@@ -1,14 +1,22 @@
-using System;
+//
+// Authors:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus and Leif Kornstaedt, 2000
+//
+// Last change:
+//   $Date$ by $Author$
+//   $Revision$
+//
 
 public class Execute {
-    public static Object Main(Object obj) {
-	Object[] res = new Object[1];
-
-	Object[] IO = new Object[1];
-	IO[0] = "IO.Io";                // Io
-
-	res[0] = IO;                    // $IO
-
-	return res;
+    public static object Main(object obj) {
+	return new object[1] {
+	    new object[1] {     // $IO
+		"IO.Io"         // $IO.Io
+	    }
+	};
     }
 }

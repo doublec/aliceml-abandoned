@@ -1,61 +1,58 @@
+//
+// Authors:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus and Leif Kornstaedt, 2000
+//
+// Last change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
 using System;
 using Alice;
 using Alice.Values;
 
-class OS_Process_system : Procedure {
-    public static Object StaticApply(Object a) {
+class OS_Process_system: Procedure {
+    public override object Apply(object a) {
 	// to be determined
 	return a;
     }
-    public override Object Apply(Object a) {
-	return StaticApply(a);
-    }
 }
 
-class OS_Process_exit : Procedure {
-    public static Object StaticApply(Object obj) {
+class OS_Process_exit: Procedure {
+    public override object Apply(object obj) {
 	Environment.Exit((Int32) CommonOp.Sync(obj));
 	return Prebound.unit;
     }
-    public override Object Apply(Object obj) {
-	return StaticApply(obj);
-    }
 }
 
-class OS_Process_getEnv : Procedure {
-    public static Object StaticApply(Object a) {
-	try {
-	    return new TagVal(1,
-			      (System.String)
-			      Environment.GetEnvironmentVariable((System.String)
-								 CommonOp.Sync(a)));
-	}
-	catch (System.Exception) {
+class OS_Process_getEnv: Procedure {
+    public override object Apply(object a) {
+	string res =
+	    Environment.GetEnvironmentVariable((string) CommonOp.Sync(a));
+	if (res == null) {
 	    return Prebound.Option_NONE;
+	} else {
+	    return new TagVal(1, res);
 	}
-    }
-    public override Object Apply(Object a) {
-	return StaticApply(a);
     }
 }
 
 public class Execute {
-    public static Object Main(Object obj) {
-	Object[] res = new Object[1];
-
-	Object[] OS = new Object[1];
-
-	Object[] OS_Process = new Object[5];
-	OS_Process[0] = new OS_Process_exit();     // exit
-	OS_Process[1] = (Int32) 1;                 // failure
-	OS_Process[2] = new OS_Process_getEnv();   // getEnv
-	OS_Process[3] = (Int32) 0;                 // success
-	OS_Process[4] = new OS_Process_system();   // system
-
-	OS[0] = OS_Process;                        // $Process
-
-	res[0] = OS;                               // $OS
-
-	return res;
+    public static object Main(object obj) {
+	return new object[1] {
+	    new object[1] {                    // $OS
+		new object[5] {                // $OS.$Process
+		    new OS_Process_exit(),     // $OS.$Process.exit
+		    1,                         // $OS.$Process.failure
+		    new OS_Process_getEnv(),   // $OS.$Process.getEnv
+		    0,                         // $OS.$Process.success
+		    new OS_Process_system(),   // $OS.$Process.system
+		}
+	    }
+	};
     }
 }
