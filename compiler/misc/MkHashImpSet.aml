@@ -1,5 +1,21 @@
-functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature HASH_KEY from "HASH_KEY-sig"
+import signature IMP_SET  from "IMP_SET-sig"
+
+
+functor MkHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
+struct
 
     type item = Item.t
     type set  = item list array ref * int ref
@@ -95,4 +111,4 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     fun unionDisjoint(s1,s2)	= app (fn k => insertDisjoint(s1,k)) s2
     fun unionWith f (s1,s2)	= app (fn k => insertWith f (s1,k)) s2
 
-  end
+end

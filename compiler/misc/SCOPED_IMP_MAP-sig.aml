@@ -1,10 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
  (*
  * A stateful scoped map (a stateful stack of stateful maps).
  *)
 
 signature SCOPED_IMP_MAP =
-  sig
-
+sig
     type key
     type 'a map
     type 'a t = 'a map
@@ -71,4 +82,4 @@ signature SCOPED_IMP_MAP =
     val findScope :		('a -> bool) -> 'a map -> 'a option
     val findi :			(key * 'a -> bool) -> 'a map -> (key *'a) option
     val findiScope :		(key * 'a -> bool) -> 'a map -> (key *'a) option
-  end
+end

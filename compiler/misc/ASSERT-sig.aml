@@ -34,15 +34,10 @@
    into this?
 *)
 
-import signature ASSERT from "ASSERT-sig"
-
-
-structure Assert : ASSERT =
-struct
+signature ASSERT =
+sig
     exception Assert of string * int * int	(* (file, line, column) *)
 
-    val failure = Assert("?", 0, 0)
-
-    fun assert true  = ()
-      | assert false = raise failure
+    val failure :	exn
+    val assert :	bool -> unit
 end

@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * A generic pretty printer.
  *
  * Based on:
@@ -12,8 +24,11 @@
  * combinator looses optimality.
  *)
 
+import signature PRETTY_PRINT from "PRETTY_PRINT-sig"
+
+
 structure PrettyPrint :> PRETTY_PRINT =
-  struct
+struct
 
     (* Types *)
 
@@ -150,4 +165,4 @@ structure PrettyPrint :> PRETTY_PRINT =
 
     fun output(os, doc, w) = List.app (outputPrim os) (layout(doc, w))
 
-  end
+end
