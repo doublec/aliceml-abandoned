@@ -3,7 +3,7 @@
 all:	Linked.ozf
 
 Linked.ozf:	Main.ozf Smurf.ozf
-	alicelink -z9 $< -o $@
+	alicelink -v -z9 $< -o $@ --include=x-alice
 
 %.ozf:	%.aml
 	alicec -c $< -o $@
