@@ -24,10 +24,10 @@
 
 class String;
 
-typedef struct {
+struct NativeComponent {
   const char *name;
   word (*init)(void);
-} prim_table;
+};
 
 // Component
 class Component : private Block {
@@ -53,9 +53,9 @@ public:
     return static_cast<Component *>(p);
   }
   // Component Untagging
-  static Component *FromWord(word entry) {
+  static Component *FromWordDirect(word entry) {
     Block *p = Store::DirectWordToBlock(entry);
-    Assert(p != INVALID_POINTER && p->GetLabel() == (BlockLabel) ENTRY_LABEL);
+    Assert(p->GetLabel() == (BlockLabel) ENTRY_LABEL);
     return static_cast<Component *>(p);
   }
 };
@@ -65,13 +65,11 @@ private:
   static word componentTable;
   static word keyQueue;
   static u_int numberOfEntries;
-  static u_int traceFlag;
   static HashTable *GetComponentTable() {
     return HashTable::FromWordDirect(componentTable);
   }
 public:
   // BootLinker Functions
-  static void Trace(const char *prefix, Chunk *key);
   static Queue *GetKeyQueue() {
     return Queue::FromWordDirect(keyQueue);
   }
@@ -80,14 +78,9 @@ public:
   }
   static void EnterComponent(Chunk *key, word sign, word str);
   static Component *LookupComponent(Chunk *key);
-  static void SetTraceMode(u_int trace) {
-    traceFlag = trace;
-  }
-  static Chunk *MakeFileName(Chunk *key);
   static word Link(Chunk *url);
   // BootLinker Static Constructor
-  static void Init(prim_table *table);
-  static void Print(Chunk *c);
+  static void Init(NativeComponent *nativeComponents);
 };
 
 #endif
