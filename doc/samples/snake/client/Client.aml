@@ -83,7 +83,9 @@ struct
                 (invoke #watch ();
                  FST ({ turn, changeView, giveUp }, promise))
 
-            fun disconnect () = invoke #disconnect ()
+            fun disconnect () = 
+                (print "sending disconnect\n";
+                 invoke #disconnect ())
             
             val lock = Lock.lock ()
 

@@ -99,7 +99,7 @@ fun main () =
                                                 Promise.future server)
                 fun disconnect () =
                     (* TODO: implement *)
-                    ()
+                    #disconnect model_join ()
 
                 fun startGame res () = 
                     let

@@ -75,7 +75,13 @@ struct
     val gameStartedMsg      = "Game already started.  Maybe next time."
 
     
+    exception ServerDisconnected 
+    (* raised when the player controlling the server disconnected.
+       the tournament is then finished.
+     *)
     
+    val pcId = 0
+ 
     (** compute possibly infinite stream of levels according
         to config *)
     fun computeLevels ({    dimensions, maxPlayers=players,
@@ -269,8 +275,14 @@ struct
                             if PState.played (#state pdesc) then
                                 cancelGame p
                             else ();
-                            (* TODO: handle disconnect *)        
-                            ()
+                            
+                            if PState.id (#state pdesc) = pcId then 
+                                (* priviliged client has disconnected! 
+                                   abort the game.
+                                 *)
+                                (print "server disconnected!\n";
+                                raise ServerDisconnected)
+                            else ()
                         end
 
                     fun giveUp (p as PDESC pdesc) =
@@ -335,17 +347,20 @@ struct
                                     snakes := (snake, 
                                         Snake.direction snake) :: !snakes
                                 |   SOME d      => 
-                                    snakes := (snake, d) :: !snakes
+                                    (snakes := (snake, d) :: !snakes;
+                                     #newDir ev := NONE)
                                 end
                             else if PState.isObserver state then
                                 case ! $ #changedView ev of
                                     NONE    => ()
                                 |   SOME P.NEXT =>
-                                    PState.changeObserved (state, 
-                                        nextId (PState.observed state, 1) )
+                                    (PState.changeObserved (state, 
+                                        nextId (PState.observed state, 1) );
+                                     #changedView ev := NONE)
                                 |   SOME P.PREV =>
-                                    PState.changeObserved (state,
-                                        nextId (PState.observed state, ~1) ) 
+                                    (PState.changeObserved (state,
+                                        nextId (PState.observed state, ~1) );
+                                     #changedView ev := NONE)
                             else ()
                         end 
                     
@@ -558,6 +573,7 @@ struct
                         (ticker (arena, 0);
                          finishLevel (arena);
                          true)
+                        handle ServerDisconnected => false
                     else false
               end
 
@@ -740,7 +756,6 @@ struct
 
             val ticket  = Remote.offer package
            
-            val pcId = 0
 
             val pcServerInterface = 
                 {   disconnect  = Remote.proxy (disconnect pcId),
