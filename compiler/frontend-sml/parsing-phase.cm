@@ -1,7 +1,7 @@
 Group is
 
 	ml-yacc-lib.cm
-	../misc/sources.cm
+	../../lib/utility/sources.cm
 	../infrastructure/sources.cm
 	../infrastructure/pp-misc.cm
 
