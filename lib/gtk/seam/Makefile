@@ -1,6 +1,8 @@
 ###
 # GTK+ 2.0 Interface for Alice - Makefile
 
+VERSION = 1.0.1
+
 # The generator creates full code for the following name spaces
 COMPS = Gdk Gtk Canvas 
 COMPSCAP = GDK GTK CANVAS 
@@ -36,11 +38,11 @@ CPPSOURCES = $(NATIVECOMPS:%=%.cc) NativeCore.cc
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # names of object files
-OBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll) \
-	  $(ALICESOURCES:%.aml=%.alc)
+DLLOBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll)
+ALICEOBJECTS = $(ALICESOURCES:%.aml=%.alc)
 
-INSTALLTARGETS = $(CPPSOURCES:%.cc=%.dll) \
-	  $(ALICESOURCES:%.aml=%.alc)
+INSTALLDLLTARGETS = $(CPPSOURCES:%.cc=%.dll)
+INSTALLALICETARGETS = $(ALICESOURCES:%.aml=%.alc)
 
 PLATFORM := $(shell ./platform.sh smlnj)
 ifeq ("$(PLATFORM)", "")
@@ -74,6 +76,11 @@ INSTALL = ./myinstall -v -m 644
 
 INSTALLDIR = `alice-config --alicelibdir`/gtk
 
+DISTFILES = $(CPPSOURCES) Makefile debian platform.sh \
+	MyNativeAuthoring.hh NativeUtils.hh NativeGdkSpecial.hh \
+	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh myinstall
+distdir = alice-gtk-$(VERSION)
+
 #################################################
 
 .PHONY: all generate compile depend docs clean veryclean distclean install
@@ -83,7 +90,7 @@ all: compile
 
 ### SOURCE CODE GENERATION ######################
 
-$(GENFILES): $(LASTGENERATE)
+#$(GENFILES): $(LASTGENERATE)
 
 $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR) 
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
@@ -116,7 +123,9 @@ $(INPUTFILE):
 
 ### COMPILATION #################################
 
-compile: $(OBJECTS)
+compile: compiledll compilealice
+compiledll: $(DLLOBJECTS)
+compilealice: $(ALICEOBJECTS)
 
 %.dll: %.o
 	$(ALICETOOL) -v link $< -o $@ \
@@ -157,16 +166,20 @@ docs:
 
 # clean: clean this directory, and the samples
 clean:
+	rm -f $(DLLOBJECTS)
+	rm -f $(ALICEOBJECTS)
+	(cd samples && $(MAKE) clean )
+
+# clean: also clean the generated sources
+veryclean: clean
 	rm -f $(GENERATOR)
 	rm -f $(GENFILES)
 	rm -f $(GENSIGS)
-	rm -f $(OBJECTS)
 	rm -f $(LASTGENERATE)
-	(cd samples && $(MAKE) clean )
 
 # distclean: clean also all subdirs (including CKIT), 
 #            and remove Makefile.depend and generator input file
-distclean: clean
+distclean: veryclean
 	rm -f *~
 	rm -f Makefile.depend
 	find -type d | grep '/CM$$' | xargs rm -fr
@@ -177,6 +190,21 @@ distclean: clean
 
 ### INSTALLATION ################################
 #
-install: all
-	mkdir -p -m 775 $(INSTALLDIR) # ./myinstall -d $(INSTALLDIR)
-	./myinstall $(INSTALLTARGETS) $(INSTALLDIR)
+install: all installdll installalice
+installdll: compiledll
+	mkdir -p -m 775 $(INSTALLDIR)
+	./myinstall $(INSTALLDLLTARGETS) $(INSTALLDIR)
+installalice: compilealice
+	mkdir -p -m 775 $(INSTALLDIR)
+	./myinstall $(INSTALLALICETARGETS) $(INSTALLDIR)
+
+### DISTRIBUTION OF THE C SOURCES FOR PACKAGING
+#
+distdir:
+	rm -rf $(distdir)
+	mkdir $(distdir)
+	cp -r $(DISTFILES) $(distdir)
+
+dist:	distdir
+	tar chzf alice-gtk-$(VERSION).tar.gz $(distdir)
+	rm -rf $(distdir)
