@@ -32,9 +32,11 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	     intro = 
 		 ["// This is a generated file. ",
 		  "Modifications may get lost.\n\n",
-		  "#include \"NativeUtils.hh\"\n"] @
-		 (map (fn s => "#include \""^s^"\"\n") Special.includeFiles)@
-		 ["\n\n"] ,
+		  "#include \"NativeUtils.hh\"\n",
+		  (case Special.includeFile of
+		      ("",_,_)   => "" 
+		    | (name,_,_) => "#include \""^name^"\"\n"),
+		  "\n\n"] ,
              outro = []
             } : Util.fileInfo
 
@@ -146,6 +148,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 			               ARRAY _    => noCast
 			             | STRING _   => reintCast
 				     | FUNCTION _ => cCast
+				     | ELLIPSES _ => reintCast
 				     | _          => staticCast
 		    in
 			cast (getCType t) name
@@ -243,7 +246,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		                 (if numOuts(al,true) > 0
 				      then f(funName,ret,al,true) 
 				      else nil)
-		val spec = (List.exists (fn f' => func=f') Special.specialFuns)
+		val spec = Util.contains func Special.specialFuns
 	    in
 	       (if spec then sigEntry(funName,ret,al,false) else call sigEntry,
 	        if spec then nil                 else call (wrapperEntry nil) )
@@ -308,22 +311,16 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	let
 	    val initLines = List.concat (map makeStructureEntry items)
 
-	    fun getIncEntry filename =
-	    let	val {base, ext} = OS.Path.splitBaseExt filename
-		val ext' = case ext of SOME s => "_"^s | _ => ""
-	    in	"_"^Util.strUpper(base)^Util.strUpper(ext')^"_"
-	    end
-	    val includeEntries = map getIncEntry Special.includeFiles
-
+	    val (_, initFun, addEntries) = Special.includeFile
 	    val header = 
 		["word InitComponent() {\n",
-		 "  includeData data[] = { ", 
-		   (Util.makeTuple ", " "" includeEntries), " };\n",
-		 "  Record *record = CreateRecord(data, ", 
-		   Int.toString (length includeEntries), ", ",
-		   Int.toString (length initLines), ");\n\n"
-		 ]
-	    val footer = ["  RETURN_STRUCTURE(\"", nativeName,
+		 wrIndent, "Record *record = CreateRecord(", 
+		   Int.toString ((length initLines)+addEntries), ");\n"] @
+		(if initFun = "" 
+		     then nil 
+		     else [wrIndent, initFun, "(record);\n"])@
+                ["\n"]
+	    val footer = [wrIndent, "RETURN_STRUCTURE(\"", nativeName,
 			  "$\", record);\n}\n"]
 	in
 	    header @ initLines @ footer
