@@ -135,12 +135,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | declareArgs (ProdArgs labelIdDefVec, await) =
 	    declareArgs (TupArgs (Vector.map #2 labelIdDefVec), await)
 
-	fun emitBox (ty, dottedname) =
-	    let
-		val index = allocateLocal ty
-	    in
-		emit (Stloc index); emit (Ldloca index); emit (Box dottedname)
-	    end
+	fun emitBox (ty, dottedname) = emit (Box dottedname)
 
 	fun genLit (WordLit w) =
 	    (emit (LdcI4 (LargeWord.toInt w)); emitBox (Int32Ty, System.Int32))
@@ -452,14 +447,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Ldsfld (dottedname, id, System.ObjectTy))
 	    end
 	  | genExp (NewExp _) =
-	    let
-		val index = allocateLocal System.GuidTy
-	    in
-		emit (Call (false, System.Guid, "NewGuid",
-			    nil, System.GuidTy));
-		emit (Stloc index); emit (Ldloca index);
-		emit (Box System.Guid)
-	    end
+	    (emit (Call (false, System.Guid, "NewGuid", nil, System.GuidTy));
+	     emitBox (System.GuidTy, System.Guid))
 	  | genExp (VarExp (_, id)) = emitId id
 	  | genExp (TagExp (_, _, n)) =
 	    (emit (LdcI4 n); emitBox (Int32Ty, System.Int32))
