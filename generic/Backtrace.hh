@@ -41,6 +41,9 @@ public:
     backtrace->Enqueue(frame);
     return backtrace;
   }
+  static Backtrace *FromWord(word x) {
+    return STATIC_CAST(Backtrace *, Queue::FromWord(x));
+  }
   static Backtrace *FromWordDirect(word x) {
     return STATIC_CAST(Backtrace *, Queue::FromWordDirect(x));
   }
