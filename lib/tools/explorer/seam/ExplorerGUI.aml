@@ -1,0 +1,133 @@
+(*
+ * This is a generated file, created by alice-glade.
+ * Modifications may get lost.
+ *)
+
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+structure ExplorerGUI =
+  struct
+    structure Helpers = struct
+      val accelGroup = Gtk.accelGroupNew()
+      val tooltips = Gtk.tooltipsNew()
+      fun containerAddList(cont, children) = 
+        List.app (fn c => Gtk.containerAdd(cont,c)) children
+    end
+
+    val aliceexplorer = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
+    val _ = Gtk.widgetShow aliceexplorer
+    val _ = Gtk.windowSetTitle(aliceexplorer,"Alice/Gecode Explorer")
+    val vbox1 = Gtk.vboxNew(false,0)
+    val _ = Gtk.widgetShow vbox1
+    val menubar = Gtk.menuBarNew()
+    val _ = Gtk.widgetShow menubar
+    val menuitem1 = Gtk.menuItemNewWithMnemonic("_File")
+    val _ = Gtk.widgetShow menuitem1
+    val menuitem1_menu = Gtk.menuNew()
+    val save = Gtk.imageMenuItemNewFromStock("gtk-save",Helpers.accelGroup)
+    val _ = Gtk.widgetShow save
+    val cancel_search = Gtk.imageMenuItemNewFromStock("gtk-cancel",Helpers.accelGroup)
+    val _ = Gtk.widgetShow cancel_search
+    val reset = Gtk.menuItemNewWithMnemonic("Reset")
+    val _ = Gtk.widgetShow reset
+    val separatormenuitem1 = Gtk.menuItemNew()
+    val _ = Gtk.widgetShow separatormenuitem1
+    val quit = Gtk.imageMenuItemNewFromStock("gtk-quit",Helpers.accelGroup)
+    val _ = Gtk.widgetShow quit
+    val _ = Helpers.containerAddList(menuitem1_menu,[save,cancel_search,reset,separatormenuitem1,quit])
+    val _ = Gtk.menuItemSetSubmenu(menuitem1,menuitem1_menu)
+    val nodemenu = Gtk.menuItemNewWithMnemonic("Node")
+    val _ = Gtk.widgetShow nodemenu
+    val nodemenu_menu = Gtk.menuNew()
+    val hidenodes = Gtk.menuItemNewWithMnemonic("(Un)Hide")
+    val _ = Gtk.widgetShow hidenodes
+    val unhide_all = Gtk.menuItemNewWithMnemonic("Unhide subtree")
+    val _ = Gtk.widgetShow unhide_all
+    val hide_failed = Gtk.menuItemNewWithMnemonic("Hide failed subtrees")
+    val _ = Gtk.widgetShow hide_failed
+    val _ = Helpers.containerAddList(nodemenu_menu,[hidenodes,unhide_all,hide_failed])
+    val _ = Gtk.menuItemSetSubmenu(nodemenu,nodemenu_menu)
+    val search = Gtk.menuItemNewWithMnemonic("Search")
+    val _ = Gtk.widgetShow search
+    val search_menu = Gtk.menuNew()
+    val next_solution = Gtk.menuItemNewWithMnemonic("Next solution")
+    val _ = Gtk.widgetShow next_solution
+    val next_n_solutions = Gtk.menuItemNewWithMnemonic("Next n solutions")
+    val _ = Gtk.widgetShow next_n_solutions
+    val all_solutions = Gtk.menuItemNewWithMnemonic("All solutions")
+    val _ = Gtk.widgetShow all_solutions
+    val _ = Helpers.containerAddList(search_menu,[next_solution,next_n_solutions,all_solutions])
+    val _ = Gtk.menuItemSetSubmenu(search,search_menu)
+    val options1 = Gtk.menuItemNewWithMnemonic("Options")
+    val _ = Gtk.widgetShow options1
+    val options1_menu = Gtk.menuNew()
+    val inspection1 = Gtk.menuItemNewWithMnemonic("Inspection")
+    val _ = Gtk.widgetShow inspection1
+    val view1 = Gtk.menuItemNewWithMnemonic("View")
+    val _ = Gtk.widgetShow view1
+    val _ = Helpers.containerAddList(options1_menu,[inspection1,view1])
+    val _ = Gtk.menuItemSetSubmenu(options1,options1_menu)
+    val menuitem4 = Gtk.menuItemNewWithMnemonic("_Help")
+    val _ = Gtk.widgetShow menuitem4
+    val menuitem4_menu = Gtk.menuNew()
+    val about = Gtk.menuItemNewWithMnemonic("_About")
+    val _ = Gtk.widgetShow about
+    val _ = Gtk.containerAdd(menuitem4_menu,about)
+    val _ = Gtk.menuItemSetSubmenu(menuitem4,menuitem4_menu)
+    val _ = Helpers.containerAddList(menubar,[menuitem1,nodemenu,search,options1,menuitem4])
+    val hbox1 = Gtk.hboxNew(false,0)
+    val _ = Gtk.widgetShow hbox1
+    val scrolledwindow_xa = Gtk.adjustmentNew(0.0,0.0,400.0,1.0,400.0,400.0)
+    val scrolledwindow_ya = Gtk.adjustmentNew(0.0,0.0,250.0,1.0,250.0,250.0)
+    val scrolledwindow = Gtk.scrolledWindowNew(scrolledwindow_xa,scrolledwindow_ya)
+    val _ = Gtk.scrolledWindowSetShadowType(scrolledwindow,Gtk.SHADOW_NONE)
+    val _ = Gtk.widgetShow scrolledwindow
+    val _ = Gtk.widgetSetSizeRequest(scrolledwindow,400,250)
+    val vbox2 = Gtk.vboxNew(false,0)
+    val _ = Gtk.widgetShow vbox2
+    val zoomToFit = Gtk.buttonNew()
+    val _ = Gtk.widgetSetSizeRequest(zoomToFit,24,24)
+    val _ = Gtk.buttonSetRelief(zoomToFit,Gtk.RELIEF_NONE)
+    val _ = Gtk.tooltipsSetTip(Helpers.tooltips,zoomToFit,"Zoom to fit window","")
+    val _ = Gtk.widgetShow zoomToFit
+    val image1 = Gtk.imageNewFromStock("gtk-zoom-fit",Gtk.IntToGtkIconSize(4))
+    val _ = Gtk.widgetShow image1
+    val _ = Gtk.containerAdd(zoomToFit,image1)
+    val scale_adj = Gtk.adjustmentNew(1.0,0.1,3.0,0.1,0.0,0.0)
+    val scale = Gtk.vscaleNew(scale_adj)
+    val _ = Gtk.widgetShow scale
+    val _ = Gtk.scaleSetDrawValue(scale,false)
+    val _ = Gtk.scaleSetValuePos(scale,Gtk.POS_TOP)
+    val _ = Gtk.scaleSetDigits(scale,1)
+    val _ = Gtk.rangeSetUpdatePolicy(scale,Gtk.UPDATE_CONTINUOUS)
+    val _ = Gtk.rangeSetInverted(scale,false)
+    val _ = Gtk.boxPackStart(vbox2,zoomToFit,false,false,0)
+    val _ = Gtk.boxPackStart(vbox2,scale,true,true,0)
+    val _ = Gtk.boxPackStart(hbox1,scrolledwindow,true,true,0)
+    val _ = Gtk.boxPackStart(hbox1,vbox2,false,true,0)
+    val toolbar1 = Gtk.toolbarNew()
+    val _ = Gtk.widgetShow toolbar1
+    val label6 = Gtk.labelNew("Choices:")
+    val _ = Gtk.widgetShow label6
+    val noOfChoices = Gtk.labelNew("00000")
+    val _ = Gtk.widgetShow noOfChoices
+    val label7 = Gtk.labelNew("   Failures:")
+    val _ = Gtk.widgetShow label7
+    val noOfFailed = Gtk.labelNew("00000")
+    val _ = Gtk.widgetShow noOfFailed
+    val label8 = Gtk.labelNew("   Solutions:")
+    val _ = Gtk.widgetShow label8
+    val noOfSolved = Gtk.labelNew("00000")
+    val _ = Gtk.widgetShow noOfSolved
+    val _ = Helpers.containerAddList(toolbar1,[label6,noOfChoices,label7,noOfFailed,label8,noOfSolved])
+    val statusbar = Gtk.statusbarNew()
+    val _ = Gtk.widgetShow statusbar
+    val _ = Gtk.boxPackStart(vbox1,menubar,false,false,0)
+    val _ = Gtk.boxPackStart(vbox1,hbox1,true,true,0)
+    val _ = Gtk.boxPackStart(vbox1,toolbar1,false,false,0)
+    val _ = Gtk.boxPackStart(vbox1,statusbar,false,false,0)
+    val _ = Gtk.containerAdd(aliceexplorer,vbox1)
+  end
+
+(* Created by alice-glade *)
