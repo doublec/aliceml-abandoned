@@ -30,11 +30,12 @@ class String;
 
 class Interpreter: public ConcreteRepresentationHandler {
 public:
+  bool primitive;
   enum Result {
     CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE
   };
   // Interpreter Constructor
-  Interpreter() {}
+  Interpreter() { primitive = false; }
   // ConcreteRepresentation Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Calling Convention Conversion
