@@ -40,7 +40,7 @@ struct
     __primitive val sub :	'a vector * int -> 'a	= "Vector.sub"
     __primitive val sub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
 
-    fun toList v		= toList'(v, length v - 1, [])
+    fun toList v		= toList'(v, length v - 1, [])		(**)
     and toList'(v, ~1, xs)	= xs
       | toList'(v, i, xs)	= toList'(v, i-1, sub'(v,i)::xs)
 
