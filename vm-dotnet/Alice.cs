@@ -2464,7 +2464,14 @@ namespace Alice {
 			    Console.Write("Komponist: Invoking ");
 			    Console.Write(Url);
 			    Console.WriteLine("/class Execute::Main");
-			    val = minf.Invoke(null, args);
+			    try {
+				val = minf.Invoke(null, args);
+			    }
+			    catch (System.Exception e) {
+				Console.WriteLine("Komponist: Got Exception " + e);
+				val = new FailedTransient(new ConVal(Prebound.Future_Future,
+								     e)); // to be determined
+			    }
 			    Console.Write("Komponist: Finished ");
 			    Console.Write(Url);
 			    Console.WriteLine("/class Execute::Main");
