@@ -30,82 +30,84 @@
 #include "generic/Transients.hh"
 #include "generic/IOHandler.hh"
 
-static const BlockLabel ENTRY_LABEL = (BlockLabel) MIN_DATA_LABEL;
+namespace {
+  const BlockLabel ENTRY_LABEL = (BlockLabel) MIN_DATA_LABEL;
 
-class Entry: private Block {
-private:
-  enum { FD_POS, FUTURE_POS, SIZE };
-public:
-  using Block::ToWord;
+  class Entry: private Block {
+  private:
+    enum { FD_POS, FUTURE_POS, SIZE };
+  public:
+    using Block::ToWord;
 
-  static Entry *New(int fd, Future *future) {
-    Block *block = Store::AllocBlock(ENTRY_LABEL, SIZE);
-    block->InitArg(FD_POS, fd);
-    block->InitArg(FUTURE_POS, future->ToWord());
-    return static_cast<Entry *>(block);
-  }
-  static Entry *FromWordDirect(word w) {
-    Block *block = Store::DirectWordToBlock(w);
-    Assert(block->GetLabel() == ENTRY_LABEL);
-    return static_cast<Entry *>(block);
-  }
-
-  int GetFD() {
-    return Store::DirectWordToInt(GetArg(FD_POS));
-  }
-  Future *GetFuture() {
-    Transient *transient = Store::WordToTransient(GetArg(FUTURE_POS));
-    Assert(transient != INVALID_POINTER &&
-	   transient->GetLabel() == FUTURE_LABEL);
-    return static_cast<Future *>(transient);
-  }
-};
-
-class Set: private Queue {
-private:
-  static const u_int initialQueueSize = 8; //--** to be checked
-public:
-  using Block::ToWord;
-  using Queue::Blank;
-
-  static Set *New() {
-    return static_cast<Set *>(Queue::New(initialQueueSize));
-  }
-  static Set *FromWordDirect(word w) {
-    return static_cast<Set *>(Queue::FromWordDirect(w));
-  }
-
-  void Add(Entry *entry) {
-    Enqueue(entry->ToWord());
-  }
-  int EnterIntoFDSet(fd_set *fdSet) {
-    int max = -1;
-    FD_ZERO(fdSet);
-    for (u_int i = GetNumberOfElements(); i--; ) {
-      int fd = Entry::FromWordDirect(GetNthElement(i))->GetFD();
-      if (fd > max)
-	max = fd;
-      FD_SET(fd, fdSet);
+    static Entry *New(int fd, Future *future) {
+      Block *block = Store::AllocBlock(ENTRY_LABEL, SIZE);
+      block->InitArg(FD_POS, fd);
+      block->InitArg(FUTURE_POS, future->ToWord());
+      return static_cast<Entry *>(block);
     }
-    return max;
-  }
-  void Schedule(fd_set *fdSet) {
-    u_int n = GetNumberOfElements();
-    for (u_int i = 0; i < n; i++) {
-    again:
-      Entry *entry = Entry::FromWordDirect(GetNthElement(i));
-      if (FD_ISSET(entry->GetFD(), fdSet)) {
-	Future *future = entry->GetFuture();
-	future->ScheduleWaitingThreads();
-	future->Become(REF_LABEL, Store::IntToWord(0));
-	Queue::RemoveNthElement(i);
-	if (i < --n) goto again;
+    static Entry *FromWordDirect(word w) {
+      Block *block = Store::DirectWordToBlock(w);
+      Assert(block->GetLabel() == ENTRY_LABEL);
+      return static_cast<Entry *>(block);
+    }
+
+    int GetFD() {
+      return Store::DirectWordToInt(GetArg(FD_POS));
+    }
+    Future *GetFuture() {
+      Transient *transient = Store::WordToTransient(GetArg(FUTURE_POS));
+      Assert(transient != INVALID_POINTER &&
+	     transient->GetLabel() == FUTURE_LABEL);
+      return static_cast<Future *>(transient);
+    }
+  };
+
+  class Set: private Queue {
+  private:
+    static const u_int initialQueueSize = 8; //--** to be checked
+  public:
+    using Block::ToWord;
+    using Queue::Blank;
+
+    static Set *New() {
+      return static_cast<Set *>(Queue::New(initialQueueSize));
+    }
+    static Set *FromWordDirect(word w) {
+      return static_cast<Set *>(Queue::FromWordDirect(w));
+    }
+
+    void Add(Entry *entry) {
+      Enqueue(entry->ToWord());
+    }
+    int EnterIntoFDSet(fd_set *fdSet) {
+      int max = -1;
+      FD_ZERO(fdSet);
+      for (u_int i = GetNumberOfElements(); i--; ) {
+	int fd = Entry::FromWordDirect(GetNthElement(i))->GetFD();
+	if (fd > max)
+	  max = fd;
+	FD_SET(fd, fdSet);
+      }
+      return max;
+    }
+    void Schedule(fd_set *fdSet) {
+      u_int n = GetNumberOfElements();
+      for (u_int i = 0; i < n; i++) {
+      again:
+	Entry *entry = Entry::FromWordDirect(GetNthElement(i));
+	if (FD_ISSET(entry->GetFD(), fdSet)) {
+	  Future *future = entry->GetFuture();
+	  future->ScheduleWaitingThreads();
+	  future->Become(REF_LABEL, Store::IntToWord(0));
+	  Queue::RemoveNthElement(i);
+	  if (i < --n) goto again;
+	}
       }
     }
-  }
-};
+  };
 
-static word Readable, Writable;
+  word Readable, Writable;
+};
 
 int IOHandler::defaultFD;
 
@@ -128,9 +130,11 @@ void IOHandler::Poll() {
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
+  retry:
     int ret = select(max + 1, &readFDs, &writeFDs, NULL, &timeout);
-    //--** EINTR
     if (ret < 0) {
+      if (GetLastError() == EINTR)
+	goto retry;
       Error("IOHandler::Poll");
     } else if (ret > 0) {
       ReadableSet->Schedule(&readFDs);
@@ -164,19 +168,13 @@ void IOHandler::Block() {
 #endif
   if (max >= 0) {
     int ret = select(max + 1, &readFDs, &writeFDs, NULL, ptimeout);
-    if (ret > 0) {
+    if (ret < 0) {
+      if (GetLastError() == EINTR)
+	return;
+      Error("IOHandler::Block");
+    } else if (ret > 0) {
       ReadableSet->Schedule(&readFDs);
       WritableSet->Schedule(&writeFDs);
-      return;
-    } else if (ret == 0) {
-      return;
-    } else {
-      switch (GetLastError()) {
-      case EINTR:
-	return;
-      default:
-	Error("IOHandler::Block");
-      }
     }
   }
 }
@@ -195,8 +193,11 @@ Future *IOHandler::CheckReadable(int fd) {
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
 
-  int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout); //--** EINTR
+ retry:
+  int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout);
   if (ret < 0) {
+    if (GetLastError() == EINTR)
+      goto retry;
     Error("IOHandler::CheckReadable");
   } else if (ret == 0) {
     Future *future = Future::New();
@@ -217,8 +218,11 @@ Future *IOHandler::CheckWritable(int fd) {
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
 
-  int ret = select(fd + 1, NULL, &writeFDs, NULL, &timeout); //--** EINTR
+ retry:
+  int ret = select(fd + 1, NULL, &writeFDs, NULL, &timeout);
   if (ret < 0) {
+    if (GetLastError() == EINTR)
+      goto retry;
     Error("IOHandler::CheckWritable");
   } else if (ret == 0) {
     Future *future = Future::New();
