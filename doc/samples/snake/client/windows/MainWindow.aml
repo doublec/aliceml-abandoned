@@ -53,8 +53,7 @@ fun highscoreToString score =
 	toString ()
     end
 
-fun timeToString   NONE   = ""
-  | timeToString (SOME t) =
+  fun timeToString t =
     let
 	val time    = Time.toSeconds t
 	val hours   = time div 3600

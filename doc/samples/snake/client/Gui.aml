@@ -49,7 +49,7 @@ struct
 	 updatePoints : Highscore.points list -> unit,
 	 headPosition : Pos.pos -> unit,
 	 gameFinished : Highscore.highscore -> unit,
-	 tick         : Time.time option -> unit
+	 tick         : Time.time -> unit
 	 }
 
     type model_join = 

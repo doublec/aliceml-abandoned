@@ -156,10 +156,10 @@ struct
 	    till gamestart. n = 0 => levels starts *)
         update :            diff list -> unit,
 	headPosition :      Pos.pos -> unit,
-        tick :              Time.time option -> unit,
+        tick :              Time.time -> unit,
         (** [tick t] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left
-	    until level ends, NONE if time is not limited *)
+	    until level ends *)
         
 	playersDied :       (string * Color.color) list -> unit,
 	playersFinished :   (string * Color.color) list -> unit,

@@ -644,7 +644,7 @@ struct
                     log ("Server", "send tick signal");
                     invokeSeveral (_file_, _line_) 
                         (Part.allConnected $ ! participants, #tick, 
-                            SOME timeLeft);
+                            timeLeft);
   
                     (* test wether there are any living snakes left *)
                     case Part.allNonFinished (!participants) of
