@@ -49,11 +49,11 @@ Worker::Result EmptyTaskWorker::Run() {
 
 Worker::Result EmptyTaskWorker::Handle() {
   if (Properties::atExn == Store::IntToWord(0)) {
-    fprintf(stderr, "uncaught exception:\n");
+    std::fprintf(stderr, "uncaught exception:\n");
     Debug::Dump(Scheduler::currentData);
-    fprintf(stderr, "backtrace:\n");
+    std::fprintf(stderr, "backtrace:\n");
     Scheduler::currentBacktrace->Dump();
-    std::exit(1); //--** should return to StockwerkMain instead
+    return Worker::TERMINATE;
   } else {
     return Scheduler::PushCall(Properties::atExn);
   }
