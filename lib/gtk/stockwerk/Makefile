@@ -92,11 +92,11 @@ $(INPUTFILE):
 compile: $(OBJECTS)
 
 %.dll: %.o
-	$(ALICETOOL) -v ld -Wl,-S $< -o $@ \
+	$(ALICETOOL) -v link -Wl,-S $< -o $@ \
 	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
 
 %.o: %.cc
-	$(ALICETOOL) -v cc -c $< -o $@ \
+	$(ALICETOOL) -v compile -c $< -o $@ \
 	 $(CC_OPTS) `pkg-config --cflags $(PC_OPTS)`
 
 %.stc: %.aml
@@ -106,7 +106,7 @@ compile: $(OBJECTS)
 ### DEPENDENCIES ################################
 
 depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
-	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(PC_OPTS)` \
+	$(ALICETOOL) makedepend `pkg-config --cflags $(PC_OPTS)` \
 	    $(CPPSOURCES) > Makefile.depend
 	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
                                                                    | $(SML)
