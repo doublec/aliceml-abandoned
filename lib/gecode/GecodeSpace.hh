@@ -169,8 +169,7 @@ public:
     if (Space::failed())
       return;
     
-    if ( (fss[s].includeI(i)) == ME_SET_FALSE)
-      Space::fail();
+    GECODE_CME_SPACE(fss[s].includeI(i));
   }
 
   template<class I>
@@ -179,8 +178,7 @@ public:
     if (Space::failed())
       return;
     
-    if ( (fss[s].intersectI(i)) == ME_SET_FALSE)
-      Space::fail();
+    GECODE_CME_SPACE(fss[s].intersectI(i));
   }
 
 
