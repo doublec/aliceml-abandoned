@@ -13,8 +13,10 @@ AC_CONFIG_SRCDIR(Seam.hh)
 AC_CONFIG_SUBDIRS([store adt generic])
 
 dnl
-dnl  Programs
+dnl  Test for Programs
 dnl
+: ${CXXFLAGS=""} dnl we do not want autoconf's default
+
 AC_PROG_MAKE_SET
 AC_PROG_CXX
 AC_PROG_INSTALL
@@ -23,7 +25,7 @@ AC_LANG(C++)
 AC_SUBST(INCLUDES)
 
 dnl
-dnl  C++ Extensions
+dnl  Test For C++ Extensions
 dnl
 AC_CACHE_CHECK([whether compiler understands __declspec(dllexport)],
   [seam_cv_have_dlls],
@@ -41,27 +43,58 @@ case "$seam_cv_have_dlls" in
 esac
 
 dnl
-dnl  Linker Flags
+dnl  Macros for Testing Compiler and Linker Flags
 dnl
-AC_CACHE_CHECK([whether linker understands --export-dynamic],
-  [seam_cv_ldflags_export_dynamic],
-  [seam_save_LDFLAGS="$LDFLAGS"
-   LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+# Macro: SEAM_CHECK_CXXFLAG (FLAG, [ACTION-IF-TRUE], [ACTION-IF-FALSE])
+#   Check whether FLAG is supported by the C++ compiler.
+#   Run the shell commands ACTION-IF-TRUE if it is, ACTION-IF-FALSE otherwise.
+#   The default for ACTION-IF-TRUE, if not given, is to append FLAG to
+#   `CXXFLAGS'.
+AC_DEFUN([SEAM_CHECK_CXXFLAG],
+  [AC_MSG_CHECKING(whether $CXX accepts $1)
+   seam_save_CXXFLAGS="$CXXFLAGS"
+   CXXFLAGS="$CXXFLAGS $1"
+   AC_COMPILE_IFELSE(AC_LANG_PROGRAM([],[]),
+		     AC_MSG_RESULT(yes)
+		     CXXFLAGS="$seam_save_CXXFLAGS"
+		     ifelse([$2],,[CXXFLAGS="$CXXFLAGS $1"],[$2]),
+		     AC_MSG_RESULT(no)
+		     CXXFLAGS="$seam_save_CXXFLAGS"
+		     $3)])
+
+# Macro: SEAM_CHECK_CXXFLAGS (FLAG...)
+#   For each given flag in the whitespace-separated argument list,
+#   test whether it is supported by the C++ compiler.
+#   If it is, append it to `CXXFLAGS'.
+AC_DEFUN([SEAM_CHECK_CXXFLAGS],
+  [for seam_cxxflag in $1; do
+       SEAM_CHECK_CXXFLAG($seam_cxxflag)
+   done])
+
+# Macro: SEAM_CHECK_LDFLAG (FLAG, [ACTION-IF-TRUE], [ACTION-IF-FALSE])
+#   Check whether FLAG is supported by the linker.
+#   Run the shell commands ACTION-IF-TRUE if it is, ACTION-IF-FALSE otherwise.
+#   The default for ACTION-IF-TRUE, if not given, is to append FLAG to
+#   `LDFLAGS'.
+AC_DEFUN([SEAM_CHECK_LDFLAG],
+  [AC_MSG_CHECKING(whether linker accepts $1)
+   seam_save_LDFLAGS="$LDFLAGS"
+   LDFLAGS="$LDFLAGS $1"
    AC_LINK_IFELSE(AC_LANG_PROGRAM([],[]),
-		  seam_cv_ldflags_export_dynamic=yes,
-		  seam_cv_ldflags_export_dynamic=no)
-   LDFLAGS="$seam_save_LDFLAGS"])
+		  AC_MSG_RESULT(yes)
+		  LDFLAGS="$seam_save_LDFLAGS"
+		  ifelse([$2],,[LDFLAGS="$LDFLAGS $1"],[$2]),
+		  AC_MSG_RESULT(no)
+		  LDFLAGS="$seam_save_LDFLAGS"
+		  $3)])
 
-case "$seam_cv_ldflags_export_dynamic" in
-    no)
-	;;
-    yes)
-	LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-	;;
-esac
+dnl  Test for some flags we always want:
+SEAM_CHECK_CXXFLAGS([-pipe])
+SEAM_CHECK_LDFLAG([[-Wl,--export-dynamic]])
 
 dnl
-dnl  Unix Sockets vs. WinSock
+dnl  Test for Unix Sockets vs. WinSock
 dnl
 AC_CACHE_CHECK([for Unix select vs. WinSock], [seam_cv_socket_flavor],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <sys/select.h>]],
@@ -91,7 +124,7 @@ case "$seam_cv_socket_flavor" in
 esac
 
 dnl
-dnl  VirtualAlloc
+dnl  Test for VirtualAlloc
 dnl
 AC_CACHE_CHECK([for VirtualAlloc], [seam_cv_have_virtualalloc],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
@@ -109,7 +142,7 @@ case "$seam_cv_have_virtualalloc" in
 esac
 
 dnl
-dnl  dlopen
+dnl  Test for dlopen
 dnl
 AC_CHECK_LIB(dl, dlopen)
 AC_CACHE_CHECK([for dlopen], [seam_cv_have_dlopen],
@@ -128,7 +161,7 @@ case "$seam_cv_have_dlopen" in
 esac
 
 dnl
-dnl  zlib
+dnl  Test for zlib
 dnl
 AC_MSG_CHECKING([for zlib])
 AC_ARG_WITH([zlib],
@@ -161,7 +194,7 @@ case "$seam_with_zlib" in
 esac
 
 dnl
-dnl  GNU Lightning
+dnl  Test for GNU Lightning
 dnl
 AC_MSG_CHECKING([for GNU Lightning])
 AC_ARG_WITH([lightning],
@@ -189,7 +222,83 @@ case "$seam_with_lightning" in
 esac
 
 dnl
-dnl  Profiler
+dnl  Test for --enable-optimized
+dnl
+AC_MSG_CHECKING([whether to build with optimization])
+AC_ARG_ENABLE([optimized],
+	      AC_HELP_STRING([--enable-optimized],
+			     [build with optimization (default: yes)]),
+	      [seam_enable_optimized="$enable_optimized"],
+	      [seam_enable_optimized=yes])
+AC_MSG_RESULT($seam_enable_optimized)
+
+case "$seam_enable_optimized" in
+    no)
+	;;
+    yes)
+	dnl--** machine-specific optimizations need more work
+	case $(uname -n) in
+	    i686)
+		SEAM_CHECK_CXXFLAGS([-mcpu=pentium -march=pentium3])
+		;;
+	esac
+	SEAM_CHECK_CXXFLAGS([-O3 -fomit-frame-pointer \
+			     -fforce-mem -fforce-addr \
+			     -finline-limit=2500 -fno-implement-inlines \
+			     -fno-keep-static-consts -fno-implicit-templates \
+			     -fno-implicit-inline-templates])
+	SEAM_CHECK_LDFLAG([[-Wl,-S]])
+	;;
+esac
+
+dnl
+dnl  Test for --enable-debug
+dnl
+AC_MSG_CHECKING([whether to build for debugging])
+AC_ARG_ENABLE([debug],
+	      AC_HELP_STRING([--enable-debug],
+			     [build with debug symbols and assertions
+			      (default: no)]),
+	      [seam_enable_debug="$enable_debug"],
+	      [seam_enable_debug=no])
+AC_MSG_RESULT($seam_enable_debug)
+
+case "$seam_enable_debug" in
+    no)
+	;;
+    yes)
+	SEAM_CHECK_CXXFLAGS([-fno-inline-functions -fimplement-inlines])
+	SEAM_CHECK_CXXFLAG([-ggdb], , SEAM_CHECK_CXXFLAG([-g]))
+	AC_DEFINE(INTERFACE)
+	AC_DEFINE(DEBUG_CHECK)
+	AC_DEFINE(STORE_DEBUG)
+	;;
+esac
+
+dnl
+dnl  Test for --enable-warnings
+dnl
+AC_MSG_CHECKING([whether to enable compiler warnings])
+AC_ARG_ENABLE([warnings],
+	      AC_HELP_STRING([--enable-warnings],
+			     [enable compiler warnings (default: yes)]),
+	      [seam_enable_warnings="$enable_warnings"],
+	      [seam_enable_warnings=yes])
+AC_MSG_RESULT($seam_enable_warnings)
+
+case "$seam_enable_warnings" in
+    no)
+	;;
+    yes)
+	SEAM_CHECK_CXXFLAGS([-Wall -W -Wundef -Wpointer-arith -Wcast-qual \
+			     -Wcast-align -Wwrite-strings -Wconversion \
+			     -Wredundant-decls -Winline -Woverloaded-virtual \
+			     -Wsign-promo])
+	;;
+esac
+
+dnl
+dnl  Test for --enable-profiler
 dnl
 AC_MSG_CHECKING([whether to build with user-level profiling support])
 AC_ARG_ENABLE([profiler],
