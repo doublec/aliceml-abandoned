@@ -14,10 +14,10 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive        from "Pervasive"
-import type int and list            from "ToplevelTypes"
-import functor   MkVectorSlice      from "MkVectorSlice"
-import signature MONO_VECTOR_SLICE  from "MONO_VECTOR_SLICE-sig"
+import structure __pervasive                   from "Pervasive"
+import __primitive type int and list           from "ToplevelTypes"
+import functor MkVectorSlice                   from "MkVectorSlice"
+import __primitive signature MONO_VECTOR_SLICE from "MONO_VECTOR_SLICE-sig"
 
 functor MkMonoVectorSlice(type elem
 			  type vector
