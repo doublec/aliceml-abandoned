@@ -51,7 +51,8 @@ Library:
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Remote: added functor Proxy to conveniently wrap a whole module into proxies.
-* Gtk library: simplified structure, all types are now defined in GtkTypes.
+* Gtk library: simplified structure, all types are now defined in GtkTypes,
+  GtkCanvas renamed to Canvas.
 
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
