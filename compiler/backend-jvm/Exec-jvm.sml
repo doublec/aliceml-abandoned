@@ -13,7 +13,7 @@
 SMLofNJ.Internals.GC.messages false;
 CM.make();
 
-fun dmlc (_, debug::echo::x) =
+fun dmlc (_, debug::echo::optimize::x) =
     let
 	val e=valOf (Int.fromString (String.substring(echo, 2,1)))
 	fun dc (fi::rest) =
@@ -21,6 +21,7 @@ fun dmlc (_, debug::echo::x) =
 	    (CodeGen.genProgramCode
 	     (valOf (Int.fromString (String.substring(debug, 2,1))),
 	      e,
+	      valOf (Int.fromString (String.substring(optimize, 2,1))),
 	      if (String.extract(fi, size fi-4, NONE)=".dml")
 		  then String.substring(fi, 0, size fi-4)
 	      else fi,
