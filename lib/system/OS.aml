@@ -11,7 +11,7 @@
  *   $Revision$
  *)
 
-(*import structure UnsafeIODesc from "UnsafeIODesc"*)
+import structure UnsafeIODesc from "UnsafeIODesc"
 import structure UnsafeOS     from "UnsafeOS"
 import signature OS           from "OS-sig"
 
@@ -45,14 +45,14 @@ structure OS :> OS =
 	    struct
 		eqtype iodesc
 
-		(*val hash = UnsafeIODesc.hash*)
-		(*val compare = UnsafeIODesc.compare*)
+		val hash = UnsafeIODesc.hash
+		val compare = UnsafeIODesc.compare
 
 		datatype iodesc_kind =
 		    FILE | DIR | SYMLINK | TTY | PIPE | SOCKET
 		  | DEVICE | UNKNOWN | CLOSED
 
-		(*val kind = UnsafeIODesc.kind*)
+		val kind = UnsafeIODesc.kind
 
 		structure Kind =
 		    struct
