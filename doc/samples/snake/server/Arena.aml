@@ -13,6 +13,7 @@ import structure Protocol from "../common/Protocol"
 import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
 import signature ARENA    from "ARENA-sig"
+import structure Random   from "x-alice:/lib/utility/Random"
 
 structure Arena :> ARENA =
 struct
@@ -25,11 +26,12 @@ struct
     type config = 
 	{
 	 dimensions: int * int,
-	 players: int
+	 players: int,
+	 walls: int
 	 (* MAGIC NUMBERs ... *)
 	 }
-    
-    fun random {dimensions : int * int, players} =
+(*    
+    fun random {dimensions : int * int, players,walls} =
 	let
 	    val (maxR,maxC) = dimensions
 	    val arena = Array2.array(maxR,maxC,P.EMPTY)
@@ -73,10 +75,10 @@ struct
 		let
 		    val l_horizont = Random.int (maxC div 2) - 2
 		    val l_vertical = Random.int (maxR div 2) - 2
-		    fun wall 0 = setWall (,) P.UP l_vertical
-		      | wall 1 = setWall (,) P.DOWN l_vertical
-		      | wall 2 = setWall (,) P.LEFT l_horizontal
-		      | wall 3 = setWall (,) P.RIGHT l_horizontal
+		    fun wall 0 = setWall (10,10) P.UP l_vertical
+		      | wall 1 = setWall (10,10) P.DOWN l_vertical
+		      | wall 2 = setWall (10,10) P.LEFT l_horizont
+		      | wall 3 = setWall (10,10) P.RIGHT l_horizont
 		in
 		    wall (Random.int 4)
 		end
@@ -107,10 +109,44 @@ struct
 		
 	in
 	    (setLimit ();
-	     setWalls (Random.int ((maxR + maxC) div 10));
+	     setWalls (Random.int walls);
 	     if correctionTest arena
 		 then (arena,startpoints players nil)
 	     else random {dimensions,players})
+	end
+*)
+
+    fun random {dimensions : int * int,players,walls} = 
+	let
+	    val (maxR,maxC) = dimensions
+	    val arena = Array2.array(maxR,maxC,P.EMPTY)
+	    (* initialising an empty arena with dimensions [dimensions] *)
+
+	    fun setLimit () = (* set a wall round the level *)
+		let
+		    fun horizontal r = 
+			if r = maxR
+			    then (Array2.update(arena,maxR-1,0,P.WALL);
+				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
+			else (Array2.update(arena,r,0,P.WALL);
+			      Array2.update(arena,r,maxC-1,P.WALL);
+			      horizontal(r + 1))
+		    fun vertical c = 
+			if c = maxC 
+			    then (Array2.update(arena,0,maxC-1,P.WALL);
+				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
+			else (Array2.update(arena,0,c,P.WALL);
+			      Array2.update(arena,maxR-1,c,P.WALL);
+			      vertical(c + 1))
+		in
+		    (horizontal (0); vertical (0))
+		end
+
+	    val startpointlist = nil
+
+	in
+	    setLimit ();
+	    (arena,startpointlist)
 	end
 
     val pregamefield  = ref (Array2.array(0,0,P.EMPTY))
