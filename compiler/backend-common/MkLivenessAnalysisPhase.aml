@@ -44,10 +44,11 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | sideEffecting (RefExp (_, _)) = false
 	  | sideEffecting (TupExp (_, _)) = false
 	  | sideEffecting (ProdExp (_, _)) = false
+	  | sideEffecting (PolyProdExp (_, _)) = false
 	  | sideEffecting (VecExp (_, _)) = false
 	  | sideEffecting (FunExp (_, _, _, _, _)) = false
 	  | sideEffecting (PrimAppExp (_, "Future.byneed", _)) = false
-	  | sideEffecting (LazySelAppExp (_, _, _, _, _)) = false
+	  | sideEffecting (LazyPolySelExp (_, _, _)) = false
 	  | sideEffecting _ = true
 
 	(* Auxiliary function: Determine all ids defined within a body *)
@@ -476,6 +477,13 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		(lastUses, ProdExp (info, labelIdRefVec))
 	    end
+	  | laExp (PolyProdExp (info, labelIdRefVec), use, dontKill) =
+	    let
+		val (lastUses, labelIdRefVec) =
+		    laLabelIdRefVec (labelIdRefVec, use, dontKill)
+	    in
+		(lastUses, PolyProdExp (info, labelIdRefVec))
+	    end
 	  | laExp (VecExp (info, idRefs), use, dontKill) =
 	    let
 		val (lastUses, idRefs) = laIdRefs (idRefs, use, dontKill)
@@ -506,13 +514,11 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		(lastUses, VarAppExp (info, laIdRef (idRef, use, dontKill),
 				      idRefArgs))
 	    end
-	  | laExp (SelAppExp (info, prod, label, i, idRef), use, dontKill) =
-	    (#[], SelAppExp (info, prod, label, i,
-			     laIdRef (idRef, use, dontKill)))
-	  | laExp (LazySelAppExp (info, prod, label, i, idRef),
-		   use, dontKill) =
-	    (#[], LazySelAppExp (info, prod, label, i,
-				 laIdRef (idRef, use, dontKill)))
+	  | laExp (SelExp (info, prod, label, i, idRef), use, dontKill) =
+	    (#[], SelExp (info, prod, label, i,
+			  laIdRef (idRef, use, dontKill)))
+	  | laExp (LazyPolySelExp (info, label, idRef), use, dontKill) =
+	    (#[], LazyPolySelExp (info, label, laIdRef (idRef, use, dontKill)))
 	  | laExp (FunAppExp (info, idRef, stamp, idRefArgs), use, dontKill) =
 	    let
 		val (lastUses, idRefArgs) =
