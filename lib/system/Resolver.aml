@@ -267,7 +267,7 @@ structure Resolver: RESOLVER =
 	    (case f s of
 		 SOME url =>
 		     let
-			 val s' = Url.toString url
+			 val s' = Url.toStringRaw url
 		     in
 			 trace ("[" ^ name ^ "] ...[" ^ s' ^ "] (" ^
 				name' ^ ")\n");
