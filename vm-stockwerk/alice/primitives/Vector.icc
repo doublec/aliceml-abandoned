@@ -27,13 +27,47 @@
 
 #define DECLARE_XVECTOR(vector, x) DECLARE_BLOCKTYPE(XVector, vector, x)
 
-// Vector.tabulate Frame
+//
+// VectorTabulateWorker
+//
+class VectorTabulateWorker: public Worker {
+private:
+  static VectorTabulateWorker *self;
+
+  VectorTabulateWorker(): Worker() {}
+public:
+  static void Init() {
+    self = new VectorTabulateWorker();
+  }
+
+  static void PushFrame(XVector *vector, word closure, u_int i, u_int n);
+  virtual Result Run();
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
 class VectorTabulateFrame: private StackFrame {
 private:
   enum { VECTOR_POS, CLOSURE_POS, INDEX_POS, NUMBEROFELEMENTS_POS, SIZE };
 public:
   using StackFrame::ToWord;
-  // VectorTabulateFrame Accessors
+
+  static VectorTabulateFrame *New(Worker *worker, XVector *vector,
+				  word closure, u_int index,
+				  u_int numberOfElements) {
+    StackFrame *frame = StackFrame::New(VECTOR_TABULATE_FRAME, worker, SIZE);
+    frame->InitArg(VECTOR_POS, vector->ToWord());
+    frame->InitArg(CLOSURE_POS, closure);
+    frame->InitArg(INDEX_POS, index);
+    frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
+    return static_cast<VectorTabulateFrame *>(frame);
+  }
+  static VectorTabulateFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == VECTOR_TABULATE_FRAME);
+    return static_cast<VectorTabulateFrame *>(p);
+  }
+
   XVector *GetVector() {
     return XVector::FromWord(GetArg(VECTOR_POS));
   }
@@ -49,48 +83,8 @@ public:
   u_int GetNumberOfElements() {
     return Store::WordToInt(GetArg(NUMBEROFELEMENTS_POS));
   }
-  // VectorTabulateFrame Constructor
-  static VectorTabulateFrame *New(Worker *worker, XVector *vector, 
-				  word closure, u_int index, 
-				  u_int numberOfElements) {
-    StackFrame *frame = StackFrame::New(VECTOR_TABULATE_FRAME, worker, SIZE);
-    frame->InitArg(VECTOR_POS, vector->ToWord());
-    frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(INDEX_POS, index);
-    frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
-    return static_cast<VectorTabulateFrame *>(frame);
-  }
-  // VectorTabulateFrame Untagging
-  static VectorTabulateFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == VECTOR_TABULATE_FRAME);
-    return static_cast<VectorTabulateFrame *>(p);
-  }
 };
 
-// Vector.tabulate Worker
-class VectorTabulateWorker: public Worker {
-private:
-  static VectorTabulateWorker *self;
-  // VectorTabulateWorker Constructor
-  VectorTabulateWorker(): Worker() {}
-public:
-  // VectorTabulateWorker Static Constructor
-  static void Init() {
-    self = new VectorTabulateWorker();
-  }
-  // Frame Handling
-  static void PushFrame(XVector *vector, word closure, u_int i, u_int n);
-  // Execution
-  virtual Result Run();
-  // Debugging
-  virtual const char *Identify();
-  virtual void DumpFrame(word frame);
-};
-
-//
-// VectorTabulateWorker Functions
-//
 VectorTabulateWorker *VectorTabulateWorker::self;
 
 void VectorTabulateWorker::PushFrame(XVector *vector,
@@ -166,8 +160,19 @@ DEFINE1(Vector_concat) {
   RETURN(vector->ToWord());
 } END
 
+DEFINE3(Vector_extract) {
+  DECLARE_XVECTOR(vector, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_INT(n, x2);
+  if (i < 0 || n < 0 || static_cast<u_int>(i + n) > vector->GetLength())
+    RAISE(PrimitiveTable::General_Subscript);
+  XVector *newVector = XVector::New(n);
+  for (u_int j = n; j--; ) newVector->Init(j, vector->Sub(i + j));
+  RETURN(newVector->ToWord());
+} END
+
 DEFINE1(Vector_fromList) {
-#if REQUEST_ELEMS_INT 
+#if REQUEST_ELEMS_INT
   DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
 #else
   DECLARE_LIST(tagVal, length, x0);
@@ -201,7 +206,7 @@ DEFINE2(Vector_tabulate) {
   DECLARE_INT(length, x0);
   if (length == 0) {
     RETURN(XVector::New(0)->ToWord());
-  } else if ((length < 0) || ((u_int) length > XVector::maxLen)) {
+  } else if (length < 0 || static_cast<u_int>(length) > XVector::maxLen) {
     RAISE(PrimitiveTable::General_Size);
   } else {
     word wClosure = x1;
@@ -213,20 +218,36 @@ DEFINE2(Vector_tabulate) {
   }
 } END
 
+DEFINE1(Vector_toList) {
+  DECLARE_XVECTOR(vector, x0);
+  word list = Store::IntToWord(Types::nil);
+  for (u_int i = vector->GetLength(); i--; ) {
+    TagVal *cons = TagVal::New(Types::cons, 2);
+    cons->Init(0, vector->Sub(i));
+    cons->Init(1, list);
+    list = cons->ToWord();
+  }
+  RETURN(list);
+} END
+
 void PrimitiveTable::XCONCAT(Register,XVector)() {
   VectorTabulateWorker::Init();
   Register(XSTRINGIFY(XVector)".concat", Vector_concat, 1);
+  Register(XSTRINGIFY(XVector)".extract", Vector_extract, 3);
   Register(XSTRINGIFY(XVector)".fromList", Vector_fromList, 1);
   Register(XSTRINGIFY(XVector)".maxLen", Store::IntToWord(XVector::maxLen));
   Register(XSTRINGIFY(XVector)".length", Vector_length, 1);
   Register(XSTRINGIFY(XVector)".sub", Vector_sub, 2);
   Register(XSTRINGIFY(XVector)".tabulate", Vector_tabulate, 2);
+  Register(XSTRINGIFY(XVector)".toList", Vector_toList, 1);
 #if defined(YVector)
   Register(XSTRINGIFY(YVector)".concat", Vector_concat, 1);
+  Register(XSTRINGIFY(YVector)".extract", Vector_extract, 3);
   Register(XSTRINGIFY(YVector)".fromList", Vector_fromList, 1);
   Register(XSTRINGIFY(YVector)".maxLen", Store::IntToWord(XVector::maxLen));
   Register(XSTRINGIFY(YVector)".length", Vector_length, 1);
   Register(XSTRINGIFY(YVector)".sub", Vector_sub, 2);
   Register(XSTRINGIFY(YVector)".tabulate", Vector_tabulate, 2);
+  Register(XSTRINGIFY(YVector)".toList", Vector_toList, 1);
 #endif
 }

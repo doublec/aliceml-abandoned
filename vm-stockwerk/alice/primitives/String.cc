@@ -68,37 +68,9 @@ DEFINE2(String_compare) {
   }
 } END
 
-DEFINE1(String_explode) {
-  DECLARE_STRING(string, x0);
-  u_char *base = string->GetValue();
-  word list = Store::IntToWord(Types::nil);
-  for (u_int i = string->GetSize(); i--; ) {
-    TagVal *cons = TagVal::New(Types::cons, 2);
-    cons->Init(0, Store::IntToWord(base[i]));
-    cons->Init(1, list);
-    list = cons->ToWord();
-  }
-  RETURN(list);
-} END
-
 DEFINE1(String_hash) {
   DECLARE_STRING(string, x0);
   RETURN_INT(string->Hash());
-} END
-
-DEFINE3(String_substring) {
-  DECLARE_STRING(string, x0);
-  DECLARE_INT(startIndex, x1);
-  DECLARE_INT(sliceLength, x2);
-  u_int stringLength = string->GetSize();
-  // Check that 0 <= sliceLength <= stringLength - startIndex < stringLength:
-  if (static_cast<u_int>(startIndex) >= stringLength ||
-      static_cast<u_int>(sliceLength) > stringLength - startIndex)
-    RAISE(PrimitiveTable::General_Subscript);
-  String *substring = String::New(sliceLength);
-  std::memcpy(substring->GetValue(),
-	      string->GetValue() + startIndex, sliceLength);
-  RETURN(substring->ToWord());
 } END
 
 DEFINE1(String_str) {
@@ -114,8 +86,6 @@ void PrimitiveTable::RegisterString() {
   Register("String.<=", String_oplessEq, 2);
   Register("String.>=", String_opgreaterEq, 2);
   Register("String.compare", String_compare, 2);
-  Register("String.explode", String_explode, 1);
   Register("String.hash", String_hash, 1);
-  Register("String.substring", String_substring, 3);
   Register("String.str", String_str, 1);
 }

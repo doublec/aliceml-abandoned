@@ -11,6 +11,7 @@
 //
 
 #define XArray Word8Array
+#define XVector Word8Array
 #define YArray CharArray
 #define REQUEST_ELEMS_INT 1
 
