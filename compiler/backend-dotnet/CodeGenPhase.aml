@@ -257,14 +257,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		IdSet.app
 		    (fn id =>
-			(IdSet.deleteExistent (unallocated, id);
+			(IdSet.removeExistent (unallocated, id);
 			 IdSet.insertDisjoint (forward, id);
 			 emit (Call (false, Builtins.lookupClass "Hole.hole",
 				     "StaticApply", #[], ObjectTy));
 			 declareLocal (IdDef id))) toAllocate;
 		case idDef of
 		    IdDef id =>
-			(IdSet.delete (unallocated, id);
+			(IdSet.remove (unallocated, id);
 			 if IdSet.member (forward, id) then
 			     (emitIdRef (IdRef id);
 			      genExp exp;

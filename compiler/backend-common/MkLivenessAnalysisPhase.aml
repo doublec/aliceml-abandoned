@@ -143,7 +143,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 
 	fun laIdDef (IdDef id, use) =
 	    if IdSet.member (use, id) then
-		(IdSet.delete (use, id); IdDef id)
+		(IdSet.remove (use, id); IdDef id)
 	    else Wildcard
 	  | laIdDef (Wildcard, _) = Wildcard
 

@@ -87,7 +87,7 @@ signature SCOPED_IMP_MAP =
 	val clone: 'a map -> 'a map
 	val cloneTop: 'a map -> 'a map
 	val insertScope: 'a map -> unit
-	val deleteScope: 'a map -> unit
+	val removeScope: 'a map -> unit
 	val insert: 'a map * key * 'a -> unit
 	val insertDeep: 'a map * key * 'a -> unit   (* Unknown *)
 	val lookup: 'a map * key -> 'a option
@@ -113,7 +113,7 @@ functor MkScopedImpMap(ImpMap: IMP_MAP) :>
 	    ref (ImpMap.clone (List.hd maps)::List.tl maps)
 
 	fun insertScope r = r := ImpMap.map ()::(!r)
-	fun deleteScope r = r := List.tl (!r)
+	fun removeScope r = r := List.tl (!r)
 
 	fun insert (ref maps, key, entry) =
 	    ImpMap.insert (List.hd maps, key, entry)
@@ -367,7 +367,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		    (node (edgeMap, stamp);
 		     StampSet.insertDisjoint (path, stamp);
 		     sortBody (body, stamp, edgeMap, shared, path);
-		     StampSet.deleteExistent (path, stamp))
+		     StampSet.removeExistent (path, stamp))
 
 	    structure DepthFirstSearch =
 		MkDepthFirstSearch(structure Key = Stamp
@@ -1645,7 +1645,7 @@ functor MkValuePropagationPhase(val isCross: bool
 			else IsToplevel::flags
 		    else List.filter (fn IsToplevel => false | _ => true) flags
 	    in
-		IdMap.deleteScope env;
+		IdMap.removeScope env;
 		(nil, FunExp (info, stamp, flags, args,
 			      patchArgs (args, lazySels) @
 			      patchBody (body, lazySels, StampMap.map ())))
@@ -1772,7 +1772,7 @@ functor MkValuePropagationPhase(val isCross: bool
 						     export = export,
 						     lazySels = lazySels}))
 				  end;
-			  StampMap.deleteExistent (shared, stamp)
+			  StampMap.removeExistent (shared, stamp)
 		      end) sorted)
 	      | (_, _) =>
 		    raise Crash.Crash "MkValuePropagationPhase.vpBodyShared"
