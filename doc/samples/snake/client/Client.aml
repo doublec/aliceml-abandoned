@@ -12,7 +12,6 @@
 import structure Protocol   from "../common/Protocol"
 import structure Gui        from "Gui"
 import signature CLIENT     from "CLIENT-sig"
-import structure Inspector  from "x-alice:/lib/tools/Inspector"
 import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
 
 open Ctrl

@@ -88,7 +88,7 @@ struct
                             ...
                         } : Protocol.config) =
         Util.tabulateStream (levelNum, 
-                fn _ => Arena.random { dimensions, players, walls = 4 } ) 
+                fn _ => Arena.random { dimensions, players, walls = 10 } ) 
 
 
     (**

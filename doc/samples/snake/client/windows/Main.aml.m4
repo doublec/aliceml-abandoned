@@ -266,10 +266,10 @@ struct
 			    fun cancel () = ()
 			    fun no ()     = ()
 			    fun yes ()    = (disconnect (); reset NONE)
-			    val answer    = {cancel, no, yes}
+			    val answer    = {yes, no, cancel}
 			in
 			    Question.mkQuestionBox 
-			    ("Sure?", "Go back to start?", answer)
+			    ("Sure?", "Do you really want to quit?", answer)
 			end)
 		     
 			
