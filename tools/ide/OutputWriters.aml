@@ -12,7 +12,7 @@ structure OutputWriters =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
-	      val startOffset = Gtk.textIterGetOffset iter
+ 	      val startOffset = Gtk.textIterGetOffset iter
 	      val start = Gtk.textIterCopy iter
               val text = Core.latin1ToUtf8 text
           in

@@ -1,0 +1,51 @@
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Core from "x-alice:/lib/gtk/Core"
+import structure AliceIdeGUI from "AliceIdeGUI"
+
+structure FileDialog =
+    struct
+        fun openFile msg =
+            let
+	        val fileSel = Gtk.fileSelectionNew msg
+                val _  = Gtk.widgetShowAll fileSel
+                val response = Gtk.dialogRun fileSel
+                val ret =
+                    case Gtk.IntToGtkResponseType response of
+                        Gtk.RESPONSE_OK =>
+                        SOME (Gtk.fileSelectionGetFilename fileSel)
+                      | _ => NONE
+            in
+                Gtk.widgetDestroy fileSel;
+                ret
+            end
+
+        fun modifiedWarning msg close page =
+            let
+                val modifiedDia = Gtk.dialogNew()
+                val discard = Gtk.dialogAddButton(modifiedDia, "discard",0)
+                val cancel = Gtk.dialogAddButton(modifiedDia, "cancel",1)
+                val vbox = Gtk.dialogGetFieldVbox modifiedDia
+                val l = Gtk.labelNew msg
+                val _ = Gtk.containerAdd(vbox, l)
+            in
+                Gtk.dialogSetDefaultResponse(modifiedDia, 1);
+                Gtk.widgetShowAll modifiedDia;
+                if Gtk.dialogRun modifiedDia = 0 then
+                    close page
+                else ();
+                Gtk.widgetDestroy modifiedDia
+            end
+        fun message msg =
+            let
+                val msgDia =
+                    Gtk.messageDialogNew(AliceIdeGUI.mainwidget,
+                                         Gtk.DIALOG_MODAL,
+                                         Gtk.MESSAGE_WARNING,
+                                         Gtk.BUTTONS_CLOSE,
+                                         msg,
+                                         Core.LIST nil)
+            in
+                Gtk.dialogRun msgDia;
+                Gtk.widgetDestroy msgDia
+            end
+    end

@@ -64,10 +64,16 @@ structure AliceIde =
         fun getPage i = List.nth (!pages, i-1)
         fun getCurrentPage () = getPage (!currentPage)
 
+        (* Evaluation *)
+
+        val evalSignal = ref NONE
+
         fun eval "" = ()
 	  | eval text =
+            case (!evalSignal) of NONE =>
 	    let
-		val dummySignal = Promise.future (Promise.promise ())
+                val signalP = Promise.promise()
+		val signal = Promise.future signalP
 		val text = if String.sub (text, String.size text - 1) = #"\n"
 			   then text else text ^ "\n"
                 fun find(i ,str) =
@@ -76,9 +82,13 @@ structure AliceIde =
                         find(i+1, str)
                     else String.extract(str, i, NONE)
 	    in
+                evalSignal := SOME signalP;
 		TextIO.StreamIO.output (compilerIn, find(0,text));
-		Evaluator.eval (text, dummySignal)
+		spawn (Evaluator.eval (text, signal);
+                       evalSignal := NONE)
 	    end
+                                | SOME _ =>
+                                  FileDialog.message "Still evaluating."
 
         fun feedFile() =
             let
@@ -312,6 +322,15 @@ structure AliceIde =
                              else FileDialog.modifiedWarning
                                       "File modified. Discard changes and close anyway, or cancel?"
                                       reallyClose (!currentPage))
+
+        fun breakEval() =
+            case (!evalSignal) of
+                NONE => ()
+              | SOME s => Promise.fulfill(s,Evaluator.INTERRUPT)
+        fun stopEval() =
+            case (!evalSignal) of
+                NONE => ()
+              | SOME s => Promise.fulfill(s,Evaluator.STOP)
 
         fun jumpToError (row, col, row', col') _ =
             let

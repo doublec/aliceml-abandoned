@@ -20,6 +20,8 @@ structure EventHandler : ALICEIDEGUISIGNALS_SIG =
         fun on_paragraphnewline_activate _ = AliceIde.feedParagraphNewline()
         fun on_feedselection_activate _ = AliceIde.feedSelection()
         fun on_feedfile_activate _ = AliceIde.feedFile()
+        fun on_stop_activate _ = AliceIde.stopEval()
+        fun on_break_activate _ = AliceIde.breakEval()
         val on_about1_activate = const()
         fun on_notebook1_switch_page (object,_) =
             let

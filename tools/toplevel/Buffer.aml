@@ -1,0 +1,161 @@
+import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
+import structure Core from "x-alice:/lib/gtk/Core"
+
+structure Buffer =
+   struct
+      structure BufferMap = MkHashImpMap(Int)
+
+      type tags = {err : Gtk.object,
+                   std : Gtk.object,
+                   log : Gtk.object}
+
+      type buffer = {id: int,
+                     file: string option ref,
+                     fileLabel: Gtk.object,
+                     view: Gtk.object,
+                     buf: Gtk.object,
+                     tags: tags}
+
+      val bufferMap : buffer BufferMap.map = BufferMap.map()
+
+      val cmap   = Gdk.colormapGetSystem ()
+      val textColor = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
+      val black = Gdk.colorNew(0, 0, 0)
+      val white = Gdk.colorNew(65535, 65535, 65535)
+      val _ = Gdk.colormapAllocColor(cmap, black, false, true)
+      val _ = Gdk.colormapAllocColor(cmap, white, false, true)
+      val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
+              
+      fun makeTags buf =
+          {err = Gtk.textBufferCreateTag(buf, "err", "foreground-gdk", Gtk.OBJECT textColor),
+           log = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC)),
+           std = Gtk.textBufferCreateTag(buf, "std", "foreground-gdk", Gtk.OBJECT black)}
+
+      fun shortName s =
+          let
+              fun lastSlash i j = if j=size s then i
+                                  else if String.sub(s,j)= #"/" then lastSlash j (j+1)
+                                  else lastSlash i (j+1)
+          in
+              String.extract(s,1 + lastSlash ~1 0, NONE)
+          end
+
+      fun modifiedChanged id _ =
+          let
+              val {fileLabel,file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val fileName = shortName (Option.getOpt(!file, "New file "^Int.toString id))
+          in
+              if Gtk.textBufferGetModified buf then
+                  Gtk.labelSetText(fileLabel, fileName^"*")
+              else
+                  Gtk.labelSetText(fileLabel, fileName)
+          end
+
+      fun deleteRange id _ =
+          print ("changed "^Int.toString id^"\n")
+
+      fun insertText id (buf,[Gtk.OBJECT iter, _, _]) =
+          ()
+        | insertText _ _ = print "Gtk is crazy"
+
+      fun buffer(parent,id,file) =
+          let
+              val fileName = Option.getOpt(file, "New file "^Int.toString id)
+              val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
+              val scrolledwindow2_ya = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
+              val scrolledwindow2 = Gtk.scrolledWindowNew(scrolledwindow2_xa,scrolledwindow2_ya)
+              val _ = Gtk.scrolledWindowSetShadowType(scrolledwindow2,Gtk.SHADOW_NONE)
+              val _ = Gtk.widgetShow scrolledwindow2
+                      
+              val newSource = Gtk.textViewNew()
+              val _ = Gtk.widgetShow newSource
+              val _ = Gtk.textViewSetEditable(newSource,true)
+              val _ = Gtk.textViewSetJustification(newSource,Gtk.JUSTIFY_LEFT)
+              val _ = Gtk.textViewSetWrapMode(newSource,Gtk.WRAP_NONE)
+              val _ = Gtk.textViewSetCursorVisible(newSource,true)
+              val _ = Gtk.textViewSetPixelsAboveLines(newSource,0)
+              val _ = Gtk.textViewSetPixelsBelowLines(newSource,0)
+              val _ = Gtk.textViewSetPixelsInsideWrap(newSource,0)
+              val _ = Gtk.textViewSetLeftMargin(newSource,0)
+              val _ = Gtk.textViewSetRightMargin(newSource,0)
+              val _ = Gtk.textViewSetIndent(newSource,0)
+              val buf = Gtk.textViewGetBuffer newSource
+              val _ = Gtk.containerAdd(scrolledwindow2,newSource)
+              val label1 = Gtk.labelNew (shortName fileName)
+              val _ = Gtk.widgetShow label1
+              val page = Gtk.notebookAppendPage(parent, scrolledwindow2, label1)
+              val _ = Gtk.notebookSetCurrentPage(parent, page)
+
+              val ret = {id=id,file=ref file,
+                         fileLabel=label1,
+                         view=newSource,buf=buf,
+                         tags=makeTags buf}
+              val _ = Gtk.signalConnect(buf, "modified-changed", modifiedChanged id)
+              val _ = Gtk.signalConnect(buf, "delete-range", deleteRange id)
+              val _ = Gtk.signalConnect(buf, "insert-text", insertText id)
+          in
+              case file of NONE => ()
+                         | SOME f =>
+                           let
+                               val fileD = TextIO.openIn f
+                               val text = TextIO.inputAll fileD
+                               val text = Core.latin1ToUtf8 text
+                           in
+                               Gtk.textBufferSetText(buf, text, ~1);
+                               Gtk.textBufferSetModified(buf, false)
+                           end;
+              BufferMap.insertDisjoint(bufferMap, id, ret);
+              ret
+          end
+
+      fun close id =
+          let
+              val {file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val modified = Gtk.textBufferGetModified buf
+          in
+              if modified then
+                  false
+              else
+                  (BufferMap.removeExistent(bufferMap, id);
+                   true)
+          end
+
+      fun save id =
+          let
+              val {id,file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val modified = Gtk.textBufferGetModified buf
+          in
+              case !file of NONE => false
+                          | SOME f =>
+                            (if modified then
+                                 let
+                                     val file = TextIO.openOut f
+                                     val startiter = Gtk.textIterNew()
+                                     val _ = Gtk.textBufferGetStartIter(buf,startiter)
+                                     val enditer = Gtk.textIterNew()
+                                     val _ = Gtk.textBufferGetEndIter(buf,enditer)
+                                     val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                                     val str = Core.utf8ToLatin1 str
+                                 in 
+                                     TextIO.output(file, str);
+                                     TextIO.closeOut file;
+                                     Gtk.textBufferSetModified(buf, false)
+                                 end
+                             else ();
+                             true)
+          end
+
+      fun saveAs (id, fileName) =
+          let
+              val {id,file,fileLabel,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+          in
+              file := SOME fileName;
+              Gtk.labelSetText(fileLabel, shortName fileName);
+              Gtk.textBufferSetModified(buf, true);
+              save id;
+              ()
+          end
+   end
