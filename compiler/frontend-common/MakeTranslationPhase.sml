@@ -24,10 +24,6 @@ import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE"
 import structure Crash			from "Crash"
 *)
 
-(*
- * UNFINISHED: maintain sharing on transformed interfaces.
- *)
-
 functor MakeTranslationPhase(Switches: SWITCHES) :> TRANSLATION_PHASE =
 struct
 
@@ -206,6 +202,11 @@ struct
 
   (* Transformation of type info *)
 
+    structure InfHash = MakeHashImpMap(open Inf val equals = Inf.same)
+
+    val infHash = InfHash.new() : Type.t InfHash.map
+		(*UNFINISHED: remove this global variable! *)
+
     fun kindToKind k =
 	if Inf.isGround k then
 	    Type.STAR
@@ -219,6 +220,17 @@ struct
 	    raise Crash.Crash "TranslationPhase.kindToKind: unknown kind"
 
     fun infToTyp j =
+	case InfHash.lookup(infHash, j) of
+	  SOME t => t
+	| NONE   =>
+	    let
+		val t = infToTyp' j
+	    in
+		InfHash.insertDisjoint(infHash, j, t);
+		t
+	    end
+
+    and infToTyp' j =
 	if Inf.isTop j then
 	    (*UNFINISHED: is this right? *)
 	    Type.inVar(Type.var Type.STAR)
@@ -1031,6 +1043,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun translate () (desc, component) =
 	let
+	    val _     = InfHash.deleteAll infHash
 	    val comp' = trComp component
 	in
 	    if not(!Switches.Debug.checkIntermediate) then () else
