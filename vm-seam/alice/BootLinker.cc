@@ -17,16 +17,10 @@
 #endif
 
 #include <cstdio>
-#include "generic/RootSet.hh"
-#include "generic/Tuple.hh"
-#include "generic/Worker.hh"
-#include "generic/StackFrame.hh"
-#include "generic/Scheduler.hh"
-#include "generic/Unpickler.hh"
-#include "alice/BootLinker.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/BootLinker.hh"
 
 // Tracing
 static bool traceFlag;

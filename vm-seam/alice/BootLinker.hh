@@ -19,19 +19,18 @@
 #pragma interface "alice/BootLinker.hh"
 #endif
 
-#include "adt/ChunkMap.hh"
-#include "adt/Queue.hh"
-#include "generic/String.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
 class String;
 
-struct DllExport NativeComponent {
+struct AliceDll NativeComponent {
   const char *name;
   word (*init)();
 };
 
 // Component
-class DllExport Component: private Block {
+class AliceDll Component: private Block {
 private:
   static const u_int ENTRY_LABEL = MIN_DATA_LABEL;
   enum { SIGN_POS, STR_POS, SIZE };
@@ -59,7 +58,7 @@ public:
   }
 };
 
-class DllExport BootLinker {
+class AliceDll BootLinker {
 private:
   static word componentTable;
   static word keyQueue;
