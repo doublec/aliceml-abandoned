@@ -11,6 +11,7 @@
  *)
 
 import structure Assert                from "../../lib/utility/Assert"
+import structure MkHashImpMap          from "../../lib/utility/MkHashImpMap"
 import structure Url                   from "../../lib/utility/Url"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Crash                 from "../infrastructure/Crash"
@@ -31,6 +32,15 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	structure O = AbstractCodeGrammar
 
 	structure Environment = MkEnvironment(AbstractCodeGrammar)
+	structure IntMap =
+	    MkHashImpMap(type t = int
+			 val equals = op=
+			 fun hash i = i)
+	structure LargeIntMap =
+	    MkHashImpMap(type t = LargeInt.int
+			 val equals = op=
+			 fun hash i =
+			     LargeWord.toIntX (LargeWord.fromLargeInt i))
 
 	open I
 	open Environment
@@ -172,10 +182,11 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | detup (O.EndTry _, _) = UNKNOWN
 	  | detup (O.EndHandle _, _) = UNKNOWN
 	  | detup (O.IntTest (_, _, _), _) = UNKNOWN
+	  | detup (O.CompactIntTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.RealTest (_, _, _), _) = UNKNOWN
 	  | detup (O.StringTest (_, _, _), _) = UNKNOWN
-	  | detup (O.WideStringTest (_, _, _), _) = UNKNOWN
 	  | detup (O.TagTest (_, _, _, _), _) = UNKNOWN
+	  | detup (O.CompactTagTest (_, _, _), _) = UNKNOWN
 	  | detup (O.ConTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.VecTest (_, _, _), _) = UNKNOWN
 	  | detup (O.Shared (_, _), _) = UNKNOWN
@@ -277,12 +288,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateStm (TestStm (_, id, LitTests litTests, elseBody), env) =
 	    (case Vector.sub (litTests, 0) of
 		 ((IntLit _ | WordLit _ | CharLit _), _) =>
-		     O.IntTest
-		     (lookup (env, id),
-		      Vector.map (fn (lit, body) =>
-				  (litToInt lit, translateBody (body, env)))
-		      litTests,
-		      translateBody (elseBody, env))
+		     translateIntTest (id, litTests, elseBody, env)
 	       | (StringLit _, _) =>
 		     O.StringTest
 		     (lookup (env, id),
@@ -300,21 +306,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 				    | _ => raise Match) litTests,
 		      translateBody (elseBody, env)))
 	  | translateStm (TestStm (_, id, TagTests tagTests, elseBody), env) =
-	    let
-		val (naryTests, nullaryTests) =
-		    List.partition (fn (_, _, args, _) => isNAry args)
-				   (Vector.toList tagTests)
-	    in
-		O.TagTest (lookup (env, id),
-			   Vector.map (fn (_, tag, _, body) =>
-				       (tag, translateBody (body, env)))
-				      (Vector.fromList nullaryTests),
-			   Vector.map (fn (_, tag, args, body) =>
-				       (tag, translateConArgs (args, env),
-					translateBody (body, env)))
-				      (Vector.fromList naryTests),
-			   translateBody (elseBody, env))
-	    end
+	    translateTagTest (id, tagTests, elseBody, env)
 	  | translateStm (TestStm (_, id, ConTests conTests, elseBody), env) =
 	    let
 		val (naryTests, nullaryTests) =
@@ -340,7 +332,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 						translateIdDef (idDef, env))
 				    idDefs,
 				    translateBody (body, env)))
-			          vecTests,
+				  vecTests,
 		       translateBody (elseBody, env))
 	  | translateStm (SharedStm (_, body, stamp), env) =
 	    (case lookupShared (env, stamp) of
@@ -472,6 +464,79 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)
 	  | translateIgnore (FailExp _, instr, _) = instr
+	and translateIntTest (id, litTests, elseBody, env) =
+	    let
+		val idRef = lookup (env, id)
+		val map = LargeIntMap.new ()
+		val tests =
+		    Vector.map (fn (lit, body) =>
+				   (litToInt lit, translateBody (body, env)))
+			       litTests
+		val (i, _) = Vector.sub (tests, 0)
+		val (min, max) =
+		    Vector.foldl (fn ((i, instr), (min, max)) =>
+				     (LargeIntMap.insert (map, i, instr);
+				      (LargeInt.min (i, min),
+				       LargeInt.max (i, max))))
+				 (i, i) tests
+		val span =
+		    LargeInt.toInt (LargeInt.+ (LargeInt.- (max, min), 1))
+		val elseInstr = translateBody (elseBody, env)
+	    in
+		if span = Vector.length tests then
+		    let
+			fun lookup i =
+			    LargeIntMap.lookupExistent
+				(map, LargeInt.+ (LargeInt.fromInt i, min))
+		    in
+			O.CompactIntTest (idRef, min,
+					  Vector.tabulate (span, lookup),
+					  elseInstr)
+		    end
+		else O.IntTest (idRef, tests, elseInstr)
+	    end
+	and translateTagTest (id, tagTests, elseBody, env) =
+	    let
+		val idRef = lookup (env, id)
+		val (naryTests, nullaryTests) =
+		    List.partition (fn (_, _, args, _) => isNAry args)
+				   (Vector.toList tagTests)
+		val nullaryTests =
+		    Vector.map (fn (_, tag, _, body) =>
+				   (tag, translateBody (body, env)))
+			       (Vector.fromList nullaryTests)
+		val naryTests =
+		    Vector.map (fn (_, tag, args, body) =>
+				   (tag, translateConArgs (args, env),
+				    translateBody (body, env)))
+			       (Vector.fromList naryTests)
+		val map = IntMap.new ()
+		val (_, i, _, _) = Vector.sub (tagTests, 0)
+		val (min, max) =
+		    Vector.foldl (fn ((i, instr), (min, max)) =>
+				     (IntMap.insert (map, i, (NONE, instr));
+				      (Int.min (i, min),
+				       Int.max (i, max))))
+				 (i, i) nullaryTests
+		val (min, max) =
+		    Vector.foldl (fn ((i, idDefs, instr), (min, max)) =>
+				     (IntMap.insert
+					  (map, i, (SOME idDefs, instr));
+				      (Int.min (i, min),
+				       Int.max (i, max))))
+				 (min, max) naryTests
+		val elseInstr = translateBody (elseBody, env)
+	    in
+		if min = 0 andalso max + 1 = Vector.length tagTests then
+		    let
+			fun lookup i = IntMap.lookupExistent (map, i)
+		    in
+			O.CompactTagTest (idRef,
+					  Vector.tabulate (max + 1, lookup),
+					  elseInstr)
+		    end
+		else O.TagTest (idRef, nullaryTests, naryTests, elseInstr)
+	    end
 
 	fun translate context (desc, (imports, body, exportDesc, sign)) =
 	    let
