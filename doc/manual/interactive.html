@@ -121,11 +121,10 @@ default when Alice is started from the system's graphical interface - e.g. the S
   selected text will be fed into the interactive top-level as input.</LI>
   <LI>If nothing has been selected, invoking <I>Feed Region</I> will
   automatically select the <I>paragraph</I> surrounding the cursor, where
-  a paragraph contains all lines up to the next empty line above and below the
-  current cursor position.</LI>
-  <LI>The whole file can be feeded by invoking <I>Feed File</I>.</LI>
+  a paragraph is a region of text delimited by emtpy lines.</LI>
+  <LI>The whole file can be feeded by invoking <I>Feed File</I> (Shift-Ctrl-Return).</LI>
 </UL>
-<P>Note that unlike direct input, feeded input is not required to be terminated by semicolon.</P>
+<P>Note that unlike direct input, feeded input is not required to be terminated by a semicolon.</P>
 
 <P>When input has been fed from a buffer, and an error occured, then selecting <I>Jump to Error</I> (Ctrl-E) from the <I>Edit</I> menu will immediately move the focus to the respective error location and select it.</P>
 
