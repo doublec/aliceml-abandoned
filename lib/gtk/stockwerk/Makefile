@@ -51,7 +51,7 @@ endif
 
 SML = sml
 ALICEC = alicec 
-ALICEC_OPTS = --dump-phases # --no-warn-conventions
+ALICEC_OPTS = --dump-phases --no-warn-conventions
 ALICETOOL = alicetool
 ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
