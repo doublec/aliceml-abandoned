@@ -32,24 +32,11 @@ structure Config =
 
       fun createConfigDir () =
 	  let
-	      val cDir = OS.FileSys.getApplicationConfigDir "Toplevel"
-	      val cApp = OS.Path.getParent cDir
-	      val cAppDir = (OS.FileSys.openDir cApp; false)
-		  handle OS.SysErr _ => true
+	      val dir = OS.FileSys.getApplicationConfigDir "Toplevel"
+	      val parent = OS.Path.getParent dir
 	  in
-	      if cAppDir then
-		  (OS.FileSys.mkDir cApp;
-		   OS.FileSys.mkDir cDir)
-	      else
-		  let
-		      val cDirDir = (OS.FileSys.openDir cDir; false)
-			  handle OS.SysErr _ => true
-		  in
-		      if cDirDir then
-			  OS.FileSys.mkDir cDir
-		      else ()
-		  end;
-	      cDir
+	      OS.FileSys.mkDir parent handle OS.SysErr _ => ();
+	      OS.FileSys.mkDir dir handle OS.SysErr _ => ()
 	  end
 
       val editorHeight = 500
@@ -143,11 +130,13 @@ structure Config =
 	      changeColor(comment, !commentColor)
 	  end
 
+      val configDir = OS.FileSys.getApplicationConfigDir "Toplevel"
+      val preferencesFile = configDir ^ "/preferences." ^ Pickle.extension
+      val historyFile = configDir ^ "/history." ^ Pickle.extension
+
       fun init() =
 	  let
-	      val cDir = OS.FileSys.getApplicationConfigDir "Toplevel"
-	      val p = Pickle.load (cDir^"/Configuration."^Pickle.extension)
-	      structure C = unpack p : USER_CONFIG
+	      structure C = unpack (Pickle.load preferencesFile) : USER_CONFIG
 	  in
 	      stdFontName := C.stdFontName;
 	      stdFont := Gtk.pangoFontDescriptionFromString (!stdFontName);
@@ -163,7 +152,6 @@ structure Config =
 
       fun save() =
 	  let
-	      val cDir = createConfigDir ()
 	      structure C = 
 	      struct
 		  val reservedColor = getRgbColor (!reservedColor)
@@ -175,42 +163,41 @@ structure Config =
 		  val stdFontName = !stdFontName
 	      end
 	  in
-	      Pickle.save(cDir^"/Configuration."^Pickle.extension,
-			  pack C : USER_CONFIG)
+	      createConfigDir ();
+	      Pickle.save(preferencesFile, pack C : USER_CONFIG)
 	  end handle (OS.SysErr _ | IO.Io _) =>
-	      FileDialog.message
-	      "Could not save configuration data."
+	      FileDialog.message "Could not save preferences."
 
      (* History management *)
       fun loadHistory() =
 	  let
-	      val cDir = OS.FileSys.getApplicationConfigDir "Toplevel"
-	      val p = Pickle.load (cDir^"/History."^Pickle.extension)
-	      structure C = unpack p : (val history : string list)
+	      structure C = unpack Pickle.load historyFile
+	      			 : (val history : string list)
 	  in
 	      C.history
 	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => []
 
       fun saveHistory (history, openFiles) =
 	  let
-	      val cDir = createConfigDir ()
-	      structure C = struct
-				val history = List.take(history, !historySize)
-					      handle Subscript => history
-				val openFiles = openFiles
-			    end
+	      structure C =
+	      struct
+		  val history = List.take(history, !historySize)
+				handle Subscript => history
+		  val openFiles = openFiles
+	      end
 	  in
-	      Pickle.save(cDir^"/History."^Pickle.extension,
+	      createConfigDir ();
+	      Pickle.save(historyFile,
 			  pack C : (val history : string list
 				    val openFiles : string list))
-	  end
+	  end handle (OS.SysErr _ | IO.Io _) =>
+	      FileDialog.message "Could not save history."
 
      (* Restore open files *)
       fun loadOpenFiles() =
 	  let
-	      val cDir = OS.FileSys.getApplicationConfigDir "Toplevel"
-	      val p = Pickle.load (cDir^"/History."^Pickle.extension)
-	      structure C = unpack p : (val openFiles : string list)
+	      structure C = unpack Pickle.load historyFile
+	      			 : (val openFiles : string list)
 	  in
 	      C.openFiles
 	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
