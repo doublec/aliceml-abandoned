@@ -152,6 +152,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	fun processFile process (filename, targetFilenameOpt) =
 	    let
 		val url = resolveWrtCwd (Url.fromString filename)
+		val targetUrlOpt =
+		    Option.map (resolveWrtCwd o Url.fromString) targetFilenameOpt
 		val s = valOf (readUrl url)
 		val s' = if not (String.isSuffix ".sml" filename orelse
 				 String.isSuffix ".sig" filename) then s else
@@ -173,9 +175,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				      "import \"" ^ f ^ "\" " ^ s)
 				     s' (Dependency.lookup
 					 (d, OS.Path.base filename))
-		val desc = Source.urlDesc {source = url,
-					   target = Option.map Url.fromString
-							targetFilenameOpt}
+		val desc = Source.urlDesc {source = url, target = targetUrlOpt}
 	    in
 		processBasic process (desc, s'')
 	    end handle (Url.NotLocal | Option.Option) =>
