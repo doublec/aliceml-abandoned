@@ -18,6 +18,9 @@ struct
     eqtype stamp
     type t = stamp
 
+    (*TODO: For Mozart it may be desirable to optimise by sharing
+            a per-process name and use ordinary stamps as deltas. *)
+
     __primitive val new :	unit -> stamp		= "GlobalStamp.new"
     __primitive val fromString:	string -> stamp		= "GlobalStamp.fromString"
     __primitive val toString :	stamp -> string		= "GlobalStamp.toString"
