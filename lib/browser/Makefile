@@ -19,9 +19,9 @@ ALICELINK = alicelink
 ALICELINK_OPTS = -x
 ALICEDEP = alicedep
 
-SIGS		= TYPES HELPER DICTIONARY MK_PATH_TABLE NEW_NODE CREATE_DOC UNSAFE_INSPECTOR
+SIGS		= TYPES HELPER DICTIONARY MK_PATH_TABLE NEW_NODE CREATE_DOC UNSAFE_INSPECTOR WINDOW
 
-STRUCTS		= Types Helper Dictionary MkPathTable NewNode CreateDoc UnsafeInspector 
+STRUCTS		= Types Helper Dictionary MkPathTable NewNode CreateDoc UnsafeInspector Window
 
 SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)
