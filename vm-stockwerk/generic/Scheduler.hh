@@ -27,7 +27,7 @@ class Backtrace;
 
 #define SCHEDULER_THREAD_PREEMPT_STATUS 1
 
-class Scheduler {
+class DllExport Scheduler {
 private:
   static word root;
   static ThreadQueue *threadQueue;
