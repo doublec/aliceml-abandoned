@@ -148,6 +148,28 @@ prepare
       'Char.isUpper': Char.isUpper
       'Char.toLower': Char.toLower
       'Char.toUpper': Char.toUpper
+      'CharVector.fromList': ByteString.make
+      'CharVector.maxLen': 0x1FFFFFFF
+      'CharVector.length': ByteString.length
+      'CharVector.sub':
+	 fun {$ S I}
+	    try
+	       {ByteString.get S I}
+	    catch system(kernel('ByteString.get' ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
+      'CharVector.tabulate':
+	 fun {$ N F} V in
+	    try
+	       V = {Tuple.make '#' N}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	    end
+	    {For 1 N 1 proc {$ I} V.I = [{F I - 1}] end}
+	    {ByteString.make V}
+	 end
       'Future.alarm\'':
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
       'Future.await':
@@ -567,6 +589,30 @@ prepare
 	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
       'Word8.wordSize': 31
       'Word8.xorb': BootWord.'xorb'
+
+      'Word8Vector.fromList':
+	 fun {$ Xs} {ByteString.make {List.map Xs BootWord.toInt}} end
+      'Word8Vector.maxLen': 0x1FFFFFFF
+      'Word8Vector.length': ByteString.length
+      'Word8Vector.sub':
+	 fun {$ S I}
+	    try
+	       {BootWord.make 8 {ByteString.get S I}}
+	    catch system(kernel('ByteString.get' ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
+      'Word8Vector.tabulate':
+	 fun {$ N F} V in
+	    try
+	       V = {Tuple.make '#' N}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	    end
+	    {For 1 N 1 proc {$ I} V.I = [{BootWord.toInt {F I - 1}}] end}
+	    {ByteString.make V}
+	 end
       'Word31.+': BootWord.'+'
       'Word31.-': BootWord.'-'
       'Word31.*': BootWord.'*'
