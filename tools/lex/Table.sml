@@ -4,13 +4,11 @@ structure Table :> TABLE =
 	open AbsSyn
 
 
-	type auto_map = (int IntMap.map * int vector IntMap.map * AbsSyn.atexp IntMap.map) StringMap.map
+	type auto_map = (int IntMap.map
+			 * int vector IntMap.map
+			 * AbsSyn.atexp IntMap.map) StringMap.map
 
 
-	(*            \|/
-	 * some c++  \'_'/
-	 *            _|_
-	 *)
 	fun ++ x = ( x := !x + 1; !x)
 
 
@@ -20,47 +18,60 @@ structure Table :> TABLE =
 	fun tError e = (print("Internal Error in structure Table: " ^ e ^ "\n");
 			raise Error e)
 
-	fun tpError (e, po) = (print("Internal Error in structure Table in position " ^ posToString po ^ ": " ^ e ^ "\n");
-			       raise Error e)
+	fun tpError (e, po) =
+	    (print("Internal Error in structure Table in position "
+		   ^ posToString po ^ ": " ^ e ^ "\n");
+	     raise Error e)
 
 
-	(* nullable: regexp -> bool, returns if regexp could be empty
+	(* nullable: regexp -> bool
+	 * returns if regexp could be empty
 	 *)
 	fun nullable (EPS                ) = true
 	  | nullable (CAT (re1, re2, _ ) ) = nullable re1 andalso nullable re2
 	  | nullable (CLOSURE (re, _ )   ) = true
 	  | nullable (CHARS _            ) = false
 	  | nullable (ALT (re1, re2, _ ) ) = nullable re1 orelse nullable re2
-	  | nullable (REGID (s, po )     ) = tpError("still regid in regexp :" ^ s, po)
+	  | nullable (REGID (s, po )     ) =
+	    tpError("still regid in regexp :" ^ s, po)
 	  | nullable (END _              ) = false
 
 
-	(* firstpos: regexp -> IntSet.set, returns a set containing all possible first positions of regexp
+	(* firstpos: regexp -> IntSet.set
+	 * returns a set containing all possible first positions of regexp
 	 *)
 	fun firstpos (EPS                ) = IntSet.empty
-	  | firstpos (CAT (re1, re2, _ ) ) = if nullable(re1) then IntSet.union(firstpos(re1),firstpos(re2) )
-					     else firstpos(re1)
+	  | firstpos (CAT (re1, re2, _ ) ) =
+	    if nullable(re1) then IntSet.union(firstpos(re1),firstpos(re2) )
+	    else firstpos(re1)
 	  | firstpos (CLOSURE (re, _ )   ) = firstpos(re)
 	  | firstpos (CHARS ( _, i, _ )  ) = IntSet.singleton(i)
-	  | firstpos (ALT (re1, re2, _ ) ) = IntSet.union(firstpos(re1),firstpos(re2) )
-	  | firstpos (REGID (s, po )     ) = tpError("still regid in regexp: " ^ s, po)
+	  | firstpos (ALT (re1, re2, _ ) ) =
+		IntSet.union(firstpos(re1),firstpos(re2) )
+	  | firstpos (REGID (s, po )     ) =
+		tpError("still regid in regexp: " ^ s, po)
 	  | firstpos (END i              ) = IntSet.singleton(i)
 
 
-	(* lastpos : regexp -> IntSet.set, returns a set containing all possible last positions of regexp
+	(* lastpos : regexp -> IntSet.set
+	 * returns a set containing all possible last positions of regexp
 	 *)
 	fun lastpos (EPS                ) = IntSet.empty
-	  | lastpos (CAT (re1, re2, _ ) ) = if nullable(re2) then IntSet.union(lastpos(re1),lastpos(re2) )
-					    else lastpos(re2)
+	  | lastpos (CAT (re1, re2, _ ) ) =
+	    if nullable(re2) then IntSet.union(lastpos(re1),lastpos(re2) )
+	    else lastpos(re2)
 	  | lastpos (CLOSURE (re, _ )   ) = lastpos(re)
 	  | lastpos (CHARS ( _, i, _ )  ) = IntSet.singleton(i)
-	  | lastpos (ALT (re1, re2, _ ) ) = IntSet.union(lastpos(re1),lastpos(re2) )
-	  | lastpos (REGID (s, po )     ) = tpError("still regid in regexp: " ^ s, po)
+	  | lastpos (ALT (re1, re2, _ ) ) =
+		IntSet.union(lastpos(re1),lastpos(re2) )
+	  | lastpos (REGID (s, po )     ) =
+		tpError("still regid in regexp: " ^ s, po)
 	  | lastpos (END i              ) = IntSet.singleton(i)
 
 
-	(* fpandchar : regexp -> IntSet.set IntMap.map * regexp IntMap.map, returns (fpmap, charmap)
-	 * where fpmap contains for each key an IntSet.set containing the possible following positions of key
+	(* fpandchar : regexp -> IntSet.set IntMap.map * regexp IntMap.map
+	 * returns (fpmap, charmap) where fpmap contains for each key
+	 * an IntSet.set containing the possible following positions of key
 	 * and charmap contains for each key the regexp that belongs to that key
 	 *)
 	fun fpandchar re =
@@ -101,7 +112,8 @@ structure Table :> TABLE =
 	    in
 		(fpmap'', charmap'')
 	    end
-	  | fpandchar' (REGID (s, po )    , _    , _      ) = tpError("still regid in regexp :" ^ s, po)
+	  | fpandchar' (REGID (s, po )    , _    , _      ) =
+	    tpError("still regid in regexp :" ^ s, po)
 	  | fpandchar' (END i             , fpmap, charmap) =
 	    let
 		val charmap' =  IntMap.insert(charmap, i, END i)
@@ -110,8 +122,10 @@ structure Table :> TABLE =
 	    end
 
 
-	(* insert: IntSet.set IntMap.map * IntSet.set * IntSet.set -> IntSet.set IntMap.map, returns a map
-	 * that contains the old map and for each key of set1 additionally the content of set2
+	(* insert: IntSet.set IntMap.map * IntSet.set * IntSet.set
+	 *          -> IntSet.set IntMap.map
+	 * returns a map that contains the old map and for each key of set1
+	 * additionally the content of set2
 	 *)
 	and insert (map, set1, set2) = 
  	    let
@@ -133,10 +147,12 @@ structure Table :> TABLE =
 	    end
 
 
-	(* makeTable : regexp -> int IntMap.map * int vector IntMap.map,
+	(* makeTable : regexp -> int IntMap.map * int vector IntMap.map
 	 * returns (finstates, dtran)
-	 * finstates contains for each key (state-number) the finishing position of the state
-	 * and dtran contains for each key (state-number) a vector containing for each character
+	 * finstates contains for each key (state-number)
+	 * the finishing position of the state
+	 * and dtran contains for each key (state-number)
+	 * a vector containing for each character
 	 * the number of the state to switch to
 	 *)
 	fun makeTable re =
@@ -149,7 +165,7 @@ structure Table :> TABLE =
 		val dtran = ref IntMap.empty
 
 
-		(* visit : IntSet.set * int -> unit,
+		(* visit : IntSet.set * int -> unit
 		 * inserts the final states of state into finstates
 		 * and inserts all possible transitions into dtran
 		 *)
@@ -157,35 +173,42 @@ structure Table :> TABLE =
 		    let
 			val trans = gettrans state
 		    in
-			finstates := IntMap.insert(!finstates, statenum, getfin state );
+			finstates :=
+			IntMap.insert(!finstates, statenum, getfin state );
 			dtran := IntMap.insert(!dtran, statenum, trans )
 		    end
 
 
-		(* gettrans : IntSet.set -> int vector,
-		 * returns a vector containing for each possible character the number of the state to switch to, 0 if none
+		(* gettrans : IntSet.set -> int vector
+		 * returns a vector containing for each possible character
+		 * the number of the state to switch to, 0 if none
 		 *)
 		and gettrans state = Vector.tabulate(257, checktrans state)
 
 
-		(* checktrans : int -> int -> int, takes a state and a char ord and returns the state to switch to
-		 *)
-		and checktrans state ord =
-		    let
-			fun check (x, r) = 
+			and checkTr ord (x, r) = 
 			    case IntMap.find(charmap, x) of
 				SOME (CHARS (c,_,_) ) => 
 				    (* if position x accepts character ord
 				     *)
 				    (if BoolVector.sub(c, ord)
-					 (* then add the following positions of x to the result
+					 (* add the following positions
+					  * of x to the result
 					  *)
 					 then IntSet.union(r, valOf(IntMap.find(fpmap, x) ) )
-				     (* else keep the result
+				     (* otherwise keep the result
 				      *)
 				     else r)
 			      | NONE                => tError("NONE in checktrans")
 			      | _                   => r
+
+		(* checktrans : int -> int -> int
+		 * takes a state and a char ord and returns
+		 * the state to switch to
+		 *)
+		and checktrans state ord =
+		    let
+			val check = checkTr ord
 
 			(* apply check to all elements in state
 			 *)
@@ -199,14 +222,17 @@ structure Table :> TABLE =
 		(* getstate : IntSet.set -> int, returns the number of the state
 		 * if the state is a new one it is inserted and visited
 		 *)
-		and getstate state = if SetMap.inDomain (!dstates, state) then valOf(SetMap.find(!dstates, state) )
-				     else let
-					      val n = ++StateNum
-					  in
-					      dstates := SetMap.insert(!dstates, state, n);
-					      visit(state, n);
-					      n
-					  end
+		and getstate state =
+		    if SetMap.inDomain (!dstates, state)
+			then valOf(SetMap.find(!dstates, state) )
+		    else
+			let
+			    val n = ++StateNum
+			in
+			    dstates := SetMap.insert(!dstates, state, n);
+			    visit(state, n);
+			    n
+			end
 
 
 		(* getfin IntSet.set -> int,
@@ -230,14 +256,16 @@ structure Table :> TABLE =
 
 	    in
 		(* begin with the only state available,
-		 * the others are inserted and visited automatically by the call of getstate
+		 * the others are inserted and visited automatically
+		 * by the call of getstate
 		 *)
 		visit(startstate, 1);
 		(!finstates, !dtran)
 	    end
 
 
-	(* minTable : int IntMap.map * int vector IntMap.map -> int IntMap.map * int vector IntMap.map,
+	(* minTable : int IntMap.map * int vector IntMap.map
+	 *            -> int IntMap.map * int vector IntMap.map
 	 * returns the minimized automaton
 	 *)
 	fun minTable (finstates, dtran) = 
@@ -257,30 +285,36 @@ structure Table :> TABLE =
 		    end
 
 
-		(* shrink : int list -> unit, takes a list of states, kills all states in dtran' except the head
-		 * and replaces all switches to the killed states in dtran' with switches to head
+		(* shrink : int list -> unit
+		 * takes a list of states, kills all states in dtran'
+		 * except the head and replaces all switches to
+		 * the killed states in dtran' with switches to head
 		 *)
 		fun shrink nil = tError("empty set in shrink")
-		  | shrink xs  = let
-				     val head = hd xs
-				 in
-				     killedStates := IntSet.empty;
-				     shrink' (head, tl xs);
-				     IntMap.appi (substitute (head, !killedStates) ) (!dtran')
-				 end
+		  | shrink xs  =
+		    let
+			val head = hd xs
+		    in
+			killedStates := IntSet.empty;
+			shrink' (head, tl xs);
+			IntMap.appi (substitute (head, !killedStates)) (!dtran')
+		    end
 
 
-		(* shrink' : int * int list -> unit, does the killing work of shrink
+		(* shrink' : int * int list -> unit
+		 * does the killing work of shrink
 		 *)
 		and shrink' ( _  , nil  ) = ()
-		  | shrink' (head, x::xs) = (finstates' := #1( IntMap.remove( !finstates', x) );
-					     dtran'     := #1( IntMap.remove( !dtran'    , x) );
-					     killedStates := IntSet.add(!killedStates, x);
-					     shrink' (head, xs) )
+		  | shrink' (head, x::xs) =
+		    (finstates' := #1( IntMap.remove( !finstates', x) );
+		     dtran'     := #1( IntMap.remove( !dtran'    , x) );
+		     killedStates := IntSet.add(!killedStates, x);
+		     shrink' (head, xs) )
 			    
 
-		(* substitute : int * IntSet.set -> int * int vector -> unit, takes (n, set) (state, vec)
-		 * and replaces all numbers of the set, that appear in vec with n, dtran' is changed
+		(* substitute : int * IntSet.set -> int * int vector -> unit
+		 * takes (n, set) (state, vec) and replaces all numbers
+		 * of the set, that appear in vec with n, dtran' is changed
 		 *)
 		and substitute (n, set) (state, vec) =
 		    if IntSet.isEmpty set then ()
@@ -290,7 +324,8 @@ structure Table :> TABLE =
 				let
 				    val oldstate = Vector.sub(vec, x)
 				in
-				    if IntSet.member (set, oldstate) then n else oldstate
+				    if IntSet.member (set, oldstate) then n
+				    else oldstate
 				end
 			    
 			    val vec' = Vector.tabulate( 257, replace )
@@ -304,8 +339,10 @@ structure Table :> TABLE =
 	    end
 
 
-	(* partition : int IntMap * int vector IntMap ->  int IntMap * int vector IntMap, 
-	 * returns a map of sets where the states of each set can be combined to one single state
+	(* partition : int IntMap * int vector IntMap
+	 *            -> int IntMap * int vector IntMap, 
+	 * returns a map of sets where the states of each set can be
+	 * combined to one single state
 	 *)
 	and partition (finstates, dtran) =
 	    let
@@ -315,9 +352,10 @@ structure Table :> TABLE =
 		val changed = ref true
 		    
 
-		(* startpart : int IntMap.map -> unit,
+		(* startpart : int IntMap.map -> unit
 		 * takes a map that contains for each state the final position
-		 * changes partMap so that it contains for each final position a set of the coupled states 
+		 * changes partMap so that it contains for each final position
+		 * a set of the coupled states 
 		 *)
 		fun startpart finstates =
 		    let
@@ -326,18 +364,26 @@ structure Table :> TABLE =
 				NONE     => IntSet.empty
 			      | SOME set => set
 				    
-			fun check (state, 0  ) = (Array.update(actGroup, state, 0);
-						 partMap := IntMap.insert( !partMap, 0, IntSet.add( oldSet 0, state) ) )
-			  | check (state, group) =	(Array.update(actGroup, state, group);
-						 groupNum := Int.max(group, !groupNum);
-						 partMap := IntMap.insert( !partMap, group, IntSet.add( oldSet group, state) ) )
+			fun check (state, 0  ) =
+			    (Array.update(actGroup, state, 0);
+			     partMap :=
+			     IntMap.insert( !partMap, 0,
+					   IntSet.add( oldSet 0, state) ) )
+
+			  | check (state, group) =
+			    (Array.update(actGroup, state, group);
+			     groupNum := Int.max(group, !groupNum);
+			     partMap :=
+			     IntMap.insert( !partMap, group,
+					   IntSet.add( oldSet group, state) ) )
 		    in
 			IntMap.appi check finstates
 		    end
 		
 
-		(* split : int * IntSet.set -> unit, takes (num, group)
-		 * and splits the group if necessary, partMap and groupNum are changed
+		(* split : int * IntSet.set -> unit
+		 * takes (num, group) and splits the group if necessary,
+		 * partMap and groupNum are changed
 		 *)
 		fun split (group, set) =
 		    case IntSet.numItems set of
@@ -346,7 +392,8 @@ structure Table :> TABLE =
 		      | x => split' (group, IntSet.listItems set)
 
 
-		(* split' : int * int list -> unit, does the main work of split
+		(* split' : int * int list -> unit
+		 * does the main work of split
 		 *)
 		and split' (group, is) =
 		    let
@@ -357,18 +404,29 @@ structure Table :> TABLE =
 		    in
 			if diff = nil then ()
 			else (changed := true;
-			      app (fn state => Array.update(actGroup, state, !groupNum + 1)) diff;
+			      app
+			      (fn state =>
+			       Array.update(actGroup, state, !groupNum + 1))
+			      diff;
 			      let
-				  val (partMap', _ ) = IntMap.remove(!partMap, group)
-				  val partMap'' = IntMap.insert( partMap', group, IntSet.addList(IntSet.empty, equal) )
+				  val (partMap', _ ) =
+				      IntMap.remove(!partMap, group)
+				  val partMap'' =
+				      IntMap.insert( partMap', group,
+						    IntSet.addList(IntSet.empty,
+								   equal) )
 			      in
-				  partMap := IntMap.insert( partMap'', ++ groupNum, IntSet.addList(IntSet.empty, diff) )
+				  partMap :=
+				  IntMap.insert( partMap'', ++ groupNum,
+						IntSet.addList(IntSet.empty,
+							       diff) )
 			      end)
 		    end
 
 
-		(* getGroup : int -> int -> int, takes state and ord and
-		 * returns the number of the group the state switches to by char ord
+		(* getGroup : int -> int -> int
+		 * takes state and ord and returns the number of the group
+		 * the state switches to by char ord
 		 *)
 		and getGroup state ord =
 		    let
@@ -384,8 +442,10 @@ structure Table :> TABLE =
 		    end
 
 
-		(* compare: int vector * int list * int list * int list -> int list * inst list, returns (equal, diff),
-		 * where equal are those states of the first list that switches for each char to the same group as comp
+		(* compare: int vector * int list * int list * int list
+		 *         -> int list * inst list, returns (equal, diff),
+		 * where equal are those states of the first list that
+		 * switches for each char to the same group as comp
 		 * and diff are the other ones
 		 *)
 		and compare ( _  , nil    , equal, diff) = (equal, diff)
@@ -395,14 +455,15 @@ structure Table :> TABLE =
 			val eq = ref true
 		    in
 			while !i < 257 do
-			     (eq := (Vector.sub (comp, !i) ) = (getGroup x (!i) );
+			     (eq := (Vector.sub (comp, !i)) = (getGroup x (!i));
 			      if !eq then i := !i + 1 else i := 257);
 			     if !eq then compare (comp, xs, (x::equal), diff)
 			     else compare (comp, xs, equal, (x::diff) )
 		    end
 
 	    in
-		(* set partMap to a start partition, based on the different finishing positions
+		(* set partMap to a start partition
+		 * based on the different finishing positions
 		 *)
 		startpart finstates;
 		(* split the groups as often as possible
@@ -417,7 +478,8 @@ structure Table :> TABLE =
 	    end
 
 
-	(* lineUp : int IntMap.map * int vector IntMap.map -> int IntMap.map * int vector IntMap.map,
+	(* lineUp : int IntMap.map * int vector IntMap.map
+	 *         -> int IntMap.map * int vector IntMap.map,
 	 * returns an automaton with consecutively numbered states
 	 *)
 	fun lineUp (finstates, dtran) =
@@ -434,17 +496,21 @@ structure Table :> TABLE =
 		val actState = ref 1
 
 
-		(* inDomain : unit -> bool, returns if we are finished
+		(* inDomain : unit -> bool
+		 * returns if we are finished
 		 *)
 		fun inDomain () = !actState <= #1(hd (!revFinstates) )
 
 
-		(* inLine : unit -> bool, returns if theres no gap because of minimization
+		(* inLine : unit -> bool
+		 * returns if theres no gap because of minimization
 		 *)
 		fun inLine () = !actState = #1(hd (!Finstates) )
 
 
-		(* insert : unit -> unit, inserts the actual first item of Finstates and Dtran into the appropriate map
+		(* insert : unit -> unit
+		 * inserts the actual first item of Finstates and Dtran
+		 * into the appropriate map
 		 *)
 		fun insert () =
 		    let
@@ -452,7 +518,8 @@ structure Table :> TABLE =
 			val (state', vec) = hd (!Dtran)
 		    in
 			if state = state' andalso state = !actState
-			    then (finstates' := IntMap.insert(!finstates', state, pos); 
+			    then (finstates' :=
+				  IntMap.insert(!finstates', state, pos); 
 				  dtran' := IntMap.insert(!dtran', state, vec) )
 			else tError "different states in insert";
 			Finstates := tl (!Finstates);
@@ -463,7 +530,8 @@ structure Table :> TABLE =
 		val replace = ref (fn x => x)
 
 
-		(* shift : unit -> unit, takes the last state and shifts it to the current position,
+		(* shift : unit -> unit
+		 * takes the last state and shifts it to the current position,
 		 * because there is a minimization gap 
 		 *)
 		fun shift () =
@@ -474,7 +542,8 @@ structure Table :> TABLE =
 			val rep = !replace
 		    in
 			if state = state'
-			    then (finstates' := IntMap.insert(!finstates', act, pos); 
+			    then (finstates' :=
+				  IntMap.insert(!finstates', act, pos); 
 				  dtran' := IntMap.insert(!dtran', act, vec) )
 			else tError "different states in insert";
 			replace := (fn x => if x = state then act else rep x); 
@@ -483,9 +552,12 @@ structure Table :> TABLE =
 		    end
 
 
-		(* correc : int vector -> int vector, replaces all out-dated transitions with the ones saved in replace
+		(* correc : int vector -> int vector
+		 * replaces all out-dated transitions with the ones
+		 + saved in replace
 		 *)
-		fun correct vec = Vector.tabulate(257, fn x => !replace( Vector.sub(vec, x) ) )
+		fun correct vec =
+		    Vector.tabulate(257, fn x => !replace( Vector.sub(vec, x)))
 
 	    in
 		while inDomain () do
@@ -505,30 +577,38 @@ structure Table :> TABLE =
 		    let
 			fun err () =
 			    let
-				val e = "Lex Error: 'eof' not at the end of regexp"
+				val e =
+				    "Lex Error: 'eof' not at the end of regexp"
 			    in
-				(print ("State " ^ Int.toString state ^ "\n");print (e ^ "\n"); raise Error e)
+				(print ("State " ^ Int.toString state ^ "\n");
+				 print (e ^ "\n"); raise Error e)
 			    end
 		    in
 			case Vector.sub (vec, 256) of
 			    0 => ()
-			  | x => if valOf( IntMap.find (finstates, x) ) = 0 then err ()
-				 else Vector.app (fn x => if x = 0 then () else err () ) (valOf( IntMap.find (dtran, x) ) )
+			  | x => if valOf( IntMap.find (finstates, x) ) = 0
+				     then err ()
+				 else Vector.app (fn x => if x = 0 then ()
+							  else err () )
+				     (valOf( IntMap.find (dtran, x) ) )
 		    end
 	    in
 		IntMap.appi transEOF dtran
 	    end
 
 
-	(* makeAuto : (regexp * atexp IntMap.map) StringMap.map ->
-	 *            (int IntMap.map * int vector IntMap.map * atexp IntMap.map) StringMap.map,
-	 * returns a map containing the minimized automata and the actions for each automaton
+	(* makeAuto : (regexp * atexp IntMap.map) StringMap.map
+	 *           -> (int IntMap.map * int vector IntMap.map
+	 *               * atexp IntMap.map) StringMap.map
+	 * returns a map containing the minimized automata and
+	 * the actions for each automaton
 	 *)
 	fun makeAuto lexMap = 
 	    let
 		fun make (re, atMap) =
 		    let
-			val (finstates, dtran) = lineUp( minTable( makeTable re ) )
+			val (finstates, dtran) =
+			    lineUp( minTable( makeTable re ) )
 		    in
 			checkEOF (finstates, dtran); 
 		       (finstates, dtran, atMap)

@@ -12,7 +12,8 @@ structure Parse :> PARSE =
 				    structure Lex = HoseLex)
 
 
-	fun print_error (s, i, _ ) = print( "Parse Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
+	fun print_error (s, i, _ ) =
+	    print( "Parse Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
 	    
 
 	fun invoke lexstream = HoseParser.parse(0, lexstream, print_error, () )
