@@ -119,6 +119,7 @@ define
 	    end#r_t
 	 I_apply:
 	    fun {$ Body Imports TaskStack}
-	       continue(arg(Imports) {Body.1.1.pushCall Body TaskStack.2})
+	       continue(arg({Record.map Imports fun {$ tuple(_ Str)} Str end})
+			{Body.1.1.pushCall Body TaskStack.2})
 	    end#rr_t)
 end
