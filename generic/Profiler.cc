@@ -19,7 +19,7 @@
 #if PROFILE
 #include "generic/Profiler.hh"
 #include "generic/RootSet.hh"
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/StackFrame.hh"
 #include "generic/String.hh"
 #include "generic/ConcreteCode.hh"
@@ -85,28 +85,28 @@ void Profiler::Init() {
 }
 
 ProfileEntry *Profiler::GetEntry(StackFrame *frame) {
-  Interpreter *interpreter = frame->GetInterpreter();
-  word key                 = interpreter->GetProfileKey(frame);
-  BlockHashTable *t        = BlockHashTable::FromWordDirect(table);
+  Worker *worker = frame->GetWorker();
+  word key = worker->GetProfileKey(frame);
+  BlockHashTable *t = BlockHashTable::FromWordDirect(table);
   if (t->IsMember(key))
     return ProfileEntry::FromWordDirect(t->GetItem(key));
   else {
-    String *name  = interpreter->GetProfileName(frame);
-    ProfileEntry  *entry = ProfileEntry::New(name);
+    String *name = worker->GetProfileName(frame);
+    ProfileEntry *entry = ProfileEntry::New(name);
     t->InsertItem(key, entry->ToWord());
     return entry;
   }
 }
 
 ProfileEntry *Profiler::GetEntry(ConcreteCode *concreteCode) {
-  Interpreter *interpreter = concreteCode->GetInterpreter();
-  word key                 = interpreter->GetProfileKey(concreteCode);
-  BlockHashTable *t        = BlockHashTable::FromWordDirect(table);
+  Worker *worker = concreteCode->GetWorker();
+  word key = worker->GetProfileKey(concreteCode);
+  BlockHashTable *t = BlockHashTable::FromWordDirect(table);
   if (t->IsMember(key))
     return ProfileEntry::FromWordDirect(t->GetItem(key));
   else {
-    String *name         = interpreter->GetProfileName(concreteCode);
-    ProfileEntry  *entry = ProfileEntry::New(name);
+    String *name = worker->GetProfileName(concreteCode);
+    ProfileEntry *entry = ProfileEntry::New(name);
     t->InsertItem(key, entry->ToWord());
     return entry;
   }
