@@ -11,6 +11,9 @@
   {
     $chapter2 = prep_title($chapter);
 ?>
+<!-- THESE HTML PAGES ARE GENERATED. DO NOT EDIT DIRECTLY!   -->
+<!-- See directory doc/manual/ in the Alice CVS for sources. -->
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 
 <HTML>
