@@ -10,7 +10,7 @@ signature INFIX =
 
     (* Import *)
 
-    structure Grammar: GRAMMAR_CORE (* = PostParseGrammar_Core *)
+    structure Grammar: GRAMMAR_CORE = PostParseGrammar_Core
 
 
     (* Infix environment *)
@@ -27,4 +27,3 @@ signature INFIX =
     val pat :	InfEnv -> Grammar.Pat -> Grammar.Pat
 
   end
-  where Grammar = PostParseGrammar_Core
