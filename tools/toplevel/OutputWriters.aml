@@ -61,6 +61,54 @@ structure OutputWriters =
       val (rowCol, rowColText) = Stream.stream ()
 
 
+      (* History *)
+
+      val history = ref {prev = [], next = []}
+
+      fun extendHistory s =
+	  let
+	      val p = Promise.promise ()
+	      val prev =
+		  case Ref.exchange (history, Promise.future p)
+		   of {prev = [], next = []} => [s]
+		    | {prev = s'::prev', next = []} =>
+		      if s = s' then s::prev' else s::s'::prev'
+		    | {prev, next = [s']} => s::prev
+		    | {prev, next = s'::next'} =>
+		      s :: List.tl (List.rev (if s = s' then next' else s'::next')) @ prev
+	  in
+	      Promise.fulfill (p, {prev, next = []})
+	  end
+
+      fun backwards s =
+	  let
+	      val p = Promise.promise ()
+	      val (history',s') =
+		  case Ref.exchange (history, Promise.future p)
+		   of h' as {prev = [], next} => (h', s)
+		    | {prev = s'::prev', next = []} =>
+		      ({prev = prev', next = [s',s]}, s')
+		    | {prev = s'::prev', next = _::next'} =>
+		      ({prev = prev', next = s'::s::next'}, s')
+	  in
+	      Promise.fulfill (p, history');
+	      s'
+	  end
+
+      fun forwards s =
+	  let
+	      val p = Promise.promise ()
+	      val (history',s') =
+		  case Ref.exchange (history, Promise.future p)
+		   of h' as {prev, next = ([] | [_])} => (h', s)
+		    | {prev, next = s1::s2::next'} =>
+		      ({prev = s::prev, next = s2::next'}, s2)
+	  in
+	      Promise.fulfill (p, history');
+	      s'
+	  end
+
+
       (* Highlight *)
 
       val highlight = BufferHighlight.highlight
@@ -182,7 +230,8 @@ structure OutputWriters =
                 	    val str = Core.utf8ToLatin1 str
                 	    val _ = eval str
                 	in
-                	    Gtk.textBufferApplyTag(buf, bold, startiter, enditer);
+                	    extendHistory (String.substring (str, 0, String.size str-1));
+			    Gtk.textBufferApplyTag(buf, bold, startiter, enditer);
                 	    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
                 	end
 		    else
@@ -197,6 +246,33 @@ structure OutputWriters =
 		    end
 	    end
           | compilerInsert _ _ = () (* Gtk is crazy *)
+
+	val compilerBufRef = ref NONE  (* Argh, is this hacking... *)
+	val noeditRef = ref NONE
+
+	fun compilerHistory direction () =
+	    let
+                val buf = Option.valOf (!compilerBufRef)
+		val noedit = Option.valOf (!noeditRef)
+		val enditer = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetEndIter(buf, enditer)
+                val startiter = Gtk.textIterCopy enditer
+		val _ = Gtk.textIterBackwardChars(startiter, 1)
+                val noInputYet = Gtk.textIterHasTag(startiter, noedit)
+		val _ = Gtk.textIterForwardChars(startiter, 1)
+		val _ = if noInputYet
+			then Gtk.textBufferGetEndIter(buf, startiter)
+			else ignore (Gtk.textIterBackwardToTagToggle(startiter, noedit))
+                val s = Gtk.textBufferGetText(buf, startiter, enditer, false)
+		val s' = direction s
+	    in
+		Gtk.textBufferDelete(buf, startiter, enditer);
+		Gtk.textBufferPlaceCursor(buf, startiter);
+		Gtk.textBufferInsertAtCursor(buf, s', ~1)
+	    end
+
+      val historyPrev = compilerHistory backwards
+      val historyNext = compilerHistory forwards
 
       fun makeWriters eval =
           let
@@ -224,7 +300,9 @@ structure OutputWriters =
 		      receive
 		  end
           in
-              Gtk.widgetModifyFont(Gui.compilerout, stdFont);
+              compilerBufRef := SOME compilerBuf;
+	      noeditRef := SOME cNoEd;
+	      Gtk.widgetModifyFont(Gui.compilerout, stdFont);
               Gtk.textViewSetBuffer(Gui.progout, progBuf);
               Gtk.textViewSetBuffer(Gui.compilerout, compilerBuf);
 	      spawn foldl (forward (Gui.compilerout, compilerBuf, cSig, cNoEd,

@@ -5,7 +5,7 @@ Bugs:
 
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
-* gui hangs when files are given on command line
+* cannot make window smaller
 * modified files dialogue is too ugly
 
 Missing Features:
@@ -15,6 +15,5 @@ Missing Features:
 * overwrapping search
 * replace
 * incremental search
-* history
 * general interactive highlighting
 * auto-indentation, indent/outdent commands

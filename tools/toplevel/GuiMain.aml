@@ -277,7 +277,8 @@ structure GuiMain =
 	    app (fn w => Gtk.widgetSetSensitive(w,activate))
 	    [Gui.save1,Gui.save_as1,Gui.go_to_line,
 	     Gui.undo,Gui.find,Gui.find_and_replace,
-	     Gui.syntax_colouring,Gui.feed1]
+	     Gui.syntax_colouring,Gui.feedline,Gui.feedparagraph,
+	     Gui.feedselection,Gui.feedfile]
 
         fun changeFocus view _ =
 	    let
@@ -336,7 +337,6 @@ structure GuiMain =
 			 let
 			     val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
 			 in
-			     Inspector.inspect("old:",h1,h2,ratio);
 			     Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
 			     Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
 			 end
@@ -347,7 +347,6 @@ structure GuiMain =
 			 val newHeight = editorHeight+h1+h2
 			 val newPos = Real.fromInt newHeight * ratio
 		     in
-			 Inspector.inspect("new:",newPos,newHeight,ratio);
 			 Gtk.panedSetPosition(Gui.vpaned1,1);
 			 Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
 			 Gtk.widgetGrabFocus Gui.compilerout
@@ -564,6 +563,9 @@ structure GuiMain =
 		    NONE => ()
 		  | SOME coords => jumpToError coords ()
 	    end
+
+	val forwardHistory = OutputWriters.historyNext
+	val backwardHistory = OutputWriters.historyPrev
 
         fun init () =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);

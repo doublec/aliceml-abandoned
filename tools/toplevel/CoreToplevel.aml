@@ -115,7 +115,8 @@ struct
 		       val doc = PPComponent.ppComp (str, inf)
 		   in
 		       PrettyPrint.output (outStream, doc, !outWidth);
-		       TextIO.output (outStream, "\n")
+		       if PrettyPrint.isEmpty doc then ()
+		       else TextIO.output (outStream, "\n")
 		   end)
 	     of NONE =>
 		(TextIO.output (errStream, "Output interrupted\n"); SOME env')
