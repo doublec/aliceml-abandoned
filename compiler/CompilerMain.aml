@@ -3,28 +3,19 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure OS
-from "../lib/system/OS"
-
-import
-    structure CommandLine
-from "../lib/system/CommandLine"
-
-import
-    structure SMLToMozartBatchCompiler
-from "top/SMLToMozartBatchCompiler"
-
-import
-    structure SMLToDotNetBatchCompiler
-from "top/SMLToDotNetBatchCompiler"
+import structure OS                       from "../lib/system/OS"
+import structure CommandLine              from "../lib/system/CommandLine"
+import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
+import structure SMLToDotNetBatchCompiler from "top/SMLToDotNetBatchCompiler"
+import structure SMLToStockwerkBatchCompiler
+		     from "top/SMLToStockwerkBatchCompiler"
 
 val _ =
     case CommandLine.arguments () of
@@ -32,5 +23,7 @@ val _ =
 	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
       | "--mozart"::args =>
 	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
+      | "--stockwerk"::args =>
+	    OS.Process.exit (SMLToStockwerkBatchCompiler.main args)
       | args =>
 	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
