@@ -99,8 +99,10 @@ DEFINE1(Real_fromInt) {
 } END
 
 DEFINE1(Real_fromLargeInt) {
-  DECLARE_INTINF(i, x0);
-  RETURN_REAL(mpz_get_d(i->big()));
+  DECLARE_INTINF_PROMOTE(i, flag, x0);
+  double res = mpz_get_d(i->big()); 
+  DISCARD_PROMOTED(i, flag);
+  RETURN_REAL(res);
 } END
 
 REAL_TO_REAL(Real_realCeil, std::ceil)

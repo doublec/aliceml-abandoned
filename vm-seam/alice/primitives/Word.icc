@@ -132,8 +132,11 @@ DEFINE1(Word_fromInt) {
 } END
 
 DEFINE1(Word_fromLargeInt) {
-  DECLARE_INTINF(i, x0);
-  RETURN_WORD(mpz_get_si(i->big()));
+  TEST_INTINF(i, x0);
+  if (i!=INVALID_INT)
+    RETURN_WORD(i);
+  DECLARE_INTINF(ii, x0);
+  RETURN_WORD(mpz_get_si(ii->big()));
 } END
 
 DEFINE1(Word_fromLarge) {

@@ -87,6 +87,21 @@
     b = BigInt::FromWordDirect(cr->Get(0));                           \
   }
 
+#define DECLARE_INTINF_PROMOTE(b, flag, x)                              \
+  bool flag;                                                            \
+  BigInt *b;                                                            \
+  {                                                                     \
+    TEST_INTINF(b ## i, x);                                             \
+    if (b ## i!=INVALID_INT) { b = BigInt::New(b ## i); flag=true; }    \
+    else                                                                \
+    { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
+      b = BigInt::FromWordDirect(cr->Get(0));                           \
+      flag = false;                                                     \
+  } }
+
+#define DISCARD_PROMOTED(b, flag)               \
+  if (flag) b->destroy();
+
 #define MK_INTINF(w, i)                                          \
   word w;                                                        \
   {                                                              \
@@ -97,11 +112,18 @@
     PrimitiveTable::gmpFinalizationSet->Register(w);             \
   }
 
-#define RETURN_INTINF(i)                                         \
-{ int j = i->toInt();                                            \
-  if (j  != INVALID_INT) { RETURN_INT(j); }      \
-  MK_INTINF(w, i);                                               \
-  RETURN(w);                                                     \
+#define TEST_INTINF(i, x) \
+  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }   \
+  s_int i = Store::WordToInt(x);
+
+#define RETURN_INTINF(i)                        \
+{                                               \
+  int j = i->toInt();                           \
+  if (j != INVALID_INT) {                       \
+    i->destroy(); RETURN_INT(j);                \
+  }                                             \
+  MK_INTINF(w, i);                              \
+  RETURN(w);                                    \
 }
 
 #endif
