@@ -1,7 +1,6 @@
 %%%
 %%% Authors:
 %%%   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
 %%%   Thorsten Brunklaus, 2000
@@ -13,38 +12,14 @@
 
 functor
 import
+   System(onToplevel)
    FS
+   FDCommon('aliceDomainToOzDomain' : AliceDomainToOzDomain
+	    'ozDomainToAliceDomain' : OzDomainToAliceDomain
+	    'exnWrapper' : ExnWrapper) at 'FDCommon.ozf'
 export
    'UnsafeFS$' : UnsafeFS
 define
-   %% Global Helper Functions
-   local
-      fun {MakeOzValue V}
-	 case V
-	 of 'SINGLE'(X)  then X
-	 [] 'RANGE'(L U) then L#U
-	 end
-      end
-      fun {Cons X Y}
-	 {MakeOzValue X}|Y
-      end
-   in
-      fun {AliceDomainToOzDomain D}
-	 {Record.foldR D Cons nil}
-      end
-   end
-   fun {OzDomainToAliceDomain Ds}
-      V = {MakeTuple '#[]' {Length Ds}}
-   in
-      {List.forAllInd Ds proc {$ I X}
-			    V.I = case X
-				  of L#U then 'RANGE'(L U)
-				  else 'SINGLE'(X)
-				  end
-			 end}
-      V
-   end
-   
    %% Interface Functions
    fun {FsFun DsO}
       case DsO
@@ -128,7 +103,7 @@ define
       {FS.value.make {AliceDomainToOzDomain S}}
    end
    fun {EmptyValueFun _}
-      {FS.value.empty}
+      FS.value.empty
    end
    fun {UniversalValueFun _}
       {FS.value.universal}
@@ -198,53 +173,54 @@ define
    fun {ReflectUpperBoundFun X}
       {OzDomainToAliceDomain {FS.reflect.upperBound X}}
    end
-   
+
    %% Create Interface
-   UnsafeFS = 'UnsafeFS'(
-		 'inf'                      : FS.inf
-		 'sup'                      : FS.sup
-		 'unsafeFS'                 : FsFun
-		 'unsafeFSVec'              : FsVecFun
-		 'compl'                    : ComplFun
-		 'complIn'                  : ComplInFun
-		 'incl'                     : InclFun
-		 'excl'                     : ExclFun
-		 'card'                     : CardFun
-		 'cardRange'                : CardRangeFun
-		 'isIn'                     : FS.isIn
-		 'isEmpty'                  : FS.empty
-		 'difference'               : DifferenceFun
-		 'intersect'                : IntersectFun
-		 'intersectN'               : IntersectNFun
-		 'union'                    : UnionFun
-		 'unionN'                   : UnionNFun
-		 'subset'                   : SubsetFun
-		 'disjoint'                 : DisjointFun
-		 'disjointN'                : DisjointNFun
-		 'distinct'                 : DistinctFun
-		 'distinctN'                : DistinctNFun
-		 'partition'                : PartitionFun
-		 'unsafeValue'              : ValueFun
-		 'emptyValue'               : EmptyValueFun
-		 'singletonValue'           : FS.value.singl
-		 'universalValue'           : UniversalValueFun
-		 'isValue'                  : FS.value.is
-		 'int_min'                  : IntMinFun
-		 'int_max'                  : IntMaxFun
-		 'int_convex'               : IntConvexFun
-		 'int_match'                : IntMatchFun
-		 'int_minN'                 : IntMinNFun
-		 'int_maxN'                 : IntMaxNFun
-		 'reifeid_isIn'             : ReifiedIsInFun
-		 'reifeid_areIn'            : ReifiedAreInFun
-		 'reifeid_incl'             : ReifiedInclFun
-		 'reifeid_equalFun'         : ReifiedEqualFun
-		 'reifeid_partition'        : ReifiedPartitionFun
-		 'reflect_card'             : ReflectCardFun
-		 'reflect_lowerBound'       : ReflectLowerBoundFun
-		 'reflect_unknown'          : ReflectUnknownFun
-		 'reflect_upperBound'       : ReflectUpperBoundFun
-		 'reflect_cardOfLowerBound' : FS.reflect.cardOf.lowerBound
-		 'reflect_cardOfUnknown'    : FS.reflect.cardOf.unknown
-		 'reflect_cardOfUpperBound' : FS.reflect.cardOf.upperBound)
+   UnsafeFS = {Record.map
+	       'UnsafeFS'(
+		  'inf'                      : FS.inf
+		  'sup'                      : FS.sup
+		  'unsafeFS'                 : FsFun
+		  'unsafeFSVec'              : FsVecFun
+		  'compl'                    : ComplFun
+		  'complIn'                  : ComplInFun
+		  'incl'                     : InclFun
+		  'excl'                     : ExclFun
+		  'card'                     : CardFun
+		  'cardRange'                : CardRangeFun
+		  'isIn'                     : FS.isIn
+		  'difference'               : DifferenceFun
+		  'intersect'                : IntersectFun
+		  'intersectN'               : IntersectNFun
+		  'union'                    : UnionFun
+		  'unionN'                   : UnionNFun
+		  'subset'                   : SubsetFun
+		  'disjoint'                 : DisjointFun
+		  'disjointN'                : DisjointNFun
+		  'distinct'                 : DistinctFun
+		  'distinctN'                : DistinctNFun
+		  'partition'                : PartitionFun
+		  'unsafeValue'              : ValueFun
+		  'emptyValue'               : EmptyValueFun
+		  'singletonValue'           : FS.value.singl
+		  'universalValue'           : UniversalValueFun
+		  'isValue'                  : FS.value.is
+		  'int_min'                  : IntMinFun
+		  'int_max'                  : IntMaxFun
+		  'int_convex'               : IntConvexFun
+		  'int_match'                : IntMatchFun
+		  'int_minN'                 : IntMinNFun
+		  'int_maxN'                 : IntMaxNFun
+		  'reifeid_isIn'             : ReifiedIsInFun
+		  'reifeid_areIn'            : ReifiedAreInFun
+		  'reifeid_incl'             : ReifiedInclFun
+		  'reifeid_equalFun'         : ReifiedEqualFun
+		  'reifeid_partition'        : ReifiedPartitionFun
+		  'reflect_card'             : ReflectCardFun
+		  'reflect_lowerBound'       : ReflectLowerBoundFun
+		  'reflect_unknown'          : ReflectUnknownFun
+		  'reflect_upperBound'       : ReflectUpperBoundFun
+		  'reflect_cardOfLowerBound' : FS.reflect.cardOf.lowerBound
+		  'reflect_cardOfUnknown'    : FS.reflect.cardOf.unknown
+		  'reflect_cardOfUpperBound' : FS.reflect.cardOf.upperBound)
+	       ExnWrapper}
 end

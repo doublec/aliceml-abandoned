@@ -46,12 +46,6 @@ define
       [] cut then 'BOUND_CUT'
       end
    end
-   fun {MakeKill K}
-      fun {$ _}
-	 {K}
-	 unit
-      end
-   end
    %% Interface Functions
    fun {SearchOneFun P}
       {MakeOption {Search.base.one {MakeScript P}}}
