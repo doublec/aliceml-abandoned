@@ -717,7 +717,7 @@ define
 
    fun {Construct Args}
       case Args of arg(X) then X
-      [] args(...) then Args
+      [] args(...) then {Adjoin Args tuple}
       end
    end
 
