@@ -125,7 +125,9 @@ struct
 
 	 
 	fun incActLine node = case node of
-	    LimitNode(r) => Layout.act_line := (!Layout.act_line) + 
+	    DLimitNode(r) => Layout.act_line := (!Layout.act_line) + 
+		                               !(#ydim(r)) +1
+	  | WLimitNode(r) => Layout.act_line := (!Layout.act_line) + 
 		                               !(#ydim(r)) +1
 	  | SimpleNode(r) => Layout.act_line := (!Layout.act_line) + 
 		                                !(#ydim(r)) +1
@@ -169,7 +171,7 @@ struct
 	 | BracketNode(r) => Bracket2Canvas(node,root)
 	 | _ => raise neverHappensSimple
        and Limit2Canvas (node,root) = case node of 
-	   LimitNode(r) =>
+	   DLimitNode(r) =>
 	       let
 		   val x =  calcX(! (#xkoord(r)))
 		   val y =  calcY(! (#ykoord(r)))
@@ -183,6 +185,19 @@ struct
 		    
 		    ; #tag(r) := SOME group)      
 	       end
+	 | WLimitNode(r) =>  let
+		   val x =  calcX(! (#xkoord(r)))
+		   val y =  calcY(! (#ykoord(r)))
+		   val group = createGroupItem (root,0.0,0.0)
+	       in
+		   (  (createTextItem(group, 
+				      createText("!",
+						 x,
+						 y,
+						 color(RED))))
+		    
+		    ; #tag(r) := SOME group)      
+	       end	       
 	 | _ => raise neverHappensLimit
        and Sep2Canvas (node,root) = case node of
 	   SepNode(r) => (let  
@@ -273,7 +288,8 @@ struct
 				   end
 				    | _ => raise neverHappensBracket
        and Node2Canvas' (node,root) = case node of
-		                            LimitNode(r) => Limit2Canvas(node,root)
+		                            DLimitNode(r) => Limit2Canvas(node,root)
+					  | WLimitNode(r) => Limit2Canvas(node,root)
 					  | SimpleNode(r) => Simple2Canvas(node,root)
 					  | BracketNode(r) => Bracket2Canvas(node,root)
 					  | LabelNode(r) => Label2Canvas(node,root)
@@ -283,7 +299,7 @@ struct
 					  | _ => raise Node2Canvas_unknownNodeType
 	    
 
-       fun Node2Canvas (node,window,canvas) = (Simple2Canvas(node,GtkCanvas.root(canvas));
+       fun Node2Canvas (node,window,canvas) = (Node2Canvas'(node,GtkCanvas.root(canvas));
 					       Gtk.widgetShowAll(window) 
 					       ; incActLine node)
 					   

@@ -72,7 +72,8 @@ struct
 			      | SepNode(r) => (case (!(#content(r))) of
 					       BracketNode(_) => true
 					     |_ =>  lookup' (a,i+1))
-			      | LimitNode(r) => lookup' (a,i+1)
+			      | DLimitNode(r) => lookup' (a,i+1)
+                              | WLimitNode(r) => lookup' (a,i+1)
 			      | _=> raise lookupError
 			 end
 	       
@@ -98,7 +99,8 @@ struct
      | setParent (LabelNode(r),p) = #parent(r) := p  
      | setParent (ContNode(r),p) = #parent(r) := p  
      | setParent (SimpleNode(r),p) = #parent(r) := p  
-     | setParent (LimitNode(r),p) = #parent(r) := p  
+     | setParent (DLimitNode(r),p) = #parent(r) := p 
+     | setParent (WLimitNode(r),p) = #parent(r) := p 
      | setParent (EmptyNode,p) = () 
        
    fun isApply t = case t of Type.Apply(_,_) => true

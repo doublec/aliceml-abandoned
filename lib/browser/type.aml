@@ -37,7 +37,6 @@ sig
 		      xkoord: int ref,
 		      ykoord: int ref,
 		      dirty: bool ref,
-		      more: bool ref,
 		      tag: object option ref}
 
   | SepNode of    {   content: Node ref,
@@ -76,9 +75,18 @@ sig
 		       dirty: bool ref,
 		       tag: object option ref}
 
-  | LimitNode of   {   isvalue: Reflect.value,
+  | DLimitNode of   {   isvalue: Reflect.value,
 		       istype: Type.t,
 		       parent: Node ref,
+		       index: int ref,
+		       xdim: int ref,
+		       ydim: int ref,
+		       xkoord: int ref,
+		       ykoord: int ref,
+		       dirty: bool ref,
+		       tag: object option ref}
+
+  | WLimitNode of {    parent: Node ref,
 		       index: int ref,
 		       xdim: int ref,
 		       ydim: int ref,
@@ -137,7 +145,6 @@ struct
 			  xkoord: int ref,
 			  ykoord: int ref,
 			  dirty: bool ref,
-			  more: bool ref,
 			  tag: object option ref}
 
       | SepNode of    {   content: Node ref,
@@ -176,7 +183,7 @@ struct
 			   dirty: bool ref,
 			   tag: object option ref}
 
-      | LimitNode of  {   isvalue: Reflect.value,
+      | DLimitNode of  {   isvalue: Reflect.value,
 		          istype: Type.t,
 			  parent: Node ref,
 			  index: int ref,
@@ -186,6 +193,15 @@ struct
 			  ykoord: int ref,
 			  dirty: bool ref,
 			  tag: object option ref}
+
+      | WLimitNode of {    parent: Node ref,
+		           index: int ref,
+			   xdim: int ref,
+			   ydim: int ref,
+			   xkoord: int ref,
+			   ykoord: int ref,
+			   dirty: bool ref,
+			   tag: object option ref}
 	
       | EmptyNode
 

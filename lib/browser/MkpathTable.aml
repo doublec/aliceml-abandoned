@@ -1,5 +1,4 @@
 import structure Types from "type"
-import structure Dictionary from "dict"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Path from "x-alice:/lib/rtt/Path"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"

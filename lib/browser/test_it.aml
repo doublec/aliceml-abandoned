@@ -1,28 +1,7 @@
 import structure Reflect from "x-alice:/lib/system/Reflect";
-import structure UnsafeInspector from "/home/blum/inspector/unsafe_insp";
+import structure UnsafeInspector from "/home/blum/stockhausen/lib/browser/unsafe_insp";
 
 (***** TEST *****)
-
-(* Referenz *)
-structure Ref = Reflect.ReflectType ( type t = int Vector.vector ref);
-val t_ref = Ref.x;
-
-UnsafeInspector.inspect (ref (#[1]), t_ref);
-
-(* Vektor *)
-structure Vec = Reflect.ReflectType ( type t = real vector);
-val t_vec = Vec.x;
-
-UnsafeInspector.inspect (#[1.0,2.0], t_vec);
-
-(* Array *)
-structure Arr = Reflect.ReflectType ( type t = string array);
-val t_array = Arr.x;
-val my_array = Array.array(2,""); 
-Array.update(my_array,0,"h"); 
-Array.update(my_array,1,"i");
-
-UnsafeInspector.inspect (my_array, t_array);
 
 (* Ausnahme *)
 structure Exn = Reflect.ReflectType ( type t = exn);
@@ -37,11 +16,38 @@ val t_word = Word.x;
 
 UnsafeInspector.inspect (0w23, tword);
 
+(* String *)
+structure Str = Reflect.ReflectType ( type t = string);
+val t_str = Str.x;
+
+UnsafeInspector.inspect("hallo, ich bin ein string!",t_str);
+
 (* Char *)
 structure Char = Reflect.ReflectType ( type t = char);
 val t_char = Char.x;
 
 UnsafeInspector.inspect (#"1", t_char);
+
+(* Referenz *)
+structure Ref = Reflect.ReflectType ( type t = int Vector.vector ref);
+val t_ref = Ref.x;
+
+UnsafeInspector.inspect (ref (#[1]), t_ref);
+
+(* Array *)
+structure Arr = Reflect.ReflectType ( type t = string array);
+val t_array = Arr.x;
+val my_array = Array.array(2,""); 
+Array.update(my_array,0,"h"); 
+Array.update(my_array,1,"i");
+
+UnsafeInspector.inspect (my_array, t_array);
+
+(* Vektor *)
+structure Vec = Reflect.ReflectType ( type t = real vector);
+val t_vec = Vec.x;
+
+UnsafeInspector.inspect (#[1.0,2.0], t_vec);
 
 (* geschachtelter Vektor (Matrix) *)
 structure VecVec = Reflect.ReflectType ( type t = string vector vector);
@@ -49,76 +55,51 @@ val t_vecvec = VecVec.x;
 
 UnsafeInspector.inspect (#[#["hi"],#["du"]], t_vecvec);
 
-(* Record1 *)
-structure Rec1  = Reflect.ReflectType(type t = {nameA: string, nameB:string});
+(* Record1 *)                         
+structure Rec1 = Reflect.ReflectType
+    (type t = {vec1: string vector , vec2: int vector});
 val t_rec1 = Rec1.x;
 
-UnsafeInspector.inspect ({nameA ="Marvin",nameB ="Berni"}, t_rec1);
+UnsafeInspector.inspect ({vec1 = #["Marvin","Berni"],vec2 = #[23,21]}, t_rec1);
 
-(* Record2  (Tupel) *)                         
+(* Record2 (Tupel) *) 
 structure Rec2 = Reflect.ReflectType
-    (type t = {vec1: string vector , vec2: int vector});
-val t_rec2 = Rec2.x;
-
-UnsafeInspector.inspect ({vec1 = #["Marvin","Berni"],vec2 = #[23,21]}, t_rec2);
-
-(* Record3 (Tupel) *) 
-structure Rec3 = Reflect.ReflectType
     (type t = string vector vector * int vector vector);
-val t_rec3 = Rec3.x;
+val t_rec2 = Rec2.x;
 
 UnsafeInspector.inspect ({1 = #[#["hi","du"],#["guck","mal"]], 
 			  2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			 t_rec3);
+			 t_rec2);
 
 (* Datatypes *)
-datatype S = A | B of int * int | C of {bla: string} | D of real vector
- | E of S | F of {bla: string, blubb: char}
- | G of real vector vector;
+datatype S = A | B of int * int | C of real vector
+ | D of S | E of {bla: string, blubb: char}
+ | F of real vector vector;
 structure P = Reflect.ReflectType ( type t = S);
 val t_S = P.x;
 
 UnsafeInspector.inspect (A, t_S);
 UnsafeInspector.inspect (B (4,5), t_S);
-UnsafeInspector.inspect (C {bla = "hello"}, t_S);
-UnsafeInspector.inspect (D #[5.0,7.0], t_S);
-UnsafeInspector.inspect (E A, t_S);
-UnsafeInspector.inspect (F {bla = "hello", blubb = #"w"}, t_S);
-UnsafeInspector.inspect (G #[#[1.0,2.0],#[3.0,4.0]], t_S);
+UnsafeInspector.inspect (C #[5.0,7.0], t_S);
+UnsafeInspector.inspect (D A, t_S);
+UnsafeInspector.inspect (E {bla = "hello", blubb = #"w"}, t_S);
+UnsafeInspector.inspect (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
 
-(* Exttypes *)
-exttype et;
-constructor U: et;
-constructor V of int * real: et;
-constructor W of string vector * et: et;
-
-structure ET = Reflect.ReflectType ( type t = et);
-val t_et = ET.x;
-
-(* ... kommt noch! *)
-
-(**** mit TIEFENFILTER ****)
+(*** Einstellung der TIEFE ***)
 
 (* Tiefe 0 *)
 UnsafeInspector.set_depth(0);
-
-UnsafeInspector.inspect (ref (#[1]), t_ref);
-
-UnsafeInspector.inspect ({1 = #[#["hi","du"],#["guck","mal"]], 
-			  2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			 t_rec3);
-
-UnsafeInspector.inspect (G #[#[1.0,2.0],#[3.0,4.0]], t_S);
-
 (* Tiefe 1 *)
-UnsafeInspector.set_depth(1);
+UnsafeInspector.set_depth(1); 
+(* Tiefe 2 *)
+UnsafeInspector.set_depth(2); 
 
-UnsafeInspector.inspect ({1 = #[#["hi","du"],#["guck","mal"]], 
-			  2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			 t_rec3);
+(*** Einstellung der BREITE ***)
 
-UnsafeInspector.inspect (G #[#[1.0,2.0],#[3.0,4.0]], t_S);
-
-
-
+(* Breite 0 *)
+UnsafeInspector.set_width(0);
+(* Breite 1 *)
+UnsafeInspector.set_width(1); 
+(* Breite 2 *)
+UnsafeInspector.set_width(2);
 

@@ -118,7 +118,8 @@ struct
 			     | LabelNode(r) => !(#xdim(r))
 			     | SepNode(r) => !(#xdim(r))
 			     | BracketNode(r) => !(#xdim(r))
-                             | LimitNode(r) => !(#xdim(r))
+                             | DLimitNode(r) => !(#xdim(r))
+                             | WLimitNode(r) => !(#xdim(r))
 			     | EmptyNode => 0
                                                    
     and xdim n = case n of 
@@ -181,7 +182,8 @@ struct
 		      | _  => 2 + xdim(!(#content(r))) )
 		  | Type.Prod(row) => 2 + xdim(!(#content(r)))
 		  | _  => xdim(!(#content(r))) )
-	       | LimitNode(r) => 1
+	       | DLimitNode(r) => 1
+               | WLimitNode(r) => 1
 	       | EmptyNode => 0
 
     and set_xdim n = case n of SimpleNode(r) => #xdim(r) := (xdim n)
@@ -205,7 +207,8 @@ struct
                              => (#xdim(r) := (xdim n)
                                 ; let val co = !(#content(r))
 				  in set_xdim co end)
-                             | LimitNode(r) => #xdim(r) := (xdim n)
+                             | DLimitNode(r) => #xdim(r) := (xdim n)
+			     | WLimitNode(r) => #xdim(r) := (xdim n)
  			     | EmptyNode => ()
 
     and  get_l_xdim n = case n of ContNode(r) => !(#l_xdim(r))
@@ -247,7 +250,8 @@ struct
 
     and get_ydim n = case n of
 	                EmptyNode       =>  0
-		      | LimitNode(r)    =>  !(#ydim(r))
+		      | DLimitNode(r)   =>  !(#ydim(r))
+                      | WLimitNode(r)   =>  !(#ydim(r))
                       | SimpleNode(r)   =>  !(#ydim(r))
                       | LabelNode(r)    =>  !(#ydim(r))
                       | BracketNode(r)  =>  !(#ydim(r))
@@ -257,7 +261,8 @@ struct
 
     and calc_ydim n = case n of
                       EmptyNode => 0
-		    | LimitNode(r) => ((#ydim(r)) := 1  ; 1)
+		    | DLimitNode(r) => ((#ydim(r)) := 1  ; 1)
+                    | WLimitNode(r) => ((#ydim(r)) := 1  ; 1)
 		    | SimpleNode(r) => ((#ydim(r)) := 1  ; 1)
 		    | LabelNode(r)   
                     => (case !(#content(r)) of
@@ -432,7 +437,7 @@ struct
 		      | _ => raise koordErrorCont) 
 		 end
 
-      | xy_koord (LimitNode(rr)) =
+      | xy_koord (DLimitNode(rr)) =
 		 let val p = !(#parent(rr)) 
 		 in (case p of
 			 EmptyNode => (0,!act_line)
@@ -475,6 +480,38 @@ struct
 				 end                   
 		       | _ => raise koordErrorLimit)
 		 end
+      | xy_koord (WLimitNode(rr)) = 
+		 let val p = !(#parent(rr)) 
+		 in (case p of
+                     ContNode(r) 
+                     => let val i = !(#index(rr))
+			    val x = #xkoord(r) 
+			    val y = #ykoord(r)
+			    val li = Array.toList(#nodes(r))
+			    val lnew = List.take(li,i)
+			in if Type.isApply(#istype(r)) 
+			       then
+			       let val  tap = Type.asApply(#istype(r))
+				   val tt  = Type.inspect(#1(tap))
+			       in (case tt of 
+				   Type.Con path
+				   => if Path.equal(path, 
+						    PervasiveType.path_ref)
+					  then (!x + 4, !y) 
+				      else    
+					  if hasContChild p 
+					      then (!x,!y + sum_y lnew)
+					  else (!x + sum lnew,!y)
+				 | _ => if hasContChild p 
+					    then (!x,!y + sum_y lnew)
+					else (!x + sum lnew,!y) ) 
+			       end 
+			   else if hasContChild p 
+				    then (!x,!y + sum_y lnew)
+				else (!x + sum lnew,!y)
+			end
+                   | _ => raise koordErrorLimit)
+		 end
 
       | xy_koord EmptyNode = raise koordErrorEmpty
 
@@ -508,7 +545,10 @@ struct
 				   ;let val co = !(#content(r))
 				    in set_xykoord co 
 				    end)
-                               | LimitNode(r)
+                               | DLimitNode(r)
+                                 => (#xkoord(r) := #1(xy_koord n)
+				     ;#ykoord(r) := #2(xy_koord n))
+                               | WLimitNode(r)
                                  => (#xkoord(r) := #1(xy_koord n)
 				     ;#ykoord(r) := #2(xy_koord n))
 			       | EmptyNode => ()

@@ -6,7 +6,7 @@ import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
-import structure Create_Doc from "create_doc"
+import structure Create_Doc from "create_doc"import structure Layout from "layout"
 import structure NewNode from "newNode"
 import structure Layout from "layout"
 import structure Window from "Window"
@@ -24,6 +24,9 @@ sig
 
 (* Einstellung der Tiefe (spaeter im Fenster selbst) *)
     val set_depth: int -> unit
+
+(* Einstellung der Breite (spaeter im Fenster selbst) *)
+    val set_width: int -> unit
     
 (* Registrierung der create-Funktionen fuer Pfadtypen in der pathTable *)
     val init: unit -> unit
@@ -40,6 +43,8 @@ struct
 			      end
 
     fun set_depth d = depth := d
+
+    fun set_width w = width := w
 
     fun init () = (registerType(PervasiveType.path_int, createInt)
 		  ; registerType(PervasiveType.path_string, createString)
