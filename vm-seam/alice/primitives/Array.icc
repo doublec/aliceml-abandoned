@@ -14,21 +14,32 @@
 
 #include "alice/Authoring.hh"
 
+#define STRINGIFY(x) #x
+#define XSTRINGIFY(x) STRINGIFY(x)
+#define CONCAT(x,y) x##y
+#define XCONCAT(x,y) CONCAT(x,y)
+
+#define DECLARE_XARRAY(array, x) DECLARE_BLOCKTYPE(XArray, array, x)
+
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
-  if (static_cast<u_int>(length) > Array::maxLen)
+  if (static_cast<u_int>(length) > XArray::maxLen)
     RAISE(PrimitiveTable::General_Size);
-  Array *array = Array::New(length);
+  XArray *array = XArray::New(length);
   for (u_int i = length; i--; )
     array->Init(i, x1);
   RETURN(array->ToWord());
 } END
 
 DEFINE1(Array_fromList) {
+#if REQUEST_ELEMS_INT
+  DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
+#else
   DECLARE_LIST(tagVal, length, x0);
-  if (length > Array::maxLen)
+#endif
+  if (length > XArray::maxLen)
     RAISE(PrimitiveTable::General_Size);
-  Array *array = Array::New(length);
+  XArray *array = XArray::New(length);
   u_int i = 0;
   while (tagVal != INVALID_POINTER) {
     array->Init(i++, tagVal->Sel(0));
@@ -39,12 +50,12 @@ DEFINE1(Array_fromList) {
 } END
 
 DEFINE1(Array_length) {
-  DECLARE_ARRAY(array, x0);
+  DECLARE_XARRAY(array, x0);
   RETURN_INT(array->GetLength());
 } END
 
 DEFINE2(Array_sub) {
-  DECLARE_ARRAY(array, x0);
+  DECLARE_XARRAY(array, x0);
   DECLARE_INT(index, x1);
   if (static_cast<u_int>(index) >= array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
@@ -52,7 +63,7 @@ DEFINE2(Array_sub) {
 } END
 
 DEFINE3(Array_update) {
-  DECLARE_ARRAY(array, x0);
+  DECLARE_XARRAY(array, x0);
   DECLARE_INT(index, x1);
   if (static_cast<u_int>(index) >= array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
@@ -60,11 +71,11 @@ DEFINE3(Array_update) {
   RETURN_UNIT;
 } END
 
-void PrimitiveTable::RegisterArray() {
-  Register("Array.array", Array_array, 2);
-  Register("Array.fromList", Array_fromList, 1);
-  Register("Array.length", Array_length, 1);
-  Register("Array.maxLen", Store::IntToWord(Array::maxLen));
-  Register("Array.sub", Array_sub, 2);
-  Register("Array.update", Array_update, 3);
+void PrimitiveTable::XCONCAT(Register,XArray)() {
+  Register(XSTRINGIFY(XArray)".array", Array_array, 2);
+  Register(XSTRINGIFY(XArray)".fromList", Array_fromList, 1);
+  Register(XSTRINGIFY(XArray)".length", Array_length, 1);
+  Register(XSTRINGIFY(XArray)".maxLen", Store::IntToWord(Array::maxLen));
+  Register(XSTRINGIFY(XArray)".sub", Array_sub, 2);
+  Register(XSTRINGIFY(XArray)".update", Array_update, 3);
 }
