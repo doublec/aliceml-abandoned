@@ -13,7 +13,7 @@ functor MkTransactionalArray2 (E: ELEM) :
     TRANSACTIONAL_ARRAY2 where type elem = E.t  =
 struct
     type elem   = E.t
-    type array  = (elem * elem option) Array2.array
+    type array  = elem Array2.array * elem option Array2.array
     type t      = array
     
     type region = { 
@@ -31,42 +31,53 @@ struct
 
     type difflist = ((int * int) * elem) list
 
-    fun array (rows, cols, v) = Array2.array (rows, cols, (v, NONE))
+    fun array (rows, cols, v) = 
+        (Array2.array (rows, cols, v),
+         Array2.array (rows, cols, NONE))
 
-    val dimensions = Array2.dimensions
+    fun dimensions (a, b) =
+        Array2.dimensions a
 
-    fun sub (a, r, c) =
-        case Array2.sub (a, r, c) of
-            (v, NONE)   => v
-        |   (_, SOME v) => v
+    fun sub ((old, new), r, c) =
+        case Array2.sub (new, r, c) of
+            NONE    => Array2.sub (old, r, c)
+        |   SOME v  => v
 
-    fun update (a, r, c, v) =
-        let val (old, _)    = Array2.sub (a, r, c) 
+    fun update ((old, new), r, c, v) =
+        let val oldv    = Array2.sub (old, r, c) 
         in
-            if E.equal (old, v) 
-                then Array2.update (a, r, c, (old, NONE))
-                else Array2.update (a, r, c, (old, SOME v))    
+            if E.equal (oldv, v) 
+                then Array2.update (new, r, c, NONE)
+                else Array2.update (new, r, c, SOME v)    
         end
 
-    fun rollback a =
-        Array2.modify Array2.RowMajor (fn (v, _) => (v, NONE)) a
+    fun rollback (_, new) =
+        Array2.modify Array2.RowMajor (const NONE) new
 
-    fun commit a =
+
+    fun commit (old, new) =
         let
             val diffs = ref []
 
-            fun commitField (r, c, (v, NONE))   = (v, NONE)
-              | commitField (r, c, (_, SOME v)) = 
-                (diffs := ((r, c), v) :: !diffs;
-                 (v, NONE))
-
+            fun commitField (r, c, oldv)    = 
+                case Array2.sub (new, r, c) of
+                    NONE        => oldv
+                |   SOME newv   =>
+                    (diffs := ((r, c), newv) :: !diffs;
+                     Array2.update (new, r, c, NONE);
+                     newv)
         in
             Array2.modifyi Array2.RowMajor commitField 
-                { base = a, row=0, col=0, nrows=NONE, ncols=NONE };
+                { base = old, row=0, col=0, nrows=NONE, ncols=NONE };
             !diffs
         end
 
-    fun alli trav a reg = 
-        Array2.alli trav (fn (r, c, (v, NONE)) => a (r, c, v)
-                           | (r, c, (_, SOME v)) => a (r, c, v)) reg
+    fun alli trav pred { base=(old,new), row, col, nrows, ncols } = 
+        Array2.alli trav 
+            (fn (r, c, oldv) =>
+                case Array2.sub (new, r, c) of
+                    NONE        => pred (r, c, oldv)
+                |   SOME newv   => pred (r, c, newv) ) 
+            { base = old, row, col, nrows, ncols }
+
 end
