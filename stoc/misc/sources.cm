@@ -30,8 +30,6 @@ Group is
 
     PRETTY_PRINT-sig.aml
     PrettyPrint.aml
-    PP_MISC-sig.aml
-    PPMisc.aml
 
     URL-sig.aml
     Url.aml
