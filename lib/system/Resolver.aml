@@ -132,6 +132,10 @@ structure Resolver: RESOLVER =
 			     (StringMap.insert (env, x, prefix);
 			      match (rest, suffix, env))
 		       | NONE => raise Failure)
+		  | match (nil, cs, env) =
+		    (case cs of
+			 nil => ()
+		       | _::_ => raise Failure)
 		  | match (_, _, _) = raise Assert.failure
 
 		fun instantiate (p, env) =
