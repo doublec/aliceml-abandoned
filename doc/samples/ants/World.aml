@@ -236,7 +236,7 @@ structure World =
 		Int.toString (#id a) ^
 		", dir " ^ dirToString (#direction a) ^
 		", food " ^ (if (#hasFood a) then "1" else "0") ^
-		", state " ^ (*Int.toString (#state a)*)"?" ^
+		", state " ^ Int.toString (#state a) ^
 		", resting " ^ Int.toString (#resting a)
 
 	
@@ -268,6 +268,16 @@ structure World =
             Array.appi (fn (i,c) =>
                            let val (x,y) = indexToCoords(xs,i) in
                                print ("cell ("^Int.toString x^", "^
+                                      Int.toString y^"): "^
+                                      cellToString c^"\n")
+                           end) cells
+
+	fun printOnlyAnts((xs,cells,_):world) =
+            Array.appi (fn (i,c) =>
+                           let val (x,y) = indexToCoords(xs,i) in
+                               case #ant c of NONE => ()
+                                            | SOME _ =>
+                                   print ("cell ("^Int.toString x^", "^
                                       Int.toString y^"): "^
                                       cellToString c^"\n")
                            end) cells

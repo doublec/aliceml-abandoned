@@ -110,8 +110,8 @@ structure Simulator :
           print ("\t black player: "^blackAnt^"\n");
           print ("random seed: "^(Int.toString(Word.toInt defSeed))^"\n");
           loop 10001
-          (fn r => ((*print ("\nAfter round "^Int.toString r^"...\n");
-                     drawWorld world;*)
+          (fn r => (print ("\nAfter round "^Int.toString r^"...\n");
+                    printOnlyAnts world;
                     if r mod 1000 = 0 then print ("round "^Int.toString r^"\n") else ();
                     loop noOfAnts
                          (fn i => step(world, redBrain, blackBrain, i))));
