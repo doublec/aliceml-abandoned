@@ -232,10 +232,10 @@ functor MkWorker(ComponentManager : COMPONENT_MANAGER) : WORKER =
 	    (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
     end
 val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
-val workers = List.map (fn host =>
+val workers = List.map (fn oneHost =>
 			let
 			    structure Worker =
-				Execute(val host = "fry"
+				Execute(val host = oneHost
 					signature RESULT = WORKER
 					structure Start = MkWorker)
 			in
