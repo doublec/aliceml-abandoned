@@ -37,7 +37,7 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 	end
 
 
-    fun find(t,k) =
+    fun findItem(t,k) =
 	let
 	    val i0 = Item.hash k mod Array.length t
 
@@ -57,11 +57,11 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 	end
 
 
-    fun member((_, ref t),k) = #1(find(t,k))
+    fun member((_, ref t),k) = #1(findItem(t,k))
 
 
     fun deleteWith f ((n, ref t), k) =
-	case find(t,k)
+	case findItem(t,k)
 	  of (false,_) => f k
 	   | (true, i) => ( Array.update(t,i,DELETED) ; n := !n-1 )
 
@@ -69,7 +69,7 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     val deleteExistent	= deleteWith (fn k => raise Delete k)
 
 
-    fun reinsert t k	= Array.update(t, #2(find(t,k)), ENTRY k)
+    fun reinsert t k	= Array.update(t, #2(findItem(t,k)), ENTRY k)
 
     fun resize(ref n, r as ref t) =
 	if 3 * n < 2 * Array.length t then () else
@@ -86,7 +86,7 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 	    val   _        = resize s
 	    val (n, ref t) = s
 	in
-	    case find(t,k)
+	    case findItem(t,k)
 	      of (true, _) => f k
 	       | (false,i) => ( Array.update(t,i,ENTRY k) ; n := !n+1 )
 	end
@@ -96,6 +96,14 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 
     fun app f (_, ref t)	= Array.app (appEntry f) t
     fun fold f a (_, ref t)	= Array.foldl (fn(ko,a) => foldEntry f a ko) a t
+    fun find p (_, ref t)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case Array.sub(t,i)
+					    of ENTRY k => if p k then SOME k
+					                         else iter(i+1)
+					     | _       => iter(i+1)
+				  in iter 0 end
 
     fun union(s1,s2)		= app (fn k => insert(s1,k)) s2
     fun unionDisjoint(s1,s2)	= app (fn k => insertDisjoint(s1,k)) s2

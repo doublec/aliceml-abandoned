@@ -39,7 +39,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 	end
 
 
-    fun find(t,k) =
+    fun findKey(t,k) =
 	let
 	    val i0 = Key.hash k mod Array.length t
 
@@ -59,13 +59,13 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 	end
 
     fun lookup((_, ref t),k) =
-	case find(t,k)
+	case findKey(t,k)
 	  of (false,_) => NONE
 	   | (true, i) => SOME(valOfEntry(Array.sub(t,i)))
 
 
     fun deleteWith f ((n, ref t), k) =
-	case find(t,k)
+	case findKey(t,k)
 	  of (false,_) => f k
 	   | (true, i) => ( Array.update(t,i,DELETED) ; n := !n-1 )
 
@@ -73,7 +73,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     fun deleteExistent x	= deleteWith (fn k => raise Delete k) x
 
 
-    fun reinsert t (ka as (k,a)) = Array.update(t, #2(find(t,k)), ENTRY ka)
+    fun reinsert t (ka as (k,a)) = Array.update(t, #2(findKey(t,k)), ENTRY ka)
 
     fun resize(ref n, r as ref t) =
 	if 3 * n < 2 * Array.length t then () else
@@ -89,7 +89,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 	let
 	    val   _        = resize m
 	    val (n, ref t) = m
-	    val (b,i)      = find(t,k)
+	    val (b,i)      = findKey(t,k)
 	    val   a'       = if not b then a
 				      else f(k, valOfEntry(Array.sub(t,i)), a)
 	in
@@ -102,8 +102,18 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     fun appi f (_, ref t)	= Array.app (appiEntry f) t
     fun foldi f b (_, ref t)	= Array.foldl (fn(e,b) => foldiEntry f b e) b t
+    fun findi p (_, ref t)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case Array.sub(t,i)
+					    of ENTRY ka => if p ka then SOME ka
+					                   else iter(i+1)
+					     | _        => iter(i+1)
+				  in iter 0 end
+
     fun app f			= appi (fn(k,a) => f a)
     fun fold f			= foldi (fn(k,a,b) => f(a,b))
+    fun find p m		= Option.map #2 (findi (fn(k,a) => p a) m)
 
     fun union' insert (m1,m2)	= appi (fn(k,a) => insert(m1,k,a)) m2
     fun union x			= union' insert x

@@ -24,8 +24,17 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 							List.foldl f' b kas
 						  ) b t
 				  end
+    fun findi p (ref t, _)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case List.find p (Array.sub(t,i))
+					    of NONE => iter(i+1)
+					     | some => some
+				  in iter 0 end
+
     fun app f			= appi(fn(k,a) => f a)
     fun fold f			= foldi(fn(k,a,b) => f(a,b))
+    fun find p m		= Option.map #2 (findi (fn(k,a) => p a) m)
 
 
     fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])

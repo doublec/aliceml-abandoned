@@ -59,11 +59,24 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun foldScope f b (ref ms)	= ImpMap.fold f b (List.hd ms)
     fun fold f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.fold f b' m)
 					     b ms
+    fun findScope p (ref ms)	= ImpMap.find p (List.hd ms)
+    fun find p (ref ms)		= let fun iter  []     = NONE
+					| iter(m::ms') = case ImpMap.find p m
+							   of NONE => iter ms'
+							    | some => some
+				  in iter ms end
+
     fun appiScope f (ref ms)	= ImpMap.appi f (List.hd ms)
     fun appi f (ref ms)		= List.app (ImpMap.appi f) (List.rev ms)
     fun foldiScope f b (ref ms)	= ImpMap.foldi f b (List.hd ms)
     fun foldi f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.foldi f b' m)
 					     b ms
+    fun findiScope p (ref ms)	= ImpMap.findi p (List.hd ms)
+    fun findi p (ref ms)	= let fun iter  []     = NONE
+					| iter(m::ms') = case ImpMap.findi p m
+							   of NONE => iter ms'
+							    | some => some
+				  in iter ms end
 
     fun delete(ref ms, k)		= ImpMap.delete(List.hd ms, k)
     fun deleteExistent(ref ms, k)	= ImpMap.deleteExistent(List.hd ms, k)

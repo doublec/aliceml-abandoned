@@ -30,5 +30,6 @@ signature IMP_SET =
 
     val app :		(item -> unit) -> set -> unit
     val fold :		(item * 'a -> 'a) -> 'a -> set -> 'a
+    val find :		(item -> bool) -> set -> item option
 
   end

@@ -67,4 +67,8 @@ signature SCOPED_IMP_MAP =
     val foldi :			(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldiScope :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
 
+    val find :			('a -> bool) -> 'a map -> 'a option
+    val findScope :		('a -> bool) -> 'a map -> 'a option
+    val findi :			(key * 'a -> bool) -> 'a map -> (key *'a) option
+    val findiScope :		(key * 'a -> bool) -> 'a map -> (key *'a) option
   end

@@ -50,6 +50,12 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     fun foldScope f a (ref ss)	= ImpSet.fold f a (List.hd ss)
     fun fold f a (ref ss)	= List.foldr (fn(s,a') => ImpSet.fold f a' s)
 					     a ss
+    fun findScope p (ref ss)	= ImpSet.find p (List.hd ss)
+    fun find p (ref ss)		= let fun iter  []     = NONE
+					| iter(s::ss') = case ImpSet.find p s
+							   of NONE => iter ss'
+							    | some => some
+				  in iter ss end
 
     fun delete(ref ss, i)		= ImpSet.delete(List.hd ss, i)
     fun deleteExistent(ref ss, i)	= ImpSet.deleteExistent(List.hd ss, i)

@@ -19,6 +19,14 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 
     fun app f (ref t, _)	= Array.app (List.app f) t
     fun fold f a (ref t, _)	= Array.foldl(fn(ks,a) => List.foldl f a ks) a t
+    fun find p (ref t, _)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case List.find p (Array.sub(t,i))
+					    of NONE => iter(i+1)
+					     | some => some
+				  in iter 0 end
+
 
 
     fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])

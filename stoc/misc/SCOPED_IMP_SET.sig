@@ -54,4 +54,7 @@ signature SCOPED_IMP_SET =
     val fold :			(item * 'a -> 'a) -> 'a -> set -> 'a
     val foldScope :		(item * 'a -> 'a) -> 'a -> set -> 'a
 
+    val find :			(item -> bool) -> set -> item option
+    val findScope :		(item -> bool) -> set -> item option
+
   end

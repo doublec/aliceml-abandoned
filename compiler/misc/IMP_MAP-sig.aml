@@ -38,5 +38,7 @@ signature IMP_MAP =
     val fold :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val appi :		(key * 'a -> unit) -> 'a map -> unit
     val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val find :		('a -> bool) -> 'a map -> 'a option
+    val findi :		(key * 'a -> bool) -> 'a map -> (key * 'a) option
 
   end
