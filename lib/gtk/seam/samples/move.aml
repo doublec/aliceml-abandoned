@@ -113,7 +113,7 @@ local
      * All Events are passed via the Event Field of the event.
      *)
     val _ = Gtk.signalConnect(rectItem, "event",
-			      fn (_,[Gtk.OBJECT event]) =>
+			      fn (_,[Gtk.EVENT (Gtk.UNSUPPORTED event)]) =>
 			      rectangleHandler(rectItem, event))
 
     fun deleteHandler _ = OS.Process.exit OS.Process.success

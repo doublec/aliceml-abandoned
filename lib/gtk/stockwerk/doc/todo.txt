@@ -165,4 +165,4 @@ Fehler:
 - ckit2.sml in stockwerk-vm testen; ggf. in alice bugzilla eintragen
 * Int.toString(2^32) haengt sich auf
 - mehrfaches spawn (fib 40) stuerzt ab
-- val ~1 = 1; stuerzt ab
+* val ~1 = 1; stuerzt ab

@@ -52,7 +52,7 @@ local
 	print ("(x: "^(Real.toString (Gdk.eventMotionGetFieldX event))^
 	      ", y: "^(Real.toString (Gdk.eventMotionGetFieldY event))^") ")
 
-    fun canvasEvent (_, [Gtk.OBJECT event]) =
+    fun canvasEvent (_, [Gtk.EVENT (Gtk.UNSUPPORTED event)]) =
 	(case Gdk.eventAnyGetFieldType event of
 	     Gdk.EXPOSE            => show "Got Expose Event"
 	   | Gdk.MOTION_NOTIFY     => (showDelta event;show "Got Motion Event")
