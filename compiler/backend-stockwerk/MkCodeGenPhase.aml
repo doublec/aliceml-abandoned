@@ -63,6 +63,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    lookup (env, idRef)
 	  | translateIdRef (Lit lit, _) = O.Immediate (translateLit lit)
 	  | translateIdRef (Prim name, _) = O.Immediate (V.prim name)
+	  | translateIdRef (Value (value, _), _) =
+	    O.Immediate (V.reflected value)
 
 	fun translateIdRefs (idRefs, env) =
 	    Vector.map (fn idRef => translateIdRef (idRef, env)) idRefs
@@ -427,6 +429,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateStm (ReturnStm (_, VarAppExp (_, idRef, args)), env) =
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env), NONE)
+	  | translateStm (ReturnStm (_, DirectAppExp (_, idRef, args)), env) =
+	    O.DirectAppVar (translateIdRef (idRef, env),
+			    translateArgs translateIdRef (args, env), NONE)
 	  | translateStm (ReturnStm (_, FunAppExp (_, idRef, _, args)), env) =
 	    O.DirectAppVar (translateIdRef (idRef, env),
 			    translateArgs translateIdRef (args, env), NONE)
@@ -519,6 +524,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		       SOME (O.IdDef id, instr))
 	  | translateExp (VarAppExp (_, idRef, args), id, instr, env) =
 	    translateVarAppExp O.AppVar (idRef, args, id, instr, env)
+	  | translateExp (DirectAppExp (_, idRef, args), id, instr, env) =
+	    translateVarAppExp O.DirectAppVar (idRef, args, id, instr, env)
 	  | translateExp (RefExp (_, idRef), id, instr, env) =
 	    O.PutRef (id, translateIdRef (idRef, env), instr)
 	  | translateExp (SelExp (_, _, _, i, idRef), id, instr, env) =
@@ -564,6 +571,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
 		      SOME (O.OneArg O.Wildcard, instr))
+	  | translateIgnore (DirectAppExp (_, idRef, args), instr, env) =
+	    O.DirectAppVar (translateIdRef (idRef, env),
+			    translateArgs translateIdRef (args, env),
+			    SOME (O.OneArg O.Wildcard, instr))
 	  | translateIgnore (SelExp (_, _, _, _, idRef), instr, env) =
 	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))

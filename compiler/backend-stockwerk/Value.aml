@@ -27,4 +27,5 @@ structure Value: VALUE =
 	val vector = UnsafeValue.cast
 	val closure = UnsafeValue.closure
 	val sign = UnsafeValue.cast
+	val reflected = UnsafeValue.cast
     end

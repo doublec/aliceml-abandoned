@@ -135,14 +135,16 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	fun idRefId (FlatGrammar.IdRef id) = id
 	  | idRefId (FlatGrammar.LastIdRef id) = id
-	  | idRefId (FlatGrammar.Lit _ | FlatGrammar.Prim _) =
+	  | idRefId (FlatGrammar.Lit _ | FlatGrammar.Prim _ |
+		     FlatGrammar.Value _) =
 	    raise Crash.Crash "MkEnvironment.idRefId"
 
 	fun idStamp (FlatGrammar.Id (_, stamp, _)) = stamp
 
 	fun isLast (FlatGrammar.IdRef _) = false
 	  | isLast (FlatGrammar.LastIdRef _) = true
-	  | isLast (FlatGrammar.Lit _ | FlatGrammar.Prim _) =
+	  | isLast (FlatGrammar.Lit _ | FlatGrammar.Prim _ |
+		    FlatGrammar.Value _) =
 	    raise Crash.Crash "MkEnvironment.isLast"
 
 	fun lookup ({context, scope, globalIndex, globalIds, ...}: t, idRef) =

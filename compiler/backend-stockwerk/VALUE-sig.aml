@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Reflect     from "../../lib/system/Reflect"
 import structure Label       from "../../lib/rtt/Label"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 
@@ -27,4 +28,5 @@ signature VALUE =
 	val vector: 'a t vector -> 'a t
 	val closure: 'a * 'a t vector -> 'a t
 	val sign: FlatGrammar.sign option -> 'a t
+	val reflected: Reflect.value -> 'a t
     end

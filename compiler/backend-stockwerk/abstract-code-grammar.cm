@@ -1,6 +1,7 @@
 Group is
 
     ../../lib/utility/sources.cm
+    ../infrastructure/crash.cm
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
 
