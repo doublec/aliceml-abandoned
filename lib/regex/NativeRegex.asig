@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature REGEX =
+  sig
+    structure NativeRegex:
+      sig
+        val regcomp : string -> 'regex_t option
+        val regexec : 'regex_t * string -> (int * int) vector option
+      end
+  end
