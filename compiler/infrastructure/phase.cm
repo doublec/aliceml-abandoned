@@ -3,17 +3,17 @@ Group is
 	source.cm
 	switches.cm
 
-	ERROR.sig
-	Error.sml
+	ERROR-sig.aml
+	Error.aml
 
-	CONTEXT.sig
-	EmptyContext.sml
+	CONTEXT-sig.aml
+	EmptyContext.aml
 
-	REPRESENTATION.sig
+	REPRESENTATION-sig.aml
 
-	PHASE.sig
-	PHASE_ERROR.sig
-	ComposePhases.sml
-	MakeTracingPhase.sml
-	MakeResultDumpingPhase.sml
-	MakeContextDumpingPhase.sml
+	PHASE-sig.aml
+	PHASE_ERROR-sig.aml
+	ComposePhases.aml
+	MkTracingPhase.aml
+	MkResultDumpingPhase.aml
+	MkContextDumpingPhase.aml
