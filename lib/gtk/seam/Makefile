@@ -21,17 +21,15 @@ ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
 INSTALL = install -C -v -m 666
 
-.PHONY: generate compile depend docs clean veryclean distclean
+.PHONY: all generate compile depend docs clean veryclean distclean
 
 all: compile
 
 #################################################
 
-generate: $(GENFILES) $(GENSIGS)
-
 $(GENFILES): $(LASTGENERATE)
 
-$(LASTGENERATE) dogenerate: gtkclean.c
+$(LASTGENERATE) generate: gtkclean.c
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	echo 'CM.make();main "$(OUTDIR)";' | sml
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .

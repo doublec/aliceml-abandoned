@@ -54,7 +54,7 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
 /***********************************************************************/
 
 enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
-/*
+
 #define VDATA_MAX_LEN 1024
 
 #define __PUT_VALUE(vtype, F, x, pos) {    \
@@ -83,7 +83,7 @@ enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
     DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
       __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
   }                                                       
-*/
+
 
 
 #define DECLARE_GLIST(l, x, ltype, ltype2, F)               \

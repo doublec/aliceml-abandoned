@@ -65,6 +65,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    local
 		fun inDeclare (NUMERIC(_,false,_))= "DECLARE_INT"
 		  | inDeclare (NUMERIC(_,true, _))= "DECLARE_CDOUBLE"
+		  | inDeclare (ELLIPSES false)    = "DECLARE_VALIST"
 		  | inDeclare BOOL                = "DECLARE_BOOL"
 		  | inDeclare (POINTER _)         = "DECLARE_UNMANAGED_POINTER"
 		  | inDeclare (STRING _)          = "DECLARE_CSTRING"
