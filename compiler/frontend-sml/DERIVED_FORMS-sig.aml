@@ -261,7 +261,7 @@ sig
 
     (* Gert hack *)
 
-    val PACKExp:	Info * LongStrId * LongSigId -> Exp
+    val PACKExp:	Info * AtStrExp * AtSigExp -> Exp
     val UNPACKStrExp:	Info * InfExp * SigExp -> StrExp
 end
 

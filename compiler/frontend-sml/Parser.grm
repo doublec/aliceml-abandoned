@@ -104,6 +104,9 @@
 (*   - sharing and where for signature:						*)
 (*	  spec   ::= spec sharing signature longsigid_1 = ... = longsigid_n	*)
 (*	  sigexp ::= sigexp where signature longsigid_1 = sigexp		*)
+(*   - packages:								*)
+(*	  exp    ::= pack atstrexp :> atsigexp					*)
+(*	  strexp ::= unpack infexp : sigexp					*)
 (*   - programs:								*)
 (*	  program   ::= topdec							*)
 (*   - components:								*)
@@ -732,12 +735,9 @@
 	| CASE exp OF match	( CASEExp(I(CASEleft,matchright), exp, match) )
 	| FN match		( FNExp(I(FNleft,matchright), match) )
 	| REC pat DARROW exp	( RECExp(I(RECleft,expright), pat, exp) )
-(*	| PACK longstrid	( PACKExp(I(PACKleft,longstridright),*)
-(*					  longstrid) )*)
-(* Gert hack: *)
-	| PACK longstrid COLONGREATER longsigid		
-				( PACKExp(I(PACKleft,longsigidright),
-					  longstrid, longsigid) )
+	| PACK atstrexp COLONGREATER atsigexp
+				( PACKExp(I(PACKleft,atsigexpright),
+					  atstrexp, atsigexp) )
 
 
   (* Core: Matches *)
@@ -1135,8 +1135,6 @@
 	| LBRACE tyrow_opt RBRACE
 			( RECORDTy(I(LBRACEleft,RBRACEright), tyrow_opt) )
 	| LPAR ty RPAR	( PARTy(I(LPARleft,RPARright), ty) )
-	| PACK longsigid
-			( PACKTy(I(PACKleft,longsigidright), longsigid))
 
   tyrow:
 	  lab COLON ty COMMA_tyrow_opt

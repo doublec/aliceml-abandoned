@@ -868,23 +868,21 @@ struct
      * putting a lot of stuff into __pervasive - and somehow resolving the
      * resulting circularity.) *)
 
-    fun PACKExp(I, longstrid, longsigid) =
-	(* pack <longstrid> :> <longsigid> -->
-	 * let structure P = Package.Pack(signature S = <longsigid>
-	 *                                structure X = <longstrid>)
+    fun PACKExp(I, atstrexp, atsigexp) =
+	(* pack <atstrexpa> :> <atsigexp> -->
+	 * let structure P = Package.Pack(signature S = <atsigexp>
+	 *                                structure X = <atstrexp>)
 	 * in P.package end
 	 *)
 	let
-	    val I1          = G.infoLong longstrid
-	    val I2          = G.infoLong longsigid
+	    val I1          = G.infoAtStrExp atstrexp
+	    val I2          = G.infoAtSigExp atsigexp
 	    val strid       = G.StrId(I1, StrId.fromString "X")
-	    val strexp      = G.ATSTREXPStrExp(I1,
-				G.LONGSTRIDAtStrExp(I1, longstrid))
+	    val strexp      = G.ATSTREXPStrExp(I1, atstrexp)
 	    val strdec      = G.STRUCTUREDec(I1,
 				G.StrBind(I1, strid, strexp, NONE))
 	    val sigid       = G.SigId(I2, SigId.fromString "S")
-	    val sigexp      = G.ATSIGEXPSigExp(I2,
-				G.LONGSIGIDAtSigExp(I2, longsigid))
+	    val sigexp      = G.ATSIGEXPSigExp(I2, atsigexp)
 	    val sigdec      = G.SIGNATUREDec(I2,
 				G.SigBind(I2, sigid, [], sigexp, NONE))
 	    val argatstrexp = DECAtStrExp(I, G.SEQDec(I, sigdec, strdec))
