@@ -19,6 +19,10 @@ import
 from "../../lib/system/OS"
 
 import
+    structure Config
+from "../../lib/system/Config"
+
+import
     structure UnsafePickle
 from "../../lib/system/UnsafePickle"
 
@@ -66,15 +70,11 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	     OS.Process.success)
 
 	fun main_x (infile, outfile) =
-	    (*--** header *)
+	    (*--** respect executableHeader *)
 	    (RecursiveCompiler.compileFileToFile (infile, outfile);
-	     OS.Process.success
-(*--**UNFINISHED
-	     case SMLofNJ.SysInfo.getOSKind () of
-		 SMLofNJ.SysInfo.WIN32 => OS.Process.success
-	       | _ => OS.Process.system ("chmod +x " ^ outfile)
-*)
-)
+	     case Config.platform of
+		 Config.WIN32 => OS.Process.success
+	       | Config.UNIX => OS.Process.system ("chmod +x " ^ outfile))
 
 	structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
 
