@@ -8,7 +8,7 @@ INSTALLFILES_0 = \
 	style.css bg.gif alice.gif macros.php3 project.html \
 	index.html people.html papers.html download.html contact.html download-old.html
 INSTALLFILES_DOWNLOAD_0 = \
-	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
+	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz COPYING
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps
 INSTALLFILES = \
@@ -44,6 +44,9 @@ $(PREFIX)/alice.gif: \
 
 # Netscape workaround:
 $(PREFIX)/bg.gif: ../manual/bg.gif
+	install -c -m 444 $< $@
+
+$(PREFIX)/download/COPYING: ../../COPYING
 	install -c -m 444 $< $@
 
 $(PREFIX)/download/%-devel.tgz:
