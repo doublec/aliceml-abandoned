@@ -13,7 +13,8 @@
 #ifndef __GENERIC__AUTHORING_HH__
 #define __GENERIC__AUTHORING_HH__
 
-#include "adt/HashTable.hh"
+#include "adt/IntMap.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
@@ -130,8 +131,10 @@
 #define DECLARE_DOUBLE(d, x) DECLARE_BLOCKTYPE(Double, d, x)
 #define DECLARE_UNIQUE_STRING(uniqueString, x) \
   DECLARE_BLOCKTYPE(UniqueString, uniqueString, x)
-#define DECLARE_HASH_TABLE(hashtable, x) \
-  DECLARE_BLOCKTYPE(HashTable, hashtable, x)
+#define DECLARE_INT_MAP(intmap, x) \
+  DECLARE_BLOCKTYPE(IntMap, intmap, x)
+#define DECLARE_CHUNK_MAP(chunkmap, x) \
+  DECLARE_BLOCKTYPE(ChunkMap, chunkmap, x)
 #define DECLARE_IODESC(ioDesc, x) DECLARE_BLOCKTYPE(IODesc, ioDesc, x)
 
 #endif
