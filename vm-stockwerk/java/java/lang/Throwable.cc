@@ -12,7 +12,6 @@
 
 #include "generic/RootSet.hh"
 #include "java/ClassLoader.hh"
-#include "java/ThrowWorker.hh"
 #include "java/ByteCodeInterpreter.hh"
 #include "java/Authoring.hh"
 
