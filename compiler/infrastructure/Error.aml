@@ -53,10 +53,12 @@ struct
 	    ((NONE | SOME "file"), NONE) =>
 	    let
 		val cwd  = OS.FileSys.getDir()
-		val file = OS.Path.getVolume cwd ^
-			   Url.toString(Url.setScheme(url, NONE))
+		val file = Url.toString(Url.setScheme(url, NONE))
+		val file' = if OS.Path.getVolume file = ""
+			    then OS.Path.getVolume cwd ^ file else file
 	    in
-		OS.Path.mkRelative{path = file, relativeTo = cwd}
+		OS.Path.mkRelative{path = OS.Path.mkCanonical file,
+				   relativeTo = cwd}
 	    end
 	  | _ =>
 	    Url.toString url
