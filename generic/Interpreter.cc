@@ -29,7 +29,7 @@
 //
 // Interpreter virtual functions: default implementations
 //
-Block *Interpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
+Transform *Interpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
   return INVALID_POINTER; // default: may not be pickled
 }
 

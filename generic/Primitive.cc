@@ -24,8 +24,6 @@
 #include "generic/StackFrame.hh"
 #include "generic/Transform.hh"
 #include "generic/Primitive.hh"
-#include "alice/Data.hh"
-#include "alice/AliceLanguageLayer.hh"
 
 // Primitive Frame
 class PrimitiveFrame: private StackFrame {
@@ -70,7 +68,7 @@ public:
   }
   static Result Run(PrimitiveInterpreter *interpreter);
   // Handler Methods
-  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
   virtual void PushCall(Closure *closure);
   // Execution
@@ -117,13 +115,13 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
   }
 }
 
-Block *
+Transform *
 PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   if (sited) {
     return INVALID_POINTER;
   } else {
     ConcreteCode *concreteCode = static_cast<ConcreteCode *>(b);
-    return Store::DirectWordToBlock(concreteCode->Get(0));
+    return Transform::FromWordDirect(concreteCode->Get(0));
   }
 }
 
@@ -138,14 +136,11 @@ Worker::Result PrimitiveInterpreter::Run() {
 }
 
 const char *PrimitiveInterpreter::Identify() {
-  return name? name: "PrimitiveInterpreter";
+  return "PrimitiveInterpreter";
 }
 
 void PrimitiveInterpreter::DumpFrame(word) {
-  if (name)
-    std::fprintf(stderr, "Primitive %s\n", name);
-  else
-    std::fprintf(stderr, "Primitive\n");
+  std::fprintf(stderr, "%s\n", name);
 }
 
 u_int PrimitiveInterpreter::GetArity() {
@@ -159,24 +154,14 @@ Interpreter::function PrimitiveInterpreter::GetCFunction() {
 //
 // Primitive Functions
 //
-word Primitive::MakeFunction(const char *name, Interpreter::function function,
+word Primitive::MakeFunction(Transform *abstract, const char *name,
+			     Interpreter::function function,
 			     u_int arity, bool sited) {
   PrimitiveInterpreter *interpreter =
     new PrimitiveInterpreter(name, function, arity, sited);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
-  //--** avoid Alice dependency:
-  word transformName = AliceLanguageLayer::TransformNames::primitiveFunction;
-  Transform *transform =
-    Transform::New(Store::DirectWordToChunk(transformName),
-		   String::New(name)->ToWord());
-  concreteCode->Init(0, transform->ToWord());
+  concreteCode->Init(0, abstract->ToWord());
   return concreteCode->ToWord();
-}
-
-word Primitive::MakeClosure(const char *name, Interpreter::function function,
-			    u_int arity, bool sited) {
-  word concreteCode = MakeFunction(name, function, arity, sited);
-  return Closure::New(concreteCode, 0)->ToWord();
 }
 
 Worker::Result Primitive::Execute(Interpreter *interpreter) {
