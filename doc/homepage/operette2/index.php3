@@ -12,6 +12,20 @@
   </P>
 
   <P>
+    Stockhausen Operette 2 offers the following advances over
+    <A href="../operette1/">Stockhausen Operette 1</A>:
+  </P>
+
+  <UL>
+    <LI>runtime types
+    <LI>pickling and type-safe unpickling
+    <LI>an interactive toplevel
+    <LI>new libraries for constraint programming and
+      building graphical user interfaces
+    <LI>a new tool for dynamically inspecting Alice values
+  </UL>
+
+  <P>
     Stockhausen implements the language <I>Alice</I>, which integrates
     features from <A href="http://www.mozart-oz.org/">Oz/Mozart</A> with the
     language
