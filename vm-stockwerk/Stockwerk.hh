@@ -32,6 +32,8 @@
 #include "generic/StackFrame.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Pickle.hh"
+#include "generic/Float.hh"
+#include "generic/Double.hh"
 #include "generic/Debug.hh"
 #include "generic/RootSet.hh"
 #include "generic/UniqueString.hh"
