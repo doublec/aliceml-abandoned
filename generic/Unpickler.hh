@@ -23,7 +23,6 @@ class Unpickler {
 public:
   // Exceptions
   static word Corrupt;
-  static word aliceFunctionTransformName;
 
   // Unpickler Static Constructor
   static void Init();

@@ -23,7 +23,6 @@
 #include "adt/Stack.hh"
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
-#include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
 #include "generic/Backtrace.hh"
 #include "generic/TaskStack.hh"
@@ -36,7 +35,7 @@
 //--** these should be factored out:
 #include "alice/Data.hh"
 #include "alice/PrimitiveTable.hh"
-#include "alice/AbstractCodeInterpreter.hh"
+#include "alice/AliceConcreteCode.hh"
 
 // pickle    ::= int | chunk | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>
@@ -486,14 +485,7 @@ word ApplyTransform(Chunk *f, word x) {
     return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
   } else if ((len == sizeof("Alice.function") - 1) &&
 	     !std::memcmp(fs, "Alice.function", len)) {
-    ConcreteCode *concreteCode =
-      ConcreteCode::New(AbstractCodeInterpreter::self, 2);
-    Chunk *name =
-      Store::DirectWordToChunk(Unpickler::aliceFunctionTransformName);
-    Transform *transform = Transform::New(name, x);
-    concreteCode->Init(0, x);
-    concreteCode->Init(1, transform->ToWord());
-    return concreteCode->ToWord();
+    return AliceConcreteCode::New(TagVal::FromWordDirect(x))->ToWord();
   } else if ((len == sizeof("Alice.constructor") - 1) &&
 	     !std::memcmp(fs, "Alice.constructor", len)) {
     Block *xp = Store::WordToBlock(x);
@@ -993,7 +985,6 @@ Interpreter::Result Unpickler::Load(Chunk *filename, TaskStack *taskStack) {
 }
 
 word Unpickler::Corrupt;
-word Unpickler::aliceFunctionTransformName;
 
 void Unpickler::Init() {
   // Setup internal Interpreters
@@ -1004,6 +995,4 @@ void Unpickler::Init() {
   PickleLoadInterpreter::Init();
   Corrupt = UniqueConstructor::New(String::New("Component.Corrupt"))->ToWord();
   RootSet::Add(Corrupt);
-  aliceFunctionTransformName = String::New("Alice.function")->ToWord();
-  RootSet::Add(aliceFunctionTransformName);
 }
