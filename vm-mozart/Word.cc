@@ -22,6 +22,10 @@
 #define TRUNCATE(v, n) \
 	(((unsigned int) (v << (MAXWIDTH - n))) >> (MAXWIDTH - n))
 
+class MsgBuffer;
+void marshalNumber(unsigned int i, MsgBuffer *bs);
+unsigned int unmarshalNumber(MsgBuffer *bs);
+
 class Word: public OZ_Extension {
 public:
   static int id;
@@ -84,7 +88,12 @@ public:
 
   void sCloneRecurseV(void) {}
 
-  //--** missing: marshalling
+  OZ_Boolean marshalV(void *p) {
+    MsgBuffer *bs = (MsgBuffer *) p;
+    marshalNumber(size, bs);
+    marshalNumber(value, bs);
+    return OZ_TRUE;
+  }
 };
 
 int Word::id;
@@ -104,6 +113,13 @@ inline static Word *OZ_WordToC(OZ_Term t) {
 
 #define OZ_word(size, value) OZ_extension(new Word(size, value))
 #define OZ_RETURN_WORD(size, value) OZ_RETURN(OZ_word(size, value))
+
+OZ_Term unmarshalWord(void *p) {
+  MsgBuffer *bs = (MsgBuffer *) p;
+  int size = unmarshalNumber(bs);
+  int value = unmarshalNumber(bs);
+  return OZ_word(size, value);
+}
 
 //
 // Builtins
@@ -218,5 +234,6 @@ OZ_C_proc_interface *oz_init_module(void) {
     {0, 0, 0, 0}
   };
   Word::id = oz_newUniqueId();
+  oz_registerExtension(Word::id, unmarshalWord);
   return interface;
 }
