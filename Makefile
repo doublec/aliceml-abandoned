@@ -110,13 +110,15 @@ seam.dll: Base.o InitSeam.o store adt generic
 	$(LD) $(LDFLAGS) -shared -o $@ Base.o InitSeam.o $(SEAM_OBJS) $(LIBS)
 
 alice.dll: seam.dll alice
-	$(LD) $(LDFLAGS) -shared -o $@ $(ALICE_OBJS) seam.dll $(LIBS)
+	$(LD) $(LDFLAGS) $(ALICE_DLL_EXTRA_LDFLAGS) \
+	-shared -o $@ $(ALICE_OBJS) seam.dll $(LIBS)
 
 alice.exe: AliceMain.o alice.dll
 	$(LD) $(LDFLAGS) -o $@ $< alice.dll seam.dll
 
 java.dll: seam.dll java
-	$(LD) $(LDFLAGS) -shared -o $@ $(JAVA_OBJS) seam.dll $(LIBS)
+	$(LD) $(LDFLAGS) $(JAVA_DLL_EXTRA_LDFLAGS) \
+	-shared -o $@ $(JAVA_OBJS) seam.dll $(LIBS)
 
 java.exe: JavaMain.o java.dll
 	$(LD) $(LDFLAGS) -o $@ $< java.dll seam.dll
