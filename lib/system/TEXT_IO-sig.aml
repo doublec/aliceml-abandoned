@@ -28,7 +28,7 @@ signature TEXT_IO =
 	val input: instream -> vector
 	val input1: instream -> elem option
 	val inputN: instream * int -> vector
-(*	val inputLine: instream -> string*)
+	val inputLine: instream -> string
 	val inputAll: instream -> vector
 	val canInput: instream * int -> int option
 	val lookahead: instream -> elem option
@@ -58,10 +58,8 @@ signature TEXT_IO =
 
 	val print: string -> unit
 
-(*
 	val scanStream:
 	    ((elem, StreamIO.instream) StringCvt.reader ->
 	     ('a, StreamIO.instream) StringCvt.reader) ->
 	    instream -> 'a option
-*)
 end

@@ -21,11 +21,11 @@ import signature TEXT_IO      from "TEXT_IO-sig"
 
 structure TextIO :> TEXT_IO =
     struct
-	structure TextStreamIO =
+	structure TextStreamIO = (*--** : TEXT_STREAM_IO *)
 	    StreamIO(structure PrimIO = TextPrimIO
 		     structure Vector = CharVector
 		     structure Array = CharArray
-		     val someElem = #"\000")
+		     val someElem = #"\n")
 	structure TextImperativeIO =
 	    ImperativeIO(structure StreamIO = TextStreamIO
 			 structure Vector = CharVector)
@@ -148,6 +148,19 @@ structure TextIO :> TEXT_IO =
 		    (TextStreamIO.mkInstream (reader, v))
 	    end
 
+	fun inputLine f =
+	    case input1 f of
+		SOME c =>
+		    if c = #"\n" then "\n"
+		    else String.implode (c::inputLine' f)
+	      | NONE => ""
+	and inputLine' f =
+	    case input1 f of
+		SOME c =>
+		    if c = #"\n" then [c]
+		    else c::inputLine' f
+	      | NONE => [#"\n"]
+
 	fun openString s =
 	    let
 		val reader = TextPrimIO.openVector s
@@ -207,6 +220,11 @@ structure TextIO :> TEXT_IO =
 	    end
 
 	fun print s = output (stdOut, s)
+
+	fun scanStream scan f =
+	    case scan StreamIO.input1 (getInstream f) of
+		NONE => NONE
+	      | SOME (x, f') => (setInstream (f, f'); SOME x)
     end
 
 val print = TextIO.print
