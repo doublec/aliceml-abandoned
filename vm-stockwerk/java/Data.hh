@@ -11,6 +11,13 @@
 //   $Revision$
 //
 
+#ifndef __JAVA__DATA_HH__
+#define __JAVA__DATA_HH__
+
+#if defined(INTERFACE)
+#pragma interface "java/Data.hh"
+#endif
+
 #include "store/Store.hh"
 
 class JavaLabel {
@@ -36,6 +43,7 @@ protected:
     CLASS_POS, // Class
     SIZE_POS, // int
     BASE_SIZE
+    // ... elements
   };
 public:
   static Array *New(word type, u_int length) {
@@ -144,12 +152,16 @@ protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // String
+    CONSTANT_POOL_POS, // Array(word)
     SUPER_POS, // Class
     INTERFACES_POS, // Array(Class)
     FIELDS_POS, // Array(FieldInfo)
     METHODS_POS, // Array(MethodInfo)
-    BASE_SIZE
+    SIZE
   };
+public:
+  bool Verify();
+  Class *Prepare();
 };
 
 class Class: public ClassInfo {
@@ -157,7 +169,9 @@ protected:
   enum {
     VIRTUAL_TABLE_POS, // Block(Closure)
     LOCK_POS,
-    SIZE
+    INITIALIZATION_THREAD_POS, // Thread | int(0)
+    BASE_SIZE
+    // ... static fields
   };
 };
 
@@ -166,5 +180,8 @@ protected:
   enum {
     CLASS_POS, // Class
     BASE_SIZE
+    // ... instance fields
   };
 };
+
+#endif
