@@ -26,11 +26,12 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
-typedef int sig_atomic_t;
+typedef int atomic_int;
 #else
 #include <sys/types.h>
 #include <time.h>
 #include <sys/time.h>
+typedef sig_atomic_t atomic_int;
 #endif
 
 //--** to be done: GetTime() wraps around every 71 weeks
@@ -42,7 +43,7 @@ word alarmHandlers; // sorted by time (ascending)
 
 struct SigHandler {
   int signal;
-  volatile sig_atomic_t pending;
+  volatile atomic_int pending;
   word handlers;
 };
 
@@ -192,7 +193,7 @@ HANDLE Timer::thread;
 #else
 class Timer {
 private:
-  static volatile sig_atomic_t time;
+  static volatile atomic_int time;
 
   static void Update(int) {
     time++;
@@ -219,7 +220,7 @@ public:
   }
 };
 
-volatile sig_atomic_t Timer::time;
+volatile atomic_int Timer::time;
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
