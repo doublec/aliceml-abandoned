@@ -199,7 +199,7 @@ structure Buffer =
                                Gtk.textBufferSetModified(buf, false);
                                Gtk.textBufferGetStartIter(buf, iter);
                                Gtk.textBufferPlaceCursor(buf, iter)
-                           end handle IO.Io => FileDialog.message "IO error. Could not open file."
+                           end handle IO.Io _ => FileDialog.message "IO error. Could not open file."
               else ();
               BufferMap.insertDisjoint(bufferMap, id, ret);
               ret
@@ -237,7 +237,7 @@ structure Buffer =
                                      TextIO.output(file, str);
                                      TextIO.closeOut file;
                                      Gtk.textBufferSetModified(buf, false)
-                                 end handle IO.Io => FileDialog.message "IO Error. Could not save file."
+                                 end handle IO.Io _ => FileDialog.message "IO Error. Could not save file."
                              else ();
                              true)
           end
