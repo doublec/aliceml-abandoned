@@ -46,5 +46,42 @@ define
 		   end
       'member':    Dictionary.member
       'isEmpty':   Dictionary.isEmpty
+      'app':	   fun {$ F D}
+		       P = case {Procedure.arity F}
+			   of 2 then proc {$ X} {F X _} end
+			   [] _ then proc {$ X}
+					  {Procedure.apply F
+						{Append {Record.toList X} [_]}}
+				     end
+			   end
+		   in
+		       {List.forAll {Dictionary.items D} P}
+		       unit
+		   end
+      'appi':	   fun {$ F D}
+		       P = case {Procedure.arity F}
+			   of 3 then proc {$ K X} {F K X _} end
+			   [] 2 then proc {$ K X} {F K#X _} end
+			   end
+		   in
+		       {List.forAll {Dictionary.entries D} P}
+		       unit
+		   end
+      'fold':	   fun {$ F Y D}
+		       P = case {Procedure.arity F}
+			   of 3 then F
+			   [] 2 then fun {$ X Y} {F X#Y} end
+			   end
+		   in
+		       {List.foldR {Dictionary.items D} P Y}
+		   end
+      'foldi':	   fun {$ F Y D}
+		       P = case {Procedure.arity F}
+			   of 4 then fun {$ K#X Y} {F K X Y} end
+			   [] 2 then fun {$ K#X Y} {F K#X#Y} end
+			   end
+		   in
+		       {List.foldR {Dictionary.entries D} P Y}
+		   end
    )
 end
