@@ -117,3 +117,7 @@ AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/
 echo "Now making scripts executable..."
 (cd bin; chmod +x dmlc Exec ExecTya ExecSunJit MultiExec)
 echo "Done."
+
+echo "Creating classes subdirectory."
+test -e java/classes || mkdir java/classes
+echo "Done."
