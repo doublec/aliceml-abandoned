@@ -12,9 +12,9 @@
  *
  *)
 
-import structure FD from "FD"
+import structure FD       from "FD"
 import structure UnsafeFS from "UnsafeFS"
-import signature FS from "FS-sig"
+import signature FS       from "FS-sig"
 
 local
     open FD
