@@ -441,28 +441,7 @@ structure StringCvt :> STRING_CVT =
 
 (* Int *)
 
-signature INT =
-    sig
-	type int
-
-	val + : int * int -> int
-
-	val scan:
-	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
-	    (int * 'a) option
-
-	val compare: int * int -> order
-
-	val toString: int -> string
-
-	val fromString: string -> int option
-
-	val max: int * int -> int
-
-	val fromInt: int -> int
-    end
-
-structure Int :> INT =
+structure Int =
     struct
 	type int = int
 
@@ -541,11 +520,41 @@ structure Int :> INT =
 	fun max (i, j) = if i < j then j else i
 
 	fun fromInt i = i
+	fun fromLarge i = i
+	fun toLarge i = i
     end
+
+structure LargeInt = Int
+
+signature INTEGER =
+    sig
+	type int
+
+	val + : int * int -> int
+	val >= : int * int -> bool
+
+	val scan:
+	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
+	    (int * 'a) option
+
+	val compare: int * int -> order
+
+	val toString: int -> string
+
+	val fromString: string -> int option
+
+	val max: int * int -> int
+
+	val fromInt: Int.int -> int
+	val fromLarge: LargeInt.int -> int
+	val toLarge: int -> LargeInt.int
+    end
+
+structure Int :> INTEGER = Int
+structure LargeInt :> INTEGER = Int
 
 type int = Int.int
 
-structure LargeInt = Int
 
 
 (* Word *)
@@ -558,6 +567,7 @@ structure Word =
 	    __primitive fromInt' : int * int -> word = "Word.fromInt'"
 	in
 	    fun fromInt x = fromInt' (31, x)
+	    fun fromLargeInt x = fromInt' (31, x)
 	end
 
 	__primitive toInt : word -> int = "Word.toInt"
@@ -572,6 +582,9 @@ structure Word =
 	__primitive op>> : word * word -> word = "Word.>>"
 	__primitive op~>> : word * word -> word = "Word.~>>"
 	__primitive toString : word -> string = "Word.toString"
+
+	fun fromLarge w = w
+	fun toLarge w = w
 
 	local
 	    open StringCvt
@@ -633,9 +646,10 @@ structure Word =
 	end
     end
 
+structure LargeWord = Word
+
 type word = Word.word
 
-structure LargeWord = Word
 
 (* Real *)
 
@@ -649,6 +663,7 @@ structure Real =
     end
 
 structure LargeReal = Real
+
 
 (* Array *)
 
