@@ -21,15 +21,13 @@ import structure Path from "x-alice:/lib/rtt/Path"
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Type from "x-alice:/lib/rtt/Type"
-import structure Component from "x-alice:/lib/system/Component"
-import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure Url from "x-alice:/lib/system/Url" 
 
 import structure Doc from "Doc"
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
+
 import structure Settings from "Settings"
 import structure Dictionaries from "Dictionaries"
 import structure Update from "Update"
@@ -46,30 +44,6 @@ structure CreateTree :> CREATE_TREE =
 struct
     
     exception createTree_unknownNode   
-
-    (* identification of the path of promises and packages *)
-
-    val coreSign = Inf.asSig(Option.valOf 
-		(Component.inf(ComponentManager.link 
-		  (Url.fromString "x-alice:/lib/fundamental/Core")))) 
-    val packageSign = Inf.asSig(Option.valOf 
-		(Component.inf(ComponentManager.link 
-		  (Url.fromString "x-alice:/lib/fundamental/Package")))) 
-
-
-    (* returns the path (used for promises and packages) *)
-
-     fun lookupPath(sign, modLab, typLab) =
-	 let val sign' = Inf.asSig(Inf.lookupMod(sign, 
-						 Label.fromString modLab))
-	     val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
-	     val typ'  = if Type.isApply typ 
-			     then #1(Type.asApply typ) 
-			 else typ
-	 in Type.asCon typ'
-	 end
-
-     (***************************************)
 
      (*** creates a new tree ***)
 
