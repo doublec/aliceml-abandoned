@@ -6,20 +6,26 @@
 
   <PRE>
     signature HTTP_SERVER
-    structure HttpServer : HTTP_SERVER
-  </PRE>
-
-<?php section("import", "import") ?>
-
-  <PRE>
-    import signature HTTP_SERVER from "x-alice:/lib/system/HTTP_SERVER-sig"
-    import structure HttpServer from "x-alice:/lib/system/HttpServer"
-  </PRE>
+    structure HttpServer : HTTP_SERVER</PRE>
 
   <P>
     This structure provides a simple, extensible server for the HTTP
     protocol as specified in RFC&nbsp;2616.
   </P>
+
+  <P>
+    See also:
+    <A href="url.php3"><TT>Url</TT></A>,
+    <A href="http.php3"><TT>Http</TT></A>,
+    <A href="http-client.php3"><TT>HttpClient</TT></A>,
+    <A href="socket.php3"><TT>Socket</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import structure HttpServer from "x-alice:/lib/system/HttpServer"
+    import signature HTTP_SERVER from "x-alice:/lib/system/HTTP_SERVER-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -30,8 +36,7 @@
 
 	val <A href="#start">start</A> : int option -> int
 	val <A href="#register">register</A> : <A href="url.php3#t">Url.t</A> * handler -> unit
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -63,15 +68,6 @@
 	Only the path component or <I>url</I> is respected.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="url.php3"><TT>Url</TT></A>,
-    <A href="http.php3"><TT>Http</TT></A>,
-    <A href="http-client.php3"><TT>HttpClient</TT></A>,
-    <A href="socket.php3"><TT>Socket</TT></A>
-  </DD></DL>
 
 <?php section("examples", "examples") ?>
 

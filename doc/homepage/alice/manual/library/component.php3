@@ -6,8 +6,7 @@
 
   <PRE>
     signature COMPONENT
-    structure Component : COMPONENT
-  </PRE>
+    structure Component : COMPONENT</PRE>
 
   <P>
     This structure provides components as first-class entities and
@@ -24,12 +23,17 @@
     managers</EM>.
   </P>
 
+  <P>
+    See also:
+    <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
+    <A href="resolver.php3"><TT>Resolver</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature COMPONENT from "x-alice:/lib/system/COMPONENT-sig"
     import structure Component from "x-alice:/lib/system/Component"
-  </PRE>
+    import signature COMPONENT from "x-alice:/lib/system/COMPONENT-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -58,8 +62,7 @@
 	val <A href="#inf">inf</A>: component -> Inf.t option
 
 	functor <A href="#MkManager">MkManager</A>() : COMPONENT_MANAGER where type component = component
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -191,12 +194,5 @@
 	resolver.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
-    <A href="resolver.php3"><TT>Resolver</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

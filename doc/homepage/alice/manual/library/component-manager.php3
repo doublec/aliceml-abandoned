@@ -5,8 +5,7 @@
 <?php section("synopsis", "synopsis") ?>
 
   <PRE>
-    signature COMPONENT_MANAGER
-  </PRE>
+    signature COMPONENT_MANAGER</PRE>
 
   <P>
     A <EM>component manager</EM> is responsible for loading and linking
@@ -15,15 +14,20 @@
     All loading, linking, evaluating, and signature matching is performed
     lazily.  For this reason components are initially returned as by-need
     futures, which can either be bound (on success) or failed.  See the
-    description of exception <TT>Component.Failure</TT> to see how these
-    "asynchronous" exceptions are handled.
+    description of exception <TT><A href="component.php3#Failure"
+    >Component.Failure</A></TT> to see how these "asynchronous"
+    exceptions are handled.
+  </P>
+
+  <P>
+    See also:
+    <A href="component.php3"><TT>Component</TT></A>
   </P>
 
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
-  </PRE>
+    import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -50,8 +54,7 @@
 	val <A href="#lookup">lookup</A> : <A href="url.php3#t">Url.t</A> -> component option
 
 	val <A href="#start">start</A> : <A href="url.php3#t">Url.t</A> -> unit
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -149,11 +152,5 @@
 	if this fails.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="component.php3"><TT>Component</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

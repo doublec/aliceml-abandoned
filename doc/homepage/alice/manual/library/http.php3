@@ -6,8 +6,7 @@
 
   <PRE>
     signature HTTP
-    structure Http : HTTP
-  </PRE>
+    structure Http : HTTP</PRE>
 
   <P>
     This structure serves to represent and analyze requests and responses
@@ -15,12 +14,19 @@
     a subset of HTTP Version 1.1 as specified by RFC&nbsp;2616.
   </P>
 
+  <P>
+    See also:
+    <A href="url.php3"><TT>Url</TT></A>,
+    <A href="http-client.php3"><TT>HttpClient</TT></A>,
+    <A href="http-server.php3"><TT>HttpServer</TT></A>,
+    <A href="socket.php3"><TT>Socket</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature HTTP from "x-alice:/lib/system/HTTP-sig"
     import structure Http from "x-alice:/lib/system/Http"
-  </PRE>
+    import signature HTTP from "x-alice:/lib/system/HTTP-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -49,8 +55,7 @@
 
 	val <A href="#reasonPhrase">reasonPhrase</A> : int -> string
 	val <A href="#makeResponse">makeResponse</A> : simple_response -> response
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -177,15 +182,6 @@
 	></TT>.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="url.php3"><TT>Url</TT></A>,
-    <A href="http-client.php3"><TT>HttpClient</TT></A>,
-    <A href="http-server.php3"><TT>HttpServer</TT></A>,
-    <A href="socket.php3"><TT>Socket</TT></A>
-  </DD></DL>
 
 <?php section("examples", "examples") ?>
 

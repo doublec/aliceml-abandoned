@@ -6,8 +6,7 @@
 
   <PRE>
     signature HTTP_CLIENT
-    structure HttpClient : HTTP_CLIENT
-  </PRE>
+    structure HttpClient : HTTP_CLIENT</PRE>
 
   <P>
     This structure implements a simple client for the HTTP protocol
@@ -22,12 +21,20 @@
     version 1.1.
   </P>
 
+  <P>
+    See also:
+    <A href="url.php3"><TT>Url</TT></A>,
+    <A href="http.php3"><TT>Http</TT></A>,
+    <A href="http-server.php3"><TT>HttpServer</TT></A>,
+    <A href="resolver.php3"><TT>Resolver</TT></A>,
+    <A href="socket.php3"><TT>Socket</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature HTTP_CLIENT from "x-alice:/lib/system/HTTP_CLIENT-sig"
     import structure HttpClient from "x-alice:/lib/system/HttpClient"
-  </PRE>
+    import signature HTTP_CLIENT from "x-alice:/lib/system/HTTP_CLIENT-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -41,8 +48,7 @@
 	val <A href="#request">request</A> : <A href="url.php3#t">Url.t</A> * <A href="http.php3#request">Http.request</A> -> <A href="http.php3#response">Http.response</A>
 	val <A href="#get">get</A> : <A href="url.php3#t">Url.t</A> -> <A href="http.php3#response">Http.response</A>
 	val <A href="#post">post</A> : <A href="url.php3#t">Url.t</A> * document -> <A href="http.php3#response">Http.response</A>
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -97,16 +103,6 @@
 	if <I>url</I> does not specify a well-formed authority.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="url.php3"><TT>Url</TT></A>,
-    <A href="http.php3"><TT>Http</TT></A>,
-    <A href="http-server.php3"><TT>HttpServer</TT></A>,
-    <A href="resolver.php3"><TT>Resolver</TT></A>,
-    <A href="socket.php3"><TT>Socket</TT></A>
-  </DD></DL>
 
 <?php section("examples", "examples") ?>
 

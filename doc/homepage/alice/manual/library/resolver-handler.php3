@@ -5,8 +5,7 @@
 <?php section("synopsis", "synopsis") ?>
 
   <PRE>
-    signature RESOLVER_HANDLER
-  </PRE>
+    signature RESOLVER_HANDLER</PRE>
 
   <P>
     This signature represents handlers as used by <A href="resolver.php3"
@@ -17,11 +16,16 @@
     may or may not return a URL.
   </P>
 
+  <P>
+    See also:
+    <A href="resolver.php3"><TT>Resolver</TT></A>,
+    <A href="url.php3"><TT>Url</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature RESOLVER_HANDLER from "x-alice:/lib/system/RESOLVER_HANDLER-sig"
-  </PRE>
+    import signature RESOLVER_HANDLER from "x-alice:/lib/system/RESOLVER_HANDLER-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -41,8 +45,7 @@
 	val <A href="#custom">custom</A>: string * (string -> <A href="url.php3#t">Url.t</A> option) -> handler
 
 	val <A href="#parse">parse</A>: string -> handler list
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -130,12 +133,5 @@
 	specified by implementations of this signature.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="resolver.php3"><TT>Resolver</TT></A>,
-    <A href="url.php3"><TT>Url</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

@@ -6,8 +6,7 @@
 
   <PRE>
     signature REMOTE
-    structure Remote : REMOTE
-  </PRE>
+    structure Remote : REMOTE</PRE>
 
   <P>
     This structure provides support for the implementation of distributed
@@ -26,12 +25,18 @@
     Accordingly, tickets are URLs using the <TT>http</TT> scheme.
   </P>
 
+  <P>
+    See also:
+    <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
+    <A href="url.php3"><TT>Url</TT></A>,
+    <A href="pickle.php3"><TT>Pickle</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"
     import structure Remote from "x-alice:/lib/distribution/Remote"
-  </PRE>
+    import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -56,8 +61,7 @@
 			signature RESULT
 			functor Start(ComponentManager :
 					  <A href="component-manager.php3">COMPONENT_MANAGER</A>) : RESULT) : RESULT
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -172,13 +176,5 @@
 	structure.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
-    <A href="url.php3"><TT>Url</TT></A>,
-    <A href="pickle.php3"><TT>Pickle</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

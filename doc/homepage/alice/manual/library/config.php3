@@ -6,8 +6,7 @@
 
   <PRE>
     signature CONFIG
-    structure Config : CONFIG
-  </PRE>
+    structure Config : CONFIG</PRE>
 
   <P>
     The <TT>Config</TT> structure serves to provide system information
@@ -17,9 +16,8 @@
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature CONFIG from "x-alice:/lib/system/CONFIG-sig"
     import structure Config from "x-alice:/lib/system/Config"
-  </PRE>
+    import signature CONFIG from "x-alice:/lib/system/CONFIG-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -35,8 +33,7 @@
 
 	val <A href="#pathEscape">pathEscape</A> : char option
 	val <A href="#pathSeparator">pathSeparator</A> : char
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 

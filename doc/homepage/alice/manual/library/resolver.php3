@@ -5,8 +5,7 @@
 
   <PRE>
     signature RESOLVER
-    structure Resolver : RESOLVER
-  </PRE>
+    structure Resolver : RESOLVER</PRE>
 
   <P>
     This structure provides functionality to map symbolic resource names
@@ -32,12 +31,18 @@
     <TT>TextIO.stdErr</TT>.
   </P>
 
+  <P>
+    See also:
+    <A href="resolver-handler.php3"><TT>RESOLVER_HANDLER</TT></A>,
+    <A href="component.php3"><TT>Component</TT></A>,
+    <A href="http-client.php3"><TT>HttpClient</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature RESOLVER from "x-alice:/lib/system/RESOLVER-sig"
-    import signature Resolver from "x-alice:/lib/system/Resolver"
-  </PRE>
+    import structure Resolver from "x-alice:/lib/system/Resolver"
+    import signature RESOLVER from "x-alice:/lib/system/RESOLVER-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -55,8 +60,7 @@
 
 	val <A href="#new">new</A>: string * Handler.handler list -> resolver
 	val <A href="#localize">localize</A>: resolver -> string -> result option
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
@@ -138,13 +142,5 @@
 	if localization was successful, <TT>NONE</TT> otherwise.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="resolver-handler.php3"><TT>RESOLVER_HANDLER</TT></A>,
-    <A href="component.php3"><TT>Component</TT></A>,
-    <A href="http-client.php3"><TT>HttpClient</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

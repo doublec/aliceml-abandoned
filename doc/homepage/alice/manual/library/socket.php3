@@ -6,8 +6,7 @@
 
   <PRE>
     signature SOCKET
-    structure Socket : SOCKET
-  </PRE>
+    structure Socket : SOCKET</PRE>
 
   <P>
     This structure provides a simplified interface for creating INET socket
@@ -20,8 +19,7 @@
 
   <PRE>
     import signature SOCKET from "x-alice:/lib/system/SOCKET-sig"
-    import structure Socket from "x-alice:/lib/system/Socket"
-  </PRE>
+    import structure Socket from "x-alice:/lib/system/Socket"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -46,8 +44,7 @@
 	val <A href="#output1">output1</A> : socket * char -> unit
 
 	val <A href="#close">close</A> : socket -> unit
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 

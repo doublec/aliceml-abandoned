@@ -5,8 +5,7 @@
 
   <PRE>
     signature URL
-    structure Url : URL
-  </PRE>
+    structure Url : URL</PRE>
 
   <P>
     This structure provides functions for parsing URLs, extracting URL
@@ -21,9 +20,8 @@
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature URL from "x-alice:/lib/utility/URL-sig"
     import signature Url from "x-alice:/lib/utility/Url"
-  </PRE>
+    import signature URL from "x-alice:/lib/utility/URL-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 
@@ -68,8 +66,7 @@
 	val <A href="#setPath">setPath</A>: url * path -> url
 	val <A href="#setQuery">setQuery</A>: url * query -> url
 	val <A href="#setFragment">setFragment</A>: url * fragment -> url
-    end
-  </PRE>
+    end</PRE>
 
 <?php section("description", "description") ?>
 
