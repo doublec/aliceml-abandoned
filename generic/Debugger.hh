@@ -17,7 +17,6 @@
 #if defined(INTERFACE)
 #pragma interface "generic/Debugger.hh"
 #endif
-//#include "generic/Thread.hh"
 #include "generic/RootSet.hh"
 
 class Thread;
