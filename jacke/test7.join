@@ -1,8 +1,0 @@
-val fileParser = fn f =>
-	let val ins = TextIO.openIn f
-	    val lexer = Lexer.makeLexer (fn n => TextIO.inputN (ins,n))
-	    val result = Parse.parse lexer
-	    val _ = TextIO.closeIn ins
-	in 
-	    result
-	end	 

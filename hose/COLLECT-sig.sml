@@ -1,6 +1,0 @@
-signature COLLECT =
-    sig
-	(* collect : replaces all regids with there value and removes their declaration
-	 *)
-	val collect : AbsSyn.lex list -> AbsSyn.lex list
-    end

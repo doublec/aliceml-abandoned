@@ -1,4 +1,0 @@
-import structure Assert        from "../lib/utility/Assert"
-import signature Parser_TOKENS from "SML_PARSER-sig"
-import signature LEXER_ERROR   from "LEXER_ERROR-sig"
-import structure Error         from "SMLError"
