@@ -13,10 +13,8 @@ is
 	../misc/sources.cm
 	../error/sources.cm
 	../common/prebound.cm
+	../common/name.cm
 
-	NAME.sig
-	Name.sml
 	ABSTRACT_GRAMMAR.sig
 	MakeAbstractGrammar.sml
-
 	AbstractGrammar.sml

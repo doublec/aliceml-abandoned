@@ -19,9 +19,8 @@ Group
 is
 
 	../misc/sources.cm
+	name.cm
 
-	NAME.sig
-	Name.sml
 	LABEL.sig
 	Label.sml
 	PATH.sig

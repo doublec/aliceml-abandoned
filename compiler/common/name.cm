@@ -1,0 +1,11 @@
+Group
+
+	signature NAME
+	structure Name
+
+is
+
+	../misc/sources.cm
+
+	NAME.sig
+	Name.sml

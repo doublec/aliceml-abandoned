@@ -1,5 +1,9 @@
 Group
 
+	signature INTERMEDIATE_GRAMMAR
+	functor MakeIntermediateGrammar
+	structure IntermediateGrammar
+
 is
 
 	../misc/sources.cm
