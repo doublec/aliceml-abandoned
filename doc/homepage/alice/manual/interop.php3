@@ -1,7 +1,7 @@
 <?php include("macros.php3"); ?>
 
 <?php heading("Interoperability with Mozart",
-	      "interoper<BR>ability") ?>
+	      "mozart <BR> interoperability") ?>
 
 <?php section("overview", "overview") ?>
   <P>The current Alice system is based on <A href="http://www.mozart-oz.org/"

@@ -28,7 +28,8 @@
     <LI> <A href="manual/pickling.php3"><I>Pickling</I></A>:
 	 higher-order and platform-independent, type-safe persistence
     <LI> <A href="manual/constraints.php3"><I>Constraints</I></A>:
-	 solving hard problems using constraints and programmable search
+	 solving combinatorical problems using constraints and programmable
+	 search
   </UL>
 
   <P>
@@ -44,7 +45,7 @@
     <LI> <A href="manual/usage.php3#linker"><I>Static linker</I></A>:
 	 type-safe bundling of components
     <LI> <A href="manual/inspector.php3"><I>Inspector</I></A>:
-	 a tool for dynamically inspecting Alice data structures
+	 a tool for interactively inspecting data structures
     <LI> <A href="manual/explorer.php3"><I>Explorer</I></A>:
 	 a tool for interactively investigating search problems
     <LI> <A href="manual/gtk.php3"><I>Gtk+</I></A>:

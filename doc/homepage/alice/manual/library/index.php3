@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The Alice library", "the <BR> alice <BR> library") ?>
+<?php heading("The Alice library", "the\nalice\nlibrary") ?>
 
 
 <?php section("structure", "structure") ?>

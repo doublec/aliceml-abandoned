@@ -16,12 +16,12 @@ INSTALLFILES_DOWNLOAD_0 = \
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps opaque.ps
 INSTALLFILES_MANUAL_0 = \
-	style.css macros.php3 menu.php3 logo-small.gif \
-	index.php3 \
+	style.css macros.php3 menu.php3 logo-small.gif logo-large.gif \
+	index.php3 features.php3 \
 	language.php3 futures.php3 types.php3 modules.php3 sugar.php3 \
 	threads.php3 components.php3 \
 	packages.php3 pickling.php3 constraints.php3 gtk.php3 \
-	extensions.php3 incompatibilities.php3 usage.php3 \
+	incompatibilities.php3 usage.php3 \
 	explorer.php3 interop.php3 examples.php3 tour.php3 \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \

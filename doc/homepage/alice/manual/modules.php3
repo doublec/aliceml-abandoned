@@ -1,7 +1,7 @@
 <?php include("macros.php3"); ?>
 
 <?php heading("Extensions to the Module Language",
-		"module <BR> language <BR> extensions") ?>
+		"module\nlanguage\nextensions") ?>
 
 
 <?php section("overview", "overview") ?>
@@ -27,11 +27,12 @@
 
 <?php section("local", "local modules") ?>
 
-<P>Alice discards SML's stratification of the core and module language. Core
-declarations (<I>dec</I>), structure declarations (<I>strdec</I>), and toplevel
-declarations (<I>topdec</I>) are collapsed into one class. As a consequence,
-structures can be declared local to an expression (via <TT>let</TT>) and
-functors as well as signatures can be nested into structures. For example: </P>
+<P>Unlike SML, Alice ML has no stratification between core and module language.
+Core declarations (<I>dec</I>), structure declarations (<I>strdec</I>), and
+toplevel declarations (<I>topdec</I>) are collapsed into one class. As a
+consequence, structures can be declared local to an expression (via
+<TT>let</TT>) and functors as well as signatures can be nested into structures.
+For example: </P>
 
 <PRE class=code>
 fun sortIntList ns =
@@ -58,16 +59,14 @@ end
 
 structure M = let structure Z = F (X) in G (Y) end</PRE>
 
-<P>Higher-order functors can be created more directly, though. The above
-example may be simplified to</P>
+<P>Functors are truly higher-order, so that the above example may be simplified
+to curried form:</P>
 
 <PRE class=code>
-functor F (X : S1) (Y : S2) = struct (* ... *) end
+functor F (X : S1) (Y : S2) = struct (* ... *) end</PRE>
 
-structure M = F (X) (Y)</PRE>
-
-<P>Curried application can be written as in the core language, without
-parentheses (see <A href="#sugar-parens">below</A>):</P>
+<P>Application can be written as in the core language, without parentheses (see
+<A href="#sugar-parens">below</A>):</P>
 
 <PRE class=code>
 structure M = F X Y</PRE>
@@ -101,7 +100,7 @@ signature:</P>
 <PRE class=code>
 structure F : fct (X : S1) -> fct (Y : S2) -> sig (* ... *) end</PRE>
 
-<P>As a derived form the following SML/NJ compatible syntax is provided for
+<P>As a derived form, the following SML/NJ compatible syntax is provided for
 functor descriptions in signatures:</P>
 
 <PRE class=code>
@@ -155,14 +154,14 @@ functor F (signature S structure X : S) = (* ... *)</PRE>
 
 <P>The Alice <A href="library.php3">library</A> contains several examples of
 such polymorphic functors, e.g. the <A href="#lazy"><TT>ByNeed</TT></A> functor
-or functors provided by the <A href="library/component-manager.php3">component
-manager</A>.</P>
+or the functors provided by the <A
+href="library/component-manager.php3">component manager</A>.</P>
 
 <DIV class=note>
 
-<P>Note that abstract signatures render the type system of Alice undecidable.
-We do not consider this a problem in practice, since the simplest program to
-make the type checker loop already is highly artificial:</P>
+<P><I>Note:</I> Abstract signatures render the type system of Alice ML
+undecidable. We do not consider this a problem in practice, since the simplest
+program to make the type checker loop already is highly artificial:</P>
 
 <PRE class=code>
 signature I =
@@ -254,7 +253,7 @@ application <TT>F ()</TT>. Evaluation will be triggered if the result module is
 requested.</P>
 
 <P>The most frequent cause of lazy module evaluation is the <A
-href="dynamics.php3#components">component system</A>. Every structure that is
+href="components.php3">component system</A>. Every structure that is
 imported from another component is evaluated lazily.</P>
 
 
@@ -295,11 +294,11 @@ structure M :> S = struct (* ... *) end
 open M
 val z = x ++ x</PRE>
 
-<P>Some structures of the Alice library, e.g. in the <A
-href="library/linear.php3">linear constraint</A> component, contain infix
-declarations that can be used comfortably this way.</P>
+<P>Some modules of the Alice library, e.g. in the <A
+href="library/linear.php3">linear constraint</A> structure, define infix
+operators that can be used conveniently this way.</P>
 
-<P class=note><EM>Note:</EM> this feature produces a syntactic <A
+<P class=note><I>Note:</I> This feature produces a syntactic <A
 href="incompatibilities.php3#openinfix">incompatibility</A> with SML showing up
 in some rare cases.</P>
 
@@ -321,7 +320,7 @@ structure Y = F A B</PRE>
 
 <P>The derived form for functor arguments, allowing a list <I>dec</I> of
 declarations being given instead of a structure expression, has been
-generalized. In a structure expression, parentheses may either enclose another
+generalized: in a structure expression, parentheses may either enclose another
 <I>strexp</I>, or a <I>dec</I>. For example,</P>
 
 <PRE class=code>
@@ -343,7 +342,7 @@ identifier:</P>
 structure _ = Pickle.SaveVal (type t = int  val x = 43)</PRE>
 
 <P>In this example, the functor application is performed solely for its side
-effect, and it does not return any interesting result.</P>
+effect, and does not return any interesting result.</P>
 
 <P>Similarly, wildcards are allowed for functor parameters:</P>
 
@@ -479,11 +478,13 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <I>sigexp</I> </TD>
     <TD align="center">::=</TD>
+<!--
     <TD> <TT>any</TT> </TD>
     <TD> top </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
+-->
     <TD> <TT>sig</TT> <I>spec</I> <TT>end</TT> </TD>
     <TD> ground signature </TD>
   </TR>
@@ -538,13 +539,13 @@ expressions. Derived forms have been marked with (*).</P>
 -->
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
-    <TD> functor </TD>
+    <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>
+    <TD> specialization </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>
-    <TD> specialization </TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
+    <TD> functor </TD>
   </TR>
   <TR></TR>
   <TR>
@@ -673,67 +674,58 @@ expressions. Derived forms have been marked with (*).</P>
 
 <?php subsection("syntax-derived", "Derived forms") ?>
 
-<TABLE class=bnf>
+<TABLE class="bnf dyptic">
   <TR>
     <TD> <TT>(</TT> <I>dec</I> <TT>)</TT> </TD>
-    <TD> ==> </TD>
     <TD> <TT>struct</TT> <I>dec</I> <TT>dec</TT> </TD>
   </TR>
   <TR>
     <TD> <TT>(</TT> <TT>_</TT> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
-    <TD> ==> </TD>
     <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> 
          <SUP>1</SUP> </TD>
   </TR>
   <TR>
     <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
-    <TD> ==> </TD>
     <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <TT>(</TT> <I>spec</I> <TT>))</TT> 
          <SUP>1</SUP><SUP>2</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
     <TD> <TT>functor</TT> <I>funbind</I> </TD>
-    <TD> ==> </TD>
     <TD> <TT>structure</TT> <I>funbind</I> </TD>
   </TR>
   <TR>
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
-         <TT>=</TT> <I>strexp</I>
+         <TT>=</TT> <I>strexp</I> <BR>
          &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
-    <TD> ==> </TD>
     <TD> <I>strid</I> <TT>=</TT>
          <TT>fct</TT> <I>strpat</I><SUB>1</SUB> <TT>=></TT> ...
-	 <TT>fct</TT> <I>strpat</I><SUB><I>n</I></SUB> <TT>=></TT> <I>strexp</I>
+	 <TT>fct</TT> <I>strpat</I><SUB><I>n</I></SUB> <TT>=></TT> <I>strexp</I> <BR>
 	 &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
   </TR>
   <TR>
-    <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I>
+    <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I> <BR>
          &lt;<TT>and</TT> <I>strbind</I>&gt; </TD>
-    <TD> ==> </TD>
-    <TD> <I>strid</I> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I>
+    <TD> <I>strid</I> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I> <BR>
          &lt;<TT>and</TT> <I>strbind</I>&gt; <SUP>1</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
     <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
-    <TD> ==> </TD>
     <TD> <TT>sig</TT> <I>spec</I> <TT>end</TT> </TD>
   </TR>
   <TR></TR>
   <TR>
     <TD> <TT>functor</TT> <I>fundesc</I> </TD>
-    <TD> </TD>
     <TD> <TT>structure</TT> <I>fundesc</I> </TD>
   </TR>
   <TR>
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
-         <TT>:</TT> <I>sigexp</I>
+         <TT>:</TT> <I>sigexp</I> <BR>
          &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
-    <TD> ==> </TD>
     <TD> <I>strid</I> <TT>:</TT>
 	 <TT>fct</TT> <I>strpat</I><SUB>1</SUB> <TT>-></TT> ...
-	 <TT>fct</TT> <I>strpat</I><SUB><I>n</I></SUB> <TT>-></TT> <I>sigexp</I>
+	 <TT>fct</TT> <I>strpat</I><SUB><I>n</I></SUB> <TT>-></TT> <I>sigexp</I> <BR>
          &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
   </TR>
 </TABLE>
@@ -742,10 +734,10 @@ expressions. Derived forms have been marked with (*).</P>
 
 <P><SUP>2</SUP>) If the <I>strpat</I> occurs in a functor expression
 <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I>, then <I>strexp</I> is
-rewritten to <I>strexp'</I> by replacing all occurances of identifiers <I>x</I>
+rewritten to <I>strexp'</I> by replacing any occurance of an identifier <I>x</I>
 bound in <I>spec</I> to <I>strid</I><TT>.</TT><I>x</I>. Likewise, if it occurs
 in a functor signature <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I>,
-then <I>sigexp</I> is rewritten to <I>sigexp'</I> by similar replacement.</P>
+then <I>sigexp</I> is rewritten to <I>sigexp'</I> by similar substitution.</P>
 
 
 <?php footing() ?>

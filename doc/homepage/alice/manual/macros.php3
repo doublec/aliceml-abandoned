@@ -1,7 +1,15 @@
 <?php
 
+  function prep_title($name)
+  {
+    $name = str_replace(" ", "&nbsp;", $name);
+    $name = str_replace("\n", "<BR>", $name);
+    return $name;
+  }
+
   function heading($title, $chapter)
   {
+    $chapter2 = prep_title($chapter);
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 
@@ -24,9 +32,7 @@
   manual.<BR>
   </H1>
 
-  <?php
-    include("menu.php3")
-  ?>
+  <?php include("menu.php3") ?>
 
   <A href="http://www.ps.uni-sb.de/alice/">
   <IMG src="logo-small.gif"
@@ -37,7 +43,7 @@
   </DIV>
 
   <H1>
-  <?php echo($chapter) ?>
+  <?php echo($chapter2) ?>
   </H1>
 
 <?php
@@ -62,6 +68,7 @@
   function section($tag, $name)
   {
     $n = 60 - strlen($name);
+    $name = prep_title($name);
 
     for ($bar = ""; $n > 0; $n--)
     {

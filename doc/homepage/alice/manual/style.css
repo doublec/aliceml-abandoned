@@ -97,6 +97,12 @@ P.note, DIV.note {
 	font-size:	80%;
 }
 
+P.center, DIV.center {
+	text-align:	center;
+	font-size:	120%;
+	font-family:	arial, helvetica, sans-serif;
+}
+
 P.menu {
 	margin-top:	40px;
 	margin-bottom:	40px;

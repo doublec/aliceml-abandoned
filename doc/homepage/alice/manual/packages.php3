@@ -6,34 +6,92 @@
 
 <?php section("overview", "overview") ?>
 
-  <P>
-    SML provides a strict static typing discipline. However, for particular
-    programming tasks - especially when it comes to open programming -
-    it is desirable to relax the rules and shift some of the type
-    checking to runtime.
-  </P>
+<P>For particular programming tasks - especially when transferring date between
+different processes - it is desirable to relax the strict static rules of ML
+and shift some of the type checking to runtime. Alice hence provides runtime
+typing through the concept of <EM>packages</EM>.
 
-  <P>
-    Alice thus provides runtime typing. Arbitrary values can be wrapped
-    as <I>packages</I> together with their type. These packages are
-    first-class values that can be passed around und later be unpacked
-    in which case a dynamic type check takes place.
-  </P>
+<P>A package is a value of abstract type <TT>package</TT> that encapsulates
+some value, along with its (runtime) type. Accessing the value inside a package
+is only possible via an explicit unpack operation, which requires giving the
+expected type. A dynamic type check takes place to verify that the actual and
+the expected type match.</P>
 
-  <P>
-    Unlike most other languages, Alice not only allows packaging of
-    ordinary data structures, but also of arbitrary module values.
-    This way, abstract types can be passed around for example.
-  </P>
-
-  <P>
-    Packages and runtime types are made available through Alice's
-    <A href="modules.php3">higher-order module system</A>.
-  </P>
-
+<P>Instead of just values of the core language, packages may actually contain
+arbitrary <A href="modules.php3">higher-order modules</A>, paired with their
+signature. This way, modules can be passed and stored as first-class values.</P>
 
 
 <?php section("package", "packages") ?>
+
+<?php subsection("package-pack", "Creating packages") ?>
+
+<P>A package is created using the <TT>pack</TT> expression:
+
+<PRE class=code>
+pack <I>longstrid</I> :> <I>longsigid</I></PRE>
+
+<P>This expression creates a package containing the module denoted by
+<TT><I>longstrid</I></TT>. The module must match the given
+signature <TT><I>longsigid</I></TT>. This signature will be the <EM>package
+signature</EM>.</P>
+
+
+<?php subsection("package-unpack", "Unpacking packages") ?>
+
+<P>A module can be projected out of a package using the inverse <TT>unpack</TT>
+form:</P>
+
+<PRE class=code>
+unpack <I>exp</I> : <I>sigexp</I></PRE>
+
+<P>Dynamically, if the package signature of the package returned by expression
+<TT><I>exp</I></TT> matches the signature <TT><I>sigexp</I></TT>, this
+structure expression evaluates to the module encapsulated in the package.
+Otherwise, it raises the exception <TT>Package.Mismatch</TT>. Since Alice ML
+supports <A href="modules.php3#local">local modules</A>, the exception may be
+handled in the usual way.</P>
+
+<P>Statically, the expression has the signature type denoted by
+<TT><I>sigexp</I></TT>, as it can only be successfully evaluated if it is able
+to deliver a suitable module. Any use of the unpacked module will be statically
+type-safe.</P>
+
+
+<?php subsection("package-example", "Example") ?>
+
+<P>We can inject the library module <TT>Word8</TT> into a package:</P>
+
+<PRE class=code>
+val p = pack Word8 :> WORD</PRE>
+
+<P>This package may then be passed to some client who may unpack it as
+follows:</P>
+
+<PRE class=code>
+structure Word' = unpack p : WORD</PRE>
+
+<P>The package signature matches the expected signature, so that unpacking
+succeeds. The client may thus access the <TT>Word'</TT> structure as usual:</P>
+
+<PRE class=code>
+print (Word'.toString (Word'.fromInt 255))</PRE>
+
+<P>The package can also be unpacked using a more general signature:</P>
+
+<PRE class=code>
+signature WORD_FROM_INT = sig type word val fromInt : int -> word end
+structure WordFromInt = unpack p : WORD_FROM_INT</PRE>
+
+<P>The full module subtyping rules apply to the unpack type check, so that
+unpacking is quite robust with respect to extensions to interfaces of modules
+packed elsewhere. In particular, arbitrary items may be added.</P>
+
+
+
+<P>The package signature of <TT>p</TT> is <TT>WORD</TT>. That signature does not
+specify anything about the identity of the contained <TT>word</TT> type.
+Consequently
 
   <P>
     Packages are provided through the structure

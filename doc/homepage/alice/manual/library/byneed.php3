@@ -8,7 +8,7 @@
   </PRE>
 
   <P>
-    The <TT>ByNeed</TT> functor allows arbitrary module expressions to
+    The polymorphic <TT>ByNeed</TT> functor allows arbitrary module expressions to
     be evaluated lazily. For example, if <TT><I>mod</I></TT> is a module
     expression with signature <TT><I>SIG</I></TT>, then evaluation can be
     suspended as follows:

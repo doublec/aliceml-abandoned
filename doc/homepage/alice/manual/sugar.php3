@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Syntactic enhancements", "syntactic <br> enhancements") ?>
+<?php heading("Syntactic enhancements", "syntactic\nenhancements") ?>
 
 
 <?php section("overview", "overview") ?>

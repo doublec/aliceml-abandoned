@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Constraints", "constraint <BR> programming") ?>
+<?php heading("Constraints", "constraint\nprogramming") ?>
 
 
 <?php section("introduction", "introduction") ?>
@@ -59,7 +59,7 @@ constraint to the system.</P>
 
 <P>The constraint programming functionality of Alice is provided through a
 library interface, containing the following <A
-href="dynamics.php3#components">components</A>:</P>
+href="components.php3">components</A>:</P>
 
 <UL>
   <LI> <TT>structure <A href="library/fd.php3">FD</A></TT> -

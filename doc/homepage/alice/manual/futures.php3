@@ -7,9 +7,17 @@
 <?php section("overview", "overview") ?>
 
 <P>A <EM>future</EM> is a place-holder for the undetermined result of a
-computation. Once the computation terminates with a result value, the future is
-eliminated by globally replacing it with that value. The value may be a future
-on its own.</P>
+(concurrent) computation. Once the computation delivers a result, the
+associated future is eliminated by globally replacing it with the result value.
+That value may be a future on its own.</P>
+
+<P>Whenever a future is <EM>requested</EM> by a concurrent computation, i.e. it
+tries to access its value, that computation automatically synchronizes on the
+future by blocking until it becomes determined or failed.</P>
+
+<P>If the computation associated with a future terminates with an exception,
+the future is <EM>failed</EM>. A failed future carries the corresponding
+exception and reraises it on every request.</P>
 
 <P>There are three basic kinds of futures:</P>
 
@@ -19,16 +27,8 @@ on its own.</P>
   <LI> <A href="#lazy"><EM>lazy futures</EM></A> stand for the
 	result of a computation that is only performed on request </LI>
   <LI> <A href="#promise"><EM>promised futures</EM></A> stand for the
-	a value that is assigned later through an explicit operation </LI>
+	a value that is delivered through an explicit operation </LI>
 </UL>
-
-<P>Whenever a future is <EM>requested</EM> by a concurrent computation, i.e. it
-tries to access its value, that computation automatically synchronizes on the
-future by blocking until it becomes determined or failed.</P>
-
-<P>If the computation associated with a future terminates with an exception,
-the future is <EM>failed</EM>. A failed future carries the corresponding
-exception and reraises it on every attempt to access it.</P>
 
 
 <?php section("spawn", "concurrency") ?>
@@ -40,18 +40,20 @@ spawn <I>exp</I></PRE>
 
 <P>which evaluates the expression <TT><I>exp</I></TT> in new thread and returns
 immediately with a future of its result. When the expression has been
-evaluated, the future is globally replaced by the result. See the below
-discussion on <A href="#failed">failed futures</A> for the treatment of
-possible error conditions.</P>
+evaluated, the future is globally replaced by the result. We speak of
+<EM>functional threads</EM>. See the below discussion on <A
+href="#failed">failed futures</A> for the treatment of possible error
+conditions.</P>
 
 
 <?php subsection("spawn-example", "Example") ?>
 
-<P>The following expression calculates a table of the function <TT>f</TT>. Each
-entry is evaluated concurrently:</P>
+<P>The following expression creates a table and concurrently fills it with the
+results of function <TT>f</TT>. Each entry becomes available as soon as its
+calculation terminates:</P>
 
 <PRE class=code>
-Vector.tabulate (50, fn i => spawn f i)</PRE>
+Vector.tabulate (30, fn i => spawn f i)</PRE>
 
 
 <?php subsection("spawn-sugar", "Syntactic sugar") ?>
@@ -63,7 +65,7 @@ separate threads:</P>
 fun spawn f x y = exp</PRE>
 
 <P>An application <TT>f a b</TT> will spawn a new thread for evaluation. See <A
-href="#sugar">below</A> for a precise definition of this derived form.</P>
+href="#syntax">below</A> for a precise definition of this derived form.</P>
 
 
 
@@ -76,17 +78,17 @@ lazy <I>exp</I></PRE>
 
 <P>A lazy expression immediately evaluates to a lazy future of the result of
 <TT><I>exp</I></TT>. As soon as a thread <A href="#request">requests</A> the
-future, the computation is intiated in a new thread. The lazy future is
-replaced by a concurrent future and evaluation proceeds similar as for
-<TT>spawn</TT>. In particular, <A href="#failed">failure</A> is handled
-consistently.</P>
+future, the computation is initiated in a new thread. The lazy future is
+replaced by a concurrent future and evaluation proceeds similar to <A
+href="#spawn"><TT>spawn</TT></A>. In particular, <A href="#failed">failure</A>
+is handled consistently.</P>
 
 
 <?php subsection("lazy-example", "Example") ?>
 
 <P>Lazy futures enable full support for the whole range of lazy programming
-techniques. For example, the following function generates an infinite list of
-integers on demand:</P>
+techniques. For example, the following function generates an infinite lazy
+stream of integers:</P>
 
 <PRE class=code>
 fun enum n = lazy n :: enum (n+1)</PRE>
@@ -94,15 +96,15 @@ fun enum n = lazy n :: enum (n+1)</PRE>
 
 <?php subsection("lazy-sugar", "Syntactic sugar") ?>
 
-<P>Analogous to <TT>spawn</TT>, a derived form is provided for defining
-lazy functions:</P>
+<P>Analogous to <A href="#spawn-sugar"><TT>spawn</TT></A>, a derived form is
+provided for defining lazy functions:</P>
 
 <PRE class=code>
 fun lazy f x y = exp</PRE>
 
-<P>See <A href="#sugar">below</A> for a precise definition of this derived
+<P>See <A href="#syntax">below</A> for a precise definition of this derived
 form. It allows convenient formulation of lazy functions. For example, a lazy
-variant of the <TT>map</TT> function on lists can be written:</P>
+variant of the <TT>map</TT> function on lists can be written</P>
 
 <PRE class=code>
 fun lazy mapl f   []    = nil
@@ -121,7 +123,7 @@ fun mapl f xs = lazy (case xs of
 
 <P><EM>Promises</EM> are explicit handles for futures. A promise is created
 through the polymorphic library function <A
-href=library/promise.php3"><TT>Promise.promise</TT></A>:
+href="library/promise.php3"><TT>Promise.promise</TT></A>:
 
 <PRE class=code>
 val p = Promise.promise ()</PRE>
@@ -151,7 +153,7 @@ operations <TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT> correspond to
 <P>Promises essentially represent a more structured form of "logic variables"
 as found in logic programming languages. Their presence allows application of
 diverse idioms from concurrent logic programming to ML. Examples can be found in
-the documentation of the <A href="library/promise.php3"><TT>Promise</TT></A>
+the documentation of the <A href="library/promise.php3#examples"><TT>Promise</TT></A>
 structure.</P>
 
 
@@ -162,7 +164,7 @@ structure.</P>
 
 <UL>
   <LI> Pattern matching </LI>
-  <LI> Primitive operations that need to access a value, e.g. <TT>op+</TT> </LI>
+  <LI> Primitive operations that need to access a value (e.g. <TT>op+</TT>) </LI>
 </UL>
 
 <P>If a future is requested by a thread, that thread blocks until the future
@@ -187,8 +189,9 @@ enables concurrent programming on a high level of abstraction.</P>
 <P>If the computation associated with a concurrent or lazy future terminates
 with an exception, that future cannot be eliminated. Instead, it turns into a
 <EM>failed future</EM>. Promised futures can be failed explicitly by means of
-the <TT>Promise.fail</TT> function. Any attempt to request a failed future will
-reraise the exception that was the cause of the failure.</P>
+the <A href="library/promise.php3"><TT>Promise.fail</TT></A> function. Any
+attempt to request a failed future will reraise the exception that was the
+cause of the failure.</P>
 
 <P>A second error condition is the attempt to replace a future with itself. This
 may happen if a recursive <TT>spawn</TT> or <TT>lazy</TT> expression is
@@ -212,7 +215,7 @@ programming with futures, promises and concurrent threads:</P>
 <P>The latter is a functor that allows creation of lazy futures for modules.</P>
 
 <P>Lazy modules are also at the core of the semantics of <A
-href="dynamics.php3#components">components</A>.
+href="components.php3">components</A>.</P>
 
 
 <?php section("syntax", "syntax summary") ?>
@@ -268,53 +271,47 @@ href="dynamics.php3#components">components</A>.
 
 <?php subsection("syntax-derived", "derived forms") ?>
 
-<TABLE class=bnf>
+<TABLE class="bnf dyptic">
   <TR>
-    <TD> </TD>
-    <TD> </TD>
-    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>=</TT>
-         <TT>fn</TT> <I>vid</I><SUB>1</SUB> <TT>=></TT> ...
-	 <TT>fn</TT> <I>vid</I><SUB><I>n</I></SUB> <TT>=></TT>
-         </TD>
-  </TR><TR>
-    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; </TD>
-    <TD> </TD>
-    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; <TT>case</TT>
-         <TT>(</TT><I>vid</I><SUB>1</SUB><TT>,</TT>...<TT>,</TT><I>vid</I><SUB><I>n</I></SUB><TT>)</TT>
-	 <TT>of</TT>
-         </TD>
-  <TR>
-    <TD> &nbsp;&nbsp;
-         &lt;<TT>op</TT>&gt; <I>vid atpat<SUB>11</SUB> ... <I>atpat</I><SUB>1<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
-	 <TT>=</TT> <I>exp</I><SUB>1</SUB> </TD>
-    <TD> ==> </TD>
-    <TD> &nbsp;&nbsp;
-        <TT>(</TT><I>atpat</I><SUB>11</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB>1<I>n</I></SUB><TT>)</TT> <TT>=></TT> <I>exp</I><SUB>1</SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
-	 </TD>
-  </TR><TR>
-    <TD> <TT>|</TT>
-         &lt;<TT>op</TT>&gt; <I>vid atpat<SUB>21</SUB> ... <I>atpat</I><SUB>2<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
-	 <TT>=</TT> <I>exp</I> </TD>
-    <TD> </TD>
-    <TD> <TT>|</TT>
-         <TT>(</TT><I>atpat</I><SUB>21</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB>2<I>n</I></SUB><TT>)</TT> <TT>=></TT> <I>exp</I><SUB>2</SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
-	 </TD>
-  </TR><TR>
-    <TD> <TT>|</TT> ... </TD>
-    <TD> </TD>
-    <TD> <TT>|</TT> ... </TD>
-  </TR><TR>
-    <TD> <TT>|</TT>
-         &lt;<TT>op</TT>&gt; <I>vid atpat<SUB><I>m</I>1</SUB> ... <I>atpat</I><SUB><I>mn</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
-	 <TT>=</TT> <I>exp</I> </TD>
-    <TD> </TD>
-    <TD> <TT>|</TT>
-        <TT>(</TT><I>atpat</I><SUB><I>m</I>1</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB><I>mn</I></SUB><TT>)</TT> <TT>=></TT> <I>exp</I><SUB><I>m</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
-	 </TD>
-  </TR><TR>
-    <TD> &lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
-    <TD> </TD>
-    <TD> &lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
+    <TD>
+      <BR>
+      &lt;<TT>lazy</TT>&nbsp;|&nbsp;<TT>spawn</TT>&gt; <BR>
+      &nbsp;&nbsp;&nbsp;&lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;<!--
+	--><I>atpat</I><SUB>11</SUB>&nbsp;...&nbsp;<I>atpat</I><SUB>1<I>n</I></SUB>&nbsp;<!--
+	-->&lt;<TT>:</TT>&nbsp;ty<SUB>1</SUB>&gt;&nbsp;<!--
+	--><TT>=</TT>&nbsp;<I>exp</I><SUB>1</SUB> <BR>
+      <TT>|</TT>&nbsp;&lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;<!--
+	--><I>atpat</I><SUB>21</SUB>&nbsp;...&nbsp;<I>atpat</I><SUB>2<I>n</I></SUB>&nbsp;<!--
+	-->&lt;<TT>:</TT>&nbsp;ty<SUB>2</SUB>&gt;&nbsp;<!--
+	--><TT>=</TT>&nbsp;<I>exp</I><SUB>2</SUB> <BR>
+      <TT>|</TT>&nbsp;&nbsp;&nbsp;&nbsp;... <BR>
+      <TT>|</TT>&nbsp;&lt;<TT>op</TT>&gt;&nbsp;<I>vid<I>&nbsp;<!--
+	--></I>atpat</I><SUB><I>m</I>1</SUB>&nbsp;...&nbsp;<I>atpat</I><SUB><I>mn</I></SUB>&nbsp;<!--
+	-->&lt;<TT>:</TT>&nbsp;ty<SUB><I>m</I></SUB>&gt;&nbsp;<!--
+	--><TT>=</TT>&nbsp;<I>exp</I><SUB><I>m</I></SUB> <BR>
+      &lt;<TT>and</TT>&nbsp;<I>fvalbind</I>&gt;
+    </TD>
+    <TD>
+      &lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;<TT>=</TT>&nbsp;<!--
+	--><TT>fn</TT>&nbsp;<I>vid</I><SUB>1</SUB>&nbsp;<TT>=></TT>&nbsp;...&nbsp;<!--
+	--><TT>fn</TT>&nbsp;<I>vid</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT> <BR>
+      &lt;<TT>lazy</TT>&nbsp;|&nbsp;<TT>spawn</TT>&gt;&nbsp;<TT>case</TT>&nbsp;<!--
+	--><TT>(</TT><I>vid</I><SUB>1</SUB><TT>,</TT>...<TT>,</TT><I>vid</I><SUB><I>n</I></SUB><TT>)</TT>&nbsp;<TT>of</TT> <BR>
+      &nbsp;&nbsp;&nbsp;<!--
+	--><TT>(</TT><I>atpat</I><SUB>11</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB>1<I>n</I></SUB><TT>)</TT>&nbsp;<!--
+	--><TT>=></TT> <I>exp</I><SUB>1</SUB>&nbsp;<!--
+	-->&lt;<TT>:</TT>&nbsp;ty<SUB>1</SUB>&gt; <BR>
+      <TT>|</TT>&nbsp;<!--
+	--><TT>(</TT><I>atpat</I><SUB>21</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB>2<I>n</I></SUB><TT>)</TT>&nbsp;<!--
+	--><TT>=></TT>&nbsp;<I>exp</I><SUB>2</SUB>&nbsp;<!--
+	-->&lt;<TT>:</TT>&nbsp;ty<SUB>2</SUB>&gt; <BR>
+      <TT>|</TT>&nbsp;&nbsp;&nbsp;&nbsp;... <BR>
+      <TT>|</TT>&nbsp;<!--
+	--><TT>(</TT><I>atpat</I><SUB><I>m</I>1</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB><I>mn</I></SUB><TT>)</TT>&nbsp;<!--
+	--><TT>=></TT>&nbsp;<I>exp</I><SUB><I>m</I></SUB>&nbsp;<!--
+	-->&lt;<TT>:</TT>&nbsp;ty<SUB><I>m</I></SUB>&gt; <BR>
+      &lt;<TT>and</TT>&nbsp;<I>fvalbind</I>&gt;
+    </TD>
   </TR>
 </TABLE>
 

@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("The Language", "the <BR> language") ?>
+<?php heading("The Language", "the\nlanguage") ?>
 
 
 <?php section("overview", "overview") ?>
@@ -51,17 +51,23 @@ programming language (SML), as defined in</P>
   </UL>
   </LI>
 
-  <LI> <A href="dynamics.php3">Dynamic typing:</A>
+  <LI> <A href="packages.php3">Dynamic typing:</A>
   <UL>
-    <LI> <A href="dynamics.php3#packages">packages</A> </LI>
-    <LI> <A href="dynamics.php3#components">components</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="pickling.php3">Pickling:</A>
+  <UL>
+  </UL>
+  </LI>
+
+  <LI> <A href="components.php3">Components:</A>
+  <UL>
   </UL>
   </LI>
 
   <LI> <A href="distribution.php3">Distributed programming:</A>
   <UL>
-    <LI> <A href="distribution.php3#pickling">pickling</A> </LI>
-    <LI> <A href="distribution.php3#remote">distribution</A> </LI>
   </UL>
   </LI>
 

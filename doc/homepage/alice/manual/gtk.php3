@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Gtk Library", "gtk <br> library") ?>
+<?php heading("Gtk Library", "gtk\nlibrary") ?>
 
   <P>
     This manual describes the GTK+ language binding for Alice.

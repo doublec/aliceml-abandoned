@@ -12,7 +12,7 @@
 <UL>
   <LI> <A href="#datatype">Structural datatypes</A> </LI>
   <LI> <A href="#exttype">Extensible datatypes</A> </LI>
-  <LI> <A href="#wildcard">Type wildcards</A> </LI>
+  <LI> <A href="#wildcards">Type wildcards</A> </LI>
   <LI> <A href="#packages">Dynamic typing</A> </LI>
 </UL>
 
@@ -25,7 +25,7 @@ following program will elaborate:</P>
 
 <PRE class=code>
 datatype 'a t = A | B of 'a | C of 'a t
-val x = C(B 0)
+val x = C (B 0)
 
 datatype 'a u = B of 'a | C of 'a u | A
 val y = B 20
@@ -159,15 +159,13 @@ it is unknown whether there will be any constructors prohibiting that.</P>
 <P>Exception declarations and specifications are derived forms in Alice ML,
 e.g.</P>
 
-<TABLE class=bnf>
+<TABLE class="bnf dyptic">
   <TR>
     <TD> <TT>exception</TT> <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt; </TD>
-    <TD> ==> </TD>
     <TD> <TT>constructor</TT> <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt; <TT>: exn</TT></TD>
   </TR>
   <TR>
     <TD> <TT>exception</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT> <I>vid</I><SUB>2</SUB> </TD>
-    <TD> ==> </TD>
     <TD> <TT>constructor</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT> <I>vid</I><SUB>2</SUB> </TD>
   </TR>
 </TABLE>
@@ -184,7 +182,7 @@ fun mapSnd (f : _ -> _ * _) l = List.map (#2 o f) l</PRE>
 <P>Unlike type variables, type wildcards do not enforce polymorphic typing. They
 are thus suitable to leave out any part of a type annotation:</P>
 
-<PRE class-code>
+<PRE class=code>
 (3,4,[]) : (_ * int * _ list)</PRE>
 
 
@@ -216,7 +214,7 @@ is the <TT>package</TT> type. Values of that type may encapsulate arbitrary
 values (or modules) along with their type (resp., signature), which is dynamically checked upon
 extraction of the value. Packages provide a rich form of dynamic typing within
 the statically typed framework of ML. See the section on <A
-href="dynamics.php#packages">packages</A> for a description.</P>
+href="packages.php3">packages</A>.</P>
 
 
 <?php footing() ?>
