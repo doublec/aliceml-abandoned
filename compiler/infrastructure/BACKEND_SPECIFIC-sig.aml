@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Error          from "Error"
+import structure Source         from "Source"
+import signature CONTEXT        from "CONTEXT-sig"
+import signature REPRESENTATION from "REPRESENTATION-sig"
+import signature TARGET         from "TARGET-sig"
+
+signature BACKEND_SPECIFIC =
+sig
+    structure C: CONTEXT
+    structure I: REPRESENTATION
+    structure O: TARGET
+
+    val isCross: bool
+
+    val translate: C.t -> Source.desc * I.t -> O.t   (* [Error.Error] *)
+end
