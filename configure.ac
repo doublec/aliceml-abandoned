@@ -220,17 +220,12 @@ AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 
 case "$host" in
-  *-*-cygwin*)
-    EXTRA_LDFLAGS="${EXTRA_LDFLAGS}${EXTRA_LDFLAGS:+ }-no-undefined"
-    libseam="${libdir}/seam.dll"
-    ;;
-  *)
-    libseam="-lseam"
-    ;;
+    *-*-cygwin*)
+        EXTRA_LDFLAGS="${EXTRA_LDFLAGS}${EXTRA_LDFLAGS:+ }-no-undefined"
+        ;;
 esac
 
 AC_SUBST(EXTRA_LDFLAGS)
-AC_SUBST(libseam)
 
 dnl
 dnl  Test for dlopen
