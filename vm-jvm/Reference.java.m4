@@ -2,14 +2,12 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class Reference implements DMLConVal, DMLReference {
 
-    ServerManager mgr = null; // Homesite-Manager
+    SManager mgr = null; // Homesite-Manager
     DMLValue content = null;
-    ClientManager cmgr = null;
+    CManager cmgr = null;
 
     public Reference(DMLValue content) throws java.rmi.RemoteException {
 	this.content=content;
-	cmgr = new ClientManager(this);
-	mgr = new ServerManager(cmgr);
     }
 
     public DMLValue release() {
@@ -145,7 +143,7 @@ final public class Reference implements DMLConVal, DMLReference {
 		cmgr=CMGR;
 		content = t;
 	    } else {
-		ClientManager CMGR = cmgr;
+		CManager CMGR = cmgr;
 		cmgr=null;
 		DMLValue t = content;
 		content = null;
