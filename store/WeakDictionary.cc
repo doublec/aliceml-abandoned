@@ -204,9 +204,7 @@ void WeakDictionary::InsertItem(word key, word value) {
   if (entry->IsEmpty()) {
     SetCounter((counter + 1));
   }
-  
-  entry->SetKey(key);
-  entry->SetValue(value);
+  entry->Fill(key, value);
 }
 
 void WeakDictionary::DeleteItem(word key) {

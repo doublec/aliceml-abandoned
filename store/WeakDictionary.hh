@@ -23,15 +23,23 @@ private:
   static const u_int SIZE    = 2;
   static const u_int KEY_POS = 0;
   static const u_int VAL_POS = 1;
+
+  void SetLabel(BlockLabel l) {
+    HeaderOp::EncodeLabel((Transient *) this, l);
+  }
 public:
   using Block::ToWord;
 
   void MakeEmpty() {
-    InitArg(KEY_POS, -1);
+    InitArg(KEY_POS, 0);
     InitArg(VAL_POS, 0);
+    SetLabel(EMPTYHASHNODE_LABEL);
   }
   int IsEmpty() {
-    return (Store::WordToInt(GetArg(KEY_POS)) == - 1);
+    return (HeaderOp::DecodeLabel(this) == EMPTYHASHNODE_LABEL);
+  }
+  int IsHandled() {
+    return (HeaderOp::DecodeLabel(this) == HANDLEDHASHNODE_LABEL);
   }
   word GetKey() {
     return GetArg(KEY_POS);
@@ -42,20 +50,28 @@ public:
   Block *GetBlockKey() {
     return Store::WordToBlock(GetKey());
   }
-  void SetKey(word key) {
-    ReplaceArg(KEY_POS, key);
-  }
   word GetValue() {
     return GetArg(VAL_POS);
   }
   void SetValue(word value) {
     ReplaceArg(VAL_POS, value);
   }
+  void Fill(word key, word value) {
+    ReplaceArg(KEY_POS, key);
+    ReplaceArg(VAL_POS, value);
+    SetLabel(FILLEDHASHNODE_LABEL);
+  }
+  void MarkHandled() {
+    SetLabel(HANDLEDHASHNODE_LABEL);
+  }
+  void MarkNormal() {
+    SetLabel(FILLEDHASHNODE_LABEL);
+  }
 
   static HashNode *New() {
-    Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
+    Block *p = Store::AllocBlock(EMPTYHASHNODE_LABEL, SIZE);
 
-    p->InitArg(KEY_POS, -1);
+    p->InitArg(KEY_POS, 0);
     p->InitArg(VAL_POS, 0);
 
     return (HashNode *) p;
@@ -63,7 +79,8 @@ public:
   static HashNode *FromWord(word x) {
     Block *p = Store::DirectWordToBlock(x);
 
-    Assert((p == INVALID_POINTER) || (p->GetLabel() == HASHNODE_LABEL));
+    Assert((p == INVALID_POINTER) ||
+	   ((p->GetLabel() >= EMPTYHASHNODE_LABEL) && (p->GetLabel() <= HANDLEDHASHNODE_LABEL)));
     return (HashNode *) p;
   }
 };
