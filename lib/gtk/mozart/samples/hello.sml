@@ -12,13 +12,13 @@
  *)
 
 import structure OS from "x-alice:/lib/OS.ozf"
-import val print from "x-alice:/lib/TextIO.ozf"
+import structure Inspector from "x-alice:/lib/Inspector.ozf"
 import structure GTK from "x-alice:/lib/gtk/GTK.ozf"
 
 local
-    fun Hello () = print "Hello, World!"
-    fun DeleteEvent () = print "Delete Event occurred"
-    fun Destroy () = print "Destroy Event occurred"
+    fun Hello () = Inspector.inspect "Hello, World!"
+    fun DeleteEvent () = Inspector.inspect "Delete Event occurred"
+    fun Destroy () = Inspector.inspect "Destroy Event occurred"
     val Window = GTK.windowNew GTK.WINDOW_TOPLEVEL
     val DestroyId = GTK.signalConnect(Window, "destroy", Destroy)
     val Button = GTK.buttonNewWithLabel "Hello, World!"

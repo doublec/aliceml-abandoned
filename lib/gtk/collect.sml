@@ -305,7 +305,34 @@ structure Collect : COLLECT =
 	    (ps("         '" ^ constChange(s) ^ "' : " ^ v ^ "\n"); emitConstValues(ps, cr))
 	  | emitConstValues(ps, _)                  = ()
 	    
-	fun emitWrapperInterface(ps, is, sis, FUNCTION(s, FUNCARGS(rt, args))) =
+	fun emitWrapperInterface(ps, is, sis, FUNCTION("CalendarGetDate", FUNCARGS(rt, args))) =
+	    (ps "fun {CalendarGetDate A0}\n";
+             ps "   A1 A2 A3\n";
+             ps "in\n";
+	     ps "   {Native.calendarGetDate {ObjectToPointer A0} A1 A2 A3}\n";
+	     ps "   '#'(A1 A2 A3)\n";
+	     ps "end\n";
+	     sis ("                val calendarGetDate : object -> int * int * int\n");
+	     is "         calendarGetDate : CalendarGetDate\n")
+	  | emitWrapperInterface(ps, is, sis, FUNCTION("PixmapGet", FUNCARGS(rt, args))) =
+	    (ps "fun {PixmapGet A0}\n";
+             ps "   A1 A2\n";
+             ps "in\n";
+	     ps "   {Native.pixmapGet {ObjectToPointer A0} A1 A2}\n";
+	     ps "   '#'({PointerToObject A1} {PointerToObject A2})\n";
+	     ps "end\n";
+	     sis ("                val pixmapGet : object -> object * object\n");
+	     is "         pixmapGet : PixmapGet\n")
+	  | emitWrapperInterface(ps, is, sis, FUNCTION("LabelGet", FUNCARGS(rt, args))) =
+	    (ps "fun {LabelGet A0}\n";
+             ps "   A1\n";
+             ps "in\n";
+	     ps "   {Native.labelGet {ObjectToPointer A0} A1}\n";
+	     ps "   {ByteString.make A1}\n";
+	     ps "end\n";
+	     sis ("                val labelGet : object -> string\n");
+	     is "         labelGet : LabelGet\n")
+	  | emitWrapperInterface(ps, is, sis, FUNCTION(s, FUNCARGS(rt, args))) =
 	    (emitHeader(ps, s, args);
 	     emitSignature(sis, s, rt, args);
 	     is("         " ^ (firstLower s) ^ " : " ^ s ^ "\n");

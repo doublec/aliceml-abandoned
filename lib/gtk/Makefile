@@ -46,7 +46,7 @@ SOURCES = GTKCore.ozf.sig \
           Canvas.ozf.sig
 
 OZHOME=/opt/mozart-1.1.1
-PREFIX=/opt/stockhausen-devel
+PREFIX=/opt/stockhausen-devel0
 
 .PHONY: header interface
 
