@@ -156,29 +156,80 @@ struct
     
     
     (* drawRelNode *)
-    and drawRelNode (n,x,y,upd) = case n of
+   and drawRelNode (n,x,y,upd) = case n of
+	RelNode(r) 
+	=> if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
+		     then (if upd then (move'(n,x,y);()) 
+			   else groupToPosition(n,x,y) 
+			       ;let
+				   val (new_x,new_y) = 
+				       draw (!(#content(r)),0,0,upd)
+			       in
+				   (x+new_x,y+new_y)
+			       end)
+	   else if upd then let
+				val _ = if move'(n,x,y) 
+				    then (GtkSupport.print00 (#rep(r),
+						 getGroup(n),
+					         getColor(n),
+				       	     !Settings.fontname);()) 
+					else ()
+			  val content = !(#content(r))
+			  val (x2,y2) = draw (content,
+					      String.size(#rep(r))
+					      ,0
+					      ,upd)
+			     in
+				   (x+x2, y+y2)
+			     end
+		else (groupToPosition(n,x,y)
+		      ; GtkSupport.print00 (#rep(r),
+					    getGroup(n),
+					    getColor(n),
+					    !Settings.fontname)
+		      ;let
+			   val content = !(#content(r))
+			   val (x2,y2) = draw (content,
+					       String.size(#rep(r))
+					       ,0
+					       ,upd)
+		       in
+			   (x+x2, y+y2)
+		       end)
+(* Version from Okt 22nd *)
+ (*  and drawRelNode (n,x,y,upd) = case n of
 	RelNode(r) 
 	=> (let val _ = () (* TextIO.print("Entering drawRelNode \n") *)
 	    in (if upd then (move'(n,x,y);()) (* important: move' needs to be a tester *) 
 		else groupToPosition(n,x,y)
 	       ; if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
 		     then let
+			   (*   val _ = GtkSupport.print00 ("_",
+				  getGroup(n),
+				  getColor(n),
+				  !Settings.fontname) *)
 			      val (new_x,new_y) = draw (!(#content(r)),0,0,upd)
 			  in
 			      (x+new_x,y+new_y)
 			  end
 		 else let 
-			  val (new_x,_) = atomDraw 
-			      (n,0,0,upd)
+			  (* val (new_x,_) = atomDraw 
+			      (n,0,0,upd) *)
+			  val _ = GtkSupport.print00 (#rep(r),
+				  getGroup(n),
+				  getColor(n),
+				  !Settings.fontname)
 			  val content = !(#content(r))
 			  val (x2,y2) = draw (content,
-					      new_x,0,upd)
+					      String.size(#rep(r))
+					      ,0
+					      ,upd)
 		      in
-			  (x + String.size(#rep(r)) +   
-			   Layout.get_l_xdim(content), (* was lxdim *)
-			   y + Layout.get_ydim(n)-1)
-		      end )
-	    end)
+			  (x + (* String.size(#rep(r)) + *) x2   
+			   (* Layout.get_l_xdim(content) *), (* was lxdim *)
+			   y + (* Layout.get_ydim(n)-1 *) y2)
+		      end  )
+	    end) *)
       | _ => raise DrawError
 
     
@@ -188,22 +239,49 @@ struct
 	     | (RelRefNode _ as n)) ,x,y,upd) = if !(getStatus(n)) = DIRTY  
 						  then atomDraw (n,x,y,upd)
 					      else move(n,x,y)  	
-      | draw (Concat(_) as n,x,y,upd) = if (!(getStatus(n))) = DIRTY  
+      | draw (Concat(_) as n,x,y,upd) = ((if (!(getStatus(n))) = DIRTY  
 			 then drawConcat (n,x,y,upd)
-			  else move(n,x,y)  
-      | draw (Container(_) as n,x,y,upd) = if (!(getStatus(n))) = DIRTY  
+			  else move(n,x,y))  
+			      handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
+	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
+		     handle General.Subscript =>
+			 (Inspector.inspect ("General.Subscript");(0,0))
+			 handle Match =>(Inspector.inspect ("Match");(0,0))
+			 handle General.Match =>
+			     (Inspector.inspect ("General.Match");(0,0))
+			     handle _ =>  (Inspector.inspect ("sth. else")
+					   ;(0,0)))
+      | draw (Container(_) as n,x,y,upd) = (((if (!(getStatus(n))) = DIRTY  
 			    then drawContainer (n,x,y,upd)
-				else move(n,x,y) 	     
+				else move(n,x,y))
+				 handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
+	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
+		     handle General.Subscript =>
+			 (Inspector.inspect ("General.Subscript");(0,0))
+			 handle Match =>(Inspector.inspect ("Match");(0,0))
+			 handle General.Match =>
+			     (Inspector.inspect ("General.Match");(0,0))
+			     handle _ =>  (Inspector.inspect ("sth. else")
+					    ; (0,0))))
       | draw (Limit(_) as n,x,y,upd) = if  (!(getStatus(n))) = DIRTY  
 			then drawLimit (n,x,y,upd)
 			 else move(n,x,y) 
-      | draw (RelNode(r) as n,x,y,upd) = if  !(#status(r)) = DIRTY 
+      | draw (RelNode(r) as n,x,y,upd) = ((if  !(#status(r)) = DIRTY 
 				 then drawRelNode (n,x,y,upd)
 		      else ( move(n,x,y) 
 				   ;( case !(#counter(r)) of
 				   1 => (x+get_xdim(!(#content(r))),
 					 y+get_ydim(!(#content(r))))
-				 | _ => (x+get_xdim(n),y+get_ydim(n)) )) 
+				 | _ => (x+get_xdim(n),y+get_ydim(n)) )))
+			     handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
+	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
+		     handle General.Subscript =>
+			 (Inspector.inspect ("General.Subscript");(0,0))
+			 handle Match =>(Inspector.inspect ("Match");(0,0))
+			 handle General.Match =>
+			     (Inspector.inspect ("General.Match");(0,0))
+			     handle _ =>  (Inspector.inspect ("sth. else")
+					  ; (0,0)))
        | draw  (Empty,x,y,upd) =  (x,y)
      
 

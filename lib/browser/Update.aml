@@ -13,6 +13,8 @@
  *
  *)
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure BrowserSupport from "x-alice:/lib/system/BrowserSupport"
@@ -98,7 +100,8 @@ struct
 		  
     (* update *)
     and update (n,va,f,g) = 
-	( setDazzled n 
+	(TextIO.print("started update") 
+	 ;setDazzled n 
 	 ; let val ind = getAncIndex n 
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
@@ -121,6 +124,7 @@ struct
 		       else ()
 	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
 	   in (Gtk.objectDestroy(getGroup(n))
+	       ; TextIO.print(" ....old object destroyed\n")
 	       ; if isRelNode new  
 		     then let val ri_rel =  
 			      case ReinspectedRelDict.lookup 
@@ -133,16 +137,26 @@ struct
 			  end  
 		 else () 
                ; Layout.layout(node) 
+	       ; TextIO.print(" Layout done \n") 
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
-	       ; DrawNodes.draw(node,0,y_pos,true)  
+	       ; DrawNodes.draw(node,0,y_pos,true)
+	       ; TextIO.print(" Drawing done \n")  
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim 
 		 in ( Window.incr_act_line dy 
 		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
 				 MainDictionary.getHighestIndexAssigned 
 				 (Dictionaries.dict)) 
 		     ; Layout.setVisible(Layout.get_xdim(node),dy)) 
-		 end )
-	   end )
+		 end
+	       ; TextIO.print(" Iter move done \n") )
+	   end ) handle MissingColor => Inspector.inspect ("MissingColor")
+	         handle DrawError => Inspector.inspect ("DrawError")
+		     handle General.Subscript =>
+			 Inspector.inspect ("General.Subscript")
+			 handle Match =>Inspector.inspect ("Match")
+			 handle General.Match =>
+			     Inspector.inspect ("General.Match")
+			     handle _ =>  Inspector.inspect ("sth. else")
 
     (* findRelNode *)
     and findRelNode(anc,va) = 
@@ -208,8 +222,8 @@ struct
 		    end ) ))
 	
     (* reinspect *)
-    and reinspect (n,f,g) = 
-        let val va = getReflectValue n
+    and reinspect (n,f,g) = ( TextIO.print("Reinspect started \n")
+        ;let val va = getReflectValue n
 			           : Reflect.value
 	in  Server.serve(fn () => 
 			 (if !(Settings.relmode) 
@@ -217,7 +231,8 @@ struct
 			      then ()
 			  else update(n,va,f,g) ; !Window.resize()) )
 	end
-    handle General.Match => raise UpdateError
+   (* handle General.Match => raise UpdateError *)
+handle _ => Inspector.inspect("exception at reinspect"))
 	
     (* foldDepth *)
     and foldDepth (n,i,f,g) = 

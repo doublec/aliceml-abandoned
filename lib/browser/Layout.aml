@@ -18,6 +18,7 @@ import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Settings from "Settings"
+import structure Window from "Window"
 import signature LAYOUT from "LAYOUT-sig"
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
@@ -65,7 +66,8 @@ struct
     (* layout *)
 
     fun layout (Concat(r) as n) = 
-        let 
+	( (* Window.testIfStop() *) ()
+	 ;let 
 	    val no_kids = Array.length(#kids(r))
 	    val li = List.tabulate(no_kids, 
 				   (fn i => layout(Array.sub(#kids(r),i))))
@@ -100,9 +102,10 @@ struct
 		   then #status(r) := DIRTY
 	       else ()
 		   ; (xdim,ydim,l_xdim))   
-	end 
+	end )
       | layout (Container(r) as n) = 
-	if !(#status(r)) = DAZZLED
+	( (* Window.testIfStop() *) ()
+	;if !(#status(r)) = DAZZLED
 	    then
 		let 
 		    val no_kids = Array.length(#kids(r))
@@ -125,7 +128,7 @@ struct
 		    ; #status(r) := DIRTY
 		    ; (xdim,ydim,l_xdim))   
 		end
-	else (get_xdim(n),get_ydim(n),get_l_xdim(n)) 
+	else (get_xdim(n),get_ydim(n),get_l_xdim(n))) 
       | layout (Simple(r) as n) = 
 	    (if !(#status(r)) = DAZZLED
 		 then #status(r) := DIRTY
@@ -142,7 +145,8 @@ struct
 		       else ()
 			   ; (get_xdim(n),get_ydim(n),get_xdim(n)) ) 
       | layout (RelNode(r) as n) 
-	    = (let
+	    = ((* Window.testIfStop() *) ()
+	       ;let
 		   val (cxdim,cydim,clxdim) = layout(!(#content(r)))
 		   val l_xdim = clxdim +  (if isSimple (!(#content(r)))
 			                orelse !(#counter(r)) = 1 

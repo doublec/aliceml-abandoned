@@ -467,6 +467,12 @@ struct
 				    ;f n
 				    ; Server.serve(fn() => stopButtonSetActive(false)))
 	 
+
+     exception stopped
+
+     fun testIfStop() = if not(stopButtonIsActive()) then raise stopped
+		else ()
+
      fun handleReinspect node = 
 	 fn _ => setStopButtonOnOff((selectHandler("reinspect")),(node,0))
 
