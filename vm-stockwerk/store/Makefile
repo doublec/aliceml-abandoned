@@ -1,11 +1,9 @@
 CC     = g++
 CFLAGS = -ggdb -DDEBUG_CHECK
 
-SRCS = memmanager.cc \
-       store.cc
+SRCS = store.cc
 
-OBJS = memmanager.o \
-       store.o
+OBJS = store.o
 
 all: test.cc $(OBJS)
 	$(CC) $(CFLAGS) -o test test.cc $(OBJS)
@@ -13,11 +11,14 @@ all: test.cc $(OBJS)
 %.o : %.cc base.hh types.hh headerdef.hh
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-memmanager.cc: memmanager.hh memchunk.hh
-store.cc: store.hh headerop.hh pointerop.hh tuple.hh gchelper.hh
+lib: $(OBJS)
+	ar -r libstore.a $(OBJS)
+	ranlib libstore.a
+
+store.cc: memchunk.hh store.hh headerop.hh pointerop.hh dataset.hh gchelper.hh
 
 clean:
-	rm -rf test $(OBJS)
+	rm -rf test $(OBJS) libstore.a
 
 distclean: clean
 	rm -rf *.s *~

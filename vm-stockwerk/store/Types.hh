@@ -4,6 +4,8 @@
 #include "headerdef.hh"
 
 #define INVALID_POINTER NULL
+#define INVALID_TSIZE   0
+#define INVALID_FIELD   0
 
 typedef unsigned int u_int;
 
@@ -20,40 +22,31 @@ typedef enum {
   TAG2      = 2,
   TAG3      = 3,
   TAG4      = 4,
-  CHUNK     = 5,
-  PROMISE   = 6,
-  FUTURE    = 7,
-  REF       = 8,
-  CANCELLED = 9,
-  BYNEED    = 10,
-  MAX_LSIZE = HeaderDef::MAX_TAGSIZE
+  MAX_LSIZE = HeaderDef::MAX_TAGSIZE - 7,
+  CHUNK     = HeaderDef::MAX_TAGSIZE - 6,
+  PROMISE   = HeaderDef::MAX_TAGSIZE - 5,
+  FUTURE    = HeaderDef::MAX_TAGSIZE - 4,
+  REF       = HeaderDef::MAX_TAGSIZE - 3,
+  CANCELLED = HeaderDef::MAX_TAGSIZE - 2,
+  BYNEED    = HeaderDef::MAX_TAGSIZE - 1,
+  STACK     = HeaderDef::MAX_TAGSIZE
 } t_label;
 
-// Tuple Field Datatype
+// Pointer Tags
 typedef enum {
-  INVALID_FIELD = 0
-} t_field;
-
-// Tuple Size Datatype
-typedef enum {
-  INVALID_TSIZE = 0,
-  TRANS_SIZE    = 1,
-} t_size;
-
-// Ptr Tags
-typedef enum {
-  TUPTAG = 0,
+  BLKTAG = 0,
   INTTAG = 1,
   TRTAG  = 2
-} tags;
+} p_tags;
 
-// Ptr Masks
+// Pointer Masks
 typedef enum {
   INTMASK = 1,
   TAGMASK = 3
-} mask;
+} p_mask;
 
-class Tuple;
+class Block;
 class Transient;
+class Stack;
 
 #endif

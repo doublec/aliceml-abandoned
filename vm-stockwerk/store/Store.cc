@@ -4,30 +4,157 @@
 #include "store.hh"
 #include "gchelper.hh"
 //
+// Helper Functions
+//
+static MemChunk *MakeList(u_int l) {
+  MemChunk *list = NULL;
+
+  while (l-- > 0) {
+    MemChunk *next = list;
+    list = new MemChunk(NULL, next, MEMCHUNK_SIZE);
+    if (next != NULL) {
+      next->SetPrev(list);
+    }
+  }
+
+  return list;
+}
+
+static void ClearList(MemChunk *list) {
+  while (list != NULL) {
+    MemChunk *tmp = list->GetNext();
+
+    delete list;
+    list = tmp;
+  }
+}
+//
 // Helper Class Implementation
 //
 const unsigned int HeaderDef::GEN_LIMIT[] = { 0x0FFFFFFF, 0x4FFFFFFF, 0x8FFFFFFF };
-DynamicTuple *Tuple::intgen_set;
+
+MemConfig *Store::config   = INVALID_POINTER;
+MemChain **Store::roots    = INVALID_POINTER;
+u_int Store::totalHeapSize = 0;
+
+DataSet *Store::root_set   = INVALID_POINTER;
+DataSet *Store::intgen_set = INVALID_POINTER;
 //
 // Method Implementations
 //
-Tuple *Store::CopyBlockToDst(Tuple *p, MemChain *dst) {
-  t_size s = HeaderOp::BlankDecodeSize(p);
-  
-  if (s == HeaderDef::MAX_HBSIZE) {
-    Tuple *newp, *realnp;
+Block *Store::WithGCAlloc(MemChain *chain, u_int size) {
+  MemChunk *list;
+  char *tmp;
+  int gen;
+
+  Assert(size > 0);
+  size = size << 2;
+ redo:
+  Assert(chain != NULL);
+  list = chain->anchor;
+
+  if (!(list->FitsInChunk(size))) {
+    u_int alloc_size = MEMCHUNK_SIZE;
+    MemChunk *anchor = chain->anchor;
+
+    if (alloc_size < size) {
+      div_t d    = div(size, MEMCHUNK_SIZE);
+      alloc_size = (d.quot + (d.rem ? 1 : 0)) * MEMCHUNK_SIZE;
+    }
     
-    p      = (Tuple *) ((char *) p - 4);
-    s      = *((t_size *) p);
-    newp   = MemManager::Alloc(dst, (s + 2));
-    realnp = (Tuple *) ((char *) newp + 4);
+    if ((gen = config->NeedGC(roots, (chain->total + alloc_size), chain->gen)) >= 0) {
+      DoGC(gen);
+      chain = roots[chain->gen];
+      goto redo;
+    }
+    totalHeapSize += alloc_size;
+    chain->total  += alloc_size;
+    chain->anchor = list = new MemChunk(NULL, anchor, alloc_size);
+    list->InitBlock(alloc_size);
+    anchor->SetPrev(list);
+  }
+  chain->used += size;
+  
+  return (Block *) list->AllocChunkItem(size);
+}
+
+Block *Store::NoGCAlloc(MemChain *chain, u_int size) {
+  MemChunk *list;
+
+  Assert(size > 0);
+  size = size << 2;
+  Assert(chain != NULL);
+  list = chain->anchor;
+
+  if (!(list->FitsInChunk(size))) {
+    u_int alloc_size = MEMCHUNK_SIZE;
+    MemChunk *anchor = chain->anchor;
+
+    if (alloc_size < size) {
+      div_t d    = div(size, MEMCHUNK_SIZE);
+      alloc_size = (d.quot + (d.rem ? 1 : 0)) * MEMCHUNK_SIZE;
+    }
+    totalHeapSize += alloc_size;
+    chain->total  += alloc_size;
+    chain->anchor = list = new MemChunk(NULL, anchor, alloc_size);
+    anchor->SetPrev(list);
+  }
+  chain->used += size;
+  
+  return (Block *) list->AllocChunkItem(size);
+}
+
+void Store::Shrink(MemChain *chain, int threshold) {
+  MemChunk *list   = chain->anchor;
+  MemChunk *anchor = list;
+  
+  while (list != NULL) {
+    MemChunk *prev = list->GetPrev();
+    MemChunk *next = list->GetNext();
+    
+    if (threshold-- <= 0) {
+      if (prev == NULL) {
+	anchor = next;
+	if (next != NULL) {
+	  next->SetPrev(NULL);
+	}
+      }
+      else {
+	prev->SetNext(next);
+	if (next != NULL) {
+	  next->SetPrev(prev);
+	}
+      }
+      totalHeapSize -= list->GetSize();
+      chain->total  -= list->GetSize();
+      delete list;
+    }
+    else {
+      list->MakeEmpty();
+    }
+    list = next;
+  }
+
+  chain->anchor = anchor;
+}
+
+Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
+    u_int s = HeaderOp::BlankDecodeSize(p);
+
+  if (s == HeaderDef::MAX_HBSIZE) {
+    Block *newp, *realnp;
+    
+    p      = (Block *) ((char *) p - 4);
+    s      = *((u_int *) p);
+    newp   = Store::Alloc(dst, (s + 2));
+    realnp = (Block *) ((char *) newp + 4);
     
     memcpy(newp, p, (s + 2) << 2);
     GCHelper::EncodeGen(realnp, dst->gen);
     return realnp;
   }
   else {
-    Tuple *newp = MemManager::Alloc(dst, (s + 1));
+    Block *newp = Store::Alloc(dst, (s + 1));
     
     memcpy(newp, p, (s + 1) << 2);
     GCHelper::EncodeGen(newp, dst->gen);
@@ -39,35 +166,36 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
   while (anchor != NULL) {
     // Scan current chunk
     while (scan < anchor->GetTop()) {
-      Tuple *curp    = (Tuple *) scan;
+      Block *curp    = (Block *) scan;
       word assumed_s = *((word *) curp);
-      t_size cursize;
+      u_int cursize;
       
       // Find next header
       if (PointerOp::IsInt(assumed_s)) {
-	cursize = (t_size) PointerOp::DecodeInt(assumed_s);
-	curp    = (Tuple *) ((char *) scan + 4);
+	cursize = (u_int) PointerOp::DecodeInt(assumed_s);
+	curp    = (Block *) ((char *) scan + 4);
       }
       else {
 	cursize = HeaderOp::BlankDecodeSize(curp);
       }
       
-      // Scan current tuple
-      for (u_int i = 1; i <= cursize; i++) {
-	t_field tf = Store::GenTField(i);
-	word p     = PointerOp::Deref(curp->GetArg(tf));
-	Tuple *sp  = PointerOp::RemoveTag(p);
+      // Scan current tuple (if label != CHUNK)
+      if (curp->GetLabel() != CHUNK) {
+	for (u_int i = 1; i <= cursize; i++) {
+	  word p    = PointerOp::Deref(curp->GetArg(i));
+	  Block *sp = PointerOp::RemoveTag(p);
 	
-	if (!PointerOp::IsInt(p) && (HeaderOp::GetHeader(sp) <= match_gen)) {
-	  if (GCHelper::AlreadyMoved(sp)) {
-	    curp->InitArg(tf, GCHelper::GetForwardPtr(sp));
-	  }
-	  else {
-	    Tuple *newsp = CopyBlockToDst(sp, dst);
-	    word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
+	  if (!PointerOp::IsInt(p) && (HeaderOp::GetHeader(sp) <= match_gen)) {
+	    if (GCHelper::AlreadyMoved(sp)) {
+	      curp->InitArg(i, GCHelper::GetForwardPtr(sp));
+	    }
+	    else {
+	      Block *newsp = CopyBlockToDst(sp, dst);
+	      word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
 	    
-	    GCHelper::MarkMoved(sp, newp);
-	    curp->InitArg(tf, newp);
+	      GCHelper::MarkMoved(sp, newp);
+	      curp->InitArg(i, newp);
+	    }
 	  }
 	}
       }
@@ -80,12 +208,35 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
   }
 }
 
-void Store::InitStore() {
-  MemManager::InitMemManager();
-  Tuple::intgen_set = new DynamicTuple(64);
+void Store::InitStore(MemConfig *cfg) {
+  config = cfg;
+  roots  = (MemChain **) malloc(sizeof(MemChain) * cfg->max_gen);
+  for (u_int i = 0; i < cfg->max_gen; i++) {
+    MemChain *chain = new MemChain();
+
+    chain->anchor = MakeList(2);
+    chain->total  = MEMCHUNK_SIZE * 2;
+    chain->used   = 0;
+    chain->gen    = i;
+    roots[i]      = chain;
+
+    totalHeapSize += chain->total;
+  }
+  roots[cfg->max_gen - 1]->gen = cfg->max_gen - 2;
+  root_set   = new DataSet();
+  intgen_set = new DataSet();
 }
 
-void Store::DoGC(DynamicTuple *root_set, u_int gen) {
+void Store::CloseStore() {
+  for (u_int i = 0; i < config->max_gen; i++) {
+    MemChain *chain = roots[i];
+
+    ClearList(chain->anchor);
+    free(chain);
+  }
+}
+
+void Store::DoGC(u_int gen) {
   u_int match_gen  = HeaderDef::GEN_LIMIT[gen];
   u_int dst_gen    = (gen + 1);
   MemChain *dst    = roots[dst_gen];
@@ -96,13 +247,16 @@ void Store::DoGC(DynamicTuple *root_set, u_int gen) {
   // Copy matching root_set entries
   for (u_int i = 0; i < rs_size; i++) {
     word p    = PointerOp::Deref(root_set->GetArg(i));
-    Tuple *sp = PointerOp::RemoveTag(p); 
+    Block *sp = PointerOp::RemoveTag(p);
 
     if (HeaderOp::GetHeader(sp) <= match_gen) {
-      Tuple *newsp = CopyBlockToDst(sp, dst);
+      Block *newsp = CopyBlockToDst(sp, dst);
       word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
       GCHelper::MarkMoved(sp, newp);
       root_set->SetArg(i, newp);
+    }
+    else {
+      root_set->SetArg(i, p);
     }
   }
   
@@ -114,69 +268,56 @@ void Store::DoGC(DynamicTuple *root_set, u_int gen) {
   scan   = anchor->GetTop();
 
   // Handle InterGenerational Pointers
-  rs_size = Tuple::intgen_set->GetSize();
+  rs_size = intgen_set->GetSize();
   for (u_int i = 0; i < rs_size; i++) {
-    Tuple *curp   = PointerOp::RemoveTag(PointerOp::Deref(Tuple::intgen_set->GetArg(i)));
+    Block *curp   = PointerOp::RemoveTag(PointerOp::Deref(intgen_set->GetArg(i)));
     u_int cursize = curp->GetSize();
     
     for (u_int k = 1; k <= cursize; k++) {
-      t_field tf = Store::GenTField(k);
-      word fp    = PointerOp::Deref(curp->GetArg(tf));
-      Tuple *fsp = PointerOp::RemoveTag(fp);
+      word fp    = PointerOp::Deref(curp->GetArg(k));
+      Block *fsp = PointerOp::RemoveTag(fp);
       
       if (!PointerOp::IsInt(fp) && (HeaderOp::GetHeader(fsp) <= match_gen)) {
 	if (GCHelper::AlreadyMoved(fsp)) {
-	  curp->InitArg(tf, GCHelper::GetForwardPtr(fsp));
+	  curp->InitArg(k, GCHelper::GetForwardPtr(fsp));
 	}
 	else {
-	  Tuple *newfsp = CopyBlockToDst(fsp, dst);
+	  Block *newfsp = CopyBlockToDst(fsp, dst);
 	  word newfp    = PointerOp::EncodeTag(newfsp, PointerOp::DecodeTag(fp));
 
 	  GCHelper::MarkMoved(fsp, newfp);
-	  curp->InitArg(tf, newfp);
+	  curp->InitArg(k, newfp);
 	}
       }
     }
   }
-  Tuple::intgen_set->Clear();
+  intgen_set->Clear();
   // Scan chunks (Tuple::intgen_set amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
 
   // Clean up collected regions
   for (u_int i = 0; i < dst_gen; i++) {
     MemChain *cur = roots[i];
-
-#ifdef DEBUG_CHECK
-    {
-      MemChunk *cur = roots[i]->anchor;
-
-      while (cur != NULL) {
-	cur->FillZero();
-	cur = cur->GetNext();
-      }
-      
-    }
-#endif
     
-    cur->anchor = MemManager::Shrink(cur->anchor, 2);
-    cur->used   = 0;
+    Store::Shrink(cur, 2);
+    cur->used = 0;
   }
 
   // switch semispaces
-  if (dst_gen == (MEMMAN_MAXGEN - 1)) {
-    MemChain *tmp = roots[MEMMAN_MAXGEN - 2];
-    roots[MEMMAN_MAXGEN - 2] = roots[MEMMAN_MAXGEN - 1];
-    roots[MEMMAN_MAXGEN - 1] = tmp;
+  if (dst_gen == (config->max_gen - 1)) {
+    MemChain *tmp = roots[config->max_gen - 2];
+    roots[config->max_gen - 2] = roots[config->max_gen - 1];
+    roots[config->max_gen - 1] = tmp;
   }
 }
 
 #ifdef DEBUG_CHECK
 void Store::MemStat() {
   cout << "Store Statistics\n";
-  cout << "Overall Memory available: " << totalHeapSize  << " Bytes\n";
-  cout << "G0 Memory used:           " << roots[0]->used << " Bytes\n";
-  cout << "G1 Memory used:           " << roots[1]->used << " Bytes\n";
-  cout << "G2 Memory used (src):     " << roots[2]->used << " Bytes\n";
-  cout << "G2 Memory used (dst):     " << roots[3]->used << " Bytes\n";
+  cout << "Overall Memory available: " << totalHeapSize  << " Bytes\n---\n";
+  for (u_int i = 0; i < config->max_gen; i++) {
+    cout << "G" << i << "--> Used: " << roots[i]->used << "; Total: " << roots[i]->total << "\n";
+  }
+  cout << "---\n";
 }
 #endif
