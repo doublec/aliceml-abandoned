@@ -323,15 +323,19 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    end
 
 (*--** if write raises an exception, adjust stillFree accordingly *)
-(*--** implement IO.NO_BUF such that always the whole vector is output *)
 
-	fun writeBuffer (buf, i, len, writeArr) =
+	fun writeBuffer' (buf, i, len, slice, write) =
 	    let
-		val k = writeArr (ArraySlice.slice (buf, i, SOME len))
+		val k = write (slice (buf, i, SOME len))
 	    in
 		if k = len then ()
-		else writeBuffer (buf, i + k, len - k, writeArr)
+		else writeBuffer' (buf, i + k, len - k, slice, write)
 	    end
+	fun writeBuffer (buf, len, writeArr) =
+	    writeBuffer' (buf, 0, len, ArraySlice.slice, blocking writeArr)
+	fun writeUnbuffered (vec, writeVec) =
+	    writeBuffer' (vec, 0, Vector.length vec, VectorSlice.slice,
+			  blocking writeVec)
 
 	fun flush (buf, stillFree, writeArr) =
 	    let
@@ -340,7 +344,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    in
 		stillFree := bufLen;
 		if free < bufLen then
-		    writeBuffer (buf, 0, bufLen - free, writeArr)
+		    writeBuffer (buf, bufLen - free, writeArr)
 		else ()
 	    end
 
@@ -361,12 +365,15 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, ...},
 			    buf, stillFree, bufferMode) =>
-			((if bufferMode = IO.LINE_BUF then
-			      outputLine (writer, buf, stillFree, v)
-			  else
-			      output' (writer, buf, Array.length buf,
-				       stillFree, v, 0, Vector.length v,
-				       bufferMode = IO.BLOCK_BUF);
+			((case bufferMode of
+			      IO.NO_BUF =>
+				  outputUnbuffered (writer, v)
+			    | IO.LINE_BUF =>
+				  outputLine (writer, buf, stillFree, v)
+			    | IO.BLOCK_BUF =>
+				  output' (writer, buf, Array.length buf,
+					   stillFree, v, 0, Vector.length v,
+					   true);
 			  Promise.fulfill (p, state))
 			 handle cause =>
 			     (Promise.fulfill (p, state);
@@ -376,6 +383,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 raise IO.Io {name, function = "output",
 				      cause = IO.ClosedStream})
 	    end
+	and outputUnbuffered (writer as PrimIO.WR {writeVec, ...}, v) =
+	    writeUnbuffered (v, writeVec)
 	and outputLine (writer, buf, stillFree, v) =
 	    let
 		val k = Vector.length v
@@ -404,7 +413,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		if free' > 0 andalso buffered then stillFree := free'
 		else
 		    (stillFree := bufLen;
-		     writeBuffer (buf, 0, bufLen - free', blocking writeArr);
+		     writeBuffer (buf, bufLen - free', writeArr);
 		     if vLen' = 0 then ()
 		     else output' (writer, buf, bufLen, stillFree,
 				   v, vStart', vLen', buffered))
@@ -429,15 +438,13 @@ functor StreamIO(structure PrimIO: PRIM_IO
 					andalso x = someElem)
 			    then
 				(stillFree := bufLen;
-				 writeBuffer (buf, 0, bufLen - free',
-					      blocking writeArr)
+				 writeBuffer (buf, bufLen - free', writeArr)
 				 handle cause =>
 				     (Promise.fulfill (p, state);
 				      raise IO.Io {name, function = "output1",
 						   cause}))
 			    else
-				stillFree := (if free' = 0 then bufLen
-					      else free');
+				stillFree := free';
 			    Promise.fulfill (p, state)
 			end
 		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
@@ -454,7 +461,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, _) =>
-			(flush (buf, stillFree, blocking writeArr)
+			(flush (buf, stillFree, writeArr)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io {name, function="flushOut", cause});
@@ -470,7 +477,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (PrimIO.WR {name, writeArr, close, ...},
 			    buf, stillFree, bufferMode) =>
-			(flush (buf, stillFree, blocking writeArr)
+			(flush (buf, stillFree, writeArr)
 			 handle cause =>
 			     raise IO.Io {name, function="closeOut", cause};
 			 Promise.fulfill (p, CLOSED_OUT (name, bufferMode));
@@ -485,23 +492,41 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		  | CLOSED_OUT _ => Promise.fulfill (p, state)
 	    end
 
+	val minBufSize = 512
+
 	fun setBufferMode (f, bufferMode) =
 	    let
 		val p = Promise.promise ()
 		val state = Ref.exchange (f, Promise.future p)
 	    in
 		case state of
-		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
-			    buf, stillFree, _) =>
-			(if bufferMode = IO.NO_BUF then
-			     flush (buf, stillFree, blocking writeArr)
+		    WRITER (writer as PrimIO.WR {name, writeArr,
+						 chunkSize, ...},
+			    buf, stillFree, bufferModeOld) =>
+			if bufferMode = bufferModeOld then
+			    ()
+			else if bufferMode = IO.NO_BUF then
+			    (flush (buf, stillFree, writeArr)
 			     handle cause =>
 				 (Promise.fulfill (p, state);
 				  raise IO.Io {name, function="setBufferMode",
-					       cause})
-			 else ();
-			 Promise.fulfill
-			     (p, WRITER (writer, buf, stillFree, bufferMode)))
+					       cause});
+			     Promise.fulfill
+				 (p, WRITER (writer, Array.array (1, someElem),
+					     stillFree, bufferMode)))
+			else if bufferModeOld = IO.NO_BUF then
+			    let
+				val bufSize = Int.max (chunkSize, minBufSize)
+			    in
+				stillFree := bufSize;
+				Promise.fulfill
+				    (p, WRITER (writer,
+						Array.array (bufSize, someElem),
+						stillFree, bufferMode))
+			    end
+			else
+			    Promise.fulfill
+				(p, WRITER (writer, buf, stillFree, bufferMode))
 		  | TERMINATED (name, writer, _) =>
 			Promise.fulfill (p, TERMINATED (name, writer, bufferMode))
 		  | CLOSED_OUT (name, _) =>
@@ -521,11 +546,15 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			(Promise.fulfill (p, state); bufferMode)
 	    end
 
-(*--** if chunkSize = 1, do not allocate a buffer at all (always unbuffered) *)
 	fun mkOutstream (writer as PrimIO.WR {chunkSize, ...}, bufferMode) =
-	    ref (WRITER (writer,
-			 Array.array (chunkSize, someElem),
-			 ref chunkSize, bufferMode))
+	    let
+		val bufSize = if bufferMode = IO.NO_BUF then 1
+			      else Int.max (chunkSize, minBufSize)
+	    in
+		ref (WRITER (writer,
+			     Array.array (bufSize, someElem),
+			     ref bufSize,  bufferMode))
+	    end
 
 	fun getWriter f =
 	    let
@@ -535,7 +564,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, bufferMode) =>
-			(flush (buf, stillFree, blocking writeArr)
+			(flush (buf, stillFree, writeArr)
 			 handle cause =>
 			     raise IO.Io
 				 {name, function = "getWriter", cause};
@@ -557,7 +586,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, getPos, ...},
 			    buf, stillFree, bufferMode) =>
-			(flush (buf, stillFree, blocking writeArr)
+			(flush (buf, stillFree, writeArr)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
@@ -582,7 +611,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, setPos, ...},
 			    buf, stillFree, bufferMode) =>
-			(flush (buf, stillFree, blocking writeArr)
+			(flush (buf, stillFree, writeArr)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
