@@ -21,6 +21,7 @@
 #include "generic/Transform.hh"
 #include "alice/Data.hh"
 #include "alice/Guid.hh"
+#include "alice/AliceLanguageLayer.hh"
 
 //
 // ConstructorHandler
@@ -46,7 +47,6 @@ Block *ConstructorHandler::GetAbstractRepresentation(Block *blockWithHandler) {
 //
 
 word globalTable;
-word aliceConstructorTransformName;
 static const u_int initialSize = 16; // to be checked
 
 Handler *Constructor::handler;
@@ -55,8 +55,6 @@ void Constructor::Init() {
   handler = new ConstructorHandler();
   globalTable = HashTable::New(HashTable::BLOCK_KEY, initialSize)->ToWord();
   RootSet::Add(globalTable);
-  aliceConstructorTransformName = String::New("Alice.constructor")->ToWord();
-  RootSet::Add(aliceConstructorTransformName);
 }
 
 static Transform *MakeConstructorTransform(word name, word key) {
@@ -64,7 +62,7 @@ static Transform *MakeConstructorTransform(word name, word key) {
   tuple->Init(0, name);
   tuple->Init(1, key);
   Chunk *transformName = static_cast<Chunk *>
-    (String::FromWordDirect(aliceConstructorTransformName));
+    (String::FromWordDirect(AliceLanguageLayer::constructorTransformName));
   return Transform::New(transformName, tuple->ToWord());
 }
 
