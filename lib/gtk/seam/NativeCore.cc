@@ -615,7 +615,8 @@ DEFINE0(NativeCore_mainIteration) {
 
 DEFINE1(NativeCore_printObject) {
   DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  g_print("printObject: Tuple %d = (Pointer: %p, Type: %d)\n", x0, obj, type);
+  g_print("printObject: Tuple %p = (Pointer: %p, Type: %s)\n",
+	  x0, obj, getObjectType(type));
   RETURN_UNIT;
 } END
 
