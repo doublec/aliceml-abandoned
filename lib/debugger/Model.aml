@@ -65,6 +65,7 @@ structure Model :> MODEL =
 	  | HANDLER of exn * Type.t
 	  | RAISE   of exn * Type.t
 	  | SPAWN
+	  | UNKNOWN  
 
 	datatype stackentry = 
 	    ENTRY    of Thread.thread * position * stackstp
@@ -378,7 +379,8 @@ structure Model :> MODEL =
 		(* Converts a step_point_type step point to a stackstp step point 
 		 * by annotating and recontructing types 
 		 *)
-		fun stepPoint2Stackstp(Debugger.Application(value, typ, values)) =
+		fun stepPoint2Stackstp(Debugger.Application(value, typ, values) |
+				       Debugger.Constructor(value, typ, values)) =
 		    let
 			fun getOneArgTypes typ = 
 			    let 
@@ -413,11 +415,13 @@ structure Model :> MODEL =
 			val types = case listvalues of 
 			    [x] => getOneArgTypes typ
 			  |  _  => getTupArgTypes typ
+			(* Debugging *)
 			val _ = if List.length listvalues = List.length types
 				    then ()
 				else TextIO.output(TextIO.stdErr, "mismatch of Listlength\n" ^
 						   Int.toString(List.length listvalues) ^ " <> " ^
 						   Int.toString(List.length types) ^ "\n" )
+		        (* End debugging *)
 		    in
 			APP(value, typ, ListPair.zip(listvalues,types))
 		    end
@@ -429,6 +433,10 @@ structure Model :> MODEL =
 		    RAISE(e, PervasiveType.typ_exn)
 		  | stepPoint2Stackstp(Debugger.Spawn)     = 
 		    SPAWN
+		  | stepPoint2Stackstp(Debugger.RecordSel(pos, value, typ)) = 
+		    UNKNOWN
+		  | stepPoint2Stackstp(Debugger.Strict (value, typ)) = 
+		    UNKNOWN
 		(* Registers a new thread at the model *)
 		fun registerThread (thread_list_entry as (thread, _, _, _, _)) =
 			if List.exists 

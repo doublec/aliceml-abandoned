@@ -14,6 +14,7 @@ import structure Model from "Model"
 import structure Stream from "Stream"
 import structure TextIO from "../../lib/system/TextIO"
 import signature EVENTLISTENER from "EVENTLISTENER-sig"
+import structure Debug from "../../lib/system/Debug"
 
 import structure Debugger from "../../lib/system/Debugger"
 
@@ -21,16 +22,18 @@ structure Eventlistener :> EVENTLISTENER =
     struct
 	type eventlistener = ((Model.event -> unit) list) ref
 
+	(* Helper functions *)
+	fun convertSystemEvent(Debugger.Breakpoint x) = Model.Breakpoint x
+	  | convertSystemEvent(Debugger.Entry x)      = Model.Entry x
+	  | convertSystemEvent(Debugger.Exit x)       = Model.Exit x
+	  | convertSystemEvent(Debugger.UnCaught x)   = Model.UnCaught x
+	  | convertSystemEvent(Debugger.Blocked x)    = Model.Blocked x
+	  | convertSystemEvent(Debugger.Runnable x)   = Model.Runnable x
+	  | convertSystemEvent(Debugger.Terminated x) = Model.Terminated x
+	(* End helper functions *)
+
 	fun new user_event_stream = 
 	    let 
-		fun convertSystemEvent(Debugger.Breakpoint x) = Model.Breakpoint x
-		  | convertSystemEvent(Debugger.Entry x)      = Model.Entry x
-		  | convertSystemEvent(Debugger.Exit x)       = Model.Exit x
-		  | convertSystemEvent(Debugger.UnCaught x)   = Model.UnCaught x
-		  | convertSystemEvent(Debugger.Blocked x)    = Model.Blocked x
-		  | convertSystemEvent(Debugger.Runnable x)   = Model.Runnable x
-		  | convertSystemEvent(Debugger.Terminated x) = Model.Terminated x
-
 		val eventlistener = (ref nil) : eventlistener
 		val system_event_stream = Debugger.getEventStream();
 		fun consumeUserStream (x::xs) =
@@ -38,16 +41,20 @@ structure Eventlistener :> EVENTLISTENER =
 		     consumeUserStream xs)
 		  | consumeUserStream _       = raise Subscript
 		fun consumeSystemStream stream = 
-		    let val (event, new_stream) = Debugger.readEventStream(stream)
+		    let 
+			val (event, new_stream) = Debugger.readEventStream(stream)
 		    in 
 			(List.app 
 			 (fn f => f (convertSystemEvent event)) (!eventlistener);
 			 consumeSystemStream new_stream)
 		    end
 		val _ = (spawn (consumeUserStream (Stream.read user_event_stream)
-				handle e => TextIO.print ("Userevent sind tot "^ General.exnName e^ "\n"));
+				handle e => 
+				    TextIO.print ("Userevent sind tot "^ General.exnName e^ "\n"));
 			 spawn (consumeSystemStream system_event_stream 
-				handle e => TextIO.print ("SystemEvents sind tot "^ General.exnName e^ "\n")))
+				handle e => 
+				    TextIO.print ("SystemEvents sind tot "^ General.exnName e^ "\n")))
+
 	    in
 		eventlistener
 	    end

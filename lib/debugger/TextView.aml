@@ -76,6 +76,7 @@ structure TextView :> VIEW =
 	      | Model.HANDLER     (exc, typ) => "Handler => "
 		    ^PrettyPrint.toString(PPValue.ppVal typ exc, 80)
 	      | Model.SPAWN                  => "Spawn"
+	      | Model.UNKNOWN                => "Unknown"
 	    
 	fun stackToString acc nil = acc
 	  | stackToString acc (Model.EXIT (_,_,result,typ) :: Model.ENTRY(_,_,stp) :: xs) = 

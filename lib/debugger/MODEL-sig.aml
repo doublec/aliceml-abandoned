@@ -58,6 +58,7 @@ signature MODEL =
 	  | HANDLER of exn * Type.t
 	  | RAISE   of exn * Type.t
 	  | SPAWN
+	  | UNKNOWN
 
 	datatype stackentry = 
 	    ENTRY    of Thread.thread * position * stackstp
