@@ -1,0 +1,22 @@
+#!/bin/sh
+
+OZHOME=/opt/mozart-1.1.1
+
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+if test -z "${OZ_LOAD}"
+then
+  OZ_LOAD=cache=$OZHOME/cache/
+fi
+
+OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:$OZ_LOAD
+
+export STOCKHOME OZ_LOAD
+
+exec ozl "$@"

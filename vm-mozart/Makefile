@@ -463,7 +463,7 @@ BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
 INSTALL3DIRS = build3/install build3/install/bin build3/install/lib
 INSTALL3TOPFILES = stow.ozf stoc.ozf stot.ozf Default.import
-INSTALL3BINFILES = stow stoc stot
+INSTALL3BINFILES = stow stoc stol stot
 INSTALL3LIBFILES = Base.ozf $(NATIVECOMPONENTS:%=%.ozf)
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
