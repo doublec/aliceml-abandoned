@@ -42,7 +42,6 @@ structure PathPrivate =
   (* Comparison and hashing *)
 
     fun equals((stamp1,_), (stamp2,_))	= stamp1 = stamp2
-    fun compare((stamp1,_), (stamp2,_))	= GlobalStamp.compare(stamp1,stamp2)
     fun hash (stamp, _)			= GlobalStamp.hash stamp
 
 

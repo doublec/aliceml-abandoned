@@ -14,7 +14,5 @@ signature GLOBAL_STAMP =
     val fromString :	string -> stamp
     val toString :	stamp  -> string
 
-    val compare :	stamp * stamp -> order
     val hash :		stamp -> int
-
   end

@@ -21,7 +21,6 @@ signature PATH =
     val path :		path * lab * int -> path
 
     val equals :	path * path -> bool
-    val compare :	path * path -> order
     val hash :		path -> int
 
     val isDot :		path -> bool

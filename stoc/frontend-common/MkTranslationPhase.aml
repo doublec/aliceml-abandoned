@@ -1425,7 +1425,7 @@ struct
 		O.Field(nonInfo r, l', e') :: fs'
 	    end
 	else if Inf.isTypItem item then
-	    (* [type y = t]_x --> y = Inf.lookupTyp(x, "y") *)
+	    (* [type y = t]_x --> y = Inf.lookupTyp(x,[y]) *)
 	    let
 		val (a,_,_) = Inf.asTypItem item
 		val  l'  = O.Lab(nonInfo r, trTypLabel a)
@@ -1436,7 +1436,7 @@ struct
 		O.Field(nonInfo r, l', e') :: fs'
 	    end
 	else if Inf.isModItem item then
-	    (* [module y : j]_x --> y = let val x1 = Inf.lookupMod(x, "y")
+	    (* [module y : j]_x --> y = let val x1 = Inf.lookupMod(x,[y])
 	     *                          in [j]_x1 end
 	     *)
 	    let
@@ -1458,7 +1458,7 @@ struct
 	else if Inf.isInfItem item then
 	    (* [interface y = j]_x --> y = fn _ =>
 	     *                             let val x1 = Inf.instance
-	     *                                          (Inf.lookupInf(x, "y"))
+	     *                                          (Inf.lookupInf(x,[y]))
 	     *                             in (x1, [j]_x1) end
 	     *)
 	    let
