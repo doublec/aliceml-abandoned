@@ -2,8 +2,12 @@
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
+ * Contributor:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
  * Copyright:
  *   Leif Kornstaedt, 2000-2002
+ *   Guido Tack, 2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -33,6 +37,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | RECORD
 		  | VECTOR
 		  | TAG of LargeInt.int
+		  | TUPLE
+		  | CLOSURE
+		  | TRANSFORM
 
 		val none = 0: LargeInt.int
 		val some = TAG 1
@@ -93,62 +100,69 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | toInt RECORD  = 3
 		  | toInt VECTOR  = 4
 		  | toInt (TAG i) = 5 + i
+		  | toInt TUPLE   = 243
+		  | toInt CLOSURE = 242
+		  | toInt TRANSFORM = 245
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
-			shared: PrimPickle.id StampMap.t}
+			shared: PrimPickle.register StampMap.t}
 
+	fun nextRegister ({outstream, ...}: context) =
+	    PrimPickle.nextRegister outstream
 	fun outputInt ({outstream, ...}: context, i) =
 	    PrimPickle.outputInt (outstream, i)
 	fun outputChunk ({outstream, ...}: context, words) =
 	    PrimPickle.outputChunk (outstream, words)
-	fun outputUnique ({outstream, ...}: context) =
-	    PrimPickle.outputUnique outstream
 	fun outputBlock ({outstream, ...}: context, label, size) =
 	    PrimPickle.outputBlock (outstream, Label.toInt label, size)
 	fun outputTuple ({outstream, ...}: context, size) =
 	    PrimPickle.outputTuple (outstream, size)
 	fun outputClosure ({outstream, ...}: context, size) =
 	    PrimPickle.outputClosure (outstream, size)
-	fun outputReference ({outstream, ...}: context, id) =
-	    PrimPickle.outputReference (outstream, id)
 	fun outputString ({outstream, ...}: context, s) =
 	    PrimPickle.outputString (outstream, s)
 	fun outputAtom ({outstream, ...}: context, s) =
 	    PrimPickle.outputAtom (outstream, s)
-	fun outputTransform ({outstream, ...}: context, name) =
-	    PrimPickle.outputTransform (outstream, name)
-
+	fun outputTransform ({outstream, ...}: context) =
+	    PrimPickle.outputTransform outstream
+	fun outputLoad ({outstream, ...}: context, i) =
+	    PrimPickle.outputLoad (outstream, i)
+	fun outputStore ({outstream, ...}: context, i) =
+	    PrimPickle.outputStore (outstream, i)
 	fun outputOption _ (context, NONE) =
 	    outputInt (context, Label.none)
 	  | outputOption output (context, SOME x) =
-	    (outputBlock (context, Label.some, 1); output (context, x))
+	    (output (context, x);
+	     outputBlock (context, Label.some, 1))
 
 	fun outputVector output (context, xs) =
-	    (outputBlock (context, Label.VECTOR, Vector.length xs + 1);
+	    (Vector.app (fn x => output (context, x)) (Vector.rev xs);
 	     outputInt (context, LargeInt.fromInt (Vector.length xs));
-	     Vector.app (fn x => output (context, x)) xs)
-
+	     outputBlock (context, Label.VECTOR, Vector.length xs + 1))
+	     
 	fun outputStamp (context, stamp) =
 	    outputInt (context, LargeInt.fromInt (Stamp.hash stamp))
 
 	fun outputId (context, id) = outputInt (context, LargeInt.fromInt id)
 
 	fun outputIdDef (context, IdDef id) =
-	    (outputBlock (context, Label.idDef, 1); outputId (context, id))
+	    (outputId (context, id);
+	     outputBlock (context, Label.idDef, 1))
 	  | outputIdDef (context, Wildcard) =
 	    outputInt (context, Label.wildcard)
 
 	fun outputArgs outputArg (context, OneArg x) =
-	    (outputBlock (context, Label.oneArg, 1); outputArg (context, x))
+	    (outputArg (context, x); outputBlock (context, Label.oneArg, 1))
 	  | outputArgs outputArg (context, TupArgs xs) =
-	    (outputBlock (context, Label.tupArgs, 1);
-	     outputVector outputArg (context, xs))
+	    (outputVector outputArg (context, xs);
+	     outputBlock (context, Label.tupArgs, 1))
 
 	fun outputCoord (context, (string, line, column)) =
-	    (outputTuple (context, 3); outputString (context, string);
+	    (outputInt (context, LargeInt.fromInt column);
 	     outputInt (context, LargeInt.fromInt line);
-	     outputInt (context, LargeInt.fromInt column))
+	     outputString (context, string);
+	     outputTuple (context, 3))
 
 	fun outputLiveness (context, is) =
 	    outputVector (fn (context, i) =>
@@ -172,268 +186,301 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    in
 		outputChunk (context,
 			     Vector.tabulate
-				 (8, fn i => Word8Vector.sub (vec, i)));
-		()
+				 (8, fn i => Word8Vector.sub (vec, i)))
 	    end
 
 	fun outputLabel (context, label) =
-	    ignore (outputAtom (context, label))
-
+	    outputAtom (context, label)
+	    
 	fun outputName (context, string) =
-	    ignore (outputString (context, string))
+	    outputString (context, string)
 
 	fun outputValue (context, V.Prim name) =
-	    (outputTransform (context, "Alice.primitive.value");
-	     ignore (outputString (context, name)))
-	  | outputValue (context, V.Int i) = outputInt (context, i)
+	    (outputString (context, name);
+	     outputString (context, "Alice.primitive.value");
+	     outputTransform context)
+	  | outputValue (context, V.Int i) = 
+	    outputInt (context, i)
 	  | outputValue (context, V.String s) =
-	    ignore (outputString (context, s))
+	    outputString (context, s)
 	  | outputValue (context, V.WideString s) =
-	    ignore (outputWideString (context, s))
-	  | outputValue (context, V.Real r) = outputReal (context, r)
+	    outputWideString (context, s)
+	  | outputValue (context, V.Real r) =
+	    outputReal (context, r)
 	  | outputValue (context, V.TaggedValue (i, values)) =
-	    (outputBlock (context, Label.TAG i, Vector.length values);
-	     Vector.app (fn value => outputValue (context, value)) values)
+	    (Vector.app (fn value => outputValue (context, value))
+	     (Vector.rev values);
+	     outputBlock (context, Label.TAG i, Vector.length values))
 	  | outputValue (context, V.Tuple values) =
-	    (outputTuple (context, Vector.length values);
-	     Vector.app (fn value => outputValue (context, value)) values)
+	    (Vector.app (fn value => outputValue (context, value))
+	     (Vector.rev values);
+	     outputTuple (context, Vector.length values))
 	  | outputValue (context, V.Vector values) =
-	    (outputBlock (context, Label.VECTOR, Vector.length values + 1);
+	    (Vector.app (fn value => outputValue (context, value))
+	     (Vector.rev values);
 	     outputInt (context, LargeInt.fromInt (Vector.length values));
-	     Vector.app (fn value => outputValue (context, value)) values)
+	     outputBlock (context, Label.VECTOR, Vector.length values + 1))
 	  | outputValue (context, V.Closure (abstractCode, values)) = 
-	    (outputClosure (context, 1 + Vector.length values);
-	     outputTransform (context, "Alice.function");
+	    (Vector.app (fn value => outputValue (context, value))
+	     (Vector.rev values);
 	     outputAbstractCode (context, abstractCode);
-	     Vector.app (fn value => outputValue (context, value)) values)
+	     outputString (context, "Alice.function");
+	     outputTransform context;
+	     outputClosure (context, 1 + Vector.length values))
 	  | outputValue (context, V.Sign _) =
 	    outputInt (context, 0) (*--** i.e., `NONE' *)
 	and outputInstr (context, Kill (ids, instr)) =
-	    (outputBlock (context, Label.kill, 2);
+	    (outputInstr (context, instr);
 	     outputVector outputId (context, ids);
-	     outputInstr (context, instr))
+	     outputBlock (context, Label.kill, 2))
 	  | outputInstr (context, PutVar (id, idRef, instr)) =
-	    (outputBlock (context, Label.putVar, 3); outputId (context, id);
-	     outputIdRef (context, idRef); outputInstr (context, instr))
+	    (outputInstr (context, instr);
+	     outputIdRef (context, idRef);
+	     outputId (context, id);
+	     outputBlock (context, Label.putVar, 3))
 	  | outputInstr (context, PutNew (id, s, instr)) =
-	    (outputBlock (context, Label.putNew, 3); outputId (context, id);
-	     outputString (context, s); outputInstr (context, instr))
+	    (outputInstr (context, instr);
+	     outputString (context, s);
+	     outputId (context, id);
+	     outputBlock (context, Label.putNew, 3))
 	  | outputInstr (context, PutTag (id, tag, idRefs, instr)) =
-	    (outputBlock (context, Label.putTag, 4); outputId (context, id);
+	    (outputInstr (context, instr);
+	     outputVector outputIdRef (context, idRefs);
 	     outputInt (context, LargeInt.fromInt tag);
-	     outputVector outputIdRef (context, idRefs);
-	     outputInstr (context, instr))
+	     outputId (context, id);
+	     outputBlock (context, Label.putTag, 4))
 	  | outputInstr (context, PutCon (id, idRef, idRefs, instr)) =
-	    (outputBlock (context, Label.putCon, 4); outputId (context, id);
-	     outputIdRef (context, idRef);
+	    (outputInstr (context, instr);
 	     outputVector outputIdRef (context, idRefs);
-	     outputInstr (context, instr))
+	     outputIdRef (context, idRef);
+	     outputId (context, id);
+	     outputBlock (context, Label.putCon, 4))
 	  | outputInstr (context, PutRef (id, idRef, instr)) =
-	    (outputBlock (context, Label.putRef, 3); outputId (context, id);
-	     outputIdRef (context, idRef); outputInstr (context, instr))
-	  | outputInstr (context, PutTup (id, idRefs, instr)) =
-	    (outputBlock (context, Label.putTup, 3); outputId (context, id);
-	     outputVector outputIdRef (context, idRefs);
-	     outputInstr (context, instr))
-	  | outputInstr (context, PutPolyRec (id, labels, idRefs, instr)) =
-	    (outputBlock (context, Label.putPolyRec, 4);
-	     outputId (context, id);
-	     outputVector outputLabel (context, labels);
-	     outputVector outputIdRef (context, idRefs);
-	     outputInstr (context, instr))
-	  | outputInstr (context, PutVec (id, idRefs, instr)) =
-	    (outputBlock (context, Label.putVec, 3); outputId (context, id);
-	     outputVector outputIdRef (context, idRefs);
-	     outputInstr (context, instr))
-	  | outputInstr (context, Close (id, idRefs, template, instr)) =
-	    (outputBlock (context, Label.close, 4); outputId (context, id);
-	     outputVector outputIdRef (context, idRefs);
-	     outputTemplate (context, template); outputInstr (context, instr))
-	  | outputInstr (context, Specialize (id, idRefs, template, instr)) =
-	    (outputBlock (context, Label.specialize, 4);
-	     outputId (context, id);
-	     outputVector outputIdRef (context, idRefs);
-	     outputTemplate (context, template); outputInstr (context, instr))
-	  | outputInstr (context, AppPrim (value, idRefs, idDefInstrOpt)) =
-	    (outputBlock (context, Label.appPrim, 3);
-	     outputValue (context, value);
-	     outputVector outputIdRef (context, idRefs);
-	     outputOption (fn (context, (idDef, instr)) =>
-			   (outputTuple (context, 2);
-			    outputIdDef (context, idDef);
-			    outputInstr (context, instr)))
-	     (context, idDefInstrOpt))
-	  | outputInstr (context, AppVar (idRef, inArgs, outArgsInstrOpt)) =
-	    (outputBlock (context, Label.appVar, 3);
+	    (outputInstr (context, instr);
 	     outputIdRef (context, idRef);
-	     outputArgs outputIdRef (context, inArgs);
-	     outputOption (fn (context, (outArgs, instr)) =>
-			   (outputTuple (context, 2);
+	     outputId (context, id);
+	     outputBlock (context, Label.putRef, 3))
+	  | outputInstr (context, PutTup (id, idRefs, instr)) =
+	    (outputInstr (context, instr);
+	     outputVector outputIdRef (context, idRefs);
+	     outputId (context, id);
+	     outputBlock (context, Label.putTup, 3))
+	  | outputInstr (context, PutPolyRec (id, labels, idRefs, instr)) =
+	    (outputInstr (context, instr);
+	     outputVector outputIdRef (context, idRefs);
+	     outputVector outputLabel (context, labels);
+	     outputId (context, id);
+	     outputBlock (context, Label.putPolyRec, 4))
+	  | outputInstr (context, PutVec (id, idRefs, instr)) =
+	    (outputInstr (context, instr);
+	     outputVector outputIdRef (context, idRefs);
+	     outputId (context, id);
+	     outputBlock (context, Label.putVec, 3))
+	  | outputInstr (context, Close (id, idRefs, template, instr)) =
+	    (outputInstr (context, instr);
+	     outputTemplate (context, template);
+	     outputVector outputIdRef (context, idRefs);
+	     outputId (context, id);
+	     outputBlock (context, Label.close, 4))
+	  | outputInstr (context, Specialize (id, idRefs, template, instr)) =
+	    (outputInstr (context, instr);
+	     outputTemplate (context, template);
+	     outputVector outputIdRef (context, idRefs);
+	     outputId (context, id);
+	     outputBlock (context, Label.specialize, 4))
+	  | outputInstr (context, AppPrim (value, idRefs, idDefInstrOpt)) =
+	    (outputOption (fn (context, (idDef, instr)) =>
+			   (outputInstr (context, instr);
+			    outputIdDef (context, idDef);
+			    outputTuple (context, 2)))
+	     (context, idDefInstrOpt);
+	     outputVector outputIdRef (context, idRefs);
+	     outputValue (context, value);
+	     outputBlock (context, Label.appPrim, 3))
+	  | outputInstr (context, AppVar (idRef, inArgs, outArgsInstrOpt)) =
+	    (outputOption (fn (context, (outArgs, instr)) =>
+			   (outputInstr (context, instr);
 			    outputArgs outputIdDef (context, outArgs);
-			    outputInstr (context, instr)))
-	     (context, outArgsInstrOpt))
+			    outputTuple (context, 2)))
+	     (context, outArgsInstrOpt);
+	     outputArgs outputIdRef (context, inArgs);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.appVar, 3))
 	  | outputInstr (context,
 			 DirectAppVar (idRef, inArgs, outArgsInstrOpt)) =
-	    (outputBlock (context, Label.directAppVar, 3);
-	     outputIdRef (context, idRef);
-	     outputArgs outputIdRef (context, inArgs);
-	     outputOption (fn (context, (outArgs, instr)) =>
-			   (outputTuple (context, 2);
+	    (outputOption (fn (context, (outArgs, instr)) =>
+			   (outputInstr (context, instr);
 			    outputArgs outputIdDef (context, outArgs);
-			    outputInstr (context, instr)))
-	     (context, outArgsInstrOpt))
-	  | outputInstr (context, GetRef (id, idRef, instr)) =
-	    (outputBlock (context, Label.getRef, 3); outputId (context, id);
-	     outputIdRef (context, idRef); outputInstr (context, instr))
-	  | outputInstr (context, GetTup  (idDefs, idRef, instr)) =
-	    (outputBlock (context, Label.getTup, 3);
-	     outputVector outputIdDef (context, idDefs);
-	     outputIdRef (context, idRef); outputInstr (context, instr))
-	  | outputInstr (context, Sel (id, idRef, i, instr)) =
-	    (outputBlock (context, Label.sel, 4);
-	     outputId (context, id); outputIdRef (context, idRef);
-	     outputInt (context, LargeInt.fromInt i);
-	     outputInstr (context, instr))
-	  | outputInstr (context, LazyPolySel (ids, idRef, labels, instr)) =
-	    (outputBlock (context, Label.lazyPolySel, 4);
-	     outputVector outputId (context, ids);
+			    outputTuple (context, 2)))
+	     (context, outArgsInstrOpt);
+	     outputArgs outputIdRef (context, inArgs);
 	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.directAppVar, 3))
+	  | outputInstr (context, GetRef (id, idRef, instr)) =
+	    (outputInstr (context, instr);
+	     outputIdRef (context, idRef);
+	     outputId (context, id);
+	     outputBlock (context, Label.getRef, 3))
+	  | outputInstr (context, GetTup  (idDefs, idRef, instr)) =
+	    (outputInstr (context, instr);
+	     outputIdRef (context, idRef);
+	     outputVector outputIdDef (context, idDefs);
+	     outputBlock (context, Label.getTup, 3))
+	  | outputInstr (context, Sel (id, idRef, i, instr)) =
+	    (outputInstr (context, instr);
+	     outputInt (context, LargeInt.fromInt i);
+	     outputIdRef (context, idRef);
+	     outputId (context, id); 
+	     outputBlock (context, Label.sel, 4))
+	  | outputInstr (context, LazyPolySel (ids, idRef, labels, instr)) =
+	    (outputInstr (context, instr);
 	     outputVector outputLabel (context, labels);
-	     outputInstr (context, instr))
+	     outputIdRef (context, idRef);
+	     outputVector outputId (context, ids);
+	     outputBlock (context, Label.lazyPolySel, 4))
 	  | outputInstr (context, Raise idRef) =
-	    (outputBlock (context, Label.raise_, 1);
-	     outputIdRef (context, idRef))
+	    (outputIdRef (context, idRef);
+	     outputBlock (context, Label.raise_, 1))
 	  | outputInstr (context, Reraise idRef) =
-	    (outputBlock (context, Label.reraise, 1);
-	     outputIdRef (context, idRef))
+	    (outputIdRef (context, idRef);
+	     outputBlock (context, Label.reraise, 1))
 	  | outputInstr (context,
 			 Try (tryInstr, idDef1, idDef2, handleInstr)) =
-	    (outputBlock (context, Label.try, 4);
-	     outputInstr (context, tryInstr); outputIdDef (context, idDef1);
-	     outputIdDef (context, idDef2); outputInstr (context, handleInstr))
+	    (outputInstr (context, handleInstr);
+	     outputIdDef (context, idDef2);
+	     outputIdDef (context, idDef1);
+	     outputInstr (context, tryInstr);
+	     outputBlock (context, Label.try, 4))
 	  | outputInstr (context, EndTry instr) =
-	    (outputBlock (context, Label.endTry, 1);
-	     outputInstr (context, instr))
+	    (outputInstr (context, instr);
+	     outputBlock (context, Label.endTry, 1))
 	  | outputInstr (context, EndHandle instr) =
-	    (outputBlock (context, Label.endHandle, 1);
-	     outputInstr (context, instr))
+	    (outputInstr (context, instr);
+	     outputBlock (context, Label.endHandle, 1))
 	  | outputInstr (context, IntTest (idRef, tests, instr)) =
-	    (outputBlock (context, Label.intTest, 3);
-	     outputIdRef (context, idRef);
+	    (outputInstr (context, instr);
 	     outputVector (fn (context, (int, instr)) =>
-			      (outputTuple (context, 2);
-			       outputInt (context, int);
-			       outputInstr (context, instr))) (context, tests);
-	     outputInstr (context, instr))
+			   (outputInstr (context, instr);
+			    outputInt (context, int);
+			    outputTuple (context, 2))) (context, tests);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.intTest, 3))
 	  | outputInstr (context, CompactIntTest (idRef, i, instrs, instr)) =
-	    (outputBlock (context, Label.compactIntTest, 4);
-	     outputIdRef (context, idRef); outputInt (context, i);
+	    (outputInstr (context, instr);
 	     outputVector outputInstr (context, instrs);
-	     outputInstr (context, instr))
+	     outputInt (context, i);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.compactIntTest, 4))
 	  | outputInstr (context, RealTest (idRef, tests, instr)) =
-	    (outputBlock (context, Label.realTest, 3);
-	     outputIdRef (context, idRef);
+	    (outputInstr (context, instr);
 	     outputVector (fn (context, (real, instr)) =>
-			   (outputTuple (context, 2);
+			   (outputInstr (context, instr);
 			    outputReal (context, real);
-			    outputInstr (context, instr))) (context, tests);
-	     outputInstr (context, instr))
+			    outputTuple (context, 2))) (context, tests);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.realTest, 3))
 	  | outputInstr (context, StringTest (idRef, tests, instr)) =
-	    (outputBlock (context, Label.stringTest, 3);
-	     outputIdRef (context, idRef);
+	    (outputInstr (context, instr);
 	     outputVector (fn (context, (string, instr)) =>
-			   (outputTuple (context, 2);
+			   (outputInstr (context, instr);
 			    outputString (context, string);
-			    outputInstr (context, instr))) (context, tests);
-	     outputInstr (context, instr))
+			    outputTuple (context, 2))) (context, tests);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.stringTest, 3))
 	  | outputInstr (context, TagTest (idRef, tests1, tests2, instr)) =
-	    (outputBlock (context, Label.tagTest, 4);
-	     outputIdRef (context, idRef);
-	     outputVector (fn (context, (tag, instr)) =>
-			      (outputTuple (context, 2);
-			       outputInt (context, LargeInt.fromInt tag);
-			       outputInstr (context, instr)))
-			  (context, tests1);
+	    (outputInstr (context, instr);
 	     outputVector (fn (context, (tag, idDefs, instr)) =>
-			      (outputTuple (context, 3);
-			       outputInt (context, LargeInt.fromInt tag);
-			       outputVector outputIdDef (context, idDefs);
-			       outputInstr (context, instr)))
-			  (context, tests2);
-	     outputInstr (context, instr))
+			   (outputInstr (context, instr);
+			    outputVector outputIdDef (context, idDefs);
+			    outputInt (context, LargeInt.fromInt tag);
+			    outputTuple (context, 3)))
+	     (context, tests2);
+	     outputVector (fn (context, (tag, instr)) =>
+			   (outputInstr (context, instr);
+			    outputInt (context, LargeInt.fromInt tag);
+			    outputTuple (context, 2)))
+	     (context, tests1);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.tagTest, 4))
 	  | outputInstr (context, CompactTagTest (idRef, tests, instrOpt)) =
-	    (outputBlock (context, Label.compactTagTest, 3);
-	     outputIdRef (context, idRef);
+	    (outputOption outputInstr (context, instrOpt);
 	     outputVector (fn (context, (idDefsOpt, instr)) =>
-			      (outputTuple (context, 2);
-			       outputOption
-				   (fn (context, idDefs) =>
-				       outputVector
-					   outputIdDef (context, idDefs))
-				   (context, idDefsOpt);
-			       outputInstr (context, instr))) (context, tests);
-	     outputOption outputInstr (context, instrOpt))
+			   (outputInstr (context, instr);
+			    outputOption
+			    (fn (context, idDefs) =>
+			     outputVector
+			     outputIdDef (context, idDefs))
+			    (context, idDefsOpt);
+			    outputTuple (context, 2))) (context, tests);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.compactTagTest, 3))
 	  | outputInstr (context, ConTest (idRef, tests1, tests2, instr)) =
-	    (outputBlock (context, Label.conTest, 4);
-	     outputIdRef (context, idRef);
-	     outputVector (fn (context, (idRef, instr)) =>
-			   (outputTuple (context, 2);
-			    outputIdRef (context, idRef);
-			    outputInstr (context, instr))) (context, tests1);
+	    (outputInstr (context, instr);
 	     outputVector (fn (context, (idRef, idDefs, instr)) =>
-			   (outputTuple (context, 3);
+			   (outputInstr (context, instr);
+			    outputVector outputIdDef (context, idDefs);
 			    outputIdRef (context, idRef);
-			    outputVector outputIdDef (context, idDefs);
-			    outputInstr (context, instr))) (context, tests2);
-	     outputInstr (context, instr))
-	  | outputInstr (context, VecTest (idRef, tests, instr)) =
-	    (outputBlock (context, Label.vecTest, 3);
+			    outputTuple (context, 3))) (context, tests2);
+	     outputVector (fn (context, (idRef, instr)) =>
+			   (outputInstr (context, instr);
+			    outputIdRef (context, idRef);
+			    outputTuple (context, 2))) (context, tests1);
 	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.conTest, 4))
+	  | outputInstr (context, VecTest (idRef, tests, instr)) =
+	    (outputInstr (context, instr);
 	     outputVector (fn (context, (idDefs, instr)) =>
-			   (outputTuple (context, 2);
+			   (outputInstr (context, instr);
 			    outputVector outputIdDef (context, idDefs);
-			    outputInstr (context, instr))) (context, tests);
-	     outputInstr (context, instr))
+			    outputTuple (context, 2))) (context, tests);
+	     outputIdRef (context, idRef);
+	     outputBlock (context, Label.vecTest, 3))
 	  | outputInstr (context as {shared, ...}, Shared (stamp, instr)) =
 	    (case StampMap.lookup (shared, stamp) of
-		 SOME id => outputReference (context, id)
+		 SOME id => outputLoad (context, id)
 	       | NONE =>
 		     let
-			 val id = outputBlock (context, Label.shared, 2)
+			 val id = nextRegister context
 		     in
-			 outputStamp (context, stamp);
 			 outputInstr (context, instr);
+			 outputStamp (context, stamp);
+			 outputBlock (context, Label.shared, 2);
+			 outputStore (context, id);
 			 StampMap.insert (shared, stamp, id)
 		     end)
 	  | outputInstr (context, Return args) =
-	    (outputBlock (context, Label.return, 1);
-	     outputArgs outputIdRef (context, args))
+	    (outputArgs outputIdRef (context, args);
+	     outputBlock (context, Label.return, 1))
 	and outputIdRef (context, Immediate value) =
-	    (outputBlock (context, Label.immediate, 1);
-	     outputValue (context, value))
+	    (outputValue (context, value);
+	     outputBlock (context, Label.immediate, 1))
 	  | outputIdRef (context, Local id) =
-	    (outputBlock (context, Label.local_, 1); outputId (context, id))
+	    (outputId (context, id);
+	     outputBlock (context, Label.local_, 1))
 	  | outputIdRef (context, LastUseLocal id) =
-	    (outputBlock (context, Label.lastUseLocal, 1);
-	     outputId (context, id))
+	    (outputId (context, id);
+	     outputBlock (context, Label.lastUseLocal, 1))
 	  | outputIdRef (context, Global i) =
-	    (outputBlock (context, Label.global, 1); outputId (context, i))
+	    (outputId (context, i);
+	     outputBlock (context, Label.global, 1))
 	and outputTemplate (context, Template (coord, ntoplevels, localNames,
 					       args, body, liveness)) =
-	    (outputBlock (context, Label.template, 6);
-	     outputCoord (context, coord);
-	     outputInt (context, LargeInt.fromInt ntoplevels);
-	     outputVector outputName (context, localNames);
+	    (outputLiveness (context, liveness);
+	     outputInstr (context, body);
 	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body); outputLiveness (context, liveness))
+	     outputVector outputName (context, localNames);
+	     outputInt (context, LargeInt.fromInt ntoplevels);
+	     outputCoord (context, coord);
+	     outputBlock (context, Label.template, 6))	     
 	and outputAbstractCode (context, Function (coord, globals, localNames,
 						   args, body, liveness)) =
-	    (outputBlock (context, Label.function, 6);
-	     outputCoord (context, coord);
-	     outputVector (outputOption outputValue) (context, globals);
-	     outputVector outputName (context, localNames);
+	    (outputLiveness (context, liveness);
+	     outputInstr (context, body);
 	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body); outputLiveness (context, liveness))
+	     outputVector outputName (context, localNames);
+	     outputVector (outputOption outputValue) (context, globals);
+	     outputCoord (context, coord);
+	     outputBlock (context, Label.function, 6))
 
 	fun output (outstream, value) =
 	    outputValue ({outstream = outstream, shared = StampMap.map ()},
