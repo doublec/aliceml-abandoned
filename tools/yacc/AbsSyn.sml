@@ -3,6 +3,30 @@
 structure AbsSyn =
 struct
     structure E = ErrorMsg
+	(* wo steht das im erzeugten jacke.grm.sml ??? *)
+    type pos = int
+
+    datatype bnfexpWithPos =
+	PSkip 	
+      | PSymbol of string * pos * pos
+      | PAs of string * bnfexpWithPos  * pos * pos
+      | PSeq of bnfexpWithPos list  * pos * pos
+      | PPrec of bnfexpWithPos * string  * pos * pos 
+      | PTransform of bnfexpWithPos * string list * pos * pos
+      | PAlt of bnfexpWithPos list * pos * pos
+	
+    and parsetreeWithPos =
+	PTokenDec of (string * string option) list * pos * pos
+      | PAssoclDec of idlist * pos * pos
+      | PAssocrDec of idlist * pos * pos
+      | PNonassocDec of idlist * pos * pos
+      | PRuleDec of Prule list * pos * pos
+      | PParserDec of (string * string option * string) list * pos * pos
+      | PMLCode of string list * pos * pos
+	
+    withtype 
+	Prule = string * string option * bnfexpWithPos
+    and idlist = string list
 
     datatype bnfexp =
 	Skip
@@ -26,6 +50,27 @@ struct
 	rule = string * string option * bnfexp
     and idlist = string list
 
+
+    val removePos =
+	let fun rfbnfexp PSkip = Skip
+	      | rfbnfexp (PSymbol (s,_,_)) = Symbol s
+	      | rfbnfexp (PAs (s,bnf,_,_)) = As (s, rfbnfexp bnf)
+	      | rfbnfexp (PSeq (bnfs,_,_)) = Seq (List.map rfbnfexp bnfs)
+	      | rfbnfexp (PPrec (bnf,s,_,_)) = Prec (rfbnfexp bnf,s)
+	      | rfbnfexp (PTransform (bnf,sl,_,_)) = Transform (rfbnfexp bnf,sl)
+	      | rfbnfexp (PAlt (bnfs,_,_)) = Alt (List.map rfbnfexp bnfs)
+	    and rfptree (PTokenDec (tl,_,_)) = TokenDec tl
+	      | rfptree (PAssoclDec (il,_,_)) = AssoclDec il
+	      | rfptree (PAssocrDec (il,_,_)) = AssocrDec il
+	      | rfptree (PNonassocDec (il,_,_)) = NonassocDec il
+	      | rfptree (PRuleDec (rl,_,_)) = 
+		let val rl' = List.map (fn (id,opt,bnf) => (id,opt,rfbnfexp bnf)) rl
+		in RuleDec rl' end
+	      | rfptree (PParserDec (pl,_,_)) = ParserDec pl
+	      | rfptree (PMLCode (cl,_,_)) = MLCode cl
+	in
+	    List.map rfptree
+	end
 
     fun checkOnlyOneTokenDec t = 
 	let val l = List.filter (fn (TokenDec _) => true | _ => false) t

@@ -25,6 +25,7 @@ struct
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
           val lexer = LrParser.Stream.streamify (Lex.makeLexer get)
           val (absyn, _) = jackeP.parse(30,lexer,parseerror,())
+	  val absyn = AbsSyn.removePos absyn
        in TextIO.closeIn file;	   
            absyn
       end handle LrParser.ParseError => raise ErrorMsg.Error
