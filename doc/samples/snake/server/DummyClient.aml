@@ -1,0 +1,21 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Protocol  from "../common/Protocol"
+
+
+local
+    fun mkInspector name a = Inspector.inspect (name, a)
+in
+    val dummyClient = {
+        playersJoined       = mkInspector "playersJoined",
+        tournamentStarted   = mkInspector "tournamentStarted",
+        levelStarted        = mkInspector "levelStarted",
+        playerDisconnected  = mkInspector "playerDisconnected",
+        abort               = mkInspector "abort",
+        update              = mkInspector "update",
+        tick                = mkInspector "tick",
+        levelFinished       = mkInspector "levelFinished",
+        tournamentFinished  = mkInspector "tournamentFinished",
+        updatePoints        = mkInspector "updatePoints"
+    } : Protocol.client_interface
+
+end
