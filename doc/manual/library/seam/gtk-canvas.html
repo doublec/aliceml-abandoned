@@ -25,11 +25,9 @@
   <?php section("import", "import"); ?>
 
   <PRE>
-    import structure Core from "x-alice:/lib/gtk/Core"
-    import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
-    import structure GdkEnums from "x-alice:/lib/gtk/GdkEnums"
-    import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
-    import structure CanvasEnums from "x-alice:/lib/gtk/CanvasEnums"</PRE>
+    import signature CANVAS from "x-alice:/lib/gtk/CANVAS-sig"
+    import structure Canvas from "x-alice:/lib/gtk/Canvas"
+  </PRE>
 
   <?php section("interface", "interface"); ?>
 
@@ -103,20 +101,11 @@ signature CANVAS =
       val signalConnect : object * string * callback_function -> int
       val signalConnectAfter : object * string * callback_function -> int
       val signalDisconnect : object * int -> unit
-      val canvasItemGetFieldCanvas : Gtk.object -> Gtk.object
-      val canvasItemGetFieldParent : Gtk.object -> Gtk.object
-      val canvasItemGetFieldXform : Gtk.object -> Gtk.object
-      val canvasItemGetFieldX1 : Gtk.object -> real
-      val canvasItemGetFieldY1 : Gtk.object -> real
-      val canvasItemGetFieldX2 : Gtk.object -> real
-      val canvasItemGetFieldY2 : Gtk.object -> real
-      val canvasItemSetFieldCanvas : Gtk.object * Gtk.object -> unit
-      val canvasItemSetFieldParent : Gtk.object * Gtk.object -> unit
-      val canvasItemSetFieldXform : Gtk.object * Gtk.object -> unit
-      val canvasItemSetFieldX1 : Gtk.object * real -> unit
-      val canvasItemSetFieldY1 : Gtk.object * real -> unit
-      val canvasItemSetFieldX2 : Gtk.object * real -> unit
-      val canvasItemSetFieldY2 : Gtk.object * real -> unit
+      val signalHandlerBlock : object * int -> unit
+      val signalHandlerUnblock : object * int -> unit
+      val latin1ToUtf8 : string -> string
+      val utf8ToLatin1 : string -> string
+      val lock : Lock.lock
       val itemGetType : unit -> int
       val itemConstruct :
          Gtk.object * Gtk.object * string * Core.arg list -> unit
@@ -146,76 +135,8 @@ signature CANVAS =
          Gtk.object * real * real * real * real -> real * real * real * real
       val itemRequestUpdate : Gtk.object -> unit
       val canvasGroupGetFieldItemList : Gtk.object -> Gtk.object list
-      val canvasGroupGetFieldItemListEnd : Gtk.object -> Gtk.object list
       val canvasGroupSetFieldItemList : Gtk.object * Gtk.object list -> unit
-      val canvasGroupSetFieldItemListEnd : Gtk.object * Gtk.object list -> unit
       val groupGetType : unit -> int
-      val canvasGetFieldRoot : Gtk.object -> Gtk.object
-      val canvasGetFieldRedrawArea : Gtk.object -> Gtk.object
-      val canvasGetFieldCurrentItem : Gtk.object -> Gtk.object
-      val canvasGetFieldNewCurrentItem : Gtk.object -> Gtk.object
-      val canvasGetFieldGrabbedItem : Gtk.object -> Gtk.object
-      val canvasGetFieldFocusedItem : Gtk.object -> Gtk.object
-      val canvasGetFieldPixmapGc : Gtk.object -> Gtk.object
-      val canvasGetFieldScrollX1 : Gtk.object -> real
-      val canvasGetFieldScrollY1 : Gtk.object -> real
-      val canvasGetFieldScrollX2 : Gtk.object -> real
-      val canvasGetFieldScrollY2 : Gtk.object -> real
-      val canvasGetFieldPixelsPerUnit : Gtk.object -> real
-      val canvasGetFieldIdleId : Gtk.object -> int
-      val canvasGetFieldRootDestroyId : Gtk.object -> int
-      val canvasGetFieldRedrawX1 : Gtk.object -> int
-      val canvasGetFieldRedrawY1 : Gtk.object -> int
-      val canvasGetFieldRedrawX2 : Gtk.object -> int
-      val canvasGetFieldRedrawY2 : Gtk.object -> int
-      val canvasGetFieldDrawXofs : Gtk.object -> int
-      val canvasGetFieldDrawYofs : Gtk.object -> int
-      val canvasGetFieldZoomXofs : Gtk.object -> int
-      val canvasGetFieldZoomYofs : Gtk.object -> int
-      val canvasGetFieldState : Gtk.object -> int
-      val canvasGetFieldGrabbedEventMask : Gtk.object -> int
-      val canvasGetFieldCloseEnough : Gtk.object -> int
-      val canvasGetFieldCenterScrollRegion : Gtk.object -> int
-      val canvasGetFieldNeedUpdate : Gtk.object -> int
-      val canvasGetFieldNeedRedraw : Gtk.object -> int
-      val canvasGetFieldNeedRepick : Gtk.object -> int
-      val canvasGetFieldLeftGrabbedItem : Gtk.object -> int
-      val canvasGetFieldInRepick : Gtk.object -> int
-      val canvasGetFieldAa : Gtk.object -> int
-      val canvasGetFieldDither : Gtk.object -> GdkRgbDither
-      val canvasSetFieldRoot : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldRedrawArea : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldCurrentItem : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldNewCurrentItem : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldGrabbedItem : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldFocusedItem : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldPixmapGc : Gtk.object * Gtk.object -> unit
-      val canvasSetFieldScrollX1 : Gtk.object * real -> unit
-      val canvasSetFieldScrollY1 : Gtk.object * real -> unit
-      val canvasSetFieldScrollX2 : Gtk.object * real -> unit
-      val canvasSetFieldScrollY2 : Gtk.object * real -> unit
-      val canvasSetFieldPixelsPerUnit : Gtk.object * real -> unit
-      val canvasSetFieldIdleId : Gtk.object * int -> unit
-      val canvasSetFieldRootDestroyId : Gtk.object * int -> unit
-      val canvasSetFieldRedrawX1 : Gtk.object * int -> unit
-      val canvasSetFieldRedrawY1 : Gtk.object * int -> unit
-      val canvasSetFieldRedrawX2 : Gtk.object * int -> unit
-      val canvasSetFieldRedrawY2 : Gtk.object * int -> unit
-      val canvasSetFieldDrawXofs : Gtk.object * int -> unit
-      val canvasSetFieldDrawYofs : Gtk.object * int -> unit
-      val canvasSetFieldZoomXofs : Gtk.object * int -> unit
-      val canvasSetFieldZoomYofs : Gtk.object * int -> unit
-      val canvasSetFieldState : Gtk.object * int -> unit
-      val canvasSetFieldGrabbedEventMask : Gtk.object * int -> unit
-      val canvasSetFieldCloseEnough : Gtk.object * int -> unit
-      val canvasSetFieldCenterScrollRegion : Gtk.object * int -> unit
-      val canvasSetFieldNeedUpdate : Gtk.object * int -> unit
-      val canvasSetFieldNeedRedraw : Gtk.object * int -> unit
-      val canvasSetFieldNeedRepick : Gtk.object * int -> unit
-      val canvasSetFieldLeftGrabbedItem : Gtk.object * int -> unit
-      val canvasSetFieldInRepick : Gtk.object * int -> unit
-      val canvasSetFieldAa : Gtk.object * int -> unit
-      val canvasSetFieldDither : Gtk.object * GdkRgbDither -> unit
       val getType : unit -> int
       val new : unit -> Gtk.object
       val newAa : unit -> Gtk.object
@@ -250,127 +171,8 @@ signature CANVAS =
       val setStippleOrigin : Gtk.object * Gtk.object -> unit
       val setDither : Gtk.object * GdkRgbDither -> unit
       val getDither : Gtk.object -> GdkRgbDither
-      val canvasLineGetFieldCoords : Gtk.object -> Gtk.object
-      val canvasLineGetFieldFirstCoords : Gtk.object -> Gtk.object
-      val canvasLineGetFieldLastCoords : Gtk.object -> Gtk.object
-      val canvasLineGetFieldGc : Gtk.object -> Gtk.object
-      val canvasLineGetFieldStipple : Gtk.object -> Gtk.object
-      val canvasLineGetFieldFillSvp : Gtk.object -> Gtk.object
-      val canvasLineGetFieldFirstSvp : Gtk.object -> Gtk.object
-      val canvasLineGetFieldLastSvp : Gtk.object -> Gtk.object
-      val canvasLineGetFieldWidth : Gtk.object -> real
-      val canvasLineGetFieldShapeA : Gtk.object -> real
-      val canvasLineGetFieldShapeB : Gtk.object -> real
-      val canvasLineGetFieldShapeC : Gtk.object -> real
-      val canvasLineGetFieldCap : Gtk.object -> GdkCapStyle
-      val canvasLineGetFieldJoin : Gtk.object -> GdkJoinStyle
-      val canvasLineGetFieldLineStyle : Gtk.object -> GdkLineStyle
-      val canvasLineGetFieldFillPixel : Gtk.object -> int
-      val canvasLineGetFieldFillRgba : Gtk.object -> int
-      val canvasLineGetFieldNumPoints : Gtk.object -> int
-      val canvasLineGetFieldFillColor : Gtk.object -> int
-      val canvasLineGetFieldSplineSteps : Gtk.object -> int
-      val canvasLineGetFieldWidthPixels : Gtk.object -> int
-      val canvasLineGetFieldFirstArrow : Gtk.object -> int
-      val canvasLineGetFieldLastArrow : Gtk.object -> int
-      val canvasLineGetFieldSmooth : Gtk.object -> int
-      val canvasLineSetFieldCoords : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldFirstCoords : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldLastCoords : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldGc : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldStipple : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldFillSvp : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldFirstSvp : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldLastSvp : Gtk.object * Gtk.object -> unit
-      val canvasLineSetFieldWidth : Gtk.object * real -> unit
-      val canvasLineSetFieldShapeA : Gtk.object * real -> unit
-      val canvasLineSetFieldShapeB : Gtk.object * real -> unit
-      val canvasLineSetFieldShapeC : Gtk.object * real -> unit
-      val canvasLineSetFieldCap : Gtk.object * GdkCapStyle -> unit
-      val canvasLineSetFieldJoin : Gtk.object * GdkJoinStyle -> unit
-      val canvasLineSetFieldLineStyle : Gtk.object * GdkLineStyle -> unit
-      val canvasLineSetFieldFillPixel : Gtk.object * int -> unit
-      val canvasLineSetFieldFillRgba : Gtk.object * int -> unit
-      val canvasLineSetFieldNumPoints : Gtk.object * int -> unit
-      val canvasLineSetFieldFillColor : Gtk.object * int -> unit
-      val canvasLineSetFieldSplineSteps : Gtk.object * int -> unit
-      val canvasLineSetFieldWidthPixels : Gtk.object * int -> unit
-      val canvasLineSetFieldFirstArrow : Gtk.object * int -> unit
-      val canvasLineSetFieldLastArrow : Gtk.object * int -> unit
-      val canvasLineSetFieldSmooth : Gtk.object * int -> unit
       val lineGetType : unit -> int
-      val canvasTextGetFieldFontDesc : Gtk.object -> Gtk.object
-      val canvasTextGetFieldAttrList : Gtk.object -> Gtk.object
-      val canvasTextGetFieldUnderline : Gtk.object -> PangoUnderline
-      val canvasTextGetFieldStrikethrough : Gtk.object -> bool
-      val canvasTextGetFieldRise : Gtk.object -> int
-      val canvasTextGetFieldScale : Gtk.object -> real
-      val canvasTextGetFieldText : Gtk.object -> string
-      val canvasTextGetFieldStipple : Gtk.object -> Gtk.object
-      val canvasTextGetFieldGc : Gtk.object -> Gtk.object
-      val canvasTextGetFieldLayout : Gtk.object -> Gtk.object
-      val canvasTextGetFieldPixel : Gtk.object -> int
-      val canvasTextGetFieldX : Gtk.object -> real
-      val canvasTextGetFieldY : Gtk.object -> real
-      val canvasTextGetFieldClipWidth : Gtk.object -> real
-      val canvasTextGetFieldClipHeight : Gtk.object -> real
-      val canvasTextGetFieldXofs : Gtk.object -> real
-      val canvasTextGetFieldYofs : Gtk.object -> real
-      val canvasTextGetFieldAnchor : Gtk.object -> GtkAnchorType
-      val canvasTextGetFieldJustification : Gtk.object -> GtkJustification
-      val canvasTextGetFieldCx : Gtk.object -> int
-      val canvasTextGetFieldCy : Gtk.object -> int
-      val canvasTextGetFieldClipCx : Gtk.object -> int
-      val canvasTextGetFieldClipCy : Gtk.object -> int
-      val canvasTextGetFieldClipCwidth : Gtk.object -> int
-      val canvasTextGetFieldClipCheight : Gtk.object -> int
-      val canvasTextGetFieldMaxWidth : Gtk.object -> int
-      val canvasTextGetFieldHeight : Gtk.object -> int
-      val canvasTextGetFieldRgba : Gtk.object -> int
-      val canvasTextGetFieldClip : Gtk.object -> int
-      val canvasTextGetFieldUnderlineSet : Gtk.object -> int
-      val canvasTextGetFieldStrikeSet : Gtk.object -> int
-      val canvasTextGetFieldRiseSet : Gtk.object -> int
-      val canvasTextGetFieldScaleSet : Gtk.object -> int
-      val canvasTextGetFieldPriv : Gtk.object -> Gtk.object
-      val canvasTextSetFieldFontDesc : Gtk.object * Gtk.object -> unit
-      val canvasTextSetFieldAttrList : Gtk.object * Gtk.object -> unit
-      val canvasTextSetFieldUnderline : Gtk.object * PangoUnderline -> unit
-      val canvasTextSetFieldStrikethrough : Gtk.object * bool -> unit
-      val canvasTextSetFieldRise : Gtk.object * int -> unit
-      val canvasTextSetFieldScale : Gtk.object * real -> unit
-      val canvasTextSetFieldText : Gtk.object * string -> unit
-      val canvasTextSetFieldStipple : Gtk.object * Gtk.object -> unit
-      val canvasTextSetFieldGc : Gtk.object * Gtk.object -> unit
-      val canvasTextSetFieldLayout : Gtk.object * Gtk.object -> unit
-      val canvasTextSetFieldPixel : Gtk.object * int -> unit
-      val canvasTextSetFieldX : Gtk.object * real -> unit
-      val canvasTextSetFieldY : Gtk.object * real -> unit
-      val canvasTextSetFieldClipWidth : Gtk.object * real -> unit
-      val canvasTextSetFieldClipHeight : Gtk.object * real -> unit
-      val canvasTextSetFieldXofs : Gtk.object * real -> unit
-      val canvasTextSetFieldYofs : Gtk.object * real -> unit
-      val canvasTextSetFieldAnchor : Gtk.object * GtkAnchorType -> unit
-      val canvasTextSetFieldJustification :
-         Gtk.object * GtkJustification -> unit
-      val canvasTextSetFieldCx : Gtk.object * int -> unit
-      val canvasTextSetFieldCy : Gtk.object * int -> unit
-      val canvasTextSetFieldClipCx : Gtk.object * int -> unit
-      val canvasTextSetFieldClipCy : Gtk.object * int -> unit
-      val canvasTextSetFieldClipCwidth : Gtk.object * int -> unit
-      val canvasTextSetFieldClipCheight : Gtk.object * int -> unit
-      val canvasTextSetFieldMaxWidth : Gtk.object * int -> unit
-      val canvasTextSetFieldHeight : Gtk.object * int -> unit
-      val canvasTextSetFieldRgba : Gtk.object * int -> unit
-      val canvasTextSetFieldClip : Gtk.object * int -> unit
-      val canvasTextSetFieldUnderlineSet : Gtk.object * int -> unit
-      val canvasTextSetFieldStrikeSet : Gtk.object * int -> unit
-      val canvasTextSetFieldRiseSet : Gtk.object * int -> unit
-      val canvasTextSetFieldScaleSet : Gtk.object * int -> unit
-      val canvasTextSetFieldPriv : Gtk.object * Gtk.object -> unit
       val textGetType : unit -> int
-      val canvasRichTextGetFieldPriv : Gtk.object -> Gtk.object
-      val canvasRichTextSetFieldPriv : Gtk.object * Gtk.object -> unit
       val richTextGetType : unit -> int
       val richTextCutClipboard : Gtk.object -> unit
       val richTextCopyClipboard : Gtk.object -> unit
@@ -415,64 +217,16 @@ signature CANVAS =
       val pathDefAllOpen : Gtk.object -> bool
       val pathDefAnyClosed : Gtk.object -> bool
       val pathDefAllClosed : Gtk.object -> bool
-      val canvasShapeGetFieldPriv : Gtk.object -> Gtk.object
-      val canvasShapeSetFieldPriv : Gtk.object * Gtk.object -> unit
       val shapeSetPathDef : Gtk.object * Gtk.object -> unit
       val shapeGetPathDef : Gtk.object -> Gtk.object
       val shapeGetType : unit -> int
-      val canvasPolygonGetFieldPathDef : Gtk.object -> Gtk.object
-      val canvasPolygonSetFieldPathDef : Gtk.object * Gtk.object -> unit
       val polygonGetType : unit -> int
-      val canvasPixbufGetFieldPriv : Gtk.object -> Gtk.object
-      val canvasPixbufSetFieldPriv : Gtk.object * Gtk.object -> unit
       val pixbufGetType : unit -> int
-      val canvasWidgetGetFieldWidget : Gtk.object -> Gtk.object
-      val canvasWidgetGetFieldX : Gtk.object -> real
-      val canvasWidgetGetFieldY : Gtk.object -> real
-      val canvasWidgetGetFieldWidth : Gtk.object -> real
-      val canvasWidgetGetFieldHeight : Gtk.object -> real
-      val canvasWidgetGetFieldAnchor : Gtk.object -> GtkAnchorType
-      val canvasWidgetGetFieldCx : Gtk.object -> int
-      val canvasWidgetGetFieldCy : Gtk.object -> int
-      val canvasWidgetGetFieldCwidth : Gtk.object -> int
-      val canvasWidgetGetFieldCheight : Gtk.object -> int
-      val canvasWidgetGetFieldDestroyId : Gtk.object -> int
-      val canvasWidgetGetFieldSizePixels : Gtk.object -> int
-      val canvasWidgetGetFieldInDestroy : Gtk.object -> int
-      val canvasWidgetSetFieldWidget : Gtk.object * Gtk.object -> unit
-      val canvasWidgetSetFieldX : Gtk.object * real -> unit
-      val canvasWidgetSetFieldY : Gtk.object * real -> unit
-      val canvasWidgetSetFieldWidth : Gtk.object * real -> unit
-      val canvasWidgetSetFieldHeight : Gtk.object * real -> unit
-      val canvasWidgetSetFieldAnchor : Gtk.object * GtkAnchorType -> unit
-      val canvasWidgetSetFieldCx : Gtk.object * int -> unit
-      val canvasWidgetSetFieldCy : Gtk.object * int -> unit
-      val canvasWidgetSetFieldCwidth : Gtk.object * int -> unit
-      val canvasWidgetSetFieldCheight : Gtk.object * int -> unit
-      val canvasWidgetSetFieldDestroyId : Gtk.object * int -> unit
-      val canvasWidgetSetFieldSizePixels : Gtk.object * int -> unit
-      val canvasWidgetSetFieldInDestroy : Gtk.object * int -> unit
       val widgetGetType : unit -> int
-      val canvasREGetFieldX1 : Gtk.object -> real
-      val canvasREGetFieldY1 : Gtk.object -> real
-      val canvasREGetFieldX2 : Gtk.object -> real
-      val canvasREGetFieldY2 : Gtk.object -> real
-      val canvasREGetFieldPathDirty : Gtk.object -> int
-      val canvasRESetFieldX1 : Gtk.object * real -> unit
-      val canvasRESetFieldY1 : Gtk.object * real -> unit
-      val canvasRESetFieldX2 : Gtk.object * real -> unit
-      val canvasRESetFieldY2 : Gtk.object * real -> unit
-      val canvasRESetFieldPathDirty : Gtk.object * int -> unit
       val reGetType : unit -> int
       val rectGetType : unit -> int
       val ellipseGetType : unit -> int
       val bpathGetType : unit -> int
-      val canvasPointsGetFieldCoords : Gtk.object -> Gtk.object
-      val canvasPointsGetFieldNumPoints : Gtk.object -> int
-      val canvasPointsGetFieldRefCount : Gtk.object -> int
-      val canvasPointsSetFieldCoords : Gtk.object * Gtk.object -> unit
-      val canvasPointsSetFieldNumPoints : Gtk.object * int -> unit
-      val canvasPointsSetFieldRefCount : Gtk.object * int -> unit
       val pointsNew : int -> Gtk.object
       val pointsRef : Gtk.object -> Gtk.object
       val pointsFree : Gtk.object -> unit

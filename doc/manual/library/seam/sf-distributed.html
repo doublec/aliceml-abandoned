@@ -12,7 +12,9 @@
 				     where type solution = solution)
          :> ENGINE where type solution = solution
 </PRE>
-   <P>The <TT>MkEngine</TT> functor expects two arguments.
+   <P>The <TT>MkEngine</TT> functor creates a search engine that
+      performs search on several networked computers in parallel.
+      It expects two arguments.
       The first one is a structure that provides the type of solutions of the distributed problem
       and a function <TT>toString</TT> to print them.
       The second one is a functor that creates a <A href="sf-problem.html"><TT>PROBLEM</TT></A>, given
