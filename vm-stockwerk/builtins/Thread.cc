@@ -66,10 +66,8 @@ DEFINE1(Thread_state) {
     RETURN(Store::IntToWord(1));
   case Thread::TERMINATED:
     RETURN(Store::IntToWord(2));
-  default:
-    Assert(0);
-    RETURN_FAIL;
   };
+  Error("inconsistent state returned by Thread::GetState to Thread_state");
 } END
 
 DEFINE1(Thread_suspend) {
@@ -84,11 +82,11 @@ DEFINE0(Thread_yield) {
 
 void Primitive::RegisterThread() {
   Register("Thread.Terminate", Constructor::New()->ToWord()); //--** unique
-  Register("Thread.current", Thread_current);
-  Register("Thread.isSuspended", Thread_isSuspended);
-  Register("Thread.raiseIn", Thread_raiseIn);
-  Register("Thread.resume", Thread_resume);
-  Register("Thread.state", Thread_state);
-  Register("Thread.suspend", Thread_suspend);
-  Register("Thread.yield", Thread_yield);
+  Register("Thread.current", Thread_current, 0);
+  Register("Thread.isSuspended", Thread_isSuspended, 1);
+  Register("Thread.raiseIn", Thread_raiseIn, 2);
+  Register("Thread.resume", Thread_resume, 1);
+  Register("Thread.state", Thread_state, 1);
+  Register("Thread.suspend", Thread_suspend, 1);
+  Register("Thread.yield", Thread_yield, 0);
 };

@@ -124,22 +124,22 @@ DEFINE1(Int_toString) {
 } END
 
 void Primitive::RegisterInt() {
-  Register("Int.~", Int_opnegate);
-  Register("Int.+", Int_opadd);
-  Register("Int.-", Int_opsub);
-  Register("Int.*", Int_opmul);
-  Register("Int.<", Int_opless);
-  Register("Int.>", Int_opgreater);
-  Register("Int.<=", Int_oplessEq);
-  Register("Int.>=", Int_opgreaterEq);
-  Register("Int.abs", Int_abs);
-  Register("Int.compare", Int_compare);
-  Register("Int.div", Int_div);
+  Register("Int.~", Int_opnegate, 1);
+  Register("Int.+", Int_opadd, 2);
+  Register("Int.-", Int_opsub, 2);
+  Register("Int.*", Int_opmul, 2);
+  Register("Int.<", Int_opless, 2);
+  Register("Int.>", Int_opgreater, 2);
+  Register("Int.<=", Int_oplessEq, 2);
+  Register("Int.>=", Int_opgreaterEq, 2);
+  Register("Int.abs", Int_abs, 1);
+  Register("Int.compare", Int_compare, 2);
+  Register("Int.div", Int_div, 2);
   Register("Int.maxInt", Store::IntToWord(0x3FFFFFFF));
   Register("Int.minInt", Store::IntToWord(-0x40000000));
-  Register("Int.mod", Int_mod);
+  Register("Int.mod", Int_mod, 2);
   Register("Int.precision", Store::IntToWord(31));
-  Register("Int.quot", Int_quot);
-  Register("Int.rem", Int_rem);
-  Register("Int.toString", Int_toString);
+  Register("Int.quot", Int_quot, 2);
+  Register("Int.rem", Int_rem, 2);
+  Register("Int.toString", Int_toString, 1);
 };

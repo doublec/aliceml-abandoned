@@ -69,23 +69,23 @@ DEFINE1(Char_toUpper) {
 } END
 
 void Primitive::RegisterChar() {
-  Register("Char.<", Char_opless);
-  Register("Char.>", Char_opgreater);
-  Register("Char.<=", Char_oplessEq);
-  Register("Char.>=", Char_opgreaterEq);
-  Register("Char.ord", Char_ord);
-  Register("Char.chr", Char_chr);
-  Register("Char.isAlpha", Char_isAlpha);
-  Register("Char.isAlphaNum", Char_isAlphaNum);
-  Register("Char.isCntrl", Char_isCntrl);
-  Register("Char.isDigit", Char_isDigit);
-  Register("Char.isGraph", Char_isGraph);
-  Register("Char.isHexDigit", Char_isHexDigit);
-  Register("Char.isLower", Char_isLower);
-  Register("Char.isPrint", Char_isPrint);
-  Register("Char.isPunct", Char_isPunct);
-  Register("Char.isSpace", Char_isSpace);
-  Register("Char.isUpper", Char_isUpper);
-  Register("Char.toLower", Char_toLower);
-  Register("Char.toUpper", Char_toUpper);
+  Register("Char.<", Char_opless, 2);
+  Register("Char.>", Char_opgreater, 2);
+  Register("Char.<=", Char_oplessEq, 2);
+  Register("Char.>=", Char_opgreaterEq, 2);
+  Register("Char.ord", Char_ord, 1);
+  Register("Char.chr", Char_chr, 1);
+  Register("Char.isAlpha", Char_isAlpha, 1);
+  Register("Char.isAlphaNum", Char_isAlphaNum, 1);
+  Register("Char.isCntrl", Char_isCntrl, 1);
+  Register("Char.isDigit", Char_isDigit, 1);
+  Register("Char.isGraph", Char_isGraph, 1);
+  Register("Char.isHexDigit", Char_isHexDigit, 1);
+  Register("Char.isLower", Char_isLower, 1);
+  Register("Char.isPrint", Char_isPrint, 1);
+  Register("Char.isPunct", Char_isPunct, 1);
+  Register("Char.isSpace", Char_isSpace, 1);
+  Register("Char.isUpper", Char_isUpper, 1);
+  Register("Char.toLower", Char_toLower, 1);
+  Register("Char.toUpper", Char_toUpper, 1);
 };

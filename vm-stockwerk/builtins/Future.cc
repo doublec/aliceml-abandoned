@@ -68,11 +68,11 @@ DEFINE1(Future_isFuture) {
 
 void Primitive::RegisterFuture() {
   Register("Future.Future", Constructor::New()->ToWord()); //--** unique
-  Register("Future.alarm'", Future_alarmQuote);
-  Register("Future.await", Future_await);
-  Register("Future.awaitOne", Future_awaitOne);
-  Register("Future.byneed", Future_byneed);
-  Register("Future.concur", Future_concur);
-  Register("Future.isFailed", Future_isFailed);
-  Register("Future.isFuture", Future_isFuture);
+  Register("Future.alarm'", Future_alarmQuote, 1);
+  Register("Future.await", Future_await, 1);
+  Register("Future.awaitOne", Future_awaitOne, 2);
+  Register("Future.byneed", Future_byneed, 1);
+  Register("Future.concur", Future_concur, 1);
+  Register("Future.isFailed", Future_isFailed, 1);
+  Register("Future.isFuture", Future_isFuture, 1);
 };

@@ -36,6 +36,7 @@ DEFINE2(Word_opshr) {
 } END
 
 DEFINE2(Word_oparithshr) {
+  //--** this is actually unspecified by ANSI C++
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
   signed int v = i << 1;
@@ -89,21 +90,21 @@ DEFINE1(Word_toString) {
 WORD_WORD_TO_WORD_OP(Word_xorb, ^)
 
 void Primitive::RegisterWord() {
-  Register("Word.+", Word_opadd);
-  Register("Word.-", Word_opsub);
-  Register("Word.*", Word_opmul);
-  Register("Word.<<", Word_opshl);
-  Register("Word.>>", Word_opshr);
-  Register("Word.~>>", Word_oparithshr);
-  Register("Word.andb", Word_andb);
-  Register("Word.div", Word_div);
-  Register("Word.fromInt'", Word_fromIntQuote);
-  Register("Word.mod", Word_mod);
-  Register("Word.notb", Word_notb);
-  Register("Word.orb", Word_orb);
-  Register("Word.toInt", Word_toInt);
-  Register("Word.toIntX", Word_toIntX);
-  Register("Word.toString", Word_toString);
+  Register("Word.+", Word_opadd, 2);
+  Register("Word.-", Word_opsub, 2);
+  Register("Word.*", Word_opmul, 2);
+  Register("Word.<<", Word_opshl, 2);
+  Register("Word.>>", Word_opshr, 2);
+  Register("Word.~>>", Word_oparithshr, 2);
+  Register("Word.andb", Word_andb, 2);
+  Register("Word.div", Word_div, 2);
+  Register("Word.fromInt'", Word_fromIntQuote, 2);
+  Register("Word.mod", Word_mod, 2);
+  Register("Word.notb", Word_notb, 1);
+  Register("Word.orb", Word_orb, 2);
+  Register("Word.toInt", Word_toInt, 1);
+  Register("Word.toIntX", Word_toIntX, 1);
+  Register("Word.toString", Word_toString, 1);
   Register("Word.wordSize", Store::IntToWord(31));
-  Register("Word.xorb", Word_xorb);
+  Register("Word.xorb", Word_xorb, 2);
 };

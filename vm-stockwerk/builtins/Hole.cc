@@ -59,10 +59,10 @@ DEFINE1(Hole_isHole) {
 void Primitive::RegisterHole() {
   Register("Hole.Cyclic", Constructor::New()->ToWord()); //--** unique
   Register("Hole.Hole", Constructor::New()->ToWord()); //--** unique
-  Register("Hole.fail", Hole_fail);
-  Register("Hole.fill", Hole_fill);
-  Register("Hole.future", Hole_future);
-  Register("Hole.hole", Hole_hole);
-  Register("Hole.isFailed", Hole_isFailed);
-  Register("Hole.isFailed", Hole_isHole);
+  Register("Hole.fail", Hole_fail, 2);
+  Register("Hole.fill", Hole_fill, 2);
+  Register("Hole.future", Hole_future, 1);
+  Register("Hole.hole", Hole_hole, 0);
+  Register("Hole.isFailed", Hole_isFailed, 1);
+  Register("Hole.isFailed", Hole_isHole, 1);
 };

@@ -30,7 +30,7 @@ DEFINE1(General_exnName) {
 } END
 
 void Primitive::RegisterGeneral() {
-  Register("General.:=", General_assign);
+  Register("General.:=", General_assign, 2);
   Register("General.Bind", Constructor::New()->ToWord()); //--** unique
   Register("General.Chr", Constructor::New()->ToWord()); //--** unique
   Register("General.Div", Constructor::New()->ToWord()); //--** unique
@@ -41,6 +41,6 @@ void Primitive::RegisterGeneral() {
   Register("General.Size", Constructor::New()->ToWord()); //--** unique
   Register("General.Span", Constructor::New()->ToWord()); //--** unique
   Register("General.Subscript", Constructor::New()->ToWord()); //--** unique
-  Register("General.exchange", General_exchange);
-  Register("General.exnName", General_exnName);
+  Register("General.exchange", General_exchange, 2);
+  Register("General.exnName", General_exnName, 1);
 };

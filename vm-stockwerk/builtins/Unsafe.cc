@@ -44,9 +44,9 @@ DEFINE1(Unsafe_cast) {
 } END
 
 void Primitive::RegisterUnsafe() {
-  Register("Unsafe.Array.sub", Unsafe_Array_sub);
-  Register("Unsafe.Array.update", Unsafe_Array_update);
-  Register("Unsafe.String.sub", Unsafe_String_sub);
-  Register("Unsafe.Vector.sub", Unsafe_Vector_sub);
-  Register("Unsafe.cast", Unsafe_cast);
+  Register("Unsafe.Array.sub", Unsafe_Array_sub, 2);
+  Register("Unsafe.Array.update", Unsafe_Array_update, 3);
+  Register("Unsafe.String.sub", Unsafe_String_sub, 2);
+  Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
+  Register("Unsafe.cast", Unsafe_cast, 1);
 };

@@ -128,17 +128,17 @@ DEFINE1(String_str) {
 } END
 
 void Primitive::RegisterString() {
-  Register("String.^", String_opconcat);
-  Register("String.<", String_opless);
-  Register("String.>", String_opgreater);
-  Register("String.<=", String_oplessEq);
-  Register("String.>=", String_opgreaterEq);
-  Register("String.compare", String_compare);
-  Register("String.explode", String_explode);
-  Register("String.implode", String_implode);
+  Register("String.^", String_opconcat, 2);
+  Register("String.<", String_opless, 2);
+  Register("String.>", String_opgreater, 2);
+  Register("String.<=", String_oplessEq, 2);
+  Register("String.>=", String_opgreaterEq, 2);
+  Register("String.compare", String_compare, 2);
+  Register("String.explode", String_explode, 1);
+  Register("String.implode", String_implode, 1);
   Register("String.maxSize", Store::IntToWord(0x3FFFFFFF));
-  Register("String.size", String_size);
-  Register("String.sub", String_sub);
-  Register("String.substring", String_substring);
-  Register("String.str", String_str);
+  Register("String.size", String_size, 1);
+  Register("String.sub", String_sub, 1);
+  Register("String.substring", String_substring, 3);
+  Register("String.str", String_str, 1);
 };

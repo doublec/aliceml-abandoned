@@ -18,22 +18,23 @@
 #include "builtins/GlobalPrimitives.hh"
 
 #define DEFINE0(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {
+  static Interpreter::Result name(TaskStack *taskStack) {		\
+    taskStack->PopFrame(1);
 #define DEFINE1(name)							\
   static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
-    taskStack->PopFrame(1);
+    taskStack->PopFrame(2);
 #define DEFINE2(name)							\
   static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
-    taskStack->PopFrame(2);
+    taskStack->PopFrame(3);
 #define DEFINE3(name)							\
   static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     word x2 = taskStack->GetWord(2);					\
-    taskStack->PopFrame(3);
+    taskStack->PopFrame(4);
 #define END }
 
 #define DECLARE_INT(i, x)						\
@@ -81,13 +82,6 @@
   return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 #define RETURN_BOOL(b) RETURN_INT(b);
-
-//--** inelegant?
-#define RETURN_FAIL {							\
-  Transient *transient = Store::AllocTransient(CANCELLED);		\
-  transient->InitArg(Store::IntToWord(666));				\
-  RETURN(transient->ToWord());						\
-}
 
 #define REQUEST(w) {							\
   taskStack->PushFrame(1);						\

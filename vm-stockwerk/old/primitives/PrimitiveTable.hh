@@ -19,12 +19,11 @@
 class TaskStack;
 
 class Primitive {
-public:
-  //--** can this move to Authoring.hh?
-  typedef Interpreter::Result (*builtin)(TaskStack *);
 private:
+  typedef Interpreter::Result (*function)(TaskStack *);
+
   static void Register(const char *name, word value);
-  static void Register(const char *name, builtin value);
+  static void Register(const char *name, function value, u_int arity);
 
   static void RegisterInternal();
   static void RegisterUnqualified();

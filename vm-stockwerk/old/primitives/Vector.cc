@@ -39,9 +39,9 @@ DEFINE2(Vector_sub) {
 } END
 
 void Primitive::RegisterVector() {
-  Register("Vector.fromList", Vector_fromList);
+  Register("Vector.fromList", Vector_fromList, 1);
   Register("Vector.maxLen", Store::IntToWord(0x3FFFFFFF));
-  Register("Vector.length", Vector_length);
-  Register("Vector.sub", Vector_sub);
+  Register("Vector.length", Vector_length, 1);
+  Register("Vector.sub", Vector_sub, 2);
   //--** tabulate
 };

@@ -58,10 +58,10 @@ DEFINE3(Array_update) {
 } END
 
 void Primitive::RegisterArray() {
-  Register("Array.array", Array_array);
-  Register("Array.fromList", Array_fromList);
-  Register("Array.length", Array_length);
+  Register("Array.array", Array_array, 2);
+  Register("Array.fromList", Array_fromList, 1);
+  Register("Array.length", Array_length, 1);
   Register("Array.maxLen", Store::IntToWord(0x3FFFFFFF));
-  Register("Array.sub", Array_sub);
-  Register("Array.update", Array_update);
+  Register("Array.sub", Array_sub, 2);
+  Register("Array.update", Array_update, 3);
 }
