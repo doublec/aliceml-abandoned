@@ -79,6 +79,7 @@ FRONTEND_COMMON_FILES = \
 	Misc.import \
 	Error.import \
 	Common.import \
+	$(STOC_DIR)/frontend-common/StringMap.sml \
 	$(STOC_DIR)/frontend-common/NAME.sig \
 	$(STOC_DIR)/frontend-common/Name.sml \
 	$(STOC_DIR)/frontend-common/ABSTRACT_GRAMMAR.sig \
