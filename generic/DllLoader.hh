@@ -10,8 +10,6 @@
 //   $Revision$
 //
 
-#define HAVE_LOADLIBRARY 1
-
 #ifndef __GENERIC__DLLLOADER_HH__
 #define __GENERIC__DLLLOADER_HH__
 
