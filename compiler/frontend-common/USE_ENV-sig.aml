@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,7 +25,7 @@ sig
     val isPartial :	use -> bool
     val inner :		use -> env
 
-    val new :		unit -> env
+    val env :		unit -> env
     val isEmpty :	env -> bool
 
     val insertVal :	env * lab -> unit

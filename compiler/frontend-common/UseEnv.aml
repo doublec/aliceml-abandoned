@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,7 +11,7 @@
  *)
 
 import structure Label         from "../../lib/rtt/Label"
-import functor   MkHashImpMap  from "../../lib/utility/MkHashImpMap"
+import functor   MkHashImpMap  from "../../lib/data/MkHashImpMap"
 import structure Crash         from "../infrastructure/Crash"
 import signature USE_ENV       from "USE_ENV-sig"
 
@@ -35,7 +35,7 @@ struct
     fun inner(PARTIAL E)	= E
       | inner FULL		= raise Crash.Crash "UseEnv.inner"
 
-    val new			= Map.new
+    val env			= Map.map
     val isEmpty			= Map.isEmpty
 
     fun insertVal(E,l)		= Map.insert(E, (VAL,l), FULL)
