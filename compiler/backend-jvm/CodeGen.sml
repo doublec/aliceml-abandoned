@@ -536,9 +536,8 @@ structure CodeGen =
 		    in
 			[New CName,
 			 Dup,
-			 Ldc (JVMString nameName),
 			 Invokespecial (CName, "<init>",
-					([Classsig CString],[Voidsig])),
+					([],[Voidsig])),
 			 Astore loc]
 		    end
 	    end
