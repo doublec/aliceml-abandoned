@@ -37,14 +37,14 @@ static void CreateHeader(FILE *f, int width, int tag, int size, int generations,
   u_int GC_SHIFT     = 0;
   u_int TAG_SHIFT    = 1;
   u_int SIZE_SHIFT   = (TAG_SHIFT + tag);
-  u_int MAXOLD_SHIFT = (SIZE_SHIFT + size);
-  u_int GEN_SHIFT    = (MAXOLD_SHIFT + generations);
+  u_int INTGEN_SHIFT = (SIZE_SHIFT + size);
+  u_int GEN_SHIFT    = (INTGEN_SHIFT + 1);
   u_int MAX_TAGSIZE  = ((1 << tag) - 1);
   u_int MAX_HBSIZE   = ((1 << size) - 1);
   u_int GC_MASK      = ComputeMask(width, 0, 1);
   u_int TAG_MASK     = ComputeMask(width, TAG_SHIFT, tag);
   u_int SIZE_MASK    = ComputeMask(width, SIZE_SHIFT, size);
-  u_int MAXOLD_MASK  = ComputeMask(width, MAXOLD_SHIFT, generations);
+  u_int INTGEN_MASK  = ComputeMask(width, INTGEN_SHIFT, 1);
   u_int GEN_MASK     = ComputeMask(width, GEN_SHIFT, generations);
 
   *MAX_TAGSIZE_PTR = MAX_TAGSIZE;
@@ -55,7 +55,7 @@ static void CreateHeader(FILE *f, int width, int tag, int size, int generations,
   fprintf(f, "  GC_SHIFT     = 0x%x,\n", GC_SHIFT);
   fprintf(f, "  TAG_SHIFT    = 0x%x,\n", TAG_SHIFT);
   fprintf(f, "  SIZE_SHIFT   = 0x%x,\n", SIZE_SHIFT);
-  fprintf(f, "  MAXOLD_SHIFT = 0x%x,\n", MAXOLD_SHIFT);
+  fprintf(f, "  INTGEN_SHIFT = 0x%x,\n", INTGEN_SHIFT);
   fprintf(f, "  GEN_SHIFT    = 0x%x,\n", GEN_SHIFT);
   fprintf(f, "  MAX_TAGSIZE  = 0x%x,\n", MAX_TAGSIZE);
   fprintf(f, "  MAX_HBSIZE   = 0x%x,\n", MAX_HBSIZE);
@@ -63,7 +63,7 @@ static void CreateHeader(FILE *f, int width, int tag, int size, int generations,
   fprintf(f, "  GC_MASK      = 0x%x,\n", GC_MASK);
   fprintf(f, "  TAG_MASK     = 0x%x,\n", TAG_MASK);
   fprintf(f, "  SIZE_MASK    = 0x%x,\n", SIZE_MASK);
-  fprintf(f, "  MAXOLD_MASK  = 0x%x,\n", MAXOLD_MASK);
+  fprintf(f, "  INTGEN_MASK  = 0x%x,\n", INTGEN_MASK);
   fprintf(f, "  GEN_MASK     = 0x%x\n", GEN_MASK);
 
   fprintf(f, "} HeaderHef;\n\n");
@@ -115,7 +115,7 @@ static void CreateGenerationLimits(FILE *f, int pos, int generations) {
 }
 
 int main(int argc, char **argv) {
-  int checksum = 0;
+  int checksum = 1; // INTGEN TAG
   int val[4]; // width, tag, size, generations
   u_int MAX_TAGSIZE, GEN_SHIFT;
   FILE *f;
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
   }
 
   for (int i = 1; i < 4; i++) {
-    checksum += ((i == 3) ? 2 : 1) * val[i];
+    checksum += val[i];
   }
 
   if (checksum != val[0]) {

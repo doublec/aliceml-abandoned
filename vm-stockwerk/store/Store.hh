@@ -32,8 +32,9 @@ public:
 
 class StoreConfig {
 public:
-  u_int max_gen;     // maximum number of generations
-  u_int *gen_limits; // limit for each memory section (in Bytes)
+  u_int max_gen;      // maximum number of generations
+  u_int *gen_limits;  // limit for each memory section (in Bytes)
+  u_int intgen_size; // initial intgen pointer threshold
 };
 
 class Store {
@@ -41,7 +42,7 @@ protected:
   static StoreConfig *config;
   static MemChain **roots;
   static u_int totalHeapSize;
-  static DataSet *intgen_set;
+  static word intgen_set;
   static u_int needGC;
 
   static void Shrink(MemChain *chain, int threshold);
@@ -106,10 +107,8 @@ public:
     return (void *) (Store::WordToInt(x) << 1);
   }
   // GC Related Functions
-  static void DoGC(DataSet *root_set, u_int gen);
-  static void AddToIntgenSet(word v) {
-    intgen_set->Push(v);
-  }
+  static word DoGC(word root_set, u_int gen);
+  static void AddToIntgenSet(Block *v);
   static int NeedGC() {
     return needGC;
   }
