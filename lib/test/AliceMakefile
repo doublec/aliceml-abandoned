@@ -74,13 +74,11 @@ clean: sw_clean sh_clean
 veryclean: clean
 distclean: veryclean
 
-depend: Makefile.depend
-
 install: all
 	mkdir -p -m 775 $(PREFIX)/lib/test  #install -d $(PREFIX)/lib/test
 	install *.$(SH_EXT) $(PREFIX)/lib/test
 
-Makefile.depend: $(FILTERED_SOURCES)
+depend: $(FILTERED_SOURCES)
 	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
 
 -include Makefile.depend
