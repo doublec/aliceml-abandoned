@@ -1,6 +1,5 @@
 Group
 
-    signature LIVENESS_ANALYSIS_PHASE
     structure LivenessAnalysisPhase
 
 is

@@ -1,6 +1,6 @@
 Group is
 
     flat-grammar.cm
-    liveness-analysis-phase.cm
     flattening-phase.cm
+    liveness-analysis-phase.cm
     output-flat-grammar.cm
