@@ -750,22 +750,27 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::ALOAD:
-    case Instr::DLOAD: // reals are boxed
-    case Instr::FLOAD: // reals are boxed
+    case Instr::FLOAD:
     case Instr::ILOAD:
-    case Instr::LLOAD:
       {
-	JavaDebug::Print("(A|D|F|I|L)LOAD");
+	JavaDebug::Print("(A|F|I)LOAD");
 	word value = frame->GetEnv((u_int) GET_BYTE_INDEX()); 
 	frame->Push(value);
 	pc += 2;
       }
       break;
+    case Instr::DLOAD:
+    case Instr::LLOAD:
+      {
+	JavaDebug::Print("(D|L)LOAD");
+	word value = frame->GetEnv((u_int) GET_BYTE_INDEX()); 
+	frame->Push(value);
+	FILL_SLOT();
+	pc += 2;
+      }
     case Instr::ALOAD_0:
-    case Instr::DLOAD_0:
     case Instr::FLOAD_0:
     case Instr::ILOAD_0:
-    case Instr::LLOAD_0:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD_0");
 	word value = frame->GetEnv(0);
@@ -773,11 +778,19 @@ Worker::Result ByteCodeInterpreter::Run() {
 	pc += 1;
       }
       break;
+    case Instr::DLOAD_0:
+    case Instr::LLOAD_0:
+      {
+	JavaDebug::Print("(D||L)LOAD_0");
+	word value = frame->GetEnv(0);
+	frame->Push(value);
+	FILL_SLOT();
+	pc += 1;
+      }
+      break;
     case Instr::ALOAD_1:
-    case Instr::DLOAD_1:
     case Instr::FLOAD_1:
     case Instr::ILOAD_1:
-    case Instr::LLOAD_1:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD_1");
 	word value = frame->GetEnv(1);
@@ -785,27 +798,53 @@ Worker::Result ByteCodeInterpreter::Run() {
 	pc += 1;
       }
       break;
+    case Instr::DLOAD_1:
+    case Instr::LLOAD_1:
+      {
+	JavaDebug::Print("(D||L)LOAD_1");
+	word value = frame->GetEnv(1);
+	frame->Push(value);
+	FILL_SLOT();
+	pc += 1;
+      }
+      break;
     case Instr::ALOAD_2:
-    case Instr::DLOAD_2:
     case Instr::FLOAD_2:
     case Instr::ILOAD_2:
-    case Instr::LLOAD_2:
       {
-	JavaDebug::Print("(A|D|F|I|L)LOAD_2");
+	JavaDebug::Print("(A|F|I)LOAD_2");
 	word value = frame->GetEnv(2);
 	frame->Push(value);
 	pc += 1;
       }
       break;
+    case Instr::DLOAD_2:
+    case Instr::LLOAD_2:
+      {
+	JavaDebug::Print("(D||L)LOAD_2");
+	word value = frame->GetEnv(2);
+	frame->Push(value);
+	FILL_SLOT();
+	pc += 1;
+      }
+      break;
     case Instr::ALOAD_3:
-    case Instr::DLOAD_3:
     case Instr::FLOAD_3:
     case Instr::ILOAD_3:
-    case Instr::LLOAD_3:
       {
-	JavaDebug::Print("(A|D|F|I|L)LOAD_3");
+	JavaDebug::Print("(A|F|I)LOAD_3");
 	word value = frame->GetEnv(3);
 	frame->Push(value);
+	pc += 1;
+      }
+      break;
+    case Instr::DLOAD_3:
+    case Instr::LLOAD_3:
+      {
+	JavaDebug::Print("(D||L)LOAD_3");
+	word value = frame->GetEnv(3);
+	frame->Push(value);
+	FILL_SLOT();
 	pc += 1;
       }
       break;
