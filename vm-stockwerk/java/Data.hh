@@ -579,15 +579,15 @@ public:
 };
 
 class DllExport JavaString: public Object {
-private:
-  static word wClass;
-
+protected:
   enum {
     VALUE_INDEX, // BaseArray(Char)
     OFFSET_INDEX, // int
     COUNT_INDEX, // int
     SIZE
   };
+private:
+  static word wClass;
 
   BaseArray *GetValue() {
     return BaseArray::FromWordDirect(GetInstanceField(VALUE_INDEX));
@@ -702,6 +702,17 @@ public:
     p[n] = '\0';
     return p;
   }
+};
+
+class DllExport StackTraceElement: public Object {
+public:
+  enum {
+    DECLARING_CLASS_INDEX, // JavaString
+    METHOD_NAME_INDEX, // JavaString
+    FILE_NAME_INDEX, // JavaString | null
+    LINE_NUMBER_INDEX, // int (-1 == unknown, -2 == native)
+    SIZE
+  };
 };
 
 //

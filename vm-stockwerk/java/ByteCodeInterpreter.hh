@@ -35,7 +35,10 @@ public:
   virtual Result Handle();
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(word wFrame);
+
+  //--** move this to the JavaLanguageLayer?:
+  static void FillStackTraceElement(word wFrame, Object *stackTraceElement);
 };
 
 #endif

@@ -2390,7 +2390,23 @@ const char *ByteCodeInterpreter::Identify() {
 void ByteCodeInterpreter::DumpFrame(word wFrame) {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
   MethodInfo *info     = frame->GetMethodInfo();
+  //--** include class name
   std::fprintf(stderr, "%s%s\n",
 	       info->GetName()->ExportC(),
 	       info->GetDescriptor()->ExportC());
+}
+
+void ByteCodeInterpreter::FillStackTraceElement(word wFrame, 
+						Object *stackTraceElement) {
+  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
+  JavaString *className = JavaString::New("unknown");
+  JavaString *name = frame->GetMethodInfo()->GetName();
+  stackTraceElement->InitInstanceField
+    (StackTraceElement::DECLARING_CLASS_INDEX, className->ToWord());
+  stackTraceElement->InitInstanceField
+    (StackTraceElement::METHOD_NAME_INDEX, name->ToWord());
+  stackTraceElement->InitInstanceField
+    (StackTraceElement::FILE_NAME_INDEX, null);
+  stackTraceElement->InitInstanceField
+    (StackTraceElement::FILE_NAME_INDEX, Store::IntToWord(-1));
 }

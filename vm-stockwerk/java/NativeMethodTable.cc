@@ -30,6 +30,7 @@ void NativeMethodTable::Init() {
   RootSet::Add(wTable);
   java_lang_Class(JavaString::New("java/lang/Class"));
   java_lang_Object(JavaString::New("java/lang/Object"));
+  java_lang_Throwable(JavaString::New("java/lang/Throwable"));
   java_lang_System(JavaString::New("java/lang/System"));
   java_lang_Float(JavaString::New("java/lang/Float"));
   java_lang_Double(JavaString::New("java/lang/Double"));
