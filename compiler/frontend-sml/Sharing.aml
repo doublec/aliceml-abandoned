@@ -126,7 +126,7 @@ struct
 	let
 	    val inf2  = buildSig'(modlongid, SigInf(infoSpec spec, #[spec]))
 	in
-	    CompInf(Source.over(infoInf inf1, i), inf1, inf2)
+	    InterInf(Source.over(infoInf inf1, i), inf1, inf2)
 	end
 
     and buildSig'(ShortId(i, modid), inf) =
