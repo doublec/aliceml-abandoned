@@ -6,8 +6,8 @@ structure Hose :> HOSE =
 
 
 	fun printEx s = (TextIO.output (TextIO.stdErr, s);
-			  TextIO.flushOut TextIO.stdErr;
-			  OS.Process.exit OS.Process.failure)
+			 TextIO.flushOut TextIO.stdErr;
+			 OS.Process.exit OS.Process.failure)
 
 
 	fun hose () =
@@ -64,13 +64,13 @@ structure Hose :> HOSE =
 	    in
 		OS.Process.exit(main' args)
 	    end
-	    handle (IO.Io {name,function="openIn",cause}) =>
-		printEx "input file does not exist\n"
-		 | (IO.Io {name,function="openOut",cause}) =>
-		printEx "invalid output file\n"
-		 | (IO.Io {name,function="inputAll",cause}) =>
-		printEx "input file seems to be a directory\n"
-		 | exn => printEx ("Hose: unhandled internal exception: "
-				    ^ General.exnName exn ^ "\n")
+	handle (IO.Io {name,function="openIn",cause}) =>
+	    printEx "input file does not exist\n"
+	     | (IO.Io {name,function="openOut",cause}) =>
+	    printEx "invalid output file\n"
+	     | (IO.Io {name,function="inputAll",cause}) =>
+	    printEx "input file seems to be a directory\n"
+	     | exn => printEx ("Hose: unhandled internal exception: "
+			       ^ General.exnName exn ^ "\n")
        
     end

@@ -15,17 +15,22 @@ fun ++ x = ( x := !x + 1; !x)
 
 exception Error of string
 
-fun error (e, pos) = (print("Lex Error in line " ^ (Int.toString pos) ^ ": " ^ e ^ "\n");  raise Error e)
+fun error (e, pos) =
+    (print("Lex Error in line " ^ (Int.toString pos) ^ ": " ^ e ^ "\n");
+     raise Error e)
 
-val eof = fn () => if !nesting = 0 then Tokens.EOF(!pos,!pos) else error ("unclosed comment", !pos)
+val eof = fn () => if !nesting = 0 then Tokens.EOF(!pos,!pos)
+		   else error ("unclosed comment", !pos)
 
-fun count (x::xs,n) = if Char.isDigit x then count (xs,10*n + Char.ord x - Char.ord #"0")
+fun count (x::xs,n) = if Char.isDigit x
+			  then count (xs,10*n + Char.ord x - Char.ord #"0")
 		      else if x = #"," then (xs,n)
 			   else error("bad repetition",!pos)
   | count y = y
 
 (* used by: hose.lex
- * countlines : string -> unit, counts the new lines in the string and changes pos
+ * countlines : string -> unit
+ * counts the new lines in the string and changes pos
  *)
 fun countlines s =
     let
@@ -45,7 +50,8 @@ fun makePair s = let
 			 nil => (nil,first) 
 		       | _   => count (ds,0)
 		 in
-		     if first<=second then (first,second) else error ("bad repetition",!pos)
+		     if first<=second then (first,second)
+		     else error ("bad repetition",!pos)
 		 end			   
 
 
@@ -81,60 +87,66 @@ mlId       = "'"?[A-Za-z][A-Za-z0-9_'.]*;
  
 %%
 
-<INITIAL>"\n"                       => (++ pos; lex());
-<INITIAL>{formatting'}+             => (lex());
-<INITIAL>"regexp"                   => (Tokens.REGEXP(!pos,!pos));
-<INITIAL>"lexer"                    => (Tokens.LEXER(!pos,!pos));
-<INITIAL>"and"                      => (Tokens.AND(!pos,!pos));
-<INITIAL>"constructor"              => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"datatype"                 => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"end"                      => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"eqtype"                   => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"exception"                => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"exttype"                  => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"from"                     => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"fun"                      => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"functor"                  => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"in"                       => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"include"                  => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"infix"                    => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"infixr"                   => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"import"                   => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"local"                    => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"nonfix"                   => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"open"                     => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"sharing"                  => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"signature"                => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"structure"                => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"type"                     => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"val"                      => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"withtype"                 => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>";"                        => (Tokens.MLKEY(yytext,!pos,!pos));
-<INITIAL>"="                        => (Tokens.EQ(!pos,!pos));
-<INITIAL>"("                        => (Tokens.LPAR(!pos,!pos));
-<INITIAL>")"                        => (Tokens.RPAR(!pos,!pos));
-<INITIAL>"*"                        => (Tokens.TIMES(!pos,!pos));
-<INITIAL>"+"                        => (Tokens.PLUS(!pos,!pos));
-<INITIAL>"?"                        => (Tokens.QMARK(!pos,!pos));
-<INITIAL>"=>"                       => (Tokens.DRARROW(!pos,!pos));
-<INITIAL>"|"                        => (Tokens.BAR(!pos,!pos));
-<INITIAL>"^"                        => (Tokens.CARAT(!pos,!pos));
-<INITIAL>"["                        => (Tokens.LBRACK(!pos,!pos));
-<INITIAL>"]"                        => (Tokens.RBRACK(!pos,!pos));
-<INITIAL>","                        => (Tokens.COMMA(!pos,!pos));
-<INITIAL>"{"                        => (Tokens.LBRACE(!pos,!pos));
-<INITIAL>"}"                        => (Tokens.RBRACE(!pos,!pos));
-<INITIAL>"_"                        => (Tokens.WILDCARD(!pos,!pos));
-<INITIAL>{symbol}+                  => (Tokens.MLOP(yytext,!pos,!pos));
-<INITIAL>{decint}                   => (Tokens.NUM(valOf(Int.fromString(yytext)),!pos,!pos));
-<INITIAL>{real}                     => (Tokens.REAL(valOf(Real.fromString(yytext)),!pos,!pos));
-<INITIAL>{string}                   => (countlines(yytext); Tokens.STRING(yytext, !pos,!pos));
-<INITIAL>{alpha}{alphaNum}*         => (Tokens.ID(yytext,!pos,!pos));
-<INITIAL>{char}                     => (countlines(yytext); Tokens.MLTOK(yytext, !pos,!pos));
-<INITIAL>{mlId}                     => (Tokens.MLTOK(yytext,!pos,!pos));
-<INITIAL>"(*"                       => (nesting := 1;YYBEGIN COMMENT;lex());
-<COMMENT>"(*"                       => (nesting := !nesting+1;lex());
-<COMMENT>"*)"                       => (nesting := !nesting-1;if !nesting=0 then YYBEGIN INITIAL else ();lex());
-<COMMENT>"\n"                       => (++ pos;lex());
-<COMMENT>.                          => (lex());
-<INITIAL>.                          => (error ("bad character "^yytext,!pos));
+<INITIAL>"\n"                => (++ pos; lex());
+<INITIAL>{formatting'}+      => (lex());
+<INITIAL>"regexp"            => (Tokens.REGEXP(!pos,!pos));
+<INITIAL>"lexer"             => (Tokens.LEXER(!pos,!pos));
+<INITIAL>"and"               => (Tokens.AND(!pos,!pos));
+<INITIAL>"constructor"       => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"datatype"          => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"end"               => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"eqtype"            => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"exception"         => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"exttype"           => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"from"              => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"fun"               => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"functor"           => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"in"                => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"include"           => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"infix"             => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"infixr"            => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"import"            => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"local"             => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"nonfix"            => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"open"              => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"sharing"           => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"signature"         => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"structure"         => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"type"              => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"val"               => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"withtype"          => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>";"                 => (Tokens.MLKEY(yytext,!pos,!pos));
+<INITIAL>"="                 => (Tokens.EQ(!pos,!pos));
+<INITIAL>"("                 => (Tokens.LPAR(!pos,!pos));
+<INITIAL>")"                 => (Tokens.RPAR(!pos,!pos));
+<INITIAL>"*"                 => (Tokens.TIMES(!pos,!pos));
+<INITIAL>"+"                 => (Tokens.PLUS(!pos,!pos));
+<INITIAL>"?"                 => (Tokens.QMARK(!pos,!pos));
+<INITIAL>"=>"                => (Tokens.DRARROW(!pos,!pos));
+<INITIAL>"|"                 => (Tokens.BAR(!pos,!pos));
+<INITIAL>"^"                 => (Tokens.CARAT(!pos,!pos));
+<INITIAL>"["                 => (Tokens.LBRACK(!pos,!pos));
+<INITIAL>"]"                 => (Tokens.RBRACK(!pos,!pos));
+<INITIAL>","                 => (Tokens.COMMA(!pos,!pos));
+<INITIAL>"{"                 => (Tokens.LBRACE(!pos,!pos));
+<INITIAL>"}"                 => (Tokens.RBRACE(!pos,!pos));
+<INITIAL>"_"                 => (Tokens.WILDCARD(!pos,!pos));
+<INITIAL>{symbol}+           => (Tokens.MLOP(yytext,!pos,!pos));
+<INITIAL>{decint}            => (Tokens.NUM(valOf(Int.fromString(yytext)),
+					    !pos,!pos));
+<INITIAL>{real}              => (Tokens.REAL(valOf(Real.fromString(yytext)),
+					     !pos,!pos));
+<INITIAL>{string}            => (countlines(yytext);
+				 Tokens.STRING(yytext, !pos,!pos));
+<INITIAL>{alpha}{alphaNum}*  => (Tokens.ID(yytext,!pos,!pos));
+<INITIAL>{char}              => (countlines(yytext);
+				 Tokens.MLTOK(yytext, !pos,!pos));
+<INITIAL>{mlId}              => (Tokens.MLTOK(yytext, !pos,!pos));
+<INITIAL>"(*"                => (nesting := 1;YYBEGIN COMMENT; lex());
+<COMMENT>"(*"                => (nesting := !nesting+1; lex());
+<COMMENT>"*)"                => (nesting := !nesting-1;
+				 if !nesting=0 then YYBEGIN INITIAL else ();
+				     lex());
+<COMMENT>"\n"                => (++ pos;lex());
+<COMMENT>.                   => (lex());
+<INITIAL>.                   => (error ("bad character "^yytext,!pos));

@@ -173,14 +173,14 @@ TO-DO!
 
 *OK* -IO.Io exception handeln
 
+*fixed* -EOF wandert nach rechts, wenn es mehrmals gefunden wird
+
 -typ: unit -> string option,
    also quasi in Lexer.sml string durch getString ersetzen
    vom alten string muss der Rest uebernommen werden,
    der noch keine Action gab
    wenn einmal NONE kam, darf die Funktion nicht wieder aufgerufen werden
    helfen koennte hose.lex.sml
-
--EOF wandert nach rechts, wenn es mehrmals gefunden wird
 
 
 --------------------------------------------------------------------------------

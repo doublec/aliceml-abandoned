@@ -22,9 +22,9 @@ FILES = AbsSyn.sml \
 
 .PHONY: with-smlnj clean distclean
 
-with-smlnj: hose-image.x86-linux
+with-smlnj: hose-image
 
-hose-image.x86-linux: ${FILES}
+hose-image: ${FILES}
 	sml <wrap-smlnj.sml
 
 clean:
@@ -35,6 +35,8 @@ clean:
 
 
 distclean:	clean
+	rm -f *.grm.*
+	rm -f *.lex.*
 	rm -rf *-image.*
 
 

@@ -6,10 +6,12 @@ structure Lexer :> LEXER =
 
 	fun lError s = (print ("Lex Error: " ^ s ^ "\n"); raise Error)
 
-	(* lexer : takes an automaton, a string and returns a funktion : unit -> 'a
-	 * x is a tuple of lexid in the same lexbind list
+	(* lexer : takes an automaton and a string with position-references
+	 * and returns the lexing function : unit -> 'a
+	 * x is a tuple of the lexids in the same lexbind list
 	 *)
-	fun lexer ((pointer, dtran, bigTable), action, finstates) (string, lexPos, lineNum, x)  =
+	fun lexer ((pointer, dtran, bigTable), action, finstates)
+	          (string, lexPos, lineNum, x)  =
 	    let
 
 		val stateStack = ref [1]
@@ -19,12 +21,15 @@ structure Lexer :> LEXER =
 		val inputSize = size string
 
 
-		(* actChar : unit -> int, returns the ord of the actual character
+		(* actChar : unit -> int
+		 * returns the ord of the actual character
 		 *)
-		fun actChar () = (ord (String.sub (string, !lexPos) ) ) handle Subscript => 256
+		fun actChar () = (ord (String.sub (string, !lexPos) ) )
+		    handle Subscript => 256
 
 
-		(* pretty : string -> string, replaces "\n" and "\t" with "\\n" and "\\t" in the string
+		(* pretty : string -> string
+		 *replaces "\n" and "\t" with "\\n" and "\\t" in the string
 		 *)
 		fun pretty s =
 		    let
@@ -38,41 +43,56 @@ structure Lexer :> LEXER =
 		    end
 
 
-		(* goBack : unit -> unit, sets all necessary parameters one step back
+		(* goBack : unit -> unit
+		 * sets all necessary parameters one step back
 		 *)
-		fun goBack () = (if actChar() = 10 then (newLines := tl (!newLines); lineNum := !lineNum - 1) else ();
-				 stateStack := tl (!stateStack);
-				 lexPos := !lexPos - 1;
-				 numBack := !numBack + 1)
+		fun goBack () =
+		    (if actChar() = 10
+			 then (newLines := tl (!newLines);
+			       lineNum := !lineNum - 1)
+		     else ();
+		     stateStack := tl (!stateStack);
+		     lexPos := !lexPos - 1;
+		     numBack := !numBack + 1)
 
 
-		(* finAction : int -> int, returns the position of the END-leaf for the state
+		(* finAction : int -> int
+		 * returns the position of the END-leaf for the state
 		 *)
 		fun finAction state = Vector.sub( finstates, state)
 				    
 
-		(* getAction : unit -> 'b, looks for the longest match and returns the Action of the END-leaf
+		fun errorInfo () = 
+		    if !lexPos < inputSize
+			then (substring(string, !lexPos + 1, !numBack ))
+		    else "EOF"
+			handle Subscript =>
+			    substring(string, !lexPos + 1,!numBack - 1 ) ^ "EOF"
+
+
+		(* getAction : unit -> 'a
+		 * looks for the longest match and returns
+		 * the Action of the END-leaf
 		 *)
 		fun getAction () =
 		    (case !stateStack of
 			nil => 
 			    let
-				val err = if !lexPos < inputSize then (substring(string, !lexPos + 1, !numBack ))
-				    handle Subscript => substring(string, !lexPos + 1, !numBack - 1 ) ^ "EOF"
-					     else "EOF"
+				val err = errorInfo ()
 			    in
 				stateStack := [1];
 				numBack := 0;
 				lexPos := !lexPos + 1;
-				lError("no rule matches for '" ^ pretty err ^ "' in line: " ^ Int.toString(!lineNum) )
+				lError("no rule matches for '" ^ pretty err
+				       ^ "' in line: " ^ Int.toString(!lineNum))
 			    end
 		      | (state :: _ ) => 
 			    (case finAction state of
 				 0  => (goBack ();
-					getAction () )
+					getAction ())
 			       | p => let
 					  val len = length (!stateStack) - 1
-					  val yytext = substring(string, !lexPos - len, len)
+					  val yytext = substring (string, !lexPos - len, len)
 					      handle Subscript => ""
 					  val newLines = ref (!newLines)
 					  val lines = ref 0
@@ -87,11 +107,14 @@ structure Lexer :> LEXER =
 				      end))
 
 
-		(* trans : int -> int, returns the state for a transition with a character of the ord chr
+		(* trans : int -> int
+		 * returns the state for a transition
+		 * with a character of ord chr
 		 *)
 		and trans chr =
 		    let
 			val state = hd (!stateStack)
+
 			fun getTrans (s, c) =
 			    if bigTable then ord( String.sub (s, 2 * c) ) * 256 + ord( String.sub (s, 2 * c + 1) )
 			    else ord( String.sub (s, c) )
@@ -113,7 +136,7 @@ structure Lexer :> LEXER =
 			    0 => (if chr = 10 then (newLines := tl (!newLines); lineNum := !lineNum - 1) else ();
 				  getAction () )
 			  | n => (stateStack := n :: (!stateStack) ;
-				  lexPos := !lexPos + 1;
+				  if chr = 256 then () else lexPos := !lexPos + 1;
 				  lex () )
 		    end
 	    in

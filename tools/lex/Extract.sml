@@ -9,14 +9,19 @@ structure Extract :> EXTRACT=
 
 	val errorFile = ref "?"
 
-	fun eError (e, po) = (print("Error in file " ^ (!errorFile) ^ " in line " ^ posToString po ^ ": " ^ e ^ "\n");
-			      raise Error e)
-	fun ieError (e, po) = (print("Internal Error in structure Extract in position: " ^ posToString po ^ ": " ^ e ^ "\n");
-			       raise Error e)
+	fun eError (e, po) =
+	    (print("Error in file " ^ (!errorFile)
+		   ^ " in line " ^ posToString po ^ ": " ^ e ^ "\n");
+	     raise Error e)
+	fun ieError (e, po) =
+	    (print("Internal Error in structure Extract in position: "
+		   ^ posToString po ^ ": " ^ e ^ "\n");
+	     raise Error e)
 
 
-	(* getLexer : lex list * lmatch StringMap.map -> lmatch StringMap.map,
-	 * returns the given map, additionally containing the lmatch for each key (lex-id) found in the lex list
+	(* getLexer : lex list * lmatch StringMap.map -> lmatch StringMap.map
+	 * returns the given map, additionally containing the lmatch
+	 * for each key (lex-id) found in the lex list
 	 *)
 	fun getLexer ( (SML (e, po) )   :: ll, map) =
 	    let
@@ -49,7 +54,8 @@ structure Extract :> EXTRACT=
 
 	and fromLbL ( (LEXBIND (s, lm, po) ) :: lbl, map) = 
 	    let
-		val map' = if StringMap.inDomain (map,s) then eError("lexer id already defined: " ^ s, po)
+		val map' = if StringMap.inDomain (map,s)
+			       then eError("lexer id already defined: " ^ s, po)
 			   else StringMap.insert(map, s, lm)
 		val map'' = fromLm (lm, map')
 	    in
@@ -71,7 +77,8 @@ structure Extract :> EXTRACT=
 
 
 	(* numLm : lmatch -> regexp * atexp IntMap.map,
-	 * the map contains for each key (finishing position of the regexp) the associated action (atexp)
+	 * the map contains for each key (finishing position of the regexp)
+	 * the associated action (atexp)
 	 *)
 	fun numLm ( LMATCH (lrl, po) ) = 
 	    let
@@ -90,29 +97,35 @@ structure Extract :> EXTRACT=
 	    in
 		numLrL ( lrl, i, endmap', re' :: result, po )
 	    end
-	  | numLrL (                          _ , _, endmap, result, po) = (concat (result, po), endmap)
+	  | numLrL ( _ , _, endmap, result, po) = (concat (result, po), endmap)
 
 
 	(* numerate the leafs from left to right
 	 *)
 	and numReg (EPS                , _) = EPS
-	  | numReg (CAT (re1, re2 , po), i) = CAT (numReg (re1,i), numReg (re2,i), po )
+	  | numReg (CAT (re1, re2 , po), i) = CAT (numReg (re1,i),
+						   numReg (re2,i), po )
 	  | numReg (CLOSURE (re, po)   , i) = CLOSURE (numReg (re,i), po )
 	  | numReg (CHARS (bv, _ , po) , i) = ( i:= !i + 1; CHARS (bv, !i, po) )
-	  | numReg (ALT (re1, re2, po) , i) = ALT (numReg (re1,i), numReg (re2,i), po )
-	  | numReg (REGID (s, po)      , i) = ieError("still regid in regexp :" ^ s, po)
+	  | numReg (ALT (re1, re2, po) , i) = ALT (numReg (re1,i),
+						   numReg (re2,i), po )
+	  | numReg (REGID (s, po)      , i) =
+	    ieError("still regid in regexp :" ^ s, po)
 	  | numReg (END _              , i) = ( i:= !i + 1; END (!i) )
 
 
 	(* merge more than lrules to one regexp
 	 *)
-	and concat ( re1 :: re2 :: rl, po) = ALT (concat (re2 :: rl, po), re1, po)
+	and concat ( re1 :: re2 :: rl, po) =
+	    ALT (concat (re2 :: rl, po), re1, po)
 	  | concat (             [re], _ ) = re
-	  | concat (              nil, po) = ieError ("empty list in concat!", po)
+	  | concat (              nil, po) =
+	    ieError ("empty list in concat!", po)
 
 
 	(* extract : lex list -> (regexp * atexp IntMap.map) StringMap.map,
-	 * returns a map containing for each key (found lex-id) the pair of regexp and finishing-action-map
+	 * returns a map containing for each key (found lex-id) the pair of
+	 * regexp and finishing-action-map
 	 *)
 	fun extract (ll, fileName) = 
 	    let
