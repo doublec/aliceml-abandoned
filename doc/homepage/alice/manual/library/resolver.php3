@@ -88,7 +88,7 @@
       </TABLE>
       <P>Characters within strings <I>s</I>, <I>s1</I>, <I>s2</I> above
 	can be escaped using the <TT><A href="config.php3#pathEscape"
-	>Config.pathEscape</A></TT> character, if applicable.
+	>Config.pathEscape</A></TT> character, if applicable.</P>
     </DD>
 
     <DT>
