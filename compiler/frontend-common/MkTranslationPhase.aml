@@ -1146,13 +1146,20 @@ struct
       | trTyp'(I.AbsTyp(i, isExtensible)) =
 	raise Crash.Crash "TranslationPhase.trTyp: AbsTyp"
 
-    and trTypRep(p', t) =
+    and trTypRep(x, t) =
 	if !Switches.Bootstrap.rttLevel = Switches.Bootstrap.NO_RTT then
 	    O.FailExp(typInfo(#region(I.infoTyp t), typ_typ))
 	else
-	    case trTypRep'(p', t)
-	      of NONE    => trTyp' t
-	       | SOME e' => e'
+	    let
+		val r  = #region(I.infoId x)
+		val p' = pathOp(lab_fromLab,
+				labOp(lab_fromString,
+				      trString(r, Name.toString(I.name x))))
+	    in
+		case trTypRep'(p', t)
+		  of NONE    => trTyp' t
+		   | SOME e' => e'
+	    end
 
     and trTypRep'(p', I.FunTyp(i,x,t)) = trTypRep'(p', t)
 
@@ -1343,7 +1350,7 @@ struct
       | trInf'(I.AbsInf(i)) =
 	raise Crash.Crash "TranslationPhase.trInf: AbsInf"
 
-    and trInfRep(p, j) =
+    and trInfRep(x, j) =
 	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
 	    let
 		val i = I.infoInf j
@@ -1353,8 +1360,12 @@ struct
 	else
 	    (* [j]_p = fn _ => [j]_id,id,p *)
 	    let
+		val r  = #region(I.infoId x)
+		val p' = pathOp(lab_fromLab,
+			    labOp(lab_fromString,
+				  trString(r, Name.toString(I.name x))))
 		val r  = #region(I.infoInf j)
-		val e' = case trInfRep'(fn k' => k', fn e' => e', p, j)
+		val e' = case trInfRep'(fn k' => k', fn e' => e', p', j)
 			   of NONE    => trInf' j
 			    | SOME e' => e'
 		val m' = O.Match(nonInfo r, O.JokPat(typInfo(r,typ_unit)), e')
@@ -1595,11 +1606,7 @@ struct
       | trDec(I.TypDec(i,x,t), ds') =
 	(* [type x = t] = val $x = [t]_(Path.fromLab(Label.fromString "x")) *)
 	let
-	    val r  = #region(I.infoId x)
-	    val p' = pathOp(lab_fromLab,
-			    labOp(lab_fromString,
-				  trString(r, Name.toString(I.name x))))
-	    val e' = trTypRep(p', t)
+	    val e' = trTypRep(x, t)
 	    val d' = O.ValDec(i, idToPat(trTypid x), e')
 	in
 	    d' :: ds'
@@ -1620,11 +1627,7 @@ struct
 	(* [interface x = j] = val $x = [j]_(Path.fromLab(Label.fromString "x"))
 	 *)
 	let
-	    val r  = #region(I.infoId x)
-	    val p' = pathOp(lab_fromLab,
-			    labOp(lab_fromString,
-				  trString(r, Name.toString(I.name x))))
-	    val e' = trInfRep(p', j)
+	    val e' = trInfRep(x, j)
 	    val d' = O.ValDec(i, idToPat(trInfid x), e')
 	in
 	    d' :: ds'
@@ -1670,11 +1673,8 @@ struct
 	    ds'
 	else let
 	    val r   = #region i
-	    val p'  = pathOp(lab_fromLab,
-			     labOp(lab_fromString,
-				   trString(r, Name.toString(I.name x))))
 	    val e1' = idToExp(trTypid x)
-	    val e2' = trTypRep(p', t)
+	    val e2' = trTypRep(x, t)
 	    val e'  = unitTypOp(lab_fill,
 				O.TupExp(typInfo(r, typ_typtyp), #[e1',e2']))
 	    val d'  = O.ValDec(nonInfo r, O.JokPat(typInfo(r,typ_unit)), e')
@@ -1898,10 +1898,6 @@ struct
 
 	    val x'  = trTypid x
 	    val xx' = idToExp x'
-	    val a'  = labOp(lab_fromString,
-			 trString(#region(I.infoId x), Name.toString(I.name x)))
-	    val p'  = pathInfOp(lab_newTyp,
-				O.TupExp(typInfo(r, typ_signlab), #[s',a']))
 	    val to' = trTypRep'(pp', t)
 	    val t'  = case to' of NONE    => trTyp' t
 			        | SOME t' => t'
