@@ -97,7 +97,7 @@ structure Parser :> PARSER =
                                 accel,internalChild)
 	      val children = parseChildren(doc, sigDoc, class, id, next)
 	  in
-	      attachChildren(doc, class, id, children);
+	      attachChildren(doc, class, id, internalChild, children);
 	      attachSignals(sigDoc,getStructureName doc,class,id,sign);
 	      id
 	  end
@@ -175,5 +175,5 @@ structure Parser :> PARSER =
 	      val xml = XML.parse gladeFile
 	  in
 	      parseInterface(doc, sigDoc, xml)
-	  end
+	  end handle CodeEmitter.CodeEmitterError s => raise ParseError s
   end

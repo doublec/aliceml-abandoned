@@ -18,6 +18,8 @@ signature CODE_EMITTER =
       type property = string * string
       type signal = string * string * string
 
+      exception CodeEmitterError of string
+
       type document
       val new : string -> document
       val newBuffered : string -> document
@@ -40,6 +42,7 @@ signature CODE_EMITTER =
                       * (string * string * string) option -> unit
       val attachChildren : document *
 			   string * string *
+			   (string * string * string) option *
 			   (string * property list * (string * string * string) option) list 
 			   -> unit
       val attachSignals : document * string * string *
@@ -286,6 +289,11 @@ structure CodeEmitter :> CODE_EMITTER =
       | processProperties(doc, class, id, ("visible", "True")::ps) =
 	((*output(doc, "val _ = Gtk.widgetShow "^id^"\n");*)
 	 processProperties(doc, class, id, ps))
+      | processProperties(doc, class, id, ("can_default", "True")::ps) =
+	(output(doc, "val _ = Gtk.objectSetBool("^id^",\"can-default\",true)\n");
+	 processProperties(doc, class, id, ps))
+      | processProperties(doc, class, id, ("can_default", "False")::ps) =
+	processProperties(doc, class, id, ps)
       | processProperties(doc, class, id, ("visible",_)::ps) =
 	processProperties(doc, class, id, ps)
       | processProperties(doc, class, id, ("value_in_list",_)::ps) =
@@ -336,6 +344,12 @@ structure CodeEmitter :> CODE_EMITTER =
       | processProperties(doc, class, id, ("layout_style", v)::ps) =
 	processProperties(doc, class, id, ("layout",
 					   cvtGtkName v)::ps)
+      | processProperties(doc, "GtkButton", id, ("response_id",v)::ps) =
+	(output(doc, "val "^id^"_response_id = "^
+		(case Int.fromString v of
+		     NONE => "NONE"
+		   | SOME i => "SOME "^Int.toString i)^"\n");
+	 processProperties(doc, "GtkButton", id, ps))
       | processProperties(doc, "GtkNotebook", id,
 			  ("enable_popup","True")::ps) =
 	(output(doc, "val _ = Gtk.notebookPopupEnable("^id^")\n");
@@ -658,30 +672,40 @@ structure CodeEmitter :> CODE_EMITTER =
     fun newInternalObject(doc, class, id, prop, access, sign,accel,
                           "vbox", "GtkDialog", parentId) =
         (output(doc, "val "^id^" = Gtk.dialogGetFieldVbox "^parentId^"\n");
-         output(doc, "val "^id^"_action_area = Gtk.dialogGetFieldActionArea");
+         output(doc, "val "^id^"_action_area = Gtk.dialogGetFieldActionArea "^parentId^"\n");
+	 output(doc, "val "^id^"_dialog = "^parentId^"\n");
          processProperties(doc, class, id, prop);
          processAccelerators(doc, class, id, accel))
       | newInternalObject(doc, class, id, prop, access, sign,accel,
                           "action_area", "GtkVBox", parentId) =
         (output(doc, "val "^id^" = "^parentId^"_action_area\n");
+	 output(doc, "val "^id^"_dialog = "^parentId^"_dialog\n");
          processProperties(doc, class, id, prop);
          processAccelerators(doc, class, id, accel))
-      | newInternalObject _ = raise CodeEmitterError "Unknown internal child"
+      | newInternalObject(doc, class, id, prop, access, sign,accel,
+                          "image", "GtkImageMenuItem", parentId) =
+	newObject'(doc, class, id, prop, access, sign, accel)
+      | newInternalObject(doc, class, id, prop, access, sign,accel,
+                          internalId, parentClass, parentId) =
+	raise CodeEmitterError ("Unknown internal child "^internalId^" "^parentClass)
 
     fun newObject(doc, class, id, prop, access, sign, accel, NONE) =
         newObject'(doc, class, cvtId(id), prop, access, sign, accel)
       | newObject(doc, class, id, prop, access, sign, 
                   accel, SOME (internalId, parentClass, parentId)) =
-        newInternalObject(doc, class, id, prop, access, sign, accel,
-                          internalId, parentClass, parentId)
+        newInternalObject(doc, class, cvtId(id), prop, access, sign, accel,
+                          cvtId internalId, parentClass, cvtId parentId)
 
     fun makeChildrenList children =
 	"["^(insertStr "," (List.map (fn (c,_,_) => c) children))^"]"
 
     (* Attach children to container etc. *)
-    fun attachBoxChild (doc,id) (c, nil,_) =
+    fun attachActionAreaChild (doc, id) (c, props, _) =
+	output(doc, "val _ = Option.app (fn rid => Gtk.dialogAddActionWidget("^id^"_dialog,"^c^",rid)) "^c^"_response_id\n")
+
+    fun attachBoxChild (doc,id) (c, nil, NONE) =
 	output(doc, "val _ = Gtk.boxPackStart("^id^","^c^",true,true,0)\n")
-      | attachBoxChild (doc,id) (c, props,_) =
+      | attachBoxChild (doc,id) (c, props, NONE) =
 	let
 	    val (expand, psr) = getBoolProp(props, "expand")
 	    val (fill, psr)   = getBoolProp(psr, "fill")
@@ -695,6 +719,7 @@ structure CodeEmitter :> CODE_EMITTER =
 			"("^id^","^c^","^expand^","^
 			fill^","^padding^")\n")
 	end
+      | attachBoxChild (doc,id) (c, _, SOME _) = ()
     fun attachFrameChild (doc,id) (c,nil,_) =
 	output(doc, "val _ = Gtk.containerAdd("^id^","^c^")\n")
       | attachFrameChild (doc,id) (c,props,_) =
@@ -766,8 +791,11 @@ structure CodeEmitter :> CODE_EMITTER =
     fun attachChildren'(doc, ("GtkHBox"
 			     | "GtkVBox"
 			     | "GtkButtonBox"
+			     | "GtkHButtonBox"
+			     | "GtkVButtonBox"
 			     | "GtkBox"), id, children) =
 	List.app (attachBoxChild(doc,id)) children
+      | attachChildren'(doc, "GtkDialog", id, children) = ()
       | attachChildren'(doc, "GtkMenuItem", id, children) =
 	List.app (fn (c,_,_) =>
 		     output(doc, "val _ = Gtk.menuItemSetSubmenu("^
@@ -807,10 +835,19 @@ structure CodeEmitter :> CODE_EMITTER =
       | attachChildren'(doc, class, id, children) =
 	output(doc, "val _ = Helpers.containerAddList("^
 		    id^","^makeChildrenList children^")\n");
-    fun attachChildren(doc, class, id, children) =
+    fun attachChildren(doc, class, id, NONE, children) =
 	attachChildren'(doc, class, cvtId(id),
 			map (fn (i,v,internal) => (cvtId i,v,internal))
                             children)
+      | attachChildren(doc, "GtkImage", id, _, nil) = ()
+      | attachChildren(doc, "GtkVBox", id,
+		       SOME(internalId, "GtkDialog", parentId), children) =
+	List.app (attachBoxChild(doc,cvtId id)) children
+      | attachChildren(doc, "GtkHButtonBox", id,
+		       SOME(internalId, "GtkVBox", parentId), children) =
+	List.app (attachActionAreaChild (doc, cvtId id)) children
+      | attachChildren(_,class,id,SOME(internalId, parentClass, parentId),_)=
+	raise CodeEmitterError ("Unknown internal child "^class^" "^id^" "^parentClass^" "^parentId)
 
     fun attachSignals(doc,str,class,id,nil) = ()
       | attachSignals(doc,str,class,id,(n,h,a)::sr) =
