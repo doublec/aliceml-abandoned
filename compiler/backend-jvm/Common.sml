@@ -23,18 +23,6 @@ structure Common=
 
 	exception Mitch
 
-	(* xxx For Debugging: *)
-	datatype deb=B of bool
-	  | Is of id list
-	  | Ias of id list array
-	  | IasSS of id list array * int * int
-	  | II of id * id
-	  | Okay
-	  | Dec of stm
-	  | Test of test
-	  | Exp of exp
-	exception Debug of deb
-
 	(* Name der aktuellen Klasse. Der Stack wird für verschachtelte Funktionen benötigt.
 	 (für jede Funktion wird eine eigene Klasse erzeugt.) *)
 	structure Class =
@@ -64,7 +52,7 @@ structure Common=
 	val alpha = 0:label
 
 	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
-	val mainpickle = ref ~1 (* JVM-Register, in dem Struktur steht *)
+	val mainpickle = ref (Stamp.new ()) (* stamp for main structure *)
 
 	val _ = Compiler.Control.Print.printLength := 10000;
 	val _ = Compiler.Control.Print.printDepth := 10000;
@@ -75,8 +63,9 @@ structure Common=
 	fun classNameFromStamp stamp' = Class.getInitial()^"class"^(Stamp.toString stamp')
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
-	val dummyCoord:ImperativeGrammar.coord = (0,0)
-	val dummyPos:Source.position = (0,0)
+	val dummyCoord:ImperativeGrammar.coord = Source.nowhere
+	val dummyPos:Source.position = Source.nowhere
+	val dummyInfo:ImperativeGrammar.info = (dummyCoord, ref NONE)
 
 	(* Functionclosures are represented by Stamps.
 	  This is the toplevel environment: *)
@@ -92,6 +81,7 @@ structure Common=
 	 val OPTIMIZE = ref 0
 
 	 (* Stamps and Ids for formal Method Parameters. *)
+	 val thisstamp = Stamp.new ()
 	 val parm1Stamp = Stamp.new ()
 	 val parm2Stamp = Stamp.new ()
 	 val parm3Stamp = Stamp.new ()
@@ -109,14 +99,29 @@ structure Common=
 	 val thisId = Id (dummyPos, thisStamp, InId)
 
 	 datatype APPLY =
-	    (* methodname, # of params *)
-	    Apply of string * int
-	  (* # of params, code class, code position.
-	   No methodname, because it is always "recapply". *)
-	  | RecApply of int * stamp * int
+	     (* Goto (# of params, label) *)
+	     GotoLabel of int * label
+	  (* Invokevirtual recapply (# of params, code class, code position)*)
+	  | InvokeRecApply of int * stamp * label
+	  (* Invokeinterface apply or apply0/2/3/4. (# of params) *)
+	  | NormalApply of int
 
 	 (* generate names for apply methods. *)
 	fun applyName 1 = "apply"
 	  | applyName parms =
 	    "apply"^Int.toString (if parms <=4 then parms else 1)
+
+	(* Structure for managing labels in JVM-methods *)
+	structure Label =
+	    struct
+		(* the actual label number *)
+		val labelcount = ref (0:label)
+
+		fun new () =
+		    (labelcount := !labelcount + 1;
+		     !labelcount)
+
+		fun toString lab =
+		    "label"^Int.toString lab
+	    end
     end

@@ -90,5 +90,7 @@ structure Abbrev  =
 	val MForName       = (CClass, "forName", ([Classsig CString], [Classsig CClass]))
 
 	val MPickle = ("de/uni_sb/ps/dml/runtime/General$Pickle","apply",
-		   ([Classsig CString, Classsig CVal, Classsig CVal], [Classsig CVal]))
+		       ([Classsig CString, Classsig CVal, Classsig CVal], [Classsig CVal]))
+
+	val ECompiler = "java/lang/RuntimeException"
     end

@@ -26,129 +26,55 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	type stamp=IntermediateGrammar.stamp
 
-	(* remember the actual function. We use a stack because functions may
-	 be nested *)
-	val lambdaStack = ref (toplevel::nil)
-
-	(* remember whether the actual function can be stored in a static
-	 method *)
-	val staticStack = ref (true::nil)
-
 	(* non top-level functions must be pickled explicitly *)
 	(* xxx store in corresponding classes *)
-	val pickleFn: id StampHash.t=StampHash.new()
+	val pickleFn=StampSet.new()
 
 	(* map function arguments to ids *)
 	val lambdas:id StampHash.t=StampHash.new ()
 
-	(* In this stack, we remember the names of functions. *)
-	val lambdaIdsStack = ref [Id ((0,0),toplevel,InId)]:id list ref
-
-	(* map names (i.e. ids) to function arguments. Remember that
-	 functions are represented by their OneArg which is unique. *)
+	(* map names (i.e. ids) to function arguments. *)
 	val ids:stamp StampHash.t=StampHash.new ()
 
 	(* map Pairs of (crosswise recursive function) stamps and number
 	 of parameters to the stamp of the class in which the function code
 	     is stored and the position in its apply method *)
-	val recApplies: (stamp * int) StampIntHash.t = StampIntHash.new ()
+	val recApplies: (stamp * label) StampIntHash.t = StampIntHash.new ()
 
-	(* set of Pairs of (not crosswise recursive function) stamps and number
-	 of parameters for which static applies are created *)
-	val staticPossible = StampIntSet.new ()
+	(* map stamps to recApply function code *)
+	val recApply: INSTRUCTION list StampHash.t = StampHash.new ()
 
 	(* remember which (non-dummy) apply functions are created. *)
-	val normalApplies = StampIntSet.new ()
+	val normalApplies = StampIntSet.new () (* xxx not in use yet. *)
 
-	(* return the current function *)
-	fun top () = hd(!lambdaStack)
+	(* mark functions for pickling. This is necessary for non-toplevel functions only *)
+	fun markForPickling (stamp', upperFun) =
+	    if upperFun = toplevel
+		then ()
+	    else
+		StampSet.insert (pickleFn, stamp')
 
-	(* Called before a new apply method is created.
-	 Assume that the method can be static. *)
-	fun newApply () =
-	    staticStack := (true::(!staticStack))
-
-	(* called on entering a new function *)
-	fun push (id' as Id(_,stamp',_)) =
-	    (if top() = toplevel
-		 then ()
-	     else
-		 StampHash.insert (pickleFn, stamp', id');
-	     lambdaStack := (stamp'::(!lambdaStack));
-	     newApply ())
-
-	(* called after finishing a apply method. *)
-	fun endApply () =
-	    staticStack := tl(!staticStack)
-
-	(*called on leaving a function *)
-	fun pop () =
-	    (lambdaStack := tl(!lambdaStack);
-	     endApply ())
-
-	(* test whether a static apply is created for a function *)
-	fun isStatic (stampparms: stamp* int) =
-	    StampIntSet.member (staticPossible,stampparms)
-
-	(* called on entering a new function *)
-	fun pushFun ids = lambdaIdsStack:=(ids::(!lambdaIdsStack))
-
-	(* called on leaving a function *)
-	fun popFun () = lambdaIdsStack:=tl(!lambdaIdsStack)
-
-	(* get the id with the name of the current function. *)
-	fun getFun () = hd (!lambdaIdsStack)
-
-	(* get the id with the name of the surrounding function.  *)
-	fun getOuterFun () = case !lambdaIdsStack of
-	    _::id'::_ => id'
-	  | _ => raise Mitch
-
-	(* name the current function. Both the function and its
-	 corresponding name can be found on top of the stack. *)
-	fun setId () =
-	    StampHash.insert(lambdas,top(),hd(!lambdaIdsStack))
+	(* name a function. *)
+	fun setId (lambda, name as Id (_, namestamp, _)) =
+	    (print ("assign function "^Stamp.toString lambda^" to Stamp "^Stamp.toString namestamp^"\n");
+	     StampHash.insert(lambdas,lambda,name);
+	     StampHash.insert(ids, namestamp, lambda))
 
 	(* get the name of a function *)
-	fun getId id' =
-	    case StampHash.lookup(lambdas, id')
-		of NONE => Id ((0,0),toplevel,InId)
+	fun getId stamp' =
+	    case StampHash.lookup(lambdas, stamp')
+		of NONE => Id (dummyCoord, stamp', InId)
 	      | SOME id'' => id''
-
-	(* called when the actual method cannot be declared static *)
-	fun noSapply () =
-	    staticStack:= false::(tl(!staticStack))
-
-	(* checks whether the actual function can be declared static *)
-	fun sapplyPossible parms =
-	    if hd(!staticStack) then
-		(StampIntSet.insert
-		 (staticPossible,
-		  ((case getId (hd (!lambdaStack))
-			of Id (_,stamp',_) => stamp'),
-		   parms));
-		 true)
-	    else false
-
-	(* checks whether a function call is self recursive. *)
-	fun isSelfCall stamp' =
-	    (case StampHash.lookup(lambdas, top()) of
-		 NONE => false
-	       | SOME (Id (_,stamp'',_)) => stamp'=stamp'')
 
 	(* return the function stamp that corresponds to a name (stamp) *)
 	fun getLambda stamp' =
 	    case StampHash.lookup(ids, stamp') of
-		NONE => toplevel
+		NONE => stamp'
 	      | SOME stamp'' => stamp''
 
-	(* We already have a hashtable that maps functions to their names.
-	 Now we create a hashtable that does vice versa. *)
-	fun createIdsLambdaTable () =
-	    StampHash.appi
-	    (fn (stamp', Id(_,stamp'',_)) =>
-	     StampHash.insert (ids, stamp'', stamp'))
-	    lambdas
+	(* checks whether a function call is self recursive. xxx *)
+	fun isSelfCall (stamp', stamp'') =
+	    getLambda stamp'= stamp''
 
 	(* create a field name for a stamp *)
 	fun fname stamp' = "f"^(Stamp.toString stamp')
@@ -161,68 +87,67 @@ functor MakeLambda(structure StampSet:IMP_SET
 	 runtime, so we have to build dummy instances of inner functions. *)
 	fun generatePickleFn startwert =
 	    let
-		fun codePickle (stamp',_,acc) =
-		    Aload 0::
+		fun codePickle (stamp',acc) =
+		    Aload thisStamp::
 		    Ldc (JVMString (classNameFromStamp stamp'))::
 		    Invokestatic MForName::
 		    Putfield (fieldname stamp',
 			      [Classsig CClass])::
 		    acc
 	    in
-		StampHash.foldi codePickle startwert pickleFn
+		StampSet.fold codePickle startwert pickleFn
 	    end
 
 	(* These are the dummy fields for generatePickleFn *)
 	fun makePickleFields startwert =
 	    let
-		fun pickleFields (stamp',_, acc) =
+		fun pickleFields (stamp', acc) =
 		    Field ([FPublic, FFinal],
 			   fname stamp',
 			   [Classsig CClass])::acc
 	    in
-		StampHash.foldi pickleFields startwert pickleFn
+		StampSet.fold pickleFields startwert pickleFn
 	    end
+
+	(* Return the number of Value parameters (1-4) of an recapply of a function
+	   with n parameters. *)
+	fun methParms n =
+	    if n > 4 then 1 else n
 
 	(* Return the class in which apply is defined. Note that this is
 	 not necessarily the class that corresponds to the stamp as crosswise
 	 recursive functions are merged in one single apply *)
-	fun getClassStamp (stampint as (stamp', _)) =
-	    case StampIntHash.lookup (recApplies, stampint) of
+	fun getClassStamp (stamp', params) =
+	    case StampIntHash.lookup (recApplies, (stamp', methParms params)) of
 		SOME (stamp'', _) => stamp''
 	      | NONE => stamp'
 
-	(* Return the apply method of a stamp and its number of parameters. *)
-	fun getMethod (sp as (stamp', parms)) =
-	    (case StampIntHash.lookup (recApplies, sp) of
-		 SOME (stamp'', pos) =>
-		     RecApply (parms, stamp'', pos)
-	       | NONE =>
-		     (case StampIntHash.lookup (recApplies, (stamp', 1)) of
-			  SOME (stamp'', pos) =>
-			      RecApply (1, stamp'', pos)
-			| NONE =>
-			      (if StampIntSet.member (normalApplies, sp) then
-				   Apply (applyName parms, parms)
-			       else Apply (applyName 1, 1))))
+	fun isInRecApply (stamp', params) =
+	    isSome (StampIntHash.lookup (recApplies, (stamp', methParms params)))
 
 	local
 	    val actual = ref illegalStamp
 	    val dest = ref illegalStamp
 	    val counter = ref 0
-
-	    fun insertInner (OneArg (Id (_,stamp',_)), _) =
-		(actual := stamp';
-		 StampIntHash.insert (recApplies, (stamp', 1),(!dest, !counter));
+	    fun insertInner (OneArg _, _) =
+		(StampIntHash.insert (recApplies, (!actual, 1),(!dest, !counter));
+		 if !VERBOSE >= 1 then
+		     print ("inserting "^Stamp.toString (!actual)^
+			    ":1 for "^Stamp.toString (!dest)^" at "^
+			    Int.toString (!counter)^"\n") else ();
 		 counter := !counter + 1)
 	      | insertInner (TupArgs ids, _) =
 		let
-		    val l = length ids
-		    val i = if l<=4 then l else 1
+		    val i = methParms (length ids)
 		in
 		    if isSome (StampIntHash.lookup (recApplies, (!actual, i)))
 			then ()
 		    else
 			(StampIntHash.insert (recApplies, (!actual, i), (!dest, !counter));
+			 if !VERBOSE >= 1 then
+			     print ("inserting "^Stamp.toString (!actual)^
+				    ":"^Int.toString i^" for "^Stamp.toString (!dest)^" at "^
+				    Int.toString (!counter)^"\n") else ();
 			 counter := !counter +1)
 		end
 	      | insertInner (RecArgs _, _) =
@@ -230,21 +155,106 @@ functor MakeLambda(structure StampSet:IMP_SET
 		    then ()
 		else
 		    (StampIntHash.insert (recApplies, (!actual, 1), (!dest, !counter));
+		     if !VERBOSE >= 1 then
+			 print ("inserting "^Stamp.toString (!actual)^
+				":1 for "^Stamp.toString (!dest)^" at "^
+				Int.toString (!counter)^"\n") else ();
 		     counter := !counter + 1)
 
-	    fun insertRec' (Id (_,stamp',_), exp') =
+	    fun insertRec' (id' as Id (_,stamp',_), exp') =
 		(case exp' of
-		     FunExp (_,_,idabodys as (OneArg (Id (_,stamp'',_)),_)::_) =>
+		     FunExp (_,thisFun,_,idabodies) =>
 			 (if !dest=illegalStamp then
-			      dest := stamp'' else ();
-			      counter := 0;
-			      app insertInner idabodys)
+			      dest := thisFun else ();
+			  actual := thisFun;
+			  print "rec': ";
+			  setId (thisFun, id');
+			  app insertInner idabodies)
 		   | _ => ())
+
+	    fun countUp (0, akku) = akku
+	      | countUp (n, akku) = countUp (n-1, (n-1)::akku)
+
+	    val errorlabel = Label.new ()
 	in
-	    fun insertRec idexps =
+	    fun insertRec (idexps as _::rest) =
 		(dest := illegalStamp;
 		 counter := 0;
-		 app insertRec' idexps)
+		 app insertRec' idexps;
+		 case rest of
+		     nil => ()
+		   | _ =>
+			 StampHash.insert
+			 (recApply,
+			  !dest,
+			  if !counter <= 1 then
+			      []
+			  else
+			      [Iload 5,
+			       Tableswitch (0, countUp (!counter-1, nil), errorlabel),
+			       Label errorlabel,
+			       New ECompiler,
+			       Dup,
+			       Ldc (JVMString "unbekannte Funktion."),
+			       Invokespecial (ECompiler, "<init>", ([Classsig CString], [Voidsig])),
+			       Athrow]))
+	      | insertRec nil = ()
 	end
 
+	fun addToRecApply (insts, stamp', parms) =
+	    let
+		val (destStamp, label') =
+		    case StampIntHash.lookup (recApplies, (stamp', parms)) of
+			SOME v => v
+		      | NONE => (illegalStamp, ~1)
+
+		val oleRecApply =
+		    case StampHash.lookup (recApply, destStamp) of
+			NONE => nil
+		      | SOME code' => code'
+	    in
+		print ("addToRecApply: "^Stamp.toString stamp'^":"^Int.toString parms^"\n");
+		if label'= ~1 then ()
+		    else StampHash.insert (recApply, destStamp,
+					   Multi oleRecApply ::
+					   Label label' ::
+					   insts)
+	    end
+
+	fun invokeRecApply (stamp', parms, tailCallPos) =
+	    let
+		val p = methParms parms
+	    in
+		case StampIntHash.lookup (recApplies, (stamp', p)) of
+		    SOME (destStamp, label') =>
+			if stamp' = destStamp andalso tailCallPos then
+			    GotoLabel (p, label')
+			else
+			    InvokeRecApply (p, destStamp, label')
+		  | NONE => NormalApply p
+	    end
+
+	fun buildRecApply lambda =
+	    Method ([MPublic],
+		    "recApply",
+		    ([Classsig CVal, Classsig CVal,
+		      Classsig CVal, Classsig CVal, Intsig],
+		     [Classsig CVal]),
+		    (case StampHash.lookup (recApply, lambda) of
+			 NONE => [Getstatic COut,
+				  Ldc (JVMString "bogus method"),
+				  Invokevirtual (CPrintStream, "print",
+						 ([Classsig CObj], [Voidsig])),
+				  Aload thisStamp,
+				  Areturn]
+		       | SOME v => v))
+	    before (StampHash.delete (recApply, lambda))
+
+	fun showRecApplies () =
+	    (print "Merged functions:\n";
+	     StampIntHash.appi
+	     (fn ((fn', parms'),(dest', label')) =>
+	      print ("Function "^Stamp.toString fn'^":"^Int.toString parms'^" stored in "^
+		     Stamp.toString dest'^" at "^Int.toString label'^"\n"))
+	     recApplies)
     end

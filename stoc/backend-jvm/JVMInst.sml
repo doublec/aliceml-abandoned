@@ -35,11 +35,11 @@ structure JVMInst =
 
 	datatype
 	    INSTRUCTION =
-	    Astore of int
+	    Astore of stamp
 	  | Aastore
 	  | Aaload
 	  | Aconst_null
-	  | Aload of int
+	  | Aload of stamp
 	  | Anewarray of classname
 	  | Areturn
 	  | Arraylength
@@ -65,14 +65,14 @@ structure JVMInst =
 	  | Ifne of label
 	  | Ifnull of label
 	  | Ifstatic of ((stamp *int) * INSTRUCTION list * INSTRUCTION list)
-	  | Iload of int
+	  | Iload of stamp
 	  | Instanceof of classname
 	  | Invokeinterface of classname * methodname * (ARG list * ARG list)
 	  | Invokespecial of classname * methodname * (ARG list * ARG list)
 	  | Invokestatic of classname * methodname * (ARG list * ARG list)
 	  | Invokevirtual of classname * methodname * (ARG list * ARG list)
 	  | Ireturn
-	  | Istore of int
+	  | Istore of stamp
 	  | Label of label
 	  | Lcmp
 	  | Ldc of JVMBASETYPE
@@ -97,8 +97,7 @@ structure JVMInst =
 	    Field of FIELDACCESS list * fieldname * ARG list
 	and
 	    METHOD =
-	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * LIMITS *
-	    INSTRUCTION list
+	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * INSTRUCTION list
 	and
 	    CLASSACCESS =
 	    CPublic | CFinal | CSuper | CAbstract | CInterface
@@ -108,7 +107,4 @@ structure JVMInst =
 	and
 	    METHODACCESS =
 	    MPublic | MPrivate | MProtected | MStatic | MFinal | MSynchronized | MNative | MAbstract
-	and
-	    LIMITS =
-	    Locals of int (* locals, stack *)
     end

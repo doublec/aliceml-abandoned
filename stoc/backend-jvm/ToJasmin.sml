@@ -33,7 +33,7 @@ structure ToJasmin =
 
 	datatype jump = Got | Ret | IRet | ARet
 	datatype branchinst = Lab of label * bool | Jump of jump | Non
-	datatype registerOps = Load of (int * INSTRUCTION) | Store
+	datatype registerOps = Load of (stamp * INSTRUCTION) | Store
 
 	structure LabelMerge =
 	    struct
@@ -155,58 +155,69 @@ structure ToJasmin =
 
 	structure JVMreg =
 	    struct
-		(* maps virtual registers to their first defining position *)
-		val from = ref (Array.array (0,0))
+		(* maps stamps to their first defining position *)
+		val from: int StampHash.t ref = ref (StampHash.new ())
 
-		(* maps virtual registers to their last read access position *)
-		val to = ref (Array.array (0,0))
+		(* maps stamps to their last read access position *)
+		val to: int StampHash.t ref = ref (StampHash.new ())
 
-		(* maps virtual registers to JVM registers *)
-		val regmap = ref (Array.array (0,0))
+		(* maps stamps to JVM registers *)
+		val regmap =
+		    let
+			val r: int StampHash.t = (StampHash.new ())
+		    in
+			StampHash.insert (r, thisStamp, 0);
+			StampHash.insert (r, parm1Stamp, 1);
+			StampHash.insert (r, parm2Stamp, 2);
+			StampHash.insert (r, parm3Stamp, 3);
+			StampHash.insert (r, parm4Stamp, 4);
+			ref r
+		    end
 
 		(* maps JVM registers to their last read access position *)
-		val jvmto = ref (Array.array (0,0))
+		val jvmto: int IntHash.t ref = ref (IntHash.new ())
 
 		(* maps labels to their position *)
 		val labHash: int IntHash.t ref = ref (IntHash.new())
 
-		(* maps virtual registers to virtual registers (used for
+		(* maps stamps to other stamps (used for
 		 Aload/Astore register fusion) *)
-		val fusedwith = ref (Array.array (0,0))
+		val fusedwith: stamp StampHash.t ref = ref (StampHash.new ())
 
-		(* Some (few) virtual registers are assigned more than once.
+		(* Some (few) stamps are assigned more than once.
 		 Therefore, they cannot be fused on Aload/Astore sequences *)
-		val defines = ref (Array.array (0,0))
+		val defines: int StampHash.t ref = ref (StampHash.new ())
 
 		(* new has to be called before each code optimization *)
 		fun new regs =
-		    let
-			val registers = if regs>=2 then regs + 1 else 3
-		    in
-			from := Array.array(registers, ~1);
-			to := Array.array(registers, ~1);
-			regmap := Array.array(registers, ~1);
-			jvmto := Array.array(registers, ~1);
-			labHash := IntHash.new();
-			fusedwith := Array.array (registers,~1);
-			defines := Array.array(registers,0)
-		    end
+		    (from := StampHash.new();
+		     to := StampHash.new();
+		     jvmto := IntHash.new();
+		     labHash := IntHash.new();
+		     fusedwith := StampHash.new();
+		     defines := StampHash.new())
 
-		(* returns the VIRTUAL register associated with the one in
-		 question *)
+		(* returns the stamp associated with the one in question *)
 		fun getOrigin register =
-		    let
-			val lookup = Array.sub (!fusedwith, register)
-		    in
-			if lookup = ~1 orelse lookup = register
-			    then register
-			else getOrigin lookup
-		    end
+		    case StampHash.lookup (!fusedwith, register) of
+			SOME fused => if fused = register then fused else getOrigin fused
+		      | NONE => register
 
-		(* returns the JVM register on which a virtual register is
-		 mapped *)
+		fun lookup stamphashreg =
+		    case StampHash.lookup stamphashreg of
+			NONE => ~1
+		      | SOME i => i
+
+		fun lookupInt inthashreg =
+		    case IntHash.lookup inthashreg of
+			NONE => ~1
+		      | SOME i => i
+
+		(* returns the JVM register on which a stamp is mapped *)
 		fun get reg =
-		    if !OPTIMIZE >= 1 then Array.sub (!regmap, getOrigin reg) else reg
+		    case StampHash.lookup (!regmap, getOrigin reg) of
+			NONE => Stamp.hash reg
+		      | SOME v => v
 
 		(* returns Jasmin-code for astore/istore. May be pop for
 		 unread registers *)
@@ -215,41 +226,41 @@ structure ToJasmin =
 			"pop"
 		    else job^Int.toString reg
 
-		(* called when a register is defined. Needed for lifeness analysis *)
-		fun define (register, pos) =
+		(* called when a stamp is defined. Needed for lifeness analysis *)
+		fun define (stamp', pos) =
 		    let
-			val old = Array.sub(!from, register)
+			val old = lookup (!from, stamp')
 		    in
 			if old = ~1 orelse old > pos
-			    then Array.update(!from, register, pos)
+			    then StampHash.insert (!from, stamp', pos)
 			else ()
 		    end
 
 		(* we need to remember the last usage of a variable for lifeness analysis *)
-		fun use (register, pos) =
+		fun use (stamp', pos) =
 		    let
-			val lookup = getOrigin register
-			val old = Array.sub(!to, lookup)
+			val ori = getOrigin stamp'
+			val old = lookup (!to, ori)
 		    in
 			if old < pos
-			    then Array.update(!to, lookup, pos)
+			    then StampHash.insert(!to, ori, pos)
 			else ()
 		    end
 
 		(* The real lifeness analysis. This function is called when we know the
-		 life range of each virtual register *)
-		fun assignAll parms =
+		 life range of each stamp *)
+		fun assignAll () =
 		    let
-			fun assign (register) =
+			fun assign (stamp',_) =
 			    let
-				val notfused = (Array.sub (!fusedwith, register) = ~1)
-				val genuineReg = getOrigin register
-				val f' = Array.sub (!from, genuineReg)
-				val t' = Array.sub (!to, genuineReg)
-				fun assignNextFree (act) =
-				    if f' > Array.sub (!jvmto, act)
-					then (Array.update (!regmap, genuineReg, act);
-					      Array.update (!jvmto, act, t'))
+				val notfused = not (isSome (StampHash.lookup (!fusedwith, stamp')))
+				val genuineReg = getOrigin stamp'
+				val f' = lookup (!from, genuineReg)
+				val t' = lookup (!to, genuineReg)
+				fun assignNextFree act =
+				    if f' > lookupInt (!jvmto, act)
+					then (StampHash.insert (!regmap, genuineReg, act);
+					      IntHash.insert (!jvmto, act, t'))
 				    else assignNextFree (act+1)
 			    in
 				if f'= ~1 then
@@ -262,21 +273,10 @@ structure ToJasmin =
 					notfused then
 					assignNextFree 1
 				    else
-					();
-				if register+1<Array.length(!to)
-				    then assign (register+1)
-				else ()
+					()
 			    end
-
-			fun parmAssign 0 = ()
-			  | parmAssign p =
-			    (Array.update(!regmap, p, p);
-			     Array.update(!jvmto, p, Array.sub (!to, p));
-			     parmAssign (p-1))
 		    in
-			Array.update(!regmap, 0, 0);
-			parmAssign parms;
-			assign (parms+1)
+			StampHash.appi assign (!to)
 		    end
 
 		(* We remember the code position of labels. Needed for
@@ -284,72 +284,68 @@ structure ToJasmin =
 		fun defineLabel (label', pos) =
 		     IntHash.insert (!labHash, label', pos)
 
-		(* Every jump could effect the life range of each (virtual)
-		 register. We have to check this. *)
+		(* Every jump could effect the life range of each stamp. We have to check this. *)
 		fun addJump (f', tolabel) =
 		    let
 			val t = IntHash.lookup(!labHash, tolabel)
 
 		    (* Checks whether we jump from behind last usage into the range of the
-		     virtual register or from inside the range to somewhere before first
-		     declaration. If so, the range of this register is changed. *)
-			fun checkReg (register) =
+		     stamp or from inside the range to somewhere before first
+		     declaration. If so, the range of this stamp is changed. *)
+			fun checkReg (stamp', _) =
 			    let
-				val genuineReg = getOrigin register
-				val regfrom = Array.sub(!from, genuineReg)
-				val regto = Array.sub(!to, genuineReg)
-				val t' = valOf t
+				val genuineReg = getOrigin stamp'
+				val regfrom = lookup (!from, genuineReg)
+				val regto = lookup (!to, genuineReg)
+				val t' = case t of
+				    NONE => raise Mitch
+				  | SOME v => v
 			    in
 				if f' > regto andalso t' > regfrom andalso t' > regto
 				    then
-					Array.update (!to, register, t')
+					StampHash.insert (!to, stamp', t')
 				else if f' > regfrom andalso f' <regto
 				    andalso t' < regfrom
-					 then Array.update (!from, genuineReg, f')
-				     else if register+1<Array.length (!to)
-					      then checkReg (register+1)
-					  else ()
+					 then StampHash.insert (!from, genuineReg, f')
+				     else ()
 			    end
 		    in
-			if isSome t then checkReg 1 else ()
+			if isSome t then StampHash.appi checkReg (!to) else ()
 		    end
 
 		(* returns the maximum JVM register we use *)
-		fun max default =
-		    let
-			fun findMax r =
-			    if r+1=Array.length (!jvmto) orelse
-				Array.sub (!jvmto, r) = ~1 then
-				r-1
-			    else findMax (r+1)
-		    in
-			if !OPTIMIZE >= 1 then
-			    findMax 2
-			else default
-		    end
+		fun max () = 8000 (* xxx *)
+		    (* IntHash.fold
+		    Int.max
+		    0
+		    (!(if !OPTIMIZE >= 1 then
+			   jvmto
+		       else to)) *)
 
-		(* fuses two virtual registers. Called on aload/astore pairs *)
+		(* fuses two stamps. Called on aload/astore pairs *)
 		fun fuse (x,u) =
 		    let
-			val (a,b) = if u = 1 then (u,x) else (x,u)
-			val ori = getOrigin a
+			val (a,b) = if u=parm1Stamp orelse u=parm2Stamp orelse u=parm3Stamp orelse
+			    u=parm4Stamp then (u,x) else (x,u)
 		    in
-			if Array.sub(!defines, u)<2 then
-			    (Array.update(!fusedwith, b, ori);
+			if lookup (!defines, u)<2 then
+			    (StampHash.insert(!fusedwith, b, getOrigin a);
 			     true)
 			 else false
 		    end
 
-		(* How often is a register written to? Most registers are written only
+		(* How often is a stamp written to? Most stamps are written only
 		 once. However, there are a few ones which are written twice. Those must
 		 not be fused on aload/atore sequences. *)
 		fun countDefine reg =
-		    (print ("Accessing reg "^Int.toString reg^"\n");
-		    Array.update (!defines, reg,
-				  Array.sub(!defines, reg)+1))
+		    (print ("Accessing reg "^Stamp.toString reg^"\n");
+		    StampHash.insert (!defines, reg,
+				      case StampHash.lookup(!defines, reg) of
+					  NONE => 1
+					| SOME i => i+1))
 	    end
 
-	fun optimize (insts, registers, parms) =
+	fun optimize insts =
 	    let
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
@@ -533,7 +529,7 @@ structure ToJasmin =
 		    prepareLifeness (insts,pos+1)
 		  | prepareLifeness (nil, pos) =
 		(* Register 0 must not be overwritten. *)
-		    JVMreg.use (0,pos)
+		    JVMreg.use (thisStamp,pos)
 
 		fun lifeness (Goto label'::insts, pos) =
 		    (JVMreg.addJump(pos, label');
@@ -596,9 +592,9 @@ structure ToJasmin =
 			     List.foldr
 			     flatten
 			     akku
-			     (if Lambda.isStatic meth
+			     (*(if Lambda.isStatic meth
 				  then then'
-			      else else')
+			      else *)else' (* ) *) (* xxx *)
 		       | Multi insts =>
 			     List.foldr
 			     flatten
@@ -609,12 +605,14 @@ structure ToJasmin =
 			     flatten
 			     akku
 			     insts
-		       | stor as Astore reg =>
+		       | Astore reg =>
 			     (JVMreg.countDefine reg;
-			      stor::akku)
-		       | stor as Istore reg =>
+			      Astore (Lambda.getLambda reg)::akku)
+		       | Istore reg =>
 			     (JVMreg.countDefine reg;
-			      stor::akku)
+			     Istore (Lambda.getLambda reg)::akku)
+		       | Aload reg => Aload (Lambda.getLambda reg)::akku
+		       | Iload reg => Iload (Lambda.getLambda reg)::akku
 		       | _ =>
 			     inst ::
 			     akku)
@@ -627,17 +625,17 @@ structure ToJasmin =
 			val d' = fuse (Store, flattened)
 			val _ = if !VERBOSE >= 3 then print "done.\n" else ()
 		    in
-			(* Register 0 ('this'-Pointer) and
+			(* (* Register 0 ('this'-Pointer) and
 			 register 1 (formal Parameter) are
 			 defined when entering a method *)
 			JVMreg.define(0, 0);
-			JVMreg.define(1, 0);
+			JVMreg.define(1, 0);*)
 			if !VERBOSE >= 3 then print "preparing lifeness... " else ();
 			prepareLifeness (d', 0);
 			if !VERBOSE >= 3 then print "doing lifeness... " else ();
 			lifeness (d', 0);
 			if !VERBOSE >= 3 then print "done.\n" else ();
-			JVMreg.assignAll parms;
+			JVMreg.assignAll ();
 			if !OPTIMIZE >= 2 then
 			    deadCode (Non, d')
 			else d'
@@ -977,34 +975,31 @@ structure ToJasmin =
 				  ^" "^fieldname^" "^(desclist2string arg)^"\n")
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
 		fun methodToJasmin (Method(access,methodname,
-					   methodsig as (parms,_),Locals perslocs,
-					   instructions)) =
+					   methodsig as (parms,_), instructions)) =
 		    let
 			val staticapply =
 			    List.exists
 			    (fn MStatic => true | _ => false)
 			    access
 
-			val parmscount = siglength parms
 		    in
 			(case instructions of
 			     nil => ()
 			   | _ =>
 				 (LabelMerge.new();
-				  print ("Perslocs: "^Int.toString perslocs^"\n");
-				  JVMreg.new perslocs;
+				  JVMreg.new ();
 				  TextIO.output(io,".method "^
 						(mAccessToString access)^
 						methodname^
 						(descriptor2string methodsig)^"\n");
 				  actmeth := methodname;
 				  instructionsToJasmin
-				  (optimize (instructions, perslocs, parmscount),
+				  (optimize instructions,
 				   true,
 				   staticapply,
 				   io);
 				  TextIO.output(io,".limit locals "^
-						Int.toString(JVMreg.max perslocs+1+parmscount)
+						Int.toString(JVMreg.max ())
 						^"\n");
 				  TextIO.output(io,".end method\n\n")))
 		    end

@@ -55,142 +55,13 @@ structure Backend=
 				      structure StampIntHash=StampIntHash
 				      val toplevel=toplevel)
 
-	(* Structure for managing labels in JVM-methods *)
-	structure Label =
-	    struct
-		(* the actual label number *)
-		val labelcount = ref (0:label)
-
-		(* Labels are stacked, so each function starts counting at 1. *)
-		val stack : (int list) ref= ref nil
-
-		fun new () =
-		    (labelcount := !labelcount + 1;
-		     !labelcount)
-
-		fun toString lab =
-		    "label"^Int.toString lab
-
-		(* For each method, we start counting at 1. *)
-		fun push () =
-		    (stack := (!labelcount :: (!stack));
-		     labelcount := 0)
-
-		fun pop () = (labelcount:=hd(!stack);
-				    stack:=tl(!stack))
-	    end
-
-	(* Administration of JVM registers *)
-	structure Register =
-	    struct
-		local
-		    (* number of the highest register in use.
-		     In virtual Methods, Register 0 is reserved for
-		     'this'-Pointer. Our apply functions have up to
-		     4 parameters, so we use Register 1-4 as parameter
-		     registers. Keep in mind that these registers will
-		     be reused due lifeness analysis when possible *)
-		    val localscount = ref 4
-
-		    (* map stamps to registers *)
-		    val register: int StampHash.t ref   = ref (StampHash.new ())
-
-		    (* Registers are stacked for each function. *)
-		    val stack:(int * int StampHash.t) list ref = ref nil
-
-		    (* assign stamps to JVM registers where the defining
-		     function closure is stored in *)
-		    val lambda  : int StampHash.t  = StampHash.new ()
-
-		    (* assign stamps to corresponding field names.
-		     This is used for generating debug information in compiled
-		     (Jasmin) code *)
-		    val fields  : string StampHash.t = StampHash.new ()
-		in
-		    (* return next free register of this method *)
-		    fun new () = (localscount := !localscount + 1;
-				       !localscount)
-
-		    (* enter a subfunction *)
-		    fun push () = (stack := (!localscount, !register)::(!stack);
-				   localscount := 4;
-				   register := StampHash.new())
-
-		    (* leave a subfunction*)
-		    fun pop () =
-			case !stack of
-			    ((lc,regs)::rest) => (stack := rest;
-						  localscount := lc;
-						  register := regs)
-			  | nil => Crash.crash "empty locals stack"
-
-		    (* save a former state *)
-		    fun save () = (!localscount, !register)
-
-		    (* restore a former state *)
-		    fun restore (n, rg) = (localscount := n;
-					 register:=rg)
-
-		    (* return the number of the highest register in use *)
-		    fun max () = !localscount
-
-		    (* assign ids to JVM registers *)
-		    fun assign (Id(_,stamp',InId), wohin) =
-			(StampHash.insert (!register, stamp', wohin);
-			 wohin)
-		      | assign (Id(_,stamp',ExId name), wohin) =
-			(StampHash.insert (!register, stamp', wohin);
-			 StampHash.insert (fields, stamp', name);
-			 wohin)
-
-		    (* return the JVM register of a stamp. *)
-		    fun get stamp' =
-			case StampHash.lookup (!register, stamp') of
-			    NONE => 1 (* unassigned stamps are formal parameters *)
-			  | SOME reg => reg
-
-		    (* assign parameters of special apply methods apply2/3/4
-		     to registers *)
-		    fun assignParms (id'::rest, reg) =
-			(assign (id', reg);
-			 assignParms (rest, reg+1))
-		      | assignParms (nil, reg) = localscount := (reg-1)
-
-		    (* Assign ids to JVM registers where their surrounding
-		     function closure can be found. *)
-		    (* xxx inzwischen überflüssig ? *)
-		    fun assignLambda (Id(_,stamp',_), wohin) =
-			(StampHash.insert(lambda,stamp',wohin);
-			 wohin)
-
-		    fun getLambda stamp' = (* xxx Unterschied zu Lambda.getLambda? *)
-			case StampHash.lookup(lambda,stamp') of
-			    NONE => ~1
-			  | SOME lambda => lambda
-
-		    (* create some debugging informations *)
-		    fun generateVariableTable rest =
-			StampHash.foldi
-			(fn (stamp',register',rest') =>
-			 Comment ("var "^(Int.toString register')^": ("^
-			      (case StampHash.lookup(fields, stamp') of
-				  NONE => "anonymous, "^(Stamp.toString stamp')
-				| SOME x => x^", "^(Stamp.toString stamp'))^")")::
-			 rest')
-			rest
-			(!register)
-		end
-	    end
-
 	(* structure for free variabes *)
 	structure FreeVars =
 	    struct
 		(* assign (function) ids to free variable list *)
 		val free:stamp list StampHash.t=StampHash.new ()
 
-		(* Assign ids to formal parameters of defining functions.
-		 Each function has a unique formal parameter (OneArg)
-		 while it can have multiple or no name at all *)
+		(* Assign ids to their defining function. *)
 		val defFun:stamp StampHash.t=StampHash.new ()
 
 		(* assign stamps to free variables *)
@@ -198,19 +69,27 @@ structure Backend=
 		    StampHash.insert (free, stamp', freeVarList)
 
 		(* get free variable list of an id. If not set previously,
-		 raise exception option. *)
-		fun getVars (Id(_,stamp',_)) =
-		    valOf (StampHash.lookup (free, stamp'))
+		 raise exception Mitch. *)
+		fun getVars stamp' =
+		    case StampHash.lookup (free, stamp') of
+			NONE => raise Mitch
+		      | SOME v => v
 
-		(* assign ids to their  defining function closure. *)
-		fun setFun (Id(_,stamp',_), stamp'') =
-		    StampHash.insert(defFun, stamp', stamp'')
+		(* assign ids to their defining function closure. *)
+		fun setFun (Id (_,stamp',_), stamp'') =
+		    (if !VERBOSE >= 2 then print (Stamp.toString stamp'^" is defined in "^Stamp.toString stamp''^"\n")
+		     else ();
+			 StampHash.insert(defFun, stamp', stamp''))
 
 		(* get the defining function closure of a stamp *)
 		fun getFun stamp' =
 		    case StampHash.lookup (defFun, stamp') of
-			NONE => toplevel
-		      | SOME stamp'' => stamp''
+			NONE => (if !VERBOSE >= 2 then print (Stamp.toString stamp'^" was defined at toplevel.\n")
+				 else ();
+				     toplevel)
+		      | SOME stamp'' => (if !VERBOSE >= 2 then print (Stamp.toString stamp'^" was defined at "^
+								      Stamp.toString stamp''^".\n") else ();
+					     stamp'')
 
 		(* print all pairs of stamps and defining function closures.
 		 used in verbose level 2. *)
@@ -219,6 +98,90 @@ structure Backend=
 				    print ("("^Stamp.toString stamp'^","^
 					   Stamp.toString stamp''^")"))
 		    defFun
+	    end
+
+		(* Administration of JVM registers *)
+	structure Register =
+	    struct
+		local
+		    (* highest register in use *)
+(*		    val registercount = ref 5*)
+
+		    (* map stamps to registers *)
+(*		    val register: int StampHash.t = StampHash.new ()*)
+
+		    (* assign stamps to JVM registers where the defining
+		     function closure is stored in *)
+		    val lambda = StampSet.new ()
+
+		    (* assign stamps to corresponding field names.
+		     This is used for generating debug information in compiled
+		     (Jasmin) code *)
+		    val fields  : string StampHash.t = StampHash.new ()
+
+		    (* map function stamps to register *)
+(*			local
+			    val p: int StampHash.t = StampHash.new ()
+			    val _ = (StampHash.insert (p, thisStamp, 0);
+				     StampHash.insert (p, parm1Stamp, 1);
+				     StampHash.insert (p, parm2Stamp, 2);
+				     StampHash.insert (p, parm3Stamp, 3);
+				     StampHash.insert (p, parm4Stamp, 4))
+			in
+			    val parms = p
+			end *)
+		in
+		    (* return next free register of this method *)
+(*		    fun new () = (registercount := !registercount + 1;
+				  !registercount)*)
+
+		    (* return the number of the highest register in use *)
+(*		    fun max () = !registercount*)
+
+		    (* assign ids to JVM registers *)
+(*		    fun assign (Id(_,stamp',InId), wohin, curFun) =
+			(StampHash.insert (register, stamp', wohin);
+			 FreeVars.setFun(stamp', curFun);
+			 wohin)
+		      | assign (Id(_,stamp',ExId name), wohin, curFun) =
+			(StampHash.insert (register, stamp', wohin);
+			 StampHash.insert (fields, stamp', name);
+			 if !VERBOSE >= 2 then print ("eingetragen: "^Stamp.toString stamp'^" ("^name^")\n")
+			     else ();
+			 FreeVars.setFun(stamp', curFun);
+			 wohin)*)
+
+		    (* return the JVM register of a stamp. *)
+(*		    fun get stamp' =
+			case StampHash.lookup (register, stamp') of
+			    NONE => 1 (* unassigned stamps are formal parameters *)
+			  | SOME reg => reg*)
+
+		    (* assign parameters of special apply methods apply2/3/4
+		     to registers *)
+		    (*fun assignParms (Id (_,stamp',_)::rest, reg) =
+			(StampHash.insert (parms, stamp', reg);
+			 assignParms (rest, reg+1))
+		      | assignParms (nil, reg) = () *)
+
+		    (* Assign ids to JVM registers where their 
+		     function closure can be found. xxx gescheiter kommentar *)
+		    fun instantiate stamp' =
+			StampSet.insert(lambda,stamp')
+
+		    (* xxx gescheiter kommentar*)
+		    fun isInstantiated stamp' =
+			StampSet.member(lambda,stamp')
+
+		    (* create some debugging informations *)
+		    fun generateVariableTable rest =
+			StampHash.foldi
+			(fn (stamp',name,rest') =>
+			 (print "hallo";Comment ("var "^name^": "^Stamp.toString stamp') ::
+			  rest'))
+			rest
+			fields
+		end
 	    end
 
 	(* load an integer as JVM integer constant. *)
@@ -406,4 +369,5 @@ structure Backend=
 	and psl (x::nil) = Stamp.toString x
 	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
 	  | psl nil = ""
+
     end
