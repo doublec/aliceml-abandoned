@@ -293,7 +293,7 @@ Rel2.import: ../../lib/fundamental/Fundamental.import
 build1/lib/fundamental/%.aml: ../../lib/fundamental/%.aml
 	cp $< $@
 
-build1/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
+build1/lib/fundamental/RTT.aml: ../../lib/fundamental/DummyRTT.aml
 	cp $< $@
 
 build1/lib/system/%.oz: ../%.oz

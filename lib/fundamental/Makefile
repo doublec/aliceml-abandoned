@@ -42,7 +42,7 @@ clean:
 %.ozf:			%.aml
 			$(STOC) $(STOC_OPTS) -c $*.aml -o $@
 
-RTT.aml:		RTTDummy.aml
+RTT.aml:		DummyRTT.aml
 			cp $< $@
 Pervasive.ozf:		RTT.ozf
 ToplevelTypes.ozf:	Pervasive.ozf

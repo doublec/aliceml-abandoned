@@ -10,11 +10,11 @@ Dependency graph for the steps outlined below - for Operette 2:
                  |
                  7
                  |
-                 8
-                 |
-                 9
+                 8--
+                 |  \
+                 10  9
 
-Steps to be performed after Operette 2: 10 and higher
+Steps to be performed after Operette 2: 11 and higher
 
 Individual steps, each probably resulting in a checkin
 (note - the system is inconsistent only once, namely in-between
@@ -227,19 +227,7 @@ steps 3 and 4):
    generation of new type stamps - so for now, the RTT component itself
    is incompatible with the generated runtime types.
 
-======
- TODO
-======
-
-9. Test runtime types. (AR)
-
-   Urgh.
-
-==================
- AFTER OPERETTE 2
-==================
-
-10. Clean up source tree. (AR)
+9. Clean up source tree. (LK)
 
    Currently we have two copies of some modules - one for the
    Alice codebase, one as the SML/NJ source.  This is the
@@ -250,6 +238,18 @@ steps 3 and 4):
    Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
 
    Rename RTTDummy to DummyRTT to be consistent with other dummies.
+
+======
+ TODO
+======
+
+10. Test runtime types. (AR)
+
+   Urgh.
+
+==================
+ AFTER OPERETTE 2
+==================
 
 11. Enrich native components with runtime types. (LK/AR)
 
