@@ -187,13 +187,11 @@ define
       [] 'VarExp'(Info Id) then varExp({TrInfo Info} {TrId Id})
       [] 'TagExp'(Info Label N) then tagExp({TrInfo Info} {TrLabel Label} N)
       [] 'ConExp'(Info Con) then conExp({TrInfo Info} {TrCon Con})
-      [] 'RefExp'(Info) then refExp({TrInfo Info})
       [] 'TupExp'(Info Ids) then tupExp({TrInfo Info} {Map Ids TrId})
       [] 'ProdExp'(Info LabelIdList) then
 	 prodExp({TrInfo Info}
 		 {Map LabelIdList
 		  fun {$ Label#Id} {TrLabel Label}#{TrId Id} end})
-      [] 'SelExp'(Info Label N) then selExp({TrInfo Info} {TrLabel Label} N)
       [] 'VecExp'(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
       [] 'FunExp'(Info Stamp Flags Args Body) then
 	 funExp({TrInfo Info} Stamp {Map Flags TrFunFlag}

@@ -340,18 +340,6 @@ define
 	 {TranslateExp
 	  tagExp(Region {GetStaticCon Stamp State} unit)
 	  Reg VHd VTl State}
-      [] refExp(Region) then
-	 Coord PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
-      in
-	 Coord = {TranslateRegion Region State}
-	 PredId = pid('ref' 2 Coord nil NLiveRegs)
-	 {State.cs startDefinition()}
-	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?ResReg)}
-	 VInstr = vCallBuiltin(_ 'Cell.new' [ArgReg ResReg] Coord nil)
-	 {State.cs
-	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
-	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] tupExp(_ nil) then
 	 VHd = vEquateConstant(_ unit Reg VTl)
       [] tupExp(_ Ids) then
@@ -363,8 +351,6 @@ define
 		{Map LabelIdList
 		 fun {$ Label#Id} Label#value({GetReg Id State}) end}}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
-      [] selExp(_ Label _) then
-	 VHd = vEquateConstant(_ fun {$ X} X.Label end Reg VTl)
       [] vecExp(_ nil) then
 	 VHd = vEquateConstant(_ '#[]' Reg VTl)
       [] vecExp(_ Ids) then

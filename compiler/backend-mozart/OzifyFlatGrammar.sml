@@ -245,8 +245,6 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, ConExp (info, con)) =
 	    (f (q, "conExp"); outputExpInfo (q, info); m q;
 	     outputCon (q, con); r q)
-	  | outputExp (q, RefExp info) =
-	    (f (q, "refExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =
 	    (f (q, "tupExp"); outputExpInfo (q, info); m q;
 	     outputVector outputId (q, ids); r q)
@@ -257,9 +255,6 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, VecExp (info, ids)) =
 	    (f (q, "vecExp"); outputExpInfo (q, info); m q;
 	     outputVector outputId (q, ids); r q)
-	  | outputExp (q, SelExp (info, label, n)) =
-	    (f (q, "selExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputInt (q, n); r q)
 	  | outputExp (q, FunExp (info, stamp, flags, args, body)) =
 	    (f (q, "funExp"); outputExpInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
