@@ -167,6 +167,9 @@ int Scheduler::Run() {
 	    switch (transient->GetLabel()) {
 	    case HOLE_LABEL:
 	      currentData = Hole::holeExn;
+	      // TODO: This might cut down existing traces; we need
+	      //       method to figure out whether there is a valid trace or not
+	      currentBacktrace = Backtrace::New();
 	      goto raise;
 	    case FUTURE_LABEL:
 	      {
@@ -180,6 +183,9 @@ int Scheduler::Run() {
 	      break;
 	    case CANCELLED_LABEL:
 	      currentData = transient->GetArg();
+	      // TODO: This might cut down existing traces; we need
+	      //       method to figure out whether there is a valid trace or not
+	      currentBacktrace = Backtrace::New();
 	      goto raise;
 	    case BYNEED_LABEL:
 	      {
