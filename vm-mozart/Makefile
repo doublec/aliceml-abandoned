@@ -83,7 +83,7 @@ BACKENDCOMMONSOURCES = \
 	PrimOps.sml VALUE_PROPAGATION_PHASE.sig ValuePropagationPhase.sml \
 	LIVENESS_ANALYSIS_PHASE.sig MakeLivenessAnalysisPhase.sml \
 	DEAD_CODE_ELIMINATION_PHASE.sig DeadCodeEliminationPhase.sml CODE.sig \
-	ENGINE.sig MakeEngine.sml MakeBackendCommon.sml
+	MakeBackendCommon.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
 BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml
