@@ -3,24 +3,24 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
 import structure __pervasive                               from "Pervasive"
-import type unit and string and exn and ref datatype order from "ToplevelTypes"
-import infix 3 := :=: o infix 0 before
+import __primitive
+       type unit and string and exn and ref datatype order from "ToplevelTypes"
+import __primitive
+       infix 3 := :=: o infix 0 before
        val ! and op := and op :=:                          from "ToplevelValues"
-import signature GENERAL                                   from "GENERAL-sig"
-
+import __primitive signature GENERAL                       from "GENERAL-sig"
 
 structure General : GENERAL =
 struct
