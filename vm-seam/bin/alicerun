@@ -18,7 +18,7 @@ case `uname -s` in
 	;;
 esac
 
-ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc${sep}pattern=?{x}=?{x}.stc
+ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc${sep}pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.dll${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
 
 export STOCKHOME ALICE_LOAD
 
