@@ -97,11 +97,11 @@ DEFINE2(Int_compare) {
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
   if (i == j) {
-    RETURN_INT(0);   // EQUAL
+    RETURN_INT(Types::EQUAL);
   } else if (i < j) {
-    RETURN_INT(2);   // LESS
+    RETURN_INT(Types::LESS);
   } else { // i > j
-    RETURN_INT(1);   // GREATER
+    RETURN_INT(Types::GREATER);
   }
 } END
 
