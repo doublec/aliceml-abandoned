@@ -5,15 +5,18 @@ INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Helper.dll Tools.dll
 .il.dll:
 	ilasm -nologo -quiet -dll -out=$@ $<
 
-all: $(OBJS) $(SIGS) stow.exe inspector
+all: stoc-com+.x86-win32 $(OBJS) $(SIGS) stow.exe inspector
 
 Alice.dll: Alice.cs
 	csc -nologo -t:library Alice.cs
 
+stoc-com+.x86-win32: ../stoc/stoc-com+.x86-win32
+	copy "..\stoc\stoc-com+.x86-win32" "stoc-com+.x86-win32"
+
 Base.aml: ../lib/bootstrap/Bootstrap.aus
 	copy ..\lib\bootstrap\Bootstrap.aus Base.aml
 
-Base.dll: Base.aml
+Base.dll: Base.aml stoc-com+.x86-win32
 	stoc --noimplicitimport -c ../lib/bootstrap/Bootstrap.aus -o Base.il
 	ilasm /dll Base.il
 
@@ -58,7 +61,7 @@ Dialog.dll: Dialog.cs Win32.dll Alice.dll
 Helper.dll: Helper.cs Alice.dll
 	csc -nologo -t:library -r:Alice.dll Helper.cs
 
-Tools.dll: Tools.aml
+Tools.dll: Tools.aml stoc-com+.x86-win32
 	stoc -c Tools.aml -o Tools.il
 	ilasm /dll Tools.il
 
