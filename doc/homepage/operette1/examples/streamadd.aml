@@ -1,16 +1,13 @@
-import structure TextIO  from "x-alice:/lib/TextIO.ozf"
-import structure Browser from "x-alice:/lib/Browser.ozf"
-
 open TextIO
-open Browser
 open Promise
+
 
 
 fun plus xsys =
     let
 	val p = promise()
     in
-	concur(fn() => plus'(x,p)) ;
+	concur(fn() => plus'(xsys,p)) ;
 	future p
     end
 
@@ -31,37 +28,38 @@ fun main() =
 	val p1 = promise()
 	val p2 = promise()
 
-	val stream1 = future prom1
-	val stream2 = future prom2
+	val stream1 = future p1
+	val stream2 = future p2
 	val stream3 = plus(stream1, stream2)
     in
-	browse (stream1, stream2, stream3) ;
-	loop(p1,p2)
+	Tools.browse{stream1=stream1, stream2=stream2, stream3=stream3} ;
+	loop(p1,p2) ;
+	OS.Process.exit(OS.Process.success)
     end
 
 and loop pp = 
-    ( TextIO.print "Enter \"k n\" to put number n on stream k (k=1,2)\n"
+    ( print "Enter \"k n\" to put number n on stream k (k=1,2)\n"
     ; loop' pp
     )
 
-and loop' pp =
+and loop'(p1,p2) =
     case (print "> "; inputLine stdIn)
       of ""   => ()
-       | "\n" => loop' pp
+       | "\n" => loop'(p1,p2)
        | s    =>
     case String.tokens Char.isSpace s
-      of non [_,_] => loop pp
+      of non [_,_] => loop(p1,p2)
        | [s1,s2]   =>
-    case (Int.fromString s1, Int.fromString s2
-      of non (SOME(1|2), SOME _) => loop pp
+    case (Int.fromString s1, Int.fromString s2)
+      of non (SOME(1|2), SOME _) => loop(p1,p2)
        | (SOME k, SOME n)        =>
 	 let
 	     val p' = promise()
 	 in
 	     if k = 1 then
-		(fulfill(p1, n::p') ; loop'(p',p2)
+		(fulfill(p1, n :: future p') ; loop'(p',p2))
 	     else
-		(fulfill(p2, n::p') ; loop'(p1,p')
+		(fulfill(p2, n :: future p') ; loop'(p1,p'))
 	 end
 
 
