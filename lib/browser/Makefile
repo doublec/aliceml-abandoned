@@ -19,9 +19,9 @@ ALICELINK = alicelink
 ALICELINK_OPTS = -x
 ALICEDEP = alicedep
 
-SIGS		= COLOR DICTIONARY DOC DRAW_NODES DRAWING_AREA DICTIONARIES GTK_SUPPORT LAYOUT NEW_NODE NEW_NODE_HELPER NODE SERVER SETTINGS UNSAFE_INSPECTOR UPDATE WIDGET
+SIGS		= COLOR CREATE_TREE CREATE_TREE_HELPER DICTIONARY DOC DRAW DRAWING_AREA DICTIONARIES GTK_SUPPORT LAYOUT NODE SERVER SETTINGS UNSAFE_INSPECTOR UPDATE WIDGET
 
-STRUCTS		= Color Doc DrawNodes Dictionaries Layout MkDictionary MkDrawingArea NewNode NewNodeHelper Node Server Settings UnsafeInspector Update GtkSupport Widget
+STRUCTS		= Color CreateTree CreateTreeHelper Doc Draw Dictionaries Layout MkDictionary MkDrawingArea Node Server Settings UnsafeInspector Update GtkSupport Widget
 
 SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)
