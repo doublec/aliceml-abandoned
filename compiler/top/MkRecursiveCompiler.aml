@@ -40,12 +40,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    val extension: string): RECURSIVE_COMPILER =
     struct
 	structure Switches = Compiler.Switches
+	structure Context = Compiler.Context
 	val isCrossCompiler = Compiler.isCrossCompiler
 
 	exception Error = Compiler.Error
-
-	type context = Compiler.context
-	val empty = Compiler.empty
 
 	val extension = extension
 
@@ -168,7 +166,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    val _ = trace ("reading signature from " ^ sigFilename)
 		    val s' = implicitImport() ^ "\n" ^ s
 		    val (_, target) =
-			Compiler.compile (Compiler.empty, desc,
+			Compiler.compile (desc, Context.empty,
 					  Source.fromString s')
 		    val _ = trace "done"
 		    val inf' =
@@ -193,7 +191,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	local
 	    fun compile' outFilename (desc, s) =
-		case Compiler.compile (empty, desc, Source.fromString s) of
+		case Compiler.compile (desc, Context.empty,
+				       Source.fromString s) of
 		    (_, Target.COMPONENT {component, ...}) =>
 			let
 			    val component = component ()
@@ -364,14 +363,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	local
 	    fun compile' context (desc, s) =
-		Compiler.compile (context, desc, Source.fromString s)
+		Compiler.compile (desc, context, Source.fromString s)
 	in
 	    val compileFileToFile = ignore o compileFileToFile'
 
-	    fun compileFile context sourceFilename =
+	    fun compileFile (context, sourceFilename) =
 		processFile (compile' context) sourceFilename
 
-	    fun compileString context sourceText =
+	    fun compileString (context, sourceText) =
 		processString (compile' context) sourceText
 	end
     end

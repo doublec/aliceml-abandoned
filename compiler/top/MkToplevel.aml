@@ -77,7 +77,7 @@ struct
 			  (TextIO.output (TextIO.stdErr, Foreign.exnMessage e);
 			   context))
     and eval' compile (printSig, source, context) =
-	(case compile context source of
+	(case compile (context, source) of
 	     (context, Target.COMPONENT {eval, component, ...}) =>
 		 let
 		     val str = eval (baseUrl ())
@@ -134,7 +134,8 @@ struct
       | main' nil =
 	let
 	    open RecursiveCompiler.Switches
-	    val context = evalString (false, "", RecursiveCompiler.empty)
+	    val context = evalString (false, "",
+				      RecursiveCompiler.Context.empty)
 	in
 	    Language.implicitImport  := false;
 	    loop context;
