@@ -122,10 +122,10 @@
 <PRE>
 fun usage () =
     TextIO.output (TextIO.stdErr,
-		   "Usage: " ^ CommandLine.name () ^ " &lt;url&gt;\n")
+		   "Usage: " ^ CommandLine.name () ^ " <url>\n")
 
 fun main [url] =
-    let
+    (let
 	val response = HttpClient.get (Url.fromString url)
     in
 	TextIO.output
@@ -133,13 +133,17 @@ fun main [url] =
 			    #reasonPhrase response ^ "\n");
 	Http.StringMap.appi
 	    (fn (name, value) =>
-		TextIO.output (TextIO.stdErr,
-			       name ^ ": " ^ value ^ "\n"))
+		TextIO.output (TextIO.stdErr, name ^ ": " ^ value ^ "\n"))
 	    (#headers response);
 	TextIO.output (TextIO.stdErr, "\n");
 	TextIO.print (#body response);
 	OS.Process.success
     end
+    handle IO.Io {cause, ...} =>
+	(TextIO.output (TextIO.stdErr,
+			case cause of Http.Format => "unsupported HTTP format\n"
+				    | e => "I/O error " ^ Exn.name e ^ "\n");
+	 OS.Process.failure))
   | main _ = (usage (); OS.Process.failure)
 
 val _ = OS.Process.exit (main (CommandLine.arguments ()))
