@@ -32,6 +32,7 @@
 #pragma implementation "generic/Double.hh"
 #if DEBUGGER
 #pragma implementation "generic/DebuggerEvent.hh"
+#pragma implementation "generic/DebugFrame.hh"
 #endif
 #endif
 
