@@ -277,19 +277,15 @@ struct
 			    end
 
 		in
-		    if Gtk.entryGetText nameText = ""
-			then TextWindow.mkTextWindow
-			    ("ERROR!!", "Please enter a name!")
-		    else
-			(Gtk.widgetDestroy serverSettings;
-			 case return of 
-			     FST (mStart, guiJoin, serverUrl) => 
-				 Wait.mkWaitingWindow 
-				 (FST (!alreadyConn, mStart, 
-				       guiJoin, serverUrl, 
-				       {reset, gameMode}))
-			   | SND     errorMsg => 
-				 reset (SOME ("ERROR!!", errorMsg)))
+		    Gtk.widgetDestroy serverSettings;
+		    case return of 
+			FST (mStart, guiJoin, serverUrl) => 
+			    Wait.mkWaitingWindow 
+			    (FST (!alreadyConn, mStart, 
+				  guiJoin, serverUrl, 
+				  {reset, gameMode}))
+		      | SND     errorMsg => 
+			    reset (SOME ("ERROR!!", errorMsg))
 		end
 
 	in
