@@ -88,12 +88,8 @@ define
       {String.toAtom {ByteString.toString S}}
    end
 
-   fun {TrCoord (LL#LC)#(RL#RC)}
-      LL#LC#RL#RC
-   end
-
-   fun {TrInfo '#'(region: Coord ...)}
-      {TrCoord Coord}
+   fun {TrInfo '#'(region: Region ...)}
+      Region
    end
 
    fun {TrLit Lit}
@@ -101,7 +97,7 @@ define
       [] IntLit(I) then intLit(I)
       [] CharLit(C) then charLit(C)
       [] StringLit(S) then stringLit({ByteString.toString S})
-      [] RealLit(S) then realLit({String.toFloat {ByteString.toString S}})
+      [] RealLit(S) then realLit({String.toFloat {VirtualString.toString S}})
       end
    end
 
