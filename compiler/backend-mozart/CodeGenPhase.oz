@@ -271,10 +271,13 @@ define
       ({TrBody Body $ nil {NewDictionary}}#Sign)
    end
 
-   fun {Translate InFilename Component OutFilename} F in
+   fun {Translate InFilename Component OutFilename
+	AssemblyFilenameOpt Header} F in
       F = {CodeGen.translate InFilename {TrComponent Component}
-	   InFilename#'.ozm'}
-      {Pickle.saveWithCells F OutFilename '' 0}
+	   case AssemblyFilenameOpt of 'NONE' then unit
+	   [] 'SOME'(Filename) then Filename
+	   end}
+      {Pickle.saveWithCells F OutFilename Header 0}
       unit
    end
 

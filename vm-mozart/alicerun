@@ -16,4 +16,4 @@ OZ_LOAD=prefix=x-alice\\:=$STOCKHOME/:prefix=http\\://www.mozart-oz.org/home-$OZ
 
 export OZHOME PATH OZ_LOAD
 
-exec ozengine x-alice:/Init.ozf "$@"
+exec ozengine x-alice:/stow.ozf "$@"

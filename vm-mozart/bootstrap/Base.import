@@ -165,10 +165,3 @@ import
     structure Thread
 
 from "x-alice:/lib/Base.ozf"
-
-
-import
-
-    val print
-
-from "x-alice:/lib/TextIO.ozf"

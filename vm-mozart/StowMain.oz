@@ -15,8 +15,8 @@ import
    Application(getArgs exit)
    Property(put get)
    Module(manager)
-   System(printError)
-   MainComponent('$Composer': Composer) at 'x-alice:/stoc.ozf'
+   System(printError show)
+   MainComponent('$Composer': Composer) at 'x-alice:/top/Composer.ozf'
 define
    fun {TypeCheck T1 T2}
       case T1#T2 of sig(unit)#_ then true

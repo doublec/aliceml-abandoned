@@ -1,12 +1,12 @@
 PREFIX = /opt/stockhausen-operette1
 
-STOC_MOZART = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
+STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/top/stoc-mozart
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
 
-NATIVESOURCES = IO TextIO OS Unix CommandLine Pickle Debug
+NATIVESOURCES = IO TextIO OS Unix CommandLine Browser Pickle Debug
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
 
 LIBSOURCES = Base.sml $(NATIVESOURCES:%=%.ozf.sig)
@@ -30,7 +30,7 @@ MISCFILES = $(MISCSOURCES:%=misc/%)
 
 TOPSOURCES = \
 	PHASE.sig ComposePhases.sml TARGET.sig EmptyContext.sml ENGINE.sig \
-	MakeEngine.sml SIGNATURE.sig Signature.sml COMPOSER.sig
+	MakeEngine.sml SIGNATURE.sig Signature.sml COMPOSER.sig Composer.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 COMMONSOURCES = \
@@ -77,7 +77,7 @@ ALLFILES = \
 	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
-INSTALLFILES0 = Init.ozf stoc.ozf Base.import
+INSTALLFILES0 = stow.ozf stoc.ozf Default.import
 INSTALLBINFILES0 = stoc stow
 INSTALLLIBFILES0 = Base.ozf IO.ozf TextIO.ozf OS.ozf Unix.ozf CommandLine.ozf
 INSTALLFILES = \
@@ -88,11 +88,15 @@ MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
 .PHONY: all install clean
 
-all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf Init.ozf
+all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 
 stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
-	$(OZL) -z9 --include=x-alice: -v x-alice:/top/Main.ozf -o $@
+	$(OZL) -z9 --include=x-alice: -v x-alice:/$< -o $@
+
+stow.ozf: Init.ozf
+	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	$(OZL) -z9 --include=x-alice: -v $< -o $@
 
 %.ozf: %.oz
 	$(OZC) -c $< -o $@
@@ -147,10 +151,10 @@ backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 	cat Base.import backend-common/$*.header $< > $@
 
 %.ozf: %.sml
-	$(STOC_MOZART) $< $@
+	$(STOC) $< $@
 
 %.ozf: %.sig
-	$(STOC_MOZART) $< $@
+	$(STOC) $< $@
 
 install: all $(INSTALLDIRS) $(INSTALLFILES)
 
@@ -160,11 +164,14 @@ $(INSTALLDIRS):
 $(INSTALLFILES0:%=$(PREFIX)/%): $(PREFIX)/%: %
 	install -c -m 444 $< $@
 
+Default.import: Base.import TextIO.import
+	cat Base.import TextIO.import > $@
+
 $(PREFIX)/bin/%: %
 	install -c -m 555 $< $@
 
 $(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
-	$(PREFIX)/bin/stoc --nobaseimport $< $@
+	$(PREFIX)/bin/stoc --nodefaultimport -c $< -o $@
 
 $(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
 	$(PREFIX)/bin/stoc --replacesign $< $<.sig $@

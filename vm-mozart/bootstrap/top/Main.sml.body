@@ -29,6 +29,10 @@ import
 from "x-alice:/error/Source.ozf"
 
 import
+    structure Error
+from "x-alice:/error/Error.ozf"
+
+import
     structure FromEqHashKey
 from "x-alice:/misc/HASH_KEY.ozf"
 
@@ -92,46 +96,9 @@ import
     structure Signature
 from "x-alice:/top/Signature.ozf"
 
-signature COMPOSER' =
-    sig
-	structure Sig: SIGNATURE
-
-	exception Corrupt
-
-	val sign:	Url.t -> Sig.t		(* [Corrupt, IO.Io] *)
-	val start:	Url.t -> unit		(* [Corrupt, IO.Io] *)
-
-	val setAcquisitionMethod: (Url.t -> Sig.t) -> unit
-    end
-
-structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
-    struct
-	structure Sig = Signature
-
-	exception Corrupt
-
-	val acquire: (Url.t -> Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "Composer.acquire")
-
-	fun setAcquisitionMethod f = acquire := f
-
-	structure UrlMap = MakeHashImpMap(FromEqHashKey(Url))
-
-	val signTable: Sig.t UrlMap.t = UrlMap.new ()
-
-	fun sign url =
-	    case UrlMap.lookup (signTable, url) of
-		SOME sign => sign
-	      | NONE =>
-		    let
-			val sign = !acquire url
-		    in
-			UrlMap.insertDisjoint (signTable, url, sign);
-			sign
-		    end
-
-	fun start url = ()
-    end
+import
+    structure Composer
+from "x-alice:/top/Composer.ozf"
 
 structure AbstractionPhase = MakeAbstractionPhase(Composer)
 structure ElaborationPhase = MakeElaborationPhase(Composer)
@@ -145,15 +112,17 @@ fun readFile filename =
 	source
     end
 
-fun readBaseImport () =
+fun readDefaultImport () =
     case OS.Process.getEnv "STOCKHOME" of
-	SOME homedir => readFile (homedir ^ "/Base.import")
-      | NONE => (TextIO.print "### warning: could not load Base.import\n"; "")
+	SOME homedir => readFile (homedir ^ "/Default.import")
+      | NONE =>
+	    (TextIO.print "### warning: could not load Default.import\n"; "")
 
-val baseImport = ref ""
+val defaultImport = ref ""
+val outputAssembly = ref false
 
 fun processString process source =
-    process (!baseImport ^ source)
+    process (!defaultImport ^ source)
     handle exn as Crash.Crash message =>
 	(TextIO.output(TextIO.stdErr, "CRASH: " ^ message ^ "\n"); raise exn)
 
@@ -171,11 +140,14 @@ val elab         = elab' o abstract
 val translate    = translate' o elab
 val flatten      = flatten' o translate
 
-fun mozartify inFilename outFilename s =
+fun mozartify (inFilename, outFilename, header) s =
     let
 	val component as (_, (_, exportSign)) = flatten s
     in
-	CodeGenPhase.translate (inFilename, component, outFilename);
+	CodeGenPhase.translate (inFilename, component, outFilename,
+				if !outputAssembly then
+				    SOME (outFilename ^ ".ozm")
+				else NONE, header);
 	exportSign
     end
 
@@ -222,10 +194,11 @@ fun compileSign filename =
 
 val fileStack: string list ref = ref nil
 
-fun compileForMozart (sourceFilename, targetFilename) =
+fun compileForMozart (sourceFilename, targetFilename, header) =
     (TextIO.print ("### compiling file " ^ sourceFilename ^ "\n");
      fileStack := sourceFilename::(!fileStack);
-     processFile (mozartify sourceFilename targetFilename) sourceFilename
+     processFile (mozartify (sourceFilename, targetFilename, header))
+     sourceFilename
      before (TextIO.print ("### wrote file " ^ targetFilename ^ "\n");
 	     case fileStack of
 		 ref (_::(rest as resumeFilename::_)) =>
@@ -254,12 +227,12 @@ in
 	     case changeExtension (targetFilename, ".ozf", ".sml") of
 		 SOME sourceFilename =>
 		     raise RETURN (compileForMozart
-				  (sourceFilename, targetFilename))
+				  (sourceFilename, targetFilename, ""))
 	       | NONE => ();
 	     case changeExtension (targetFilename, ".ozf", ".sig") of
 		 SOME sourceFilename =>
 		     raise RETURN (compileForMozart
-				  (sourceFilename, targetFilename))
+				  (sourceFilename, targetFilename, ""))
 	       | NONE => ();
 	     TextIO.print ("### warning: could not locate source for " ^
 			   targetFilename ^ "\n");
@@ -270,31 +243,69 @@ end
 val _ = Composer.setAcquisitionMethod acquireSign
 
 local
-    fun stoc [infile] =
-	(baseImport := readBaseImport ();
-	 case changeExtension (infile, ".sml", ".ozf") of
-	     SOME outfile =>
-		 (compileForMozart (infile, outfile);
-		  OS.Process.success)
-	   | NONE =>
-		 case changeExtension (infile, ".sig", ".ozf") of
-		     SOME outfile =>
-			 (compileForMozart (infile, outfile);
-			  OS.Process.success)
-		   | NONE => OS.Process.failure)
-      | stoc [infile, outfile] =
-	(baseImport := readBaseImport ();
-	 compileForMozart (infile, outfile);
+    fun basename filename =
+	let
+	    fun cutPath ((#"/" | #"\\")::rest) = nil
+	      | cutPath (c::rest) = c::cutPath rest
+	      | cutPath nil = nil
+	    val cs = cutPath (List.rev (String.explode filename))
+	    fun cutExtension (#"."::rest) =
+		(case rest of
+		     (#"/" | #"\\")::_ => cs
+		   | _::_ => rest
+		   | nil => cs)
+	      | cutExtension ((#"/" | #"\\")::_) = cs
+	      | cutExtension (_::rest) = cutExtension rest
+	      | cutExtension nil = cs
+	in
+	    String.implode (List.rev (case cs of
+					  #"."::_ => cs
+					| _ => cutExtension cs))
+	end
+
+    val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n"
+
+    fun stoc_c (infile, outfile) =
+	(compileForMozart (infile, basename infile ^ ".ozf", "");
 	 OS.Process.success)
-      | stoc ["--nobaseimport", infile, outfile] =
-	(baseImport := "";
-	 compileForMozart (infile, outfile);
-	 OS.Process.success)
-      | stoc ["--replacesign", infile, signfile, outfile] =
+
+    fun stoc_x (infile, outfile) =
+	(compileForMozart (infile, outfile, executableHeader);
+	 OS.Process.system ("chmod +x " ^ outfile))
+
+    fun usage () =
+	TextIO.output (TextIO.stdErr,
+		       "Usage:\n" ^
+		       "\tstoc [--nodefaultimport] [-c|-x] <input file> " ^
+		       "[-o <output file>]\n" ^
+		       "\tstoc --replacesign <input url> <signature file> " ^
+		       "<output file>\n")
+
+    fun stoc' ([infile] | ["-c", infile]) =
+	stoc_c (infile, basename infile ^ ".ozf")
+      | stoc' ["-x", infile] =
+	stoc_x (infile, basename infile)
+      | stoc' ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
+	stoc_c (infile, outfile)
+      | stoc' ["-x", infile, "-o", outfile] =
+	stoc_x (infile, outfile)
+      | stoc' _ = (usage (); OS.Process.failure)
+
+    fun defaults () =
+	(defaultImport := readDefaultImport ();
+	 outputAssembly := false)
+
+    fun options ("--nodefaultimport"::rest) =
+	(defaultImport := ""; options rest)
+      | options rest = rest
+
+    fun stoc ["--replacesign", infile, signfile, outfile] =
 	(Pickle.replaceSign (Url.fromString infile,
 			     compileSign signfile, outfile);
 	 OS.Process.success)
-      | stoc _ = OS.Process.failure
+      | stoc args =
+	(defaults (); stoc' (options args))
+	handle Error.Error (_, _) => OS.Process.failure
 in
     val _ = OS.Process.exit (stoc (CommandLine.arguments ()))
 end

@@ -12,7 +12,7 @@
 
 functor
 import
-   OS(getEnv)
+   OS(system getEnv)
    Application(exit)
 export
    '$OS': OS_Module
@@ -21,6 +21,7 @@ define
    'OS'('$Process':
 	   'Process'('success': 0
 		     'failure': 1
+		     'system': OS.system
 		     'exit':
 			proc {$ N _}
 			   {Application.exit N}

@@ -1,0 +1,21 @@
+(* -*- sml -*- *)
+
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature BROWSER_COMPONENT =
+    sig
+	structure Browser:
+	    sig
+		val browse: 'a -> unit
+	    end
+    end
