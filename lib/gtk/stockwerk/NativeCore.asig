@@ -19,7 +19,7 @@ sig
         val weakMapIsMember : 'object -> bool
         val weakMapCondGet : 'object * 'object -> 'object
 
-	val unrefObject : 'object -> 'object
+	val unrefObject : 'object -> unit
 	val hasSignals : 'object -> bool
 
 	val isLoaded : unit -> bool
