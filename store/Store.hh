@@ -189,6 +189,9 @@ public:
   static void ResetTime();
   static struct timeval *ReadTime();
 #endif
+#if defined(STORE_DEBUG)
+  static void ForceGC(word &root, const u_int gen);
+#endif
 };
 
 // Defined Store Value Classes
