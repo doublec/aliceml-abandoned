@@ -21,3 +21,5 @@ Group is
     CODE_GEN_PHASE-sig.aml
     MkCodeGenPhase.aml
     MkBackendSeamCross.aml
+    WORD8_BUFFER-sig.aml
+    Word8Buffer.aml
