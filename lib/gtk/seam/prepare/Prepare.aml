@@ -14,6 +14,7 @@ local
 	  | k::kr =>
 	      (case k of
 		   "__extension__"              => ""
+		 | "__cdecl"                    => ""
 		 | "__ssize_t"                  => "unsigned int"
 		 | "(__const"                   => "(const"
 		 | "__const"                    => "const"
@@ -26,6 +27,7 @@ local
 		 | "__attribute__(("            => (incCounter(); "")
 		 | "__attribute__((__cdecl__))" => ""
 		 | "__attribute__((dllimport))" => ""
+		 | "__declspec(dllimport)"      => ""
 		 | "__builtin_va_list"          => "void *"
 		 | "dllimport"                  => ""
 		 | "))"                         => 
