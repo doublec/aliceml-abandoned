@@ -43,30 +43,32 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
     public void run() {
 	DMLValue v = null;
 	DMLValue t = null;
+	long time = 0l;
 	try {
 	    FileInputStream fin = new FileInputStream(filename);
 	    PickleInputStream in = new PickleInputStream(fin);
 	    in.readObject(); // read the literals class
 	    DMLValue r = (DMLValue) in.readObject();
 	    System.out.println(r);
+	    time = System.currentTimeMillis();
 	    v=((Record) r).get("main").apply(arglist);
 	    while (tail!=null) {
 		t = tail;
 		tail = null;
 		v=t.apply(v);
 	    }
-    } catch (Exception e) {
-	    System.err.println(e);
+	} catch (Exception e) {
 	    e.printStackTrace();
 	}
+	    System.out.println("Execution time [ms]: "+ (System.currentTimeMillis() - time));
     }
 
     public static void main(java.lang.String[] args) {
 	if (args.length<1) {
 	    usage();
 	    System.exit(2);
-	}
-	else
+	} else {
 	    (new Exec(args)).start();
+	}
     }
 }
