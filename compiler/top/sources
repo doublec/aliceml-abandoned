@@ -41,6 +41,8 @@
 ../misc/PPMisc.sml
 ../misc/URL.sig
 ../misc/Url.sml
+../top/SWITCHES.sig
+../top/Switches.sml
 ../top/PHASE.sig
 ../top/ComposePhases.sml
 ../top/TARGET.sig
