@@ -1,3 +1,7 @@
+(* NOTE: Reduction is still a bit strange for recursive type functions -
+	 we get some non-wellformed lambdas in-between.
+	 Have to look into it later... *)
+
 structure TypePrivate =
   struct
 
@@ -271,50 +275,50 @@ before print"MARK updated (by dup)\n"
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce1(t as ref(APP(t1,t2)))	= 
+    fun reduce(t as ref(APP(t1,t2)))	= 
 (*(print">reduce APP\n";*)
- reduceApp(t, t1, t2)
+ reduceApp(t, t1, t2, false)
 (*;print"<reduce\n")*)
-      | reduce1 _			=
+      | reduce _			=
 (*(print">reduce\n";*)
  ()
 (*;print"<reduce\n")*)
 
-(*    fun reduce1(t as ref(APP(t1,t2))) =
+(*    fun reduce(t as ref(APP(t1,t2))) =
 	(case follow t1
 	   of t3 as ref(LAM _) =>
 		(case !(clone t3) of LAM(a,t4) =>
 		    ( a := LINK t2
 		    ; t := LINK t4
-		    ; reduce1 t
+		    ; reduce t
 		    )
-		| _ => Crash.crash "Type.reduce1")
+		| _ => Crash.crash "Type.reduce")
 
 	    | _ => ()
 	)
-      | reduce1 _ = ()
+      | reduce _ = ()
 *)
-    and reduceApp(t, t1 as ref(LAM _), t2) =
-	(case !(clone t1)
-	   of LAM(a,t3) =>
+    and reduceApp(t, t1 as ref(LAM(a,_)), t2, r) =
+	( t := HOLE(kind a, !level)
+	; case !(clone t1)
+	    of LAM(a,t3) =>
 		( a := LINK t2
-		; t := LINK t3
+		; t := (if r then REC else LINK) t3
 (*DEBUG*)
 (*;print"-reduce APP(LAM)\n"*)
-		; reduce1 t
+		; reduce t
 		)
 	    | _ => Crash.crash "Type.reduceApp"
 	)
-      | reduceApp(t, ref(LINK t3), t2) =
-	    reduceApp(t, follow t3, t2)
+      | reduceApp(t, ref(LINK t3), t2, r) =
+	    reduceApp(t, follow t3, t2, r)
 (*DEBUG*)
 (*;print"-reduce APP(LINK)\n")*)
-      | reduceApp(t, ref(REC t3), t2) =
-	    (*UNFINISHED: do we need to keep the REC? somehow? *)
-	    reduceApp(t, follow t3, t2)
+      | reduceApp(t, ref(REC t3), t2, r) =
+	    reduceApp(t, follow t3, t2, true)
 (*DEBUG*)
 (*;print"-reduce APP(REC)\n")*)
-      | reduceApp(t, t1, t2) = ()
+      | reduceApp(t, t1, t2, r) = ()
 
 
     (* Creation and injections *)
@@ -331,7 +335,7 @@ before print"MARK updated (by dup)\n"
     fun inAll at	= ref(ALL at)
     fun inExist at	= ref(EX at)
     fun inLambda at	= ref(LAM at)
-    fun inApp(t1,t2)	= let val t = ref(APP(t1,t2)) in reduce1 t ; t end
+    fun inApp(t1,t2)	= let val t = ref(APP(t1,t2)) in reduce t ; t end
     fun inRec t		= ref(REC t)
 
     fun var k		= ref(VAR(k, !level))
@@ -342,7 +346,7 @@ before print"MARK updated (by dup)\n"
     exception Type
 
     fun asType(ref(LINK t | REC t))	= asType t
-      | asType(t as ref(APP _))		= ( reduce1 t ; asType' t )
+      | asType(t as ref(APP _))		= ( reduce t ; asType' t )
       | asType(ref t')			= t'
 
     and asType'(ref(t' as APP _))	= t'

@@ -100,16 +100,20 @@ structure PPType :> PP_TYPE =
 	    ppTypePrec p t1
 )
 
-      | ppTypePrec p (t as ref(APP _)) = ( reduce1 t ; ppTypePrec' p (!t) )
+      | ppTypePrec p (t as ref(APP _)) =
+       ( reduce t ;
+(*print("[pp APP]");*)
+        ppTypePrec' p (!t) )
 
       | ppTypePrec  p (ref t') = ppTypePrec' p t'
 (*(*DEBUG*)
     | ppTypePrec p (t as ref t') =
 let
-(*val _=print("[pp " ^ pr t' ^ "]")*)
+val _=print("[pp " ^ pr t' ^ "]")
+(*val _=TextIO.inputLine TextIO.stdIn*)
 in
 
-	if foldl1'(t', fn(t1,b) => b orelse occurs(t,t1), false) then
+	if foldl1'(t', fn(t1,b) => b orelse occursIllegally(t,t1), false) then
 	    let
 (*DEBUG*)
 val _=print"RECURSIVE!\n"
@@ -179,7 +183,7 @@ end
 	end
 
       | ppTypePrec' p (ROW r) =
-	    brace(break ^^ fbox(below(ppRow r)) ^^ break)
+	    brace(fbox(below(ppRow r)))
 
       | ppTypePrec' p (SUM r) =
 	    paren(fbox(below(ppSum r)))
@@ -265,7 +269,7 @@ end
 		hbox(
 		    ppType a ^/^
 (*DEBUG*)
-text"(" ^^ ppTypePrec' 0 a' ^^ text")" ^/^
+(*text"(" ^^ ppTypePrec' 0 a' ^^ text")" ^/^*)
 		    text "."
 		) ^^
 		below(break ^^

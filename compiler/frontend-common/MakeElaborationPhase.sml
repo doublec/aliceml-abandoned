@@ -656,7 +656,7 @@ handle Lookup _ => ()
 		    handle Lookup _ =>
 			let val t = Type.unknown k in
 (*DEBUG*)
-print"not found\n";
+print"'_? (* not found *)\n";
 			    insertTyp(E, stamp, (id,t)) ; t
 			end
 	in
@@ -1179,7 +1179,7 @@ fun a andthen b = b
 				appVals (fn(x,(id,t)) =>
 (*DEBUG*)
 (let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
-in print("val " ^ x ^ ": ") end;
+in print("val " ^ x ^ " : ") end;
 PrettyPrint.output(TextIO.stdOut, PPType.ppType(Type.close t), 600);
 print "\n") andthen
 					 insertVal(E, x, (id, Type.close t))
