@@ -14,6 +14,7 @@ functor
 import
    Open(file text)
    System(printInfo printError gcDo)
+   Error(exceptionToMessage messageToVirtualString)
    Application(getArgs exit)
    Property(get put)
    Pickle(load saveWithCells)
@@ -116,8 +117,11 @@ define
    try
       {Loop {New TextFile init(name: stdin flags: [read])}}
    catch E then
-      {System.printInfo
-       'Error:'#{Value.toVirtualString E 10 5}#'\n\n'}
+      V1 = {Error.messageToVirtualString {Error.exceptionToMessage E}}
+      V2 = {FoldR {String.tokens {VirtualString.toString V1} &\n}
+	    fun {$ S In} 'Error:'#S#'\n'#In end ""}
+   in
+      {System.printInfo V2#'\n'}
       {Application.exit 1}
    end
 end
