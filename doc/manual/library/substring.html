@@ -74,6 +74,10 @@
 	val takel :       (char -> bool) -> substring -> substring
 	val taker :       (char -> bool) -> substring -> substring
 
+        val position :    string -> substring -> substring * substring
+        val tokens :      (char -> bool) -> substring -> substring list
+        val fields :      (char -> bool) -> substring -> substring list
+
 	val span :        substring * substring -> substring
 	val translate :   (char -> string) -> substring -> string
 
@@ -90,16 +94,6 @@
     Items not described here are as in the Standard ML Basis'
     <A href="http://SML.sourceforge.net/Basis/substring.html"><TT>SUBSTRING</TT></A> signature.
   </P>
-
-  <P>
-    <I>Limitations:</I> The following standard functions are
-    currently missing:
-  </P>
-
-  <UL>
-    <LI><TT>position</TT></LI>
-    <LI><TT>tokens</TT>, <TT>fields</TT></LI>
-  </UL>
 
   <DL>
     <DT>
