@@ -189,13 +189,13 @@
 
   <P>
     Some of the above structures must be imported explicitly. A program using
-    the <TT>CommandLine</TT> structure, for example, has to be
+    the <TT>IO</TT> structure, for example, has to be
     prefixed by the following import announcement
     (see <A href="components.php3">components</A>):
   </P>
 
   <PRE>
-	import structure CommandLine from "x-alice:/lib/CommandLine.ozf"
+	import structure IO from "x-alice:/lib/IO.ozf"
   </PRE>
 
 
