@@ -1,0 +1,11 @@
+Source: alice-sqlite
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 4.0.0), alice-dev, libsqlite3-dev
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+Standards-Version: 3.6.0
+
+Package: alice-sqlite
+Architecture: any
+Depends: ${shlibs:Depends}, alice, libsqlite3-0
+Description: The Alice SQLite binding

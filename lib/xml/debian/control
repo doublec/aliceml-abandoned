@@ -1,0 +1,11 @@
+Source: alice-xml
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 4.0.0), alice-dev, libxml2-dev
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+Standards-Version: 3.6.0
+
+Package: alice-xml
+Architecture: any
+Depends: ${shlibs:Depends}, alice, libxml2
+Description: The Alice XML binding

@@ -10,7 +10,9 @@ DEBUG = 0
 
 VERSION = 1.0.1
 
-GECODEDIR = /opt/gecode
+GECODEDIR = /usr
+SQLITEDIR = /usr
+LIBXMLDIR = /usr
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
@@ -122,7 +124,7 @@ clean-seam: clean-common
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
-	
+
 clean-common:
 	(cd bootstrap && make clean) || exit 1
 	rm -f time[1-3]
@@ -232,6 +234,8 @@ libs-seam:
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
+	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
+	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR))) || exit 1 ;}
 	(cd tools/ide && make depend) || exit 1 ;\
 	(cd tools/ide && make install) || exit 1
 

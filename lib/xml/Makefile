@@ -1,7 +1,8 @@
 # Makefile for alice xml binding
 
-INSTALLDIR = `alice-config --alicelibdir`
-INSTALLTO = $(INSTALLDIR)/xml
+INSTALLDIR = `alice-config --alicelibdir`/xml
+
+LIBXMLDIR = /usr
 
 NATIVES = NativeAliceXML
 
@@ -10,11 +11,16 @@ SOURCES = \
 
 TARGETS = AliceXML.alc
 
-EXTRA_LIBS = -lxml2
+VERSION = 1.0.1
+DISTFILES = $(SOURCES) Makefile debian
+distdir = alice-xml-$(VERSION)
 
-EXTRA_INCLUDES = -I/usr/include/libxml2
+EXTRA_LIBS = -L$(LIBXMLDIR)/lib -lxml2
+EXTRA_INCLUDES = -I$(LIBXMLDIR)/include/libxml2
 
-all: $(NATIVES:%=%.dll) $(TARGETS)
+all: compiledll compilealice
+compiledll: $(NATIVES:%=%.dll)
+compilealice: $(TARGETS)
 
 AliceXML.dll: $(SOURCES:%.cc=%.o)
 
@@ -41,8 +47,25 @@ distclean: veryclean
 depend:
 	alicedep *.aml > Makefile.depend
 
-install: all
-	install -d $(INSTALLTO)
-	install $(NATIVES:%=%.dll) $(NATIVES:%=%.asig) $(TARGETS) $(INSTALLTO)
+install: all installdll installalice
+
+installdll:
+	install -d $(INSTALLDIR)
+	install $(NATIVES:%=%.dll) $(INSTALLDIR)
+
+installalice:
+	install -d $(INSTALLDIR)
+	install $(TARGETS) $(INSTALLDIR)
+
+### DISTRIBUTION OF THE C SOURCES FOR PACKAGING
+#
+distdir:
+	rm -rf $(distdir)
+	mkdir $(distdir)
+	cp -r $(DISTFILES) $(distdir)
+
+dist:	distdir
+	tar chzf alice-xml-$(VERSION).tar.gz $(distdir)
+	rm -rf $(distdir)
 
 -include Makefile.depend

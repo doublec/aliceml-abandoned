@@ -14,7 +14,7 @@
 # Makefile for Alice/SEAM sqlite binding
 
 # Change this to reflect your installation directory
-INSTALLTO = `alice-config --alicelibdir`/sqlite
+INSTALLDIR = `alice-config --alicelibdir`/sqlite
 SQLITEDIR = /usr
 
 ## No changes needed below this
@@ -29,10 +29,16 @@ TARGETS = SQLite.alc SQLITE-sig.alc
 EXTRA_LIBS = -L$(SQLITEDIR)/lib -lsqlite3
 EXTRA_INCLUDES = -I$(SQLITEDIR)/include
 
+VERSION = 1.0.1
+DISTFILES = $(SOURCES) Makefile debian
+distdir = alice-sqlite-$(VERSION)
+
 MAKEDEPEND = alicetool makedepend
 
 
-all: $(NATIVES:%=%.dll) $(TARGETS)
+all: compiledll compilealice
+compiledll: $(NATIVES:%=%.dll)
+compilealice: $(TARGETS)
 
 %.o: %.cc
 	alicetool -v compile $(EXTRA_INCLUDES) \
@@ -59,8 +65,25 @@ depend:
 	alicedep *.aml > Makefile.depend
 #	$(MAKEDEPEND) $(SOURCES) >> Makefile.depend
 
-install: all
-	install -d $(INSTALLTO)
-	install $(NATIVES:%=%.dll) $(NATIVES:%=%.asig) $(TARGETS) $(INSTALLTO)
+install: installdll installalice
+
+installdll: compiledll
+	install -d $(INSTALLDIR)
+	install $(NATIVES:%=%.dll) $(INSTALLDIR)
+
+installalice: compilealice
+	install -d $(INSTALLDIR)
+	install $(TARGETS) $(INSTALLDIR)
+
+### DISTRIBUTION OF THE C SOURCES FOR PACKAGING
+#
+distdir:
+	rm -rf $(distdir)
+	mkdir $(distdir)
+	cp -r $(DISTFILES) $(distdir)
+
+dist:	distdir
+	tar chzf alice-sqlite-$(VERSION).tar.gz $(distdir)
+	rm -rf $(distdir)
 
 -include Makefile.depend

@@ -1,0 +1,12 @@
+Package: alice-xml
+Version: 1.0.1
+Revision: 1
+Source: http://www.ps.uni-sb.de/alice/download/%n-%v.tar.gz
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+HomePage: http://www.ps.uni-sb.de/alice
+License: BSD
+Description: Alice Language Layer, libxml binding
+Source-MD5: INSERTMD5HERE
+Depends: alice (= %v-%r), libxml
+CompileScript: make compiledll
+InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/xml
