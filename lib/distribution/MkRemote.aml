@@ -185,10 +185,8 @@ struct
     fun proxyCallback (url, unpackedArgument) =
         let
             val packedArgument = UnsafeRemote.packValue unpackedArgument
-                                 handle Pickle.Sited =>
+                                 handle UnsafeRemote.Sited =>
                                      raise Proxy SitedArgument
-                                    (*--** Sited may originate from a
-                                     failed future *)
             val packedResult = RemotePort.call (url, packedArgument)
                                handle e => raise Proxy e
             val unpackedResult = UnsafeRemote.unpackValue packedResult
@@ -223,9 +221,7 @@ struct
                     val unpackedResult = RETURN (f unpackedArgument)
                 in
                     UnsafeRemote.packValue unpackedResult
-                    handle Pickle.Sited => raise Proxy SitedResult
-                                    (*--** Sited may originate from a
-                                     failed future *)
+                    handle UnsafeRemote.Sited => raise Proxy SitedResult
                 end
                 handle e =>
                     UnsafeRemote.packValue (RAISE e)

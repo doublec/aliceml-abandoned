@@ -43,18 +43,22 @@ endif
 
 ALICESOURCES = \
 	HttpServerMain.aml HttpClientMain.aml \
-	REMOTE-sig.aml Remote.aml HttpRemote.aml MkRemote.aml \
+	REMOTE-sig.aml BinRemote.aml HttpRemote.aml MkRemote.aml Remote.aml \
 	TestServer.aml TestClient.aml \
 	RemoteServer.aml
 
 OZSOURCES = $(NATIVES:%=Unsafe%.oz)
 
 COMPONENTS = \
-	$(NATIVES:%=Linked%.$(STC)) \
-	$(ALICESOURCES:%.aml=%.$(STC))
+	$(ALICESOURCES:%.aml=%.$(STC)) \
+	LinkedBinRemote.$(STC) \
+	LinkedHttpRemote.$(STC)
+	# $(NATIVES:%=Linked%.$(STC)) \
 
 INSTALLDIRS = $(PREFIX)/lib/distribution
-INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.$(STC))
+INSTALLFILES = \
+	$(filter-out $(PREFIX)/lib/distribution/MkRemote.$(STC), \
+	  $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.$(STC)))
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -70,9 +74,13 @@ depend:
 %.$(STC): %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-Linked%.$(STC): %.$(STC) $(OZSOURCES:%.oz=%.$(STC))
-	$(ALICELINK) $(ALICELINK_OPTS) $* \
-	--include $* --include Unsafe$* -o $@
+Linked%Remote.$(STC): %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
+	$(ALICELINK) $(ALICELINK_OPTS) $*Remote \
+	--include $*Remote --include UnsafeRemote --include MkRemote -o $@
+
+#Linked%.$(STC): %.$(STC) $(OZSOURCES:%.oz=%.$(STC))
+#	$(ALICELINK) $(ALICELINK_OPTS) $* \
+#	--include $* --include Unsafe$* -o $@
 
 %.$(STC): %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
@@ -88,8 +96,11 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(NATIVES:%=$(PREFIX)/lib/distribution/%.$(STC)): \
-	$(PREFIX)/lib/distribution/%.$(STC): Linked%.$(STC)
+#$(NATIVES:%=$(PREFIX)/lib/distribution/%.$(STC)): \
+#	$(PREFIX)/lib/distribution/%.$(STC): Linked%.$(STC)
+#	install -c -m 444 $< $@
+
+$(PREFIX)/lib/distribution/%Remote.$(STC): Linked%Remote.$(STC)
 	install -c -m 444 $< $@
 
 $(PREFIX)/lib/distribution/%.$(STC): %.$(STC)

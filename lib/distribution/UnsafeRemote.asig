@@ -14,6 +14,8 @@ signature UNSAFE_REMOTE_COMPONENT =
     sig
 	structure UnsafeRemote:
 	    sig
+		exception Sited
+
 		val getLocalIP: unit -> string
 
 		val setCallback: ('ticket * 'a -> 'b) -> unit

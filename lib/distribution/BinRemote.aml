@@ -1,9 +1,10 @@
 (*
  * Author:
- *   Benedikt Grundmann <bgrund@alice.ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
  *
  * Copyright:
- *   Benedikt Grundmann, (c) 2004 
+ *   Leif Kornstaedt and Benedikt Grundmann, 2004 
  *
  * Last change:
  *   $Date$ by $Author$
@@ -150,9 +151,9 @@ struct
 
     val logOut: TextIO.outstream option ref = ref NONE
 
-    fun trace (s:string) = 
+    fun trace s = 
 	case !logOut of
-	    SOME q => TextIO.output (q, s)
+	    SOME q => (TextIO.output (q, s); TextIO.flushOut q)
 	  | NONE => ()
 
     val idleTime = ref (Time.fromSeconds 30)
@@ -169,8 +170,8 @@ struct
     fun findHandler i =
 	case IntMap.lookup (handlerMap, i) of
 	    SOME handler => handler
-        |   NONE => (trace ("couldn't find handler for: " ^ 
-                        Int.toString i ^ "\n"); 
+        |   NONE => (trace ("could not find handler for: " ^
+			    Int.toString i ^ "\n"); 
                      notFoundHandler)
 
     (*--**  Currently have to pass token stream as reference
@@ -205,6 +206,8 @@ struct
     fun handleExchange (socket, host, port, stream) =
 	let
 	    val request = BinaryMessage.read socket
+	    val _ = trace ("request from " ^ host ^ ":" ^
+			   Int.toString port ^ "\n")
 	    val p = Promise.promise ()
 	    val _ = Stream.send (stream, Promise.future p)
 	    val handler = findHandler (#1 request)
@@ -215,11 +218,13 @@ struct
 	    Promise.fulfill (p, ());
 	    #2 request <> BinaryMessage.tagClose
 	end
+	handle BinaryMessage.Protocol _ =>
+		   false before trace "protocol error\n"
+	     | IO.Io {...} =>
+		   false before trace "i/o error\n"
 
     fun handleConnection' (socket, host, port, stream) =
 	let
-	    val _ = trace ("connection from " ^ host ^ ":" ^
-			   Int.toString port ^ "\n")
 	in
 	    if handleExchange (socket, host, port, stream) then
 		handleConnection' (socket, host, port, stream)
@@ -231,6 +236,7 @@ struct
 	let
 	    val (stream, tokens) = Stream.stream ()
 	in
+	    trace ("connection from " ^ host ^ ":" ^ Int.toString port ^ "\n");
 	    spawn handleConnection' (socket, host, port, stream);
 	    spawn closeIdle (ref tokens, socket)
 	end
@@ -397,7 +403,6 @@ struct
 	    register handler
 	end
 
-    
     fun download url =
 	let
 	    val answer =

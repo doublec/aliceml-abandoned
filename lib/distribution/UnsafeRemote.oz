@@ -20,10 +20,12 @@ import
 export
    'UnsafeRemote$' : Remote
 define
-   SitedException = {NewUniqueName 'Pickle.Sited'}
+   SitedException = {NewUniqueName 'UnsafeRemote.Sited'}
 
    Remote =
-   'Remote'(getLocalIP:
+   'Remote'('Sited': SitedException
+	    '\'Sited': SitedException
+	    getLocalIP:
 	       fun {$ unit}   % generate a ticket just to guess our IP
 		  case {VirtualString.toString {Connection.offer 7}}
 		  of &x|&-|&o|&z|&t|&i|&c|&k|&e|&t|&:|&/|&/|Rest then
@@ -42,7 +44,7 @@ define
 	    packValue:
 	       fun {$ X}
 		  try {Pickle.packWithCells X}
-		  catch error(dp(generic 'pickle:nogoods' ...) ...) then
+		  catch error(dp(generic ...) ...) then
 		     {Exception.raiseError alice(SitedException)} unit
 		  end
 		  %--** should handle pickle:resources for holes
