@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "scheduler/Closure.hh"
 #include "scheduler/Thread.hh"
 #include "scheduler/Scheduler.hh"
 #include "builtins/Authoring.hh"
@@ -38,8 +39,8 @@ DEFINE2(Thread_raiseIn) {
 	int nargs = otherTaskStack->GetInt(0);
 	int frameSize = nargs == -1? 2: nargs + 1;
 	otherTaskStack->PopFrame(frameSize);
-	Closure::FromWord(GlobalPrimitives::Internal_raise)->
-	  PushCall(otherTaskStack);
+	otherTaskStack->
+	  PushCall(Closure::FromWord(GlobalPrimitives::Internal_raise));
 	otherTaskStack->PushFrame(1);
 	otherTaskStack->PutWord(0, x1);
 	break;
@@ -67,7 +68,7 @@ DEFINE1(Thread_state) {
     RETURN(Store::IntToWord(1));
   case Thread::TERMINATED:
     RETURN(Store::IntToWord(2));
-  };
+  }
   Error("inconsistent state returned by Thread::GetState to Thread_state");
 } END
 
@@ -91,4 +92,4 @@ void Primitive::RegisterThread() {
   Register("Thread.state", Thread_state, 1);
   Register("Thread.suspend", Thread_suspend, 1);
   Register("Thread.yield", Thread_yield, 0);
-};
+}

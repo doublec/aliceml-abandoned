@@ -12,6 +12,7 @@
 
 #pragma implementation "interpreter/bootstrap/BootstrapInterpreter.hh"
 
+#include "scheduler/Closure.hh"
 #include "scheduler/Scheduler.hh"
 #include "datalayer/alicedata.hh"
 #include "builtins/Primitive.hh"
@@ -37,7 +38,7 @@ ConcreteCode *BootstrapInterpreter::Prepare(word abstractCode) {
 //    0 to nargs - 1: arguments
 //    #args + INTERPRETER_POS: Interpreter *interpreter
 //    #args + PC_POS: TagVal *pc
-//    #args + GLOBAL_ENV_POS: Vector *globalEnv
+//    #args + CLOSURE_POS: Closure *closure
 //    #args + LOCAL_ENV_POS: Environment *localEnv
 //    #args + FORMAL_ARGS_POS: id args (to receive arguments)
 //
@@ -45,12 +46,11 @@ ConcreteCode *BootstrapInterpreter::Prepare(word abstractCode) {
 static const u_int FRAME_SIZE = 5;
 static const u_int INTERPRETER_POS = 0;
 static const u_int PC_POS = 1;
-static const u_int GLOBAL_ENV_POS = 2;
+static const u_int CLOSURE_POS = 2;
 static const u_int LOCAL_ENV_POS = 3;
 static const u_int FORMAL_ARGS_POS = 4;
 
-void BootstrapInterpreter::PushCall(TaskStack *taskStack, word w) {
-  Closure *closure = Closure::FromWord(w);
+void BootstrapInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   ConcreteCode *concreteCode = closure->GetConcreteCode();
   Assert(concreteCode->GetInterpreter() == this);
   TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
@@ -60,7 +60,7 @@ void BootstrapInterpreter::PushCall(TaskStack *taskStack, word w) {
   taskStack->PushFrame(FRAME_SIZE);
   taskStack->PutUnmanagedPointer(INTERPRETER_POS, this);
   taskStack->PutWord(PC_POS, function->Sel(2));
-  taskStack->PutWord(GLOBAL_ENV_POS, closure->GetGlobalEnv()->ToWord());
+  taskStack->PutWord(CLOSURE_POS, closure->ToWord());
   taskStack->PutWord(LOCAL_ENV_POS, Environment::New()->ToWord());
   taskStack->PutWord(FORMAL_ARGS_POS, function->Sel(1));
 }
@@ -70,18 +70,18 @@ void BootstrapInterpreter::PopFrame(TaskStack *taskStack) {
 }
 
 inline void PushState(TaskStack *taskStack,
-		      Interpreter *interpreter, TagVal *pc, Vector *globalEnv,
+		      Interpreter *interpreter, TagVal *pc, Closure *closure,
 		      Environment *localEnv, TagVal *formalArgs) {
   taskStack->PushFrame(FRAME_SIZE);
   taskStack->PutUnmanagedPointer(INTERPRETER_POS, interpreter);
   taskStack->PutWord(PC_POS, pc->ToWord());
-  taskStack->PutWord(GLOBAL_ENV_POS, globalEnv->ToWord());
+  taskStack->PutWord(CLOSURE_POS, closure->ToWord());
   taskStack->PutWord(LOCAL_ENV_POS, localEnv->ToWord());
   taskStack->PutWord(FORMAL_ARGS_POS, formalArgs->ToWord());
 }
 
 inline void PushState(TaskStack *taskStack,
-		      Interpreter *interpreter, TagVal *pc, Vector *globalEnv,
+		      Interpreter *interpreter, TagVal *pc, Closure *globalEnv,
 		      Environment *localEnv) {
   TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
   formalArgs->Init(0, Vector::New(0)->ToWord());
@@ -105,8 +105,8 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
   u_int nslots = nargs == -1? 1: nargs;
   Assert(Store::WordToUnmanagedPointer(taskStack->GetWord(nslots + INTERPRETER_POS)) == this);
   TagVal *pc = TagVal::FromWord(taskStack->GetWord(nslots + PC_POS));
-  Vector *globalEnv =
-    Vector::FromWord(taskStack->GetWord(nslots + GLOBAL_ENV_POS));
+  Closure *globalEnv =
+    Closure::FromWord(taskStack->GetWord(nslots + CLOSURE_POS));
   Environment *localEnv =
     Environment::FromWord(taskStack->GetWord(nslots + LOCAL_ENV_POS));
   TagVal *formalArgs =
@@ -136,8 +136,8 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	Tuple *tuple = Tuple::FromWord(suspendWord);
 	if (tuple == INVALID_POINTER) {
 	  taskStack->PopFrame(1);
-	  Closure::FromWord(GlobalPrimitives::Future_await)->
-	    PushCall(taskStack);
+	  taskStack->
+	    PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
 	  return Result(Result::CONTINUE, 1);
@@ -152,7 +152,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
       }
     }
     break;
-  };
+  }
   taskStack->PopFrame(nslots + FRAME_SIZE);
   while (!(Scheduler::TestPreempt() || Store::NeedGC())) {
   loop:
@@ -255,10 +255,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
       {
 	Vector *ids = Vector::FromWord(pc->Sel(1));
 	u_int nglobals = ids->GetLength();
-	Vector *newGlobalEnv = Vector::New(nglobals);
+	Closure *closure = Closure::New(Prepare(pc->Sel(2)), nglobals);
 	for (u_int i = nglobals; i--; )
-	  newGlobalEnv->Init(i, localEnv->Lookup(ids->Sub(i)));
-	Closure *closure = Closure::New(Prepare(pc->Sel(2)), newGlobalEnv);
+	  closure->Init(i, localEnv->Lookup(ids->Sub(i)));
 	localEnv->Add(pc->Sel(0), closure->ToWord());
 	pc = TagVal::FromWord(pc->Sel(3));
       }
@@ -282,7 +281,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 		  globalEnv, localEnv, formalArgs);
 	// Push a call frame for the primitive:
 	const char *name = String::FromWord(pc->Sel(1))->GetValue();
-	Closure::FromWord(Primitive::Lookup(name))->PushCall(taskStack);
+	taskStack->PushCall(Closure::FromWord(Primitive::Lookup(name)));
 	Vector *actualIds = Vector::FromWord(pc->Sel(2));
 	u_int nargs = actualIds->GetLength();
 	taskStack->PushFrame(nargs);
@@ -298,7 +297,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	if (closure == INVALID_POINTER) SUSPEND(suspendWord);
 	PushState(taskStack, this, TagVal::FromWord(pc->Sel(3)),
 		  globalEnv, localEnv, TagVal::FromWord(pc->Sel(0)));
-	closure->PushCall(taskStack);
+	taskStack->PushCall(closure);
 	TagVal *actualArgs = TagVal::FromWord(pc->Sel(2));
 	switch (Pickle::GetArgs(actualArgs)) {
 	case Pickle::OneArg:

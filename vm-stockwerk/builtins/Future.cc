@@ -11,6 +11,7 @@
 //
 
 #include "scheduler/Transients.hh"
+#include "scheduler/Closure.hh"
 #include "scheduler/Interpreter.hh"
 #include "scheduler/Scheduler.hh"
 #include "builtins/Authoring.hh"
@@ -39,7 +40,6 @@ DEFINE2(Future_awaitOne) {
 } END
 
 DEFINE1(Future_byneed) {
-  //--** should this be strict?
   RETURN(Byneed::New(x0)->ToWord());
 } END
 
@@ -47,7 +47,8 @@ DEFINE1(Future_concur) {
   word byneed = Byneed::New(x0)->ToWord();
   Thread *thread = Thread::New(Scheduler::GetCurrentThread()->GetPriority());
   TaskStack *newTaskStack = thread->GetTaskStack();
-  Closure::FromWord(GlobalPrimitives::Future_await)->PushCall(newTaskStack);
+  //--** push toplevel exception handler on taskStack
+  newTaskStack->PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
   newTaskStack->PushFrame(1);
   newTaskStack->PutWord(0, byneed);
   Scheduler::AddThread(thread);
@@ -75,4 +76,4 @@ void Primitive::RegisterFuture() {
   Register("Future.concur", Future_concur, 1);
   Register("Future.isFailed", Future_isFailed, 1);
   Register("Future.isFuture", Future_isFuture, 1);
-};
+}

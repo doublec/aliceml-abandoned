@@ -12,6 +12,7 @@
 
 #pragma implementation "builtin/Primitive.hh"
 
+#include "scheduler/Closure.hh"
 #include "scheduler/TaskStack.hh"
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
@@ -24,17 +25,17 @@ public:
   PrimitiveInterpreter(Primitive::function f, int n):
     function(f), arity(n == 1? -1: n) {}
 
-  ConcreteCode *Prepare(word abstractCode);
-  void PushCall(TaskStack *taskStack, word closure);
-  void PopFrame(TaskStack *taskStack);
-  Result Run(TaskStack *taskStack, int nargs);
+  virtual ConcreteCode *Prepare(word abstractCode);
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PopFrame(TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack, int nargs);
 };
 
 ConcreteCode *PrimitiveInterpreter::Prepare(word /*abstractCode*/) {
   Error("PrimitiveInterpreter::Prepare must never be called");
 }
 
-void PrimitiveInterpreter::PushCall(TaskStack *taskStack, word w) {
+void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *w) {
   Assert(Closure::FromWord(w)->GetConcreteCode()->GetInterpreter() == this);
   taskStack->PushFrame(1);
   taskStack->PutUnmanagedPointer(0, this);
@@ -52,8 +53,8 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
       if (arity == 0) { // await unit
 	if (Store::WordToInt(suspendWord) == INVALID_INT) {
 	  taskStack->PopFrame(1);
-	  Closure::FromWord(GlobalPrimitives::Future_await)->
-	    PushCall(taskStack);
+	  taskStack->
+	    PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
 	  return Result(Result::CONTINUE, 1);
@@ -63,8 +64,8 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
 	Tuple *tuple = Tuple::FromWord(suspendWord);
 	if (tuple == INVALID_POINTER) {
 	  taskStack->PopFrame(1);
-	  Closure::FromWord(GlobalPrimitives::Future_await)->
-	    PushCall(taskStack);
+	  taskStack->
+	    PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
 	  return Result(Result::CONTINUE, 1);
@@ -120,8 +121,8 @@ void Primitive::Register(const char *name, function value, u_int arity) {
   //--** this reinterpret_cast breaks if sizeof(int) != sizeof(function):
   concreteCode->
     Init(0, Store::FunctionPointerToWord(reinterpret_cast<int>(value)));
-  Closure *closure = Closure::New(concreteCode, Vector::New(0));
+  Closure *closure = Closure::New(concreteCode, 0);
   Register(name, closure->ToWord());
-};
+}
 
 //--** word Primitive::Lookup(const char *name);

@@ -19,10 +19,10 @@
 
 class BootstrapInterpreter: public Interpreter {
 public:
-  ConcreteCode *Prepare(word abstractCode);
-  void PushCall(TaskStack *taskStack, word closure);
-  void PopFrame(TaskStack *taskStack);
-  Result Run(TaskStack *taskStack, int nargs);
+  virtual ConcreteCode *Prepare(word abstractCode);
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PopFrame(TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack, int nargs);
 };
 
 #endif __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__

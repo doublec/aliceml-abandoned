@@ -16,6 +16,7 @@
 #pragma interface "builtins/Primitive.hh"
 
 #include "datalayer/alicedata.hh"
+#include "scheduler/Interpreter.hh"
 
 class TaskStack;
 
