@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Examples", "examples") ?>
+<?php heading("Oz for Lightning - Examples", "examples") ?>
 
 
 
@@ -9,8 +9,8 @@
   <P>
     This program does pairwise addition of the elements of two integer streams,
     producing a third stream. The user can interactively put numbers on both
-    of the two source streams. All three streams are displayed in the Mozart
-    Browser.
+    of the two source streams. All three streams are displayed in the
+    Inspector.
   </P>
 
   <UL>
