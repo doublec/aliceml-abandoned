@@ -68,7 +68,7 @@ struct
 	in
           case Space.status s of
             Space.BRANCH desc =>
-              (Space.commitDescription(s, i, desc);
+              (Space.commit(s, i, desc);
                Space.status s;
                space := SOME s;
                s)
