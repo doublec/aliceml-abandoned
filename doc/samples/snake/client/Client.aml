@@ -12,7 +12,7 @@ struct
             Protocol.client_interface * Gui.model_join =
         let
             fun playersJoined players = ()
-
+            
             fun tournamentStarted () = ()
 
             fun levelStarted level_info = ()
@@ -36,7 +36,6 @@ struct
             fun tournamentFinished highscore = ()
 
             fun updatePoints points = ()
-        
 
             (* ------------ gui callbacks --------- *)
             (* user turns snake, gives up...        *)

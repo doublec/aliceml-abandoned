@@ -1,0 +1,8 @@
+import structure Protocol   from "../common/Protocol"
+import structure Gui        from "Gui"
+
+signature CLIENT =
+sig
+    val startClient : Gui.gui_join * Protocol.server_interface -> Protocol.client_interface * Gui.model_join
+
+end
