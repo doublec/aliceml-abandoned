@@ -86,7 +86,7 @@ components (currently <TT>ozf</TT>) and exit immediately.</P>
 
 <?php section("interop", "import management") ?>
 
-<P>The Alice employs a compilation model that is quite different from other
+<P>Alice employs a compilation model that is quite different from other
 Standard ML systems. In particular, Alice ML requires putting explicit <A
 href="components.html#source">import announcements</A> into source files to
 enable separate compilation.</P>
@@ -111,7 +111,7 @@ follows:</P>
     <TD align="center">::=</TD>
     <TD> {<I>dep-line</I>}* </TD>
   </TR><TR>
-    <TD> <I>depend-line</I> </TD>
+    <TD> <I>dep-line</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>file-name</I> <TT>:</TT> {<I>file-name</I>}* </TD>
   </TR>
@@ -130,7 +130,7 @@ the content of the first line to be continued on the next one.
 ignored completely (including contained backslashes).
 </UL>
 
-<P>Each line is headed by the file name denoting a source file, the
+<P>Each line is headed by a file name denoting a source file, the
 <I>target</I>. After the colon follows a list of files the target
 depends on, its <I>prerequisites</I>. When a source file is compiled with a
 dependency file that contains its name as a target, then the source file is
