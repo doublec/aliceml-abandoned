@@ -18,6 +18,10 @@
     <A href="toplevel.php3">top-level environment</A>.
   </P>
 
+  <P>See also:
+    <A href="general.php3"><TT>General</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -124,11 +128,5 @@
       <P>An explicit equality function on references. Equivalent to <TT>op=</TT>.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="general.php3"><TT>General</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

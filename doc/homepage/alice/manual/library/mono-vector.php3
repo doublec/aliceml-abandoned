@@ -15,6 +15,11 @@
     Basis' <TT>MONO_VECTOR</TT></A> signature.
   </P>
 
+  <P>See also:
+    <A href="vector.php3"><TT>Vector</TT></A>,
+    <A href="mono-array.php3"><TT>MONO_ARRAY</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -203,12 +208,5 @@
       elements.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="vector.php3"><TT>Vector</TT></A>,
-    <A href="mono-array.php3"><TT>MONO_ARRAY</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

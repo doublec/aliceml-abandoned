@@ -16,6 +16,11 @@
     from the longer vector are ignored.
   </P>
 
+  <P>See also:
+    <A href="vector.php3"><TT>Vector</TT></A>,
+    <A href="list-pair.php3"><TT>ListPair</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -160,12 +165,5 @@
          Vector.find <I>f</I> (zip (<I>vec1</I>, <I>vec2</I>))</PRE>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="vector.php3"><TT>Vector</TT></A>,
-    <A href="list-pair.php3"><TT>ListPair</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

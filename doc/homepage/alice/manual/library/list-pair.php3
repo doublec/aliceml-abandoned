@@ -14,6 +14,11 @@
     Basis' <TT>ListPair</TT></A> structure.
   </P>
 
+  <P>See also:
+    <A href="list.php3"><TT>List</TT></A>,
+    <A href="vector-pair.php3"><TT>VectorPair</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -111,12 +116,5 @@
         foldr <I>f b</I> (<I>l1</I>, <I>l2</I>) = foldri (fn (<I>i</I>,<I>a</I>,<I>b</I>,<I>c</I>) => <I>f</I>(<I>a</I>,<I>b</I>,<I>c</I>)) <I>b</I> (<I>l1</I>, <I>l2</I>)</PRE>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="list.php3"><TT>List</TT></A>,
-    <A href="vector-pair.php3"><TT>VectorPair</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

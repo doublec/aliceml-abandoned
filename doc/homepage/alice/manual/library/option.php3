@@ -21,6 +21,10 @@
     <A href="toplevel.php3">top-level environment</A>.
   </P>
 
+  <P>See also:
+    <A href="alt.php3"><TT>Alt</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -122,11 +126,5 @@
 	   | (SOME x, SOME y) = compare' (x, y)</PRE>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="alt.php3"><TT>Alt</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

@@ -15,6 +15,11 @@
     are also known as <EM>internalized string</EM> or <EM>symbols</EM>.
   </P>
 
+  <P>See also:
+    <A href="string.php3"><TT>STRING</TT></A>,
+    <A href="substring.php3"><TT>SUBSTRING</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -96,12 +101,5 @@
       <P>A hash function for unique strings. Hashing is constant time.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="string.php3"><TT>STRING</TT></A>,
-    <A href="substring.php3"><TT>SUBSTRING</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

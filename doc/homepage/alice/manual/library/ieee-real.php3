@@ -14,6 +14,10 @@
     Basis' <TT>IEEEReal</TT></A> structure.
   </P>
 
+  <P>See also:
+    <A href="real.php3"><TT>Real</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -52,11 +56,5 @@
     <LI><TT>getRoundingMode</TT>, <TT>setRoundingMode</TT></LI>
     <LI><TT>toString</TT>, <TT>fromString</TT></LI>
   </UL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="real.php3"><TT>Real</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

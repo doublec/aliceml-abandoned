@@ -15,6 +15,11 @@
     Basis' <TT>REAL</TT></A> signature.
   </P>
 
+  <P>See also:
+    <A href="ieee-real.php3"><TT>IEEEReal</TT></A>,
+    <A href="math.php3"><TT>MATH</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -158,12 +163,5 @@
       Basis</A>.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="ieee-real.php3"><TT>IEEEReal</TT></A>,
-    <A href="math.php3"><TT>MATH</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

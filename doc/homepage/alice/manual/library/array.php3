@@ -14,6 +14,11 @@
     Basis' <TT>Array</TT></A> structure.
   </P>
 
+  <P>See also:
+    <A href="mono-array.php3"><TT>MONO_ARRAY</TT></A>,
+    <A href="vector.php3"><TT>Vector</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -216,12 +221,5 @@
       elements.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="mono-array.php3"><TT>MONO_ARRAY</TT></A>,
-    <A href="vector.php3"><TT>Vector</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

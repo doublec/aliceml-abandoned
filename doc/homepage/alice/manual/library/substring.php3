@@ -15,6 +15,10 @@
     Basis' <TT>SUBSTRING</TT></A> signature.
   </P>
 
+  <P>See also:
+    <A href="string.php3"><TT>STRING</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -124,11 +128,5 @@
         List.appr <I>f</I> (explode <I>s</I>)</PRE>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="string.php3"><TT>STRING</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

@@ -27,6 +27,11 @@
     resume threads.
   </P>
 
+  <P>See also:
+    <A href="future.php3"><TT>Future</TT></A>,
+    <A href="lock.php3"><TT>Lock</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -150,10 +155,7 @@
     <DD>
       <P>causes the calling thread to stop executing and not be rescheduled
 	for the time specified by&nbsp;<TT><I>t</I></TT>.  If <TT><I>t</I
-	></TT> is zero or negative, immediately returns.  This is equivalent
-	to</P>
-      <PRE><A href="future.php3#await">Future.await</A
-	> (<A href="future.php3#alarm">Future.alarm</A> t)</PRE>
+	></TT> is zero or negative, immediately returns.</P>
     </DD>
 
     <DT>
@@ -206,11 +208,5 @@
 	<TT>false</TT> otherwise.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="future.php3"><TT>Future</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

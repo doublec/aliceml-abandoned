@@ -17,6 +17,10 @@
     <A href="toplevel.php3">top-level environment</A>.
   </P>
 
+  <P>See also:
+    <A href="alt.php3"><TT>Alt</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -113,11 +117,5 @@
       for each component type. The order induced is the lexicographic one.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="alt.php3"><TT>Alt</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

@@ -19,6 +19,10 @@
     in the <A href="toplevel.php3">top-level environment</A>.
   </P>
 
+  <P>See also:
+    <A href="ref.php3"><TT>Ref</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -137,11 +141,5 @@
       <P>for any values <TT><I>x</I></TT> and <TT><I>y</I></TT>.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="ref.php3"><TT>Ref</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

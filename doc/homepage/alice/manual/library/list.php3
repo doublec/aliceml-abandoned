@@ -14,6 +14,11 @@
     Basis' <TT>List</TT></A> structure.
   </P>
 
+  <P>See also:
+    <A href="list-pair.php3"><TT>ListPair</TT></A>,
+    <A href="vector.php3"><TT>Vector</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -184,12 +189,5 @@
       elements.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="list-pair.php3"><TT>ListPair</TT></A>,
-    <A href="vector.php3"><TT>Vector</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

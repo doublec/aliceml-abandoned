@@ -17,6 +17,10 @@
   <PRE>
     structure Mod = ByNeed (signature S = <I>SIG</I> functor F() = <I>mod</I>)</PRE>
 
+  <P>See also:
+    <A href="component.php3"><TT>Component</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -47,11 +51,5 @@
       <P>A functorial suspension of the module expression to be evaluated.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="component.php3"><TT>Component</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

@@ -20,6 +20,10 @@
     <TT>Char</TT>.
   </P>
 
+  <P>See also:
+    <A href="string.php3"><TT>String</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -151,11 +155,5 @@
       character set.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="string.php3"><TT>String</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

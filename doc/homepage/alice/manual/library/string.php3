@@ -16,6 +16,13 @@
     Basis' <TT>STRING</TT></A> signature.
   </P>
 
+  <P>See also:
+    <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>,
+    <A href="substring.php3"><TT>SUBSTRING</TT></A>,
+    <A href="unique-string.php3"><TT>UNIQUE_STRING</TT></A>,
+    <A href="string-cvt.php3"><TT>StringCvt</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -156,14 +163,5 @@
       in the target character set.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>,
-    <A href="substring.php3"><TT>SUBSTRING</TT></A>,
-    <A href="unique-string.php3"><TT>UNIQUE_STRING</TT></A>,
-    <A href="string-cvt.php3"><TT>StringCvt</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

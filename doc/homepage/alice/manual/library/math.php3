@@ -14,6 +14,10 @@
     Basis' <TT>MATH</TT></A> signature.
   </P>
 
+  <P>See also:
+    <A href="real.php3"><TT>Real</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -71,11 +75,5 @@
       <TT>tanh</TT>.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="real.php3"><TT>Real</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

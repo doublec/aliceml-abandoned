@@ -19,6 +19,11 @@
     in the <A href="toplevel.php3">top-level environment</A>.
   </P>
 
+  <P>See also:
+    <A href="option.php3"><TT>Option</TT></A>,
+    <A href="pair.php3"><TT>Pair</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -163,12 +168,5 @@
 	   | (SND _,  FST _ ) => GREATER</PRE>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="option.php3"><TT>Option</TT></A>,
-    <A href="pair.php3"><TT>Pair</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

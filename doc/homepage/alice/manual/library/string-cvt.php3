@@ -14,6 +14,11 @@
     Basis' <TT>StringCvt</TT></A> structure.
   </P>
 
+  <P>See also:
+    <A href="string.php3"><TT>STRING</TT></A>,
+    <A href="substring.php3"><TT>SUBSTRING</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -48,12 +53,5 @@
     <A href="http://www.dina.kvl.dk/~sestoft/sml/string-cvt.html">Standard ML
     Basis' <TT>StringCvt</TT></A> structure.
   </P>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="string.php3"><TT>STRING</TT></A>,
-    <A href="substring.php3"><TT>SUBSTRING</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

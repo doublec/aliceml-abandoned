@@ -17,6 +17,10 @@
     Basis' <TT>WORD</TT></A> signature.
   </P>
 
+  <P>See also:
+    <A href="integer.php3"><TT>INTEGER</TT></A>
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>
@@ -122,11 +126,5 @@
       <TT>StringCvt.scanString (scan DEC) s</TT>.</P>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="integer.php3"><TT>INTEGER</TT></A>
-  </DD></DL>
 
 <?php footing() ?>

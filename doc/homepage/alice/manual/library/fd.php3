@@ -37,6 +37,10 @@
     of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
   </P>
 
+  <P>See also:
+    <A href="fs.php3"><TT>FS</TT></A>
+  </P>
+
 <?php section("import", "import"); ?>
 
   <PRE>
@@ -923,11 +927,5 @@
       </UL>
     </DD>
   </DL>
-
-<?php section("also", "see also") ?>
-
-  <DL><DD>
-    <A href="fs.php3"><TT>FS</TT></A>
-  </DD></DL>
 
 <?php footing() ?>
