@@ -175,8 +175,9 @@ void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
   String *name         = String::FromWord(coord->Sel(0));
-  std::fprintf(stderr, "Alice native %s %.*s, line %d, column %d\n",
-	       frameType, (int) name->GetSize(), name->GetValue(),
+  std::fprintf(stderr, //"Alice native %s %.*s, line %d, column %d\n",
+	       "%.*s:%d.%d\n",
+	       /*frameType,*/ (int) name->GetSize(), name->GetValue(),
 	       Store::WordToInt(coord->Sel(1)),
 	       Store::WordToInt(coord->Sel(2)));
 }
