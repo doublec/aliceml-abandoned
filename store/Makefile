@@ -56,10 +56,10 @@ clean:
 	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o) libstore.a
 
 veryclean: clean
-	rm -f test StoreConfig.hh libstore.a
+	rm -f test libstore.a
 
 distclean: veryclean
-	rm -f Makefile.depend
+	rm -f StoreConfig.hh Makefile.depend
 
 Makefile.depend: Makefile StoreConfig.hh $(SOURCES)
 	$(MAKEDEPEND) $(SOURCES) StoreConfig.cc > $@
