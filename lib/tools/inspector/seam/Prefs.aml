@@ -111,10 +111,10 @@ struct
   val refL = "ref "
   val refIdL = "ref"
 
-  val foldL = "?"
+  val foldL = ".."
   val cutL = "..."
 
-  val topL = "()"
+  val topL = "_module"
   val fctL = "_fct"
   val fctLambdaL = "_lambdaSig"
 
@@ -168,17 +168,16 @@ struct
   val failStyle   = newStyle ("failed", !fontname, (45000,0,0), false)
 
   (* Style for datatype constructors. *)
-  val consStyle = newStyle ("constructor", !fontname, (45000,10000,65535),
-			    false)
+  val consStyle = newStyle ("constructor", !fontname, (0,30000,10000), false)
 
   (* Some built-in types. *)
-  val intStyle   = newStyle ("int", !fontname, (0,45000,0), false)
-  val realStyle  = newStyle ("real", !fontname, (0,45000,0), false)
-  val charStyle  = newStyle ("char", !fontname, (45000,0,50000), false)
-  val strStyle   = newStyle ("string", !fontname, (45000,0,50000), true)
-  val wordStyle  = newStyle ("word", !fontname, (0,43000,0), false)
-  val refStyle   = newStyle ("reference", !fontname, (0,0,0), false)
-  val vecStyle   = newStyle ("vector", !fontname, (55000,25000,0), false)
+  val intStyle   = newStyle ("int", !fontname, (0,0,45000), false)
+  val realStyle  = newStyle ("real", !fontname, (0,0,45000), false)
+  val charStyle  = newStyle ("char", !fontname, (0,30000,65535), false)
+  val strStyle   = newStyle ("string", !fontname, (0,30000,65535), true)
+  val wordStyle  = newStyle ("word", !fontname, (0,0,45000), false)
+  val refStyle   = newStyle ("reference", !fontname, (50000,20000,0), false)
+  val vecStyle   = newStyle ("vector", !fontname, (0,0,0), false)
 
   (* Exceptions. *)
   val exnStyle   = newStyle ("exception", !fontname, (60000,40000,0), false)
@@ -186,21 +185,24 @@ struct
   (* Separators, i.e. punctuation symbols. *)
   val sepStyle   = newStyle ("separator", !fontname, (0,0,0), false)
   val sepColor   = #colorClass sepStyle
-  val brackStyle = newStyle ("brackets", !fontname, (0,5000,47000), false)
+  val brackStyle = newStyle ("brackets", !fontname, (0,0,0), false)
 
   (* Structures *)
-  val structStyle = newStyle ("structure", !fontname, (0,50000,0), false)
-  val fixStyle    = newStyle ("fixity", !fontname, (0,50000,25000), false)
-  val valStyle    = newStyle ("val", !fontname, (0,50000,25000), false)
-  val labStyle    = newStyle ("label", !fontname, (0,10000,65535), true)
-  val typStyle    = newStyle ("type", !fontname, (60000,10000,20000), false)
+  val structStyle = newStyle ("structure", !fontname, (15000,15000,15000), false)
+  val fixStyle    = newStyle ("fixity", !fontname, (15000,15000,15000), false)
+  val valStyle    = newStyle ("val", !fontname, (15000,15000,15000), false)
+  val labStyle    = newStyle ("label", !fontname, (0,45000,0), true)
+  val typStyle    = newStyle ("type", !fontname, (15000,15000,15000), false)
 
   (* Labels in a record. *)
   val labelStyle = labStyle
 
+  (* User mappings. *)
+  val userStyle = newStyle ("user", !fontname, (60000,40000,0), false)
+
 
   (* Limit symbols. *)
-  val limitStyle = newStyle ("limit", !fontname, (0,0,0), false)
+  val limitStyle = newStyle ("limit", !fontname, (65535,0,0), false)
 
   val defaultStyle = newStyle ("default", !fontname, (0,0,0), false)
 

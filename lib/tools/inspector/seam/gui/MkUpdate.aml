@@ -163,24 +163,16 @@ fun abstreeBuilder (depth, TupRec {row, tagged}, desc, start, _) =
       (makeAbs, length + start)
     end
     
-(* Expands an array. *)
-  | abstreeBuilder (depth, Array typ, desc, start, tree) =
+(* Expands a vector or array. *)
+  | abstreeBuilder (depth, VecArrayLimit (length, typ, sub),
+		    desc, start, tree) =
     let
       val value = Reflect.reify (AbsTree.getValue desc)
-      fun makeAbs (limit, array) = AbsTree.makeArray (depth, limit, array,
-                                                      value, start, typ)
+      fun makeAbs (limit, array) = AbsTree.makeVecArray (sub, length, depth,
+							 limit, array,
+                                                         value, start, typ)
     in
-      (makeAbs, Array.length value)
-    end
-
-(* Expands a vector. *)
-  | abstreeBuilder (depth, Vector typ, desc, start, tree) =
-    let
-      val value = Reflect.reify (AbsTree.getValue desc)
-      fun makeAbs (limit, array) = AbsTree.makeVector (depth, limit, array,
-                                                      value, start, typ)
-    in
-      (makeAbs, Vector.length value)
+      (makeAbs, length)
     end
 
 

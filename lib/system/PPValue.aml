@@ -344,9 +344,9 @@ local
     fun ppReal t fm x	= SOME(text(Real.toString x))
     fun ppChar t fm x	= SOME(text("#\"" ^ Char.toString x ^ "\""))
     fun ppString t (fm : format) x =
-	if String.size x <= #width fm
+	if String.size x <= 4 * #width fm
 	then SOME(text("\"" ^ String.toString x ^ "\""))
-	else SOME(text("\"" ^ String.toString(String.substring(x,0,#width fm))
+	else SOME(text("\"" ^ String.toString(String.substring(x,0,4* #width fm))
 			    ^ "\\...\""))
 
     fun ppExn t fm x =

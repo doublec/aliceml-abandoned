@@ -21,11 +21,8 @@ struct
   (* Mapper for default (unknown) constructors. *)
   fun abstract item = AbsTree.simpleText (item, Prefs.absL, Prefs.defaultStyle)
 
-  (* Mapper for functions, functors, and other non-displayable things. *)
+  (* Mapper for functions and other non-displayable things. *)
   fun arrow item = AbsTree.simpleText (item, Prefs.funL, Prefs.defaultStyle)
-  fun funct item = AbsTree.simpleText (item, Prefs.fctL, Prefs.defaultStyle)
-  fun functLambda item = AbsTree.simpleText (item, Prefs.fctLambdaL,
-                                             Prefs.defaultStyle)
 
   (* Mapper for products (records, tuples)
    * tagged is a boolean wich tells if the value is a tagged block. *)
@@ -120,7 +117,7 @@ struct
       val item' = Common.Value (typ', e)
       val tree = AbsTree.mapValue (depth - 1, item', typ', e)
     in
-      AbsTree.failedApplication (item, tree)
+      AbsTree.makeAbsBox {label = Prefs.faiL, item, tree}
     end
 
 end

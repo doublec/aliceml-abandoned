@@ -63,8 +63,8 @@ struct
   datatype limit_description = TupRec of {row    : row,
 					  tagged : bool}
 			     | ListLimit of Type.typ * Reflect.value list
-                             | Array of Type.typ
-                             | Vector of Type.typ
+                             | VecArrayLimit of int * Type.typ *
+					        (int -> Reflect.value)
 			     | ModuleLimit of declaration list * int
 
   datatype orientation = datatype Prefs.orientation
@@ -151,6 +151,12 @@ struct
   val closeSBracket = ("]", Prefs.brackStyle)
   val closeSBracketL = [closeSBracket]
 
+  val openAbsBracket = ("{|", Prefs.brackStyle)
+  val openAbsBracketL = [openAbsBracket]
+
+  val closeAbsBracket = ("|}", Prefs.brackStyle)
+  val closeAbsBracketL = [closeAbsBracket]
+
   val comma = (", ", Prefs.brackStyle)
   val commaL = [comma]
 
@@ -174,6 +180,14 @@ struct
 	val kids = Array.array (1, kid)
       in
 	Container {desc  = item, limit = false, kids}
+      end
+
+  fun makeAbsBox {label, tree, item} =
+      let
+	val prefix = (label, Prefs.consStyle)::openAbsBracketL
+	val suffix = closeAbsBracketL
+      in
+	makeBox {prefix, tree, suffix, item}
       end
 
   (* A constructor applied to its argument : K (arg) 
@@ -278,7 +292,7 @@ struct
     end
 
   (* Maps a Reflect.value array/vector into the given tree array. *)
-  fun makeVecArray (read, limd) (depth, limit, array, value, start, typ) =
+  fun makeVecArray (sub, fullLength, depth, limit, array, value, start, typ) =
     let
       val length = Array.length array
       val last = if limit then length - 2 else length - 1
@@ -287,7 +301,7 @@ struct
         else
           let
 	    val i' = index + start
-            val subvalue = read (value, i')
+            val subvalue = sub i'
             val item = Common.Value (typ, subvalue)
             val subtree = mapValue (depth, item, typ, subvalue)
             val tree = if index = length - 1 then subtree
@@ -302,12 +316,10 @@ struct
     in
       loop 0 ;
       if limit
-      then Array.update (array, length - 1, WidthLimit (limd typ))
+      then Array.update (array, length - 1,
+                         WidthLimit (VecArrayLimit (fullLength, typ, sub)))
       else ()
     end
-
-  val makeArray = makeVecArray (Array.sub, Array)
-  val makeVector = makeVecArray (Vector.sub, Vector)
 
 end
 

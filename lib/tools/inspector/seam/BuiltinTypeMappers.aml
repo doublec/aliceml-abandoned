@@ -1,7 +1,7 @@
 import structure Type          from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Atom          from "x-alice:/lib/data/Atom"
 import structure Reflect       from "x-alice:/lib/system/Reflect"
-import structure Inf           from "x-alice:/lib/rtt/Inf"
 import structure Common        from "Common"
 import structure AbsTree       from "AbsTree"
 import structure Prefs         from "Prefs"
@@ -47,10 +47,10 @@ struct
   (*** STRING ***)
   fun string (depth, item, path, targs, value) =
     let
-      val width = !Prefs.widthLimit
+      val width = 4 * !Prefs.widthLimit
       val value = String.toString value
-      val label = if String.size value <= width then value ^ "\""
-                  else String.substring (value, 0, width) ^ "\\...\""
+      val label = (if String.size value <= width then value
+                   else String.substring (value, 0, width) ^ "\\...") ^ "\""
     in
       AbsTree.simpleText (item, "\"" ^ label, Prefs.strStyle)
     end
@@ -71,8 +71,6 @@ struct
     end
 
   (*** PROMISE ***)
-  val promisePrefix = [("promise ", Prefs.refStyle)]
-
   fun promise (depth, item, path, targs, value) =
     let
       val argType = case targs of [t] => t | _ => assert false
@@ -80,7 +78,7 @@ struct
       val item'   = Common.Value (argType, x)
       val tree    = AbsTree.mapValue (depth - 1, item', argType, x)
     in
-      AbsTree.makeBox {prefix = promisePrefix, tree, suffix = [], item}
+      AbsTree.makeAbsBox {label = "promise", tree, item}
     end
   
   (*** LIST ***)
@@ -162,7 +160,7 @@ struct
         Limited      => Container {desc = item', limit = true, kids}
       | Undetermined => Container {desc = item', limit = false, kids}
       | Full         =>
-          if empty then AbsTree.simpleText (item', "[]", Prefs.consStyle)
+          if empty then AbsTree.simpleText (item', "[]", Prefs.brackStyle)
           else
                Concat {prefix = AbsTree.openSBracketL,
                        tree   = Container {desc = item', limit = false, kids},
@@ -175,18 +173,45 @@ struct
       list' (!Prefs.widthLimit, depth, item, path, targs, value)  
 
   (*** ATOMS ***)
-  val atom = generic ("atom{|\"" ^+ Atom.toString +^ "\"|}", Prefs.strStyle)
+  val stringType =
+    let structure T = Reflect.ReflectType (type t = string) in T.x end
+
+  fun atom (depth, item, path, targs, value) =
+    let
+      val x     = Reflect.reflect (Atom.toString value)
+      val item' = Common.Value (stringType, x)
+      val tree  = AbsTree.mapValue (depth - 1, item', stringType, x)
+    in
+      AbsTree.makeAbsBox {label = "atom", tree, item}
+    end
+
+  (*** THREADS ***)
+  val threadStateType =
+    let structure T = Reflect.ReflectType (type t = Thread.state) in T.x end
+
+  fun thread (depth, item, path, targs, value) =
+    let
+      val x     = Reflect.reflect (Thread.state value)
+      val item' = Common.Value (threadStateType, x)
+      val tree  = AbsTree.mapValue (depth - 1, item', threadStateType, x)
+    in
+      AbsTree.makeAbsBox {label = "thread", tree, item}
+    end
 
   (*** TIME ***)
-  fun timeToString t = "time{|" ^
-    (LargeInt.toString (Time.toMicroseconds t)) ^ "us|}"
-  val time = generic (timeToString, Prefs.defaultStyle)
+  fun time (depth, item, path, targs, value) =
+    let
+      val text = LargeInt.toString (Time.toMicroseconds value) ^ "us"
+      val tree = AbsTree.simpleText (item, text, Prefs.defaultStyle)
+    in
+      AbsTree.makeAbsBox {label = "atom", tree, item}
+    end
 
   (*** ARRAY / VECTOR ***)
   val undefinedKid = Common.undefined "Builtin-KID"
 
-  fun genArray (prefix, suffix, emptyLabel, getLength, make)
-               (depth, item, path, targs, value) =
+  fun genArray (prefix, suffix, getLength, sub) : _ type_mapper =
+    fn (depth, item, path, targs, value) =>
     let val length = getLength value
     in
       if length > 0 then
@@ -199,39 +224,37 @@ struct
         val kids = Array.array (width, undefinedKid)
         val tree = Container {desc = item, limit, kids}
       in
-        make (depth - 1, limit, kids, value, 0, argType) ;
+        AbsTree.makeVecArray (fn i => sub (value, i), length,
+                              depth - 1, limit, kids, value, 0, argType) ;
         Concat {prefix, tree, suffix, orient = AbsTree.orientSon}
       end
-      else AbsTree.simpleText (item, emptyLabel, Prefs.vecStyle)
+      else Concat {prefix, tree = Simple {desc = item, rep = hd suffix},
+                   suffix = tl suffix, orient = AbsTree.orientSon}
     end
 
-  val arrayPrefix = [("array{|", Prefs.vecStyle)]
-  val vectorPrefix = [("#{|", Prefs.vecStyle)]
-  val arraySuffix = [("|}", Prefs.vecStyle)]
+  val arrayPrefix = ("array", Prefs.vecStyle)::AbsTree.openAbsBracketL
+  val vectorPrefix = ("vector", Prefs.vecStyle)::AbsTree.openAbsBracketL
+  val arraySuffix = AbsTree.closeAbsBracketL
+  val vectorSuffix = AbsTree.closeAbsBracketL
 
-  val array = (genArray (arrayPrefix, arraySuffix, "array{||}", Array.length,
-                         AbsTree.makeArray) : _ type_mapper)
-
-  val vector = (genArray (vectorPrefix, arraySuffix, "#{||}", Vector.length,
-                          AbsTree.makeVector) : _ type_mapper)
+  val array = genArray (arrayPrefix, arraySuffix, Array.length, Array.sub)
+  val vector = genArray ([("#[", Prefs.vecStyle)], [("]", Prefs.vecStyle)],
+			 Vector.length, Vector.sub)
+  val charArray = genArray (arrayPrefix, arraySuffix, CharArray.length,
+			    Reflect.reflect o CharArray.sub)
+  val word8Array = genArray (arrayPrefix, arraySuffix, Word8Array.length,
+			     Reflect.reflect o Word8Array.sub)
+  val word8Vector = genArray (vectorPrefix, vectorSuffix, Word8Vector.length,
+			      Reflect.reflect o Word8Vector.sub)
 
   (*** PACKAGES ***)
-  val packPrefix = [("package", Prefs.consStyle), ("{|", Prefs.brackStyle)]
-  val packSuffix = [("|}", Prefs.brackStyle)]
-
   fun package (depth, item, path, targs, value) =
     let
-      val (modl, sign) = Reflect.reflectPackage value
-      val item' = AbsTree.Module (sign, modl, AbsTree.Noflag)
-      val sign = (assert Inf.isSig sign ; Inf.asSig sign)
-      val tree = ModuleMapper.module (depth - 1, item', sign, modl)
-      val kid = Concat {prefix = packPrefix,
-                        tree,
-                        suffix = packSuffix,
-                        orient = AbsTree.orientParent }
-      val kids = Array.array (1, kid)
+      val (modl, intf) = Reflect.reflectPackage value
+      val item' = AbsTree.Module (intf, modl, AbsTree.Noflag)
+      val tree = ModuleMapper.module (depth - 1, item', intf, modl)
     in
-      Container {desc = item, limit = false, kids}
+      AbsTree.makeAbsBox {label = "package", tree, item}
     end
 
 end

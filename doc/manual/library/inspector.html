@@ -8,8 +8,8 @@
     structure Inspector : INSPECTOR</PRE>
 
   <P>
-    The <I>Inspector</I> is a tool that allows to interactively
-    display and inspect data structures.
+    The <I>Inspector</I> is an graphical tool that allows to interactively
+    display and inspect data structures and modules.
   </P>
   <P>
     For example, the expression
@@ -18,15 +18,15 @@
   <P>
     tells the Inspector to show the value <TT>x</TT>.
     The Inspector will popup a window and pretty-print the value.
-    Different elements can be assigned different colors to
-    make output more readable.
+    Different elements are assigned different colors to
+    make output more readable. Most stateful entitities are updated
+    automatically in the display when their state changes.
   </P>
 
 <?php section("import", "import"); ?>
 
   <PRE>
-    import structure Inspector from "x-alice:/lib/tools/Inspector"
-    import signature INSPECTOR from "x-alice:/lib/tools/INSPECTOR-sig"</PRE>
+    import structure Inspector from "x-alice:/lib/tools/Inspector"</PRE>
 
   <P>
     In the <A href="../interactive.html">interactive toplevel</A> the
@@ -39,76 +39,16 @@
   <PRE>
     signature INSPECTOR =
     sig
-	type value
+        val inspect : 'a -> unit
+        functor Inspect (signature S structure X : S) : any
 
-	datatype color =
-	    KEEP_COLOR
-	  | SET_COLOR       of {red : int, green : int, blue : int}
-	datatype width =
-	    KEEP_WIDTHS
-	  | REPLACE_WIDTHS  of int vector
-	  | APPEND_WIDTH    of int
-	  | REMOVE_WIDTH    of int
-	datatype depth =
-	    KEEP_DEPTHS
-	  | REPLACE_DEPTHS  of int vector
-	  | APPEND_DEPTH    of int
-	  | REMOVE_DEPTH    of int
-	datatype action =
-	    KEEP_ACTIONS
-	  | REPLACE_ACTIONS of (string * (value -> unit)) vector
-	  | APPEND_ACTION   of string * (value -> unit)
-	  | REMOVE_ACTION   of string
-
-	datatype option =
-	    NUMBER             of color *                 action
-	  | FUNCTION           of color *                 action
-	  | STRING             of color *                 action
-	  | HOLE               of color *                 action
-	  | FUTURE             of color *                 action
-	  | CONSTRUCTOR        of color *                 action
-	  | REFERENCE          of                         action
-	  | FD                 of                         action
-	  | FSET               of                         action
-	  | TUPLE              of color * width * depth * action
-	  | RECORD             of color * width * depth * action
-	  | LIST               of color * width * depth * action
-	  | CONSTRUCTED_VALUE  of         width * depth * action
-	  | VECTOR             of color * width * depth * action
-	  | RECORD_LABEL       of color
-	  (* relation mode *)
-	  | ALIAS_DEFINITION   of color
-	  | ALIAS_REFERENCE    of color
-	  (* ellipses *)
-	  | WIDTH_ARROW        of color
-	  | DEPTH_ARROW        of color
-	  | PARENTHESES        of color
-	  | MISC               of color
-	  | TYPEDINDICATOR     of color
-	  | PROMISE            of color
-	  | PACKAGE            of color
-          | CELL_POLL_INTERVAL of int
-
-	exception ConfigurationError
-
-	val inspect :   'a -> unit
-	val inspectN :  int * 'a -> unit
-	val configure : option vector -> unit
+        val register : ('a -> string) -> unit
     end
   </PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
-    <DT>
-      <TT>type value</TT>
-    </DT>
-    <DD>
-      <P>
-        The abstract value type.
-      </P>
-    </DD>
-
     <DT>
       <TT>inspect <I>x</I></TT>
     </DT>
@@ -118,19 +58,32 @@
     </DD>
 
     <DT>
-      <TT>inspectN (<I>i</I>, <I>x</I>)</TT>
+      <TT>Inspect (signature S = <I>S</I> structure X = <I>X</I>)</TT>
     </DT>
     <DD>
-      <P>displays <I>x</I> in the <I>i</I>-th Inspector window.
+      <P>displays the module <TT><I>X</I></TT>, having signature
+        <TT><I>S</I></TT>.
       </P>
     </DD>
 
     <DT>
-      <TT>configure <I>v</I></TT>
+      <TT>register <I>f</I></TT>
     </DT>
     <DD>
-      <P>configures the options in <I>v</I>. Raises <TT>ConfigurationError</TT>
-         in case something goes wrong.
+      <P>
+        Adds function <TT><I>f</I></TT> as a layout function. The function must
+	have a concrete type <I>tyvarseq</I> <TT><I>t</I> -> string</TT>, where
+	<TT><I>t</I></TT>
+	has to be an abstract type. Further calls to <TT>inspect</TT> use
+	this function to transform values of any type <I>tyseq <TT>t</TT></I>
+	into a tree the inspector can display. Raises <TT>Type</TT> if
+	the type of <TT><I>f</I></TT> is not of the required form.
+	This includes the case that <TT><I>t</I></TT> is not an abstract type,
+	or that <TT><I>f</I></TT> is not fully polymorphic in the type
+	arguments <I>tyseq</I> to <TT><I>t</I></TT>.
+	Note that these rules also preclude <TT><I>f</I></TT> from being
+	<EM>too polymorphic</EM>, i.e. being of type <TT>'a -> string</TT>,
+	because in that case no type name could be derived.
       </P>
     </DD>
   </DL>

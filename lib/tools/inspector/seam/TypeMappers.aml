@@ -1,9 +1,7 @@
-(* import structure Inf     from "x-alice:/lib/rtt/Inf" *)
 import structure UnsafeValue   from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect       from "x-alice:/lib/system/Reflect"
 import structure Name          from "x-alice:/lib/rtt/Name"
 import structure Type          from "x-alice:/lib/rtt/Type"
-import structure Inf           from "x-alice:/lib/rtt/Inf"
 import structure Path          from "x-alice:/lib/rtt/Path"
 import structure PathMap       from "x-alice:/lib/rtt/PathMap"
 import structure Common        from "Common"
@@ -138,25 +136,14 @@ struct
         in
           case Type.inspect (getAlias t') of
             Type.Mu _ => mapValue' (depth, item, Type.unroll typ, value)
-          | Type.Con path => mapConstructor (depth, item, t', path, ts, value)
+          | Type.Con path => mapConstructor (depth, item, typ, path, ts, value)
           | _  => assert false
         end
 
   val mapValue = futureMap mapValue'
 
   (* Mapping MODULES to Abstract Trees. *)
-  fun mapModule' (depth, item, sign, modl) =
-    case Inf.inspect sign of
-       Inf.Top => AbsTree.simpleText (item, Prefs.topL, Prefs.defaultStyle)
-     | Inf.Con _ => AbsTree.simpleText (item, Prefs.topL, Prefs.defaultStyle)
-     | Inf.Arrow _ => Basic.funct item
-     | Inf.Exist (_, _, sign) => mapModule' (depth, item, sign, modl)
-     | Inf.Lambda _ => Basic.functLambda item
-     | Inf.Apply _ => AbsTree.simpleText(item, Prefs.topL, Prefs.defaultStyle)
-     | Inf.Sing m => mapModule' (depth, item, #2 (Inf.asMod m), modl)
-     | Inf.Sig sign => ModuleMapper.module (depth, item, sign, modl)      
-
-  val mapModule = futureMap mapModule'
+  val mapModule = futureMap ModuleMapper.module
 
   (* Map an item. *)
   fun map (depth, item) = 
@@ -181,8 +168,12 @@ struct
   val _ = register Builtin.list
   val _ = register Builtin.atom
   val _ = register Builtin.time
+  val _ = register Builtin.thread
   val _ = register Builtin.array
+  val _ = register Builtin.charArray
+  val _ = register Builtin.word8Array
   val _ = register Builtin.vector
+  val _ = register Builtin.word8Vector
   val _ = register Builtin.package
 
 end

@@ -103,7 +103,8 @@ struct
   fun container (item, kids) = 
     AbsTree.Container {desc = mapItem item, limit = false, kids}
 
-  fun register' typ userMapper =
+
+  fun register2' typ userMapper =
     let
       fun typeMapper (depth, item, path, targs, value) =
         case item of
@@ -114,7 +115,22 @@ struct
     end
 
   type 'a user = int * 'a * Type.typ * Type.typ * Type.typ list -> AbsTree.tree
-  __overload 'a register  : 'a user -> unit = register'
+  __overload 'a register2 : 'a user -> unit = register2'
+
+
+  fun register' typ userPrinter =
+    let
+      fun typeMapper (depth, item, path, targs, value) =
+        case item of
+          AbsTree.Value (t, _, _) =>
+		AbsTree.simpleText (item, userPrinter value, Prefs.userStyle)
+        | _ => assert false
+    in
+      TypeMappers.register' typ typeMapper
+    end
+
+  __overload 'a register  : ('a -> string) -> unit = register'
+
 
   (* Predefined values. *)
   val openParenthesis   = AbsTree.openParenthesis

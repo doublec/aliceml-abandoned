@@ -145,12 +145,19 @@ struct
 	end
 	  
       | ValItem (label, typ, value) =>
-	let
+	(*let
           val tree = AbsTree.simpleText (Decl decl, label, Prefs.labStyle)
           val prefix = if Type.isArrow typ then pFunL else pValL
 	in
 	  Concat {prefix, tree, suffix=[], orient = AbsTree.orientSon}
-	end
+	end*)
+        let
+          val prefix = pVal :: (label, Prefs.labStyle) :: AbsTree.equalL
+          val item = Common.Value (typ, value)
+          val tree = AbsTree.mapValue (depth + 1, item, typ, value)
+        in
+          Concat {prefix, tree, suffix = [], orient = AbsTree.orientSonStrict}
+        end
 
       | TypItem (path, k, _) =>
         let
@@ -194,11 +201,18 @@ struct
         end
 
       | ModItem (label, msig, mvalue) =>
-        let
+        (*let
           val tree = AbsTree.simpleText (Decl decl, label, Prefs.labStyle)
           val prefix = if Inf.isArrow msig then pFctL else pModL
         in
           Concat {prefix, tree, suffix=[], orient = AbsTree.orientSon}
+        end*)
+        let
+          val prefix = pMod :: (label, Prefs.labStyle) :: AbsTree.equalL
+          val item = Common.Module (msig, mvalue)
+          val tree = AbsTree.map (depth + 1, item)
+        in
+          Concat {prefix, tree, suffix = [], orient = AbsTree.orientSonStrict}
         end
 
       | SigItem (l, sign) =>
@@ -212,7 +226,7 @@ struct
       case decl of
 	FixItem _ => NONE
       | ValItem (l, t, value) => 
-          if Type.isArrow t then NONE else
+          (*if Type.isArrow t then NONE else*)
             let
               val prefix = pVal :: (l, Prefs.labStyle) :: AbsTree.equalL
               val item = Common.Value (t, value)
@@ -225,7 +239,7 @@ struct
       | TypItem _ => NONE
 
       | ModItem (l, msig, mvalue) =>
-        if Inf.isArrow msig then NONE else
+        (*if Inf.isArrow msig then NONE else*)
           let
             val prefix = pMod :: (l, Prefs.labStyle) :: AbsTree.equalL
             val item = Common.Module (msig, mvalue)
@@ -290,8 +304,7 @@ struct
 	    NONE => filterItems (modl, xs, acc, n)
 	  | SOME i => filterItems (modl, xs, i :: acc, n + 1)
 
-  (* Maps a module to an abstree. *)
-  fun module (depth, item, sign, module) =
+  fun structur (depth, item, sign, module) =
     let
       val (items, length) = filterItems (module, Inf.items sign, [], 0)
       val widthLimit = !Prefs.widthLimit
@@ -309,10 +322,21 @@ struct
       Array.update (kids, 1, body) ;
       Array.update (kids, 2, labelEnd) ;
       makeDecl (module, depth - 1, elemKids, items, length, limit) ;
-      if length = 0 then AbsTree.simpleText (item, "()", Prefs.structStyle)
+      if length = 0 then AbsTree.simpleText (item, "struct end", Prefs.structStyle)
       else Container {desc = item, limit = false, kids}
     end
 
+  (* Maps a module to an abstree. *)
+  fun module (depth, item, intf, modl) =
+    case Inf.inspect intf of
+       Inf.Top => AbsTree.simpleText (item, Prefs.topL, Prefs.defaultStyle)
+     | Inf.Con _ => AbsTree.simpleText (item, Prefs.topL, Prefs.defaultStyle)
+     | Inf.Arrow _ => AbsTree.simpleText (item, Prefs.fctL, Prefs.defaultStyle)
+     | Inf.Exist (_, _, inf') => module (depth, item, inf', modl)
+     | Inf.Lambda _ => AbsTree.simpleText (item, Prefs.fctLambdaL, Prefs.defaultStyle)
+     | Inf.Apply _ => AbsTree.simpleText(item, Prefs.topL, Prefs.defaultStyle)
+     | Inf.Sing m => module (depth, item, #2 (Inf.asMod m), modl)
+     | Inf.Sig sign => structur (depth, item, sign, modl)
 
 end
 end

@@ -62,7 +62,7 @@ local
     val spinner3 = Gtk.spinButtonNewWithRange (1.0, 500.0, 1.0) ;
     val spinner4 = Gtk.spinButtonNewWithRange (1.0, 500.0, 1.0) ;
     val check1 = Gtk.checkButtonNewWithLabel
-                            "Show identifiers of futures and references"
+                            "Show indices for futures and references"
 
     val _ =
       (hAlign [label1, label2, label3, label4] ;
@@ -217,7 +217,7 @@ local
     val vbox = Gtk.vboxNew (false, 15)      
     val selection = Gtk.frameNew "Selection"
     val hbox1 = Gtk.hboxNew (false, 10)
-    val label1 = Gtk.labelNew "A clic on a record label selects "
+    val label1 = Gtk.labelNew "A click on a record label selects "
     val vbox1 = Gtk.vboxNew (false, 5)
     val therecord = "the record"
     val thefield  = "the field"

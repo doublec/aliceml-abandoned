@@ -229,7 +229,7 @@ fun mapComplex (depth, value, t, _, _) =
                       orient = Inspector.Son}
   end
 
-val _ = Inspector.register mapComplex
+val _ = Inspector.register2 mapComplex
   
 val cx = Complex.create (1.0, ~3.14159)
 val _ = Inspector.inspect cx
