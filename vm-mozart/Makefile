@@ -144,7 +144,7 @@ LIBFUNDAMENTALSOURCES0 = \
 LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
 	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml \
-	OS.aml
+	OS.aml PACKAGE-sig.aml Package.aml PICKLE-sig.aml Pickle.aml
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
@@ -649,8 +649,8 @@ build3/install/stoc/top/%: build3/stoc/top/Linked%
 ## Automatic Dependency Management
 ##
 
-BUILD2ALICESOURCES = $(filter %.aml, $(BUILD2SOURCES))
-BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
+BUILD2ALICESOURCES = $(filter %.aml %.asig, $(BUILD2SOURCES))
+BUILD3ALICESOURCES = $(filter %.aml %.asig, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
