@@ -438,7 +438,7 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_DEBUGGER],
    fi])dnl
 
 dnl Macro:
-dnl   AC_SEAM_ARG_ENABLE_WARNINGS
+dnl   AC_SEAM_ARG_WITH_WARNINGS
 dnl
 dnl Description:
 dnl   Introduce a build option to enable compiler warnings and
@@ -447,14 +447,21 @@ dnl
 dnl Authors:
 dnl   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl   Guido Tack <tack@ps.uni-sb.de>
 dnl
-AC_DEFUN([AC_SEAM_ARG_ENABLE_WARNINGS],
-  [AC_ARG_ENABLE([warnings],
-      AC_HELP_STRING([--enable-warnings],
-        [enable compiler warnings @<:@default=yes@:>@]))
+AC_DEFUN([AC_SEAM_ARG_WITH_WARNINGS],
+  [AC_ARG_WITH([warnings],
+      AC_HELP_STRING([--with-warnings],
+        [enable compiler warnings (no/yes/pedantic) @<:@default=yes@:>@]))
    AC_MSG_CHECKING(whether to enable compiler warnings)
-   if test "${enable_warnings:-yes}" = "yes"; then
+   if test "${with_warnings:-yes}" = "yes"; then
       AC_MSG_RESULT(yes)
+      AC_SEAM_CHECK_CXXFLAGS(-Wundef -Wpointer-arith -Wcast-qual \
+                             -Wcast-align -Wwrite-strings -Wconversion \
+                             -Wredundant-decls -Winline \
+                             -Woverloaded-virtual -Wsign-promo)
+   elif test "${with_warnings:-yes}" = "pedantic"; then
+      AC_MSG_RESULT(pedantic)
       AC_SEAM_CHECK_CXXFLAGS(-Wall -W -Wundef -Wpointer-arith -Wcast-qual \
                              -Wcast-align -Wwrite-strings -Wconversion \
                              -Wredundant-decls -Winline \
