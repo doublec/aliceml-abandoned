@@ -157,8 +157,10 @@ void Interpreter::CreateDefaultEnv() {
   CreateId(GlobalAlloc("show"), OP_SHOW);
   CreateId(GlobalAlloc("time"), OP_TIME);
   CreateId(GlobalAlloc("gc"), OP_GC);
+  CreateId(GlobalAlloc("gengc"), OP_GENGC);
   CreateId(GlobalAlloc("show_list"), OP_SHOWLIST);
   CreateId(GlobalAlloc("exit"), OP_EXIT);
+  CreateId(GlobalAlloc("memstat"), OP_MEMSTAT);
 }
 
 inline void Interpreter::InterpretDeclArr(Block *instr) {
@@ -169,6 +171,9 @@ inline void Interpreter::InterpretDeclArr(Block *instr) {
   }
   if (Store::NeedGC()) {
     Store::DoGC(root);
+#if defined(STORE_DEBUG)
+    Store::MemStat();
+#endif
   }
 }
 
@@ -452,11 +457,19 @@ inline char *Interpreter::InterpretOp(Block *p) {
     
     Store::ForceGCGen(gen);
     Store::DoGC(root);
+    Store::MemStat();
 #else
     PopValue();
     if (Store::NeedGC()) {
-      // Store::DoGC(root);
+      Store::DoGC(root);
     }
+#endif
+    break;
+  }
+  case OP_GENGC: {
+    Store::DoGC(root);
+#if defined(STORE_DEBUG) || defined(STORE_PROFILE)
+    Store::MemStat();
 #endif
     break;
   }
@@ -492,6 +505,12 @@ inline char *Interpreter::InterpretOp(Block *p) {
   }
   case OP_EXIT: {
     exit(0);
+    break;
+  }
+  case OP_MEMSTAT: {
+#if defined(STORE_DEBUG) || defined(STORE_PROFILE)
+    Store::MemStat();
+#endif
     break;
   }
   default:
@@ -582,6 +601,9 @@ char *Interpreter::Interpret(word tree) {
   
 	if (Store::NeedGC()) {
 	  Store::DoGC(root);
+#if defined(STORE_DEBUG)
+	  Store::MemStat();
+#endif
 	}
 	break;
       }

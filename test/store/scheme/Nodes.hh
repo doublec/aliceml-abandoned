@@ -76,8 +76,10 @@ typedef enum {
   OP_SHOW,
   OP_TIME,
   OP_GC,
+  OP_GENGC,
   OP_SHOWLIST,
-  OP_EXIT
+  OP_EXIT,
+  OP_MEMSTAT
 } PrimType;
 
 // Global Helper Nodes
