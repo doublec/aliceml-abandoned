@@ -2847,10 +2847,9 @@ functor MakeAbstractionPhase(
 	   end
 
 
-    and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
+    and trOpenImpVal (E,i) (vid', (_,stamp,is), acc) =
 	let
 	    val name   = VId.toString vid'
-	    val stamp  = Stamp.new()
 	    val valid' = O.Id(i, stamp, Name.ExId name)
 	    val _      = insertDisjointVal(E, vid', (i,stamp,is))
 			 handle CollisionVal _ =>
@@ -2970,11 +2969,10 @@ functor MakeAbstractionPhase(
 		val  E'''        = case lookupTy(E', tycon')
 				    of SOME(_,_,E''') => E'''
 				     | NONE => error(i',E.DatItemUnbound tycon')
-		val  _           = unionDisjoint(E'',E''')
+		val  acc2'       = foldiVals (trOpenImpVal (E'',i)) acc2 E'''
+		val  _           = unionDisjoint(E,E'')
 	   in
-		trDatItemo_rhs' (E,E', imp'::acc1,
-				       foldiVals (trOpenImpVal (E,i)) acc2 E'')
-				datitemo
+		trDatItemo_rhs' (E,E', imp'::acc1, acc2') datitemo
 	   end
 
 	 | SOME(DESCDatItem(_, tyvarseq, tycon as TyCon(_,tycon'), conitem,

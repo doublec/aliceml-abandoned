@@ -84,7 +84,8 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		if Type.isEmptyRow r then () else
 		let
 		    val (a,ts) = Type.headRow r
-		    val  x     = Stamp.new()
+		    val  z     = Stamp.new()
+		    val  z'    = Stamp.new()
 		    val  name  = Label.toString a
 		    val  name' = "'" ^ name
 		    val  vid   = VId.fromString name
@@ -97,8 +98,8 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		     * by following members???
 		     *)
 		in
-		    insertVal(E, vid', (I,x,V)) ;
-		    insertVal(E, vid, (I,x,is)) ;
+		    insertVal(E, vid', (I,z',V)) ;
+		    insertVal(E, vid, (I,z,is)) ;
 		    loop(Type.tailRow r)
 		end
 	in
