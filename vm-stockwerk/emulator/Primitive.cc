@@ -135,9 +135,11 @@ word Primitive::MakeFunction(const char *name, Primitive::function function,
   PrimitiveInterpreter *interpreter =
     new PrimitiveInterpreter(name, function, arity, sited);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
+  TagVal *tagVal = TagVal::New(0, 1);
+  tagVal->Init(0, String::New(name)->ToWord());
   Transform *transform =
     Transform::New(Store::DirectWordToChunk(aliceTransformName),
-		   String::New(name)->ToWord());
+		   tagVal->ToWord());
   concreteCode->Init(0, transform->ToWord());
   return concreteCode->ToWord();
 }
