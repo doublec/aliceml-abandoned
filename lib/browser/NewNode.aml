@@ -93,7 +93,7 @@ struct
 				     else getValue(getDesc(x)) = va 
 		 in 
 		     (case List.find f relman of   
-		      NONE 
+		      NONE (* erstmalige Darstellung des Wertes *) 
 		      => let val node = createRelNode (desc,Empty,p,i,d,
 						       str^" as ",
 						       relman,setGroup)
@@ -108,50 +108,46 @@ struct
 						List.append([node],actrelman)))
 			     ; node )
 			 end     
-		    | SOME n => let val rep = ( case n of 
-					        RelNode(rr) => #rep(rr)
-					      | _ => "_")
-				    val str = iterTake rep	
-				    val m = incrCounter n 
-				    val node = 
-					if isSimple n
-					    then createUsualGraph (va,t,p,i,d)
-					else 
-					let val ri_rel = 
-					    case ReinspectedRelDict.lookup
-						(ri_reldict,ind) of SOME x => x
-					                          | NONE => []
-					in case List.find f ri_rel 
-					   of NONE 
-					      => createRelRefNode (desc,p,i,d,
-								   str,m,
-								   setGroup)
-					    | SOME no => if getDesc(no) = desc
-					       andalso getParent(no) = p
-					       andalso getIndex(no) = i
-					       andalso getDepth(no) = d
-					       andalso String.equal(getRep(no),
-								    rep)
-							     then no
-							 else createRelRefNode
-							     (desc,p,i,d,str,m,
-							      setGroup)
-					end
-				    val actrelman = case 
-					RelManDictionary.lookup(reldict,ind)
-					of SOME x => x
-				      | NONE => []
-				    val part = List.partition (fn x => x = n)
-					                      actrelman
-				    val restlist = #2(part)
-				in (RelManDictionary.update(reldict,
-					         (ind,
-						  List.append([m],restlist)))
-                                    ; node)
-				end)
+		    | SOME n (* Wert bereits dargestellt - Referenzbildung *)
+		      => let val rep = ( case n of RelNode(rr) => #rep(rr)
+		                                 | _ => "_")
+			     val str = iterTake rep	
+			     val m = incrCounter n 
+			     val node = 
+				 if isSimple (getContent(n))
+				     then createUsualGraph (va,t,p,i,d)
+				 else 
+				     let val ri_rel = 
+					 case ReinspectedRelDict.lookup
+					     (ri_reldict,ind) of SOME x => x
+					                       | NONE => []
+				     in case List.find f ri_rel 
+					 of NONE => createRelRefNode (desc,p,i,
+								      d,str,m,
+								      setGroup)
+				          | SOME no => if getDesc(no) = desc
+					         andalso getParent(no) = p
+						 andalso getIndex(no) = i
+						 andalso getDepth(no) = d
+							   then no
+						       else createRelRefNode
+							   (desc,p,i,d,str,m,
+							    setGroup)
+				     end
+			     val actrelman = case 
+				 RelManDictionary.lookup(reldict,ind) 
+				 of SOME x => x
+			       | NONE => []
+			     val part = List.partition(fn x => x = n) actrelman
+			     val restlist = #2(part)
+			 in (RelManDictionary.update(reldict,
+						     (ind,
+						    List.append([m],restlist)))
+			     ; node)
+			 end)
 		 end
 	else createUsualGraph (va,t,p,i,d)
-
+	    
     (* createUsualGraph *)
     and createUsualGraph (va,t,p,i,d) = 
 	(case Type.inspect t of
@@ -163,7 +159,7 @@ struct
 				    p,i,d,setGroup)
 	      else createSimple (createValue(va,t,NO_ACTIONS),p,i,d,"fn",
 				 DEFAULT,setGroup)
-         | Type.All(var,typ) 
+	 | Type.All(var,typ) 
 	   => createGraph (va,typ,p,i,d)
 	 | Type.Exist(var,typ) 
 	   => createGraph (va,typ,p,i,d)

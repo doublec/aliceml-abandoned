@@ -16,6 +16,7 @@ signature TEST =
 sig
     type t
     val test: string
+    val foo: string -> string
     signature S
     structure X: SIMPLE
 end;
@@ -24,6 +25,7 @@ structure Test =
 struct
     type t = string
     val test = "hi"
+    fun foo str = str^"@"
     signature S = sig
 		      val x : string
 		  end

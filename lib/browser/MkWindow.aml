@@ -96,7 +96,6 @@ struct
 	       	  ;Gtk.widgetShowAll(dialog))
 	end)
 			   
-
     fun okHandler(w,
 		  width_s,
 		  depth_s,
@@ -116,8 +115,8 @@ struct
 		    ;Gtk.widgetDestroy(w)
 		    ;if 
 		    Gtk.toggleButtonGetActive(treemode_button) = 1
-			 then (RelManDictionary.dumpAll(Dictionaries.reldict);
-			       Settings.relnumber := 0)
+			 then (RelManDictionary.dumpAll(Dictionaries.reldict)
+			      ; Settings.relnumber := 0)
 		     else ()))
 
     (* Preferences Window Handler *)

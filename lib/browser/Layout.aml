@@ -125,7 +125,8 @@ struct
 			     ; (get_xdim(n),get_ydim(n),0) )  
 	  | RelNode(r) 
 	    => (if !(#status(r)) = DAZZLED
-		    then let val xdim = if !(#counter(r)) = 1 
+		    then let val xdim = if isSimple (!(#content(r)))
+			                orelse !(#counter(r)) = 1 
 					    then f (!(#content(r))) 
 					else String.length(#rep(r)) + 
 					     f (!(#content(r)))
