@@ -49,7 +49,7 @@ structure PrimPickle :> PRIM_PICKLE =
 		(outputByte (q, Word8.fromLargeInt (i mod 0x80 + 0x80));
 		 outputUInt (q, i div 0x80))
 	    else if i >= 0 then outputByte (q, Word8.fromLargeInt i)
-	    else raise Crash.Crash "Pickle.outputUInt"
+	    else raise Crash.Crash "PrimPickle.outputUInt"
 
 	val maxDataLabel = 0xFEC: int
 

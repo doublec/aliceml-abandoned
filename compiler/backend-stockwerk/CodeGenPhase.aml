@@ -29,7 +29,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | litToInt (WordLit w) = LargeWord.toLargeInt w
 	  | litToInt (CharLit c) = LargeInt.fromInt (Char.ord c)
 	  | litToInt (StringLit _ | RealLit _) =
-	    raise Crash.Crash "BackendStockwerk.litToInt"
+	    raise Crash.Crash "CodeGenPhase.litToInt"
 
 	fun translateId (id, env) = lookup (env, id)
 
@@ -178,7 +178,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		  | ref _ => instr
 	    end
 	  | translateBody (nil, _) =
-	    raise Crash.Crash "BackendStockwerk.translateBody"
+	    raise Crash.Crash "CodeGenPhase.translateBody"
 	and translateDec (ValDec (_, IdDef id, exp), instr, env) =
 	    translateExp (exp, declare (env, id), instr, env)
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
@@ -234,11 +234,11 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			   EndHandleStm (_, _) | TestStm (_, _, _, _) |
 			   SharedStm (_, _, _) | ReturnStm (_, _) |
 			   IndirectStm (_, _) | ExportStm (_, _)), _, _) =
-	    raise Crash.Crash "BackendStockwerk.translateDec"
+	    raise Crash.Crash "CodeGenPhase.translateDec"
 	and translateStm ((ValDec (_, _, _) | RecDec (_, _) |
 			   RefAppDec (_, _, _) |
 			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
-	    raise Crash.Crash "BackendStockwerk.translateStm"
+	    raise Crash.Crash "CodeGenPhase.translateStm"
 	  | translateStm (RaiseStm (_, id), env) =
 	    O.Raise (lookup (env, id))
 	  | translateStm (ReraiseStm (_, id), env) = (*--** do better *)
