@@ -15,6 +15,7 @@ import
    Application(getArgs exit)
    System(showError show)
    Property(get put)
+   URL(make resolve toString)
    Linker(link)
    PrimitiveTable(values)
    Scheduler(object)
