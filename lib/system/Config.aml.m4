@@ -41,12 +41,35 @@ struct
     val revision = 1
     val version = {major, minor, revision}
 
+    val majors = #["Stockhausen", "Kraftwerk"]
+
+    val allMinors = #[
+	    (* 0.X *) #[],
+	    (* 1.X *) #["Debut", "Eval Yourself"]
+	]
+    val minors = Vector.sub (allMinors, major) handle Subscript => #[]
+
+    val allRevisions = #[
+	    (* 0.X *) #[],
+	    (* 1.X *) #[
+		(* 1.0.X *) #["", "Lord of the Lib"],
+		(* 1.1.X *) #[""]
+			]
+	]
+    val revisions = Vector.sub (Vector.sub (allRevisions, major), minor)
+		    handle Subscript => #[]
+
+    fun name (s, vs, n) =
+	"'" ^ Vector.sub (vs, n) ^ "' " ^ s
+	handle Subscript => s ^ " " ^ Int.toString (n+1)
+
     val codename =
 	case vm of
 	    "mozart" => "Stockhausen Operette 3 Ultrarare Mix"
-	  | "seam" => "Kraftwerk Album " ^ Int.toString (minor + 1) ^
-		      (if revision = 0 then ""
-		       else " Remix " ^ Int.toString revision)
+	  | "seam" =>
+		"Kraftwerk " ^ name ("Album", minors, minor) ^
+		(if revision = 0 then "" else
+		 " " ^ name ("Remix", revisions, revision))
 	  | _ => "Alien Invaders Breakz Mix"
 
     val buildDate = valOf (Date.fromISO ("substr(esyscmd(date "-I"), 0, 10)"))
