@@ -142,6 +142,7 @@ DEFINE1(Vector_fromList) {
     vector->Init(i++, tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
   }
+  Assert(i == length);
   RETURN(vector->ToWord());
 } END
 
