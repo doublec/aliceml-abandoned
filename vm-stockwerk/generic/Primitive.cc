@@ -164,12 +164,11 @@ word Primitive::MakeFunction(const char *name, Interpreter::function function,
   PrimitiveInterpreter *interpreter =
     new PrimitiveInterpreter(name, function, arity, sited);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
-  //--** use a more direct representation and avoid Alice dependency:
-  TagVal *tagVal = TagVal::New(0, 1);
-  tagVal->Init(0, String::New(name)->ToWord());
+  //--** avoid Alice dependency:
   word transformName = AliceLanguageLayer::TransformNames::primitiveFunction;
   Transform *transform =
-    Transform::New(Store::DirectWordToChunk(transformName), tagVal->ToWord());
+    Transform::New(Store::DirectWordToChunk(transformName),
+		   String::New(name)->ToWord());
   concreteCode->Init(0, transform->ToWord());
   return concreteCode->ToWord();
 }
