@@ -6,4 +6,5 @@ Group is
 	MkAnalyzer.aml
 
 	MAKE_DEPEND-sig.aml
-	SMLToMozartMakeDepend.aml
+	MkMakeDepend.aml
+	MakeDepend.aml
