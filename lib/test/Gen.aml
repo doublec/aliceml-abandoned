@@ -58,7 +58,7 @@ struct
 	    cond' (gen n, 1)
 	end
 
-    val cardinaln	= Random.int
+    val cardinal	= Random.int
     fun bool n		= oneOf [const true, const false] n
     fun char n		= Char.chr (cardinal (Char.maxOrd + 1))
     fun string n	= String.tabulate (Int.abs n, char) 
