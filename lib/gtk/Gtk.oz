@@ -12,7 +12,7 @@
 
 functor
 import
-   GtkCoreComponent('GtkCore$' : GtkCore) at 'GtkCore'
+   GtkCoreComponent('GtkCoreOz$' : GtkCore) at 'GtkCoreOz' %% This is the Oz-Part only
    Native at 'x-oz://system/GTK.so{native}'
 export
    'Gtk$' : GTK
