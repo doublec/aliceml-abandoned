@@ -152,31 +152,27 @@ public:
 
 // Interpreter Helper
 inline void PushState(TaskStack *taskStack,
-		      Interpreter *interpreter,
 		      TagVal *pc,
 		      Closure *closure,
 		      Environment *localEnv,
 		      TagVal *formalArgs) {
-  taskStack->PushFrame(
-		       AbstractCodeFrame::New(interpreter,
-					      pc->ToWord(),
-					      closure,
-					      localEnv,
-					      formalArgs->ToWord())->ToWord());
+  AbstractCodeFrame *frame =
+    AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
+			   closure, localEnv, formalArgs->ToWord());
+  taskStack->PushFrame(frame->ToWord());
 }
 
 inline void PushState(TaskStack *taskStack,
-		      Interpreter *interpreter,
 		      TagVal *pc,
 		      Closure *globalEnv,
 		      Environment *localEnv) {
   //--** formalArgs should only be constructed once
   TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
   formalArgs->Init(0, Vector::New(0)->ToWord());
-  PushState(taskStack, interpreter, pc, globalEnv, localEnv, formalArgs);
+  PushState(taskStack, pc, globalEnv, localEnv, formalArgs);
 }
 #define SUSPEND(w) {						\
-  PushState(taskStack, this, pc, globalEnv, localEnv);		\
+  PushState(taskStack, pc, globalEnv, localEnv);		\
   Scheduler::currentData = w;                                   \
   return Interpreter::REQUEST;	         	       		\
 }
@@ -369,7 +365,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
 	  TagVal *formalArgs = TagVal::New(Pickle::OneArg, 1);
 	  formalArgs->Init(0, idDefInstr->Sel(0));
-	  PushState(taskStack, this, TagVal::FromWord(idDefInstr->Sel(1)),
+	  PushState(taskStack, TagVal::FromWord(idDefInstr->Sel(1)),
 		    globalEnv, localEnv, formalArgs);
 	}
 	// Push a call frame for the primitive
@@ -398,8 +394,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
 	  // Save our state for return
 	  Tuple *idDefArgsInstr = Tuple::FromWord(idDefArgsInstrOpt->Sel(0));
-	  PushState(taskStack, this,
-		    TagVal::FromWord(idDefArgsInstr->Sel(1)),
+	  PushState(taskStack, TagVal::FromWord(idDefArgsInstr->Sel(1)),
 		    globalEnv, localEnv,
 		    TagVal::FromWord(idDefArgsInstr->Sel(0)));
 	}
@@ -433,7 +428,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	case Pickle::AppConst:
 	  return taskStack->PushCall(pc->Sel(0));
 	default:
-	  Assert(0);
+	  Error("AbstractCodeInterpreter: inconsistent (AppVar/AppConst)")
 	}
       }
       break;
@@ -738,12 +733,12 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
       }
       break;
     default:
-      Assert(0);
-      return Interpreter::CONTINUE;
+      Error("AbstractCodeInterpreter: unknown instruction");
     }
   }
-  Assert(0);
-  return Interpreter::CONTINUE;
+  PushState(taskStack, pc, globalEnv, localEnv);
+  Scheduler::currentArgs = Interpreter::EmptyArg();
+  return Interpreter::PREEMPT;
 }
 
 Interpreter::Result
