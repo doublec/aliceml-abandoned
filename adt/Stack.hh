@@ -134,7 +134,7 @@ public:
     newmax = ((newmax <= max) ? newmax : max);
 
     for (u_int i = top; i <= newmax; i++) {
-      InitArg(i, Store::IntToWord(0));
+      a->InitArg(i, Store::IntToWord(0));
     }
     HeaderOp::EncodeSize(a, newmax);
   }
