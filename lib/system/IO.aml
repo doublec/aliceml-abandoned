@@ -1,0 +1,19 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeIO from "UnsafeIO"
+import signature IO       from "IO-sig"
+
+structure IO :> IO =
+    struct
+	exception Io = UnsafeIO.Io
+    end
