@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -102,16 +102,128 @@ local
 	end
     end
     *)
+
+    signature LABEL' =
+    sig
+	type lab = Label.lab
+
+	val fromString :	string -> lab
+    end
+
+    signature PATH' =
+    sig
+	type path = Path.path
+
+	val invent :		unit    -> path
+	val pervasive :		string  -> path
+	val fromLab :		Label.t -> path
+	val fromString :	string  -> path
+    end
+
+    signature TYPE' =
+    sig
+	type var = Type.var
+	type typ = Type.typ
+	type row = Type.row
+	type kind = Type.kind
+
+	val starKind :		unit -> kind
+	val extKind :		unit -> kind
+	val singKind :		typ -> kind
+	val arrowKind :		kind * kind -> kind
+
+	val unknown :		kind -> typ
+	val var :		var -> typ
+	val con :		Path.t * kind -> typ
+	val arrow :		typ * typ -> typ
+	val tuple :		typ vector -> typ
+	val prod :		row -> typ
+	val sum :		row -> typ
+	val all :		var * typ -> typ
+	val exist :		var * typ -> typ
+	val lambda :		var * typ -> typ
+	val apply :		typ * typ -> typ
+
+	val newVar :		kind -> var
+	val kind :		typ -> kind
+
+	val unknownRow :	unit -> row
+	val emptyRow :		unit -> row
+	val extendRow :		Label.t * typ * row -> row
+
+	val fix :		(typ * typ) vector -> unit
+    end
+
+    signature FIXITY' =
+    sig
+	type fix = Fixity.fix
+	type assoc = Fixity.assoc
+
+	val LEFT :		assoc
+	val RIGHT :		assoc
+	val NEITHER :		assoc
+	val NONFIX :		fix
+	val PREFIX :		int -> fix
+	val POSTFIX :		int -> fix
+	val INFIX :		int * assoc -> fix
+    end
+
+    signature INF' =
+    sig
+	type mod = Inf.mod
+	type inf = Inf.inf
+	type sign = Inf.sign
+	type kind = Inf.kind
+	type rea = Inf.rea
+
+	val emptySig :		unit -> sign
+	val extendFix :		sign * Label.t * Fixity.t -> unit
+	val extendVal :		sign * Label.t * Type.t -> unit
+	val extendTyp :		sign * Path.t * Type.kind -> unit
+	val extendMod :		sign * Path.t * inf -> unit
+	val extendInf :		sign * Path.t * kind -> unit
+
+	val lookupMod :		sign * Label.t -> inf
+	val lookupTyp' :	sign * Label.t -> Type.t
+	val lookupInf' :	sign * Label.t -> inf
+
+	val mod :		Path.t * inf -> mod
+	val top :		unit -> inf
+	val con :		Path.t * kind -> inf
+	val sign :		sign -> inf
+	val arrow :		Path.t * inf * inf -> inf
+	val sing :		mod -> inf
+	val lambda :		Path.t * inf * inf -> inf
+	val apply :		inf * mod -> inf
+
+	val asSig :		inf -> sign
+	val asArrow :		inf -> Path.t * inf * inf
+
+	val groundKind :	unit -> kind
+	val depKind :		Path.t * inf * kind -> kind
+	val singKind :		inf -> kind
+
+	val kind :		inf -> kind
+	val instance :		Path.t * inf -> inf * rea
+	val match :		inf * inf -> rea
+	val infimum :		inf * inf -> inf
+
+	type mismatch
+	exception Mismatch of mismatch
+    end
+
+    signature PERVASIVE_TYPE' =
+    sig
+	val lookup :		string -> Type.t
+    end
 in
-
-structure __pervasive =
-struct
-    structure Label         = Label
-    structure Path          = Path
-    structure Fixity        = Fixity
-    structure Type          = Type
-    structure Inf           = Inf
-    structure PervasiveType = PervasiveType
-end
-
+    structure RTT =
+    struct
+	structure Label         = Label :> LABEL'
+	structure Path          = Path :> PATH'
+	structure Fixity        = Fixity :> FIXITY'
+	structure Type          = Type :> TYPE'
+	structure Inf           = Inf :> INF'
+	structure PervasiveType = PervasiveType :> PERVASIVE_TYPE'
+    end
 end
