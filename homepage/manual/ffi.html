@@ -16,6 +16,11 @@
 </P>
 
 <?php pslab_header2("A small Example"); ?>
+
+<P>Suppose we want to add a native module <TT>System</TT> providing the
+   <TT>getEnv</TT> function to our system.
+   In order to illustrate the foreign function interface, we will stepwise
+   examine the sample module implementation.
 <CENTER>
 <PRE>
 #include "SEAM.hh"                                              //  1
@@ -46,8 +51,7 @@ word Interface() {                                              // 11
 <HR>
 <CENTER>A sample <TT>System</TT> module</CENTER>
 <P>
-  In order to illustrate the foreign function interface, we will stepwise
-  examine a small sample module named <TT>System</TT>. To realize this,
+  To implement the native module <TT>System</TT>,
   we need the following three steps:
 </P>
 <OL>
@@ -62,7 +66,7 @@ include <TT>SEAM.hh</TT> which contains everthing needed (line 1).
 Thereafter, use <TT>DEFINEn</TT>/<TT>END</TT> pairs to define module functions
 (lines 1 and 9), with <TT>n</TT> denoting the number of arguments.
 Use pre-defined <TT>DECLARE_</TT> macros to convert the arguments from the
-tagged representation into the untagged represenation as shown in line 4.
+tagged representation into the untagged representation as shown in line 4.
 Use <TT>RAISE(value)</TT> to abnormally terminate execution with an exception
 or <TT>RETURN(value)</TT> to terminate normally returning value <TT>value</TT>.
 </P>
@@ -122,7 +126,7 @@ word getenvClosure = Tuple::FromWordDirect(interfaceValue)->Sel(0);
 <CENTER>Sample linking code for module <TT>System</TT></CENTER>
 <P>
   The code above illustrates how you would link the sample module and access
-  the getenv closure. This closure could now simple be invoked via
+  the getenv closure. This closure could now simply be invoked via
   <TT>Scheduler::PushCall</TT>.
 </P>
 <?php pslab_header2("Specification of the C Interface"); ?>
@@ -151,7 +155,8 @@ word getenvClosure = Tuple::FromWordDirect(interfaceValue)->Sel(0);
 <P>
   The number of arguments that can be passed to a C function directly,
   that is without constructing a container, is limited by the size of the
-  argument register bank whose size is implementation dependent.
+  argument register bank whose size is implementation dependent. For example,
+  the current implementation provides 16 argument registers.
 </P>
 <P>
   The arguments are of type <TT>word</TT> and referred
