@@ -94,6 +94,8 @@ import structure Word8Array	from "Word8Array"
 import signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
 import structure CharArraySlice	from "CharArraySlice"
 import structure Word8ArraySlice from "Word8ArraySlice"
+import signature BYTE		from "BYTE-sig"
+import structure Byte		from "Byte"
 
 import signature TIME		from "TIME-sig"
 import structure Time		from "Time"
@@ -198,6 +200,8 @@ structure Word8Array	= Word8Array
 signature MONO_ARRAY_SLICE = MONO_ARRAY_SLICE
 structure CharArraySlice  = CharArraySlice
 structure Word8ArraySlice = Word8ArraySlice
+signature BYTE		= BYTE
+structure Byte		= Byte
 
 signature TIME		= TIME
 structure Time		= Time
