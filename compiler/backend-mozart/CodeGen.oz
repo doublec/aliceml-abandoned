@@ -358,7 +358,12 @@ define
    fun {TranslateExp Exp Reg VTl State}
       case Exp of 'NewExp'(Region 'InId') then
 	 vCallBuiltin(_ 'Name.new' [Reg] {TranslateRegion Region State} VTl)
-      [] 'NewExp'(Region 'ExId'(PrintName)) then VHd VInter ArgReg in
+      [] 'NewExp'(Region 'ExId'(PrintName0))
+      then PrintName VHd VInter ArgReg in
+	 PrintName = case {Atom.toString PrintName0} of &'|Rest then
+			{String.toAtom Rest}
+		     else PrintName0
+		     end
 	 {State.cs newReg(?ArgReg)}
 	 VHd = vEquateConstant(_ PrintName ArgReg VInter)
 	 VInter = vCallBuiltin(_ 'Name.newNamed' [ArgReg Reg]
