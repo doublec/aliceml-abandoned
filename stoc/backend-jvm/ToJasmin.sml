@@ -360,20 +360,17 @@ structure ToJasmin =
 
 		(* fuses two stamps. Called on aload/astore pairs *)
 		fun fuse (x,u) =
-		    let
-			val (a,b) = if u=parm1Stamp orelse u=parm2Stamp orelse u=parm3Stamp orelse
-			    u=parm4Stamp orelse u=parm5Stamp
-					then (u,x) else (x,u)
-		    in
-			if !VERBOSE >= 2 then
-			    print ("fuse "^Stamp.toString x^" with "^Stamp.toString u^
-				   (if x=a then "\n" else " (parameter swapped)\n"))
-			    else ();
+		    if u=parm1Stamp orelse u=parm2Stamp orelse u=parm3Stamp orelse
+			u=parm4Stamp orelse u=parm5Stamp
+			then false
+		    else
 			if lookup (!defines, u)<2 then
-			    (StampHash.insert(!fusedwith, b, getOrigin a);
-			     true)
-			 else false
-		    end
+			    (StampHash.insert(!fusedwith, u, getOrigin x);
+			     if !VERBOSE >= 2 then
+				 print ("fuse "^Stamp.toString x^" with "^Stamp.toString u^".\n")
+			     else ();
+				 true)
+			else false
 
 		(* How often is a stamp written to? Most stamps are written only
 		 once. However, there are a few ones which are written twice. Those must

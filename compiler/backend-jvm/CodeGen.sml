@@ -27,7 +27,8 @@ structure CodeGen =
 
 	    (* mark a variable as free *)
 	    fun markfree (free, id' as Id (_,stamp', _), curFun, dbg) =
-		StampSet.insert (free, stamp')
+		(StampSet.insert (free, stamp');
+		 print ("markfree ("^dbg^"): "^Stamp.toString stamp'^"\n"))
 
 	    (* mark a variable as bound *)
 	    fun markbound (free, id' as Id (_,stamp', _), curFun, dbg) =
@@ -56,10 +57,10 @@ structure CodeGen =
 		(markfree (free, id', curFun, "AdjExp");
 		 markfree (free, id'', curFun, "AdjExp2"))
 	      | freeVarsExp (AppExp(_,Id (_, stamp',_), idargs'), free, curFun) =
-		(markfree (free, Id (dummyPos, (* XXX Pfeffer.Hase *)
-				     Lambda.getClassStamp
-				     (stamp', Lambda.argSize idargs'),
-				     InId),
+		(markfree (free, Lambda.getId
+			   (Lambda.getClassStamp
+			    (Lambda.getLambda stamp',
+			     Lambda.argSize idargs')),
 			   curFun, "AppExp");
 		 argApp (markfree, idargs', free, curFun, "AppExp2"))
 	      | freeVarsExp (ConExp(_, id', _), free, curFun) =
@@ -525,6 +526,7 @@ structure CodeGen =
 					 Dup ::
 					 storeCode (stamp', curFun, curCls) ::
 					 Goto retry ::
+					 Label notByNeed ::
 					 decListCode (body'', curFun, curCls),
 					 number::switchlist,
 					 lab :: labelList,
@@ -833,11 +835,11 @@ structure CodeGen =
 		    (decListCode (body'', curFun, curCls)) ::
 		    [Label danach]
 	    in
-		if !OPTIMIZE >=3 then
+		(* if !OPTIMIZE >=3 then *) (* xxx *)
 		    case checkForSwitch (test', body'', 0) of
 			(true, _, _) => generateSwitch (Label.new ())
 		      | _ => normalTest ()
-		else normalTest ()
+	    (* else normalTest ()*)
 	    end
 
 	  | decCode (SharedStm(_,body',da as ref schonda), curFun, curCls) =
