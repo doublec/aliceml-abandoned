@@ -21,7 +21,7 @@ import
    PrimitiveTable(importOzModule)
    Scheduler(object)
 require
-   Helper(construct: Construct)
+   Helper(construct: Construct pushCall: PushCall)
 export
    Link
 define
@@ -141,8 +141,7 @@ define
 		  Key2 = {URL.toAtom {URL.resolve Key Imports.I.2}}
 		  Modules.I = ModuleTable.Key2.2
 	       end
-	       continue(arg(Modules)
-			{BodyClosure.1.1.pushCall BodyClosure Rest})
+	       {PushCall arg(Modules) BodyClosure Rest}
 	    end
 	 end
       handle:
