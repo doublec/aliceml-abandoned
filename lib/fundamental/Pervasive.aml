@@ -17,8 +17,8 @@
     structure __pervasive :
     sig
 	(* to encode datatypes: *)
-	type zero
-	type 'a succ
+	type 'a ref
+	type 'a strict
 	type ('a,'b) conarrow
 
 	(* to enable derived forms: *)
@@ -172,9 +172,9 @@ structure __pervasive =
 struct
     open __pervasive
 
-    __primitive type zero		= "zero"
-    __primitive type 'a succ		= "succ"
-    __primitive type ('a,'b) conarrow	= "conarrow"
+    __primitive type 'a ref      = "ref"
+    __primitive type 'a strict   = "strict"
+    __primitive type 'a conarrow = "conarrow"
 end
 
 
@@ -188,6 +188,7 @@ structure __pervasive =
 struct
     open __pervasive
 
+    __primitive __reftype 'a ref = ref of 'a
     __primitive datatype exn = "exn"
     datatype 'a list = nil | op:: of 'a * 'a list
 
@@ -200,11 +201,10 @@ struct
     structure Char	= struct __primitive eqtype char	= "char"    end
     structure WideChar	= struct               type char	= Char.char end
     structure String	= struct __primitive eqtype string	= "string"  end
-    structure WideString= struct               type string	= String.string
+    structure WideString = struct              type string	= String.string
 									    end
     structure Vector	= struct __primitive eqtype 'a vector	= "vector"  end
-    structure Array	= struct __primitive __eqeqtype 'a array= "array"   end
-    structure Ref	= struct __primitive __reftype 'a ref	= ref of 'a end
+    structure Array	= struct __primitive __eqeqtype 'a array = "array"  end
 end
 
 end (* local *)

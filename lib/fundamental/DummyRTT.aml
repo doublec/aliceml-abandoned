@@ -18,10 +18,9 @@ struct
     local
 	structure __pervasive =
 	struct
-	    __primitive type zero		= "zero"
-	    __primitive type 'a succ		= "succ"
-	    __primitive type ('a,'b) conarrow	= "conarrow"
-	    __primitive datatype exn		= "exn"
+	    __primitive type 'a strict   = "strict"
+	    __primitive type 'a conarrow = "conarrow"
+	    __primitive datatype exn     = "exn"
 	end
     in
 	structure Inf =
