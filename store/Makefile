@@ -19,6 +19,7 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 SRCS = WeakDictionary.cc \
+       Memory.cc \
        Store.cc
 OBJS = $(SRCS:%.cc=%.o)
 
