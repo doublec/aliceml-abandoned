@@ -26,6 +26,7 @@ define
    'Value'('cast': fun {$ A} A end
 	   'same': System.eq
 	   'proj': Proj
+	   'projTuple': fun {$ Value _ I} Value.(I + 1) end
 	   'tag': fun {$ Value _} 'ALPHA'({ByteString.make {Label Value}}) end
 	   'projTagged': Proj
 	   'con': fun {$ _} raise notImplemented end end %--**
