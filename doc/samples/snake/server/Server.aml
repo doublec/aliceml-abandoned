@@ -181,7 +181,7 @@ struct
             
             fun synchronize (partDescs, config : P.config) =
                 let
-                    val syncStepTime    = 10
+                    val syncStepTime    = Int.toLarge 10
 
                     fun isSynced partDescs =
                         DynArray.all (fn PDESC pd => 
@@ -202,17 +202,17 @@ struct
 
                     fun loop (pds, syncs) =
                         if isSynced pds then syncs
-                        else if syncs * syncStepTime > Time.toMilliseconds
-                                (#tick config) * 4 then
+                        else if Int.toLarge syncs * syncStepTime > Time.toMilliseconds
+                                (#tick config) * Int.toLarge 4 then
                             syncs before killSlowClients pds
-                        else (Thread.sleep $ Time.fromMilliseconds 10;
+                        else (Thread.sleep $ Time.fromMilliseconds (Int.toLarge 10);
                               loop (pds, syncs + 1) )
                     
                     val steps   = loop (partDescs, 0)
                 in
                     if steps > 0 then
                         TextIO.output (TextIO.stdErr, 
-                            Int.toString (syncStepTime * steps) ^ "\n")
+                            LargeInt.toString (syncStepTime * Int.toLarge steps) ^ "\n")
                     else ()
                 end
                     
@@ -386,12 +386,12 @@ struct
                                         Time.toMilliseconds (#tick config))
                     val timeout     = #timeout config
                     (* amount of time left. *)
-                    val timeLeft    = Time.fromSeconds (Int.max (0, 
+                    val timeLeft    = Time.fromSeconds (LargeInt.max (Int.toLarge 0, 
                             Time.toSeconds (Time.- (timeout, time))))
                     
                     (* percentage of time expired *)
-                    val expiredTime = Real.fromInt (Time.toMilliseconds time) / 
-                                     Real.fromInt (Time.toMilliseconds timeout)
+                    val expiredTime = Real.fromLargeInt (Time.toMilliseconds time) / 
+                                     Real.fromLargeInt (Time.toMilliseconds timeout)
 
                     (* traverse event map :
                         - remove disconnected clients
@@ -477,7 +477,7 @@ struct
                         end) finished;
                     
                     (* timeout expired? *)
-                    if timeLeft = Time.fromMilliseconds 0 then
+                    if timeLeft = Time.fromMilliseconds (Int.toLarge 0) then
                         (* kill all slow snakes! *)
                         DynArray.foldl (fn (p as PDESC pdesc, deads) =>
                             let val state   = #state pdesc
@@ -500,7 +500,7 @@ struct
                        and is there still time left *)
                     List.length (!snakes) + List.length (!snakesInGate) 
                         - List.length dead - List.length finished > 0 
-                        andalso timeLeft <> (Time.fromMilliseconds 0)
+                        andalso timeLeft <> (Time.fromMilliseconds (Int.toLarge 0))
                 end)
             
             (**
@@ -596,7 +596,7 @@ struct
                     fun loop (partDescs, n) =
                         if n < 0 
                             then Promise.fulfill (p, true)
-                            else (Thread.sleep (Time.fromMilliseconds 990);
+                            else (Thread.sleep (Time.fromMilliseconds (Int.toLarge 990));
                                   invokeOnAll (partDescs, #countdown, n);
                                   loop (partDescs, n - 1) )
                 in
@@ -617,11 +617,11 @@ struct
                                 (* sleep some tick and execute next ticks *)
                                 (Thread.sleep $ #tick config;
                                  synchronize (partDescs, config);
-                                 ticker (level, ticks + 1, config, partDescs))
+                                 ticker (level, ticks + Int.toLarge 1, config, partDescs))
                             else ()
                 in
                     if startLevel (arena, startPos, config, partDescs) then
-                        (ticker (arena, 0, config, partDescs);
+                        (ticker (arena, Int.toLarge 0, config, partDescs);
                          finishLevel (arena, partDescs);
                          true)
                         handle ServerDisconnected => false

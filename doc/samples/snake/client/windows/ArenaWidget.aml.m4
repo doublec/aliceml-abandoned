@@ -105,7 +105,7 @@ struct
 	val green    = convArena (0.32, 0.66, 0.17);
 	val red      = convArena (1.0, 0.0, 0.0);
 	val white    = convArena (1.0, 1.0, 1.0)
-	    
+        val goodyCol = convArena (0.42, 0.58, 0.24) 	    
     end
 
     val backgroundColor = green
@@ -283,7 +283,7 @@ struct
 	    val ground = Canvas.createEllipse (goodie, 0.0, 0.0, 
 					       real cellSize,
 					       real cellSize,
-					       red, black)
+					       goodyCol, black)
 	in
 	    goodie
 	end

@@ -22,8 +22,8 @@ struct
 
     val defaultSingle = 
 	{
-         tick           = Time.fromMilliseconds 120,
-	 timeout        = Time.fromSeconds 100,
+         tick           = Time.fromMilliseconds (Int.toLarge 120),
+	 timeout        = Time.fromSeconds (Int.toLarge 100),
 	 dimensions     = (70,70),
 	 goodie         = 7,
 	 lives          = SOME 7,
@@ -35,8 +35,8 @@ struct
 
     val defaultMulti = 
 	{
-         tick           = Time.fromMilliseconds 120,
-	 timeout        = Time.fromSeconds 100,
+         tick           = Time.fromMilliseconds (Int.toLarge 120),
+	 timeout        = Time.fromSeconds (Int.toLarge 100),
 	 dimensions     = (50,50),
 	 goodie         = 5,
 	 lives          = SOME 5,

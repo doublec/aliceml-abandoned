@@ -164,8 +164,10 @@ struct
 		    fun read adj = 
 			Real.round (Gtk.adjustmentGetFieldValue adj)
 		    
-		    val tick       = Time.fromMilliseconds (read tickAdjust)
-		    val timeout    = Time.fromSeconds (read timeoutAdj)
+		    val tick       = 
+                          Time.fromMilliseconds (Int.toLarge (read tickAdjust))
+		    val timeout    = 
+                          Time.fromSeconds (Int.toLarge (read timeoutAdj))
 		    val dimensions = (read yDimAdjust, read xDimAdjust)
 		    val goodie     = read goodysAdjust
 		    val lives = 
@@ -332,7 +334,9 @@ struct
 			       fn _ => mainQuit ());
 
 	    insertColors ();
+            print "before setting values\n";
 	    setValues Config.defaultMulti;
+	    print "after them\n";
 	    
 	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo,false);
 	    Gtk.entrySetMaxLength (nameText, 12);
