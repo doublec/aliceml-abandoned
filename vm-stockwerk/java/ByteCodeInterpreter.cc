@@ -22,6 +22,7 @@
 
 #include "java/Data.hh"
 #include "java/StackFrame.hh"
+#include "java/JavaByteCode.hh"
 #include "java/ByteCodeInterpreter.hh"
 
 //
@@ -241,9 +242,11 @@ class ByteCodeFrame : public StackFrame {
 protected:
   enum {
     PC_POS,
+    CONT_PC_POS,
     TOP_POS,
+    POOL_POS,
+    EXN_TABLE_POS,
     CODE_POS,
-    CLOSURE_POS,
     BASE_SIZE
   };
   
@@ -263,11 +266,20 @@ public:
   void SetPC(int pc) {
     StackFrame::InitArg(PC_POS, Store::IntToWord(pc));
   }
+  int GetContPC() {
+    return Store::DirectWordToInt(StackFrame::GetArg(CONT_PC_POS));
+  }
+  void SetContPC(int pc) {
+    StackFrame::InitArg(CONT_PC_POS, Store::IntToWord(pc));
+  }
   Chunk *GetCode() {
     return Store::DirectWordToChunk(StackFrame::GetArg(CODE_POS));
   }
-  void SetCode(Chunk *code) {
-    StackFrame::ReplaceArg(CODE_POS, code->ToWord());
+  RuntimeConstantPool *GetRuntimeConstantPool() {
+    return RuntimeConstantPool::FromWordDirect(StackFrame::GetArg(POOL_POS));
+  }
+  Table *GetExceptionTable() {
+    return Table::FromWordDirect(StackFrame::GetArg(EXN_TABLE_POS));
   }
   // Environment Accessors
   word GetEnv(u_int i) {
@@ -290,17 +302,21 @@ public:
   // ByteCodeFrame Constructor
   static ByteCodeFrame *New(Interpreter *interpreter,
 			    word pc,
+			    word contPC,
 			    Chunk *code,
-			    Closure *closure,
-			    u_int nbLocals,
+			    word runtimeConstantPool,
+			    Table *exnTable,
+			    u_int nLocals,
 			    u_int maxStack) {
-    u_int frSize = BASE_SIZE + nbLocals + maxStack;
+    u_int frSize = BASE_SIZE + nLocals + maxStack;
     StackFrame *frame =
       StackFrame::New(JAVA_BYTE_CODE_FRAME, interpreter, frSize);
     frame->InitArg(PC_POS, pc);
-    frame->InitArg(TOP_POS, Store::IntToWord(BASE_SIZE + nbLocals));
+    frame->InitArg(CONT_PC_POS, contPC);
+    frame->InitArg(TOP_POS, Store::IntToWord(BASE_SIZE + nLocals));
     frame->InitArg(CODE_POS, code->ToWord());
-    frame->InitArg(CLOSURE_POS, closure->ToWord());
+    frame->InitArg(POOL_POS, runtimeConstantPool);
+    frame->InitArg(EXN_TABLE_POS, exnTable->ToWord());
     return static_cast<ByteCodeFrame *>(frame);
   }
   // ByteCodeFrame Untagging
@@ -311,36 +327,84 @@ public:
   }
 };
 
-class ByteCodeHandlerFrame : public StackFrame {
-protected:
-  enum { PC_POS, FRAME_POS, BASE_SIZE };
+//
+// Interpreter Types
+//
+class JavaInt {
 public:
-  using Block::ToWord;
-
-  // ByteCodeHandlerFrame Accessors
-  u_int GetPC() {
-    return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
+  static word ToWord(int value) {
+    return Store::IntToWord(value);
   }
-  ByteCodeFrame *GetCodeFrame() {
-    return ByteCodeFrame::FromWordDirect(StackFrame::GetArg(FRAME_POS));
+  static int FromWord(word value) {
+    return Store::DirectWordToInt(value);
   }
-  // ByteCodeHandlerFrame Constructor
-  static ByteCodeHandlerFrame *New(Interpreter *interpreter,
-				   word pc,
-				   ByteCodeFrame *codeFrame) {
-    StackFrame *frame = StackFrame::New(JAVA_BYTE_CODE_FRAME,
-					interpreter, BASE_SIZE);
-    frame->InitArg(PC_POS, pc);
-    frame->InitArg(FRAME_POS, codeFrame->ToWord());
-    return static_cast<ByteCodeHandlerFrame *>(frame);
+  static word Add(word a, word b) {
+    int ai = FromWord(a);
+    int bi = FromWord(b);
+    return ToWord(ai + bi);
   }
-  // ByteCodeHandlerFrame Untagging
-  static ByteCodeHandlerFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == JAVA_BYTE_CODE_FRAME);
-    return static_cast<ByteCodeHandlerFrame *>(p);
+  static word Sub(word a, word b) {
+    int ai = FromWord(a);
+    int bi = FromWord(b);
+    return ToWord(ai - bi);
+  }
+  static word Mul(word a, word b) {
+    int ai = FromWord(a);
+    int bi = FromWord(b);
+    return ToWord(ai * bi);
+  }
+  static word Div(word a, word b) {
+    int ai = FromWord(a);
+    int bi = FromWord(b);
+    return ToWord(ai / bi);
+  }
+  static word Rem(word a, word b) {
+    int ai = FromWord(a);
+    int bi = FromWord(b);
+    return ToWord(ai % bi);
+  }
+  static word Neg(word a) {
+    int ai = FromWord(a);
+    return ToWord(0 - ai);
+  }
+  static word Zero() {
+    return Store::IntToWord(0);
+  }
+  static word Deref(word a) {
+    return a;
   }
 };
+
+//
+// Helper Stuff
+//
+#define GET_BYTE_INDEX() \
+  (code[pc + 1])
+
+#define GET_POOL_INDEX() \
+  ((code[pc + 1] << 8) | code[pc + 2])
+
+// to be done
+#define GET_POOL_VALUE(index) \
+  (pool->Get(index))
+
+#define GET_WIDE_INDEX() \
+  ((code[pc + 1] << 24) | (code[pc + 2] << 16) \
+  | (code[pc + 3] << 8) | code[pc + 4])
+
+#define REQUEST(w) {	      \
+  frame->SetPC(pc);           \
+  Scheduler::currentData = w; \
+  Scheduler::nArgs = 0;	      \
+  return Worker::REQUEST;     \
+}
+
+#define CHECK_PREEMPT() {			\
+  if (StatusWord::GetStatus() != 0)		\
+    return Worker::PREEMPT;			\
+  else						\
+    return Worker::CONTINUE;			\
+}
 
 //
 // Interpreter Functions
@@ -348,19 +412,44 @@ public:
 ByteCodeInterpreter *ByteCodeInterpreter::self;
 
 Block *
-ByteCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
+ByteCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
   return NULL; // to be done
 }
 
-
-void ByteCodeInterpreter::PushCall(Closure *) {
-  // to be done
+void ByteCodeInterpreter::PushCall(Closure *closure) {
+  JavaByteCode *concreteCode =
+    JavaByteCode::FromWord(closure->GetConcreteCode());
+  ByteCodeFrame *frame =
+    ByteCodeFrame::New(ByteCodeInterpreter::self,
+		       Store::IntToWord(-1),
+		       Store::IntToWord(0),
+		       concreteCode->GetCode(),
+		       closure->Sub(0), // RuntimeConstantPool
+		       concreteCode->GetExceptionTable(),
+		       concreteCode->GetMaxLocals(),
+		       concreteCode->GetMaxStack());
+  Scheduler::PushFrame(frame->ToWord());
 }
 
 Worker::Result ByteCodeInterpreter::Run() {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
-  int pc               = frame->GetPC();
-  unsigned char *code  = (unsigned char *) (frame->GetCode()->GetBase());
+  int pc = frame->GetPC();
+  unsigned char *code = (unsigned char *) frame->GetCode()->GetBase();
+  RuntimeConstantPool *pool = frame->GetRuntimeConstantPool();
+  // to be done: more efficient solution
+  if (pc == -1) {
+    // Copy arguments to local variables
+    // to be done: support large arguments
+    for (u_int i = Scheduler::nArgs; i--;)
+      frame->SetEnv(i, Scheduler::currentArgs[i]);
+    pc = frame->GetContPC();
+  }
+  else if (pc == -2) {
+    // Push Return Value to stack
+    if (Scheduler::nArgs != 0)
+      frame->Push(Scheduler::currentArgs[0]);
+    pc = frame->GetContPC();
+  }
   while (1) {
     switch (static_cast<Instr::Opcode>(code[pc])) {
     case Instr::AALOAD:
@@ -370,8 +459,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LALOAD:
     case Instr::SALOAD:
       {
-	u_int index = Store::DirectWordToInt(frame->Pop());
-	ObjectArray *arr  = ObjectArray::FromWord(frame->Pop());
+	u_int index      = Store::DirectWordToInt(frame->Pop());
+	ObjectArray *arr = ObjectArray::FromWord(frame->Pop());
 	if (arr != INVALID_POINTER) {
 	  if (index < arr->GetLength()) {
 	    frame->Push(arr->Get(index));
@@ -381,7 +470,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  }
 	}
 	else {
-	  // to be done: raise nullpointerexception
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
 	}
       }
       break;
@@ -405,7 +495,8 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ACONST_NULL:
       {
-	frame->Push(Store::IntToWord(0));
+	frame->Push(null);
+	pc += 1;
       }
       break;
     case Instr::ALOAD:
@@ -414,8 +505,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD:
     case Instr::LLOAD:
       {
-	u_int index = (u_int) code[++pc];
-	frame->Push(frame->GetEnv(index));
+	frame->Push(frame->GetEnv((u_int) GET_BYTE_INDEX()));
+	pc += 2;
       }
       break;
     case Instr::ALOAD_0:
@@ -425,6 +516,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_0:
       {
 	frame->Push(frame->GetEnv(0));
+	pc += 1;
       }
       break;
     case Instr::ALOAD_1:
@@ -434,6 +526,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_1:
       {
 	frame->Push(frame->GetEnv(1));
+	pc += 1;
       }
       break;
     case Instr::ALOAD_2:
@@ -443,6 +536,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_2:
       {
 	frame->Push(frame->GetEnv(2));
+	pc += 1;
       }
       break;
     case Instr::ALOAD_3:
@@ -452,6 +546,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_3:
       {
 	frame->Push(frame->GetEnv(3));
+	pc += 1;
       }
       break;
     case Instr::ANEWARRAY:
@@ -476,11 +571,10 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IRETURN:
     case Instr::LRETURN:
       {
-	// to be done
 	Scheduler::nArgs          = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = frame->Pop();
 	Scheduler::PopFrame();
-	return Interpreter::CONTINUE;
+	CHECK_PREEMPT();
       }
       break;
     case Instr::ARRAYLENGTH:
@@ -488,9 +582,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	ObjectArray *arr = ObjectArray::FromWord(frame->Pop());
 	if (arr != INVALID_POINTER) {
 	  frame->Push(Store::IntToWord(arr->GetLength()));
+	  pc += 1;
 	}
 	else {
 	  //to be done: raise NullPointerException
+	  Error("NullPointerException");
 	}
       }
       break;
@@ -500,8 +596,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE:
     case Instr::LSTORE:
       {
-	u_int index = code[++pc];
-	frame->SetEnv(index, frame->Pop());
+	frame->SetEnv((u_int) GET_BYTE_INDEX(), frame->Pop());
+	pc += 2;
       }
       break;
     case Instr::ASTORE_0:
@@ -511,6 +607,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_0:
       {
 	frame->SetEnv(0, frame->Pop());
+	pc += 1;
       }
       break;
     case Instr::ASTORE_1:
@@ -520,6 +617,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_1:
       {
 	frame->SetEnv(1, frame->Pop());
+	pc += 1;
       }
       break;
     case Instr::ASTORE_2:
@@ -529,6 +627,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_2:
       {
 	frame->SetEnv(2, frame->Pop());
+	pc += 1;
       }
       break;
     case Instr::ASTORE_3:
@@ -538,6 +637,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_3:
       {
 	frame->SetEnv(3, frame->Pop());
+	pc += 1;
       }
       break;
     case Instr::ATHROW:
@@ -552,6 +652,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Chunk *byteArr = Store::DirectWordToChunk(frame->Pop());
 	if (index < byteArr->GetSize()) {
 	  frame->Push(Store::IntToWord(byteArr->GetBase()[index]));
+	  pc += 1;
 	}
 	else {
 	  // to be done: throw invalid something
@@ -566,6 +667,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Chunk *byteArr = Store::DirectWordToChunk(frame->Pop());
 	if (index < byteArr->GetSize()) {
 	  byteArr->GetBase()[index] = (char) value;
+	  pc += 1;
 	}
 	else {
 	  // to be done: throw invalid something
@@ -574,32 +676,59 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::BIPUSH:
       {
-	char byte = code[++pc];
-	frame->Push(Store::IntToWord(byte));
+	frame->Push(Store::IntToWord((int) (char) GET_BYTE_INDEX()));
+	pc += 2;
       }
       break;
     case Instr::CHECKCAST:
       {
-	unsigned char byte1 = code[++pc];
-	unsigned char byte2 = code[++pc];
-	u_int index = byte1 << 8 | byte2;
-	word object = frame->Pop();
-	// to be done
+	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
+	Type *type = Type::FromWord(wType);
+	if (type == INVALID_POINTER)
+	  REQUEST(wType);
+	word wObject = frame->Pop();
+	switch (type->GetLabel()) {
+	case JavaLabel::Class:
+	  {
+	    Class *classObj = static_cast<Class *>(type);
+	    Block *p = Store::WordToBlock(wObject);
+	    if ((p->GetLabel() != JavaLabel::Object) ||
+		(!(Object::FromWordDirect(wObject)->IsInstanceOf(classObj)))) {
+	      // to be done: raise CastClassException
+	      Error("CastClassException");
+	    }
+	  }
+	  break;
+	case JavaLabel::ObjectArrayType:
+	  {
+	    Error("not implemented");
+	  }
+	  break;
+	case JavaLabel::BaseArrayType:
+	  {
+	    Error("not implemented");
+	  }
+	  break;
+	default:
+	  Error("unknown type");
+	}
+	frame->Push(wObject);
+	pc += 3;
       }
       break;
     case Instr::D2F:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::D2I:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::D2L:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::DADD:
@@ -609,6 +738,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Chunk *res = v1;
 	// to be done
 	frame->Push(res->ToWord());
+	pc += 1;
       }
       break;
     case Instr::DCMPG:
@@ -688,10 +818,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP:
       {
-	// to be done: more efficient solution
 	word value = frame->Pop();
 	frame->Push(value);
 	frame->Push(value);
+	pc += 1;
       }
       break;
     case Instr::DUP_X1:
@@ -705,178 +835,129 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP_X2:
       {
-	// to de done: handle two or three value form? how?
-	word v1 = frame->Pop();
-	word v2 = frame->Pop();
-	word v3 = frame->Pop();
-	frame->Push(v1);
-	frame->Push(v2);
-	frame->Push(v3);
-	frame->Push(v1);
+	Error("not implemented");
       }
       break;
     case Instr::DUP2:
       {
-	// to be done: handle one or two value form? how?
-	word v2 = frame->Pop();
-	word v1 = frame->Pop();
-	frame->Push(v2);
-	frame->Push(v1);
-	frame->Push(v2);
-	frame->Push(v1);
+	Error("not implemented");
       }
       break;
     case Instr::DUP2_X1:
       {
-	// to be done: handle two or three value form? how?
-	word v3 = frame->Pop();
-	word v2 = frame->Pop();
-	word v1 = frame->Pop();
-	frame->Push(v2);
-	frame->Push(v1);
-	frame->Push(v3);
-	frame->Push(v2);
-	frame->Push(v1);
+	Error("not implemented");
       }
       break;
     case Instr::DUP2_X2:
       {
-	// to be done: handle all four forms
+	Error("not implemented");
       }
       break;
     case Instr::F2D:
       {
-	// floats are reals
+	Error("not implemented");
       }
       break;
     case Instr::F2I:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::F2L:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::FADD:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::FCMPG:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::FCMPL:
       {
+	Error("not implemented");
       }
       break;
     case Instr::FCONST_0:
       {
-	// to be done
-	Chunk *res = Store::AllocChunk(0);
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FCONST_1:
       {
-	// to be done
-	Chunk *res = Store::AllocChunk(0);
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FCONST_2:
       {
-	// to be done
-	Chunk *res = Store::AllocChunk(0);
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FDIV:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FMUL:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FNEG:
       {
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FREM:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::FSUB:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::GETFIELD:
       {
-	unsigned char byte1 = code[++pc];
-	unsigned char byte2 = code[++pc];
-	u_int index = (byte1 << 8 | byte2);
-	word object = frame->Pop();
-	word res = object;
-	// to be done
-	frame->Push(res);
+	word wObject = frame->Pop();
+	if (wObject != null) {
+	  word wFieldRef             = GET_POOL_VALUE(GET_POOL_INDEX());
+	  InstanceFieldRef *fieldRef = InstanceFieldRef::FromWord(wFieldRef);
+	  if (fieldRef == INVALID_POINTER)
+	    REQUEST(wFieldRef);
+	  Object *object = Object::FromWord(wObject);
+	  frame->Push(object->GetInstanceField(fieldRef->GetIndex()));
+	}
+	else {
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
+	}
       }
       break;
     case Instr::GETSTATIC:
       {
-	unsigned char byte1 = code[++pc];
-	unsigned char byte2 = code[++pc];
-	u_int index = (byte1 << 8 | byte2);
-	word res = Store::IntToWord(0);
-	// to be done
-	frame->Push(res);
+	word wFieldRef           = GET_POOL_VALUE(GET_POOL_INDEX());
+	StaticFieldRef *fieldRef = StaticFieldRef::FromWord(wFieldRef);
+	if (fieldRef == INVALID_POINTER)
+	  REQUEST(wFieldRef);
+	Class *classObj = fieldRef->GetClass();
+	frame->Push(classObj->GetStaticField(fieldRef->GetIndex()));
       }
       break;
     case Instr::GOTO:
       {
-	unsigned char byte1 = code[pc + 1];
-	unsigned char byte2 = code[pc + 2];
-	// 16 bit signed offfset
-	short int offset = ((byte1 << 8) | byte2);
-	pc += offset;
+	pc += (short int) GET_POOL_INDEX();
       }
       break;
     case Instr::GOTO_W:
       {
-	unsigned char byte1 = code[pc + 1];
-	unsigned char byte2 = code[pc + 2];
-	unsigned char byte3 = code[pc + 3];
-	unsigned char byte4 = code[pc + 4];
-	// 32 bit signed offfset
-	int offset = ((byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4);
-	pc += offset;
+	pc += (int) GET_WIDE_INDEX();
       }
       break;
     case Instr::I2B:
@@ -890,20 +971,17 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::I2D:
       {
-	int i = Store::DirectWordToInt(frame->Pop());
-	Chunk *res = Store::AllocChunk(0);
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::I2F:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::I2L:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::I2S:
@@ -913,9 +991,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IADD:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 + v2));
+	word v2 = frame->Pop();
+	word v1 = frame->Pop();
+	frame->Push(JavaInt::Add(v1, v2));
+	pc += 1;
       }
       break;
     case Instr::IAND:
@@ -923,228 +1002,188 @@ Worker::Result ByteCodeInterpreter::Run() {
 	int v2 = Store::DirectWordToInt(frame->Pop());
 	int v1 = Store::DirectWordToInt(frame->Pop());
 	frame->Push(Store::IntToWord(v1 & v2));
+	pc += 1;
       }
       break;
     case Instr::ICONST_M1:
       {
-	frame->Push(Store::IntToWord(-1));
+	frame->Push(JavaInt::ToWord(-1));
+	pc += 1;
       }
       break;
     case Instr::ICONST_0:
       {
-	frame->Push(Store::IntToWord(0));
+	frame->Push(JavaInt::ToWord(0));
+	pc += 1;
       }
       break;
     case Instr::ICONST_1:
       {
-	frame->Push(Store::IntToWord(1));
+	frame->Push(JavaInt::ToWord(1));
+	pc += 1;
       }
       break;
     case Instr::ICONST_2:
       {
-	frame->Push(Store::IntToWord(2));
+	frame->Push(JavaInt::ToWord(2));
+	pc += 1;
       }
       break;
     case Instr::ICONST_3:
       {
-	frame->Push(Store::IntToWord(3));
+	frame->Push(JavaInt::ToWord(3));
+	pc += 1;
       }
       break;
     case Instr::ICONST_4:
       {
-	frame->Push(Store::IntToWord(4));
+	frame->Push(JavaInt::ToWord(4));
+	pc += 1;
       }
       break;
     case Instr::ICONST_5:
       {
-	frame->Push(Store::IntToWord(5));
+	frame->Push(JavaInt::ToWord(5));
+	pc += 1;
       }
       break;
     case Instr::IDIV:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	if (v2 != 0)
-	  frame->Push(Store::IntToWord(v1 / v2));
+	word v2 = frame->Pop();
+	word v1 = frame->Pop();
+	if (JavaInt::FromWord(v2) != 0)
+	  frame->Push(JavaInt::Div(v1, v2));
 	else {
 	  // to be done: raise ArithmeticException
+	  Error("ArithmeticException");
 	}
+	pc += 1;
       }
       break;
     case Instr::IF_ACMPEQ:
     case Instr::IF_ICMPEQ:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
 	word v2 = frame->Pop();
 	word v1 = frame->Pop();
 	if (v1 == v2)
-	  pc += offset - 1;
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IF_ACMPNE:
     case Instr::IF_ICMPNE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
 	word v2 = frame->Pop();
 	word v1 = frame->Pop();
 	if (v1 != v2)
-	  pc += offset - 1;
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IF_ICMPLT:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 < v2)
-	  pc += offset - 1;
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IF_ICMPGE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 >= v2)
-	  pc += offset - 1;
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IF_ICMPGT:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 > v2)
-	  pc += offset - 1;
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IF_ICMPLE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 <= v2)
-	  pc += offset - 1;
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFEQ:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v = Store::DirectWordToInt(frame->Pop());
-	if (v == 0)
-	  pc += offset - 1;
+	if (JavaInt::Deref(frame->Pop()) == JavaInt::Zero())
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFNE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v = Store::DirectWordToInt(frame->Pop());
-	if (v != 0)
-	  pc += offset - 1;
+	if (JavaInt::Deref(frame->Pop()) != JavaInt::Zero())
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFLT:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v = Store::DirectWordToInt(frame->Pop());
-	if (v < 0)
-	  pc += offset - 1;
+	if (JavaInt::FromWord(frame->Pop()) < 0)
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFGE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v = Store::DirectWordToInt(frame->Pop());
-	if (v >= 0)
-	  pc += offset - 1;
+	if (JavaInt::FromWord(frame->Pop()) >= 0)
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFGT:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v = Store::DirectWordToInt(frame->Pop());
-	if (v > 0)
-	  pc += offset - 1;
+	if (JavaInt::FromWord(frame->Pop()) > 0)
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFLE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	int v = Store::DirectWordToInt(frame->Pop());
-	if (v <= 0)
-	  pc += offset - 1;
+	if (JavaInt::FromWord(frame->Pop()) <= 0)
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFNONNULL:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	word object         = frame->Pop();
-	if (object != null)
-	  pc += offset - 1;
+	if (frame->Pop() != null)
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IFNULL:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	word object         = frame->Pop();
-	if (object == null)
-	  pc += offset - 1;
+	if (frame->Pop() == null)
+	  pc += (short) GET_POOL_INDEX();
 	else
-	  pc += 2;
+	  pc += 3;
       }
       break;
     case Instr::IINC:
@@ -1171,46 +1210,104 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::INSTANCEOF:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	word object      = frame->Pop();
-	// to be done
+	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
+	Type *type = Type::FromWord(wType);
+	if (type == INVALID_POINTER)
+	  REQUEST(wType);
+	word wObject = frame->Pop();
+	int result = 0;
+	switch (type->GetLabel()) {
+	case JavaLabel::Class:
+	  {
+	    Class *classObj = static_cast<Class *>(type);
+	    Block *p = Store::WordToBlock(wObject);
+	    result = (p->GetLabel() == JavaLabel::Object &&
+		      Object::FromWordDirect(wObject)->IsInstanceOf(classObj));
+	  }
+	  break;
+	case JavaLabel::ObjectArrayType:
+	  {
+	    Error("not implemented");
+	  }
+	  break;
+	case JavaLabel::BaseArrayType:
+	  {
+	    Error("not implemented");
+	  }
+	  break;
+	default:
+	  Error("unknown type");
+	}
+	frame->Push(Store::IntToWord(result));
+	pc += 3;
       }
       break;
     case Instr::INVOKEINTERFACE:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	u_int index         = ((b1 << 8) | b2);
-	unsigned char count = code[pc + 3];
-	unsigned char zero  = code[pc + 4]; // never used
-	pc += 4;
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::INVOKESPECIAL:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	// to be done
+	word wMethodRef             = GET_POOL_VALUE(GET_POOL_INDEX());
+	VirtualMethodRef *methodRef = VirtualMethodRef::FromWord(wMethodRef);
+	if (methodRef == INVALID_POINTER)
+	  REQUEST(wMethodRef);
+	// Set continuation
+	frame->SetPC(-2);
+	frame->SetContPC(pc + 3);
+	// to be done: support more arguments
+	u_int nArgs = methodRef->GetNumberOfArguments();
+	Assert(nArgs < Scheduler::maxArgs);
+	// self becomes local0
+	Scheduler::nArgs = nArgs + 1;
+	for (u_int i = nArgs + 1; i--;)
+	  Scheduler::currentArgs[i] = frame->Pop();
+	// to be done: where is the closure to be found; assuming static ref
+	Class *classObj  = methodRef->GetClass();
+	Closure *closure = classObj->GetVirtualMethod(methodRef->GetIndex());
+	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::INVOKESTATIC:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	// to be done
+	word wMethodRef            = GET_POOL_VALUE(GET_POOL_INDEX());
+	StaticMethodRef *methodRef = StaticMethodRef::FromWord(wMethodRef);
+	if (methodRef == INVALID_POINTER)
+	  REQUEST(wMethodRef);
+	// Set continuation
+	frame->SetPC(-2);
+	frame->SetContPC(pc + 3);
+	// to be done: support more arguments
+	u_int nArgs = methodRef->GetNumberOfArguments();
+	Assert(nArgs < Scheduler::maxArgs);
+	Scheduler::nArgs = nArgs;
+	for (u_int i = nArgs; i--;)
+	  Scheduler::currentArgs[i] = frame->Pop();
+	Class *classObj  = methodRef->GetClass();
+	Closure *closure = classObj->GetStaticMethod(methodRef->GetIndex());
+	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::INVOKEVIRTUAL:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	// to be done
+	word wMethodRef             = GET_POOL_VALUE(GET_POOL_INDEX());
+	VirtualMethodRef *methodRef = VirtualMethodRef::FromWord(wMethodRef);
+	if (methodRef == INVALID_POINTER)
+	  REQUEST(wMethodRef);
+	// Set continuation
+	frame->SetPC(-2);
+	frame->SetContPC(pc + 3);
+	// to be done: support more arguments
+	u_int nArgs = methodRef->GetNumberOfArguments();
+	Assert(nArgs < Scheduler::maxArgs - 1);
+	// self becomes local0
+	Scheduler::nArgs = nArgs + 1;
+	for (u_int i = nArgs + 1; i--;)
+	  Scheduler::currentArgs[i] = frame->Pop();
+	Object *object   = Object::FromWord(Scheduler::currentArgs[0]);
+	Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
+	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::IOR:
@@ -1395,13 +1492,12 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::MONITORENTER:
       {
-	word object = frame->Pop();
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::MONITOREXIT:
       {
-	word object = frame->Pop();
+	Error("not implemented");
       }
       break;
     case Instr::MULTIANEWARRAY:
@@ -1423,11 +1519,28 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::NEW:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	// to be done
+	Type *type = Type::FromWord(GET_POOL_VALUE(GET_POOL_INDEX()));
+	switch (static_cast<Block *>(type)->GetLabel()) {
+	case JavaLabel::Class:
+	  {
+	    Class *classObj = static_cast<Class *>(type);
+	    Object *object = Object::New(classObj);
+	    Assert(object != INVALID_POINTER);
+	    frame->Push(object->ToWord());
+	  }
+	  break;
+	case JavaLabel::ObjectArrayType:
+	case JavaLabel::BaseArrayType:
+	  {
+	    // to be done: raise InstantiationError
+	    Error("InstantiationError");
+	  }
+	  break;
+	default:
+	  Error("unknown type");
+	}
       }
+      pc += 3;
       break;
     case Instr::NEWARRAY:
       {
@@ -1448,21 +1561,23 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::PUTFIELD:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	word value       = frame->Pop();
-	word object      = frame->Pop();
-	// to be done
+	word wFieldRef             = GET_POOL_VALUE(GET_POOL_INDEX());
+	InstanceFieldRef *fieldRef = InstanceFieldRef::FromWord(wFieldRef);
+	if (fieldRef == INVALID_POINTER)
+	  REQUEST(wFieldRef);
+	word value = frame->Pop();
+	Object *object = Object::FromWord(frame->Pop());
+	object->PutInstanceField(fieldRef->GetIndex(), value);
       }
       break;
     case Instr::PUTSTATIC:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	word value       = frame->Pop();
-	// to be done
+	word wFieldRef           = GET_POOL_VALUE(GET_POOL_INDEX());
+	StaticFieldRef *fieldRef = StaticFieldRef::FromWord(wFieldRef);
+	if (fieldRef == INVALID_POINTER)
+	  REQUEST(wFieldRef);
+	Class *classObj = fieldRef->GetClass();
+	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
       }
       break;
     case Instr::RET:
@@ -1472,8 +1587,11 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
     case Instr::RETURN:
       {
-	Error("not implemented");
+	Scheduler::nArgs = 0;
+	Scheduler::PopFrame();
+	CHECK_PREEMPT();
       }
+      break;
     case Instr::SIPUSH:
       {
 	unsigned char b1 = code[++pc];
@@ -1513,10 +1631,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case Instr::ASTORE:
 	case Instr::LSTORE:
 	  {
-	    unsigned char b1 = code[++pc];
-	    unsigned char b2 = code[++pc];
-	    u_int index      = ((b1 << 8) | b2);
-	    frame->SetEnv(index, frame->Pop());
+	    frame->SetEnv(GET_POOL_INDEX(), frame->Pop());
 	  }
 	  break;
 	case Instr::IINC:
@@ -1546,10 +1661,40 @@ Worker::Result ByteCodeInterpreter::Run() {
     }
     // Check for preemption
     if (StatusWord::GetStatus() != 0) {
-      frame->SetPC(pc + 1);
+      frame->SetPC(pc);
       return Worker::PREEMPT;
     }
-    else
-      pc++;
   }
+}
+
+Interpreter::Result ByteCodeInterpreter::Handle() {
+  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
+  int pc               = frame->GetPC();
+  Table *table         = frame->GetExceptionTable();
+  u_int count          = table->GetCount();
+  Object *object       = Object::FromWord(Scheduler::currentData);
+  for (u_int i = 0; i < count; i++) {
+    ExceptionTableEntry *entry =
+      ExceptionTableEntry::FromWordDirect(table->Get(i));
+    int startPC = entry->GetStartPC();
+    int endPC   = entry->GetEndPC();
+    // Exception handler is within range
+    if ((startPC <= pc) && (pc < endPC)) {
+      // Check exception type
+      word wType = entry->GetCatchType();
+      if (wType == Store::IntToWord(0)) {
+	frame->SetPC(entry->GetHandlerPC());
+	return Worker::CONTINUE;
+      }
+      Class *typeObj = Class::FromWord(entry->GetCatchType());
+      Assert(typeObj != INVALID_POINTER);
+      if (object->IsInstanceOf(typeObj)) {
+	frame->SetPC(entry->GetHandlerPC());
+	return Worker::CONTINUE;
+      }
+    }
+  }
+  // to be done: Add to BackTrace
+  Scheduler::PopFrame();
+  return Worker::RAISE;
 }
