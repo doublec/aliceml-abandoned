@@ -46,6 +46,9 @@ val fontHeight: string -> int
 
 val createRectangle: Gtk.object * real * real * real * real -> Gtk.object
 
+val copyArray' : 'a Array.array * 'a Array.array * int -> unit
+val copyArray : 'a Array.array * 'a Array.array -> unit
+
 val setVisible: int * int -> unit
 
 end

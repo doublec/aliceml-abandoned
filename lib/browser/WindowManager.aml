@@ -16,6 +16,7 @@
 import signature MK_WINDOW from "MK_WINDOW-sig"
 import structure Settings from "Settings"
 import functor MkWindow from "MkWindow"
+import structure WindowHelper from "WindowHelper"
 import structure Dictionaries from "Dictionaries" (* to be verified *)
 import structure MainDictionary from "MainDictionary" (* to be verified *)
 import signature WINDOW_MANAGER from "WINDOW_MANAGER-sig"
@@ -42,6 +43,7 @@ structure WindowManager :> WINDOW_MANAGER =
 		     in
 			 if  a then () 
 			 else let
+				  val previous_handlers = W.handlers
 				  structure W =  MkWindow() :MK_WINDOW
 				  val _    = alive:= W.alive 
 				  val _ = canvasroot := W.canvasroot
@@ -52,8 +54,11 @@ structure WindowManager :> WINDOW_MANAGER =
 				  val _ = Settings.max_x :=0.0
 				  val _ = Settings.max_y :=0.0
 				  val _ = MainDictionary.dumpAll(Dictionaries.dict)
+				  val _ = WindowHelper.copyArray(previous_handlers, 
+								 W.handlers)
 			      in
 				  (incr_act_line (~(!act_line)) )
 			      end
-		     end
+		     end	
+		 
 end

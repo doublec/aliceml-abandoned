@@ -13,6 +13,7 @@
  *
  *)
 
+import structure Types from "Types"
 import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
@@ -273,7 +274,13 @@ struct
 			   ("y", Gtk.DOUBLE 0.0)])
 
 
-    fun makePopup {widthhandler = w, depthhandler = d, reinspecthandler = r} = 
+    fun makePopup {node = n, widthhandler = w, depthhandler = d, reinspecthandler = r} = 
+	let 
+	    val reinspect_active = 
+		                 (case n of 
+				      Types.Limit(re) => #sort(re) = Types.DEPTH_LIMIT 
+				    | _ => true)
+	in
 	serve (fn () => 
 	       (createMenu
 		(PopupObj
@@ -293,10 +300,11 @@ struct
 			  items = [],
 			  sensitive = true},
 		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),r,true)],
+			  items = [EntryObj(LABEL("reinspect"),r,reinspect_active)],
 			  sensitive = true}])
 		;()))
-
+	end
+				      
 
 	fun calcAbsolutePosition(x,y) = 
 	    let
@@ -363,7 +371,8 @@ struct
 		    in
 		    (case node of 
 		     SOME(n) 
-		     =>( makePopup({widthhandler = [], 
+		     =>( makePopup({node = n,
+				    widthhandler = [], 
 				    depthhandler = [], 
 				    reinspecthandler = [Handler("activate",
 							 handleReinspect(n))]})
