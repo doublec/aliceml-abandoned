@@ -17,6 +17,8 @@ import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
 
 structure Config =
    struct
+      val editorHeight = 500
+
       val cmap   = Gdk.colormapGetSystem ()
       val ugly = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
       val black = Gdk.colorNew(0, 0, 0)

@@ -79,7 +79,7 @@ structure OutputWriters =
 	      Gtk.textBufferInsert(buffer, iter, text, size text);
               Gtk.textBufferGetIterAtOffset (buffer, start, startOffset);
               app (fn t => Gtk.textBufferApplyTag(buffer, t, start, iter)) tags;
-              highlight (buffer, start, iter);
+              highlight (buffer, start, iter, false);
               Gtk.textBufferPlaceCursor(buffer,iter);
               Gtk.textViewScrollToMark(view,
                                        Gtk.textBufferGetInsert buffer,
@@ -176,7 +176,7 @@ structure OutputWriters =
                 	val startiter = Gtk.textIterCopy enditer
                 	val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
                 	val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
-                	val _ = highlight(buf, startiter, enditer)
+                	val _ = highlight(buf, startiter, enditer, false)
                 	val str = Core.utf8ToLatin1 str
                 	val _ = eval str
                     in

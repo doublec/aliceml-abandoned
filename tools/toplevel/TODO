@@ -3,15 +3,12 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* paste should delete tags
 * jump-to-error does not work for compile
   (how do we detect whether we feeded something from a buffer or used
   the toplevel directly? We have to give eval a filename for buffers!)
 * scroll to bottom after layout change or resize
-* prompt is feeded
 * propagate output width on init and after resize
 * gui hangs when files are given on command line
-* switch layout compiler and i/o buffer
 * undo shortcut not shown in menu
 * colorize compiler output?
 * dialogues at mouse position

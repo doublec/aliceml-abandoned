@@ -17,7 +17,7 @@ import structure Highlight from "HighlightString"
 
 structure BufferHighlight =
    struct
-      fun colorRegion buf offset (style, x, x') =
+      fun colorRegion (buf, offset, removeTags) (style, x, x') =
           let
               open Highlight
               val startiter = Gtk.textIterNew()
@@ -35,11 +35,13 @@ structure BufferHighlight =
                           | COMMENT => "comment"
                           | ERRONEOUS => "error"
           in
-              Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
+	      if removeTags then
+		  Gtk.textBufferRemoveAllTags(buf, startiter, enditer)
+	      else ();
               Gtk.textBufferApplyTagByName(buf, tag, startiter, enditer)
           end
 
-      fun highlight (buf, startiter, enditer) =
+      fun highlight (buf, startiter, enditer, removeTags) =
           if Gtk.textIterGetChar startiter = ord #"#" then ()
           else
               let
@@ -48,6 +50,6 @@ structure BufferHighlight =
                   val str = Core.utf8ToLatin1 str
                   val regions = Highlight.scan str
               in
-                app (colorRegion buf offset) regions
+                app (colorRegion (buf, offset, removeTags)) regions
               end
    end

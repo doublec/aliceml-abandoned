@@ -19,6 +19,7 @@ import structure Key from "x-alice:/lib/gtk/Key"
 import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
+import structure Config from "Config"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
@@ -236,8 +237,14 @@ structure GuiMain =
         fun copy() = Gtk.textBufferCopyClipboard(getCurBuf(), clipboard)
 
         fun paste() =
-            Gtk.textBufferPasteClipboard(getCurBuf(), clipboard,
-                                         Gtk.NULL, true)
+            let
+		val txt = Gtk.clipboardWaitForText clipboard
+		val buf = getCurBuf()
+		val _ =
+		    Gtk.textBufferInsertInteractiveAtCursor(buf,txt,~1,true)
+	    in
+		()
+	    end
 
         fun cut() =
             Gtk.textBufferCutClipboard(getCurBuf(), clipboard, true)
@@ -254,8 +261,7 @@ structure GuiMain =
                 val enditer = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetEndIter(buf,enditer)
             in
-                (*Gtk.textBufferRemoveAllTags(buf, startiter, enditer);*)
-                BufferHighlight.highlight(buf, startiter, enditer)
+                BufferHighlight.highlight(buf, startiter, enditer, true)
             end
                                  | _ => ()
 
@@ -284,7 +290,9 @@ structure GuiMain =
 
         fun checkNotebookSize() =
             (if Gtk.notebookGetNPages Gui.notebook1 > 0
-             then Gtk.panedSetPosition(Gui.vpaned1,500)
+             then if Gtk.panedGetPosition Gui.vpaned1 = 1 
+		  then Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
+		  else ()
              else (Gtk.panedSetPosition(Gui.vpaned1,1);
                    Gtk.widgetGrabFocus Gui.compilerout))
 
