@@ -39,6 +39,16 @@ define
       {ByteString.make [A B C D E F G H]}
    end
 
+   WordSize = 31
+
+   fun {W2I X}
+      {BootWord.toInt X}
+   end
+
+   fun {I2W X}
+      {BootWord.make WordSize X}
+   end
+
    fun {Deref X}
       case X of transient(TransientState) then
 	 case {Access TransientState} of ref(Y) then {Deref Y}
@@ -519,49 +529,51 @@ define
 		    V
 		 end
 */
-	      'Word.+': BootWord.'+'
-	      'Word.-': BootWord.'-'
-	      'Word.*': BootWord.'*'
-	      'Word.<<': BootWord.'<<'
-	      'Word.>>': BootWord.'>>'
-	      'Word.~>>': BootWord.'~>>'
+	      'Word.+': fun {$ X Y} {W2I {BootWord.'+' {I2W X} {I2W Y}}} end
+	      'Word.-': fun {$ X Y} {W2I {BootWord.'-' {I2W X} {I2W Y}}} end
+	      'Word.*': fun {$ X Y} {W2I {BootWord.'*' {I2W X} {I2W Y}}} end
+	      'Word.<<': fun {$ X Y} {W2I {BootWord.'<<' {I2W X} {I2W Y}}} end
+	      'Word.>>': fun {$ X Y} {W2I {BootWord.'>>' {I2W X} {I2W Y}}} end
+	      'Word.~>>':
+		 fun {$ X Y} {W2I {BootWord.'~>>' {I2W X} {I2W Y}}} end
 	      'Word.<':
 		 fun {$ W1 W2}
-		    if {BootWord.'<' W1 W2} then 1 else 0 end
+		    if {BootWord.'<' {I2W W1} {I2W W2}} then 1 else 0 end
 		 end
 	      'Word.>':
 		 fun {$ W1 W2}
-		    if {BootWord.'>' W1 W2} then 1 else 0 end
+		    if {BootWord.'>' {I2W W1} {I2W W2}} then 1 else 0 end
 		 end
 	      'Word.<=':
 		 fun {$ W1 W2}
-		    if {BootWord.'<=' W1 W2} then 1 else 0 end
+		    if {BootWord.'<=' {I2W W1} {I2W W2}} then 1 else 0 end
 		 end
 	      'Word.>=':
 		 fun {$ W1 W2}
-		    if {BootWord.'>=' W1 W2} then 1 else 0 end
+		    if {BootWord.'>=' {I2W W1} {I2W W2}} then 1 else 0 end
 		 end
-	      'Word.andb': BootWord.'andb'
+	      'Word.andb':
+		 fun {$ X Y} {W2I {BootWord.'andb' {I2W X} {I2W Y}}} end
 	      'Word.div':
 		 fun {$ W1 W2}
-		    try
-		       {BootWord.'div' W1 W2}
+		    try {W2I {BootWord.'div' {I2W W1} {I2W W2}}}
 		    catch _ then exception(Primitives.'General.Div')
 		    end
 		 end
-	      'Word.fromInt\'': BootWord.make
+	      'Word.fromInt\'': fun {$ 31 X} X end
 	      'Word.mod':
 		 fun {$ W1 W2}
-		    try {BootWord.'mod' W1 W2}
+		    try {W2I {BootWord.'mod' {I2W W1} {I2W W2}}}
 		    catch _ then exception(Primitives.'General.Div')
 		    end
 		 end
-	      'Word.notb': BootWord.notb
-	      'Word.orb': BootWord.orb
-	      'Word.toInt': BootWord.toInt
-	      'Word.toIntX': BootWord.toIntX
+	      'Word.notb': fun {$ X} {W2I {BootWord.notb {I2W X}}} end
+	      'Word.orb': fun {$ X Y} {W2I {BootWord.orb {I2W X} {I2W Y}}} end
+	      'Word.toInt': fun {$ X} X end
+	      'Word.toIntX': fun {$ X} {BootWord.toIntX {I2W X}} end
 	      'Word.wordSize': 31
-	      'Word.xorb': BootWord.'xorb')
+	      'Word.xorb':
+		 fun {$ X Y} {W2I {BootWord.'xorb' {I2W X} {I2W Y}}} end)
 
    fun {Construct Args}
       case Args of arg(X) then X
