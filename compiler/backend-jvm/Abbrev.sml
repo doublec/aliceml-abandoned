@@ -66,7 +66,7 @@ structure Abbrev  =
 
 	val ISerializable  = "java/io/Serializable"
 
-	val CClass         = "java.lang.Class"
+	val CClass         = "java/lang/Class"
 
 	val MForName       = (CClass, "forName", ([Classsig CString], [Classsig CClass]))
 
