@@ -249,6 +249,9 @@ signature DERIVED_FORMS =
 							   * Rea option   -> Rea
     val SIGNATURERea:     Info * LongSigId * StrPat list * AppSigExp
 							 * Rea option     -> Rea
+    val PRIMITIVETYPERea: Info * TyVarSeq * LongTyCon * string            -> Rea
+    val PRIMITIVESIGNATURERea: Info * LongSigId * StrPat list * string    -> Rea
+
 
     (* Imports *)
 

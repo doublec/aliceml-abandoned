@@ -49,6 +49,6 @@ signature PERVASIVE_TYPE =
     val typ_exn :	typ
 
     exception Lookup
-    val lookup :	string -> typ	(* [Lookup] *)
+    val lookup :	string -> con	(* [Lookup] *)
 
   end

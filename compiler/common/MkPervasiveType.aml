@@ -111,17 +111,17 @@ functor MakePervasiveType(val labid_false :	string
     exception Lookup
 
     fun lookup s =
-	if      s = typid_int    then typ_int
-	else if s = typid_word   then typ_word
-	else if s = typid_real   then typ_real
-	else if s = typid_char   then typ_char
-	else if s = typid_string then typ_string
-	else if s = typid_vec	 then typ_vec
-	else if s = typid_array  then typ_array
-	else if s = typid_ref    then typ_ref
-	else if s = typid_exn    then typ_exn
-	else if s = typid_time   then typ_time
-	else if s = typid_prom   then typ_prom
+	if      s = typid_int    then con_int
+	else if s = typid_word   then con_word
+	else if s = typid_real   then con_real
+	else if s = typid_char   then con_char
+	else if s = typid_string then con_string
+	else if s = typid_vec	 then con_vec
+	else if s = typid_array  then con_array
+	else if s = typid_ref    then con_ref
+	else if s = typid_exn    then con_exn
+	else if s = typid_time   then con_time
+	else if s = typid_prom   then con_prom
 	else raise Lookup
 
   end

@@ -886,51 +886,59 @@ functor MakeElaborationPhase(
 	let
 	    val (t,w,typlongid') = elabTyplongid(E, typlongid)
 	in
-	    ( t, false, w, O.ConTyp(typInfo(i,t), typlongid') )
+	    ( t, false, w, O.ConTyp(typInfo(i,t), typlongid'), p )
 	end
 
       | elabTypRep(E, p, buildKind, I.FunTyp(i, typid, typ)) =
 	let
-	    val  k              = Type.STAR
-	    val (a,typid')      = elabVarid_bind(E, k, typid)
-	    val (t1,gen,w,typ') = elabTypRep(E, p,
+	    val  k                 = Type.STAR
+	    val (a,typid')         = elabVarid_bind(E, k, typid)
+	    val (t1,gen,w,typ',p') = elabTypRep(E, p,
 				      fn k' => Type.ARROW(k, buildKind k'), typ)
-            val  t              = if gen then t1 else Type.inLambda(a,t1)
-				(* If the type is generative then we
-				 * get a constructor with appropriate kind
-				 * and do not need to insert lambdas.
-				 *)
+            val  t                 = if gen then t1 else Type.inLambda(a,t1)
+				   (* If the type is generative then we
+				    * get a constructor with appropriate kind
+				    * and do not need to insert lambdas.
+				    *)
 	in
-	    ( t, gen, w, O.FunTyp(typInfo(i,t), typid', typ') )
+	    ( t, gen, w, O.FunTyp(typInfo(i,t), typid', typ'), p' )
 	end
 
       | elabTypRep(E, p, buildKind, I.AbsTyp(i,so))=
 	let
-	    val t = case so
-		      of NONE => Type.inCon(buildKind Type.STAR, Type.CLOSED, p)
-		       | SOME s => PervasiveType.lookup s
-				   handle PervasiveType.Lookup =>
-					error(i, E.PervasiveTypUnknown s)
+	    val (t,p') =
+		case so
+		  of NONE =>
+			( Type.inCon(buildKind Type.STAR, Type.CLOSED, p), p )
+		   | SOME s =>
+			let val con = PervasiveType.lookup s in
+			    ( Type.inCon con, #3 con )
+			end handle PervasiveType.Lookup =>
+				   error(i, E.PervasiveTypUnknown s)
 	in
-	    ( t, true, Type.CLOSED, O.AbsTyp(typInfo(i,t), so) )
+	    ( t, true, Type.CLOSED, O.AbsTyp(typInfo(i,t), so), p' )
 	end
 
       | elabTypRep(E, p, buildKind, I.ExtTyp(i,so))=
 	let
-	    val t = case so
-		      of NONE => Type.inCon(buildKind Type.STAR, Type.OPEN, p)
-		       | SOME s => PervasiveType.lookup s
-				   handle PervasiveType.Lookup =>
-					error(i, E.PervasiveTypUnknown s)
+	    val (t,p') =
+		case so
+		  of NONE =>
+			( Type.inCon(buildKind Type.STAR, Type.OPEN, p), p )
+		   | SOME s =>
+			let val con = PervasiveType.lookup s in
+			    ( Type.inCon con, #3 con )
+			end handle PervasiveType.Lookup =>
+				   error(i, E.PervasiveTypUnknown s)
 	in
-	    ( t, true, Type.OPEN, O.ExtTyp(typInfo(i,t), so) )
+	    ( t, true, Type.OPEN, O.ExtTyp(typInfo(i,t), so), p' )
 	end
 
       | elabTypRep(E, p, buildKind, typ) =
 	let
 	    val (t,typ') = elabTyp(E, typ)
 	in
-	    ( t, false, Type.CLOSED, typ' )
+	    ( t, false, Type.CLOSED, typ', p )
 	end
 
 
@@ -1036,9 +1044,9 @@ functor MakeElaborationPhase(
 	    val (j1,mod1')  = elabMod(E, mod1)
 	    val (j2,mod2')  = elabMod(E, mod2)
 	    val (p,j11,j12) = if Inf.isArrow j1 then
-				 Inf.asArrow(Inf.instance j1)
+				  Inf.asArrow(Inf.instance j1)
 			      else
-				 error(I.infoMod mod1, E.AppModFunMismatch j1)
+				  error(I.infoMod mod1, E.AppModFunMismatch j1)
 	    val  p2         = case elabMod_path(E, mod2)
 				of SOME(p2,_) => p2
 				 | NONE       => Path.invent()
@@ -1067,9 +1075,10 @@ functor MakeElaborationPhase(
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
-	    val  j        = Inf.instance j2	(* opaque *)
-	    val  _        = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
+	    val  j2'      = Inf.instance j2	(* opaque *)
+	    val  _        = Inf.match(j1, j2') handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
+	    val  j        = j2
 	in
 	    ( j, O.UpMod(infInfo(i,j), mod', inf') )
 	end
@@ -1093,11 +1102,10 @@ functor MakeElaborationPhase(
 	let
 	    val (t,exp') = elabExp(E, exp)
 	    val (j,inf') = elabInf(E, inf)
-	    val  j'      = Inf.instance j
 	    (*UNFINISHED*)
 	in
 	    unfinished i "elabMod" "packages";
-	    ( j', O.UnpackMod(infInfo(i,j), exp', inf') )
+	    ( j, O.UnpackMod(infInfo(i,j), exp', inf') )
 	end
 
 
@@ -1272,7 +1280,7 @@ functor MakeElaborationPhase(
 	    raise Crash.Crash "Elab.elabInf: AbsInf"
 
 
-  (* Interfaces in positions where they not be higher order *)
+  (* Interfaces in positions where they not may be higher order *)
 
     and elabGroundInf(E, inf) =
 	let
@@ -1362,10 +1370,10 @@ functor MakeElaborationPhase(
 
       | elabDec(E, s, vars, I.TypDec(i, typid, typ)) =
 	let
-	    val  p             = Inf.newTyp(s, Label.fromName(I.name typid))
-	    val (t,gen,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
-	    val  typid'        = elabTypid_bind(E, p, t, w, typid)
-	    val  _             = Inf.extendTyp(s, p, Type.kind t, w, SOME t)
+	    val  p                = Inf.newTyp(s, Label.fromName(I.name typid))
+	    val (t,gen,w,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
+	    val  typid'           = elabTypid_bind(E, p', t, w, typid)
+	    val  _                = Inf.extendTyp(s, p', Type.kind t, w, SOME t)
 	in
 	    O.TypDec(nonInfo(i), typid', typ')
 	end
@@ -1511,12 +1519,12 @@ functor MakeElaborationPhase(
       | elabRHSRecDec(E, s, rtpats', I.TypDec(i, typid, typ)) =
 	let
 	    val (t0,p,_,typid') = elabTypid(E, typid)
-	    val (t,_,w,typ')    = elabTypRep(E, p, fn k'=>k', typ)
+	    val (t,_,w,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
 	    val  t1             = #2(Type.asAbbrev t0)
 	    val  _              = Type.unify(Type.inMu t, t1)
-	    val  _              = elabTypid_bind(E, p, t1, w, typid)
+	    val  _              = elabTypid_bind(E, p', t1, w, typid)
 				  (* Updates type sort *)
-	    val  _              = Inf.extendTyp(s, p, Type.kind t1, w, SOME t1)
+	    val  _              = Inf.extendTyp(s, p', Type.kind t1, w, SOME t1)
 	in
 	    O.TypDec(nonInfo(i), typid', typ')
 	end
@@ -1566,11 +1574,11 @@ functor MakeElaborationPhase(
 
       | elabSpec(E, s, I.TypSpec(i, typid, typ)) =
 	let
-	    val  p             = Inf.newTyp(s, Label.fromName(I.name typid))
-	    val (t,gen,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
-	    val  typid'        = elabTypid_bind(E, p, t, w, typid)
-	    val  _             = Inf.extendTyp(s, p, Type.kind t, w,
-					       if gen then NONE else SOME t)
+	    val  p                = Inf.newTyp(s, Label.fromName(I.name typid))
+	    val (t,gen,w,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
+	    val  typid'           = elabTypid_bind(E, p', t, w, typid)
+	    val  _                = Inf.extendTyp(s, p', Type.kind t, w,
+						  if gen then NONE else SOME t)
 	in
 	    O.TypSpec(nonInfo(i), typid', typ')
 	end
@@ -1674,14 +1682,14 @@ functor MakeElaborationPhase(
 
       | elabRHSRecSpec(E, s, I.TypSpec(i, typid, typ)) =
 	let
-	    val (t0,p,_,typid') = elabTypid(E, typid)
-	    val (t,gen,w,typ')  = elabTypRep(E, p, fn k'=>k', typ)
-	    val  t1             = #2(Type.asAbbrev t0)
-	    val  _              = Type.unify(Type.inMu t, t1)
-	    val  _              = elabTypid_bind(E, p, t1, w, typid)
+	    val (t0,p,_,typid')   = elabTypid(E, typid)
+	    val (t,gen,w,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
+	    val  t1               = #2(Type.asAbbrev t0)
+	    val  _                = Type.unify(Type.inMu t, t1)
+	    val  _                = elabTypid_bind(E, p', t1, w, typid)
 				  (* Updates type sort *)
-	    val  _              = Inf.extendTyp(s, p, Type.kind t1, w,
-					       if gen then NONE else SOME t1)
+	    val  _                = Inf.extendTyp(s, p', Type.kind t1, w,
+						  if gen then NONE else SOME t1)
 	in
 	    O.TypSpec(nonInfo(i), typid', typ')
 	end
@@ -1767,7 +1775,7 @@ functor MakeElaborationPhase(
 				   (t1, w1, O.NoDesc(typInfo(i', t1)))
 				 | I.SomeDesc(i',typ) =>
 				   let
-				      val (t2,_,w2,typ') =
+				      val (t2,_,w2,typ',_) =
 						elabTypRep(E, p, fn k'=>k', typ)
 				      val  k1 = Type.kind t1
 				      val  k2 = Type.kind t2
@@ -1917,7 +1925,7 @@ functor MakeElaborationPhase(
 					(t1, w1, O.NoDesc(typInfo(i',t1)))
 				      | I.SomeDesc(i',typ) =>
 					let
-					    val (t2,_,w2,typ') =
+					    val (t2,_,w2,typ',_) =
 						elabTypRep(E, p, fn k'=>k', typ)
 					in
 					    ( t1, w1,

@@ -127,16 +127,27 @@
 (* low-level constructs:							*)
 (*	  dec     ::= __eqeqtype typbind					*)
 (*                ::= __primitive val <op> vid : ty = string			*)
+(*                ::= __primitive fun <op> vid : ty = string		(DF)	*)
 (*                ::= __primitive type tyvarseq tycon = string			*)
 (*                ::= __primitive eqtype tyvarseq tycon = string		*)
 (*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
 (*                ::= __primitive __reftype tyvar tycon = <op> vid of tyvar	*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
+(*	          ::= __primitive exception <op> vid <of ty> = string	(DF)	*)
 (*	          ::= __primitive structure strid : sigexp = string		*)
+(*	          ::= __primitive functor strid strpat_1 ... strpat_n	(n>=1)	*)
+(*					: sigexp = string		(DF)	*)
+(*	          ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
+(*					= string				*)
 (*	  spec    ::= __eqeqtype typdesc					*)
 (*                ::= __primitive type tyvarseq tycon = string			*)
 (*                ::= __primitive eqtype tyvarseq tycon = string		*)
 (*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
+(*	          ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
+(*					= string				*)
+(*	  rea     ::= __primitive type tyvarseq tycon = string			*)
+(*                ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
+(*					= string				*)
 (*										*)
 (* Notes:									*)
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
@@ -1488,6 +1499,13 @@
 				       longsigid, strpat_list0,
 				       #1 sigexp__AND_rea_opt,
 				       #2 sigexp__AND_rea_opt) )
+	| PRIMITIVE TYPE tyvarseq longtycon EQUALS STRING
+			( PRIMITIVETYPERea(I(PRIMITIVEleft,STRINGright),
+					   tyvarseq, longtycon, STRING) )
+	| PRIMITIVE SIGNATURE longsigid strpat_list0 EQUALS STRING
+			( PRIMITIVESIGNATURERea(I(SIGNATUREleft,STRINGright),
+						longsigid, strpat_list0,
+						STRING) )
 
      AND_rea_opt:
 	  AND rea	( SOME rea )

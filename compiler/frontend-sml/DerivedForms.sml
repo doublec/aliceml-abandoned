@@ -691,6 +691,8 @@ structure DerivedForms :> DERIVED_FORMS =
 							     * Rea option
 	| SIGNATURERea   of Info * LongSigId * StrPat list * AppSigExp
 							   * Rea option
+	| PRIMITIVETYPERea of Info * TyVarSeq * LongTyCon * string
+	| PRIMITIVESIGNATURERea of Info * LongSigId * StrPat list * string
 
     val FUNRea       = VALRea
     val EXCEPTIONRea = CONSTRUCTORRea
@@ -710,7 +712,10 @@ structure DerivedForms :> DERIVED_FORMS =
 						 longstrid, NONE))
     fun buildSigSpec (strpats, sigexp) (I, sigid) =
 	    G.SIGNATURESpec(I, G.EQUALSigDesc(I, sigid, strpats, sigexp, NONE))
-
+    fun buildPrimTypSpec (tyvarseq, string) (I, tycon) =
+	    G.PRIMITIVETYPESpec(I, tyvarseq, tycon, string)
+    fun buildPrimSigSpec (strpats, string) (I, sigid) =
+	    G.PRIMITIVESIGNATURESpec(I, sigid, strpats, string)
 
     fun buildSigExp(buildInnerSpec, I, longid, rea_opt) =
 	let
@@ -742,13 +747,22 @@ structure DerivedForms :> DERIVED_FORMS =
 			I, longstrid1, rea_opt)
       | Rea(SIGNATURERea(I, longsigid, strpats, sigexp, rea_opt)) =
 	    buildSigExp(buildSigSpec(strpats, sigexp), I, longsigid, rea_opt)
+      | Rea(PRIMITIVETYPERea(I, tyvarseq, longtycon, string)) =
+	    buildSigExp(buildPrimTypSpec(tyvarseq, string), I, longtycon, NONE)
+      | Rea(PRIMITIVESIGNATURERea(I, longsigid, strpats, string)) =
+	    buildSigExp(buildPrimSigSpec(strpats, string), I, longsigid, NONE)
 
     fun WHEREREASigExp'(I, sigexp, NONE)     = sigexp
       | WHEREREASigExp'(I, sigexp, SOME rea) =
 	let
 	    val (sigexp2,rea_opt) = Rea rea
 	    val  I'               = Source.over(I, G.infoSigExp sigexp2)
-	    val  sigexp'          = G.WHERESigExp(I', sigexp, sigexp2)
+	    val  sigexp'          = (*UNFINISHED: ugly ugly ugly hack!*)
+				    case rea
+				      of ( PRIMITIVETYPERea _
+				         | PRIMITIVESIGNATURERea _ ) =>
+					      G.WHERESigExp(I', sigexp2, sigexp)
+				       | _ => G.WHERESigExp(I', sigexp, sigexp2)
 	in
 	    WHEREREASigExp'(I, sigexp', rea_opt)
 	end
