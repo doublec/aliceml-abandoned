@@ -261,7 +261,7 @@ final public class List {
 	    if (first==nil)
 		return Empty.raise();
 	    else if (first instanceof Cons) {
-		Cons cons = new Cons(((Cons) first).car,nil);
+ 		Cons cons = new Cons(((Cons) first).car,nil);
 		first = ((Cons) first).cdr.request();
 		while (first!=nil) {
 		    if (first instanceof Cons) {
@@ -560,7 +560,7 @@ final public class List {
 	    Foldl1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) {
 		DMLValue[] args=fromTuple(val,1,"List.foldl1");
-		return new Foldl2(fun,args[0].request());
+		return new Foldl2(fun,args[0]);
 	    }
 	    final public static class Foldl2 extends DMLBuiltin {
 		DMLValue fun = null; DMLValue init = null;
@@ -593,7 +593,60 @@ final public class List {
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a list -> 'b </code>*/
     final public static Foldl foldl = new Foldl();
 
+    final public static class Foldr extends DMLBuiltin {
+	final public DMLValue apply(DMLValue val) {
+	    DMLValue[] args=fromTuple(val,1,"List.foldr");
+	    return new Foldr1(args[0]);
+	}
+	final public static class Foldr1 extends DMLBuiltin {
+	    DMLValue fun = null;
+	    Foldr1(DMLValue f) { fun=f; }
+	    final public DMLValue apply(DMLValue val) {
+		DMLValue[] args=fromTuple(val,1,"List.foldr1");
+		return new Foldr2(fun,args[0]);
+	    }
+	    final public static class Foldr2 extends DMLBuiltin {
+		DMLValue fun = null; DMLValue init = null;
+		Foldr2(DMLValue f, DMLValue i) {
+		    fun=f;
+		    init = i;
+		}
+		final public DMLValue apply(DMLValue val) {
+		    DMLValue[] args=fromTuple(val,1,"List.foldr2");
+		    DMLValue li = args[0].request();
+		    if (li==nil)
+			return init;
+		    else if (li instanceof Cons) {
+			Cons cons = new Cons(((Cons) li).car,nil);
+			li = ((Cons) li).cdr.request();
+			while (li!=nil) {
+			    if (li instanceof Cons) {
+				Cons lc = (Cons) li;
+				cons = new Cons(lc.car,cons);
+				li = lc.cdr.request();
+			    }
+			    else
+				return error("argument #1 not DMLList",val);
+			}
+			// in cons ist jetzt die umgedrehte Liste
+			DMLValue result=init;
+			while (cons instanceof Cons) {
+			    Cons cc = (Cons) cons;
+			    result=fun.apply(new Tuple2(cc.car,result));
+			    if (cc.cdr instanceof Cons)
+				cons = (Cons) cc.cdr;
+			    else
+				break;
+			}
+			return result;
+		    } else
+			return error("argument not DMLList",val);
+		}
+	    }
+	}
+    }
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a list -> 'b </code>*/
+    final public static Foldr foldr = new Foldr();
 
     final public static class Exists extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {

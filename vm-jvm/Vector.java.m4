@@ -10,10 +10,7 @@ final public class Vector {
 	final public DMLValue apply(DMLValue val) {
 	    DMLValue[] args=fromTuple(val,1,"Vector.fromList");
 	    DMLValue arg=args[0].request();
-	    if (arg instanceof DMLList)
-		return new DMLVector((DMLList) arg);
-	    else
-		return error("argument not DMLList",val);
+	    return new DMLVector(arg);
 	}
     }
     /** <code>val fromList : 'a list -> 'a vector </code>*/
