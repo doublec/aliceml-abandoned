@@ -33,11 +33,18 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun freshIntermediateId info = Id (info, Stamp.stamp (), Name.InId)
 
-	fun translateLit (I.IntLit i) = O.IntLit i
-	  | translateLit (I.WordLit w) = O.WordLit w
-	  | translateLit (I.CharLit c) = O.CharLit c
-	  | translateLit (I.StringLit s) = O.StringLit s
-	  | translateLit (RealLit r) = O.RealLit r
+	fun translateLit (info, I.IntLit i) = O.IntLit (info, i)
+	  | translateLit (info, I.WordLit w) = O.WordLit (info, w)
+	  | translateLit (info, I.CharLit c) = O.CharLit (info, c)
+	  | translateLit (info, I.StringLit s) = O.StringLit (info, s)
+	  | translateLit (info, I.RealLit r) = O.RealLit (info, r)
+
+	fun litEq (IntLit i1, IntLit i2) = i1 = i2
+	  | litEq (WordLit w1, WordLit w2) = w1 = w2
+	  | litEq (CharLit c1, CharLit c2) = c1 = c2
+	  | litEq (StringLit s1, StringLit s2) = s1 = s2
+	  | litEq (RealLit r1, RealLit r2) = Real.== (r1, r2)
+	  | litEq (_, _) = raise Crash.Crash "IntermediateAux.litEq"
 
 	type subst = (Stamp.t * Stamp.t) list
 

@@ -28,7 +28,8 @@ signature INTERMEDIATE_AUX =
 
 	val freshIntermediateId: I.id_info -> I.id
 
-	val translateLit: I.lit -> O.lit
+	val litEq: I.lit * I.lit -> bool
+	val translateLit: O.lit_info * I.lit -> O.lit
 
 	type subst = (Stamp.t * Stamp.t) list
 

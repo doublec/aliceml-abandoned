@@ -111,7 +111,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	fun testEq (test1, test2) = compareTest (test1, test2) = EQUAL
 
 	fun testDisjoint (LitTest lit1, LitTest lit2) =
-	    not (O.litEq (lit1, lit2))
+	    not (litEq (lit1, lit2))
 	  | testDisjoint (VecTest n1, VecTest n2) = n1 <> n2
 	  | testDisjoint (TagTest (_, n1, _, _), TagTest (_, n2, _, _)) =
 	    n1 <> n2

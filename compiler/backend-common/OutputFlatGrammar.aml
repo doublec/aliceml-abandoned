@@ -63,14 +63,14 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 			while !n >= 4 do (append "\t"; n := !n - 4);
 			while !n > 0 do (append "  "; n := !n - 1)
 		    end
-		  | format' (LIT (WordLit w)) =
+		  | format' (LIT (WordLit (_, w))) =
 		    (append "0w"; append (LargeWord.toString w))
-		  | format' (LIT (IntLit i)) = append (LargeInt.toString i)
-		  | format' (LIT (CharLit c)) =
+		  | format' (LIT (IntLit (_, i))) = append (LargeInt.toString i)
+		  | format' (LIT (CharLit (_, c))) =
 		    (append "#\""; append (WideChar.toString c); append "\"")
-		  | format' (LIT (StringLit s)) =
+		  | format' (LIT (StringLit (_, s))) =
 		    (append "\""; append (String.toString s); append "\"")
-		  | format' (LIT (RealLit r)) = append (LargeReal.toString r)
+		  | format' (LIT (RealLit (_, r))) = append (LargeReal.toString r)
 		  | format' (ID id) = append (idToString id)
 		  | format' (IDREF (IdRef id)) = append (idToString id)
 		  | format' (IDREF (LastIdRef id)) =

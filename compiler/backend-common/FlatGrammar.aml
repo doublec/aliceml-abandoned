@@ -26,13 +26,19 @@ structure FlatGrammar :> FLAT_GRAMMAR =
     struct
 	(* Annotations *)
 
+	type lit_info = Source.region
 	type id_info = {region: Source.region, typ: Type.t}
 	type stm_info = Source.region
 	type exp_info = Source.region
 
 	(* Statements and Expressions *)
 
-	datatype lit = datatype IntermediateGrammar.lit
+	datatype lit = (*--** need to annotate widths *)
+	    IntLit of lit_info * LargeInt.int
+	  | WordLit of lit_info * LargeWord.word
+	  | CharLit of lit_info * WideChar.char
+	  | StringLit of lit_info * WideString.string
+	  | RealLit of lit_info * LargeReal.real
 
 	type stamp = Stamp.t
 	type name = Name.t
@@ -175,10 +181,10 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | infoStm (IndirectStm (info, _)) = info
 	  | infoStm (ExportStm (info, _)) = info
 
-	fun litEq (IntLit i1, IntLit i2) = i1 = i2
-	  | litEq (WordLit w1, WordLit w2) = w1 = w2
-	  | litEq (CharLit c1, CharLit c2) = c1 = c2
-	  | litEq (StringLit s1, StringLit s2) = s1 = s2
-	  | litEq (RealLit r1, RealLit r2) = Real.== (r1, r2)
+	fun litEq (IntLit (_, i1), IntLit (_, i2)) = i1 = i2
+	  | litEq (WordLit (_, w1), WordLit (_, w2)) = w1 = w2
+	  | litEq (CharLit (_, c1), CharLit (_, c2)) = c1 = c2
+	  | litEq (StringLit (_, s1), StringLit (_, s2)) = s1 = s2
+	  | litEq (RealLit (_, r1), RealLit (_, r2)) = Real.== (r1, r2)
 	  | litEq (_, _) = raise Crash.Crash "IntermediateAux.litEq"
     end

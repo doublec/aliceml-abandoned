@@ -19,6 +19,7 @@ import structure Label                 from "../../lib/rtt/Label"
 import structure Type                  from "../../lib/rtt/Type"
 import structure PervasiveType         from "../../lib/rtt/PervasiveType"
 import structure Crash                 from "../infrastructure/Crash"
+import structure Error                 from "../infrastructure/Error"
 import structure Source                from "../infrastructure/Source"
 import structure IntMap                from "../infrastructure/IntMap"
 import structure Stamp                 from "../common/Stamp"
@@ -59,11 +60,11 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
             maxFixedInt + Int.toLarge 1
 	    handle Overflow => Int.toLarge 0 (* if LargeInt = FixedInt *)
 
-	fun translateLit (IntLit i) =
+	fun translateLit (IntLit (region, i)) =
             (V.int (FixedInt.fromLarge i) (*--** IntInf? *)
              handle Overflow =>
-                    raise Crash.Crash "CodeGenPhase.translateLit int")
-	  | translateLit (WordLit w) =
+                    Error.error' (region, "integer literal out of range"))
+	  | translateLit (WordLit (region, w)) =
             (let
                  val li = LargeWord.toLargeIntX w
              in
@@ -73,18 +74,21 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
                      V.int (FixedInt.fromLarge li)
              end
              handle Overflow =>
-                    raise Crash.Crash "CodeGenPhase.translateLit word")
-	  | translateLit (CharLit c) = V.int (FixedInt.fromInt (Char.ord c))
-	  | translateLit (StringLit s) = V.string s
-	  | translateLit (RealLit r) = V.real r
+                    Error.error' (region, "word literal out of range"))
+	  | translateLit (CharLit (region, c)) =
+	    V.int (FixedInt.fromInt (Char.ord c))
+	  | translateLit (StringLit (region, s)) = V.string s
+	  | translateLit (RealLit (region, r)) = V.real r
 
-	fun litToInt (IntLit i) =
+	fun litToInt (IntLit (region, i)) =
             (Int.fromLarge i (*-** IntInf? *)
-             handle Overflow => raise Crash.Crash "CodeGenPhase.litToInt int")
-	  | litToInt (WordLit w) =
+             handle Overflow =>
+                    Error.error' (region, "integer literal out of range"))
+	  | litToInt (WordLit (region, w)) =
             (LargeWord.toInt w
-             handle Overflow => raise Crash.Crash "CodeGenPhase.litToInt word")
-	  | litToInt (CharLit c) = Char.ord c
+             handle Overflow =>
+                    Error.error' (region, "word literal out of range"))
+	  | litToInt (CharLit (region, c)) = Char.ord c
 	  | litToInt (StringLit _ | RealLit _) =
 	    raise Crash.Crash "CodeGenPhase.litToInt string | real"
 
@@ -491,7 +495,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		     O.StringTest
 		     (translateIdRef (idRef, env),
 		      Vector.map (fn (lit, body) =>
-				  case lit of StringLit s =>
+				  case lit of StringLit (_, s) =>
 				      (s, translateBody (body, env))
 				    | _ => raise Match) litTests,
 		      translateBody (elseBody, env))
@@ -499,7 +503,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		     O.RealTest
 		     (translateIdRef (idRef, env),
 		      Vector.map (fn (lit, body) =>
-				  case lit of RealLit r =>
+				  case lit of RealLit (_, r) =>
 				      (r, translateBody (body, env))
 				    | _ => raise Match) litTests,
 		      translateBody (elseBody, env)))

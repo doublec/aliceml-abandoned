@@ -81,15 +81,15 @@ structure PickleFlatGrammar :> CODE
 	    fun outputExpInfo (q, info: exp_info) = outputRegion (q, info)
 	end
 
-	fun outputLit (q, WordLit w) =
+	fun outputLit (q, WordLit (_, w)) =
 	    (outputTuple (q, "WordLit", 1); ignore (outputWord (q, 31, w)))
-	  | outputLit (q, IntLit n) =
+	  | outputLit (q, IntLit (_, n)) =
 	    (outputTuple (q, "IntLit", 1); outputLargeInt (q, n))
-	  | outputLit (q, CharLit c) =
+	  | outputLit (q, CharLit (_, c)) =
 	    (outputTuple (q, "CharLit", 1); outputChar (q, c))
-	  | outputLit (q, StringLit s) =
+	  | outputLit (q, StringLit (_, s)) =
 	    (outputTuple (q, "StringLit", 1); ignore (outputString (q, s)))
-	  | outputLit (q, RealLit r) =
+	  | outputLit (q, RealLit (_, r)) =
 	    (outputTuple (q, "RealLit", 1); outputLargeReal (q, r))
 
 	fun outputLabel (q, label) =

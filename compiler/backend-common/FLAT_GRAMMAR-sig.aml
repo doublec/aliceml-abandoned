@@ -24,6 +24,7 @@ signature FLAT_GRAMMAR =
     sig
 	(* Annotations *)
 
+	type lit_info = Source.region
 	type id_info = {region: Source.region, typ: Type.t}
 	type stm_info = Source.region
 	type exp_info = Source.region
@@ -31,11 +32,11 @@ signature FLAT_GRAMMAR =
 	(* Statements and Expressions *)
 
 	datatype lit = (*--** need to annotate widths *)
-	    IntLit of LargeInt.int
-	  | WordLit of LargeWord.word
-	  | CharLit of WideChar.char
-	  | StringLit of WideString.string
-	  | RealLit of LargeReal.real
+	    IntLit of lit_info * LargeInt.int
+	  | WordLit of lit_info * LargeWord.word
+	  | CharLit of lit_info * WideChar.char
+	  | StringLit of lit_info * WideString.string
+	  | RealLit of lit_info * LargeReal.real
 
 	type stamp = Stamp.t
 	type name = Name.t
@@ -158,4 +159,3 @@ signature FLAT_GRAMMAR =
 	val infoStm: stm -> stm_info
 	val litEq: lit * lit -> bool
     end
-    where type lit = IntermediateGrammar.lit (*--** *)

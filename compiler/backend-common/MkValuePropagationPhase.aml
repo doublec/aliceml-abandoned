@@ -590,11 +590,11 @@ functor MkValuePropagationPhase(val isCross: bool
 	fun litRValueEq (lit, rvalue, eager) =
 	    (isDetermined (rvalue, eager);
 	     case lit of
-		 IntLit i => UnsafeValue.same (i, rvalue)
-	       | WordLit w => UnsafeValue.same (w, rvalue)
-	       | CharLit c => UnsafeValue.same (c, rvalue)
-	       | StringLit s => UnsafeValue.same (s, rvalue)
-	       | RealLit r => UnsafeValue.same (r, rvalue))
+		 IntLit (_, i) => UnsafeValue.same (i, rvalue)
+	       | WordLit (_, w) => UnsafeValue.same (w, rvalue)
+	       | CharLit (_, c) => UnsafeValue.same (c, rvalue)
+	       | StringLit (_, s) => UnsafeValue.same (s, rvalue)
+	       | RealLit (_, r) => UnsafeValue.same (r, rvalue))
 
 	fun lookupEnv (env, (IdRef id | LastIdRef id)) =
 	    IdMap.lookupExistent (env, id)
@@ -607,19 +607,17 @@ functor MkValuePropagationPhase(val isCross: bool
 	    if isCross then NONE
 	    else
 		case value of
-		    LitVal (IntLit i) =>
+		    LitVal (IntLit (region, i)) =>
 		    (SOME (UnsafeValue.cast (FixedInt.fromLarge i), true)
 		     handle Overflow =>
-			    raise Crash.Crash
-				  "ValuePropagationPhase.valueToRValue int")
-		  | LitVal (WordLit w) =>
+			    Error.error' (region, "integer literal out of range"))
+		  | LitVal (WordLit (region, w)) =>
 		    (SOME (UnsafeValue.cast (Word.fromLarge w), true)
 		     handle Overflow =>
-			    raise Crash.Crash
-				  "ValuePropagationPhase.valueToRValue word")
-		  | LitVal (CharLit c) => SOME (UnsafeValue.cast c, true)
-		  | LitVal (StringLit s) => SOME (UnsafeValue.cast s, true)
-		  | LitVal (RealLit r) => SOME (UnsafeValue.cast r, true)
+			    Error.error' (region, "word literal out of range"))
+		  | LitVal (CharLit (_, c)) => SOME (UnsafeValue.cast c, true)
+		  | LitVal (StringLit (_, s)) => SOME (UnsafeValue.cast s, true)
+		  | LitVal (RealLit (_, r)) => SOME (UnsafeValue.cast r, true)
 		  | PrimVal name => SOME (UnsafeValue.prim name, true)
 		  | ReflectVal (rvalue, eager) => SOME (rvalue, eager)
 		  | _ => NONE

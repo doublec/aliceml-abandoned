@@ -433,7 +433,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		(O.PrimAppExp (#region info, "Future.await", #[idRef]), stms)
 	    end
 	and translateExp (LitExp (info, lit), f, cont) =
-	    f (O.VarExp (#region info, O.Lit (translateLit lit)))::
+	    f (O.VarExp (#region info, O.Lit (translateLit (#region info, lit))))::
 	    translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.VarExp (#region info, O.Prim name))::translateCont cont
@@ -1058,7 +1058,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val idRef = lookup (pos, mapping)
 		val (thenBody, mapping') =
 		    translateGraph (thenGraph, mapping, region)
-		val tests = O.LitTests #[(lit, thenBody)]
+		val tests = O.LitTests #[(translateLit (region, lit), thenBody)]
 		val (elseBody, mapping'') =
 		    translateGraph (elseGraph, mapping', region)
 	    in

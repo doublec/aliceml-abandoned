@@ -147,14 +147,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | declareArgs (ProdArgs labelIdDefVec, await) =
 	    declareArgs (TupArgs (Vector.map #2 labelIdDefVec), await)
 
-	fun genLit (WordLit w) =
+	fun genLit (WordLit (_, w)) =
 	    (emit (LdcI4 (LargeWord.toInt w)); emit (Box System.Int32))
-	  | genLit (IntLit i) =
+	  | genLit (IntLit (_, i)) =
 	    (emit (LdcI4 (LargeInt.toInt i)); emit (Box System.Int32))
-	  | genLit (CharLit c) =
+	  | genLit (CharLit (_, c)) =
 	    (emit (LdcI4 (Char.ord c)); emit (Box System.Char))
-	  | genLit (StringLit s) = emit (Ldstr s)
-	  | genLit (RealLit r) = (emit (LdcR8 r); emit (Box System.Double))
+	  | genLit (StringLit (_, s)) = emit (Ldstr s)
+	  | genLit (RealLit (_, r)) = (emit (LdcR8 r); emit (Box System.Double))
 
 	fun emitIdRef (idRef as (IdRef _ | LastIdRef _)) =
 	    CodeStore.emitIdRef idRef
@@ -285,7 +285,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (case Vector.sub (litBodyVec, 0) of
 		 (WordLit _, _) =>
 		     let
-			 fun toInt (WordLit w, body) =
+			 fun toInt (WordLit (_, w), body) =
 			     (LargeWord.toInt w, ignore, body)
 			   | toInt (_, _) =
 			     raise Crash.Crash "CodeGenPhase.genTests 1"
@@ -297,7 +297,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     end
 	       | (IntLit _, _) =>
 		     let
-			 fun toInt (IntLit i, body) =
+			 fun toInt (IntLit (_, i), body) =
 			     (LargeInt.toInt i, ignore, body)
 			   | toInt (_, _) =
 			     raise Crash.Crash "CodeGenPhase.genTests 2"
@@ -309,7 +309,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     end
 	       | (CharLit _, _) =>
 		     let
-			 fun toInt (CharLit c, body) =
+			 fun toInt (CharLit (_, c), body) =
 			     (WideChar.ord c, ignore, body)
 			   | toInt (_, _) =
 			     raise Crash.Crash "CodeGenPhase.genTests 3"
@@ -322,7 +322,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	       | (StringLit _, _) =>
 		     let
 			 val max = Vector.length litBodyVec - 1
-			 fun gen (i, (StringLit s, body)) =
+			 fun gen (i, (StringLit (_, s), body)) =
 			     let
 				 val elseLabel = newLabel ()
 				 val regState = saveRegState ()
@@ -346,7 +346,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	       | (RealLit _, _) =>
 		     let
 			 val max = Vector.length litBodyVec - 1
-			 fun gen (i, (RealLit r, body)) =
+			 fun gen (i, (RealLit (_, r), body)) =
 			     let
 				 val elseLabel = newLabel ()
 				 val regState = saveRegState ()
