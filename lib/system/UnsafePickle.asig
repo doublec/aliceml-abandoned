@@ -11,17 +11,6 @@
  *   $Revision$
  *)
 
-(*--**FIXME: 'inf should be Inf.sign, 'signature should Signature.t,
-             string should be Url.t
-import
-    structure Url
-from "../stoc/misc/Url"
-
-import
-    structure Inf
-from "../stoc/common/Inf"
-*)
-
 signature UNSAFE_PICKLE_COMPONENT =
     sig
 	structure UnsafePickle:

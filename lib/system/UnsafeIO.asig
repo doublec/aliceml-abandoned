@@ -11,9 +11,10 @@
  *   $Revision$
  *)
 
-import signature IO from "IO-sig"
-
-signature IO_COMPONENT =
+signature UNSAFE_IO_COMPONENT =
     sig
-	structure IO : IO
+	structure UnsafeIO:
+	    sig
+		exception Io of {name: string, function: string, cause: exn}
+	    end
     end
