@@ -78,14 +78,25 @@ functor Intermediate(type info
 
     (* Predefined *)
 
-    val id_false	= Id(dummy, ~1, ExId "false")
-    val id_true		= Id(dummy, ~2, ExId "true")
-    val id_nil		= Id(dummy, ~3, ExId "nil")
-    val id_cons		= Id(dummy, ~4, ExId "::")
-    val id_ref		= Id(dummy, ~5, ExId "ref")
-    val id_Match	= Id(dummy, ~6, ExId "Match")
-    val id_Bind		= Id(dummy, ~7, ExId "Bind")
-    val id_eq		= Id(dummy, ~8, ExId "=")
+    val stamp_false	= ~1
+    val stamp_true	= ~2
+    val stamp_nil	= ~3
+    val stamp_cons	= ~4
+    val stamp_ref	= ~5
+    val stamp_Match	= ~6
+    val stamp_Bind	= ~7
+    val stamp_eq	= ~8
+    val stamp_assign	= ~9
+
+    val id_false	= Id(dummy, stamp_false, ExId "false")
+    val id_true		= Id(dummy, stamp_true,  ExId "true")
+    val id_nil		= Id(dummy, stamp_nil,   ExId "nil")
+    val id_cons		= Id(dummy, stamp_cons,  ExId "::")
+    val id_ref		= Id(dummy, stamp_ref,   ExId "ref")
+    val id_Match	= Id(dummy, stamp_Match, ExId "Match")
+    val id_Bind		= Id(dummy, stamp_Bind,  ExId "Bind")
+    val id_eq		= Id(dummy, stamp_eq,    ExId "=")
+    val id_assign	= Id(dummy, stamp_assign,ExId ":=")
 
     val longid_false	= ShortId(dummy, id_false)
     val longid_true	= ShortId(dummy, id_true)
@@ -95,6 +106,7 @@ functor Intermediate(type info
     val longid_Match	= ShortId(dummy, id_Match)
     val longid_Bind	= ShortId(dummy, id_Bind)
     val longid_eq	= ShortId(dummy, id_eq)
+    val longid_assign	= ShortId(dummy, id_assign)
 
 
     (* Projections *)
