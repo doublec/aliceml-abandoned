@@ -25,14 +25,15 @@
 #define MAX_SIZE(t) \
   (MAX_BIGBLOCKSIZE * sizeof(u_int) / sizeof(t))
 
+class Transform;
+
 class Alice {
 public:
   static const BlockLabel Array       = MIN_DATA_LABEL;
   static const BlockLabel Cell        = (BlockLabel) (MIN_DATA_LABEL + 1);
-  static const BlockLabel Constructor = (BlockLabel) (MIN_DATA_LABEL + 2);
-  static const BlockLabel ConVal      = (BlockLabel) (MIN_DATA_LABEL + 3);
-  static const BlockLabel Vector      = (BlockLabel) (MIN_DATA_LABEL + 4);
-  static const BlockLabel MIN_TAG     = (BlockLabel) (MIN_DATA_LABEL + 5);
+  static const BlockLabel ConVal      = (BlockLabel) (MIN_DATA_LABEL + 2);
+  static const BlockLabel Vector      = (BlockLabel) (MIN_DATA_LABEL + 3);
+  static const BlockLabel MIN_TAG     = (BlockLabel) (MIN_DATA_LABEL + 4);
   static const BlockLabel MAX_TAG     = MAX_DATA_LABEL;
 
   static bool IsTag(BlockLabel l) {
@@ -131,26 +132,36 @@ public:
 
 class Constructor: private Block {
 private:
-  static const u_int NAME_POS = 0;
-  static const u_int SIZE     = 1;
+  static const u_int HANDLER_POS = 0;
+  static const u_int NAME_POS = 1;
+  static const u_int TRANSFORM_POS = 2;
+  static const u_int SIZE = 3; //--** needs to be represented exactly
+  static Handler *handler;
 public:
   using Block::ToWord;
 
+  static void Init();
+
+  static Constructor *New(word name, Block *guid);
   static Constructor *New(word name) {
-    Block *b = Store::AllocBlock(Alice::Constructor, SIZE);
+    Block *b = Store::AllocBlockWithHandler(SIZE, handler);
     b->InitArg(NAME_POS, name);
+    b->InitArg(TRANSFORM_POS, 0); // construct lazily
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Constructor);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == HANDLERBLOCK_LABEL && b->GetSize() == SIZE);
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == Alice::Constructor);
+    Assert(b->GetLabel() == HANDLERBLOCK_LABEL && b->GetSize() == SIZE);
     return static_cast<Constructor *>(b);
   }
+
+  Transform *GetTransform();
 };
 
 class ConVal: private Block {
@@ -169,13 +180,13 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == Alice::ConVal ||
-	   b->GetLabel() == Alice::Constructor);
+	   b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<ConVal *>(b);
   }
   static ConVal *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::ConVal ||
-	   b->GetLabel() == Alice::Constructor);
+	   b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<ConVal *>(b);
   }
 
@@ -291,24 +302,16 @@ public:
 };
 
 class UniqueConstructor: public Constructor {
-private:
-  static const u_int ID_POS = 0;
-  static const u_int SIZE = 1;
 public:
   static UniqueConstructor *New(String *id) {
-    Block *b = Store::AllocBlock(Alice::Constructor, SIZE);
-    b->InitArg(ID_POS, id->ToWord());
-    return static_cast<UniqueConstructor *>(b);
+    return static_cast<UniqueConstructor *>
+      (Constructor::New(id->ToWord(), static_cast<Block *>(id)));
   }
   static UniqueConstructor *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Constructor);
-    return static_cast<UniqueConstructor *>(b);
+    return static_cast<UniqueConstructor *>(Constructor::FromWord(x));
   }
   static UniqueConstructor *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == Alice::Constructor);
-    return static_cast<UniqueConstructor *>(b);
+    return static_cast<UniqueConstructor *>(Constructor::FromWordDirect(x));
   }
 };
 
