@@ -45,6 +45,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	fun main_c (infile, outfile) =
 	    (RecursiveCompiler.compileFileToFile (infile, outfile);
 	     OS.Process.success)
+(*--** handle IO.Io {...} => *)
 
 	fun main_x (infile, outfile) =
 	    (*--** respect executableHeader *)
@@ -52,6 +53,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	     case Config.platform of
 		 Config.WIN32 => OS.Process.success
 	       | Config.UNIX => OS.Process.system ("chmod +x " ^ outfile))
+(*--** handle IO.Io {...} => *)
 
 	structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
 
