@@ -54,9 +54,8 @@ DEFINE1(Unsafe_getPrimitiveByName) {
   RETURN(PrimitiveTable::LookupValue(static_cast<Chunk *>(name)));
 } END
 
-DEFINE2(Unsafe_makeClosure) {
+DEFINE1(Unsafe_makeFunction) {
   DECLARE_TAGVAL(function, x0);
-  DECLARE_VECTOR(vector, x1);
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, 2);
   Chunk *name =
@@ -64,8 +63,13 @@ DEFINE2(Unsafe_makeClosure) {
   Transform *transform = Transform::New(name, function->ToWord());
   concreteCode->Init(0, function->ToWord());
   concreteCode->Init(1, transform->ToWord());
+  RETURN(concreteCode->ToWord());
+} END
+
+DEFINE2(Unsafe_makeClosure) {
+  DECLARE_VECTOR(vector, x1);
   u_int nglobals = vector->GetLength();
-  Closure *closure = Closure::New(concreteCode->ToWord(), nglobals);
+  Closure *closure = Closure::New(x0, nglobals);
   for (u_int i = nglobals; i--; )
     closure->Init(i, vector->Sub(i));
   RETURN(closure->ToWord());
@@ -97,6 +101,7 @@ void PrimitiveTable::RegisterUnsafe() {
   Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
   Register("Unsafe.cast", Unsafe_cast, 1);
   Register("Unsafe.getPrimitiveByName", Unsafe_getPrimitiveByName, 1);
+  Register("Unsafe.makeFunction", Unsafe_makeFunction, 1);
   Register("Unsafe.makeClosure", Unsafe_makeClosure, 2);
   Register("Unsafe.makeTaggedValue", Unsafe_makeTaggedValue, 2);
   Register("Unsafe.makeTuple", Unsafe_makeTuple, 2);
