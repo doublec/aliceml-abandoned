@@ -85,11 +85,12 @@ struct
 		      val relman = 
 			    case RelMan.lookup(reldict,ind)
 			      of SOME x => x (* es existiert bereits ein Relationsmanager *)
-		               | NONE => ( if isListType t
+		               | NONE => ( if true
 					       then ( Dictionaries.RelMan.update(Dictionaries.reldict,
 										 (ind,
 										  [(V va,ref 0,!relnumber)]))
-                                                    ; valOf(RelMan.lookup(reldict,ind)) )
+                                                    ; TextIO.print("CT: eingefuegt mit counter 0\n")
+						    ; valOf(RelMan.lookup(reldict,ind)) )
 					   else [] )
 			val desc = createValue(va,t) 
 			val str = "Ref"^Int.toString(!relnumber)

@@ -1009,10 +1009,8 @@ fun setVisible (x,y) = let
 	    val i = Dictionaries.Main.
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
 	    val root = (new()
-			; Dictionaries.RelMan.update(Dictionaries.reldict,
-						     (i,[(V va,ref 0,0)]))
-			; relnumber := 0
-			;!canvasroot)
+		       ; relnumber := 0
+		       ;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
 		     ;CreateTree.newTree(va,t,i,root))		
