@@ -101,6 +101,11 @@
   return Worker::REQUEST;			\
 }
 
+#define EXIT(i) {				\
+  Scheduler::currentData = Store::IntToWord(i);	\
+  return Worker::EXIT;				\
+}
+
 #define DECLARE_INT(i, x)			\
   s_int i = Store::WordToInt(x);		\
   if (i == INVALID_INT) { REQUEST(x); } else {}
