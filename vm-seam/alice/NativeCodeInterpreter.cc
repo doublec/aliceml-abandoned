@@ -37,7 +37,7 @@ protected:
   static const u_int CODE_POS           = 1;
   static const u_int CLOSURE_POS        = 2;
   static const u_int IMMEDIATE_ARGS_POS = 3;
-  static const u_int NB_LOCAL_ARGS_POS  = 4;
+  static const u_int CONTINUATION_POS   = 4;
   static const u_int BASE_SIZE          = 5;
 public:
   using Block::ToWord;
@@ -64,9 +64,6 @@ public:
   void SetImmediateArgs(Tuple *immediateArgs) {
     StackFrame::ReplaceArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
   }
-  u_int GetNbLocals() {
-    return Store::DirectWordToInt(StackFrame::GetArg(NB_LOCAL_ARGS_POS));
-  }
   void InitLocalEnv(u_int index, word value) {
     StackFrame::InitArg(BASE_SIZE + index, value);
   }
@@ -76,6 +73,7 @@ public:
 			      Chunk *code,
 			      Closure *closure,
 			      Tuple *immediateArgs,
+			      word continuation,
 			      int nbLocals) {
     u_int frSize      = BASE_SIZE + nbLocals;
     StackFrame *frame = StackFrame::New(NATIVE_CODE_FRAME, interpreter, frSize);
@@ -83,7 +81,7 @@ public:
     frame->InitArg(CODE_POS, code->ToWord());
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
-    frame->InitArg(NB_LOCAL_ARGS_POS, Store::IntToWord(nbLocals));
+    frame->InitArg(CONTINUATION_POS, continuation);
     return static_cast<NativeCodeFrame *>(frame);
   }
   // NativeCodeFrame Untagging
@@ -122,6 +120,33 @@ public:
 //
 NativeCodeInterpreter *NativeCodeInterpreter::self;
 
+static inline word MakeNativeFrame(word continuation, Closure *closure) {
+  NativeConcreteCode *concreteCode =
+    NativeConcreteCode::FromWord(closure->GetConcreteCode());
+  Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
+  int nLocals = concreteCode->GetNLocals();
+  Chunk *code          = concreteCode->GetNativeCode();
+  Tuple *immediateArgs = concreteCode->GetImmediateArgs();
+  return NativeCodeFrame::New(NativeCodeInterpreter::self,
+			      NativeCodeJitter::GetInitialPC(),
+			      code, closure, immediateArgs,
+			      continuation, nLocals)->ToWord();
+}
+
+word NativeCodeInterpreter::FastPushCall(word continuation, Closure *closure) {
+  word frame = MakeNativeFrame(continuation, closure);
+  Scheduler::PushFrame(frame);
+  return frame;
+}
+
+word NativeCodeInterpreter::TailPushCall(Closure *closure) {
+  word frame =
+    MakeNativeFrame(NativeCodeJitter::GetDefaultContinuation(), closure);
+  Scheduler::PopFrame();
+  Scheduler::PushFrameNoCheck(frame);
+  return frame;
+}
+
 Block *
 NativeCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   NativeConcreteCode *concreteCode = (NativeConcreteCode *) blockWithHandler;
@@ -129,39 +154,10 @@ NativeCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
 }
 
 void NativeCodeInterpreter::PushCall(Closure *closure) {
-  NativeConcreteCode *concreteCode =
-    NativeConcreteCode::FromWord(closure->GetConcreteCode());
-  Assert(concreteCode->GetInterpreter() == this);
-  NativeCodeFrame *frame;
-  int nLocals = concreteCode->GetNLocals();
-  Chunk *code          = concreteCode->GetNativeCode();
-  Tuple *immediateArgs = concreteCode->GetImmediateArgs();
-  frame = NativeCodeFrame::New(this, NativeCodeJitter::GetInitialPC(),
-			       code, closure, immediateArgs, nLocals);
-  Scheduler::PushFrame(frame->ToWord());
+  word frame =
+    MakeNativeFrame(NativeCodeJitter::GetDefaultContinuation(), closure);
+  Scheduler::PushFrame(frame);
 }
-
-#if defined(ALICE_IMPLICIT_KILL)
-void NativeCodeInterpreter::PurgeFrame(word frame) {
-  StackFrame *f = StackFrame::FromWordDirect(frame);
-  NativeCodeFrame *codeFrame;
-  if (f->GetLabel() == NATIVE_CODE_FRAME) {
-    codeFrame = static_cast<NativeCodeFrame *>(f);
-    Closure *closure = codeFrame->GetClosure();
-    word wConcreteCode = closure->GetConcreteCode();
-    NativeConcreteCode *nativeCode =
-      NativeConcreteCode::FromWord(wConcreteCode);
-    LivenessInformation *info = nativeCode->GetLivenessInfo();
-    char *row = info->SeekRow(Store::IntToWord(codeFrame->GetPC()));
-    if (row != NULL) {
-      word dead = Store::IntToWord(4711);
-      for (u_int i = info->GetM(); i--;)
-  	if (info->GetRowBit(row, i))
-  	  codeFrame->InitLocalEnv(i, dead);
-    }
-  }
-}
-#endif
 
 Interpreter::Result NativeCodeInterpreter::Run() {
   NativeCodeFrame *frame =
