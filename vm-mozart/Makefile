@@ -93,8 +93,8 @@ PREFIX = /opt/stockhausen-devel
 
 STOC0 = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../bootstrap/stoc-mozart
-STOC1 = build1/install/bin/stoc
-STOC2 = build2/install/bin/stoc
+STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
+STOC2 = STOCKHOME=build2/install build2/install/bin/stoc --rtt-level=full
 
 STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
 STOC_EXTRA_OPTS = --dump-target
@@ -143,7 +143,7 @@ LIBRTTSOURCES0 = \
 	Type.aml INF-sig.aml Inf.aml PERVASIVE_TYPE-sig.aml \
 	MkPervasiveType.aml PervasiveType.aml PP_MISC-sig.aml PPMisc.aml \
 	PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml \
-	PPInf.aml
+	PPInf.aml RTT.aml
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES0 = \
@@ -412,7 +412,7 @@ BUILD2SOURCES = $(LIBSOURCES:%=build2/%)
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \
 	build2/install/lib/system build2/install/lib/utility \
-	build2/install/lib/rtt
+	build2/install/lib/rtt build2/install/lib/ml-yacc
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
 INSTALL2LIBFILES = \
@@ -493,12 +493,14 @@ $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
 ########################################################################
 
 BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
-BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
+BUILD3SOURCES = \
+	$(filter-out build3/lib/fundamental/RTT.aml, \
+	  $(ALLSOURCES:%=build3/%))
 
 INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
-	build3/install/lib/rtt
+	build3/install/lib/rtt build3/install/lib/ml-yacc
 INSTALL3TOPFILES = $(INSTALL2TOPFILES) stot.ozf
 INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
 INSTALL3LIBFILES = $(INSTALL2LIBFILES)
@@ -532,6 +534,9 @@ BUILD3OZLINPUTS = \
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/stow.ozf build3/stoc.ozf build3/stot.ozf
+
+build3/lib/fundamental/RTT.ozf: build2/install/lib/rtt/RTT.ozf
+	$(OZL) --include=.. $< -o $@
 
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
@@ -595,7 +600,9 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 ## Global Installation
 ##
 
-INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental
+INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
+	$(PREFIX)/lib/system $(PREFIX)/lib/utility $(PREFIX)/lib/rtt \
+	$(PREFIX)/lib/ml-yacc
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \

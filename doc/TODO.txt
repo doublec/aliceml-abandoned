@@ -217,30 +217,19 @@ steps 3 and 4):
    Formerly the corresponding sources resided in stoc/misc and
    stoc/common.  The import URLs reflect this change.
 
-======
- TODO
-======
-
-7a. Clean up SML/NJ source tree. (AR)
-
-   Currently we have two copies of some modules - one for the
-   Alice codebase, one as the SML/NJ source.  This is the
-   case for some sources formerly residing in stoc/misc and
-   stoc/common.  These sources now live in lib/utility and
-   utility/rtt and should now be handled using aml2sml.
-
-   Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
-
-8. Implement pass 2. (AR)
-
-   Rename RTT to DummyRTT to be consistent with other dummies.
+8. Implement pass 2. (LK)
 
    Build fundamental, system, utility, and rtt in pass 2 without RTT. Use
    DummyRTT as RTT component.
 
    Use full RTT in pass 3. Use RTT component built in pass 2. Rebuild
-   everything except RTT component (for now, until we have a working
-   where-primitive-type to avoid generation of new type stamps).
+   everything.  We will need a working where-primitive-type to avoid
+   generation of new type stamps - so for now, the RTT component itself
+   is incompatible with the generated runtime types.
+
+======
+ TODO
+======
 
 9. Test runtime types. (AR)
 
@@ -250,31 +239,43 @@ steps 3 and 4):
  AFTER OPERETTE 2
 ==================
 
-10. Enrich native components with runtime types. (LK/AR)
+10. Clean up source tree. (AR)
+
+   Currently we have two copies of some modules - one for the
+   Alice codebase, one as the SML/NJ source.  This is the
+   case for some sources formerly residing in stoc/misc and
+   stoc/common.  These sources now live in lib/utility and
+   utility/rtt and should now be handled using aml2sml.
+
+   Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
+
+   Rename RTT to DummyRTT to be consistent with other dummies.
+
+11. Enrich native components with runtime types. (LK/AR)
 
    Natively implemented components that export types, such
    as TextIO.outstream, are assigned runtime types by wrapping
    them in an Alice component.
 
-11. Provide fundamental library as building-blocks. (AR/LK)
+12. Provide fundamental library as building-blocks. (AR/LK)
 
    Every runtime instantiates `holes' in the library, such
    as by specifying that Int = IntInf or LargeInt = Int31.
    Includes solving the cycle problem regarding Pervasive.
 
-12. Generate dependencies automatically. (AR)
+13. Generate dependencies automatically. (AR)
 
    A basic stodep tool exists, but the parser has to be
    replaced by a correct one.
 
-13. Let stoc lose its special status. (AR)
+14. Let stoc lose its special status. (AR)
 
    Move the Makefile one level up.  The files are then
    generated within the toplevel directory.
 
-14. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
+15. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
 
-15. Factorize vm-mozart/bootstrap/Makefile into vm-specific and generic stuff.
+16. Factorize vm-mozart/bootstrap/Makefile into vm-specific and generic stuff.
 
    A new file Makefile.vars will contain all vm-specific stuff.
    BACKENDMOZARTSOURCES0 will be renamed to BACKENDSPECIFICSOURCES0
@@ -283,6 +284,6 @@ steps 3 and 4):
    The same can be done for FRONTENDSMLSOURCES0, which would
    become FRONTENDSPECIFICFILES0.
 
-16. Clean up lib/system/UnsafePickle.
+17. Clean up lib/system/UnsafePickle.
 
    The Pickle component needs Url, which also should move to system.
