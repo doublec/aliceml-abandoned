@@ -12,7 +12,7 @@
  *   $Revision$
  *)
 
-import structure Signature from "../../lib/system/Signature"
+import structure Inf       from "../../lib/rtt/Inf"
 import structure Component from "../../lib/system/Component"
 import structure Url       from "../../lib/utility/Url"
 
@@ -21,6 +21,6 @@ sig
     datatype t =
 	COMPONENT of {component: unit -> Component.t,
 		      eval: Url.t -> unit}
-      | FOREIGN of {sign: Signature.t,
+      | FOREIGN of {inf: Inf.t,
 		    save: string -> unit}
 end
