@@ -12,9 +12,8 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
- // NON-ABSTRACT TASK STACK USE
 static int Compare(word x0, word x1) {
   Block *a = Store::WordToBlock(x0);
   Block *b = Store::WordToBlock(x1);
