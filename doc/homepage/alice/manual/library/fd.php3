@@ -262,7 +262,7 @@
       <P>This datatype is used to assign implementation dependent values to
          finite domain variables. <TT>MIN</TT> denotes the minimal integer
          value, <TT>MAX</TT> denotes the maximal integer value and <TT>MID</TT>
-         the value <TT>MAX / 2</TT>.
+         the medium value.
     </P></DD>
 
     <DT>
