@@ -52,7 +52,6 @@ public:
   static void PushPreloadFrame(Thread *thread);
 
   word ResolveClass(JavaString *name); // Class or Future
-  word ResolveType(JavaString *name); // Type or Future
   word ResolveFieldRef(word theClass, JavaString *name,
 		       JavaString *descriptor); // FieldRef or Future
   word ResolveMethodRef(word theClass, JavaString *name,
