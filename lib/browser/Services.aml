@@ -68,6 +68,11 @@ import signature SERVICES from "SERVICES-sig"
 		  val h = WindowHelper.fontHeight(font)
 		  val rx = Real.fromInt(x * w)
 		  val ry = Real.fromInt(y * h)
+		  val _ = TextIO.print("ITEM MOVE BY " 
+					^ Real.toString(rx)
+					^ "/" 
+					^ Real.toString(ry)
+				         ^ "\n")
 	      in
 		  GtkCanvas.itemMove(group,rx,ry)
 	      end
