@@ -112,13 +112,15 @@ text "@" ^^*)
 		hbox(
 		    text(if w = VALUE then "val" else "constructor") ^/^
 		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
 		) ^^
 		nest(break ^^
 		    abox(PPType.ppTyp t)
 		) ^^
 		(case d of NONE => empty | SOME p' =>
-(*DEBUG		if p' = p then empty else*)
+		if p' = p then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ PPPath.ppPath p')
 		))
@@ -129,13 +131,15 @@ text "@" ^^*)
 		hbox(
 		    text(if w = CLOSED then "type" else "datatype") ^/^
 		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
 		) ^^
 		nest(break ^^
 		    abox(PPType.ppKind k)
 		) ^^
 		(case d of NONE => empty | SOME t =>
-(*DEBUG		if Type.isCon t andalso #3(Type.asCon t) = p then empty else*)
+		if Type.isCon t andalso #3(Type.asCon t) = p then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ PPType.ppTyp t)
 		))
@@ -146,13 +150,15 @@ text "@" ^^*)
 		hbox(
 		    text(if isArrow j then "functor" else "structure") ^/^
 		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
 		) ^^
 		nest(break ^^
 		    abox(ppInf j)
 		) ^^
 		(case d of NONE => empty | SOME p' =>
-(*DEBUG		if p' = p then empty else*)
+		if p' = p then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ PPPath.ppPath p')
 		))
@@ -163,13 +169,15 @@ text "@" ^^*)
 		hbox(
 		    text "signature" ^/^
 		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
 		) ^^
 		nest(break ^^
 		    abox(ppKind k)
 		) ^^
 		(case d of NONE => empty | SOME j =>
-(*DEBUG		if isCon j andalso #2(asCon j) = p then empty else*)
+		if isCon j andalso #2(asCon j) = p then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ ppInf j)
 		))

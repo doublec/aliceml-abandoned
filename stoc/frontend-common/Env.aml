@@ -3,6 +3,7 @@ structure Env :> ENV =
 
     type stamp = AbstractGrammar.stamp
     type id    = AbstractGrammar.id
+    type path  = Path.t
     type typ   = Type.t
     type var   = Type.var
     type inf   = Inf.t

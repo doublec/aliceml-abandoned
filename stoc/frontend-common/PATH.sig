@@ -27,7 +27,6 @@ signature PATH =
 
     val strengthen :	path * (path * lab * int) -> unit
 
-    val cloneBinder :	('rea * path -> path option) -> 'rea * path -> path
-    val cloneFree :	('rea * path -> path option) -> 'rea * path -> path
+    val instance :	('rea * path -> path option) -> 'rea * path -> path
 
   end

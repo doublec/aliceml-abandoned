@@ -64,6 +64,7 @@ signature INF =
 
     val clone :		inf -> inf
     val instance :	inf -> inf
+    val singleton :	inf -> inf
     val realise :	rea  * inf -> unit
     val strengthen :	path * inf -> unit
     val strengthenSig :	path * sign -> unit
@@ -90,10 +91,10 @@ signature INF =
     val newMod :	sign * lab -> path
     val newInf :	sign * lab -> path
 
-    val extendVal :	sign * path *  typ  * val_sort * path option -> path
-    val extendTyp :	sign * path * tkind * typ_sort * typ  option -> path
-    val extendMod :	sign * path *  inf  * path option -> path
-    val extendInf :	sign * path *  kind * inf  option -> path
+    val extendVal :	sign * path *  typ  * val_sort * path option -> unit
+    val extendTyp :	sign * path * tkind * typ_sort * typ  option -> unit
+    val extendMod :	sign * path *  inf  * path option -> unit
+    val extendInf :	sign * path *  kind * inf  option -> unit
 
   (* Signature lookup *)
 

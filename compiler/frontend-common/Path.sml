@@ -63,29 +63,24 @@ structure PathPrivate =
     (* Strengthening has to be used carefully, as it results in a new
      * hash value, thereby invalidating eventual hash maps and sets! *)
 
-    fun strengthen(p1, (p,l,n)) = p := DOT(p1,l,n)
+    fun strengthen(p1, (p as ref(PLAIN _),l,n)) = p := DOT(p1,l,n)
+      | strengthen _                            = ()
 
 
   (* Cloning *)
 
-    fun clone (isBinder, lookup) (rea, p) =
+    fun instance lookup (rea, p) =
 	let
-	    exception External
-
-	    fun clone' p1 =
+	    fun clone p1 =
 		case lookup(rea, p1)
 		 of SOME p2 => p2
 		  | NONE    =>
 		case !p1
-		 of p' as PLAIN _ => if isBinder then ref p' else raise External
-		  | DOT(p2,l,n)   => ref(DOT(clone' p2, l, n))
+		 of p' as PLAIN _ => ref p'
+		  | DOT(_,l,_)    => fromLab l
 	in
-	    clone' p handle External => p
+	    clone p
 	end
-
-    fun cloneBinder lookup = clone(true,  lookup)
-    fun cloneFree   lookup = clone(false, lookup)
-
   end
 
 

@@ -256,30 +256,85 @@ structure TypePrivate =
 	end
 
 
+  (* Occur check (not used by unification) *)
+
+    exception Occurs
+
+    fun occurs(t1,t2) =
+	let
+	    fun occurs t = if t1 = t then raise Occurs else ()
+	in
+	    ( app occurs t2 ; false ) handle Occurs => true
+	end
+
+
   (* Reduction to head normal form *)
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(t as ref(APP(t1,t2)))	= reduceApp(t, t1, t2, false)
-      | reduce _			= ()
-
-    and reduceApp(t, t1 as ref(LAM(a,_)), t2, r) =
-	( t := HOLE(kind a, !level)
-	; case !(clone t1)
-	    of LAM(a,t11) =>
-		( a := LINK t2
-		; t := (if r then REC else LINK) t11
-		; reduce t
+    fun reduce(t as ref(APP(t1,t2))) =
+	let
+	    fun reduceApp(t1 as ref(LAM(a,_)), r) =
+		( t := HOLE(kind a, !level)
+		; case !(clone t1)
+		    of LAM(a,t11) =>
+			( a := LINK t2
+			; t := (if r then REC else LINK) t11
+			; reduce t
+			)
+		    | _ => Crash.crash "Type.reduceApp"
 		)
-	    | _ => Crash.crash "Type.reduceApp"
-	)
-      | reduceApp(t, ref(LINK t11), t2, r) =
-	    reduceApp(t, follow t11, t2, r)
+	      | reduceApp(ref(LINK t11), r) =
+		    reduceApp(follow t11, r)
 
-      | reduceApp(t, ref(REC t11), t2, r) =
-	    reduceApp(t, follow t11, t2, true)
+	      | reduceApp(ref(REC t11), r) =
+		    reduceApp(follow t11, true)
 
-      | reduceApp(t, t1, t2, r) = ()
+	      | reduceApp _ = ()
+	in
+	    reduceApp(t1, false)
+	end
+
+      | reduce _ = ()
+
+
+    (*
+     * We don't normally do eta-reduction, since it is expensive.
+     * During unification we curently allow no lambdas anyway.
+     * Eta-reduction is still needed however for equals, to equate
+     * eta-convertible type functions. It's done on demand.
+     *)
+ 
+    fun reduceEta(t as ref(LAM _)) =
+	let
+	    fun reduceLam(ref(LAM(a,t1)), vs) =
+		reduceLam(t1, a::vs)
+
+	      | reduceLam(ref(APP(t1,t2)), a::vs) =
+		let
+		    val t2' = follow t2
+		    val a'  = follow a
+		in
+		    if t2' = a' andalso not(occurs(a',t1)) then
+			reduceLam(t1, vs)
+		    else
+			()
+		end
+
+	      | reduceLam(t1, []) =
+		    ( t := LINK t1 ; reduceEta t1 )
+
+	      | reduceLam(ref(LINK t1), vs) =
+		    reduceLam(t1, vs)
+
+	      | reduceLam _ = ()
+	in
+	    reduceLam(t, [])
+	end
+
+      | reduceEta(ref(LINK t)) = reduceEta t
+
+      | reduceEta _ = ()
 
 
   (* Creation and injections *)
@@ -442,18 +497,6 @@ structure TypePrivate =
     and liftRow(NIL)        = ()
       | liftRow(RHO n)      = if !n > !level then n := !level else ()
       | liftRow(FLD(l,t,r)) = liftRow r
-
-
-  (* Occur check (not used by unification) *)
-
-    exception Occurs
-
-    fun occurs(t1,t2) =
-	let
-	    fun occurs t = if t1 = t then raise Occurs else ()
-	in
-	    ( app occurs t2 ; false ) handle Occurs => true
-	end
 
 
   (* Unification *)
@@ -643,7 +686,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 		    fun recur p x =
 			( t1 := LINK t2
-			; trail := (t1,t1') :: !trail
+			; trail := (t1,!t1) :: !trail
 			; p x
 			)
 
@@ -682,17 +725,22 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 p1 = p2
 
 		       | (APP(tt1), APP(tt2)) =>
-			 (* Note that we do not allow general lambdas during
-			  * unification, so application is considered to be
-			  * in normal form *)
 			 recur equalsPair (tt1,tt2)
 
+		       | ( (LAM _, _) | (_, LAM _) ) =>
+			 ( reduceEta t1
+			 ; reduceEta t2
+			 ; case (!t1,!t2)
+			     of (LAM(a1,t11), LAM(a2,t21)) =>
+				recurBinder(a1, a2, t11, t21)
+			      | ( (LAM _, _) | (_, LAM _) ) => false
+			      | _ => equals(t1,t2)
+			 )
 		       | ( (ALL(a1,t11), ALL(a2,t21))
-			 | (EX(a1,t11), EX(a2,t21))
-			 | (LAM(a1,t11), LAM(a2,t21)) ) =>
+			 | (EX(a1,t11), EX(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
 
-		       | _ => raise Unify(t1,t2)
+		       | _ => false
 		end
 
 	    and equalsPair((t11,t12), (t21,t22)) =

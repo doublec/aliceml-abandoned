@@ -1,5 +1,6 @@
 (* UNFINISHED:
    - reset type level on error
+   - appropriate treatment of value paths
 *)
 
 (*
@@ -137,10 +138,10 @@ val _=print("-- insert val " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
 	    val _ = insertVal(E, stamp, (id,t,sort))
 		    handle Collision _ =>	(* val rec or alt pat *)
 			Type.unify(t, #2(lookupVal(E, stamp)))
+(*
 before (print" (* found : ";
 PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60);
 print" *)")
-(*
 val _=print "\n"
 *)
 	in
@@ -639,11 +640,12 @@ val _=print "\n"
 
     and elabTypId_bind(E, t, sort, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert type " ^ x ^ "(" ^ Stamp.toString stamp ^ ") = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
+*)
 	    val _ = insertTyp(E, stamp, (id,t,sort))
 	in
 	    O.Id(typInfo(i,t), stamp, name)
@@ -944,11 +946,12 @@ val _=print "\n"
 
     and elabModId_bind(E, j, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert module " ^ x ^ "(" ^ Stamp.toString stamp ^ ") :\n")
 val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
 val _=print "\n"
+*)
 	    val _ = insertMod(E, stamp, (id,j))
 	in
 	    O.Id(infInfo(i,j), stamp, name)
@@ -1105,11 +1108,12 @@ val _=print "\n"
 
     and elabInfId_bind(E, j, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ") =\n")
 val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
 val _=print "\n"
+*)
 	    val _ = insertInf(E, stamp, (id,j))
 	in
 	    O.Id(infInfo(i,j), stamp, name)
@@ -1212,9 +1216,25 @@ val _=print "\n"
 	let
 	    val (j1,inf1') = elabGroundInf(E, inf1)
 	    val (j2,inf2') = elabGroundInf(E, inf2)
+(*DEBUG
+val _ = (
+print "#### Intersection ####\n\
+\#### j1 =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j1, 75);
+print "\n\
+\#### j2 =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
+print "\n"
+)*)
 	    val  j         = Inf.intersect(j1,j2)
 			     handle Inf.Mismatch mismatch =>
 				error(i, E.CompInfMismatch mismatch)
+(*val _ = (
+print "#### j =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75);
+print "\n\
+\#### End Intersection ####\n"
+)*)
 	in
 	    ( j, O.CompInf(infInfo(i,j), inf1', inf2') )
 	end
@@ -1237,8 +1257,23 @@ val _=print "\n"
       | elabInf(E, I.SingInf(i, mod)) =
 	let
 	    val (j,mod') = elabMod(E, mod)
+	    val  _       = Inf.strengthen(Path.invent(), j)
+(*DEBUG
+val _ = (
+print "#### Singleton ####\n\
+\#### j =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75);
+print "\n"
+)*)
+	    val  j'      = Inf.singleton j
+(*val _ = (
+print "#### j' =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j', 75);
+print "\n\
+\#### End Singleton ####\n"
+)*)
 	in
-	    ( j, O.SingInf(infInfo(i,j), mod') )
+	    ( j', O.SingInf(infInfo(i,j'), mod') )
 	end
 
       | elabInf(E, I.AbsInf(i)) =
@@ -1295,7 +1330,8 @@ val _=print "\n"
 			    handle Type.Unify(t3,t4) =>
 				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	    (* UNFINISHED: if pat = x and exp = y then equate x to y *)
-	    val  _        = appVals (generaliseVal (E, s, NONE, isValue exp)) E'
+	    val  _        = appVals (generaliseVal
+					(E, s, SOME NONE, isValue exp)) E'
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
@@ -1310,7 +1346,7 @@ val _=print "\n"
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
 	    (* UNFINISHED: if typ is singleton then equate x to it *)
-	    val  _          = appVals (generaliseVal (E, s, NONE, true)) E'
+	    val  _          = appVals (generaliseVal (E, s, SOME NONE, true)) E'
 	in
 	    O.ConDec(nonInfo(i), con', typ')
 	end
@@ -1321,11 +1357,12 @@ val _=print "\n"
 	    val (t,typ') = elabTyp(E, typ)
 	    val  id'     = elabTypId_bind(E, t, Type.CLOSED, id)
 	    val  _       = Inf.extendTyp(s, p, Type.kind t, Type.CLOSED, SOME t)
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _=print("type " ^ x ^ " = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
+*)
 	in
 	    O.TypDec(nonInfo(i), id', typ')
 	end
@@ -1341,14 +1378,15 @@ val _=print "\n"
 	    val  _           = Type.unify(t, t0)
 	    val  _           = Type.exitLevel()
 	    val  E'          = splitScope E
-(*DEBUG*)
+(*DEBUG
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _= print("datatype " ^ x ^ " = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
+*)
 	    val  id'         = elabTypId_bind(E, t, w, id)
 	    val  _           = Inf.extendTyp(s, p, k, w, SOME t)
-	    val  _           = appVals (generaliseVal (E, s, NONE, true)) E'
+	    val  _           = appVals (generaliseVal (E,s, SOME NONE, true)) E'
 	in
 	    O.DatDec(nonInfo(i), id', typ')
 	end
@@ -1357,10 +1395,10 @@ val _=print "\n"
 	let
 	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
 	    val (j,mod') = elabMod(E, mod)
+	    val  _       = Inf.strengthen(p, j)
 	    val  id'     = elabModId_bind(E, j, id)
 	    (*UNFINISHED: if mod = y then equate p to y *)
 	    val  _       = Inf.extendMod(s, p, j, SOME p)
-	    val  _       = Inf.strengthen(p, j)
 	in
 	    O.ModDec(nonInfo(i), id', mod')
 	end
@@ -1397,7 +1435,7 @@ val _=print "\n"
 	    (* ASSUME that recursive ValDecs are never expansive *)
 	    (* ASSUME that recursive ValDecs are never equatable *)
 	    val _      = appTyps (fn(x,entry) => insertTyp(E,x,entry)) E'
-	    val _      = appVals (generaliseVal (E, s, NONE, true)) E'
+	    val _      = appVals (generaliseVal (E, s, SOME NONE, true)) E'
 	in
 	    O.RecDec(nonInfo(i), decs')
 	end
@@ -1407,7 +1445,7 @@ val _=print "\n"
 	    val s'    = Inf.empty()
 	    val decs' = elabDecs(E, s', decs)
 	    val p     = Path.invent()
-	    val _     = Inf.strengthenSig(p, s)
+	    val _     = Inf.strengthenSig(p, s')
 	in
 	    O.LocalDec(nonInfo(i), decs')
 	end
@@ -1417,21 +1455,23 @@ val _=print "\n"
 	List.app (fn id as I.Id(_, stamp, name) =>
 			insertVar(E, stamp, (id, Type.var Type.STAR))) vars
 
-    and generaliseVal (E, s, po, isPoly) (x,(id,t,sort)) =
+    and generaliseVal (E, s, poo, isPoly) (x,(id,t,sort)) =
 	let
 	    val p  = Inf.newVal(s, Lab.fromName(I.name id))
 	    val t' = if isPoly then Type.close t
 			       else (Type.lift t ; t)
 			       handle Type.Lift a =>
 				   error(I.infoId id, E.ValDecLift(id, a))
+	    val d  = Option.map (fn po => Option.getOpt(po, p)) poo
 	in
 	    insertVal(E, x, (id, t', sort));
-	    Inf.extendVal(s, p, t', sort, SOME(Option.getOpt(po, p)))
-(*DEBUG*);
-let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
+	    Inf.extendVal(s, p, t', sort, d)
+(*DEBUG
+;let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
 in print("val " ^ x ^ " : ") end;
 PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t', 60);
 print(if sort = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n" else " (* not generalised *)\n")
+*)
 	end
 
 
@@ -1485,11 +1525,12 @@ print(if sort = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then 
 	    val (t,_,w,typ') = elabTypRep(E, p, t0, fn t'=>t', fn k'=>k', typ)
 	    val  _           = Type.unify(t, t0)
 	    val  _           = Inf.extendTyp(s, p, Type.kind t, w, SOME t)
-(*DEBUG*)
+(*DEBUG
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _= print("datatype " ^ x ^ " = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
+*)
 	in
 	    O.DatDec(nonInfo(i), id', typ')
 	end
@@ -1514,7 +1555,7 @@ val _=print "\n"
 	    val (t0,id') = elabValId_bind(E, Inf.VALUE, id)
 	    val (t,typ') = elabStarTyp(E, typ)
 	    val  _       = Type.unify(t,t0)
-	    val  p       = Inf.extendVal(s, p, t, Inf.VALUE, NONE)
+	    val  _       = Inf.extendVal(s, p, t, Inf.VALUE, NONE)
 	in
 	    O.ValSpec(nonInfo(i), id', typ')
 	end
@@ -1568,11 +1609,30 @@ val _=print "\n"
 	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
 	    val (j,inf') = elabGroundInf(E, inf)
 	    val  j'      = Inf.clone j
+(*DEBUG
+val _ = (
+print "#### Mod Spec ####\n\
+\#### j =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75);
+print "\n\
+\#### j' =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j', 75);
+print "\n"
+)*)
 	    val  _       = Inf.strengthen(p, j')
+(*val _ = (
+print "#### j =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75);
+print "\n\
+\#### j' =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j', 75);
+print "\n\
+\#### End Mod Spec ####\n"
+)*)
 	    (* UNFINISHED: revert renaming of paths somehow *)
 	    val  id'     = elabModId_bind(E, j', id)
 	    (* UNFINISHED: treat singleton infs *)
-	    val  p       = Inf.extendMod(s, p, j, NONE)
+	    val  _       = Inf.extendMod(s, p, j, NONE)
 	in
 	    O.ModSpec(nonInfo(i), id', inf')
 	end
@@ -1617,7 +1677,7 @@ val _=print "\n"
 	    val s'     = Inf.empty()
 	    val specs' = elabSpecs(E, s, specs)
 	    val p      = Path.invent()
-	    val _      = Inf.strengthenSig(p, s)
+	    val _      = Inf.strengthenSig(p, s')
 	in
 	    O.LocalSpec(nonInfo(i), specs')
 	end
@@ -1691,6 +1751,9 @@ val _=print "\n"
 	    val imps' = elabImps(E, imps)
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
+(*DEBUG*)
+val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
+val _ = print "\n"
 	in
 	    O.Comp(nonInfo(i), imps', decs')
 	end

@@ -90,24 +90,31 @@ structure ElaborationError :> ELABORATION_ERROR =
 	)
 
     fun ppUnify4(d1, d2, (t1,t2,t3,t4)) =
-	if t3 = t1 andalso t4 = t2 then
-	vbox(
-	    d1 ^^
-	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    d2 ^^
-	    nest(break ^^ below(PPType.ppTyp t2))
-	)
-	else
-	vbox(
-	    d1 ^^
-	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    d2 ^^
-	    nest(break ^^ below(PPType.ppTyp t2)) ^/^
-	    par["because","type"] ^^
-	    nest(break ^^ below(PPType.ppTyp t3)) ^/^
-	    par["does","not","unify","with"] ^^
-	    nest(break ^^ below(PPType.ppTyp t4))
-	)
+	let
+	    val td1 = PPType.ppTyp t1
+	    val td2 = PPType.ppTyp t2
+	    val td3 = PPType.ppTyp t3
+	    val td4 = PPType.ppTyp t4
+	in
+	    if td3 = td1 andalso td4 = td2 then
+		vbox(
+		    d1 ^^
+		    nest(break ^^ below td1) ^/^
+		    d2 ^^
+		    nest(break ^^ below td2)
+		)
+	    else
+		vbox(
+		    d1 ^^
+		    nest(break ^^ below td1) ^/^
+		    d2 ^^
+		    nest(break ^^ below td2) ^/^
+		    par["because","type"] ^^
+		    nest(break ^^ below td3) ^/^
+		    par["does","not","unify","with"] ^^
+		    nest(break ^^ below td4)
+		)
+	end
 
     fun ppMismatch(d, im) =
         vbox(
