@@ -21,6 +21,12 @@ import
 define
    Args = {Application.getArgs record()}
 
+   local
+      U = {URL.make {Property.get 'application.url'}}
+   in
+      {Property.put 'alice.home' {URL.toString {URL.resolve U ''}}}
+   end
+
    case Args.1 of ComponentName|Rest then
       Transient = {Linker.link ComponentName}
       AwaitClosure = PrimitiveTable.values.'Future.await'
