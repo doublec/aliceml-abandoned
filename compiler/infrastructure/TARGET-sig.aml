@@ -20,7 +20,7 @@ signature TARGET =
 sig
     datatype t =
 	COMPONENT of {component: unit -> Component.t,
-		      eval: Url.t -> package}
+		      eval: Url.t -> Package.t}
       | FOREIGN of {inf: Inf.t,
 		    save: string -> unit}
 end
