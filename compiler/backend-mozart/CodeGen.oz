@@ -86,30 +86,18 @@ define
 	 end
       [] tagTest(Label) then
 	 onScalar(Label ThenVInstr)
-      [] tagAppTest(Label oneArg(Id) unary) then ThenVInstr0 in
+      [] tagAppTest(Label oneArg(Id)) then ThenVInstr0 in
 	 ThenVInstr0 = vGetVariable(_ {MakeReg Id State} ThenVInstr)
 	 onRecord(Label 1 ThenVInstr0)
-      [] tagAppTest(Label oneArg(Id) tuple(0)) then ThenVInstr0 in
-	 ThenVInstr0 = vEquateConstant(_ unit {MakeReg Id State} ThenVInstr)
-	 onScalar(Label ThenVInstr0)
-      [] tagAppTest(Label oneArg(Id) ConArity) then
-	 ThenVInstr0 LabelReg ThenVInstr1
-      in
-	 {State.cs newReg(?LabelReg)}
-	 ThenVInstr0 = vEquateConstant(_ '#' LabelReg ThenVInstr1)
-	 ThenVInstr1 = vCallBuiltin(_ 'Record.adjoin'
-				    [Reg LabelReg {MakeReg Id State}]
-				    unit ThenVInstr)
-	 onRecord(Label ConArity.1 ThenVInstr0)
-      [] tagAppTest(Label tupArgs(nil) _) then
+      [] tagAppTest(Label tupArgs(nil)) then
 	 onScalar(Label ThenVInstr)
-      [] tagAppTest(Label tupArgs(Ids=_|_) _) then ThenVInstr0 in
+      [] tagAppTest(Label tupArgs(Ids=_|_)) then ThenVInstr0 in
 	 {FoldL Ids
 	  proc {$ VHd Id VTl}
 	     VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	  end ThenVInstr0 ThenVInstr}
 	 onRecord(Label {Length Ids} ThenVInstr0)
-      [] tagAppTest(Label recArgs(LabelIdList) _) then ThenVInstr0 in
+      [] tagAppTest(Label recArgs(LabelIdList)) then ThenVInstr0 in
 	 {FoldL LabelIdList
 	  proc {$ VHd _#Id VTl}
 	     VHd = vGetVariable(_ {MakeReg Id State} VTl)
@@ -468,31 +456,21 @@ define
 	 end
 	 VInter = vDeconsCall(_ {GetReg Id State} ArgReg Reg
 			      {TranslateRegion Region State} VTl)
-      [] tagAppExp(_ Label oneArg(Id) unary) then
+      [] tagAppExp(_ Label oneArg(Id)) then
 	 VHd = vEquateRecord(_ Label 1 Reg [value({GetReg Id State})] VTl)
-      [] tagAppExp(Region Label oneArg(Id) tuple(0)) then VInter in
-	 VHd = vCallBuiltin(_ 'Value.wait' [{GetReg Id State}]
-			    {TranslateRegion Region State} VInter)
-	 VInter = vEquateConstant(_ Label Reg VTl)
-      [] tagAppExp(Region Label oneArg(Id) _) then LabelReg VInter in
-	 {State.cs newReg(?LabelReg)}
-	 VHd = vEquateConstant(_ Label LabelReg VInter)
-	 VInter = vCallBuiltin(_ 'Record.adjoin'
-			       [{GetReg Id State} LabelReg Reg]
-			       {TranslateRegion Region State} VTl)
-      [] tagAppExp(_ Label tupArgs(nil) _) then
+      [] tagAppExp(_ Label tupArgs(nil)) then
 	 VHd = vEquateConstant(_ Label Reg VTl)
-      [] tagAppExp(_ Label tupArgs(Ids=_|_) _) then
+      [] tagAppExp(_ Label tupArgs(Ids=_|_)) then
 	 VHd = vEquateRecord(_ Label {Length Ids} Reg
 			     {Map Ids fun {$ Id} value({GetReg Id State}) end}
 			     VTl)
-      [] tagAppExp(_ Label recArgs(LabelIdList) _) then
+      [] tagAppExp(_ Label recArgs(LabelIdList)) then
 	 VHd = vEquateRecord(_ Label
 			     {Map LabelIdList fun {$ Label#_} Label end} Reg
 			     {Map LabelIdList
 			      fun {$ _#Id} value({GetReg Id State}) end}
 			     VTl)
-      [] conAppExp(Region Id1 oneArg(Id2) unary) then
+      [] conAppExp(Region Id1 oneArg(Id2)) then
 	 Coord WidthReg VInter1 VInter2
       in
 	 Coord = {TranslateRegion Region State}
@@ -502,17 +480,9 @@ define
 				[{GetReg Id1 State} WidthReg Reg]
 				Coord VInter2)
 	 VInter2 = vInlineDot(_ Reg 1 {GetReg Id2 State} true Coord VTl)
-      [] conAppExp(Region Id1 oneArg(Id2) tuple(0)) then VInter in
-	 VHd = vCallBuiltin(_ 'Value.wait' [{GetReg Id2 State}]
-			    {TranslateRegion Region State} VInter)
-	 VInter = vUnify(_ Reg {GetReg Id1 State} VTl)
-      [] conAppExp(Region Id1 oneArg(Id2) _) then
-	 VHd = vCallBuiltin(_ 'Record.adjoin'
-			    [{GetReg Id2 State} {GetReg Id1 State} Reg]
-			    {TranslateRegion Region State} VTl)
-      [] conAppExp(_ Id tupArgs(nil) _) then
+      [] conAppExp(_ Id tupArgs(nil)) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conAppExp(Region Id tupArgs(Ids=_|_) _) then
+      [] conAppExp(Region Id tupArgs(Ids=_|_)) then
 	 Coord WidthReg VInter1 VInter2
       in
 	 Coord = {TranslateRegion Region State}
@@ -524,7 +494,7 @@ define
 	  proc {$ I VHd Id VTl}
 	     VHd = vInlineDot(_ Reg I {GetReg Id State} true Coord VTl)
 	  end VInter2 VTl}
-      [] conAppExp(Region Id recArgs(LabelIdList) _) then
+      [] conAppExp(Region Id recArgs(LabelIdList)) then
 	 Coord ArityReg VInter1 VInter2
       in
 	 Coord = {TranslateRegion Region State}

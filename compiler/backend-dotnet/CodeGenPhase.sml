@@ -144,11 +144,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (LdcR4 s); emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (TagTest _, _) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genTest: TagTest"
-	  | genTest (TagAppTest (_, _, _), _) =   (*--** not implemented *)
+	  | genTest (TagAppTest (_, _), _) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genTest: TagAppTest"
 	  | genTest (ConTest id, elseLabel) =
 	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
-	  | genTest (ConAppTest (id, args, _), elseLabel) =
+	  | genTest (ConAppTest (id, args), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.ConVal);
 	     emit (B (FALSE, elseLabel));
 	     emit (Castclass StockWerk.ConVal); emit Dup;
@@ -566,12 +566,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; genExp (RecExp (info, labelIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (TagAppExp (_, _, _, _), _) =   (*--** not implemented *)
+	  | genExp (TagAppExp (_, _, _), _) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genExp: TagAppExp"
-	  | genExp (ConAppExp (_, id, _, _), PREPARE) =
+	  | genExp (ConAppExp (_, id, _), PREPARE) =
 	    (emitId id;
 	     emit (Newobj (StockWerk.ConVal, [StockWerk.StockWertTy])))
-	  | genExp (ConAppExp (_, _, args, _), FILL) =
+	  | genExp (ConAppExp (_, _, args), FILL) =
 	    (genArgs args;
 	     emit (Stfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy)))
 	  | genExp (RefAppExp (_, _), PREPARE) =

@@ -158,11 +158,9 @@ define
    fun {TrTest Test}
       case Test of LitTest(Lit) then litTest({TrLit Lit})
       [] TagTest(Lab) then tagTest({TrLab Lab})
-      [] TagAppTest(Lab Args ConArity) then
-	 tagAppTest({TrLab Lab} {TrArgs Args} {TrConArity ConArity})
+      [] TagAppTest(Lab Args) then tagAppTest({TrLab Lab} {TrArgs Args})
       [] ConTest(Id) then conTest({TrId Id})
-      [] ConAppTest(Id Args ConArity) then
-	 conAppTest({TrId Id} {TrArgs Args} {TrConArity ConArity})
+      [] ConAppTest(Id Args) then conAppTest({TrId Id} {TrArgs Args})
       [] RefAppTest(Id) then refAppTest({TrId Id})
       [] TupTest(Ids) then tupTest({Map Ids TrId})
       [] RecTest(LabIdList) then
@@ -241,11 +239,10 @@ define
 	 primAppExp({TrInfo Info} {StringToAtom String} {Map Ids TrId})
       [] VarAppExp(Info Id Args) then
 	 varAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
-      [] TagAppExp(Info Lab Args ConArity) then
-	 tagAppExp({TrInfo Info} {TrLab Lab} {TrArgs Args}
-		   {TrConArity ConArity})
-      [] ConAppExp(Info Id Args ConArity) then
-	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args} {TrConArity ConArity})
+      [] TagAppExp(Info Lab Args) then
+	 tagAppExp({TrInfo Info} {TrLab Lab} {TrArgs Args})
+      [] ConAppExp(Info Id Args) then
+	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
       [] RefAppExp(Info Id) then refAppExp({TrInfo Info} {TrId Id})
       [] SelAppExp(Info Lab Id) then
 	 selAppExp({TrInfo Info} {TrLab Lab} {TrId Id})

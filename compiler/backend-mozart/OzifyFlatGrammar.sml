@@ -147,16 +147,14 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
 	  | outputTest (q, TagTest label) =
 	    (f (q, "tagTest"); outputLabel (q, label); r q)
-	  | outputTest (q, TagAppTest (label, args, conArity)) =
+	  | outputTest (q, TagAppTest (label, args)) =
 	    (f (q, "tagAppTest"); outputLabel (q, label); m q;
-	     outputArgs outputId (q, args); m q;
-	     outputConArity (q, conArity); r q)
+	     outputArgs outputId (q, args); r q)
 	  | outputTest (q, ConTest id) =
 	    (f (q, "conTest"); outputId (q, id); r q)
-	  | outputTest (q, ConAppTest (id, args, conArity)) =
+	  | outputTest (q, ConAppTest (id, args)) =
 	    (f (q, "conAppTest"); outputId (q, id); m q;
-	     outputArgs outputId (q, args); m q;
-	     outputConArity (q, conArity); r q)
+	     outputArgs outputId (q, args); r q)
 	  | outputTest (q, RefAppTest id) =
 	    (f (q, "refAppTest"); outputId (q, id); r q)
 	  | outputTest (q, TupTest ids) =
@@ -268,18 +266,15 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, VarAppExp (info, id, args)) =
 	    (f (q, "varAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
-	  | outputExp (q, TagAppExp (info, label, args, conArity)) =
+	  | outputExp (q, TagAppExp (info, label, args)) =
 	    (f (q, "tagAppExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputArgs outputId (q, args); m q;
-	     outputConArity (q, conArity); r q)
-	  | outputExp (q, ConAppExp (info, id, args, conArity)) =
+	     outputLabel (q, label); m q; outputArgs outputId (q, args); r q)
+	  | outputExp (q, ConAppExp (info, id, args)) =
 	    (f (q, "conAppExp"); outputExpInfo (q, info); m q;
-	     outputId (q, id); m q; outputArgs outputId (q, args); m q;
-	     outputConArity (q, conArity); r q)
-	  | outputExp (q, StaticConAppExp (info, stamp, args, conArity)) =
+	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
+	  | outputExp (q, StaticConAppExp (info, stamp, args)) =
 	    (f (q, "staticConAppExp"); outputExpInfo (q, info); m q;
-	     outputStamp (q, stamp); m q; outputArgs outputId (q, args); m q;
-	     outputConArity (q, conArity); r q)
+	     outputStamp (q, stamp); m q; outputArgs outputId (q, args); r q)
 	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
