@@ -1540,6 +1540,8 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
 TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc) {
   PrintPC("AppVar\n");
   TagVal *tagVal = TagVal::FromWord(pc->Sel(0));
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
   word wClosure;
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
