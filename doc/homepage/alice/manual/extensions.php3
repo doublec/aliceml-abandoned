@@ -14,7 +14,7 @@
 
   <UL>
     <LI> <A href="#data">structural datatypes</A> </LI>
-    <LI> <A href="#opendata">open datatypes</A> </LI>
+    <LI> <A href="#exttype">extensible datatypes</A> </LI>
     <LI> <A href="#patterns">extended pattern language</A> </LI>
     <LI> <A href="#valrec">generalized <TT>val</TT> <TT>rec</TT></A> </LI>
     <LI> <A href="#vectors">vector expressions and patterns</A> </LI>
@@ -59,20 +59,20 @@
 
 
 
-<?php section("opendata", "open datatypes") ?>
+<?php section("exttype", "extensible datatypes") ?>
 
   <P>
-    Open datatypes are a generalization of SML's exception type. In effect,
-    the programmer can arbitrarily introduce new sum types similar to
+    Extensible datatypes are a generalization of SML's exception type. In
+    effect, the programmer can arbitrarily introduce new sum types similar to
     <TT>exn</TT>, which have an potentially unlimited set of constructors.
   </P>
 
   <P>
-    An open datatype is declared as follows:
+    An extensible datatype is declared as follows:
   </P>
 
   <PRE>
-	datatype 'a message
+	exttype 'a message
 
 	constructor DoThis of int : 'a message
 	constructor DoThat of bool * 'a : 'a message
@@ -91,9 +91,9 @@
   </PRE>
 
   <P>
-    Note that - like exceptions - open datatypes cannot admit equality (since
-    it is unknown whether there will be any constructors for it prohibiting
-    that).
+    Note that - like exceptions - extensible datatypes cannot admit equality
+    (since it is unknown whether there will be any constructors for it
+    prohibiting that).
   </P>
 
   <P>
@@ -108,7 +108,7 @@
   </PRE>
 
   <P>
-    Here is the complete syntax dealing with open datatypes:
+    Here is the complete syntax dealing with extensible datatypes:
   </P>
 
   <TABLE>
@@ -120,35 +120,35 @@
     </TR>
     <TR>
       <TD></TD> <TD></TD>
-      <TD> <TT>constructor</TT> <I>dconbind</I> </TD>
+      <TD> <TT>exttype</TT> <I>extbind</I> </TD>
+      <TD> extensible datatype </TD>
+    </TR>
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> <TT>constructor</TT> <I>econbind</I> </TD>
       <TD> generative constructor </TD>
     </TR>
     <TR></TR>
     <TR>
-      <TD> <I>datbind</I> </TD>
+      <TD> <I>extbind</I> </TD>
       <TD align="center">::=</TD>
-      <TD> ... </TD>
-      <TD> </TD>
-    </TR>
-    <TR>
-      <TD></TD> <TD></TD>
       <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
-      <TD> open datatype </TD>
+      <TD> extensible datatype </TD>
     </TR>
     <TR></TR>
     <TR>
-      <TD> <I>dconbind</I> </TD>
+      <TD> <I>econbind</I> </TD>
       <TD align="center">::=</TD>
       <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
            <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
-	   &lt;<TT>and</TT> <I>dconbind</I>&gt; </TD>
+	   &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
       <TD> new constructor </TD>
     </TR>
     <TR>
       <TD></TD> <TD></TD>
       <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
            <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
-	   &lt;<TT>and</TT> <I>dconbind</I>&gt; </TD>
+	   &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
       <TD> synonym </TD>
     </TR>
     <TR></TR>
@@ -160,28 +160,28 @@
     </TR>
     <TR>
       <TD></TD> <TD></TD>
-      <TD> <TT>constructor</TT> <I>dcondesc</I> </TD>
+      <TD> <TT>exttype</TT> <I>extdesc</I> </TD>
+      <TD> extensible datatype </TD>
+    </TR>
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> <TT>constructor</TT> <I>econdesc</I> </TD>
       <TD> generative constructor </TD>
     </TR>
     <TR></TR>
     <TR>
-      <TD> <I>datdesc</I> </TD>
+      <TD> <I>extdesc</I> </TD>
       <TD align="center">::=</TD>
-      <TD> ... </TD>
-      <TD> </TD>
-    </TR>
-    <TR>
-      <TD></TD> <TD></TD>
       <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
-      <TD> open datatype </TD>
+      <TD> extensible datatype </TD>
     </TR>
     <TR></TR>
     <TR>
-      <TD> <I>dcondesc</I> </TD>
+      <TD> <I>econdesc</I> </TD>
       <TD align="center">::=</TD>
       <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
            <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
-	   &lt;<TT>and</TT> <I>dcondesc</I>&gt; </TD>
+	   &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
       <TD> new constructor </TD>
     </TR>
 <!--
@@ -189,7 +189,7 @@
       <TD></TD> <TD></TD>
       <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
            <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
-	   &lt;<TT>and</TT> <I>dcondesc</I>&gt; </TD>
+	   &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
       <TD> synonym </TD>
 -->
     </TR>
