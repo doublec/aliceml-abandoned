@@ -160,22 +160,31 @@ DEFINE3(UnsafeValue_proj) {
 } END
 
 DEFINE2(UnsafeValue_tag) {
-  TagVal *tagVal = TagVal::FromWord(x0);
-  x1 = x1; // ignored
-  if (tagVal == INVALID_POINTER) {
-    s_int i = Store::WordToInt(x0);
-    if (i == INVALID_INT) REQUEST(x0);
-    RETURN_INT(i);
+  DECLARE_VECTOR(labels, x1);
+  if (Alice::IsBigTagVal(labels->GetLength())) {
+    BigTagVal *bigTagVal = BigTagVal::FromWord(x0);
+    if (bigTagVal != INVALID_POINTER)
+      RETURN_INT(bigTagVal->GetTag());
   } else {
-    RETURN_INT(tagVal->GetTag());
+    TagVal *tagVal = TagVal::FromWord(x0);
+    if (tagVal != INVALID_POINTER)
+      RETURN_INT(tagVal->GetTag());
   }
+  s_int i = Store::WordToInt(x0);
+  if (i == INVALID_INT) REQUEST(x0);
+  RETURN_INT(i);
 } END
 
 DEFINE3(UnsafeValue_projTagged) {
-  DECLARE_TAGVAL(tagVal, x0);
-  x1 = x1; // ignored
+  DECLARE_VECTOR(labels, x1);
   DECLARE_INT(i, x2);
-  RETURN(tagVal->Sel(i));
+  if (Alice::IsBigTagVal(labels->GetLength())) {
+    DECLARE_BIGTAGVAL(bigTagVal, x0);
+    RETURN(bigTagVal->Sel(i));
+  } else {
+    DECLARE_TAGVAL(tagVal, x0);
+    RETURN(tagVal->Sel(i));
+  }
 } END
 
 DEFINE1(UnsafeValue_con) {
