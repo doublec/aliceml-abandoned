@@ -56,6 +56,10 @@ import
 from "x-alice:/common/Type.ozf"
 
 import
+    structure Fixity
+from "x-alice:/common/Fixity.ozf"
+
+import
     structure Inf
 from "x-alice:/common/Inf.ozf"
 
@@ -78,6 +82,10 @@ from "x-alice:/common/TypeReflection.ozf"
 import
     structure PervasiveTypeReflection
 from "x-alice:/common/PervasiveTypeReflection.ozf"
+
+import
+    structure FixityReflection
+from "x-alice:/common/FixityReflection.ozf"
 
 import
     structure InfReflection
