@@ -95,7 +95,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
     final protected void annotateClass(Class cls) throws java.io.IOException {
 	objectcounter++;
-	// System.out.println("POS: annotateClass "+cls);
+	// System.out.println("annotateClass "+cls);
 	Class superClass = cls.getSuperclass();
 	if (fcn.isAssignableFrom(superClass) // cls instanceof fUNcTIOn
 	    || (ccn.isAssignableFrom(superClass) &&

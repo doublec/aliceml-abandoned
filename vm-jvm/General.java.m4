@@ -80,7 +80,7 @@ final public class General {
 	}
 	_SAPPLY2(v) {
 	    if (v1 instanceof DMLLVar) {
-		return ((DMLLVar) v2).bind(v2);
+		return ((DMLLVar) v1).bind(v2);
 	    } else {
 		_RAISENAME(General.Match);
 	    }

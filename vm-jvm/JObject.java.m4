@@ -18,7 +18,7 @@ import java.lang.reflect.Method;
 
 final public class JObject implements DMLValue {
 
-    final protected java.lang.Object javaObject;
+    final public java.lang.Object javaObject;
 
     public JObject(java.lang.Object o) {
 	javaObject=o;

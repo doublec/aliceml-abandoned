@@ -17,7 +17,7 @@ import java.rmi.server.UnicastRemoteObject;
 final public class LVar extends UnicastRemoteObject
     implements DMLLVar {
 
-    protected DMLValue ref=null;
+    private DMLValue ref=null;
 
     public LVar() throws java.rmi.RemoteException { }
 

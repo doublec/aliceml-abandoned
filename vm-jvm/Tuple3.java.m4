@@ -16,9 +16,9 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple3 implements DMLTuple {
 
-    protected DMLValue fst;
-    protected DMLValue snd;
-    protected DMLValue thr;
+    public DMLValue fst;
+    public DMLValue snd;
+    public DMLValue thr;
 
     public Tuple3() {}
 

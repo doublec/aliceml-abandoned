@@ -14,10 +14,10 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConVal4 implements DMLConVal {
 
-    private DMLValue fst = null;
-    private DMLValue snd = null;
-    private DMLValue thr = null;
-    private DMLValue fur = null;
+    public DMLValue fst = null;
+    public DMLValue snd = null;
+    public DMLValue thr = null;
+    public DMLValue fur = null;
 
     final public Constructor constructor;
 

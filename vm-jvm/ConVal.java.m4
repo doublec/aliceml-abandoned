@@ -14,7 +14,7 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConVal implements DMLConVal {
 
-    private DMLValue content = null;
+    public DMLValue content = null;
 
     final public Constructor constructor;
 

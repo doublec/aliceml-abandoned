@@ -14,8 +14,8 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class Cons implements DMLConVal {
 
-    protected DMLValue car=null;
-    protected DMLValue cdr=null;
+    public DMLValue car=null;
+    public DMLValue cdr=null;
 
     public Cons(DMLValue fst, DMLValue snd) {
 	car=fst;
