@@ -1,7 +1,6 @@
 (*
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
  *   Thorsten Brunklaus, 2000
@@ -21,6 +20,8 @@ in
 	sig
 	    type fs
 
+	    exception Tell of {cause : exn} (* = FD.Tell *)
+
 	    (* Implementation dependent fs limits *)
 	    val inf : int
 	    val sup : int
@@ -37,7 +38,6 @@ in
 	    val card : fs * fd -> unit
 	    val cardRange : int * int * fs -> unit
 	    val isIn : int * fs -> bool
-	    val isEmpty : fs -> bool
 
 	    val difference : fs * fs * fs -> unit
 	    val intersect : fs * fs * fs -> unit

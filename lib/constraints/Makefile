@@ -39,20 +39,24 @@ ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
 
 TOOLSOURCES = EXPLORER-sig.aml Explorer.aml
 
+OZNATIVES = FDCommon.oz
 NATIVES = FD FS Space Search
 TOOLNATIVES = Explorer
 
-OZSOURCES=$(NATIVES:%=Unsafe%.oz) \
+OZSOURCES= $(NATIVES:%=Unsafe%.oz) \
 	$(TOOLNATIVES:%=Unsafe%.oz)
 
 COMPONENTS = \
+	$(OZNATIVES:%.oz=%.ozf) \
 	$(NATIVES:%=Linked%.ozf) \
 	$(TOOLNATIVES:%=Linked%.ozf) \
 	$(ALICESOURCES:%.aml=%.ozf) \
 	$(TOOLSOURCES:%.aml=%.ozf) \
 
 INSTALLDIRS = $(PREFIX)/lib/constraints
-INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf) \
+INSTALLFILES = \
+	$(OZNATIVES:%.oz=$(PREFIX)/lib/constraints/%.ozf) \
+	$(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf) \
 	$(TOOLSOURCES:%.aml=$(PREFIX)/lib/tools/%.ozf)
 
 .PHONY: all depend install clean veryclean distclean
