@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,12 +17,14 @@ structure CodeStore :> CODE_STORE =
 	type stamp = Stamp.t
 
 	datatype id = datatype FlatGrammar.id
+	datatype idDef = datatype FlatGrammar.idDef
 
 	datatype reg =
 	    SFld of index
 	  | Fld of index
 	  | Arg of index
 	  | Loc of index
+	  | Killed of index
 	withtype index = int
 
 	type class = stamp
@@ -97,8 +99,12 @@ structure CodeStore :> CODE_STORE =
 			    end
 	    in
 		ScopedMap.insertScope scope;
-		List.foldl (fn (Id (_, stamp, _), i) =>
-			    (ScopedMap.insertDisjoint (scope, stamp, Arg i);
+		List.foldl (fn (idDef, i) =>
+			    (case idDef of
+				 IdDef (Id (_, stamp, _)) =>
+				     ScopedMap.insertDisjoint (scope, stamp,
+							       Arg i)
+			       | Wildcard => ();
 			     i + 1)) 1 args;
 		env :=
 		(stamp, id, List.length args,
@@ -147,6 +153,7 @@ structure CodeStore :> CODE_STORE =
 				      System.ObjectTy)))
 		  | Loc i => emit (Ldloc i)
 		  | Arg i => emit (Ldarg i)
+		  | Killed _ => raise Crash.Crash "CodeStore.emitStamp"
 	end
 
 	fun emitId (Id (_, stamp, _)) =
@@ -161,7 +168,7 @@ structure CodeStore :> CODE_STORE =
 		tysRef := ty::(!tysRef); ri := index + 1; index
 	    end
 
-	fun declareLocal (Id (_, stamp, _)) =
+	fun declareLocal (IdDef (Id (_, stamp, _))) =
 	    let
 		val (_, _, _, (scope, _, ri, tysRef, indicesRef), _) =
 		    List.hd (!env)
@@ -169,6 +176,9 @@ structure CodeStore :> CODE_STORE =
 		emit (Comment ("store " ^ Stamp.toString stamp));
 		case ScopedMap.lookup (scope, stamp) of
 		    SOME (Loc i) => emit (Stloc i)
+		  | SOME (Killed i) =>
+			(ScopedMap.insert (scope, stamp, Loc i);
+			 emit (Stloc i))
 		  | SOME _ => raise Crash.Crash "CodeStore.declareLocal"
 		  | NONE =>
 			let
@@ -185,6 +195,7 @@ structure CodeStore :> CODE_STORE =
 			    emit (Stloc i)
 			end
 	    end
+	  | declareLocal Wildcard = emit Pop
 
 	fun kill set =
 	    let
@@ -196,7 +207,7 @@ structure CodeStore :> CODE_STORE =
 		     SOME (Loc i) =>
 			 (emit (Comment ("kill " ^ Stamp.toString stamp));
 			  indicesRef := i::(!indicesRef);
-			  ScopedMap.deleteExistent (scope, stamp))
+			  ScopedMap.insert (scope, stamp, Killed i))
 		    | _ => emit (Comment ("nonlocal " ^ Stamp.toString stamp)))
 		set
 	    end

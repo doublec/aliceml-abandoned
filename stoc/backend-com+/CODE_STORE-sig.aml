@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,11 +39,11 @@ signature CODE_STORE =
 
 	val init: IL.dottedname -> unit
 	val defineClass: class * IL.extends * IL.implements -> unit
-	val defineMethod: class * IL.id * FlatGrammar.id list -> unit
+	val defineMethod: class * IL.id * FlatGrammar.idDef list -> unit
 	val emit: IL.instr -> unit
 	val emitId: FlatGrammar.id -> unit
 	val allocateLocal: IL.ty -> int
-	val declareLocal: FlatGrammar.id -> unit
+	val declareLocal: FlatGrammar.idDef -> unit
 	val kill: StampSet.t -> unit
 	val saveRegState: unit -> savedRegState
 	val restoreRegState: savedRegState -> unit
