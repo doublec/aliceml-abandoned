@@ -15,6 +15,7 @@
 
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import signature WINDOW_HELPER from "WINDOW_HELPER-sig"
 
 
@@ -134,6 +135,20 @@ fun createRadioButtons li =
     in
 	(List.foldl create uglyNULL li; box)
     end
+
+fun fontHeight font_name = let 
+			       val font = Gdk.fontLoad(font_name)
+			       val height = Gdk.fontGetFieldAscent(font)+
+				   Gdk.fontGetFieldDescent(font)
+			   in
+			       height
+			   end
+
+fun fontWidth font_name = let
+			      val font = Gdk.fontLoad(font_name)
+			  in
+			      Gdk.stringWidth(font,"W")
+			  end
 
 
 end
