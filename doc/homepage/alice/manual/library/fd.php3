@@ -5,8 +5,7 @@
 
   <PRE>
     signature FD
-    structure FD : FD
-  </PRE>
+    structure FD : FD</PRE>
 
   <P>
     The <TT>FD</TT> structure provides access to finite domain variables
@@ -33,17 +32,16 @@
     it is posted on are determined. In the following sections,
     only exceptions from this rule are mentioned,
     i. e. if the propagator ceases to exist earlier.
-    For example, <TT>FD.lessEq(X, Y)</TT> ceases
+    For example, <TT>FD.lessEq(x, y)</TT> ceases
     to exist if the current upper bound
-    of X is smaller than or equal to the current lower bound of Y.
+    of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
   </P>
 
 <?php section("import", "import"); ?>
 
   <PRE>
     import signature FD from "x-alice:/lib/constraints/FD-sig"
-    import structure FD from "x-alice:/lib/constraints/FD"
-  </PRE>
+    import structure FD from "x-alice:/lib/constraints/FD"</PRE>
 
 <?php section("interface", "interface"); ?>
 
@@ -214,8 +212,7 @@
 		val serialized : tasks * starts * specs -> unit
 		val taskIntervals : tasks * starts * specs -> unit
 	    end
-     end
-  </PRE>
+     end</PRE>
 
 <?php section("description", "description"); ?>
 
@@ -270,7 +267,7 @@
     </DD>
 
     <DT>
-      <TT>fd <I>dom</T></TT>
+      <TT>fd <I>dom</I></TT>
     </DT>
     <DD>
       <P>returns a freshly created finite domain variable initialized with
