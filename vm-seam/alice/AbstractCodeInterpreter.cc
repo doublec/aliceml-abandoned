@@ -261,7 +261,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 Worker::Result AbstractCodeInterpreter::Run() {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  Assert(frame->GetInterpreter() == this);
+  Assert(frame->GetWorker() == this);
   Assert(!frame->IsHandlerFrame());
   TagVal *pc = frame->GetPC();
   Closure *globalEnv = frame->GetClosure();
