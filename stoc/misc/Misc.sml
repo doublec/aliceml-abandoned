@@ -30,6 +30,15 @@ structure Misc :> MISC =
 	    foldli' (xs, z, 0)
 	end
 
+    fun List_foldri f z xs =
+	let
+	    fun foldri' (x::xr, z, i) =
+		f (i, x, foldri' (xr, z, i + 1))
+	      | foldri' (nil, z, _) = z
+	in
+	    foldri' (xs, z, 0)
+	end
+
     fun List_mapi f xs =
 	let
 	    fun mapi' (x::xr, i) = f (i, x)::mapi' (xr, i + 1)
