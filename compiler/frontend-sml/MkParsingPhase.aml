@@ -55,7 +55,7 @@ struct
 				       structure LexerError = LexerError
 				       val error            = ParsingError.error
 				       val startLine =
-					   if !Switches.Bootstrap.implicitImport
+					   if !Switches.Language.implicitImport
 					   then 0 else 1)
 
     structure Parser = Join(structure LrParser   = LrParser
