@@ -203,7 +203,7 @@ in
 		      inner=child}
     in
 (*	val _ = Promise.fulfill(w, MakeWidget widget)
-	val _ = Gtk.windowSetTitle(Promise.future w, "abcdef") *)
+	val _ = Gtk.windowSetTitle(Promise.future w, "abcdef")*)
   	val _ = ( w := MakeWidget widget )   
     end
 
