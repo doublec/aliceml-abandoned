@@ -340,7 +340,7 @@ Worker::Result ApplyWorker::Run(StackFrame *sFrame) {
     Assert(entry != INVALID_POINTER);
     strs->Init(i, entry->GetStr());
   }
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = strs->ToWord();
   return Scheduler::PushCall(closure);
 }
@@ -376,7 +376,7 @@ Worker::Result EnterWorker::Run(StackFrame *sFrame) {
   word sign = frame->GetSign();
   Scheduler::PopFrame(frame->GetSize());
   Trace("entering", key);
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+  Assert(Scheduler::nArgs == 1);
   BootLinker::EnterComponent(key, sign, Scheduler::currentArgs[0]);
   return Worker::CONTINUE;
 }
@@ -411,7 +411,7 @@ Worker::Result LinkWorker::Run(StackFrame *sFrame) {
   String *key = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
   Trace("linking", key);
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+  Assert(Scheduler::nArgs == 1);
   TagVal *tagVal = TagVal::FromWord(Scheduler::currentArgs[0]);
   Assert(tagVal != INVALID_POINTER);
   switch (tagVal->GetTag()) {
@@ -489,7 +489,7 @@ Worker::Result LoadWorker::Run(StackFrame *sFrame) {
   Scheduler::PopFrame(frame->GetSize());
   Component *component = BootLinker::LookupComponent(key);
   if (component != INVALID_POINTER) {
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = component->GetStr();
     return Worker::CONTINUE;
   }
@@ -532,10 +532,10 @@ Worker::Result StartWorker::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   String *arg = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+  Assert(Scheduler::nArgs == 1);
   Record *record = Record::FromWordDirect(Scheduler::currentArgs[0]);
   word boot = record->PolySel(UniqueString::New(String::New("boot")));
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = arg->ToWord();
   return Scheduler::PushCall(boot);
 }
