@@ -16,8 +16,9 @@
  *)
 
 import structure __pervasive and Int and LargeInt         from "Pervasive"
-import type char and string and bool and order and option from "ToplevelTypes"
-import structure StringCvt                                from "StringCvt"
+import __primitive
+       type char and string and bool and order and option from "ToplevelTypes"
+import __primitive structure StringCvt                    from "StringCvt"
 
 signature INTEGER =
 sig
