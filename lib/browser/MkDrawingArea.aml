@@ -12,6 +12,8 @@
  *   $Revision$
  *
  *)
+
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure MkColorTable from "MkColorTable"
@@ -24,6 +26,8 @@ struct
 
     type tag = Gtk.object
     val canvas =  GtkCanvas.new 0
+
+    val _ = Gtk.signalConnect(canvas,"event",fn [Gtk.EVENT(event)] => Inspector.inspect(event))
 	
     val _ =  (Gtk.widgetSetUsize(canvas, Real.trunc xsize, Real.trunc ysize ) 
 	      ;GtkCanvas.setScrollRegion (canvas,0.0,0.0,xsize,ysize))
@@ -47,12 +51,21 @@ struct
 	   val adj1 = Gtk.adjustmentNew(valueh,0.0,!Settings.max_x ,
 					 20.0,50.0,!Settings.max_x )
 	    val adj2 = Gtk.adjustmentNew(valuev,0.0,!Settings.max_y ,
-					 20.0,50.0,!Settings.max_y ) 
+					 20.0,50.0,!Settings.max_y )
+	    val _ = TextIO.print("Valueh is :"
+				 ^ Real.toString(valueh)
+				 ^ " and valuev is:"
+				 ^ Real.toString(valuev)
+				 ^ "\n")
 	in
-	( Gtk.widgetSetScrollAdjustments(scrolled,adj1,adj2) 
+	( Gtk.layoutFreeze(canvas)
+	 ; Gtk.widgetSetScrollAdjustments(scrolled,adj1,adj2) 
 	     ;GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
 	     ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-	     ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))
+	     ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y)
+	     ;GtkCanvas.scrollTo(canvas,Real.trunc valueh,Real.trunc valuev)
+	 ; Gtk.layoutThaw(canvas)
+	 ; GtkCanvas.updateNow(canvas))
 	end
 end
 

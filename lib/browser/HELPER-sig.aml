@@ -58,6 +58,9 @@ sig
     val getNoRelAnc : node -> node * int
     val getAncIndex : node -> int
 
+    (* Hilfsfunktion zur Bestimmung von byneed-Futures *)
+    val isByneed: node -> bool
+
     (* boolsche Tests auf nodes *)
     val setsVertical : node -> bool (* nur bei Container moeglich! *)
     val isSimple : node -> bool

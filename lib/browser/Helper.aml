@@ -181,6 +181,18 @@ struct
 				 then getIndex n
 			     else getAncIndex (getParent(n))
 
+(* Hilfsfunktion zur Bestimmung von byneed-Futures *)
+
+fun isByneed n = let
+		     val future = case getDesc(n) of
+			 Types.VALUE(r) => UnsafeValue.cast (#value(r)) 
+		       | Types.I_VALUE(r) => UnsafeValue.cast (#value(r)) 
+		       | Types.INTERPUNCT => raise Match
+		 in
+		     (Future.isLazy(future)) handle Match => false
+		 end
+
+
 (* Test, ob Container vertikal anordnet *)
 
     fun setsVertical n = case n of
