@@ -116,3 +116,4 @@ __overload 'a printType : 'a -> unit = Print'.printType'
 __overload 'a inspect : 'a -> unit = Inspector.inspectVal
 
 val use = CoreToplevel.use
+fun exit() = OS.Process.exit OS.Process.success
