@@ -12,6 +12,7 @@
 
 functor
 export
+   ImportOzModule
    Table
 require
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
@@ -126,15 +127,13 @@ prepare
 	      'Char.toLower': Char.toLower
 	      'Char.toUpper': Char.toUpper
 	      'Future.Future': FutureException
-	      'Future.alarm\'':
-		 fun {$ X} !!{Alarm (X + 500) div 1000} end
-	      'Future.await':
-		 fun {$ X} {Wait X} X end
-	      'Future.awaitOne': unit   %--**
-/*
-		 fun {$ X Y} {WaitOr X Y} X end
-*/
-	      'Future.byneed': unit   %--**
+	      'Future.alarm\'': missing('Future.alarm\'')
+%		 fun {$ X} !!{Alarm (X + 500) div 1000} end
+	      'Future.await': missing('Future.await')
+%		 fun {$ X} {Wait X} X end
+	      'Future.awaitOne': missing('Future.awaitOne')   %--**
+%		 fun {$ X Y} {WaitOr X Y} X end
+	      'Future.byneed': missing('Future.byneed')   %--**
 /*
 	      fun {$ P}
 		 {ByNeed fun {$}
@@ -149,7 +148,7 @@ prepare
 			 end}
 	      end
 */
-	      'Future.concur': unit   %--**
+	      'Future.concur': missing('Future.concur')   %--**
 /*
 	      fun {$ P}
 		 !!thread
@@ -210,7 +209,7 @@ prepare
 	      'GlobalStamp.hash': BootName.hash
 	      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
 	      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
-	      'Hole.fail': unit   %--**
+	      'Hole.fail': missing('Hole.fail')   %--**
 /*
 	      fun {$ X E}
 		 try
@@ -221,7 +220,7 @@ prepare
 		 unit
 	      end
 */
-	      'Hole.fill': unit   %--**
+	      'Hole.fill': missing('Hole.fill')   %--**
 /*
 	      fun {$ X Y}
 		 if {IsDet X} then   %--** test and bind must be atomic
@@ -235,7 +234,7 @@ prepare
 		 unit
 	      end
 */
-	      'Hole.future': unit   %--**
+	      'Hole.future': missing('Hole.future')   %--**
 /*
 	      fun {$ X}
 		 if {IsFuture X} then
@@ -244,7 +243,7 @@ prepare
 		 !!X
 	      end
 */
-	      'Hole.hole': unit   %--**
+	      'Hole.hole': missing('Hole.hole')   %--**
 /*
 	 fun {$ unit} _ end
 */
@@ -405,14 +404,14 @@ prepare
 		 end
 	      'String.str':
 		 fun {$ C} {ByteString.make [C]} end
-	      'Thread.Terminate': unit   %--**
-	      'Thread.current': unit   %--**
-	      'Thread.isSuspended': unit   %--**
-	      'Thread.raiseIn': unit   %--**
-	      'Thread.resume': unit   %--**
-	      'Thread.state': unit   %--**
-	      'Thread.suspend': unit   %--**
-	      'Thread.yield': unit   %--**
+	      'Thread.Terminate': missing('Thread.Terminate')   %--**
+	      'Thread.current': missing('Thread.current')   %--**
+	      'Thread.isSuspended': missing('Thread.isSuspended')   %--**
+	      'Thread.raiseIn': missing('Thread.raiseIn')   %--**
+	      'Thread.resume': missing('Thread.resume')   %--**
+	      'Thread.state': missing('Thread.state')   %--**
+	      'Thread.suspend': missing('Thread.suspend')   %--**
+	      'Thread.yield': missing('Thread.yield')   %--**
 /*
 	      'Thread.Terminate': kernel(terminate)
 	      'Thread.current':
@@ -450,7 +449,7 @@ prepare
 		       exception(Primitives.'General.Subscript')
 		    end
 		 end
-	      'Vector.tabulate': unit   %--**
+	      'Vector.tabulate': missing('Vector.tabulate')   %--**
 /*
 		 fun {$ Args} N = Args.1 F = Args.2 V in
 		    V = {Tuple.make vector N}
@@ -514,7 +513,7 @@ prepare
       end
    end
 
-   PrimitiveInterpreter =
+   Interpreter =
    primitiveInterpreter(run:
 			   fun {$ Args TaskStack}
 			      case TaskStack of primitive(_ F)|Rest then
@@ -556,11 +555,15 @@ prepare
 			      end
 			   end)
 
-   Table = {Record.map Primitives
-	    fun {$ X}
-	       if {IsProcedure X} then
-		  closure(primitive(PrimitiveInterpreter X))
-	       else X
-	       end
-	    end}
+   fun {ImportOzModule Module}
+      {Record.map Module
+       fun {$ X}
+	  if {IsProcedure X} then
+	     closure(primitive(Interpreter X))
+	  else X
+	  end
+       end}
+   end
+
+   Table = {ImportOzModule Primitives}
 end
