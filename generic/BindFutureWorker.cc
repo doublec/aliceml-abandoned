@@ -30,15 +30,7 @@ private:
   static const u_int SIZE       = 1;
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
-  // ByneedFrame Accessors
-  Future *GetFuture() {
-    Transient *transient =
-      Store::WordToTransient(StackFrame::GetArg(FUTURE_POS));
-    Assert(transient != INVALID_POINTER &&
-	   transient->GetLabel() == FUTURE_LABEL);
-    return static_cast<Future *>(transient);
-  }
+
   // ByneedFrame Constructor
   static ByneedFrame *New(Interpreter *interpreter, Transient *future) {
     StackFrame *frame = StackFrame::New(BYNEED_FRAME, interpreter, SIZE);
@@ -50,6 +42,15 @@ public:
     StackFrame *p = StackFrame::FromWordDirect(frame);
     Assert(p->GetLabel() == BYNEED_FRAME);
     return static_cast<ByneedFrame *>(p);
+  }
+
+  // ByneedFrame Accessors
+  Future *GetFuture() {
+    Transient *transient =
+      Store::WordToTransient(StackFrame::GetArg(FUTURE_POS));
+    Assert(transient != INVALID_POINTER &&
+	   transient->GetLabel() == FUTURE_LABEL);
+    return static_cast<Future *>(transient);
   }
 };
 

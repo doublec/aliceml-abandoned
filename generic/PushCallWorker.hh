@@ -10,8 +10,8 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR_PUSHCALL_INTERPRETER_HH__
-#define __EMULATOR_PUSHCALL_INTERPRETER_HH__
+#ifndef __EMULATOR__PUSH_CALL_INTERPRETER_HH__
+#define __EMULATOR__PUSH_CALL_INTERPRETER_HH__
 
 #if defined(INTERFACE)
 #pragma interface "emulator/PushCallInterpreter.hh"
@@ -20,11 +20,12 @@
 #include "emulator/Interpreter.hh"
 
 class PushCallInterpreter : public Interpreter {
+private:
+  // PushCallInterpreter Constructor
+  PushCallInterpreter() : Interpreter() {}
 public:
   // Exported PushCallInterpreter Instance
   static PushCallInterpreter *self;
-  // PushCallInterpreter Constructor
-  PushCallInterpreter() : Interpreter() {}
   // PushCallInterpreter Static Constructor
   static void Init() {
     self = new PushCallInterpreter();
