@@ -20,21 +20,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
-	val id_false = Id ({region = Source.nowhere},
-			   Prebound.valstamp_false,
-			   Prebound.valname_false)
-	val id_true = Id ({region = Source.nowhere},
-			  Prebound.valstamp_true,
-			  Prebound.valname_true)
 	val id_Match = Id ({region = Source.nowhere},
 			   Prebound.valstamp_match,
 			   Prebound.valname_match)
 	val id_Bind = Id ({region = Source.nowhere},
 			  Prebound.valstamp_bind,
 			  Prebound.valname_bind)
-
-	val longid_true = ShortId ({region = Source.nowhere}, id_true)
-	val longid_false = ShortId ({region = Source.nowhere}, id_false)
 
 	val label_true = Label.fromString "true"
 	val label_false = Label.fromString "false"
@@ -376,11 +367,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (UpExp (_, exp), f, cont) =
 	    translateExp (exp, f, cont)   (*--** UpExp *)
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
-	    translateExp (IfExp (info, exp1,
-				 exp2, VarExp (info, longid_false)), f, cont)
+	    translateExp (IfExp (info, exp1, exp2,
+				 TagExp (info, Lab (info, label_false), false),
+				 f, cont)
 	  | translateExp (OrExp (info, exp1, exp2), f, cont) =
 	    translateExp (IfExp (info, exp1,
-				 VarExp (info, longid_true), exp2), f, cont)
+				 TagExp (info, Lab (info, label_true), false),
+				 exp2), f, cont)
 	  | translateExp (IfExp (_, exp1, exp2, exp3), f, cont) =
 	    let
 		val cont' = Share (ref NONE, cont)
