@@ -17,17 +17,18 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                    from "Pervasive"
+import structure __pervasive                          from "Pervasive"
 import type unit and int and vector and array
-       datatype bool and option and list        from "ToplevelTypes"
-import infix 4 = <> < > >= infixr 5 :: infix 6 + -
-       val op = and op <> and op < and op > and op >=
-       val op + and op -                        from "ToplevelValues"
-import structure General                        from "General"
-import structure List                           from "List"
-import structure Vector                         from "Vector"
-import signature ARRAY                          from "ARRAY-sig"
-
+       datatype bool and order and option and list    from "ToplevelTypes"
+import infix 4 = <> < > <= >= infixr 5 ::
+       infix 6 + - infix 7 div
+       val op = and op <>
+       val op < and op > and op <= and op >=
+       val op + and op - and op div                   from "ToplevelValues"
+import structure General                              from "General"
+import structure List                                 from "List"
+import structure Vector                               from "Vector"
+import signature ARRAY                                from "ARRAY-sig"
 
 structure Array : ARRAY =
 struct
@@ -160,4 +161,40 @@ struct
     and find'(f,a,i) where (i = length a)		= NONE
       | find'(f,a,i) withval x = sub'(a,i) where (f x)	= SOME x
       | find'(f,a,i)					= find'(f,a,i+1)
+
+    fun isSorted compare a	= isSorted'(compare,a,1)		(**)
+    and isSorted'(compare,a,i)	= i >= length a orelse
+				  compare(sub(a,i-1), sub(a,i)) <> GREATER
+				  andalso isSorted'(compare,a,i+1)
+
+    fun sort compare a =						(**)
+    let
+	fun partition(i,j,p) where (i = j) = j
+	  | partition(i,j,p) where (compare(sub(a,i),p) <> GREATER) =
+		partition(i+1,j,p)
+	  | partition(i,j,p) where (compare(p,sub(a,j-1)) = LESS) =
+		partition(i,j-1,p)
+	  | partition(i,j,p) =
+		(swap(a,i,j-1); partition(i+1,j-1,p))
+
+	fun sort(i,j) where (j-i <= 1) = ()
+	  | sort(i,j) where (j-i = 2)  =
+		if compare(sub(a,i), sub(a,j-1)) <> GREATER then ()
+		else swap(a,i,j-1)
+	  | sort(i,j) =
+	    let
+		val mid = (i+j) div 2
+		val _ = if compare(sub(a,i), sub(a,mid)) <> GREATER then ()
+			else swap(a,i,mid)
+		val _ = if compare(sub(a,mid), sub(a,j-1)) <> GREATER then ()
+			else (swap(a,mid,j-1);
+			      if compare(sub(a,i),sub(a,mid)) <> GREATER then ()
+			      else swap(a,i,mid))
+	  	val k = partition(i+1,j-1, sub(a,mid))
+	    in
+		sort(i,k); sort(k,j)
+	    end
+    in
+	sort(0, length a)
+    end
 end

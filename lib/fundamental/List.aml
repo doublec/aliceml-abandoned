@@ -15,9 +15,10 @@
  *)
 
 import structure __pervasive                         from "Pervasive"
-import datatype bool and option and list             from "ToplevelTypes"
-import infix 4 < = >= infixr 5 :: @ infix 6 + -
-       val op = and op < and op >= and op + and op - from "ToplevelValues"
+import datatype bool and order and option and list   from "ToplevelTypes"
+import infix 4 = <> < >= infixr 5 :: @ infix 6 + -
+       val op = and op <> and op < and op >=
+       val op + and op -                             from "ToplevelValues"
 import structure General                             from "General"
 import structure Bool                                from "Bool"
 import signature LIST                                from "LIST-sig"
@@ -168,4 +169,31 @@ struct
       | tabulate (n,f)			= tabulate'(n,f,0,nil)
     and tabulate'(n,f,i,xs) where (i=n)	= rev xs
       | tabulate'(n,f,i,xs)		= tabulate'(n, f, i+1, f i :: xs)
+
+    fun isSorted  compare xs		= isSorted'(compare, xs)	(**)
+    and isSorted'(compare,(nil|_::nil))	= true
+      | isSorted'(compare, x1::(xs as x2::_))
+					= compare(x1,x2) <> GREATER
+					  andalso isSorted'(compare, xs)
+
+    fun split nil			= (nil, nil)
+      | split(xs as _::nil)		= (xs, nil)
+      | split(x1::x2::xs)		= let val (xs1,xs2) = split xs
+					  in (x1::xs1, x2::xs2) end
+    fun sort compare			=				(**)
+    let
+	fun merge(xs, nil)		= xs
+	  | merge(nil, ys)		= ys
+	  | merge(xs as x::xs',
+		  ys as y::ys')		= case compare(x,y)
+					    of LESS    => x::merge(xs',ys)
+					     | EQUAL   => x::y::merge(xs',ys')
+					     | GREATER => y::merge(xs,ys')
+	fun sort nil			= nil
+	  | sort(xs as _::nil)		= xs
+	  | sort xs			= let val (ys,zs) = split xs
+					  in merge(sort ys, sort zs) end
+    in
+	sort
+    end
 end

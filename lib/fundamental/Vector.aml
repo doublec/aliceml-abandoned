@@ -16,17 +16,16 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                    from "Pervasive"
+import structure __pervasive                       from "Pervasive"
 import type int and vector
-       datatype bool and option and list        from "ToplevelTypes"
-import infix 4 = <> < > infixr 5 :: infix 6 + -
-       val op = and op <> and op < and op >
-       val op + and op -                        from "ToplevelValues"
-import structure General                        from "General"
-import structure Bool                           from "Bool"
-import structure List                           from "List"
-import signature VECTOR                         from "VECTOR-sig"
-
+       datatype bool and order and option and list from "ToplevelTypes"
+import infix 4 = <> < > >= infixr 5 :: infix 6 + -
+       val op = and op <> and op < and op > and op >=
+       val op + and op -                           from "ToplevelValues"
+import structure General                           from "General"
+import structure Bool                              from "Bool"
+import structure List                              from "List"
+import signature VECTOR                            from "VECTOR-sig"
 
 structure Vector : VECTOR =
 struct
@@ -124,4 +123,12 @@ struct
     and find'(f,v,i) where (i = length v)		= NONE
       | find'(f,v,i) withval x = sub'(v,i) where (f x)	= SOME x
       | find'(f,v,i)					= find'(f,v,i+1)
+
+    fun isSorted compare v	= isSorted'(compare,v,1)		(**)
+    and isSorted'(compare,v,i)	= i >= length v orelse
+				  compare(sub(v,i-1), sub(v,i)) <> GREATER
+				  andalso isSorted'(compare,v,i+1)
+
+    fun sort compare		= sort'(List.sort compare)		(**)
+    and sort' sortList v	= fromList(sortList(toList v))
 end

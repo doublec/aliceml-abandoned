@@ -18,7 +18,8 @@
  *)
 
 import structure __pervasive                          from "Pervasive"
-import type unit and int and bool and option and list
+import type unit and int
+       type bool and option and order and list
        type array                                     from "ToplevelTypes"
 
 
@@ -67,4 +68,7 @@ sig
     val all :		('a -> bool) -> 'a array -> bool		(**)
     val exists :	('a -> bool) -> 'a array -> bool		(**)
     val find :		('a -> bool) -> 'a array -> 'a option		(**)
+
+    val isSorted :	('a * 'a -> order) -> 'a array -> bool		(**)
+    val sort :		('a * 'a -> order) -> 'a array -> unit		(**)
 end

@@ -15,7 +15,6 @@ import structure Inf                from "../lib/rtt/Inf"
 import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
-import structure MkListSort         from "../lib/utility/MkListSort"
 import structure Url                from "../lib/utility/Url"
 import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
@@ -110,9 +109,6 @@ structure Link :> LINK =
 	structure DepthFirstSearch =
 	    MkDepthFirstSearch(structure Key = UrlHashKey
 			       structure Map = UrlMap)
-
-	structure Sort =
-	    MkListSort(type 'a t = string val compare = String.compare)
 
 	fun sort (includeMap, excludeMap) =
 	    let
@@ -234,7 +230,8 @@ structure Link :> LINK =
 					    UrlMap.member (includeMap, url))
 					order
 			val imports =
-			    Sort.sort (UrlMap.foldi
+			    List.sort String.compare
+				      (UrlMap.foldi
 					   (fn (url, _, rest) =>
 					       rewrite (Url.toString url)::
 					       rest) nil excludeMap)

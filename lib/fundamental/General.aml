@@ -43,6 +43,10 @@ struct
 
     datatype order				= datatype order
 
+    fun inverse LESS				= GREATER
+      | inverse EQUAL				= EQUAL
+      | inverse GREATER				= LESS
+
     val !					= !
     val op :=					= op :=
     val op :=:					= op :=:

@@ -40,6 +40,8 @@ sig
 
     datatype order =	LESS | EQUAL | GREATER
 
+    val inverse :	order -> order				(**)
+
     val ! :		'a ref -> 'a
     val op := :		'a ref * 'a -> unit
     val op :=: :	'a ref * 'a ref -> unit			(**)

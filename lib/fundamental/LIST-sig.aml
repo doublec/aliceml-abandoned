@@ -15,10 +15,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-
-import structure __pervasive                 from "Pervasive"
-import type unit and int and bool and option from "ToplevelTypes"
-
+import structure __pervasive                           from "Pervasive"
+import type unit and int and bool and option and order from "ToplevelTypes"
 
 signature LIST =
 sig
@@ -66,4 +64,7 @@ sig
     val notContains :	''a list -> ''a -> bool				(**)
 
     val tabulate :	int * (int -> 'a) -> 'a list
+
+    val isSorted :	('a * 'a -> order) -> 'a list -> bool		(**)
+    val sort :		('a * 'a -> order) -> 'a list -> 'a list	(**)
 end
