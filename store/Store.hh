@@ -9,94 +9,96 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __STORE_HH__
-#define __STORE_HH__
+#ifndef __STORE__STORE_HH__
+#define __STORE__STORE_HH__
 
 #if defined(INTERFACE)
-#pragma interface
+#pragma interface "store/Store.hh"
 #endif
 
-#include "base.hh"
-#include "memchunk.hh"
-#include "headerop.hh"
-#include "pointerop.hh"
+#include "store/Base.hh"
+#include "store/HeaderOp.hh"
+#include "store/PointerOp.hh"
 
-class MemChain {
-public:
-  MemChunk *anchor;
-  u_int total;      // total amount of mem within chain
-  u_int used;       // used memory
-  u_int gen;        // generation index
-};
+class MemChunk;
 
-class StoreConfig {
-public:
-  u_int max_gen;     // maximum number of generations
-  u_int *gen_limits; // gc limit for each memory section (in Bytes)
-  u_int intgen_size; // initial intgen pointer threshold
-};
+extern char *storeChunkTop;
+extern char *storeChunkMax;
+extern MemChunk *storeCurChunk;
 
 class Store {
-protected:
-  static StoreConfig *config;
-  static MemChain **roots;
-  static u_int totalHeapSize;
-  static word intgen_set;
+private:
+  static MemChunk *roots[STORE_GENERATION_NUM];
+  static u_int memUsage[STORE_GENERATION_NUM];
+  static u_int memLimits[STORE_GENERATION_NUM];
+  static word intgenSet;
   static u_int needGC;
+  static u_int gcGen;
 
-  static void Shrink(MemChain *chain, int threshold);
-  static Block *CopyBlockToDst(Block *p, MemChain *dst);
-  static void ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *scan);
-  static Block *Alloc(MemChain *chain, u_int size);
-  static Block *InternalAllocBlock(BlockLabel l, u_int s) {
-    Assert(s > INVALID_TSIZE);
-    if (s < (MAX_HBSIZE - 1)) {
-      Block *t = Store::Alloc(roots[0], (u_int) s + 1);
-      
-      Assert(t != NULL);
-      HeaderOp::EncodeHeader(t, l, s);
-      return t;
+  static MemChunk *Shrink(MemChunk *chain, int threshold);
+  static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
+  static void ScanChunks(u_int dst_gen, u_int cpy_gen,
+			 u_int match_gen, MemChunk *anchor, char *scan);
+  static char *GCAlloc(u_int s, u_int gen);
+  static void SwitchToNewChunk(MemChunk *chain);
+  static void AllocNewMemChunk(u_int size, u_int gen);
+
+  static char *FastAlloc(u_int size) {
+  retry:
+    char *top = storeChunkTop;
+
+    storeChunkTop += size;
+    if (storeChunkTop > storeChunkMax) {
+      AllocNewMemChunk(size, 0);
+      needGC = 1;
+      goto retry;
     }
+#ifdef DEBUG_CHECK
     else {
-      char *t = (((char *) Store::Alloc(roots[0], (u_int) s + 1)) + 4);
-      
-      Assert(t != NULL);
-      HeaderOp::EncodeHeader((Block *) t, l, MAX_HBSIZE);
-      ((u_int *) t)[-1] = (u_int) s;
-      
-      return (Block *) t;
+      StoreTop();
     }
+#endif
+
+    return top;
+  }
+  static Block *InternalAllocBlock(BlockLabel l, u_int s) {
+    Assert(s > INVALID_BLOCKSIZE);
+    Assert(s <= MAX_BLOCKSIZE);
+
+    Block *t = (Block *) Store::FastAlloc((s + 1) << 2);
+    Assert(t != NULL);
+    HeaderOp::EncodeHeader(t, l, s);
+
+    return t;
   }
 public:
   // Init Functions
-  static void InitStore(StoreConfig *cfg);
+  static void InitStore(u_int mem_limits[STORE_GENERATION_NUM]);
   static void CloseStore();
 
   // GC Related Functions
-  static word DoGC(word root, u_int gen);
+  static word DoGC(word root);
   static void AddToIntgenSet(Block *v);
   static int NeedGC() {
     return needGC;
   }
+
   // DataLabel Function
   static BlockLabel MakeLabel(u_int l) {
-    Assert(l <= MAX_HELPERLABELSIZE);
+    Assert(l <= MAX_HELPER_LABEL);
     return (BlockLabel) l;
   }
   // Allocation Functions
   static Block *AllocBlock(BlockLabel l, u_int s) {
-    Assert(l >= MIN_DATALABELSIZE);
-    Assert(l <= MAX_HELPERLABELSIZE);
+    Assert(l >= MIN_DATA_LABEL);
+    Assert(l <= MAX_HELPER_LABEL);
     return InternalAllocBlock(l, s);
   }
   static Block *AllocChunk(u_int s) {
-    return Store::InternalAllocBlock(CHUNK, s);
-  }
-  static Block *AllocStack(u_int s) {
-    return Store::InternalAllocBlock(STACK, s);
+    return Store::InternalAllocBlock(CHUNK_LABEL, s);
   }
   static Transient *AllocTransient(BlockLabel l) {
-    Assert(l >= MIN_TRANSIENT && l <= MAX_TRANSIENT);
+    Assert((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
   // Conversion Functions
@@ -118,12 +120,20 @@ public:
   static void *WordToUnmanagedPointer(word x) {
     return PointerOp::DecodeUnmanagedPointer(x);
   }
+  static int UnsafeWordToInt(word x) {
+    return PointerOp::DecodeInt(x);
+  }
+  static Block *UnsafeWordToBlock(word x) {
+    return PointerOp::DecodeBlock(x);
+  }
 #ifdef DEBUG_CHECK
   static void MemStat();
+  static void StoreTop();
+  static void ForceGCGen(u_int gen);
 #endif
 };
 
 // Defined Store Values Classes
-#include "value.hh"
+#include "store/Value.hh"
 
-#endif
+#endif __STORE__STORE_HH__
