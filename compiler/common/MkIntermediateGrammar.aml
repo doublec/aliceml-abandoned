@@ -44,7 +44,7 @@ functor Intermediate(type info
 	| IfExp     of info * exp * exp * exp
 	| WhileExp  of info * exp * exp
 	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list
+	| CaseExp   of info * exp * match list * longid (* failure exception *)
 	| RaiseExp  of info * exp
 	| HandleExp of info * exp * id * exp
 	| LetExp    of info * dec list * exp
@@ -95,7 +95,7 @@ functor Intermediate(type info
       | info_exp(IfExp(i,_,_,_))	= i
       | info_exp(WhileExp(i,_,_))	= i
       | info_exp(SeqExp(i,_))		= i
-      | info_exp(CaseExp(i,_,_))	= i
+      | info_exp(CaseExp(i,_,_,_))	= i
       | info_exp(RaiseExp(i,_))		= i
       | info_exp(HandleExp(i,_,_,_))	= i
       | info_exp(LetExp(i,_,_))		= i
@@ -272,11 +272,11 @@ functor Intermediate(type info
 					  ; output_info(q,i) ; m(q)
 					  ; output_list output_exp (q,es) ; r(q)
 					  )
-      | output_exp(q, CaseExp(i,e,ms))	= ( f(q,"CaseExp")
+      | output_exp(q, CaseExp(i,e,ms,y))= ( f(q,"CaseExp")
 					  ; output_info(q,i) ; m(q)
 					  ; output_exp(q,e) ; m(q)
-					  ; output_list output_match (q,ms)
-					  ; r(q)
+					  ; output_list output_match(q,ms); m(q)
+					  ; output_longid(q,y) ; r(q)
 					  )
       | output_exp(q, RaiseExp(i,e))	= ( f(q,"RaiseExp")
 					  ; output_info(q,i) ; m(q)

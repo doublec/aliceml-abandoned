@@ -42,7 +42,7 @@ signature INTERMEDIATE =
 	| IfExp     of info * exp * exp * exp
 	| WhileExp  of info * exp * exp
 	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list
+	| CaseExp   of info * exp * match list * longid (* failure exception *)
 	| RaiseExp  of info * exp
 	| HandleExp of info * exp * id * exp
 	| LetExp    of info * dec list * exp
