@@ -1,3 +1,5 @@
+PHP = php
+
 PREFIX = /services/ps/httpd/html/alice
 
 DIRS = $(PREFIX) \
@@ -35,7 +37,7 @@ $(DIRS):
 	mkdir -p $@
 
 $(PREFIX)/%.html: %.html macros.php3
-	php -q $< >$<.static
+	$(PHP) -q $< >$<.static
 	install -c -m 444 $<.static $@
 	rm -f $<.static
 

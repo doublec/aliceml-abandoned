@@ -1,3 +1,5 @@
+PHP = php
+
 ifeq ($(STOCKWERK), 1)
 INTEROP =
 PLATFORM = stockwerk
@@ -87,7 +89,7 @@ $(DIRS):
 
 $(PREFIX)/%.html: %.html macros.php3 menu.html
 	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) > $<.static.in
-	php -f $<.static.in > $<.static
+	$(PHP) -f $<.static.in > $<.static
 	install -c -m 444 $<.static $@
 	rm -f $<.static.in $<.static
 
