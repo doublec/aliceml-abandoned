@@ -1,15 +1,25 @@
 #!/bin/sh
 
 howcalled=$0
-cmd=`basename $howcalled`
+runmedir=`dirname $howcalled`
 
 if test -z "${OZHOME}"
 then
-  dir=`dirname $howcalled`
-  OZHOME=`(cd $dir; cd ..; /bin/pwd)`
+    IFS=:
+    for i in $PATH
+    do
+	if test -x $i/oz
+	then
+	    dir=`dirname $i`
+	    OZHOME=`(cd $dir; cd ..; /bin/pwd)`
+	fi
+    done
 fi
 
-OZ_LOAD=cache=cache:cache=$OZHOME/cache
+: ${OZHOME=/usr/lib/mozart}
+: ${OZ_LOAD=cache=$OZHOME/cache/}
+
+OZ_LOAD=cache=$runmedir/:$OZ_LOAD
 
 export OZHOME OZ_LOAD
 
