@@ -18,6 +18,7 @@
 
 class Block {
 private:
+  static const u_int HANDLER_POS = 1;
   word ar[2];
 public:
   word *GetBase() {
@@ -59,8 +60,8 @@ public:
     InitArg(f, Store::IntToWord(v));
   }
   Handler *GetHandler() {
-    return (Handler *) ((GetLabel() != HANDLER_BLOCK_LABEL) ?
-			INVALID_POINTER : Store::DirectWordToUnmanagedPointer(GetArg(1)));
+    return (Handler *) ((GetLabel() != HANDLER_BLOCK_LABEL) ? INVALID_POINTER :
+			Store::DirectWordToUnmanagedPointer(GetArg(HANDLER_POS)));
   }
   word ToWord() {
     return PointerOp::EncodeBlock(this);

@@ -74,15 +74,16 @@ static void CreateLabel(FILE *f, int size) {
   std::fprintf(f, "typedef enum {\n");
 
   std::fprintf(f, "  MIN_DATA_LABEL      = 0x%x,\n", 0);
-  std::fprintf(f, "  MAX_DATA_LABEL      = 0x%x,\n", (size - 7 - arr_size));
-  std::fprintf(f, "  MIN_HELPER_LABEL    = 0x%x,\n\n", (size - 6 - arr_size));
+  std::fprintf(f, "  MAX_DATA_LABEL      = 0x%x,\n", (size - 8 - arr_size));
+  std::fprintf(f, "  MIN_HELPER_LABEL    = 0x%x,\n\n", (size - 7 - arr_size));
 
   for (u_int i = 0; i < arr_size; i++) {
-    std::fprintf(f, "  %s_LABEL = 0x%x,\n", helper_arr[i], (size - 6 - (arr_size  - i)));
+    std::fprintf(f, "  %s_LABEL = 0x%x,\n", helper_arr[i], (size - 7 - (arr_size  - i)));
   }
 
-  std::fprintf(f, "\n  MAX_HELPER_LABEL    = 0x%x,\n", (size - 7));
-  std::fprintf(f, "  MIN_STORE_LABEL     = 0x%x,\n", (size - 6));
+  std::fprintf(f, "\n  MAX_HELPER_LABEL    = 0x%x,\n", (size - 8));
+  std::fprintf(f, "  MIN_STORE_LABEL     = 0x%x,\n", (size - 7));
+  std::fprintf(f, "  WEAK_DICT_LABEL     = 0x%x,\n", (size - 7));
   std::fprintf(f, "  HANDLER_BLOCK_LABEL = 0x%x,\n", (size - 6));
   std::fprintf(f, "  CHUNK_LABEL         = 0x%x,\n", (size - 5));
   std::fprintf(f, "  HOLE_LABEL          = 0x%x,\n", (size - 4));

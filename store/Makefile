@@ -3,7 +3,8 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SRCS = Store.cc
+SRCS = WeakDictionary.cc \
+       Store.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all clean distclean
