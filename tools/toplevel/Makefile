@@ -43,6 +43,7 @@ install: all
 	install LinkedTextToplevel.alc $(INSTALLTO)/TextToplevel.alc
 	install LinkedGuiToplevel.alc $(INSTALLTO)/GuiToplevel.alc
 	install LinkedCoreToplevel.alc $(INSTALLTO)/CoreToplevel.alc
+	install ToplevelStartup.aml $(INSTALLTO)/ToplevelStartup.aml
 	install alice $(INSTALLBINTO)/alice
 
 clean:

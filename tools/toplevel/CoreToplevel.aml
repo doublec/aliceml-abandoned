@@ -31,9 +31,8 @@ struct
     val outStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdOut)
     val errWidth  = ref 80
     val errStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
+    val traceWidth  = ref 80
     val traceStream = TextIO.mkOutstream null
-
-    val null = TextIO.StreamIO.mkOutstream (TextPrimIO.nullWr (), IO.NO_BUF)
 
 
     (* Signal handling *)
@@ -73,12 +72,11 @@ struct
     fun trace s = TextIO.output (traceStream, "-- " ^ s ^ "\n")
 
     fun call prepare (env, source) =
-	(Compiler.withTraceStream (TextIO.getOutstream traceStream)
-	 (Compiler.withOutStream (TextIO.getOutstream outStream)
-	  (Compiler.withErrStream (TextIO.getOutstream errStream)
-	   (Compiler.withOutWidth (!outWidth)
-	    (Compiler.withErrWidth (!errWidth)
-	     prepare))))) (env, source)
+	Compiler.withStreams {out = SOME outStream, err = SOME errStream,
+			      trace = SOME traceStream}
+	(Compiler.withWidths {out = !outWidth, err = !errWidth,
+			      trace = !traceWidth}
+	 prepare) (env, source)
 
     fun eval' prepare (printSig, env, source, signal) =
 	(
@@ -194,20 +192,18 @@ struct
 
     val currentEnv = ref Compiler.initialEnv
 
-    val startup = "x-alice:/lib/tools/ToplevelStartup.aml"
+    val startup = "x-alice:/tools/ToplevelStartup.aml"
 
     fun init () =
 	let
 	    val p   = Promise.promise ()
 	    val env = Ref.exchange (currentEnv, Promise.future p)
 	in
-	    await env;
+	    await env; (* avoid deadlock *)
 	    case evalFile (false, Compiler.initialEnv, startup, dummySignal)
 	     of NONE =>	raise Compiler.Error
 	      | SOME env' => Promise.fulfill (p, env')
 	end
-
-    (*val _ = init ()*)
 
 
     (* Evaluation *)
@@ -234,6 +230,7 @@ struct
 	in
 	    case evalString (true, env, source, signal)
 	     of NONE      => Promise.fulfill (p, env)
+before print "[1]"
 	      | SOME env' => Promise.fulfill (p, loopUses (env', signal))
 	end
 

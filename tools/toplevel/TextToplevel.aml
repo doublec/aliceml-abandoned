@@ -75,7 +75,7 @@ struct
     fun run () =
 	(
 	    TextIO.print CoreToplevel.banner;
-	    await CoreToplevel.eval;
+	    CoreToplevel.init ();
 	    registerSignals ();
 	    loop ();
 	    TextIO.print CoreToplevel.bye

@@ -20,6 +20,7 @@ sig
 
     val outWidth	: int ref
     val errWidth	: int ref
+    val traceWidth	: int ref
     val outStream	: TextIO.outstream
     val errStream	: TextIO.outstream
     val traceStream	: TextIO.outstream

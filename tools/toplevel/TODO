@@ -3,6 +3,7 @@ TODO list for the Alice IDE
 
 Bugs:
 
+* output stream synchronisation (how?)
 * paste should delete tags
 * highlighting displaced due to prompt
 * compile output in wrong buffer

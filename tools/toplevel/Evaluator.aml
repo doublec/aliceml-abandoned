@@ -20,6 +20,7 @@ struct
 
     fun setOutWidth n   = outWidth := n
     fun setErrWidth n   = errWidth := n
+    fun setTraceWidth n = traceWidth := n
     fun setOutStream os = TextIO.setOutstream (outStream, os)
     fun setErrStream os = TextIO.setOutstream (errStream, os)
     fun setTraceStream os = TextIO.setOutstream (traceStream, os)
@@ -29,12 +30,11 @@ struct
 	 TextIO.flushOut outStream)
 
     fun compile' file =
-	(Compiler.withTraceStream (TextIO.getOutstream traceStream)
-	 (Compiler.withOutStream (TextIO.getOutstream outStream)
-	  (Compiler.withErrStream (TextIO.getOutstream errStream)
-	   (Compiler.withOutWidth (!outWidth)
-	    (Compiler.withErrWidth (!errWidth)
-	     Compiler.compileFile))))) (file, NONE)
+	Compiler.withStreams {out = SOME outStream, err = SOME errStream,
+			      trace = SOME traceStream}
+	(Compiler.withWidths {out = !outWidth, err = !errWidth,
+			      trace = !traceWidth}
+	 Compiler.compileFile) (file, NONE)
 
     fun compile file =
 	((TextIO.output (outStream, "\n");
