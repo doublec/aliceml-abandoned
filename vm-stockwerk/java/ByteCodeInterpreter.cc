@@ -556,6 +556,12 @@ public:
   return Worker::RAISE; \
 }
 
+#define RAISE_VM_EXCEPTION(exn, mesg) { \
+  ThrowWorker::PushFrame(ThrowWorker::exn, JavaString::New(mesg)); \
+  Scheduler::nArgs = 0; \
+  return Worker::CONTINUE; \
+}
+
 class JavaDebug {
 public:
 #if defined(STORE_DEBUG)
@@ -627,13 +633,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (index < array->GetLength())
 	    frame->Push(array->Get(index));
 	  else {
-	    // to be done: raise ArrayIndexOutOfBoundsException
-	    Error("ArrayIndexOutOfBoundsException");
+	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "AALOAD");
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "AALOAD");
 	}
 	pc += 1;
       }
@@ -652,13 +656,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (index < array->GetLength())
 	    frame->Push(array->Get(index));
 	  else {
-	    // to be done: raise ArrayIndexOutOfBoundsException
-	    Error("ArrayIndexOutOfBoundsException");
+	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException,
+			       "(C|D||F|I|L|S)ALOAD");
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "(C|D||F|I|L|S)ALOAD");
 	}
 	pc += 1;
       }
@@ -679,18 +682,15 @@ Worker::Result ByteCodeInterpreter::Run() {
 		 object->IsInstanceOf(static_cast<Class *>(type))))
 	      array->Assign(index, value);
 	    else {
-	      // to be done: raise ArrayStoreException
-	      Error("ArrayStoreException");
+	      RAISE_VM_EXCEPTION(ArrayStoreException, "AASTORE");
 	    }
 	  }
 	  else {
-	    // to be done: raise ArrayIndexOutOfBoundsException
-	    Error("ArrayIndexOutOfBoundsException");
+	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "AASTORE");
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "AASTORE");
 	}
 	pc += 1;
       }
@@ -710,13 +710,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (index < array->GetLength())
 	    array->Assign(index, value);
 	  else {
-	    // to be done: raise ArrayIndexOutOfBoundsException
-	    Error("ArrayIndexOutOfBoundsException");
+	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException,
+			       "(C|D|F|I|L|S)ASTORE");
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "(C|D|F|I|L|S)ASTORE");
 	}
 	pc += 1;
       }
@@ -805,8 +804,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  frame->Push(arr->ToWord());
 	}
 	else {
-	  // to be done: raise NegativeArraySizeException
-	  Error("NegativeArraySizeException");
+	  RAISE_VM_EXCEPTION(NegativeArraySizeException, "ANEWARRAY");
 	}
       }
       pc += 3;
@@ -856,8 +854,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  pc += 1;
 	}
 	else {
-	  //to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "ARRAYLENGTH");
 	}
       }
       break;
@@ -928,8 +925,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  RAISE_EXCEPTION(exn->ToWord());
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "ATHROW");
 	}
       }
       break;
@@ -944,13 +940,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    pc += 1;
 	  }
 	  else {
-	    // to be done: raise ArrayIndexOutOfBoundsException
-	    Error("ArrayIndexOutOfBoundsException");
+	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "BALOAD");
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "BALOAD");
 	}
       }
       break;
@@ -966,13 +960,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    pc += 1;
 	  }
 	  else {
-	    // to be done: raise ArrayIndexOutOfBoundsException
-	    Error("ArrayIndexOutOfBoundsException");
+	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "BASTORE");
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "BASTORE");
 	}
       }
       break;
@@ -999,8 +991,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    Assert(p != INVALID_POINTER);
 	    if ((p->GetLabel() != JavaLabel::Object) ||
 		(!(Object::FromWordDirect(wObject)->IsInstanceOf(classObj)))) {
-	      // to be done: raise CastClassException
-	      Error("CastClassException");
+	      RAISE_VM_EXCEPTION(ClassCastException, "CHECKCAST");
 	    }
 	  }
 	  break;
@@ -1284,8 +1275,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  frame->Push(value);
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "GETFIELD");
 	}
 	pc += 3;
       }
@@ -1433,8 +1423,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (v2 != 0)
 	  frame->Push(JavaInt::ToWord(v1 / v2));
 	else {
-	  // to be done: raise ArithmeticException
-	  Error("ArithmeticException");
+	  RAISE_VM_EXCEPTION(ArithmeticException, "IDIV");
 	}
 	pc += 1;
       }
@@ -1667,7 +1656,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  Scheduler::nArgs = nArgs + 1;
 	for (u_int i = nArgs + 1; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
-	// to be done: where is the closure to be found; assuming static ref
+	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
+	if (object == INVALID_POINTER) {
+	  RAISE_VM_EXCEPTION(NullPointerException, "INVOKESPECIAL");
+	}
 	Class *classObj  = methodRef->GetClass();
 	Closure *closure = classObj->GetVirtualMethod(methodRef->GetIndex());
 	return Scheduler::PushCall(closure->ToWord());
@@ -1728,14 +1720,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	for (u_int i = nArgs + 1; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
 	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
-	if (object != INVALID_POINTER) {
-	  Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
-	  return Scheduler::PushCall(closure->ToWord());
+	if (object == INVALID_POINTER) {
+	  RAISE_VM_EXCEPTION(NullPointerException, "INVOKEVIRTUAL");
 	}
-	ThrowWorker::PushFrame(ThrowWorker::NullPointerException,
-			       JavaString::New("invokevirtual"));
-	Scheduler::nArgs = 0;
-	return CONTINUE;
+	Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
+	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::IOR:
@@ -1755,8 +1744,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (v2 != 0)
 	  frame->Push(JavaInt::ToWord(v1 % v2));
 	else {
-	  // to be done: raise ArithmeticException
-	  Error("ArithmeticException");
+	  RAISE_VM_EXCEPTION(ArithmeticException, "IREM");
 	}
 	pc += 1;
       }
@@ -1941,8 +1929,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  }
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "MONITORENTER");
 	}
 	pc += 1;
       }
@@ -1957,8 +1944,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  lock->Release();
 	}
 	else {
-	  // to be done: raise NullPointerException
-	  Error("NullPointerException");
+	  RAISE_VM_EXCEPTION(NullPointerException, "MONITOREXIT");
 	}
 	pc += 1;
       }
@@ -1974,8 +1960,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	for (u_int i = nDims; i--;) {
 	  int count = JavaInt::FromWord(frame->Pop());
 	  if (count < 0) {
-	    // to be done: raise NegativeArraySizeException
-	    Error("NegativeArraySizeException");
+	    RAISE_VM_EXCEPTION(NegativeArraySizeException, "multianewarray");
 	  }
 	  ObjectArray *arr = ObjectArray::New(type, count);
 	  arr = arr;
@@ -2013,8 +1998,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case JavaLabel::BaseType:
 	case JavaLabel::ArrayType:
 	  {
-	    // to be done: raise InstantiationError
-	    Error("InstantiationError");
+	    RAISE_VM_EXCEPTION(InstantiationError, "new");
 	  }
 	  break;
 	default:
@@ -2046,8 +2030,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  frame->Push(array);
 	}
 	else {
-	  // to be done: raise NegativeArraySizeException
-	  Error("NegativeArraySizeException");
+	  RAISE_VM_EXCEPTION(NegativeArraySizeException, "newarray");
 	}
 	pc += 2;
       }
