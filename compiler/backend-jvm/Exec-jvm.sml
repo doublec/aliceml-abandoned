@@ -31,4 +31,4 @@ fun dmlc (_, debug::echo::x) =
     end
   | dmlc _ = 2
 
-val _ = SMLofNJ.exportFn ("dmlc", dmlc)
+val _ = SMLofNJ.exportFn (".dmlc", dmlc)
