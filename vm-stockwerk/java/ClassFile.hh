@@ -55,21 +55,23 @@ private:
   bool ParseVersion(u_int &offset);
   ConstantPool *ParseConstantPool(u_int &offset);
   ConstantPoolEntry *ParseConstantPoolEntry(u_int &offset);
-  Table *ResolveConstantPool(ConstantPool *constantPool,
-			     ClassLoader *classLoader);
-  Table *ParseInterfaces(u_int &offset, Table *runtimeConstantPool);
+  RuntimeConstantPool *ResolveConstantPool(ConstantPool *constantPool,
+					   ClassLoader *classLoader);
+  Table *ParseInterfaces(u_int &offset,
+			 RuntimeConstantPool *runtimeConstantPool);
   Table *ParseFields(u_int &offset, ConstantPool *constantPool,
-		     Table *runtimeConstantPool);
+		     RuntimeConstantPool *runtimeConstantPool);
   FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool,
-			    Table *runtimeConstantPool);
+			    RuntimeConstantPool *runtimeConstantPool);
   bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPool,
-			    Table *runtimeConstantPool, word &constantValue);
+			    RuntimeConstantPool *runtimeConstantPool,
+			    word &constantValue);
   Table *ParseMethods(u_int &offset, ConstantPool *constantPool,
-		      Table *runtimeConstantPool);
+		      RuntimeConstantPool *runtimeConstantPool);
   MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
-			      Table *runtimeConstantPool);
+			      RuntimeConstantPool *runtimeConstantPool);
   bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPool,
-			     Table *runtimeConstantPool,
+			     RuntimeConstantPool *runtimeConstantPool,
 			     JavaByteCode *&byteCode);
   void SkipAttributes(u_int &offset);
 public:
