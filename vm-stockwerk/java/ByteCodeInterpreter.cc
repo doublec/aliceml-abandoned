@@ -2504,7 +2504,21 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::TABLESWITCH:
       {
-	Error("not implemented");
+	s_int basePC = pc;
+	pc = pc + 4 - (pc & 3);
+	s_int defaultOffset = GET_WIDE_INDEX();
+	pc += 4;
+	s_int lowValue = GET_WIDE_INDEX();
+	pc += 4;
+	s_int highValue = GET_WIDE_INDEX();
+	s_int value = JavaInt::FromWord(frame->Pop());
+	if ((value >= lowValue) && (value <= highValue)) {
+	  value -= lowValue;
+	  pc += value * 4;
+	  pc = basePC + static_cast<s_int>(GET_WIDE_INDEX());
+	}
+	else
+	  pc = basePC + defaultOffset; 
       }
       break;
     case Instr::WIDE:
