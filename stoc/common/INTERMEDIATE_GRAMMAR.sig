@@ -74,7 +74,9 @@ signature INTERMEDIATE =
 
     and dec =
 	  ValDec    of info * id list * exp
-	  		(* all ids distinct *)
+	  		(* - all ids distinct
+			 * - id list either empty
+			 *   or exp has appropriate tuple type *)
 	| ConDec    of info * id * bool (* has args *)
 
 
