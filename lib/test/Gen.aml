@@ -79,8 +79,8 @@ struct
 					     option int n) 
 			    handle Subscript => arraySlice gen n
     fun array2 gen n    = Array2.tabulate Array2.ColMajor 
-			                  (int (Int.abs n), 
-					   int (Int.abs n), 
+			                  (Int.abs (int n), 
+					   Int.abs (int n), 
 					   fn (a, b) => gen (a + b))
     fun refOf gen n	= ref (gen n)
     
