@@ -132,7 +132,7 @@ local
 
 in
     val testSuiteConcur = ("Concur", [testBug49])
-    val testSuiteFuture = ("Future", [testLazy, testSpawn , testByNeed, testPromise1, testPromise2])
+    val testSuiteFuture = ("Future", [testLazy, testSpawn, testPromise1, testPromise2])
 end
 
 

@@ -14,6 +14,11 @@ ifndef SH_EXT
 endif
 export SH_EXT
 
+ifndef PREFIX
+  PREFIX := ../../install
+endif
+export PREFIX
+
 ifndef SW_EXT
   SW_EXT := stc
 endif
@@ -46,7 +51,7 @@ ifndef ALICEDEP
   ALICEDEP := alicedep
 endif
 
-.PHONY: .DELETE_ON_ERROR all components library depend clean
+.PHONY: .DELETE_ON_ERROR all components library depend clean install
 .DELETE_ON_ERROR:
 
 
@@ -68,6 +73,10 @@ clean: sh_clean
 #clean: sw_clean
 
 depend: Makefile.depend
+
+install: all
+	install -d $(PREFIX)/lib/test
+	install *.$(SH_EXT) $(PREFIX)/lib/test
 
 Makefile.depend: $(FILTERED_SOURCES)
 	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
