@@ -55,8 +55,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		patternVariablesOf' (pat, ids)
 	      | patternVariablesOf' (WithPat (_, pat, decs), ids) =
 		patternVariablesOf' (pat, foldr declaredVariables ids decs)
-	    and declaredVariables (ValDec (_, pat, _, _), ids) =
+	    and declaredVariables (ValDec (_, pat, _), ids) =
 		patternVariablesOf' (pat, ids)
+	      | declaredVariables (RecDec (_, decs), ids) =
+		foldr declaredVariables ids decs
 	      | declaredVariables (ConDec (_, id, _), ids) = id::ids
 	in
 	    fun patternVariablesOf pat = patternVariablesOf' (pat, nil)
@@ -71,9 +73,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	fun substDecs (dec::decr, subst) =
 	    substDec (dec, subst)::substDecs (decr, subst)
 	  | substDecs (nil, _) = nil
-	and substDec (ValDec (coord, pat, exp, isRec), subst) =
-	    ValDec (coord, substPat (pat, subst), substExp (exp, subst), isRec)
+	and substDec (ValDec (coord, pat, exp), subst) =
+	    ValDec (coord, substPat (pat, subst), substExp (exp, subst))
 	  | substDec (dec as ConDec (_, _, _), _) = dec
+	  | substDec (RecDec (coord, decs), subst) =
+	    RecDec (coord, List.map (fn dec => substDec (dec, subst)) decs)
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (VarExp (coord, longid), subst) =
 	    VarExp (coord, substLongId (longid, subst))
@@ -175,7 +179,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 val coord = infoId id
 			 val exp = VarExp (coord, ShortId (coord, id'))
 		     in
-			 ValDec (coord, VarPat (coord, id), exp, false)::decs
+			 ValDec (coord, VarPat (coord, id), exp)::decs
 		     end) nil subst
 	    in
 		WithPat (infoPat pat', pat', decs)

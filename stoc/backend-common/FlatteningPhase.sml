@@ -599,12 +599,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | derec (pat, _) =
 	    Error.error (infoPat pat, "pattern never matches")
 
-	fun simplifyDec (ValDec (coord, VarPat (_, id), exp, false)) =
+	fun simplifyDec (ValDec (coord, VarPat (_, id), exp)) =
 	    (* this is needed to end recursion with introduced WithPats *)
 	    O.OneDec (coord, id, simplifyExp exp)
-	  | simplifyDec (ValDec (coord, VarPat (_, id), exp, true)) =
-	    O.RecDec (coord, [([id], simplifyExp exp)])
-	  | simplifyDec (ValDec (coord, pat, exp, false)) =
+	  | simplifyDec (ValDec (coord, pat, exp)) =
 	    let
 		val ids = patternVariablesOf pat
 		val decExp = O.DecExp (coord, ids)
@@ -613,10 +611,18 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		O.ValDec (coord, ids,
 			  simplifyCase (coord, exp, matches, longid_Bind))
 	    end
-	  | simplifyDec (ValDec (coord, pat, exp, true)) =
-	    O.RecDec (coord,
-		      List.map (fn (ids, exp) => (ids, simplifyExp exp))
-		      (derec (pat, exp)))
+	  | simplifyDec (RecDec (coord, decs)) =
+	    let
+		fun simplifyRec (ValDec (_, pat, exp), rest) =
+		    derec (pat, exp) @ rest
+		  | simplifyRec (_, _) =
+		    Crash.crash "MatchCompilationPhase.simplifyDec"
+		val idsExpList =
+		    List.map (fn (ids, exp) => (ids, simplifyExp exp))
+		    (List.foldr simplifyRec nil decs)
+	    in
+		O.RecDec (coord, idsExpList)
+	    end
 	  | simplifyDec (ConDec (coord, id, hasArgs)) =
 	    O.ConDec (coord, id, hasArgs)
 	and simplifyTerm (VarExp (_, longid)) = (NONE, longid)
