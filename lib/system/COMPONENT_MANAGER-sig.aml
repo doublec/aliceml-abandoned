@@ -4,15 +4,14 @@
  *   Andreas Rossberg <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ $Author$
  *   $Revision$
  *)
 
-import structure Reflect from "Reflect"
-import structure Url     from "Url"
+import structure Url from "Url"
 
 local
     __primitive type component = "Component.component"
