@@ -22,6 +22,7 @@ import structure MainDictionary from "MainDictionary"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
+import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import structure Server from "Server"
 import structure Services from "Services"
@@ -35,84 +36,96 @@ local
 in
 
 structure Update :> UPDATE = 
-    struct
+struct
+    
+    exception UpdateError
+    
+    val minCounter = ref (MainDictionary.getHighestIndexAssigned
+			  (Dictionaries.dict))
 	
-	exception UpdateError
-	
-	val minCounter = ref (MainDictionary.getHighestIndexAssigned
-			      (Dictionaries.dict))
-
-	(* updateChild *)
-	fun updateChild (p,i,n) = case p of
-	    Concat(r) => (Array.update(getKids(p),i,n)
-                         ; if not(getParent(n) = Empty)
+    (* updateChild *)
+    fun updateChild (p,i,n) = case p of
+	Concat(r) => (Array.update(getKids(p),i,n)
+		      ; if not(getParent(n) = Empty)
+			    then updateChild(getParent(p),getIndex(p),p)
+			else () )
+      | Container(r) => (Array.update(getKids(p),i,n)
+			 ; if not(getParent(n) = Empty)
 			       then updateChild(getParent(p),getIndex(p),p)
 			   else () )
-          | Container(r) => (Array.update(getKids(p),i,n)
-			    ; if not(getParent(n) = Empty)
-			       then updateChild(getParent(p),getIndex(p),p)
-			   else () )
-          | RelNode(r) => (#content(r) := n
-			  ; if not(getParent(n) = Empty)
-			       then updateChild(getParent(p),getIndex(p),p) 
-			    else () )
-          | Empty => () 
-          | _ => raise UpdateError
-
-        (* setDazzled *)
-        fun setDazzled n = case n of
-	    Simple(r) => ( #status(r) := DAZZLED
+      | RelNode(r) => (#content(r) := n
+		       ; if not(getParent(n) = Empty)
+			     then updateChild(getParent(p),getIndex(p),p) 
+			 else () )
+      | Empty => () 
+      | _ => raise UpdateError
+	    
+    (* setDazzled *)
+    fun setDazzled n = case n of
+	Simple(r) => ( #status(r) := DAZZLED
+		      ; setDazzled(getParent(n)) )
+      | Concat(r) => ( #status(r) := DAZZLED
+		      ; setDazzled(getParent(n)) )
+      | Container(r) => ( #status(r) := DAZZLED
 			 ; setDazzled(getParent(n)) )
-          | Concat(r) => ( #status(r) := DAZZLED
-                         ; setDazzled(getParent(n)) )
-          | Container(r) => ( #status(r) := DAZZLED
-                            ; setDazzled(getParent(n)) )
-          | RelNode(r) => ( #status(r) := DAZZLED
-                          ; setDazzled(getParent(n)) )
-          | RelRefNode(r) => ( #status(r) := DAZZLED
-                             ; setDazzled(getParent(n)) )
-          | Limit(r) => ( #status(r) := DAZZLED
-                        ; setDazzled(getParent(n)) )
-          | Empty => ()
-
-        (* tell *)
-	and tell (va,li,f) =  
-	    (TextIO.print "\nmethod tell: starting update ...\n\n" 
-            ;
-	    let val new_li = List.sort 
-		(fn (n,m) => Int.compare(getAncIndex n, 
-					 getAncIndex m)) 
-		                         li
-		val update =  
-		    fn n  
-		    => ( setDazzled n 
-		       ; let val ind = getAncIndex n 
-                             val anc = valOf(MainDictionary.lookup 
-					         (Dictionaries.dict,ind)) 
-			     val (x,y) = Services.getPosition
-				 (getGroup(anc),!(Settings.font)) 
-                             val t = ( case getDesc(n) of  
-				       VALUE(rr) => #typ(rr) 
-				     | _ => raise UpdateError)  
-			     val new = f(va,t,getParent(n), 
-					 getIndex(n), 
-					 getDepth(n)) 
-			 in ( minCounter := getAncIndex(hd(new_li)) 
-			    ; Gtk.objectDestroy(getGroup(n)) 
-                            ; updateChild(getParent(n),getIndex(n),new) 
-			    ; MainDictionary.update(Dictionaries.dict, 
-			         		     (ind,anc)) 
-			    ; Layout.layout(anc) 
-			    ;(TextIO.print ("("^Int.toString(x)^" / "
-						^Int.toString(y)^")\n")
-			    ; DrawNodes.draw(anc,x,y,DrawNodes.DRAW))  ) 
-			 end )
-		val _ = TextIO.print "...update-Funktion computed \n\n" 
-		val mapped_li = List.map update new_li 
-	    in () (* alle darunterliegenden Wurzelknoten verschieben *)
-	    end    )
-	    (* nach oben durchgehen, flags auf DAZZLED setzen, 
-	     minCounter setzen und createGraph aufrufen *)
+      | RelNode(r) => ( #status(r) := DAZZLED
+		       ; setDazzled(getParent(n)) )
+      | RelRefNode(r) => ( #status(r) := DAZZLED
+			  ; setDazzled(getParent(n)) )
+      | Limit(r) => ( #status(r) := DAZZLED
+		     ; setDazzled(getParent(n)) )
+      | Empty => ()
+	    
+    (* iterMove *)	    
+    fun iterMove (dict,dy,i,highest_i)
+	= if i > highest_i 
+	      then () 
+	  else
+	      case MainDictionary.lookup(dict,i) of
+	      NONE => iterMove(dict,dy,i+1,highest_i)
+            | SOME node 
+	      => ( Services.moveGroup(getGroup(node),0,dy,!Settings.font)
+                 ; iterMove (dict,dy,i+1,highest_i) )
+		
+    (* tell *)
+    and tell (va,li,f) =  
+	let val new_li = List.sort 
+	    (fn (n,m) => Int.compare(getAncIndex n, 
+				     getAncIndex m)) 
+	    li
+	    val update =  
+		fn n  
+		=> ( setDazzled n 
+		    ; let val ind = getAncIndex n 
+			  val anc = valOf(MainDictionary.lookup 
+					  (Dictionaries.dict,ind)) 
+			  val old_ydim = Layout.get_ydim(anc)
+			  val (x,y) = Services.getPosition
+			              (getGroup(anc),!(Settings.font)) 
+			  val t = ( case getDesc(n) of  
+				   VALUE(rr) => #typ(rr) 
+				 | _ => raise UpdateError)  
+			  val new = f(va,t,getParent(n), 
+				      getIndex(n), 
+				      getDepth(n)) 
+		      in ( minCounter := getAncIndex(hd(new_li)) 
+			  ; Gtk.objectDestroy(getGroup(n)) 
+			  ; updateChild(getParent(n),getIndex(n),new) 
+			  ; Layout.layout(anc) 
+			  ; MainDictionary.update(Dictionaries.dict, 
+						  (ind,anc))
+			  ; DrawNodes.draw(anc,x,y,DrawNodes.DRAW)
+			  ; let val dy =  Layout.get_ydim(anc) - old_ydim
+			    in ( WindowManager.incr_act_line dy
+				; iterMove (Dictionaries.dict,dy,
+					    getIndex(n) + 1,
+					MainDictionary.getHighestIndexAssigned
+					    (Dictionaries.dict)) )
+			    end)
+		      end )
+	    val mapped_li = List.map update new_li 
+	in () 
+	end   
 
        (* watcher *)
 	and watcher (future,va,f) = 

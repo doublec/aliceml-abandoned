@@ -24,7 +24,6 @@ import structure ColorMap from "ColorMap"
 import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
 import structure MkColorTable from "MkColorTable"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas" (* to be removed *)
 
 open Types Helper Layout 
 
@@ -227,17 +226,18 @@ struct
 				 in 
 				     if search then (* besserer Codeteil *)
 					 case new_found of 
-					     SOME(node_found) => 
-						 (case #desc(r) of
-						      INTERPUNCT => 
-							  if n = node_found
-							      then  (x,y,
-								     SOME(getParent(n)))
-							  else (new_x,new_y,new_found)
-						    | _ => if n = node_found 
-							       then (x,y,SOME n)
-							   else (new_x,new_y,new_found))
-					   | NONE => (new_x,new_y,new_found)
+					 SOME(node_found) 
+					 => 
+					 (case #desc(r) of
+					  INTERPUNCT 
+					  => if n = node_found
+						 then  (x,y,
+							SOME(getParent(n)))
+					     else (new_x,new_y,new_found)
+					| _ => if n = node_found 
+						   then (x,y,SOME n)
+					       else (new_x,new_y,new_found))
+				       | NONE => (new_x,new_y,new_found)
 				     else
 					 (new_x,new_y,NONE)
 				 end
@@ -294,7 +294,7 @@ struct
 					 else hor_funct
 			 in
 				 if search andalso not(in_bounding_box) 
-				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE)  
+				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE)
 				 else
 				 let val (new_x',new_y',new_x2,new_found) = 
 				     (Array.foldl funct (x,y,0,NONE) 
@@ -314,21 +314,22 @@ struct
 				 in
 				      if search then (* besserer Codeteil *)
 					 case new_found of 
-					     SOME(node_found) => 
-						 (case #desc(r) of
-						      INTERPUNCT => 
-							  if n = node_found
-							      then  (x,y,
-								     SOME(getParent(n)))
-							  else (new_x,new_y,new_found)
-						    | _ => if n = node_found 
-							       then (x,y,SOME n)
-							   else (new_x,new_y,new_found))
-					   | NONE => (new_x,new_y,new_found)
-						 else
-						      (new_x,new_y,NONE)
+					 SOME(node_found) => 
+					 (case #desc(r) of
+					  INTERPUNCT 
+					  => 
+					  if n = node_found
+					      then  (x,y,
+						     SOME(getParent(n)))
+					  else (new_x,new_y,new_found)
+					| _ => if n = node_found 
+						   then (x,y,SOME n)
+					       else (new_x,new_y,new_found))
+				       | NONE => (new_x,new_y,new_found)
+				      else
+					  (new_x,new_y,NONE)
 				 end
-			     end)
+			 end)
 	       else (x + get_xdim(n), y + get_ydim(n),NONE) 
 	   end
       | _ => raise DrawError
@@ -381,7 +382,8 @@ struct
 			 else (x+String.length(#rep(r)),y,NONE)
 	  | SEARCH _ => atomSearch(n,x,y,intent) 
 	  | _ => raise DrawError
-			     
+		
+    (* move *)	     
     and move (n,x,y) = 
 	let
 	    val group = getGroup(n)
@@ -389,11 +391,13 @@ struct
 						     !Settings.font)
 	    val dx = x - old_x
 	    val dy = y - old_y
+            (*
 	    val _ = TextIO.print("moving from (" ^ Int.toString(old_x) 
 				 ^ "/" ^ Int.toString(old_y)
 				 ^ ") to ("
 				 ^ Int.toString(x) ^ "/"
 				 ^ Int.toString(y) ^ ") \n")
+		*)
 	in
 	    (Services.moveGroup(group,dx,dy,!Settings.font)
 	     ;(x+get_xdim(n),y+get_ydim(n)-1,NONE))

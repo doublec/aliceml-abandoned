@@ -16,6 +16,7 @@
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
+import structure MainDictionary from "MainDictionary"
 
 local
     open Types
@@ -30,6 +31,8 @@ signature UPDATE =
 
 	val setDazzled: node -> unit
 	val updateChild: node * int * node -> unit
+
+        val iterMove: MainDictionary.dictionary * int * int * int -> unit
 
         (* eigentlicher update-Mechanismus *)
 	val tell: Reflect.value * node list * 
