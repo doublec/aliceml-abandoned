@@ -154,7 +154,7 @@ bootstrap-mozart:
 
 libs-mozart:
 	unset ALICE_HOME ;\
-	export PATH=$(PREFIX)/bin:$(PATH) ;\
+	export PATH="$(PREFIX)/bin:$(PATH)" ;\
 	(cd lib/inspector && make depend) || exit 1 ;\
 	(cd lib/inspector && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/constraints && make depend) || exit 1 ;\
