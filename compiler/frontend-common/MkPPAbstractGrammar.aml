@@ -243,7 +243,7 @@ struct
       | ppExp(ProdExp(i, exprow))	= exptree "Prod" i (
 					    ppRow ppExp exprow
 					  )
-      | ppExp(UpdExp(i, exp, exprow))	= exptree "Prod" i (
+      | ppExp(UpdExp(i, exp, exprow))	= exptree "Upd" i (
 					    ppExp exp ^/^
 					    ppRow ppExp exprow
 					  )
