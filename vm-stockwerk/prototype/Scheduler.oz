@@ -21,6 +21,28 @@ export
 define
    %--** add another thread that checks for preemption
 
+   class Thread
+      attr Args TaskStack Res
+      meth init(args: A stack: T result: R)
+	 Args <- A
+	 TaskStack <- T
+	 Res <- R
+      end
+      meth getArgs($)
+	 @Args
+      end
+      meth getTaskStack($)
+	 @TaskStack
+      end
+      meth setArgsAndTaskStack(A T)
+	 Args <- A
+	 TaskStack <- T
+      end
+      meth bindResult(X)
+	 @Res = X
+      end
+   end
+
    class Scheduler
       attr QueueHd: unit QueueTl: unit CurrentThread: unit
       meth init() Empty in
@@ -30,22 +52,25 @@ define
       meth newThread(Closure Args ?Res <= _ taskStack: TaskStack0 <= nil)
 	 case Closure of closure(Function ...) then TaskStack in
 	    TaskStack = {Function.1.pushCall Closure TaskStack0}
-	    Scheduler, enqueue('thread'(args: Args
-					stack: TaskStack
-					result: Res))
+	    Scheduler, enqueue({New Thread init(args: Args
+						stack: TaskStack
+						result: Res)})
 	 end
       end
       meth enqueue(T) Tl Rest in
 	 Tl = (QueueTl <- Rest)
 	 Tl = T|Rest
       end
+      meth getCurrentThread($)
+	 @CurrentThread
+      end
       meth run() Hd = @QueueHd in
 	 if {IsFree Hd} then
 	    skip   %--** wait for I/O
-	 elsecase Hd of (T='thread'(args: Args stack: TaskStack ...))|Tr then
+	 elsecase Hd of T|Tr then
 	    QueueHd <- Tr
 	    CurrentThread <- T
-	    Scheduler, Run(Args TaskStack)
+	    Scheduler, Run({T getArgs($)} {T getTaskStack($)})
 	    Scheduler, run()
 	 end
       end
@@ -54,9 +79,9 @@ define
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.run Args TaskStack})
 	 [] nil then
-	    @CurrentThread.result = case Args of arg(X) then X
-				    [] args(...) then {Adjoin Args tuple}
-				    end
+	    {@CurrentThread bindResult(case Args of arg(X) then X
+				       [] args(...) then {Adjoin Args tuple}
+				       end)}
 	 end
       end
       meth Handle(Debug Exn TaskStack)
@@ -73,8 +98,8 @@ define
 	 case Res of continue(Args TaskStack) then
 	    Scheduler, Run(Args TaskStack)
 	 [] preempt(Args TaskStack) then
-	    Scheduler, enqueue({Adjoin @CurrentThread
-				'thread'(args: Args stack: TaskStack)})
+	    {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
+	    Scheduler, enqueue(@CurrentThread)
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
 	 [] request(Transient=transient(TransientState) Args TaskStack) then
@@ -83,13 +108,11 @@ define
 	       Scheduler, Handle(nil PrimitiveTable.table.'Hole.Hole'
 				 TaskStack)
 	    [] future(Ts) then
-	       {Assign TransientState
-		future({Adjoin @CurrentThread
-			'thread'(args: Args stack: TaskStack)}|Ts)}
+	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
+	       {Assign TransientState future(@CurrentThread|Ts)}
 	    [] byneed(Closure) then
-	       {Assign TransientState
-		future([{Adjoin @CurrentThread
-			 'thread'(args: Args stack: TaskStack)}])}
+	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
+	       {Assign TransientState future([@CurrentThread])}
 	       Scheduler, Byneed(Transient Closure)
 	    [] cancelled(Exn) then
 	       Scheduler, Handle(nil Exn TaskStack)
