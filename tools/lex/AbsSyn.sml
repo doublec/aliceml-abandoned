@@ -5,7 +5,7 @@ structure AbsSyn :> ABS_SYN=
 
 
 	fun posToString (a, b) = if a = b then  Int.toString a
-				 else Int.toString a ^ " - " ^ Int.toString b
+				 else Int.toString a ^ "_" ^ Int.toString b
 
 
 	datatype regexp = 
@@ -24,6 +24,7 @@ structure AbsSyn :> ABS_SYN=
 	and atexp =
 	    ATEXP of string * position
 	  | PAREXP of lex list * position
+	  | REGCASE of atexp list * lmatch * position
 
 
 	and exp = EXP of atexp list * position

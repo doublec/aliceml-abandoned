@@ -49,6 +49,18 @@ structure Extract :> EXTRACT=
 	    in
 		fromAtL (atl, map')
 	    end
+	  | fromAtL ( (REGCASE (atl', lm, po) ) :: atl, map) =
+	    let
+		val map' = fromAtL (atl', map)
+		val lexid = "reglex" ^ posToString po
+		val map'' =
+		    if StringMap.inDomain (map', lexid)
+			then eError("lexer id already defined: " ^ lexid, po)
+		    else StringMap.insert(map', lexid, lm)
+		val map''' = fromLm (lm, map'') 
+	    in
+		fromAtL (atl, map''')
+	    end
 	  | fromAtL (                 _ , map) = map
 
 

@@ -25,7 +25,7 @@ signature ABS_SYN =
 	and atexp =
 	    ATEXP of string * position
 	  | PAREXP of lex list * position
-
+	  | REGCASE of atexp list * lmatch * position
 
 	and exp = EXP of atexp list * position
 

@@ -106,6 +106,13 @@ structure Collect :> COLLECT =
 	    in
 		substAtList' (al, map', (PAREXP (ll', po) ) :: result)
 	    end
+	  | substAtList' ( (REGCASE (al', lm, po) ) :: al, map, result) =
+	    let
+		val (al'', map') = substAtList (al', map)
+		val (lm', map'') = substLmatch (lm, map')
+	    in
+		substAtList' (al, map, (REGCASE (al'', lm', po)) :: result)
+	    end
           | substAtList' ( _ , map, result) = (rev result, map)
 	    
 	and substLexbindList (lbl, map) = substLexbindList' (lbl, map, [ ] )

@@ -7,6 +7,8 @@ val out = ref TextIO.stdOut
 
 fun print s = TextIO.output (!out, s)
 
+
+
 regexp
     formatting = [" \t\n\011\012\013"]+
 and letter     = ["A-Za-z"]
@@ -157,3 +159,12 @@ fun make () =
     (openF ();
      go (Lexer.fromStream (TextIO.openIn "in.hose.sml"));
      closeF ()) 
+
+
+(* regcase test *)
+
+fun what () = regcase (TextIO.inputLine TextIO.stdIn) of
+    ( "b" _ * => ( print "\nDa war ein 'b' am Anfang!\n")
+  | _ {1,5} "\n" => ( print "\nDas '\\n' der Zeile wird mit uebergeben!\n" ))
+
+

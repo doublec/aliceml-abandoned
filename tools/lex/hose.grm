@@ -6,7 +6,8 @@ fun pError (e, po) =
     (print ("Parse Error in position " ^ posToString po ^ ": " ^ e ^ "\n");
      raise Error e)
 
-(* makeVector : bool array -> BoolVector.vector, converts array to Vector
+(* makeVector : bool array -> BoolVector.vector
+ * converts array to Vector
  *)
 fun makeVector c = (BoolVector.tabulate (257, (fn x => Array.sub(c,x))))
 	
@@ -22,7 +23,7 @@ fun shrink (nil, xs, po) = rev xs
   | shrink (c::cs, xs, po) = shrink (cs, c::xs, po)
     
     
-(* escape takes (char list, char list),
+(* escape takes (char list, char list)
  * reads an escaped char from the first list, attaches it to the second list
  * and returns the pair
  *)
@@ -141,7 +142,7 @@ fun makeRep (r, n, m, p) =
     end
 
 
-(* makeArray : string * bool -> bool array,
+(* makeArray : string * bool -> bool array
  * returns an array with all fields (except the char ords of the string)
  * set to the bool value
  * example: makeArray ("A-Z -", true) =
@@ -163,7 +164,7 @@ fun makeArray (s, b, po) =
     end
     
     
-(* insertSequence : char * char * bool * bool array -> unit,
+(* insertSequence : char * char * bool * bool array -> unit
  * updates the array x from a to b with bool value t
  *)
 and insertSequence (a,b,t,x) = 
@@ -177,7 +178,12 @@ and insertSequence (a,b,t,x) =
     end
 
 
-
+(* addEof : lrule list -> lrule list -> lrule list
+ * adds "eof" to each lrule in the list
+ *)
+fun addEof [] ys = rev ys
+  | addEof ((LRULE (reg, act, pos)) :: lrl) ys =
+    addEof lrl (LRULE (CAT(reg, REGID ("eof", (~1, ~1)), pos), act, pos) :: ys)
 
 
 %%
@@ -192,7 +198,9 @@ and insertSequence (a,b,t,x) =
 
 
 %term     REGEXP 
-	| LEXER 
+	| LEXER
+        | REGCASE
+        | OF
 	| AND 
 	| MLKEY of string 
 	| EQ 
@@ -230,6 +238,7 @@ and insertSequence (a,b,t,x) =
 	| regexp' of regexp 
 	| regexp'' of regexp 
 	| explist of atexp list
+        | atexp' of atexp
 	| atexp of atexp
 
 %name Hose
@@ -359,8 +368,15 @@ regexp	: LPAR regexp'' RPAR	  ( regexp'' )
               ( makeRep (regexp, NUM1, NUM2, (regexpleft, RBRACEright) ) )
 
 
-explist	: atexp explist	    ( atexp::explist )
+explist	: atexp' explist    ( atexp' :: explist )
 	| 		    ( [] )
+
+atexp'  : REGCASE explist OF LPAR lmatch RPAR
+                     ( REGCASE (explist,
+				LMATCH (addEof lmatch [],(LPARleft, RPARright)),
+				(REGCASEleft, RPARright) ) )
+
+        | atexp      ( atexp )
 
 atexp	: AND		    ( ATEXP ("and", (ANDleft, ANDright) ) )
 	| EQ		    ( ATEXP ("=", (EQleft, EQright) ) )

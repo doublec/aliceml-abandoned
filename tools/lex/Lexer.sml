@@ -84,19 +84,22 @@ structure Lexer :> LEXER =
 		(* charList : char option list -> char list -> char list
 		 * 
 		 *)
-		fun charList nil ys            = ys
-		  | charList (NONE :: xs) ys   =
-		    charList xs (#"F" :: #"O" :: #"E" :: ys)
-		  | charList (SOME c :: xs) ys = charList xs (c :: ys)
+		fun charList nil ys _                  = ys
+		  | charList (NONE :: xs) ys showEof   =
+		    if showEof
+			then charList xs (#"F" :: #"O" :: #"E" :: ys) showEof
+		    else charList xs ys showEof
+		  | charList (SOME c :: xs) ys showEof =
+		    charList xs (c :: ys) showEof
 
 
-		fun errorInfo () = implode (rev (charList (!strBack) []))
+		fun errorInfo () = implode (rev (charList (!strBack) [] true))
 
 
 		fun buildResult p =
 		    let
 			val len = length (!stateStack) - 1
-			val yytext = implode (charList (!strBuf) [])
+			val yytext = implode (charList (!strBuf) [] false)
 			val newLines = ref (!newLines)
 			val lines = ref 0
 			val yycol =

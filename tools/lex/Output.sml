@@ -96,17 +96,20 @@ structure Output :> OUTPUT =
 	 * prints the return value tuple
 	 *)
 	fun printFunctionsLb say num =
-	    let
-		val n = ref (num - 1)
-		fun printOne i =
-		    say ["fn getChar => #", Int.toString i, " (build getChar)"]
-	    in
-		while !n > 0 do
-		    (printOne (num - !n);
-		     say [", "];
-		     n := !n - 1);
-		printOne num
-	    end
+	    if num = 1 then say ["fn getChar => build getChar"]
+	    else
+		let
+		    val n = ref (num - 1)
+		    fun printOne i =
+			say ["fn getChar => #", Int.toString i,
+			     " (build getChar)"]
+		in
+		    while !n > 0 do
+			(printOne (num - !n);
+			 say [", "];
+			 n := !n - 1);
+			printOne num
+		end
 	
 
 	(* escape16: int -> string
@@ -380,9 +383,9 @@ structure Output :> OUTPUT =
 
 		    in
 
-			say ["\n\n(**** DECLARATION OF "];
+			say ["\n\n(**** BEGIN DECLARATION OF "];
 			pIdList "" idList;
-			say [" BEGIN ****)\n\n"];
+			say [" ****)\n\n"];
 
 			say ["val ("];
 			pIdList "" idList;
@@ -428,9 +431,9 @@ structure Output :> OUTPUT =
 			say [")\nend\n"];
 
 
-			say ["\n\n(**** DECLARATION OF "];
+			say ["\n\n(**** END DECLARATION OF "];
 			pIdList "" idList;
-			say [" END ****)\n\n"]
+			say [" ****)\n\n"]
 
 		    end
 		
@@ -475,6 +478,22 @@ structure Output :> OUTPUT =
 		    (say ["( "];
 		     printLexList (str, ls, autoMap);
 		     say [")\n"])
+		  | printAtexp ( REGCASE (al, lm, pos) ) =
+		    let
+			val lexid = "reglex" ^ posToString pos
+		    in
+			(say ["\n\n(**** BEGIN REGCASE DECLARATION OF ",
+			      lexid,
+			      " ****)\n\n",
+			      "let\n\n"];
+			 printLexbind [LEXBIND (lexid, lm, pos)];
+			 say ["in\n"];
+			 say [lexid, "(Lexer.fromString (\n"];
+			 printAtexpList al;
+			 say [")) ()\n"];
+			 say ["end\n\n"]
+			 )
+		    end 
 		
 	    in
 		(printLex l; printLexList (str, ls, autoMap))
