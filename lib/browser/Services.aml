@@ -12,6 +12,9 @@
  *   $Revision$
  *
  *)
+
+import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure WindowHelper from "WindowHelper"
@@ -41,31 +44,34 @@ import signature SERVICES from "SERVICES-sig"
 				      ("anchor", Gtk.INT(2))]) 
 		   
 		   
-	       fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
+	 fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
 
-	       fun positionGroup (group,x,y) = (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
-					       ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
+	 fun positionGroup (group,x,y) = 
+	     (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
+	      ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
 					      
 		   (*
 
-	       fun moveGroup (group,x,y,font) = let
-						    val w = WindowHelper.fontWidth(font)
-						    val h = WindowHelper.fontHeight(font)
-						    val rx = Real.fromInt(x * w)
-						    val ry = Real.fromInt(y * h)
+	 fun moveGroup (group,x,y,font) = 
+		    let
+			val w = WindowHelper.fontWidth(font)
+                        val h = WindowHelper.fontHeight(font)
+                        val rx = Real.fromInt(x * w)
+                        val ry = Real.fromInt(y * h)
 						in
-						    positionGroup(group,rx,ry)
-						end *)
+	       		    positionGroup(group,rx,ry)
+	   end *)
 		   
-	       fun moveGroup (group,x,y,font) = let
-						    val w = WindowHelper.fontWidth(font)
-						    val h = WindowHelper.fontHeight(font)
-						    val rx = Real.fromInt(x * w)
-						    val ry = Real.fromInt(y * h)
-						in
-						    GtkCanvas.itemMove(group,rx,ry)
-						end
-
+	  fun moveGroup (group,x,y,font) = 
+	      let
+		  val w = WindowHelper.fontWidth(font)
+		  val h = WindowHelper.fontHeight(font)
+		  val rx = Real.fromInt(x * w)
+		  val ry = Real.fromInt(y * h)
+	      in
+		  GtkCanvas.itemMove(group,rx,ry)
+	      end
+	  
 			     
 	   fun getCoordinates (group,font) = 
 	       let
@@ -80,19 +86,39 @@ import signature SERVICES from "SERVICES-sig"
 	       in
 		   (x1,y1,x2,y2)
 	       end
-	   
+		   
 	   fun getPosition (group,font) = 
 	       let
 		   val w = WindowHelper.fontWidth(font)
 		   val h = WindowHelper.fontHeight(font)
 		   val (rx1,ry1,_,_) = 
-		       GtkCanvas.itemGetBounds(group, 0.0 ,0.0, 
-					       1000.0 , 1000.0)
+		       GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
 		   val x1 = (Real.trunc rx1) div w
 		   val y1 = (Real.trunc ry1) div h
 	       in
 		   (x1,y1)
 	       end
-	   
+
+	   fun itemMoveTo (group,rx,ry) = 
+	       let
+		   val (rx1,ry1,_,_) = 
+		       GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 
+					       1000.0 , 1000.0)
+		   val _ = Inspector.inspect (rx1,ry1)
+		   val _ = TextIO.print("ITEM MOVE FROM " 
+					^ Real.toString(rx1)
+					^ "/" 
+					^ Real.toString(ry1)
+					^ " TO "
+					^ Real.toString(rx)
+					^ "/" 
+					^ Real.toString(ry)
+					^ "\n")
+		   val dx = Real.- (rx, rx1)
+		   val dy = Real.- (ry ,ry1)
+	       in
+		   GtkCanvas.itemMove(group,dx,dy)
+	       end
+
 	   end
        

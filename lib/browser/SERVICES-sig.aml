@@ -28,5 +28,6 @@ signature SERVICES =
 	val moveGroup     : tag * int * int * string -> unit
 	val getCoordinates: tag * font -> int * int * int * int 
 	val getPosition   : tag * font -> int * int
+	val itemMoveTo    : tag * real * real -> unit
 	    
     end 
