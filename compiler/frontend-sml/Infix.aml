@@ -74,86 +74,99 @@ structure Infix :> INFIX =
 
     (* Resolving infixed expressions and patterns *)
 
-    fun parse (ATXx,APPx,TUPLEAtX,LONGVIDAtX, info,info_At,categorise,flatten)
-	      IE x =
+    fun parse (ATXx, APPx, PARAtX, TUPLEAtX, LONGVIDAtX,
+	       info, categorise, flatten) IE x =
 	let
-	    fun atomic(atx)  = ATXx(info_At atx, atx)
+	    fun pair(x1,x2) =
+		let
+		    val i1 = info x1
+		    val i2 = info x2
+		in
+		    TUPLEAtX(Source.over(i1,i2), [ATXx(i1,x1), ATXx(i2,x2)])
+		end
 
-	    fun apply(x,atx) = APPx(Source.over(info x, info_At atx), x, atx)
-
-	    fun pair(x1,x2)  = TUPLEAtX(Source.over(info x1, info x2), [x1,x2])
+	    fun apply(x1,x2) =
+		let
+		    val i1 = info x1
+		    val i2 = info x2
+		    val i  = Source.over(i1, i2)
+		in
+		    PARAtX(i, APPx(i, ATXx(i1, x1), x2))
+		end
 
 	    fun infapply(x1,vid,x2) =
 		let
+		    val i       = Source.over(info x1, info x2)
 		    val i_vid   = info_VId vid
 		    val longvid	= SHORTLong(i_vid, vid)
-		    val x	= ATXx(i_vid, LONGVIDAtX(i_vid,WITHOp,longvid))
-		    val atx	= pair(x1,x2)
+		    val x1'	= LONGVIDAtX(i_vid, WITHOp, longvid)
+		    val x2'	= pair(x1,x2)
 		in
-		    APPx(Source.over(info x1, info x2), x, atx)
+		    PARAtX(i, APPx(i, ATXx(i_vid, x1'), x2'))
 		end
 
 
-	    fun app(x, NONFIX(atx)::xs) = app(apply(x,atx), xs)
-	      | app other               = other
+	    fun loop(NONFIX(x)::[], []) = x
 
-	    fun inf(10, NONFIX(atx)::xs) = app(atomic(atx), xs)
+	      | loop(NONFIX(x2)::NONFIX(x1)::s', i) =
+		    (* reduce nonfix application *)
+		    loop(NONFIX(apply(x1, x2))::s', i)
 
-	      | inf(p, xs as NONFIX(_)::_) =
-		let
-		   val result as (x,xs') = inf(p+1,xs)
-		in
-		   case xs'
-		     of INFIX(a,p',vid)::_ => if p'= p then inftail(a,p,x,xs')
-						       else result
-		      | _                  => result
-		end
+	      | loop(s, NONFIX(x)::i') =
+		    (* shift *)
+		    loop(NONFIX(x)::s, i')
 
-	      | inf(p, INFIX(_,_,vid)::_) =
+	      | loop(s as NONFIX(x)::[], INFIX(q)::i') =
+		    (* shift *)
+		    loop(INFIX(q)::s, i')
+
+	      | loop(NONFIX(x2)::INFIX(a,p,vid)::NONFIX(x1)::s', []) =
+		    (* reduce infix application *)
+		    loop(NONFIX(infapply(x1, vid, x2))::s', [])
+
+	      | loop(s as NONFIX(x2)::INFIX(a1,p1,vid1)::NONFIX(x1)::s',
+		       i as INFIX(q2 as (a2,p2,vid2))::i') =
+		if p1 > p2 then
+		    (* reduce infix application *)
+		    loop(NONFIX(infapply(x1, vid1, x2))::s', i)
+		else if p1 < p2 then
+		    (* shift *)
+		    loop(INFIX(q2)::s, i')
+		else if a1 <> a2 then
+		    error(Source.over(info_VId vid1, info_VId vid2),
+			  "conflicting infix associativity")
+		else if a1 = LEFT then
+		    (* reduce infix application *)
+		    loop(NONFIX(infapply(x1, vid1, x2))::s', i)
+		else (* a1 = RIGHT *)
+		    (* shift *)
+		    loop(INFIX(q2)::s, i')
+
+	      | loop(INFIX(a,p,vid)::s, []) =
 		    errorVId("misplaced infix identifier ", vid)
 
-	      | inf(_, []) =
-		    (* Missing operands are caught in inftail! *)
-		    Crash.crash "Infix.parse: empty expression"
-
-
-	    and inftail(a, p, x1, xs as INFIX(a',p',vid)::x::xs') =
-		if p <> p' then
-		    (x1, xs)
-		else if a <> a' then
-		    errorVId("conflicting infix associativity at infix \
-			     \identifier ", vid)
-		else if a = LEFT then
-		    let
-			val (x2, xs'') = inf(p+1, x::xs')
-		    in
-			inftail(a, p, infapply(x1,vid,x2), xs'')
-		    end
-		else (* a = RIGHT *)
-		    let
-			val (x2, xs'')  = inf(p+1,x::xs')
-			val (x2',xs''') = inftail(a,p,x2,xs'')
-		    in
-		        (infapply(x1,vid,x2'), xs''')
-		    end
-
-	      | inftail(a, p, x1, INFIX(_,_,vid)::[]) =
+	      | loop(INFIX(x)::s, INFIX(a,p,vid)::i) =
 		    errorVId("misplaced infix identifier ", vid)
 
-	      | inftail(a, p, x1, xs) = (x1, xs)
+	      | loop([], INFIX(a,p,vid)::i) =
+		    errorVId("misplaced infix identifier ", vid)
+
+	      | loop _ = Crash.crash "Infix.parse: inconsistency"
+
+	    val x = loop([], List.map (categorise IE) (flatten x))
 	in
-	    #1 (inf(0, List.map (categorise IE) (flatten x)))
+	    ATXx(info x, x)
 	end
 
 
     (* Expressions *)
 
-    val exp = parse(ATEXPExp, APPExp, TUPLEAtExp, LONGVIDAtExp,
-		    info_Exp, info_AtExp, categoriseAtExp, flattenExp)
+    val exp = parse(ATEXPExp, APPExp, PARAtExp, TUPLEAtExp, LONGVIDAtExp,
+		    info_AtExp, categoriseAtExp, flattenExp)
 
     (* Patterns *)
 
-    val pat = parse(ATPATPat, APPPat, TUPLEAtPat, LONGVIDAtPat,
-		    info_Pat, info_AtPat, categoriseAtPat, flattenPat)
+    val pat = parse(ATPATPat, APPPat, PARAtPat, TUPLEAtPat, LONGVIDAtPat,
+		    info_AtPat, categoriseAtPat, flattenPat)
 
   end
