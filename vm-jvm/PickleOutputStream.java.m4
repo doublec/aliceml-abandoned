@@ -13,6 +13,7 @@
 package de.uni_sb.ps.dml.runtime;
 
 import java.rmi.server.*;
+import java.lang.reflect.*;
 
 /** This is the OutputStream used to create pickles.
  */
@@ -166,9 +167,28 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 	    }
 	    writeInt(bytes.length);
 	    write(bytes,0,bytes.length);
+	    // now class has been written. output the static fields
+	    Field[] fields = cls.getDeclaredFields();
+	    int fc = fields.length;
+	    for (int i=0; i<fc; i++) {
+		int modifier = fields[i].getModifiers();
+		if (Modifier.isStatic(modifier)) {
+		    Object content = null;
+		    try {
+			content = fields[i].get(null);
+		    } catch (IllegalArgumentException I) {
+			System.err.println(I);
+			I.printStackTrace();
+		    } catch (IllegalAccessException I) {
+			System.err.println(I);
+			I.printStackTrace();
+		    }
+		    writeObject(content);
+		}
 	    }
-	else
+	} else {
 	    writeBoolean(false);
+	}
     }
 
     /** LVar/Future werden durch ihren Inhalt ersetzt. Falls @field waitforbind true ist,
