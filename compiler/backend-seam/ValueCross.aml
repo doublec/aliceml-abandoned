@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Crash       from "../infrastructure/Crash"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 import signature VALUE       from "VALUE-sig"
 
@@ -39,4 +40,5 @@ structure Value (* : VALUE - must be transparent *) =
 	val vector = Vector
 	val closure = Closure
 	val sign = Sign
+	fun reflected _ = raise Crash.Crash "ValueCross.reflected"
     end
