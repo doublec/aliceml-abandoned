@@ -50,8 +50,6 @@ SEAM_OBJS = $(STORE_OBJS) $(ADT_OBJS) $(GENERIC_OBJS)
 ## Done
 ##
 
-LIBS = -L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
-
 .PHONY: $(SUBDIRS) clean-local veryclean-local distclean-local install
 
 all: seam.exe

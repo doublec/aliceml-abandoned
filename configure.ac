@@ -17,6 +17,7 @@ AC_CONFIG_SUBDIRS([store adt generic])
 
 dnl     checks for programs
 AC_PROG_MAKE_SET
+AC_PROG_CXX
 
 dnl     checks for libraries
 dnl     checks for header files
@@ -25,6 +26,22 @@ dnl     checks for structures
 dnl     checks for compiler characteristics
 dnl     checks for library functions
 dnl     checks for system services
+
+case $(uname) in
+    CYGWIN*)
+	SEAM_MACHINE_FLAGS=-mno-cygwin
+	SEAM_LDFLAGS = 
+	SEAM_LIBS="-lwsock32 -lmsvcrt"
+	;;
+    *)
+	SEAM_MACHINE_FLAGS=
+	SEAM_LDFLAGS="-Wl,--export-dynamic -Ur"
+	SEAM_LIBS="-lm -ldl"
+	;;
+esac
+AC_SUBST(SEAM_MACHINE_FLAGS)
+AC_SUBST(SEAM_LDFLAGS)
+AC_SUBST(SEAM_LIBS)
 
 AC_CONFIG_FILES([Makefile Makefile.vars])
 AC_OUTPUT

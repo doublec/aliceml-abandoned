@@ -12,15 +12,8 @@
 ## 
 
 ifdef WINDOWS
-EXTRA_MACHINE_FLAGS = -mno-cygwin
-EXTRA_LIBS = -lwsock32 -lmsvcrt
 SUPPORTDIR = $(BUILDTOP)/../alice/support/install/mingw32
-ALICE_DLL_EXTRA_LDFLAGS = --image-base=1010000
-JAVA_DLL_EXTRA_LDFLAGS = --image-base=1020000
 else
-EXTRA_MACHINE_FLAGS = 
-EXTRA_LIBS = -lm -ldl
-EXTRA_LDFLAGS = -Wl,--export-dynamic -Ur
 SUPPORTDIR = $(BUILDTOP)/../alice/support/install/linux
 endif
 
@@ -39,7 +32,7 @@ else
 DEFINES += -DLIGHTNING=0
 endif
 
-MACHINE_FLAGS = -mcpu=pentium $(EXTRA_MACHINE_FLAGS)
+MACHINE_FLAGS = -mcpu=pentium @SEAM_MACHINE_FLAGS@
 
 CXX_WARNING_FLAGS = \
 	-Wall -W -Wundef -Wpointer-arith -Wcast-qual -Wcast-align \
@@ -56,16 +49,18 @@ CXX_OPTIMIZE_FLAGS = \
 	-fno-implement-inlines -fno-keep-static-consts \
 	-fno-implicit-templates -fno-implicit-inline-templates
 
-CXX = g++
+CXX = @CXX@ $(MACHINE_FLAGS)
 
-#CXXFLAGS = $(MACHINE_FLAGS) $(CXX_WARNING_FLAGS) $(CXX_DEBUG_FLAGS)
-CXXFLAGS = $(MACHINE_FLAGS) $(CXX_WARNING_FLAGS) $(CXX_OPTIMIZE_FLAGS)
+#CXXFLAGS = $(CXX_WARNING_FLAGS) $(CXX_DEBUG_FLAGS)
+CXXFLAGS = $(CXX_WARNING_FLAGS) $(CXX_OPTIMIZE_FLAGS)
 
-LD = g++
+LD = @CXX@ $(MACHINE_FLAGS)
 LD_DEBUG_FLAGS = 
 LD_OPTIMIZE_FLAGS = -Wl,-S
 
-#LDFLAGS = $(MACHINE_FLAGS) $(LD_DEBUG_FLAGS) $(EXTRA_LDFLAGS)
-LDFLAGS = $(MACHINE_FLAGS) $(LD_OPTIMIZE_FLAGS) $(EXTRA_LDFLAGS)
+#LDFLAGS = $(MACHINE_FLAGS) $(LD_DEBUG_FLAGS) @SEAM_LDFLAGS@
+LDFLAGS = $(LD_OPTIMIZE_FLAGS) @SEAM_LDFLAGS@
 
-MAKEDEPEND = $(CXX) $(EXTRA_MACHINE_FLAGS) -M $(DEFINES) $(INCLUDES)
+LIBS = -L$(SUPPORTDIR)/lib @SEAM_LIBS@ -lz
+
+MAKEDEPEND = $(CXX) -M $(DEFINES) $(INCLUDES)
