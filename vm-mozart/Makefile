@@ -383,8 +383,7 @@ BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
 	$(BUILD1SOURCES) \
 	$(NATIVECOMPONENTS:%=build1/lib/system/%.ozf) \
-	$(filter-out build1/stoc/backend-mozart/CodeEmitter.ozf, \
-	  $(BUILD1OZSOURCES:%.oz=%.ozf)) \
+	$(BUILD1OZSOURCES:%.oz=%.ozf) \
 	build1/stoc/StocMain.ozf
 
 build1/LinkedStowMain.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
@@ -392,9 +391,6 @@ build1/LinkedStowMain.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
 
 build1/stoc/LinkedStocMain.ozf: $(BUILD1OZLINPUTS)
 	$(OZL) --include=.. build1/stoc/StocMain.ozf -o $@
-
-build1/stoc/backend-mozart/CodeStore.ozf: \
-	build1/stoc/backend-mozart/CodeEmitter.oz
 
 ##
 ## Installing Build 1
@@ -443,6 +439,9 @@ INSTALL2FILES = \
 
 $(BUILD2DIRS):
 	mkdir -p $@
+
+build2/lib/fundamental/RTT.aml: build1/lib/fundamental/RTT.aml
+	cp $< $@
 
 build2/%.aml: build1/%.aml
 	cp $< $@
@@ -573,13 +572,11 @@ build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
 build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
-	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
-	  $(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf))
+	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(OZL) --include=.. $< -o $@
 
 build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf \
-	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
-	  $(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf))
+	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(OZL) --include=.. $< -o $@
 
 ##
