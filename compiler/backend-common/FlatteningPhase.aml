@@ -291,7 +291,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    List.app (fn (idDef, _) =>
 			      case idDef of
 				  O.IdDef id => IdSet.insert (unallocated, id)
-				| O.Wildcard => ())idDefExpList'
+				| O.Wildcard => ()) idDefExpList'
 		val rest =
 		    List.concat (recToHoles (idDefExpList', #region info,
 					     unallocated)) @
@@ -901,7 +901,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	and translateTupArgs (n, pos, mapping) =
 	    let
-		val (idDefs, mapping) = translateTupArgs' (1, n, pos, mapping)
+		val (idDefs, mapping) =
+		    if n = 0 then (nil, mapping)
+		    else translateTupArgs' (1, n, pos, mapping)
 	    in
 		(Vector.fromList idDefs, mapping)
 	    end
