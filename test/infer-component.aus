@@ -1,12 +1,5 @@
 __prebound Prebound
 
-import
-structure TextIO:
-    sig
-	val print: 'a
-    end
-from "../../vm-mozart/TextIO.ozf"
-
 infix  7  * / div mod
 infix  6  + - ^
 infixr 5  :: @
@@ -124,7 +117,7 @@ signature SYMBOL =
 	val top: 'a t * id -> 'a           (* Error *)
     end
 
-structure Symbol (*:> SYMBOL*) =
+structure Symbol :> SYMBOL =
     struct
 	type id = string
 
@@ -369,7 +362,7 @@ structure Elab :> ELAB =
 
 	fun elab (env, exp) =
 	    SOME (Type.toString (elab' (exp, env)))
-	    handle Type.Unification s => (TextIO.print (s ^ "\n"); NONE)
+	    handle Type.Unification s => NONE
     end
 
 open Expression;
@@ -420,7 +413,13 @@ val env = let
 	      initializeEnv env; env
 	  end
 
-fun print (SOME x) = TextIO.print (x ^ "\n")
+local
+    val r = ref ""
+in
+    fun print (SOME x) = r := !r ^ x ^ "\n"
+
+    fun getOutput () = !r
+end
 
 val _ = print (Elab.elab (env, VarExp "one"))
 
@@ -517,3 +516,5 @@ in
 end
 
 val _ = print (Elab.elab (env, test6))
+
+val res = getOutput ()
