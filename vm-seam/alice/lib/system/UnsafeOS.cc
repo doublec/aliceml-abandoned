@@ -19,6 +19,7 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#include <shlobj.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -304,7 +305,7 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
   u_int size = buffer->GetSize();
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ITEMIDLIST* pidl;
-  HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_MYDOCUMENTS, &pidl );
+  HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_PERSONAL, &pidl );
   if (hRes==NOERROR) {
     SHGetPathFromIDList( pidl, (CHAR *) buffer->GetValue());
   } else {
@@ -363,11 +364,11 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
       wBufferString = buffer->ToWord();
       goto retry;
     }
-    strcat((char *) buffer->GetValue(), "/.alice");
+    strcat((char *) buffer->GetValue(), "/.");
     RETURN(String::New((char *) buffer->GetValue())->ToWord());
   }
   strcpy((char *) buffer->GetValue(), envVal);
-  strcat((char *) buffer->GetValue(), "/.alice");
+  strcat((char *) buffer->GetValue(), "/.");
   RETURN(String::New((char *) buffer->GetValue())->ToWord());
 #endif
 } END
