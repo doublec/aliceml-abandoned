@@ -29,12 +29,12 @@ define
 
    %Function = 0
 
-   AppConst       = 0
-   AppPrim        = 1
-   AppVar         = 2
-   CompactIntTest = 3
-   CompactTagTest = 4
-   ConTest        = 5
+   AppPrim        = 0
+   AppVar         = 1
+   CompactIntTest = 2
+   CompactTagTest = 3
+   ConTest        = 4
+   DirectAppVar   = 5
    EndHandle      = 6
    EndTry         = 7
    GetRef         = 8
@@ -254,14 +254,11 @@ define
 	    NewFrame = frame(Me tag(!OneArg IdDef) NextInstr Closure L)
 	    {PushCall Args Op NewFrame|TaskStack}
 	 end
-      [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
+      [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op Args in
 	 Op = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
 	      [] tag(!Immediate X) then X
 	      end
-	 {Emulate tag(AppConst Op IdRefArgs IdDefArgsInstrOpt)
-	  Closure L TaskStack}
-      [] tag(!AppConst Op IdRefArgs IdDefArgsInstrOpt) then Args in
 	 %% construct argument:
 	 case IdRefArgs of tag(!OneArg IdRef) then
 	    Args = arg(case IdRef of tag(!Local Id) then L.Id
@@ -284,6 +281,9 @@ define
 	    NewFrame = frame(Me IdDefArgs NextInstr Closure L)
 	    {PushCall Args Op NewFrame|TaskStack}
 	 end
+      [] tag(!DirectAppVar IdRef IdRefArgs IdDefArgsInstrOpt) then
+	 {Emulate tag(AppVar IdRef IdRefArgs IdDefArgsInstrOpt)
+	  Closure L TaskStack}
       [] tag(!GetRef Id IdRef NextInstr) then R0 in
 	 R0 = case IdRef of tag(!Local Id2) then L.Id2
 	      [] tag(!Global I) then Closure.(I + 2)

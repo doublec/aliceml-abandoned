@@ -44,12 +44,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 		val function = TAG 0
 
-		val appConst = TAG 0
-		val appPrim = TAG 1
-		val appVar = TAG 2
-		val compactIntTest = TAG 3
-		val compactTagTest = TAG 4
-		val conTest = TAG 5
+		val appPrim = TAG 0
+		val appVar = TAG 1
+		val compactIntTest = TAG 2
+		val compactTagTest = TAG 3
+		val conTest = TAG 4
+		val directAppVar = TAG 5
 		val endHandle = TAG 6
 		val endTry = TAG 7
 		val getRef = TAG 8
@@ -247,9 +247,10 @@ structure OutputPickle :> OUTPUT_PICKLE =
 			    outputArgs outputIdDef (context, outArgs);
 			    outputInstr (context, instr)))
 	     (context, outArgsInstrOpt))
-	  | outputInstr (context, AppConst (value, inArgs, outArgsInstrOpt)) =
-	    (outputBlock (context, Label.appConst, 3);
-	     outputValue (context, value);
+	  | outputInstr (context,
+			 DirectAppVar (idRef, inArgs, outArgsInstrOpt)) =
+	    (outputBlock (context, Label.directAppVar, 3);
+	     outputIdRef (context, idRef);
 	     outputArgs outputIdRef (context, inArgs);
 	     outputOption (fn (context, (outArgs, instr)) =>
 			   (outputTuple (context, 2);

@@ -43,7 +43,7 @@ public:
   };
 
   enum instr {
-    AppConst, AppPrim, AppVar, CompactIntTest, CompactTagTest, ConTest,
+    AppPrim, AppVar, CompactIntTest, CompactTagTest, ConTest, DirectAppVar,
     EndHandle, EndTry, GetRef, GetTup, IntTest, Kill, LazySel, PutCon, PutFun,
     PutNew, PutRef, PutTag, PutTup, PutVar, PutVec, Raise, RealTest, Reraise,
     Return, Sel, Shared, StringTest, TagTest, Try, VecTest

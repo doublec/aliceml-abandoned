@@ -155,7 +155,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			 fn instr => O.PutFun (id, idRefs, function, instr))
 	  | detup (O.AppPrim (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.AppVar (_, _, _), _) = SIDE_EFFECTING
-	  | detup (O.AppConst (_, _, _), _) = SIDE_EFFECTING
+	  | detup (O.DirectAppVar (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetRef (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetTup (idDefs, idRef, instr), id) =
 	    if isId (idRef, id) then
@@ -355,9 +355,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppVar (lookup (env, id),
 		      translateArgs translateId (args, env), NONE)
 	  | translateStm (ReturnStm (_, FunAppExp (_, id, _, args)), env) =
-	    (*--** translate to AppConst *)
-	    O.AppVar (lookup (env, id),
-		      translateArgs translateId (args, env), NONE)
+	    O.DirectAppVar (lookup (env, id),
+			    translateArgs translateId (args, env), NONE)
 	  | translateStm (ReturnStm (_, exp), env) =
 	    let
 		val id = fresh env
@@ -412,6 +411,18 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppPrim (V.prim name, translateIds (ids, env),
 		       SOME (O.IdDef id, instr))
 	  | translateExp (VarAppExp (_, id, args), id', instr, env) =
+	    translateVarAppExp O.AppVar (id, args, id', instr, env)
+	  | translateExp (RefExp (_, id), id', instr, env) =
+	    O.PutRef (id', lookup (env, id), instr)
+	  | translateExp (SelAppExp (_, _, _, i, id), id', instr, env) =
+	    O.Sel (id', lookup (env, id), i, instr)
+	  | translateExp (LazySelAppExp (_, _, _, i, id), id', instr, env) =
+	    O.LazySel (id', lookup (env, id), i, instr)
+	  | translateExp (FunAppExp (info, id, _, args), id', instr, env) =
+	    translateVarAppExp O.DirectAppVar (id, args, id', instr, env)
+	  | translateExp (FailExp info, id', instr, env) = (*--** implement *)
+	    raise Crash.Crash "CodeGenPhase.translateExp: FailExp"
+	and translateVarAppExp appVar (id, args, id', instr, env) =
 	    let
 		val (returnArgs, instr) =
 		    case detup (instr, id') of
@@ -421,21 +432,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			    (O.OneArg (O.IdDef id'), instr)
 		      | KILLED => (O.OneArg O.Wildcard, instr)
 	    in
-		O.AppVar (lookup (env, id),
-			  translateArgs translateId (args, env),
-			  SOME (returnArgs, instr))
+		appVar (lookup (env, id),
+			translateArgs translateId (args, env),
+			SOME (returnArgs, instr))
 	    end
-	  | translateExp (RefExp (_, id), id', instr, env) =
-	    O.PutRef (id', lookup (env, id), instr)
-	  | translateExp (SelAppExp (_, _, _, i, id), id', instr, env) =
-	    O.Sel (id', lookup (env, id), i, instr)
-	  | translateExp (LazySelAppExp (_, _, _, i, id), id', instr, env) =
-	    O.LazySel (id', lookup (env, id), i, instr)
-	  | translateExp (FunAppExp (info, id, _, args), id', instr, env) =
-	    (*--** translate to AppConst *)
-	    translateExp (VarAppExp (info, id, args), id', instr, env)
-	  | translateExp (FailExp info, id', instr, env) = (*--** implement *)
-	    raise Crash.Crash "CodeGenPhase.translateExp: FailExp"
 	and translateIgnore (LitExp (_, _), instr, _) = instr
 	  | translateIgnore (PrimExp (_, _), instr, _) = instr
 	  | translateIgnore (NewExp (_, _), instr, _) = instr
@@ -461,8 +461,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		       SOME (O.Wildcard, instr))
 	  | translateIgnore (LazySelAppExp (_, _, _, _, id), instr, _) = instr
 	  | translateIgnore (FunAppExp (info, id, _, args), instr, env) =
-	    (*--** translate to AppConst *)
-	    translateIgnore (VarAppExp (info, id, args), instr, env)
+	    O.DirectAppVar (lookup (env, id),
+			    translateArgs translateId (args, env),
+			    SOME (O.OneArg O.Wildcard, instr))
 	  | translateIgnore (FailExp _, instr, _) = instr
 	and translateIntTest (id, litTests, elseBody, env) =
 	    let

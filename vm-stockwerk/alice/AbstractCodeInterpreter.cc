@@ -364,9 +364,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       }
       break;
     case AbstractCode::AppVar:
+    case AbstractCode::DirectAppVar:
       // of idRef * idRef args * (idDef args * instr) option
-    case AbstractCode::AppConst:
-      // of value * idRef args * (idDef args * instr) option
       {
 	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
 	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
@@ -395,24 +394,13 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  }
 	  break;
 	}
-	switch (AbstractCode::GetInstr(pc)) {
-	case AbstractCode::AppVar:
-	  if (Scheduler::TestPreempt() || Store::NeedGC()) {
-	    Interpreter::Result res =
-	      taskStack->PushCall(GetIdRef(pc->Sel(0), globalEnv, localEnv));
-	    return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
-	  } else {
-	    word closure = GetIdRef(pc->Sel(0), globalEnv, localEnv);
-	    return taskStack->PushCall(closure);
-	  }
-	case AbstractCode::AppConst:
-	  if (Scheduler::TestPreempt() || Store::NeedGC()) {
-	    Interpreter::Result res = taskStack->PushCall(pc->Sel(0));
-	    return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
-	  } else
-	    return taskStack->PushCall(pc->Sel(0));
-	default:
-	  Error("AbstractCodeInterpreter: inconsistent (AppVar/AppConst)")
+	if (Scheduler::TestPreempt() || Store::NeedGC()) {
+	  Interpreter::Result res =
+	    taskStack->PushCall(GetIdRef(pc->Sel(0), globalEnv, localEnv));
+	  return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
+	} else {
+	  word closure = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	  return taskStack->PushCall(closure);
 	}
       }
       break;

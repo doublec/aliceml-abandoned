@@ -47,7 +47,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | PutFun of id * idRef vector * value * instr
 	  | AppPrim of value * idRef vector * (idDef * instr) option
 	  | AppVar of idRef * idRef args * (idDef args * instr) option
-	  | AppConst of value * idRef args * (idDef args * instr) option
+	  | DirectAppVar of idRef * idRef args * (idDef args * instr) option
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Sel of id * idRef * int * instr
