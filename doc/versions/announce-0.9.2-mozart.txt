@@ -1,0 +1,25 @@
+We are happy to announce the release of version 0.9.2 of
+the Alice Programming System. It is available from the
+Alice home page:
+
+        http://www.ps.uni-sb.de/alice/
+
+This version is a bug fix release that also features
+significant extensions to the library. The compiler now
+has special support for importing plain SML code. For a
+detailed list of changes, see:
+
+        http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Also, we recently set up a page that is intended to list
+libraries and tools contributed by the user community:
+
+        http://www.ps.uni-sb.de/alice/contribs.html
+
+If you developed something useful and want to make it
+available to others, do not hesitate to mail a suitable
+link to the Webmaster.
+
+Enjoy,
+
+	- The Alice Team
