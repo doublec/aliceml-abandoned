@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,6 +11,7 @@
  *)
 
 import structure Url       from "../../lib/system/Url"
+import structure Reflect   from "../../lib/system/Reflect"
 import structure Inf       from "../../lib/rtt/Inf"
 import structure Source    from "../infrastructure/Source"
 import signature SWITCHES  from "../infrastructure/SWITCHES-sig"
@@ -29,6 +30,7 @@ signature RECURSIVE_COMPILER =
 
 	val compileFileToFile: string * string -> unit
 	val acquireSig: Source.desc * Url.t -> Inf.sign
+	val acquireMod: Source.desc * Url.t -> Reflect.module
 
 	val compileFile: context -> string -> context * Target.t
 	val compileString: context -> string -> context * Target.t

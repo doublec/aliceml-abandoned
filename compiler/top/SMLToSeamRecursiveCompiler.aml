@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,7 +23,8 @@ import structure MkBackendStockwerk  from "../backend-stockwerk/MkBackendStockwe
 import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
-                 type sig_loader     from "MkRecursiveCompiler"
+       type sig_loader
+       type mod_loader               from "MkRecursiveCompiler"
 
 structure SMLToStockwerkRecursiveCompiler =
     let
@@ -31,8 +32,11 @@ structure SMLToStockwerkRecursiveCompiler =
 
 	val acquireSigRef: sig_loader ref =
 	    ref (fn _ => raise Assert.failure)
+	val acquireModRef: mod_loader ref =
+	    ref (fn _ => raise Assert.failure)
 
-	fun loadSig(desc, url) = !acquireSigRef(desc, url)
+	fun loadSig (desc, url) = !acquireSigRef (desc, url)
+	fun loadMod (desc, url) = !acquireModRef (desc, url)
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSig = loadSig
@@ -43,7 +47,8 @@ structure SMLToStockwerkRecursiveCompiler =
 			     structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(structure Switches = Switches)
+	    MkBackendCommon(val loadMod = loadMod
+			    structure Switches = Switches)
 
 	structure BackendStockwerk =
 	    MkBackendStockwerk(structure ComponentManager = ComponentManager
@@ -61,6 +66,7 @@ structure SMLToStockwerkRecursiveCompiler =
 				val extension = "stc")
 
 	val _ = acquireSigRef := RecursiveCompiler.acquireSig
+	val _ = acquireModRef := RecursiveCompiler.acquireMod
     in
 	RecursiveCompiler
     end

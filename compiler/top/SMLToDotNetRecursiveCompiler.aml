@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,7 +24,8 @@ import structure MkBackendDotNet     from "../backend-dotnet/MkBackendDotNet"
 import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
-                 type sig_loader     from "MkRecursiveCompiler"
+       type sig_loader
+       type mod_loader               from "MkRecursiveCompiler"
 
 structure SMLToDotNetRecursiveCompiler =
     let
@@ -32,8 +33,11 @@ structure SMLToDotNetRecursiveCompiler =
 
 	val acquireSigRef: sig_loader ref =
 	    ref (fn _ => raise Assert.failure)
+	val acquireModRef: mod_loader ref =
+	    ref (fn _ => raise Assert.failure)
 
-	fun loadSig(desc, url) = !acquireSigRef(desc, url)
+	fun loadSig (desc, url) = !acquireSigRef (desc, url)
+	fun loadMod (desc, url) = !acquireModRef (desc, url)
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSig = loadSig
@@ -44,7 +48,8 @@ structure SMLToDotNetRecursiveCompiler =
 			     structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(structure Switches = Switches)
+	    MkBackendCommon(val loadMod = loadMod
+			    structure Switches = Switches)
 
 	structure BackendDotNet =
 	    MkBackendDotNet(structure Switches = Switches)
@@ -62,6 +67,7 @@ structure SMLToDotNetRecursiveCompiler =
 				val extension = "dll")
 
 	val _ = acquireSigRef := RecursiveCompiler.acquireSig
+	val _ = acquireModRef := RecursiveCompiler.acquireMod
     in
 	RecursiveCompiler
     end

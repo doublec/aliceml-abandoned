@@ -1,10 +1,10 @@
 (*
- * Author:
+ * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,6 +17,7 @@ import structure TextIO             from "../../lib/system/TextIO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
 import structure Url                from "../../lib/system/Url"
+import structure Reflect            from "../../lib/system/Reflect"
 import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Component          from "../../lib/system/Component"
 import structure MkHashImpMap       from "../../lib/utility/MkHashImpMap"
@@ -30,6 +31,7 @@ import signature COMPILER           from "COMPILER-sig"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
 type sig_loader = Source.desc * Url.t -> Inf.sign
+type mod_loader = Source.desc * Url.t -> Reflect.module
 
 functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				where type component = Component.t
@@ -137,7 +139,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	fun processBasic process (desc, s) =
 	    let
-	        val prefix = if not(!Switches.Language.implicitImport)
+		val prefix = if not(!Switches.Language.implicitImport)
 			     orelse isBaseSig desc
 			     then ""
 			     else implicitImport()
@@ -335,6 +337,15 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 					     pathCeil targetFilename))
 		else NONE
 	    end
+
+	fun acquireMod (desc, url) =
+	    if Compiler.isCrossCompiler then
+		raise IO.Io {name = Url.toStringRaw url,
+			     function = "load",
+			     cause = Component.NotFound}
+	    else
+		(*--** support evaluation during recursive compilation; *)
+		ComponentManager.eval (url, ComponentManager.link url)
 
 	local
 	    fun compile' context (desc, s) =
