@@ -22,7 +22,7 @@
  *     "\n"
  * link_result ::=
  *     ( "Debug:" <string> "\n" )*
- *     ( "Error:" <string> "\n"
+ *     ( ( "Error:" <string> "\n" )*
  *     | "Valref:" <int> "\n" )
  *     "\n"
  *
@@ -33,49 +33,20 @@
  *     "\n"
  * save_result ::=
  *     ( "Debug:" <string> "\n" )*
- *     ( "Error:" <string> "\n" )?
+ *     ( "Error:" <string> "\n" )*
  *     "\n"
  *)
 
-import
-    structure TextIO
-from "../../lib/system/TextIO"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    functor MkHashImpMap
-from "../../lib/utility/MkHashImpMap"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Error
-from "../infrastructure/Error"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    signature CODE
-from "CODE-sig"
-
-import
-    signature ENGINE
-from "ENGINE-sig"
-
-import
-    signature CONTEXT
-from "../infrastructure/CONTEXT-sig"
+import structure TextIO       from "../../lib/system/TextIO"
+import structure Stamp        from "../common/Stamp"
+import structure Label        from "../../lib/rtt/Label"
+import structure MkHashImpMap from "../../lib/utility/MkHashImpMap"
+import structure Source       from "../infrastructure/Source"
+import structure Error        from "../infrastructure/Error"
+import structure FlatGrammar  from "FlatGrammar"
+import signature CODE         from "CODE-sig"
+import signature ENGINE       from "ENGINE-sig"
+import signature CONTEXT      from "../infrastructure/CONTEXT-sig"
 
 structure IdMap =
     MkHashImpMap(type t = FlatGrammar.id
@@ -200,6 +171,9 @@ functor MkEngine(val cmd: unit -> string * string list
 			    | _ => ()) args
 	    end
 
+	fun errorsToString (s, es) =
+	    String.concat (s::List.foldr (fn ((_, s), ss) => s::ss) nil es)
+
 	fun link (procOptRef, map) (code, stringOpt) =
 	    let
 		val proc = start procOptRef
@@ -214,7 +188,8 @@ functor MkEngine(val cmd: unit -> string * string list
 	    in
 		case result of
 		    [("Valref", s)] => valOf (Int.fromString s)
-		  | [("Error", s)] => error ("link (engine): " ^ s)
+		  | ("Error", _)::_ =>
+			error (errorsToString ("link (engine):\n", result))
 		  | _ => error "link: could not parse result"
 	    end
 
@@ -229,7 +204,8 @@ functor MkEngine(val cmd: unit -> string * string list
 	    in
 		case result of
 		    nil => ()
-		  | [("Error", s)] => error ("save (engine): " ^ s)
+		  | ("Error", _)::_ =>
+			error (errorsToString ("save (engine):\n", result))
 		  | _ => error "save: could not parse result"
 	    end
     end
