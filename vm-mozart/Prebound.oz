@@ -324,13 +324,13 @@ prepare
 	 end
 \else
 	 fun {$ P}
-	    !!{ByNeed fun {$}
-			 try
-			    {P unit}
-			 catch error(InnerE ...) then
-			    {Value.failed error(InnerE)}
-			 end
-		      end}
+	    {ByNeedFuture fun {$}
+			     try
+				{P unit}
+			     catch error(InnerE ...) then
+				{Value.failed error(InnerE)}
+			     end
+			  end}
 	 end
 \endif
       'Future.concur':

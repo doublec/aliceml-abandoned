@@ -10,6 +10,10 @@
 %%%   $Revision$
 %%%
 
+\ifdef Mozart_1_2
+\define OLD_BYNEED
+\endif
+
 functor
 import
    Application(getArgs exit)
@@ -148,10 +152,16 @@ define
 		       else {Link Key2}
 		       end
 		    end}
+\ifdef OLD_BYNEED
 	 Mod = {Value.byNeed
-		fun {$}
+\else
+	 Mod = {Value.byNeedFuture
+\endif
+		fun {$} X in
 		   {Trace applying Key}
-		   {F.apply {Adjoin Imports 'IMPORT'}}
+		   X = {F.apply {Adjoin Imports 'IMPORT'}}
+		   {Trace evaluated Key}
+		   X
 		end}
 	 Inf = case F.'export' of sig(Sig) andthen Sig \= unit then 'SOME'(Sig)
 	       else 'NONE'
