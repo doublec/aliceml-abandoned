@@ -33,23 +33,27 @@ final public class Tuple4 implements DMLTuple {
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	if (val instanceof Tuple4) {
-	    Tuple4 v = (Tuple4) val;
-	    return
-		fst.equals(v.fst) &&
-		snd.equals(v.snd) &&
-		thr.equals(v.thr) &&
-		fur.equals(v.fur);
-	} else if (val instanceof DMLTuple) {
-	    DMLTuple t = (DMLTuple) val;
-	    if (t.getArity()!=4) {
+	if (val instanceof DMLTuple) {
+	    if (val instanceof Record) {
 		return false;
-	    } else {
+	    } else if (val instanceof Tuple4) {
+		Tuple4 v = (Tuple4) val;
 		return
-		    t.get0().equals(fst) &&
-		    t.get1().equals(snd) &&
-		    t.get2().equals(thr) &&
-		    t.get3().equals(fur);
+		    fst.equals(v.fst) &&
+		    snd.equals(v.snd) &&
+		    thr.equals(v.thr) &&
+		    fur.equals(v.fur);
+	    } else {
+		DMLTuple t = (DMLTuple) val;
+		if (t.getArity()!=4) {
+		    return false;
+		} else {
+		    return
+			t.get0().equals(fst) &&
+			t.get1().equals(snd) &&
+			t.get2().equals(thr) &&
+			t.get3().equals(fur);
+		}
 	    }
 	} else {
 	    return false;
@@ -96,13 +100,5 @@ final public class Tuple4 implements DMLTuple {
 	return 4;
     }
 
-    final public DMLValue[] getVals() {
-	DMLValue[] vals = {fst,snd,thr,fur};
-	return vals;
-    }
-
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 }

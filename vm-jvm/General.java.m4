@@ -354,6 +354,6 @@ final public class General {
 	Builtin.builtins.put("print",print);
 	Builtin.builtins.put("TextIO.print",print);
     }
-    // val exnName : exn -> string 
+    // val exnName : exn -> string
     // val exnMessage : exn -> string
 }

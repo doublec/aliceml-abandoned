@@ -29,21 +29,25 @@ final public class Tuple3 implements DMLTuple {
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	if (val instanceof Tuple3) {
-	    Tuple3 v = (Tuple3) val;
-	    return
-		fst.equals(v.fst) &&
-		snd.equals(v.snd) &&
-		thr.equals(v.thr);
-	} else if (val instanceof DMLTuple) {
-	    DMLTuple t = (DMLTuple) val;
-	    if (t.getArity()!=3) {
+	if (val instanceof DMLTuple) {
+	    if (val instanceof Record) {
 		return false;
-	    } else {
+	    } else if (val instanceof Tuple3) {
+		Tuple3 v = (Tuple3) val;
 		return
-		    t.get0().equals(fst) &&
-		    t.get1().equals(snd) &&
-		    t.get2().equals(thr);
+		    fst.equals(v.fst) &&
+		    snd.equals(v.snd) &&
+		    thr.equals(v.thr);
+	    } else {
+		DMLTuple t = (DMLTuple) val;
+		if (t.getArity()!=3) {
+		    return false;
+		} else {
+		    return
+			t.get0().equals(fst) &&
+			t.get1().equals(snd) &&
+			t.get2().equals(thr);
+		}
 	    }
 	} else {
 	    return false;
@@ -89,13 +93,5 @@ final public class Tuple3 implements DMLTuple {
 	return 3;
     }
 
-    final public DMLValue[] getVals() {
-	DMLValue[] vals = {fst,snd,thr};
-	return vals;
-    }
-
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 }

@@ -11,7 +11,7 @@ package de.uni_sb.ps.dml.runtime;
  */
 public class Tuple implements DMLTuple {
 
-    final public DMLValue vals[];
+    final protected DMLValue vals[];
 
     public Tuple(DMLValue[] v) {
 	vals=v;
@@ -24,65 +24,69 @@ public class Tuple implements DMLTuple {
     public DMLValue get4() { return vals[4]; }
 
     public boolean equals(java.lang.Object val) {
-	if (val instanceof Record) {
-	    return false;
-	} else if (val instanceof Tuple) {
-	    Tuple r = (Tuple) val;
-	    if (r.vals.length != this.vals.length)
+	if (val instanceof DMLTuple) {
+	    if (val instanceof Record) {
 		return false;
-	    int length=vals.length;
-	    for(int i=0; i<length; i++)
-		if (!vals[i].equals(r.vals[i]))
+	    } else if (val instanceof Tuple) {
+		Tuple r = (Tuple) val;
+		if (r.vals.length != this.vals.length)
 		    return false;
-	    return true;
-	} else if (val instanceof DMLTuple) {
-	    switch (vals.length) {
-	    case 1:
-		if (val instanceof Tuple1) {
-		    return vals[0].equals(((Tuple1) val).fst);
-		} else {
-		    return false;
+		int length=vals.length;
+		for(int i=0; i<length; i++) {
+		    if (!vals[i].equals(r.vals[i])) {
+			return false;
+		    }
 		}
-	    case 2:
-		if (val instanceof Tuple2) {
-		    return
-			vals[0].equals(((Tuple2) val).fst) &&
-			vals[1].equals(((Tuple2) val).snd);
-		} else {
-		    return false;
-		}
-	    case 3:
-		if (val instanceof Tuple3) {
-		    return
-			vals[0].equals(((Tuple3) val).fst) &&
-			vals[1].equals(((Tuple3) val).snd) &&
-			vals[2].equals(((Tuple3) val).thr);
-		} else {
-		    return false;
-		}
-	    case 4:
-		if (val instanceof Tuple4) {
-		    return
-			vals[0].equals(((Tuple4) val).fst) &&
-			vals[1].equals(((Tuple4) val).snd) &&
-			vals[2].equals(((Tuple4) val).thr) &&
-			vals[3].equals(((Tuple4) val).fur);
-		} else {
-		    return false;
-		}
-	    case 5:
-		if (val instanceof Tuple5) {
-		    return
-			vals[0].equals(((Tuple5) val).fst) &&
-			vals[1].equals(((Tuple5) val).snd) &&
-			vals[2].equals(((Tuple5) val).thr) &&
-			vals[3].equals(((Tuple5) val).fur) &&
-			vals[4].equals(((Tuple5) val).fiv);
+		return true;
+	    } else { // kann nur noch Tuple<i> sein
+		switch (vals.length) {
+		case 1:
+		    if (val instanceof Tuple1) {
+			return vals[0].equals(((Tuple1) val).fst);
 		    } else {
+			return false;
+		    }
+		case 2:
+		    if (val instanceof Tuple2) {
+			return
+			    vals[0].equals(((Tuple2) val).fst) &&
+			    vals[1].equals(((Tuple2) val).snd);
+		    } else {
+			return false;
+		    }
+		case 3:
+		    if (val instanceof Tuple3) {
+			return
+			    vals[0].equals(((Tuple3) val).fst) &&
+			    vals[1].equals(((Tuple3) val).snd) &&
+			    vals[2].equals(((Tuple3) val).thr);
+		    } else {
+			return false;
+		    }
+		case 4:
+		    if (val instanceof Tuple4) {
+			return
+			    vals[0].equals(((Tuple4) val).fst) &&
+			    vals[1].equals(((Tuple4) val).snd) &&
+			    vals[2].equals(((Tuple4) val).thr) &&
+			    vals[3].equals(((Tuple4) val).fur);
+		    } else {
+			return false;
+		    }
+		case 5:
+		    if (val instanceof Tuple5) {
+			return
+			    vals[0].equals(((Tuple5) val).fst) &&
+			    vals[1].equals(((Tuple5) val).snd) &&
+			    vals[2].equals(((Tuple5) val).thr) &&
+			    vals[3].equals(((Tuple5) val).fur) &&
+			    vals[4].equals(((Tuple5) val).fiv);
+		    } else {
+			return false;
+		    }
+		default:
 		    return false;
 		}
-	    default:
-		return false;
 	    }
 	} else {
 	    return false;
@@ -129,12 +133,5 @@ public class Tuple implements DMLTuple {
 	return vals.length;
     }
 
-    final public DMLValue[] getVals() {
-	return vals;
-    }
-
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 }
