@@ -21,7 +21,8 @@ functor ImperativeIO(structure StreamIO: STREAM_IO
 	where type StreamIO.instream = StreamIO.instream
 	  and type StreamIO.outstream = StreamIO.outstream
 	  and type StreamIO.vector = StreamIO.vector
-	  and type StreamIO.elem = StreamIO.elem =
+	  and type StreamIO.elem = StreamIO.elem
+	  and type StreamIO.pos = StreamIO.pos =
     struct
 	structure StreamIO = StreamIO
 
