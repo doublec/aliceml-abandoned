@@ -123,8 +123,8 @@ fun fac 0 = 1
 integers to integers. We can apply that function:</P>
 
 <PRE class=code>
-fac 50
-<I>val it : int = 30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
+fac 12
+<I>val it : int = 479001600</I></PRE>
 
 <DIV class=note>
 <P><I>Note:</I> If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C (Ctrl-Break on Windows). You can also put it into background with Ctrl-Z (Ctrl-D on Windows). The result of a background computation will be represented by futures, see <A href="#concurrency">discussion of concurrency</A> below. The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows).</P>
@@ -182,7 +182,7 @@ inspect infiniteList
 <I>val it : unit = ()</I></PRE>
 
 <PRE class=code>
-inspect (Future.alarm (Time.fromMilliseconds 2000))
+inspect (Future.alarm (Time.fromMilliseconds (Int.toLarge 2000)))
 <I>val it : unit = ()</I></PRE>
 -->
 
@@ -270,8 +270,8 @@ you evaluate</P>
 <PRE class=code>
 inspect facs
 <I>val it : unit = ()</I>
-List.nth (facs,13)
-<I>val it : int = 6227020800</I></PRE>
+List.nth (facs,12)
+<I>val it : int = 479001600</I></PRE>
 
 <P>it will automatically update its window to reflect the substitution of the
 lazy tail of <TT>facs</TT> by a (partial) list.</P>
@@ -383,7 +383,7 @@ producer and consumer that are connected through a message stream:</P>
 
 <PRE class=code>
 fun produce 0 = []
-  | produce n = spawn (Thread.sleep (Time.fromSeconds 2); n :: produce (n-1))
+  | produce n = spawn (Thread.sleep (Time.fromSeconds (Int.toLarge 2)); n :: produce (n-1))
 <I>val produce : int -> int list = _fn</I>
 fun consume (n::ns) = (print (Int.toString n ^ "\n"); consume ns)
   | consume   nil   = ()
@@ -869,8 +869,8 @@ Num'.toInt (Num'.add (Num'.fromInt 4, Num'.fromInt 5))
 
 <PRE class=code>
 Num'.add (Num.fromInt 4, Num.fromInt 5)
-<I>1.0-1.39: argument type mismatch:
-   t * t
+<I>0.0-0.39: argument type mismatch:
+   Num.t * Num.t
 does not match argument type
    Num'.t * Num'.t
 because type
@@ -1004,11 +1004,11 @@ Fac.fac
 component will be evaluated when its content is first requested:</P>
 
 <PRE class=code>
-Fac.fac 23
+Fac.fac 11
 <I>Evaluating component Fac...
-val it : int = 25852016738884976640000</I>
-Fac.fac 46
-<I>val it : int = 5502622159812088949850305428800254892961651752960000000000</I></PRE>
+val it : int = 39916800</I>
+Fac.fac 10
+<I>val it : int = 3628800</I></PRE>
 
 <P>Let us write a little application using the <TT>Fac</TT> component. We simply
 implement an appropriate main component:</P>
@@ -1049,9 +1049,9 @@ machine</A>:</P>
 
 <PRE class=code>
 alicerun Main
-<I>Input number: </I>34
+<I>Input number: </I>8
 <I>Evaluating component Fac...
-295232799039604140847618609643520000000</I></PRE>
+40320</I></PRE>
 
 <P>You can again observe that imports are performed lazily. If the <TT>Fac</TT>
 component is never accessed, it will not be loaded at all:</P>
@@ -1068,7 +1068,189 @@ alicerun Main
 can inspect them using the Alice <A href="linker.html">linker</A>:</P>
 
 <PRE class=code>
-alicelink -d Main
+alicelink -d Main<!-- new version not nice :-( -->
+<I>import
+   structure __pervasive :
+      sig
+         type ref = _._local.__pervasive.ref
+         type exn = _._local.__pervasive.exn
+         type conarrow = _._local.__pervasive.conarrow
+         type strict = _._local.__pervasive.strict
+         structure RTT :
+            sig
+               structure Label :
+                  sig
+                     type lab = _._local.lab
+                     val fromString : _.string -> _._local.lab
+                  end = _.__pervasive.RTT.Label
+               structure Path :
+                  sig
+                     type path = _._local.path
+                     val invent : _._local.unit -> _._local.path
+                     val pervasive : _.string -> _._local.path
+                     val fromLab : _._local.lab -> _._local.path
+                     val fromString : _.string -> _._local.path
+                  end = _.__pervasive.RTT.Path
+               structure Type :
+                  sig
+                     type var = _._local.var
+                     type typ = _._local.typ
+                     type row = _._local.row
+                     type kind = Type.kind
+                     type constraint = _._local.constraint
+                     val Unconstrained : _._local.constraint
+                     val Intensional : _._local.constraint
+                     val Extensional :
+                        _._local.path * _._local.path _._local.list ->
+                           _._local.constraint
+                     val starKind : _._local.unit -> Type.kind
+                     val extKind : _._local.unit -> Type.kind
+                     val singKind : _._local.typ -> Type.kind
+                     val arrowKind : Type.kind * Type.kind -> Type.kind
+                     val unknown : Type.kind -> _._local.typ
+                     val var : _._local.var -> _._local.typ
+                     val con : _._local.path * Type.kind -> _._local.typ
+                     val arrow : _._local.typ * _._local.typ -> _._local.typ
+                     val tuple : _._local.typ _._local.vector -> _._local.typ
+                     val prod : _._local.row -> _._local.typ
+                     val sum : _._local.row -> _._local.typ
+                     val all : _._local.var * _._local.typ -> _._local.typ
+                     val exist : _._local.var * _._local.typ -> _._local.typ
+                     val lambda : _._local.var * _._local.typ -> _._local.typ
+                     val apply : _._local.typ * _._local.typ -> _._local.typ
+                     val newVar :
+                        Type.kind * _._local.constraint -> _._local.var
+                     val kind : _._local.typ -> Type.kind
+                     val unknownRow : _._local.unit -> _._local.row
+                     val emptyRow : _._local.unit -> _._local.row
+                     val extendRow :
+                        _._local.lab * _._local.typ * _._local.row ->
+                           _._local.row
+                     val fix :
+                        (_._local.typ * _._local.typ) _._local.vector ->
+                           _._local.unit
+                  end = _.__pervasive.RTT.Type
+               structure Fixity :
+                  sig
+                     type fix = _._local.fix
+                     type assoc = _._local.assoc
+                     val LEFT : _._local.assoc
+                     val RIGHT : _._local.assoc
+                     val NEITHER : _._local.assoc
+                     val NONFIX : _._local.fix
+                     val PREFIX : _.int -> _._local.fix
+                     val POSTFIX : _.int -> _._local.fix
+                     val INFIX : _.int * _._local.assoc -> _._local.fix
+                  end = _.__pervasive.RTT.Fixity
+               structure Inf :
+                  sig
+                     type mod = _._local.mod
+                     type inf = _._local.inf
+                     type sign = _._local.sign
+                     type kind = _._local.kind
+                     type rea = _._local.rea
+                     val emptySig : _._local.unit -> _._local.sign
+                     val extendFix :
+                        _._local.sign * _._local.lab * _._local.fix ->
+                           _._local.unit
+                     val extendVal :
+                        _._local.sign * _._local.lab * _._local.typ ->
+                           _._local.unit
+                     val extendTyp :
+                        _._local.sign * _._local.path * Type.kind ->
+                           _._local.unit
+                     val extendMod :
+                        _._local.sign * _._local.path * _._local.inf ->
+                           _._local.unit
+                     val extendInf :
+                        _._local.sign * _._local.path * _._local.kind ->
+                           _._local.unit
+                     val lookupMod :
+                        _._local.sign * _._local.lab -> _._local.inf
+                     val lookupTyp' :
+                        _._local.sign * _._local.lab -> _._local.typ
+                     val lookupInf' :
+                        _._local.sign * _._local.lab -> _._local.inf
+                     val mod : _._local.path * _._local.inf -> _._local.mod
+                     val top : _._local.unit -> _._local.inf
+                     val con : _._local.path * _._local.kind -> _._local.inf
+                     val sign : _._local.sign -> _._local.inf
+                     val arrow :
+                        _._local.path * _._local.inf * _._local.inf ->
+                           _._local.inf
+                     val sing : _._local.mod -> _._local.inf
+                     val lambda :
+                        _._local.path * _._local.inf * _._local.inf ->
+                           _._local.inf
+                     val apply : _._local.inf * _._local.mod -> _._local.inf
+                     val asSig : _._local.inf -> _._local.sign
+                     val asArrow :
+                        _._local.inf ->
+                           _._local.path * _._local.inf * _._local.inf
+                     val groundKind : _._local.unit -> _._local.kind
+                     val depKind :
+                        _._local.path * _._local.inf * _._local.kind ->
+                           _._local.kind
+                     val singKind : _._local.inf -> _._local.kind
+                     val kind : _._local.inf -> _._local.kind
+                     val instance :
+                        _._local.path * _._local.inf ->
+                           _._local.inf * _._local.rea
+                     val match : _._local.inf * _._local.inf -> _._local.rea
+                     val infimum : _._local.inf * _._local.inf -> _._local.inf
+                     type mismatch = _._local.mismatch
+                     exception Mismatch of _._local.mismatch
+                  end = _.__pervasive.RTT.Inf
+               structure PervasiveType :
+                  sig val lookup : _.string -> _._local.typ end =
+                  _.__pervasive.RTT.PervasiveType
+               structure DynMatch :
+                  sig
+                     type module = _._local.module
+                     val match : _._local.module * _._local.inf -> _._local.rea
+                     val matchWith :
+                        _._local.rea * _._local.module * _._local.inf ->
+                           _._local.unit
+                     val strengthen :
+                        _._local.module * _._local.inf -> _._local.inf
+                     val strengthenWith :
+                        _._local.rea * _._local.module * _._local.inf ->
+                           _._local.inf
+                     val thin :
+                        _._local.module * _._local.inf -> _._local.module
+                     val seal :
+                        _._local.module * _._local.inf -> _._local.module
+                  end = _.__pervasive.RTT.DynMatch
+            end = _.__pervasive.RTT
+         datatype bool = false | true
+         datatype 'a list = :: of 'a * 'a list | nil
+         exception Assert of _._local.string * _._local.int
+      end
+from "x-alice:/lib/fundamental/Pervasive"
+import
+   structure TextIO :
+      sig
+         type instream
+         val inputLine : instream -> string option
+         val stdIn : instream
+         val print : string -> unit
+      end
+from "x-alice:/lib/system/TextIO"
+import
+   structure OS :
+      sig
+         structure Process :
+            sig
+               type status
+               val success : status
+               val failure : status
+               val exit : status -> 'a
+            end
+      end
+from "x-alice:/lib/system/OS"
+import structure Fac : sig val fac : int -> int end from "Fac"
+structure Main : sig val main : unit -> OS.Process.status end</I></PRE>
+<!--  old version not correct (notice the 'a)
 <I>import
    structure TextIO :
       sig
@@ -1091,7 +1273,7 @@ import
       end
 from "x-alice:/lib/system/OS"
 import structure Fac : sig val fac : int -> int end from "Fac"
-structure Main : sig val main : unit -> 'a end</I></PRE>
+structure Main : sig val main : unit -> 'a end</I></PRE>-->
 
 <P>The output first lists all imports required by the component (which includes
 necessary parts of the <A href="library/index.html">library</A>) and then the
@@ -1124,6 +1306,7 @@ will cause a runtime failure:</P>
 alicec Fac.aml
 alicerun Main
 <I>Input number: </I>20
+<I>Evaluating component Fac...</I>
 <I>error</I></PRE>
 
 <P>An application that strives to be robust against such failures should handle
@@ -1134,7 +1317,8 @@ pages</A> on components for more details.</P>
 the application using the <A href="linker.html">static linker</A>:</P>
 
 <PRE class=code>
-alicelink --include ./ ./Main -o LinkedMain.ozf</PRE>
+alicelink --include ./ ./Main -o LinkedMain.acl</PRE>
+<I>TODO: show error here? Main.aml is still not adapted to new signature in Fac</I>
 
 <P>The linker verifies that all import/export signatures are compatible and
 builds a new component that bundles all components that are directly or
