@@ -42,7 +42,7 @@ end
 
 structure IntermediateGrammar = MkIntermediateGrammar(
 	open IntermediateInfo
-	type sign = Inf.sign)
+	type sign = Inf.t)
 
 structure PPIntermediateGrammar = MkPPIntermediateGrammar(
 	structure IntermediateGrammar = IntermediateGrammar
