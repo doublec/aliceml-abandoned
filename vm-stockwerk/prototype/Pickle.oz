@@ -29,7 +29,8 @@ import
    Open(file)
    Primitives(table)
 export
-   Unpickle
+   Load
+   Unpack
 define
    %% Tags:
    POSINT    = 0
@@ -62,12 +63,6 @@ define
 	    end
 	 end
 %      end
-   end
-
-   proc {ReadFile File ?VS} F in
-      F = {New Open.file init(name: File flags: [read])}
-      {F read(list: ?VS size: all)}
-      {F close()}
    end
 
    class PickleParser
@@ -177,7 +172,17 @@ define
       end
    end
 
-   fun {Unpickle File}
+   fun {Unpack S}
+      {New PickleParser init({VirtualString.toString S} $) _}
+   end
+
+   proc {ReadFile File ?VS} F in
+      F = {New Open.file init(name: File flags: [read])}
+      {F read(list: ?VS size: all)}
+      {F close()}
+   end
+
+   fun {Load File}
       {New PickleParser init({ReadFile File} $) _}
    end
 end
