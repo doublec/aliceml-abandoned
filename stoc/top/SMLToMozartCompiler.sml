@@ -12,20 +12,20 @@
  *   $Revision$
  *)
 
-local
-    structure Switches = MakeSwitches()
+structure SMLToMozartCompiler =
+    let
+	structure Switches = MakeSwitches()
 
-    structure MozartTarget = MakeMozartTarget(Signature)
+	structure MozartTarget = MakeMozartTarget(Signature)
 
-    structure FrontendSML = MakeFrontendSML(Composer)
+	structure FrontendSML = MakeFrontendSML(Composer)
 
-    structure FrontendCommon =
-	MakeFrontendCommon(structure Composer = Composer
-			   structure Switches = Switches)
+	structure FrontendCommon =
+	    MakeFrontendCommon(structure Composer = Composer
+			       structure Switches = Switches)
 
-    structure BackendMozart = MakeBackendMozart(MozartTarget)
-in
-    structure SMLToMozartCompiler =
+	structure BackendMozart = MakeBackendMozart(MozartTarget)
+    in
 	MakeCompiler(structure Switches         = Switches
 		     structure Target           = MozartTarget
 		     structure FrontendSpecific = FrontendSML
@@ -41,4 +41,4 @@ in
 			       InitialEmptyContext
 		     structure BackendSpecificInitialContext =
 			       InitialEmptyContext)
-end
+    end

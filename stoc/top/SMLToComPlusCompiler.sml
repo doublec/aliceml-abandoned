@@ -10,20 +10,20 @@
  *   $Revision$
  *)
 
-local
-    structure Switches = MakeSwitches()
+structure SMLToComPlusCompiler =
+    let
+	structure Switches = MakeSwitches()
 
-    structure ComPlusTarget = MakeComPlusTarget(Signature)
+	structure ComPlusTarget = MakeComPlusTarget(Signature)
 
-    structure FrontendSML = MakeFrontendSML(Composer)
+	structure FrontendSML = MakeFrontendSML(Composer)
 
-    structure FrontendCommon =
-	MakeFrontendCommon(structure Composer = Composer
-			   structure Switches = Switches)
+	structure FrontendCommon =
+	    MakeFrontendCommon(structure Composer = Composer
+			       structure Switches = Switches)
 
-    structure BackendComPlus = MakeBackendComPlus(ComPlusTarget)
-in
-    structure SMLToComPlusCompiler =
+	structure BackendComPlus = MakeBackendComPlus(ComPlusTarget)
+    in
 	MakeCompiler(structure Switches         = Switches
 		     structure Target           = ComPlusTarget
 		     structure FrontendSpecific = FrontendSML
@@ -39,4 +39,4 @@ in
 			       InitialEmptyContext
 		     structure BackendSpecificInitialContext =
 			       InitialEmptyContext)
-end
+    end
