@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,8 +12,18 @@
 
 structure Future =
 struct
-    exception Future of exn
+    datatype status = FUTURE | FAILED | DETERMINED
+    exception Cyclic
 
-    fun innerExn(Future e) = innerExn e
-      | innerExn e         = e
+    fun concur f	= f()
+    fun byneed f	= f()
+
+    fun await x		= x
+    fun awaitQuiet x	= x
+
+    fun status x	= DETERMINED
+    fun isFuture x	= false
+    fun isFailed x	= false
+    fun isDetermined x	= true
+    fun isLazy x	= false
 end
