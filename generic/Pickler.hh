@@ -25,8 +25,11 @@ public:
   // Exceptions
   static word Sited;
 
+  // Pickler Static Constructor
   static void Init();
+  static void InitExceptions();
 
+  // Pickler Functions
   static Worker::Result Pack(word x);
   static Worker::Result Save(String *filename, word x);
 };
