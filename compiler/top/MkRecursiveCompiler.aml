@@ -118,6 +118,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    fun implicitImport() =
 		case !Switches.Language.implicitImportFile
 		  of NONE => "\n"
+		   | SOME "--" => "" (* hack for bootstrapping! *)
 		   | SOME url =>
 		case !implicitImportRef
 		  of SOME s => s

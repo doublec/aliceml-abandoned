@@ -109,7 +109,7 @@ ALICEC1 = ALICE_HOME=build1/install ${bindir}/alicec --seam
 ALICEC2 = ALICE_HOME=build1/install ${bindir}/alicec --seam -z
 
 ALICEC_EXTRA_OPTS = --no-warn-conventions
-ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
+ALICEC_OPTS = --check-intermediate --implicit-import-file -- $(ALICEC_EXTRA_OPTS)
 
 ALICELINK1 = ALICE_HOME=build1/install ${bindir}/alicelink
 ALICELINK2 = ALICE_HOME=build1/install ${bindir}/alicelink -z
@@ -437,10 +437,12 @@ build1/%.cc: %.cc
 	cp $< $@
 
 Rel1.import: lib/fundamental/Fundamental.import
-	sed 's|x-alice:/|../|g' < $< | tr '\n' ' ' > $@
+	sed 's|x-alice:/|../|g' < $< | tr '\n' ' ' | \
+	sed 's|(\*END\*)|\n|g' > $@
 
 Rel2.import: lib/fundamental/Fundamental.import
-	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' > $@
+	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' | \
+	sed 's|(\*END\*)|\n|g' > $@
 
 build1/Build1.aml: Build1.aml
 	cp $< $@

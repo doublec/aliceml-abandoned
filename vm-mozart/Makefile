@@ -106,7 +106,7 @@ ALICEC0 = $(BOOTSTRAPDIR)/alicec # --profile
 ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --mozart
 ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --mozart
 
-ALICEC_OPTS = --no-warn-conventions --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
+ALICEC_OPTS = --no-warn-conventions --check-intermediate --implicit-import-file -- $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = 
 
 ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
@@ -420,10 +420,12 @@ $(BUILD1DIRS):
 	mkdir -p $@
 
 Rel1.import: lib/fundamental/Fundamental.import
-	sed 's|x-alice:/|../|g' < $< | tr '\n' ' ' > $@
+	sed 's|x-alice:/|../|g' < $< | tr '\n' ' ' | \
+	sed 's|(\*END\*)|\n|g' > $@
 
 Rel2.import: lib/fundamental/Fundamental.import
-	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' > $@
+	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' | \
+	sed 's|(\*END\*)|\n|g' > $@
 
 build1/Build1.aml: Build1.aml
 	cp $< $@
