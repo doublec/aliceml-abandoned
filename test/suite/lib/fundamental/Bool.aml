@@ -45,10 +45,10 @@ struct
 
     fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    val suite = ("Bool", [("testNot", testNot), 
-                          ("testCompare", testCompare),
-                          ("testEqual", testEqual),
-                          ("testToString", testToString),
- 			  ("testFromString", testFromString), 
-	                  ("testScan", testScan)])
+    val suite = ("Bool", [("not", testNot), 
+                          ("compare", testCompare),
+                          ("equal", testEqual),
+                          ("toString", testToString),
+ 			  ("fromString", testFromString), 
+	                  ("scan", testScan)])
 end

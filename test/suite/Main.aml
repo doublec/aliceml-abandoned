@@ -23,6 +23,7 @@ import structure TestAlt      from "lib/fundamental/Alt"
 import structure TestIEEEReal from "lib/fundamental/IEEEReal"
 import structure TestChar     from "lib/fundamental/Char"
 import structure TestInteger  from "lib/fundamental/Integer"
+import structure TestIntInf   from "lib/fundamental/IntInf"
 import structure TestTime     from "lib/system/Time"
 import structure TestCompiler from "lib/compiler/Compiler"
 
@@ -32,9 +33,20 @@ val allTests = [TestBool.suite, TestOption.suite,
 		TestAlt.suite,
 		TestIEEEReal.suite,
 		TestInteger.suite,
-		TestChar.suite,
+		(*TestIntInf.suite,*)
+		TestChar.suite(*,
 		TestTime.suite
-		(*TestCompiler.suite*)]
+		TestCompiler.suite*)]
+
+val beg = ref (Time.now ())
+
+fun displayNeededTime () =
+    let
+	val ending = Time.now ()
+	val result = Time.-(ending, !beg)
+    in
+	TextIO.output (TextIO.stdOut, "\nneeded " ^ Time.toString result ^ " seconds")
+    end
 
 fun usage () = print "nenene\n"
 
@@ -42,7 +54,8 @@ fun runTests conf =
     Report.runAll TextIO.stdOut conf allTests
 
 fun start cfg = 
-    (TextIO.output (TextIO.stdOut, "\n\n   automatic testing sequence for " 
+    (beg := Time.now ();
+     TextIO.output (TextIO.stdOut, "\n\n   automatic testing sequence for " 
                  ^ "Alice\n------------------------------------------\n\n");
 	 runTests cfg)
 
@@ -66,5 +79,6 @@ fun main () =
 
 
 val _ = (main ();
+	 displayNeededTime ();
 	 TextIO.output (TextIO.stdOut, "\ndone.\n");
 	 OS.Process.exit OS.Process.success)

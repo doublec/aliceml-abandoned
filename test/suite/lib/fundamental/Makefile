@@ -1,3 +1,3 @@
-SOURCES=IntInf.aml LargeInt.aml Alt.aml String.aml Bool.aml General.aml Option.aml IEEEReal.aml Integer.aml Char.aml
+SOURCES=IntInf.aml Alt.aml String.aml Bool.aml General.aml Option.aml IEEEReal.aml Integer.aml Char.aml
 
 -include ../../AliceMakefile

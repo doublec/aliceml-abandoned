@@ -142,15 +142,15 @@ struct
 				  (fn x => Option.compose (f, g) x = test x))
 	end
 
-    val suite = ("Option", [("testIsSome", testIsSome),
-			    ("testIsNone", testIsNone),
-			    ("testValOf", testValOf),
-			    ("testFilter", testFilter),
-			    ("testJoin", testJoin),
-			    ("testApp", testApp),
-			    ("testMap", testMap),
-			    ("testMapPart", testMapPart),
-			    ("testFold", testFold),
-			    ("testCompose", testCompose),
-			    ("testComposePart", testComposePart)])
+    val suite = ("Option", [("isSome", testIsSome),
+			    ("isNone", testIsNone),
+			    ("valOf", testValOf),
+			    ("filter", testFilter),
+			    ("join", testJoin),
+			    ("app", testApp),
+			    ("map", testMap),
+			    ("mapPart", testMapPart),
+			    ("fold", testFold),
+			    ("compose", testCompose),
+			    ("composePart", testComposePart)])
 end

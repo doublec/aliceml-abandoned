@@ -139,19 +139,19 @@ struct
 	end
 
 
-    val suite = ("Alt", [("testIsFst", testIsFst), 
-                         ("testIsSnd", testIsSnd),
-                         ("testFst", testFst),
-                         ("testSnd", testSnd),
- 			 ("testGetFst", testGetFst), 
-	                 ("testGetSnd", testSnd),
-			 ("testApp", testApp),
-			 ("testAppFst", testAppFst),
-			 ("testAppSnd", testAppSnd),
-			 ("testMap", testMap),
-			 ("testMapFst", testMapFst),
-			 ("testMapSnd", testMapSnd),
-			 ("testMapBoth", testMapBoth),
-			 ("testEqual", testEqual),
-			 ("testCollate", testCollate)])
+    val suite = ("Alt", [("isFst", testIsFst), 
+                         ("isSnd", testIsSnd),
+                         ("fst", testFst),
+                         ("snd", testSnd),
+ 			 ("getFst", testGetFst), 
+	                 ("getSnd", testSnd),
+			 ("app", testApp),
+			 ("appFst", testAppFst),
+			 ("appSnd", testAppSnd),
+			 ("map", testMap),
+			 ("mapFst", testMapFst),
+			 ("mapSnd", testMapSnd),
+			 ("mapBoth", testMapBoth),
+			 ("equal", testEqual),
+			 ("collate", testCollate)])
 end

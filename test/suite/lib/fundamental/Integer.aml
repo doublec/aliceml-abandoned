@@ -12,6 +12,7 @@
 
 import signature TESTSUITE from "../../src/TESTSUITE-sig"
 
+import structure Random    from "x-alice:/lib/utility/Random"
 import structure Gen       from "x-alice:/lib/test/Gen"
 import structure Test      from "../../src/Test"
 
@@ -54,19 +55,76 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testMod () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    (* very ugly... TODO: some more faster way *)
+	    fun t (x, y, r, i) = if i > Int.abs(x) then false
+				 else if x = y * i + r then true 
+				     else t (x, y, r, i + 1)
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1)) div 1000
+	    fun h' () = let val a = getInt ()
+			    val b = getInt ()
+			in
+			    (a, b, a mod b, ~ (Int.abs a))
+			end
+	    fun h i = if i <= 0 then () else (Test.test t (h' ()); h (i - 1))
+	in
+	    h 5
+	end
 
     fun testSign () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t' x = if x < 0 then ~1
+		      else if x > 0 then 1 else x
+	    fun t x = Int.sign x = t' x
+	in 
+	    Test.test t (valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt);
+	    Gen.try 1000 Gen.int (Test.test t)
+	end
 
     fun testToFromLarge () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t x = x = Int.fromLarge (Int.toLarge x)
+	in 
+	    Test.test t (valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt);
+	    Gen.try 10000 Gen.int (Test.test t)
+	end
 
     fun testSameSign () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t' (x1, x2) = if x1 = 0 andalso x2 = 0 then true
+			     else if x1 > 0 andalso x2 > 0 then true
+				  else if x1 < 0 andalso x2 < 0 then true
+				      else false
+	    fun t x = Int.sameSign x = t' x
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
+	in
+	    Test.test t (valOf Int.maxInt, valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt, valOf Int.minInt);
+	    Test.test t (valOf Int.minInt, 0);
+	    Test.test t (0, valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt, valOf Int.maxInt);
+	    Test.test t (valOf Int.maxInt, valOf Int.minInt);
+	    Gen.try 10000 Gen.int (Test.test (fn x => t (x, getInt ())))
+	end
 
     fun testMin () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t' (x1, x2) = if x1 = x2 then x1
+			      else if x1 < x2 then x1
+				   else x2
+	    fun t x = Int.min x = t' x
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
+	in
+	    Test.test t (valOf Int.maxInt, valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt, valOf Int.minInt);
+	    Test.test t (valOf Int.minInt, 0);
+	    Test.test t (0, valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt, valOf Int.maxInt);
+	    Test.test t (valOf Int.maxInt, valOf Int.minInt);
+	    Gen.try 10000 Gen.int (Test.test (fn x => t (x, getInt ())))
+	end
 
     fun testToFromString () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -78,13 +136,24 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testEqual () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
+	    fun t (x1, x2) = if x1 = x2 then Int.equal (x1, x2) 
+			     else Bool.not (Int.equal (x1, x2))
+	in
+	    Gen.try 10000 Gen.int 
+	     (Test.test (fn x => Int.equal(x, x) andalso t (getInt (), getInt ())))
+	end
 
     fun testRem () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testToFromInt () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t x = x = Int.toInt (Int.fromInt x)
+	in
+	    Gen.try 100000 Gen.int (Test.test t)
+	end
 
     fun testDiv () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -93,28 +162,46 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testMax () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t' (x1, x2) = if x1 = x2 then x1
+			      else if x1 > x2 then x1
+				   else x2
+	    fun t x = Int.max x = t' x
+	    fun t'' (x1, x2) = if Int.max (x1, x2) = x1
+				   then Int.min (x1, x2) = x2
+			       else Int.min (x2, x1) = x1
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
+	in
+	    Test.test t (valOf Int.maxInt, valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt, valOf Int.minInt);
+	    Test.test t (valOf Int.minInt, 0);
+	    Test.test t (0, valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt, valOf Int.maxInt);
+	    Test.test t (valOf Int.maxInt, valOf Int.minInt);
+	    Gen.try 10000 Gen.int (Test.test (fn x => t (x, getInt ())));
+	    Gen.try 10000 Gen.int (Test.test (fn x => t'' (x, getInt ())))
+	end
 
 
-    val suite = ("Integer", [("testHash", testHash),
-			     ("testMinInt", testMinInt),
-			     ("testMaxInt", testMaxInt),
-			     ("testPrecision", testPrecision),
-			     ("testAbs", testAbs),
-			     ("testArithmetic", testArithmetic),
-			     ("testCompare", testCompare),
-			     ("testMod", testMod),
-			     ("testSign", testSign),
-			     ("testToFromLarge", testToFromLarge),
-			     ("testSameSign", testSameSign),
-			     ("testMin", testMin),
-			     ("testToFromString", testToFromString),
-			     ("testQuot", testQuot),
-			     ("testScan", testScan),
-			     ("testEqual", testEqual),
-			     ("testRem", testRem),
-			     ("testToFromInt", testToFromInt),
-			     ("testDiv", testDiv),
-			     ("testFmt", testFmt),
-			     ("testMax", testMax)])
+    val suite = ("Integer", [("hash", testHash),
+			     ("minInt", testMinInt),
+			     ("maxInt", testMaxInt),
+			     ("precision", testPrecision),
+			     ("abs", testAbs),
+			     ("arithmetic", testArithmetic),
+			     ("compare", testCompare),
+			     ("mod", testMod),
+			     ("sign", testSign),
+			     ("toFromLarge", testToFromLarge),
+			     ("sameSign", testSameSign),
+			     ("min", testMin),
+			     ("toFromString", testToFromString),
+			     ("quot", testQuot),
+			     ("scan", testScan),
+			     ("equal", testEqual),
+			     ("rem", testRem),
+			     ("toFromInt", testToFromInt),
+			     ("div", testDiv),
+			     ("fmt", testFmt),
+			     ("max", testMax)])
 end

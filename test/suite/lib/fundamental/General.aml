@@ -77,14 +77,14 @@ struct
 	(Test.test (fn x => (!(ref x) = !(ref x))) ();
 	 Test.test (fn x => not (ref x = ref x)) ())
 
-    val suite = ("General", [("testInverse", testInverse),
-			     ("testIgnore", testIgnore),
-			     ("testBefore", testBefore),
-			     ("testConst", testConst),
-			     ("testId", testId),
-			     ("testUnref", testUnref),
-			     ("testFlip", testFlip),
-			     ("testO", testO),
-			     ("testRef", testRef),
-			     ("testSwap", testSwap)])
+    val suite = ("General", [("inverse", testInverse),
+			     ("ignore", testIgnore),
+			     ("before", testBefore),
+			     ("const", testConst),
+			     ("id", testId),
+			     ("unref", testUnref),
+			     ("flip", testFlip),
+			     ("o", testO),
+			     ("ref", testRef),
+			     ("swap", testSwap)])
 end

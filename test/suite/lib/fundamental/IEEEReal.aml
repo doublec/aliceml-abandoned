@@ -18,19 +18,19 @@ structure TestIEEEReal :> TESTSUITE = (* the IEEEReal test suite *)
 struct
 
     fun testGetRoundingMode () = 
-	Test.test (fn _ => raise Test.MissingFunction) ()
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testSetRoundingMode () =
-        Test.test (fn _ => raise Test.MissingFunction) ()
+        Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testToString () =
-        Test.test (fn _ => raise Test.MissingFunction) ()
+        Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFromString () = 
-	Test.test (fn _ => raise Test.MissingFunction) ()
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    val suite = ("IEEEReal", [("testGetRoundingMode", testGetRoundingMode), 
-                          ("testSetRoundingMode", testSetRoundingMode),
-                          ("testToString", testToString),
- 			  ("testFromString", testFromString)])
+    val suite = ("IEEEReal", [("getRoundingMode", testGetRoundingMode), 
+                          ("setRoundingMode", testSetRoundingMode),
+                          ("toString", testToString),
+ 			  ("fromString", testFromString)])
 end

@@ -18,6 +18,49 @@ import structure Test      from "../../src/Test"
 structure TestIntInf :> TESTSUITE = (* the intInf test suite *)
 struct
 
+    fun testMinInt () =
+	Test.test (fn _ => LargeInt.minInt = NONE) ()
+
+    fun testMaxInt () =
+	Test.test (fn _ => LargeInt.maxInt = NONE) ()
+
+    fun testPrecision () =
+	Test.test (fn _ => LargeInt.precision = NONE) ()
+
+    fun testToFromInt () = 
+	(Test.test (fn x => LargeInt.toInt (LargeInt.fromInt x) = x) 
+	                                                    (valOf Int.maxInt);
+	 Test.test (fn x => LargeInt.toInt (LargeInt.fromInt x) = x) 
+	                                                    (valOf Int.minInt);
+	 Gen.try 1000 Gen.int 
+	    (Test.test (fn x => LargeInt.toInt (LargeInt.fromInt x) = x)))
+
+    fun testToInt () = 
+	let
+	    val x1 = LargeInt.fromInt (valOf Int.maxInt)
+	    val x2 = LargeInt.* (x1, x1)
+	    val x1 = LargeInt.- (x1, x2)
+	in
+	    Test.test (fn s => (LargeInt.toInt s; false) handle _ => true) x1;
+	    Test.test (fn s => (LargeInt.toInt s; false) handle _ => true) x2
+	end
+
+    fun testToFromString () =
+	let
+	    val x1 = LargeInt.fromInt (valOf Int.maxInt)
+	    val x2 = LargeInt.fromInt (valOf Int.minInt)
+	    fun toFrom x = valOf (LargeInt.fromString (LargeInt.toString x))
+	in
+            (Test.test (fn x => toFrom x = x handle _ => false) x1;
+	     Test.test (fn x => toFrom x = x handle _ => false) x2;
+	     Gen.try 1000 Gen.int 
+		     (Test.test (fn x => let
+					   val t = LargeInt.fromInt x
+				         in
+					   toFrom t = t handle _ => false
+				         end)))
+	end
+
     fun testArithmetic () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFmt () = Test.test (fn _ => raise Test.NotYetImplemented) ()    
