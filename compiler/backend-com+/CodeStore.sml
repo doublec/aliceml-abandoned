@@ -179,14 +179,12 @@ structure CodeStore :> CODE_STORE =
 	    (emit (Comment ("load " ^ Stamp.toString stamp));
 	     emitStamp stamp)
 
-	fun emitBox (ty, dottedname) =
-	    (*--** store local type *)
+	fun allocateLocal ty =
 	    let
 		val (_, _, _, (_, _, ri, tysRef, _), _) = List.hd (!env)
 		val index = !ri
 	    in
-		tysRef := ty::(!tysRef); ri := index + 1;
-		emit (Stloc index); emit (Ldloca index); emit (Box dottedname)
+		tysRef := ty::(!tysRef); ri := index + 1; index
 	    end
 
 	fun declareLocal (Id (_, stamp, _)) =

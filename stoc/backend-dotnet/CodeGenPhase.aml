@@ -135,15 +135,18 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 
 	fun genTest (LitTest (WordLit w), elseLabel) =
 	    (emit (Castclass System.Int32Ty); emit Dup;
-	     emit (Unbox System.Int32); emit (LdcI4 (LargeWord.toInt w));
+	     emit (Unbox System.Int32); emit LdindI4;
+	     emit (LdcI4 (LargeWord.toInt w));
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (IntLit i), elseLabel) =
 	    (emit (Castclass System.Int32Ty); emit Dup;
-	     emit (Unbox System.Int32); emit (LdcI4 (LargeInt.toInt i));
+	     emit (Unbox System.Int32); emit LdindI4;
+	     emit (LdcI4 (LargeInt.toInt i));
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (CharLit c), elseLabel) =
 	    (emit (Castclass System.CharTy); emit Dup;
-	     emit (Unbox System.Char); emit (LdcI4 (WideChar.ord c));
+	     emit (Unbox System.Char); emit LdindU2;
+	     emit (LdcI4 (WideChar.ord c));
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (StringLit s), elseLabel) =
 	    (emit (Castclass System.StringTy); emit Dup;
@@ -153,12 +156,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (B (FALSE, elseLabel)); emit Pop)
 	  | genTest (LitTest (RealLit s), elseLabel) =
 	    (emit (Castclass System.DoubleTy); emit Dup;
-	     emit (Unbox System.Double); emit (LdcR8 s);
+	     emit (Unbox System.Double); emit LdindR8; emit (LdcR8 s);
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (TagTest (_, n), elseLabel) =
 	    (emit Dup; emit (Isinst System.Int32Ty);
 	     emit (B (FALSE, elseLabel)); emit (Castclass System.Int32Ty);
-	     emit Dup; emit (Unbox System.Int32); emit (LdcI4 n);
+	     emit Dup; emit (Unbox System.Int32); emit LdindI4; emit (LdcI4 n);
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (TagAppTest (_, n, args), elseLabel) =
 	    (emit Dup; emit (Isinst Alice.TagValTy);
@@ -200,6 +203,13 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
 	     emit (B (NE_UN, elseLabel));
 	     declareArgs (TupArgs ids, false))
+
+	fun emitBox (ty, dottedname) =
+	    let
+		val index = allocateLocal ty
+	    in
+		emit (Stloc index); emit (Ldloca index); emit (Box dottedname)
+	    end
 
 	fun genLit (WordLit w) =
 	    (emit (LdcI4 (LargeWord.toInt w)); emitBox (Int32Ty, System.Int32))
@@ -270,7 +280,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		fun toInt (LitTest (WordLit w)) = LargeWord.toInt w
 		  | toInt _ = raise Crash.Crash "CodeGenTest.genTestStm' 1"
 		fun getInt () = (emit (Castclass System.Int32Ty);
-				 emit (Unbox System.Int32))
+				 emit (Unbox System.Int32); emit LdindI4)
 		fun gen (_, body) = genBody body
 	    in
 		genSwitchTestStm (toInt, getInt, gen,
@@ -282,7 +292,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		fun toInt (LitTest (IntLit i)) = LargeInt.toInt i
 		  | toInt _ = raise Crash.Crash "CodeGenTest.genTestStm' 2"
 		fun getInt () = (emit (Castclass System.Int32Ty);
-				 emit (Unbox System.Int32))
+				 emit (Unbox System.Int32); emit LdindI4)
 		fun gen (_, body) = genBody body
 	    in
 		genSwitchTestStm (toInt, getInt, gen,
@@ -294,7 +304,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		fun toInt (LitTest (CharLit c)) = WideChar.ord c
 		  | toInt _ = raise Crash.Crash "CodeGenTest.genTestStm' 3"
 		fun getInt () = (emit (Castclass System.CharTy);
-				 emit (Unbox System.Char))
+				 emit (Unbox System.Char); emit LdindU2)
 		fun gen (_, body) = genBody body
 	    in
 		genSwitchTestStm (toInt, getInt, gen,
@@ -321,8 +331,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			emit Dup; emit Dup; emit (Isinst Alice.TagValTy);
 			emit (B (TRUE, thenLabel));
 			emit (Castclass System.Int32Ty);
-			emit (Unbox System.Int32); emit (Br contLabel);
-			emit (Label thenLabel);
+			emit (Unbox System.Int32); emit LdindI4;
+			emit (Br contLabel); emit (Label thenLabel);
 			emit (Castclass Alice.TagValTy);
 			emit (Call (true, Alice.TagVal, "GetTag", nil,
 				    Int32Ty));
@@ -389,7 +399,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Ldsfld (dottedname, id, System.ObjectTy))
 	    end
 	  | genExp (NewExp (_, _), PREPARE) =
-	    emit (Newobj (System.Guid, nil))
+	    let
+		val index = allocateLocal System.GuidTy
+	    in
+		emit (Call (false, System.Guid, "NewGuid",
+			    nil, System.GuidTy));
+		emit (Stloc index); emit (Ldloca index);
+		emit (Box System.Guid)
+	    end
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (TagExp (_, _, n, NONE), PREPARE) =
 	    (emit (LdcI4 n); emitBox (Int32Ty, System.Int32))

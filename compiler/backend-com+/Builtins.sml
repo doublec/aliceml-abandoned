@@ -24,6 +24,7 @@ structure Builtins :> BUILTINS =
 		Map.insert (map, "Char.>", "Char_opgreater");
 		Map.insert (map, "Char.<=", "Char_oplessEq");
 		Map.insert (map, "Char.>=", "Char_opgreaterEq");
+		Map.insert (map, "Future.alarm'", "Future_alarmQuote");
 		Map.insert (map, "General.:=", "General_assign");
 		Map.insert (map, "Int.~", "Int_opnegate");
 		Map.insert (map, "Int.+", "Int_opadd");

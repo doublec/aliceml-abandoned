@@ -114,6 +114,9 @@ structure IL :> IL =
 	  | LdcR8 of string
 	  | LdelemRef
 	  | Ldfld of dottedname * id * ty
+	  | LdindI4
+	  | LdindU2
+	  | LdindR8
 	  | Ldlen
 	  | Ldloc of int
 	  | Ldloca of int
@@ -265,6 +268,9 @@ structure IL :> IL =
 	  | eval (LdcR8 _) = push 1
 	  | eval LdelemRef = (pop 2; push 1)
 	  | eval (Ldfld (_, _, _)) = (pop 1; push 1)
+	  | eval LdindI4 = (pop 1; push 1)
+	  | eval LdindU2 = (pop 1; push 1)
+	  | eval LdindR8 = (pop 1; push 1)
 	  | eval Ldlen = (pop 1; push 1)
 	  | eval (Ldloc _) = push 1
 	  | eval (Ldloca _) = push 1
@@ -487,6 +493,9 @@ structure IL :> IL =
 	    (output (q, "ldfld "); outputTy (q, ty); output1 (q, #" ");
 	     outputDottedname (q, dottedname); output (q, "::");
 	     outputId (q, id))
+	  | outputInstr (q, LdindI4) = output (q, "ldind.i4")
+	  | outputInstr (q, LdindU2) = output (q, "ldind.u2")
+	  | outputInstr (q, LdindR8) = output (q, "ldind.r8")
 	  | outputInstr (q, Ldlen) = output (q, "ldlen")
 	  | outputInstr (q, Ldloc i) =
 	    (output (q, "ldloc");

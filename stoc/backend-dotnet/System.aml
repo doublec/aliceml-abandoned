@@ -23,7 +23,7 @@ structure System =
 	val Double = ["System", "Double"]
 	val DoubleTy = IL.ClassTy Double
 	val Guid = ["System", "Guid"]
-	val GuidTy = IL.ClassTy Guid
+	val GuidTy = IL.ValueClassTy Guid
 	val Array = ["System", "Array"]
 	val ArrayTy = IL.ClassTy Array
     end

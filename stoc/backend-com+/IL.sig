@@ -114,6 +114,9 @@ signature IL =
 	  | LdcR8 of string
 	  | LdelemRef
 	  | Ldfld of dottedname * id * ty
+	  | LdindI4
+	  | LdindU2
+	  | LdindR8
 	  | Ldlen
 	  | Ldloc of int
 	  | Ldloca of int
