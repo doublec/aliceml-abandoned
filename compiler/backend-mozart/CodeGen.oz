@@ -18,6 +18,7 @@ import
    ErrorListener('class')
    CodeStore('class')
    Prebound(builtinTable env)
+   Word at '../../vm-mozart/Word.so{native}'
 export
    Translate
 define
@@ -68,11 +69,11 @@ define
    end
 
    fun {TranslateLit Lit}
-      case Lit of wordLit(W) then W   %--** {Word.make ...}
+      case Lit of wordLit(W) then {Word.make 31 W}
       [] intLit(I) then I
-      [] charLit([C]) then C
+      [] charLit(C) then C
       [] stringLit(S) then {ByteString.make S}
-      [] realLit(S) then {String.toFloat S}
+      [] realLit(F) then F
       end
    end
 
