@@ -55,7 +55,7 @@ $(PREFIX)/bg.gif: ../manual/bg.gif
 $(PREFIX)/download/COPYING: ../../COPYING
 	install -c -m 444 $< $@
 
-$(PREFIX)/download/CHANGES: ../versions/changes-devel-mozart.txt
+$(PREFIX)/download/CHANGES: ../versions/changes-release-mozart.txt
 	install -c -m 444 $< $@
 
 $(PREFIX)/download/%-devel.tgz:
