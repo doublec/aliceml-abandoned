@@ -13,6 +13,7 @@
 functor
 import
    Property(put)
+   Open
    OS(srand rand)
    System(show)
    Signal at 'GtkSignal.so{native}'
@@ -224,6 +225,36 @@ define
 	 {Dispatcher exit}
 	 unit
       end
+
+      %% This is a temorary shell hack
+      local
+	 class Shell from Open.pipe Open.text
+	    meth init(P A)
+	       Open.pipe, init(cmd:  {ByteString.toString P}
+			       args: {ByteString.toString A})
+	    end
+	    meth cmd(Cmd)
+	       Open.text, putS({ByteString.toString Cmd})
+	    end
+	    meth show($)
+	       case Open.text, getS($)
+	       of false      then {self close} 'NONE'
+	       elseof Result then 'SOME'({ByteString.make Result})
+	       end
+	    end
+	 end
+      in
+	 fun {OpenShellFun P A}
+	    {New Shell init(P A)}
+	 end
+	 fun {PutShellFun S C}
+	    {S cmd(C)}
+	    unit
+	 end
+	 fun {GetShellFun S}
+	    {S show($)}
+	 end
+      end
       
       %% Create Interface
       GtkCoreOz = 'GtkCoreOz'(pointerToObject      : PointerToObject
@@ -263,11 +294,17 @@ define
 			      ctreeNodeGetPixtext : Signal.ctreeNodeGetPixtext
 			      ctreeGetNodeInfo : Signal.ctreeGetNodeInfo
 			      gtkImageGet : Signal.gtkImageGet
+			      editableGetChars : Signal.editableGetChars
+			      textBackwardDelete : Signal.textBackwardDelete
+			      textForwardDelete : Signal.textForwardDelete
 			      realToString : fun {$ R}
 					    {ByteString.make {Float.toString R}}
 					     end
 			      srand                : fun {$ I} {OS.srand I} unit end
 			      rand                 : fun {$ _} {OS.rand} end
+			      openShell : OpenShellFun
+			      putShell : PutShellFun
+			      getShell : GetShellFun
 			      exit                 : Exit)
       
       %% Start dispatcher

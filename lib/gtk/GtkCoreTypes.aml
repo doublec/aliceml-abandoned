@@ -93,4 +93,7 @@ structure GtkCoreTypes =
 	  | GDK_DRAG_ENTER | GDK_DRAG_LEAVE | GDK_DRAG_MOTION | GDK_DRAG_STATUS
 	  | GDK_DROP_START | GDK_DROP_FINISHED
 	  | GDK_CLIENT_EVENT | UNSUPPORTED
+
+	(* Ugly Hack *)
+	type shell
     end

@@ -36,6 +36,9 @@ in
 		    val realToString : real -> string
 		    val srand : int -> unit
 		    val rand : unit -> int
+		    val openShell : string * string -> T.shell
+		    val putShell : T.shell * string -> unit
+		    val getShell : T.shell -> string option
 		    val exit : unit -> unit
 		end
 	end

@@ -732,6 +732,30 @@ OZ_BI_define (alice_gtk_image_get, 1, 1) {
   return OZ_ENTAILED;
 } OZ_BI_end
 
+OZ_BI_define (alice_editable_get_chars, 3, 1) {
+  OZ_declareForeignType(0, editable, GtkEditable*);
+  OZ_declareInt(1, start_pos);
+  OZ_declareInt(2, end_pos);
+  gchar *text;
+  text = gtk_editable_get_chars(editable, start_pos, end_pos);
+  OZ_out(0) = OZ_mkByteString(text, strlen(text));
+  return OZ_ENTAILED;
+} OZ_BI_end
+
+OZ_BI_define (alice_text_backward_delete, 2, 1) {
+  OZ_declareForeignType(0, text, GtkText*);
+  OZ_declareInt(1, nchars);
+  OZ_out(0) = OZ_int(gtk_text_backward_delete(text, nchars));
+  return OZ_ENTAILED;
+} OZ_BI_end
+
+OZ_BI_define (alice_text_forward_delete, 2, 1) {
+  OZ_declareForeignType(0, text, GtkText*);
+  OZ_declareInt(1, nchars);
+  OZ_out(0) = OZ_int(gtk_text_forward_delete(text, nchars));
+  return OZ_ENTAILED;
+} OZ_BI_end
+
 OZ_BI_define (alice_alloc_args, 1, 1) {
   OZ_declareInt(0, size);
   OZ_out(0) = OZ_makeForeignPointer(malloc(sizeof(GtkArg) * size));
@@ -779,6 +803,9 @@ static OZ_C_proc_interface oz_interface[] = {
   {"ctreeNodeGetPixtext", 3, 1, alice_ctree_node_get_pixtext},
   {"ctreeGetNodeInfo", 2, 1, alice_ctree_get_node_info},
   {"gtkImageGet", 1, 1, alice_gtk_image_get},
+  {"editableGetChars", 3, 1, alice_editable_get_chars},
+  {"textBackwardDelete", 2, 1, alice_text_backward_delete},
+  {"textForwardDelete", 2, 1, alice_text_forward_delete},
   {"allocArgs", 1, 1, alice_alloc_args},
   {"freeArgs", 1, 0, alice_free_args},
   {0, 0, 0, 0}
