@@ -39,7 +39,6 @@ struct
 	val silentFailExp			= ref true
 	val reexportImport			= ref false
 	val retainFullImport			= ref false
-	val implicitImport			= ref true
 	val implicitImportFile			= ref(NONE : string option)
 	val dependencyFiles			= ref(nil : string list)
     end

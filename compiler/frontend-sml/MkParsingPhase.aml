@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -57,9 +57,7 @@ struct
     structure Lexer' = MkCountPosLexer(structure Lexer      = Lexer
 				       structure LexerError = LexerError
 				       val error            = ParsingError.error
-				       val startLine =
-					    if !Switches.Language.implicitImport
-					    then 0 else 1)
+				       val startLine        = 0)
 
     structure Parser = Join(structure LrParser   = LrParser
 		    structure ParserData = LrVals.ParserData

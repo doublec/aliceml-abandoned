@@ -136,10 +136,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	fun processBasic process (desc, s) =
 	    let
-		val prefix = if not(!Switches.Language.implicitImport)
-			     orelse isBaseSig desc
-			     then ""
-			     else implicitImport()
+		val prefix = if isBaseSig desc then "" else implicitImport()
 	    in
 		process(desc, prefix ^ "\n" ^ s)
 	    end

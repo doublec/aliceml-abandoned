@@ -144,7 +144,7 @@ struct
 	    val context = evalString (false, "",
 				      RecursiveCompiler.Context.empty)
 	in
-	    Language.implicitImport  := false;
+	    Language.implicitImportFile := NONE;
 	    loop context;
 	    OS.Process.success
 	end
