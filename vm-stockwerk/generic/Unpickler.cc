@@ -116,7 +116,7 @@ public:
     // This has to be revisited: TOO NAIVE
     // Fresh Buffer
     if (tl == 0) {
-      buffer = (u_char *) malloc(sizeof(u_char) * size);
+      buffer = reinterpret_cast<u_char *>(malloc(sizeof(u_char) * size));
       Assert(buffer != INVALID_POINTER);
       memcpy(buffer, src, size);
       tl = size;
@@ -125,7 +125,7 @@ public:
     else {
       int newTl   = size + tl;
       u_char *old = buffer;
-      buffer = (u_char *) malloc(sizeof(u_char) * newTl);
+      buffer = reinterpret_cast<u_char *>(malloc(sizeof(u_char) * newTl));
       Assert(buffer != INVALID_POINTER);
       memcpy(buffer, old, tl);
       memcpy(buffer + tl, src, size);
@@ -140,12 +140,12 @@ public:
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) = 0;
   // Store Interface
   word ToWord() {
-    return Store::UnmanagedPointerToWord((void *) this);
+    return Store::UnmanagedPointerToWord(this);
   }
   static InputStreamBase *FromWord(word x) {
     void *p = Store::WordToUnmanagedPointer(x);
     Assert(p != INVALID_POINTER);
-    return (InputStreamBase *) p;
+    return static_cast<InputStreamBase *>(p);
   }
 };
 
@@ -159,7 +159,7 @@ private:
 public:
   // FileInputStream Constructor
   FileInputStream(char *filename) : InputStreamBase() {
-    rdBuf     = (u_char *) malloc(sizeof(u_char) * rdSize);
+    rdBuf     = reinterpret_cast<u_char *>(malloc(sizeof(u_char) * rdSize));
     file      = fopen(filename, "r");
     exception = (file == NULL);
   }
@@ -210,7 +210,8 @@ public:
       return Interpreter::RAISE;
     }
     else {
-      AppendToBuffer((u_char *) string->GetBase(), string->GetSize());
+      AppendToBuffer(reinterpret_cast<u_char *>(string->GetBase()),
+		     string->GetSize());
       string = INVALID_POINTER;
       CONTINUE(args);
     }
@@ -242,13 +243,13 @@ public:
     p->InitArg(STREAM_POS, is->ToWord());
     p->InitArg(ENV_POS, env);
     p->InitArg(COUNT_POS, count);
-    return (PickleArgs *) p;
+    return static_cast<PickleArgs *>(p);
   }
   // PickleArgs Untagging
   static PickleArgs *FromWord(word args) {
     Block *p = Store::DirectWordToBlock(args);
     Assert(p != INVALID_POINTER && p->GetLabel() == TUPARGS_LABEL);
-    return (PickleArgs *) p;
+    return static_cast<PickleArgs *>(p);
   }
 };
 
@@ -314,16 +315,15 @@ public:
   static TransformFrame *New(Interpreter *interpreter,
 			     Transient *transient, Tuple *tuple) {
     StackFrame *frame = StackFrame::New(TRANSFORM_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(TRANSIENT_POS, transient->ToWord());
-    frame->ReplaceArg(TUPLE_POS, tuple->ToWord());
-    return (TransformFrame *) frame;
+    frame->InitArg(TRANSIENT_POS, transient->ToWord());
+    frame->InitArg(TUPLE_POS, tuple->ToWord());
+    return static_cast<TransformFrame *>(frame);
   }
   // TransformFrame Untagging
-  static TransformFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p != INVALID_POINTER &&
-	   p->GetLabel() == (BlockLabel) TRANSFORM_FRAME);
-    return (TransformFrame *) frame;
+  static TransformFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == TRANSFORM_FRAME);
+    return static_cast<TransformFrame *>(p);
   }
 };
 
@@ -394,11 +394,12 @@ const char *TransformInterpreter::Identify() {
 }
 
 Interpreter::Result TransformInterpreter::Run(word args, TaskStack *taskStack) {
-  TransformFrame *frame = TransformFrame::FromWord(taskStack->GetFrame());
-  Transient *transient  = frame->GetTransient();
-  Tuple *tuple          = frame->GetTuple();
-  Chunk *f              = Chunk::FromWord(tuple->Sel(0));
-  word x                = tuple->Sel(1);
+  TransformFrame *frame =
+    TransformFrame::FromWordDirect(taskStack->GetFrame());
+  Transient *transient = frame->GetTransient();
+  Tuple *tuple         = frame->GetTuple();
+  Chunk *f             = Chunk::FromWord(tuple->Sel(0));
+  word x               = tuple->Sel(1);
   transient->Become(REF_LABEL, ApplyTransform(f, x));
   taskStack->PopFrame(); // Discard Frame
   CONTINUE(args);
@@ -431,17 +432,16 @@ public:
   static UnpickleFrame *New(Interpreter *interpreter,
 			    word x, int i, int n) {
     StackFrame *frame = StackFrame::New(UNPICKLE_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(BLOCK_POS, x);
-    frame->ReplaceArg(INDEX_POS, Store::IntToWord(i));
-    frame->ReplaceArg(NUMELEM_POS, Store::IntToWord(n));
-    return (UnpickleFrame *) frame;
+    frame->InitArg(BLOCK_POS, x);
+    frame->InitArg(INDEX_POS, Store::IntToWord(i));
+    frame->InitArg(NUMELEM_POS, Store::IntToWord(n));
+    return static_cast<UnpickleFrame *>(frame);
   }
   // UnpickleFrame Untagging
-  static UnpickleFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p != INVALID_POINTER &&
-	   p->GetLabel() == (BlockLabel) UNPICKLE_FRAME);
-    return (UnpickleFrame *) p;
+  static UnpickleFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == UNPICKLE_FRAME);
+    return static_cast<UnpickleFrame *>(p);
   }
 };
 
@@ -527,7 +527,7 @@ word SelFromEnv(word env, int count) {
 
 // Core Unpickle Function
 Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
-  UnpickleFrame *frame = UnpickleFrame::FromWord(taskStack->GetFrame());
+  UnpickleFrame *frame = UnpickleFrame::FromWordDirect(taskStack->GetFrame());
   word x = frame->GetBlock();
   int i  = frame->GetIndex();
   int n  = frame->GetNumElems();
@@ -578,9 +578,10 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::BLOCK:
       {
-	u_int label = is->GetUInt(); CHECK_EOB();
-	u_int size  = is->GetUInt(); CHECK_EOB();
-	word   y    = Store::AllocBlock((BlockLabel) label, size)->ToWord();
+	u_int label  = is->GetUInt(); CHECK_EOB();
+	u_int size   = is->GetUInt(); CHECK_EOB();
+	Block *block = Store::AllocBlock(static_cast<BlockLabel>(label), size);
+	word   y     = block->ToWord();
 	Set(x, i, y);
 	AddToEnv(env, count, y);
 	is->Commit();
@@ -616,7 +617,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::TRANSFORM:
       {
-	Transient *y = (Transient *) Future::New();
+	Transient *y = static_cast<Transient *>(Future::New());
 	word yw = y->ToWord();
 	Set(x, i, yw);
 	AddToEnv(env, count, yw);
@@ -648,8 +649,7 @@ const char *UnpickleInterpreter::Identify() {
 }
 
 void UnpickleInterpreter::DumpFrame(word frameWord) {
-  UnpickleFrame *frame = UnpickleFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  UnpickleFrame *frame = UnpickleFrame::FromWordDirect(frameWord);
   fprintf(stderr, "Unpickling Task %d of %d\n",
 	  frame->GetIndex(), frame->GetNumElems());
 }
@@ -667,16 +667,16 @@ public:
   }
   // PickleUnpackFrame Constructor
   static PickleUnpackFrame *New(Interpreter *interpreter, Tuple *x) {
-    StackFrame *frame = StackFrame::New(PICKLE_UNPACK_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(TUPLE_POS, x->ToWord());
-    return (PickleUnpackFrame *) frame;
+    StackFrame *frame =
+      StackFrame::New(PICKLE_UNPACK_FRAME, interpreter, SIZE);
+    frame->InitArg(TUPLE_POS, x->ToWord());
+    return static_cast<PickleUnpackFrame *>(frame);
   }
   // PickleUnpackFrame Untagging
-  static PickleUnpackFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p != INVALID_POINTER &&
-	   p->GetLabel() == (BlockLabel) PICKLE_UNPACK_FRAME);
-    return (PickleUnpackFrame *) p;
+  static PickleUnpackFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == PICKLE_UNPACK_FRAME);
+    return static_cast<PickleUnpackFrame *>(p);
   }
 };
 
@@ -710,9 +710,10 @@ void PickleUnpackInterpeter::PushFrame(TaskStack *taskStack, Tuple *x) {
 }
 
 Interpreter::Result
-PickleUnpackInterpeter::Run(word args, TaskStack *taskStack) {
-  PickleUnpackFrame *frame = PickleUnpackFrame::FromWord(taskStack->GetFrame());
-  Tuple *x                 = frame->GetTuple();
+PickleUnpackInterpeter::Run(word, TaskStack *taskStack) {
+  PickleUnpackFrame *frame =
+    PickleUnpackFrame::FromWordDirect(taskStack->GetFrame());
+  Tuple *x = frame->GetTuple();
   taskStack->PopFrame();
   CONTINUE(Interpreter::OneArg(x->Sel(0)));
 }
@@ -739,15 +740,14 @@ public:
   // PickleLoadFrame Constructor
   static PickleLoadFrame *New(Interpreter *interpreter, Tuple *x) {
     StackFrame *frame = StackFrame::New(PICKLE_LOAD_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(TUPLE_POS, x->ToWord());
-    return (PickleLoadFrame *) frame;
+    frame->InitArg(TUPLE_POS, x->ToWord());
+    return static_cast<PickleLoadFrame *>(frame);
   }
   // PickleLoadFrame Untagging
-  static PickleLoadFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p != INVALID_POINTER &&
-	   p->GetLabel() == (BlockLabel) PICKLE_LOAD_FRAME);
-    return (PickleLoadFrame *) p;
+  static PickleLoadFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == PICKLE_LOAD_FRAME);
+    return static_cast<PickleLoadFrame *>(p);
   }
 };
 
@@ -782,10 +782,11 @@ void PickleLoadInterpreter::PushFrame(TaskStack *taskStack, Tuple *x) {
 
 Interpreter::Result
 PickleLoadInterpreter::Run(word args, TaskStack *taskStack) {
-  PickleLoadFrame *frame = PickleLoadFrame::FromWord(taskStack->GetFrame());
-  PickleArgs *pargs      = PickleArgs::FromWord(args);
-  InputStreamBase *is    = pargs->GetStream();
-  Tuple *x               = frame->GetTuple();
+  PickleLoadFrame *frame =
+    PickleLoadFrame::FromWordDirect(taskStack->GetFrame());
+  PickleArgs *pargs   = PickleArgs::FromWord(args);
+  InputStreamBase *is = pargs->GetStream();
+  Tuple *x            = frame->GetTuple();
   is->Close();
   taskStack->PopFrame();
   CONTINUE(Interpreter::OneArg(x->Sel(0)));
@@ -816,7 +817,7 @@ static char *ExportString(Chunk *s) {
 
 Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
   Tuple *x = Tuple::New(1);
-  InputStreamBase *is = (InputStreamBase *) new StringInputStream(s);
+  InputStreamBase *is = new StringInputStream(s);
   HashTable *env      = HashTable::New(HashTable::INT_KEY, INITIAL_TABLE_SIZE);
   taskStack->PopFrame();
   PickleUnpackInterpeter::PushFrame(taskStack, x);
@@ -840,7 +841,7 @@ Interpreter::Result Unpickler::Load(Chunk *filename, TaskStack *taskStack) {
   HashTable *env = HashTable::New(HashTable::INT_KEY, INITIAL_TABLE_SIZE);
   PickleLoadInterpreter::PushFrame(taskStack, x);
   UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);
-  CONTINUE(PickleArgs::New((InputStreamBase *) is, env->ToWord(), 0)->ToWord());
+  CONTINUE(PickleArgs::New(is, env->ToWord(), 0)->ToWord());
 }
 
 word Unpickler::Corrupt;

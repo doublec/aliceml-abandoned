@@ -42,7 +42,7 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 DEFINE1(UnsafeComponent_load) {
   DECLARE_STRING(s, x0);
   taskStack->PushFrame(prim_self);
-  return Unpickler::Load((Chunk *) s, taskStack);
+  return Unpickler::Load(static_cast<Chunk *>(s), taskStack);
 } END
 
 DEFINE2(UnsafeComponent_save) {

@@ -4,8 +4,8 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Thorsten Brunklaus, 2000-2002
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -53,14 +53,13 @@ public:
     frame->InitArg(FUN_POS, closure);
     frame->InitArg(INDEX_POS, Store::IntToWord(index));
     frame->InitArg(NUMELEM_POS, Store::IntToWord(numelems));
-    return (VectorTabulateFrame *) frame;
+    return static_cast<VectorTabulateFrame *>(frame);
   }
   // VectorTabulateFrame Untagging
-  static VectorTabulateFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) VECTOR_TABULATE_FRAME);
-    return (VectorTabulateFrame *) p;
+  static VectorTabulateFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == VECTOR_TABULATE_FRAME);
+    return static_cast<VectorTabulateFrame *>(p);
   }
 };
 
@@ -101,7 +100,7 @@ void VectorTabulateInterpreter::PushFrame(TaskStack *taskStack,
 Interpreter::Result
 VectorTabulateInterpreter::Run(word args, TaskStack *taskStack) {
   VectorTabulateFrame *frame =
-    VectorTabulateFrame::FromWord(taskStack->GetFrame());
+    VectorTabulateFrame::FromWordDirect(taskStack->GetFrame());
   Vector *vector = frame->GetVector();
   word fun       = frame->GetClosure();
   int i          = frame->GetIndex();
@@ -126,8 +125,7 @@ const char *VectorTabulateInterpreter::Identify() {
 }
 
 void VectorTabulateInterpreter::DumpFrame(word frameWord) {
-  VectorTabulateFrame *frame = VectorTabulateFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  VectorTabulateFrame *frame = VectorTabulateFrame::FromWordDirect(frameWord);
   fprintf(stderr, "Vector Tabulate %d of %d\n",
 	  frame->GetIndex(), frame->GetNumElems());
 }

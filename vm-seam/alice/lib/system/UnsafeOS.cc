@@ -140,8 +140,9 @@ DEFINE0(FileSys_tmpName) {
   }
   RETURN(String::New(s));
 #else
-  String *s = String::New("/tmp/aliceXXXXXX");
-  mkstemp(reinterpret_cast<char *>(s->GetValue())); // to be done
+  static const char path[] = "/tmp/aliceXXXXXX";
+  String *s = String::New(path, sizeof(path));
+  mkstemp(reinterpret_cast<char *>(s->GetValue()));
   RETURN(s->ToWord());
 #endif
 } END

@@ -35,20 +35,13 @@ public:
   static PushCallFrame *New(Interpreter *interpreter, word closure) {
     StackFrame *frame = StackFrame::New(CALL_FRAME, interpreter, SIZE);
     frame->ReplaceArg(CLOSURE_POS, closure);
-    return (PushCallFrame *) frame;
+    return static_cast<PushCallFrame *>(frame);
   }
   // PushCallFrame Untagging
-  static PushCallFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) CALL_FRAME);
-    return (PushCallFrame *) p;
-  }
   static PushCallFrame *FromWordDirect(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) CALL_FRAME);
-    return (PushCallFrame *) p;
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == CALL_FRAME);
+    return static_cast<PushCallFrame *>(p);
   }
 };
 
@@ -62,9 +55,9 @@ void PushCallInterpreter::PushFrame(TaskStack *taskStack, word closure) {
   taskStack->PushFrame(PushCallFrame::New(self, closure)->ToWord());
 }
 
-Interpreter::Result
-PushCallInterpreter::Run(word args, TaskStack *taskStack) {
-  word closure = PushCallFrame::FromWord(taskStack->GetFrame())->GetClosure();
+Interpreter::Result PushCallInterpreter::Run(word args, TaskStack *taskStack) {
+  word closure =
+    PushCallFrame::FromWordDirect(taskStack->GetFrame())->GetClosure();
   taskStack->PopFrame();
   Scheduler::currentArgs = args;
   return taskStack->PushCall(closure);

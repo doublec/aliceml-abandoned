@@ -44,7 +44,7 @@ public:
     return Stack::Top();
   }
   Interpreter *GetInterpreter() {
-    return StackFrame::FromWord(GetFrame())->GetInterpreter();
+    return StackFrame::FromWordDirect(GetFrame())->GetInterpreter();
   }
   Interpreter::Result PushCall(word closure);
   void Clear() {
@@ -60,16 +60,16 @@ public:
   static void Init();
   // TaskStack Constructor
   static TaskStack *New() {
-    TaskStack *taskStack = (TaskStack *) Stack::New(INITIAL_SIZE);
+    TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(INITIAL_SIZE));
     taskStack->PushFrame(emptyTask);
     return taskStack;
   }
   // TaskStack Untagging
   static TaskStack *FromWord(word x) {
-    return (TaskStack *) Stack::FromWord(x);
+    return static_cast<TaskStack *>(Stack::FromWord(x));
   }
   static TaskStack *FromWordDirect(word x) {
-    return (TaskStack *) Stack::FromWordDirect(x);
+    return static_cast<TaskStack *>(Stack::FromWordDirect(x));
   }
 };
 

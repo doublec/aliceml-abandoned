@@ -58,8 +58,7 @@ word Interpreter::Deconstruct(word args) {
       if (t == INVALID_POINTER) {
 	Tuple *tuple = Tuple::FromWord(arg);
 	Assert(tuple != INVALID_POINTER);
-	u_int nargs  = ((Block *) tuple)->GetSize();
-	// Hack Alert: to be done
+	u_int nargs = static_cast<Block *>(tuple)->GetSize(); // to be done
 	Block *args_outp = Interpreter::TupArgs(nargs); 
 	for (u_int i = nargs; i--;) {
 	  args_outp->InitArg(i, tuple->Sel(i));

@@ -50,13 +50,13 @@ public:
     Block *p = Store::AllocBlock((BlockLabel) ENTRY_LABEL, SIZE);
     p->InitArg(SIGN_POS, sign);
     p->InitArg(STR_POS, str);
-    return (Component *) p;
+    return static_cast<Component *>(p);
   }
   // Component Untagging
   static Component *FromWord(word entry) {
     Block *p = Store::DirectWordToBlock(entry);
     Assert(p != INVALID_POINTER && p->GetLabel() == (BlockLabel) ENTRY_LABEL);
-    return (Component *) p;
+    return static_cast<Component *>(p);
   }
 };
 

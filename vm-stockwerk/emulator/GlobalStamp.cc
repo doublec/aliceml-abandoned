@@ -27,10 +27,10 @@ DEFINE2(GlobalStamp_compare) {
   // Both are Blocks
   if (p->GetLabel() == CHUNK_LABEL) {
     if (q->GetLabel() == CHUNK_LABEL) {
-      Chunk *pc = (Chunk *) p;
-      Chunk *qc = (Chunk *) q;
-      u_int pl  = pc->GetSize();
-      u_int ql  = qc->GetSize();
+      String *pc = static_cast<String *>(p);
+      String *qc = static_cast<String *>(q);
+      u_int pl = pc->GetSize();
+      u_int ql = qc->GetSize();
       if (pl < ql) {
 	RETURN_INT(2); // LESS
       }
@@ -38,7 +38,7 @@ DEFINE2(GlobalStamp_compare) {
 	RETURN_INT(1); // GREATER
       }
       else {
-	switch (memcmp(pc->GetBase(), qc->GetBase(), ql)) {
+	switch (memcmp(pc->GetValue(), qc->GetValue(), ql)) {
 	case -1:
 	  RETURN_INT(2); // LESS
 	case 0:
@@ -61,8 +61,8 @@ DEFINE2(GlobalStamp_compare) {
     }
     else {
       // GUID comparision: to be done
-      Tuple *pt = (Tuple *) p;
-      Tuple *qt = (Tuple *) q;
+      Tuple *pt = static_cast<Tuple *>(p);
+      Tuple *qt = static_cast<Tuple *>(q);
       u_int pl = Store::WordToInt(pt->Sel(1));
       u_int ql = Store::WordToInt(qt->Sel(1));
       if (pl < ql) {
@@ -89,16 +89,16 @@ DEFINE1(GlobalStamp_hash) {
     REQUEST(x0);
   }
   if (p->GetLabel() == CHUNK_LABEL) {
-    Chunk *pc  = (Chunk *) p;
+    String *pc = static_cast<String *>(p);
     u_int size = p->GetSize();
     if (size == 0) {
       RETURN_INT(0);
     }
-    u_char *pb = (u_char *) pc->GetBase();
+    u_char *pb = pc->GetValue();
     RETURN_INT(pb[0] * pb[size - 1]); 
   }
   // GUID Hashing to be done
-  Tuple *pt = (Tuple *) p;
+  Tuple *pt = static_cast<Tuple *>(p);
   RETURN_INT(Store::WordToInt(pt->Sel(1)));
 } END
 
@@ -117,7 +117,7 @@ DEFINE1(GlobalStamp_toString) {
   if (p->GetLabel() == CHUNK_LABEL) {
     RETURN(x0);
   }
-  Tuple *pt = (Tuple *) p;
+  Tuple *pt = static_cast<Tuple *>(p);
   //--** not elegant: string is traversed twice
   static char buf[20];
   std::sprintf(buf, "%u", Store::WordToInt(pt->Sel(1)));

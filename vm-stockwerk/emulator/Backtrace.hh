@@ -33,7 +33,8 @@ public:
   void Dump() {
     while (!IsEmpty()) {
       word frame = Dequeue();
-      Interpreter *interpreter = StackFrame::FromWord(frame)->GetInterpreter();
+      Interpreter *interpreter =
+	StackFrame::FromWordDirect(frame)->GetInterpreter();
       interpreter->DumpFrame(frame);
     }
   }

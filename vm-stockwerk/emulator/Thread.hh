@@ -79,7 +79,7 @@ public:
   void SetTerminated() {
     SetState(TERMINATED);
   }
-  void Block(word future) {
+  void BlockOn(word future) {
     SetState(BLOCKED);
     ReplaceArg(FUTURE_POS, future);
   }
@@ -89,24 +89,25 @@ public:
   }
   // Thread Constructor
   static Thread *New(word args, TaskStack *taskstack) {
-    Thread *b = (Thread *) Store::AllocBlock(THREAD_LABEL, SIZE);
+    Block *b = Store::AllocBlock(THREAD_LABEL, SIZE);
     b->InitArg(PRIORITY_POS, NORMAL);
-    b->ReplaceArg(TASK_STACK_POS, taskstack->ToWord());
+    b->InitArg(TASK_STACK_POS, taskstack->ToWord());
     b->InitArg(STATE_POS, RUNNABLE);
     b->InitArg(IS_SUSPENDED_POS, false);
-    b->ReplaceArg(ARGS_POS, args);
-    return b;
+    b->InitArg(ARGS_POS, args);
+    b->InitArg(FUTURE_POS, 0);
+    return static_cast<Thread *>(b);
   }
   // Thread Untagging
   static Thread *FromWord(word x) {
-    Thread *b = (Thread *) Store::WordToBlock(x);
+    Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == THREAD_LABEL);
-    return b;
+    return static_cast<Thread *>(b);
   }
   static Thread *FromWordDirect(word x) {
-    Thread *b = (Thread *) Store::DirectWordToBlock(x);
+    Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == THREAD_LABEL);
-    return b;
+    return static_cast<Thread *>(b);
   }
 };
 

@@ -44,14 +44,14 @@ public:
   }
   // Environment Constructor
   static Environment *New(u_int size) {
-    return (Environment *) Array::New(size);
+    return static_cast<Environment *>(Array::New(size));
   }
   // Environment Untagging
   static Environment *FromWord(word x) {
-    return (Environment *) Array::FromWord(x);
+    return static_cast<Environment *>(Array::FromWord(x));
   }
   static Environment *FromWordDirect(word x) {
-    return (Environment *) Array::FromWordDirect(x);
+    return static_cast<Environment *>(Array::FromWordDirect(x));
   }
 };
 
@@ -68,11 +68,10 @@ public:
   using StackFrame::GetInterpreter;
   // AbstractCodeFrame Accessors
   bool IsHandlerFrame() {
-    if (((Block *) this)->GetLabel() ==
-	(BlockLabel) ABSTRACT_CODE_HANDLER_FRAME)
+    if (GetLabel() == ABSTRACT_CODE_HANDLER_FRAME) {
       return true;
-    else {
-      Assert(((Block *) this)->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME);
+    } else {
+      Assert(GetLabel() == ABSTRACT_CODE_FRAME);
       return false;
     }
   }
@@ -96,26 +95,18 @@ public:
 				word args) {
     StackFrame *frame =
       StackFrame::New(ABSTRACT_CODE_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(PC_POS, pc);
-    frame->ReplaceArg(CLOSURE_POS, closure->ToWord());
-    frame->ReplaceArg(LOCAL_ENV_POS, env->ToWord());
-    frame->ReplaceArg(FORMAL_ARGS_POS, args);
-    return (AbstractCodeFrame *) frame;
+    frame->InitArg(PC_POS, pc);
+    frame->InitArg(CLOSURE_POS, closure->ToWord());
+    frame->InitArg(LOCAL_ENV_POS, env->ToWord());
+    frame->InitArg(FORMAL_ARGS_POS, args);
+    return static_cast<AbstractCodeFrame *>(frame);
   }
   // AbstractCodeFrame Untagging
-  static AbstractCodeFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
-    return (AbstractCodeFrame *) p;
-  }
   static AbstractCodeFrame *FromWordDirect(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
-    return (AbstractCodeFrame *) p;
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == ABSTRACT_CODE_FRAME ||
+	   p->GetLabel() == ABSTRACT_CODE_HANDLER_FRAME);
+    return static_cast<AbstractCodeFrame *>(p);
   }
 };
 
@@ -129,24 +120,11 @@ public:
 				       word args) {
     StackFrame *frame =
       StackFrame::New(ABSTRACT_CODE_HANDLER_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(PC_POS, pc);
-    frame->ReplaceArg(CLOSURE_POS, closure->ToWord());
-    frame->ReplaceArg(LOCAL_ENV_POS, env->ToWord());
-    frame->ReplaceArg(FORMAL_ARGS_POS, args);
-    return (AbstractCodeHandlerFrame *) frame;
-  }
-  // AbstractCodeHandlerFrame Untagging
-  static AbstractCodeHandlerFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
-    return (AbstractCodeHandlerFrame *) p;
-  }
-  static AbstractCodeHandlerFrame *FromWordDirect(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
-    return (AbstractCodeHandlerFrame *) p;
+    frame->InitArg(PC_POS, pc);
+    frame->InitArg(CLOSURE_POS, closure->ToWord());
+    frame->InitArg(LOCAL_ENV_POS, env->ToWord());
+    frame->InitArg(FORMAL_ARGS_POS, args);
+    return static_cast<AbstractCodeHandlerFrame *>(frame);
   }
 };
 
@@ -224,8 +202,8 @@ void AbstractCodeInterpreter::PurgeFrame(TaskStack *) {
 Interpreter::Result
 AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
   AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWord(taskStack->GetFrame());
-  Assert(frame != INVALID_POINTER && frame->GetInterpreter() == this);
+    AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
+  Assert(frame->GetInterpreter() == this);
   TagVal *pc            = frame->GetPC();
   Closure *globalEnv    = frame->GetClosure();
   Environment *localEnv = frame->GetLocalEnv();
@@ -525,8 +503,8 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
     case Pickle::EndTry: // of instr
       {
 	Assert(Store::WordToBlock(taskStack->GetFrame()) != INVALID_POINTER);
-	Assert(Store::WordToBlock(taskStack->GetFrame())->GetLabel() ==
-	       (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
+	Assert(StackFrame::FromWordDirect(taskStack->GetFrame())->GetLabel() ==
+	       ABSTRACT_CODE_HANDLER_FRAME);
 	taskStack->PopFrame();
 	pc = TagVal::FromWord(pc->Sel(0));
       }
@@ -752,7 +730,7 @@ Interpreter::Result
 AbstractCodeInterpreter::Handle(word exn, Backtrace *trace,
 				TaskStack *taskStack) {
   AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWord(taskStack->GetFrame());
+    AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
   if (frame->IsHandlerFrame()) {
     Tuple *package = Tuple::New(2);
     package->Init(0, exn);
@@ -775,8 +753,7 @@ const char *AbstractCodeInterpreter::Identify() {
 }
 
 void AbstractCodeInterpreter::DumpFrame(word frameWord) {
-  AbstractCodeFrame *frame = AbstractCodeFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  AbstractCodeFrame *frame = AbstractCodeFrame::FromWordDirect(frameWord);
   Closure *closure = frame->GetClosure();
   ConcreteCode *concreteCode =
     ConcreteCode::FromWord(closure->GetConcreteCode());

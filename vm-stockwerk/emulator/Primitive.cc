@@ -37,14 +37,13 @@ public:
   // PrimitiveFrame Constructor
   static PrimitiveFrame *New(Interpreter *interpreter) {
     StackFrame *frame = StackFrame::New(PRIMITIVE_FRAME, interpreter, SIZE);
-    return (PrimitiveFrame *) frame;
+    return static_cast<PrimitiveFrame *>(frame);
   }
   // PrimitiveFrame Untagging
-  static PrimitiveFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p != INVALID_POINTER &&
-	   p->GetLabel() == (BlockLabel) PRIMITIVE_FRAME);
-    return (PrimitiveFrame *) p;
+  static PrimitiveFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == PRIMITIVE_FRAME);
+    return static_cast<PrimitiveFrame *>(p);
   }
 };
 

@@ -23,28 +23,33 @@ typedef enum {
   IO_OUT = (IO_IN + 1)
 } IOStreamType;
 
-// Builtin IoStream Classes
+// Builtin IOStream Classes
 //--** to be done: finalization
 class IOStream : private Block {
 private:
   static const u_int STREAM_POS = 0;
   static const u_int NAME_POS   = 1;
   static const u_int SIZE       = 2;
+protected:
+  static BlockLabel IOStreamTypeToBlockLabel(IOStreamType type) {
+    return static_cast<BlockLabel>(static_cast<int>(type));
+  }
 public:
   using Block::ToWord;
-  // IoStream Accessors
+  // IOStream Accessors
   FILE *GetStream() {
-    return (FILE *) Store::DirectWordToUnmanagedPointer(GetArg(STREAM_POS));
+    return static_cast<FILE *>
+      (Store::DirectWordToUnmanagedPointer(GetArg(STREAM_POS)));
   }
   String *GetName() {
     return String::FromWordDirect(GetArg(NAME_POS));
   }
-  // IoStream Constructor
+  // IOStream Constructor
   static IOStream *New(IOStreamType type, FILE *file, String *name) {
-    Block *p = Store::AllocBlock((BlockLabel) type, SIZE);
+    Block *p = Store::AllocBlock(IOStreamTypeToBlockLabel(type), SIZE);
     p->InitArg(STREAM_POS, Store::UnmanagedPointerToWord(file));
     p->InitArg(NAME_POS, name->ToWord());
-    return (IOStream *) p;
+    return static_cast<IOStream *>(p);
   }
 };
 
@@ -52,13 +57,14 @@ class InStream : public IOStream {
 public:
   // InStream Constructor
   static InStream *New(FILE *file, String *name) {
-    return (InStream *) IOStream::New(IO_IN, file, name);
+    return static_cast<InStream *>(IOStream::New(IO_IN, file, name));
   }
   // InStream Untagging
   static InStream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-    Assert(p == INVALID_POINTER || p->GetLabel() == (BlockLabel) IO_IN);
-    return (InStream *) p;
+    Assert(p == INVALID_POINTER ||
+	   p->GetLabel() == IOStreamTypeToBlockLabel(IO_IN));
+    return static_cast<InStream *>(p);
   }
 };
 
@@ -66,13 +72,14 @@ class OutStream : public IOStream {
 public:
   // OutStream Constructor
   static OutStream *New(FILE *file, String *name) {
-    return (OutStream *) IOStream::New(IO_OUT, file, name);
+    return static_cast<OutStream *>(IOStream::New(IO_OUT, file, name));
   }
   // OutStream Untagging
   static OutStream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-    Assert(p == INVALID_POINTER || p->GetLabel() == (BlockLabel) IO_OUT);
-    return (OutStream *) p;
+    Assert(p == INVALID_POINTER ||
+	   p->GetLabel() == IOStreamTypeToBlockLabel(IO_OUT));
+    return static_cast<OutStream *>(p);
   }
 };
 
@@ -137,12 +144,13 @@ DEFINE1(UnsafeIO_flushOut) {
 } END
 
 DEFINE1(UnsafeIO_inputAll) {
-  static char *buf = (char *) malloc(sizeof(char) * 8192);
+  static const u_int bufSize = 8192;
+  static char *buf = static_cast<char *>(malloc(sizeof(char) * bufSize));
   DECLARE_INSTREAM(stream, x0);
   FILE *file = stream->GetStream();
-  String *b  = String::New((u_int) 0);
+  String *b  = String::New(static_cast<u_int>(0));
   while (!feof(file)) {
-    u_int rdBytes = fread(buf, 1, 8192, file);
+    u_int rdBytes = fread(buf, 1, bufSize, file);
     if (ferror(file)) {
       RAISE_IO(Store::IntToWord(0), "inputAll", stream->GetName());
     }
@@ -153,13 +161,15 @@ DEFINE1(UnsafeIO_inputAll) {
 
 DEFINE1(UnsafeIO_inputLine) {
   //--** to be done: raise Size if > String::maxSize
-  static char *buf = (char *) malloc(sizeof(char) * 1024);
+  static const u_int bufSize = 1024;
+  static char *buf = static_cast<char *>(malloc(sizeof(char) * bufSize));
   DECLARE_INSTREAM(stream, x0);
   FILE *file = stream->GetStream();
-  String *b  = String::New((u_int) 0);
+  String *b  = String::New(static_cast<u_int>(0));
   u_int stop = 0;
   while (!stop) {
-    u_int rdBytes = fread(buf, 1, 1024, file);
+    //--** why not use fgets?
+    u_int rdBytes = fread(buf, 1, bufSize, file);
     if (ferror(file)) {
       RAISE_IO(Store::IntToWord(0), "inputLine", stream->GetName());
     }
@@ -246,7 +256,7 @@ DEFINE2(UnsafeIO_output1) {
 
 DEFINE1(UnsafeIO_print) {
   DECLARE_STRING(s, x0);
-  fprintf(stdout, "%.*s", (int) s->GetSize(), s->GetValue());
+  fprintf(stdout, "%.*s", static_cast<int>(s->GetSize()), s->GetValue());
   fflush(stdout);
   RETURN_UNIT;
 } END

@@ -36,10 +36,10 @@ public:
     return static_cast<RaiseFrame *>(frame);
   }
   // VectorTabulateFrame Untagging
-  static RaiseFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER || p->GetLabel() == (BlockLabel) RAISE_FRAME);
-    return (RaiseFrame *) p;
+  static RaiseFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == RAISE_FRAME);
+    return static_cast<RaiseFrame *>(p);
   }
 };
 
@@ -70,7 +70,7 @@ public:
 RaiseInterpreter *RaiseInterpreter::self;
 
 Interpreter::Result RaiseInterpreter::Run(word, TaskStack *taskStack) {
-  RaiseFrame *frame = RaiseFrame::FromWord(taskStack->GetFrame());
+  RaiseFrame *frame = RaiseFrame::FromWordDirect(taskStack->GetFrame());
   Scheduler::currentData = frame->GetExn();
   return Interpreter::RAISE;
 }

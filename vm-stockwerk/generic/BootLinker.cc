@@ -176,14 +176,13 @@ public:
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(IMPORTS_POS, imports);
     frame->InitArg(KEY_POS, key->ToWord());
-    return (ApplyFrame *) frame;
+    return static_cast<ApplyFrame *>(frame);
   }
   // ApplyFrame Untagging
-  static ApplyFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) APPLY_FRAME);
-    return (ApplyFrame *) p;
+  static ApplyFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == APPLY_FRAME);
+    return static_cast<ApplyFrame *>(p);
   }
 };
 
@@ -206,14 +205,13 @@ public:
     StackFrame *frame = StackFrame::New(ENTER_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(SIGN_POS, sign);
-    return (EnterFrame *) frame;
+    return static_cast<EnterFrame *>(frame);
   }
   // EnterFrame Untagging
-  static EnterFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ENTER_FRAME);
-    return (EnterFrame *) p;
+  static EnterFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == ENTER_FRAME);
+    return static_cast<EnterFrame *>(p);
   }
 };
 
@@ -231,14 +229,13 @@ public:
   static LinkFrame *New(Interpreter *interpreter, Chunk *key) {
     StackFrame *frame = StackFrame::New(LINK_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
-    return (LinkFrame *) frame;
+    return static_cast<LinkFrame *>(frame);
   }
   // LinkFrame Untagging
-  static LinkFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) LINK_FRAME);
-    return (LinkFrame *) p;
+  static LinkFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == LINK_FRAME);
+    return static_cast<LinkFrame *>(p);
   }
 };
 
@@ -256,14 +253,13 @@ public:
   static LoadFrame *New(Interpreter *interpreter, Chunk *key) {
     StackFrame *frame = StackFrame::New(LOAD_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
-    return (LoadFrame *) frame;
+    return static_cast<LoadFrame *>(frame);
   }
   // LoadFrame Untagging
-  static LoadFrame *FromWord(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) LOAD_FRAME);
-    return (LoadFrame *) p;
+  static LoadFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == LOAD_FRAME);
+    return static_cast<LoadFrame *>(p);
   }
 };
 
@@ -279,7 +275,7 @@ void ApplyInterpreter::PushFrame(TaskStack *taskStack,
 }
 
 Interpreter::Result ApplyInterpreter::Run(word, TaskStack *taskStack) {
-  ApplyFrame *frame = ApplyFrame::FromWord(taskStack->GetFrame());
+  ApplyFrame *frame = ApplyFrame::FromWordDirect(taskStack->GetFrame());
   word bodyclosure  = frame->GetClosure();
   Vector *imports   = Vector::FromWord(frame->GetImports());
   Chunk *key        = frame->GetKey();
@@ -307,8 +303,7 @@ const char *ApplyInterpreter::Identify() {
 }
 
 void ApplyInterpreter::DumpFrame(word frameWord) {
-  ApplyFrame *frame = ApplyFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  ApplyFrame *frame = ApplyFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
   fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetBase());
 }
@@ -321,8 +316,8 @@ void EnterInterpreter::PushFrame(TaskStack *taskStack, Chunk *key, word sign) {
 }
 
 Interpreter::Result EnterInterpreter::Run(word args, TaskStack *taskStack) {
-  EnterFrame *frame = EnterFrame::FromWord(taskStack->GetFrame());
-  Chunk *key       = frame->GetKey();
+  EnterFrame *frame = EnterFrame::FromWordDirect(taskStack->GetFrame());
+  Chunk *key        = frame->GetKey();
   word sign         = frame->GetSign();
   taskStack->PopFrame();
   BootLinker::Trace("entering", key);
@@ -336,8 +331,7 @@ const char *EnterInterpreter::Identify() {
 }
 
 void EnterInterpreter::DumpFrame(word frameWord) {
-  EnterFrame *frame = EnterFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  EnterFrame *frame = EnterFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
   fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetBase());
 }
@@ -354,8 +348,8 @@ typedef enum {
 } COMPONENT;
 
 Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
-  LinkFrame *frame = LinkFrame::FromWord(taskStack->GetFrame());
-  Chunk *key      = frame->GetKey();
+  LinkFrame *frame = LinkFrame::FromWordDirect(taskStack->GetFrame());
+  Chunk *key       = frame->GetKey();
   BootLinker::Trace("linking", key);
   taskStack->PopFrame();
   args = Interpreter::Construct(args);
@@ -408,8 +402,7 @@ const char *LinkInterpreter::Identify() {
 }
 
 void LinkInterpreter::DumpFrame(word frameWord) {
-  LinkFrame *frame = LinkFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  LinkFrame *frame = LinkFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
   fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetBase());
 }
@@ -422,8 +415,8 @@ void LoadInterpreter::PushFrame(TaskStack *taskStack, Chunk *key) {
 }
 
 Interpreter::Result LoadInterpreter::Run(word, TaskStack *taskStack) {
-  LoadFrame *frame = LoadFrame::FromWord(taskStack->GetFrame());
-  Chunk *key      = frame->GetString();
+  LoadFrame *frame = LoadFrame::FromWordDirect(taskStack->GetFrame());
+  Chunk *key       = frame->GetString();
   taskStack->PopFrame();
   if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
     CONTINUE(Interpreter::EmptyArg());
@@ -439,8 +432,7 @@ const char *LoadInterpreter::Identify() {
 }
 
 void LoadInterpreter::DumpFrame(word frameWord) {
-  LoadFrame *frame = LoadFrame::FromWord(frameWord);
-  Assert(frame != INVALID_POINTER);
+  LoadFrame *frame = LoadFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetString();
   fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetBase());
 }
@@ -471,7 +463,7 @@ void BootLinker::Init(prim_table *builtins) {
   // Import built-in native components
   while (builtins->name != NULL) {
     word (*f)(void) = builtins->init;
-    EnterComponent((Chunk *) String::New(builtins->name),
+    EnterComponent(static_cast<Chunk *>(String::New(builtins->name)),
 		   Store::IntToWord(0), // NONE
 		   f());
     builtins++;
