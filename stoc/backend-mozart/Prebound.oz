@@ -14,6 +14,7 @@ functor
 import
    System(show)
 export
+   BuiltinTable
    Env
 define
    BuiltinTable =

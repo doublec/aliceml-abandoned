@@ -12,15 +12,15 @@
 
 functor
 import
+   CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
+   System(printName)
    Narrator('class')
    ErrorListener('class')
    CodeStore('class')
-   Prebound(env)
+   Prebound(builtinTable env)
 export
    Translate
 define
-   BuiltinTable = unit   %--** table mapping Stockhausen builtins to Mozart
-
    fun {MakeRegDict CS ?RegDict}
       RegDict = {NewDictionary}
       {List.toRecord prebound
@@ -241,11 +241,15 @@ define
       [] conAppExp(Coord Id1 Id2) then
 	 VHd = vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
 		     {TranslateCoord Coord} VTl)
-      [] buitinAppExp(Coord Builtinname Ids) then
-	 VHd = vCallBuiltin(_ BuiltinTable.Builtinname
-			    {FoldR Ids
-			     fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
-			    {TranslateCoord Coord} VTl)
+      [] buitinAppExp(Coord Builtinname Ids) then Value Regs in
+	 Value = Prebound.builtinTable.Builtinname
+	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
+	 if {CompilerSupport.isBuiltin Value} then
+	    VHd = vCallBuiltin(_ {System.printName Value}
+			       Regs {TranslateCoord Coord} VTl)
+	 else
+	    VHd = vCallConstant(_ Value Regs {TranslateCoord Coord} VTl)
+	 end
       [] adjExp(Coord Id1 Id2) then
 	 VHd = vCallBuiltin(_ 'Record.adjoin' [{GetReg Id1 State}
 					       {GetReg Id2 State} Reg]
