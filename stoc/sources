@@ -1,5 +1,4 @@
 ../../lib/bootstrap/Bootstrap.aus
-../../lib/bootstrap/OpenBase.aus
 ../../lib/bootstrap/Word.aus
 ../../lib/bootstrap/IO.aus
 ../../lib/bootstrap/TextIO.aus
