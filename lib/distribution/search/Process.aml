@@ -16,16 +16,14 @@ import signature PROCESS from "PROCESS-sig"
 
 structure Process :> PROCESS =
     struct
-	fun send((_, os), s) =
-	    (print ("sending:'" ^ s ^ ";'\n"); TextIO.output(os, s); TextIO.output(os, ";\n"))
+	fun send((_, os), s) = (TextIO.output(os, s); TextIO.output(os, ";\n"))
 	
 	fun initSite site =
 	    let
-		val root         = "/home/bruni/devel/stockhausen/lib/distribution/search/"
 		val remoteImport = ["import structure Remote from ",
 				    "\"x-alice:/lib/distribution/Remote.ozf\""]
 		val scriptImport = ["import structure RemoteWorker from ",
-				    "\"/", root, "RemoteWorker\""]
+				    "\x-alice:/lib/distribution/search/RemoteWorker\""]
 	    in
 		(send(site, String.concat remoteImport);
 		 send(site, String.concat scriptImport))

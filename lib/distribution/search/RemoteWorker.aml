@@ -24,7 +24,6 @@ structure RemoteWorker :> REMOTE_WORKER =
     struct
 	fun worker parcel =
 	    let
-		val _ = print "Remote_worker::worker\n"
 		structure Parcel = Remote.Take(val ticket = parcel
 					       signature S = WORKER_PARCEL)
 	    in
@@ -36,9 +35,7 @@ structure RemoteWorker :> REMOTE_WORKER =
 			      structure P = Packer.Pack(structure X = W
 							signature S = PLAIN_WORKER)
 			  in
-			      (print "RemoteWorker::calling register\n";
-			       Parcel.Manager.register(P.package, Parcel.id);
-			       print "RemoteWorker::registered\n")
+			      Parcel.Manager.register(P.package, Parcel.id)
 			  end
 		   | 1 => let
 			      structure W = MkBestWorker(structure Manager = Parcel.Manager
@@ -47,9 +44,7 @@ structure RemoteWorker :> REMOTE_WORKER =
 			      structure P = Packer.Pack(structure X = W
 							signature S = BEST_WORKER)
 			  in
-			      (print "RemoteWorker::calling register\n";
-			       Parcel.Manager.register(P.package, Parcel.id);
-			       print "RemoteWorker::registered\n")
+			      Parcel.Manager.register(P.package, Parcel.id)
 			  end)
 	    end
     end
