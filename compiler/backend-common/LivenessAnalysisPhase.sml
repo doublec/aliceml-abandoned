@@ -92,6 +92,9 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanTest (ConTest id, lset) = ins (lset, id)
 	  | scanTest (ConAppTest (id, args), lset) =
 	    processArgs (args, ins (lset, id), del)
+	  | scanTest (StaticConTest _, lset) = lset
+	  | scanTest (StaticConAppTest (_, args), lset) =
+	    processArgs (args, lset, del)
 	  | scanTest (RefAppTest id, lset) = del (lset, id)
 	  | scanTest (TupTest ids, lset) = delList (lset, ids)
 	  | scanTest (RecTest labIdList, lset) =
@@ -280,6 +283,9 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    processArgs (args, set, ins)
 	  | initTest (ConTest _, _) = ()
 	  | initTest (ConAppTest (_, args), set) = processArgs (args, set, ins)
+	  | initTest (StaticConTest _, _) = ()
+	  | initTest (StaticConAppTest (_, args), set) =
+	    processArgs (args, set, ins)
 	  | initTest (RefAppTest id, set) = ins (set, id)
 	  | initTest (TupTest ids, set) = insList (set, ids)
 	  | initTest (RecTest labIdList, set) =
