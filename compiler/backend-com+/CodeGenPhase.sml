@@ -82,8 +82,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		end
 	end
 
-	fun emitRegion (s, ((a, b), _)) =
-	    emit (Comment (s ^ " at " ^ Int.toString a ^ "." ^ Int.toString b))
+	fun emitRegion (s, region) =
+	    emit (Comment (s ^ " at " ^ Source.regionToString region))
 
 	datatype expMode =
 	    PREPARE
