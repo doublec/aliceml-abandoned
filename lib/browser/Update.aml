@@ -19,6 +19,7 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
+import structure ReinspectedRelDict from "ReinspectedRelDict"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
@@ -123,15 +124,24 @@ struct
 	   in ( Gtk.objectDestroy(getGroup(n))
 	       ; Layout.layout(node)
 	       ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
+               ; if isRelNode new 
+		     then let val ri_rel = case ReinspectedRelDict.lookup
+			                        (Dictionaries.ri_reldict,ind) 
+						of SOME x => x
+					         | NONE => []
+			  in ReinspectedRelDict.update(Dictionaries.ri_reldict,
+						       (ind,
+						    List.append([new],ri_rel)))
+			  end 
+		 else ()
                ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
 	       ; TextIO.print ("UPDATE: drawing with y = "
 			       ^Int.toString(y_pos)^"\n")
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
 		 in ( WindowManager.incr_act_line dy
-		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
+		     ; iterMove (Dictionaries.dict,dy,getIndex(node) + 1,
 				 MainDictionary.getHighestIndexAssigned
 				 (Dictionaries.dict))
-		    (* ; TextIO.print("UPDATE: iterMove beendet !! \n") *)
 		     ; Layout.setVisible(Layout.get_xdim(node),dy)
 		     ; !WindowManager.resize() )
 		 end)

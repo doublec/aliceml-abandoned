@@ -3,6 +3,8 @@ import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
+import structure Dictionaries from "Dictionaries";
+
 UnsafeInspector.init();
 
 structure IntList = Reflect.ReflectType(type t = int list);
@@ -67,6 +69,9 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
 			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
 			 data_type);
+
+structure Test = Reflect.ReflectType (type t = int vector list);
+UnsafeInspector.inspect([#[1,2],#[1,1]],Test.x);
 
 (*
 structure IntList = Reflect.ReflectType (type t = (int * int) list);
