@@ -108,20 +108,4 @@ structure Util :> UTIL =
 	fun closeFile (h as (info, f) : fileHandle) =
 	    ( outputStrings h (#outro info) ; TextIO.closeOut f )
 	  
-(*
-	fun includeFile (filename, begincomment, endcomment) =
-	let
-	    val f = TextIO.openIn filename
-	    val s = TextIO.inputAll f
-	    val _ = TextIO.closeIn f
-	in 
-	    String.concat
-	        ["\n",
-		 begincomment," ** begin of ",filename," ** ",endcomment,"\n",
-		 s,
-		 begincomment," ** end of ",filename," ** ",endcomment,"\n\n"]
-	end
-        handle _ => ""
-*)
-
     end

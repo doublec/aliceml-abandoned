@@ -10,7 +10,6 @@ signature TYPE_MANAGER =
 	val getAliceType :        TypeTree.ty -> string
 	val getAliceNativeType :  TypeTree.ty -> string
 
-	val isOutArg :            TypeTree.ty -> bool
 	val splitArgTypes :       TypeTree.ty list -> arginfo list
 	val splitArgTypesNoOuts : TypeTree.ty list -> arginfo list
 	val splitInOuts :         arginfo list * bool -> 
@@ -30,7 +29,5 @@ signature TYPE_MANAGER =
 	val makeFieldFun :        Util.spaces 
 	                            -> string * string * TypeTree.ty * bool
 	                            -> string * TypeTree.ty * TypeTree.ty list
-	val getEnumSpace :        string -> Util.spaces
-	
-(*	val getClassList :        TypeTree.tree -> TypeTree.tree*)
+	val getEnumSpace :        string -> Util.spaces	
    end

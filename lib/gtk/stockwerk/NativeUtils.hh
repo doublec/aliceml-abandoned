@@ -69,8 +69,7 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
     case EVENT:  break; \
     case INT:  __PUT_VALUE(int,  DECLARE_INT, tv->Sel(0), pos);  break;       \
     case LIST:   break; \
-    case OBJECT: __PUT_VALUE(void*,DECLARE_UNMANAGED_POINTER,tv->Sel(0),pos); \
-                 break; \
+    case OBJECT: __PUT_VALUE(void*,DECLARE_OBJECT,tv->Sel(0),pos);  break; \
     case REAL: __PUT_VALUE(double, DECLARE_CDOUBLE, tv->Sel(0), pos); break;  \
     case STRING: __PUT_VALUE(char*, DECLARE_CSTRING, tv->Sel(0), pos); break; \
     }                                                                         \
@@ -105,6 +104,18 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
 
 /***********************************************************************/
 
+// macros for extracting C pointer from an object tuple;
+// the pointer itself cannot be a transient, as the object tuples are
+// always created by the native components
+#define DECLARE_OBJECT(pointer, x)                               \
+  DECLARE_TUPLE(pointer##__tup,x);                               \
+  void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
+
+#define DECLARE_OBJECT_WITH_TYPE(pointer, type, x)               \
+  DECLARE_TUPLE(pointer##__tup,x);                               \
+  int type = Store::WordToInt(pointer##__tup->Sel(1));           \
+  void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
+
 
 #define DECLARE_GLIST(l, x, ltype, ltype2, F)               \
   ltype *l = NULL;                                          \
@@ -125,26 +136,23 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
   }                                                         \
   return tail;
 
-#define __RETURN_STRING(s) \
-  String::New(reinterpret_cast<const char *>(s))->ToWord()
-
-#define __RETURN_OBJECT(p) \
+#define __OBJECT_TO_WORD(p) \
   PointerToObject(p, TYPE_UNKNOWN)
 
 inline word GListToObjectList(GList *list) {
-  __RETURN_LIST_HELP(list, g_list, __RETURN_OBJECT);
+  __RETURN_LIST_HELP(list, g_list, __OBJECT_TO_WORD);
 }
 
 inline word GSListToObjectList(GSList *list) {
-  __RETURN_LIST_HELP(list, g_slist, __RETURN_OBJECT);
+  __RETURN_LIST_HELP(list, g_slist, __OBJECT_TO_WORD);
 }
 
 inline word GListToStringList(GList *list) {
-  __RETURN_LIST_HELP(list, g_list, __RETURN_STRING);
+  __RETURN_LIST_HELP(list, g_list, STRING_TO_WORD);
 }
 
 inline word GSListToStringList(GSList *list) {
-  __RETURN_LIST_HELP(list, g_slist, __RETURN_STRING);
+  __RETURN_LIST_HELP(list, g_slist, STRING_TO_WORD);
 }
 
 
