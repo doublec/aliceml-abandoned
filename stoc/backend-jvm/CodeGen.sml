@@ -113,7 +113,7 @@ structure CodeGen =
 
 		    fun get stamp' =
 			case StampHash.lookup (register, stamp') of
-			    NONE => illegalstamp
+			    NONE => ~1
 			  | SOME register => register
 
 		    fun fieldNameFromStamp stamp' =
@@ -130,7 +130,7 @@ structure CodeGen =
 			 wohin)
 		    fun getLambda stamp' =
 			case StampHash.lookup(lambda,stamp') of
-			    NONE => illegalstamp
+			    NONE => ~1
 			  | SOME lambda => lambda
 		end
 	    end
@@ -360,8 +360,7 @@ structure CodeGen =
 	    fun freeVarsExp (LitExp _) = ()
 	      | freeVarsExp (VarExp (_, id')) = fV.insert id'
 	      | freeVarsExp (ConAppExp (_, id', id'')) = (fV.insert id'; fV.insert id'')
-	      | freeVarsExp (TupExp ((i,_),ids)) = (print ("TupExp "^(Stamp.toString i));app fV.insert ids;
-						    print ("/TupExp "^(Stamp.toString i)^"\n"))
+	      | freeVarsExp (TupExp (_,ids)) = app fV.insert ids
 	      | freeVarsExp (RecExp (_,labids)) = app (fn (lab, id') => fV.insert id') labids
 	      | freeVarsExp (SelExp _) = ()
 	      | freeVarsExp (FunExp(_,_, idbodys)) =
