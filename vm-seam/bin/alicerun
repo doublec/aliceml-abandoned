@@ -22,7 +22,7 @@ ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc${sep}pattern=x-alice:/?{x
 
 export STOCKHOME ALICE_LOAD
 
-#(echo "break Base.cc:19"; echo run "$@"; cat)|
+#(echo "break Base.cc:22"; echo run "$@"; cat)|
 #exec gdb -nw "$STOCKHOME"/stow.exe
 
 exec "$STOCKHOME"/stow.exe "$@"
