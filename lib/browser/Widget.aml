@@ -13,20 +13,19 @@
  *
  *)
 
-import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 import structure PPType from "x-alice:/lib/rtt/PPType"
-import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure PPInf from "x-alice:/lib/rtt/PPInf"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 
-import structure Node from "Node"
 import structure Doc from "Doc"
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
+
 import structure Color from "Color"
 import structure MkDrawingArea from "MkDrawingArea"
 import signature DRAWING_AREA from "DRAWING_AREA-sig"
-import structure GtkSupport from "GtkSupport"
 import structure Settings from "Settings"
 
 import structure Dictionaries from "Dictionaries"
@@ -40,7 +39,7 @@ import structure Server from "Server"
 import signature WIDGET from "WIDGET-sig"
 
 local 
-open GtkSupport Node Doc Color PervasiveType
+open Doc Node GtkSupport Color
 
 (***           Node Search              ***)
 
@@ -541,7 +540,7 @@ struct
        font resize*)
 
      val inspectFct = ref (fn _ => ())
-     val inspectInfFct = ref (fn _ => ())
+     val inspectModFct = ref (fn _ => ())
 
      (* folds all datastuctures into a list and deletes representations *)
      fun uninspect() = 
@@ -561,7 +560,7 @@ struct
 	 in
 	     List.app (fn d => case d of 
 		       VALUE(r) => (!inspectFct) (#value(r),#typ(r))
-		     | I_VALUE(r) => (!inspectInfFct)  (#value(r),#typ(r))
+		     | I_VALUE(r) => (!inspectModFct)  (#value(r),#typ(r))
 		     | _ => ()) li
 	 end)
 
@@ -743,8 +742,8 @@ struct
 	     val positions_displayed = Real.trunc(canvaswidth(hadj)) div 6 
 	 in
 	     (case desc of
-		 Node.INTERPUNCT => 0
-	       |  Node.VALUE(r) => 
+		 INTERPUNCT => 0
+	       | VALUE(r) => 
 		     let
 			 val text = PrettyPrint.toString
 			     (PPType.ppTyp(#typ(r)),1000)
@@ -760,7 +759,7 @@ struct
 			 else
 			     postType("  " ^ text)
 		     end
-	       | Node.I_VALUE(r) => 
+	       | I_VALUE(r) => 
 		     let 
 			 val post = createTextWindow()
 		     in
@@ -783,13 +782,13 @@ struct
 		            ;deselect(bar))
 		val width_active =not(case n of 
 				  Limit(r) => 
-					  getSort(n) = Node.DEPTH_LIMIT
+					  getSort(n) = DEPTH_LIMIT
 				|  _ => false )
 		val depth_active =not(case n of 
 					  Limit(r) => 
-					      getSort(n) = Node.WIDTH_LIMIT
+					      getSort(n) = WIDTH_LIMIT
 					|  _ => false )	
-		val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT) 
+		val reinspect_active = not(Node.getDesc(n) = INTERPUNCT) 
 		val force_active = (*  (Node.isByneed n) handle _ => false *)
 		    true
 		val delete_active = getParent(n) = Empty orelse 
@@ -869,7 +868,7 @@ struct
 				       ]
 	    in
 		case n of
-		    Node.RelRefNode _ => ()
+		    RelRefNode _ => ()
 		  | _ =>
 		   Server.serve 
 		   (fn () => 
@@ -918,16 +917,16 @@ struct
 			     (case node of 
 				  SOME(n) => 
 				      let 
-				    val ydim =Node.get_ydim(n) 
-				    val group = Node.getGroup(n)
+				    val ydim =get_ydim(n) 
+				    val group = getGroup(n)
 				    val x2 = Real.fromInt(font_width 
-					    	* Node.get_xdim(n))
+					    	* get_xdim(n))
 				    val y2 = Real.fromInt(font_height 
 						  * ydim)
 				    val y2' = Real.fromInt(font_height 
 						  * (ydim-1))
 				    val lx =Real.fromInt(font_width 
-				     *  Node.get_l_xdim(n))
+				     *  get_l_xdim(n))
 				    val re =createRectangle(group,
 							    0.0,
 							    0.0,
@@ -946,13 +945,13 @@ struct
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
 				    ; case n of
-				     Node.Limit(_)  => 
+				     Limit(_)  => 
 					 setExpandSensitive(bar,true)
 				       | _ => setExpandSensitive(bar,false)
-				    ;if getDesc(n) = Node.INTERPUNCT 
-					 orelse Node.isSimple(n) 
-					 orelse Node.isRelRefNode(n) 
-					 orelse Node.isLimit(n)
+				    ;if getDesc(n) = INTERPUNCT 
+					 orelse isSimple(n) 
+					 orelse isRelRefNode(n) 
+					 orelse isLimit(n)
 					 then setShrinkSensitive(bar,false)
 				     else setShrinkSensitive(bar,true)
 				    ; case b of
@@ -1030,34 +1029,11 @@ struct
 						  false  ,0)])
 		 ;signalConnect(window,"event",handleWindowEvent))
 
+
 	(**** Browser Initialisation ****)
-
-     
-
-	val path_promise = CreateTree.lookupPath(CreateTree.coreSign,
-						 "Promise","promise")   
-	    
-	val path_package = CreateTree.lookupPath(CreateTree.packageSign,
-						 "Package","package") 
-	    
-	val path_val_package = CreateTree.lookupPath(CreateTree.packageSign,
-						     "Package","val_package") 
-	    
-	fun init () = 
-	    ( registerType(path_int, createInt)
-	     ; registerType(path_string, createString)
-	     ; registerType(path_char, createChar)
-	     ; registerType(path_word, createWord)
-	     ; registerType(path_real, createReal)
-	     ; registerType(path_exn, createExn)
-	     ; registerType(path_ref, createRef)
-	     ; registerType(path_vec, createVector)
-	     ; registerType(path_array, createArray)
-	     ; registerType(path_promise, createPromise)
-	     ; registerType(path_package, createPackage)  
-	     ; registerType(path_val_package, createValPackage) 
-	     
-	     ; registerColor(INT_COLOR,  allocColor(0,45000,0))
+    
+	fun initGtk () = 
+	    ( registerColor(INT_COLOR,  allocColor(0,45000,0))
 	     ; registerColor(REAL_COLOR, allocColor(0,45000,0))
 	     ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
 	     ; registerColor(STR_COLOR, allocColor(45000,0,50000)) 
@@ -1074,7 +1050,6 @@ struct
 	    
 	    ; Update.incrActLine := (fn dy => incr_act_line dy) )
 	    
-
 
 	(*******         Inspection            *******)
 
@@ -1109,7 +1084,7 @@ struct
 		 ;())
 	    end 
 	
-    fun inspectInf(v,t) = 
+    fun inspectMod(v,t) = 
 	let
 	    val va = UnsafeValue.cast v: Reflect.module
 	    val i = Dictionaries.Main.
@@ -1139,9 +1114,10 @@ struct
 	    ; stopButtonSetActive(false)
 	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
 	end 
-   
-    val _ = (inspectFct := inspect
-	     ;inspectInfFct := inspectInf)
+
+    val _ = ( inspectFct := inspect
+	     ; inspectModFct := inspectMod
+	     ; initGtk () )
 	 
 	
 end (* structure Widget end *)
