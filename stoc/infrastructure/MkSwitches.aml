@@ -1,6 +1,19 @@
-functor MakeSwitches(val logOut : TextIO.outstream) :> SWITCHES =
-struct
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2000
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+functor MkSwitches(val logOut : TextIO.outstream) :> SWITCHES =
+struct
     structure Warn =
     struct
 	val shadowing				= ref false
@@ -35,5 +48,4 @@ struct
 	val dumpDeadCodeEliminationResult	= ref false
 	val dumpTarget				= ref false
     end
-
 end

@@ -12,7 +12,12 @@
  *   $Revision$
  *)
 
-functor MakeContextDumpingPhase(
+import signature PHASE       from "PHASE-sig"
+import signature SWITCHES    from "SWITCHES-sig"
+import structure PrettyPrint from "../misc/PrettyPrint"
+
+
+functor MkContextDumpingPhase(
 	structure Phase :    PHASE
 	structure Switches : SWITCHES
 	val header : string

@@ -1,11 +1,20 @@
 (*
- * Global stamp generator.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
+
+import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
 
 
 structure GlobalStamp :> GLOBAL_STAMP  =
-  struct
-
+struct
     datatype stamp		= GEN of int * Posix.ProcEnv.pid | STR of string
     type     t			= stamp
 
@@ -20,5 +29,4 @@ structure GlobalStamp :> GLOBAL_STAMP  =
 
     fun hash(GEN(n,_))		= n
       | hash(STR s)		= StringHashKey.hash s
-
-  end
+end

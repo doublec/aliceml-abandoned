@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-signature SORT =
+signature LIST_SORT =
     sig
 	type 'a t
 

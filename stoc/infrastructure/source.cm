@@ -2,5 +2,5 @@ Group is
 
 	../misc/sources.cm
 
-	SOURCE.sig
-	Source.sml
+	SOURCE-sig.aml
+	Source.aml

@@ -1,4 +1,20 @@
-functor MakeTracingPhase(
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature PHASE    from "PHASE-sig"
+import signature SWITCHES from "SWITCHES-sig"
+
+
+functor MkTracingPhase(
 	structure Phase :    PHASE
 	structure Switches : SWITCHES
 	val name : string

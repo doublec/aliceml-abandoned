@@ -16,7 +16,23 @@
  * returns a topological ordering of all strongly connected components.
  *)
 
-functor MakeDepthFirstSearch
+import
+    structure Assert
+from "Assert"
+
+import
+    signature HASH_KEY
+from "HASH_KEY-sig"
+
+import
+    signature IMP_MAP
+from "IMP_MAP-sig"
+
+import
+    signature DEPTH_FIRST_SEARCH
+from "DEPTH_FIRST_SEARCH-sig"
+
+functor MkDepthFirstSearch
     (structure Key: HASH_KEY
      structure Map: IMP_MAP where type key = Key.t): DEPTH_FIRST_SEARCH =
     struct

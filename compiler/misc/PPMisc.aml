@@ -1,10 +1,25 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Miscellaneous pretty printing helpers
  *)
 
-structure PPMisc :> PP_MISC =
-  struct
+import structure PrettyPrint from "PrettyPrint"
+import signature PP_MISC     from "PP_MISC-sig"
 
+
+structure PPMisc :> PP_MISC =
+struct
     (* Import *)
 
     open PrettyPrint
@@ -40,5 +55,4 @@ structure PPMisc :> PP_MISC =
       | ppSeqPrec ppXPrec n  xs = paren(ppCommaList (ppXPrec 0) xs)
 
     fun ppSeq ppX = ppSeqPrec (fn _ => ppX) 0
-
-  end
+end

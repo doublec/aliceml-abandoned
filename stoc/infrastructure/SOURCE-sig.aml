@@ -1,11 +1,21 @@
 (*
- * A source file.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
 
+(* A source file. *)
+
+import structure Url from "../misc/Url"
 
 signature SOURCE =
-  sig
-
+sig
     type source
     type t	= source
 
@@ -27,5 +37,4 @@ signature SOURCE =
     val urlDesc:		Url.t -> desc
 
     val url:			desc -> Url.t option
-
-  end
+end

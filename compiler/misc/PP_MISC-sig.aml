@@ -1,10 +1,23 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Miscellaneous pretty printing helpers
  *)
 
-signature PP_MISC =
-  sig
+import structure PrettyPrint from "PrettyPrint"
 
+signature PP_MISC =
+sig
     type doc = PrettyPrint.doc
 
     val nest:		doc -> doc
@@ -22,5 +35,4 @@ signature PP_MISC =
     val par:		doc list -> doc
     val textpar:	string list -> doc
     val indent:		doc -> doc
-
-  end
+end
