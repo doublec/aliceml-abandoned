@@ -242,13 +242,20 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	fun indent 0 = ""
 	  | indent n = "  " ^ indent (n - 1)
 
-	fun testToString (LitTest _) = "lit"
+	fun litToString (WordLit w) = LargeWord.toString w
+	  | litToString (IntLit i) = LargeInt.toString i
+	  | litToString (CharLit c) = "#\"" ^ WideChar.toString c ^ "\""
+	  | litToString (StringLit s) = "\"" ^ s ^ "\""
+	  | litToString (RealLit s) = s
+
+	fun testToString (LitTest lit) = "lit " ^ litToString lit
 	  | testToString (TagTest label | TagAppTest (label, O.OneArg _, _)) =
 	    "tag " ^ Label.toString label
 	  | testToString (TagAppTest (label, O.TupArgs typs, _)) =
-	    "tag tup " ^ Int.toString (List.length typs)
+	    "tag " ^ Label.toString label ^
+	    " tup " ^ Int.toString (List.length typs)
 	  | testToString (TagAppTest (label, O.RecArgs labelTypList, _)) =
-	    "tag rec"
+	    "tag " ^ Label.toString label ^ " rec"
 	  | testToString (ConTest _ | ConAppTest (_, O.OneArg _, _)) = "con"
 	  | testToString (ConAppTest (_, O.TupArgs typs, _)) =
 	    "con tup " ^ Int.toString (List.length typs)
@@ -272,7 +279,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    testToString test ^ "\n" ^
 	    graphToString (thenGraph, level + 1) ^
 	    graphToString (elseGraph, level + 1)
-	  | graphToString (Leaf (_, _), level) = indent level ^ "leaf\n"
+	  | graphToString (Leaf (body, _), level) =
+	    indent level ^ "leaf " ^
+	    (Source.regionToString (#region (O.infoStm (List.hd body)))) ^ "\n"
 	  | graphToString (Default, level) = indent level ^ "default\n"
 
 	fun mappingToString' ((pos, _)::mapping) =
@@ -342,10 +351,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | mergeIntoTree (Test (pos, test)::testSeqRest,
 			       thenTree, elseTree) =
 		(case findTest (elseTree, pos, test) of
-		     SOME treeRef =>
+		     SOME (treeRef as ref tree) =>
 			 let
-			     val newTree = mergeIntoTree (testSeqRest,
-							  thenTree, !treeRef)
+			     val newTree =
+				 mergeIntoTree (testSeqRest, thenTree, tree)
 			 in
 			     treeRef := newTree; elseTree
 			 end
@@ -363,11 +372,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | mergeIntoTree (Alt testSeqs::testSeqRest, thenTree, elseTree) =
 		let
 		    val newThenTree =
-			mergeIntoTree (testSeqRest, thenTree, Default)
+			mergeIntoTree (testSeqRest, thenTree, elseTree)
 		in
 		    List.foldr (fn (testSeq, elseTree) =>
 				mergeIntoTree (testSeq, newThenTree, elseTree))
-		    elseTree testSeqs
+		    Default testSeqs
 		end
 	end
 
@@ -480,23 +489,23 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	type consequent = (Source.region * O.body option ref)
 
-	fun buildGraph (matches, elseExp) =
+	fun buildGraph (matches, elseBody) =
 	    let
 		val (graph, consequents) =
-		    List.foldr (fn ((region, pat, thenExp),
+		    List.foldr (fn ((region, pat, thenBody),
 				    (elseTree, consequents)) =>
 				let
 				    val pat' = separateAlt pat
 				    val (testSeq, _) =
 					makeTestSeq (pat', nil, nil, nil)
 				    val r = ref NONE
-				    val leaf = Leaf (thenExp, r)
+				    val leaf = Leaf (thenBody, r)
 				in
 				    (mergeIntoTree (List.rev testSeq,
 						    leaf, elseTree),
 				     (region, r)::consequents)
 				end) (Default, nil) matches
-		val elseGraph = Leaf (elseExp, ref NONE)
+		val elseGraph = Leaf (elseBody, ref NONE)
 	    in
 		case graph of
 		    Default =>
