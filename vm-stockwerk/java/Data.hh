@@ -22,7 +22,12 @@
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
 
-typedef unsigned short u_wchar; //--** ensure that this is always 16-bit
+typedef u_char u_int8;
+typedef short s_int16; //--** ensure that this is always 16-bit
+typedef unsigned short u_int16; //--** ensure that this is always 16-bit
+typedef s_int s_int32; //--** ensure that this is always 32-bit
+typedef u_int u_int32; //--** ensure that this is always 32-bit
+typedef u_int16 u_wchar;
 
 class JavaLabel {
 private:
@@ -179,6 +184,21 @@ public:
 
 static const word null = Store::IntToWord(0);
 
+class DllExport JavaLong: private Chunk {
+protected:
+  static const u_int SIZE = 64 / sizeof(char);
+public:
+  using Block::ToWord;
+
+  static JavaLong *New(s_int32 high, s_int32 low) {
+    Chunk *chunk = Store::AllocChunk(SIZE);
+    char *p = chunk->GetBase();
+    p[0] = high >> 24; p[1] = high >> 16; p[2] = high >> 8; p[3] = high;
+    p[4] = low >> 24; p[5] = low >> 16; p[6] = low >> 8; p[7] = low;
+    return static_cast<JavaLong *>(chunk);
+  }
+};
+
 class DllExport Lock: private Block {
 protected:
   enum { COUNT_POS, THREAD_POS, FUTURE_POS, SIZE };
@@ -295,7 +315,7 @@ public:
   }
 };
 
-//--** problem: always store in big-endian format
+//--** always store in big-endian format
 class DllExport JavaString: private Chunk {
 public:
   using Chunk::ToWord;

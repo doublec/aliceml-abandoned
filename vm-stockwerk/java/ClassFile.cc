@@ -32,8 +32,8 @@ enum CONSTANT_tag {
   CONSTANT_NameAndType        = 12,
   CONSTANT_Utf8               = 1,
   // Tags for unusable constant pool entries
-  CONSTANT_Long_unusable      = -1,
-  CONSTANT_Double_unusable    = -2
+  CONSTANT_Long_unusable      = MAX_DATA_LABEL - 1,
+  CONSTANT_Double_unusable    = MAX_DATA_LABEL
 };
 
 //
@@ -155,9 +155,9 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
       return constantPool->GetUtf8(index)->Intern()->ToWord();
     }
   case CONSTANT_Integer:
+  case CONSTANT_Long:
     return GetArg(0);
   case CONSTANT_Float:
-  case CONSTANT_Long:
   case CONSTANT_Double:
     Error("unimplemented constant pool tag"); //--**
   case CONSTANT_Long_unusable:
@@ -249,8 +249,16 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
       return entry;
     }
     break;
-  case CONSTANT_Float:
   case CONSTANT_Long:
+    {
+      ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 1);
+      s_int32 high = GetU4(offset);
+      s_int32 low = GetU4(offset);
+      entry->InitArg(0, JavaLong::New(high, low)->ToWord());
+      return entry;
+    }
+    break;
+  case CONSTANT_Float:
   case CONSTANT_Double:
     Error("unimplemented CONSTANT_tag"); //--**
   case CONSTANT_NameAndType:

@@ -27,26 +27,26 @@ class ClassLoader;
 class DllExport ClassFile: private Chunk {
 private:
   struct SupportedVersion {
-    static const u_int majorMin = 45;
-    static const u_int minorMin = 0;
-    static const u_int majorMax = 46;
-    static const u_int minorMax = 0;
+    static const u_int16 majorMin = 45;
+    static const u_int16 minorMin = 0;
+    static const u_int16 majorMax = 46;
+    static const u_int16 minorMax = 0;
   };
 
-  static const u_int MAGIC = 0xCAFEBABE;
+  static const u_int32 MAGIC = 0xCAFEBABE;
 
   u_char *GetBase() {
     return reinterpret_cast<u_char *>(Chunk::GetBase());
   }
-  u_char GetU1(u_int &offset) {
+  u_int8 GetU1(u_int &offset) {
     return GetBase()[offset++];
   }
-  u_int GetU2(u_int &offset) {
+  u_int16 GetU2(u_int &offset) {
     u_char *p = GetBase();
     u_char a = p[offset++];
     return (a << 8) | p[offset++];
   }
-  u_int GetU4(u_int &offset) {
+  u_int32 GetU4(u_int &offset) {
     u_int a = GetU2(offset);
     return (a << 16) | GetU2(offset);
   }
