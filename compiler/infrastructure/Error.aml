@@ -14,6 +14,7 @@
 
 import structure Url         from "../../lib/system/Url"
 import structure TextIO      from "../../lib/system/TextIO"
+import structure OS          from "../../lib/system/OS"
 import signature ERROR       from "ERROR-sig"
 import structure Source      from "Source"
 import structure PrettyPrint from "../../lib/utility/PrettyPrint"
@@ -34,12 +35,26 @@ struct
     val currentUrl : Url.t option ref = ref NONE
     fun setCurrentUrl uo = currentUrl := uo
 
-    fun urlToString url = Url.toString (Url.setScheme (url, NONE))
+    fun resolveWrtCwd url =
+	let
+	    val base = Url.setScheme(Url.fromString(OS.FileSys.getDir() ^ "/"),
+				     SOME "file")
+	in
+	    Url.resolve base url
+	end
+
+    fun urlToString url =
+	case (Url.getScheme url, Url.getAuthority url) of
+	    ((NONE | SOME "file"), NONE) =>
+	    OS.Path.mkRelative{path = Url.toString(Url.setScheme(url, NONE)),
+			       relativeTo = OS.FileSys.getDir()}
+	  | _ =>
+	    Url.toString url
 
     fun print(reg, doc) =
 	output(TextIO.stdErr,
 	       (case !currentUrl of NONE   => empty
-	                          | SOME f => text (urlToString f) ^^ text ":") ^^
+	                          | SOME f => text(urlToString f) ^^ text ":") ^^
 	       text(Source.regionToString reg) ^^ text ": " ^^ doc ^^ break, 78)
 
     fun error(reg, message)   = ( print(reg,message) ; raise Error(reg,message) )
