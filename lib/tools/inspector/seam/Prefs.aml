@@ -48,9 +48,9 @@ struct
 		styles       : style list}
 
   val styles = ref []
-  val widthLimit  = ref 8
+  val widthLimit  = ref 16
   val depthLimit  = ref 5
-  val incrWidth   = ref 4
+  val incrWidth   = ref 16
   val incrDepth   = ref 2
   val bigWidth    = ref 100
   val bigDepth    = ref 20
