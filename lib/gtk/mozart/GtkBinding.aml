@@ -11,7 +11,6 @@
  *
  *)
 
-import structure Inspector     from "x-alice:/lib/tools/Inspector"
 import structure GtkTreeTypes  from "GtkTreeTypes"
 import structure MkTypeManager from "MkTypeManager"
 import structure MkWrapper     from "MkWrapper"
