@@ -35,7 +35,7 @@ usage () {
     echo "MODE must be one of the following:                         " >&2
     echo "  compile          compile a source file                   " >&2
     echo "  link             create a library or an executable       " >&2
-    echo "  config           output standard configuration options   " >&2
+    echo "  config           output installation paths for SEAM      " >&2
     echo "                                                           " >&2
     echo "MODE-ARGs vary depending on the MODE.                      " >&2
 }
@@ -44,19 +44,13 @@ config_usage () {
     echo "Usage: $0 config [CONFIG-ARG]                              " >&2
     echo "Output installation paths for SEAM                         " >&2
     echo "                                                           " >&2
-    echo "CONFIG-ARG must be one of the following:                   " >&2
-    echo "  prefix           directory prefix for                    " >&2
-    echo "                   architecture-independent files          " >&2
-    echo "  exec_prefix      directory prefix for                    " >&2
-    echo "                   architecture-dependent files            " >&2
-    echo "  includedir       directory prefix for                    " >&2
-    echo "                   C header files                          " >&2
-    echo "  pkgincludedir    directory prefix for                    " >&2
-    echo "                   SEAM-specific C header files            " >&2
-    echo "  libdir           directory prefix for                    " >&2
-    echo "                   " >&2
-    echo "  seamlibdir       directory prefix for                    " >&2
-    echo "                   SEAM extension modules                  " >&2
+    echo "Depending on CONFIG-ARG, emit the directory prefix for     " >&2
+    echo "  prefix           architecture-independent files          " >&2
+    echo "  exec_prefix      architecture-dependent files            " >&2
+    echo "  includedir       C header files                          " >&2
+    echo "  pkgincludedir    SEAM-specific C header files            " >&2
+    echo "  libdir           object code libraries                   " >&2
+    echo "  seamlibdir       SEAM extension modules                  " >&2
 }
 
 version () {
