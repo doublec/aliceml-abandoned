@@ -42,32 +42,32 @@ DEFINE1(UnsafeReflect_realToVector) {
 } END
 
 DEFINE1(UnsafeReflect_Reflect) {
-  DECLARE_TUPLE(argTuple, x0);
-  Tuple *tuple = Tuple::New(1);
-  tuple->Init(0, argTuple->Sel(1));
-  RETURN(tuple->ToWord());
+  DECLARE_RECORD(argRecord, x0);
+  Record *record = Record::New(1);
+  record->Init("x", argRecord->PolySel(UniqueString::New(String::New("X$"))));
+  RETURN(record->ToWord());
 } END
 
 DEFINE1(UnsafeReflect_Unreflect) {
-  DECLARE_TUPLE(argTuple, x0);
-  RETURN(argTuple->Sel(1));
+  DECLARE_RECORD(argRecord, x0);
+  RETURN(argRecord->PolySel(UniqueString::New(String::New("x"))));
 } END
 
 DEFINE1(UnsafeReflect_ReflectSig) {
-  DECLARE_TUPLE(argTuple, x0);
-  Tuple *tuple = Tuple::New(1);
-  tuple->Init(0, argTuple->Sel(0));
-  RETURN(tuple->ToWord());
+  DECLARE_RECORD(argRecord, x0);
+  Record *record = Record::New(1);
+  record->Init("x", argRecord->PolySel(UniqueString::New(String::New("$S$"))));
+  RETURN(record->ToWord());
 } END
 
 DEFINE1(UnsafeReflect_UnreflectSig) {
-  DECLARE_TUPLE(argTuple, x0);
-  Tuple *tuple = Tuple::New(1);
-  tuple->Init(0, argTuple->Sel(0));
-  RETURN(tuple->ToWord());
+  DECLARE_RECORD(argRecord, x0);
+  Record *record = Record::New(1);
+  record->Init("$S$", argRecord->PolySel(UniqueString::New(String::New("x"))));
+  RETURN(record->ToWord());
 } END
 
-word UnsafeReflect(void) {
+word UnsafeReflect() {
   FloatChunk x;
   x.i[0] = 1;
   for (u_int i = 1; i < sizeof(double) / sizeof(int); i++)
@@ -77,18 +77,18 @@ word UnsafeReflect(void) {
   else
     littleEndian = false;
 
-  Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeClosure("UnsafeReflect.Reflect",
-				    UnsafeReflect_Reflect, 1, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeReflect.ReflectSig",
-				    UnsafeReflect_ReflectSig, 1, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeReflect.Unreflect",
-				    UnsafeReflect_Unreflect, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeReflect.UnreflectSig",
-				    UnsafeReflect_UnreflectSig, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeReflect.cast",
-				    UnsafeReflect_cast, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeReflect.realToVector",
-				    UnsafeReflect_realToVector, 1, true));
-  RETURN_STRUCTURE(t);
+  Record *record = Record::New(6);
+  INIT_STRUCTURE(record, "UnsafeReflect", "cast",
+		 UnsafeReflect_cast, 1, true);
+  INIT_STRUCTURE(record, "UnsafeReflect", "realToVector",
+		 UnsafeReflect_realToVector, 1, true);
+  INIT_STRUCTURE(record, "UnsafeReflect", "Reflect$",
+		 UnsafeReflect_Reflect, 1, true);
+  INIT_STRUCTURE(record, "UnsafeReflect", "Unreflect$",
+		 UnsafeReflect_Unreflect, 1, true);
+  INIT_STRUCTURE(record, "UnsafeReflect", "ReflectSig$",
+		 UnsafeReflect_ReflectSig, 1, true);
+  INIT_STRUCTURE(record, "UnsafeReflect", "UnreflectSig$",
+		 UnsafeReflect_UnreflectSig, 1, true);
+  RETURN_STRUCTURE("UnsafeReflect$", record);
 }
