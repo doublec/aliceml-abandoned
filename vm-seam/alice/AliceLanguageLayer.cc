@@ -134,11 +134,13 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
 #if defined(JIT_STORE_DEBUG)
-  u_int codeSizeInChunks = 100;
+  u_int codeSizeInChunks = 50;
 #else
-  u_int codeSizeInChunks = 100; // was 40
+  u_int codeSizeInChunks = 50; // was 40
 #endif
-  NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
+  NativeCodeJitter::Init((codeSizeInChunks+
+                          NativeCodeJitter::codeBufferSecurity)
+                         * STORE_MEMCHUNK_SIZE);
 
   const char *jitMode = std::getenv("ALICE_JIT_MODE");
   if (jitMode != NULL && !strcmp(jitMode, "0"))

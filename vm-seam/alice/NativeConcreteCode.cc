@@ -70,7 +70,7 @@ Worker::Result LazyCompileInterpreter::Run(StackFrame *sFrame) {
   Scheduler::PopFrame(frame->GetSize());
   Scheduler::nArgs = 1;
   NativeCodeJitter jitter;
-  Scheduler::currentArgs[0] = jitter.Compile(closure)->ToWord();
+  Scheduler::currentArgs[0] = jitter.Compile(closure);
   return Worker::CONTINUE;
 }
 

@@ -24,6 +24,8 @@
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/JitterAliceData.hh"
 
+#include <setjmp.h>
+
 class LivenessTable;
 class TableAllocator;
 
@@ -73,6 +75,7 @@ protected:
   word initialPC;
   word initialNoCCCPC;
   jit_insn *codeBuffer;
+  char *codeStart;
 
   IntMap *sharedTable;
   LivenessTable *livenessTable;
@@ -84,6 +87,7 @@ protected:
   u_int currentOutArity;
   Vector *currentArgs;
   u_int currentStack;
+  jmp_buf jumpEnv;
 
   // NativeCodeFrame
   enum {
@@ -258,15 +262,17 @@ protected:
   void CompileInstr(TagVal *pc);
   Tuple *AllocateRegister(u_int nLocals, Tuple *liveness);
   Chunk *CopyCode(char *start);
+  void CheckCodeBuffer(void);
 public:
   static void Init(u_int codeSize);
+  static u_int codeBufferSecurity;
 
   NativeCodeJitter();
   ~NativeCodeJitter();
 
   void Disassemble(Chunk*);
 
-  NativeConcreteCode *Compile(LazyCompileClosure *lazyCompileClosure);
+  word Compile(LazyCompileClosure *lazyCompileClosure);
 #ifdef INSTRUCTION_COUNTS
   void DumpInstructionCounts();
 #endif
