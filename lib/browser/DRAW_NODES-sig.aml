@@ -23,29 +23,29 @@ signature DRAW_NODES =
 	exception DrawError
 
 	datatype intention = DRAW | SEARCH of int * int
+
+	val groupToPosition:  node * int * int -> unit
 	
-	val atomDraw   :   node * int * int -> int * int 
-
-	val drawSimple :   
-	    node * int * int  -> int * int 
-
-	val drawLimit  :   
-	    node * int * int -> int * int 
+	val atomDraw   :   node * int * int *  (node * int * int -> unit) 
+	    -> int * int 
 
 	val drawConcat :   
-	    node * int * int  -> int * int
+	    node * int * int  *  (node * int * int -> unit) 
+	    -> int * int
 
 	val drawContainer:
-	    node * int * int -> int * int 
+	    node * int * int  *  (node * int * int -> unit) 
+	    -> int * int 
         
         val drawRelNode : 
-	    node * int * int -> int * int 
+	    node * int * int  *  (node * int * int -> unit) 
+	    -> int * int 
 
-        val drawRelRefNode : 
-	    node * int * int   -> int * int 
+	val move': node * int * int -> unit 
 
-	val move: node * int * int -> int * int 
+	val move: node * int * int -> int * int   
 
-	val draw : node * int * int  -> int * int 
+	val draw : node * int * int *  (node * int * int -> unit) 
+	    -> int * int 
        
     end

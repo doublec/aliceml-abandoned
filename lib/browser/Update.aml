@@ -106,14 +106,14 @@ struct
 	       val _ = updateChild(getParent(n),getIndex(n),new)
               (*  val _ = TextIO.print("UPDATE: updateChild gemacht\n") *)
 	       val node = if getParent(new) = Empty then new else anc 
-	       val (x_pos,y_pos) = Services.getPosition(getGroup(node))
+	       val (x_pos,y_pos) = Services.getPosition(getGroup(anc))
               (* val _ = TextIO.print("UPDATE: node zugewiesen\n") *)
-	   in ( Gtk.objectDestroy(getGroup(n)) 
+	   in ( (y_pos;Gtk.objectDestroy(getGroup(n))) 
               (* ; TextIO.print("UPDATE: alte Gruppe zerstoert\n") *)
 	       ; Layout.layout(node)
                ; TextIO.print ("UPDATE: beginne zu zeichnen...\n")
 	       ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
-               ; DrawNodes.draw(node,0,y_pos) 
+               ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
 	       ; TextIO.print ("UPDATE: drawing with y = "
 			       ^Int.toString(y_pos)^"\n")
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim

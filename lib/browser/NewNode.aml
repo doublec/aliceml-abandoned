@@ -36,6 +36,8 @@ import structure Settings from "Settings"
 import structure WindowManager from "WindowManager"
 import signature NEW_NODE from "NEW_NODE-sig"
 
+import structure Services from "Services" (* to be removed *)
+
 local
     open Types Helper MkPathTable Settings Dictionaries
  
@@ -76,6 +78,17 @@ struct
 			    val _ = RelManDictionary.update(reldict,(i,nil))
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
+			    val (x1,y1,x2,y2) = Services.getCoordinates(
+							 getGroup(node))
+			    val _ = TextIO.print("NEWNODE: x1 = "
+						 ^ Int.toString(x1)
+						 ^ " y1 = "
+						 ^ Int.toString(y1)
+						 ^ " x2 = "
+						  ^ Int.toString(x2)
+						 ^ " y2 = "
+						  ^ Int.toString(y2)
+						 ^" \n" )
 			in (MainDictionary.insertI(dict,(node)) ; node)
 			end
   
