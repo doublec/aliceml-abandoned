@@ -116,44 +116,6 @@ structure Backend=
 		    defFun
 	    end
 
-		(* Administration of JVM registers *)
-	structure Register =
-	    struct
-		local
-		    (* highest register in use *)
-(*		    val registercount = ref 5*)
-
-		    (* map stamps to registers *)
-(*		    val register: int StampHash.t = StampHash.new ()*)
-
-		    (* assign stamps to JVM registers where the defining
-		     function closure is stored in *)
-		    val lambda = StampSet.new ()
-
-		    (* assign stamps to corresponding field names.
-		     This is used for generating debug information in compiled
-		     (Jasmin) code *)
-		    val fields  : string StampHash.t = StampHash.new ()
-		in
-		    (* Remember that an instance of this class has been created. *)
-		    fun instantiate stamp' =
-			StampSet.insert(lambda,stamp')
-
-		    (* return whether an instance of this class has been created *)
-		    fun isInstantiated stamp' =
-			StampSet.member(lambda,stamp')
-
-		    (* create some debugging informations *)
-		    fun generateVariableTable rest =
-			StampHash.foldi
-			(fn (stamp',name,rest') =>
-			 (print "hallo";Comment ("var "^name^": "^Stamp.toString stamp') ::
-			  rest'))
-			rest
-			fields
-		end
-	    end
-
 	(* load an integer as JVM integer constant. *)
 	fun atCodeInt (i:LargeInt.int) =
 	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.>= (Int.toLarge 5, i)

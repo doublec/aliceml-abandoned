@@ -77,27 +77,32 @@ structure ToJasmin =
 		  | SOME (Jump IRet) => "ireturn"
 		  | SOME _ => Crash.crash "ToJasmin: directJump"
 
-	    (* return the toString of the real label for this jump *)
+	    (* return the real label for this jump *)
 	    fun condJump lab' =
 		case IntHash.lookup(!labelMerge, lab') of
 		    SOME (Lab (lab'', _)) => condJump lab''
-		  | _ => Label.toString lab'
+		  | _ => lab'
+
+	    fun labName lab' = "label"^Int.toString (condJump lab')
 
 	    (* For several branches to the same address, stack size has
 	     to be equal in order to make the Java verifier happy *)
 	    fun checkSizeAt (l, size) =
-		case IntHash.lookup(!stackSizeHash, l) of
-		    SOME s => if s <> size then
-			(print ("Stack verification error: Size = "^
-				Int.toString s^" or "^
-				Int.toString size^
-				" at "^Label.toString l^" of "^(!actclass)^
-				"."^(!actmeth)^".\n");
-			 size)
-			      else size
-		  | NONE =>
-				  (IntHash.insert (!stackSizeHash, l, size);
-				   size)
+		let
+		    val l'= condJump l
+		in
+		    case IntHash.lookup(!stackSizeHash, l') of
+			SOME s => (if s <> size then
+				       print ("Stack verification error: Size = "^
+					      Int.toString s^" or "^
+					      Int.toString size^
+					      " at "^Label.toString l'^" of "^(!actclass)^
+					      "."^(!actmeth)^".\n")
+				   else ();
+				       size)
+		      | NONE => (IntHash.insert (!stackSizeHash, l', size);
+				 size)
+		end
 
 	    (* Leave a method (via return or athrow).
 	     Return the stack size after this instruction (i.e.
@@ -649,16 +654,7 @@ structure ToJasmin =
 		       (* sort lookupswitches. if possible, change to tableswitch *)
 		       | Lookupswitch (keylabs, def) =>
 			     let
-				 fun show (k::ks, l::ls) =
-				     (print ("("^LargeInt.toString k^", "^
-					     Int.toString l^") ");
-				      show (ks, ls))
-				   | show _ = ()
 				 val (key, labs) = MergeSort.sort keylabs
-				 val _ = (print "before sort: ";
-					  show keylabs;
-					  print "\nafter sort: ";
-					  show (key, labs))
 				 fun isTable (last, nil) = (true, last)
 				   | isTable (last, next::rest) =
 				     if last - 1 = next
@@ -694,11 +690,6 @@ structure ToJasmin =
 			val d' = fuse (Store, flattened)
 			val _ = if !VERBOSE >= 3 then print "done.\n" else ()
 		    in
-			(* Register 0 ('this'-Pointer) and
-			 register 1 (formal Parameter) are
-			 defined when entering a method *)
-			(* JVMreg.define(0, 0);
-			JVMreg.define(1, 0);*)
 			if !VERBOSE >= 3 then print "preparing liveness... " else ();
 			prepareLiveness (d', 0);
 			if !VERBOSE >= 3 then print "doing liveness... " else ();
@@ -848,9 +839,9 @@ structure ToJasmin =
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
 	      | instructionToJasmin (Catch(cn,from,to,use), _) =
-		".catch "^cn^" from "^LabelMerge.condJump from^
-		" to "^LabelMerge.condJump to^" using "^
-		LabelMerge.condJump use
+		".catch "^cn^" from "^LabelMerge.labName from^
+		" to "^LabelMerge.labName to^" using "^
+		LabelMerge.labName use
 	      | instructionToJasmin (Call _,_) =
 					 Crash.crash "IntructionToJasmin: unresolved Ifstatic"
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
@@ -877,14 +868,14 @@ structure ToJasmin =
 	      | instructionToJasmin (Iconst i,_) =
 				     if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
 	      | instructionToJasmin (Iadd,_) = "iadd"
-	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ifeq l,_) = "ifeq "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ifne l,_) = "ifne "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ifeq l,_) = "ifeq "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ifne l,_) = "ifne "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(LabelMerge.labName l)
 	      | instructionToJasmin (Iload j,s) =
 					 let
 					     val i = if s then JVMreg.get j-1 else JVMreg.get j
@@ -924,12 +915,12 @@ structure ToJasmin =
 				 fun flatten (switch::switches, lab::labels) =
 				     flatten (switches, labels)^
 				     ("\t"^int32ToString switch^": "^
-				      LabelMerge.condJump lab^"\n")
+				      LabelMerge.labName lab^"\n")
 				   | flatten _ = ""
 			     in
 				 "lookupswitch\n"^
 				 flatten (switchlist, labellist)^
-				 "default: "^LabelMerge.condJump default
+				 "default: "^LabelMerge.labName default
 			     end
 	      | instructionToJasmin (Multi _,_) = Crash.crash "instructionToJasmin: unresolved Multi"
 	      | instructionToJasmin (New cn,_) = "new "^cn
@@ -948,12 +939,12 @@ structure ToJasmin =
 				  CodeGen generates it from right to left *)
 				 fun flatten (lab::labl) =
 				     (flatten labl)^
-				     ("\t"^(LabelMerge.condJump lab)^"\n")
+				     ("\t"^(LabelMerge.labName lab)^"\n")
 				   | flatten nil = ""
 			     in
 				 "tableswitch "^(int32ToString low)^"\n"^
 				 (flatten labellist)^
-				 "default: "^(LabelMerge.condJump default)
+				 "default: "^(LabelMerge.labName default)
 			     end
 	      |  instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
 			     if (!DEBUG >= 1) then
@@ -961,7 +952,7 @@ structure ToJasmin =
 				 (Int.toString
 				  (if isStatic then number'-1 else number'))
 				 ^" is "^name'^" "^(desclist2string descriptor')^
-				 " from "^(LabelMerge.condJump from')^" to "^(LabelMerge.condJump to')
+				 " from "^(LabelMerge.labName from')^" to "^(LabelMerge.labName to')
 			     else ""
 	in
 	    fun instructionsToJasmin (insts, enterstack, staticapply, ziel) =

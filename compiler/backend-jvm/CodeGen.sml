@@ -229,7 +229,6 @@ structure CodeGen =
 			 end
 
 		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
-				   Register.generateVariableTable
 				   [New name,
 				    Dup,
 				    Invokespecial (name, "<init>", ([], [Voidsig])),
@@ -258,9 +257,6 @@ structure CodeGen =
 		 val clinit = Method([MPublic],
 				     "<clinit>",
 				     ([],[Voidsig]),
-(*				     Literals.makeNullfields
-				     (toplevel, RecordLabel.makeNullfields
-				     (toplevel, nil)))*)
 				     [Return])
 
 		 (* The main class *)
@@ -319,8 +315,7 @@ structure CodeGen =
 	  | decCode (RecDec ((((line,_),_),_),idexps as ((recid,_)::rest),_), curFun, curCls) =
 	    (* RecDec of coord * (id * exp) list * isTopLevel *)
 	    (* 1. create a new object for each id and store it into a new register. *)
-	    (* 2. evaluate the expression and pop the result *)
-	    (* !! The closure is built on evaluation of the expressions *)
+	    (* 2. fill the empty FunExp closures *)
 	    let
 		(* 1st step *)
 		local
@@ -346,7 +341,6 @@ structure CodeGen =
 				FunExp (((line,_),_),thisFun,_,_) =>
 				    let
 					val className = classNameFromStamp thisFun
-					val _ = Register.instantiate thisFun
 				    in
 					Line line ::
 					New className ::
@@ -436,13 +430,12 @@ structure CodeGen =
 
 		(* 2nd step *)
 		local
-		    fun evalexp ((id',exp')::idexps') =
-			(Multi (expCode (exp', curFun, curCls)) ::
-			 Pop::
-			 evalexp idexps')
-		      | evalexp nil = nil
+		    fun evalexp ((id',exp' as FunExp(_,thisFun, _, lambda)), akku) =
+			Multi (createFun (thisFun, lambda, curFun, curCls, false)) ::
+			akku
+		      | evalexp (_,akku) = akku
 		in
-		    val expcode = evalexp (List.rev idexps)
+		    val expcode = List.foldr evalexp nil idexps
 		end
 	    in
 		Line line ::
@@ -467,7 +460,7 @@ structure CodeGen =
 		val ilselabel = Label.new ()
 		val retry = Label.new ()
 		val stampcode' = idCode (id', curCls)
-		val notByNeed = Label.new ()
+		val behind = Label.new ()
 
 		fun switchNumber (LitTest (WordLit a)) =
 		    LargeWord.toLargeInt a
@@ -529,28 +522,22 @@ structure CodeGen =
 					     b', t'', b'')
 					  | _ => Crash.crash "CodeGen: generateBody"
 				else
-				    let
-					val behind = Label.new ()
-				    in
-					(Label lab ::
-					 Multi (decListCode (body', curFun, curCls)) ::
-					 Multi akku ::
-					 Label behind ::
-					 stampcode' ::
-					 Dup ::
-					 Instanceof ITransient ::
-					 Ifeq notByNeed ::
-					 Checkcast ITransient ::
-					 Invokeinterface MRequest ::
-					 Dup ::
-					 storeCode (stamp', curFun, curCls) ::
-					 Goto retry ::
-					 Label notByNeed ::
-					 decListCode (body'', curFun, curCls),
-					 number::switchlist,
-					 lab :: labelList,
-					 behind)
-				    end
+				    (Label lab ::
+				     Multi (decListCode (body', curFun, curCls)) ::
+				     Multi akku ::
+				     Label behind ::
+				     Instanceof ITransient ::
+				     Ifeq elselabel ::
+				     stampcode' ::
+				     Checkcast ITransient ::
+				     Invokeinterface MRequest ::
+				     Dup ::
+				     storeCode (stamp', curFun, curCls) ::
+				     Goto retry ::
+				     Label elselabel ::
+				     decListCode (body'', curFun, curCls),
+				     number::switchlist,
+				     lab :: labelList)
 			    end
 
 			fun isTableSwitch (i::(rest as (j::_))) =
@@ -560,20 +547,20 @@ structure CodeGen =
 			  | isTableSwitch (i::nil) = (true, i)
 			  | isTableSwitch nil = (false, 0)
 
-			fun makeSwitch (bod, switchlist, labellist, behind) =
+			fun makeSwitch (bod, switchlist, labellist) =
 			    (case isTableSwitch switchlist of
-				 (true, i) => Tableswitch (i, labellist, behind)
-			       | _ => Lookupswitch ((switchlist, labellist), behind)) ::
+				 (true, i) => Tableswitch (i, labellist, elselabel)
+			       | _ => Lookupswitch ((switchlist, labellist), elselabel)) ::
 			     bod
 
-			val gb as (_, _, _, behind) = generateBody (nil, nil, nil, body', test', body'')
+			val gb as (_, _, _) = generateBody (nil, nil, nil, body', test', body'')
 
 			val sw = makeSwitch gb
 
 			fun litTest (cls, ret) =
+			    Dup ::
 			    Instanceof cls ::
 			    Ifeq behind ::
-			    stampcode' ::
 			    Checkcast cls ::
 			    Getfield (cls^"/value", ret) ::
 			    sw
@@ -805,16 +792,14 @@ structure CodeGen =
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label ilselabel ::
-		    Dup ::
 		    Instanceof ITransient ::
-		    Ifeq notByNeed ::
+		    Ifeq elselabel ::
+		    stampcode' ::
 		    Checkcast ITransient ::
 		    Invokeinterface MRequest ::
 		    Dup ::
 		    storeCode (stamp', curFun, curCls) ::
 		    Goto retry ::
-		    Label notByNeed ::
-		    Pop ::
 		    Label elselabel ::
 		    Multi
 		    (decListCode (body'', curFun, curCls)) ::
@@ -1041,7 +1026,7 @@ structure CodeGen =
 		fun load ((_,Id (_,stamp',_))::rs,j) =
 		    Dup ::
 		    atCodeInt j ::
-		    Aload stamp' ::
+		    stampCode (stamp', curCls) ::
 		    Aastore ::
 		    (load (rs,j+1))
 		  | load (nil,_) = nil
@@ -1154,12 +1139,70 @@ structure CodeGen =
 		code'
 	    end
 
-
 	and
 	    loadIds nil = nil
 	  | loadIds (id'::rest) =
 	    idCode id' :: loadIds rest
 
+	and
+	    createFun (thisFun, lambda, upperFun, upperCls, newClosure) =
+	    (* create a new function closure for ValDec or
+	     fill an empty closure for RecDec.
+	     If newClosure is false, no value is returned via stack. *)
+	    let
+		val curCls = Lambda.getClassStamp (thisFun, 1)
+		val className = classNameFromStamp curCls
+		val freeVarList = FreeVars.getVars thisFun
+		(* 1st *)
+		val object =
+		    if newClosure
+			then
+			    Multi
+			    [Comment "build curCls",
+			     New className,
+			     Dup,
+			     Invokespecial (className, "<init>",
+					    ([], [Voidsig]))]
+		    else
+			Multi [Aload thisFun,
+			       Comment "make closure"]
+
+		(* 2. *)
+		local
+		    fun loadFreeVars (stamp''::rest, popWhenFinished, akku) =
+			loadFreeVars
+			(rest,
+			 false,
+			 (if popWhenFinished then Nop else Dup) ::
+			 stampCode (stamp'', upperCls) ::
+			 Putfield ((if stamp'' = curCls then
+					classNameFromStamp thisFun
+				    else className)^"/"^
+				   (fieldNameFromStamp stamp''),
+				   [Classsig IVal]) ::
+			     akku)
+		      | loadFreeVars (nil, true, akku) = Pop::akku
+		      | loadFreeVars (_,_,akku) = akku
+
+		    val realFreeVars = StampSet.fold
+			(fn (stamp'',akku) => let
+						  val s'' = Lambda.getLambda stamp''
+					      in
+						  if isParmStamp s'' orelse s''=thisFun
+						      then akku
+						  else s''::akku
+					      end)
+			nil
+			freeVarList
+		in
+		    val loadVars = loadFreeVars (realFreeVars, not newClosure, nil)
+		end
+	    in
+		Lambda.markForPickling (thisFun, upperCls);
+		expCodeClass (lambda, thisFun, curCls);
+		object ::
+		loadVars
+	    end
 	and
 	    expCode (AppExp(((line,_),_),Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
@@ -1211,64 +1254,11 @@ structure CodeGen =
 	  | expCode (FunExp(((line,_),_),thisFun, _, lambda), upperFun, upperCls) =
 		     (* FunExp of coord * string * (id args * dec) list *)
 		     (* id is formal parameter *)
-		     (* 1st build closure: - instantiate or load object *)
+		     (* 1st build closure: - instantiate class *)
 		     (*                    - set free variables via putfields *)
 		     (* 2nd generate corresponding class file *)
-		     let
-			 val curCls = Lambda.getClassStamp (thisFun, 1)
-			 val className = classNameFromStamp curCls
-			 val freeVarList = FreeVars.getVars thisFun
-			 (* 1st *)
-			 val object =
-			     if Register.isInstantiated curCls
-				 then
-				     Multi
-				     [Comment "Aload curCls",
-				      Aload curCls]
-			     else (* instantiate object *)
-				 Multi
-				 [Comment "build curCls",
-				  New className,
-				  Dup,
-				  Invokespecial (className,
-						 "<init>",
-						 ([],
-						  [Voidsig]))]
-			 (* 2. *)
-			 local
-			     fun loadFreeVar (stamp'', akku) =
-				 let
-				     val s'' = Lambda.getLambda stamp''
-				 in
-				     if isParmStamp s'' then akku else
-					 if s'' = curCls then
-					     if s'' <> thisFun then
-						 Aload thisFun ::
-						 stampCode (s'', upperCls) ::
-						 Putfield (classNameFromStamp thisFun^"/"^
-							   (fieldNameFromStamp s''),
-							   [Classsig IVal]) ::
-						 akku
-					     else akku
-					 else
-					     Dup ::
-					     stampCode (s'', upperCls) ::
-					     Putfield (className^"/"^
-						       (fieldNameFromStamp s''),
-						       [Classsig IVal]) ::
-					     akku
-				 end
-			 in
-			     val loadVars =
-				 StampSet.fold loadFreeVar nil freeVarList
-			 end
-		     in
-			 Lambda.markForPickling (thisFun, upperCls);
-			 expCodeClass (lambda, thisFun, curCls);
-			 Line line ::
-			 object ::
-			 loadVars
-		     end
+		     Line line ::
+		     createFun(thisFun, lambda, upperFun, upperCls, true)
 
 	  | expCode (RecExp(_, nil),_,_) =
 		     Crash.crash "CodeGen.expCode: empty RecExp"
