@@ -5,3 +5,4 @@ Group is
 
 	TARGET-sig.aml
 	Target.aml
+	BACKEND_SPECIFIC-sig.aml
