@@ -20,8 +20,8 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun funExp(i,    [],     exp') = exp'
       | funExp(i, id'::ids', exp') = O.FunExp(i, id', funExp(i, ids', exp'))
 
-    fun curryExp(i,1,exp') = exp'
-      | curryExp(i,k,exp') =
+    fun curryExp(i, (0|1), exp') = exp'
+      | curryExp(i,   k,   exp') =
 	let
 	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),O.InId))
 	    val exps' = List.map (fn id' => O.VarExp(i, O.ShortId(i,id'))) ids'
