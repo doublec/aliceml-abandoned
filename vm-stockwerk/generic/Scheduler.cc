@@ -42,10 +42,6 @@ word Scheduler::currentArgs[Scheduler::maxArgs];
 word Scheduler::currentData;
 Backtrace *Scheduler::currentBacktrace;
 
-void Scheduler::Timer() {
-  StatusWord::SetStatus(PreemptStatus());
-}
-
 void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
   root = Store::IntToWord(0);
@@ -195,14 +191,16 @@ int Scheduler::Run() {
 	RootSet::DoGarbageCollection();
 	threadQueue = ThreadQueue::FromWordDirect(root);
       }
+      IOHandler::Poll();
       if (SignalHandler::GetSignalStatus())
 	SignalHandler::HandlePendingSignals();
-      IOHandler::Poll();
       StatusWord::ClearStatus();
     }
-    // Check for both incoming signals and I/O
+    // Wait for I/O and/or asynchronous signals
     IOHandler::Block();
-    SignalHandler::HandlePendingSignals();
+    if (SignalHandler::GetSignalStatus())
+      SignalHandler::HandlePendingSignals();
+    StatusWord::ClearStatus();
   }
 }
 
