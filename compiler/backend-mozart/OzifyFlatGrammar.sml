@@ -239,6 +239,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, ConExp (info, id, conArity)) =
 	    (f (q, "conExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputConArity (q, conArity); r q)
+	  | outputExp (q, StaticConExp (info, stamp, conArity)) =
+	    (f (q, "staticConExp"); outputExpInfo (q, info); m q;
+	     outputStamp (q, stamp); m q; outputConArity (q, conArity); r q)
 	  | outputExp (q, RefExp info) =
 	    (f (q, "refExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =
@@ -272,6 +275,10 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, ConAppExp (info, id, args, conArity)) =
 	    (f (q, "conAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); m q;
+	     outputConArity (q, conArity); r q)
+	  | outputExp (q, StaticConAppExp (info, stamp, args, conArity)) =
+	    (f (q, "staticConAppExp"); outputExpInfo (q, info); m q;
+	     outputStamp (q, stamp); m q; outputArgs outputId (q, args); m q;
 	     outputConArity (q, conArity); r q)
 	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
