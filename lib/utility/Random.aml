@@ -20,10 +20,13 @@ struct
     val  _         = Rand.srand 0
     val (min,max)  = Rand.randLimits()
     val  range     = max - min
+    val bigInt     = 536870912 (* 2 ^ 29 *)
 
     fun int limit  = if limit = 0 then 0 else (Rand.rand() mod limit)
 	
-    fun real limit = if limit = 0.0 then 0.0 else Real.*(Real./(Real.fromInt (Rand.rand () - min), limit), Real.fromInt range) 
+    fun real limit =
+        if limit = 0.0 then 0.0 
+        else Real.fromInt (int bigInt) * limit / (Real.fromInt bigInt)
 
     val largeInt   = int
     val largeReal  = real
