@@ -13,7 +13,7 @@
 #include <cstring>
 #include <cstdio>
 
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#if defined(STORE_PROFILE)
 #include <sys/time.h>
 #include <unistd.h>
 #endif
@@ -22,7 +22,6 @@
 #pragma implementation "store/HeaderOp.hh"
 #pragma implementation "store/PointerOp.hh"
 #pragma implementation "store/Store.hh"
-#pragma implementation "store/Memory.hh"
 #pragma implementation "store/GCHelper.hh"
 #pragma implementation "store/Value.hh"
 #pragma implementation "store/Set.hh"
@@ -51,7 +50,7 @@ Set *Store::wkDictSet        = INVALID_POINTER;
 u_int Store::needGC          = 0;
 Finalization *Store::handler = INVALID_POINTER;
 
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#if defined(STORE_PROFILE)
 u_int Store::totalMem  = 0;
 u_int Store::gcLiveMem = 0;
 struct timeval *Store::sum_t;
@@ -262,7 +261,7 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
   handler   = INVALID_POINTER;
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#if defined(STORE_PROFILE)
   totalMem = 0;
   sum_t    = (struct timeval *) malloc(sizeof(struct timeval));
 #endif
@@ -302,7 +301,7 @@ word Store::ResolveForwardPtr(word v) {
 
 inline void Store::HandleInterGenerationalPointers(u_int gen) {
   Set *intgen_set = intgenSet;
-#if defined(STORE_DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::printf("initial intgen_size is %d\n", intgen_set->GetSize());
 #endif
   u_int rs_size = intgen_set->GetSize();
@@ -370,13 +369,13 @@ inline void Store::HandleInterGenerationalPointers(u_int gen) {
       }
     }
   }
-#if defined(STORE_DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::printf("new_intgen_size is %d\n", intgen_set->GetSize());
 #endif
 }
 inline Block *Store::HandleWeakDictionaries() {
   Set *wkdict_set = wkDictSet;
-#if defined(STORE_DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::printf("initial weakdict_size is %d\n", wkdict_set->GetSize()); 
 #endif
   // Allocate and initialize Finalisation Set
@@ -510,7 +509,7 @@ inline Block *Store::HandleWeakDictionaries() {
   }
   // Now successivly forward the finalized tree
   Store::CheneyScan(chunk, scan);
-#if defined(STORE_DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
   return finset;
@@ -590,7 +589,7 @@ inline void Store::DoGC(word &root, const u_int gen) {
 }
 
 void Store::DoGC(word &root) {
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#if defined(STORE_PROFILE)
   struct timeval start_t, end_t;
   gettimeofday(&start_t, INVALID_POINTER);
 #endif
@@ -601,7 +600,7 @@ void Store::DoGC(word &root) {
   //  gen--;
   // }
 
-#if defined(STORE_DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::printf("GCing all gens <= %d.\n", gen);
 
   std::printf("root_set   gen %d\n", HeaderOp::DecodeGeneration(Store::WordToBlock(root)));
@@ -625,16 +624,14 @@ void Store::DoGC(word &root) {
   default:
     DoGC(root, gen); break;
   }
-#if defined(STORE_DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::printf("Done GC.\n");
 #endif
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#if defined(STORE_PROFILE)
   gettimeofday(&end_t, INVALID_POINTER);
   sum_t->tv_sec  += (end_t.tv_sec - start_t.tv_sec);
   sum_t->tv_usec += (end_t.tv_usec - start_t.tv_usec);
-#endif
-#if defined(STORE_PROFILE)
-  gcLiveMem += (GetMemUsage(roots[hdrGen]) - memUsage);
+  gcLiveMem      += (GetMemUsage(roots[hdrGen]) - memUsage);
 #endif
 }
 
@@ -683,24 +680,6 @@ void Store::ForceGC(word &root, const u_int gen) {
   Store::DoGC(root, gen);
 }
 
-#endif
-
-#if defined(STORE_GC_DEBUG)
-void Store::CheckAlive(char *p) {
-  MemChunk *chunk = roots[0];
-  if (p != NULL) {
-    while (chunk != NULL) {
-      if (p >= chunk->GetBase() && (p < chunk->GetTop()))
-	return;
-      chunk = chunk->GetNext();
-    }
-    std::fprintf(stderr, "Illegal blcok ptr to non-alive struct\n");
-    ((char *) NULL)[0] = 0x00;
-  }
-}
-#endif
-
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
   std::printf("---\n");
   std::printf("ingen_set size: %u\n", intgenSet->GetSize());
@@ -723,6 +702,24 @@ void Store::MemStat() {
   std::fflush(stdout);
 }
 
+#endif
+
+#if defined(STORE_GC_DEBUG)
+void Store::CheckAlive(char *p) {
+  MemChunk *chunk = roots[0];
+593  if (p != NULL) {
+    while (chunk != NULL) {
+      if (p >= chunk->GetBase() && (p < chunk->GetTop()))
+	return;
+      chunk = chunk->GetNext();
+    }
+    std::fprintf(stderr, "Illegal blcok ptr to non-alive struct\n");
+    ((char *) NULL)[0] = 0x00;
+  }
+}
+#endif
+
+#if defined(STORE_PROFILE)
 void Store::ResetTime() {
   sum_t->tv_sec = sum_t->tv_usec = 0;
   totalMem = 0;
