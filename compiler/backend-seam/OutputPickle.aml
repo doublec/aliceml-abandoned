@@ -132,7 +132,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | toInt TRANSFORM = 245
 
 		(* alice/Data.hh: Alice::MAX_TAG - Alice::MIN_TAG *)
-		val maxSmallTag = 221
+		val maxSmallTag = 94
 
 		fun isBigTagValue nLabels = nLabels > maxSmallTag
 	    end
