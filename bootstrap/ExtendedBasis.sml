@@ -36,7 +36,8 @@ signature REF =
     val :=: :		'a ref * 'a ref -> unit
     val exchange :	'a ref * 'a -> 'a
 
-    val map: ('a -> 'a) -> 'a ref -> 'a ref
+    val equal :		'a ref * 'a ref -> bool
+    val map :		('a -> 'a) -> 'a ref -> 'a ref
   end
 
 
@@ -52,6 +53,7 @@ structure Ref : REF =
 
     fun exchange(r as ref x1, x2)	= (r := x2 ; x1)
 
+    val equal				= op =
     fun map f (r as ref x)		= ref(f x)
   end
 
@@ -66,6 +68,7 @@ signature BOOL =
     include BOOL
 
     type t = bool
+    val equal : bool * bool -> bool
   end
 
 
@@ -73,7 +76,8 @@ structure Bool : BOOL =
   struct
     open Bool
 
-    type t = bool
+    type t    = bool
+    val equal = op =
   end
 
 
@@ -374,6 +378,9 @@ structure Char =
 
     type t		= char
 
+    val equal		= op =
+    val hash		= ord
+
     fun toWide c	= c
     fun fromWide c	= c
   end
@@ -390,6 +397,9 @@ signature CHAR =
     include CHAR
 
     type t = char
+
+    val equal :		char * char -> bool
+    val hash :		char -> int
 
     val toWide :	char -> WideChar.char
     val fromWide :	WideChar.char -> char
@@ -414,6 +424,28 @@ structure String =
     open String
 
     type t		= string
+
+    fun hash s =	(* hashpjw [Aho/Sethi/Ullman "Compilers"] *)
+	let
+	    open Word
+	    infix << >> andb xorb
+
+	    val n = String.size s
+
+	    fun iter(i,h) =
+		if i = n then h else
+		let
+		    val c  = Word.fromInt(Char.ord(String.sub(s,i)))
+		    val h' = (h << 0w4) + c
+		    val g  = h' andb 0wxf00000
+		in
+		    iter(Int.+(i,1), h' xorb g xorb (g >> 0w16))
+		end
+	in
+	    Word.toInt(iter(0,0w0))
+	end
+
+    val equal		= op =
 
     fun toWide s	= s
     fun fromWide s	= s
@@ -450,6 +482,9 @@ signature STRING =
 
     type t = string
 
+    val equal :		string * string -> bool
+    val hash :		string -> int
+
     val maxLen :	int
     val length :	string -> int
     val append :	string * string -> string
@@ -483,8 +518,18 @@ signature SUBSTRING =
     include SUBSTRING (* where structure String : STRING *)
 
     type t = substring
+
+    val equal :	substring * substring -> bool
+    val hash :	substring -> int
   end
 
+structure Substring =
+  struct
+    open Substring
+
+    fun hash ss		= String.hash(string ss)
+    fun equal(ss, st)	= string ss = string st
+  end
 
 
 (*****************************************************************************
@@ -496,6 +541,9 @@ signature INTEGER =
     include INTEGER
 
     type t = int
+
+    val equal :	int * int -> bool
+    val hash :	int -> Int.int
   end
 
 
@@ -503,7 +551,10 @@ structure Int : INTEGER =
   struct
     open Int
 
-    type t = int
+    type t	= int
+
+    val equal	= op =
+    fun hash i	= abs i handle Overflow => 0
   end
 
 
@@ -511,7 +562,10 @@ structure LargeInt : INTEGER =
   struct
     open LargeInt
 
-    type t = int
+    type t	= int
+
+    val equal	= op =
+    fun hash i	= toInt(abs i mod valOf maxInt) handle Overflow => 0
   end
 
 
@@ -519,7 +573,10 @@ structure Position : INTEGER =
   struct
     open Position
 
-    type t = int
+    type t	= int
+
+    val equal	= op =
+    fun hash i	= toInt(abs i mod valOf maxInt) handle Overflow => 0
   end
 
 
@@ -533,6 +590,9 @@ signature WORD =
     include WORD
 
     type t = word
+
+    val equal :	word * word -> bool
+    val hash :	word -> int
   end
 
 
@@ -540,7 +600,10 @@ structure Word : WORD =
   struct
     open Word
 
-    type t = word
+    type t	= word
+
+    val equal	= op =
+    fun hash w	= abs(toInt w) handle Overflow => 0
   end
 
 
@@ -548,7 +611,10 @@ structure LargeWord : WORD =
   struct
     open LargeWord
 
-    type t = word
+    type t	= word
+
+    val equal	= op =
+    fun hash w	= abs(toInt w) handle Overflow => 0
   end
 
 
@@ -562,6 +628,8 @@ signature REAL =
     include REAL
 
     type t = real
+
+    val equal : real * real -> bool
   end
 
 
@@ -569,7 +637,9 @@ structure Real : REAL =
   struct
     open Real
 
-    type t = real
+    type t	= real
+
+    val equal	= op ==
   end
 
 
@@ -577,7 +647,9 @@ structure LargeReal : REAL =
   struct
     open LargeReal
 
-    type t = real
+    type t	= real
+
+    val equal	= op ==
   end
 
 
@@ -875,6 +947,9 @@ signature TIME =
     include TIME
 
     type t = time
+
+    val equal :	time * time -> bool
+    val hash :	time -> int
   end
 
 
@@ -882,7 +957,10 @@ structure Time : TIME =
   struct
     open Time
 
-    type t = time
+    type t	= time
+
+    val equal	= op =
+    fun hash t	= LargeInt.hash(toMicroseconds t)
   end
 
 
