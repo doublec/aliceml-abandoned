@@ -17,6 +17,7 @@ signature UNSAFE_OS_COMPONENT =
 		structure FileSys:
 		    sig
 			val getDir: unit -> string
+			val tmpName: unit -> string
 		    end
 
 		structure Process:
