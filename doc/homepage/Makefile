@@ -36,7 +36,7 @@ download: $(DOWNLOADFILES)
 $(DIRS):
 	mkdir -p -m 775 $@
 
-$(PREFIX)/%.html: %.html macros.php3
+$(PREFIX)/%.html: %.html macros.php3 project.html
 	$(PHP) -q $< >$<.static
 	install -c -m 444 $<.static $@
 	rm -f $<.static
