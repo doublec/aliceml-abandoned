@@ -22,7 +22,8 @@ import structure MkBackendMozart     from "../backend-mozart/MkBackendMozart"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
        structure InfLoader
-       structure ModLoader           from "MkRecursiveCompiler"
+       structure ModLoader
+       structure ImportLoader        from "MkRecursiveCompiler"
 
 structure SMLToMozartRecursiveCompiler =
     let
@@ -32,9 +33,11 @@ structure SMLToMozartRecursiveCompiler =
 
 	val acquireSigRef: InfLoader.t ref = ref (fn _ => assert false)
 	val acquireModRef: ModLoader.t ref = ref (fn _ => assert false)
+	val acquireImportsRef: ImportLoader.t ref = ref (fn _ => assert false)
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)
+	fun loadImports (desc, url) = !acquireImportsRef (desc, url)
 
 	structure ComponentManager' =
 	    Component.MkManager(val resolver = Component.defaultResolver)
@@ -45,6 +48,8 @@ structure SMLToMozartRecursiveCompiler =
 
 	structure FrontendCommon =
 	    MkFrontendCommon(val loadSig = loadSig
+			     val loadMod = loadMod
+			     val loadImports = loadImports
 			     structure Switches = Switches)
 
 	structure BackendMozart =
@@ -70,6 +75,7 @@ structure SMLToMozartRecursiveCompiler =
 
 	val _ = acquireSigRef := RecursiveCompiler.acquireSig
 	val _ = acquireModRef := RecursiveCompiler.acquireMod
+	val _ = acquireImportsRef := RecursiveCompiler.acquireImports
     in
 	RecursiveCompiler
     end

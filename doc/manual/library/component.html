@@ -25,10 +25,12 @@
 
   <P>
     If the environment variable <TT>ALICE_TRACE_COMPONENT</TT> is set,
-    then trace messages concerning link failures of native components
-    and type-checking and evaluation of components will be printed to
-    the standard error output stream <TT><A href="text-io.html"
-    >TextIO.stdErr</A></TT>.
+    then trace messages concerning linking, type-checking and evaluation of
+    components will be logged. If the environment variable is set to the
+    empty string, logging is performed on the standard error output stream.
+    Otherwise, the variable's value is interpreted as a filename opened for
+    logging. If the file already exists, it is overwritten. If it cannot be
+    opened for writing, logging falls back to standard error.
   </P>
 
   <P>
@@ -71,8 +73,9 @@
 
 	val <A href="#load">load</A> : <A href="url.html#t">Url.t</A> -> component
 	val <A href="#save">save</A> : string * component -> unit
+<!--
 	val <A href="#inf">inf</A> :  component -> Inf.t option
-
+-->
 	functor <A href="#MkManager">MkManager</A>(val resolver : <A href="resolver.html#t">Resolver.t</A>) : <A href="component-manager.html">COMPONENT_MANAGER</A>
     end</PRE>
 
@@ -207,6 +210,7 @@
 	></TT> if pickling or saving fails.</P>
     </DD>
 
+<!--
     <DT>
       <TT><A name="inf">inf</A> <I>comp</I></TT>
     </DT>
@@ -217,6 +221,7 @@
 	or foreign component (that is, a component not implemented in
 	Alice).</P>
     </DD>
+-->
 
     <DT>
       <TT><A name="MkManager">MkManager</A

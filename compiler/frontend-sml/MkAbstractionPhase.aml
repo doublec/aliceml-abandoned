@@ -82,19 +82,16 @@ backend support for general strictness.
 
 *)
 
-
 import structure Url              from "../../lib/system/Url"
 import structure Crash            from "../infrastructure/Crash"
 import structure Source           from "../infrastructure/Source"
 import signature SWITCHES         from "../infrastructure/SWITCHES-sig"
-import signature CONTEXT          from "../infrastructure/CONTEXT-sig"
 
 import structure Stamp            from "../common/Stamp"
 import structure Name             from "../../lib/rtt/Name"
 import structure Label            from "../../lib/rtt/Label"
 import structure Fixity           from "../../lib/rtt/Fixity"
 import structure PervasiveType    from "../../lib/rtt/PervasiveType"
-import signature ABSTRACT_GRAMMAR from "../frontend-common/ABSTRACT_GRAMMAR-sig"
 import structure AbstractGrammar  from "../frontend-common/AbstractGrammar"
 
 import structure SCon             from "SCon"
@@ -102,9 +99,8 @@ import structure Lab              from "Lab"
 import structure VId
        structure TyCon
        structure TyVar
-       structure SigId
-       structure StrId             from "Ids"
-import signature INPUT_GRAMMAR     from "INPUT_GRAMMAR-sig"
+       structure StrId
+       structure SigId             from "Ids"
 import structure InputGrammar      from "InputGrammar"
 
 import structure BindEnv           from "BindEnv"
@@ -320,11 +316,9 @@ struct
     fun trLab E (Lab(i, lab)) =
 	let
 	    val name = Lab.toString lab
-	    val _    = if !Switches.Warn.conventions
-			andalso not(isConventionalLab name) then
-			   warn(i, E.LabConvention lab)
-			else ()
 	in
+	    warn(!Switches.Warn.conventions andalso not(isConventionalLab name),
+		 i, E.LabConvention lab);
 	    O.Lab(i, Label.fromString name)
 	end
 
@@ -365,15 +359,11 @@ struct
 	    val id'   = idId id
 	    val name  = toString id'
 	    val stamp = Stamp.stamp()
-	    val _     = if !Switches.Warn.shadowing
-			andalso Option.isSome(lookup(E, id')) then
-			   warn(i, Shadowed id')
-			else ()
-	    val _     = if !Switches.Warn.conventions
-			andalso not(isConventional name) then
-			   warn(i, Convention id')
-			else ()
 	in
+	    warn(!Switches.Warn.shadowing andalso Option.isSome(lookup(E, id')),
+		 i, Shadowed id');
+	    warn(!Switches.Warn.conventions andalso not(isConventional name),
+		 i, Convention id');
 	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
 

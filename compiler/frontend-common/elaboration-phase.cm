@@ -12,6 +12,9 @@ Group is
 	ENV-sig.aml
 	Env.aml
 
+	REWRITE_IMPORTS-sig.aml
+	MkRewriteImports.aml
+
 	ELABORATION_ERROR-sig.aml
 	ElaborationError.aml
 	ELABORATION_PHASE-sig.aml

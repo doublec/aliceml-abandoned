@@ -19,9 +19,6 @@ Nevertheless, we sometimes use scopes to reduce the size of the symbol table.
 TODO: Replace Tag{Exp,Pat} annotations with general downward propagation of
 annotation types, which would extend to recursive products and arrows.
 
-TODO: Check for pattern exhaustiveness and irredundancy? Better done by the
-pattern compiler in the middle end.
-
 TODO: Eliminate SingTyp in abstract grammar by proper encoding of datatypes.
 
 *******************************************************************************)
@@ -29,9 +26,7 @@ TODO: Eliminate SingTyp in abstract grammar by proper encoding of datatypes.
 import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
 
-import structure Name              from "../../lib/rtt/Name"
 import structure Label             from "../../lib/rtt/Label"
-import structure Stamp             from "../common/Stamp"
 import structure Path              from "../../lib/rtt/Path"
 import structure PathMap           from "../../lib/rtt/PathMap"
 import structure Type              from "../../lib/rtt/Type"
@@ -43,6 +38,9 @@ import structure AbstractGrammar   from "AbstractGrammar"
 import structure TypedInfo
        structure TypedGrammar      from "TypedGrammar"
 
+import structure Reflect           from "../../lib/system/Reflect"
+import functor MkRewriteImports    from "MkRewriteImports"
+
 import structure Crash             from "../infrastructure/Crash"
 import structure Error             from "../infrastructure/Error"
 import structure ElaborationError  from "ElaborationError"
@@ -50,7 +48,9 @@ import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
 import signature ELABORATION_PHASE from "ELABORATION_PHASE-sig"
 
 (*DEBUG
+import structure PathSet           from "../../lib/rtt/PathSet"
 import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
+import structure PPMisc            from "../../lib/rtt/PPMisc"
 import structure PPPath            from "../../lib/rtt/PPPath"
 import structure PPType            from "../../lib/rtt/PPType"
 import structure PPInf             from "../../lib/rtt/PPInf"
@@ -58,6 +58,8 @@ import structure TextIO            from "../../lib/system/TextIO"
 *)
 
 functor MkElaborationPhase(val loadSig: Source.desc * Url.t -> Inf.sign
+			   val loadMod: Source.desc * Url.t -> Reflect.module
+			   val loadImports: Source.desc * Url.t -> (Url.t * Inf.sign) vector
 			   structure Switches: SWITCHES)
     :> ELABORATION_PHASE =
 struct
@@ -75,12 +77,6 @@ struct
 
     val error = E.error
     val warn  = E.warn
-
-    fun warnUnused(region as (_,(lin,_)), warning) =
-	if lin = 0 andalso region <> Source.nowhere then () else
-	warn(region, warning)
-
-  (* UNFINISHED... *)
 
     (*DEBUG helpers
 
@@ -112,6 +108,13 @@ struct
     fun prInf name j =
 	(TextIO.print name; TextIO.print " = ";
 	 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 76 - size name);
+	 TextIO.print "\n")
+
+    fun prPaths name u =
+	(TextIO.print name; TextIO.print " = ";
+	 PrettyPrint.output(TextIO.stdOut,
+		PPMisc.brace(PPMisc.ppCommaList PPPath.ppPath (PathSet.toList u)),
+		76 - size name);
 	 TextIO.print "\n")
 
     fun nest 0 = ""
@@ -562,9 +565,15 @@ struct
 	let
 	    val  _       = Env.insertScope E
 	    val  s       = Inf.emptySig()
-	    val  decs'   = elabDecs(E, s, NONE, decs)
+	    val  p       = Path.invent()
+	    val  decs'   = elabDecs(E, s, SOME p, decs)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = Env.removeScope E
+	    val  s2      = Inf.emptySig()
+	    val  _       = Inf.extendVal(s2, Label.fromInt 0, t)
+	    val  j       = Inf.exist(p, Inf.sign s, Inf.sign s2) (* maximises *)
+	    val  _       = if not(Inf.isExist j) then () else
+				error(i, E.LetExpGenerative(#2(Inf.asExist j)))
 	in
 	    ( t, O.LetExp(typInfo(i,t), decs', exp') )
 	end
@@ -1174,9 +1183,8 @@ struct
 	let
 (*DEBUG
 val _ = (
-TextIO.print("elabModid_bind " ^ Name.toString name ^ " : \n");
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
-TextIO.print "\n";
+TextIO.print("elabModid_bind " ^ Name.toString name ^ ":");
+prInf "j" j;
 ())
 *)
 	    val j' = Future.byneed(fn() => Inf.sing(Inf.mod(p,j)))
@@ -1271,7 +1279,13 @@ TextIO.print "\n";
 	    val _     = Inf.close s handle Inf.Unclosed lt =>
 			    error(i, E.StrModUnclosed lt)
 *)
-	    val j     = Inf.sign s
+	    val j     = Inf.sign(Inf.avoidHidden s)
+(*DEBUG
+val _ =(TextIO.print "ElabMod StrMod:\n";
+prInf "s1" (Inf.sign s);
+prInf "s2" j;
+())
+*)
 	in
 	    ( j, O.StrMod(infInfo(i,j), decs') )
 	end
@@ -1298,9 +1312,8 @@ TextIO.print "\n";
 	    val  j           = Inf.arrow(p, j1', j2)
 	in
 (*DEBUG
-TextIO.print "ElabMod FunMod: j = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
-TextIO.print "\n";
+TextIO.print "ElabMod FunMod:\n";
+prInf "j" j;
 *)
 	    ( j, O.FunMod(infInfo(i,j), modid', inf', mod') )
 	end
@@ -1313,35 +1326,28 @@ TextIO.print "\n";
 	    val (p,j11,j12) = Inf.asArrow j1 handle Inf.Interface =>
 				error(I.infoMod mod1, E.AppModFunMismatch j1)
 (*DEBUG
-val _ =
-(TextIO.print "elabMod AppMod: matching...\n";
-TextIO.print "j_arg =\n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
-TextIO.print "\n";
-TextIO.print "j_param =\n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j11, 80);
-TextIO.print "\n";
+val _ = (
+TextIO.print "elabMod AppMod: matching...\n";
+prInf "j_arg" j2;
+prInf "j_param" j11;
 ())
 *)
 	    val  _          = Type.enterLevel()
 	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 (*DEBUG
 (TextIO.print "elabMod AppMod: mismatch\n";
-TextIO.print "j2 =\n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
-TextIO.print "\n";
-TextIO.print "j11 =\n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j11, 80);
-TextIO.print "\n";
+prInf "j2" j2;
+prInf "j11" j11;
 *)
 				error(i, E.AppModArgMismatch mismatch)
 	    val  _          = Type.exitLevel()
 	    val  _          = PathMap.insertDisjoint(#mod_rea rea, p,
 						     Inf.narrowMod(m2,j11))
-(*DEBUG handle e =>
-(TextIO.print "j2 = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
-TextIO.print "\n";
+(*DEBUG
+handle e =>
+(TextIO.print "elabMod AppMod: mismatch narrowing:\n";
+prInf "j2" j2;
+prInf "j11" j11;
 raise e)
 *)
 	    val  j'         = Inf.realise(rea, j12)
@@ -1349,9 +1355,8 @@ raise e)
 				       | SOME p => #1(Inf.instance(p,j'))
 	in
 (*DEBUG
-TextIO.print "ElabMod AppMod: j = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
-TextIO.print "\n";
+TextIO.print "ElabMod AppMod:\n";
+prInf "j" j;
 *)
 	    ( j, O.AppMod(infInfo(i,j), mod1', mod2') )
 	end
@@ -1365,20 +1370,19 @@ TextIO.print "\n";
 				error(i, E.AnnModMismatch mismatch)
 	    val  _        = Type.exitLevel()
 	    val  j        = Inf.narrow(j1,j2)
+	    val  j'       = case Inf.inspect j
+			     of Inf.Sig s => Inf.sign(Inf.avoidHidden s)
+			      | _ => j
 (*DEBUG*) handle e => raise e
 	in
 (*DEBUG
-TextIO.print "ElabMod AnnMod: j1 = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j1, 80);
-TextIO.print "\n";
-TextIO.print "ElabMod AnnMod: j2 = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
-TextIO.print "\n";
-TextIO.print "ElabMod AnnMod: j = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
-TextIO.print "\n";
+TextIO.print "ElabMod AnnMod:\n";
+prInf "j1" j1;
+prInf "j2" j2;
+prInf "j" j;
+prInf "j'" j';
 *)
-	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
+	    ( j', O.AnnMod(infInfo(i,j'), mod', inf') )
 	end
 
       | elabMod(E, po, I.SealMod(i, mod, inf)) =
@@ -1393,12 +1397,8 @@ TextIO.print "\n";
 (*DEBUG
 val _ = (
 TextIO.print "ElabMod SealMod:\n";
-TextIO.print "j1 = \n";
-PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j1, 80);
-TextIO.print "\n";
-TextIO.print "j2 = \n";
-PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 80);
-TextIO.print "\n";
+prInf "j1" j1;
+prInf "j2" j2;
 ())
 *)
 	in
@@ -1428,18 +1428,17 @@ TextIO.print "\n";
 	    val  j1       = Inf.sign s
 	    val (j2,mod') = elabMod(E, po, mod)
 	    val  _        = Env.removeScope E
+	    val  j        = Inf.exist(p,j1,j2)
 (*DEBUG
 val _ = (
 TextIO.print "ElabMod LetMod:\n";
-TextIO.print "j1 = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j1, 80);
-TextIO.print "\n";
-TextIO.print "j1' = \n";
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j1', 80);
-TextIO.print "\n";
+prPath "p" p;
+prInf "j1" j1;
+prInf "j2" j2;
+prPaths "paths j2" (Inf.paths j2);
+prInf "j" j;
 ())
 *)
-	    val  j        = Inf.exist(p,j1,j2)
 	in
 	    ( j, O.LetMod(infInfo(i,j), decs', mod') )
 	end
@@ -1769,9 +1768,9 @@ TextIO.print "\n";
 	    val (j',modid') = elabModid_bind(E, p, true, j, modid)
 (*DEBUG
 val _ = (
-TextIO.print("elabDec ModDec: " ^ PrettyPrint.toString(PPPath.ppPath p, 80) ^ " : \n");
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j', 80);
-TextIO.print "\n";
+TextIO.print("elabDec ModDec:\n";
+prPath "p" p;
+prInf "j'" j';
 ())
 *)
 	    val  _          = Inf.extendMod(s, p, j')
@@ -1792,9 +1791,9 @@ TextIO.print "\n";
 	    val  _           = Inf.extendInf(s, p, k)
 (*DEBUG
 val _ = (
-TextIO.print("elabDec InfDec: " ^ PrettyPrint.toString(PPPath.ppPath p, 80) ^ " = \n");
-PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j', 80);
-TextIO.print "\n";
+TextIO.print("elabDec InfDec:\n";
+prPath "p" p;
+prInf "j'" j';
 ())
 *)
 	in
@@ -2116,7 +2115,7 @@ TextIO.print "\n";
 	    val s'    = Inf.emptySig()
 	    val imps' = elabImps(E, s, s', imps)
 	    val s''   = if !Switches.Language.retainFullImport then s
-			else Future.byneed(fn() => Inf.narrowSig(s,s'))
+			else Future.byneed(fn() => Inf.narrowSigExt(s,s'))
 (*DEBUG*) handle e => raise e
 	in
 	    O.ImpAnn(sigInfo(i,s''), imps', url, b)
@@ -2351,165 +2350,42 @@ TextIO.print "\n";
 	    elabImp(E, s, s', imp)
 
 
-  (* Stripping of import signatures *)
-
-    fun stripAnns(E, anns') =
-	Vector.fromList
-	  (List.mapPartial (fn ann' => stripAnn(E, ann')) (Vector.toList anns'))
-
-    and stripAnn(E, O.ImpAnn({region,sign}, imps', url, b)) =
-	let
-	    val UE     = UseEnv.env()
-	    val imps'' = stripImps(E, UE, imps')
-	in
-	    if UseEnv.isEmpty UE then NONE else (* avoid requesting sign! *)
-	    let
-		val sign' = Inf.narrowSigExt(sign, stripSig(UE,sign))
-(*DEBUG*) handle e => raise e
-	    in
-		if Vector.length imps'' = 0
-		then NONE
-		else SOME(O.ImpAnn({region=region, sign=sign'}, imps'', url, b))
-	    end
-	end
-
-    and stripImps(E, UE, imps') =
-	Vector.fromList (List.mapPartial (fn imp' => stripImp(E, UE, imp'))
-					 (Vector.toList imps'))
-
-    and stripImp(E, UE, imp' as O.ValImp(i, valid', _)) =
-	let
-	    val {use, ...} = Env.lookupVal(E, O.stamp valid')
-	    val  l         = Label.fromName(O.name valid')
-	in
-	    if !use then
-		( UseEnv.insertVal(UE, l)
-		; SOME imp'
-		)
-	    else
-		( if not(!Switches.Warn.unusedImport) then () else
-		     warnUnused(#region i, E.ValImpUnused l)
-		; NONE
-		)
-	end
-
-      | stripImp(E, UE, imp' as O.TypImp(i, typid', _)) =
-	let
-	    val {use, ...} = Env.lookupTyp(E, O.stamp typid')
-	    val  l         = Label.fromName(O.name typid')
-	in
-	    if !use then
-		( UseEnv.insertTyp(UE, l)
-		; SOME imp'
-		)
-	    else
-		( if not(!Switches.Warn.unusedImport) then () else
-		     warnUnused(#region i, E.TypImpUnused l)
-		; NONE
-		)
-	end
-
-      | stripImp(E, UE, imp' as O.ModImp(i, modid', desc')) =
-	let
-	    val {use, ...} = Env.lookupMod(E, O.stamp modid')
-	    val  l         = Label.fromName(O.name modid')
-	in
-	    case !use
-	      of UseEnv.FULL =>
-		 ( UseEnv.insertMod(UE, l, !use)
-		 ; SOME imp'
-		 )
-	       | UseEnv.PARTIAL UE' =>
-		 if not(UseEnv.isEmpty UE') then
-		    ( UseEnv.insertMod(UE, l, case desc' of O.NoDesc _ => !use
-		    				 | O.SomeDesc _ => UseEnv.FULL)
-		    ; SOME imp'
-		    )
-		 else
-		    ( if not(!Switches.Warn.unusedImport) then () else
-			 warnUnused(#region i, E.ModImpUnused l)
-		    ; NONE
-		    )
-	end
-
-      | stripImp(E, UE, imp' as O.InfImp(i, infid', _)) =
-	let
-	    val {use, ...} = Env.lookupInf(E, O.stamp infid')
-	    val  l         = Label.fromName(O.name infid')
-	in
-	    if !use then
-		( UseEnv.insertInf(UE, l)
-		; SOME imp'
-		)
-	    else
-		( if not(!Switches.Warn.unusedImport) then () else
-		     warnUnused(#region i, E.InfImpUnused l)
-		; NONE
-		)
-	end
-
-      | stripImp(E, UE, imp' as O.FixImp _) =
-	    NONE
-
-      | stripImp(E, UE, O.RecImp(i, imps')) =
-	let
-	    val imps'' = stripImps(E, UE, imps')
-	in
-	    if Vector.length imps'' = 0 then
-		NONE
-	    else
-		SOME(O.RecImp(i, imps''))
-	end
-
-    (* Now this is real ugly... *)
-
-    and stripInf(UseEnv.FULL,       j) = j
-      | stripInf(UseEnv.PARTIAL UE, j) = Inf.sign(stripSig(UE, Inf.asSig j))
-
-    and stripSig(UE, s) =
-	let
-	    val s' = Inf.emptySig()
-	in
-	    List.app (stripItem (UE,s,s')) (Inf.items s);
-	    s'
-	end
-
-    and stripItem (UE,s,s') item =
-	case Inf.inspectItem item
-	 of (Inf.FixItem _ | Inf.HiddenItem _) =>
-		()
-	  | Inf.ValItem(l,t) =>
-		if not(UseEnv.lookupVal(UE, l)) then ()
-		else Inf.extendVal(s', l, t)
-	  | Inf.TypItem(p,k) =>
-		if not(UseEnv.lookupTyp(UE, Path.toLab p)) then ()
-		else Inf.extendTyp(s', p, k)
-	  | Inf.ModItem(p,j) =>
-		(case UseEnv.lookupMod(UE, Path.toLab p)
-		 of NONE     => ()
-		  | SOME use => Inf.extendMod(s', p, stripInf(use, j))
-		)
-	  | Inf.InfItem(p,k) =>
-		if not(UseEnv.lookupInf(UE, Path.toLab p)) then ()
-		else Inf.extendInf(s', p, k)
-
-
   (* Components *)
+
+    structure RewriteImports = MkRewriteImports(val loadImports = loadImports
+						val loadMod = loadMod
+						structure Switches = Switches)
 
     fun elabComp(E, desc, I.Comp(i, anns, decs)) =
 	let
-	    val _      = Env.insertScope E
-	    val anns'  = elabAnns(E, desc, anns)
-	    val s      = Inf.emptySig()
-	    val decs'  = elabDecs(E, s, NONE, decs)
-	    val _      = if !Switches.Language.allowUnclosedComponents then ()
-			 else Inf.close s handle Inf.Unclosed lnt =>
-			     error(i, E.CompUnclosed lnt)
-	    val anns'' = if !Switches.Language.retainFullImport then anns'
-			 else stripAnns(E, anns')
-	    val _      = Env.mergeScope E
+	    val _       = Env.insertScope E
+	    val anns'   = elabAnns(E, desc, anns)
+	    val s       = Inf.emptySig()
+	    val decs'   = elabDecs(E, s, NONE, decs)
+	    val _       = Env.mergeScope E
+	    val _       = if !Switches.Language.allowUnclosedComponents then ()
+			  else Inf.close s handle Inf.Unclosed lnt =>
+			      error(i, E.ExportUnclosed lnt)
+	    val (anns'',s') = RewriteImports.rewriteAnns(desc, E, anns', s)
 	in
-	    O.Comp(sigInfo(i,s), anns'', decs')
+	    if not(!Switches.Warn.inaccessibleExport) then () else
+	    let
+		val bound = Inf.boundPaths(Inf.sign s')
+	    in
+		PathMap.appi (fn(p,(pso,_)) =>
+			      if Option.isSome pso then () else
+				 warn(!Switches.Warn.inaccessibleExport, i,
+				      E.ExportHiddenTyp p)) (#typ bound);
+		PathMap.appi (fn(p,(pso,_)) =>
+			      if Option.isSome pso then () else
+				 warn(!Switches.Warn.inaccessibleExport, i,
+				      E.ExportHiddenMod p)) (#mod bound);
+		PathMap.appi (fn(p,(pso,_)) =>
+			      if Option.isSome pso then () else
+				 warn(!Switches.Warn.inaccessibleExport, i,
+				      E.ExportHiddenInf p)) (#inf bound)
+	    end;
+	    O.Comp(sigInfo(i,s'), anns'', decs')
 	end
 
     fun translate(desc, E, component) =

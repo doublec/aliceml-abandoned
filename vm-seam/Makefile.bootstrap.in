@@ -268,6 +268,7 @@ COMPILERFRONTENDCOMMONSOURCES0 = \
 	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
 	AbstractGrammar.aml TypedGrammar.aml \
 	ENV-sig.aml Env.aml USE_ENV-sig.aml UseEnv.aml \
+	REWRITE_IMPORTS-sig.aml MkRewriteImports.aml \
 	ELABORATION_ERROR-sig.aml ElaborationError.aml \
 	ELABORATION_PHASE-sig.aml MkElaborationPhase.aml \
 	TRANSLATION_ENV-sig.aml TranslationEnv.aml \
@@ -350,7 +351,8 @@ COMPILERSOURCES = \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
 
 TOOLSLINKERSOURCES0 = \
-	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml Main.aml
+	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml \
+	PrintSig.aml Main.aml
 TOOLSLINKERSOURCES = $(TOOLSLINKERSOURCES0:%=tools/linker/%)
 
 TOOLSDEPENDSOURCES0 = \
@@ -657,6 +659,7 @@ INSTALL3LIBFILES = \
 	$(DEBUGGERSOURCES:%.aml=%.stc) \
 	fundamental/Pervasive.stc fundamental/Core.stc \
 	fundamental/PACKAGE-sig.stc fundamental/Package.stc
+#	fundamental/RTT.stc 
 INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
 	SMLToSeamRecursiveCompiler.stc
@@ -702,6 +705,9 @@ build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 	Toplevel.import
 	cat $^ > $@
+
+build3/lib/fundamental/Pervasive.stc: build3/lib/fundamental/Pervasive.aml
+	$(ALICEC2) $(ALICEC_OPTS) --no-check-intermediate -c $< -o $@
 
 build3/%.stc: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
@@ -773,6 +779,10 @@ build3/install/lib/fundamental/Pervasive.stc: \
 build3/install/lib/fundamental/Core.stc: \
 	build3/lib/fundamental/Core.stc
 	install -c -m 444 $< $@
+
+#build3/install/lib/fundamental/RTT.stc: \
+#	build3/lib/fundamental/RTT.stc
+#	install -c -m 444 $< $@
 
 build3/install/lib/%: build3/lib/%
 	install -c -m 444 $< $@

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,13 +19,10 @@ import structure VId
 import structure Label             from "../../lib/rtt/Label"
 import structure Name              from "../../lib/rtt/Name"
 import structure AbstractGrammar   from "../frontend-common/AbstractGrammar"
-import structure Source            from "../infrastructure/Source"
 import structure Error             from "../infrastructure/Error"
-import structure Url               from "../../lib/system/Url"
 import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure PPMisc            from "../infrastructure/PPMisc"
 import signature ABSTRACTION_ERROR from "ABSTRACTION_ERROR-sig"
-
 
 structure AbstractionError :> ABSTRACTION_ERROR =
 struct
@@ -379,6 +376,6 @@ struct
 
   (* Export *)
 
-    fun error(region, e)  = Error.error(region, ppError e)
-    fun warn(region, w)   = Error.warn(region, ppWarning w)
+    fun error(region, e)   = Error.error(region, ppError e)
+    fun warn(b, region, w) = Error.warn(b, region, ppWarning w)
 end

@@ -29,6 +29,8 @@ struct
 	val conventions				= ref true
 	val shadowing				= ref false
 	val unusedImport			= ref true
+	val insertedImport			= ref false
+	val inaccessibleExport			= ref true
     end
 
     structure Language =
@@ -37,6 +39,7 @@ struct
 	val allowUnclosedComponents		= ref false
 	val supportRtt				= ref true
 	val silentFailExp			= ref true
+	val unsafeImport			= ref false
 	val reexportImport			= ref false
 	val retainFullImport			= ref false
 	val implicitImportFile			= ref(NONE : string option)

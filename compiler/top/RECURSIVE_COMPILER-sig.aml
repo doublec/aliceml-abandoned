@@ -32,6 +32,7 @@ signature RECURSIVE_COMPILER =
 	val compileFileToFile: string * string -> unit     (* IO.Io *)
 	val acquireSig: Source.desc * Url.t -> Inf.sign
 	val acquireMod: Source.desc * Url.t -> Reflect.module
+	val acquireImports: Source.desc * Url.t -> (Url.t * Inf.sign) vector
 
 	val compileFile: Context.t * string -> Context.t * Target.t
 	val compileString: Context.t * string -> Context.t * Target.t

@@ -32,6 +32,12 @@ import structure IntermediateInfo
        structure IntermediateGrammar	from "../common/IntermediateGrammar"
 import signature INTERMEDIATE_CONS	from "INTERMEDIATE_CONS-sig"
 
+(*DEBUG
+import val print structure TextIO from "../../lib/system/TextIO"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure PPType from "../../lib/rtt/PPType"
+*)
+
 structure IntermediateCons : INTERMEDIATE_CONS =
 struct
     open PervasiveType
@@ -115,92 +121,115 @@ struct
     fun idDec(longid, id) =
 	auxDec(id, VarExp(infoId id, LongId(infoId id, longid, idLab id)))
 
+    fun idUnsealDec(longid, id) =
+	let
+	    val i = infoLongid longid
+	    val t = Type.lookupRow(Type.asProd(#typ i), lab(idLab id))
+(*DEBUG
+handle Type.Row =>
+(print("idUnsealDec: did not find field " ^ Label.toString(lab(idLab id)) ^ "\nt = ");
+ PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(#typ i), 76);
+ print "\n";
+ raise Type.Row)
+*)
+	    val i' = typInfo(#region i, t)
+	in
+	    auxDec(id, UnsealExp(infoId id,
+				 VarExp(i', LongId(i', longid, idLab id))))
+	end
+	handle (Type.Type | Type.Row) => idDec(longid, id)
+	    (* Type for import of __pervasive, Row for interactive toplevel *)
+
 
   (* RTT expressions *)
+
+    val modlab_rtt' = LabelTranslation.trModLabel modlab_rtt
 
     fun pathId(env, r) = Id(typInfo(r, typ_path env), Stamp.stamp(), Name.InId)
     fun typId(env, r)  = Id(typInfo(r, typ_typ env), Stamp.stamp(), Name.InId)
     fun infId(env, r)  = Id(typInfo(r, typ_inf env), Stamp.stamp(), Name.InId)
 
-    (* __pervasive.modlab.lab *)
-    fun pervasiveExp(env, r, modlab, lab) =
+    (* __pervasive.RTT.modlab.lab *)
+    fun rttExp(env, r, modlab, lab) =
 	let
 	    val modlab' = LabelTranslation.trModLabel modlab
 	    val lab'    = LabelTranslation.trValLabel lab
 	    val longid0 = TranslationEnv.lookupPervasive' env
 	    val t0      = typOfLongid longid0
-	    val t1      = Type.lookupRow(Type.asProd t0, modlab')
-	    val t2      = Type.lookupRow(Type.asProd t1, lab')
-	    val longid1 = LongId(typInfo(r,t1), longid0, Lab(nonInfo r,modlab'))
-	    val longid2 = LongId(typInfo(r,t2), longid1, Lab(nonInfo r,lab'))
+	    val t1      = Type.lookupRow(Type.asProd t0, modlab_rtt')
+	    val t2      = Type.lookupRow(Type.asProd t1, modlab')
+	    val t3      = Type.lookupRow(Type.asProd t2, lab')
+	    val longid1 = LongId(typInfo(r,t1), longid0, Lab(nonInfo r,modlab_rtt'))
+	    val longid2 = LongId(typInfo(r,t2), longid1, Lab(nonInfo r,modlab'))
+	    val longid3 = LongId(typInfo(r,t3), longid2, Lab(nonInfo r,lab'))
 	in
-	    VarExp(typInfo(r,t2), longid2)
+	    VarExp(typInfo(r,t3), longid3)
 	end
 
-    (* __pervasive.modlab.lab exp *)
-    fun pervasiveAppExp(env, r, modlab, lab, exp) =
+    (* __pervasive.RTT.modlab.lab exp *)
+    fun rttAppExp(env, r, modlab, lab, exp) =
 	let
-	    val exp1    = pervasiveExp(env, r, modlab, lab)
+	    val exp1    = rttExp(env, r, modlab, lab)
 	    val t1      = typOfExp exp1
 	    val (t2,t3) = Type.asArrow t1
 	in
-	    assert (Type.equal(t2, typOfExp exp));
-	    AppExp(typInfo(r,t3), exp1, exp)
+	    (*assert (Type.equal(t2, typOfExp exp));*)
+	    (* violated in Pervasive.aml, hence we need a seal cast *)
+	    AppExp(typInfo(r,t3), exp1, SealExp(typInfo(r,t2), exp))
 	end
 
     fun assocExp(env, r, Fixity.LEFT) =
-	pervasiveExp(env, r, modlab_fixity, lab_left)
+	rttExp(env, r, modlab_fixity, lab_left)
       | assocExp(env, r, Fixity.RIGHT) =
-	pervasiveExp(env, r, modlab_fixity, lab_right)
+	rttExp(env, r, modlab_fixity, lab_right)
       | assocExp(env, r, Fixity.NEITHER) =
-	pervasiveExp(env, r, modlab_fixity, lab_neither)
+	rttExp(env, r, modlab_fixity, lab_neither)
 
     fun fixExp(env, r, Fixity.NONFIX) =
-	pervasiveExp(env, r, modlab_fixity, lab_nonfix)
+	rttExp(env, r, modlab_fixity, lab_nonfix)
       | fixExp(env, r, Fixity.PREFIX n) =
-	pervasiveAppExp(env, r, modlab_fixity, lab_prefix, intExp(r, n))
+	rttAppExp(env, r, modlab_fixity, lab_prefix, intExp(r, n))
       | fixExp(env, r, Fixity.POSTFIX n) =
-	pervasiveAppExp(env, r, modlab_fixity, lab_postfix, intExp(r, n))
+	rttAppExp(env, r, modlab_fixity, lab_postfix, intExp(r, n))
       | fixExp(env, r, Fixity.INFIX(n,a)) =
-	pervasiveAppExp(env, r, modlab_fixity, lab_infix,
-			tupExp(r, #[intExp(r, n), assocExp(env, r, a)]))
+	rttAppExp(env, r, modlab_fixity, lab_infix,
+		  tupExp(r, #[intExp(r, n), assocExp(env, r, a)]))
 
     fun unconstrainedExp(env, r) =
-	pervasiveExp(env, r, modlab_type, lab_unconstrained)
+	rttExp(env, r, modlab_type, lab_unconstrained)
 
     fun labExp(env, r, l) =
-	pervasiveAppExp(env, r, modlab_label, lab_fromString,
-			stringExp(r, Label.toString l))
+	rttAppExp(env, r, modlab_label, lab_fromString,
+		  stringExp(r, Label.toString l))
     fun pathExp(env, r, n) =
-	pervasiveAppExp(env, r, modlab_path, lab_fromString,
-			stringExp(r, Name.toString n))
+	rttAppExp(env, r, modlab_path, lab_fromString,
+		  stringExp(r, Name.toString n))
     fun pathInventExp(env, r) =
-	pervasiveAppExp(env, r, modlab_path, lab_invent, unitExp r)
+	rttAppExp(env, r, modlab_path, lab_invent, unitExp r)
 
     fun kindExp(env, r, k) =
 	case Type.inspectKind k
 	 of Type.StarKind =>
-	    pervasiveAppExp(env, r, modlab_type, lab_starKind, unitExp r)
+	    rttAppExp(env, r, modlab_type, lab_starKind, unitExp r)
 	  | Type.ExtKind =>
-	    pervasiveAppExp(env, r, modlab_type, lab_extKind, unitExp r)
+	    rttAppExp(env, r, modlab_type, lab_extKind, unitExp r)
 	  | Type.ArrowKind(kind1, kind2) =>
 	    let
 		val exp1 = kindExp(env, r, kind1)
 		val exp2 = kindExp(env, r, kind2)
 	    in
-		pervasiveAppExp(env, r, modlab_type, lab_arrowKind,
-				tupExp(r, #[exp1,exp2]))
+		rttAppExp(env, r, modlab_type, lab_arrowKind,
+			  tupExp(r, #[exp1,exp2]))
 	    end
 	  | Type.SingKind _ => raise Domain		(*TODO*)
 
     fun pervTypExp(env, r, s) =
-	pervasiveAppExp(env, r, modlab_pervasiveType, lab_lookup,
-			stringExp(r, s))
+	rttAppExp(env, r, modlab_pervasiveType, lab_lookup, stringExp(r, s))
     fun pervInfExp(env, r, s) =
 	raise Fail "TranslationPhase.pervInfExp: primitive interface"
 
     fun typExp(env, lab, exp) =
-	pervasiveAppExp(env, regionOfExp exp, modlab_type, lab, exp)
+	rttAppExp(env, regionOfExp exp, modlab_type, lab, exp)
     fun infExp(env, lab, exp) =
-	pervasiveAppExp(env, regionOfExp exp, modlab_inf, lab, exp)
+	rttAppExp(env, regionOfExp exp, modlab_inf, lab, exp)
 end

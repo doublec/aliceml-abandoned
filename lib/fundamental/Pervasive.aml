@@ -33,13 +33,16 @@
 	... as above ...
 
 	(* to encode runtime types: *)
-	structure Label :	LABEL'
-	structure Path :	PATH'
-	structure Type :	TYPE'
-	structure Fixity :	FIXITY'
-	structure Inf :		INF'
-	structure PervasiveType : PERVASIVE_TYPE'
-	structure DynMatch :    DYN_MATCH'
+	structure RTT :
+	sig
+	    structure Label :		LABEL'
+	    structure Path :		PATH'
+	    structure Type :		TYPE'
+	    structure Fixity :		FIXITY'
+	    structure Inf :		INF'
+	    structure PervasiveType :	PERVASIVE_TYPE'
+	    structure DynMatch :	DYN_MATCH'
+	end
     end
 
  *)
@@ -48,37 +51,50 @@
 import structure __pervasive from "RTT"
 
 local
-    (* Step 2: Extend with primitive types encoding datatypes
-     *         (accesses type lib). *)
+    signature RTT = __pervasive.RTT
+
+    (* Step 2: Hide rtt types to prevent transitive imports *)
+    structure __pervasive =
+    struct
+	structure RTT = __pervasive.RTT :> RTT
+    end
+
+    (* Step 3: Redefine primitive types encoding datatypes
+     *         (accesses re-typed type lib). *)
     structure __pervasive =
     struct
 	open __pervasive
 
+	__primitive exttype exn      = "exn"
 	__primitive type 'a ref      = "ref"
 	__primitive type 'a strict   = "strict"
 	__primitive type 'a conarrow = "conarrow"
     end
 
-    (* Step 3: Extend with actual content
-     *         (requires type lib and datatype encoding) *)
-    structure __pervasive =
-    struct
-	open __pervasive
-
-	__primitive exttype exn = "exn"
-	datatype bool    = false | true
-	datatype 'a list = nil | op:: of 'a * 'a list
-    end
-
     __primitive type int    = "int"
     __primitive type string = "string"
+(*
+    signature PERVASIVE =
+    sig
+	type exn = __pervasive.exn
+	type ref = __pervasive.ref
+	type strict = __pervasive.strict
+	type conarrow = __pervasive.conarrow
+	datatype bool    = false | true
+	datatype 'a list = nil | op:: of 'a * 'a list
+	exception Assert of string * int
+	structure RTT : RTT = __pervasive.RTT
+    end
+*)
 in
-    (* Step 4: Extend with exceptions
-     *         (requires type exn) *)
-    structure __pervasive =
+    (* Step 4: Extend with actual content
+     *         (requires type lib and datatype encoding) *)
+    structure __pervasive (*:> PERVASIVE*) =
     struct
 	open __pervasive
 
+	datatype bool    = false | true
+	datatype 'a list = nil | op:: of 'a * 'a list
 	__primitive exception Assert of string * int = "General.Assert"
     end
 end (* local *)

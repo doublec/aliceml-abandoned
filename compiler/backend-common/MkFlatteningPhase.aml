@@ -10,8 +10,6 @@
  *   $Revision$
  *)
 
-import structure GlobalStamp          from "../../lib/data/GlobalStamp"
-import structure Url                  from "../../lib/system/Url"
 import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
 import structure Type                 from "../../lib/rtt/Type"
@@ -20,15 +18,12 @@ import structure PathSet              from "../../lib/rtt/PathSet"
 import structure Crash                from "../infrastructure/Crash"
 import structure Source               from "../infrastructure/Source"
 import structure Error                from "../infrastructure/Error"
-import signature CONTEXT              from "../infrastructure/CONTEXT-sig"
 import structure EmptyContext         from "../infrastructure/EmptyContext"
 import structure Stamp                from "../common/Stamp"
-import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
 import structure IntermediateGrammar  from "../common/IntermediateGrammar"
 
 import structure LabelSort            from "LabelSort"
 import structure Arity                from "Arity"
-import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
 import structure FlatGrammar          from "FlatGrammar"
 import structure IntermediateAux      from "IntermediateAux"
 import structure SimplifyMatch        from "SimplifyMatch"
@@ -956,8 +951,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    end
 	and checkReachability consequents =
 	    List.app (fn (region, ref bodyOpt) =>
-		      if isSome bodyOpt then ()
-		      else Error.warn' (region, "unreachable expression"))
+		      Error.warn' (Option.isNone bodyOpt, region,
+				   "unreachable expression"))
 	    consequents
  	and simplifyCase (region, idRef, matches, raiseIdRef, check) =
 	    let

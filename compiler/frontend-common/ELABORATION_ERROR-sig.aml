@@ -10,11 +10,11 @@
  *   $Revision$
  *)
 
+import structure Url    from "../../lib/system/Url"
 import structure Source from "../infrastructure/Source"
 import structure Fixity from "../../lib/rtt/Fixity"
-import structure Name   from "../../lib/rtt/Name"
 import structure Label  from "../../lib/rtt/Label"
-import structure Stamp  from "../common/Stamp"
+import structure Path   from "../../lib/rtt/Path"
 import structure Type   from "../../lib/rtt/Type"
 import structure Inf    from "../../lib/rtt/Inf"
 import structure AbstractGrammar from "AbstractGrammar"
@@ -22,7 +22,9 @@ import structure AbstractGrammar from "AbstractGrammar"
 
 signature ELABORATION_ERROR =
 sig
+    type url       = Url.t
     type lab       = Label.t
+    type path      = Path.t
     type typ       = Type.t
     type var       = Type.var
     type kind      = Type.kind
@@ -57,6 +59,7 @@ sig
 	| AnnExpMismatch	of typ_mismatch
 	| MatPatMismatch	of typ_mismatch
 	| MatExpMismatch	of typ_mismatch
+	| LetExpGenerative	of inf
 	| OverExpEmpty
 	| OverExpArity
 	| OverExpNonPrimTyp	of typ
@@ -106,8 +109,15 @@ sig
 	| PervasiveInfUnknown	of string
 	(* Imports *)
 	| ImpMismatch		of inf_mismatch
-	(* Components *)
-	| CompUnclosed		of lab * typ
+	| ImplicitImpHiddenTyp	of url * path
+	| ImplicitImpHiddenMod	of url * path
+	| ImplicitImpHiddenInf	of url * path
+	| ImplicitImpInconsistent of url * path * url
+	| ImplicitImpHiddenTransTyp of url * path * url
+	| ImplicitImpHiddenTransMod of url * path * url
+	| ImplicitImpHiddenTransInf of url * path * url
+	(* Exports *)
+	| ExportUnclosed	of lab * typ
 
     datatype warning =
 	(* Imports *)
@@ -115,10 +125,15 @@ sig
 	| TypImpUnused		of lab
 	| ModImpUnused		of lab
 	| InfImpUnused		of lab
-	(* Imports *)
-	| NotGeneralized	of valid * typ
+	| TypImpInserted	of url * path * url
+	| InfImpInserted	of url * path * url
+	(* Exports *)
+	| ExportNotGeneralized	of valid * typ
+	| ExportHiddenTyp	of path
+	| ExportHiddenMod	of path
+	| ExportHiddenInf	of path
 
     val error :	Source.region * error -> 'a
-    val warn :	Source.region * warning -> unit
+    val warn :	bool * Source.region * warning -> unit
     val unfinished : Source.region * string * string -> unit
 end

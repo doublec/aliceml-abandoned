@@ -19,6 +19,8 @@ signature TYPE_TRANSLATION =
 sig
     (* RTT types *)
 
+    val modlab_rtt	: Label.t
+
     val typ_unit	: Type.t
 
     val typ_fix		: TranslationEnv.t -> Type.t

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -34,12 +34,13 @@ struct
         output(TextIO.stdErr,
 	       text(Source.regionToString reg ^ ": ") ^^ doc ^^ break, 78)
 
-    fun error(reg, message) = ( print(reg,message) ; raise Error(reg,message) )
-    fun warn (reg, message) =   print(reg, text "warning: " ^^ message)
-
+    fun error(reg, message)   = ( print(reg,message) ; raise Error(reg,message) )
+    fun warn(b, reg, message) = if not b then () else
+				print(reg, text "warning: " ^^ message)
+				
     (*UNFINISHED: provisory*)
-    fun error'(reg, s) = error(reg, text s)
-    fun warn'(reg, s)  = warn(reg, text s)
+    fun error'(reg, s)   = error(reg, text s)
+    fun warn'(b, reg, s) = warn(b, reg, text s)
     fun unfinished(region, phasename, casename) =
 	error(region, text(phasename ^ ": "^ casename ^ " not implemented yet"))
 end

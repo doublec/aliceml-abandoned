@@ -1,0 +1,22 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source       from "../infrastructure/Source"
+import structure Inf          from "../../lib/rtt/Inf"
+import structure Env          from "Env"
+import structure TypedGrammar from "TypedGrammar"
+
+signature REWRITE_IMPORTS =
+sig
+    val rewriteAnns : Source.desc * Env.t * TypedGrammar.ann vector * Inf.sign
+		      -> TypedGrammar.ann vector * Inf.sign
+end

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -22,10 +22,22 @@ local
 in
     structure __pervasive =
     struct
-	structure Inf =		(* required by Package *)
+	signature RTT =
+	sig
+	    structure Inf :		(* required by Package *)
+	    sig
+		type mismatch
+		exception Mismatch of mismatch
+	    end
+	end
+
+	structure RTT =
 	struct
-	    type mismatch
-	    exception Mismatch of mismatch
+	    structure Inf =		(* required by Package *)
+	    struct
+		type mismatch
+		exception Mismatch of mismatch
+	    end
 	end
     end
 end

@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure TextIO        from "../../lib/system/TextIO"
 import signature SWITCHES      from "../infrastructure/SWITCHES-sig"
 import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
@@ -29,11 +28,15 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tTrace component loads and saves by the compiler.\n\
 	    \Warning options:\n\
 	    \\t--warn-conventions\n\
-	    \\t\tWhether to warn about naming convention violations.\n\
+	    \\t\tWarn about naming convention violations (default).\n\
 	    \\t--warn-shadowing\n\
-	    \\t\tWhether to warn about shadowing of identifiers.\n\
+	    \\t\tWarn about shadowing of identifiers.\n\
 	    \\t--warn-unused-imports\n\
-	    \\t\tWhether to warn about unused imports.\n\
+	    \\t\tWarn about unused imports (default).\n\
+	    \\t--warn-added-imports\n\
+	    \\t\tWarn about imports inserted by the compiler.\n\
+	    \\t--warn-inaccessible-exports\n\
+	    \\t\tWarn about inaccessible types occuring in export signature (default).\n\
 	    \Language options:\n\
 	    \\t--assert <int>\n\
 	    \\t\tSpecify assertion level for compiled code.\n\
@@ -91,6 +94,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	     ("warn-conventions", Warn.conventions),
 	     ("warn-shadowing", Warn.shadowing),
 	     ("warn-unused-imports", Warn.unusedImport),
+	     ("warn-added-imports", Warn.insertedImport),
+	     ("warn-inaccessible-exports", Warn.inaccessibleExport),
 	     ("rtt", Language.supportRtt),
 	     ("reexport-import", Language.reexportImport),
 	     ("retain-full-import", Language.retainFullImport),

@@ -49,6 +49,8 @@
     sig
 	exception <A href="#Conflict">Conflict</A>
 
+	val <A href="#logStream">logStream</A> : TextIO.outstream option ref
+
 	functor <A href="#Eval-fn">Eval</A>(val component : Component.t
 		     val url : <A href="url.html#t">Url.t</A>
 		     signature S) : S
@@ -60,6 +62,7 @@
 		      signature S
 		      structure X : S) : any
 
+	val <A href="#load">load</A> : <A href="url.html#t">Url.t</A> -> Component.t
 	val <A href="#link">link</A> : <A href="url.html#t">Url.t</A> -> Component.t
 	val <A href="#enter">enter</A> : <A href="url.html#t">Url.t</A> * Component.t -> unit
 	val <A href="#lookup">lookup</A> : <A href="url.html#t">Url.t</A> -> Component.t option
@@ -76,6 +79,17 @@
     <DD>
       <P>indicates an attempt to enter a component in the component table
 	while some component was already registered under that name.</P>
+    </DD>
+
+    <DT>
+      <TT>val <A name="logStream">logStream</A></TT>
+    </DT>
+    <DD>
+      <P>if set to <TT>SOME</TT> <TT><I>os</I></TT>, the component manager
+        will log its activity on stream <TT><I>os</I></TT>, otherwise it
+	remains silent. The default can be configured using the
+	environment variable <TT>ALICE_TRACE_COMPONENT</TT>, see structure
+	<A href="component.html"><TT>Component</TT></A>.</P>
     </DD>
 
     <DT>
@@ -132,6 +146,16 @@
 	The future is then bound to the component.  If the component table
 	has no entry for <TT><I>url</I></TT> yet, a new entry is created
 	immediately.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="load">load</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>localizes <TT><I>url</I></TT> and loads a first-class component
+        from the file found, without linking or evaluating it.
+	Raises <TT><A href="io.html">IO.Io</A></TT> if resolving, loading
+	or unpickling fails.</P>
     </DD>
 
     <DT>

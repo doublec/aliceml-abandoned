@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,7 +24,8 @@ import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
        structure InfLoader
-       structure ModLoader           from "MkRecursiveCompiler"
+       structure ModLoader
+       structure ImportLoader        from "MkRecursiveCompiler"
 
 structure SMLToDotNetRecursiveCompiler =
     let
@@ -32,9 +33,11 @@ structure SMLToDotNetRecursiveCompiler =
 
 	val acquireSigRef: InfLoader.t ref = ref (fn _ => assert false)
 	val acquireModRef: ModLoader.t ref = ref (fn _ => assert false)
+	val acquireImportsRef: ImportLoader.t ref = ref (fn _ => assert false)
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)
+	fun loadImports (desc, url) = !acquireImportsRef (desc, url)
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSig = loadSig
@@ -42,6 +45,8 @@ structure SMLToDotNetRecursiveCompiler =
 
 	structure FrontendCommon =
 	    MkFrontendCommon(val loadSig = loadSig
+			     val loadMod = loadMod
+			     val loadImports = loadImports
 			     structure Switches = Switches)
 
 	structure BackendDotNet =
@@ -66,6 +71,7 @@ structure SMLToDotNetRecursiveCompiler =
 
 	val _ = acquireSigRef := RecursiveCompiler.acquireSig
 	val _ = acquireModRef := RecursiveCompiler.acquireMod
+	val _ = acquireImportsRef := RecursiveCompiler.acquireImports
     in
 	RecursiveCompiler
     end

@@ -20,8 +20,8 @@ struct
     type t = package
     type val_package = package
 
-    type      mismatch = __pervasive.Inf.mismatch
-    exception Mismatch = __pervasive.Inf.Mismatch
+    type      mismatch = __pervasive.RTT.Inf.mismatch
+    exception Mismatch = __pervasive.RTT.Inf.Mismatch
 
     functor Pack(signature S structure X : S) = (val package = pack X : S)
     functor Unpack(signature S val package : package) = unpack package : S

@@ -10,10 +10,12 @@ i *
  *   $Revision$
  *)
 
+import structure Url               from "../../lib/system/Url"
 import structure Fixity            from "../../lib/rtt/Fixity"
 import structure Name              from "../../lib/rtt/Name"
 import structure Label             from "../../lib/rtt/Label"
-import structure Stamp             from "../common/Stamp"
+import structure Path              from "../../lib/rtt/Path"
+import structure PathMap           from "../../lib/rtt/PathMap"
 import structure Type              from "../../lib/rtt/Type"
 import structure PervasiveType     from "../../lib/rtt/PervasiveType"
 import structure Inf               from "../../lib/rtt/Inf"
@@ -38,10 +40,13 @@ struct
     open PPMisc
 
     infixr ^^ ^/^
+    nonfix mod
 
   (* Types *)
 
+    type url       = Url.t
     type lab       = Label.t
+    type path      = Path.t
     type typ       = Type.t
     type var       = Type.var
     type kind      = Type.kind
@@ -76,6 +81,7 @@ struct
 	| AnnExpMismatch	of typ_mismatch
 	| MatPatMismatch	of typ_mismatch
 	| MatExpMismatch	of typ_mismatch
+	| LetExpGenerative	of inf
 	| OverExpEmpty
 	| OverExpArity
 	| OverExpNonPrimTyp	of typ
@@ -125,8 +131,15 @@ struct
 	| PervasiveInfUnknown	of string
 	(* Imports *)
 	| ImpMismatch		of inf_mismatch
-	(* Components *)
-	| CompUnclosed		of lab * typ
+	| ImplicitImpHiddenTyp	of url * path
+	| ImplicitImpHiddenMod	of url * path
+	| ImplicitImpHiddenInf	of url * path
+	| ImplicitImpInconsistent of url * path * url
+	| ImplicitImpHiddenTransTyp of url * path * url
+	| ImplicitImpHiddenTransMod of url * path * url
+	| ImplicitImpHiddenTransInf of url * path * url
+	(* Exports *)
+	| ExportUnclosed	of lab * typ
 
     datatype warning =
 	(* Imports *)
@@ -134,8 +147,13 @@ struct
 	| TypImpUnused		of lab
 	| ModImpUnused		of lab
 	| InfImpUnused		of lab
-	(* Imports *)
-	| NotGeneralized	of valid * typ
+	| TypImpInserted	of url * path * url
+	| InfImpInserted	of url * path * url
+	(* Exports *)
+	| ExportNotGeneralized	of valid * typ
+	| ExportHiddenTyp	of path
+	| ExportHiddenMod	of path
+	| ExportHiddenInf	of path
 
 
   (* Pretty printing *)
@@ -339,8 +357,7 @@ struct
 		    below(PPType.ppTyp t)
 		))
 	    ) ^/^
-	    textpar["contains","free","type","variable",
-		    "or","unresolved","record","type"]
+	    textpar["contains","free","type","variable"]
 	)
 
 
@@ -422,6 +439,23 @@ struct
 	ppTypMismatch4(
 	  textpar["inconsistent","types","in","branches","of","`case':"],
 	  textpar["does","not","agree","with","previous","type"], ue)
+      | ppError(LetExpGenerative j) =
+	let
+	    val {typ,mod,inf} = Inf.boundPaths j
+	    val doc1 = PathMap.foldi (fn(p,_,doc) =>
+			text "type " ^^ PPPath.ppPath p ^/^ doc) empty typ
+	    val doc2 = PathMap.foldi (fn(p,_,doc) =>
+			text "structure " ^^ PPPath.ppPath p ^/^ doc) empty mod
+	    val doc3 = PathMap.foldi (fn(p,_,doc) =>
+			text "signature " ^^ PPPath.ppPath p ^/^ doc) empty inf
+	in
+	    vbox(
+		textpar["type","of","let","body","contains","local","names:"] ^^
+		indent(
+		    doc1 ^/^ (*doc2 ^/^*) doc3
+		)
+	    )
+	end
       | ppError(OverExpEmpty) =
 	  textpar["empty","overloading"]
       | ppError(OverExpArity) =
@@ -555,7 +589,7 @@ struct
 	  textpar["inconsistency","at","signature","specialization:"], im)
       | ppError(LetInfGenerative j) =
 	vbox(
-	    textpar["signature","contains","names","introduced","in","let:"] ^^
+	    textpar["signature","contains","local","names:"] ^^
 	    indent(PPInf.ppSig(Inf.asSig j))
 	)
       | ppError(SingInfNonSing j) =
@@ -566,10 +600,69 @@ struct
       | ppError(ImpMismatch im) =
 	ppInfMismatch(
 	  textpar["component","does","not","match","import,","because"], im)
-      (* Components *)
-      | ppError(CompUnclosed lt) =
+      | ppError(ImplicitImpHiddenTyp(url,p)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    textpar["refers","to","inaccessible"] ^^
+	    indent(text "type " ^^ PPPath.ppPath p)
+	)
+      | ppError(ImplicitImpHiddenMod(url,p)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    textpar["refers","to","inaccessible"] ^^
+	    indent(text "structure " ^^ PPPath.ppPath p)
+	)
+      | ppError(ImplicitImpHiddenInf(url,p)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    textpar["refers","to","inaccessible"] ^^
+	    indent(text "signature " ^^ PPPath.ppPath p)
+	)
+      | ppError(ImplicitImpHiddenTransTyp(url,p,viaUrl)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^^
+	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    textpar["refers","to","inaccessible"] ^^
+	    indent(text "type " ^^ PPPath.ppPath p) ^/^
+	    textpar["which","is","stemming","from","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\""))
+	)
+      | ppError(ImplicitImpHiddenTransMod(url,p,viaUrl)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^^
+	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    textpar["refers","to","inaccessible"] ^^
+	    indent(text "structure " ^^ PPPath.ppPath p) ^/^
+	    textpar["which","is","stemming","from","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\""))
+	)
+      | ppError(ImplicitImpHiddenTransInf(url,p,viaUrl)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^^
+	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    textpar["refers","to","inaccessible"] ^^
+	    indent(text "signature " ^^ PPPath.ppPath p) ^/^
+	    textpar["which","is","stemming","from","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\""))
+	)
+      | ppError(ImplicitImpInconsistent(url,p,viaUrl)) =
+	vbox(
+	    textpar["implicit","import","signature","for","component"] ^/^
+	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    textpar["refers","to"] ^^
+	    indent(text "structure " ^^ PPPath.ppPath p) ^/^
+	    textpar["which","is","stemming","from","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    textpar["but","is","no","longer","exported","by","it",
+		    "(please","try","recompiling","the","former","component)"]
+	)
+      (* Exports *)
+      | ppError(ExportUnclosed lt) =
 	ppUnclosed(
-	  textpar["component","is","not","closed:"], lt)
+	  textpar["component","signature","is","not","closed:"], lt)
 
     fun ppWarning(ValImpUnused l) =
 	  textpar["imported","value",ppLab l,"is","not","used",
@@ -583,20 +676,59 @@ struct
       | ppWarning(InfImpUnused l) =
 	  textpar["imported","signature",ppLab l,"is","not","used",
 		  "and","has","been","dropped"]
-      | ppWarning(NotGeneralized(x,t)) =
+      | ppWarning(TypImpInserted(url,p,viaUrl)) =
+	vbox(
+	    textpar["inserting","import","for"] ^^
+	    indent(text "type " ^^ PPPath.ppPath p) ^/^
+	    textpar["from","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    textpar["referred","to","by","implicit","import","signature","for",
+		    "component"] ^^
+	    indent(text("\"" ^ Url.toString viaUrl ^ "\""))
+	)
+      | ppWarning(InfImpInserted(url,p,viaUrl)) =
+	vbox(
+	    textpar["inserting","import","for"] ^^
+	    indent(text "signature " ^^ PPPath.ppPath p) ^/^
+	    textpar["from","component"] ^^
+	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    textpar["referred","to","by","implicit","import","signature","for",
+		    "component"] ^^
+	    indent(text("\"" ^ Url.toString viaUrl ^ "\""))
+	)
+      (* Exports *)
+      | ppWarning(ExportNotGeneralized(x,t)) =
 	vbox(
 	    textpar["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^
 	    indent(PPType.ppTyp t)
 	)
+      | ppWarning(ExportHiddenTyp p) =
+	vbox(
+	    textpar["component","export","signature","refers","to",
+		    "inaccessible","local"] ^^
+	    indent(text "type " ^^ PPPath.ppPath p)
+	)
+      | ppWarning(ExportHiddenMod p) =
+	vbox(
+	    textpar["component","export","signature","refers","to",
+		    "inaccessible","local"] ^^
+	    indent(text "structure " ^^ PPPath.ppPath p)
+	)
+      | ppWarning(ExportHiddenInf p) =
+	vbox(
+	    textpar["component","export","signature","refers","to",
+		    "inaccessible","local"] ^^
+	    indent(text "signature " ^^ PPPath.ppPath p)
+	)
 
   (* Export *)
 
-    fun error(region, e)  = Error.error(region, ppError e)
-    fun warn(region, w)   = Error.warn(region, ppWarning w)
+    fun error(region, e)   = Error.error(region, ppError e)
+    fun warn(b, region, w) = Error.warn(b, region, ppWarning w)
 
     (*UNFINISHED*)
     fun unfinished(region, funname, casename) =
-	Error.warn(region, text("Elab." ^ funname ^ ": " ^ casename ^
-				" not checked yet"))
+	Error.warn(true, region, text("Elab." ^ funname ^ ": " ^ casename ^
+				      " not checked yet"))
 end

@@ -245,9 +245,10 @@ struct
       | main'(_::_) = (usage true; OS.Process.failure)
       | main' nil =
 	let
-            val _ = TextIO.print banner;
 	    open RecursiveCompiler.Switches
 	in
+	    TextIO.print banner;
+	    Language.unsafeImport := true;
 	    case evalString (false, "", RecursiveCompiler.Context.empty) of
 	         NONE => 
 		    (TextIO.output (TextIO.stdErr,
@@ -255,13 +256,18 @@ struct
 		     OS.Process.failure)
 	       | SOME context =>
 		    (Language.implicitImportFile := NONE;
+		     Language.unsafeImport := false;
 		     loop context;
 		     OS.Process.success)
 	end
 
     fun defaults () = (* override defaults from MkSwitches here *)
-	RecursiveCompiler.Switches.Language.implicitImportFile :=
-	    SOME "x-alice:/alice.import"
+	let
+	    open RecursiveCompiler.Switches
+	in
+	    Language.implicitImportFile := SOME "x-alice:/alice.import";
+	    Warn.inaccessibleExport := false
+	end
 
     fun main arguments =
 	if RecursiveCompiler.isCrossCompiler then

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,8 +27,8 @@ sig
     exception Error of region * doc
 
     val error :		region * doc -> 'a
-    val warn :		region * doc -> unit
+    val warn :		bool * region * doc -> unit
     val error' :	region * string -> 'a
-    val warn' :		region * string -> unit
+    val warn' :		bool * region * string -> unit
     val unfinished :	region * string * string -> 'a
  end

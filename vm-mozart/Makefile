@@ -105,7 +105,7 @@ ALICEC0 = $(BOOTSTRAPDIR)/alicec # --profile
 ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --mozart
 ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --mozart
 
-ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
+ALICEC_OPTS = --no-warn-conventions --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = 
 
 ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
@@ -263,6 +263,7 @@ COMPILERFRONTENDCOMMONSOURCES0 = \
 	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
 	AbstractGrammar.aml TypedGrammar.aml \
 	ENV-sig.aml Env.aml USE_ENV-sig.aml UseEnv.aml \
+	REWRITE_IMPORTS-sig.aml MkRewriteImports.aml \
 	ELABORATION_ERROR-sig.aml ElaborationError.aml \
 	ELABORATION_PHASE-sig.aml MkElaborationPhase.aml \
 	TRANSLATION_ENV-sig.aml TranslationEnv.aml \
@@ -335,7 +336,8 @@ COMPILERSOURCES = \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
 
 TOOLSLINKERSOURCES0 = \
-	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml Main.aml
+	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml \
+	PrintSig.aml Main.aml
 TOOLSLINKERSOURCES = $(TOOLSLINKERSOURCES0:%=tools/linker/%)
 
 TOOLSDEPENDSOURCES0 = \
@@ -622,7 +624,7 @@ build2/%.ozf: build2/%.aml
 
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
 	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT \
-	--include build2 -o $@
+	--include build2 --rewrite "build2/lib/?{x}=../?{x}" -o $@
 
 $(LIBNATIVES:%.ozf=build2/%.asig): %.asig: %.ozf
 
@@ -651,7 +653,7 @@ INSTALL3BINFILES = $(INSTALL1BINFILES) alice alicedep
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) system/UnsafeValue.asig \
-	fundamental/Pervasive.ozf fundamental/Core.ozf \
+	fundamental/Pervasive.ozf fundamental/Core.ozf fundamental/RTT.ozf \
 	fundamental/PACKAGE-sig.ozf fundamental/Package.ozf
 INSTALL3COMPILERFILES = $(INSTALL1COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
@@ -703,6 +705,9 @@ build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 	compiler/top/Toplevel.import
 	cat $^ > $@
+
+build3/lib/fundamental/Pervasive.ozf: build3/lib/fundamental/Pervasive.aml
+	$(ALICEC2) $(ALICEC_OPTS) --no-check-intermediate -c $< -o $@
 
 build3/%.ozf: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
@@ -789,6 +794,10 @@ build3/install/lib/fundamental/Pervasive.ozf: \
 
 build3/install/lib/fundamental/Core.ozf: \
 	build3/lib/fundamental/Core.ozf
+	install -c -m 444 $< $@
+
+build3/install/lib/fundamental/RTT.ozf: \
+	build3/lib/fundamental/RTT.ozf
 	install -c -m 444 $< $@
 
 build3/install/lib/%: build3/lib/%

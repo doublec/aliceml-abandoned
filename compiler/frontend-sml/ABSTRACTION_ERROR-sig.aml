@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,8 +18,6 @@ import structure VId
        structure StrId from "Ids"
 import structure AbstractGrammar from "../frontend-common/AbstractGrammar"
 import structure Source          from "../infrastructure/Source"
-import structure Url             from "../../lib/system/Url"
-
 
 signature ABSTRACTION_ERROR =
 sig
@@ -120,5 +118,5 @@ sig
 	| SigIdConvention	of SigId.t
 
     val error :	Source.region * error -> 'a
-    val warn :	Source.region * warning -> unit
+    val warn :	bool * Source.region * warning -> unit
 end

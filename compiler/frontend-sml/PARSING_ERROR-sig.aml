@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -32,6 +32,6 @@ sig
 
     type warning	(* yet empty *)
 
-    val error :	Source.region * error -> 'a
-    val warn :	Source.region * warning -> unit
+    val error :	 Source.region * error -> 'a
+    val warn :	 bool * Source.region * warning -> unit
 end

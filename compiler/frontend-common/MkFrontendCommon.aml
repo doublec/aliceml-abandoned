@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -22,11 +22,13 @@ import functor   MkTracingPhase        from "../infrastructure/MkTracingPhase"
 import functor   MkResultDumpingPhase  from
 					"../infrastructure/MkResultDumpingPhase"
 
-import structure Env                   from "Env"
 import structure TypedGrammar          from "TypedGrammar"
 import structure Inf                   from "../../lib/rtt/Inf"
 import structure PPInf                 from "../../lib/rtt/PPInf"
 import structure PPIntermediateGrammar from "../common/IntermediateGrammar"
+import structure PrettyPrint           from "../../lib/utility/PrettyPrint"
+
+import structure Reflect               from "../../lib/system/Reflect"
 
 import functor   MkElaborationPhase    from "MkElaborationPhase"
 import functor   MkTranslationPhase    from "MkTranslationPhase"
@@ -35,14 +37,35 @@ import structure CheckIntermediate     from "../common/CheckIntermediate"
 
 functor MkFrontendCommon (
     val loadSig: Source.desc * Url.t -> Inf.sign
+    val loadMod: Source.desc * Url.t -> Reflect.module
+    val loadImports: Source.desc * Url.t -> (Url.t * Inf.sign) vector
     structure Switches: SWITCHES
 ) : PHASE =
 let
+    fun ppComp(TypedGrammar.Comp(i, anns, _)) =
+	let
+	    open PrettyPrint
+	    infixr ^^ ^/^
+	in
+	    Vector.foldr (fn(TypedGrammar.ImpAnn(i, _, url, b), doc) =>
+			     abox(
+				  nest 3 (
+				      text(if not b then "import"
+					   else "import __primitive") ^/^
+				      PPInf.ppSig(#sign i)
+				  ) ^/^
+				  text ("from \"" ^ Url.toString url ^ "\"")
+			      ) ^/^ doc
+			  ) (PPInf.ppSig(#sign i)) anns
+	end
+
     structure Phase1 =
 	      MkTracingPhase(
 		    structure Phase =
-			MkElaborationPhase(val       loadSig  = loadSig
-					   structure Switches = Switches)
+			MkElaborationPhase(val       loadSig     = loadSig
+					   val       loadMod     = loadMod
+					   val       loadImports = loadImports
+					   structure Switches    = Switches)
 		    structure Switches = Switches
 		    val name = "Elaboration"
 	      )
@@ -57,7 +80,7 @@ let
 		    structure Phase    = Phase1
 		    structure Switches = Switches
 		    val header = "Component Signature"
-		    val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
+		    val pp     = ppComp
 		    val switch = Switches.Debug.dumpElaborationSig
 	      )
     structure Phase2' =

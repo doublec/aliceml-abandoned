@@ -41,6 +41,8 @@ struct
     open FixityLib
     open DynMatchLib
 
+    val modlab_rtt = Label.fromString "RTT"
+
     val typ_unit = Type.tuple #[]
     val var_poly = Type.newVar(Type.starKind(), Type.Unconstrained)
     val typ_poly = Type.all(var_poly, Type.var var_poly)
@@ -49,8 +51,9 @@ struct
 	if not(TranslationEnv.rtt env) then typ_poly else
 	let
 	    val j0 = TranslationEnv.lookupPervasiveInf env
-	    val j1 = Inf.lookupMod(Inf.asSig j0, modlab)
-	    val t  = Inf.lookupTyp'(Inf.asSig j1, lab)
+	    val j1 = Inf.lookupMod(Inf.asSig j0, modlab_rtt)
+	    val j2 = Inf.lookupMod(Inf.asSig j1, modlab)
+	    val t  = Inf.lookupTyp'(Inf.asSig j2, lab)
 	in
 	    t
 	end

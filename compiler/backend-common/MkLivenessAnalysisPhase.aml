@@ -14,10 +14,8 @@ import structure Name                    from "../../lib/rtt/Name"
 import structure Crash                   from "../infrastructure/Crash"
 import signature SWITCHES                from "../infrastructure/SWITCHES-sig"
 import structure EmptyContext            from "../infrastructure/EmptyContext"
-import structure Stamp                   from "../common/Stamp"
 import structure StampSet                from "../common/StampSet"
 import structure StampMap                from "../common/StampMap"
-import signature FLAT_GRAMMAR            from "FLAT_GRAMMAR-sig"
 import structure FlatGrammar             from "FlatGrammar"
 import structure IntermediateAux         from "IntermediateAux"
 import signature LIVENESS_ANALYSIS_PHASE from "LIVENESS_ANALYSIS_PHASE-sig"
@@ -664,10 +662,10 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val _ =
 		    Vector.app (fn (_, id) => IdSet.insert (use, id)) exports
 		val imports =
-		    Vector.foldr (fn ((id, sign, url, compileTime), rest) =>
+		    Vector.foldr (fn (imprt as (id, _, _, compileTime), rest) =>
+				     if not compileTime then imprt::rest else
 				     case laIdDef (IdDef id, use) of
-					 IdDef id =>
-					 (id, sign, url, compileTime)::rest
+					 IdDef id => imprt::rest
 				       | Wildcard => rest) nil imports
 		val imports = Vector.fromList imports
 	    in

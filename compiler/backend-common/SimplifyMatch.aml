@@ -13,16 +13,13 @@
 
 import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
-import structure Type                 from "../../lib/rtt/Type"
 import functor MkRedBlackMap          from "../../lib/data/MkRedBlackMap"
 import structure Crash                from "../infrastructure/Crash"
 import structure Source               from "../infrastructure/Source"
 import structure Error                from "../infrastructure/Error"
 import structure Stamp                from "../common/Stamp"
-import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
 import structure IntermediateGrammar  from "../common/IntermediateGrammar"
 import structure Arity                from "Arity"
-import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
 import structure FlatGrammar          from "FlatGrammar"
 import structure IntermediateAux      from "IntermediateAux"
 import signature SIMPLIFY_MATCH       from "SIMPLIFY_MATCH-sig"
@@ -829,16 +826,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    in
 		case graph of
 		    Default =>
-			(Error.warn' (region, "match is void");
+			(Error.warn' (true, region, "match is void");
 			 (defaultGraph, consequents))
 		  | _ =>
 			let
 			    val _ = if not check then () else
 				    checkExhaustiveness graph
 			    handle Inconsistent (trueMap, falseMap) =>
-				   Error.warn' (region, "match is inconsistent")
+				   Error.warn' (true, region,
+						"match is inconsistent")
 			         | NonExhaustive (trueMap, falseMap) =>
-				   Error.warn' (region,
+				   Error.warn' (true, region,
 						"match is not exhaustive, \
 						\because e.g.\n    " ^
 						sample (nil, trueMap, falseMap)

@@ -27,6 +27,8 @@ sig
 	val conventions :			bool ref
 	val shadowing :				bool ref
 	val unusedImport :			bool ref
+	val insertedImport :			bool ref
+	val inaccessibleExport :		bool ref
     end
 
     structure Language :
@@ -35,6 +37,7 @@ sig
 	val allowUnclosedComponents :		bool ref
 	val supportRtt :			bool ref
 	val silentFailExp :			bool ref
+	val unsafeImport :			bool ref
 	val reexportImport :			bool ref
 	val retainFullImport :			bool ref
 	val implicitImportFile :		string option ref

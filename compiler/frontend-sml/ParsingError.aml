@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,10 +13,7 @@
 import structure Error         from "../infrastructure/Error"
 import structure PrettyPrint   from "../../lib/utility/PrettyPrint"
 import structure PPMisc        from "../infrastructure/PPMisc"
-import structure Source        from "../infrastructure/Source"
-import structure VId           from "Ids"
 import signature PARSING_ERROR from "PARSING_ERROR-sig"
-
 
 structure ParsingError :> PARSING_ERROR =
 struct
@@ -88,6 +85,6 @@ struct
 
   (* Export *)
 
-    fun error(region, e)  = Error.error(region, ppError e)
-    fun warn(region, w)   = Error.warn(region, ppWarning w)
+    fun error(region, e)   = Error.error(region, ppError e)
+    fun warn(b, region, w) = Error.warn(b, region, ppWarning w)
 end

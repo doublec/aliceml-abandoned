@@ -31,8 +31,13 @@ import structure Dependency         from "Dependency"
 import signature COMPILER           from "COMPILER-sig"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
+(*DEBUG*)
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure PPInf from "../../lib/rtt/PPInf"
+
 structure InfLoader = struct type t = Source.desc * Url.t -> Inf.sign end
 structure ModLoader = struct type t = Source.desc * Url.t -> Reflect.module end
+structure ImportLoader = struct type t = Source.desc * Url.t -> (Url.t * Inf.sign) vector end
 
 functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    structure Compiler: COMPILER
@@ -181,22 +186,30 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    val (_, target) =
 			Compiler.compile (desc, Context.empty,
 					  Source.fromString s)
-		    val _ = trace "done"
-		    val inf' =
+		    val _ = trace ("finished reading signature from " ^ sigFilename)
+		    val {export, imports} =
 			case target of
 			    Target.COMPONENT {component, ...} =>
-				valOf (Component.inf (component ()))
-			  | Target.FOREIGN {inf, ...} => inf
-		    val inf = Inf.asSingKind
-			      (#2 (Inf.asInfItem
-				   (List.hd (Inf.items (Inf.asSig inf')))))
-			      handle e as ( Inf.Interface | Inf.Kind | Inf.Item
-					  | List.Empty | Option.Option) =>
-				 error ("signature file " ^ sigFilename ^
-					" does not contain a proper\
-					\ signature declaration")
+			    let
+				val component = component ()
+			    in
+				{export = valOf (Component.inf component),
+				 imports = Vector.map (Pair.mapSnd valOf)
+					   (Component.imports component)}
+			    end
+			  | Target.FOREIGN {inf, ...} =>
+				{export = inf, imports = #[]} (*--** *)
+		    val export' =
+			Inf.asSingKind
+			(#2 (Inf.asInfItem
+			     (List.hd (Inf.items (Inf.asSig export)))))
+			handle e as ( Inf.Interface | Inf.Kind | Inf.Item
+				    | List.Empty | Option.Option) =>
+			   error ("signature file " ^ sigFilename ^
+				  " does not contain a proper\
+				  \ signature declaration")
 		in
-		    inf
+		    {export = export', imports = imports}
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -211,11 +224,13 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    val component = component ()
 			in
 			    Component.save (outFilename, component);
-			    valOf (Component.inf component)
+			    {export = valOf (Component.inf component),
+			     imports = Vector.map (Pair.mapSnd valOf)
+				       (Component.imports component)}
 			end
 		  | (_, Target.FOREIGN {save, inf}) =>
 			(save outFilename;
-			 inf)
+			 {export = inf, imports = #[]}) (*--** *)
 
 	    val fileStack: string list ref = ref nil
 	in
@@ -284,37 +299,42 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	 *)
 
 	structure UrlMap = MkHashImpMap(Url)
+	type import_entry = {export: Inf.t, imports: (Url.t * Inf.t) vector}
 
-	val sigTable: Inf.sign UrlMap.t = UrlMap.map ()
+	val importTable: import_entry UrlMap.t = UrlMap.map ()
 
-	fun loadSig url = Component.inf (ComponentManager.link url)
+	fun loadInfs url =
+	    let
+		val component = ComponentManager.load url
+		val dummyInf = Inf.sign (Inf.emptySig ())
+	    in
+		{export = valOf (Component.inf component),
+		 imports = Vector.map (fn (url, infOpt) =>
+				       (url, Option.getOpt (infOpt, dummyInf)))
+				      (Component.imports component)}
+	    end
 
-	fun acquireSig (desc, url) =
+	fun acquireInfs (desc, url) =
 	    let
 		val url' =
 		    case Source.url desc of
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
 	    in
-		case UrlMap.lookup (sigTable, urlCeil url') of
-		    SOME sign => sign
+		case UrlMap.lookup (importTable, urlCeil url') of
+		    SOME infs => infs
 		  | NONE =>
 		    let
-			val inf =
-			    (valOf (loadSig url')
+			val infs =
+			    (loadInfs url'
 			     before
 			     trace ("loaded signature from " ^
 				    Url.toStringRaw url'))
-			    handle exn as (Component.Failure (_, _) |
-					   Option.Option) =>
+			    handle exn as (IO.Io _ | Option.Option) =>
 				acquireFromSigFile (url', exn)
-			val sign = Inf.asSig inf
-			    handle Inf.Interface =>
-				error ("higher-order content found in " ^
-				       Url.toStringRaw url)
 		    in
-			UrlMap.insert (sigTable, urlCeil url', sign);
-			sign
+			UrlMap.insert (importTable, urlCeil url', infs);
+			infs
 		    end
 	    end
 	and acquireFromSigFile (url, exn) =
@@ -331,21 +351,20 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    acquireFromSource targetFilename
 		else
 		    error ((case exn of
-				Component.Failure (_, IO.Io {...}) =>
-				    "could not locate component "
+				IO.Io _ => "could not locate component "
 			      | Option.Option => "no signature found in "
 			      | _ => "unknown error while accessing ") ^
 			   targetFilename)
 	    end
 	and acquireFromSource targetFilename =
 	    case acquireFromSource' (targetFilename, ".aml") of
-		SOME inf => inf
+		SOME infs => infs
 	      | NONE =>
 	    case acquireFromSource' (targetFilename, ".sml") of
-		SOME inf => inf
+		SOME infs => infs
 	      | NONE =>
 	    case acquireFromSource' (targetFilename, ".sig") of
-		SOME inf => inf
+		SOME infs => infs
 	      | NONE =>
 	    error ("could not locate source for " ^ targetFilename)
 	and acquireFromSource' (targetFilename, to) =
@@ -357,6 +376,24 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 					      pathCeil targetFilename))
 		else NONE
 	    end
+
+	fun acquireSig (desc, url) =
+(*
+	    Inf.asSig (#export (acquireInfs (desc, url)))
+*)
+let val j = #export (acquireInfs (desc, url))
+in Inf.asSig j
+	    handle Inf.Interface =>
+(*DEBUG*)
+(PrettyPrint.output(TextIO.stdOut,PPInf.ppInf j,79);
+TextIO.print"\n";
+		error ("higher-order content found in " ^ Url.toStringRaw url)
+) end
+	fun acquireImports (desc, url) =
+	    Vector.map (Pair.mapSnd Inf.asSig)
+		       (#imports (acquireInfs (desc, url)))
+	    handle Inf.Interface =>
+		error ("higher-order import found in " ^ Url.toStringRaw url)
 
 	fun acquireMod (desc, url) =
 	    let
