@@ -130,12 +130,15 @@ public:
 };
 
 class Constructor: private Block {
-  //--** store the constructor's print name?
+private:
+  static const u_int NAME_POS = 0;
+  static const u_int SIZE     = 1;
 public:
   using Block::ToWord;
 
-  static Constructor *New() {
-    Block *b = Store::AllocBlock(Alice::Constructor, MIN_BLOCKSIZE);
+  static Constructor *New(word name) {
+    Block *b = Store::AllocBlock(Alice::Constructor, SIZE);
+    b->InitArg(NAME_POS, name);
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWord(word x) {
