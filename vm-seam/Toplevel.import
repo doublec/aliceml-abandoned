@@ -103,3 +103,5 @@ __overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
 __overload 'a printVal :  'a -> unit = Print'.printVal'
 __overload 'a printType : 'a -> unit = Print'.printType'
 __overload 'a inspect : 'a -> unit = Inspector'.inspect'
+
+fun exit _ = OS.Process.exit OS.Process.success
