@@ -12,6 +12,7 @@
 
 functor
 import
+   Property(condGet)
    System(showError)
    Application(exit)
    Debug(dumpTaskStack: DumpTaskStack)
@@ -154,10 +155,14 @@ define
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.handle Debug Exn TaskStack})
 	 [] nil then
-	    {System.showError
-	     'uncaught exception: '#{Value.toVirtualString Exn 5 5}}
-	    {DumpTaskStack {Reverse Debug}}
-	    {Application.exit 1}
+	    case {Property.condGet 'alice.atExn' unit} of unit then
+	       {System.showError
+		'uncaught exception: '#{Value.toVirtualString Exn 5 5}}
+	       {DumpTaskStack {Reverse Debug}}
+	       {Application.exit 1}
+	    elseof Closure then
+	       Scheduler, Run(args() {Closure.1.1.pushCall Closure TaskStack})
+	    end
 	 end
       end
       meth Result(Res)
