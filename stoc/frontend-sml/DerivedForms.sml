@@ -142,7 +142,7 @@ structure DerivedForms :> DERIVED_FORMS =
 		(* may raise Option *)
 
 
-    fun replaceTy (G.Seq(_,tyvars), G.Seq(_,tys)) (G.TYVARTy(i, tyvar)) =
+    fun replaceTy (G.Seq(_,tyvars), G.Seq(_,tys)) (ty as G.TYVARTy(i, tyvar)) =
 	let
 	    fun loop(tyvar'::tyvars', ty'::tys') =
 		    if equalTyVar(tyvar, tyvar') then
@@ -150,7 +150,7 @@ structure DerivedForms :> DERIVED_FORMS =
 		    else
 			loop(tyvars', tys')
 	      | loop([], _) =
-		    Error.error(i, "unbound type variable")
+		    ty
 	      | loop(_, []) =
 		    Error.error(i, "type sequence has wrong arity")
 	in
@@ -183,15 +183,21 @@ structure DerivedForms :> DERIVED_FORMS =
       | rewriteTy typbind (G.RECORDTy(I, tyrow_opt)) =
 	    G.RECORDTy(I, Option.map (rewriteTyRow typbind) tyrow_opt)
 
-      | rewriteTy typbind (ty as G.TYCONTy(I, tyseq, G.DOTLong _)) = ty
+      | rewriteTy typbind (ty as G.TYCONTy(I, tyseq, longtycon as G.DOTLong _))=
+	    G.TYCONTy(I, rewriteTySeq typbind tyseq, longtycon)
 
-      | rewriteTy typbind (ty as G.TYCONTy(I, tyseq, G.SHORTLong(_, tycon))) =
-	(let 
-            val (tyvarseq', ty') = lookupTyCon(tycon, typbind)
+      | rewriteTy typbind (ty as G.TYCONTy(I, tyseq,
+					  longtycon as G.SHORTLong(_, tycon))) =
+	let 
+	    val tyseq' = rewriteTySeq typbind tyseq
 	in
-	    replaceTy (tyvarseq',tyseq) ty'
+	    let
+		val (tyvarseq', ty') = lookupTyCon(tycon, typbind)
+	    in
+		replaceTy (tyvarseq',tyseq) ty'
+	    end
+	    handle Option => G.TYCONTy(I, tyseq', longtycon)
 	end
-	handle Option => ty)
 
       | rewriteTy typbind (G.ARROWTy(I, ty1, ty2)) =
 	    G.ARROWTy(I, rewriteTy typbind ty1, rewriteTy typbind ty2)
@@ -202,6 +208,9 @@ structure DerivedForms :> DERIVED_FORMS =
     and rewriteTyRow typbind (G.ROWTyRow(I, lab, ty, tyrow_opt)) =
 	    G.ROWTyRow(I, lab, rewriteTy typbind ty,
 			  Option.map (rewriteTyRow typbind) tyrow_opt)
+
+    and rewriteTySeq typbind (G.Seq(I, tys)) =
+	    G.Seq(I, List.map (rewriteTy typbind) tys)
 
     fun rewriteConBind typbind (G.ConBind(I, op_opt, vid, ty_opt, conbind_opt))=
 	    G.ConBind(I, op_opt, vid,
