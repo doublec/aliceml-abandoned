@@ -13,7 +13,6 @@
 import structure Name           from "Name"
 import structure Label          from "Label"
 import structure Path           from "Path"
-import structure PathSet        from "PathSet"
 import structure PathMap        from "PathMap"
 import signature SIMPLE_IMP_MAP from "../utility/SIMPLE_IMP_MAP-sig"
 
@@ -134,7 +133,7 @@ sig
     val path :		typ -> path			(* [Type] *)
     val pathCon :	con -> path
 
-    val paths :		typ -> PathSet.t
+    val paths :		typ -> kind PathMap.t
 
   (* Operations on rows *)
 

@@ -16,7 +16,6 @@ import functor   MkRefMap from "../utility/MkRefMap"
 import structure Name     from "Name"
 import structure Label    from "Label"
 import structure Path     from "Path"
-import structure PathSet  from "PathSet"
 import structure PathMap  from "PathMap"
 import signature TYPE     from "TYPE-sig"
 
@@ -155,12 +154,62 @@ struct
 
   (* Very basic helpers *)
 
-    fun new t'				= ref(t', Stamp.new())
     fun typ'(ref(t',_))			= t'
+    fun new t'				= ref(t', Stamp.new())
     fun replace(t as ref(_,z), t')	= t := (t',z)
-
     val same				= op=
     fun hash(ref(_,z))			= Stamp.hash z
+
+
+    fun trace f s = f
+
+    (*DEBUG: The following allows tracing of all type nodes.
+
+    val currentFn = ref "external"
+
+    fun trace f s x =
+	let
+	    val s' = !currentFn
+	in
+	    currentFn := s;
+	    f x before currentFn := s'
+	    handle e => (currentFn := s' ; raise e)
+	end
+
+    fun id(ref(_,z)) = Stamp.toString z
+
+    val printTyp' =
+	fn HOLE _	=> "HOLE"
+	 | LINK t	=> "LINK(" ^ id t ^ ")"
+	 | FUN(t1,t2)	=> "FUN(" ^ id t1 ^ "," ^ id t2 ^ ")"
+	 | TUPLE ts	=> "TUPLE(" ^ String.separate ","
+					(Vector.toList(Vector.map id ts)) ^ ")"
+	 | PROD _	=> "PROD(...)"
+	 | SUM _	=> "SUM(...)"
+	 | VAR _	=> "VAR"
+	 | CON _	=> "CON"
+	 | ALL(a,t)	=> "ALL(" ^ id a ^ "," ^ id t ^ ")"
+	 | EXIST(a,t)	=> "EXIST(" ^ id a ^ "," ^ id t ^ ")"
+	 | LAMBDA(a,t)	=> "LAMBDA(" ^ id a ^ "," ^ id t ^ ")"
+	 | APPLY(t1,t2)	=> "APPLY(" ^ id t1 ^ "," ^ id t2 ^ ")"
+	 | MU t		=> "MU(" ^ id t ^ ")"
+	 | ABBREV(t1,t2) => "ABBREV(" ^ id t1 ^ "," ^ id t2 ^ ")"
+
+    fun new t' =
+	let
+	    val z = Stamp.new()
+	in
+	    print("new " ^ Stamp.toString z ^ " = " ^ printTyp' t' ^
+		  " by " ^ !currentFn ^ "\n");
+	    ref(t',z)
+	end
+
+    fun replace(t as ref(t'',z), t') =
+	( print("replace " ^ Stamp.toString z ^ " = " ^ printTyp' t'' ^
+		" with " ^ printTyp' t' ^ " by " ^ !currentFn ^ "\n");
+	  t := (t',z)
+	)
+    *)
 
 
   (* Level management *)
@@ -339,7 +388,13 @@ struct
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-	      | clone' _		= raise Assert.failure
+	      | clone'(HOLE _)		= raise Assert.failure
+	      | clone'(LINK t)		= LINK(clone t)
+					  (* links can appear via dup because
+					   * equals constructs links to vars
+					   * that may remain if a var is
+					   * shared between several quantifiers.
+					   *)
 
 	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
@@ -347,6 +402,9 @@ struct
 	in
 	    clone t
 	end
+
+    (*DEBUG*)
+    val cloneCont = trace cloneCont "clone"
 
     fun clone t = cloneCont(cloneStart(), t)
 
@@ -392,6 +450,9 @@ struct
 					       SOME(Option.getOpt(to,t11)))
 	   | _			=> ()
 
+    (*DEBUG*)
+    val reduce = trace reduce "reduce"
+
     (*
      * We don't normally do eta-reduction, since it is expensive.
      * During unification we curently allow no lambdas anyway.
@@ -429,6 +490,8 @@ struct
 					   then reduceLambda(t,t1, vs, modified)
 					   else modified
 
+    (*DEBUG*)
+    val reduceEta = trace reduceEta "reduceEta"
 
 
   (* Creation and injections *)
@@ -633,6 +696,9 @@ struct
 					   )
 	   | _				=> asTypeFunc(new(APPLY(t,t2)), ts)
 
+    (*DEBUG*)
+    val asType = trace asType "asType"
+
     fun asArrow' t	= case asType t of FUN tt    => tt | _ => raise Type
     fun asTuple' t	= case asType t of PROD r    => (rowToTup r handle Row
 							       => raise Type)
@@ -651,19 +717,14 @@ struct
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)
 
-(*
-    fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
-    fun paths t = foldl (fn(t as ref(CON c), a) => pathCon(c)::a | (t,a) => a) t
-*)
-
     fun paths t =
     	let
-	    val s = PathSet.new()
+	    val s = PathMap.new()
 
-	    fun path t = case typ' t of CON c => PathSet.insert(s, pathCon c)
-				      | _     => ()
+	    fun path t = case typ' t of CON(k,_,p) => PathMap.insert(s,p,k)
+				      | _          => ()
 	in
-	    app path t;
+	    appNoAbbrevs path t;
 	    s
 	end
 
@@ -702,6 +763,9 @@ struct
 	   | EXIST(a,t)		=> instance' t
 	   | _			=> t
 
+    (*DEBUG*)
+    val instance' = trace instance' "instance'"
+
     fun instance t =
 	case typ' t
 	  of LINK t		=> instance t
@@ -713,6 +777,9 @@ struct
 	  of ALL(a,t)		=> skolem' t
 	   | EXIST(a,t)		=> (replace(a, unknown'(kind a)) ; skolem' t)
 	   | _			=> t
+
+    (*DEBUG*)
+    val skolem' = trace skolem' "skolem'"
 
     fun skolem t =
 	case typ' t
@@ -745,6 +812,9 @@ struct
     and closeRow(r as RHO(n,r')) = if !n <= !level then r else r'
       | closeRow r               = r
 
+    (*DEBUG*)
+    val close = trace close "close"
+
 
   (* Lifting a type to the current level *)
 
@@ -758,15 +828,14 @@ struct
 	  | VAR(k,n)		=> if n <= !level then () else raise Lift t
 	  | (PROD r | SUM r)	=> liftRow r
 	  | (LAMBDA(a,_) | ALL(a,_) | EXIST(a,_)) =>
-(*ASSERT			   assert case typ' a of VAR _ => true
-						   | _ => false =>*)
-				   if case typ' a of VAR _ => false | _ => true
-				   then raise Assert.failure else
 				   replace(a, VAR(kindVar a, globalLevel))
 	  | _			=> ()
 
     and liftRow(RHO(n,r))	= if !n > !level then n := !level else ()
       | liftRow _		= ()
+
+    (*DEBUG*)
+    val lift = trace lift "lift"
 
 
   (* Filling *)
@@ -782,6 +851,10 @@ struct
 			   if isLambda t2 then raise Assert.failure else
 			   replace(t1, LINK t2)
 	   | _		=> raise Fill
+
+    (*DEBUG*)
+    val fill = trace fill "fill" : typ * typ -> unit
+
 
 
   (* Unification *)
@@ -981,6 +1054,10 @@ struct
 	    handle Unify tt => ( List.app replace (!trail) ; raise Unify tt )
 	end
 
+    (*DEBUG*)
+    val unify = trace unify "unify"
+
+
 
   (* Matching *)
 
@@ -1019,15 +1096,19 @@ struct
 			let
 			    val a1' = typ' a1
 			in
-			    ( replace(a1, LINK a2)
-			    ; trail := (a1,a1') :: !trail
-			    ; recur equals (t1,t2)
-			    )
+			    replace(a1, LINK a2);
+			    trail := (a1,a1') :: !trail;
+			    recur equals (t1,t2)
 			end
 
 		    fun equalsTupProd(ts, r, t) =
-			let val ts' = rowToTup r in
-			    replace(t, TUPLE ts'); recur equalsVector (ts,ts')
+			let
+			    val ts' = rowToTup r
+			    val t'  = typ' t
+			in
+			    replace(t, TUPLE ts');
+			    trail := (t,t') :: !trail;
+			    recur equalsVector (ts,ts')
 			end
 			handle Row => false
 		in
@@ -1043,13 +1124,7 @@ struct
 
 		       | (MU(t11), MU(t21)) =>
 			 recur equals (t11,t21)
-		       (*
-		       | (MU(t11), _) =>
-			 recur equals (t11,t2)
 
-		       | (_, MU(t21)) =>
-			 recur equals (t1,t21)
-		       *)
 		       | (FUN(tt1), FUN(tt2)) =>
 			 recur equalsPair (tt1,tt2)
 
@@ -1107,6 +1182,10 @@ struct
 	    equals(t1,t2) orelse ( List.app replace (!trail) ; false )
 	end
 
+    (*DEBUG*)
+    val equals = trace equals "equals"
+
+
 
   (* Realisation *)
 
@@ -1118,6 +1197,10 @@ struct
 			       | NONE    => ()
 			   )
 	   | _		=> ()
+
+    (*DEBUG*)
+    val realisePath = trace realisePath "realisePath"
+
 
     (*
      * Realisations need not be idempotent (fully expanded). Would be nice
@@ -1141,6 +1224,9 @@ struct
 	in
 	    app realise1 t ; List.app reduce (!apps)
 	end
+
+    (*DEBUG*)
+    val realise = trace realise "realise"
 
 
   (* Intersection *)
