@@ -103,49 +103,64 @@ public class MarshalInputStream extends ObjectInputStream {
 	    if (annotation != null && (annotation instanceof String))
 	    {
 		String location = (String) annotation;
-		//System.out.println("Location: "+location+" ClassName: "+className);
+		// System.out.println("Location: "+location+" ClassName: "+className);
 		// hier machen wir eine tolle Analyse des annotation Strings
 		// und laden gegebenenfalls die Klasse selbst via unseren PickleClassLoader
 		// case location of !IP!className =>
 		//   schnapp den byte code von IP mit className;
 		//   lade Klasse mit PickleClassLoader.enter und gib sie zurück
-		if (location.startsWith("!")) {
-		    String ip = location.substring(1);
-		    Export exp = null;
-		    try {
-			exp = (Export) Naming.lookup("//"+ip+"/exporter");
-		    } catch (Exception e) {
-			System.err.println(e);
-			e.printStackTrace();
-			return null;
-		    }
-		    byte[] b = exp.getClass(className);
-		    // System.out.println("Bytes: "+b);
-		    if (b != null) {
-			PickleClassLoader.loader.enter(className,b);
-		    }
-		    Class cl = PickleClassLoader.loader.findClass(className);
-		    // now read the static fields:
-		    Field[] fields = cl.getDeclaredFields();
-		    int fc = fields.length;
-		    for (int i=0; i<fc; i++) {
-			int modifier = fields[i].getModifiers();
-			if (Modifier.isStatic(modifier)) {
-			    Object content = exp.getField(className+"field"+i);
-			    try {
-				fields[i].set(null,content);
-			    } catch (IllegalArgumentException I) {
-				System.err.println(I);
-				I.printStackTrace();
-			    } catch (IllegalAccessException I) {
-				System.err.println(I);
-				I.printStackTrace();
+		if (PickleClassLoader.loader.getBytes(className) != null) {
+		    // System.out.println("Class already loaded.");
+		    return PickleClassLoader.loader.findClass(className);
+		} else {
+		    // System.out.println("Fetching class "+className+" from "+location+ ".");
+		    if (location.startsWith("!")) {
+			int idxofcolon = location.indexOf(':');
+			// System.out.println("location is: "+location);
+			String ip = location.substring(1,idxofcolon);
+			// System.out.println("IP: "+ip);
+			String machine = location.substring(idxofcolon+1);
+			// System.out.println("Machine: " + machine);
+			Export exp = null;
+			try {
+			    exp = (Export) Naming.lookup("//"+ip+"/exporter"+machine);
+			} catch (Exception e) {
+			    System.err.println(e);
+			    e.printStackTrace();
+			    return null;
+			}
+			byte[] b = exp.getClass(className);
+			// System.out.println("Bytes: "+b);
+			if (b != null) {
+			    PickleClassLoader.loader.enter(className,b);
+			}
+			// here we define the class;
+			Class cl = PickleClassLoader.loader.findClass(className);
+			// now read the static fields:
+			// System.out.println("Reading static fields ...");
+			Field[] fields = cl.getDeclaredFields();
+			int fc = fields.length;
+			for (int i=0; i<fc; i++) {
+			    int modifier = fields[i].getModifiers();
+			    if (Modifier.isStatic(modifier)) {
+				Object content = exp.getField(className+"field"+i);
+				// System.out.println("Field "+i+": "+content);
+				try {
+				    fields[i].set(null,content);
+				} catch (IllegalArgumentException I) {
+				    System.err.println(I);
+				    I.printStackTrace();
+				} catch (IllegalAccessException I) {
+				    System.err.println(I);
+				    I.printStackTrace();
+				}
 			    }
 			}
+			// System.out.println("Done.");
+			return cl;
+		    } else {
+			return LoaderHandler.loadClass(location, className);
 		    }
-		    return cl;
-		} else {
-		    return LoaderHandler.loadClass(location, className);
 		}
 	    } else {
 		return LoaderHandler.loadClass(className);
