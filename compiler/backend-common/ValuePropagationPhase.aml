@@ -741,7 +741,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				     (IdMap.insert (env, id,
 						    (VarVal id', isToplevel'));
 				      Wildcard)
-			       | (_, _) => idDef') (idDefs, idDefs')
+			       | (_, _) => idDef) (idDefs, idDefs')
 		      | (_, _) => idDefs
 	    in
 		Vector.app (fn idDef =>
@@ -763,7 +763,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				     (IdMap.insert (env, id,
 						    (VarVal id', isToplevel'));
 				      (label, Wildcard))
-			       | (_, _) => (label, idDef'))
+			       | (_, _) => (label, idDef))
 			    (labelIdDefVec, idDefs)
 		      | (_, _) => labelIdDefVec
 		val idDefs = Vector.map #2 labelIdDefVec
