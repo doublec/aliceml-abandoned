@@ -18,6 +18,7 @@
  *)
 
 import structure Source   from "../infrastructure/Source"
+import structure Error    from "../infrastructure/Error"
 import signature SWITCHES from "../infrastructure/SWITCHES-sig"
 import signature PHASE    from "../infrastructure/PHASE-sig"
 import signature TARGET   from "../infrastructure/TARGET-sig"
@@ -36,6 +37,8 @@ functor MkCompiler(
 struct
     structure Switches = Switches
     structure Target = Target
+
+    exception Error
 
     type context =
 	{ feSpec : FrontendSpecific.C.t
@@ -68,4 +71,5 @@ struct
 	in
 	    (C', target)
 	end
+	handle Error.Error _ => raise Error
 end

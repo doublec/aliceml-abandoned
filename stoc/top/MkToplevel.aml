@@ -58,7 +58,7 @@ struct
 	    RecursiveCompiler.Target.apply targetContext target;
 	    (compilerContext, targetContext)
 	end
-	handle Error.Error _ => (compilerContext, targetContext)
+	handle RecursiveCompiler.Error => (compilerContext, targetContext)
 
     fun loop(compilerContext, targetContext) =
 	case readInput()

@@ -76,6 +76,8 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	structure Switches = Compiler.Switches
 	structure Target = Compiler.Target
 
+	exception Error = Compiler.Error
+
 	type context = Compiler.context
 	val empty = Compiler.empty
 

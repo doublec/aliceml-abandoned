@@ -27,6 +27,8 @@ sig
     structure Switches: SWITCHES
     structure Target:   TARGET
 
+    exception Error
+
     type context
 
     val empty:   context
