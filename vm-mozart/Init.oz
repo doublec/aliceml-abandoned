@@ -15,12 +15,10 @@ import
    Application(getCmdArgs)
    Property(put)
    Module(link)
-   System(show)
    Word at 'Word.so{native}'
 define
    {Wait Word}
    case {Application.getCmdArgs plain} of Name|Rest then M in
-      {System.show Rest}
       {Property.put 'ozd.args' Rest}
       [M] = {Module.link [Name]}
       {Wait M}
