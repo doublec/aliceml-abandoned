@@ -12,6 +12,7 @@
 
 import structure Inf                from "../lib/rtt/Inf"
 import structure TextIO             from "../lib/system/TextIO"
+import structure OS                 from "../lib/system/OS"
 import structure IO                 from "../lib/system/IO"
 import structure Url                from "../lib/system/Url"
 import structure Resolver           from "../lib/system/Resolver"
@@ -135,7 +136,11 @@ struct
 	    DepthFirstSearch.search graph
 	end
 
-    fun trace s = TextIO.output (TextIO.stdErr, "[rewrite] " ^ s)
+(*--** try to output trace messages only once *)
+    val trace =
+	if Option.isSome (OS.Process.getEnv "ALICE_TRACE_REWRITE") then
+	    (fn s => TextIO.output (TextIO.stdErr, "[rewrite] " ^ s))
+	else ignore
 
     fun rewrite handlers url =
 	#1 (Option.valOf (Resolver.Handler.tracingApply trace url handlers))
