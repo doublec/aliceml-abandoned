@@ -21,3 +21,7 @@ import "x-alice:/lib/system/Unix"
 import "x-alice:/lib/system/CommandLine"
 
 import "x-alice:/lib/system/Tools"
+
+(*--** these should only be active for stot: *)
+(*import "x-alice:/lib/tools/Inspector"*)
+import "x-alice:/stoc/StotMain"
