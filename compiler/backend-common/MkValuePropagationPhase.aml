@@ -33,28 +33,36 @@ from "../../lib/system/TextIO"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint"
+from "../../lib/utility/PrettyPrint"
 
 import
     structure Assert
-from "../misc/Assert"
+from "../../lib/utility/Assert"
 
 import
     signature HASH_KEY
     structure FromEqHashKey
-from "../misc/HASH_KEY-sig"
+from "../../lib/utility/HASH_KEY-sig"
 
 import
     signature IMP_MAP
-from "../misc/IMP_MAP-sig"
+from "../../lib/utility/IMP_MAP-sig"
 
 import
     structure MkHashImpMap
-from "../misc/MkHashImpMap"
+from "../../lib/utility/MkHashImpMap"
 
 import
     structure MkDepthFirstSearch
-from "../misc/MkDepthFirstSearch"
+from "../../lib/utility/MkDepthFirstSearch"
+
+import   (*--**DEBUG*)
+    structure Name
+from "../../lib/rtt/Name"
+
+import
+    structure Label
+from "../../lib/rtt/Label"
 
 import
     structure Crash
@@ -83,14 +91,6 @@ from "../common/StampSet"
 import
     structure StampMap
 from "../common/StampMap"
-
-import   (*--**DEBUG*)
-    structure Name
-from "../common/Name"
-
-import
-    structure Label
-from "../common/Label"
 
 import
     structure Arity

@@ -36,7 +36,7 @@
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint"
+from "../../lib/utility/PrettyPrint"
 
 import
     structure Crash
