@@ -9,6 +9,7 @@ libsystem_a_SOURCES = \
 	UnsafeCommandLine.cc \
 	UnsafeComponent.cc \
 	UnsafeDebug.cc \
+	UnsafeDebugger.cc \
 	UnsafeSocket.cc \
 	UnsafeRand.cc \
 	UnsafeValue.cc \
