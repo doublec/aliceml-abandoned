@@ -7,8 +7,8 @@ sig
 	| TAGGED of Tag.tag * doc
     withtype doc = item list
 
-    val length : doc -> int
-    val output : TextIO.outstream * doc -> unit
+    val size :  doc -> int
+    val print : doc -> unit
 end
 
 structure Doc : DOC =
@@ -18,20 +18,20 @@ struct
 	| TAGGED of Tag.tag * doc
     withtype doc = item list
 
-    fun length doc                   = length'(doc, 0)
-    and length'(items, n)            = List.foldl lengthItem n items
-    and lengthItem(TEXT ss, n)       = List.foldl lengthString n ss
-      | lengthItem(TAGGED(t,doc), n) = length'(doc, n + Tag.cost t)
-    and lengthString(s, n)           = String.length s + n
+    fun size doc                   = size'(doc, 0)
+    and size'(items, n)            = List.foldl sizeItem n items
+    and sizeItem(TEXT ss, n)       = List.foldl sizeString n ss
+      | sizeItem(TAGGED(t,doc), n) = size'(doc, n + Tag.cost t)
+    and sizeString(s, n)           = String.size s + n
 
-    fun output(out, items)       = List.app (fn x => outputItem(out, x)) items
-    and outputItem(out, TEXT ss) = List.appr (fn s => TextIO.output(out, s)) ss
-      | outputItem(out, TAGGED(t,doc)) =
+    fun print items              = List.app printItem items
+    and printItem(TEXT ss)       = List.appr TextIO.print ss
+      | printItem(TAGGED(t,doc)) =
 	let
 	    val tag = Tag.toString t
 	in
-	    TextIO.output(out, "<" ^ tag ^ ">");
-	    output(out, doc);
-	    TextIO.output(out, "</" ^ tag ^ ">")
+	    TextIO.print("<" ^ tag ^ ">");
+	    print doc;
+	    TextIO.print("</" ^ tag ^ ">")
 	end
 end
