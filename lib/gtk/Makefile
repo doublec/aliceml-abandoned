@@ -82,8 +82,11 @@ Untyped%.ozf: %.oz
 %.ozf: Untyped%.ozf %.asig
 	$(STOC) $(STOCOPTS) --replacesign $< $*.asig $@
 
+UntypedGTK.ozf: GTKWrapper.oz GTKExport.oz
 GTK.ozf: GTKCore.ozf
+UntypedGDK.ozf: GDKWrapper.oz GDKExport.oz
 GDK.ozf: GTKCore.ozf
+UntypedCanvas.ozf: CanvasWrapper.oz CanvasExport.oz
 Canvas.ozf: GTKCore.ozf
 
 -include Makefile.depend
