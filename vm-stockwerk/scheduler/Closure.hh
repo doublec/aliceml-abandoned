@@ -19,8 +19,6 @@
 
 #include "scheduler/Interpreter.hh"
 
-#define CLOSURE_LABEL Store::MakeLabel(0) //--**
-
 class TaskStack;
 
 class Closure: private Block {

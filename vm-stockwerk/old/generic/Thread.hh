@@ -19,8 +19,6 @@
 
 #include "scheduler/TaskStack.hh"
 
-#define THREAD_LABEL Store::MakeLabel(0) //--**
-
 class Thread: private Block {
 private:
   static const u_int SIZE = 4;
@@ -41,10 +39,10 @@ public:
 
   static Thread *New(priority p) {
     Block *b = Store::AllocBlock(THREAD_LABEL, SIZE);
-    b->InitArg(PRIORITY_POS, Store::IntToWord(p));
+    b->InitArg(PRIORITY_POS, p);
     b->InitArg(TASK_STACK_POS, TaskStack::New()->ToWord());
-    b->InitArg(STATE_POS, Store::IntToWord(RUNNABLE));
-    b->InitArg(IS_SUSPENDED_POS, Store::IntToWord(false));
+    b->InitArg(STATE_POS, RUNNABLE);
+    b->InitArg(IS_SUSPENDED_POS, false);
     return static_cast<Thread *>(b);
   }
   static Thread *FromWord(word x) {
@@ -54,25 +52,25 @@ public:
   }
 
   priority GetPriority() {
-    return static_cast<priority>(Store::WordToInt(GetArg(PRIORITY_POS)));
+    return static_cast<priority>(Store::UnsafeWordToInt(GetArg(PRIORITY_POS)));
   }
   TaskStack *GetTaskStack() {
     return TaskStack::FromWord(GetArg(TASK_STACK_POS));
   }
   void SetState(state s) {
-    ReplaceArg(STATE_POS, Store::IntToWord(s));
+    ReplaceArg(STATE_POS, s);
   }
   state GetState() {
-    return static_cast<state>(Store::WordToInt(GetArg(STATE_POS)));
+    return static_cast<state>(Store::UnsafeWordToInt(GetArg(STATE_POS)));
   }
   void Suspend() {
-    ReplaceArg(IS_SUSPENDED_POS, Store::IntToWord(true));
+    ReplaceArg(IS_SUSPENDED_POS, true);
   }
   void Resume() {
-    ReplaceArg(IS_SUSPENDED_POS, Store::IntToWord(false));
+    ReplaceArg(IS_SUSPENDED_POS, false);
   }
   bool IsSuspended() {
-    return Store::WordToInt(GetArg(IS_SUSPENDED_POS));
+    return Store::UnsafeWordToInt(GetArg(IS_SUSPENDED_POS));
   }
 };
 

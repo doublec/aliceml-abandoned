@@ -18,7 +18,6 @@
 #include "scheduler/Interpreter.hh"
 #include "builtins/GlobalPrimitives.hh"
 
-StoreConfig *Scheduler::storeConfig; //--** probably not the correct place
 ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
 bool Scheduler::preempt;
@@ -90,23 +89,23 @@ void Scheduler::Run() {
 	  for (int i = nvars; i--; ) {
 	    Transient *transient = transients[i];
 	    switch (transient->GetLabel()) {
-	    case HOLE:
+	    case HOLE_LABEL:
 	      taskStack->PushFrame(1);
 	      taskStack->PutWord(0, GlobalPrimitives::Hole_Hole);
 	      goto raise;
-	    case FUTURE:
+	    case FUTURE_LABEL:
 	      taskStack->PushFrame(1);
 	      taskStack->PutInt(0, 0);
 	      static_cast<Future *>(transient)->AddToWaitQueue(currentThread);
 	      break;
-	    case CANCELLED:
+	    case CANCELLED_LABEL:
 	      taskStack->PushFrame(1);
 	      taskStack->PutWord(0, transient->GetArg());
 	      goto raise;
-	    case BYNEED:
+	    case BYNEED_LABEL:
 	      {
 		word closure = transient->GetArg();
-		transient->Become(FUTURE, Store::IntToWord(0)); // empty queue
+		transient->Become(FUTURE_LABEL, 0); // empty queue
 		// Push a task that binds the transient:
 		word primitive = GlobalPrimitives::Internal_bind;
 		taskStack->PushFrame(1);
@@ -142,11 +141,10 @@ void Scheduler::Run() {
       }
     }
     if (Store::NeedGC()) {
+      //--** add Primitive::table
       //--** add threads waiting for I/O as well as properties
       threadQueue->PurgeAll();
-      threadQueue =
-	ThreadQueue::FromWord(Store::DoGC(threadQueue->ToWord(),
-					  storeConfig->max_gen - 1));
+      threadQueue = ThreadQueue::FromWord(Store::DoGC(threadQueue->ToWord()));
     }
   }
   //--* select(...)

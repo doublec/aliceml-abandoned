@@ -17,20 +17,20 @@
 #pragma interface "scheduler/Transients.hh"
 #endif
 
-#include "store/store.hh"
+#include "store/Store.hh"
 #include "scheduler/Scheduler.hh"
 #include "adt/Queue.hh"
 
 //
 // Transient Representation:
 //
-//    Label       Argument
-//    -----       --------
-//    HOLE        associated future (or the integer 0 if not created)
-//    FUTURE      wait queue
-//    CANCELLED   exception
-//    BYNEED      closure
-//    REF         value
+//    Label             Argument
+//    -----             --------
+//    HOLE_LABEL        associated future (or the integer 0 if not created)
+//    FUTURE_LABEL      wait queue
+//    CANCELLED_LABEL   exception
+//    BYNEED_LABEL      closure
+//    REF_LABEL         value
 //
 
 class Future: private Transient {
@@ -38,7 +38,7 @@ public:
   using Transient::ToWord;
 
   static Future *New() {
-    Transient *transient = Store::AllocTransient(FUTURE);
+    Transient *transient = Store::AllocTransient(FUTURE_LABEL);
     return static_cast<Future *>(transient);
   }
 
@@ -61,7 +61,7 @@ public:
   using Transient::ToWord;
 
   static Hole *New() {
-    Transient *transient = Store::AllocTransient(HOLE);
+    Transient *transient = Store::AllocTransient(HOLE_LABEL);
     transient->InitArg(0);
     return static_cast<Hole *>(transient);
   }
@@ -81,8 +81,8 @@ public:
       return false;
     Transient *future = Store::WordToTransient(GetArg());
     if (future != INVALID_POINTER) // eliminate associated future (if created)
-      future->Become(REF, w);
-    Become(REF, w);
+      future->Become(REF_LABEL, w);
+    Become(REF_LABEL, w);
     return true;
   }
 };
@@ -92,13 +92,13 @@ public:
   using Transient::ToWord;
 
   static Byneed *New(word w) {
-    Transient *transient = Store::AllocTransient(BYNEED);
+    Transient *transient = Store::AllocTransient(BYNEED_LABEL);
     transient->InitArg(w);
     return static_cast<Byneed *>(transient);
   }
   static Byneed *FromWord(word w) {
     Transient *t = Store::WordToTransient(w);
-    Assert(t == INVALID_POINTER || t->GetLabel() == BYNEED);
+    Assert(t == INVALID_POINTER || t->GetLabel() == BYNEED_LABEL);
     return static_cast<Byneed *>(t);
   }
 };

@@ -17,9 +17,7 @@
 #pragma interface "scheduler/ConcreteCode.hh"
 #endif
 
-#include "store/store.hh"
-
-static const BlockLabel ConcreteCodeLabel = Store::MakeLabel(0); //--**
+#include "store/Store.hh"
 
 class Interpreter;
 
@@ -33,14 +31,14 @@ public:
 
   static ConcreteCode *New(word abstractCode, Interpreter *interpreter,
 			   u_int size) {
-    Block *b = Store::AllocBlock(ConcreteCodeLabel, SIZE + size);
+    Block *b = Store::AllocBlock(CONCRETECODE_LABEL, SIZE + size);
     b->InitArg(ABSTRACT_CODE_POS, abstractCode);
     b->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
     return static_cast<ConcreteCode *>(b);
   }
   static ConcreteCode *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == ConcreteCodeLabel);
+    Assert(b == INVALID_POINTER || b->GetLabel() == CONCRETECODE_LABEL);
     return static_cast<ConcreteCode *>(b);
   }
 
@@ -48,7 +46,8 @@ public:
     return GetArg(ABSTRACT_CODE_POS);
   }
   Interpreter *GetInterpreter() {
-    return static_cast<Interpreter *>(Store::WordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
+    return static_cast<Interpreter *>
+      (Store::WordToUnmanagedPointer(GetArg(INTERPRETER_POS))); //--** Direct
   }
   void Init(u_int index, word value) {
     InitArg(SIZE + index + 1, value);

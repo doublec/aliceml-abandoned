@@ -26,7 +26,6 @@
 
 class Scheduler {
 private:
-  static StoreConfig *storeConfig; //--** probably not the correct place
   static ThreadQueue *threadQueue;
   static Thread *currentThread;
   static bool preempt;

@@ -17,6 +17,7 @@
 #pragma interface "scheduler/TaskStack.hh"
 #endif
 
+#include "adt/Stack.hh"
 #include "scheduler/Closure.hh"
 
 class TaskStack: private Stack {
@@ -45,7 +46,7 @@ public:
     closure->GetConcreteCode()->GetInterpreter()->PushCall(this, closure);
   }
   void Clear() {
-    ClearFrame(GetSize());
+    ClearFrame(GetStackSize());
     Blank(0);
   }
   void Purge() {
@@ -61,16 +62,16 @@ public:
     return GetFrameArg(offset);
   }
   void PutInt(u_int offset, int i) {
-    PutWord(offset, Store::IntToWord(i));
+    PutFrameArg(offset, Store::IntToWord(i)); //--** remove IntToWord
   }
   int GetInt(u_int offset) {
-    return Store::WordToInt(GetWord(offset));
+    return Store::UnsafeWordToInt(GetWord(offset));
   }
   void PutUnmanagedPointer(u_int offset, void *pointer) {
     PutWord(offset, Store::UnmanagedPointerToWord(pointer));
   }
   void *GetUnmanagedPointer(u_int offset) {
-    return Store::WordToUnmanagedPointer(GetWord(offset));
+    return Store::WordToUnmanagedPointer(GetWord(offset)); //--** Unsafe
   }
 };
 
