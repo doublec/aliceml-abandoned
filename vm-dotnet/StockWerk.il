@@ -86,6 +86,8 @@
     .field static public initonly class StockWerk.StockWert Int$times
     .field static public initonly class StockWerk.StockWert Int$toString
     .field static public initonly class StockWerk.StockWert Int$uminus
+    .field static public initonly class StockWerk.StockWert Pickle$load
+    .field static public initonly class StockWerk.StockWert Pickle$save
     .field static public initonly class StockWerk.StockWert String$compare2
     .field static public initonly class StockWerk.StockWert String$conc
     .field static public initonly class StockWerk.StockWert String$explode
@@ -207,6 +209,10 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$plus
       newobj instance void StockWerk.Builtins.Int$toString::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$toString
+      newobj instance void StockWerk.Builtins.Pickle$load::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle$load
+      newobj instance void StockWerk.Builtins.Pickle$save::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle$save
       newobj instance void StockWerk.Builtins.String$conc::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$conc
       newobj instance void StockWerk.Builtins.String$str::.ctor()
@@ -234,7 +240,7 @@
   }
 
   .class sealed public ExceptionWrapper extends System.RuntimeException {
-    .field public initonly class StockWerk.StockWert Value
+    .field public class StockWerk.StockWert Value
     .method public void .ctor(class StockWerk.StockWert) {
       ldarg.0
       ldarg.1
@@ -533,11 +539,14 @@
       call class System.Serialization.SerializationTypeData System.Serialization.SerializationInfoGenerator::GetSerializationTypeData(class System.Type, int32)
       stloc.0
       ldloca.s 1
+      initobj System.Serialization.SerializationInfo
+      ldloca.s 1
       ldloc.0
       ldarg.0
       call instance void System.Serialization.SerializationInfo::.ctor(class System.Serialization.SerializationTypeData, class System.Object)
       ldarg.0
-      ldloc.1
+      ldloca.s 1
+      ldobj System.Serialization.SerializationInfo
       call void System.Serialization.SerializationInfoGenerator::PopulateSerializationInfo(class System.Object, value class System.Serialization.SerializationInfo)
       ldloc.1
       ret
@@ -644,15 +653,17 @@
     serialize:
       ldarg.0
       ldarg.1
-      ldarg.2
-      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamingContext)
+      ldarga.s 2
+      ldobj System.Serialization.StreamingContext
+      //--** putting a tail. instruction here breaks things (NullReferenceException in super)
+      call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamingContext)
       ret
     }
     .method virtual public class System.Object GetRealObject() {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
       ldarg.0
-      tail. call class StockWerk.StockWert StockWerk.Global::Localize(class System.Object, class StockWerk.StockWert)
+      call class StockWerk.StockWert StockWerk.Global::Localize(class System.Object, class StockWerk.StockWert)
       ret
     }
   }
@@ -662,7 +673,7 @@
   //
 
   .class sealed public Word extends StockWerk.StockWert {
-    .field public initonly int32 Value
+    .field public int32 Value
     .method public void .ctor(int32) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -698,7 +709,7 @@
   }
 
   .class sealed public Int extends StockWerk.StockWert {
-    .field public initonly int32 Value
+    .field public int32 Value
     .method public void .ctor(int32) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -740,7 +751,7 @@
   }
 
   .class sealed public Char extends StockWerk.StockWert {
-    .field public initonly int32 Value
+    .field public int32 Value
     .method public void .ctor(int32) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -777,7 +788,7 @@
   }
 
   .class sealed public String extends StockWerk.StockWert {
-    .field public initonly class System.String Value
+    .field public class System.String Value
     .method public void .ctor(class System.String) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -825,7 +836,7 @@
   }
 
   .class sealed public Real extends StockWerk.StockWert {
-    .field public initonly float32 Value
+    .field public float32 Value
     .method public void .ctor(float32) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -858,6 +869,28 @@
       ldc.i4.0
       ret
     }
+    .method virtual public class System.String ToString() {
+      ldarg.0
+      ldfld float32 StockWerk.Real::Value
+      call class System.String System.Single::ToString(float32)
+      dup
+      ldc.i4.s 46   // '.'
+      callvirt instance int32 System.String::IndexOf(wchar)
+      ldc.i4.M1
+      beq.s appendFrac
+      dup
+      ldc.i4.s 101   // 'e'
+      callvirt instance int32 System.String::IndexOf(wchar)
+      ldc.i4.M1
+      bne.un.s return
+    appendFrac:
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldstr ".0"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
+    return:
+      ret
+    }
   }
 
   //
@@ -877,7 +910,7 @@
   }
 
   .class sealed public NamedName extends StockWerk.Name {
-    .field public initonly class System.String Name
+    .field public class System.String Name
     .method public void .ctor(class System.String) {
       ldarg.0
       call instance void StockWerk.Name::.ctor()
@@ -914,7 +947,7 @@
   }
 
   .class sealed public NamedConstructor extends StockWerk.Constructor {
-    .field public initonly class System.String Name
+    .field public class System.String Name
     .method public void .ctor(class System.String) {
       ldarg.0
       call instance void StockWerk.Constructor::.ctor()
@@ -931,7 +964,7 @@
   }
 
   .class sealed public ConVal extends StockWerk.StockWert {
-    .field public initonly class StockWerk.Constructor Con
+    .field public class StockWerk.Constructor Con
     .field public class StockWerk.StockWert Val
     .method public void .ctor(class StockWerk.Constructor) {
       ldarg.0
@@ -1248,7 +1281,7 @@
   }
 
   .class public Tuple extends StockWerk.StockWert {
-    .field public initonly class StockWerk.StockWert[] Values
+    .field public class StockWerk.StockWert[] Values
     .method public void .ctor(class StockWerk.StockWert[]) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -1319,8 +1352,8 @@
   }
 
   .class sealed public Record extends StockWerk.StockWert {
-    .field public initonly class StockWerk.RecordArity Arity
-    .field public initonly class StockWerk.StockWert[] Values
+    .field public class StockWerk.RecordArity Arity
+    .field public class StockWerk.StockWert[] Values
     .method public void .ctor(class StockWerk.RecordArity, class StockWerk.StockWert[]) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -1424,7 +1457,7 @@
   }
 
   .class public Vector extends StockWerk.StockWert {
-    .field public initonly class StockWerk.StockWert[] Values
+    .field public class StockWerk.StockWert[] Values
     .method public void .ctor(class StockWerk.StockWert[]) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -1876,7 +1909,7 @@
   //
 
   .class public sealed Selector extends StockWerk.StockWert {
-    .field private initonly class System.String Label
+    .field private class System.String Label
     .method public void .ctor(class System.String) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -2138,7 +2171,7 @@
   //
 
   .class public sealed Array extends StockWerk.StockWert {
-    .field public initonly class StockWerk.StockWert[] Values
+    .field public class StockWerk.StockWert[] Values
     .method public void .ctor(int32, class StockWerk.StockWert) {
       .locals(class StockWerk.StockWert[], int32)
       ldarg.0
@@ -2716,6 +2749,89 @@
       ldarg.1
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Pickle$load extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      //--** this should take a URL instead of a path name
+      .locals(class System.IO.FileStream)
+    retry:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.1
+      ldfld class System.String StockWerk.String::Value
+      ldc.i4.3   // System.IO.FileMode::Open
+      ldc.i4.1   // System.IO.FileAccess::Read
+      newobj instance void System.IO.FileStream::.ctor(class System.String, int32, int32)
+      dup
+      stloc.0
+      newobj instance void System.Serialization.PseudoMLFormatter::.ctor(class System.IO.Stream)
+      callvirt instance class System.Object System.Serialization.Formatter::Deserialize()
+      ldloc.0
+      callvirt instance void System.IO.Stream::Close()
+      castclass StockWerk.StockWert
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Pickle$save extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.IO.FileStream)
+    retry:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.2
+      ldfld class System.String StockWerk.String::Value
+      ldc.i4.2   // System.IO.FileMode::Create
+      ldc.i4.2   // System.IO.FileAccess::Write
+      newobj instance void System.IO.FileStream::.ctor(class System.String, int32, int32)
+      dup
+      stloc.0
+      newobj instance void System.Serialization.PseudoMLFormatter::.ctor(class System.IO.Stream)
+      ldarg.1
+      ldc.i4.5   // System.Serialization.FormatterEnum::PrivateFields + PublicFields
+      callvirt instance void System.Serialization.Formatter::Serialize(class System.Object, int32)
+      ldloc.0
+      callvirt instance void System.IO.Stream::Close()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
       br.s retry
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
