@@ -28,7 +28,7 @@ static word IoConstructor;
       ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);	\
     conVal->Init(0, cause);						\
     conVal->Init(1, String::New(function)->ToWord());			\
-    conVal->Init(1, name->ToWord());					\
+    conVal->Init(2, name->ToWord());					\
     RAISE(conVal->ToWord());						\
   }
 
