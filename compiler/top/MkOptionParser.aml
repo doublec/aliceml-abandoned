@@ -94,8 +94,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	      Debug.dumpValuePropagationResult),
 	     ("dump-liveness-analysis-result",
 	      Debug.dumpLivenessAnalysisResult),
-	     ("dump-target",
-	      Debug.dumpTarget)]
+	     ("dump-target", Debug.dumpTarget),
+	     ("generate-debug-code", CodeGen.debugMode)]
 
 	fun checkBooleanSwitches (s, (name, switch)::rest) =
 	    if "--" ^ name = s then (switch := true; true)
