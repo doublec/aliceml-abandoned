@@ -22,7 +22,6 @@
 #include "store/Types.hh"
 #include "store/HeaderOp.hh"
 #include "store/PointerOp.hh"
-#include "store/Memory.hh"
 #include "store/StatusWord.hh"
 
 #if defined(STORE_PROFILE)
@@ -31,10 +30,11 @@ struct timeval;
 
 class JITStore;
 class Profiler;
+class MemChunk;
 
 #define STORE_NEED_GC_STATUS 0
 
-class Store : public StatusWord {
+class DllExport Store : public StatusWord {
 protected:
   friend class JITStore;
   friend class Profiler;
