@@ -165,8 +165,8 @@ struct
 			then doc
 			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
 		    end
-		else if isAbs t then
-		    PPPath.ppPath' ps (asAbs t)
+		else if isCon t then
+		    PPPath.ppPath' ps (asCon t)
 		else if isArrow t then
 		    let
 			val (t1,t2) = asArrow t
@@ -196,11 +196,11 @@ struct
 			val doc    = ppBinder("ALL",a,t1)
 		    in
 			parenPrec p (1, fbox(below doc))
-		    end
 *)
 		    in
 			Map.insert(m, canonical(var a), ppVar true);
 			ppTyp t1
+(**)
 		    end
 		else if isExist t then
 		    let
@@ -224,6 +224,9 @@ struct
 			fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t3))
 		    end
 		else if isMu t then
+(*DEBUG
+		    text("MU." ^ Int.toString(hash t))
+*)
 		    let
 			val t1  = asMu t
 			val doc = ppVar true
