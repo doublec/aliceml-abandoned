@@ -239,15 +239,19 @@ struct
 		      (fn _ => 	load' (!logStream, resolver) url)
 
 	fun lazyLink url : mod * inf =
-	    case UrlMap.lookupNew (map, url) of
-		UrlMap.EXISTING entry => entry
-	      | UrlMap.NEW p =>
-		    let
-			val result = lazy eval' (url, load url)
-			val entry = (lazy #1 result, lazy #2 result)
-		    in
-			Promise.fulfill (p, entry); entry
-		    end
+	    let
+		val result = lazy
+		    case UrlMap.lookupNew (map, url) of
+			UrlMap.EXISTING entry => entry
+		      | UrlMap.NEW p =>
+			    let
+				val entry = lazy eval' (url, load url)
+			    in
+				Promise.fulfill (p, entry); entry
+			    end
+	    in
+		(lazy #1 result, lazy #2 result)
+	    end
 	and typedLink (url, rea, importInf, baseUrlOpt) : mod =
 	    let
 		val (mod, inf) = lazyLink url
