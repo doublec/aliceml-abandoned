@@ -229,20 +229,26 @@ struct
 						"]",BRACK_COLOR,canvas)
 		       val cont = createContainer (INTERPUNCT,concat,1,d,
 						   na,canvas)
-		       val nodearray = listElemArray(List.take(l,length-1),
-						     length-1,inty,cont,d,b,
-						     canvas)
-		       val last = let val inva = UnsafeValue.cast(List.last(l))
-			                         : Reflect.value
-				  in createTree(NONE,inva,inty,
-						cont,length-1,d+1,canvas)
-				  end      	
-		   in ( Array.update(na,length-1,last)
-		       ; copyArray(nodearray,na)
-		       ; Array.update(getKids(concat),0,lbra)
-		       ; Array.update(getKids(concat),1,cont)
-		       ; Array.update(getKids(concat),2,rbra)
-		       ; concat )
+		   in
+		       ( Array.update(getKids(concat),0,lbra)
+			 ; Array.update(getKids(concat),1,cont)
+			 ; Array.update(getKids(concat),2,rbra)
+			 ; if length > 0 then let
+			       val nodearray =
+				   listElemArray(List.take(l,length-1),
+						 length-1,inty,cont,d,b,
+						 canvas)
+			       val last = let val inva =
+						  UnsafeValue.cast(List.last(l))
+			                          : Reflect.value
+					  in createTree(NONE,inva,inty,
+							cont,length-1,d+1,canvas)
+					  end      	
+			       in ( Array.update(na,length-1,last)
+				    ; copyArray(nodearray,na)
+				    ; concat )
+			       end
+			   else concat )
 		   end
 	     end
 	    
