@@ -18,7 +18,6 @@
 import structure __pervasive and WideString from "Pervasive"
 import type int and bool and char 
        type order and option and list       from "ToplevelTypes"
-import signature CHAR                       from "CHAR-sig"
 import structure StringCvt                  from "StringCvt"
 
 signature STRING =
