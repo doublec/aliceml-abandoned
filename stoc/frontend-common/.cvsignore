@@ -4,3 +4,4 @@ Parser.grm.*
 ~*
 [a-z]*.sml
 *.x86-linux
+obsolete
