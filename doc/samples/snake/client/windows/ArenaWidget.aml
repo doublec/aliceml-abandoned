@@ -329,6 +329,9 @@ struct
 
 	    fun insert ((r, c), field) = 
 		let
+                    val (rows, cols)    = Array2.dimensions arena
+                    val _   = assert 0 <= r andalso r < rows andalso
+                                0 <= c andalso c < cols
 		    val (obj, f) = Array2.sub(arena, r, c)
 		in 
 		    if f = field  (* shouldn't happen normally *)
@@ -337,8 +340,8 @@ struct
                         changeField (obj, r, c, field)
 		end
 	in
-	    List.app insert difflist
-	end
+	    List.app insert difflist 
+	end 
 	
     fun changeView (a, (x, y)) = 
 	GtkCanvas.scrollTo(toObject a, 

@@ -26,7 +26,7 @@ struct
 
             fun countdown n = ()
 
-            fun update diffs = #update guiGame diffs
+            fun update diffs = #update guiGame diffs 
 
             fun tick remainingTime = () 
             

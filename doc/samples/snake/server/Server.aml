@@ -188,8 +188,8 @@ struct
                Returns immediately -- without waiting for the
                calls to finish.
              *)
-            fun invokeSeveral (clients, f, a) = 
-                List.app (fn c => ispawn (_file_, _line_) invoke (c, f, a)) 
+            fun invokeSeveral loc (clients, f, a) = 
+                List.app (fn c => ispawn loc invoke (c, f, a)) 
                     clients 
                
 
@@ -238,8 +238,8 @@ struct
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
                                 (* inform the other PLAYERs *)
-                                invokeSeveral (players, #playersJoined, 
-                                                [(name, color)]);
+                                invokeSeveral (_file_, _line_) 
+                                    (players, #playersJoined, [(name, color)]);
                                 (* inform the NEW player of the other 
                                    already connected players *)
                                 ispawn (_file_, _line_) 
@@ -300,7 +300,8 @@ struct
                 (* compute highscore *)
                 not_yet_implemented ("highscore");
                 (*TODO: compute it ;-) *)
-                invokeSeveral (allConnected (), #tournamentFinished, Highscore.empty);
+                invokeSeveral (_file_, _line_)
+                    (allConnected (), #tournamentFinished, Highscore.empty);
                 raise TournamentFinished
             )
 
@@ -329,9 +330,9 @@ struct
                                 state := Part.PLAYING (info, snake)
                             end
                         ) (p, startPos);
-                    invokeSeveral (allConnected (), #levelStarted, 
-                            { dimensions = dims });
-                    invokeSeveral (allConnected (), #update, 
+                    invokeSeveral (_file_, _line_) 
+                        (allConnected (), #levelStarted,{ dimensions = dims });
+                    invokeSeveral (_file_, _line_) (allConnected (), #update, 
                         Arena.toDiffList newArena);
                     (levels, oldArena, newArena)
                 end
@@ -343,7 +344,8 @@ struct
                     val _   = assert null (allPlayers ())
                 in
                     (* send level finished signal *)
-                    invokeSeveral (allConnected (), #levelFinished, ());
+                    invokeSeveral (_file_, _line_) 
+                        (allConnected (), #levelFinished, ());
                     
                     case levels of
                         []  =>      (* no more levels -- tournament ended *)
@@ -380,7 +382,8 @@ struct
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
-                    invokeSeveral (allConnected (), #update, changes); 
+                    invokeSeveral (_file_, _line_) 
+                        (allConnected (), #update, changes);
                     
                     (* change state of participants whose snake died to DEAD. *)
                     log ("Server", "check for dead snakes");
@@ -436,7 +439,8 @@ struct
                         
                     (* send tick signal *)
                     log ("Server", "send tick signal");
-                    invokeSeveral (allConnected (), #tick, NONE);
+                    invokeSeveral 
+                        (_file_, _line_) (allConnected (), #tick, NONE);
   
                     (* test wether there are any living snakes left *)
                     case allPlayers () of
@@ -458,7 +462,8 @@ struct
 
                     fun loop (levels, old, new) =
                         let 
-                            val _   = invokeSeveral (allConnected (), #update, 
+                            val _   = invokeSeveral (_file_, _line_)
+                                (allConnected (), #update, 
                                             Arena.toDiffList new)
                             val (levels, old, new) = tick (levels, old, new)
                         in
@@ -476,7 +481,8 @@ struct
                 else raise P.Protocol "game already started";
                 
                 (* send startTournament signal *)
-                invokeSeveral (allConnected (), #tournamentStarted, ());
+                invokeSeveral (_file_, _line_)
+                    (allConnected (), #tournamentStarted, ());
                 
                 (* start tick signal sender *)
                 ispawn (_file_, _line_) ticker ()
