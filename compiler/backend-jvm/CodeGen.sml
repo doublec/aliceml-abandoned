@@ -280,51 +280,81 @@ structure CodeGen =
 	(* Literale zu Konstruieren ist aufgrund unserer
 	 Wrapper-Klassen recht teuer. Wir bauen sie daher zur
 	 Compilezeit und schreiben sie in statische Felder. *)
-	structure Integers =
+	structure Literals =
 	    struct
 		(* Die Konstanten werden in einer Hashtabelle
 		 verwaltet, um doppeltes Generieren zu vermeiden. *)
-		val inthash: int IntHash.t = IntHash.new ()
+		val lithash: int LitHash.t = LitHash.new ()
 		val number = ref 0
 
-		fun fieldname number = "int"^Int.toString number
+		fun litClass (CharLit _) = CInt
+		  | litClass (IntLit _)    = CInt
+		  | litClass (RealLit _)   = CReal
+		  | litClass (StringLit _) = CStr
+		  | litClass (WordLit _)   = CWord
+
+		fun fieldname number = "lit"^Int.toString number
 
 		fun staticfield number =
-		    (Class.getInitial ()^"/"^(fieldname number), CInt, 0)
+		    Class.getInitial ()^"/"^(fieldname number)
 
 		(* Hinzufügen einer Konstanten *)
-		fun insert int' =
-		    case IntHash.lookup (inthash, int') of
+		fun insert lit' =
+		    case LitHash.lookup (lithash, lit') of
 			NONE => (number := ((!number)+1);
-				 IntHash.insert (inthash, int', !number);
+				 LitHash.insert (lithash, lit', !number);
 				 staticfield (!number))
 		      | SOME number' => staticfield number'
 
 		(* Erzeugen aller Integerkonstanten zur
 		 Übersetzungszeit *)
 		fun generate startwert =
-		    let
-			fun codeints (int', constnumber, acc) =
-			    (New CInt ::
-			     Dup ::
-			     (atCodeInt int') ::
-			     (Invokespecial (CInt, "<init>",
-					     ([Intsig], [Voidsig])))::
-			     (Putstatic (staticfield constnumber)) ::
-			     acc)
-		    in
-			IntHash.foldi codeints startwert inthash
-		    end
+		     let
+			 fun codelits (lit', constnumber, acc) =
+			     let
+				 val jValue = case lit' of
+				     CharLit c => atCodeInt(ord c)
+				   | IntLit i  => atCodeInt (LargeInt.toInt i)
+				   | RealLit r =>
+					 let
+					     val SOME r = Real.fromString r
+					 in
+					     if (Real.sign (r-0.0)=0)
+						 orelse (Real.sign(r-1.0)=0)
+						 orelse (Real.sign (r-2.0)=0) then Fconst (trunc r)
+					     else Ldc (JVMFloat r)
+					 end
+				   | StringLit s => Ldc (JVMString s)
+				   | WordLit w   => atCodeInt (LargeInt.toInt (LargeWord.toLargeInt w))
+				 val jType = case lit' of
+				     CharLit _   => ([Intsig],[Voidsig])
+				   | IntLit _    => ([Intsig],[Voidsig])
+				   | RealLit _   => ([Floatsig],[Voidsig])
+				   | StringLit _ => ([Classsig CString], [Voidsig])
+				   | WordLit _   => ([Intsig],[Voidsig])
+				 and scon = litClass lit'
+			     in
+				 (New scon ::
+				  Dup ::
+				  jValue ::
+				  (Invokespecial (scon,"<init>",jType)) ::
+				  (Putstatic ((staticfield constnumber),scon,0)) ::
+				  acc)
+
+			     end
+		     in
+			 LitHash.foldi codelits startwert lithash
+		     end
 
 		(* Erzeugen der .field Einträge *)
 		fun makefields startwert =
-		    IntHash.fold
-		    (fn (number, fields) =>
+		    LitHash.foldi
+		    (fn (lit', number, fields) =>
 		     Field ([FPublic, FStatic],
 			    fieldname number,
-			    Classtype (CInt, 0))::fields)
+			    Classtype (litClass lit', 0))::fields)
 		    startwert
-		    inthash
+		    lithash
 	    end
 
 	(* Berechnung der freien Variablen *)
@@ -517,7 +547,7 @@ structure CodeGen =
 
 		 val clinit = Method([MPublic],"<clinit>",([],[Voidsig]),
 				   Locals 6,
-				     Integers.generate(
+				     Literals.generate(
 						      RecordLabel.generate()),
 				   nil, false)
 
@@ -564,7 +594,7 @@ structure CodeGen =
 		 val class = Class([CPublic],
 				   name,
 				   CDMLThread,
-				   Integers.makefields
+				   Literals.makefields
 				   (RecordLabel.makefields ()),
 				   [main, clinit, init, run])
 	     in
@@ -1275,7 +1305,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 
 	  | expCode (LitExp(_,lit')) =
 		     let
-			 val jValue = case lit' of
+			(* val jValue = case lit' of
 			     CharLit c => atCodeInt(ord c)
 			   | IntLit i  => atCodeInt (LargeInt.toInt i)
 			   | RealLit r =>
@@ -1294,24 +1324,21 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			   | IntLit _    => ([Intsig],[Voidsig])
 			   | RealLit _   => ([Floatsig],[Voidsig])
 			   | StringLit _ => ([Classsig CString], [Voidsig])
-			   | WordLit _   => ([Intsig],[Voidsig])
-			 and scon = case lit' of
+			   | WordLit _   => ([Intsig],[Voidsig])*)
+			 val scon = case lit' of
 			     CharLit _   => CInt
 			   | IntLit _    => CInt
 			   | RealLit _   => CReal
 			   | StringLit _ => CStr
 			   | WordLit _   => CInt
 		     in
-			 case lit' of
-			     IntLit i => [Getstatic (Integers.insert
-						     (LargeInt.toInt i))]
-			   | _ =>
-				 [Comment "constant(",
+			 [Getstatic (Literals.insert lit', scon, 0)]
+(*				 [Comment "constant(",
 				  New scon,
 				  Dup,
 				  jValue,
 				  Invokespecial (scon,"<init>",jType),
-				  Comment "end of constant)"]
+				  Comment "end of constant)"] *)
 		     end
 
 	  | expCode (TupExp(_,longids)) =

@@ -16,7 +16,7 @@ structure Backend=
 
 	(* Hashtabelle für Integers. Wird benötigt zum statischen
 	 Generieren von Integerkonstanten. *)
-	structure IntHash = MakeHashImpMap (type t=int fun hash n=n)
+	structure LitHash = MakeHashImpMap (LitHashKey)
 
 	structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
 

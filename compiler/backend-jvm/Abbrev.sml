@@ -24,6 +24,7 @@ structure Abbrev  =
 	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/Function"
 	val CFuture        = "de/uni_sb/ps/dml/runtime/Future"
 	val CInt           = "de/uni_sb/ps/dml/runtime/Int"
+	val CWord           = "de/uni_sb/ps/dml/runtime/Word"
 	val CInternalError = "de/uni_sb/ps/dml/runtime/DMLInternalError"
 	val CLabel         = "de/uni_sb/ps/dml/runtime/Label"
 	val CLVal          = "de/uni_sb/ps/dml/runtime/LVar"
