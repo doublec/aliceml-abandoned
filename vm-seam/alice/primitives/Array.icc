@@ -139,6 +139,12 @@ void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame) {
 //
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
+#if REQUEST_ELEMS_INT
+  if (Store::WordToInt(x1) == INVALID_INT) {
+    Scheduler::currentData = x1;
+    return Worker::REQUEST;
+  }
+#endif
   if (STATIC_CAST(u_int, length) > XArray::maxLen)
     RAISE(PrimitiveTable::General_Size);
   XArray *array = XArray::New(length);
@@ -242,7 +248,7 @@ void PrimitiveTable::XCONCAT(Register,XArray)() {
   Register(XSTRINGIFY(XArray)".fromList", Array_fromList, 1);
   Register(XSTRINGIFY(XArray)".fromVector", Array_fromVector, 1);
   Register(XSTRINGIFY(XArray)".length", Array_length, 1);
-  Register(XSTRINGIFY(XArray)".maxLen", Store::IntToWord(Array::maxLen));
+  Register(XSTRINGIFY(XArray)".maxLen", Store::IntToWord(XArray::maxLen));
   Register(XSTRINGIFY(XArray)".sub", Array_sub, 2);
   Register(XSTRINGIFY(XArray)".tabulate", Array_tabulate, 2);
   Register(XSTRINGIFY(XArray)".toList", Array_toList, 1);
@@ -253,7 +259,7 @@ void PrimitiveTable::XCONCAT(Register,XArray)() {
   Register(XSTRINGIFY(YArray)".fromList", Array_fromList, 1);
   Register(XSTRINGIFY(YArray)".fromVector", Array_fromVector, 1);
   Register(XSTRINGIFY(YArray)".length", Array_length, 1);
-  Register(XSTRINGIFY(YArray)".maxLen", Store::IntToWord(Array::maxLen));
+  Register(XSTRINGIFY(YArray)".maxLen", Store::IntToWord(XArray::maxLen));
   Register(XSTRINGIFY(YArray)".sub", Array_sub, 2);
   Register(XSTRINGIFY(YArray)".tabulate", Array_tabulate, 2);
   Register(XSTRINGIFY(YArray)".toList", Array_toList, 1);
