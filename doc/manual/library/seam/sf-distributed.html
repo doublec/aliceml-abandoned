@@ -174,7 +174,7 @@ val nreif = FD.boolvarVec (root, size) (* means "logical-not of reif" *)
 val reif2 = Vector.map FD.boolvar2intvar reif
 val sum   = FD.intvar (root, #[(0, size*max)])
 val kvars = Vector.tabulate
-		(size+1, (fn i => if i<size then (1,vars%i) else (~1, sum)))
+		(size+1, (fn i => if i&lt;size then (1,vars%i) else (~1, sum)))
 fun readSolution space = Vector.map (toInt space) vars
 fun bound (space, sol) =
     let
@@ -221,7 +221,7 @@ struct
   val bab = true
   val bound = bound
 
-  fun compare (x,y) = (sumvec x) < (sumvec y)
+  fun compare (x,y) = (sumvec x) &lt; (sumvec y)
   val mask = Debug.dbManag
 end
 
