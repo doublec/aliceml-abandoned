@@ -31,7 +31,8 @@ import signature INTERACTIVE_TOPLEVEL from "INTERACTIVE_TOPLEVEL-sig"
 functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER') :
     INTERACTIVE_TOPLEVEL =
 struct
-    structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
+    structure Switches = RecursiveCompiler.Switches
+    structure OptionParser = MkOptionParser Switches
 
     fun usage fail = TextIO.output(if fail then
                                        TextIO.stdErr
@@ -39,10 +40,10 @@ struct
                                    "Usage: alice [options]\n" ^
 				   OptionParser.helpText)
 
-    val banner     = "Alice 0.9.3+ (" ^
+    val banner     = "Alice 1.0.0- (" ^
 		     (case Config.vm
 		       of "mozart" => "Stockhausen Operette 3 Remix 3 Extended"
-		        | "seam" => "Kraftwerk Album 1 Demo Tape"
+		        | "seam" => "Kraftwerk Album 1 Promo"
 			| _ => "Alien Invaderz Breakbeats"
 		     ) ^ ")\n"
     val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
@@ -128,6 +129,11 @@ struct
 		 case target of
 		     Target.COMPONENT {eval, component, ...} =>
 		     let
+			 val _ = if !Switches.Debug.dumpPhases then
+				     (TextIO.output (Switches.Debug.logOut,
+						     "-- Evaluation...\n");
+				      TextIO.flushOut Switches.Debug.logOut)
+				 else ()
 			 val result = if stopped then
 					  SOME (spawn eval (baseUrl ()))
 				      else
