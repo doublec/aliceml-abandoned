@@ -53,6 +53,8 @@ abstract public class Builtin implements DMLValue {
 		    new Array(0,null);
 		} else if (lib.equals("Vector")) {
 		    new Vector(0);
+		} else if (lib.equals("Function")) {
+		    ;
 		} else {
 		    Class.forName("de.uni_sb.ps.dml.runtime."+lib).newInstance();
 		}
