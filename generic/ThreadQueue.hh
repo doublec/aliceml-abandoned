@@ -44,11 +44,6 @@ public:
     return 0;
     //    Queue::IsMember(thread->ToWord());
   }
-  void PurgeAll() {
-    Blank();
-    for (u_int i = GetNumberOfElements(); i--; )
-      Thread::FromWordDirect(GetNthElement(i))->Purge();
-  }
   // ThreadQueue Constructor
   static ThreadQueue *New() {
     return static_cast<ThreadQueue *>(Queue::New(threshold));

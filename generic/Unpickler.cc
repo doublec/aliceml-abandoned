@@ -51,7 +51,7 @@
 //
 class InputStreamBase {
 private:
-  int hd, tl, rd, eob;
+  u_int hd, tl, rd, eob;
   u_char *buffer;
 public:
   // InputStreamBase Constructor
@@ -62,6 +62,7 @@ public:
   u_int IsEOB() {
     if (eob) {
       eob = 0;
+      rd  = hd;
       return 1;
     }
     else {
@@ -78,19 +79,15 @@ public:
     }
   }
   u_char *GetBytes(u_int n) {
-    // This has to be revisited: TOO NAIVE
-    u_char *byteBuffer = (u_char *) malloc(sizeof(u_char) * n);
-    u_int i = 0;
-    if (n > 0) {
-      while (i < n) {
-	byteBuffer[i++] = GetByte();
-	if (eob) {
-	  free(byteBuffer);
-	  return INVALID_POINTER;
-	}
-      }
+    u_char *bytes = buffer + rd;
+    // Seek bytes to make sure they are available
+    if (rd + n >= tl) {
+      eob = 1;
     }
-    return byteBuffer;
+    else {
+      rd += n;
+    }
+    return bytes;
   }
   u_int GetUInt() {
     return DoGetUInt(0, 1);
@@ -115,20 +112,26 @@ public:
     // Fresh Buffer
     if (tl == 0) {
       buffer = (u_char *) malloc(sizeof(u_char) * size);
+      Assert(buffer != INVALID_POINTER);
       memcpy(buffer, src, size);
       tl = size;
     }
     // Enlarge Buffer
     else {
-      int newTl = size + tl;
-      buffer = (u_char *) realloc(buffer, sizeof(u_char) * newTl);
+      int newTl   = size + tl;
+      u_char *old = buffer;
+      buffer = (u_char *) malloc(sizeof(u_char) * newTl);
+      Assert(buffer != INVALID_POINTER);
+      memcpy(buffer, old, tl);
       memcpy(buffer + tl, src, size);
       tl = newTl;
     }
-    fprintf(stderr, "AppendToBuffer: newTl=%d\n", tl);
+    //    fprintf(stderr, "AppendToBuffer: newTl=%d\n", tl);
   }
   // Buffer Handling
-  virtual void Close() = 0;
+  virtual void Close() {
+    free(buffer);
+  }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) = 0;
   // Store Interface
   word ToWord() {
@@ -144,30 +147,29 @@ public:
 // FileInputStream
 class FileInputStream : public InputStreamBase {
 private:
-  static const u_int BUFFER_SIZE = 2 * 1024 * 1024 + 1;
+  static const u_int rdSize = 8192;
+  u_char *rdBuf;
   FILE *file;
   u_int exception;
 public:
   // FileInputStream Constructor
   FileInputStream(char *filename) : InputStreamBase() {
-    exception = 0;
-    file = fopen(filename, "r");
-    if (file == NULL) {
-      exception = 1;
-    }
+    rdBuf     = (u_char *) malloc(sizeof(u_char) * rdSize);
+    file      = fopen(filename, "r");
+    exception = (file == NULL);
   }
   // FileInputStream Functions
   u_int GotException() {
     return exception;
   }
   virtual void Close() {
+    InputStreamBase::Close();
     fclose(file);
+    free(rdBuf);
   }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
-    u_char *locBuffer = (u_char *) malloc(sizeof(u_char) * BUFFER_SIZE);
     // This is blocking
-    AppendToBuffer(locBuffer,
-		   (u_int) fread(locBuffer, sizeof(u_char), BUFFER_SIZE, file));
+    AppendToBuffer(rdBuf, (u_int) fread(rdBuf, sizeof(u_char), rdSize, file));
     taskStack->PopFrame();
     CONTINUE(args);
   }
@@ -183,7 +185,9 @@ public:
     string = s; // to be checked
   }
   // StringInputStream Functions
-  virtual void Close() {}
+  virtual void Close() {
+    InputStreamBase::Close();
+  }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
     taskStack->PopFrame();
     if (string == INVALID_POINTER) {

@@ -73,6 +73,7 @@ void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
 }
 
 Interpreter::Result PrimitiveInterpreter::Run(word args, TaskStack *taskStack) {
+  Assert(args != (word) 0);
   if (arity == 0) {
     Transient *t = Store::WordToTransient(args);
     if (t == INVALID_POINTER) {
@@ -84,8 +85,7 @@ Interpreter::Result PrimitiveInterpreter::Run(word args, TaskStack *taskStack) {
     }
   }
   else if (arity == 1) {
-    return function(Store::WordToBlock(Interpreter::Construct(args)),
-		    taskStack);
+    return function(Interpreter::Construct(args), taskStack);
   }
   else {
     word deconstructed_args = Interpreter::Deconstruct(args);
@@ -93,9 +93,8 @@ Interpreter::Result PrimitiveInterpreter::Run(word args, TaskStack *taskStack) {
       // Deconstruct already preset Scheduler::currentData
       return Interpreter::REQUEST;
     }
-    Block *p = Store::WordToBlock(deconstructed_args);
-    Assert(p->GetSize() == arity);
-    return function(p, taskStack);
+    Assert(Store::WordToBlock(deconstructed_args)->GetSize() == arity);
+    return function(deconstructed_args, taskStack);
   }
 }
 
