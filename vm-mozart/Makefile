@@ -83,6 +83,11 @@
 ##    Install the system found in build3/install to the global
 ##    installation directory.
 ##
+## Typical Use for a Clean Build
+## =============================
+##
+## make distclean; make depend; make all; make install
+##
 
 PREFIX = /opt/stockhausen-devel
 
@@ -106,9 +111,28 @@ MLYACC = ml-yacc
 ##
 
 NATIVECOMPONENTS = IO TextIO OS Unix CommandLine Tools Pickle Debug Socket
-LIBSOURCES0 = Base.aml $(NATIVECOMPONENTS:%=%.ozf.sig)
+
+LIBFUNDAMENTALSOURCES0 = \
+	RTT.aml Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
+	Fundamental.aml ALT-sig.aml ARRAY-sig.aml BOOL-sig.aml CELL-sig.aml \
+	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
+	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
+	MATH-sig.aml OPTION-sig.aml PAIR-sig.aml PROMISE-sig.aml REAL-sig.aml \
+	REF-sig.aml STRING-sig.aml STRING_CVT-sig.aml SUBSTRING-sig.aml \
+	THREAD-sig.aml TIME-sig.aml VECTOR-sig.aml VECTOR_PAIR-sig.aml \
+	WORD-sig.aml Alt.aml Array.aml Bool.aml Cell.aml Char.aml Future.aml \
+	General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml LargeReal.aml \
+	LargeWord.aml List.aml ListPair.aml Math.aml Option.aml Pair.aml \
+	Position.aml Promise.aml Real.aml Ref.aml String.aml StringCvt.aml \
+	Substring.aml Thread.aml Time.aml Toplevel.aml Vector.aml \
+	VectorPair.aml WideChar.aml WideString.aml Word.aml
+LIBSOURCES0 = $(NATIVECOMPONENTS:%=%.ozf.sig)
 MLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
-LIBSOURCES = $(LIBSOURCES0:%=lib/%) $(MLYACCSOURCES0:%=lib/ml-yacc/%)
+
+LIBSOURCES = \
+	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
+	$(LIBSOURCES0:%=lib/%) \
+	$(MLYACCSOURCES0:%=lib/ml-yacc/%)
 
 STOCMISCSOURCES0 = \
 	ASSERT-sig.aml Assert.aml HASH_KEY-sig.aml StringHashKey.aml \
@@ -207,9 +231,9 @@ STOCSOURCES = \
 ALLSOURCES = Init.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
-	lib lib/ml-yacc stoc stoc/misc stoc/infrastructure stoc/common \
-	stoc/frontend-common stoc/frontend-sml stoc/backend-common \
-	stoc/backend-mozart stoc/top
+	lib lib/fundamental lib/ml-yacc stoc stoc/misc stoc/infrastructure \
+	stoc/common stoc/frontend-common stoc/frontend-sml \
+	stoc/backend-common stoc/backend-mozart stoc/top
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -255,78 +279,77 @@ INSTALL1FILES = \
 $(BUILD1DIRS):
 	mkdir -p $@
 
-Rel1Base.import: Base.import
+Rel1.import: ../../lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../|g' < $< > $@
 
-Rel2Base.import: Base.import
+Rel2.import: ../../lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< > $@
-
-build1/lib/Base.aml: ../../lib/bootstrap/Bootstrap.aus
-	cp $< $@
 
 build1/lib/%: ../%
 	cp $< $@
 
-build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1Base.import
-	cat Rel1Base.import $< > $@
+build1/lib/fundamental/%: ../../lib/fundamental/%
+	cp $< $@
 
-build1/lib/ml-yacc/%.aml: ../../lib/bootstrap/ml-yacc/%.aml Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
+	cp $< $@
 
-build1/stoc/misc/%.aml: ../../stoc/misc/%.aml Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1.import
+	cat Rel1.import $< > $@
 
-build1/stoc/infrastructure/%.aml: ../../stoc/infrastructure/%.aml \
-	Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/lib/ml-yacc/%.aml: ../../lib/bootstrap/ml-yacc/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
-build1/stoc/common/%.aml: ../../stoc/common/%.aml Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/stoc/misc/%.aml: ../../stoc/misc/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
-build1/stoc/frontend-common/%.aml: ../../stoc/frontend-common/%.aml \
-	Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/stoc/infrastructure/%.aml: ../../stoc/infrastructure/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
-build1/stoc/frontend-sml/%.aml: ../../stoc/frontend-sml/%.aml Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/stoc/common/%.aml: ../../stoc/common/%.aml Rel2.import
+	cat Rel2.import $< > $@
+
+build1/stoc/frontend-common/%.aml: ../../stoc/frontend-common/%.aml Rel2.import
+	cat Rel2.import $< > $@
+
+build1/stoc/frontend-sml/%.aml: ../../stoc/frontend-sml/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
 build1/stoc/frontend-sml/Lexer.lex: ../../stoc/frontend-sml/Lexer.lex
 	cp $< $@
 
 build1/stoc/frontend-sml/Lexer.aml: build1/stoc/frontend-sml/Lexer.lex.sml \
-	frontend-sml/Lexer.aml.header Rel2Base.import
-	cat Rel2Base.import frontend-sml/Lexer.aml.header $< > $@
+	frontend-sml/Lexer.aml.header Rel2.import
+	cat Rel2.import frontend-sml/Lexer.aml.header $< > $@
 
 build1/stoc/frontend-sml/Parser.grm: ../../stoc/frontend-sml/Parser.grm
 	cp $< $@
 
 build1/stoc/frontend-sml/PARSER-sig.aml: \
 	build1/stoc/frontend-sml/Parser.grm.sig \
-	frontend-sml/PARSER-sig.aml.header Rel2Base.import fixparser.awk
-	(cat Rel2Base.import frontend-sml/PARSER-sig.aml.header && \
+	Rel2.import frontend-sml/PARSER-sig.aml.header fixparser.awk
+	(cat Rel2.import frontend-sml/PARSER-sig.aml.header && \
 	 awk -f fixparser.awk < $<) > $@ || rm $@
 
 build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
-	frontend-sml/Parser.aml.header Rel2Base.import
-	cat Rel2Base.import frontend-sml/Parser.aml.header $< > $@
+	Rel2.import frontend-sml/Parser.aml.header
+	cat Rel2.import frontend-sml/Parser.aml.header $< > $@
 
-build1/stoc/backend-common/%.aml: ../../stoc/backend-common/%.aml \
-	Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/stoc/backend-common/%.aml: ../../stoc/backend-common/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
-build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1Base.import
-	cat Rel1Base.import $< > $@
+build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1.import
+	cat Rel1.import $< > $@
 
-build1/stoc/backend-mozart/%.aml: ../../stoc/backend-mozart/%.aml \
-	Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/stoc/backend-mozart/%.aml: ../../stoc/backend-mozart/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
 build1/stoc/backend-mozart/%.ozf.sig: ../../stoc/backend-mozart/%.ozf.sig \
-	Rel2Base.import
-	cat Rel2Base.import $< > $@
+	Rel2.import
+	cat Rel2.import $< > $@
 
-build1/stoc/top/%.aml: ../../stoc/top/%.aml Rel2Base.import
-	cat Rel2Base.import $< > $@
+build1/stoc/top/%.aml: ../../stoc/top/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
 build1/%.oz: ../../%.oz
 	cp $< $@
@@ -382,12 +405,16 @@ build1/install/bin/%: %
 ### BUILD 2
 ########################################################################
 
-BUILD2DIRS = build2 build2/lib
+BUILD2DIRS = build2 build2/lib build2/lib/fundamental
+BUILD2SOURCES = $(LIBFUNDAMENTALSOURCES0:%=build2/lib/fundamental/%)
 
-INSTALL2DIRS = build2/install build2/install/bin build2/install/lib
+INSTALL2DIRS = build2/install build2/install/bin \
+	build2/install/lib build2/install/lib/fundamental
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
-INSTALL2LIBFILES = Base.ozf $(NATIVECOMPONENTS:%=%.ozf)
+INSTALL2LIBFILES = \
+	$(LIBFUNDAMENTALSOURCES0:%.aml=fundamental/%.ozf) \
+	$(NATIVECOMPONENTS:%=%.ozf)
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -400,11 +427,14 @@ INSTALL2FILES = \
 $(BUILD2DIRS):
 	mkdir -p $@
 
-build2/lib/Base.aml: build1/lib/Base.aml
+build2/%: build1/%
 	cp $< $@
 
-build2/Default.import: Base.import Other.import
-	cat Base.import Other.import > $@
+build2/Default.import: ../../lib/fundamental/Fundamental.import Other.import
+	cat ../../lib/fundamental/Fundamental.import Other.import > $@
+
+build2/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
+	cp $< $@
 
 $(NATIVECOMPONENTS:%=build2/lib/%.ozf.sig): build2/%: build1/%
 	cp $< $@
@@ -413,7 +443,8 @@ $(NATIVECOMPONENTS:%=build2/lib/%.ozf.sig): build2/%: build1/%
 ## Performing Build 2
 ##
 
-build2-all: build1-install $(BUILD2DIRS)
+build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
+	$(INSTALL2LIBFILES:%=build2/lib/%)
 
 build2/%.ozf: build2/%.aml
 	$(STOC1) $(STOC_OPTS) -c $< -o $@
@@ -458,10 +489,13 @@ $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
 BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
 BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
-INSTALL3DIRS = build3/install build3/install/bin build3/install/lib
+INSTALL3DIRS = build3/install build3/install/bin \
+	build3/install/lib build3/install/lib/fundamental
 INSTALL3TOPFILES = stow.ozf stoc.ozf stot.ozf Default.import
 INSTALL3BINFILES = stow stoc stol stot
-INSTALL3LIBFILES = Base.ozf $(NATIVECOMPONENTS:%=%.ozf)
+INSTALL3LIBFILES = \
+	$(LIBFUNDAMENTALSOURCES0:%.aml=fundamental/%.ozf) \
+	$(NATIVECOMPONENTS:%=%.ozf)
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -490,7 +524,7 @@ BUILD3OZLINPUTS = \
 	  $(BUILD3OZSOURCES:%.oz=%.ozf)) \
 	$(BUILD3ALICESOURCES:%.aml=%.ozf)
 
-build3-all: build2-install $(BUILD3DIRS) \
+build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/stow.ozf build3/stoc.ozf build3/stot.ozf
 
 build3/%.ozf: build3/%.oz
@@ -500,7 +534,7 @@ build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build3/lib/%.ozf): build3/%.ozf: \
-	build1/%.ozf build3/%.ozf.sig build3/lib/Base.ozf
+	build1/%.ozf build3/%.ozf.sig build3/lib/fundamental/Fundamental.ozf
 	$(STOC2) $(STOC_OPTS) --replacesign $< $@.sig $@
 
 build3/lib/Unix.ozf: build3/lib/TextIO.ozf
@@ -514,8 +548,8 @@ build3/stoc.ozf: $(BUILD3OZLINPUTS)
 build3/stot.ozf: $(BUILD3OZLINPUTS)
 	$(OZL) --include=.. build3/stoc/top/StotMain.ozf -o $@
 
-build3/Default.import: Base.import Other.import
-	cat Base.import Other.import > $@
+build3/Default.import: ../../lib/fundamental/Fundamental.import Other.import
+	cat ../../lib/fundamental/Fundamental.import Other.import > $@
 
 ##
 ## Installing Build 3
@@ -543,8 +577,11 @@ $(INSTALL3LIBFILES:%=build3/install/lib/%): build3/install/%: build3/%
 ## Automatic Dependency Management
 ##
 
-depend: $(BUILD1DIRS) $(BUILD3DIRS) $(BUILD3SOURCES) $(BUILD3ALICESOURCES)
-	$(STODEP) $(BUILD3ALICESOURCES) > Makefile.depend
+BUILD2ALICESOURCES = $(filter %.aml, $(BUILD2SOURCES))
+
+depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
+	$(BUILD2SOURCES) $(BUILD3SOURCES)
+	$(STODEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) > Makefile.depend
 
 -include Makefile.depend
 
@@ -552,7 +589,7 @@ depend: $(BUILD1DIRS) $(BUILD3DIRS) $(BUILD3SOURCES) $(BUILD3ALICESOURCES)
 ## Global Installation
 ##
 
-INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
+INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
@@ -577,7 +614,7 @@ $(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
 ##
 
 clean:
-	-rm -f Rel1Base.import Rel2Base.import
+	-rm -f Rel1.import Rel2.import
 	-rm -rf build1 build2 build3
 
 veryclean: clean

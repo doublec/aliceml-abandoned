@@ -1,16 +1,18 @@
 Dependency graph for the steps outlined below - for Operette 2:
 
                now
-             /  |  \
-            1   2   3
-             \  |   |
-              \ 5   4
-               \ \ /
-                \-6
-                  |
-                  7
-                 / \
-                8   9
+             /  | \
+            1   2  3
+             \   \ |
+              \----4
+                  / \
+                 5   7
+                 |
+                 6
+                 |
+                 8
+                 |
+                 9
 
 Steps to be performed after Operette 2: 10 and higher
 
@@ -194,40 +196,15 @@ steps 3 and 4):
  TODO
 ======
 
-5. Provide a new place for all files formerly in lib/bootstrap. (LK)
+5. Use fragmented library. (LK)
 
-   This means that TextIO.sig (et al.) are moved to lib/system.
-   The Pickle component needs Url, which also should move to system.
-   Pickle itself should be renamed to UnsafePickle.
-   The vm-mozart/bootstrap/Makefile needs to be adapted.
+   The lib/fundamental directory becomes part of the source tree,
+   replacing lib/Base.aml.  Dependencies need to be generated for
+   the sources in build2 as well.  Base.import is replaced by
+   lib/fundamental/Fundamental.import.  The component lib/fundamental/RTT
+   is copied from RTTDummy for now.
 
-6. Use fragmented library. (AR)
-
-   This step gets rid of lib/bootstrap/Bootstrap.aus.
-   This file has to be moved to vm-com+, since that runtime
-   still needs it.
-
-7. Implement pass 2. (AR)
-
-8. Test runtime types. (AR)
-
-9. Enrich native components with runtime types. (LK)
-
-   Natively implemented components that export types, such
-   as TextIO.outstream, are assigned runtime types by wrapping
-   them in an Alice component.
-
-==================
- AFTER OPERETTE 2
-==================
-
-10. Provide fundamental library as building-blocks. (AR/LK)
-
-   Every runtime instantiates `holes' in the library, such
-   as by specifying that Int = IntInf or LargeInt = Int31.
-   Includes solving the cycle problem regarding Pervasive.
-
-11. Compiler uses lib. (AR)
+6. Compiler uses lib (utility/rtt). (LK)
 
    Currently we have two copies of some modules - one for the
    Alice codebase, one as the SML/NJ source.  This is the
@@ -237,10 +214,40 @@ steps 3 and 4):
 
    Move misc/BootstrapGlobalStamp to bootstrap.
 
+7. Provide a new place for all files formerly in lib/bootstrap. (LK)
+
+   This means that TextIO.sig (et al.) are moved to lib/system.
+   The Pickle component needs Url, which also should move to system.
+   Pickle itself should be renamed to UnsafePickle.
+   The vm-mozart/bootstrap/Makefile needs to be adapted.
+
+   Bootstrap.aus has to be moved to vm-com+, since that runtime
+   still needs it.
+
+8. Implement pass 2. (AR)
+
+9. Test runtime types. (AR)
+
+==================
+ AFTER OPERETTE 2
+==================
+
+10. Enrich native components with runtime types. (LK/AR)
+
+   Natively implemented components that export types, such
+   as TextIO.outstream, are assigned runtime types by wrapping
+   them in an Alice component.
+
+11. Provide fundamental library as building-blocks. (AR/LK)
+
+   Every runtime instantiates `holes' in the library, such
+   as by specifying that Int = IntInf or LargeInt = Int31.
+   Includes solving the cycle problem regarding Pervasive.
+
 12. Generate dependencies automatically. (AR)
 
-   This involves building a stodep tool and invoking it to
-   build dependencies for the build2 and build3 directories.
+   A basic stodep tool exists, but the parser has to be
+   replaced by a correct one.
 
 13. Let stoc lose its special status. (AR)
 
@@ -248,3 +255,12 @@ steps 3 and 4):
    generated within the toplevel directory.
 
 14. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
+
+15. Factorize vm-mozart/boostrap/Makefile into vm-specific and generic stuff.
+
+   A new file Makefile.vars will contain all vm-specific stuff.
+   BACKENDMOZARTSOURCES0 will be renamed to BACKENDSPECIFICSOURCES0
+   and given its value in Makefile.vars.
+
+   The same can be done for FRONTENDSMLSOURCES0, which would
+   become FRONTENDSPECIFICFILES0.

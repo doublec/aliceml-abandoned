@@ -1,5 +1,5 @@
 SHELL		= /bin/sh
-STOC		= stoc --implicit-import-file ../fundamental/fundamental.import
+STOC		= stoc --implicit-import-file ../fundamental/Fundamental.import
 STOC_OPTS	= 
 
 SIGS		= NAME LABEL PATH FIXITY TYPE INF PERVASIVE_TYPE
@@ -31,7 +31,7 @@ MkHashImpSet.ozf:	; cp ../utility/$@ .
 MkHashImpMap.ozf:	; cp ../utility/$@ .
 
 $(FILES):		../fundamental/Fundamental.ozf \
-			../fundamental/fundamental.import
+			../fundamental/Fundamental.import
 
 NAME-sig.ozf:		
 Name.ozf:		StringHashKey.ozf NAME-sig.ozf

@@ -1,5 +1,5 @@
 SHELL		= /bin/sh
-STOC		= stoc --implicit-import-file ../fundamental/fundamental.import
+STOC		= stoc --implicit-import-file ../fundamental/Fundamental.import
 STOC_OPTS	= 
 
 SIGS		= ASSERT STAMP GLOBAL_STAMP URL \
@@ -24,7 +24,7 @@ clean:
 			$(STOC) $(STOC_OPTS) -c $*.aml -o $@
 
 $(FILES):		../fundamental/Fundamental.ozf \
-			../fundamental/fundamental.import
+			../fundamental/Fundamental.import
 
 ASSERT-sig.ozf:		
 Assert.ozf:		ASSERT-sig.ozf
