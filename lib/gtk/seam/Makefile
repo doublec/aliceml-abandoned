@@ -77,7 +77,7 @@ ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
 
 INSTALLDIR = `alice-config --alicelibdir`/gtk
-ALICEDLL=$(alice-config --alicebindir | sed 's#/bin$##g')/lib/seam/alice.dll
+ALICEDLL=$(shell ./getalicedll.sh) 
 DISTFILES = $(CPPSOURCES) Makefile debian platform.sh \
 	MyNativeAuthoring.hh NativeUtils.hh NativeGdkSpecial.hh \
 	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh \
