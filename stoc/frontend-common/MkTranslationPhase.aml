@@ -145,8 +145,8 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Identifiers *)
 
-    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel  l)
-    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel' l)
+    fun trLab(I.Lab(i,a))		= O.Lab(i, trLabel  a)
+    fun trLab'(I.Lab(i,a))		= O.Lab(i, trLabel' a)
 
     fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
     fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)
@@ -159,7 +159,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trLabLongid(I.ShortId(i,x))	= O.Lab(i,
 					       Label.fromName(trName(I.name x)))
-      | trLabLongid(I.LongId(i,y,a))	= trLabLongid y
+      | trLabLongid(I.LongId(i,y,a))	= trLab a
 
 
   (* Extract bound ids from declarations. *)
