@@ -391,8 +391,8 @@ inline Block *Store::HandleWeakDictionaries() {
   finset->InitArg(0, 1);
 
   u_int rs_size = wkdict_set->GetSize();
-  wkdict_set->MakeEmpty();
   Block *db_set = Store::TempAlloc((rs_size + 1));
+  wkdict_set->MakeEmpty();
   std::memcpy(db_set->GetBase(), ((Block *) wkdict_set)->GetBase(),
 	      ((rs_size + 1) * sizeof(u_int)));
 
@@ -433,10 +433,9 @@ inline Block *Store::HandleWeakDictionaries() {
     // Now Process Dict Table but NOT its content
     WeakDictionary *p = WeakDictionary::FromWordDirect(ndict);
     word arr          = Store::ForwardWord(p->GetTable()->ToWord());
+    p->SetTable(arr);
     Block *table      = Store::DirectWordToBlock(arr);
     u_int table_size  = table->GetSize();
-
-    p->SetTable(arr);
     for (u_int k = table_size; k--;) {
       table->InitArg(k, Store::ForwardWord(table->GetArg(k)));
     }
@@ -444,18 +443,18 @@ inline Block *Store::HandleWeakDictionaries() {
 
   // Phase Two: Forward Dictionary Contents and record Finalize Candiates
   for (u_int i = rs_size; i >= 1; i--) {
+    MemChunk *chunk      = curChunk;
+    char *scan           = (curChunkMax + curChunkTop);
+
     WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
     Handler *h           = dict->GetHandler();
     Block *table         = dict->GetTable();
     u_int table_size     = table->GetSize();
-    MemChunk *chunk      = curChunk;
-    char *scan           = (curChunkMax + curChunkTop);
-
     for (u_int k = table_size; k--;) {
       HashNode *node = HashNode::FromWord(table->GetArg(k));
 
       if (!node->IsEmpty()) {
-	word val = node->GetValue();
+	word val = PointerOp::Deref(node->GetValue());
 
 	if (!PointerOp::IsInt(val)) {
 	  Block *valp = PointerOp::RemoveTag(val);
@@ -480,6 +479,10 @@ inline Block *Store::HandleWeakDictionaries() {
 	      node->SetValue(ForwardWord(val));
 	    }
 	  }
+	}
+	// Save derefed integer (its arguable whether to allow or not integers as items)
+	else {
+	  node->SetValue(val);
 	}
       }
     }
@@ -566,10 +569,12 @@ inline void Store::DoGC(word &root, const u_int gen) {
 
   // Call Finalization Handler
   if (arr != INVALID_POINTER) {
-    u_int size = Store::WordToInt(arr->GetArg(1));
-    for (u_int i = 2; i < size; i += 2) {
+    u_int size = Store::WordToInt(arr->GetArg(0));
+    for (u_int i = 1; i < size; i += 2) {
       Handler *h = (Handler *) PointerOp::DecodeUnmanagedPointer(arr->GetArg(i));
-      h->Finalize(arr->GetArg(i + 1));
+      if (h != INVALID_POINTER) {
+	h->Finalize(arr->GetArg(i + 1));
+      }
     }
   }
 }
@@ -626,6 +631,13 @@ void Store::SetGCParams(u_int mem_free, u_int mem_tolerance) {
   Store::memFree      = mem_free;
   Store::memTolerance = mem_tolerance;
 }
+
+#if defined(STORE_DEBUG)
+void Store::ForceGC(word &root, const u_int gen) {
+  Store::DoGC(root, gen);
+}
+#endif
+
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
