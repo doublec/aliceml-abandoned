@@ -286,12 +286,18 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateExp (FunExp (info, matches), f, cont) =
 	    let
-		val region = #region (infoMatch (List.hd matches))
-		fun return exp' = O.ReturnStm (stmInfo region, exp')
 		val matches' =
-		    List.map (fn Match (_, pat, exp) =>
-			      (#region (infoExp exp), pat,
-			       translateExp (exp, return, Goto nil))) matches
+		    List.map (fn Match (info, pat, exp) =>
+			      let
+				  val region = #region info
+				  fun return exp' =
+				      O.ReturnStm (stmInfo region, exp')
+			      in
+				  (#region (infoExp exp), pat,
+				   translateExp (exp, return, Goto nil))
+			      end)
+		    matches
+		val region = #region (infoMatch (List.hd matches))
 		val errStms = [O.RaiseStm (stmInfo region, id_Match)]
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
