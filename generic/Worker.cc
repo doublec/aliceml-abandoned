@@ -13,13 +13,13 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Interpreter.hh"
+#pragma implementation "generic/Interpreter.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Backtrace.hh"
+#include "generic/Interpreter.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Backtrace.hh"
 
 // Calling Convention Conversion
 void Interpreter::Construct() {
