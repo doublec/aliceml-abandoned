@@ -186,6 +186,10 @@ structure TypePrivate =
 
   (* Type graph traversal *)
 
+    (*UNFINISHED: Traversal ignores abbreviations. Most times this is
+	the right thing to do (eg. closure check), sometimes it's not that
+	obvious, however (eg. realisation). What's right? *)
+
     fun app1'(( HOLE _
 	      | VAR _
 	      | CON _ ), f)		= ()
@@ -193,16 +197,16 @@ structure TypePrivate =
 	      | MU t
 	      | ALL(_,t)
 	      | EXIST(_,t)
-	      | LAMBDA(_,t)), f)	= f t
+	      | LAMBDA(_,t) ), f)	= f t
       | app1'(( FUN(t1,t2)
-	      | APPLY(t1,t2)
-	      | ABBREV(t1,t2)), f)	= ( f t1 ; f t2 )
+	      | APPLY(t1,t2) ), f)	= (f t1 ; f t2)
+      | app1'(( ABBREV(t1,t2) ), f)	= f t2
       | app1'(( TUPLE ts ), f)		= Vector.app f ts
       | app1'(( PROD r
 	      | SUM r ), f)		= appRow(r,f)
       | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
 
-    and appRow(FIELD(_,ts,r), f)	= ( Vector.app f ts ; appRow(r,f) )
+    and appRow(FIELD(_,ts,r), f)	= (Vector.app f ts ; appRow(r,f))
       | appRow(RHO(_,r), f)		= appRow(r,f)
       | appRow(NIL, f)			= ()
 
@@ -214,10 +218,10 @@ structure TypePrivate =
 		| MU t
 		| ALL(_,t)
 		| EXIST(_,t)
-		| LAMBDA(_,t)), f, a)	= f(t,a)
+		| LAMBDA(_,t) ), f, a)	= f(t,a)
       | foldl1'(( FUN(t1,t2)
-		| APPLY(t1,t2)
-		| ABBREV(t1,t2)), f, a)	= f(t2, f(t1,a))
+		| APPLY(t1,t2) ), f, a)	= f(t2, f(t1,a))
+      | foldl1'(( ABBREV(t1,t2)), f, a)	= f(t2,a)
       | foldl1'(( TUPLE ts ), f, a)	= Vector.foldl f a ts
       | foldl1'(( PROD r
 		| SUM r ), f, a)	= foldlRow(r,f,a)
@@ -557,6 +561,8 @@ structure TypePrivate =
 	end
 
 
+  (* Check for holes *)
+
     exception Unclosed
 
     fun checkClosedRow(RHO _)		= raise Unclosed
@@ -567,15 +573,7 @@ structure TypePrivate =
       | checkClosed' _			= ()
 
     fun isClosed t =
-	( app (fn t as ref t' => checkClosed' t'
-	handle Unclosed =>
-(*DEBUG*)
-	( print(case !t of HOLE _ => "Hummm...\n" | _ => "Haehh?\n")
-	; t := CON(STAR,CLOSED,Path.fromLab(Label.fromString "'_ouch"))
-	; raise Unclosed
-	)
-	) t ; true )
-(*	( app (fn ref t' => checkClosed' t') t ; true )*)
+	( app (fn ref t' => checkClosed' t') t ; true )
 	handle Unclosed => false
 
 
@@ -696,21 +694,17 @@ structure TypePrivate =
 
     exception Lift of var
 
-    fun lift t =
-	let
-	    fun lift(t as ref(t' as HOLE(k,n))) =
-		    if n > !level then t := HOLE(k,!level) else ()
-	      | lift(t as ref(VAR(k,n))) =
-		    if n > !level then raise Lift t else ()
-	      | lift(ref(PROD r | SUM r)) = liftRow r
-	      | lift(ref(LAMBDA(a,_) | ALL(a,_) | EXIST(a,_))) =
-(*ASSERT	    assert isVar a =>*)
+    fun lift t = app lift1 t
+    and lift1(t as ref(t' as HOLE(k,n))) =
+	    if n > !level then t := HOLE(k,!level) else ()
+      | lift1(t as ref(VAR(k,n))) =
+	    if n > !level then raise Lift t else ()
+      | lift1(ref(PROD r | SUM r)) = liftRow r
+      | lift1(ref(LAMBDA(a,_) | ALL(a,_) | EXIST(a,_))) =
+(*ASSERT    assert isVar a =>*)
 if not(isVar a) then raise Assert.failure else
-		    a := VAR(kindVar a, globalLevel)
-	      | lift t = ()
-	in
-	    app lift t
-	end
+	    a := VAR(kindVar a, globalLevel)
+      | lift1 t = ()
 
     and liftRow(RHO(n,r))	= if !n > !level then n := !level else ()
       | liftRow _		= ()
@@ -1050,17 +1044,13 @@ end
 
   (* Realisation *)
 
-    fun realisePath(rea, t) =
-	let
-	    fun subst(t1 as ref(CON(k,s,p))) =
-		( case PathMap.lookup(rea, p)
-		    of SOME p' => t1 := CON(k,s,p')
-		     | NONE    => ()
-		)
-	      | subst t1 = ()
-	in
-	    app subst t
-	end
+    fun realisePath(rea, t) = app (realisePath1 rea) t
+    and realisePath1 rea (t as ref(CON(k,s,p))) =
+	( case PathMap.lookup(rea, p)
+	    of SOME p' => t := CON(k,s,p')
+	     | NONE    => ()
+	)
+      | realisePath1 rea t = ()
 
     (*
      * Realisations need not be idempotent (fully expanded). Would be nice
@@ -1072,16 +1062,16 @@ end
 	let
 	    val apps = ref[]
 
-	    fun subst(t1 as ref(CON(k,s,p))) =
+	    fun realise1(t1 as ref(CON(k,s,p))) =
 		(case PathMap.lookup(rea, p)
 		   of SOME t2 => t1 := LINK t2		(* expand *)
-					(*UNFINISHED: do we have to clone t2? *)
+			(*UNFINISHED: do we have to clone t2? *)
 		    | NONE    => ()
 		)
-	      | subst(t1 as ref(APPLY _)) = apps := t1::(!apps)
-	      | subst t1 = ()
+	      | realise1(t1 as ref(APPLY _)) = apps := t1::(!apps)
+	      | realise1 t1 = ()
 	in
-	    app subst t ; List.app reduce (!apps)
+	    app realise1 t ; List.app reduce (!apps)
 	end
 
 
