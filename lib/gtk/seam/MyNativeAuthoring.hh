@@ -218,7 +218,7 @@
 
 // type = array member C type; F = conversion macro (like DECLARE_INT,etc.)
 #define DECLARE_CARRAY(a,x,type,F)                       \
-  DECLARE_ARRAY(a##__temp,x);                            \
+  DECLARE_VECTOR(a##__temp,x);                           \
   type a [a##__temp->GetLength()];                       \
   for (u_int a##__iter = 0; a##__iter < a##__temp->GetLength(); a##__iter++) {\
      F(a##__value,a##__temp->Sub(a##__iter));            \
