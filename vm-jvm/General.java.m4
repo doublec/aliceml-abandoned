@@ -244,6 +244,7 @@ final public class General {
     _FIELD(General,equals);
     static {
 	Builtin.builtins.put("=",equals);
+	Builtin.builtins.put("Int.=",equals);
     }
     _BUILTIN(Pickle) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
