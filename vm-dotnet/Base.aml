@@ -262,7 +262,7 @@ structure List =
     fun tabulate(n, f) =
 	let fun tabulate'(i,l) = if i = n then rev l
 					  else tabulate'(i+1, f i :: l)
-	in if n >= 0 then tabulate'(n, nil) else raise Size end
+	in if n >= 0 then tabulate'(0, nil) else raise Size end
 
   end
 
