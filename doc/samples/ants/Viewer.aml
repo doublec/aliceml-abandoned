@@ -119,7 +119,6 @@ struct
             Gtk.signalConnect (area, "expose_event", expose);
             Gtk.signalConnect (area, "configure_event", configure);
             Gtk.signalConnect (bt, "clicked", fn _ => OS.Process.exit OS.Process.success); 
-          (*  Gtk.widgetSetEvents (area,   *)
             Gtk.widgetShowAll window;
             Future.await pixmap;
             G { drawingArea = area, pixmap, window,
@@ -164,9 +163,10 @@ struct
             else 
                 (if #redHill cell then drawRect redHillC
                  else if #blackHill cell then drawRect blackHillC
-                 else if !(#food cell) > 0 then 
-                        drawRect (Vector.sub (foodCs, !(#food cell) - 1))
                  else drawRect emptySpotC;
+                 if !(#food cell) > 0 then 
+                    drawRect (Vector.sub (foodCs, !(#food cell) - 1))
+                 else ();
                  case ! (#ant cell) of
                     NONE    => ()
                  |  SOME a  => 
