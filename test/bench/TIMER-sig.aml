@@ -1,0 +1,4 @@
+signature TIMER =
+sig
+  val time : unit -> int
+end
