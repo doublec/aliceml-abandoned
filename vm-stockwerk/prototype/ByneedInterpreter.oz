@@ -32,12 +32,12 @@ define
 	 fun {$ Args byneedFrame(_ Transient=transient(TransientState))|Rest}
 	    case {Access TransientState} of future(Ts) then X in
 	       X = {Construct Args}
+	       for T in Ts do {Scheduler.object wakeup(T)} end
 	       if {IsCyclic X TransientState} then
 		  {Assign TransientState
 		   cancelled(PrimitiveTable.values.'Hole.Cyclic')}
 		  exception(nil PrimitiveTable.values.'Hole.Cyclic' Rest)
 	       else
-		  for T in Ts do {Scheduler.object wakeup(T)} end
 		  {Assign TransientState ref(X)}
 		  continue(arg(Transient) Rest)
 	       end
