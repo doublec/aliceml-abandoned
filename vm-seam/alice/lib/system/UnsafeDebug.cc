@@ -20,17 +20,29 @@ DEFINE1(UnsafeDebug_print) {
   RETURN_UNIT;
 } END
 
-word UnsafeDebug(void) {
-  Tuple *t = Tuple::New(9);
-  //--** Inspect
-  //--** InspectSig
-  //--** InspectType
-  //--** Print
-  //--** inspect
-  t->Init(5, Primitive::MakeClosure("UnsafeDebug_print",
-				    UnsafeDebug_print, 1, true));
-  //--** setPrintDepth
-  //--** setPrintWidth
-  //--** toString
-  RETURN_STRUCTURE(t);
+DEFINE1(UnsafeDebug_unimplemented) {
+  Error("UnsafeDebug: unimplemented");
+} END
+
+word UnsafeDebug() {
+  Record *record = Record::New(9);
+  INIT_STRUCTURE(record, "UnsafeDebug", "setPrintDepth",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "setPrintWidth",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "toString",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "print",
+		 UnsafeDebug_print, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "inspect",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "Print$",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "Inspect$",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "InspectType$",
+		 UnsafeDebug_unimplemented, 1, true);
+  INIT_STRUCTURE(record, "UnsafeDebug", "InspectSig$",
+		 UnsafeDebug_unimplemented, 1, true);
+  RETURN_STRUCTURE("UnsafeDebug$", record);
 }
