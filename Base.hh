@@ -33,7 +33,7 @@
 #include <unistd.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-# if defined(STOCKWERK_FOREIGN)
+# if defined(SEAM_FOREIGN)
 #  define DllExport __declspec(dllimport)
 # else
 #  define DllExport __declspec(dllexport)

@@ -10,10 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __STOCKWERK_HH__
-#define __STOCKWERK_HH__
+#ifndef __SEAM_HH__
+#define __SEAM_HH__
 
-#define STOCKWERK_FOREIGN
+#define SEAM_FOREIGN
 
 #include "generic/SignalHandler.hh"
 #include "store/Store.hh"
