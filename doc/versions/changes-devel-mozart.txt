@@ -1,3 +1,8 @@
+Library:
+
+* Fixed {*VectorSlice,Substring}.splitr.
+
+
 Alice 0.9.2 (Stockhausen Operette 3 Remix 2) - 2003/07/25
 ---------------------------------------------------------
 

@@ -82,7 +82,7 @@ struct
 				  else if f(rsub(r,j)) then
 				      splitr'(f, r, i, n, j-1)
 				  else
-				      ((r,i,j-i+1), (r, j, n-(j-i+1)))
+				      ((r,i,j-i+1), (r, j+1, n-(j-i+1)))
 
     fun takel f sl		= #1(splitl f sl)
     fun dropl f sl		= #2(splitl f sl)
