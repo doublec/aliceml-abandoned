@@ -123,16 +123,83 @@ darstellen zu k\"{o}nnen.
 
 \section{Zentrale Ideen}
 
-%% Satz
+Der Browser soll in der Lage sein, Alice-Werte 
+\"ubersichtlich auf einem graphischen Interface darzustellen. 
+Dies wird erreicht, indem die Werte in eine interne Beschreibung 
+transformiert werden, aus der die graphische Repr\"sentation 
+erzeugt werden kann. Die Transformation in 
+die interne Beschreibung wird durch die 
+Typinformation der inspizierten Werte gesteuert. 
 
 \subsection{Typregistrierung}
 
+\paragraph{}
+
+Die Typen von Alice-Werten k\"onnen strukturelle oder abstrakte Typen 
+sein. Um die Werte in eine entsprechende Darstellung transformieren 
+zu k\"onnen, ben\"otigt der Browser explizite strukturelle  
+Information zu diesen Werten. 
+
+\paragraph{}
+
+Gleichzeitig ben\"otigt der Browser Anweisungen, wie 
+ein Wert eines bestimmten Types in eine interne 
+Repr\"asentation und letztendlich eine graphische Darstellung 
+umgewandelt werden soll.
+
+\paragraph{}
+
+W\"ahrend strukturelle Typen die ben\"otigte Strukturinformation 
+zu dieser Transformation liefern, m\"ussen abstrakte Typen 
+zusammen mit Darstellungsanweisungen beim Browser registriert 
+werden. Diese Darstellungsvorschriften werden in Form einer 
+Prozedur \"ubermittelt, welche die Umwandlung in eine 
+Beschreibung des Wertes spezifiziert.  
+
 \subsection{Darstellungskriterien}
 
+\paragraph{}
+
+Der Entwurf eines graphischen Tools erfordert die \"Uberlegung, 
+welche Kriterien bei der Wahl von Anordnungsvorschriften f\"ur 
+die Darstellung der Datenstrukturen im Vordergrund stehen sollen. 
+Es gibt Pretty Printer, die, wie auch der 
+Algorithmus von Oppen \cite{op:pr}, die Einhaltung einer vorgegebenen 
+darstellbaren Seitenbreite sicherstellen, und durch gezielte 
+Umbr\"uche und Einr\"uckungen die Lesbarkeit wiederherstellen. Im 
+Gegensatz dazu steht die Vorgehensweise, die Anordnung nicht 
+an einer vorgegebenen Seitenbreite zu orientieren, sondern 
+vielmehr die Gr\"o\ss e des Darstellungsbrereichs an eine m\"oglichst 
+\"ubersichtliche Darstellung anzupassen. 
+Im Fall des Alice-Browsers wurde letztere Vorgehensweise gew\"ahlt, 
+um trotz der Komplexit\"at der Alice-Datenstrukturen 
+eine klare Darstellung zu erm\"oglichen.
+
+\paragraph{}
+
+Zusammengesetzte Alice-Werte lassen sich in Teilwerte untergliedern, 
+so dass sich ein solcher Wert 
+in eine baumartige Darstellung zerlegen l\"asst.
+Hier deutet sich schon an, 
+dass sich auch die interne Behandlung der Datenstrukturen 
+an Baumstrukturen orientieren muss. Gleichzeitig soll der Browser 
+bei der graphischen Darstellung auf 
+die f\"ur Alice \"ubliche Notation f\"ur 
+Werte mit Klammern und Trennzeichen 
+zur\"uck greifen.    
+Die Darstellung von baumartigen Werten durch 
+den Browser orientiert sich dabei 
+an einer Regel, wie sie u.a. Kennedy \cite{ke:dr} f\"ur 
+das Baumzeichnen aufstellt: Gleiche Teilb\"aume werden 
+gleich dargestellt. 
+
+%%% Bild: Wert, interne Darstellung, graphische Darstellung
 
 %%% ENTWURF ============================================================
 
 \section{Entwurf}
+
+%%% Bild: create -> layout -> draw
 
 \subsection{Interne Darstellung}
 
@@ -147,7 +214,7 @@ darstellen zu k\"{o}nnen.
 
 %%% IMPLEMENTIERUNG ====================================================
 
-\section{Implementeirung}
+\section{Implementierung}
 
 \subsection{Knotentypen}
 
@@ -157,7 +224,7 @@ darstellen zu k\"{o}nnen.
 
 \subsection{Zeichnen}
 
-\subsection{Inkrementalit\"at 
+\subsection{Inkrementalit\"at} 
 
 \subsection{Transientenverwaltung}
 
