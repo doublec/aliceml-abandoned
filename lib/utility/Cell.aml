@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkStamp  from "MkStamp"
+import functor   MkRefMap from "MkRefMap"
+import signature CELL     from "CELL-sig"
+
+structure Cell :> CELL =
+struct
+    structure Stamp		= MkStamp()
+
+    type 'a cell		= ('a * Stamp.t) ref
+    type 'a t			= 'a cell
+
+    fun new x			= ref(x, Stamp.new())
+    fun content(ref(x,_))	= x
+    fun stamp(ref(_,z))		= z
+    fun replace(c,x)		= c := (x, stamp c)
+
+    val equals			= op=
+    fun hash c			= Stamp.hash(stamp c)
+
+    functor MkMap(type t)	= MkRefMap(structure Stamp = Stamp
+					   type t          = t * Stamp.t
+					   val stamp       = #2 : t -> Stamp.t)
+end

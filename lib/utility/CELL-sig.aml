@@ -1,0 +1,28 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SIMPLE_IMP_MAP from "SIMPLE_IMP_MAP-sig"
+
+signature CELL =
+sig
+    type 'a cell
+    type 'a t = 'a cell
+
+    val new :		'a -> 'a cell
+    val content :	'a cell -> 'a
+    val replace :	'a cell * 'a -> unit
+
+    val equals :	'a cell * 'a cell -> bool
+    val hash :		'a cell -> int
+
+    functor MkMap(type t) : SIMPLE_IMP_MAP where type key = t cell
+end

@@ -15,6 +15,7 @@ Group is
 	MkListSort.aml
 
 	HASH_KEY-sig.aml
+	IntHashKey.aml
 	LargeIntHashKey.aml
 	StringHashKey.aml
 
@@ -30,6 +31,9 @@ Group is
 	SCOPED_IMP_SET-sig.aml
 	MkScopedImpMap.aml
 	MkScopedImpSet.aml
+
+	CELL-sig.aml
+	Cell.aml
 
 	DEPTH_FIRST_SEARCH-sig.aml
 	MkDepthFirstSearch.aml
