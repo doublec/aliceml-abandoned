@@ -11,7 +11,7 @@
  *)
 
 import structure Pickle from "x-alice:/lib/system/Pickle"
-import signature URL    from "x-alice:/lib/utility/URL-sig"
+import signature URL    from "x-alice:/lib/system/URL-sig"
 
 structure PicklingSample =
 struct

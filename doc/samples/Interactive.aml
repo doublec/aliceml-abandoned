@@ -299,9 +299,9 @@ structure Mod = Pickle.Load(val file = modfile
  *)
 
 val file = "Url." ^ Pickle.extension
-val comp = "x-alice:/lib/utility/" ^ file
+val comp = "x-alice:/lib/system/" ^ file
 
-import signature URL from "x-alice:/lib/utility/URL-sig"
+import signature URL from "x-alice:/lib/system/URL-sig"
 
 structure Url' = Pickle.Load(val file = comp
 			     signature S = (structure Url : URL))
