@@ -31,6 +31,18 @@ You can declare an open datatype like follows:
 	con StopIt : message
 	con Abort = StopIt
 
-Exception declarations and specifications become a derived form, e.g.
+Constructors can be added at any point. Like exceptions in SML, constructor
+declarations are dynamically generative, i.e. the following function returns a
+different constructor on each call:
+
+	fun genMsg() = let con C : 'a message in C end
+
+The type of genMsg of course is unit -> 'a message.
+
+Note that -- like exceptions -- open datatypes cannot admit equality (since it
+is unknown whether there will be any constructors for it prohibiting that).
+
+Exception declarations and specifications can be turned into a derived form,
+e.g.
 
 	exception Error of string    ==>    con Error of string : exn
