@@ -66,5 +66,6 @@ signature UNSAFE_VALUE_COMPONENT =
 		 *)
 		val inArity: 'function_value -> int
 		val outArity: 'function_value -> int
+		val dumpBacktrace: 'backtrace -> unit
 	    end
     end

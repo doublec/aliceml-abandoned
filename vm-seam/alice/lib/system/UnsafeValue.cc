@@ -381,9 +381,15 @@ DEFINE1(UnsafeValue_outArity) {
 	     arity == 1? -1: STATIC_CAST(s_int, arity));
 } END
 
+DEFINE1(UnsafeValue_dumpBacktrace) {
+  DECLARE_BLOCKTYPE(Backtrace, backtrace, x0);
+  backtrace->Dump();
+  RETURN_UNIT;
+} END
+
 AliceDll word UnsafeValue() {
   RequestInterpreter::Init();
-  Record *record = Record::New(22);
+  Record *record = Record::New(23);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
@@ -428,5 +434,7 @@ AliceDll word UnsafeValue() {
 		 UnsafeValue_inArity, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "outArity",
 		 UnsafeValue_outArity, 1);
+  INIT_STRUCTURE(record, "UnsafeValue", "dumpBacktrace",
+		 UnsafeValue_dumpBacktrace, 1);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
