@@ -31,9 +31,23 @@ DEFINE1(Future_await) {
 DEFINE2(Future_awaitOne) {
   Transient *transient1 = Store::WordToTransient(x0);
   Transient *transient2 = Store::WordToTransient(x1);
-  if (transient1 == INVALID_POINTER || transient2 == INVALID_POINTER)
+  // We might have been woken up after having added the currentThread to
+  // both wait queues.  Thus we make sure that we remove ourselves from
+  // the wait queue of the other transient if necessary.
+  if (transient1 == INVALID_POINTER) {
+    if (transient2 != INVALID_POINTER &&
+	transient2->GetLabel() == FUTURE_LABEL)
+      static_cast<Future *>(transient2)->
+	RemoveFromWaitQueue(Scheduler::GetCurrentThread());
     RETURN(x0);
-  taskStack->PushFrame(2);
+  }
+  if (transient2 == INVALID_POINTER) {
+    if (transient1->GetLabel() == FUTURE_LABEL)
+      static_cast<Future *>(transient1)->
+	RemoveFromWaitQueue(Scheduler::GetCurrentThread());
+    RETURN(x0);
+  }
+  taskStack->PushFrame(2 - 1); // the Interpreter is still on the stack
   taskStack->PutWord(0, transient1->ToWord());
   taskStack->PutWord(1, transient2->ToWord());
   return Interpreter::Result(Interpreter::Result::REQUEST, 2);
