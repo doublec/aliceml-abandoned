@@ -59,7 +59,7 @@ depend:
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-Linked%.ozf: %.ozf
+Linked%.ozf: %.ozf $(OZSOURCES:%.oz=%.ozf)
 	$(STOL) $(STOLOPTS) $< --norelative \
 	--rewrite=`pwd`/= \
 	--include=`pwd`/$< --include=`pwd`/Unsafe$* -o $@
