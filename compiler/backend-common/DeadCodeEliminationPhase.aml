@@ -91,6 +91,7 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	  | deadExp (VecExp (_, _)) = NONE
 	  | deadExp (FunExp (_, _, _, _, _)) = NONE
 	  | deadExp (RefAppExp (_, _)) = NONE
+	  | deadExp (LazySelAppExp (_, _, _, _, _)) = NONE
 	  | deadExp exp = SOME exp
 
 	fun liveBody (ValDec (info, idDef, exp)::rest, shared) =

@@ -61,6 +61,11 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | NULL
 	  | SEP of format * format vector
 
+	fun idToString (Id (_, stamp, Name.InId)) =
+	    "$" ^ Stamp.toString stamp
+	  | idToString (Id (_, stamp, Name.ExId s)) =
+	    "$" ^ Stamp.toString stamp ^ "[" ^ s ^ "]"
+
 	fun format f =
 	    let
 		val indent = ref 0
@@ -80,10 +85,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 			String.concat (List.tabulate (ntabs, fn _ => "\t")) ^
 			String.concat (List.tabulate (nspaces, fn _ => " "))
 		    end
-		  | format' (ID (Id (_, stamp, Name.InId))) =
-		    "$" ^ Stamp.toString stamp
-		  | format' (ID (Id (_, stamp, Name.ExId s))) =
-		    "$" ^ Stamp.toString stamp ^ "[" ^ s ^ "]"
+		  | format' (ID id) = idToString id
 		  | format' (IDDEF (IdDef id)) = format' (ID id)
 		  | format' (IDDEF Wildcard) = "_"
 		  | format' (CO s) = "   (* " ^ s ^ " *)"
@@ -164,7 +166,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		      handleOutput]
 	    end
 	  | outputStm (EndTryStm (_, body), shared) =
-	    SEQ #[S "(* end try *)", outputBody (body, shared)]
+	    SEQ #[S "(* end try *)", NL, outputBody (body, shared)]
 	  | outputStm (EndHandleStm (_, body), shared) =
 	    SEQ #[S "(* end handle *)", EX, NL, outputBody (body, shared)]
 	  | outputStm (TestStm (_, id, tests, body), shared) =
@@ -274,6 +276,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "ref ", ID id]
 	  | outputExp (SelAppExp (_, _, label, n, id)) =
 	    SEQ #[S "#", S (Label.toString label), S "/", I n, S " ", ID id]
+	  | outputExp (LazySelAppExp (_, _, label, n, id)) =
+	    SEQ #[S "lazy#", S (Label.toString label),
+		  S "/", I n, S " ", ID id]
 	  | outputExp (FunAppExp (_, id, _, args)) =
 	    SEQ #[ID id, S " ", outputArgs ID args]
 	  | outputExp (FailExp _) = S "fail"

@@ -550,6 +550,12 @@ define
       [] 'SelAppExp'(Region _ Label _ Id) then
 	 vInlineDot(_ {GetReg Id State} Label Reg false
 		    {TranslateRegion Region State} VTl)
+      [] 'LazySelAppExp'(Region _ Label _ Id) then LabelReg VInter in
+	 {State.cs newReg(?LabelReg)}
+	 VInter = vCallBuiltin(_ 'Value.byNeedDot'
+			       [{GetReg Id State} LabelReg Reg]
+			       {TranslateRegion Region State} VTl)
+	 vEquateConstant(_ Label LabelReg VInter)
       [] 'FunAppExp'(Region Id _ Args) then
 	 {TranslateExp 'VarAppExp'(Region Id Args) Reg VTl State}
       [] 'FailExp'(Region) then Coord in

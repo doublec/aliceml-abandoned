@@ -396,6 +396,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.SelAppExp (_, _, _, _, id), set, used, _) =
 	    usedVarsId (id, set, used)
+	  | usedVarsExp (O.LazySelAppExp (_, _, _, _, id), set, used, _) =
+	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.FunAppExp (_, id, _, args), set, used, _) =
 	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
 	  | usedVarsExp (O.FailExp _, _, _, _) = ()

@@ -276,7 +276,7 @@ functor MkFlatteningPhase(val loadSign:
 		val (prod, n) = labelToIndex (innerTyp, label)
 		val stm =
 		    O.ValDec (stm_info region, O.IdDef id',
-			      O.SelAppExp (info, prod, label, n, id))
+			      O.LazySelAppExp (info, prod, label, n, id))
 	    in
 		(stms @ [stm], id', typ)
 	    end
@@ -742,6 +742,10 @@ functor MkFlatteningPhase(val loadSign:
 		f (O.TupExp ({region = #region info}, #[]))::translateCont cont
 	    else
 		f (O.FailExp {region = #region info})::translateCont cont
+	  | translateExp (LazyExp (_, exp as VarExp (_, _)), f, cont) =
+	    translateExp (exp, f, cont)
+	  | translateExp (LazyExp (info, UpExp (_, exp)), f, cont) =
+	    translateExp (LazyExp (info, exp), f, cont)
 	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
 	    let
 		val r = ref NONE

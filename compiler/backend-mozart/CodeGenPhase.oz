@@ -189,6 +189,9 @@ define
       [] 'RefAppExp'(Info Id) then 'RefAppExp'({TrInfo Info} {TrId Id})
       [] 'SelAppExp'(Info Prod Label N Id) then
 	 'SelAppExp'({TrInfo Info} {TrProd Prod} {TrLabel Label} N {TrId Id})
+      [] 'LazySelAppExp'(Info Prod Label N Id) then
+	 'LazySelAppExp'({TrInfo Info} {TrProd Prod} {TrLabel Label} N
+			 {TrId Id})
       [] 'FunAppExp'(Info Id Stamp Args) then
 	 'FunAppExp'({TrInfo Info} {TrId Id} Stamp {TrArgs Args TrId})
       [] 'FailExp'(Info) then 'FailExp'({TrInfo Info})

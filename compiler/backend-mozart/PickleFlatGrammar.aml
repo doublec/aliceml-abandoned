@@ -316,6 +316,10 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "SelAppExp", 5); outputId (q, id);
 	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
 	     outputExpInfo (q, info))
+	  | outputExp (q, LazySelAppExp (info, prod, label, n, id)) =
+	    (outputTuple (q, "LazySelAppExp", 5); outputId (q, id);
+	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
+	     outputExpInfo (q, info))
 	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
 	    (outputTuple (q, "FunAppExp", 4); outputArgs outputId (q, args);
 	     outputStamp (q, stamp); outputId (q, id); outputExpInfo (q, info))

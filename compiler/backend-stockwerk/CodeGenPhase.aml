@@ -458,6 +458,21 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			   O.IdDef id'::List.tabulate (n - index - 1, wild)),
 			  lookup (env, id), instr)
 	    end
+	  | translateExp (LazySelAppExp (_, prod, _, index, id),
+			  id', instr, env) =
+	    (*--** make it lazy *)
+	    let
+		val n =
+		    case prod of
+			Tuple n => n
+		      | Product labels => Vector.length labels
+		fun wild _ = O.Wildcard
+	    in
+		O.GetTup (Vector.fromList
+			  (List.tabulate (index, wild) @
+			   O.IdDef id'::List.tabulate (n - index - 1, wild)),
+			  lookup (env, id), instr)
+	    end
 	  | translateExp (FunAppExp (info, id, _, args), id', instr, env) =
 	    (*--** translate to AppConst *)
 	    translateExp (VarAppExp (info, id, args), id', instr, env)
@@ -487,6 +502,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateIgnore (SelAppExp (_, _, _, _, id), instr, env) =
 	    O.AppPrim ("Future.await", #[lookup (env, id)],
 		       SOME (O.Wildcard, instr))
+	  | translateIgnore (LazySelAppExp (_, _, _, _, id), instr, _) = instr
 	  | translateIgnore (FunAppExp (info, id, _, args), instr, env) =
 	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)

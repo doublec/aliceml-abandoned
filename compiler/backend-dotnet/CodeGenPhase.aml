@@ -595,6 +595,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; emitAwait ();
 	     emit (Castclass (ArrayTy System.ObjectTy));
 	     emit (LdcI4 n); emit LdelemRef)
+	  | genExp (LazySelAppExp (_, _, _, n, id)) =
+	    (*--** make it lazy *)
+	    (emitId id; emitAwait ();
+	     emit (Castclass (ArrayTy System.ObjectTy));
+	     emit (LdcI4 n); emit LdelemRef)
 	  | genExp (FunAppExp (info, id, _, args)) =
 	    genExp (VarAppExp (info, id, args))
 	  | genExp (FailExp _) =   (*--** implement *)
