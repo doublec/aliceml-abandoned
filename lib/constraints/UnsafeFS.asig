@@ -12,7 +12,7 @@
  *
  *)
 
-signature UNSAFE_FS_OZ_COMPONENT =
+signature UNSAFE_FS_COMPONENT =
     sig
 	structure UnsafeFS :
 	    sig

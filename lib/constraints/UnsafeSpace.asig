@@ -11,7 +11,7 @@
  *
  *)
 
-signature UNSAFE_SPACE_OZ_COMPONENT =
+signature UNSAFE_SPACE_COMPONENT =
     sig
 	structure UnsafeSpace :
 		sig
