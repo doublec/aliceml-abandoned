@@ -1,69 +1,61 @@
 <?php include("macros.php3"); ?>
-
 <?php heading("Examples", "examples") ?>
 
 
+<?php section("tour", "Examples from the Tour") ?>
 
-<?php section("streams", "streams") ?>
+<!--TODO-->
 
-  <P>
-    This program allows the user to interactively put numbers on two streams.
-    Several other streams are concurrently produced by different combinations
-    of those two streams (addition, zipping, mapping, etc.). All streams are
-    displayed in the Inspector.
-  </P>
-
-  <UL>
-    <LI> <A href="examples/streams.aml"><TT>streams.aml</TT></A> </LI>
-  </UL>
+<P>To come...</P>
 
 
-<?php section("smolka", "futures et al.") ?>
+<?php section("smolka", "concurrency") ?>
 
-  <P>
-    Here are some small examples for concurrent programming with futures:
-  </P>
+<P>A collection of small examples of concurrent programming idioms using
+futures:</P>
 
-  <UL>
-    <LI> <A href="examples/smolka.aml"><TT>smolka.aml</TT></A> </LI>
-  </UL>
+<UL>
+  <LI> <A href="examples/smolka.aml"><TT>smolka.aml</TT></A> </LI>
+</UL>
+
+<P>Best tried interactively.</P>
+
+<P>A small interactive demo demonstrating dataflow synchronisation using
+streams:</P>
+
+<UL>
+  <LI> <A href="examples/streams.aml"><TT>streams.aml</TT></A> </LI>
+</UL>
+
+<P>Compile with:</P>
+
+<PRE class=code>
+alicec streams.aml</PRE>
+
+<P>Run with:</P>
+
+<PRE class=code>
+alicerun streams</PRE>
 
 
 <?php section("interpreter", "interpreter") ?>
 
-  <P>
-    The following interpreter for a simple functional language adapted from
-    last semester's course "Programmierung" demonstrates
-    how a program can be divided into components:
-  </P>
+<P>The implementation of an interpreter for a simple functional language
+demonstrates how a program can be divided into components:</P>
 
-  <UL>
-    <LI> <A href="examples/interpreter/">Interpreter for F</A> </LI>
-    <LI> Everything as a <A href="examples/interpreter.tar"><TT>.tar</TT></A>
-         file </LI>
-  </UL>
+<UL>
+  <LI> <A href="examples/interpreter/">source directory</A> </LI>
+  <LI> <A href="examples/interpreter.tar"><TT>tar file</TT></A> </LI>
+</UL>
 
-  <P>
-    Compile it with
-  </P>
-
-  <PRE>
-	alicec -x Main.aml -o interpr
-  </PRE>
-
-
-<?php section("explorer", "explorer") ?>
-
-  <P>
-    Explorer sample to be placed here.
-  </P>
+<P>See the <TT>README</TT> file for build instructions.</P>
 
 
 <?php section("gtk", "gtk") ?>
 
-  <P>
-    Gtk samples to be placed here.
-  </P>
+<!--TODO-->
+
+<P>Gtk samples to come...</P>
 
 
 <?php footing() ?>
