@@ -1,5 +1,6 @@
 Here is the syntax for modules in Stockhausen. In addition to SML it provides:
 
+- local modules
 - higher-order functors
 - manifest structures and values
 - signature members
@@ -15,7 +16,7 @@ expressiveness in the system (SML/NJ has higher-order functors while retaining
 separate namespaces, but at the cost of treating functors only semi-first-class
 in the module language, requiring them to be wrapped into structures when
 passed around - I do not consider this very elegant, and it introduces further
-complications). Another minor incompatibility is that the mutliple `include'
+complications). Another minor incompatibility is that the multiple `include'
 derived form can longer be supported - this should not be critical.
 
 Structure declarations can now introduce higher-order modules (ie. functors). I
