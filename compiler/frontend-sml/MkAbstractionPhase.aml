@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -274,6 +274,39 @@ struct
 
   (* Constants and identifiers *)
 
+    fun isPrime c     = c = #"'"
+    fun isDigit' c    = Char.isDigit c orelse c = #"_"
+    fun isLowerNum' c = Char.isLower c orelse isDigit' c
+    fun isUpperNum' c = Char.isUpper c orelse isDigit' c
+    fun isAlphaNum' c = Char.isAlpha c orelse isDigit' c
+
+    fun unprime s = Substring.dropr isPrime (Substring.full s)
+
+    fun isConventionalLab s	= not(Char.isAlpha(String.sub(s,0))) orelse
+				  Char.isLower(String.sub(s,0)) andalso
+				  CharVectorSlice.all isAlphaNum' (unprime s)
+    fun isConventionalTyVar s	= let val ss = Substring.dropl isPrime
+						     (unprime s)
+				  in
+				      Substring.size ss > 0 andalso
+				      Char.isLower(Substring.sub(ss,0)) andalso
+				      CharVectorSlice.all isLowerNum' ss
+				  end
+    fun isConventionalVId s	= not(Char.isAlpha(String.sub(s,0))) orelse
+				  CharVectorSlice.all isAlphaNum' (unprime s)
+    fun isConventionalValVId s	= not(Char.isAlpha(String.sub(s,0))) orelse
+				  Char.isLower(String.sub(s,0)) andalso
+				  CharVectorSlice.all isAlphaNum' (unprime s)
+    fun isConventionalConVId s	= not(Char.isAlpha(String.sub(s,0))) orelse
+				  Char.isUpper(String.sub(s,0)) andalso
+				  CharVectorSlice.all isAlphaNum' (unprime s)
+    fun isConventionalTyCon s	= CharVectorSlice.all isLowerNum' (unprime s)
+    fun isConventionalStrId s	= String.sub(s,0) = #"_" orelse
+				  Char.isUpper(String.sub(s,0)) andalso
+				  CharVectorSlice.all Char.isAlphaNum(unprime s)
+    fun isConventionalSigId s	= Char.isUpper(String.sub(s,0)) andalso
+				  CharVectorSlice.all isUpperNum' (unprime s)
+
     fun trSCon E =
 	fn SCon(i, SCon.INT n)		=> O.IntLit n
 	 | SCon(i, SCon.WORD w)		=> O.WordLit w
@@ -281,7 +314,16 @@ struct
 	 | SCon(i, SCon.STRING s)	=> O.StringLit s
 	 | SCon(i, SCon.REAL x)		=> O.RealLit x
 
-    fun trLab E (Lab(i, lab)) = O.Lab(i, Label.fromString(Lab.toString lab))
+    fun trLab E (Lab(i, lab)) =
+	let
+	    val name = Lab.toString lab
+	    val _    = if !Switches.Warn.conventions
+			andalso not(isConventionalLab name) then
+			   warn(i, E.LabConvention lab)
+			else ()
+	in
+	    O.Lab(i, Label.fromString name)
+	end
 
     fun trTyVar E (tyvar as TyVar(i, tyvar')) =
 	let
@@ -313,7 +355,8 @@ struct
 			SigId.toString, E.SigIdUnbound)
 
 
-    fun trId_bind (lookup,infoId,idId,toString,Shadowed) E id =
+    fun trId_bind (lookup,infoId,idId,toString,isConventional,
+		   Convention,Shadowed) E id =
 	let
 	    val i     = infoId id
 	    val id'   = idId id
@@ -323,21 +366,36 @@ struct
 			andalso Option.isSome(lookup(E, id')) then
 			   warn(i, Shadowed id')
 			else ()
+	    val _     = if !Switches.Warn.conventions
+			andalso not(isConventional name) then
+			   warn(i, Convention id')
+			else ()
 	in
 	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
 
 
     val trTyVar_bind = trId_bind(lookupVar, infoTyVar, idTyVar, TyVar.toString,
-				 E.TyVarShadowed)
+				 isConventionalTyVar,
+				 E.TyVarConvention, E.TyVarShadowed)
     val trVId_bind   = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
-				 E.VIdShadowed)
+				 isConventionalVId,
+				 E.VIdConvention, E.VIdShadowed)
+    val trValVId_bind = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
+				 isConventionalValVId,
+				 E.ValVIdConvention, E.VIdShadowed)
+    val trConVId_bind = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
+				 isConventionalConVId,
+				 E.ConVIdConvention, E.VIdShadowed)
     val trTyCon_bind = trId_bind(lookupTy,  infoTyCon, idTyCon, TyCon.toString,
-				 E.TyConShadowed)
+				 isConventionalTyCon,
+				 E.TyConConvention, E.TyConShadowed)
     val trStrId_bind = trId_bind(lookupStr, infoStrId, idStrId, StrId.toString,
-				 E.StrIdShadowed)
+				 isConventionalStrId,
+				 E.StrIdConvention, E.StrIdShadowed)
     val trSigId_bind = trId_bind(lookupSig, infoSigId, idSigId, SigId.toString,
-				 E.SigIdShadowed)
+				 isConventionalSigId,
+				 E.SigIdConvention, E.SigIdShadowed)
 
     fun trVId_bind' E (VId(i, vid')) =
 	let
@@ -896,7 +954,7 @@ struct
 		     *)
 		    val (valid',stamp) =
 			case lookupVal(E', vid')
-			  of NONE            => trVId_bind E vid
+			  of NONE            => trValVId_bind E vid
 			   | SOME(_,stamp,_) => ( O.Id(i', stamp,
 						   Name.ExId(VId.toString vid'))
 						, stamp )
@@ -1421,7 +1479,7 @@ struct
 
 	 | PRIMITIVEVALDec(i, _, vid as VId(i',vid'), ty, s) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
+		val (valid',stamp) = trValVId_bind E vid
 		val  _             = insertScope E
 		val  varids'       = trAllTy E ty
 		val  typ'          = trTy E ty
@@ -1464,7 +1522,7 @@ struct
 				  _, vid as VId(i2',vid'), tyvar2) =>
 	   let
 		val (typid',stamp1) = trTyCon_bind E tycon
-		val (valid',stamp2) = trVId_bind E vid
+		val (valid',stamp2) = trConVId_bind E vid
 		val  _              = insertScope E
 		val  varid'         = trSeqTyVar E tyvar
 		val  _              = deleteScope E
@@ -1489,7 +1547,7 @@ struct
 		(i, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon, s) =>
 	   let
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  vallongid1'     = O.ShortId(i, valid1')
 		val  _               = insertScope E
 		val (varids',typ12') = trTyVarSeqLongTyCon E
@@ -1729,7 +1787,7 @@ struct
     and trFmatch_lhs (E,E') (Match(i, fmrule, fmatcho)) =
 	   let
 		val vid as VId(i',vid') = trFmrule_lhs E fmrule
-		val (valid',stamp)      = trVId_bind E vid
+		val (valid',stamp)      = trValVId_bind E vid
 		val _ = trFmatcho_lhs (E,vid) fmatcho
 		val _ = insertDisjointVal(E', vid', (i',stamp,V))
 			handle CollisionVal _ =>
@@ -2105,7 +2163,7 @@ struct
 
 	 | SOME(ConBind(i, _, vid as VId(i',vid'), tyo, conbindo)) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
+		val (valid',stamp) = trConVId_bind E vid
 		val (typ1',k)      = trTyo (E,i') tyo
 		val  vallab'       = idToLab valid'
 		val  fld'          = O.Fld(i, vallab', stricttyp E (typ1',k))
@@ -2169,7 +2227,7 @@ struct
 	   let
 		val  i               = Source.span(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  vallongid1'     = O.ShortId(i, valid1')
 		val  _               = insertScope E
 		val (varids',typ12') = trTyVarSeqLongTyCon E
@@ -2209,7 +2267,7 @@ struct
 	   let
 		val  i               = Source.span(i', infoLong longvid)
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  vallongid1'     = trConLongVId E longvid
 		val (vallongid2',is) = trLongVId E longvid
 		val  i1              = infoLong longvid
@@ -2807,7 +2865,7 @@ struct
 
 	 | SOME(ConDesc(i, _, vid as VId(i',vid'), tyo, condesco)) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
+		val (valid',stamp) = trConVId_bind E vid
 		val  vallab'       = idToLab valid'
 		val (typ1',k)      = trTyo (E,i') tyo
 		val  fld'          = O.Fld(i, vallab', stricttyp E (typ1',k))
@@ -2859,7 +2917,7 @@ struct
 	   let
 		val  i               = Source.span(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  _               = insertScope E
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq, longtycon)
@@ -2892,7 +2950,7 @@ struct
 	   let
 		val  i               = Source.span(i', infoLong longvid)
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  vallongid1'     = trConLongVId E longvid
 		val (vallongid2',is) = trLongVId E longvid
 		val  typ1'           = O.SingTyp(O.infoLongid vallongid1',
@@ -3320,7 +3378,7 @@ struct
 
 	 | SOME(ConItem(i, _, vid as VId(i',vid'), tyo, conitemo)) =>
 	   let
-		val (valid',stamp) = trVId_bind E'' vid
+		val (valid',stamp) = trConVId_bind E'' vid
 		val  vallab'       = idToLab valid'
 		val (typ1',k)      = trTyo (E,i') tyo
 		val  fld'          = O.Fld(i, vallab', stricttyp E (typ1',k))
@@ -3397,7 +3455,7 @@ struct
 	 | SOME(PLAINEconItem(_, _, vid as VId(i',vid'), econitemo)) =>
 	   let
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  imp1'           = O.ValImp(i', valid1', O.NoDesc(i'))
 		val  imp2'           = O.ValImp(i', valid2', O.NoDesc(i'))
 		val  is2             = Future.byneed(fn() =>
@@ -3419,7 +3477,7 @@ struct
 	   let
 		val  i               = Source.span(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
-		val (valid2',stamp2) = trVId_bind E vid
+		val (valid2',stamp2) = trConVId_bind E vid
 		val  _               = insertScope E
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq, longtycon)

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000-2001
+ *   Andreas Rossberg, 2000-2003
  *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
@@ -24,6 +24,7 @@ sig
 
     structure Warn :
     sig
+	val conventions :			bool ref
 	val shadowing :				bool ref
 	val unusedImport :			bool ref
     end

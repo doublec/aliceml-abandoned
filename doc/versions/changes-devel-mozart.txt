@@ -2,6 +2,10 @@ Library:
 
 * Added List.split.
 
+Compiler:
+
+* Implemented naming convention warning.
+
 
 Alice 0.9.1 (Stockhausen Operette 3 Remix 1) - 2003/02/13
 ---------------------------------------------------------

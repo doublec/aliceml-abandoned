@@ -124,6 +124,15 @@ struct
 	| TyVarShadowed		of TyVar.t
 	| StrIdShadowed		of StrId.t
 	| SigIdShadowed		of SigId.t
+	(* Conventions *)
+	| LabConvention		of Lab.t
+	| VIdConvention		of VId.t
+	| ValVIdConvention	of VId.t
+	| ConVIdConvention	of VId.t
+	| TyConConvention	of TyCon.t
+	| TyVarConvention	of TyVar.t
+	| StrIdConvention	of StrId.t
+	| SigIdConvention	of SigId.t
 
 
   (* Pretty printing *)
@@ -149,6 +158,8 @@ struct
 
     val classLab	= (ppLab,   ["label"])
     val classVId	= (ppVId,   ["value","or","constructor"])
+    val classValVId	= (ppVId,   ["value"])
+    val classConVId	= (ppVId,   ["constructor"])
     val classTyCon	= (ppTyCon, ["type"])
     val classTyVar	= (ppTyVar, ["type","variable"])
     val classStrId	= (ppStrId, ["structure","or","functor"])
@@ -327,6 +338,13 @@ struct
 
     fun ppShadowed((ppId,class), id) =
 	  textpar(class @ [ppId id,"shadows","previous","one"])
+    fun ppNamingConvention((ppId,class), id, examples) =
+	vbox(
+	    textpar(class @ ["identifier",ppId id,"violates","standard",
+		    "naming","conventions,","which","suggest"] @ class @
+		    ["names","of","the","form"]) ^^
+	    indent(textpar examples)
+	)
 
     fun ppWarning(VIdShadowed vid) =
 	  ppShadowed(classVId, vid)
@@ -338,6 +356,25 @@ struct
 	  ppShadowed(classStrId, strid)
       | ppWarning(SigIdShadowed sigid) =
 	  ppShadowed(classSigId, sigid)
+      (* Conventions *)
+      | ppWarning(LabConvention lab) =
+	  ppNamingConvention(classLab, lab, ["foo,","123"])
+      | ppWarning(VIdConvention vid) =
+	  ppNamingConvention(classVId, vid,
+		["foo,","fooBar,","Foo,","FooBar,","FOO,","FOO_BAR"])
+      | ppWarning(ValVIdConvention vid) =
+	  ppNamingConvention(classValVId, vid, ["foo,","foo',","fooBar"])
+      | ppWarning(ConVIdConvention vid) =
+	  ppNamingConvention(classConVId, vid,
+		["Foo,","FooBar,","FOO,","FOO_BAR"])
+      | ppWarning(TyConConvention tycon) =
+	  ppNamingConvention(classTyCon, tycon, ["foo,","foo_bar"])
+      | ppWarning(TyVarConvention tyvar) =
+	  ppNamingConvention(classTyVar, tyvar, ["'foo,","''foo,","'foo_bar"])
+      | ppWarning(StrIdConvention strid) =
+	  ppNamingConvention(classStrId, strid, ["Foo,","FooBar"])
+      | ppWarning(SigIdConvention sigid) =
+	  ppNamingConvention(classSigId, sigid, ["FOO,","FOO_BAR"])
 
 
   (* Export *)

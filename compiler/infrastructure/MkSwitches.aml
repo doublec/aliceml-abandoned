@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg, 2000-2003
  *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
@@ -26,6 +26,7 @@ struct
 
     structure Warn =
     struct
+	val conventions				= ref true
 	val shadowing				= ref false
 	val unusedImport			= ref false
     end

@@ -27,6 +27,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t--(no-)trace-component-access\n\
 	    \\t\tTrace component loads and saves by the compiler.\n\
 	    \Warning options:\n\
+	    \\t--(no-)warn-conventions\n\
+	    \\t\tWhether to warn about naming convention violations.\n\
 	    \\t--(no-)warn-shadowing\n\
 	    \\t\tWhether to warn about shadowing of identifiers.\n\
 	    \\t--(no-)warn-unused-import\n\
@@ -75,6 +77,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	val booleanSwitches =
 	    [("recursive-compilation", Global.recursiveCompilation),
 	     ("trace-component-access", Global.traceComponentAccess),
+	     ("warn-conventions", Warn.conventions),
 	     ("warn-shadowing", Warn.shadowing),
 	     ("warn-unused-import", Warn.unusedImport),
 	     ("rtt", Language.supportRtt),
