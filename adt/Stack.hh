@@ -19,7 +19,7 @@
 #include "store/Store.hh"
 #include <cstring>
 
-class Stack : private Block {
+class DllExport Stack : private Block {
 protected:
   static const u_int SIZE    = 2;
   static const u_int TOP_POS = 0;

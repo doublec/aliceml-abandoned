@@ -20,7 +20,7 @@
 #include <cstring>
 #include "store/Store.hh"
 
-class Queue: private Block {
+class DllExport Queue: private Block {
 private:
   static const u_int READ_INDEX_POS = 0;
   static const u_int WRITE_INDEX_POS = 1;
