@@ -30,9 +30,7 @@ public:
   // NativeCodeInterpreter Constructor
   NativeCodeInterpreter() : Interpreter() {}
   // NativeCodeInterpreter Static Constructor
-  static void Init() {
-    self = new NativeCodeInterpreter();
-  }
+  static void Init();
   static StackFrame *FastPushCall(Closure *closure);
   // Handler Methods
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);

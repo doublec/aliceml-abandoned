@@ -110,7 +110,7 @@ word PrimitiveTable::Lookup(word table, Chunk *name) {
     String *message = String::New(80 + name->GetSize());
     sprintf(reinterpret_cast<char *>(message->GetValue()),
 	    "PrimitiveTable::Lookup: unknown primitive `%.*s'",
-	    static_cast<int>(name->GetSize()), name->GetBase());
+	    STATIC_CAST(int, name->GetSize()), name->GetBase());
     Error(message->ExportC());
   }
   return t->Get(key);

@@ -447,11 +447,11 @@ public:
     Array *table = Array::New(tableSize);
     for (u_int i = tableSize; i--;)
       table->Init(i, Store::IntToWord(DEAD));
-    return static_cast<LivenessTable *>(table);
+    return STATIC_CAST(LivenessTable *, table);
   }
   // LivenessTable Untagging
   static LivenessTable *FromWordDirect(word table) {
-    return static_cast<LivenessTable *>(Array::FromWordDirect(table));
+    return STATIC_CAST(LivenessTable *, Array::FromWordDirect(table));
   }
 };
 
@@ -471,7 +471,7 @@ public:
     else {
       Array *table = Array::FromWordDirect(tableList);
       tableList = table->Sub(0);
-      return static_cast<LivenessTable *>(table);
+      return STATIC_CAST(LivenessTable *, table);
     }
   }
   LivenessTable *CloneTable(LivenessTable *table) {
@@ -1039,7 +1039,7 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
   IntMap *inlineMap = IntMap::FromWordDirect(inlineTable);
   word tag          = inlineMap->Get(wPrimitive);
   u_int Result;
-  switch (static_cast<INLINED_PRIMITIVE>(Store::DirectWordToInt(tag))) {
+  switch (STATIC_CAST(INLINED_PRIMITIVE, Store::DirectWordToInt(tag))) {
   case HOLE_HOLE:
     {
       Hole_New(JIT_V1);
@@ -1269,7 +1269,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure, bool direct) {
       u_int actualArity        = GetArity(actualArgs);
       if (interpreter == NativeCodeInterpreter::self) {
 	NativeConcreteCode *nativeCode =
-	  static_cast<NativeConcreteCode *>(concreteCode);
+	  STATIC_CAST(NativeConcreteCode *, concreteCode);
 	closure->SetConcreteCode(concreteCode->ToWord());
 	JIT_APPLY_COUNT(applyNative);
 	info.mode    = NATIVE_CALL;
@@ -1364,7 +1364,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure, bool direct) {
       Transient *transient = Store::WordToTransient(wConcreteCode);
       if ((transient != INVALID_POINTER) &&
 	  (transient->GetLabel() == BYNEED_LABEL)) {
-	Closure *byneedClosure = static_cast<Byneed *>(transient)->GetClosure();
+	Closure *byneedClosure = STATIC_CAST(Byneed *, transient)->GetClosure();
 	wConcreteCode = byneedClosure->GetConcreteCode();
 	if (wConcreteCode == LazyCompileInterpreter::concreteCode) {
 	  LazyCompileClosure *lazyCompileClosure =
@@ -1395,7 +1395,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure, bool direct) {
     Transient *transient = Store::WordToTransient(wClosure);
     if ((transient != INVALID_POINTER) &&
 	(transient->GetLabel() == BYNEED_LABEL)) {
-      Closure *byneedClosure = static_cast<Byneed *>(transient)->GetClosure();
+      Closure *byneedClosure = STATIC_CAST(Byneed *, transient)->GetClosure();
       ConcreteCode *concreteCode =
 	ConcreteCode::FromWord(byneedClosure->GetConcreteCode());
       if ((concreteCode != INVALID_POINTER) &&
@@ -1622,7 +1622,7 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
   template_->AssertWidth(AbstractCode::functionWidth);
   abstractCode->Init(0, template_->Sel(0));
-  Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
+  Assert(STATIC_CAST(u_int, Store::DirectWordToInt(template_->Sel(1))) ==
 	 nGlobals);
   // Inherit substitution
   Vector *subst = Vector::New(nGlobals);
@@ -1701,7 +1701,7 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   // Create Substitution (value option vector)
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nGlobals = idRefs->GetLength();
-  Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
+  Assert(STATIC_CAST(u_int, Store::DirectWordToInt(template_->Sel(1))) ==
 	 nGlobals);
   Vector_New(JIT_V1, nGlobals);
   for (u_int i = nGlobals; i--;) {
@@ -2590,7 +2590,7 @@ struct InlineEntry {
 
 #if PROFILE
 static InlineEntry inlines[] = {
-  { static_cast<INLINED_PRIMITIVE>(0), NULL }
+  { STATIC_CAST(INLINED_PRIMITIVE, 0), NULL }
 };
 #else
 static InlineEntry inlines[] = {
@@ -2601,7 +2601,7 @@ static InlineEntry inlines[] = {
   { INT_OPSUB,     "Int.-" },
   { INT_OPMUL,     "Int.*" },
   { INT_OPLESS,    "Int.<" },
-  { static_cast<INLINED_PRIMITIVE>(0), NULL }
+  { STATIC_CAST(INLINED_PRIMITIVE, 0), NULL }
 };
 #endif
 
@@ -2700,7 +2700,7 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   }
   else {
     RegisterAllocator::Run(&closureNLocals, &assignment, abstractCode);
-    currentNLocals = static_cast<u_int>(closureNLocals);
+    currentNLocals = STATIC_CAST(u_int, closureNLocals);
     lazyCompileClosure->SetNLocals(currentNLocals);
     lazyCompileClosure->SetAssignment(assignment);
   }
@@ -2761,7 +2761,7 @@ void NativeCodeJitter::DumpInstructionCounts() {
   for (u_int opcode = 0; opcode < AbstractCode::nInstrs; opcode++)
     std::fprintf(stderr, "  %s, %d, %d\n",
 		 AbstractCode::GetOpcodeName
-		   (static_cast<AbstractCode::instr>(opcode)),
+		   (STATIC_CAST(AbstractCode::instr, opcode)),
 		 staticCounts[opcode], dynamicCounts[opcode]);
 }
 #endif

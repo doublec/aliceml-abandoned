@@ -57,7 +57,7 @@ static word SysErrConstructor;
     DECLARE_X(x, x_buf);						 \
     DECLARE_INT(i, x_i);						 \
     u_int length = x->GetLength();					 \
-    if (i < 0 || static_cast<u_int>(i) > length)			 \
+    if (i < 0 || STATIC_CAST(u_int, i) > length)			 \
       RAISE(PrimitiveTable::General_Subscript);				 \
     TagVal *tagVal = TagVal::FromWord(x_sz);				 \
     if (tagVal == INVALID_POINTER) {					 \
@@ -66,7 +66,7 @@ static word SysErrConstructor;
     } else {								 \
       DECLARE_INT(sz0, tagVal->Sel(0));					 \
       if (sz0 < 0) RAISE(PrimitiveTable::General_Size);			 \
-      if (static_cast<u_int>(i + sz0) > length)				 \
+      if (STATIC_CAST(u_int, i + sz0) > length)				 \
 	RAISE(PrimitiveTable::General_Subscript);			 \
       sz = sz0;								 \
     }									 \
@@ -187,7 +187,7 @@ DEFINE1(UnsafeIODesc_readerCapabilities) {
 DEFINE2(UnsafeIODesc_readVec) {
   DECLARE_IODESC(ioDesc, x0);
   DECLARE_INT(n, x1);
-  if (n < 0 || static_cast<u_int>(n) > Vector::maxLen)
+  if (n < 0 || STATIC_CAST(u_int, n) > Vector::maxLen)
     RAISE(PrimitiveTable::General_Size);
   if (n == 0) RAISE(PrimitiveTable::General_Domain);
   String *string0 = String::New(n);
@@ -212,7 +212,7 @@ DEFINE4(UnsafeIODesc_readArr) {
 DEFINE2(UnsafeIODesc_readVecNB) {
   DECLARE_IODESC(ioDesc, x0);
   DECLARE_INT(n, x1);
-  if (n < 0 || static_cast<u_int>(n) > Vector::maxLen)
+  if (n < 0 || STATIC_CAST(u_int, n) > Vector::maxLen)
     RAISE(PrimitiveTable::General_Size);
   if (n == 0) RAISE(PrimitiveTable::General_Domain);
   String *string0 = String::New(n);

@@ -47,7 +47,7 @@ public:
 
   static LazyCompileClosure *New(TagVal *abstractCode);
   static LazyCompileClosure *FromWordDirect(word wClosure) {
-    return static_cast<LazyCompileClosure *>(Closure::FromWordDirect(wClosure));
+    return STATIC_CAST(LazyCompileClosure *, Closure::FromWordDirect(wClosure));
   }
 };
 
@@ -114,12 +114,12 @@ public:
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
     Assert(concreteCode == INVALID_POINTER ||
 	   concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-    return static_cast<NativeConcreteCode *>(concreteCode);
+    return STATIC_CAST(NativeConcreteCode *, concreteCode);
   }
   static NativeConcreteCode *FromWordDirect(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
     Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-    return static_cast<NativeConcreteCode *>(concreteCode);
+    return STATIC_CAST(NativeConcreteCode *, concreteCode);
   }
 };
 

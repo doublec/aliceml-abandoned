@@ -37,7 +37,7 @@ public:
 			       Closure *closure) {
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(CLOSURE_POS, closure->ToWord());
-    return static_cast<LazyCompileFrame *>(frame);
+    return STATIC_CAST(LazyCompileFrame *, frame);
   }
 };
 
@@ -58,13 +58,13 @@ void LazyCompileInterpreter::PushCall(Closure *closure) {
 }
 
 u_int LazyCompileInterpreter::GetFrameSize(StackFrame *sFrame) {
-  LazyCompileFrame *frame = static_cast<LazyCompileFrame *>(sFrame);
+  LazyCompileFrame *frame = STATIC_CAST(LazyCompileFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result LazyCompileInterpreter::Run(StackFrame *sFrame) {
-  LazyCompileFrame *frame = static_cast<LazyCompileFrame *>(sFrame);
+  LazyCompileFrame *frame = STATIC_CAST(LazyCompileFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   LazyCompileClosure *closure = frame->GetClosure();
   Scheduler::PopFrame(frame->GetSize());
@@ -95,7 +95,7 @@ LazyCompileClosure *LazyCompileClosure::New(TagVal *abstractCode) {
   // closure->Init(BYNEED_POS, byneed) done in NativeConcreteCode::New
   closure->Init(N_LOCALS_POS, Store::IntToWord(-1));
   closure->Init(ASSIGNMENT_POS, Store::IntToWord(0));
-  return static_cast<LazyCompileClosure *>(closure);
+  return STATIC_CAST(LazyCompileClosure *, closure);
 }
 
 //
@@ -118,7 +118,7 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
   concreteCode->Init(NLOCALS_POS, nbLocals);
   concreteCode->Init(CCC_PC_POS, CCCPC);
   concreteCode->Init(SKIP_CCC_PC_POS, skipCCCPC);
-  return static_cast<NativeConcreteCode *>(concreteCode);
+  return STATIC_CAST(NativeConcreteCode *, concreteCode);
 }
 
 word NativeConcreteCode::New(TagVal *abstractCode) {

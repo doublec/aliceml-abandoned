@@ -27,9 +27,7 @@ private:
 public:
   static LazySelInterpreter *self;
 
-  static void Init() {
-    self = new LazySelInterpreter();
-  }
+  static void Init();
 
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);
@@ -49,7 +47,7 @@ public:
     Closure *closure = Closure::New(concreteCode->ToWord(), SIZE);
     closure->Init(RECORD_POS, record);
     closure->Init(LABEL_POS, label->ToWord());
-    return static_cast<LazySelClosure *>(closure);
+    return STATIC_CAST(LazySelClosure *, closure);
   }
 
   word GetRecord() {
