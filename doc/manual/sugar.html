@@ -203,7 +203,7 @@ identifier on either side:</P>
 fun f(xs as x::xr) = bla
 fun g(x::xr as xs) = blo</PRE>
 
-
+<!--
 <?php subsection("patterns-negated", "Negated patterns") ?>
 
 <P>Negated patterns are a more special feature. A negated pattern matches
@@ -217,7 +217,7 @@ fun f(non(1 | 2 | 3)) = 0
 
 <P>The nested pattern may bind variables, but these are not visible outside.
 (They may be useful for a local guard, for example.)</P>
-
+-->
 
 <?php subsection("patterns-guard", "Guard patterns") ?>
 
@@ -261,11 +261,13 @@ guard expression occurs whenever the pattern is tried to be matched.</P>
     <TD> <I>pat</I> <TT>as</TT> <I>pat</I> </TD>
     <TD> layered (R) </TD>
   </TR>
+<!--
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>non</TT> <I>pat</I> </TD>
     <TD> negated </TD>
   </TR>
+-->
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>pat</I> <TT>where</TT> <I>atexp</I> </TD>
