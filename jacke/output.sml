@@ -145,8 +145,8 @@ struct
 		let fun prRhs first [] = "rest671"
 		      | prRhs first ((A.As(s,A.Symbol t))::rhs) =
 		    "(_, (SValue."^t^"("^s^"), "
-		    ^(if first then s^"left, " else "_, ")
-		    ^(if List.length rhs = 0 then s^"right)) ::" else "_)) ::")
+		    ^(if first then s^"left, " else s^"left, ")
+		    ^(if List.length rhs = 0 then s^"right)) ::" else s^"right)) ::")
 		    ^(prRhs false rhs)
 		in 
 		    "("^(Int.toString rulenum)^", "
@@ -158,12 +158,12 @@ struct
 		    ^(mkMatch rhs)
 		val A.Seq rhs = bnf
 		val code = foldr (fn (s,r) => s^" "^r) "" code
-		val leftpos = if List.null rhs then "defPos"
-			      else let val A.As(name,_) = List.last rhs 
-			      in name^"left" end 
 		val rightpos = if List.null rhs then "defPos"
-			       else let val A.As(name,_) = List.hd rhs
-			       in name^"right" end
+			       else let val A.As(name,_) = List.last rhs 
+				    in name^"right" end 
+		val leftpos = if List.null rhs then "defPos"
+			      else let val A.As(name,_) = List.hd rhs
+				   in name^"left" end
 		val posInfo = case posInfo of SOME s => s^"\n" | _ => ""  
 	    in
 		(blank 1)^posInfo
