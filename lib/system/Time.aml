@@ -22,5 +22,5 @@ structure Time : TIME =
 struct
     open Time
 
-    fun now () = Time.fromMilliseconds (UnsafeTime.now ())
+    fun now () = Time.fromMicroseconds (UnsafeTime.now ())
 end
