@@ -1382,25 +1382,24 @@ case content j1 of TOP => j2 | _   => exist'(p,j1,j2)
 	    val tab1 = tab s1
 
 	    fun narrowTypReaItem(item2 as TYP(p2,k2)) =
-		if Type.isSingKind k2 then () else
+		(if Type.isSingKind k2 then () else
 		let
 		    val (p1,k1) =
 			asTypItem(Tab.lookupExistent(tab1, itemDom item2))
 		in
 		    PathMap.insert(typ_rea, p2, Type.con(p1,k1))
-		end
+		end handle Tab.Unknown _ => () (* contra-variance *))
 	      | narrowTypReaItem(item2 as MOD(p2,j2)) =
-		let
+		(let
 		    val (p1,j1) =
 			asModItem(Tab.lookupExistent(tab1, itemDom item2))
 		in
 		    narrowTypRea(typ_rea,j1,j2) handle Mismatch m =>
 			raise Mismatch(MismatchMod(Path.toLab p2, m))
-		end
+		end handle Tab.Unknown _ => () (* contra-variance *))
 	      | narrowTypReaItem _ = ()
 	in
 	    List.app narrowTypReaItem (items s2)
-	    handle Tab.Unknown dom => raise Mismatch(missing dom)
 	end
 
 
