@@ -25,5 +25,5 @@ sig
     structure I : ABSTRACT_GRAMMAR     = TypedGrammar
     structure O : INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-    val translate : C.t -> Source.desc * I.comp -> O.comp
+    val translate : Source.desc * C.t * I.comp -> C.t * O.comp
 end
