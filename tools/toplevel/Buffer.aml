@@ -95,6 +95,14 @@ structure Buffer =
               iter
           end
 
+      fun scrollToCursor id =
+          let
+              val {view,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+	  in
+              Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
+                                       0.1, false, 0.0, 0.0)
+	  end
+
       fun selectRange(buf, startiter, enditer) =
 	  (Gtk.textBufferPlaceCursor(buf, enditer);
 	   Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter))
@@ -268,14 +276,22 @@ structure Buffer =
               case (!undoBuf) of nil => ()
                             | (DELETE(off,txt)::ur) =>
                               let
-                                  val iter = Gtk.textIterNew()
+                                  val startiter = Gtk.textIterNew()
+				  val enditer = Gtk.textIterNew()
+				  val len = String.size txt
                               in
                                   Gtk.textBufferGetIterAtOffset(buf,
-                                                                iter,
+                                                                startiter,
                                                                 off);
-                                  Gtk.textBufferInsert(buf, iter, txt,
-                                                       String.size txt);
-                                  checkUnmodified ur;
+                                  Gtk.textBufferInsert(buf, startiter, txt, len);
+                                  Gtk.textBufferGetIterAtOffset(buf,
+                                                                startiter,
+                                                                off);
+                                  Gtk.textBufferGetIterAtOffset(buf,
+                                                                enditer,
+                                                                off + len);
+                                  selectRange(buf, startiter, enditer);
+				  checkUnmodified ur;
 				  undoBuf := ur;
 				  if rollBack then undo'(undoBuf, buf, true) else ();
                                   undoBuf := WAIT_DELETE(off,txt) :: (!undoBuf)
@@ -291,9 +307,10 @@ structure Buffer =
                                   Gtk.textBufferGetIterAtOffset(buf,
                                                                 enditer,
                                                                 off2);
+                                  Gtk.textBufferPlaceCursor(buf, startiter);
                                   Gtk.textBufferDelete(buf, startiter,
                                                        enditer);
-                                  checkUnmodified ur;
+				  checkUnmodified ur;
 				  undoBuf := ur;
 				  if rollBack then undo'(undoBuf, buf, true) else ();
                                   undoBuf := WAIT_INSERT(off1,off2) :: (!undoBuf)
@@ -316,8 +333,8 @@ structure Buffer =
 	  let
               val {undo=undoBuf,buf,...} = BufferMap.lookupExistent(bufferMap, id)
 	  in
-	      Lock.sync Core.lock
-	      undo' (undoBuf, buf, false)
+	      Lock.sync Core.lock undo' (undoBuf, buf, false);
+	      scrollToCursor id
 	  end
 
       fun getFileName id =
@@ -501,14 +518,6 @@ structure Buffer =
               save id;
               ()
           end
-
-      fun scrollToCursor id =
-          let
-              val {view,buf,...} = BufferMap.lookupExistent(bufferMap, id)
-	  in
-              Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
-                                       0.1, false, 0.0, 0.0)
-	  end
 
       fun match (iter, back, txt, i, caseSensitive) =
           if (if caseSensitive then
