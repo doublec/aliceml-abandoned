@@ -72,7 +72,7 @@ import structure Print     from "x-alice:/lib/system/Print"
 	(*Eta forewa! :-) *)
 	val vdom2II = Vector.foldl ( fn (r,a)=> IntInf.orb ((range2II r),a) ) (IntInf.fromInt 0)
 
-	fun vTern v1 root space =
+	fun vBool v1 root space =
 	let
 		val root2 : (IntInf.int vector)= Vector.map 
 				(  fn v => vdom2II ( FS.Reflect.lowerBound (space,v) )  )
@@ -81,9 +81,26 @@ import structure Print     from "x-alice:/lib/system/Print"
 		v1 root2
 	end
 
-fun vUnion1 (root2 as #[a,b,c]) = (IntInf.orb(b,c) = a)
+	fun vUnion1 (root2 as #[a,b,c]) = (IntInf.orb(b,c) = a)
+	val vUnion = vBool vUnion1
+
+	fun vInter1 (root2 as #[a,b,c]) = (IntInf.andb(b,c) = a)
+	(* a is a subset of b: no element in a and not in b*)
+	fun vSubSet1 (root2 as #[a,b]) =
+		IntInf.andb (IntInf.xorb(a,b),a)= IntInf.fromInt 0		
+	fun vNoSubSet1 root2 = Bool.not (vSubSet1 root2)
+		
+	fun vSuperOfInt1 (root2 as #[a,b,c]) =
+		vSubSet1(#[IntInf.andb(b,c),a])
+	fun vSubOfUni1 max (root2 as #[a,b,c]) =
+		vSubSet1(#[a,IntInf.orb(b,c)])
 	
-	val vUnion = vTern vUnion1
+	fun vDiff1 (root2 as #[a,b,c]) = IntInf.andb (IntInf.xorb(c,b),b) = c
+	fun vDisjoint1 (root2 as #[a,b]) = IntInf.andb(a,b) = IntInf.fromInt 0
+	fun vDistinct1 (root2 as #[a,b]) = IntInf.xorb(a,b) > IntInf.fromInt 0
+	fun vPartition1 (root2) = (vDisjoint1 root2 ) andalso (vUnion1 root2)
+	
+	fun vEquals1 (root2 as #[a,b]) = (a=b)
 	
 	val (root, space)= unionTest ()
 	val _ = testVerifySimple space (vUnion root)
