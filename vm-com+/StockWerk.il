@@ -596,6 +596,11 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
+    .method virtual public class StockWerk.StockWert Apply4(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
     .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.0
@@ -1381,6 +1386,128 @@
     }
   }
 
+  .class public Tuple4 extends StockWerk.StockWert {
+    .field public class StockWerk.StockWert Value1
+    .field public class StockWerk.StockWert Value2
+    .field public class StockWerk.StockWert Value3
+    .field public class StockWerk.StockWert Value4
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.StockWert::.ctor()
+      ret
+    }
+    .method virtual public bool Equals(class System.Object) {
+      .locals(class StockWerk.Tuple4)
+    retry:
+      ldarg.1
+      isinst StockWerk.Tuple4
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Tuple4
+      stloc.0
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value1
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value1
+      callvirt instance bool System.Object::Equals(class System.Object)
+      brfalse.s retFalse
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value2
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value2
+      callvirt instance bool System.Object::Equals(class System.Object)
+      brfalse.s retFalse
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value3
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value3
+      callvirt instance bool System.Object::Equals(class System.Object)
+      brfalse.s retFalse
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value4
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value4
+      callvirt instance bool System.Object::Equals(class System.Object)
+      brfalse.s retFalse
+      ldc.i4.1
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Select(class System.String) {
+      ldarg.1
+      ldstr "1"
+      call bool System.String::Equals(class System.String, class System.String)
+      bne.un.s test2
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value1
+      ret
+    test2:
+      ldarg.1
+      ldstr "2"
+      call bool System.String::Equals(class System.String, class System.String)
+      bne.un.s test3
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value2
+      ret
+    test3:
+      ldarg.1
+      ldstr "3"
+      call bool System.String::Equals(class System.String, class System.String)
+      bne.un.s test4
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value3
+      ret
+    test4:
+      ldarg.1
+      ldstr "4"
+      call bool System.String::Equals(class System.String, class System.String)
+      bne.un.s raise
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value4
+      ret
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public class System.String ToString() {
+      ldstr "("
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value1
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value2
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value3
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value4
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ")"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
+    }
+  }
+
   .class public Tuple extends StockWerk.StockWert {
     .field public class StockWerk.StockWert[] Values
     .method public void .ctor(class StockWerk.StockWert[]) {
@@ -2011,6 +2138,24 @@
       tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
       ret
     }
+    .method virtual public class StockWerk.StockWert Apply4(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldarg.0
+      newobj instance void StockWerk.Tuple4::.ctor()
+      dup
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Tuple4::Value1
+      dup
+      ldarg.2
+      stfld class StockWerk.StockWert StockWerk.Tuple4::Value2
+      dup
+      ldarg.3
+      stfld class StockWerk.StockWert StockWerk.Tuple4::Value3
+      dup
+      ldarg.s 4
+      stfld class StockWerk.StockWert StockWerk.Tuple4::Value4
+      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      ret
+    }
   }
 
   .class public abstract Procedure0 extends StockWerk.Procedure {
@@ -2102,6 +2247,47 @@
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value3
       tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class public abstract Procedure4 extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      .locals(class StockWerk.Tuple4)
+    retry:
+      ldarg.1
+      isinst StockWerk.Tuple4
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Tuple4
+      stloc.0
+      ldarg.0
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value1
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value2
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value3
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple4::Value4
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply4(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert)
       ret
     testTransient:
       ldarg.1
