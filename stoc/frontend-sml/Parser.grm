@@ -42,6 +42,9 @@
 (*		      tyvarseq tycon = ty					*)
 (*   - where for structures:							*)
 (*	  sigexp ::= sigexp where longstrid_1 = longstrid_2			*)
+(*   - parenthesised structure and signature expressions (derived forms):	*)
+(*        strexp ::= ( strexp )							*)
+(*        sigexp ::= ( sigexp )							*)
 (*   - fun keyword in signatures (derived form):				*)
 (*	  spec ::= fun valdesc							*)
 (*   - withtype in signatures (derived form):					*)
@@ -144,7 +147,7 @@
 	 SIGNATURE STRUCT STRUCTURE WHERE
 	 CON WHEN
 
-%eop     EOF SEMICOLON
+%eop     EOF
 %noshift EOF
 
 
@@ -335,6 +338,7 @@
 
 	(* Top nonterminal *)
 	| program			of Program
+	|    program'			of Program
 	|    program_opt		of Program option
 
 
@@ -870,6 +874,8 @@
 			( APPStrExp(I(funidleft,RPARright), funid, strexp) )
 	| funid LPAR strdec RPAR
 			( APPDECStrExp(I(funidleft,RPARright), funid, strdec) )
+	| LPAR strexp RPAR
+			( PARStrExp(I(LPARleft,RPARright), strexp) )
 	| LET strdec IN strexp END
 			( LETStrExp(I(LETleft,ENDright), strdec, strexp) )
 
@@ -964,6 +970,8 @@
      sigexp':
 	  SIG spec END	( SIGSigExp(I(SIGleft,ENDright), spec) )
 	| sigid		( SIGIDSigExp(I(sigidleft,sigidright), sigid) )
+	| LPAR sigexp RPAR
+			( PARSigExp(I(LPARleft,RPARright), sigexp) )
 	| sigexp WHERE longstrid EQUALS longstrid
 			( WHERESigExp(I(sigexpleft,longstrid2right),
 				      sigexp, longstrid1, longstrid2) )
@@ -1309,6 +1317,9 @@
   (* Programs *)
 
   program:
+	  program'	( program' )
+
+     program':
 	  topdec SEMICOLON program_opt
 	  		( TOPDECProgram(I(topdecleft,program_optright),
 					topdec, program_opt) )
@@ -1317,5 +1328,5 @@
 				     exp, program_opt) )
 
      program_opt:
-	  program	( SOME program )
+	  program'	( SOME program' )
 	| (*empty*)	( NONE )
