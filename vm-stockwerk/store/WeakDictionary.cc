@@ -164,19 +164,12 @@ void WeakDictionary::Resize() {
 // Public Interface Methods
 //
 
-WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size, Handler *handler) {
+WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size) {
   size = NextPrime(size);
 
   Block *p      = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
-  u_int percent = (u_int) (size * FILL_RATIO); // former 1 +
-
-  if (handler == INVALID_POINTER) {
-    p->InitArg(HANDLER_POS, Store::IntToWord(0));
-  }
-  else {
-    p->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord((void *) handler));
-  }
+  u_int percent = (size * FILL_RATIO);
 
   p->InitArg(COUNTER_POS, Store::IntToWord(0));
   p->InitArg(PERCENT_POS, Store::IntToWord(percent));
@@ -186,7 +179,6 @@ WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size, 
   for (u_int i = size; i--;) {
     arr->InitArg(i, HashNode::New()->ToWord());
   }
-  
   return (WeakDictionary *) p;
 }
 

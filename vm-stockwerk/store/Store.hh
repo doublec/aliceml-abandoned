@@ -28,6 +28,11 @@ class Set;
 struct timeval;
 #endif
 
+class Finalization {
+public:
+  virtual void Finalize(word value) = 0;
+};
+
 class Store {
 private:
   static MemChunk *roots[STORE_GENERATION_NUM];
@@ -42,6 +47,7 @@ private:
   static Set *intgenSet;
   static Set *wkDictSet;
   static u_int needGC;
+  static Finalization *handler;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static struct timeval *sum_t;
 #endif
@@ -59,9 +65,9 @@ private:
   static void HandleInterGenerationalPointers(u_int gen);
   static Block *HandleWeakDictionaries();
   static u_int GetMemUsage(MemChunk *chunk);
-  static char *GCAlloc(u_int s, u_int header);
-  static Block *TempAlloc(u_int size);
-  static Block *AddToFinSet(Block *p, Handler *h, word value);
+  static char *GCAlloc(u_int size, u_int header);
+  static char *GCAlloc(u_int size);
+  static Block *AddToFinSet(Block *p, word value);
   static void SwitchToChunk(MemChunk *chunk);
   static void AllocNewMemChunk();
   static void AllocNewMemChunk(u_int size, const u_int gen);
@@ -99,9 +105,11 @@ public:
   static word ResolveForwardPtr(word v);
   static void DoGC(word &root);
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
-  // To be determined
   static void AddToIntgenSet(Block *v);
   static void RegisterWeakDict(WeakDictionary *v);
+  static void RegisterFinalizer(Finalization *handler) {
+    Store::handler = handler;
+  }
   static int NeedGC() {
     return needGC;
   }
@@ -129,8 +137,8 @@ public:
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
   static Block *AllocBlockWithHandler(u_int s, Handler *h) {
-    Block *t = Store::InternalAllocBlock(HANDLERBLOCK_LABEL, (s + 1));
-
+    Block *t = Store::InternalAllocBlock(HANDLERBLOCK_LABEL, s);
+    AssertStore(s >= 1);
     ((word *) t)[0] = PointerOp::EncodeUnmanagedPointer((void *) h);
     return t;
   }

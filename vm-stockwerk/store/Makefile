@@ -22,7 +22,10 @@ SRCS = WeakDictionary.cc \
        Store.cc
 OBJS = $(SRCS:%.cc=%.o)
 
-.PHONY: all clean distclean
+.PHONY: all clean distclean adt
+
+adt:
+	cd $(TOPDIR)/adt && $(MAKE) clean all
 
 all: libstore.a
 
