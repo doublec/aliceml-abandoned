@@ -302,7 +302,7 @@ struct
     fun trace f s	= f
     val newKind		= new
 
-    (*DEBUG: The following allows tracing of all type nodes.*)
+    (*DEBUG: The following allows tracing of all type nodes.
 
     fun id t = Int.toString(hash (*DEBUG Addr.addr*) t)
 
@@ -393,7 +393,7 @@ struct
 	    then ()
 	    else ( TextIO.print "!!!!";TextIO.inputLine TextIO.stdIn; () )
 	end
-    (**)
+    *)
 
 
   (* Kinds *)
