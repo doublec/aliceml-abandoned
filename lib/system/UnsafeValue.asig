@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name  from "../rtt/Name"
+import structure Label from "../rtt/Label"
+import structure Type  from "../rtt/Type"
+
+signature UNSAFE_VALUE_COMPONENT =
+    sig
+	structure UnsafeValue:
+	    sig
+		val cast: 'value -> 'a
+		val proj: 'value * Label.t vector * int -> 'value
+		val tag: 'value * Label.t vector -> Label.t
+		val projTagged: 'value * Label.t vector * int -> 'value
+		val con: 'value -> 'value * Type.t
+		val projConstructed: 'value * Label.t vector * int -> 'value
+		val conName: 'value -> Name.t
+	    end
+    end
