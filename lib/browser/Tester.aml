@@ -3,10 +3,9 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 
 (* ganz einfache Liste *)
 
-structure SList = Reflect.ReflectType (type t = int list list);
+structure SList = Reflect.ReflectType (type t = int list);
 
-UnsafeInspector.inspect ([1,2],SList.x);
-UnsafeInspector.inspect([[1,2,3],[4,5,6,7],[8,9,10,11,12,13]],SList.x);
+UnsafeInspector.inspect ([1,2],SList.x)
 
 val rec x = 1::x;
 UnsafeInspector.inspect(x,SList.x);
@@ -63,8 +62,8 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			 data_type);
 UnsafeInspector.inspect(C(C(A)),data_type);
 
-structure Test = Reflect.ReflectType (type t = int vector list);
-UnsafeInspector.inspect([#[1,2],#[1,1]],Test.x);
+structure Test = Reflect.ReflectType (type t = int vector vector list);
+UnsafeInspector.inspect([#[#[1,1],#[1,1]],#[#[2,2],#[2,2]]],Test.x);
 
 
 structure IntList = Reflect.ReflectType (type t = (int * int) list);

@@ -99,13 +99,14 @@ struct
                               dargestellt worden ist *) 
 		      => let val _ = TextIO.print("Nichts gefunden :(\n")
 			     val count = ref 1
+			     val number = !relnumber
 			     val node = createRelNode (desc,Empty,p,i,d,
 						       count,str^" as ",
 						       relman,root)
 			     val c = createUsualGraph (opt,va,t,node,0,d,root)
 			     val actrelman = valOf(RelMan.lookup(reldict,ind))
 			         handle Option => []
-			     val new_relman = (V va,count,!relnumber-1)::actrelman
+			     val new_relman = (V va,count,number)::actrelman
 			 in ( setContent (node,c)   
 			    ; RelMan.update(reldict,(ind,new_relman)) 
                             ; TextIO.print("CREATE_GRAPH: Eintrag in RelDict!\n")
@@ -113,22 +114,19 @@ struct
 			    ; node )
 			 end     
 		    | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
-		      => let val _ = TextIO.print("was gefunden :) - erhoehe Zaehler auf "
-                                     ^Int.toString(!count+1)^"\n")
-			     val str = "Ref "^Int.toString(number)	
-			     val node = if !count > 0 
-					    then createRelRefNode (desc,p,i,d,str,root)
-					else  createRelNode (desc,Empty,p,i,d,
-							     count,"Ref0 as ",
-							     relman,root)
-			 in ( count := !count + 1
-			    ; if !count = 1 
-				  then let val c = createUsualGraph (opt,va,t,node,0,d,root)
-				       in setContent (node,c)  
-				       end 
-			      else ()
-			     ; node)
-			 end)
+		      => (  count := !count + 1
+			 ;  let val str = "Ref "^Int.toString(number)
+				val node = if !count = 1
+					       then createRelNode (desc,Empty,p,i,d,count,
+								   "Ref0 as ",relman,root)
+					   else createRelRefNode (desc,p,i,d,str,root)
+			    in ( if !count = 1 
+				     then let val c = createUsualGraph (opt,va,t,node,0,d,root)
+					  in setContent (node,c)  
+					  end 
+				 else ()
+			       ; node)
+			 end ) )
 		 end
 	else (* kein Relationsmodus *) 
 	    createUsualGraph (NONE,va,t,p,i,d,root))
