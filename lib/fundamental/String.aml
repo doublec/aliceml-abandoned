@@ -111,6 +111,10 @@ struct
       				= (List.rev cs', c::cs)
       | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
 
+    fun separate s' ss		= concat(separate'(s', ss))
+    and separate'(s', nil)	= nil
+      | separate'(s', s::nil)	= s::nil
+      | separate'(s', s::ss)	= s::s'::separate'(s', ss)
 
     fun toWide s		= s					(**)
     fun fromWide s		= s						(**)

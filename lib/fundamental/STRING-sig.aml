@@ -51,6 +51,7 @@ sig
     val translate :	(Char.char -> string) -> string -> string
     val fields :	(Char.char -> bool) -> string -> string list
     val tokens :	(Char.char -> bool) -> string -> string list
+    val separate :	string -> string list -> string			(**)
 
     val op < :		string * string -> bool
     val op > :		string * string -> bool
