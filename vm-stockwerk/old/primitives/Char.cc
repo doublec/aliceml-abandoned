@@ -64,7 +64,7 @@ DEFINE1(Char_toLower) {
 } END
 
 DEFINE1(Char_toUpper) {
-  DECLARE_INT(c, 0);
+  DECLARE_INT(c, x0);
   RETURN_INT(toupper(c));
 } END
 
