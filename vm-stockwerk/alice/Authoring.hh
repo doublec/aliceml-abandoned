@@ -46,7 +46,7 @@
       list = tagVal->Sel(1);						\
     }									\
     if (Store::WordToInt(list) == INVALID_INT) { REQUEST(list); }	\
-  } \
+  }									\
   tagVal = TagVal::FromWord(x);
 
 #define DECLARE_LIST(tagVal, length, x)					\
