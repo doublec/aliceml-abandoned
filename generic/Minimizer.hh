@@ -32,7 +32,7 @@ private:
   void InitBlocks();
   PBlock *GetBlock(u_int blockNo);
   void InitAgenda(Stack *agenda);
-  bool splitBlockAtNode(u_int block, u_int nodeIndex);
+  bool splitBlockAtNode(u_int block, int nodeIndex);
   void FollowBack(u_int block, u_int edge);
   void DoSplits(Stack *q);
   void ReduceGraph();

@@ -34,7 +34,7 @@ public:
   void SetEnd(int end);
   int GetStart();
   int GetEnd();
-  void SetSplitIndex(u_int i);
+  void SetSplitIndex(int i);
   int GetSplitIndex();
   bool HasToBeSplit();
   void IncrementIncoming(int edge);
@@ -49,6 +49,9 @@ public:
 };
 
 PBlock *PBlock::New(int start, int end) {
+  Assert(start >= 0);
+  Assert(end == 0 || end>= start);
+
   DynamicArray *p = DynamicArray::New(SIZE+2);
   
   p->Update(START_INDEX_POS, Store::IntToWord(start));
@@ -82,7 +85,8 @@ int PBlock::GetEnd() {
   return Store::DirectWordToInt(Sub(END_INDEX_POS));
 }
 
-void PBlock::SetSplitIndex(u_int i) {
+void PBlock::SetSplitIndex(int i) {
+  Assert(i>=-1);
   Update(CUR_SPLIT_INDEX_POS, Store::IntToWord(i));
 }
 
@@ -182,7 +186,6 @@ bool PBlock::IsOnAgenda() {
 
 bool PBlock::IsOnAgenda(int edge) {
   // Is this block on the agenda with egde "edge"?
-
   word old = Sub(SIZE+edge+1);
   return (old!=DynamicArray::INVALID_ARRAY_ELEM &&
 	  Store::DirectWordToInt(old) < 0);
@@ -325,11 +328,8 @@ int PNode::compareBlocks(::Block *v, BlockLabel vl,
   case MAP_LABEL:
   case HASHNODEARRAY_LABEL:
   case HASHNODE_LABEL:
-    //  case HANDLEDHASHNODE_LABEL:
   case QUEUE_LABEL:
-    //  case QUEUEARRAY_LABEL:
   case STACK_LABEL:
-    //  case STACKARRAY_LABEL:
   case ROOTSETELEMENT_LABEL:
   case THREAD_LABEL:
   case TASKSTACK_LABEL:
@@ -401,8 +401,10 @@ int PNode::compare(PNode *n1, PNode *n2) {
     return 1;
   case 0:
     return compareBlocks(v,vl,w);
+  default:
+    Assert(false);
+    return -1;
   }
-  Assert(false);
 }
 
 // provides a dynamic array for PNodes
@@ -416,7 +418,7 @@ private:
   static const BlockLabel DYNNODEARRAY_LABEL = (BlockLabel) (MIN_DATA_LABEL+1);
   enum { ARRAY_POS, LUA_ARRAY_POS, COUNT_POS, SIZE };
 
-  static void swap(DynamicArray* a, DynamicArray *lua, u_int i, u_int j);
+  static void swap(DynamicArray* a, DynamicArray *lua, int i, int j);
   static int partition(DynamicArray *a, DynamicArray *lua, int l, int r);
   static void sort(DynamicArray *a, DynamicArray *lua, int l, int r);
 
@@ -438,48 +440,39 @@ public:
   void Sort();
 };
 
-// provides a dynamic array for PNodes
-// with a quicksort implementation
-// and a lookup table from initial indices to
-// current indices (maintaining the permutation
-// of the array)
-
-
 /////////////////////////////
 // Quicksort helper functions
 
-void DynNodeArray::swap(DynamicArray* a, DynamicArray *lua, u_int i, u_int j) {
-  PNode *pni = PNode::FromWordDirect(a->Sub(i));
-  PNode *pnj = PNode::FromWordDirect(a->Sub(j));
+void DynNodeArray::swap(DynamicArray* a, DynamicArray *lua, int i, int j) {
+  Assert(i>=0);
+  Assert(j>=0);
 
-  a->Update(i, pnj->ToWord());
-  a->Update(j, pni->ToWord());
+  word wi = a->Sub(i);
+  word wj = a->Sub(j);
 
-  int lui = pni->GetNum();
-  int luj = pnj->GetNum();
+  int lui = PNode::FromWordDirect(wi)->GetNum();
+  int luj = PNode::FromWordDirect(wj)->GetNum();
+
+  a->Update(i, wj);
+  a->Update(j, wi);
   
-  //  fprintf(stderr, "swap %d <-> %d (%d, %d)\n", i, j, lui, luj);
-
   // maintain permutation information
-  word dummy = lua->Sub(lui);
-  int dummy_i = Store::WordToInt(dummy);
-  if (dummy_i<0)
-    fprintf(stderr, "STRANGE! dummy_i %d %d -> %d",i,j,dummy_i);
-  int dummy_j = Store::WordToInt(lua->Sub(luj));
-  if (dummy_j<0)
-    fprintf(stderr, "STRANGE! dummy_j %d %d -> %d",lui,luj,dummy_j);
+  Assert(Store::WordToInt(lua->Sub(lui))>=0);
+  Assert(Store::WordToInt(lua->Sub(luj))>=0);
 
-  lua->Update(lui, lua->Sub(luj));
-  lua->Update(luj, dummy);
+  lua->Update(lui, Store::IntToWord(j));
+  lua->Update(luj, Store::IntToWord(i));
 }
 
-int DynNodeArray::partition(DynamicArray *a, DynamicArray *lua, int l, int r) {
+int DynNodeArray::partition(DynamicArray *a, DynamicArray *lua,
+			    int l, int r) {
   int i = l-1, j = r;
   PNode *v = PNode::FromWordDirect(a->Sub(r));
   for(;;) {
     while (PNode::FromWordDirect(a->Sub(++i))->Compare(v)==-1);
-    while (v->Compare(PNode::FromWordDirect(a->Sub(--j))) == -1)
+    while (v->Compare(PNode::FromWordDirect(a->Sub(--j))) == -1) {
       if (j==l) break;
+    }
     if (i >= j) break;
     swap(a, lua, i, j);
   }
@@ -489,14 +482,12 @@ int DynNodeArray::partition(DynamicArray *a, DynamicArray *lua, int l, int r) {
 
 void DynNodeArray::sort(DynamicArray *a, DynamicArray *lua, int l, int r) {
   // a standard (not optimized) quicksort
-  // from --TODO--
+  // from Robert Sedgewick, Algorithms in C++ 1-4
   if (r <= l) return;
   int i = partition(a, lua, l, r);
   sort(a, lua, l, i-1);
   sort(a, lua, i+1, r);
 }
-
-
 
 
 /////////////////////////////
@@ -750,15 +741,15 @@ void Partition::InitBlocks() {
   ReplaceArg(BLOCK_COUNT_POS, blockCount);
 }
 
-bool Partition::splitBlockAtNode(u_int block, u_int nodeIndex) {
+bool Partition::splitBlockAtNode(u_int block, int nodeIndex) {
   // Marks block "block" as to be split at node with index nodeIndex
 
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
   PBlock *b = PBlock::FromWordDirect(ba->Sub(block));
   DynNodeArray *na = DynNodeArray::FromWordDirect(GetArg(NA_POS));
   
-  u_int si = b->GetSplitIndex();
-  u_int end = b->GetEnd();
+  int si = b->GetSplitIndex();
+  int end = b->GetEnd();
 
   bool result=false;
 
@@ -771,7 +762,7 @@ bool Partition::splitBlockAtNode(u_int block, u_int nodeIndex) {
     tv->InitArg(1, head);
     ReplaceArg(TO_DO_POS, tv->ToWord());
   }  
-  if (si>=nodeIndex) {
+  if (si >= nodeIndex) {
     // only do the actual split if the split index is to the
     // right of the node!
     na->Swap(si, nodeIndex);
@@ -891,8 +882,8 @@ void Partition::FollowBack(u_int block, u_int edge) {
     for (int j=pn->GetPredCount(); j--; ) {
       Tuple *tu = Tuple::FromWordDirect(pn->Pred(j));
       u_int tu_edge = Store::WordToInt(tu->Sel(0));
-      u_int parent = Store::WordToInt(tu->Sel(1));
-      u_int realParent = na->LookUp(parent);
+      int parent = Store::WordToInt(tu->Sel(1));
+      int realParent = na->LookUp(parent);
       if (tu_edge == edge) {
 	PNode *parentNode = na->Sub(realParent);
 	int parentBlock = parentNode->GetBlock();
@@ -937,11 +928,9 @@ void Partition::ReduceGraph() {
     PNode *leaderNode = na->Sub(start);
     word leader = leaderNode->GetNode();
     PNode *curNode;
-    //    DynamicArray *pred;
     int predCount;
     for (int j=start+1; j<=end; j++) {
       curNode = na->Sub(j);
-      //      pred = curNode->GetPred();
       predCount = curNode->GetPredCount();
       for (int k=predCount;k--;) {
 	Tuple *tu = Tuple::FromWordDirect(curNode->Pred(k));
@@ -950,7 +939,6 @@ void Partition::ReduceGraph() {
 	// replace this node by its block's leader
 	PNode *parentNode = na->LookUpSub(parent);
 	Block *b = Store::WordToBlock(parentNode->GetNode());
-        u_int wasMutable = b->IsMutable();
 	b->ReplaceArgUnchecked(edge, leader);
       }
     }
@@ -963,10 +951,8 @@ void Partition::Minimize() {
   // has already filled the partition
 
   // Initialize & sort the blocks
-//   fprintf(stderr, "Init blocks.\n");
   InitBlocks();
 
-//   fprintf(stderr, "Init agenda.\n");
   Stack *agenda = Stack::New(100);  
   InitAgenda(agenda);
   
@@ -977,7 +963,6 @@ void Partition::Minimize() {
     
     while (pb->IsOnAgenda()) {
       for (int edge=0; edge<=pbSize; edge++) {
-	//	  fprintf(stderr, "Block %d, edge %d\n", blockNo, edge);
 	if (pb->IsOnAgenda(edge)) {
 	  pb->RemoveFromAgenda(edge);
 	  FollowBack(blockNo, edge);
@@ -987,8 +972,5 @@ void Partition::Minimize() {
     }
   }
   
-//   fprintf(stderr, "Reduce graph.\n");
   ReduceGraph();
-//   fprintf(stderr, "Minimizer done.\n");
-
 }
