@@ -187,9 +187,9 @@ structure Main :> MAIN =
 	    val n = String.size filename
 	    val m = String.size fro
 	in
-	    if String.substring (filename, n - m, m) = fro then
-		String.substring (filename, 0, n - m) ^ to
-	    else raise Crash.Crash "Main.changeExtension"
+	    if n > m andalso String.substring (filename, n - m, m) = fro then
+		SOME (String.substring (filename, 0, n - m) ^ to)
+	    else NONE
 	end
 
     fun compileSign filename =
@@ -216,12 +216,10 @@ structure Main :> MAIN =
 	in
 	    if existsFile sigFilename then compileSign sigFilename
 	    else
-		let
-		    val sourceFilename =
-			changeExtension (targetFilename, ".ozf", ".sml")
-		in
-		    compileForMozart (sourceFilename, targetFilename)
-		end
+		case changeExtension (targetFilename, ".ozf", ".sml") of
+		    SOME sourceFilename =>
+			compileForMozart (sourceFilename, targetFilename)
+		  | NONE => Inf.empty ()
 	end
 
     val _ = Composer.setAcquisitionMethod acquireSign
