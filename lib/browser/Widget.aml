@@ -39,6 +39,8 @@ import structure Server from "Server"
 
 import signature WIDGET from "WIDGET-sig"
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 local 
 open GtkSupport Node Doc Color PervasiveType
 
@@ -709,7 +711,7 @@ fun makePopup n =
 	    val d = handleDepth(n)
 	    val r = handleReinspect(n)
 	    val f = handleForce(n)
-	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT)
+	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT) 
 	    val force_active = (Node.isByneed n) handle _ => false
 	    val delete_active = getParent(n) = Empty orelse 
 		                (isRelNode(getParent(n)) 
@@ -788,8 +790,7 @@ fun makePopup n =
 				     ]
 	in
 	case n of
-	Node.RelNode _ => ()
-      | Node.RelRefNode _ => ()
+       Node.RelRefNode _ => ()
       | _ =>
 	Server.serve (fn () => 
 	       (createMenu
