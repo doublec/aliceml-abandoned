@@ -31,6 +31,7 @@ Library:
 * [CHG] Minimizer: removed, superseded by Store component.
 * [CHG] Http: ignore multiple headers; replace empty reguest URIs with "/".
 * [CHG] Remote: more error conditions distinguished by execute.
+* [FIX] Promise: equality now works properly.
 * [FIX] IntInf: fixed handling of division by 0.
 * [FIX] Word[N]: fixed mod by 0 and conversion overflow checks.
 * [FIX] Real: fixed comparison, exception handling, handling NaNs and infinity.

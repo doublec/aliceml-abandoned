@@ -61,6 +61,7 @@ Library:
 * Exn: new structure for dealing with exceptions and backtraces.
 * OS.Process: atExn takes an Exn.packet now.
 * Promise:
+  - Equality now works properly.
   - Added isFulfilled predicate.
   - Fulfilling with a cycle no longer fails the promise.
 * Hole: future now simply returns argument if not a hole (no exception).
