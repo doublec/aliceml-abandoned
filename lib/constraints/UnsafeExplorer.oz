@@ -86,13 +86,14 @@ define
       unit
    end
 
-   %% Change Default Explorer Bindings: add Inspector
-   {Explorer.object delete(information all)}
-   {Explorer.object add(information
-			proc {$ I X}
-			   {Inspector.inspect '#[]'(I X) _}
-			end
-			label: 'Inspect')}
+   %% Change Default Explorer Bindings
+   {Explorer.object option(visual title:'Alice Explorer')}
+%   {Explorer.object delete(information all)}
+%    {Explorer.object add(information
+% 			proc {$ I X}
+% 			   {Inspector.inspect '#[]'(I X) _}
+% 			end
+% 			label: 'Inspect')}
    
    %% Create Explorer Interface
    UnsafeExplorer = 'UnsafeExplorer'('exploreOne'    : ExploreOneFun

@@ -35,6 +35,7 @@ signature FD =
 	    NAIVE
 	  | FIRSTFAIL
 	  | SPLIT
+	  | NBSUSPS
 
 	datatype assign =
 	    MIN

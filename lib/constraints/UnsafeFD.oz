@@ -419,6 +419,8 @@ define
 	 case M
 	 of 'FIRSTFAIL' then ff
 	 [] 'NAIVE'     then naive
+	 [] 'SPLIT'     then split
+	 [] 'NBSUSPS'   then generic(order:nbSusps)
 	 end
       end
    in

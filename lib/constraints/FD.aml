@@ -37,6 +37,7 @@ structure FD :> FD =
 	    NAIVE
 	  | FIRSTFAIL
 	  | SPLIT
+	  | NBSUSPS
 
 	datatype assign =
 	    MIN
