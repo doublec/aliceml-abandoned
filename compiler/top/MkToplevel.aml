@@ -68,6 +68,11 @@ struct
 	    (compilerContext, targetContext)
 	end
 	handle RecursiveCompiler.Error => (compilerContext, targetContext)
+	     | exn =>
+		   (TextIO.output (TextIO.stdErr,
+				   "uncaught exception " ^
+				   General.exnName exn ^ "\n");
+		    (compilerContext, targetContext))   (*--** is this cool or what? *)
 
     val evalString = eval RecursiveCompiler.compileString
     val evalFile   = eval RecursiveCompiler.compileFile
