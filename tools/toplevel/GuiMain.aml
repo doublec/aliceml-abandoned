@@ -454,8 +454,8 @@ structure GuiMain =
             (if Buffer.close id then
                  reallyClose (!currentPage)
              else FileDialog.modifiedWarning
-                      "File modified. Discard changes and close anyway, or cancel?"
-                      reallyClose (!currentPage);
+		 ("File modified.", "Discard changes and close anyway, or cancel?",
+		  reallyClose, !currentPage);
              checkNotebookSize())
 
         fun interruptEval() =
@@ -638,6 +638,7 @@ structure GuiMain =
         fun quit () = if List.all Buffer.close (!pages) then
                           OS.Process.exit OS.Process.success
                       else FileDialog.modifiedWarning
-                               "There are modified files. Discard changes and quit anyway or cancel?"
-                               OS.Process.exit OS.Process.success
+			  ("There are modified files.",
+			   "Discard changes and quit anyway or cancel?",
+			   OS.Process.exit, OS.Process.success)
     end

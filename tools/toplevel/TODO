@@ -6,9 +6,6 @@ Bugs:
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * cannot make window smaller
-* modified files dialogue is too ugly
-
-* Glade should generate widgetShow calls bottom up
 
 Missing Features:
 
