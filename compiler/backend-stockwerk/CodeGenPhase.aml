@@ -3,48 +3,22 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure Assert
-from "../../lib/utility/Assert"
-
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    signature PickleGrammar
-from "PickleGrammar"
-
-import
-    structure Environment
-from "Environment"
-
-import
-    signature CODE_GEN_PHASE
-from "CODE_GEN_PHASE-sig"
+import structure Assert         from "../../lib/utility/Assert"
+import structure Url            from "../../lib/utility/Url"
+import structure Crash          from "../infrastructure/Crash"
+import structure EmptyContext   from "../infrastructure/EmptyContext"
+import structure StampSet       from "../common/StampSet"
+import structure FlatGrammar    from "../backend-common/FlatGrammar"
+import signature PickleGrammar  from "PickleGrammar"
+import structure Environment    from "Environment"
+import signature CODE_GEN_PHASE from "CODE_GEN_PHASE-sig"
 
 structure CodeGenPhase: CODE_GEN_PHASE =
     struct
@@ -54,6 +28,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 
 	open I
 	open Environment
+
+	fun isNAry (TupArgs #[]) = true
+	  | isNAry _ = false
 
 	fun translateLit (IntLit i) = O.Int i
 	  | translateLit (WordLit w) = O.Int (LargeWord.toLargeInt w)
@@ -90,9 +67,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | argsToVector (TupArgs xs) = xs
 	  | argsToVector (ProdArgs labelXList) = Vector.map #2 labelXList
 
-	fun translateConArgs (conArgs, env) =
+	fun translateConArgs (args, env) =
 	    Vector.map (fn idDef => translateIdDef (idDef, env))
-	    (argsToVector (valOf conArgs))
+	    (argsToVector args)
 
 	fun isId (O.Local i, id) = i = id
 	  | isId (O.Global _, _) = false
@@ -225,9 +202,8 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.translateBody"
 	and doDec (ValDec (_, IdDef id, _), env) = ignore (declare (env, id))
 	  | doDec (ValDec (_, Wildcard, _), _) = ()
-	  | doDec (RefAppDec (_, IdDef id, _), env) =
-	    ignore (declare (env, id))
-	  | doDec (RefAppDec (_, Wildcard, _), _) = ()
+	  | doDec (RefDec (_, IdDef id, _), env) = ignore (declare (env, id))
+	  | doDec (RefDec (_, Wildcard, _), _) = ()
 	  | doDec (TupDec (_, idDefs, _), env) =
 	    Vector.app (fn idDef =>
 			case idDef of
@@ -245,9 +221,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    translateExp (exp, declare (env, id), instr, env)
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
 	    translateIgnore (exp, instr, env)
-	  | translateDec (RefAppDec (_, IdDef id, id'), instr, env) =
+	  | translateDec (RefDec (_, IdDef id, id'), instr, env) =
 	    O.GetRef (declare (env, id), translateId (id', env), instr)
-	  | translateDec (RefAppDec (_, Wildcard, id), instr, env) =
+	  | translateDec (RefDec (_, Wildcard, id), instr, env) =
 	    let
 		val id' = lookup (env, id)
 	    in
@@ -268,7 +244,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			   SharedStm (_, _, _) | ReturnStm (_, _) |
 			   IndirectStm (_, _) | ExportStm (_, _)), _, _) =
 	    raise Crash.Crash "CodeGenPhase.translateDec"
-	and translateStm ((ValDec (_, _, _) | RefAppDec (_, _, _) |
+	and translateStm ((ValDec (_, _, _) | RefDec (_, _, _) |
 			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
 	    raise Crash.Crash "CodeGenPhase.translateStm"
 	  | translateStm (RaiseStm (_, id), env) =
@@ -316,15 +292,15 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateStm (TestStm (_, id, TagTests tagTests, elseBody), env) =
 	    let
 		val (naryTests, nullaryTests) =
-		    List.partition (fn (_, _, conArgs, _) => isSome conArgs)
+		    List.partition (fn (_, _, args, _) => isNAry args)
 		    (Vector.toList tagTests)
 	    in
 		O.TagTest (lookup (env, id),
 			   Vector.map (fn (_, tag, _, body) =>
 				       (tag, translateBody (body, env)))
 			   (Vector.fromList nullaryTests),
-			   Vector.map (fn (_, tag, conArgs, body) =>
-				       (tag, translateConArgs (conArgs, env),
+			   Vector.map (fn (_, tag, args, body) =>
+				       (tag, translateConArgs (args, env),
 					translateBody (body, env)))
 			   (Vector.fromList naryTests),
 			   translateBody (elseBody, env))
@@ -332,7 +308,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateStm (TestStm (_, id, ConTests conTests, elseBody), env) =
 	    let
 		val (naryTests, nullaryTests) =
-		    List.partition (fn (_, conArgs, _) => isSome conArgs)
+		    List.partition (fn (_, args, _) => isNAry args)
 		    (Vector.toList conTests)
 	    in
 		O.ConTest (lookup (env, id),
@@ -340,9 +316,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 				       (translateCon (con, env),
 					translateBody (body, env)))
 			   (Vector.fromList nullaryTests),
-			   Vector.map (fn (con, conArgs, body) =>
+			   Vector.map (fn (con, args, body) =>
 				       (translateCon (con, env),
-					translateConArgs (conArgs, env),
+					translateConArgs (args, env),
 					translateBody (body, env)))
 			   (Vector.fromList naryTests),
 			   translateBody (elseBody, env))
@@ -397,12 +373,17 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateExp (NewExp (_, _), id, instr, _) = O.PutNew (id, instr)
 	  | translateExp (VarExp (_, id'), id, instr, env) =
 	    O.PutVar (id, lookup (env, id'), instr)
-	  | translateExp (TagExp (_, _, tag), id, instr, _) =
+	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
 	    O.PutConst (id, O.Int (LargeInt.fromInt tag), instr)
-	  | translateExp (ConExp (_, Con id'), id, instr, env) =
+	  | translateExp (TagExp (_, _, tag, args), id, instr, env) =
+	    O.PutTag (id, tag, translateIds (argsToVector args, env), instr)
+	  | translateExp (ConExp (_, Con id', TupArgs #[]), id, instr, env) =
 	    O.PutVar (id, lookup (env, id'), instr)
-	  | translateExp (ConExp (_, StaticCon s), id, instr, _) =
+	  | translateExp (ConExp (_, StaticCon s, TupArgs #[]), id, instr, _) =
 	    O.PutConst (id, O.Constructor s, instr)
+	  | translateExp (ConExp (_, con, args), id, instr, env) =
+	    O.PutCon (id, translateCon (con, env),
+		      translateIds (argsToVector args, env), instr)
 	  | translateExp (TupExp (_, ids), id, instr, env) =
 	    O.PutTup (id, translateIds (ids, env), instr)
 	  | translateExp (ProdExp (info, labelIdVec), id, instr, env) =
@@ -438,12 +419,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			  translateArgs translateId (args, env),
 			  SOME (returnArgs, instr))
 	    end
-	  | translateExp (TagAppExp (_, _, tag, args), id, instr, env) =
-	    O.PutTag (id, tag, translateIds (argsToVector args, env), instr)
-	  | translateExp (ConAppExp (_, con, args), id, instr, env) =
-	    O.PutCon (id, translateCon (con, env),
-		      translateIds (argsToVector args, env), instr)
-	  | translateExp (RefAppExp (_, id), id', instr, env) =
+	  | translateExp (RefExp (_, id), id', instr, env) =
 	    O.PutRef (id', lookup (env, id), instr)
 	  | translateExp (SelAppExp (_, prod, _, index, id), id', instr, env) =
 	    let
@@ -482,8 +458,13 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateIgnore (PrimExp (_, _), instr, _) = instr
 	  | translateIgnore (NewExp (_, _), instr, _) = instr
 	  | translateIgnore (VarExp (_, _), instr, _) = instr
-	  | translateIgnore (TagExp (_, _, _), instr, _) = instr
-	  | translateIgnore (ConExp (_, _), instr, _) = instr
+	  | translateIgnore (TagExp (_, _, _, _), instr, _) = instr
+	  | translateIgnore (ConExp (_, _, TupArgs #[]), instr, _) = instr
+	  | translateIgnore (ConExp (_, Con id, _), instr, env) =
+	    O.AppPrim ("Future.await", #[lookup (env, id)],
+		       SOME (O.Wildcard, instr))
+	  | translateIgnore (ConExp (_, StaticCon _, _), instr, _) = instr
+	  | translateIgnore (RefExp (_, _), instr, _) = instr
 	  | translateIgnore (TupExp (_, _), instr, _) = instr
 	  | translateIgnore (ProdExp (_, _), instr, _) = instr
 	  | translateIgnore (VecExp (_, _), instr, _) = instr
@@ -493,12 +474,6 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateIgnore (VarAppExp (_, id, args), instr, env) =
 	    O.AppVar (lookup (env, id), translateArgs translateId (args, env),
 		      SOME (O.OneArg O.Wildcard, instr))
-	  | translateIgnore (TagAppExp (_, _, _, _), instr, _) = instr
-	  | translateIgnore (ConAppExp (_, Con id, _), instr, env) =
-	    O.AppPrim ("Future.await", #[lookup (env, id)],
-		       SOME (O.Wildcard, instr))
-	  | translateIgnore (ConAppExp (_, StaticCon _, _), instr, _) = instr
-	  | translateIgnore (RefAppExp (_, _), instr, _) = instr
 	  | translateIgnore (SelAppExp (_, _, _, _, id), instr, env) =
 	    O.AppPrim ("Future.await", #[lookup (env, id)],
 		       SOME (O.Wildcard, instr))

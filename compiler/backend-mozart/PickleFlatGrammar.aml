@@ -153,8 +153,6 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "ProdArgs", 1);
 	     outputVector (outputPair (outputLabel, outputX)) (q, labelIdVec))
 
-	fun outputConArgs outputX = outputOption (outputArgs outputX)
-
 	fun outputProd (q, Tuple n) =
 	    (outputTuple (q, "Tuple", 1); outputInt (q, n))
 	  | outputProd (q, Product labels) =
@@ -164,8 +162,8 @@ structure PickleFlatGrammar :> CODE
 	fun outputStm (q, ValDec (info, idDef, exp)) =
 	    (outputTuple (q, "ValDec", 3); outputExp (q, exp);
 	     outputIdDef (q, idDef); outputStmInfo (q, info))
-	  | outputStm (q, RefAppDec (info, idDef, id)) =
-	    (outputTuple (q, "RefAppDec", 3); outputId (q, id);
+	  | outputStm (q, RefDec (info, idDef, id)) =
+	    (outputTuple (q, "RefDec", 3); outputId (q, id);
 	     outputIdDef (q, idDef); outputStmInfo (q, info))
 	  | outputStm (q, TupDec (info, idDefs, id)) =
 	    (outputTuple (q, "TupDec", 3); outputId (q, id);
@@ -221,11 +219,11 @@ structure PickleFlatGrammar :> CODE
 	  | outputTests (q, TagTests tagBodyVec) =
 	    (outputTuple (q, "TagTests", 1);
 	     outputVector (outputQuadruple (outputLabel, outputInt,
-					    outputConArgs outputIdDef,
+					    outputArgs outputIdDef,
 					    outputBody)) (q, tagBodyVec))
 	  | outputTests (q, ConTests conBodyVec) =
 	    (outputTuple (q, "ConTests", 1);
-	     outputVector (outputTriple (outputCon, outputConArgs outputIdDef,
+	     outputVector (outputTriple (outputCon, outputArgs outputIdDef,
 					 outputBody)) (q, conBodyVec))
 	  | outputTests (q, VecTests vecBodyVec) =
 	    (outputTuple (q, "VecTests", 1);
@@ -243,11 +241,14 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VarExp (info, id)) =
 	    (outputTuple (q, "VarExp", 2); outputId (q, id);
 	     outputExpInfo (q, info))
-	  | outputExp (q, TagExp (info, label, n)) =
-	    (outputTuple (q, "TagExp", 3); outputInt (q, n);
-	     outputLabel (q, label); outputExpInfo (q, info))
-	  | outputExp (q, ConExp (info, con)) =
-	    (outputTuple (q, "ConExp", 2); outputCon (q, con);
+	  | outputExp (q, TagExp (info, label, n, args)) =
+	    (outputTuple (q, "TagExp", 4); outputArgs outputId (q, args);
+	     outputInt (q, n); outputLabel (q, label); outputExpInfo (q, info))
+	  | outputExp (q, ConExp (info, con, args)) =
+	    (outputTuple (q, "ConExp", 3); outputArgs outputId (q, args);
+	     outputCon (q, con); outputExpInfo (q, info))
+	  | outputExp (q, RefExp (info, id)) =
+	    (outputTuple (q, "RefExp", 2); outputId (q, id);
 	     outputExpInfo (q, info))
 	  | outputExp (q, TupExp (info, ids)) =
 	    (outputTuple (q, "TupExp", 2); outputVector outputId (q, ids);
@@ -270,15 +271,6 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VarAppExp (info, id, args)) =
 	    (outputTuple (q, "VarAppExp", 3); outputArgs outputId (q, args);
 	     outputId (q, id); outputExpInfo (q, info))
-	  | outputExp (q, TagAppExp (info, label, n, args)) =
-	    (outputTuple (q, "TagAppExp", 4); outputArgs outputId (q, args);
-	     outputInt (q, n); outputLabel (q, label); outputExpInfo (q, info))
-	  | outputExp (q, ConAppExp (info, con, args)) =
-	    (outputTuple (q, "ConAppExp", 3); outputArgs outputId (q, args);
-	     outputCon (q, con); outputExpInfo (q, info))
-	  | outputExp (q, RefAppExp (info, id)) =
-	    (outputTuple (q, "RefAppExp", 2); outputId (q, id);
-	     outputExpInfo (q, info))
 	  | outputExp (q, SelAppExp (info, prod, label, n, id)) =
 	    (outputTuple (q, "SelAppExp", 5); outputId (q, id);
 	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);

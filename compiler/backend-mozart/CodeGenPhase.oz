@@ -22,10 +22,6 @@ import
 export
    'CodeGenPhase$': CodeGenPhase
 define
-   fun {TrOption Option TrX}
-      {Record.map Option TrX}
-   end
-
    fun {TrInfo '#'(region: Region ...)}
       Region
    end
@@ -77,10 +73,6 @@ define
       end
    end
 
-   fun {TrConArgs ConArgs TrX}
-      {TrOption ConArgs fun {$ Args} {TrArgs Args TrX} end}
-   end
-
    fun {TrProd Prod}
       case Prod of 'Tuple'(N) then 'Tuple'(N)
       [] 'Product'(Labels) then 'Product'({Record.map Labels TrLabel})
@@ -90,8 +82,8 @@ define
    proc {TrStm Stm Hd Tl ShareDict}
       case Stm of 'ValDec'(Info IdDef Exp) then
 	 Hd = 'ValDec'({TrInfo Info} {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
-      [] 'RefAppDec'(Info IdDef Id) then
-	 Hd = 'RefAppDec'({TrInfo Info} {TrIdDef IdDef} {TrId Id})|Tl
+      [] 'RefDec'(Info IdDef Id) then
+	 Hd = 'RefDec'({TrInfo Info} {TrIdDef IdDef} {TrId Id})|Tl
       [] 'TupDec'(Info IdDefs Id) then
 	 Hd = 'TupDec'({TrInfo Info} {Record.map IdDefs TrIdDef} {TrId Id})|Tl
       [] 'ProdDec'(Info LabelIdDefVec Id) then
@@ -121,16 +113,15 @@ define
 				       end})
 			[] 'TagTests'(TagBodyVec) then
 			   'TagTests'({Record.map TagBodyVec
-				       fun {$ Label#N#ConArgs#Body}
+				       fun {$ Label#N#Args#Body}
 					  {TrLabel Label}#N#
-					  {TrConArgs ConArgs TrIdDef}#
+					  {TrArgs Args TrIdDef}#
 					  {TrBody Body $ nil ShareDict}
 				       end})
 			[] 'ConTests'(ConBodyVec) then
 			   'ConTests'({Record.map ConBodyVec
-				       fun {$ Con#ConArgs#Body}
-					  {TrCon Con}#
-					  {TrConArgs ConArgs TrIdDef}#
+				       fun {$ Con#Args#Body}
+					  {TrCon Con}#{TrArgs Args TrIdDef}#
 					  {TrBody Body $ nil ShareDict}
 				       end})
 			[] 'VecTests'(VecBodyVec) then
@@ -167,8 +158,11 @@ define
 	 'PrimExp'({TrInfo Info} {VirtualString.toAtom String})
       [] 'NewExp'(Info Name) then 'NewExp'({TrInfo Info} {TrName Name})
       [] 'VarExp'(Info Id) then 'VarExp'({TrInfo Info} {TrId Id})
-      [] 'TagExp'(Info Label N) then 'TagExp'({TrInfo Info} {TrLabel Label} N)
-      [] 'ConExp'(Info Con) then 'ConExp'({TrInfo Info} {TrCon Con})
+      [] 'TagExp'(Info Label N Args) then
+	 'TagExp'({TrInfo Info} {TrLabel Label} N {TrArgs Args TrId})
+      [] 'ConExp'(Info Con Args) then
+	 'ConExp'({TrInfo Info} {TrCon Con} {TrArgs Args TrId})
+      [] 'RefExp'(Info Id) then 'RefExp'({TrInfo Info} {TrId Id})
       [] 'TupExp'(Info Ids) then 'TupExp'({TrInfo Info} {Record.map Ids TrId})
       [] 'ProdExp'(Info LabelIdVec) then
 	 'ProdExp'({TrInfo Info}
@@ -183,11 +177,6 @@ define
 		      {Record.map Ids TrId})
       [] 'VarAppExp'(Info Id Args) then
 	 'VarAppExp'({TrInfo Info} {TrId Id} {TrArgs Args TrId})
-      [] 'TagAppExp'(Info Label N Args) then
-	 'TagAppExp'({TrInfo Info} {TrLabel Label} N {TrArgs Args TrId})
-      [] 'ConAppExp'(Info Con Args) then
-	 'ConAppExp'({TrInfo Info} {TrCon Con} {TrArgs Args TrId})
-      [] 'RefAppExp'(Info Id) then 'RefAppExp'({TrInfo Info} {TrId Id})
       [] 'SelAppExp'(Info Prod Label N Id) then
 	 'SelAppExp'({TrInfo Info} {TrProd Prod} {TrLabel Label} N {TrId Id})
       [] 'LazySelAppExp'(Info Prod Label N Id) then
