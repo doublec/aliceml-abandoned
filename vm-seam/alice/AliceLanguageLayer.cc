@@ -23,6 +23,10 @@
 #include "alice/AliceConcreteCode.hh"
 #include "alice/NativeCodeJitter.hh"
 #include "alice/NativeCodeInterpreter.hh"
+#include "alice/AliceDebuggerEvent.hh"
+#if DEBUGGER
+#include "alice/DebugEnvironment.hh"
+#endif
 
 word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
@@ -32,6 +36,7 @@ word AliceLanguageLayer::aliceHome;
 word AliceLanguageLayer::rootUrl;
 word AliceLanguageLayer::commandLineArguments;
 word AliceLanguageLayer::remoteCallback;
+word AliceLanguageLayer::undefinedValue;
 
 concrete_constructor AliceLanguageLayer::concreteCodeConstructor;
 
@@ -139,4 +144,12 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
 #else
   concreteCodeConstructor = AliceConcreteCode::New;
 #endif
+
+#if DEBUGGER
+  // Initialize Debugger Components
+  DebugEnvironment::Init();
+#endif
+  undefinedValue = Store::IntToWord(42);
+  RootSet::Add(undefinedValue);
+
 }

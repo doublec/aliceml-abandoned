@@ -191,6 +191,61 @@ private:
     std::fprintf(file, " %s",
 		 UniqueString::FromWordDirect(w)->ToString()->ExportC());
   }
+  void EntryPoint(word w) {
+    TagVal *tagVal = TagVal::FromWord(w);
+    AbstractCode::entryPoint tag;
+    if (tagVal == INVALID_POINTER) {
+      Assert(Store::DirectWordToInt(w) == AbstractCode::SpawnEntry);
+      tag = AbstractCode::SpawnEntry;
+    } else {
+      tag = AbstractCode::GetEntryPoint(tagVal);
+    }
+    switch (tag) {
+    case AbstractCode::ConEntry: // of idRef * idRef args
+      std::fprintf(file, " con");
+      IdRef(tagVal->Sel(0)); ARGS(tagVal->Sel(1), IdRef); break;
+    case AbstractCode::SelEntry: // of int * idRef
+      std::fprintf(file, " sel");
+      Int(tagVal->Sel(0)); IdRef(tagVal->Sel(0)); break;
+    case AbstractCode::StrictEntry: // of idRef
+      std::fprintf(file, " strict");
+      IdRef(tagVal->Sel(0)); break;
+    case AbstractCode::AppEntry: // of idRef * idRef args
+      std::fprintf(file, " app");
+      IdRef(tagVal->Sel(0)); ARGS(tagVal->Sel(1), IdRef); break;
+    case AbstractCode::CondEntry: // of idRef
+      std::fprintf(file, " cond");
+      IdRef(tagVal->Sel(0)); break;
+    case AbstractCode::RaiseEntry: // of idRef
+      std::fprintf(file, " raise");
+      IdRef(tagVal->Sel(0)); break;
+    case AbstractCode::HandleEntry: // of idRef
+      std::fprintf(file, " handle");
+      IdRef(tagVal->Sel(0)); break;
+    case AbstractCode::SpawnEntry:
+      std::fprintf(file, " spawn"); break;
+    }
+  }
+  void ExitPoint(word w) {
+    switch (static_cast<AbstractCode::exitPoint>(Store::DirectWordToInt(w))) {
+    case AbstractCode::ConExit:
+      std::fprintf(file, " con\n"); break;
+    case AbstractCode::SelExit:
+      std::fprintf(file, " sel\n"); break;
+    case AbstractCode::StrictExit:
+      std::fprintf(file, " strict\n"); break;
+    case AbstractCode::AppExit:
+      std::fprintf(file, " app\n"); break;
+    case AbstractCode::CondExit:
+      std::fprintf(file, " cond\n"); break;
+    case AbstractCode::RaiseExit:
+      std::fprintf(file, " raise\n"); break;
+    case AbstractCode::HandleExit:
+      std::fprintf(file, " handle\n"); break;
+    case AbstractCode::SpawnExit:
+      std::fprintf(file, " spawn\n"); break;
+    }
+  }
   void Template(word w) {
     TagVal *templ = TagVal::FromWordDirect(w);
     std::fprintf(file, " Template(");

@@ -37,13 +37,17 @@ public:
     Con, StaticCon
   };
 
+  enum annotation {
+    Debug, Simple
+  };
+
   enum args {
     OneArg, TupArgs
   };
 
   enum instr {
     AppPrim, AppVar, Close, CompactIntTest, CompactTagTest, ConTest,
-    EndHandle, EndTry, GetRef, GetTup, IntTest, Kill,
+    EndHandle, EndTry, Entry, Exit, GetRef, GetTup, IntTest, Kill,
     LazyPolySel, PutCon, PutNew, PutPolyRec, PutRef, PutTag, PutTup,
     PutVar, PutVec, Raise, RealTest, Reraise, Return, Sel, Shared,
     Specialize, StringTest, TagTest, Try, VecTest
@@ -61,6 +65,16 @@ public:
     Function
   };
 
+  enum entryPoint {
+    AppEntry, ConEntry, CondEntry, HandleEntry, RaiseEntry, SelEntry,
+    SpawnEntry, StrictEntry
+  };
+
+  enum exitPoint {
+    AppExit, ConExit, CondExit, HandleExit, RaiseExit, SelExit,
+    SpawnExit, StrictExit
+  };
+
   static con GetCon(TagVal *tagVal) {
     return STATIC_CAST(con, tagVal->GetTag());
   }
@@ -75,6 +89,15 @@ public:
   }
   static abstractCode GetAbstractCode(TagVal *tagVal) {
     return STATIC_CAST(abstractCode, tagVal->GetTag());
+  }
+  static entryPoint GetEntryPoint(TagVal *tagVal) {
+    return STATIC_CAST(entryPoint, tagVal->GetTag());
+  }
+  static exitPoint GetExitPoint(TagVal *tagVal) {
+    return STATIC_CAST(exitPoint, tagVal->GetTag());
+  }
+  static annotation GetAnnotation(TagVal *tagVal) {
+    return STATIC_CAST(annotation, tagVal->GetTag());
   }
 
   static void Disassemble(std::FILE *f, TagVal *pc);

@@ -14,15 +14,19 @@
 
 #if defined(INTERFACE)
 #pragma implementation "alice/AbstractCodeInterpreter.hh"
+#pragma implementation "alice/AbstractCodeFrame.hh"
 #endif
 
 #include <cstdio>
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
+#include "alice/AbstractCodeFrame.hh"
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/AliceDebuggerEvent.hh"
+#include "alice/DebugEnvironment.hh"
 
 #ifdef DEBUG_CHECK
 static word dead;
@@ -38,124 +42,224 @@ static void DisassembleAlice(Closure *closure) {
 }
 #endif
 
-// Local Environment
-class Environment: private Array {
-public:
-  using Array::ToWord;
-  // Environment Accessors
-  void Add(word id, word value) {
-    Update(Store::WordToInt(id), value);
+inline word GetIdRef(word idRef, Closure *globalEnv, 
+		     AbstractCodeFrame::Environment *localEnv) {
+  TagVal *tagVal = TagVal::FromWordDirect(idRef);
+  switch (AbstractCode::GetIdRef(tagVal)) {
+  case AbstractCode::Immediate:
+    return tagVal->Sel(0);
+  case AbstractCode::Local:
+  case AbstractCode::LastUseLocal:
+    return localEnv->Lookup(tagVal->Sel(0));
+  case AbstractCode::Global:
+    return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
+  default:
+    Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
   }
-  word Lookup(word id) {
-    word value = Sub(Store::WordToInt(id));
-#ifdef LIVENESS_DEBUG
-    Block *p = Store::WordToBlock(value);
-    if (p != INVALID_POINTER) {
-      if (p->GetLabel() == DEAD_LABEL) {
-	std::fprintf(stderr, "### USING KILLED VALUE ###\n");
-	std::fprintf(stderr, "### killed as Local(%d)\n",
-		     Store::DirectWordToInt(p->GetArg(0)));
-	std::fprintf(stderr, "### value before kill:\n");
-	Debug::Dump(p->GetArg(1));
-	std::fprintf(stderr, "### killed at pc=%p in function:\n",
-		     TagVal::FromWordDirect(p->GetArg(2)));
-	DisassembleAlice(Closure::FromWordDirect(p->GetArg(3)));
-	return p->GetArg(1);
-      }
-    }
-#else
-    Assert(value != dead);
-#endif
-    return value;
-  }
-#ifdef LIVENESS_DEBUG
-  void Kill(word id, TagVal *pc, Closure *globalEnv) {
-    Block *dead = Store::AllocBlock(DEAD_LABEL, 4);
-    dead->InitArg(0, id);
-    dead->InitArg(1, Sub(Store::WordToInt(id)));
-    dead->InitArg(2, pc->ToWord());
-    dead->InitArg(3, globalEnv->ToWord());
-    Update(Store::WordToInt(id), dead->ToWord());
-  }
-#else
-  void Kill(word id, TagVal *, Closure *) {
-#ifdef DEBUG_CHECK
-    Update(Store::WordToInt(id), dead);
-#else
-    Update(Store::WordToInt(id), Store::IntToWord(0));
-#endif
-  }
-#endif
-  // Environment Constructor
-  static Environment *New(u_int size) {
-    return STATIC_CAST(Environment *, Array::New(size));
-  }
-  // Environment Untagging
-  static Environment *FromWordDirect(word x) {
-    return STATIC_CAST(Environment *, Array::FromWordDirect(x));
-  }
-};
+}
 
-// AbstractCodeInterpreter StackFrames
-class AbstractCodeFrame: public StackFrame {
-protected:
-  enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
-public:
-  // AbstractCodeFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+inline void KillIdRef(word idRef, TagVal *pc,
+		      Closure *globalEnv, 
+		      AbstractCodeFrame::Environment *localEnv) {
+  TagVal *tagVal = TagVal::FromWordDirect(idRef);
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::LastUseLocal)
+    localEnv->Kill(tagVal->Sel(0), pc, globalEnv);
+}
+
+#if DEBUGGER
+//
+// Debugging Support
+//
+// Debugger event generation
+
+#define APP_LABEL     0
+#define CON_APP_LABEL APP_LABEL
+#define COND_LABEL    1
+#define HANDLE_LABEL  2
+#define RAISE_LABEL   3
+#define SEL_LABEL     COND_LABEL
+#define STRICT_LABEL  COND_LABEL
+#define SPAWN_LABEL   4
+
+#define SUSPEND() {                                     \
+  PushState(pc, globalEnv, localEnv);                   \
+  Scheduler::nArgs = 0;                                 \
+  return Worker::SUSPEND;                               \
+}
+
+static word IdRefVecToValueVec(word wIdRef, 
+			       AbstractCodeFrame::Environment *localEnv,
+			       Closure *globalEnv) {
+  Vector *idRefs = Vector::FromWordDirect(wIdRef);
+  Vector *values = Vector::New(idRefs->GetLength());
+  for (int index = idRefs->GetLength(); index--; ) {
+    values->Init(index, GetIdRef(idRefs->Sub(index), globalEnv, localEnv));
   }
-  bool IsHandlerFrame() {
-    return false; // to be done
+  return values->ToWord();
+}
+
+static word GenerateEntryEvent(word coord, word stepPoint, 
+			       AbstractCodeFrame::Environment *localEnv, 
+			       Closure *globalEnv) {
+  TagVal *entryEvent;
+  Thread *thread = Scheduler::GetCurrentThread();
+  // Check wheter we have a breakpoint
+  if (Debugger::IsBreakpoint(thread)) {
+    entryEvent = TagVal::New(1,3);
+  } else {
+    entryEvent = TagVal::New(2,3);
   }
-  TagVal *GetPC() {
-    return TagVal::FromWordDirect(StackFrame::GetArg(PC_POS));
+  // Entry Event generation
+  entryEvent->Init(0, Scheduler::GetCurrentThread()->ToWord());
+  entryEvent->Init(1, coord);
+  TagVal *entryPoint = TagVal::FromWord(stepPoint);
+  if(entryPoint == INVALID_POINTER) {
+    // spawn 
+    entryEvent->Init(2, Store::IntToWord(SPAWN_LABEL));
+    AliceDebuggerEvent *event = AliceDebuggerEvent::New(entryEvent->ToWord());
+    return event->ToWord();
   }
-  void SetPC(TagVal *pc) {
-    StackFrame::ReplaceArg(PC_POS, pc->ToWord());
+  TagVal *stepPointCon;
+  switch (AbstractCode::GetEntryPoint(entryPoint)) {
+  case AbstractCode::AppEntry:
+    {
+      stepPointCon = TagVal::New(APP_LABEL, 3);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(1), globalEnv, localEnv));
+      stepPointCon->Init(1, entryPoint->Sel(0));
+      stepPointCon->Init(2, IdRefVecToValueVec(entryPoint->Sel(2), 
+					       localEnv, globalEnv));
+      break;
+    }
+  case AbstractCode::ConEntry:
+    {
+      stepPointCon = TagVal::New(CON_APP_LABEL, 3);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(1), globalEnv, localEnv));
+      stepPointCon->Init(1, entryPoint->Sel(0));
+      stepPointCon->Init(2, IdRefVecToValueVec(entryPoint->Sel(2), 
+						 localEnv, globalEnv));
+      break;
+    }
+  case AbstractCode::CondEntry:
+    {
+      stepPointCon = TagVal::New(COND_LABEL, 2);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(1), globalEnv, localEnv));
+      stepPointCon->Init(1, entryPoint->Sel(0));
+      break;
+    }
+  case AbstractCode::HandleEntry:
+    {
+      stepPointCon = TagVal::New(HANDLE_LABEL, 1);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(0), globalEnv, localEnv));
+      break;
+    }
+  case AbstractCode::RaiseEntry:
+    {
+      stepPointCon = TagVal::New(RAISE_LABEL, 1);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(0), globalEnv, localEnv));
+      break;
+    }
+  case AbstractCode::SelEntry:
+    {
+      stepPointCon = TagVal::New(SEL_LABEL, 2);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(2), globalEnv, localEnv));
+      stepPointCon->Init(1, entryPoint->Sel(1));
+      break;
+    }
+  case AbstractCode::StrictEntry:
+    {
+      stepPointCon = TagVal::New(STRICT_LABEL, 2);
+      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(1), globalEnv, localEnv));
+      stepPointCon->Init(1, entryPoint->Sel(0));
+      break;
+    }
+  default:
+    {
+      Error("GenerateEntryEvent: illegal tag");
+    }
   }
-  Closure *GetClosure() {
-    return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
+  entryEvent->Init(2, stepPointCon->ToWord());
+  AliceDebuggerEvent *event = AliceDebuggerEvent::New(entryEvent->ToWord());
+  return event->ToWord();
+}
+
+word GenerateExitEvent(word coord, word result, word stepPoint) {
+  TagVal *exitPoint = TagVal::FromWord(stepPoint);
+  TagVal *exitEvent = TagVal::New(3, 4);
+  exitEvent->Init(0, Scheduler::GetCurrentThread()->ToWord());
+  exitEvent->Init(1, coord);
+  exitEvent->Init(2, result);
+  if (exitPoint == INVALID_POINTER) {
+    exitEvent->Init(3, Store::IntToWord(Types::NONE));
+    AliceDebuggerEvent *event = AliceDebuggerEvent::New(exitEvent->ToWord());   
+    return event->ToWord();
   }
-  Environment *GetLocalEnv() {
-    return Environment::FromWordDirect(StackFrame::GetArg(LOCAL_ENV_POS));
+  switch (AbstractCode::GetExitPoint(exitPoint)) {
+  case AbstractCode::SelExit:
+    {
+      TagVal *some = TagVal::New(Types::SOME, 1);
+      some->Init(0, exitPoint->Sel(0));
+      exitEvent->Init(3, some->ToWord());
+      break;
+    }
+  case AbstractCode::CondExit:
+    {
+      TagVal *some = TagVal::New(Types::SOME, 1);
+      some->Init(0, exitPoint->Sel(0));
+      exitEvent->Init(3, some->ToWord());
+      break;
+    }
+  case AbstractCode::RaiseExit:
+    {
+      TagVal *some = TagVal::New(Types::SOME, 1);
+      some->Init(0, exitPoint->Sel(0));
+      exitEvent->Init(3, some->ToWord());
+      break;
+    }
+  case AbstractCode::HandleExit:
+    {
+      TagVal *some = TagVal::New(Types::SOME, 1);
+      some->Init(0, exitPoint->Sel(0));
+      exitEvent->Init(3, some->ToWord());
+      break;
+    }
+  case AbstractCode::SpawnExit:
+    {
+      TagVal *some = TagVal::New(Types::SOME, 1);
+      some->Init(0, exitPoint->Sel(0));
+      exitEvent->Init(3, some->ToWord());
+      break;
+    }
+  default:
+    {
+      exitEvent->Init(3, Store::IntToWord(Types::NONE));
+    }
   }
-  Vector *GetFormalArgs() {
-    return Vector::FromWord(StackFrame::GetArg(FORMAL_ARGS_POS));
-  }
-  void SetFormalArgs(word formalArgs) {
-    StackFrame::ReplaceArg(FORMAL_ARGS_POS, formalArgs);
-  }
-  // AbstractCodeFrame Constructor
-  static AbstractCodeFrame *New(Interpreter *interpreter,
-				word pc,
-				Closure *closure,
-				Environment *env,
-				word formalArgs) {
-    NEW_STACK_FRAME(frame, interpreter, SIZE);
-    frame->InitArg(PC_POS, pc);
-    frame->InitArg(CLOSURE_POS, closure->ToWord());
-    frame->InitArg(LOCAL_ENV_POS, env->ToWord());
-    frame->InitArg(FORMAL_ARGS_POS, formalArgs);
-    return STATIC_CAST(AbstractCodeFrame *, frame);
-  }
-};
+  AliceDebuggerEvent *event = AliceDebuggerEvent::New(exitEvent->ToWord());
+  return event->ToWord();
+}
+
+//
+// End of Debugging Support
+//
+#endif
 
 // Interpreter Helper
-inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv,
+inline void PushState(TagVal *pc, Closure *globalEnv, 
+		      AbstractCodeFrame::Environment *localEnv,
 		      Vector *formalArgs) {
   AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
 			 globalEnv, localEnv, formalArgs->ToWord());
 }
 
-inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv) {
+inline void PushState(TagVal *pc, Closure *globalEnv, 
+		      AbstractCodeFrame::Environment *localEnv) {
   AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
 			 globalEnv, localEnv, Store::IntToWord(0));
 }
 
 inline word
 GetIdRefKill(word idRef, TagVal *pc,
-	     Closure *globalEnv, Environment *localEnv) {
+	     Closure *globalEnv, AbstractCodeFrame::Environment *localEnv) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
@@ -174,28 +278,6 @@ GetIdRefKill(word idRef, TagVal *pc,
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
   }
-}
-
-inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
-  TagVal *tagVal = TagVal::FromWordDirect(idRef);
-  switch (AbstractCode::GetIdRef(tagVal)) {
-  case AbstractCode::Immediate:
-    return tagVal->Sel(0);
-  case AbstractCode::Local:
-  case AbstractCode::LastUseLocal:
-    return localEnv->Lookup(tagVal->Sel(0));
-  case AbstractCode::Global:
-    return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
-  default:
-    Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
-  }
-}
-
-inline void KillIdRef(word idRef, TagVal *pc,
-		      Closure *globalEnv, Environment *localEnv) {
-  TagVal *tagVal = TagVal::FromWordDirect(idRef);
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::LastUseLocal)
-    localEnv->Kill(tagVal->Sel(0), pc, globalEnv);
 }
 
 //
@@ -226,11 +308,28 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   case AbstractCode::Function:
     {
       abstractCode->AssertWidth(AbstractCode::functionWidth);
-      Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
-      u_int nLocals = localNames->GetLength();
+      // get number of local variables from abstractCode
+      TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
+      u_int nLocals;
+      switch (AbstractCode::GetAnnotation(annotation)) {
+      case AbstractCode::Simple:
+	{
+	  nLocals = Store::DirectWordToInt(annotation->Sel(0));
+	}
+	break;
+      case AbstractCode::Debug:
+	{
+	  Vector *localNamesTypOpt = 
+	    Vector::FromWordDirect(annotation->Sel(0));
+	  nLocals = localNamesTypOpt->GetLength();
+	}
+	break;
+      default:
+	Assert(false);
+      }
       AbstractCodeFrame::New(AbstractCodeInterpreter::self,
 			     abstractCode->Sel(5), closure,
-			     Environment::New(nLocals),
+			     AbstractCodeFrame::Environment::New(nLocals),
 			     abstractCode->Sel(3));
     }
     break;
@@ -267,7 +366,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   TagVal *pc = frame->GetPC();
   Closure *globalEnv = frame->GetClosure();
-  Environment *localEnv = frame->GetLocalEnv();
+  AbstractCodeFrame::Environment *localEnv = frame->GetLocalEnv();
   Vector *formalArgs = frame->GetFormalArgs();
   if (formalArgs != INVALID_POINTER) {
     // Calling convention conversion
@@ -314,6 +413,47 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
   while (true) {
   loop:
     switch (AbstractCode::GetInstr(pc)) {
+    case AbstractCode::Entry: // of coord * entry_point * instr
+      {
+#if DEBUGGER
+	// DebugFrame Generation
+	word event =
+	  GenerateEntryEvent(pc->Sel(0), pc->Sel(1), localEnv, globalEnv);
+	DebugWorker::PushFrame(event);
+	pc = TagVal::FromWordDirect(pc->Sel(2));
+	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
+	  Debugger::SendEvent(event);
+	  SUSPEND();
+	}
+#else
+	pc = TagVal::FromWordDirect(pc->Sel(2));
+#endif
+      }
+      break;
+    case AbstractCode::Exit: // of coord * exit_point * idRef * instr
+      {
+#if DEBUGGER
+	// Pop current Frame
+	Scheduler::PopFrame(frame->GetSize());
+	// Check for and pop DebugFrame
+	sFrame = Scheduler::GetFrame();
+	Assert(sFrame->GetWorker() == DebugWorker::self);
+	DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
+	Scheduler::PopFrame(debugFrame->GetSize());
+	word coord = pc->Sel(0);
+	word stepPoint = pc->Sel(1);
+	word idRef = pc->Sel(2);
+	pc = TagVal::FromWordDirect(pc->Sel(3));
+	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
+	  word idRefRes = GetIdRef(idRef, globalEnv, localEnv);
+	  Debugger::SendEvent(GenerateExitEvent(coord, idRefRes, stepPoint));
+	  SUSPEND();
+	}
+#else 
+	pc = TagVal::FromWordDirect(pc->Sel(3));
+#endif
+      }
+      break;
     case AbstractCode::Kill: // of id vector * instr
       {
 	Vector *kills = Vector::FromWordDirect(pc->Sel(0));
@@ -444,7 +584,21 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// Construct concrete code from abstract code:
 	word wConcreteCode =
 	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
+#if DEBUGGER
+	Closure *closure;
+	// check wether abstractCode has debug annotation
+	TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
+	if (AbstractCode::GetAnnotation(annotation) == AbstractCode::Debug) {
+	  DebugEnvironment *env = DebugEnvironment::New(localEnv, globalEnv);
+	  closure = Closure::New(wConcreteCode, nGlobals + 1);
+	  // add link to DebugEnvironment at the last position
+	  closure->Init(nGlobals, env->ToWord());
+	} else {
+	  closure = Closure::New(wConcreteCode, nGlobals);
+	} 
+#else
 	Closure *closure = Closure::New(wConcreteCode, nGlobals);
+#endif
 	for (u_int i = nGlobals; i--; )
 	  closure->Init(i, GetIdRefKill(idRefs->Sub(i), pc,
 					globalEnv, localEnv));
@@ -475,7 +629,21 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Assert(STATIC_CAST(u_int, Store::DirectWordToInt(template_->Sel(1))) ==
 	       nGlobals);
 	Vector *subst = Vector::New(nGlobals);
+#if DEBUGGER
+	Closure *closure;
+	// check wether abstractCode has debug annotation
+	TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
+	if (AbstractCode::GetAnnotation(annotation) == AbstractCode::Debug) {
+	  DebugEnvironment *env = DebugEnvironment::New(localEnv, globalEnv);
+	  closure = Closure::New(wConcreteCode, nGlobals + 1);
+	  // add link to DebugEnvironment at the last position
+	  closure->Init(nGlobals, env->ToWord());
+	} else {
+	  closure = Closure::New(wConcreteCode, nGlobals);
+	} 
+#else
 	Closure *closure = Closure::New(wConcreteCode, nGlobals);
+#endif
 	for (u_int i = nGlobals; i--; ) {
 	  word value = GetIdRefKill(idRefs->Sub(i), pc, globalEnv, localEnv);
 	  TagVal *some = TagVal::New(Types::SOME, 1);

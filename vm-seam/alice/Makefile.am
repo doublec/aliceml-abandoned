@@ -6,12 +6,14 @@ noinst_LIBRARIES = libalicebase.a
 
 libalicebase_a_SOURCES = \
 	Data.cc \
+	DebugEnvironment.cc \
 	Guid.cc \
 	AbstractCode.cc \
 	PrimitiveTable.cc \
 	LazySelInterpreter.cc \
 	AbstractCodeInterpreter.cc \
 	AliceConcreteCode.cc \
+	AliceDebuggerEvent.cc \
 	AliceLanguageLayer.cc \
 	BootLinker.cc \
 	NativeConcreteCode.cc \
@@ -20,13 +22,16 @@ libalicebase_a_SOURCES = \
 
 pkginclude_HEADERS = \
 	AbstractCode.hh \
+	AbstractCodeFrame.hh \
 	AbstractCodeInterpreter.hh \
 	AliceConcreteCode.hh \
+	AliceDebuggerEvent.hh \
 	AliceLanguageLayer.hh \
 	Authoring.hh \
 	Base.hh \
 	BootLinker.hh \
 	Data.hh \
+	DebugEnvironment.hh \
 	Guid.hh \
 	NativeCodeInterpreter.hh \
 	NativeCodeJitter.hh \

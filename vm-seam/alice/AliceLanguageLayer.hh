@@ -38,6 +38,7 @@ public:
   static word rootUrl;
   static word commandLineArguments;
   static word remoteCallback;
+  static word undefinedValue;
 
   static concrete_constructor concreteCodeConstructor;
 
