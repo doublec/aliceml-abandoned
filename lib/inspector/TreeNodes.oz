@@ -50,6 +50,9 @@ define
 		%% Logic-, Future- and Constraint-Variables
 		free     # [free a(free) free]
 		future   # [future a(future) future]
+\ifndef Mozart_1_2
+		failed   # [failed a(failed) failed]
+\endif
 		fdInt    # [a(fdInt) fdInt fdInt]
 		fsVal    # [fsVal fdInt fdInt]
 		fsHelper # [fsHelper fdInt fdInt]

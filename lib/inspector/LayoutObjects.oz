@@ -22,6 +22,9 @@ export
    freeGrLayoutObject      : FreeGrLayoutObject
    futureLayoutObject      : FutureLayoutObject
    futureGrLayoutObject    : FutureGrLayoutObject
+\ifndef Mozart_1_2
+   failedLayoutObject      : FailedLayoutObject
+\endif
    nameLayoutObject        : NameLayoutObject
    nameGrLayoutObject      : NameGrLayoutObject
    procedureLayoutObject   : ProcedureLayoutObject
@@ -43,6 +46,9 @@ define
       OzFreeGrLayoutObject        = LayoutObjects.freeGrLayoutObject
       OzFutureLayoutObject        = LayoutObjects.futureLayoutObject
       OzFutureGrLayoutObject      = LayoutObjects.futureGrLayoutObject
+\ifndef Mozart_1_2
+      OzFailedLayoutObject        = LayoutObjects.failedLayoutObject
+\endif
       OzProcedureLayoutObject     = LayoutObjects.procedureLayoutObject
       LabelTupleLayoutObject      = LayoutObjects.labelTupleLayoutObject
       LabelTupleIndLayoutObject   = LayoutObjects.labelTupleIndLayoutObject
@@ -88,11 +94,20 @@ define
    local
       class AliceLayoutObject
 	 meth createRep(PrintStr LengthStr)
-	    PrintStr = case {self checkFutureType(@value $)}
-		       of '<Fut>'    then '_future'
-		       [] '<Failed>' then '_failed'
-		       [] '<ByNeed>' then '_lazy'
+	    Value = @value
+	 in
+\ifdef Mozart_1_2
+ 	    PrintStr = case {self checkFutureType(Value $)}
+ 		       of '<Fut>'    then '_future'
+ 		       [] '<Failed>' then '_failed'
+ 		       [] '<ByNeed>' then '_lazy'
 		       end
+\else
+	    PrintStr = if {IsFuture Value} andthen {Not {IsNeeded Value}}
+		       then '_lazy'
+		       else '_future'
+		       end
+\endif
 	    LengthStr = PrintStr
 	 end
       end
@@ -109,7 +124,24 @@ define
 	 end
       end
    end
-   
+
+\ifndef Mozart_1_2   
+   local
+      class AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    PrintStr = '_failed'
+	    LengthStr = PrintStr
+	 end
+      end
+   in
+      class FailedLayoutObject from OzFailedLayoutObject AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    AliceLayoutObject, createRep(PrintStr LengthStr)
+	 end
+      end
+   end
+\endif
+
    local
       class AliceLayoutObject
 	 meth createRep(PrintStr LengthStr)

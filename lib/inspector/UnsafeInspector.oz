@@ -45,8 +45,11 @@ define
 	 [] 'conval'     then true  %% Constructed Values
 	 [] 'record'     then true  %% Record
 	 [] 'list'       then true  %% List (also pipetuple)
-	    %% Variable Stuff 
+	    %% Variable Stuff
 	 [] 'future'     then true
+\ifndef Mozart_1_2
+	 [] 'failed'     then true
+\endif
 	 [] 'fdint'      then true
 	 [] 'fset'       then true
 	 else false
@@ -69,6 +72,9 @@ define
 	 [] 'list'        then true %% List (also pipetuple)
 	    %% Variable Stuff
 	 [] 'future'      then true
+\ifndef Mozart_1_2
+	 [] 'failed'      then true
+\endif
 	    %% Relation Variable Stuff
 	 [] 'variable'    then true %% Variable Definition
 	 [] 'variableref' then true %% Variable Reference
@@ -102,6 +108,9 @@ define
 			  hashtuple#tuple pipetuple#list labeltuple#vector
 			  record#record fdint#fdInt cell#cell
 			  fset#fsVal fsvar#fsVar free#free future#future
+\ifndef Mozart_1_2
+			  failed#failed
+\endif
 			  byteString#byteString]
       RelationNodes    = [int#int word#word float#float atom#atom name#nameGr procedure#procedure
 			  hashtuple#tupleGr pipetuple#listGr
@@ -161,6 +170,9 @@ define
 			  reclabel      # 'Record Label'
 			  list          # 'List'
 			  future        # 'Future'
+\ifndef Mozart_1_2
+			  failed        # 'Failed Future'
+\endif
 			  fdint         # 'Finite-Domain-Variable'
 			  fset          # 'Finite-Set-Variable'
 			  variable      # 'Co-Reference Definition'
