@@ -203,7 +203,7 @@ struct
                         |   Part.FINISHED _                     => true
                         |   Part.HALF_FINISHED _                => true
                         |   Part.DEAD ({deathCount,...},_)  
-                           where (isNone (#lives config) orelse
+                            where (isNone (#lives config) orelse
                             !deathCount < valOf (#lives config))=> true
                         |   _                                   => false)
 
@@ -345,7 +345,7 @@ struct
                         let
                             val players = allPlayers ()
                         in
-                            (Part.state part) := Part.WATCHING (ref ~1);
+                            (Part.state part) := Part.WATCHING (ref NONE);
                             (* inform the NEW player of the other 
                                already connected players *)
                             ispawn (_file_, _line_)
@@ -566,6 +566,14 @@ struct
 
                     val _   = List.app (fn ((r, c), p) =>
                                     Array2.update (oldArena, r, c, p)) diffOld
+                   
+                    (* estimated amount of time this game is running now *) 
+                    val time        = Time.fromSeconds (ticks * 
+                                        Time.toSeconds (#tick config))
+                    val timeout     = #timeout config
+                    (* amount of time left. *)
+                    val timeLeft    = Time.fromSeconds (Int.max (0, 
+                            Time.toSeconds (Time.- (timeout, time))))
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
@@ -583,7 +591,7 @@ struct
                                 color)      = Part.nameNColor part
                             val points      = ! $ #points playerInfo
                         in
-                            (Part.state part) := Part.DEAD (playerInfo, ref ~1); (*FIXME*)
+                            (Part.state part) := Part.DEAD (playerInfo, ref NONE); (*FIXME*)
                             #deathCount playerInfo := !(#deathCount playerInfo) 
                                                         + 1;
                             (* reset gamepoints to zero, points are not changed
@@ -664,7 +672,7 @@ struct
                     List.app (fn part =>
                         case !(Part.state part) of
                             Part.HALF_FINISHED (info, ref 0) =>
-                                Part.state part := Part.FINISHED (info, ref ~1) 
+                                Part.state part := Part.FINISHED (info, ref NONE) 
                                     (*FIXME: find snake to watch *)
                         |   Part.HALF_FINISHED (info, n) => n := !n - 1
                         |   _           => assert false
@@ -674,7 +682,7 @@ struct
                     (* send tick signal *)
                     log ("Server", "send tick signal");
                     invokeSeveral 
-                        (_file_, _line_) (allConnected (), #tick, NONE);
+                        (_file_, _line_) (allConnected (), #tick, SOME timeLeft);
   
                     (* test wether there are any living snakes left *)
                     case allNonFinished () of
@@ -682,23 +690,17 @@ struct
                         (* no more players left --> finish *)
                         finishLevel levels
                     |   _   => 
-                        let
-                            val timeout = #timeout config
-                            (* estimated period of time we have played yet *)
-                            val time    = ticks * Time.toSeconds (#tick config)
-                        in
-                            (* timeout expired ? *)
-                            if (* isSome timeout andalso 
-                                    time >= Time.toSeconds (valOf timeout) *)
-                               time >= Time.toSeconds timeout then
-                                (* timeout expired --> finish *)
-                                finishLevel levels
-                            else
-                                (* players and time left continue *)
-                                {levels, oldArena = newArena, 
-                                    newArena = oldArena,
-                                    ticks = ticks + 1, goodies }
-                        end
+                        (* timeout expired ? *)
+                        if (* isSome timeout andalso 
+                                time >= Time.toSeconds (valOf timeout) *)
+                           Time.fromSeconds 0 = timeLeft then
+                            (* timeout expired --> finish *)
+                            finishLevel levels
+                        else
+                            (* players and time left continue *)
+                            {levels, oldArena = newArena, 
+                                newArena = oldArena,
+                                ticks = ticks + 1, goodies }
                 end)
 
 

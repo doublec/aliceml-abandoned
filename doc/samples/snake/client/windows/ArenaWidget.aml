@@ -15,6 +15,7 @@ import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 import structure Inspector     from "x-alice:/lib/tools/Inspector"
+import structure Config        from "x-alice:/lib/system/Config"
 (*
 import structure GtkBuilder    from "../GtkBuilder"
 *)
@@ -414,10 +415,18 @@ struct
 	    val (x1, y1, x2, y2) = 
 		GtkCanvas.getScrollRegion (obj, 0.0, 0.0, 0.0, 0.0)
 	in
-	    GtkCanvas.requestRedraw (obj, Real.round x1, 
-				     Real.round y1, 
-				     Real.round x2, 
-				     Real.round y2)
+            (* gtkcanvas seems to be buggy.  On windows
+               the call to scrollTo produces garbage unless
+               being followed by a call to requestRedraw.
+               It works perfectly well on Linux without this
+               call!
+             *)
+            if Config.platform = Config.WIN32 then
+	        GtkCanvas.requestRedraw (obj, Real.round x1, 
+				        Real.round y1, 
+				        Real.round x2, 
+				        Real.round y2)
+            else ()
 	end
 
 end

@@ -22,9 +22,9 @@ struct
 	CONNECTED
       | PLAYING  of player_info * Snake.snake
       | HALF_FINISHED of player_info * int ref
-      | FINISHED of player_info * id ref 
-      | DEAD     of player_info * id ref
-      | WATCHING of id ref
+      | FINISHED of player_info * id option ref 
+      | DEAD     of player_info * id option ref
+      | WATCHING of id option ref
       | DISCONNECTED    (* TODO: Do we need it? *)
 
 
