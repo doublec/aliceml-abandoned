@@ -2030,6 +2030,7 @@ TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
   JITStore::PushArg(JIT_V2); // Frame ptr
   JITStore::Finish((void *) Outline::Backtrace::New);
   Scheduler_SetCurrentBacktrace(JIT_R0);
+  SaveRegister();
   jit_movi_ui(JIT_R0, Worker::RAISE);
   RETURN();
   return INVALID_POINTER;
@@ -2045,6 +2046,7 @@ TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
   Scheduler_SetCurrentData(JIT_R0);
   Tuple_Sel(JIT_R0, Reg, 1);
   Scheduler_SetCurrentBacktrace(JIT_R0);
+  SaveRegister();
   jit_movi_ui(JIT_R0, Worker::RAISE);
   RETURN();
   return INVALID_POINTER;
@@ -2062,6 +2064,7 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   CompileBranch(TagVal::FromWordDirect(pc->Sel(0)));
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
   JIT_LOG_MESG("executing exception handler\n");
+  RestoreRegister();
   TagVal *idDef1 = TagVal::FromWord(pc->Sel(1));
   if (idDef1 != INVALID_POINTER)
     MoveMemValToLocalEnv(idDef1->Sel(0), Scheduler_GetZeroArg());
