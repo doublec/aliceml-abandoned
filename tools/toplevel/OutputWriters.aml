@@ -1,3 +1,17 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gui from "Gui"

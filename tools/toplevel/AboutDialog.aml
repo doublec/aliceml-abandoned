@@ -1,3 +1,17 @@
+(*
+ * Authors:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan and Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Gui from "Gui"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 

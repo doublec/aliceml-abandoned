@@ -44,7 +44,8 @@ structure Config =
       val _ = Gdk.colormapAllocColor(cmap, orange, false, true)
       val _ = Gdk.colormapAllocColor(cmap, green, false, true)
       val _ = Gdk.colormapAllocColor(cmap, blue, false, true)
-      val stdFont = Gtk.pangoFontDescriptionFromString "Courier"   
+
+      val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
 
       type tags = {err : Gtk.object,
                    log : Gtk.object,

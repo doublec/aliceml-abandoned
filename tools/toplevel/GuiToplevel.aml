@@ -1,6 +1,18 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure GuiMain from "GuiMain"
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Gui from "Gui"
 import structure Evaluator from "Evaluator"
 import functor GuiSignals from "GuiSignals"
 import structure EventHandler from "EventHandler"
