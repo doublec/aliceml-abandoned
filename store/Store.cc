@@ -83,7 +83,6 @@ Block *Store::Alloc(MemChain *chain, u_int size) {
     totalHeapSize += alloc_size;
     chain->total  += alloc_size;
     chain->anchor = list = new MemChunk(NULL, anchor, alloc_size);
-    list->InitBlock(alloc_size);
     anchor->SetPrev(list);
   }
   chain->used += size;
@@ -128,25 +127,51 @@ void Store::Shrink(MemChain *chain, int threshold) {
 Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     u_int s = HeaderOp::BlankDecodeSize(p);
 
-  if (s == (u_int) MAX_HBSIZE) {
-    Block *newp, *realnp;
-    
-    p      = (Block *) ((char *) p - 4);
-    s      = *((u_int *) p);
-    newp   = Store::Alloc(dst, (s + 2));
-    realnp = (Block *) ((char *) newp + 4);
-    
-    std::memcpy(newp, p, (s + 2) << 2);
-    GCHelper::EncodeGen(realnp, dst->gen);
-    return realnp;
-  }
-  else {
-    Block *newp = Store::Alloc(dst, (s + 1));
-    
-    std::memcpy(newp, p, (s + 1) << 2);
-    GCHelper::EncodeGen(newp, dst->gen);
-    return newp;
-  }
+    if (p->GetLabel() != STACK) {
+      if (s == (u_int) MAX_HBSIZE) {
+	Block *newp, *realnp;
+	
+	p      = (Block *) ((word *) p - 1);
+	s      = *((u_int *) p);
+	newp   = Store::Alloc(dst, (s + 2));
+	realnp = (Block *) ((word *) newp + 1);
+      
+	std::memcpy(newp, p, (s + 2) * sizeof(word));
+	GCHelper::EncodeGen(realnp, dst->gen);
+	return realnp;
+      }
+      else {
+	Block *newp = Store::Alloc(dst, (s + 1));
+	
+	std::memcpy(newp, p, (s + 1) * sizeof(word));
+	GCHelper::EncodeGen(newp, dst->gen);
+	return newp;
+      }
+    }
+    else {
+      u_int rs = (u_int) (Store::WordToInt(p->GetArg(1)) - 1);
+
+      if (s == (u_int) MAX_HBSIZE) {
+	Block *newp, *realnp;
+	
+	p      = (Block *) ((word *) p - 1);
+	newp   = Store::Alloc(dst, (rs + 2));
+	realnp = (Block *) ((word *) newp + 1);
+      
+	std::memcpy(newp, p, (rs + 2) * sizeof(word));
+	GCHelper::EncodeGen(realnp, dst->gen);
+	GCHelper::AdjustBigSize(realnp, rs);
+	return realnp;
+      }
+      else {
+	Block *newp = Store::Alloc(dst, (rs + 1));
+	
+	std::memcpy(newp, p, (rs + 1) * sizeof(word));
+	GCHelper::EncodeGen(newp, dst->gen);
+	GCHelper::AdjustSmallSize(newp, rs);
+	return newp;
+      }
+    }
 }
 
 void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *scan) {
@@ -160,7 +185,7 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
       // Find next header
       if (PointerOp::IsInt(assumed_s)) {
 	cursize = (u_int) PointerOp::DecodeInt(assumed_s);
-	curp    = (Block *) ((char *) scan + 4);
+	curp    = (Block *) ((word *) scan + 1);
       }
       else {
 	cursize = HeaderOp::BlankDecodeSize(curp);
@@ -172,7 +197,7 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
 	  word p    = PointerOp::Deref(curp->GetArg(i));
 	  Block *sp = PointerOp::RemoveTag(p);
 	
-	  if (!PointerOp::IsInt(p) && (HeaderOp::GetHeader(sp) <= match_gen)) {
+	  if ((!PointerOp::IsInt(p)) && (HeaderOp::GetHeader(sp) <= match_gen)) {
 	    if (GCHelper::AlreadyMoved(sp)) {
 	      curp->InitArg(i, GCHelper::GetForwardPtr(sp));
 	    }
@@ -186,7 +211,7 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
 	  }
 	}
       }
-      scan += (cursize + ((cursize > (u_int) MAX_HBSIZE) ? 2 : 1)) << 2;
+      scan += (cursize + ((cursize >= (u_int) MAX_HBSIZE) ? 2 : 1)) << 2;
     }
     anchor = anchor->GetPrev();
     if (anchor != NULL) {
@@ -225,55 +250,58 @@ void Store::CloseStore() {
 
 void Store::AddToIntgenSet(Block *v) {
   HeaderOp::SetIntgenMark(v);
-  ((Set *) Store::WordToBlock(intgen_set))->SlowPush(v->ToWord());
+  Stack::FromWord(intgen_set)->SlowPush(v->ToWord());
 }
 
-word Store::DoGC(word root_set, u_int gen) {
+word Store::DoGC(word root, u_int gen) {
   PLACEGENERATIONLIMIT;
   u_int match_gen  = gen_limits[gen];
   u_int dst_gen    = (gen + 1);
   MemChain *dst    = roots[dst_gen];
-  Block *rootset   = Store::WordToBlock(root_set);
-  Block *intgenset = Store::WordToBlock(intgen_set);
-  u_int rs_size    = ((Set *) rootset)->GetSize();
-  MemChunk *anchor = dst->anchor;
-  char *scan       = anchor->GetTop(); // First top is scan
-  Set *new_root_set, *new_intgen_set;
-
-  // Check That Root IS an root set
-  Assert(rootset->GetLabel() == STACK);
+  Block *root_set  = Store::WordToBlock(root);
+  Set *intgen_set  = Set::FromWord(Store::intgen_set);
+  u_int rs_size    = root_set->GetSize();
+  Block *new_root_set;
+  Set *new_intgen_set;
 
   // Copy tuples to new memory
-  if (HeaderOp::GetHeader(rootset) <= match_gen) {
-    new_root_set = (Set *) CopyBlockToDst(rootset, dst);
+  if (HeaderOp::GetHeader(root_set) <= match_gen) {
+    new_root_set = CopyBlockToDst(root_set, dst);
   }
   else {
-    new_root_set = (Set *) rootset;
+    new_root_set = root_set;
   }
-  if (HeaderOp::GetHeader(intgenset) <= match_gen) {
-    new_intgen_set = (Set *) CopyBlockToDst(intgenset, dst);
+  if (HeaderOp::GetHeader((Block *) intgen_set) <= match_gen) {
+    new_intgen_set = (Set *) CopyBlockToDst((Block *) intgen_set, dst);
   }
   else {
-    new_intgen_set = (Set *) intgenset;
+    new_intgen_set = intgen_set;
   }
+
+  // Obtain scan anchor
+  MemChunk *anchor = dst->anchor;
+  char *scan       = anchor->GetTop(); // First top is scan
 
   // Copy matching rootset entries
-  for (u_int i = 2; i <= rs_size; i++) {
-    word p    = PointerOp::Deref(rootset->GetArg(i));
-    Block *sp = PointerOp::RemoveTag(p);
+  for (u_int i = 1; i <= rs_size; i++) {
+    word p = PointerOp::Deref(root_set->GetArg(i));
 
-    if (HeaderOp::GetHeader(sp) <= match_gen) {
-      Block *newsp = CopyBlockToDst(sp, dst);
-      word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
-      GCHelper::MarkMoved(sp, newp);
-      new_root_set->InitArg(i, newp);
-    }
-    else {
-      new_root_set->InitArg(i, p);
+    if (!PointerOp::IsInt(p)) {
+      Block *sp = PointerOp::RemoveTag(p);
+
+      if (HeaderOp::GetHeader(sp) <= match_gen) {
+	Block *newsp = CopyBlockToDst(sp, dst);
+	word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
+	GCHelper::MarkMoved(sp, newp);
+	new_root_set->InitArg(i, newp);
+      }
+      else {
+	new_root_set->InitArg(i, p);
+      }
     }
   }
   
-  // Scanning chunks (rootset amount)
+  // Scanning chunks (root_set amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
 
   // Reset Anchor and Scan Ptr (for new stuff)
@@ -281,11 +309,11 @@ word Store::DoGC(word root_set, u_int gen) {
   scan   = anchor->GetTop();
 
   // Handle InterGenerational Pointers
-  rs_size = ((Set *) intgenset)->GetSize();
+  rs_size = intgen_set->GetSize();
   new_intgen_set->MakeEmpty();
 
   for (u_int i = 2; i <= rs_size; i++) {
-    word dp = PointerOp::Deref(intgenset->GetArg(i));
+    word dp = PointerOp::Deref(intgen_set->GetArg(i));
 
     if (!PointerOp::IsInt(dp)) {
       Block *curp   = PointerOp::RemoveTag(dp);
@@ -311,7 +339,7 @@ word Store::DoGC(word root_set, u_int gen) {
 
       // Test for entry removal
       if (HeaderOp::DecodeGeneration(curp) > gen) {
-	new_root_set->Push(dp);
+	new_intgen_set->Push(dp);
       }
       else {
 	HeaderOp::ClearIntgenMark(curp);
@@ -320,7 +348,7 @@ word Store::DoGC(word root_set, u_int gen) {
   }
 
   // change to the new intgenset
-  intgen_set = new_intgen_set->ToWord();
+  Store::intgen_set = new_intgen_set->ToWord();
 
   // Scan chunks (Tuple::intgen_set amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
@@ -345,7 +373,11 @@ word Store::DoGC(word root_set, u_int gen) {
 
 #ifdef DEBUG_CHECK
 void Store::MemStat() {
-  cout << "Store Statistics\n";
+  static char *val[] = { "no", "yes" };
+
+  cout << "---\n";
+  cout << "GC necessary: " << val[needGC] << "\n";
+  cout << "---\n";
   cout << "Overall Memory available: " << totalHeapSize  << " Bytes\n---\n";
   for (u_int i = 0; i < config->max_gen; i++) {
     cout << "G" << i << "--> Used: " << roots[i]->used << "; Total: " << roots[i]->total << "\n";

@@ -43,5 +43,6 @@ typedef enum {
 class Block;
 class Transient;
 class Stack;
+class Set;
 
 #endif

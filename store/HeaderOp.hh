@@ -21,10 +21,10 @@
 
 class HeaderOp {
 public:
-  // Header Creation and Acess
-  static void EncodeHeader(Block *t, BlockLabel l, u_int s, u_int g) {
+  // Header Creation and Access
+  static void EncodeHeader(Block *t, BlockLabel l, u_int s) {
     Assert(t != NULL);
-    ((u_int *) t)[0] =  (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT) | (g << GEN_SHIFT);
+    ((u_int *) t)[0] =  (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT);
   }
   static u_int GetHeader(Block *p) {
     Assert(p != NULL); return *((u_int *) p);
@@ -45,11 +45,11 @@ public:
   }
   static u_int DecodeSize(Block *p) {
     u_int s = BlankDecodeSize(p);
-    return (u_int) ((s < MAX_HBSIZE) ? s : (*((u_int *) ((char *) p - 4)) >> 1));
+    return (u_int) ((s < MAX_HBSIZE) ? s : (*((u_int *) ((word *) p - 1)) >> 1));
   }
   static void EncodeSize(Block *p, u_int s) {
     if (HeaderOp::BlankDecodeSize(p) == MAX_HBSIZE) {
-      *((u_int *) ((char *) p - 4)) = s;
+      *((u_int *) ((word *) p - 1)) = s;
     }
     else {
       ((u_int *) p)[0] = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
@@ -72,7 +72,6 @@ public:
     Assert(p != NULL);
     return (((u_int *) p)[0] & INTGEN_MASK);
   }
-
 };
 
 #endif

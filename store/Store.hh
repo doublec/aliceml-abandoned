@@ -18,7 +18,6 @@
 
 #include "base.hh"
 #include "memchunk.hh"
-#include "dataset.hh"
 #include "headerop.hh"
 #include "pointerop.hh"
 
@@ -32,8 +31,8 @@ public:
 
 class StoreConfig {
 public:
-  u_int max_gen;      // maximum number of generations
-  u_int *gen_limits;  // limit for each memory section (in Bytes)
+  u_int max_gen;     // maximum number of generations
+  u_int *gen_limits; // gc limit for each memory section (in Bytes)
   u_int intgen_size; // initial intgen pointer threshold
 };
 
@@ -51,37 +50,50 @@ protected:
   static Block *Alloc(MemChain *chain, u_int size);
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
     Assert(s > INVALID_TSIZE);
-    if (s < MAX_HBSIZE) {
+    if (s < (MAX_HBSIZE - 1)) {
       Block *t = Store::Alloc(roots[0], (u_int) s + 1);
       
       Assert(t != NULL);
-      HeaderOp::EncodeHeader(t, l, s, 0);
+      HeaderOp::EncodeHeader(t, l, s);
       return t;
     }
     else {
       char *t = (((char *) Store::Alloc(roots[0], (u_int) s + 1)) + 4);
       
       Assert(t != NULL);
-      HeaderOp::EncodeHeader((Block *) t, l, MAX_HBSIZE, 0);
+      HeaderOp::EncodeHeader((Block *) t, l, MAX_HBSIZE);
       ((u_int *) t)[-1] = (u_int) s;
       
       return (Block *) t;
     }
   }
 public:
+  // Init Functions
   static void InitStore(StoreConfig *cfg);
   static void CloseStore();
-  // Type Access Functions
+
+  // GC Related Functions
+  static word DoGC(word root, u_int gen);
+  static void AddToIntgenSet(Block *v);
+  static int NeedGC() {
+    return needGC;
+  }
+  // DataLabel Function
   static BlockLabel MakeLabel(u_int l) {
-    Assert(l <= MAX_LSIZE); return (BlockLabel) l;
+    Assert(l <= MAX_HELPERLABELSIZE);
+    return (BlockLabel) l;
   }
   // Allocation Functions
   static Block *AllocBlock(BlockLabel l, u_int s) {
-    Assert(l <= MAX_LSIZE);
+    Assert(l >= MIN_DATALABELSIZE);
+    Assert(l <= MAX_HELPERLABELSIZE);
     return InternalAllocBlock(l, s);
   }
   static Block *AllocChunk(u_int s) {
     return Store::InternalAllocBlock(CHUNK, s);
+  }
+  static Block *AllocStack(u_int s) {
+    return Store::InternalAllocBlock(STACK, s);
   }
   static Transient *AllocTransient(BlockLabel l) {
     Assert(l >= MIN_TRANSIENT && l <= MAX_TRANSIENT);
@@ -101,23 +113,10 @@ public:
     return PointerOp::DecodeTransient(PointerOp::Deref(v));
   }
   static word UnmanagedPointerToWord(void *v) {
-    return Store::IntToWord(((int) v) >> 1);
+    return PointerOp::EncodeUnmanagedPointer(v);
   }
   static void *WordToUnmanagedPointer(word x) {
-    return (void *) (Store::WordToInt(x) << 1);
-  }
-  static word FunctionPointerToWord(int v) {
-    return Store::IntToWord(v >> 1);
-  }
-  static int WordToFunctionPointer(word x) {
-    return Store::WordToInt(x) << 1;
-  }
-
-  // GC Related Functions
-  static word DoGC(word root_set, u_int gen);
-  static void AddToIntgenSet(Block *v);
-  static int NeedGC() {
-    return needGC;
+    return PointerOp::DecodeUnmanagedPointer(x);
   }
 #ifdef DEBUG_CHECK
   static void MemStat();

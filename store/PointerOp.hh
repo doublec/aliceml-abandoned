@@ -52,8 +52,8 @@ public:
   }
   // int<->Word Conversion
   static word EncodeInt(int v) {
-    Assert(v > -(1 << 30));
-    Assert(v < (1 << 30));
+    Assert(v >= -(1 << 30));
+    Assert(v <= (1 << 30));
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static int DecodeInt(word v) {
@@ -61,8 +61,16 @@ public:
       return (int) INVALID_INT;
     }
     else {
-      return (int) ((u_int) v >> 1);
+      return (int) (((u_int) v & (1 << 31)) ? ((1 << 31) | ((u_int) v >> 1)) : ((u_int) v >> 1));
     }
+  }
+  static word EncodeUnmanagedPointer(void *v) {
+    Assert(((u_int) v & (1 << 31)) == 0);
+    return (word) (((u_int) v << 1) | (u_int) INTTAG); 
+  }
+  static void *DecodeUnmanagedPointer(word v) {
+    Assert((u_int) v & INTMASK);
+    return (void *) ((u_int) v >> 1);
   }
   // Deref Function
   static word Deref(word v) {
@@ -70,14 +78,14 @@ public:
       u_int vi = (u_int) v;
  
       Assert(v != NULL);
+      if (vi & INTMASK) {
+	return v;
+      }
       if ((vi & TAGMASK) == (u_int) TRTAG) {
 	vi -= (u_int) TRTAG;
-	if (HeaderOp::DecodeLabel((Block *) vi) == REF) {
-	  v = ((word *) vi)[1];
-	}
-	else {
-	  return v;
-	}
+      }
+      if (HeaderOp::DecodeLabel((Block *) vi) == REF) {
+	v = ((word *) vi)[1];
       }
       else {
 	return v;
