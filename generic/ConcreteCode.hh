@@ -21,21 +21,10 @@
 
 class ConcreteCode : private Block {
 private:
-  static const u_int INTERPRETER_POS = 0;
-  static const u_int BASE_SIZE       = 1;
+  static const u_int BASE_SIZE = 1;
 public:
   using Block::ToWord;
-  // ConcreteCode Accessors
-  Interpreter *GetInterpreter() {
-    return static_cast<Interpreter *>
-      (Store::DirectWordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
-  }
-  void Init(u_int index, word value) {
-    InitArg(BASE_SIZE + index, value);
-  }
-  word Get(u_int index) {
-    return GetArg(BASE_SIZE + index);
-  }
+
   // ConcreteCode Constructor
   static ConcreteCode *New(Interpreter *interpreter, u_int size) {
     Block *b = Store::AllocBlockWithHandler(BASE_SIZE + size, interpreter);
@@ -51,6 +40,17 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<ConcreteCode *>(b);
+  }
+
+  // ConcreteCode Accessors
+  Interpreter *GetInterpreter() {
+    return static_cast<Interpreter *>(GetHandler());
+  }
+  void Init(u_int index, word value) {
+    InitArg(BASE_SIZE + index, value);
+  }
+  word Get(u_int index) {
+    return GetArg(BASE_SIZE + index);
   }
 };
 

@@ -23,21 +23,13 @@
 #include "emulator/Interpreter.hh"
 #include "emulator/StackFrame.hh"
 
-class Backtrace : private Queue {
+class Backtrace: private Queue {
 private:
   static const u_int initialBacktraceSize = 16; // to be checked
 public:
   using Queue::ToWord;
   using Queue::Enqueue;
-  // Backtrace Accessors
-  void Dump() {
-    while (!IsEmpty()) {
-      word frame = Dequeue();
-      Interpreter *interpreter =
-	StackFrame::FromWordDirect(frame)->GetInterpreter();
-      interpreter->DumpFrame(frame);
-    }
-  }
+
   // Backtrace Constuctor
   static Backtrace *New(word frame) {
     Queue *trace = Queue::New(initialBacktraceSize);
@@ -48,6 +40,16 @@ public:
   static Backtrace *FromWordDirect(word x) {
     Queue *q = Queue::FromWordDirect(x);
     return static_cast<Backtrace *>(q);
+  }
+
+  // Backtrace Accessors
+  void Dump() {
+    while (!IsEmpty()) {
+      word frame = Dequeue();
+      Interpreter *interpreter =
+	StackFrame::FromWordDirect(frame)->GetInterpreter();
+      interpreter->DumpFrame(frame);
+    }
   }
 };
 
