@@ -40,6 +40,7 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 	  | String of String.string
 	  | WideString of WideString.string
 	  | Real of Real.real
+	  | TaggedValue of LargeInt.int * value vector
 	  | Constructor of Stamp.t
 	  | Tuple of value vector
 	  | Vector of value vector

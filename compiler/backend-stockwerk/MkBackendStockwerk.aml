@@ -24,10 +24,8 @@ import structure CodeGenPhase   from "CodeGenPhase"
 
 functor MkBackendStockwerk(structure Switches: SWITCHES): PHASE =
     let
-	fun sign (PickleGrammar.Tuple #[PickleGrammar.Vector _,
-					PickleGrammar.Closure (_, #[]),
-					PickleGrammar.Sign exportSign]) =
-	    exportSign
+	fun sign (PickleGrammar.TaggedValue
+		      (_, #[_, _, PickleGrammar.Sign exportSign])) = exportSign
 	  | sign _ = raise Crash.Crash "MkBackendStockwerk.sign"
 
 	fun save value filename =

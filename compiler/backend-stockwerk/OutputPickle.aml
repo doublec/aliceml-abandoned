@@ -144,9 +144,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInt (context, LargeInt.fromInt line);
 	     outputInt (context, LargeInt.fromInt column))
 
-	val filler8 = Char.chr 1
-	val filler16 = WideChar.chr 1
-
 	fun outputWideString (context, s) =
 	    outputChunk (context,
 			 Vector.fromList
@@ -178,6 +175,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputValue (context, WideString s) =
 	    ignore (outputWideString (context, s))
 	  | outputValue (context, Real r) = outputReal (context, r)
+	  | outputValue (context, TaggedValue (i, values)) =
+	    (outputBlock (context, Label.TAG i, Vector.length values);
+	     Vector.app (fn value => outputValue (context, value)) values)
 	  | outputValue (context as {shared, ...}, Constructor stamp) =
 	    (case StampMap.lookup (shared, stamp) of
 		 SOME id => outputReference (context, id)
@@ -199,7 +199,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputClosure (context, 1 + Vector.length values);
 	     outputFunction (context, function);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Sign sign) = outputInt (context, 0) (*--** *)
+	  | outputValue (context, Sign _) =
+	    outputInt (context, 0) (*--** i.e., `NONE' *)
 	and outputFunction (context,
 			    Function (coord, nglobals, nlocals, args, body)) =
 	    (outputTransform (context, "Alice.function");

@@ -518,8 +518,12 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 				Vector.length globals, nlocals,
 				O.OneArg (O.IdDef formalId), bodyInstr)
 	    in
-		O.Tuple #[O.Vector imports',
-			  O.Closure (function, #[]),
-			  O.Sign sign]
+		(* This is an instance of the component type
+		 * defined in lib/system/Component.aml:
+		 *)
+		O.TaggedValue (LargeInt.fromInt 1,            (* UNEVALUATED *)
+			       #[O.Closure (function, #[]),   (* body *)
+				 O.Vector imports',           (* imports *)
+				 O.Sign sign])                (* sign *)
 	    end
     end
