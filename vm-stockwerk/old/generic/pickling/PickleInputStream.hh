@@ -20,6 +20,7 @@
 #include <cstdio>
 #include "store/Store.hh"
 #include "store/Handler.hh"
+#include "generic/Finalization.hh"
 #include "generic/pickling/PrimPickle.hh"
 
 class PickleInputStream: public Block {
@@ -33,18 +34,19 @@ public:
 
   static PickleInputStream *New(FILE *file) {
     Block *block =
-      Store::AllocBlockWithHandler(PICKLEINPUTSTREAM_LABEL, SIZE, handler);
+      Store::AllocBlockWithHandler(SIZE, handler);
     block->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
+    Finalization::Register(block->ToWord());
     return static_cast<PickleInputStream *>(block);
   }
   static PickleInputStream *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == PICKLEINPUTSTREAM_LABEL);
+    Assert(b == INVALID_POINTER || b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<PickleInputStream *>(b);
   }
   static PickleInputStream *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == PICKLEINPUTSTREAM_LABEL);
+    Assert(b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<PickleInputStream *>(b);
   }
 
