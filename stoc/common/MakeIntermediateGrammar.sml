@@ -1,10 +1,12 @@
-functor MakeIntermediateGrammar(type info) :>
-  INTERMEDIATE_GRAMMAR where type info = info =
+functor MakeIntermediateGrammar(type info type sign) :>
+  INTERMEDIATE_GRAMMAR where type info = info
+ 		       where type sign = sign =
   struct
 
     (* Generic *)
 
     type info = info
+    type sign = sign
 
     (* Literals *)
 
@@ -97,7 +99,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Components *)
 
-    type component = (id * string) list * id list * dec list
+    type component = (id * sign * Url.t) list * (exp * sign)
 
 
     (* Projections *)

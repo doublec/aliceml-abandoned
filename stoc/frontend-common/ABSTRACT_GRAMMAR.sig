@@ -152,7 +152,7 @@ signature ABSTRACT_GRAMMAR =
 
     and comp = Comp of info * imp list * dec list
 
-    and imp  = Imp of info * spec list * string
+    and imp  = Imp of info * spec list * Url.t
 
     type component = comp
 

@@ -2308,8 +2308,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn IMPORTImport(i, spec, s) =>
 	   let
 		val specs' = trSpec E spec
+		val url    = Url.fromString s
 	   in
-		O.Imp(i, specs', s) :: acc
+		O.Imp(i, specs', url) :: acc
 	   end
 
 	 | EMPTYImport(i) =>

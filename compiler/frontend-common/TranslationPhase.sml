@@ -222,7 +222,6 @@ UNFINISHED: obsolete after bootstrapping:
       | trMod(I.UnpackMod(i,e,j))	= trExp e
 
 
-
     (* Declarations *)
 
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
@@ -284,20 +283,23 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trComp(I.Comp(i,is,ds))		=
 	let
-	    val (xus',ds') = trImps'(is, trDecs ds)
+	    val  ids'       = ids ds
+	    val (xsus',ds') = trImps'(is, trDecs ds)
+	    val  fs'        = List.map idToField ids'
+	    val  exp'       = O.LetExp(i, ds', O.RowExp(i, fs'))
 	in
-	    ( xus', ids ds, ds' )
+	    ( xsus', (exp',()) )
 	end
 
     and trImps'(is, ds')		= List.foldr trImp ([],ds') is
 
-    and trImp(I.Imp(i,ss,u),(xus',ds'))	=
+    and trImp(I.Imp(i,ss,u),(xsus',ds')) =
 	let
 	    val x'  = O.Id(i, Stamp.new(), O.InId)
 	    val y'  = O.ShortId(i, x')
 	    val ds' = trSpecs(ss, y', ds')
 	in
-	    ( (x',u)::xus', ds' )
+	    ( (x',(),u)::xsus', ds' )
 	end
 
     and trSpecs(ss, y, ds')		= List.foldr (trSpec y) ds' ss

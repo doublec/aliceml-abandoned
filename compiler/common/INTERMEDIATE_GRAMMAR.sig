@@ -4,6 +4,7 @@ signature INTERMEDIATE_GRAMMAR =
     (* Generic *)
 
     type info
+    type sign
 
     (* Literals *)
 
@@ -96,7 +97,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Components *)
 
-    type component = (id * string) list * id list * dec list
+    type component = (id * sign * Url.t) list * (exp * sign)
 
 
     (* Operations *)

@@ -2,6 +2,7 @@
 
 General:
 
+- Check for multiple imports from single (normalised) URL
 - Improve pretty-printing
 - Consistent state cleanup (especially on errors)
 - Copyright notices

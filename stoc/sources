@@ -28,6 +28,8 @@
 ../misc/PrettyPrint.sml
 ../misc/PP_MISC.sig
 ../misc/PPMisc.sml
+../misc/URL.sig
+../misc/Url.sml
 ../error/SOURCE.sig
 ../error/Source.sml
 ../error/CRASH.sig
