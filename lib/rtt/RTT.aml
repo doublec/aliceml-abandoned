@@ -17,8 +17,84 @@ import structure Type		from "Type"
 import structure Inf		from "Inf"
 import structure PervasiveType	from "PervasiveType"
 
+(*DEBUG
+import structure TextIO         from "../system/TextIO"
+import structure PrettyPrint    from "../utility/PrettyPrint"
+import structure PPPath         from "PPPath"
+import structure PPType         from "PPType"
+import structure PPInf          from "PPInf"
+*)
 
-structure RTT =
+local
+    (*DEBUG
+    structure Inf =
+    struct
+	open Inf
+
+	local
+	    fun prPath name p =
+		(TextIO.print name; TextIO.print " = ";
+		 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p,
+				    76 - size name);
+		 TextIO.print "\n")
+
+	    fun prTKind name k =
+		(TextIO.print name; TextIO.print " = ";
+		 PrettyPrint.output(TextIO.stdOut, PPType.ppKind k,
+				    76 - size name);
+		 TextIO.print "\n")
+
+	    fun prInf name j =
+		(TextIO.print name; TextIO.print " = ";
+		 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j,
+				    76 - size name);
+		 TextIO.print "\n")
+	in
+	    fun extendTyp(s,p,k) =
+		let
+		    val _ = TextIO.print "### Runtime signature extension:\n"
+		    val _ = prPath "p" p
+		    val _ = prTKind "k" k
+		in
+		    Inf.extendTyp(s,p,k)
+		end
+(*
+	    fun sign s =
+		let
+		    val _ = TextIO.print "### Runtime signature injection:\n"
+		    val j = Inf.sign s
+		    val _ = prInf "j" j
+		in
+		    j
+		end
+*)
+	    fun instance(p,j) =
+		let
+		    val _ = TextIO.print "### Runtime interface instantiation:\n"
+		    val _ = prPath "p" p
+		    val _ = prInf "j" j
+		    val (j',rea) = Inf.instance(p,j)
+		    val _ = prInf "j'" j'
+		in
+		    (j',rea)
+		end
+
+	    fun match(j1,j2) =
+		let
+		    val _ = TextIO.print "### Runtime interface matching:\n"
+		    val _ = prInf "j1" j1
+		    val _ = prInf "j2" j2
+		    val (j,rea) = Inf.match(j1,j2)
+		    val _ = prInf "j2'" j
+		in
+		    (j,rea)
+		end
+	end
+    end
+    *)
+in
+
+structure __pervasive =
 struct
     structure Label         = Label
     structure Path          = Path
@@ -26,4 +102,6 @@ struct
     structure Type          = Type
     structure Inf           = Inf
     structure PervasiveType = PervasiveType
+end
+
 end
