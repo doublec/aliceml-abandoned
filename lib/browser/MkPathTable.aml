@@ -14,10 +14,11 @@
  *)
 
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
-import structure Types from "Types"
 import signature MK_PATH_TABLE from "MK_PATH_TABLE-sig"
 
 structure MkPathTable :> MK_PATH_TABLE =
 struct
+
     val pathTable = PathMap.new()
+
 end
