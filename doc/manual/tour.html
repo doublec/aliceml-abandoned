@@ -78,7 +78,7 @@ systems where you can type in expressions and declarations to evaluate them.
 Input is terminated with a semicolon. For example, you might simply perform a
 simple calculation:</P>
 
-<PRE>
+<PRE class=code>
 - 4+5;
 <I>val it : int = 9</I></PRE>
 
@@ -86,86 +86,203 @@ simple calculation:</P>
 its inferred type <TT>int</TT>. Anonymous expressions get the name <TT>it</TT>,
 so that you can refer to them in consecutive inputs:</P>
 
-<PRE>
+<PRE class=code>
 - 2*it;
 <I>val it : int = 18</I></PRE>
 
 <P>We can also try the one-line Hello World program:</P>
 
-<PRE>
+<PRE class=code>
 - print "Hello world!\n";
+<I>Hello world!
+val it : unit = ()</I></PRE>
+
+<P>In the rest of this tour we will present program fragments in their pure
+form, without showing the interpreter prompt or the semicolon terminating the
+interactive input. For example, the last interaction will be displayed simply
+as</P>
+
+<PRE class=code>
+print "Hello world!\n"
 <I>Hello world!
 val it : unit = ()</I></PRE>
 
 <P>Entering a function declaration is more interesting. For example,
 the factority function:<P>
 
-<PRE>
-- fun fac 0 = 1
-    | fac n = n * fac (n-1);
+<PRE class=code>
+fun fac 0 = 1
+  | fac n = n * fac (n-1)
 <I>val fac : int -> int = fn</I></PRE>
 
 <P>This time, the result has a more complex type: it is a function from
 integers to integers. We can apply that function:</P>
 
-<PRE>
-- fac 50;
+<PRE class=code>
+fac 50
 <I>val it : int = 30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
 
 <P>For more complex values, the static output of the result is often
 insufficient. The Alice system includes the <EM>Inspector</EM> for browsing
 arbitrary data structures interactively:</P>
 
-<PRE>
-- inspect (List.tabulate (100, fn i => (i, i*i, i*i*i)));
+<PRE class=code>
+inspect (List.tabulate (10, fn i => (i, i*i, i*i*i)))
 <I>val it : unit = ()</I></PRE>
 
 <P>An inspector window will pop up displaying the table of the first hundred
-square and cubic numbers.</P>
+square and cubic numbers:</P>
 
-inspect ({hello = "hello, world"}, 3 + 8);
+<P align=center><IMG src="inspector-1.jpg" border=0 alt="Alice Inspector"></P>
 
-val rec infiniteList = 1::infiniteList;
-inspect infiniteList;
+<P>When you inspect additional values, they will be displayed in the same
+Inspector window. The inspector can show arbitrary data structures:</P>
 
-inspect (Future.alarm (Time.fromMilliseconds 2000));
+<PRE class=code>
+inspect (3 + 8, SOME Math.pi, {hello = "hello, world"}, [true, 4 < 3])
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="inspector-2.jpg" border=0 alt="Alice Inspector"></P>
+
+<!--
+<P>The Inspector concurrently watches the data structures it shows. If they
+change, the it will notice it and update its display. For example, if you
+inspect a reference, and re-assign it later, the Inspector window will be
+updated automatically:</P>
+
+<PRE class=code>
+- val r = ref 56;
+<I>val r : int ref = ref 56</I>
+- inspect r;
+<I>val it : unit = ()</I>
+- r := 33;
+<I>val it : unit = ()</I></PRE>
+-->
+
+<!--
+<PRE class=code>
+- val rec infiniteList = 1::infiniteList;
+<I>val infiniteList : int list =
+   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]</I>
+- inspect infiniteList;
+<I>val it : unit = ()</I></PRE>
+
+<PRE class=code>
+- inspect (Future.alarm (Time.fromMilliseconds 2000));
+<I>val it : unit = ()</I></PRE>
+-->
 
 
 <?php section("laziness", "laziness") ?>
 
-open Future
+<P>While Standard ML is a fully strict (eager) language, Alice ML provides
+support for optional lazy evaluation. Any expression can be evaluated lazily by
+preceeding it with the <TT>lazy</TT> keyword:</P>
 
-fun fib () =
-    let
-	fun gen (a, b) = byneed (fn () => a::gen (b, a + b))
-    in
-	gen (1, 1)
-    end
+<PRE class=code>
+val x = lazy 4+5
+<I>val x : int = lazy</I></PRE>
 
-val fibs = fib ()
+<P>Lazy suspensions are represented by the <TT>lazy</TT> keyword in the
+interpreter's output, as shown above. The value of <TT>x</TT> will not be
+calculated before it is actually required. For example,</P>
 
-Inspector.inspect fibs;
+<PRE class=code>
+x > 10
+<I>val it : bool = false</I>
+x
+<I>val it : int = 9</I></PRE>
 
-val _ = List.take (fibs, 5)
+<P>The comparison operator <TT>></TT> is strict in its arguments and hence
+forces evaluation of <TT>x</TT>.</P>
 
-val f: int = byneed (fn () =>
-			(TextIO.print "hello, world\n";
-			 raise Match));
+<P>As a simple example of a lazy function, consider a generator for lazy
+streams of numbers:</P>
 
-inspect f;
+<PRE class=code>
+fun enum n = lazy n :: enum (n+1)
+<I>val enum : int -> int list = fn</I>
+val ns = enum 0
+<I>val ns : int list = lazy</I>
+List.nth (ns,5)
+<I>val it : int = 5</I>
+ns
+<I>val it : int list = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: lazy</I></PRE>
 
-Future.await f handle e => (Inspector.inspect e; 1);
+<P>In this example, requesting the 5th element of the list forced partial
+evaluation of the list, up to that element.</P>
 
+<P>We can define a lazy variant of the <TT>map</TT> function:</P>
 
-val hole: int = Hole.hole ()
+<PRE class=code>
+fun mapy f xs = lazy (case xs of nil    => nil
+                               | x::xs' => f x :: mapy f xs')
+<I>val mapy : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
 
-Inspector.inspect hole;
+<P>Note that the <TT>case</TT> expression must be inside the <TT>lazy</TT>
+expression - otherwise applying <TT>mapy</TT> would trigger evaluation of the
+head of the list, to perform the necessary pattern matching. Function
+declarations support syntactic sugar that allows expressing the same definition
+more elegantly:</P>
 
-val future = Hole.future hole
+<PRE class=code>
+fun lazy mapy f nil     = nil
+  |      mapy f (x::xs) = f x :: mapy f xs
+<I>val mapy : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
 
-Inspector.inspect future;
+<P>This derived form is defined such that both definitions of <TT>mapy</TT> are
+equivalent. Let us apply <TT>mapy</TT> to the stream of natural numbers
+to calculate their factorities lazily:</P>
 
-Hole.fill (hole, 17);
+<PRE class=code>
+val facs = mapy fac (enum 0)
+<I>val facs : int list = lazy</I>
+List.take (facs,7)
+<I>val it : int list = [1, 1, 2, 6, 24, 120, 720]</I>
+facs
+<I>val it : int list = 1 :: 1 :: 2 :: 6 :: 24 :: 120 :: 720 :: lazy</I></PRE>
+
+<DIV class=note>
+<P><EM>Note:</EM> The Inspector observes when lazy suspensions are triggered. If you
+evaluate</P>
+
+<PRE class=code>
+inspect facs
+<I>val it : unit = ()</I>
+List.nth (facs,13)
+<I></I></PRE>
+
+<P>it will automatically update its window to reflect the substitution of the
+lazy tail of <TT>facs</TT> by a (partial) list.</P>
+</DIV>
+
+<P>Here is a lazy version of the <TT>zip</TT> function:</P>
+
+<PRE class=code>
+fun lazy zipy (x::xs, y::ys) = (x,y) :: zipy (xs,ys)
+  |      zipy       _        = nil
+<I>val zipy : 'a list * 'b list -> ('a * 'b) list = fn</I></PRE>
+
+<P>It is possible to calculate the stream of Fibonacci numbers using
+<TT>mapy</TT> and <TT>zipy</TT>:</P>
+
+<PRE class=code>
+val rec fibs = 1 :: 1 :: (lazy mapy op+ (zipy (fibs, tl fibs)))
+<I>val it : int list = 1 :: 1 :: lazy</I>
+List.nth (fibs, 10)
+<I>val it : int list =
+   1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: lazy</I></PRE>
+
+<P>For more interesting applications of laziness, see the standard literature
+on lazy functional programming. Last but not least, note that Alice ML allows
+laziness to be freely combined with side effects:</P>
+
+<PRE class=code>
+val n = lazy (print "Huhu!\n"; 13)
+<I>val n : int = lazy</I>
+n+1
+<I>Huhu!
+val it : int = 14</I></PRE>
 
 
 <?php section("concurrency", "concurrency") ?>
@@ -177,6 +294,10 @@ spawn fib 30;
 
 inspect (List.tabulate (30, fn i => spawn fib i));
 
+
+inspect f;
+
+Future.await f handle e => (Inspector.inspect e; 1);
 
 <?php section("promises", "promises") ?>
 
@@ -451,7 +572,7 @@ import "/home/kornstae/stockhausen/doc/samples/Url"
   <P>
     Using Alice, the problem can be written as follows.
   </P>
-  <PRE>
+  <PRE class=code>
     import structure FD       from "x-alice:/lib/constraints/FD"
     import structure FS       from "x-alice:/lib/constraints/FS"
     import structure Search   from "x-alice:/lib/constraints/Search"
@@ -476,12 +597,12 @@ import "/home/kornstae/stockhausen/doc/samples/Url"
     To obtain possibly existing solutions of the problem given above, you can
     either use
   </P>
-  <PRE>
+  <PRE class=code>
     Explorer.exploreAll Money;</PRE>
   <P>
     to interactively explore the search tree as displayed on the screen or
   </P>
-  <PRE>
+  <PRE class=code>
     inspect (Search.searchAll Money);</PRE>
   <P>
     to inspect the computed list of solutions.
