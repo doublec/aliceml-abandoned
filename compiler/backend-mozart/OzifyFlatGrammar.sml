@@ -190,6 +190,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, VarExp (coord, id)) =
 	    (f (q, "varExp"); outputCoord (q, coord); m q;
 	     outputId (q, id); r q)
+	  | outputExp (q, ConExp (coord, id, hasArgs)) =
+	    (f (q, "conExp"); outputCoord (q, coord); m q;
+	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
 	  | outputExp (q, TupExp (coord, ids)) =
 	    (f (q, "tupExp"); outputCoord (q, coord); m q;
 	     outputList outputId (q, ids); r q)

@@ -37,8 +37,20 @@ define
       {Dictionary.put State.regDict Stamp Reg}
    end
 
+   proc {MakeConReg id(_ Stamp _) State ?Reg1 ?Reg2}
+      {State.cs newReg(?Reg1)}   % value identifier
+      {State.cs newReg(?Reg2)}   % constructor name
+      {Dictionary.put State.regDict Stamp Reg1#Reg2}
+   end
+
    fun {GetReg id(_ Stamp _) State}
-      {Dictionary.get State.regDict Stamp}
+      case {Dictionary.get State.regDict Stamp} of Reg#_ then Reg
+      elseof Reg then Reg
+      end
+   end
+
+   fun {GetNameReg id(_ Stamp _) State}
+      case {Dictionary.get State.regDict Stamp} of _#Reg then Reg end
    end
 
    fun {GetPrintName id(_ _ Name)}
@@ -80,9 +92,8 @@ define
 	 Reg Pos NameReg VInter PredId NLiveRegs ArgReg TmpReg ResReg
 	 VInstr VInter1 VInter2 GRegs Code
       in
-	 Reg = {MakeReg Id State}
+	 {MakeConReg Id State ?Reg ?NameReg}
 	 Pos = {TranslateCoord Coord}
-	 {State.cs newReg(?NameReg)}
 	 VHd = vCallBuiltin(_ 'Name.new' [NameReg] Pos VInter)
 	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
 	 {State.cs startDefinition()}
@@ -127,8 +138,11 @@ define
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
-	 [] conTest(_ some(_)) then
-	    VHd = VTl   %--**
+	 [] conTest(Id1 some(Id2)) then NameReg in
+	    NameReg = {GetNameReg Id1 State}
+	    VHd = vTestBuiltin(_ 'Record.testLabel'
+			       [Reg0 NameReg {State.cs newReg($)}]
+			       ThenVInstr ElseVInstr VTl)
 	 [] tupTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord('#' {Length Ids} ThenVInstr0)]
@@ -185,6 +199,10 @@ define
       case Exp of litExp(_ Lit) then
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
       [] varExp(_ Id) then
+	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
+      [] conExp(_ Id true) then
+	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
+      [] conExp(_ Id false) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] tupExp(_ Ids) then
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
