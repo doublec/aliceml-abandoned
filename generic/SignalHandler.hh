@@ -25,7 +25,7 @@
 
 class Future;
 
-class SignalHandler {
+class DllExport SignalHandler {
 public:
   // SignalHandler Static Constructor
   static void Init();
