@@ -276,7 +276,8 @@ structure OutputWriters =
 			then Gtk.textBufferGetEndIter(buf, startiter)
 			else ignore (Gtk.textIterBackwardToTagToggle(startiter, noedit))
                 val s = Gtk.textBufferGetText(buf, startiter, enditer, false)
-		val s' = direction s
+		val s = Gtk.utf8ToLatin1 s
+		val s' = Gtk.latin1ToUtf8 (direction s)
 	    in
 		Gtk.textBufferDelete(buf, startiter, enditer);
 		Gtk.textBufferPlaceCursor(buf, startiter);
