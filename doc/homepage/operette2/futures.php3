@@ -21,21 +21,21 @@
   </P>
 
   <PRE>
-	structure Future:
-	    sig
-		exception Future of exn
-		exception Cyclic
+	structure Future :
+	sig
+	    exception Future of exn
+	    exception Cyclic
 
-		val concur:	(unit -> 'a) -> 'a
-		val byneed:	(unit -> 'a) -> 'a
-		val alarm:	Time.time -> unit
+	    val concur :	(unit -> 'a) -> 'a
+	    val byneed :	(unit -> 'a) -> 'a
+	    val alarm :		Time.time -> unit
 
-		val await:	'a -> 'a
-		val awaitOne:	'a * 'b -> 'a
+	    val await :		'a -> 'a
+	    val awaitOne :	'a * 'b -> 'a
 
-		val isFuture:	'a -> bool
-		val isFailed:	'a -> bool
-	    end
+	    val isFuture :	'a -> bool
+	    val isFailed :	'a -> bool
+	end
   </PRE>
 
   <P>
@@ -44,7 +44,7 @@
   </P>
 
   <PRE>
-	val concur: (unit -> 'a) -> 'a 
+	val concur : (unit -> 'a) -> 'a 
   </PRE>
 
   <P>
@@ -63,7 +63,7 @@
   </P>
 
   <PRE>
-	val byneed: (unit -> 'a) -> 'a 
+	val byneed : (unit -> 'a) -> 'a 
   </PRE>
 
   <P>
@@ -83,7 +83,7 @@
   </P>
 
   <PRE>
-	val alarm: Time.time -> unit
+	val alarm : Time.time -> unit
   </PRE>
 
   <P>
@@ -98,7 +98,7 @@
   </P>
 
   <PRE>
-	val await: 'a -> 'a
+	val await : 'a -> 'a
   </PRE>
 
   <P>
@@ -107,7 +107,7 @@
   </P>
 
   <PRE>
-	val awaitOne: 'a * 'b -> 'a
+	val awaitOne : 'a * 'b -> 'a
   </PRE>
 
   <P>
@@ -137,7 +137,7 @@
   </P>
 
   <PRE>
-	val isFuture: 'a -> bool
+	val isFuture : 'a -> bool
   </PRE>
 
   <P>
@@ -146,7 +146,7 @@
   </P>
 
   <PRE>
-	val isFailed: 'a -> bool
+	val isFailed : 'a -> bool
   </PRE>
 
   <P>
@@ -170,18 +170,18 @@
   </P>
 
   <PRE>
-	structure Promise:
-	    sig
-		type 'a promise
+	structure Promise :
+	sig
+	    type 'a promise
 
-		exception Promise
+	    exception Promise
 
-		val promise:	unit -> 'a promise
-		val future:	'a promise -> 'a
+	    val promise :	unit -> 'a promise
+	    val future :	'a promise -> 'a
 
-		val fulfill:	'a promise * 'a  -> unit
-		val fail:	'a promise * exn -> unit
-	    end
+	    val fulfill :	'a promise * 'a  -> unit
+	    val fail :		'a promise * exn -> unit
+	end
   </PRE>
 
   <P>
@@ -189,7 +189,7 @@
   </P>
 
   <PRE>
-	val promise: unit -> 'a promise
+	val promise : unit -> 'a promise
   </PRE>
 
   <P>
@@ -197,7 +197,7 @@
   </P>
 
   <PRE>
-	val future: 'a promise -> 'a
+	val future : 'a promise -> 'a
   </PRE>
 
   <P>
@@ -206,7 +206,7 @@
   </P>
 
   <PRE>
-	val fulfill: 'a promise * 'a -> unit
+	val fulfill : 'a promise * 'a -> unit
   </PRE>
 
   <P>
@@ -222,7 +222,7 @@
   </P>
 
   <PRE>
-	val fail: 'a promise * exn -> unit
+	val fail : 'a promise * exn -> unit
   </PRE>
 
   <P>
@@ -243,13 +243,13 @@
   </P>
 
   <PRE>
-	structure Cell:
-	    sig
-		type 'a cell
+	structure Cell :
+	sig
+	    type 'a cell
 
-		val cell:	'a -> 'a cell
-		val exchange:	'a cell * 'a -> 'a
-	    end
+	    val cell :		'a -> 'a cell
+	    val exchange :	'a cell * 'a -> 'a
+	end
   </PRE>
 
   <P>
