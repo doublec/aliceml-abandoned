@@ -15,6 +15,7 @@ import
 %   Pickle at 'x-oz://boot/Pickle'
    Connection
    Property
+   OS
 export
    'UnsafeRemoteCore$' : UnsafeRemoteCore
 define
@@ -50,12 +51,16 @@ define
       end
    end
    fun {TimeFun _}
-      {Property.get 'time'}.all
+      {Property.get 'time'}.total
    end
-
+   fun {NowFun _}
+      {OS.time}
+   end
+   
    %% Create Interface
    UnsafeRemoteCore = 'UnsafeRemoteCore'(take : TakeFun
 					 offer : OfferFun
 					 proxy : ProxyFun
-					 time : TimeFun)
+					 time : TimeFun
+					 now : NowFun)
 end

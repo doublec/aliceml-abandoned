@@ -12,7 +12,7 @@
 
 # Configurable directories
 
-PREFIX=/opt/stockhausen-devel
+#PREFIX=/opt/stockhausen-devel
 
 SRCTOP = ../..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
@@ -31,7 +31,6 @@ COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
 UNTYPEDCOMPONENTS = $(OZSOURCES:%.oz=Untyped%.ozf)
 
 ALICESOURCES = PACKER-sig.aml Packer.aml \
-               UNIX-sig.aml Unix.aml \
                REMOTE_CORE-sig.aml RemoteCore.aml \
                REMOTE-sig.aml Remote.aml
 

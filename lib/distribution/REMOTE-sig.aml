@@ -11,8 +11,6 @@
  *
  *)
 
-import structure TextIO from "x-alice:/lib/system/TextIO"
-
 signature REMOTE =
     sig
 	signature TICKET =
@@ -24,6 +22,6 @@ signature REMOTE =
 	functor Take(val ticket : string signature S) : S
 
 	val proxy : ('a -> 'b) -> 'a -> 'b
-	val remote : string -> TextIO.instream * TextIO.outstream
 	val time : unit -> int
+	val now : unit -> int
     end

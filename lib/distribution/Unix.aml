@@ -1,9 +1,0 @@
-import structure UnsafeUnix from "UnsafeUnix"
-import signature UNIX       from "UNIX-sig"
-
-structure Unix :> UNIX =
-    struct
-	type proc
-
-	open UnsafeUnix
-    end

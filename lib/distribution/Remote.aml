@@ -11,7 +11,6 @@
  *
  *)
 
-import structure Unix       from "Unix"
 import structure RemoteCore from "RemoteCore"
 import signature REMOTE     from "REMOTE-sig"
 import structure Packer     from "Packer"
@@ -37,8 +36,6 @@ structure Remote :> REMOTE =
 	    Packer.Unpack(val package = RemoteCore.take ticket signature S = S)
 
 	val proxy = RemoteCore.proxy
-
-	fun remote host = Unix.streamsOf(Unix.execute("ssh", [host, "alice", "--rtt-level=no"]))
-
-	val time = RemoteCore.time
+	val time  = RemoteCore.time
+	val now   = RemoteCore.now
     end
