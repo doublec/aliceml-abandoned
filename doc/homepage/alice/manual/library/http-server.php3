@@ -54,18 +54,20 @@
       <TT><A name="start">start</A> <I>portOpt</I></TT>
     </DT>
     <DD>
-      <P>starts a HTTP server and lets it listen for connections in a
-	concurrent thread.  If <I>portOpt</I> is <TT>SOME <I>port</I></TT>,
-	tries to listen on <I>port</I>, else selects an available port.
-	Returns the port on which it listens for request.</P>
+      <P>starts a HTTP server and lets it listen for connections in
+	a concurrent thread.  If <TT><I>portOpt</I></TT> is <TT>SOME
+	<I>port</I></TT>, tries to listen on <TT><I>port</I></TT>, else
+	selects an available port.  Returns the port on which it listens
+	for request.</P>
     </DD>
 
     <DT>
       <TT><A name="register">register</A> (<I>url</I>, <I>handler</I>)</TT>
     </DT>
     <DD>
-      <P>registers <I>handler</I> for requests make to <I>url</I>.
-	Only the path component or <I>url</I> is respected.</P>
+      <P>registers <TT><I>handler</I></TT> for requests make to
+	<TT><I>url</I></TT>.  Only the path component or <TT><I>url</I></TT>
+	is significant.</P>
     </DD>
   </DL>
 

@@ -74,33 +74,33 @@
       <TT><A name="request">request</A> (<I>url</I>, <I>request</I>)</TT>
     </DT>
     <DD>
-      <P>establishes a connection to the server specified in <I>url</I>,
-	issues the <I>request</I>, and returns the response.  Closes the
-	connection immediately after reading the response.  Raises
-	<TT><A href="#Authority">Authority</A></TT> if <I>url</I> does
-	not specify a well-formed authority.</P>
+      <P>establishes a connection to the server specified in <TT><I>url</I
+	></TT>, issues the <TT><I>request</I></TT>, and returns the response.
+	Closes the connection immediately after reading the response.  Raises
+	<TT><A href="#Authority">Authority</A></TT> if <TT><I>url</I></TT>
+	does not specify a well-formed authority.</P>
     </DD>
 
     <DT>
       <TT><A name="get">get</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>establishes a connection to the server specified in <I>url</I>,
-	issues a <TT>GET</TT> request, and returns the response.  Closes
-	the connection immediately after reading the response.  Raises
-	<TT><A href="#Authority">Authority</A></TT> if <I>url</I> does
-	not specify a well-formed authority.</P>
+      <P>establishes a connection to the server specified in <TT><I>url</I
+	></TT>, issues a <TT>GET</TT> request, and returns the response.
+	Closes the connection immediately after reading the response.  Raises
+	<TT><A href="#Authority">Authority</A></TT> if <TT><I>url</I></TT>
+	does not specify a well-formed authority.</P>
     </DD>
 
     <DT>
       <TT><A name="post">post</A> (<I>url</I>, <I>doc</I>)</TT>
     </DT>
     <DD>
-      <P>establishes a connection to the server specified in <I>url</I>,
-	issues a <TT>POST</TT> request with <I>doc</I>, and returns the
-	response.  Closes the connection immediately after reading the
-	response.  Raises <TT><A href="#Authority">Authority</A></TT>
-	if <I>url</I> does not specify a well-formed authority.</P>
+      <P>establishes a connection to the server specified in <TT><I>url</I
+	></TT>, issues a <TT>POST</TT> request with <TT><I>doc</I></TT>, and
+	returns the response.  Closes the connection immediately after reading
+	the response.  Raises <TT><A href="#Authority">Authority</A></TT>
+	if <TT><I>url</I></TT> does not specify a well-formed authority.</P>
     </DD>
   </DL>
 
@@ -118,7 +118,7 @@
 <PRE>
 fun usage () =
     TextIO.output (TextIO.stdErr,
-		   "Usage: " ^ CommandLine.name () ^ " <url>\n")
+		   "Usage: " ^ CommandLine.name () ^ " &lt;url&gt;\n")
 
 fun main [url] =
     let

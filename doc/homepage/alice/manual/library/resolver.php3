@@ -76,30 +76,31 @@
 	>Config.pathSeparator</A></TT> characters.  If last handler
 	specification is the equals sign (<TT>=</TT>), then the
 	<TT><A href="resolver-handler.php3#default">default</A></TT>
-	handler is <I>not</I> appended, else it is.  The following
+	handler is <EM>not</EM> appended, else it is.  The following
 	handler specifications are accepted:</P>
       <TABLE align=center border=1>
 	<TR><TH>Syntax<TH>Specified handler
 	<TR>
 	  <TD><TT>root=<I>s</I></TT>
 	  <TD>The handler <TT><A href="resolver-handler.php3#root">root</A
-	    > <I>s</I>.
+	    > <I>s</I></TT>.
 	<TR>
 	  <TD><TT>cache=<I>s</I></TT>
 	  <TD>The handler <TT><A href="resolver-handler.php3#cache">cache</A
-	    > <I>s</I>.
+	    > <I>s</I></TT>.
 	<TR>
 	  <TD><TT>prefix=<I>s1</I>=<I>s2</I></TT>
 	  <TD>The handler <TT><A href="resolver-handler.php3#prefix">prefix</A
-	    > (<I>s1</I>, <I>s2</I>).
+	    > (<I>s1</I>, <I>s2</I>)</TT>.
 	<TR>
 	  <TD><TT>pattern=<I>s1</I>=<I>s2</I></TT>
 	  <TD>The handler <TT><A href="resolver-handler.php3#prefix">pattern</A
-	    > (<I>s1</I>, <I>s2</I>).
+	    > (<I>s1</I>, <I>s2</I>)</TT>.
       </TABLE>
-      <P>Characters within strings <I>s</I>, <I>s1</I>, <I>s2</I> above
-	can be escaped using the <TT><A href="config.php3#pathEscape"
-	>Config.pathEscape</A></TT> character, if applicable.</P>
+      <P>Characters within strings <TT><I>s</I></TT>, <TT><I>s1</I></TT>,
+	<TT><I>s2</I></TT> above can be escaped using the <TT><A
+	href="config.php3#pathEscape">Config.pathEscape</A></TT> character,
+	if applicable.</P>
     </DD>
 
     <DT>
@@ -111,35 +112,35 @@
     </DD>
 
     <DT>
-      <PRE>datatype <A name="result">result</A> =
-    FILE of string
-  | STRING of string</PRE>
+      <TT>datatype <A name="result">result</A> = FILE of string
+	| STRING of string</TT>
     </DT>
     <DD>
       <P>The type of results of localization acts.  If localization
-	of a resource succeeded and found a local file with name&nbsp;<I>s</I>,
-	the result of the localization act is <TT>FILE&nbsp;<I>s</I></TT>;
-	if the resource was found on a remote address, the resource is
-	downloaded into a string&nbsp;<I>s</I> and the result of the
-	localization act is <TT>STRING&nbsp;<I>s</I></TT>.</P>
+	of a resource succeeded and found a local file with name&nbsp;<TT><I
+	>s</I></TT>, the result of the localization act is <TT>FILE&nbsp;<I
+	>s</I></TT>; if the resource was found on a remote address, the
+	resource is downloaded into a string&nbsp;<TT><I>s</I></TT> and the
+	result of the localization act is <TT>STRING&nbsp;<I>s</I></TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="new">new</A> (<I>name</I>, <I>handlers</I>)</TT>
     </DT>
     <DD>
-      <P>returns a new resolver with name <I>name</I> and trying the given
-	<I>handlers</I> in order.  The name is used to print tracing
-	messages.</P>
+      <P>returns a new resolver with name <TT><I>name</I></TT> and trying the
+	given <TT><I>handlers</I></TT> in order.  The name is used to print
+	tracing messages.</P>
     </DD>
 
     <DT>
       <TT><A name="localize">localize</A> <I>resolver</I> <I>name</I></TT>
     </DT>
     <DD>
-      <P>performs a localization act, using <I>resolver</I>, to localize
-	the resource with symbolic name <I>name</I>.  Returns <TT>SOME _</TT>,
-	if localization was successful, <TT>NONE</TT> otherwise.</P>
+      <P>performs a localization act, using <TT><I>resolver</I></TT>, to
+	localize the resource with symbolic name <TT><I>name</I></TT>.
+	Returns <TT>SOME _</TT>, if localization was successful, <TT>NONE</TT>
+	otherwise.</P>
     </DD>
   </DL>
 

@@ -94,18 +94,18 @@
       <TT><A name="proxy">proxy</A> <I>f</I></TT>
     </DT>
     <DD>
-      <P>returns a proxy for&nbsp;<I>f</I>.  The proxy differs
-	from&nbsp;<I>f</I> in that:</P>
+      <P>returns a proxy for&nbsp;<TT><I>f</I></TT>.  The proxy differs
+	from&nbsp;<TT><I>f</I></TT> in that:</P>
       <UL>
-	<LI><P>the argument to the proxy is cloned before&nbsp;<I>f</I>
-	  is applied to it;</P>
+	<LI><P>the argument to the proxy is cloned before&nbsp;<TT><I>f</I
+	  ></TT> is applied to it;</P>
 	<LI><P>the return value from&nbsp;<I>f</I> is cloned before
 	  it is returned from the proxy;</P>
-	<LI><P>when the proxy is cloned, a reference to the running site
-	  is cloned which does not contain a clone of&nbsp;<I>f</I>;</P>
+	<LI><P>when the proxy is cloned, a reference to the running site is
+	  cloned which does not contain a clone of&nbsp;<TT><I>f</I></TT>;</P>
 	<LI><P>when the proxy is applied no matter on which site, this
-	  causes <I>f</I> to be applied on the site on which the proxy
-	  was created.</P>
+	  causes <TT><I>f</I></TT> to be applied on the site on which the
+	  proxy was created.</P>
       </UL>
       <P>When the site on which the proxy was created terminates,
 	the proxy becomes invalid.  Applications of the proxy on other
@@ -117,18 +117,18 @@
       <TT><A name="offer">offer</A> <I>package</I></TT>
     </DT>
     <DD>
-      <P>makes <I>package</I> available to other sites for taking.
+      <P>makes <TT><I>package</I></TT> available to other sites for taking.
 	Returns a ticket suitable for <TT><A href="#take">take</A></TT>
 	or <TT><A href="#Take-fn">Take</A></TT>.  If the argument
 	is a mutable data structure, then taking returns a clone of
-	the data structure of the point in time the offer was made.</P>
+	how the data structure looked when the offer was initially made.</P>
     </DD>
 
     <DT>
       <TT><A name="take">take</A> <I>ticket</I></TT>
     </DT>
     <DD>
-      <P>imports the data structure denoted by <I>ticket</I>, which
+      <P>imports the data structure denoted by <TT><I>ticket</I></TT>, which
 	must have been created by <TT><A href="#offer">offer</A></TT>
 	or <TT><A href="#Offer-fn">Offer</A></TT>.  Raises
 	<TT><A href="#Ticket-exn">Ticket</A></TT> if the ticket is
@@ -140,12 +140,12 @@
 	structure X = <I>X</I>)</TT>
     </DT>
     <DD>
-      <P>makes <I>X</I> available to other sites for taking
-	with signature&nbsp;<I>S</I>.  Returns a ticket
-	suitable for <TT><A href="#take">take</A></TT> or
-	<TT><A href="#Take-fn">Take</A></TT>.  If the argument
-	is a mutable data structure, then taking returns a clone of
-	the data structure of the point in time the offer was made.</P>
+      <P>makes <TT><I>X</I></TT> available to other sites for taking with
+	signature&nbsp;<I>S</I>.  Returns a ticket suitable for <TT><A
+	href="#take">take</A></TT> or <TT><A href="#Take-fn">Take</A></TT>.
+	If the argument is a mutable data structure, then taking returns
+	a clone of how the data structure looked when the offer was
+	initially made.</P>
     </DD>
 
     <DT>
@@ -153,14 +153,14 @@
 	signature S = <I>S</I>)</TT>
     </DT>
     <DD>
-      <P>imports the data structure denoted by <I>ticket</I>, which
-	must have been created by <TT><A href="#offer">offer</A></TT>
-	or <TT><A href="#Offer-fn">Offer</A></TT>, under
-	signature&nbsp;<I>S</I>.  Raises <TT><A href="#Ticket-exn">Ticket</A
-	></TT> if the ticket is invalid or the site on which it was
-	created no longer exists.  Raises <TT><A href="package.php3#Mismatch"
-	>Package.Mismatch</A></TT> if the value was not exported with a
-	signature matching&nbsp;<I>S</I>.</P>
+      <P>imports the data structure denoted by <TT><I>ticket</I></TT>, which
+	must have been created by <TT><A href="#offer">offer</A></TT> or <TT
+	><A href="#Offer-fn">Offer</A></TT>, under signature&nbsp;<TT><I>S</I
+	></TT>.  Raises <TT><A href="#Ticket-exn">Ticket</A></TT> if the
+	ticket is invalid or the site on which it was created no longer
+	exists.  Raises <TT><A href="package.php3#Mismatch">Package.Mismatch</A
+	></TT> if the value was not exported with a signature matching&nbsp;<TT
+	><I>S</I></TT>.</P>
     </DD>
 
     <DT>
@@ -169,11 +169,11 @@
 	functor Start = <I>F</I>)</TT>
     </DT>
     <DD>
-      <P>creates a new site on <I>host</I>, transfers a clone of <I>Start</I>
-	to the new site, on which it is applied to the local component
-	manager.  A clone of the resulting structure is transferred back
-	to the caller of <TT>Execute</TT> and returned as the resulting
-	structure.</P>
+      <P>creates a new site on <TT><I>host</I></TT>, transfers a clone of
+	<TT><I>Start</I></TT> to the new site, on which it is applied to
+	the local component manager.  A clone of the resulting structure is
+	transferred back to the caller of <TT>Execute</TT> and returned as
+	the resulting structure.</P>
     </DD>
   </DL>
 

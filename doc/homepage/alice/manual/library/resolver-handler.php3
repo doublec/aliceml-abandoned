@@ -81,8 +81,8 @@
     </DT>
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
-	below a specific root path.  Only applicable for resource names
-	that represent a relative path name.</P>
+	below a specific root path&nbsp;<TT><I>s</I></TT>.  Only applicable
+	for resource names that represent a relative path name.</P>
     </DD>
 
     <DT>
@@ -103,8 +103,8 @@
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
 	under prefix replacement.  Only applicable for resource names
-	that start with prefix <I>s1</I>.  The prefix is replaced by
-	<I>s2</I> and the result is parsed as a URL.</P>
+	that start with prefix <TT><I>s1</I></TT>.  The prefix is replaced
+	by <TT><I>s2</I></TT> and the result is parsed as a URL.</P>
     </DD>
 
     <DT>
@@ -112,22 +112,23 @@
     </DT>
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
-	under pattern replacement.  <I>s1</I> is a pattern that contains
-	variables of the form <TT>?{<I>x</I>}</TT>, where <I>x</I> is a
-	string not containing a right brace character.  Only applicable
-	for resource names that match <I>s1</I>.  Variables given in the
-	pattern are bound to corresponding substrings of the resource name.
-	<I>s2</I> is returned, with occurrences of variables replaced by
-	the substrings they are bound to, parsed as a URL.  Raises
-	<TT><A href="#Syntax">Syntax</A></TT> if either <I>s1</I> or
-	<I>s2</I> contain a non-terminated variable.</P>
+	under pattern replacement.  <TT><I>s1</I></TT> is a pattern that
+	contains variables of the form <TT>?{<I>x</I>}</TT>, where <TT><I
+	>x</I></TT> is a string not containing a right brace character.
+	Only applicable for resource names that match <TT><I>s1</I></TT>.
+	Variables given in the pattern are bound to corresponding substrings
+	of the resource name.  <TT><I>s2</I></TT> is returned, with
+	occurrences of variables replaced by the substrings they are bound
+	to, parsed as a URL.  Raises <TT><A href="#Syntax">Syntax</A></TT>
+	if either <TT><I>s1</I></TT> or <TT><I>s2</I></TT> contain a
+	non-terminated variable.</P>
     </DD>
 
     <DT>
       <TT><A name="parse">parse</A> <I>s</I></TT>
     </DT>
     <DD>
-      <P>interprets <I>s</I> as a string representation for a list of
+      <P>interprets <TT><I>s</I></TT> as a string representation for a list of
 	handlers and returns this.  Raises <TT><A href="#Syntax">Syntax</A
 	></TT> if the string is not well-formed.  The concrete syntax is
 	specified by implementations of this signature.</P>

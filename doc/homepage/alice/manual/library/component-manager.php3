@@ -77,42 +77,48 @@
     </DD>
 
     <DT>
-      <TT><A name="Eval-fn">Eval</A>(val component = <I>comp</I> val url = <I>url</I> signature S = <I>S</I>)</TT>
+      <TT><A name="Eval-fn">Eval</A>(val component = <I>comp</I>
+	val url = <I>url</I>
+	signature S = <I>S</I>)</TT>
     </DT>
     <DD>
-      <P>evaluates <I>comp</I>, rooted at <I>url</I>, in the context of
-	the component table managed by this component manager, and returns
-	the computed structure.  Raises <TT><A href="component.php3#Mismatch"
-	>Component.Mismatch</A></TT> if the computed structure does not
-	match&nbsp;<I>S</I>, <EM>after</EM> evaluating the declarations
-	contained in <I>comp</I>.  Note that no entry for <I>url</I> is
-	created in the component table, but entries may be created for
-	components imported (directly or indirectly) by <I>comp</I>.
-	Relative import URLs in <I>comp</I> are resolved using <I>url</I>
-	as a base url, which should be absolute.</P>
+      <P>evaluates <TT><I>comp</I></TT>, rooted at <TT><I>url</I></TT>,
+	in the context of the component table managed by this component
+	manager, and returns the computed structure.  Raises <TT><A
+	href="component.php3#Mismatch">Component.Mismatch</A></TT> if
+	the computed structure does not match&nbsp;<TT><I>S</I></TT>,
+	<EM>after</EM> evaluating the declarations contained in
+	<TT><I>comp</I></TT>.  Note that no entry for <TT><I>url</I></TT>
+	is created in the component table, but entries may be created for
+	components imported (directly or indirectly) by <TT><I>comp</I></TT>.
+	Relative import URLs in <TT><I>comp</I></TT> are resolved using
+	<TT><I>url</I></TT> as a base url, which should be absolute.</P>
     </DD>
 
     <DT>
-      <TT><A name="Link-fn">Link</A>(val url = <I>url</I> signature S = <I>S</I>)</TT>
+      <TT><A name="Link-fn">Link</A>(val url = <I>url</I>
+	signature S = <I>S</I>)</TT>
     </DT>
     <DD>
       <P>returns a new by-need future that, when triggered, causes the
-	component from <I>url</I> to be linked and evaluated and its signature
-	to be matched against&nbsp;<I>S</I>.  The future is then bound to
-	the structure computed by the component.  If the component table has
-	no entry for <I>url</I> yet, a new entry is created immediately.</P>
+	component from <TT><I>url</I></TT> to be linked and evaluated and
+	its signature to be matched against&nbsp;<TT><I>S</I></TT>.  The
+	future is then bound to the structure computed by the component.
+	If the component table has no entry for <TT><I>url</I></TT> yet, a
+	new entry is created immediately.</P>
     </DD>
 
     <DT>
-      <PRE><A name="Enter-fn">Enter</A>(val url = <I>url</I>
-      signature S = <I>S</I>
-      structure X = <I>X</I>)</PRE>
+      <TT><A name="Enter-fn">Enter</A>(val url = <I>url</I>
+	signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
     </DT>
     <DD>
-      <P>enters an evaluated component with export structure&nbsp;<I>X</I>
-	of signature&nbsp;<I>S</I> into the component table, under name
-	<I>url</I>.  Raises <TT><A href="#Conflict">Conflict</A></TT> if
-	the component table already had an entry for <I>url</I>.</P>
+      <P>enters an evaluated component with export structure&nbsp;<TT><I
+	>X</I></TT> of signature&nbsp;<TT><I>S</I></TT> into the component
+	table, under name <TT><I>url</I></TT>.  Raises <TT><A href="#Conflict"
+	>Conflict</A></TT> if the component table already had an entry for
+	<TT><I>url</I></TT>.</P>
     </DD>
 
     <DT>
@@ -120,18 +126,20 @@
     </DT>
     <DD>
       <P>returns a new by-need future that, when triggered, causes the
-	component from <I>url</I> to be linked and evaluated.  The future
-	is then bound to the component.  If the component table has no entry
-	for <I>url</I> yet, a new entry is created immediately.</P>
+	component from <TT><I>url</I></TT> to be linked and evaluated.
+	The future is then bound to the component.  If the component table
+	has no entry for <TT><I>url</I></TT> yet, a new entry is created
+	immediately.</P>
     </DD>
 
     <DT>
       <TT><A name="enter">enter</A> (<I>url</I>, <I>comp</I>)</TT>
     </DT>
     <DD>
-      <P>enters <I>comp</I> into the component table, under name <I>url</I>.
-	Raises <TT><A href="#Conflict">Conflict</A></TT> if the component
-	table already had an entry for <I>url</I>.</P>
+      <P>enters <TT><I>comp</I></TT> into the component table, under name
+	<TT><I>url</I></TT>.  Raises <TT><A href="#Conflict">Conflict</A></TT>
+	if the component table already had an entry for <TT><I>url</I
+	></TT>.</P>
     </DD>
 
     <DT>
@@ -139,15 +147,15 @@
     </DT>
     <DD>
       <P>returns <TT>SOME <I>comp</I></TT>, if the component table has
-	an entry mapping <I>url</I> to <I>comp</I>, or <TT>NONE</TT>
-	otherwise.</P>
+	an entry mapping <TT><I>url</I></TT> to <TT><I>comp</I></TT>, or
+	<TT>NONE</TT> otherwise.</P>
     </DD>
 
     <DT>
       <TT><A name="start">start</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>links and evaluates the component at <I>url</I> eagerly.
+      <P>links and evaluates the component at <TT><I>url</I></TT> eagerly.
 	Raises <TT><A href="component.php3#Failure">Component.Failure</A></TT>
 	if this fails.</P>
     </DD>

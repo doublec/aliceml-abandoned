@@ -130,17 +130,17 @@
       <TT><A name="fromString">fromString</A> <I>s</I></TT>
     </DT>
     <DD>
-      <P>parses <I>s</I> as a URL in string representation, raising
-	<TT>Malformed</TT> if it is not well-formed.  The resulting URL
-	is normalized and returned.</P>
+      <P>parses <TT><I>s</I></TT> as a URL in string representation, raising
+	<TT>Malformed</TT> if it is not well-formed.  The resulting URL is
+	normalized and returned.</P>
     </DD>
 
     <DT>
       <TT><A name="toString">toString</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>converts <I>url</I> into its string representation.  Constituents
-	are encoded as necessary.</P>
+      <P>converts <TT><I>url</I></TT> into its string representation.
+	Constituents are encoded as necessary.</P>
 <!--** when may toString u1 = toString u2 for u1 <> u2? -->
     </DD>
 
@@ -148,7 +148,7 @@
       <TT><A name="toStringRaw">toStringRaw</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>converts <I>url</I> into its string representation, without
+      <P>converts <TT><I>url</I></TT> into its string representation, without
 	encoding any characters.  Only reliable for URLs that represent
 	local files or paths (that is, where scheme, authority, query
 	and fragment are all absent).</P>
@@ -158,8 +158,8 @@
       <TT><A name="isAbsolute">isAbsolute</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> if <I>url</I> represents an absolute URL,
-	<TT>false</TT> otherwise.  An URL is absolute if at least one
+      <P>returns <TT>true</TT> if <TT><I>url</I></TT> represents an absolute
+	URL, <TT>false</TT> otherwise.  An URL is absolute if at least one
 	of scheme or device is present or if the path constituent is
 	an absolute path or starts with <TT>"."</TT>, <TT>".."</TT> or
 	the character <TT>#"~"</TT>.</P>
@@ -169,17 +169,17 @@
       <TT><A name="resolve">resolve</A> <I>baseUrl</I> <I>relUrl</I></TT>
     </DT>
     <DD>
-      <P>resolves <I>relUrl</I> with respect to <I>baseUrl</I> and returns
-	the resulting URL.  <I>baseUrl</I> should be an absolute URL,
-	although this is not required.</P>
+      <P>resolves <TT><I>relUrl</I></TT> with respect to <I>baseUrl</I> and
+	returns the resulting URL.  <TT><I>baseUrl</I></TT> should be an
+	absolute URL, although this is not required.</P>
     </DD>
 
     <DT>
       <TT><A name="equal">equal</A> (<I>url1</I>, <I>url2</I>)</TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> if <I>url1</I> and <I>url2</I> represent
-	the same URL, <TT>false</TT> otherwise.  Is identical to</P>
+      <P>returns <TT>true</TT> if <TT><I>url1</I></TT> and <TT><I>url2</I></TT>
+	represent the same URL, <TT>false</TT> otherwise.  Is identical to</P>
       <PRE><I>url1</I> = <I>url2</I></PRE>
     </DD>
 
@@ -195,7 +195,7 @@
       <TT><A name="hash">hash</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>returns a hash value for <I>url</I>.</P>
+      <P>returns a hash value for <TT><I>url</I></TT>.</P>
     </DD>
 
     <DT>
@@ -207,16 +207,16 @@
       <TT><A name="getFragment">getFragment</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>return the corresponding constituents of <I>url</I>.  For optional
-	constituents, return <TT>SOME _</TT> if the constituent is present,
-	<TT>NONE</TT> otherwise.</P>
+      <P>return the corresponding constituents of <TT><I>url</I></TT>.  For
+	optional constituents, return <TT>SOME _</TT> if the constituent is
+	present, <TT>NONE</TT> otherwise.</P>
     </DD>
 
     <DT>
       <TT><A name="isAbsolutePath">isAbsolutePath</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> if the path constituent of <I>url</I>
+      <P>returns <TT>true</TT> if the path constituent of <TT><I>url</I></TT>
 	represents an absolute path, that is, a path whose string
 	representation starts with a slash, <TT>false</TT> otherwise.</P>
     </DD>
@@ -229,9 +229,9 @@
     </DT>
     <DD>
       <P>return a URL with the corresponding constituent replaced.
-	If <I>x</I> is <TT>SOME _</TT>, this causes the constituent to
-	be present in the result, if it is <TT>NONE</TT>, the constituent
-	is absent in the result.  Raise <TT>Malformed</TT> if <I>x</I>
+	If <TT><I>x</I></TT> is <TT>SOME _</TT>, this causes the constituent
+	to be present in the result, if it is <TT>NONE</TT>, the constituent
+	is absent in the result.  Raise <TT>Malformed</TT> if <TT><I>x</I></TT>
 	is not a valid value for the constituent.</P>
     </DD>
 
@@ -240,7 +240,7 @@
       <TT><A name="makeRelativePath">makeRelativePath</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>return a URL equivalent to <I>url</I> except that its path
+      <P>return a URL equivalent to <TT><I>url</I></TT> except that its path
 	constituent is absolute resp. relative.</P>
     </DD>
 
@@ -250,8 +250,8 @@
     </DT>
     <DD>
       <P>return a URL with the corresponding constituent replaced.
-	If <I>x</I> is <TT>SOME _</TT>, this causes the constituent to
-	be present in the result, if it is <TT>NONE</TT>, the constituent
+	If <TT><I>x</I></TT> is <TT>SOME _</TT>, this causes the constituent
+	to be present in the result, if it is <TT>NONE</TT>, the constituent
 	is absent in the result.</P>
     </DD>
   </DL>

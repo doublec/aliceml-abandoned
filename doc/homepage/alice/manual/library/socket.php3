@@ -79,46 +79,47 @@
       <TT><A name="server">server</A> (<I>portOpt</I>, <I>acceptor</I>)</TT>
     </DT>
     <DD>
-      <P>starts a server listening for connections.  If <I>portOpt</I> is
-	<TT>SOME <I>port</I></TT>, makes the server listen on <I>port</I>
-	if available, if it is <TT>NONE</TT>, selects a free port.
+      <P>starts a server listening for connections.  If <TT><I>portOpt</I></TT>
+	is <TT>SOME <I>port</I></TT>, makes the server listen on <TT><I>port</I
+	></TT> if available, if it is <TT>NONE</TT>, selects a free port.
 	Returns the socket with which one can close down the server and
 	the actual port on which it listens.  Raises <TT>IO.Io</TT> if the
 	a port was specified but not available.</P>
       <P>For every client that connects to the server, invokes</P>
       <PRE><I>acceptor</I> (<I>sock</I>, <I>host</I>, <I>port</I></PRE>
-      <P>where <I>sock</I>, <I>host</I> and <I>port</I> are the socket
-	with which to speak to the client, the client's host name and
-	the port number on which the client connected, respectively.</P>
+      <P>where <TT><I>sock</I></TT>, <TT><I>host</I></TT> and <TT><I>port</I
+	></TT> are the socket with which to speak to the client, the client's
+	host name and the port number on which the client connected,
+	respectively.</P>
     </DD>
 
     <DT>
       <TT><A name="client">client</A> (<I>host</I>, <I>port</I>)</TT>
     </DT>
     <DD>
-      <P>establishes a connection to a server listening on <I>host</I>
-	on <I>port</I>.  Raises <TT>IO.Io</TT> if no connection could
-	be established.  Returns the socket with which the client can
-	speak to the server.</P>
+      <P>establishes a connection to a server listening on <TT><I>host</I></TT>
+	on <TT><I>port</I></TT>.  Raises <TT>IO.Io</TT> if no connection could
+	be established.  Returns the socket with which the client can speak to
+	the server.</P>
     </DD>
 
     <DT>
       <TT><A name="input1">input1</A> <I>sock</I></TT>
     </DT>
     <DD>
-      <P>receives a single character from <I>sock</I>.  If the socket was
-	closed by the other end, returns <TT>NONE</TT>, else returns <TT>SOME
-	<I>c</I></TT> where <I>c</I> is the character received.  Raises
-	<TT>IO.Io</TT> if receiving failed.</P>
+      <P>receives a single character from <TT><I>sock</I></TT>.  If the socket
+	was closed by the other end, returns <TT>NONE</TT>, else returns <TT
+	>SOME <I>c</I></TT> where <TT><I>c</I></TT> is the character received.
+	Raises <TT>IO.Io</TT> if receiving failed.</P>
     </DD>
 
     <DT>
       <TT><A name="inputN">inputN</A> (<I>sock</I>, <I>n</I>)</TT>
     </DT>
     <DD>
-      <P>receives at most <I>n</I> characters from <I>sock</I>.  If the
-	returned string is shorter than <I>n</I> characters, then this
-	indicates that the socket was closed by the other end.  Raises
+      <P>receives at most <I>n</I> characters from <TT><I>sock</I></TT>.
+	If the returned string is shorter than <I>n</I> characters, then
+	this indicates that the socket was closed by the other end.  Raises
 	<TT>IO.Io</TT> if receiving failed.</P>
     </DD>
 
@@ -126,37 +127,37 @@
       <TT><A name="inputLine">inputLine</A> <I>sock</I></TT>
     </DT>
     <DD>
-      <P>receives characters from <I>sock</I> until the next newline character
-	(<TT>#"\n"</TT>) and returns them, including the newline character.
-	If the returned string is empty, then this indicates that the socket
-	was closed by the other end.  The last line is always terminates
-	by a newline character, even if it did not end in one.  Raises
-	<TT>IO.Io</TT> if receiving failed.</P>
+      <P>receives characters from <TT><I>sock</I></TT> until the next newline
+	character (<TT>#"\n"</TT>) and returns them, including the newline
+	character.  If the returned string is empty, then this indicates that
+	the socket was closed by the other end.  The last line is always
+	terminates by a newline character, even if it did not end in one.
+	Raises <TT>IO.Io</TT> if receiving failed.</P>
     </DD>
 
     <DT>
       <TT><A name="output">output</A> (<I>sock</I>, <I>s</I>)</TT>
     </DT>
     <DD>
-      <P>sends <I>s</I> to <I>sock</I>.  Raises <TT>IO.Io</TT> if sending
-	failed.</P>
+      <P>sends <TT><I>s</I></TT> to <TT><I>sock</I></TT>.  Raises
+	<TT>IO.Io</TT> if sending failed.</P>
     </DD>
 
     <DT>
       <TT><A name="output1">output1</A> (<I>sock</I>, <I>c</I>)</TT>
     </DT>
     <DD>
-      <P>sends <I>c</I> to <I>sock</I>.  Raises <TT>IO.Io</TT> if sending
-	failed.</P>
+      <P>sends <TT><I>c</I></TT> to <TT><I>sock</I></TT>.  Raises
+	<TT>IO.Io</TT> if sending failed.</P>
     </DD>
 
     <DT>
       <TT><A name="close">close</A> <I>sock</I></TT>
     </DT>
     <DD>
-      <P>closes <I>sock</I>.  If <I>sock</I> was returned by <A href="#server"
-	><TT>server</TT></A>, shuts down the server, else closes an active
-	connection.</P>
+      <P>closes <TT><I>sock</I></TT>.  If <TT><I>sock</I></TT> was returned
+	by <A href="#server"><TT>server</TT></A>, shuts down the server, else
+	closes an active connection.</P>
     </DD>
   </DL>
 

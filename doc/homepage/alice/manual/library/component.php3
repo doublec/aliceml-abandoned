@@ -96,9 +96,10 @@
     </DD>
 
     <DT>
-      <PRE>exception <A name="Mismatch">Mismatch</A> of {component : <A href="url.php3#t">Url.t</A>,
-		       request : <A href="url.php3#t">Url.t</A> option,
-		       cause : Inf.mismatch}</PRE>
+      <TT>exception <A name="Mismatch">Mismatch</A> of
+	{component : <A href="url.php3#t">Url.t</A>,
+	 request : <A href="url.php3#t">Url.t</A> option,
+	 cause : Inf.mismatch}</TT>
     </DT>
     <DD>
       <P>indicates a signature mismatch during dynamic linking.
@@ -146,38 +147,38 @@
     </DT>
     <DD>
       <P>returns an evaluated component (as <TT>val component</TT> of the
-	resulting structure) representing structure&nbsp;<I>X</I> with export
-	signature&nbsp;<I>S</I>.</P>
+	resulting structure) representing structure&nbsp;<TT><I>X</I></TT>
+	with export signature&nbsp;<TT><I>S</I></TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="load">load</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>localizes <I>url</I> using the <A href="resolver.php3">resolver</A>
-	initialized from the <TT>ALICE_LOAD</TT> environment variable and
-	attempts to unpickle a first-class component from the file found,
-	which it returns upon success.  Raises <TT>IO.Io</TT> if resolving,
-	loading or unpickling fails.  If resolving fails, the <TT>cause</TT>
-	is <TT>Option</TT>.</P>
+      <P>localizes <TT><I>url</I></TT> using the <A href="resolver.php3"
+	>resolver</A> initialized from the <TT>ALICE_LOAD</TT> environment
+	variable and attempts to unpickle a first-class component from the
+	file found, which it returns upon success.  Raises <TT>IO.Io</TT>
+	if resolving, loading or unpickling fails.  If resolving fails, the
+	<TT>cause</TT> is <TT>Option</TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="save">save</A> (<I>s</I>, <I>comp</I>)</TT>
     </DT>
     <DD>
-      <P>pickles <I>comp</I> and saves it to a new file with
-	name&nbsp;<I>s</I>.  Raises <TT>IO.Io</TT> is pickling or saving
-	fails.</P>
+      <P>pickles <TT><I>comp</I></TT> and saves it to a new file with
+	name&nbsp;<TT><I>s</I></TT>.  Raises <TT>IO.Io</TT> is pickling
+	or saving fails.</P>
     </DD>
 
     <DT>
       <TT><A name="inf">inf</A> <I>comp</I></TT>
     </DT>
     <DD>
-      <P>retrieves the export signature from <I>comp</I>.  May return
-	<TT>NONE</TT> if the component represented by <I>comp</I> has
-	no explicit export signature, as may be the case for a native
+      <P>retrieves the export signature from <TT><I>comp</I></TT>.  May return
+	<TT>NONE</TT> if the component represented by <TT><I>comp</I></TT>
+	has no explicit export signature, as may be the case for a native
 	or foreign component (that is, a component not implemented in
 	Alice).</P>
     </DD>

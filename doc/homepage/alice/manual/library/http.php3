@@ -70,9 +70,9 @@
     </DD>
 
     <DT>
-      <PRE>type <A name="request">request</A> =
-     {method : string, uri : <A href="url.php3#t">Url.t</A>, protocol : string,
-      headers : string StringMap.t, body : string}</PRE>
+      <TT>type <A name="request">request</A> =
+	{method : string, uri : <A href="url.php3#t">Url.t</A>,
+	 protocol : string, headers : string StringMap.t, body : string}</TT>
     </DT>
     <DD>
       <P>The type of HTTP requests.  Represents a request with <TT>method</TT>
@@ -82,9 +82,9 @@
     </DD>
 
     <DT>
-      <PRE>type <A name="response">response</A> =
-     {protocol : string, statusCode : int, reasonPhrase : string,
-      headers : string StringMap.t, body : string}</PRE>
+      <TT>type <A name="response">response</A> =
+	{protocol : string, statusCode : int, reasonPhrase : string,
+	 headers : string StringMap.t, body : string}</TT>
     </DT>
     <DD>
       <P>The type of HTTP responses.  Represents a response with
@@ -94,8 +94,8 @@
     </DD>
 
     <DT>
-      <PRE>type <A name="simple_response">simple_response</A> =
-     {statusCode : int, contentType : string, body : string}</PRE>
+      <TT>type <A name="simple_response">simple_response</A> =
+	{statusCode : int, contentType : string, body : string}</TT>
     </DT>
     <DD>
       <P>The type of simplified HTTP responses.  Represents a response
@@ -126,8 +126,8 @@
       <TT><A name="readRequest">readRequest</A> <I>sock</I></TT>
     </DT>
     <DD>
-      <P>attempts to read an HTTP request from <I>sock</I>, parses it,
-	and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
+      <P>attempts to read an HTTP request from <TT><I>sock</I></TT>, parses
+	it, and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
 	or <TT><A href="#Format">Format</A></TT> if the connection was
 	closed or the request was malformed, respectively.</P>
     </DD>
@@ -136,8 +136,8 @@
       <TT><A name="readResponse">readResponse</A> <I>sock</I></TT>
     </DT>
     <DD>
-      <P>attempts to read an HTTP response from <I>sock</I>, parses it,
-	and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
+      <P>attempts to read an HTTP response from <TT><I>sock</I></TT>, parses
+	it, and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
 	or <TT><A href="#Format">Format</A></TT> if the connection was
 	closed or the response was malformed, respectively.</P>
     </DD>
@@ -147,8 +147,8 @@
 	(<I>sock</I>, <I>request</I>)</TT>
     </DT>
     <DD>
-      <P>formats <I>request</I> according to the HTTP protocol, Version 1.1,
-	and writes it to <I>sock</I>.</P>
+      <P>formats <TT><I>request</I></TT> according to the HTTP protocol,
+	Version 1.1, and writes it to <TT><I>sock</I></TT>.</P>
     </DD>
 
     <DT>
@@ -156,26 +156,26 @@
 	(<I>sock</I>, <I>response</I>)</TT>
     </DT>
     <DD>
-      <P>formats <I>response</I> according to the HTTP protocol, Version 1.1,
-	and writes it to <I>sock</I>.</P>
+      <P>formats <TT><I>response</I></TT> according to the HTTP protocol,
+	Version 1.1, and writes it to <TT><I>sock</I></TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="reasonPhrase">reasonPhrase</A> <I>code</I></TT>
     </DT>
     <DD>
-      <P>returns a reason phrase describing status <I>code</I>.
+      <P>returns a reason phrase describing status <TT><I>code</I></TT>.
 	Implemented to use the reason phrases given in RFC&nbsp;2616,
-	or <TT>"Unknown"</TT> if <I>code</I> does not correspond to
-	a status code defined in RFC&nbsp;2616.</P>
+	or <TT>"Unknown"</TT> if <TT><I>code</I></TT> does not correspond
+	to a status code defined in RFC&nbsp;2616.</P>
     </DD>
 
     <DT>
       <TT><A name="makeResponse">makeResponse</A> <I>simpleResponse</I></TT>
     </DT>
     <DD>
-      <P>returns a full response corresponding to the response specified
-	by <I>simpleResponse</I>.  The <TT>headers</TT> only specify
+      <P>returns a full response corresponding to the response specified by
+	<TT><I>simpleResponse</I></TT>.  The <TT>headers</TT> only specify
 	<TT>Content-Type</TT> and <TT>Content-Length</TT>, <TT>protocol</TT>
 	is fixed to <TT>HTTP/1.1</TT>, and <TT>reasonPhrase</TT> is
 	generated using function <TT><A href="#reasonPhrase">reasonPhrase</A
