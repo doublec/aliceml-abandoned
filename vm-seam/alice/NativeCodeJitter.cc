@@ -1106,6 +1106,13 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
   word tag          = inlineMap->Get(wPrimitive);
   u_int Result;
   switch (static_cast<INLINED_PRIMITIVE>(Store::DirectWordToInt(tag))) {
+  case HOLE_HOLE:
+    {
+      Generic::Hole::New(JIT_V1);
+      JITStore::SetTransientTag(JIT_V1);
+      Result = JIT_V1;
+    }
+    break;
   case FUTURE_BYNEED:
     {
       Generic::Byneed::New(JIT_V1);
@@ -2578,6 +2585,7 @@ static InlineEntry inlines[] = {
 };
 #else
 static InlineEntry inlines[] = {
+  { HOLE_HOLE,     "Hole.hole" },
   { FUTURE_BYNEED, "Future.byneed" },
   { CHAR_ORD,      "Char.ord" },
   { INT_OPPLUS,    "Int.+" },

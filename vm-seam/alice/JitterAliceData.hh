@@ -13,6 +13,8 @@
 #ifndef __ALICE__JITTER_ALICE_DATA_HH__
 #define __ALICE__JITTER_ALICE_DATA_HH__
 
+#if HAVE_LIGHTNING
+
 #include "alice/Data.hh"
 
 namespace JITAlice {
@@ -113,5 +115,7 @@ namespace JITAlice {
     }
   };
 };
+
+#endif
 
 #endif

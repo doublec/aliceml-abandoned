@@ -27,6 +27,7 @@ class Vector;
 class LivenessTable;
 
 typedef enum {
+  HOLE_HOLE,
   FUTURE_BYNEED,
   CHAR_ORD,
   INT_OPPLUS,
