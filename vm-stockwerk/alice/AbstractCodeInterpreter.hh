@@ -39,7 +39,7 @@ public:
   virtual Result Handle(word exn, word debug, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 #endif

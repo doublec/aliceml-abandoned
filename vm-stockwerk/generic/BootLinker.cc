@@ -87,7 +87,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 class EnterInterpreter : public Interpreter {
@@ -106,7 +106,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 class LinkInterpreter : public Interpreter {
@@ -125,7 +125,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 class LoadInterpreter : public Interpreter {
@@ -144,7 +144,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -305,8 +305,11 @@ const char *ApplyInterpreter::Identify() {
   return "ApplyInterpreter";
 }
 
-const char *ApplyInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "ApplyInterpreter::ToString";
+void ApplyInterpreter::DumpFrame(word frameWord) {
+  ApplyFrame *frame = ApplyFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  Chunk *key = frame->GetKey();
+  fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 // EnterInterpreter
@@ -331,8 +334,11 @@ const char *EnterInterpreter::Identify() {
   return "EnterInterpreter";
 }
 
-const char *EnterInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "EnterInterpreter::ToString";
+void EnterInterpreter::DumpFrame(word frameWord) {
+  EnterFrame *frame = EnterFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  Chunk *key = frame->GetKey();
+  fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 // LinkInterpreter
@@ -399,8 +405,12 @@ Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
 const char *LinkInterpreter::Identify() {
   return "LinkInterpreter";
 }
-const char *LinkInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "LinkInterpreter::ToString";
+
+void LinkInterpreter::DumpFrame(word frameWord) {
+  LinkFrame *frame = LinkFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  Chunk *key = frame->GetKey();
+  fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 // LoadInterpreter
@@ -427,8 +437,11 @@ const char *LoadInterpreter::Identify() {
   return "LoadInterpreter";
 }
 
-const char *LoadInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "LoadInterpreter::ToString";
+void LoadInterpreter::DumpFrame(word frameWord) {
+  LoadFrame *frame = LoadFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  Chunk *key = frame->GetString();
+  fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 //

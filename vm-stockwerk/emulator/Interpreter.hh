@@ -63,7 +63,7 @@ public:
   virtual Result Handle(word exn, word debug, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify() = 0;
-  virtual const char *ToString(word args, TaskStack *taskStack) = 0;
+  virtual void DumpFrame(word frame) = 0;
 };
 
 #endif

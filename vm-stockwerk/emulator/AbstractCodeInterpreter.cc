@@ -16,6 +16,7 @@
 #define implementation "emulator/AbstractCodeInterpreter.hh"
 #endif
 
+#include <cstdio>
 #include "emulator/AbstractCodeInterpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
@@ -757,6 +758,6 @@ const char *AbstractCodeInterpreter::Identify() {
   return "AbstractCodeInterpreter";
 }
 
-const char *AbstractCodeInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "AbstractCodeInterpreter::ToString";
+void AbstractCodeInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Alice Function\n"); //--** include the name of the function
 }

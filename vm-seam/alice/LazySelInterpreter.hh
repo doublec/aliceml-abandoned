@@ -37,7 +37,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 class LazySelectionClosure : public Closure {

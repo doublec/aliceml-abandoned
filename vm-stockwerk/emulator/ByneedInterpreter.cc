@@ -14,6 +14,7 @@
 #pragma implementation "emulator/ByneedInterpreter.hh"
 #endif
 
+#include <cstdio>
 #include "emulator/ByneedInterpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
@@ -104,6 +105,6 @@ const char *ByneedInterpreter::Identify() {
   return "ByneedInterpreter";
 }
 
-const char *ByneedInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "ByneedInterpreter::ToString";
+void ByneedInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Byneed\n");
 }

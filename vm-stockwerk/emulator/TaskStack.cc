@@ -116,7 +116,7 @@ public:
   virtual Result Handle(word, word, TaskStack *);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word, TaskStack *);
+  virtual void DumpFrame(word frame);
 };
 
 Interpreter::Result EmptyTaskInterpreter::Handle(word exn, word, TaskStack *) {
@@ -134,8 +134,8 @@ const char *EmptyTaskInterpreter::Identify() {
   return "EmptyTaskInterpreter";
 }
 
-const char *EmptyTaskInterpreter::ToString(word, TaskStack *) {
-  return "EmptyTaskInterpreter::ToString";
+void EmptyTaskInterpreter::DumpFrame(word) {
+  // do nothing
 }
 
 word TaskStack::emptyTask;

@@ -277,7 +277,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -299,8 +299,8 @@ const char *InputInterpreter::Identify() {
   return "InputInterpreter";
 }
 
-const char *InputInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "InputInterpreter::ToString";
+void InputInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Fill Unpickling Buffer\n");
 }
 
 // TransformInterpreter Frame
@@ -354,7 +354,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 // ApplyTransform Function
@@ -410,8 +410,8 @@ Interpreter::Result TransformInterpreter::Run(word args, TaskStack *taskStack) {
   CONTINUE(args);
 }
 
-const char *TransformInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "TransformInterpreter::ToString";
+void TransformInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Apply Transform\n");
 }
 
 // UnpickleInterpreter Frame
@@ -482,7 +482,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -653,8 +653,11 @@ const char *UnpickleInterpreter::Identify() {
   return "UnpickleInterpreter";
 }
 
-const char *UnpickleInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "UnpickleInterpreter::ToString";
+void UnpickleInterpreter::DumpFrame(word frameWord) {
+  UnpickleFrame *frame = UnpickleFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  fprintf(stderr, "Unpickling Task %d of %d\n",
+	  frame->GetIndex(), frame->GetNumElems());
 }
 
 // PickleUnpackInterpeter Frame
@@ -700,7 +703,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -724,8 +727,8 @@ const char *PickleUnpackInterpeter::Identify() {
   return "PickleUnpackInterpeter";
 }
 
-const char *PickleUnpackInterpeter::ToString(word args, TaskStack *taskStack) {
-  return "PickleUnpackInterpeter::ToString";
+void PickleUnpackInterpeter::DumpFrame(word) {
+  fprintf(stderr, "Pickle Unpack\n");
 }
 
 // PickleLoadInterpreter Frame
@@ -771,7 +774,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -798,8 +801,8 @@ const char *PickleLoadInterpreter::Identify() {
   return "PickleLoadInterpreter";
 }
 
-const char *PickleLoadInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "PickleLoadInterpreter::ToString";
+void PickleLoadInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Pickle Load\n");
 }
 
 //

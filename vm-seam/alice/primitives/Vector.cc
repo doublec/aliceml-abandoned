@@ -16,6 +16,7 @@
 #pragma implementation "emulator/VectorTabulateInterpreter.hh"
 #endif
 
+#include <cstdio>
 #include "emulator/Authoring.hh"
 #include "emulator/VectorTabulateInterpreter.hh"
 
@@ -110,9 +111,11 @@ const char *VectorTabulateInterpreter::Identify() {
   return "VectorTabulateInterpreter";
 }
 
-const char *VectorTabulateInterpreter::ToString(word args,
-						TaskStack *taskStack) {
-  return "VectorTabulateInterpreter::ToString";
+void VectorTabulateInterpreter::DumpFrame(word frameWord) {
+  VectorTabulateFrame *frame = VectorTabulateFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  fprintf(stderr, "Vector Tabulate %d of %d\n",
+	  frame->GetIndex(), frame->GetNumElems());
 }
 
 DEFINE1(Vector_fromList) {

@@ -100,14 +100,10 @@ const char *LazySelectionInterpreter::Identify() {
   return "LazySelectionInterpreter";
 }
 
-const char *
-LazySelectionInterpreter::ToString(word args, TaskStack *taskStack) {
-  static char info[256];
-  LazySelectionFrame *frame =
-    LazySelectionFrame::FromWord(taskStack->GetFrame());
+void LazySelectionInterpreter::DumpFrame(word frameWord) {
+  LazySelectionFrame *frame = LazySelectionFrame::FromWord(frameWord);
   Assert(frame != INVALID_POINTER);
-  sprintf(info, "LazySelection . %d", frame->GetIndex());
-  return info;
+  fprintf(stderr, "Select #%d\n", frame->GetIndex());
 }
 
 //

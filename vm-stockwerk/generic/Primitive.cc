@@ -16,6 +16,7 @@
 #pragma implementation "emulator/Primitive.hh"
 #endif
 
+#include <cstdio>
 #include "emulator/Closure.hh"
 #include "emulator/ConcreteCode.hh"
 #include "emulator/TaskStack.hh"
@@ -60,7 +61,7 @@ public:
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -101,8 +102,9 @@ const char *PrimitiveInterpreter::Identify() {
   return "PrimitiveInterpreter";
 }
 
-const char *PrimitiveInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "PrimitiveInterpreter::ToString";
+void PrimitiveInterpreter::DumpFrame(word) {
+  //--** include the name of the primitive
+  fprintf(stderr, "Primitive\n");
 }
 
 //
