@@ -19,7 +19,6 @@ import
    System(printError)
    Resolve(trace)
    Error(registerFormatter exceptionToMessage)
-   UrlComponent('Url$': Url) at 'lib/utility/Url'
    SignatureComponent('Signature$': Signature) at 'lib/system/Signature'
    BootComponent('boot': Boot) at 'lib/system/Boot'
 define
@@ -118,7 +117,7 @@ define
       {Property.put 'ozd.args' Rest}
       {Property.put 'errors.depth' 20}
       {Property.put 'errors.width' 10}
-      {Boot {Url.fromString {ByteString.make Name}} _}
+      {Boot {ByteString.make Name} _}
    [] nil then
       {Usage 2}
    end
