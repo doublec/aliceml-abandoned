@@ -217,11 +217,18 @@
 	val f = TextIO.openOut "/tmp/log";
 	withStreams {err=SOME f, out=NONE, trace=NONE} compile s</PRE>
 
+    <LI>Error message redirection to an incremental list of lines:
+	<PRE>
+	val (lines,wr) = TextPrimIO.openVectorListWr ()
+	val f = TextIO.mkOutstream (TextIO.StreamIO.mkOutstream (wr, IO.LINE_BUF));
+	withStreams {err=SOME f, out=NONE, trace=NONE} compile s;
+	TextIO.closeOut f</PRE>
+
     <LI>Combined message redirection and layout customization (note the
       parenthesization):
 	<PRE>
 	withStreams {err=SOME TextIO.stdOut, out=SOME TextIO.stdOut, trace=NONE}
-	    (withWidhts {err=120, out=120, trace=80} compile) s</PRE>
+	    (withWidths {err=120, out=120, trace=80} compile) s</PRE>
   </UL>
 
 <?php footing() ?>
