@@ -5,6 +5,7 @@ import
    FD
    FS
    Search
+   Space
 \ifdef DEBUG
    System
    Inspector
@@ -67,22 +68,16 @@ define
 		    end)
    end
 
-   local
-      fun {Bool X}
-	 if X then 1 else 0 end
-      end
-   in
-      fun {ComputeMinDepth Attributes}
-	 {FD.sum
-	  [Attributes.b     \=: RootAttributes.b
-	   Attributes.ems   \=: RootAttributes.ems
-	   Attributes.i     \=: RootAttributes.i
-	   Attributes.tt    \=: RootAttributes.tt
-	   {FD.minus Attributes.u RootAttributes.u}
-	   Attributes.size  \=: RootAttributes.size
-	   Attributes.color \=: RootAttributes.color
-	   1] '=:'}
-      end
+   fun {ComputeMinDepth Attributes}
+      {FD.sum
+       [Attributes.b     \=: RootAttributes.b
+	Attributes.ems   \=: RootAttributes.ems
+	Attributes.i     \=: RootAttributes.i
+	Attributes.tt    \=: RootAttributes.tt
+	{FD.minus Attributes.u RootAttributes.u}
+	Attributes.size  \=: RootAttributes.size
+	Attributes.color \=: RootAttributes.color
+	1] '=:'}
    end
 
    fun {MkSizeTag I}
@@ -195,7 +190,7 @@ define
 
    RootI = 1
 
-   fun {Constrain Meaning SourceCost}
+   proc {Constrain Meaning SourceCost ?Res}
       NumberOfElements = SourceCost div Tag.minCost
       NumberOfDataItems = {Length Meaning}
 
@@ -386,8 +381,12 @@ define
 
       for I in FirstElementI..LastElementI do W TagIllegal in
 	 W = V.I
-%	 {FS.exclude W.tag W.illegal}
-	 W.illegal = {Select.inter IllegalUps W.daughters}
+	 {FS.exclude W.tag W.illegal}
+
+	 W.illegal = {FS.compl {Select.union
+				{Map IllegalUps FS.compl} W.daughters}}
+
+%	 W.illegal = {Select.union IllegalUps W.daughters}
 	 TagIllegal = {Select.fs TagIllegals W.tag}
 	 W.illegalup = {FS.union TagIllegal W.illegal}
       end
@@ -406,26 +405,102 @@ define
       Cost = {FD.sum for I in FirstElementI..LastElementI collect: Collect do
 			{Collect {Select.fd TagCosts V.I.tag}}
 		     end '=:'}
+
+      proc {Distribute} Mothers in
+	 %% Step 1: Find nodes that are complete downwards.
+	 %%         Pick one, determine its mother.
+	 {Space.waitStable}
+	 Mothers = for I in FirstElementI..LastElementI collect: Collect do
+		      if {IsDet V.I.down} andthen {Not {IsDet V.I.mother}} then
+			 {Collect V.I.mother}
+		      end
+		   end
+	 case Mothers of _|_ then AMother in
+	    AMother = {FD.choose ff Mothers $ _}
+	    {FD.distribute ff [AMother]}
+	    {Distribute}
+	 [] nil then
+/*
+	    %% Step 2: Pick leftmost data item with non-det mother.
+	    %%         Determine its mother.
+	    Mothers = for I in FirstDataItemI..LastDataItemI collect: Collect
+		      do
+			 if {Not {IsDet V.I.mother}} then
+			    {Collect V.I.mother}
+			 end
+		      end
+	 in
+	    case Mothers of Mother|_ then
+	       {FD.distribute ff [Mother]}
+	       {Distribute}
+	    [] nil then
+	       %% Step 3: Pick a node with non-det down set.
+	       %%         Set cardinality to lower bound in one branch,
+	       %%         greater than lower bound in the other.
+	       Downs = for I in FirstElementI..LastElementI collect: Collect do
+			  Down = V.I.down
+		       in
+			  if {Not {IsDet Down}} then
+			     {Collect Down#{FS.reflect.cardOf.lowerBound Down}}
+			  end
+		       end
+	    in
+	       case Downs of _|_ then
+		  MinDown#MinCard = {List.foldR Downs
+				     fun {$ This=_#I In=_#J}
+					if I < J then This else In end
+				     end unit#FS.sup}
+	       in
+		  choice {FS.cardRange MinCard MinCard MinDown}
+		  []     {FS.cardRange MinCard + 1 FS.sup MinDown}
+		  end
+		  {Distribute}
+	       else
+		  Tags = for I in FirstElementI..LastElementI collect: Collect
+			 do {Collect V.I.tag}
+			 end
+		  {FD.distribute ff Tags}
+	       end
+	    end
+*/
+	    {FD.distribute ff
+	     {Append
+	      for I in 1..{Width V} collect: Collect do
+		 case {CondSelect V.I mother unit} of unit then skip
+		 elseof Mother then {Collect Mother}
+		 end
+	      end
+	      for I in 1..{Width V} collect: Collect do
+		 case {CondSelect V.I tag unit} of unit then skip
+		 elseof Tag then {Collect Tag}
+		 end
+	      end}}
+	 end
+      end
    in
-      V#Cost
+      Res = V#Cost
+
+/*
+      {FD.distribute ff
+       {Append
+	for I in 1..{Width V} collect: Collect do
+	   case {CondSelect V.I mother unit} of unit then skip
+	   elseof Mother then {Collect Mother}
+	   end
+	end
+	for I in 1..{Width V} collect: Collect do
+	   case {CondSelect V.I tag unit} of unit then skip
+	   elseof Tag then {Collect Tag}
+	   end
+	end}}
+*/
+
+      {Distribute}
    end
 
    fun {Script Meaning SourceCost}
-      proc {$ Res} V in
-	 Res = {Constrain {Reverse Meaning} SourceCost}
-	 V = Res.1
-	 {FD.distribute ff
-	  {Append
-	   for I in 1..{Width V} collect: Collect do
-	      case {CondSelect V.I mother unit} of unit then skip
-	      elseof Mother then {Collect Mother}
-	      end
-	   end
-	   for I in 1..{Width V} collect: Collect do
-	      case {CondSelect V.I tag unit} of unit then skip
-	      elseof Tag then {Collect Tag}
-	      end
-	   end}}
+      fun {$}
+	 {Constrain {Reverse Meaning} SourceCost}
       end
    end
 
