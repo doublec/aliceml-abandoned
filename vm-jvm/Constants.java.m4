@@ -17,7 +17,20 @@ final public class Constants {
     public static final Name dmlbind  = new UniqueName("[Bind]");
 
     public static final Constructor runtimeError = new UniqueConstructor("runtimeError");
-    public static final Constructor reference    = new UniqueConstructor("reference");
+
+    final public static class Ref extends UniqueConstructor {
+
+	public Ref(java.lang.String n) {
+	    super(n);
+	}
+
+	final public DMLValue apply(DMLValue val)
+	    throws java.rmi.RemoteException {
+	    return new Reference(val);
+	}
+    }
+
+    public static final Constructor reference    = new Ref("reference");
     //    public static final Constructor cons         = new Constructor("cons");
 
     /** Diese Exception gibt's, um java-Exceptions zu verpacken */
