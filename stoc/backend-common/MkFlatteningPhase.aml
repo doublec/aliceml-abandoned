@@ -276,22 +276,20 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME (f (O.VecExp (info, ids))::translateCont cont);
 		stms
 	    end
-	  | translateExp (FunExp (info, id, exp), f, cont) =
+	  | translateExp (FunExp (info, matches), f, cont) =
 	    let
-		fun return exp' = O.ReturnStm (stmInfo (infoExp exp), exp')
-		val (args, body) =
-		    case exp of
-			CaseExp (_, VarExp (_, ShortId (_, id')), matches) =>
-			    if idEq (id, id')
-				andalso not (occursInMatches (matches, id))
-			    then translateFunBody (info, id, matches, return)
-			    else
-				(O.OneArg id,
-				 translateExp (exp, return, Goto nil))
-		      | _ =>
-			    (O.OneArg id,
-			     translateExp (exp, return, Goto nil))
+		fun return exp' =
+		    O.ReturnStm (stmInfo (infoMatch (List.hd matches)), exp')
+		val matches' =
+		    List.map (fn Match (_, pat, exp) =>
+			      (region (infoExp exp), pat,
+			       translateExp (exp, return, Goto nil))) matches
+		val errStms = [O.RaiseStm (stmInfo info, id_Match)]
+		val (args, graph, mapping, consequents) =
+		    buildFunArgs (matches', errStms)
+		val body = translateGraph (graph, mapping)
 	    in
+		checkReachability consequents;
 		f (O.FunExp (info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
@@ -498,20 +496,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME (translateGraph (graph, [(nil, id)]));
 		checkReachability consequents;
 		stms
-	    end
-	and translateFunBody (info, id, matches, return) =
-	    let
-		val matches' =
-		    List.map (fn Match (_, pat, exp) =>
-			      (region (infoExp exp), pat,
-			       translateExp (exp, return, Goto nil))) matches
-		val errStms = [O.RaiseStm (stmInfo info, id_Match)]
-		val (args, graph, mapping, consequents) =
-		    buildFunArgs (id, matches', errStms)
-		val stms = translateGraph (graph, mapping)
-	    in
-		checkReachability consequents;
-		(args, stms)
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =

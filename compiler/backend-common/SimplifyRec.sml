@@ -284,15 +284,15 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun preprocess (I.WildPat info) = (nil, WildPat info)
 	  | preprocess (I.LitPat (info, lit)) = (nil, LitPat (info, lit))
 	  | preprocess (I.VarPat (info, id)) = (nil, VarPat (info, id))
-	  | preprocess (I.ConPat (info, longid, NONE, isNAry)) =
+	  | preprocess (I.ConPat (info, longid, isNAry)) =
 	    (nil, ConPat (info, longid, NONE, isNAry))
-	  | preprocess (I.ConPat (info, longid, SOME pat, isNAry)) =
+	  | preprocess (I.AppPat (_, I.ConPat (info, longid, isNAry), pat)) =
 	    let
 		val (constraints, pat') = preprocess pat
 	    in
 		(constraints, ConPat (info, longid, SOME pat', isNAry))
 	    end
-	  | preprocess (I.RefPat (info, pat)) =
+	  | preprocess (I.AppPat (_, I.RefPat info, pat)) =
 	    let
 		val (constraints, pat') = preprocess pat
 	    in
@@ -378,6 +378,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | preprocess (I.WithPat (info, _, _)) =
 	    Error.error (region info,
 			 "with pattern not allowed in val rec")
+	  | preprocess (I.RefPat _ | I.AppPat (_, _, _)) =
+	    raise Crash.Crash "SimplifyRec.preprocess"
 
 	fun derec (ValDec (_, pat, exp)::decr) =
 	    let

@@ -49,6 +49,6 @@ signature SIMPLIFY_MATCH =
 	val buildGraph: (O.coord * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
 
-	val buildFunArgs: I.id * (O.coord * I.pat * O.body) list * O.body ->
+	val buildFunArgs: (O.coord * I.pat * O.body) list * O.body ->
 	    O.id O.args * testGraph * mapping * consequent list
     end

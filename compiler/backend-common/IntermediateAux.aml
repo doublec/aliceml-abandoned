@@ -38,7 +38,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInExp (SelExp (_, _), _) = false
 	  | occursInExp (VecExp (_, exps), id) =
 	    List.exists (fn exp => occursInExp (exp, id)) exps
-	  | occursInExp (FunExp (_, _, exp), id) = occursInExp (exp, id)
+	  | occursInExp (FunExp (_, matches), id) =
+	    occursInMatches (matches, id)
 	  | occursInExp (AppExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (AdjExp (_, exp1, exp2), id) =
@@ -70,10 +71,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and occursInPat (WildPat _, _) = false
 	  | occursInPat (LitPat (_, _), _) = false
 	  | occursInPat (VarPat (_, _), _) = false
-	  | occursInPat (ConPat (_, _, NONE, _), _) = false
-	  | occursInPat (ConPat (_, _, SOME pat, _), id) =
-	    occursInPat (pat, id)
-	  | occursInPat (RefPat (_, pat), id) = occursInPat (pat, id)
+	  | occursInPat (ConPat (_, _, _), _) = false
+	  | occursInPat (RefPat _, id) = false
 	  | occursInPat (TupPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
 	  | occursInPat (RowPat (_, patFields), id) =
@@ -81,6 +80,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    patFields
 	  | occursInPat (VecPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
+	  | occursInPat (AppPat (_, pat1, pat2), id) =
+	    occursInPat (pat1, id) orelse occursInPat (pat2, id)
 	  | occursInPat (AsPat (_, pat1, pat2), id) =
 	    occursInPat (pat1, id) orelse occursInPat (pat2, id)
 	  | occursInPat (AltPat (_, pats), id) =
@@ -96,11 +97,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
 	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
-	      | patternVariablesOf' (ConPat (_, _, NONE, _), ids) = ids
-	      | patternVariablesOf' (ConPat (_, _, SOME pat, _), ids) =
-		patternVariablesOf' (pat, ids)
-	      | patternVariablesOf' (RefPat (_, pat), ids) =
-		patternVariablesOf' (pat, ids)
+	      | patternVariablesOf' (ConPat (_, _, _), ids) = ids
+	      | patternVariablesOf' (RefPat _, ids) = ids
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
 	      | patternVariablesOf' (RowPat (_, fieldPats), ids) =
@@ -108,6 +106,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		       patternVariablesOf' (pat, ids)) ids fieldPats
 	      | patternVariablesOf' (VecPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
+	      | patternVariablesOf' (AppPat (_, pat1, pat2), ids) =
+		patternVariablesOf' (pat1, patternVariablesOf' (pat2, ids))
 	      | patternVariablesOf' (AsPat (_, pat1, pat2), ids) =
 		patternVariablesOf' (pat1, patternVariablesOf' (pat2, ids))
 	      | patternVariablesOf' (AltPat (_, pat::_), ids) =
@@ -133,96 +133,94 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else lookup (subst, id0)
 	  | lookup (nil, id0) = id0
 
-	fun substLongId (ShortId (coord, id), subst) =
-	    ShortId (coord, lookup (subst, id))
+	fun substLongId (ShortId (info, id), subst) =
+	    ShortId (info, lookup (subst, id))
 	  | substLongId (longid as LongId (_, _, _), _) = longid
 
 	fun substDecs (dec::decr, subst) =
 	    substDec (dec, subst)::substDecs (decr, subst)
 	  | substDecs (nil, _) = nil
-	and substDec (ValDec (coord, pat, exp), subst) =
-	    ValDec (coord, substPat (pat, subst), substExp (exp, subst))
-	  | substDec (RecDec (coord, decs), subst) =
-	    RecDec (coord, List.map (fn dec => substDec (dec, subst)) decs)
+	and substDec (ValDec (info, pat, exp), subst) =
+	    ValDec (info, substPat (pat, subst), substExp (exp, subst))
+	  | substDec (RecDec (info, decs), subst) =
+	    RecDec (info, List.map (fn dec => substDec (dec, subst)) decs)
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (exp as PrimExp (_, _), _) = exp
 	  | substExp (exp as NewExp (_, _, _), _) = exp
-	  | substExp (VarExp (coord, longid), subst) =
-	    VarExp (coord, substLongId (longid, subst))
+	  | substExp (VarExp (info, longid), subst) =
+	    VarExp (info, substLongId (longid, subst))
 	  | substExp (exp as ConExp (_, _, _), _) = exp
 	  | substExp (exp as RefExp _, _) = exp
-	  | substExp (TupExp (coord, exps), subst) =
-	    TupExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
-	  | substExp (RowExp (coord, expFields), subst) =
-	    RowExp (coord,
-		    List.map (fn Field (coord, label, exp) =>
-			      Field (coord, label, substExp (exp, subst)))
+	  | substExp (TupExp (info, exps), subst) =
+	    TupExp (info, List.map (fn exp => substExp (exp, subst)) exps)
+	  | substExp (RowExp (info, expFields), subst) =
+	    RowExp (info,
+		    List.map (fn Field (info, label, exp) =>
+			      Field (info, label, substExp (exp, subst)))
 		    expFields)
 	  | substExp (exp as SelExp (_, _), _) = exp
-	  | substExp (VecExp (coord, exps), subst) =
-	    VecExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
-	  | substExp (FunExp (coord, id, exp), subst) =
-	    FunExp (coord, id, substExp (exp, subst))
-	  | substExp (AppExp (coord, exp1, exp2), subst) =
-	    AppExp (coord, substExp (exp1, subst), substExp (exp2, subst))
-	  | substExp (AdjExp (coord, exp1, exp2), subst) =
-	    AdjExp (coord, substExp (exp1, subst), substExp (exp2, subst))
-	  | substExp (UpExp (coord, exp), subst) =
-	    UpExp (coord, substExp (exp, subst))
-	  | substExp (AndExp (coord, exp1, exp2), subst) =
-	    AndExp (coord, substExp (exp1, subst), substExp (exp2, subst))
-	  | substExp (OrExp (coord, exp1, exp2), subst) =
-	    OrExp (coord, substExp (exp1, subst), substExp (exp2, subst))
-	  | substExp (IfExp (coord, exp1, exp2, exp3), subst) =
-	    IfExp (coord, substExp (exp1, subst),
+	  | substExp (VecExp (info, exps), subst) =
+	    VecExp (info, List.map (fn exp => substExp (exp, subst)) exps)
+	  | substExp (FunExp (info, matches), subst) =
+	    FunExp (info, substMatches (matches, subst))
+	  | substExp (AppExp (info, exp1, exp2), subst) =
+	    AppExp (info, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (AdjExp (info, exp1, exp2), subst) =
+	    AdjExp (info, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (UpExp (info, exp), subst) =
+	    UpExp (info, substExp (exp, subst))
+	  | substExp (AndExp (info, exp1, exp2), subst) =
+	    AndExp (info, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (OrExp (info, exp1, exp2), subst) =
+	    OrExp (info, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (IfExp (info, exp1, exp2, exp3), subst) =
+	    IfExp (info, substExp (exp1, subst),
 		   substExp (exp2, subst), substExp (exp3, subst))
-	  | substExp (WhileExp (coord, exp1, exp2), subst) =
-	    WhileExp (coord, substExp (exp1, subst), substExp (exp2, subst))
-	  | substExp (SeqExp (coord, exps), subst) =
-	    SeqExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
-	  | substExp (CaseExp (coord, exp, matches), subst) =
-	    CaseExp (coord, substExp (exp, subst),
+	  | substExp (WhileExp (info, exp1, exp2), subst) =
+	    WhileExp (info, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (SeqExp (info, exps), subst) =
+	    SeqExp (info, List.map (fn exp => substExp (exp, subst)) exps)
+	  | substExp (CaseExp (info, exp, matches), subst) =
+	    CaseExp (info, substExp (exp, subst),
 		     substMatches (matches, subst))
-	  | substExp (RaiseExp (coord, exp), subst) =
-	    RaiseExp (coord, substExp (exp, subst))
-	  | substExp (HandleExp (coord, exp, matches), subst) =
-	    HandleExp (coord, substExp (exp, subst),
+	  | substExp (RaiseExp (info, exp), subst) =
+	    RaiseExp (info, substExp (exp, subst))
+	  | substExp (HandleExp (info, exp, matches), subst) =
+	    HandleExp (info, substExp (exp, subst),
 		       substMatches (matches, subst))
-	  | substExp (LetExp (coord, decs, exp), subst) =
-	    LetExp (coord, substDecs (decs, subst), substExp (exp, subst))
+	  | substExp (LetExp (info, decs, exp), subst) =
+	    LetExp (info, substDecs (decs, subst), substExp (exp, subst))
 	and substMatches (matches, subst) =
-	    List.map (fn Match (coord, pat, exp) =>
-		      Match (coord, substPat (pat, subst),
+	    List.map (fn Match (info, pat, exp) =>
+		      Match (info, substPat (pat, subst),
 			     substExp (exp, subst))) matches
 	and substPat (pat as WildPat _, _) = pat
 	  | substPat (pat as LitPat (_, _), _) = pat
 	  | substPat (pat as VarPat (_, _), _) = pat
-	  | substPat (ConPat (coord, longid, NONE, isNAry), subst) =
-	    ConPat (coord, substLongId (longid, subst), NONE, isNAry)
-	  | substPat (ConPat (coord, longid, SOME pat, isNAry), subst) =
-	    ConPat (coord, substLongId (longid, subst),
-		    SOME (substPat (pat, subst)), isNAry)
-	  | substPat (RefPat (coord, pat), subst) =
-	    RefPat (coord, substPat (pat, subst))
-	  | substPat (TupPat (coord, pats), subst) =
-	    TupPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (RowPat (coord, patFields), subst) =
-	    RowPat (coord,
-		    List.map (fn Field (coord, label, pat) =>
-			      Field (coord, label, substPat (pat, subst)))
+	  | substPat (ConPat (info, longid, isNAry), subst) =
+	    ConPat (info, substLongId (longid, subst), isNAry)
+	  | substPat (pat as RefPat _, subst) = pat
+	  | substPat (TupPat (info, pats), subst) =
+	    TupPat (info, List.map (fn pat => substPat (pat, subst)) pats)
+	  | substPat (RowPat (info, patFields), subst) =
+	    RowPat (info,
+		    List.map (fn Field (info, label, pat) =>
+			      Field (info, label, substPat (pat, subst)))
 		    patFields)
-	  | substPat (VecPat (coord, pats), subst) =
-	    VecPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (AsPat (coord, pat1, pat2), subst) =
-	    AsPat (coord, substPat (pat1, subst), substPat (pat2, subst))
-	  | substPat (AltPat (coord, pats), subst) =
-	    AltPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (NegPat (coord, pat), subst) =
-	    NegPat (coord, substPat (pat, subst))
-	  | substPat (GuardPat (coord, pat, exp), subst) =
-	    GuardPat (coord, substPat (pat, subst), substExp (exp, subst))
-	  | substPat (WithPat (coord, pat, decs), subst) =
-	    WithPat (coord, substPat (pat, subst), substDecs (decs, subst))
+	  | substPat (VecPat (info, pats), subst) =
+	    VecPat (info, List.map (fn pat => substPat (pat, subst)) pats)
+	  | substPat (AppPat (info, pat1, pat2), subst) =
+	    AppPat (info, substPat (pat1, subst), substPat (pat2, subst))
+	  | substPat (AsPat (info, pat1, pat2), subst) =
+	    AsPat (info, substPat (pat1, subst), substPat (pat2, subst))
+	  | substPat (AltPat (info, pats), subst) =
+	    AltPat (info, List.map (fn pat => substPat (pat, subst)) pats)
+	  | substPat (NegPat (info, pat), subst) =
+	    NegPat (info, substPat (pat, subst))
+	  | substPat (GuardPat (info, pat, exp), subst) =
+	    GuardPat (info, substPat (pat, subst), substExp (exp, subst))
+	  | substPat (WithPat (info, pat, decs), subst) =
+	    WithPat (info, substPat (pat, subst), substDecs (decs, subst))
 
 	(* If the same test occurs in two patterns at the same position,
 	 * then these may be merged by the pattern matching compiler.
@@ -250,10 +248,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		    List.map
 		    (fn (id, id') =>
 		     let
-			 val coord = infoId id
-			 val exp = VarExp (coord, ShortId (coord, id'))
+			 val info = infoId id
+			 val exp = VarExp (info, ShortId (info, id'))
 		     in
-			 ValDec (coord, VarPat (coord, id), exp)
+			 (*--** the pattern below does not carry its type *)
+			 ValDec (info, VarPat (info, id), exp)
 		     end) subst
 	    in
 		case decs of
@@ -262,26 +261,15 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    end
 	and relax (pat as WildPat _, subst) = (pat, subst)
 	  | relax (pat as LitPat (_, _), subst) = (pat, subst)
-	  | relax (VarPat (coord, id), subst) =
+	  | relax (VarPat (info, id), subst) =
 	    let
-		val id' = freshId coord
+		val id' = freshId info
 	    in
-		(VarPat (coord, id'), (id, id')::subst)
+		(VarPat (info, id'), (id, id')::subst)
 	    end
-	  | relax (pat as ConPat (_, _, NONE, _), subst) = (pat, subst)
-	  | relax (ConPat (coord, longid, SOME pat, isNAry), subst) =
-	    let
-		val (pat', subst') = relax (pat, subst)
-	    in
-		(ConPat (coord, longid, SOME pat', isNAry), subst')
-	    end
-	  | relax (RefPat (coord, pat), subst) =
-	    let
-		val (pat', subst') = relax (pat, subst)
-	    in
-		(RefPat (coord, pat'), subst')
-	    end
-	  | relax (TupPat (coord, pats), subst) =
+	  | relax (pat as ConPat (_, _, _), subst) = (pat, subst)
+	  | relax (pat as RefPat _, subst) = (pat, subst)
+	  | relax (TupPat (info, pats), subst) =
 	    let
 		val (pats', subst') =
 		    List.foldr (fn (pat, (pats, subst)) =>
@@ -291,22 +279,22 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 				    (pat'::pats, subst')
 				end) (nil, subst) pats
 	    in
-		(TupPat (coord, pats'), subst')
+		(TupPat (info, pats'), subst')
 	    end
-	  | relax (RowPat (coord, patFields), subst) =
+	  | relax (RowPat (info, patFields), subst) =
 	    let
 		val (patFields', subst') =
 		    List.foldr
-		    (fn (Field (coord, label, pat), (patFields, subst)) =>
+		    (fn (Field (info, label, pat), (patFields, subst)) =>
 		     let
 			 val (pat', subst') = relax (pat, subst)
 		     in
-			 (Field (coord, label, pat')::patFields, subst')
+			 (Field (info, label, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
-		(RowPat (coord, patFields'), subst')
+		(RowPat (info, patFields'), subst')
 	    end
-	  | relax (VecPat (coord, pats), subst) =
+	  | relax (VecPat (info, pats), subst) =
 	    let
 		val (pats', subst') =
 		    List.foldr (fn (pat, (pats, subst)) =>
@@ -316,30 +304,37 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 				    (pat'::pats, subst')
 				end) (nil, subst) pats
 	    in
-		(VecPat (coord, pats'), subst')
+		(VecPat (info, pats'), subst')
 	    end
-	  | relax (AsPat (coord, pat1, pat2), subst) =
+	  | relax (AppPat (info, pat1, pat2), subst) =
 	    let
 		val (pat1', subst') = relax (pat1, subst)
 		val (pat2', subst'') = relax (pat2, subst')
 	    in
-		(AsPat (coord, pat1', pat2'), subst'')
+		(AppPat (info, pat1', pat2'), subst'')
 	    end
-	  | relax (AltPat (coord, pats), subst) =
-	    (AltPat (coord, List.map separateAlt pats), subst)
-	  | relax (NegPat (coord, pat), subst) =
-	    (NegPat (coord, separateAlt pat), subst)
-	  | relax (GuardPat (coord, pat, exp), subst) =
+	  | relax (AsPat (info, pat1, pat2), subst) =
+	    let
+		val (pat1', subst') = relax (pat1, subst)
+		val (pat2', subst'') = relax (pat2, subst')
+	    in
+		(AsPat (info, pat1', pat2'), subst'')
+	    end
+	  | relax (AltPat (info, pats), subst) =
+	    (AltPat (info, List.map separateAlt pats), subst)
+	  | relax (NegPat (info, pat), subst) =
+	    (NegPat (info, separateAlt pat), subst)
+	  | relax (GuardPat (info, pat, exp), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(GuardPat (coord, pat', substExp (exp, subst')), subst')
+		(GuardPat (info, pat', substExp (exp, subst')), subst')
 	    end
-	  | relax (WithPat (coord, pat, decs), subst) =
+	  | relax (WithPat (info, pat, decs), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(WithPat (coord, pat', substDecs (decs, subst')), subst')
+		(WithPat (info, pat', substDecs (decs, subst')), subst')
 	    end
 
 	structure O = ImperativeGrammar

@@ -87,8 +87,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (ConPat (info, longid, NONE, isNAry),
-			 pos, rest, mapping) =
+	  | makeTestSeq (ConPat (info, longid, isNAry), pos, rest, mapping) =
 	    let
 		val typ = IntermediateInfo.typ info
 		val info' = (Source.nowhere, SOME typ)
@@ -96,7 +95,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    in
 		(Test (pos, ConTest (longid, NONE, conArity))::rest, mapping)
 	    end
-	  | makeTestSeq (ConPat (info, longid, SOME pat, isNAry),
+	  | makeTestSeq (AppPat (_, ConPat (info, longid, isNAry), pat),
 			 pos, rest, mapping) =
 	    let
 		val typ = Type.inArrow (typPat pat, IntermediateInfo.typ info)
@@ -107,7 +106,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			     Test (pos, ConTest (longid, SOME (typPat pat),
 						 conArity))::rest, mapping)
 	    end
-	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
+	  | makeTestSeq (AppPat (_, RefPat _, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, Label.fromString "ref"::pos,
 			 Test (pos, RefTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
@@ -165,6 +164,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    in
 		(Test (pos, DecTest (mapping', decs))::rest', mapping')
 	    end
+	  | makeTestSeq ((RefPat _ | AppPat (_, _, _)), _, _, _) =
+	    raise Crash.Crash "SimplifyMatch.makeTestSeq"
 
 	(* Test Graphs *)
 
@@ -422,11 +423,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun deconstructs (WildPat _) = false
 	      | deconstructs (LitPat _) = true
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
-	      | deconstructs (ConPat (_, _, _, _)) = true
-	      | deconstructs (RefPat (_, _)) = true
+	      | deconstructs (ConPat (_, _, _)) = true
+	      | deconstructs (RefPat _) = true
 	      | deconstructs (TupPat (_, _)) = true
 	      | deconstructs (RowPat (_, _)) = true
 	      | deconstructs (VecPat (_, _)) = true
+	      | deconstructs (AppPat (_, _, _)) = true
 	      | deconstructs (AsPat (_, pat1, pat2)) =
 		deconstructs pat1 orelse deconstructs pat2
 	      | deconstructs (AltPat (_, pats)) = List.exists deconstructs pats
@@ -442,8 +444,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	    fun freshId info = Id (info, Stamp.new (), Name.InId)
 
-	    fun process (ONE, graph, consequents, id) =
-		(O.OneArg id, graph, [(nil, id)], consequents)
+	    fun process (ONE, graph, consequents, info) =
+		let
+		    val id = freshId info
+		in
+		    (O.OneArg id, graph, [(nil, id)], consequents)
+		end
 	      | process (TUP typs, Node (nil, TupTest _, ref graph, _, _),
 			 consequents, _) =
 		let
@@ -476,16 +482,16 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | process (_, _, _, _) =
 		raise Crash.Crash "SimplifyMatch.process 3"
 	in
-	    fun buildFunArgs (id, matches as (_, pat, _)::_, errStms) =
+	    fun buildFunArgs (matches as (_, pat, _)::_, errStms) =
 		let
 		    val (graph, consequents) = buildGraph (matches, errStms)
 		    val args =
 			if checkMatches matches then typToArity (typPat pat)
 			else ONE
 		in
-		    process (args, graph, consequents, id)
+		    process (args, graph, consequents, infoPat pat)
 		end
-	      | buildFunArgs (_, nil, _) =
+	      | buildFunArgs (nil, _) =
 		raise Crash.Crash "SimplifyMatch.buildFunArgs"
 	end
     end
