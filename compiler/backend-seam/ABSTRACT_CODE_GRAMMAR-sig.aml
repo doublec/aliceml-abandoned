@@ -34,6 +34,8 @@ signature ABSTRACT_CODE_GRAMMAR =
 
 	type label = Atom.t
 
+	type outArity = int
+
 	datatype instr =
 	    Kill of id vector * instr
 	  | PutVar of id * idRef * instr
@@ -78,10 +80,10 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | Global of int
 	and template =
 	    Template of coord * int * string vector *
-			idDef vector * instr * liveness
+			idDef vector * outArity option * instr * liveness
 	and abstractCode =
 	    Function of coord * value option vector * string vector *
-			idDef vector * instr * liveness
+			idDef vector * outArity option * instr * liveness
 	withtype value = abstractCode Value.t
 
 	type t = value * (Stamp.t * Label.t) vector

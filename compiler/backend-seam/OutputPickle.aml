@@ -149,6 +149,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	fun outputStamp (context, stamp) =
 	    outputInt (context, LargeInt.fromInt (Stamp.hash stamp))
 
+	fun outputArity (context, arity) =
+	    outputInt (context, LargeInt.fromInt arity)
+
 	fun outputId (context, id) = outputInt (context, LargeInt.fromInt id)
 
 	fun outputIdDef (context, IdDef id) =
@@ -455,23 +458,27 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputId (context, i);
 	     outputBlock (context, Label.global, 1))
 	and outputTemplate (context, Template (coord, ntoplevels, localNames,
-					       args, body, liveness)) =
+					       args, outArityOpt, body,
+					       liveness)) =
 	    (outputLiveness (context, liveness);
 	     outputInstr (context, body);
+	     outputOption outputArity (context, outArityOpt);
 	     outputVector outputIdDef (context, args);
 	     outputVector outputName (context, localNames);
 	     outputInt (context, LargeInt.fromInt ntoplevels);
 	     outputCoord (context, coord);
-	     outputBlock (context, Label.template, 6))	     
+	     outputBlock (context, Label.template, 7))	     
 	and outputAbstractCode (context, Function (coord, globals, localNames,
-						   args, body, liveness)) =
+						   args, outArityOpt, body,
+						   liveness)) =
 	    (outputLiveness (context, liveness);
 	     outputInstr (context, body);
+	     outputOption outputArity (context, outArityOpt);
 	     outputVector outputIdDef (context, args);
 	     outputVector outputName (context, localNames);
 	     outputVector (outputOption outputValue) (context, globals);
 	     outputCoord (context, coord);
-	     outputBlock (context, Label.function, 6))
+	     outputBlock (context, Label.function, 7))
 
 	fun output (outstream, value) =
 	    outputValue ({outstream = outstream, shared = StampMap.map ()},

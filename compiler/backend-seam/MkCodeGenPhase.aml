@@ -22,6 +22,7 @@ import structure EmptyContext          from "../infrastructure/EmptyContext"
 import structure Source                from "../infrastructure/Source"
 import structure IntMap                from "../infrastructure/IntMap"
 import structure StampMap              from "../common/StampMap"
+import structure Arity                 from "../backend-common/Arity"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
 import structure IntermediateAux       from "../backend-common/IntermediateAux"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
@@ -546,7 +547,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    end
 	  | translateExp (VecExp (_, idRefs), id, instr, env) =
 	    O.PutVec (id, translateIdRefs (idRefs, env), instr)
-	  | translateExp (FunExp (region, _, flags, args, body),
+	  | translateExp (FunExp (region, _, flags, args, outArityOpt, body),
 			  id, instr, env) =
 	    let
 		val isSpecialize =
@@ -578,9 +579,17 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    case Vector.fromList (IdSet.fold op:: nil kills) of
 			#[] => instr
 		      | ids => O.Kill (ids, instr)
+		val outArityOpt' =
+		    case outArityOpt of
+			NONE => NONE
+		      | SOME (Arity.Unary) => SOME 1
+		      | SOME (Arity.Tuple n) => SOME n
+		      | SOME (Arity.Product labels) =>
+			SOME (Vector.length labels)
 		val template =
 		    O.Template (coord, Vector.length globalIdRefs,
-				localNames, args', bodyInstr, liveness)
+				localNames, args', outArityOpt', bodyInstr,
+				liveness)
 	    in
 		if isSpecialize then
 		    O.Specialize (id, globalIdRefs, template, instr)
@@ -633,7 +642,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateIgnore (ProdExp (_, _), instr, _) = instr
 	  | translateIgnore (PolyProdExp (_, _), instr, _) = instr
 	  | translateIgnore (VecExp (_, _), instr, _) = instr
-	  | translateIgnore (FunExp (_, _, _, _, _), instr, _) = instr
+	  | translateIgnore (FunExp (_, _, _, _, _, _), instr, _) = instr
 	  | translateIgnore (PrimAppExp (_, name, idRefs), instr, env) =
 	    O.AppPrim (V.prim name, translateIdRefs (idRefs, env),
 		       SOME (O.Wildcard, instr))
@@ -758,9 +767,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    O.VecTest (O.LastUseLocal formalId,
 			       #[(idDefs, instr)], elseInstr)
 		val liveness = Liveness.analyze (args, bodyInstr)
+		val outArityOpt = NONE
 		val abstractCode =
 		    O.Function ((filename, 0, 0), #[], localNames,
-				args, bodyInstr, liveness)
+				args, outArityOpt, bodyInstr, liveness)
 		val exports =
 		    Vector.map (fn (label, Id (_, stamp, _)) => (stamp, label))
 			       exports

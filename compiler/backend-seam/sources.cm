@@ -6,6 +6,7 @@ Group is
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
     ../backend-common/intermediate-aux.cm
+    ../backend-common/arity.cm
 
     abstract-code-grammar.cm
 
