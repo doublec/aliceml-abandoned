@@ -193,7 +193,7 @@ struct
 		val s     = Inf.asSig' j
 		val items = Inf.items s
 	    in
-		Type.prod(List.foldr (itemToRow E) (Type.emptyRow()) items)
+		Type.prod(List.foldr (itemToRow E) (Type.unknownRow()) items)
 	    end
 	else if Inf.isArrow' j then
 	    (* [fct(x:j1) -> j2] = [j1] -> [j2] *)
@@ -1086,7 +1086,7 @@ struct
 		val x3o = Option.map (fn _ => O.ShortId(i3, x3')) x2o
 		val (isntIdentity',flds,row) =
 		    coerceStr(E, r, x1,s1, x3o,Inf.items s2,s2',
-			      isntIdentity, [], Type.emptyRow())
+			      isntIdentity, [], Type.unknownRow())
 	    in
 		if isntIdentity'
 		orelse List.length(Inf.items s1)<>List.length(Inf.items s2) then
