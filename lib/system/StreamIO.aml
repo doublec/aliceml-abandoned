@@ -492,7 +492,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		  | CLOSED_OUT _ => Promise.fulfill (p, state)
 	    end
 
-	val minBufSize = 512
+	val minBufSize = 256
 
 	fun setBufferMode (f, bufferMode) =
 	    let
