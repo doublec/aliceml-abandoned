@@ -135,7 +135,7 @@ Worker::Result PrimitiveInterpreter::Run() {
 }
 
 const char *PrimitiveInterpreter::Identify() {
-  return "PrimitiveInterpreter";
+  return name;
 }
 
 void PrimitiveInterpreter::DumpFrame(word) {
