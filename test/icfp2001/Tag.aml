@@ -1,4 +1,13 @@
-structure Tag =
+signature TAG =
+sig
+    datatype color = R | G | B' | C | M | Y | K | W | UNKNOWN
+    datatype tag   = B | EM | I | PL | S | TT | U | SIZE of int | COLOR of color
+
+    val cost :     tag -> int
+    val toString : tag -> string
+end
+
+structure Tag : TAG =
 struct
     datatype color = R | G | B' | C | M | Y | K | W | UNKNOWN
     datatype tag   = B | EM | I | PL | S | TT | U | SIZE of int | COLOR of color
