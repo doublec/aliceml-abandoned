@@ -25,10 +25,7 @@ public:
 
 class DllExport HashNode : private Block {
 private:
-  static const u_int KEY_POS   = 0;
-  static const u_int VALUE_POS = 1;
-  static const u_int NEXT_POS  = 2;
-  static const u_int SIZE      = 3;
+  enum { KEY_POS, VALUE_POS, NEXT_POS, SIZE };
 
   void SetLabel(BlockLabel l) {
     HeaderOp::EncodeLabel((Transient *) this, l);
@@ -88,9 +85,7 @@ public:
 
 class DllExport BTListNode : private Block {
 private:
-  static const u_int TABLE_POS = 0;
-  static const u_int NEXT_POS  = 1;
-  static const u_int SIZE      = 2;
+  enum { TABLE_POS, NEXT_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -134,12 +129,7 @@ public:
     return (u_int) Store::DirectWordToBlock(GetArg(TABLE_POS))->GetSize();
   }
 protected:
-  static const u_int HANDLER_POS = 0;
-  static const u_int COUNTER_POS = 1;
-  static const u_int PERCENT_POS = 2;
-  static const u_int TYPE_POS    = 3;
-  static const u_int TABLE_POS   = 4;
-  static const u_int SIZE        = 5;
+  enum { HANDLER_POS, COUNTER_POS, PERCENT_POS, TYPE_POS, TABLE_POS, SIZE };
   //
   // Adjust these two values to optimize runtime behaviour
   //
