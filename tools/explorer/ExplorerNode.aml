@@ -36,10 +36,11 @@ struct
 	   shape =ref nil}, ref mom, ref #[])
 
     fun setMom (N(_,mom,_)) newMom = mom := newMom
-    fun decOpenChildren (N({openChildren=openChildren,...},ref mom,_)) =
+    fun decOpenChildren (N({openChildren=openChildren,space=space,...},ref mom,_)) =
         (openChildren := !openChildren - 1;
          if !openChildren=0 then
-             Option.app decOpenChildren mom
+             (Option.app decOpenChildren mom;
+              Option.app (fn _ => Option.app (fn s => (Space.discard s; space := NONE)) (!space)) mom)
          else ())
     fun hasOpenChildren (N({openChildren=openChildren,...},_,_)) = !openChildren>=1
 

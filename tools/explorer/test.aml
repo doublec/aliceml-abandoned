@@ -30,7 +30,20 @@ fun queens n cl =
 	(v, space)
     end
 
-val (v, s) = queens 6 FD.BND
+val (v, s) = queens 10 FD.BND
+
+fun test () =
+    let
+        val space = Space.new()
+        val v = FD.range(space,(0,1))
+        val v2 = FD.range(space,(0,1))
+        val v3 = FD.range(space,(0,1))
+    in
+        FD.branch(space,#[v,v2,v3],FD.B_SIZE_MIN, FD.B_MIN);
+        (#[v], space)
+    end
+
+(*val (v, s) = test()*)
 
 fun inspect1 s = (print "inspect1!\n";
 		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^

@@ -44,20 +44,21 @@ structure VisualNode =
 	  if (!dirty) then
 	      (dirty := false;
 	       case (!vNode) of NONE =>
-				GtkNode.drawNode state momX (myY-TreeNode.verSpaceI) v
+				(GtkNode.drawNode state momX (myY-TreeNode.verSpaceI) v)
 			   | SOME v =>
-			     (GtkNode.moveNode state (v, myByX);
+			     (if myByX <> 0 then
+                                  GtkNode.moveNode state (v, myByX) else ();
 			      (case mom of NONE => ()
-					 | SOME m =>
-					   ((case (!connection) of NONE => ()
-								 | SOME c => GtkNode.unconnect c);
-					    connection := SOME (GtkNode.connect
-								    state hidden status
-								    (TreeNode.getStatus m)
-								    (momX+myOffset)
-								    myY
-								    momX 
-								    (myY-TreeNode.verSpaceI))));
+					      | SOME m =>
+					        ((case (!connection) of NONE => ()
+								      | SOME c => (GtkNode.unconnect c));
+					         connection := SOME (GtkNode.connect
+								         state hidden status
+								         (TreeNode.getStatus m)
+								         (momX+myOffset)
+								         myY
+								         momX 
+								         (myY-TreeNode.verSpaceI))));
 			      if hidden then ()
 			      else Vector.app
 				       (fn k => adjust state k
@@ -65,12 +66,12 @@ structure VisualNode =
 						       myByX (myY+TreeNode.verSpaceI)
 						       groupOffset) children))
 	  else
-	      if myByX<>0 then
+              (if myByX<>0 then
 		  (GtkNode.moveTree state (v, myByX);
 		   case mom of NONE => ()
 			     | SOME m =>
 			       ((case (!connection) of NONE => ()
-						     | SOME c => GtkNode.unconnect c);
+						     | SOME c => (GtkNode.unconnect c));
 				connection := SOME (GtkNode.connect state hidden status
 								    (TreeNode.getStatus m)
 								    (momX+myOffset)
@@ -78,7 +79,7 @@ structure VisualNode =
 								    momX
 								    (myY-TreeNode.verSpaceI))))
 	      else
-		  ()
+		  ())
       end
 
 

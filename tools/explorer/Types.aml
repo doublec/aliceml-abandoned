@@ -43,6 +43,8 @@ structure Types =
                          curInspAction : string ref,
 			 currentNode : tree option ref,
                          refreshAfter : int ref,
+                         breakAfter : int ref,
+                         debug : bool ref,
 			 window : Core.object,
 			 menu : {inspectionActions : Core.object ref},
 			 scale : real ref}
@@ -50,5 +52,11 @@ structure Types =
   fun setTree (ref (SOME ({tree=tree,...}: explorer_state))) newTree =
       tree:=newTree
     | setTree _ _ = ()
+
+  fun debug (ref (SOME ({debug=debug,...}: explorer_state))) = !debug
+    | debug _ = false
+
+  fun setDebug (ref (SOME ({debug=debug,...}: explorer_state))) flag = debug:=flag
+    | setDebug _ _ = ()
 
   end

@@ -15,6 +15,7 @@ import structure Gdk          from "x-alice:/lib/gtk/Gdk"
 import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
 
 import structure Types        from "Types"
+import structure Defaults     from "Defaults"
 import structure TreeNode     from "TreeNode"
 import structure VisualNode   from "VisualNode"
 import structure GtkNode      from "GtkNodes"
@@ -51,6 +52,20 @@ structure EventHandler =
                                      Types.FAILED => ()
                                    | _ => 
 				     (currentNode := SOME n;
+(*                                      let
+                                          val N({offset=ref offset, oldOffset=ref oldOffset,
+                                                 groupOffset=ref groupOffset, dirty=ref dirty,
+                                                 ...}, ref mom, ref ch) = n
+                                      in
+                                          print ("offset: "^Int.toString offset^"\n");
+                                          print "oldOffset: ";
+                                          (case oldOffset of NONE => print "NONE"
+                                                           | SOME off => print ("SOME "^Int.toString off^"\n"));
+                                          print ("groupOffset: "^Int.toString groupOffset^"\n");
+                                          print ("dirty: "^(if dirty then "true" else "false")^"\n");
+                                          print ("mom: "^(case mom of SOME _ => "SOME" | _ => "NONE")^"\n");
+                                          print ("ch: "^Int.toString (Vector.length(ch))^"\n")
+                                      end;*)
 				      GtkNode.drawShadow state x y n)
 			     end
                            | Gdk.EVENT_2BUTTON_PRESS {x=x,y=y,...} =>
@@ -92,28 +107,34 @@ structure EventHandler =
 				   TreeNode.defScale))
       in
 	  GnomeCanvas.setScrollRegion(canvas, itr xMin, 0.0,
-				      itr xMax, Real.fromInt yDim)
+				      itr xMax, Real.fromInt yDim);
+          GnomeCanvas.requestRedraw(canvas, xMin, 0, xMax, yDim)
       end
     | setBBox _ _ = ()
 
   fun refresh serve cmw state =
       case !state of
-          (SOME (rstate as {tree=ref tree,
+          (SOME (rstate as {canvas={canvas=canvas,...},
+                            tree=ref tree,
+                            scale=ref scale,
 			    currentNode=ref cn,...}
 		 : explorer_state)) =>
           let
 	      val shape = TreeNode.layoutNode tree
 	      val (minx, maxx, depth) = TreeNode.getBBox shape
           in
-	      setBBox state (minx, maxx, depth);
+              setBBox state (minx, maxx, depth);
+              Gtk.layoutFreeze canvas;
 	      VisualNode.adjust rstate tree 0 0 TreeNode.verSpaceI 0;
-	      case cn of NONE => ()
-		       | SOME cn =>
-		         let
-			     val (x,y) = TreeNode.getCenter cn
-		         in
-			     GtkNode.drawShadow rstate x y cn
-		         end
+	      (case cn of NONE => ()
+		        | SOME cn =>
+		          let
+			      val (x,y) = TreeNode.getCenter cn
+		          in
+			      GtkNode.drawShadow rstate x y cn
+		          end);
+              Gtk.layoutThaw canvas;
+              GnomeCanvas.setPixelsPerUnit(canvas,scale*Defaults.floatScaleBase)
           end
         | NONE =>(state := !(cmw serve);
 		  refresh serve cmw state)
@@ -132,18 +153,18 @@ structure EventHandler =
   fun exploreOneHandler serve refresh state _ = (serve (fn () =>
                                                        case !state of
                                                            SOME {currentNode=ref (SOME cn),...} =>
-                                                           ExplorerSearch.searchOneFrom serve state cn refresh
+                                                           ExplorerSearch.search serve state refresh 1 (SOME cn)
                                                          | _ => ()))
   fun exploreAllHandler serve refresh state _ = (serve (fn () =>
                                                            case !state of
                                                                SOME {currentNode=ref (SOME cn),...} =>
-                                                               ExplorerSearch.searchAllFrom serve state cn refresh
+                                                               ExplorerSearch.search serve state refresh 0 (SOME cn)
                                                              | _ => ()))
 
   fun exploreNHandler serve refresh state _ = (serve (fn () =>
                                                            case !state of
-                                                               SOME {currentNode=ref (SOME cn),...} =>
-                                                               ExplorerSearch.searchNFrom serve state cn refresh
+                                                               SOME {currentNode=ref (SOME cn),breakAfter=ref breakAfter,...} =>
+                                                               ExplorerSearch.search serve state refresh breakAfter (SOME cn)
                                                              | _ => ()))
                                                 
   fun resetHandler serve refresh state _ = (serve (fn () =>
@@ -173,5 +194,11 @@ structure EventHandler =
       in
           Gtk.widgetShowAll configure
       end
+
+  fun debugHandler serve state _ = (serve (fn () =>
+                                              case !state of
+                                                  SOME {debug=debug,...} =>
+                                                  Types.setDebug state (not (!debug))
+                                                | NONE => ()))
 
   end

@@ -174,6 +174,15 @@
 		<widget class="GtkMenu" id="options1_menu">
 
 		  <child>
+		    <widget class="GtkMenuItem" id="debug">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">debug</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_debug_activate" last_modification_time="Thu, 13 May 2004 09:08:31 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
 		    <widget class="GtkMenuItem" id="inspection1">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">Inspection</property>

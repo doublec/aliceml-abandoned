@@ -82,8 +82,8 @@ structure MainWindow :> MAINWINDOW =
   fun createMainWindow serve =
       let
 	  val state = ref NONE
-	  val xDim = 400
-	  val yDim = 250
+	  val xDim = 40000
+	  val yDim = 25000
 	  val canvas = CanvasHelper.createCanvas state serve xDim yDim
 
           val w = ExplorerGUI.aliceexplorer
@@ -102,6 +102,7 @@ structure MainWindow :> MAINWINDOW =
               val on_next_n_solutions_activate = EventHandler.exploreNHandler serve refresh state
               val on_all_solutions_activate = EventHandler.exploreAllHandler serve refresh state
               val on_view_activate = EventHandler.viewOptionsHandler w serve state
+              val on_debug_activate = EventHandler.debugHandler serve state
               fun on_about_activate _ = ()
               val on_scale_value_changed =
                   CanvasHelper.scaleCanvasHandler serve state ExplorerGUI.scale
@@ -119,7 +120,9 @@ structure MainWindow :> MAINWINDOW =
 			 inspect=ref nil,
                          curInspAction=ref "",
 			 currentNode=ref NONE,
-                         refreshAfter=ref 1
+                         refreshAfter=ref 1,
+                         breakAfter=ref 0,
+                         debug=ref false
 			 };
 	  state
       end

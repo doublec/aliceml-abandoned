@@ -143,12 +143,14 @@ struct
       let
 	  val color = if shadow then shadowColor else lightgray
 	  val outline = if shadow then shadowColor else black
-	  val scaledCircleWidth = 10.0*256.0*scale
+          val origWidth = 10.0*256.0*scale
+	  val scaledCircleWidth = 10.0*256.0*scale*0.7
+          val diff = origWidth - scaledCircleWidth
 
 	  val x1 = (itr myX) - scaledCircleWidth
-	  val y1 = (itr myY) - scaledCircleWidth
+	  val y1 = (itr myY) - scaledCircleWidth - diff
 	  val x2 = (itr myX) + scaledCircleWidth
-	  val y2 = (itr myY) + scaledCircleWidth
+	  val y2 = (itr myY) + scaledCircleWidth - diff
       in
 	  GnomeCanvas.itemCreate(group,
 				 GnomeCanvas.ellipseGetType(),
@@ -233,6 +235,30 @@ struct
 	      if hidden then ()
 	      else Vector.app (drawNode state myX myY) children
 	  end
+
+  fun markNode (state as {canvas={canvas=canvas,rootGroup=rootGroup,actionGroup=actionGroup,...},
+                          scale=scale,...}
+	        : Types.explorer_state)
+	       (TreeNode.N({offset=offset,status=ref status,hidden=ref hidden,dirty=dirty,
+		            vNode=vNode,connection=connection,...},
+		           ref parent, ref children)) =
+               case !vNode of
+                   SOME v =>
+                   let
+                       val (x1,y1,x2,y2) = GnomeCanvas.itemGetBounds v
+                   in
+	               GnomeCanvas.itemCreate(GnomeCanvas.root canvas,
+				              GnomeCanvas.ellipseGetType(),
+				              [("x1", Gtk.REAL x1),
+				               ("y1", Gtk.REAL y1),
+				               ("x2", Gtk.REAL x2),
+				               ("y2", Gtk.REAL y2),
+				               ("fill_color_gdk", Gtk.OBJECT black),
+				               ("outline_color_gdk", Gtk.OBJECT black)
+				               ]);
+                       ()
+                   end
+                 | NONE => ()
 
   fun drawShadow
 	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,shadowGroup=shadowGroup,...},

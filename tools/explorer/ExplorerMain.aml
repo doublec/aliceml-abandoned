@@ -70,7 +70,7 @@ structure Explorer =
 	  val state = initExplorer()
       in
           serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
-	  serve (fn () => ExplorerSearch.searchAll serve state MainWindow.refresh);
+	  serve (fn () => ExplorerSearch.search serve state MainWindow.refresh 0 NONE);
 	  state
       end
 
@@ -79,7 +79,7 @@ structure Explorer =
 	  val state = initExplorer()
       in
           serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
-	  serve (fn () => ExplorerSearch.searchOne serve state MainWindow.refresh);
+	  serve (fn () => ExplorerSearch.search serve state MainWindow.refresh 1 NONE);
 	  state
       end
 
