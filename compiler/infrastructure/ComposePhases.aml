@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 2000-2003
+ *   Andreas Rossberg and Leif Kornstaedt, 2000-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -45,7 +45,7 @@ let
     struct
 	type t    = Phase1.C.t * Phase2.C.t
 	val empty = (Phase1.C.empty, Phase2.C.empty)
-     end
+    end
 in
     ComposePhases' (
 	structure Phase1  = Phase1
