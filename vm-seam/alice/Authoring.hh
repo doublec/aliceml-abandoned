@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000-2002
+//   Leif Kornstaedt, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -67,15 +67,8 @@
 #define RETURN_BOOL(b) RETURN(BOOL_TO_WORD(b));
 #define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
 
-#define INIT_STRUCTURE(r, s1, s2, f, i, b) {				      \
-  word transformName = AliceLanguageLayer::TransformNames::primitiveFunction; \
-  Transform *abstract;							      \
-  if (b)								      \
-    abstract = INVALID_POINTER;						      \
-  else									      \
-    abstract =								      \
-      Transform::New(Store::DirectWordToChunk(transformName),		      \
-		     String::New(s1 "." s2)->ToWord());			      \
+#define INIT_STRUCTURE(r, s1, s2, f, i) {				      \
+  Transform *abstract = INVALID_POINTER;				      \
   word function = Primitive::MakeFunction(s1 "." s2, f, i, abstract);	      \
   r->Init(s2, Closure::New(function, 0)->ToWord());			      \
 }
