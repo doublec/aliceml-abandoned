@@ -123,7 +123,25 @@ DEFINE1(FileSys_remove) {
 } END
 
 DEFINE0(FileSys_tmpName) {
-  RETURN(String::New(tmpnam(NULL))->ToWord());
+#ifdef __MINGW32__
+  char prefix[MAX_PATH];
+  DWORD ret = GetTempPath(sizeof(prefix),prefix);
+  if (ret == 0 || ret >= sizeof(prefix))
+    strcpy(prefix,"C:\\TEMP\\");
+  char s[MAX_PATH];
+  static int counter = 0;
+  while (true) {
+    sprintf(s, "%salice%d", prefix, counter);
+    counter = (counter++) % 10000;
+    if (access(s, F_OK))
+      break;
+  }
+  RETURN(String::New(s));
+#else
+  String *s = String::New("/tmp/aliceXXXXXX");
+  mkstemp(s->GetValue());
+  RETURN(s->ToWord());
+#endif
 } END
 
 static word FileSys(void) {
