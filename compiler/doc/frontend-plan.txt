@@ -1,5 +1,3 @@
-- add type wildcard syntax to frontend
-
 - change open datatype syntax to exttype
   - change keyword and syntax
   - implement proper distinguished treatment of datatypes and exttypes in import
