@@ -1,5 +1,5 @@
 ###
-# GTK+ 2.0 Binding for Alice - Makefile
+# GTK+ 2.0 Interface for Alice - Makefile
 
 # The generator creates full code for the following name spaces
 COMPS = Gdk Gtk GnomeCanvas
@@ -36,30 +36,34 @@ MAINFILES = $(COMPS:%=%.aml)
 CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
-# executable names
+# names of object files
+OBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll) \
+	  $(ALICESOURCES:%.aml=%.stc)
+
+# platform specific settings
 ifdef WINDOWS
 GENERATOR = GtkBinding.x86-win32
-EXTRAFLAGS = -mno-cygwin -mms-bitfields
+CC_OPTS = -mno-cygwin -mms-bitfields
 else
 GENERATOR = GtkBinding.x86-linux
-EXTRAFLAGS =
+CC_OPTS =
 endif
 
+PACKAGES = gtk+-2.0 libgnomecanvas-2.0
+
 SML = sml
-ALICEC = alicec --dump-phases
+ALICEC = alicec 
+ALICEC_OPTS = --dump-phases # --no-warn-conventions
 ALICETOOL = alicetool
-INSTALL = ./myinstall -v -m 644
 ALICEDEP = gawk -f alicedepend.awk
 #ALICEDEP = alicedep
-CLIBS = gtk+-2.0 libgnomecanvas-2.0
+INSTALL = ./myinstall -v -m 644
 
 #################################################
 
-.PHONY: all full generate compile depend docs clean veryclean distclean
+.PHONY: all generate compile depend docs clean veryclean distclean
 
 all: compile
-
-full: generate depend compile docs
 
 
 ### SOURCE CODE GENERATION ######################
@@ -80,7 +84,7 @@ $(GENERATOR):
 	test -e $(GENERATOR) || exit 1
 
 $(INPUTFILE):
-	(cd prepare ; $(MAKE) )
+	( cd prepare && $(MAKE) WINDOWS=$(WINDOWS) )
 
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk $< > $@
@@ -88,24 +92,24 @@ $(INPUTFILE):
 
 ### COMPILATION #################################
 
-compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
+compile: $(OBJECTS)
 
 %.dll: %.o
 	$(ALICETOOL) -v ld -Wl,-S $< -o $@ \
-	 $(EXTRAFLAGS) `pkg-config --libs $(CLIBS)`
+	 $(CC_OPTS) `pkg-config --libs $(PACKAGES)`
 
 %.o: %.cc
 	$(ALICETOOL) -v cc -c $< -o $@ \
-	 $(EXTRAFLAGS) `pkg-config --cflags $(CLIBS)`
+	 $(CC_OPTS) `pkg-config --cflags $(PACKAGES)`
 
 %.stc: %.aml
-	$(ALICEC) $< -o $@
+	$(ALICEC) $(ALICEC_OPTS) $< -o $@
 
 
 ### DEPENDENCIES ################################
 
 depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
-	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(CLIBS)` \
+	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(PACKAGES)` \
 	    $(CPPSOURCES) > Makefile.depend
 	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
                                                                    | $(SML)
@@ -114,30 +118,35 @@ depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 -include Makefile.depend
 
 
+### SAMPLE FILES ################################
+
+sample-files:
+	(cd samples && $(MAKE) depend && $(MAKE) )
+
 ### DOCUMENTATION ###############################
 
 docs:
-	(cd doc; $(MAKE) )
+	(cd doc && $(MAKE) )
 
 
 ### CLEAN #######################################
 
+# clean: clean this directory, and the samples
 clean:
 	rm -f $(GENERATOR)
 	rm -f $(GENFILES)
 	rm -f $(GENSIGS)
-	rm -f *.stc
-	rm -f *.o
-	rm -f *~
+	rm -f $(OBJECTS)
 	rm -f $(LASTGENERATE)
+	(cd samples && $(MAKE) clean )
 
-veryclean: clean
-	rm -f $(INPUTFILE)
-	rm -f $(NATIVES:%=%.dll)
-	rm -f $(NATIVES:%=%.dll.def)
+# distclean: clean also all subdirs (including CKIT), 
+#            and remove Makefile.depend and generator input file
+distclean: clean
+	rm -f *~
 	rm -f Makefile.depend
 	find -type d | grep '/CM$$' | xargs rm -fr
-	(cd prepare ; $(MAKE) clean )
-	(cd doc ; $(MAKE) clean )
-
-distclean: veryclean
+	rm -f $(INPUTFILE)
+	(cd prepare && $(MAKE) distclean )
+	(cd samples && $(MAKE) distclean )
+	(cd doc && $(MAKE) distclean )

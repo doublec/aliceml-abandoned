@@ -2,6 +2,9 @@
 # alicedepend.awk does more or less the same as "alicedep --stockwerk".
 # Well, a hundred times faster.
 #
+# Okay, it is not able to handle "x-alice:" URLs.
+# So in the release version, the real alicedep should be used.
+#
 
 BEGIN { FS = "\""; }
 

@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+# check PKG_CONFIG_PATH
 if ! pkg-config gtk+-2.0 libgnomecanvas-2.0 >& /dev/null ; then
   echo "** 'pkg-config gtk+-2.0 libgnomecanvas-2.0' failed!"
   echo "** Either GTK+ and GnomeCanvas are not installed,"
@@ -7,11 +9,21 @@ if ! pkg-config gtk+-2.0 libgnomecanvas-2.0 >& /dev/null ; then
   exit 1 ;
 fi
 
-if test x$1 = "x--windows" ; then
-  WINDOWS=1 ;
+# try to find out platform
+case `uname -s` in
+    CYGWIN*) WINDOWS=1 ;;
+esac
+
+case $1 in
+    --windows)    WINDOWS=1 ;;
+    --no-windows) WINDOWS= ;;
+esac
+
+if test "$WINDOWS" ; then
+    echo "BUILD_ALL: Win32 platform detected; override with --no-windows." ;
 fi
 
-(make generate WINDOWS=$WINDOWS && 
- make depend   WINDOWS=$WINDOWS && 
- make compile  WINDOWS=$WINDOWS)
+(make generate             WINDOWS=$WINDOWS && 
+ make depend               WINDOWS=$WINDOWS && 
+ make compile sample-files WINDOWS=$WINDOWS)
 

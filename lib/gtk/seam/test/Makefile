@@ -17,7 +17,7 @@ all: gtktest.stc
 %.stc: %.aml
 	$(ALICEC) -c $< -o $@
 
-depend: Makefile *.cc *.aml
+depend:
 	$(CC) -M *.cc > Makefile.depend
 	$(ALICEDEP) *.aml >> Makefile.depend
 
@@ -26,4 +26,7 @@ depend: Makefile *.cc *.aml
 clean:
 	rm -f *.o
 	rm -f *.stc
-	rm -f test valisttest
+	rm -f test valisttest reftest canvastest
+
+distclean:
+	rm -f Makefile.depend

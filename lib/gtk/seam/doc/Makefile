@@ -14,3 +14,4 @@ clean:
 	rm -f $(DVIS) $(PDFS) *.log *.aux
 
 
+distclean: clean

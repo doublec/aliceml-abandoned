@@ -291,6 +291,8 @@ struct
   	        EStruct   => error "struct in arglist or retval"
 	      | EUnion    => error "union in arglist or retval"
 	end		    
+(* Hack Alert - the following line prevents cygwin ld crashing *)
+(*    | checkItem (STRUCT _) = false *)
       | checkItem _ = true
 
     (* Removes struct/enum members for which no binding can be generated *)

@@ -1,7 +1,6 @@
-BOOTSTRAPDIR= ../../../bootstrap
-
 ALICEC      = alicec
 ALICEC_OPTS = --dump-phases
+
 ALICEDEP    = alicedep
 
 SRCS = hello.aml          \
