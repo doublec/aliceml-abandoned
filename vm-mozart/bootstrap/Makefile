@@ -78,7 +78,7 @@ ALLFILES = \
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
 INSTALLFILES0 = stow.ozf stoc.ozf Default.import
-INSTALLBINFILES0 = stoc stow
+INSTALLBINFILES0 = stoc stow stoc.bat stow.bat
 INSTALLLIBFILES0 = Base.ozf IO.ozf TextIO.ozf OS.ozf Unix.ozf CommandLine.ozf \
 	Tools.ozf
 INSTALLFILES = \
