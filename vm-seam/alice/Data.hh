@@ -204,13 +204,17 @@ public:
 };
 
 class DllExport Real: private Chunk {
-  //--** to be done: always represent in big-endian format
 public:
   using Chunk::ToWord;
 
   static Real *New(double value) {
     Chunk *chunk = Store::AllocChunk(sizeof(double));
-    std::memcpy(chunk->GetBase(), &value, sizeof(double));
+    char *to = chunk->GetBase(), *from = reinterpret_cast<char *>(&value);
+#if DOUBLE_LITTLE_ENDIAN
+    for (u_int i = sizeof(double); i--; *to++ = from[i]);
+#else
+    std::memcpy(to, from, sizeof(double));
+#endif
     return static_cast<Real *>(chunk);
   }
   static Real *FromWord(word x) {
@@ -226,8 +230,16 @@ public:
 
   double GetValue() {
     double result;
-    std::memcpy(&result, GetBase(), sizeof(double));
+    char *to = reinterpret_cast<char *>(&result), *from = GetBase();
+#if DOUBLE_LITTLE_ENDIAN
+    for (u_int i = sizeof(double); i--; *to++ = from[i]);
+#else
+    std::memcpy(to, from, sizeof(double));
+#endif
     return result;
+  }
+  unsigned char *GetBigEndianRepresentation() {
+    return reinterpret_cast<u_char *>(GetBase());
   }
 };
 
