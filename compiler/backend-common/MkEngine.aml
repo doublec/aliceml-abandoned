@@ -51,26 +51,29 @@ functor MakeEngine(val cmd: unit -> string * string list
 	    end
 
 	local
-	    fun split (#":"::cs) = (nil, cs)
+	    fun split (#":"::cs) = SOME (nil, cs)
 	      | split (c::cs) =
-		let
-		    val (name, value) = split cs
-		in
-		    (c::name, value)
-		end
-	      | split nil = raise Format "split: colon expected"
+		(case split cs of
+		     SOME (name, value) => SOME (c::name, value)
+		   | NONE => NONE)
+	      | split nil = NONE
 	in
 	    fun parseResult proc =
 		case TextIO.inputLine (instream proc) of
 		    "\n" => nil
 		  | s =>
-			(case split (String.explode s) of
-			     ([#"D", #"e", #"b", #"u", #"g"], s) =>
-				 (TextIO.print (String.implode s);
-				  parseResult proc)
-			   | (name, value) =>
-				 (String.implode name, String.implode value)::
+			case String.sub (s, 0) of
+			    #"%" => (TextIO.print s; parseResult proc)
+			  | _ =>
+			case split (String.explode s) of
+			    SOME ([#"D", #"e", #"b", #"u", #"g"], s) =>
+				(TextIO.print (String.implode s);
 				 parseResult proc)
+			  | SOME (name, value) =>
+				(String.implode name, String.implode value)::
+				parseResult proc
+			  | NONE =>
+				(TextIO.print s; parseResult proc)
 	end
 
 	fun stop proc =
