@@ -31,6 +31,6 @@ structure Ref : REF =							(**)
     val op :=				= op :=
     val op :=:				= op :=:
 
-    fun exchange(r as ref x1, x2)	= (r := x2 ; x1)
+    __primitive val exchange : 'a ref * 'a -> 'a = "Ref.exchange"
     fun map f (r as ref x)		= ref(f x)
   end
