@@ -11,7 +11,10 @@
  *   $Revision$
  *)
 
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+
 import structure TextIO              from "../../lib/system/TextIO"
+import structure Signature           from "../../lib/system/Signature"
 
 import structure InputGrammar        from "../frontend-sml/InputGrammar"
 import structure AbstractGrammar     from "../frontend-common/AbstractGrammar"
@@ -21,11 +24,8 @@ import structure FlatGrammar         from "../backend-common/FlatGrammar"
 
 import structure Source             from "../infrastructure/Source"
 import structure Crash              from "../infrastructure/Crash"
-import structure Composer           from "Composer"
-import structure Signature          from "Signature"
 
 import functor MkSwitches           from "../infrastructure/MkSwitches"
-import functor MkMozartTarget       from "../backend-mozart/MkMozartTarget"
 import functor MkFrontendSML        from "../frontend-sml/MkFrontendSML"
 import functor MkFrontendCommon     from "../frontend-common/MkFrontendCommon"
 import functor MkBackendCommon      from "../backend-common/MkBackendCommon"
@@ -67,20 +67,12 @@ structure Debug : DEBUG =
 
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
+	val acquireSignRef: (Source.desc * Url.t -> Signature.t) ref =
 	    ref (fn _ => raise Crash.Crash
 				"SMLToMozartRecursiveCompiler.loadSignRef")
 
 	fun loadSign(desc, url) = !acquireSignRef(desc, url)
-	fun loadPlainSign(desc, url) =
-	    Inf.asSig(#2(loadSign(desc, url)))
-	    handle Inf.Interface =>
-		Error.error(Source.nowhere,
-			    "Pickle "^ Url.toString url ^" is not a component")
-
-	structure MozartTarget =
-	    MkMozartTarget(structure Switches = Switches
-			   structure Sig = Signature)
+	fun loadPlainSign(desc, url) = Signature.toSig(loadSign(desc, url))
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSign = loadPlainSign
@@ -94,19 +86,18 @@ structure Debug : DEBUG =
 						  structure Switches = Switches)
 
 	structure BackendMozart =
-	    MkBackendMozart(structure Switches = Switches
-			    structure MozartTarget = MozartTarget)
+	    MkBackendMozart(structure ComponentManager = ComponentManager
+			    structure Switches = Switches)
 
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
-		       structure Target           = MozartTarget
 		       structure FrontendSpecific = FrontendSML
 		       structure FrontendCommon   = FrontendCommon
 		       structure BackendCommon    = BackendCommon
 		       structure BackendSpecific  = BackendMozart)
 
 	structure RecursiveCompiler =
-	    MkRecursiveCompiler(structure Composer = Composer
+	    MkRecursiveCompiler(structure ComponentManager = ComponentManager
 				structure Compiler = Compiler
 				val extension = "ozf")
 
