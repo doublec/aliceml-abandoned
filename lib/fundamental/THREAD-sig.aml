@@ -28,6 +28,7 @@ sig
     datatype state = RUNNABLE | BLOCKED | TERMINATED
 
     exception Terminate
+    exception Terminated
 
     val thread :	(unit -> unit) -> thread
     val spawnThread :	(unit -> 'a) -> thread * 'a
@@ -38,7 +39,7 @@ sig
     val yield :		thread -> unit
     val sleep :		Time.time -> unit
 
-    val raiseIn :	thread * exn -> unit
+    val raiseIn :	thread * exn -> unit   (* Terminated *)
     val terminate :	thread -> unit
 
     val suspend :	thread -> unit
