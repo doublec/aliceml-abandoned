@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2002
+ *   Leif Kornstaedt, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,10 +25,10 @@ import structure Value                 from "Value"
 import structure MkAbstractCodeGrammar from "MkAbstractCodeGrammar"
 import structure MkCodeGenPhase        from "MkCodeGenPhase"
 
-functor MkBackendStockwerk(structure ComponentManager:
-			       COMPONENT_MANAGER
-				   where type component = Component.t
-			   structure Switches: SWITCHES): BACKEND_SPECIFIC =
+functor MkBackendSeam(structure ComponentManager:
+			  COMPONENT_MANAGER
+			      where type component = Component.t
+		      structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
 	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)

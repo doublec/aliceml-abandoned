@@ -25,14 +25,14 @@ import structure AbstractCodeGrammar from "AbstractCodeGrammar"
 import structure OutputPickle        from "OutputPickle"
 import structure MkCodeGenPhase      from "MkCodeGenPhase"
 
-functor MkBackendStockwerk(structure ComponentManager: COMPONENT_MANAGER
-			   structure Switches: SWITCHES): BACKEND_SPECIFIC =
+functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
+		      structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
 
 	fun inf (Value.TaggedValue
 		     (_, #[_, _, Value.Sign (SOME exportInf)])) = exportInf
-	  | inf _ = raise Crash.Crash "MkBackendStockwerk.inf"
+	  | inf _ = raise Crash.Crash "MkBackendSeam.inf"
 
 	fun save value filename =
 	    let
