@@ -3,7 +3,7 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = store scheduler datalayer builtins interpreter
+SUBDIRS = store adt scheduler datalayer builtins interpreter
 
 all:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) all) || exit 1; done
