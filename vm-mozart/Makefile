@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /opt/mozart-stable
+OZHOME = /usr
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
@@ -377,7 +377,8 @@ alicec1-%: build1-install
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
 BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
-	$(ALLSOURCES:%=build1/%)
+	$(ALLSOURCES:%=build1/%) \
+	build1/tools/Linker.aml
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 
 INSTALL1DIRS = build1/install \
@@ -489,6 +490,9 @@ build1/compiler/ToplevelMain.aml: compiler/ToplevelMainMozart.aml Rel1.import
 build1/compiler/%.aml: compiler/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
+build1/tools/Linker.aml: tools/linker/Build1Linker.aml Rel1.import
+	cat Rel1.import $< > $@
+
 build1/tools/linker/%.aml: tools/linker/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
@@ -547,9 +551,6 @@ build1/install/bin/%: %
 	install -c -m 555 $< $@
 
 build1/install/tools/Linker.ozf:
-	(cd build1/tools/linker && tar cf - `find . -name '*.ozf'`) | \
-	(cd build1/install/tools && tar xvf -) | \
-	mv build1/install/tools/Main.ozf $@
 
 ########################################################################
 ### BUILD 2
