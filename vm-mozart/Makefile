@@ -4,12 +4,10 @@ OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
 
-NATIVESOURCES = IO TextIO OS Unix
+NATIVESOURCES = BootWord IO TextIO OS Unix CommandLine
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
 
-LIBSOURCES = \
-	Base.sml BootWord.ozf.sig Word.sml IO.ozf.sig OS.ozf.sig \
-	TextIO.ozf.sig Unix.ozf.sig
+LIBSOURCES = Base.sml Word.sml $(NATIVESOURCES:%=%.ozf.sig)
 LIBFILES = $(LIBSOURCES:%=lib/%)
 
 MLYACCSOURCES = base.sig join.sml lrtable.sml stream.sml parser2.sml
@@ -75,7 +73,7 @@ ALLFILES = \
 	$(TOPFILES) $(COMMONFILES) $(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) \
 	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
-all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf
+all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc-mozart
 
 stoc-mozart:
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
@@ -137,5 +135,5 @@ backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 	$(STOC_MOZART) $< $@
 
 clean:
-	rm -rf $(ALLFILES)
-	rm -rf */*.ozf */*/*.ozf
+	-rm -f $(ALLFILES)
+	-rm -f */*.ozf */*/*.ozf stoc-mozart
