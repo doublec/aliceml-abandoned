@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -64,7 +64,7 @@ struct
     val name_match	= Name.ExId valid_match
     val name_bind	= Name.ExId valid_bind
 
-    val paths		= PathSet.new()
+    val paths		= PathSet.set()
     val path_bool	= Path.pervasive typid_bool
 			  (* non-generative *)
     val path_int	= Path.pervasive typid_int
