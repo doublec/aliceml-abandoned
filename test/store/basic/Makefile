@@ -21,7 +21,7 @@ EXES = $(OBJS:%.o=%.exe)
 
 %.exe: %.o
 	$(LD) $(CXXFLAGS) -o $@ $< \
-        -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt $(EXTRA_LIBS)
+        -L$(TOPDIR)/adt -L$(TOPDIR)/store -L$(TOPDIR)/generic -lstore -ladt -lgeneric $(EXTRA_LIBS)
 
 
 all: $(OBJS) $(EXES)

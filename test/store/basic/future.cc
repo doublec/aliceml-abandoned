@@ -12,6 +12,7 @@
 #include <cstdio>
 #include "store/Store.hh"
 #include "adt/Stack.hh"
+#include "generic/Debug.hh"
 
 #define COUNT_LIMIT 5
 
@@ -30,6 +31,10 @@ static u_int StringToHexValue(char *s) {
 
 #if defined(STORE_DEBUG)
 void AssertOutline(const char *file, int line, const char *message) {
+  std::fprintf(stderr, "%s: line %d: %s\n", file, line, message);
+}
+#else
+void ErrorOutline(const char *file, int line, const char *message) {
   std::fprintf(stderr, "%s: line %d: %s\n", file, line, message);
 }
 #endif
@@ -57,21 +62,24 @@ int main(void) {
   std::printf("Allocating...\n");
   Block *p = Store::AllocBlock(MIN_DATA_LABEL, 1);
   Transient *t = Store::AllocTransient(FUTURE_LABEL);
-  p->InitArg(0, t->ToWord());
+  p->InitArg(0, Chain(t, 2));
   root = p->ToWord();
   std::printf("GCing...\n");
-  Store::DoGC(root);
+  //Store::DoGC(root);
   p = Store::WordToBlock(root);
-  std::printf("Binding future..\n");
+  std::printf("Binding and Diumpingfuture..\n");
   t = Store::WordToTransient(p->GetArg(0));
-  Chain(t, 20);
+  Debug::Dump(p->GetArg(0));
+  std::printf("done\n");
+  Block *a = Store::AllocBlock(MIN_DATA_LABEL, 1);
+  t->Become(REF_LABEL, a->ToWord());
   //  t->Become(REF_LABEL, Store::IntToWord(0));
   //std::printf("Checking Result...\n");
   //printf("%d\n", Store::WordToInt(t->GetArg()));
+  Block *ra = Store::WordToBlock(p->GetArg(0));
+  Debug::Dump(p->GetArg(0));
+  Debug::Dump(ra->ToWord());
   std::printf("Done\n");
   std::printf("GCing...\n");
-  Store::DoGC(root);
-  p = Store::WordToBlock(root);
-  std::printf("succeeded\n");
   return 0;
 }
