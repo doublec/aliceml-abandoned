@@ -51,6 +51,8 @@
 #include "generic/Profiler.hh"
 #include "generic/Authoring.hh"
 
+DllExport int StockwerkMain(char *home, u_int argc, char *argv[]);
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 // We must not use DllExport here:
 extern "C" __declspec(dllexport) word InitComponent();

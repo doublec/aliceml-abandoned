@@ -13,7 +13,7 @@
 #ifndef __ALICE_HH__
 #define __ALICE_HH__
 
-#include "Stow.hh"
+#include "Stockwerk.hh"
 #include "alice/Guid.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
