@@ -19,6 +19,7 @@ import datatype bool and option and list             from "ToplevelTypes"
 import infix 4 < = >= infixr 5 :: @ infix 6 + -
        val op = and op < and op >= and op + and op - from "ToplevelValues"
 import structure General                             from "General"
+import structure Bool                                from "Bool"
 import signature LIST                                from "LIST-sig"
 
 
@@ -152,6 +153,12 @@ struct
     fun exists  f   xs			= exists'(f,xs)
     and exists'(f,  nil )		= false
       | exists'(f, x::xs)		= f x orelse exists'(f,xs)
+
+    fun contains xs y			= contains'(y, xs)		(**)
+    and contains'(y, nil)		= false
+      | contains'(y, x::xs)		= y = x orelse contains'(y,xs)
+
+    fun notContains xs y		= Bool.not(contains'(y,xs))	(**)
 
     fun tabulate (n,f)      where (n<0)	= raise General.Size
       | tabulate (n,f)			= tabulate'(n,f,0,nil)

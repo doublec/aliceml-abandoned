@@ -61,6 +61,8 @@ sig
     val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
     val all :		('a -> bool) -> 'a list -> bool
     val exists :	('a -> bool) -> 'a list -> bool
+    val contains :	''a list -> ''a -> bool				(**)
+    val notContains :	''a list -> ''a -> bool				(**)
 
     val tabulate :	int * (int -> 'a) -> 'a list
 end
