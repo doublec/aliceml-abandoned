@@ -12,9 +12,12 @@
  *   $Revision$
  *)
 
-structure OzifyFlatGrammar :> CODE where type t = FlatGrammar.t =
+
+structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
     struct
 	open FlatGrammar
+
+	type t = string * FlatGrammar.t
 
 	local
 	    val count = ref 0
@@ -260,11 +263,12 @@ structure OzifyFlatGrammar :> CODE where type t = FlatGrammar.t =
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun externalize (q, (importList, (stms, _))) =
-	    (output1 (q, #"(");
+	fun externalize (q, (filename, (importList, (stms, _)))) =
+	    (outputString (q, filename);
+	     output1 (q, #"#");
 	     outputList (fn (q, (id, _, url)) =>
 			 outputPair (outputId, outputString)
 			 (q, (id, Url.toString url))) (q, importList);
 	     output1 (q, #"#");
-	     outputList outputStm (q, stms); output1 (q, #")"))
+	     outputList outputStm (q, stms))
     end

@@ -13,23 +13,11 @@
 functor
 import
    Parser(virtualString) at 'x-oz://boot/Parser'
-   Open(text pipe)
    System(showError)
    Compiler(engine interface)
 export
-   TranslateFile
+   TranslateVirtualString
 define
-   class TextPipe from Open.pipe Open.text
-      meth get($)
-	 case TextPipe, getS($) of S=&(|_ then S#'\n'
-	 [] false then false
-	 elseof S then
-	    {System.showError S}
-	    TextPipe, get($)
-	 end
-      end
-   end
-
    local
       fun {Trans X}
 	 case X of fAtom(A _) then A
@@ -56,15 +44,6 @@ define
 	 of [ParseTree]#_ then {Trans ParseTree}
 	 end
       end
-   end
-
-   fun {StockhausenToImperative File Image} Pipe S in
-      Pipe = {New TextPipe
-	      init(cmd: 'sml-cm'
-		   args: ['@SMLload='#Image File])}
-      {Pipe get(?S)}
-      {Pipe close()}
-      S
    end
 
    proc {Share I ShareDict NewStm}
@@ -117,14 +96,11 @@ define
       {Map Stms fun {$ Stm} {ShareStm Stm ShareDict} end}
    end
 
-   fun {TranslateFile File Image} C in
+   fun {TranslateVirtualString VS} C InFilename Imports Body in
       C = {New Compiler.engine init()}
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
-      case {StockhausenToImperative File Image} of false then unit
-      elseof VS then Imports Body in
-	 Imports#Body = {VirtualStringToValue VS}
-	 Imports#{ShareBody Body {NewDictionary}}
-      end
+      InFilename#Imports#Body = {VirtualStringToValue VS}
+      InFilename#Imports#{ShareBody Body {NewDictionary}}
    end
 end

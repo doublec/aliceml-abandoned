@@ -12,7 +12,7 @@
 
 structure MozartEngine =
     MakeEngine (val cmd = "/bin/sh"
-		val args = ["mozart-engine"]
+		val args = ["stoc-mozart.exe"]
 		structure Code = OzifyFlatGrammar)
 
 structure MozartContext :> CONTEXT where type t = MozartEngine.t =
@@ -22,11 +22,12 @@ structure MozartContext :> CONTEXT where type t = MozartEngine.t =
 	fun clone engine = engine
     end
 
-structure MozartTarget :> TARGET =
+structure MozartTarget: TARGET =
+    (*--** :> TARGET where structure C = MozartContext *)
     struct
 	structure C = MozartContext
 
-	type t = FlatGrammar.t
+	type t = string * FlatGrammar.t
 
 	fun apply engine component =
 	    raise Crash.Crash "MozartTarget.eval: not implemented"

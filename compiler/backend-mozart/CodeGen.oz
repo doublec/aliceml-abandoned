@@ -373,7 +373,7 @@ define
        end VHd VTl}
    end
 
-   fun {Translate Filename Import#Body}
+   fun {Translate Filename#Import#Body}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in

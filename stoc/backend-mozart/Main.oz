@@ -12,35 +12,75 @@
 
 functor
 import
-   Application(getCmdArgs exit)
+   Open(file text)
+   System(printInfo)
+   Application(exit)
    Pickle(save)
-   System(printError)
-   Property(get)
-   Frontend(translateFile)
+   Frontend(translateVirtualString)
    CodeGen(translate)
-prepare
-   Spec = record('in'(single char: &i type: atom optional: false)
-		 'out'(single char: &o type: string optional: false)
-		 'image'(single type: string default: "../top/stoc-mozart"))
 define
-   Args
+   class TextFile from Open.file Open.text end
 
-   try
-      Args = {Application.getCmdArgs Spec}
-   catch error(ap(usage M) ...) then
-      {System.printError
-       'Command line option error: '#M#'\n'#
-       'Usage: '#{Property.get 'application.url'}#' [options]\n'#
-       '--in=<File>         File containing component to translate.\n'#
-       '--out=<File>        Name of pickle to write.\n'#
-       '--image=<File>      Where to locate the SML/NJ heap image.\n'}
-      {Application.exit 2}
+   fun {ReadMessage File}
+      case {File getS($)} of false then nil
+      [] "" then nil
+      elseof S then Name in
+	 case {List.takeDropWhile S fun {$ C} C \= &: end ?Name}
+	 of &:|Rest then
+	    Name#{List.dropWhile Rest Char.isSpace}|{ReadMessage File}
+	 else raise format(readMessage S) end
+	 end
+      end
    end
 
-   case {Frontend.translateFile Args.'in' Args.'image'} of unit then
-      {Application.exit 1}
-   elseof AST then
-      {Pickle.save {CodeGen.translate Args.'in' AST} Args.'out'}
-      {Application.exit 0}
+   fun {ReadCommand File}
+      case {ReadMessage File} of "Command"#Command|Arguments then
+	 {String.toAtom Command}#
+	 {List.map Arguments
+	  fun {$ Name#Value}
+	     case Name of "Argument" then Value
+	     else raise format end
+	     end
+	  end}
+      [] nil then unit
+      else raise format(readCommand) end
+      end
    end
+
+   local
+      Values = {Dictionary.new}
+
+      Cell = {NewCell 0}
+   in
+      fun {Put V} Id in
+	 Id = {Access Cell}
+	 {Assign Cell Id + 1}
+	 {Dictionary.put Values Id V}
+	 Id
+      end
+
+      fun {Get Id}
+	 {Dictionary.get Values Id}
+      end
+   end
+
+   proc {Loop File}
+      case {ReadCommand File} of 'buildFunctor'#[Code] then
+	 case {Frontend.translateVirtualString Code} of unit then
+	    {System.printInfo 'Result: ~1\n\n'}
+	 elseof AST then Id in
+	    Id = {Put {CodeGen.translate AST}}
+	    {System.printInfo 'Result: '#Id#'\n\n'}
+	 end
+      [] 'saveValue'#[OutFilename Id] then
+	 {Pickle.save {Get {String.toInt Id}} OutFilename}
+	 {System.printInfo 'Result: 0\n\n'}
+      [] unit then
+	 {Application.exit 0}
+      elseof X then raise format(loop X) end
+      end
+      {Loop File}
+   end
+
+   {Loop {New TextFile init(name: stdin flags: [read])}}
 end
