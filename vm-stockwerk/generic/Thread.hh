@@ -14,13 +14,13 @@
 #define __GENERIC__THREAD_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Thread.hh"
+#pragma interface "generic/Thread.hh"
 #endif
 
 #include "store/Store.hh"
-#include "emulator/TaskStack.hh"
+#include "generic/TaskStack.hh"
 
-class Thread : private Block {
+class Thread: private Block {
   friend class Scheduler;
 public:
   enum priority {
