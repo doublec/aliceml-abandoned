@@ -343,15 +343,17 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
       | upItems(withAbs, r, x, item::items, s1, isntIdentity, fields) =
 	if Inf.isValItem item then
 	    let
-		val (a,t,w2,_) = Inf.asValItem item
-		val      w1    = Inf.lookupValSort(s1,a)
-		val      i     = typInfo(r,t)
-		val      i'    = nonInfo r
-		val      l'    = O.Lab(i', trLabel a)
-		val      y     = O.LongId(typInfo(r,NONE), x, l')
+		val (a,t2,w2,_) = Inf.asValItem item
+		val      t1     = Inf.lookupVal(s1,a)
+		val      w1     = Inf.lookupValSort(s1,a)
+		val      i1     = typInfo(r,t1)
+		val      i2     = typInfo(r,t2)
+		val      i'     = nonInfo r
+		val      l'     = O.Lab(i', trLabel a)
+		val      y      = O.LongId(typInfo(r,NONE), x, l')
 		val (exp,isntIdentity') =
 		    if w1 = w2 then
-			(O.VarExp(i,y), isntIdentity)
+			(O.VarExp(i1,y), isntIdentity)
 		    else let
 			val n = case w1 of Inf.CONSTRUCTOR k => k > 0
 					 | Inf.VALUE =>
@@ -359,11 +361,11 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 						    "TranslationPhase.upItems: \
 						    \funny arity (hoho)"
 		    in
-			(if isTagType(Inf.lookupVal(s1,a))
-			 then O.TagExp(i,l',n)
-			 else O.ConExp(i,y,n), true)
+			(if isTagType t1 then O.TagExp(i1,l',n)
+					 else O.ConExp(i1,y,n), true)
 		    end
-		val  exp' = O.LazyExp(i,exp)
+		val exp' = if withAbs then O.UpExp(i2, O.LazyExp(i1,exp))
+				      else O.LazyExp(i1,exp)
 	    in
 		upItems(withAbs, r, x, items, s1, isntIdentity',
 			O.Field(i',l',exp')::fields)
@@ -403,15 +405,17 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 		val    j1    = Inf.lookupMod(s1,a)
 		val    t1    = infToTyp j1
 		val    t2    = infToTyp j2
-		val    i     = typInfo(r,t2)
+		val    i1    = typInfo(r,t1)
+		val    i2    = typInfo(r,t2)
 		val    i'    = nonInfo r
 		val    l'    = O.Lab(i', trModLabel a)
 		val    y     = O.LongId(typInfo(r, SOME t2), x, l')
 		val (exp,isntIdentity') =
 		    case upInf(withAbs, y,j1,j2, r,t1,t2)
-		      of NONE     => (O.VarExp(i,y), isntIdentity)
+		      of NONE => (if withAbs then O.UpExp(i2, O.VarExp(i1,y))
+		 			     else O.VarExp(i1,y), isntIdentity)
 		       | SOME exp => (exp, true)
-		val  exp'    = O.LazyExp(i,exp)
+		val  exp'    = O.LazyExp(i2,exp)
 	    in
 		upItems(withAbs, r, x, items, s1, isntIdentity',
 			O.Field(i',l',exp')::fields)
@@ -655,26 +659,21 @@ UNFINISHED: obsolete after bootstrapping:
 	    val j1 = #inf(I.infoMod m)
 	    val j2 = #inf i
 
-	    val i' = trInfInfo i
+	    val i2 = trInfInfo i
 	    val r  = #region i
 
 	    val e1 = trMod m
-	    val t1 = #typ(O.infoExp e1)
-	    val t2 = #typ i'
+	    val i1 = O.infoExp e1
+	    val t1 = #typ i1
+	    val t2 = #typ i2
 
-	    val i2 = nonInfo r
-	    val x' = O.Id(i2, Stamp.new(), Name.InId)
+	    val i' = nonInfo r
+	    val x' = O.Id(i', Stamp.new(), Name.InId)
 	    val x  = O.ShortId(typInfo(r, SOME t1), x')
 	in
 	    case upInf(withAbs, x,j1,j2, r,t1,t2)
-	      of NONE    => e1
-	       | SOME e2 =>
-		 let
-		     val p = O.VarPat(typInfo(r,t1), x')
-		     val d = O.ValDec(i2,p,e1)
-		 in
-		     O.LetExp(typInfo(r,t2), [d], e2)
-		 end
+	      of NONE    => if withAbs then O.UpExp(i2, e1) else e1
+	       | SOME e2 => O.LetExp(i2, [O.ValDec(i',O.VarPat(i1,x'), e1)], e2)
 	end
 
 
