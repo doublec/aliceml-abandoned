@@ -170,10 +170,11 @@
     <DD>
       <P>makes <TT><I>package</I></TT> available to other sites for taking.
 	Returns a ticket suitable for <TT><A href="#take">take</A></TT>
-	or <TT><A href="#Take-fn">Take</A></TT>.  If the argument
-	is a mutable data structure, then taking returns a clone of
-	how the data structure looked when the offer was initially made.
-	An offered data structure can be taken any number of times.</P>
+	or <TT><A href="#Take-fn">Take</A></TT>.
+	An offered package can be taken any number of times.
+	If the package contains mutable data, then each
+	<TT><A href="#take">take</A></TT> will return a clone of
+	a snapshot of the package made when offer is executed.</P>
     </DD>
 
     <DT>
@@ -184,7 +185,9 @@
 	must have been created by <TT><A href="#offer">offer</A></TT>
 	or <TT><A href="#Offer-fn">Offer</A></TT>.  Raises
 	<TT><A href="#Ticket-exn">Ticket</A></TT> if the ticket is
-	invalid or the site on which it was created no longer exists.</P>
+	invalid or the site on which it was created no longer exists.
+	Raises <TT><A href="io.html">IO.Io</A></TT> if retrieving the
+	package fails for other reasons.</P>
     </DD>
 
     <DT>
@@ -192,12 +195,10 @@
 	structure X = <I>X</I>)</TT>
     </DT>
     <DD>
-      <P>makes <TT><I>X</I></TT> available to other sites for taking with
+      <P>makes module <TT><I>X</I></TT> available to other sites for taking with
 	signature&nbsp;<I>S</I>.  Returns a ticket suitable for <TT><A
 	href="#take">take</A></TT> or <TT><A href="#Take-fn">Take</A></TT>.
-	If the argument is a mutable data structure, then taking returns
-	a clone of how the data structure looked when the offer was
-	initially made. Equivalent to</P>
+	Equivalent to</P>
         <PRE>
 	(val ticket = offer (pack <I>X</I> :> <I>S</I>))</PRE>
     </DD>
@@ -207,14 +208,17 @@
 	signature S = <I>S</I>)</TT>
     </DT>
     <DD>
-      <P>imports the data structure denoted by <TT><I>ticket</I></TT>, which
+      <P>imports the module denoted by <TT><I>ticket</I></TT>, which
 	must have been created by <TT><A href="#offer">offer</A></TT> or <TT
-	><A href="#Offer-fn">Offer</A></TT>, under signature&nbsp;<TT><I>S</I
-	></TT>.  Raises <TT><A href="#Ticket-exn">Ticket</A></TT> if the
+	><A href="#Offer-fn">Offer</A></TT>, under a sub-signature
+	of&nbsp;<TT><I>S</I></TT>.
+	Raises <TT><A href="#Ticket-exn">Ticket</A></TT> if the
 	ticket is invalid or the site on which it was created no longer
 	exists.  Raises <TT><A href="package.html#Mismatch">Package.Mismatch</A
-	></TT> if the value was not exported with a signature matching&nbsp;<TT
-	><I>S</I></TT>. Equivalent to</P>
+	></TT> if the module was not exported with a signature matching&nbsp;<TT
+	><I>S</I></TT>. Raises <TT><A href="io.html">IO.Io</A></TT> if
+	retrieving the module fails for other reasons.
+	Equivalent to</P>
         <PRE>
 	unpack (take <I>ticket</I>) : <I>S</I></PRE>
     </DD>
