@@ -154,10 +154,11 @@ let
               if oldbest = NONE orelse LProblem.compare (valOf oldbest, sol)
 	      then
 		  (Promise.fulfill (p, SOME sol) ;
-		   Array.app (fn w => #bestMsg w sol) workers)
-              else Promise.fulfill (p, oldbest)
+		   spawn (Array.app (fn w => #bestMsg w sol) workers) ;
+		   true)
+              else (Promise.fulfill (p, oldbest) ; false)
           end         
-      else ()
+      else true
 
   (**************************************************************************
    *                       Proxies of the Engine
@@ -168,8 +169,7 @@ let
       (llog (dbCom, name id ^ " has sent a solution at path " ^
 		    (Path.toString path) ^ ".\nNamely " ^
 		    (toString sol) ^ "\n") ;
-       Channel.put (solutions, sol) ;
-       updateBest sol)
+       if updateBest sol then Channel.put (solutions, sol) else ())
 
   (* Worker #id is idle. *)
   fun idle id = (setIdle id ; (* We know that id is idle. *)
