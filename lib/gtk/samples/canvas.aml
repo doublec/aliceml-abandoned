@@ -8,8 +8,8 @@ local
     open GtkCore
     open Canvas
 	
-    fun DeleteEvent _ = () (* Inspector.inspect "Delete Event occurred" *)
-    fun Destroy _ = () (* Inspector.inspect "Destroy Event occurred" *)
+    fun DeleteEvent _ = ()
+    fun Destroy _ = OS.Process.exit OS.Process.success
     val Window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
     val DestroyId = Gtk.signalConnect(Window, "destroy", Destroy)
 
