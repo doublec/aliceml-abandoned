@@ -5,7 +5,7 @@ Core language:
 
 - var annotations in types?
 - curried fn? (grammar overhead)
-* more liberal infix syntax in fun
++ more liberal infix syntax in fun
 + more liberal datatype declaration syntax
 + punning in record expressions
 - record update
