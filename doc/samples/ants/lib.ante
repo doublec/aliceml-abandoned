@@ -4,3 +4,52 @@ val trailmarker2 = 2
 
 val foodmarker = 3
 val boringmarker = 4
+
+val todo = loop (flip 123 ifyes nop)
+val lost = loop (flip 124 ifyes nop)
+
+local
+val labelprefix = "home_"
+val goto  = fn s => goto (labelprefix ^ s)
+val label = fn s => label (labelprefix ^ s)
+val proc  = fn s => proc (labelprefix ^ s)
+in
+
+fun nextstep step = (step+1) mod 3
+
+fun turnto_trail step success otherwise failure =
+    turnto_trail' (Vector.sub(#[(ifnot,ifyes), (ifyes,ifnot), (ifnot,ifnot)],
+			      step)) success failure
+and turnto_trail' (if1,if2) success failure =
+    letlabel (fn sense_trail_ahead =>
+    letlabel (fn sense_trail_next =>
+	sense leftahead (marker trailmarker1) if1 (goto sense_trail_ahead) ++
+	sense leftahead (marker trailmarker2) if2 (goto sense_trail_ahead) ++
+	turn left ++
+	success ++
+	label sense_trail_ahead ++
+	sense ahead (marker trailmarker1) if1 (goto sense_trail_next) ++
+	sense ahead (marker trailmarker2) if2 (goto sense_trail_next) ++
+	success ++
+	label sense_trail_next ++
+	turn right ++
+	goto sense_trail_ahead
+    ))
+
+fun towards_hill' trailstep trailaction homeaction =
+    turnto_trail (nextstep trailstep) (
+	move ifnot (todo) ++
+	trailaction ++
+	sense here home ifyes homeaction
+    ) otherwise (lost)
+
+fun towards_hill trailaction homeaction =
+    loop (
+	label "towards_hill0" ++
+	towards_hill' 0 trailaction homeaction ++
+	label "towards_hill1" ++
+	towards_hill' 1 trailaction homeaction ++
+	label "towards_hill2" ++
+	towards_hill' 2 trailaction homeaction
+    )
+end

@@ -1,0 +1,32 @@
+
+val labelprefix = "worker_"
+val goto  = fn s => goto (labelprefix ^ s)
+val label = fn s => label (labelprefix ^ s)
+val proc  = fn s => proc (labelprefix ^ s)
+
+fun nextstep step = (step+1) mod 3
+
+fun towards_blob towards_hill =
+    loop (
+	pick ifyes towards_hill ++
+	turnto (marker foodmarker) ifnot (todo) ++
+	move ifnot (todo)
+    )
+
+fun drop_food towards_blob =
+    drop ++
+    times 3 (turn left) ++
+    towards_blob
+
+fun worker _ =
+    proc "towards_blob" (
+	towards_blob (goto "towards_hill")
+    ) ++
+    proc "towards_hill" (
+	towards_hill nop (goto "drop_food")
+    ) ++
+    proc "drop_food" (
+	drop_food (goto "towards_blob")
+    )
+
+val ant = worker ()
