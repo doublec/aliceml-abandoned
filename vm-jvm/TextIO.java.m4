@@ -9,10 +9,12 @@ package de.uni_sb.ps.dml.runtime;
 import java.io.*;
 
 final public class TextIO {
-    final public class IStream implements DMLValue {
+    final public static Name IO = new UniqueName("TextIO.IO");
+
+    final public static class IStream implements DMLValue {
 	InputStream in = null;
 
-	public InStream(InputStream is) {
+	public IStream(InputStream is) {
 	    in = is;
 	}
 	_apply_fails ;
@@ -21,10 +23,10 @@ final public class TextIO {
 	_raise ;
     }
 
-    final public class OStream implements DMLValue {
+    final public static class OStream implements DMLValue {
 	OutputStream out = null;
 
-	public InStream(OutputStream os) {
+	public OStream(OutputStream os) {
 	    out = os;
 	}
 	_apply_fails ;
@@ -37,7 +39,7 @@ final public class TextIO {
     final public static DMLValue stdIn = new IStream(System.in);
 
     /** val stdOut : instream */
-    final public static DMLValue stdOut = new IStream(System.out);
+    final public static DMLValue stdOut = new OStream(System.out);
 
     _BUILTIN(OpenIn) {
 	_APPLY(val) {
@@ -45,8 +47,15 @@ final public class TextIO {
 	    DMLValue fn  = args[0].request();
 	    if (fn instanceof STRING) {
 		java.lang.String filename = ((STRING) fn).getString();
-		FileInputStream fs = new FileInputStream(filename);
-		return new IStream(fs);
+		FileInputStream fs = null;
+		try {
+		     fs = new FileInputStream(filename);
+		     return new IStream(fs);
+		} catch (FileNotFoundException f) {
+		    System.err.println(f);
+		    f.printStackTrace();
+		    _RAISENAME(IO);
+		}
 	    } else {
 		_error("argument not string",val);
 	    }
@@ -60,8 +69,14 @@ final public class TextIO {
 	    _fromTuple(args,val,1,"TextIO.closeIn");
 	    DMLValue fn  = args[0].request();
 	    if (fn instanceof IStream) {
-		((IStream) fn).in.close();
-		return Constants.unit;
+		try {
+		    ((IStream) fn).in.close();
+		    return Constants.dmlunit;
+		} catch (IOException i) {
+		    System.err.println(i);
+		    i.printStackTrace();
+		    _RAISENAME(IO);
+		}
 	    } else {
 		_error("argument not string",val);
 	    }
@@ -72,16 +87,22 @@ final public class TextIO {
 
     _BUILTIN(InputAll) {
 	_APPLY(val) {
-	    _fromTulpe(args,val,1,"TextIO.inputAll");
+	    _fromTuple(args,val,1,"TextIO.inputAll");
 	    DMLValue ins = args[0].request();
 	    if (ins instanceof IStream) {
-		InputStream in = ((IStream) ins).in;
-		int len = in.available();
-		byte[] b = new byte[len];
-		in.read(b,0,len);
-		return STRING (java.lang.String(b));
+		try {
+		    InputStream in = ((IStream) ins).in;
+		    int len = in.available();
+		    byte[] b = new byte[len];
+		    in.read(b,0,len);
+		    return new STRING (new java.lang.String(b));
+		} catch (IOException i) {
+		    System.err.println(i);
+		    i.printStackTrace();
+		    _RAISENAME(IO);
+		}
 	    } else {
-		_error("argument not instream");
+		_error("argument not instream",val);
 	    }
 	}
     }
