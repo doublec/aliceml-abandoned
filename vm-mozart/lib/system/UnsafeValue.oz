@@ -130,6 +130,17 @@ define
 	      fun {$ Labels I Values}
 		 {Adjoin Values {LabelToOz Labels.(I + 1)}}
 	      end
+	   'prodPoly':
+	      fun {$ LabelValueVec}
+		 case LabelValueVec of '#[]' then unit
+		 else
+		    {List.toRecord '#'
+		     {Record.foldR LabelValueVec
+		      fun {$ Label#Value In}
+			 {LabelToOz Label}#Value|In
+		      end nil}}
+		 end
+	      end
 	   'closure':
 	      fun {$ Code Values}
 		 {Handle closure(Code Values) notImplemented 0}   %--**
