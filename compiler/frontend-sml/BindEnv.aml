@@ -12,7 +12,6 @@
 
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
-import structure StringHashKey      from "../../lib/utility/StringHashKey"
 import structure MkHashScopedImpMap from "../infrastructure/MkHashScopedImpMap"
 import structure Stamp              from "../common/Stamp"
 import structure StampMap           from "../common/StampMap"
@@ -51,21 +50,21 @@ struct
 		 | SIGID of SigId
 		 | SELF
 
-    fun hashDom(INFIX id) = StringHashKey.hash(  VId.toString id)
-      | hashDom(LAB   id) = StringHashKey.hash(  Lab.toString id)
-      | hashDom(TYVAR id) = StringHashKey.hash(TyVar.toString id)
-      | hashDom(VID   id) = StringHashKey.hash(  VId.toString id)
-      | hashDom(TYCON id) = StringHashKey.hash(TyCon.toString id)
-      | hashDom(STRID id) = StringHashKey.hash(StrId.toString id)
-      | hashDom(SIGID id) = StringHashKey.hash(SigId.toString id)
+    fun hashDom(INFIX id) = String.hash(  VId.toString id)
+      | hashDom(LAB   id) = String.hash(  Lab.toString id)
+      | hashDom(TYVAR id) = String.hash(TyVar.toString id)
+      | hashDom(VID   id) = String.hash(  VId.toString id)
+      | hashDom(TYCON id) = String.hash(TyCon.toString id)
+      | hashDom(STRID id) = String.hash(StrId.toString id)
+      | hashDom(SIGID id) = String.hash(SigId.toString id)
       | hashDom(SELF)     = 0
 
 
     (* The map implementing the environment *)
 
-    structure Map = MkHashScopedImpMap(type t     = Dom
-				       val equals = op=
-				       val hash   = hashDom)
+    structure Map = MkHashScopedImpMap(type t    = Dom
+				       val equal = op=
+				       val hash  = hashDom)
 
 
     (* The environment's range *)

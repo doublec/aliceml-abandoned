@@ -12,7 +12,6 @@
 
 import structure Label         from "../../lib/rtt/Label"
 import functor   MkHashImpMap  from "../../lib/utility/MkHashImpMap"
-import functor   FromEqHashKey from "../../lib/utility/HASH_KEY-sig"
 import structure Crash         from "../infrastructure/Crash"
 import signature USE_ENV       from "USE_ENV-sig"
 
@@ -22,8 +21,9 @@ struct
     type lab = Label.t
 
     datatype  dom = VAL | TYP | MOD | INF
-    structure Map = MkHashImpMap(FromEqHashKey(type t = dom * lab
-					       fun hash(dom,l) = Label.hash l))
+    structure Map = MkHashImpMap(type t = dom * lab
+				 val equal = op =
+				 fun hash(dom,l) = Label.hash l)
 
     datatype use = FULL | PARTIAL of env
     withtype env = use Map.t
