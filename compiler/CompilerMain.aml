@@ -15,8 +15,10 @@ import structure TextIO                   from "../lib/system/TextIO"
 import structure OS                       from "../lib/system/OS"
 import structure CommandLine              from "../lib/system/CommandLine"
 import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
-import structure SMLToDotNetBatchCompiler from "top/SMLToDotNetBatchCompiler"
 import structure SMLToSeamBatchCompiler   from "top/SMLToSeamBatchCompiler"
+(* This is fairly obsolete by now...
+import structure SMLToDotNetBatchCompiler from "top/SMLToDotNetBatchCompiler"
+*)
 
 val _ =
     case CommandLine.arguments () of
@@ -24,16 +26,20 @@ val _ =
 	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
       | "--seam"::args =>
 	    OS.Process.exit (SMLToSeamBatchCompiler.main args)
+      (*
       | "--dotnet"::args =>
 	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
+      *)
       | args =>
 	    case Config.vm of
 		"mozart" =>
 		    OS.Process.exit (SMLToMozartBatchCompiler.main args)
 	      | "seam" =>
 		    OS.Process.exit (SMLToSeamBatchCompiler.main args)
+	      (*
 	      | "dotnet" =>
 		    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
+	      *)
 	      | _ =>
 		    (TextIO.output (TextIO.stdErr,
 				    "alicec: unknown runtime environment\n");
