@@ -69,6 +69,7 @@ Library:
 * Pair: added mapBoth.
 * List: fixed evaluation order of filter[i] and partition[i].
 * Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
+* VectorPair: fixed foldri.
 * VectorSlice: fixed toVector.
 * ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
 * Char: fixed scan, scanC, fromCString.

@@ -37,6 +37,7 @@ Library:
 * [FIX] Real: fixed comparison, exception handling, handling NaNs and infinity.
 * [FIX] List: fixed evaluation order of filter[i] and partition[i].
 * [FIX] Vector, {Char,Word8}Vector: update raises Subscript for bad indices.
+* [FIX] VectorPair: fixed foldri.
 * [FIX] ArraySlice, {Char,Word8}ArraySlice: fixed copying of overlapping slices.
 * [FIX] Char: fixed numeric escapes and gaps in scan, scanC, fromCString.
 * [FIX] String: fixed numeric escapes and gaps in scanC, fromCString.
