@@ -288,13 +288,14 @@ struct
      * the old forward reference trick.
      *)
 
-    val appFwd 		= ref NONE : ((typ -> unit) -> typ -> unit) option ref
-    val equalsFwd 	= ref NONE : (typ * typ -> bool) option ref
-    val substFwd	= ref NONE : (subst * typ -> typ) option ref
+    fun dummy _		= raise Assert.failure
+    val appFwd 		= ref dummy : ((typ -> unit) -> typ -> unit) ref
+    val equalsFwd 	= ref dummy : (typ * typ -> bool) ref
+    val substFwd	= ref dummy : (subst * typ -> typ) ref
 
-    fun app f		= Option.valOf(!appFwd)    f
-    fun equals(t1,t2)	= Option.valOf(!equalsFwd) (t1,t2)
-    fun subst(m,t)	= Option.valOf(!substFwd)  (m,t)
+    fun app f		= !appFwd f
+    fun equals(t1,t2)	= !equalsFwd(t1,t2)
+    fun subst(m,t)	= !substFwd(m,t)
 
 
   (* Debugging aids *)
@@ -1629,7 +1630,7 @@ struct
 
   (* Tie forwarding knots *)
 
-    val _ = appFwd    := SOME app
-    val _ = equalsFwd := SOME equals
-    val _ = substFwd  := SOME subst
+    val _ = appFwd    := app
+    val _ = equalsFwd := equals
+    val _ = substFwd  := subst
 end
