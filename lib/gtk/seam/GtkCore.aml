@@ -88,7 +88,7 @@ struct
 	fun addObject (p,tinfo) = (*(p,unref,hasSignals) =*)
 	    (if p = NULL orelse weakMapContains p 
 		 then () 
-	         else newObject (p,fn _=>(), true) ; 
+	         else newObject (p,fn _=>(), false) ; 
              p)
     end
 

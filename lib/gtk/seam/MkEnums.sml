@@ -52,8 +52,9 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	    val mt = Util.makeTuple " | " ""
 	    val memnames = map (fn (name,_) => name) members
 	    val e2r = map (fn (name,num) => name^" => "^num^".0") members
-	    val r2e = map (fn (name,num) => num^".0 => "^name)
-		       (Util.removeDuplicates (fn (x,y) => #2x = #2y) members)
+	    val r2e = (map (fn (name,num) => num^".0 => "^name)
+		       (Util.removeDuplicates (fn (x,y) => #2x = #2y) members))
+		   @(if null members then nil else ["_ => "^(#1(hd members))])
 	in
 	   [wrIndent,"datatype ",name," = ",mt memnames,"\n",
 	    wrIndent,"val ",name,"ToReal = fn ",mt e2r,"\n",

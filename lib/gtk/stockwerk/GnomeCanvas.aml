@@ -11,4 +11,32 @@ struct
     val _ = GtkCore.init()
     open GnomeCanvasEnums 
     open GnomeCanvasUnsafe
+
+    fun itemCreate (root, ty, list) =
+    let
+	val findNonReal = fn ((_,GtkTypes.REAL _),e) => e | (a,e) => a
+	fun processArgs nil = ("", GtkTypes.OBJECT GtkCore.NULL, nil)
+	  | processArgs ((fst, fstarg)::ar) =
+	     (fst, fstarg, fstarg::
+	      (foldr (fn ((a,v),e) => [GtkTypes.STRING a, v]@e) nil ar))
+
+        val (fst,fstarg,args) = processArgs list
+	val (dummy,dummyarg) = foldr findNonReal (fst,fstarg) list
+	val item = itemNew(root, ty, dummy, [dummyarg])
+	val _ = if null args then () else itemSetValist(item, fst, args)
+    in
+	item
+    end
+
+    fun makePoints plist =
+    let
+	val plist' = if (length plist) mod 2 = 0 then plist else plist@[0]
+	val points = pointsNew((length plist') div 2)
+	val _ = foldl (fn (x,i) => 
+		         ( pointsSetCoords(points,i,x) ; i+1 ) )
+		      0 plist'
+    in
+	points
+    end
+
 end
