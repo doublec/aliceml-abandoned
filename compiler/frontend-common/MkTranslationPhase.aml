@@ -34,6 +34,7 @@ import structure FixityTranslation	from "FixityTranslation"
 import structure PervasiveTypeTranslation from "PervasiveTypeTranslation"
 
 import structure TranslationEnv		from "TranslationEnv"
+import functor   MkListSort             from "../../lib/utility/MkListSort"
 import structure Assert                 from "../../lib/utility/Assert"
 import structure Crash			from "../infrastructure/Crash"
 import structure Error			from "../infrastructure/Error"
@@ -42,6 +43,11 @@ import structure StampMap		from "../common/StampMap"
 import structure StringMap		from "../infrastructure/StringMap"
 import signature SWITCHES		from "../infrastructure/SWITCHES-sig"
 import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE-sig"
+
+(*DEBUG
+import val print from "../../lib/system/TextIO"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+*)
 
 functor MkTranslationPhase(Switches: SWITCHES) : TRANSLATION_PHASE =
 struct
@@ -148,6 +154,10 @@ struct
 
   (* Transformation of type info *)
 
+    structure FieldList = MkListSort(type 'a t = Label.t * Type.t
+				     fun compare((l1,_), (l2,_)) =
+					 Label.compare(l1, l2))
+
     val infHash  = Inf.Map.new() : Type.t Inf.Map.t
 		(*UNFINISHED: remove this global variable! *)
 
@@ -192,8 +202,14 @@ struct
 	    let
 		val s     = Inf.asSig' j
 		val items = Inf.items s
+		val fs    = List.mapPartial (itemToField E) items
+		val r     = List.foldr
+				(fn((l,t),r) => Type.extendRow(l,t,r))
+				(Type.unknownRow())
+				(FieldList.sort fs)
+				(* sort to avoid quadratic behaviour *)
 	    in
-		Type.prod(List.foldr (itemToRow E) (Type.unknownRow()) items)
+		Type.prod r
 	    end
 	else if Inf.isArrow' j then
 	    (* [fct(x:j1) -> j2] = [j1] -> [j2] *)
@@ -219,12 +235,12 @@ struct
 	else
 	    raise Crash.Crash "TranslationPhase.infToTyp: unknown inf"
 
-    and itemToRow E (item,r) =
+    and itemToField E item =
 	if Inf.isValItem item then
 	    let
 		val (l,t) = Inf.asValItem item
 	    in
-		Type.extendRow(trValLabel l, t, r)
+		SOME(trValLabel l, t)
 	    end
 	else if Inf.isTypItem item then
 	    let
@@ -234,13 +250,13 @@ struct
 					"RTT types not available everywhere");
 			     typ_poly) (* for bootstrapping *)
 	    in
-		Type.extendRow(trTypLabel(Path.toLab p), t, r)
+		SOME(trTypLabel(Path.toLab p), t)
 	    end
 	else if Inf.isModItem item then
 	    let
 		val (p,j) = Inf.asModItem item
 	    in
-		Type.extendRow(trModLabel(Path.toLab p), infToTyp(E,j), r)
+		SOME(trModLabel(Path.toLab p), infToTyp(E,j))
 	    end
 	else if Inf.isInfItem item then
 	    let
@@ -250,10 +266,10 @@ struct
 					"RTT types not available everywhere");
 			     typ_poly) (* for bootstrapping *)
 	    in
-		Type.extendRow(trInfLabel(Path.toLab p), t, r)
+		SOME(trInfLabel(Path.toLab p), t)
 	    end
 	else (* fixity or hidden *)
-	    r
+	    NONE
 
 
   (* Identifiers and operations for RTT code *)
