@@ -3,8 +3,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
- *
+ *   Andreas Rossberg, 2001-2004
+i *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
@@ -168,7 +168,7 @@ struct
 
     fun ppTypMismatch2(d1, d2, (t1,t2,t3,t4)) =
 	vbox(
-	    d1 ^^ indent(PPType.ppTyp t1) ^^
+	    d1 ^^ indent(PPType.ppTyp t1) ^/^
 	    d2 ^^ indent(PPType.ppTyp t2)
 	)
 
@@ -181,14 +181,14 @@ struct
 	in
 	    if td3 = td1 andalso td4 = td2 then
 		vbox(
-		    d1 ^^ indent td1 ^^
+		    d1 ^^ indent td1 ^/^
 		    d2 ^^ indent td2
 		)
 	    else
 		vbox(
-		    d1 ^^ indent td1 ^^
-		    d2 ^^ indent td2 ^^
-		    textpar["because","type"] ^^ indent td3 ^^
+		    d1 ^^ indent td1 ^/^
+		    d2 ^^ indent td2 ^/^
+		    textpar["because","type"] ^^ indent td3 ^/^
 		    textpar["does","not","unify","with"] ^^ indent td4
 		)
 	end
@@ -203,45 +203,45 @@ struct
 	    break ^^
 	    textpar["fixity","of",ppQuoted(ppLab l),"is","unspecified"]
       | ppInfMismatch'(Inf.MissingVal l) =
-	    indent(textpar["val",ppLab l]) ^^
+	    indent(textpar["val",ppLab l]) ^/^
 	    textpar["is","missing"]
       | ppInfMismatch'(Inf.MissingTyp l) =
-	    indent(textpar["type",ppLab l]) ^^
+	    indent(textpar["type",ppLab l]) ^/^
 	    textpar["is","missing"]
       | ppInfMismatch'(Inf.MissingMod l) =
-	    indent(textpar["structure",ppLab l]) ^^
+	    indent(textpar["structure",ppLab l]) ^/^
 	    textpar["is","missing"]
       | ppInfMismatch'(Inf.MissingInf l) =
-	    indent(textpar["signature",ppLab l]) ^^
+	    indent(textpar["signature",ppLab l]) ^/^
 	    textpar["is","missing"]
       | ppInfMismatch'(Inf.MismatchFix(l,q1,q2)) =
-	    indent(par[ppFix q1,text(ppLab l)]) ^^
+	    indent(par[ppFix q1,text(ppLab l)]) ^/^
 	    textpar["does","not","match"] ^^
 	    indent(par[ppFix q2,text(ppLab l)])
       | ppInfMismatch'(Inf.MismatchVal(l,t1,t2,m)) =
-	    indent(par[text"val",text(ppLab l),text":",ppTyp t1]) ^^
+	    indent(par[text"val",text(ppLab l),text":",ppTyp t1]) ^/^
 	    textpar["does","not","match"] ^^
-	    indent(par[text"val",text(ppLab l),text":",ppTyp t2]) ^^
+	    indent(par[text"val",text(ppLab l),text":",ppTyp t2]) ^/^
 	    textpar["because"] ^^
 	    ppTypeMismatch m
       | ppInfMismatch'(Inf.MismatchTyp(l,k1,k2,m)) =
 	if not(Type.isSingKind k2) then
-	    indent(textpar["type",ppLab l]) ^^
+	    indent(textpar["type",ppLab l]) ^/^
 	    textpar["has","incompatible","arity"]
 	else
 	    indent(if Type.isSingKind k1
 		   then par[text"type",text(ppLab l),text"=",
 			    ppTyp(Type.asSingKind k1)]
-		   else textpar["type",ppLab l]) ^^
+		   else textpar["type",ppLab l]) ^/^
 	    textpar["does","not","match","specification"] ^^
 	    indent(par[text"type",text(ppLab l),text"=",
 		       ppTyp(Type.asSingKind k2)])
       | ppInfMismatch'(Inf.MismatchMod(l,im)) =
-	    indent(textpar["structure",ppLab l]) ^^
+	    indent(textpar["structure",ppLab l]) ^/^
 	    textpar["does","not","match,","because"] ^^
 	    ppInfMismatch' im
       | ppInfMismatch'(Inf.MismatchInf(l,km)) =
-	    indent(textpar["signature",ppLab l]) ^^
+	    indent(textpar["signature",ppLab l]) ^/^
 	    textpar["does","not","match,","because"] ^^
 	    ppKindMismatch km
       | ppInfMismatch'(Inf.MismatchDom im) =
@@ -271,13 +271,13 @@ struct
       | ppInfMismatch'(Inf.Incompatible(j1,j2)) =
 	    break ^^
 	    textpar["signature"] ^^
-	    indent(ppInf j1) ^^
+	    indent(ppInf j1) ^/^
 	    textpar["is","incompatible","to"] ^^
 	    indent(ppInf j2)
       | ppInfMismatch'(Inf.IncompatibleMod(p1,p2)) =
 	    break ^^
 	    textpar["module"] ^^
-	    indent(ppPath p1) ^^
+	    indent(ppPath p1) ^/^
 	    textpar["is","not","equal","to"] ^^
 	    indent(ppPath p2)
 
@@ -297,7 +297,7 @@ struct
 	    ppInfMismatch' im
 
     and ppTypeMismatch(t1,t2) =
-	    indent(ppTyp t1) ^^
+	    indent(ppTyp t1) ^/^
 	    textpar["is","incompatible","with"] ^^
 	    indent(ppTyp t2)
 
@@ -311,7 +311,7 @@ struct
 		    text ":" ^/^
 		    below(PPType.ppTyp t)
 		))
-	    ) ^^
+	    ) ^/^
 	    textpar["contains","free","type","variable",
 		    "or","unresolved","record","type"]
 	)
@@ -410,14 +410,14 @@ struct
       | ppError(OverExpOverlap(t1,t2)) =
 	vbox(
 	    textpar["overlapping","overload,","because", "type"] ^^
-	    indent(PPType.ppTyp t1) ^^
+	    indent(PPType.ppTyp t1) ^/^
 	    textpar["is","the","same","as","type"] ^^
 	    indent(PPType.ppTyp t2)
 	)
       | ppError(OverExpKind t) =
 	vbox(
 	    textpar["inconsistent","kinds","in","overloading:"] ^^
-	    indent(PPType.ppTyp t) ^^
+	    indent(PPType.ppTyp t) ^/^
 	    textpar["does","not","agree","with","previous","type"]
 	)
       | ppError(OverExpMismatch ue) =
@@ -533,7 +533,7 @@ struct
       | ppError(LetInfGenerative j) =
 	vbox(
 	    textpar["signature","contains","names","introduced","in","let:"] ^^
-	    nest(break ^^ PPInf.ppSig(Inf.asSig j))
+	    indent(PPInf.ppSig(Inf.asSig j))
 	)
       | ppError(SingInfNonSing j) =
 	  textpar["module","expression","is","not","a","valid","singleton"]
@@ -560,7 +560,7 @@ struct
 	vbox(
 	    textpar["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^
-	    nest(break ^^ PPType.ppTyp t)
+	    indent(PPType.ppTyp t)
 	)
 
   (* Export *)

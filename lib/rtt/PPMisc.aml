@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,7 +38,7 @@ struct
     val brack = contain("[","]")
 
     fun apply(doc, docs) = fbox(nest(doc ^/^ List.foldr op^/^ empty docs))
-    fun indent doc = nest(break ^^ below doc) ^^ break
+    fun indent doc = nest(break ^^ doc)
     fun par docs   = fbox(List.foldr op^/^ empty docs)
     fun textpar ss = fbox(List.foldr (fn(s,doc) => text s ^/^ doc) empty ss)
 

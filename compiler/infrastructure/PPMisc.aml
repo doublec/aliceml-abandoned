@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,28 +31,28 @@ struct
 
     val nest = nest 3
 
-    fun quote doc  = text "`" ^^ doc ^^ text "'"
-    fun paren doc  = text "(" ^^ fbox(below doc) ^^ text ")"
-    fun brace doc  = text "{" ^^ fbox(below doc) ^^ text "}"
-    fun brack doc  = text "[" ^^ fbox(below doc) ^^ text "]"
+    fun contain (l,r) doc = text l ^^ fbox(below doc) ^^ text r
+    val quote = contain("`","'")
+    val paren = contain("(",")")
+    val brace = contain("{","}")
+    val brack = contain("[","]")
 
-    fun indent doc = nest(break ^^ below doc) ^^ break
-    val par        = fbox o List.foldr (fn(doc',doc) => doc' ^/^ doc) empty
-    val textpar    = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
+    fun apply(doc, docs) = fbox(nest(doc ^/^ List.foldr op^/^ empty docs))
+    fun indent doc = nest(break ^^ doc)
+    fun par docs   = fbox(List.foldr op^/^ empty docs)
+    fun textpar ss = fbox(List.foldr (fn(s,doc) => text s ^/^ doc) empty ss)
 
     fun ppCommaList ppX   []    = empty
       | ppCommaList ppX   [x]   = ppX x
-      | ppCommaList ppX (x::xs) = ppX x ^^ text "," ^^ break ^^
-				  ppCommaList ppX xs
+      | ppCommaList ppX (x::xs) = ppX x ^^ text "," ^/^ ppCommaList ppX xs
 
     fun ppStarList ppX   []     = empty
       | ppStarList ppX   [x]    = ppX x
-      | ppStarList ppX (x::xs)  = hbox(ppX x ^^ break ^^ text "*") ^^ break ^^
-				  ppStarList ppX xs
+      | ppStarList ppX (x::xs)  = ppX x ^^ text " *" ^/^ ppStarList ppX xs
 
     fun ppSeqPrec ppXPrec n []  = empty
       | ppSeqPrec ppXPrec n [x] = ppXPrec n x
-      | ppSeqPrec ppXPrec n  xs = paren(ppCommaList (ppXPrec 0) xs)
+      | ppSeqPrec ppXPrec n  xs = paren(below(ppCommaList (ppXPrec 0) xs))
 
     fun ppSeq ppX = ppSeqPrec (fn _ => ppX) 0
 end
