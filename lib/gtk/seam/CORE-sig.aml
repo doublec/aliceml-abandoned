@@ -103,9 +103,9 @@ sig
     val TRUE : int
     val FALSE : int
 
-    type callBackFunction = object * arg list -> unit
-    val signalConnect      : object * string * callBackFunction -> int
-    val signalConnectAfter : object * string * callBackFunction -> int
+    type callback_function = object * arg list -> unit
+    val signalConnect      : object * string * callback_function -> int
+    val signalConnectAfter : object * string * callback_function -> int
     val signalDisconnect   : object * int -> unit
 
 (**)val printObject : object -> unit
