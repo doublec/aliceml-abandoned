@@ -204,7 +204,7 @@ define
 
    RootI = 1
 
-   fun {Constrain Meaning SourceCost}
+   proc {Constrain Meaning SourceCost Res}
       NumberOfInnerNodes = SourceCost div Tag.minCost
       NumberOfDataItems  = {Length Meaning}
       NumberOfExtraNodes = (NumberOfDataItems + 1) div 2
@@ -283,7 +283,7 @@ define
 	       IsMother = (W2.mother =: I1)
 	    in
 	       IsMother =: {FS.reified.isIn I2 W1.daughters}
-%	       {FD.conj IsMother W2.isDataItemTag} =<: W1.familleNombreuse
+	       {FD.conj IsMother W2.isDataItemTag} =<: W1.familleNombreuse
 	    end
 	 end
       end
@@ -310,16 +310,16 @@ define
 	 IsInVPlus        = {FS.reified.isIn I VPlus}
 	 IsInVMinus       = {FS.reified.isIn I VMinus}
 	 IsDownEmpty      = {FS.reified.equal W.down FS.value.empty}
-	 IsNonDataItem    = {FS.reified.equal W.sigma FS.value.empty}
+	 IsSigmaEmpty     = {FS.reified.equal W.sigma FS.value.empty}
 	 IsNonDataItemTag = (W.tag \=: DataItemTag)
       in
 	 W.isDataItemTag \=: IsNonDataItemTag
 	 IsInVMinus =<: (W.mother =: RootI)
 	 IsInVMinus =<: IsDownEmpty
-	 IsInVMinus =<: IsNonDataItem
+	 IsInVMinus =<: IsSigmaEmpty
 	 IsInVMinus =: (W.tag =: Epsilon)
-	 IsInVPlus =: (IsDownEmpty \=: IsNonDataItem)
-	 IsNonDataItemTag =<: IsNonDataItem
+	 IsInVPlus =: (IsDownEmpty \=: IsSigmaEmpty)
+	 IsSigmaEmpty =<: IsNonDataItemTag
       end
 
       %% Attribute constraints
@@ -362,27 +362,30 @@ define
 			{Collect {Select.fd TagCosts V.I.tag}}
 		     end '=:'}
    in
-      V#Cost
+      Res = V#Cost
+
+      {FS.cardRange NumberOfDataItems NumberOfVertices - 1 VPlus}
+      {FD.distribute naive [{FS.card VPlus}]}
+
+      {FD.distribute ff
+       {Append
+	for I in 1..{Width V} collect: Collect do
+	   if I \= RootI then
+	      {Collect V.I.mother}
+	   end
+	end
+	for I in 1..{Width V} collect: Collect do
+	   if I \= RootI then
+	      {Collect V.I.tag}
+	   end
+	end}}
    end
 
    fun {Script Meaning0 SourceCost}
       Meaning = {Reverse Meaning0}
    in
-      proc {$ Res} V in
-	 Res = {Constrain Meaning SourceCost}
-	 V = Res.1
-	 {FD.distribute ff
-	  {Append
-	   for I in 1..{Width V} collect: Collect do
-	      if I \= RootI then
-		 {Collect V.I.mother}
-	      end
-	   end
-	   for I in 1..{Width V} collect: Collect do
-	      if I \= RootI then
-		 {Collect V.I.tag}
-	      end
-	   end}}
+      proc {$ Res}
+	 {Constrain Meaning SourceCost ?Res}
       end
    end
 
