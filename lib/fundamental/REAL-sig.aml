@@ -79,6 +79,7 @@ sig
     val isNan :		real -> bool
     val isNormal :	real -> bool
     val class :		real -> IEEEReal.float_class
+    val checkFloat :	real -> real
 
     val ceil :		real -> int
     val floor :		real -> int
@@ -91,7 +92,6 @@ sig
 
 (*TODO
     val nextAfter :	real * real -> real
-    val checkFloat :	real -> real
 *)
 
 (*TODO

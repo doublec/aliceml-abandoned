@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2003
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,6 +23,7 @@ import __primitive
        infix 4 = <> > < >= <= infix 6 + - infix 7 * / div mod
        val op = and op <> and op div and op mod           from "ToplevelValues"
 import __primitive structure IEEEReal                     from "IEEEReal"
+import __primitive structure General                      from "General"
 import __primitive structure Bool                         from "Bool"
 import __primitive structure Int                          from "Int"
 import __primitive structure Char                         from "Char"
@@ -87,15 +88,19 @@ struct
     fun x ?= y				= x == y
 
     fun isNan x				= x != x
-    fun isFinite x			= abs x = 1.0/0.0
+    fun isFinite x			= abs x <> 1.0/0.0
     fun isNormal x			= isFinite x andalso abs x <> 0.0
 
-    fun class x  = class'(abs x)
-    and class' x =
-	if x != x then IEEEReal.NAN else
-	if x = 1.0/0.0 then IEEEReal.INF else
-	if x = 0.0 then IEEEReal.ZERO else
-	IEEEReal.NORMAL	(* TODO: detect SUBNORMAL *)
+    fun class x				= class'(abs x)
+    and class' x			= if x != x then IEEEReal.NAN else
+					  if x = 1.0/0.0 then IEEEReal.INF else
+					  if x = 0.0 then IEEEReal.ZERO else
+					  IEEEReal.NORMAL
+					  (* TODO: detect SUBNORMAL *)
+
+    fun checkFloat x			= if isNan x then raise General.Div
+					  else if isFinite x then x
+					  else raise General.Overflow
 
     __primitive val ceil :	real -> int	= "Real.ceil"
     __primitive val floor :	real -> int	= "Real.floor"

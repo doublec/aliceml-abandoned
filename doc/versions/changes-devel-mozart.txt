@@ -19,6 +19,8 @@ Library:
 * Added intersect and difference functions to map types.
 * Added disjoint function to set and map types.
 * Moved Atom to lib/data.
+* Added Real.checkFloat.
+* Fixed Real.isFinite.
 * Fixed exception handling in Thread structure.
 * Fixed {*VectorSlice,Substring}.splitr (also fixes OS.Path.split*).
 * Fixed CharArraySlice.
