@@ -138,7 +138,7 @@ int IOHandler::SocketPair(int type, int *sv) {
   return socketpair(PF_UNIX, type, 0, sv);
 #else
   int newsock = socket(AF_INET, type, 0);
-  if (newsock < 0) return -1;
+  if (newsock == INVALID_SOCKET) return -1;
   // bind the socket to any unused port
   struct sockaddr_in sock_in;
   sock_in.sin_family = AF_INET;
