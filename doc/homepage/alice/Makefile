@@ -33,7 +33,7 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	unique-string.php3 vector.php3 vector-pair.php3 word.php3 \
 	thread.php3 url.php3 config.php3 socket.php3 http.php3 \
 	http-client.php3 http-server.php3 resolver-handler.php3 \
-	resolver.php3 component.php3 component-manager.php3 \
+	resolver.php3 component.php3 component-manager.php3 remote.php3 \
 	HttpClientExample.aml HttpServerExample.aml
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
