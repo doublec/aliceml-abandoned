@@ -179,7 +179,7 @@ structure CodeGen =
 		 (* JVM-Register initialisieren. *)
 		 fun initializeLocals 0 = [Label afterInit]
 		   | initializeLocals x = [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
-		 val iL = initializeLocals (Local.max())
+		 val iL = initializeLocals (Register.max())
 
 		 val _ = if (!mainpickle= ~1) then
 		     raise Error "Derzeit sind nur Strukturen übersetzbar." else ()
@@ -192,7 +192,7 @@ structure CodeGen =
 		  Initialisierungsarbeit geschieht in run. *)
 		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
 				   Locals 1,
-				   Local.generateVariableTable
+				   Register.generateVariableTable
 				   [New name,
 				    Dup,
 				    Invokespecial (name, "<init>", ([], [Voidsig])),
@@ -210,7 +210,7 @@ structure CodeGen =
 		  Dies ist der letzte Schritt des Compilierungsvorganges. *)
 		 val literalName = Class.getLiteralName()
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
-				  Locals (Local.max()+1),
+				  Locals (Register.max()+1),
 				   iL @
 				   insts @
 				   (if !ECHO >= 1 then
@@ -299,10 +299,10 @@ structure CodeGen =
 	(* Codegenerierung für Deklarationen *)
 	and decCode (ValDec(_, id' as Id (_,stamp',_), exp',_)) =
 	    let
-		val l=Local.get stamp'
+		val l=Register.get stamp'
 		val loc =
 		    if l = 1
-			then Local.assign(id', Local.nextFree())
+			then Register.assign(id', Register.nextFree())
 		    else l
 	    in
 		(Lambda.pushFun id';
@@ -322,14 +322,14 @@ structure CodeGen =
 		local
 		    fun init ((id',exp')::ids'') =
 			let
-			    val loc = Local.assign(id',Local.nextFree())
+			    val loc = Register.assign(id',Register.nextFree())
 			    fun funList ((OneArg id'',_)::rest) =
 				let
 				    val className = classNameFromId id''
 				    (* Der formale Parameter einer Funktion wird immer in
 				     Register 1 übergeben. *)
-				    val _ = Local.assign(id'',1)
-				    val _ = Local.assignLambda(id'', loc)
+				    val _ = Register.assign(id'',1)
+				    val _ = Register.assignLambda(id'', loc)
 				in
 				    [New className,
 				     Dup,
@@ -400,7 +400,7 @@ structure CodeGen =
 	  | decCode (ConDec (_, id' as Id(_, stamp', name'), hasArgs,_)) =
 	    (* ConDec of coord * id * bool *)
 	    let
-		val loc = Local.assign(id',Local.nextFree())
+		val loc = Register.assign(id',Register.nextFree())
 	    in
 		if hasArgs then
 		    let
@@ -499,7 +499,7 @@ structure CodeGen =
 		    [Ifacmpne elselabel]
 		  | testCode (ConTest(id'',SOME id''')) =
 		    let
-			val loc = Local.assign(id''',Local.nextFree())
+			val loc = Register.assign(id''',Register.nextFree())
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			Comment "Hi9" ::
@@ -528,7 +528,7 @@ structure CodeGen =
 			  | stringids2strings (nil, s') = s'
 			fun bindit ((_,id'')::nil,i) =
 			    let
-				val loc = Local.assign(id'',Local.nextFree())
+				val loc = Register.assign(id'',Register.nextFree())
 				val _ = FreeVars.setFun (id'', Lambda.top())
 			    in
 				(atCodeInt i) ::
@@ -537,7 +537,7 @@ structure CodeGen =
 			    end
 			  | bindit ((_,id'')::rest,i) =
 			    let
-				val loc = Local.assign(id'',Local.nextFree())
+				val loc = Register.assign(id'',Register.nextFree())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 			    in
 				Dup ::
@@ -575,7 +575,7 @@ structure CodeGen =
 		    let
 			fun bindit (id''::nil,i) =
 			    let
-				val loc = Local.assign(id'',Local.nextFree())
+				val loc = Register.assign(id'',Register.nextFree())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 
 			    in
@@ -586,7 +586,7 @@ structure CodeGen =
 			    end
 			  | bindit (id''::rest,i) =
 			    let
-				val loc = Local.assign(id'',Local.nextFree())
+				val loc = Register.assign(id'',Register.nextFree())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 			    in
 				Dup ::
@@ -614,9 +614,9 @@ structure CodeGen =
 		    end
 		  | testCode (LabTest (s', id' as Id (_,stamp'',_))) =
 		    let
-			val r = Local.get stamp''
+			val r = Register.get stamp''
 			val n = if r = 1
-				    then Local.assign(id', r)
+				    then Register.assign(id', r)
 				else r
 		    in
 			Comment "Hi 69"::
@@ -668,7 +668,7 @@ structure CodeGen =
 
 	  | decCode (HandleStm(_,body', id',body'')) =
 		    let
-			val loc = Local.assign (id', Local.nextFree())
+			val loc = Register.assign (id', Register.nextFree())
 			val try   = Label.new()
 			val to = Label.pushANewHandle ()
 			val using = Label.new()
@@ -717,12 +717,12 @@ structure CodeGen =
 			     Dup::
 			     (atCodeInt j)::
 			     (Comment "Hi4'")::
-			     (Aload (Local.get stamp'))::
+			     (Aload (Register.get stamp'))::
 			     Aastore::
 			     (load (rs,j+1))
 			   | load (nil,_) = nil
 		    (* 3. *)
-			 val mp = Local.nextFree()
+			 val mp = Register.nextFree()
 		    in
 			(mainpickle:=mp;
 			 [Comment "[Mainpickle "] @
@@ -772,7 +772,7 @@ structure CodeGen =
 				     Aload 1]
 				else
 				    [Comment "Hi6",
-				     Aload (Local.get stamp')]
+				     Aload (Register.get stamp')]
 			else
 			    (* Es handelt sich um eine freie Variable, die
 			     beim Abschluss bilden in ein Feld der
@@ -782,7 +782,7 @@ structure CodeGen =
 			    (Lambda.noSapply ();
 			     [Comment ("Hi. Stamp="^(Stamp.toString stamp')^
 				       ". Lambda.top = "^Stamp.toString (Lambda.top())^
-				       " in "^Int.toString (Local.get stamp')^
+				       " in "^Int.toString (Register.get stamp')^
 				       ". Fun = "^(Stamp.toString
 						   (FreeVars.getFun
 						    stamp'))^
@@ -882,7 +882,7 @@ structure CodeGen =
 			 val freeVarList = FreeVars.getVars id'
 			 (* 1. *)
 			 val object = let
-					  val loc = Local.getLambda stamp'
+					  val loc = Register.getLambda stamp'
 				      in
 					  if loc= ~1 (* dann baue Objekt *)
 					      then
@@ -912,11 +912,11 @@ structure CodeGen =
 			 Catch.push ();
 			 Lambda.pushFun illegalId;
 			 Label.push();
-			 Local.push();
+			 Register.push();
 			 Class.push(className);
 			 expCodeClass(lambda);
 			 Class.pop();
-			 Local.pop();
+			 Register.pop();
 			 Label.pop();
 			 Lambda.popFun ();
 			 Catch.pop();
@@ -949,7 +949,7 @@ structure CodeGen =
 			     Dup::
 			     (atCodeInt j)::
 			     (Comment "Hi4")::
-			     (Aload (Local.get stamp'))::
+			     (Aload (Register.get stamp'))::
 			     Aastore::
 			     (load (rs,j+1))
 			   | load (nil,_) = nil
@@ -1081,13 +1081,13 @@ structure CodeGen =
 			      [Classsig CVal], alpha, omega)::akku)
 		in
 		    val fieldscode = fields freeVarList
-		    val bd = vars (Local.max(),e)
+		    val bd = vars (Register.max(),e)
 		end
 		local (* Register in apply initialisieren *)
 		    fun initializeLocals 0 = [Label afterInit]
 		      | initializeLocals x = [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
 		in
-		    val initRegister = initializeLocals (Local.max ())
+		    val initRegister = initializeLocals (Register.max ())
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
 		val ap =
@@ -1099,13 +1099,13 @@ structure CodeGen =
 		val applY = Method ([MPublic],
 				    "apply",
 				    ([Classsig CVal], [Classsig CVal]),
-				    Locals (Local.max()+1),
+				    Locals (Register.max()+1),
 				    ap,
 				    Catch.top(), false)
 		val sapply = Method ([MPublic, MStatic],
 				     "sapply",
 				     ([Classsig CVal], [Classsig CVal]),
-				     Locals (Local.max()),
+				     Locals (Register.max()),
 				     ap,
 				     Catch.top(), true)
 		(* die Standard-Initialisierung *)
