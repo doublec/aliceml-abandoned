@@ -16,7 +16,8 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
  	     name = nativeName^".asig" ,
 	     intro =        
  	         ["(* This is a generated file. ",
-		  "Modifications may get lost. *)\n\n",
+		  "Modifications may get lost. *)\n",
+		  "import structure GtkCore from \"GtkCore\"\n\n",
 		  "signature ", Util.strUpper nativeName, "_COMPONENT =\n",
 		  "sig\n",
 		  Util.indent 1, "structure ", nativeName, " :\n",
@@ -31,6 +32,8 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	     intro = 
 		 ["// This is a generated file. ",
 		  "Modifications may get lost.\n\n",
+		  "#include \"Alice.hh\"\n",
+		  "#include \"MyNativeAuthoring.hh\"\n",
 		  "#include \"NativeUtils.hh\"\n",
 		  (case Special.includeFile of
 		      ("",_,_)   => "" 

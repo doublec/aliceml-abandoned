@@ -117,6 +117,55 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
   void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
 
 
+inline void print_type(char *s, void *obj) {
+  GObject *p = reinterpret_cast<GObject*>(obj);
+  GTypeQuery q;
+  memset(&q, 0, sizeof(q));
+  g_type_query(G_OBJECT_TYPE(p), &q);
+  g_message("%s: %p (type %s)", s, p, q.type_name);
+}
+
+inline void __refObject(void *p, int type) {
+  if (!p) return;
+  //g_message("reffing: %p (type %d)", p, type);
+  switch (type) {
+  case TYPE_GTK_OBJECT: 
+    g_object_ref(G_OBJECT(p));
+    gtk_object_sink(GTK_OBJECT(p));
+    //print_type("gtk-object-reffed", p);
+    break;
+  case TYPE_G_OBJECT: 
+    g_object_ref(p);
+    //print_type("gobject-reffed", p);
+    break;
+  }
+}
+
+inline void __unrefObject(void *p, int type) {
+  if (!p) return;
+  switch (type) {
+  case TYPE_GTK_OBJECT: 
+  case TYPE_G_OBJECT: 
+    //print_type("about to unref", p);
+    //g_message("refcnt: %d", G_OBJECT(p)->ref_count);
+    g_object_unref(G_OBJECT(p));
+    // print_type("object-unreffed", p); // crashes if ref_count == 0
+    break;
+  case TYPE_OWN:
+    delete (int*)p;
+    //g_message("deleted: %p", p);
+    break;
+  }
+}
+
+inline word PointerToObject(void *p, int type) {
+  __refObject(p, type);
+  Tuple *t = Tuple::New(2);
+  t->Init(0,Store::UnmanagedPointerToWord(p));
+  t->Init(1,Store::IntToWord(type));
+  return t->ToWord();
+}
+
 #define DECLARE_GLIST(l, x, ltype, ltype2, F)               \
   ltype *l = NULL;                                          \
   {                                                         \

@@ -43,8 +43,8 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	    val memnames = map (fn (name,_) => name) members
 	in
 	   [sigIndent,"datatype ",name," = ",mt memnames,"\n",
-	    "(**)",sigIndent,"val ",name,"ToInt : ",name," -> int\n",
-	    "(**)",sigIndent,"val IntTo",name," : int -> ",name,"\n\n"]
+	    sigIndent,"val ",name,"ToInt : ",name," -> int\n",
+	    sigIndent,"val IntTo",name," : int -> ",name,"\n\n"]
 	end
 
 	fun wrapperEntry (name, members) =
@@ -66,7 +66,7 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	let
 	    val members' = map (fn (name,num) => 
 				(Util.computeEnumName (space,name), 
-				LargeInt.toString num)) members
+				Int.toString num)) members
 	in
 	    if null members 
 		then ( nil, nil )

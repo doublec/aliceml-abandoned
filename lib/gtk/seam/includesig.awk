@@ -18,7 +18,10 @@ BEGIN {
 	print "(* end of " $2 " *)\n"
       }
       else 
-	if (body == 0 || printlines == 1) 
-	  if (!match ($0, /^\(\*\*\)/)) 
-	    print $0;
+	if (match ($0, /^\(\*\*\)\(\*\*\)/))
+	  printlines = 1-printlines;
+	else
+	  if (body == 0 || printlines == 1) 
+	    if (!match ($0, /^\(\*\*\)/)) 
+	      print $0;
 }

@@ -285,11 +285,4 @@
                             reinterpret_cast<const char *>(s))->ToWord()
 #define ENUM_TO_WORD INT_TO_WORD
 
-inline word PointerToObject(void *p, int type) {
-  Tuple *t = Tuple::New(2);
-  t->Init(0,Store::UnmanagedPointerToWord(p));
-  t->Init(1,Store::IntToWord(type));
-  return t->ToWord();
-}
-
 #endif

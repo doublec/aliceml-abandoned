@@ -5,21 +5,20 @@ struct
 
     exception EUnknown
     exception EMessage of string
+    exception EIgnore of string
     exception EParseError
 
     fun generateAst file =
     (* generates abstract syntax tree from file *)
     let
 	val tree = ParseToAst.fileToAst file
-	val _ = 
-	   case (#warningCount tree, #errorCount tree) of
-	       (0,0) => ()
-	     | (w,0) => print (Util.separator("WARNINGS: "^Int.toString(w)))
-	     | (w,e) => (print (Util.separator("ERRORS: "^Int.toString(e)^", "^
-					       "WARNINGS: "^Int.toString(w))) ;
-			 raise EParseError )
     in
-	tree
+	case (#warningCount tree, #errorCount tree) of
+	    (0,0) => tree
+	  | (w,0) => (print(Util.separator("WARNINGS: "^Int.toString(w)));tree)
+	  | (w,e) => (print (Util.separator("ERRORS: "^Int.toString(e)^", "^
+					    "WARNINGS: "^Int.toString(w))) ;
+			 raise EParseError )
     end
 	
     fun filterCoreDecls decls = 
@@ -31,6 +30,12 @@ struct
 
     fun parseDecls decls ttab =
     let
+	fun showWarning s = print ("Parser: "^s^"\n")
+        fun toSmallInt (i,s) = (LargeInt.toInt i) handle _ => raise EIgnore s
+	fun parseList f memlist =
+	    foldr (fn (x,l) => ((f x)::l) handle EIgnore s=>(showWarning s; l))
+	          nil memlist
+
         (* type id table functions *)
 	fun getTypeByID id = 
 	    (valOf(Tidtab.find(ttab, id)):Bindings.tidBinding)
@@ -56,7 +61,6 @@ struct
 	    foldl (fn (d,e) => if find d = "" then e else find d) "" decls
 	end
 	    
-
 	(* Ast.ctype to TypeTree.ty conversion *)
 	local
 	    fun convNumeric Ast.CHAR = CHAR
@@ -92,13 +96,13 @@ struct
 	      | convType (Ast.Numeric(_,_,sign,kind,tag)) = 
   	        NUMERIC (not (sign=Ast.UNSIGNED andalso tag=Ast.SIGNDECLARED),
 			 isReal (convNumeric kind), convNumeric kind)
-	      | convType (Ast.Array(SOME (i,_),t)) = ARRAY (SOME i, convType t)
+	      | convType (Ast.Array(SOME (i,_),t)) = 
+		ARRAY (SOME (toSmallInt(i,"array size too big")), convType t)
 	      | convType (Ast.Array (NONE, t))     = ARRAY (NONE, convType t)
 	      | convType (Ast.Pointer (Ast.Function (ret,arglist))) =
 		FUNCTION (convType ret, map convType arglist)
 	      | convType (Ast.Pointer t) = makePointer (convType t)
-	      | convType (Ast.Function (ret,arglist)) = 
-		raise EUnknown (* shouldn't occur *)
+	      | convType (Ast.Function (ret,arglist)) = raise EUnknown
 	      | convType (Ast.StructRef id)  = STRUCTREF (getTypeNameFromID id)
 	      | convType (Ast.UnionRef id)   = UNIONREF  (getTypeNameFromID id)
 	      | convType (Ast.EnumRef id)    = ENUMREF   (findEnumName id)
@@ -121,14 +125,13 @@ struct
 	end
 
 	fun parseStruct structName memlist = 
-	let
-	    fun error s = 
-		raise EMessage("struct "^structName^" ignored: "^s)
-	    fun parseMember (_, NONE, _)   = error "anonymous bitfield"
+	let	    
+	    val message = "ignored anonymus bitfield in struct "^structName
+	    fun parseMember (_, NONE, _) = raise EIgnore message
 	      | parseMember (t, SOME (m:Ast.member), _) =
 		(Symbol.name(#name m), convType t)  (* bitfield size ignored *)
 	in
-	    STRUCT (structName, map parseMember memlist)
+	    STRUCT (structName, parseList parseMember memlist)
 	end
 
 	fun parseUnion unionName  memlist = 
@@ -140,13 +143,14 @@ struct
 
 	fun parseEnum tid memlist =
 	let
-	    (* isValidInt tests whether can be converted to Int31
-	       should be tested later, in TypeManager.checkItem? *)
-	    fun isValid (_,v) = (LargeInt.toInt v ; true) handle _ => false   
-	    fun parseMember (m:Ast.member,v) = (Symbol.name(#name m), v)
-	    val memlist' = List.filter isValid memlist
+	    fun parseMember (m:Ast.member,v) = 
+	    let
+		val name = Symbol.name(#name m)
+	    in
+		(name, toSmallInt(v,"ignored enum value "^name^": too big"))
+	    end
 	in
-	    ENUM (findEnumName tid, map parseMember memlist')
+	    ENUM (findEnumName tid, parseList parseMember memlist)
 	end
 
 	fun parseTypeDef typeName ctype = ALIAS (typeName, convType ctype)
@@ -154,7 +158,7 @@ struct
 	fun parseFun ({name,ctype,...}:Ast.id) = 
 	let
 	    val symid = Symbol.name (name)
-	    fun error s = raise EMessage("function "^symid^" ignored: "^s)
+	    fun error s = raise EMessage("ignored function "^symid^": "^s)
 	in
 	    case ctype of
 		Ast.Function (ret,arglist) => 
@@ -164,7 +168,7 @@ struct
 		    EUnknown  => error "unknown type in arglist or retval!"
 	        )
 	      | _ => 
-		raise EMessage (symid^" ignored: probably external variable")
+		raise EMessage("ignored "^symid^": probably external variable")
 	end
 
    
@@ -187,16 +191,18 @@ struct
 				  parseStruct name memlist
 			    | SOME (Bindings.Union(_,memlist))  => 
 				  parseUnion name memlist
-			    | _ => raise EMessage (name^" is a partial type")
+			    | _ => raise EMessage("ignored partial type "^name)
 			 )
 		 in
 		     parseDecls' ds (p::parsed) unparsed
 		 end
 	    )
 	    handle 
-	        EMessage s => ( print ("parse: "^s^"\n") ; 
+	        EMessage s => ( showWarning s ; 
 			        parseDecls' ds parsed (d::unparsed) )
-	      | _      => parseDecls' ds parsed (d::unparsed)
+	      | EIgnore s  => ( showWarning s ;
+			        parseDecls' ds parsed (d::unparsed) )
+	      | _          => parseDecls' ds parsed (d::unparsed)
     in
 	parseDecls' decls nil nil
     end (* of parseDecls *)
@@ -204,12 +210,11 @@ struct
     (* main parse function *)
     fun parse file =
     let
-	val _ = print (Util.separator "GENERATING AST")
+	val _ = print (Util.separator "Generating AST")
 	val astTree = generateAst file
-	val _ = print (Util.separator "GENERATING TYPE TREE")
+	val _ = print (Util.separator "Generating own type tree")
 	val result = parseDecls (filterCoreDecls (#ast astTree)) 
                                 (#tidtab astTree)
-	val _ = print (Util.separator "FINISHED")
     in
 	result
     end

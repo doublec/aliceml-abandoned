@@ -5,21 +5,6 @@
 #include "MyNativeAuthoring.hh"
 #include <gtk/gtk.h>
 
-/*
-DEFINE1(NativeGtk_TypeMismatch) {
-  Constructor *ccVal = Constructor::FromWord(TypeMismatchConstructor);
-  ConVal *conVal     = ConVal::New(ccVal, 1);
-  conVal->Init(0, x0);
-  RETURN(conVal->ToWord());
-} END
-
-void NativeGtkSpecialInit(Record *record) {
-  record->Init("'TypeMismatch", TypeMismatchConstructor);
-  INIT_STRUCTURE(record, "NativeGtk", "TypeMismatch",
-  	 NativeGtk_TypeMismatch, 1);
-}
-*/
-
 DEFINE0(NativeGtk_textIterNew) {
   GtkTextIter *iter = new GtkTextIter;
   RETURN(PointerToObject(iter,TYPE_OWN));

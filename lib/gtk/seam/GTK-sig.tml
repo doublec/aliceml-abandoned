@@ -1,12 +1,12 @@
-import structure GtkTypes from "GtkTypes"
+import structure GtkCore from "GtkCore"
 import structure GdkEnums from "GdkEnums"
 import structure PangoEnums from "PangoEnums"
 
 signature GTK =
 sig
-    type object = GtkTypes.object
 
-<<< "GTK_TYPES-sig.aml" >>>
+    type object = GtkCore.object
+
 <<< "GTK_CORE-sig.aml" >>>
 <<< "GTK_ENUMS-sig.aml" >>>
 <<< "GTK_UNSAFE-sig.aml" >>>

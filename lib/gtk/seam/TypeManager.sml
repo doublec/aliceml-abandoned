@@ -34,7 +34,7 @@ struct
 	  | getCType (STRING false)           = "guchar*"
 	  | getCType (STRING true)            = "gchar*"
 	  | getCType (ARRAY (SOME i, t))      = 
-	    (getCType t)^"["^LargeInt.toString(i)^"]"
+	        (getCType t)^"["^Int.toString(i)^"]"
 	  | getCType (ARRAY (NONE, t))        = (getCType t)^"[]"
 	  | getCType (LIST (name,_))          = name^"*"
 	  | getCType (FUNCTION (ret,arglist)) = 
@@ -47,16 +47,16 @@ struct
     end
 
     fun getAliceType VOID                  = "unit"
-      | getAliceType (ELLIPSES true)       = "arg"
-      | getAliceType (ELLIPSES false)      = "arg list"
+      | getAliceType (ELLIPSES true)       = "GtkCore.arg"
+      | getAliceType (ELLIPSES false)      = "GtkCore.arg list"
       | getAliceType BOOL                  = "bool"
       | getAliceType (NUMERIC (_,false,_)) = "int"
       | getAliceType (NUMERIC (_,true,_))  = "real"
-      | getAliceType (POINTER _)           = "object"
+      | getAliceType (POINTER _)           = "GtkCore.object"
       | getAliceType (STRING _)            = "string"
       | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " array"
       | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
-      | getAliceType (FUNCTION _)          = "object"
+      | getAliceType (FUNCTION _)          = "GtkCore.object"
       | getAliceType (STRUCTREF _)         = raise EStruct
       | getAliceType (UNIONREF _)          = raise EUnion
       | getAliceType (ENUMREF name)        = name
@@ -66,9 +66,9 @@ struct
 	let 
 	    val s = getAliceType t
 	in  
-	    if (Util.checkPrefix "object" s orelse Util.checkPrefix "arg" s)
+	    (*if (Util.checkPrefix "object" s orelse Util.checkPrefix "arg" s)
 		then "'"^s 
-	        else case removeTypeRefs t of (ENUMREF _) => "int" | _ => s
+	        else*) case removeTypeRefs t of (ENUMREF _) => "int" | _ => s
 	end
       
     local

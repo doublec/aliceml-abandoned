@@ -1,5 +1,4 @@
 
-import structure GtkTypes from "GtkTypes"
 import structure GtkCore from "GtkCore"
 import structure GdkEnums from "GdkEnums"
 import structure GdkUnsafe from "GdkUnsafe"
@@ -7,7 +6,6 @@ import signature GDK from "GDK-sig"
 
 structure Gdk :> GDK =
 struct
-    open GtkTypes
     open GtkCore
     val _ = init()
     open GdkEnums 

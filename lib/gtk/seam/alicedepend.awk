@@ -13,5 +13,5 @@ function exists(file) {
 
 END {
   for (file in depends)
-    print (gensub(/\.aml$/, ".stc", "g", file)) ": " file depends[file] "\n"
+    print (gensub(/\.aml$/, ".stc", "g", file)) ":" depends[file] "\n"
 }

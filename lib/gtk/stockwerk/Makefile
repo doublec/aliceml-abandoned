@@ -29,10 +29,10 @@ OUTDIR = output
 LASTGENERATE = lastgenerate
 
 # names of all files to compile
-COMMON = GTK_TYPES-sig.aml GtkTypes.aml GTK_CORE-sig.aml GtkCore.aml
+CORE = GTK_CORE-sig.aml GtkCore.aml
 MAINFILES = $(COMPS:%=%.aml)
 CPPSOURCES = $(NATIVES:%=%.cc)
-ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
+ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # executable names
 ifdef WINDOWS
@@ -45,6 +45,8 @@ SML = sml
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
 INSTALL = ./myinstall -v -m 644
+ALICEDEP = gawk -f alicedepend.awk
+#ALICEDEP = alicedep
 CLIBS = gtk+-2.0 libgnomecanvas-2.0
 
 #################################################
@@ -101,8 +103,7 @@ depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 	    $(CPPSOURCES) > Makefile.depend
 	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
                                                                    | $(SML)
-	gawk -f alicedepend.awk $(ALICESOURCES) >> Makefile.depend
-#	alicedep --stockwerk $(ALICESOURCES) >> Makefile.depend
+	$(ALICEDEP) $(ALICESOURCES) >> Makefile.depend
 
 -include Makefile.depend
 

@@ -2,7 +2,6 @@ signature NATIVE_GTK_CORE_COMPONENT =
 sig
     structure NativeGtkCore :
     sig
-        exception TypeMismatch of string
 	val isLoaded : unit -> bool
 	
 	val init : unit -> unit
@@ -13,10 +12,11 @@ sig
 	val gtkTrue : unit -> int
 	val gtkFalse : unit -> int
 	
-	val refObject : 'object -> 'object
+	val unrefObject : 'object -> 'object
 	val hasSignals : 'object -> bool
 
 	val printObject : 'object -> unit
+	val forceGC : unit -> unit
 
         val signalConnect : 'object * string * bool -> int
         val signalDisconnect : 'object * int -> unit

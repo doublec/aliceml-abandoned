@@ -18,15 +18,13 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	     intro = 
 	         ["(* This is a generated file. ",
 		  "Modifications may get lost. *)\n\n",
-		  "import structure GtkTypes from \"GtkTypes\"\n",
+		  "import structure GtkCore from \"GtkCore\"\n",
 		  "import structure GtkEnums from \"GtkEnums\"\n",
 		  "import structure GdkEnums from \"GdkEnums\"\n",
 		  "import structure PangoEnums from \"PangoEnums\"\n",
 		  "\n",
 		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
-		  "(**)", sigIndent, "type object = GtkTypes.object\n" ,
-		  "(**)", sigIndent, "type arg = GtkTypes.arg\n",
 		  sigIndent, "\n"] ,
 	      outro =
 		 ["end\n\n"]
@@ -38,7 +36,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		["(* This is a generated file. ",
 		 "Modifications may get lost. *)\n\n",
 		 "import structure ",nativeName," from \"",nativeName, "\"\n",
-		 "import structure GtkTypes from \"GtkTypes\"\n",
 		 "import structure GtkCore  from \"GtkCore\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
@@ -48,8 +45,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 "structure ", unsafeName, " :> ",
 		 Util.strUpper unsafeName, " =\n",
 		 Util.indent 1, "struct\n",
-		 wrIndent, "type object = GtkTypes.object\n",
-		 wrIndent, "type arg = GtkTypes.arg\n\n",
 		 wrIndent, "open GtkEnums\n",
 		 wrIndent, "open GdkEnums\n",
 		 wrIndent, "open PangoEnums\n",

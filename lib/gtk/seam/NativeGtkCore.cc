@@ -1,3 +1,5 @@
+#include "Alice.hh"
+#include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 
 static word eventStream = 0;
@@ -10,6 +12,17 @@ word push_front(word list, word value) {
   cons->Init(0,value);
   cons->Init(1,list);
   return cons->ToWord();
+}
+
+inline word PointerToObjectRegister(void *p, int type) {
+  word obj = PointerToObject(p,type);
+  WeakMap *wd = WeakMap::FromWord(weakDict);
+  word w = Store::UnmanagedPointerToWord(p);
+  if (p && (!wd->IsMember(w))) {
+    __refObject(p,type);
+    wd->Put(w,obj);
+  }
+  return obj;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -26,54 +39,12 @@ DEFINE0(NativeGtkCore_gtkFalse) {
   RETURN(INT_TO_WORD(FALSE));
 } END
 
-inline void print_type(char *s, void *obj) {
-  GObject *p = reinterpret_cast<GObject*>(obj);
-  GTypeQuery q;
-  memset(&q, 0, sizeof(q));
-  g_type_query(G_OBJECT_TYPE(p), &q);
-  //!  g_message("%s: %p (type %s)", s, p, q.type_name);
-}
-
-inline void refObject(void *p, int type) {
-  switch (type) {
-  case TYPE_GTK_OBJECT: 
-    g_object_ref(G_OBJECT(p));
-    gtk_object_sink(GTK_OBJECT(p));
-    print_type("gtk-object-reffed", p);
-    break;
-  case TYPE_G_OBJECT: 
-    g_object_ref(p);
-    print_type("gobject-reffed", p);
-    break;
-  }
-}
-
-DEFINE1(NativeGtkCore_refObject) {
+DEFINE1(NativeGtkCore_unrefObject) {
   DECLARE_OBJECT_WITH_TYPE(p,type,x0);
-  //!  g_message("reffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
-  refObject(p,type);  
+  //! g_message("unreffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
+  __unrefObject(p,type);  
   RETURN(x0);
 } END
-
-inline void unrefObject(word o) {
-  Tuple *t = Tuple::FromWord(o);
-  void *obj = Store::WordToUnmanagedPointer(t->Sel(0));
-  int type = Store::WordToInt(t->Sel(1));
-  // g_message("unreffing: Tuple %d = (Pointer: %p, Type: %d)", o, obj, type);
-  switch (type) {
-  case TYPE_GTK_OBJECT: 
-  case TYPE_G_OBJECT: 
-    print_type("about to unref", obj);
-    //g_message("refcnt: %d", G_OBJECT(obj)->ref_count);
-    g_object_unref(G_OBJECT(obj));
-    // print_type("object-unreffed", obj); // crashes if ref_count == 0
-    break;
-  case TYPE_OWN:
-    delete (int*)obj;
-    g_message("deleted: %p", obj);
-    break;
-  }
-}
 
 DEFINE1(NativeGtkCore_hasSignals) {
   DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
@@ -86,65 +57,12 @@ DEFINE1(NativeGtkCore_printObject) {
   RETURN_UNIT;
 } END
 
-
-inline word PointerToObjectRegister(void *p, int type) {
-  word obj = PointerToObject(p,type);
-  WeakMap *wd = WeakMap::FromWord(weakDict);
-  word w = Store::UnmanagedPointerToWord(p);
-  if (p && (!wd->IsMember(w))) {
-    refObject(p,type);
-    wd->Put(w,obj);
-  }
-  return obj;
-}
-
-
+DEFINE0(NativeGtkCore_forceGC) {
+  StatusWord::SetStatus(Store::GCStatus());
+  RETURN_UNIT;
+} END
 
 ///////////////////////////////////////////////////////////////////////
-
-static inline word GdkScrollDirectionToDatatype(GdkScrollDirection dir) {
-  enum { SCROLL_DOWN, SCROLL_LEFT, SCROLL_RIGHT, SCROLL_UP };
-  switch (dir) {
-  case GDK_SCROLL_UP: return INT_TO_WORD(SCROLL_UP);
-  case GDK_SCROLL_DOWN: return INT_TO_WORD(SCROLL_DOWN);
-  case GDK_SCROLL_LEFT: return INT_TO_WORD(SCROLL_LEFT);
-  }
-  return INT_TO_WORD(SCROLL_RIGHT);
-}
-
-static inline word GdkCrossingModeToDatatype(GdkCrossingMode mode) {
-  enum { CROSSING_GRAB, CROSSING_NORMAL, CROSSING_UNGRAB };
-  switch (mode) {
-  case GDK_CROSSING_NORMAL: return INT_TO_WORD(CROSSING_NORMAL);
-  case GDK_CROSSING_GRAB: return INT_TO_WORD(CROSSING_GRAB);
-  }
-  return INT_TO_WORD(CROSSING_UNGRAB);
-}
-
-static inline word GdkNotifyTypeToDatatype(GdkNotifyType type) {
-  enum { NOTIFY_ANCESTOR, NOTIFY_INFERIOR, NOTIFY_NONLINEAR, 
-	 NOTIFY_NONLINEAR_VIRTUAL, NOTIFY_UNKNOWN, NOTIFY_VIRTUAL };
-  switch (type) {
-  case GDK_NOTIFY_ANCESTOR: return INT_TO_WORD(NOTIFY_ANCESTOR);
-  case GDK_NOTIFY_VIRTUAL: return INT_TO_WORD(NOTIFY_VIRTUAL);
-  case GDK_NOTIFY_INFERIOR: return INT_TO_WORD(NOTIFY_INFERIOR);
-  case GDK_NOTIFY_NONLINEAR: return INT_TO_WORD(NOTIFY_NONLINEAR);
-  case GDK_NOTIFY_NONLINEAR_VIRTUAL: 
-    return INT_TO_WORD(NOTIFY_NONLINEAR_VIRTUAL);
-  }
-  return INT_TO_WORD(NOTIFY_UNKNOWN);
-}
-
-static inline word GdkVisibilityStateToDatatype(GdkVisibilityState state) {
-  enum {  VISIBILITY_FULLY_OBSCURED, VISIBILITY_PARTIAL, 
-	  VISIBILITY_UNOBSCURED };
-  switch (state) {
-  case GDK_VISIBILITY_FULLY_OBSCURED: 
-    return INT_TO_WORD(VISIBILITY_FULLY_OBSCURED);
-  case GDK_VISIBILITY_PARTIAL: return INT_TO_WORD(VISIBILITY_PARTIAL);
-  }
-  return INT_TO_WORD(VISIBILITY_UNOBSCURED);
-}
 
 static inline word ExposeEvent(GdkEvent* event, int label) {
   GdkEventExpose *ev = reinterpret_cast<GdkEventExpose*>(event);
@@ -211,9 +129,9 @@ static inline word KeyEvent(GdkEvent* event, int label) {
 static inline word CrossingEvent(GdkEvent* event, int label) {
   GdkEventCrossing *ev = reinterpret_cast<GdkEventCrossing*>(event);    
   TagVal *t = TagVal::New(label, 12);
-  t->Init(0, GdkNotifyTypeToDatatype(ev->detail));
+  t->Init(0, INT_TO_WORD(ev->detail));
   t->Init(1, BOOL_TO_WORD(ev->focus));
-  t->Init(2, GdkCrossingModeToDatatype(ev->mode));
+  t->Init(2, INT_TO_WORD(ev->mode));
   t->Init(3, BOOL_TO_WORD(ev->send_event));
   t->Init(4, INT_TO_WORD(ev->state));
   t->Init(5, PointerToObjectRegister(ev->subwindow,TYPE_G_OBJECT));
@@ -252,7 +170,7 @@ static inline word VisibilityEvent(GdkEvent* event, int label) {
   GdkEventVisibility *ev = reinterpret_cast<GdkEventVisibility*>(event);
   TagVal *t = TagVal::New(label, 3);
   t->Init(0, BOOL_TO_WORD(ev->send_event));
-  t->Init(1, GdkVisibilityStateToDatatype(ev->state));
+  t->Init(1, INT_TO_WORD(ev->state));
   t->Init(2, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
@@ -269,7 +187,7 @@ static inline word ScrollEvent(GdkEvent* event, int label) {
   GdkEventScroll *ev = reinterpret_cast<GdkEventScroll*>(event);    
   TagVal *t = TagVal::New(label, 10);
   t->Init(0, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
-  t->Init(1, GdkScrollDirectionToDatatype(ev->direction));
+  t->Init(1, INT_TO_WORD(ev->direction));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
   t->Init(4, INT_TO_WORD(ev->time));
@@ -534,10 +452,13 @@ DEFINE0(NativeGtkCore_getEventStream) {
 class MyFinalization: public Finalization {
 public:
   void Finalize(word value) {
-    void *p = Store::WordToUnmanagedPointer((Tuple::FromWord(value))->Sel(0));
     //g_message("finalizing %p (%d)", p, value);
-    //unrefObject(value);
-    g_message("finalized %p (%d)", p, value);
+    Tuple *t = Tuple::FromWord(value);
+    void *p = Store::WordToUnmanagedPointer(t->Sel(0));
+    int type = Store::WordToInt(t->Sel(1));
+    __unrefObject(Store::WordToUnmanagedPointer(t->Sel(0)),
+                  Store::WordToInt(t->Sel(1)));
+    g_message("finalized %p (type %d)", p, type);
   }
 };
 
@@ -635,7 +556,7 @@ DEFINE0(NativeGtkCore_mainIteration) {
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = CreateRecord(20);
+  Record *record = CreateRecord(21);
   INIT_STRUCTURE(record, "NativeGtkCore", "isLoaded",
 		 NativeGtkCore_isLoaded, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "init", 
@@ -651,13 +572,15 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeGtkCore", "gtkFalse", 
 		 NativeGtkCore_gtkFalse, 0);
 
-  INIT_STRUCTURE(record, "NativeGtkCore", "refObject", 
-		 NativeGtkCore_refObject, 1);
+  INIT_STRUCTURE(record, "NativeGtkCore", "unrefObject", 
+		 NativeGtkCore_unrefObject, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "hasSignals", 
 		 NativeGtkCore_hasSignals, 1);
 
   INIT_STRUCTURE(record, "NativeGtkCore", "printObject", 
 		 NativeGtkCore_printObject, 1);
+  INIT_STRUCTURE(record, "NativeGtkCore", "forceGC",
+		 NativeGtkCore_forceGC, 0);
 
   INIT_STRUCTURE(record, "NativeGtkCore", "signalConnect", 
 		 NativeGtkCore_signalConnect, 3);
