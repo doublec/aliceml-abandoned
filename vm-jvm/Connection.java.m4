@@ -42,7 +42,13 @@ final public class Connection {
 
 		if (System.getSecurityManager() == null) {
 		    System.out.println("starte security manager");
-		    System.setSecurityManager(new RMISecurityManager());
+		    try {
+			System.setSecurityManager(new RMISecurityManager());
+		    } catch (Exception e) {
+			System.err.println("could not install security manager");
+			System.err.println("Policy-file used: "+prop.get("java.security.policy"));
+			return new STRING ("invalid ticket");
+		    }
 		}
 		export = new java.util.Hashtable();
 		exp = new Exporter(export);
