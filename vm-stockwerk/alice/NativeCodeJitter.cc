@@ -581,23 +581,18 @@ TagVal *NativeCodeJitter::LookupSubst(u_int index) {
 }
 
 // LazySelClosure (belongs to alice, of course)
-void NativeCodeJitter::LazySelClosureNew(u_int Record, Vector *labels) {
+void NativeCodeJitter::LazySelClosureNew(u_int Record, UniqueString *label) {
   jit_pushr_ui(Record); // Save Record
   Generic::ConcreteCode::New(JIT_V1, LazySelInterpreter::self, 0);
   jit_pushr_ui(JIT_V1); // Save ConcreteCode Ptr
   Generic::Closure::New(JIT_V1, LazySelClosure::SIZE);
   jit_popr_ui(JIT_R0); // Restore ConcreteCode Ptr
-  Generic::Closure::InitCC(JIT_V1, JIT_R0);
+  Generic::Closure::InitConcreteCode(JIT_V1, JIT_R0);
   jit_popr_ui(JIT_R0); // Restore Record
   Generic::Closure::Put(JIT_V1, LazySelClosure::RECORD_POS, JIT_R0);
-  u_int labelsIndex = ImmediateEnv::Register(labels->ToWord());
-  ImmediateSel(JIT_R0, JIT_V2, labelsIndex);
-  Generic::Closure::Put(JIT_V1, LazySelClosure::LABELS_POS, JIT_R0);
-}
-
-void
-NativeCodeJitter::LazySelClosureInitByneeds(u_int Closure, u_int Byneeds) {
-  Generic::Closure::Put(Closure, LazySelClosure::BYNEEDS_POS, Byneeds);
+  u_int labelIndex = ImmediateEnv::Register(label->ToWord());
+  ImmediateSel(JIT_R0, JIT_V2, labelIndex);
+  Generic::Closure::Put(JIT_V1, LazySelClosure::LABEL_POS, JIT_R0);
 }
 
 #define RETURN() \
@@ -1436,7 +1431,7 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
     AliceLanguageLayer::concreteCodeConstructor(abstractCode);
   u_int i1 = ImmediateEnv::Register(wConcreteCode);
   ImmediateSel(JIT_R0, JIT_V2, i1);
-  Generic::Closure::InitCC(JIT_V1, JIT_R0);
+  Generic::Closure::InitConcreteCode(JIT_V1, JIT_R0);
 #if PROFILE
   Prepare();
   jit_pushr_ui(JIT_R0);
@@ -1511,7 +1506,7 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   Generic::Closure::New(JIT_V1, nGlobals);
   JITStore::Call(1, (void *) AliceLanguageLayer::concreteCodeConstructor);
   Finish();
-  Generic::Closure::InitCC(JIT_V1, JIT_RET);
+  Generic::Closure::InitConcreteCode(JIT_V1, JIT_RET);
   for (u_int i = nGlobals; i--;) {
     u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));
     Generic::Closure::Put(JIT_V1, i, Reg);
@@ -1635,23 +1630,19 @@ TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
   JITStore::LogReg(WRecord);
   jit_insn *poly_sel = jit_beqi_ui(jit_forward(), JIT_R0, BLKTAG);
   // Record yet unknown: create byneeds
-  LazySelClosureNew(WRecord, labels);
-  jit_pushr_ui(JIT_V1); // save closure
-  u_int n = ids->GetLength();
-  JITAlice::Vector::New(JIT_V1, n); // create byneeds vector
-  jit_pushr_ui(JIT_V1); // save byneeds vector
-  for (u_int i = n; i--; ) {
+  jit_pushr_ui(WRecord); // save WRecord
+  for (u_int i = ids->GetLength(); i--; ) {
+    jit_popr_ui(JIT_R0); // restore WRecord
+    jit_pushr_ui(JIT_R0); // save WRecord
+    LazySelClosureNew(JIT_R0, UniqueString::FromWordDirect(labels->Sub(i)));
+    jit_pushr_ui(JIT_V1); // save LazySel closure
     Generic::Byneed::New(JIT_V1);
-    jit_ldxi_ui(JIT_R0, JIT_SP, 1 * sizeof(word)); // closure
+    jit_popr_ui(JIT_R0); // restore LazySel closure
     Generic::Byneed::InitClosure(JIT_V1, JIT_R0);
     JITStore::SetTransientTag(JIT_V1);
-    jit_ldxi_ui(JIT_R0, JIT_SP, 0 * sizeof(word)); // byneeds vector
-    JITAlice::Vector::Put(JIT_R0, i, JIT_V1);
     LocalEnvPut(JIT_V2, ids->Sub(i), JIT_V1);
   }
-  jit_popr_ui(JIT_R0); // byneeds
-  jit_popr_ui(JIT_V1); // closure
-  LazySelClosureInitByneeds(JIT_V1, JIT_R0);
+  jit_popr_ui(JIT_R0); // clear stack (restore WRecord)
   jit_insn *skip = jit_jmpi(jit_forward());
   // Record known: perform selection immediately
   jit_patch(poly_sel);
