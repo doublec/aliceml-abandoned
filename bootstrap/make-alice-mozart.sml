@@ -23,7 +23,7 @@ local
 	      | _ => args
 	end
 
-    fun main _ = OS.Process.exit (SMLToMozartEmacsToplevel.stot (getArgs ()))
+    fun main _ = OS.Process.exit (SMLToMozartEmacsToplevel.main (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("stot-mozart", main)
+    val _ = SMLofNJ.exportFn ("alice-mozart", main)
 end;
