@@ -182,7 +182,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val info = {region = #region info, typ = PervasiveType.typ_exn}
 	    in
 		simplifyCase (#region info, exp, matches,
-			      PrimExp (info, "General.Bin"), false)
+			      PrimExp (info, "General.Bind"), false)
 	    end
 	  | translateDec (RecDec (info, decs), cont) =
 	    let
