@@ -17,12 +17,13 @@
 
 #include "store/Store.hh"
 #include "generic/Tuple.hh"
+#include "generic/ConcreteRepresentationHandler.hh"
 
 class TaskStack;
 class Closure;
 class Backtrace;
 
-class Interpreter: public Handler {
+class Interpreter : public ConcreteRepresentationHandler {
 public:
   enum Result {
     CONTINUE,
@@ -33,8 +34,7 @@ public:
   };
   // Interpreter Constructor
   Interpreter() {}
-  // Handler Methods
-  virtual void PrepareForGC(Block *p);
+  // ConcreteRepresentation Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Calling Convention Conversion
   static void Construct();
