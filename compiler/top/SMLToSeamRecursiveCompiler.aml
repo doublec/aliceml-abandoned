@@ -46,13 +46,15 @@ structure SMLToStockwerkRecursiveCompiler =
 	    MkFrontendCommon(val loadSig = loadSig
 			     structure Switches = Switches)
 
-	structure BackendCommon =
-	    MkBackendCommon(val loadMod = loadMod
-			    structure Switches = Switches)
-
 	structure BackendStockwerk =
 	    MkBackendStockwerk(structure ComponentManager = ComponentManager
 			       structure Switches = Switches)
+
+	structure BackendCommon =
+	    MkBackendCommon(val isCross = BackendStockwerk.isCross
+			    val loadMod = loadMod
+			    structure Switches = Switches)
+
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
 		       structure FrontendSpecific = FrontendSML
