@@ -8,6 +8,23 @@ val _ = inspect (x, x, x)
 val rec x = 1::2::3::4::5::x
 val _ = inspect x
 
+open Promise Future
+
+let
+    val p = promise ()
+    val f = future p
+    val l = 1::2::3::4::5::f
+in
+    fulfill (p, l); inspect l
+end;
+
+let
+    val p = promise ()
+    val f = future p
+in
+    fulfill (p, f); inspect f
+end;
+
 
 
 (* Bedarfsgetriebene Auswertung *)
@@ -30,7 +47,7 @@ inspect (List.nth (fibs, 80))
 
 (* Nebenläufigkeit *)
 
-fun sleep n = Future.await (Future.alarm (Time.fromSeconds 1))
+fun sleep n = Future.await (Future.alarm (Time.fromSeconds n))
 
 local
     val active = ref true
@@ -185,6 +202,34 @@ structure _ =
 		   signature S = (val f: real option -> int))   (* Mismatch *)
 
 
+signature TO_STRING =
+sig
+    type t
+    val x: t
+    val toString: t -> string
+end
+
+structure P1 =
+    Package.Pack(structure X = (open Int val x = 5)
+		 signature S = TO_STRING)
+structure P2 =
+    Package.Pack(structure X = (open Real val x = 5.0)
+		 signature S = TO_STRING)
+structure P3 =
+    Package.Pack(structure X = (open Char val x = #"7")
+		 signature S = TO_STRING)
+
+val ps = [P1.package, P2.package, P3.package]
+
+List.app (fn p =>
+	     let
+		 structure S =
+		     Package.Unpack(val package = p
+				    signature S = TO_STRING)
+	     in
+		 TextIO.print (S.toString S.x ^ "\n")
+	     end) ps
+
 
 (* Persistenz *)
 
@@ -213,3 +258,7 @@ structure Num' = Pickle.Load(val file = file
 			     signature S = NUM where type t = Num.t)
 
 import "/home/kornstae/stockhausen/doc/samples/Num"
+
+structure  _ = Pickle.Save(val file = file
+			   structure X = TextIO
+			   signature S = TEXT_IO)
