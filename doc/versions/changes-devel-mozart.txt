@@ -1,5 +1,7 @@
 Library:
 
+* Defined and fixed behaviour of proxies in the presence of
+  sited values and failed futures.
 * Fixed broken string type in GTK.
 * Renamed UniqueString to Atom.
 * Added WideText and WideChar{Vector,Array}[Slice].
