@@ -27,7 +27,7 @@ import structure Explorer     from "x-alice:/tools/Explorer"
 		  | Space.SOLVED => (
 		  assert (v s); 
 		  Space.discard s)
-		  | Space.BRANCH =>
+		  | Space.BRANCH _ =>
 		    let
 			val c = Space.clone s
 		    in

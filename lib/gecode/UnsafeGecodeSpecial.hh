@@ -280,7 +280,16 @@ DEFINE1(status) {
   switch(s->status()) {
   case SS_BRANCH:
     DBGMSG("done");
-    RETURN_INT(0);
+    {
+      ConcreteRepresentation *cr =
+        ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,1);
+      cr->Init(0, Store::UnmanagedPointerToWord(s->description()));
+      UnsafeGecode::gecodeBranchdescFinalizationSet->Register(cr->ToWord());
+      TagVal *t = TagVal::New(0, 1);
+      t->Init(0, cr->ToWord());
+      RETURN(t->ToWord());
+    }
+    break;
   case SS_FAILED:
     DBGMSG("done");
     RETURN_INT(1);

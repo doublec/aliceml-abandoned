@@ -51,16 +51,14 @@ structure GecodeTest :
 		| Space.SOLVED => ((*p s;*)
                                    assert (v s);
 		                   Space.discard s)
-		| Space.BRANCH =>
+		| Space.BRANCH desc =>
 		  let
                       val _ = p s
-                      val desc = Space.description s
 		      val c = Space.clone s
-                      val desc2 = Space.description c
 		  in
 		      Space.commitDescription(s, 1, desc);
 		      (dfe s);
-		      Space.commitDescription(c, 2, desc2);
+		      Space.commitDescription(c, 2, desc);
 		      (dfe c)
 		  end
 		 ))

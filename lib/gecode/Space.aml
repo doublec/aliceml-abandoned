@@ -18,7 +18,7 @@ struct
     type space
     type description
 
-    datatype status = BRANCH | FAILED | SOLVED
+    datatype status = BRANCH of description | FAILED | SOLVED
 
     open UnsafeGecode
     val new = makespace

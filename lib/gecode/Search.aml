@@ -22,7 +22,7 @@ struct
 		case Space.status s of
 		    Space.FAILED => (Space.discard s; nil)
 		  | Space.SOLVED => [s]
-		  | Space.BRANCH =>
+		  | Space.BRANCH _ =>
 		    let
 			val c = Space.clone s
 		    in
@@ -41,7 +41,7 @@ struct
 		case Space.status s of
 		    Space.FAILED => Space.discard s
 		  | Space.SOLVED => raise (Found s)
-		  | Space.BRANCH =>
+		  | Space.BRANCH _ =>
 		    let
 			val c = Space.clone s
 		    in
@@ -67,7 +67,7 @@ struct
 			Space.FAILED => (Space.discard f;
 					 babe fr bs best)
 		      | Space.SOLVED => babe nil (fr@bs) (SOME f)
-		      | Space.BRANCH =>
+		      | Space.BRANCH _ =>
 			let
 			    val c = Space.clone f
 			in
@@ -99,7 +99,7 @@ struct
                   case Space.status s of
                       Space.SOLVED => (raise Found s)
                     | Space.FAILED => Space.discard s
-                    | Space.BRANCH =>
+                    | Space.BRANCH _ =>
                       if d>=m then
                           let
                               val c = Space.clone s
@@ -133,7 +133,7 @@ struct
                   case Space.status s of
                       Space.SOLVED => [s]
                     | Space.FAILED => (Space.discard s; nil)
-                    | Space.BRANCH =>
+                    | Space.BRANCH _ =>
                       if d>=m then
                           let
                               val c = Space.clone s
