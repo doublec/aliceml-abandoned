@@ -1,0 +1,39 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive  from "Pervasive"
+import type unit datatype ref from "ToplevelTypes"
+import structure Ref          from "Ref"
+import structure Promise      from "Promise"
+import structure Future       from "Future"
+import signature LOCK         from "LOCK-sig"
+
+structure Lock :> LOCK =					(**)
+    struct
+	type lock = unit ref
+
+	fun lock () = ref ()
+
+	fun sync lock f x =
+	    let
+		val p = Promise.promise ()
+		val u = Ref.exchange (lock, Promise.future p)
+		val _ = Future.await u
+		val res = f x
+	    in
+		Promise.fulfill (p, ()); res
+	    end
+    end
