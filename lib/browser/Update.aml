@@ -44,6 +44,13 @@ struct
     
     exception UpdateError
      
+    (* max *)
+    fun max (nil,f) = 0
+      | max ([x],f) = f(x)
+      | max (x::xr,f) = let val m = Int.max(f(x),f(hd(xr)) )
+			in Int.max(m, max(tl(xr),f) )
+			end 
+
     (* updateChild *)
     fun updateChild (p,i,n) = case p of
 	Concat(r) => (Array.update(#kids(r),i,n)
@@ -268,11 +275,11 @@ struct
 
     (* findHighestDepth *)
     and findHighestDepth n = case n of
-	Concat(r) => Layout.max(Array.toList(#kids(r)),
+	Concat(r) => max(Array.toList(#kids(r)),
 				fn no => if no = Empty 
 					     then findHighestDepth n
 					 else findHighestDepth no)
-      | Container(r) => Layout.max(Array.toList(#kids(r)),
+      | Container(r) => max(Array.toList(#kids(r)),
 				   fn no => if no = Empty 
 						then findHighestDepth n
 					    else findHighestDepth no)

@@ -13,13 +13,10 @@
  *
  *)
 
-import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
 import structure Helper from "Helper"
-import structure RelManDictionary from "RelManDictionary"
 import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
-import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
 import structure Services from "Services"
 import signature LAYOUT from "LAYOUT-sig"
@@ -31,20 +28,8 @@ open Types Helper
 structure Layout :> LAYOUT = 
 struct
 
-    exception LayoutError
-
-    fun sum_up (nil,f) = 0
-      | sum_up ([x],f) = f(x)
-      | sum_up (x::xr,f) = f(x) + sum_up(xr,f) 
-			      
-    and max (nil,f) = 0
-      | max ([x],f) = f(x)
-      | max (x::xr,f) = let val m = Int.max(f(x),f(hd(xr)) )
-			in Int.max(m, max(tl(xr),f) )
-			end
-
     (* get_xdim *)
-    and get_xdim n = case n of Simple(r) => !(#width(r))
+    fun get_xdim n = case n of Simple(r) => !(#width(r))
                              | Concat(r) => !(#width(r))
                              | Container(r) => !(#width(r))
                              | RelNode(r) => !(#width(r))
@@ -53,15 +38,15 @@ struct
                              | Empty => 0
 
     (* get_ydim *)
-    and get_ydim n = case n of Concat(r) => !(#height(r))
+    fun get_ydim n = case n of Concat(r) => !(#height(r))
                              | Container(r) => !(#height(r))
                              | RelNode(r) => !(#height(r))
                              | Empty => 0
                              | _ => 1
 
   
-    (* get_l_xdim_or_xdim *)
-    and get_l_xdim (Container(r)) = !(#l_width(r))
+    (* get_l_xdim *)
+    fun get_l_xdim (Container(r)) = !(#l_width(r))
       | get_l_xdim (Concat(r))  =  !(#l_width(r))
       | get_l_xdim (RelNode(r)) = (get_l_xdim(
 					    !(#content(r)))) + 
@@ -70,29 +55,6 @@ struct
 				     then 0 
 				 else String.size(#rep(r)))
       | get_l_xdim node = get_xdim node
-	
- (*   and iterFindLX n = case n of
-        Container _ => get_l_xdim(n)
-      | Concat(r) 
-	=> let
-	       val li = Array.toList(#kids(r))
-	       val li' = List.take(li,List.length(li)-1)
-	       val seclast = List.last(li')
-	       val l_x = if setsVertical seclast 
-			     then iterFindLX (seclast)
-				 + sum_up(#2(List.partition 
-					     (fn i => i = seclast) li),
-					  iterFindLX)
-			 else sum_up(li,iterFindLX)
-	   in
-	       l_x
-	   end
-       | RelNode(r) => (iterFindLX(!(#content(r)))) + 
-				(if isSimple (!(#content(r)))
-				     orelse !(#counter(r)) = 1 
-				     then 0 
-				 else String.size(#rep(r)))
-      | _ => get_xdim(n) *)
 
     fun st (a,_,_) = a
     fun nd (_,b,_) = b
@@ -103,7 +65,7 @@ struct
 
     (* layout *)
 
-    and layout (Concat(r) as n) = 
+    fun layout (Concat(r) as n) = 
         let 
 	    val no_kids = Array.length(#kids(r))
 	    val li = List.tabulate(no_kids, 
@@ -214,7 +176,7 @@ struct
 	       NONE => calcMaxXDim(dict,i+1)
 	     | SOME (node,_) => Int.max( get_xdim(node),calcMaxXDim(dict,i+1)) 
 				
-
+    (* setVisible *) 
     fun setVisible (x,y) = let
 			       val w = Services.fontWidth()
 			       val h = Services.fontHeight()
