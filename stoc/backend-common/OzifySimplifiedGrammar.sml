@@ -207,6 +207,6 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	     outputList (outputPair (outputString, outputX))
 	     (q, stringIdList); r q)
 
-	val outputProgram = outputList outputDec
-
+	val outputProgram =
+	    outputPair (outputList outputDec, outputList outputId)
     end

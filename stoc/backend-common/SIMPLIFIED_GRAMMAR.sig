@@ -73,7 +73,7 @@ signature SIMPLIFIED_GRAMMAR =
 	  | RecArgs of (string * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
-	type program = dec list
+	type program = dec list * id list
 
 	val coordOf: exp -> coord
     end

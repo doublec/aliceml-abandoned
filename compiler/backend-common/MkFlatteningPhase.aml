@@ -899,5 +899,5 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.simplifyTest"
 
-	val simplify = List.map simplifyDec
+	fun simplify (decs, ids) = (List.map simplifyDec decs, ids)
     end

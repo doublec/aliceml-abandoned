@@ -236,10 +236,10 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 *)
 
 
-	fun main decs =
+	fun main (decs, ids) =
 	    let
 		val state = newState ()
 	    in
-		List.map (fn dec => evalDec (dec, state)) decs
+		(List.map (fn dec => evalDec (dec, state)) decs, ids)
 	    end
     end

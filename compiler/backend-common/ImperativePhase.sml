@@ -287,5 +287,6 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	  | translateExp (SharedExp (_, _, ref i), _, _) = lookupShared i
 	  | translateExp (DecExp (_, _), _, cont) = translateCont cont
 
-	fun translate decs = translateCont (Decs (decs, Goto nil))
+	fun translate (decs, _) = translateCont (Decs (decs, Goto nil))
+	    (*--** preserve declared ids in output *)
     end

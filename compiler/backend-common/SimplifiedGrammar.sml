@@ -73,7 +73,7 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 	  | RecArgs of (string * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
-	type program = dec list
+	type program = dec list * id list
 
 	fun coordOf (LitExp (coord, _)) = coord
 	  | coordOf (VarExp (coord, _)) = coord
