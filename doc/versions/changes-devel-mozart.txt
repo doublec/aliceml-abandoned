@@ -8,10 +8,12 @@ Library:
 
 * Sync'ed with latest updates to Basis spec
   (see http://sml.sourceforge.net/Basis/history.html).
+* Added intersect and difference functions to map types.
+* Added disjoint function to set and map types.
+* Moved Atom to lib/data.
 * Fixed {*VectorSlice,Substring}.splitr (also fixes OS.Path.split*).
 * Fixed CharArraySlice.
 * Fixed PrimIO.augment{Reader,Writer}.
-* Moved Atom to lib/data.
 
 
 Alice 0.9.2 (Stockhausen Operette 3 Remix 2) - 2003/07/25
