@@ -1,0 +1,3 @@
+import
+    structure Url
+from "x-alice:/misc/Url.ozf"
