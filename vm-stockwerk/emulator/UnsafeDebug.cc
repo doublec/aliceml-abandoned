@@ -13,9 +13,10 @@
 //
 
 #include "emulator/Authoring.hh"
+#include "emulator/Debug.hh"
 
 DEFINE1(UnsafeDebug_print) {
-  TaskStack::Dump(x0);
+  Debug::Dump(x0);
   RETURN_UNIT;
 } END
 

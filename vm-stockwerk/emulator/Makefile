@@ -67,6 +67,7 @@ SRCS = $(GENERICSRCS) \
        $(PRIMITIVESSRCS) \
        $(UNSAFESSRCS) \
        $(INTERPRETERSRCS) \
+       Debug.cc \
        Base.cc \
        Outline.cc \
        Properties.cc \
