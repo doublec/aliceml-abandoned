@@ -55,6 +55,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| ModLongidInf		of longid * inf
 	(* Modules *)
 	| SelModInf		of inf
+	| AppModFunMismatch	of inf
+	| AppModArgMismatch	of inf_mismatch
 	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
@@ -254,6 +256,13 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["module",ppLongid y,"is","not","a","structure"]
       | ppError(SelModInf j) =
 	  par["module","expression","is","not","a","structure"]
+      | ppError(AppModFunMismatch j) =
+	  par["applied","module","is","not","a","functor"]
+	  (* UNFINISHED: print actual signature j *)
+      | ppError(AppModArgMismatch im) =
+	ppMismatch(
+	  par["module","expression","does","not","match",
+	      "functor","parameter","signature:"], im)
       | ppError(AnnModMismatch im) =
 	ppMismatch(
 	  par["module","expression","does","not","match","signature:"], im)

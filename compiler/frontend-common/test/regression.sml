@@ -1010,9 +1010,12 @@ structure K : ORD_KEY =
       | compare  _     = EQUAL
   end
 
+structure Test1 = BinaryMapFn(K)
+structure Test2 = BinaryMapFn(K) : ORD_MAP
+structure Test3 = BinaryMapFn(K) :> ORD_MAP
 (*
 signature K_MAP = ORD_MAP where type Key.ord_key = K.ord_key
-structure Test1 = BinaryMapFn(K) :> K_MAP
-structure Test2 = BinaryMapFn(K) :> ORD_MAP where type Key.ord_key = K.ord_key
+structure Test4 = BinaryMapFn(K) :> K_MAP
+structure Test5 = BinaryMapFn(K) :> ORD_MAP where type Key.ord_key = K.ord_key
 *)
 ;

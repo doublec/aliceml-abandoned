@@ -492,6 +492,8 @@ structure InfPrivate =
       | kind'(LINK j)		= kind j
 
 
+  (* Building matching realisations *)
+
   (* Matching *)
 
     datatype mismatch =
@@ -522,9 +524,9 @@ structure InfPrivate =
     fun matchModDef x = matchDef(op=, ManifestMod) x
     fun matchInfDef x = matchDef(equals, ManifestInf) x
 
-    and matchSig((ref items1, m1), s2 as (ref items2, m2)) =
+    and matchSig'(rea, (ref items1, m1), s2 as (ref items2, m2)) =
 	let
-	    val rea as {val_rea, typ_rea, mod_rea, inf_rea} = emptyRea()
+	    val {val_rea, typ_rea, mod_rea, inf_rea} = rea
 
 	    fun pair(m1,      [],      pairs) = List.rev pairs
 	      | pair(m1, item2::items, pairs) =
@@ -601,7 +603,7 @@ structure InfPrivate =
 	    raise Mismatch(MismatchTyp(l,k1,k2))
 
     and matchInf(l,j1,j2) =
-	match(j1,j2)
+	match'(emptyRea(), j1, j2)
 	handle Mismatch mismatch =>
 	    raise Mismatch(MismatchMod(l, mismatch))
 
@@ -611,47 +613,55 @@ structure InfPrivate =
 	    raise Mismatch(MismatchInf(l, mismatch))
 
 
-    and match(_, ref ANY) = ()
-      | match(j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+    and match'(rea, _, ref ANY) = ()
+      | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
 	if p1 = p2 then
 	    ()
 	else
 	    raise Mismatch(Incompatible(j1,j2))
 
-      | match(ref(SIG s1), ref(SIG s2)) = matchSig(s1, s2)
+      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig'(rea, s1, s2)
 
-      | match(ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
+      | match'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
 	(*UNFINISHED*)
-	let
-	    val rea = emptyRea()
-	in
 	    ()
-	end
 
-      | match(ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
-	(*UNFINISHED*)
-	let
-	    val rea = emptyRea()
-	in
+      | match'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
 	    ()
-	end
 
-      | match(ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
-	( match(j11, j21) ;
+      | match'(rea, ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
+	( match'(rea, j11, j21) ;
 	  if p1 = p2 then
 	      ()
 	  else
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
-      | match(ref(LINK j1), j2)	= match(j1,j2)
-      | match(j1, ref(LINK j2))	= match(j1,j2)
-      | match(j1,j2)		= raise Mismatch(Incompatible(j1,j2))
+      | match'(rea, ref(LINK j1), j2)	= match'(rea, j1, j2)
+      | match'(rea, j1, ref(LINK j2))	= match'(rea, j1, j2)
+      | match'(rea, j1,j2)		= raise Mismatch(Incompatible(j1,j2))
 
 
     and equals(j1,j2) = (*UNFINISHED*) true
 
     and equaliseKind(k1,k2) = (*UNFINISHED*) ()
+
+
+    fun match(j1,j2) =
+	let
+	    val rea = emptyRea()
+	in
+	    match'(rea, j1, j2) ;
+	    rea
+	end
+
+    fun matchSig(j1,j2) =
+	let
+	    val rea = emptyRea()
+	in
+	    matchSig'(rea, j1, j2) ;
+	    rea
+	end
 
   end
 

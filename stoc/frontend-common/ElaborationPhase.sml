@@ -1033,12 +1033,21 @@ val _=print "\n"
 
       | elabMod(E, I.AppMod(i, mod1, mod2)) =
 	let
-	    val (j1,mod1') = elabMod(E, mod1)
-	    val (j2,mod2') = elabMod(E, mod2)
-	(*UNFINISHED*)
-	    val  j         = Inf.inAny()
+	    val (j1,mod1')  = elabMod(E, mod1)
+	    val (j2,mod2')  = elabMod(E, mod2)
+	    val (p,j11,j12) = if Inf.isArrow j1 then
+				 Inf.asArrow(Inf.clone j1)
+			      else
+				 error(I.infoMod mod1, E.AppModFunMismatch j1)
+	    val  p2         = Path.invent()
+	    val  _          = Inf.strengthen(p2, j2)
+	    val  rea        = Inf.match(j2,j11)
+			      handle Inf.Mismatch mismatch =>
+				  error(i, E.AppModArgMismatch mismatch)
+	    val  _          = PathMap.insert(#mod_rea rea, p, p2)
+	    val  _          = Inf.realise(rea, j12)
+	    val  j          = j12
 	in
-	    unfinished i "elabMod" "functor application";
 	    ( j, O.AppMod(infInfo(i,j), mod1', mod2') )
 	end
 

@@ -32,7 +32,6 @@ signature INF =
 		   , inf_rea : inf_rea
 		   }
 
-
   (* Injections *)
 
     val inAny :		unit		 -> inf
@@ -127,7 +126,7 @@ signature INF =
 
     exception Mismatch of mismatch
 
-    val match :		inf  *  inf -> unit		(* Mismatch *)
-    val matchSig :	sign * sign -> unit		(* Mismatch *)
+    val match :		inf  *  inf -> rea		(* Mismatch *)
+    val matchSig :	sign * sign -> rea		(* Mismatch *)
 
   end

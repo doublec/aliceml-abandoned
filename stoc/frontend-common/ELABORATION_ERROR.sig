@@ -47,6 +47,8 @@ signature ELABORATION_ERROR =
 	| ModLongidInf		of longid * inf
 	(* Modules *)
 	| SelModInf		of inf
+	| AppModFunMismatch	of inf
+	| AppModArgMismatch	of inf_mismatch
 	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
