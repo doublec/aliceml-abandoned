@@ -107,7 +107,7 @@ define
       'Char.isHexDigit': Char.isXDigit
       'Char.isSpace': Char.isSpace
       'Char.toCString':
-	 fun {$ C} {ByteString.make &"|{ToCString C "\""}} end
+	 fun {$ C} {ByteString.make {ToCString C nil}} end
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}
@@ -131,7 +131,7 @@ define
 	 fun {$ S1#S2} {ByteString.append S1 S2} end
       'String.toCString':
 	 fun {$ X}
-	    {ByteString.make &"|{FoldR {ByteString.toString X} ToCString "\""}}
+	    {ByteString.make {FoldR {ByteString.toString X} ToCString nil}}
 	 end
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
