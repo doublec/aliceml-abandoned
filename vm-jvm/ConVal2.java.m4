@@ -89,6 +89,31 @@ final public class ConVal2 implements DMLConVal {
 		") : constructed value";
 	}
     }
+    final public void set(DMLValue v0) throws RemoteException {
+	if (v0 instanceof Tuple2) {
+	    Tuple2 t = (Tuple2) v0;
+	    fst = t.fst;
+	    snd = t.snd;
+	} else {
+	    // this should never happen
+	    _RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+	}
+    }
+
+    final public void set(DMLValue v0,DMLValue v1) throws RemoteException {
+	fst = v0;
+	snd = v1;
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2) throws RemoteException {
+	// this should never happen
+	_RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2,DMLValue v3) throws RemoteException {
+	// this should never happen
+	_RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+    }
 
     _getConstructor ;
     _apply_fails ;

@@ -29,4 +29,9 @@ public interface DMLConVal extends DMLValue {
     public DMLValue get1() throws RemoteException;
     public DMLValue get2() throws RemoteException;
     public DMLValue get3() throws RemoteException;
+
+    public void set(DMLValue v0) throws RemoteException;
+    public void set(DMLValue v0,DMLValue v1) throws RemoteException;
+    public void set(DMLValue v0,DMLValue v1,DMLValue v2) throws RemoteException;
+    public void set(DMLValue v0,DMLValue v1,DMLValue v2,DMLValue v3) throws RemoteException;
 }

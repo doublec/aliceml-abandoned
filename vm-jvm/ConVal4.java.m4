@@ -99,6 +99,35 @@ final public class ConVal4 implements DMLConVal {
 	}
     }
 
+    final public void set(DMLValue v0) throws RemoteException {
+	if (v0 instanceof Tuple4) {
+	    Tuple4 t = (Tuple4) v0;
+	    fst = t.fst;
+	    snd = t.snd;
+	    thr = t.thr;
+	    fur = t.fur;
+	} else {
+	    // this should never happen
+	    _RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+	}
+    }
+
+    final public void set(DMLValue v0,DMLValue v1) throws RemoteException {
+	// this should never happen
+	_RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2) throws RemoteException {
+	// this should never happen
+	_RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2,DMLValue v3) throws RemoteException {
+	fst = v0;
+	snd = v1;
+	thr = v2;
+	fur = v3;
+    }
     _getConstructor ;
     _apply_fails ;
 }
