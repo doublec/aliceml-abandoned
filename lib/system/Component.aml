@@ -64,7 +64,7 @@ struct
 	exception Conflict
 	exception Mismatch
 
-	type component = component
+	datatype component = datatype component
 
 	local
 	    val b = Option.isSome (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
