@@ -49,7 +49,7 @@ public:
     AllocArgFrame(size);
   }
   void PopFrame(u_int size) {
-    ClearFrame(size);
+    if (size) ClearFrame(size);
   }
   void PushCall(Closure *closure) {
     closure->GetConcreteCode()->GetTaskManager()->PushCall(this, closure);

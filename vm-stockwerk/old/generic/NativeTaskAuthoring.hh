@@ -17,44 +17,51 @@
 #include "generic/NativeTaskManager.hh"
 
 #define DEFINE0(name)							\
-  static TaskManager::Result name(TaskStack *taskStack) {
+  static TaskManager::Result name(TaskStack *taskStack) {		\
+    u_int frameSize = 1;
 #define DEFINE1(name)							\
   static TaskManager::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
-    taskStack->PopFrame(1);
+    u_int frameSize = 2;
 #define DEFINE2(name)							\
   static TaskManager::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
-    taskStack->PopFrame(2);
+    u_int frameSize = 3;
 #define DEFINE3(name)							\
   static TaskManager::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     word x2 = taskStack->GetWord(2);					\
-    taskStack->PopFrame(3);
+    u_int frameSize = 4;
 #define END }
 
+#define POP_TASK							\
+  taskStack->PopFrame(frameSize);
+
 #define RETURN(w) {							\
+  taskStack->PopFrame(frameSize - 1);					\
   taskStack->PutWord(0, w);						\
   return TaskManager::Result(TaskManager::Result::CONTINUE, -1);	\
 }
 #define RETURN_UNIT {							\
-  taskStack->PopFrame(1);						\
+  POP_TASK;								\
   return TaskManager::Result(TaskManager::Result::CONTINUE, 0);		\
 }
 #define RETURN_INT(i) {							\
+  taskStack->PopFrame(frameSize - 1);					\
   taskStack->PutInt(0, i);						\
   return TaskManager::Result(TaskManager::Result::CONTINUE, -1);	\
 }
 #define RETURN_BOOL(b) RETURN_INT(b);
 
 #define PREEMPT {							\
-  taskStack->PopFrame(1);						\
+  POP_TASK;								\
   return TaskManager::Result(TaskManager::Result::PREEMPT, 0);		\
 }
 
 #define RAISE(w) {							\
+  taskStack->PopFrame(frameSize - 1);					\
   taskStack->PutWord(0, w);						\
   return TaskManager::Result(TaskManager::Result::RAISE);		\
 }
