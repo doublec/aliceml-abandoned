@@ -63,6 +63,8 @@ signature INSPECTOR =
 	  | PARENTHESES       of color
 	  | MISC              of color
 	  | TYPEDINDICATOR    of color
+	  | PROMISE           of color
+	  | PACKAGE           of color
 
 	exception ConfigurationError
 
