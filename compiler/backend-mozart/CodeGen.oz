@@ -10,6 +10,10 @@
 %%%   $Revision$
 %%%
 
+\ifdef Mozart_1_2
+\define OLD_BYNEED
+\endif
+
 functor
 import
    CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
@@ -138,12 +142,22 @@ define
       end
    end
 
+\ifdef OLD_BYNEED
    fun lazy {LazyPolySel X F}
       try X.F
       catch error(InnerE ...) then
-	 {Value.byNeedFail error(InnerE)}
+	 {Value.failed error(InnerE)}
       end
    end
+\else
+   fun {LazyPolySel X F}
+      {ByNeedFuture fun {$} X.F end}
+   end
+
+   fun {ValueFailed E}
+      {Value.failed E}
+   end
+\endif
 
    fun {CallConstant Region X ArgRegs VTl State}
       if {IsDet X} andthen {CompilerSupport.isBuiltin X} then
@@ -706,7 +720,11 @@ define
 	 Coord = {TranslateRegion Region State}
 	 case Coord of pos(Filename I J) then ExnReg VInter in
 	    {State.cs newReg(?ExnReg)}
+\ifdef OLD_BYNEED
 	    VInter = vCallBuiltin(_ 'Value.byNeedFail' [ExnReg Reg] Coord VTl)
+\else
+	    VInter = {CallConstant Region ValueFailed [ExnReg Reg] VTl State}
+\endif
 	    vEquateConstant(_ alice(failed Filename I J) ExnReg VInter)
 	 end
       end
