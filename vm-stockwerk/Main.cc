@@ -31,6 +31,7 @@
 #include "alice/Guid.hh"
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AbstractCodeInterpreter.hh"
+#include "alice/AliceConcreteCode.hh"
 
 extern word UnsafeConfig(void);
 extern word UnsafeIO(void);
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
+  AliceConcreteCode::Init();
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
