@@ -11,3 +11,8 @@
  *
  *)
 
+signature SIGNAL =
+    sig
+	datatype signal = SIGINT
+	val register : signal * (signal -> unit) -> unit
+    end
