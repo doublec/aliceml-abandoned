@@ -28,7 +28,7 @@ DEFINE2(Hole_fill) {
     RAISE(PrimitiveTable::Hole_Hole);
   Hole *hole = STATIC_CAST(Hole *, transient);
   if (!hole->Fill(x1)) {
-    hole->Fail(PrimitiveTable::Future_Cyclic);
+    //hole->Fail(PrimitiveTable::Future_Cyclic);
     RAISE(PrimitiveTable::Future_Cyclic);
   }
   RETURN_UNIT;

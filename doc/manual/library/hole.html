@@ -89,9 +89,7 @@
     <DD>
       <P>Replaces the hole <TT><I>h</I></TT> and its associated future with
       the value <TT><I>v</I></TT>. If <TT><I>v</I></TT> is the hole or its
-      future itself, the future is failed with exception <TT>Future.Cyclic</TT>,
-      the hole is filled with the same failed future,
-      and the exception <TT>Future.Cyclic</TT> is raised.
+      future itself, the exception <TT>Future.Cyclic</TT> is raised instead.
       If <TT><I>h</I></TT> is not a hole, <TT>Hole</TT> is raised.</P>
     </DD>
 

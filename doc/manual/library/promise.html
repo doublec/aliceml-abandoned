@@ -106,8 +106,7 @@
     <DD>
       <P>Replaces the future associated with <TT><I>p</I></TT> with the value
       <TT><I>v</I></TT>. If <TT><I>v</I></TT> is the future itself,
-      the future is failed with exception <TT>Future.Cyclic</TT> and the
-      same exception is raised.
+      the exception <TT>Future.Cyclic</TT> is raised instead.
       If <TT><I>p</I></TT> has already been fulfilled or failed, the exception
       <TT>Promise</TT> is raised.</P>
     </DD>
