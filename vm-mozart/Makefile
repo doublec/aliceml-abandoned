@@ -104,7 +104,8 @@ ALICEC0 = $(BOOTSTRAPDIR)/alicec
 ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
 ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
 
-ALICEC_OPTS = --no-dump-elaboration-sig --no-implicit-import $(ALICEC_EXTRA_OPTS)
+ALICEC_OPTS = \
+	--no-dump-elaboration-sig --no-implicit-import $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = --dump-target
 
 ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
@@ -124,7 +125,7 @@ MLYACC = ml-yacc
 ##
 
 NATIVECOMPONENTS = \
-	IO TextIO OS_Process OS_FileSys Unix CommandLine \
+	NativeConfig IO TextIO OS_Process OS_FileSys Unix CommandLine \
 	Tools UnsafePickle Debug Socket
 
 LIBFUNDAMENTALSOURCES0 = \
@@ -145,7 +146,7 @@ LIBFUNDAMENTALSOURCES0 = \
 LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
 	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml \
-	OS.aml PICKLE-sig.aml Pickle.aml HOME-sig.aml Home.aml
+	OS.aml PICKLE-sig.aml Pickle.aml CONFIG-sig.aml Config.aml
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
