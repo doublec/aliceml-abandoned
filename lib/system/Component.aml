@@ -13,6 +13,8 @@
 import structure Url               from "../utility/Url"
 import structure Label             from "../rtt/Label"
 import structure Inf               from "../rtt/Inf"
+import structure TextIO            from "TextIO"
+import structure OS                from "OS"
 import structure Reflect           from "Reflect"
 import structure UnsafeComponent   from "UnsafeComponent"
 import structure Signature         from "Signature"
@@ -64,14 +66,28 @@ struct
 
 	type component = component
 
+	local
+	    val b = Option.isSome (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
+	in
+	    fun trace s =
+		if b then TextIO.output (TextIO.stdErr,
+					 "[component manager] " ^ s ^ "\n")
+		else ()
+	end
+
 	val map: (sign * str) UrlMap.t = UrlMap.new ()
 
-	fun lazyTypeCheck (SOME sign, SOME importSign, str) =
+	fun lazyTypeCheck (SOME sign, SOME importSign, str, url, baseUrlOpt) =
 	    byneed (fn () =>
-		    case Signature.match (sign, importSign, str) of
-			SOME str => str
-		      | NONE => raise Mismatch)
-	  | lazyTypeCheck (_, _, str) = str
+		    (trace ("type-checking " ^ Url.toString url ^
+			    (case baseUrlOpt of
+				 SOME baseUrl =>
+				     " imported from " ^ Url.toString baseUrl
+			       | NONE => ""));
+		     case Signature.match (sign, importSign, str) of
+			 SOME str => str
+		       | NONE => raise Mismatch))
+	  | lazyTypeCheck (_, _, str, _, _) = str
 
 	fun strictTypeCheck (SOME sign, SOME importSign, str) =
 	    (case Signature.match (sign, importSign, str) of
@@ -92,11 +108,11 @@ struct
 			Promise.fulfill (p, entry); entry
 		    end
 	and link url = EVALUATED (link' url)
-	and typedLink (url, importSign) =
+	and typedLink (url, importSign, baseUrlOpt) =
 	    let
 		val (sign, str) = link' url
 	    in
-		lazyTypeCheck (sign, importSign, str)
+		lazyTypeCheck (sign, importSign, str, url, baseUrlOpt)
 	    end
 	and eval (baseUrl, UNEVALUATED {imports, body, ...}) =
 	    let
@@ -104,7 +120,7 @@ struct
 		    Vector.map (fn (label, importUrl, importSign) =>
 				(label,
 				 typedLink (Url.resolve baseUrl importUrl,
-					    importSign))) imports
+					    importSign, SOME baseUrl))) imports
 	    in
 		UnsafeComponent.apply (body, imports')
 	    end
@@ -125,7 +141,7 @@ struct
 	functor Link(val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val str = typedLink (url, signFromInf Sig.x)
+		val str = typedLink (url, signFromInf Sig.x, NONE)
 	    in
 		Reflect.Unreflect(val x = str signature S = S)
 	    end
