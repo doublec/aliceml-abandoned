@@ -13,7 +13,7 @@
 //
 
 #if defined(INTERFACE)
-#define implementation "emulator/AbstractCodeInterpreter.hh"
+#pragma implementation "emulator/AbstractCodeInterpreter.hh"
 #endif
 
 #include <cstdio>
