@@ -233,7 +233,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [NL, S "fn ", outputArgs IDDEF args, S " =>",
 		 IN, NL, outputBody (body, StampSet.new ()), EX]
 	  | outputExp (PrimAppExp (_, name, ids)) =
-	    SEQ [S "prim \"", S name, S "\" ", SEP (S ", ", List.map ID ids)]
+	    SEQ [S "prim \"", S name, S "\" (",
+		 SEP (S ", ", List.map ID ids), S ")"]
 	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs ID args]
 	  | outputExp (TagAppExp (_, label, n, args)) =
