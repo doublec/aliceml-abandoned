@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2001-2002
+%%%   Leif Kornstaedt, 2001-2003
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -47,10 +47,10 @@ define
 	     'realToVector': RealToVector
 	     'Reflect$':
 		fun {$ '#'('$S$': _ 'X$': X)} '#'('x': X) end
-	     'Unreflect$':
+	     'Reify$':
 		fun {$ '#'('x': X '$S$': _)} X end
 	     'ReflectSig$':
 		fun {$ '#'('$S$': S)} '#'('x': S) end
-	     'UnreflectSig$':
+	     'ReifySig$':
 		fun {$ '#'('x': X)} '#'('$S$': X) end)
 end

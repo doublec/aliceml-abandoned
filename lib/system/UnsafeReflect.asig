@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -21,8 +22,8 @@ signature UNSAFE_REFLECT_COMPONENT =
 		val realToVector: real -> Word8Vector.vector
 
 		functor Reflect(signature S structure X: S): (val x: unit)
-		functor Unreflect(val x: unit signature S): S
+		functor Reify(val x: unit signature S): S
 		functor ReflectSig(signature S): (val x: Inf.t)
-		functor UnreflectSig(val x: Inf.t): (signature S)
+		functor ReifySig(val x: Inf.t): (signature S)
 	    end
     end
