@@ -400,7 +400,7 @@ define
       fun {OzDomainToAliceDomain Ds}
 	 V = {MakeTuple '#[]' {Length Ds}}
       in
-	 {List.forAllInd Ds proc {$ X I}
+	 {List.forAllInd Ds proc {$ I X}
 			       V.I = case X
 				     of L#U then 'RANGE'(L U)
 				     else 'SINGLE'(X)
@@ -418,6 +418,8 @@ define
       end
    in
       fun {ReflectDomainFun X}
+	 {Inspector.inspect X}
+	 {Inspector.inspect {FD.reflect.dom X}}
 	 {OzDomainToAliceDomain {FD.reflect.dom X}}
       end
       fun {DistFun M X}
