@@ -230,10 +230,10 @@ struct
 	      | VAR _
 	      | CON _ ), f, b)		= ()
       | app1'(( LINK t
-	      | MU t
-	      | ALL(_,t)
-	      | EXIST(_,t)
-	      | LAMBDA(_,t) ), f, b)	= f t
+	      | MU t ), f, b)		= f t
+      | app1'(( ALL(a,t)
+	      | EXIST(a,t)
+	      | LAMBDA(a,t) ), f, b)	= (f a ; f t)
       | app1'(( FUN(t1,t2)
 	      | APPLY(t1,t2) ), f, b)	= (f t1 ; f t2)
       | app1'(( ABBREV(t1,t2) ), f, b)	= if b then (f t1 ; f t2) else f t2
@@ -249,30 +249,28 @@ struct
 
     fun foldl1'(( HOLE _
 		| VAR _
-		| CON _ ), f,a,b)	= a
+		| CON _ ), f,c,b)	= c
       | foldl1'(( LINK t
-		| MU t
-		| ALL(_,t)
-		| EXIST(_,t)
-		| LAMBDA(_,t) ), f,a,b)	= f(t,a)
+		| MU t ), f,c,b)	= f(t,c)
+      | foldl1'(( ALL(a,t)
+		| EXIST(a,t)
+		| LAMBDA(a,t) ), f,c,b)	= f(t, f(a,c))
       | foldl1'(( FUN(t1,t2)
-		| APPLY(t1,t2)), f,a,b)	= f(t2, f(t1,a))
-      | foldl1'(( ABBREV(t1,t2)),f,a,b)	= if b then f(t2, f(t1,a)) else f(t2,a)
-      | foldl1'(( TUPLE ts ), f,a,b)	= Vector.foldl f a ts
+		| APPLY(t1,t2)), f,c,b)	= f(t2, f(t1,c))
+      | foldl1'(( ABBREV(t1,t2)),f,c,b)	= if b then f(t2, f(t1,c)) else f(t2,c)
+      | foldl1'(( TUPLE ts ), f,c,b)	= Vector.foldl f c ts
       | foldl1'(( PROD r
-		| SUM r ), f,a,b)	= foldlRow(r,f,a)
-      | foldl1'(( MARK _ ), f,a,b)	= raise Assert.failure
+		| SUM r ), f,c,b)	= foldlRow(r,f,c)
+      | foldl1'(( MARK _ ), f,c,b)	= raise Assert.failure
 
-    and foldlRow(FIELD(_,t,r), f,a)	= foldlRow(r, f, f(t,a))
-      | foldlRow(RHO(_,r), f,a)		= foldlRow(r, f, a)
-      | foldlRow(NIL, f,a)		= a
+    and foldlRow(FIELD(_,t,r), f,c)	= foldlRow(r, f, f(t,c))
+      | foldlRow(RHO(_,r), f,c)		= foldlRow(r, f, c)
+      | foldlRow(NIL, f,c)		= c
 
 
     fun unmark(t as ref(MARK t')) 	=
 (*ASSERT				  assert t' of non MARK _ => *)
-( case t' of MARK _ => raise Assert.failure | _ =>
 					  ( t := t' ; app1'(t', unmark, true) )
-)
       | unmark _	            	= ()
 
 
@@ -294,19 +292,19 @@ struct
     fun app f		= appHow true f
     fun appNoAbbrevs f	= appHow false f
 
-    fun foldlHow b f a t =
+    fun foldlHow b f c t =
 	let
-	    fun fold(ref(MARK _), a) = a
-	      | fold(t, a) =
+	    fun fold(ref(MARK _), c) = c
+	      | fold(t, c) =
 		let
-		    val a' = f(t,a)
+		    val c' = f(t,c)
 		    val t' = !t
 		    val _  = t := MARK t'
 		in
-		    foldl1'(t',fold,a',b)
+		    foldl1'(t',fold,c',b)
 		end
 	in
-	    fold(t,a) before unmark t handle e => ( unmark t ; raise e )
+	    fold(t,c) before unmark t handle e => ( unmark t ; raise e )
 	end
 
     fun foldl f		= foldlHow true f
@@ -323,7 +321,10 @@ struct
 
 	    val trail = ref []
 
-	    fun dup'(t1 as ref t1') =
+	    fun dupBound(t1 as ref t1') =
+(*ASSERT	assert case t1' of VAR _ => true | _ => false *)
+		if case t1' of VAR _ => false | _ => true
+		then raise Assert.failure else
 		let
 		    val _   = trail := (t1,t1') :: !trail
 		    val t2  = ref(MARK t1')
@@ -354,17 +355,13 @@ struct
 	      | clone'(PROD r)		= PROD(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
 	      | clone'(CON c)		= CON c
-	      | clone'(ALL(a,t))	= ALL(dup' a, clone t)
-	      | clone'(EXIST(a,t))	= EXIST(dup' a, clone t)
-	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
+	      | clone'(ALL(a,t))	= ALL(dupBound a, clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dupBound a, clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dupBound a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-(*DEBUG: had an irreproducable error here once, get more info next time
 	      | clone' _		= raise Assert.failure
-*)
-| clone' t' = let exception TypeClone of string * typ'
-in raise TypeClone("Type.clone", t') end
 
 	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
@@ -390,7 +387,10 @@ in raise TypeClone("Type.clone", t') end
 
     fun cloneCont {trail,typs} t =
 	let
-	    fun dup'(t1 as ref t1') =
+	    fun dupBound(t1 as ref t1') =
+(*ASSERT	assert case t1' of VAR _ => true | _ => false *)
+		if case t1' of VAR _ => false | _ => true
+		then raise Assert.failure else
 		let
 		    val _   = trail := (t1,t1') :: !trail
 		    val t2  = ref(MARK t1')
@@ -421,9 +421,9 @@ in raise TypeClone("Type.clone", t') end
 	      | clone'(PROD r)		= PROD(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
 	      | clone'(CON c)		= CON c
-	      | clone'(ALL(a,t))	= ALL(dup' a, clone t)
-	      | clone'(EXIST(a,t))	= EXIST(dup' a, clone t)
-	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
+	      | clone'(ALL(a,t))	= ALL(dupBound a, clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dupBound a, clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dupBound a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
@@ -470,11 +470,11 @@ in raise TypeClone("Type.clone", t') end
 			)
 		    | _ => raise Assert.failure
 		)
-	      | reduceApply(ref(LINK t11), to) =
-		    reduceApply(follow t11, to)
+	      | reduceApply(t1 as ref(LINK _), to) =
+		    reduceApply(follow t1, to)
 
 	      | reduceApply(ref(ABBREV(t11,t12)), to) =
-		    reduceApply(follow t12, SOME(Option.getOpt(to,t11)))
+		    reduceApply(t12, SOME(Option.getOpt(to,t11)))
 	      (*
 	      | reduceApply(ref(MU t11), to) =
 		    reduceApply(follow t11, to)
@@ -839,7 +839,7 @@ in raise TypeClone("Type.clone", t') end
 		 * The reason is that there may be several types being
 		 * closed that share parts of their graphs.
 		 * Note that this means we have to take care to choose
-		 * a unique upper level when we use VAR for skolem types.
+		 * the correct level when we use VAR for skolem types.
 		 *)
 		if n > !level then
 		    fn t => f(inAll(a,t))
@@ -873,8 +873,9 @@ in raise TypeClone("Type.clone", t') end
 	    if n > !level then raise Lift t else ()
       | lift1(ref(PROD r | SUM r)) = liftRow r
       | lift1(ref(LAMBDA(a,_) | ALL(a,_) | EXIST(a,_))) =
-(*ASSERT    assert isVar a =>*)
-if not(isVar a) then raise Assert.failure else
+(*ASSERT    assert case !a of VAR _ => true | _ => false =>*)
+	    if case !a of VAR _ => false | _ => true
+	    then raise Assert.failure else
 	    a := VAR(kindVar a, globalLevel)
       | lift1 t = ()
 
@@ -1061,9 +1062,6 @@ if isLambda t1 then raise Assert.failure else
 
 	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
-(*DEBUG
-val timer = Timer.startRealTimer()
-*)
 		    fun loop(RHO(n1,r1), _,  RHO(n2,r2), _ ) =
 			    RHO(ref(Int.min(!n1, !n2)), loop(r1,true, r2,true))
 		      | loop(RHO(_,r1), _, r2, _) =
@@ -1089,11 +1087,6 @@ val timer = Timer.startRealTimer()
 		      | loop _ = raise Unify(t1,t2)
 		in
 		    t2 := PRODorSUM(loop(r1, false, r2, false))
-(*DEBUG*)
-(*before let val ms = LargeInt.toInt(Time.toMilliseconds(Timer.checkRealTimer timer)) in
-print("Row unification took "^Int.toString ms^"ms\n")
-before ignore(TextIO.inputLine(TextIO.stdIn))
-end*)
 		end
 	in
 	    unify(t1,t2)
@@ -1211,25 +1204,11 @@ end*)
 		Vector.length ts1 = Vector.length ts2 andalso
 		VectorPair.all equals (ts1,ts2)
 
-(*DEBUG
-and equalsRow rr =
-let
-val timer = Timer.startRealTimer()
-fun f() = ()
-*)
 	    and equalsRow(NIL,             NIL)             = true
 	      | equalsRow(RHO(_,r1),       RHO(_,r2))       = equalsRow(r1,r2)
 	      | equalsRow(FIELD(l1,t1,r1), FIELD(l2,t2,r2)) =
 		l1 = l2 andalso equals(t1,t2) andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
-(*in
-equalsRow rr
-before let val ms = LargeInt.toInt(Time.toMilliseconds(Timer.checkRealTimer timer)) in
-print("Row equality took "^Int.toString ms^"ms\n")
-before ignore(TextIO.inputLine(TextIO.stdIn))
-end
-end
-*)
 	in
 	    equals(t1,t2) orelse ( List.app op:= (!trail) ; false )
 	end
