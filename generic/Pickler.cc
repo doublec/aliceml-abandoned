@@ -296,16 +296,16 @@ public:
   }
 };
 
-// PicklingWorker
-class PicklingWorker: public Worker {
+// PickleWorker
+class PickleWorker: public Worker {
 private:
-  static PicklingWorker *self;
-  // PicklingWorker Constructor
-  PicklingWorker(): Worker() {}
+  static PickleWorker *self;
+  // PickleWorker Constructor
+  PickleWorker(): Worker() {}
 public:
-  // PicklingWorker Static Constructor
+  // PickleWorker Static Constructor
   static void Init() {
-    self = new PicklingWorker();
+    self = new PickleWorker();
   }
   // Frame Handling
   static void PushFrame(word data);
@@ -316,39 +316,39 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-// PicklingWorker Frame
-class PicklingFrame: private StackFrame {
+// PickleWorker Frame
+class PickleFrame: private StackFrame {
 private:
   enum { DATA_POS, SIZE };
 public:
   using Block::ToWord;
 
-  // PicklingFrame Constructor
-  static PicklingFrame *New(Worker *worker, word data) {
+  // PickleFrame Constructor
+  static PickleFrame *New(Worker *worker, word data) {
     StackFrame *frame = StackFrame::New(PICKLING_FRAME, worker, SIZE);
     frame->InitArg(DATA_POS, data);
-    return static_cast<PicklingFrame *>(frame);
+    return static_cast<PickleFrame *>(frame);
   }
-  // PicklingFrame Untagging
-  static PicklingFrame *FromWordDirect(word frame) {
+  // PickleFrame Untagging
+  static PickleFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
     Assert(p->GetLabel() == PICKLING_FRAME);
-    return static_cast<PicklingFrame *>(p);
+    return static_cast<PickleFrame *>(p);
   }
 
-  // PicklingFrame Accessors
+  // PickleFrame Accessors
   word GetData() {
     return StackFrame::GetArg(DATA_POS);
   }
 };
 
 //
-// PicklingWorker Functions
+// PickleWorker Functions
 //
-PicklingWorker *PicklingWorker::self;
+PickleWorker *PickleWorker::self;
 
-void PicklingWorker::PushFrame(word data) {
-  Scheduler::PushFrame(PicklingFrame::New(self, data)->ToWord());
+void PickleWorker::PushFrame(word data) {
+  Scheduler::PushFrame(PickleFrame::New(self, data)->ToWord());
 }
 
 #define CONTINUE() {				\
@@ -358,9 +358,9 @@ void PicklingWorker::PushFrame(word data) {
     return Worker::CONTINUE;			\
 }
 
-Worker::Result PicklingWorker::Run() {
-  PicklingFrame *frame =
-    PicklingFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+Worker::Result PickleWorker::Run() {
+  PickleFrame *frame =
+    PickleFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   word x0 = frame->GetData();
   if (Store::WordToTransient(x0) != INVALID_POINTER) {
     Scheduler::currentData = x0;
@@ -416,7 +416,7 @@ Worker::Result PicklingWorker::Run() {
       outputStream->PutByte(Pickle::UNIQUE);
       seen->Add(v);
       UniqueString *s = static_cast<UniqueString *>(v);
-      PicklingWorker::PushFrame(s->ToString()->ToWord());
+      PickleWorker::PushFrame(s->ToString()->ToWord());
       CONTINUE();
     }
     break;
@@ -427,7 +427,7 @@ Worker::Result PicklingWorker::Run() {
       outputStream->PutUInt(size);
       seen->Add(v);
       for (u_int i = size; i--; )
-	PicklingWorker::PushFrame(v->GetArg(i));
+	PickleWorker::PushFrame(v->GetArg(i));
       CONTINUE();
     }
     break;
@@ -438,7 +438,7 @@ Worker::Result PicklingWorker::Run() {
       outputStream->PutUInt(size);
       seen->Add(v);
       for (u_int i = size; i--; )
-	PicklingWorker::PushFrame(v->GetArg(i));
+	PickleWorker::PushFrame(v->GetArg(i));
       CONTINUE();
     }
     break;
@@ -453,7 +453,7 @@ Worker::Result PicklingWorker::Run() {
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Worker::RAISE;
       } else {
-	PicklingWorker::PushFrame(abstract->ToWord());
+	PickleWorker::PushFrame(abstract->ToWord());
 	CONTINUE();
       }
     }
@@ -463,8 +463,8 @@ Worker::Result PicklingWorker::Run() {
       Transform *transform = static_cast<Transform *>(v);
       outputStream->PutByte(Pickle::TRANSFORM);
       seen->Add(v);
-      PicklingWorker::PushFrame(transform->GetArgument());
-      PicklingWorker::PushFrame(transform->GetName()->ToWord());
+      PickleWorker::PushFrame(transform->GetArgument());
+      PickleWorker::PushFrame(transform->GetName()->ToWord());
       CONTINUE();
     }
     break;
@@ -476,18 +476,18 @@ Worker::Result PicklingWorker::Run() {
       outputStream->PutUInt(size);
       seen->Add(v);
       for (u_int i = size; i--; )
-	PicklingWorker::PushFrame(v->GetArg(i));
+	PickleWorker::PushFrame(v->GetArg(i));
       CONTINUE();
     }
   }
 }
 
-const char *PicklingWorker::Identify() {
-  return "PicklingWorker";
+const char *PickleWorker::Identify() {
+  return "PickleWorker";
 }
 
-void PicklingWorker::DumpFrame(word) {
-  std::fprintf(stderr, "Pickling Task\n");
+void PickleWorker::DumpFrame(word) {
+  std::fprintf(stderr, "Pickle Task\n");
 }
 
 // PicklePackWorker Frame
@@ -631,7 +631,7 @@ Worker::Result Pickler::Pack(word x) {
   StringOutputStream *os = StringOutputStream::New();
   Scheduler::PopFrame();
   PicklePackWorker::PushFrame();
-  PicklingWorker::PushFrame(x);
+  PickleWorker::PushFrame(x);
   PickleArgs::New(os, Seen::New());
   return Worker::CONTINUE;
 }
@@ -648,7 +648,7 @@ Worker::Result Pickler::Save(String *filename, word x) {
   } else {
     Scheduler::PopFrame();
     PickleSaveWorker::PushFrame();
-    PicklingWorker::PushFrame(x);
+    PickleWorker::PushFrame(x);
     PickleArgs::New(os, Seen::New());
     return Worker::CONTINUE;
   }
@@ -656,7 +656,7 @@ Worker::Result Pickler::Save(String *filename, word x) {
 
 void Pickler::Init() {
   FileOutputStream::Init();
-  PicklingWorker::Init();
+  PickleWorker::Init();
   PicklePackWorker::Init();
   PickleSaveWorker::Init();
 }
