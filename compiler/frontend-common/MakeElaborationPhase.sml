@@ -687,8 +687,9 @@ val _=print("-- insert type " ^ x ^ "(" ^ Stamp.toString stamp ^ ") = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
 *)
+	    val t' = Type.inAbbrev(Type.inCon(Type.kind t,w,p), t)
 	    (*UNFINISHED: use punning: *)
-	    val _ = insertTyp(E, stamp, {id=id, path=p, typ=t, sort=w})
+	    val _  = insertTyp(E, stamp, {id=id, path=p, typ=t', sort=w})
 	in
 	    O.Id(nonInfo(i), stamp, name)
 	end
@@ -1195,8 +1196,9 @@ val _=print("-- insert interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ") =\n")
 val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
 val _=print "\n"
 *)
+	    val j' = Inf.inAbbrev(Inf.inCon(Inf.kind j,p), j)
 	    (*UNFINISHED: use punning: *)
-	    val _ = insertInf(E, stamp, {id=id, path=p, inf=j})
+	    val _  = insertInf(E, stamp, {id=id, path=p, inf=j'})
 	in
 	    O.Id(nonInfo(i), stamp, name)
 	end
@@ -2139,12 +2141,13 @@ and elabRHSRecSpec' bla =
 	    val decs' = elabDecs(E, s, decs)
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
 			    error(i, E.CompUnclosed lnt)
-(*DEBUG
+(*DEBUG*)
 val _ = print "Component signature:\n"
 val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
 val _ = print "\n"
-*)
+(*
 val _ = print "Output of component signature disabled\n"
+*)
 	in
 	    O.Comp(nonInfo(i), anns', decs')
 	end
