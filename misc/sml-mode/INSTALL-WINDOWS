@@ -1,0 +1,20 @@
+On Windows, if you have Cygwin, proceed as described in INSTALL. Otherwise,
+you have to install the SML mode by hand.
+
+1) Go to your Emacs installation directory (e.g. C:\Program Files\Emacs).
+
+2) In the site-lisp subdirectory, create a new directory named sml-mode.
+
+3) Copy all *.el files to it.
+
+4) In the site-lisp subdirectory, edit the file site-start.el and add the
+   following two lines:
+
+	(add-to-list 'load-path "C:\Program Files\Emacs\site-lisp\sml-mode")
+	(load "sml-mode\sml-mode-startup")
+
+   (Adapt the path to your installation directory.)
+
+Optionally, to add the sml-mode documentation to the Emacs info system:
+
+5) Copy sml-mode.info to the info subdirectory.
