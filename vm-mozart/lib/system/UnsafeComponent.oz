@@ -20,7 +20,6 @@ import
    Property(get)
    Resolve(trace)
    System(printError)
-   UrlComponent('Url$': Url) at '../utility/Url'
 export
    %% For use by other Oz programs:
    ComponentToFunctor
@@ -83,7 +82,7 @@ define
 	   {Record.foldR Imports
 	    fun {$ Label#URL#Sig In}
 	       {LabelToOz Label}#
-	       info('from': {VirtualString.toAtom {Url.toString URL}}
+	       info('from': {VirtualString.toAtom URL}
 		    'type': {SigToOz Sig})|In
 	    end nil}}
 	  {SigToOz Sig} Body}
@@ -101,14 +100,13 @@ define
 			{Record.foldRInd F.'import'
 			 fun {$ ModName Desc Rest}
 			    {OzToLabel ModName}#
-			    {Url.fromString
-			     {ByteString.make
-			      case {CondSelect Desc 'from' unit}
-			      of unit then
-				 {OzURL.toVirtualString
-				  {DefaultURL.nameToUrl ModName}}
-			      [] URL then URL
-			      end}}#
+			    {ByteString.make
+			     case {CondSelect Desc 'from' unit}
+			     of unit then
+				{OzURL.toVirtualString
+				 {DefaultURL.nameToUrl ModName}}
+			     [] URL then URL
+			     end}#
 			    {OzToSig {CondSelect Desc 'type' nil}}|Rest
 			 end nil}}
 		    body: F.apply
@@ -130,14 +128,14 @@ define
 	 case S of &%|&7|&b|Rest then &{|{HackInfo Rest}
 	 [] &%|&7|&d|Rest then &}|{HackInfo Rest}
 	 [] &%|&7|&B|Rest then &{|{HackInfo Rest}
-         [] &%|&7|&D|Rest then &}|{HackInfo Rest} 
+	 [] &%|&7|&D|Rest then &}|{HackInfo Rest}
 	 [] C|Rest then C|{HackInfo Rest}
 	 [] nil then nil
 	 end
       end
    in
       fun {Load U}
-	 HU  = {HackInfo {ByteString.toString U}} 
+	 HU  = {HackInfo {ByteString.toString U}}
 	 URL = {OzURL.make HU}
       in
 	 if {IsOzScheme URL} then
@@ -172,8 +170,7 @@ define
 		     unit
 		  end
 	       'load':
-		  fun {$ URL} U in
-		     U = {Url.toString URL}
+		  fun {$ U}
 		     {Trace 'component' 'load '#U}
 		     {Load U}
 		  end
