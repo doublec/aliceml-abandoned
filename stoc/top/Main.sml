@@ -20,24 +20,25 @@ structure Main :> MAIN =
 
     val parse      = Parse.parse
     val translate  = Translate_Program.translate BindEnv0_Module.E0 o parse
+    val simplify   = (List.map Simplify.simplifyDec) o translate
 
     fun ozify name s =
 	let
-	    val decs = translate s
+	    val decs = simplify s
 	    val file = TextIO.openOut name
 	in
-	    OzifyIntermediate.output_list OzifyIntermediate.output_dec
-					  (file,decs) ;
+	    OzifySimplified.outputList OzifySimplified.outputDec
+				       (file,decs) ;
 	    TextIO.output1 (file,#"\n") ;
 	    TextIO.closeOut file
 	end
 
     fun ozifyToStream file s =
 	let
-	    val decs = translate s
+	    val decs = simplify s
 	in
-	    OzifyIntermediate.output_list OzifyIntermediate.output_dec
-					  (file,decs) ;
+	    OzifySimplified.outputList OzifySimplified.outputDec
+				       (file,decs) ;
 	    TextIO.output1 (file,#"\n")
 	end
 
@@ -46,6 +47,9 @@ structure Main :> MAIN =
 
     val translateString		= processString translate
     val translateFile		= processFile translate
+
+    val simplifyString		= processString simplify
+    val simplifyFile		= processFile simplify
 
     fun ozifyString(s,f)	= processString (ozify f) s
     fun ozifyFile(s,f)		= processFile (ozify f) s

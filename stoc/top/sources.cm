@@ -82,8 +82,14 @@ Group is
     Translate_Module.sml
     Translate_Program.sml
 
-    OZIFYINTERMEDIATE.sig
-    OzifyIntermediate.sml
+    SIMPLIFIED.sig
+    Simplified.sml
+    LabelSort.sml
+    SIMPLIFY.sig
+    Simplify.sml
+
+    OZIFYSIMPLIFIED.sig
+    OzifySimplified.sml
 
     MAIN.sig
     Main.sml

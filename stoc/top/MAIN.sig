@@ -7,6 +7,9 @@ signature MAIN =
     val translateString :	string -> PostTranslationIntermediate.dec list
     val translateFile :		string -> PostTranslationIntermediate.dec list
 
+    val simplifyString :	string -> Simplified.dec list
+    val simplifyFile :		string -> Simplified.dec list
+
     val ozifyString :		string * string -> unit
     val ozifyFile :		string * string -> unit
 
