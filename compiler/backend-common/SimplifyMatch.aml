@@ -90,9 +90,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val (labelTypList, hasDots) =
 			if Type.isProd typ then parseRow (Type.asProd typ)
 			else
-			    (List.mapi (fn (i, typ) =>
-					(Label.fromInt (i + 1), typ))
-			     (Vector.toList (Type.asTuple typ)), false)
+			    (Vector.foldri (fn (i, typ, rest) =>
+					    (Label.fromInt (i + 1), typ)::rest)
+			     nil (Type.asTuple typ, 0, NONE), false)
 		    val (labelTypList', arity) = LabelSort.sort labelTypList
 		in
 		    (labelTypList', arity, hasDots)
