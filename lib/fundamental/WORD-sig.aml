@@ -21,7 +21,6 @@ import type int and char and string
        type bool and order and option                    from "ToplevelTypes"
 import structure StringCvt                               from "StringCvt"
 
-
 signature WORD =
 sig
     eqtype word
@@ -47,6 +46,7 @@ sig
     val >> :		word * Word.word -> word
     val ~>> :		word * Word.word -> word
 
+    val ~ :		word -> word
     val + :		word * word -> word
     val - :		word * word -> word
     val * :		word * word -> word

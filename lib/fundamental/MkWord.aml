@@ -79,6 +79,8 @@ struct
 	else if w1 < w2 then GREATER
 	else EQUAL
 
+    fun ~w = 0-w
+
     fun min(w1,w2) = if w1 < w2 then w1 else w2
     fun max(w1,w2) = if w1 > w2 then w1 else w2
 
