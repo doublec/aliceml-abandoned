@@ -59,8 +59,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 				      val i    = hash(t,k)
 				      val kas  = Array.sub(t,i)
 				      val kas' = delete'(kas,k) before n := !n-1
-						 handle Delete' =>
-							(f k ; kas)
+						 handle Delete' => (f k ; kas)
 				  in
 				      Array.update(t, i, kas')
 				  end
