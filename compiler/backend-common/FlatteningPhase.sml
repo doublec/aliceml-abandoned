@@ -860,16 +860,17 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	and translateTupArgs (n, pos, mapping) =
 	    let
-		val (idDefs, mapping) = translateTupArgs' (n, pos, mapping)
+		val (idDefs, mapping) = translateTupArgs' (1, n, pos, mapping)
 	    in
 		(Vector.fromList idDefs, mapping)
 	    end
-	and translateTupArgs' (0, _, mapping) = (nil, mapping)
-	  | translateTupArgs' (n, pos, mapping) =
+	and translateTupArgs' (i, n, pos, mapping) =
 	    let
-		val (idDefs, mapping) = translateTupArgs' (n - 1, pos, mapping)
+		val (idDefs, mapping) =
+		    if i = n then (nil, mapping)
+		    else translateTupArgs' (i + 1, n, pos, mapping)
 		val (idDef, mapping) =
-		    adjoin (LABEL (Label.fromInt n)::pos, mapping)
+		    adjoin (LABEL (Label.fromInt i)::pos, mapping)
 	    in
 		(idDef::idDefs, mapping)
 	    end
