@@ -1,30 +1,35 @@
-SRCS   = Alice.cs
 OBJS   = Alice.dll
+IOBJS  = Win32.dll Canvas.dll Dialog.dll Helper.dll
 
-ISRCS  = Win32.cs
-IOBJS  = Win32.dll
+.il.dll:
+	ilasm -nologo -quiet -dll -out=$@ $<
 
-ILOBJS = Alice.il stow.il
+all: stow.exe $(OBJS) inspector
 
-all: stow.cs $(OBJS)
-	cl -nologo -LD io.c -link -export:readline
-	csc -nologo -r:Alice.dll -t:exe stow.cs
-	ildasm -text -tok -byt -out=stow.il stow.exe
+inspector: $(IOBJS)
 
-%.dll : %.cs
-	csc -nologo -t:library -out:$@ $<
+Alice.dll: Alice.cs
+	csc -nologo -t:library Alice.cs
 
-%.dll : %.il
-	ilasm -nologo -quit -dll -out=$@ $<
+Win32.dll: Alice.cs
+	csc -nologo -t:library Win32.cs
 
-inspector: Canvas.cs Dialog.cs Helper.cs $(IOBJS)
+Canvas.dll: Canvas.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Canvas.cs
-	csc -nologo -t:library -r;Win32.dll -r:Alice.dll Dialog.cs
+
+Dialog.dll: Dialog.cs Win32.dll Alice.dll
+	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
+
+Helper.dll: Helper.cs Alice.dll
 	csc -nologo -t:library -r:Alice.dll Helper.cs
 
+stow.exe: stow.cs Alice.dll
+	csc -nologo -t:exe -r:Alice.dll stow.cs
+
 clean:
-	rm -rf $(OBJS) $(ILOBJS) stow.exe
+	@-del /f /q *~ *.pdb
 
-distclean: clean
-	rm -rf Win32.dll Canvas.dll *~ *.pdb
+veryclean: clean
 
+distclean: veryclean
+	@-del /f /q $(OBJS) $(IOBJS) stow.exe
