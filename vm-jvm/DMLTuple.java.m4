@@ -34,10 +34,6 @@ final public class DMLTuple implements DMLValue {
 	return s+")";
     }
 
-    final public DMLValue apply(DMLValue val) {
-	throw DMLConstants.runtimeError.apply(new DMLString("cannot apply tuple.\n\t"+this+" applied to "+val));
-    }
-
     /** gibt den i-ten Eintrag des Tuples */
     final public DMLValue getByIndex(int i){
 	return vals[i];
