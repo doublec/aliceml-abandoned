@@ -56,7 +56,7 @@ public:
 };
 
 //
-// ThrowWorker Method Implementations
+// ThrowWorker Implementation
 //
 ThrowWorker *ThrowWorker::self;
 
@@ -66,6 +66,7 @@ ThrowWorker::Throwable ThrowWorker::ArrayStoreException;
 ThrowWorker::Throwable ThrowWorker::ClassCastException;
 ThrowWorker::Throwable ThrowWorker::ClassCircularityError;
 ThrowWorker::Throwable ThrowWorker::ClassFormatError;
+ThrowWorker::Throwable ThrowWorker::IncompatibleClassChangeError;
 ThrowWorker::Throwable ThrowWorker::IndexOutOfBoundsException;
 ThrowWorker::Throwable ThrowWorker::InstantiationError;
 ThrowWorker::Throwable ThrowWorker::NegativeArraySizeException;
@@ -90,11 +91,13 @@ void ThrowWorker::Init() {
   self = new ThrowWorker();
   ::Init("java/lang/ArithmeticException", ArithmeticException);
   ::Init("java/lang/ArrayIndexOutOfBoundsException",
-       ArrayIndexOutOfBoundsException);
+	 ArrayIndexOutOfBoundsException);
   ::Init("java/lang/ArrayStoreException", ArrayStoreException);
   ::Init("java/lang/ClassCastException", ClassCastException);
   ::Init("java/lang/ClassCircularityError", ClassCircularityError);
   ::Init("java/lang/ClassFormatError", ClassFormatError);
+  ::Init("java/lang/IncompatibleClassChangeError",
+	 IncompatibleClassChangeError);
   ::Init("java/lang/IndexOutOfBoundsException", IndexOutOfBoundsException);
   ::Init("java/lang/InstantiationError", InstantiationError);
   ::Init("java/lang/NegativeArraySizeException", NegativeArraySizeException);
