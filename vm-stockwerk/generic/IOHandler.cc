@@ -11,7 +11,7 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/IOHandler.hh"
+#pragma implementation "generic/IOHandler.hh"
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -21,8 +21,9 @@
 #endif
 
 #include "adt/Queue.hh"
-#include "emulator/IOHandler.hh"
-#include "emulator/RootSet.hh"
+#include "generic/RootSet.hh"
+#include "generic/Transients.hh"
+#include "generic/IOHandler.hh"
 
 static const BlockLabel ENTRY_LABEL = (BlockLabel) MIN_DATA_LABEL;
 
