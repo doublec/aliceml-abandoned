@@ -139,7 +139,6 @@ structure OutputWriters =
               (Gtk.statusbarPop(Gui.statusbar1, rowColId);
                Gtk.statusbarPush(Gui.statusbar1, rowColId, msg);
                ())
-              
           end
 
 	val cmap   = Gdk.colormapGetSystem ()
@@ -190,7 +189,10 @@ structure OutputWriters =
             let
                 val iter = Gtk.textIterNew()
             in
-                Gtk.textBufferGetIterAtOffset(buf, iter, off);
+                (*Gtk.textBufferGetIterAtOffset(buf, iter, off);*)
+		Gtk.textBufferGetEndIter(buf, iter);
+		Gtk.textIterGetOffset iter = off+1
+		andalso Gtk.textIterBackwardChar iter;
                 lastChar' iter
             end
 
@@ -202,12 +204,15 @@ structure OutputWriters =
 		val off = Gtk.textIterGetOffset enditer
 	    in
 		Gtk.textBufferPlaceCursor(buf, enditer);
-		if lastChar(buf, off) = SOME (ord #";") then
-		    Gtk.textBufferInsertInteractive(buf,enditer,"\n",~1,true)
-		else
-		    Gtk.textBufferInsertInteractive(buf,enditer,";\n",~1,true);
+		lastChar(buf, off) = SOME (ord #";")
+		orelse Gtk.textBufferInsertInteractive(buf,enditer,";",~1,true);
+		Gtk.textBufferInsertInteractive(buf,enditer,"\n",~1,true);
 		()
 	    end
+
+ 	val compilerBufRef = ref NONE  (* Argh, is this hacking... *)
+	val noeditRef = ref NONE
+	val insertHandler = ref 0
 
         fun compilerInsert (eval, noedit, bold)
 		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
@@ -217,10 +222,22 @@ structure OutputWriters =
                 val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
                 val startiter = Gtk.textIterCopy enditer
 	    in
-		if String.sub(txt, String.size txt - 1) = #"\n" then
-		   if lastChar(buf, off+size-1) = SOME (ord #";")
-        	    then
+		(*if String.sub(txt, String.size txt - 1) = #"\n" then*)
+		if txt = "\n" then
+		    if lastChar(buf, off+size-1) = SOME (ord #";") then
                 	let
+			    val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off)
+			    val _ = Gtk.textBufferGetIterAtOffset(buf, enditer, off)
+			    val _ = Gtk.textIterForwardChar enditer
+			    val _ = Gtk.textBufferDelete(buf, startiter, enditer)
+
+			    val _ = Gtk.textBufferGetEndIter(buf, startiter)
+			    val _ = Gtk.signalHandlerBlock(buf, !insertHandler)
+			    val _ = Gtk.textBufferInsert(buf, startiter, "\n", ~1)
+			    val _ = Gtk.signalHandlerUnblock(buf, !insertHandler)
+			    val _ = Gtk.textBufferGetEndIter(buf, startiter)
+		            val _ = Gtk.textBufferGetEndIter(buf, enditer)
+
                 	    val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
                 	    val _ = Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
                 	    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
@@ -232,7 +249,9 @@ structure OutputWriters =
                 	    History.extend (String.substring (str, 0, String.size str-1))
                 	end
 		    else
-			Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
+			(Gtk.signalHandlerBlock(buf, !insertHandler);
+			 Gtk.textBufferInsertAtCursor(buf, "  ", ~1);
+			 Gtk.signalHandlerUnblock(buf, !insertHandler))
         	else
 		    let
 		    in
@@ -242,9 +261,6 @@ structure OutputWriters =
 		    end
 	    end
           | compilerInsert _ _ = () (* Gtk is crazy *)
-
-	val compilerBufRef = ref NONE  (* Argh, is this hacking... *)
-	val noeditRef = ref NONE
 
 	fun compilerHistory direction () =
 	    let
@@ -264,7 +280,10 @@ structure OutputWriters =
 	    in
 		Gtk.textBufferDelete(buf, startiter, enditer);
 		Gtk.textBufferPlaceCursor(buf, startiter);
-		Gtk.textBufferInsertAtCursor(buf, s', ~1)
+		Gtk.textBufferInsertAtCursor(buf, s', ~1);
+                Gtk.textViewScrollToMark(Gui.compilerout,
+					 Gtk.textBufferGetInsert buf,
+                                         0.0, false, 0.0, 0.0)
 	    end
 
       val historyPrev = compilerHistory History.backwards
@@ -304,6 +323,7 @@ structure OutputWriters =
           in
               compilerBufRef := SOME compilerBuf;
 	      noeditRef := SOME cNoEd;
+	      insertHandler := cSig;
 	      Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont);
 	      Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
               Gtk.textViewSetBuffer(Gui.progout, progBuf);
