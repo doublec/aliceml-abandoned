@@ -165,7 +165,11 @@ assumed to be already running.  Sometimes applications want to spawn new
 sites themselves.  To do this, Alice provides for <EM>remote execution</EM>.
 Given a host and a service, a new site is created on the remote host (using
 <TT>ssh</TT>) and the service is run there.  Both the spawning and the spawned
-site open communication ports to connect to each other.</P>
+site open communication ports to connect to each other.  Note that communication
+is done via pickling.  This implies that you must be careful not to use 
+sited values in a service!  Many interesting structures in  (e.g <TT>Remote</TT>...) contain 
+Sited values.  In order to use these you would have to link them using 
+<TT>ComponentManager.Link</TT> on the spawned site.</P>
 
 <PRE class=code>
 Execute : fct (val host : string
@@ -208,12 +212,23 @@ signature WORKER =
     sig
 	val executeTask : (unit -> 'a) -> 'a
     end
+
+(* create the urls here to avoid the Url structure to be
+ * transmitted 
+ *)
+val remoteUrl = Url.fromString "x-alice:/lib/distribution/Remote"
+val textIOUrl = Url.fromString "x-alice:/lib/system/TextIO"
+
 functor MkWorker(ComponentManager : COMPONENT_MANAGER) : WORKER =
     struct
 	structure TextIO =
-	    ComponentManager.Link(val url = "x-alice:/lib/system/TextIO"
+	    ComponentManager.Link(val url = remoteUrl 
 				  signature S = TEXT_IO)
-	val executeTask = proxy
+	structure Remote = 
+	    ComponentManager.Link(val url = textIOUrl
+                                  signature S = REMOTE)
+
+	val executeTask = Remote.proxy
 	    (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
     end
 val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
