@@ -75,7 +75,7 @@
 
 
 <?php section("emacs", "emacs") ?>
-  <P>Using Alice with Emacs can be done in two steps:</P>
+  <P>Using Emacs with Alice can be done in two steps:</P>
   <UL>
     <LI>Setting up the environment
     <LI>Setting up the emacs ml mode
@@ -101,7 +101,7 @@
        (require 'sml-font)
   </PRE>
   <P>To use ml mode version 3.9.3, extract this
-     <A HREF="sml-mode-3.93.tgz">archive</A>
+     <A HREF="sml-mode-3.9.3.tgz">archive</A>
      and follow the installation instructions given in
     <TT>INSTALL</TT>. Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
     Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT> and adjust the
