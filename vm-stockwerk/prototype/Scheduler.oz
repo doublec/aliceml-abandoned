@@ -127,7 +127,8 @@ define
 	    Scheduler, Result({Interpreter.handle Debug Exn TaskStack})
 	 [] nil then
 	    %--** display the stack
-	    {System.showError 'uncaught exception'}
+	    {System.showError
+	     'uncaught exception: '#{Value.toVirtualString Exn 5 5}}
 	    {Application.exit 1}
 	 end
       end
