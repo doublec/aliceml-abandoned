@@ -103,6 +103,16 @@ structure TestSuite :
 	    Vector.length ad = 1
 	end
 	
+	fun vSameMinMax (a,b) space =
+	let
+	    val a = FS.Reflect.lowerBound (space,a)
+	    val b = FS.Reflect.lowerBound (space,b)	    
+	in
+		Pair.fst (Vector.sub (a,0)) = Pair.fst (Vector.sub (b,0)) andalso
+			Pair.snd (Vector.sub (a,(Vector.length a)-1)) = 
+			Pair.snd (Vector.sub (b,(Vector.length b)-1)) 
+	end
+	
 	fun vConvexHull (a,b) space =
             if not (vConvex a space) then
                 (print "not Convex!\n";
@@ -115,9 +125,17 @@ structure TestSuite :
                 (print "no subset!\n";
                  Print.printVal (FS.Reflect.lowerBound (space,a));
                  print "\n";
+                 Print.printVal (FS.Reflect.lowerBound (space,b));                 
+                 print "\n";
                  false)
-                else true
-
+                else if not ( vSameMinMax (a,b) space )
+                	then (print "no tight hull!\n";
+	                 Print.printVal (FS.Reflect.lowerBound (space,a));
+	                 print "\n";
+    	             Print.printVal (FS.Reflect.lowerBound (space,b));                              
+    	             print "\n";
+        	         false)
+					else true
         (*
          * Test cases
          *
