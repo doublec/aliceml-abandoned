@@ -11,11 +11,14 @@ struct
     fun startClient (gui_join, server : Protocol.server_interface) : 
             Protocol.client_interface * Gui.model_join =
         let
+            val promise     = Promise.promise () : Gui.gui_game Promise.promise
+            val guiGame     = Promise.future promise
+            
             fun playersJoined players = ()
             
             fun tournamentStarted () = ()
 
-            fun levelStarted level_info = ()
+            fun levelStarted levelInfo = ()
 
             fun playerDisconnected (name, color) = ()
 
@@ -23,28 +26,41 @@ struct
 
             fun countdown n = ()
 
-            fun update diffs = ()
+            fun update diffs = #update guiGame diffs
 
-            fun tick remainingTime = ()
+            fun tick remainingTime = () 
             
             fun playersDied players = ()
 
-            fun playersFinished players = ()
+            fun playersFinished players = (* #playersFinished guiGame players *) ()
 
             fun levelFinished () = ()
 
             fun tournamentFinished highscore = ()
 
-            fun updatePoints points = ()
+            fun updatePoints points = #updatePoints guiGame points
 
             (* ------------ gui callbacks --------- *)
             (* user turns snake, gives up...        *)
             
-            fun play (name, color) =
-                SND "not yet implemented"
+            fun turn d =
+                #turn server d
 
+            fun changeView h =
+                #changeView server h
+
+            fun giveUp () =
+                #giveUp server ()
+                
+            fun play (name, color) = 
+                if #play server (name, color) then
+                    FST ({ turn, changeView, giveUp }, promise)
+                else
+                    SND "no more players are allowed"
+                
             fun watch () =
-                SND "not yet implemented"
+                (#watch server ();
+                 FST ({ turn, changeView, giveUp }, promise))
 
             val lock = Lock.lock ()
         in

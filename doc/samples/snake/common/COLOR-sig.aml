@@ -13,7 +13,7 @@ signature COLOR =
 sig
     exception Unknown
 
-    type color
+    type color 
 
     type t = color
 

@@ -32,6 +32,7 @@ struct
 	 }
     
     exception NoMoreEmptySpots
+       
 
     fun random' {dimensions = (rows, cols), players,walls} =
 	let
@@ -279,7 +280,8 @@ struct
 		in
 		    died := s::(!died);
 		    List.app 
-		        (fn (r,c) => Array2.update(a,r,c,P.EMPTY)) hb
+		        (fn (r,c) => 
+                            Array2.update(a,r,c,P.EMPTY)) hb
 		end
 
 	    fun placeHead snake =
@@ -363,7 +365,8 @@ struct
 		let
 		    val ps = (Snake.head s)::(Snake.body s)
 		in
-		    List.app (fn(r,c) => Array2.update(a,r,c,P.EMPTY)) ps
+		    List.app (fn(r,c) => 
+                        Array2.update(a,r,c,P.EMPTY)) ps
 		end
 	in
 	    List.app (fn s => removeSnake s) snakes

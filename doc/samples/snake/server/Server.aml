@@ -12,7 +12,6 @@
 import structure Protocol       from "../common/Protocol"
 import structure Color          from "../common/Color"
 import structure Pos            from "../common/Pos"
-import val ispawn               from "../common/ISpawn"
 
 import structure Participant    from "Participant"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
@@ -25,7 +24,9 @@ import structure Highscore      from "../common/Highscore"
 import signature SERVER         from "SERVER-sig"
 import val dummyClient          from "DummyClient"
 import val log                  from "../common/Log"
+import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 
+open Ctrl
 
 fun not_yet_implemented s =
     log ("Server", "TODO: " ^ s ^ " not yet implemented.")
@@ -77,10 +78,6 @@ struct
             |   SOME n  => ntimes (n, 0)
         end    
 
-    infix 3 ++
-    
-    fun x ++ f = f x
-
     
     (** compute possibly infinite stream of levels according
         to config *)
@@ -89,7 +86,7 @@ struct
                             ...
                         } : Protocol.config) =
         tabulateStream (levelNum, 
-                fn _ => Arena.random { dimensions, players, walls = 4 }
+                fn _ => Arena.random { dimensions, players, walls = 4 } handle e => assert false
             ) 
             
 
@@ -192,7 +189,8 @@ struct
                calls to finish.
              *)
             fun invokeSeveral (clients, f, a) = 
-                List.app (fn c => ispawn invoke (c, f, a)) clients 
+                List.app (fn c => ispawn (_file_, _line_) invoke (c, f, a)) 
+                    clients 
                
 
             (* [withParticipant def (procName, id, f) returns a function which 
@@ -244,7 +242,8 @@ struct
                                                 [(name, color)]);
                                 (* inform the NEW player of the other 
                                    already connected players *)
-                                ispawn invoke (part, #playersJoined, 
+                                ispawn (_file_, _line_) 
+                                    invoke (part, #playersJoined, 
                                         List.map Part.nameNColor players);
                                 true
                             end
@@ -266,7 +265,8 @@ struct
                             (Part.state part) := Part.WATCHING (ref ~1);
                             (* inform the NEW player of the other 
                                already connected players *)
-                            ispawn invoke (part, #playersJoined, 
+                            ispawn (_file_, _line_)
+                                invoke (part, #playersJoined, 
                                     List.map Part.nameNColor players)
                         end
                 ))
@@ -367,12 +367,12 @@ struct
                         end
                         
                     (* move all still playing snakes *)
-                    val _ = List.app movePlayer players;
+                    val _ = List.app movePlayer players handle e => assert false
                     
                     (* place them on the newArena *)
                     val (deadSnakes, halfFinishedSnakes, finishedSnakes) =
                         Arena.placeSnakes (newArena, 
-                            List.map Part.snake players);
+                            List.map Part.snake players) handle e => assert false
 
                     val _   = log ("Server", ("calculating differences", oldArena, newArena))
                     val changes = Arena.diff (oldArena, newArena)
@@ -479,7 +479,7 @@ struct
                 invokeSeveral (allConnected (), #tournamentStarted, ());
                 
                 (* start tick signal sender *)
-                ispawn ticker ()
+                ispawn (_file_, _line_) ticker ()
                 ))
 
 
