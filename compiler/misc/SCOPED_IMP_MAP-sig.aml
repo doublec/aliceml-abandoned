@@ -20,7 +20,6 @@ signature SCOPED_IMP_MAP =
     val insertScope :		'a map -> unit
     val inheritScope :		'a map * 'a map -> unit
     val deleteScope :		'a map -> unit
-    val delete2ndScope :	'a map -> unit
     val splitScope :		'a map -> 'a map
 
     val mergeScope :		'a map -> unit

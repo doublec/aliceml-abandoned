@@ -19,7 +19,6 @@ functor MakeHashScopedImpSet(Item: HASH_KEY) :>
     fun copyScope(ref ss)	= ref[ImpSet.copy(List.hd ss)]
     fun insertScope r		= r := ImpSet.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
-    fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
     fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
