@@ -72,13 +72,13 @@ the <A href="interop.html">interop section</A> for details.</P>
 
 <?php section("environment-variables", "environment variables") ?>
 
-<P><TT>alicec</TT> is parameterized by the same environment variables
-as <A href="machine.html#environment-variables"><TT>alicerun</TT></A>,
+<P>The batch compiler is parameterized by the same environment variables
+as the <A href="machine.html#environment-variables">virtual machine</A>,
 plus:</P>
 
 <DL>
   <DT><TT>ALICE_SOURCE_PATH</TT>
-  <DD>specifies how source file URLs are interpreted.  If set, the value
+  <DD><P>specifies how source file URLs are interpreted.  If set, the value
     of this environment variable is parsed by the <TT>parse</TT> method of
     the <A href="library/resolver.html#Handler"><TT>Resolver.Handler</TT></A>
     structure.  If not set, uses only the default identity method.</P>
