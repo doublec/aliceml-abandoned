@@ -1,23 +1,39 @@
 #!/bin/sh
 
-howcalled=$0
+set -e
 
-if test -z "${STOCKHOME}"
-then
-  dir=`dirname $howcalled`
-  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+find_in () {
+    local search_for=$1 found_in=""
+    shift
+    for d in $@; do
+	if test -f $d/${search_for} -o -h $d/${search_for}; then
+	    found_in=$d && break
+	fi
+    done
+    if test -z "${found_in}"; then
+	echo "Error: Could not find ${search_for} in either of" >&2
+	for d in $@; do echo "  $d" >&2; done
+	exit 1
+    fi
+    echo ${found_in}
+}
+
+if test -z "${STOCKHOME}"; then
+    STOCKHOME=$(find_in VMMain.ozf /usr/share/alice $(dirname $(dirname $0)))
 fi
 
-: ${OZHOME=/opt/mozart-devel}
+if test -z "${OZHOME}"; then
+    OZHOME=$(find_in share/Init.ozf /usr/lib/mozart /opt/mozart-devel)
+fi
 
-case `uname` in
+case $(uname) in
     CYGWIN*)
-	: ${OZ_LOAD=prefix=/=c:/cygwin/\;cache=$OZHOME/cache/}
+	: ${OZ_LOAD:=prefix=/=c:/cygwin/\;cache=$OZHOME/cache/}
 	SEP=\;
 	ESC=
 	;;
     *)
-	: ${OZ_LOAD=cache=$OZHOME/cache/}
+	: ${OZ_LOAD:=cache=$OZHOME/cache/}
 	SEP=:
 	ESC=\\
 	;;
@@ -27,7 +43,6 @@ ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz${ESC}:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'$
 
 OZ_LOAD=$ALICE_LOAD${SEP}$OZ_LOAD
 
-PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
-export STOCKHOME PATH OZ_LOAD ALICE_LOAD
+export STOCKHOME OZ_LOAD ALICE_LOAD
 
 exec ozengine x-alice:/VMMain "$@"
