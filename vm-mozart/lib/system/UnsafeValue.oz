@@ -43,7 +43,6 @@ define
 	   'con': Label
 	   'projConstructed': ProjRecord
 	   'projConstructedTuple': ProjTuple
-	   'conType': fun {$ _} raise notImplemented end end %--**
 	   'conName':
 	      fun {$ Value}
 		 'ExId'({ByteString.make {System.printName Value}})
