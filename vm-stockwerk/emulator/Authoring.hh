@@ -29,6 +29,7 @@
 #define DECLARE_STRING(string, x) DECLARE_BLOCKTYPE(String, string, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
 #define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
+#define DECLARE_TAGVAL(tagVal, x) DECLARE_BLOCKTYPE(TagVal, tagVal, x)
 
 //--** does not work for infinite lists
 #define DECLARE_LIST_ELEMS(tagVal, length, x, cmd)			\

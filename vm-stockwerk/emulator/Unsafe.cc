@@ -55,14 +55,14 @@ DEFINE1(Unsafe_getPrimitiveByName) {
 } END
 
 DEFINE2(Unsafe_makeClosure) {
-  word function = x0;
+  DECLARE_TAGVAL(function, x0);
   DECLARE_VECTOR(vector, x1);
-  Chunk *name =
-    Store::DirectWordToChunk(Unpickler::aliceFunctionTransformName);
-  Transform *transform = Transform::New(name, function);
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, 2);
-  concreteCode->Init(0, function);
+  Chunk *name =
+    Store::DirectWordToChunk(Unpickler::aliceFunctionTransformName);
+  Transform *transform = Transform::New(name, function->ToWord());
+  concreteCode->Init(0, function->ToWord());
   concreteCode->Init(1, transform->ToWord());
   u_int nglobals = vector->GetLength();
   Closure *closure = Closure::New(concreteCode->ToWord(), nglobals);
