@@ -20,20 +20,29 @@ struct
                 case Elem.compare (e, x) of
                     (LESS|EQUAL)    => e :: x :: xs
                 |   GREATER         => x :: insert' xs
+            
+            val res = Promise.promise ()
+            val l   = Ref.exchange (h, Promise.future res)
         in
-            h := insert' (! h)
+            Promise.fulfill (res, insert' l)
         end
 
-    fun isEmpty (ref [])    = true
-      | isEmpty _           = false
+    val isEmpty     = List.null o !
+    
+    val size        = List.length o !
 
-    fun size (ref l)        = List.length l
+    fun minimum l   = 
+        case !l of
+            []      => raise Empty
+        |   (x::xs) => x
 
-    fun minimum (ref [])        = raise Empty
-      | minimum (ref (x::xs))   = x
-
-    fun remove (ref [])             = raise Empty
-      | remove (r as (ref (_::l)))  = r := l
+    fun remove r    = 
+        let
+            val rest    = Promise.promise ()
+            val l       = Ref.exchange (r, Promise.future rest)
+        in
+            Promise.fulfill (rest, List.tl l)
+        end
 
 end
 

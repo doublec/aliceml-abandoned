@@ -2,6 +2,9 @@ import structure Protocol   from "../common/Protocol"
 import structure Gui        from "Gui"
 import signature CLIENT     from "CLIENT-sig"
 import structure Inspector  from "x-alice:/lib/tools/Inspector"
+import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
+
+open Ctrl
 
 structure Client (* :> CLIENT *) = 
 struct
@@ -16,12 +19,13 @@ struct
             val guiGame     = Promise.future promise
             fun playersJoined players = #playersJoined gui_join players
             
-            fun tournamentStarted () = ()
+            fun tournamentStarted () = (* ispawn (_file_, _line_)
+                                            (#gameStarted gui_join) () *) ()
 
             fun levelStarted levelInfo = 
                 #startLevel guiGame levelInfo
 
-            fun playerDisconnected (name, color) = ()
+            fun playerDisconnected p = #playerDisconnected gui_join p
 
             fun abort () = ()
 
