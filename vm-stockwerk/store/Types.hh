@@ -19,7 +19,6 @@
 #define MIN_VALID_INT     (-(1 << (STORE_WORD_WIDTH - 2)))
 #define MAX_VALID_INT     ((1 << (STORE_WORD_WIDTH - 2)) - 1)
 #define INVALID_BLOCKSIZE 0
-#define INVALID_FIELD     0
 
 // Word Datatype
 typedef struct {
