@@ -94,15 +94,15 @@ all: compile
 ### SOURCE CODE GENERATION ######################
 
 #$(GENFILES): $(LASTGENERATE)
+generate:	$(GENFILES)
 
-$(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR) 
+$(GENFILES): $(INPUTFILE) $(GENERATOR) 
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	$(SML) $(OUTDIR) $(INPUTFILE) @SMLload=$(GENERATOR)
 	./prepare-keyval.sh && mv Key.aml ${OUTDIR} || exit
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
-	touch $(LASTGENERATE)
 
 $(GENERATOR):
 	rm -f $(GENERATOR)
