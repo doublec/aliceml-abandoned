@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,11 +23,11 @@ struct
     type      mismatch = __pervasive.Inf.mismatch
     exception Mismatch = __pervasive.Inf.Mismatch
 
-    functor Pack(signature S structure X : S) = (val package = pack X :> S)
+    functor Pack(signature S structure X : S) = (val package = pack X : S)
     functor Unpack(signature S val package : package) = unpack package : S
 
     functor PackVal(type t val x : t) =
-	(val package = pack (val x = x) :> (val x : t))
+	(val package = pack (val x = x) : (val x : t))
 
     functor UnpackVal(val package : val_package type t) =
 	unpack package : (val x : t)

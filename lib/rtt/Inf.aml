@@ -253,6 +253,8 @@ struct
 
     nonfix mod
 
+    val same			= Cell.equal
+
     fun mapr  f   xs		= mapr'(f,xs)
     and mapr'(f,  nil )		= nil
       | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
@@ -1277,7 +1279,13 @@ struct
 	  | CON(p,k)		=>
 	case PathMap.lookup(#inf_rea(#rea c), p)
 	 of NONE		=> buildOld(c, j)
-	  | SOME j'		=> buildNew(c, j,j')
+	  | SOME j'		=> buildNew(c, j,
+					    case #inst c of NoInst _=> j' | _ =>
+					    build({inf  = Map.map(),
+						   kind = KindMap.map(),
+						   typ  = Type.realiseStart(),
+						   rea  = rea(),
+						   inst = #inst c}, j'))
 	    (* DEBUG
 		(matchKind(kind j',k)
 		 handle KindMismatch m => raise Mismatch(Incompatible(j,j'));
@@ -1487,7 +1495,7 @@ TextIO.print "\n";
 
     and buildSingKind(c, k, toKind, j) =
 	let
-	    val j' = build(c,j)
+	    val j' = build(instContext(c, NoInst LeftSingleton), j)
 	in
 	    if Cell.equal(j,j')
 	    then buildOldKind(c, k)

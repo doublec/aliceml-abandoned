@@ -43,13 +43,14 @@ signature UNSAFE_VALUE_COMPONENT =
 		(* Construction *)
 
 		val prod: (Label.t * 'value) vector -> 'prod_value
-		val prodPoly: (Label.t * 'value) vector -> 'prod_value
 		val tuple: 'value vector -> 'tuple_value
 
 		val tagged: Label.t vector * int *
 			    (Label.t * 'value) vector -> 'sum_value
 		val taggedTuple: Label.t vector * int *
 				 'value vector -> 'sum_value
+
+		val prodPoly: (Label.t * 'value) vector -> 'prod_value
 
 		val closure: 'code * 'value vector -> 'closure_value
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,6 +39,7 @@
 	structure Fixity :	FIXITY'
 	structure Inf :		INF'
 	structure PervasiveType : PERVASIVE_TYPE'
+	structure DynMatch :    DYN_MATCH'
     end
 
  *)

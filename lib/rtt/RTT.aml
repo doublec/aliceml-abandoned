@@ -16,6 +16,7 @@ import structure Fixity		from "Fixity"
 import structure Type		from "Type"
 import structure Inf		from "Inf"
 import structure PervasiveType	from "PervasiveType"
+import structure DynMatch	from "../system/DynMatch"
 
 (*DEBUG
 import structure TextIO         from "../system/TextIO"
@@ -210,6 +211,7 @@ local
 
 	val kind :		inf -> kind
 	val instance :		Path.t * inf -> inf * rea
+	val realise :		rea * inf -> inf
 	val match :		inf * inf -> rea
 	val infimum :		inf * inf -> inf
 
@@ -220,6 +222,14 @@ local
     signature PERVASIVE_TYPE' =
     sig
 	val lookup :		string -> Type.t
+    end
+
+    signature DYN_MATCH' =
+    sig
+	type module
+	val match :		module * Inf.inf -> Inf.rea
+	val strengthen :	module * Inf.inf -> Inf.inf
+	val seal :		module * Inf.inf -> module
     end
 in
     (* structure is named __pervasive to avoid spurious warnings during
@@ -232,5 +242,6 @@ in
 	structure Type          = Type :> TYPE'
 	structure Inf           = Inf :> INF'
 	structure PervasiveType = PervasiveType :> PERVASIVE_TYPE'
+	structure DynMatch      = DynMatch :> DYN_MATCH'
     end
 end

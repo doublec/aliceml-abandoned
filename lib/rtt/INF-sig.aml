@@ -144,6 +144,8 @@ sig
     val compress :	inf  -> unit
     val compressSig :	sign -> unit
 
+    val same :		inf * inf -> bool	(* for efficiency hacks... *)
+
   (* Matching and intersection *)
 
     datatype mismatch =
