@@ -34,11 +34,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
 	  | longidEq (_, _) = false
 
-	fun lookup ((Id (_, stamp, _), id')::subst, id0 as Id (_, stamp0, _)) =
-	    if stamp = stamp0 then id'
-	    else lookup (subst, id0)
-	  | lookup (nil, id0) = id0
-
 	local
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
@@ -75,6 +70,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	end
 
 	type subst = (id * id) list
+
+	fun lookup ((Id (_, stamp, _), id')::subst, id0 as Id (_, stamp0, _)) =
+	    if stamp = stamp0 then id'
+	    else lookup (subst, id0)
+	  | lookup (nil, id0) = id0
 
 	fun substLongId (ShortId (coord, id), subst) =
 	    ShortId (coord, lookup (subst, id))
@@ -187,16 +187,18 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    let
 		val (pat', subst) = relax (pat, nil)
 		val decs =
-		    List.foldl
-		    (fn ((id, id'), decs) =>
+		    List.map
+		    (fn (id, id') =>
 		     let
 			 val coord = infoId id
 			 val exp = VarExp (coord, ShortId (coord, id'))
 		     in
-			 ValDec (coord, VarPat (coord, id), exp)::decs
-		     end) nil subst
+			 ValDec (coord, VarPat (coord, id), exp)
+		     end) subst
 	    in
-		WithPat (infoPat pat', pat', decs)
+		case decs of
+		    nil => pat'
+		  | _::_ => WithPat (infoPat pat', pat', decs)
 	    end
 	and relax (pat as WildPat _, subst) = (pat, subst)
 	  | relax (pat as LitPat (_, _), subst) = (pat, subst)
