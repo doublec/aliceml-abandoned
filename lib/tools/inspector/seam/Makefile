@@ -2,7 +2,8 @@
 ALICEC = alicec
 ALICEDEP = alicedep
 ALICELINK = alicelink
-ALICEC_OPTS =
+ALICEC_OPTS = 
+ALICELINK_OPTS = -z -v
 
 ## Components of the gui, in the subdirectory gui/
 GUI = MAIN_WINDOW-sig MkMainWindow MkAboutWindow MkPrefsWindow \
@@ -49,7 +50,7 @@ $(COMPONENTS): %.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 $(LINKEDNAME): $(COMPONENTS)
-	$(ALICELINK) -v $(LINKCOMPONENTS) $(ROOTCOMPONENT) -o $(LINKEDNAME)
+	$(ALICELINK) $(ALICELINK_OPTS) $(LINKCOMPONENTS) $(ROOTCOMPONENT) -o $(LINKEDNAME)
 
 install: $(LINKEDNAME)
 	mkdir -p -m 775 $(INSTALLTO)

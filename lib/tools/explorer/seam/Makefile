@@ -45,7 +45,7 @@ TARGETS= $(SOURCES:%.aml=%.alc)
 all: LinkedExplorer.alc
 
 LinkedExplorer.alc: $(TARGETS)
-	alicelink --include ./ ./Explorer -o $@
+	alicelink -z --include ./ ./Explorer -o $@
 
 $(GLADE_TARGETS): $(GLADE_SOURCES)
 	aliceglade $< -o $(GLADE_SOURCES:%.glade=%)
