@@ -362,7 +362,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 			       outputInstr (context, instr)))
 			  (context, tests2);
 	     outputInstr (context, instr))
-	  | outputInstr (context, CompactTagTest (idRef, tests, instr)) =
+	  | outputInstr (context, CompactTagTest (idRef, tests, instrOpt)) =
 	    (outputBlock (context, Label.compactTagTest, 3);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (idDefsOpt, instr)) =>
@@ -373,7 +373,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 					   outputIdDef (context, idDefs))
 				   (context, idDefsOpt);
 			       outputInstr (context, instr))) (context, tests);
-	     outputInstr (context, instr))
+	     outputOption outputInstr (context, instrOpt))
 	  | outputInstr (context, ConTest (idRef, tests1, tests2, instr)) =
 	    (outputBlock (context, Label.conTest, 4);
 	     outputIdRef (context, idRef);

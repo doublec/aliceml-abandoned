@@ -369,9 +369,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 				      (r, translateBody (body, env))
 				    | _ => raise Match) litTests,
 		      translateBody (elseBody, env)))
-	  | translateStm (TestStm (_, idRef, TagTests tagTests, elseBody),
+	  | translateStm (TestStm (_, idRef,
+				   TagTests (labels, tagTests), elseBody),
 			  env) =
-	    translateTagTest (idRef, tagTests, elseBody, env)
+	    translateTagTest (idRef, labels, tagTests, elseBody, env)
 	  | translateStm (TestStm (_, idRef, ConTests conTests, elseBody),
 			  env) =
 	    let
@@ -615,23 +616,23 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    end
 		else O.IntTest (idRef, tests, elseInstr)
 	    end
-	and translateTagTest (idRef, tagTests, elseBody, env) =
+	and translateTagTest (idRef, labels, tagTests, elseBody, env) =
 	    let
 		val idRef = translateIdRef (idRef, env)
 		val (naryTests, nullaryTests) =
-		    List.partition (fn (_, _, args, _) => isNAry args)
+		    List.partition (fn (_, args, _) => isNAry args)
 				   (Vector.toList tagTests)
 		val nullaryTests =
-		    Vector.map (fn (_, tag, _, body) =>
+		    Vector.map (fn (tag, _, body) =>
 				   (tag, translateBody (body, env)))
 			       (Vector.fromList nullaryTests)
 		val naryTests =
-		    Vector.map (fn (_, tag, args, body) =>
+		    Vector.map (fn (tag, args, body) =>
 				   (tag, translateConArgs (args, env),
 				    translateBody (body, env)))
 			       (Vector.fromList naryTests)
 		val map = IntMap.new ()
-		val (_, i, _, _) = Vector.sub (tagTests, 0)
+		val (i, _, _) = Vector.sub (tagTests, 0)
 		val (min, max) =
 		    Vector.foldl (fn ((i, instr), (min, max)) =>
 				     (IntMap.insert (map, i, (NONE, instr));
@@ -653,7 +654,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    in
 			O.CompactTagTest (idRef,
 					  Vector.tabulate (max + 1, lookup),
-					  elseInstr)
+					  if Vector.length labels = max + 1
+					  then NONE
+					  else SOME elseInstr)
 		    end
 		else O.TagTest (idRef, nullaryTests, naryTests, elseInstr)
 	    end

@@ -151,13 +151,16 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    in
 			lIdRef (idRef, i)
 		    end
-		  | lInstr (CompactTagTest (idRef, tests, elseInstr), i) =
+		  | lInstr (CompactTagTest (idRef, tests, elseInstrOpt), i) =
 		    lIdRef (idRef,
 			    Vector.foldr
 				(fn ((idDefsOpt, thenInstr), i) =>
 				    lIdDefsOpt (idDefsOpt,
 						lInstr (thenInstr, i)))
-				(lInstr (elseInstr, i)) tests + 1)
+				(case elseInstrOpt of
+				     SOME elseInstr =>
+					 lInstr (elseInstr, i)
+				   | NONE => i) tests + 1)
 		  | lInstr (ConTest (idRef, nullaryTests, naryTests,
 				     elseInstr), i) =
 		    let
