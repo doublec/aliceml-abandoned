@@ -48,49 +48,63 @@ structure BackendStockwerk: PHASE =
 	  | argsToVector (TupArgs xs) = xs
 	  | argsToVector (ProdArgs labelXList) = Vector.map #2 labelXList
 
-	fun translateStms (ValDec (_, IdDef id, exp)::stms, env) =
+	fun translateBody (stm::stms, env) =
 	    let
-		val instr = translateStms (stms, env)
+		val instr =
+		    case stms of
+			_::_ =>
+			    translateDec (stm, translateBody (stms, env), env)
+		      | nil => translateStm (stm, env)
 	    in
-		translateExp (exp, declare (env, id), instr, env)
+		case #liveness (infoStm stm) of
+		    ref (Kill set) =>
+			let
+			    val idRefs =
+				StampSet.fold (fn (stamp, rest) =>
+					       lookupStamp (env, stamp)::rest)
+				nil set
+			    val ids =
+				List.mapPartial (fn O.Local i => SOME i
+						  | O.Global _ => NONE) idRefs
+			in
+			    O.Kill (Vector.fromList ids, instr)
+			end
+		      | ref _ => instr
 	    end
-	  | translateStms (ValDec (_, Wildcard, exp)::stms, env) =
-	    translateIgnore (exp, translateStms (stms, env), env)
+	  | translateBody (nil, _) =
+	    raise Crash.Crash "BackendStockwerk.translateBody"
+	and translateDec (ValDec (_, IdDef id, exp), instr, env) =
+	    translateExp (exp, declare (env, id), instr, env)
+	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
+	    translateIgnore (exp, instr, env)
 
 (*
 	  | RecDec of stm_info * (idDef * exp) vector
 	    (* all ids distinct *)
 *)
 
-	  | translateStms (RefAppDec (_, IdDef id, id')::stms, env) =
+	  | translateDec (RefAppDec (_, IdDef id, id'), instr, env) =
+	    O.GetRef (declare (env, id), translateId (id', env), instr)
+	  | translateDec (RefAppDec (_, Wildcard, id), instr, env) =
 	    let
-		val instr = translateStms (stms, env)
-	    in
-		O.GetRef (declare (env, id), translateId (id', env), instr)
-	    end
-	  | translateStms (RefAppDec (_, Wildcard, id)::stms, env) =
-	    let
-		val instr = translateStms (stms, env)
 		val id' = lookup (env, id)
 	    in
 		O.AppPrim (O.Wildcard, "Future.await", #[id'], SOME instr)
 	    end
-	  | translateStms (TupDec (_, idDefs, id)::stms, env) =
+	  | translateDec (TupDec (_, idDefs, id), instr, env) =
 	    let
-		val instr = translateStms (stms, env)
 		fun f id = translateIdDef (id, env)
 	    in
 		O.GetTup (Vector.map f idDefs, lookup (env, id), instr)
 	    end
-	  | translateStms (ProdDec (info, labelIdDefVec, id)::stms, env) =
-	    let
-		val stm = TupDec (info, Vector.map #2 labelIdDefVec, id)
-	    in
-		translateStms (stm::stms, env)
-	    end
-	  | translateStms ([RaiseStm (_, id)], env) =
+	  | translateDec (ProdDec (info, labelIdDefVec, id), instr, env) =
+	    translateDec (TupDec (info, Vector.map #2 labelIdDefVec, id),
+			  instr, env)
+	  | translateDec (_, _, _) =
+	    raise Crash.Crash "BackendStockwerk.translateDec"
+	and translateStm (RaiseStm (_, id), env) =
 	    O.Raise (lookup (env, id))
-	  | translateStms ([ReraiseStm (_, id)], env) = (*--** do better *)
+	  | translateStm (ReraiseStm (_, id), env) = (*--** do better *)
 	    O.Raise (lookup (env, id))
 
 (*
@@ -99,16 +113,18 @@ structure BackendStockwerk: PHASE =
 	  | TestStm of stm_info * id * tests * body
 	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
 *)
-	  | translateStms ([ReturnStm (_, exp)], env) =
+	  | translateStm (ReturnStm (_, exp), env) =
 	    let
 		val id = fresh env
 	    in
 		translateExp (exp, id, O.Return (O.OneArg (O.Local id)), env)
 	    end
-	  | translateStms ([IndirectStm (info, ref (SOME stms))], env) =
-	    translateStms (stms, env)
-	  | translateStms ([ExportStm (info, exp)], env) =
-	    translateStms ([ReturnStm (info, exp)], env)
+	  | translateStm (IndirectStm (_, ref (SOME stms)), env) =
+	    translateBody (stms, env)
+	  | translateStm (ExportStm (info, exp), env) =
+	    translateStm (ReturnStm (info, exp), env)
+	  | translateStm (_, _) =
+	    raise Crash.Crash "BackendStockwerk.translateStm"
 	and translateExp (LitExp (_, lit), id, instr, _) =
 	    O.PutConst (id, translateLit lit, instr)
 	  | translateExp (PrimExp (_, name), id, instr, _) =
@@ -133,7 +149,7 @@ structure BackendStockwerk: PHASE =
 	    let
 		val _ = startFn env
 		val args' = translateArgs translateIdDef (args, env)
-		val bodyInstr = translateStms (body, env)
+		val bodyInstr = translateBody (body, env)
 		val globals = endFn env
 		val function =
 		    O.Function (Vector.length globals, args', bodyInstr)

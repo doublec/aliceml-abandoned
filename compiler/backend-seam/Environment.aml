@@ -76,5 +76,8 @@ structure Environment :> ENVIRONMENT =
 			StampMap.insertDisjoint (!scope, stamp, idRef);
 			idRef
 		    end
-	    
+
+	fun lookupStamp ({stack, scope, localIndex, globalIndex, globals},
+			 stamp) =
+	    StampMap.lookupExistent (!scope, stamp)
     end
