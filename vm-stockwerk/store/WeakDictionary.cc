@@ -55,7 +55,7 @@ inline u_int WeakDictionary::HashInt(u_int i) {
 inline u_int WeakDictionary::HashBlock(Block *b) {
   u_int size = b->GetSize();
   u_int len  = size * sizeof(word);
-  return HashString((const char *) b->GetBase(), len, size);
+  return HashString((const char *) b->GetBase(), len, GetTableSize());
 }
 
 inline u_int WeakDictionary::HashKey(word key) {
