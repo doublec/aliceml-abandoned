@@ -27,8 +27,6 @@ export
    %% For use by Alice programs:
    'UnsafeComponent$': Component
 define
-   IoException       = {NewUniqueName 'IO.Io'}
-
    SitedException    = {NewUniqueName 'Component.Sited'}
    CorruptException  = {NewUniqueName 'Component.Corrupt'}
    NotFoundException = {NewUniqueName 'Component.NotFound'}
@@ -41,11 +39,6 @@ define
       if {Resolve.trace.get} then
 	 {System.printError '['#Title#'] '#Msg#' '#U#'\n'}
       end
-   end
-
-   proc {RaiseIo U N E}
-      {Exception.raiseError
-       alice(IoException(name: U function: {ByteString.make N} cause: E))}
    end
 
    proc {RaiseNative Msg}
@@ -186,7 +179,7 @@ define
 			{Pickle.saveWithCells {ComponentToFunctor Component}
 			 Filename '' 9}
 		     catch error(dp(generic 'pickle:nogoods' ...) ...)
-		     then {RaiseIo Filename 'save' SitedException}
+		     then {Exception.raiseError alice(SitedException)} unit
 		     end
 		     unit
 		  end
@@ -196,20 +189,18 @@ define
 		     try
 			Component = {Load U}
 		     catch error(url(load _) ...) then
-			{RaiseIo U 'load' NotFoundException}
-		     [] error(dp(generic ...) ...) then
-			{RaiseIo U 'load' CorruptException}
+			{Exception.raiseError alice(NotFoundException)}
 		     [] error(foreign(dlOpen _)) then
-			{RaiseIo U 'load' NotFoundException}
+			{Exception.raiseError alice(NotFoundException)}
 		     [] error(foreign(dlOpen _ _)) then
-			{RaiseIo U 'load' CorruptException}
+			{Exception.raiseError alice(CorruptException)}
 		     [] error(foreign(cannotFindOzInitModule _)) then
-			{RaiseIo U 'load' CorruptException}
-		     [] E then
-			{RaiseIo U 'load' E} %--** cause not of type exn
+			{Exception.raiseError alice(CorruptException)}
+		     [] error(dp(generic ...) ...) then
+			{Exception.raiseError alice(CorruptException)}
 		     end
 		     case Component of unit then
-			{RaiseIo U 'load' CorruptException} unit
+			{Exception.raiseError alice(CorruptException)} unit
 		     else Component
 		     end
 		  end
@@ -227,7 +218,7 @@ define
 		     [] error(foreign(dlOpen _ Msg)) then
 			{RaiseNative Msg}
 		     [] error(foreign(cannotFindOzInitModule _)) then
-			{RaiseNative 'symbol `oz_init_module\' not found'}
+			{Exception.raiseError alice(CorruptException)}
 		     [] _ then
 			{RaiseNative 'unknown error'}
 		     end

@@ -18,7 +18,7 @@ import
 export
    'UnsafeSocket$': Socket
 define
-   IoException = {NewUniqueName 'IO.Io'}
+   IoException = {NewUniqueName 'IO.Io'}   %--** does not exit any more
 
    Socket = 'Socket'(server:
 			fun {$ TakePort} Socket Port in
