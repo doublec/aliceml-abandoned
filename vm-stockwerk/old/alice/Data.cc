@@ -12,8 +12,8 @@
 #include <iostream.h>
 
 #if defined(INTERFACE)
-#pragma implementation "alicedata.hh"
+#pragma implementation "datalayer/alicedata.hh"
 #endif
 
-#include "alicedata.hh"
+#include "datalayer/alicedata.hh"
 
