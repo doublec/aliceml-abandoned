@@ -12,7 +12,7 @@ import structure Output         from "Output"
 structure Hose :> HOSE =
     struct
 
-    val binName = "aliceyacc"
+    val binName = "alicelex"
 
 	val inFile = ref ""
 	val outFile = ref ""
