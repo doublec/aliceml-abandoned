@@ -1,10 +1,10 @@
 (*
  * Authors:
- *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Thorsten Brunklaus, 2000-2003
+ *   Andreas Rossberg and Thorsten Brunklaus, 2000-2004
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -31,26 +31,23 @@ local
       | fold' (f, a, n, i) = fold' (f, f (i, a), n-1, i+1)
 
 
-    (* A server abstraction *)
+    (* A simple server abstraction *)
 
     fun newServer () =
 	let
-	    val tail   = Promise.promise ()
-	    val stream = Ref.ref tail
+	    val fs     = Promise.promise ()
+	    val stream = Ref.ref fs
 
-	    fun process  nil    = ()
-	      | process (p::pr) = (p (); process pr)
-
-	    fun send p =
+	    fun enqueue f =
 		let
 		    val newtail = Promise.promise ()
 		    val tail    = Ref.exchange (stream, newtail)
 		in
-		    Promise.fulfill (tail, p::Promise.future newtail)
+		    Promise.fulfill (tail, f::Promise.future newtail)
 		end
 	in
-	    spawn process (Promise.future tail);
-	    send
+	    spawn List.app (fn f => f ()) (Promise.future fs);
+	    enqueue
 	end
 
     val serve = newServer ()
