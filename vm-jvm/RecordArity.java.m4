@@ -9,8 +9,10 @@ final public class DMLRecordArity implements java.io.Serializable {
 	super();
 	int i=0;
 	hashtable=new java.util.Hashtable();
+	this.labels = labels;
 
 	qsort(labels,vals, 0,labels.length-1);
+
 	for(i=0; i<labels.length; i++) {
 	    hashtable.put(labels[i], new Integer(i));
 	}
