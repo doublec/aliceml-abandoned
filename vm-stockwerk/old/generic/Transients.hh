@@ -43,8 +43,6 @@ public:
   }
 
   void AddToWaitQueue(Thread *thread) {
-    thread->SetState(Thread::BLOCKED);
-    thread->GetTaskStack()->Purge();
     Queue *waitQueue = Queue::FromWord(GetArg());
     if (waitQueue == INVALID_POINTER) {
       waitQueue = Queue::New(2);
@@ -55,10 +53,8 @@ public:
   void ScheduleWaitingThreads() {
     Queue *waitQueue = Queue::FromWord(GetArg());
     if (waitQueue != INVALID_POINTER)
-      while (!waitQueue->IsEmpty()) {
-	Thread *thread = Thread::FromWord(waitQueue->Dequeue());
-	Scheduler::AddThread(thread);
-      }
+      while (!waitQueue->IsEmpty())
+	Scheduler::WakeupThread(Thread::FromWordDirect(waitQueue->Dequeue()));
   }
 };
 

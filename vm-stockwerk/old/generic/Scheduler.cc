@@ -96,6 +96,8 @@ void Scheduler::Run() {
 	    case FUTURE_LABEL:
 	      taskStack->PushFrame(1);
 	      taskStack->PutInt(0, 0);
+	      currentThread->SetState(Thread::BLOCKED);
+	      currentThread->GetTaskStack()->Purge();
 	      static_cast<Future *>(transient)->AddToWaitQueue(currentThread);
 	      break;
 	    case CANCELLED_LABEL:

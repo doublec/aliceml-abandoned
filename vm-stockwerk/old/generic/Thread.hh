@@ -20,12 +20,7 @@
 #include "scheduler/TaskStack.hh"
 
 class Thread: private Block {
-private:
-  static const u_int SIZE = 4;
-  static const u_int PRIORITY_POS = 1;
-  static const u_int TASK_STACK_POS = 2;
-  static const u_int STATE_POS = 3;
-  static const u_int IS_SUSPENDED_POS = 4;
+  friend class Scheduler;
 public:
   enum priority {
     HIGH, NORMAL, LOW
@@ -34,7 +29,23 @@ public:
   enum state {
     BLOCKED, RUNNABLE, TERMINATED
   };
+private:
+  static const u_int SIZE = 4;
+  static const u_int PRIORITY_POS = 1;
+  static const u_int TASK_STACK_POS = 2;
+  static const u_int STATE_POS = 3;
+  static const u_int IS_SUSPENDED_POS = 4;
 
+  void SetState(state s) {
+    ReplaceArg(STATE_POS, s);
+  }
+  void Suspend() {
+    ReplaceArg(IS_SUSPENDED_POS, true);
+  }
+  void Resume() {
+    ReplaceArg(IS_SUSPENDED_POS, false);
+  }
+public:
   using Block::ToWord;
 
   static Thread *New(priority p) {
@@ -62,17 +73,8 @@ public:
   TaskStack *GetTaskStack() {
     return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
   }
-  void SetState(state s) {
-    ReplaceArg(STATE_POS, s);
-  }
   state GetState() {
     return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
-  }
-  void Suspend() {
-    ReplaceArg(IS_SUSPENDED_POS, true);
-  }
-  void Resume() {
-    ReplaceArg(IS_SUSPENDED_POS, false);
   }
   bool IsSuspended() {
     return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));

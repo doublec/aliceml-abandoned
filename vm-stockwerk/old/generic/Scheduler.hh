@@ -35,16 +35,32 @@ public:
   static void Init();
   static void Run();
 
-  static void AddThread(Thread *thread) {
-    if (thread->GetState() != Thread::BLOCKED) {
-      // The thread could also be TERMINATED or RUNNABLE because
-      // it had been in the wait queues of several transients.
-      thread->SetState(Thread::RUNNABLE);
-      threadQueue->Enqueue(thread);
-    }
-  }
   static Thread *GetCurrentThread() {
     return currentThread;
+  }
+
+  static void AddThread(Thread *thread) {
+    Assert(thread->GetState() == Thread::RUNNABLE);
+    threadQueue->Enqueue(thread);
+  }
+  static void WakeupThread(Thread *thread) {
+    if (thread->GetState() == Thread::BLOCKED) {
+      // The thread can already have been woken up
+      // if it awaited more than one future.
+      thread->SetState(Thread::RUNNABLE);
+      AddThread(thread);
+    }
+  }
+  static void SuspendThread(Thread *thread) {
+    //--** remove from runnable queue if it's in there
+    //--** check if argument is current thread
+    thread->Suspend();
+    thread->GetTaskStack()->Purge();
+  }
+  static void ResumeThread(Thread *thread) {
+    thread->Resume();
+    if (thread->GetState() == Thread::RUNNABLE)
+      AddThread(thread);
   }
 
   static bool TestPreempt() {
