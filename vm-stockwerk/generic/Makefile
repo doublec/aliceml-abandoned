@@ -57,7 +57,8 @@ PRIMITIVESSRCS = Primitive.cc \
 UNSAFESSRCS = UnsafeMkRefMap.cc \
               UnsafeReflect.cc \
               UnsafeIO.cc \
-              UnsafeComponent.cc
+              UnsafeComponent.cc \
+              UnsafeOS.cc
 
 SRCS = $(GENERICSRCS) \
        $(PRIMITIVESSRCS) \
