@@ -1417,6 +1417,16 @@ define
 	    {Assembler append(testRecord(R Label RecordArity ElseL))}
 	 end
 	 {Peephole Rest Assembler}
+      [] match(R ht(ElseL [onScalar(true TrueL) onScalar(false FalseL)]))|Rest
+	 andthen {HasLabel Rest TrueL}
+      then
+	 {Assembler append(testBool(R FalseL ElseL))}
+	 {Peephole Rest Assembler}
+      [] match(R ht(ElseL [onScalar(false FalseL) onScalar(true TrueL)]))|Rest
+	 andthen {HasLabel Rest TrueL}
+      then
+	 {Assembler append(testBool(R FalseL ElseL))}
+	 {Peephole Rest Assembler}
       [] (match(_ _)=I1)|Rest then
 	 {Assembler append(I1)}
 	 {EliminateDeadCode Rest Assembler}
