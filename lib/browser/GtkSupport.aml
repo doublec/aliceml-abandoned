@@ -294,6 +294,22 @@ fun createStatusbar()  = let
 			 in
 			     (status,postMessageType,postMessageMode)
 			 end
+
+fun changeFontSize i = let
+                           val fontname =  "-*-*-medium-r-normal--" 
+			       ^ Int.toString(i) 
+			       ^ "-*-*-*-m-*-iso8859-1"
+			   val font =  Gdk.fontLoad(fontname)
+		       in
+			   (Settings.fontname := fontname
+			    ; Settings.font := font
+			    ; Settings.fontHeight:=
+			    (Gdk.fontGetFieldAscent(font)+
+			     Gdk.fontGetFieldDescent(font) )
+			    ; Settings.fontWidth :=
+			    (Gdk.stringWidth(font,"W"))
+			    ;Settings.fontSize := i)
+		       end
      
 (******************** Canvas Items ***************************)
 
