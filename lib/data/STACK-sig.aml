@@ -12,7 +12,7 @@
 
 signature STACK =
 sig
-    type 'a stack
+    __eqeqtype 'a stack
     type t = stack
 
     exception Empty
