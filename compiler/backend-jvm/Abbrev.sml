@@ -36,7 +36,8 @@ structure Abbrev  =
 	val CThread        = "java/lang/Thread"
 	val CVector        = "java/util/Vector"
 	val CPlus          = ("de/uni_sb/ps/dml/runtime/Int/plus","de/uni_sb/ps/dml/runtime/DMLValue")
-
+	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
+	    
 	(* Ab hier nur Unfug! *)
 	val CEquals        = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Equals")
 	val CNot           = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Not")
