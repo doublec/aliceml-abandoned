@@ -84,9 +84,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    Vector.map (fn idDef => translateIdDef (idDef, env))
 	    (argsToVector args)
 
-	fun isId (O.Local i, id) = i = id
+	fun isId (O.Immediate _, _) = false
+	  | isId (O.Local i, id) = i = id
 	  | isId (O.Global _, _) = false
-	  | isId (O.Immediate _, _) = false
+	  | isId (O.Toplevel _, _) = false
 
 	fun isIdInVec (idRefs, id) =
 	    Vector.exists (fn idRef => isId (idRef, id)) idRefs
@@ -94,9 +95,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	fun isIdInArgs (O.OneArg idRef, id) = isId (idRef, id)
 	  | isIdInArgs (O.TupArgs idRefs, id) = isIdInVec (idRefs, id)
 
-	fun getLocal (O.Local i) = SOME i
+	fun getLocal (O.Immediate _) = NONE
+	  | getLocal (O.Local i) = SOME i
 	  | getLocal (O.Global _) = NONE
-	  | getLocal (O.Immediate _) = NONE
+	  | getLocal (O.Toplevel _) = NONE
 
 	(*
 	 * Function `detup' tries to find out whether the value referenced
@@ -149,10 +151,15 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    if isIdInVec (idRefs, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.PutVec (id, idRefs, instr))
-	  | detup (O.PutFun (id, idRefs, function, instr), id') =
+	  | detup (O.Close (id, idRefs, value, instr), id') =
 	    if isIdInVec (idRefs, id') then USED
 	    else detup' (detup (instr, id'),
-			 fn instr => O.PutFun (id, idRefs, function, instr))
+			 fn instr => O.Close (id, idRefs, value, instr))
+	  | detup (O.Specialize (id, idRefs, template, instr), id') =
+	    if isIdInVec (idRefs, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr =>
+			    O.Specialize (id, idRefs, template, instr))
 	  | detup (O.AppPrim (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.AppVar (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.DirectAppVar (_, _, _), _) = SIDE_EFFECTING
@@ -393,19 +400,38 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			  id, instr, env)
 	  | translateExp (VecExp (_, ids), id, instr, env) =
 	    O.PutVec (id, translateIds (ids, env), instr)
-	  | translateExp (FunExp (info, _, _, args, body), id, instr, env) =
+	  | translateExp (FunExp (info, _, flags, args, body),
+			  id, instr, env) =
 	    let
-		val _ = startFn env
+		val isSpecialize =
+		    List.exists (fn IsToplevel => true | _ => false) flags
+		val _ =
+		    if isSpecialize then startSpecialize env
+		    else startClose env
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
-		val (globals, nlocals) = endFn env
+		val (globalIds, nlocals) = endFn env
 		val ((i, j), _) = #region info
-		val function =
-		    V.function ((filename env, i, j),
-				Vector.length globals, nlocals,
-				args', bodyInstr)
+		val coord = (filename env, i, j)
+		val globalIdRefs = translateIds (globalIds, env)
 	    in
-		O.PutFun (id, translateIds (globals, env), function, instr)
+		if isSpecialize then
+		    let
+			val template =
+			    O.Template (coord, Vector.length globalIds,
+					nlocals, args', bodyInstr)
+		    in
+			O.Specialize (id, globalIdRefs, template, instr)
+		    end
+		else
+		    let
+			val abstractCode =
+			    O.Function (coord, Vector.length globalIds,
+					nlocals, args', bodyInstr)
+			val concreteCode = V.concreteCode abstractCode
+		    in
+			O.Close (id, globalIdRefs, concreteCode, instr)
+		    end
 	    end
 	  | translateExp (PrimAppExp (_, name, ids), id, instr, env) =
 	    O.AppPrim (V.prim name, translateIds (ids, env),
@@ -549,25 +575,23 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    Vector.map (fn (_, sign, url) =>
 				   V.tuple #[V.string (Url.toStringRaw url),
 					     V.sign (SOME sign)]) imports
-		val env = new (filename, context)
-		val _ = startFn env
+		val env = startTop (filename, context)
 		val formalId = fresh env
 		val idDefs =
 		    Vector.map (fn (idDef, _, _) =>
 				translateIdDef (idDef, env)) imports
 		val instr = translateBody (body, env)
 		val raiseId = fresh env
-		val (globals, nlocals) = endFn env
-		val _ = Assert.assert (Vector.length globals = 0)
+		val nlocals = endTop env
 		val elseInstr =
 		    O.PutVar (raiseId, O.Immediate (V.prim "General.Match"),
 			      O.Raise (O.Local raiseId))
 		val bodyInstr =
 		    O.VecTest (O.Local formalId, #[(idDefs, instr)], elseInstr)
-		val function =
-		    V.function ((filename, 0, 0),
-				Vector.length globals, nlocals,
+		val abstractCode =
+		    O.Function ((filename, 0, 0), 0, nlocals,
 				O.OneArg (O.IdDef formalId), bodyInstr)
+		val concreteCode = V.concreteCode abstractCode
 		val exportDesc =
 		    Vector.map (fn (_, Id (_, stamp, _)) => stamp) exportDesc
 	    in
@@ -575,9 +599,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		 * defined in lib/system/Component.aml:
 		 *)
 		(V.taggedValue (LargeInt.fromInt 1,           (* UNEVALUATED *)
-				#[V.closure (function, #[]),  (* body *)
-				  V.vector imports',          (* imports *)
-				  V.sign (SOME sign)]),       (* sign *)
+				#[V.closure (concreteCode, #[]), (* body     *)
+				  V.vector imports',             (* imports  *)
+				  V.sign (SOME sign)]),          (* sign     *)
 		 exportDesc)
 	    end
     end
