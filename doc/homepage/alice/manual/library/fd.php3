@@ -1,4 +1,4 @@
-<?php include "macros.php3"); ?>
+<?php include("macros.php3"); ?>
 <?php heading("The FD structure", "The <TT>FD</TT> structure"); ?>
 
 <?php section("synopsis", "synopsis"); ?>
