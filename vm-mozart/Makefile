@@ -404,7 +404,7 @@ build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
 
 build1/%.ozf: build1/%.aml
-	$(STOC0) $(STOC_OPTS) -c $< -o $@
+	$(STOC0) $(STOC_OPTS) --rtt-level=no -c $< -o $@
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
@@ -490,11 +490,11 @@ build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
 	build2/lib/rtt/LinkedRTT.ozf
 
 build2/%.ozf: build2/%.aml
-	$(STOC1) $(STOC_OPTS) -c $< -o $@
+	$(STOC1) $(STOC_OPTS) --rtt-level=no -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build2/lib/system/%.ozf): build2/%.ozf: \
 	build1/%.ozf build2/%.asig
-	$(STOC1) $(STOC_OPTS) --replacesign $< build2/$*.asig $@
+	$(STOC1) $(STOC_OPTS) --rtt-level=no --replacesign $< build2/$*.asig $@
 
 build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
@@ -587,7 +587,7 @@ build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 
 $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
-	$(STOC2) $(STOC_OPTS) --replacesign $< build3/$*.asig $@
+	$(STOC2) $(STOC_OPTS) --rtt-level=no --replacesign $< build3/$*.asig $@
 
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
@@ -605,7 +605,7 @@ build3/lib/utility/Url.ozf: build3/lib/utility/Url.aml
 	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/%.ozf: build3/%.aml
-	$(STOC2) $(STOC_OPTS) -c $< -o $@
+	$(STOC2) $(STOC_OPTS) --rtt-level=no -c $< -o $@
 
 BUILD3 := $(shell pwd)/build3
 TOP3 = $(BUILD3)/stoc/top
