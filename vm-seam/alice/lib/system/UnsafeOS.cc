@@ -144,7 +144,7 @@ DEFINE1(UnsafeOS_FileSys_readLink) {
  retry:
   int res = readlink(name->ExportC(), (char *) buffer->GetValue(), size);
   if (res < 0) RAISE_SYS_ERR();
-  if (static_cast<u_int>(res) == size) {
+  if (STATIC_CAST(u_int, res) == size) {
     size = size * 3 / 2;
     buffer = String::New(size);
     wBufferString = buffer->ToWord();
