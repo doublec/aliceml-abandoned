@@ -20,6 +20,28 @@ import structure Canvas    from "x-alice:/lib/gtk/Canvas"
 local
     open GtkCore
 
+    fun newServer () =
+	let
+	    val tail   = Promise.promise ()
+	    val stream = Cell.cell tail
+
+	    fun process s = (case s of
+				 nil   => ()
+			       | p::pr => (p (); process pr))
+	    fun send p =
+		let
+		    val newtail = Promise.promise ()
+		    val tail    = Cell.exchange(stream, newtail)
+		in
+		    Promise.fulfill(tail, p::(Promise.future newtail))
+		end
+	in
+	    (Thread.spawn (fn () => process(Promise.future tail));
+	     send)
+	end
+
+    val serve = newServer ()
+
     val pieceSize = 50
 
     val font = "-adobe-helvetica-bold-r-normal--24-240-75-75-p-138-iso8859-1"
@@ -142,36 +164,37 @@ local
 						va_string "anchor", va_int Gtk.ANCHOR_CENTER,
 						va_string "fill_color_gdk", va_object black])
 			 
-		     fun pieceEvent event =
-			 (case Gdk.getGdkEvent event of
-			      GDK_ENTER_NOTIFY _ =>
-				  Canvas.itemSet(text, "fill_color_gdk", white)
-			    | GDK_LEAVE_NOTIFY _ =>
-				  Canvas.itemSet(text, "fill_color_gdk", black)
-			    | GDK_BUTTON_PRESS _ =>
-				  let
-				      val pos                    = Array.sub(posArr, i)
-				      val y                      = pos div 4
-				      val x                      = pos mod 4
-				      val (dx, dy, nx, ny, move) = checkMove(itemArr, x, y)
-				  in
-				      (case move of
-					   false => ()
-					 | true  =>
-					       let
-						   val ItR    = Real.fromInt
-						   val newpos = (ny * 4 + nx)
-						   val mx     = Real.*(dx, (ItR pieceSize))
-						   val my     = Real.*(dy, (ItR pieceSize))
-					       in
-						   (Array.update(posArr, i, newpos);
-						    Array.update(itemArr, pos, NONE);
-						    Array.update(itemArr, newpos, SOME group);
-						    Canvas.itemMove(group, mx, my);
-						    checkVictory(posArr, 0); ())
-					       end)
-				  end
-			    | _ => () (* Ignore all other events *))
+		     fun pieceEvent event = serve
+			 (fn () =>
+			  (case Gdk.getGdkEvent event of
+			       GDK_ENTER_NOTIFY _ =>
+				   Canvas.itemSet(text, "fill_color_gdk", white)
+			     | GDK_LEAVE_NOTIFY _ =>
+				   Canvas.itemSet(text, "fill_color_gdk", black)
+			     | GDK_BUTTON_PRESS _ =>
+				   let
+				       val pos                    = Array.sub(posArr, i)
+				       val y                      = pos div 4
+				       val x                      = pos mod 4
+				       val (dx, dy, nx, ny, move) = checkMove(itemArr, x, y)
+				   in
+				       (case move of
+					    false => ()
+					  | true  =>
+						let
+						    val ItR    = Real.fromInt
+						    val newpos = (ny * 4 + nx)
+						    val mx     = Real.*(dx, (ItR pieceSize))
+						    val my     = Real.*(dy, (ItR pieceSize))
+						in
+						    (Array.update(posArr, i, newpos);
+						     Array.update(itemArr, pos, NONE);
+						     Array.update(itemArr, newpos, SOME group);
+						     Canvas.itemMove(group, mx, my);
+						     checkVictory(posArr, 0); ())
+						end)
+				   end
+			     | _ => () (* Ignore all other events *)))
 		 in
 		     (Array.update(itemArr, i, SOME group);
 		      Array.update(posArr, i, i);
@@ -236,8 +259,8 @@ local
 		      moveSpot (canvas, board, (i + 1), oldpos))
 		 end)
 
-    fun scrambleEvent canvas (board as (itemArr, posArr)) _ =
-	(srand 0; moveSpot(canvas, board, 0, findSpot(itemArr, 0))) 
+    fun scrambleEvent canvas (board as (itemArr, posArr)) _ = serve
+	(fn () => (srand 0; moveSpot(canvas, board, 0, findSpot(itemArr, 0))))
 
     fun fifteen () =
 	let
