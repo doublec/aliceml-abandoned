@@ -1487,7 +1487,7 @@ domain of non-negative integers, or sets thereof. Problems in this class range
 from puzzles to real world applications as diverse as scheduling, ware house
 allocation, configuration and placement.</P>
 
-<P>Let us take a first look at programming with <I>finite domain</I>
+<P>Let us take a look at programming with <I>finite domain</I>
 constraints. A finite domain (FD) is a set of natural (non-negative integer)
 numbers. An FD <I>constraint</I> is a formula in predicate logic, containing
 variables ranging over the natural numbers. In particular, a domain constraint
@@ -1497,23 +1497,25 @@ that contains a domain constraint for every variable occurring in it. A
 <I>solution</I> is a variable assignment that satisfies every constraint of the
 problem.</P>
 
+<?php if ($platform != "seam") { ?>
+
 <P>Let us create some finite domain variables. We use the <A
 href="library/linear.html"><TT>Linear</TT></A> library for linear
 constraints:</P>
 
 <PRE class=code>
 open Linear
-<I>### loaded signature from x-alice:/lib/constraints/Linear
-...</I></PRE>
+<I><SMALL>### loaded signature from x-alice:/lib/constraints/Linear
+...</SMALL></I></PRE>
 
 <P>To create a vector of constraint variables <I>x</I>,<I>y</I>,<I>z</I>, the
 <TT>vec</TT> function can be used:</P>
 
 <PRE class=code>
 val #[x,y,z] = vec (3, [1`#10])
-<I>val x : term = FD (_val)
+<I><SMALL>val x : term = FD (_val)
 val y : term = FD (_val)
-val z : term = FD (_val)</I></PRE>
+val z : term = FD (_val)</SMALL></I></PRE>
 
 <P>The arguments to <TT>vec</TT> specify the number of constraint variables
 (the size of the vector) and the initial domain {1,...,10} of each of these
@@ -1522,7 +1524,7 @@ constraint. Constraint variables can be investigated using the Inspector:</P>
 
 <PRE class=code>
 inspect {x,y,z}
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P align=center><IMG src="inspector-fd-1.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -1538,7 +1540,7 @@ can require that 2<I>x</I> = <I>y</I>:</P>
 
 <PRE class=code>
 post (`2 `* x `= y)
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P class=note><EM>Note:</EM> Be aware of the backquotes prefixing numbers and
 operators in the constraint formula - <TT>`*</TT> and <TT>`=</TT> are infix
@@ -1560,13 +1562,13 @@ with other posted constraints:</P>
 
 <PRE class=code>
 post (z `< x)
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P align=center><IMG src="inspector-fd-3.jpg" border=0 alt="Alice Inspector"></P>
 
 <PRE class=code>
 post (y `&lt; `7)
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P align=center><IMG src="inspector-fd-4.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -1576,7 +1578,7 @@ is found when all variables are determined.</P>
 
 <PRE class=code>
 post (z `&lt;&gt; `1)
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P align=center><IMG src="inspector-fd-5.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -1592,6 +1594,9 @@ interfaces.</P>
 
 
 <?php subsection("constraints-example", "Example") ?>
+
+<?php } ?>
+
 
 <P>As a simple example of a complete program solving a finite domain problem,
 consider the <I>Send More Money</I> problem. It consists in finding distinct
@@ -1609,21 +1614,23 @@ SEND + MORE = MONEY</PRE>
 a so-called <I>script</I> that encodes the problem:</P>
 
 <PRE class=code>
-fun money () =
+fun money sp =
 let
-    val v as #[S,E,N,D,M,O,R,Y] = vec (8, [0`#9])
+    val v as #[S,E,N,D,M,O,R,Y] = fdtermVec (sp, 8, [0`#9])
 in
-    distinct v; 
-    post (S `&lt;&gt; `0); 
-    post (M `&lt;&gt; `0); 
-    post (`1000`*S `+ `100`*E `+ `10`*N `+ D `+
-	  `1000`*M `+ `100`*O `+ `10`*R `+ E `=
-          `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y ); 
-    distribute (FD.FIRSTFAIL, v); 
+    distinct (sp, v, FD.BND); 
+    post (sp, S `&lt;&gt; `0, FD.BND); 
+    post (sp, M `&lt;&gt; `0, FD.BND); 
+    post (sp, `1000`*S `+ `100`*E `+ `10`*N `+ D `+
+              `1000`*M `+ `100`*O `+ `10`*R `+ E `=
+             `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y, FD.BND); 
+    branch (sp, v, FD.B_SIZE_MIN, FD.B_MIN); 
     {S,E,N,D,M,O,R,Y}
 end
-<I>val money :
-   unit -> {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} = _fn</I></PRE>
+<I><SMALL>val money :
+   Linear.space ->
+      {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
+       Y : term} = _fn</SMALL></I></PRE>
 
 <P>The Send More Money problem cannot be solved using constraint propagation
 alone. Search is required to reduce the problem space until constraint
@@ -1631,23 +1638,29 @@ propagation is able to determine the solution. The <TT>distribute</TT> function
 in the script specifies the <I>distribution strategy</I> used when the problem
 space has to be split for search. See the Mozart <A
 href="http://www.mozart-oz.org/documentation/fdt/">Constraint Programming
-Tutorial</A> for more detail.</P>
+Tutorial</A> for a more detailed explanation of the basic concepts.</P>
 
 <P>To perform the actual search and obtain all solutions to the problem,
 predefined search engines can be used:</P>
 
 <PRE class=code>
 Search.searchAll money
-<I>val it :
-   {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} list =
-   [{D = FD (_val), E = FD (_val), M = FD (_val), N = FD (_val), O = FD (_val),
-     R = FD (_val), S = FD (_val), Y = FD (_val)}]</I></PRE>
+<I><SMALL>### loaded signature from x-alice:/lib/gecode/Search
+val it :
+   Space.space list *
+      {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
+       Y : term} =
+   ([_val],
+    {D = FD (_val), E = FD (_val), M = FD (_val), N = FD (_val), O = FD (_val),
+     R = FD (_val), S = FD (_val), Y = FD (_val)})</SMALL></I></PRE>
+
+<?php if ($platform != "seam") { ?>
 
 <P>Using the inspector, we can easily look at the solution:</P>
 
 <PRE class=code>
 inspect it
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P align=center><IMG src="inspector-fd-6.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -1655,16 +1668,35 @@ inspect it
 search tree induced by the script using the <A
 href="library/explorer.html"><EM>Explorer</EM></A>:</P>
 
+<?php } else { ?>
+
+<P>The actual solutions could now be extracted from the result record using the functions from the <A
+href="library/fd.html"><TT>FD.Reflect</TT></A> library structure. However, the easiest way to obtain the solutions is to interactively explore the
+search tree induced by the script using the <A
+href="library/explorer.html"><EM>Explorer</EM></A> instead of offline <TT>Search</TT>:</P>
+
+<?php } ?>
+
 <PRE class=code>
 Explorer.exploreAll money
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
-<P align=center><IMG src="explorer.jpg" border=0 alt="Alice Explorer"></P>
+<P align=center><IMG src="explorer.png" border=0 alt="Alice Explorer"></P>
 
 <P>Double-clicking on the only solution node in the search tree (the green
 diamond) will open an Inspector window displaying the variable assignments of
-the solution. Chosing an inner node will display the information available at
+the solution.
+<?php if ($platform == "seam") { ?>
+</P>
+
+<P align=center><IMG src="inspector-search-1.png" border=0 alt="Alice Inspector"></P>
+
+<P>
+<?php } ?>
+Chosing an inner node will display the information available at
 the respective point of the search tree.</P>
+
+
 
 <?php if ($platform != "seam") { ?>
 

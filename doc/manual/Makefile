@@ -45,7 +45,9 @@ INSTALLFILES_0 = \
 	inspector-prom-4.png \
 	inspector-pack-1.png inspector-pack-2.png \
 	inspector-fd-1.jpg inspector-fd-2.jpg inspector-fd-3.jpg \
-	inspector-fd-4.jpg inspector-fd-5.jpg inspector-fd-6.jpg explorer.jpg
+	inspector-fd-4.jpg inspector-fd-5.jpg inspector-fd-6.jpg \
+	inspector-search-1.png \
+	explorer.png
 INSTALLFILES_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
 	index.html \
