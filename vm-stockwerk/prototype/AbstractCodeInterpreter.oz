@@ -71,6 +71,35 @@ define
       end
    end
 
+   LazySelInterpreter =
+   lazySelInterpreter(
+      run:
+	 fun {$ Args TaskStack}
+	    case TaskStack of lazySelFrame(_ X I)|Rest then
+	       case {Deref X} of Transient=transient(_) then
+		  request(Transient Args TaskStack)
+	       elseof T then
+		  continue(arg(T.(I + 1)) Rest)
+	       end
+	    end
+	 end
+      handle:
+	 fun {$ Debug Exn TaskStack}
+	    case TaskStack of (Frame=lazySelFrame(_ _ _))|Rest then
+	       exception(Frame|Debug Exn Rest)
+	    end
+	 end
+      pushCall:
+	 fun {$ Closure TaskStack}
+	    case Closure of closure(_ X I) then
+	       lazySelFrame(LazySelInterpreter X I)|TaskStack
+	    end
+	 end
+      toString:
+	 fun {$ lazySelFrame(_ _ I)}
+	    'LazySel #'#I
+	 end)
+
    fun {LitCase I N X YInstrVec ElseInstr}
       if I > N then ElseInstr
       elsecase YInstrVec.I of tuple(!X ThenInstr) then ThenInstr
@@ -299,18 +328,13 @@ define
 	    L.Id := T.(I + 1)
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
-      [] tag(!LazySel Id IdRef I NextInstr) then T0 in
-	 %--** make it lazy
-	 T0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      end
-	 case {Deref T0} of Transient=transient(_) then NewFrame in
-	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
-	    request(Transient args() NewFrame|TaskStack)
-	 elseof T then
-	    L.Id := T.(I + 1)
-	    {Emulate NextInstr Closure L TaskStack}
-	 end
+      [] tag(!LazySel Id IdRef I NextInstr) then X NewClosure in
+	 X = case IdRef of tag(!Local Id) then L.Id
+	     [] tag(!Global I) then Closure.(I + 2)
+	     end
+	 NewClosure = closure(lazySel(LazySelInterpreter) X I)
+	 L.Id := transient({NewCell byneed(NewClosure)})
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!Raise IdRef) then Exn in
 	 Exn = case IdRef of tag(!Local Id) then L.Id
 	       [] tag(!Global I) then Closure.(I + 2)
