@@ -77,10 +77,10 @@ val rec recf = Yala {afield = tupleA,
 
 val _ = print "Two.\n" 
 
-
+(*
 datatype yala = Yala of {afield : int, b : yala, c : yala list}
 val rec yala = Yala {afield = 100, b = yala, c = [yala, yala]}
-
+*)
 (*
 val rece = { afield = tupleA ,
 	     b = recd,
@@ -369,7 +369,7 @@ val _ =
   Inspector.inspect tupleA ; waitLine () ;
   Inspector.inspect tupleB ; waitLine () ;
 (*  Inspector.inspect rece ; waitLine () ; *)
-  Inspector.inspect yala ; waitLine () ;
+(*  Inspector.inspect yala ; waitLine () ; *)
 (*  Inspector.inspect recf ; waitLine () ; *)
   Inspector.inspect (E (100, A, B)) ; waitLine () ;
   Inspector.inspect ([E (100, A, B)]) ; waitLine () ;

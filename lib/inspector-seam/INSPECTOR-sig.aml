@@ -1,0 +1,60 @@
+import structure Type from "x-alice:/lib/rtt/Type"
+
+
+local
+type color = int * int * int  (* Each in 0..65000 *)
+in
+
+signature INSPECTOR =
+sig
+
+  type style
+  type tree
+  type text = string * style
+
+  (* newStyle  (style-name, color, editable) *)
+  val newStyle : string * color * bool -> style
+
+  (* An item is either a value or a nested hidden item. *)
+  datatype 'a item = Hidden | Value of 'a * Type.typ
+
+  (**** Type-mappers map a value to a tree. ***)
+
+  (* TREE : Creates a leaf from an item and some text. *)
+  val simple : 'a item * text -> tree
+
+  (* TREE : Creates a subtree corresponding to the given value. *)
+  val raw : Type.typ * 'a -> tree
+
+  (* A concatenation is made of a son (a tree) and some garments.
+   * The 'orientation' defines the behaviour of the garments
+   * when they are clicked on. *)
+  datatype orientation = Parent     (* Aim at the parent container. *)
+		       | Son        (* Aim at itself (including the son) *)
+		       | SonStrict  (* Only the son is highlighted. *)
+
+  (* TREE : Creates a concatenation
+   * concat (prefix, son, suffix, orientation) *)
+  val concat : text list * tree * text list * orientation -> tree
+
+
+  (* TREE : Creates a container *)
+  val container : 'a item * tree array -> tree
+
+  (* Registers a user-defined type-mapper. *)
+  (* mapper is a function of type 'a user
+   * It will be called with the following arguments :
+   * mapper (depth, value, typ, path, typArgs)
+   *  - The depth is the current depth. If < 0, raw should be used.
+   *  - value is the value to be mapped.
+   *  - typ is the type of the value
+   *    We always have typ = typArgs typ (type application)
+   * 
+   * For example, for a list, typArgs is a singleton list [t]
+   * where t is the type of the elements of the list.
+   * *)
+  type 'a user = int * 'a * Type.typ * Type.typ * Type.typ list -> tree
+  val register : 'a user -> unit
+
+end
+end

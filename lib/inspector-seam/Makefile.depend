@@ -195,12 +195,16 @@ MkHandlers.alc: \
 	Print.alc \
 	gui/MkTooltip.alc
 
+INSPECTOR-sig.alc: \
+
 Inspector.alc: \
 	Common.alc \
 	gui/MkMainWindow.alc \
 	gui/MkConnections.alc \
 	MkHandlers.alc \
-	Prefs.alc
+	Prefs.alc \
+	AbsTree.alc \
+	TypeMappers.alc
 
 Test.alc: \
 	Inspector.alc \

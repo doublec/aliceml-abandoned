@@ -1,9 +1,12 @@
 import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Type          from "x-alice:/lib/rtt/Type"
 import structure Common        from "Common"
 import structure MkMainWindow  from "gui/MkMainWindow"
 import structure MkConnections from "gui/MkConnections"
 import structure MkHandlers    from "MkHandlers"
 import structure Prefs         from "Prefs"
+import structure AbsTree       from "AbsTree"
+import structure TypeMappers   from "TypeMappers"
 
 structure Inspector =
 struct
@@ -51,10 +54,6 @@ struct
 
   functor Inspect (A : (signature S structure X : S)) : any =
     let
-(*      val p       = pack A.X : A.S
-      val (m, s) = Reflect.reflectPackage p
-      val _ = inspectItem (Common.Module (s, m)) *)
-
       structure I = Reflect.ReflectSig A (* Does reflect the signature A.S *)
       structure M = Reflect.Reflect A    (* Does reflect the structure A.X *)
       val _ = inspectItem (Common.Module (I.x, M.x))
@@ -62,7 +61,59 @@ struct
       ()
     end
 
+  (* Define your own style :
+   *   newStyle (name, fontname, (r, g, b), editable) *
+   *   name : Name of this style.
+   *   r,g,b : integers from 0 to 650000.
+   *   editable : should this style be editable in the preferences ?
+   *)
+  type style = Prefs.style
+  type tree = AbsTree.tree
+  type text = string * style
+
+  fun newStyle (name, colors, editable) =
+    Prefs.newStyle (name, !Prefs.fontname, colors, editable)
+
   (* Define your own mappers. *)
-  
+  datatype 'a item = Hidden | Value of 'a * Type.typ
+  val nof = AbsTree.Noflag
+
+
+  fun mapItem Hidden = AbsTree.NestedRow NONE
+    | mapItem (Value (v, t)) = AbsTree.Value (t, Reflect.reflect v, nof)
+
+  fun simple (item, rep) =
+    AbsTree.Simple {desc = mapItem item, rep}
+
+  (* Raw *)
+  fun raw (t, v) =
+    AbsTree.Raw (ref (FST (Common.Value (t, Reflect.reflect v))))
+
+  datatype orientation = datatype Prefs.orientation
+
+  (* Concatenation. *)
+  fun concat (prefix, tree, suffix, orient) =
+    let val orient = case orient of Parent => AbsTree.orientParent
+                                  | Son => AbsTree.orientSon
+                                  | SonStrict => AbsTree.orientSonStrict
+    in
+      AbsTree.Concat {prefix, tree, suffix, orient}
+    end
+
+  fun container (item, kids) = 
+    AbsTree.Container {desc = mapItem item, limit = false, kids}
+
+  fun register' typ userMapper =
+    let
+      fun typeMapper (depth, item, path, targs, value) =
+        case item of
+          AbsTree.Value (t, _, _) => userMapper (depth, value, t, path, targs)
+        | _ => assert false
+    in
+      TypeMappers.register' typ typeMapper
+    end
+
+  type 'a user = int * 'a * Type.typ * Type.typ * Type.typ list -> AbsTree.tree
+  __overload 'a register  : 'a user -> unit = register'
 
 end

@@ -23,7 +23,7 @@ MAIN = QUEUE-sig MkQueue \
        MONITORS-sig MkMonitors \
        Print \
        HANDLERS-sig MkHandlers \
-       Inspector \
+       INSPECTOR-sig Inspector \
        Test
 
 ROOTCOMPONENT = Inspector

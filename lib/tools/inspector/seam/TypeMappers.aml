@@ -45,9 +45,9 @@ struct
   (* Registry containing type mappers for some type constructors. *)
   val registry = PathMap.map () 
 
-  type item = AbsTree.item
+  type absitem = AbsTree.absitem
   type tree = AbsTree.tree
-  type 'a type_mapper = int * unit item * Type.typ * Type.typ list * 'a -> tree
+  type 'a type_mapper = int * absitem * Type.typ * Type.typ list * 'a -> tree
 
   (* Static representation of the type Reflect.value. *)
   val tvalue =
