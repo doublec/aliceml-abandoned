@@ -199,10 +199,9 @@ struct
 	val pollStep = 5
 
 	fun mainLoop sTime =
-	    (sleep sTime;  
-	     mainLoop (if NativeCore.eventsPending() 
-			   then (NativeCore.mainIteration(); initPoll)
-		           else Int.min (maxPoll, sTime+pollStep)))
+	    (sleep sTime;
+	     mainLoop (if NativeCore.handlePendingEvents() then initPoll
+                       else Int.min(maxPoll, sTime+pollStep)))
     end
 
     (* init core module *)

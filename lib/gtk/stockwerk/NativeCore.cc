@@ -26,6 +26,7 @@ static word eventStream;
 static word weakDict;
 static word signalMap;
 static word signalMap2;
+static bool had_events = false;
 static gboolean loaded = FALSE;
 
 ///////////////////////////////////////////////////////////////////////
@@ -418,6 +419,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   gint connid = GPOINTER_TO_INT(marshal_data);
 
   //  g_print("event occured: %d\n", connid);
+  had_events = 1;
 
   sendArgsToStream(connid,n_param_values,param_values);
 
@@ -601,13 +603,12 @@ DEFINE0(NativeCore_init) {
   RETURN_UNIT;
 } END
 
-DEFINE0(NativeCore_eventsPending) {
-  RETURN(BOOL_TO_WORD(gtk_events_pending()));
-} END
-
-DEFINE0(NativeCore_mainIteration) {
-  gtk_main_iteration();
-  RETURN_UNIT;
+DEFINE0(NativeCore_handlePendingEvents) {
+  while (gtk_events_pending())
+    gtk_main_iteration();
+  bool ret = had_events;
+  had_events = 0;
+  RETURN(BOOL_TO_WORD(ret));
 } END
 
 ///////////////////////////////////////////////////////////////////////
@@ -628,7 +629,7 @@ DEFINE0(NativeCore_forceGC) {
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = Record::New(21);
+  Record *record = Record::New(20);
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
   INIT_STRUCTURE(record, "NativeCore", "gtkTrue", 
@@ -668,10 +669,8 @@ word InitComponent() {
 		 NativeCore_isLoaded, 0);
   INIT_STRUCTURE(record, "NativeCore", "init", 
 		 NativeCore_init, 0);
-  INIT_STRUCTURE(record, "NativeCore", "eventsPending", 
-		 NativeCore_eventsPending, 0);
-  INIT_STRUCTURE(record, "NativeCore", "mainIteration", 
-		 NativeCore_mainIteration, 0);
+  INIT_STRUCTURE(record, "NativeCore", "handlePendingEvents", 
+		 NativeCore_handlePendingEvents, 0);
 
   INIT_STRUCTURE(record, "NativeCore", "printObject", 
 		 NativeCore_printObject, 1);

@@ -24,8 +24,7 @@ sig
 
 	val isLoaded : unit -> bool
 	val init : unit -> unit
-	val eventsPending : unit -> bool
-	val mainIteration : unit -> unit
+	val handlePendingEvents : unit -> bool
 
 	val printObject : 'object -> unit
 	val forceGC : unit -> unit
