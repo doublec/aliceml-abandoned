@@ -1,4 +1,5 @@
 %{
+#include <cstdio>
 #include "Parser.hh"
 #include "scheme.bison.tab.h"
 
@@ -9,7 +10,7 @@ static int StringToInt(char *s) {
   return i;
 }
 
-static char *TransformString(char *s) {
+static char *CutQuotes(char *s) {
   s[strlen(s) - 1] = 0x00;
   return s + 1;
 }
@@ -27,6 +28,7 @@ static char *TransformString(char *s) {
 <init>"define"		{ yylval = NULL; return TK_DEFINE; }
 <init>"let"		{ yylval = NULL; return TK_LET; }
 <init>"lambda"		{ yylval = NULL; return TK_LAMBDA; }
+<init>"begin"		{ yylval = NULL; return TK_BEGIN; }
 <init>"if"		{ yylval = NULL; return TK_IF; }
 <init>"("		{ yylval = NULL; return TK_OPARENT; }
 <init>")"		{ yylval = NULL; return TK_CPARENT; }
@@ -39,7 +41,7 @@ static char *TransformString(char *s) {
 				return TK_INT;
 			}
 <init>"\""[^'\n]*"\""	{
-				yylval = StringNode::New(TransformString(yytext))->ToWord();
+				yylval = StringNode::New(CutQuotes(yytext))->ToWord();
 				return TK_STRING;
 			}
 <init>([a-zA-Z0-9_?])+	{
@@ -75,9 +77,8 @@ static char *TransformString(char *s) {
 				return TK_ID;
 			}
 
-
 <init>[ \t]+		// Consume whitespaces
-<init>[\n]		{ line_num++; }
+<init>[\n]		{ Parser::line++; }
 <init>";"		{ yyterminate(); }
 <init>.			{ std::printf("flex: unrecognized character `%s'", yytext); std::exit(0); }
 

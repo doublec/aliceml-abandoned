@@ -18,20 +18,19 @@
 // export node type to BISON and FLEX
 #define YYSTYPE word
 
-// ROOT variable containing the complete parse tree
-extern YYSTYPE anchor;
-
-// expose current line for error reporting
-extern int line_num;
-
 // BISON and FLEX stuff
 extern FILE *yyin;
 extern int yylex(void);
 extern int yyparse(void);
 extern void yyerror(char *s);
 
-/* Parser Interface */
+// Parser Interface
+class Parser {
+public:
+  static word tree;
+  static int line;
 
-extern word parse(FILE *file_name);
+  static void Parse(FILE *file);
+};
 
 #endif __TEST__STORE__SCHEME__PARSER_HH__
