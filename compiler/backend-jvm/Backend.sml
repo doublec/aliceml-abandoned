@@ -54,7 +54,7 @@ structure Backend=
 		  During code generation, we know the labels for beginTry and
 		  handleRoutine, but we don't yet know about endTry.
 		  Furthermore, handles may be nested, so we use a stack. *)
-		 val handleStack : (string list) ref = ref nil
+		 val handleStack = ref [("", "")]
 
 		 (* xxx store ALL labels in numbers! *)
 		 fun newNumber () =
@@ -81,17 +81,21 @@ structure Backend=
 		fun fromNumber i = "label"^Int.toString i
 
 		(* Create a new label and push it on the handleStack *)
-		fun pushANewHandle () =
+		fun pushANewHandle originLabel =
 		    let
 			val label'=new()
 		    in
-			handleStack := label'::(!handleStack);
+			handleStack := (originLabel,label')::(!handleStack);
 			label'
 		    end
 
 		(* Pop a handle label and return it *)
 		fun popHandle () =
-		    hd (!handleStack) before handleStack := tl (!handleStack)
+		    #2 (hd (!handleStack)) before handleStack := tl (!handleStack)
+
+		(* verify whether label at top of stack was pushed for label' *)
+		fun topHandleDefinedAt label' =
+		    #1 (hd (!handleStack)) = label'
 	    end
 
 	(* Administration of JVM registers *)
@@ -232,23 +236,25 @@ structure Backend=
 	(* Store for the exception table entries. Nested exception handles
 	 are stored in the wrong order (innerst first), so we have to
 	 reverse the list when creating the exception table. *)
-	(* xxx use FIFO representation and don't reverse the list *)
 	structure Catch =
 	    struct
 		val stack=ref (nil:CATCH list list)
 		val liste=ref (nil:CATCH list)
 
 		fun add x = liste := x::(!liste)
+
 		fun push () = (stack := (!liste)::(!stack);
 			       liste:=nil)
+
+		fun top () = List.rev (!liste)
+
 		fun pop () = let
-				 val t = !liste
+				 val t = top ()
 			     in
 				 liste:=hd(!stack);
 				 stack:=(tl (!stack));
 				 t
 			     end
-		fun top () = !liste
 	    end
 
 	(* load an integer as JVM integer constant. *)

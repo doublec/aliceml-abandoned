@@ -1016,20 +1016,27 @@ structure CodeGen =
 		    let
 			val loc = Register.assign (id', Register.new())
 			val try   = Label.new()
-			val to = Label.pushANewHandle ()
+			val to = Label.pushANewHandle try
 			val using = Label.new()
 			val nocatch = Label.new()
+			val code' =
+			    (Catch.add (Catch (CExWrap, try, to, using));
+			     Label try::
+			     Multi (decListCode body') ::
+			     Goto nocatch ::
+			     Label using ::
+			     Invokevirtual (CExWrap,"getValue",
+					    ([],[Classsig CVal])) ::
+			     Astore loc ::
+			     Multi (decListCode body'') ::
+			     [Label nocatch])
 		    in
-			Catch.add (Catch (CExWrap, try, to, using));
-			Label try::
-			Multi (decListCode body') ::
-			Goto nocatch ::
-			Label using ::
-			Invokevirtual (CExWrap,"getValue",
-				       ([],[Classsig CVal])) ::
-			Astore loc ::
-			Multi (decListCode body'') ::
-			[Label nocatch]
+			if Label.topHandleDefinedAt try then
+			    (* no EndHandleStm found for this Handle *)
+			    Multi code' ::
+			    [Label (Label.popHandle ())]
+			else
+			    code'
 		    end
 
 	  | decCode (EndHandleStm (_, body')) =

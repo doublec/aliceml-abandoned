@@ -44,13 +44,20 @@ structure ToJasmin =
 		(* set of reachable labels *)
 		val reachable = ref (StringSet.new())
 
+		(* set of used labels. Labels may be used in catch clauses although they
+		 are not reachable, if they are used as the end of a try-catch block.
+		 We differ reachable and used because we don't want to keep dead code after
+		 a "catch", but need the label *)
+		val usedlabel = ref (StringSet.new ())
+
 		(* maps labels to the stack size on enter *)
 		val stackSizeHash: int StringHash.t ref = ref (StringHash.new ())
 
 		fun new () =
 		    (labelMerge := StringHash.new();
 		     reachable := StringSet.new();
-		     stackSizeHash := StringHash.new())
+		     stackSizeHash := StringHash.new();
+		     usedlabel := StringSet.new())
 
 	    (* Perform a unconditional jump to a label. If the first
 	     operation there would be some kind of return, do so. *)
@@ -69,66 +76,82 @@ structure ToJasmin =
 		    SOME (Lab (lab'', _)) => condJump lab''
 		  | _ => lab'
 
-		(* For several branches to the same address, stack size has
-		 to be equal in order to make the Java verifier happy *)
-		fun checkSizeAt (l, size) =
-		    case StringHash.lookup(!stackSizeHash, l) of
-			SOME s => if s <> size then
-			    (print ("Stack verification error: Size = "^
-				    Int.toString s^" or "^
-				    Int.toString size^
-				    " at "^l^" of "^(!actclass)^
-				    "."^(!actmeth)^".\n");
-			     size)
-				  else size
-		      | NONE =>
-			     (StringHash.insert (!stackSizeHash, l, size);
-			      size)
+	    (* For several branches to the same address, stack size has
+	     to be equal in order to make the Java verifier happy *)
+	    fun checkSizeAt (l, size) =
+		case StringHash.lookup(!stackSizeHash, l) of
+		    SOME s => if s <> size then
+			(print ("Stack verification error: Size = "^
+				Int.toString s^" or "^
+				Int.toString size^
+				" at "^l^" of "^(!actclass)^
+				"."^(!actmeth)^".\n");
+			 size)
+			      else size
+		  | NONE =>
+				  (StringHash.insert (!stackSizeHash, l, size);
+				   size)
 
-		(* Leave a method (via return or athrow).
-		 Return the stack size after this instruction (i.e.
-		 the size before the next instruction can be performed *)
-		fun leave (Comment _ :: rest, sizeAfter) = leave (rest, sizeAfter)
-		  | leave (Label l :: _, sizeAfter) =
-		    (case StringHash.lookup(!stackSizeHash, l) of
-			 SOME sz => sz
-		       | NONE => sizeAfter)
-		  | leave (_, sizeAfter) = sizeAfter
+	    (* Leave a method (via return or athrow).
+	     Return the stack size after this instruction (i.e.
+	     the size before the next instruction can be performed *)
+	    fun leave (Comment _ :: rest, sizeAfter) = leave (rest, sizeAfter)
+	      | leave (Label l :: _, sizeAfter) =
+		(case StringHash.lookup(!stackSizeHash, l) of
+		     SOME sz => sz
+		   | NONE => sizeAfter)
+	      | leave (_, sizeAfter) = sizeAfter
 
-		(* Leave a method (via return or athrow).
-		 Check whether stack size is correct and
-		 call leave to compute the stack size for the next
-		 instruction. *)
-		fun leaveMethod (sizeAfter, rest) =
-		    (if sizeAfter <> 0
-			 then
-			     print ("Stack verification error: Size = "^
-				    Int.toString sizeAfter^" leaving "^(!actclass)^
-				    "."^(!actmeth)^" after "^(!lastLabel)^".\n")
-		     else ();
-			 leave (rest, sizeAfter))
+	    (* Leave a method (via return or athrow).
+	     Check whether stack size is correct and
+	     call leave to compute the stack size for the next
+	     instruction. *)
+	    fun leaveMethod (sizeAfter, rest) =
+		(if sizeAfter <> 0
+		     then
+			 print ("Stack verification error: Size = "^
+				Int.toString sizeAfter^" leaving "^(!actclass)^
+				"."^(!actmeth)^" after "^(!lastLabel)^".\n")
+		 else ();
+		     leave (rest, sizeAfter))
 
-		(* merge two labels *)
-		fun merge (l', l'') =
-		    StringHash.insert (!labelMerge, l', l'')
+	    (* merge two labels *)
+	    fun merge (l', l'') =
+		StringHash.insert (!labelMerge, l', l'')
 
-		(* mark a lable as reachable *)
-		fun setReachable l' =
-		    StringSet.insert (!reachable, l')
+	    (* mark a lable as reachable *)
+	    fun setReachable l' =
+		StringSet.insert (!reachable, l')
 
-		(* check whether a lable is reachable or not *)
-		fun isReachable l' =
-		    let val result =
-			isSome (StringHash.lookup (!labelMerge, l'))
-			orelse StringSet.member (!reachable, l')
-		    in
-			if !VERBOSE >= 2 then
-			    print ("Label "^l'^" is "^
-				   (if result then "" else "not ")^
-					"reachable.\n")
-			else ();
+	    (* check whether a lable is reachable or not *)
+	    fun isReachable l' =
+		let val result =
+		    isSome (StringHash.lookup (!labelMerge, l'))
+		    orelse StringSet.member (!reachable, l')
+		in
+		    if !VERBOSE >= 2 then
+			print ("Label "^l'^" is "^
+			       (if result then "" else "not ")^
+				    "reachable.\n")
+		    else ();
 			result
-		    end
+		end
+
+	    (* check whether a lable is used or not *)
+	    fun isUsed l' =
+		let
+		    val result =StringSet.member (!usedlabel, l')
+		in
+		    if !VERBOSE >= 2 then
+			print ("Label "^l'^" is "^
+			       (if result then "" else "not ")^
+				    "used.\n")
+		    else ();
+			result
+		end
+
+	    (* mark a lable as used *)
+	    fun setUsed l' = StringSet.insert (!usedlabel, l')
 	    end
 
 	structure JVMreg =
@@ -330,71 +353,133 @@ structure ToJasmin =
 	    let
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
+
 		  | deadCode (Lab (lab', dropMode),Label lab''::rest) =
 		    let
 			val l'' = Lab (lab'', dropMode)
+			val code'=(LabelMerge.merge(lab', l'');
+				   deadCode (l'', rest))
 		    in
-			LabelMerge.merge(lab', l'');
-			deadCode (l'', rest)
+			if LabelMerge.isUsed lab' then
+			    Label lab' ::
+			    code'
+			else code'
 		    end
+
 		  | deadCode (Lab (lab', dropMode), Goto lab''::rest) =
-		    (LabelMerge.merge (lab', Lab (lab'', false));
-		     if dropMode then
-			 deadCode (Jump Got, rest)
-		     else
-			 Goto lab'' ::
-			 deadCode (Jump Got, rest))
+		    let
+			val code' =
+			    (LabelMerge.merge (lab', Lab (lab'', false));
+			     if dropMode then
+				 deadCode (Jump Got, rest)
+			     else
+				 Goto lab'' ::
+				 deadCode (Jump Got, rest))
+		    in
+			if LabelMerge.isUsed lab' then
+			    Label lab' ::
+			    code'
+			else code'
+		    end
+
 		  | deadCode (Lab (lab', dropMode), Areturn::rest) =
-		    (LabelMerge.merge (lab', Jump ARet);
-		     if dropMode then
-			 deadCode (Jump ARet, rest)
-		     else
-			 Label lab' ::
-			 Areturn ::
-			 deadCode (Jump ARet, rest))
+		    let
+			val code' =
+			    (LabelMerge.merge (lab', Jump ARet);
+			     deadCode (Jump ARet, rest))
+			val code'' =
+			    if dropMode then
+				code'
+			    else
+				Areturn ::
+				code'
+		    in
+			if LabelMerge.isUsed lab' orelse not dropMode then
+			    Label lab' ::
+			    code''
+			else code''
+		    end
+
 		  | deadCode (Lab (lab', dropMode), Return::rest) =
-		    (LabelMerge.merge (lab', Jump Ret);
-		     if dropMode then
-			 deadCode (Jump Ret, rest)
-		     else
-			 Label lab' ::
-			 Return ::
-			 deadCode (Jump Ret, rest))
+		    let
+			val code' =
+			    (LabelMerge.merge (lab', Jump Ret);
+			     deadCode (Jump Ret, rest))
+			val code'' =
+			    if dropMode then
+				code'
+			    else
+				Return ::
+				code'
+		    in
+			if LabelMerge.isUsed lab' orelse not dropMode then
+			    Label lab' ::
+			    code''
+			else code''
+		    end
+
 		  | deadCode (Lab (lab', dropMode), Ireturn::rest) =
-		    (LabelMerge.merge (lab', Jump IRet);
-		     if dropMode then
-			 deadCode (Jump IRet, rest)
-		     else
-			 Label lab' ::
-			 Ireturn ::
-			 deadCode (Jump IRet, rest))
+		    let
+			val code' =
+			    (LabelMerge.merge (lab', Jump IRet);
+			     deadCode (Jump IRet, rest))
+			val code'' =
+			    if dropMode then
+				code'
+			    else
+				Ireturn ::
+				deadCode (Jump IRet, rest)
+		    in
+			if LabelMerge.isUsed lab' orelse not dropMode then
+			    Label lab' ::
+			    code''
+			else code''
+		    end
+
 		  | deadCode (Lab (l', _), rest) =
 		    Label l' :: deadCode (Non, rest)
-		    (* In codegeneration we ensure that backward jumps
-		     only occur to labels that can be reached from before.
-		     Therefore, if we both don't know a label while parsing
-		     top-down and cannot reach it because it is placed after
-		     an unconditional jump, we can dump it *)
-		  | deadCode (i as Jump _, Label lab''::rest) =
-		    deadCode
-		    (if LabelMerge.isReachable lab''
-			 then Lab (lab'', true)
-		     else i,
-		    rest)
+
+		  (* In codegeneration we ensure that backward jumps
+		   only occur to labels that can be reached from before.
+		   Therefore, if we both don't know a label while parsing
+		   top-down and cannot reach it because it is placed after
+		   an unconditional jump, we can dump it *)
+		  | deadCode (i as Jump _, (l'' as Label lab'')::rest) =
+		    let
+			val reachable = LabelMerge.isReachable lab''
+			val code' =
+			    deadCode
+			    (if reachable
+				 then Lab (lab'', true)
+			     else i,
+				 rest)
+		    in
+			if LabelMerge.isUsed lab'' andalso not reachable then
+			    l'' :: code'
+			    else code'
+		    end
+
 		  | deadCode (i as Jump _, _::rest) =
 			 deadCode (i, rest)
+
 		  | deadCode (Non, Label lab'::rest) =
 			 deadCode (Lab (lab', false), rest)
+
 		  | deadCode (Non, Goto lab''::rest) =
 			 Goto lab'' :: deadCode (Jump Got, rest)
+
 		  | deadCode (Non, Areturn::rest) =
 			 Areturn :: deadCode (Jump ARet, rest)
+
 		  | deadCode (Non, Return::rest) =
 			 Return :: deadCode (Jump Ret, rest)
+
 		  | deadCode (Non, Ireturn::rest) =
 			 Ireturn :: deadCode (Jump IRet, rest)
+
 		  | deadCode (Non, Athrow::rest) =
 			 Athrow :: deadCode (Jump Got, rest)
+
 		  | deadCode (Non, c::rest) =
 			 ((case c of
 			       Ifacmpeq l' => LabelMerge.setReachable l'
@@ -415,6 +500,7 @@ structure ToJasmin =
 				   (l::ls)
 			     | _ => ());
 			   c :: deadCode (Non, rest))
+
 		  | deadCode (last, nil) = nil
 
 		fun prepareLifeness (Astore r::insts, pos) =
@@ -657,12 +743,15 @@ structure ToJasmin =
 	    let
 		fun catchToJasmin (Catch(cn,from,to,use)) =
 		    (LabelMerge.checkSizeAt (use, 1);
+		     (* note that to is not necessarily reachable.
+		      Anyhow, we have to generate the label for it. *)
 		     LabelMerge.setReachable from;
-		     LabelMerge.setReachable to;
 		     LabelMerge.setReachable use;
-		     TextIO.output(out,".catch "^cn^" from "^(LabelMerge.condJump from)^
-				   " to "^(LabelMerge.condJump to)^" using "^
-				   (LabelMerge.condJump use)^"\n"))
+		     LabelMerge.setUsed from;
+		     LabelMerge.setUsed to;
+		     LabelMerge.setUsed use;
+		     TextIO.output(out,".catch "^cn^" from "^from^
+				   " to "^to^" using "^use^"\n"))
 	    in
 		app catchToJasmin catches
 	    end
