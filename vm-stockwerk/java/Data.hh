@@ -85,7 +85,7 @@ protected:
     NUMBER_OF_VIRTUAL_METHODS_POS, // int
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
     VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
-    LOCK_POS,
+    LOCK_POS, // Lock
     BASE_SIZE
     // ... static fields
     // ... static methods
@@ -121,6 +121,7 @@ public:
   Closure *GetVirtualMethod(u_int index) {
     return Closure::FromWordDirect(GetVirtualTable()->GetArg(index));
   }
+  class Lock *GetLock();
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
@@ -181,6 +182,11 @@ public:
   static Lock *New() {
     Block *b = Store::AllocBlock(JavaLabel::Lock, SIZE);
     b->InitArg(COUNT_POS, 0);
+    return static_cast<Lock *>(b);
+  }
+  static Lock *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Lock);
     return static_cast<Lock *>(b);
   }
 
@@ -583,5 +589,13 @@ public:
     return Store::DirectWordToInt(GetArg(NUMBER_OF_ARGUMENTS_POS));
   }
 };
+
+//
+// Implementation of Inline `Class' Methods
+//
+
+inline Lock *Class::GetLock() {
+  return Lock::FromWordDirect(GetArg(LOCK_POS));
+}
 
 #endif
