@@ -20,7 +20,7 @@
 #include "adt/Queue.hh"
 #include "generic/Thread.hh"
 
-class ThreadQueue: private Queue {
+class DllExport ThreadQueue: private Queue {
 private:
   static const int threshold = 8; //--** to be checked
 public:

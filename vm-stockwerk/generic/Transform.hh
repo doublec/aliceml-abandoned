@@ -17,7 +17,7 @@
 
 #include "store/Store.hh"
 
-class Transform: private Block {
+class DllExport Transform: private Block {
 protected:
   enum { NAME_POS, ARGUMENT_POS, SIZE };
 public:

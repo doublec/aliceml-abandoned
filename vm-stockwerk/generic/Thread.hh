@@ -20,7 +20,7 @@
 #include "store/Store.hh"
 #include "generic/TaskStack.hh"
 
-class Thread: private Block {
+class DllExport Thread: private Block {
   friend class Scheduler;
 public:
   enum priority { HIGH, NORMAL, LOW };

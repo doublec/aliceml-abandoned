@@ -19,7 +19,7 @@
 #pragma interface "generic/TaskStack.hh"
 #endif
 
-class TaskStack: private Block {
+class DllExport TaskStack: private Block {
 private:
   static const u_int INITIAL_SIZE = 16; // to be checked
 
