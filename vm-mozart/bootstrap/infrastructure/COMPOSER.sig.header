@@ -1,6 +1,6 @@
 import
     signature SIGNATURE
-from "x-alice:/top/SIGNATURE.ozf"
+from "x-alice:/infrastructure/SIGNATURE.ozf"
 
 import
     structure Url

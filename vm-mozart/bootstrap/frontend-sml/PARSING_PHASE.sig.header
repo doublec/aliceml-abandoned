@@ -1,18 +1,18 @@
 import
     signature SOURCE
-from "x-alice:/error/SOURCE.ozf"
+from "x-alice:/infrastructure/SOURCE.ozf"
 
 import
     structure Source
-from "x-alice:/error/Source.ozf"
+from "x-alice:/infrastructure/Source.ozf"
 
 import
     signature CONTEXT
-from "x-alice:/top/PHASE.ozf"
+from "x-alice:/infrastructure/CONTEXT.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/top/EmptyContext.ozf"
+from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     signature INPUT_GRAMMAR

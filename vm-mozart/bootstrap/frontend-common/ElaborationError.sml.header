@@ -1,6 +1,6 @@
 import
     structure Error
-from "x-alice:/error/Error.ozf"
+from "x-alice:/infrastructure/Error.ozf"
 
 import
     structure Fixity

@@ -1,7 +1,7 @@
 import
-    structure Inf
-from "x-alice:/common/Inf.ozf"
+    signature SIGNATURE
+from "x-alice:/infrastructure/SIGNATURE.ozf"
 
 import
-    signature SIGNATURE
-from "x-alice:/top/SIGNATURE.ozf"
+    structure Inf
+from "x-alice:/common/Inf.ozf"

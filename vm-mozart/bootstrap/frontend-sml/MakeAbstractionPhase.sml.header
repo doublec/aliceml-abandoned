@@ -1,14 +1,22 @@
 import
+    structure Url
+from "x-alice:/misc/Url.ozf"
+
+import
     structure Crash
-from "x-alice:/error/Crash.ozf"
+from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/error/Source.ozf"
+from "x-alice:/infrastructure/Source.ozf"
 
 import
-    structure Url
-from "x-alice:/misc/Url.ozf"
+    signature CONTEXT
+from "x-alice:/infrastructure/CONTEXT.ozf"
+
+import
+    signature COMPOSER
+from "x-alice:/infrastructure/COMPOSER.ozf"
 
 import
     structure Stamp
@@ -29,14 +37,6 @@ from "x-alice:/common/Fixity.ozf"
 import
     structure Inf
 from "x-alice:/common/Inf.ozf"
-
-import
-    signature CONTEXT
-from "x-alice:/top/PHASE.ozf"
-
-import
-    signature COMPOSER
-from "x-alice:/top/COMPOSER.ozf"
 
 import
     signature ABSTRACT_GRAMMAR

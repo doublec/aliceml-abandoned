@@ -1,18 +1,10 @@
 import
     signature CONTEXT
-from "x-alice:/top/PHASE.ozf"
+from "x-alice:/infrastructure/CONTEXT.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/top/EmptyContext.ozf"
-
-import
-    signature ABSTRACT_GRAMMAR
-from "x-alice:/frontend-common/ABSTRACT_GRAMMAR.ozf"
-
-import
-    structure TypedGrammar
-from "x-alice:/frontend-common/TypedGrammar.ozf"
+from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     signature INTERMEDIATE_GRAMMAR
@@ -21,3 +13,11 @@ from "x-alice:/common/INTERMEDIATE_GRAMMAR.ozf"
 import
     structure IntermediateGrammar
 from "x-alice:/common/IntermediateGrammar.ozf"
+
+import
+    signature ABSTRACT_GRAMMAR
+from "x-alice:/frontend-common/ABSTRACT_GRAMMAR.ozf"
+
+import
+    structure TypedGrammar
+from "x-alice:/frontend-common/TypedGrammar.ozf"

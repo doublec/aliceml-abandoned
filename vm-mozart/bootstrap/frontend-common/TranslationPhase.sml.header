@@ -1,10 +1,10 @@
 import
     structure Crash
-from "x-alice:/error/Crash.ozf"
+from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/top/EmptyContext.ozf"
+from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     structure TypedInfo

@@ -21,11 +21,19 @@ from "x-alice:/common/PPInf.ozf"
 
 import
     structure Crash
-from "x-alice:/error/Crash.ozf"
+from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure Error
-from "x-alice:/error/Error.ozf"
+from "x-alice:/infrastructure/Error.ozf"
+
+import
+    structure Switches
+from "x-alice:/infrastructure/Switches.ozf"
+
+import
+    signature COMPOSER
+from "x-alice:/infrastructure/COMPOSER.ozf"
 
 import
     structure Name
@@ -75,14 +83,6 @@ from "x-alice:/frontend-common/TypedGrammar.ozf"
 import
     structure ElaborationError
 from "x-alice:/frontend-common/ElaborationError.ozf"
-
-import
-    structure Switches
-from "x-alice:/top/Switches.ozf"
-
-import
-    signature COMPOSER
-from "x-alice:/top/COMPOSER.ozf"
 
 import
     signature ELABORATION_PHASE

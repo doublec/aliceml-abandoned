@@ -1,10 +1,10 @@
 import
     signature CONTEXT
-from "x-alice:/top/PHASE.ozf"
+from "x-alice:/infrastructure/CONTEXT.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/top/EmptyContext.ozf"
+from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     signature INTERMEDIATE_GRAMMAR

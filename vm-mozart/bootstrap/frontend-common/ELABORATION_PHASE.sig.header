@@ -1,6 +1,6 @@
 import
     signature CONTEXT
-from "x-alice:/top/PHASE.ozf"
+from "x-alice:/infrastructure/CONTEXT.ozf"
 
 import
     structure Env

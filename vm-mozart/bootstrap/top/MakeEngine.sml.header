@@ -1,12 +1,15 @@
 import
-    signature CODE
-    signature ENGINE
-from "x-alice:/top/ENGINE.ozf"
-
-import
     structure Unix
 from "x-alice:/lib/Unix.ozf"
 
 import
     structure TextIO
 from "x-alice:/lib/TextIO.ozf"
+
+import
+    signature CODE
+from "x-alice:/backend-common/CODE.ozf"
+
+import
+    signature ENGINE
+from "x-alice:/backend-common/ENGINE.ozf"

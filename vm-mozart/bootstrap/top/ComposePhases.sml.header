@@ -1,4 +1,0 @@
-import
-    signature PHASE
-    signature CONTEXT
-from "x-alice:/top/PHASE.ozf"

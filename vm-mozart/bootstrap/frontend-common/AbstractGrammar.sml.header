@@ -4,4 +4,4 @@ from "x-alice:/frontend-common/MakeAbstractGrammar.ozf"
 
 import
     structure Source
-from "x-alice:/error/Source.ozf"
+from "x-alice:/infrastructure/Source.ozf"

@@ -4,8 +4,8 @@ from "x-alice:/lib/TextIO.ozf"
 
 import
     structure Source
-from "x-alice:/error/Source.ozf"
+from "x-alice:/infrastructure/Source.ozf"
 
 import
     signature ERROR
-from "x-alice:/error/ERROR.ozf"
+from "x-alice:/infrastructure/ERROR.ozf"

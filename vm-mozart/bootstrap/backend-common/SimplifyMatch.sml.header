@@ -1,10 +1,10 @@
 import
     structure Crash
-from "x-alice:/error/Crash.ozf"
+from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/error/Source.ozf"
+from "x-alice:/infrastructure/Source.ozf"
 
 import
     structure Misc

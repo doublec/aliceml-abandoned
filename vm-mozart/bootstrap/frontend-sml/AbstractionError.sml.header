@@ -1,10 +1,10 @@
 import
     structure Source
-from "x-alice:/error/Source.ozf"
+from "x-alice:/infrastructure/Source.ozf"
 
 import
     structure Error
-from "x-alice:/error/Error.ozf"
+from "x-alice:/infrastructure/Error.ozf"
 
 import
     structure PrettyPrint

@@ -1,26 +1,26 @@
 import
-    structure Crash
-from "x-alice:/error/Crash.ozf"
-
-import
-    structure Source
-from "x-alice:/error/Source.ozf"
-
-import
-    structure Error
-from "x-alice:/error/Error.ozf"
-
-import
     structure Misc
 from "x-alice:/misc/Misc.ozf"
 
 import
+    structure Crash
+from "x-alice:/infrastructure/Crash.ozf"
+
+import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
+    structure Error
+from "x-alice:/infrastructure/Error.ozf"
+
+import
     signature CONTEXT
-from "x-alice:/top/PHASE.ozf"
+from "x-alice:/infrastructure/CONTEXT.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/top/EmptyContext.ozf"
+from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     structure Stamp

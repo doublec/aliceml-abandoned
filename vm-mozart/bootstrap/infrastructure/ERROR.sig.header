@@ -1,7 +1,3 @@
 import
     structure Source
 from "x-alice:/infrastructure/Source.ozf"
-
-import
-    structure VId
-from "x-alice:/frontend-sml/Ids.ozf"

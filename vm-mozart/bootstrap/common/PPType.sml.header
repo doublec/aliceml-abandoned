@@ -1,6 +1,6 @@
 import
     structure Crash
-from "x-alice:/error/Crash.ozf"
+from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure PrettyPrint

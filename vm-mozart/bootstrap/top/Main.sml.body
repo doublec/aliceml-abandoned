@@ -21,18 +21,6 @@ import
 from "x-alice:/lib/Pickle.ozf"
 
 import
-    structure Crash
-from "x-alice:/error/Crash.ozf"
-
-import
-    structure Source
-from "x-alice:/error/Source.ozf"
-
-import
-    structure Error
-from "x-alice:/error/Error.ozf"
-
-import
     structure FromEqHashKey
 from "x-alice:/misc/HASH_KEY.ozf"
 
@@ -43,6 +31,26 @@ from "x-alice:/misc/MakeHashImpMap.ozf"
 import
     structure Url
 from "x-alice:/misc/Url.ozf"
+
+import
+    structure Crash
+from "x-alice:/infrastructure/Crash.ozf"
+
+import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
+    structure Error
+from "x-alice:/infrastructure/Error.ozf"
+
+import
+    structure Switches
+from "x-alice:/infrastructure/Switches.ozf"
+
+import
+    signature SIGNATURE
+from "x-alice:/infrastructure/SIGNATURE.ozf"
 
 import
     structure Inf
@@ -87,14 +95,6 @@ from "x-alice:/backend-common/FlatteningPhase.ozf"
 import
     structure CodeGenPhase
 from "x-alice:/backend-mozart/CodeGenPhase.ozf"
-
-import
-    structure Switches
-from "x-alice:/top/Switches.ozf"
-
-import
-    signature SIGNATURE
-from "x-alice:/top/SIGNATURE.ozf"
 
 import
     structure Signature

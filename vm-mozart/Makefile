@@ -1,7 +1,7 @@
 PREFIX = /opt/stockhausen-operette1
 
 STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
-	sml @SMLload=../../stoc/top/stoc-mozart
+	sml @SMLload=../../stoc/stoc-mozart
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
@@ -15,9 +15,6 @@ LIBFILES = $(LIBSOURCES:%=lib/%)
 MLYACCSOURCES = base.sig join.sml lrtable.sml stream.sml parser2.sml
 MLYACCFILES = $(MLYACCSOURCES:%=lib/ml-yacc/%)
 
-ERRORSOURCES = SOURCE.sig Source.sml CRASH.sig Crash.sml ERROR.sig Error.sml
-ERRORFILES = $(ERRORSOURCES:%=error/%)
-
 MISCSOURCES = \
 	Assert.sml HASH_KEY.sig StringHashKey.sml LargeIntHashKey.sml \
 	Wide.sml MISC.sig Misc.sml IMP_SET.sig MakeHashImpSet.sml IMP_MAP.sig \
@@ -28,11 +25,12 @@ MISCSOURCES = \
 	PPMisc.sml URL.sig Url.sml
 MISCFILES = $(MISCSOURCES:%=misc/%)
 
-TOPSOURCES = \
-	SWITCHES.sig Switches.sml PHASE.sig ComposePhases.sml TARGET.sig \
-	EmptyContext.sml ENGINE.sig MakeEngine.sml SIGNATURE.sig \
-	Signature.sml COMPOSER.sig Composer.sml
-TOPFILES = $(TOPSOURCES:%=top/%)
+INFRASTRUCTURESOURCES = \
+	CRASH.sig Crash.sml SOURCE.sig Source.sml ERROR.sig Error.sml \
+	SWITCHES.sig Switches.sml CONTEXT.sig REPRESENTATION.sig PHASE.sig \
+	PHASE_ERROR.sig ComposePhases.sml EmptyContext.sml SIGNATURE.sig \
+	COMPOSER.sig TARGET.sig
+INFRASTRUCTUREFILES = $(INFRASTRUCTURESOURCES:%=infrastructure/%)
 
 COMMONSOURCES = \
 	Stamp.sml StampSet.sml StampMap.sml NAME.sig Name.sml LABEL.sig \
@@ -69,13 +67,17 @@ BACKENDCOMMONSOURCES = \
 	INTERMEDIATE_AUX.sig IntermediateAux.sml SIMPLIFY_MATCH.sig \
 	SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
 	FLATTENING_PHASE.sig FlatteningPhase.sml LIVENESS_ANALYSIS_PHASE.sig \
-	LivenessAnalysisPhase.sml
+	LivenessAnalysisPhase.sml CODE.sig ENGINE.sig MakeEngine.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
+TOPSOURCES = Signature.sml Composer.sml
+TOPFILES = $(TOPSOURCES:%=top/%)
+
 ALLFILES = \
-	$(NATIVEFILES) $(LIBFILES) $(MLYACCFILES) $(ERRORFILES) $(MISCFILES) \
-	$(TOPFILES) $(COMMONFILES) $(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) \
-	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
+	$(NATIVEFILES) $(LIBFILES) $(MLYACCFILES) $(MISCFILES) \
+	$(INFRASTRUCTUREFILES) $(TOPFILES) $(COMMONFILES) \
+	$(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) $(BACKENDCOMMONFILES) \
+	backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
 INSTALLFILES0 = stow.ozf stoc.ozf Default.import
@@ -127,11 +129,12 @@ misc/GlobalStamp.sml: misc/GlobalStamp.sml.body Base.import
 lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header Base.import
 	cat Base.import lib/ml-yacc/$*.header $< > $@
 
-error/%: ../../stoc/error/% error/%.header Base.import
-	cat Base.import error/$*.header $< > $@
-
 misc/%: ../../stoc/misc/% misc/%.header Base.import
 	cat Base.import misc/$*.header $< > $@
+
+infrastructure/%: ../../stoc/infrastructure/% infrastructure/%.header \
+	Base.import
+	cat Base.import infrastructure/$*.header $< > $@
 
 top/%: ../../stoc/top/% top/%.header Base.import
 	cat Base.import top/$*.header $< > $@

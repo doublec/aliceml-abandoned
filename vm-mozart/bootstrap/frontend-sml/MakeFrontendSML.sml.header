@@ -1,18 +1,18 @@
 import
-    structure Inf
-from "x-alice:/common/Inf.ozf"
-
-import
     signature PHASE
-from "x-alice:/top/PHASE.ozf"
+from "x-alice:/infrastructure/PHASE.ozf"
 
 import
     structure ComposePhases
-from "x-alice:/top/ComposePhases.ozf"
+from "x-alice:/infrastructure/ComposePhases.ozf"
 
 import
     signature COMPOSER
-from "x-alice:/top/COMPOSER.ozf"
+from "x-alice:/infrastructure/COMPOSER.ozf"
+
+import
+    structure Inf
+from "x-alice:/common/Inf.ozf"
 
 import
     structure ParsingPhase
