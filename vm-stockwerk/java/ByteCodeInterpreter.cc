@@ -1091,12 +1091,16 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::I2B:
-    case Instr::I2C: // to be done
       {
-	JavaDebug::Print("I2(B|C)");
+	JavaDebug::Print("I2B");
 	int i = JavaInt::FromWord(frame->Pop());
-	frame->Push(Store::IntToWord((int) ((char) i)));
+	frame->Push(Store::IntToWord((int) ((unsigned char) i)));
 	pc += 1;
+      }
+      break;
+    case Instr::I2C:
+      {
+	Error("not implemented");
       }
       break;
     case Instr::I2D:
