@@ -117,7 +117,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	in
 	    fun implicitImport() =
 		case !Switches.Language.implicitImportFile
-		  of NONE => ""
+		  of NONE => "\n"
 		   | SOME url =>
 		case !implicitImportRef
 		  of SOME s => s
@@ -145,7 +145,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	fun processBasic process (desc, s) =
 	    let
-		val prefix = if isBaseSig desc then "" else implicitImport()
+		val prefix = if isBaseSig desc then "\n" else implicitImport()
 	    in
 		process(desc, prefix ^ s)
 	    end

@@ -40,6 +40,7 @@ Interactive Toplevel:
 * Enable Ctrl-Z for putting a computation into background (new Alice thread).
 * Function exit() as an alternative for Ctrl-D in broken environments.
 * Value printer is customizable for abstract types.
+* Fixed off-by-one line numbers, including use function.
 
 Library:
 

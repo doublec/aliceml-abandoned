@@ -17,6 +17,7 @@ Linker:
 
 Interactive Toplevel:
 
+* [FIX] Fixed off-by-one line numbers, including use function.
 * [FIX] Eliminated race condition when bg'ing computation (pressing Ctrl-Z).
 
 Library:
