@@ -182,7 +182,7 @@ public:
   Table *GetInterfaceTable() {
     return Table::FromWordDirect(GetArg(INTERFACE_TABLE_POS));
   }
-  Closure *GetInterfaceMethod(Class *interface, u_int index);
+  Closure *GetInterfaceMethod(Class *interfaceClass, u_int index);
   class Lock *GetLock();
   bool IsInitialized() {
     return GetArg(CLASS_INITIALIZER_POS) == null;
@@ -514,7 +514,7 @@ protected:
     // ... elements
   };
   u_char *GetElementPointer(u_int index, u_int elemSize) {
-    Assert(index < (GetSize() - BASE_SIZE) / elemSize);
+    Assert(index <= (GetSize() - BASE_SIZE) / elemSize);
     return reinterpret_cast<u_char *>
       (GetBase() + BASE_SIZE + index * elemSize);
   }
@@ -678,7 +678,7 @@ private:
     return Store::DirectWordToInt(GetInstanceField(COUNT_INDEX));
   }
   u_char *GetBase(u_int offset) {
-    Assert(offset < GetValue()->GetLength());
+    Assert(offset <= GetValue()->GetLength());
     return GetValue()->GetElementPointer(offset, 2);
   }
   u_char *GetBase() {
