@@ -496,7 +496,14 @@ struct
 		  items = [EntryObj(LABEL "Preferences...",
 				    [Handler("activate",
 					     Preferences)],true)],
-		  sensitive = true}])  
+		  sensitive = true}]) 
+
+     val stopButton = let
+			  val button = Gtk.menuItemNewWithLabel("stop") 
+		      in
+			  (Gtk.menuBarAppend(bar,button)
+			   ; Gtk.menuItemRightJustify(button))
+		      end
 	 
      fun postT n = 
 	 let  

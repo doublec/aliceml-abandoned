@@ -1,0 +1,569 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(* please note: this structure was created due to a suggestion originating 
+ * from Thorsten Brunklaus, who also suggested the name. Two former 
+ * structures are merged here: 
+ * one containing support for creating Gtk windows
+ * and one containing support for drawing and handling Canvas objects
+ * 
+ * may they rest in peace *)
+
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Settings from "Settings"
+import structure MkColorTable from "MkColorTable" 
+import structure MainDictionary from "MainDictionary"
+import structure ColorMap from "ColorMap"
+import structure Types from "Types"
+import signature GTK_SUPPORT from "GTK_SUPPORT-sig"
+
+
+import structure TextIO from "x-alice:/lib/system/TextIO"
+ 
+structure GtkSupport :> GTK_SUPPORT =
+    struct
+	
+	type tag = Gtk.object
+	type color = Gtk.object
+
+(************ Window creation helpers ******************)
+
+(* SEP represents separation lines on the menu window *)
+datatype MenuLabel = SEP | LABEL of string
+
+(* Handler carries signal and appropriate handler function *)
+datatype Handler = Handler of string * (Gtk.arg list -> unit)
+
+(* represents a hierarchy of menu items *)
+datatype MenuConstructObj = 
+    BarObj of MenuConstructObj list
+  | PopupObj of MenuConstructObj list
+  | MenuObj of {title: string, items: MenuConstructObj list, sensitive: bool} 
+  | EntryObj of MenuLabel * Handler list * bool  
+
+(* Represents one radio button and associated handlers *)
+datatype RadioButtonObj = RBObj of string * Handler list
+
+(* Represents one button and associated handlers *)
+datatype ButtonObj = BObj of string * Handler list
+
+val uglyNULL = UnsafeValue.cast () : Gtk.object
+
+fun setSensitive (widget,true) = Gtk.widgetSetSensitive(widget,1)
+  | setSensitive (widget,false) = Gtk.widgetSetSensitive(widget,0)
+
+(* createMenu *)
+fun createMenu (BarObj(l)) =let
+			        val bar = Gtk.menuBarNew()
+				val create = (fn i => 
+				    Gtk.menuBarAppend(bar,createMenu(i)))  
+			    in 
+				(  (List.app create l) 
+				 ;   bar) 
+			    end  
+ | createMenu (PopupObj(l)) =  
+			    let
+				val menu = Gtk.menuNew()
+				val create = (fn i => 
+				    Gtk.menuAppend (menu,createMenu i))
+			    in
+				(List.app create l
+				 ;Gtk.menuPopup(menu,
+						uglyNULL,
+						uglyNULL,
+						uglyNULL,
+						uglyNULL,
+						3,0)
+			         ;Gtk.widgetShowAll (menu)
+				 ; menu)
+			   end 
+  | createMenu (MenuObj(r)) = 
+	    let
+		val menu_item = Gtk.menuItemNewWithLabel( #title(r))
+		val menu = Gtk.menuNew()
+		val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
+		val create = fn i => 
+		    Gtk.menuAppend(menu,createMenu i)
+	    in
+		(List.app create (#items(r))
+		 ; setSensitive(menu_item,#sensitive(r)) 
+		 ; menu_item)
+	    end
+  | createMenu (EntryObj(label,handlerlist,sensitive)) =
+	    let
+		val item = case label of
+		    SEP => Gtk.menuItemNew()
+		  | LABEL(label) => Gtk.menuItemNewWithLabel(label)
+		val connect = fn Handler(str,handler) 
+		    => (Gtk.signalConnect (item,str, handler);())
+    in
+	(List.app connect handlerlist
+	 ; setSensitive(item,sensitive)
+	 ; item)
+    end
+
+
+(* createCombo *)       
+fun createCombo strlist = 
+    let
+	val combo = Gtk.comboNew()
+	val _ = Gtk.comboSetPopdownStrings(combo,
+					   UnsafeValue.cast(strlist) )
+    in 
+	combo
+    end
+
+
+(* createNotebookPages - takes notebook and string * Gtk object pair and inserts page in Notebook *)		
+fun createNotebookPages n (title,page) = 
+    let
+	val t = Gtk.labelNew title
+	val _ = Gtk.notebookAppendPage(n, page, t)
+    in
+	()
+    end
+
+(* createNotebook - takes string * Gtk.object list and creates notebook with strings as labels *)
+fun createNotebook l = 
+    let 
+	val n =  Gtk.notebookNew ()
+	val _ =  Gtk.notebookSetShowTabs(n, 1 (* showlabel *))
+        val _ = Gtk.notebookSetTabPos(n,Gtk.POS_TOP)
+    in
+	(List.app (createNotebookPages n) l;n)
+    end
+
+(* creates one button item and connects with handlers, needs predecessor *)
+fun createRadioItem (RBObj(stri,handlerlist),pred) = 
+    let
+	val group = if pred =  
+	            uglyNULL then  uglyNULL
+		    else Gtk.radioButtonGroup(pred)
+	val button = Gtk.radioButtonNewWithLabel(group, stri)
+	val connect = fn Handler(str,handler) 
+	    => (Gtk.signalConnect (button,str, handler);())
+    in
+	(List.app connect handlerlist; button)
+    end
+
+(* creates Radio Buttons from list of RBObj's *)
+fun createRadioButtons li = 
+    let
+	val box =  Gtk.vboxNew(0,4)
+	val create = fn (x,e) => let
+				     val button = createRadioItem(x,e)
+				     val _ =  Gtk.boxPackStart(box,button,0,1,0)
+				 in
+				     button
+				 end
+    in
+	(List.foldl create uglyNULL li; box)
+    end
+
+fun copyArray' (a,b,i) = if i < Array.length(b) 
+			     then
+				 (Array.update(b,i,Array.sub(a,i))
+				  ;copyArray' (a,b,i+1))
+			 else () 
+				     
+fun copyArray(a,b) = if Array.length(a) = Array.length(b) 
+			 then copyArray' (a,b,0)
+		     else ()
+
+fun connect item = (fn Handler(str,handler) 
+		    => (Gtk.signalConnect (item,str, handler);()))
+		    
+fun createButton (BObj(title,handlerlist)) = 
+		    let
+			val button =  Gtk.buttonNewWithLabel(title)
+			val con = connect button
+		    in
+			(List.app con handlerlist
+			 ; button)
+		    end
+		       
+
+fun createButtonBox {buttons = l, borderwidth = b} =  
+		    let
+			val bbox = Gtk.hbuttonBoxNew()
+		    in
+			(Gtk.containerSetBorderWidth(bbox,b)
+			 ;Gtk.buttonBoxSetLayout(bbox,
+						 Gtk.BUTTONBOX_END)
+			 ; List.app (fn b => Gtk.containerAdd(bbox,
+				    (createButton b))) l
+			 ; bbox)
+		    end
+
+fun createTable {rows = r, cols = c, entries = l}   = 
+    let 
+	val table = Gtk.tableNew(r,c,1)
+	val attach = (fn (obj,x1,x2,y1,y2) 
+		      => Gtk.tableAttachDefaults(table,
+						 obj,x1,x2,y1,y2))
+    in
+	(List.app attach l
+	 ; table )
+    end
+
+fun createSpinButton {init = i, lower = l, upper = u, inc = ic, dec = d}
+    = let
+	  val a = Gtk.adjustmentNew(Real.fromInt(i), 
+				    Real.fromInt(l),
+				    Real.fromInt(u), 
+				    Real.fromInt(ic), 
+				    0.0, 
+				    0.0)
+      in
+	  Gtk.spinButtonNew(a,Real.fromInt(ic),d)
+      end
+
+fun createVBoxDefaults l = let
+		       val vbox = Gtk.vboxNew(0,4)
+		       val p = fn i =>  Gtk.boxPackStart(vbox,i,0,1,0)
+		   in
+		       (List.app p l
+			; vbox)
+		   end
+
+fun createVBox l = let
+		       val vbox = Gtk.vboxNew(0,4)
+		       val p = fn (a,i,j,k) =>  Gtk.boxPackStart(vbox,a,i,j,k)
+		   in
+		       (List.app p l
+			; vbox)
+		   end
+
+fun createFrame (title,obj) = 
+    let 
+	val frame = Gtk.frameNew(title)
+    in
+	(Gtk.containerAdd(frame,obj)
+	 ; frame)
+    end
+
+fun  createScrollWindowDefaults(inc1,inc2) =  
+    let
+	val adj1 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_x ,
+				     inc1,inc2,!Settings.max_x )
+	val adj2 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_y ,
+				     inc1,inc2,!Settings.max_y ) 
+	    
+	val scrolled = Gtk.scrolledWindowNew(adj1,adj2)
+	val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
+	val vadj = Gtk.scrolledWindowGetVadjustment(scrolled)
+    in
+	(Gtk.scrolledWindowSetPolicy(scrolled,
+				     Gtk.POLICY_ALWAYS,
+				     Gtk.POLICY_ALWAYS)
+	 ; (scrolled,hadj,vadj))
+    end
+
+fun createStatusbar()  = let 
+			     val status = Gtk.statusbarNew()
+			     val type_context = 
+				 Gtk.statusbarGetContextId(status,"type")
+			     val postMessageType = fn str =>
+				 (Gtk.statusbarPop(status,
+						  type_context)
+				  ;Gtk.statusbarPush(status,type_context,
+						     str))
+			     val mode_context = 
+				 Gtk.statusbarGetContextId(status,"mode")
+			     val postMessageMode = fn str =>
+				 (Gtk.statusbarPop(status,
+						   mode_context)
+				  ;Gtk.statusbarPush(status,mode_context,
+						     str)) 
+			 in
+			     (status,postMessageType,postMessageMode)
+			 end
+     
+(******************** Canvas Items ***************************)
+
+ exception MissingColor
+		  
+ fun fontHeight() = !Settings.fontHeight 
+     
+ fun fontWidth() = !Settings.fontWidth
+
+ fun newTag(parent,x,y) = 
+     GtkCanvas.itemNew(parent, 
+		       GtkCanvas.GROUP,
+		       [("x", Gtk.DOUBLE y), 
+			("y", Gtk.DOUBLE y)])
+		   
+		  
+	
+(*	   
+ fun printXY (str,group,x,y,c,fontname) =  
+     GtkCanvas.itemNew(group, 
+		       GtkCanvas.TEXT, 
+		       [("text", Gtk.STRING str),
+			("font", Gtk.STRING fontname),
+			("x", Gtk.DOUBLE(x)), ("y", Gtk.DOUBLE(y)),
+			("fill_color_gdk", Gtk.OBJECT(c) ),
+			("anchor", Gtk.INT(2))])  *)
+		   
+		
+ fun print00 (str,group,c,fontname) = 
+     GtkCanvas.itemNew(group, 
+		       GtkCanvas.TEXT, 
+		      [("text", Gtk.STRING str),
+		       ("font", Gtk.STRING fontname),
+		       ("fill_color_gdk", 
+			Gtk.OBJECT(valOf(
+		     ColorMap.lookup(MkColorTable.colorTable,c))) ),
+		       ("anchor", Gtk.INT(2))]) 
+
+   
+ fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
+
+ fun positionGroup (group,x,y) = if x=0.0 andalso y=0.0 then ()
+			 else 
+	            (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
+	 	     ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
+					       
+ fun moveGroup (group,x,y) = if x=0 andalso y=0 then ()
+		  else
+		 let
+		      val w = fontWidth()
+		      val h =   fontHeight()
+		      val rx = Real.fromInt(x * w)
+		      val ry = Real.fromInt(y * h)
+		      val _ = () (* TextIO.print("ITEM MOVE BY " 
+				  ^ Real.toString(rx)
+				  ^ "/" 
+				  ^ Real.toString(ry)
+				  ^ "\n") *)
+		  in
+		      GtkCanvas.itemMove(group,rx,ry)
+		  end
+	  
+			     
+ fun getCoordinates group = 
+     let
+	 val w = fontWidth()
+	 val h = fontHeight()
+	 val (rx1,ry1,rx2,ry2) = 
+	     GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
+	 val x1 = (Real.trunc rx1) div w
+	 val y1 = (Real.trunc ry1) div h
+	 val x2 = (Real.trunc rx2) div w
+	 val y2 = (Real.trunc ry2) div h
+     in
+	 (x1,y1,x2,y2)
+     end
+		   
+ fun getPosition group = 
+     let
+	 val w = fontWidth()
+	 val h = fontHeight()
+	 val (rx1,ry1,_,_) = 
+	     GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
+	 val x1 = (Real.trunc rx1) div w
+	 val y1 = (Real.trunc ry1) div h
+     in
+	 (x1,y1)
+     end
+
+ fun itemMoveTo (group,rx,ry) = 
+     let
+	 val (rx1,ry1,_,_) = 
+	     GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 
+				     1000.0 , 1000.0)
+	 val (absx,absy) = GtkCanvas.itemI2w(group,rx1,ry1)
+	 val _ = if absy <> ry1 then TextIO.print("DIFFERENT!\n")
+		 else ()
+	 val dx = Real.- (rx, absx)
+	 val dy = Real.- (ry, absy)
+     in
+	 if absx = rx andalso absy = ry
+	     then ()
+	 else (GtkCanvas.itemMove(group,dx,dy)
+	       ; (* TextIO.print("ITEM MOVE FROM " 
+		  ^ Real.toString(absx)
+		  ^ "/" 
+		  ^ Real.toString(absy)
+		  ^ " TO "
+		  ^ Real.toString(rx)
+		  ^ "/" 
+		  ^ Real.toString(ry)
+		  ^ "\n") *) () )
+     end
+
+ fun createSepLine (group,actline)= 
+     if actline > 0 
+	 then
+	     let
+		 val mx = Real.trunc(!Settings.max_x)
+		 val linepos = actline * fontHeight()
+		     - (fontHeight() div 2)
+	     in
+		 GtkCanvas.itemNew(group,   		 
+				   GtkCanvas.LINE, 
+				   [("points", 
+				     Gdk.POINTS ([0, linepos, mx, linepos])),
+				    ("fill_color_gdk", 
+		 Gdk.OBJECT(MkColorTable.allocColor(40000,40000,50000)) ),
+		       	    ("line_style",Gdk.INT(Gdk.LINE_ON_OFF_DASH)),
+		 ("width_pixels", Gdk.INT 1)])  
+		       end
+	       else uglyNULL 
+
+ 
+ fun  resizeSepLinesIterate(dict,x,i,highest_i) =
+     if i > highest_i 
+	 then ()
+     else
+	 (case MainDictionary.lookup(dict,i) of
+	      NONE =>
+		  resizeSepLinesIterate(dict,x,i+1,highest_i)
+	    | SOME (_,line) => 
+		  if line = uglyNULL 
+		      then  resizeSepLinesIterate(dict,x,i+1,highest_i)
+		  else
+		      let
+			  val (rx1,ry1,rx2,ry2) = 
+			      GtkCanvas.itemGetBounds(line, 0.0,
+						      0.0,
+						      0.0,
+						      0.0)
+			  val y1 = Real.trunc(Real.+(ry1,1.0))
+		      in
+			  (GtkCanvas.itemSet(line,
+					     "points", 
+					     Gdk.POINTS ([0, y1, x, y1]))
+			      ;  resizeSepLinesIterate(dict,x,i+1,highest_i))
+		      end)
+
+ fun resizeSepLines (dict,rx) = 
+     let
+	 val x = Real.trunc rx
+	 val highest_i = MainDictionary.getHighestIndexAssigned(dict)
+     in
+	 resizeSepLinesIterate(dict,x,0,highest_i)
+     end
+
+
+		
+ fun yPosSepLine (item,group) = 
+     let
+	 val (_,ry1,_,_) = 
+	     GtkCanvas.itemGetBounds(group, 0.0,
+				     0.0,
+				     0.0,
+				     0.0)
+	 val y = Real.trunc(ry1) - (fontHeight() div 2)
+	 val (_,_,lx2,_) = 
+	     GtkCanvas.itemGetBounds(item, 0.0,
+				     0.0,
+				     0.0,
+				     0.0)
+     in
+	 GtkCanvas.itemSet(item,
+			   "points", 
+			   Gdk.POINTS ([0, y, 
+					Real.trunc(lx2), 
+					y]))   
+     end 
+	
+(*
+ fun yPosSepRel (item,dy) = 
+     let
+	 val (_,_,lx2,_) = 
+	     GtkCanvas.itemGetBounds(item, 0.0,
+				     0.0,
+				     0.0,
+				     0.0)
+	 val y = fontHeight() * dy
+     in
+	 GtkCanvas.itemSet(item,
+			   "points", 
+			   Gdk.POINTS ([0, y, 
+					Real.trunc(lx2), 
+					y]))   
+     end 
+  *) 
+
+ fun translate (nil,h,v,h_off,v_off) = nil
+   | translate (x1::x2::xr,h,v,h_off,v_off) = 
+     ((x1 * h) div 8 + h_off)::
+     ((x2 * v) div 8 + v_off)::translate(xr,h,v,h_off,v_off)
+   | translate _ = raise Match
+     
+ fun createArrow(group,points) = 
+     let
+		   val color = case ColorMap.lookup(MkColorTable.colorTable,
+						    Types.LIMIT_COLOR) of 
+		       SOME x => x
+		     | NONE   => raise MissingColor
+     in
+	 GtkCanvas.itemNew(group,
+			   GtkCanvas.POLYGON,
+			   [("points", 
+			     Gdk.POINTS points),
+			    ("fill_color_gdk",
+			     Gtk.OBJECT(color)),
+			    ("outline_color_gdk",
+			     Gdk.OBJECT(MkColorTable.allocColor(0,0,0))),
+			    ("width_pixels", Gdk.INT 1)])
+     end
+
+	       
+ fun createArrowRight(group) = 
+     let
+	 val w = (fontWidth() * 3) div 2
+	 val h = fontHeight()  
+	 val points = [4,0, 4,2, 0,2, 0,6, 4,6, 4,8, 8,4]
+	 val points' = translate(points,w,h,0,0)
+	 val group' = newTag(group,0.5,0.5)
+     in
+	 createArrow(group',points')
+     end
+
+ fun createArrowDown(group) = 
+     let
+	 val w = (fontWidth() * 3) div 2
+	 val h = fontHeight() 
+	 val points = [2,0, 2,4, 0,4, 4,8, 8,4, 6,4, 6,0]
+	 val points' = translate(points,w,h,0,0)
+	 val group' = newTag(group,0.5,0.5)
+     in
+	 createArrow(group',points')
+     end
+
+fun createRectangle (group,x1,y1,x2,y2) = 
+    GtkCanvas.itemNew 
+    ( group, 
+     GtkCanvas.RECTANGLE,
+     [("x1", Gtk.DOUBLE x1),
+      ("y1", Gtk.DOUBLE y1),
+      ("x2", Gtk.DOUBLE x2),
+      ("y2", Gtk.DOUBLE y2),
+      ("fill_color_gdk", 
+       Gtk.OBJECT(MkColorTable.allocColor(65000,50000,50000))),
+      ("outline_color_gdk", 
+       Gtk.OBJECT (MkColorTable.allocColor(65000,50000,50000)))]) 
+
+	     
+
+end
+
+ 

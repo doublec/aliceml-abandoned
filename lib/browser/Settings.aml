@@ -29,7 +29,7 @@ struct
     val relnumber = ref 0
     val tokenmode = ref false
 
-    val fontname = ref "8x13"
+    val fontname = ref "-*-*-medium-r-normal--14-*-*-*-m-*-iso8859-1"
     val font = ref (Gdk.fontLoad(!fontname))
     val fontHeight = ref (Gdk.fontGetFieldAscent(!font)+
 			   Gdk.fontGetFieldDescent(!font) )
