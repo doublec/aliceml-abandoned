@@ -124,91 +124,102 @@ structure LivenessAnalysisPhase1 :>
 		liveness := Use set; Orig set
 	    end
 
-	fun scanBody (ValDec (info, idDef, exp)::stms) =
-	    setInfo (info, scanExp (exp, delDef (scanBody stms, idDef)))
-	  | scanBody (RefDec (info, idDef, id)::stms) =
-	    setInfo (info, ins (delDef (scanBody stms, idDef), id))
-	  | scanBody (TupDec (info, idDefs, id)::stms) =
+	fun scanBody (ValDec (info, idDef, exp)::stms, set) =
+	    setInfo (info, scanExp (exp, delDef (scanBody (stms, set), idDef)))
+	  | scanBody (RefDec (info, idDef, id)::stms, set) =
+	    setInfo (info, ins (delDef (scanBody (stms, set), idDef), id))
+	  | scanBody (TupDec (info, idDefs, id)::stms, set) =
 	    let
 		val lset =
 		    Vector.foldr (fn (idDef, lset) => delDef (lset, idDef))
-		    (scanBody stms) idDefs
+		    (scanBody (stms, set)) idDefs
 	    in
 		setInfo (info, ins (lset, id))
 	    end
-	  | scanBody (ProdDec (info, labelIdDefVec, id)::stms) =
+	  | scanBody (ProdDec (info, labelIdDefVec, id)::stms, set) =
 	    let
 		val lset =
 		    Vector.foldr
 		    (fn ((_, idDef), lset) => delDef (lset, idDef))
-		    (scanBody stms) labelIdDefVec
+		    (scanBody (stms, set)) labelIdDefVec
 	    in
 		setInfo (info, ins (lset, id))
 	    end
-	  | scanBody [RaiseStm (info, Id (_, stamp, _))] =
+	  | scanBody ([RaiseStm (info, Id (_, stamp, _))], _) =
 	    let
 		val set = StampSet.new ()
 		val _ = StampSet.insert (set, stamp)
 	    in
 		setInfo (info, Copy set)
 	    end
-	  | scanBody [ReraiseStm (info, Id (_, stamp, _))] =
+	  | scanBody ([ReraiseStm (info, Id (_, stamp, _))], _) =
 	    let
 		val set = StampSet.new ()
 		val _ = StampSet.insert (set, stamp)
 	    in
 		setInfo (info, Copy set)
 	    end
-	  | scanBody [TryStm (info, tryBody, idDef1, idDef2, handleBody)] =
+	  | scanBody ([TryStm (info, tryBody, idDef1, idDef2, handleBody)],
+		      set) =
 	    let
-		val lset1 = scanBody tryBody
 		val lset2 =
-		    delDef (delDef (scanBody handleBody, idDef1), idDef2)
+		    delDef (delDef (scanBody (handleBody, set), idDef1),
+			    idDef2)
+		val lset1 = scanBody (tryBody, lazyValOf lset2)
 	    in
 		setInfo (info, union (lset1, lset2))
 	    end
-	  | scanBody [EndTryStm (info, body)] =
-	    setInfo (info, scanBody body)
-	  | scanBody [EndHandleStm (info, body)] =
-	    setInfo (info, scanBody body)
-	  | scanBody [TestStm (info, id, tests, body)] =
-	    setInfo (info, ins (union (scanTests tests, scanBody body), id))
-	  | scanBody [SharedStm ({liveness = ref (Use set'), ...}, _, _)] =
-	    Orig set'
-	  | scanBody [SharedStm (info, body, _)] =
-	    setInfo (info, scanBody body)
-	  | scanBody [ReturnStm (info, exp)] =
-	    setInfo (info, scanExp (exp, Copy (StampSet.new ())))
-	  | scanBody [IndirectStm (info, ref bodyOpt)] =
-	    setInfo (info, scanBody (valOf bodyOpt))
-	  | scanBody [ExportStm (info, exp)] =
-	    setInfo (info, scanExp (exp, Copy (StampSet.new ())))
-	  | scanBody _ = raise Crash.Crash "LivenessAnalysisPhase1.scanStm"
-	and scanTests (LitTests litBodyVec) =
+	  | scanBody ([EndTryStm (info, body)], set) =
+	    setInfo (info, scanBody (body, set))
+	  | scanBody ([EndHandleStm (info, body)], set) =
+	    setInfo (info, scanBody (body, set))
+	  | scanBody ([TestStm (info, id, tests, body)], set) =
+	    setInfo (info, ins (union (scanTests (tests, set),
+				       scanBody (body, set)), id))
+	  | scanBody ([SharedStm ({liveness = ref (Use set'), ...}, _, _)],
+		      set) =
+	    let
+		val set'' = StampSet.clone set'
+	    in
+		StampSet.app (fn stamp => StampSet.insert (set'', stamp)) set;
+		Copy set''
+	    end
+	  | scanBody ([SharedStm (info, body, _)], set) =
+	    setInfo (info, scanBody (body, set))
+	  | scanBody ([ReturnStm (info, exp)], set) =
+	    setInfo (info, scanExp (exp, Copy (StampSet.clone set)))
+	  | scanBody ([IndirectStm (info, ref bodyOpt)], set) =
+	    setInfo (info, scanBody (valOf bodyOpt, set))
+	  | scanBody ([ExportStm (info, exp)], set) =
+	    setInfo (info, scanExp (exp, Copy (StampSet.clone set)))
+	  | scanBody (_, _) =
+	    raise Crash.Crash "LivenessAnalysisPhase1.scanStm"
+	and scanTests (LitTests litBodyVec, set) =
 	    (*--** this and the following folds can be improved *)
-	    Vector.foldl (fn ((_, body), lset) => union (lset, scanBody body))
+	    Vector.foldl (fn ((_, body), lset) =>
+			     union (lset, scanBody (body, set)))
 	    (Copy (StampSet.new ())) litBodyVec
-	  | scanTests (TagTests tagBodyVec) =
+	  | scanTests (TagTests tagBodyVec, set) =
 	    Vector.foldl (fn ((_, _, args, body), lset) =>
 			  let
-			      val lset' = scanBody body
+			      val lset' = scanBody (body, set)
 			      val lset' = processArgs (args, lset', delDef)
 			  in
 			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) tagBodyVec
-	  | scanTests (ConTests conBodyVec) =
+	  | scanTests (ConTests conBodyVec, set) =
 	    Vector.foldl (fn ((id, args, body), lset) =>
 			  let
-			      val lset' = scanBody body
+			      val lset' = scanBody (body, set)
 			      val lset' = ins (lset', id)
 			      val lset' = processArgs (args, lset', delDef)
 			  in
 			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) conBodyVec
-	  | scanTests (VecTests vecBodyVec) =
+	  | scanTests (VecTests vecBodyVec, set) =
 	    Vector.foldl (fn ((idDefs, body), lset) =>
 			  let
-			      val lset' = scanBody body
+			      val lset' = scanBody (body, set)
 			      val lset' = delDefVec (lset', idDefs)
 			  in
 			      union (lset, lset')
@@ -227,7 +238,8 @@ structure LivenessAnalysisPhase1 :>
 	    Vector.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdVec
 	  | scanExp (VecExp (_, ids), lset) = insVec (lset, ids)
 	  | scanExp (FunExp (_, _, _, args, body), lset) =
-	    processArgs (args, union (lset, scanBody body), delDef)
+	    processArgs (args, union (lset, scanBody (body, StampSet.new ())),
+			 delDef)
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insVec (lset, ids)
 	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
@@ -238,7 +250,7 @@ structure LivenessAnalysisPhase1 :>
 	  | scanExp (FailExp _, lset) = lset
 
 	fun translate () (_, component as (_, body, _, _)) =
-	    (scanBody body; component)
+	    (scanBody (body, StampSet.new ()); component)
     end
 
 structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
