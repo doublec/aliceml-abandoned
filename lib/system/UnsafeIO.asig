@@ -16,6 +16,7 @@ signature UNSAFE_IO_COMPONENT =
 	structure UnsafeIO:
 	    sig
 		exception Io of {name: string, function: string, cause: exn}
+		exception ClosedStream
 
 		val stdIn: 'instream
 		val stdOut: 'outstream
