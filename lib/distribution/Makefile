@@ -26,7 +26,7 @@ STOC = alicec
 STODEP =  sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOCOPTS = --rtt-level=no
 
-OZSOURCES = UnsafePackage.oz UnsafeUnix.oz UnsafeRemoteCore.oz
+OZSOURCES = UnsafePackage.oz UnsafeRemoteCore.oz
 COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
 UNTYPEDCOMPONENTS = $(OZSOURCES:%.oz=Untyped%.ozf)
 
@@ -96,12 +96,6 @@ UntypedUnsafePackage.ozf: \
 
 UnsafePackage.ozf: \
 	UnsafePackage.asig
-
-UntypedUnsafeUnix.ozf: \
-	UnsafeUnix.oz
-
-UnsafeUnix.ozf: \
-	UnsafeUnix.asig
 
 UntypedUnsafeRemoteCore.ozf: \
 	UnsafeRemoteCore.oz
