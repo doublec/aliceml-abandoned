@@ -3,7 +3,7 @@
 dir=`dirname $0`
 dir=`(cd $dir && pwd)`
 
-case `sml </dev/null | grep "110\.0\.[0-9]"` in
+case `echo 'OS.Process.exit OS.Process.sucess' | sml | grep "110\.0\.[0-9]"` in
     *Jersey*)
 	CM=cm
 	;;
