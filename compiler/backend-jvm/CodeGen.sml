@@ -201,11 +201,9 @@ structure CodeGen =
 		    else
 			StampHash.insert(defFun, stamp', Lambda.top ())
 		fun getFun stamp' =
-		    (* Falls undef, exception Option *)
-		    (print  ("getFun Okay: "^Int.toString stamp');
-		     case StampHash.lookup (defFun, stamp') of
-			 NONE => toplevel
-		       | SOME stamp'' => stamp'')
+		    case StampHash.lookup (defFun, stamp') of
+			NONE => toplevel
+		      | SOME stamp'' => stamp''
 	    end
 
 	(* Zuordnung von formalen Parametern auf zugehoerige Funktions-Stamps *)
@@ -220,8 +218,10 @@ structure CodeGen =
 
 		fun setId () = StampHash.insert(lambdas,Lambda.top(),hd(!stack))
 
-		(* raises Option if undef *)
-		fun getId id' = valOf (StampHash.lookup(lambdas, id'))
+		fun getId id' =
+		    case StampHash.lookup(lambdas, id')
+			of NONE => Id ((0,0),toplevel,InId)
+		      | SOME id'' => id''
 
 		(* feststellen, ob eine Applikation selbstrekursiv ist. xxx *)
 		fun isSelfCall stamp' =
@@ -340,7 +340,7 @@ structure CodeGen =
 		fun fieldname number = "int"^Int.toString number
 
 		fun staticfield number =
-		    (Class.getInitial ()^"/"^(fieldname number), CLabel, 1)
+		    (Class.getInitial ()^"/"^(fieldname number), CInt, 0)
 
 		(* Hinzufügen einer Konstanten *)
 		fun insert int' =
@@ -424,7 +424,6 @@ structure CodeGen =
 			 fV.delete id';
 			 FreeVars.setVars (stamp',fV.get ());
 			 FreeVars.setFun id';
-			 print "setVars\n";
 			 freeVarsFun idbodys';
 			 LambdaIds.setId();
 			 Lambda.pop ();
@@ -449,31 +448,34 @@ structure CodeGen =
 	      | freeVarsExp e = raise Debug (Exp e)
 
 	    and freeVarsDec (RaiseStm(_,id')) = fV.insert id'
-	      | freeVarsDec (HandleStm(_,body',id',body'')) = (print "HandleExp";
-							       freeVarsDecs body'';
-							       freeVarsDecs body';
-							       FreeVars.setFun id';
-							       fV.delete id'; print "/HandleExp\n")
+	      | freeVarsDec (HandleStm(_,body',id',body'')) =
+		(freeVarsDecs body'';
+		 freeVarsDecs body';
+		 FreeVars.setFun id';
+		 fV.delete id')
 	      | freeVarsDec (EndHandleStm(_,body')) = freeVarsDecs body'
-	      | freeVarsDec (TestStm(_,id',test',body',body'')) =(freeVarsDecs  body'';
-								  freeVarsDecs  body';
-								  freeVarsTest test';
-								  fV.insert id')
+	      | freeVarsDec (TestStm(_,id',test',body',body'')) =
+		(freeVarsDecs  body'';
+		 freeVarsDecs  body';
+		 freeVarsTest test';
+		 fV.insert id')
 	      | freeVarsDec (SharedStm(_,body',raf as ref 0)) = (raf := ~1; freeVarsDecs body')
 	      | freeVarsDec (SharedStm _) = ()
-	      | freeVarsDec (ValDec(_,id',exp', _)) = (print "ValDec";
-						  freeVarsExp exp';
-						  print "/exp";
-						  FreeVars.setFun id';
-						  fV.delete id';
-						  print "/ValDec\n")
+	      | freeVarsDec (ValDec(_,id',exp', _)) =
+		(LambdaIds.pushFun id';
+		 freeVarsExp exp';
+		 FreeVars.setFun id';
+		 fV.delete id';
+		 LambdaIds.popFun ())
 	      | freeVarsDec (RecDec(_,idsexps, _)) =
 		let
 		    fun freeVarsRecDec ((id',exp')::rest) =
-			(freeVarsExp exp';
+			(LambdaIds.pushFun id';
+			 freeVarsExp exp';
 			 FreeVars.setFun id';
 			 freeVarsRecDec rest;
-			 fV.delete id')
+			 fV.delete id';
+			 LambdaIds.popFun ())
 		      | freeVarsRecDec nil = ()
 		in
 		    freeVarsRecDec idsexps
@@ -539,6 +541,7 @@ structure CodeGen =
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
 		 val insts = decListCode program
+		 val _ = print "decListCode done.\n"
 
 		 (* JVM-Register initialisieren. *)
 		 fun initializeLocals 0 = [Label afterInit]
@@ -565,7 +568,8 @@ structure CodeGen =
 
 		 val clinit = Method([MPublic],"<clinit>",([],[Voidsig]),
 				   Locals 6,
-				   RecordLabel.generate(),
+				     Integers.generate(
+						      RecordLabel.generate()),
 				   nil)
 
 		 val init = Method([MPublic],"<init>",([],[Voidsig]),
@@ -605,14 +609,14 @@ structure CodeGen =
 						     ([Classsig CVal],
 						      [Classsig CVal])),
 				    Pop,
-				    Comment "Generate" ] @
-				   [Return],
+				    Return],
 				  Catch.top())
 		 (* die Hauptklasse *)
 		 val class = Class([CPublic],
 				   name,
 				   CDMLThread,
-				   RecordLabel.makefields (),
+				   Integers.makefields
+				   (RecordLabel.makefields ()),
 				   [main, clinit, init, run])
 	     in
 		 schreibs(name^".j",classToJasmin class)
@@ -640,6 +644,7 @@ structure CodeGen =
 	    let
 		val loc = Local.assign(id', Local.nextFree())
 	    in
+		print "ValDec\n";
 		LambdaIds.pushFun id';
 		(expCode exp' @
 		 [Comment "Store 2", Astore loc])
@@ -924,11 +929,10 @@ structure CodeGen =
 	    else
 		[Goto (Label.fromNumber schonda)]
 
-	  | decCode (ReturnStm (_,ap as AppExp(_,id' as (Id (_,stamp',_)),_))) =
+	  | decCode (ReturnStm (_,ap as AppExp(_,id' as (Id (_,stamp',_)),arg'))) =
 		(* Tailcall Applikation *)
-		(* if Lambda.top ()<>toplevel
-			    then *)
 		if LambdaIds.isSelfCall stamp' then
+		    idArgCode arg' @
 		    [Astore 1,
 		     Goto afterInit]
 		else
@@ -1005,34 +1009,40 @@ structure CodeGen =
 			 wurde, kann die Variable direkt aus einem
 			 JVM-Register geladen werden. *)
 			then
-			    if stamp' = Lambda.top() then
-				(* Stamp ist der formale Parameter der
-				 aktuellen Funktion. Dieser liegt
-				 immer in Register 1. *)
-				[Comment "Hi.Parm",
-				 Aload 1]
-			    else
-				[Comment "Hi6",
-				 Aload (Local.get stamp')]
+			    (print "in";
+			     if stamp'=(stampFromId (LambdaIds.getId
+						     (Lambda.top())))
+				 then (* Zugriff auf die aktuelle
+				       Funktion. Bei dynamischen Methoden
+				       steht diese in Register 0, bei
+				       statischen im Feld
+				       actualClass/instance *)
+				     [Getself]
+			     else
+				 if stamp' = Lambda.top() then
+				     (* Stamp ist der formale Parameter der
+				      aktuellen Funktion. Dieser liegt
+				      immer in Register 1. *)
+				     [Comment "Hi.Parm",
+				      Aload 1]
+				 else
+				     [Comment "Hi6",
+				      Aload (Local.get stamp')]
+				     before print "out\n")
 		    else
 			(* Es handelt sich um eine freie Variable, die
 			 beim Abschluss bilden in ein Feld der
 			 aktuellen Klasse kopiert wurde. *)
-			if stamp'=(stampFromId (LambdaIds.getId
-						(Lambda.top())))
-			    then (* Zugriff auf die aktuelle
-				  Funktion. Diese steht in
-				  Register 0. *)
-				[Comment "Hi 42",
-				 Aload 0]
-			else
-			    [Comment ("Hi. Stamp="^(Int.toString stamp')^
-				      ". Lambda = "^Int.toString (Lambda.top())^
-				      " in "^Int.toString (Local.get stamp')^
-				      ". Fun = "^(Int.toString
-						  (FreeVars.getFun stamp'))^"\n"),
-			     Aload 0,
-			     Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
+			[Comment ("Hi. Stamp="^(Int.toString stamp')^
+				  ". Lambda.top = "^Int.toString (Lambda.top())^
+				  " in "^Int.toString (Local.get stamp')^
+				  ". Fun = "^(Int.toString
+					      (FreeVars.getFun
+					       stamp'))^
+				  "Id (Lambda.top) ="^(Int.toString (stampFromId
+								     (LambdaIds.getId(Lambda.top()))))^"\n"),
+			 Aload 0,
+			 Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
 	    end
 	and
 	    idArgCode (OneArg id') = idCode id'
@@ -1276,40 +1286,33 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			     labids2strings (labids', l::s')
 			   | labids2strings (nil, s') = s'
 
-			 val labelinsts = (*labeliter(lablongid,0)*)
-			     [Getstatic (RecordLabel.insert (labids2strings (labid, nil)))]
 			 (*end*)
 			 (* 2. *)
-			 local
-			     fun load ((_,Id (_,stamp',_))::rs,j) =
-				 Dup::
-				 (atCodeInt j)::
-				 (Comment "Hi4")::
-				 (Aload (Local.get stamp'))::
-				 Aastore::
-				 (load (rs,j+1))
-			       | load (nil,_) = nil
-			 in
-			     val loadids = load (labid,0)
-			 end
+			 fun load ((_,Id (_,stamp',_))::rs,j) =
+			     Dup::
+			     (atCodeInt j)::
+			     (Comment "Hi4")::
+			     (Aload (Local.get stamp'))::
+			     Aastore::
+			     (load (rs,j+1))
+			   | load (nil,_) = nil
 			 (* 3. *)
-			 val result =
-			     [Comment "[Record "] @
-			     [New CRecord,
-			      Dup(*,
-				  atCodeInt arity,
-				  Anewarray CLabel*)] @
-			     labelinsts@
-			     [atCodeInt arity,
-			      Anewarray CVal] @
-			     loadids @
-			     [Invokespecial (CRecord,"<init>",
-					     ([Arraysig, Classsig CLabel,
-					       Arraysig, Classsig CVal],
-					      [Voidsig])),
-			      Comment "Record ]"]
 		     in
-			 result
+			 [Comment "[Record "] @
+			 [New CRecord,
+			  Dup(*,
+			      atCodeInt arity,
+			      Anewarray CLabel*),
+			  Getstatic (RecordLabel.insert
+				     (labids2strings (labid, nil))),
+			  atCodeInt arity,
+			  Anewarray CVal] @
+			 (load (labid,0)) @
+			 [Invokespecial (CRecord,"<init>",
+					 ([Arraysig, Classsig CLabel,
+					   Arraysig, Classsig CVal],
+					  [Voidsig])),
+			  Comment "Record ]"]
 		     end
 
 	  | expCode (LitExp(_,lit')) =
@@ -1341,13 +1344,16 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			   | StringLit _ => CStr
 			   | WordLit _   => CInt
 		     in
-			 [Comment "constant(",
-			  New scon,
-			  Dup,
-			  jValue,
-			  Invokespecial (scon,"<init>",jType),
-			  Comment "end of constant)"
-			  ]
+			 case lit' of
+			     IntLit i => [Getstatic (Integers.insert
+						     (LargeInt.toInt i))]
+			   | _ =>
+				 [Comment "constant(",
+				  New scon,
+				  Dup,
+				  jValue,
+				  Invokespecial (scon,"<init>",jType),
+				  Comment "end of constant)"]
 		     end
 
 	  | expCode (TupExp(_,longids)) =
@@ -1422,10 +1428,22 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		    val initRegister = initializeLocals (Local.max ())
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
-		val applY =Method ([MPublic],"apply",([Classsig CVal], [Classsig CVal]),
-				   Locals (Local.max()+1),
-				   (* (Aload 1) :: *) initRegister @ [Comment "Hi"] @ e @ [Comment "Ho", Areturn],
-				   Catch.top())
+		val applY = Method ([MPublic],
+				    "apply",
+				    ([Classsig CVal], [Classsig CVal]),
+				    Locals (Local.max()+1),
+				    initRegister @
+				    e @
+				    [Areturn],
+				    Catch.top())
+		val sapply = Method ([MPublic, MStatic],
+				    "sapply",
+				    ([Classsig CVal], [Classsig CVal]),
+				    Locals (Local.max()+1),
+				    initRegister @
+				    e @
+				    [Areturn],
+				    Catch.top())
 		(* die Standard-Initialisierung *)
 		val init = Method ([MPublic],"<init>",([], [Voidsig]), Locals 1,
 				   [Aload 0,

@@ -78,6 +78,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Dup = 1
 	  | stackNeedInstruction (Fconst _) = 1
 	  | stackNeedInstruction (Getfield _) = 0
+	  | stackNeedInstruction Getself = 1
 	  | stackNeedInstruction (Getstatic _) = 1
 	  | stackNeedInstruction (Goto _) = 0
 	  | stackNeedInstruction Iadd = ~1
@@ -163,6 +164,7 @@ structure ToJasmin =
 		     else "fconst_2"
 	      | instructionToJasmin (Getfield(fieldn, ty,arity)) = "getfield "^fieldn^" "^
 			 (makeArityString (arity, ""))^"L"^ty^";"
+	      | instructionToJasmin Getself = "aload_0"
 	      | instructionToJasmin (Getstatic(fieldn, ty,arity)) = "getstatic "^fieldn^" "^
 			 (makeArityString (arity, ""))^"L"^ty^";"
 	      | instructionToJasmin (Goto l) = "goto "^l

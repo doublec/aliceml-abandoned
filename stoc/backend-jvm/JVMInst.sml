@@ -37,6 +37,7 @@ structure JVMInst =
 	  | Dup
 	  | Fconst of int
 	  | Getfield of fieldname * classname * int (* int is dimension. 0 if no array *)
+	  | Getself
 	  | Getstatic of fieldname * classname * int (* int is dimension. 0 if no array *)
 	  | Goto of label
 	  | Iadd
