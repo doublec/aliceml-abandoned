@@ -12,11 +12,16 @@
 
 functor
 import
+   GtkCoreOzComponent('GtkCoreOz$': GtkCoreOz) at 'GtkCoreOz'
    GtkCoreComponent('GtkCore$' : GtkCore) at 'GtkCore'
    Native at 'GtkCanvas.so{native}'
 export
    'Canvas$' : CANVAS
 define
+   %% The `GtkSignal' native functor has to be loaded before
+   %% the `GtkCanvas' native functor:
+   {Wait GtkCoreOz}
+
    %% Import necessary Core Definitions
    PointerToObject   = GtkCore.pointerToObject
    ObjectToPointer   = GtkCore.objectToPointer
