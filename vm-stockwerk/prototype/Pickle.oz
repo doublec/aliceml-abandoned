@@ -28,12 +28,9 @@
 functor
 import
    Open(file)
-   System(eq showInfo
-show)
+   System(eq showInfo)
    PrimitiveTable(values functions)
    AbstractCodeInterpreter(interpreter)
-Inspector(inspect)
-Property(put)
 export
    Unpack
    Load
@@ -82,14 +79,11 @@ define
       %--** implement as an interpreter
       attr BS: unit Index: 0 Dict: unit Counter: unit
       meth init(V ?X)
-try
 	 BS <- {ByteString.make V}
 	 Index <- 0
 	 Dict <- {NewDictionary}
 	 Counter <- 0
 	 PickleParser, ParsePickle(?X)
-{System.showInfo 'read '#@Index#' bytes from pickle'}
-catch _ then {Inspector.inspect {Dictionary.toRecord dict @Dict}} {Inspector.inspect X} {Wait _} end
       end
       meth Next($) I in
 	 I = @Index
@@ -200,7 +194,6 @@ catch _ then {Inspector.inspect {Dictionary.toRecord dict @Dict}} {Inspector.ins
       end
       meth ParseTransform(?Transform) F X in
 	 PickleParser, Remember(Transform)
-%Transform = transform(F X)
 	 PickleParser, ParsePickle(?F)
 	 PickleParser, ParsePickle(?X)
 	 Transform = {ApplyTransform {VirtualString.toAtom F} X}
@@ -403,7 +396,7 @@ catch _ then {Inspector.inspect {Dictionary.toRecord dict @Dict}} {Inspector.ins
 	 elseof Id then
 	    {OutputStream putByte(REF)}
 	    {OutputStream putUInt(Id)}
-	    continue(args(Id OutputStream Seen) Rest)
+	    continue(Args Rest)
 	 end
       end
    end
@@ -438,20 +431,9 @@ catch _ then {Inspector.inspect {Dictionary.toRecord dict @Dict}} {Inspector.ins
 	       picklePack(PicklePackInterpreter)|TaskStack.2)
    end
 
-   fun {PickleSaveInterpreterRun args(_ OutputStream Seen) TaskStack}
+   fun {PickleSaveInterpreterRun args(_ OutputStream _) TaskStack}
       case TaskStack of pickleSave(_)|Rest then
-
-{Property.put 'print.depth' 10}
-{Property.put 'print.width' 50}
-A = {FoldR Seen fun {$ X#I In} if I < 46 then I#X|In else In end end nil}
-{System.show A}
-B = {List.toRecord dict A}
-in
-{System.show B}
-{Inspector.inspect B}
-
 	 {OutputStream close()}
-{Wait _}
 	 continue(args() Rest)
       end
    end
