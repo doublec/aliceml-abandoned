@@ -100,16 +100,17 @@ prepare
    BuiltinTable =
    builtinTable(
       '=':
-\ifdef OLD_BYNEED
-	 Value.'=='
-\else
 	 fun {$ X Y}
-	    {Wait X} %--** works around Mozart 1.3 bug
-	    {Wait Y}
+	    {Wait X} % approximates proper behaviour for Alice equality
+	    {Wait Y} % (nested futures may still compare prematurely)
 	    X == Y
 	 end
-\endif
-      '<>': Value.'\\='
+      '<>':
+	 fun {$ X Y}
+	    {Wait X} % approximates proper behaviour for Alice inequality
+	    {Wait Y} % (nested futures may still compare prematurely)
+	    X \= Y
+	 end
       'Array.array':
 	 fun {$ N Init}
 	    if 0 =< N andthen N < BuiltinTable.'Array.maxLen' then
