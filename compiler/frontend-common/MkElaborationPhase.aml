@@ -116,14 +116,14 @@ struct
 	 TextIO.print "\n")
 
     fun nest 0 = ""
-      | nest n = "  " ^ s(n-1)
+      | nest n = "  " ^ nest(n-1)
 
     fun prUE UE = prUE' 0 UE
     and prUE' n UE =
-	(UseEnv.appVals (prVal n) UE;
-	 UseEnv.appTyps (prTyp n) UE;
-	 UseEnv.appInfs (prInf n) UE;
-	 UseEnv.appMods (prMod n) UE)
+	(UseEnv.appVals (prUEVal n) UE;
+	 UseEnv.appTyps (prUETyp n) UE;
+	 UseEnv.appInfs (prUEInf n) UE;
+	 UseEnv.appMods (prUEMod n) UE)
     and prUEVal n lab =
 	TextIO.print(nest n ^ "val " ^ Label.toString lab ^ "\n")
     and prUETyp n lab =
@@ -1100,8 +1100,8 @@ TextIO.print "\n";
 			 else UseEnv.PARTIAL(UseEnv.new()))
 	    val _  = Env.insertMod(E, stamp, {id=modid, path=p, inf=j', use=u})
 	in
-	    (* EXPERIMENTAL: make arguments non-generative *)
-	    if doSingleton then () else Path.hide p;
+	    (* EXPERIMENTAL: make arguments non-generative
+	    if doSingleton then () else Path.hide p; *)
 	    ( j, O.Id(infInfo(i,j'), stamp, name) )
 	end
 
@@ -1617,10 +1617,11 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.TypDec(i, typid, typ)) =
 	let
-	    val  p          = elabNewPath(po, I.name typid)
-	    val (t,_,typ')  = elabTypRep(E, p, fn k => k, typ)
-	    val (t',typid') = elabTypid_bind(E, p, t, typid)
-	    val  _          = Inf.extendTyp(s, p, Type.singKind t')
+	    val  p           = elabNewPath(po, I.name typid)
+	    val (t,gen,typ') = elabTypRep(E, p, fn k => k, typ)
+	    val (t',typid')  = elabTypid_bind(E, p, t, typid)
+	    val  k           = (if gen then Type.kind else Type.singKind) t'
+	    val  _           = Inf.extendTyp(s, p, k)
 	in
 	    O.TypDec(nonInfo(i), typid', typ')
 	end
@@ -1644,10 +1645,11 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.InfDec(i, infid, inf)) =
 	let
-	    val  p          = elabNewPath(po, I.name infid)
-	    val (j,_,inf')  = elabInfRep(E, p, fn k => k, inf)
-	    val (j',infid') = elabInfid_bind(E, p, j, infid)
-	    val  _          = Inf.extendInf(s, p, Inf.singKind j')
+	    val  p           = elabNewPath(po, I.name infid)
+	    val (j,gen,inf') = elabInfRep(E, p, fn k => k, inf)
+	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
+	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
+	    val  _           = Inf.extendInf(s, p, k)
 (*DEBUG
 val _ = (
 TextIO.print("elabDec InfDec: " ^ PrettyPrint.toString(PPPath.ppPath p, 80) ^ " = \n");
@@ -1806,8 +1808,9 @@ TextIO.print "\n";
       | elabRHSRecDec(E, s, rtpats', I.TypDec(i, typid, typ)) =
 	let
 	    val (t0,p,typid') = elabTypid(E, typid)
-	    val (t,_,typ')    = elabTypRep(E, p, fn k => k, typ)
-	    val  _            = Inf.extendTyp(s, p, Type.singKind t0)
+	    val (t,gen,typ')  = elabTypRep(E, p, fn k => k, typ)
+	    val  k            = (if gen then Type.kind else Type.singKind) t0
+	    val  _            = Inf.extendTyp(s, p, k)
 	    (* ASSUME typ is wellformed for fix *)
 	in
 	    ( O.TypDec(nonInfo(i), typid', typ'), [(t0,t)] )
