@@ -10,8 +10,8 @@ export
 define
    %% Attribute A is one of [b ems i tt u size color]
 
-   InitialAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
-				  size: 11 color: 9)
+   RootAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
+			       size: 11 color: 9)
 
    fun {MkDataItemAttributes Property IsSpace}
       attributes(b: if IsSpace then {FD.int 1#2}
@@ -72,93 +72,93 @@ define
       end
    end
 
-   Tags = tags(0: tag(p: proc {$ _ In Out} Out = In end)   % epsilon
-	       1: tag(name: 'B'
-		      p: proc {$ A In Out}
-			    case A of b then Out = 2
-			    else Out = In
-			    end
-			 end)
-	       2: tag(name: 'EM'
-		      p: proc {$ A In Out}
-			    case A of ems then Out = {Select.fd [2 1 3] In}
-			    else Out = In
-			    end
-			 end)
-	       3: tag(name: 'I'
-		      p: proc {$ A In Out}
-			    case A of i then Out = 2
-			    else Out = In
-			    end
-			 end)
-	       4: tag(name: 'PL'
-		      p: proc {$ A In Out}
-			    case A of b then Out = 1
-			    [] em then Out = 1
-			    [] i then Out = 1
-			    [] tt then Out = 1
-			    [] u then Out = 1
-			    else Out = In
-			    end
-			 end)
-	       5: tag(name: 'S'
-		      p: proc {$ A In Out}
-			    case A of em then Out = 3
-			    else Out = In
-			    end
-			 end)
-	       6: tag(name: 'TT'
-		      p: proc {$ A In Out}
-			    case A of tt then Out = 2
-			    else Out = In
-			    end
-			 end)
-	       7: tag(name: 'U'
-		      p: proc {$ A In Out}
-			    case A of u then Out = {FD.max {FD.plus In 1} 4}
-			    else Out = In
-			    end
-			 end)
-	       8: tag(name: 'SIZE'(0)
-		      p: {MkSizeProc 1})
-	       9: tag(name: 'SIZE'(1)
-		      p: {MkSizeProc 2})
-	       10: tag(name: 'SIZE'(2)
-		      p: {MkSizeProc 3})
-	       11: tag(name: 'SIZE'(3)
-		      p: {MkSizeProc 4})
-	       12: tag(name: 'SIZE'(4)
-		      p: {MkSizeProc 5})
-	       13: tag(name: 'SIZE'(5)
-		      p: {MkSizeProc 6})
-	       14: tag(name: 'SIZE'(6)
-		      p: {MkSizeProc 7})
-	       15: tag(name: 'SIZE'(7)
-		      p: {MkSizeProc 8})
-	       16: tag(name: 'SIZE'(8)
-		      p: {MkSizeProc 9})
-	       17: tag(name: 'SIZE'(9)
-		      p: {MkSizeProc 10})
-	       18: tag(name: 'COLOR'('R')
-		      p: {MkColorProc 1})
-	       19: tag(name: 'COLOR'('G')
-		      p: {MkColorProc 2})
-	       20: tag(name: 'COLOR'('B\'')
-		      p: {MkColorProc 3})
-	       21: tag(name: 'COLOR'('C')
-		      p: {MkColorProc 4})
-	       22: tag(name: 'COLOR'('M')
-		      p: {MkColorProc 5})
-	       23: tag(name: 'COLOR'('Y')
-		      p: {MkColorProc 6})
-	       24: tag(name: 'COLOR'('K')
-		      p: {MkColorProc 7})
-	       25: tag(name: 'COLOR'('W')
-		      p: {MkColorProc 8}))
+   Tags = tags(tag(p: proc {$ _ In Out} Out = In end)   % epsilon
+	       tag(name: 'B'
+		   p: proc {$ A In Out}
+			 case A of b then Out = 2
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'EM'
+		   p: proc {$ A In Out}
+			 case A of ems then Out = {Select.fd [2 1 3] In}
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'I'
+		   p: proc {$ A In Out}
+			 case A of i then Out = 2
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'PL'
+		   p: proc {$ A In Out}
+			 case A of b then Out = 1
+			 [] em then Out = 1
+			 [] i then Out = 1
+			 [] tt then Out = 1
+			 [] u then Out = 1
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'S'
+		   p: proc {$ A In Out}
+			 case A of em then Out = 3
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'TT'
+		   p: proc {$ A In Out}
+			 case A of tt then Out = 2
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'U'
+		   p: proc {$ A In Out}
+			 case A of u then Out = {FD.max {FD.plus In 1} 4}
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'SIZE'(0)
+		   p: {MkSizeProc 1})
+	       tag(name: 'SIZE'(1)
+		   p: {MkSizeProc 2})
+	       tag(name: 'SIZE'(2)
+		   p: {MkSizeProc 3})
+	       tag(name: 'SIZE'(3)
+		   p: {MkSizeProc 4})
+	       tag(name: 'SIZE'(4)
+		   p: {MkSizeProc 5})
+	       tag(name: 'SIZE'(5)
+		   p: {MkSizeProc 6})
+	       tag(name: 'SIZE'(6)
+		   p: {MkSizeProc 7})
+	       tag(name: 'SIZE'(7)
+		   p: {MkSizeProc 8})
+	       tag(name: 'SIZE'(8)
+		   p: {MkSizeProc 9})
+	       tag(name: 'SIZE'(9)
+		   p: {MkSizeProc 10})
+	       tag(name: 'COLOR'('R')
+		   p: {MkColorProc 1})
+	       tag(name: 'COLOR'('G')
+		   p: {MkColorProc 2})
+	       tag(name: 'COLOR'('B\'')
+		   p: {MkColorProc 3})
+	       tag(name: 'COLOR'('C')
+		   p: {MkColorProc 4})
+	       tag(name: 'COLOR'('M')
+		   p: {MkColorProc 5})
+	       tag(name: 'COLOR'('Y')
+		   p: {MkColorProc 6})
+	       tag(name: 'COLOR'('K')
+		   p: {MkColorProc 7})
+	       tag(name: 'COLOR'('W')
+		   p: {MkColorProc 8}))
 
    RootI = 0
-   Epsilon = 0
-   MaxTag = 25
+   Epsilon = 1
+   MaxTag = {Width Tags}
 
    fun {Constrain Meaning NumberOfElements}
       NumberOfDataItems = {Length Meaning}
@@ -166,7 +166,8 @@ define
 
       %% Root is vertex with number 0
       Root = root(daughters: {FS.var.upperBound 1#NumberOfVertices}
-		  scope: {FS.var.upperBound 1#NumberOfDataItems})
+		  scope: {FS.var.upperBound 1#NumberOfDataItems}
+		  attributes: RootAttributes)
       DataItems = {List.mapInd Meaning
 		   fun {$ I Text#IsSpace#Property}
 		      dataItem(mother: {FD.int 0#NumberOfVertices}
@@ -185,7 +186,7 @@ define
 			     down: {FS.var.upperBound 1#NumberOfVertices}
 			     eqdown: {FS.var.upperBound 0#NumberOfVertices}
 			     scope: {FS.var.upperBound 1#NumberOfDataItems}
-			     tag: {FD.int Epsilon#MaxTag}
+			     tag: {FD.int 1#MaxTag}
 			     attributes: {MkElementAttributes})}
 		 end
 
@@ -225,7 +226,25 @@ define
 		    end}
 
       %% Attribute constraints
-      %%--** missing
+      Attributes = {List.toRecord attributes
+		    {Map [b ems i tt u size color]
+		     fun {$ A}
+			A#for I in 1..NumberOfVertices collect: Collect do
+			     {Collect V.I.attributes.A}
+			  end
+		     end}}
+      Ps = for Tag in 1..MaxTag collect: Collect do {Collect Tags.Tag.p} end
+
+      for I in 1..NumberOfElements do W in
+	 W = V.(I + NumberOfDataItems)
+	 {ForAll [b ems i tt u size color]
+	  proc {$ A} Inherited in
+	     Inherited = {Select.fd Attributes.A W.mother}
+	     W.attributes.A = {Select.fd
+			       {Map Ps fun {$ P} {P A Inherited} end}
+			       Tags.(W.tag)}
+	  end}
+      end
 
       %% Scope constraints
       Scopes = for I in 0..NumberOfVertices collect: Collect do
