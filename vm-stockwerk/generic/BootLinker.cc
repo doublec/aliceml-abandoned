@@ -1,9 +1,11 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -27,37 +29,6 @@
 #define CONTINUE(args)           \
   Scheduler::currentArgs = args; \
   return Interpreter::CONTINUE;
-
-// ModuleEntry
-class ModuleEntry : private Block {
-private:
-  static const u_int ENTRY_LABEL = MIN_DATA_LABEL;
-  static const u_int SIGN_POS    = 0;
-  static const u_int MODULE_POS  = 1;
-  static const u_int SIZE        = 2;
-public:
-  using Block::ToWord;
-  // ModuleEntry Accessors
-  word GetSign() {
-    return GetArg(SIGN_POS);
-  }
-  word GetModule() {
-    return GetArg(MODULE_POS);
-  }
-  // ModuleEntry Constructor
-  static ModuleEntry *New(word sign, word module) {
-    Block *p = Store::AllocBlock((BlockLabel) ENTRY_LABEL, SIZE);
-    p->InitArg(SIGN_POS, sign);
-    p->InitArg(MODULE_POS, module);
-    return (ModuleEntry *) p;
-  }
-  // ModuleEntry Untagging
-  static ModuleEntry *FromWord(word entry) {
-    Block *p = Store::DirectWordToBlock(entry);
-    Assert(p != INVALID_POINTER && p->GetLabel() == (BlockLabel) ENTRY_LABEL);
-    return (ModuleEntry *) p;
-  }
-};
 
 static u_int ParentDir(char *s, u_int offset) {
   while (offset && (s[--offset] != '/'));
@@ -306,7 +277,7 @@ void ApplyInterpreter::PushFrame(TaskStack *taskStack,
   taskStack->PushFrame(ApplyFrame::New(self, closure, imports, key)->ToWord());
 }
 
-Interpreter::Result ApplyInterpreter::Run(word args, TaskStack *taskStack) {
+Interpreter::Result ApplyInterpreter::Run(word, TaskStack *taskStack) {
   ApplyFrame *frame = ApplyFrame::FromWord(taskStack->GetFrame());
   word bodyclosure  = frame->GetClosure();
   Vector *imports   = Vector::FromWord(frame->GetImports());
@@ -322,9 +293,8 @@ Interpreter::Result ApplyInterpreter::Run(word args, TaskStack *taskStack) {
     Assert(t != INVALID_POINTER);
     t->AssertWidth(2);
     Chunk *key2 = ResolveUrl(key, Store::WordToChunk(t->Sel(0)));
-    ModuleEntry *entry =
-      ModuleEntry::FromWord(BootLinker::GetModuleTable()->
-			    GetItem(key2->ToWord()));
+    ModuleEntry *entry = BootLinker::LookupComponent(key2);
+    Assert(entry != INVALID_POINTER);
     modules->Init(i, entry->GetModule());
   }
   Scheduler::currentArgs = Interpreter::OneArg(modules->ToWord());
@@ -352,11 +322,9 @@ Interpreter::Result EnterInterpreter::Run(word args, TaskStack *taskStack) {
   word sign         = frame->GetSign();
   taskStack->PopFrame();
   BootLinker::Trace("[boot-linker] entering", key);
-  word module = Interpreter::Construct(args);
-  BootLinker::GetModuleTable()->
-    InsertItem(key->ToWord(),
-	       ModuleEntry::New(sign, module)->ToWord());
-  CONTINUE(Interpreter::OneArg(module));
+  word str = Interpreter::Construct(args);
+  BootLinker::EnterComponent(key, sign, str);
+  CONTINUE(Interpreter::OneArg(str));
 }
 
 const char *EnterInterpreter::Identify() {
@@ -415,7 +383,7 @@ Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
 	t->AssertWidth(2);
 	Chunk *rel  = Store::WordToChunk(t->Sel(0));
 	Chunk *key2 = ResolveUrl(key, rel);
-	if (!BootLinker::GetModuleTable()->IsMember(key2->ToWord())) {
+	if (BootLinker::LookupComponent(key2) == INVALID_POINTER) {
 	  LoadInterpreter::PushFrame(taskStack, key2);
 	}
       }
@@ -442,7 +410,7 @@ void LoadInterpreter::PushFrame(TaskStack *taskStack, Chunk *key) {
   taskStack->PushFrame(LoadFrame::New(self, key)->ToWord());
 }
 
-Interpreter::Result LoadInterpreter::Run(word args, TaskStack *taskStack) {
+Interpreter::Result LoadInterpreter::Run(word, TaskStack *taskStack) {
   LoadFrame *frame = LoadFrame::FromWord(taskStack->GetFrame());
   Chunk *key      = frame->GetString();
   taskStack->PopFrame();
@@ -482,9 +450,9 @@ void BootLinker::Init(char *home, prim_table *builtins) {
   // Import builtin native Modules
   while (builtins->name != NULL) {
     word (*f)(void) = builtins->module;
-    GetModuleTable()->
-      InsertItem(String::New(builtins->name)->ToWord(),
-		 ModuleEntry::New(Store::IntToWord(0), f())->ToWord()); // NONE
+    EnterComponent((Chunk *) String::New(builtins->name),
+		   Store::IntToWord(0), // NONE
+		   f());
     builtins++;
   }
 }
@@ -521,12 +489,11 @@ word BootLinker::Link(Chunk *url) {
   RootSet::Add(urlWord);
   Scheduler::Run();
   RootSet::Remove(urlWord);
-  HashTable *table = GetModuleTable();
-  if (table->IsMember(urlWord)) {
-    word entry = GetModuleTable()->GetItem(urlWord);
-    return ModuleEntry::FromWord(entry)->GetModule();
+  ModuleEntry *moduleEntry = LookupComponent(url);
+  if (moduleEntry == INVALID_POINTER) {
+    return Store::IntToWord(0);
   }
   else {
-    return Store::IntToWord(0);
+    return moduleEntry->GetModule();
   }
 }

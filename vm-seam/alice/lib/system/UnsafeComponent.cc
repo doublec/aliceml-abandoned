@@ -37,8 +37,6 @@ word UnsafeComponent(void) {
     UniqueConstructor::New(String::New("Component.Sited"))->ToWord();
   RootSet::Add(SitedConstructor);
 
-  HashTable *moduleTable = BootLinker::GetModuleTable();
-
   Tuple *t = Tuple::New(8);
   t->Init(0, Unpickler::Corrupt);
   t->Init(1, SitedConstructor);
