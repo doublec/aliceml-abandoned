@@ -35,6 +35,8 @@
 (*		      tyvarseq tycon = ty					*)
 (*   - where for structures:							*)
 (*	  sigexp ::= sigexp where longstrid_1 = longstrid_2			*)
+(*   - definitional structure specifications:					*)
+(*	  strdesc ::= strid <: sigexp> = longstrid <and strdesc>		*)
 (*   - parenthesised structure and signature expressions (derived forms):	*)
 (*        strexp ::= ( strexp )							*)
 (*        sigexp ::= ( sigexp )							*)
@@ -1229,9 +1231,13 @@
 
   strdesc:
 	  strid COLON sigexp__AND_strdesc_opt
-	  		( StrDesc(I(stridleft,sigexp__AND_strdesc_optright),
-	  			  strid, #1 sigexp__AND_strdesc_opt,
-				  #2 sigexp__AND_strdesc_opt) )
+			( NEWStrDesc(I(stridleft,sigexp__AND_strdesc_optright),
+				     strid, #1 sigexp__AND_strdesc_opt,
+				     #2 sigexp__AND_strdesc_opt) )
+	| strid COLON_sigexp_opt EQUALS longstrid AND_strdesc_opt
+	  		( EQUALStrDesc(I(stridleft,AND_strdesc_optright),
+				       strid, COLON_sigexp_opt, longstrid,
+				       AND_strdesc_opt) )
      AND_strdesc_opt:
 	  AND strdesc	( SOME strdesc )
 	| (*empty*)	( NONE )

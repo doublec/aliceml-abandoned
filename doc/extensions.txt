@@ -40,7 +40,8 @@ Module language:
 + fixity specs
 
 + where for structures
-* structure synonyms / singleton signatures / open in signatures (DF)
++ structure synonyms
+* singleton signatures / open in signatures (DF)
 * signature composition
 * signature subtraction
 * parameterized signatures
