@@ -27,7 +27,7 @@ import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure Settings from "Settings"
-import structure WindowManager from "WindowManager"
+import structure Window from "Window"
 import signature NEW_NODE_HELPER from "NEW_NODE_HELPER-sig"
 
 local 
@@ -66,8 +66,8 @@ struct
       | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
       | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
       | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
-      | Empty        => let  val _ = WindowManager.new()
-			in createGroupItem(!WindowManager.canvasroot,0.0,0.0)
+      | Empty        => let  val _ = Window.new()
+			in createGroupItem(!Window.canvasroot,0.0,0.0)
 			end
       | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
       | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 

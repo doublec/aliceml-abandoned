@@ -50,20 +50,11 @@ struct
 					 20.0,50.0,!Settings.max_x )
 	    val adj2 = Gtk.adjustmentNew(valuev,0.0,!Settings.max_y ,
 					 20.0,50.0,!Settings.max_y )
-	    val _ = TextIO.print("Valueh is :"
-				 ^ Real.toString(valueh)
-				 ^ " and valuev is:"
-				 ^ Real.toString(valuev)
-				 ^ "\n")
 	in
-	( Gtk.layoutFreeze(canvas)
-	 ; Gtk.widgetSetScrollAdjustments(scrolled,adj1,adj2) 
+	( Gtk.widgetSetScrollAdjustments(scrolled,adj1,adj2) 
 	     ;GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
 	     ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-	     ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y)
-	     ;GtkCanvas.scrollTo(canvas,Real.trunc valueh,Real.trunc valuev)
-	 ; Gtk.layoutThaw(canvas)
-	 ; GtkCanvas.updateNow(canvas))
+	     ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))
 	end
 end
 

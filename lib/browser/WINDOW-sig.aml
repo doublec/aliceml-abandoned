@@ -13,10 +13,22 @@
  *
  *)
 
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
+import structure Types from "Types"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 signature WINDOW =
-sig 
-    val window: Gtk.object
-    val canvas: Gtk.object
-end;
+sig
+    type tag = Gtk.object
+    val window: tag
+    val handlers :  (Types.node * int -> unit) Array.array
+    val register: string * (Types.node * int -> unit) -> unit
+    val serve: (unit -> unit) -> unit
+    val canvas: tag ref
+    val canvasroot: tag ref
+    val resize: (unit -> unit) ref 
+    val show : unit -> unit
+    val act_line : int ref
+    val incr_act_line : int -> unit 
+    val alive: bool ref
+    val new: unit -> unit
+end

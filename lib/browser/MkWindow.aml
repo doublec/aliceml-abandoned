@@ -33,7 +33,7 @@ import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
 import structure Helper from "Helper"  
-import signature MK_WINDOW from "MK_WINDOW-sig"
+import signature WINDOW from "WINDOW-sig"
 
 local 
 open GtkSupport
@@ -381,7 +381,7 @@ fun scrollY (y,scrolled,vadj) =
 in
 
 
-functor MkWindow () :> MK_WINDOW =
+structure Window :> WINDOW =
 struct
 
     val serve =  serve'
@@ -418,17 +418,35 @@ struct
 
     val (status,postType,postMode) = createStatusbar() 
 	 
-     structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
-				    val ysize = !Settings.max_y) 	
+    val canvas = ref GtkSupport.uglyNULL
+    val canvasroot = ref GtkSupport.uglyNULL
+    val resize = ref (fn () => ())
 
-     val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0)
-     val canvas = DA.canvas
+    val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0)
+
+    val newDrawingArea _ = 
+	let
+	    val _ = Gtk.objectDestroy(canvas)
+	    structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
+					   val ysize = !Settings.max_y)
+	in
+	    (canvas := DA.canvas
+	    ;canvasroot := DA.root
+	    ;resize := DA.resize
+	    ;Gtk.containerAdd(scrolled,DA.canvas)
+	    ;Gtk.widgetSetParent(DA.canvas,scrolled)
+	    ;Gtk.widgetShowAll(window)) 
+	end
+
+    val _ = newDrawingArea()
+
+   (*  val canvas = ref DA.canvas
      val lowest_layer  = GtkCanvas.itemNew(DA.root, 
 					   GtkCanvas.GROUP,
 					   [("x", Gtk.DOUBLE 0.0), 
 					    ("y", Gtk.DOUBLE 0.0)])
      val canvasroot = lowest_layer
-     val resize = handleResize(scrolled,hadj,vadj,DA.resize) 
+     val resize = handleResize(scrolled,hadj,vadj,DA.resize)  *)
 
      fun show() = if !alive then Gtk.widgetShowAll(window) else ()
     
@@ -606,7 +624,7 @@ struct
 				 handleResize(scrolled,hadj,vadj,DA.resize))
 	      ;Gtk.signalConnect(hadj,"value_changed",fn _ => freezeThaw(DA.canvas))
 	      ;Gtk.signalConnect(vadj,"value_changed",fn _ => freezeThaw(DA.canvas))
-  	      ;Gtk.containerAdd(scrolled,DA.canvas)
+  	  (*    ;Gtk.containerAdd(scrolled,canvas) *)
 	      ;Gtk.containerAdd(window,createVBox[(bar,0,0,0),
 						  (scrolled,Gtk.EXPAND,Gtk.FILL,0),
 						  (status,0,0,0)])

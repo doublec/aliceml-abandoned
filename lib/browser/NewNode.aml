@@ -36,7 +36,7 @@ import structure Update from "Update"
 import structure MkPathTable from "MkPathTable"
 import structure Settings from "Settings"
 import structure NewNodeHelper from "NewNodeHelper"
-import structure WindowManager from "WindowManager"
+import structure Window from "Window"
 import structure GtkSupport from "GtkSupport"
 import signature NEW_NODE from "NEW_NODE-sig"
 
@@ -59,8 +59,8 @@ struct
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
 			    val line = GtkSupport.createSepLine
-				(!WindowManager.canvasroot,
-				 !WindowManager.act_line)
+				(!Window.canvasroot,
+				 !Window.act_line)
 			in (MainDictionary.insertI(dict,(node,line)) ; node)
 			end
   
@@ -572,8 +572,8 @@ struct
 			       val _ = Settings.relnumber := 0 
 			       val node = createGraphInf (va,t,Empty,i,0)
 			       val line = GtkSupport.createSepLine
-				(!WindowManager.canvasroot,
-				 !WindowManager.act_line)
+				(!Window.canvasroot,
+				 !Window.act_line)
 			   in (MainDictionary.insertI(dict,(node,line)) 
 			       ; node) 
 			   end   

@@ -19,9 +19,9 @@ ALICELINK = alicelink
 ALICELINK_OPTS = -x
 ALICEDEP = alicedep
 
-SIGS		= COLOR CREATE_DOC DRAW_NODES DRAWING_AREA DICTIONARIES HELPER INIT LAYOUT MK_COLOR_TABLE MK_DICTIONARY MK_PATH_TABLE MK_WINDOW  NEW_NODE NEW_NODE_HELPER NODE_SEARCH SERVER SETTINGS TYPES UNSAFE_INSPECTOR UPDATE GTK_SUPPORT WINDOW_MANAGER 
+SIGS		= COLOR CREATE_DOC DRAW_NODES DRAWING_AREA DICTIONARIES HELPER INIT LAYOUT MK_COLOR_TABLE MK_DICTIONARY MK_PATH_TABLE WINDOW  NEW_NODE NEW_NODE_HELPER NODE_SEARCH SERVER SETTINGS TYPES UNSAFE_INSPECTOR UPDATE GTK_SUPPORT 
 
-STRUCTS		= Color ColorMap CreateDoc DrawNodes Dictionaries Helper Init Layout  MainDictionary MkColorTable MkDictionary MkDrawingArea MkPathTable MkWindow NewNode NewNodeHelper NodeSearch ReinspectedRelDict RelManDictionary Server Settings TransientDictionary Types UnsafeInspector Update GtkSupport WindowManager   
+STRUCTS		= Color ColorMap CreateDoc DrawNodes Dictionaries Helper Init Layout  MainDictionary MkColorTable MkDictionary MkDrawingArea MkPathTable Window NewNode NewNodeHelper NodeSearch ReinspectedRelDict RelManDictionary Server Settings TransientDictionary Types UnsafeInspector Update GtkSupport 
 
 SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)

@@ -24,7 +24,7 @@ import structure ReinspectedRelDict from "ReinspectedRelDict"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
-import structure WindowManager from "WindowManager"
+import structure Window from "Window"
 import structure DrawNodes from "DrawNodes"
 import structure Server from "Server"
 import structure GtkSupport from "GtkSupport"
@@ -137,7 +137,7 @@ struct
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
 	       ; DrawNodes.draw(node,0,y_pos,true) 
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
-		 in ( WindowManager.incr_act_line dy
+		 in ( Window.incr_act_line dy
 		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
 				 MainDictionary.getHighestIndexAssigned
 				 (Dictionaries.dict))
@@ -182,7 +182,7 @@ struct
 							    getAncIndex m)) 
 	                           li
 	in ( List.map (fn n => update(n,va,f,g)) new_li 
-	    ; !WindowManager.resize() )
+	    ; !Window.resize() )
 	end   
 
     (* watcher *)
@@ -209,7 +209,7 @@ struct
     (* reinspect *)
     and reinspect (n,f,g) = 
         let val va = getValue(getDesc(n))
-	in  Server.serve(fn () => (update(n,va,f,g) ; !WindowManager.resize()))
+	in  Server.serve(fn () => (update(n,va,f,g) ; !Window.resize()))
 	end
     handle General.Match => raise UpdateError
 	
@@ -263,13 +263,13 @@ struct
 	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
 	    ; DrawNodes.draw(node,0,y_pos,true) 
 	    ; let val dy =  Layout.get_ydim(node) - old_ydim
-	      in ( WindowManager.incr_act_line dy
+	      in ( Window.incr_act_line dy
 		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
 			      MainDictionary.getHighestIndexAssigned
 			      (Dictionaries.dict))
 		  ; Layout.setVisible(Layout.get_xdim(node),dy))
 	      end 
-	    ; !WindowManager.resize() )
+	    ; !Window.resize() )
 	end 
 
     (* findHighestDepth *)
