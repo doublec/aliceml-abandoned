@@ -32,8 +32,9 @@
 ## The goal is to build a compiler using the hybrid SML/NJ+Mozart compiler.
 ## This is performed via the following targets.
 ##
-## build1-all:
+## build1-src:
 ##    A complete source tree is created in subdirectory build1.
+## build1-all:
 ##    The native components are created using ozc.  The component
 ##    Build1.ozf (and all its imports, transitively) are built
 ##    using the hybrid compiler via recursive invocation.
@@ -112,7 +113,7 @@ ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = STOCKHOME=build2/install build2/install/bin/alicelink
 
-ALICELINK_OPTS = -z9 #--sequential
+ALICELINK_OPTS = -z9 --sequential
 
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
