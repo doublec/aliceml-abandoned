@@ -34,7 +34,7 @@
 #include "store/Set.hh"
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-u_int MemChunk::counter =  0;
+u_int MemChunk::counter = 0;
 struct timeval *Store::sum_t;
 #endif
 
@@ -42,38 +42,52 @@ struct timeval *Store::sum_t;
 // Helper Functions
 //
 
-static inline u_int ComputeUsage(MemChunk *chunk) {
-  u_int used = 0;
-
-  chunk = chunk->GetNext();
+// Returns the allocated usage and max
+static inline void ComputeMemUseMax(MemChunk *chunk, u_int &used, u_int &total) {
   while (!chunk->IsAnchor()) {
-    used++;
+    u_int size = (anchor->GetMax() - anchor->GetBottom());
+
+    used  += (size + ((chunk == storeCurChunk) ? storeChunkTop : chunk->GetTop()));
+    total += size;
     chunk = chunk->GetNext();
   }
+}
 
-  return used;
+static inline void FreeMemory(MemChunk *chunk, u_int mem_space) {
+  while (!chunk->IsAnchor()) {
+    MemChunk *next = chunk->GetNext();
+
+    // retain mem_space amount
+    if (mem_space > 0) {
+      mem_space -= chunk->GetMemSpace();
+      chunk->Clear();
+    }
+    else {
+      MemChunk *prev = chunk->GetPrev();
+      
+      prev->SetNext(next);
+      next->SetPrev(prev);
+      delete chunk;
+    }
+    chunk = next;
+  }
 }
 
 //
-// Class Fields and Global Vars
+// Class Fields
 //
 
-MemChunk *Store::roots[STORE_GENERATION_NUM];
-u_int Store::memUsage[STORE_GENERATION_NUM];
-u_int Store::memLimits[STORE_GENERATION_NUM];
+MemChunk *Store::memChains[STORE_GENERATION_NUM];
+u_int Store::memMax[STORE_GENERATION_NUM];
+u_int Store::memFree;
 
 Set *Store::intgenSet = INVALID_POINTER;
 Set *Store::wkDictSet = INVALID_POINTER;
 u_int Store::needGC   = 0;
-u_int Store::maxGcGen = 0;
 
-char *storeChunkMax;
-#if defined(STORE_CHUNKTOP_IN_REG)
-register s_int storeChunkTop;
-#else
-s_int storeChunkTop;
-#endif
-MemChunk *storeCurChunk;
+char *Store::storeChunkMax;
+s_int Store::storeChunkTop;
+MemChunk *Store::storeCurChunk;
 
 //
 // Method Implementations
@@ -101,7 +115,7 @@ inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
   }
 
   // Allocate a new Chunk
-  MemChunk *root     = roots[gen];
+  MemChunk *root     = memChains[gen];
   MemChunk *newChunk = new MemChunk(root, storeCurChunk, alloc_size);
   // Store new Chunk into Chain and prepare for next (Fast|GC)Alloc
   root->SetNext(newChunk);
@@ -109,7 +123,6 @@ inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
   SwitchToNewChunk(newChunk);
   SetInitMark(0); // neded for gc
 
-  memUsage[gen]++;
   // Generation Zero implies GC
   if (gen == 0) {
     needGC = 1;
@@ -168,30 +181,7 @@ inline Block *Store::AddToFinSet(Block *p, Handler *h, word value, u_int dst_gen
 
 void Store::AllocNewMemChunk() {
   Block *p = (Block *) (storeChunkMax + storeChunkTop);
-  AllocNewMemChunk(HeaderOp::DecodeSize(p), HeaderOp::DecodeGeneration(p));
-}
-
-void Store::Shrink(MemChunk *list, int threshold) {
-  list = list->GetNext();
-
-  while (!list->IsAnchor()) {
-    MemChunk *next = list->GetNext();
-
-    if (threshold-- > 0) {
-#if defined(STORE_DEBUG)
-      std::printf("clearing... %d\n", list->id);
-#endif
-      list->Clear();
-    }
-    else {
-      MemChunk *prev = list->GetPrev();
-
-      prev->SetNext(next);
-      next->SetPrev(prev);
-      delete list;
-    }
-    list = next;
-  }
+  AllocNewMemChunk((HeaderOp::DecodeSize(p) + 1) * sizeof(u_int), HeaderOp::DecodeGeneration(p));
 }
 
 inline Block *Store::CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen) {
@@ -252,7 +242,7 @@ inline void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Bl
   }
 }
 
-void Store::InitStore(u_int memLimits[STORE_GENERATION_NUM]) {
+void Store::InitStore(u_int memMax[STORE_GENERATION_NUM], u_int memFree) {
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     MemChunk *lanchor  = new MemChunk();
     MemChunk *ranchor  = new MemChunk();
@@ -260,15 +250,17 @@ void Store::InitStore(u_int memLimits[STORE_GENERATION_NUM]) {
 
     lanchor->SetNext(memChunk);
     ranchor->SetPrev(memChunk);
-    Store::roots[i]     = lanchor;
-    Store::memUsage[i]  = 1;
-    Store::memLimits[i] = memLimits[i];
+    Store::memChains[i] = lanchor;
+    Store::memMax[i]    = memMax[i];
   }
+
   // Prepare Fast Memory Allocation
-  MemChunk *anchor = roots[0]->GetNext();
-  storeChunkTop = anchor->GetTop();
-  storeChunkMax = anchor->GetMax();
-  storeCurChunk = anchor;
+  MemChunk *anchor = memChains[0]->GetNext();
+  storeChunkTop  = anchor->GetTop();
+  storeChunkMax  = anchor->GetMax();
+  storeCurChunk  = anchor;
+  Store::memFree = memFree;
+
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
@@ -279,12 +271,12 @@ void Store::InitStore(u_int memLimits[STORE_GENERATION_NUM]) {
 
 void Store::CloseStore() {
   for (int i = (STORE_GENERATION_NUM - 1); i--;) {
-    MemChunk *chain = roots[i];
+    MemChunk *chain = memChains[i];
 
     while (chain != INVALID_POINTER) {
-      MemChunk *tmp = chain->GetNext();
-      delete chain;
-      chain = tmp;
+      MemChunk *tmp = chain;
+      chain = chain->GetNext();
+      delete tmp;
     }
   }
 }
@@ -403,7 +395,7 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 	      ((rs_size + 1) * sizeof(u_int)));
 
   // Phase One: Forward all Dictionaries but not the contents
-  for (u_int i = rs_size; i >= 1; i--) {
+  for (u_int i = rs_size; i > 0; i--) {
     word dict  = db_set->GetArg(i);
     Block *dp  = Store::DirectWordToBlock(dict);
     word ndict;
@@ -449,7 +441,7 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
   }
 
   // Phase Two: Forward Dictionary Contents and record Finalize Candiates
-  for (u_int i = rs_size; i >= 1; i--) {
+  for (u_int i = rs_size; i > 0; i--) {
     WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
     Handler *h           = dict->GetHandler();
     Block *table         = dict->GetTable();
@@ -510,9 +502,9 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
   std::printf("intgen_set gen %d\n", HeaderOp::DecodeGeneration((Block *) intgenSet));
   std::printf("wkdict_set gen %d\n", HeaderOp::DecodeGeneration((Block *) wkDictSet));
 #endif
-
+  
   // Switch to the new Generation
-  SwitchToNewChunk(roots[dst_gen]->GetNext());
+  SwitchToNewChunk(memChains[dst_gen]->GetNext());
   SetInitMark(0);
 
   // Copy Root-, Intgen- and WeakDict-Set to New Memory (if appropriate)
@@ -524,7 +516,7 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
   MemChunk *anchor = storeCurChunk;
   char *scan       = (storeChunkMax + storeChunkTop);
 
-  // Copy matching rootset entries
+  // Copy matching memChainset entries
   for (u_int i = root_set->GetSize(); i--;) {
     root_set->InitArg(i, Store::ForwardBlock(PointerOp::Deref(root_set->GetArg(i)),
 					     dst_gen, cpy_gen));
@@ -545,34 +537,27 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
   if (wkDictSet->GetSize() != 0) {
     arr = Store::HandleWeakDictionaries(dst_gen, cpy_gen);
   }
-  
+
   // Clean up Collected regions
   for (u_int i = dst_gen; i--;) {
-    Store::Shrink(roots[i], memLimits[i]);
-    memUsage[i] = ComputeUsage(roots[i]);
+    FreeMemory(memChains[i]->GetNext(), memMax[i]);
   }
-  // Compute GC Flag (to be determined)
-  needGC   = 0;
-  maxGcGen = ((memUsage[cpy_gen] > memLimits[cpy_gen]) ? cpy_gen : 0);
-  //  maxGcGen = (STORE_GENERATION_NUM - 2);
 
+  // Compute GC Flag and Threshold (to be determined)
+  needGC = 0;
+  u_int usage = 0;
+  u_int total = 0;
+  memMax[dst_gen] = (ComputeMemUseMax(memChains[dst_gen]->GetNext(), usage, total))* 100) / (100 - memFree);
+  
   // Switch Semispaces
   if (dst_gen == (STORE_GENERATION_NUM - 1)) {
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-    std::printf("switching semispaces\n");
-    std::fflush(stdout);
-#endif
-    MemChunk *tmp = roots[STORE_GENERATION_NUM - 2];
-    roots[STORE_GENERATION_NUM - 2] = roots[STORE_GENERATION_NUM - 1];
-    roots[STORE_GENERATION_NUM - 1] = tmp;
-
-    u_int mem_tmp = memUsage[STORE_GENERATION_NUM - 2];
-    memUsage[STORE_GENERATION_NUM - 2] = memUsage[STORE_GENERATION_NUM - 1];
-    memUsage[STORE_GENERATION_NUM - 1] = mem_tmp;
+    MemChunk *tmp = memChains[STORE_GENERATION_NUM - 2];
+    memChains[STORE_GENERATION_NUM - 2] = memChains[STORE_GENERATION_NUM - 1];
+    memChains[STORE_GENERATION_NUM - 1] = tmp;
   }
 
   // Switch back to Generation Zero and Adjust Root Set
-  SwitchToNewChunk(roots[0]->GetNext());
+  SwitchToNewChunk(memChains[0]->GetNext());
   root = root_set->ToWord();
 
   // Call Finalization Handler
@@ -583,9 +568,6 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
       h->Finalize(arr->GetArg(i + 1));
     }
   }
-#if defined(STORE_DEBUG)
-  std::printf("Done GC; maxGcGen is %d\n", maxGcGen);
-#endif
 }
 
 void Store::DoGC(word &root) {
@@ -593,6 +575,12 @@ void Store::DoGC(word &root) {
   struct timeval start_t, end_t;
   gettimeofday(&start_t, INVALID_POINTER);
 #endif
+  u_int maxGcGen = (STORE_GENERATION_NUM - 2);
+
+  while ((maxGcGen > 0) && (ComputeMemUsage(memChains[maxGcGen]->GetNext()) <= memMax[maxGcGen])) {
+    maxGcGen--;
+  }
+
   switch (maxGcGen) {
   case STORE_GEN_YOUNGEST:
     DoGC(root, STORE_GEN_YOUNGEST); break;
@@ -611,31 +599,13 @@ void Store::DoGC(word &root) {
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
   std::printf("---\n");
-  std::printf("maxGcGen is %d\n", maxGcGen);
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    MemChunk *anchor = roots[i];
-    u_int used       = 0;
-    u_int total      = 0;
-    
-    anchor = anchor->GetNext();
-    while (!anchor->IsAnchor()) {
-      u_int size = (anchor->GetMax() - anchor->GetBottom());
-
-      used  += (size + ((anchor == storeCurChunk) ? storeChunkTop : anchor->GetTop()));
-      total += size;
-      anchor = anchor->GetNext();
-    }
-
-    std::printf("G%d --> Used: %8d; Total: %8d; GC-Limit: %8d; Mem-Usage: %8d\n", i, used, total,
-		memLimits[i] * STORE_MEMCHUNK_SIZE,
-		memUsage[i] * STORE_MEMCHUNK_SIZE);
+    std::printf("G%d --> Used: %8d; Gc-Limit: %8d; Total: %8d\n",
+		i, ComputeMemUsage(memChains[i]->GetNext()),
+		memMax[i], ComputeMemSpace(memChains[i]->GetNext()));
   }
   std::printf("---\n");
   std::fflush(stdout);
-}
-
-void Store::ForceGCGen(u_int gen) {
-  maxGcGen = gen;
 }
 
 void Store::ResetTime() {

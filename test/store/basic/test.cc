@@ -47,13 +47,13 @@ int main(void) {
   
   Store::InitStore(memLimits);
   
-  std::printf("Enter\n");
+  std::printf("Allocating...\n");
   p = Store::AllocBlock(Store::MakeLabel(0), 1);
-  std::printf("Leave\n");
+  std::printf("Initializing allocated block\n");
   p->InitArg(0, 667);
-  std::printf("Leave\n");
+  std::printf("Checking Result...\n");
   printf("%d\n", Store::WordToInt(p->GetArg(0)));
-  std::printf("Leave\n");
+  std::printf("Done\n");
 
   p->InitArg(0, Stack::New(2)->ToWord());
   //  p->InitArg(2, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());

@@ -28,24 +28,21 @@ class Set;
 struct timeval;
 #endif
 
-extern char *storeChunkMax;
-extern s_int storeChunkTop;
-extern MemChunk *storeCurChunk;
-
 class Store {
 private:
-  static MemChunk *roots[STORE_GENERATION_NUM];
-  static u_int memUsage[STORE_GENERATION_NUM];
-  static u_int memLimits[STORE_GENERATION_NUM];
+  static MemChunk *memChains[STORE_GENERATION_NUM];
+  static u_int memMax[STORE_GENERATION_NUM];
+  static u_int memFree;
   static Set *intgenSet;
   static Set *wkDictSet;
   static u_int needGC;
-  static u_int maxGcGen;
+  static  char *storeChunkMax;
+  static  s_int storeChunkTop;
+  static MemChunk *storeCurChunk;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static struct timeval *sum_t;
 #endif
 
-  static void Shrink(MemChunk *list, int threshold);
   static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
   static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen);
   static Block *ForwardSet(Block *p, u_int cpy_gen, u_int dst_gen);
@@ -82,7 +79,7 @@ private:
   static void DoGC(word &root, const u_int gcGen);
 public:
   // Init Functions
-  static void InitStore(u_int mem_limits[STORE_GENERATION_NUM]);
+  static void InitStore(u_int mem_limits[STORE_GENERATION_NUM], u_int memFree);
   static void CloseStore();
 
   // GC Related Functions
@@ -164,7 +161,6 @@ public:
   static void MemStat();
   static void ResetTime();
   static struct timeval *ReadTime();
-  static void ForceGCGen(u_int gen);
 #endif
 };
 

@@ -20,7 +20,15 @@ class HeaderOp {
 public:
   // Header Creation and Access
   static u_int EncodeHeader(BlockLabel l, u_int s, u_int gen) {
-    return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT));
+    AssertStore(s < (8 * MAX_BLOCKSIZE));
+    if (s > MAX_BLOCKSIZE) {
+      s = (s >> SIZE_SHIFT);
+      return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) |
+	      (1 << SIZESHIFT_SHIFT) | (((u_int) l) << TAG_SHIFT));
+    }
+    else {
+      return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT));
+    }
   }
   static u_int GetHeader(Block *p) {
     AssertStore(p != INVALID_POINTER);
@@ -38,11 +46,19 @@ public:
   // Size Creation and Access
   static void EncodeSize(Block *p, u_int s) {
     AssertStore(p != INVALID_POINTER);
-    ((u_int *) p)[-1] = ((((u_int *) p)[-1] & ~SIZE_MASK) | (s << SIZE_SHIFT));
+    if (s > MAX_BLOCKSIZE) {
+      s = (s >> SIZE_SHIFT);
+      ((u_int *) p)[-1] = ((((u_int *) p)[-1] & ~SIZE_MASK) | (s << SIZE_SHIFT) |
+			   (1 << SIZESHIFT_SHIFT));
+    }
+    else {
+      ((u_int *) p)[-1] = ((((u_int *) p)[-1] & ~SIZE_MASK) | (s << SIZE_SHIFT));
+    }
   }
   static u_int DecodeSize(Block *p) {
     AssertStore(p != INVALID_POINTER);
-    return (u_int) ((((u_int *) p)[-1] & SIZE_MASK) >> SIZE_SHIFT);
+    u_int h = ((u_int *) p)[-1];
+    return ((h & SIZESHIFT_MASK) ? (h & SIZE_MASK) : ((h & SIZE_MASK) >> SIZE_SHIFT));
   }
   // Generation Access
   static u_int DecodeGeneration(Block *p) {
