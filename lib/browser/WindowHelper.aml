@@ -71,10 +71,21 @@ and createMenuEntry (menu,(label,handlerlist)) =
 	List.app connect handlerlist
     end
 
+and createMenuObjPopup (menu,MenuObj(r)) = 
+    let
+	val menu_item = Gtk.menuItemNewWithLabel( #title(r))
+	val _         = Gtk.menuAppend(menu,menu_item)
+	val menu = Gtk.menuNew()
+	val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
+	val create = fn i => createMenuEntry(menu,i)
+    in
+	List.app create (#items(r))
+    end
+
 fun createPopupMenu l =
     let
 	val menu = Gtk.menuNew()
-	val create = fn i => createMenuEntry(menu,i)
+	val create = fn i => createMenuObjPopup(menu,i)
 	val _ = List.app create l
 	val _ = Gtk.menuPopup(menu,uglyNULL,uglyNULL,uglyNULL,uglyNULL,3,0)
 	val _ = Gtk.widgetShowAll (menu)

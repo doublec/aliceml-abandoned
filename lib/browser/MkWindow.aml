@@ -189,15 +189,8 @@ struct
      val st_context = Gtk.statusbarGetContextId(status,"st")
      val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
      val _ = Gtk.boxPackEnd(vbox,status,0,0,0)
-
-    structure A = 
-	struct
-	    val x = !Settings.max_x
-	    val y = !Settings.max_y
-	    val root = window
-	end
     
-    structure DA  =  MkDrawingArea(structure AreaArgs = A) 	
+    structure DA  =  MkDrawingArea(val xsize = !Settings.max_x val ysize = !Settings.max_y) 	
 
     val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
 
@@ -220,8 +213,6 @@ struct
 			    DA.resize(h,v)  
 			 end
 
-    (* val _ = Gtk.signalConnect(hadj,"changed",handleResize) *)
-    (* val _ = Gtk.signalConnect(vadj,"changed",handleResize) *)
     val _ = Gtk.signalConnect(scrolled,"size_allocate",handleResize)
     val _ = Gtk.boxPackStart(vbox,scrolled,Gtk.EXPAND,Gtk.FILL,0) 
     val _ = Gtk.containerAdd(scrolled,DA.canvas)
@@ -233,30 +224,21 @@ struct
 			   ("y", Gtk.DOUBLE 0.0)])
 
 
-    fun makePopup {widthhandler = w, depthhandler = d, reinspecthandler = r} = let
-			val menu = Gtk.menuNew()
-	                val submenu1 = Gtk.menuItemNewWithLabel("Explore Tree")
-			val submenu2 = Gtk.menuItemNewWithLabel("Filter")
-			val submenu3 = Gtk.menuItemNewWithLabel("Actions") 
-			val _ = Gtk.menuAppend(menu,submenu1)
-			val _ = Gtk.menuAppend(menu,submenu2)
-			val _ = Gtk.menuAppend(menu,submenu3) 
-			val sm1 = Gtk.menuNew()
-			val sm2 = Gtk.menuNew()
-			val sm3 = Gtk.menuNew() 
-			val _ = Gtk.menuItemSetSubmenu(submenu1,sm1)
-			val _ = Gtk.menuItemSetSubmenu(submenu2,sm2)
-			val _ = Gtk.menuItemSetSubmenu(submenu3,sm3)
-			val _ = createMenuEntry(sm1,(LABEL("width"),[]))
-			val _ = createMenuEntry(sm1,(LABEL("depth"),[]))
-			val _ = createMenuEntry(sm3,(LABEL("reinspect"),[]))  
-		     in
-			 menu
-		     end
+    fun makePopup {widthhandler = w, depthhandler = d, reinspecthandler = r} = 
+	createPopupMenu([MenuObj{title = "Explore Tree",
+				items = [(LABEL("width"),[]),
+					 (LABEL("depth"),[])]},
+			MenuObj{title = "Filter",
+				items = []},
+			MenuObj{title = "Actions",
+				items = [(LABEL("reinspect"),[])]}])
 
-    fun handleEvent [Gdk.EVENT(event)] = let
-					     val valueh = Gtk.adjustmentGetFieldValue(hadj)
-					     val valuev = Gtk.adjustmentGetFieldValue(vadj)   
+
+
+    fun handleEvent [Gdk.EVENT(event)] = 
+	let
+	    val valueh = Gtk.adjustmentGetFieldValue(hadj)
+	    val valuev = Gtk.adjustmentGetFieldValue(vadj)   
 	in
 	    case event of
 		Gdk.GDK_BUTTON_PRESS(r) => 
@@ -265,35 +247,38 @@ struct
 			val y = Real.+ (#y(r),valuev)
 			val (node_x,node_y,node) = 
 			    NodeSearch.search(Dictionaries.dict,x,y)
+			    val font_width = fontWidth(!Settings.font)
+			    val font_height = fontHeight(!Settings.font)
 		    in
 			case #button(r) of
 			    1 =>
 				let
 				    val (node_x_real,node_y_real) = 
-					(Real.fromInt(fontWidth(!Settings.font)*node_x),
-					 Real.fromInt(fontHeight(!Settings.font)*node_y)) 
+					(Real.fromInt(font_width* node_x),
+					 Real.fromInt(font_height *node_y)) 
 				in
 				    (case node of 
-					 SOME(n) => let
-							val x2 = Real.+(node_x_real,
-									Real.fromInt(fontWidth(!Settings.font) 
-										     * Layout.get_xdim(n)))
-							val y2 = Real.+ (node_y_real,
-									 Real.fromInt(fontHeight(!Settings.font) 
-										      *Layout.get_ydim(n)))
-							val re =createRectangle(lowest_layer,
-										  node_x_real,
-										  node_y_real,
-										  x2,
-										  y2)
-							val _ = GtkCanvas.itemLowerToBottom(re)
-							val _ = case !selection of 
-							    NONE => ()
-							  | SOME(_,rect) => Gtk.objectDestroy(rect)
-							val _ = selection := SOME (n,re)
-						    in
-							()
-						    end
+					 SOME(n) => 
+					     let
+						 val x2 = Real.+(node_x_real,
+								 Real.fromInt(font_width 
+								 * Layout.get_xdim(n)))
+						 val y2 = Real.+ (node_y_real,
+								  Real.fromInt(font_height 
+						        	      *Layout.get_ydim(n)))
+						 val re =createRectangle(lowest_layer,
+									 node_x_real,
+									 node_y_real,
+									 x2,
+									 y2)
+						 val _ = GtkCanvas.itemLowerToBottom(re)
+						 val _ = case !selection of 
+						     NONE => ()
+						   | SOME(_,rect) => Gtk.objectDestroy(rect)
+						 val _ = selection := SOME (n,re)
+					     in
+						 ()
+					     end
 				       | NONE => ()   )
 				end
 			  | 3 => let
@@ -301,16 +286,12 @@ struct
 				     val y = Real.+ (#y(r),valuev)
 				     val (node_x,node_y,node) = 
 					 NodeSearch.search(Dictionaries.dict,x,y)
-				     val menu = makePopup({widthhandler = [], depthhandler = [], reinspecthandler = []})
 				 in
 				     (case node of 
-					  SOME(n) => (Gtk.menuPopup(menu,
-								    uglyNULL,
-								    uglyNULL,
-								    uglyNULL,
-								    uglyNULL,
-								    3,0);
-						      Gtk.widgetShowAll(menu))
+					  SOME(n) =>( makePopup({widthhandler = [], 
+							   depthhandler = [], 
+							   reinspecthandler = []})
+						     ; ())
 					| NONE => ()   )  
 				 end
 			  | _ => ()
