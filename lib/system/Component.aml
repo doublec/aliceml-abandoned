@@ -104,32 +104,28 @@ struct
 					(sign, str)))
 				   (UnsafeComponent.getInitialTable ()))
 
-	fun lazyTypeCheck (SOME sign, SOME importSign, str, url, baseUrlOpt) =
-	    byneed (fn () =>
-		    (trace ("type-checking " ^ Url.toString url ^
-			    (case baseUrlOpt of
-				 SOME baseUrl =>
-				     " imported from " ^ Url.toString baseUrl
-			       | NONE => ""));
-		     case Signature.match (sign, importSign, str) of
-			 SOME str => str
-		       | NONE => raise Mismatch))
-	  | lazyTypeCheck (_, _, str, _, _) = str
-
 	fun strictTypeCheck (SOME sign, SOME importSign, str) =
 	    (case Signature.match (sign, importSign, str) of
 		 SOME str => str
 	       | NONE => raise Mismatch)
 	  | strictTypeCheck (_, _, str) = str
 
+	fun lazyTypeCheck (signOpt, importSignOpt, str, url, baseUrlOpt) =
+	    lazy (trace ("type-checking " ^ Url.toString url ^
+			 (case baseUrlOpt of
+			      SOME baseUrl =>
+				  " imported from " ^ Url.toString baseUrl
+			    | NONE => ""));
+		  strictTypeCheck (signOpt, importSignOpt, str))
+
 	fun link' url =
 	    case UrlMap.lookupNew (map, url) of
 		UrlMap.EXISTING entry => entry
 	      | UrlMap.NEW p =>
 		    let
-			val component = byneed (fn () => load url)
-			val sign = byneed (fn () => sign component)
-			val str = byneed (fn () => eval (url, component))
+			val component = lazy load url
+			val sign = lazy sign component
+			val str = lazy eval (url, component)
 			val entry = (sign, str)
 		    in
 			Promise.fulfill (p, entry); entry
@@ -194,8 +190,7 @@ struct
 		UrlMap.EXISTING _ => raise Conflict
 	      | UrlMap.NEW p =>
 		    Promise.fulfill (p, (sign component,
-					 byneed (fn () =>
-						 eval (url, component))))
+					 lazy eval (url, component)))
 
 	fun lookup url =
 	    case UrlMap.lookup (map, url) of
