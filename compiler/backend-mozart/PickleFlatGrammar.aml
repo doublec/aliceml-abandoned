@@ -132,6 +132,10 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "IdRef", 1); outputId (q, id))
 	  | outputIdRef (q, LastIdRef id) =
 	    (outputTuple (q, "LastIdRef", 1); outputId (q, id))
+	  | outputIdRef (q, Lit lit) =
+	    (outputTuple (q, "Lit", 1); outputLit (q, lit))
+	  | outputIdRef (q, Prim name) =
+	    (outputTuple (q, "Prim", 1); ignore (outputAtom (q, name)))
 
 	fun outputFunFlag (q, PrintName s) =
 	    (outputTuple (q, "PrintName", 1); ignore (outputAtom (q, s)))
@@ -228,13 +232,7 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "VecTests", 1);
 	     outputVector (outputPair (outputVector outputIdDef, outputBody))
 	     (q, vecBodyVec))
-	and outputExp (q, LitExp (info, lit)) =
-	    (outputTuple (q, "LitExp", 2); outputLit (q, lit);
-	     outputExpInfo (q, info))
-	  | outputExp (q, PrimExp (info, name)) =
-	    (outputTuple (q, "PrimExp", 2); outputAtom (q, name);
-	     outputExpInfo (q, info))
-	  | outputExp (q, NewExp (info, name)) =
+	and outputExp (q, NewExp (info, name)) =
 	    (outputTuple (q, "NewExp", 2); outputName (q, name);
 	     outputExpInfo (q, info))
 	  | outputExp (q, VarExp (info, idRef)) =

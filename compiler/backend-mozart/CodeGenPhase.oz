@@ -50,6 +50,8 @@ define
    fun {TrIdRef IdRef}
       case IdRef of 'IdRef'(Id) then 'IdRef'({TrId Id})
       [] 'LastIdRef'(Id) then 'LastIdRef'({TrId Id})
+      [] 'Lit'(_) then IdRef
+      [] 'Prim'(String) then 'Prim'({VirtualString.toAtom String})
       end
    end
 
@@ -152,10 +154,7 @@ define
    end
 
    fun {TrExp Exp ShareDict}
-      case Exp of 'LitExp'(Info Lit) then 'LitExp'(Info Lit)
-      [] 'PrimExp'(Info String) then
-	 'PrimExp'(Info {VirtualString.toAtom String})
-      [] 'NewExp'(Info Name) then 'NewExp'(Info {TrName Name})
+      case Exp of 'NewExp'(Info Name) then 'NewExp'(Info {TrName Name})
       [] 'VarExp'(Info IdRef) then 'VarExp'(Info {TrIdRef IdRef})
       [] 'TagExp'(Info Label N Args) then
 	 'TagExp'(Info {TrLabel Label} N {TrArgs Args TrIdRef})

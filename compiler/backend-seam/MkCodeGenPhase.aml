@@ -58,15 +58,13 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | litToInt (StringLit _ | RealLit _) =
 	    raise Crash.Crash "CodeGenPhase.litToInt"
 
-	fun translateId (id, env) =
-	    case lookup (env, LastIdRef id) of
-		O.LastUseLocal id => SOME id
-	      | _ => NONE
-
-	fun translateIdRef (idRef, env) = lookup (env, idRef)
+	fun translateIdRef (idRef as (IdRef _ | LastIdRef _), env) =
+	    lookup (env, idRef)
+	  | translateIdRef (Lit lit, _) = O.Immediate (translateLit lit)
+	  | translateIdRef (Prim name, _) = O.Immediate (V.prim name)
 
 	fun translateIdRefs (idRefs, env) =
-	    Vector.map (fn idRef => lookup (env, idRef)) idRefs
+	    Vector.map (fn idRef => translateIdRef (idRef, env)) idRefs
 
 	fun translateIdDef (IdDef id, env) = O.IdDef (declare (env, id))
 	  | translateIdDef (Wildcard, _) = O.Wildcard
@@ -204,11 +202,21 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    if isIdInArgs (idRefArgs, id) then USED else KILLED
 
 	fun translateBody ([stm], env) = translateStm (stm, env)
-	  | translateBody (stm::stms, env) =
-	    (doDec (stm, env);
-	     translateDec (stm, translateBody (stms, env), env))
+	  | translateBody ((stm as ValDec (_, IdDef id, exp))::
+			   (stms as [RaiseStm (_, LastIdRef id')]), env) =
+	    if id = id' then
+		case exp of
+		    VarExp (_, idRef) => O.Raise (translateIdRef (idRef, env))
+		  | ConExp (_, idRef, TupArgs #[]) =>
+			O.Raise (translateIdRef (idRef, env))
+		  | _ => translateBody' (stm, stms, env)
+	    else translateBody' (stm, stms, env)
+	  | translateBody (stm::stms, env) = translateBody' (stm, stms, env)
 	  | translateBody (nil, _) =
 	    raise Crash.Crash "CodeGenPhase.translateBody"
+	and translateBody' (stm, stms, env) =
+	    (doDec (stm, env);
+	     translateDec (stm, translateBody (stms, env), env))
 	and doDec (LastUse (_, _), _) = ()
 	  | doDec (ValDec (_, IdDef id, _), env) = ignore (declare (env, id))
 	  | doDec (ValDec (_, Wildcard, _), _) = ()
@@ -232,7 +240,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    let
 		val ids =
 		    Vector.foldr (fn (id, rest) =>
-				     case translateId (id, env) of
+				     case weakLookup (env, LastIdRef id) of
 					 SOME id => id::rest
 				       | NONE => rest) nil ids
 	    in
@@ -245,15 +253,16 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
 	    translateIgnore (exp, instr, env)
 	  | translateDec (RefDec (_, IdDef id, idRef), instr, env) =
-	    O.GetRef (declare (env, id), lookup (env, idRef), instr)
+	    O.GetRef (declare (env, id), translateIdRef (idRef, env), instr)
 	  | translateDec (RefDec (_, Wildcard, idRef), instr, env) =
-	    O.AppPrim (V.prim "Future.await", #[lookup (env, idRef)],
+	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))
 	  | translateDec (TupDec (_, idDefs, idRef), instr, env) =
 	    let
 		fun f id = translateIdDef (id, env)
 	    in
-		O.GetTup (Vector.map f idDefs, lookup (env, idRef), instr)
+		O.GetTup (Vector.map f idDefs, translateIdRef (idRef, env),
+			  instr)
 	    end
 	  | translateDec (ProdDec (info, labelIdDefVec, idRef), instr, env) =
 	    translateDec (TupDec (info, Vector.map #2 labelIdDefVec, idRef),
@@ -269,9 +278,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
 	    raise Crash.Crash "CodeGenPhase.translateStm"
 	  | translateStm (RaiseStm (_, idRef), env) =
-	    O.Raise (lookup (env, idRef))
+	    O.Raise (translateIdRef (idRef, env))
 	  | translateStm (ReraiseStm (_, idRef), env) =
-	    O.Reraise (lookup (env, idRef))
+	    O.Reraise (translateIdRef (idRef, env))
 	  | translateStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
 			  env) =
 	    O.Try (translateBody (tryBody, env),
@@ -291,7 +300,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		     translateIntTest (idRef, litTests, elseBody, env)
 	       | (StringLit _, _) =>
 		     O.StringTest
-		     (lookup (env, idRef),
+		     (translateIdRef (idRef, env),
 		      Vector.map (fn (lit, body) =>
 				  case lit of StringLit s =>
 				      (s, translateBody (body, env))
@@ -299,7 +308,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		      translateBody (elseBody, env))
 	       | (RealLit _, _) =>
 		     O.RealTest
-		     (lookup (env, idRef),
+		     (translateIdRef (idRef, env),
 		      Vector.map (fn (lit, body) =>
 				  case lit of RealLit r =>
 				      (r, translateBody (body, env))
@@ -315,13 +324,13 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    List.partition (fn (_, args, _) => isNAry args)
 				   (Vector.toList conTests)
 	    in
-		O.ConTest (lookup (env, idRef),
+		O.ConTest (translateIdRef (idRef, env),
 			   Vector.map (fn (idRef', _, body) =>
-				       (lookup (env, idRef'),
+				       (translateIdRef (idRef', env),
 					translateBody (body, env)))
 				      (Vector.fromList nullaryTests),
 			   Vector.map (fn (idRef', args, body) =>
-				       (lookup (env, idRef'),
+				       (translateIdRef (idRef', env),
 					translateConArgs (args, env),
 					translateBody (body, env)))
 				      (Vector.fromList naryTests),
@@ -329,7 +338,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    end
 	  | translateStm (TestStm (_, idRef, VecTests vecTests, elseBody),
 			  env) =
-	    O.VecTest (lookup (env, idRef),
+	    O.VecTest (translateIdRef (idRef, env),
 		       Vector.map
 			   (fn (idDefs, body) =>
 			       (Vector.map (fn idDef =>
@@ -348,19 +357,25 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		     in
 			 declareShared (env, stamp, instr); instr
 		     end)
+	  | translateStm (ReturnStm (_, VarExp (_, idRef)), env) =
+	    O.Return (O.OneArg (translateIdRef (idRef, env)))
+	  | translateStm (ReturnStm (_, TagExp (_, _, tag, TupArgs #[])), _) =
+	    O.Return (O.OneArg (O.Immediate (V.int (LargeInt.fromInt tag))))
+	  | translateStm (ReturnStm (_, ConExp (_, idRef, TupArgs #[])), env) =
+	    O.Return (O.OneArg (translateIdRef (idRef, env)))
 	  | translateStm (ReturnStm (_, TupExp (_, idRefs)), env) =
 	    O.Return (O.TupArgs (translateIdRefs (idRefs, env)))
 	  | translateStm (ReturnStm (_, ProdExp (_, labelIdRefVec)), env) =
 	    O.Return (O.TupArgs (Vector.map (fn (_, idRef) =>
-						lookup (env, idRef))
+						translateIdRef (idRef, env))
 					    labelIdRefVec))
 	  | translateStm (ReturnStm (_, PrimAppExp (_, name, idRefs)), env) =
 	    O.AppPrim (V.prim name, translateIdRefs (idRefs, env), NONE)
 	  | translateStm (ReturnStm (_, VarAppExp (_, idRef, args)), env) =
-	    O.AppVar (lookup (env, idRef),
+	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env), NONE)
 	  | translateStm (ReturnStm (_, FunAppExp (_, idRef, _, args)), env) =
-	    O.DirectAppVar (lookup (env, idRef),
+	    O.DirectAppVar (translateIdRef (idRef, env),
 			    translateArgs translateIdRef (args, env), NONE)
 	  | translateStm (ReturnStm (_, exp), env) =
 	    let
@@ -373,22 +388,18 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    translateBody (valOf bodyOpt, env)
 	  | translateStm (ExportStm (info, exp), env) =
 	    translateStm (ReturnStm (info, exp), env)
-	and translateExp (LitExp (_, lit), id, instr, _) =
-	    O.PutVar (id, O.Immediate (translateLit lit), instr)
-	  | translateExp (PrimExp (_, name), id, instr, _) =
-	    O.PutVar (id, O.Immediate (V.prim name), instr)
-	  | translateExp (NewExp (_, name), id, instr, _) =
+	and translateExp (NewExp (_, name), id, instr, _) =
 	    O.PutNew (id, Name.toString name, instr)
 	  | translateExp (VarExp (_, idRef), id, instr, env) =
-	    O.PutVar (id, lookup (env, idRef), instr)
+	    O.PutVar (id, translateIdRef (idRef, env), instr)
 	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
 	    O.PutVar (id, O.Immediate (V.int (LargeInt.fromInt tag)), instr)
 	  | translateExp (TagExp (_, _, tag, args), id, instr, env) =
 	    O.PutTag (id, tag, translateIdRefs (argsToVector args, env), instr)
 	  | translateExp (ConExp (_, idRef, TupArgs #[]), id, instr, env) =
-	    O.PutVar (id, lookup (env, idRef), instr)
+	    O.PutVar (id, translateIdRef (idRef, env), instr)
 	  | translateExp (ConExp (_, idRef, args), id, instr, env) =
-	    O.PutCon (id, lookup (env, idRef),
+	    O.PutCon (id, translateIdRef (idRef, env),
 		      translateIdRefs (argsToVector args, env), instr)
 	  | translateExp (TupExp (_, idRefs), id, instr, env) =
 	    O.PutTup (id, translateIdRefs (idRefs, env), instr)
@@ -456,11 +467,11 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateExp (VarAppExp (_, idRef, args), id, instr, env) =
 	    translateVarAppExp O.AppVar (idRef, args, id, instr, env)
 	  | translateExp (RefExp (_, idRef), id, instr, env) =
-	    O.PutRef (id, lookup (env, idRef), instr)
+	    O.PutRef (id, translateIdRef (idRef, env), instr)
 	  | translateExp (SelAppExp (_, _, _, i, idRef), id, instr, env) =
-	    O.Sel (id, lookup (env, idRef), i, instr)
+	    O.Sel (id, translateIdRef (idRef, env), i, instr)
 	  | translateExp (LazySelAppExp (_, _, _, i, idRef), id, instr, env) =
-	    O.LazySel (id, lookup (env, idRef), i, instr)
+	    O.LazySel (id, translateIdRef (idRef, env), i, instr)
 	  | translateExp (FunAppExp (info, idRef, _, args), id, instr, env) =
 	    translateVarAppExp O.DirectAppVar (idRef, args, id, instr, env)
 	  | translateExp (FailExp info, id, instr, env) = (*--** implement *)
@@ -475,18 +486,16 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			    (O.OneArg (O.IdDef id), instr)
 		      | KILLED => (O.OneArg O.Wildcard, instr)
 	    in
-		appVar (lookup (env, idRef),
+		appVar (translateIdRef (idRef, env),
 			translateArgs translateIdRef (args, env),
 			SOME (returnArgs, instr))
 	    end
-	and translateIgnore (LitExp (_, _), instr, _) = instr
-	  | translateIgnore (PrimExp (_, _), instr, _) = instr
-	  | translateIgnore (NewExp (_, _), instr, _) = instr
+	and translateIgnore (NewExp (_, _), instr, _) = instr
 	  | translateIgnore (VarExp (_, _), instr, _) = instr
 	  | translateIgnore (TagExp (_, _, _, _), instr, _) = instr
 	  | translateIgnore (ConExp (_, _, TupArgs #[]), instr, _) = instr
 	  | translateIgnore (ConExp (_, idRef, _), instr, env) =
-	    O.AppPrim (V.prim "Future.await", #[lookup (env, idRef)],
+	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))
 	  | translateIgnore (RefExp (_, _), instr, _) = instr
 	  | translateIgnore (TupExp (_, _), instr, _) = instr
@@ -497,21 +506,21 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppPrim (V.prim name, translateIdRefs (idRefs, env),
 		       SOME (O.Wildcard, instr))
 	  | translateIgnore (VarAppExp (_, idRef, args), instr, env) =
-	    O.AppVar (lookup (env, idRef),
+	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
 		      SOME (O.OneArg O.Wildcard, instr))
 	  | translateIgnore (SelAppExp (_, _, _, _, idRef), instr, env) =
-	    O.AppPrim (V.prim "Future.await", #[lookup (env, idRef)],
+	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))
 	  | translateIgnore (LazySelAppExp (_, _, _, _, _), instr, _) = instr
 	  | translateIgnore (FunAppExp (info, idRef, _, args), instr, env) =
-	    O.DirectAppVar (lookup (env, idRef),
+	    O.DirectAppVar (translateIdRef (idRef, env),
 			    translateArgs translateIdRef (args, env),
 			    SOME (O.OneArg O.Wildcard, instr))
 	  | translateIgnore (FailExp _, instr, _) = instr
 	and translateIntTest (idRef, litTests, elseBody, env) =
 	    let
-		val idRef = lookup (env, idRef)
+		val idRef = translateIdRef (idRef, env)
 		val map = LargeIntMap.new ()
 		val tests =
 		    Vector.map (fn (lit, body) =>
@@ -542,7 +551,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    end
 	and translateTagTest (idRef, tagTests, elseBody, env) =
 	    let
-		val idRef = lookup (env, idRef)
+		val idRef = translateIdRef (idRef, env)
 		val (naryTests, nullaryTests) =
 		    List.partition (fn (_, _, args, _) => isNAry args)
 				   (Vector.toList tagTests)
@@ -599,11 +608,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    Vector.map (fn (id, _, _) => O.IdDef (declare (env, id)))
 			       imports
 		val instr = translateBody (body, env)
-		val raiseId = fresh env
 		val nlocals = endTop env
 		val elseInstr =
-		    O.PutVar (raiseId, O.Immediate (V.prim "General.Match"),
-			      O.Raise (O.LastUseLocal raiseId))
+		    O.Raise (O.Immediate (V.prim "General.Match"))
 		val args = O.OneArg (O.IdDef formalId)
 		val bodyInstr =
 		    O.VecTest (O.LastUseLocal formalId,

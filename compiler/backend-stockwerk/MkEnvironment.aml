@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Name                  from "../../lib/rtt/Name"
 import structure Crash                 from "../infrastructure/Crash"
 import structure Stamp                 from "../common/Stamp"
 import structure StampMap              from "../common/StampMap"
@@ -42,6 +43,11 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		  isSpecialize: bool ref,
 		  shared: AbstractCodeGrammar.instr StampMap.t}
 
+	fun idToString (FlatGrammar.Id (_, stamp, Name.InId)) =
+	    "$" ^ Stamp.toString stamp
+	  | idToString (FlatGrammar.Id (_, stamp, Name.ExId s)) =
+	    "$" ^ Stamp.toString stamp ^ "[" ^ s ^ "]"
+
 	fun startTop (filename, context) =
 	    {filename = filename, context = context,
 	     stack = ref nil, scope = ref (StampMap.new ()),
@@ -52,7 +58,14 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		     globalIds = ref nil, ...}: t) =
 	    localIndex
 	  | endTop {stack, globalIds, ...} =
-	    raise Crash.Crash "MkEnvironment.endTop"
+	    if List.null (!stack) then
+		let
+		    val s =
+			String.separate ", " (List.map idToString (!globalIds))
+		in
+		    raise Crash.Crash ("MkEnvironment.endTop: globalIds " ^ s)
+		end
+	    else raise Crash.Crash "MkEnvironment.endTop: stack"
 
 	fun startFn ({stack, scope, localIndex,
 		      globalIndex, globalIds, isSpecialize, ...}: t,
@@ -124,11 +137,15 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	fun idRefId (FlatGrammar.IdRef id) = id
 	  | idRefId (FlatGrammar.LastIdRef id) = id
+	  | idRefId (FlatGrammar.Lit _ | FlatGrammar.Prim _) =
+	    raise Crash.Crash "MkEnvironment.idRefId"
 
 	fun idStamp (FlatGrammar.Id (_, stamp, _)) = stamp
 
 	fun isLast (FlatGrammar.IdRef _) = false
 	  | isLast (FlatGrammar.LastIdRef _) = true
+	  | isLast (FlatGrammar.Lit _ | FlatGrammar.Prim _) =
+	    raise Crash.Crash "MkEnvironment.isLast"
 
 	fun lookup ({context, scope,
 		     globalIndex, globalIds, isSpecialize, ...}: t, idRef) =
@@ -158,6 +175,16 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			    StampMap.insertDisjoint (!scope, stamp, idRef);
 			    idRef
 			end
+	    end
+
+	fun weakLookup ({scope, ...}: t, idRef) =
+	    let
+		val id = idRefId idRef
+		val stamp = idStamp id
+	    in
+		case StampMap.lookup (!scope, stamp) of
+		    SOME (AbstractCodeGrammar.Local id) => SOME id
+		  | _ => NONE
 	    end
 
 	fun lookupStamp ({scope, shared, ...}: t, stamp) =
