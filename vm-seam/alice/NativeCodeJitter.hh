@@ -95,6 +95,7 @@ protected:
   static u_int LoadIdRefKill(u_int Dest, word idRef);
   static void Await(u_int Ptr, word pc);
   static u_int LoadIdRef(u_int Dest, word idRef, word pc);
+  static u_int ReloadIdRef(u_int Dest, word idRef);
   static void KillVariables();
   static void BlockOnTransient(u_int Ptr, word pc);
   static void LookupTestTable(u_int Key, u_int table);
