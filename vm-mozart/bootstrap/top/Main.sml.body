@@ -114,7 +114,9 @@ fun readFile filename =
 
 fun readDefaultImport () =
     case OS.Process.getEnv "STOCKHOME" of
-	SOME homedir => readFile (homedir ^ "/Default.import")
+	SOME homedir =>
+	    String.map (fn #"\n" => #" " | c => c)
+	    (readFile (homedir ^ "/Default.import")) ^ "\n"
       | NONE =>
 	    (TextIO.print "### warning: could not load Default.import\n"; "")
 
@@ -224,6 +226,11 @@ in
 	     if existsFile sigFilename then
 		 raise RETURN (compileSign sigFilename)
 	     else ();
+	     case changeExtension (targetFilename, ".ozf", ".aml") of
+		 SOME sourceFilename =>
+		     raise RETURN (compileForMozart
+				  (sourceFilename, targetFilename, ""))
+	       | NONE => ();
 	     case changeExtension (targetFilename, ".ozf", ".sml") of
 		 SOME sourceFilename =>
 		     raise RETURN (compileForMozart
@@ -266,7 +273,7 @@ local
     val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n"
 
     fun stoc_c (infile, outfile) =
-	(compileForMozart (infile, basename infile ^ ".ozf", "");
+	(compileForMozart (infile, outfile, "");
 	 OS.Process.success)
 
     fun stoc_x (infile, outfile) =
@@ -297,6 +304,8 @@ local
 
     fun options ("--nodefaultimport"::rest) =
 	(defaultImport := ""; options rest)
+      | options ("--outputassembly"::rest) =
+	(outputAssembly := true; options rest)
       | options rest = rest
 
     fun stoc ["--replacesign", infile, signfile, outfile] =
