@@ -186,7 +186,7 @@ public:
   }
 #if defined(JIT_STORE_DEBUG)
   // Logging Support
-  SeamMemberDll void InitLoggging();
+  SeamMemberDll static void InitLoggging();
   SeamMemberDll void LogMesg(const char *mesg);
   SeamMemberDll void LogReg(u_int Value);
   SeamMemberDll void DumpReg(u_int Value, value_plotter plotter);
