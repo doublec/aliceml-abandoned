@@ -14,8 +14,6 @@
  *)
 
 import structure Node from "Node"
-import structure Dictionaries from "Dictionaries"
-import structure Settings from "Settings"
 
 import signature LAYOUT from "LAYOUT-sig"
 
@@ -136,7 +134,8 @@ struct
 		end) 
       | layout (Empty) = (0,0,0) 
     
-   
+(*    
+
    (* calcMaxXDim *) 
    fun calcMaxXDim (dict,i)  = 
        if i > Dictionaries.Main.getHighestIndexAssigned(dict) 
@@ -147,7 +146,7 @@ struct
 	     | SOME  (node,_)  => Int.max( get_xdim(node)  ,calcMaxXDim(dict,i+1)) 
 		
 		
-    (* setVisible *) (*** nach Widget!!! ***)
+    (* setVisible *) (*** nach Update!!! ***)
     fun setVisible (x,y) = let
 			       val w = !Settings.fontWidth
 			       val h = !Settings.fontHeight
@@ -161,7 +160,7 @@ struct
 				    calcMaxXDim (Dictionaries.maindict,0))
 				    ; Settings.max_y 
 				    := Real.+(!Settings.max_y,ry))
-			   end 
+			   end  *)
 
 end
 

@@ -1043,6 +1043,19 @@ struct
 
 (**** Ende Initialisierung ****)
 
+fun setVisible (x,y) = let
+			   val w = !Settings.fontWidth
+			   val h = !Settings.fontHeight
+			   val rx =  Real.fromInt(w * x)
+			   val ry =  Real.fromInt(h * y)
+		       in
+			   (if Real.> (rx,!(Settings.max_x)) 
+				then Settings.max_x := rx 
+			    else ()
+			    ;Settings.max_y := 
+				Real.+(!Settings.max_y,ry))
+		       end
+
 (********** Inspizieren **********)
     fun inspect(v,t) = 
 	let
@@ -1061,7 +1074,7 @@ struct
 	    ; TextIO.print ("Widget: changing actline by " 
 			    ^ Int.toString (get_ydim(n)+1)
 			    ^ "\n")
-	    ; Layout.setVisible(get_xdim(n),get_ydim(n)+1)
+	    ; setVisible(get_xdim(n),get_ydim(n)+1)
 	    ; (!resize)()
 	    ; show()
 	    ; stopButtonSetActive(false)
@@ -1082,7 +1095,7 @@ struct
 	    ( Layout.layout(n)
 	    ; DrawNodes.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
-	    ; Layout.setVisible(get_xdim(n),get_ydim(n)+1)
+	    ; setVisible(get_xdim(n),get_ydim(n)+1)
 	    ; (!resize)()
             ; show()
 	    ; stopButtonSetActive(false)
