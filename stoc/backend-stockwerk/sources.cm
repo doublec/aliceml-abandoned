@@ -10,12 +10,12 @@ Group is
 
     pickle-grammar.cm
 
-    PRIM_PICKLE.sig
-    PrimPickle.sml
-    OUTPUT_PICKLE.sig
-    OutputPickle.sml
-    ENVIRONMENT.sig
-    Environment.sml
-    CODE_GEN_PHASE.sig
-    CodeGenPhase.sml
-    MakeBackendStockwerk.sml
+    PRIM_PICKLE-sig.aml
+    PrimPickle.aml
+    OUTPUT_PICKLE-sig.aml
+    OutputPickle.aml
+    ENVIRONMENT-sig.aml
+    Environment.aml
+    CODE_GEN_PHASE-sig.aml
+    CodeGenPhase.aml
+    MkBackendStockwerk.aml

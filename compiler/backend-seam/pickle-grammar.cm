@@ -4,5 +4,5 @@ Group is
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
 
-    PICKLE_GRAMMAR.sig
-    PickleGrammar.sml
+    PICKLE_GRAMMAR-sig.aml
+    PickleGrammar.aml

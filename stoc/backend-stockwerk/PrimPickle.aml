@@ -16,7 +16,7 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	type id = int
 
-	structure StringMap = MakeHashImpMap(StringHashKey)
+	structure StringMap = MkHashImpMap(StringHashKey)
 
 	type outstream = BinIO.outstream * id ref * id StringMap.t
 
