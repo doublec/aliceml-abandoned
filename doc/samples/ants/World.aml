@@ -5,7 +5,7 @@ import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 structure World =
   struct
 
-  structure AntMap = MkHashImpMap Int
+(*  structure AntMap = MkHashImpMap Int*)
 
   exception Debug of int
 
@@ -27,8 +27,8 @@ structure World =
 
   type pos = int * int
 
-  (* world = x_size * cell array *)
-  type world = int * cell array * Ant.ant AntMap.map
+  (* world = x_size * cell array * map of ants *)
+  type world = int * cell array * Ant.ant array
 
   
   val updateCellVR = ref (fn (w, x, y) => ())
@@ -42,7 +42,8 @@ structure World =
 
   fun newWorld(x_size, y_size) = (x_size,
                                   Array.array(x_size*y_size,emptyCell()),
-                                  AntMap.map())
+                                  Array.array(1000, Ant.emptyAnt))
+
   fun sizeOfTheWorld(xs, cells,_) = (xs, Array.length cells div xs)
 
   fun indexToCoords(xs, i) = (i mod xs, i div xs)
@@ -58,7 +59,7 @@ structure World =
 
   fun initCellAt(w as (xs, cells,antMap):world, (x,y), cell) =
       (Array.update(cells, xs*y+x, cell);
-       Option.app (fn a => AntMap.insert(antMap,#id a, a)) (!(#ant cell));
+       Option.app (fn a => Array.update(antMap,#id a, a)) (!(#ant cell));
        updateCellV (w, x, y))
 
   (* Geometry *)
@@ -120,7 +121,7 @@ structure World =
       end
 
   fun findAnt((_,_,antMap):world, id) =
-      Ant.getCoords(AntMap.lookupExistent(antMap, id))
+      Ant.getCoords(Array.sub(antMap, id))
 
   fun antIsAlive(world, id) = 
       findAnt(world,id) <> (~1,~1)

@@ -22,6 +22,15 @@ structure Ant =
                xpos : int ref,
                ypos : int ref}
 
+  val emptyAnt =  { id = 0,
+                    color = Red,
+                    state = ref 0,
+                    resting = ref 0,
+                    direction = ref E,
+                    hasFood = ref false,
+                    xpos = ref ~1,
+                    ypos = ref ~1}
+
   fun setState({state,...}:ant, newState) = state:=newState
   fun setResting({resting,...}:ant, newResting) = resting:=newResting
   fun setDirection({direction,...}:ant, newDirection) = direction:=newDirection

@@ -22,7 +22,7 @@ structure Simulator :
 
   val defSeed = 0w12345
   fun randStream seed =
-      lazy Word.toInt ((seed div 0w65536) mod 0w16384 ) ::
+      lazy Word.toInt (Word.andb(Word.>>(seed,0w16), 0wx3FFF )) ::
            randStream ((seed * 0w22695477)+0w1)
   fun randInit () = tl(tl(tl(tl(randStream defSeed))))
                     
@@ -84,18 +84,20 @@ structure Simulator :
       end
 
   fun step(w, redAnt, blackAnt, id) =
-      if antIsAlive(w, id) then
-      let val p = findAnt(w, id)
-          val a = antAt(w, p) handle Option => raise Empty
+      case findAnt(w, id) of
+          (~1,~1) => ()
+        | p =>
+      let
+          val a = antAt(w, p)
+          val resting = Ant.getResting a
       in
-          if Ant.getResting a > 0 then
-              setResting(w, p, Ant.getResting a - 1)
+          if resting > 0 then
+              setResting(w, p, resting - 1)
           else instr (getInstruction(case Ant.getColor a of Red => redAnt
                                                           | _ => blackAnt,
                                      Ant.getState a),
                       w, id, p, a)
       end
-      else ()
 
   fun simulate(showStatus, showWorlds, showAnts, drawWorlds,
                visualize, visualizeEnd,
@@ -141,7 +143,7 @@ structure Simulator :
                         else ()
                     else ();
                     if delay>0 then
-                        Future.await(Future.alarm(Time.fromMilliseconds delay))
+                        Thread.sleep (Time.fromMilliseconds delay)
                     else ();
                     loop noOfAnts
                          (fn i => step(world, redBrain, blackBrain, i))));
