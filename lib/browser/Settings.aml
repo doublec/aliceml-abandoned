@@ -19,12 +19,15 @@ import signature SETTINGS from "SETTINGS-sig"
 structure Settings :> SETTINGS = 
 struct 
 
+    (* depth and width limit settings *)
     val max_width = ref 30
     val max_depth = ref 8
 
+    (* relation mode settings *)
     val relmode = ref false
     val tokenmode = ref false
 
+    (* font settings *)
     val fontname = ref ""
     val font = ref GtkSupport.uglyNULL
     val fontHeight = ref 0
@@ -35,26 +38,28 @@ struct
      
     fun getFontWidth() = !fontWidth
 
-    fun setFontSize i = (fontSize:= i
-			 ;fontname:=  
-			 ("-*-*-medium-r-normal--"
-			 ^ Int.toString(i) 
-			 ^ "-*-*-*-m-*-iso8859-1")
-			 ;font:= GtkSupport.fontLoad(!fontname)
-			 ;fontHeight := 
-			 (GtkSupport.fontGetFieldAscent(!font)+
-			  GtkSupport.fontGetFieldDescent(!font) )
-			 ;fontWidth := 
-			 (GtkSupport.stringWidth(!font,"W")))
+    (* procedures to edit the settings *)
+    fun setFontSize i = 
+	(fontSize:= i
+	 ;fontname:=  
+	   ("-*-*-medium-r-normal--"
+	    ^ Int.toString(i) 
+	    ^ "-*-*-*-m-*-iso8859-1")
+	 ;font:= GtkSupport.fontLoad(!fontname)
+	 ;fontHeight := 
+	   (GtkSupport.fontGetFieldAscent(!font)+
+	    GtkSupport.fontGetFieldDescent(!font) )
+	 ;fontWidth := 
+	   (GtkSupport.stringWidth(!font,"W")))
 
-     val _ = setFontSize 14
-
+    val _ = setFontSize 14
+	
     fun set_width w = max_width := w
-
+	
     fun set_depth d = max_depth := d
 	
     fun set_relmode b = relmode := b
-
+	
     fun set_tokenmode b = tokenmode := b
-
+	
 end

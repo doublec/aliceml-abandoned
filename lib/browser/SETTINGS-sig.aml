@@ -17,28 +17,35 @@ import structure GtkSupport from "GtkSupport"
 
 signature SETTINGS = 
 sig
-
+    
+    (* depth and width limit settings *)
+    
     val max_width: int ref
     val max_depth: int ref
 
-    val relmode: bool ref
-
+    (* relation mode settings *)
+    
+    val relmode:   bool ref
     val tokenmode: bool ref
 
-    val fontname: string ref
-    val font: GtkSupport.tag ref
-    val fontHeight: int ref
-    val fontWidth: int ref
-    val fontSize: int ref
+    (* font settings *)
+    
+    val fontname:    string ref
+    val font:        GtkSupport.tag ref
+    val fontHeight:  int ref
+    val fontWidth:   int ref
+    val fontSize:    int ref
 
     val getFontHeight: unit -> int 
-    val getFontWidth: unit -> int
+    val getFontWidth:  unit -> int
 
-    val setFontSize: int -> unit
+    (* procedures to edit the settings *)
+    
+    val setFontSize:   int -> unit
 
-    val set_width: int -> unit
-    val set_depth: int -> unit
-    val set_relmode: bool -> unit
+    val set_width:     int  -> unit
+    val set_depth:     int  -> unit
+    val set_relmode:   bool -> unit
     val set_tokenmode: bool -> unit
 
 end
