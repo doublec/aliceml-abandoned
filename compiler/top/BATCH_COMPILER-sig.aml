@@ -1,17 +1,17 @@
 signature MAIN =
   sig
 
-    val parseString :		string -> InputGrammar.Component
-    val parseFile :		string -> InputGrammar.Component
+    val parseString :		string -> InputGrammar.t
+    val parseFile :		string -> InputGrammar.t
 
-    val abstractString :	string -> AbstractGrammar.component
-    val abstractFile :		string -> AbstractGrammar.component
+    val abstractString :	string -> AbstractGrammar.t
+    val abstractFile :		string -> AbstractGrammar.t
 
-    val elabString :		string -> TypedGrammar.component
-    val elabFile :		string -> TypedGrammar.component
+    val elabString :		string -> TypedGrammar.t
+    val elabFile :		string -> TypedGrammar.t
 
-    val translateString :	string -> IntermediateGrammar.component
-    val translateFile :		string -> IntermediateGrammar.component
+    val translateString :	string -> IntermediateGrammar.t
+    val translateFile :		string -> IntermediateGrammar.t
 
     val imperatifyString :	string -> ImperativeGrammar.component
     val imperatifyFile :	string -> ImperativeGrammar.component

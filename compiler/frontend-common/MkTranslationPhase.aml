@@ -381,7 +381,7 @@ UNFINISHED: obsolete after bootstrapping:
     fun trComp(I.Comp(i,is,ds))		=
 	let
 	    val  ids'       = ids ds
-	    val (xsus',ds') = trImps'(is, trDecs ds)
+	    val (xsus',ds') = trAnns'(is, trDecs ds)
 	    val  fs'        = List.map idToField ids'
 	    val  t          = Type.inProd(idsToRow ids')
 	    val  i'         = typInfo(#region i,t)
@@ -390,9 +390,9 @@ UNFINISHED: obsolete after bootstrapping:
 	    ( xsus', (exp',()) )
 	end
 
-    and trImps'(is, ds') = List.foldr trImp ([],ds') is
+    and trAnns'(is, ds') = List.foldr trAnn ([],ds') is
 
-    and trImp(I.Imp(i,ss,u),(xsus',ds')) =
+    and trAnn(I.ImpAnn(i,ss,u),(xsus',ds')) =
 	let
 	    val x'  = O.Id(i, Stamp.new(), Name.InId)
 	    val y'  = O.ShortId(i, x')

@@ -12,8 +12,8 @@ functor MakeAbstractGrammar(type lab_info
 			    type inf_info
 			    type dec_info
 			    type spec_info
+			    type ann_info
 			    type comp_info
-			    type imp_info
 			    val labToIdInfo: lab_info -> id_info
 			    val idToLabInfo: id_info -> lab_info
 			   ) : ABSTRACT_GRAMMAR =
@@ -35,8 +35,8 @@ functor MakeAbstractGrammar(type lab_info
     type inf_info	= inf_info
     type dec_info	= dec_info
     type spec_info	= spec_info
+    type ann_info	= ann_info
     type comp_info	= comp_info
-    type imp_info	= imp_info
 
     type fix		= Fixity.t
 
@@ -187,11 +187,11 @@ functor MakeAbstractGrammar(type lab_info
 
     (* Components *)
 
-    and comp = Comp of comp_info * imp list * dec list
+    and ann  = ImpAnn of ann_info * spec list * Url.t
 
-    and imp  = Imp of imp_info * spec list * Url.t
+    and comp = Comp of comp_info * ann list * dec list
 
-    type component = comp
+    type t = comp
 
 
     (* Projections *)
@@ -316,7 +316,8 @@ functor MakeAbstractGrammar(type lab_info
       | infoSpec(LocalSpec(i,_))	= i
       | infoSpec(ExtSpec(i,_))		= i
 
+    fun infoAnn(ImpAnn(i,_,_))		= i
+
     fun infoComp(Comp(i,_,_))		= i
-    fun infoImp(Imp(i,_,_))		= i
 
   end

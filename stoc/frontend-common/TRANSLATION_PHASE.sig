@@ -4,5 +4,5 @@ signature TRANSLATION_PHASE =
     structure I : ABSTRACT_GRAMMAR     = TypedGrammar
     structure O : INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-    val translate : C.t -> I.component -> O.component
+    val translate : C.t -> I.comp -> O.comp
   end

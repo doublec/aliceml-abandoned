@@ -14,8 +14,8 @@ structure AbstractInfo =
     type inf_info	= Source.region
     type dec_info	= Source.region
     type spec_info	= Source.region
+    type ann_info	= Source.region
     type comp_info	= Source.region
-    type imp_info	= Source.region
 
     fun labToIdInfo r	= r
     fun idToLabInfo r	= r

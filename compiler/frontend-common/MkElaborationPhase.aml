@@ -1883,9 +1883,9 @@ val p = Path.fromLab(Label.fromString "?localSpec")
 
   (* Components *)
 
-    fun elabComp(E, I.Comp(i, imps, decs)) =
+    fun elabComp(E, I.Comp(i, anns, decs)) =
 	let
-	    val imps' = elabImps(E, imps)
+	    val anns' = elabAnns(E, anns)
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
@@ -1895,17 +1895,17 @@ val _ = print "Component signature:\n"
 val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
 val _ = print "\n"
 	in
-	    O.Comp(nonInfo(i), imps', decs')
+	    O.Comp(nonInfo(i), anns', decs')
 	end
 
-    and elabImp(E, I.Imp(i, specs, url)) =
+    and elabAnn(E, I.ImpAnn(i, specs, url)) =
 	let
 	    val specs' = elabSpecs(E, Inf.empty(), specs)
 	in
-	    O.Imp(nonInfo(i), specs', url)
+	    O.ImpAnn(nonInfo(i), specs', url)
 	end
 
-    and elabImps(E, imps) = List.map (fn imp => elabImp(E, imp)) imps
+    and elabAnns(E, anns) = List.map (fn ann => elabAnn(E, ann)) anns
 
 
 

@@ -17,8 +17,8 @@ signature ABSTRACT_GRAMMAR =
     type inf_info
     type dec_info
     type spec_info
+    type ann_info
     type comp_info
-    type imp_info
 
     type fix = Fixity.t
 
@@ -169,11 +169,11 @@ signature ABSTRACT_GRAMMAR =
 
     (* Components *)
 
-    and comp = Comp of comp_info * imp list * dec list
+    and ann  = ImpAnn of ann_info * spec list * Url.t
 
-    and imp  = Imp of imp_info * spec list * Url.t
+    and comp = Comp of comp_info * ann list * dec list
 
-    type component = comp
+    type t = comp
 
 
     (* Operations *)
@@ -199,7 +199,7 @@ signature ABSTRACT_GRAMMAR =
     val infoInf :	inf	-> inf_info
     val infoDec :	dec	-> dec_info
     val infoSpec :	spec	-> spec_info
+    val infoAnn :	ann	-> ann_info
     val infoComp :	comp	-> comp_info
-    val infoImp :	imp	-> imp_info
 
   end

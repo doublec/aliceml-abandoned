@@ -14,8 +14,8 @@ structure TypedInfo =
     type inf_info	= { region: Source.region, inf: Inf.t }
     type dec_info	= { region: Source.region }
     type spec_info	= { region: Source.region }
+    type ann_info	= { region: Source.region }
     type comp_info	= { region: Source.region }
-    type imp_info	= { region: Source.region }
 
     fun labToIdInfo i	= i
     fun idToLabInfo i	= i
