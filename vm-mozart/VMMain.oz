@@ -90,6 +90,7 @@ define
    AliceHome = case {OS.getEnv 'ALICE_HOME'} of false then
 		  {System.printError 'alicerun: ALICE_HOME not set\n'}
 		  {Application.exit 1}
+		  unit
 	       elseof S then S#'/'
 	       end
 
