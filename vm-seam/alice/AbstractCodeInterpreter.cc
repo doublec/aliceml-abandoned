@@ -287,7 +287,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Vector *formalIdDefs = formalArgs;
 	if (nArgs == 0) {
 	  if (Scheduler::nArgs != 0) {
-	    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+	    Assert(Scheduler::nArgs == 1);
 	    word requestWord = Scheduler::currentArgs[0];
 	    if (Store::WordToInt(requestWord) == INVALID_INT)
 	      REQUEST(requestWord);
@@ -501,7 +501,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// Push a call frame for the primitive
 	Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nArgs = actualIdRefs->GetLength();
-	Scheduler::nArgs = nArgs == 1? Scheduler::ONE_ARG: nArgs;
+	Scheduler::nArgs = nArgs;
 	for (u_int i = nArgs; i--; )
 	  Scheduler::currentArgs[i] =
 	    GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv);
@@ -522,21 +522,10 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	}
 	Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nArgs = actualIdRefs->GetLength();
-	switch (nArgs) {
-	case 1:
-	  Scheduler::nArgs = Scheduler::ONE_ARG;
-	  Scheduler::currentArgs[0] =
-	    GetIdRefKill(actualIdRefs->Sub(0), pc, globalEnv, localEnv);
-	  break;
-	default:
-	  {
-	    Scheduler::nArgs = nArgs;
-	    for (u_int i = nArgs; i--; )
-	      Scheduler::currentArgs[i] =
-		GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv);
-	  }
-	  break;
-	}
+	Scheduler::nArgs = nArgs;
+	for (u_int i = nArgs; i--; )
+	  Scheduler::currentArgs[i] =
+	    GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv);
 	if (StatusWord::GetStatus() != 0) {
 	  Worker::Result res =
 	    Scheduler::PushCall(GetIdRefKill(pc->Sel(0), pc,
@@ -901,22 +890,11 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	Vector *returnIdRefs = Vector::FromWordDirect(pc->Sel(0));
 	u_int nArgs = returnIdRefs->GetLength();
-	switch (nArgs) {
-	case 1:
-	  Scheduler::nArgs = Scheduler::ONE_ARG;
-	  Scheduler::currentArgs[0] =
-	    GetIdRefKill(returnIdRefs->Sub(0), pc, globalEnv, localEnv);
-	  break;
-	default:
-	  {
-	    Assert(nArgs <= Scheduler::maxArgs);
-	    Scheduler::nArgs = nArgs;
-	    for (u_int i = nArgs; i--; )
-	      Scheduler::currentArgs[i] =
-		GetIdRefKill(returnIdRefs->Sub(i), pc, globalEnv, localEnv);
-	  }
-	  break;
-	}
+	Assert(nArgs <= Scheduler::maxArgs);
+	Scheduler::nArgs = nArgs;
+	for (u_int i = nArgs; i--; )
+	  Scheduler::currentArgs[i] =
+	    GetIdRefKill(returnIdRefs->Sub(i), pc, globalEnv, localEnv);
 	CHECK_PREEMPT();
       }
       break;
@@ -950,10 +928,7 @@ u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   TagVal *abstractCode = aliceConcreteCode->GetAbstractCode();
   Vector *idDefs = Vector::FromWordDirect(abstractCode->Sel(3));
   u_int nArgs = idDefs->GetLength();
-  if (nArgs == 1)
-    return Scheduler::ONE_ARG;
-  else
-    return nArgs;
+  return nArgs;
 }
 
 const char *AbstractCodeInterpreter::Identify() {
