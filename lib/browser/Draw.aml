@@ -23,13 +23,13 @@ import structure Color from "Color"
 import structure Layout from "Layout"
 import structure Settings from "Settings"
 
-import signature DRAW_NODES from "DRAW_NODES-sig"
+import signature DRAW from "DRAW-sig"
 
 local open Node Layout 
 
 in
 
-structure DrawNodes :> DRAW_NODES =
+structure Draw :> DRAW =
 struct
 
     exception MissingColor

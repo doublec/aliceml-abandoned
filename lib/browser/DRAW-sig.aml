@@ -19,7 +19,7 @@ local open Node
 
 in
 
-signature DRAW_NODES =
+signature DRAW =
     sig
 
         exception  MissingColor
