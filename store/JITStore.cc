@@ -18,9 +18,6 @@
 
 #include "store/JITStore.hh"
 
-// This is the only instance of lightning state
-jit_state lightning;
-
 //
 // Logging Helper Functions
 //
@@ -31,8 +28,6 @@ word JITStore::loadedWord;
 #if defined(JIT_STORE_DEBUG)
 
 #include <string.h>
-
-static FILE *execLog;
 
 static const char *RegToString(u_int Reg) {
   switch (Reg) {
@@ -57,29 +52,16 @@ static const char *RegToString(u_int Reg) {
   }
 }
 
+static FILE *execLog;
+
 static void ShowMessage(const char *info) {
   fprintf(execLog, info);
   fflush(execLog);
 }
 
-static void CompileMessage(const char *info) {
-  jit_movi_p(JIT_R0, info);
-  jit_pushr_ui(JIT_R0);
-  JITStore::Call(1, (void *) ShowMessage);
-}
-
 static void ShowRegister(const char *info, word value) {
   fprintf(execLog, info, value);
   fflush(execLog);
-}
-
-static void CompileRegister(u_int Reg) {
-  static char buffer[256];
-  sprintf(buffer, "%s = %%p\n", RegToString(Reg));
-  jit_pushr_ui(Reg);
-  jit_movi_p(JIT_R0, strdup(buffer));
-  jit_pushr_ui(JIT_R0);
-  JITStore::Call(2, (void *) ShowRegister);
 }
 
 //
@@ -100,6 +82,22 @@ SeamDll u_int jitDebug = 0;
 #define JIT_END_COND() \
   jit_patch(no_debug); \
   jit_popr_ui(JIT_R0);
+
+
+void JITStore::CompileMessage(const char *info) {
+  jit_movi_p(JIT_R0, info);
+  jit_pushr_ui(JIT_R0);
+  JITStore::Call(1, (void *) ShowMessage);
+}
+
+void JITStore::CompileRegister(u_int Reg) {
+  static char buffer[256];
+  sprintf(buffer, "%s = %%p\n", RegToString(Reg));
+  jit_pushr_ui(Reg);
+  jit_movi_p(JIT_R0, strdup(buffer));
+  jit_pushr_ui(JIT_R0);
+  JITStore::Call(2, (void *) ShowRegister);
+}
 
 void JITStore::LogMesg(const char *info) {
   JIT_BEG_COND();
