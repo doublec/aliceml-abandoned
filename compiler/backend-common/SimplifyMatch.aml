@@ -117,7 +117,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val (posPatVector, conArgs) =
 		    makeAppConArgs (pat, isNAry, LABEL label::pos)
 		val typ = #typ info
-		val n = tagIndex (typ, label)
+		val n = labelToIndex (typ, label)
 		val conArity = makeConArity (typ, isNAry)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>

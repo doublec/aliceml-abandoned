@@ -348,10 +348,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | findLabel (ProdArity labels, label) =
 	    find (labels, label, 0, Vector.length labels)
 
-	fun selIndex (typ, label) =
-	    valOf (findLabel (typToArity typ, label))
-
-	fun tagIndex (typ, label) =
-	    selIndex (if Type.isArrow' typ then #2 (Type.asArrow' typ)
-		      else typ, label)
+	fun labelToIndex (typ, label) =
+	    case findLabel (typToArity typ, label) of
+		SOME i => i
+	      | NONE => raise Crash.Crash "IntermediateAux.labelToIndex"
     end

@@ -98,15 +98,19 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | testArity (_, _, _, _) =
 	    raise Crash.Crash "FlatteningPhase.testArity"
 
-	fun tagAppTest (label, n, args, conArity, body) =
-	    testArity (args, valOf conArity,
+	fun tagAppTest (label, n, args, SOME arity, body) =
+	    testArity (args, arity,
 		       fn (args, body) =>
 		       O.TagTests #[(label, n, SOME args, body)], body)
+	  | tagAppTest (_, _, _, NONE, _) =
+	    raise Crash.Crash "FlatteningPhase.tagAppTest"
 
-	fun conAppTest (con, args, conArity, body) =
-	    testArity (args, valOf conArity,
+	fun conAppTest (con, args, SOME arity, body) =
+	    testArity (args, arity,
 		       fn (args, body) =>
 		       O.ConTests #[(con, SOME args, body)], body)
+	  | conAppTest (_, _, NONE, _) =
+	    raise Crash.Crash "FlatteningPhase.conAppTest"
 
 	fun expArity (args as O.OneArg _, O.Unary, info, app) = (nil, app args)
 	  | expArity (O.OneArg id, O.TupArity n, info: id_info, app) =
@@ -139,13 +143,17 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | expArity (_, _, _, _) =
 	    raise Crash.Crash "FlatteningPhase.expArity"
 
-	fun tagAppExp (info, label, n, args, conArity) =
-	    expArity (args, valOf conArity, info,
+	fun tagAppExp (info, label, n, args, SOME arity) =
+	    expArity (args, arity, info,
 		      fn args => O.TagAppExp (id_info info, label, n, args))
+	  | tagAppExp (_, _, _, _, NONE) =
+	    raise Crash.Crash "FlatteningPhase.tagAppExp"
 
-	fun conAppExp (info, id, args, conArity) =
-	    expArity (args, valOf conArity, info,
+	fun conAppExp (info, id, args, SOME arity) =
+	    expArity (args, arity, info,
 		      fn args => O.ConAppExp (id_info info, id, args))
+	  | conAppExp (_, _, _, NONE) =
+	    raise Crash.Crash "FlatteningPhase.conAppExp"
 
 	(* Translation *)
 
@@ -159,7 +167,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms, id, innerTyp) = translateLongid longid
 		val info = {region = region}
 		val id' = O.Id (info, Stamp.new (), Name.InId)
-		val n = selIndex (innerTyp, label)
+		val n = labelToIndex (innerTyp, label)
 		val stm =
 		    O.ValDec (stm_info region, O.IdDef id',
 			      O.SelAppExp (info, label, n, id))
@@ -334,7 +342,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (TagExp (info, Lab (_, label), exp, isNAry),
 			  f, cont) =
 	    if isZeroTyp (#typ (infoExp exp)) then
-		f (O.TagExp (id_info info, label, tagIndex (#typ info, label),
+		f (O.TagExp (id_info info, label,
+			     labelToIndex (#typ info, label),
 			     makeConArity (#typ info, isNAry)))::
 		translateCont cont
 	    else
@@ -342,9 +351,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    val r = ref NONE
 		    val rest = [O.IndirectStm (stm_info (#region info), r)]
 		    val (stms, args) = unfoldArgs (exp, rest, isNAry)
-		    val typ = #typ (infoExp exp)
-		    val n = tagIndex (typ, label)
-		    val conArity = makeConArity (typ, isNAry)
+		    val n = labelToIndex (#typ info, label)
+		    val conArity = makeConArity (#typ (infoExp exp), isNAry)
 		    val (stms', exp') =
 			tagAppExp (info, label, n, args, conArity)
 		in
@@ -430,7 +438,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp, Goto rest)
 		val typ = #typ (infoExp exp)
-		val n = selIndex (#1 (Type.asArrow' typ), label)
+		val n = labelToIndex (#1 (Type.asArrow' typ), label)
 	    in
 		(r := SOME (f (O.SelAppExp (id_info info, label, n, id2))::
 			    translateCont cont);
