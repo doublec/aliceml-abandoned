@@ -16,7 +16,6 @@
 
 __prebound Prebound
 
-type     unit   = {}
 datatype bool   = datatype Prebound.bool
 type     int    = Prebound.int
 type     word   = Prebound.word
@@ -95,6 +94,7 @@ structure General =
 
 open General
 
+
 (* Option *)
 
 structure Option =
@@ -138,9 +138,6 @@ structure Option =
 
 datatype option = datatype Option.option
 
-val getOpt = Option.getOpt
-val isSome = Option.isSome
-val valOf = Option.valOf
 
 (* Bool *)
 
@@ -159,6 +156,7 @@ structure Bool =
 
 val not = Bool.not
 
+
 (* List *)
 
 structure List =
@@ -172,9 +170,9 @@ structure List =
       | null _  = false
 
     fun length xs =
-	let fun length(nil,   n) = n
-	      | length(x::xs, n) = length(xs,n+1)
-	in length(xs,0) end
+	let fun length'(nil,   n) = n
+	      | length'(y::ys, n) = length'(ys,n+1)
+	in length'(xs,0) end
 
     fun   nil   @ ys = ys
       | (x::xs) @ ys = x :: xs @ ys
@@ -193,27 +191,27 @@ structure List =
       | getItem  nil   = NONE
 
     fun nth(l,i) =
-	let fun nth(x::xs, 0) = x
-	      | nth(x::xs, i) = nth(xs, i-1)
-	      | nth(nil,   i) = raise Subscript
-	in if i >= 0 then nth(l,i) else raise Subscript end
+	let fun nth'(x::xs, 0) = x
+	      | nth'(x::xs, j) = nth'(xs, j-1)
+	      | nth'(nil,   j) = raise Subscript
+	in if i >= 0 then nth'(l,i) else raise Subscript end
 
     fun rev l =
-	let fun rev( nil,  ys) = ys
-	      | rev(x::xs, ys) = rev(xs, x::ys)
-	in rev(l,nil) end
+	let fun rev'( nil,  ys) = ys
+	      | rev'(x::xs, ys) = rev'(xs, x::ys)
+	in rev'(l,nil) end
 
     fun take(l,i) =
-	let fun take(x::xs, 0, ys) = rev ys
-	      | take(x::xs, i, ys) = take(xs, i-1, x::ys)
-	      | take(nil,   i, ys) = raise Subscript
-	in if i >= 0 then take(l,i,nil) else raise Subscript end
+	let fun take'(x::xs, 0, ys) = rev ys
+	      | take'(x::xs, j, ys) = take'(xs, j-1, x::ys)
+	      | take'(nil,   j, ys) = raise Subscript
+	in if i >= 0 then take'(l,i,nil) else raise Subscript end
 
     fun drop(l,i) =
-	let fun drop(l,     0) = l
-	      | drop(x::xs, i) = drop(xs, i-1)
-	      | drop(nil,   i) = raise Subscript
-	in if i >= 0 then drop(l,i) else raise Subscript end
+	let fun drop'(xs,    0) = xs
+	      | drop'(x::xs, j) = drop'(xs, j-1)
+	      | drop'(nil,   j) = raise Subscript
+	in if i >= 0 then drop'(l,i) else raise Subscript end
 
     fun concat  nil   = nil
       | concat(l::ls) = l @ concat ls
@@ -243,11 +241,11 @@ structure List =
 	in if b then x::ys else ys end
 
     fun partition f l =
-	let fun partition( nil,  pos, neg) = (rev pos, rev neg)
-	      | partition(x::xs, pos, neg) =
-		if f x then partition(xs, x::pos, neg)
-		       else partition(xs, pos, x::neg)
-	in partition(l,nil,nil) end
+	let fun partition'( nil,  pos, neg) = (rev pos, rev neg)
+	      | partition'(x::xs, pos, neg) =
+		if f x then partition'(xs, x::pos, neg)
+		       else partition'(xs, pos, x::neg)
+	in partition'(l,nil,nil) end
 
     fun foldl f b   nil   = b
       | foldl f b (x::xs) = foldl f (f(x,b)) xs
@@ -262,22 +260,12 @@ structure List =
       | all f (x::xs) = f x andalso all f xs
 
     fun tabulate(n, f) =
-	let fun tabulate(i,l) = if i = n then rev l
-					 else tabulate(i+1, f i :: l)
-	in if n >= 0 then tabulate(n, nil) else raise Size end
+	let fun tabulate'(i,l) = if i = n then rev l
+					  else tabulate'(i+1, f i :: l)
+	in if n >= 0 then tabulate'(n, nil) else raise Size end
 
   end
 
-val null = List.null
-val hd = List.hd
-val tl = List.tl
-val length = List.length
-val rev = List.rev
-val op@ = List.@
-val app = List.app
-val map = List.map
-val foldr = List.foldr
-val foldl = List.foldl
 
 (* ListPair *)
 
@@ -285,15 +273,15 @@ structure ListPair =
   struct
 
     fun zip(l1, l2) =
-	let fun zip( nil,    _,   l) = List.rev l
-	      | zip(  _,    nil,  l) = List.rev l
-	      | zip(x::xs, y::ys, l) = zip(xs, ys, (x,y)::l)
-	in zip(l1, l2, nil) end
+	let fun zip'( nil,    _,   l) = List.rev l
+	      | zip'(  _,    nil,  l) = List.rev l
+	      | zip'(x::xs, y::ys, l) = zip'(xs, ys, (x,y)::l)
+	in zip'(l1, l2, nil) end
 
     fun unzip l =
-	let fun unzip(    nil,  l1, l2) = (List.rev l1, List.rev l2)
-	      | unzip((x,y)::l, l1, l2) = unzip(l, x::l1, y::l2)
-	in unzip(l, nil, nil) end
+	let fun unzip'(    nil,   l1, l2) = (List.rev l1, List.rev l2)
+	      | unzip'((x,y)::l', l1, l2) = unzip'(l', x::l1, y::l2)
+	in unzip'(l, nil, nil) end
 
     fun map f ( nil,    _  ) = nil
       | map f (  _,    nil ) = nil
@@ -321,6 +309,7 @@ structure ListPair =
 
   end
 
+
 (* Char *)
 
 structure Char =
@@ -337,8 +326,6 @@ structure Char =
 	__primitive toCString :  char -> bool = "Char.toCString"
     end
 
-val ord = Char.ord
-val chr = Char.chr
 
 (* String *)
 
@@ -379,13 +366,8 @@ structure String =
 	      | _ => false
     end
 
-val str = String.str
-val size = String.size
-val concat = String.concat
-val explode = String.explode
-val implode = String.implode
-val substring = String.substring
-val op^ = String.^
+
+(* StringCvt *)
 
 signature STRING_CVT =
     sig
@@ -435,6 +417,7 @@ structure StringCvt :> STRING_CVT =
 		  | SOME (res, _) => SOME res
 	    end
     end
+
 
 (* Int *)
 
@@ -497,9 +480,9 @@ structure Int :> INTEGER =
 			fun digr res src =
 			    case getc src of
 				NONE => SOME (sgn * res, src)
-			      | SOME (c, rest) =>
-				    if isDigit c then
-					digr (factor * res + hexval c) rest
+			      | SOME (c', rest') =>
+				    if isDigit c' then
+					digr (factor * res + hexval c') rest'
 				    else
 					SOME (sgn * res, src)
 		    in
@@ -527,6 +510,7 @@ structure Int :> INTEGER =
 	    in
 		sign (skipWSget getc source)
 	    end
+
 	fun compare (i, j) =
 	    let
 		__primitive compare' : int * int -> int = "Int.compare'"
@@ -551,6 +535,7 @@ structure Int :> INTEGER =
 
 structure LargeInt :> INTEGER = Int
 
+
 (* Real *)
 
 structure Real =
@@ -566,6 +551,7 @@ structure Real =
     end
 
 structure LargeReal = Real
+
 
 (* Array *)
 
@@ -598,9 +584,9 @@ structure Array =
 	fun foldl f z a =
 	    let
 		val n = length a
-		fun foldl' (i, z) =
-		    if i < n then foldl' (i + 1, f (sub (a, i), z))
-		    else z
+		fun foldl' (i, z') =
+		    if i < n then foldl' (i + 1, f (sub (a, i), z'))
+		    else z'
 	    in
 		foldl' (0, z)
 	    end
@@ -618,6 +604,7 @@ structure Array =
 
 type array = Array.array
 
+
 (* Vector *)
 
 structure Vector =
@@ -631,3 +618,32 @@ structure Vector =
     end
 
 val vector = Vector.fromList
+
+
+(* More members exported to toplevel *)
+
+val getOpt = Option.getOpt
+val isSome = Option.isSome
+val valOf = Option.valOf
+
+val null = List.null
+val hd = List.hd
+val tl = List.tl
+val length = List.length
+val rev = List.rev
+val op@ = List.@
+val app = List.app
+val map = List.map
+val foldr = List.foldr
+val foldl = List.foldl
+
+val ord = Char.ord
+val chr = Char.chr
+
+val str = String.str
+val size = String.size
+val concat = String.concat
+val explode = String.explode
+val implode = String.implode
+val substring = String.substring
+val op^ = String.^
