@@ -11,17 +11,17 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/LazySelectionInterpreter.hh"
+#pragma implementation "alice/LazySelInterpreter.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/LazySelectionInterpreter.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/ConcreteCode.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "generic/ConcreteCode.hh"
+#include "alice/LazySelInterpreter.hh"
 
-// LazySelection Frame
-class LazySelectionFrame : private StackFrame {
+// LazySel Frame
+class LazySelFrame : private StackFrame {
 private:
   static const u_int BLOCK_POS = 0;
   static const u_int INDEX_POS = 1;
@@ -29,49 +29,45 @@ private:
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
-  // LazySelectionFrame Accessors
+  // LazySelFrame Accessors
   word GetBlock() {
     return StackFrame::GetArg(BLOCK_POS);
   }
   int GetIndex() {
     return Store::WordToInt(StackFrame::GetArg(INDEX_POS));
   }
-  // LazySelectionFrame Constructor
-  static LazySelectionFrame *New(Interpreter *interpreter, word blk, int idx) {
+  // LazySelFrame Constructor
+  static LazySelFrame *New(Interpreter *interpreter, word blk, int idx) {
     StackFrame *frame =
       StackFrame::New(LAZY_SELECTION_FRAME,interpreter, SIZE);
     frame->InitArg(BLOCK_POS, blk);
     frame->InitArg(INDEX_POS, Store::IntToWord(idx));
-    return static_cast<LazySelectionFrame *>(frame);
+    return static_cast<LazySelFrame *>(frame);
   }
-  // LazySelectionFrame Untagging
-  static LazySelectionFrame *FromWordDirect(word frame) {
+  // LazySelFrame Untagging
+  static LazySelFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
     Assert(p->GetLabel() == LAZY_SELECTION_FRAME);
-    return static_cast<LazySelectionFrame *>(p);
+    return static_cast<LazySelFrame *>(p);
   }
 };
 
 //
-// LazySelectionInterpreter
+// LazySelInterpreter
 //
-LazySelectionInterpreter *LazySelectionInterpreter::self;
+LazySelInterpreter *LazySelInterpreter::self;
 
-void LazySelectionInterpreter::PushFrame(TaskStack *taskStack,
-					 word tuple,
-					 int index) {
-  taskStack->PushFrame(LazySelectionFrame::New(self, tuple, index)->ToWord());
+void
+LazySelInterpreter::PushFrame(TaskStack *taskStack, word tuple, int index) {
+  taskStack->PushFrame(LazySelFrame::New(self, tuple, index)->ToWord());
 }
 
-void LazySelectionInterpreter::PushCall(TaskStack *taskStack,
-					Closure *closure) {
+void LazySelInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   PushFrame(taskStack, closure->Sub(0), Store::WordToInt(closure->Sub(1)));
 }
 
-Interpreter::Result
-LazySelectionInterpreter::Run(TaskStack *taskStack) {
-  LazySelectionFrame *frame =
-    LazySelectionFrame::FromWordDirect(taskStack->GetFrame());
+Interpreter::Result LazySelInterpreter::Run(TaskStack *taskStack) {
+  LazySelFrame *frame = LazySelFrame::FromWordDirect(taskStack->GetFrame());
   word block = frame->GetBlock();
   Transient *transient = Store::WordToTransient(block);
   if (transient == INVALID_POINTER) { // is determined
@@ -85,23 +81,22 @@ LazySelectionInterpreter::Run(TaskStack *taskStack) {
   }
 }
 
-const char *LazySelectionInterpreter::Identify() {
-  return "LazySelectionInterpreter";
+const char *LazySelInterpreter::Identify() {
+  return "LazySelInterpreter";
 }
 
-void LazySelectionInterpreter::DumpFrame(word frameWord) {
-  LazySelectionFrame *frame = LazySelectionFrame::FromWordDirect(frameWord);
+void LazySelInterpreter::DumpFrame(word frameWord) {
+  LazySelFrame *frame = LazySelFrame::FromWordDirect(frameWord);
   fprintf(stderr, "Select #%d\n", frame->GetIndex());
 }
 
 //
-// LazySelectionClosure
+// LazySelClosure
 //
-LazySelectionClosure *LazySelectionClosure::New(word tuple, int index) {
-  ConcreteCode *concreteCode =
-    ConcreteCode::New(LazySelectionInterpreter::self, 0);
+LazySelClosure *LazySelClosure::New(word tuple, int index) {
+  ConcreteCode *concreteCode = ConcreteCode::New(LazySelInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 2);
   closure->Init(0, tuple);
   closure->Init(1, Store::IntToWord(index));
-  return static_cast<LazySelectionClosure *>(closure);
+  return static_cast<LazySelClosure *>(closure);
 }

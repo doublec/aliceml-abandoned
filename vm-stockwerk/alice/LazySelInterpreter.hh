@@ -10,25 +10,25 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR_LAZY_SELECTION_INTERPRETER_HH__
-#define __EMULATOR_LAZY_SELECTION_INTERPRETER_HH__
+#ifndef __ALICE__LAZY_SEL_INTERPRETER_HH__
+#define __ALICE__LAZY_SEL_INTERPRETER_HH__
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/LazySelectionInterpreter.hh"
+#pragma implementation "alice/LazySelInterpreter.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
-#include "emulator/Closure.hh"
+#include "generic/Interpreter.hh"
+#include "generic/Closure.hh"
 
-class LazySelectionInterpreter : public Interpreter {
+class LazySelInterpreter : public Interpreter {
 public:
-  // Exported LazySelectionInterpreter Instance
-  static LazySelectionInterpreter *self;
-  // LazySelectionInterpreter Constructor
-  LazySelectionInterpreter() : Interpreter() {}
-  // LazySelectionInterpreter Static Constructor
+  // Exported LazySelInterpreter Instance
+  static LazySelInterpreter *self;
+  // LazySelInterpreter Constructor
+  LazySelInterpreter() : Interpreter() {}
+  // LazySelInterpreter Static Constructor
   static void Init() {
-    self = new LazySelectionInterpreter();
+    self = new LazySelInterpreter();
   }
   // Frame Handling
   static void PushFrame(TaskStack *taskStack, word tuple, int index);
@@ -40,9 +40,9 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-class LazySelectionClosure : public Closure {
+class LazySelClosure : public Closure {
 public:
-  static LazySelectionClosure *New(word tuple, int index);
+  static LazySelClosure *New(word tuple, int index);
 };
 
 #endif
