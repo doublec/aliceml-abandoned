@@ -166,7 +166,7 @@ struct
 	 of Inf.FixItem(l,f) =>
 	    let
 	    in
-		LabelSet.deleteAll ls;
+		LabelSet.removeAll ls;
 		doc ^/^
 		fbox(nest(
 		    ppFix f ^^ text " " ^^
@@ -189,7 +189,7 @@ struct
 			val    n    = UnsafeValue.conName
 						(UnsafeValue.projPoly(str,l))
 		    in
-			LabelSet.deleteAll ls;
+			LabelSet.removeAll ls;
 			LabelSet.insert(ls,l');
 			doc ^/^
 			fbox(nest(
@@ -216,7 +216,7 @@ struct
 		else if LabelSet.member(ls,l) then
 		    doc
 		else
-		    (LabelSet.deleteAll ls;
+		    (LabelSet.removeAll ls;
 		    doc ^/^
 		    fbox(nest(
 			text "val " ^^
@@ -256,7 +256,7 @@ struct
 	    in
 		if isDatatype
 		then typToLabs(ls, Option.valOf to)
-		else LabelSet.deleteAll ls;
+		else LabelSet.removeAll ls;
 		doc ^/^
 		fbox(nest(
 		    text(case Type.inspectKind k'
@@ -289,7 +289,7 @@ struct
 				    (j', SOME p)
 				end
 	    in
-		LabelSet.deleteAll ls;
+		LabelSet.removeAll ls;
 		doc ^/^
 		fbox(nest(
 		    text(if Inf.isArrow j' then "functor " else "structure ") ^^
@@ -329,7 +329,7 @@ struct
 				    end
 				end
 	    in
-		LabelSet.deleteAll ls;
+		LabelSet.removeAll ls;
 		doc ^/^
 		fbox(nest(
 		    text "signature " ^^

@@ -54,7 +54,7 @@ struct
 	PathMap.insertWith op@ (registry, p, [UnsafeValue.cast f])
 
     fun unregisterTyp p =
-	PathMap.delete(registry, p)
+	PathMap.remove(registry, p)
 
     fun tryRegistry(p,t,fm,x) =
 	case PathMap.lookup(registry, p)
