@@ -17,7 +17,6 @@ import structure Source               from "../infrastructure/Source"
 import structure Stamp                from "../common/Stamp"
 import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
 import structure IntermediateGrammar  from "../common/IntermediateGrammar"
-import structure MkLabelSort          from "MkLabelSort"
 import structure Arity                from "Arity"
 import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
 import structure FlatGrammar          from "FlatGrammar"
@@ -80,26 +79,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
 
-	structure LabelSort =
-	    MkLabelSort(type 'a t = Label.t
-			fun get label = label)
-
-	fun getRow typ =
-	    if Type.isProd typ then
-		let
-		    val labels = rowLabels (Type.asProd typ)
-		    val (labels', arity) = LabelSort.sort labels
-		in
-		    (labels', arity)
-		end
-	    else
-		let
-		    val n = Vector.length (Type.asTuple typ)
-		in
-		    (Vector.tabulate (n, fn i => Label.fromInt (i + 1)),
-		     LabelSort.Tup n)
-		end
-
 	fun makeConArgs (_, Arity.Tuple 0, _) = (#[], O.TupArgs #[])
 	    (*--** this looks irregular *)
 	  | makeConArgs (TupPat (_, pats), Arity.Tuple _, pos) =
@@ -108,16 +87,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	     (pats, 0, NONE),
 	     O.TupArgs (Vector.map ignore pats))
 	  | makeConArgs (ProdPat (info, patFlds), Arity.Product _, pos) =
-	    (case getRow (#typ info) of
-		 (_, LabelSort.Tup n) =>
+	    (case typToArity (#typ info) of
+		 Arity.Tuple n =>
 		     (Vector.map (fn Fld (_, Lab (_, label), pat) =>
 				  (LABEL label::pos, pat)) patFlds,
 		      O.TupArgs (Vector.tabulate (n, ignore)))
-	       | (labels, LabelSort.Prod) =>
+	       | Arity.Product labels =>
 		     (Vector.map (fn Fld (_, Lab (_, label), pat) =>
 				  (LABEL label::pos, pat)) patFlds,
 		      O.ProdArgs (Vector.map (fn label =>
-					      (label, ())) labels)))
+					      (label, ())) labels))
+	       | Arity.Unary => raise Crash.Crash "SimplifyMatch.makeConArgs")
 	  | makeConArgs (pat, _, pos) = (#[(pos, pat)], O.OneArg ())
 
 	fun patToArity (StrictPat (_, pat)) =
@@ -169,12 +149,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    Vector.foldl (fn (Fld (_, Lab (_, label), pat),
 			      (rest, mapping)) =>
 			  makeTestSeq (pat, LABEL label::pos, rest, mapping))
-	    (case getRow (#typ info) of
-		 (_, LabelSort.Tup n) =>
+	    (case typToArity (#typ info) of
+		 Arity.Tuple n =>
 		     Test (pos, TupTest n)::rest
-	       | (labels, LabelSort.Prod) =>
-		     Test (pos, ProdTest labels)::rest, mapping)
-	    patFlds
+	       | Arity.Product labels =>
+		     Test (pos, ProdTest labels)::rest
+	       | Arity.Unary => raise Crash.Crash "SimplifyMatch.makeTestSeq",
+	     mapping) patFlds
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    Vector.foldli
 	    (fn (i, pat, (rest, mapping)) =>
