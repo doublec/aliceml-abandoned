@@ -1,11 +1,7 @@
 structure Prebound :> PREBOUND =
   struct
 
-    type name   = IntermediateGrammar.stamp
-
-    open IntermediateGrammar
-
-    val dummy = Source.nowhere
+    type stamp = IntermediateGrammar.stamp
 
     val stamp_false	= Stamp.new()
     val stamp_true	= Stamp.new()

@@ -1,7 +1,7 @@
 signature PREBOUND =
   sig
 
-    type stamp  = IntermediateGrammar.stamp
+    type stamp = IntermediateGrammar.stamp
 
     val stamp_false :	stamp
     val stamp_true :	stamp
