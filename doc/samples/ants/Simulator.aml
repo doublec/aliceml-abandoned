@@ -32,8 +32,6 @@ structure Simulator :
   fun instr(Sense(sensedir,st1,st2,cond,_),
             w,id:int,p,a) =
       let val p' = sensedCell(p, #direction a, sensedir)
-(*          val _ = Print.printVal("-->sense",id,p,p', #direction a, sensedir, cond)
-          val _ = print "\n"*)
           val st = if cellMatches(w, p', cond, #color a) then st1 else st2
       in
           setState(w,p,st)
@@ -107,12 +105,18 @@ structure Simulator :
             | loop'(size, n, f) = (f (size-n); loop'(size,n-1,f))
           fun loop n f = loop'(n,n,f)
       in
+          print "Staring with\n";
+          print ("\t red player: "^redAnt^"\n");
+          print ("\t black player: "^blackAnt^"\n");
           print ("random seed: "^(Int.toString(Word.toInt defSeed))^"\n");
           loop 10001
-          (fn i => (print ("\nAfter round "^Int.toString i^"...\n");
-                    printWorld world;
+          (fn r => ((*print ("\nAfter round "^Int.toString r^"...\n");
+                     drawWorld world;*)
+                    if r mod 500 = 0 then print ("round "^Int.toString r^"\n") else ();
                     loop noOfAnts
-                         (fn i => step(world, redBrain, blackBrain, i))))
+                         (fn i => step(world, redBrain, blackBrain, i))));
+          printWorld world;
+          printStats world
       end
 
   end

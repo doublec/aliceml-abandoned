@@ -1,0 +1,7 @@
+import structure Simulator from "Simulator"
+
+val ant1::ant2::world::_ = CommandLine.arguments()
+
+
+val _ = Simulator.simulate(ant1,ant2,world)
+val _ = OS.Process.exit OS.Process.success
