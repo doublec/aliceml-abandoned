@@ -264,7 +264,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   OutputStream *outputStream = PickleArgs::GetOutputStream();
   // Check for integer
   int i;
-  if ((i = Store::DirectWordToInt(x0)) != INVALID_INT) {
+  if ((i = Store::WordToInt(x0)) != INVALID_INT) {
     if (i >= 0) {
       outputStream->PutByte(Tag::POSINT);
       outputStream->PutUInt(i);
