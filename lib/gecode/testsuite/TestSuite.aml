@@ -32,6 +32,7 @@ structure TestSuite :
       val disjoint : t
       val distinct : t
       val partition : t
+      val partitionN : tn
       val equals : t
       val convexHull : t
   end
@@ -101,6 +102,9 @@ structure TestSuite :
 	| vPartitionN2 (p,u, h::t) =
 	  (IntInf.andb (u,h) = IntInf.fromInt 0)
           andalso vPartitionN2(p, IntInf.orb(u,h), t)
+
+        fun vPartitionN1 (x, i) =
+            vPartitionN2(i, IntInf.fromInt 0, Vector.toList x)
 
 	fun vSubSet1 (a,b) =
 		IntInf.andb (IntInf.xorb(a,b),a)= IntInf.fromInt 0
@@ -230,6 +234,10 @@ structure TestSuite :
             GecodeTest.ternarySet ("Partition",max,seeds,
                                    FS.partition,
                                    vBoolTern vPartition1)
+        fun partitionN arity max seeds =
+            GecodeTest.narySet ("PartitionN",max,seeds,arity,
+                                FS.partitionN,
+                                vBoolN vPartitionN1)
         fun equals max seeds =
             GecodeTest.binarySet ("Equals",max,seeds,
                                    FS.equals,
