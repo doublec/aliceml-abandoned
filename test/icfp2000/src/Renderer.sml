@@ -13,8 +13,7 @@ structure Renderer :> RENDERER =
 
 	type surface' =
 	    point -> {color: color, diffuse: real, specular: real, phong: real}
-	type 'face surface =
-	    'face -> surface'
+	type 'face surface = 'face -> surface'
 
 	datatype object =
 	    Plane      of plane_face surface
@@ -32,11 +31,13 @@ structure Renderer :> RENDERER =
 	  | Point       of color * point
 	  | Spot        of color * point * point * angle * real
 
+	type data = surface' * mat * (vec -> vec)
+
 	datatype object' =
-	    Plane'      of mat * vec * surface'
-	  | Sphere'     of mat * point * surface'
-	  | Cylinder'   of mat * mat * surface'
-	  | Cone'       of mat * mat * surface'
+	    Plane'      of mat * data
+	  | Sphere'     of mat * data
+	  | Cylinder'   of mat * data
+	  | Cone'       of mat * data
 	  | Union'      of object' * object'
 	  | Intersect'  of object' * object'
 	  | Difference' of object' * object'
@@ -44,43 +45,102 @@ structure Renderer :> RENDERER =
 	exception Error of string
 	exception Crash
 
+	val topMat = translationMat (0.0, 1.0, 0.0)
+	val topMat' = translationMat (0.0, ~1.0, 0.0)
+	val bottomMat = rotationXMat Math.pi
+	val bottomMat' = bottomMat
+	val frontMat = rotationXMat (~Math.pi / 2.0)
+	val frontMat' = rotationXMat (Math.pi / 2.0)
+	val backMat = mulMat (translationMat (0.0, 0.0, 1.0),
+			      rotationXMat (Math.pi / 2.0))
+	val backMat' = mulMat (rotationXMat (~Math.pi / 2.0),
+			       translationMat (0.0, 0.0, ~1.0))
+	val leftMat = rotationZMat (Math.pi / 2.0)
+	val leftMat' = rotationZMat (~Math.pi / 2.0)
+	val rightMat = mulMat (translationMat (1.0, 0.0, 0.0),
+			       rotationZMat (~Math.pi / 2.0))
+	val rightMat' = mulMat (rotationZMat (Math.pi / 2.0),
+				translationMat (~1.0, 0.0, 0.0))
+
 	fun preprocess (Plane surface, o2w, w2o) =
-	    Plane' (w2o, mulMatVec (o2w, (0.0, 1.0, 0.0)),
-		    surface PlaneSurface)
+	    let
+		val normal = mulMatVec (o2w, (0.0, 1.0, 0.0))
+	    in
+		Plane' (w2o, (surface PlaneSurface, w2o, fn _ => normal))
+	    end
 	  | preprocess (Sphere surface, o2w, w2o) =
-	    Sphere' (w2o, mulMatPoint (o2w, (0.0, 0.0, 0.0)),
-		     surface SphereSurface)
+	    let
+		val center = mulMatPoint (o2w, (0.0, 0.0, 0.0))
+	    in
+		Sphere' (w2o, (surface SphereSurface, w2o,
+			       fn v => subVec (v, center)))
+	    end
 	  | preprocess (Cube surface, o2w, w2o) =
 	    let
 		fun plane (o2w', w2o', face) =
-		    Plane' (mulMat (w2o', w2o),
-			    mulMatVec (mulMat (o2w, o2w'), (0.0, 1.0, 0.0)),
-			    surface face)
-		val top = plane (translationMat (0.0, 1.0, 0.0),
-				 translationMat (0.0, ~1.0, 0.0), CubeTop)
-		val rotXpi = rotationXMat Math.pi
-		val bottom = plane (rotXpi, rotXpi, CubeBottom)
-		val rotXpi2 = rotationXMat (Math.pi / 2.0)
-		val rotXmpi2 = rotationXMat (~Math.pi / 2.0)
-		val front = plane (rotXmpi2, rotXpi2, CubeFront)
-		val back = plane (mulMat (translationMat (0.0, 0.0, 1.0),
-					  rotXpi2),
-				  mulMat (translationMat (0.0, 0.0, ~1.0),
-					  rotXmpi2), CubeBack)
-		val rotZpi2 = rotationZMat (Math.pi / 2.0)
-		val rotZmpi2 = rotationZMat (~Math.pi / 2.0)
-		val left = plane (rotZpi2, rotZmpi2, CubeLeft)
-		val right = plane (mulMat (translationMat (1.0, 0.0, 0.0),
-					   rotZmpi2),
-				   mulMat (translationMat (~1.0, 0.0, 0.0),
-					   rotZpi2), CubeBack)
+		    let
+			val normal =
+			    mulMatVec (mulMat (o2w, o2w'), (0.0, 1.0, 0.0))
+		    in
+			Plane' (mulMat (w2o', w2o),
+				(surface face, w2o, fn _ => normal))
+		    end
+		val top = plane (topMat, topMat', CubeTop)
+		val bottom = plane (bottomMat, bottomMat', CubeBottom)
+		val front = plane (frontMat, frontMat', CubeFront)
+		val back = plane (backMat, backMat', CubeBack)
+		val left = plane (leftMat, leftMat', CubeLeft)
+		val right = plane (rightMat, rightMat', CubeRight)
 	    in
 		Intersect' (Intersect' (Intersect' (top, bottom),
 					Intersect' (left, right)),
 			    Intersect' (front, back))
 	    end
-	  | preprocess (Cylinder surface, o2w, w2o) = raise Crash (*TODO*)
-	  | preprocess (Cone surface, o2w, w2o) = raise Crash (*TODO*)
+	  | preprocess (Cylinder surface, o2w, w2o) =
+	    let
+		fun plane (o2w', w2o', face) =
+		    let
+			val normal =
+			    mulMatVec (mulMat (o2w, o2w'), (0.0, 1.0, 0.0))
+		    in
+			Plane' (mulMat (w2o', w2o),
+				(surface face, w2o, fn _ => normal))
+		    end
+		val top = plane (topMat, topMat', CylinderTop)
+		val bottom = plane (bottomMat, bottomMat', CylinderBottom)
+		fun normal v =   (*IMPROVE*)
+		    let
+			val (v1, _, v3) = mulMatPoint (w2o, v)
+		    in
+			mulMatVec (o2w, (v1, 0.0, v3))
+		    end
+	    in
+		Intersect' (Intersect' (top, bottom),
+			    Cylinder' (w2o, (surface CylinderSide, w2o,
+					     normal)))
+	    end
+	  | preprocess (Cone surface, o2w, w2o) =
+	    let
+		fun plane (o2w', w2o', face) =
+		    let
+			val normal =
+			    mulMatVec (mulMat (o2w, o2w'), (0.0, 1.0, 0.0))
+		    in
+			Plane' (mulMat (w2o', w2o),
+				(surface face, w2o, fn _ => normal))
+		    end
+		val top = plane (topMat, topMat', ConeBase)
+		val bottom = plane (bottomMat, bottomMat', ConeSide)
+		fun normal v =   (*IMPROVE*)
+		    let
+			val (v1, _, v3) = mulMatPoint (w2o, v)
+		    in
+			mulMatVec (o2w, (v1, ~1.0, v3))
+		    end
+	    in
+		Intersect' (Intersect' (top, bottom),
+			    Cone' (w2o, (surface ConeSide, w2o, normal)))
+	    end
 	  | preprocess (Union (o1, o2), o2w, w2o) =
 	    Union' (preprocess (o1, o2w, w2o), preprocess (o2, o2w, w2o))
 	  | preprocess (Intersect (o1, o2), o2w, w2o) =
@@ -130,8 +190,7 @@ structure Renderer :> RENDERER =
 	  | union' (nil, _) = nil
 	  | union' (_, _) = raise Crash
 
-	fun inter (nil, _) = nil
-	  | inter (_, nil) = nil
+	fun inter (_, nil) = nil
 	  | inter (xs, ys) = inter' (merge (xs, ys), start (xs, ys))
 	and inter' ((x as (_, _, Entry), A)::xr, Outside) = inter' (xr, InA)
 	  | inter' ((x as (_, _, Entry), B)::xr, Outside) = inter' (xr, InB)
@@ -144,8 +203,7 @@ structure Renderer :> RENDERER =
 	  | inter' (nil, _) = nil
 	  | inter' (_, _) = raise Crash
 
-	fun diff (nil, _) = nil
-	  | diff (xs, nil) = xs
+	fun diff (xs, nil) = xs
 	  | diff (xs, ys) = diff' (merge (xs, ys), start (xs, ys))
 	and diff' ((x as (_, _, Entry), A)::xr, Outside) = x::diff' (xr, InA)
 	  | diff' ((x as (_, _, Entry), B)::xr, Outside) = diff' (xr, InB)
@@ -158,7 +216,7 @@ structure Renderer :> RENDERER =
 	  | diff' (nil, _) = nil
 	  | diff' (_, _) = raise Crash
 
-	fun intersect' (Plane' (w2o, normal, surface), base, dir) =
+	fun intersect' (Plane' (w2o, data), base, dir) =
 	    let
 		val (_, dy, _) = mulMatVec (w2o, dir)
 		val (_, y, _) = mulMatPoint (w2o, base)
@@ -169,19 +227,16 @@ structure Renderer :> RENDERER =
 			val k = y / dy
 		    in
 			if k > 0.0 then nil
-			else if dy > 0.0 then
-			    [(~k, (surface, fn _ => normal), Exit)]
-			else
-			    [(~k, (surface, fn _ => normal), Entry)]
+			else [(~k, data, if dy < 0.0 then Entry else Exit)]
 		    end
 	    end
-	  | intersect' (Sphere' (w2o, center, surface), base, dir) =
+	  | intersect' (Sphere' (w2o, data), base, dir) =
 	    let
 		val x = mulMatPoint (w2o, base)
 		val v = mulMatVec (w2o, dir)
-		val v2 = mulVec (v, v)
-		val a = ~(mulVec (x, v)) / v2
-		val arg = a * a - (mulVec (x, x) - 1.0) / v2
+		val divi = mulVec (v, v)
+		val a = ~(mulVec (x, v)) / divi
+		val arg = a * a - (mulVec (x, x) - 1.0) / divi
 	    in
 		if arg < 0.0 then nil
 		else
@@ -190,27 +245,80 @@ structure Renderer :> RENDERER =
 			val k1 = a - b
 			val k2 = a + b
 		    in
-			if k1 > 0.0 andalso k2 > 0.0 then
-			    let
-				val x = (surface, fn v => subVec (v, center))
-			    in
-				[(k1, x, Entry), (k2, x, Exit)]
-			    end
-			else if k2 > 0.0 then
-			    let
-				val x = (surface, fn v => subVec (v, center))
-			    in
-				[(k2, x, Exit)]
-			    end
+			if k2 > 0.0 then
+			    if k1 > 0.0 then
+				[(k1, data, Entry), (k2, data, Exit)]
+			    else
+				[(k2, data, Exit)]
+			else nil
+		    end
+	    end
+	  | intersect' (Cylinder' (w2o, data), base, dir) =
+	    let
+		val (x1, _, x3) = mulMatPoint (w2o, base)
+		val (v1, _, v3) = mulMatVec (w2o, dir)
+		val divi = v1 * v1 + v3 * v3
+		val a = ~(x1 * v1 + x3 * v3) / divi
+		val arg = a * a - (x1 * x1 + x3 * x3 - 1.0) / divi
+	    in
+		if arg < 0.0 then nil
+		else
+		    let
+			val b = Math.sqrt arg
+			val k1 = a - b
+			val k2 = a + b
+		    in
+			if k2 > 0.0 then
+			    if k1 > 0.0 then
+				[(k1, data, Entry), (k2, data, Exit)]
+			    else
+				[(k2, data, Exit)]
+			else nil
+		    end
+	    end
+	  | intersect' (Cone' (w2o, data), base, dir) =
+	    let
+		val x as (x1, x2, x3) = mulMatPoint (w2o, base)
+		val x' = (x1, ~x2, x3)
+		val v as (v1, v2, v3) = mulMatVec (w2o, dir)
+		val v' = (v1, ~v2, v3)
+		val divi = mulVec (v', v)
+		val a = ~(mulVec (x', v)) / divi
+		val arg = a * a - mulVec (x', x) / divi
+	    in
+		if arg < 0.0 then nil
+		else
+		    let
+			val b = Math.sqrt arg
+			val k1 = a - b
+			val k2 = a + b
+		    in
+			if k2 > 0.0 then
+			    if k1 > 0.0 then
+				[(k1, data, Entry), (k2, data, Exit)]
+			    else
+				[(k2, data, Exit)]
 			else nil
 		    end
 	    end
 	  | intersect' (Union' (obj1, obj2), base, dir) =
 	    union (intersect' (obj1, base, dir), intersect' (obj2, base, dir))
 	  | intersect' (Intersect' (obj1, obj2), base, dir) =
-	    inter (intersect' (obj1, base, dir), intersect' (obj2, base, dir))
+	    let
+		val xs = intersect' (obj1, base, dir)
+	    in
+		case xs of
+		    nil => nil
+		  | _::_ => inter (xs, intersect' (obj2, base, dir))
+	    end
 	  | intersect' (Difference' (obj1, obj2), base, dir) =
-	    diff (intersect' (obj1, base, dir), intersect' (obj2, base, dir))
+	    let
+		val xs = intersect' (obj1, base, dir)
+	    in
+		case xs of
+		    nil => nil
+		  | _::_ => diff (xs, intersect' (obj2, base, dir))
+	    end
 
 	fun dropWhile f xs = dropWhile' (xs, f)
 	and dropWhile' (xs as x::xr, f) =
@@ -251,7 +359,7 @@ structure Renderer :> RENDERER =
 	    let
 		val spotDir = subVec (at, pos)
 		val unitSpotDir = normalizeVec spotDir
-		val spotPointDir = subVec (pos, point)
+		val spotPointDir = subVec (point, pos)
 		val dist = absVec spotPointDir
 		val unitSpotPointDir = mulScalVec (1.0 / dist, spotPointDir)
 		val orthoDist = mulVec (unitSpotDir, unitSpotPointDir)
@@ -262,7 +370,7 @@ structure Renderer :> RENDERER =
 		then NONE
 		else
 		    let
-			val attenuation1 = Math.pow (~orthoDist, exp)
+			val attenuation1 = Math.pow (orthoDist, exp)
 			val attenuation2 = 100.0 / (99.0 + dist * dist)
 		    in
 			SOME (Color.scale (attenuation1 * attenuation2, color),
@@ -279,14 +387,15 @@ structure Renderer :> RENDERER =
 
 	fun trace (base, dir, ambient, lights, scene, depth) =
 	    case intersect (scene, base, dir) of
-		(k, (surface, f), _)::_ =>
+		(k, (surface, w2o, f), _)::_ =>
 		    let
 			val p =   (* intersection point *)
 			    addVec (base, mulScalVec (k, dir))
 			val n =   (* unit normal vector on surface *)
 			    normalizeVec (f p)
 			val {color = c, diffuse = kd,
-			     specular = ks, phong = exp} = surface p
+			     specular = ks, phong = exp} =
+			    surface (mulMatPoint (w2o, p))
 			val intensityDirList =
 			    if Real.== (kd, 0.0) andalso Real.== (ks, 0.0)
 			    then nil
@@ -297,12 +406,7 @@ structure Renderer :> RENDERER =
 			val diffuseLighting =
 			    colorSum
 			    (fn (i, l) =>
-(*(TextIO.print ("n = " ^ Real.toString (#1 n) ^
-", " ^ Real.toString (#2 n) ^ ", " ^ Real.toString (#3 n) ^ "\n");
-TextIO.print ("l = " ^ Real.toString (#1 l) ^
-", " ^ Real.toString (#2 l) ^ ", " ^ Real.toString (#3 l) ^ "\n");*)
 			     Color.scale (mulVec (n, l), i))
-(*)*)
 			    (kd, ambient) intensityDirList
 			val reflected =
 			    if Real.== (ks, 0.0) orelse depth = 0 then
@@ -322,11 +426,6 @@ TextIO.print ("l = " ^ Real.toString (#1 l) ^
 					  (0.5 * mulVec (n, subVec (l, d)),
 					   exp), i))
 			    (ks, reflected) intensityDirList
-(*val _ = TextIO.print ("diffuse = " ^ Real.toString (#red diffuseLighting) ^
-", " ^ Real.toString (#green diffuseLighting) ^ ", " ^ Real.toString (#blue diffuseLighting) ^ "\n")
-val _ = TextIO.print ("specular = " ^ Real.toString (#red specularLighting) ^
-", " ^ Real.toString (#green specularLighting) ^ ", " ^ Real.toString (#blue specularLighting) ^ "\n")
-val _ = TextIO.print ("|lights| = " ^ Int.toString (List.length intensityDirList) ^ "\n")*)
 		    in
 			Color.prod (Color.add (diffuseLighting,
 					       specularLighting), c)
@@ -348,7 +447,10 @@ val _ = TextIO.print ("|lights| = " ^ Int.toString (List.length intensityDirList
 		    val dir = (left + delta * Real.fromInt x,
 			       top - delta * Real.fromInt y,
 			       1.0)
-		    val c = trace (base, dir, ambient, lights, scene', depth)
+		    val c =
+			trace (base, dir, ambient, lights, scene', depth)
+			handle e as Error s =>
+			    (TextIO.print ("Error: " ^ s ^ "\n"); raise e)
 		in
 		    Color.clamp c
 		end
