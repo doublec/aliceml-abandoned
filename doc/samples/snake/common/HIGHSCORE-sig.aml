@@ -33,8 +33,9 @@ sig
 	 name:       string,
 	 color:      Color.color,
 	 points:     int,        (* total points (excluding gamePoints) *)
-	 gamePoints: int         (* points made this game 
+	 gamePoints: int,        (* points made this game 
 				  but not yet taken home *)
+         lives :     int option
 	 }
 
     val empty: highscore

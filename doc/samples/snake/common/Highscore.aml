@@ -9,8 +9,6 @@
  *
  *)
 
-import structure OS        from "x-alice:/lib/system/OS"
-
 import signature HIGHSCORE from "HIGHSCORE-sig"
 import structure Color     from "Color"
 
@@ -35,8 +33,9 @@ struct
 	 name:       string,
 	 color:      Color.color,
 	 points:     int,        (* total points (excluding gamePoints) *)
-	 gamePoints: int         (* points made this game 
+	 gamePoints: int,        (* points made this game 
 				  but not yet taken home *)
+         lives :     int option  (* lives left *)
 	 }
 
     val empty = nil
@@ -48,7 +47,8 @@ struct
 		List.foldl (fn ({name,
 				 color,
 				 points,
-				 gamePoints}, xs) => {name,
+				 gamePoints,
+                                 lives}, xs) => {name,
 						      color,
 						      points,
 						      player,

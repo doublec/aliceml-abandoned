@@ -48,6 +48,14 @@ struct
             }
         end
 
+    fun start (SN { belly, body, direction,... }, pos, dir) =
+        (Q.clear body;
+         Q.add (body, pos);
+         assert Q.size body = 1;
+         belly := (startSize - 1);
+         direction := dir)
+
+        
     fun color (SN { color = c, ... }) = c
     
     fun id    (SN { id = id, ... }) = id
@@ -84,12 +92,12 @@ struct
                 |   ((P.RIGHT, P.LEFT) |
                      (non P.LEFT, P.RIGHT)) =>
                     (Pos.right head, P.RIGHT)
+            
+            val _   = Q.add (body, newHead);
         in
-            Q.add (body, newHead);
             if !belly > 0 
                 then belly := !belly - 1
                 else (Q.remove body; ());
-
             direction := dir
         end
 
@@ -101,15 +109,19 @@ struct
             List.tl l
         end
 
-    fun appBody f (SN { body,  ... }) = 
+    fun appBody f (s as SN { body = b,  ... }) = 
         let
-            val skippedHead = ref false
+            val n   = Q.size b - 1
+            val _   = assert List.length (body s) = n
         in
-            Q.app (fn x => if !skippedHead 
-                                then f x 
-                                else skippedHead := true)  body
+            Q.fold (fn (x, i) =>
+                if i >= n then i
+                else (f x; i + 1)) 1 b;
+            ()
         end
 
     fun length (SN { body, ... }) = Q.size body
+
+    fun shrink (SN { body, ... }) = (Q.remove body; ())
 
 end

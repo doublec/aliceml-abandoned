@@ -21,9 +21,11 @@ sig
     type t = snake
 
     val snake :     int * int * Color.color * Pos.pos * Protocol.direction -> snake
-    (** [snake (capacity id, c, p, d)] returns a snake of length 1 (just the head) 
+    (** [snake (capacity, id, c, p, d)] returns a snake of length 1 (just the head) 
         and maximum length [capacity] at position [p] with an empty belly 
         looking into direction [d]. *)
+
+    val start :     snake * Pos.pos * Protocol.direction -> unit
 
     val belly :     snake -> int
 
@@ -45,7 +47,7 @@ sig
         In that case the snake is moved in that direction and 
         it's direction is not changed. If the belly is non empty
         (> 0) it's decreased by one and the snake's length is increased
-        by the same amount.
+        by the same amount. 
       *) 
 
     val head :      snake -> Pos.pos
@@ -61,4 +63,6 @@ sig
     (** [length s] is equivalent to [List.length (body s) + 1], but
         possibly more efficient
       *)
+
+    val shrink :    snake -> unit 
 end

@@ -57,11 +57,9 @@ ROOT := $(addsuffix .$(EXT), $(ROOT))
 export ROOT
 
 all: components
-clean: clean
+clean: 
 
-depend: Makefile.depend
-
-Makefile.depend: $(FILTERED_SOURCES)
+depend, Makefile.depend: $(FILTERED_SOURCES)
 	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
 	
 -include Makefile.depend

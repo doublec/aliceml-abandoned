@@ -17,6 +17,8 @@ sig
 
     val remove :    'a queue -> 'a          (* Empty *)
 
+    val clear :     'a queue -> unit
+
     val size :      'a queue -> int
 
     val capacity :  'a queue -> int

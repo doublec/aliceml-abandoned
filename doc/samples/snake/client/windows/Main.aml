@@ -11,7 +11,6 @@
 
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure Gdk            from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas      from "x-alice:/lib/gtk/GtkCanvas"
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 
 import structure Color          from "../../common/Color"
@@ -132,7 +131,8 @@ struct
 		    fun gameFinished h = 
 			(reset (SOME ("Highscore", highscoreToString h)))
 			
-		    fun update difflist = ArenaWidget.update (arena, difflist)
+		    fun update (difflist, pos)  = 
+                        ArenaWidget.update (arena, difflist, pos)
 		
                     val displayCountDown    = ref NONE	
                     
@@ -150,31 +150,24 @@ struct
                                 then (displ NONE; displayCountDown := NONE)
                                 else displ (SOME n)
                         end
-		    
-		    fun tick remainingTime =
-			let
-			    val timeStr = timeToString remainingTime
-			in
-			    Gtk.labelSetText (timeLabel, timeStr)
-			end
-		    
+		   		    
 		    (* updates the pointsLabel. different points are separated
 		     by newlines *)
 		    fun updatePoints plist =
 			let
-			    fun toString' (({name, 
+			    fun toString' ({name, 
 					     color, 
 					     points, 
-					     gamePoints},
-					    NONE), str) =
+					     gamePoints,
+                                             lives = NONE}, str) =
 				(str ^ name ^ ":  " 
 				 ^ (Int.toString points) ^ "  /  " 
 				 ^ (Int.toString gamePoints) ^ "\n\n")
-			      | toString' (({name, 
+			      | toString' ({name, 
 					     color, 
 					     points, 
-					     gamePoints},
-					    SOME lives), str) =
+					     gamePoints,
+                                             lives = SOME lives}, str) =
 				(str ^ name ^ ":  " 
 				 ^ (Int.toString points) ^ "  /  " 
 				 ^ (Int.toString gamePoints)
@@ -188,8 +181,15 @@ struct
 			(ArenaWidget.initLevel (arena, levinf);
 			 Gtk.labelSetText (timeLabel, ""))		     
 			
-		    fun headPosition p = ArenaWidget.changeView (arena, p)
-			
+		    fun tick (pts, diffs, headPos, remainingTime) =
+			let
+			    val timeStr = timeToString remainingTime
+			in
+			    Gtk.labelSetText (timeLabel, timeStr);
+                            update (diffs, headPos);
+                            Option.app updatePoints pts
+			end
+	
 		in
 		    mode := GAME;
 		    Gtk.widgetSetSensitive (menuGiveUpItem, true);
@@ -197,9 +197,8 @@ struct
 		    Gtk.widgetShow canvas;
 		    Gtk.widgetShow rightHBox;
 		    assert (Future.isFuture $ Promise.future guiGameP) 
-		    do Promise.fulfill (guiGameP, {startLevel, update, 
+		    do Promise.fulfill (guiGameP, {startLevel, 
 						   countdown, 
-						   updatePoints, headPosition,
 						   tick,
 						   gameFinished});
 		    (* update procedures *)

@@ -1,110 +1,142 @@
-(* Alice Snake 2.0 - Arena
- *
- *  Authors: Benedikt Grundmann / Sebastian Germesin
- *
- *  $Revision$
- *
- *  Last updated: $Date$ by $Author$
- * 
- *
- *)
-
-import structure Random   from "x-alice:/lib/utility/Random"
-
-import signature ARENA    from "ARENA-sig"
-import structure Protocol from "../common/Protocol"
-import structure Snake    from "Snake"
-import structure Pos      from "../common/Pos"
-import structure Color    from "../common/Color"
+import signature ARENA                  from "ARENA-sig"
+import structure MkTransactionalArray2  from "MkTransactionalArray2"
+import structure Snake                  from "Snake"
+import structure Protocol               from "../common/Protocol"
+import structure Pos                    from "../common/Pos"
+import structure Color                  from "../common/Color"
+import structure Random                 from "x-alice:/lib/utility/Random"
+import structure Inspector              from "x-alice:/lib/tools/Inspector"
 
 
 structure Arena :> ARENA =
 struct
-
     structure P = Protocol
 
-    type arena = P.field Array2.array (* MUTABLE *)
+    structure Field =
+    struct
+        type t = P.field
+        
+        val equal = P.equalFields
+    end
+
+    structure TA    = MkTransactionalArray2 (Field) 
+
+    type arena = TA.array
+
 
     type config = 
 	{
 	 dimensions: int * int,
 	 players: int,
 	 walls: int
-	 (* MAGIC NUMBERs ... *)
 	 }
-    
+
+
     exception NoMoreEmptySpots
-       
+
+    fun testUp (arena, (row, col)) =
+        TA.alli TA.RowMajor (fn (r, c, cell) =>
+            case cell of 
+                P.EMPTY  => true
+            |   _               => false) { 
+                base    = arena, 
+                row     = row - 2, 
+                col     = col - 2, 
+                nrows   = SOME 3,
+                ncols   = SOME 5
+            }
+
+
+    fun testDown (arena, (row, col)) =
+        TA.alli TA.RowMajor (fn (r, c, cell) =>
+            case cell of 
+                P.EMPTY  => true
+            |   _               => false) { 
+                base    = arena, 
+                row     = row, 
+                col     = col - 2, 
+                nrows   = SOME 3,
+                ncols   = SOME 5
+            }
+
+
+    fun testRight (arena, (row, col)) =
+        TA.alli TA.RowMajor (fn (r, c, cell) =>
+            case cell of 
+                P.EMPTY  => true
+            |   _               => false) { 
+                base    = arena, 
+                row     = row - 2, 
+                col     = col, 
+                nrows   = SOME 5,
+                ncols   = SOME 3
+            }
+
+
+    fun testLeft (arena, (row, col)) =
+        TA.alli TA.RowMajor (fn (r, c, cell) =>
+            case cell of 
+                P.EMPTY  => true
+            |   _               => false) { 
+                base    = arena, 
+                row     = row - 2, 
+                col     = col - 2, 
+                nrows   = SOME 5,
+                ncols   = SOME 3
+            }
+
+    fun test (arena, p, dir) =
+        (case dir of 
+            P.UP     => testUp (arena, p)
+        |   P.DOWN   => testDown (arena, p)
+        |   P.LEFT   => testLeft (arena, p)
+        |   P.RIGHT  => testRight (arena, p))
+        handle Subscript => false
+
+
+    val maxNumberOfTries = 8
+    
+    fun findEmptySpot (arena, tries) =
+        let
+            val (rows, cols)    = TA.dimensions arena
+
+            val r2  = rows div 2 - 2
+            val c2  = cols div 2 - 2
+            
+            val (r, c) = case tries mod 4 of
+                    0   => (Random.int r2, Random.int c2)
+                |   1   => (r2 + Random.int r2, Random.int c2)
+                |   2   => (r2 + Random.int r2, c2 + Random.int c2)
+                |   3   => (Random.int r2, c2 + Random.int c2)
+                |   _   => assert false
+            
+            val lu = (r, c)
+            val p  = (r + 2, c + 2)
+            val ru = (r, c + 2)
+
+            fun testSpot p = test (arena, p, P.UP) andalso
+                                test (arena, p, P.DOWN)
+        in
+            if testSpot p then p
+            else if testSpot lu then lu
+            else if testSpot ru then ru
+            else if tries < maxNumberOfTries then
+                findEmptySpot (arena, tries + 1)
+            else
+                raise NoMoreEmptySpots
+        end
+
 
     fun random' {dimensions = (rows, cols), players,walls} =
 	let
-            fun testUp (arena, (row, col)) =
-                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
-                    case cell of 
-                        P.EMPTY  => true
-                    |   _               => false) { 
-                        base    = arena, 
-                        row     = row - 2, 
-                        col     = col - 2, 
-                        nrows   = SOME 3,
-                        ncols   = SOME 5
-                    }
-
-
-            fun testDown (arena, (row, col)) =
-                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
-                    case cell of 
-                        P.EMPTY  => true
-                    |   _               => false) { 
-                        base    = arena, 
-                        row     = row, 
-                        col     = col - 2, 
-                        nrows   = SOME 3,
-                        ncols   = SOME 5
-                    }
-
-
-            fun testRight (arena, (row, col)) =
-                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
-                    case cell of 
-                        P.EMPTY  => true
-                    |   _               => false) { 
-                        base    = arena, 
-                        row     = row - 2, 
-                        col     = col, 
-                        nrows   = SOME 5,
-                        ncols   = SOME 3
-                    }
-
-
-            fun testLeft (arena, (row, col)) =
-                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
-                    case cell of 
-                        P.EMPTY  => true
-                    |   _               => false) { 
-                        base    = arena, 
-                        row     = row - 2, 
-                        col     = col - 2, 
-                        nrows   = SOME 5,
-                        ncols   = SOME 3
-                    }
-
-            fun test (arena, p, dir) =
-                (case dir of 
-                    P.UP     => testUp (arena, p)
-                |   P.DOWN   => testDown (arena, p)
-                |   P.LEFT   => testLeft (arena, p)
-                |   P.RIGHT  => testRight (arena, p))
-                handle Subscript => false
-
-	    val arena = Array2.array(rows,cols,P.EMPTY)
+    	    val arena = TA.array(rows,cols,P.EMPTY)
 	    (* initialising an empty arena with dimensions [dimensions] *)
             
             (* [horizontal ((r,c), l)] draws a wall from (r,c) to (r, c+l-1)
              *)
             fun horizontal ((r,c), l) =
                 if l <= 0 then ()
-                else (Array2.update (arena, r, c, P.WALL);
+                else (TA.update (arena, r, c, P.WALL);
                       horizontal (Pos.right (r,c), l - 1))
 
             (* [vertical ((r,c), l)]
@@ -112,7 +144,7 @@ struct
              *)
             fun vertical ( (r, c), l) =
                 if l <= 0 then ()
-                else (Array2.update (arena, r, c, P.WALL);
+                else (TA.update (arena, r, c, P.WALL);
                       vertical (Pos.below (r, c), l - 1))
                 
             (* place the outer borders *)
@@ -168,7 +200,7 @@ struct
                     fun placePart ((l, false, d), p)    = Pos.moveBy (p, d, l)
                     |   placePart ((l, true, d), p as (r, c))   = 
                         if l = 0 then p
-                        else (Array2.update (arena, r, c, P.WALL);
+                        else (TA.update (arena, r, c, P.WALL);
                               placePart ((l - 1, true, d), Pos.move (p, d)))
                 in
                     ((* test if we can place this figure *)
@@ -189,34 +221,6 @@ struct
                
             val maxNumberOfTries = 8
             
-            fun findEmptySpot tries =
-                let
-                    val r2  = rows div 2 - 2
-                    val c2  = cols div 2 - 2
-                    
-                    val (r, c) = case tries mod 4 of
-                            0   => (Random.int r2, Random.int c2)
-                        |   1   => (r2 + Random.int r2, Random.int c2)
-                        |   2   => (r2 + Random.int r2, c2 + Random.int c2)
-                        |   3   => (Random.int r2, c2 + Random.int c2)
-                        |   _   => assert false
-                    
-                    val lu = (r, c)
-                    val p  = (r + 2, c + 2)
-                    val ru = (r, c + 2)
-
-                    fun testSpot p = test (arena, p, P.UP) andalso
-                                        test (arena, p, P.DOWN)
-                in
-                    if testSpot p then p
-                    else if testSpot lu then lu
-                    else if testSpot ru then ru
-                    else if tries < maxNumberOfTries then
-                        findEmptySpot (tries + 1)
-                    else
-                        raise NoMoreEmptySpots
-                end
-
                 
             fun placeWalls (n, p) =
                 if n <= 0 then ()
@@ -225,7 +229,7 @@ struct
                     in
                         case place (f, p) of
                             NONE    =>
-                            let val p = findEmptySpot 0
+                            let val p = findEmptySpot (arena, 0)
                             in
                                 case place (f, p) of
                                     NONE    => placeWalls (n, p)
@@ -243,7 +247,7 @@ struct
 	    fun startpoints (0, xs) = xs
 	      | startpoints (p, xs) = 
 		let
-		    val pos = findEmptySpot 20
+		    val pos = findEmptySpot (arena, 20)
 		    val d = 
 			case Random.int 4 of
 			    0 => P.UP
@@ -268,199 +272,143 @@ struct
             else
                 random (tries + 1) c
 
+
     val random = random 0 
-        
-    (* some aiding procedures for placeSnakes *)
-    fun killHead (a, s) = 
-	let
-	    val (r, c) = Snake.head s
-	in
-	    Array2.update (a, r, c, P.EMPTY)
-	end
 
-    fun killBody (a, s, died) = 
-	let
-	    val body = Snake.body s
-	in
-	    died := s :: !died;
-	    List.app (fn (r, c) => Array2.update (a, r, c, P.EMPTY)) body
-	end
-
-
-    fun placeBody a died snake =
-	let
-	    val headP       = Snake.head snake
-	    val color       = Snake.color snake
-	    val body        = Snake.body snake
-	    fun thisSnake s = Color.equal (color, Snake.color s)
-	    (* have we already died? *)
-	    val dead = List.exists thisSnake (!died)
-		
-	    fun place [] = ()
-	      | place ((r, c) :: bodyRest) =
-		if (r, c) = headP then 
-		    (* ouch! our head has hit ourself! *)
-		    killBody (a, snake, died)
-		else
-		    (Array2.update (a, r, c, P.SNAKE_BODY color);
-		     place bodyRest)
-	in
-	    if dead 
-		then ()
-	    else place body
-	end
-
-    fun placeSnakes (a, snakes) =
-	let
-	    val died    = ref nil
-	    val fin     = ref nil
-            val eaters  = ref nil
-	    
-	    fun placeHead snake =
-		let
-		    val (r, c)     = Snake.head snake
-		    val color      = Snake.color snake
-		    val dir        = Snake.direction snake
-		    val collObject = Array2.sub (a, r, c)
-		    fun hitSnake s     nil     = false
-		      | hitSnake s (sn :: slist) = 
-			let
-			    val hb = (Snake.head sn) :: (Snake.body sn)
-			in
-			    if List.exists (fn x => Snake.head s = x) hb
-				then true
-			    else hitSnake s slist
-			end
-			
-		    val othersnakes = 
-			    List.filter (fn x => not (snake = x)) snakes
-
-		    val hit = hitSnake snake othersnakes
-		    
-                    fun place () = Array2.update(a, r, c, P.SNAKE_HEAD(dir,
-								       color)) 
-                in
-		    if hit
-			then (killHead (a, snake);
-			      killBody (a, snake, died))
-		    else 
-			case collObject of
-			 P.EMPTY              => place ()
-		       | P.GOODY n            => (Snake.eat (snake, n); 
-						  place ();
-						  eaters := snake :: !eaters)
-		       | P.WALL               => killBody (a, snake, died)
-                       | P.GATE (_, P.CLOSED) => killBody (a, snake, died)
-		       | P.GATE (col, P.OPEN) => 
-                            if Color.equal (col, color)
-			        then (fin := snake :: !fin;
-				      Array2.update (a, r, c, collObject))
-			    else killBody (a, snake, died)
-		       | P.SNAKE_HEAD (_, col) => 
-				 if not (Color.equal (col, color))
-				     then killBody (a, snake, died)
-				 else ()
-		       |     _                 => killBody (a, snake, died)
-		end
-	in
-	    List.app placeHead snakes;
-	    List.app (placeBody a died) snakes;
-	    {dead = !died, grown = !eaters, finished = !fin}
-	end
-    
-    fun emptyCopy a =
-        let 
-	    val (rows, cols) = Array2.dimensions a
+ 
+    fun removeSnake (a, s) =
+        let
+            val (r, c) = Snake.head s
         in
-            Array2.array (rows, cols, P.EMPTY)
+            TA.update (a, r, c, P.EMPTY);
+            removeSnakeBody (a, s)
         end
 
-    fun copy a = 
-	let
-	    val (rows, cols) = Array2.dimensions a
-	in 
-	    Array2.tabulate Array2.RowMajor (rows, cols, 
-					     fn (r, c) => Array2.sub (a, r, c))
-	end
+    and removeSnakeBody (a, s) =
+        Snake.appBody (fn (r, c) => TA.update (a, r, c, P.EMPTY)) s
+ 
+    fun removeSnakeBodies (a, snakes) =
+        List.app (curry removeSnakeBody a) snakes
+       
+    fun removeSnakes (a, snakes) =
+        List.app (curry removeSnake a) snakes 
 
-        
-    fun removeSnakes (a, snakes) = 
-	let
-	    fun removeSnake s =
-		let
-		    val ps = (Snake.head s) :: (Snake.body s)
-		in
-		    List.app (fn (r, c) => 
-                        Array2.update (a, r, c, P.EMPTY)) ps
-		end
-	in
-	    List.app removeSnake snakes
-	end
-
-
-    (* some equation procedures for P.field types *)
-    fun goodyEqual (P.GOODY n1, 
-		    P.GOODY n2) = Int.equal (n1, n2)
-      | goodyEqual (_, _)       = false
-	
-    fun gateEqual (P.GATE (c1, s1),
-		   P.GATE (c2, s2)) =
-	(Color.equal (c1, c2) andalso s1 = s2)
-      | gateEqual (_, _)            = false
-	
-    fun headEqual (P.SNAKE_HEAD (d1, c1), 
-		   P.SNAKE_HEAD (d2, c2)) =
-	(Color.equal (c1, c2) andalso d1 = d2)
-      | headEqual (_, _)                  = false
-	
-    fun bodyEqual (P.SNAKE_BODY c1, 
-		   P.SNAKE_BODY c2) = 
-	Color.equal (c1, c2)
-      | bodyEqual (_, _)            = false
-
-    fun fieldEqual (P.WALL, P.WALL)   = true
-      | fieldEqual (P.EMPTY, P.EMPTY) = true
-      | fieldEqual (field1, field2)   =
-	(case field1 of
-	     P.GOODY      _ => goodyEqual (field1, field2)
-	   | P.GATE       _ => gateEqual  (field1, field2)
-	   | P.SNAKE_HEAD _ => headEqual  (field1, field2)
-	   | P.SNAKE_BODY _ => bodyEqual  (field1, field2)
-	   |       _        => false)
-
-    fun diff (old, new) =
+    fun placeSnake (a, s) =
         let
-            val _   = assert Array2.dimensions old = Array2.dimensions new
+            val (hR, hC)    = Snake.head s
+            val c           = Snake.color s
+            val d           = Snake.direction s
+            val body        = Snake.body s
+        in
+            assert List.notContains body (hR, hC);
+            placeSnakeBody (a, s);
+            TA.update (a, hR, hC, P.SNAKE_HEAD (d, c))
+        end
 
-            val (rows, cols) = Array2.dimensions old
+    and placeSnakeBody (a, s) =
+        let
+            val b = P.SNAKE_BODY (Snake.color s)
+            val head    = Snake.head s
+        in
+            Snake.appBody (fn (r, c) => assert head <> (r, c) do TA.update (a, r, c, b)) s
+        end
 
-            fun help ((r, c), xs) = 
-                assert 0 <= r andalso r <= rows andalso 
-                    0 <= c andalso c <= cols do
-                if c = cols
-		    then xs
-	        else 
-		    if r = rows
-		        then help ((0, c + 1), xs)
-		    else
-			let
-			    val f = Array2.sub (old, r, c)
-			in
-			    case f of
-                                (* remove snakes from the old field *)
-				(P.SNAKE_HEAD _ | P.SNAKE_BODY _) =>
-				    Array2.update (old, r, c, P.EMPTY)
-			    |   _ => ();
-		            if fieldEqual (f, Array2.sub (new, r, c))
-			       then help ((r + 1, c), xs)
-		            else 
-                               help ((r + 1, c),
-                                   ((r, c), Array2.sub (new, r, c)) :: xs)
-                        end
-      in
-	  help ((0, 0), nil)
-      end
+    
+    fun moveSnakes  (arena, snakesNDirs, snakesInGate) = 
+        let
+            val snakes  = List.map #1 snakesNDirs
+            (* remove snake from old locations *)
+            val _       = removeSnakes (arena, snakes);
+            val _       = removeSnakes (arena, snakesInGate);
 
-    fun toDiffList a = diff (emptyCopy a, a)
+            (* move all snakes *)
+            val _           = List.app Snake.move snakesNDirs
+            val finished    = List.foldl (fn (s, res) =>
+                                (Snake.shrink s;
+                                 if Snake.length s <= 1 then
+                                    s :: res
+                                 else 
+                                    (placeSnakeBody (arena, s);
+                                     res))) [] snakesInGate
+
+            fun hitOtherSnake [] s          = false
+              | hitOtherSnake (s2::sns) s   = 
+                let
+                    val head = Snake.head s2 
+                    val body = Snake.body s2
+                in
+                    (* hit OTHER snake s2 on the head *)
+                    (Snake.head s = head andalso Snake.id s <> Snake.id s2) 
+                        orelse 
+                        (* or hit some snake (maybe even ourself) on the body *) 
+                        List.exists (fn x => Snake.head s = x) body orelse 
+                            (* or hit one of the remaining snakes *)
+                            hitOtherSnake sns s
+                end
+                  
+            (* determine all snakes which died cause they hit a snake.
+               Snakes which already entered a gate cannot hit another snake
+               but other snakes might hit their body.
+             *)
+            val (dead, snakes)  = List.partition (hitOtherSnake 
+                                                (snakes @ finished)) snakes  
+        in
+            placeSnakes (arena, snakes, dead, [], [], finished)
+        end
+
+    and placeSnakes (a, [], dead, grown, gateEntered, finished) =
+        (* at the end remove all those corpses lying around *)
+        (removeSnakeBodies (a, dead);
+         { dead, grown, gateEntered, finished })
+
+      | placeSnakes (a, s::sns, dead, grown, gateEntered, finished) =
+        let
+            val (hR, hC)    = Snake.head s
+            val color       = Snake.color s
+            val collOb      = TA.sub (a, hR, hC)
+        in
+            case collOb of
+                P.EMPTY     => 
+                (placeSnake (a, s);
+                 placeSnakes (a, sns, dead, grown, gateEntered, finished))
+            |   P.GOODY n   =>
+                (Snake.eat (s, n);
+                 placeSnake (a, s);
+                 placeSnakes (a, sns, dead, s :: grown, gateEntered, finished))
+            |   P.WALL      =>
+                placeSnakes (a, sns, s :: dead, grown, gateEntered, finished)
+            |   P.GATE (_, P.CLOSED) =>
+                placeSnakes (a, sns, s :: dead, grown, gateEntered, finished)
+            |   P.GATE (c, P.OPEN)  =>
+                if Color.equal (color, c) 
+                    then (* it's this snakes gate and it's open *)
+                        placeSnakes (a, sns, dead, grown, s :: gateEntered, 
+                                finished)
+                    else (* another snakes gate :-( *)
+                        placeSnakes (a, sns, s :: dead, grown, gateEntered,
+                            finished)
+            |   _           => 
+                (* snake - snake collision are already detected above *)
+                assert false
+        end
+    
+    fun placeGoody (a, n) =
+        let val (r, c) = findEmptySpot (a, 0) 
+        in
+            TA.update (a, r, c, P.GOODY n);
+            true
+        end handle NoMoreEmptySpots => false 
+             
+
+    fun openGate (a, (r, c)) =
+        case TA.sub (a, r, c) of
+            P.GATE (_, P.OPEN)   => ()
+        |   P.GATE (cl, P.CLOSED) => TA.update (a, r, c, P.GATE (cl, P.OPEN))
+        |   _                    => assert false
+
+    fun placeGate (a, (r,c), col) = TA.update (a, r, c, P.GATE (col, P.CLOSED))
+
+    val commit = TA.commit
 
 end
+

@@ -17,7 +17,7 @@ import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
 
 open Ctrl
 
-structure Client (* :> CLIENT *) = 
+structure Client :> CLIENT = 
 struct
     (* [startClient (gui, server)] starts the core client given a server,
        which can be a future
@@ -47,11 +47,7 @@ struct
 
             fun countdown n = #countdown guiGame n
 
-            fun update diffs = #update guiGame diffs
-            
-	    fun headPosition p = #headPosition guiGame p
-
-            fun tick remainingTime = #tick guiGame remainingTime
+            fun tick args = #tick guiGame args
             
             fun playersDied players = ()
 
@@ -61,8 +57,6 @@ struct
 
             fun tournamentFinished highscore = 
                 #gameFinished guiGame highscore
-
-            fun updatePoints points = #updatePoints guiGame points
 
             (* ------------ gui callbacks --------- *)
             (* user turns snake, gives up...        *)
@@ -115,14 +109,11 @@ struct
                playerDisconnected   = locked "playerDisconnected" playerDisconnected,
                abort                = locked "abort" abort,
                countdown            = locked "countdown" countdown,
-               update               = locked "update" update,
-	       headPosition         = locked "headPosition" headPosition,
                tick                 = locked "tick" tick,
                playersDied          = locked "playersDied" playersDied,
                playersFinished      = locked "playersFinished" playersFinished,
                levelFinished        = locked "levelFinished" levelFinished,
-               tournamentFinished   = locked "tournamentFinished" tournamentFinished,
-               updatePoints         = locked "updatePoints"  updatePoints
+               tournamentFinished   = locked "tournamentFinished" tournamentFinished
             },
             {   play                = play,
                 watch               = watch,

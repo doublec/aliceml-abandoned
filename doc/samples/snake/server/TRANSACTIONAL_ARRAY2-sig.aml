@@ -1,0 +1,35 @@
+signature TRANSACTIONAL_ARRAY2 =
+sig
+    type array
+    type t = array
+    type elem
+
+    type region = { 
+        base :  array,
+	row :   int,
+	col :   int,
+	nrows : int option,
+	ncols : int option 
+    }
+
+    datatype traversal =
+	RowMajor
+      | ColMajor
+
+
+    type difflist = ((int * int) * elem) list
+
+    val array :         int * int * elem -> array
+
+    val dimensions :    array -> int * int
+
+    val sub :           array * int * int -> elem
+    val update :        array * int * int * elem -> unit
+    
+    val rollback :      array -> unit
+
+    val commit :        array -> difflist
+
+    val alli : traversal -> (int * int * elem -> bool) -> region -> bool
+
+end

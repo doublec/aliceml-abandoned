@@ -155,10 +155,9 @@ struct
 	countdown :         int -> unit,
 	(** [countdown n] is called before a level starts. [n] is the time
 	    till gamestart. n = 0 => levels starts *)
-        update :            diff list -> unit,
-	headPosition :      Pos.pos -> unit,
-        tick :              Time.time -> unit,
-        (** [tick t] is called to notify the client that a new tick has
+
+        tick :            Highscore.points list option * diff list * Pos.pos option * Time.time -> unit,
+        (** [tick (diffs, pos, t)] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left
 	    until level ends *)
         
@@ -168,12 +167,10 @@ struct
         levelFinished :     unit -> unit,
 	(** levelFinished is called when a level is finished *)
 
-	tournamentFinished : Highscore.highscore -> unit,
+	tournamentFinished : Highscore.highscore -> unit
 	(** [tournamentFinished h] is called when the tournament 
 	    is finished, it's called after levelFinished. 
 	    [h] will be displayed. *)
-
-        updatePoints :      (Highscore.points * int option) list -> unit
     }
 
     signature SERVER_CONNECTOR =
@@ -181,6 +178,20 @@ struct
         val connect :       client_interface -> 
 	                     config * server_interface  (* Protocol *)
     end
+
+        
+    fun equalFields (f1, f2) =
+        case (f1, f2) of
+            (GOODY n1, GOODY n2)                    => n1 = n2
+        |   (GATE (c1, s1), GATE (c2, s2))          => 
+            Color.equal (c1, c2) andalso s1 = s2
+        |   (WALL, WALL)                            => true
+        |   (EMPTY, EMPTY)                          => true
+        |   (SNAKE_HEAD (d1,c1), SNAKE_HEAD (d2, c2)) => 
+            Color.equal (c1, c2) andalso d1 = d2
+        |   (SNAKE_BODY c1, SNAKE_BODY c2)          => 
+            Color.equal (c1, c2)
+        |   _                                           => false
 
 end
 

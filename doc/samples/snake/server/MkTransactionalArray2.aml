@@ -1,0 +1,72 @@
+import signature TRANSACTIONAL_ARRAY2   from "TRANSACTIONAL_ARRAY2-sig"
+
+
+signature ELEM = 
+sig
+    type t
+
+    val equal : t * t -> bool
+end
+
+
+functor MkTransactionalArray2 (E: ELEM) : 
+    TRANSACTIONAL_ARRAY2 where type elem = E.t  =
+struct
+    type elem   = E.t
+    type array  = (elem * elem option) Array2.array
+    type t      = array
+    
+    type region = { 
+        base :  array,
+	row :   int,
+	col :   int,
+	nrows : int option,
+	ncols : int option 
+    }
+
+    datatype traversal =
+	RowMajor
+      | ColMajor
+
+
+    type difflist = ((int * int) * elem) list
+
+    fun array (rows, cols, v) = Array2.array (rows, cols, (v, NONE))
+
+    val dimensions = Array2.dimensions
+
+    fun sub (a, r, c) =
+        case Array2.sub (a, r, c) of
+            (v, NONE)   => v
+        |   (_, SOME v) => v
+
+    fun update (a, r, c, v) =
+        let val (old, _)    = Array2.sub (a, r, c) 
+        in
+            if E.equal (old, v) 
+                then Array2.update (a, r, c, (old, NONE))
+                else Array2.update (a, r, c, (old, SOME v))    
+        end
+
+    fun rollback a =
+        Array2.modify Array2.RowMajor (fn (v, _) => (v, NONE)) a
+
+    fun commit a =
+        let
+            val diffs = ref []
+
+            fun commitField (r, c, (v, NONE))   = (v, NONE)
+              | commitField (r, c, (_, SOME v)) = 
+                (diffs := ((r, c), v) :: !diffs;
+                 (v, NONE))
+
+        in
+            Array2.modifyi Array2.RowMajor commitField 
+                { base = a, row=0, col=0, nrows=NONE, ncols=NONE };
+            !diffs
+        end
+
+    fun alli trav a reg = 
+        Array2.alli trav (fn (r, c, (v, NONE)) => a (r, c, v)
+                           | (r, c, (_, SOME v)) => a (r, c, v)) reg
+end

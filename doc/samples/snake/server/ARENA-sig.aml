@@ -1,62 +1,37 @@
-(* Alice Snake 2.0 - Arena
- *
- *  Authors: Benedikt Grundmann / Sebastian Germesin
- *
- *  $Revision$
- *
- *  Last updated: $Date$ by $Author$
- * 
- *
- *)
-
-import structure Protocol from "../common/Protocol"
-import structure Snake    from "Snake"
-import structure Pos      from "../common/Pos"
-
+import structure Protocol   from "../common/Protocol"
+import structure Pos        from "../common/Pos"
+import structure Color      from "../common/Color"
+import structure Snake      from "Snake"
 
 signature ARENA =
 sig
+    type arena
 
-    type arena = Protocol.field Array2.array (* MUTABLE *)
-
-
-    type config = {
-        dimensions: int * int,
-	players: int,
-        walls: int
-        (* MAGIC NUMBERs ... *)
-    }
+    type config = 
+	{
+	 dimensions: int * int,
+	 players: int,
+	 walls: int
+	 }
     
-    val random       : config -> arena * (Pos.pos * Protocol.direction) list
 
-    val emptyCopy    : arena -> arena
+    val random :        config -> arena * (Pos.pos * Protocol.direction) list
+   
+    val removeSnake :   arena * Snake.snake -> unit
 
-    val copy         : arena -> arena
+    val moveSnakes :    arena * (Snake.snake * Protocol.direction) list 
+                            * Snake.snake list -> 
+        {   dead :          Snake.snake list, 
+            grown :         Snake.snake list,
+            gateEntered :   Snake.snake list,
+            finished :      Snake.snake list
+        }
+
+    val placeGoody :    arena * int -> bool
+
+    val openGate :      arena * Pos.pos -> unit
     
-    
-    val placeSnakes  : arena * Snake.snake list -> 
-        { dead: Snake.snake list, grown: Snake.snake list, 
-          finished: Snake.snake list }
-    (** places the snakes on the arena, returns all snakes
-       which died, have eaten a goodie, are half-finished.
-       
-       PRE: arena contains NO snakes 
-       POST: arena contains NO snake which is contained
-       in the first returned list. 
-     *)
+    val placeGate :     arena * Pos.pos * Color.color -> unit
 
-    val removeSnakes :  arena * Snake.snake list -> unit
-    (** removes all snakes *)
-
-    val diff         : arena * arena -> Protocol.diff list
-
-    val toDiffList   : arena -> Protocol.diff list
-
+    val commit :        arena -> Protocol.diff list
 end
-
-
-
-
-
-
-

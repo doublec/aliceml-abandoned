@@ -1,0 +1,249 @@
+(* Alice Snake 2.0 - Participant (impl)
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature PSTATE        from "PSTATE-sig"
+import structure Protocol      from "../common/Protocol"
+import structure Color         from "../common/Color"
+import structure Snake         from "Snake"
+import structure Ctrl          from "x-alice:/lib/utility/Ctrl"
+import structure Pos           from "../common/Pos"
+
+structure PState :> PSTATE =
+struct
+    open Ctrl
+
+    type id = int
+
+    type player_info = {
+	       points     : int ref,
+               gamePoints : int ref,
+	       name       : string,
+	       color      : Color.color,
+	       nextDir    : Protocol.direction ref,
+               gatePos    : (int * int) ref,
+	       deathCount : int ref
+		       }
+
+    datatype state =
+	CONNECTED
+      | PLAYING         of player_info * Snake.snake
+      | GATE_ENTERED    of player_info * Snake.snake
+      | FINISHED        of player_info * id option ref 
+      | DEAD            of player_info * id option ref
+      | BURIED          of player_info * id option ref
+      | WATCHING        of id option ref
+
+
+    type pstate = { 
+        id:             id,
+        state:          state ref
+    }
+
+
+    fun playerInfo (p: pstate) =
+        case ! (#state p) of
+            PLAYING (i, _)      => i
+        |   GATE_ENTERED (i, _) => i
+        |   FINISHED (i, _)     => i
+        |   DEAD (i, _)         => i
+        |   BURIED (i, _)       => i
+        |   _                   => assert false
+
+    fun giveUp (p: pstate) =
+        let
+            val pi  = playerInfo p
+        in
+            (* giving up implies no points at all! *)
+            #points pi     := 0;
+            #gamePoints pi := 0;
+            #state p := BURIED (pi, ref NONE)
+        end
+
+    fun play (p:pstate, maxLength, name, color) =
+        #state p := PLAYING ({
+                points      = ref 0,
+                gamePoints  = ref 0,
+                name        = name,
+                color       = color,
+                nextDir     = ref Protocol.UP,
+                gatePos     = ref (0, 0),
+                deathCount  = ref 0 }, 
+            Snake.snake (maxLength, #id p, color, (0, 0), Protocol.UP))
+
+
+    fun die (p:pstate, maxLives) =
+        case ! (#state p) of
+            PLAYING (info, snake) =>
+            (#gamePoints info := 0;
+             #deathCount info := !(#deathCount info) + 1;
+             if isSome maxLives andalso 
+                    ! (#deathCount info) > valOf maxLives then
+               (#state p := BURIED (info, ref NONE);
+                print "buried\n")
+             else
+               (#state p := DEAD (info, ref NONE);
+                print "died\n") )
+        |   _   => assert false
+
+
+    fun enterGate (p: pstate) =
+        case ! (#state p) of
+            PLAYING (info, snake) =>
+            (#gamePoints info := !(#gamePoints info) + 5; (* FIXME*)
+             #state p := GATE_ENTERED (info, snake) )
+        |   _                     => assert false
+
+    
+    fun finish (p:pstate) =
+        case ! (#state p) of    
+            GATE_ENTERED (info, snake) =>
+            (#points info := !(#points info) + !(#gamePoints info);
+             #gamePoints info := 0;
+             #state p := FINISHED (info, ref NONE) )
+        |   _   => assert false
+
+
+    fun adjustPoints (p:pstate) =
+        case !(#state p) of
+            PLAYING (info, snake) =>
+            (#gamePoints info := !(#gamePoints info) + Snake.length snake)
+        |   _   => assert false
+
+
+        
+    fun watch (p: pstate) =
+        #state p := WATCHING (ref NONE)
+
+
+    fun snake (p: pstate) =
+        case ! ( #state p ) of
+            PLAYING (_, sn)         => sn
+        |   GATE_ENTERED (_, sn)    => sn
+        |   _                       => assert false
+
+
+    fun startLevel (p:pstate, maxLength, pos, d) =
+        let
+            val pi      = playerInfo p
+            val id      = #id p
+            val snake   = Snake.snake (maxLength, id, #color pi, 
+                                        Pos.move (pos, d), d)
+        in
+            #nextDir pi := d;
+            #gatePos pi := pos;
+            #state p    := PLAYING (pi, snake)
+        end
+            
+    fun pstate id = { id, state = ref CONNECTED }
+
+    fun id (p: pstate) = #id p
+
+    fun changeObserved (p: pstate, id) =
+        case ! ( #state p) of
+            FINISHED (_, r)     => r := id
+        |   WATCHING r          => r := id
+        |   DEAD (_, r)         => r := id
+        |   BURIED (_, r)       => r := id
+        |   _                   => ()
+
+    fun observes (p: pstate, ob) =
+        case ! (#state p) of
+            FINISHED (_, ref (SOME id)) => id = ob
+        |   WATCHING (ref (SOME id))    => id = ob
+        |   DEAD (_, ref (SOME id))     => id = ob
+        |   BURIED (_, ref (SOME id))   => id = ob
+        |   _                           => false
+
+    fun observed (p: pstate) =
+        case ! (#state p) of
+            FINISHED (_, ref ob)    => ob
+        |   WATCHING (ref ob)       => ob
+        |   DEAD (_, ref ob)        => ob
+        |   BURIED (_, ref ob)      => ob
+        |   _                       => NONE
+
+    fun isObserver (p: pstate) =
+        case ! (#state p) of
+            FINISHED _      => true
+        |   WATCHING _      => true
+        |   DEAD _          => true
+        |   BURIED _        => true
+        |   _               => false
+
+    fun nameNColor p = 
+        let
+            val info    = playerInfo p
+            val name    = #name info
+            val color   = #color info
+        in
+            (name, color)
+        end
+
+    fun isConnected (p:pstate) =
+        case ! (#state p) of    
+            CONNECTED       => true
+        |   _               => false
+
+
+    fun played (p:pstate) =
+        case ! (#state p) of
+            PLAYING _       => true
+        |   DEAD _          => true
+        |   BURIED _        => true
+        |   GATE_ENTERED _  => true
+        |   FINISHED _      => true
+        |   _               => false
+
+    fun hasEnteredGate (p: pstate) =
+        case ! (#state p) of
+            GATE_ENTERED _  => true
+        |   _               => false
+
+
+    fun isPlayer (p: pstate) =
+        case ! (#state p) of
+            PLAYING _       => true
+        |   DEAD _          => true
+        |   GATE_ENTERED _  => true
+        |   FINISHED _      => true
+        |   _               => false
+
+
+    fun isPlaying (p:pstate) =
+        case ! (#state p) of
+            PLAYING _       => true
+        |   _               => false
+
+    fun points (p: pstate, lives) =
+        assert played p do
+        let val pi = playerInfo p in
+            {   name        = #name pi,
+                color       = #color pi,
+                gamePoints  = !(#gamePoints pi),
+                points      = !(#points pi),
+                lives       = Option.map (fn l => l - ! (#deathCount pi)) lives
+            }
+        end
+        
+    fun position p =
+        if isPlaying p then
+            FST $ Snake.head (snake p)
+        else SND $ observed p
+
+    fun gatePos p =
+        assert played p do
+        ! (#gatePos $ playerInfo p)
+
+    fun canEnterGate (p, treshhold) =
+        assert isPlaying p do
+        Snake.length (snake p) >= treshhold
+
+end

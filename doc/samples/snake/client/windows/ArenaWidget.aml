@@ -13,14 +13,11 @@ import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
-import structure Inspector     from "x-alice:/lib/tools/Inspector"
 import structure Config        from "x-alice:/lib/system/Config"
 
 import signature ARENAWIDGET   from "ARENAWIDGET-sig"
 import structure Protocol      from "../../common/Protocol"
 import structure Color         from "../../common/Color"
-import structure Pos           from "../../common/Pos"
-import structure Arena         from "../../server/Arena"
 
 (* Overview:
 
@@ -133,7 +130,6 @@ struct
 	    val canvas = GtkCanvas.new 1
             (* antialiasing mode: val canvas = GtkCanvas.newAa ()*)
         in
-            Gtk.layoutFreeze canvas;
 	    {
 	        canvas,
 	        state     = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY))),
@@ -424,13 +420,6 @@ struct
 	    else changeField (obj, f, r, c, field) cache arena canvas
 	end
 
-
-    fun update ({canvas, state = ref arena, itemCache}, difflist) =
-	let
-            val root = GtkCanvas.root canvas
-	in
-	    List.app (insert itemCache arena root) difflist
-	end 
 	
     fun arenaWidth (a:arena_widget) =
 	let
@@ -448,7 +437,7 @@ struct
 	end
 
 
-    fun changeView (a, (y, x)) =
+    fun changeView (a:arena_widget, (y, x)) =
 	let
 	    val obj = toObject a
 	    val minX = 0
@@ -474,11 +463,20 @@ struct
 				        Real.round y1, 
 				        Real.round x2, 
 				        Real.round y2)
-            else ();
-            Gtk.layoutThaw obj;
-	    Gtk.layoutFreeze obj
-
+            else ()
 	end
+
+    fun update (a as {canvas, state = ref arena, itemCache}, difflist, pos) =
+	let
+            val root = GtkCanvas.root canvas
+	in
+            Gtk.layoutFreeze canvas;
+	    List.app (insert itemCache arena root) difflist;
+            (case pos of
+                NONE    => ()
+            |   SOME p  => changeView (a, p) );
+            Gtk.layoutThaw canvas
+	end 
 
     fun startCountDown a =
         let
@@ -517,9 +515,7 @@ struct
                     val numObj  = GtkCanvas.itemNew (root, 
                                                  GtkCanvas.TEXT, args)
                 in
-                    changeObj numObj;
-                    Gtk.layoutThaw obj;
-                    Gtk.layoutFreeze obj
+                    changeObj numObj
                 end
         in
             display

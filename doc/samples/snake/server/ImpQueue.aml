@@ -14,6 +14,11 @@ struct
         assert capacity > 0 do
         (Array.array (capacity + 1, NONE), ref 0, ref 0, ref 0)
 
+    fun clear (a, inptr, outptr, n) =
+        (Array.modify (const NONE) a;
+         inptr := 0;
+         outptr := 0;
+         n := 0)
 
     fun capacity (a, _, _, _) = Array.length a - 1
 

@@ -26,9 +26,7 @@ sig
 	
     val initLevel : arena_widget * Protocol.level_info -> unit
 	
-    val update : arena_widget * Protocol.diff list -> unit
-	
-    val changeView : arena_widget * Pos.pos -> unit
+    val update : arena_widget * Protocol.diff list * Pos.pos option -> unit
 	
     val startCountDown : arena_widget -> (int option -> unit)
 end

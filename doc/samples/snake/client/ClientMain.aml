@@ -27,14 +27,11 @@ fun proxyClient (c : Protocol.client_interface) : Protocol.client_interface =
         playerDisconnected  = Remote.proxy $ #playerDisconnected c,
         abort               = Remote.proxy $ #abort c,
         countdown           = Remote.proxy $ #countdown c,
-        update              = Remote.proxy $ #update c,
-	headPosition        = Remote.proxy $ #headPosition c,
         tick                = Remote.proxy $ #tick c,
         playersDied         = Remote.proxy $ #playersDied c,
         playersFinished     = Remote.proxy $ #playersFinished c,
         levelFinished       = Remote.proxy $ #levelFinished c,
-        tournamentFinished  = Remote.proxy $ #tournamentFinished c,
-        updatePoints        = Remote.proxy $ #updatePoints c
+        tournamentFinished  = Remote.proxy $ #tournamentFinished c
     }
 
 fun main () =
