@@ -40,7 +40,7 @@ abstract public class Builtin implements DMLValue {
 		    new Int(0);
 		} else if (lib.equals("Real")) {
 		    new Real(0.0f);
-		} else if (lib.equals("Real")) {
+		} else if (lib.equals("Word")) {
 		    new Word(0);
 		} else if (lib.equals("Array")) {
 		    new Array(0,null);
