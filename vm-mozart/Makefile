@@ -33,8 +33,17 @@ COMMONSOURCES = \
 	MakePrebound.sml Prebound.sml PREBOUND_TYPE.sig PreboundType.sml
 COMMONFILES = $(COMMONSOURCES:%=common/%)
 
+FRONTENDCOMMONSOURCES = \
+	StringMap.sml ABSTRACT_GRAMMAR.sig MakeAbstractGrammar.sml \
+	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml ENV0.sig \
+	Env0.sml ELABORATION_ERROR.sig ElaborationError.sml \
+	ELABORATION_PHASE.sig MakeElaborationPhase.sml TRANSLATION_PHASE.sig \
+	TranslationPhase.sml MakeFrontendCommon.sml
+FRONTENDCOMMONFILES = $(FRONTENDCOMMONSOURCES:%=frontend-common/%)
+
 BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
-	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) $(COMMONFILES)
+	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) $(COMMONFILES) \
+	$(FRONTENDCOMMONFILES)
 
 ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
 
@@ -66,6 +75,10 @@ top/%: ../../stoc/top/% top/%.header Base.import
 
 common/%: ../../stoc/common/% common/%.header Base.import
 	cat Base.import common/$*.header $< > $@
+
+frontend-common/%: ../../stoc/frontend-common/% frontend-common/%.header \
+	Base.import
+	cat Base.import frontend-common/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC_MOZART) $< $@
