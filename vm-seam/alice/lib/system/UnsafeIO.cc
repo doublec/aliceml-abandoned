@@ -119,6 +119,9 @@ static String *Concat(String *a, const char *b, u_int bLen) {
   return s;
 }
 
+static const u_int bufSize = 8192;
+static char buf[bufSize];
+
 // Builtins
 DEFINE3(UnsafeIO_Io) {
   ConVal *conVal = ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);
@@ -147,8 +150,6 @@ DEFINE1(UnsafeIO_flushOut) {
 } END
 
 DEFINE1(UnsafeIO_inputAll) {
-  static const u_int bufSize = 8192;
-  static char *buf = static_cast<char *>(std::malloc(sizeof(char) * bufSize));
   DECLARE_INSTREAM(stream, x0);
   std::FILE *file = stream->GetStream();
   String *b = String::New(static_cast<u_int>(0));
@@ -163,41 +164,30 @@ DEFINE1(UnsafeIO_inputAll) {
 } END
 
 DEFINE1(UnsafeIO_inputLine) {
-  static const u_int bufSize = 1024;
-  static char *buf = static_cast<char *>(std::malloc(sizeof(char) * bufSize));
   DECLARE_INSTREAM(stream, x0);
   std::FILE *file = stream->GetStream();
-  String *b  = String::New(static_cast<u_int>(0));
-  while (true) {
-    u_int nRead = std::fread(buf, 1, bufSize, file);
-    if (ferror(file)) {
-      RAISE_IO(Store::IntToWord(0), "inputLine", stream->GetName());
+  String *b = String::New(static_cast<u_int>(0));
+  u_int index = 0;
+  int c = std::fgetc(file);
+  while (c != EOF) {
+    buf[index++] = c;
+    if (c == '\n') {
+      if (index != 0)
+	b = Concat(b, buf, index);
+      RETURN(b->ToWord());
     }
-    u_int seek = 0;
-    while (seek < nRead) {
-      if (buf[seek++] == '\n') {
-	if (seek < nRead) {
-	  std::fseek(file, seek - nRead, SEEK_CUR);
-	}
-	if (b->GetSize() + seek > String::maxSize) {
-	  RAISE(PrimitiveTable::General_Size);
-	} else {
-	  RETURN(Concat(b, buf, seek)->ToWord());
-	}
+    if (index == bufSize) {
+      if (b->GetSize() + index > String::maxSize) {
+	RAISE(PrimitiveTable::General_Size);
       }
+      b = Concat(b, buf, index);
+      index = 0;
     }
-    if (b->GetSize() + nRead + 1 > String::maxSize) { // space for final '\n'
-      RAISE(PrimitiveTable::General_Size);
-    }
-    b = Concat(b, buf, nRead);
-    if (feof(file)) {
-      if (b->GetSize() == 0) {
-	RETURN(b->ToWord());
-      } else {
-	RETURN(Concat(b, "\n", 1)->ToWord());
-      }
-    }
+    c = std::fgetc(file);
   }
+  b = Concat(b, buf, index);
+  b = Concat(b, "\n", 1);
+  RETURN(b->ToWord());
 } END
 
 DEFINE2(UnsafeIO_openAppend) {
