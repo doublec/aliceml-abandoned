@@ -65,6 +65,7 @@ struct
 
     fun Preferences _ = 
 				 let	
+				    
 				     val vbox = Gtk.vboxNew(0,4)
 				     (* val ck_button = Gtk.checkButtonNewWithLabel("hello") *)
 
@@ -90,11 +91,18 @@ struct
 				      Gtk.SHADOW_ETCHED_IN
 				      Gtk.SHADOW_ETCHED_OUT *)
 				     val text1 = Gtk.labelNew("Structure")
-				     val radio = createRadioButtons [RBObj("eins",[]),
-								     RBObj("zwei",[]),
-								     RBObj("drei",[]),
-								     RBObj("vier",[]),
-								     RBObj("fuenf",[])]
+				     val radiobox =  Gtk.vboxNew(0,4)
+				     val treemode_button = Gtk.radioButtonNewWithLabel(uglyNULL, "Tree Mode")
+				     val _ =  Gtk.boxPackStart(radiobox,treemode_button,0,1,0)
+				     val group = Gtk.radioButtonGroup(treemode_button)
+				     val relmode_button = Gtk.radioButtonNewWithLabel(group, "Relational Mode")
+				     val _ =  Gtk.boxPackStart(radiobox,relmode_button,0,1,0)
+				     val _ = if !Settings.relmode then Gtk.toggleButtonSetActive(relmode_button,1)
+					     else  Gtk.toggleButtonSetActive(treemode_button,1)
+				   (*  val radio = createRadioButtons [RBObj("Tree Mode",
+									   [[]),
+								     RBObj("Relational Mode",
+									   [])] *)
 				     val text3 = Gtk.labelNew("Range")  
 				     val bbox = Gtk.hbuttonBoxNew()
 				     val _ = Gtk.containerSetBorderWidth(bbox,10)
@@ -106,8 +114,8 @@ struct
 				     val _ = Gtk.containerAdd(bbox,apply_button)
 				     val _ = Gtk.containerAdd(bbox,cancel_button)
 				     val n = createNotebook[("Width & Depth Limit Settings",inner_vbox),
-							    ("Appearance",radio),
-							    ("Range", text3)] 
+							    ("Mode Settings",radiobox),
+							    ("foo", text3)] 
 				     val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 				     val _  = Gtk.signalConnect (cancel_button, "clicked", 
 								 fn _ => Gtk.widgetDestroy(w) )
@@ -117,6 +125,10 @@ struct
 								     Gtk.spinButtonGetValueAsInt(width_s) 
 								 val _ =Settings.max_depth := 
 								     Gtk.spinButtonGetValueAsInt(depth_s)
+								 val _ = Settings.relmode := (if 
+								     Gtk.toggleButtonGetActive(relmode_button) = 1
+												  then true 
+											      else false)
 								 val _ =   Gtk.widgetDestroy(w)
 									 in
 									     ()

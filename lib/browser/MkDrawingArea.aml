@@ -54,15 +54,8 @@ struct
     fun resize (x,y) = 
 	let
 	    val _ = GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
-	    val _ = GtkCanvas.itemSet(background,
-				      [("x1", Gtk.DOUBLE 0.0),
-				       ("y1", Gtk.DOUBLE 0.0),
-				       ("x2", Gtk.DOUBLE x),
-				       ("y2", Gtk.DOUBLE y),
-				       ("fill_color_gdk", 
-					Gtk.OBJECT(MkColorTable.allocColor(65535,65535,65535))),
-				       ("outline_color_gdk", 
-					Gtk.OBJECT (MkColorTable.allocColor(0,0,0)))])
+	    val _ = GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
+	    val _ = GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y)	
 	in
 	    ()
 	end

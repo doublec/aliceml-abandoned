@@ -18,4 +18,5 @@ structure Settings :> SETTINGS =
 struct 
     val max_width = ref 10
     val max_depth = ref 5
+    val relmode = ref false
 end
