@@ -11,6 +11,11 @@ Interactive Toplevel:
 * Enable Ctrl-C for interrupting a computation.
 * Enable Ctrl-Z for putting a computation into background.
 
+Library:
+
+* Promise: fulfilling with a cycle no longer fails the promise.
+* VectorSlice: fixed toVector.
+
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
 ---------------------------------------------------------

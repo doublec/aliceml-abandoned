@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,7 +29,7 @@ struct
 	type 'a elem = 'a
 	__primitive val vlength :   'a v -> int		= "Vector.length"
 	__primitive val vsub :	    'a v * int -> 'a	= "Vector.sub"
-	__primitive val vextract :  'a v * int * int -> 'a v = "Vector.toList"
+	__primitive val vextract :  'a v * int * int -> 'a v = "Vector.extract"
 	__primitive val vtabulate : int * (int->'a) -> 'a v  = "Vector.tabulate"
 	__primitive val vconcat :   'a v list -> 'a v	= "Vector.concat"
 	__primitive val vfromList : 'a list -> 'a v	= "Vector.fromList"
