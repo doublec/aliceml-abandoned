@@ -566,6 +566,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val x'   = O.Id(nonInfo r, Stamp.new(), Name.InId)
 	    val y'   = O.ShortId(typInfo(r, SOME t), x')
 	    val ds'' = trImps(is, y', t, ds')
+	    val _    = Inf.stripSig s
 	in
 	    ( (x',s,u)::xsus', ds'' )
 	end
@@ -596,8 +597,10 @@ UNFINISHED: obsolete after bootstrapping:
 	    val  t          = Type.inProd(idsToRow ids')
 	    val  i'         = typInfo(#region i,t)
 	    val  exp'       = O.LetExp(i', ds', O.ProdExp(i', fs'))
+	    val  s          = #sign i
+	    val  _          = Inf.stripSig s
 	in
-	    ( xsus', (exp', #sign i) )
+	    ( xsus', (exp',s) )
 	end
 
     fun translate() (desc, component) = trComp component

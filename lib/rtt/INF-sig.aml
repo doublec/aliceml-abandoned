@@ -73,6 +73,9 @@ signature INF =
     val strengthen :	path * inf -> unit
     val strengthenSig :	path * sign -> unit
 
+    val strip :		inf  -> unit
+    val stripSig :	sign -> unit
+
   (* Kinds *)
 
     exception Kind
