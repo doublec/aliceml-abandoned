@@ -11,12 +11,7 @@
  *
  *)
 
-import structure GtkTypes        from "GtkTypes"
-import structure UnsafeGTKCANVAS from "UnsafeGTKCANVAS"
+import structure UnsafeGtkCanvas from "UnsafeGtkCanvas"
 import signature GTK_CANVAS      from "GTK_CANVAS-sig"
 
-structure GtkCanvas :> GTK_CANVAS =
-    struct
-	open GtkTypes
-	open UnsafeGTKCANVAS
-    end
+structure GtkCanvas :> GTK_CANVAS = UnsafeGtkCanvas

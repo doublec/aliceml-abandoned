@@ -11,14 +11,9 @@
  *
  *)
 
-import structure GtkTypes from "GtkTypes"
+import signature GDK from "GDK-sig"
 
-local
-    type bool = bool
-in
-    signature GTK =
-	sig
-#include "GTK_TYPES_INTERFACE.aml"
-#include "GTK_INTERFACE.aml"
-	end
-end
+signature UNSAFE_GDK_COMPONENT =
+    sig
+	structure UnsafeGdk : GDK
+    end

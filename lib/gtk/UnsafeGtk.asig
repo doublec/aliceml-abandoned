@@ -3,7 +3,7 @@
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus, 2001
+ *   Thorsten Brunklaus, 2002
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -11,7 +11,9 @@
  *
  *)
 
-import structure UnsafeGtk from "UnsafeGtk"
-import signature GTK       from "GTK-sig"
+import signature GTK from "GTK-sig"
 
-structure Gtk :> GTK = UnsafeGtk
+signature UNSAFE_GTK_COMPONENT =
+    sig
+	structure UnsafeGtk : GTK
+    end

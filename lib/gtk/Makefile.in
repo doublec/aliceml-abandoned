@@ -75,13 +75,13 @@ ALICEOBJS    = $(ALICESOURCES:%.aml=%.ozf)
 # Alice Wrapper Files
 #---------------------------------------------------------------------
 
-OZWRPSRCS = UnsafeGDK.oz \
-            UnsafeGTK.oz \
-            UnsafeGTKCANVAS.oz
+OZWRPSRCS = UnsafeGdk.oz \
+            UnsafeGtk.oz \
+            UnsafeGtkCanvas.oz
 OZWRPOBJS = $(OZWRPSRCS:%.oz=%.ozf)
-OZWRPSIGS = $(OZWRPSRCS:%.oz=%.asig)
 
-WRPSRCS    = GDK-sig.aml \
+WRPSRCS    = GtkTypes.aml \
+             GDK-sig.aml \
              GTK-sig.aml \
              GTK_CANVAS-sig.aml \
              Gdk.aml \
@@ -90,26 +90,17 @@ WRPSRCS    = GDK-sig.aml \
 WRPOBJS    = $(WRPSRCS:%.aml=%.ozf)
 COMPONENTS = $(WRPOBJS:%.ozf=Linked%.ozf)
 
-TMPSRCS = UnsafeGDK.tsig \
-          UnsafeGTK.tsig \
-          UnsafeGTKCANVAS.tsig
-TMPOBJS = $(TMPSRCS:%.tsig=%.asig)
-
-TMPSIGSRCS = GDK-sig.tml \
-             GTK-sig.tml \
-             GTK_CANVAS-sig.tml
-TMPSIGOBJS = $(TMPSIGSRCS:%.tml=%.aml)
-
-INTWRPSRCS = GDK_INTERFACE.aml \
-             GTK_INTERFACE.aml \
-             GTK_CANVAS_INTERFACE.aml
+TMPSIGSRCS = GDK-sig.aml \
+             GTK-sig.aml \
+             GTK_CANVAS-sig.aml
+TMPSIGOBJS = $(TMPSIGSRCS)
 
 #---------------------------------------------------------------------
 # Target Variables
 #---------------------------------------------------------------------
 
 TARGETS          = gtkraw.c $(ALICEOBJS) $(OZOBJS)
-TEMPLATE_TARGETS = $(TMPOBJS) $(TMPSIGOBJS)
+TEMPLATE_TARGETS = $(TMPSIGOBJS)
 WRAPPER_TARGETS  = $(OZWRPOBJS)
 
 INSTALLDIRS  = $(PREFIX)/lib/gtk
@@ -125,16 +116,8 @@ INSTALLFILES = $(COMPONENTS:Linked%=$(PREFIX)/lib/gtk/%)
 %.ozf: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $(BUILDDIR)/$< -o $(BUILDDIR)/$@
 
-#--** why statically include the GtkTypes component into all others??
 Linked%.ozf: %.ozf
-	$(ALICELINK) $(ALICELINK_OPTS) $* \
-	--include $* --include Unsafe --include GtkTypes -o $@
-
-%.asig: %.tsig
-	$(CPP) -P -E -o $@ $<
-
-%.aml: %.tml
-	$(CPP) -P -E -o $@ $<
+	$(ALICELINK) $(ALICELINK_OPTS) $* --include $* --include Unsafe -o $@
 
 #---------------------------------------------------------------------
 # Building
@@ -161,7 +144,7 @@ binding:
 	@$(MAKE) template_files
 	@$(MAKE) wrapper_files
 
-template_files: $(TMPOBJS) $(TMPSIGOBJS)
+template_files: $(TEMPLATE_TARGETS)
 wrapper_files: $(WRAPPER_TARGETS)
 wrapper: $(WRPOBJS) $(COMPONENTS)
 
@@ -183,14 +166,14 @@ $(PREFIX)/lib/gtk/%: Linked%
 
 clean veryclean:
 	-$(RM) $(OZOBJS) $(ALICEOBJS)
-	-$(RM) $(OZWRPSRCS) $(OZWRPSIGS) $(OZWRPOBJS) $(WRPOBJS)
-	-$(RM) $(COMPONENTS) $(TMPOBJS) $(TMPSIGOBJS) $(INTWRPSRCS)
+	-$(RM) $(OZWRPSRCS) $(OZWRPOBJS) $(WRPOBJS)
+	-$(RM) $(COMPONENTS) $(TMPSIGOBJS)
 
 wrapper_clean:
 	-$(RM) $(WRPOBJS)
 
 template_clean:
-	-$(RM) $(TMPOBJS) $(TMPSIGOBJS)
+	-$(RM) $(TMPSIGOBJS)
 
 distclean: clean
 	-$(RM) gtkraw.c config.* Makefile

@@ -25,9 +25,9 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 
 	(* This file will be created *)
 	val file = TextIO.openOut ((case space of
-					"gdk"        => "UnsafeGDK.oz"
-				      | "gtk"        => "UnsafeGTK.oz"
-				      | "gtk_canvas" => "UnsafeGTKCANVAS.oz"
+					"gdk"        => "UnsafeGdk.oz"
+				      | "gtk"        => "UnsafeGtk.oz"
+				      | "gtk_canvas" => "UnsafeGtkCanvas.oz"
 				      | _            => raise Match))
 
 	(* Printing abstractions *)
@@ -365,7 +365,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "'x-oz://system/gtk/GOZCore.ozf'\n",
 	     "   GDK at 'x-oz://system/gtk/GDK.ozf'\n",
 	     "export\n",
-	     "   'UnsafeGDK$' : Interface\n",
+	     "   'UnsafeGdk$' : Interface\n",
 	     "define\n",
 	     "   P2O = GOZCore.pointerToObject\n",
 	     "   O2P = GOZCore.objectToPointer\n",
@@ -391,7 +391,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "   GDK at 'x-oz://system/gtk/GDK.ozf'\n",
 	     "   GTK at 'x-oz://system/gtk/GTK.ozf'\n",
 	     "export\n",
-	     "   'UnsafeGTK$' : Interface\n",
+	     "   'UnsafeGtk$' : Interface\n",
 	     "define\n",
 	     "   {GOZCore.setMode alice}\n",
 	     "   P2O = GOZCore.pointerToObject\n",
@@ -446,7 +446,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "   GTK at 'x-oz://system/gtk/GTK.ozf'\n",
 	     "   GTKCANVAS at 'x-oz://system/gtk/GTKCANVAS.ozf'\n",
 	     "export\n",
-	     "   'UnsafeGTKCANVAS$' : Interface\n",
+	     "   'UnsafeGtkCanvas$' : Interface\n",
 	     "define\n",
 	     "   P2O = GOZCore.pointerToObject\n",
 	     "   O2P = GOZCore.objectToPointer\n",
@@ -454,11 +454,11 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     ]
 
 	(* File Init Constant Data *)
-	val gdkInit    = ["   Interface = 'UnsafeGDK'(\n",
+	val gdkInit    = ["   Interface = 'UnsafeGdk'(\n",
 			  "         'allocColor' : AllocColor\n"]
-	val gtkInit    = ["   Interface = 'UnsafeGTK'(\n",
+	val gtkInit    = ["   Interface = 'UnsafeGtk'(\n",
 			  "         'null' : Null\n"]
-	val canvasInit = ["   Interface = 'UnsafeGTKCANVAS'(\n"]
+	val canvasInit = ["   Interface = 'UnsafeGtkCanvas'(\n"]
 
 	(* File End Constant Data *)
 	val gdkEnd    = [ "                                )\n",
