@@ -4,16 +4,18 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure OS        from "OS"
 import structure IO        from "IO"
 import signature PRIM_IO   from "PRIM_IO-sig"
 import signature STREAM_IO from "STREAM_IO-sig"
+import structure RefMap    from "../data/RefMap"
 
 functor StreamIO(structure PrimIO: PRIM_IO
 		 structure Vector: MONO_VECTOR
@@ -469,6 +471,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		  | (TERMINATED _ | CLOSED_OUT _) => Promise.fulfill (p, state)
 	    end
 
+	val openSet = RefMap.map ()
+
+	fun flushAll () =
+	    RefMap.appi (fn (f, _) => flushOut f handle _ => ()) openSet
+	val _ = OS.Process.atExit flushAll
+
 	fun closeOut f =
 	    let
 		val p = Promise.promise ()
@@ -480,6 +488,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			(flush (buf, stillFree, writeArr)
 			 handle cause =>
 			     raise IO.Io {name, function="closeOut", cause};
+			 RefMap.removeExistent (openSet, f);
 			 Promise.fulfill (p, CLOSED_OUT (name, bufferMode));
 			 close ()
 			 handle cause =>
@@ -550,10 +559,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    let
 		val bufSize = if bufferMode = IO.NO_BUF then 1
 			      else Int.max (chunkSize, minBufSize)
+		val f =	ref (WRITER (writer,
+				     Array.array (bufSize, someElem),
+				     ref bufSize,  bufferMode))
 	    in
-		ref (WRITER (writer,
-			     Array.array (bufSize, someElem),
-			     ref bufSize,  bufferMode))
+		RefMap.insert (openSet, f, ());
+		f
 	    end
 
 	fun getWriter f =
@@ -568,6 +579,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 handle cause =>
 			     raise IO.Io
 				 {name, function = "getWriter", cause};
+			 RefMap.removeExistent (openSet, f);
 			 Promise.fulfill (p, TERMINATED (name, writer, bufferMode));
 			 (writer, bufferMode))
 		  | TERMINATED (_, writer, bufferMode) =>
