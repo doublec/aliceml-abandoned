@@ -14,7 +14,7 @@
 #define __GENERIC__FINALIZATION_SET_HH__
 
 #if defined(INTERFACE)
-#pragma interface "generic/RootSet.hh"
+#pragma interface "generic/FinalizationSet.hh"
 #endif
 
 #include "store/WeakDictionary.hh"
