@@ -1,3 +1,15 @@
+(* Alice Snake 2.0 - Operations on Positions
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+
 import structure Color   from "Color"
 
 signature HIGHSCORE =
@@ -27,7 +39,7 @@ sig
     val empty: highscore
 
     val load:   unit -> highscore
-    (* load the highscore, create a new one iff no highscore exists *)
+    (* load the highscore, create a new one if no highscore exists *)
 
     val save:   highscore -> unit
 
