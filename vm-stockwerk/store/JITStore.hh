@@ -144,6 +144,7 @@ protected:
       jit_pushr_ui(JIT_V1);
       jit_movr_ui(JIT_V1, JIT_R0);
       Deref(JIT_V1);
+      jit_movr_ui(JIT_R0, JIT_V1);
       jit_popr_ui(JIT_V1);
     }
     else
