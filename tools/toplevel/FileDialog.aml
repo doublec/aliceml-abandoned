@@ -20,7 +20,8 @@ structure FileDialog =
         fun openFile msg =
             let
 	        val fileSel = Gtk.fileSelectionNew msg
-                val _  = Gtk.widgetShowAll fileSel
+                val _ = Gtk.windowSetPosition (fileSel, Gtk.WIN_POS_MOUSE)
+                val _ = Gtk.widgetShowAll fileSel
                 val response = Gtk.dialogRun fileSel
                 val ret =
                     case Gtk.IntToGtkResponseType response of
@@ -41,7 +42,10 @@ structure FileDialog =
                 val l = Gtk.labelNew msg
                 val _ = Gtk.containerAdd(vbox, l)
             in
-                Gtk.dialogSetDefaultResponse(modifiedDia, 1);
+                Gtk.windowSetTitle(modifiedDia, "Modifications Not Saved");
+		Gtk.dialogSetDefaultResponse(modifiedDia, 1);
+                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.windowSetPosition (modifiedDia, Gtk.WIN_POS_MOUSE);
                 Gtk.widgetShowAll modifiedDia;
                 if Gtk.dialogRun modifiedDia = 0 then
                     close page

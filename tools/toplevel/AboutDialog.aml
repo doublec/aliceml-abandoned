@@ -8,7 +8,7 @@ structure AboutDialog =
                                               Gtk.DIALOG_DESTROY_WITH_PARENT,
                                               "    Close    ",
                                               Gtk.INT 0)
-    
+
        val vbox = Gtk.dialogGetFieldVbox dialog
        val label1 = Gtk.labelNew ""
        val label2 = Gtk.labelNew "by"
@@ -33,12 +33,14 @@ structure AboutDialog =
             Gtk.boxPackStart (vbox, label4, false, false, 10) ;
             
             Gtk.windowSetPolicy (dialog, 0, 0, 1) ;
+            (* Gtk.windowSetKeepAbove (dialog, true); Gtk 2.4 *)
    
             Gtk.signalConnect (dialog, "response", close)
             )
 
        fun openDialog() =
-               (Gtk.widgetShowAll dialog;
+               (Gtk.windowSetPosition (dialog, Gtk.WIN_POS_MOUSE);
+		Gtk.widgetShowAll dialog;
                 Gtk.widgetMap dialog)
 
     end

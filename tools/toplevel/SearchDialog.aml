@@ -73,6 +73,9 @@ structure SearchDialog =
         val _ = Gtk.containerAdd(actionArea,dialog_action_area1)
         val accelGroup = Gtk.accelGroupNew()
 
+        val _ = Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE)
+	(* val _ = Gtk.windowSetKeepAbove (searchDialog, true); Gtk 2.4 *)
+
         fun closeCallback _ = Gtk.widgetUnmap searchDialog
         val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
         val _ = Gtk.signalConnect(cancelbutton1, "clicked", closeCallback)
