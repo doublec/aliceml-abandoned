@@ -137,26 +137,48 @@ public:
   }
 };
 
+// to be done
+class Seen: private Queue {
+private:
+  static const u_int initialQueueSize = 8; //--** to be checked
+public:
+  static const u_int NOT_FOUND = static_cast<u_int>(-1);
+
+  using Queue::ToWord;
+
+  static Seen *New() {
+    return static_cast<Seen *>(Queue::New(initialQueueSize));
+  }
+  static Seen *FromWordDirect(word w) {
+    return static_cast<Seen *>(Queue::FromWordDirect(w));
+  }
+
+  void Add(Block *v) {
+    Enqueue(v->ToWord());
+  }
+  u_int Find(Block *v) {
+    for (u_int i = GetNumberOfElements(); i--; )
+      if (Store::DirectWordToBlock(GetNthElement(i)) == v)
+	return i;
+    return NOT_FOUND;
+  }
+};
+
 // PickleArgs
 class PickleArgs {
 private:
-  static const u_int ID_POS     = 0;
-  static const u_int STREAM_POS = 1;
-  static const u_int SEEN_POS   = 2;
+  static const u_int STREAM_POS = 0;
+  static const u_int SEEN_POS   = 1;
 public:
-  static void New(int id, OutputStream *stream, word seen) {
-    Scheduler::currentArgs[ID_POS] = Store::IntToWord(id);
+  static void New(OutputStream *stream, Seen *seen) {
     Scheduler::currentArgs[STREAM_POS] = stream->ToWord();
-    Scheduler::currentArgs[SEEN_POS] = seen;
-  }
-  static int GetId() {
-    return Store::DirectWordToInt(Scheduler::currentArgs[ID_POS]);
+    Scheduler::currentArgs[SEEN_POS] = seen->ToWord();
   }
   static OutputStream *GetOutputStream() {
     return OutputStream::FromWordDirect(Scheduler::currentArgs[STREAM_POS]);
   }
-  static word GetSeen() {
-    return Scheduler::currentArgs[SEEN_POS];
+  static Seen *GetSeen() {
+    return Seen::FromWordDirect(Scheduler::currentArgs[SEEN_POS]);
   }
 };
 
@@ -231,26 +253,6 @@ void PicklingInterpreter::PushFrame(TaskStack *taskStack, word data) {
   taskStack->PushFrame(PicklingFrame::New(self, data)->ToWord());
 }
 
-// to be done
-static word AddToSeen(word seen, Block *v, u_int id) {
-  Tuple *t = Tuple::New(3);
-  t->Init(0, Store::IntToWord(id));
-  t->Init(1, v->ToWord());
-  t->Init(2, seen);
-  return t->ToWord();
-}
-
-static u_int FindRef(Block *v, word seen) {
-  Tuple *cons = Tuple::FromWord(seen);
-  while (cons != INVALID_POINTER) {
-    if (Store::DirectWordToBlock(cons->Sel(1)) == v) {
-      return Store::DirectWordToInt(cons->Sel(0));
-    }
-    cons = Tuple::FromWord(cons->Sel(2));
-  }
-  return static_cast<u_int>(-1);
-}
-
 Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   PicklingFrame *frame = PicklingFrame::FromWordDirect(taskStack->GetFrame());
   word x0              = frame->GetData();
@@ -259,26 +261,24 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
     return Interpreter::REQUEST;
   }
   taskStack->PopFrame();
-  int id                     = PickleArgs::GetId();
   OutputStream *outputStream = PickleArgs::GetOutputStream();
-  word seen                  = PickleArgs::GetSeen();
   // Check for integer
   int i;
   if ((i = Store::DirectWordToInt(x0)) != INVALID_INT) {
     if (i >= 0) {
       outputStream->PutByte(Tag::POSINT);
       outputStream->PutUInt(i);
-    }
-    else {
+    } else {
       outputStream->PutByte(Tag::NEGINT);
       outputStream->PutUInt(-(i + 1));
     }
     return Interpreter::CONTINUE;
   }
   // Search for already known value
-  Block *v  = Store::WordToBlock(x0);
-  u_int ref = FindRef(v, seen);
-  if (ref != static_cast<u_int>(-1)) {
+  Seen *seen = PickleArgs::GetSeen();
+  Block *v   = Store::WordToBlock(x0);
+  u_int ref  = seen->Find(v);
+  if (ref != Seen::NOT_FOUND) {
     outputStream->PutByte(Tag::REF);
     outputStream->PutUInt(ref);
     return Interpreter::CONTINUE;
@@ -292,8 +292,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       outputStream->PutByte(Tag::CHUNK);
       outputStream->PutUInt(c->GetSize());
       outputStream->PutBytes(c);
-      seen = AddToSeen(seen, v, id);
-      PickleArgs::New(id + 1, outputStream, seen);
+      seen->Add(v);
       return Interpreter::CONTINUE;
     }
     break;
@@ -302,11 +301,9 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       u_int size = v->GetSize();
       outputStream->PutByte(Tag::TUPLE);
       outputStream->PutUInt(size);
-      seen = AddToSeen(seen, v, id);
-      for (u_int i = size; i--;) {
+      seen->Add(v);
+      for (u_int i = size; i--; )
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
-      }
-      PickleArgs::New(id + 1, outputStream, seen);
       return Interpreter::CONTINUE;
     }
     break;
@@ -315,11 +312,9 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       u_int size = v->GetSize();
       outputStream->PutByte(Tag::CLOSURE);
       outputStream->PutUInt(size);
-      seen = AddToSeen(seen, v, id);
-      for (u_int i = size; i--;) {
+      seen->Add(v);
+      for (u_int i = size; i--; )
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
-      }
-      PickleArgs::New(id + 1, outputStream, seen);
       return Interpreter::CONTINUE;
     }
     break;
@@ -341,10 +336,9 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
     {
       Transform *transform = reinterpret_cast<Transform *>(v);
       outputStream->PutByte(Tag::TRANSFORM);
-      seen = AddToSeen(seen, v, id);
+      seen->Add(v);
       PicklingInterpreter::PushFrame(taskStack, transform->GetArgument());
       PicklingInterpreter::PushFrame(taskStack, transform->GetName()->ToWord());
-      PickleArgs::New(id + 1, outputStream, seen);
       return Interpreter::CONTINUE;
     }
     break;
@@ -354,11 +348,9 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       outputStream->PutByte(Tag::BLOCK);
       outputStream->PutUInt(l);
       outputStream->PutUInt(size);
-      seen = AddToSeen(seen, v, id);
-      for (u_int i = size; i--;) {
+      seen->Add(v);
+      for (u_int i = size; i--; )
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
-      }
-      PickleArgs::New(id + 1, outputStream, seen);
       return Interpreter::CONTINUE;
     }
   }
@@ -526,7 +518,7 @@ Interpreter::Result Pickler::Pack(word x, TaskStack *taskStack) {
   taskStack->PopFrame();
   PicklePackInterpreter::PushFrame(taskStack);
   PicklingInterpreter::PushFrame(taskStack, x);
-  PickleArgs::New(0, os, Store::IntToWord(0));
+  PickleArgs::New(os, Seen::New());
   return Interpreter::CONTINUE;
 }
 
@@ -544,7 +536,7 @@ Pickler::Save(Chunk *filename, word x, TaskStack *taskStack) {
   taskStack->PopFrame();
   PickleSaveInterpreter::PushFrame(taskStack);
   PicklingInterpreter::PushFrame(taskStack, x);
-  PickleArgs::New(0, os, Store::IntToWord(0));
+  PickleArgs::New(os, Seen::New());
   return Interpreter::CONTINUE;
 }
 
