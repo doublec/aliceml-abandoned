@@ -4,7 +4,7 @@
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ## 
 ## Copyright:
-##   Leif Kornstaedt, 2000
+##   Leif Kornstaedt, 2000-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -14,7 +14,7 @@
 .PHONY: all clean veryclean distclean
 
 %.o: %.cc
-	$(CXX) $(DEFINES) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
 
 %.s: %.cc
-	$(CXX) $(DEFINES) $(INCLUDES) $(CXXFLAGS) -S $< -o $@
+	$(CXX) $(INCLUDES) $(CXXFLAGS) -S $< -o $@

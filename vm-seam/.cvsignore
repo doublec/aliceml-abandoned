@@ -1,5 +1,5 @@
 Makefile.depend
-seam.dll alice.dll java.dll
+alice.dll
 Rel1.import Rel2.import
 build1 build2 build3
 Makefile.bootstrap.depend
