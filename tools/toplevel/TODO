@@ -5,7 +5,6 @@ Bugs:
 
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
-* pane resize upon opening first tab shrinks output pane to 0 size
 * gui hangs when files are given on command line
 * modified files dialogue is too ugly
 

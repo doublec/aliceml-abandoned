@@ -319,12 +319,40 @@ structure GuiMain =
             end
 
         fun checkNotebookSize() =
-            (if Gtk.notebookGetNPages Gui.notebook1 > 0
-             then if Gtk.panedGetPosition Gui.vpaned1 = 1 
-		  then Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
-		  else ()
-             else (Gtk.panedSetPosition(Gui.vpaned1,1);
-                   Gtk.widgetGrabFocus Gui.compilerout))
+            let
+		 val rq1 = Gdk.rectangleNew(0,0,0,0)
+		 val _ = Gtk.textViewGetVisibleRect(Gui.compilerout,rq1)
+		 val rq2 = Gdk.rectangleNew(0,0,0,0)
+		 val _ = Gtk.textViewGetVisibleRect(Gui.progout,rq2)
+
+		 (* Hack alert: The scrollbar between the two panes *)
+		 (* seems to be about 18 pixels high...*)
+		 val h1 = Gdk.rectangleGetFieldHeight rq1 + 18
+		 val h2 = Gdk.rectangleGetFieldHeight rq2
+		 val ratio = Real.fromInt h1 / Real.fromInt (h1+h2)
+	     in
+		 if Gtk.notebookGetNPages Gui.notebook1 > 0
+		     then if Gtk.panedGetPosition Gui.vpaned1 = 1 then
+			 let
+			     val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
+			 in
+			     Inspector.inspect("old:",h1,h2,ratio);
+			     Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
+			     Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
+			 end
+			  else ()
+		 else
+		     let
+			 val editorHeight = Gtk.panedGetPosition Gui.vpaned1
+			 val newHeight = editorHeight+h1+h2
+			 val newPos = Real.fromInt newHeight * ratio
+		     in
+			 Inspector.inspect("new:",newPos,newHeight,ratio);
+			 Gtk.panedSetPosition(Gui.vpaned1,1);
+			 Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
+			 Gtk.widgetGrabFocus Gui.compilerout
+		     end
+	     end
 
         fun new' file =
             let
