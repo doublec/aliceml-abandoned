@@ -25,10 +25,10 @@ private:
   static const u_int TOP_POS = 1;
   static const u_int ARR_POS = 2;
 protected:
-  int GetTop() {
+  u_int GetTop() {
     return Store::DirectWordToInt(GetArg(TOP_POS));
   }
-  void SetTop(int top) {
+  void SetTop(u_int top) {
     InitArg(TOP_POS, top);
   }
   Block *GetArray() {
@@ -137,6 +137,10 @@ public:
     
     Assert(top > f + 1);
     return GetArray()->GetArg(pos);
+  }
+  word GetAbsoluteArg(u_int f) {
+    Assert(f < GetTop());
+    return GetArray()->GetArg(f);
   }
   void PutFrameArg(u_int f, word v) {
     u_int top = GetTop();
