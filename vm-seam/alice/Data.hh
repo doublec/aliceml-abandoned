@@ -330,6 +330,7 @@ public:
 };
 
 class DllExport Word8Array: private String {
+  //--** deriving from String yields wrong equality (must be token equality)
 public:
   static const u_int maxLen = String::maxSize;
 
