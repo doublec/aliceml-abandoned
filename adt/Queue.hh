@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000-2001
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -22,8 +22,8 @@
 
 class Queue: private Block {
 private:
-  static const u_int WRITE_INDEX_POS = 0;
-  static const u_int READ_INDEX_POS = 1;
+  static const u_int READ_INDEX_POS = 0;
+  static const u_int WRITE_INDEX_POS = 1;
   static const u_int ARRAY_POS = 2;
   static const u_int SIZE = 3;
 
@@ -97,8 +97,8 @@ public:
   static Queue *New(u_int initialSize) {
     Block *b = Store::AllocBlock(QUEUE_LABEL, SIZE);
     Block *array = Store::AllocBlock(QUEUEARRAY_LABEL, initialSize);
-    b->InitArg(WRITE_INDEX_POS, 0);
     b->InitArg(READ_INDEX_POS, 0);
+    b->InitArg(WRITE_INDEX_POS, 0);
     b->InitArg(ARRAY_POS, array->ToWord());
     return static_cast<Queue *>(b);
   }
@@ -187,17 +187,19 @@ public:
       word *base = array->GetBase();
       if (readIndex < writeIndex) {
 	if (writeIndex >= newSize) {
-	  u_int length = writeIndex - readIndex;
-	  std::memmove(base, base + readIndex, length * sizeof(word));
-	  SetWriteIndex(length);
-	  SetReadIndex(0);
+	  std::memmove(base, base + readIndex, nentries * sizeof(word));
+	  readIndex = 0;
+	  SetReadIndex(readIndex);
+	  writeIndex = nentries;
+	  SetWriteIndex(writeIndex);
 	}
       } else { // wrap-around layout
 	u_int length = oldSize - readIndex;
 	u_int newReadIndex = newSize - length;
 	std::memmove(base + newReadIndex, base + readIndex,
 		     length * sizeof(word));
-	SetReadIndex(newReadIndex);
+	readIndex = newReadIndex;
+	SetReadIndex(readIndex);
       }
       // reflect our new size in the header
       HeaderOp::EncodeSize(array, newSize);
