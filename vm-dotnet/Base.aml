@@ -763,10 +763,10 @@ val vector = Vector.fromList
 
 structure Transient =
     struct
-	__primitive exception Promise = "Transient.Promise"
-	__primitive exception Future = "Transient.Future"
-	__primitive exception Fulfill = "Transient.Fulfill"
-	__primitive exception ByNeed of exn = "Transient.ByNeed"
+	__primitive constructor Promise: exn = "Transient.Promise"
+	__primitive constructor Future: exn = "Transient.Future"
+	__primitive constructor Fulfill: exn = "Transient.Fulfill"
+	__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
 
 	__primitive val promise: unit -> 'a = "Transient.promise"
 	__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
@@ -784,10 +784,10 @@ structure Transient' =
     struct
 	type 'a promise
 
-	__primitive exception Promise = "Transient.Promise"
-	__primitive exception Future = "Transient.Future"
-	__primitive exception Fulfill = "Transient.Fulfill"
-	__primitive exception ByNeed of exn = "Transient.ByNeed"
+	__primitive constructor Promise: exn = "Transient.Promise"
+	__primitive constructor Future: exn = "Transient.Future"
+	__primitive constructor Fulfill: exn = "Transient.Fulfill"
+	__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
 
 	__primitive val promise: unit -> 'a promise = "Transient.promise"
 	__primitive val fulfill: 'a promise * 'a -> unit = "Transient.fulfill"
