@@ -115,7 +115,7 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 	    (* C function call *)
 	    local
 		fun cArgList' (OUT,name,t) = 
-		    "reinterpret_cast<"^getCType t^"*>(&"^name^")"
+		    "(("^getCType t^"*)(&"^name^"))"
 		  | cArgList' (IN,name,(ELLIPSES true)) = 
                     let
 			val nums = List.tabulate(2,
@@ -125,13 +125,21 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 		    end
 		  | cArgList' (IN,name,t) =
 		    let
+            (*
 			fun staticCast t v  = "static_cast<"^t^">("^v^")"
 			fun reintCast t v   = "reinterpret_cast<"^t^">("^v^")"
 			fun cCast t v       = "("^t^")("^v^")"
 			fun noCast _ v      = v
-			val cast = case removeTypeRefs t of 
-			               ARRAY _    => noCast
-			             | STRING _   => reintCast
+			*)
+            (* use C style casting all the time *)
+            fun staticCast t v  = "((" ^ t ^ ")(" ^ v ^ "))"
+            fun reintCast  t v  = "((" ^ t ^ ")(" ^ v ^ "))"
+            fun cCast      t v  = "((" ^ t ^ ")(" ^ v ^ "))"
+            fun noCast     t v  = v (* "((" ^ t ^ ")(" ^ v ^ "))" *)
+
+            val cast = case removeTypeRefs t of 
+			           ARRAY _    => noCast
+			         | STRING _   => reintCast
 				     | FUNCTION _ => cCast
 				     | ELLIPSES _ => reintCast
 				     | _          => staticCast
@@ -142,11 +150,11 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 	    in
 		val funCall = if null callLine then
 		              [wrIndent,
-			       (case ret of
-				   VOID => ""
-				 | STRING _ =>"const "^(getCType ret)^" ret = "
-				 | _ => (getCType ret)^" ret = "),
-				funName, "(", cArgList, ");\n"]
+			            (case ret of
+				           VOID => ""
+				        | _ => (getCType ret)^" ret = (" ^ getCType ret ^ ")" 
+                        ),
+                        funName, "(", cArgList, ");\n"]
 			      else
 			      [wrIndent] @ callLine
 	    end

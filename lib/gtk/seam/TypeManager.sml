@@ -29,7 +29,7 @@ struct
     open TypeTree
 	
     (* Utility function to remove all TYPEREFs from a type (tree) *)
-    fun removeTypeRefs (POINTER t)     = POINTER (removeTypeRefs t)
+    fun removeTypeRefs (POINTER (c, t))     = POINTER (c, removeTypeRefs t)
       | removeTypeRefs (ARRAY (x,t))   = ARRAY(x, removeTypeRefs t)
       | removeTypeRefs (LIST  (x,t))   = LIST (x, removeTypeRefs t)
       | removeTypeRefs (TYPEREF (_,t)) = removeTypeRefs t
@@ -114,10 +114,17 @@ struct
 	  | getCType (ELLIPSES false)         = "va_list"
 	  | getCType BOOL                     = "gboolean"
 	  | getCType (NUMERIC (sign,_,kind))  = numericToCType sign kind
-	  | getCType (POINTER t)              = (getCType t)^"*"
-	  | getCType (STRING false)           = "guchar*"
-	  | getCType (STRING true)            = "gchar*"
-	  | getCType (ARRAY (SOME i, t))      = 
+      | getCType (POINTER (true, (STRING (false, true))))   
+                                          = "const guchar* const *"
+      | getCType (POINTER (true, (STRING (true, true))))
+                                          = "const gchar* const*"
+	  | getCType (POINTER (true, t))      = "const " ^ getCType t ^"*"
+      | getCType (POINTER (false, t))     = getCType t ^ "*"
+	  | getCType (STRING (false, false))  = "guchar*"
+	  | getCType (STRING (true, false))   = "gchar*"
+	  | getCType (STRING (false, true))   = "const guchar*"
+	  | getCType (STRING (true, true))    = "const gchar*"
+      | getCType (ARRAY (SOME i, t))      = 
 	        (getCType t)^"["^Int.toString(i)^"]"
 	  | getCType (ARRAY (NONE, t))        = (getCType t)^"[]"
 	  | getCType (LIST (name,_))          = name^"*"
@@ -142,7 +149,7 @@ struct
 	  | getAliceType BOOL                  = "bool"
 	  | getAliceType (NUMERIC (_,false,_)) = "int"
 	  | getAliceType (NUMERIC (_,true,_))  = "real"
-	  | getAliceType (POINTER _)           = "Core.object"
+	  | getAliceType (POINTER (_, _))      = "Core.object"
 	  | getAliceType (STRING _)            = "string"
 	  | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " vector"
 	  | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
@@ -190,7 +197,7 @@ struct
     fun toWord (NUMERIC(_,false,_))      = ("INT_TO_WORD", nil)
       | toWord (NUMERIC(_,true ,_))      = ("REAL_TO_WORD", nil)
       | toWord BOOL                      = ("BOOL_TO_WORD", nil)
-      | toWord (POINTER t)               = ("OBJECT_TO_WORD", [getTypeInfo t])
+      | toWord (POINTER (c, t))          = ("OBJECT_TO_WORD", [getTypeInfo t])
       | toWord (STRING _)                = ("STRING_TO_WORD", nil)
       | toWord (LIST("GList",STRING _))  = ("GLIST_STRING_TO_WORD", nil)
       | toWord (LIST("GSList",STRING _)) = ("GSLIST_STRING_TO_WORD", nil)
@@ -213,11 +220,11 @@ struct
     (* arginfo: IN/OUT argument; name of the C variable; type *)
 
     local
-	fun isOutArg (POINTER (NUMERIC _)) = true
-	  | isOutArg (POINTER (POINTER _)) = true
-	  | isOutArg (POINTER (ENUMREF _)) = true
-	  | isOutArg (POINTER (STRING _))  = true
-	  | isOutArg _                     = false
+	fun isOutArg (POINTER (c, NUMERIC _))   = not c
+	  | isOutArg (POINTER (c, POINTER _))   = not c
+	  | isOutArg (POINTER (c, ENUMREF _))   = not c
+	  | isOutArg (POINTER (_, STRING (_, c)))  = not c
+	  | isOutArg _                          = false
     in
 	(* Splits an list of TypeTree.ty's into inArgs and outArgs      *)
 	(* (arginfo lists), where outArgs lose their POINTERs           *)
@@ -233,7 +240,7 @@ struct
 		    if at = IN
 			then (at, "in"^num, t)
 			else (at, "out"^num, (case t of 
-			                        POINTER x => x 
+			                        POINTER (_, x) => x 
 					      | _         => t) )
 		end
 	in
@@ -261,7 +268,7 @@ struct
     fun getCFunType (funName, ret, arglist, mask) =
     let
 	fun getCType' (IN,_,t) = getCType t
-	  | getCType' (OUT,_,t)  = getCType (POINTER t)
+	  | getCType' (OUT,_,t)  = getCType (POINTER (false, t))
 	val s = (getCType ret) ^ " " ^ funName ^ "(" ^ 
 	        (Util.makeTuple ", " "void" (map getCType' arglist)) ^ ")"
     in
@@ -285,7 +292,7 @@ struct
     let
 	val sname' = (Util.spaceName space)^
 	              Util.cutPrefix ("_"^(Util.spaceEnumPrefix space), sname)
-	val stype = POINTER (STRUCTREF sname')
+	val stype = POINTER (false, STRUCTREF sname')
     in
 	if get 
 	    then (sname'^"_get_field_"^mname, mtype, [stype])
@@ -313,7 +320,7 @@ struct
 	(case removeTypeRefs t of
 	     FUNCTION _        => false
 	   | ARRAY _           => false
-	   | POINTER (ARRAY _) => false
+	   | POINTER (_, ARRAY _) => false
            | t'         => ((getAliceType t' ; true) handle _ => false))
 
     fun checkEnumMember (_,v) = (LargeInt.toInt v ; true) handle _ => false

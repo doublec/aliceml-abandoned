@@ -33,8 +33,8 @@ structure TypeTree =
        | ELLIPSES of bool          (* if true: ..., if false: va_list *)
        | BOOL
        | NUMERIC of bool * bool * num_kind  (* signed? / real? / kind *)
-       | POINTER of ty
-       | STRING of bool                     (* pointer to signed char? *)
+       | POINTER of bool * ty               (* const pointer to something *)
+       | STRING of bool * bool              (* pointer to signed char? const or not? *)
        | ARRAY of int option * ty           (* size / type *)
        | LIST of string * ty                (* c_type_name / elem_type *)
        | FUNCTION of ty * ty list           (* retval / arglist *)

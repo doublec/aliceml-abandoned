@@ -113,15 +113,16 @@ struct
 	    fun isValist "va_list" = true
 	      | isValist _         = false
 
-            fun makePointer (TYPEREF("GList",_))  = LIST("GList",POINTER VOID)
-	      | makePointer (TYPEREF("GSList",_)) = LIST("GSList",POINTER VOID)
-	      | makePointer (NUMERIC (sg,_,CHAR)) = STRING sg
-	      | makePointer (tr as TYPEREF(_,t))  =
-		   (case makePointer t of LIST l   => LIST l
-			                | ELLIPSES t => ELLIPSES t
-		                        | STRING s => STRING s
-                                        | _        => POINTER tr)
-	      | makePointer t                      = POINTER t
+        fun makePointer const (TYPEREF("GList",_))  = LIST("GList",POINTER (false, VOID))
+	      | makePointer const (TYPEREF("GSList",_)) = LIST("GSList",POINTER (false, VOID))
+	      | makePointer const (NUMERIC (sg,_,CHAR)) = STRING (sg, const)
+	      | makePointer const (tr as TYPEREF(_,t))  =
+		   (case makePointer const t of 
+                LIST l          => LIST l
+			  | ELLIPSES t      => ELLIPSES t
+		      | STRING (s, _)   => STRING (s, const)
+              | _               => POINTER (const, tr))
+	      | makePointer  const t                    = POINTER (const, t)
                                 
 	in
 	    fun convType Ast.Void         = VOID
@@ -135,7 +136,8 @@ struct
 	      | convType (Ast.Array (NONE, t))     = ARRAY (NONE, convType t)
 	      | convType (Ast.Pointer (Ast.Function (ret,arglist))) =
 		FUNCTION (convType ret, map convType arglist)
-	      | convType (Ast.Pointer t) = makePointer (convType t)
+          | convType (Ast.Pointer (Ast.Qual (Ast.CONST, t))) = makePointer true (convType t)
+	      | convType (Ast.Pointer t) = makePointer false (convType t)
 	      | convType (Ast.Function (ret,arglist)) = raise EUnknown
 	      | convType (Ast.StructRef id)  = STRUCTREF (getTypeNameFromID id)
 	      | convType (Ast.UnionRef id)   = UNIONREF  (getTypeNameFromID id)

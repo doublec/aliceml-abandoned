@@ -54,13 +54,16 @@ functor MkNativeFields(structure TypeManager : TYPE_MANAGER
 		  | _ => false
 	    val callLine =
 		if get then
-		    [if isConst then "const " else "",
+	(*	    [if isConst then "const " else "",
 		     getCType mtype, " ret = (static_cast<",
 		     stype, ">(", svar,"))->", mname,";\n"]
+     *)
+            [getCType mtype, " ret = ((", stype, ")(", svar, "))->", mname, ";\n"]
 		else
-		    ["(static_cast<", stype, ">(", svar,"))->", mname, " = ",
+            ["((", stype, ")(", svar, "))->", mname, " = (", getCType mtype, ")(", mvar, ");\n"]
+		    (* ["(static_cast<", stype, ">(", svar,"))->", mname, " = ",
 		     if isConst then "reinterpret_cast<" else "static_cast<",
-		     getCType mtype, ">(", mvar, ");\n"]
+		     getCType mtype, ">(", mvar, ");\n"] *)
 	in
 	    wrapperEntry callLine (funName,ret,al,false)
 	end
