@@ -85,7 +85,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
 	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
 	  | outputLit (CharLit c) = "char " ^ Char.toCString c
-	  | outputLit (StringLit s) = "string " ^ String.toCString s
+	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
 	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
 
 	fun outputArgs (OneArg id) = ID id
