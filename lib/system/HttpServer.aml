@@ -78,7 +78,9 @@ structure HttpServer :> HTTP_SERVER =
 	fun closeIdle (tokens, socket) =
 	    (Future.awaitEither (Future.alarm (!idleTime), tokens);
 	     if Future.isDetermined tokens then
-		 closeIdle (List.tl tokens, socket)
+		 case tokens of
+		     ()::tokens => closeIdle (tokens, socket)
+		   | _ => raise Match
 	     else
 		 (trace "closing idle connection\n";
 		  Socket.close socket))
@@ -86,7 +88,7 @@ structure HttpServer :> HTTP_SERVER =
 	fun handleConnection (socket, host, port) =
 	    let
 		val (stream, tokens) = Stream.stream ()
-		fun sendToken () = Stream.send (stream, ())
+		fun sendToken token = Stream.send (stream, token)
 	    in
 		spawn handleConnection' (socket, host, port, sendToken);
 		spawn closeIdle (tokens, socket)
@@ -96,7 +98,8 @@ structure HttpServer :> HTTP_SERVER =
 		val _ = trace ("connection from " ^ host ^ ":" ^
 			       Int.toString port ^ "\n")
 		val request = Http.readRequest socket
-		val _ = sendToken ()
+		val p = Promise.promise ()
+		val _ = sendToken (Promise.future p)
 		val handler = findHandler (#uri request)
 		val response = handler request
 		    handle _ =>
@@ -105,9 +108,8 @@ structure HttpServer :> HTTP_SERVER =
 				body = "Internal server error"}
 		val connectionTokens = parseConnectionHeader request
 	    in
-		sendToken ();
 		Http.writeResponse (socket, response);
-		sendToken ();
+		Promise.fulfill (p, ());
 		if List.exists (fn s => s = "close") connectionTokens then
 		    Socket.close socket
 		else handleConnection' (socket, host, port, sendToken)
