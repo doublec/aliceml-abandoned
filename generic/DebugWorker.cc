@@ -12,7 +12,7 @@
 
 #if DEBUGGER
 #if defined(INTERFACE)
-#pragma implementation "generic/DebugWorker.cc"
+#pragma implementation "generic/DebugWorker.hh"
 #endif
 
 #include <cstdio>
@@ -21,6 +21,7 @@
 #include "generic/RootSet.hh"
 #include "generic/DebugWorker.hh"
 #include "generic/DebugFrame.hh"
+#include "generic/StackFrame.hh"
 
 //
 // Debug Interpreter Functions
@@ -56,7 +57,7 @@ void DebugWorker::DumpFrame(StackFrame *) {
 
 word DebugWorker::GetEvent(StackFrame *sFrame) {
   DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
-  Assert(debugFrame->GetWorker() == this);
+  Assert(debugFrame->GetWorker() == self);
   return debugFrame->GetEvent();
 }
 #endif

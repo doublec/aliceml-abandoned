@@ -60,3 +60,9 @@
 #endif
 
 template class BaseMap<IntKey>;
+
+#if DEBUGGER
+EventAccessor::~EventAccessor() {
+  return;
+}
+#endif

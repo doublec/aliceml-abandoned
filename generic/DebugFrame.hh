@@ -20,7 +20,7 @@
 
 #include "generic/StackFrame.hh"
 
-class SeamDll DebugFrame: private StackFrame {
+class SeamDll DebugFrame: public StackFrame {
 private:
   enum { EVENT_POS, SIZE };
 public:

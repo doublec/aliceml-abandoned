@@ -31,8 +31,7 @@ typedef enum {
 
 class SeamDll EventAccessor {
 public:
-  EventAccessor() {}
-
+  virtual ~EventAccessor();
   virtual EventLabel GetLabel() = 0;
   virtual word GetEvent(word event) = 0;
 };
