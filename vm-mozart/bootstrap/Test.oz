@@ -3,11 +3,15 @@ import
    Application(getCmdArgs exit)
    System(printError show)
    Property(get)
+   Pickle(save)
    Base('$Option') at 'Base.ozf'
    BackendCommon('$ImperativeGrammar') at 'BackendCommon.ozf'
+   Common('$Prebound': Prebound) at 'Common.ozf'
    Main(imperatifyFile) at 'Main.ozf'
+   CodeGen(translate) at '../../stoc/backend-mozart/CodeGen.ozf'
 prepare
-   Spec = record('in'(single char: &i type: atom optional: false))
+   Spec = record('in'(single char: &i type: atom optional: false)
+		 'out'(single char: &o type: string optional: false))
 define
    Args
 
@@ -17,7 +21,8 @@ define
       {System.printError
        'Command line option error: '#M#'\n'#
        'Usage: '#{Property.get 'application.url'}#' [options]\n'#
-       '--in=<File>         File containing component to translate.\n'}
+       '--in=<File>         File containing component to translate.\n'#
+       '--out=<File>        Name of pickle to write.'}
       {Application.exit 2}
    end
 
@@ -88,8 +93,8 @@ define
       {String.toAtom {ByteString.toString S}}
    end
 
-   fun {TrCoord Coord}
-      Coord
+   fun {TrCoord (LL#LC)#(RL#RC)}
+      LL#LC#RL#RC
    end
 
    fun {TrLit Lit}
@@ -101,6 +106,18 @@ define
       end
    end
 
+   fun {TrStamp Stamp}
+      if Stamp == Prebound.stamp_false then 'false'
+      elseif Stamp == Prebound.stamp_true then 'true'
+      elseif Stamp == Prebound.stamp_nil then 'nil'
+      elseif Stamp == Prebound.stamp_cons then 'cons'
+      elseif Stamp == Prebound.stamp_ref then 'ref'
+      elseif Stamp == Prebound.stamp_Match then 'Match'
+      elseif Stamp == Prebound.stamp_Bind then 'Bind'
+      else Stamp
+      end
+   end
+
    fun {TrName Name}
       case Name of ExId(S) then exId({TrAtom S})
       [] !InId then inId
@@ -108,7 +125,7 @@ define
    end
 
    fun {TrId Id(Coord#Stamp#Name)}
-      id({TrCoord Coord} Stamp {TrName Name})
+      id({TrCoord Coord} {TrStamp Stamp} {TrName Name})
    end
 
    fun {TrLab S} S2 in
@@ -132,7 +149,7 @@ define
 
    fun {TrFunFlag FunFlag}
       case FunFlag of PrintName(String) then printName({TrAtom String})
-      [] AuxiliaryOf(Stamp) then auxiliaryOf(Stamp)
+      [] AuxiliaryOf(Stamp) then auxiliaryOf({TrStamp Stamp})
       end
    end
 
@@ -192,7 +209,7 @@ define
       [] SelExp(Coord#Lab) then selExp({TrCoord Coord} {TrLab Lab})
       [] VecExp(Coord#Ids) then vecExp({TrCoord Coord} {TrList Ids TrId})
       [] FunExp(Coord#Stamp#Flags#ArgsBodyList) then
-	 funExp({TrCoord Coord} Stamp {TrList Flags TrFunFlag}
+	 funExp({TrCoord Coord} {TrStamp Stamp} {TrList Flags TrFunFlag}
 		{TrList ArgsBodyList
 		 fun {$ Args#Body} {TrArgs Args}#{TrBody Body} end})
       [] AppExp(Coord#Id#Args) then
@@ -218,9 +235,8 @@ define
       {TrList Ids TrId}#{TrBody Body}
    end
 
-   Component = {Main.imperatifyFile Args.'in'}
-
-   {System.show {TrComponent Component}}
+   Component = {TrComponent {Main.imperatifyFile Args.'in'}}
+   {Pickle.save {CodeGen.translate Args.'in' Component} Args.'out'}
 
    {Application.exit 0}
 end
