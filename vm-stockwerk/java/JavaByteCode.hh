@@ -98,6 +98,7 @@ public:
     return static_cast<JavaByteCode *>(ConcreteCode::FromWord(x));
   }
 
+  MethodInfo *GetMethodInfo();
   u_int GetMaxStack() {
     return Store::DirectWordToInt(Get(MAX_STACK_POS));
   }
