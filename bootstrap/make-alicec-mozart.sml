@@ -12,6 +12,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
+Compiler.Profile.setProfMode true;
 CM.make' "main-mozart.cm";
 
 local
@@ -24,7 +25,11 @@ local
 	      | _ => args
 	end
 
-    fun main' args = SMLToMozartBatchCompiler.main args
+    fun main' ("--profile"::args) =
+	(Compiler.Profile.setTimingMode true;
+	 Compiler.Profile.reset ();
+	 main' args before Compiler.Profile.report TextIO.stdOut)
+      | main' args = SMLToMozartBatchCompiler.main args
 	handle e =>
 	let
 	    val history = List.rev(SMLofNJ.exnHistory e)
