@@ -729,10 +729,54 @@ structure CodeGen =
 		    end
 	  | decCode (EvalStm (_, exp')) =
 		    (expCode exp') @ [Pop]
-	  | decCode (ExportStm (_,Id (_,stamp',_)::_)) = (mainpickle:=Local.get stamp'; nil)
+	  | decCode (ExportStm (_,ids)) =
+		    (* ExportStm of coord * id list *)
+		    (* 1. Label[] laden *)
+		    (* 2. Value[] bauen *)
+		    (* 3. Record erzeugen *)
+		    (* Label[] bauen passiert statisch! *)
+		    let
+			val arity = length ids
+			(* 1. *)
+			(* dreht Liste um und erzeugt Labelstrings *)
+			fun ids2strings (Id (_,_,ExId l)::ids',s')=
+			    ids2strings (ids', l::s')
+			  | ids2strings (Id (_,stamp',InId)::ids',s') =
+			    ids2strings (ids', Stamp.toString stamp'::s')
+			  | ids2strings (nil, s') = s'
+
+			(* 2. *)
+			 fun load (Id (_,stamp',_)::rs,j) =
+			     Dup::
+			     (atCodeInt j)::
+			     (Comment "Hi4'")::
+			     (Aload (Local.get stamp'))::
+			     Aastore::
+			     (load (rs,j+1))
+			   | load (nil,_) = nil
+		    (* 3. *)
+			 val mp = Local.nextFree()
+		    in
+			(mainpickle:=mp;
+			 [Comment "[Mainpickle "] @
+			 [New CRecord,
+			  Dup,
+			  Getstatic (RecordLabel.insert
+				     (ids2strings (ids, nil))),
+			  atCodeInt (Int.toLarge arity),
+			  Anewarray CVal] @
+			 (load (ids,0)) @
+			 [Invokespecial (CRecord,"<init>",
+					 ([Arraysig, Classsig CLabel,
+					   Arraysig, Classsig CVal],
+					  [Voidsig])),
+			  Astore mp,
+			  Comment "Mainpickle ]"])
+		     end
+
 	  | decCode (IndirectStm (_, ref (SOME body'))) = List.concat (map decCode body')
 	  | decCode (IndirectStm (_, ref NONE)) = nil
-	  | decCode dings = raise Debug (Dec dings)
+	  (*| decCode dings = raise Debug (Dec dings)*)
 	and
 	    idCode (Id(_,stamp',_)) = Comment "Hi87"::stampCode stamp'
 	and
@@ -992,25 +1036,11 @@ structure CodeGen =
 		     let
 			 val arity = length labid
 			 (* 1. *)
-			 (*		local
-					    fun labelcode (Lab(_,label),index) =
-						[Dup,
-						atCodeInt index,
-						New CLabel,
-						Dup,
-						Ldc (JVMString label),
-						Invokespecial (CLabel,"<init>",([Classsig CString], Voidsig)),
-						Aastore]
-fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
-  | labeliter (nil,_) = nil
-		     in *)
-
 			 (* dreht Liste um und entfernt überflüssige ids *)
 			 fun labids2strings ((Lab (_,l), _)::labids',s')=
 			     labids2strings (labids', l::s')
 			   | labids2strings (nil, s') = s'
 
-			 (*end*)
 			 (* 2. *)
 			 fun load ((_,Id (_,stamp',_))::rs,j) =
 			     Dup::
@@ -1024,9 +1054,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		     in
 			 [Comment "[Record "] @
 			 [New CRecord,
-			  Dup(*,
-			      atCodeInt arity,
-			      Anewarray CLabel*),
+			  Dup,
 			  Getstatic (RecordLabel.insert
 				     (labids2strings (labid, nil))),
 			  atCodeInt (Int.toLarge arity),
