@@ -57,6 +57,10 @@ define
 			   end
 			   unit
 			end
+		     'rmDir':
+			fun {$ Name}
+			   {Exception.raiseError notImplemented} unit %--**
+			end
 		     'isDir':
 			fun {$ Name}
 			   try
@@ -67,6 +71,14 @@ define
 					    'NONE'))}
 			      unit
 			   end
+			end
+		     'isLink':
+			fun {$ Name}
+			   {Exception.raiseError notImplemented} unit %--**
+			end
+		     'readLink':
+			fun {$ Name}
+			   {Exception.raiseError notImplemented} unit %--**
 			end
 		     'fileSize':
 			fun {$ Name}
