@@ -214,16 +214,14 @@ inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
     // Scan current MemChunk
     while (scan < chunk->GetTop()) {
       // Test for HandlerBlock must be done only once
-      Block *p     = (Block *) scan;
-      BlockLabel l = p->GetLabel();
+      Block *p = (Block *) scan;
       //u_int index = GetTableIndex(scan);
       //      std::fprintf(stderr, "scanning block %d (%d)[%d] at %p\n",
       //		   counter++, l, index, scan);
-      if (l == HANDLERBLOCK_LABEL)
-	PointerOp::DecodeHandler(p)->PrepareForGC(p);
     
       // Scan current tuple (if not CHUNK or WEAK_DICT_LABEL)
       u_int cursize = HeaderOp::DecodeSize(p);
+      BlockLabel l  = p->GetLabel();
       if ((l != CHUNK_LABEL) && (l != WEAK_DICT_LABEL)) {
 	for (u_int i = cursize; i--;) {
 	  //	  std::fprintf(stderr, "scanning index %d/%d\n", i, cursize);

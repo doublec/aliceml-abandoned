@@ -19,7 +19,6 @@
 #include "store/Base.hh"
 #include "store/Types.hh"
 #include "store/HeaderOp.hh"
-#include "store/Handler.hh"
 #include "store/PointerOp.hh"
 #include "store/Memory.hh"
 
@@ -129,12 +128,6 @@ public:
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAllocBlock(l, 1);
-  }
-  static Block *AllocBlockWithHandler(u_int s, Handler *h) {
-    Block *t = Store::InternalAllocBlock(HANDLERBLOCK_LABEL, s);
-    AssertStore(s >= 1);
-    ((word *) t)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
-    return t;
   }
   // Conversion Functions
   static word IntToWord(int v) {
