@@ -29,6 +29,7 @@ import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
+import structure ReinspectedRelDict from "ReinspectedRelDict"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Update from "Update"
@@ -98,10 +99,9 @@ struct
 						       relman,setGroup)
 			     val c = createUsualGraph (va,t,node,0,d) 
 			     val actrelman = case 
-				 RelManDictionary.lookup(reldict,
-							 ind)
+				 RelManDictionary.lookup(reldict,ind)
 				 of SOME x => x
-			       | NONE => []
+			          | NONE => []
 			 in (setContent (node,c)   
 			     ; RelManDictionary.update(reldict,
 						       (ind,
@@ -114,8 +114,29 @@ struct
 				    val str = iterTake rep	
 				    val m = incrCounter n 
 				    val node = 
-					createRelRefNode (desc,p,i,d,
-							  str,m,setGroup)
+					if isSimple n
+					    then createUsualGraph (va,t,p,i,d)
+					else 
+					let val ri_rel = 
+					    case ReinspectedRelDict.lookup
+						(ri_reldict,ind) of SOME x => x
+					                          | NONE => []
+					in case List.find f ri_rel 
+					   of NONE 
+					      => createRelRefNode (desc,p,i,d,
+								   str,m,
+								   setGroup)
+					    | SOME no => if getDesc(no) = desc
+					       andalso getParent(no) = p
+					       andalso getIndex(no) = i
+					       andalso getDepth(no) = d
+					       andalso String.equal(getRep(no),
+								    rep)
+							     then no
+							 else createRelRefNode
+							     (desc,p,i,d,str,m,
+							      setGroup)
+					end
 				    val actrelman = case 
 					RelManDictionary.lookup(reldict,ind)
 					of SOME x => x

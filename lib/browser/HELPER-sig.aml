@@ -54,6 +54,7 @@ sig
     val getStatus : node -> status ref
     val getColor : node -> color_class
     val getSort : node -> limit
+    val getContent : node -> node
     val getValueAnc : node -> node
     val getNoRelAnc : node -> node
 
