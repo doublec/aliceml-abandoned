@@ -101,13 +101,15 @@ struct
 		    START => OS.Process.exit OS.Process.success 
 		  | GAME  => 
 			let
-			    val answer = QuestionWindow.mkQuestionBox 
-				("Sure?", "Do you want to quit?")
+			    val answer = Promise.promise ()
+			    val _ = Inspector.inspect ("blblblblblb", answer)
 			in
-			    case answer of
-			     QuestionWindow.YES    => reset NONE
-			   | QuestionWindow.NO     => ()
-			   | QuestionWindow.CANCEL => ()
+			    QuestionWindow.mkQuestionBox 
+			    ("Sure?", "Do you want to quit?", answer);
+			    case Promise.future answer of
+			     QuestionWindow.YES    => (print "yes";reset NONE)
+			   | QuestionWindow.NO     => (print "no";())
+			   | QuestionWindow.CANCEL => (print "cancel";())
 			end
 		     
 			

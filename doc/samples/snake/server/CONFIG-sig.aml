@@ -18,12 +18,14 @@ sig
 
     val defaultSingle : config
     (* the default configuration with
+       tick = TI
        timeout = T,
        dimensions = (R,C),
        goodie = G,
        lives = L,
        maxPlayer = M,
-       goodieFrequency = F
+       goodieProb = GP,
+       levels = LEV
     *)
 
     val defaultMulti :  config
@@ -31,5 +33,5 @@ sig
     val save :          config -> unit
 
     val load : unit -> config
-    (** loads config. if no one exists defaultMulit will be loaded *)
+    (** loads config. if no one exists defaultMulti will be loaded *)
 end

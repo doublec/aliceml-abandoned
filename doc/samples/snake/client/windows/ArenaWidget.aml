@@ -109,7 +109,7 @@ struct
     fun initialize () = 
 	{
 	 canvas = GtkCanvas.new 0,
-	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY)))
+	 state  = ref (Array2.array(1, 1, (Gtk.null , P.EMPTY)))
 	 }
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
@@ -130,7 +130,7 @@ struct
 				    ("y2", Gtk.DOUBLE (real (rows * cellSize))),
 				    ("fill_color_gdk", Gtk.OBJECT green),
 				    ("outline_color_gdk", Gtk.OBJECT green)])
-	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
+	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
 	in
 	    state  := arena
 	end
@@ -289,7 +289,8 @@ struct
 				    ("y1", Gtk.DOUBLE 0.0),
 				    ("x2", Gtk.DOUBLE (real cellSize)),
 				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT red)])
+				    ("fill_color_gdk", Gtk.OBJECT red),
+				    ("outline_color_gdk", Gtk.OBJECT black)])
 		
 	in
 	    goodie
@@ -306,13 +307,13 @@ struct
                     val y = cellSize * r
                 in
                     (* destroy old object if existing *)
-                    if oldObj <> Gtk.null () 
+                    if oldObj <> Gtk.null 
 			then Gtk.objectDestroy oldObj
                     else ();
                     (* place the new one *)
                     case field of
 		        P.EMPTY     => 
-                            Array2.update (arena, r, c, (Gtk.null (), field))
+                            Array2.update (arena, r, c, (Gtk.null, field))
                     |   P.WALL      => Array2.update (arena, r, c, 
                                         (insertWall (can, x, y), field))
                     | P.GOODY n    => Array2.update (arena, r, c, 
@@ -367,18 +368,19 @@ struct
 
     fun changeView (a, (x, y)) =
 	let
-	    val minX = windowWidth2
+	    val minX = 0
 	    val maxX = arenaWidth a - windowWidth2
-	    val minY = windowHeight2
+	    val minY = 0
 	    val maxY = arenaHeight a - windowHeight2
 	    val x    = x * cellSize - windowWidth2
 	    val y    = y * cellSize - windowHeight2
 	in 
 	    GtkCanvas.scrollTo(toObject a,
 			       clamp (minX, maxX) x, 
-			       clamp (minY, maxY) y)
+			       clamp (minY, maxY) y);
+	    GtkCanvas.updateNow (toObject a)
 	end
-	
+
 end
 (*
 fun testfield () =

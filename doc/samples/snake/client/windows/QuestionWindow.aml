@@ -1,15 +1,14 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 structure QuestionWindow =
 struct
 
-    val ans = Promise.promise ()
-
     datatype answer = YES | NO | CANCEL
 	
-    fun mkQuestionBox (title, quest) =
+    fun mkQuestionBox (title, quest, answer) =
 	let
 
 	    val sure_window = Gtk.dialogNew ()
@@ -27,8 +26,9 @@ struct
 				      10)
 		end
 
-	    fun mainQuit answer = (Promise.fulfill(ans, answer);
-				   Gtk.widgetDestroy sure_window)
+	    fun mainQuit ans = (Promise.fulfill(answer, ans);
+				   Gtk.widgetDestroy sure_window;
+				   Inspector.inspect answer)
 
 	in
 
@@ -42,7 +42,7 @@ struct
 	    
 	    Gtk.signalConnect (Gtk.dialogGetFieldWindow sure_window, 
 			       "delete-event",
-			       fn _ => mainQuit CANCEL);
+			       fn _ =>mainQuit CANCEL);
 	    Gtk.signalConnect (button1, "clicked", 
 			       fn _ => mainQuit YES);
 	    Gtk.signalConnect (button2, "clicked", 
@@ -54,7 +54,7 @@ struct
 			      button2, true, true, 5);
 	    
 	    Gtk.widgetShowAll sure_window;
-	    Promise.future ans
+	    Inspector.inspect 33
 	end
 
 end
