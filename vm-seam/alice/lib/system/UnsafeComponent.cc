@@ -18,8 +18,21 @@
 static word SitedConstructor;
 
 DEFINE0(UnsafeComponent_getInitialTable) {
-  // to be done
-  RETURN_UNIT;
+  u_int numberOfEntries = BootLinker::GetNumberOfEntries();
+  Queue *keyQueue = BootLinker::GetKeyQueue();
+  Vector *vector = Vector::New(numberOfEntries);
+  while (numberOfEntries--) {
+    Chunk *key = Store::DirectWordToChunk(keyQueue->Dequeue());
+    Component *component = BootLinker::LookupComponent(key);
+    Assert(component != INVALID_POINTER);
+    Tuple *triple = Tuple::New(3);
+    triple->Init(0, key->ToWord());
+    triple->Init(1, component->GetSign());
+    triple->Init(2, component->GetStr());
+    vector->Init(numberOfEntries, triple->ToWord());
+  }
+  Assert(keyQueue->IsEmpty());
+  RETURN(vector->ToWord());
 } END
 
 DEFINE1(UnsafeComponent_load) {
