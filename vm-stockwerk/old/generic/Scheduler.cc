@@ -75,6 +75,7 @@ void Scheduler::Run() {
 	  for (int i = nvars; i--; )
 	    transients[i] = Store::WordToTransient(taskStack->GetWord(i));
 	  taskStack->PopFrame(nvars);
+	  //--** this is wrong if nvars > 1 and there's at least one byneed
 	  for (int i = nvars; i--; ) {
 	    Transient *transient = transients[i];
 	    switch (transient->GetLabel()) {
