@@ -120,6 +120,10 @@ TABLE.bnf TR TD {
 	vertical-align:	baseline;
 }
 
+TABLE.tt TD {
+	font-family:	"Courier New", courier, monospace;
+}
+
 TABLE.dyptic {
 	width:		80%;
 }

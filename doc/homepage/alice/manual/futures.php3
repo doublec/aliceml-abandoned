@@ -6,259 +6,316 @@
 
 <?php section("overview", "overview") ?>
 
-  <P>
-    One of the main novel concepts relative to SML are <I>futures</I>.
-    Futures in Alice bring the basic idea of "logic variables" as found in
-    logic programming languages into the typed functional world of ML.
-  </P>
+<P>A <EM>future</EM> is a place-holder for the undetermined result of a
+computation. Once the computation terminates with a result value, the future is
+eliminated by globally replacing it with that value. That value may be a future
+on its own. If the associated computation terminates with an exception, the
+future is <EM>failed</EM>. A failed future carries the corresponding exception
+and reraises it on every attempt to access it. Whenever a future is
+<EM>requested</EM> by a concurrent computation, i.e. it tries to access its
+value, that computation automatically synchronizes on the future by blocking on
+it until it becomes determined or failed.</P>
+
+<P>There are three basic kinds of futures:</P>
+
+<UL>
+  <LI> <A href="#spawn"><EM>concurrent futures</EM></A> stand for the
+	result of an concurrent computation </LI>
+  <LI> <A href="#lazy"><EM>lazy futures</EM></A> stand for the
+	result of a computation that is only performed on request </LI>
+  <LI> <A href="#promise"><EM>promised futures</EM></A> stand for the
+	a value that is assigned later through an explicit operation </LI>
+</UL>
+
+
+<?php section("spawn", "concurrency") ?>
+
+<P>A concurrent future is created by the expression</P>
+
+<PRE>
+spawn <I>exp</I></PRE>
+
+<P>which evaluates the expression <TT><I>exp</I></TT> in new thread and returns
+immediately with a future of its result. When the expression has been
+evaluated, the future is globally replaced by the result. Note that the result
+may itself be a future. See the below discussion on <A href="#failed">failed
+futures</A> for the treatment of possible error conditions.</P>
+
+<P>A thread that tries to <A href="#request"><EM>request</EM></A> a future is
+automatically blocked until the result is no longer a future. Such implicit
+data-flow synchronisation enables concurrent programming on a high level of
+abstraction.</P>
+
+
+<?php subsection("spawn-example", "Example") ?>
+
+<P>The following expression calculates a table of the function <TT>f</TT>. Each
+entry is evaluated concurrently:</P>
+
+<PRE class=code>
+Vector.tabulate (50, fn i => spawn f i)</PRE>
+
+
+<?php subsection("spawn-sugar", "Syntactic sugar") ?>
+
+<P>A derived form is provided for defining functions that always evaluate in
+separate thread:</P>
+
+<PRE class=code>
+fun spawn f x y = exp</PRE>
+
+<P>An application <TT>f a b</TT> will spawn a new thread for evaluation. See <A
+href="#sugar">below</A> for a precise definition of this derived form.</P>
 
 
 
-<?php section("future", "futures") ?>
+<?php section("lazy", "laziness") ?>
 
-  <P>
-    Futures are provided through the library structure <TT>Future</TT>:
-  </P>
+<P>An expression can be marked as lazy:</P>
 
-  <PRE>
-	structure Future :
-	sig
-	    exception Cyclic
+<PRE>
+lazy <I>exp</I></PRE>
 
-	    val concur :	(unit -> 'a) -> 'a
-	    val byneed :	(unit -> 'a) -> 'a
-	    val alarm :		Time.time -> unit
+<P>A lazy expression immediately evaluates to a lazy future of the result of
+<TT><I>exp</I></TT>. As soon as a thread requests the future, the computation
+is intiated in a new thread. The future then turns into a concurrent future and
+evaluation proceeds similar as for <TT>spawn</TT>. In particular, <A
+href="#failed">failure</A> is handled consistently.</P>
 
-	    val await :		'a -> 'a
-	    val awaitOne :	'a * 'b -> 'a
 
-	    val isFuture :	'a -> bool
-	    val isFailed :	'a -> bool
-	end
-  </PRE>
+<?php subsection("lazy-example", "Example") ?>
 
-  <P>
-    This structure provides three basic primitives to create futures. The
-    operation
-  </P>
+<P>Lazy futures enable full support for the whole range of lazy programming
+techniques. For example, the following function generates an infinite list of
+integers on demand:</P>
 
-  <PRE>
-	val concur : (unit -> 'a) -> 'a 
-  </PRE>
+<PRE class=code>
+fun enum n = lazy n :: enum (n+1)</PRE>
 
-  <P>
-    applies the procedure in a new thread. It immediately returns a future
-    associated with that thread. When the procedure terminates with a result
-    that is different from the future, this future is globally replaced with
-    the result. If the application terminates with an exception <I>e</I>, the
-    future is marked as failed and all operations accessing it will
-    raise <I>e</I>. If the application terminates
-    returning the future itself, the future is marked as failed and all
-    operations accessing it will raise <TT>Cyclic</TT>.
-  <P>
 
-  <P>
-    The operation
-  </P>
+<?php subsection("lazy-sugar", "Syntactic sugar") ?>
 
-  <PRE>
-	val byneed : (unit -> 'a) -> 'a 
-  </PRE>
+<P>Analogous to <TT>spawn</TT>, a derived form is provided for defining
+lazy functions:</P>
 
-  <P>
-    returns a by-need future. As soon as a thread blocks on the future, the
-    argument procedure is applied in a new thread. Evaluation proceeds similar
-    to <TT>concur</TT>. By-need futures can be used for
-    <A href="laziness.php3">lazy evaluation</A>.
-  </P>
+<PRE class=code>
+fun lazy f x y = exp</PRE>
 
-  <P>
-    Concurrent and by-need futures are in fact supported more directly
-    through two basic expression forms:
-  </P>
+<P>See <A href="#sugar">below</A> for a precise definition of this derived
+form. It allows convenient formulation of lazy functions. For example, a lazy
+variant of the <TT>map</TT> function on lists can be written:</P>
 
-  <TABLE>
-    <TR>
-      <TD> <I>exp</I> </TD>
-      <TD align="center">::=</TD>
-      <TD> ... </TD>
-      <TD> </TD>
-    </TR>
-    <TR>
-      <TD></TD> <TD></TD>
-      <TD> <TT>lazy</TT> <I>exp</I> </TD>
-      <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lazy expression </TD>
-    </TR>
-    <TR>
-      <TD></TD> <TD></TD>
-      <TD> <TT>spawn</TT> <I>exp</I> </TD>
-      <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;concurrent expression </TD>
-    </TR>
-  </TABLE>
+<PRE class=code>
+fun lazy mapl f   []    = nil
+       | mapl f (x::xs) = f x :: mapl f xs</PRE>
 
-  <P>
-    The aforementioned functions are thus defined as
-  </P>
+<P>This formulation is equivalent to</P>
 
-  <PRE>
-	fun byneed f = lazy f()
-	fun concur f = spawn f()
-  </PRE>
-
-  <P>
-    Finally, the operation
-  </P>
-
-  <PRE>
-	val alarm : Time.time -> unit
-  </PRE>
-
-  <P>
-    creates a future that will be replaced by the value <TT>()</TT> after the
-    given period of time (see structure
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/time.html"><TT>Time</TT></A>).
-    This is useful for programming timeouts and the like.
-  </P>
-
-  <P>
-    The operation 
-  </P>
-
-  <PRE>
-	val await : 'a -> 'a
-  </PRE>
-
-  <P>
-    is the identity for all non-future arguments. On futures <TT>await</TT>
-    blocks until the future is replaced by a proper value. Similarly,
-  </P>
-
-  <PRE>
-	val awaitOne : 'a * 'b -> 'a
-  </PRE>
-
-  <P>
-    blocks until at least one if its arguments is a proper value. It then
-    returns the first argument.
-  </P>
-
-  <P>
-    Every future is in one of three possible states:
-  </P>
-
-  <UL>
-    <LI> undetermined </LI>
-    <LI> succeded </LI>
-    <LI> failed </LI>
-  </UL>
-
-  <P>
-    A freshly created future is undetermined. When it is replaced by a proper
-    value it becomes succeeded. If the computation associated with a future
-    created by <TT>concur</TT> or <TT>byneed</TT> is terminated with an
-    exception, the future becomes failed.
-  </P>
-
-  <P>
-    The operation
-  </P>
-
-  <PRE>
-	val isFuture : 'a -> bool
-  </PRE>
-
-  <P>
-    tests whether its argument is an undetermined future. It does not block.
-    Similarly,
-  </P>
-
-  <PRE>
-	val isFailed : 'a -> bool
-  </PRE>
-
-  <P>
-    tests whether its argument is a failed future.
-  </P>
-
-  <P class=note>
-    Note: In the current system, the operation <TT>isFuture</TT> does return
-    <TT>true</TT> for failed futures, due to limitations
-    of the Mozart virtual machine. Similarly, <TT>isFailed</TT> will always
-    deliver <TT>false</TT>.
-  </P>
-
+<PRE class=code>
+fun mapl' f xs = lazy (case xs of
+                            []   => nil
+                         | x::xs => f x :: mapl' f xs)</PRE>
 
 
 
 <?php section("promise", "promises") ?>
 
-  <P>
-    A forth form of future is introduced by the structure <TT>Promise</TT>:
-  </P>
+<P><EM>Promises</EM> are explicit handles for futures. A promise is created
+through the polymorphic library function <A
+href=library/promise.php3"><TT>Promise.promise</TT></A>:
 
-  <PRE>
-	structure Promise :
-	sig
-	    type 'a promise
+<PRE class=code>
+val p = Promise.promise ()</PRE>
 
-	    exception Promise
+<P>Associated with every promise is a future. Creating a new promise also
+creates a fresh future. The future can be extracted as
 
-	    val promise :	unit -> 'a promise
-	    val future :	'a promise -> 'a
+<PRE class=code>
+val f = Promise.future p</PRE>
 
-	    val fulfill :	'a promise * 'a  -> unit
-	    val fail :		'a promise * exn -> unit
-	end
-  </PRE>
+<P>A promised future is eliminated explicitly by applying
 
-  <P>
-    A promise is a handle for a future. The operation
-  </P>
+<PRE class=code>
+Promise.fulfill (p, v)</PRE>
 
-  <PRE>
-	val promise : unit -> 'a promise
-  </PRE>
+<P>to the corresponding promise, which globally replaces the future with the
+value <TT><I>v</I></TT>.</P>
 
-  <P>
-    creates a promise and thereby a fresh future. The operation 
-  </P>
+<P>Promises may also be thought of as single-assignment references that allow
+dereferencing prior to assignment, yielding a future. The operations
+<TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT> correspond to
+<TT>ref</TT>, <TT>!</TT> and <TT>:=</TT>, respectively.</P>
 
-  <PRE>
-	val future : 'a promise -> 'a
-  </PRE>
 
-  <P>
-    returns the future associated with the promise. This future can become
-    succeeded by applying
-  </P>
+<?php subsection("promise-example", "Example") ?>
 
-  <PRE>
-	val fulfill : 'a promise * 'a -> unit
-  </PRE>
+<P>Promises essentially represent a more structured form of "logic variables"
+as found in logic programming languages. Their presence allows application of
+diverse idioms from concurrent logic programming to ML. Examples can be found in
+the documentation of the <A href="library/promise.php3"><TT>Promise</TT></A>
+structure.</P>
 
-  <P>
-    to the promise. It globally replaces the future with the right argument,
-    provided it is not the future itself.  If the promise has already been
-    fulfilled (or failed, see below), the exception <TT>Promise</TT> is
-    raised. If the right arguments is the future associated with the promise,
-    the exception <TT>Cyclic</TT> is raised.
-  </P>
 
-  <P>
-    Dually, a promise and its future can be explicitly failed by applying
-  </P>
+<?php section("request", "requesting a futures") ?>
 
-  <PRE>
-	val fail : 'a promise * exn -> unit
-  </PRE>
+<P>A future is <EM>requested</EM> if it is used as an argument to a
+<EM>strict</EM> operation. Strict operations are:</P>
 
-  <P>
-    to the promise. If a promise is failed with exception <I>e</I>, any
-    subsequent attempt to access its future will cause the exception
-    <I>e</I> to be raised. If the promise already
-    had been fulfilled or failed, <TT>fail</TT> will raise the exception
-    <TT>Promise</TT>.
-  </P>
+<UL>
+  <LI> Pattern matching </LI>
+  <LI> Primitive operations that need to access a value, e.g. <TT>op+</TT> </LI>
+</UL>
 
+<P>If a future is requested by a thread, that thread blocks until the future
+has been replaced by a non-future value (or a failed future, see <A
+href="#failed">below</A>). After the value has been determined, the thread
+proceeds.</P>
+
+<P>Requesting a lazy future triggers initiation of the corresponding
+computation. The future is replaced by a concurrent future of the computation's
+result. The requesting thread blocks until the result is determined.</P>
+
+<P>Request of a promised future will block at least until a <TT>fulfill</TT>
+operation has been applied to the corresponding promise. Blocking continues if
+the promise is fulfilled with another future.</P>
+
+
+<?php section("failed", "failed futures") ?>
+
+<P>If the computation associated with a concurrent or lazy future terminates
+with an exception, that future cannot be eliminated. Instead, it turns into a
+<EM>failed future</EM>. Promised futures can be failed explicitly by means of
+the <TT>Promise.fail</TT> function. Any attempt to request a failed future will
+reraise the exception that was the cause of the failure.</P>
+
+<P>A second error condition is the attempt to replace a future with itself. This
+may happen if a recursive <TT>spawn</TT> or <TT>lazy</TT> expression is
+unfounded, or if a promise is fulfilled with its own future. In all cases, the
+future will be failed with the special exception <TT>Future.Cyclic</TT>.</P>
+
+
+<?php section("lib", "library support") ?>
+
+<P>The following library modules provide functionality relevant for
+programming with futures, promises and concurrent threads:</P>
+
+<UL>
+  <LI> <A href="library/future.php3"><TT>Future</TT></A> </LI>
+  <LI> <A href="library/promise.php3"><TT>Promise</TT></A> </LI>
+  <LI> <A href="library/thread.php3"><TT>Thread</TT></A> </LI>
+  <LI> <A href="library/os-process.php3"><TT>OS.Process</TT></A> </LI>
+  <LI> <A href="library/byneed.php3"><TT>ByNeed</TT></A> </LI>
+</UL>
+
+<P>The latter is a functor that allows creation of lazy futures for modules.</P>
+
+<P>Lazy modules are also core to the semantics of <A
+href="dynamics.php3#components">components</A>.
+
+
+<?php section("syntax", "syntax summary") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>lazy</TT> <I>exp</I> </TD>
+    <TD> lazy </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>spawn</TT> <I>exp</I> </TD>
+    <TD> concurrent </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>fvalbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; </TD>
+    <TD> (<I>m</I>,<I>n</I>&ge;1) (*) </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>11</SUB> ... <I>atpat</I><SUB>1<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>1</SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> <TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>21</SUB> ... <I>atpat</I><SUB>2<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>2</SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> <TT>|</TT> ... </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> <TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB><I>m</I>1</SUB> ... <I>atpat</I><SUB><I>mn</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB><I>m</I></SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
+  </TR>
+</TABLE>
+
+
+<?php subsection("syntax-derived", "derived forms") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> </TD>
+    <TD> </TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>=</TT>
+         <TT>fn</TT> <I>vid</I><SUB>1</SUB> <TT>=></TT> ...
+	 <TT>fn</TT> <I>vid</I><SUB><I>n</I></SUB> <TT>=></TT>
+         </TD>
+  </TR><TR>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; </TD>
+    <TD> </TD>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; <TT>case</TT>
+         <TT>(</TT><I>vid</I><SUB>1</SUB><TT>,</TT>...<TT>,</TT><I>vid</I><SUB><I>n</I></SUB><TT>)</TT>
+	 <TT>of</TT>
+         </TD>
+  <TR>
+    <TD> &nbsp;&nbsp;
+         &lt;<TT>op</TT>&gt; <I>vid atpat<SUB>11</SUB> ... <I>atpat</I><SUB>1<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>1</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> &nbsp;&nbsp;
+        <TT>(</TT><I>atpat</I><SUB>11</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB>1<I>n</I></SUB><TT>)</TT> <TT>=></TT> <I>exp</I><SUB>1</SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
+	 </TD>
+  </TR><TR>
+    <TD> <TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat<SUB>21</SUB> ... <I>atpat</I><SUB>2<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
+	 <TT>=</TT> <I>exp</I> </TD>
+    <TD> </TD>
+    <TD> <TT>|</TT>
+         <TT>(</TT><I>atpat</I><SUB>21</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB>2<I>n</I></SUB><TT>)</TT> <TT>=></TT> <I>exp</I><SUB>2</SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
+	 </TD>
+  </TR><TR>
+    <TD> <TT>|</TT> ... </TD>
+    <TD> </TD>
+    <TD> <TT>|</TT> ... </TD>
+  </TR><TR>
+    <TD> <TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat<SUB><I>m</I>1</SUB> ... <I>atpat</I><SUB><I>mn</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
+	 <TT>=</TT> <I>exp</I> </TD>
+    <TD> </TD>
+    <TD> <TT>|</TT>
+        <TT>(</TT><I>atpat</I><SUB><I>m</I>1</SUB><TT>,</TT>...<TT>,</TT><I>atpat</I><SUB><I>mn</I></SUB><TT>)</TT> <TT>=></TT> <I>exp</I><SUB><I>m</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
+	 </TD>
+  </TR><TR>
+    <TD> &lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
+    <TD> </TD>
+    <TD> &lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
+  </TR>
+</TABLE>
+
+<P><I>vid</I><SUB>1</SUB>,...,<I>vid</I><SUB><I>n</I></SUB> are distinct and new.</P>
 
 <?php footing() ?>

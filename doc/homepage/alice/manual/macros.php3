@@ -29,7 +29,7 @@
   ?>
 
   <A href="http://www.ps.uni-sb.de/alice/">
-  <IMG src="/alice/logos/alice-strikethrough-shadow-blue-72x22.gif"
+  <IMG src="logo-small.gif"
        border=0
        alt="Alice Project">
   </A>
@@ -75,7 +75,7 @@
 
   function subsection($tag, $name)
   {
-    echo("<H3><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
+    echo("<H3><A name=" . $tag . ">" . ucfirst($name) . "&nbsp;" . $bar .
 	 "</A></H3>");
   };
 ?>

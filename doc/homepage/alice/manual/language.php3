@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("The Language", "The Language") ?>
+<?php heading("The Language", "the <BR> language") ?>
 
 
 <?php section("overview", "overview") ?>
@@ -22,9 +22,9 @@ programming language (SML), as defined in</P>
 <UL>
   <LI> <A href="futures.php3">Futures:</A>
   <UL>
-    <LI> <A href="futures.php3#lazy">lazy evaluation</A> </LI>
     <LI> <A href="futures.php3#spawn">concurrency</A> </LI>
-    <LI> <A href="futures.php3#promises">promises</A> </LI>
+    <LI> <A href="futures.php3#lazy">lazy evaluation</A> </LI>
+    <LI> <A href="futures.php3#promise">promises</A> </LI>
   </UL>
   </LI>
 
@@ -69,7 +69,7 @@ programming language (SML), as defined in</P>
   <UL>
     <LI> <A href="constraints.php3#fd">finite domain constraints</A> </LI>
     <LI> <A href="constraints.php3#fs">finite set contraints</A> </LI>
-    <LI> <A href="constraints.php3#search">programmable search</A> </LI>
+    <LI> <A href="constraints.php3#spaces">spaces</A> </LI>
   </UL>
   </LI>
 
@@ -118,6 +118,11 @@ relative to Standard ML. Derived forms are marked (*).
                      <I>exp</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
     <TD> vector (<I>n</I>&ge;0) </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
+    <TD> record update </TD>
+  </TR>
 
   <TR></TR>
   <TR>
@@ -128,13 +133,18 @@ relative to Standard ML. Derived forms are marked (*).
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
-    <TD> recursion (*) </TD>
+    <TD> <TT>lazy</TT> <I>exp</I> </TD>
+    <TD> lazy </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
-    <TD> record update </TD>
+    <TD> <TT>spawn</TT> <I>exp</I> </TD>
+    <TD> concurrent </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
+    <TD> recursion (*) </TD>
   </TR>
 
   <TR></TR>
@@ -235,6 +245,35 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>constructor</TT> <I>econbind</I> </TD>
     <TD> generative constructor </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>fvalbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; </TD>
+    <TD> (<I>m</I>,<I>n</I>&ge;1) (*) </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>11</SUB> ... <I>atpat</I><SUB>1<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>1</SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;<TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>21</SUB> ... <I>atpat</I><SUB>2<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>2</SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;<TT>|</TT> ... </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;<TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB><I>m</I>1</SUB> ... <I>atpat</I><SUB><I>mn</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB><I>m</I></SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;&lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
   </TR>
 
   <TR></TR>

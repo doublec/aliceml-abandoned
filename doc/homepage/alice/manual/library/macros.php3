@@ -8,35 +8,39 @@
 <HTML>
   <HEAD>
     <META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-    <TITLE> <?php echo "Alice Library Manual - $title" ?></TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
+    <TITLE> <?php echo "Alice Manual - $title" ?></TITLE>
+    <LINK rel="stylesheet" type="text/css" href="../style.css">
   </HEAD>
 
   <BODY>
 
 
+  <!-- margin-color: #83a2eb -->
+
+  <DIV class=margin>
+
   <H1>
-<!--
-  <TABLE cellpadding=8 bgcolor=white>
-    <TR><TD>
-      <IMG class=logo src="alice.gif">
-    </TD></TR>
-  </TABLE>
-  <BR>
--->
   alice<BR>
   library<BR>
   manual.<BR>
-  <BR>
-  <?php echo($chapter) ?>
-  <BR>
   </H1>
-
-  <IMG align="right" src="../alice.gif" alt="Alice">
 
   <?php
     include("menu.php3")
   ?>
+
+  <A href="http://www.ps.uni-sb.de/alice/">
+  <IMG src="../logo-small.gif"
+       border=0
+       alt="Alice Project">
+  </A>
+
+  </DIV>
+
+  <H1>
+  <?php echo($chapter) ?>
+  </H1>
+
 <?php
   };
 
@@ -58,14 +62,21 @@
 
   function section($tag, $name)
   {
-    $n = 40 - strlen($name);
+    $n = 60 - strlen($name);
 
     for ($bar = ""; $n > 0; $n--)
     {
 	$bar .= "_";
     };
 
-    echo("<H2><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
-	 "</A></H2> <BR><BR>");
+    echo("<BR><H2><A name=" . $tag . "><SUP><TT>________&nbsp;</TT></SUP>" .
+	 ucfirst($name) .
+	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></A></H2>");
+  };
+
+  function subsection($tag, $name)
+  {
+    echo("<H3><A name=" . $tag . ">" . ucfirst($name) . "&nbsp;" . $bar .
+	 "</A></H3>");
   };
 ?>

@@ -134,7 +134,7 @@ end</PRE>
 
 <TABLE class=bnf>
   <TR>
-    <TD> <I>exp</I> </TD>
+    <TD> <I>atexp</I> </TD>
     <TD align="center">::=</TD>
     <TD> ... </TD>
     <TD> </TD>

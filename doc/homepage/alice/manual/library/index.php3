@@ -1,20 +1,78 @@
 <?php include("macros.php3"); ?>
-<?php heading("The Alice library", "") ?>
+<?php heading("The Alice library", "the <BR> alice <BR> library") ?>
 
-<?php section("synopsis", "synopsis") ?>
 
-  <P>
-    These pages provide a reference to the Alice library. It extends the
-    <A href="http://SML.sourceforge.net/Basis/">Standard ML
-    Basis library</A>. All modules from the Standard Basis and some basic
-    Alice-specific structures are available
-    by default and need not be imported explicitly. For all others, the
-    "import" section from the corresponding reference page contains the
-    URL of the necessary import announcement. Note that it is not necessary to
-    import corresponding signatures, if they are never used explicitly.
-  </P>
+<?php section("structure", "structure") ?>
+
+<P>Alice is equipped with an extended version of the <A
+href="http://SML.sourceforge.net/Basis/">Standard ML Basis Library</A>. 
+Most additional modules deal with Alice ML extensions over Standard ML.</P>
+
+<P>The library is split into <A
+href="../dynamics.php3#components">components</A>. Usually, one component
+exports a single module (structure or functor) or signature. The components are
+named after the module or signature they export. Signature component names have
+a <TT>-sig</TT> suffix appended to avoid problems with case insensitive
+operating systems.</P>
+
+<P>Library components are imported through URIs using the <TT>x-alice:</TT>
+scheme. The library is organized hierarchically as follows:</P>
+
+<UL>
+  <LI><A href="#fundamental"><TT>"x-alice:/lib/fundamental/"</TT></A>
+	- fundamental types and data structures </LI>
+  <LI><A href="#system"><TT>"x-alice:/lib/system/"</TT></A>
+	- I/O and other system related functionality </LI>
+  <LI><A href="#distribution"><TT>"x-alice:/lib/distribution/"</TT></A>
+	- distributed programming </LI>
+  <LI><A href="#constraints"><TT>"x-alice:/lib/constraints/"</TT></A>
+	- constraint programming </LI>
+  <LI><A href="#tools"><TT>"x-alice:/lib/tools/"</TT></A>
+	- interactive tools </LI>
+  <LI><A href="#gtk"><TT>"x-alice:/lib/gtk/"</TT></A>
+	- Gtk+ GUI toolkit </LI>
+</UL>
+
+<P>The Standard ML <A href="#toplevel.php3">top-level environment</A> is
+available as usual.</P>
+
+
+<?php section("import", "import") ?>
+
+<P>Components from the fundamental library, and those components of the system
+library that are part of the Standard ML Basis Library, are imported implicitly.
+Other components can be accessed through appropriate explicit import
+announcements. For example, a program using the <A
+href="url.php3"><TT>Url</TT></A> component has to be prefixed by the
+following announcement:</P>
+
+<PRE class=code>
+import structure Url from "x-alice:/lib/system/Url"</PRE>
+
+<P>The reference pages for the individual library items contain the synopsis of
+the appropriate import announcement for each item. Note that it is not
+necessary to import a signature in order to use a structure implementing that
+signature, although the library pages usually contain the synopsis for both.
+Signatures only need to be imported if used explicitly.</P>
+
+
+<?php subsection("import-all", "Interactive import") ?>
+
+<P>To access a non-implicit library item in the <A
+href="usage.php#interactive">interactive system</A>, import announcements
+must be used in very much the same way. For convenience, it is possible to
+abbreviate import announcements as follows interactively:</P>
+
+<PRE class=code>
+import "x-alice:/lib/system/Url"</PRE>
+
+<P>Such an announcement will import everything exported by the corresponding
+component.</P>
+
 
 <!--
+<?php section("compatibility", "compatibility") ?>
+
   <P>
     <EM>Note:</EM> Most other SML implementations currently still implement
     a <A href="http://www.dina.kvl.dk/~sestoft/sml/">previous version of the
@@ -27,16 +85,15 @@
 
 <?php section("toplevel", "top-level") ?>
 
-   <P>The <A href="toplevel.php3">top-level environment</A> contains all
-   types, exceptions and values that are available unqualified.</P>
+<P>The <A href="toplevel.php3">top-level environment</A> contains all
+types, exceptions and values that are available unqualified.</P>
 
 
-<?php section("signatures", "signatures") ?>
+<?php section("fundamental", "fundamental library") ?>
 
-  <P><TT>lib/fundamental</TT>:</P>
+<?php subsection("fundamental-sigs", "Signatures") ?>
 
-  <TT>
-  <TABLE>
+  <TABLE class=tt>
     <TR> <TD><A href="alt.php3">ALT</A></TD> </TR>
     <TR> <TD><A href="array.php3">ARRAY</A></TD> </TR>
     <TR> <TD><A href="array-slice.php3">ARRAY_SLICE</A></TD> </TR>
@@ -73,68 +130,10 @@
     <TR> <TD><A href="vector-slice.php3">VECTOR_SLICE</A></TD> </TR>
     <TR> <TD><A href="word.php3">WORD</A></TD> </TR>
   </TABLE>
-  </TT>
 
-  <P><TT>lib/system</TT>:</P>
+<?php subsection("fundamental-structs", "Structures") ?>
 
-  <TT>
-  <TABLE>
-    <TR> <TD><A href="bin-io.php3">BIN_IO</A></TD> </TR>
-    <TR> <TD><A href="command-line.php3">COMMAND_LINE</A></TD> </TR>
-    <TR> <TD><A href="component.php3">COMPONENT</A></TD> </TR>
-    <TR> <TD><A href="component-manager.php3">COMPONENT_MANAGER</A></TD> </TR>
-    <TR> <TD><A href="config.php3">CONFIG</A></TD> </TR>
-    <TR> <TD><A href="http.php3">HTTP</A></TD> </TR>
-    <TR> <TD><A href="http-client.php3">HTTP_CLIENT</A></TD> </TR>
-    <TR> <TD><A href="http-server.php3">HTTP_SERVER</A></TD> </TR>
-    <TR> <TD><A href="imperative-io.php3">IMPERATIVE_IO</A></TD> </TR>
-    <TR> <TD><A href="io.php3">IO</A></TD> </TR>
-    <TR> <TD><A href="os.php3">OS</A></TD> </TR>
-    <TR> <TD><A href="os-file-sys.php3">OS_FILE_SYS</A></TD> </TR>
-    <TR> <TD><A href="os-io.php3">OS_IO</A></TD> </TR>
-    <TR> <TD><A href="os-process.php3">OS_PROCESS</A></TD> </TR>
-    <TR> <TD><A href="pickle.php3">PICKLE</A></TD> </TR>
-    <TR> <TD><A href="prim-io.php3">PRIM_IO</A></TD> </TR>
-    <TR> <TD><A href="resolver.php3">RESOLVER</A></TD> </TR>
-    <TR> <TD><A href="resolver-handler.php3">RESOLVER_HANDLER</A></TD> </TR>
-    <TR> <TD><A href="socket.php3">SOCKET</A></TD> </TR>
-    <TR> <TD><A href="stream-io.php3">STREAM_IO</A></TD> </TR>
-    <TR> <TD><A href="text-io.php3">TEXT_IO</A></TD> </TR>
-    <TR> <TD><A href="text-stream-io.php3">TEXT_STREAM_IO</A></TD> </TR>
-    <TR> <TD><A href="unix.php3">UNIX</A></TD> </TR>
-    <TR> <TD><A href="url.php3">URL</A></TD> </TR>
-  </TABLE>
-  </TT>
-
-  <P><TT>lib/distribution</TT>:</P>
-
-  <TABLE>
-    <TR> <TD><A href="remote.php3"><TT>REMOTE</TT></A></TD> </TR>
-  </TABLE>
-
-  <P><TT>lib/constraints</TT>:</P>
-
-  <TABLE>
-    <TR> <TD><A href="fd.php3"><TT>FD</TT></A></TD> </TR>
-    <TR> <TD><A href="fs.php3"><TT>FS</TT></A></TD> </TR>
-    <TR> <TD><A href="linear.php3"><TT>LINEAR</TT></A></TD> </TR>
-    <TR> <TD><A href="search.php3"><TT>SEARCH</TT></A></TD> </TR>
-    <TR> <TD><A href="space.php3"><TT>SPACE</TT></A></TD> </TR>
-  </TABLE>
-
-  <P><TT>lib/tools</TT>:</P>
-
-  <TABLE>
-    <TR> <TD><A href="explorer.php3"><TT>EXPLORER</TT></A></TD> </TR>
-    <TR> <TD><A href="inspector.php3"><TT>INSPECTOR</TT></A></TD> </TR>
-  </TABLE>
-
-<?php section("structures", "structures") ?>
-
-  <P><TT>lib/fundamental</TT>:</P>
-
-  <TT>
-  <TABLE>
+  <TABLE class=tt>
     <TR> <TD><A href="alt.php3">Alt</A></TD> </TR>
     <TR> <TD><A href="array.php3">Array</A></TD> </TR>
     <TR> <TD><A href="array-slice.php3">ArraySlice</A></TD> </TR>
@@ -185,12 +184,48 @@
     <TR> <TD><A href="mono-vector.php3">Word8Vector</A></TD> </TR>
     <TR> <TD><A href="mono-vector-slice.php3">Word8VectorSlice</A></TD> </TR>
   </TABLE>
-  </TT>
 
-  <P><TT>lib/system</TT>:</P>
+<?php subsection("fundamental-funs", "Functors") ?>
 
-  <TT>
-  <TABLE>
+  <TABLE class=tt>
+    <TR> <TD><A href="byneed.php3">ByNeed</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("system", "system library") ?>
+
+<?php subsection("system-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="bin-io.php3">BIN_IO</A></TD> </TR>
+    <TR> <TD><A href="command-line.php3">COMMAND_LINE</A></TD> </TR>
+    <TR> <TD><A href="component.php3">COMPONENT</A></TD> </TR>
+    <TR> <TD><A href="component-manager.php3">COMPONENT_MANAGER</A></TD> </TR>
+    <TR> <TD><A href="config.php3">CONFIG</A></TD> </TR>
+    <TR> <TD><A href="http.php3">HTTP</A></TD> </TR>
+    <TR> <TD><A href="http-client.php3">HTTP_CLIENT</A></TD> </TR>
+    <TR> <TD><A href="http-server.php3">HTTP_SERVER</A></TD> </TR>
+    <TR> <TD><A href="imperative-io.php3">IMPERATIVE_IO</A></TD> </TR>
+    <TR> <TD><A href="io.php3">IO</A></TD> </TR>
+    <TR> <TD><A href="os.php3">OS</A></TD> </TR>
+    <TR> <TD><A href="os-file-sys.php3">OS_FILE_SYS</A></TD> </TR>
+    <TR> <TD><A href="os-io.php3">OS_IO</A></TD> </TR>
+    <TR> <TD><A href="os-process.php3">OS_PROCESS</A></TD> </TR>
+    <TR> <TD><A href="pickle.php3">PICKLE</A></TD> </TR>
+    <TR> <TD><A href="prim-io.php3">PRIM_IO</A></TD> </TR>
+    <TR> <TD><A href="resolver.php3">RESOLVER</A></TD> </TR>
+    <TR> <TD><A href="resolver-handler.php3">RESOLVER_HANDLER</A></TD> </TR>
+    <TR> <TD><A href="socket.php3">SOCKET</A></TD> </TR>
+    <TR> <TD><A href="stream-io.php3">STREAM_IO</A></TD> </TR>
+    <TR> <TD><A href="text-io.php3">TEXT_IO</A></TD> </TR>
+    <TR> <TD><A href="text-stream-io.php3">TEXT_STREAM_IO</A></TD> </TR>
+    <TR> <TD><A href="unix.php3">UNIX</A></TD> </TR>
+    <TR> <TD><A href="url.php3">URL</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("system-structs", "Structures") ?>
+
+  <TABLE class=tt>
     <TR> <TD><A href="bin-io.php3">BinIO</A></TD> </TR>
     <TR> <TD><A href="prim-io.php3">BinPrimIO</A></TD> </TR>
     <TR> <TD><A href="command-line.php3">CommandLine</A></TD> </TR>
@@ -213,50 +248,70 @@
     <TR> <TD><A href="unix.php3">Unix</A></TD> </TR>
     <TR> <TD><A href="url.php3">Url</A></TD> </TR>
   </TABLE>
-  </TT>
 
-  <P><TT>lib/distribution</TT>:</P>
+<?php subsection("system-funs", "Functors") ?>
 
-  <TABLE>
-    <TR> <TD><A href="remote.php3"><TT>Remote</TT></A></TD> </TR>
-  </TABLE>
-
-  <P><TT>lib/constraints</TT>:</P>
-
-  <TABLE>
-    <TR> <TD><A href="fd.php3"><TT>FD</TT></A></TD> </TR>
-    <TR> <TD><A href="fs.php3"><TT>FS</TT></A></TD> </TR>
-    <TR> <TD><A href="linear.php3"><TT>Linear</TT></A></TD> </TR>
-    <TR> <TD><A href="search.php3"><TT>Search</TT></A></TD> </TR>
-    <TR> <TD><A href="space.php3"><TT>Space</TT></A></TD> </TR>
-  </TABLE>
-
-  <P><TT>lib/tools</TT>:</P>
-
-  <TABLE>
-    <TR> <TD><A href="explorer.php3"><TT>Explorer</TT></A></TD> </TR>
-    <TR> <TD><A href="inspector.php3"><TT>Inspector</TT></A></TD> </TR>
-  </TABLE>
-
-
-<?php section("functors", "functors") ?>
-
-  <P><TT>lib/fundamental</TT>:</P>
-
-  <TT>
-  <TABLE>
-    <TR> <TD><A href="byneed.php3">ByNeed</A></TD> </TR>
-  </TABLE>
-  </TT>
-
-  <P><TT>lib/system</TT>:</P>
-
-  <TT>
-  <TABLE>
+  <TABLE class=tt>
     <TR> <TD><A href="imperative-io.php3">ImperativeIO</A></TD> </TR>
     <TR> <TD><A href="prim-io.php3">PrimIO</A></TD> </TR>
     <TR> <TD><A href="stream-io.php3">StreamIO</A></TD> </TR>
   </TABLE>
-  </TT>
+
+
+
+<?php section("distribution", "distribution library") ?>
+
+<?php subsection("distribution-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="remote.php3">REMOTE</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("distribution-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="remote.php3">Remote</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("constraints", "constraints library") ?>
+
+<?php subsection("constraints-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="fd.php3">FD</A></TD> </TR>
+    <TR> <TD><A href="fs.php3">FS</A></TD> </TR>
+    <TR> <TD><A href="linear.php3">LINEAR</A></TD> </TR>
+    <TR> <TD><A href="search.php3">SEARCH</A></TD> </TR>
+    <TR> <TD><A href="space.php3">SPACE</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("constraints-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="fd.php3">FD</A></TD> </TR>
+    <TR> <TD><A href="fs.php3">FS</A></TD> </TR>
+    <TR> <TD><A href="linear.php3">Linear</A></TD> </TR>
+    <TR> <TD><A href="search.php3">Search</A></TD> </TR>
+    <TR> <TD><A href="space.php3">Space</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("tools", "tools library") ?>
+
+<?php subsection("tools-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="explorer.php3">EXPLORER</A></TD> </TR>
+    <TR> <TD><A href="inspector.php3">INSPECTOR</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("tools-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="explorer.php3">Explorer</A></TD> </TR>
+    <TR> <TD><A href="inspector.php3">Inspector</A></TD> </TR>
+  </TABLE>
+
 
 <?php footing() ?>
