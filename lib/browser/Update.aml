@@ -30,6 +30,7 @@ import structure Server from "Server"
 import signature UPDATE from "UPDATE-sig"
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure TextIO from "x-alice:/lib/system/TextIO"
 
 local
     open Doc Node
@@ -99,16 +100,6 @@ struct
 			     else g (!(#content(r))) )
 	  | _ => () )
 	end
-
-    (* helper that filters double appearances from a sorted list *)
-    fun unique' (eq,nil,new) = rev new
-      | unique' (eq,x::xr,nil) = unique'(eq,xr,[x])
-      | unique' (eq,x::xr,y::new)  = if eq(x,y) 
-					then unique'(eq,xr,y::new)
-					    else unique'(eq,xr,x::y::new)
-
-    fun unique(eq,xs) = unique'(eq,xs,nil)
-
 
     (* finds highest depth in a (part of a) tree *)
 
@@ -268,34 +259,45 @@ struct
     (* core function - 
        is essential for reinspect, foldDepth, foldWith and watcher *)
 
-    fun update(no,va,f,g,canvas) = let
-				       val (topnode,old_ydim,y_pos) = 
-					   (GtkSupport.busyButtonSetActive(true)
-					    ;updateTree (no,va,f,g,canvas))
-				   in
-				       (layoutDrawTree(topnode,canvas,old_ydim,y_pos) 
-					;GtkSupport.busyButtonSetActive(false))
-				   end
+    fun update(no,va,f,g,canvas) = 
+	let
+	    val (topnode,old_ydim,y_pos) = 
+		(GtkSupport.busyButtonSetActive(true)
+		 ;updateTree (no,va,f,g,canvas))
+	in
+	    (layoutDrawTree(topnode,canvas,old_ydim,y_pos) 
+	     ;GtkSupport.busyButtonSetActive(false))
+	end
 			       
     (*  mechanism of update watching for FUTURES *)    
 
     fun tell (va,i,li,f,g,canvas) =  
-	let 
+	let
+	    fun updateRest (ind,nil) = nil
+	      | updateRest(ind,x::xs) = if getAncIndex(x) = ind 
+					    then  (updateTree(x,va,f,g,canvas)
+						   ;updateRest(ind,xs))
+					else x::xs
+	    fun updateCycle nil    = ()
+	      | updateCycle(x::xs) = 
+		let 
+		    val (topnode,old_ydim,y_pos)= 
+			updateTree (x,va,f,g,canvas)
+		    val restlist = updateRest(getAncIndex(x),xs)
+		in
+		    (layoutDrawTree(topnode,canvas,old_ydim,y_pos)
+		     ;updateCycle(restlist))
+		end
 	    val _ = GtkSupport.busyButtonSetActive(true)
 	    val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
-	    li
-	    val para_list =  List.map (fn n => updateTree(n,va,f,g,canvas)) new_li
-	    val unique_para_list = unique(fn ((tn1,_,_),
-					      (tn2,_,_)) => getIndex(tn1) = getIndex(tn2),
-					  para_list)
-	    val layoutDraw = fn (tn,old_ydim,old_ypos) =>
-		               layoutDrawTree(tn,canvas,old_ydim,old_ypos) 
-	in (  List.app layoutDraw unique_para_list 
-	    ; (!resize)() 
-	    ; GtkSupport.busyButtonSetActive(false)
-	    ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
-	end   
+		li
+	in
+	    (updateCycle new_li
+	     ;(!resize)() 
+	     ; GtkSupport.busyButtonSetActive(false)
+	     ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
+	end
 
     fun watcher (future,va,i,f,g,canvas) = 
 	Thread.thread 
