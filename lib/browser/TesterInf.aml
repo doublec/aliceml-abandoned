@@ -1,0 +1,28 @@
+import structure NewNodeInf from "NewNodeInf";
+import structure Layout from "Layout";
+import structure UnsafeInspector from "UnsafeInspector";
+import structure Reflect from "x-alice:/lib/system/Reflect";
+
+signature SIMPLE = 
+sig
+    type t
+    val x : t
+    val foo : t -> bool
+end;
+
+structure Simple :> SIMPLE =
+struct
+    type t = int
+    val x = 0
+    fun foo y = (y = x)
+end;
+
+structure V = Reflect.Reflect(signature S = SIMPLE structure X = Simple);
+val v = V.x;
+
+structure T = Reflect.ReflectSig(signature S = SIMPLE);
+val t = T.x;
+
+val n = NewNodeInf.newNodeInf (v,t);
+
+UnsafeInspector.inspectInf (v,t);
