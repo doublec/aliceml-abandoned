@@ -272,8 +272,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val  _   = trTyVarSeq E tyvarseq
 	    val  _   = insertScope E
 	    val ids' = ?unguardedTyVarsTy E ty_opt
-	    val  _   = delete2ndScope E
-	    val  _   = mergeScope E
+	    val  E'  = splitScope E
+	    val  _   = deleteScope E
+	    val  _   = union(E,E')
 	in
 	    ids' @ ?unguardedTyVarsDconBind E dconbind_opt
 	end
@@ -906,8 +907,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val decs1' = trDec E dec1
 		val  _     = insertScope E
 		val decs2' = trDec E dec2
-		val  _     = delete2ndScope E
-		val  _     = mergeScope E
+		val  E'    = splitScope E
+		val  _     = deleteScope E
+		val  _     = union(E,E')
 	   in
 		O.LocalDec(i, decs1') :: decs2'
 	   end

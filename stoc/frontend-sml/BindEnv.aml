@@ -82,14 +82,14 @@ structure BindEnv :> BIND_ENV =
     fun appSig f (SIGID id, SIG x) = f(id,x) | appSig f _ = ()
     fun appFun f (FUNID id, FUN x) = f(id,x) | appFun f _ = ()
 
-    fun foldInf f ((INFIX id, INF x), a) = f(id,x,a) | foldInf f (_,a) = a
-    fun foldFld f ((LAB   id, FLD x), a) = f(id,x,a) | foldFld f (_,a) = a
-    fun foldVar f ((TYVAR id, VAR x), a) = f(id,x,a) | foldVar f (_,a) = a
-    fun foldVal f ((VID   id, VAL x), a) = f(id,x,a) | foldVal f (_,a) = a
-    fun foldTy  f ((TYCON id, TY  x), a) = f(id,x,a) | foldTy  f (_,a) = a
-    fun foldStr f ((STRID id, STR x), a) = f(id,x,a) | foldStr f (_,a) = a
-    fun foldSig f ((SIGID id, SIG x), a) = f(id,x,a) | foldSig f (_,a) = a
-    fun foldFun f ((FUNID id, FUN x), a) = f(id,x,a) | foldFun f (_,a) = a
+    fun foldInf f (INFIX id, INF x, a) = f(id,x,a) | foldInf f (_,_,a) = a
+    fun foldFld f (LAB   id, FLD x, a) = f(id,x,a) | foldFld f (_,_,a) = a
+    fun foldVar f (TYVAR id, VAR x, a) = f(id,x,a) | foldVar f (_,_,a) = a
+    fun foldVal f (VID   id, VAL x, a) = f(id,x,a) | foldVal f (_,_,a) = a
+    fun foldTy  f (TYCON id, TY  x, a) = f(id,x,a) | foldTy  f (_,_,a) = a
+    fun foldStr f (STRID id, STR x, a) = f(id,x,a) | foldStr f (_,_,a) = a
+    fun foldSig f (SIGID id, SIG x, a) = f(id,x,a) | foldSig f (_,_,a) = a
+    fun foldFun f (FUNID id, FUN x, a) = f(id,x,a) | foldFun f (_,_,a) = a
 
 
     (* Collision exceptions *)
@@ -123,7 +123,6 @@ structure BindEnv :> BIND_ENV =
     fun insertScope(ENV E)		= Map.insertScope E
     fun inheritScope(ENV E1, ENV E2)	= Map.inheritScope(E1,E2)
     fun deleteScope(ENV E)		= Map.deleteScope E
-    fun delete2ndScope(ENV E)		= Map.delete2ndScope E
     fun mergeScope(ENV E)		= Map.mergeScope E
     fun mergeDisjointScope(ENV E)	= Map.mergeDisjointScope E
 					  handle Map.Collision coll =>
