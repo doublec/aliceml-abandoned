@@ -36,6 +36,7 @@ signature TYPE_REFLECTION =
     val lab_inMu :	Label.t
 
     val lab_var :	Label.t
+    val lab_kind :	Label.t
 
     val lab_unknownRow:	Label.t
     val lab_emptyRow :	Label.t

@@ -36,6 +36,7 @@ signature INF_REFLECTION =
     val lab_inGround :		Label.t
     val lab_inDependent :	Label.t
 
+    val lab_kind :		Label.t
     val lab_instance :		Label.t
     val lab_intersect :		Label.t
 

@@ -92,6 +92,8 @@ structure TypeReflection :> TYPE_REFLECTION =
 
     val lab_var		= Label.fromString "var"
     val _		= Type.var : kind -> var		(* verify *)
+    val lab_kind	= Label.fromString "kind"
+    val _		= Type.kind : typ -> kind		(* verify *)
 
     val lab_unknownRow	= Label.fromString "unknownRow"
     val _		= Type.unknownRow : unit -> row		(* verify *)
