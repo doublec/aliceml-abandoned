@@ -34,8 +34,7 @@ structure Url :> URL =
 	type t = url
 
 	exception Malformed
-	exception Crash of string (*--** *)
-
+	exception Crash of string   (*--** *)
 
 	(*
 	 * Split a string at the 1st occurrence of a separator character.
@@ -323,8 +322,7 @@ structure Url :> URL =
 			  | SOME #"?" => parseQuery suffix
 			  | SOME #"#" => parseFragment suffix
 			  | SOME _ =>
-				raise Crash
-				    "Url.fromString parseAuthority"
+				raise Crash "Url.fromString parseAuthority"
 		    end
 		and parsePathDev (c::(#":")::cr) =
 		    (device := SOME (toDevice c); parsePath cr)
