@@ -149,8 +149,13 @@ public:
   bool IsEOF() {
     switch ((IN_STREAM_TYPE) GetLabel()) {
     case FILE_INPUT_STREAM:
-      return (GetRd() >= GetTl() &&
-	      gzgetc(GetFile())<0);
+      if (GetRd() >= GetTl() &&
+	  gzgetc(GetFile()) < 0) {
+	gzseek(GetFile(), -1L, SEEK_CUR);
+	return true;
+      } else {
+	return false;
+      }
       break;
     case STRING_INPUT_STREAM:
       return (GetRd() >= GetTl());
