@@ -3,12 +3,12 @@
 if not defined OZHOME set OZHOME=%PROGRAMFILES%\Mozart
 if not defined STOCKHOME set STOCKHOME=%PROGRAMFILES%\Alice
 
-set ALICE_LOAD=pattern=x-oz:?{x}=x-oz:?{x};pattern=?{x}=?{x}.ozf;pattern=?{x}=?{x}
+set ALICE_LOAD=cache=%HOMEDRIVE%%HOMEPATH%/.alice/cache;pattern=x-oz:?{x}=x-oz:?{x};pattern=?{x}=?{x}.ozf;pattern=?{x}=?{x}
 
 if defined ALICE_LOAD_PREFIX set ALICE_LOAD=%ALICE_LOAD_PREFIX%;%ALICE_LOAD%
 if defined ALICE_LOAD_SUFFIX set ALICE_LOAD=%ALICE_LOAD%;%ALICE_LOAD_PREFIX%
 
-if not defined OZ_LOAD set OZ_LOAD=cache=%HOMEDRIVE%%HOMEPATH%/.oz;cache=%OZHOME%/cache
+if not defined OZ_LOAD set OZ_LOAD=cache=%HOMEDRIVE%%HOMEPATH%/.oz/cache;cache=%OZHOME%/cache
 
 set OZ_LOAD=%ALICE_LOAD%;pattern=x-alice:/?{x}=%STOCKHOME%/?{x}.ozf;%OZ_LOAD%
 

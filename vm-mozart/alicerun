@@ -41,7 +41,7 @@ case $(uname) in
 	;;
 esac
 
-ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz${esc}:'?{x}'${sep}pattern='?{x}'='?{x}.ozf'${sep}pattern='?{x}'='?{x}'
+ALICE_LOAD=cache=~/.alice/cache${sep}pattern=x-oz:'?{x}'=x-oz${esc}:'?{x}'${sep}pattern='?{x}'='?{x}.ozf'${sep}pattern='?{x}'='?{x}'
 
 if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then
