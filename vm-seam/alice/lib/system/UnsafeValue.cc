@@ -12,6 +12,7 @@
 //
 
 #include "alice/Authoring.hh"
+#include "generic/Debug.hh"
 
 //
 // RequestInterpreter
@@ -38,12 +39,12 @@ public:
 
 class RequestFrame: public StackFrame {
 protected:
-  enum { QUEUE_POS, BYNEED_POS, AGAIN_POS, SIZE };
+  enum { FUTURE_POS, CLOSURE_POS, AGAIN_POS, SIZE };
 public:
-  static RequestFrame *New(Interpreter *interpreter, word queue, word byneed) {
+  static RequestFrame *New(Interpreter *interpreter, word future, word closure) {
     NEW_STACK_FRAME(frame, interpreter, SIZE);
-    frame->InitArg(QUEUE_POS, queue);
-    frame->InitArg(BYNEED_POS, byneed);
+    frame->InitArg(FUTURE_POS, future);
+    frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(AGAIN_POS, false);
     return STATIC_CAST(RequestFrame *, frame);
   }
@@ -51,11 +52,12 @@ public:
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
   }
-  Queue *GetQueue() {
-    return Queue::FromWord(StackFrame::GetArg(QUEUE_POS));
+  Future *GetFuture() {
+    word wFuture = StackFrame::GetArg(FUTURE_POS);
+    return STATIC_CAST(Future *, Store::WordToTransient(wFuture));
   }
-  word GetByneed() {
-    return StackFrame::GetArg(BYNEED_POS);
+  word GetClosure() {
+    return StackFrame::GetArg(CLOSURE_POS);
   }
   bool GetAgain() {
     return Store::DirectWordToInt(StackFrame::GetArg(AGAIN_POS));
@@ -77,17 +79,17 @@ Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
   RequestFrame *frame = STATIC_CAST(RequestFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   if (frame->GetAgain()) {
-    Queue *queue = frame->GetQueue();
+    Construct(); // TODO: Is this really necessary?
+    Future *future = frame->GetFuture();
+    future->ScheduleWaitingThreads();
+    future->Become(REF_LABEL, Scheduler::currentArgs[0]);
     Scheduler::PopFrame(frame->GetSize());
-    while (!queue->IsEmpty()) {
-      Thread *thread = Thread::FromWordDirect(queue->Dequeue());
-      Scheduler::ResumeThread(thread);
-    }
     return Worker::CONTINUE;
   } else {
     frame->SetAgain();
-    Scheduler::currentData = frame->GetByneed();
-    return Worker::REQUEST;
+    Scheduler::nArgs = 1;
+    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    return Scheduler::PushCall(frame->GetClosure());
   }
 }
 
@@ -125,29 +127,28 @@ DEFINE2(UnsafeValue_same) {
 
 DEFINE1(UnsafeValue_awaitRequest) {
   Transient *transient = Store::WordToTransient(x0);
-  if (transient == INVALID_POINTER) RETURN(x0);
+  if (transient == INVALID_POINTER)
+    RETURN(x0);
   if (transient->GetLabel() == BYNEED_LABEL) {
     Closure *closure = STATIC_CAST(Byneed *, transient)->GetClosure();
-    word wConcreteCode = closure->GetConcreteCode();
-    ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
-    Queue *queue;
-    Scheduler::nArgs = 1;
-    if (concreteCode != INVALID_POINTER &&
-	concreteCode->GetInterpreter() == RequestInterpreter::self) {
-      queue = Queue::FromWordDirect(closure->Sub(0));
-      Scheduler::currentArgs[0] = closure->Sub(1);
+    ConcreteCode *concreteCode =
+      ConcreteCode::FromWord(closure->GetConcreteCode());
+    word wFuture;
+    if ((concreteCode != INVALID_POINTER) &&
+	(concreteCode->GetInterpreter() == RequestInterpreter::self)) {
+      wFuture = closure->Sub(0);
     } else {
-      Byneed *copy = Byneed::New(closure->ToWord());
-      ConcreteCode *concCode = ConcreteCode::New(RequestInterpreter::self, 0);
-      Closure *requestClosure = Closure::New(concCode->ToWord(), 2);
-      queue = Queue::New(2);
-      requestClosure->Init(0, queue->ToWord());
-      requestClosure->Init(1, copy->ToWord());
+      wFuture = Future::New()->ToWord();
+      ConcreteCode *requestConcreteCode =
+	ConcreteCode::New(RequestInterpreter::self, 0);
+      Closure *requestClosure = Closure::New(requestConcreteCode->ToWord(), 2);
+      requestClosure->Init(0, wFuture);
+      requestClosure->Init(1, closure->ToWord());
       transient->ReplaceArg(requestClosure->ToWord());
-      Scheduler::currentArgs[0] = copy->ToWord();
     }
-    queue->Enqueue(Scheduler::GetCurrentThread()->ToWord());
-    SUSPEND;
+    Scheduler::nArgs          = 1;
+    Scheduler::currentArgs[0] = wFuture;
+    REQUEST(wFuture);
   }
   REQUEST(x0);
 } END
@@ -354,6 +355,7 @@ DEFINE1(UnsafeValue_outArity) {
 } END
 
 AliceDll word UnsafeValue() {
+  RequestInterpreter::Init();
   Record *record = Record::New(21);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
