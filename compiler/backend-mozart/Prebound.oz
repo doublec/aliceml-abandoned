@@ -194,8 +194,8 @@ define
 	    end
 	 end
       'GlobalStamp.hash': BootName.hash
-      'Hole.Cyclic': {NewUniqueName 'Hole.Cyclic'}
-      'Hole.Hole': {NewUniqueName 'Hole.Hole'}
+      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
+      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
       'Hole.fail':
 	 fun {$ X E}
 	    try
