@@ -3,7 +3,8 @@ structure Output =
 struct
     (* evaluate only after parse? *)
     val closure = false
-
+    (* print error structure at the beginning ? *)
+    val printErrorStruct = false
     (* print description file *)
     val description = true
 
@@ -261,7 +262,8 @@ struct
 			^"    val table = J.generatedLrTable\n"
 			^"    val saction = J.SAction.actions\n"
 			^"    val void = J.SValue.VOID\n"
-			^"    val error = "^structureName3^".error\n"
+			^"    val error = "
+			^(if printErrorStruct then structureName3^".error\n" else "parseError\n")
 			^"    fun extract (J.SValue."^(Translate.start)^" a) =\n"
 			^"        case a () of (J.SValue.S"^(Int.toString n)^" b) => b\n"
 			^"in\n    extract (J.LrParser.parse {arg=arg,\n" 
@@ -279,12 +281,14 @@ struct
 		^"structure "^structureName2^" = \nstruct\n"
 		^(undoBinding termlist)^"end\n(* --- *)\n\n"
 	    val errorDef =
-		"(* ---error function for syntax errors: adapt to needs *)\n"
-		^"structure "^structureName3^" = \nstruct\n"
-		^"  exception ParseError\n\n"
-		^"  (* val error : position type -> parse result type *)\n" 
-		^"  val error = fn pos => raise ParseError\n"
-		^"end\n(* --- *)\n\n"
+		if printErrorStruct then
+		    "(* ---error function for syntax errors: adapt to needs *)\n"
+		    ^"structure "^structureName3^" = \nstruct\n"
+		    ^"  exception ParseError\n\n"
+		    ^"  (* val error : position type -> parse result type *)\n" 
+		    ^"  val error = fn pos => raise ParseError\n"
+		    ^"end\n(* --- *)\n\n"
+		else ""
 
 	    val p = (A.MLCode [errorDef, hack]) ::p
  
