@@ -75,9 +75,9 @@ structure Common=
 	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
 	val mainpickle = ref ~1 (* JVM-Register, in dem Struktur steht *)
 
-	val _ = Compiler.Control.Print.printLength := 10000;
+	(*val _ = Compiler.Control.Print.printLength := 10000;
 	val _ = Compiler.Control.Print.printDepth := 10000;
-	val _ = SMLofNJ.Internals.GC.messages false
+	val _ = SMLofNJ.Internals.GC.messages false*)
 
 (* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
  Funktionsparameters ist. *)

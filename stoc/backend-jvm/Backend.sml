@@ -203,8 +203,8 @@ structure Backend=
 	    end
 
 
-	fun atCodeInt (i:Int32.int) =
-	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.<= (i, Int.toLarge 5)
+	fun atCodeInt (i:LargeInt.int) =
+	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.>= (Int.toLarge 5, i)
 		then Iconst (Int.fromLarge i) else
 		    if LargeInt.>= (i, Int.toLarge ~128)
 			andalso LargeInt.>= (Int.toLarge 127, i)
@@ -214,7 +214,7 @@ structure Backend=
 				then Sipush (Int.fromLarge i)
 			    else Ldc (JVMInt i)
 
-	fun atCodeWord (i:Word32.word) =
+	fun atCodeWord (i:LargeWord.word) =
 	    if LargeWord.>= (i, Word.toLargeWord (Word.fromInt ~1)) andalso
 		LargeWord.>= (Word.toLargeWord (Word.fromInt 5), i)
 		then Iconst (Int.fromLarge (LargeWord.toLargeInt i)) else
