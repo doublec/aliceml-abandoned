@@ -261,7 +261,6 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (SelAppExp (_, _, _, id), lset) = ins (lset, id)
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
 
 	(* Compute `Def' and `Kill' sets *)
 

@@ -136,12 +136,13 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputList (outputPair (outputLabel, outputX)) (q, labelIdList);
 	     r q)
 
-	fun outputConArity (q, Nullary) = output (q, "nullary")
-	  | outputConArity (q, Unary) = output (q, "unary")
-	  | outputConArity (q, Tuple i) =
-	    (f (q, "tuple"); output (q, Int.toString i); r q)
-	  | outputConArity (q, Record labels) =
-	    (f (q, "record"); outputList outputLabel (q, labels); r q)
+	fun outputArity (q, Unary) = output (q, "unary")
+	  | outputArity (q, TupArity i) =
+	    (f (q, "tupArity"); output (q, Int.toString i); r q)
+	  | outputArity (q, RecArity labels) =
+	    (f (q, "recArity"); outputList outputLabel (q, labels); r q)
+
+	val outputConArity = outputOption outputArity
 
 	fun outputTest (q, LitTest lit) =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
@@ -223,9 +224,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	and outputExp (q, LitExp (info, lit)) =
 	    (f (q, "litExp"); outputExpInfo (q, info); m q;
 	     outputLit (q, lit); r q)
-	  | outputExp (q, PrimExp (info, string)) =
+	  | outputExp (q, PrimExp (info, name)) =
 	    (f (q, "primExp"); outputExpInfo (q, info); m q;
-	     outputAtom (q, string); r q)
+	     outputAtom (q, name); r q)
 	  | outputExp (q, NewExp (info, conArity)) =
 	    (f (q, "newExp"); outputExpInfo (q, info); m q;
 	     outputConArity (q, conArity); r q)
@@ -262,9 +263,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
 	     outputArgs outputId (q, args); m q; outputBody (q, body); r q)
-	  | outputExp (q, PrimAppExp (info, string, ids)) =
+	  | outputExp (q, PrimAppExp (info, name, ids)) =
 	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
-	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
+	     outputAtom (q, name); m q; outputList outputId (q, ids); r q)
 	  | outputExp (q, VarAppExp (info, id, args)) =
 	    (f (q, "varAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
@@ -289,9 +290,6 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "funAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputStamp (q, stamp); m q;
 	     outputArgs outputId (q, args); r q)
-	  | outputExp (q, AdjExp (info, id1, id2)) =
-	    (f (q, "adjExp"); outputExpInfo (q, info); m q;
-	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
 	fun externalize (q, (filename, (importList, (stms, _)))) =

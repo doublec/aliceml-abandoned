@@ -12,5 +12,7 @@ is
     flat-grammar.cm
     output-flat-grammar.cm
 
+    PRIM_OPS.sig
+    PrimOps.sml
     VALUE_PROPAGATION_PHASE.sig
     ValuePropagationPhase.sml

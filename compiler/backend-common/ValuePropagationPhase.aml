@@ -199,9 +199,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		    doSelRec (info, labelIdList, n)
 	      | (_, _) => SelAppExp (info, label, n, id)
 
-	fun arityMatches (OneArg _, Unary) = true
-	  | arityMatches (TupArgs _, Tuple _) = true
-	  | arityMatches (RecArgs _, Record _) = true
+	fun arityMatches (OneArg _, SOME Unary) = true
+	  | arityMatches (TupArgs _, SOME (TupArity _)) = true
+	  | arityMatches (RecArgs _, SOME (RecArity _)) = true
 	  | arityMatches (_, _) = false
 
 	fun alias (id, id' as Id (info', _, _), env, isToplevel) =
@@ -255,6 +255,30 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | dynamicTest (ConAppTest (id, args), env) =
 	    DYNAMIC_TEST (ConAppTest (deref (id, env), args))
 	  | dynamicTest (test, _) = DYNAMIC_TEST test
+
+	fun vpPrimApp (info, name, ids) =   (*--** evaluate partially *)
+	    PrimAppExp (info, name, ids)
+
+	fun primAppExp (info, _, name, Unary, args as OneArg id, _) =
+	    vpPrimApp (info, name, [id])
+	  | primAppExp (info, id, name, TupArity _, args as OneArg id', env) =
+	    (case IdMap.lookupExistent (env, id') of
+		 ((EXP (TupExp (_, ids), _) |
+		   TEST (TupTest ids, _)), _) =>
+		     vpPrimApp (info, name, ids)
+	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
+	  | primAppExp (info, id, name, RecArity _, args as OneArg id', env) =
+	    (case IdMap.lookupExistent (env, id') of
+		 ((EXP (RecExp (_, labelIdList), _) |
+		   TEST (RecTest labelIdList, _)), _) =>
+		     vpPrimApp (info, name, List.map #2 labelIdList)
+	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
+	  | primAppExp (info, id, name, TupArity _, TupArgs ids, _) =
+	    vpPrimApp (info, name, ids)
+	  | primAppExp (info, id, name, RecArity _, RecArgs labelIdList, _) =
+	    vpPrimApp (info, name, List.map #2 labelIdList)
+	  | primAppExp (info, id, _, _, args, _) =
+	    VarAppExp (info, id, args)   (*--** *)
 
 	fun vpTest (test, UNKNOWN, env, _) = dynamicTest (test, env)
 	  | vpTest (LitTest lit,
@@ -463,20 +487,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    in
 		FunExp (info, stamp, flags, args, body')
 	    end
-	  | vpExp (PrimAppExp (info, string, ids), env, _, _) =
-	    (*--** make sure it's applied with the correct arity *)
-	    (*--** partially evaluate this application *)
-	    PrimAppExp (info, string, List.map (fn id => deref (id, env)) ids)
+	  | vpExp (PrimAppExp (info, name, ids), env, _, _) =
+	    vpPrimApp (info, name, List.map (fn id => deref (id, env)) ids)
 	  | vpExp (VarAppExp (info, id, args), env, _, _) =
 	    let
 		val id = deref (id, env)
 		val args = derefArgs (args, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		    (EXP (PrimExp (_, string), _), _) =>
-			(case args of
-			     TupArgs ids => PrimAppExp (info, string, ids)
-			   | _ => VarAppExp (info, id, args))
+		    (EXP (PrimExp (_, name), _), _) =>
+			primAppExp (info, deref (id, env), name,
+				    valOf (PrimOps.getArity name), args, env)
 		  | (EXP (TagExp (_, label, n, conArity), _), _) =>
 			if arityMatches (args, conArity) then
 			    TagAppExp (info, label, n, args)
@@ -492,7 +513,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		  | (EXP (RefExp _, _), _) =>
 			(case args of
 			     OneArg id => RefAppExp (info, id)
-			   | _ => VarAppExp (info, id, args))
+			   | _ => VarAppExp (info, id, args))   (*--** *)
 		  | (EXP (SelExp (_, label, n), _), _) =>
 			(case derefArgs (args, env) of
 			     OneArg id =>
@@ -525,9 +546,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    doSel (info, label, n, deref (id, env), env)
 	  | vpExp (FunAppExp (info, id, stamp, args), env, _, _) =
 	    FunAppExp (info, id, stamp, derefArgs (args, env))
-	  | vpExp (AdjExp (info, id1, id2), env, _, _) =
-	    (*--** evaluate partially *)
-	    AdjExp (info, deref (id1, env), deref (id2, env))
 	and vpBody (stm::stms, env, isToplevel, shared) =
 	    vpStm (stm, env, isToplevel, shared)::
 	    vpBody (stms, env, isToplevel, shared)
@@ -562,17 +580,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		open Prebound
 	    in
 		ins (valstamp_false, valname_false,
-		     (exp (TagExp (info, Label.fromString "false", 0,
-				   Nullary))));
+		     (exp (TagExp (info, Label.fromString "false", 0, NONE))));
 		ins (valstamp_true, valname_true,
-		     (exp (TagExp (info, Label.fromString "true", 1,
-				   Nullary))));
+		     (exp (TagExp (info, Label.fromString "true", 1, NONE))));
 		ins (valstamp_nil, valname_nil,
-		     (exp (TagExp (info, Label.fromString "nil", 1,
-				   Nullary))));
+		     (exp (TagExp (info, Label.fromString "nil", 1, NONE))));
 		ins (valstamp_cons, valname_cons,
-		     (exp (TagExp (info, Label.fromString "::", 0,
-				   Nullary))));
+		     (exp (TagExp (info, Label.fromString "::", 0, NONE))));
 		ins (valstamp_ref, valname_ref,
 		     (exp (RefExp info)));
 		(*--** use StaticConExps: *)

@@ -35,16 +35,18 @@ signature FLAT_GRAMMAR =
 
 	datatype id = Id of id_info * Stamp.t * Name.t
 
-	datatype conArity =
-	    Nullary
-	  | Unary
-	  | Tuple of int
-	  | Record of label list
-
 	datatype funFlag =
 	    PrintName of string
 	  | AuxiliaryOf of stamp
 	  | IsToplevel
+
+	datatype arity =
+	    Unary
+	  | TupArity of int
+	  | RecArity of label list
+	    (* sorted, all labels distinct, no tuple *)
+
+	type conArity = arity option
 
 	datatype 'a args =
 	    OneArg of 'a
@@ -103,7 +105,6 @@ signature FLAT_GRAMMAR =
 	  | RefAppExp of exp_info * id
 	  | SelAppExp of exp_info * label * int * id
 	  | FunAppExp of exp_info * id * stamp * id args
-	  | AdjExp of exp_info * id * id
 	withtype body = stm list
 
 	type sign = IntermediateGrammar.sign

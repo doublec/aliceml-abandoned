@@ -273,9 +273,9 @@ define
 			    {TranslateRegion Region State} VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] tagExp(_ Label _ nullary) then
+      [] tagExp(_ Label _ none) then
 	 VHd = vEquateConstant(_ Label Reg VTl)
-      [] tagExp(Region Label _ unary) then
+      [] tagExp(Region Label _ some(unary)) then
 	 PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
 	 PredId = pid(Label 2 {TranslateRegion Region State} nil NLiveRegs)
@@ -286,13 +286,13 @@ define
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
-      [] tagExp(_ Label _ tuple(0)) then
+      [] tagExp(_ Label _ some(tupArity(0))) then
 	 VHd = vEquateConstant(_ fun {$ unit} Label end Reg VTl)
-      [] tagExp(_ Label _ _) then
+      [] tagExp(_ Label _ some(_)) then
 	 VHd = vEquateConstant(_ fun {$ X} {Adjoin X Label} end Reg VTl)
-      [] conExp(_ Id nullary) then
+      [] conExp(_ Id none) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(Region Id ConArity) then
+      [] conExp(Region Id some(Arity)) then
 	 Coord PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
 	 Coord = {TranslateRegion Region State}
@@ -300,14 +300,14 @@ define
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ArgReg)}
 	 {State.cs newReg(?ResReg)}
-	 case ConArity of unary then WidthReg VInter1 VInter2 in
+	 case Arity of unary then WidthReg VInter1 VInter2 in
 	    {State.cs newReg(?WidthReg)}
 	    VInstr = vEquateConstant(_ 1 WidthReg VInter1)
 	    VInter1 = vCallBuiltin(_ 'Tuple.make'
 				   [{GetReg Id State} WidthReg ResReg]
 				   Coord VInter2)
 	    VInter2 = vInlineDot(_ ResReg 1 ArgReg true Coord nil)
-	 [] tuple(0) then VInter in
+	 [] tupArity(0) then VInter in
 	    VInstr = vCallBuiltin(_ 'Value.wait' [ArgReg] Coord VInter)
 	    VInter = vUnify(_ ResReg {GetReg Id State} nil)
 	 else
@@ -502,10 +502,6 @@ define
 			  {TranslateRegion Region State} VTl)
       [] funAppExp(Region Id _ Args) then
 	 {TranslateExp varAppExp(Region Id Args) Reg VHd VTl State}
-      [] adjExp(Region Id1 Id2) then
-	 VHd = vCallBuiltin(_ 'Record.adjoin' [{GetReg Id1 State}
-					       {GetReg Id2 State} Reg]
-			    {TranslateRegion Region State} VTl)
       end
    end
 

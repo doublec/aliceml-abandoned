@@ -34,7 +34,8 @@ signature INTERMEDIATE_AUX =
 
 	val separateAlt: I.pat -> I.pat
 
+	val typToArity: Type.t -> O.arity
 	val makeConArity: Type.t * bool -> O.conArity
-
+	val labelToIndexOpt: O.arity * Label.t -> int option
 	val labelToIndex: Type.t * Label.t -> int
     end

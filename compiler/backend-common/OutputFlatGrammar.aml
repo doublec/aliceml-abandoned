@@ -85,13 +85,13 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
 	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
 
-	fun outputTag Nullary = S "tag0"
-	  | outputTag Unary = S "tag1"
-	  | outputTag (Tuple _ | Record _) = S "tag+"
+	fun outputTag NONE = S "tag0"
+	  | outputTag (SOME Unary) = S "tag1"
+	  | outputTag (SOME (TupArity _) | SOME (RecArity _)) = S "tag+"
 
-	fun outputCon Nullary = S "con0"
-	  | outputCon Unary = S "con1"
-	  | outputCon (Tuple _ | Record _) = S "con+"
+	fun outputCon NONE = S "con0"
+	  | outputCon (SOME Unary) = S "con1"
+	  | outputCon (SOME (TupArity _) | SOME (RecArity _)) = S "con+"
 
 	fun outputArgs (OneArg id) = ID id
 	  | outputArgs (TupArgs ids) =
@@ -166,7 +166,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
-	  | outputExp (PrimExp (_, s)) = SEQ [S "prim \"", S s, S "\""]
+	  | outputExp (PrimExp (_, name)) = SEQ [S "prim \"", S name, S "\""]
 	  | outputExp (NewExp (_, conArity)) = outputCon conArity
 	  | outputExp (VarExp (_, id)) = ID id
 	  | outputExp (TagExp (_, label, n, conArity)) =
@@ -192,8 +192,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (FunExp (_, _, _, args, body)) =
 	    SEQ [NL, S "fn ", outputArgs args, S " =>",
 		 IN, NL, outputBody (body, StampSet.new ()), EX]
-	  | outputExp (PrimAppExp (_, s, ids)) =
-	    SEQ [S "prim\"", S s, S "\" ", SEP (S ", ", List.map ID ids)]
+	  | outputExp (PrimAppExp (_, name, ids)) =
+	    SEQ [S "prim\"", S name, S "\" ", SEP (S ", ", List.map ID ids)]
 	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
 	  | outputExp (TagAppExp (_, label, n, args)) =
@@ -207,8 +207,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "ref ", ID id]
 	  | outputExp (SelAppExp (_, label, n, id)) =
 	    SEQ [S "#", S (Label.toString label), S "/", I n, S " ", ID id]
-	  | outputExp (AdjExp (_, id1, id2)) =
-	    SEQ [S "adj ", ID id1, S ", ", ID id2]
 	  | outputExp (FunAppExp (_, id, _, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
 	and outputBody (stms, shared) =
