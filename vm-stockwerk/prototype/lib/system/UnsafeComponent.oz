@@ -20,7 +20,6 @@ import
    Resolve(trace)
    System(printError)
    Pickle(load save) at '../../Pickle.ozf'
-   Linker(getInitialTable) at '../../Linker.ozf'
 export
    module: ComponentComponent
 define
@@ -111,7 +110,7 @@ define
 	 I_Corrupt: value(CorruptException)
 	 I_PrimeCorrupt: value(CorruptException)
 	 I_extension: value(Extension)
-	 I_getInitialTable: Linker.getInitialTable#n_v
+	 I_getInitialTable: {Property.get 'alice.getInitialTable'}#n_v
 	 I_save: Pickle.save#ri_t
 	 I_load:
 	    fun {$ URL TaskStack}
