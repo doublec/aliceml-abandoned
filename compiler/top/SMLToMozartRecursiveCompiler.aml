@@ -47,13 +47,14 @@ structure SMLToMozartRecursiveCompiler =
 	    MkFrontendCommon(val loadSig = loadSig
 			     structure Switches = Switches)
 
-	structure BackendCommon =
-	    MkBackendCommon(val loadMod = loadMod
-			    structure Switches = Switches)
-
 	structure BackendMozart =
 	    MkBackendMozart(structure ComponentManager = ComponentManager
 			    structure Switches         = Switches)
+
+	structure BackendCommon =
+	    MkBackendCommon(val isCross = BackendMozart.isCross
+			    val loadMod = loadMod
+			    structure Switches = Switches)
 
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
