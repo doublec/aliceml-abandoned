@@ -525,8 +525,7 @@ u_int BootLinker::numberOfEntries;
 void BootLinker::Init(NativeComponent *nativeComponents) {
   RootSet::Add(componentTable);
   RootSet::Add(keyQueue);
-  componentTable =
-    HashTable::New(HashTable::BLOCK_KEY, INITIAL_TABLE_SIZE)->ToWord();
+  componentTable = ChunkMap::New(INITIAL_TABLE_SIZE)->ToWord();
   keyQueue = Queue::New(INITIAL_QUEUE_SIZE)->ToWord();
   numberOfEntries = 0;
   // Initialize Workers
@@ -547,17 +546,17 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
 
 void BootLinker::EnterComponent(String *key, word sign, word str) {
   Assert(!GetComponentTable()->IsMember(key->ToWord()));
-  GetComponentTable()->InsertItem(key->ToWord(),
-				  Component::New(sign, str)->ToWord());
+  GetComponentTable()->Put(key->ToWord(),
+			   Component::New(sign, str)->ToWord());
   GetKeyQueue()->Enqueue(key->ToWord());
   numberOfEntries++;
 }
 
 Component *BootLinker::LookupComponent(String *key) {
-  HashTable *componentTable = GetComponentTable();
+  ChunkMap *componentTable = GetComponentTable();
   word keyWord = key->ToWord();
   if (componentTable->IsMember(keyWord)) {
-    return Component::FromWordDirect(componentTable->GetItem(keyWord));
+    return Component::FromWordDirect(componentTable->Get(keyWord));
   } else {
     return INVALID_POINTER;
   }
