@@ -992,7 +992,7 @@ structure CodeGen =
 			    (Lambda.noSapply ();
 			     [Comment ("Hi. Stamp="^(Stamp.toString stamp')^
 				       ". Lambda.top = "^Stamp.toString (Lambda.top())^
-				       " in "^Stamp.toString (Local.get stamp')^
+				       " in "^Int.toString (Local.get stamp')^
 				       ". Fun = "^(Stamp.toString
 						   (FreeVars.getFun
 						    stamp'))^
