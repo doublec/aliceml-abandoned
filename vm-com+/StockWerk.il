@@ -352,6 +352,21 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
+    .method virtual public class StockWerk.StockWert Apply0() {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
     .method virtual public bool Equals(class StockWerk.StockWert) {
     retry:
       ldarg.0
@@ -688,8 +703,14 @@
     }
     .method virtual public class System.String ToString() {
       //--** escape characters
+      ldstr "\""
+      newobj instance void System.StringBuilder::.ctor(class System.String)
       ldarg.0
       ldfld class System.String StockWerk.String::Value
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldstr "\""
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
       ret
     }
   }
@@ -757,14 +778,8 @@
       ret
     }
     .method virtual public class System.String ToString() {
-      ldstr "<N:"
-      newobj instance void System.StringBuilder::.ctor(class System.String)
       ldarg.0
       ldfld class System.String StockWerk.NamedName::Name
-      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
-      ldstr ">"
-      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
-      tail. call instance class System.String System.StringBuilder::ToString()
       ret
     }
   }
@@ -800,14 +815,8 @@
       ret
     }
     .method virtual public class System.String ToString() {
-      ldstr "<C:"
-      newobj instance void System.StringBuilder::.ctor(class System.String)
       ldarg.0
-      ldfld class System.String StockWerk.NamedConstructor::Name
-      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
-      ldstr ">"
-      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
-      tail. call instance class System.String System.StringBuilder::ToString()
+      ldfld class System.String StockWerk.NamedName::Name
       ret
     }
   }
@@ -851,6 +860,19 @@
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
+    }
+    .method virtual public class System.String ToString() {
+      ldarg.0
+      ldfld class StockWerk.Constructor StockWerk.ConVal::Con
+      callvirt instance class System.String System.Object::ToString()
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldstr " "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
     }
   }
 
@@ -908,6 +930,15 @@
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
+    }
+    .method synchronized virtual public class System.String ToString() {
+      ldstr "ref "
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Ref::Value
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
     }
   }
 
@@ -978,6 +1009,22 @@
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Match
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
+    }
+    .method virtual public class System.String ToString() {
+      ldstr "("
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ")"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
     }
   }
 
@@ -1059,6 +1106,27 @@
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Match
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
+    }
+    .method virtual public class System.String ToString() {
+      ldstr "("
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple3::Value1
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple3::Value2
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple3::Value3
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldstr ")"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
     }
   }
 
@@ -1673,19 +1741,37 @@
       ret
     }
     .method virtual public class StockWerk.StockWert Apply0() {
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+      ldarg.0
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+      ldarg.0
+      newobj instance void StockWerk.Tuple2::.ctor()
+      dup
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      ldarg.2
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      ret
     }
     .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+      ldarg.0
+      newobj instance void StockWerk.Tuple3::.ctor()
+      dup
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Tuple3::Value1
+      dup
+      ldarg.2
+      stfld class StockWerk.StockWert StockWerk.Tuple3::Value2
+      dup
+      ldarg.3
+      stfld class StockWerk.StockWert StockWerk.Tuple3::Value3
+      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      ret
     }
   }
 
@@ -2282,7 +2368,7 @@
       ldarg.1
       castclass StockWerk.String
       ldfld class System.String StockWerk.String::Value
-      call void Console::Write(class System.String)
+      call void System.Console::Write(class System.String)
       ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
       ret
     testTransient:
