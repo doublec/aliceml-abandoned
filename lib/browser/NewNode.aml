@@ -73,11 +73,12 @@ struct
   
     (* createGraph *)
     and createGraph (va,t,p,i,d) = 
-	if !relmode 
+	if !relmode (* Konstruktion im Relationsmodus *)
 	    then let val ind = if p = Empty then i else getAncIndex p
                      val relman = case RelManDictionary.lookup(reldict,ind)
 			 of SOME x => x
 		       | NONE => []
+		     val desc = createValue(va,t,NO_ACTIONS) 
                      val str = "Ref"^Int.toString(!relnumber)
                      val f = if !tokenmode
 				 then fn x   
@@ -92,8 +93,7 @@ struct
 		 in 
 		     (case List.find f relman of   
 		      NONE 
-		      => let val desc = createValue(va,t,NO_ACTIONS)   
-			     val node = createRelNode (desc,Empty,p,i,d,
+		      => let val node = createRelNode (desc,Empty,p,i,d,
 						       str^" as ",
 						       relman,setGroup)
 			     val c = createUsualGraph (va,t,node,0,d) 
@@ -102,14 +102,11 @@ struct
 							 ind)
 				 of SOME x => x
 			       | NONE => []
-			 in ( case c of     
-			      Simple(_) => c
-			    | Empty => c    
-                            | _ => ( setContent (node,c)   
-				    ; RelManDictionary.update(reldict,
-								  (ind,
-					        List.append([node],actrelman)))
-				    ; node ) )
+			 in (setContent (node,c)   
+			     ; RelManDictionary.update(reldict,
+						       (ind,
+						List.append([node],actrelman)))
+			     ; node )
 			 end     
 		    | SOME n => let val rep = ( case n of 
 					        RelNode(rr) => #rep(rr)
@@ -117,7 +114,7 @@ struct
 				    val str = iterTake rep	
 				    val m = incrCounter n 
 				    val node = 
-					createRelRefNode (INTERPUNCT,p,i,d,
+					createRelRefNode (desc,p,i,d,
 							  str,m,setGroup)
 				    val actrelman = case 
 					RelManDictionary.lookup(reldict,ind)

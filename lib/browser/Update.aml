@@ -91,25 +91,30 @@ struct
 	
     (* update *)
     and update (n,va,f,g) = 
+	if !(Settings.relmode) andalso isRelNode(getParent(n)) 
+	    then ()
+	else 
 	( setDazzled n 
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
 	       val old_ydim = Layout.get_ydim(anc)
-	       val new = case getDesc(n) of
-		         VALUE(r) => f(va,#typ(r),getParent(n),getIndex(n),
+	       val p = if isRelNode(getParent(n))
+			   then getParent(getParent(n))
+		       else getParent(n)
+	       val new =
+		   case getDesc(n) of
+		       VALUE(r) => f(va,#typ(r),p,getIndex(n),
+				     getDepth(n))
+		     | I_VALUE(r) => g(va,#typ(r),p,getIndex(n),
 				       getDepth(n))
-		       | I_VALUE(r) => g(va,#typ(r),getParent(n),getIndex(n),
-					 getDepth(n))
-                       | INTERPUNCT => raise UpdateError 
-	       val _ = updateChild(getParent(n),getIndex(n),new)
-	       val node = if getParent(new) = Empty then new else anc 
+		     | INTERPUNCT => raise UpdateError 
+	       val _ = updateChild(p,getIndex(n),new)
+	       val node = if getParent(new) = Empty then new else anc
 	       val (x_pos,y_pos) = Services.getPosition(getGroup(anc))
-	   in ( (y_pos;Gtk.objectDestroy(getGroup(n))) 
-               ; TextIO.print("UPDATE: alte Gruppe zerstoert\n") 
+	   in ( Gtk.objectDestroy(getGroup(n))
 	       ; Layout.layout(node)
-               ; TextIO.print ("UPDATE: beginne zu zeichnen...\n")
 	       ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
                ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
 	       ; TextIO.print ("UPDATE: drawing with y = "

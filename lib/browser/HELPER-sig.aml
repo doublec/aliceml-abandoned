@@ -58,6 +58,9 @@ sig
 
     val setsVertical : node -> bool
 
+    val isSimple : node -> bool
+    val isRelNode : node -> bool
+
     (* Behandlung von Listen *)
     val inspectList : int * 'a list  -> 'a list_desc 
     val castList : 'a -> 'b list

@@ -206,6 +206,14 @@ struct
 		 | _ => false )
      | _ => false
 
+    and isSimple n = case n of
+	Simple _ => true
+      | _ => false
+
+    and isRelNode n = case n of
+	RelNode _ => true
+      | _ => false
+
     fun inspectList(n,x) = inspectList'(n,x,[])
 
     and inspectList'(n,x,xs) =

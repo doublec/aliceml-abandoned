@@ -178,7 +178,13 @@ struct
 					 y-Layout.get_ydim(node)-1,
 					 i+1,
 					 highest_i)
-		      | SOME n => SOME n
+		      | SOME n => ( case getParent(n) of
+				    RelNode(r) 
+				    => if !(#counter(r)) = 1
+					   then SOME n
+				       else SOME (getParent(n))
+                                  | _ => SOME n)
+				   
 						     
     fun search (dict,real_x, real_y) = 
 	let
@@ -192,7 +198,7 @@ struct
 	    val _ = TextIO.print("searching for x:" ^ Int.toString(x) ^ " and y:" ^Int.toString(y)
 				  ^ " \n")
 	in
-	    iterate (dict,x,y,0,highest_i)
+	   iterate (dict,x,y,0,highest_i)
 	end
 
 end

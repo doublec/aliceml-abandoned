@@ -132,22 +132,22 @@ struct
 	RelNode(r) 
 	=> (let val _ = TextIO.print("Entering drawRelNode \n")
 	    in (f(n,x,y)
-		;(case !(#counter(r)) of
-		     1 => let
+	       ; if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
+		     then let
 			      val (new_x,new_y) = draw (!(#content(r)),0,0,f)
-			     in
-				 (x+new_x,y+new_y)
-				 end
-		   | _ => let 
-			      val (new_x,new_y) = atomDraw (n,0,0,f)
-			      val content = !(#content(r))
-			      val (x2,y2) = draw (content,
-						  new_x,new_y,f)
 			  in
-			      (x + String.length(#rep(r)) +   
-			       Layout.get_xdim(content),
-			       y + Layout.get_ydim(n)-1)
-			  end))
+			      (x+new_x,y+new_y)
+			  end
+		 else let 
+			  val (new_x,new_y) = atomDraw (n,0,0,f)
+			  val content = !(#content(r))
+			  val (x2,y2) = draw (content,
+					      new_x,new_y,f)
+		      in
+			  (x + String.length(#rep(r)) +   
+			   Layout.get_xdim(content),
+			   y + Layout.get_ydim(n)-1)
+		      end )
 	    end)
       | _ => raise DrawError
 
