@@ -350,11 +350,11 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val toAllocate = IntermediateAux.getUsedVars (exp, unallocated)
 		val _ =
 		    IdSet'.app (fn id =>
-				   (IdSet'.deleteExistent (unallocated, id);
+				   (IdSet'.removeExistent (unallocated, id);
 				    IdSet'.insertDisjoint (forward, id)))
 			       toAllocate
 		val _ = case idDef of
-			    IdDef id => IdSet'.delete (unallocated, id)
+			    IdDef id => IdSet'.remove (unallocated, id)
 			  | Wildcard => ()
 		val instr = recToHoles (rest, env, unallocated, forward, instr)
 		val instr =
@@ -557,7 +557,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    Vector.map
 			(fn idRef as O.Local id =>
 			    if IdSet.member (kills, id) then
-				(IdSet.delete (kills, id); O.LastUseLocal id)
+				(IdSet.remove (kills, id); O.LastUseLocal id)
 			    else idRef
 			  | idRef => idRef)
 			(translateIdRefs (Vector.map IdRef globalIds, env))
