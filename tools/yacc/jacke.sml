@@ -31,8 +31,9 @@ struct
 
   fun try filename =
       let val p = parse filename
-	  val yaccGrammar = Translate.translate (NormalForm.toNormalForm p)
-	  val (table,_,_,_) = MakeLrTable.mkTable (yaccGrammar,true)
+	  val Translate.TRANSLATE{grammar,...} = 
+	      Translate.translate (NormalForm.toNormalForm p)
+	  val (table,_,_,_) = MakeLrTable.mkTable (grammar,true)
       in
 	  PrintStruct.makeStruct {table=table,
 				  name="t1",

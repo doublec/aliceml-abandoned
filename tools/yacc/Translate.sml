@@ -6,6 +6,12 @@ struct
     structure A = AbsSyn 
     structure N = NormalForm
 
+    datatype translate = TRANSLATE of {grammar :G.grammar,
+				       stringToTerm :string -> G.term,
+				       stringToNonterm :string -> G.nonterm,
+				       termlist :(string * string option) list
+				       }
+
     val toNonterm = List.find 
     val toTerm = List.find
 
@@ -138,19 +144,26 @@ struct
 	    val noshift = []
 	    val termToString = termToString td
 	    val nontermToString = nontermToString ntd
+	    val stringToTerm = stringToTerm td
+	    val stringToNonterm = stringToNonterm ntd
+	    val termlist = map (fn (x,_) => x) td
 	    val rules = mkRules td ntd x
 	    val precedence = fn t => NONE
-	in
-	    G.GRAMMAR {rules=rules,
-		       terms=terms,
-		       nonterms=nonterms,
-		       start=start,
-		       eop=eop,
-		       noshift=noshift,
-		       precedence=precedence,
-		       termToString=termToString,
-		       nontermToString=nontermToString
-		       }
+	    val grammar = G.GRAMMAR {rules=rules,
+				     terms=terms,
+				     nonterms=nonterms,
+				     start=start,
+				     eop=eop,
+				     noshift=noshift,
+				     precedence=precedence,
+				     termToString=termToString,
+				     nontermToString=nontermToString
+				     }
+	in TRANSLATE {grammar=grammar, 
+		      stringToTerm = stringToTerm,
+		      stringToNonterm = stringToNonterm,
+		      termlist = termlist
+		      }
 	end
     
     val print = fn (g as G.GRAMMAR{termToString,nontermToString,...}) =>

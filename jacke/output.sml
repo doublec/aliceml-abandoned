@@ -63,7 +63,8 @@ struct
 	    fun constrCase (tok as (t,_)) = 
 		(constrPat tok)
 		^" => Token.TOKEN(LrTable.T "
-		^(Int.toString(stringToTerm t))^", (SValue."^(constrInt tok)
+		^(Int.toString(case stringToTerm t of Grammar.T i => i))
+		^", (SValue."^(constrInt tok)
 		^", p1, p2))\n"
 	    fun cases [] = "" (* should not happen *)
 	      | cases [t] = constrCase t
@@ -71,7 +72,7 @@ struct
 	in
 	    "\n(* type lexer = unit -> (token * pos * pos) *)"
 	    ^"\nfun toInternalToken (lexer :lexer) =\n"
-	    ^"    case lexer() of\n"
+	    ^"val fn () =>\n    case lexer() of\n"
 	    ^"      "^(cases terms)
 	end
 
@@ -86,12 +87,12 @@ struct
 	^"end\n"
 
     (* to be done: code for parser *)
-    fun parserDecToString [] = ""
-      | parserDecToString ((name,ty,sr)::ds) =
+    fun parserDecToString (terms,nonterms,stringToTerm) [] = ""
+      | parserDecToString (terms,nonterms,stringToTerm) ((name,ty,sr)::ds) =
 	let val prefix = case ty of
 	    NONE => "val "^name^" "
 	  | SOME ty => "val "^name^" : lexer -> "^ty^" "
-		val decString = printPrelimString (name)
+		val decString = printPrelimString (name,terms,nonterms,stringToTerm)
 	in
 	    cr (decString^prefix^" = fn lexer => lexer\n")
 	end
@@ -103,14 +104,15 @@ struct
 	removeRuleDecs false l
       | removeRuleDecs first (x::l) = x::(removeRuleDecs first l)
 
-    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
-      | absSynToString _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
-      | absSynToString _ (A.ParserDec l) = parserDecToString l
-      | absSynToString lrTable (A.RuleDec l) =
+    fun absSynToString _ _ (A.TokenDec l) = tokenDecToString l
+      | absSynToString _ _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
+      | absSynToString (terms,nonterms,stringToTerm) _ (A.ParserDec l) = 
+	  parserDecToString (terms,nonterms,stringToTerm) l
+      | absSynToString _ lrTable (A.RuleDec l) =
 	"\nlocal structure Table =\nstruct\nopen LrTable\n\n"
 	^lrTable
 	^"end\nin val generatedLrTable = Table.generatedLrTable end\n\n"
-      | absSynToString _ _ = "" (* remove assocDecs *)
+      | absSynToString _ _ _ = "" (* remove assocDecs *)
 
     fun mkPrint init =
 	let val str = ref init
@@ -119,14 +121,21 @@ struct
  
     fun output filename = 
 	let val (r,print) = mkPrint ""
-	    val p = Parse.parse filename
-	    val yaccGrammar = Translate.translate (NormalForm.toNormalForm p)
-	    val (table,_,_,_) = MakeLrTable.mkTable (yaccGrammar,true)
+	    val p = (NormalForm.toNormalForm (Parse.parse filename))
+	    val Translate.TRANSLATE {grammar,stringToTerm,stringToNonterm,termlist} = 
+		  Translate.translate p
+	    val Grammar.GRAMMAR{terms,nonterms,termToString,nontermToString,...} 
+		= grammar
+	    val nontermlist = map nontermToString 
+		(List.tabulate (nonterms, fn x => Grammar.NT x))
+	    val (table,_,_,_) = MakeLrTable.mkTable (grammar,true)
 	    val lrTable = (PrintStruct.makeStruct {table=table,
 						   name="generatedLrTable",
 						   print=print,
 						   verbose=false}; !r)
-	    val code = List.map (absSynToString lrTable)(removeRuleDecs true p)
+	    val code = List.map 
+		(absSynToString (termlist,nontermlist,stringToTerm) lrTable)
+		(removeRuleDecs true p)
 	in
 	    List.foldr (fn (x,r) => x^" "^r) "\n" code
 	end
