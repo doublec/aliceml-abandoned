@@ -78,7 +78,7 @@ static void Init(const char *className, ThrowWorker::Throwable &throwable) {
   ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
   throwable.wClass = classLoader->ResolveClass(JavaString::New(className));
   JavaString *name = JavaString::New("<init>");
-  JavaString *descriptor = JavaString::New("()V");
+  JavaString *descriptor = JavaString::New("(Ljava/lang/String;)V");
   throwable.wMethodRef =
     classLoader->ResolveMethodRef(throwable.wClass, name, descriptor);
   RootSet::Add(throwable.wClass);
