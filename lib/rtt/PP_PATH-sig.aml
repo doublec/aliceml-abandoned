@@ -18,5 +18,6 @@ sig
     type doc  = PrettyPrint.doc
     type path = Path.t
 
-    val ppPath : path -> doc
+    val ppPath :  path -> doc
+    val ppPath' : path list -> path -> doc
 end
