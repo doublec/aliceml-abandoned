@@ -12,9 +12,12 @@
 //   $Revision$
 //
 
-#include <cmath>
+//#include <cmath> // does not work under Cygwin: linking fails for isnan, isinf!
+#include <math.h>
 #include <cstdio>
 #include "alice/Authoring.hh"
+
+//using namespace std;
 
 #define REAL_TO_REAL(name, op)			\
   DEFINE1(name) {				\
@@ -26,7 +29,7 @@
   DEFINE1(name) {					\
     DECLARE_REAL(real, x0);				\
     double value = real->GetValue();			\
-    if (std::isnan(value))				\
+    if (/*std::*/isnan(value))					\
       RAISE(PrimitiveTable::General_Domain);      	\
     double result = op(value);				\
     if (result > STATIC_CAST(double, MAX_VALID_INT) ||	\
@@ -40,10 +43,10 @@
   DEFINE1(name) {				\
     DECLARE_REAL(real, x0);			\
     double value = real->GetValue();		\
-    if (std::isnan(value))			\
+    if (/*std::*/isnan(value))				\
       RAISE(PrimitiveTable::General_Domain);	\
     double result = op(value);			\
-    if (std::isinf(result)) {			\
+    if (/*std::*/isinf(result)) {			\
       RAISE(PrimitiveTable::General_Overflow);	\
     }						\
     BigInt *b = BigInt::New(result);		\
@@ -74,9 +77,9 @@
 
 static inline double Trunc(double x) {
   if (x >= 0.0)
-    return std::floor(x);
+    return /*std::*/floor(x);
   else
-    return std::ceil(x);
+    return /*std::*/ceil(x);
 }
 
 REAL_TO_REAL(Real_opnegate, -)
@@ -88,8 +91,8 @@ REAL_REAL_TO_BOOL_OP(Real_opless, <)
 REAL_REAL_TO_BOOL_OP(Real_opgreater, >)
 REAL_REAL_TO_BOOL_OP(Real_oplessEq, <=)
 REAL_REAL_TO_BOOL_OP(Real_opgreaterEq, >=)
-REAL_TO_INT(Real_ceil, std::ceil)
-REAL_TO_INTINF(Real_largeCeil, std::ceil)
+  REAL_TO_INT(Real_ceil, /*std::*/ceil)
+REAL_TO_INTINF(Real_largeCeil, /*std::*/ceil)
 
 DEFINE2(Real_compare) {
   DECLARE_REAL(real1, x0);
@@ -107,8 +110,8 @@ DEFINE2(Real_compare) {
   }
 } END
 
-REAL_TO_INT(Real_floor, std::floor)
-REAL_TO_INTINF(Real_largeFloor, std::floor)
+REAL_TO_INT(Real_floor, /*std::*/floor)
+  REAL_TO_INTINF(Real_largeFloor, /*std::*/floor)
 
 DEFINE1(Real_fromInt) {
   DECLARE_INT(i, x0);
@@ -122,8 +125,8 @@ DEFINE1(Real_fromLargeInt) {
   RETURN_REAL(res);
 } END
 
-REAL_TO_REAL(Real_realCeil, std::ceil)
-REAL_TO_REAL(Real_realFloor, std::floor)
+REAL_TO_REAL(Real_realCeil, /*std::*/ceil)
+  REAL_TO_REAL(Real_realFloor, /*std::*/floor)
 
 static inline double Rint(double x) {
   double fx = floor(x);
@@ -140,7 +143,7 @@ static inline double Rint(double x) {
 
 REAL_TO_REAL(Real_realRound, Rint)
 REAL_TO_REAL(Real_realTrunc, Trunc)
-REAL_REAL_TO_INT(Real_rem, std::fmod)
+  REAL_REAL_TO_INT(Real_rem, /*std::*/fmod)
 REAL_TO_INT(Real_round, Rint)
 REAL_TO_INTINF(Real_largeRound, Rint)
 
@@ -168,8 +171,8 @@ DEFINE1(Real_toString) {
       hasDecimalPoint = true;
     }
   if (!hasDecimalPoint &&
-      !std::isnan(value) &&
-      !std::isinf(value)) std::strcpy(&buf[i - 1], ".0");
+      !/*std::*/isnan(value) &&
+      !/*std::*/isinf(value)) std::strcpy(&buf[i - 1], ".0");
   RETURN(String::New(buf)->ToWord());
 } END
 
