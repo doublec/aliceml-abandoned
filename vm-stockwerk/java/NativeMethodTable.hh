@@ -55,6 +55,7 @@ private:
   static void java_io_FileOutputStream(JavaString *className);
   static void java_io_ObjectStreamClass(JavaString *className);
   static void java_security_AccessController(JavaString *className);
+  static void sun_misc_Unsafe(JavaString *className);
   static void sun_misc_AtomicLong(JavaString *className);
   static void sun_reflect_Reflection(JavaString *className);
   static void sun_reflect_NativeConstructorAccessorImpl(JavaString *className);

@@ -45,6 +45,7 @@ void NativeMethodTable::Init() {
   java_io_ObjectStreamClass(JavaString::New("java/io/ObjectStreamClass"));
   java_security_AccessController
     (JavaString::New("java/security/AccessController"));
+  sun_misc_Unsafe(JavaString::New("sun/misc/Unsafe"));
   sun_misc_AtomicLong(JavaString::New("sun/misc/AtomicLong"));
   sun_reflect_Reflection(JavaString::New("sun/reflect/Reflection"));
   sun_reflect_NativeConstructorAccessorImpl
