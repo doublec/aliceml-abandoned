@@ -1561,9 +1561,9 @@ structure CodeGen =
 	    end
 	  | expCodeClass _ = Crash.crash "CodeGen.expCodeClass"
 	and
-	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", imperatifyString prog)
+	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", imperatifyString' prog)
 	and
-	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,false,"Emil", imperatifyFile f)
+	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,false,"Emil", imperatifyFile' f)
 
 	(* make array of value list *)
 	and
