@@ -15,8 +15,7 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-# GNU make has no reverse function, but we need these in reversed form, too:
-SUBDIRS = store adt generic alice java
+SUBDIRS = java alice generic adt store
 
 SOURCES = Base.cc InitSeam.cc AliceMain.cc JavaMain.cc
 OBJS = $(SOURCES:%.cc=%.o)
@@ -100,7 +99,7 @@ JAVA_OBJS = $(JAVA_SOURCES:%.cc=java/%.o)
 
 LIBS = -L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
 
-.PHONY: all clean veryclean distclean $(SUBDIRS)
+.PHONY: clean-local veryclean-local distclean-local $(SUBDIRS)
 
 all: alice.exe java.exe
 
@@ -110,35 +109,36 @@ $(SUBDIRS): %:
 seam.dll: Base.o InitSeam.o store adt generic
 	$(LD) $(LDFLAGS) -shared -o $@ Base.o InitSeam.o $(SEAM_OBJS) $(LIBS)
 
-alice.dll: alice seam.dll
+alice.dll: seam.dll alice
 	$(LD) $(LDFLAGS) -shared -o $@ $(ALICE_OBJS) seam.dll $(LIBS)
 
 alice.exe: AliceMain.o alice.dll
 	$(LD) $(LDFLAGS) -o $@ $< alice.dll seam.dll
 
-java.dll: java seam.dll
+java.dll: seam.dll java
 	$(LD) $(LDFLAGS) -shared -o $@ $(JAVA_OBJS) seam.dll $(LIBS)
 
 java.exe: JavaMain.o java.dll
 	$(LD) $(LDFLAGS) -o $@ $< java.dll seam.dll
 
-clean:
+clean: clean-local
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
-	rm -f $(OBJS)
-
-veryclean:
+veryclean: veryclean-local
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
-	rm -f $(OBJS)
-	rm -f seam.dll alice.dll alice.exe java.dll java.exe
-
-distclean:
+distclean: distclean-local
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
+
+clean-local:
 	rm -f $(OBJS)
+veryclean-local: clean-local
 	rm -f seam.dll alice.dll alice.exe java.dll java.exe
+distclean-local: veryclean-local
 	rm -f Makefile.depend
 
-Makefile.depend: Makefile $(SOURCES) JavaMain.cc
-	cd store && $(MAKE) StoreConfig.hh || exit 1
-	$(MAKEDEPEND) $(SOURCES) JavaMain.cc > Makefile.depend
+Makefile.depend: Makefile $(SOURCES) store/StoreConfig.hh
+	$(MAKEDEPEND) $(SOURCES) > Makefile.depend
+
+store/StoreConfig.hh:
+	cd store && make StoreConfig.hh
 
 include Makefile.depend
