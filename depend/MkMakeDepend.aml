@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -42,15 +42,19 @@ struct
 					| _ => cutExtension cs))
 	end
 
+    val escape = String.translate (fn #" " => "\\ "
+				    | #"\\" => "/"
+				    | c => String.str c)
+
     fun depend arguments =
 	(List.app (fn filename =>
 		   let
 		       val filenames = Analyzer.analyzeFile filename
 		   in
-		       TextIO.print (basename filename ^ "." ^
+		       TextIO.print (escape (basename filename) ^ "." ^
 				     extension ^ ":");
 		       List.app (fn filename =>
-				    TextIO.print (" \\\n\t" ^ filename))
+				    TextIO.print (" \\\n\t" ^ escape filename))
 				filenames;
 		       TextIO.print "\n\n"
 		   end
