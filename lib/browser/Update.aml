@@ -201,15 +201,10 @@ struct
     and reinspect (n,f,g) = 
        (Thread.thread
 	(fn () =>
-        (let val va = getValue(getDesc(n))
-	 in  Server.serve(fn () => update(n,va,f,g))
-	 end
-	 ; TextIO.print ("REINSPECT: angeklickter Knoten hat Tiefe "
-			 ^Int.toString(getDepth(n))
-			 ^" und Tiefenlimit ist "
-			 ^Int.toString(!(Settings.max_depth))
-			 ^" !!!\n") )
-	     handle General.Match => raise UpdateError )
+        let val va = getValue(getDesc(n))
+	in  Server.serve(fn () => update(n,va,f,g))
+	end
+	     handle General.Match => raise UpdateError)
       ; () )
 
     (* foldDepth *)
