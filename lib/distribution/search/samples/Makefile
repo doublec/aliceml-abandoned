@@ -25,7 +25,9 @@ STOCOPTS = --rtt-level=no
 
 SOURCES = Sample.aml \
           FDAlpha.aml \
-          FDQueens.aml
+          FDQueens.aml \
+          FDPhoto.aml \
+          Main.aml \
 
 COMPONENTS = $(SOURCES:%.aml=%.ozf)
 
