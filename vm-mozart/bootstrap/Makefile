@@ -48,6 +48,7 @@ COMMONSOURCES = \
 	LABEL_REFLECTION.sig LabelReflection.sml \
 	PATH_REFLECTION.sig PathReflection.sml \
 	TYPE_REFLECTION.sig TypeReflection.sml \
+	PERVASIVE_TYPE_REFLECTION.sig PervasiveTypeReflection.sml \
 	FIXITY_REFLECTION.sig FixityReflection.sml \
 	INF_REFLECTION.sig InfReflection.sml
 COMMONFILES = $(COMMONSOURCES:%=common/%)

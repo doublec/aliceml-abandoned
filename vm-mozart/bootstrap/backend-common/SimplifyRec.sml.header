@@ -35,6 +35,10 @@ import
 from "x-alice:/backend-common/MakeLabelSort.ozf"
 
 import
+    structure FlatGrammar
+from "x-alice:/backend-common/FlatGrammar.ozf"
+
+import
     structure IntermediateAux
 from "x-alice:/backend-common/IntermediateAux.ozf"
 

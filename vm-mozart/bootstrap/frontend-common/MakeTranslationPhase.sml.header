@@ -11,6 +11,10 @@ import
 from "x-alice:/infrastructure/Source.ozf"
 
 import
+    structure Error
+from "x-alice:/infrastructure/Error.ozf"
+
+import
     signature SWITCHES
 from "x-alice:/infrastructure/SWITCHES.ozf"
 
@@ -70,6 +74,14 @@ from "x-alice:/common/PathReflection.ozf"
 import
     structure TypeReflection
 from "x-alice:/common/TypeReflection.ozf"
+
+import
+    structure PervasiveTypeReflection
+from "x-alice:/common/PervasiveTypeReflection.ozf"
+
+import
+    structure InfReflection
+from "x-alice:/common/InfReflection.ozf"
 
 import
     functor MakeHashImpMap

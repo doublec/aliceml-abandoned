@@ -39,5 +39,9 @@ import
 from "x-alice:/backend-common/FlatGrammar.ozf"
 
 import
+    structure OutputFlatGrammar
+from "x-alice:/backend-common/OutputFlatGrammar.ozf"
+
+import
     signature LIVENESS_ANALYSIS_PHASE
 from "x-alice:/backend-common/LIVENESS_ANALYSIS_PHASE.ozf"
