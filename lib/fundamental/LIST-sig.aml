@@ -16,7 +16,8 @@
  *)
 
 import structure __pervasive                           from "Pervasive"
-import type unit and int and bool and option and order from "ToplevelTypes"
+import __primitive
+       type unit and int and bool and option and order from "ToplevelTypes"
 
 signature LIST =
 sig
