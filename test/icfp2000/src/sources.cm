@@ -3,15 +3,12 @@ Group is
     smlnj-lib.cm
     ml-yacc-lib.cm
 
-    Error.sml
     Lexer.lex
     Parser.grm
     Machine.sml
-
     Color.sml
     Geometry.sml
     RENDERER.sml
     Renderer.sml
-
     PPMFile.sml
     Main.sml

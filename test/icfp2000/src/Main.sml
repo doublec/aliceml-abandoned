@@ -13,21 +13,35 @@ struct
 			      structure ParserData = LrVals.ParserData
 			      structure Lex        = Lexer)
 
+    (* Sometimes I get the feeling they just designed ML-Yacc as it is
+     * to scare away people from ever using SML modules again...
+     *)
+    exception LexerError  = Lexer.UserDeclarations.Error
+    exception ParserError = LrVals.ParserData.Header.Error
+
     fun parse source =
 	let
 	    val yyread    = ref false
 	    fun yyinput _ = if !yyread then "" else (yyread := true; source)
 	    val lexer     = Parser.makeLexer yyinput
-
-(*	    fun onError(s, pos1, pos2) = E.error((pos1,pos2), E.SyntaxError s)
-*)	    fun onError(s, pos1, pos2) = raise Fail s
+	    fun onError(s, pos, _) = raise ParserError(pos,s)
 	in
 	    #1 (Parser.parse(0, lexer, onError, ()))
 	end
 
+
+    fun error s =
+	( TextIO.output(TextIO.stdErr, s ^ "\n")
+	; OS.Process.failure
+	)
+    fun errorPos(~1,  s) = error("(end of file): " ^ s)
+      | errorPos(pos, s) = error(Int.toString pos ^ ": " ^ s)
+
     fun main _ =
 	(Machine.run(parse(TextIO.inputAll(TextIO.stdIn))); OS.Process.success)
-	handle _ => OS.Process.failure
+	handle LexerError(pos, s)  => errorPos(pos, "Lexical error: " ^ s)
+	     | ParserError(pos, s) => errorPos(pos, "Syntax error: " ^ s)
+	     | Machine.Error s => error("Runtime error: " ^ s)
 
     fun test name =
 	let

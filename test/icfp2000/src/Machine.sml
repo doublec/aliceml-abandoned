@@ -292,9 +292,9 @@ struct
       | evalOp(Cone,     stack) = evalPrimObj(stack, Renderer.Cone, coneFace)
       | evalOp(Cylinder, stack) = evalPrimObj(stack, Renderer.Cylinder,
 						     cylinderFace)
-      | evalOp(Union,      stack) = evalConstrObj(stack, Renderer.Union)
-      | evalOp(Intersect,  stack) = evalConstrObj(stack, Renderer.Intersect)
-      | evalOp(Difference, stack) = evalConstrObj(stack, Renderer.Difference)
+      | evalOp(Union,      stack) = evalComposedObj(stack, Renderer.Union)
+      | evalOp(Intersect,  stack) = evalComposedObj(stack, Renderer.Intersect)
+      | evalOp(Difference, stack) = evalComposedObj(stack, Renderer.Difference)
 
       | evalOp(Translate,  stack) = evalTransformVec(stack, translate)
       | evalOp(Scale,      stack) = evalTransformVec(stack, scale)
@@ -363,11 +363,11 @@ struct
 							= BoolV(f(x,y)) :: stack
       | evalRealRealToBool _				= typeError()
 
-  (* Constructive Objects *)
+  (* Composed Objects *)
 
-    and evalConstrObj(ObjectV obj2 :: ObjectV obj1 :: stack, RenderConstr) =
+    and evalComposedObj(ObjectV obj2 :: ObjectV obj1 :: stack, RenderConstr) =
 	    ObjectV(RenderConstr(obj1, obj2)) :: stack
-      | evalConstrObj _ = typeError()
+      | evalComposedObj _ = typeError()
 
   (* Transformations *)
 

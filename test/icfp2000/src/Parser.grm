@@ -1,3 +1,5 @@
+exception Error of int * string
+
 %%
 
 %header	(functor LrVals(structure Token : TOKEN))
@@ -47,7 +49,7 @@ token:
 	| BINDER			( case Machine.operator BINDER
 					    of NONE => Machine.Binder BINDER
 					     | _ =>
-						Error.error(BINDERleft,
+						raise Error(BINDERleft,
 							"rebinding of operator")
 					)
 	| INTEGER			( Machine.Int INTEGER )
