@@ -93,8 +93,7 @@ struct
 		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
 		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
 		fun event _ =
-		    case obj of (p, _, ref ids) =>
-			  List.app removeFromSignalTable ids
+			List.app removeFromSignalTable (!(#3obj))
 	    in
 		( doSignalConnect(p,"destroy",event,true) ; () )
 	    end
@@ -106,7 +105,7 @@ struct
 	    in
 		( if hasSignals then addDestroyEvent (obj) else () ;
   	          NativeGtkCore.weakMapAdd (p',obj) ;
-		  p )
+		  p' )
 	    end 
     in
 	fun addObject (p,refInfo,hasSignals) =
@@ -114,6 +113,8 @@ struct
 		 then p
 	         else newObject (p,refInfo,hasSignals)
     end
+
+    fun printObject p = NativeGtkCore.printObject p
 
 
     fun listener nil                        = ()

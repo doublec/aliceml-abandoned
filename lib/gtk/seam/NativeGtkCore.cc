@@ -107,6 +107,12 @@ DEFINE1(NativeGtkCore_deleteUnref) {
   RETURN_UNIT; 
 } END
 
+DEFINE1(NativeGtkCore_printObject) {
+  DECLARE_UNMANAGED_POINTER(obj,x0);
+  g_message("Pointer: %p, Word: %d", obj, x0);
+  RETURN_UNIT;
+} END
+
 ////////////////////////////////////////////////////////////////////////
 
 static inline word GdkScrollDirectionToDatatype(GdkScrollDirection dir) {
@@ -224,6 +230,7 @@ static inline word CrossingEvent(GdkEvent* event, int label) {
   t->Init(3, BOOL_TO_WORD(ev->send_event));
   t->Init(4, Store::IntToWord(ev->state));
   t->Init(5, Store::UnmanagedPointerToWord(ev->subwindow));
+  //  g_message("%d", ev->time);
   t->Init(6, Store::IntToWord(ev->time));
   t->Init(7, Store::UnmanagedPointerToWord(ev->window));
   t->Init(8, Real::New(ev->x)->ToWord());
@@ -475,6 +482,8 @@ void sendArgsToStream(gint connid, guint n_param_values,
   tup->Init(2,paramlist);
   
   put_on_stream(&eventStream, tup->ToWord());
+
+  //  g_message("event has been put put on stream");
 }
 
 void generic_marshaller(GClosure *closure, GValue *return_value, 
@@ -553,17 +562,19 @@ public:
     void *p = Store::WordToUnmanagedPointer((Tuple::FromWord(value))->Sel(0));
 
     // g_message("finalizing %p", p);
-
+    /*
     finalStreamRef = Tuple::FromWord(value)->Sel(2);
     Cell *c = Cell::FromWord(finalStreamRef);
     finalStream = c->Access();
     //finalStream = ForwardWord(finalStream);
-    put_on_stream(&finalStream, value);
-    c->Assign(finalStream);
 
+    put_on_stream(&finalStream, value);
+
+    c->Assign(finalStream);
+    */
     //    g_message("stream: %d, ref: %d", finalStream, finalStreamRef);
 
-    g_message("finalized %p", p);
+    g_message("finalized %p (%d)", p, value);
   }
 };
 
@@ -571,12 +582,14 @@ DEFINE2(NativeGtkCore_weakMapAdd) {
   // x0 = pointer/key, x1 = (pointer, unref-fun, ids ref)
 
   // g_message("adding %p", Store::WordToUnmanagedPointer(x0));
-  Tuple* t = Tuple::FromWord(x1);
-  t->Init(2, finalStreamRef);
+  //  Tuple* t = Tuple::FromWord(x1);
+  //  t->Init(2, finalStreamRef);
 
-  WeakMap::FromWord(weakDict)->Put(x0, t->ToWord());
+  //  WeakMap::FromWord(weakDict)->Put(x0, t->ToWord());
+  WeakMap::FromWord(weakDict)->Put(x0, x1);
   
-  g_message("added %p", Store::WordToUnmanagedPointer(x0));
+  g_message("added %p (%d)", Store::WordToUnmanagedPointer(x0), x1);
+	    //	                     Store::WordToUnmanagedPointer(t->Sel(0)));
   RETURN_UNIT;
 } END
 
@@ -606,7 +619,7 @@ DEFINE0(NativeGtkCore_getFinalStream) {
 //////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = CreateRecord(21);
+  Record *record = CreateRecord(22);
   INIT_STRUCTURE(record, "NativeGtkCore", "isLoaded",
 		 NativeGtkCore_isLoaded, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "init", 
@@ -636,6 +649,9 @@ word InitComponent() {
 		 NativeGtkCore_gObjectUnref, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "deleteUnref", 
 		 NativeGtkCore_deleteUnref, 1);
+
+  INIT_STRUCTURE(record, "NativeGtkCore", "printObject", 
+		 NativeGtkCore_printObject, 1);
 
   INIT_STRUCTURE(record, "NativeGtkCore", "signalConnect", 
 		 NativeGtkCore_signalConnect, 3);

@@ -21,6 +21,8 @@ sig
 	val gObjectUnref : 'object -> unit
 	val deleteUnref : 'object -> unit
 
+	val printObject : 'object -> unit
+
         val signalConnect : 'object * string * bool -> int
         val signalDisconnect : 'object * int -> unit
 	val getEventStream : unit -> 'stream

@@ -210,7 +210,7 @@ local
 	in
 	    (Array.update(itemArr, i, SOME group);
 	     Array.update(posArr, i, i);
-	     Gtk.signalConnect(group, "event", pieceEvent);
+	     Gtk.signalConnect(group, "event", (fn x => print "!\n";pieceEvent));
 	     fillBoard(board, (i + 1), parent))
 	end)
 	     

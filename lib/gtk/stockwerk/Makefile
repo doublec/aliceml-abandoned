@@ -36,7 +36,7 @@ ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # executable names
 ifdef WINDOWS
-GENERATOR = GtkBinding.x86-win32
+GENERATOR = GtkBinding.x86-win32.exe
 else
 GENERATOR = GtkBinding.x86-linux
 endif
