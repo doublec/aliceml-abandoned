@@ -474,7 +474,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else find (labels, label', i + 1, n)
 
 	fun findLabel (Arity.Unary, label) =
-	    raise Crash.Crash "IntermediateAux.findLabel"
+	    raise Crash.Crash ("IntermediateAux.findLabel " ^
+			       Label.toString label)
 	  | findLabel (Arity.Tuple n, label) =
 	    (case Label.toLargeInt label of
 		 SOME li =>
@@ -490,5 +491,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	fun labelToIndex (typ, label) =
 	    case findLabel (typToArity typ, label) of
 		SOME (prod, index) => (prod, index)
-	      | NONE => raise Crash.Crash "IntermediateAux.labelToIndex"
+	      | NONE => raise Crash.Crash ("IntermediateAux.labelToIndex " ^
+					   Label.toString label)
     end
