@@ -36,6 +36,11 @@
     to exist if the current upper bound
     of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
   </P>
+  <P>
+    Note that every propagator creation
+    can raise a <TT>Tell</TT> exception if it is performed on toplevel and
+    the constraint is inconsistent with other constraints.
+  </P>
 
   <P>See also:
     <A href="fs.html"><TT>FS</TT></A>,
@@ -55,6 +60,8 @@
      sig
 	type fd
 	type bin = fd
+
+	exception Tell of {cause : exn}
 	    
 	datatype domain_element =
 	    SINGLE of int
@@ -234,6 +241,14 @@
     <DD>
       <P>The type of finite domain variables. The type <TT>bin</TT> is used
          to indicate boolean 0/1 variables.
+    </P></DD>
+
+    <DT>
+      <TT>exception Tell</TT>
+    </DT>
+    <DD>
+      <P>is raised when a propagator is created on toplevel and is inconsistent
+         with other constraints.
     </P></DD>
 
     <DT>
