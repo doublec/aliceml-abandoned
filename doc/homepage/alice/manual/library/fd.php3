@@ -282,7 +282,7 @@
     <DD>
       <P>returns a vector of freshly created finite domain variables.
          The vector has size <I>n</I> and all variables are initialized
-         with the domain denoted by <I>dom<I>.
+         with the domain denoted by <I>dom</I>.
     </DD>
 
     <DT>
@@ -293,7 +293,7 @@
     </DD>
 
     <DT>
-      <TT>rangeVec (<I>n<I>, <I>il</I>, <I>ih</I>)</TT>
+      <TT>rangeVec (<I>n</I>, <I>il</I>, <I>ih</I>)</TT>
     </DT>
     <DD>
       <P>convienience abbreviation for
