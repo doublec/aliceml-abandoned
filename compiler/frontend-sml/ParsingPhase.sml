@@ -1,5 +1,5 @@
-structure ParsingPhase :> PARSING_PHASE =
-  struct
+functor MakeParsingPhase(Switches : SWITCHES) :> PARSING_PHASE =
+struct
 
     (* Import *)
 
@@ -22,7 +22,10 @@ structure ParsingPhase :> PARSING_PHASE =
 
     structure Lexer' = CountPosLexer(structure Lexer      = Lexer
 				     structure LexerError = LexerError
-				     val error            = ParsingError.error)
+				     val error            = ParsingError.error
+				     val startLine =
+					if !Switches.Bootstrap.implicitImport
+					then 0 else 1)
 
     structure Parser = Join  (structure LrParser   = LrParser
 			      structure ParserData = LrVals.ParserData
@@ -49,4 +52,4 @@ structure ParsingPhase :> PARSING_PHASE =
 
     fun translate() (desc, source) = parse source
 
-  end
+end

@@ -13,7 +13,7 @@ functor MakeFrontendSML(
 		  )
     in
 	ComposePhases(
-	    structure Phase1  = ParsingPhase
+	    structure Phase1  = MakeParsingPhase(Switches)
 	    structure Phase2  = Phase2
 	    structure Context = BindEnv
 	    fun context1 E    = ()

@@ -6,6 +6,7 @@ functor CountPosLexer(
 	where type token =
 		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
 	val error : Source.region * LexerError.error -> 'a
+	val startLine : int
 ) : LEXER =
   struct
 
@@ -17,7 +18,7 @@ functor CountPosLexer(
 
     fun makeLexer yyinput =
 	let
-	    val lin  = ref 0	(*UNFINISHED: 1*)
+	    val lin  = ref startLine
 	    val col  = ref 0
 	    val pos  = ref 0
 	    val buf  = ref ""	(* current buffer *)
