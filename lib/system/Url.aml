@@ -387,7 +387,7 @@ structure Url :> URL =
 	    end
 
 	val toString = toStringEncode (encode isPathChar)
-	val toStringRaw = toStringEncode (fn s => s)
+	val toStringRaw = toStringEncode General.id
 
 	fun isAbsolute ({scheme, device, absolute, path, ...}: url) =
 	    isSome scheme orelse isSome device orelse absolute orelse

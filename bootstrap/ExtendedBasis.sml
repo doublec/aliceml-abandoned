@@ -6,8 +6,12 @@ signature GENERAL =
   sig
     include GENERAL
 
-    val :=: :	'a ref * 'a ref -> unit
-    val flip :	('a * 'b -> 'c) -> ('b * 'a -> 'c)
+    val :=: :		'a ref * 'a ref -> unit
+    val id :		'a -> 'a
+    val const :		'a -> 'b -> 'a
+    val curry :		('a * 'b -> 'c) -> ('a -> 'b -> 'c)
+    val uncurry :	('a -> 'b -> 'c) -> ('a * 'b -> 'c)
+    val flip :		('a * 'b -> 'c) -> ('b * 'a -> 'c)
     val inverse :	order -> order
   end
 
@@ -17,6 +21,10 @@ structure General : GENERAL =
     open General
 
     fun op :=: (r1 as ref x1, r2 as ref x2)	= (r1 := x2 ; r2 := x1)
+    fun id x					= x
+    fun const x y				= x
+    fun curry f x y				= f(x,y)
+    fun uncurry f (x,y)				= f x y
     fun flip f (x,y)				= f(y,x)
     fun inverse LESS				= GREATER
       | inverse EQUAL				= EQUAL

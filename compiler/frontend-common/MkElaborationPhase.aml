@@ -1618,7 +1618,7 @@ TextIO.print "\n";
       | elabDec(E, s,po,varids, I.TypDec(i, typid, typ)) =
 	let
 	    val  p           = elabNewPath(po, I.name typid)
-	    val (t,gen,typ') = elabTypRep(E, p, fn k => k, typ)
+	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
 	    val (t',typid')  = elabTypid_bind(E, p, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
@@ -1646,7 +1646,7 @@ TextIO.print "\n";
       | elabDec(E, s,po,varids, I.InfDec(i, infid, inf)) =
 	let
 	    val  p           = elabNewPath(po, I.name infid)
-	    val (j,gen,inf') = elabInfRep(E, p, fn k => k, inf)
+	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
 	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
 	    val  _           = Inf.extendInf(s, p, k)
@@ -1808,7 +1808,7 @@ TextIO.print "\n";
       | elabRHSRecDec(E, s, rtpats', I.TypDec(i, typid, typ)) =
 	let
 	    val (t0,p,typid') = elabTypid(E, typid)
-	    val (t,gen,typ')  = elabTypRep(E, p, fn k => k, typ)
+	    val (t,gen,typ')  = elabTypRep(E, p, General.id, typ)
 	    val  k            = (if gen then Type.kind else Type.singKind) t0
 	    val  _            = Inf.extendTyp(s, p, k)
 	    (* ASSUME typ is wellformed for fix *)
@@ -1857,7 +1857,7 @@ TextIO.print "\n";
       | elabSpec(E, s,po, I.TypSpec(i, typid, typ)) =
 	let
 	    val  p           = elabNewPath(po, I.name typid)
-	    val (t,gen,typ') = elabTypRep(E, p, fn k => k, typ)
+	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
 	    val (t',typid')  = elabTypid_bind(E, p, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
@@ -1878,7 +1878,7 @@ TextIO.print "\n";
       | elabSpec(E, s,po, I.InfSpec(i, infid, inf)) =
 	let
 	    val  p           = elabNewPath(po, I.name infid)
-	    val (j,gen,inf') = elabInfRep(E, p, fn k => k, inf)
+	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
 	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
 	    val  _           = Inf.extendInf(s, p, k)
@@ -1940,7 +1940,7 @@ TextIO.print "\n";
     and elabRHSRecSpec(E, s, I.TypSpec(i, typid, typ)) =
 	let
 	    val (t0,p,typid') = elabTypid(E, typid)
-	    val (t,gen,typ')  = elabTypRep(E, p, fn k => k, typ)
+	    val (t,gen,typ')  = elabTypRep(E, p, General.id, typ)
 	    (* ASSUME typ is wellformed for fix *)
 	    val  k            = (if gen then Type.kind else Type.singKind) t0
 	    val  _            = Inf.extendTyp(s, p, k)
@@ -2039,7 +2039,7 @@ TextIO.print "\n";
 		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i', t1)))
 		  | I.SomeDesc(i',typ) =>
 		    let
-			val (t2,_,typ') = elabTypRep(E, p, fn k => k, typ)
+			val (t2,_,typ') = elabTypRep(E, p, General.id, typ)
 			val  k2         = Type.kind t2
 		    in
 			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
@@ -2095,7 +2095,7 @@ TextIO.print "\n";
 		 of I.NoDesc(i')       => (k1, j1, O.NoDesc(infInfo(i',j1)))
 		  | I.SomeDesc(i',inf) =>
 		    let				
-			val (j2,_,inf') = elabInfRep(E, p, fn k => k, inf)
+			val (j2,_,inf') = elabInfRep(E, p, General.id, inf)
 			val  k2         = Inf.kind j2
 		    in
 			Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
