@@ -20,7 +20,7 @@ struct
         PLUS  => (op+)
       | MINUS => (op-)
     and oper2 =
-	TIMES => (op*)
+	TIMES  => (op*)
 
     parser eval = exp
     
