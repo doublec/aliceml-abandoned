@@ -537,7 +537,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 					 #[StringTy, ObjectTy], VoidTy))))
 			labelIdRefVec)
 	  | genExp (VecExp (info, ids)) = genExp (TupExp (info, ids))
-	  | genExp (FunExp (info, stamp, _, args, body)) =
+	  | genExp (FunExp (info, stamp, _, args, _, body)) =
 	    (emitRegion ("FunExp", info);
 	     emit (Newobj (className stamp, #[]));
 	     case args of
