@@ -134,6 +134,9 @@ struct
 	val signalConnect      = checkSignalConnect false
 	val signalConnectAfter = checkSignalConnect true
 
+        val signalHandlerBlock = NativeCore.signalHandlerBlock
+        val signalHandlerUnblock = NativeCore.signalHandlerUnblock
+
 	fun signalDisconnect (obj, connid) =
 	    ( NativeCore.signalDisconnect(obj,connid) ;
 	      NativeCore.signalMapRemove connid )

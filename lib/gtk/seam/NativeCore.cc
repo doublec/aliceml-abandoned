@@ -450,6 +450,20 @@ DEFINE2(NativeCore_signalDisconnect) {
   RETURN_UNIT;
 } END
 
+DEFINE2(NativeCore_signalHandlerBlock) {
+  DECLARE_OBJECT(obj,x0);
+  DECLARE_INT(handler_id,x1);
+  g_signal_handler_block(G_OBJECT(obj), static_cast<gulong>(handler_id));
+  RETURN_UNIT;
+} END
+
+DEFINE2(NativeCore_signalHandlerUnblock) {
+  DECLARE_OBJECT(obj,x0);
+  DECLARE_INT(handler_id,x1);
+  g_signal_handler_unblock(G_OBJECT(obj), static_cast<gulong>(handler_id));
+  RETURN_UNIT;
+} END
+
 DEFINE1(NativeCore_getEventStream) {
   destroyCallback = x0;
   RETURN(eventStream);
@@ -720,7 +734,7 @@ DEFINE1(NativeCore_utf8ToLatin1) {
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = Record::New(16);
+  Record *record = Record::New(18);
   Init();
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
@@ -735,6 +749,11 @@ word InitComponent() {
 		 NativeCore_signalDisconnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
 		 NativeCore_getEventStream, 1);
+
+  INIT_STRUCTURE(record, "NativeCore", "signalHandlerBlock", 
+		 NativeCore_signalHandlerBlock, 2);
+  INIT_STRUCTURE(record, "NativeCore", "signalHandlerUnblock", 
+		 NativeCore_signalHandlerUnblock, 2);
 
   INIT_STRUCTURE(record, "NativeCore", "signalMapAdd",
 		 NativeCore_signalMapAdd, 3);

@@ -23,6 +23,9 @@ sig
         val signalDisconnect : 'object * int -> unit
 	val getEventStream : 'callback -> 'stream
 
+        val signalHandlerBlock : 'object * int -> unit
+        val signalHandlerUnblock : 'object * int -> unit
+
 	val signalMapAdd : 'connid * 'callback * 'object -> unit
 	val signalMapRemove : 'connid -> unit
 	val signalMapCondGet : 'connid * 'callback -> 'callback
