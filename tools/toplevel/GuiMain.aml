@@ -68,7 +68,7 @@ structure GuiMain =
 		val text = if String.sub (text, String.size text - 1) = #"\n"
 			   then text else text ^ "\n"
                 fun find(i ,str) =
-                    if i=String.size str then ""
+                    if i=String.size str then "\n"
                     else if Char.isSpace (String.sub(str,i)) then
                         find(i+1, str)
                     else String.extract(str, i, NONE)
@@ -195,7 +195,7 @@ structure GuiMain =
                 (startiter, enditer)
             end
 
-        fun feedParagraph() =
+        fun feedRegion() =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
@@ -285,8 +285,7 @@ structure GuiMain =
 	    app (fn w => Gtk.widgetSetSensitive(w,activate))
 	    [Gui.save1,Gui.save_as1,Gui.go_to_line,
 	     Gui.undo,Gui.find,Gui.find_and_replace,
-	     Gui.syntax_colouring,Gui.feedline,Gui.feedparagraph,
-	     Gui.feedselection,Gui.feedfile]
+	     Gui.syntax_colouring,Gui.feedregion,Gui.feedfile]
 
         fun changeFocus view _ =
 	    let
@@ -398,6 +397,7 @@ structure GuiMain =
 		    switchPage Gui.notebook1;
 		    changeFocus (BUFFER view) ();
                     checkNotebookSize()
+;syntax() (* for now *)
                 end
 
          fun openFile () =
