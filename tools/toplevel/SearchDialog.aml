@@ -77,6 +77,7 @@ structure SearchDialog =
 	     Gtk.widgetSetSensitive(Gui.search_replace_button,false);
 	     isReplace := false;
 	     Gtk.windowSetModal(searchDialog, false);
+             Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE);
              Gtk.widgetShowAll searchDialog;
              Gtk.widgetMap searchDialog)
 
@@ -97,6 +98,7 @@ structure SearchDialog =
 	     Gtk.widgetSetSensitive(Gui.search_replace_button,false);
 	     isReplace := true;
 	     Gtk.windowSetModal(searchDialog, false);
+             Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE);
              Gtk.widgetShowAll searchDialog;
              Gtk.widgetMap searchDialog)
 
@@ -106,6 +108,7 @@ structure SearchDialog =
             in
 		Gtk.windowSetModal(dia, true);
 		Gtk.dialogSetDefaultResponse(dia, ~5);
+                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
                 Gtk.widgetShowAll dia;
 		Gtk.widgetMap dia;
                 if Gtk.dialogRun dia = ~5 then

@@ -46,6 +46,7 @@ structure FileDialog =
 					     Gtk.GtkResponseTypeToInt
 					     Gtk.RESPONSE_CANCEL);
                 (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.windowSetPosition (modifiedDia, Gtk.WIN_POS_MOUSE);
                 Gtk.widgetShowAll modifiedDia;
 		Gtk.widgetMap modifiedDia;
 		Gtk.windowSetModal(modifiedDia, true);
@@ -68,6 +69,7 @@ structure FileDialog =
 					     Gtk.GtkResponseTypeToInt
 					     Gtk.RESPONSE_OK);
                 (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
                 Gtk.widgetShowAll dia;
 		Gtk.widgetMap dia;
 		Gtk.windowSetModal(dia, true);

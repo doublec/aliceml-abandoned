@@ -1740,7 +1740,7 @@
 
 <widget class="GtkDialog" id="searchDialog">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">dialog1</property>
+  <property name="title" translatable="yes">Search</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_MOUSE</property>
   <property name="modal">False</property>
@@ -2100,7 +2100,7 @@
 
 <widget class="GtkDialog" id="go_to_line_dialog">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">Go to line</property>
+  <property name="title" translatable="yes">Go to Line</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_MOUSE</property>
   <property name="modal">True</property>
@@ -2209,7 +2209,7 @@
 
 <widget class="GtkDialog" id="modified_dialog">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">Unsaved modifications</property>
+  <property name="title" translatable="yes">Unsaved Modifications</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -2459,7 +2459,7 @@
 
 <widget class="GtkDialog" id="save_on_quit_dialog">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">Modifed files</property>
+  <property name="title" translatable="yes">Modifed Files</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
