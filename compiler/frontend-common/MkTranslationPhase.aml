@@ -1693,7 +1693,7 @@ struct
 	else let
 	    val r   = #region i
 	    val e1' = idToExp(trTypid x)
-	    val e2' = trTypRep(x, t)
+	    val e2' = typOp(lab_inMu, trTypRep(x, t))
 	    val e'  = unitTypOp(lab_fill,
 				O.TupExp(typInfo(r, typ_typtyp), #[e1',e2']))
 	    val d'  = O.ValDec(nonInfo r, O.JokPat(typInfo(r,typ_unit)), e')
@@ -1918,8 +1918,8 @@ struct
 	    val x'  = trTypid x
 	    val xx' = idToExp x'
 	    val to' = trTypRep'(pp', t)
-	    val t'  = case to' of NONE    => trTyp' t
-			        | SOME t' => t'
+	    val t'  = typOp(lab_inMu, case to' of NONE    => trTyp' t
+					        | SOME t' => t')
 	    val e1' = unitTypOp(lab_fill,
 				O.TupExp(typInfo(r,typ_typtyp), #[xx',t']))
 	    val d1' = O.ValDec(i', O.JokPat(O.infoId x'), e1')
