@@ -34,7 +34,7 @@ struct
 
 	open UnsafeOS.FileSys
 	fun getApplicationConfigDir appName =
-	    UnsafeOS.FileSys.getApplicationConfigDir() ^ "Alice/" ^ appName
+	    UnsafeOS.FileSys.getApplicationConfigDir() ^ "/" ^ appName
     end
 
     structure Process =

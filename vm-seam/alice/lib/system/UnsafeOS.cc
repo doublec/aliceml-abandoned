@@ -434,7 +434,7 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   hRes = SHGetMalloc(&palloc); 
   palloc->Free( (void*)pidl ); 
   palloc->Release();
-  strcat((char *) buffer->GetValue(), "\\");
+  strcat((char *) buffer->GetValue(), "\\Alice\\");
   RETURN(String::New((char *) buffer->GetValue())->ToWord());
 #else
   char *envVal = std::getenv("HOME");
@@ -448,11 +448,11 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
       wBufferString = buffer->ToWord();
       goto retry;
     }
-    strcat((char *) buffer->GetValue(), "/.");
+    strcat((char *) buffer->GetValue(), "/.alice/");
     RETURN(String::New((char *) buffer->GetValue())->ToWord());
   }
   strcpy((char *) buffer->GetValue(), envVal);
-  strcat((char *) buffer->GetValue(), "/.");
+  strcat((char *) buffer->GetValue(), "/.alice/");
   RETURN(String::New((char *) buffer->GetValue())->ToWord());
 #endif
 } END
