@@ -10,10 +10,9 @@
  * table.
  *)
 
-functor MakeElaborationPhase(
-		structure Composer: COMPOSER where type Sig.t = Inf.sign
-	) :> ELABORATION_PHASE =
-  struct
+functor MakeElaborationPhase(Composer: COMPOSER where type Sig.t = Inf.sign)
+    :> ELABORATION_PHASE =
+struct
 
     structure C = Env
     structure I = AbstractGrammar
@@ -1945,4 +1944,4 @@ functor MakeElaborationPhase(
 	    ; raise Error.Error x
 	    )
 
-  end
+end

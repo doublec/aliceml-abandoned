@@ -28,8 +28,8 @@ import structure Crash			from "Crash"
  * UNFINISHED: maintain sharing on transformed interfaces.
  *)
 
-functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
-  struct
+functor MakeTranslationPhase(Switches: SWITCHES) :> TRANSLATION_PHASE =
+struct
 
     structure C = EmptyContext
     structure I = TypedGrammar
@@ -1043,5 +1043,4 @@ UNFINISHED: obsolete after bootstrapping:
 		CheckIntermediate.check comp';
 	    comp'
 	end
-
-  end
+end

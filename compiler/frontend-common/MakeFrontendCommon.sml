@@ -3,19 +3,17 @@ functor MakeFrontendCommon(
 		structure Switches: SWITCHES
 	) : PHASE =
     let
-	structure Phase1  = MakeElaborationPhase(structure Composer = Composer)
-	structure Phase2  = MakeTranslationPhase(structure Switches = Switches)
-	structure Phase1' =
+	structure Phase1 =
 		  MakeDumpingPhase(
-			structure Phase    = Phase1
+			structure Phase    = MakeElaborationPhase(Composer)
 			structure Switches = Switches
 			val header = "Component Signature"
 			val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
 			val switch = Switches.Debug.dumpElaborationSig
 		  )
-	structure Phase2' =
+	structure Phase2 =
 		  MakeDumpingPhase(
-			structure Phase    = Phase2
+			structure Phase    = MakeTranslationPhase(Switches)
 			structure Switches = Switches
 			val header = "Intermediate Syntax"
 			val pp     = PPIntermediateGrammar.ppComp
@@ -23,8 +21,8 @@ functor MakeFrontendCommon(
 		  )
     in
 	ComposePhases(
-	    structure Phase1  = Phase1'
-	    structure Phase2  = Phase2'
+	    structure Phase1  = Phase1
+	    structure Phase2  = Phase2
 	    structure Context = Env
 	    fun context1 E    = E
 	    fun context2 E    = ()
