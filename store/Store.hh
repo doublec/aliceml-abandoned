@@ -99,10 +99,8 @@ public:
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
   static Block *AllocBlockWithHandler(u_int s, Handler *h) {
-    s += 1;
-    Block *t = (Block *) Store::FastAlloc((s + 1) << 2);
+    Block *t = Store::InternalAllocBlock(HANDLER_BLOCK_LABEL, (s + 1));
     Assert(t != NULL);
-    HeaderOp::EncodeHeader(t, HANDLER_BLOCK_LABEL, s);
     // ugly hack to avoid regrouping the items
     ((word *) t)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
     return t;
