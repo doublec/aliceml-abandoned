@@ -19,7 +19,7 @@ import
    PrimitiveTable(values)
    ByneedInterpreter(interpreter)
 require
-   Helper(pushCallInterpreter: PushCallInterpreter)
+   Helper(deref: Deref pushCallInterpreter: PushCallInterpreter)
 export
    Object
 define
@@ -212,9 +212,13 @@ define
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.handle Debug Exn TaskStack})
 	 [] nil then
-	    case {Property.condGet 'alice.atExn' unit} of unit then
+	    case {Property.condGet 'alice.atExn' unit} of unit then Exn2 in
+	       Exn2 = case {Deref Exn} of Exn=con(Con ...) then
+			 {AdjoinAt Exn 1 {Deref Con}}
+		      elseof Exn then Exn
+		      end
 	       {System.showError
-		'uncaught exception: '#{Value.toVirtualString Exn 5 5}}
+		'uncaught exception: '#{Value.toVirtualString Exn2 5 5}}
 	       {DumpTaskStack {Reverse Debug}}
 	       {Application.exit 1}
 	    elseof Closure then
