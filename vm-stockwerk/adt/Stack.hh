@@ -20,7 +20,7 @@
 #include <cstring>
 
 class Stack : private Block {
-private:
+protected:
   static const u_int SIZE    = 2;
   static const u_int TOP_POS = 0;
   static const u_int ARR_POS = 1;
