@@ -27,12 +27,14 @@ import
     datatype ref
     datatype exn
 
-    exception Match
     exception Bind
     exception Chr
     exception Div
     exception Domain
+    exception Empty
     exception Fail
+    exception Match
+    exception Option
     exception Overflow
     exception Size
     exception Span
