@@ -168,7 +168,7 @@ sig
 	| FunMod    of mod_info * modid * inf * mod (* functor *)
 	| AppMod    of mod_info * mod * mod	(* application *)
 	| AnnMod    of mod_info * mod * inf	(* annotation *)
-	| AbsMod    of mod_info * mod * inf	(* abstraction *)
+	| SealMod   of mod_info * mod * inf	(* sealing *)
 	| LetMod    of mod_info * dec vector * mod (* let *)
 	| UnpackMod of mod_info * exp * inf	(* package elimination *)
 
