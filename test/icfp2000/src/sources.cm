@@ -1,5 +1,6 @@
 Group is
 
+(*
     smlnj-lib.cm
     ml-yacc-lib.cm
 
@@ -8,6 +9,7 @@ Group is
     Parser.grm
 
     Machine.sml
+*)
 
     Color.sml
     Geometry.sml

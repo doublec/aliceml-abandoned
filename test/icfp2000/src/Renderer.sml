@@ -186,10 +186,10 @@ structure Renderer :> RENDERER =
 	  | isShadowed ((_, _, Exit)::_, _) = raise Crash
 	  | isShadowed (nil, _) = true
 
-	fun intensity (Directional (color, dir), scene, point) =
-	    if List.null (intersect (scene, point, dir)) then SOME color
+	fun testLight (Directional (color, dir), scene, point) =
+	    if List.null (intersect (scene, point, dir)) then SOME (color, dir)
 	    else NONE
-	  | intensity (Point (color, pos), scene, point) =
+	  | testLight (Point (color, pos), scene, point) =
 	    let
 		val dir = subVec (pos, point)
 	    in
@@ -199,40 +199,87 @@ structure Renderer :> RENDERER =
 			val dist = absVec dir
 			val attenuation = 100.0 / (99.0 + dist * dist * dist)
 		    in
-			SOME (Color.scale (attenuation, color))
+			SOME (Color.scale (attenuation, color),
+			      normalizeVec dir)
 		    end
 	    end
-	  | intensity (Spot (color, pos, at, cutoff, exp), scene, point) =
+	  | testLight (Spot (color, pos, at, cutoff, exp), scene, point) =
 	    let
 		val dir = subVec (pos, point)
+		val spotDir = subVec (at, pos)
+		val unitSpotDir = normalizeVec spotDir
+		val phi = Math.acos (mulVec (spotDir, dir) / absVec dir)
 	    in
-		(*--** at, cutoff, exp *)
-		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
-		else SOME color   (*--** attenuation *)
+		if phi > cutoff orelse
+		    isShadowed (intersect (scene, point, dir), 1.0) then NONE
+		else
+		    let
+			val dist = absVec dir
+			val unitDir = mulScalVec (1.0 / dist, dir)
+			val negUnitDir = negVec unitDir
+			val attenuation1 =
+			    Math.pow (mulVec (unitSpotDir, negUnitDir), exp)
+			val attenuation2 = 100.0 / (99.0 + dist * dist * dist)
+		    in
+			SOME (Color.scale (attenuation1 * attenuation2, color),
+			      unitDir)
+		    end
 	    end
+
+	fun colorSum f (k, i) xs =
+	    if Real.== (k, 0.0) then Color.black
+	    else
+		Color.scale
+		(k, List.foldr (fn (x, sum) => Color.add (sum, f x)) i xs)
+
+	fun trace (base, dir, ambient, lights, scene, depth) =
+	    case intersect (scene, base, dir) of
+		(k, (surface, f), Entry)::_ =>
+		    let
+			val p =   (* intersection point *)
+			    addVec (base, mulScalVec (k, dir))
+			val n =   (* unit normal vector on surface *)
+			    normalizeVec (f p)
+			val {color = c, diffuse = kd,
+			     specular = ks, phong = exp} = surface p
+			val intensityDirList =
+			    if Real.== (kd, 0.0) andalso Real.== (ks, 0.0)
+			    then nil
+			    else
+				List.mapPartial
+				(fn light => testLight (light, scene, p))
+				lights
+			val diffuseLighting =
+			    colorSum
+			    (fn (i, l) => Color.scale (mulVec (n, l), i))
+			    (kd, ambient) intensityDirList
+			val d = normalizeVec dir
+			val reflected =
+			    if Real.== (kd, 0.0) orelse depth = 0
+			    then Color.black
+			    else
+				trace (p,
+				       addVec (dir,
+					       mulScalVec (2.0 *
+							   mulVec (n, dir),
+							   n)),
+				       ambient, lights, scene, depth - 1)
+			val specularLighting =
+			    colorSum
+			    (fn (i, l) =>
+			     Color.scale (Math.pow
+					  (0.5 * mulVec (n, subVec (l, d)),
+					   exp), i))
+			    (ks, reflected) intensityDirList
+		    in
+			Color.prod (Color.add (diffuseLighting,
+					       specularLighting), c)
+		    end
+	      | (_, _, Exit)::_ => raise Crash
+	      | nil => ambient
 
 	fun mkRender {ambient, lights, scene, vision, width, height, depth} =
 	    let
-		fun trace (base, dir) =
-		    case intersect (scene, base, dir) of
-			(k, (surface, f), Entry)::_ =>
-			    let
-				val p =   (* intersection point *)
-				    addVec (base, mulScalVec (k, dir))
-				val n =   (* unit normal vector on surface *)
-				    normalizeVec (f p)
-				val {color = c, diffuse = kd,
-				     specular = ks, phong = exp} = surface p
-				val intensities =
-				    List.mapPartial
-				    (fn light => intensity (light, scene, p))
-				    lights
-			    in
-				ambient (*UNFINISHED*)
-			    end
-		      | (_, _, Exit)::_ => raise Crash
-		      | nil => ambient
-
 		fun render' (x, y) =
 		    {red = 0.0, green = 0.0, blue = 0.0}   (*UNFINISHED*)
 	    in
