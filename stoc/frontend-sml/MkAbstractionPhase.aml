@@ -637,9 +637,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val pat' = trPat (E,E') pat
 		val  _   = inheritScope(E, copyScope E')
 		val  _   = insertScope E'
-		val (ids',fmatches) = trFvalBindo_lhs (E,E') (SOME fvalbind)
+		val ids' = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _   = inheritScope(E, copyScope E')
-		val exps'= trFmatches_rhs E fmatches
+		val exps'= trFvalBindo_rhs E (SOME fvalbind)
 		val decs'= ListPair.map
 				(fn(id',exp') =>
 				 O.ValDec(O.infoExp exp',
@@ -829,13 +829,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | FUNDec(i, tyvarseq, fvalbind) =>
 	   let
 		val E'    = Env.new()
-		val (ids',fmatches)
-			  = trFvalBindo_lhs (E,E') (SOME fvalbind)
+		val ids'  = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _    = union(E,E')
 		val  _    = insertScope E
 		val ids'' = trValTyVarSeq E tyvarseq @
 			    unguardedTyVarsFvalBind E fvalbind
-		val exps' = trFmatches_rhs E fmatches
+		val exps' = trFvalBindo_rhs E (SOME fvalbind)
 		val  _    = deleteScope E
 		val decs' = ListPair.map
 				(fn(id',exp') =>
@@ -1094,66 +1093,61 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     (* Function bindings *)
 
     and trFvalBindo_lhs (E,E') fvalbindo =
-	let
-	    val (ids',fmatches) = trFvalBindo_lhs' (E,E',[],[]) fvalbindo
-	in
-	    ( List.rev ids', List.rev fmatches )
-	end
+	    List.rev(trFvalBindo_lhs' (E,E',[]) fvalbindo)
 
-    and trFvalBindo_lhs'(E,E',acc1,acc2) =
-	fn NONE => ( acc1, acc2 )
-	 | SOME(FvalBind(i, match, fvalbindo)) =>
+    and trFvalBindo_lhs'(E,E',acc) =
+	fn NONE => acc
+	 | SOME(FvalBind(i, fmatch, fvalbindo)) =>
 	   let
-		val (id',fmatch) = trFmatch_lhs (E,E') match
+		val id' = trFmatch_lhs (E,E') fmatch
 	   in
-		trFvalBindo_lhs' (E,E', id'::acc1, fmatch::acc2) fvalbindo
+		trFvalBindo_lhs' (E,E', id'::acc) fvalbindo
 	   end
 
 
-    and trFmatch_lhs (E,E') (Match(i, mrule, matcho)) =
+    and trFmatch_lhs (E,E') (Match(i, fmrule, fmatcho)) =
 	   let
-		val (vid,fmrule) = trFmrule_lhs E mrule
-		val VId(i',vid') = vid
-		val (id',stamp)  = trVId_bind E vid
+		val vid as VId(i',vid') = trFmrule_lhs E fmrule
+		val (id',stamp)         = trVId_bind E vid
+		val _ = trFmatcho_lhs (E,vid) fmatcho
 		val _ = insertDisjointVal(E', vid', (i',stamp,V))
 			handle CollisionVal _ =>
 			       errorVId("duplicate function ", vid,
 					" in binding group")
 	   in
-		( id', Match(i, fmrule, trFmatcho_lhs (E,E',vid) matcho) )
+		id'
 	   end
 
-    and trFmatcho_lhs (E,E',vid1) =
-	fn NONE => NONE
-	 | SOME(Match(i, mrule, matcho)) =>
+    and trFmatcho_lhs (E,vid1) =
+	fn NONE => ()
+	 | SOME(Match(i, fmrule, fmatcho)) =>
 	   let
-		val (vid2,fmrule) = trFmrule_lhs E mrule
-		val VId(_, vid1') = vid1
-		val VId(_, vid2') = vid2
+		val vid2 = trFmrule_lhs E fmrule
 	   in
-		if vid2' <> vid1' then
+		if idVId vid1 = idVId vid2 then
+		    trFmatcho_lhs (E,vid1) fmatcho
+		else
 		    errorVId("inconsistent function name ", vid2,
 			     " in function clause")
-		else
-		    SOME(Match(i, fmrule, trFmatcho_lhs (E,E',vid1) matcho))
 	   end
 
-    and trFmrule_lhs E (Mrule(i, pat, exp)) =
-	   let
-		val fpat = Infix.pat (infEnv E) pat
-	   in
-		( trFpat_lhs E fpat, Mrule(i, fpat, exp) )
-	   end
+    and trFmrule_lhs E (Mrule(i, fpat, exp)) =
+	   trFappPat_lhs E fpat
 
     and trFpat_lhs E =
-	fn ATPATPat(i, atpat)		=> trFatPat_lhs E atpat
-	 | ( APPPat(i, fpat, _)
-	   | TYPEDPat(i, fpat, _)
+	fn fpat as (ATPATPat _ | APPPat _) =>
+		trFappPat_lhs E (Infix.pat (infEnv E) fpat)
+	 | ( TYPEDPat(i, fpat, _)
 	   | WHENPat(i, fpat, _) )	=> trFpat_lhs E fpat
 	 | ( NONPat(i,_)
 	   | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_)
 	   | WITHFUNPat(i,_,_) )	=> error(i, "invalid function pattern")
+
+    and trFappPat_lhs E =
+	fn APPPat(i, fpat, atpat)	=> trFappPat_lhs E fpat
+	 | ATPATPat(i, atpat)		=> trFatPat_lhs E atpat
+	 | fpat				=> trFpat_lhs E fpat
 
     and trFatPat_lhs E =
 	fn LONGVIDAtPat(i, _, SHORTLong(_, vid as VId(_, vid'))) =>
@@ -1186,7 +1180,18 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trFpats_lhs E = List.map(trFpat_lhs E)
 
 
-    and trFmatches_rhs E = List.map(trFmatch_rhs E)
+
+    and trFvalBindo_rhs E fvalbindo =
+	    List.rev(trFvalBindo_rhs' (E,[]) fvalbindo)
+
+    and trFvalBindo_rhs'(E,acc) =
+	fn NONE => acc
+	 | SOME(FvalBind(i, fmatch, fvalbindo)) =>
+	   let
+		val exp' = trFmatch_rhs E fmatch
+	   in
+		trFvalBindo_rhs' (E, exp'::acc) fvalbindo
+	   end
 
     and trFmatch_rhs E (Match(i, fmrule, fmatcho)) =
 	   let
@@ -1237,15 +1242,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
     and trFpat_rhs (E,E') =
-	fn ATPATPat(i, fatpat) =>
-		trFatPat_rhs (E,E') fatpat
-
-	 | fpat as APPPat(i,_,_)   =>
-	   let
-		val pats' = trFappPat_rhs (E,E') fpat
-	   in
-		( tuppat(i, pats'), List.length pats' )
-	   end
+	fn fpat as (ATPATPat _ | APPPat _) =>
+		trFappPat_rhs (E,E') (Infix.pat (infEnv E) fpat)
 
 	 | TYPEDPat(i, fpat, ty) =>
 	   let
@@ -1272,6 +1270,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | ( NONPat(i,_) | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
 		error(i,"invalid function pattern")
+
+    and trFappPat_rhs (E,E') =
+	fn fpat as APPPat _ =>
+	   let
+		val pats' = trAppliedFappPat_rhs (E,E') fpat
+	   in
+		( tuppat(infoPat fpat, pats'), List.length pats' )
+	   end
+	 | ATPATPat(i, atpat)		=> trFatPat_rhs (E,E') atpat
+	 | fpat				=> trFpat_rhs (E,E') fpat
 
     and trFatPat_rhs (E,E') =
 	fn ALTAtPat(i, fpats) =>
@@ -1317,18 +1325,21 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-    and trFappPat_rhs (E,E') =
-	fn ATPATPat(i, fatpat)	  => trFappAtPat_rhs (E,E') fatpat
-	 | APPPat(i, fpat, atpat) => trFappPat_rhs (E,E') fpat
-				     @ [trAtPat (E,E') atpat]
-	 | pat =>
-		error(infoPat pat, "invalid function pattern")
+    and trAppliedFpat_rhs (E,E') =
+	fn fpat as (ATPATPat _ | APPPat _) =>
+		trAppliedFappPat_rhs (E,E') (Infix.pat (infEnv E) fpat)
+	 | fpat => error(infoPat fpat, "invalid function pattern")
 
-    and trFappAtPat_rhs (E,E') =
-	fn LONGVIDAtPat _	=> nil
-	 | PARAtPat(i, fpat)	=> trFappPat_rhs (E,E') fpat
-	 | fatpat		=>
-		error(infoAtPat fatpat, "invalid function pattern")
+    and trAppliedFappPat_rhs (E,E') =
+	fn ATPATPat(i, fatpat)	  => trAppliedFatPat_rhs (E,E') fatpat
+	 | APPPat(i, fpat, atpat) => trAppliedFappPat_rhs (E,E') fpat
+				     @ [trAtPat (E,E') atpat]
+	 | fpat => error(infoPat fpat, "invalid function pattern")
+
+    and trAppliedFatPat_rhs (E,E') =
+	fn LONGVIDAtPat _	=> []
+	 | PARAtPat(i, fpat)	=> trAppliedFpat_rhs (E,E') fpat
+	 | fatpat => error(infoAtPat fatpat, "invalid function pattern")
 
 
 
