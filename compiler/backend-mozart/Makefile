@@ -1,4 +1,5 @@
-SOURCES = Frontend.oz Builtins.oz Prebound.oz CodeGen.oz Assembler.oz
+SOURCES = Frontend.oz Builtins.oz Prebound.oz \
+	CodeStore.oz CodeGen.oz Assembler.oz
 
 .PHONY: all clean
 
@@ -7,7 +8,7 @@ SOURCES = Frontend.oz Builtins.oz Prebound.oz CodeGen.oz Assembler.oz
 
 all: $(SOURCES:%.oz=%.ozf)
 
-CodeGen.ozf: CodeGen.oz CodeEmitter.oz CodeStore.oz
+CodeStore.ozf: CodeEmitter.oz
 
 clean:
 	-rm -f *.ozf

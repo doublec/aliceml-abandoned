@@ -12,20 +12,13 @@
 
 functor
 import
-   FD(decl distinct sumC reflect)
-   Space(new waitStable ask merge)
-   Debug(getRaiseOnBlock setRaiseOnBlock) at 'x-oz://boot/Debug'
-   Property(get)
    Narrator('class')
    ErrorListener('class')
-   Builtins(getInfo)
+   CodeStore('class')
    Prebound(env)
 export
    Translate
 define
-   \insert CodeEmitter
-   \insert CodeStore
-
    BuiltinTable = unit   %--** table mapping Stockhausen builtins to Mozart
 
    fun {MakeRegDict CS ?RegDict}
@@ -67,7 +60,7 @@ define
    end
 
    fun {TranslateLit Lit}
-      case Lit of wordLit(W) then W
+      case Lit of wordLit(W) then W   %--** {Word.make ...}
       [] intLit(I) then I
       [] charLit(C) then C
       [] stringLit(S) then {ByteString.make S}
@@ -265,7 +258,8 @@ define
    in
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
-      CS = {New CodeStore init(proc {$ getSwitch(_ X)} X = false end Reporter)}
+      CS = {New CodeStore.'class'
+	    init(proc {$ getSwitch(_ X)} X = false end Reporter)}
       {MakeRegDict CS ?RegDict ?Prebound}
       {CS startDefinition()}
       {TranslateBody Program ?VInstr nil
