@@ -37,8 +37,9 @@ sig
 
     val defaultMulti : config
 
-    val saveConfig : config -> unit
+    val save : config -> unit
 
-    val loadConfig : unit -> config
+    val load : unit -> config
+    (** loads config. if no one exists defaultMulit will be loaded *)
 
 end
