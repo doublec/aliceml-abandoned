@@ -734,15 +734,6 @@ Console.WriteLine(i);
 		return StaticApply(a);
 	    }
 	}
-	public class General_op_Assignment: Procedure2 {
-	    public static object StaticApply(object c, object v) {
-		((Cell) CommonOp.Sync(c)).Assign(v);
-		return Prebound.unit;
-	    }
-	    public override object Apply(object c, object v) {
-		return StaticApply(c, v);
-	    }
-	}
 	public class General_exchange: Procedure2 {
 	    public static object StaticApply(object c, object v) {
 		return ((Cell) CommonOp.Sync(c)).Exchange(v);
@@ -1557,6 +1548,15 @@ Console.WriteLine(i);
 		return StaticApply(a);
 	    }
 	}
+	public class Ref_op_Assignment: Procedure2 {
+	    public static object StaticApply(object c, object v) {
+		((Cell) CommonOp.Sync(c)).Assign(v);
+		return Prebound.unit;
+	    }
+	    public override object Apply(object c, object v) {
+		return StaticApply(c, v);
+	    }
+	}
 	public class String_op_Concatenation: Procedure2 {
 	    public static object StaticApply(object a, object b) {
 		return String.Concat((string) CommonOp.Sync(a),
@@ -2077,7 +2077,6 @@ Console.WriteLine(i);
 	public static object General_EQUAL     = 0;
 	public static object General_LESS      = 2;
 	public static object General_GREATER   = 1;
-	public static object General_op_Assignment = new General_op_Assignment();
 	public static object General_exchange      = new General_exchange();
 	public static object General_exnName       = new General_exnName();
 
@@ -2164,6 +2163,8 @@ Console.WriteLine(i);
 	public static object Real_round       = new Real_round();
 	public static object Real_toString    = new Real_toString();
 	public static object Real_trunc       = new Real_trunc();
+
+	public static object Ref_op_Assignment = new Ref_op_Assignment();
 
 	public static object String_op_Concatenation      = new String_op_Concatenation();
 	public static object String_op_LessThan           = new String_op_LessThan();
