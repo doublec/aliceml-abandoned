@@ -8,5 +8,6 @@ signature PATH_REFLECTION =
 
     val lab_invent :	Label.t
     val lab_pervasive :	Label.t
+    val lab_fromLab :	Label.t
 
   end

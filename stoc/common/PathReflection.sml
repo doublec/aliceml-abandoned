@@ -22,5 +22,7 @@ structure PathReflection :> PATH_REFLECTION =
     val _		= Path.invent : unit -> path		(* verify *)
     val lab_pervasive	= Label.fromString "pervasive"
     val _		= Path.pervasive : string -> path	(* verify *)
+    val lab_fromLab	= Label.fromString "fromLab"
+    val _		= Path.fromLab : Label.t -> path	(* verify *)
 
   end
