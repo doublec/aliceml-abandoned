@@ -16,7 +16,7 @@
   </P>
 
   <PRE>
-	val concur: (unit -> 'a) -> 'a
+	val concur : (unit -> 'a) -> 'a
   </PRE>
 
   <P>
@@ -35,32 +35,32 @@
 <?php section("sig", "signature") ?>
 
   <PRE>
-	structure Thread:
-	    sig
-	        type thread
+	structure Thread :
+	sig
+	    type thread
 
-		datatype state = RUNNABLE
-		               | BLOCKED
-		               | TERMINATED
+	    datatype state = RUNNABLE
+		           | BLOCKED
+		           | TERMINATED
 
-		exception Terminate
+	    exception Terminate
 
-		val thread:      (unit -> unit) -> thread
-		val spawn:       (unit -> 'a) -> thread * 'a
+	    val thread :      (unit -> unit) -> thread
+	    val spawn :       (unit -> 'a) -> thread * 'a
 
-		val current:     unit -> thread
-		val state:       thread -> state
+	    val current :     unit -> thread
+	    val state :       thread -> state
 
-		val yield:       thread -> unit
-		val sleep:       int -> unit
+	    val yield :       thread -> unit
+	    val sleep :       int -> unit
 
-		val raiseIn:     thread * exn -> unit
-		val terminate:   thread -> unit
+	    val raiseIn :     thread * exn -> unit
+	    val terminate :   thread -> unit
 
-		val suspend:     thread -> unit
-		val resume:      thread -> unit
-		val isSuspended: thread -> bool
-	    end
+	    val suspend :     thread -> unit
+	    val resume :      thread -> unit
+	    val isSuspended : thread -> bool
+	end
   </PRE>
 
 
