@@ -80,7 +80,7 @@ AliceDll word UnsafeRemote() {
 			   "UnsafeRemote.Sited")->ToWord();
   RootSet::Add(SitedConstructor);
 
-  Record *record = Record::New(4);
+  Record *record = Record::New(6);
   record->Init("'Sited", SitedConstructor);
   record->Init("Sited", SitedConstructor);
   INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
