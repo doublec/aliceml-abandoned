@@ -46,16 +46,34 @@ define
 			   Socket
 			end
 		     input1:
-			fun {$ Socket} Cs in
-			   {Socket read(list: ?Cs size: 1)}
-			   case Cs of [C] then 'SOME'(C)
-			   [] nil then 'NONE'
+			fun {$ Socket}
+			   try Cs in
+			      {Socket read(list: ?Cs size: 1)}
+			      case Cs of [C] then 'SOME'(C)
+			      [] nil then 'NONE'
+			      end
+			   catch E then
+			      {Exception.raiseError
+			       alice(IoException(name:
+						    {ByteString.make 'socket'}
+						 function:
+						    {ByteString.make 'input1'}
+						 cause: E))} %--** not type exn
 			   end
 			end
 		     inputN:
-			fun {$ Socket N} Cs in
-			   {Socket read(list: ?Cs size: N)}
-			   {ByteString.make Cs}
+			fun {$ Socket N}
+			   try Cs in
+			      {Socket read(list: ?Cs size: N)}
+			      {ByteString.make Cs}
+			   catch E then
+			      {Exception.raiseError
+			       alice(IoException(name:
+						    {ByteString.make 'socket'}
+						 function:
+						    {ByteString.make 'inputN'}
+						 cause: E))} %--** not type exn
+			   end
 			end
 		     output1:
 			fun {$ Socket C}
