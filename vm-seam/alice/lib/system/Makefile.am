@@ -10,6 +10,7 @@ libsystem_a_SOURCES = \
 	UnsafeComponent.cc \
 	UnsafeDebug.cc \
 	UnsafeDebugger.cc \
+	UnsafeSignal.cc \
 	UnsafeSocket.cc \
 	UnsafeRand.cc \
 	UnsafeValue.cc \

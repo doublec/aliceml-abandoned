@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#include "Alice.hh"
+#include "alice/Authoring.hh"
 
 // TODO: This stuff belongs to the generic SEAM Layer
 
@@ -54,7 +54,7 @@ DEFINE2(UnsafeSignal_register) {
   RETURN_UNIT;
 } END
 
-word InitComponent() {
+AliceDll word UnsafeSignal() {
   Record *record = Record::New(1);
   INIT_STRUCTURE(record, "UnsafeSignal", "register",
 		 UnsafeSignal_register, 2);

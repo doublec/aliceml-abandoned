@@ -11,7 +11,7 @@
  *
  *)
 
-signature UNSAFE_SIGNAL =
+signature UNSAFE_SIGNAL_COMPONENT =
     sig
 	structure UnsafeSignal:
 	    sig
