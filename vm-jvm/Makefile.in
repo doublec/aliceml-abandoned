@@ -76,6 +76,8 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Word.class 
 
 rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
+	$(CLASSROOT)$(RUNTIME)Future_Stub.class \
+	$(CLASSROOT)$(RUNTIME)ByNeedFuture_Stub.class \
 	$(CLASSROOT)$(RUNTIME)ServerManager_Stub.class \
 	$(CLASSROOT)$(RUNTIME)ClientManager_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Exporter_Stub.class \
@@ -90,7 +92,9 @@ link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)
 	(test -d $(CLASSROOT)$(RUNTIME) || for a in $(SRCDIR)/*.java.m4 ; do \
 	$(M4) $(M4INCL) $$a > `basename $$a .m4` ; done)
-	test -d $(CLASSROOT)$(RUNTIME) || CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) *java
+	test -d $(CLASSROOT)$(RUNTIME) || (\
+	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) *java && \
+	$(RMIC) $(RMIFLAGS) -d $(CLASSROOT) $(rt)LVar $(rt)Future $(rt)ServerManager $(rt)ClientManager $(rt)Exporter $(rt)Port)
 
 rmi:	$(rmifil)
 

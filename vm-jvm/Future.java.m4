@@ -12,27 +12,49 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-public class Future extends LVar {
+import java.rmi.server.UnicastRemoteObject;
 
-    // von LVar: DMLValue ref = null;
-    // diese ref kann nur eine LVar sein!
+final public class Future extends UnicastRemoteObject
+    implements DMLLVar {
 
-    public Future() throws java.rmi.RemoteException {
-    }
+    /** The logic value of which this is the future. */
+    private DMLValue ref;
+
+    //      public Future() throws java.rmi.RemoteException {
+    //      }
 
     /** Dieser Konstruktor wird nur mit LVar als Argument aufgerufen.
      *  @param v LVar
      */
     public Future(DMLValue v) throws java.rmi.RemoteException {
-	ref=v;
+	if (v instanceof LVar) {
+	    ref = v;
+	} else {
+	    ref = null;
+	    _RAISE(runtimeError, new STRING ("cannot create future of "+v));
+	}
+    }
+
+    final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
+	if (ref instanceof DMLLVar) {
+	    ref = ((DMLLVar) ref).getValue();
+	}
+	return ref;
+    }
+
+    final synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
+	if (ref instanceof DMLLVar) {
+	    ref = ((DMLLVar) ref).request();
+	}
+	return ref;
     }
 
     /** bind ist nicht erlaubt und wirft RuntimeError */
-    public DMLValue bind(DMLValue v)  throws java.rmi.RemoteException {
+    final public DMLValue bind(DMLValue v)  throws java.rmi.RemoteException {
 	_RAISE(runtimeError,new STRING ("cannot bind future to "+v));
     }
 
-    public java.lang.String toString() {
+    final public java.lang.String toString() {
 	DMLValue val = null;
 	try {
 	    this.getValue();
@@ -46,21 +68,21 @@ public class Future extends LVar {
     }
 
     /** die Referenz der Future wird appliziert */
-    public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
+    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	return ref.apply(val); // ref ist LVar !
     }
-    public DMLValue apply0() throws java.rmi.RemoteException {
+    final public DMLValue apply0() throws java.rmi.RemoteException {
 	return ref.apply0();
     }
-    public DMLValue apply2(DMLValue v1, DMLValue v2)
+    final public DMLValue apply2(DMLValue v1, DMLValue v2)
 	throws java.rmi.RemoteException {
 	return ref.apply2(v1,v2);
     }
-    public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
+    final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
 	throws java.rmi.RemoteException {
 	return ref.apply3(v1,v2,v3);
     }
-    public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
+    final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
 	throws java.rmi.RemoteException {
 	return ref.apply4(v1,v2,v3,v4);
     }

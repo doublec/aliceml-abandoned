@@ -14,7 +14,7 @@ package de.uni_sb.ps.dml.runtime;
 
 import java.rmi.server.UnicastRemoteObject;
 
-public class LVar extends UnicastRemoteObject
+final public class LVar extends UnicastRemoteObject
     implements DMLLVar {
 
     protected DMLValue ref=null;
@@ -32,7 +32,7 @@ public class LVar extends UnicastRemoteObject
 	return ref;
     }
 
-    synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
+    final synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
 	if (ref==null) {
 	    try {
 		this.wait();
@@ -49,7 +49,7 @@ public class LVar extends UnicastRemoteObject
 
     // bindet Variable und startet Threads aus
     // suspendVector-Liste
-    synchronized public DMLValue bind(DMLValue v)
+    final synchronized public DMLValue bind(DMLValue v)
 	throws java.rmi.RemoteException {
 	// here I must check if the value v is admissible
 	// avoid cycles
@@ -87,7 +87,7 @@ public class LVar extends UnicastRemoteObject
 	}
     }
 
-    public java.lang.String toString() {
+    final public java.lang.String toString() {
 	DMLValue val;
 	try {
 	    val=this.getValue();
@@ -103,21 +103,21 @@ public class LVar extends UnicastRemoteObject
     }
 
 
-    public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException {
+    final public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException {
 	return this.request().apply(v);
     }
-    public DMLValue apply0() throws java.rmi.RemoteException {
+    final public DMLValue apply0() throws java.rmi.RemoteException {
 	return this.request().apply0();
     }
-    public DMLValue apply2(DMLValue v1, DMLValue v2)
+    final public DMLValue apply2(DMLValue v1, DMLValue v2)
 	throws java.rmi.RemoteException {
 	return this.request().apply2(v1,v2);
     }
-    public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
+    final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
 	throws java.rmi.RemoteException {
 	return this.request().apply3(v1,v2,v3);
     }
-    public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
+    final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
 	throws java.rmi.RemoteException {
 	return this.request().apply4(v1,v2,v3,v4);
     }
