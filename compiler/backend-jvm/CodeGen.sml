@@ -299,12 +299,17 @@ structure CodeGen =
 	  | decListCode (nil, _, _) = nil
 
 	(* Code generation for declarations *)
-	and decCode (ValDec((((line,_),_),_), id' as Id (_,stamp',_), exp' as FunExp (_, thisFun, _, _),_), curFun, curCls) =
+	and decCode (ValDec((((line,_),_),_), id',
+			    exp' as FunExp (_, thisFun, _, _),_), curFun, curCls) =
 	    (Lambda.setId (thisFun, id');
 	     Line line ::
 	     Multi (expCode (exp', curFun, curCls)) ::
 	     Astore thisFun ::
 	     nil)
+	  | decCode (ValDec((((line,_),_),_), Id (_,stamp',_),
+			    ConAppExp (_,id'', idargs),_), curFun, curCls) =
+	    Line line ::
+	    createConVal (SOME stamp', id'', idargs, curFun, curCls)
 	  | decCode (ValDec((((line,_),_),_), Id (_,stamp',_), exp',_), curFun, curCls) =
 	    (Line line ::
 	     Multi (expCode (exp', curFun, curCls)) ::
@@ -321,21 +326,6 @@ structure CodeGen =
 		local
 		    fun init ((Id (((line,_),_),stamp',_),exp'),akku) =
 			let
-			    fun normalConAppExp (((line,_),_),id'',idargs) =
-				Line line ::
-				New CConVal ::
-				Dup ::
-				idCode (id'', curCls) ::
-				Invokespecial (CConVal, "<init>",
-					       ([Classsig CConstructor],
-						[Voidsig])) ::
-				Dup ::
-				Astore stamp' ::
-				idArgCode
-				(idargs,
-				 curCls,
-				 [Putfield (CConVal^"/content", [Classsig IVal])])
-
 			    val one = case exp' of
 				(* user defined function *)
 				FunExp (((line,_),_),thisFun,_,_) =>
@@ -351,39 +341,8 @@ structure CodeGen =
 					nil
 				    end
 
-			      (* constructor application *)
-			      | ConAppExp (parms as
-					   (((line,_),_),id'', (TupArgs ids))) =>
-				    let
-					val n = length ids
-					val cls=cConVal n
-					fun initTup (id'' :: rest', name::rest'') =
-					    (case rest' of
-						 _::_ => Dup
-					       | nil => Nop) ::
-					     idCode (id'', curCls) ::
-					     Putfield (cls^"/"^name, [Classsig IVal]) ::
-					     initTup (rest', rest'')
-					  | initTup _ = nil
-				    in
-					if n=0 then [Line line,
-						     Getstatic BUnit] else
-					    if n>=2 andalso n<=4 then
-						Line line ::
-						New cls ::
-						Dup ::
-						idCode (id'', curCls) ::
-						Invokespecial
-						(cls, "<init>",
-						 ([Classsig CConstructor], [Voidsig])) ::
-						Dup ::
-						Astore stamp' ::
-						initTup (ids, ["fst", "snd", "thr", "fur"])
-					    else
-						normalConAppExp parms
-				    end
-
-			      | ConAppExp parms => normalConAppExp parms
+			      | ConAppExp (((line,_),_),id'',idargs) =>
+				    createConVal (SOME stamp', id'', idargs, curFun, curCls)
 
 			      | VarExp (((line,_),_), id'') =>
 				    Line line ::
@@ -1204,6 +1163,61 @@ structure CodeGen =
 		loadVars
 	    end
 	and
+
+	    createConVal (stampop, id'', idargs, curFun, curCls) =
+	    (* stampop = constructed value or NONE, if called from an expression *)
+	    (* id'' = the constructor *)
+	    (* idargs = the content *)
+	    let
+		val store = case stampop of
+		    NONE => Nop
+		  | SOME stamp' => Astore stamp'
+
+		fun normalConAppExp () =
+		    New CConVal ::
+		    Dup ::
+		    idCode (id'', curCls) ::
+		    Invokespecial (CConVal, "<init>",
+				   ([Classsig CConstructor],
+				    [Voidsig])) ::
+		    Dup ::
+		    store ::
+		    idArgCode
+		    (idargs,
+		     curCls,
+		     [Putfield (CConVal^"/content", [Classsig IVal])])
+	    in
+		case idargs of
+		    TupArgs t =>
+			let
+			    val n = length t
+			    val cls=cConVal n
+			    fun initTup (id'' :: rest', name::rest'') =
+				(case rest' of
+				     _::_ => Dup
+				   | nil => Nop) ::
+				     idCode (id'', curCls) ::
+				     Putfield (cls^"/"^name, [Classsig IVal]) ::
+				     initTup (rest', rest'')
+			      | initTup _ = nil
+			in
+			    if 2<=n andalso n<=4 then
+				New cls ::
+				Dup ::
+				idCode (id'', curCls) ::
+				Invokespecial
+				(cls, "<init>",
+				 ([Classsig CConstructor], [Voidsig])) ::
+				Dup ::
+				store ::
+				initTup (t, ["fst", "snd", "thr", "fur"])
+			    else
+				normalConAppExp ()
+			end
+		  | _ => normalConAppExp ()
+	    end
+	and
+
 	    expCode (AppExp(((line,_),_),Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
 	    Line line ::
@@ -1252,7 +1266,7 @@ structure CodeGen =
 		      Invokestatic MGetBuiltin]
 
 	  | expCode (FunExp(((line,_),_),thisFun, _, lambda), upperFun, upperCls) =
-		     (* FunExp of coord * string * (id args * dec) list *)
+		     (* FunExp of coord * function stamp * printname * (id args * dec) list *)
 		     (* id is formal parameter *)
 		     (* 1st build closure: - instantiate class *)
 		     (*                    - set free variables via putfields *)
@@ -1312,10 +1326,9 @@ structure CodeGen =
 			  [Line line,
 			   Getstatic BRef]
 
-	  | expCode (ConAppExp (((line,_),_), Id (_,stamp', _), idargs), curFun, curCls) =
-			  Comment "ConAppExp:" ::
+	  | expCode (ConAppExp (((line,_),_), id', idargs), curFun, curCls) =
 			  Line line ::
-			  invokeRecApply (stamp', idargs, curFun, false, curCls, false)
+			  createConVal (NONE, id', idargs, curFun, curCls)
 
 	  | expCode (RefAppExp (((line,_),_), idargs), curFun, curCls) =
 			  Line line ::
