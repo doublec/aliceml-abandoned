@@ -258,15 +258,14 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 		       O.VarExp(typInfo(r,t), O.ShortId(typInfo(r,SOME t), x')))
 	end
 
-    fun idToDec(O.Id(i as {region=r,...}, z, n), y, t) =
+    fun idToDec(O.Id(i as {region=r,...}, z, n), y, tMod, tField) =
 	let
-	    val a    = Label.fromName n
-	    val tMod = Type.inProd(Type.extendRow(a, [t], Type.unknownRow()))
-	    val tSel = Type.inArrow(tMod, t)
+	    val tSel = Type.inArrow(tMod, tField)
 	in
-	    O.ValDec(i, O.VarPat(typInfo(r,t), O.Id(i,z,n)),
-			O.AppExp(typInfo(r,t),
-				 O.SelExp(typInfo(r,tSel), O.Lab(i,a)),
+	    O.ValDec(i, O.VarPat(typInfo(r,tField), O.Id(i,z,n)),
+			O.AppExp(typInfo(r,tField),
+				 O.SelExp(typInfo(r,tSel),
+					  O.Lab(i, Label.fromName n)),
 				 O.VarExp(typInfo(r,tMod), y)))
 	end
 
@@ -566,24 +565,25 @@ UNFINISHED: obsolete after bootstrapping:
 	    val t    = infToTyp(Inf.inSig s)
 	    val x'   = O.Id(nonInfo r, Stamp.new(), Name.InId)
 	    val y'   = O.ShortId(typInfo(r, SOME t), x')
-	    val ds'' = trImps(is, y', ds')
+	    val ds'' = trImps(is, y', t, ds')
 	in
 	    ( (x',s,u)::xsus', ds'' )
 	end
 
-    and trImps(is, y, ds')		= List.foldr (trImp y) ds' is
+    and trImps(is, y, t, ds')		= List.foldr (trImp y t) ds' is
 
-    and trImp y (I.ValImp(i,x,d),ds')	= idToDec(trId x, y, #typ(I.infoDesc d))
-					  :: ds'
-      | trImp y (I.ConImp(i,x,d,k),ds')	= idToDec(trId x, y, #typ(I.infoDesc d))
-					  :: ds'
-      | trImp y (I.TypImp(i,x,d),ds')	= ds'
-      | trImp y (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y,
+    and trImp y t (I.ValImp(i,x,d),ds')	= idToDec(trId x, y, t,
+						  #typ(I.infoDesc d)) :: ds'
+      | trImp y t (I.ConImp(i,x,d,k),ds')
+					= idToDec(trId x, y, t,
+						  #typ(I.infoDesc d)) :: ds'
+      | trImp y t (I.TypImp(i,x,d),ds')	= ds'
+      | trImp y t (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y, t,
 						  infToTyp(#inf(I.infoDesc d)))
 					  :: ds'
-      | trImp y (I.InfImp(i,x,d),ds')	= ds'
-      | trImp y (I.FixImp(i,x,d),ds')	= ds'
-      | trImp y (I.RecImp(i,is), ds')	= trImps(is, y, ds')
+      | trImp y t (I.InfImp(i,x,d),ds')	= ds'
+      | trImp y t (I.FixImp(i,x,d),ds')	= ds'
+      | trImp y t (I.RecImp(i,is), ds')	= trImps(is, y, t, ds')
 
 
   (* Components *)
