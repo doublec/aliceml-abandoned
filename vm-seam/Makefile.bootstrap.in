@@ -386,12 +386,10 @@ BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
 	$(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin \
+INSTALL1DIRS = build1/install \
 	build1/install/compiler build1/install/linker
-INSTALL1BINFILES = alicerun alicec alicelink
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
-	$(INSTALL1BINFILES:%=build1/install/bin/%) \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(LIBNATIVES:%=build1/install/%)
 
@@ -610,7 +608,6 @@ INSTALL3DIRS = \
 	build3/install/include/adt \
 	build3/install/include/generic \
 	build3/install/include/alice \
-	build3/install/bin \
 	build3/install/lib \
 	build3/install/lib/fundamental \
 	build3/install/lib/data \
@@ -785,7 +782,6 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 
 INSTALLDIRS = \
 	${prefix} \
-	${bindir} \
 	${pkgdatadir}/lib \
 	${pkgdatadir}/lib/fundamental \
 	${pkgdatadir}/lib/data \
