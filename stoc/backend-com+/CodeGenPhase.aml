@@ -253,7 +253,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newobj (StockWerk.Int, [Int32Ty])))
 	  | genLit (CharLit c) =
 	    (emit (LdcI4 (Char.ord c));
-	     emit (Newobj (StockWerk.Char, [Int32Ty])))
+	     emit (Newobj (StockWerk.Char, [CharTy])))
 	  | genLit (StringLit s) =
 	    (emit (Ldstr s);
 	     emit (Newobj (StockWerk.String, [System.StringTy])))
