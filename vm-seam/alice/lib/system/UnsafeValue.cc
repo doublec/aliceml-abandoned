@@ -29,6 +29,13 @@ DEFINE3(UnsafeValue_proj) {
   RETURN(record->Sel(i));
 } END
 
+DEFINE3(UnsafeValue_projTuple) {
+  DECLARE_TUPLE(tuple, x0);
+  x1 = x1; // ignored
+  DECLARE_INT(i, x2);
+  RETURN(tuple->Sel(i));
+} END
+
 DEFINE2(UnsafeValue_tag) {
   TagVal *tagVal = TagVal::FromWord(x0);
   if (tagVal == INVALID_POINTER) {
@@ -73,13 +80,15 @@ DEFINE1(UnsafeValue_conName) {
 } END
 
 word UnsafeValue() {
-  Record *record = Record::New(8);
+  Record *record = Record::New(9);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
 		 UnsafeValue_same, 2, true);
   INIT_STRUCTURE(record, "UnsafeValue", "proj",
 		 UnsafeValue_proj, 3, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "projTuple",
+		 UnsafeValue_projTuple, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "tag",
 		 UnsafeValue_tag, 2, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projTagged",
