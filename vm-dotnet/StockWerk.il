@@ -391,7 +391,7 @@
       ldloc.1
       ldloc.2
       ldelem.ref
-      call instance bool System.String::Equals(class System.Object)
+      call bool System.String::Equals(class System.String, class System.String)
       brfalse.s retFalse
       ldloc.2
       ldc.i4.1
@@ -490,7 +490,7 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.0
       ldarg.1
@@ -698,7 +698,7 @@
       stfld int32 StockWerk.Word::Value
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.Word
@@ -734,7 +734,7 @@
       stfld int32 StockWerk.Int::Value
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.Int
@@ -777,7 +777,7 @@
       //--** throw exception Chr if out of range
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.Char
@@ -813,7 +813,7 @@
       stfld class System.String StockWerk.String::Value
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.String
@@ -861,7 +861,7 @@
       stfld float32 StockWerk.Real::Value
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.Real
@@ -1014,7 +1014,7 @@
       stfld class StockWerk.Constructor StockWerk.ConVal::Con
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.ConVal
@@ -1029,7 +1029,7 @@
       ldfld class StockWerk.StockWert StockWerk.ConVal::Val
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.ConVal::Val
-      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance bool System.Object::Equals(class System.Object)
       ret
     retFalse:
       ldc.i4.0
@@ -1069,7 +1069,7 @@
       newobj instance void StockWerk.Ref::.ctor(class StockWerk.StockWert)
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.RefConstructor
@@ -1144,7 +1144,7 @@
       /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       .locals(class StockWerk.Tuple2)
     retry:
       ldarg.1
@@ -1157,13 +1157,13 @@
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldc.i4.1
       ret
@@ -1227,7 +1227,7 @@
       /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       .locals(class StockWerk.Tuple3)
     retry:
       ldarg.1
@@ -1240,19 +1240,19 @@
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value1
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value1
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value2
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value2
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value3
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value3
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldc.i4.1
       ret
@@ -1330,7 +1330,7 @@
       stfld class StockWerk.StockWert[] StockWerk.Tuple::Values
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
     retry:
       ldarg.1
@@ -1361,7 +1361,7 @@
       ldloc.1
       ldloc.2
       ldelem.ref
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldloc.2
       ldc.i4.1
@@ -1405,7 +1405,7 @@
       stfld class StockWerk.StockWert[] StockWerk.Record::Values
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
     retry:
       ldarg.1
@@ -1436,7 +1436,7 @@
       ldloc.1
       ldloc.2
       ldelem.ref
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldloc.2
       ldc.i4.1
@@ -1506,7 +1506,7 @@
       stfld class StockWerk.StockWert[] StockWerk.Vector::Values
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
     retry:
       ldarg.1
@@ -1537,7 +1537,7 @@
       ldloc.1
       ldloc.2
       ldelem.ref
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldloc.2
       ldc.i4.1
@@ -1664,13 +1664,13 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
       dup
       brfalse.s raise
       ldarg.1
-      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance bool System.Object::Equals(class System.Object)
       ret
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Promise
@@ -1767,12 +1767,12 @@
       tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       ldarg.0
       ldfld class StockWerk.Promise StockWerk.Future::Prom
       call instance class StockWerk.StockWert StockWerk.Promise::AwaitInternal()
       ldarg.1
-      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance bool System.Object::Equals(class System.Object)
       ret
     }
     .method virtual public bool IsVariantOf(class StockWerk.Transient) {
@@ -1826,11 +1826,11 @@
       stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
       ldarg.0
       call instance class StockWerk.StockWert StockWerk.ByNeed::Await()
       ldarg.1
-      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance bool System.Object::Equals(class System.Object)
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -1962,7 +1962,7 @@
       tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Select(class System.String)
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.Selector
@@ -2172,7 +2172,7 @@
       stfld class System.Thread StockWerk.Thread::Thr
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+    .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
       isinst StockWerk.Thread
@@ -2271,7 +2271,7 @@
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
       ldarg.1
       ldarg.2
-      callvirt bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brfalse.s retFalse
       ldsfld class StockWerk.StockWert StockWerk.Prebound::true
       ret
@@ -2290,7 +2290,7 @@
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
       ldarg.1
       ldarg.2
-      callvirt bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      callvirt instance bool System.Object::Equals(class System.Object)
       brtrue.s retFalse
       ldsfld class StockWerk.StockWert StockWerk.Prebound::true
       ret
