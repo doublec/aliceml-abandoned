@@ -1,8 +1,15 @@
 #!/bin/sh
 
+# Install the non-bootstrapped system, used for testing the libraries.
+# This has to be preceded by the following commands from make.sh:
+#    rm -f stoc/stoc-mozart.*
+#    (cd stoc && make) || exit 1
+#    (cd vm-mozart && make) || exit 1
+
+
 if [$1 = ""]
 then
-  PREFIX=/opt/stockhausen-devel
+  PREFIX=/opt/stockhausen-devel0
 else
   PREFIX=$1
 fi
