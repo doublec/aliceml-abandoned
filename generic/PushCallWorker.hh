@@ -19,10 +19,10 @@
 
 #include "generic/Interpreter.hh"
 
-class PushCallInterpreter : public Interpreter {
+class PushCallInterpreter: public Interpreter {
 private:
   // PushCallInterpreter Constructor
-  PushCallInterpreter() : Interpreter() {}
+  PushCallInterpreter(): Interpreter() {}
 public:
   // Exported PushCallInterpreter Instance
   static PushCallInterpreter *self;
@@ -31,9 +31,10 @@ public:
     self = new PushCallInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, word closure);
+  static void PushFrame(word closure);
+  static void PushFrame(Thread *thread, word closure);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
