@@ -72,23 +72,27 @@ void Scheduler::Run() {
 	raise:
 	  currentThread->SetArgs(Interpreter::EmptyArg());
 	  interpreter = taskStack->GetInterpreter();
-	  result = interpreter->Handle(currentData, currentBacktrace,taskStack);
+	  result =
+	    interpreter->Handle(currentData, currentBacktrace, taskStack);
 	  goto interpretResult;
 	}
       case Interpreter::REQUEST:
 	{
-	  Transient *transient = Store::WordToTransient(Scheduler::currentData);
+	  Transient *transient = Store::WordToTransient(currentData);
 	  Assert(transient != INVALID_POINTER);
 	  switch (transient->GetLabel()) {
 	  case HOLE_LABEL:
 	    Scheduler::currentData = Hole::holeExn;
 	    goto raise;
 	  case FUTURE_LABEL:
-	    taskStack->Purge();
-	    currentThread->SetArgs(currentArgs);
-	    currentThread->Block(transient->ToWord());
-	    ((Future *) transient)->AddToWaitQueue(currentThread);
-	    nextThread = true;
+	    {
+	      taskStack->Purge();
+	      currentThread->SetArgs(currentArgs);
+	      Future *future = reinterpret_cast<Future *>(transient);
+	      future->AddToWaitQueue(currentThread);
+	      currentThread->Block(transient->ToWord());
+	      nextThread = true;
+	    }
 	    break;
 	  case CANCELLED_LABEL:
 	    Scheduler::currentData = transient->GetArg();
@@ -103,8 +107,9 @@ void Scheduler::Run() {
 	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 	      taskStack->Purge();
 	      currentThread->SetArgs(currentArgs);
+	      Future *future = reinterpret_cast<Future *>(transient);
+	      future->AddToWaitQueue(currentThread);
 	      currentThread->Block(transient->ToWord());
-	      ((Future *) transient)->AddToWaitQueue(currentThread);
 	      nextThread = true;
 	    }
 	    break;
