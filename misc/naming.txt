@@ -38,6 +38,10 @@ The other tools:
 
 And we want a foreign function interface -- the Stock Exchange.
 
+As for versions, each major version will be an opus. Increasements
+in minor versions are varations. So version 1.2 is Stockhausen Opus 1
+Variation 2. The prototypes are small operettes.
+
 We want the reader to compare this nice, consistent, and
 extensible naming scheme to the other current proposal,
 Amadeus. If the system is Amadeus then it only contains a Made
