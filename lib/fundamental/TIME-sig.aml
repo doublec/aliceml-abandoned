@@ -20,7 +20,7 @@ import __primitive type unit and int and char and string
        type bool and order and option                    from "ToplevelTypes"
 import __primitive structure LargeInt                    from "LargeInt"
 import __primitive structure LargeReal                   from "LargeReal"
-
+import __primitive structure StringCvt                   from "StringCvt"
 
 signature TIME =
 sig
@@ -30,8 +30,11 @@ sig
     exception Time
 
     val zeroTime :		time
-(*TODO
+(*
     val now :			unit -> time
+    
+    is in system/Time
+
 *)
 
     val fromReal :		LargeReal.real -> time
@@ -56,10 +59,8 @@ sig
     val compare :		time * time -> order
     val hash :			time  -> int				(**)
 
-(*TODO
     val toString :	time -> string
     val fromString :	string -> time option
     val fmt :		int -> time -> string
     val scan :		(char,'a) StringCvt.reader -> 'a -> (time * 'a) option
-*)
 end
