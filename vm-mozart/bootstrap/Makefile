@@ -91,8 +91,6 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/PathSet.sml \
 	$(STOC_DIR)/frontend-common/TYPE.sig \
 	$(STOC_DIR)/frontend-common/Type.sml \
-	$(STOC_DIR)/frontend-common/SIGN.sig \
-	$(STOC_DIR)/frontend-common/Sign.sml \
 	$(STOC_DIR)/frontend-common/INF.sig \
 	$(STOC_DIR)/frontend-common/Inf.sml \
 	$(STOC_DIR)/frontend-common/ABSTRACT_GRAMMAR.sig \
@@ -107,6 +105,8 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/PPPath.sml \
 	$(STOC_DIR)/frontend-common/PP_TYPE.sig \
 	$(STOC_DIR)/frontend-common/PPType.sml \
+	$(STOC_DIR)/frontend-common/PP_INF.sig \
+	$(STOC_DIR)/frontend-common/PPInf.sml \
 	$(STOC_DIR)/frontend-common/ELABORATION_ERROR.sig \
 	$(STOC_DIR)/frontend-common/ElaborationError.sml \
 	$(STOC_DIR)/frontend-common/ELABORATION_PHASE.sig \

@@ -18,9 +18,6 @@ structure PathMap: IMP_MAP
 ###frontend-common/TYPE.sig
 structure Type: TYPE
 
-###frontend-common/SIGN.sig
-structure Sign: SIGN
-
 ###frontend-common/INF.sig
 structure Inf: INF
 
