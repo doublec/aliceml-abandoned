@@ -171,6 +171,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [outputTag conArity, S " ", S (Label.toString label)]
 	  | outputExp (ConExp (_, id, conArity)) =
 	    SEQ [outputCon conArity, S " ", ID id]
+	  | outputExp (StaticConExp (_, stamp, conArity)) =
+	    SEQ [outputCon conArity, S " ", S (Stamp.toString stamp)]
 	  | outputExp (RefExp _) = SEQ [S "ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
@@ -197,6 +199,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (ConAppExp (_, id, args, conArity)) =
 	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
 		 outputArgs args]
+	  | outputExp (StaticConAppExp (_, stamp, args, conArity)) =
+	    SEQ [S "(", outputCon conArity, S " ", S (Stamp.toString stamp),
+		 S ") ", outputArgs args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ [S "ref ", ID id]
 	  | outputExp (SelAppExp (_, label, id)) =

@@ -51,7 +51,7 @@ signature FLAT_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
-	type id_info = IntermediateInfo.id_info
+	type id_info = {region: Source.region}
 	type stm_info = {region: Source.region, liveness: livenessInfo ref}
 	type exp_info = {region: Source.region, typ: Type.t}
 
@@ -94,6 +94,7 @@ signature FLAT_GRAMMAR =
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * conArity
 	  | ConExp of exp_info * id * conArity
+	  | StaticConExp of exp_info * stamp * conArity
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id list
 	  | RecExp of exp_info * (label * id) list
@@ -107,6 +108,9 @@ signature FLAT_GRAMMAR =
 	    (* args may only be TupArgs if conArity is Tuple;
 	     * args may only be RecArgs if conArity is Record *)
 	  | ConAppExp of exp_info * id * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
+	  | StaticConAppExp of exp_info * stamp * id args * conArity
 	    (* args may only be TupArgs if conArity is Tuple;
 	     * args may only be RecArgs if conArity is Record *)
 	  | RefAppExp of exp_info * id

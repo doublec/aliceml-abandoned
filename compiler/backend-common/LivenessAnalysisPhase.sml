@@ -232,6 +232,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
 	  | scanExp (TagExp (_, _, _), lset) = lset
 	  | scanExp (ConExp (_, id, _), lset) = ins (lset, id)
+	  | scanExp (StaticConExp (_, _, _), lset) = lset
 	  | scanExp (RefExp _, lset) = lset
 	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
 	  | scanExp (RecExp (_, labIdList), lset) =
@@ -252,6 +253,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    processArgs (args, lset, ins)
 	  | scanExp (ConAppExp (_, id, args, _), lset) =
 	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (StaticConAppExp (_, _, args, _), lset) =
+	    processArgs (args, lset, ins)
 	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
 	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
