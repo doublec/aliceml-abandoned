@@ -74,6 +74,20 @@ struct
 
     fun state (p: participant) = #state p
 
+    fun changeObserved (p: participant, id) =
+        case ! ( #state p) of
+            FINISHED (_, r)     => r := id
+        |   WATCHING r          => r := id
+        |   DEAD (_, r)         => r := id
+        |   _                   => ()
+
+    fun observes (p: participant, ob) =
+        case ! (#state p) of
+            FINISHED (_, ref (SOME id)) => id = ob
+        |   WATCHING (ref (SOME id))    => id = ob
+        |   DEAD (_, ref (SOME id))     => id = ob
+        |   _                           => false
+
     fun nameNColor p = 
         let
             val info    = playerInfo p
@@ -135,10 +149,11 @@ struct
                 |   DEAD _                 => true
                 |   _                      => false)) 
 
-    val allWatching = allParticipants
+    val allSpectators = allParticipants
             (fn p =>
                 case !(state p) of
                     FINISHED    (_, ref (SOME _)) => true
                 |   DEAD        (_, ref (SOME _)) => true
+                |   WATCHING    (ref (SOME _))    => true
                 |   _                             => false)
 end

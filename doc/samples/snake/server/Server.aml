@@ -253,19 +253,59 @@ struct
                     #updatePoints, computePointsList ())
 
                 
+            fun indexOf p v =
+                case Vector.findi (fn (_, x) => p x) v of
+                    SOME (ndx, _) => SOME ndx
+                |   NONE          => NONE
+
+                
+            fun previousSnake (p, id) =
+                let
+                    val parts   = Vector.fromList $ Part.allPlayers p
+                    val ndx     = getOpt (indexOf 
+                                    (fn p => Part.id p = id) parts, 1)
+                in
+                    if Vector.length parts = 0 then NONE
+                    else SOME (Part.id $
+                        Vector.sub (parts, (ndx - 1) mod Vector.length parts))
+                end
+            
+            fun nextSnake (p, id) =
+                let
+                    val parts   = Vector.fromList $ Part.allPlayers p
+                    val ndx     = getOpt (indexOf 
+                                    (fn p => Part.id p = id) parts, 1)
+                 in
+                    if Vector.length parts = 0 then NONE
+                    else SOME (Part.id $ 
+                        Vector.sub (parts, (ndx + 1) mod Vector.length parts))
+                end
+             
             fun kill id =
                 let val part        = PMap.lookupExistent (!participants, id)
                     val playerInfo  = Part.playerInfo part
                     val (name, 
                         color)      = Part.nameNColor part
                     val points      = ! $ #points playerInfo
+
+                    val spectators  = Part.allSpectators (!participants)
                 in
                     (Part.state part) := Part.DEAD (playerInfo, ref NONE); (*FIXME*)
                     #deathCount playerInfo := !(#deathCount playerInfo) 
                                                 + 1;
                     (* reset gamepoints to zero, points are not changed
                        as the snake died before entering the gate *)
-                    #gamePoints playerInfo := 0
+                    #gamePoints playerInfo := 0;
+                    
+                    (* each spectator observing this snake must be notified *)
+                    List.app (fn p => 
+                        if Part.observes (p, id) then
+                            Part.changeObserved (p, NONE)
+                            (* alternatively:
+                            Part.changeObserved (p, 
+                                nextSnake (!participants, id))
+                            *)
+                        else ())  spectators
 
                     (*TODO: send playersFinished / dead signal? *)
                 end
@@ -348,35 +388,7 @@ struct
                         *) ()
                 ))
 
-            
-            fun indexOf p v =
-                case Vector.findi (fn (_, x) => p x) v of
-                    SOME (ndx, _) => SOME ndx
-                |   NONE          => NONE
-
-                
-            fun previousSnake (p, id) =
-                let
-                    val parts   = Vector.fromList $ Part.allPlayers p
-                    val ndx     = getOpt (indexOf 
-                                    (fn p => Part.id p = id) parts, 1)
-                in
-                    if Vector.length parts = 0 then NONE
-                    else SOME (Part.id $
-                        Vector.sub (parts, (ndx - 1) mod Vector.length parts))
-                end
-            
-            fun nextSnake (p, id) =
-                let
-                    val parts   = Vector.fromList $ Part.allPlayers p
-                    val ndx     = getOpt (indexOf 
-                                    (fn p => Part.id p = id) parts, 1)
-                 in
-                    if Vector.length parts = 0 then NONE
-                    else SOME (Part.id $ 
-                        Vector.sub (parts, (ndx + 1) mod Vector.length parts))
-                end
-             
+           
             fun changeView id = Lock.sync lock (
                 withParticipant () ("changeView", id, fn (part, hint) => 
                     let
@@ -515,7 +527,7 @@ struct
             fun mayAppList f [] = ()
               | mayAppList f l  = f l
 
-
+            
             val tick    = Lock.sync lock (fn {levels, oldArena, newArena, 
                                                 ticks, goodies} =>
                 let
@@ -634,12 +646,18 @@ struct
                         (Part.allConnected $ ! participants, #playersDied, deads));
                 
 		    (* inform snake about their new head positions *)
-		    (* FIXME: do not send headPos to dead snakes *)
-		    (* send headPos to those snakes who 
-		       are watching this one *)
-		    List.app (fn (part, p) =>
-			      ispawn (_file_, _line_)
-			         invoke (part, #headPosition, p)) newHeadPos;
+		    List.app (fn (part, pos) =>
+                                let 
+                                    val id  = Part.id part
+                                    val spects  = Part.allParticipants 
+                                        (fn p => Part.observes (p, id)) 
+                                                (!participants)
+                                in
+                                    (* inform the player himself and all 
+                                       spectators observing him *)
+                                    invokeSeveral (part :: spects, 
+                                        #headPosition, pos)
+                                end) newHeadPos;
  
                     (* change state of participants whose snakes are 
                        finished to HALF_FINISHED, as soon as their

@@ -58,6 +58,10 @@ sig
 
     val disconnect :        participant -> unit
 
+    val observes :          participant * id -> bool
+
+    val changeObserved :    participant * id option -> unit
+
     (******* operations on a participant map *)
 
     structure Map : MAP where type key = id
@@ -75,7 +79,7 @@ sig
     
     val allNonFinished :    pmap -> participant list
 
-    val allWatching :       pmap -> participant list
+    val allSpectators :     pmap -> participant list
 end
 
 
