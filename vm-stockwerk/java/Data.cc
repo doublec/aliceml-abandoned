@@ -125,14 +125,49 @@ void InitializeClassWorker::DumpFrame(word wFrame) {
 }
 
 //
+// Type Implementation
+//
+ClassObject *Type::GetClassObject() {
+  switch (GetLabel()) {
+  case JavaLabel::Class:
+    return static_cast<Class *>(this)->GetClassObject();
+  case JavaLabel::PrimitiveType:
+    PrimitiveType::GetClassObject
+      (static_cast<PrimitiveType *>(this)->GetType());
+  case JavaLabel::ArrayType:
+    return static_cast<ArrayType *>(this)->GetClassObject();
+  default:
+    Error("invalid type");
+  }
+}
+
+//
+// PrimitiveType Implementation
+//
+static word primitiveClasses[PrimitiveType::Void + 1];
+
+void PrimitiveType::Init() {
+  for (u_int i = Void + 1; i--; ) {
+    primitiveClasses[i] = null;
+    RootSet::Add(primitiveClasses[i]);
+  }
+}
+
+ClassObject *PrimitiveType::GetClassObject(type t) {
+  if (primitiveClasses[t] == null) {
+    ClassObject *classObject = ClassObject::New(New(t));
+    primitiveClasses[t] = classObject->ToWord();
+    return classObject;
+  }
+  return static_cast<ClassObject *>
+    (ClassObject::FromWord(primitiveClasses[t]));
+}
+
+//
 // Class Implementation
 //
-word Class::wClass;
-
 void Class::Init() {
   InitializeClassWorker::Init();
-  wClass = ClassLoader::PreloadClass("java/lang/Class");
-  RootSet::Add(wClass);
 }
 
 word Class::MakeMethodKey(JavaString *name, JavaString *descriptor) {
@@ -436,16 +471,46 @@ Worker::Result Class::RunInitializer() {
   return Scheduler::PushCall(wClassInitializer);
 }
 
-Object *Class::GetClassObject() {
+ClassObject *Class::GetClassObject() {
   word wObject = GetArg(CLASS_OBJECT_POS);
-  if (wObject != null) return Object::FromWordDirect(wObject);
+  if (wObject != null)
+    return static_cast<ClassObject *>(Object::FromWordDirect(wObject));
+  ClassObject *classObject = ClassObject::New(this);
+  ReplaceArg(CLASS_OBJECT_POS, classObject->ToWord());
+  return classObject;
+}
+
+//
+// ArrayType Implementation
+//
+ClassObject *ArrayType::GetClassObject() {
+  word wObject = GetArg(CLASS_OBJECT_POS);
+  if (wObject != null)
+    return static_cast<ClassObject *>(Object::FromWordDirect(wObject));
+  ClassObject *classObject = ClassObject::New(this);
+  ReplaceArg(CLASS_OBJECT_POS, classObject->ToWord());
+  return classObject;
+}
+
+//
+// ClassObject Implementation
+//
+word ClassObject::wClass;
+
+void ClassObject::Init() {
+  wClass = ClassLoader::PreloadClass("java/lang/Class");
+  RootSet::Add(wClass);
+}
+
+ClassObject *ClassObject::New(Type *type) {
+  // Precondition: has not been called before for type
+  Assert(type != INVALID_POINTER);
   Class *theClass = Class::FromWord(wClass);
   Assert(theClass != INVALID_POINTER);
   u_int index = theClass->GetNumberOfInstanceFields();
   Object *classObject = Object::New(wClass, index + 1);
-  classObject->InitInstanceField(index, ToWord());
-  ReplaceArg(CLASS_OBJECT_POS, classObject->ToWord());
-  return classObject;
+  classObject->InitInstanceField(index, type->ToWord());
+  return static_cast<ClassObject *>(classObject);
 }
 
 //

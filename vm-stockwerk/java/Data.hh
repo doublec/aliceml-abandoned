@@ -129,6 +129,8 @@ public:
 	   b->GetLabel() == JavaLabel::ArrayType);
     return static_cast<Type *>(b);
   }
+
+  class ClassObject *GetClassObject();
 };
 
 class DllExport Class: protected Type {
@@ -139,15 +141,13 @@ protected:
     VIRTUAL_TABLE_POS, // Table(Closure)
     INTERFACE_TABLE_POS, // Table(Table(Class Closure ...))
     LOCK_POS, // Lock
-    CLASS_INITIALIZER_POS, // Closure | int(0)
+    CLASS_INITIALIZER_POS, // Closure | null
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
-    CLASS_OBJECT_POS, // Object | int(0)
+    CLASS_OBJECT_POS, // Object | null
     BASE_SIZE
     // ... static fields
     // ... static methods
   };
-private:
-  static word wClass;
 public:
   using Block::ToWord;
 
@@ -194,7 +194,7 @@ public:
   u_int GetNumberOfInstanceFields() {
     return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
   }
-  class Object *GetClassObject();
+  class ClassObject *GetClassObject();
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
@@ -208,7 +208,7 @@ public:
 
 class DllExport PrimitiveType: protected Type {
 public:
-  enum type { Byte, Char, Double, Float, Int, Long, Short, Boolean };
+  enum type { Boolean, Byte, Char, Double, Float, Int, Long, Short, Void };
 protected:
   enum {
     TYPE_POS, // int (type)
@@ -216,6 +216,9 @@ protected:
   };
 public:
   using Block::ToWord;
+
+  static void Init();
+  static class ClassObject *GetClassObject(type t);
 
   static PrimitiveType *New(type t) {
     Block *b = Store::AllocBlock(JavaLabel::PrimitiveType, SIZE);
@@ -237,6 +240,7 @@ public:
     case PrimitiveType::Long:
     case PrimitiveType::Double:
       return 8;
+    case PrimitiveType::Void:
     default:
       Error("invalid base type");
     }
@@ -250,7 +254,8 @@ public:
 class DllExport ArrayType: protected Type {
 protected:
   enum {
-    TYPE_POS, // Type
+    ELEMENT_TYPE_POS, // Type
+    CLASS_OBJECT_POS, // Object | null
     SIZE
   };
 public:
@@ -258,9 +263,14 @@ public:
 
   static ArrayType *New(word wType) {
     Block *b = Store::AllocBlock(JavaLabel::ArrayType, SIZE);
-    b->InitArg(TYPE_POS, wType);
+    b->InitArg(ELEMENT_TYPE_POS, wType);
+    b->InitArg(CLASS_OBJECT_POS, null);
     return static_cast<ArrayType *>(b);
   }
+  Type *GetElementType() {
+    return Type::FromWordDirect(GetArg(ELEMENT_TYPE_POS));
+  }
+  class ClassObject *GetClassObject();
 };
 
 //
@@ -409,7 +419,7 @@ class DllExport Object: private Block {
 protected:
   enum {
     CLASS_POS, // Class
-    LOCK_POS, // Lock | int(0)
+    LOCK_POS, // Lock | null
     BASE_SIZE
     // ... instance fields
   };
@@ -476,6 +486,7 @@ public:
   }
 };
 
+//--** arrays are objects
 class DllExport ObjectArray: private Block {
 protected:
   enum {
@@ -527,6 +538,7 @@ public:
   }
 };
 
+//--** arrays are objects
 class BaseArray: private Chunk {
   friend class JavaString;
 protected:
@@ -576,6 +588,7 @@ public:
     case PrimitiveType::Long:
     case PrimitiveType::Double:
       return (GetSize() - BASE_SIZE) / 8;
+    case PrimitiveType::Void:
     default:
       Error("invalid base type");
     }
@@ -679,10 +692,16 @@ public:
 };
 
 class DllExport ClassObject: public Object {
+private:
+  static word wClass;
 public:
-  Class *GetRepresentedClass() {
+  static void Init();
+
+  static ClassObject *New(Type *type);
+
+  Type *GetRepresentedType() {
     u_int index = GetClass()->GetNumberOfInstanceFields();
-    return Class::FromWordDirect(GetInstanceField(index));
+    return Type::FromWordDirect(GetInstanceField(index));
   }
 };
 
@@ -766,6 +785,13 @@ public:
     if (otherString->GetLength() != length) return false;
     return !std::memcmp(GetBase(), otherString->GetBase(),
 			length * sizeof(u_wchar));
+  }
+  bool Equals(const char *s) {
+    u_int length = GetLength();
+    if (std::strlen(s) != length) return false;
+    for (u_int i = length; i--; )
+      if (CharAt(i) != reinterpret_cast<const u_char *>(s)[i]) return false;
+    return true;
   }
   JavaString *Concat(JavaString *otherString) {
     u_int length = GetLength();
