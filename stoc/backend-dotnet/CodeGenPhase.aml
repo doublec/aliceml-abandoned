@@ -125,6 +125,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		val max = List.length ids - 1
 	    in
 		if await then emitAwait () else ();
+		emit (Castclass (ArrayTy System.ObjectTy));
 		List.appi (fn (i, id) =>
 			   (if i = max then () else emit Dup;
 			    emit (LdcI4 i); emit LdelemRef;
@@ -187,12 +188,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.genTest: StaticConAppTest"
 	  | genTest (RefAppTest id, elseLabel) =
 	    (emit (Castclass Alice.CellTy);
-	     emit (Call (true, Alice.Cell, "Access", nil, System.ObjectTy));
+	     emit (Ldfld (Alice.Cell, "Value", System.ObjectTy));
 	     declareLocal id)
 	  | genTest (TupTest nil, elseLabel) = emit Pop
 	  | genTest (TupTest ids, elseLabel) =
-	    (emit (Castclass (ArrayTy System.ObjectTy));
-	     declareArgs (TupArgs ids, false))
+	    declareArgs (TupArgs ids, false)
 	  | genTest (RecTest labelIdList, elseLabel) =
 	    genTest (TupTest (List.map #2 labelIdList), elseLabel)
 	  | genTest (LabTest (_, n, id), elseLabel) =
@@ -347,6 +347,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				  testBodyList, elseBodyFun)
 	    end
 	and genSwitchTestStm (toInt, getInt, gen, testBodyList, elseBodyFun) =
+(*
 	    let
 		val map = IntMap.new ()
 		val i = toInt (#1 (List.hd testBodyList))
@@ -379,8 +380,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 					restoreRegState regState
 				    end) map
 		    end
-		else genSequentialTestStm (testBodyList, elseBodyFun)
-	    end
+		else*) genSequentialTestStm (testBodyList, elseBodyFun)
+(*	    end*)
 	and genSequentialTestStm (testBodyList, elseBodyFun) =
 	    (List.app (fn (test, body) =>
 		       let
@@ -581,9 +582,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (RefAppExp (_, _), PREPARE) =
 	    emit (Newobj (Alice.Cell, nil))
 	  | genExp (RefAppExp (_, id), FILL) =
-	    (emitId id;
-	     emit (Call (true, Alice.Cell, "Assign",
-			 [System.ObjectTy], VoidTy)))
+	    (emitId id; emit (Stfld (Alice.Cell, "Value", System.ObjectTy)))
 	  | genExp (RefAppExp (_, id), BOTH) =
 	    (emitId id; emit (Newobj (Alice.Cell, [System.ObjectTy])))
 	  | genExp (SelAppExp (_, _, n, id), BOTH) =
