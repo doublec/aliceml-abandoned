@@ -153,6 +153,10 @@ prepare
 	    end
 	    unit
 	 end
+      'Byte.bytesToString':
+	 fun {$ S} S end
+      'Byte.stringToBytes':
+	 fun {$ S} S end
       'Char.<': Value.'<'
       'Char.>': Value.'>'
       'Char.<=': Value.'=<'

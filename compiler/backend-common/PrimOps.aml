@@ -38,6 +38,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Array.tabulate", SOME (Tuple 2));
 		ins ("Array.toList", SOME Unary);
 		ins ("Array.update", SOME (Tuple 3));
+		ins ("Byte.bytesToString", SOME Unary);
+		ins ("Byte.stringToBytes", SOME Unary);
 		ins ("Char.<", SOME (Tuple 2));
 		ins ("Char.>", SOME (Tuple 2));
 		ins ("Char.<=", SOME (Tuple 2));
