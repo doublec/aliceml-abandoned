@@ -113,10 +113,10 @@ black1 black2 tower apply /blackTower
   surface cylinder 1.0 0.75 1.0 scale
   % Body
   surface cone 180.0 rotatez 30.0 rotatey 0.0 1.0 0.0 translate
-  1.0 7.5 1.0 scale
+  1.0 5.0 1.0 scale
   surface plane 0.0 3.0 0.0 translate intersect union
   % Head
-  surface sphere 0.0 3.05 0.0 translate difference
+  surface sphere 0.9 uscale 0.0 3.15 0.0 translate difference
   surface sphere 0.8 uscale 0.0 3.25 0.0 translate union
   0.4 uscale
 } /bishop
@@ -128,22 +128,6 @@ black1 black2 bishop apply /blackBishop
 %% Queens
 %%
 
-{ /v2 /v1
-  v1 getx v2 getx mulf
-  v1 gety v2 gety mulf addf
-  v1 getz v2 getz mulf addf
-} /dotprod
-
-{ /v
-  v getx /x x x mulf
-  v gety /x x x mulf addf
-  v getz /x x x mulf addf
-} /len
-
-{ /v2 /v1
-  v1 v2 dotprod apply v1 len apply v2 len apply mulf divf acos
-} /angle
-
 { /col2 /col1
   col1 col2 figureSurface apply /surface
   col1 col1 figureSurface apply /surface1
@@ -153,12 +137,8 @@ black1 black2 bishop apply /blackBishop
   % Body
   surface cone 180.0 rotatez 30.0 rotatey 0.0 1.0 0.0 translate
   1.0 7.5 1.0 scale
-  surface plane 0.0 3.0 0.0 translate intersect union
+  surface plane 0.0 4.0 0.0 translate intersect union
   % Crown
-  %1.0 0.5 sqrt subf /x
-  %x x 0.0 point /v1
-  %30.0 cos x 30.0 sin point /v2
-  %v1 v2 angle apply /phi
   38.146 /phi
   surface cylinder 1.0 2.0 1.0 scale
   surface1 plane -90.0 phi subf rotatex
@@ -167,10 +147,10 @@ black1 black2 bishop apply /blackBishop
   wedge wedge 60.0 rotatey union wedge 120.0 rotatey union
   wedge 180.0 rotatey union wedge 240.0 rotatey union wedge 300.0 rotatey union
   0.0 1.0 0.0 translate difference
-  0.6 0.25 0.6 scale 0.0 4.2 0.0 translate union
+  0.6 0.25 0.6 scale 0.0 4.7 0.0 translate union
   % Head
-  surface sphere 0.0 3.3 0.0 translate difference
-  surface sphere 0.8 uscale 0.0 3.5 0.0 translate union
+  surface sphere 0.9 uscale 0.0 3.9 0.0 translate difference
+  surface sphere 0.8 uscale 0.0 4.0 0.0 translate union
   0.4 uscale
 } /queen
 
