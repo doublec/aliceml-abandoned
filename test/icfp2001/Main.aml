@@ -1,0 +1,8 @@
+import structure Parse from "Parse"
+
+structure Main =
+struct
+    val file = TextIO.openIn "example.smlng"
+    val s    = TextIO.inputAll file
+    val _    = TextIO.closeIn file
+end

@@ -1,0 +1,22 @@
+import structure Tag from "Tag"
+
+structure Meaning =
+struct
+    type property =
+	{ b :		bool
+	, em :		bool
+	, i :		bool
+	, s :		bool
+	, tt :		bool
+	, u :		int	(* 0..3 *)
+	, size :	int	(* 0..9 or ~1 for preset *)
+	, color :	Tag.color
+	}
+
+    (* All lists are reversed! *)
+
+    type item = string list * bool * property
+	(* The bool flag is true iff all strings are spaces. *)
+
+    type meaning = item list
+end

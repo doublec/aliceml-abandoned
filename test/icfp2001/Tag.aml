@@ -1,0 +1,26 @@
+structure Tag =
+struct
+    datatype color = R | G | B' | C | M | Y | K | W | UNKNOWN
+    datatype tag   = B | EM | I | PL | S | TT | U | SIZE of int | COLOR of color
+
+    fun cost(B | I | S | U | SIZE _ | COLOR _) = 7
+      | cost(EM | PL | TT)                     = 9
+
+    fun toString B         = "B"
+      | toString EM        = "EM"
+      | toString I         = "I"
+      | toString PL        = "PL"
+      | toString S         = "S"
+      | toString TT        = "TT"
+      | toString U         = "U"
+      | toString(SIZE n)   = Int.toString n
+      | toString(COLOR R)  = "r"
+      | toString(COLOR G)  = "g"
+      | toString(COLOR B') = "b"
+      | toString(COLOR C)  = "c"
+      | toString(COLOR M)  = "m"
+      | toString(COLOR Y)  = "y"
+      | toString(COLOR K)  = "k"
+      | toString(COLOR W)  = "w"
+      | toString(COLOR UNKNOWN)	= raise Fail "Tag.toString"
+end
