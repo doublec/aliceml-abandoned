@@ -13,23 +13,38 @@
 #ifndef __TASKSTACK_HH__
 #define __TASKSTACK_HH__
 
-#include "scheduler/Scheduler.hh"
+#include "store/store.hh"
+
+#define TASK_STACK_INITIAL_SIZE 8 /* words */
+
+#define TASK_STACK_LABEL Store::MakeLabel(0) //--**
+
+//--** we'll want to implement this in terms of class Stack
 
 class TaskStack: private Block {
 public:
   using Block::ToWord;
 
-  static TaskStack *New();
+  static TaskStack *New() {
+    Block *b = Store::AllocBlock(TASK_STACK_LABEL, TASK_STACK_INITIAL_SIZE);
+    b->InitArg(1, Store::IntToWord(0));
+    return static_cast<TaskStack *>(b);
+  }
+  static TaskStack *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == TASK_STACK_LABEL);
+    return static_cast<TaskStack *>(b);
+  }
 
   // Handling stack frames:
-  void PushFrame(u_int size); //--** size may be 0
-  void PopFrame(u_int size);
-  bool IsEmpty();
-  void Clear();
+  void PushFrame(u_int size); //--** implement; size may be 0
+  void PopFrame(u_int size); //--** implement
+  bool IsEmpty(); //--** implement
+  void Clear(); //--** implement
 
   // Accessing the current frame:
-  void PutWord(u_int offset, word v);
-  word GetWord(u_int offset);
+  void PutWord(u_int offset, word v); //---** implement
+  word GetWord(u_int offset); //--** implement
   void PutInt(u_int offset, int i) {
     PutWord(offset, Store::IntToWord(i));
   }
