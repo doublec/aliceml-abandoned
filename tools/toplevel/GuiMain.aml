@@ -474,7 +474,9 @@ structure GuiMain =
                 val (buf,id) =
 		    case file of
 			NONE => (SOME (Buffer.getBuffer id), id)
-		      | SOME f => Buffer.getBufferByName f
+		      | SOME f =>
+	        Buffer.getBufferByName
+		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
 	    in
 		case buf of
 		    NONE => ()

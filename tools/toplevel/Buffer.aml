@@ -315,7 +315,7 @@ structure Buffer =
 
       fun getBufferByName f =
 	  case BufferMap.find
-	      (fn {file,...} => case !file of SOME f' => shortName f' = f | _ => false) bufferMap of
+	      (fn {file,...} => case !file of SOME f' => f' = f | _ => false) bufferMap of
 	      NONE => (NONE, ~1)
 	    | SOME {buf,id,...} => (SOME buf, id)
 
@@ -351,6 +351,11 @@ structure Buffer =
               val page = Gtk.notebookPageNum(notebook, scrolledwindow2)
               val _ = Gtk.notebookSetCurrentPage(notebook, page)
               val _ = Gtk.widgetModifyFont(newSource, stdFont)
+
+	      val file = Option.map
+		  (fn f => OS.Path.mkAbsolute {path=f,
+					       relativeTo=OS.FileSys.getDir()})
+		  file
 
               val ret = {id=id,file=ref file,
                          fileLabel=label1,
@@ -392,7 +397,7 @@ structure Buffer =
               val modified = Gtk.textBufferGetModified buf
 	      val prom = Promise.promise()
           in
-              modified orelse
+              not modified andalso
               (BufferMap.removeExistent(bufferMap, id);
                Promise.fulfill(prom, NONE);
 	       highlight := prom;
