@@ -115,6 +115,7 @@ struct
 	    Gtk.windowSetModal (waiting, true);
 	    Gtk.windowSetTitle (waiting, "Waiting...");
 	    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
+	    Gtk.textViewSetEditable (playerText, false);
 	    
 	    (* connects the signals with procedures *)
 	    Gtk.signalConnect (waiting, "delete-event", 
