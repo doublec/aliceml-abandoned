@@ -15,4 +15,5 @@ OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.oz
 
 export STOCKHOME OZ_LOAD
 
-exec $STOCKHOME/bin/alicerun $OZHOME/bin/ozl "$@"
+#--** note: the `--execheader' option in the next line is a hack
+exec $STOCKHOME/bin/alicerun $OZHOME/bin/ozl --execheader alicerun "$@"
