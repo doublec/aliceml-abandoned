@@ -540,7 +540,7 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
   BootInterpreter::Init();
   // Enter built-in native components
   while (nativeComponents->name != NULL) {
-    word (*init)(void) = nativeComponents->init;
+    word (*init)() = nativeComponents->init;
     String *key = String::New(nativeComponents->name);
     word sign = Store::IntToWord(0); // 0 = NONE
     EnterComponent(key, sign, init());
