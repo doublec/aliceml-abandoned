@@ -105,7 +105,7 @@ public:
   virtual void PushCall(Closure *closure);
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);
-  virtual Result Handle(StackFrame *sFrame);
+  virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
@@ -145,8 +145,10 @@ Worker::Result SignalTranslationInterpreter::Run(StackFrame *sFrame) {
 }
 
 // Alice thread semantic: Silently ignore exceptions raised by the signal handler
-Worker::Result SignalTranslationInterpreter::Handle(StackFrame *sFrame) {
-  SignalTranslationFrame *frame = STATIC_CAST(SignalTranslationFrame *, sFrame);
+Worker::Result SignalTranslationInterpreter::Handle(word) {
+  StackFrame *sFrame = Scheduler::GetFrame();
+  SignalTranslationFrame *frame =
+    STATIC_CAST(SignalTranslationFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopFrame(frame->GetSize());
   Scheduler::nArgs = 1;
