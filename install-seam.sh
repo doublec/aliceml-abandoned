@@ -26,14 +26,15 @@ fi
 
 case `uname -s` in
     CYGWIN*)
+	WINDOWS=1
 	SMLPLATFORM=x86-win32
 	SUPPORTPLATFORM=mingw32
 	CC="gcc -mno-cygwin"
 	;;
     *)
+	WINDOWS=0
 	SMLPLATFORM=x86-linux
 	SUPPORTPLATFORM=linux
-	LIGHTNINGCONFOPTS=
 	CC=gcc
 	;;
 esac
@@ -74,7 +75,7 @@ fi
 ##
 ## Build Seam
 ##
-(cd vm-stockwerk && make LIGHTNING=${LIGHTNING}) || exit 1
+(cd vm-stockwerk && make WINDOWS=${WINDOWS} LIGHTNING=${LIGHTNING}) || exit 1
 
 ##
 ## Compile the Bootstrap Compiler with SML/NJ
