@@ -36,11 +36,17 @@ sig
       | DISCONNECTED    (* TODO: Do we need it? *)
 
     
-    type participant = (Protocol.client_interface * state ref)
+    type participant
 
+    val participant :       id * Protocol.client_interface -> participant
 
-    val playerInfo :    participant -> player_info
-    val snake :         participant -> Snake.snake
+    val playerInfo :        participant -> player_info
+    val snake :             participant -> Snake.snake
+    val id :                participant -> id
+    val client_interface :  participant -> Protocol.client_interface
+    val state :             participant -> state ref
+    
+    val nameNColor :        participant -> string * Color.color
 end
 
 

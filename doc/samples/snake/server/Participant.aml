@@ -30,16 +30,34 @@ struct
       | DISCONNECTED    (* TODO: Do we need it? *)
 
 
-    type participant = (Protocol.client_interface * state ref)
+    type participant = (id * Protocol.client_interface * state ref)
+
+    
+    fun participant (id, interface) =
+        (id, interface, ref CONNECTED)
+
+    fun playerInfo (_, _, ref (PLAYING (st, _)))       = st
+    |   playerInfo (_, _, ref (FINISHED (st, _, _)))   = st
+    |   playerInfo (_, _, ref (DEAD (st, _)))          = st
+    |   playerInfo _                                   = assert false
 
 
-    fun playerInfo (_, ref (PLAYING (st, _)))       = st
-    |   playerInfo (_, ref (FINISHED (st, _, _)))   = st
-    |   playerInfo (_, ref (DEAD (st, _)))          = st
-    |   playerInfo _                                = assert false
+    fun snake (_, _, ref (PLAYING (_, sn)))        = sn
+    |   snake _                                    = assert false
 
+    fun id (id, _, _) = id
 
-    fun snake (_, ref (PLAYING (_, sn)))        = sn
-    |   snake _                                 = assert false
+    fun client_interface (_, i, _)  = i
+
+    fun state (_, _, s) = s
+
+    fun nameNColor p = 
+        let
+            val info    = playerInfo p
+            val name    = #name info
+            val color   = #color info
+        in
+            (name, color)
+        end
 
 end
