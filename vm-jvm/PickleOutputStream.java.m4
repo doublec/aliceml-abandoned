@@ -211,8 +211,6 @@ final public class PickleOutputStream extends ObjectOutputStream {
 		return obj;
 	    } else if (obj instanceof Array) {
 		_RAISE(runtimeError,new STRING ("cannot pickle Array"));
-	    } else if (obj instanceof Vector) {
-		_RAISE(runtimeError,new STRING ("cannot pickle Vector"));
 	    } else if (obj instanceof DMLPort) {
 		_RAISE(runtimeError,new STRING ("cannot pickle Port"));
 	    } else if (obj instanceof Thread) {
