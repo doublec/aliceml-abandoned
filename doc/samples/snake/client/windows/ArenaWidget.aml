@@ -9,9 +9,9 @@
 *
 *)
 
-import structure Gtk           from "x-alice:/lib/gtk/Gtk"
-import structure Gdk           from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
+import structure Gtk           from "GtkSupport"
+import structure Gdk           from "GtkSupport"
+import structure Canvas        from "GtkSupport"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 import structure Config        from "x-alice:/lib/system/Config"
 
@@ -76,9 +76,9 @@ struct
 	fun conv c = 
 	    let
 		val (r, g, b) = Color.rgb c
-		val color = Gdk.allocColor (colorConv r, 
-					    colorConv g, 
-					    colorConv b)
+		val color = Gdk.colorNew (colorConv r, 
+					  colorConv g, 
+					  colorConv b)
 	    in
 		Gdk.colormapAllocColor (colormap, color, false, true);
 		color
@@ -86,9 +86,9 @@ struct
 
 	fun convArena (r, g, b) = 
 	    let
-		val color = Gdk.allocColor (colorConv r, 
-					    colorConv g, 
-					    colorConv b)
+		val color = Gdk.colorNew (colorConv r, 
+					  colorConv g, 
+					  colorConv b)
 	    in
 		Gdk.colormapAllocColor (colormap, color, false, true);
 		color
@@ -99,7 +99,7 @@ struct
 	    Color.all
 	    
     in
-	fun color c = CMap.lookupExistent (map, c);
+	fun color c  = CMap.lookupExistent (map, c);
 	val black    = convArena (0.0, 0.0, 0.0);
 	val green    = convArena (0.32, 0.66, 0.17);
 	val red      = convArena (1.0, 0.0, 0.0);
@@ -110,10 +110,10 @@ struct
     val backgroundColor = green
 
     (* some procedures to work on item_cache *)
-    fun addToItemCache (r, c, object, field) ca =
+    fun addToItemCache (r, c, object, field, ca) =
 	ca := (r, c, object, field) :: !ca
 
-    fun removeFromItemCache (r, c, object, field) ca = 
+    fun removeFromItemCache (r, c, object, field, ca) = 
 	let
 	    val newList = 
 		List.filter (fn (v, w, x, y) => 
@@ -127,12 +127,12 @@ struct
 
     fun initialize () = 
         let
-	    val canvas = GtkCanvas.new 1
-            (* antialiasing mode: val canvas = GtkCanvas.newAa ()*)
+	    val canvas = Canvas.new ()
+
         in
 	    {
 	        canvas,
-	        state     = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY))),
+	        state     = ref (Array2.array(0, 0, (Gtk.null, P.EMPTY))),
 		itemCache = ref nil
 	    }
         end
@@ -143,20 +143,17 @@ struct
 		   {dimensions = dim} : P.level_info) =
 	let
 	    val (rows, cols) = dim
-	    val _ = GtkCanvas.setScrollRegion (canvas, 0.0, 0.0,
+	    val _ = Gtk.widgetSetSizeRequest (canvas, windowWidth, 
+					      windowHeight)
+	    val _ = Canvas.setScrollRegion (canvas, 0.0, 0.0,
 					       Real.fromInt(cols * cellSize),
 					       Real.fromInt(rows * cellSize))
-	    val _ = Gtk.widgetSetUsize (canvas, windowWidth, windowHeight)
-	    val root = GtkCanvas.root canvas
-	    val _ = 
-		GtkCanvas.itemNew (root, Gtk.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE(real (cols * cellSize))),
-				    ("y2", Gtk.DOUBLE(real (rows * cellSize))),
-				    ("fill_color_gdk", Gtk.OBJECT green),
-				    ("outline_color_gdk", Gtk.OBJECT green)])
-	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
+	    val root = Canvas.root canvas
+	    val (x1, y1, x2, y2) = (0.0, 0.0,
+				    Real.fromInt (cols * cellSize),
+				    Real.fromInt (rows * cellSize))
+	    val _ = Canvas.createRect (root, x1, y1, x2, y2, green, green)
+	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
 	in
 	    state     := arena;
 	    itemCache := nil
@@ -203,130 +200,76 @@ struct
 			       (11 * cellSize div 10),
 				(4 * cellSize div 10)]
 
-	    val head = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x", Gtk.DOUBLE (real x)),
-				    ("y", Gtk.DOUBLE (real y))])
+	    val head = Canvas.createGroup (canvas, real x, real y)
 
-	    val ground = 
-		GtkCanvas.itemNew (head, GtkCanvas.ELLIPSE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT snakecol)])
+	    val ground = Canvas.createEllipse (head, 0.0, 0.0,
+					       real cellSize,
+					       real cellSize, snakecol, 
+					       snakecol)
 
-	    val tongue = 
-		GtkCanvas.itemNew (head, 
-				   GtkCanvas.LINE,
-				   [("points", Gtk.POINTS tonglist),
-				    ("fill_color_gdk", Gtk.OBJECT red),
-				    ("width_pixels",Gtk.INT(cellSize div 10))])
+	    val tongue = Canvas.createLine (head, tonglist, red, 
+					    cellSize div 10)
 
-	    val leftEye = 
-		GtkCanvas.itemNew (head,
-				   GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE (real ex1)),
-				    ("y1", Gtk.DOUBLE (real ey1)),
-				    ("x2", Gtk.DOUBLE (real (ex1 + 1))),
-				    ("y2", Gtk.DOUBLE (real (ey1 + 1))),
-				    ("fill_color_gdk", Gtk.OBJECT black)])
+	    val leftEye = Canvas.createRect (head, real ex1, real ey1,
+					     real (ex1 + 2), real (ey1 + 2),
+					     black, black)
 		
-	    val rightEye = 
-		GtkCanvas.itemNew (head,
-				   GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE (real ex2)),
-				    ("y1", Gtk.DOUBLE (real ey2)),
-				    ("x2", Gtk.DOUBLE (real (ex2 + 1))),
-				    ("y2", Gtk.DOUBLE (real (ey2 + 1))),
-				    ("fill_color_gdk", Gtk.OBJECT black)])
+	    val rightEye = Canvas.createRect (head, real ex2, real ey2, 
+					      real (ex2 + 2), real (ey2 + 2),
+					      black, black)
 	in
 	    head
 	end
 	    
     fun insertBody (canvas, x, y, snakecol) =
 	let
-	    val body = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x",Gtk.DOUBLE (real x)),
-				    ("y",Gtk.DOUBLE (real y))])
+	    val body = Canvas.createGroup (canvas, real x, real y)
 
-	    val ground = 
-		GtkCanvas.itemNew (body, GtkCanvas.ELLIPSE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT snakecol)])
-		
+	    val ground = Canvas.createEllipse (canvas, 0.0, 0.0, 
+					       real cellSize,
+					       real cellSize,
+					       snakecol, snakecol)
 	in
 	    body
 	end
 
     fun insertClosedGate (canvas, x, y, gatecol) = 
 	let
-	    val gate = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x", Gtk.DOUBLE (real x)),
-				    ("y", Gtk.DOUBLE (real y))])
+	    val gate = Canvas.createGroup (canvas, real x, real y)
 		
-	    val ground = 
-		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT gatecol),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
+	    val ground = Canvas.createRect (gate, 0.0, 0.0, 
+					    real cellSize,
+					    real cellSize,
+					    gatecol, black)
 	in
 	    gate
 	end
 
     fun insertOpenGate (canvas, x, y, gatecol) = 
 	let
-	    val gate = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x", Gtk.DOUBLE (real x)),
-				    ("y", Gtk.DOUBLE (real y))])
+	    val gate = Canvas.createGroup (canvas, real x, real y)
 		
-	    val ground = 
-		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT gatecol),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
+	    val ground = Canvas.createRect (gate, 0.0, 0.0, 
+					    real cellSize,
+					    real cellSize,
+					    gatecol, black)
 
-	    val opens = 
-		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 3.0),
-				    ("y1", Gtk.DOUBLE 3.0),
-				    ("x2", Gtk.DOUBLE (real (cellSize-3))),
-				    ("y2", Gtk.DOUBLE (real (cellSize-3))),
-				    ("fill_color_gdk", Gtk.OBJECT black),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
-
+	    val opens = Canvas.createRect (gate, 3.0, 3.0,
+					   real (cellSize - 3),
+					   real (cellSize - 3),
+					   black, black)
 	in
 	    gate
 	end
 
     fun insertWall (canvas, x, y) = 
 	let
-	    val wall = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x", Gtk.DOUBLE (real x)),
-				    ("y", Gtk.DOUBLE (real y))])
+	    val wall = Canvas.createGroup (canvas, real x, real y)
 		
-	    val ground = 
-		GtkCanvas.itemNew (wall, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT red),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
-		
+	    val ground = Canvas.createRect (wall, 0.0, 0.0, 
+					    real cellSize,
+					    real cellSize,
+					    red, black)
 	in
 	    wall
 	end
@@ -334,25 +277,17 @@ struct
     fun insertGoodie (canvas, x, y, n) =
 	(* where n is the amount of a goodie *)
 	let
-	    val goodie = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x", Gtk.DOUBLE (real x)),
-				    ("y", Gtk.DOUBLE (real y))])
+	    val goodie = Canvas.createGroup (canvas, real x, real y)
 		
-	    val ground = 
-		GtkCanvas.itemNew (goodie, GtkCanvas.ELLIPSE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT red),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
-		
+	    val ground = Canvas.createEllipse (goodie, 0.0, 0.0, 
+					       real cellSize,
+					       real cellSize,
+					       red, black)
 	in
 	    goodie
 	end
 
-    fun createNewFieldObj (r, c, field) arena canvas = 
+    fun createNewFieldObj (r, c, field, arena, canvas) = 
 	let
 	    val x = cellSize * c
 	    val y = cellSize * r
@@ -360,7 +295,7 @@ struct
 	    (* place the new one *)
 	    case field of
 		P.EMPTY                => 
-		    Array2.update (arena, r, c, (Gtk.null (), field))
+		    Array2.update (arena, r, c, (Gtk.null, field))
 	      | P.WALL                 => 
 		    Array2.update (arena, r, c, 
 				   (insertWall (canvas, x, y), field))
@@ -386,38 +321,36 @@ struct
 				    field))
 	end
 
-    fun moveFieldObjTo (obj, oldR, oldC, newR, newC, field) arena _ =
+    fun moveFieldObjTo (obj, oldR, oldC, newR, newC, field, arena) =
 	let
 	    val deltaY = Real.fromInt (cellSize * (newR - oldR))
 	    val deltaX = Real.fromInt (cellSize * (newC - oldC))
 	in
-	    GtkCanvas.itemMove (obj, deltaX, deltaY);
-	    GtkCanvas.itemShow obj;
+	    Canvas.itemMove (obj, deltaX, deltaY);
+	    Canvas.itemShow obj;
 	    Array2.update (arena, newR, newC, (obj, field))
 	end
 
 
-    fun changeField (object, oldField, r, c, field) cache = 
-	(if object <> Gtk.null () orelse oldField <> P.EMPTY
-	     then (addToItemCache (r, c, object, oldField) cache;
-		   GtkCanvas.itemHide object)
+    fun changeField (object, oldField, r, c, field, cache, arena, canvas) = 
+	(if object <> Gtk.null orelse oldField <> P.EMPTY
+	     then (addToItemCache (r, c, object, oldField, cache);
+		   Canvas.itemHide object)
 	 else ();
 	 case List.find (fn (_, _, _, f) => f = field) (!cache) of
-	     NONE                      => createNewFieldObj (r, c, field)
+	     NONE                      => 
+		 createNewFieldObj (r, c, field, arena, canvas)
 	   | SOME (row, col, obj, fld) => 
-		 (removeFromItemCache (row, col, obj, fld) cache;
-		  moveFieldObjTo (obj, row, col, r, c, fld)))
+		 (removeFromItemCache (row, col, obj, fld, cache);
+		  moveFieldObjTo (obj, row, col, r, c, fld, arena)))
 
-    fun insert cache arena canvas ((r, c), field) = 
+    fun insert (a as (cache, arena, canvas)) ((r, c), field) = 
 	let
 	    val (rows, cols) = Array2.dimensions arena
-	    val _ = assert 0 <= r andalso r < rows andalso
-		0 <= c andalso c < cols
 	    val (obj, f) = Array2.sub (arena, r, c)
 	in
-	    if f = field (* shouldn't happen normally *)
-		then ()
-	    else changeField (obj, f, r, c, field) cache arena canvas
+	    assert f <> field do
+	    changeField (obj, f, r, c, field, cache, arena, canvas)
 	end
 
 	
@@ -447,73 +380,50 @@ struct
 	    val x    = x * cellSize - windowWidth2
 	    val y    = y * cellSize - windowHeight2
 
-	    val _ = GtkCanvas.scrollTo (obj, x, y)
-
-	    val (x1, y1, x2, y2) = 
-		GtkCanvas.getScrollRegion (obj, 0.0, 0.0, 0.0, 0.0)
 	in
-            (* gtkcanvas seems to be buggy.  On windows
-               the call to scrollTo produces garbage unless
-               being followed by a call to requestRedraw.
-               It works perfectly well on Linux without this
-               call!
-             *)
-            if Config.platform = Config.WIN32 then
-	        GtkCanvas.requestRedraw (obj, Real.round x1, 
-				        Real.round y1, 
-				        Real.round x2, 
-				        Real.round y2)
-            else ()
+	    Canvas.scrollTo (obj, x, y)
 	end
 
     fun update (a as {canvas, state = ref arena, itemCache}, difflist, pos) =
 	let
-            val root = GtkCanvas.root canvas
+            val root = Canvas.root canvas
 	in
-            Gtk.layoutFreeze canvas;
-	    List.app (insert itemCache arena root) difflist;
+	    Gtk.layoutFreeze canvas;
+	    List.app (insert (itemCache, arena, root)) difflist;
             (case pos of
                 NONE    => ()
-            |   SOME p  => changeView (a, p) );
-            Gtk.layoutThaw canvas
+            |   SOME p  => changeView (a, p));
+	    Gtk.layoutThaw canvas;
+	    Canvas.updateNow canvas
 	end 
 
-    fun startCountDown a =
+    fun startCountDown (a, w, h) =
         let
             val obj         = toObject a
-            val oldNumber   = ref (Gtk.null ())
+            val oldNumber   = ref (Gtk.null)
             val color       = white
            
             fun changeObj new =
-                (if !oldNumber <> Gtk.null () 
+                (if !oldNumber <> Gtk.null 
                     then Gtk.objectDestroy (!oldNumber)
                     else ();
                  oldNumber := new)
 
  
             fun display NONE =
-                changeObj (Gtk.null ())
+                changeObj (Gtk.null)
               | display (SOME n) =
                 let
-                    val root    = GtkCanvas.root obj
+                    val root    = Canvas.root obj
                     val num     = Int.toString n
-	            val font   = 
-                            "-*-*-*-*-*-*-34-*-*-*-*-*-*-*"
-                    val (x, y) = GtkCanvas.getScrollOffsets 
-                        (obj, 0, 0)
-                    val x      = Real.fromInt (x + 200)
-                    val y      = Real.fromInt (y + 150)
-                    val anchor = Gtk.ANCHOR_CENTER
-                    val args   = [("text", GtkCanvas.STRING num),
-                                  ("font", GtkCanvas.STRING font),
-                                  ("x", GtkCanvas.DOUBLE x), 
-                                  ("y", GtkCanvas.DOUBLE y),
-                                  ("fill_color_gdk", 
-                                   GtkCanvas.OBJECT color),
-                                  ("anchor", GtkCanvas.INT anchor)]
+	            val font   = "Sans 30"
+                    val (x, y) = Canvas.getScrollOffsets obj
+                    val x      = Real.fromInt (x + w)
+                    val y      = Real.fromInt (y + h)
+                    val anchor = Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_CENTER
                         
-                    val numObj  = GtkCanvas.itemNew (root, 
-                                                 GtkCanvas.TEXT, args)
+                    val numObj  = Canvas.createText (root, num, font, x, y, 
+						     color,anchor)
                 in
                     changeObj numObj
                 end

@@ -9,7 +9,7 @@
 *
 *)
 
-import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Gtk         from "GtkSupport"
 
 import structure Protocol    from "../../common/Protocol"
 import structure Pos         from "../../common/Pos"
@@ -28,5 +28,5 @@ sig
 	
     val update : arena_widget * Protocol.diff list * Pos.pos option -> unit
 	
-    val startCountDown : arena_widget -> (int option -> unit)
+    val startCountDown : arena_widget * int * int -> (int option -> unit)
 end

@@ -9,7 +9,7 @@
 *
 *)
 
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
+import structure Gtk       from "GtkSupport"
 
 
 structure Question =
@@ -19,20 +19,15 @@ struct
     fun mkQuestionBox (title, quest, {yes, no, cancel}) =
 	let
 
-	    val questionWindow = Gtk.dialogNew ()
+	    val questionWindow = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	    val yesButton      = Gtk.buttonNewWithLabel "Yes"
 	    val noButton       = Gtk.buttonNewWithLabel "No"
+	    val buttonBox      = Gtk.hbuttonBoxNew ()
+	    val dialogBox      = Gtk.vboxNew (false, 5)
+	    val label          = Gtk.labelNew ""
 		
-	    fun question q = 
-		let
-		    val label = Gtk.labelNew q
-		in
-		    Gtk.boxPackStart (Gtk.dialogGetFieldVbox questionWindow,
-				      label, 
-				      true, 
-				      true, 
-				      10)
-		end
+	    fun question q = Gtk.labelSetText (label, q)
+
 
 	    fun mainQuit ans = (Gtk.widgetDestroy questionWindow;
 			        ans ())
@@ -40,14 +35,13 @@ struct
 	in
 
 	    question quest;
-	    Gtk.windowSetModal (Gtk.dialogGetFieldWindow questionWindow, true);
-	    Gtk.containerSetBorderWidth 
-	    (Gtk.dialogGetFieldWindow questionWindow, 10);
-	    Gtk.windowSetTitle (Gtk.dialogGetFieldWindow questionWindow, title);
-	    Gtk.windowSetPosition (Gtk.dialogGetFieldWindow questionWindow,
+	    Gtk.windowSetModal (questionWindow, true);
+	    Gtk.containerSetBorderWidth (questionWindow, 10);
+	    Gtk.windowSetTitle (questionWindow, title);
+	    Gtk.windowSetPosition (questionWindow,
 				   Gtk.WIN_POS_CENTER);
 	    
-	    Gtk.signalConnect (Gtk.dialogGetFieldWindow questionWindow, 
+	    Gtk.signalConnect (questionWindow, 
 			       "delete-event",
 			       fn _ => mainQuit cancel);
 	    Gtk.signalConnect (yesButton, "clicked", 
@@ -55,10 +49,16 @@ struct
 	    Gtk.signalConnect (noButton, "clicked", 
 			       fn _ => mainQuit no);
 	    
-	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea questionWindow,
+	    Gtk.boxPackStart (buttonBox,
 			      yesButton, true, true, 5);
-	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea questionWindow,
+	    Gtk.boxPackStart (buttonBox,
 			      noButton, true, true, 5);
+	    Gtk.boxPackStart (dialogBox,
+			      label, false, false, 5);
+	    Gtk.boxPackStart (dialogBox,
+			      buttonBox, false, false, 5);
+
+	    Gtk.containerAdd (questionWindow, dialogBox);
 
 	    Gtk.widgetShowAll questionWindow
 	end

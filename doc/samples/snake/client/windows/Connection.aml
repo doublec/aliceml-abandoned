@@ -9,7 +9,7 @@
 *
 *)
 
-import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Gtk            from "GtkSupport"
 
 import structure PlayerSettings from "PlayerSettings"
 

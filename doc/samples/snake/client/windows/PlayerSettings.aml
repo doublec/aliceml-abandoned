@@ -9,28 +9,27 @@
 *
 *)
 
-import structure Gtk        from "x-alice:/lib/gtk/Gtk"
-import structure Gdk        from "x-alice:/lib/gtk/Gdk"
+import structure Gtk        from "GtkSupport"
+import structure Gdk        from "GtkSupport"
 
 import structure Color      from "../../common/Color"
-
-import structure Wait       from "Wait"
-import structure Text       from "Text"
-
-
 
 
 
 structure PlayerSettings =
 struct
 
+    val colormap = Gdk.colormapGetSystem ()
+
     (* converts a Color.color into a Gdk.color *)
     fun colorToGdkColor c =
 	let
 	    val (r, g, b) = Color.rgb c
 	    fun conv n = Real.round (65535.0 * n)
+	    val color = Gdk.colorNew (conv r, conv g, conv b)
 	in
-	    Gdk.allocColor (conv r, conv g, conv b)
+	    Gdk.colormapAllocColor (colormap, color, false, true);
+	    color
 	end
 
 
@@ -39,21 +38,10 @@ struct
 			  {reset, gameMode}) =
 	let
 
-	    val playerSettings  = Gtk.windowNew 0
-	    (* the adjustments for the playerText *)
-   	    val playerAdjust1   = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						     1.0, 1.0, 1.0)
-   	    val playerAdjust2   = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						     1.0, 1.0, 1.0)
-  	    val playerText      = Gtk.textNew (playerAdjust1, playerAdjust2)
-	    (* the adjustments for the scrolles window which 
-	       contains playerText *)
-	    val adj1		= Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						     1.0, 1.0, 1.0)
-	    val adj2		= Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						     1.0, 1.0, 1.0)
-	    val playerScrolledWindow = Gtk.scrolledWindowNew (adj1, adj2)
-
+	    val playerSettings  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+  	    val playerText      = Gtk.createTextWidget ()
+	    val playerScrolledWindow = 
+		Gtk.scrolledWindowNew (Gtk.null, Gtk.null)
  	    val colorCombo      = Gtk.comboNew ()
 	    val settingsVBox 	= Gtk.vboxNew (false, 0)
 	    val nameLabel 	= Gtk.labelNew "Name : "
@@ -66,10 +54,11 @@ struct
 	    val spectatorCheckButton = 
 		Gtk.checkButtonNewWithLabel "Spectator Mode"
 	    val separator3	= Gtk.hseparatorNew ()
-	    val connectedLabel 	= Gtk.labelNew "Connected Players : "
+	    val connectedLabel 	= Gtk.labelNew "Connected Players: "
 	    val separator4	= Gtk.hseparatorNew ()
 	    val readyButton    	= Gtk.buttonNewWithLabel "Ready "
 	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
+
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
 
 	    (* contains a fututre unless the 'ready' button has been pushed.
@@ -112,29 +101,20 @@ struct
 	    (* inserts a player with his color in the playerText widget *)
 	    fun insertPlayer (name, color) = 
 		let
-		    val font = 
-			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (65535, 65535, 65535)
-		    val front = colorToGdkColor color
+		    val text = name ^ " has connected!\n"
+		    val color = colorToGdkColor color
 		in
-		    Gtk.textInsert(playerText, font, front, 
-				   white, name ^ "\n", ~1)
+		    Gtk.textWidgetInsert (playerText, name, color)
 		end
 
 
 	    (* inserts 'name has disconnected' with it's color in playerText *)
 	    fun removePlayer (name, color) = 
 		let
-		    val font = 
-			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (65535, 65535, 65535)
-		    val black = Gdk.allocColor (0 ,0, 0)
+		    val text  = name ^ " has disconnected!\n"
+		    val color = colorToGdkColor color
 		in
-		    Gtk.textInsert(playerText, font, black, 
-				   white, 
-				   name ^
-				   " has disconnected" ^
-				   "\n", ~1)
+		    Gtk.textWidgetInsert (playerText, text, color)
 		end
 
 	    (* if client has pushed the reday-button yet, everything is ok and
@@ -223,7 +203,8 @@ struct
 		in
 		    case return () of 
 			FST game     => 
-			    (Gtk.widgetSetSensitive (readyButton, false);
+			    (Gtk.buttonSetLabel (cancelButton, "Disconnect");
+			     Gtk.widgetSetSensitive (readyButton, false);
 			     Gtk.widgetSetSensitive (nameHBox, false);
 			     Gtk.widgetSetSensitive (colorHBox, false);
 			     Gtk.widgetSetSensitive (spectatorCheckButton, 

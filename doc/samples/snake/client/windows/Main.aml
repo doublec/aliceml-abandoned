@@ -9,8 +9,9 @@
 *
 *)
 
-import structure Gtk            from "x-alice:/lib/gtk/Gtk"
-import structure Gdk            from "x-alice:/lib/gtk/Gdk"
+import structure Gtk            from "GtkSupport"
+import structure Gdk            from "GtkSupport"
+import structure Canvas         from "GtkSupport"
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 
 import structure Color          from "../../common/Color"
@@ -18,6 +19,7 @@ import structure Config         from "../../server/Config"
 import structure Protocol       from "../../common/Protocol"
 import structure Highscore      from "../../common/Highscore"
 
+import structure EnterName      from "EnterName"
 import structure ArenaWidget    from "ArenaWidget"
 import structure Connection     from "Connection"
 import structure ServerSettings from "ServerSettings"
@@ -79,11 +81,36 @@ struct
     (* builds the mainWindow, starting in START mode *)
     fun mkMainWindow ({connect, startServer}, gui) = 
 	let
+
+	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 			
 	    (* initialising the canvas widget *)
 	    val arena = ArenaWidget.initialize ()
 	    val canvas = ArenaWidget.toObject arena
 
+(*	    (* setting the image shown at the beginning *)
+	    fun startImage can = 
+		let
+		    val root = Canvas.root can
+		    val image = 
+			Gtk.imageNewFromFile ("client/windows/logo.png")
+		    val ibox = Gtk.eventBoxNew ()
+		    val args = 
+			[("widget", Gtk.OBJECT ibox),
+			 ("x", Gtk.REAL (Real.fromInt ~320)),
+			 ("y", Gtk.REAL (Real.fromInt ~227)),
+			 ("width", Gtk.REAL (Real.fromInt 640)),
+			 ("height", Gtk.REAL (Real.fromInt 455))]
+		    val _ = Gtk.containerAdd (ibox, image)
+		    val item = 
+			Canvas.itemCreate (root, 
+						Canvas.widgetGetType (), 
+						args)
+		in
+		    image
+		end
+	    val sImage = startImage canvas
+*)
 	    (* the menu bar items which sensitivity get 
 	     changed some times *)
 	    val menuMenuItem   = Gtk.menuItemNewWithLabel "Menu"
@@ -139,7 +166,17 @@ struct
                     fun countdown n =
                         let val displ = case !displayCountDown of
                                 NONE    =>
-                                let val d = ArenaWidget.startCountDown arena
+				let 
+				    val (width, height) = 
+					Gtk.windowGetSize mainWindow
+				    val (w, h) = 
+					Canvas.windowToWorld
+					(canvas, real width, real height)
+				    val w = Real.toInt IEEEReal.TO_NEAREST w
+				    val h = Real.toInt IEEEReal.TO_NEAREST h
+				    val d = 
+					ArenaWidget.startCountDown 
+					(arena, w div 2, h div 2)
                                 in
                                     displayCountDown := SOME d;
                                     d
@@ -161,7 +198,7 @@ struct
 					     gamePoints,
                                              lives = NONE}, str) =
 				(str ^ name ^ ":  " 
-				 ^ (Int.toString points) ^ "  /  " 
+				 ^ (Int.toString points) ^ "  +  " 
 				 ^ (Int.toString gamePoints) ^ "\n\n")
 			      | toString' ({name, 
 					     color, 
@@ -209,23 +246,23 @@ struct
 		end
 
 	    (* the different behaviour by pressing the quit button *)
-	    fun mainQuit () = 
-		case !mode of
+	    fun mainQuit () = OS.Process.exit OS.Process.success 
+
+	    fun backToStart () = 
+		(case !mode of
 		    START => OS.Process.exit OS.Process.success 
-		  | GAME  => 
+		  | GAME  =>
 			let
 			    fun cancel () = ()
 			    fun no () = ()
-			    fun yes () = (!disconnect' ();
-					  reset NONE)
+			    fun yes () = (!disconnect' (); reset NONE)
 			    val answer = {cancel, no, yes}
 			in
 			    Question.mkQuestionBox 
-			    ("Sure?", "Do you want to quit?", answer)
-			end
+			    ("Sure?", "Go back to start?", answer)
+			end)
 		     
 			
-	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	    val dialogVBox     = Gtk.vboxNew (false, 10)
 	    val dialogHBox     = Gtk.hboxNew (false, 10)
 	    val menuBar        = Gtk.menuBarNew ()
@@ -240,36 +277,19 @@ struct
 
 
 	    (* procedure called by pressing Client - button *)
-	    fun startClient () = 
+	    fun startClient () = ((*Canvas.itemHide sImage;*)
 		Connection.mkConnectToServer ({connect},
-						    {reset, gameMode})
+						    {reset, gameMode}))
 
 	    (* procedure called by pressing Server - button *)
-	    fun startMultiPlayer () = 
+	    fun startMultiPlayer () = ((*Canvas.itemHide sImage;*)
                 (log ("MainWindow", "startMultiPlayer");
 		ServerSettings.mkServerSettings ({startServer},
-						       {reset, gameMode}))
+						       {reset, gameMode})))
 
             (* procedure called by pressing SinglePlayer - button *)
-	    fun startSinglePlayer () = 
-		case startServer (SOME ("Player", Color.fromString "yellow"), 
-				  Config.defaultSingle) of
-		    FST ({start, disconnect}, guiJoinP, _) => 
-			let
-			    val guiJoin = {playersJoined = fn _ => (),
-					   playerDisconnected = fn _ => (),
-					   gameStarted = fn _ => ()}
-			in
-			    Promise.fulfill (guiJoinP, guiJoin);
-			    (case start () of
-				 FST (mGame, guiGame) => 
-				     gameMode ({disconnect}, mGame, 
-					       guiGame)
-			       | SND   errorMsg       => 
-				     reset (SOME ("ERROR!!", errorMsg)))
-			end
-		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
-
+	    fun startSinglePlayer () = ((*Canvas.itemHide sImage *)
+		EnterName.mkEnterName {startServer, reset, gameMode})
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval =
 		  if !mode = GAME
@@ -287,7 +307,7 @@ struct
 	    (* catches the canvas events *)
 	    fun canvasEvent [Gtk.EVENT event] = 
 		(case event of
-		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
+		     Gdk.EVENT_KEY_PRESS {keyval, ...}	=> key keyval
 		   |            _                  	=> ())
 	      |  canvasEvent       x            = ()
 
@@ -315,7 +335,7 @@ struct
 
 	    (* just signalconnecting *)
 	    Gtk.signalConnect (mainWindow, "event",
-			       canvasEvent);
+			       fn (_,x) => canvasEvent x);
 	    Gtk.signalConnect (mainWindow, "delete-event", 
 			       fn _ => mainQuit ());
 	    Gtk.signalConnect (menuMenuSingle, "activate", 
@@ -325,7 +345,7 @@ struct
 	    Gtk.signalConnect (menuMenuServer, "activate", 
 			       fn _ => startMultiPlayer ());
 	    Gtk.signalConnect (menuQuit, "activate", 
-			       fn _ => mainQuit ());
+			       fn _ => backToStart ());
 	    Gtk.signalConnect (menuGiveUpItem, "activate",
 			       fn _ => (!giveUp') ());
 	    
@@ -345,7 +365,6 @@ struct
 
 	    Gtk.widgetShowAll mainWindow;
 
-	    Gtk.widgetHide canvas;
 	    Gtk.widgetHide rightHBox
 		
 	end

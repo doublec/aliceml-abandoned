@@ -9,15 +9,13 @@
 *
 *)
 
-import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+import structure Gtk        from "GtkSupport"
 
 import structure Color      from "../../common/Color"
 import structure Config     from "../../server/Config"
 
 import structure Wait       from "Wait"
 
-
-import val log              from "../../common/Log"
 
 
 structure ServerSettings =
@@ -38,8 +36,8 @@ struct
 	    val colorLabel         = Gtk.labelNew "Color :         "
 	    val colorHBox	   = Gtk.hboxNew (false, 4)
 	    val normalRadioButton  =
-		Gtk.radioButtonNewWithLabel (Gtk.null (), "Normal Mode")
-	    val radioButtonGroup = Gtk.radioButtonGroup normalRadioButton
+		Gtk.radioButtonNewWithLabel (Gtk.null, "Normal Mode")
+	    val radioButtonGroup = Gtk.radioButtonGetGroup normalRadioButton
 	    val spectatorRadioButton = 
 		Gtk.radioButtonNewWithLabel (radioButtonGroup, 
 					     "Spectator Mode")
@@ -269,6 +267,7 @@ struct
 				    Gtk.entryGetText 
 				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
+				alreadyConn := [(name, color)];
 				startServer 
 				(SOME (name, color),
 				 config)

@@ -1,0 +1,177 @@
+(* Alice Snake 2.0 - PlayerSettingsWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk        from "GtkSupport"
+import structure Gdk        from "GtkSupport"
+
+import structure Config     from "../../server/Config"
+import structure Color      from "../../common/Color"
+
+
+
+structure EnterName =
+struct
+
+    val colormap = Gdk.colormapGetSystem ()
+
+    (* converts a Color.color into a Gdk.color *)
+    fun colorToGdkColor c =
+	let
+	    val (r, g, b) = Color.rgb c
+	    fun conv n = Real.round (65535.0 * n)
+	    val color = Gdk.colorNew (conv r, conv g, conv b)
+	in
+	    Gdk.colormapAllocColor (colormap, color, false, true);
+	    color
+	end
+
+
+    (* builds the player settings window *)
+    fun mkEnterName {startServer, reset, gameMode} =
+	let
+
+	    val enterName     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+ 	    val colorCombo    = Gtk.comboNew ()
+	    val nameLabel     = Gtk.labelNew "Name : "
+	    val nameText      = Gtk.entryNew ()
+	    val nameHBox      = Gtk.hboxNew (false, 0)
+	    val separator1    = Gtk.hseparatorNew ()
+	    val colorLabel    = Gtk.labelNew "Color : "
+	    val colorHBox     = Gtk.hboxNew (false, 5)
+	    val readyButton   = Gtk.buttonNewWithLabel "Ready "
+	    val cancelButton  = Gtk.buttonNewWithLabel "Cancel"
+	    val buttonHBox    = Gtk.hboxNew (true, 10)
+	    val settingsVBox  = Gtk.vboxNew (false, 5)
+
+	    (* an alterable list which contains all colors that are
+	     still selectabel *)
+	    val allColors = ref (List.map Color.toString Color.all)
+
+	    (* inserts all colors into the color combo *)
+	    fun insertColors colors = 
+		Gtk.comboSetPopdownStrings (colorCombo, colors)
+
+	    fun removeColor col =
+		let
+		    val c = Color.toString col
+		    val colors = !allColors
+		    fun removeColor' () = List.filter (fn x => x <> c) colors
+		    val spareColors = removeColor' ()
+		in
+		    allColors := spareColors;
+		    Gtk.comboSetPopdownStrings (colorCombo, spareColors)
+		end
+
+	    fun insertColor col = 
+		let
+		    val colors = (Color.toString col) :: (!allColors)
+		in
+		    allColors := colors;
+		    Gtk.comboSetPopdownStrings (colorCombo, colors)
+		end
+
+	    val colorlock = Lock.lock ()
+
+	    val removeColor = Lock.sync colorlock removeColor
+
+	    val insertColor = Lock.sync colorlock insertColor
+		
+	    (* the mainQuit procedure. returns to the main window *)
+	    fun mainQuit () = 
+		(Gtk.widgetDestroy enterName;
+		 reset NONE)
+
+
+	    (* called, if the client has changed the nameText widget.
+	       if nameText = "" -> you can't press the ready-button,
+	       else the ready-button is set sensitive *)
+	    fun changedNameText () =
+		if Gtk.entryGetText nameText = ""
+		    then Gtk.widgetSetSensitive (readyButton, false)
+		else Gtk.widgetSetSensitive (readyButton, true)
+
+	    fun okClickedCB () = 
+		let
+		    val name  = Gtk.entryGetText nameText
+		    val color = Gtk.entryGetText 
+			(Gtk.comboGetFieldEntry colorCombo)
+		    val color = Color.fromString color
+		    fun return () = 
+			startServer (SOME (name, color), Config.defaultSingle)
+		in
+		    Gtk.widgetDestroy enterName;
+		    case return () of
+			FST ({start, disconnect}, guiJoinP, _) => 
+			    let
+				val guiJoin = {playersJoined = fn _ => (),
+					       playerDisconnected = fn _ => (),
+					       gameStarted = fn _ => ()}
+			    in
+				Promise.fulfill (guiJoinP, guiJoin);
+				(case start () of
+				     FST (mGame, guiGame) => 
+					 gameMode ({disconnect}, mGame, 
+						   guiGame)
+				   | SND   errorMsg       => 
+					 reset (SOME ("ERROR!!", errorMsg)))
+			    end
+		      | SND errorMsg   => reset (SOME ("ERROR!!", errorMsg))
+		end
+
+	in
+
+	    (* inserts all available colors into the color combo *)
+	    insertColors (!allColors);
+	    Gtk.windowSetModal (enterName, true);
+	    Gtk.windowSetTitle (enterName, "Please choose name and color");
+	    Gtk.windowSetPosition (enterName, Gtk.WIN_POS_CENTER);
+	    
+	    Gtk.signalConnect (enterName,
+			       "delete-event", 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (nameText, 
+			       "changed",
+			       fn _ => changedNameText ());
+	    Gtk.signalConnect (readyButton, 
+			       "clicked", 
+			       fn _ => okClickedCB ());
+	    Gtk.signalConnect (cancelButton, 
+			       "clicked",
+			       fn _ => mainQuit ());
+	    
+	    (* setting some useful values *)
+	    Gtk.containerSetBorderWidth (enterName, 10);
+	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo, 
+				  false);
+	    Gtk.entrySetMaxLength (nameText, 11);
+	    Gtk.widgetSetSensitive (readyButton, false);
+
+	    (* packing everything in boxes and later in enterName *)
+	    Gtk.boxPackStart (nameHBox, nameLabel, false, false, 0);
+	    Gtk.boxPackStart (nameHBox, nameText, true, false, 0);
+
+	    Gtk.boxPackStart (colorHBox, colorLabel, false, false, 0);
+	    Gtk.boxPackStart (colorHBox, colorCombo, true, false, 0);
+
+	    Gtk.boxPackStart (buttonHBox, readyButton, true, true, 5);
+	    Gtk.boxPackStart (buttonHBox, cancelButton, true, true, 5);
+
+	    Gtk.boxPackStart (settingsVBox, nameHBox, false, false, 2);
+	    Gtk.boxPackStart (settingsVBox, colorHBox, false, false, 2);
+	    Gtk.boxPackStart (settingsVBox, separator1, false, false, 5);
+	    Gtk.boxPackStart (settingsVBox, buttonHBox, false, false, 5);
+	    
+	    Gtk.containerAdd (enterName, settingsVBox);
+
+	    Gtk.widgetShowAll enterName
+
+	end
+end

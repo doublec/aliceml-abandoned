@@ -9,29 +9,26 @@
 *
 *)
 
-import structure Gtk        from "x-alice:/lib/gtk/Gtk"
-import structure Gdk        from "x-alice:/lib/gtk/Gdk"
-
-import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
+import structure Gtk        from "GtkSupport"
+import structure Gdk        from "GtkSupport"
 
 import structure Color      from "../../common/Color"
 
 
-import val log              from "../../common/Log"
-
-open Ctrl
-
 
 structure Wait =
 struct
+    val colormap = Gdk.colormapGetSystem ()
 
     (* converts a Color.color into a Gdk.color *)
     fun colorToGdkColor c =
 	let
 	    val (r, g, b) = Color.rgb c
 	    fun conv n = Real.round (65535.0 * n)
+	    val color = Gdk.colorNew (conv r, conv g, conv b)
 	in
-	    Gdk.allocColor (conv r, conv g, conv b)
+	    Gdk.colormapAllocColor (colormap, color, false, true);
+	    color
 	end
 
     (* builds the waiting window *)
@@ -51,44 +48,28 @@ struct
 	    val serverUrl        = Gtk.entryNew ()
 
 	    (* the textwindow where the connected player will be listed *)
-	    val playerTextAdjust1 = 
-		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-	    val playerTextAdjust2 =
-		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-	    val playerTextAdjust3 = 
-		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-	    val playerTextAdjust4 =
-		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-	    val playerText        = 
-		Gtk.textNew (playerTextAdjust1, playerTextAdjust2)
+	    val playerText        = Gtk.createTextWidget ()
 	    val playerWindow      = 
-		Gtk.scrolledWindowNew (playerTextAdjust3, playerTextAdjust4)
+		Gtk.scrolledWindowNew (Gtk.null, Gtk.null)
 
 	    (* [insert(name, color)] inserts one player with name and color in
-	     connected-players list *)
-	    fun insert (name, color) = 
+	       connected-players list *)
+	    fun insertPlayer (name, color) = 
 		let
-		    val font = 
-			Gdk.fontLoad ("-*-times-bold-*-*-*-15-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (65535, 65535, 65535)
-		    val front = colorToGdkColor color
-		in
-		    Gtk.textInsert(playerText, font, front,
-				   white, name ^ "\n", ~1)
-		end
-
-	    fun removePlayer (name, color) =
-		let
-		    val font = 
-			Gdk.fontLoad ("-*-times-bold-*-*-*-15-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (65535, 65535, 65535)
+		    val text  = name ^ " has connected!\n"
 		    val color = colorToGdkColor color
 		in
-		    Gtk.textInsert(playerText, font, color, 
-				   white, 
-				   name ^
-				   " has disconnected" ^
-				   "\n", ~1)
+		    Gtk.textWidgetInsert (playerText, text, color)
+		end
+
+	    (* inserts "Name: name Color: color has disconnected" 
+	       in playetText *)
+	    fun removePlayer (name, color) =
+		let
+		    val text  = name ^ " has disconnected!\n"
+		    val color = colorToGdkColor color
+		in
+		    Gtk.textWidgetInsert (playerText, text, color)
 		end
 		
 	    (* the mainQuit procedure resets also the used refs *)
@@ -99,7 +80,7 @@ struct
 		
 		
 	    (* inserts all connected players into text widget *)
-	    val playersJoined = List.app insert
+	    val playersJoined = List.app insertPlayer
 		
 	    (* removes one player from text widget *)
 	    val playerDisconnected = removePlayer
@@ -109,8 +90,8 @@ struct
 		
 		
 	    (* fulfills the guiJoin promise, if already fulfilled
-               exception assert will be raised *)
-	    val _ = if (Future.isFuture $ Promise.future guiJoin)
+               nothing will be done *)
+	    val _ = if (Future.isFuture (Promise.future guiJoin))
 			then Promise.fulfill (guiJoin, {playersJoined,
 							playerDisconnected,
 							gameStarted})
@@ -127,7 +108,7 @@ struct
 			 reset (SOME ("ERROR!!", errorMsg)))
 		
 	in
-		    
+
 	    playersJoined alreadyConnected;
 	    Gtk.windowSetModal (waiting, true);
 	    Gtk.windowSetTitle (waiting, "Waiting...");
@@ -142,7 +123,7 @@ struct
 			       fn _ => mainQuit ());
 	    
 	    (* set some default configurations *)
-	    Gtk.entryPrependText (serverUrl, serverUrlStr);
+	    Gtk.entrySetText (serverUrl, serverUrlStr);
 	    Gtk.containerSetBorderWidth (waiting, 10);
 	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
 	    Gtk.entrySetEditable (serverUrl, false);
@@ -159,7 +140,7 @@ struct
 	    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 5);
 	    Gtk.boxPackStart (urlHBox, serverUrl, true, true, 5);
 	    
-	    Gtk.scrolledWindowAddWithViewport (playerWindow, playerText);
+	    Gtk.containerAdd (playerWindow, playerText);
 	    
 	    Gtk.boxPackStart (dialogVBox, urlHBox, false, false, 0);
 	    Gtk.boxPackStart (dialogVBox, separator2, false, 
