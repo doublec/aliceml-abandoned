@@ -19,6 +19,9 @@
 
 static const int initialSize = 19;
 
+word Finalization::dictionary;
+u_int Finalization::counter;
+
 void Finalization::Init() {
   dictionary =
     WeakDictionary::New(initialSize, INVALID_POINTER)->ToWord();
