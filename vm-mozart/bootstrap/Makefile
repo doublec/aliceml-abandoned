@@ -53,9 +53,18 @@ FRONTENDSMLSOURCES = \
 	ParsingPhase.sml BIND_ENV0.sig BindEnv0.sml MakeFrontendSML.sml
 FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
 
+BACKENDCOMMONSOURCES = \
+	LABEL_SORT.sig MakeLabelSort.sml LabelSort.sml FLAT_GRAMMAR.sig \
+	FlatGrammar.sml OUTPUT_FLAT_GRAMMAR.sig OutputFlatGrammar.sml \
+	INTERMEDIATE_AUX.sig IntermediateAux.sml SIMPLIFY_MATCH.sig \
+	SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
+	FLATTENING_PHASE.sig FlatteningPhase.sml LIVENESS_ANALYSIS_PHASE.sig \
+	LivenessAnalysisPhase.sml
+BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
+
 BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
 	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) $(COMMONFILES) \
-	$(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES)
+	$(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) $(BACKENDCOMMONFILES)
 
 ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
 
@@ -94,6 +103,10 @@ frontend-common/%: ../../stoc/frontend-common/% frontend-common/%.header \
 
 frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header Base.import
 	cat Base.import frontend-sml/$*.header $< > $@
+
+backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
+	Base.import
+	cat Base.import backend-common/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC_MOZART) $< $@

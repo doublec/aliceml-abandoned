@@ -1,0 +1,35 @@
+import
+    structure LargeWord
+from "lib/Word.ozf"
+
+import
+    structure Url
+from "misc/Url.ozf"
+
+import
+    structure Stamp
+from "common/Stamp.ozf"
+
+import
+    structure StampSet
+from "common/StampSet.ozf"
+
+import
+    structure Name
+from "common/Name.ozf"
+
+import
+    structure Label
+from "common/Label.ozf"
+
+import
+    signature FLAT_GRAMMAR
+from "backend-common/FLAT_GRAMMAR.ozf"
+
+import
+    structure FlatGrammar
+from  "backend-common/FlatGrammar.ozf"
+
+import
+    signature OUTPUT_FLAT_GRAMMAR
+from "backend-common/OUTPUT_FLAT_GRAMMAR.ozf"
