@@ -1,0 +1,41 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* The local signature table is used during recursive invocations. *)
+
+import structure Signature     from "../../lib/system/Signature"
+import structure Url           from "../../lib/utility/Url"
+import structure FromEqHashKey from "../../lib/utility/HASH_KEY-sig"
+import structure MkHashImpMap  from "../../lib/utility/MkHashImpMap"
+
+signature SIGN_TABLE =
+    sig
+	exception Collision of Url.t
+
+	val lookup: Url.t -> Signature.t option
+	val insert: Url.t * Signature.t -> unit   (* Collision *)
+    end
+
+structure SignTable :> SIGN_TABLE =
+    struct
+	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+
+	exception Collision = UrlMap.Collision
+
+	val map: Signature.t UrlMap.t = UrlMap.new ()
+
+	fun lookup url =
+	    UrlMap.lookup (map, url)
+
+	fun insert (url, sign) =
+	    UrlMap.insertDisjoint (map, url, sign)
+    end
