@@ -1,15 +1,15 @@
 (* very simple (toplevel) grammar definition *)
 signature MYTOKEN =
 sig
-    token  PLUS | MINUS | TIMES | NUM of int
+    token PLUS | MINUS | TIMES | NUM of int
 end
 
 structure a =
 struct
     token PLUS | MINUS | TIMES | NUM of int 
 
-    assocl TIMES
-    assocl PLUS MINUS
+    assocl TIMES 
+    assocl PLUS MINUS 
 
     rule exp : int = 
         NUM 
