@@ -34,7 +34,7 @@ public:
   }
   // Frame Handling
   static void PushFrame(word event);
-  virtual u_int GetFrameSize(StackFrame *s);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *);
   virtual Result Handle(word);
@@ -42,8 +42,7 @@ public:
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *);
   // Event Accessors
-  static word GetEvent(StackFrame *frame);
-
+  static word GetEvent(StackFrame *sFrame);
 };
 
 #endif
