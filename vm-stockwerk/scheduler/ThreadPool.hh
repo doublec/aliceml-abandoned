@@ -24,6 +24,10 @@ public:
   static ThreadPool *New();
   Thread *Dequeue(); // returns INVALID_POINTER if queue empty
   void Enqueue(Thread *thread);
+
+  static ThreadPool *FromWord(word w) {
+    return static_cast<ThreadPool *>(Store::WordToBlock(w));
+  }
 };
 
 #endif
