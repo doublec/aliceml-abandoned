@@ -189,6 +189,9 @@ public:
     jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
     StackFrame_InitArg(This, STACKFRAME_WORKER_POS, JIT_R0);
   }
+  void StackFrame_GetWorkerW(u_int Dest, u_int This) {
+    StackFrame_GetArg(Dest, This, STACKFRAME_WORKER_POS);
+  }
   void StackFrame_PutWorker(u_int Dest, Worker *worker) {
     jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
     StackFrame_InitArg(Dest, STACKFRAME_WORKER_POS, JIT_R0);
