@@ -14,7 +14,6 @@
 #define __ALICE_JITTER_IMMEDIATE_ENV_HH__
 
 #include "store/Store.hh"
-#include "adt/HashTable.hh"
 #include "generic/Tuple.hh"
 #include "generic/RootSet.hh"
 
