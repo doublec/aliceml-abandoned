@@ -1,5 +1,5 @@
 OZC = ozc
-STOC = ../../stoc/backend-mozart/stoc-mozart --image=../../stoc/top/stoc-mozart
+STOC = ../../stoc/backend-mozart/stoc-mozart.exe --image=../../stoc/top/stoc-mozart
 MERGE = ./merge.sh
 OZHOME = /opt/mozart-1.1.0
 OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
