@@ -62,7 +62,7 @@ the intended return value.
 The `as' expression allows a subexpression result to be named, so that it is
 available in the following expressions (e.g. to transform it or to use it
 inside attribute applications. As short hand, expressions only consisting of a
-symbol identifier symid behave as if the expression (symid as symid) had been
+symbol identifier "symid" behave as if the expression "symid as symid" had been
 written. This often allows more compact rules and corresponds to the scheme
 used to name the results of subderivations in New Jersey's ML-Yacc.
 
@@ -112,7 +112,7 @@ parsing. The above specification will generate the following SML objects:
 	datatype token = PLUS | MINUS | TIMES | LET | IN | EQUAL |
 			 ID of string | NUM of int
 
-	val eval : lexer -> env -> int
+	val eval : lexer -> int
 
 The `lexer' type will be specified in an appropriate library and will probably
 be some function type, to allow lazy input.
