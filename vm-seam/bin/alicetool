@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ $# -lt 1 ]; then
-    echo "usage: $0 [--verbose|-v] (cc|c++|ld) <option> ..." >&2
+    echo "usage: $0 [--verbose|-v] (makedepend|c++|ld) <option> ..." >&2
     exit 2
 fi
 
