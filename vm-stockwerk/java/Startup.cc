@@ -103,16 +103,28 @@ void RunMainWorker::DumpFrame(word) {
 void Startup() {
   RunMainWorker::Init();
   ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
-  char buf[512];
-  std::sprintf(buf, "%s",
-	       String::FromWordDirect(Properties::rootUrl)->ExportC());
-  for (u_int i = std::strlen(buf); i--; )
-    if (buf[i] == '.') buf[i] = '/';
-  word theClass = classLoader->ResolveClass(JavaString::New(buf));
-  JavaString *name = JavaString::New("main");
-  JavaString *descriptor = JavaString::New("([Ljava/lang/String;)V");
-  word methodRef = classLoader->ResolveMethodRef(theClass, name, descriptor);
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
-  RunMainWorker::PushFrame(thread, methodRef);
+  {
+    char buf[512];
+    std::sprintf(buf, "%s",
+		 String::FromWordDirect(Properties::rootUrl)->ExportC());
+    for (u_int i = std::strlen(buf); i--; )
+      if (buf[i] == '.') buf[i] = '/';
+    word theClass = classLoader->ResolveClass(JavaString::New(buf));
+    JavaString *name = JavaString::New("main");
+    JavaString *descriptor = JavaString::New("([Ljava/lang/String;)V");
+    word methodRef = classLoader->ResolveMethodRef(theClass, name, descriptor);
+    RunMainWorker::PushFrame(thread, methodRef);
+  }
+#if defined(JAVA_INITIALIZE_SYSTEM_CLASS)
+  {
+    JavaString *className = JavaString::New("java/lang/System");
+    word theClass = classLoader->ResolveClass(className);
+    JavaString *name = JavaString::New("initializeSystemClass");
+    JavaString *descriptor = JavaString::New("()V");
+    word methodRef = classLoader->ResolveMethodRef(theClass, name, descriptor);
+    RunMainWorker::PushFrame(thread, methodRef);
+  }
+#endif
   ClassLoader::PushPreloadFrame(thread);
 }
