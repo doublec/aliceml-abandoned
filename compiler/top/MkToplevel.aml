@@ -21,6 +21,7 @@ import structure Config               from "../../lib/system/Config"
 
 import structure Component            from "../../lib/system/Component"
 import structure PPComponent          from "../../lib/system/PPComponent"
+import structure PPMismatch           from "../../lib/rtt/PPMismatch"
 import structure PrettyPrint          from "../../lib/utility/PrettyPrint"
 
 import structure Target               from "../infrastructure/Target"
@@ -42,9 +43,9 @@ struct
 
     val banner     = "Alice 1.0.0- (" ^
 		     (case Config.vm
-		       of "mozart" => "Stockhausen Operette 3 Remix 3 Extended"
+		       of "mozart" => "Stockhausen Operette 4 Original Mix"
 		        | "seam" => "Kraftwerk Album 1 Promo"
-			| _ => "Alien Invaderz Breakbeats"
+			| _ => "Alien Invaderz Breakz Mix"
 		     ) ^ ")\n"
     val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
     val prompt     = "- "
@@ -183,16 +184,22 @@ struct
 					 Url.toString url ^ "\"\n"));
 		    SOME context)
 	     | Component.Failure (_, Component.Mismatch
-				     {component, request, ...}) =>
-		   (TextIO.output (TextIO.stdErr,
-				   "failure type-checking \"" ^
-				   Url.toString component ^ "\"" ^
-				   (case request of
-					NONE => "\n"
-				      | SOME url => "\nas requested by \"" ^
-						    Url.toString url ^ "\"\n"));
-				   (*--** print cause *)
-		    SOME context)
+				     {component, request, cause}) =>
+	       let
+		   val s = "failure type-checking \"" ^
+			   Url.toString component ^ "\"" ^
+			   (case request of
+				NONE => "\n"
+			      | SOME url => "\nas requested by \"" ^
+					    Url.toString url ^ "\":")
+	       in
+		   PrettyPrint.output
+		   (TextIO.stdErr,
+		    PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
+		    79);
+		    TextIO.output (TextIO.stdErr, "\n");
+		   SOME context
+	       end
 	     | Component.Failure (url, IO.Io _) =>
 		   (TextIO.output (TextIO.stdErr,
 				   "failure loading \"" ^

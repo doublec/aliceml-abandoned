@@ -215,7 +215,8 @@ LIBRTTSOURCES0 = \
 	FIXITY-sig.aml Fixity.aml TYPE-sig.aml Type.aml INF-sig.aml Inf.aml \
 	PERVASIVE_TYPE-sig.aml MkPervasiveType.aml PervasiveType.aml \
 	PP_MISC-sig.aml PPMisc.aml PP_PATH-sig.aml PPPath.aml \
-	PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml PPInf.aml
+	PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml PPInf.aml \
+	PP_MISMATCH-sig.aml PPMismatch.aml
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES0 = \

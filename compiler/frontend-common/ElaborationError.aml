@@ -26,6 +26,7 @@ import structure PPMisc            from "../infrastructure/PPMisc"
 import structure PPPath            from "../../lib/rtt/PPPath"
 import structure PPType            from "../../lib/rtt/PPType"
 import structure PPInf             from "../../lib/rtt/PPInf"
+import structure PPMismatch        from "../../lib/rtt/PPMismatch"
 
 import structure Error             from "../infrastructure/Error"
 import signature ELABORATION_ERROR from "ELABORATION_ERROR-sig"
@@ -50,7 +51,7 @@ struct
     type typ       = Type.t
     type var       = Type.var
     type kind      = Type.kind
-    type inf	   = Inf.t
+    type inf       = Inf.t
     type fix       = Fixity.t
     type valid     = AbstractGrammar.valid
     type modlongid = AbstractGrammar.modlongid
@@ -175,15 +176,7 @@ struct
     val ppTyp  = PPType.ppTyp
     val ppInf  = PPInf.ppInf
 
-    open Fixity
-
-    fun ppFix NONFIX		= text "nonfix"
-      | ppFix(PREFIX n)		= text "prefix" ^/^ text(Int.toString n)
-      | ppFix(POSTFIX n)	= text "postfix"^/^ text(Int.toString n)
-      | ppFix(INFIX(n,LEFT))	= text "infix"  ^/^ text(Int.toString n)
-      | ppFix(INFIX(n,RIGHT))	= text "infixr" ^/^ text(Int.toString n)
-      | ppFix(INFIX(n,NEITHER))	= text "infixn" ^/^ text(Int.toString n)
-
+    val ppInfMismatch = PPMismatch.ppMismatch'
 
     fun ppTypMismatch2(d1, d2, (t1,t2,t3,t4)) =
 	vbox(
@@ -236,115 +229,6 @@ struct
 	handle (Type.Type | Type.Row) =>
 	    ppTypMismatch4(textpar["ill-typed","recursive","value:"],
 			   textpar["does","not","match","recursive","type"], ue)
-
-
-    fun ppInfMismatch(d, im) =
-        vbox(
-	    d ^^
-	    ppInfMismatch' im
-	)
-
-    and ppInfMismatch'(Inf.MissingFix l) =
-	    break ^^
-	    textpar["fixity","of",ppQuoted(ppLab l),"is","unspecified"]
-      | ppInfMismatch'(Inf.MissingVal l) =
-	    indent(textpar["val",ppLab l]) ^/^
-	    textpar["is","missing"]
-      | ppInfMismatch'(Inf.MissingTyp l) =
-	    indent(textpar["type",ppLab l]) ^/^
-	    textpar["is","missing"]
-      | ppInfMismatch'(Inf.MissingMod l) =
-	    indent(textpar["structure",ppLab l]) ^/^
-	    textpar["is","missing"]
-      | ppInfMismatch'(Inf.MissingInf l) =
-	    indent(textpar["signature",ppLab l]) ^/^
-	    textpar["is","missing"]
-      | ppInfMismatch'(Inf.MismatchFix(l,q1,q2)) =
-	    indent(par[ppFix q1,text(ppLab l)]) ^/^
-	    textpar["does","not","match"] ^^
-	    indent(par[ppFix q2,text(ppLab l)])
-      | ppInfMismatch'(Inf.MismatchVal(l,t1,t2,m)) =
-	    indent(par[text"val",text(ppLab l),text":",ppTyp t1]) ^/^
-	    textpar["does","not","match"] ^^
-	    indent(par[text"val",text(ppLab l),text":",ppTyp t2]) ^/^
-	    textpar["because"] ^^
-	    ppTypeMismatch m
-      | ppInfMismatch'(Inf.MismatchTyp(l,k1,k2,m)) =
-	if not(Type.isSingKind k2) then
-	    indent(textpar["type",ppLab l]) ^/^
-	    textpar["has","incompatible","arity"]
-	else
-	    indent(if Type.isSingKind k1
-		   then par[text"type",text(ppLab l),text"=",
-			    ppTyp(Type.asSingKind k1)]
-		   else textpar["type",ppLab l]) ^/^
-	    textpar["does","not","match","specification"] ^^
-	    indent(par[text"type",text(ppLab l),text"=",
-		       ppTyp(Type.asSingKind k2)])
-      | ppInfMismatch'(Inf.MismatchMod(l,im)) =
-	    indent(textpar["structure",ppLab l]) ^/^
-	    textpar["does","not","match,","because"] ^^
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.MismatchInf(l,km)) =
-	    indent(textpar["signature",ppLab l]) ^/^
-	    textpar["does","not","match,","because"] ^^
-	    ppKindMismatch km
-      | ppInfMismatch'(Inf.MismatchDom im) =
-	    break ^^
-	    textpar["argument","signature","is","too","permissive,",
-		"because"] ^^
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.MismatchRan im) =
-	    break ^^
-	    textpar["result","signature","is","too","restrictive,","because"] ^^
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.MismatchParam im) =
-	    break ^^
-	    textpar["parameter","signature","is","too","permissive,",
-		"because"] ^^
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.MismatchBody im) =
-	    break ^^
-	    textpar["body","signature","is","incompatible,","because"] ^^
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.MismatchFun im) =
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.MismatchArg im) =
-	    break ^^
-	    textpar["signature","argument","does","not","match,","because"] ^^
-	    ppInfMismatch' im
-      | ppInfMismatch'(Inf.Incompatible(j1,j2)) =
-	    break ^^
-	    textpar["signature"] ^^
-	    indent(ppInf j1) ^/^
-	    textpar["is","incompatible","to"] ^^
-	    indent(ppInf j2)
-      | ppInfMismatch'(Inf.IncompatibleMod(p1,p2)) =
-	    break ^^
-	    textpar["module"] ^^
-	    indent(ppPath p1) ^/^
-	    textpar["is","not","equal","to"] ^^
-	    indent(ppPath p2)
-
-    and ppKindMismatch(Inf.MismatchKindDom im) =
-	    break ^^
-	    textpar["argument","signature","is","too","permissive,",
-		"because"] ^^
-	    ppInfMismatch' im
-      | ppKindMismatch(Inf.MismatchKindRan km) =
-	    ppKindMismatch km
-      | ppKindMismatch(Inf.IncompatibleKind(k1,k2)) =
-	    break ^^
-	    textpar["arity","is","incompatible"]
-      | ppKindMismatch(Inf.IncompatibleInf im) =
-	    break ^^
-	    textpar["signature","is","incompatible,","because"] ^^
-	    ppInfMismatch' im
-
-    and ppTypeMismatch(t1,t2) =
-	    indent(ppTyp t1) ^/^
-	    textpar["is","incompatible","with"] ^^
-	    indent(ppTyp t2)
 
 
     fun ppUnclosed(d, (l,t)) =

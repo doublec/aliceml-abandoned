@@ -1,0 +1,23 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure Inf         from "Inf"
+
+signature PP_MISMATCH =
+sig
+    type doc      = PrettyPrint.doc
+    type mismatch = Inf.mismatch
+
+    val ppMismatch  : mismatch -> doc
+    val ppMismatch' : doc * mismatch -> doc
+end

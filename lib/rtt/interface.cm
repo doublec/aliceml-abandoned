@@ -11,6 +11,7 @@ Group
 	structure PPPath
 	structure PPType
 	structure PPInf
+	structure PPMismatch
 is
 	../utility/sources.cm
 	pp-misc.cm
@@ -24,3 +25,6 @@ is
 
 	PP_INF-sig.aml
 	PPInf.aml
+	PP_MISMATCH-sig.aml
+	PPMismatch.aml
+

@@ -23,6 +23,9 @@ import structure TextIO      from "TextIO"
 import structure UnsafeOS    from "UnsafeOS"
 import structure UnsafeValue from "UnsafeValue"
 
+import structure PPMismatch  from "../rtt/PPMismatch"
+import structure PrettyPrint from "../utility/PrettyPrint"
+
 local
     __primitive val cast : 'a -> 'b = "Unsafe.cast" (* Thank Thorsten... *)
     val atExn = cast UnsafeOS.Process.atExn : (exn * unit -> unit) -> unit
@@ -39,15 +42,22 @@ local
 			    "uncaught exception " ^ General.exnName exn ^
 			    " while evaluating " ^ Url.toString url ^ "\n")
 		      | Component.Failure (_, Component.Mismatch
-					      {component, request, ...}) =>
-			TextIO.output (TextIO.stdErr,
-			    "failure type-checking " ^
-			    Url.toString component ^
-			    (case request of
-				 NONE => "\n"
-			       | SOME url => "\nas requested by " ^
-					     Url.toString url ^ "\n"))
-			     (*--** print cause *)
+					      {component, request, cause}) =>
+			let
+			    val s = "failure type-checking " ^
+				    Url.toString component ^
+				    (case request of
+					 NONE => "\n"
+				       | SOME url => "\nas requested by " ^
+						     Url.toString url ^ "\n") ^
+				    "Reason:"
+			in
+			    PrettyPrint.output
+			    (TextIO.stdErr,
+			     PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
+			     79);
+			    TextIO.output (TextIO.stdErr, "\n")
+			end
 		      | Component.Failure (url, IO.Io _) =>
 			TextIO.output (TextIO.stdErr,
 			    "failure loading " ^  Url.toString url ^ "\n")
