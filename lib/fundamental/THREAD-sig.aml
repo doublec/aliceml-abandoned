@@ -29,7 +29,9 @@ sig
 
     exception Terminate
 
+    val thread :	(unit -> unit) -> thread
     val spawn :		(unit -> 'a) -> thread * 'a
+
     val current :	unit -> thread
     val state :		thread -> state
 
