@@ -46,7 +46,6 @@ typedef enum {
   T_NIL,
   T_SELECTION,
   T_REMOVE,
-  T_TOGGLE,
   T_ASSIGN,
   T_PRIMOP,
   T_BEGIN,
@@ -647,26 +646,6 @@ public:
 };
 
 // Interpreter Helper Nodes
-class ToggleNode : private Block {
-private:
-  static const int SIZE = 0;
-public:
-  using Block::ToWord;
-
-  static Block *New() {
-    return Store::AllocBlock((BlockLabel) T_TOGGLE, SIZE);
-  }
-  static ToggleNode *FromBlock(Block *x) {
-    return (ToggleNode *) x;
-  }
-  static ToggleNode *FromWord(word x) {
-    Block *p = Store::DirectWordToBlock(x);
-
-    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_TOGGLE));
-    return FromBlock(p);
-  }
-};
-
 class AssignNode : private Block {
 private:
   static const u_int SIZE   = 1;

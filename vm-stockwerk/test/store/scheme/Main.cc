@@ -17,7 +17,9 @@
 
 #if defined(STORE_DEBUG)
 void AssertOutline(const char *file, int line, const char *message) {
+  char *p = INVALID_POINTER;
   std::fprintf(stderr, "%s: line %d: %s\n", file, line, message);
+  *p = (char) 0;
 }
 #endif
 
