@@ -16,21 +16,10 @@ This file describes how to install and run Alice for NGWS.
 
 4. You can invoke the compiler on the samples as follows:
 
-      stoc examples\streams.aml streams.il
+      stoc examples\streams.aml streams.dll
 
-   produces a streams.il file in the current directory.
-   Now invoke ilasm, provided with the NGWS SDK, to generate
-   streams.dll:
+   produces a streams.dll file in the current directory.
 
-      ilasm /dll streams.il
-
-5. IMPORTANT - Due to a strange bug in the system it is
-   necessary to reassemble some base components after each
-   time you performed step 4, as follows:
-
-      ilasm /dll TextIO.il
-      ilasm /dll Tools.il
-
-6. Invoke the application:
+5. Invoke the application:
 
       stow streams.dll
