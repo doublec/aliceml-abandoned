@@ -14,7 +14,8 @@
 
 structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
     struct
-	open ImperativeGrammar
+	structure I = ImperativeGrammar
+	open I
 
 	local
 	    val count = ref 0
@@ -241,5 +242,10 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	val outputProgram = outputList outputStm
+	fun outputComponent (q, (idStringList, ids, stms)) =
+	    (output1 (q, #"(");
+	     outputList (outputPair (outputId, outputString))
+	     (q, idStringList); output1 (q, #"#");
+	     outputList outputId (q, ids); output1 (q, #"#");
+	     outputList outputStm (q, stms); output1 (q, #")"))
     end

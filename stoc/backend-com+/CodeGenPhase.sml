@@ -536,5 +536,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    genExp (RecExp (Source.nowhere, idExpList), BOTH)
 	and genBody stms = List.app genStm stms
 
-	fun genProgram program = (init ["Test"]; genBody program; close())
+	fun genComponent (nil, _, body) =
+	    (init ["Test"]; genBody body; close())
+	  | genComponent (_::_, _, _) = Crash.crash "CodeGenPhase.genComponent"
     end

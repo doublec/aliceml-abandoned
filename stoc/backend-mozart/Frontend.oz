@@ -21,7 +21,7 @@ export
 define
    class TextPipe from Open.pipe Open.text
       meth get($)
-	 case TextPipe, getS($) of S=&[|_ then S#'\n'
+	 case TextPipe, getS($) of S=&(|_ then S#'\n'
 	 [] false then false
 	 elseof S then
 	    {System.showError S}
@@ -123,11 +123,11 @@ define
       case {StockhausenToImperative File} of false then
 	 {System.showInfo 'frontend error'}
 	 unit
-      elseof VS then Program in
+      elseof VS then Imports Exports Body in
 	 {System.showInfo 'reading imperative syntax ...'}
-	 Program = {VirtualStringToValue VS}
+	 Imports#Exports#Body = {VirtualStringToValue VS}
 	 {System.showInfo 'sharing bodies ...'}
-	 {ShareBody Program {NewDictionary}}
+	 Imports#Exports#{ShareBody Body {NewDictionary}}
       end
    end
 end

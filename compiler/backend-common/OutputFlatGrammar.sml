@@ -168,5 +168,9 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "adj ", ID id1, S ", ", ID id2]
 	and outputBody stms = SEP (NL, List.map outputStm stms)
 
-	fun outputProgram body = format (SEQ [outputBody body, NL])
+	fun outputComponent (idStringList, _, body) =
+	    format (SEQ [SEQ (List.map
+			      (fn (id, string) =>
+			       SEQ [S "import ", ID id, S (" from " ^ string)])
+			      idStringList), outputBody body, NL])
     end

@@ -25,29 +25,29 @@ structure Main :> MAIN =
     fun elab x     = (ElaborationPhase.elab (Env.copy Env0.E0) o abstract) x
     val translate  = TranslationPhase.translate o abstract
     val imperatify = MatchCompilationPhase.translate o translate
-    val ilify      = CodeGenPhase.genProgram o imperatify
+    val ilify      = CodeGenPhase.genComponent o imperatify
 
     fun ozify outstream s =
 	let
-	    val prog = imperatify s
+	    val component = imperatify s
 	in
-	    OzifyImperativeGrammar.outputProgram(outstream, prog) ;
-	    TextIO.output1(outstream, #"\n")
+	    OzifyImperativeGrammar.outputComponent (outstream, component);
+	    TextIO.output1 (outstream, #"\n")
 	end
 
     fun comify outstream s =
 	let
-	    val prog = ilify s
+	    val component = ilify s
 	in
-	    IL.outputProgram(outstream, prog) ;
-	    TextIO.output1(outstream, #"\n")
+	    IL.outputProgram (outstream, component);
+	    TextIO.output1 (outstream, #"\n")
 	end
 
-    fun debug s =
+    fun debug outstream s =
 	let
-	    val s' = OutputImperativeGrammar.outputProgram (imperatify s)
+	    val s' = OutputImperativeGrammar.outputComponent (imperatify s)
 	in
-	    TextIO.output (TextIO.stdOut, s')
+	    TextIO.output (outstream, s')
 	end
 
     val parseString		= processString parse
@@ -65,17 +65,14 @@ structure Main :> MAIN =
     val imperatifyString	= processString imperatify
     val imperatifyFile		= processFile imperatify
 
-    fun ozifyString(s,os)	= processString (ozify os) s
-    fun ozifyFile(n,os)		= processFile (ozify os) n
-
     val ozifyStringToStdOut	= processString (ozify TextIO.stdOut)
     val ozifyFileToStdOut	= processFile (ozify TextIO.stdOut)
 
     fun ozifyStringToFile(s,n)	= processString (toFile ozify n) s
     fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify n2) n1
 
-    val debugString		= processString debug
-    val debugFile		= processFile debug
+    val debugString		= processString (debug TextIO.stdOut)
+    val debugFile		= processFile (debug TextIO.stdOut)
 
     val comifyStringToStdOut	= processString (comify TextIO.stdOut)
     val comifyFileToStdOut	= processFile (comify TextIO.stdOut)

@@ -14,5 +14,7 @@
 
 signature OZIFY_IMPERATIVE_GRAMMAR =
     sig
-	val outputProgram: TextIO.outstream * ImperativeGrammar.program -> unit
+	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
+
+	val outputComponent: TextIO.outstream * I.component -> unit
     end

@@ -622,7 +622,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.translateTest"
 
-	fun translate (nil, ids, decs) =
-	    translateCont (Decs (decs, Export ids))
-	  | translate (_, _, _) = Crash.crash "MatchCompilationPhase.translate"
+	fun translate (imports, exports, decs) =
+	    (imports, exports, translateCont (Decs (decs, Export exports)))
     end

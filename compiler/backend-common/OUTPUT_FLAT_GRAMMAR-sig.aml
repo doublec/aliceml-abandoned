@@ -14,5 +14,5 @@ signature OUTPUT_IMPERATIVE_GRAMMAR =
     sig
 	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
-	val outputProgram: I.body -> string
+	val outputComponent: I.component -> string
     end

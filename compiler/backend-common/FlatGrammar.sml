@@ -97,7 +97,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | AdjExp of coord * id * id
 	withtype body = stm list
 
-	type program = body
+	type component = (id * string) list * id list * body
 
 	fun infoStm (ValDec (info, _, _, _)) = info
 	  | infoStm (RecDec (info, _, _)) = info

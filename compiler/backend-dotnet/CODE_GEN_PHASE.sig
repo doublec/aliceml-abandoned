@@ -15,5 +15,5 @@ signature CODE_GEN_PHASE =
 	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
 	structure O: IL = IL
 
-	val genProgram: I.program -> O.program
+	val genComponent: I.component -> O.program
     end

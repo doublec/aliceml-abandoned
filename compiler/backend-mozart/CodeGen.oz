@@ -323,7 +323,7 @@ define
        end VHd VTl}
    end
 
-   fun {Translate Program}
+   fun {Translate _#_#Program}
       NarratorObject Reporter CS RegDict Prebound VInstr GRegs Code NLiveRegs
    in
       NarratorObject = {New Narrator.'class' init(?Reporter)}

@@ -15,5 +15,5 @@ signature MATCH_COMPILATION_PHASE =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
-	val translate: I.component -> O.program
+	val translate: I.component -> O.component
     end

@@ -95,7 +95,7 @@ signature IMPERATIVE_GRAMMAR =
 	  | AdjExp of coord * id * id
 	withtype body = stm list
 
-	type program = body
+	type component = (id * string) list * id list * body
 
 	val infoStm: stm -> info
     end
