@@ -394,7 +394,7 @@ let rec getit bench len =
       | "cpstak" -> (function()->(cpstak (len*3) (len*2) len))
       | "nrev"   -> (function()->(nrev (genlist len)); 1)
       | "quick"  -> let l = (randlist 5000) in 
-	(function()->(dotimes len (function()->(quick l)));1)
+	(function()->(dotimes len (function()->(quick l))); 1)
       | "quickho"  -> let l = (randlist 5000) in 
 	(function()->(dotimes len (function()->(quickho l less)));1)
       | "quickarray" -> let l = (randlist 5000) in 
@@ -414,18 +414,18 @@ let doitall(iter) =
      doit("fib",iter,31);
      (*     doit("fibf",iter,31); *)
      doit("tak",iter,8);
-     doit("cpstak",iter,8);
+(*     doit("cpstak",iter,8); *)
      doit("nrev",iter,3000);
-     doit("quick",iter,30);
-     doit("quickho",iter,30);
-     doit("quickarray",iter,30);
-     doit("queens",iter,10);
+(*     doit("quick",iter,30); *)
+(*     doit("quickho",iter,30); *)
+(*     doit("quickarray",iter,30);*)
+(*     doit("queens",iter,10); *)
      (*     doit("mandel",iter,4711); *)
      doit("deriv",iter,50)
      );;
 
 let main () =
-    doitall(5); exit 0;;
+    doitall(8); exit 0;;
 
 main ();;
 

@@ -6,27 +6,12 @@ import structure AliceTimer from "AliceTimer"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 
-(* Alice Imports *)
-
-(*
-__primitive val + : int * int -> int  = "Int.+"
-__primitive val - : int * int -> int  = "Int.-"
-__primitive val * : int * int -> int  = "Int.*"
-__primitive val < : int * int -> bool = "Int.<"
-*)
- 
-val _ = Future.await op+
-val _ = Future.await op-
-val _ = Future.await op*
-val _ = Future.await op<
-
 (* Tools *)
 
 fun genlistaux(0,m,acc) = acc
   | genlistaux(n,m,acc) = genlistaux(n-1,m+1,m::acc)
 
 fun genlist(n) = genlistaux(n,1,[]);
-
 
 fun myrandom(n) = (n*25 + 1345) mod 10000 + (n*713 + 1345) mod 100000;
 
@@ -41,7 +26,6 @@ fun randlist(n) = randlistaux(n,0,nil);
 
 fun app(nil,ys)   = ys
   | app(x::xr,ys) = x::app(xr,ys);
-
 
 fun dotimes(0,p) = 0
   | dotimes(n,p) = (p(); dotimes(n-1,p));
@@ -84,8 +68,10 @@ fun dobenchavrg(n,proc) =
 (* Benches *)
 
 (*--** use <? *)
-fun fib (0|1) = 1
-  | fib n = fib(n-2)+fib(n-1);
+
+fun fib n = if n < 2 then 1 else fib(n-2)+fib(n-1);
+(* fun fib (0|1) = 1
+  | fib n = fib(n-2)+fib(n-1); *)
 
 fun concfib (0|1) = 1
   | concfib n =
@@ -121,6 +107,9 @@ fun cpstakaux(x,y,z,k) =
 fun cpstak(x,y,z) = cpstakaux(x,y,z,fn(a)=>a);
 
 (**************************************************************)
+
+(* Make app visible to nrev during runtime compilation *)
+val _ = app(nil, nil);
 
 fun nrev(nil)   = nil
   | nrev(a::bs) = app(nrev(bs),[a]);
@@ -323,8 +312,8 @@ fun deriv(Var(u),x)     = if u=x then Const(1) else Const(0)
   | deriv(Minus(u,v),x) = Minus(deriv(u,x),deriv(v,x))
   | deriv(Times(u,v),x) = Plus(Times(deriv(u,x),v),Times(u,deriv(v,x)))
   | deriv(Div(u,v),x)   = Div(Minus(Times(deriv(u,x),v),
-				   Times(u,deriv(v,x))),
-			     Exp(v,2))
+				    Times(u,deriv(v,x))),
+			      Exp(v,2))
   | deriv(Exp(u,n),x)   = Times(Times(deriv(u,x),Const(n)),Exp(u,n-1))
   | deriv(Uminus(u),x)  = Uminus(deriv(u,x))
   | deriv(Log(u),x)     = Div(deriv(u,x),u);
@@ -346,7 +335,7 @@ fun threadcrea 0 = ()
     (Future.await (spawn ()); threadcrea (n - 1))
 
 (**************************************************************)
-
+(*
 local
   fun mkList n     = mklist' n nil
   and mklist' 0 xs = xs
@@ -402,7 +391,7 @@ fun saveComponent () = (Component.save(newCoreName, c); ())
 end
 
 (**************************************************************)
-
+*)
 fun getit("fib",n)    = (fn()=>fib(n))
   | getit("concfib",n) = (fn()=>Future.await (concfib n))
   | getit("threadcrea",n) = (fn()=>(threadcrea n; 1))
@@ -420,12 +409,12 @@ fun getit("fib",n)    = (fn()=>fib(n))
   | getit("mandel",n) = (fn()=>(mandelloop(0,0);1))
   | getit("mandeliter",n) = (fn()=>(mandeliter()))
   | getit("deriv",n)  = (fn()=>(goderiv(n);1))
-  | getit("picklelist",n) = (fn () => (pickleList (); 1))
+(*  | getit("picklelist",n) = (fn () => (pickleList (); 1))
   | getit("unpicklelist",n) = (fn () => (unpickleList (); 1))
   | getit("loadcomponent",n) = (fn () => (loadComponent (); 1))
   | getit("savecomponent",n) = (fn () => (saveComponent (); 1))
   | getit("savetypes",n) = (fn () => (pickleTypes (); 1))
-  | getit("loadtypes",n) = (fn () => (unpickleTypes (); 1))
+  | getit("loadtypes",n) = (fn () => (unpickleTypes (); 1)) *)
   | getit(bench,n)    = (fn()=>(print("unknown\n");1));
 
 fun printBench(name, n, (mean, times)) =
@@ -436,7 +425,8 @@ fun printBench(name, n, (mean, times)) =
      TextIO.print (Int.toString mean);
      TextIO.print " mean, [";
      List.app (fn n => (TextIO.print ((Int.toString n) ^ " "))) times;
-     TextIO.print "]\n")
+     TextIO.print "]\n";
+     TextIO.flushOut TextIO.stdOut)
 
 
 fun doit(bench,iter,n) =
@@ -462,26 +452,26 @@ fun doitall(iter) =
       );
 
 fun benches(iter) =
-    [doit("picklelist",iter, 50000),
-     doit("unpicklelist",iter, 50000),
-     doit("savecomponent",iter, 8),
-     doit("loadcomponent",iter, 8),
-     doit("savetypes",iter, 8),
-     doit("loadtypes",iter, 8)]
+(*      [doit("picklelist",iter, 50000), *)
+(*       doit("unpicklelist",iter, 50000), *)
+(*       doit("savecomponent",iter, 8), *)
+(*       doit("loadcomponent",iter, 8), *)
+(*       doit("savetypes",iter, 8), *)
+(*       doit("loadtypes",iter, 8)] *)
 
-(*      [doit("fib",iter,31), *)
-(*     doit("fibf",iter,31), *)
-(*       doit("concfib",iter,20), *)
-(*       doit("threadcrea",iter,100000), *)
-(*       doit("tak",iter,8), *)
+    [doit("fib",iter,31),
+(*       doit("fibf",iter,31), *)
+     doit("concfib",iter,20),
+     doit("threadcrea",iter,100000),
+     doit("tak",iter,8),
 (*       doit("cpstak",iter,8), *)
-(*       doit("nrev",iter,3000), *)
+     doit("nrev",iter,3000),
 (*       doit("quick",iter,30), *)
 (*       doit("quickho",iter,30), *)
 (*       doit("quickarray",iter,30), *)
 (*       doit("queens",iter,10), *)
-(*  (*       doit("mandel",iter,4711), *) *)
-(*       doit("deriv",iter,30) *)
+(*       doit("mandel",iter,4711), *)
+     doit("deriv",iter,30)]
 
 val _ = benches 8;
 
