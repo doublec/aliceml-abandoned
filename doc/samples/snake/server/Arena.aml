@@ -373,7 +373,7 @@ struct
 	end
     (** removes all snakes *)
 
-    fun diff (old,new) = (* TODO: schlangen auf old löschen *)
+    fun diff (old,new) =
         let
             val _   = assert Array2.dimensions old = Array2.dimensions new
 
@@ -388,12 +388,20 @@ struct
 		    if r = rows
 		        then help ((0, c + 1), xs)
 		    else
-		        if Array2.sub (old, r, c) = 
-			        Array2.sub (new, r, c)
-			    then help ((r + 1, c), xs)
-		        else 
-                            help ((r + 1, c),
-                                ((r,c), Array2.sub (new, r, c)) :: xs)
+			let
+			    val f = Array2.sub (old, r, c)
+			in
+			    case f of
+				(P.SNAKE_HEAD _ | P.SNAKE_BODY _) =>
+				    Array2.update (old, r, c, P.EMPTY)
+			    |   _ => ();
+		            if Array2.sub (old, r, c) = 
+			             Array2.sub (new, r, c)
+			       then help ((r + 1, c), xs)
+		            else 
+                               help ((r + 1, c),
+                                   ((r,c), Array2.sub (new, r, c)) :: xs)
+                        end
       in
 	  help ((0,0), nil)
       end
