@@ -19,6 +19,7 @@
 
 import structure __pervasive      from "Pervasive"
 import type unit and bool and exn from "ToplevelTypes"
+import structure Hole             from "Hole"
 import structure Time             from "Time"
 import signature FUTURE           from "FUTURE-sig"
 
