@@ -181,7 +181,7 @@
       <TT>isIn (<I>i</I>,<I>x</I>)</TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> iff <I>i</I> is an element of <I>x<I>,
+      <P>returns <TT>true</TT> iff <I>i</I> is an element of <I>x</I>,
          <TT>false</TT> otherwise.
     </P></DD>
 
