@@ -18,7 +18,7 @@ structure PPInf :> PP_INF =
 
     (* Simple objects *)
 
-    fun ppLab l		= text(Lab.toString l)
+    fun ppLab l		= text(Label.toString l)
     fun ppCon (k,p)	= PPPath.ppPath p
 
 

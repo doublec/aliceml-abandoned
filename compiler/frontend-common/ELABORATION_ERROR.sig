@@ -1,7 +1,7 @@
 signature ELABORATION_ERROR =
   sig
 
-    type lab    = Lab.t
+    type lab    = Label.t
     type typ    = Type.t
     type var    = Type.var
     type kind   = Type.kind

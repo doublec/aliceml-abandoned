@@ -1,0 +1,37 @@
+Group
+
+	signature NAME
+	structure Name
+	signature LABEL
+	structure Label
+	signature PATH
+	structure Path
+	structure PathSet
+	structure PathMap
+	signature TYPE
+	structure Type
+
+	signature PP_PATH
+	signature PP_TYPE
+	structure PPPath
+	structure PPType
+
+is
+
+	../misc/sources.cm
+
+	NAME.sig
+	Name.sml
+	LABEL.sig
+	Label.sml
+	PATH.sig
+	Path.sml
+	PathSet.sml
+	PathMap.sml
+	TYPE.sig
+	Type.sml
+
+	PP_PATH.sig
+	PP_TYPE.sig
+	PPPath.sml
+	PPType.sml

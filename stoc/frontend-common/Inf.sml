@@ -6,7 +6,7 @@ structure InfPrivate =
 
   (* Types *)
 
-    type lab	= Lab.t
+    type lab	= Label.t
     type name	= Name.t
     type stamp	= Stamp.t
     type path	= Path.t
@@ -25,7 +25,7 @@ structure InfPrivate =
     datatype space = VAL' | TYP' | MOD' | INF'
 
     structure Map = MakeHashImpMap(struct type t = space * lab
-					  fun hash(_,l) = Lab.hash l end)
+					  fun hash(_,l) = Label.hash l end)
 
 
     datatype inf' =

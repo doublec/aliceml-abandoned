@@ -8,16 +8,7 @@ is
 	../common/sources.cm
 	abstract-grammar.cm
 
-	LAB.sig
-	Lab.sml
-	PATH.sig
-	Path.sml
-
-	PathSet.sml
 	StringMap.sml
-	StampMap.sml
-	TYPE.sig
-	Type.sml
 	INF.sig
 	Inf.sml
 	ENV.sig
@@ -26,10 +17,6 @@ is
 	ENV0.sig
 	Env0.sml
 
-	PP_PATH.sig
-	PPPath.sml
-	PP_TYPE.sig
-	PPType.sml
 	PP_INF.sig
 	PPInf.sml
 

@@ -9,7 +9,7 @@ structure PathPrivate =
 
   (* Types *)
 
-    type lab   = Lab.t
+    type lab   = Label.t
     type name  = Name.t
     type url   = Url.t
 
@@ -25,11 +25,11 @@ structure PathPrivate =
   (* Creation and projection *)
 
     fun invent()		= ref(PLAIN(Name.InId))
-    fun fromLab l		= ref(PLAIN(Lab.toName l))
+    fun fromLab l		= ref(PLAIN(Label.toName l))
     fun fromUrl url		= ref(URL url)
     fun path pln		= ref(DOT pln)
 
-    fun toLab(ref(PLAIN n))	= Lab.fromName n
+    fun toLab(ref(PLAIN n))	= Label.fromName n
       | toLab _			= raise Crash.Crash "Path.toLab"
 
     fun isDot(ref(DOT _))	= true
@@ -52,7 +52,7 @@ structure PathPrivate =
       | compare'(DOT(p1,l1,n1), DOT(p2,l2,n2))	= (case compare(p1,p2)
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
-						   case Lab.compare(l1,l2)
+						   case Label.compare(l1,l2)
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
 						   Int.compare(n1,n2))
@@ -60,7 +60,7 @@ structure PathPrivate =
 
     fun hash(ref(PLAIN x))	= Name.hash x
       | hash(ref(URL u))	= Url.hash u
-      | hash(ref(DOT(p,l,n)))	= Lab.hash l
+      | hash(ref(DOT(p,l,n)))	= Label.hash l
 
 
   (* Strengthening *)
@@ -90,4 +90,4 @@ structure PathPrivate =
   end
 
 
-structure Path : PATH = PathPrivate
+structure Path : (*DEBUG :>*) PATH = PathPrivate

@@ -1,4 +1,4 @@
-signature LAB =
+signature LABEL =
   sig
 
     eqtype lab					(* [lab,l] *)

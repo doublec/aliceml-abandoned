@@ -12,7 +12,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 
   (* Types *)
 
-    type lab    = Lab.t
+    type lab    = Label.t
     type typ    = Type.t
     type var    = Type.var
     type kind   = Type.kind
@@ -90,7 +90,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun ppLongid y = ppQuoted(ppLongid' y)
 
 
-    fun ppLab l = ppQuoted(Lab.toString l)
+    fun ppLab l = ppQuoted(Label.toString l)
 
 
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
@@ -192,7 +192,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    d ^^
 	    nest(break ^^
 		fbox(nest(
-		    text(Lab.toString l) ^/^
+		    text(Label.toString l) ^/^
 		    text ":" ^/^
 		    below(PPType.ppTyp t)
 		))

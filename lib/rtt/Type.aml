@@ -10,7 +10,7 @@ structure TypePrivate =
     datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
-    type lab  = Lab.t					(* [lab,l] *)
+    type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
     type con  = kind * sort * path			(* [chi,c] *)
 
@@ -456,7 +456,7 @@ structure TypePrivate =
 
     fun extendRow(l,ts, r as (RHO _ | NIL))	= FLD(l,ts,r)
       | extendRow(l1,ts1, r1 as FLD(l2,ts2,r2)) =
-	case Lab.compare(l1,l2)
+	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
 	   | LESS    => FLD(l1, ts1, r1)
 	   | GREATER => FLD(l2, ts2, extendRow(l1,ts1,r2))
@@ -464,7 +464,7 @@ structure TypePrivate =
     fun tupToRow ts =
 	let
 	    fun loop(n,  []  ) = NIL
-	      | loop(n, t::ts) = FLD(Lab.fromInt n, [t], loop(n+1,ts))
+	      | loop(n, t::ts) = FLD(Label.fromInt n, [t], loop(n+1,ts))
 	in
 	    loop(1,ts)
 	end
@@ -665,7 +665,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 			    FLD(l,ts, loop(r, b1, rho, true))
 		      | loop(r1 as FLD(l1,ts1,r1'), b1,
 			     r2 as FLD(l2,ts2,r2'), b2) =
-			(case Lab.compare(l1,l2)
+			(case Label.compare(l1,l2)
 			   of EQUAL   => ( ListPair.app unify (ts1,ts2)
 					 ; FLD(l1,ts1, loop(r1',b1, r2',b2)) )
 			    | LESS    => FLD(l1,ts1, loop(r1',b1, r2,true))
@@ -840,4 +840,4 @@ if kind' t1' <> k2 then raise Assert.failure else
   end
 
 
-structure Type : TYPE = TypePrivate
+structure Type : (*DEBUG :>*) TYPE = TypePrivate

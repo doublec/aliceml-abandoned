@@ -11,7 +11,7 @@ structure PPPath :> PP_PATH =
 
 
     fun ppName n		= text(Name.toString n)
-    fun ppLab l			= text(Lab.toString l)
+    fun ppLab l			= text(Label.toString l)
 
     fun ppHiddenLab(0,l)	= ppLab l
       | ppHiddenLab(i,l)	= text "?" ^^ ppHiddenLab(i-1, l)

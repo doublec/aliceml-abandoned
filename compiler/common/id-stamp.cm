@@ -2,9 +2,13 @@ Group
 
 	signature STAMP
 	structure Stamp
+	structure StampSet
+	structure StampMap
 
 is
 
 	../misc/sources.cm
 
 	Stamp.sml
+	StampSet.sml
+	StampMap.sml

@@ -94,7 +94,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
   (* Rows (polymorphic, thus put here) *)
 
-    fun elabLab(E, I.Lab(i, s)) = ( Lab.fromString s, O.Lab(nonInfo(i), s) )
+    fun elabLab(E, I.Lab(i, s)) = ( Label.fromString s, O.Lab(nonInfo(i), s) )
 
     fun elabRow(elabX, E, I.Row(i, fields, b)) =
 	let
@@ -134,7 +134,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert val " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
 *)
-	    val  p      = Inf.newVal(s, Lab.fromName name)
+	    val  p      = Inf.newVal(s, Label.fromName name)
 	    val  t      = Type.unknown(Type.STAR)
 	    (*UNFINISHED: use punning: *)
 	    val (p',t') = ( insertVal(E, stamp, {id=id, path=p, typ=t, sort=w})
@@ -188,7 +188,7 @@ val _=print "\n"
 	let
 	    val (s,_) = elabModLongid_path(E, longid)
 	in
-	    Inf.lookupValPath(s, Lab.fromString l)
+	    Inf.lookupValPath(s, Label.fromString l)
 	end
 
 
@@ -414,7 +414,7 @@ val _=print "\n"
 	    val  s       = Inf.empty()
 	    val  decs'   = elabDecs(E, s, decs)
 (*DEBUG*)
-val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
+val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = deleteScope E
@@ -854,7 +854,7 @@ val _=print "\n"
     and elabCon(E, I.Con(i, id as I.Id(i', stamp, name), typs)) =
 	let
 	    val  id'       = O.Id(nonInfo(i'), stamp, name)
-	    val  l         = Lab.fromName name
+	    val  l         = Label.fromName name
 	    val (ts,typs') = elabStarTyps(E, typs)
 	in
 	    ( l, ts, O.Con(nonInfo(i), id', typs') )
@@ -932,7 +932,7 @@ val _=print "\n"
 
     and elabConRep(E, s, t0, I.Con(i, id, typs)) =
 	let
-	    val  l         = Lab.fromName(I.name id)
+	    val  l         = Label.fromName(I.name id)
 	    val (ts,typs') = elabStarTyps(E, typs)
 	    val (t,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
 	    val  _         = Type.unify(t, List.foldr Type.inArrow t0 ts)
@@ -1055,7 +1055,7 @@ val _=print "\n"
 	    val  _        = insertScope E
 	    val (j1,inf') = elabGroundInf(E, inf)
 	    val  j1'      = Inf.clone j1
-	    val  p        = Path.fromLab(Lab.fromName(I.name id))
+	    val  p        = Path.fromLab(Label.fromName(I.name id))
 	    val  _        = Inf.strengthen(p, j1')
 	    val  id'      = elabModId_bind(E, p, j1', id)
 	    val (j2,mod') = elabMod(E, mod)
@@ -1086,7 +1086,7 @@ print "\n"
 	    val  p2         = case elabMod_path(E, mod2)
 				of SOME(p2,_) => p2
 (*DEBUG*)
-| NONE => Path.fromLab(Lab.fromString "?arg")(*
+| NONE => Path.fromLab(Label.fromString "?arg")(*
 				 | NONE       => Path.invent()
 *)
 	    val  _          = Inf.strengthen(p2, j2)
@@ -1136,7 +1136,7 @@ print "\n"
 	    val  decs'   = elabDecs(E, s, decs)
 	    val  p       = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Lab.fromString "?let")
+val p = Path.fromLab(Label.fromString "?let")
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = deleteScope E
@@ -1169,7 +1169,7 @@ val p = Path.fromLab(Lab.fromString "?let")
 	    | SOME(_,j) =>
 	      let
 		  val s = Inf.asSig j
-		  val l = Lab.fromString l
+		  val l = Label.fromString l
 		  val j = Inf.lookupMod(s, l)
 		  val p = Inf.lookupModPath(s, l)
 	      in
@@ -1270,7 +1270,7 @@ val _=print "\n"
 	    val  _         = insertScope E
 	    val (j1,inf1') = elabGroundInf(E, inf1)
 	    val  j1'       = Inf.clone j1
-	    val  p         = Path.fromLab(Lab.fromName(I.name id))
+	    val  p         = Path.fromLab(Label.fromName(I.name id))
 	    val  _         = Inf.strengthen(p, j1')
 	    (* UNFINISHED: revert renaming of paths somehow *)
 	    val  id'       = elabModId_bind(E, p, j1', id)
@@ -1323,7 +1323,7 @@ print "\n\
 	    val  _         = insertScope E
 	    val (j1,inf1') = elabGroundInf(E, inf1)
 	    val  j1'       = Inf.clone j1
-	    val  p         = Path.fromLab(Lab.fromName(I.name id))
+	    val  p         = Path.fromLab(Label.fromName(I.name id))
 	    val  _         = Inf.strengthen(p, j1')
 	    val  id'       = elabModId_bind(E, p, j1', id)
 	    val (j2,inf2') = elabGroundInf(E, inf2)
@@ -1337,7 +1337,7 @@ print "\n\
 	let
 	    val (j,mod') = elabMod(E, mod)
 (*DEBUG*)
-val _ = Inf.strengthen(Path.fromLab(Lab.fromString "?singleton"), j)
+val _ = Inf.strengthen(Path.fromLab(Label.fromString "?singleton"), j)
 	    val  _       = Inf.strengthen(Path.invent(), j)
 (*DEBUG
 val _ = (
@@ -1374,7 +1374,7 @@ print "\n\
 	    val  _             = insertScope E
 	    val (j1,inf1')     = elabGroundInf(E, inf1)
 	    val  j1'           = Inf.clone j1
-	    val  p             = Path.fromLab(Lab.fromName(I.name id))
+	    val  p             = Path.fromLab(Label.fromName(I.name id))
 	    val  _             = Inf.strengthen(p, j1')
 	    val  id'           = elabModId_bind(E, p, j1', id)
 	    val (j2,gen,inf2') = elabInfRep(E, p',
@@ -1436,7 +1436,7 @@ print "\n\
 
       | elabDec(E, s, vars, I.TypDec(i, id, typ)) =
 	let
-	    val  p       = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newTyp(s, Label.fromName(I.name id))
 	    val (t,typ') = elabTyp(E, typ)
 	    val  id'     = elabTypId_bind(E, p, t, Type.CLOSED, id)
 	    val  _       = Inf.extendTyp(s, p, Type.kind t, Type.CLOSED, SOME t)
@@ -1452,7 +1452,7 @@ val _=print "\n"
 
       | elabDec(E, s, vars, I.DatDec(i, id, typ)) =
 	let
-	    val  p           = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p           = Inf.newTyp(s, Label.fromName(I.name id))
 	    val  _           = insertScope E
 	    val  _           = Type.enterLevel()
 	    val  k           = elabTypKind(E, typ)
@@ -1476,7 +1476,7 @@ val _=print "\n"
 
       | elabDec(E, s, vars, I.ModDec(i, id, mod)) =
 	let
-	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newMod(s, Label.fromName(I.name id))
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = Inf.strengthen(p, j)
 	    val  p'      = case elabMod_path(E, mod)
@@ -1490,7 +1490,7 @@ val _=print "\n"
 
       | elabDec(E, s, vars, I.InfDec(i, id, inf)) =
 	let
-	    val  p         = Inf.newInf(s, Lab.fromName(I.name id))
+	    val  p         = Inf.newInf(s, Label.fromName(I.name id))
 	    val (j,_,inf') = elabInfRep(E, p, fn k'=>k', inf)
 	    val  k         = Inf.kind j
 	    val  id'       = elabInfId_bind(E, p, j, id)
@@ -1531,7 +1531,7 @@ val _=print "\n"
 	    val decs' = elabDecs(E, s', decs)
 	    val p     = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Lab.fromString "?local")
+val p = Path.fromLab(Label.fromString "?local")
 	    val _     = Inf.strengthenSig(p, s')
 	in
 	    O.LocalDec(nonInfo(i), decs')
@@ -1576,7 +1576,7 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 
       | elabLHSRecDec(E, s, I.DatDec(i, id, typ)) =
 	let
-	    val p = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val p = Inf.newTyp(s, Label.fromName(I.name id))
 	    val k = elabTypKind(E, typ)
 	    val t = Type.inRec(Type.unknown k)
 	    (* ASSUME that typ does not contain ExtTyp *)
@@ -1666,7 +1666,7 @@ val _=print "\n"
 
       | elabSpec(E, s, vars, I.TypSpec(i, id, typ)) =
 	let
-	    val  p       = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newTyp(s, Label.fromName(I.name id))
 	    val (t,typ') = elabTyp(E, typ)
 	    val  id'     = elabTypId_bind(E, p, t, Type.CLOSED, id)
 	    val  _       = Inf.extendTyp(s, p, Type.kind t, Type.CLOSED, SOME t)
@@ -1676,7 +1676,7 @@ val _=print "\n"
 
       | elabSpec(E, s, vars, I.DatSpec(i, id, typ)) =
 	let
-	    val  p             = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p             = Inf.newTyp(s, Label.fromName(I.name id))
 	    val  _             = insertScope E
 	    val  _             = Type.enterLevel()
 	    val  k             = elabTypKind(E, typ)
@@ -1696,7 +1696,7 @@ val _=print "\n"
 
       | elabSpec(E, s, vars, I.ModSpec(i, id, inf)) =
 	let
-	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newMod(s, Label.fromName(I.name id))
 	    val (j,inf') = elabGroundInf(E, inf)
 	    val  j'      = Inf.clone j
 (*DEBUG
@@ -1735,7 +1735,7 @@ print "\n\
 
       | elabSpec(E, s, vars, I.InfSpec(i, id, inf)) =
 	let
-	    val  p           = Inf.newInf(s, Lab.fromName(I.name id))
+	    val  p           = Inf.newInf(s, Label.fromName(I.name id))
 	    val (j,gen,inf') = elabInfRep(E, p, fn k'=>k', inf)
 	    val  k           = Inf.kind j
 	    val  id'         = elabInfId_bind(E, p, j, id)
@@ -1774,7 +1774,7 @@ print "\n\
 	    val specs' = elabSpecs(E, s, specs)
 	    val p      = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Lab.fromString "?localSpec")
+val p = Path.fromLab(Label.fromString "?localSpec")
 	    val _      = Inf.strengthenSig(p, s')
 	in
 	    O.LocalSpec(nonInfo(i), specs')
@@ -1801,7 +1801,7 @@ val p = Path.fromLab(Lab.fromString "?localSpec")
 
     and elabLHSRecSpec(E, s, I.DatSpec(i, id, typ)) =
 	let
-	    val p = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val p = Inf.newTyp(s, Label.fromName(I.name id))
 	    val k = elabTypKind(E, typ)
 	    val t = Type.inRec(Type.unknown k)
 	    (* ASSUME that typ does not contain ExtTyp *)

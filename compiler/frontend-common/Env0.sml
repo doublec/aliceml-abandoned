@@ -27,16 +27,16 @@ structure Env0 :> ENV0 =
     val s_vec		= "vector"
     val s_list		= "list"
 
-    val path_int	= Path.fromLab(Lab.fromString s_int)
-    val path_word	= Path.fromLab(Lab.fromString s_word)
-    val path_char	= Path.fromLab(Lab.fromString s_char)
-    val path_string	= Path.fromLab(Lab.fromString s_string)
-    val path_real	= Path.fromLab(Lab.fromString s_real)
-    val path_bool	= Path.fromLab(Lab.fromString s_bool)
-    val path_exn	= Path.fromLab(Lab.fromString s_exn)
-    val path_ref	= Path.fromLab(Lab.fromString s_ref)
-    val path_vec	= Path.fromLab(Lab.fromString s_vec)
-    val path_list	= Path.fromLab(Lab.fromString s_list)
+    val path_int	= Path.fromLab(Label.fromString s_int)
+    val path_word	= Path.fromLab(Label.fromString s_word)
+    val path_char	= Path.fromLab(Label.fromString s_char)
+    val path_string	= Path.fromLab(Label.fromString s_string)
+    val path_real	= Path.fromLab(Label.fromString s_real)
+    val path_bool	= Path.fromLab(Label.fromString s_bool)
+    val path_exn	= Path.fromLab(Label.fromString s_exn)
+    val path_ref	= Path.fromLab(Label.fromString s_ref)
+    val path_vec	= Path.fromLab(Label.fromString s_vec)
+    val path_list	= Path.fromLab(Label.fromString s_list)
 
     val con_word	= (STAR, CLOSED, path_word)
     val con_int		= (STAR, CLOSED, path_int)
@@ -93,13 +93,13 @@ structure Env0 :> ENV0 =
     val s_match		= "Match"
     val s_bind		= "Bind"
 
-    val path_false	= Path.fromLab(Lab.fromString s_false)
-    val path_true	= Path.fromLab(Lab.fromString s_true)
-    val path_nil	= Path.fromLab(Lab.fromString s_nil)
-    val path_cons	= Path.fromLab(Lab.fromString s_cons)
-    val path_ref	= Path.fromLab(Lab.fromString s_ref)
-    val path_match	= Path.fromLab(Lab.fromString s_match)
-    val path_bind	= Path.fromLab(Lab.fromString s_bind)
+    val path_false	= Path.fromLab(Label.fromString s_false)
+    val path_true	= Path.fromLab(Label.fromString s_true)
+    val path_nil	= Path.fromLab(Label.fromString s_nil)
+    val path_cons	= Path.fromLab(Label.fromString s_cons)
+    val path_ref	= Path.fromLab(Label.fromString s_ref)
+    val path_match	= Path.fromLab(Label.fromString s_match)
+    val path_bind	= Path.fromLab(Label.fromString s_bind)
 
     fun poly typF =
 	let

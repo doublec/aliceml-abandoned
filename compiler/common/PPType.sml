@@ -24,7 +24,7 @@ structure PPType :> PP_TYPE =
 
     (* Simple objects *)
 
-    fun ppLab l		= text(Lab.toString l)
+    fun ppLab l		= text(Label.toString l)
     fun ppCon (k,_,p)	= PPPath.ppPath p
 
     fun varToString(isBound, n) =
@@ -75,7 +75,7 @@ structure PPType :> PP_TYPE =
 		let
 		    val k = kindVar t
 		    val s = varToString(isBound, !a before a := !a+1)
-		    val c = (k, CLOSED, Path.fromLab(Lab.fromString s))
+		    val c = (k, CLOSED, Path.fromLab(Label.fromString s))
 		    val _ = t := CON c
 		    val _ = if isBound then () else trail := (t,t')::(!trail)
 		in

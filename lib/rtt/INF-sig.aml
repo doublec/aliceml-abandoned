@@ -3,7 +3,7 @@ signature INF =
 
   (* Types *)
 
-    type lab   = Lab.t
+    type lab   = Label.t
     type name  = Name.t
     type stamp = Stamp.t
     type path  = Path.t

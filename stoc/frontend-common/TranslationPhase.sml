@@ -9,14 +9,15 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     (* Create fields for all structures and values in an environment *)
 
-    fun idToField(x' as O.Id(i,_,O.ExId s)) =
-	    O.Field(i, O.Lab(i,s), O.VarExp(i, O.ShortId(i, x')))
+    fun idToField(x' as O.Id(i,_,n)) =
+	    O.Field(i, O.Lab(i,Label.fromName n), O.VarExp(i, O.ShortId(i, x')))
 
       | idToField _ = raise Crash.Crash"TranslationPhase.idToField: internal id"
 
-    fun idToDec(x' as O.Id(i, z, O.ExId s), y) =
-	    O.ValDec(i, O.VarPat(i, O.Id(i, z, O.ExId s)),
-			O.AppExp(i, O.SelExp(i, O.Lab(i,s)), O.VarExp(i,y)))
+    fun idToDec(x' as O.Id(i, z, n), y) =
+	    O.ValDec(i, O.VarPat(i, O.Id(i, z, n)),
+			O.AppExp(i, O.SelExp(i, O.Lab(i,Label.fromName n)),
+				    O.VarExp(i,y)))
 
       | idToDec _ = raise Crash.Crash "TranslationPhase.idToDec: internal id"
 
@@ -29,7 +30,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun curryExp(i, (0|1), exp') = exp'
       | curryExp(i,   k,   exp') =
 	let
-	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),O.InId))
+	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),Name.InId))
 	    val exps' = List.map (fn id' => O.VarExp(i, O.ShortId(i,id'))) ids'
 	in
 	    funExp(i, ids', O.AppExp(i, exp', O.TupExp(i, exps')))
@@ -49,17 +50,15 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Identifiers *)
 
-    fun trName  s			= s
-    fun trName' s			= "$" ^ s
+    fun trName  n			= n
+    fun trName'(n as Name.InId)		= n
+      | trName'(Name.ExIs s)		= Name.ExId("$" ^ s)
 
     fun trLab(I.Lab(i,s))		= O.Lab(i, trName  s)
     fun trLab'(I.Lab(i,s))		= O.Lab(i, trName' s)
 
-    fun trId(I.Id(i,z,I.InId))		= O.Id(i, z, O.InId)
-      | trId(I.Id(i,z,I.ExId s))	= O.Id(i, z, O.ExId(trName s))
-
-    fun trId'(I.Id(i,z,I.InId))		= O.Id(i, z, O.InId)
-      | trId'(I.Id(i,z,I.ExId s))	= O.Id(i, z, O.ExId(trName' s))
+    fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
+    fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)
 
     fun trLongid'(I.ShortId(i,x))	= O.ShortId(i, trId' x)
       | trLongid'(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab' a)
@@ -72,8 +71,8 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun idsId trId xs' x =
 	case trId x
-	  of x' as O.Id(_,_,O.ExId s') => StringMap.insert(xs', s', x')
-	   | _                         => ()
+	  of x' as O.Id(_,_,Name.ExId s') => StringMap.insert(xs', s', x')
+	   | _                            => ()
 
     fun idsRow    idsZ xs' (I.Row(i,fs,_))   = idsFields idsZ xs' fs
     and idsField  idsZ xs' (I.Field(i,a,z))  = idsZ xs' z
@@ -295,7 +294,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trImp(I.Imp(i,ss,u),(xsus',ds')) =
 	let
-	    val x'  = O.Id(i, Stamp.new(), O.InId)
+	    val x'  = O.Id(i, Stamp.new(), Name.InId)
 	    val y'  = O.ShortId(i, x')
 	    val ds' = trSpecs(ss, y', ds')
 	in

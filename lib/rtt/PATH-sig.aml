@@ -6,7 +6,7 @@ signature PATH =
 
   (* Types *)
 
-    type lab   = Lab.t
+    type lab   = Label.t
     type name  = Name.t
     type url   = Url.t
 

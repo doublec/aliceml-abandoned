@@ -1,4 +1,4 @@
-structure Lab :> LAB =
+structure Label :> LABEL =
   struct
 
     datatype lab = NUM of int | ALPHA of string		(* [lab,l] *)

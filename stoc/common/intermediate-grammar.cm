@@ -8,6 +8,7 @@ is
 	../misc/sources.cm
 	../error/sources.cm
 	id-stamp.cm
+	type.cm
 
 	INTERMEDIATE_GRAMMAR.sig
 	MakeIntermediateGrammar.sml

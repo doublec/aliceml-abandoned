@@ -6,7 +6,7 @@ signature TYPE =
     datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
-    type lab  = Lab.t					(* [lab,l] *)
+    type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
     type con  = kind * sort * path			(* [chi,c] *)
 
