@@ -29,6 +29,7 @@ public:
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
 
@@ -92,6 +93,10 @@ Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
 
 u_int RequestInterpreter::GetInArity(ConcreteCode *) {
   return 0;
+}
+
+u_int RequestInterpreter::GetOutArity(ConcreteCode *) {
+  return INVALID_INT; // TODO: Correct arity needed?
 }
 
 const char *RequestInterpreter::Identify() {
@@ -294,14 +299,19 @@ DEFINE1(UnsafeValue_inArity) {
   if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetInArity(concreteCode);
-  // to be done: is it necessary to keep -2, -1 instead of -1 only?
   RETURN_INT(arity == STATIC_CAST(u_int, INVALID_INT)? -2:
 	     arity == 1? -1: STATIC_CAST(s_int, arity));
 } END
 
 DEFINE1(UnsafeValue_outArity) {
-  x0 = x0; // ignored
-  RETURN_INT(-2); //--** try to do better
+  DECLARE_CLOSURE(closure, x0);
+  word wConcreteCode = closure->GetConcreteCode();
+  ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
+  if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
+  Interpreter *interpreter = concreteCode->GetInterpreter();
+  u_int arity = interpreter->GetOutArity(concreteCode);
+  RETURN_INT(arity == STATIC_CAST(u_int, INVALID_INT)? -2:
+	     arity == 1? -1: STATIC_CAST(s_int, arity));
 } END
 
 AliceDll word UnsafeValue() {
