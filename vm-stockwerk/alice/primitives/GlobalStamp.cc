@@ -11,8 +11,8 @@
 //
 
 #include <cstdio>
-#include "emulator/Authoring.hh"
-#include "emulator/Guid.hh"
+#include "alice/Guid.hh"
+#include "alice/primitives/Authoring.hh"
 
 static int counter = 0;
 
