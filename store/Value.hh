@@ -21,7 +21,7 @@ private:
   static const u_int HANDLER_POS = 0;
 public:
   word *GetBase() {
-    return (word *) this;
+    return (word *) this + 1;
   }
   BlockLabel GetLabel() {
     return HeaderOp::DecodeLabel(this);
@@ -31,11 +31,11 @@ public:
   }
   word GetArg(u_int f) {
     AssertStore(f < GetSize());
-    return ((word *) this)[f];
+    return ((word *) this)[f + 1];
   }
   void InitArg(u_int f, word v) {
     AssertStore(f < GetSize());
-    ((word *) this)[f] = v;
+    ((word *) this)[f + 1] = v;
   }
   void InitArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
@@ -50,7 +50,7 @@ public:
 	Store::AddToIntgenSet(this);
       }
     }
-    ((word *) this)[f] = v;
+    ((word *) this)[f + 1] = v;
   }
   void ReplaceArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
@@ -114,7 +114,7 @@ public:
   using Block::ToWord;
 
   char *GetBase() {
-    return (char *) this + sizeof(u_int);
+    return (char *) this + 2 * sizeof(u_int);
   }
   u_int GetSize() {
     return Store::DirectWordToInt(GetArg(BYTESIZE_POS));
