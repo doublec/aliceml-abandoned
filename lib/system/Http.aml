@@ -91,7 +91,7 @@ structure Http :> HTTP =
 			      end
 			| NONE => raise Format)
 		     handle Overflow => raise Format)
-	      | NONE => ""
+	      | NONE => "" (*--** this is wrong *)
 
 	fun readRequest socket =
 	    let
