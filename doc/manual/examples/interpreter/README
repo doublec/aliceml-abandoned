@@ -1,3 +1,12 @@
+BUILD
+
+	make depend
+	make
+
+EXECUTE
+
+	alicerun Main
+
 SYNTAX
 
 	exp	::=	appexp
@@ -20,7 +29,7 @@ SYNTAX
 	con	 =	[0-9]+
 
 
-KONSTANTEN
+CONSTANTS
 
 	add	:	int -> int -> int
 	sub	:	int -> int -> int
