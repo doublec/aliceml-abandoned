@@ -19,7 +19,7 @@ import
    Frontend(translateFile)
    CodeGen(translate)
 prepare
-   Spec = record('in'(single char: &i type: string optional: false)
+   Spec = record('in'(single char: &i type: atom optional: false)
 		 'out'(single char: &o type: string optional: false)
 		 'image'(single type: string default: "../top/stoc-mozart"))
 define
