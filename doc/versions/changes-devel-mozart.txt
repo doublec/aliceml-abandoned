@@ -23,6 +23,9 @@ Compiler:
   over all implicit import signatures, by potentially inserting additional
   imports for abstract types and signatures imported transitively. Optional
   warnings for added imports (switch --warn-added-imports).
+* Support for giving multiple source files on command line.
+* Import URLs are now resolved relative to the out-file location when compiling,
+  allowing proper separation of source and build directories.
 * Support for smart recompilation, taking component signatures into account.
 
 Linker:
@@ -62,7 +65,7 @@ Library:
 * Pair: added mapBoth.
 * Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
 * VectorSlice: fixed toVector.
-* ArraySlice, {Char,Word8}ArraySlice: fixed copying with overlapping slices.
+* ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
 * Char: fixed scan, scanC, fromCString.
 * String: fixed isSubstring, scanC, fromCString.
 * Substring: fixed isSubstring.
@@ -70,6 +73,7 @@ Library:
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
 * Package: deleted separate val_package type.
+* TextIO, StreamIO: fixed buffering of TTY output.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.

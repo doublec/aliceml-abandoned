@@ -1,13 +1,21 @@
+Compiler:
+
+* Support for giving multiple source files on command line.
+* Import URLs are now resolved relative to the out-file location when compiling,
+  allowing proper separation of source and build directories.
+
 Library:
 
 * IntInf: fixed handling of division by 0.
+* Real: fixed exception handling in round, floor, ceil, trunc.
 * Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
-* ArraySlice, {Char,Word8}ArraySlice: fixed copying with overlapping slices.
+* ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
 * Char: fixed scan, scanC, fromCString.
 * String: fixed scanC, fromCString.
 * Date: added fromISO, toISO, scanISO for locale-independent date formats.
+* TextIO, StreamIO: fixed buffering of TTY output.
 * Minimize: several bugfixes.
-* Inspector: fixed handling of mono vectors and arrays.
+* Inspector: fixed handling of unit type, and mono vectors and arrays.
 
 
 Alice 1.0 (Kraftwerk Album 1) - 2004/12/22
