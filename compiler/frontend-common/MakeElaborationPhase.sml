@@ -141,7 +141,8 @@ val lev = ref 0
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert val " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
 *)
-	    val  p      = Inf.newVal(s, Label.fromName name)
+	    val  p      = Inf.newVal(s, Label.fromName name
+					handle Domain => Label.fromInt 0)
 	    val  t      = Type.unknown(Type.STAR)
 	    (*UNFINISHED: use punning: *)
 	    val (p',t') = ( insertVal(E, stamp, {id=id, path=p, typ=t, sort=w})
