@@ -20,20 +20,20 @@ class GCHelper {
 public:
   // Moving Helper
   static u_int AlreadyMoved(Block *p) {
-    return (!((((u_int *) p)[-1] & GEN_GC_MASK) >> GEN_GC_SHIFT));
+    return (!((((u_int *) p)[0] & GEN_GC_MASK) >> GEN_GC_SHIFT));
   }
   static Block *GetForwardPtr(Block *p) {
-    return ((Block **) p)[-1];
+    return ((Block **) p)[0];
   }
   static void MarkMoved(Block *p, Block *np) {
-    ((Block **) p)[-1] = np; // test for 8 byte Alignment to be determined
+    ((Block **) p)[0] = np; // test for 8 byte Alignment to be determined
   }
   // Generation Encoding
   static void EncodeGen(Block *p, u_int gen) {
-    ((u_int *) p)[-1] = (((u_int *) p)[-1] & ~GEN_GC_MASK) | ((gen + 1) << GEN_GC_SHIFT);
+    ((u_int *) p)[0] = (((u_int *) p)[0] & ~GEN_GC_MASK) | ((gen + 1) << GEN_GC_SHIFT);
   }
   static u_int DecodeGen(Block *p) {
-    return ((((u_int *) p)[-1] & GEN_GC_MASK) >> GEN_GC_SHIFT);
+    return ((((u_int *) p)[0] & GEN_GC_MASK) >> GEN_GC_SHIFT);
   }
 };
 
