@@ -152,13 +152,14 @@ LIBFUNDAMENTALSOURCES0 = \
 	THREAD-sig.aml TIME-sig.aml VECTOR-sig.aml VECTOR_PAIR-sig.aml \
 	WORD-sig.aml PACKAGE-sig.aml \
 	Alt.aml Array.aml Bool.aml Char.aml CharVector.aml Future.aml \
-	General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml LargeReal.aml \
-	LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml MkWord.aml \
-	Option.aml Pair.aml Position.aml Promise.aml Real.aml Ref.aml \
-	Stream.aml String.aml StringCvt.aml Substring.aml UniqueString.aml \
-	Thread.aml Time.aml Toplevel.aml Vector.aml VectorPair.aml \
-	WideChar.aml WideString.aml Word.aml Word8.aml Word8Array.aml \
-	Word8Vector.aml Word31.aml Package.aml ByNeed.aml
+	General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
+	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \
+	MkMonoArray.aml MkMonoVector.aml MkWord.aml Option.aml Pair.aml \
+	Position.aml Promise.aml Real.aml Ref.aml Stream.aml String.aml \
+	StringCvt.aml Substring.aml UniqueString.aml Thread.aml Time.aml \
+	Toplevel.aml Vector.aml VectorPair.aml WideChar.aml WideString.aml \
+	Word.aml Word8.aml Word8Array.aml Word8Vector.aml Word31.aml \
+	Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	UnsafeIODesc.asig \
