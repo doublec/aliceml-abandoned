@@ -206,9 +206,9 @@ sig
 
     (* Functor bindings *)
 
-    val TRANSFunBind:     Info * StrId * StrPat list * SigExp option
+    val TRANSFunBind:     Info * Lazy * StrId * StrPat list * SigExp option
 			       * StrExp * FunBind option           -> FunBind
-    val OPAQFunBind:      Info * StrId * StrPat list * SigExp
+    val OPAQFunBind:      Info * Lazy * StrId * StrPat list * SigExp
 			       * StrExp * FunBind option           -> FunBind
 
     (* Specifications *)

@@ -166,9 +166,7 @@ for handling pickles.</P>
 	 exists at compile time, however, which is not the case for
 	 the load mechanism.
     <LI> Linking of imports happens lazily, while the <TT>Load</TT>
-         functor executes at least the root component eagerly. (Lazy execution
-	 can be achieved through the use of the
-	 <A href="laziness.html#modules"><TT>ByNeed</TT></A> functor though.)
+         functor executes at least the root component eagerly.
     <LI> Components imported via import announcements are only linked
          in once in a given process, regardless how many import announcements
 	 exist for the same component. <TT>Load</TT> will always reload

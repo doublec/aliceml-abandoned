@@ -100,11 +100,10 @@ local
 	    assert Future.isFailed testb
 	end
 
-(*    val testByNeed = ("ByNeed", fn () => assert ("sigsev on SEAM due to Bug #58", false)) *)
     fun testByNeed () =
 	let exception Quit
-	    structure F = ByNeed (signature S = (val x: unit) 
-				  functor F () = (val x = raise Quit ))
+	    structure F = Future.ByNeed (signature S = (val x: unit) 
+					 functor F () = (val x = raise Quit ))
 	in
 	    assert F.x = () raise Quit
 	end

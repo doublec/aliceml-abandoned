@@ -480,6 +480,12 @@ struct
 					    ppMod mod ^/^
 					    ppInf inf
 					  )
+      | ppMod(LazyMod(i, mod))		= modtree "Lazy" i (
+					    ppMod mod
+					  )
+      | ppMod(SpawnMod(i, mod))		= modtree "Spawn" i (
+					    ppMod mod
+					  )
       | ppMod(LetMod(i, decs, mod))	= modtree "Let" i (
 					    ppDecs decs ^/^
 					    ppMod mod

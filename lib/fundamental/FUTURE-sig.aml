@@ -36,4 +36,7 @@ sig
     val isFailed :	'a -> bool
     val isDetermined :	'a -> bool
     val isLazy :	'a -> bool
+
+    functor Concur (signature S functor F () : S) : S
+    functor ByNeed (signature S functor F () : S) : S
 end

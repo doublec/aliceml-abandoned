@@ -5,7 +5,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -79,4 +79,7 @@ ifdef([[FUTURE_AWAIT_EITHER_IS_PRIMITIVE]],[[
     fun isFuture x	= status x = FUTURE
     fun isFailed x	= status x = FAILED
     fun isDetermined x	= status x = DETERMINED
+
+    functor Concur (signature S functor F () : S) = spawn F ()
+    functor ByNeed (signature S functor F () : S) = lazy F ()
 end

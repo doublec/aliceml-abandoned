@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -116,8 +116,6 @@ import __primitive structure Promise		from "Promise"
 
 import __primitive signature THREAD		from "THREAD-sig"
 import __primitive structure Thread		from "Thread"
-
-import __primitive functor   ByNeed		from "ByNeed"
 
 import __primitive signature LOCK		from "LOCK-sig"
 import __primitive structure Lock		from "Lock"
@@ -257,8 +255,6 @@ structure Promise		= Promise
 
 signature THREAD		= THREAD
 structure Thread		= Thread
-
-structure ByNeed		= ByNeed
 
 signature LOCK			= LOCK
 structure Lock			= Lock

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -275,6 +275,8 @@ struct
 	| OPAQStrExp        of Info * StrExp * SigExp
 	| FCTStrExp         of Info * StrPat * StrExp
 	| UNPACKStrExp      of Info * Exp * SigExp
+	| LAZYStrExp        of Info * StrExp
+	| SPAWNStrExp       of Info * StrExp
 
     and StrPat =
 	  StrPat            of Info * StrId * SigExp
@@ -555,6 +557,8 @@ struct
       | infoStrExp(OPAQStrExp(I,_,_))			= I
       | infoStrExp(FCTStrExp(I,_,_))			= I
       | infoStrExp(UNPACKStrExp(I,_,_))			= I
+      | infoStrExp(LAZYStrExp(I,_))			= I
+      | infoStrExp(SPAWNStrExp(I,_))			= I
 
     fun infoStrPat(StrPat(I,_,_))			= I
 

@@ -159,8 +159,7 @@ are particularly useful as functor parameters, because they allow declaring
 functor F (signature S structure X : S) = (* ... *)</PRE>
 
 <P>The Alice <A href="library/index.html">library</A> contains several examples of
-such polymorphic functors, for example, the <A href="#lazy"><TT>ByNeed</TT></A>
-functor or the functors provided by the <A
+such polymorphic functors, for example the functors provided by the <A
 href="library/component-manager.html">component manager</A>.</P>
 
 <DIV class=note>
@@ -254,22 +253,31 @@ href="packages.html">packages</A> for a description of the package
 mechanism.</P>
 
 
-<?php section("lazy", "laziness") ?>
+<?php section("lazy", "laziness and concurrency") ?>
 
 <P>Like <A href="futures.html#lazy">core expressions</A>, modules can be
-evaluated lazily. The library provides a polymorphic functor</P>
+evaluated concurrently or lazily. Like in the core language, this can be accomplished by just preceding a module expression with the respective keyword:</P>
 
 <PRE class=code>
-ByNeed : fct (signature S  functor F () : S) -> S</PRE>
+lazy <I>strexp</I>
+spawn <I>strexp</I></PRE>
 
-<P>which can be applied to an appropriate functor <TT>F</TT> and returns a lazy
-<A href="futures.html">future</A> of the module resulting from the functor
-application <TT>F ()</TT>. Evaluation will be triggered if the result module is
-requested.</P>
+<P>Evaluating these expressions returns a lazy or concurrent module future, respectively.</P>
 
-<P>The most frequent cause of lazy module evaluation is the <A
-href="components.html">component system</A>. Every structure that is
+<P>Note however that the most frequent cause of lazy module evaluation is the
+<A href="components.html">component system</A>. Every structure that is
 imported from another component is evaluated lazily.</P>
+
+
+<?php subsection("lazy-sugar", "Syntactic sugar") ?>
+
+<P>Derived forms <A href="futures.html#spawn-sugar">analogous to the core language</A> are provided for defining functors that should evaluate lazily or in a separate threads:</P>
+
+<PRE class=code>
+functor lazy F (X : S) = <I>strexp</I>
+functor spawn G (X : S) = <I>strexp</I></PRE>
+
+<P>An application of <TT>F</TT> is evaluated lazily, while <TT>G</TT> will spawn a new thread for evaluation. See <A href="#syntax">below</A> for a precise definition of this derived form.</P>
 
 
 <?php subsection("lazy-longids", "Lazy structure access") ?>
@@ -495,6 +503,16 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
     <TD> functor </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>lazy</TT> <I>strexp</I> </TD>
+    <TD> laziness </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>spawn</TT> <I>strexp</I> </TD>
+    <TD> concurrency </TD>
+  </TR>
   <TR></TR>
   <TR>
     <TD> <I>atstrpat</I> </TD>
@@ -718,7 +736,7 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <I>funbind</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB> &lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;
          <TT>=</TT> <I>strexp</I>
          &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
     <TD> functor binding (<I>n</I>&ge;1) (*) </TD>
@@ -767,12 +785,13 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <TT>structure</TT>&nbsp;<I>funbind</I> </TD>
   </TR>
   <TR>
-    <TD> <I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<!--
+    <TD> &lt;<TT>lazy</TT>|<TT>spawn</TT>&gt;&nbsp;<I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;&lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;&nbsp;<!--
 	--><TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
 	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
     <TD> <I>strid</I>&nbsp;<TT>=</TT>&nbsp;<!--
 	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;<TT>=></TT>&nbsp;...&nbsp;<!--
-	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT>&nbsp;&lt;<TT>lazy</TT>|<TT>spawn</TT>&gt;&nbsp;<!--
+	--><I>strexp</I>&nbsp;&lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;&nbsp;<!--
 	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
   </TR>
   <TR>

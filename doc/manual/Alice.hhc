@@ -113,10 +113,6 @@
 			<param name="Local" value="library/bool.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="ByNeed">
-			<param name="Local" value="library/byneed.html">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Byte">
 			<param name="Local" value="library/byte.html">
 			</OBJECT>
@@ -203,6 +199,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="INTEGER">
 			<param name="Local" value="library/integer.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="IntInf">
+			<param name="Local" value="library/int-inf.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="IO">

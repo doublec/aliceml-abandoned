@@ -171,7 +171,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	WideCharVectorSlice.aml WideString.aml WideSubstring.aml WideText.aml \
 	Word.aml Word8.aml Word8Array.aml Word8ArraySlice.aml \
 	Word8Vector.aml Word8VectorSlice.aml Word31.aml \
-	Package.aml ByNeed.aml
+	Package.aml
 LIBDATASOURCES0 = \
 	ATOM-sig.aml Atom.aml WideAtom.aml \
 	STAMP-sig.aml MkStamp.aml GLOBAL_STAMP-sig.aml GlobalStamp.aml \

@@ -720,11 +720,16 @@ struct
 
     (* Functor bindings *)
 
-    fun FunBind(I, strid, strpats, strexp, funbind_opt) =
+    fun FunBind(I, lazy_opt, strid, strpats, strexp, funbind_opt) =
 	let
 	    val I' = G.infoStrExp strexp
 
-	    fun buildStrExp       []         = strexp
+	    fun buildStrExp [] =
+		    (case lazy_opt
+		      of G.SANSLazy => strexp
+		       | G.WITHLazy => G.LAZYStrExp(I', strexp)
+		       | G.WITHSpawn => G.SPAWNStrExp(I', strexp)
+		    )
 	      | buildStrExp(strpat::strpats) =
 		    FCTStrExp(Source.span(G.infoStrPat strpat, I'),
 			      strpat, buildStrExp strpats)
@@ -732,16 +737,16 @@ struct
 	    G.StrBind(I, strid, buildStrExp strpats, funbind_opt)
 	end
 
-    fun TRANSFunBind(I, strid, strpats, NONE, strexp, funbind_opt) =
-	    FunBind(I, strid, strpats, strexp, funbind_opt)
+    fun TRANSFunBind(I, lazy_opt, strid, strpats, NONE, strexp, funbind_opt) =
+	    FunBind(I, lazy_opt, strid, strpats, strexp, funbind_opt)
 
-      | TRANSFunBind(I, strid, strpats, SOME sigexp, strexp, funbind_opt) =
-	    FunBind(I, strid, strpats, G.TRANSStrExp(I, strexp, sigexp),
-		       funbind_opt)
+      | TRANSFunBind(I, lazy_opt, strid, strpats, SOME sigexp, strexp, funbind_opt) =
+	    FunBind(I, lazy_opt, strid, strpats,
+		       G.TRANSStrExp(I, strexp, sigexp), funbind_opt)
 
-    fun OPAQFunBind(I, strid, strpats, sigexp, strexp, funbind_opt) =
-	    FunBind(I, strid, strpats, G.OPAQStrExp(I, strexp, sigexp),
-		       funbind_opt)
+    fun OPAQFunBind(I, lazy_opt, strid, strpats, sigexp, strexp, funbind_opt) =
+	    FunBind(I, lazy_opt, strid, strpats,
+		       G.OPAQStrExp(I, strexp, sigexp), funbind_opt)
 
 
     (* Specifications *)

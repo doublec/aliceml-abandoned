@@ -200,6 +200,8 @@ struct
 	| AppMod    of mod_info * mod * mod	(* application *)
 	| AnnMod    of mod_info * mod * inf	(* annotation *)
 	| SealMod   of mod_info * mod * inf	(* sealing *)
+	| LazyMod   of mod_info * mod		(* byneed evaluation *)
+	| SpawnMod  of mod_info * mod		(* concurrent evaluation *)
 	| LetMod    of mod_info * dec vector * mod (* let *)
 	| UnpackMod of mod_info * exp * inf	(* package elimination *)
 
@@ -352,6 +354,8 @@ struct
       | infoMod(AppMod(i,_,_))		= i
       | infoMod(AnnMod(i,_,_))		= i
       | infoMod(SealMod(i,_,_))		= i
+      | infoMod(LazyMod(i,_))		= i
+      | infoMod(SpawnMod(i,_))		= i
       | infoMod(LetMod(i,_,_))		= i
       | infoMod(UnpackMod(i,_,_))	= i
 

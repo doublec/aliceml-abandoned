@@ -1404,6 +1404,20 @@ TextIO.print "\n";
 	    ( j, O.SealMod(infInfo(i,j), mod', inf') )
 	end
 
+      | elabMod(E, po, I.LazyMod(i, mod)) =
+	let
+	    val (j,mod') = elabMod(E, po, mod)
+	in
+	    ( j, O.LazyMod(infInfo(i,j), mod') )
+	end
+
+      | elabMod(E, po, I.SpawnMod(i, mod)) =
+	let
+	    val (j,mod') = elabMod(E, po, mod)
+	in
+	    ( j, O.SpawnMod(infInfo(i,j), mod') )
+	end
+
       | elabMod(E, po, I.LetMod(i, decs, mod)) =
 	let
 	    val  _        = Env.insertScope E

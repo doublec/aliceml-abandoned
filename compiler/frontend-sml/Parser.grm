@@ -138,6 +138,10 @@
 (*   - packages:								*)
 (*	  exp    ::= pack atstrexp :> atsigexp					*)
 (*	  strexp ::= unpack infexp : sigexp					*)
+(*   - lazy expressions:							*)
+(*	  strexp ::= lazy strexp							*)
+(*   - spawn expressions:							*)
+(*	  strexp ::= spawn strexp							*)
 (*   - programs:								*)
 (*	  program   ::= topdec							*)
 (*   - components:								*)
@@ -378,6 +382,7 @@
 	| longsigid			of LongSigId
 
 	| OP_opt			of Op
+	| LAZY_SPAWN_opt		of Lazy
 
 	(* Nonterminals of the core language *)
 	| atexp				of AtExp
@@ -689,7 +694,10 @@
 	  OP			( WITHOp )
 	| (*empty*)		( SANSOp )
 
-
+  LAZY_SPAWN_opt:
+	  LAZY			( WITHLazy )
+	| SPAWN			( WITHSpawn )
+	| (*empty*)		( SANSLazy )
 
 
   (* Core: Expressions *)
@@ -1310,6 +1318,8 @@
 	| UNPACK infexp COLON sigexp
 			( UNPACKStrExp(I(UNPACKleft,sigexpright),
 				       infexp, sigexp) )
+	| LAZY strexp	( LAZYStrExp(I(LAZYleft,strexpright), strexp) )
+	| SPAWN strexp	( SPAWNStrExp(I(SPAWNleft,strexpright), strexp) )
 
   atstrpat:
 	  LPAR strid COLON sigexp RPAR
@@ -1382,6 +1392,15 @@
 					   sigexp__AND_strbind_optright),
 					 infexp, #1 sigexp__AND_strbind_opt)
 			  , #2 sigexp__AND_strbind_opt ) )
+	| LAZY strexp__AND_strbind_opt
+			( ( LAZYStrExp(I(LAZYleft,strexp__AND_strbind_optright),
+				       #1 strexp__AND_strbind_opt)
+			  , #2 strexp__AND_strbind_opt ) )
+	| SPAWN strexp__AND_strbind_opt
+			( ( SPAWNStrExp(I(SPAWNleft,
+					  strexp__AND_strbind_optright),
+					#1 strexp__AND_strbind_opt)
+			  , #2 strexp__AND_strbind_opt ) )
 
      sigexp__AND_strbind_opt:
 	  sigexp' AND_strbind_opt
@@ -1730,15 +1749,20 @@
   (* Modules: Functors *)
 
   funbind:
-	  strid atstrpat_list1 COLON_sigexp_opt EQUALS strexp__AND_funbind_opt
-			( TRANSFunBind(I(stridleft,
+	  LAZY_SPAWN_opt strid atstrpat_list1 COLON_sigexp_opt
+		EQUALS strexp__AND_funbind_opt
+			( TRANSFunBind(I(LAZY_SPAWN_optleft,
 					 strexp__AND_funbind_optright),
-				       strid, atstrpat_list1, COLON_sigexp_opt,
+				       LAZY_SPAWN_opt, strid, atstrpat_list1,
+				       COLON_sigexp_opt,
 				       #1 strexp__AND_funbind_opt,
 				       #2 strexp__AND_funbind_opt) )
-	| strid atstrpat_list1 COLONGREATER sigexp EQUALS strexp__AND_funbind_opt
-			( OPAQFunBind(I(stridleft,strexp__AND_funbind_optright),
-				      strid, atstrpat_list1, sigexp,
+	| LAZY_SPAWN_opt strid atstrpat_list1 COLONGREATER sigexp
+		EQUALS strexp__AND_funbind_opt
+			( OPAQFunBind(I(LAZY_SPAWN_optleft,
+					strexp__AND_funbind_optright),
+				      LAZY_SPAWN_opt, strid, atstrpat_list1,
+				      sigexp,
 				      #1 strexp__AND_funbind_opt,
 				      #2 strexp__AND_funbind_opt) )
      atstrpat_list1:
@@ -1772,6 +1796,15 @@
 					   sigexp__AND_funbind_optright),
 					 infexp, #1 sigexp__AND_funbind_opt)
 			  , #2 sigexp__AND_funbind_opt ) )
+	| LAZY strexp__AND_funbind_opt
+			( ( LAZYStrExp(I(LAZYleft,strexp__AND_funbind_optright),
+				       #1 strexp__AND_funbind_opt)
+			  , #2 strexp__AND_funbind_opt ) )
+	| SPAWN strexp__AND_funbind_opt
+			( ( SPAWNStrExp(I(SPAWNleft,
+					  strexp__AND_funbind_optright),
+					#1 strexp__AND_funbind_opt)
+			  , #2 strexp__AND_funbind_opt ) )
 
      sigexp__AND_funbind_opt:
 	  sigexp' AND_funbind_opt

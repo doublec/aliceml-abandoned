@@ -715,6 +715,14 @@ struct
 	 *)
 	trOpaqCoerceMod(env, #region i, mod, trInf(env, inf), #inf i)
 
+      | trMod(env, I.LazyMod(i, mod)) =
+	(* [lazy mod] = lazy [mod] *)
+	O.LazyExp(trModInfo(env,i), trMod(env, mod))
+
+      | trMod(env, I.SpawnMod(i, mod)) =
+	(* [spawn mod] = spawn [mod] *)
+	O.SpawnExp(trModInfo(env,i), trMod(env, mod))
+
       | trMod(env, I.LetMod(i, decs, mod)) =
 	(* [let decs in mod] = let [decs] in [mod] *)
 	O.LetExp(trModInfo(env,i), trDecs(env, decs), trMod(env, mod))
@@ -743,24 +751,6 @@ struct
 	in
 	    letExp(#[dec'], exp')
 	end
-
-      | trMod(env, I.PrimMod(i, "ByNeed", inf)) =
-	(* [prim "ByNeed" : (interface lab1; module lab2 : any -> lab1) -> lab1] =
-	 *   fun {[lab2]=id,...} -> lazy id ()
-	 *)
-	(let
-	    val  r       = #region i
-	    val  i'      = trModInfo(env,i)
-	    val (t1,t2)  = Type.asArrow(#typ i')
-	    val (l1,t11) = findFld(NameTranslation.isModName, t1)
-	    val (l2,t12) = findFld(NameTranslation.isInfName, t1)
-	    val  id'     = auxId(typInfo(r,t11))
-	    val  pat'    = O.ProdPat(typInfo(r,t1), #[fld(r, l1, idPat id')])
-	    val  exp'    = lazyExp(O.AppExp(typInfo(r,t2), idExp id', unitExp r))
-	in
-	    O.FunExp(i', #[O.Mat(nonInfo r, pat', exp')])
-	end
-	handle Type.Type => raise Crash.Crash "trPrimMod: ByNeed")
 
       | trMod(env, I.PrimMod(i, "Reflect", inf)) =
 	(* [prim "Reflect" : (interface lab1; module lab2 : lab1) -> (lab3 : Value.t)] =
@@ -1643,6 +1633,8 @@ struct
 			      | I.AppMod _    => "AppMod"
 			      | I.AnnMod _    => "AnnMod"
 			      | I.SealMod _   => "SealMod"
+			      | I.LazyMod _   => "LazyMod"
+			      | I.SpawnMod _  => "SpawnMod"
 			      | I.LetMod _    => "LetMod"
 			      | I.UnpackMod _ => "UnpackMod"
 	in

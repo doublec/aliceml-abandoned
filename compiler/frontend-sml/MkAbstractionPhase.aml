@@ -713,6 +713,8 @@ struct
 
       | unguardedTyVarsStrExp E ( TRANSStrExp(_, strexp, _)
 				| OPAQStrExp(_, strexp, _)
+				| LAZYStrExp(_, strexp)
+				| SPAWNStrExp(_, strexp)
 				| FCTStrExp(_, _, strexp) ) =
 	    unguardedTyVarsStrExp E strexp
 
@@ -2508,6 +2510,20 @@ struct
 		val (inf',F) = trSigExp E sigexp
 	   in
 		( O.UnpackMod(i, exp', inf'), F )
+	   end
+
+	 | LAZYStrExp(i, strexp) =>
+	   let
+		val (mod',F) = trStrExp E strexp
+	   in
+		( O.LazyMod(i, mod'), F )
+	   end
+
+	 | SPAWNStrExp(i, strexp) =>
+	   let
+		val (mod',F) = trStrExp E strexp
+	   in
+		( O.SpawnMod(i, mod'), F )
 	   end
 
 

@@ -383,7 +383,7 @@ relative to Standard ML. Derived forms are marked (*).
   <TR>
     <TD> <I>funbind</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB> &lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;
          <TT>=</TT> <I>strexp</I>
          &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
     <TD> <A href="modules.html#higher-strexp">functor binding</A> (<I>n</I>&ge;1) (*) <SUP>2</SUP> </TD>
@@ -434,13 +434,23 @@ bindings.</P>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#higher-strexp">functor</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
     <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
     <TD> <A href="packages.html#package-unpack">unpacking</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
-    <TD> <A href="modules.html#higher-strexp">functor</A> </TD>
+    <TD> <TT>lazy</TT> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#lazy">laziness</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>spawn</TT> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#lazy">concurrency</A> </TD>
   </TR>
 
   <TR></TR>

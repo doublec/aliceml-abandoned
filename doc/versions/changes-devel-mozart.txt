@@ -1,6 +1,7 @@
 Language:
 
 * Nicer syntax (derived forms) for functors.
+* Lazy and spawn syntax for modules.
 
 Compiler:
 
@@ -15,6 +16,8 @@ Library:
 
 * Promise: fulfilling with a cycle no longer fails the promise.
 * VectorSlice: fixed toVector.
+* ByNeed: moved to Future structure.
+* Future: added ByNeed and Concur functors.
 
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15

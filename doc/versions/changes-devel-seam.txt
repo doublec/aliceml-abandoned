@@ -1,6 +1,7 @@
 Language:
 
 * Nicer syntax (derived forms) for functors.
+* Lazy and spawn syntax for modules.
 
 Compiler:
 
@@ -32,6 +33,8 @@ Library:
 * Hole: fixed semantics of synchronisation on holes.
 * Promise: fulfilling with a cycle no longer fails the promise.
 * VectorSlice: fixed toVector.
+* ByNeed: moved to Future structure.
+* Future: added ByNeed and Concur functors.
 
 Tools:
 

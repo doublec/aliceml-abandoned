@@ -106,7 +106,7 @@ sig
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
 	| SeqExp    of exp_info * exp * exp	(* sequential expressions *)
 	| CaseExp   of exp_info * exp * mat vector (* case *)
-	| LazyExp   of exp_info * exp		(* byneed evaulation *)
+	| LazyExp   of exp_info * exp		(* byneed evaluation *)
 	| SpawnExp  of exp_info * exp		(* concurrent evaulation *)
 	| HandleExp of exp_info * exp * mat vector (* exception handling *)
 	| RaiseExp  of exp_info * exp		(* exception raising *)
@@ -173,6 +173,8 @@ sig
 	| AppMod    of mod_info * mod * mod	(* application *)
 	| AnnMod    of mod_info * mod * inf	(* annotation *)
 	| SealMod   of mod_info * mod * inf	(* sealing *)
+	| LazyMod   of mod_info * mod		(* byneed evaluation *)
+	| SpawnMod  of mod_info * mod		(* concurrent evaluation *)
 	| LetMod    of mod_info * dec vector * mod (* let *)
 	| UnpackMod of mod_info * exp * inf	(* package elimination *)
 

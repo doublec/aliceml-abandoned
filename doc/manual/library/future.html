@@ -35,7 +35,7 @@
       <P>which evaluates the expression <TT><I>exp</I></TT> in new
       thread and returns immediately with a future of its result.</P>
     </LI>
-    
+
     <LI>
       <P><EM>lazy</EM> futures are created by the expression</P>
       <PRE>
@@ -97,6 +97,9 @@
 	val isFailed :     'a -> bool
 	val isDetermined : 'a -> bool
 	val isLazy :       'a -> bool
+
+        functor Concur (signature S functor F () : S) : S
+        functor ByNeed (signature S functor F () : S) : S
     end
   </PRE>
 
@@ -227,6 +230,18 @@
       <P>Returns <TT>true</TT> if <TT><I>v</I></TT> is a lazy future that
       has not yet been requested, <TT>false</TT> otherwise. Does not
       request <TT><I>v</I></TT> by itself.</P>
+    </DD>
+
+    <DT>
+      <TT>Concur (signature S = <I>SIG</I> functor F () = <I>MOD</I>)</TT> <BR>
+      <TT>ByNeed (signature S = <I>SIG</I> functor F () = <I>MOD</I>)</TT> <BR>
+    </DT>
+    <DD>
+      <P>Polymorphic functors evaluating a module expression <TT><I>MOD</I></TT>
+      concurrently or lazily. The following equivalences hold:</P>
+      <PRE>
+        Concur (signature S = <I>SIG</I> functor F () = <I>MOD</I>) = spawn <I>MOD</I> : <I>SIG</I>
+        ByNeed (signature S = <I>SIG</I> functor F () = <I>MOD</I>) = lazy <I>MOD</I> : <I>SIG</I></PRE>
     </DD>
   </DL>
 
