@@ -73,7 +73,7 @@ HeapChunk::HeapChunk(u_int size, HeapChunk *chain) : prev(NULL) {
   max  = (base + size - sizeof(word)); // Header must always fit
   top  = base;
   next = chain;
-#if HAVE_LIGHTNING
+#if HAVE_LIGHTNING && !HAVE_VIRTUALALLOC
   // Recent Linux kernels disallow EXEC by default
   if (mprotect(base, (max - base + sizeof(word)),
 	       PROT_READ | PROT_WRITE | PROT_EXEC) == -1) {
