@@ -330,6 +330,13 @@ public:
 //
 // Interpreter Types
 //
+class Word {
+public:
+  static word Deref(word a) {
+    return a;
+  }
+};
+
 class JavaInt {
 public:
   static word ToWord(int value) {
@@ -340,9 +347,6 @@ public:
   }
   static word Zero() {
     return Store::IntToWord(0);
-  }
-  static word Deref(word a) {
-    return a;
   }
 };
 
@@ -1208,8 +1212,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ICMPEQ:
       {
 	JavaDebug::Print("IF_(A|I)CMPEQ");
-	word v2 = frame->Pop();
-	word v1 = frame->Pop();
+	word v2 = Word::Deref(frame->Pop());
+	word v1 = Word::Deref(frame->Pop());
 	if (v1 == v2)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1220,8 +1224,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ICMPNE:
       {
 	JavaDebug::Print("IF_(A|I)CMPNE");
-	word v2 = frame->Pop();
-	word v1 = frame->Pop();
+	word v2 = Word::Deref(frame->Pop());
+	word v1 = Word::Deref(frame->Pop());
 	if (v1 != v2)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1275,7 +1279,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IFEQ:
       {
 	JavaDebug::Print("IFEQ");
-	if (JavaInt::Deref(frame->Pop()) == JavaInt::Zero())
+	if (Word::Deref(frame->Pop()) == JavaInt::Zero())
 	  pc += (short) GET_POOL_INDEX();
 	else
 	  pc += 3;
@@ -1284,7 +1288,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IFNE:
       {
 	JavaDebug::Print("IFNE");
-	if (JavaInt::Deref(frame->Pop()) != JavaInt::Zero())
+	if (Word::Deref(frame->Pop()) != JavaInt::Zero())
 	  pc += (short) GET_POOL_INDEX();
 	else
 	  pc += 3;
