@@ -14,6 +14,7 @@ import structure Gdk        from "GtkSupport"
 
 import structure Color      from "../../common/Color"
 
+import structure Error      from "Error"
 
 
 structure Wait =
@@ -101,12 +102,15 @@ struct
 	     also resets the refs and destroyes the window *)
 	    fun start' () = 
 		(Gtk.widgetDestroy waiting;
-		 case start () of
-		     FST (mGame, guiGame) => 
-			 gameMode ({disconnect}, mGame, guiGame)
-		   | SND   errorMsg       =>
-			 reset (SOME ("ERROR!!", errorMsg)))
-		
+		 let
+		     fun return () = start () handle Error.Error msg => SND msg
+		 in
+		     case return () of
+			 FST (mGame, guiGame) => 
+			     gameMode ({disconnect}, mGame, guiGame)
+		       | SND   errorMsg       =>
+			     reset (SOME ("ERROR!!", errorMsg))
+		 end)
 	in
 
 	    playersJoined alreadyConnected;

@@ -9,11 +9,12 @@
 *
 *)
 
-import structure Gtk        from "GtkSupport"
-import structure Gdk        from "GtkSupport"
+import structure Gtk   from "GtkSupport"
+import structure Gdk   from "GtkSupport"
 
-import structure Color      from "../../common/Color"
+import structure Color from "../../common/Color"
 
+import structure Error from "Error"
 
 
 structure PlayerSettings =
@@ -188,7 +189,7 @@ struct
 	    fun okClickedCB spectator = 
 		let
 		    fun return () = 
-			if Gtk.toggleButtonGetActive spectator
+			(if Gtk.toggleButtonGetActive spectator
 			    then watch ()
 			else
 			    let
@@ -198,7 +199,7 @@ struct
 				    (Gtk.comboGetFieldEntry colorCombo))
 			    in 
 				play (name, color)
-			    end
+			    end) handle Error.Error msg => SND msg
                     
 		in
 		    case return () of 

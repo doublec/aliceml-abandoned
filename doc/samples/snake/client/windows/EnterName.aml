@@ -9,12 +9,13 @@
 *
 *)
 
-import structure Gtk        from "GtkSupport"
-import structure Gdk        from "GtkSupport"
+import structure Gtk    from "GtkSupport"
+import structure Gdk    from "GtkSupport"
 
-import structure Config     from "../../server/Config"
-import structure Color      from "../../common/Color"
+import structure Config from "../../server/Config"
+import structure Color  from "../../common/Color"
 
+import structure Error  from "Error"
 
 
 structure EnterName =
@@ -105,7 +106,7 @@ struct
 			(Gtk.comboGetFieldEntry colorCombo)
 		    val color = Color.fromString color
 		    fun return () = 
-			startServer (SOME (name, color), Config.defaultSingle)
+			(startServer (SOME (name, color), Config.defaultSingle)) handle Error.Error msg => SND msg
 		in
 		    Gtk.widgetDestroy enterName;
 		    case return () of

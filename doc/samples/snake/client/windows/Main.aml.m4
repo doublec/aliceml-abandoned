@@ -13,13 +13,16 @@ changequote([[,]])
 
 import structure Gtk            from "GtkSupport"
 import structure Gdk            from "GtkSupport"
+(*
 import structure Canvas         from "GtkSupport"
+*)
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 
 import structure Color          from "../../common/Color"
 import structure Protocol       from "../../common/Protocol"
 import structure Highscore      from "../../common/Highscore"
 
+import structure Error          from "Error"
 import structure EnterName      from "EnterName"
 import structure ArenaWidget    from "ArenaWidget"
 import structure Connection     from "Connection"
@@ -241,6 +244,13 @@ struct
 		    disconnect' := disconnect
 		end
 
+	    fun giveUp () = (!giveUp' ()) 
+	          handle Error.Error msg => reset (SOME ("ERROR!!", msg))
+
+	    fun disconnect () = (!disconnect' ())
+	   	  handle Error.Error msg => reset (SOME ("ERROR!!", msg))
+
+
 	    (* the different behaviour by pressing the quit button *)
 	    fun mainQuit () = OS.Process.exit OS.Process.success 
 
@@ -251,7 +261,7 @@ struct
 			let
 			    fun cancel () = ()
 			    fun no () = ()
-			    fun yes () = (!disconnect' (); reset NONE)
+			    fun yes () = (disconnect (); reset NONE)
 			    val answer = {cancel, no, yes}
 			in
 			    Question.mkQuestionBox 
@@ -275,20 +285,21 @@ struct
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = ((*Canvas.itemHide sImage;*)
 		Connection.mkConnectToServer ({connect},
-						    {reset, gameMode}))
+		 {reset, gameMode}))
 
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = ((*Canvas.itemHide sImage;*)
                 (log ("MainWindow", "startMultiPlayer");
 		ServerSettings.mkServerSettings ({startServer},
-						       {reset, gameMode})))
+	        {reset, gameMode})))
 
             (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = ((*Canvas.itemHide sImage *)
 		EnterName.mkEnterName {startServer, reset, gameMode})
+ 			
 	    (* converts canvasEvents into direction or view_hint *)
-	    fun key keyval =
-		  if !mode = GAME
+	    fun key keyval = 
+		 (if !mode = GAME
 		      then
 			  case Gdk.keyvalName keyval of
 			        "Up"      => !turn' Protocol.UP
@@ -298,7 +309,8 @@ struct
 			    | ("q" | "Q") => !changeView' Protocol.PREV
 			    | ("w" | "W") => !changeView' Protocol.NEXT
 			    |   _         => ()
-		  else ()
+		  else ()) 
+			handle Error.Error msg => reset (SOME ("Error!", msg))
 
 	    ifdef([[GTK2]],[[
 	    (* catches the canvas events *)
@@ -314,6 +326,8 @@ struct
 		   |            _                  	=> ())
 	      |  canvasEvent       x            = ()
             ]])
+
+
 	in
 
 	    mode := START;
@@ -354,7 +368,7 @@ struct
 	    Gtk.signalConnect (menuQuit, "activate", 
 			       fn _ => backToStart ());
 	    Gtk.signalConnect (menuGiveUpItem, "activate",
-			       fn _ => (!giveUp') ());
+			       fn _ => giveUp ());
 	    
 	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 0);
 	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 0);

@@ -11,6 +11,7 @@
 
 import structure Gtk            from "GtkSupport"
 
+import structure Error          from "Error"
 import structure PlayerSettings from "PlayerSettings"
 
 
@@ -39,13 +40,16 @@ struct
 
 	    fun start ticket =
 		(Gtk.widgetDestroy connectToServer;
-		case connect ticket of
-		    FST (mJoin, guiJoin) => 
-			PlayerSettings.mkPlayerSettings (mJoin, 
-							 guiJoin, 
-							 {reset,
-							  gameMode})
-		  | SND    errorMsg      => reset (SOME ("ERROR!!", errorMsg)))
+		 let
+		     fun return () = 
+			 connect ticket handle Error.Error msg => SND msg
+		 in
+		     case return () of
+			 FST (mJoin, guiJoin) => 
+			     (PlayerSettings.mkPlayerSettings 
+			       (mJoin, guiJoin, {reset, gameMode}))
+		  | SND    errorMsg      => reset (SOME ("ERROR!!", errorMsg))
+		 end)
 	
 	in
 	    Gtk.windowSetModal (connectToServer, true);

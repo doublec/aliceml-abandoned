@@ -14,6 +14,7 @@ import structure Gtk        from "GtkSupport"
 import structure Color      from "../../common/Color"
 import structure Config     from "../../server/Config"
 
+import structure Error      from "Error"
 import structure Wait       from "Wait"
 
 
@@ -258,7 +259,7 @@ struct
 		    val alreadyConn = ref nil
 
 		    val return = 
-			if Gtk.toggleButtonGetActive spectator
+			(if Gtk.toggleButtonGetActive spectator
 			    then startServer (NONE, config)
 			else
 			    let
@@ -271,7 +272,7 @@ struct
 				startServer 
 				(SOME (name, color),
 				 config)
-			    end
+			    end) handle Error.Error msg => SND msg
 
 		in
 		    Gtk.widgetDestroy serverSettings;
