@@ -327,22 +327,20 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "FailExp", 1); outputExpInfo (q, info))
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun parseDesc desc =
-	    case Source.url desc of
-		SOME url =>
-		    (case (Url.getScheme url, Url.getAuthority url) of
-			 (NONE, NONE) =>
-			     SOME (Url.toString url)
-		       | (SOME "file", NONE) =>
-			     SOME (Url.toString (Url.setScheme (url, NONE)))
-		       | _ => raise Crash.Crash "PickleFlatGrammar.parseDesc")
-	      | NONE => NONE
+	fun parseUrl NONE = NONE   (*--** use OS.Path.fromUrl *)
+	  | parseUrl (SOME url) =
+	    case (Url.getScheme url, Url.getAuthority url) of
+		(NONE, NONE) =>
+		    SOME (Url.toString url)
+	      | (SOME "file", NONE) =>
+		    SOME (Url.toString (Url.setScheme (url, NONE)))
+	      | _ => NONE
 
 	fun toString (desc, tmpOptRef, component) =
 	    let
 		val q = openOut ()
 		val (sourcename, filename') =
-		    case parseDesc desc of
+		    case parseUrl (Source.url desc) of
 			SOME filename => (filename, filename ^ ".ozp")
 		      | NONE =>
 			    let
