@@ -1,6 +1,0 @@
-datatype t = C of t
-
-val rec x = C x
-and f as g = fn () => x
-
-; builtin "System.show" (x, f (), g ()) ;

@@ -1,7 +1,0 @@
-(* -*- sml -*- *)
-
-datatype t = id1 of {a: int, b: int}
-
-fun id2 id3 =
-    case id3 of
-	(id1 {a = 3, b = id4}, (id5, id6)) => (id4, id5, id6)

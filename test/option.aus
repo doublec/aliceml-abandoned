@@ -1,6 +1,0 @@
-structure Option =
-    struct
-	datatype 'a option = NONE | SOME of 'a
-    end
-
-datatype option = datatype Option.option

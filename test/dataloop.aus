@@ -1,8 +1,0 @@
-__prebound Prebound
-type int = Prebound.int
-datatype list = datatype Prebound.list
-__primitive show: 'a -> int = "show"
-
-infixr ::
-
-; show (rec x => 1::x) ;

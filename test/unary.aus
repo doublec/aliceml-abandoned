@@ -1,5 +1,0 @@
-datatype t = C of {}
-
-val rec x = C ()
-
-(* ; case x of C y => builtin "System.show" (x, y, x = y) ;*)

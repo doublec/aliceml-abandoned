@@ -1,9 +1,0 @@
-(* -*- sml -*- *)
-
-datatype t = id1 of int
-
-val id2 = {a = 7, b = #7, 1 = fn id3 => id1 id3}
-
-val rec id4 = id5 1
-and id5 = id1
-and id6 = id5 2

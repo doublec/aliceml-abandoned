@@ -1,9 +1,0 @@
-(* -*- sml -*- *)
-
-fun id1 id2 = case ((1, 2), id2) of (id3, (id4, 3)) => (id2, id3, id4)
-
-(*
-  value of id2 in the tuple = record(top int(3))
-  value of id3 in the tuple = record(int(1) int(2))
-  value of id4 in the tuple = top
-*)
