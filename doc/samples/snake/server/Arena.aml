@@ -1,0 +1,94 @@
+(* Alice Snake 2.0 - Arena
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import structure Protocol from "../common/Protocol"
+import structure Snake    from "Snake"
+import structure Pos      from "../common/Pos"
+
+
+structure Arene :> ARENA =
+struct
+
+    structure P = Protocol
+
+    type arena = P.field Array2.array (* MUTABLE *)
+
+
+    type config = {
+        dimensions: int * int,
+	players: int
+        (* MAGIC NUMBERs ... *)
+    }
+    
+    val random :    config -> arena * Pos.pos list
+
+    fun random {dimensions,players} =
+	let
+	    
+	in
+
+	end
+
+    fun placeSnakes (a,snakes) =
+	let
+	    
+	in
+
+	end
+
+    val placeSnakes : arena * Snake.snake list -> 
+            Snake.snake list * Snake.snake list
+    (** places the snakes on the arena, returns all snakes
+       which died and all finished.
+       
+       PRE: arena contains NO snakes 
+       POST: arena contains NO snake which is contained
+       in the first returned list. 
+     *)
+
+    fun removeSnakes (a,snakes) = 
+	let
+	    fun removeSnake s =
+		let
+		    val positions = (Snake.head s)::(Snake.body s)
+		in
+		  List.app (fn(r,c) => Array2.update(a,r,c,P.EMPTY)) positions
+		end
+	in
+	    List.app (fn s => removeSnake s) snakes
+	end
+    (** removes all snakes *)
+
+    fun diff (old,new) = 
+      let
+	  val (R,C) = Array2.dimensions old       (* dimensions *)
+	  fun help (r,c) xs = 
+	      if c = C 
+		  then xs
+	      else 
+		  if r = R
+		      then help(0,c+1) xs
+		  else
+		      if Array2.sub(old,r,c) = Array2.sub(new,r,c)
+			  then help(r+1,c) xs
+		      else help (r+1,c) ((r,c,Array2.sub(new,r,c))::xs)
+      in
+	  help (0,0) nil
+      end
+
+end
+
+
+
+
+
+
+
