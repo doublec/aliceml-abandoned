@@ -118,12 +118,12 @@ define
       end
    end
 
-   proc {Link Key ?Mod}
+   proc {Link Key ?Mod} Inf in
       {Trace loading Key}
+      {Dictionary.put ComponentTable Key Inf#Mod}
       case {Atom.toString Key} of &x|&-|&o|&z|&:|_ then
 	 Mod = {ModuleManager link(url: Key $)}
-	 {Trace entering Key}
-	 {Dictionary.put ComponentTable Key 'NONE'#Mod}
+	 Inf = 'NONE'
       else F Imports in
 	 F = {Pickle.load {Localize Key}}
 	 {Trace linking Key}
@@ -140,13 +140,14 @@ define
 		       else {Link Key2}
 		       end
 		    end}
-	 {Trace applying Key}
-	 Mod = {F.apply {Adjoin Imports 'IMPORT'}}
-	 {Trace entering Key}
-	 {Dictionary.put ComponentTable Key
-	  case F.'export' of sig(Sig) andthen Sig \= unit then 'SOME'(Sig)
-	  else 'NONE'
-	  end#Mod}
+	 Mod = {Value.byNeed
+		fun {$}
+		   {Trace applying Key}
+		   {F.apply {Adjoin Imports 'IMPORT'}}
+		end}
+	 Inf = case F.'export' of sig(Sig) andthen Sig \= unit then 'SOME'(Sig)
+	       else 'NONE'
+	       end
       end
    end
 
