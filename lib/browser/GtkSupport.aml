@@ -390,6 +390,8 @@ structure GtkSupport :> GTK_SUPPORT  =
 				    (Gtk.containerRemove(!textwindow,
 							 scrolled)
 				     ; alive := false
+				     ; Gtk.textBackwardDelete(text,
+				                Gtk.textGetLength(text))
 				     ; widgetDestroy(!textwindow)))
 			      ; alive := true;0)
 		     else 
