@@ -130,7 +130,7 @@ MLYACC = ml-yacc
 VMSOURCES = VMMain.oz
 
 LIBSYSTEMNATIVES0 = \
-	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
+	Config OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES = \
@@ -149,8 +149,8 @@ LIBFUNDAMENTALSOURCES0 = \
 	STRING_CVT-sig.aml SUBSTRING-sig.aml UNIQUE_STRING-sig.aml \
 	THREAD-sig.aml TIME-sig.aml VECTOR-sig.aml VECTOR_PAIR-sig.aml \
 	WORD-sig.aml PACKAGE-sig.aml \
-	Alt.aml Array.aml Bool.aml Char.aml CharVector.aml Future.aml \
-	General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
+	Alt.aml Array.aml Bool.aml Char.aml CharArray.aml CharVector.aml \
+	Future.aml General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
 	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \
 	MkMonoArray.aml MkMonoVector.aml MkWord.aml Option.aml Pair.aml \
 	Position.aml Promise.aml Real.aml Ref.aml Stream.aml String.aml \
@@ -161,12 +161,13 @@ LIBFUNDAMENTALSOURCES0 = \
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	UnsafeIODesc.asig \
-	CONFIG-sig.aml IO-sig.aml PRIM_IO-sig.aml PrimIO.aml BinPrimIO.aml \
-	STREAM_IO-sig.aml StreamIO.aml IMPERATIVE_IO-sig.aml \
-	ImperativeIO.aml BIN_IO-sig.aml BinIO.aml TEXT_IO-sig.aml TextIO.aml \
-	OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml OS_IO-sig.aml OS-sig.aml \
-	UNIX-sig.aml COMMAND_LINE-sig.aml COMPONENT-sig.aml DEBUG-sig.aml \
-	SOCKET-sig.aml RAND-sig.aml REFLECT-sig.aml \
+	CONFIG-sig.aml IO-sig.aml IO.aml PRIM_IO-sig.aml PrimIO.aml \
+	BinPrimIO.aml TextPrimIO.aml STREAM_IO-sig.aml StreamIO.aml \
+	IMPERATIVE_IO-sig.aml ImperativeIO.aml BIN_IO-sig.aml BinIO.aml \
+	TEXT_IO-sig.aml TextIO.aml OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml \
+	OS_IO-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
+	COMPONENT-sig.aml DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml \
+	REFLECT-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
 	PICKLE-sig.aml Pickle.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \
