@@ -28,9 +28,7 @@ sig
 
     val createValue  :  Reflect.value * Type.t * actions -> desc
 
-    val createGroupItem: Gtk.object * real * real ->  Gtk.object
-
-    val setGroup : node -> Gtk.object
+   
 
     (* Hilfsfunktionen zur Typbestimmung *)
     val isApply: Type.desc -> bool	

@@ -17,7 +17,6 @@ import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure RelManDictionary from "RelManDictionary"
-import structure NewNode from "NewNode"
 import signature LAYOUT from "LAYOUT-sig"
 
 open Types Helper
@@ -26,18 +25,7 @@ structure Layout :> LAYOUT =
 struct
 
     exception LayoutError
-(*
-    fun findAdequ n = let val ind = getAncIndex n
-			  val relman = RelManDictionary.return(ind,
-							       NewNode.reldict)
-		      in (case List.find (fn x 
-					  => UnsafeValue.same
-					           (getValue(getDesc(x)),
-						    getValue(getDesc(x))) )
-			                  relman of
-			  NONE => Empty 
-                        | SOME x => x)
-		      end    *)
+
 
     fun sum_up (li,f,g) = if List.length(li) = 0
 			      then 0

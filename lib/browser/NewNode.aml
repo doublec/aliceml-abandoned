@@ -13,6 +13,9 @@
  *
  *)
 
+import structure Gdk           from "x-alice:/lib/gtk/Gdk"
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Path from "x-alice:/lib/rtt/Path"
@@ -24,26 +27,41 @@ import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
+import structure Dictionaries from "Dictionaries"
 import structure MkPathTable from "MkPathTable"
 import structure Settings from "Settings"
+import structure WindowManager from "WindowManager"
 import signature NEW_NODE from "NEW_NODE-sig"
 
 local
-    open Types
-    open Helper
-    open MkPathTable
-    open Settings
-
+    open Types Helper MkPathTable Settings Dictionaries
+ 
 in	
     
 structure NewNode :> NEW_NODE =
 struct
     
-    val dict = MainDictionary.empty
-    val reldict = RelManDictionary.empty	
-
     exception createGraph_unknownNode
+
+    fun createGroupItem (parent,x,y) = 
+	           GtkCanvas.itemNew(parent, 
+				     GtkCanvas.GROUP,
+				     [("x", Gtk.DOUBLE y), 
+				      ("y", Gtk.DOUBLE y)])
     
+    fun setGroup pnode = case pnode of 
+	Simple(r)    => createGroupItem(#group(r),0.0,0.0) 
+      | Container(r) => createGroupItem(#group(r),0.0,0.0) 
+      | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
+      | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
+      | Empty        => let 
+			    val _ = WindowManager.new()
+			in
+			    createGroupItem(!WindowManager.canvasroot,0.0,0.0)
+			end
+      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
+
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
                             val i = MainDictionary.getHighestIndexAssigned(dict) +1

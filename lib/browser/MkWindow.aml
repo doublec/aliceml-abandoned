@@ -16,10 +16,14 @@
 import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure MkDrawingArea from "MkDrawingArea"
 import structure WindowHelper from "WindowHelper"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure Settings from "Settings"
+import structure Dictionaries from "Dictionaries"
+import structure NodeSearch from "NodeSearch" 
+import structure DrawNodes from "DrawNodes"
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 local 
@@ -219,8 +223,22 @@ struct
     val _ = Gtk.boxPackStart(vbox,scrolled,Gtk.EXPAND,Gtk.FILL,0) 
     val _ = Gtk.containerAdd(scrolled,DA.canvas)
     val _ = Gtk.containerAdd(window,vbox)
+
+	fun handleEvent [Gdk.EVENT(event)] = case event of
+	    Gdk.GDK_BUTTON_PRESS(r) => let 
+		val valueh = Gtk.adjustmentGetFieldValue(hadj)
+		val valuev = Gtk.adjustmentGetFieldValue(vadj)
+		val x = Real.+ (#x(r),valueh)
+		val y = Real.+ (#y(r),valuev)
+		val node = NodeSearch.search(Dictionaries.dict,x,y)
+		    in
+			Inspector.inspect (node)
+			end
+		| _ => ()
+
+	val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
 	
-	
+
     val canvas = DA.canvas
     val canvasroot = DA.root
     val resize = handleResize

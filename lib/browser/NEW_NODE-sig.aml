@@ -30,10 +30,10 @@ in
 
 signature NEW_NODE =
 sig
-	
-    val dict: MainDictionary.dictionary
 
-    val reldict: RelManDictionary.dictionary
+    val createGroupItem: Gtk.object * real * real ->  Gtk.object
+
+    val setGroup : node -> Gtk.object
 
     val newNode: 'a * Type.t -> node
 
