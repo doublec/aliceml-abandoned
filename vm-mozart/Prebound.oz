@@ -474,7 +474,7 @@ define
 	    end
 	 end
       'Word.notb': BootWord.notb
-      'Word.orb': BootWord.'orb'
+      'Word.orb': BootWord.orb
       'Word.toInt': BootWord.toInt
       'Word.toIntX': BootWord.toIntX
       'Word.toString':
