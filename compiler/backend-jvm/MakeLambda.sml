@@ -43,6 +43,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	fun pushFun ids = lambdaIdsStack:=(ids::(!lambdaIdsStack))
 	fun popFun () = lambdaIdsStack:=tl(!lambdaIdsStack)
+	fun getFun () = hd (!lambdaIdsStack)
 
 	fun setId () = StampHash.insert(lambdas,top(),hd(!lambdaIdsStack))
 

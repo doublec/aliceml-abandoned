@@ -70,6 +70,9 @@ structure CodeGen =
 	fun fieldNameFromStamp stamp' = "field"^(Stamp.toString stamp')
 	fun fieldNameFromId (Id(_,stamp',_)) = fieldNameFromStamp stamp'
 
+	fun nameFromId (Id (_,stamp',InId)) = "unnamed"^(Stamp.toString stamp')
+	  | nameFromId (Id (_,stamp',ExId name')) = name'^(Stamp.toString stamp')
+
 	(* Den Stamp aus einer Id extrahieren. *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
 
@@ -186,6 +189,11 @@ structure CodeGen =
 		    case StampHash.lookup (defFun, stamp') of
 			NONE => toplevel
 		      | SOME stamp'' => stamp''
+		fun printFun () =
+		    StampHash.appi (fn (stamp', stamp'') =>
+				    print ("("^Stamp.toString stamp'^","^
+					   Stamp.toString stamp''^")"))
+		    defFun
 	    end
 
 
@@ -418,6 +426,9 @@ structure CodeGen =
 			    x
 			end
 
+		    fun isFree stamp' =
+			ScopedStampSet.member (free, stamp')
+
 		    (* Betreten einer neuen Subfunktion. *)
 		    fun enter () =
 			 ScopedStampSet.insertScope free
@@ -559,6 +570,7 @@ structure CodeGen =
 	     let
 		 (* freie Variablen berechnen. *)
 		 val _ = app freeVarsDec program
+		 val _ = FreeVars.printFun ()
 		 val _ = Lambda.createIdsLambdaTable()
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
@@ -1314,14 +1326,23 @@ structure CodeGen =
 						      Comment ("load local variable")]
 					     else nil
 					 else
-					     (Lambda.noSapply ();
-					      [Dup,
-					       Aload 0,
-					       Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
-							Stamp.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
-							Stamp.toString (Lambda.top())),
-					       Getfield(Class.getCurrent()^"/"^(fieldNameFromStamp stamp''),[Classsig CVal]),
-					       Putfield(className^"/"^(fieldNameFromStamp stamp''),[Classsig CVal])])
+					     if stamp''=(stampFromId (Lambda.getId
+								     (Lambda.top())))
+						 then (* Zugriff auf die aktuelle
+						       Funktion. Diese steht in Register 0. *)
+						     (Lambda.noSapply ();
+						      [Dup,
+						       Aload 0,
+						       Putfield (className^"/"^(fieldNameFromStamp stamp''),[Classsig CVal])])
+					     else
+						 (Lambda.noSapply ();
+						  [Dup,
+						   Aload 0,
+						   Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
+							    Stamp.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
+							    Stamp.toString (Lambda.top())),
+						   Getfield(Class.getCurrent()^"/"^(fieldNameFromStamp stamp''),[Classsig CVal]),
+						   Putfield(className^"/"^(fieldNameFromStamp stamp''),[Classsig CVal])])
 				 end
 			 in
 			     val loadVars = List.concat (map loadFreeVar freeVarList)
@@ -1512,7 +1533,13 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	    expCodeClass (OneArg id',body') =
 	    let
 		val _ = print ("create Class "^(Class.getCurrent())^"\n")
-		val e = List.concat (map decCode body')
+		val e = (Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
+			 Ldc (JVMString "Betrete: (")::
+			 Invokevirtual ("java/io/PrintStream","print",([Classsig CObj],[Voidsig]))::
+			 Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
+			 Ldc (JVMString (nameFromId (Lambda.getFun ())))::
+			 Invokevirtual ("java/io/PrintStream","println",([Classsig CObj],[Voidsig]))::
+			 (List.concat (map decCode body')))
 		val className = classNameFromId id'
 		val freeVarList = FreeVars.getVars id'
 		(* baut die Felder, d.h. die freien Variablen der Klasse *)

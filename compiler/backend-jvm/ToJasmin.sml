@@ -162,7 +162,11 @@ structure ToJasmin =
 		    else "aload "^Int.toString i
 		end
 	      | instructionToJasmin (Anewarray cn,_) = "anewarray "^cn
-	      | instructionToJasmin (Areturn,_) = "areturn"
+	      | instructionToJasmin (Areturn,_) =
+		"getstatic java/lang/System/out Ljava/io/PrintStream;\n"^
+		"ldc \")\"\n"^
+		"invokevirtual java/io/PrintStream/print(Ljava/lang/Object;)V\n"^
+		"areturn"
 	      | instructionToJasmin (Arraylength,_) = "arraylength"
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
@@ -276,7 +280,7 @@ structure ToJasmin =
 			      | _ => ((if noStack i
 					   then ()
 				       else
-					   (TextIO.output (ziel,"\t\t.line "^line());
+					   ((*TextIO.output (ziel,"\t\t.line "^line());*)
 					    TextIO.output (ziel,"\t; Stack: "^Int.toString need^
 							   " Max: "^Int.toString max^"\n"));
 					   TextIO.output (ziel,instructionToJasmin (i, staticapply)^"\n");
@@ -320,7 +324,7 @@ structure ToJasmin =
 		    (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
 		    instructionsToJasmin(instructions,0,0, staticapply, ziel);
 		    TextIO.output(ziel,".limit locals "^Int.toString(perslocs+1)^"\n");
-		    TextIO.output(ziel,".limit stack "^Int.toString (!stackmax)^"\n");
+		    TextIO.output(ziel,".limit stack "^Int.toString (2+(!stackmax))^"\n");
 		    TextIO.output(ziel,".end method\n"))
 	  in
 	      actclass:=name;
