@@ -52,9 +52,10 @@
 #include "generic/Authoring.hh"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-__declspec(dllexport) word InitComponent();
+// We must not use DllExport here:
+extern "C" __declspec(dllexport) word InitComponent();
 #else
-word InitComponent();
+extern "C" word InitComponent();
 #endif
 
 #endif
