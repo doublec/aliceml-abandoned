@@ -10,7 +10,8 @@
  *   $Revision$
  *)
 
-structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
+structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
+    (*--** the above signature constraint should be opaque *)
     struct
 	type coord = Source.position
 
