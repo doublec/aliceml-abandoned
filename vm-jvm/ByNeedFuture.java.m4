@@ -35,7 +35,9 @@ final public class ByNeedFuture extends UnicastRemoteObject
     }
 
     final synchronized public DMLValue getValue() throws RemoteException { // gibt Wert zurück ohne blockieren
-	return ref.getValue();
+	DMLValue x = ref.getValue();
+	if (x == ref) return this;
+	else return x;
     }
 
     final synchronized public DMLValue request()
@@ -89,7 +91,7 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	} catch (RemoteException r) {
 	    System.out.println(r);
 	}
-	if (val instanceof LVar) {
+	if (val == this) {
 	    return "<unresolved>: byneed-future";
 	} else {
 	    return val.toString();
