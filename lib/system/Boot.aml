@@ -39,12 +39,15 @@ fun boot url =
 					structure X =
 					    (structure ComponentManager =
 						 ComponentManager))
+	val component = Component.load componentManagerUrl
+(*
 	structure Sig = Reflect.ReflectSig(signature S =
 					       (structure ComponentManager:
 						    COMPONENT_MANAGER
 						    where type component =
 							       Component.t))
-	val component = Component.create (SOME Sig.x, Str.x)
+*)
+	val component = Component.create (Component.inf component, Str.x)
 	val _ = ComponentManager.enter (componentManagerUrl, component)
     in
 	ComponentManager.start (Url.fromString url)
