@@ -26,7 +26,7 @@
     (time
      (lambda ()
        (begin
-	 (imap (lambda (n) (* n 2)) (make_list 5000))
+	 (imap (lambda (n) (cons  n ())) (make_list 5000))
 	 (killtop))))));
 (iter 10 b_imap);
 (exit);

@@ -35,7 +35,7 @@ static inline void InitStore() {
   limits[0]             = 1 * STORE_MEMCHUNK_SIZE;
   limits[1]             = 2 * STORE_MEMCHUNK_SIZE;
   limits[2] = limits[3] = 5 * STORE_MEMCHUNK_SIZE;
-  Store::InitStore(limits, 75);
+  Store::InitStore(limits, 75, 20);
 }
 
 // Public Functions
