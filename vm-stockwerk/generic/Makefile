@@ -19,7 +19,8 @@ include $(TOPDIR)/Makefile.rules
 
 SOURCES = \
 	Outline.cc Debug.cc RootSet.cc UniqueString.cc Properties.cc \
-	TaskStack.cc IOHandler.cc Scheduler.cc Transients.cc Interpreter.cc \
+	TaskStack.cc IOHandler.cc SignalHandler.cc \
+        Scheduler.cc Transients.cc Interpreter.cc \
 	Primitive.cc PushCallInterpreter.cc ByneedInterpreter.cc \
 	Unpickler.cc Pickler.cc BootLinker.cc \
 	Profiler.cc
