@@ -1251,8 +1251,9 @@ struct
 	(* [y] = lazy [y]() *)
 	let
 	    val r   = #region i
-	    val t1  = infToInstTyp(#inf i)
-	    val e1' = O.VarExp(typInfo(r,t1), trInflongid y)
+	    val y'  = trInflongid y
+	    val t1  = #typ(O.infoLongid y')
+	    val e1' = O.VarExp(typInfo(r,t1), y')
 	    val e2' = trUnit r
 	    val i'  = typInfo(r, #2(Type.asArrow' t1))
 	in
