@@ -191,7 +191,7 @@ $(PREFIX)/bin/%: %
 	scp $< grizzly:$@
 
 $(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
-	$(PREFIX)/bin/stoc --nodefaultimport -c $< -o $@
+	$(PREFIX)/bin/stoc --noimplicitimport -c $< -o $@
 
 $(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
 	$(PREFIX)/bin/stoc --replacesign $< $<.sig $@
