@@ -60,9 +60,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    (TextIO.stdErr,
 	     "Usage:\n\
 	      \\talicec [<option> ...] [-c|-x] <input file> \
-	      \[-o <output file>]\n\
-	      \\talicec --replacesign <input url> <signature file> \
-	      \<output file>\n" ^ OptionParser.helpText)
+	      \[-o <output file>]\n" ^ OptionParser.helpText)
 
 	fun main' ["--dryrun"] =
 	    let
