@@ -14,35 +14,10 @@
 
 (* This file is prepended to every file compiled by stoc. *)
 
-import
-    signature IO
-    structure IO
-from "x-alice:/lib/system/IO"
+import "x-alice:/lib/system/IO"
+import "x-alice:/lib/system/TextIO"
+import "x-alice:/lib/system/OS"
+import "x-alice:/lib/system/Unix"
+import "x-alice:/lib/system/CommandLine"
 
-import
-    signature TEXT_IO
-    structure TextIO
-    val print
-from "x-alice:/lib/system/TextIO"
-
-import
-    signature OS_FILE_SYS
-    signature OS_PROCESS
-    signature OS
-    structure OS
-from "x-alice:/lib/system/OS"
-
-import
-    signature UNIX
-    structure Unix
-from "x-alice:/lib/system/Unix"
-
-import
-    signature COMMAND_LINE
-    structure CommandLine
-from "x-alice:/lib/system/CommandLine"
-
-import
-    signature TOOLS
-    structure Tools
-from "x-alice:/lib/system/Tools"
+import "x-alice:/lib/system/Tools"
