@@ -24,12 +24,14 @@ import signature DICTIONARIES from "DICTIONARIES-sig"
 structure Dictionaries : DICTIONARIES =
 struct
 
-    structure Main = MkDictionary(type t =  Node.node * GtkSupport.tag)
+    structure Main = MkDictionary
+	(type t =  Node.node * GtkSupport.tag)
 
-    structure RelMan = MkDictionary(type t = (Node.value * int ref * int) list)
+    structure RelMan = MkDictionary
+	(type t = (Node.value * int ref * int) list)
 
-    structure Transient = MkDictionary(type t = Reflect.value * Thread.thread * 
-					        Node.node list)
+    structure Transient = MkDictionary 
+	(type t = Reflect.value * Thread.thread * Node.node list)
 
     type main = Main.dictionary
     type relman = RelMan.dictionary
