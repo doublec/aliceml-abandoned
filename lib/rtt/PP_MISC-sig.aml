@@ -14,7 +14,7 @@
  * Miscellaneous pretty printing helpers
  *)
 
-import structure PrettyPrint from "PrettyPrint"
+import structure PrettyPrint from "../utility/PrettyPrint"
 
 signature PP_MISC =
 sig
