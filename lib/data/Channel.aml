@@ -70,7 +70,7 @@ struct
     fun isEmpty (chan: 'a channel) = !(#count chan) = 0
 
     fun get (chan: 'a channel) =
-	let val p  = promise ()
+	let val p = promise ()
 	in
 	    case Ref.exchange (#first chan, future p)
 		of x::xs => (decr chan ;
@@ -78,6 +78,21 @@ struct
 			     x)
 	      | nil   => (fulfill (p, nil); raise Empty)
 	end
+
+    fun getSome   chan = SOME (get chan) handle Empty => NONE
+
+    fun getSomeNB chan = 
+        let
+          val p = promise ()
+          val l = Ref.exchange (#first chan, future p)
+        in
+          if isEmpty chan then (fulfill (p, l); NONE)
+          else case l of
+                 x::xs => (decr chan ;
+                           fulfill (p, xs);
+                           SOME x)
+               | nil   => (fulfill (p, nil); NONE)
+        end
     
     val pop = get
 
@@ -164,13 +179,21 @@ struct
 	     closed = promise () }
 	end
 	
-    fun getSome ch = SOME (get ch) handle Empty => NONE
+    fun appG getSome =
+      let fun loop f ch = case getSome ch of NONE => ()
+                                           | SOME x => (f x ; loop f ch)
+      in loop end
 
-    fun app f ch = case getSome ch of NONE => ()
-                                    | SOME x => (f x ; app f ch)
+    fun app   f = appG getSome   f
+    fun appNB f = appG getSomeNB f
 
-    fun toList ch = lazy case getSome ch of NONE => nil
-                                          | SOME x => x :: toList ch
+    fun toListG getSome = 
+      let fun loop ch = lazy case getSome ch of NONE => nil
+                                              | SOME x => x :: loop ch
+      in loop end
+
+    fun toList   f = toListG getSome   f
+    fun toListNB f = toListG getSomeNB f
 
 end
 
