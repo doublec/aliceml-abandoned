@@ -23,87 +23,20 @@
 #include "alice/AbstractCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 
-#ifdef DEBUG_CHECK
-static word dead;
-#endif
-
-#ifdef LIVENESS_DEBUG
-static const BlockLabel DEAD_LABEL = HASHNODE_LABEL;
-
-static void DisassembleAlice(Closure *closure) {
-  AliceConcreteCode *concreteCode =
-    AliceConcreteCode::FromWord(closure->GetConcreteCode());
-  concreteCode->Disassemble(stderr);
-}
-#endif
-
 // AbstractCodeInterpreter StackFrames
 class AbstractCodeFrame: public StackFrame {
 protected:
   enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
 public:
-  // Local Environment
-  class Environment: private Array {
+  class Environment : private Array {
   public:
     using Array::ToWord;
-    // Environment Accessors
-    void Add(word id, word value) {
-      Update(Store::WordToInt(id), value);
-    }
-    word Lookup(word id) {
-      word value = Sub(Store::WordToInt(id));
-#ifdef LIVENESS_DEBUG
-      Block *p = Store::WordToBlock(value);
-      if (p != INVALID_POINTER) {
-	if (p->GetLabel() == DEAD_LABEL) {
-	  std::fprintf(stderr, "### USING KILLED VALUE ###\n");
-	  std::fprintf(stderr, "### killed as Local(%d)\n",
-		       Store::DirectWordToInt(p->GetArg(0)));
-	  std::fprintf(stderr, "### value before kill:\n");
-	  Debug::Dump(p->GetArg(1));
-	  std::fprintf(stderr, "### killed at pc=%p in function:\n",
-		       TagVal::FromWordDirect(p->GetArg(2)));
-	  DisassembleAlice(Closure::FromWordDirect(p->GetArg(3)));
-	  return p->GetArg(1);
-	}
-      }
-#else
-      Assert(value != dead);
-#endif
-      return value;
-    }
-#ifdef LIVENESS_DEBUG
-    void Kill(word id, TagVal *pc, Closure *globalEnv) {
-      Block *dead = Store::AllocBlock(DEAD_LABEL, 4);
-      dead->InitArg(0, id);
-      dead->InitArg(1, Sub(Store::WordToInt(id)));
-      dead->InitArg(2, pc->ToWord());
-      dead->InitArg(3, globalEnv->ToWord());
-      Update(Store::WordToInt(id), dead->ToWord());
-    }
-#else
-    void Kill(word id, TagVal *, Closure *) {
-#ifdef DEBUG_CHECK
-      Update(Store::WordToInt(id), dead);
-#else
-      Update(Store::WordToInt(id), Store::IntToWord(0));
-#endif
-    }
-#endif
-    // Environment Constructor
-    static Environment *New(u_int size) {
-      Array *array = Array::New(size);
-      for(int index = size; index--; ) {
-	array->Init(index, AliceLanguageLayer::undefinedValue);
-      }
-      return STATIC_CAST(Environment *, array);
-    }
-    // Environment Untagging
-    static Environment *FromWordDirect(word x) {
-      return STATIC_CAST(Environment *, Array::FromWordDirect(x));
-    }
+    void Add(word id, word value);
+    word Lookup(word id);
+    void Kill(word id, TagVal *pc, Closure *globalEnv);
+    static Environment *New(u_int size);
+    static Environment *FromWordDirect(word x);
   };
-  
   // AbstractCodeFrame Accessors
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
@@ -143,10 +76,7 @@ public:
     return STATIC_CAST(AbstractCodeFrame *, frame);
   }
 #ifdef DEBUG_CHECK
-  static void Init() {
-    dead = String::New("UNINITIALIZED OR DEAD")->ToWord();
-    RootSet::Add(dead);
-  }
+  static void Init();
 #endif
 
 };

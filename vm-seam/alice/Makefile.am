@@ -11,6 +11,7 @@ libalicebase_a_SOURCES = \
 	AbstractCode.cc \
 	PrimitiveTable.cc \
 	LazySelInterpreter.cc \
+	AbstractCodeFrame.cc \
 	AbstractCodeInterpreter.cc \
 	AliceConcreteCode.cc \
 	AliceDebuggerEvent.cc \
