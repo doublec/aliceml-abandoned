@@ -31,7 +31,7 @@ ALICEC_OPTS =
 ALICEDEP = alicedep
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
-ifeq ($(TARGET), stockwerk)
+ifeq ($(TARGET), seam)
 NATIVES = 
 STC = stc
 else
