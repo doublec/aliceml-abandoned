@@ -309,6 +309,7 @@ IODesc::kind IODesc::GetKind() {
 }
 
 u_int IODesc::GetChunkSize() {
+#if USE_WINSOCK
   switch (GetKind()) {
   case FILE:
   case DIR:
@@ -319,7 +320,6 @@ u_int IODesc::GetChunkSize() {
   case TTY:
     return 1;
   case PIPE:
-#if USE_WINSOCK
     {
       HANDLE pipeHandle = GetHandle();
       DWORD inBufferSize, outBufferSize;
@@ -330,28 +330,17 @@ u_int IODesc::GetChunkSize() {
       else
 	return 1;
     }
-#else
-    return 1;
-#endif
   case SOCKET:
     {
       int socket = GetFD();
       s_int sockVal;
-#if USE_WINSOCK
       s_int sockValSize = sizeof(s_int);
-#else
-      socklen_t sockValSize = (socklen_t) sizeof(s_int);
-#endif
       u_int sockOptName =
 	((GetFlags() & DIR_MASK == DIR_WRITER) ? SO_SNDBUF : SO_RCVBUF);
       Interruptible(ret,
 		    getsockopt(socket, SOL_SOCKET, sockOptName,
 			       (char *) &sockVal, &sockValSize));
-#if USE_WINSOCK
       return ((ret == SOCKET_ERROR) ? 1 : sockVal);
-#else
-      return ((ret == -1) ? 1 : sockVal);
-#endif
     }
   case CLOSED:
     return 2;
@@ -360,6 +349,28 @@ u_int IODesc::GetChunkSize() {
   default:
     Error("invalid kind");
   }
+#else
+  switch (GetKind()) {
+  case FILE:
+  case DIR:
+  case SYMLINK:
+  case DEVICE:
+  case TTY:
+  case PIPE:
+  case SOCKET:
+    {
+      struct stat info;
+      Interruptible(res, fstat(GetFD(), &info));
+      return (res ? 1 : info.st_blksize);
+    }
+  case CLOSED:
+    return 2;
+  case UNKNOWN:
+    return 1;
+  default:
+    Error("invalid kind");
+  }
+#endif
 }
 
 IODesc::result IODesc::Close() {
