@@ -82,6 +82,11 @@ AC_CHECK_FUNC(fabs,
     LIBS=${LIBS}${LIBS:+ }-lm,
     AC_MSG_ERROR([could not find shared math library])))
 
+dnl
+dnl  Test for gettimeofday
+dnl
+AC_CHECK_FUNCS(gettimeofday)
+
 # checks for system services
 
 # groups of checks
