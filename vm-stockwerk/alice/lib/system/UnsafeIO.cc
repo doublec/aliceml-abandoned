@@ -21,6 +21,7 @@ typedef enum {
 } IOStreamType;
 
 // Builtin IoStream Classes
+//--** to be done: finalization
 class IOStream : private Block {
 private:
   static const u_int STREAM_POS = 0;
@@ -96,6 +97,15 @@ static String *Concat(String *a, char *b, u_int bLen) {
 
 static word IoConstructor;
 
+#define RAISE_IO_EXCEPTION(cause, function, name)		\
+  ConVal *conVal =						\
+    ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);	\
+  conVal->Init(0, cause);					\
+  conVal->Init(1, String::New(function)->ToWord());		\
+  conVal->Init(1, name->ToWord());				\
+  Scheduler::currentData = conVal->ToWord();			\
+  return Interpreter::RAISE;
+
 DEFINE3(UnsafeIO_Io) {
   ConVal *conVal = ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);
   conVal->Init(0, x0);
@@ -129,12 +139,16 @@ DEFINE1(UnsafeIO_inputAll) {
   String *b  = String::New((u_int) 0);
   while (!feof(file)) {
     u_int rdBytes = fread(buf, 1, 8192, file);
+    if (ferror(file)) {
+      RAISE_IO_EXCEPTION(Store::IntToWord(0), "inputAll", stream->GetName());
+    }
     b = Concat(b, buf, rdBytes);
   }
   RETURN(b->ToWord());
 } END
 
 DEFINE1(UnsafeIO_inputLine) {
+  //--** to be done: raise Size if > String::maxSize
   static char *buf = (char *) malloc(sizeof(char) * 1024);
   DECLARE_INSTREAM(stream, x0);
   FILE *file = stream->GetStream();
@@ -142,12 +156,15 @@ DEFINE1(UnsafeIO_inputLine) {
   u_int stop = 0;
   while (!stop) {
     u_int rdBytes = fread(buf, 1, 1024, file);
+    if (ferror(file)) {
+      RAISE_IO_EXCEPTION(Store::IntToWord(0), "inputLine", stream->GetName());
+    }
     u_int seek    = 0;
     while (!stop && (seek < rdBytes)) {
       if (buf[seek++] == '\n') {
 	stop = 1;
       }
-    } 
+    }
     b = Concat(b, buf, seek);
     if (seek < rdBytes) {
       fseek(file, rdBytes - seek, SEEK_CUR);
@@ -157,50 +174,44 @@ DEFINE1(UnsafeIO_inputLine) {
 } END
 
 DEFINE2(UnsafeIO_openAppend) {
-  DECLARE_INT(b, x0);
+  DECLARE_BOOL(b, x0);
   DECLARE_STRING(s, x1);
-  const char *flags = (b ? "wab" : "wa"); 
+  const char *flags = (b ? "wab" : "wa");
   String *name = ExportString(s);
   FILE *file   = fopen(name->GetValue(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, s)->ToWord());
   }
   else {
-    // to be done: proper Exception
-    Scheduler::currentData = s->ToWord();
-    return Interpreter::RAISE;
+    RAISE_IO_EXCEPTION(Store::IntToWord(0), "openAppend", s);
   }
 } END
 
 DEFINE2(UnsafeIO_openIn) {
-  DECLARE_INT(b, x0);
+  DECLARE_BOOL(b, x0);
   DECLARE_STRING(s, x1);
-  const char *flags = (b ? "rb" : "r"); 
+  const char *flags = (b ? "rb" : "r");
   String *name = ExportString(s);
   FILE *file   = fopen(name->GetValue(), flags);
   if (file != NULL) {
     RETURN(InStream::New(file, s)->ToWord());
   }
   else {
-    // to be done: proper Exception
-    Scheduler::currentData = s->ToWord();
-    return Interpreter::RAISE;
+    RAISE_IO_EXCEPTION(Store::IntToWord(0), "openIn", s);
   }
 } END
 
 DEFINE2(UnsafeIO_openOut) {
-  DECLARE_INT(b, x0);
+  DECLARE_BOOL(b, x0);
   DECLARE_STRING(s, x1);
-  const char *flags = (b ? "wb" : "w"); 
+  const char *flags = (b ? "wb" : "w");
   String *name = ExportString(s);
   FILE *file   = fopen(name->GetValue(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, s)->ToWord());
   }
   else {
-    // to be done: proper Exception
-    Scheduler::currentData = s->ToWord();
-    return Interpreter::RAISE;
+    RAISE_IO_EXCEPTION(Store::IntToWord(0), "openOut", s);
   }
 } END
 
@@ -210,12 +221,10 @@ DEFINE2(UnsafeIO_output) {
   u_int wrtBytes = s->GetSize();
   u_int nbBytes  = fwrite(s->GetValue(), 1, wrtBytes, stream->GetStream());
   if (nbBytes == wrtBytes) {
-    RETURN(Interpreter::EmptyArg());
+    RETURN_UNIT;
   }
   else {
-    // to be done: proper Exception
-    Scheduler::currentData = Store::IntToWord(0);
-    return Interpreter::RAISE;
+    RAISE_IO_EXCEPTION(Store::IntToWord(0), "output", stream->GetName());
   }
 } END
 
@@ -224,12 +233,10 @@ DEFINE2(UnsafeIO_output1) {
   DECLARE_INT(c, x1);
   u_int nbBytes = fwrite(&c, 1, 1, stream->GetStream());
   if (nbBytes == 1) {
-    RETURN(Interpreter::EmptyArg());
+    RETURN_UNIT;
   }
   else {
-    // to be done: proper Exception
-    Scheduler::currentData = Store::IntToWord(0);
-    return Interpreter::RAISE;
+    RAISE_IO_EXCEPTION(Store::IntToWord(0), "output1", stream->GetName());
   }
 } END
 
@@ -238,18 +245,6 @@ DEFINE1(UnsafeIO_print) {
   fprintf(stdout, "%.*s", (int) s->GetSize(), s->GetValue());
   fflush(stdout);
   RETURN_UNIT;
-} END
-
-DEFINE1(UnsafeIO_stdErr) {
-  RETURN(OutStream::New(stderr, String::New("stderr"))->ToWord());
-} END
-
-DEFINE1(UnsafeIO_stdIn) {
-  RETURN(InStream::New(stdin, String::New("stdin"))->ToWord());
-} END
-
-DEFINE1(UnsafeIO_stdOut) {
-  RETURN(OutStream::New(stdout, String::New("stdout"))->ToWord());
 } END
 
 word UnsafeIO(void) {
@@ -270,8 +265,8 @@ word UnsafeIO(void) {
   t->Init(10, Primitive::MakeFunction(UnsafeIO_output, 2));
   t->Init(11, Primitive::MakeFunction(UnsafeIO_output1, 2));
   t->Init(12, Primitive::MakeFunction(UnsafeIO_print, 1));
-  t->Init(13, Primitive::MakeFunction(UnsafeIO_stdErr, 1));
-  t->Init(14, Primitive::MakeFunction(UnsafeIO_stdIn, 1));
-  t->Init(15, Primitive::MakeFunction(UnsafeIO_stdOut, 1));
+  t->Init(13, OutStream::New(stderr, String::New("stderr"))->ToWord());
+  t->Init(14, InStream::New(stdin, String::New("stdin"))->ToWord());
+  t->Init(15, OutStream::New(stdout, String::New("stdout"))->ToWord());
   return t->ToWord();
 }
