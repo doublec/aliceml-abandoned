@@ -470,4 +470,33 @@ define
 	 {PopTask TaskStack Res}
       end
    end
+
+/*
+   class Scheduler
+      attr QueueHd: unit QueueTl: unit
+      meth init() Empty in
+	 QueueHd <- Empty
+	 QueueTl <- Empty
+      end
+      meth newThread(Closure)
+	 case Closure of closure(function(_ NL IdDefArgs BodyInstr) G) then
+	    L = {NewArray 0 NL - 1 unit}
+	    Hd Rest
+	 in
+	    Hd = (@QueueHd <- Rest)
+	    Hd = 'thread'([tuple frame(IdDefArgs BodyInstr G L)])|Rest
+	 end
+      end
+      meth run() Hd = @QueueHd in
+	 if {IsFree Hd} then
+	    skip   %--** wait for I/O
+	 elsecase Hd of 'thread'(Res|TaskStack)|Tr then
+	    QueueHd <- Tr
+	    {PopTask TaskStack Res}
+	    %--** returns one of continue, preempt, raise, request, terminate
+	    Scheduler, run()
+	 end
+      end
+   end
+*/
 end
