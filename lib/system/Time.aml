@@ -1,0 +1,206 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import signature TIME           from "TIME-sig"
+import structure UnsafeTime     from "UnsafeTime"
+
+
+structure Time : TIME =
+struct
+    structure LInt = LargeInt
+
+    (* TODO: an optimized variant of this routine should
+       be part of LargeInt.
+     *)
+    fun quotRem (a : LargeInt.int, b : LargeInt.int) =
+        let
+            val q   = LInt.quot (a, b)
+            val r   = LInt.rem (a, b)
+        in
+            ( (q, r) : (LargeInt.int * LargeInt.int) )
+        end
+ 
+    
+    (*********** conversion Time -> String **********)
+
+    fun largeInt s = valOf (LInt.fromString s)
+
+    (* maximum precision possible (nanosecond resolution) *)
+    val maxPrec     = 9
+    (* number of seconds in a nano second *)
+    val nanoSec     =    largeInt "1000000000"
+    (* rounding borders *)
+    val borders     = #[ largeInt "5"
+                       , largeInt "50"
+                       , largeInt "500"
+                       , largeInt "5000"
+                       , largeInt "50000"
+                       , largeInt "500000"
+                       , largeInt "5000000"
+                       , largeInt "50000000"
+                       , largeInt "500000000"
+                       ]
+                    
+    val zero        = LInt.fromInt 0
+    val minusOne    = LInt.fromInt (~1)
+    val one         = LInt.fromInt 1
+    val two         = LInt.fromInt 2
+    val border      = Vector.sub (borders, 0)
+    
+    fun isEven i = LInt.rem (i, two) = zero
+
+    (* given a number [n] and a number of fractional
+       digits to split of [p], split [n] at [p] into
+       whole and fractional part.
+     *)
+    fun splitRaw (n, p) =
+        assert (0 < p andalso p <= maxPrec) do
+        let
+            val border = Vector.sub (borders, p - 1)
+        in
+            quotRem (n, border * two)
+        end
+    
+    (* given a number [n] and a number of fractional
+       digits to split of [p], split [n] at [p] into 
+       whole and fractional part, rounding if necessary.
+     *)
+    fun split (n, p) =
+        assert (0 < p andalso p <= maxPrec) do
+        let
+            val border          = Vector.sub (borders, p - 1) 
+            val (whole, frac)   = quotRem (n, border * two)
+        in
+            case LInt.compare (frac, border) of
+                LESS    => (whole, frac)
+              | GREATER => (whole + one, zero)
+              | EQUAL   => if isEven whole 
+                              then (whole, frac)
+                              else (whole + one, zero)
+        end
+
+    fun fmt prec t = let
+	val nsec        = Time.toNanoseconds t 
+        val (neg, nsec)    = if LInt.sign nsec < 0 
+                            then (true, ~nsec) 
+                            else (false, nsec)
+	fun fmtInt i = LInt.fmt StringCvt.DEC i
+	fun fmtSec (neg, i) = fmtInt (if neg then ~i else i)
+    in
+	if prec < 0 then raise General.Size
+	else if prec = 0 then
+            let val (sec, _)    = split (nsec, maxPrec)
+	    in
+		fmtSec (neg, sec)
+	    end
+	else if prec >= maxPrec then
+	    let val (sec, nsec) = quotRem (nsec, nanoSec)
+	        val frac        = fmtInt nsec
+            in
+                concat [fmtSec (neg, sec), ".",
+                        StringCvt.padRight #"0" prec frac]
+	    end
+	else
+            let (* remove excess digits *) 
+                val (n, _)      = split (nsec, maxPrec - prec)
+                (* do the raw split *)
+                val (sec, frac) = splitRaw (n, prec) 
+                val frac        = fmtInt frac
+            in
+                concat [fmtSec (neg, sec), ".",
+                        StringCvt.padLeft #"0" prec frac]
+            end
+    end
+
+
+    fun toString msec = fmt 3 msec
+
+    
+    (*********** conversion String -> Time **********)
+  
+    fun pow10 n =
+        let 
+            val ten = LargeInt.fromInt 10
+            fun loop i res =
+                if i = 0 then res
+                else loop (i - 1) (res * ten)
+        in
+            loop n (LargeInt.fromInt 1)
+        end
+
+    fun divPow10 n i =
+        n div (pow10 i)
+
+    fun toFrac n =
+        let
+            fun loop (n, i) =
+                if (divPow10 n i) = LargeInt.fromInt 0 then i
+                else loop (n, i + 1)
+            
+            val i = loop (n, 1)
+            val f = pow10 (maxPrec - i) 
+        in
+            n * f
+        end
+
+
+    fun scan getc s =
+    let
+        (* unsigned number: must start with a digit *)
+        fun cardinal s =
+            case getc s of
+                SOME (d, _) where (Char.isDigit d) =>
+                LargeInt.scan StringCvt.DEC getc s
+              | _       => NONE
+
+        fun fractional (sign, sec, s) =
+            (* fractional part must always start with a '.' *)
+            case getc s of
+                SOME (#".", s') =>
+                (case cardinal s' of
+                    SOME (frac, s'') =>
+                    SOME (Time.fromNanoseconds 
+                            (sign * (sec * nanoSec + toFrac frac)), s'')
+                  | _                => NONE)
+              | _               => 
+                NONE
+               
+        fun time (sign, s) =
+            case cardinal s of
+                NONE            => fractional (sign, zero, s)
+              | SOME (v, s')    => fractional (sign, v, s')
+
+        fun sign s =
+            case getc s of
+                NONE                    => NONE
+              | SOME (#"+", s')         => time (one, s')
+              | SOME ((#"-" | #"~"), s')  => time (minusOne, s')
+              | _                       => time (one, s)
+    in
+        sign (StringCvt.skipWS getc s)
+    end
+
+
+    fun fromString s = StringCvt.scanString scan s
+
+    open Time
+
+    type time = Time.time
+    exception Time = Time.Time
+
+    fun now () = Time.fromMilliseconds (UnsafeTime.now ())
+end

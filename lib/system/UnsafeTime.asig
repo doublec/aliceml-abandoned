@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_TIME_COMPONENT =
+    sig
+	structure UnsafeTime :
+	    sig
+	    	val now : unit -> LargeInt.int  
+	    end
+    end
