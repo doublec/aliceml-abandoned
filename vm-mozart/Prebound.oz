@@ -128,6 +128,7 @@ define
 	    end
 	    '#'
 	 end
+      'Char.<=': fun {$ X1#X2} X1 =< X2 end
       'Char.ord': fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
@@ -135,6 +136,7 @@ define
 	    else {Exception.raiseError BuiltinTable.'General.Chr'} '#'
 	    end
 	 end
+      'Char.isAlphaNum': Char.isAlNum
       'Char.isDigit': Char.isDigit
       'Char.isHexDigit': Char.isXDigit
       'Char.isSpace': Char.isSpace
