@@ -87,7 +87,7 @@ define
 	 end
       toString:
 	 fun {$ lazySelFrame(_ _ I)}
-	    'LazySel #'#I
+	    'Select #'#I
 	 end)
 
    fun {LitCase I N X YInstrVec ElseInstr}
