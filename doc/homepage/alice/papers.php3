@@ -26,6 +26,10 @@
     <LI> Gerhard Schneider:
 	 <A href="/Papers/abstracts/Schneider2000.html">ML mit Typklassen</A>,
 	 Diplomarbeit (in German), 2000
+    <LI> Leif Kornstaedt:
+	 <A href="/Papers/abstracts/Kornstaedt2001.html">Alice in the Land 
+	 of Oz</A>, Proceedings of the First Workshop on Multi-language
+	 Infrastructure and Interoperability (BABEL), 2001
     <LI> Andreas Rossberg:
 	 <A href="papers/intermediate.ps">The Stockhausen Intermediate
 	 Language</A>, Tech Report, 2001
