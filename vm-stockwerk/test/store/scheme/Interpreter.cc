@@ -50,6 +50,40 @@ static u_int StackSize(word s) {
   return Store::DirectWordToBlock(Store::DirectWordToBlock(s)->GetArg(1))->GetSize();
 }
 
+static void ShowList(Block *p) {
+  u_int ende = 0;
+  
+  std::printf(" (");
+  while (!ende) {
+    if (p->GetLabel() == (BlockLabel) T_NIL) {
+      std::printf(")");
+      ende = 1;
+    }
+    else {
+      ConsCell *c = ConsCell::FromBlock(p);
+      Block *car  = Store::DirectWordToBlock(c->Car());
+      
+      switch ((NodeType) car->GetLabel()) {
+      case T_INT:
+	std::printf(" %d", IntNode::FromBlock(car)->GetInt());
+	break;
+      case T_STRING:
+	std::printf(" %s", StringNode::FromBlock(car)->GetString());
+	break;
+      case T_CONS:
+	ShowList(car);
+	break;
+      case T_NIL:
+	std::printf(" ()");
+	break;
+      default:
+	break;
+      }
+      p = Store::DirectWordToBlock(c->Cdr());
+    }
+  }
+}
+
 // Internal Class Variables
 word Interpreter::root;
 u_int Interpreter::allowGC;
@@ -184,7 +218,6 @@ void Interpreter::CreateDefaultEnv() {
   CreateId(GlobalAlloc("cdr"), OP_CDR);
   CreateId(GlobalAlloc("show"), OP_SHOW);
   CreateId(GlobalAlloc("time"), OP_TIME);
-  CreateId(GlobalAlloc("gc"), OP_GC);
   CreateId(GlobalAlloc("gengc"), OP_GENGC);
   CreateId(GlobalAlloc("setgc"), OP_SETGC);
   CreateId(GlobalAlloc("show_list"), OP_SHOWLIST);
@@ -265,11 +298,14 @@ inline void Interpreter::InterpretId(Block *instr) {
 }
 
 inline void Interpreter::InterpretLet(Block *instr) {
-  LetNode *node = LetNode::FromBlock(instr);
-  
-  PushTask(node->GetBody());
-  PushTask(AssignNode::New(node->GetId())->ToWord());
-  PushTask(node->GetExpr());
+  LetNode *node  = LetNode::FromBlock(instr);
+  Block *abs     = LambdaNode::New(node->GetId()->ToWord(), node->GetBody());
+  Block *applist = ConsCell::New(node->GetExpr(),
+				  ConsCell::New(abs->ToWord(), Store::IntToWord(0))->ToWord());
+  word exarr     = ConsCell::FromBlock(applist)->ToArray(T_EXPRARR)->ToWord();
+  Block *app     = ApplicationNode::New(exarr, 0);
+
+  PushTask(app->ToWord());
 }
 
 inline void Interpreter::InterpretLambda(Block *instr) {
@@ -335,14 +371,15 @@ inline void Interpreter::InterpretTime() {
   long total_sec        = (end_t.tv_sec - start_t.tv_sec);
   long total_usec       = (end_t.tv_usec - start_t.tv_usec);
 
-  long calc_time  = (((total_sec - sum_t->tv_sec) * 1000) +
-		     ((total_usec - sum_t->tv_usec) / 1000));
-  long gc_time    = ((sum_t->tv_sec * 1000) + (sum_t->tv_usec / 1000));
-  long total_time = ((total_sec * 1000) + (total_usec / 1000));
-  double  weight  = (0.0 + gc_time) / (0.0 + total_time) * 100;
+  long calc_time   = (((total_sec - sum_t->tv_sec) * 1000) +
+		      ((total_usec - sum_t->tv_usec) / 1000));
+  long gc_time     = ((sum_t->tv_sec * 1000) + (sum_t->tv_usec / 1000));
+  long total_time  = ((total_sec * 1000) + (total_usec / 1000));
+  double  weight   = (0.0 + gc_time) / (0.0 + total_time) * 100;
+  double all_ratio = ((total_time != 0) ? (((Store::totalMem - Store::oldTotalMem) / total_time) * 1000) : (Store::totalMem - Store::oldTotalMem));
 
-  std::printf("Calc: %ld ms; GC: %ld ms; Total: %ld ms; Weight: %g percent\n",
-	      calc_time, gc_time, total_time, weight);
+  std::printf("CC: %ld ms; GC: %ld ms; ALL: %ld ms; GW: %g p; AR: %g b/s\n",
+	      calc_time, gc_time, total_time, weight, all_ratio);
 #endif
   std::fflush(stdout);
 }
@@ -498,27 +535,11 @@ char *Interpreter::InterpretOp(Block *p) {
     gettimeofday(&start_t, INVALID_POINTER);
     break;
   }
-  case OP_GC: {
-#if (defined(DEBUG_CHECK) || defined(STORE_PROFILE))
-    int gen = IntNode::FromWord(PopValue())->GetInt();
-    
-    gen = ((gen <= (STORE_GENERATION_NUM - 2)) ? gen : (STORE_GENERATION_NUM - 2));
-    
-    Store::DoGC(root);
-    Store::MemStat();
+  case OP_GENGC: {
     std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
     std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
     std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
     std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
-#else
-    PopValue();
-    if (allowGC && Store::NeedGC()) {
-      Store::DoGC(root);
-    }
-#endif
-    break;
-  }
-  case OP_GENGC: {
     Store::DoGC(root);
 #if defined(STORE_DEBUG) || defined(STORE_PROFILE)
     Store::MemStat();
@@ -532,36 +553,11 @@ char *Interpreter::InterpretOp(Block *p) {
     std::printf("Automatic Garbage Collection is %s.\n", val[allowGC]);
     break;
   }
-  case OP_SHOWLIST: {
-    Block *p   = Store::DirectWordToBlock(PopValue());
-    u_int ende = 0;
-
-    std::printf("(");
-    while (!ende) {
-      if (p->GetLabel() == (BlockLabel) T_NIL) {
-	std::printf(")\n");
-	std::fflush(stdout);
-	ende = 1;
-      }
-      else {
-	ConsCell *c = ConsCell::FromBlock(p);
-	Block *car  = Store::DirectWordToBlock(c->Car());
-	
-	switch ((NodeType) car->GetLabel()) {
-	case T_INT:
-	  std::printf("%d ", IntNode::FromBlock(car)->GetInt());
-	  break;
-	case T_STRING:
-	  std::printf("%s ", StringNode::FromBlock(car)->GetString());
-	  break;
-	default:
-	  break;
-	}
-	p = Store::DirectWordToBlock(c->Cdr());
-      }
-    }
+  case OP_SHOWLIST:
+    ShowList(Store::DirectWordToBlock(PopValue()));
+    std::printf("\n");
+    std::fflush(stdout);
     break;
-  }
   case OP_EXIT: {
     exit(0);
     break;
