@@ -52,9 +52,9 @@ final public class General {
 	    _REQUESTDEC(DMLValue car,args[0]);
 	    if (car instanceof Reference) {
 		return ((Reference) car).assign(args[1]);
-	    }
-	    else
+	    } else {
 		_error("wrong argument 1 for assign",val);
+	    }
 	}
     }
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
@@ -168,8 +168,9 @@ final public class General {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.pickle");
 	    _REQUESTDEC(DMLValue fst,args[0]);
-	    if (!(fst instanceof STRING))
+	    if (!(fst instanceof STRING)) {
 		_error("argument 1 not STRING ",val);
+	    }
 	    java.lang.String whereto=((STRING) fst).value;
 	    ExceptionWrapper ex=null;
 	    java.io.FileOutputStream outf=null;
@@ -204,8 +205,9 @@ final public class General {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.unpickle");
 	    _REQUESTDEC(DMLValue fst,args[0]);
-	    if (!(fst instanceof STRING))
+	    if (!(fst instanceof STRING)) {
 		_error("argument 1 not STRING ",val);
+	    }
 	    java.lang.String wherefrom=((STRING) fst).value;
 	    ExceptionWrapper ex=null;
 	    java.io.FileInputStream inf=null;

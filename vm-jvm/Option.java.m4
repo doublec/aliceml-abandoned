@@ -16,6 +16,22 @@ final public class Option {
 
     // val getOpt : ('a option * 'a) -> 'a 
     // val isSome : 'a option -> bool 
+    _BUILTIN(ValOf) {
+	_APPLY(val) {
+	    if (val instanceof DMLConVal) {
+		DMLConVal cv = (DMLConVal) val;
+		if (cv.getConstructor() == SOME) {
+		    return cv.getContent();
+		} else {
+		    _RAISENAME(Option);
+		}
+	    } else {
+		_error("argument not option",val);
+	    }
+	}
+    }
+
+    _FIELD(Option,valOf);
     // val valOf : 'a option -> 'a 
     // val filter : ('a -> bool) -> 'a -> 'a option 
     // val join : 'a option option -> 'a option 

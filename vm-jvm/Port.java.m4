@@ -66,8 +66,9 @@ final public class Port extends UnicastRemoteObject
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Port.send");
 	    _REQUESTDEC(DMLValue p,args[0]);
-	    if (!(p instanceof DMLPort))
+	    if (!(p instanceof DMLPort)) {
 		_error("argument 1 not DMLPort",val);
+	    }
 	    DMLPort port = (DMLPort) p;
 	    try {
 		return port.send(args[1]);
@@ -81,13 +82,14 @@ final public class Port extends UnicastRemoteObject
     _FIELD(Port,send);
 
     _BUILTIN(Recieve) {
-    _APPLY(val) {
-	// _FROMSINGLE(val,"Port.recieve");
-	    if (!(val instanceof DMLPort))
+	_APPLY(val) {
+	    // _FROMSINGLE(val,"Port.recieve");
+	    if (!(val instanceof DMLPort)) {
 		_error("argument 1 not DMLPort",val);
+	    }
 	    DMLPort port = (DMLPort) val;
 	    try {
-		return port.recieve();
+	    return port.recieve();
 	    } catch (RemoteException r) {
 		System.err.println(r);
 		return null;

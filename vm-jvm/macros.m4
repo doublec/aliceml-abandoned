@@ -9,8 +9,12 @@ define(_error,`
 	_RAISE(runtimeError,new Tuple2(new STRING`'($1),$2))
 	// END MACRO: ERROR($1,$2)
 ')
-define(_RAISE,`throw new ExceptionWrapper(Constants.$1.apply($2))')
-define(_RAISENAME,`throw new ExceptionWrapper($1)')
+define(_RAISE,`ExceptionWrapper E = new ExceptionWrapper(Constants.$1.apply($2));
+	       E.printStackTrace();
+	       throw E')
+define(_RAISENAME,`ExceptionWrapper E = new ExceptionWrapper($1);
+		   E.printStackTrace(); 
+		   throw E')
 dnl
 dnl Hier machen wir die Macros rein, die quasi überall gebraucht werden
 dnl
@@ -161,7 +165,10 @@ define(_BINOPINT,`
 	}
     }
     /** <code>val $2 : (int * int) -> int </code>*/
-    _FIELD(Int,$1);')
+    final public static DMLValue $1 = new capitalize($1)();
+    static {
+	Builtin.builtins.put("Int.$2",$1);
+    }')
 define(_COMPAREINT,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
