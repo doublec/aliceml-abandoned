@@ -82,8 +82,8 @@ val op >= :	int * int -> bool
 
 signature GENERAL =
   sig
-    (*!!eqtype*) type unit (*!!*)= unit
-    type exn (*!!*)= exn
+    eqtype unit
+    type exn
 
     exception Bind
     exception Chr
@@ -111,8 +111,8 @@ signature GENERAL =
   end
 
 
-structure General : GENERAL (*!!where type unit = unit
-			    where type exn  = exn*)
+structure General : GENERAL where type unit = unit
+			    where type exn  = exn
 
 datatype order = datatype General.order
 
@@ -145,7 +145,7 @@ structure Ref : REF
 
 signature BOOL =
   sig
-    datatype bool = (*!!false | true*) datatype bool
+    datatype bool = false | true
     type     t    = bool			(**)
 
     val not :		bool -> bool
@@ -158,7 +158,7 @@ signature BOOL =
   end
 
 
-structure Bool : BOOL (*!!where type bool = bool*)
+structure Bool : BOOL
 
 
 
@@ -257,7 +257,7 @@ datatype option = datatype Option.option
 
 signature LIST =
   sig
-(*!!    datatype 'a list = :: of 'a * 'a list | nil*)
+    datatype 'a list = :: of 'a * 'a list | nil
     datatype list    = datatype list
     type     'a t    = 'a list						(**)
 
@@ -302,7 +302,7 @@ signature LIST =
   end
 
 
-structure List : LIST (*!!where type 'a list = 'a list*)
+structure List : LIST
 
 
 
@@ -346,8 +346,8 @@ structure ListPair : LIST_PAIR
 
 signature CHAR =
   sig
-    (*!!eq*)type char (*!!*)= char
-    (*!!eq*)type string (*!!*)= string
+    eqtype char
+    eqtype string
     type t = char					(**)
 
     val minChar :	char
@@ -398,11 +398,11 @@ signature CHAR =
   end
 
 
-structure Char     : CHAR (*!!where type char   = char
-			  where type string = string*)
+structure Char     : CHAR where type char   = char
+			  where type string = string
 
-structure WideChar : CHAR (*!!where type char   = char
-			  where type string = string*)
+structure WideChar : CHAR where type char   = char
+			  where type string = string
 
 
 
@@ -412,7 +412,7 @@ structure WideChar : CHAR (*!!where type char   = char
 
 signature STRING =
   sig
-    type string (*!!*)= string
+    type string
     type t = string							(**)
 
     structure Char :	CHAR
@@ -463,11 +463,11 @@ signature STRING =
   end
 
 
-structure String     : STRING (*!!where type string = string
-			      where Char = Char*)
+structure String     : STRING where type string = string
+			      where Char = Char
 
-structure WideString : STRING (*!!where type string = string
-			      where Char = WideChar*)
+structure WideString : STRING where type string = string
+			      where Char = WideChar
 
 
 
@@ -528,7 +528,7 @@ signature SUBSTRING =
 
 
 (*MISSING
-structure Substring : SUBSTRING (*!!where String = String*)
+structure Substring : SUBSTRING where String = String
 *)
 
 
@@ -571,7 +571,7 @@ structure StringCvt : STRING_CVT
 
 signature INTEGER =
   sig
-    (*!!eq*)type int (*!!*)= int
+    eqtype int
     type t = int							(**)
 
     val minInt :	int option
@@ -614,8 +614,8 @@ signature INTEGER =
   end
 
 
-structure Int      : INTEGER (*!!where type int = int*)
-structure LargeInt : INTEGER (*!!where type int = int*)
+structure Int      : INTEGER where type int = int
+structure LargeInt : INTEGER where type int = int
 structure Position : INTEGER = Int
 
 
@@ -626,7 +626,7 @@ structure Position : INTEGER = Int
 
 signature WORD =
   sig
-    (*!!eq*)type word (*!!*)= word
+    eqtype word
     type t = word							(**)
 
     val wordSize :	int
@@ -678,8 +678,8 @@ signature WORD =
   end
 
 
-structure Word      : WORD (*!!where type word = word*)
-structure LargeWord : WORD (*!!where type word = word*)
+structure Word      : WORD where type word = word
+structure LargeWord : WORD where type word = word
 
 
 
@@ -728,7 +728,7 @@ structure IEEEReal : IEEE_REAL
 
 signature MATH =
   sig
-    (*!!eq*)type real (*!!*)= real
+    eqtype real
 
     val e :		real
     val pi :		real
@@ -755,7 +755,7 @@ signature MATH =
   end
 
 
-structure Math : MATH (*!!where type real = real*)
+structure Math : MATH where type real = real
 
 
 
@@ -765,10 +765,10 @@ structure Math : MATH (*!!where type real = real*)
 
 signature REAL =
   sig
-    (*!!eq*)type real (*!!*)= real
+    eqtype real
     type t = real							(**)
 
-    structure Math :	MATH (*!!where type real = real*)
+    structure Math :	MATH where type real = real
 
 (*MISSING
     val radix :		int
@@ -858,8 +858,8 @@ signature REAL =
   end
 
 
-structure Real      : REAL (*!!where type real = real*)
-structure LargeReal : REAL (*!!where type real = real*)
+structure Real      : REAL where type real = real
+structure LargeReal : REAL where type real = real
 
 
 
@@ -869,7 +869,7 @@ structure LargeReal : REAL (*!!where type real = real*)
 
 signature VECTOR =
   sig
-    (*!!eq*)type 'a vector (*!!*)= 'a vector
+    eqtype 'a vector
     type   'a t = 'a vector						(**)
 
     val maxLen :	int
@@ -908,7 +908,7 @@ signature VECTOR =
   end
 
 
-structure Vector : VECTOR (*!!where type 'a vector = 'a vector*)
+structure Vector : VECTOR where type 'a vector = 'a vector
 
 
 
@@ -919,7 +919,7 @@ structure Vector : VECTOR (*!!where type 'a vector = 'a vector*)
 signature ARRAY =
   sig
     type 'a array
-    type 'a vector (*!!*)= 'a vector
+    type 'a vector
     type 'a t = 'a array						(**)
 
     val maxLen :	int
@@ -964,7 +964,7 @@ signature ARRAY =
   end
 
 
-structure Array : ARRAY (*!!where type 'a vector = 'a vector*)
+structure Array : ARRAY where type 'a vector = 'a vector
 
 
 
