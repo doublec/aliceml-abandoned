@@ -25,9 +25,12 @@ structure Main :> MAIN =
 	    TextIO.closeOut file
 	end
 
+    fun abstract' x = AbstractionPhase.translate (BindEnv.copy BindEnv0.E0) x
+    fun elab' x     = ElaborationPhase.elab (Env.copy Env0.E0) x
+
     val parse      = ParsingPhase.parse o Source.fromString
-    val abstract   = AbstractionPhase.translate(BindEnv.copy BindEnv0.E0) o parse
-    val elab       = ElaborationPhase.elab(Env.copy Env0.E0) o abstract
+    val abstract   = abstract' o parse
+    val elab       = elab' o abstract
     val translate  = TranslationPhase.translate o elab
     val imperatify = MatchCompilationPhase.translate o translate
     val illify     = CodeGenPhase.genComponent o imperatify

@@ -1829,7 +1829,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   in
 		(*UNFINISHED*)
 		(* Mmh, is there really no better way than having LetInf? *)
-		(inf',E')
+		raise Crash.Crash "unimplemented: let in signatures \
+				  \(may be induced by functor derived form)"
 	   end
 
 	 | PARAtSigExp(i, sigexp) => trSigExp E sigexp

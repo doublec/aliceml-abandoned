@@ -1,5 +1,3 @@
-(* Untyped translation *)
-
 structure TranslationPhase :> TRANSLATION_PHASE =
   struct
 
