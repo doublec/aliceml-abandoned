@@ -313,8 +313,8 @@ structure CodeGen =
 					if stamp'=stamp_Bind then ([Getstatic CBind],true) else
 					    if stamp'=stamp_eq then ([Getstatic CEquals],true) else
 						if stamp'=stamp_assign then ([Getstatic CAssign],true) else
-						    (nil,false)
-
+						    if stamp'=stamp_builtin then ([Getstatic CBuilt],true) else
+							(nil,false)
 
 	and decListCode decs = List.concat (map decCode decs)
 
