@@ -446,13 +446,9 @@ struct
     fun groundKind()		= kGround
     fun depKind(p,j,k)		= newKind(DEP(p,j,k))
     fun singKind j		= let val k = kind j in
-				      case content k
-				       of GROUND => newKind(SING j)
-					| SING _ => k
-					| DEP(p,j1,k1) =>
-					  let val j' = apply'(j, mod(p,j1)) in
-					     newKind(DEP(p,j1,newKind(SING j')))
-					  end
+				      if isSingKind k
+				      then k
+				      else newKind(SING j)
 				  end
 
     and kind j =
@@ -484,17 +480,17 @@ struct
 	 of SING j		=> j
 	  | (GROUND | DEP _)	=> raise Kind
 
-    fun isGroundKind k =
+    and isGroundKind k =
     	case content k
 	 of GROUND		=> true
 	  | SING j		=> isGroundKind(kind j)
 	  | _			=> false
-    fun isDepKind k =
+    and isDepKind k =
 	case content k
 	 of DEP _		=> true
 	  | SING j		=> isDepKind(kind j)
 	  | _			=> false
-    fun isSingKind k =
+    and isSingKind k =
 	case content k
 	 of SING j		=> true
 	  | _			=> false
@@ -2035,7 +2031,7 @@ TextIO.print "Inf.infimum done.\n")
 		(Type.matchKind(k2',k1'); k2') handle Type.KindMismatch _ =>
 		(Type.matchKind(k1',k2'); k1') handle Type.KindMismatch m =>
 		raise Mismatch(MismatchTyp(Path.toLab p', k1',k2',m))
-	    val t'  = Type.con(p',k')
+	    val t'  = Type.con(p',k')	(* reduces singletons *)
 	in
 	    if Type.isSingKind k1 then ()
 	    else (PathMap.insertDisjoint(#typ_rea(#rea c), p1, t');
@@ -2098,7 +2094,7 @@ TextIO.print "\n";
 	    val p' = buildPath(c,p1)
 	    val k' = infimumKind(c,k1,k2) handle KindMismatch m =>
 		     raise Mismatch(MismatchInf(Path.toLab p', m))
-	    val j' = con'(p',k')
+	    val j' = con'(p',k')	(* reduces singletons *)
 	in
 	    if isSingKind k1 then ()
 	    else PathMap.insertDisjoint(#inf_rea(#rea c), p1, j')
