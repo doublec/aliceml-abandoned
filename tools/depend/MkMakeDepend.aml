@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,11 +17,10 @@ import structure Parser      from "SMLParser"
 import functor   MkAnalyzer  from "MkAnalyzer"
 import signature MAKE_DEPEND from "MAKE_DEPEND-sig"
 
-
-structure SMLToMozartMakeDepend :> MAKE_DEPEND =
+functor MkMakeDepend(val extension: string) :> MAKE_DEPEND =
 struct
     structure Analyzer = MkAnalyzer(structure Parser = Parser
-				    val extension = "ozf")
+				    val extension = extension)
 
     exception FAIL
 
@@ -47,9 +46,11 @@ struct
 		   let
 		       val filenames = Analyzer.analyzeFile filename
 		   in
-		       TextIO.print (basename filename ^ ".ozf" ^ ":");
+		       TextIO.print (basename filename ^ "." ^
+				     extension ^ ":");
 		       List.app (fn filename =>
-				 TextIO.print (" \\\n\t" ^ filename)) filenames;
+				    TextIO.print (" \\\n\t" ^ filename))
+				filenames;
 		       TextIO.print "\n\n"
 		   end
 		   handle Assert.Assert _ =>
