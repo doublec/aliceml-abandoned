@@ -22,6 +22,24 @@ AC_PROG_INSTALL
 AC_LANG(C++)
 
 dnl
+dnl  C++ Extensions
+dnl
+AC_CACHE_CHECK([whether compiler understands __declspec(dllexport)],
+  [seam_cv_have_dlls],
+  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[void __declspec(dllexport) foo() {};]],[]),
+		  seam_cv_have_dlls=yes,
+		  seam_cv_have_dlls=no)])
+
+case "$seam_cv_have_dlls" in
+    no)
+	AC_DEFINE(HAVE_DLLS, 0)
+	;;
+    yes)
+	AC_DEFINE(HAVE_DLLS, 1)
+	;;
+esac
+
+dnl
 dnl  Linker Flags
 dnl
 AC_CACHE_CHECK([whether linker understands --export-dynamic],
@@ -30,7 +48,7 @@ AC_CACHE_CHECK([whether linker understands --export-dynamic],
    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
    AC_LINK_IFELSE(AC_LANG_PROGRAM([],[]),
 		  seam_cv_ldflags_export_dynamic=yes,
-		  seam_cv_ldflags_export_dynamic=no),
+		  seam_cv_ldflags_export_dynamic=no)
    LDFLAGS="$seam_save_LDFLAGS"])
 
 case "$seam_cv_ldflags_export_dynamic" in
@@ -52,7 +70,7 @@ AC_SUBST(INCLUDES)
 dnl
 dnl  zlib
 dnl
-AC_MSG_CHECKING([whether to build with zlib])
+AC_MSG_CHECKING([for zlib])
 AC_ARG_WITH([zlib],
   AC_HELP_STRING([--with-zlib=DIR],
 		 [use the zlib file compression library
@@ -85,7 +103,7 @@ esac
 dnl
 dnl  GNU Lightning
 dnl
-AC_MSG_CHECKING([whether to build with GNU Lightning])
+AC_MSG_CHECKING([for GNU Lightning])
 AC_ARG_WITH([lightning],
   AC_HELP_STRING([--with-lightning=DIR],
 		 [use GNU Lightning to enable run-time native
