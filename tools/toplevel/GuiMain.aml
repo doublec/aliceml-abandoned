@@ -637,6 +637,8 @@ structure GuiMain =
 		Gtk.widgetGrabFocus Gui.progout
 	  | switchTo _ = ()
 
+	fun selectFont _ = ()
+
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
              Gtk.signalConnect(Gui.compilerout, "focus-in-event",

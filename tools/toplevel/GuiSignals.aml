@@ -34,14 +34,15 @@ signature GUISIGNALS_SIG =
     val on_jump_to_last_error_activate : Gtk.callback_function
     val on_feedregion_activate : Gtk.callback_function
     val on_feedfile_activate : Gtk.callback_function
-    val on_switch_to_editor_activate : Gtk.callback_function
-    val on_switch_to_compiler_activate : Gtk.callback_function
-    val on_switch_to_io_activate : Gtk.callback_function
     val on_interrupt_activate : Gtk.callback_function
     val on_background_activate : Gtk.callback_function
     val on_reset_activate : Gtk.callback_function
     val on_back_in_history_activate : Gtk.callback_function
     val on_forward_in_history_activate : Gtk.callback_function
+    val on_switch_to_editor_activate : Gtk.callback_function
+    val on_switch_to_compiler_activate : Gtk.callback_function
+    val on_switch_to_io_activate : Gtk.callback_function
+    val on_select_fonts_activate : Gtk.callback_function
     val on_about1_activate : Gtk.callback_function
     val on_notebook1_switch_page : Gtk.callback_function
   end
@@ -69,14 +70,15 @@ functor GuiSignals(structure S : GUISIGNALS_SIG) =
     val jump_to_last_error_on_jump_to_last_error_activate = Gtk.signalConnect(Gui.jump_to_last_error, "activate",S.on_jump_to_last_error_activate)
     val feedregion_on_feedregion_activate = Gtk.signalConnect(Gui.feedregion, "activate",S.on_feedregion_activate)
     val feedfile_on_feedfile_activate = Gtk.signalConnect(Gui.feedfile, "activate",S.on_feedfile_activate)
-    val switch_to_editor_on_switch_to_editor_activate = Gtk.signalConnect(Gui.switch_to_editor, "activate",S.on_switch_to_editor_activate)
-    val switch_to_compiler_on_switch_to_compiler_activate = Gtk.signalConnect(Gui.switch_to_compiler, "activate",S.on_switch_to_compiler_activate)
-    val switch_to_io_on_switch_to_io_activate = Gtk.signalConnect(Gui.switch_to_io, "activate",S.on_switch_to_io_activate)
     val interrupt_on_interrupt_activate = Gtk.signalConnect(Gui.interrupt, "activate",S.on_interrupt_activate)
     val background_on_background_activate = Gtk.signalConnect(Gui.background, "activate",S.on_background_activate)
     val reset_on_reset_activate = Gtk.signalConnect(Gui.reset, "activate",S.on_reset_activate)
     val back_in_history_on_back_in_history_activate = Gtk.signalConnect(Gui.back_in_history, "activate",S.on_back_in_history_activate)
     val forward_in_history_on_forward_in_history_activate = Gtk.signalConnect(Gui.forward_in_history, "activate",S.on_forward_in_history_activate)
+    val switch_to_editor_on_switch_to_editor_activate = Gtk.signalConnect(Gui.switch_to_editor, "activate",S.on_switch_to_editor_activate)
+    val switch_to_compiler_on_switch_to_compiler_activate = Gtk.signalConnect(Gui.switch_to_compiler, "activate",S.on_switch_to_compiler_activate)
+    val switch_to_io_on_switch_to_io_activate = Gtk.signalConnect(Gui.switch_to_io, "activate",S.on_switch_to_io_activate)
+    val select_fonts_on_select_fonts_activate = Gtk.signalConnect(Gui.select_fonts, "activate",S.on_select_fonts_activate)
     val about1_on_about1_activate = Gtk.signalConnect(Gui.about1, "activate",S.on_about1_activate)
     val notebook1_on_notebook1_switch_page = Gtk.signalConnect(Gui.notebook1, "switch_page",S.on_notebook1_switch_page)
     val mainwidget_on_quit1_activate = Gtk.signalConnect(Gui.mainwidget, "delete-event",S.on_quit1_activate)
