@@ -111,6 +111,8 @@ patch="$PWD/patch.jar"
 AC_SUBST(patch)
 dmllib="$PWD/Compiler/Backend"
 AC_SUBST(dmllib)
+policy="$PWD/java/policy"
+AC_SUBST(policy)
 
 AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/Exec bin/ExecTya bin/ExecSunJit bin/MultiExec)
 
