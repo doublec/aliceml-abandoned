@@ -658,16 +658,21 @@ void PickleLoadWorker::DumpFrame(StackFrame *) {
 // UnpickleWorker Frame
 class UnpickleFrame: private StackFrame {
 private:
-  enum { SIZE_POS, TOP_POS, LOCALS_POS, SIZE };
+  enum { SIZE_POS, TOP_POS, 
+#ifdef DEBUG_CHECK
+         LOCALS_POS,
+#endif
+         SIZE };
 public:
   // UnpickleFrame Constructor
   static UnpickleFrame *New(Worker *worker, int stackSize, int locals) {
-    locals = locals + 100;
-    u_int frSize = SIZE+stackSize+locals+2000;
+    u_int frSize = SIZE+stackSize+locals;
     NEW_STACK_FRAME(frame, worker, frSize);
     frame->InitArg(SIZE_POS, frame->GetSize() + frSize);
-    frame->InitArg(TOP_POS, SIZE+locals+1);
-    frame->InitArg(LOCALS_POS, locals+1);
+    frame->InitArg(TOP_POS, SIZE+locals);
+#ifdef DEBUG_CHECK
+    frame->InitArg(LOCALS_POS, locals);
+#endif
     for (u_int i = frSize - SIZE; i--;) {
       frame->InitArg(SIZE+i, Store::IntToWord(0));
     }
@@ -677,76 +682,44 @@ public:
   u_int GetSize() {
     return Store::DirectWordToInt(StackFrame::GetArg(SIZE_POS));
   }
-  void Push(word value);
-  word Pop();
-  word Top();
-  void Store(u_int i, word value);
-  word Load(u_int i);
-  void PushStore(u_int i, word value);
-  void PushAddr(u_int i);
+
+  void Push(word value) {
+    u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
+    Assert(tp>=Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert(tp<GetSize());
+    ReplaceArg(tp, value);
+    tp++;
+    ReplaceArg(TOP_POS, Store::IntToWord(tp));
+  }
+  word Pop() {
+    u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
+    Assert(tp > (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    tp--;
+    word result = GetArg(tp);
+    ReplaceArg(TOP_POS, Store::IntToWord(tp));
+    return result;
+  }
+  word Top() {
+    u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
+    Assert(tp > (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    return GetArg(tp-1);
+  }
+  void Store(u_int i, word value) {
+    Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert( Store::WordToInt(GetArg(SIZE+i)) == 0);
+    ReplaceArg(SIZE+i, value);
+  }
+  word Load(u_int i) {
+    Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert( Store::WordToInt(GetArg(SIZE+i)) == INVALID_INT);
+    return GetArg(SIZE+i);
+  }
+  void PushStore(u_int i, word value) {
+    Store(i, value);
+    Push(value);
+  }
 
 };
-
-void UnpickleFrame::Push(word value) {
-  u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-  tp++;
-  Assert(tp>=Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert(tp<GetSize());
-  ReplaceArg(tp, value);
-  ReplaceArg(TOP_POS, Store::IntToWord(tp));
-}
-
-word UnpickleFrame::Pop() {
-  u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-  Assert(tp >= (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  word result = GetArg(tp);
-  tp--;
-  ReplaceArg(TOP_POS, Store::IntToWord(tp));
-  return result;
-}
-
-word UnpickleFrame::Top() {
-  u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-  Assert(tp >= (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  return GetArg(tp);
-}
-
-void UnpickleFrame::Store(u_int i, word value) {
-  Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert( Store::WordToInt(GetArg(SIZE+i)) == 0);
-  ReplaceArg(SIZE+i, value);
-}
-
-word UnpickleFrame::Load(u_int i) {
-  Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert( Store::WordToInt(GetArg(SIZE+i)) == INVALID_INT);
-  return GetArg(SIZE+i);
-}
-
-void UnpickleFrame::PushAddr(u_int i) {
-  Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert( Store::WordToInt(GetArg(SIZE+i)) == INVALID_INT);
-  u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-  tp++;
-  Assert(tp>=Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert(tp<GetSize());
-  ReplaceArg(tp, GetArg(SIZE+i));
-  ReplaceArg(TOP_POS, Store::IntToWord(tp));
-}
-
-void UnpickleFrame::PushStore(u_int i, word value) {
-  Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert( Store::WordToInt(GetArg(SIZE+i)) == 0);
-  ReplaceArg(SIZE+i, value);
-
-  u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-  tp++;
-  Assert(tp>=Store::DirectWordToInt(GetArg(LOCALS_POS)));
-  Assert(tp<GetSize());
-  ReplaceArg(tp, value);
-  ReplaceArg(TOP_POS, Store::IntToWord(tp));
-}
-
 
 // UnpickleWorker
 class UnpickleWorker: public Worker {
@@ -941,7 +914,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	is->Commit();
 
 	if (addr > MAX_VALID_INT) NCORRUPT();
-	frame->PushAddr(addr);
+        frame->Push(frame->Load(addr));
       }
       break;
     case Pickle::POSINT:
