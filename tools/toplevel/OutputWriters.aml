@@ -108,8 +108,6 @@ structure OutputWriters =
 
       (* Highlight *)
 
-      val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
-
       fun highlight (buffer, text, startOffset, startiter, enditer) =
           if Gtk.textIterGetChar startiter = ord #"#"
           then Gtk.textBufferApplyTagByName(buffer, "comment", startiter, enditer)
@@ -303,7 +301,8 @@ structure OutputWriters =
           in
               compilerBufRef := SOME compilerBuf;
 	      noeditRef := SOME cNoEd;
-	      Gtk.widgetModifyFont(Gui.compilerout, stdFont);
+	      Gtk.widgetModifyFont(Gui.compilerout, Config.stdFont);
+	      Gtk.widgetModifyFont(Gui.progout, Config.stdFont);
               Gtk.textViewSetBuffer(Gui.progout, progBuf);
               Gtk.textViewSetBuffer(Gui.compilerout, compilerBuf);
 	      spawn foldl (forward (Gui.compilerout, compilerBuf, cSig, cNoEd,
