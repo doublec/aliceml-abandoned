@@ -21,9 +21,8 @@
 
 class ConcreteCode : private Block {
 private:
-  // static const u_int HANDLER_POS   = 0;
-  static const u_int TASK_MANAGER_POS = 1;
-  static const u_int BASE_SIZE        = 2;
+  static const u_int INTERPRETER_POS = 0;
+  static const u_int BASE_SIZE       = 1;
 public:
   using Block::ToWord;
   // ConcreteCode Accessors
@@ -32,7 +31,7 @@ public:
   }
   Interpreter *GetInterpreter() {
     return static_cast<Interpreter *>
-      (Store::DirectWordToUnmanagedPointer(GetArg(TASK_MANAGER_POS)));
+      (Store::DirectWordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
   }
   void Init(u_int index, word value) {
     InitArg(BASE_SIZE + index, value);
@@ -42,10 +41,7 @@ public:
   }
   // ConcreteCode Constructor
   static ConcreteCode *New(Interpreter *interpreter, u_int size) {
-    // to be checked: Where to fetch handler
-    Block *b = Store::AllocBlockWithHandler(BASE_SIZE + size,
-					    INVALID_POINTER);
-    b->InitArg(TASK_MANAGER_POS, Store::UnmanagedPointerToWord(interpreter));
+    Block *b = Store::AllocBlockWithHandler(BASE_SIZE + size, interpreter);
     return static_cast<ConcreteCode *>(b);
   }
   // ConcreteCode Untagging

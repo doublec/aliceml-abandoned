@@ -21,7 +21,7 @@
 class TaskStack;
 class Closure;
 
-class Interpreter {
+class Interpreter : public Handler {
 public:
   enum Result {
     CONTINUE,
@@ -32,6 +32,9 @@ public:
   };
   // Interpreter Constructor
   Interpreter() {}
+  // Handler Methods
+  virtual void PrepareForGC(Block *p);
+  virtual Block *GetAbstractRepresentation();
   // Argument Creation
   static inline word EmptyArg() {
     Block *p = Store::AllocBlock(EMPTYARG_LABEL, 1);

@@ -78,6 +78,14 @@ word Interpreter::Deconstruct(word args) {
 //
 // Interpreter Functions
 //
+void Interpreter::PrepareForGC(Block *p) {
+  return;
+}
+
+Block *Interpreter::GetAbstractRepresentation() {
+  Error("Interpreter::GetAbstractRepresentation must never be called\n");
+}
+
 void Interpreter::PushCall(TaskStack *, Closure *) {
   Error("Interpreter::PushCall must never be called\n");
 }
