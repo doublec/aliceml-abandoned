@@ -13,9 +13,9 @@
  *)
 
 import structure Inf       from "../../lib/rtt/Inf"
+import structure Url       from "../../lib/system/Url"
 import structure Component from "../../lib/system/Component"
 import structure Reflect   from "../../lib/system/Reflect"
-import structure Url       from "../../lib/utility/Url"
 
 signature TARGET =
 sig
