@@ -202,7 +202,7 @@ define
 	     TmpReg VInter ThenVInstr
 	  in
 	     {State.cs newReg(?TmpReg)}
-	     VHd = vEquateConstant(_ {ByteString.make S} TmpReg VInter)
+	     VHd = vEquateConstant(_ S TmpReg VInter)
 	     VInter = {TestBuiltin 'Value.\'==\'' [{GetReg Id State} TmpReg]
 		       ThenVInstr ElseVInstr State}
 	     {TranslateBody Body ?ThenVInstr nil State ReturnReg}
@@ -321,7 +321,7 @@ define
 	 Constant = case Lit of 'WordLit'(W) then {Word.make 31 W}
 		    [] 'IntLit'(I) then I
 		    [] 'CharLit'(C) then C
-		    [] 'StringLit'(S) then {ByteString.make S}
+		    [] 'StringLit'(S) then S
 		    [] 'RealLit'(F) then F
 		    end
 	 VHd = vEquateConstant(_ Constant Reg VTl)
@@ -449,7 +449,7 @@ define
 	    VHd = vCallConstant(_ Value Regs
 				{TranslateRegion Region State} VTl)
 	 end
-      [] 'VarAppExp'(Region Id 'TupArgs'(Ids)) then
+      [] 'VarAppExp'(Region Id 'TupArgs'(Ids)) andthen {Width Ids} > 0 then
 	 VHd = vConsCall(_ {GetReg Id State}
 			 {Record.foldR Ids
 			  fun {$ Id Rest} {GetReg Id State}|Rest end [Reg]}
@@ -461,12 +461,6 @@ define
 	 [] 'TupArgs'('#[]') then
 	    {State.cs newReg(?ArgReg)}
 	    VHd = vEquateConstant(_ unit ArgReg VInter)
-	 [] 'TupArgs'(Ids) then
-	    {State.cs newReg(?ArgReg)}
-	    VHd = vEquateRecord(_ '#' {Width Ids} ArgReg
-				{Record.foldR Ids
-				 fun {$ Id In} value({GetReg Id State})|In end
-				 nil} VInter)
 	 [] 'ProdArgs'(LabelIdVec) then
 	    {State.cs newReg(?ArgReg)}
 	    VHd = vEquateRecord(_ '#'
