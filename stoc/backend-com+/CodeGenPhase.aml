@@ -97,16 +97,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun emitRecordArity labelIdList =
 	    (emit (LdcI4 (List.length labelIdList));
 	     emit (Newarr System.ObjectTy);
-	     Misc.List_appi (fn (i, (label, _)) =>
-			     (emit Dup; emit (LdcI4 i);
-			      case Label.toLargeInt label of
-				  SOME i =>
-				      (emit (LdcI4 (LargeInt.toInt i));
+	     List.appi (fn (i, (label, _)) =>
+			(emit Dup; emit (LdcI4 i);
+			 case Label.toLargeInt label of
+			     SOME i =>
+				 (emit (LdcI4 (LargeInt.toInt i));
 						(*--** *)
-				       emit (Newobj (System.Int32, [Int32Ty])))
-				| NONE =>
-				      emit (Ldstr (Label.toString label));
-			      emit (StelemRef))) labelIdList;
+				  emit (Newobj (System.Int32, [Int32Ty])))
+			   | NONE =>
+				 emit (Ldstr (Label.toString label));
+			 emit (StelemRef))) labelIdList;
 	     emit (Call (false, StockWerk.RecordArity, "MakeRecordArity",
 			 [ArrayTy System.ObjectTy], StockWerk.RecordArityTy)))
 
@@ -206,9 +206,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Castclass StockWerk.Tuple);
 	     emit (Ldfld (StockWerk.Tuple, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emit LdelemRef;
-			      declareLocal id)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emit LdelemRef;
+			 declareLocal id)) ids;
 	     emit Pop)
 	  | genTest (RecTest labelIdList, elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Record);
@@ -216,9 +216,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Castclass StockWerk.Record);
 	     emit (Ldfld (StockWerk.Record, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, (_, id)) =>
-			     (emit Dup; emit (LdcI4 i); emit LdelemRef;
-			      declareLocal id)) labelIdList;
+	     List.appi (fn (i, (_, id)) =>
+			(emit Dup; emit (LdcI4 i); emit LdelemRef;
+			 declareLocal id)) labelIdList;
 	     emit Pop)
 	  | genTest (LabTest (label, id), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Record);
@@ -245,9 +245,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
 		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
 		emit (Label thenLabel);
-		Misc.List_appi (fn (i, id) =>
-				(emit Dup; emit (LdcI4 i); emit LdelemRef;
-				 declareLocal id)) ids;
+		List.appi (fn (i, id) =>
+			   (emit Dup; emit (LdcI4 i); emit LdelemRef;
+			    declareLocal id)) ids;
 		emit Pop
 	    end
 
@@ -424,16 +424,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (TupExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Tuple, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) ids;
 	     emit Pop)
 	  | genExp (TupExp (_, ids), BOTH) =
 	    (emit (LdcI4 (List.length ids));
 	     emit (Newarr StockWerk.StockWertTy);
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) ids;
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
 	  | genExp (RecExp (_, labelIdList), PREPARE) =
 	    (emitRecordArity labelIdList;
@@ -444,17 +444,17 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (RecExp (_, labelIdList), FILL) =
 	    (emit (Ldfld (StockWerk.Record, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, (_, id)) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) labelIdList;
+	     List.appi (fn (i, (_, id)) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) labelIdList;
 	     emit Pop)
 	  | genExp (RecExp (_, labelIdList), BOTH) =
 	    (emitRecordArity labelIdList;
 	     emit (LdcI4 (List.length labelIdList));
 	     emit (Newarr StockWerk.StockWertTy);
-	     Misc.List_appi (fn (i, (_, id)) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) labelIdList;
+	     List.appi (fn (i, (_, id)) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) labelIdList;
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
 	  | genExp (SelExp (_, label), BOTH) =
@@ -473,9 +473,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (VecExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Vector, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) ids;
 	     emit Pop)
 	  | genExp (FunExp (info, stamp, _, args, body), PREPARE) =
 	    (emitRegion ("FunExp", #region info);

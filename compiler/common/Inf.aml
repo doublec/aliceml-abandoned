@@ -497,7 +497,7 @@ structure InfPrivate =
 		    extendSig((FIX',l), item)
 		end
 	in
-	    Misc.List_appr instanceItem items ;
+	    List.appr instanceItem items ;
 	    s
 	end
 
@@ -654,7 +654,7 @@ structure InfPrivate =
 		    extendSig((FIX',l), item)
 		end
 	in
-	    Misc.List_appr singletonItem items ;
+	    List.appr singletonItem items ;
 	    s
 	end
 
@@ -710,7 +710,7 @@ structure InfPrivate =
 	      | cloneItem'(item' as FIX(x,q)) =
 		    extendSig((FIX', idLab x), ref item')
 	in
-	    Misc.List_appr cloneItem items ;
+	    List.appr cloneItem items ;
 	    s
 	end
 
@@ -1175,8 +1175,8 @@ structure InfPrivate =
 		      * We would loop during realisation if we inserted
 		      * identity realisations. *)
 		     ( if pair1(not(Path.equals(itemPath item1,itemPath item2)),
-				!item1, !item2) then () else
-			  Misc.General_swap(item1, item2)
+				!item1, !item2) then ()
+		       else item1 :=: item2
 		     ; pair(m1, items, (item1,item2)::pairs, left)
 		     )
 

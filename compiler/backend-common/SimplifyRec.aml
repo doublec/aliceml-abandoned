@@ -364,8 +364,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		val typ = #typ info
 		val labelTypList =
 		    if Type.isTuple typ then
-			Misc.List_mapi (fn (i, typ) =>
-					(Label.fromInt (i + 1), typ))
+			List.mapi (fn (i, typ) => (Label.fromInt (i + 1), typ))
 			(Type.asTuple typ)
 		    else parseRow (Type.asProd typ)
 		fun adjoin (labelTyp as (label, _), patFields as

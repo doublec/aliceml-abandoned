@@ -643,7 +643,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			      freshId (exp_info (Source.nowhere, typ))) typs
 	    in
 		(O.TupArgs ids,
-		 Misc.List_foldri
+		 List.foldri
 		 (fn (i, id, mapping) =>
 		  (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		 mapping ids)
@@ -701,7 +701,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    List.map (fn typ =>
 			      freshId (exp_info (Source.nowhere, typ))) typs
 		val mapping' =
-		    Misc.List_foldli
+		    List.foldli
 		    (fn (i, id, mapping) =>
 		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		    mapping ids
@@ -735,7 +735,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    List.map (fn typ =>
 			      freshId (exp_info (Source.nowhere, typ))) typs
 		val mapping' =
-		    Misc.List_foldli
+		    List.foldli
 		    (fn (i, id, mapping) =>
 		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		    mapping ids

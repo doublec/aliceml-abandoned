@@ -33,7 +33,6 @@
  *)
 
 
-    open Misc
     open Tokens
 
     structure E = ParsingError
@@ -144,7 +143,7 @@
 		case String.sub(s,k)
 		  of #"\"" => WideString.implode(List.rev cs)
 		   | #"\\" => escape(k+1,cs)
-		   |   c   => convert(k+1, Char_toWide(c)::cs)
+		   |   c   => convert(k+1, Char.toWide(c)::cs)
 
 	    and escape(k,cs) =
 		case String.sub(s,k)

@@ -2,10 +2,9 @@ Group is
 
     (* Utilities *)
 
+    ExtendedBase.sml
+
     Assert.sml
-    Wide.sml
-    MISC.sig
-    Misc.sml
     STAMP.sig
     MakeStamp.sml
     GLOBAL_STAMP.sig

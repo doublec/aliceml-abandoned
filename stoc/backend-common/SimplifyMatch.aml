@@ -90,8 +90,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val (labelTypList, hasDots) =
 			if Type.isProd typ then parseRow (Type.asProd typ)
 			else
-			    (Misc.List_mapi (fn (i, typ) =>
-					     (Label.fromInt (i + 1), typ))
+			    (List.mapi (fn (i, typ) =>
+					(Label.fromInt (i + 1), typ))
 			     (Type.asTuple typ), false)
 		    val (labelTypList', arity) = LabelSort.sort labelTypList
 		in
@@ -100,8 +100,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	end
 
 	fun makeAppArgs (TupPat (_, pats), true, pos) =
-	    (Misc.List_mapi (fn (i, pat) =>
-			     (LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
+	    (List.mapi (fn (i, pat) =>
+			(LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
 	     O.TupArgs (List.map typPat pats))
 	  | makeAppArgs (pat as ProdPat (info, patFields), true, pos) =
 	    (case getRow (#typ info) of
@@ -157,7 +157,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
 			 Test (pos, RefAppTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
-	    Misc.List_foldli
+	    List.foldli
 	    (fn (i, pat, (rest, mapping)) =>
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
@@ -175,7 +175,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	       | (labelTypList, LabelSort.Rec, false) =>
 		     Test (pos, RecTest labelTypList)::rest, mapping) patFields
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
-	    Misc.List_foldli
+	    List.foldli
 	    (fn (i, pat, (rest, mapping)) =>
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
@@ -599,8 +599,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				  freshId (exp_info (Source.nowhere, typ)))
 			typs
 		    val labelIdList =
-			Misc.List_mapi (fn (i, id) =>
-					(Label.fromInt (i + 1), id)) ids
+			List.mapi (fn (i, id) =>
+				   (Label.fromInt (i + 1), id)) ids
 		    val mapping =
 			List.foldr (fn ((label, id), mapping) =>
 				    ([LABEL label], id)::mapping)

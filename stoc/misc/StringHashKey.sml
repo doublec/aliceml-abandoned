@@ -1,12 +1,11 @@
 structure StringHashKey : HASH_KEY =
   struct
-
-    type t = string
-
     open Word
     infix << >> andb xorb
 
-    val equals = op=
+    type t = string
+
+    val equals = op =
 
     fun hash s =	(* hashpjw [Aho/Sethi/Ullman "Compilers"] *)
 	let
@@ -24,5 +23,4 @@ structure StringHashKey : HASH_KEY =
 	in
 	    toInt(iter(0,0w0))
 	end
-    
   end
