@@ -1,9 +1,11 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -20,7 +22,7 @@
 #include "generic/Interpreter.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
-#include "alice/Data.hh"
+#include "generic/UniqueString.hh"
 
 class LazySelInterpreter: public Interpreter {
 public:
@@ -43,28 +45,22 @@ public:
 
 class LazySelClosure: public Closure {
 public:
-  enum { RECORD_POS, LABELS_POS, BYNEEDS_POS, SIZE };
+  enum { RECORD_POS, LABEL_POS, SIZE };
 
-  static LazySelClosure *New(word record, Vector *labels) {
+  static LazySelClosure *New(word record, UniqueString *label) {
     ConcreteCode *concreteCode =
       ConcreteCode::New(LazySelInterpreter::self, 0);
     Closure *closure = Closure::New(concreteCode->ToWord(), SIZE);
     closure->Init(RECORD_POS, record);
-    closure->Init(LABELS_POS, labels->ToWord());
+    closure->Init(LABEL_POS, label->ToWord());
     return static_cast<LazySelClosure *>(closure);
-  }
-  void InitByneeds(Vector *byneeds) {
-    Init(BYNEEDS_POS, byneeds->ToWord());
   }
 
   word GetRecord() {
     return Sub(RECORD_POS);
   }
-  Vector *GetLabels() {
-    return Vector::FromWordDirect(Sub(LABELS_POS));
-  }
-  Vector *GetByneeds() {
-    return Vector::FromWordDirect(Sub(BYNEEDS_POS));
+  UniqueString *GetLabel() {
+    return UniqueString::FromWordDirect(Sub(LABEL_POS));
   }
 };
 
