@@ -1,0 +1,42 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature WINDOW_HELPER = 
+sig
+
+datatype MenuLabel = SEP | LABEL of string
+
+datatype Handler = Handler of string * (Gtk.arg list -> unit)
+
+datatype MenuConstructObj = MenuObj of {title: string, 
+					items: (MenuLabel * Handler list) list}
+
+datatype RadioButtonObj = RBObj of string * Handler list
+
+val createMenu:  MenuConstructObj list -> Gtk.object
+val createMenuObj:  Gtk.object * MenuConstructObj -> unit
+val createMenuEntry:  Gtk.object * (MenuLabel * Handler list) -> unit 
+val createPopupMenu : (MenuLabel * Handler list) list -> Gtk.object
+val createCombo : string list -> Gtk.object 
+
+val createNotebookPages :  Gtk.object -> string * Gtk.object -> unit
+val createNotebook : (string * Gtk.object) list -> Gtk.object
+
+val createRadioItem : RadioButtonObj * Gtk.object -> Gtk.object
+val createRadioButtons : RadioButtonObj list -> Gtk.object
+
+end

@@ -1,0 +1,141 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import signature WINDOW_HELPER from "WINDOW_HELPER-sig"
+
+
+structure WindowHelper :> WINDOW_HELPER =
+struct
+
+(* SEP represents separation lines on the menu window *)
+datatype MenuLabel = SEP | LABEL of string
+
+(* Handler carries signal and appropriate handler function *)
+datatype Handler = Handler of string * (Gtk.arg list -> unit)
+
+(* represents one entire submenu *)
+datatype MenuConstructObj = MenuObj of {title: string, items: (MenuLabel * Handler list) list}
+
+(* Represents one radio button and associated handlers *)
+datatype RadioButtonObj = RBObj of string * Handler list
+
+val uglyNULL = UnsafeValue.cast () : Gtk.object
+
+(* createMenu - creates menubar from a list of submenus *)
+fun createMenu l = let
+		       val bar = Gtk.menuBarNew()
+		       val create = fn i => createMenuObj(bar,i)
+		   in 
+		       (List.app create l ; bar)
+		   end
+
+(* createMenuObj - creates one submenu *)	       
+and createMenuObj (bar,MenuObj(r)) = 
+    let
+	val menu_item = Gtk.menuItemNewWithLabel( #title(r))
+	val _         = Gtk.menuBarAppend(bar,menu_item)
+	val menu = Gtk.menuNew()
+	val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
+	val create = fn i => createMenuEntry(menu,i)
+    in
+	List.app create (#items(r))
+    end
+
+(* createMenuEntry - creates one submenu entry and connects handlers *)
+and createMenuEntry (menu,(label,handlerlist)) = 
+    let
+	val item = case label of
+	    SEP => Gtk.menuItemNew()
+	  | LABEL(label) => Gtk.menuItemNewWithLabel(label)
+	val _ = Gtk.menuAppend(menu,item)
+	val connect = fn Handler(str,handler) 
+	    => (Gtk.signalConnect (item,str, handler);())
+    in
+	List.app connect handlerlist
+    end
+
+fun createPopupMenu l =
+    let
+	val menu = Gtk.menuNew()
+	val create = fn i => createMenuEntry(menu,i)
+	val _ = List.app create l
+	val _ = Gtk.menuPopup(menu,uglyNULL,uglyNULL,uglyNULL,uglyNULL,3,0)
+	val _ = Gtk.widgetShowAll (menu)
+    in
+	menu
+    end
+	       
+fun createCombo strlist = 
+    let
+	val combo = Gtk.comboNew()
+	val _ = Gtk.comboSetPopdownStrings(combo,
+					   UnsafeValue.cast(strlist) )
+    in 
+	combo
+    end
+
+
+(* createNotebookPages - takes notebook and string * Gtk object pair and inserts page in Notebook *)		
+fun createNotebookPages n (title,page) = 
+    let
+	val t = Gtk.labelNew title
+	val _ = Gtk.notebookAppendPage(n, page, t)
+    in
+	()
+    end
+
+(* createNotebook - takes string * Gtk.object list and creates notebook with strings as labels *)
+fun createNotebook l = 
+    let 
+	val n =  Gtk.notebookNew ()
+	val _ =  Gtk.notebookSetShowTabs(n, 1 (* showlabel *))
+        val _ = Gtk.notebookSetTabPos(n,Gtk.POS_TOP)
+    in
+	(List.app (createNotebookPages n) l;n)
+    end
+
+(* creates one button item and connects with handlers, needs predecessor *)
+fun createRadioItem (RBObj(stri,handlerlist),pred) = 
+    let
+	val group = if pred =  
+	            uglyNULL then  uglyNULL
+		    else Gtk.radioButtonGroup(pred)
+	val button = Gtk.radioButtonNewWithLabel(group, stri)
+	val connect = fn Handler(str,handler) 
+	    => (Gtk.signalConnect (button,str, handler);())
+    in
+	(List.app connect handlerlist; button)
+    end
+
+(* creates Radio Buttons from list of RBObj's *)
+fun createRadioButtons li = 
+    let
+	val box =  Gtk.vboxNew(0,4)
+	val create = fn (x,e) => let
+				     val button = createRadioItem(x,e)
+				     val _ =  Gtk.boxPackStart(box,button,0,1,0)
+				 in
+				     button
+				 end
+    in
+	(List.foldl create uglyNULL li; box)
+    end
+
+
+end
+
+ 
