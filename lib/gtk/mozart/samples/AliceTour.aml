@@ -12,19 +12,20 @@
  *)
 
 import structure Inspector  from "x-alice:/lib/tools/Inspector"
-import structure GtkCore    from "x-alice:/lib/gtk/GtkCore"
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
 import structure GtkBuilder from "GtkBuilder"
 
 local
-    open GtkCore
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
+
     open GtkBuilder
 
     fun newServer () =
 	let
 	    val tail   = Promise.promise ()
-	    val stream = Cell.cell tail
+	    val stream = Ref.ref tail
 
 	    fun process s = (case s of
 				 nil   => ()
@@ -32,12 +33,12 @@ local
 	    fun send p =
 		let
 		    val newtail = Promise.promise ()
-		    val tail    = Cell.exchange(stream, newtail)
+		    val tail    = Ref.exchange(stream, newtail)
 		in
 		    Promise.fulfill(tail, p::(Promise.future newtail))
 		end
 	in
-	    (Thread.spawn (fn () => process(Promise.future tail));
+	    (spawn (process(Promise.future tail));
 	     send)
 	end
 
@@ -79,11 +80,13 @@ local
 
     fun collectSeps(ts, nil)         = (String.implode (rev ts), nil)
       | collectSeps(ts, cs as c::cr) =
-	if isSep c then collectSeps(c::ts, cr) else (String.implode (rev ts), cs)
+	if isSep c then collectSeps(c::ts, cr)
+	else (String.implode (rev ts), cs)
 
     fun collectTokens(ts, nil)         = (String.implode (rev ts), nil)
       | collectTokens(ts, cs as c::cr) =
-	if isToken c then collectTokens(c::ts, cr) else (String.implode (rev ts), cs)
+	if isToken c then collectTokens(c::ts, cr)
+	else (String.implode (rev ts), cs)
 
     fun lineToTokens(nil)         = nil
       | lineToTokens(cs as c::cr) =
@@ -103,11 +106,12 @@ local
 
     fun insertLines(pars, nil)      = ()
       | insertLines(pars, line::lr) =
-	(insertTokens(pars, lineToTokens (String.explode line)); insertLines(pars, lr))
+	(insertTokens(pars, lineToTokens (String.explode line));
+	 insertLines(pars, lr))
 
-    val textcolor = ref (Gdk.allocateGdkColor(0xf0f0, 0x2020, 0xa0a0))
-    val curwin    = ref NONE : object option ref
-    val curtext   = ref NONE : object option ref
+    val textcolor = ref (Gdk.allocColor(0xf0f0, 0x2020, 0xa0a0))
+    val curwin    = ref NONE : Gtk.object option ref
+    val curtext   = ref NONE : Gtk.object option ref
     val curfile   = ref ""
 
     val font = Gdk.fontLoad "-adobe-helvetica-medium-r-*--12-*"
@@ -116,7 +120,9 @@ local
 	let
 	    val xdim    = 550.0
 	    val ydim    = 350.0
-	    val lines   = if file = "" then nil else fileToString(TextIO.openIn file, nil)
+	    val lines   = if file = "" then nil
+			  else fileToString(TextIO.openIn file, nil)
+
 	    val text    = MakeWidget (Text {xdim=xdim, ydim=ydim, text=nil})
 	    val xa      = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
 	    val ya      = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
@@ -125,17 +131,17 @@ local
 			   TableSimple {x=1, y=0, item=Window vs}]
 
 	    val map   = Gdk.colormapGetSystem ()
-	    val black = Gdk.allocateGdkColor(0, 0, 0)
-	    val white = Gdk.allocateGdkColor(65535, 65535, 65535)
+	    val black = Gdk.allocColor(0, 0, 0)
+	    val white = Gdk.allocColor(65535, 65535, 65535)
 	    val kcol  = !textcolor
 	in
 	    (Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
 	     Gtk.textSetEditable(text, true);
 	     curtext := SOME text;
 	     Gtk.textSetAdjustments(text, xa, ya);
-	     Gdk.colormapAllocColor(map, black, false, true);
-	     Gdk.colormapAllocColor(map, white, false, true);
-	     Gdk.colormapAllocColor(map, kcol, false, true);
+	     Gdk.colormapAllocColor(map, black, 0, 1);
+	     Gdk.colormapAllocColor(map, white, 0, 1);
+	     Gdk.colormapAllocColor(map, kcol, 0, 1);
 	     insertLines((text, kcol, black, white, font), lines);
 	     Table {rows=1, columns=2, homogeneous=false, entries=entries})
 	end
@@ -159,24 +165,24 @@ local
 	val ydim = 150.0
 
 	val map   = Gdk.colormapGetSystem ()
-	val white = Gdk.allocateGdkColor(65535, 65535, 65535)
-	val black = Gdk.allocateGdkColor(0, 0, 0)
+	val white = Gdk.allocColor(65535, 65535, 65535)
+	val black = Gdk.allocColor(0, 0, 0)
 
 	val text  = MakeWidget (Text {xdim=xdim, ydim=ydim, text=nil})
     in
 	fun resultWindow () =
 	    let
-		val xa      = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
-		val ya      = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
-		val vs      = Gtk.vscrollbarNew ya
+		val xa = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
+		val ya = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
+		val vs = Gtk.vscrollbarNew ya
 		val entries = [TableSimple {x=0, y=0, item=Window text},
 			       TableSimple {x=1, y=0, item=Window vs}]
 	    in
 		(Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
 		 Gtk.textSetEditable(text, false);
 		 Gtk.textSetAdjustments(text, xa, ya);
-		 Gdk.colormapAllocColor(map, black, false, true);
-		 Gdk.colormapAllocColor(map, white, false, true);
+		 Gdk.colormapAllocColor(map, black, 0, 1);
+		 Gdk.colormapAllocColor(map, white, 0, 1);
 		 Table {rows=1, columns=2, homogeneous=false, entries=entries})
 	    end
 	
@@ -194,7 +200,8 @@ local
 	    let
 		val nline = (line ^ "\n")
 	    in
-		(Gtk.textInsert(text, font, black, white, nline, String.size nline);
+		(Gtk.textInsert(text, font, black,
+				white, nline, String.size nline);
 		 insertLines lr)
 	    end
 
