@@ -11,11 +11,11 @@
  *   $Revision$
  *)
 
-functor MakeMain(structure Composer: COMPOSER'
-		     where type Sig.t = Signature.t
-		 structure Compiler: COMPILER
-		     where Target.Sig = Signature
-		 val executableHeader: string): MAIN =
+functor MakeBatchCompiler(structure Composer: COMPOSER'
+			      where type Sig.t = Signature.t
+			  structure Compiler: COMPILER
+			      where Target.Sig = Signature
+			  val executableHeader: string): MAIN =
     struct
 	structure Composer = Composer
 	structure Switches = Compiler.Switches
@@ -79,7 +79,7 @@ functor MakeMain(structure Composer: COMPOSER'
 			    Inf.strengthen(Path.invent(), inf);
 			    Inf.asSig inf
 			end
-		      | _ => raise Crash.Crash "MakeMain.compileSign"
+		      | _ => raise Crash.Crash "MakeBatchCompiler.compileSign"
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -131,7 +131,7 @@ functor MakeMain(structure Composer: COMPOSER'
 *)
 		    Url.toString (Url.setScheme (Url.makeRelativePath url,
 						 NONE))
-	      | _ => raise Crash.Crash "MakeMain.parseUrl"
+	      | _ => raise Crash.Crash "MakeBatchCompiler.parseUrl"
 
 	fun existsFile filename =
 	    (TextIO.closeIn (TextIO.openIn filename); true)

@@ -11,6 +11,7 @@
  *)
 
 structure SMLToMozartMain =
-    MakeMain(structure Composer = Composer
-	     structure Compiler = SMLToMozartCompiler
-	     val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n")
+    MakeBatchCompiler(structure Composer = Composer
+		      structure Compiler = SMLToMozartCompiler
+		      val executableHeader =
+			  "#!/bin/sh\nexec stow $0 \"$@\"\n")

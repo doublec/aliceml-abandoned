@@ -11,6 +11,6 @@
  *)
 
 structure SMLToComPlusMain =
-    MakeMain(structure Composer = Composer
-	     structure Compiler = SMLToComPlusCompiler
-	     val executableHeader = "")
+    MakeBatchCompiler(structure Composer = Composer
+		      structure Compiler = SMLToComPlusCompiler
+		      val executableHeader = "")

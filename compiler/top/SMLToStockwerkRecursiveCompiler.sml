@@ -11,6 +11,7 @@
  *)
 
 structure SMLToStockwerkMain =
-    MakeMain(structure Composer = Composer
-	     structure Compiler = SMLToStockwerkCompiler
-	     val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n")
+    MakeBatchCompiler(structure Composer = Composer
+		      structure Compiler = SMLToStockwerkCompiler
+		      val executableHeader =
+			  "#!/bin/sh\nexec stow $0 \"$@\"\n")

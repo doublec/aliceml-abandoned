@@ -90,7 +90,7 @@ BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml
 BACKENDMOZARTFILES = $(BACKENDMOZARTSOURCES:%=backend-mozart/%)
 
 TOPSOURCES = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
-	MAIN.sig MakeMain.sml Main.sml SMLToMozartCompiler.sml
+	MAIN.sig MakeBatchCompiler.sml Main.sml SMLToMozartCompiler.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 ALLFILES = \

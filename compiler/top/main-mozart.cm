@@ -1,6 +1,6 @@
 Group is
 
-    make-main.cm
+    make-batch-compiler.cm
 
     ../backend-mozart/sources.cm
     SMLToMozartCompiler.sml
