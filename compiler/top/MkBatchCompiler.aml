@@ -10,37 +10,13 @@
  *   $Revision$
  *)
 
-import
-    structure TextIO
-from "../../lib/system/TextIO"
-
-import
-    structure OS
-from "../../lib/system/OS"
-
-import
-    structure Config
-from "../../lib/system/Config"
-
-import
-    structure UnsafePickle
-from "../../lib/system/UnsafePickle"
-
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure MkOptionParser
-from "MkOptionParser"
-
-import
-    signature BATCH_COMPILER
-from "BATCH_COMPILER-sig"
-
-import
-    signature RECURSIVE_COMPILER
-from "RECURSIVE_COMPILER-sig"
+import structure TextIO             from "../../lib/system/TextIO"
+import structure OS                 from "../../lib/system/OS"
+import structure Config             from "../../lib/system/Config"
+import structure Url                from "../../lib/utility/Url"
+import structure MkOptionParser     from "MkOptionParser"
+import signature BATCH_COMPILER     from "BATCH_COMPILER-sig"
+import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
 functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 			val executableHeader: string): BATCH_COMPILER =
@@ -87,14 +63,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\talicec --replacesign <input url> <signature file> \
 	      \<output file>\n" ^ OptionParser.helpText)
 
-	fun main' ["--replacesign", infile, signfile, outfile] =
-	    (RecursiveCompiler.Switches.Language.rttLevel :=
-	     RecursiveCompiler.Switches.Language.NO_RTT;
-	     UnsafePickle.replaceSign (infile,
-				       RecursiveCompiler.compileSign signfile,
-				       outfile);
-	     OS.Process.success)
-	  | main' ["--dryrun"] =
+	fun main' ["--dryrun"] =
 	    let
 		val s = TextIO.inputAll TextIO.stdIn
 	    in
