@@ -13,6 +13,7 @@
 import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FS        from "x-alice:/lib/gecode/FS"
 import structure Print     from "x-alice:/lib/system/Print"
+import structure Explorer     from "x-alice:/tools/Explorer"
 
 	(**
 	* Asserts v holds for all solutions, performs f if failed node met.
@@ -39,19 +40,18 @@ import structure Print     from "x-alice:/lib/system/Print"
 	    dfe ((Space.clone s),0)
 	end
 
-	fun testVerifySimple s v = testVerify s v (fn () => assert false)	
+	fun testVerifySimple s v = testVerify s v (fn () => (print "Space failed!";assert false))
 	fun testVerifyComplex s v = testVerify s v (fn () => ())	
 	
 	fun unionTest () =
 	let
 		val space = Space.new()
-		val root as #[a,b,c] = FS.setvarVec (space, 3)
+		val root as #[a,b] = FS.setvarVec (space, 2)
 		val top = FS.Value.make (space,#[(0,5)])
 	in
 		FS.subset (space, a, top);
 		FS.subset (space, b, top);
-		FS.subset (space, c, top);				
-		FS.union (space, a, b, c);
+		FS.convexHull (space, a, b);
 (*        FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN); *)
 		FS.randomBranch(space, root, 1);
 		(root, space)
@@ -82,6 +82,7 @@ import structure Print     from "x-alice:/lib/system/Print"
 	end
 
 	fun vUnion1 (root2 as #[a,b,c]) = (IntInf.orb(b,c) = a)
+	fun vUnion2 (a,b,c) = (IntInf.orb(b,c) = a)	
 	val vUnion = vBool vUnion1
 
 	fun vInter1 (root2 as #[a,b,c]) = (IntInf.andb(b,c) = a)
@@ -92,7 +93,7 @@ import structure Print     from "x-alice:/lib/system/Print"
 		
 	fun vSuperOfInt1 (root2 as #[a,b,c]) =
 		vSubSet1(#[IntInf.andb(b,c),a])
-	fun vSubOfUni1 max (root2 as #[a,b,c]) =
+	fun vSubOfUni1 (root2 as #[a,b,c]) =
 		vSubSet1(#[a,IntInf.orb(b,c)])
 	
 	fun vDiff1 (root2 as #[a,b,c]) = IntInf.andb (IntInf.xorb(c,b),b) = c
@@ -105,17 +106,49 @@ import structure Print     from "x-alice:/lib/system/Print"
 	
 	fun vConvex #[a] space = 
 	let
-		ad = FS.Reflect.lowerBound (space,a)
+		val ad = FS.Reflect.lowerBound (space,a)
 	in
-		Vector.length ad = 1
+		(Vector.length ad) = 1
 	end
 	
 	fun vConvexHull #[a,b] space =
-		(vConvex #[a] space) andthen
-		( (vBool SubSet1) #[b,a] space )
+		(vConvex #[a] space) andalso
+		( (vBool vSubSet1) #[b,a] space )
 	
+	fun b2II b = if b then IntInf.fromInt 1 else IntInf.fromInt 0
 	
+	val one = IntInf.fromInt 1
+	val zero = IntInf.fromInt 0
+	
+	fun countTernaryVerifier (max, (a,b,c), v, acc) =
+	let
+		val acc = (b2II (v(a,b,c))) + acc
+		val _ = print "Calculating "
+		val _ = Print.printVal (a,b,c)
+		val _ = print "\n"		
+	in
+		if (a < max) then countTernaryVerifier (max, (a+one,b,c), v, acc)
+		else if (b < max) then countTernaryVerifier (max, (a,b+one,c), v, acc)
+			else if (c < max) then countTernaryVerifier (max, (a,b,c+one), v, acc)			
+				else acc
+	end
+
+	fun countBinaryVerifier (max, (a,b), v, acc) =
+	let
+		val acc = (b2II (v(a,b))) + acc
+	in
+		if (a < max) then countBinaryVerifier (max, (a+one,b), v, acc)
+		else if (b < max) then countBinaryVerifier (max, (a,b+one), v, acc)
+			else acc
+	end
+
+
+	val _ = print "Number of solutions for union, max=1: "
+val _ = Print.printVal (countTernaryVerifier(one, (zero,zero,zero), vUnion2, zero))
 	val (root, space)= unionTest ()
-	val _ = testVerifySimple space (vUnion root)
+(*	val _ = Explorer.exploreOne unionTest	*)
+	
+	val _ = testVerifySimple space (vBool vNoSubSet1 root) 
+	val _ = testVerifySimple space (fn _ => true) 
 	val _ = print "done.\n";
 	val _ = OS.Process.exit OS.Process.success
