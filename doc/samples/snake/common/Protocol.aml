@@ -60,6 +60,9 @@ struct
 	(* how many clients can actively participate in the tournament *)
 	 
         goodieProb :    real, (* probabilty of a goodie *)
+        
+        gateTreshold :  int,
+        (* minimum length of a snake to enter a gate *)
 
 	levels :       int option
     }
@@ -70,11 +73,16 @@ struct
       | DOWN
       | LEFT
       | RIGHT
+    
+    datatype gate_state =
+        OPEN
+    |   CLOSED
 
     datatype field =
         EMPTY
       | WALL
-      | GATE of Color.color (* only snakes of this color can pass this gate *)
+      | GATE of Color.color * gate_state 
+        (* only snakes of this color can pass this gate *)
       | GOODY of int       (* number of elements the snake will increase by *)
       | SNAKE_HEAD of direction * Color.color
       | SNAKE_BODY of Color.color
@@ -152,9 +160,9 @@ struct
         (** [tick t] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left
 	    until level ends, NONE if time is not limited *)
-
-	playersDied :        (string * Color.color) list -> unit,
-	playersFinished :    (string * Color.color) list -> unit,
+        
+	playersDied :       (string * Color.color) list -> unit,
+	playersFinished :   (string * Color.color) list -> unit,
 
         levelFinished :     unit -> unit,
 	(** levelFinished is called when a level is finished *)
