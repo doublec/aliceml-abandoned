@@ -51,7 +51,7 @@ signature INTERMEDIATE =
 	| SeqExp    of info * exp list
 	| CaseExp   of info * exp * match list
 	| RaiseExp  of info * exp
-	| HandleExp of info * exp * id * exp
+	| HandleExp of info * exp * match list
 	| LetExp    of info * dec list * exp
 
     and 'a field = Field of info * lab * 'a

@@ -52,7 +52,7 @@ functor Intermediate(type info
 	| SeqExp    of info * exp list
 	| CaseExp   of info * exp * match list
 	| RaiseExp  of info * exp
-	| HandleExp of info * exp * id * exp
+	| HandleExp of info * exp * match list
 	| LetExp    of info * dec list * exp
 
     and 'a field = Field of info * lab * 'a
@@ -144,7 +144,7 @@ functor Intermediate(type info
       | info_exp(SeqExp(i,_))		= i
       | info_exp(CaseExp(i,_,_))	= i
       | info_exp(RaiseExp(i,_))		= i
-      | info_exp(HandleExp(i,_,_,_))	= i
+      | info_exp(HandleExp(i,_,_))	= i
       | info_exp(LetExp(i,_,_))		= i
 
     fun info_field(Field(i,_,_))	= i
