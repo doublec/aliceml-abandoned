@@ -117,10 +117,10 @@ $(INSTALLDIRS): %:
 	mkdir -p $@
 
 $(bindir)/%: %
-	$(INSTALL) -c -m 555 $< $@
+	$(INSTALL) -m 555 $< $@
 
 $(includedir)/seam/%: %
-	$(INSTALL) -c -m 444 $< $@
+	$(INSTALL) -m 444 $< $@
 
 %: %.in config.status
 	./config.status $@
