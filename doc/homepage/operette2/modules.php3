@@ -52,7 +52,7 @@
   <PRE>
 	fun sortIntList ns =
 	    let
-	        structure Tree = MakeIntBinTree(type t = int)
+	        structure Tree = MkBinTree(type t = int)
 	    in
 		Tree.toList(foldl Tree.insert Tree.empty ns)
 	    end
