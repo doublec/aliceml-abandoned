@@ -90,10 +90,12 @@ final public class ConVal implements DMLConVal {
     }
 
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	if (this.constructor == Constants.reference)
-	   _RAISE(runtimeError,new STRING ("cannot pickle referencev"));
-	else
+	if (this.constructor == Constants.reference) {
+	    _RAISE(runtimeError,new STRING ("cannot pickle reference"+this.toString()));
+	}
+	else {
 	    out.defaultWriteObject();
+	}
     }
 
     _getConstructor ;
