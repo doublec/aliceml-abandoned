@@ -44,7 +44,6 @@ infix  0  before
 
 __primitive op=  : ''a * ''a -> bool = "="
 __primitive op<> : ''a * ''a -> bool = "<>"
-__primitive op:= : 'a ref * 'a -> unit = ":="
 
 
 (* Overloaded Identifiers *)
@@ -85,7 +84,8 @@ structure General =
     datatype order = LESS | EQUAL | GREATER
 
     fun !(ref v) = v
-    val op:=     = op:=
+
+    __primitive op:= : 'a ref * 'a -> unit = ":="
 
     fun (f o g) a  = f(g a)
     fun a before b = a
@@ -176,7 +176,6 @@ structure List =
 	      | length(x::xs, n) = length(xs,n+1)
 	in length(xs,0) end
 
-    infixr 5 @
     fun   nil   @ ys = ys
       | (x::xs) @ ys = x :: xs @ ys
 
@@ -322,7 +321,6 @@ structure ListPair =
 
   end
 
-
 (* Char *)
 
 structure Char =
@@ -339,7 +337,6 @@ structure Char =
 	__primitive toCString :  char -> bool = "Char.toCString"
     end
 
-type char = Char.char
 val ord = Char.ord
 val chr = Char.chr
 
@@ -382,7 +379,6 @@ structure String =
 	      | _ => false
     end
 
-type string = String.string
 val str = String.str
 val size = String.size
 val concat = String.concat
@@ -442,7 +438,32 @@ structure StringCvt :> STRING_CVT =
 
 (* Int *)
 
-structure Int =
+signature INTEGER =
+    sig
+	type int
+
+	val + : int * int -> int
+	val >= : int * int -> bool
+	val < : int * int -> bool
+
+	val scan:
+	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
+	    (int * 'a) option
+
+	val compare: int * int -> order
+
+	val toString: int -> string
+
+	val fromString: string -> int option
+
+	val max: int * int -> int
+
+	val fromInt: int -> int
+	val fromLarge: int -> int
+	val toLarge: int -> int
+    end
+
+structure Int :> INTEGER =
     struct
 	type int = int
 
@@ -528,39 +549,7 @@ structure Int =
 	fun toLarge i = i
     end
 
-structure LargeInt = Int
-
-signature INTEGER =
-    sig
-	type int
-
-	val + : int * int -> int
-	val >= : int * int -> bool
-	val < : int * int -> bool
-
-	val scan:
-	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
-	    (int * 'a) option
-
-	val compare: int * int -> order
-
-	val toString: int -> string
-
-	val fromString: string -> int option
-
-	val max: int * int -> int
-
-	val fromInt: Int.int -> int
-	val fromLarge: LargeInt.int -> int
-	val toLarge: int -> LargeInt.int
-    end
-
-structure Int :> INTEGER = Int
 structure LargeInt :> INTEGER = Int
-
-type int = Int.int
-
-
 
 (* Word *)
 
@@ -654,9 +643,6 @@ structure Word =
 
 structure LargeWord = Word
 
-type word = Word.word
-
-
 (* Real *)
 
 structure Real =
@@ -665,7 +651,6 @@ structure Real =
 
 	val scan = 0   (*--** *)
 	val toString = 0   (*--** *)
-	val toString = 0   (*--** *)
 	val fromString = 0 (*--** *)
 	val compare = 0 (*--** *)
 	val trunc = 0 (*--** *)
@@ -673,7 +658,6 @@ structure Real =
     end
 
 structure LargeReal = Real
-
 
 (* Array *)
 
