@@ -401,11 +401,7 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 				 O.VarExp(typInfo(r,tMod), y)))
 	end
 
-    fun idsToRow'(     [],    r) = r
-      | idsToRow'((x,t)::ids, r) =
-	Type.extendRow(Label.fromName(O.name x), #[t], r)
-
-    fun idsToRow ids = idsToRow'(ids, Type.emptyRow())
+    fun idToRow((x,t), r) = Type.extendRow(Label.fromName(O.name x), #[t], r)
 
 
 
@@ -673,7 +669,7 @@ UNFINISHED: obsolete after bootstrapping:
 	(* [fn x => t] = let val {[x]} = Type.var <<kind x>>
 	 *               in Type.inLambda([x],[t]) end
 	 *)
-	trBindTyp lab_inLambda Type.asLambda (i,x,t)
+	trBindTyp lab_inLambda (i, x, t, Type.domKind(Type.kind(#typ i)))
 
       | trTyp'(I.AppTyp(i,t1,t2)) =
 	(* [t1 t2] = Type.inApply([t1],[t2]) *)
@@ -745,13 +741,13 @@ UNFINISHED: obsolete after bootstrapping:
 	(* [forall x => t] = let val {[x]} = Type.var <<kind x>>
 	 *                   in Type.inAll([x],[t]) end
 	 *)
-	trBindTyp lab_inAll Type.asAll (i,x,t)
+	trBindTyp lab_inAll (i,x,t, Type.kindVar(#1(Type.asAll(#typ i))))
 
       | trTyp'(I.ExTyp(i,x,t)) =
 	(* [exists x => t] = let val {[x]} = Type.var <<kind x>>
 	 *                   in Type.inExists([x],[t]) end
 	 *)
-	trBindTyp lab_inExist Type.asExist (i,x,t)
+	trBindTyp lab_inExist (i,x,t, Type.kindVar(#1(Type.asExist(#typ i))))
 
       | trTyp'(I.PackTyp(i,j)) =
 	(* [pack j] = Type.inPack[j] *)
@@ -821,12 +817,11 @@ UNFINISHED: obsolete after bootstrapping:
 	    rowOp(lab_extendRow, e')
 	end
 
-    and trBindTyp a asT (i,x,t) =
+    and trBindTyp a (i,x,t,k) =
 	let
 	    val r  = #region(I.infoId x)
-	    val k' = trKind r (Type.kindVar(#1(asT(#typ i))))
 	    val p' = O.VarPat(typInfo(#region(I.infoId x), typ_var), trTypid x)
-	    val d' = O.ValDec(nonInfo(#region i), p', varOp k')
+	    val d' = O.ValDec(nonInfo(#region i), p', varOp(trKind r k))
 	    val e' = typOp(a, O.TupExp(typInfo(#region i, typ_vartyp),
 				       [trVarTyp r x, trTyp' t]))
 	in
@@ -930,14 +925,14 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trComp(I.Comp(i,a_s,ds)) =
 	let
-	    val  ids'       = ids ds
+	    val  ids' = ids ds
 	    val (xsus',ds') = trAnns'(a_s, trDecs ds)
-	    val  fs'        = List.map idToField ids'
-	    val  t          = Type.inProd(idsToRow ids')
-	    val  i'         = typInfo(#region i,t)
-	    val  exp'       = O.LetExp(i', ds', O.ProdExp(i', fs'))
-	    val  s          = #sign i
-	    val  _          = Inf.stripSig s
+	    val  fs'  = List.map idToField ids'
+	    val  t    = Type.inProd(List.foldl idToRow (Type.emptyRow()) ids')
+	    val  i'   = typInfo(#region i,t)
+	    val  exp' = O.LetExp(i', ds', O.ProdExp(i', fs'))
+	    val  s    = #sign i
+	    val  _    = Inf.stripSig s
 	in
 	    ( xsus', (exp',s) )
 	end
