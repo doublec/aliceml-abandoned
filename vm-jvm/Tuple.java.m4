@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -23,13 +23,13 @@ public class Tuple implements DMLTuple {
 	vals=v;
     }
 
-    public DMLValue get0() { return vals[0]; }
-    public DMLValue get1() { return vals[1]; }
-    public DMLValue get2() { return vals[2]; }
-    public DMLValue get3() { return vals[3]; }
-    public DMLValue get4() { return vals[4]; }
+    final public DMLValue get0() { return vals[0]; }
+    final public DMLValue get1() { return vals[1]; }
+    final public DMLValue get2() { return vals[2]; }
+    final public DMLValue get3() { return vals[3]; }
+    final public DMLValue get4() { return vals[4]; }
 
-    public boolean equals(java.lang.Object val) {
+    final public boolean equals(java.lang.Object val) {
 	if (val instanceof DMLTuple) {
 	    if (val instanceof Record) {
 		return false;
@@ -52,7 +52,7 @@ public class Tuple implements DMLTuple {
 	}
     }
 
-    public java.lang.String toString() {
+    final public java.lang.String toString() {
 	java.lang.String s="(";
 	int i;
 	for (i=0; i<vals.length;i++) {
@@ -63,11 +63,11 @@ public class Tuple implements DMLTuple {
     }
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/
-    public DMLValue get(int i){
+    final public DMLValue get(int i){
 	return vals[i];
     }
 
-    public DMLValue get(java.lang.String i) {
+    final public DMLValue get(java.lang.String i) {
 	try {
 	    _RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
 	} catch (java.rmi.RemoteException r) {

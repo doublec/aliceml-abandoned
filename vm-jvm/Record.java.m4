@@ -1,28 +1,29 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
 /** This class represents DML records. Records have an RecordArity and some
  *  associated values.
  */
-final public class Record extends Tuple {
+final public class Record implements DMLValue {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
+    final public DMLValue vals[];
     final public RecordArity arity;
 
     public Record (java.lang.String[] ls, DMLValue[] vals) {
-	super(vals);
+	this.vals = vals;
 	RecordArity ra = new RecordArity(ls);
 	Object ar=arityHash.get(ra);
 	if (ar == null) {
@@ -48,7 +49,7 @@ final public class Record extends Tuple {
 		return true;
 	    }
 	} else {
- 	    return false;
+	    return false;
 	}
     }
 
@@ -61,6 +62,13 @@ final public class Record extends Tuple {
 	}
 	return s+"}";
     }
+
+    final public DMLValue get0() { return vals[0]; }
+    final public DMLValue get1() { return vals[1]; }
+    final public DMLValue get2() { return vals[2]; }
+    final public DMLValue get3() { return vals[3]; }
+    final public DMLValue get4() { return vals[4]; }
+
 
     final public DMLValue get(int i) {
 	int index = arity.getIndexOfLabel(java.lang.String.valueOf(i));
@@ -87,4 +95,14 @@ final public class Record extends Tuple {
 	    return null;
 	}
     }
+
+    /** gibt die Stelligkeit des Tuples oder Records an */
+    final public int getArity() {
+	return vals.length;
+    }
+
+    final public DMLValue[] getVals() {
+	return vals;
+    }
+    _apply_fails ;
 }
