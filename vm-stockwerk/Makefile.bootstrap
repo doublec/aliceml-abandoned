@@ -562,8 +562,6 @@ $(INSTALL1DIRS):
 $(STOCKWERKFILES:%=build1/install/%): build1/install/%: %
 	install -c -m 555 $< $@
 
-.PHONY: build1/install/CompilerMain.stc
-
 build1/install/compiler/CompilerMain.stc:
 	(cd build1 && tar cf - `find . -name '*.stc'`) | \
 	(cd build1/install && tar xvf -)
