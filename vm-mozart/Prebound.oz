@@ -62,6 +62,8 @@ define
       if X > 15 then {ToHex X div 16} else '' end#Hex.(X mod 16 + 1)
    end
 
+   ByNeedException = {NewUniqueName 'Transient.ByNeed'}
+
    BuiltinTable =
    builtinTable(
       '=': Value.'=='
@@ -298,7 +300,7 @@ define
 	 fun {$ T} {Thread.suspend T} unit end
       'Thread.yield':
 	 fun {$ T} {Thread.preempt T} unit end
-      'Transient.ByNeed': {NewUniqueName 'Transient.ByNeed'}
+      'Transient.ByNeed': ByNeedException
       'Transient.Fulfill': {NewUniqueName 'Transient.Fulfill'}
       'Transient.Future': {NewUniqueName 'Transient.Future'}
       'Transient.Promise': {NewUniqueName 'Transient.Promise'}
@@ -314,7 +316,7 @@ define
 		       try
 			  {P unit}
 		       catch E=error(E2 ...) then
-			  {ByNeedFail {Adjoin E 1 ByNeedException(E2)}}
+			  {ByNeedFail {AdjoinAt E 1 ByNeedException(E2)}}
 		       end
 		    end}
 	 end
