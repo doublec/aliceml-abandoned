@@ -12,6 +12,7 @@
 
 functor
 import
+   PrimitiveTable(table)
    Scheduler(object)
 export
    interpreter: Me
@@ -22,14 +23,36 @@ define
       end
    end
 
+   fun {Deref X}
+      case X of transient(TransientState) then
+	 case {Access TransientState} of ref(Y) then {Deref Y}
+	 else X
+	 end
+      else X
+      end
+   end
+
+   fun {IsCyclic X TransientState}
+      case {Deref X} of transient(TransientState2) then
+	 TransientState2 == TransientState
+      else false
+      end
+   end
+
    fun {ByneedInterpreterRun Args TaskStack}
       case TaskStack
       of byneedFrame(_ Transient=transient(TransientState))|Rest then
-	 case {Access TransientState} of future(Ts) then
-	    %--** cyclic?
-	    for T in Ts do {Scheduler.object enqueue(T)} end
-	    {Assign TransientState ref({Construct Args})}
-	    continue(arg(Transient) Rest)
+	 case {Access TransientState} of future(Ts) then X in
+	    X = {Construct Args}
+	    if {IsCyclic X TransientState} then
+	       {Assign TransientState
+		cancelled(PrimitiveTable.table.'Hole.Cyclic')}
+	       exception(nil PrimitiveTable.table.'Hole.Cyclic' Rest)
+	    else
+	       for T in Ts do {Scheduler.object enqueue(T)} end
+	       {Assign TransientState ref(X)}
+	       continue(arg(Transient) Rest)
+	    end
 	 end
       end
    end
