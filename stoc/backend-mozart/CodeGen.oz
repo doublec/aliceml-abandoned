@@ -60,7 +60,7 @@ define
       end
    end
 
-   fun {TranslateCoord I#J}
+   fun {TranslateCoord I#J#_#_}
       pos(bogus I J)   %--**
    end
 
@@ -82,9 +82,6 @@ define
 	  proc {$ VHd Id#Exp VTl}
 	     {TranslateExp Exp {GetReg Id State} VHd VTl State}
 	  end VHd VTl}
-      [] conDec(Coord Id _ _) then
-	 VHd = vCallBuiltin(_ 'Name.new' [{MakeReg Id State}]
-			    {TranslateCoord Coord} VTl)
       [] evalStm(_ Exp) then
 	 {TranslateExp Exp {State.cs newReg($)} VHd VTl State}
       [] handleStm(Coord Body1 Id Body2 Body3 _) then
@@ -209,6 +206,8 @@ define
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
       [] primExp(_ Builtinname) then
 	 VHd = vEquateConstant(_ Prebound.builtinTable.Builtinname Reg VTl)
+      [] newExp(Coord _) then
+	 VHd = vCallBuiltin(_ 'Name.new' [Reg] {TranslateCoord Coord} VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] conExp(_ Id false) then
@@ -256,7 +255,7 @@ define
 			      fun {$ _#Id} value({GetReg Id State}) end} VTl)
       [] selExp(_ Lab) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Lab end Reg VTl)
-      [] funExp(Coord PrintName oneArg(Id)#Body|ArgsBodyList) then
+      [] funExp(Coord _ _ oneArg(Id)#Body|ArgsBodyList) then
 	 Body2 PredId NLiveRegs ResReg FormalRegs VInstr GRegs Code
       in
 	 Body2 = {FoldL ArgsBodyList
@@ -266,7 +265,7 @@ define
 			    end
 		     [testStm(Coord Id Test Body In)]
 		  end Body}
-	 PredId = pid(PrintName 2 {TranslateCoord Coord} nil NLiveRegs)
+	 PredId = pid('' 2 {TranslateCoord Coord} nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ResReg)}
 	 FormalRegs = [{MakeReg Id State} ResReg]

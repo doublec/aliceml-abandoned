@@ -82,7 +82,6 @@ define
 	 recDec(Coord {Map IdExpList
 		       fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end}
 		IsToplevel)
-      [] conDec(_ _ _ _) then Stm
       [] evalStm(Coord Exp) then evalStm(Coord {ShareExp Exp ShareDict})
       [] handleStm(Coord Body1 Id Body2 Body3 Shared) then
 	 handleStm(Coord {ShareBody Body1 ShareDict} Id
@@ -105,8 +104,8 @@ define
    end
 
    fun {ShareExp Exp ShareDict}
-      case Exp of funExp(Coord String ArgsBodyList) then
-	 funExp(Coord String
+      case Exp of funExp(Coord Stamp Flags ArgsBodyList) then
+	 funExp(Coord Stamp Flags
 		{Map ArgsBodyList
 		 fun {$ Args#Body} Args#{ShareBody Body ShareDict} end})
       else Exp
