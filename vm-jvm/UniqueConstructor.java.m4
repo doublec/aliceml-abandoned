@@ -17,8 +17,10 @@ package de.uni_sb.ps.dml.runtime;
  */
 public class UniqueConstructor extends Constructor {
 
+    final public java.lang.String name;
+
     public UniqueConstructor(java.lang.String name) {
-	super(name);
+	this.name = name;
 	GName.gNames.put(name,this);
     }
 
@@ -33,5 +35,9 @@ public class UniqueConstructor extends Constructor {
     final private java.lang.Object readResolve()
 	throws java.io.ObjectStreamException {
 	return GName.gNames.get(name);
+    }
+
+    final public java.lang.String toString() {
+	return this.name;
     }
 }

@@ -14,23 +14,15 @@ package de.uni_sb.ps.dml.runtime;
 
 public class Name implements DMLValue {
 
-    final protected java.lang.String name;
     GName gName = null;
-
-    public Name(java.lang.String name) {
-	super();
-	this.name=name;
-	this.gName=null;
-    }
 
     public Name() {
 	super();
-	this.name = "unnamed";
 	this.gName=null;
     }
 
-    final public java.lang.String toString() {
-	return name+" : name";
+    public java.lang.String toString() {
+	return "unnamed name";
     }
 
     /** Falls der Name noch keinen GName hat, wird jetzt ein

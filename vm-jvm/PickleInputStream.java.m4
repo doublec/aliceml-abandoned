@@ -26,6 +26,7 @@ final public class PickleInputStream extends java.io.ObjectInputStream {
     }
 
     final protected Class resolveClass(java.io.ObjectStreamClass osc) throws java.io.IOException, ClassNotFoundException {
+	//System.out.println("resolving Class " + osc);
 	if (readBoolean()) {
 //   	    System.out.println("reading class from pickle");
 	    int length = readInt();

@@ -18,9 +18,15 @@ package de.uni_sb.ps.dml.runtime;
  */
 public class UniqueName extends Name {
 
+    final protected java.lang.String name;
+
     public UniqueName(java.lang.String name) {
-	super(name);
+	this.name = name;
 	GName.gNames.put(name,this);
+    }
+
+    public java.lang.String toString() {
+	return name+" : name";
     }
 
     /** Here we use the default mechanism to store the name, since the

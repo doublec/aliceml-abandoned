@@ -1,5 +1,5 @@
 /*
- * @(#)MarshalInputStream.java	1.19 98/07/15
+ * @(#)MarshalInputStream.java  1.19 98/07/15
  *
  * Copyright 1996-1998 by Sun Microsystems, Inc.,
  * 901 San Antonio Road, Palo Alto, California, 94303, U.S.A.
@@ -34,7 +34,7 @@ import sun.security.action.GetBooleanAction;
  * class from the location annotated by the sending MarshalOutputStream.
  * This location object must be a string representing a path of URLs.
  * <p>
- * A new MarshalInputStream should be created to deserialize remote objects or 
+ * A new MarshalInputStream should be created to deserialize remote objects or
  * graphs containing remote objects.  Objects are created from the stream
  * using the ObjectInputStream.readObject method.
  */
@@ -49,14 +49,14 @@ public class MarshalInputStream extends ObjectInputStream {
      */
     private final static boolean useCodebaseOnly =
 	((Boolean) java.security.AccessController.doPrivileged(
-            new GetBooleanAction("java.rmi.server.codebase"))).booleanValue();
+	    new GetBooleanAction("java.rmi.server.codebase"))).booleanValue();
 
     /**
      * Create a new MarshalInputStream object.
      */
     public MarshalInputStream(InputStream in)
 	throws IOException, StreamCorruptedException
-    {	      
+    {
 	super(in);
     }
 
@@ -74,7 +74,7 @@ public class MarshalInputStream extends ObjectInputStream {
 	 */
 	Object annotation = readLocation();
 
-	// System.out.println("Annotation: "+annotation);
+	//System.out.println("Annotation: "+annotation);
 	/*
 	 * Unless we were told to skip this step, first try resolving the
 	 * class using default ObjectInputStream mechanism (using first
@@ -84,12 +84,12 @@ public class MarshalInputStream extends ObjectInputStream {
 	 * stub protocol, because there would never be a non-null class
 	 * loader on the stack in that situation anyway.)
 	 */
-//  	if (!skipDefaultResolveClass) {
-//  	    try {
-//  		return super.resolveClass(classDesc);
-//  	    } catch (ClassNotFoundException e) {
-//  	    }
-//  	}
+	if (!skipDefaultResolveClass) {
+	    try {
+		return super.resolveClass(classDesc);
+	    } catch (ClassNotFoundException e) {
+	    }
+	}
 
 	String className = classDesc.getName();
 
@@ -104,7 +104,7 @@ public class MarshalInputStream extends ObjectInputStream {
 	    if (annotation != null && (annotation instanceof String))
 	    {
 		String location = (String) annotation;
-		System.out.println("Location: "+location+" ClassName: "+className);
+		//System.out.println("Location: "+location+" ClassName: "+className);
 		// hier machen wir eine tolle Analyse des annotation Strings
 		// und laden gegebenenfalls die Klasse selbst via unseren PickleClassLoader
 		// case location of !IP!className =>

@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -18,15 +18,61 @@ import java.rmi.server.*;
  */
 final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
-    static Class fcn = null;
+    final static Class fcn; // class of Function
+    final static Class ccn; // class of Constructor
+    final static Class ucn; // class of UniqueConstructor
+    final static Class ncn; // class of Name
+    final static Class uncn; // class of UniqueName
     static {
+	Class cl = null;
 	try{
-	    fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Function");
 	    // System.err.println("Class zum Vergleichen: "+fcn);
 	} catch (ClassNotFoundException e) {
 	    System.err.println("Function must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
 	    e.printStackTrace();
 	}
+	fcn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Constructor");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Constructor must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	ccn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.UniqueConstructor");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Constructor must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	ucn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Name");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Name must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	ncn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.UniqueName");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("UniqueName must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	uncn = cl;
     }
 
     boolean waitforbind = false;
@@ -49,29 +95,39 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     final protected void annotateClass(Class cls) throws java.io.IOException {
 	objectcounter++;
 	// System.out.println("POS: annotateClass "+cls);
-	if (fcn.isAssignableFrom(cls.getSuperclass())) {
+	Class superClass = cls.getSuperclass();
+	if (fcn.isAssignableFrom(superClass) // cls instanceof fUNcTIOn
+	    || (ccn.isAssignableFrom(superClass) &&
+		!ucn.isAssignableFrom(cls) &&
+		!ucn.equals(cls)) // cls is a constructor group
+	    || (ncn.isAssignableFrom(superClass) &&
+		!uncn.isAssignableFrom(cls)) // cls is a name group
+	    ) {
 	    // System.out.println("POS: annotateClass "+cls+" must be annotated");
 	    byte[] bytes = null;
 	    java.lang.String name = cls.getName();
 	    ClassLoader cl = cls.getClassLoader();
-	    if (cl==PickleClassLoader.loader) {
+	    if (cl == PickleClassLoader.loader) {
 		// System.out.println("POS: annotateClass "+cls+" came from a pickle");
 		bytes = ((PickleClassLoader) cl).getBytes(name);
-	    } else if (cl==ClassLoader.getSystemClassLoader()) {
-		// System.out.println("POS: annotateClass "+cls+" came from somewhere else");
+	    } else if (cl == null || cl==ClassLoader.getSystemClassLoader()) {
+		//System.out.println("POS: annotateClass "+cls+" came from somewhere else");
 		java.io.InputStream in = null;
 		java.io.DataInputStream din = null;
-//  		java.io.OutputStream out = null;
-//  		java.io.DataOutputStream refout = null;
+		if (cl == null) {
+		    cl = ClassLoader.getSystemClassLoader();
+		}
+//              java.io.OutputStream out = null;
+//              java.io.DataOutputStream refout = null;
 		try {
 		    in = cl.getResourceAsStream(name+".class");
 		    din = new java.io.DataInputStream(in);
 		    bytes = new byte[din.available()];
 		    din.readFully(bytes); // NICHT: read
-//  		    out = new java.io.FileOutputStream("ref"+name);
-//  		    refout = new java.io.DataOutputStream(out);
-//  		    refout.write(bytes,0,bytes.length);
-//  		    refout.close();
+//                  out = new java.io.FileOutputStream("ref"+name);
+//                  refout = new java.io.DataOutputStream(out);
+//                  refout.write(bytes,0,bytes.length);
+//                  refout.close();
 		}
 		catch (Exception e) {
 		    System.err.println("This should never happen.");
@@ -88,22 +144,26 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		    }
 		}
 	    } else if (cl instanceof java.net.URLClassLoader) { // Klasse wurde über Netz geladen
-  		// System.out.println("POS: annotateClass "+cls+" has been loaded via Network");
-  		java.net.URL[] urls = ((java.net.URLClassLoader) cl).getURLs();
-  		for(int i=0; i<urls.length; i++) {
-  		    try {
-  			// System.out.println("Trying: "+urls[i]);
-  			java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
-  			bytes=new byte[in.available()];
-  			in.readFully(bytes);
-  			break;  // bei Erfolg for verlassen
-  		    } catch (java.io.IOException io) {
-  			System.err.println(urls[i]+" IOException");
-  			io.printStackTrace();
-  		    }
-  		}
-  	    }
+		// System.out.println("POS: annotateClass "+cls+" has been loaded via Network");
+		java.net.URL[] urls = ((java.net.URLClassLoader) cl).getURLs();
+		for(int i=0; i<urls.length; i++) {
+		    try {
+			// System.out.println("Trying: "+urls[i]);
+			java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
+			bytes=new byte[in.available()];
+			in.readFully(bytes);
+			break;  // bei Erfolg for verlassen
+		    } catch (java.io.IOException io) {
+			System.err.println(urls[i]+" IOException");
+			io.printStackTrace();
+		    }
+		}
+	    }
 	    writeBoolean(true);
+	    if (bytes == null) {
+		System.out.println("CRASH: class annotated was "+cls);
+		System.out.println("Class loaded by "+cl);
+	    }
 	    writeInt(bytes.length);
 	    write(bytes,0,bytes.length);
 	    }

@@ -40,12 +40,12 @@ final public class Constants {
     //    public static final Constructor cons         = new Constructor("cons");
 
     /** Diese Exception gibt's, um java-Exceptions zu verpacken */
-    public static final Constructor javaAPIException = new Constructor("javaAPIException");
+    public static final Constructor javaAPIException = new UniqueConstructor("javaAPIException");
 
     /** Diese Exception zeigt wirkliche FEHLER des Benutzers an:
      *  - nicht-existierende Methoden/Konstructoren
      *  - Sicherheitsfehler
      */
-    public static final Constructor javaAPIError = new Constructor("javaAPIError");
+    public static final Constructor javaAPIError = new UniqueConstructor("javaAPIError");
 
 }

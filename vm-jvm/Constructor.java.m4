@@ -14,21 +14,14 @@ package de.uni_sb.ps.dml.runtime;
 
 public class Constructor implements DMLValue {
 
-    final public java.lang.String name;
     GName gName = null;
 
     public Constructor() {
-	this.name="unnamed";
 	this.gName = null;
     }
 
-    public Constructor(java.lang.String name) {
-	this.name=name;
-	this.gName = null;
-    }
-
-    final public java.lang.String toString() {
-	return this.name;
+    public java.lang.String toString() {
+	return "unnamed constructor";
     }
 
     public DMLValue apply(DMLValue val)

@@ -22,10 +22,13 @@ import de.uni_sb.ps.dml.runtime.PickleClassLoader;
  */
 public class MarshalOutputStream extends ObjectOutputStream
 {
-    final static Class fcn;
     final static String host;
+    final static Class fcn;
+    final static Class ccn; // class of Constructor
+    final static Class ucn; // class of UniqueConstructor
+    final static Class ncn; // class of Name
+    final static Class uncn; // class of UniqueName
     static {
-	// System.out.println("RMIClassLoader");
 	Class cl = null;
 	try{
 	    cl=Class.forName("de.uni_sb.ps.dml.runtime.Function");
@@ -43,6 +46,46 @@ public class MarshalOutputStream extends ObjectOutputStream
 	    u.printStackTrace();
 	}
 	host = "!"+i.getHostAddress();
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Constructor");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Constructor must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	ccn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.UniqueConstructor");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("UniqueConstructor must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	ucn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Name");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Name must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	ncn = cl;
+
+	cl = null;
+	try{
+	    cl = Class.forName("de.uni_sb.ps.dml.runtime.UniqueName");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("UniqueName must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	uncn = cl;
     }
 
     /** Create a marshaling stream to handle RMI marshaling
@@ -81,15 +124,27 @@ public class MarshalOutputStream extends ObjectOutputStream
      * to load the the specified class.
      */
     protected void annotateClass(Class cl) throws IOException {
-	if (fcn.isAssignableFrom(cl.getSuperclass())) { // cl instanceof Function
-	    // we transfer class code by need, i.e. we annotate the class with the ip of
+	Class superClass = cl.getSuperclass();
+	//	System.out.println("Annotate: "+cl+" extends "+superClass);
+	if (fcn.isAssignableFrom(superClass) // cl instanceof Function
+	    || (ccn.isAssignableFrom(superClass) &&
+		!ucn.isAssignableFrom(superClass) &&
+		!ucn.equals(cl)) // cl is constructor group
+	    || (ncn.isAssignableFrom(superClass) &&
+		!uncn.isAssignableFrom(cl)) // cl is a name group
+	    ) {      // we transfer class code by need, i.e. we annotate the class with the ip of
 	    // the server that knows the byte code. the byte code is stored in the PickleClassLoader
+	    //System.out.println("I RMI serialize: "+cl);
 	    String className = cl.getName();
 	    if (PickleClassLoader.loader.getBytes(className) == null) { // code not yet in loader
 		// enter code into loader
 		byte[] bytes = null;
 		ClassLoader loader = cl.getClassLoader();
-		if (loader==ClassLoader.getSystemClassLoader()) {
+		if (loader == null
+		    || loader==ClassLoader.getSystemClassLoader()) {
+		    if (loader == null) {
+			loader=ClassLoader.getSystemClassLoader();
+		    }
 		    java.io.InputStream in = null;
 		    java.io.DataInputStream din = null;
 		    try {
