@@ -1,8 +1,11 @@
+- move PP stuff from lib/rtt to compiler/frontend-common
 - don't use instance structures for runtime interfaces
+- compress: integrate rehash-consing; use compress_state
 - complete verifier for intermediate language
 - remove indexed labels from signatures by converting hiding to local
 - remove definitionals from signatures by adding singletons
 - remove signature intersection
+- smarter handling of substitutions
 - make tuple special case of products/rows
 - separate suspensions from applications
 - separate types from type constructors
