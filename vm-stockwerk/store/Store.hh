@@ -84,8 +84,8 @@ public:
     return Store::InternalAllocBlock(CHUNK, s);
   }
   static Transient *AllocTransient(BlockLabel l) {
-    Assert((l == PROMISE) || (l == FUTURE) || (l == BYNEED));
-    return (Transient *) Store::InternalAllocBlock(l, 2);
+    Assert(l >= MIN_TRANSIENT && l <= MAX_TRANSIENT);
+    return (Transient *) Store::InternalAllocBlock(l, 1);
   }
   // Conversion Functions
   static word IntToWord(int v) {
@@ -106,6 +106,13 @@ public:
   static void *WordToUnmanagedPointer(word x) {
     return (void *) (Store::WordToInt(x) << 1);
   }
+  static word FunctionPointerToWord(int v) {
+    return Store::IntToWord(v >> 1);
+  }
+  static int WordToFunctionPointer(word x) {
+    return Store::WordToInt(x) << 1;
+  }
+
   // GC Related Functions
   static word DoGC(word root_set, u_int gen);
   static void AddToIntgenSet(Block *v);
