@@ -39,6 +39,9 @@ ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 OBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll) \
 	  $(ALICESOURCES:%.aml=%.stc)
 
+INSTALLTARGETS = $(CPPSOURCES:%.cc=%.dll) \
+	  $(ALICESOURCES:%.aml=%.stc)
+
 # platform specific settings
 ifdef WINDOWS
 GENERATOR = GtkBinding.x86-win32
@@ -59,6 +62,8 @@ ALICEC_OPTS = --no-warn-conventions
 ALICETOOL = alicetool
 ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
+
+INSTALLDIR = `alice-config --alicelibdir`/gtk
 
 #################################################
 
@@ -151,3 +156,9 @@ distclean: clean
 	(cd prepare && $(MAKE) distclean )
 	(cd samples && $(MAKE) distclean )
 	(cd doc && $(MAKE) distclean )
+
+### INSTALLATION ################################
+#
+install: all
+	./myinstall -d $(INSTALLDIR)
+	./myinstall $(INSTALLTARGETS) $(INSTALLDIR)

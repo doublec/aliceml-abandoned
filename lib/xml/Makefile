@@ -1,13 +1,7 @@
 # Makefile for alice xml binding
 
-# Change this to reflect your installation directory
-# INSTALLDIR = ../../install
-INSTALLDIR = ../../vm-seam/build3/install
-
-
-## No changes needed below this
-
-INSTALLTO = $(INSTALLDIR)/lib/xml
+INSTALLDIR = `alice-config --alicelibdir`
+INSTALLTO = $(INSTALLDIR)/xml
 
 NATIVES = NativeAliceXML
 
@@ -52,11 +46,11 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 AliceXML.dll: $(SOURCES:%.cc=%.o)
 
 %.o: %.cc
-	alicetool -v compile $(ALLFLAGS) $(EXTRA_INCLUDES) \
+	alicetool compile $(ALLFLAGS) $(EXTRA_INCLUDES) \
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool -v link $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	alicetool link $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.stc: %.aml
 	alicec -c $< -o $@
