@@ -103,7 +103,7 @@ public:
     return InternalAllocBlock(l, s);
   }
   static Chunk *AllocChunk(u_int s) {
-    u_int ws = (1 + (s / sizeof(u_int)) + (((s % sizeof(u_int)) == 0) ? 0 : 1));
+    u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
     Block *p = Store::InternalAllocBlock(CHUNK_LABEL, ws);
 
     ((word *) p)[1] = PointerOp::EncodeInt(s);
@@ -132,6 +132,9 @@ public:
   static Transient *WordToTransient(word v) {
     return PointerOp::DecodeTransient(PointerOp::Deref(v));
   }
+  static Chunk *WordToChunk(word v) {
+    return PointerOp::DecodeChunk(PointerOp::Deref(v));
+  }
   static word UnmanagedPointerToWord(void *v) {
     return PointerOp::EncodeUnmanagedPointer(v);
   }
@@ -145,6 +148,9 @@ public:
   static Block *DirectWordToBlock(word x) {
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
     return PointerOp::DecodeBlock(x);
+  }
+  static Chunk *DirectWordToChunk(word x) {
+    return PointerOp::DecodeChunk(x);
   }
   static void *DirectWordToUnmanagedPointer(word x) {
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
