@@ -20,10 +20,9 @@ class Block;
 class Handler {
 public:
   virtual void PrepareForGC(Block *p) = 0;
-  virtual void Finalize(word value) = 0;
 
+  // returns INVALID_POINTER if there is none
   virtual Block *GetAbstractRepresentation() = 0;
-    // returns INVALID_POINTER if there is none
 };
 
 #endif __STORE__HANDLER_HH__

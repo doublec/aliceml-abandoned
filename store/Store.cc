@@ -48,10 +48,10 @@ MemChunk *Store::curChunk;
 u_int Store::hdrGen;
 u_int Store::dstGen;
 
-Set *Store::intgenSet = INVALID_POINTER;
-Set *Store::wkDictSet = INVALID_POINTER;
-u_int Store::needGC   = 0;
-
+Set *Store::intgenSet        = INVALID_POINTER;
+Set *Store::wkDictSet        = INVALID_POINTER;
+u_int Store::needGC          = 0;
+Finalization *Store::handler = INVALID_POINTER;
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 u_int Store::totalMem = 0;
@@ -70,7 +70,7 @@ static inline u_int GetMagicHeader() {
 
 inline u_int Store::GetMemUsage(MemChunk *chunk) {
   u_int size = 0;
-
+  
   chunk = chunk->GetNext();
   while (!chunk->IsAnchor()) {
     s_int top = (s_int) ((chunk == curChunk) ? curChunkTop : chunk->GetTop());
@@ -124,27 +124,27 @@ inline char *Store::GCAlloc(u_int size, u_int header) {
   }
 }
 
-inline Block *Store::TempAlloc(u_int size) {
-  u_int header = HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen);
-  Block *p     = (Block *) Store::GCAlloc(BlockMemSize(size), header);
-
-  AssertStore(p != INVALID_POINTER);
-  // to be determined
-  p->InitArg(0, 1);
-
-  return p;
+inline char *Store::GCAlloc(u_int size) {
+  return Store::GCAlloc(BlockMemSize(size), HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen));
 }
 
-inline Block *Store::AddToFinSet(Block *p, Handler *h, word value) {
-  u_int size   = p->GetSize();
+inline Block *Store::AddToFinSet(Block *p, word value) {
+  if (p == INVALID_POINTER) {
+    p = (Block *) Store::GCAlloc(120);
+    p->InitArg(0, 1);
+  }
+
   u_int top    = Store::DirectWordToInt(p->GetArg(0));
-  u_int newtop = (top + 2);
+  u_int newtop = (top + 1);
+  u_int size   = p->GetSize();
   Block *np;
 
   if (newtop >= size) {
     u_int newsize = ((size * 3) >> 1);
-    
-    np = Store::TempAlloc(newsize);
+
+    np = (Block *) Store::GCAlloc(newsize);
+    HeaderOp::EncodeHeader(MIN_DATA_LABEL, newsize, hdrGen);
+    AssertStore(np != INVALID_POINTER);
     std::memcpy(np->GetBase(), p->GetBase(), (size * sizeof(u_int)));
   }
   else {
@@ -152,8 +152,7 @@ inline Block *Store::AddToFinSet(Block *p, Handler *h, word value) {
   }
 
   np->InitArg(0, newtop);
-  np->InitArg(top, Store::UnmanagedPointerToWord((void *) h));
-  np->InitArg((top + 1), value);
+  np->InitArg(top, value);
   return np;
 }
 
@@ -272,6 +271,7 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
+  handler   = INVALID_POINTER;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   totalMem = 0;
   sum_t    = (struct timeval *) malloc(sizeof(struct timeval));
@@ -391,13 +391,11 @@ inline Block *Store::HandleWeakDictionaries() {
 #if defined(STORE_DEBUG)
   std::printf("initial weakdict_size is %d\n", wkdict_set->GetSize()); 
 #endif
-
-  // Alloc Fin Set
-  Block *finset = Store::TempAlloc(120);
-  finset->InitArg(0, 1);
+  // Allocate and initialize Finalisation Set
+  Block *finset = INVALID_POINTER;
 
   u_int rs_size = wkdict_set->GetSize();
-  Block *db_set = Store::TempAlloc((rs_size + 1));
+  Block *db_set = (Block *) Store::GCAlloc((rs_size + 1));
   wkdict_set->MakeEmpty();
   std::memcpy(db_set->GetBase(), ((Block *) wkdict_set)->GetBase(),
 	      ((rs_size + 1) * sizeof(u_int)));
@@ -415,13 +413,12 @@ inline Block *Store::HandleWeakDictionaries() {
     }
     // Dictionary might be finalized
     else if (HeaderOp::DecodeGeneration(dp) < dstGen) {
-      Handler *h  = dp->GetHandler();
       Block *newp = CloneBlock(dp);
 	
       ndict = PointerOp::EncodeTag(newp, PointerOp::DecodeTag(dict));
       // Finalize only empty dict
       if (((WeakDictionary *) newp)->GetCounter() == 0) {
-	finset = Store::AddToFinSet(finset, h, ndict);
+	finset = Store::AddToFinSet(finset, ndict);
       }
       // Keep it alive (thanks to Denys for pointing that out)
       else {
@@ -436,29 +433,21 @@ inline Block *Store::HandleWeakDictionaries() {
     // Keep Dict References complete for working
     db_set->InitArg(i, ndict);
 
-    // Now Process Dict Table but NOT its content
+    // Now Process DictTable and its HashNodes but NOT the content
     WeakDictionary *p = WeakDictionary::FromWordDirect(ndict);
     word arr          = Store::ForwardWord(p->GetTable()->ToWord());
     p->SetTable(arr);
-    Block *table      = Store::DirectWordToBlock(arr);
-    u_int table_size  = table->GetSize();
-    for (u_int k = table_size; k--;) {
+    Block *table = Store::DirectWordToBlock(arr);
+    for (u_int k = table->GetSize(); k--;) {
       table->InitArg(k, Store::ForwardWord(table->GetArg(k)));
     }
   }
-
-  // Phase Two: Forward Dictionary Contents and record Finalize Candiates
+  // Phase Two: Check for integer or forwarded entries in all dictionaries and handle them
   for (u_int i = rs_size; i >= 1; i--) {
-    // Save start anchor
-    MemChunk *chunk      = curChunk;
-    char *scan           = (curChunkMax + curChunkTop);
-    // Retrieve dict data
     WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
-    Handler *h           = dict->GetHandler();
     Block *table         = dict->GetTable();
-    u_int table_size     = table->GetSize();
-    // Phase 2.1: Check for integer or forwarded entries and handle them
-    for (u_int k = table_size; k--;) {
+
+    for (u_int k = table->GetSize(); k--;) {
       HashNode *node = HashNode::FromWord(table->GetArg(k));
 
       if (!node->IsEmpty()) {
@@ -481,8 +470,14 @@ inline Block *Store::HandleWeakDictionaries() {
 	}
       }
     }
-    // Pase 2.2: Remove handled marks and collect finalisation data
-    for (u_int k = table_size; k--;) {
+  }
+  // Phase Three: Forward Dictionary Contents and record Finalize Candiates
+  MemChunk *chunk = curChunk;
+  char *scan      = (curChunkMax + curChunkTop);
+  for (u_int i = rs_size; i >= 1; i--) {
+    WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
+    Block *table         = dict->GetTable();
+    for (u_int k = table->GetSize(); k--;) {
       HashNode *node = HashNode::FromWord(table->GetArg(k));
 
       if (!node->IsEmpty()) {
@@ -510,9 +505,9 @@ inline Block *Store::HandleWeakDictionaries() {
 	  else if (HeaderOp::DecodeGeneration(valp) < dstGen) {
 	    if (Store::CanFinalize(valp)) {
 	      dict->RemoveEntry(node);
-	      finset = Store::AddToFinSet(finset, h, ForwardWord(val));
+	      finset = Store::AddToFinSet(finset, ForwardWord(val));
 	    }
-	    // No, save it again
+	    // No, forward and save it again
 	    else {
 	      node->SetValue(ForwardWord(val));
 	    }
@@ -524,8 +519,9 @@ inline Block *Store::HandleWeakDictionaries() {
 	}
       }
     }
-    Store::CheneyScan(chunk, (Block *) scan);
   }
+  // Now successivly forward the finalized tree
+  Store::CheneyScan(chunk, (Block *) scan);
 #if defined(STORE_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
@@ -558,10 +554,10 @@ inline void Store::DoGC(word &root, const u_int gen) {
   }
   // Scanning chunks (root_set amount)
   Store::CheneyScan(chunk, (Block *) scan);
-  // Obtain new scan start (to scan the new stuff)
+
+  // Obtain new scan start (to scan intgen set stuff)
   chunk = curChunk;
   scan  = (curChunkMax + curChunkTop);
-
   // Handle InterGenerational Pointers
   Store::HandleInterGenerationalPointers(gen);
   // Scan chunks (intgen_set amount)
@@ -606,13 +602,10 @@ inline void Store::DoGC(word &root, const u_int gen) {
   root = root_set->ToWord();
 
   // Call Finalization Handler
-  if (arr != INVALID_POINTER) {
-    u_int size = Store::WordToInt(arr->GetArg(0));
-    for (u_int i = 1; i < size; i += 2) {
-      Handler *h = (Handler *) PointerOp::DecodeUnmanagedPointer(arr->GetArg(i));
-      if (h != INVALID_POINTER) {
-	h->Finalize(arr->GetArg(i + 1));
-      }
+  if ((arr != INVALID_POINTER) && (handler != INVALID_POINTER)) {
+    u_int size = (Store::WordToInt(arr->GetArg(0)) - 1);
+    for (u_int i = size; i >= 1; i--) {
+      handler->Finalize(arr->GetArg(i));
     }
   }
 }

@@ -154,7 +154,7 @@ protected:
   int IsMember(word key);
   word GetItem(word key); // must be member
 
-  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size, Handler *handler);
+  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size);
 public:
   using Block::ToWord;
 
@@ -184,8 +184,8 @@ public:
     }
   }
 
-  static WeakDictionary *New(u_int size, Handler *handler) {
-    WeakDictionary *d = WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size, handler);
+  static WeakDictionary *New(u_int size) {
+    WeakDictionary *d = WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size);
 
     Store::RegisterWeakDict(d);
     return d;
