@@ -57,7 +57,7 @@ final public class Tuple4 implements DMLTuple {
     }
 
     final public java.lang.String toString() {
-	return "("+fst+", "+snd+", "+thr+", "+fur+")";
+	return "("+fst+", "+snd+", "+thr+", "+fur+")/4";
     }
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/

@@ -21,7 +21,7 @@ final public class Word implements DMLValue {
     /** Baut ein neues Word mit Wert <code>value</code>.
      *  @param value <code>long</code> Wert, der dem Word entspricht.
      */
-    public Word(long value) {
+    public Word(int value) {
 	this.value=value;
     }
 

@@ -160,7 +160,7 @@ final public class JObject implements DMLValue {
 		else if (oo instanceof java.lang.Integer)
 		    return new Int(((java.lang.Integer) oo).intValue());
 		else if (oo instanceof Long)
-		    return new Word(((Long) oo).longValue());
+		    return new Word((int) ((Long) oo).longValue());
 		else if (oo instanceof Float)
 		    return new Real(((Float) oo).floatValue());
 		else if (oo instanceof java.lang.String)
@@ -409,7 +409,7 @@ final public class JObject implements DMLValue {
 		    else if (oo instanceof Integer)
 			return new Int(((Integer) oo).intValue());
 		    else if (oo instanceof Long)
-			return new Word(((Long) oo).longValue());
+			return new Word((int) ((Long) oo).longValue());
 		    else if (oo instanceof Float)
 			return new Real(((Float) oo).floatValue());
 		    else if (oo instanceof java.lang.String)
@@ -730,7 +730,7 @@ _BUILTIN(Getfield) {
 	    else if (oo instanceof java.lang.Integer)
 		return new Int(((Integer) oo).intValue());
 	    else if (oo instanceof Long)
-		return new Word(((Long) oo).longValue());
+		return new Word((int) ((Long) oo).longValue());
 	    else if (oo instanceof Float)
 		return new Real(((Float) oo).floatValue());
 	    else if (oo instanceof java.lang.String)

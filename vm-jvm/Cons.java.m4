@@ -48,7 +48,7 @@ final public class Cons implements DMLConVal {
     }
 
     final public java.lang.String toString() {
-	return "("+car+", "+cdr+")";
+	return "("+car+". "+cdr+")";
     }
 
     /** Gleichheit der  und Inhalte */
