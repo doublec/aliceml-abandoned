@@ -91,10 +91,13 @@ public:
     return future;
   }
   bool Fill(word w) {
-    if (Store::WordToTransient(w) == this) // cyclic bind
+    Transient *t = Store::WordToTransient(w);
+    if (t == this) // cyclic bind
       return false;
     Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
     if (future != INVALID_POINTER) { // eliminate associated future
+      if (t == future) // cyclic bind
+	return false;
       future->ScheduleWaitingThreads();
       future->Become(REF_LABEL, w);
     }
