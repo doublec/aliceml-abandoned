@@ -94,8 +94,11 @@ define
 		 end
 	      [] tag(!StaticCon X) then X
 	      end
-	 if C == C2 then ThenInstr
-	 else {NullaryConCase I + 1 N C Cases Closure L ElseInstr}
+	 case {Deref C2} of Transient=transient(_) then request(Transient)
+	 elseof C3 then
+	    if C == C3 then ThenInstr
+	    else {NullaryConCase I + 1 N C Cases Closure L ElseInstr}
+	    end
 	 end
       end
    end
@@ -109,8 +112,11 @@ define
 		 end
 	      [] tag(!StaticCon X) then X
 	      end
-	 if C == C2 then Case
-	 else {NAryConCase I + 1 N C Cases Closure L}
+	 case {Deref C2} of Transient=transient(_) then request(Transient)
+	 elseof C3 then
+	    if C == C3 then Case
+	    else {NAryConCase I + 1 N C Cases Closure L}
+	    end
 	 end
       end
    end
@@ -395,10 +401,15 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof C then
-	    if {IsName C} then ThenInstr in
-	       ThenInstr = {NullaryConCase 1 {Width NullaryCases}
-			    C NullaryCases Closure L ElseInstr}
-	       {Emulate ThenInstr Closure L TaskStack}
+	    if {IsName C} then
+	       case {NullaryConCase 1 {Width NullaryCases}
+		     C NullaryCases Closure L ElseInstr}
+	       of request(Transient) then NewFrame in
+		  NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+		  request(Transient args() NewFrame|TaskStack)
+	       elseof ThenInstr then
+		  {Emulate ThenInstr Closure L TaskStack}
+	       end
 	    elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases Closure L}
 	    of tuple(_ IdDefs ThenInstr) then N in
 	       N = {Width IdDefs}
@@ -409,6 +420,9 @@ define
 		  end
 	       end
 	       {Emulate ThenInstr Closure L TaskStack}
+	    [] request(Transient) then NewFrame in
+	       NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	       request(Transient args() NewFrame|TaskStack)
 	    [] unit then
 	       {Emulate ElseInstr Closure L TaskStack}
 	    end
