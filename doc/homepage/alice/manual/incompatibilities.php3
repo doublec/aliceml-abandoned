@@ -32,8 +32,8 @@
   </P>
 
   <PRE>
-	any     constructor   fct     from       import     non
-	pack    unpack        when    withfun    withval
+	any    constructor   exttype    fct    from       import     non
+	non    pack          unpack     hen    withfun    withval
   </PRE>
 
 
@@ -141,6 +141,65 @@
     <LI> Rename your function, this is perverse anyway. </LI>
   </UL>
 
+
+
+<?php section("datatypes", "datatypes") ?>
+
+  <P>
+    The feature that datatypes are structural in Alice comes with some
+    restrictions that are not present in SML. In particular, Alice demands
+    that, whenever a datatype constructor is used in an expression or pattern,
+    the corresponding type is visible. For example, the following program
+    will not typecheck:
+  </P>
+
+  <PRE>
+	datatype t = C
+	type t = int
+	val c = C
+  </PRE>
+
+  <P>
+    Though one does not usually write such code, the same situation can
+    appear implicitly through liberal use of open.
+  </P>
+
+  <P>
+    Fix:
+  </P>
+
+  <UL>
+    <LI> Do not shadow datatypes you intend to use. </LI>
+  </UL>
+
+  <P>
+    Another consequence of Alice's structural interpretation of datatypes is
+    that some sharing constraints become invalid. Consider:
+  </P>
+
+  <PRE>
+	type t
+	datatype u = C
+	sharing t = u
+  </PRE>
+
+  <P>
+    This specification will be rejected. Note however that Alice has a more
+    liberal treatment of sharing where sharing of equal types is
+    allowed, as well as sharing between an abstract type and a non-abstract
+    type that is specified <I>before</I> the abstract one. Consequently, the
+    following specifications are legal:
+  </P>
+
+  <PRE>
+	datatype t = C
+	type u
+	sharing t = u
+
+	structure X : sig datatype t = D end
+	structure Y : sig datatype t = D end
+	sharing X.t = Y.t
+  </PRE>
 
 
 <?php section("conarity", "constructor arity") ?>
