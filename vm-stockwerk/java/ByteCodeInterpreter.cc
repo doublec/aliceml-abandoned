@@ -1348,7 +1348,15 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::FDIV:
       {
 	JavaDebug::Print("FDIV");
-	Error("not implemented");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	if (f2->GetValue() != 0.0) {
+	  frame->Push(Float::New(f1->GetValue() / f2->GetValue())->ToWord());
+	}
+	else {
+	  RAISE_VM_EXCEPTION(ArithmeticException, "FDIV");
+	}
+	pc += 1;
       }
       break;
     case Instr::FMUL:
@@ -1460,7 +1468,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::I2C:
       {
-	Error("not implemented");
+	  JavaDebug::Print("I2C");
+	s_int32 i = JavaInt::FromWord(frame->Pop());
+	frame->Push(Store::IntToWord(static_cast<s_int16>(i)));
+	pc += 1;
       }
       break;
     case Instr::I2D:
@@ -1489,7 +1500,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::I2S:
       {
-	Error("not implemented");
+	  JavaDebug::Print("I2S");
+	  s_int32 i = JavaInt::FromWord(frame->Pop());
+	  frame->Push(JavaInt::ToWord(static_cast<s_int16>(i)));
+	  pc += 1;
       }
       break;
     case Instr::IADD:
@@ -1978,17 +1992,23 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::L2D:
       {
-	Error("not implemented");
+	  JavaDebug::Print("L2D");
+	  DECLARE_LONG(v);
+	  PUSH_DOUBLE(static_cast<double>(v));
+	  pc += 1;
       }
       break;
     case Instr::L2F:
       {
-	Error("not implemented");
+	JavaDebug::Print("L2D");
+	DECLARE_LONG(v);
+	frame->Push(Float::New(static_cast<float>(v))->ToWord());
+	pc += 1;
       }
       break;
-    case Instr::L2I:
-      {
-	JavaDebug::Print("L2I");
+      case Instr::L2I:
+	  {
+	  JavaDebug::Print("L2I");
 	DECLARE_LONG(v);
 	frame->Push(JavaInt::ToWord(v));
 	pc += 1;
@@ -2064,7 +2084,16 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LDIV:
       {
-	Error("not implemented");
+	JavaDebug::Print("LDIV");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	if (v1 != 0.0) {
+	  PUSH_LONG(v1 / v2);
+	}
+	else {
+	  RAISE_VM_EXCEPTION(ArithmeticException, "LDIV");
+	}
+	pc += 1;
       }
       break;
     case Instr::LMUL:
