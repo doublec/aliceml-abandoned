@@ -25,6 +25,7 @@
  *   - guarded patterns
  *   - negated patterns
  *   - withval patterns
+ *   - type wildcards
  *   - abstract type declarations
  *   - open datatypes and free construct declarations
  *   - package types and expressions
@@ -240,7 +241,8 @@ sig
     (* Type expressions *)
 
     and Ty =
-	  TYVARTy        of Info * TyVar
+	  WILDCARDTy     of Info
+	| TYVARTy        of Info * TyVar
 	| RECORDTy       of Info * TyRow option
 	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon

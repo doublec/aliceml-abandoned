@@ -42,6 +42,8 @@
 (*	      ::= pat withfun fvalbind end		(derived form)		*)
 (*	      ::= pat withval valbind where atexp	(derived form)		*)
 (*	      ::= pat withfun fvalbind where atexp	(derived form)		*)
+(*   - type wildcards:								*)
+(*	  ty ::= _								*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
 (*        dec      ::= constructor dconbind					*)
@@ -1107,7 +1109,8 @@
 					  tyseq, longtycon) )
 
      atty:
-	  tyvar		( TYVARTy(I(tyvarleft,tyvarright), tyvar) )
+	  UNDERBAR	( WILDCARDTy(I(UNDERBARleft,UNDERBARright)) )
+	| tyvar		( TYVARTy(I(tyvarleft,tyvarright), tyvar) )
 	| LBRACE tyrow_opt RBRACE
 			( RECORDTy(I(LBRACEleft,RBRACEright), tyrow_opt) )
 	| LPAR ty RPAR	( PARTy(I(LPARleft,RPARright), ty) )
