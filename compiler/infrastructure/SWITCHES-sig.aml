@@ -22,6 +22,7 @@ sig
     structure Warn :
     sig
 	val shadowing :				bool ref
+	val unusedImport :			bool ref
     end
 
     structure Language :
@@ -31,6 +32,7 @@ sig
 	val rttLevel :				rtt_level ref
 	val silentFailExp :			bool ref
 	val reexportImport :			bool ref
+	val retainFullImport :			bool ref
 	val implicitImport :			bool ref
 	val implicitImportFile :		string option ref
     end

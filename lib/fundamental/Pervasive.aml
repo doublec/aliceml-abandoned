@@ -153,6 +153,8 @@
 import structure RTT from "RTT"
 
 
+local
+
 (* Step 1: Type lib
  *)
 
@@ -175,6 +177,8 @@ struct
     __primitive type ('a,'b) conarrow	= "conarrow"
 end
 
+
+in
 
 (* Step 3: Extend with actual content
  *         (requires type lib and datatype encoding)
@@ -202,3 +206,5 @@ struct
     structure Array	= struct __primitive __eqeqtype 'a array= "array"   end
     structure Ref	= struct __primitive __reftype 'a ref	= ref of 'a end
 end
+
+end (* local *)

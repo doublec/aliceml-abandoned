@@ -26,6 +26,7 @@ struct
     structure Warn =
     struct
 	val shadowing				= ref false
+	val unusedImport			= ref false
     end
 
     structure Language =
@@ -35,6 +36,7 @@ struct
 	val rttLevel				= ref FULL_RTT
 	val silentFailExp			= ref true
 	val reexportImport			= ref false
+	val retainFullImport			= ref false
 	val implicitImport			= ref true
 	val implicitImportFile			= ref(NONE : string option)
     end

@@ -142,8 +142,9 @@ structure Debug : DEBUG =
 	    )
 	structure ElaborationPhase =
 	    MkTracingPhase(
-		  structure Phase    =
-		      MkElaborationPhase(val loadSign = loadPlainSign)
+		  structure Phase =
+		      MkElaborationPhase(val       loadSign = loadPlainSign
+					 structure Switches = Switches)
 		  structure Switches = Switches
 		  val name = "Elaboration"
 	    )

@@ -35,7 +35,11 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \Warning options:\n\
 	    \\t--(no-)warn-shadowing\n\
 	    \\t\tWhether to warn about shadowing of identifiers.\n\
+	    \\t--(no-)warn-unused-import\n\
+	    \\t\tWhether to warn about unused imports.\n\
 	    \Language options:\n\
+	    \\t--(no-)retain-full-import\n\
+	    \\t\tWhether to reduce import signatures to the entities used.\n\
 	    \\t--(no-)reexport-import\n\
 	    \\t\tMake imported entities part of the component.\n\
 	    \\t--(no-)implicit-import\n\
@@ -89,7 +93,9 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	val booleanSwitches =
 	    [("recursive-compilation", Global.recursiveCompilation),
 	     ("warn-shadowing", Warn.shadowing),
+	     ("warn-unused-import", Warn.unusedImport),
 	     ("reexport-import", Language.reexportImport),
+	     ("retain-full-import", Language.retainFullImport),
 	     ("implicit-import", Language.implicitImport),
 	     ("silent-fail", Language.silentFailExp),
 	     ("dump-phases", Debug.dumpPhases),
