@@ -30,7 +30,26 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
-    .method abstract virtual public bool Equals(class StockWerk.StockWert) {}
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+    retry:
+      ldarg.0
+      ldarg.1
+      bne.un.s testTransient
+      ldc.i4 1
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4 0
+      ret
+    }
   }
 
   .class sealed public ExceptionWrapper extends System.RuntimeException {
@@ -90,26 +109,6 @@
       tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
-    retry:
-      ldarg.0
-      ldarg.1
-      bne.un.s testTransient
-      ldc.i4 1
-      ret
-    testTransient:
-      ldarg.1
-      isinst StockWerk.Transient
-      brfalse.s retFalse
-      ldarg.1
-      castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
-      starg.s 1
-      br.s retry
-    retFalse:
-      ldc.i4 0
-      ret
-    }
   }
 
   .class sealed public NamedName extends StockWerk.Name {
@@ -134,26 +133,6 @@
       ldarg.0
       ldarg.1
       newobj instance void StockWerk.ConVal::.ctor(class StockWerk.Constructor, class StockWerk.StockWert)
-      ret
-    }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
-    retry:
-      ldarg.0
-      ldarg.1
-      bne.un.s testTransient
-      ldc.i4 1
-      ret
-    testTransient:
-      ldarg.1
-      isinst StockWerk.Transient
-      brfalse.s retFalse
-      ldarg.1
-      castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
-      starg.s 1
-      br.s retry
-    retFalse:
-      ldc.i4 0
       ret
     }
   }
@@ -364,13 +343,35 @@
   }
 */
 
-  .class BuiltinTable {
-    .method public static class StockWerk.StockWert Promise() {
+  .class public abstract Procedure extends StockWerk.StockWert {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.StockWert::.ctor()
+      ret
+    }
+  }
+}
+
+.namespace StockWerk.Builtins {
+  .class sealed public BIPromise extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public static class StockWerk.StockWert Apply0() {
       newobj instance void StockWerk.Promise::.ctor()
       ret
     }
+  }
 
-    .method public static class StockWerk.StockWert Future(class StockWerk.StockWert) {
+  .class sealed public BIFuture extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public static class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
     retry:
       ldarg.0
       isinst StockWerk.Promise
@@ -393,15 +394,23 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
+  }
 
-    .method public static class StockWerk.StockWert Fulfill(class StockWerk.StockWert) {
+  .class sealed public BIFulfill extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public static class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
     retry:
       ldarg.0
       isinst StockWerk.Promise
       brfalse.s testFuture
       ldarg.0
       castclass StockWerk.Promise
-      tail. call instance void StockWerk.Promise::Fulfill()
+      ldarg.1
+      call instance void StockWerk.Promise::Fulfill(class StockWerk.StockWert)
       ldnull   //--** unit
       ret
     testFuture:
@@ -418,8 +427,15 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
+  }
 
-    .method public static class StockWerk.StockWert Await(class StockWerk.StockWert) {
+  .class sealed public BIAwait extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public static class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
       ldarg.0
       isinst StockWerk.Transient
       brfalse.s return
@@ -451,5 +467,8 @@
   ldstr "ByNeed"
   newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
   stsfld class StockWerk.StockWert StockWerk.Prebound::ByNeed
+  //--** the following instructions just make the DLL verifiable:
+  newobj instance void StockWerk.Builtins.BIAwait::.ctor()
+  pop
   ret
 }
