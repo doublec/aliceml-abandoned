@@ -1008,7 +1008,7 @@ structure CodeGen =
 	    createRefAppExp (idop, idargs, init, curCls) =
 	    createOrLoad (idop, CReference) ::
 	    idArgCode (idargs, curCls,
-		       Putfield (CReference^"/content", [Arraysig, Classsig IVal]) ::
+		       Putfield (CReference^"/content", [Classsig IVal]) ::
 		       init)
 
 	and
