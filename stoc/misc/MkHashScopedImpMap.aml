@@ -58,7 +58,9 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) :>
     fun foldi f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.foldi f b' m)
 					     b ms
 
-    fun delete(ref ms, k)	= ImpMap.delete(List.hd ms, k)
+    fun delete(ref ms, k)		= ImpMap.delete(List.hd ms, k)
+    fun deleteExistent(ref ms, k)	= ImpMap.deleteExistent(List.hd ms, k)
+    fun deleteWith f (ref ms, k)	= ImpMap.deleteWith f (List.hd ms, k)
 
     fun insert(ref ms, k, a)		= ImpMap.insert(List.hd ms, k, a)
     fun insertDisjoint(ref ms, k, a)	= ImpMap.insertDisjoint(List.hd ms, k,a)

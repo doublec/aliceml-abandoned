@@ -52,11 +52,13 @@ functor MakeHashScopedImpSet(Item: HASH_KEY) :>
     fun fold f a (ref ss)	= List.foldr (fn(s,a') => ImpSet.fold f a' s)
 					     a ss
 
-    fun delete(ref ss, i)	= ImpSet.delete(List.hd ss, i)
+    fun delete(ref ss, i)		= ImpSet.delete(List.hd ss, i)
+    fun deleteExistent(ref ss, i)	= ImpSet.deleteExistent(List.hd ss, i)
+    fun deleteWith f (ref ss, i)	= ImpSet.deleteWith f (List.hd ss, i)
 
-    fun insert(ref ss, i)	= ImpSet.insert(List.hd ss, i)
-    fun insertDisjoint(ref ss, i) = ImpSet.insertDisjoint(List.hd ss, i)
-    fun insertWith f (ref ss, i)  = ImpSet.insertWith f (List.hd ss, i)
+    fun insert(ref ss, i)		= ImpSet.insert(List.hd ss, i)
+    fun insertDisjoint(ref ss, i)	= ImpSet.insertDisjoint(List.hd ss, i)
+    fun insertWith f (ref ss, i)	= ImpSet.insertWith f (List.hd ss, i)
 
     fun union' setUnion (ref ss1, ref ss2)
 				= let val s1 = List.hd ss1 in

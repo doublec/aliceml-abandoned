@@ -26,7 +26,9 @@ signature SCOPED_IMP_SET =
     val mergeDisjointScope :	set -> unit			(* Collision *)
     val mergeScopeWith :	(item -> unit) -> set -> unit
 
-    val delete :		set * item -> unit		(* Delete *)
+    val delete :		set * item -> unit
+    val deleteExistent :	set * item -> unit		(* Delete *)
+    val deleteWith :		(item -> unit) -> set * item -> unit
 
     val insert :		set * item -> unit
     val insertDisjoint :	set * item -> unit		(* Collision *)

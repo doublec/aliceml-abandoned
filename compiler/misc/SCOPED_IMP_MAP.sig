@@ -27,7 +27,9 @@ signature SCOPED_IMP_MAP =
     val mergeScopeWith :	('a * 'a -> 'a) -> 'a map -> unit
     val mergeScopeWithi :	(key * 'a * 'a -> 'a) -> 'a map -> unit
 
-    val delete :		'a map * key -> unit		(* Delete *)
+    val delete :		'a map * key -> unit
+    val deleteExistent :	'a map * key -> unit		(* Delete *)
+    val deleteWith :		(key -> unit) -> 'a map * key -> unit
 
     val insert :		'a map * key * 'a -> unit
     val insertDisjoint :	'a map * key * 'a -> unit	(* Collision *)
