@@ -42,11 +42,21 @@ usage () {
 
 config_usage () {
     echo "Usage: $0 config [CONFIG-ARG]                              " >&2
-    echo "Compilation utility for SEAM                               " >&2
+    echo "Output installation paths for SEAM                         " >&2
     echo "                                                           " >&2
     echo "CONFIG-ARG must be one of the following:                   " >&2
-    echo "  libdir           output directory where SEAM extension   " >&2
-    echo "                   libraries should be installed           " >&2
+    echo "  prefix           directory prefix for                    " >&2
+    echo "                   architecture-independent files          " >&2
+    echo "  exec_prefix      directory prefix for                    " >&2
+    echo "                   architecture-dependent files            " >&2
+    echo "  includedir       directory prefix for                    " >&2
+    echo "                   C header files                          " >&2
+    echo "  pkgincludedir    directory prefix for                    " >&2
+    echo "                   SEAM-specific C header files            " >&2
+    echo "  libdir           directory prefix for                    " >&2
+    echo "                   " >&2
+    echo "  seamlibdir       directory prefix for                    " >&2
+    echo "                   SEAM extension modules                  " >&2
 }
 
 version () {
@@ -102,9 +112,11 @@ case "$mode" in
 		config_usage
 		exit 0
 		;;
-	    libdir)
-		echo ${libdir}/seam
-		exit 0
+            prefix|exec_prefix|includedir|pkgincludedir|libdir)
+		eval tmp="\$$1" && echo "'$tmp'"
+                ;;
+	    seamlibdir)
+		echo \''${libdir}/seam'\'
 		;;
 	    *)
 		echo "$0: unknown config option '$1'." >&2
