@@ -16,7 +16,7 @@
 
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
-  if (length < 0 || length > Array::maxLen)
+  if (length < 0 || static_cast<u_int>(length) > Array::maxLen)
     RAISE(GlobalPrimitives::General_Size);
   Array *array = Array::New(length);
   for (u_int i = length; i--; )
