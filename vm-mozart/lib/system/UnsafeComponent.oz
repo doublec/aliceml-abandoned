@@ -58,7 +58,8 @@ define
    end
 
    fun {OzToSig Sig}
-      case Sig of sig(unit) then 'NONE'   % produced by the hybrid compiler
+      case Sig of sig(Sig) andthen {IsDet Sig} andthen Sig == unit then
+ 	 'NONE'   % produced by the hybrid compiler
       [] sig(Sig) then 'SOME'(Sig)   % Stockhausen component
       else 'NONE'   % non-Stockhausen component
       end
