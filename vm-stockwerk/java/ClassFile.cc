@@ -291,18 +291,20 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   }
 }
 
-Table *ClassFile::ResolveConstantPool(ConstantPool *constantPool,
-				      ClassLoader *classLoader) {
+RuntimeConstantPool *ClassFile::ResolveConstantPool(ConstantPool *constantPool,
+						    ClassLoader *classLoader) {
   u_int constantPoolCount = constantPool->GetSize();
-  Table *runtimeConstantPool = Table::New(constantPoolCount);
+  RuntimeConstantPool *runtimeConstantPool =
+    RuntimeConstantPool::New(constantPoolCount);
   for (u_int j = 1; j < constantPoolCount; j++) {
     word resolved = constantPool->Get(j)->Resolve(constantPool, classLoader);
-    runtimeConstantPool->Init(j - 1, resolved);
+    runtimeConstantPool->Init(j, resolved);
   }
   return runtimeConstantPool;
 }
 
-Table *ClassFile::ParseInterfaces(u_int &offset, Table *runtimeConstantPool) {
+Table *ClassFile::ParseInterfaces(u_int &offset,
+				  RuntimeConstantPool *runtimeConstantPool) {
   u_int interfacesCount = GetU2(offset);
   Table *interfaces = Table::New(interfacesCount);
   for (u_int i = 0; i < interfacesCount; i++)
@@ -311,7 +313,7 @@ Table *ClassFile::ParseInterfaces(u_int &offset, Table *runtimeConstantPool) {
 }
 
 Table *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool,
-			      Table *runtimeConstantPool) {
+			      RuntimeConstantPool *runtimeConstantPool) {
   //--** No two fields in one class file may have the same name and descriptor
   //--** All fields of interfaces must have their ACC_PUBLIC, ACC_STATIC, and
   //--** ACC_FINAL flags set and may not have any of the other flags in
@@ -327,9 +329,10 @@ Table *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool,
   return fields;
 }
 
-FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
-				     ConstantPool *constantPool,
-				     Table *runtimeConstantPool) {
+FieldInfo *
+ClassFile::ParseFieldInfo(u_int &offset,
+			  ConstantPool *constantPool,
+			  RuntimeConstantPool *runtimeConstantPool) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & FieldInfo::ACC_PUBLIC) != 0) +
       ((accessFlags & FieldInfo::ACC_PRIVATE) != 0) +
@@ -352,7 +355,7 @@ FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
 
 bool ClassFile::ParseFieldAttributes(u_int &offset,
 				     ConstantPool *constantPool,
-				     Table *runtimeConstantPool,
+				     RuntimeConstantPool *runtimeConstantPool,
 				     word &constantValue) {
   u_int attributesCount = GetU2(offset);
   JavaString *constantValueAttributeName = JavaString::New("ConstantValue");
@@ -374,7 +377,7 @@ bool ClassFile::ParseFieldAttributes(u_int &offset,
 }
 
 Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
-			       Table *runtimeConstantPool) {
+			       RuntimeConstantPool *runtimeConstantPool) {
   //--** No two methods in one class file may have the same name and descriptor
   //--** All interface methods must have their ACC_ABSTRACT and ACC_PUBLIC
   //--** flags set and may not have any of the other flags in Table 4.5 set 
@@ -389,9 +392,10 @@ Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
   return methods;
 }
 
-MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
-				       ConstantPool *constantPool,
-				       Table *runtimeConstantPool) {
+MethodInfo *
+ClassFile::ParseMethodInfo(u_int &offset,
+			   ConstantPool *constantPool,
+			   RuntimeConstantPool *runtimeConstantPool) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & MethodInfo::ACC_PUBLIC) != 0) +
       ((accessFlags & MethodInfo::ACC_PRIVATE) != 0) +
@@ -424,7 +428,7 @@ MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
 
 bool ClassFile::ParseMethodAttributes(u_int &offset,
 				      ConstantPool *constantPool,
-				      Table *runtimeConstantPool,
+				      RuntimeConstantPool *runtimeConstantPool,
 				      JavaByteCode *&byteCode) {
   //--** implementations must recognize the Exceptions attribute
   u_int attributesCount = GetU2(offset);
@@ -495,7 +499,8 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
     return INVALID_POINTER; //--** raise UnsupportedClassVersionError
   ConstantPool *constantPool = ParseConstantPool(offset);
   if (constantPool == INVALID_POINTER) return INVALID_POINTER;
-  Table *runtimeConstantPool = ResolveConstantPool(constantPool, classLoader);
+  RuntimeConstantPool *runtimeConstantPool =
+    ResolveConstantPool(constantPool, classLoader);
   u_int accessFlags = GetU2(offset);
   //--** check accessFlags validity
   JavaString *name;
