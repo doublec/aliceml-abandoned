@@ -21,7 +21,7 @@
 
 #include "generic/Interpreter.hh"
 
-class Primitive {
+class DllExport Primitive {
 public:
   static word MakeFunction(const char *name, Interpreter::function function,
 			   u_int arity, bool sited = false);

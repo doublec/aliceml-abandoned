@@ -17,9 +17,11 @@
 #pragma interface "generic/IOHandler.hh"
 #endif
 
+#include "Base.hh"
+
 class Future;
 
-class IOHandler {
+class DllExport IOHandler {
 protected:
   static int defaultFD;
 public:
