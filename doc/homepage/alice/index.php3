@@ -1,32 +1,8 @@
 <?php
-  include("/services/ps/httpd/html/pslab.php");
+  include("project.php3");
 
-  pslab_bibheader("Alice");
-
-  $baseurl = "/alice";
-
-  $suburls =
-    array(array("text" => "Download",
-		"url"  => "download.php3"),
-	  array("text" => "Manual",
-		"url"  => "manual/"),
-	  array("text" => "Bugs",
-		"url"  => "bugzilla/"),
-	  array("text" => "Papers",
-		"url"  => "papers.php3"),
-	  array("text" => "People and Contact",
-		"url"  => "people.php3"));
+  alice_project_header("Alice");
 ?>
-
-<IMG align=right src="alice.gif">
-
-<P class=margin>
-  <?php pslab_uni(); ?>
-  <?php pslab_menu(); ?>
-  <BR><BR>
-  <A href="http://www.coli.uni-sb.de/sfb378/"
-    ><IMG src="/images/sfb378.gif" border=0 vspace=8></A>
-</P>
 
 <H2>Overview</H2>
 

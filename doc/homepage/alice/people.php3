@@ -1,11 +1,10 @@
-<?php include("macros.php3"); ?>
+<?php
+  include("project.php3");
 
-<?php heading("Alice Team", "the team") ?>
+  alice_project_header("The Alice Team");
+?>
 
-
-<BR><BR><BR><BR><BR>
-
-<?php section("people", "people") ?>
+<H2>People</H2>
 
   <P>
     The following people are currently involved in the Alice project:
@@ -34,8 +33,7 @@
     <LI><A HREF="/~jan/">Jan Schwinghammer</A> (formerly)
   </UL>
 
-
-<?php section("contact", "contact") ?>
+<H2>Contact</H2>
 
   <P>
     You can submit bug reports by using our Bugzilla
@@ -59,5 +57,4 @@
     <LI> <A href="news:ps.alice" class="url">ps.alice</A> </LI>
   </UL>
 
-
-<?php footing() ?>
+<?php pslab_footer("Stockhausen"); ?>

@@ -9,7 +9,7 @@ DIRS = $(PREFIX) \
 	$(PREFIX)/manual/examples/interpreter
 
 INSTALLFILES_0 = \
-	style.css bg.gif alice.gif musicemb.jpg macros.php3 \
+	style.css bg.gif alice.gif musicemb.jpg macros.php3 project.php3 \
 	index.php3 people.php3 papers.php3 download.php3
 INSTALLFILES_DOWNLOAD_0 = \
 	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz

@@ -1,11 +1,10 @@
-<?php include("macros.php3"); ?>
+<?php
+  include("project.php3");
 
-<?php heading("Papers", "papers") ?>
+  alice_project_header("Papers");
+?>
 
-
-<BR><BR><BR><BR><BR>
-
-<?php section("papers", "papers") ?>
+<H2>Papers</H2>
 
   <P>
     On the Design of Alice:
@@ -99,7 +98,7 @@
   </P>
 
 
-<?php section("reports", "funding") ?>
+<H2>Funding</H2>
 
   <P>
     Research Reports and Proposals:
@@ -115,5 +114,4 @@
 	 2001
   </UL>
 
-
-<?php footing() ?>
+<?php pslab_footer("Stockhausen"); ?>
