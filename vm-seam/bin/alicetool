@@ -4,7 +4,7 @@
 ## Configuration Section
 ##
 
-LIGHTNING=1
+LIGHTNING=0
 
 ##
 ## End of Configuration Section
@@ -87,9 +87,9 @@ case "$mode" in
 		    ;;
 	    esac
 	done
+	libs="$libs $ALICE_HOME/seam.dll $ALICE_HOME/alice.dll"
 	if [ "$platform" = windows ]; then
 	    ldflags="-mno-cygwin $ldflags"
-	    libs="$libs $ALICE_HOME/stow.dll"
 	fi
 	cmd g++ -shared $ldflags -o $outputfile $fileargs $libs
 	;;
