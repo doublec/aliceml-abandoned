@@ -27,9 +27,14 @@ structure Util :> UTIL =
         datatype spaces = GDK | GTK | GNOMECANVAS | PANGO
 	val allSpaces = [GDK, GTK, GNOMECANVAS, PANGO]
 
+	fun moduleName GDK         = "Gdk"
+	  | moduleName GTK         = "Gtk"
+	  | moduleName GNOMECANVAS = "Canvas"
+	  | moduleName PANGO       = "Pango"
+
 	fun spaceName GDK         = "Gdk"
 	  | spaceName GTK         = "Gtk"
-	  | spaceName GNOMECANVAS = "Canvas"
+	  | spaceName GNOMECANVAS = "GnomeCanvas"
 	  | spaceName PANGO       = "Pango"
 
 	fun spaceFuncPrefix GDK       = "gdk_"

@@ -23,7 +23,7 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	open TypeTree
 	open TypeManager
 
-	val safeName = Util.spaceName(space)^"Enums"
+	val safeName = Util.moduleName(space)^"Enums"
 
 	(* Indentation constants *)
 	val sigIndent = Util.indent 1

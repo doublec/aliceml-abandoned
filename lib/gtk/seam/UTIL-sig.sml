@@ -16,6 +16,7 @@ signature UTIL =
         datatype spaces = GDK | GTK | GNOMECANVAS | PANGO
 	val allSpaces : spaces list
 
+	val moduleName : spaces -> string
 	val spaceName : spaces -> string
 	val spaceFuncPrefix : spaces -> string
 	val spaceEnumPrefix : spaces -> string

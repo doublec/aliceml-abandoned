@@ -26,7 +26,7 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 	open TypeTree
 	open TypeManager
 	val nativeName = "Native"^(if makeFieldFuns then "Fields" else "")^
-	                     Util.spaceName(space)
+	                     Util.moduleName(space)
 
 	(* Indentation constant *)
 	val sigIndent = Util.indent 2

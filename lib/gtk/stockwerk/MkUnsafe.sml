@@ -23,9 +23,9 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	open TypeTree
 	open TypeManager
 
-	val nativeName = "Native"^Util.spaceName(space)
-	val fieldsName = "NativeFields"^Util.spaceName(space)
-	val unsafeName = Util.spaceName(space)^"Unsafe"
+	val nativeName = "Native"^Util.moduleName(space)
+	val fieldsName = "NativeFields"^Util.moduleName(space)
+	val unsafeName = Util.moduleName(space)^"Unsafe"
 
 	(* Indentation constants *)
 	val sigIndent = Util.indent 1
