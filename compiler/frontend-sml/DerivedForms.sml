@@ -149,9 +149,10 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Some helpers *)
 
-    (*UNFINISHED: how refer to pervasives? *)
-    fun longvid(I, vid)		= G.SHORTLong(I, vid)
-    fun longtycon(I, tycon)	= G.SHORTLong(I, tycon)
+    fun strid_PERVASIVE(I)	= G.StrId(I, StrId.fromString "__pervasive")
+    fun longstrid_PERVASIVE(I)	= G.SHORTLong(I, strid_PERVASIVE(I))
+    fun longvid(I, vid)		= G.DOTLong(I, longstrid_PERVASIVE(I), vid)
+    fun longtycon(I, tycon)	= G.DOTLong(I, longstrid_PERVASIVE(I), tycon)
 
     fun vid_NIL(I)		= G.VId(I, VId.fromString "nil")
     fun vid_CONS(I)		= G.VId(I, VId.fromString "::")

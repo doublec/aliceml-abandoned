@@ -222,7 +222,7 @@
 	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| ANY | FCT | PACK | UNPACK
 	| IMPORT | FROM
-	| PRIMITIVE | EQEQTYPE | REFTYPE
+	| PRIMITIVE | EQEQTYPE | REFTYPE | PERVASIVE
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
@@ -247,7 +247,7 @@
 	 CONSTRUCTOR NON WITHFUN WITHVAL
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
-	 PRIMITIVE EQEQTYPE REFTYPE
+	 PRIMITIVE EQEQTYPE REFTYPE PERVASIVE
 
 %eop     EOF
 %noshift EOF
@@ -563,6 +563,8 @@
 
   strid:  ALPHA		( StrId(I(ALPHAleft,ALPHAright),
 				StrId.fromString ALPHA) )
+	| PERVASIVE	( StrId(I(PERVASIVEleft,PERVASIVEright),
+				StrId.fromString "__pervasive") )
 
   sigid:  ALPHA		( SigId(I(ALPHAleft,ALPHAright),
 				SigId.fromString ALPHA) )
