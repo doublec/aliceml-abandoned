@@ -7,7 +7,7 @@
 ## Configuration Section
 ##
 
-SEAM_HOME="$PROGRAMFILES/Seam"
+: ${SEAM_HOME="$PROGRAMFILES/Seam"}
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
