@@ -73,7 +73,8 @@ structure JVMInst =
 	    Field of FIELDACCESS list * fieldname * FIELDTYPE
 	and
 	    METHOD =
-	    Method of METHODACCESS list * methodname * (ARG list * ARG) * LIMITS * INSTRUCTION list
+	    Method of METHODACCESS list * methodname * (ARG list * ARG) * LIMITS *
+	    INSTRUCTION list * INSTRUCTION list
 	and
 	    FIELDTYPE =
 	    Classtype of classname

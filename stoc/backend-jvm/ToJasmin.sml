@@ -249,7 +249,7 @@ structure ToJasmin =
 	      | fieldsToJasmin nil = ""
 	end
 
-	fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs, instructions)) =
+	fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs, instructions, catches)) =
 	    let
 		val mcc = mAccessToString access
 	    in
@@ -259,6 +259,7 @@ structure ToJasmin =
 		".limit locals "^Int.toString(perslocs+1)^"\n"^
 		".limit stack "^Int.toString(stackNeed (instructions,0,0))^"\n"^
 		instructionsToJasmin(instructions,0,0)^"\n"^
+		instructionsToJasmin(catches,0,0)^"\n"^
 		".end method\n"
 	    end
 	fun methodsToJasmin (m::ms) = (methodToJasmin m)^(methodsToJasmin ms)
