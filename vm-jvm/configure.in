@@ -18,14 +18,14 @@ if test $HASSML = "no";
   then
 	AC_MSG_ERROR("No sml found.");
   else
-	sml="sml"
+	smlcm="sml"
 fi
 AC_CHECK_PROG(HASSML,sml-cm,yes,no,$PATH)
 if test HASSML = "no";
   then
 	AC_MSG_RESULT("No sml-cm. Cross fingers and hope it works with sml.");
   else
-	sml="sml-cm"
+	smlcm="sml-cm"
 fi
 AC_CHECK_PROG(HASJAVA,javac,yes,no,$PATH)
 if test $HASJAVA = "no" ;
@@ -33,6 +33,15 @@ if test $HASJAVA = "no" ;
 	AC_MSG_ERROR("No javac found.");
   else
 	javac="javac"
+fi
+
+dnl Check system type
+UNAME=`uname`
+if test $UNAME = "Linux"
+  then
+	smlexesuffix=".x86-linux"
+  else
+	smlexesuffix="."
 fi
 
 dnl Checks for libraries.
@@ -44,7 +53,8 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 
 dnl Checks for library functions.
 
+AC_SUBST(smlexesuffix)
 AC_SUBST(m4)
 AC_SUBST(javac)
-AC_SUBST(sml-cm)
+AC_SUBST(smlcm)
 AC_OUTPUT(../../benchmarks/Makefile Makefile tools/Makefile test/Makefile)
