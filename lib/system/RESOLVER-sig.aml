@@ -31,6 +31,10 @@ signature RESOLVER =
 	type resolver
 	type t = resolver
 
+	datatype result =
+	    FILE of string
+	  | STRING of string
+
 	val new: string * Handler.t list -> resolver
-	val localize: resolver -> string -> string option
+	val localize: resolver -> string -> result option
     end
