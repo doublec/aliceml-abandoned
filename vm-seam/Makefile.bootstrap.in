@@ -94,6 +94,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
+FIXPARSER=$(BOOTSTRAPDIR)/fixparser.awk
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
@@ -488,9 +489,9 @@ build1/compiler/frontend-sml/Parser.grm: compiler/frontend-sml/Parser.grm
 
 build1/compiler/frontend-sml/PARSER-sig.aml: \
 	build1/compiler/frontend-sml/Parser.grm.sig \
-	Rel2.import compiler/frontend-sml/PARSER-sig.aml.header fixparser.awk
+	Rel2.import compiler/frontend-sml/PARSER-sig.aml.header $(FIXPARSER)
 	(cat Rel2.import $(SRCTOP)/compiler/frontend-sml/PARSER-sig.aml.header && \
-	 awk -f $(SRCTOP)/fixparser.awk < $<) > $@ || rm $@
+	 awk -f $(FIXPARSER) < $<) > $@ || rm $@
 
 build1/compiler/frontend-sml/Parser.aml: \
 	build1/compiler/frontend-sml/Parser.grm.sml \
@@ -545,9 +546,9 @@ build1/tools/depend/SMLParser.grm: tools/depend/SMLParser.grm
 	cp $< $@
 
 build1/tools/depend/SML_PARSER-sig.aml: build1/tools/depend/SMLParser.grm.sig \
-	Rel2.import tools/depend/SML_PARSER-sig.aml.header fixparser.awk
+	Rel2.import tools/depend/SML_PARSER-sig.aml.header $(FIXPARSER)
 	(cat Rel2.import $(SRCTOP)/tools/depend/SML_PARSER-sig.aml.header && \
-	 awk -f $(SRCTOP)/fixparser.awk < $<) > $@ || rm $@
+	 awk -f$(FIXPARSER) < $<) > $@ || rm $@
 
 build1/tools/depend/SMLParser.grm.aml: build1/tools/depend/SMLParser.grm.sml \
 	Rel2.import tools/depend/SMLParser.grm.aml.header
