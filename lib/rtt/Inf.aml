@@ -945,65 +945,54 @@ structure InfPrivate =
     exception Mismatch of mismatch
 
 
+    fun match(_, ref TOP) =
+	    emptyRea()
 
-    fun match(j1,j2) =
-	let
-	    val rea = emptyRea()
-	in
-	    match'(rea, j1, j2) ;
-	    rea
-	end
-
-    and match'(rea, _, ref TOP) = ()
-      | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+      | match(j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
 	if Path.equals(p1,p2) then
-	    ()
+	    emptyRea()
 	else
 	    raise Mismatch(Incompatible(j1,j2))
 
-      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
+      | match(ref(SIG s1), ref(SIG s2)) =
+	    matchSig(s1,s2)
 
-      | match'(rea, j1 as ref(FUN _), j2 as ref(FUN _)) =
+      | match(j1 as ref(FUN _), j2 as ref(FUN _)) =
 	( case (instance j1, instance j2)
 	   of (ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =>
 	      let
-		  val rea2 = emptyRea()
+		  val rea = match(j21,j11) handle Mismatch mismatch =>
+				raise Mismatch(MismatchDom mismatch)
 	      in
-		  realise(rea, j21);
-	          match'(rea2, j21, j11) handle Mismatch mismatch =>
-			raise Mismatch(MismatchDom mismatch);
-		  realise(rea2, j12);
-		  match'(rea, j12, j22) handle Mismatch mismatch =>
+		  realise(rea, j12);
+		  match(j12,j22) handle Mismatch mismatch =>
 			raise Mismatch(MismatchRan mismatch)
 	      end
 	    | _ => raise Assert.failure
 	)
 
-      | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
+      | match(ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    ()
+	    emptyRea()
 
-      | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
-	( match'(rea, j11, j21)
-	; if Path.equals(p1,p2) then () else
-	      raise Mismatch(IncompatibleArg(p1,p2))
-	)
+      | match(ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
+	if Path.equals(p1,p2) then
+	    match(j11,j21)
+	else
+	    raise Mismatch(IncompatibleArg(p1,p2))
 
-      | match'(rea, ref(LINK j1), j2)      = match'(rea, j1, j2)
-      | match'(rea, j1, ref(LINK j2))      = match'(rea, j1, j2)
-      | match'(rea, ref(ABBREV(_,j1)), j2) = match'(rea, j1, j2)
-      | match'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
-	( match'(rea, j1, j22)
-(*	; j2 := ABBREV(j21,j1)
-*)	)
+      | match(ref(LINK j1), j2)      = match(j1,j2)
+      | match(j1, ref(LINK j2))      = match(j1,j2)
+      | match(ref(ABBREV(_,j1)), j2) = match(j1,j2)
+      | match(j1, ref(ABBREV(_,j2))) = match(j1,j2)
 
-      | match'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
+      | match(j1,j2) = raise Mismatch(Incompatible(j1,j2))
 
 
-    and matchSig(rea, s1 as (ref items1, _), s2 as (ref items2, _)) =
+    and matchSig(s1 as (ref items1, _), s2 as (ref items2, _)) =
 	let
 	    val m1 = getMap s1
-	    val {val_rea, typ_rea, mod_rea, inf_rea} = rea
+	    val rea as {val_rea, typ_rea, mod_rea, inf_rea} = emptyRea()
 
 	    fun pair(m1,      [],      pairs) = List.rev pairs
 	      | pair(m1, item2::items, pairs) =
@@ -1038,10 +1027,8 @@ structure InfPrivate =
 	    (* Necessary to create complete realisation. *)
 	    and matchNested(ref(SIG s1), ref(SIG(ref items2,_))) =
 		    ignore(pair(getMap s1, items2, []))
-	      | matchNested(ref(FUN _), ref(FUN _)) =
-		(*UNFINISHED: when introducing functor paths*) ()
-	      | matchNested(ref(LINK j1), j2) = matchNested(j1, j2)
-	      | matchNested(j1, ref(LINK j2)) = matchNested(j1, j2)
+	      | matchNested(ref(LINK j1), j2)      = matchNested(j1, j2)
+	      | matchNested(j1, ref(LINK j2))      = matchNested(j1, j2)
 	      | matchNested(ref(ABBREV(_,j1)), j2) = matchNested(j1, j2)
 	      | matchNested(j1, ref(ABBREV(_,j2))) = matchNested(j1, j2)
 	      | matchNested _ = ()
@@ -1049,7 +1036,8 @@ structure InfPrivate =
 	    val pairs = pair(m1, items2, [])
 	in
 	    realiseSig(rea, s2);
-	    List.app matchItem pairs
+	    List.app matchItem pairs;
+	    rea
 	end
 
     and matchItem(ref item1', item2 as ref item2') =
@@ -1090,14 +1078,12 @@ structure InfPrivate =
 	    raise Mismatch(MismatchTyp(l,k1,k2))
 
     and matchInf(l,j1,j2) =
-	match'(emptyRea(), j1, j2)
-	handle Mismatch mismatch =>
+	match(j1,j2) handle Mismatch mismatch =>
 	    raise Mismatch(MismatchMod(l, mismatch))
 
     and matchKind(l,k1,k2) =
 	(*UNFINISHED: match contravariant*)
-	equaliseKind(k1,k2)
-	handle Mismatch mismatch =>
+	equaliseKind(k1,k2) handle Mismatch mismatch =>
 	    raise Mismatch(MismatchInf(l, mismatch))
 
     and matchFix(l,q1,q2) =
