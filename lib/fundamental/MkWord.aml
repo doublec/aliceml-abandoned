@@ -79,7 +79,13 @@ struct
 	else if w1 < w2 then GREATER
 	else EQUAL
 
-    fun ~w = 0-w
+    val w0 = fromInt 0
+    val w2 = fromInt 2
+    val w8 = fromInt 8
+    val w10 = fromInt 10
+    val w16 = fromInt 16
+
+    fun ~w = w0-w
 
     fun min(w1,w2) = if w1 < w2 then w1 else w2
     fun max(w1,w2) = if w1 > w2 then w1 else w2
@@ -90,12 +96,6 @@ struct
     open StringCvt
 
     (* fmt and scan both use inverted signs to cope with minInt! *)
-
-    val w0 = fromInt 0
-    val w2 = fromInt 2
-    val w8 = fromInt 8
-    val w10 = fromInt 10
-    val w16 = fromInt 16
 
     fun base BIN	= w2
       | base OCT	= w8
