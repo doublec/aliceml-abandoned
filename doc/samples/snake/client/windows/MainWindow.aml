@@ -167,13 +167,11 @@ struct
 		  | GAME  => 
 			let
 			    val answer = Promise.promise ()
-			    val _ = Inspector.inspect ("answer should appear",
-						       answer)
 			in
 			    QuestionWindow.mkQuestionBox 
 			    ("Sure?", "Do you want to quit?", answer);
 			    case Promise.future answer of
-			     QuestionWindow.YES    => ((!disconnect') ();
+			     QuestionWindow.YES    => (!disconnect' ();
 						       reset NONE)
 			   | QuestionWindow.NO     => ()
 			   | QuestionWindow.CANCEL => ()
@@ -253,7 +251,7 @@ struct
 		(case event of
 		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
 		   |            _                  	=> ())
-	      |  canvasEvent       _            = ()
+	      |  canvasEvent       x            = Inspector.inspect x
 
 	in
 

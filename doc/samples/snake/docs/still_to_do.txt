@@ -1,7 +1,22 @@
-knopf für laden und speichern von config sachen... und knopf
-für default multi oder default single laden machen...
-(serversettings)
+in waitingwindow das server_url fenster vergrößern
 
-code verschönern
+in waiting, playersettingswindow disconnect einfügen und farben
+in schriftarten
 
-canvas-fehler beseitigen...
+questionwindow geht net - warum?
+
+layout von serversettingswindow
+
+blinken im mainwindow bei gateöffnen
+
+anzeigen von noch verfügbarer zeit
+
+FAILURES:
+
+
+
+client: waitingwindow : eigener name im clientmode net angezeigt
+
+	mainwindow zwischendurch ruckeln
+
+	updaten wird langsamer
