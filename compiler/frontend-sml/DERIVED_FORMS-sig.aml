@@ -16,6 +16,14 @@
  *	<type typbind> local datatype datbind in type typbind' dec end
  *     where typbind' contains a binding t = t for each tycon t bound in
  *     datbind. Note that this results in a different treatment of equality.
+ *   - derived forms for where patterns:
+ *	pat withval valbind where atexp
+ *	==>
+ *	pat withval valbind end where atexp
+ *
+ *	pat withfun fvalbind where atexp
+ *	==>
+ *	pat withfun fvalbind end where atexp
  *   - include takes longsigids:
  *	include longsigid_1 ... longsigid_n
  *	==>
@@ -140,6 +148,8 @@ signature DERIVED_FORMS =
     val VIDPatRow:   Info * VId * Ty option * Pat option * PatRow option
                                                                -> PatRow
     val WITHFUNPat:  Info * Pat * FvalBind                     -> Pat
+    val WITHVALWHEREPat: Info * Pat * ValBind * AtExp          -> Pat
+    val WITHFUNWHEREPat: Info * Pat * FvalBind * AtExp         -> Pat
 
     (* Types *)
 

@@ -17,6 +17,14 @@
  *	<type typbind> local datatype datbind in type typbind' dec end
  *     where typbind' contains a binding t = t for each tycon t bound in
  *     datbind. Note that this results in a different treatment of equality.
+ *   - derived forms for where patterns:
+ *	pat withval valbind where atexp
+ *	==>
+ *	pat withval valbind end where atexp
+ *
+ *	pat withfun fvalbind where atexp
+ *	==>
+ *	pat withfun fvalbind end where atexp
  *   - include takes longsigids:
  *	include longsigid_1 ... longsigid_n
  *	==>
@@ -355,6 +363,21 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.ROWPatRow(I, lab, pat, patrow_opt)
 	end
 
+    fun WITHVALWHEREPat(I, pat, valbind, atexp) =
+	let
+	    val I'         = Source.over(G.infoPat pat, G.infoValBind valbind)
+	    val withvalPat = G.WITHVALPat(I', pat, valbind)
+	in
+	    G.WHEREPat(I, withvalPat, atexp)
+	end
+
+    fun WITHFUNWHEREPat(I, pat, fvalbind, atexp) =
+	let
+	    val I'         = Source.over(G.infoPat pat, G.infoFvalBind fvalbind)
+	    val withfunPat = G.WITHFUNPat(I', pat, fvalbind)
+	in
+	    G.WHEREPat(I, withfunPat, atexp)
+	end
 
 
     (* Expressions *)

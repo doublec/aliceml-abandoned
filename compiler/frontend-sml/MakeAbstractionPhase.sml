@@ -1294,11 +1294,11 @@ functor MakeAbstractionPhase(
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trFappPat_lhs E (Infix.pat (infEnv E) fpat)
 	 | ( TYPEDPat(i, fpat, _)
-	   | WHEREPat(i, fpat, _) )	=> trFpat_lhs E fpat
+	   | WHEREPat(i, fpat, _)
+	   | WITHVALPat(i, fpat, _)
+	   | WITHFUNPat(i, fpat, _) )	=> trFpat_lhs E fpat
 	 | ( NONPat(i,_)
-	   | ASPat(i,_,_)
-	   | WITHVALPat(i,_,_)
-	   | WITHFUNPat(i,_,_) )	=> error(i, E.FvalBindPatInvalid)
+	   | ASPat(i,_,_) )		=> error(i, E.FvalBindPatInvalid)
 
     and trFappPat_lhs E =
 	fn APPPat(i, fpat, atpat)	=> trFappPat_lhs E fpat
@@ -1428,8 +1428,48 @@ functor MakeAbstractionPhase(
 		( O.GuardPat(i, pat', exp'), arity, typs' )
 	   end
 
-	 | ( NONPat(i,_) | ASPat(i,_,_)
-	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
+	 | WITHVALPat(i, pat, valbind) =>
+	   let
+		val  _   = insertScope E'
+		val (pat',arity,typs') = trFpat_rhs (E,E') pat
+		val  _   = inheritScope(E, cloneScope E')
+		val  _   = insertScope E'
+		val decs'= trValBindo (E,E') (SOME valbind)
+		val  _   = deleteScope E
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.WithPatVIdDuplicate)
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.PatVIdDuplicate)
+	   in
+		( O.WithPat(i, pat', decs'), arity, typs' )
+	   end
+
+	 | WITHFUNPat(i, pat, fvalbind) =>
+	   let
+		val  _   = insertScope E'
+		val (pat',arity,typs') = trFpat_rhs (E,E') pat
+		val  _   = inheritScope(E, cloneScope E')
+		val  _   = insertScope E'
+		val ids' = trFvalBindo_lhs (E,E') (SOME fvalbind)
+		val  _   = inheritScope(E, cloneScope E')
+		val exps'= trFvalBindo_rhs E (SOME fvalbind)
+		val decs'= ListPair.map
+				(fn(id',exp') =>
+				 O.ValDec(O.infoExp exp',
+					  O.VarPat(O.infoId id', id'), exp'))
+				(ids',exps')
+		val  _   = deleteScope E
+		val  _   = deleteScope E
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.WithPatVIdDuplicate)
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.PatVIdDuplicate)
+	   in
+		( O.WithPat(i, pat', [O.RecDec(infoFvalBind fvalbind, decs')]),
+		  arity, typs' )
+	   end
+
+	 | ( NONPat(i,_) | ASPat(i,_,_) ) =>
 		error(i, E.FvalBindPatInvalid)
 
     and trFappPat_rhs (E,E') =
