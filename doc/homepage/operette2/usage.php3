@@ -58,10 +58,12 @@
     <DT><TT>--no-implicit-import</TT></DT>
     <DD><P>Do not make the SML Standard Basis top-level environment available
       to source files.  This option is necessary for bootstrapping the
-      top-level environment itself.</P></DD>
+      top-level environment itself.  Improper use will most probably
+      crash the compiler.</P></DD>
     <DT><TT>--implicit-import-file</TT> <I>&lt;file&gt;</I></DT>
     <DD><P>Name a file containing import announcements that is automatically
-      prepended to any Alice source file before compilation.</P></DD>
+      prepended to any Alice source file before compilation.  Improper use
+      will most probably crash the compiler.</P></DD>
     <DT><TT>--rtt-level=no</TT></DT>
     <DD><P>Do not generate code for runtime types.</P></DD>
     <DT><TT>--rtt-level=core</TT></DT>
