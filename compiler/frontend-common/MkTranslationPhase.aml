@@ -51,7 +51,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun infToTyp j =
 	if Inf.isTop j then
 	    (*UNFINISHED: is this right? *)
-	    PreboundType.typ_unit
+	    Type.inVar(Type.var Type.STAR)
 	else if Inf.isCon j then
 	    let
 		val (k,p) = Inf.asCon j
