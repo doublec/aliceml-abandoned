@@ -422,6 +422,16 @@ public:
   }
 };
 
+class ReturnAddress {
+public:
+  static word ToWord(u_int pc) {
+    return Store::IntToWord(pc);
+  }
+  static u_int FromWord(word x) {
+    return Store::DirectWordToInt(x);
+  }
+};
+
 // to be done: check compliance of java spec with c spec
 class JavaFloat {
 public:
@@ -2028,14 +2038,14 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::JSR:
       {
 	JavaDebug::Print("JSR");
-	frame->Push(Store::IntToWord(pc + 3));
+	frame->Push(ReturnAddress::ToWord(pc + 3));
 	pc += static_cast<s_int16>(GET_POOL_INDEX());
       }
       break;
     case Instr::JSR_W:
       {
 	JavaDebug::Print("JSR_W");
-	frame->Push(Store::IntToWord(pc + 5));
+	frame->Push(ReturnAddress::ToWord(pc + 5));
 	pc += static_cast<s_int>(GET_WIDE_INDEX());
       }
       break;
@@ -2454,7 +2464,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("RET");
 	u_int index = GET_BYTE_INDEX();
-	pc = Store::DirectWordToInt(frame->GetEnv(index));
+	pc = ReturnAddress::FromWord(frame->GetEnv(index));
       }
       break;
     case Instr::RETURN:
@@ -2537,7 +2547,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case Instr::RET:
 	  {
 	    u_int index = GET_POOL_INDEX();
-	    pc = Store::DirectWordToInt(frame->GetEnv(index));
+	    pc = ReturnAddress::FromWord(frame->GetEnv(index));
 	  }
 	  break;
 	default:
