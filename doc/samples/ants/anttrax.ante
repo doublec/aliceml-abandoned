@@ -1,0 +1,37 @@
+
+
+fun domove otherwise evadeaction =
+    letlabel (fn exit =>
+    letlabel (fn evade =>
+	sense ahead foehome ifyes (goto evade) ++
+	(* avoid trap *)
+	sense aheadleft foe ifyes (
+	    sense aheadright foe ifyes (goto evade)
+	) ++
+	move ifyes (goto exit) ++
+	label evade ++
+	evadeaction ++
+	label exit
+    ))
+
+
+
+fun gohome trailaction homeaction =
+    letlabel (fn exit =>
+	direct ++
+	domove otherwise (
+	    todo
+	)
+    )
+
+
+val fetch_food =
+    loop (
+	turnto (marker foodmarker) ifnot (
+	    turnto food
+	) ++
+	domove otherwise nop
+    )
+
+val deliver_food =
+    gohome (mark food) (drop ++ times 3 (turn left) ++ fetch_food)
