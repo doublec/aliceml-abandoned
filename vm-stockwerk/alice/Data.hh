@@ -238,7 +238,7 @@ public:
 #endif
     return result;
   }
-  unsigned char *GetBigEndianRepresentation() {
+  u_char *GetBigEndianRepresentation() {
     return reinterpret_cast<u_char *>(GetBase());
   }
 };
@@ -329,11 +329,46 @@ public:
   }
 };
 
+class DllExport Word8Array: private String {
+public:
+  static const u_int maxLen = String::maxSize;
+
+  using Chunk::ToWord;
+  using String::GetValue;
+
+  static Word8Array *New(u_int length) {
+    return static_cast<Word8Array *>(String::New(length));
+  }
+  static Word8Array *FromWord(word x) {
+    return static_cast<Word8Array *>(String::FromWord(x));
+  }
+  static Word8Array *FromWordDirect(word x) {
+    return static_cast<Word8Array *>(String::FromWordDirect(x));
+  }
+
+  u_int GetLength() {
+    return GetSize();
+  }
+  void Init(u_int index, word value) {
+    Assert(index < GetSize());
+    s_int i = Store::WordToInt(value);
+    Assert(i >= 0 && i <= 0xFF);
+    GetValue()[index] = i;
+  }
+  void Update(u_int index, word value) {
+    Init(index, value);
+  }
+  word Sub(u_int index) {
+    return Store::IntToWord(GetValue()[index]);
+  }
+};
+
 class DllExport Word8Vector: private String {
 public:
   static const u_int maxLen = String::maxSize;
 
   using Chunk::ToWord;
+  using String::GetValue;
 
   static Word8Vector *New(u_int length) {
     return static_cast<Word8Vector *>(String::New(length));
@@ -344,12 +379,15 @@ public:
   static Word8Vector *FromWordDirect(word x) {
     return static_cast<Word8Vector *>(String::FromWordDirect(x));
   }
+
   u_int GetLength() {
     return GetSize();
   }
   void Init(u_int index, word value) {
     Assert(index < GetSize());
-    GetValue()[index] = Store::WordToInt(value);
+    s_int i = Store::WordToInt(value);
+    Assert(i >= 0 && i <= 0xFF);
+    GetValue()[index] = i;
   }
   void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate
