@@ -93,13 +93,13 @@ void AliceLanguageLayer::Init() {
   // to be done: Memory should be enlarged dynamically
   NativeCodeJitter::Init(20 * STORE_MEMCHUNK_SIZE);
 
-  char *jitMode = getenv("ALICE_JIT_MODE");
-  if ((jitMode != NULL) && !strcmp(jitMode, "0"))
-    concreteCodeConstructor = (concrete_constructor) AliceConcreteCode::New;
+  const char *jitMode = std::getenv("ALICE_JIT_MODE");
+  if (jitMode != NULL && !strcmp(jitMode, "0"))
+    concreteCodeConstructor = AliceConcreteCode::New;
   else
-    concreteCodeConstructor = (concrete_constructor) NativeConcreteCode::New;
+    concreteCodeConstructor = NativeConcreteCode::New;
 #else
-  concreteCodeConstructor = (concrete_constructor) AliceConcreteCode::New;
+  concreteCodeConstructor = AliceConcreteCode::New;
 #endif
   Hole::InitExceptions(); //--** should not be here
   PrimitiveTable::Init();
