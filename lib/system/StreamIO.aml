@@ -19,8 +19,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				       where type elem = PrimIO.elem
 					 and type vector = PrimIO.vector
 		 structure Array: MONO_ARRAY
-				      where type elem = PrimIO.elem
-					and type array = PrimIO.array
+				      where type array = PrimIO.array
+					and type Vector.elem = PRimIO.elem
 					and type Vector.vector = PrimIO.vector
 		 val someElem: PrimIO.elem) :>
 	STREAM_IO
