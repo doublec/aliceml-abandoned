@@ -19,12 +19,13 @@
 
 #include "generic/Interpreter.hh"
 
+class Thread;
 class Transient;
 
-class ByneedInterpreter : public Interpreter {
+class ByneedInterpreter: public Interpreter {
 private:
   // ByneedInterpreter Constructor
-  ByneedInterpreter() : Interpreter() {}
+  ByneedInterpreter(): Interpreter() {}
 public:
   // Exported ByneedInterpreter Instance
   static ByneedInterpreter *self;
@@ -33,10 +34,10 @@ public:
     self = new ByneedInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Transient *future);
+  static void PushFrame(Thread *thread, Transient *future);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
-  virtual Result Handle(TaskStack *taskStack);
+  virtual Result Run();
+  virtual Result Handle();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
