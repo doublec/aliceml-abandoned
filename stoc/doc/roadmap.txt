@@ -15,6 +15,7 @@ InputGrammar
  | AbstractionPhase:
  |	- Fixity resolution
  |	- Binding analysis
+ |	- Syntactic restrictions
  |	- more Derived form elimination
  |
  | -------------------------------------
@@ -31,7 +32,7 @@ AbstractGrammar
 TypedGrammar (= AbstractGrammar')
  |
  | TranslationPhase:
- |	- Type elimination
+ |	- Type erasure
  |	- Module translation
  |
  | -------------------------------------
