@@ -32,6 +32,9 @@
 #include "store/Store.hh"
 #include "store/Memory.hh"
 #include "store/GCHelper.hh"
+#include "store/Map.hh"
+#include "store/WeakMap.hh"
+#include "store/MapNode.hh"
 
 // Using Set in a anonymous namespace prevents
 // class Set from appearing outside
@@ -110,7 +113,7 @@ inline char *Store::GCAlloc(u_int size, u_int header) {
   }
 }
 
-inline char *Store::GCAlloc(u_int size) {
+char *Store::GCAlloc(u_int size) {
   size = HeaderOp::TranslateSize(size);
   return Store::GCAlloc(BlockMemSize(size),
 			HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen));
@@ -198,8 +201,8 @@ inline Block *Store::ForwardSet(Block *p) {
 inline s_int Store::CanFinalize(Block *p) {
   BlockLabel l = p->GetLabel();
   // Value is non Dict or empty Dict ?
-  return ((l != WEAK_DICT_LABEL) ||
-	  ((l == WEAK_DICT_LABEL) && ((WeakDictionary *) p)->GetCounter() == 0));
+  return ((l != WEAK_MAP_LABEL) ||
+	  ((l == WEAK_MAP_LABEL) && ((WeakMap *) p)->GetCounter() == 0));
 }
 
 inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
@@ -210,16 +213,10 @@ inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
     while (scan < chunk->GetTop()) {
       Block *p      = (Block *) scan;
       u_int cursize = HeaderOp::DecodeSize(p);
-      BlockLabel l  = p->GetLabel();
-      // CHUNK_LABEL and WEAK_DICT_LABEL are the largest possible labels
-      if (l < CHUNK_LABEL) {
-	for (u_int i = cursize; i--;) {
-	  word item = p->GetArg(i);
-	  item = PointerOp::Deref(item);
-	  item = Store::ForwardWord(item);
-	  p->InitArg(i, item);
-	}
-      }
+       // CHUNK_LABEL and WEAK_MAP_LABEL are the largest possible labels
+      if (p->GetLabel() < CHUNK_LABEL)
+	for (u_int i = cursize; i--;)
+	  p->InitArg(i, Store::ForwardWord(PointerOp::Deref(p->GetArg(i))));
       scan += BlockMemSize(cursize);
     }
     chunk = chunk->GetPrev();
@@ -254,7 +251,7 @@ inline void Store::FinalizeCheneyScan(MemChunk *chunk, char *scan) {
       Block *p      = (Block *) scan;
       u_int cursize = HeaderOp::DecodeSize(p);
       BlockLabel l  = p->GetLabel();
-      // CHUNK_LABEL and WEAK_DICT_LABEL are the largest possible labels
+      // CHUNK_LABEL and WEAK_MAP_LABEL are the largest possible labels
       if (l < CHUNK_LABEL) {
 	for (u_int i = cursize; i--;) {
 	  word item = p->GetArg(i);
@@ -296,7 +293,7 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
   // Enable BlockHashTables
-  BlockHashTable::Init();
+  Map::Init();
 #if defined(STORE_PROFILE)
   totalMem = 0;
   sum_t    = (struct timeval *) malloc(sizeof(struct timeval));
@@ -319,7 +316,7 @@ void Store::AddToIntgenSet(Block *v) {
   intgenSet = intgenSet->Push(v->ToWord());
 }
 
-void Store::RegisterWeakDict(WeakDictionary *v) {
+void Store::RegisterWeakDict(WeakMap *v) {
   wkDictSet = wkDictSet->Push(v->ToWord());
 }
 
@@ -421,8 +418,8 @@ inline Block *Store::HandleWeakDictionaries() {
       Block *newp = CloneBlock(dp);
       ndict = PointerOp::EncodeTag(newp, PointerOp::DecodeTag(dict));
       // Finalize only empty dict
-      if (((WeakDictionary *) newp)->GetCounter() == 0) {
-	word handler = ((WeakDictionary *) newp)->GetHandler();
+      if (((WeakMap *) newp)->GetCounter() == 0) {
+	word handler = ((WeakMap *) newp)->GetHandler();
 	finset = Store::AddToFinSet(finset, ndict);
 	finset = Store::AddToFinSet(finset, handler);
       }
@@ -438,8 +435,8 @@ inline Block *Store::HandleWeakDictionaries() {
     // Keep Dict References complete for working
     db_set->InitArg(i, ndict);
 
-    // Now Process DictTable and its HashNodes but NOT the content
-    WeakDictionary *p = WeakDictionary::FromWordDirect(ndict);
+    // Now Process DictTable and its MapNodes but NOT the content
+    WeakMap *p = WeakMap::FromWordDirect(ndict);
     word arr          = Store::ForwardWord(p->GetTable()->ToWord());
     p->SetTable(arr);
     Block *table = Store::DirectWordToBlock(arr);
@@ -447,7 +444,7 @@ inline Block *Store::HandleWeakDictionaries() {
       word nodes = Store::ForwardWord(table->GetArg(k));
       table->InitArg(k, nodes);
       while (nodes != Store::IntToWord(0)) {
-	HashNode *node = HashNode::FromWordDirect(nodes);
+	MapNode *node = MapNode::FromWordDirect(nodes);
 	nodes = Store::ForwardWord(node->GetNext());
 	node->SetNextDirect(nodes);
       }
@@ -456,13 +453,13 @@ inline Block *Store::HandleWeakDictionaries() {
   // Phase Two: Check for integer or forwarded entries
   // in all dictionaries and handle them
   for (u_int i = rs_size; i >= 1; i--) {
-    WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
+    WeakMap *dict = WeakMap::FromWordDirect(db_set->GetArg(i));
     Block *table         = dict->GetTable();
 
     for (u_int k = table->GetSize(); k--;) {
       word nodes = table->GetArg(k);
       while (nodes != Store::IntToWord(0)) {
-	HashNode *node = HashNode::FromWordDirect(nodes);
+	MapNode *node = MapNode::FromWordDirect(nodes);
 	word val       = PointerOp::Deref(node->GetValue());
 	// Store Integers and mark node as handled
 	if (PointerOp::IsInt(val)) {
@@ -486,14 +483,14 @@ inline Block *Store::HandleWeakDictionaries() {
   MemChunk *chunk = curChunk;
   char *scan      = curChunk->GetTop();
   for (u_int i = rs_size; i >= 1; i--) {
-    WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
+    WeakMap *dict = WeakMap::FromWordDirect(db_set->GetArg(i));
     word handler         = dict->GetHandler();
     Block *table         = dict->GetTable();
     for (u_int k = table->GetSize(); k--;) {
       word nodes = table->GetArg(k);
       word prev  = Store::IntToWord(0);
       while (nodes != Store::IntToWord(0)) {
-	HashNode *node = HashNode::FromWordDirect(nodes);
+	MapNode *node = MapNode::FromWordDirect(nodes);
 	// Remove handled marks
 	if (node->IsHandled())
 	  node->MarkNormal();
@@ -542,28 +539,6 @@ inline Block *Store::HandleWeakDictionaries() {
   std::fprintf(stderr, "new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
   return finset;
-}
-
-void Store::HandleBlockHashTables() {
-  word tables = BlockHashTable::tables;
-  BlockHashTable::tables = Store::IntToWord(0);
-  while (tables != Store::IntToWord(0)) {
-    BTListNode *node = BTListNode::FromWordDirect(tables);
-    Block *p         = Store::DirectWordToBlock(node->GetTable());
-    // Get current Table ptr
-    if (GCHelper::AlreadyMoved(p))
-      p = GCHelper::GetForwardPtr(p);
-    else if (HeaderOp::DecodeGeneration(p) < dstGen)
-      p = INVALID_POINTER;
-    // Do rehash only if table is alive
-    if (p != INVALID_POINTER) {
-      ((BlockHashTable *) p)->Rehash();
-      BTListNode *node = (BTListNode *) Store::GCAlloc(BTListNode::GetSize());
-      node->Init(p->ToWord(), BlockHashTable::tables);
-      BlockHashTable::tables = node->ToWord();
-    }
-    tables = node->GetNext();
-  }
 }
 
 static inline u_int min(u_int a, u_int b) {
@@ -638,7 +613,7 @@ inline void Store::DoGC(word &root, const u_int gen) {
   if (wkDictSet->GetSize() != 0)
     arr = Store::HandleWeakDictionaries();
   // Handle BlockHashTables
-  Store::HandleBlockHashTables();
+  Map::RehashAll(dstGen);
   // Clean up Collected regions
   for (u_int i = dstGen; i--;)
     Store::FreeMemChunks(roots[i]);
@@ -792,8 +767,14 @@ static const char *LabelToString(u_int l) {
     return "CANCELLED";
   case BYNEED_LABEL:
     return "BYNEED";
-  case HASHTABLE_LABEL:
-    return "HASHTABLE";
+  case MAP_LABEL:
+    return "MAP";
+  case INT_MAP_LABEL:
+    return "INTMAP";
+  case CHUNK_MAP_LABEL:
+    return "CHUNKMAP";
+  case WEAK_MAP_LABEL:
+    return "WEAKMAP";
   case QUEUE_LABEL:
     return "QUEUE";
   case STACK_LABEL:
@@ -949,8 +930,8 @@ void Store::VerifyGC(word root) {
   rootWord = root;
   Verify(roots, root);
   InitVerify();
-  rootWord = BlockHashTable::tables;
-  Verify(roots, BlockHashTable::tables);
+  rootWord = Map::mapLs;
+  Verify(roots, Map::mapLs);
 }
 #endif
 

@@ -53,7 +53,7 @@
 #define STORE_HELPER_LABEL_ARRAY \
   static const char *helper_arr[] = \
   { "GENSET", \
-    "HASHTABLE", "BLOCKHASHTABLE", \
+    "INT_MAP", "CHUNK_MAP", "MAP", \
     "HASHNODEARRAY", "HASHNODE", "HANDLEDHASHNODE", \
     "QUEUE", "QUEUEARRAY", \
     "STACK", "STACKARRAY", \
