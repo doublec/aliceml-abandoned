@@ -16,6 +16,8 @@
 
 #include <cstdio>
 #include "adt/HashTable.hh"
+#include "generic/String.hh"
+#include "generic/Tuple.hh"
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"
 #include "generic/ConcreteCode.hh"
@@ -55,6 +57,101 @@ public:
     InsertItem(wName, wClass);
   }
 };
+
+//
+// PreloadWorker
+//
+class PreloadWorker: public Worker {
+public:
+  static PreloadWorker *self;
+private:
+  PreloadWorker() {}
+public:
+  static void Init() {
+    self = new PreloadWorker();
+  }
+
+  static void PushFrame(Thread *thread);
+
+  virtual Result Run();
+  virtual const char *Identify();
+  virtual void DumpFrame(word wFrame);
+};
+
+class PreloadFrame: private StackFrame {
+protected:
+  enum { HOLE_POS, SIZE };
+public:
+  using Block::ToWord;
+
+  static PreloadFrame *New() {
+    StackFrame *frame =
+      StackFrame::New(PRELOAD_FRAME, PreloadWorker::self, SIZE);
+    return static_cast<PreloadFrame *>(frame);
+  }
+  static PreloadFrame *FromWordDirect(word x) {
+    StackFrame *frame = StackFrame::FromWordDirect(x);
+    Assert(frame->GetLabel() == PRELOAD_FRAME);
+    return static_cast<PreloadFrame *>(frame);
+  }
+
+  void SetHole(Hole *hole) {
+    ReplaceArg(HOLE_POS, hole->ToWord());
+  }
+  Hole *GetHole() {
+    return static_cast<Hole *>(Store::DirectWordToTransient(GetArg(HOLE_POS)));
+  }
+};
+
+PreloadWorker *PreloadWorker::self;
+
+static word wPreloadQueue;
+
+void PreloadWorker::PushFrame(Thread *thread) {
+  thread->PushFrame(PreloadFrame::New()->ToWord());
+}
+
+Worker::Result PreloadWorker::Run() {
+  PreloadFrame *frame = PreloadFrame::FromWordDirect(Scheduler::GetFrame());
+  if (Scheduler::nArgs == Scheduler::ONE_ARG) { 
+    Class *theClass = Class::FromWord(Scheduler::currentArgs[0]);
+    Assert(theClass != INVALID_POINTER);
+    Hole *hole = frame->GetHole();
+    hole->Fill(theClass->ToWord());
+  }
+  Queue *preloadQueue = Queue::FromWordDirect(wPreloadQueue);
+  if (preloadQueue->IsEmpty()) {
+    Scheduler::PopFrame();
+    Scheduler::nArgs = 0;
+    return CONTINUE;
+  }
+  Tuple *tuple = Tuple::FromWordDirect(preloadQueue->Dequeue());
+  String *string = String::FromWordDirect(tuple->Sel(0));
+  JavaString *name =
+    JavaString::New(reinterpret_cast<const char *>(string->GetValue()),
+		    string->GetSize());
+  Hole *hole =
+    static_cast<Hole *>(Store::DirectWordToTransient(tuple->Sel(1)));
+  frame->SetHole(hole);
+  ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
+  word wClass = classLoader->ResolveClass(name);
+  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::currentArgs[0] = wClass;
+  if (Class::FromWord(wClass) == INVALID_POINTER) {
+    Scheduler::currentData = wClass;
+    return REQUEST;
+  } else {
+    return CONTINUE;
+  }
+}
+
+const char *PreloadWorker::Identify() {
+  return "PreloadWorker";
+}
+
+void PreloadWorker::DumpFrame(word) {
+  std::fprintf(stderr, "Preload classes\n");
+}
 
 //
 // BuildClassWorker
@@ -402,11 +499,16 @@ void ResolveInterpreter::DumpFrame(word wFrame) {
 //
 // ClassLoader Method Implementations
 //
-word ClassLoader::bootstrapClassLoader;
+word ClassLoader::wBootstrapClassLoader;
+
+static const u_int PRELOAD_QUEUE_INITIAL_SIZE = 2; //--** to be determined
 
 void ClassLoader::Init() {
-  bootstrapClassLoader = ClassLoader::New()->ToWord();
-  RootSet::Add(bootstrapClassLoader);
+  wBootstrapClassLoader = ClassLoader::New()->ToWord();
+  RootSet::Add(wBootstrapClassLoader);
+  wPreloadQueue = Queue::New(PRELOAD_QUEUE_INITIAL_SIZE)->ToWord();
+  RootSet::Add(wPreloadQueue);
+  PreloadWorker::Init();
   BuildClassWorker::Init();
   ResolveInterpreter::Init();
 }
@@ -419,6 +521,19 @@ ClassLoader *ClassLoader::New() {
 
 ClassTable *ClassLoader::GetClassTable() {
   return ClassTable::FromWordDirect(GetArg(CLASS_TABLE_POS));
+}
+
+word ClassLoader::PreloadClass(const char *name) {
+  Hole *hole = Hole::New();
+  Tuple *tuple = Tuple::New(2);
+  tuple->Init(0, String::New(name)->ToWord());
+  tuple->Init(1, hole->ToWord());
+  Queue::FromWordDirect(wPreloadQueue)->Enqueue(tuple->ToWord());
+  return hole->ToWord();
+}
+
+void ClassLoader::PushPreloadFrame(Thread *thread) {
+  PreloadWorker::PushFrame(thread);
 }
 
 word ClassLoader::ResolveClass(JavaString *name) {

@@ -25,7 +25,7 @@ class DllExport ClassLoader: private Block {
 protected:
   enum { CLASS_TABLE_POS, SIZE };
 private:
-  static word bootstrapClassLoader;
+  static word wBootstrapClassLoader;
 
   ClassTable *GetClassTable();
 public:
@@ -41,8 +41,10 @@ public:
   }
 
   static ClassLoader *GetBootstrapClassLoader() {
-    return ClassLoader::FromWordDirect(bootstrapClassLoader);
+    return ClassLoader::FromWordDirect(wBootstrapClassLoader);
   }
+  static word PreloadClass(const char *name); // Hole
+  static void PushPreloadFrame(Thread *thread);
 
   word ResolveClass(JavaString *name); // Class or Future
   word ResolveType(JavaString *name); // Type or Future
