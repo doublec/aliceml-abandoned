@@ -5,7 +5,7 @@ ROOT = Main
 all:	components
 
 ## adding some dependencies manually
-Color.ozf:	Color-prepare.aml
+Color.alc:	Color-prepare.aml
 
 -include ../AliceMakefile
 
