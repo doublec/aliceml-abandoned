@@ -117,6 +117,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		let
 		    val s = String.map (fn #"\n" => #" " | c => c)
 				       (valOf (readUrl (Url.fromString url)))
+			    ^ "\n"
 		in
 		    implicitImportRef := SOME s;
 		    s
@@ -138,7 +139,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    let
 		val prefix = if isBaseSig desc then "" else implicitImport()
 	    in
-		process(desc, prefix ^ "\n" ^ s)
+		process(desc, prefix ^ s)
 	    end
 
 	fun processString process source =
