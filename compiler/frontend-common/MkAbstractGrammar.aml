@@ -471,4 +471,15 @@ struct
       | isValuePat( GuardPat(_, pat, exp) )	= isValuePat pat andalso
 						  isValue exp
       | isValuePat( WithPat _ )			= false
+
+
+  (* Descriptive closedness *)
+
+    fun hasDesc(FixImp(i,_,SomeDesc _))		= true
+      | hasDesc(ValImp(i,_,SomeDesc _))		= true
+      | hasDesc(TypImp(i,_,SomeDesc _))		= true
+      | hasDesc(ModImp(i,_,SomeDesc _))		= true
+      | hasDesc(InfImp(i,_,SomeDesc _))		= true
+      | hasDesc(RecImp(i,imps))			= Vector.all hasDesc imps
+      | hasDesc _				= false
 end

@@ -3289,11 +3289,8 @@ struct
 		val  _             = removeScope E
 		val  desc'         = O.SomeDesc(O.infoTyp typ', typ')
 		val  imp'          = O.ValImp(i, valid', desc')
-		val  is            = Future.byneed(fn() =>
-				     if Option.isSome(lookupVal(E', vid'))
-				     then V
-				     else error(i', E.ValItemUnbound vid'))
-		val  _             = insertDisjointVal(E, vid', (i',stamp,is))
+		val  is            = V
+		val  _             = insertDisjointVal(E, vid', (i',stamp,V))
 				     handle CollisionVal vid' =>
 					error(i', E.ImpVIdDuplicate vid')
 	   in
@@ -3329,10 +3326,7 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
-		val  E''           = Future.byneed(fn() =>
-				     if Option.isSome(lookupTy(E',tycon'))
-				     then env()
-				     else error(i', E.TypItemUnbound tycon'))
+		val  E''           = env()
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
@@ -3478,11 +3472,7 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
-		val  E''           = Future.byneed(fn() =>
-				     case lookupTy(E',tycon')
-				       of SOME(_,_,E'') => E''
-				        | NONE =>
-					  error(i', E.TypItemUnbound tycon'))
+		val  E''           = env()
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
@@ -3575,12 +3565,7 @@ struct
 		val (inf',F)       = trSigExp E sigexp
 		val  desc'         = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'          = O.ModImp(i, modid', desc')
-		val  F'            = Future.byneed(fn() =>
-				     case lookupStr(E', strid')
-				     of SOME(_,_,F') => match(F',F)
-				      | NONE =>
-					error(i',E.StrItemUnbound strid'))
-		val  _             = insertDisjointStr(E, strid', (i',stamp,F'))
+		val  _             = insertDisjointStr(E, strid', (i',stamp,F))
 				     handle CollisionStr strid' =>
 					error(i', E.ImpStrIdDuplicate strid')
 	   in

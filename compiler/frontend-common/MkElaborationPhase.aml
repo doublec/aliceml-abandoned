@@ -59,6 +59,7 @@ import structure PPInf             from "../../lib/rtt/PPInf"
 import structure TextIO            from "../../lib/system/TextIO"
 *)
 
+
 functor MkElaborationPhase(val loadSig: Source.desc * Url.t -> Inf.sign
 			   val loadMod: Source.desc * Url.t -> Reflect.module
 			   val loadImports: Source.desc * Url.t -> (Url.t * Inf.sign) vector
@@ -2123,11 +2124,13 @@ prInf "j'" j';
 
     fun elabAnn(E, desc, I.ImpAnn(i, imps, url, b)) =
 	let
-	    val s     = Future.byneed(fn() => loadSig(desc, url))
-	    val s'    = Inf.emptySig()
-	    val imps' = elabImps(E, s, s', imps)
-	    val s''   = if !Switches.Language.retainFullImport then s
-			else Future.byneed(fn() => Inf.narrowSigExt(s,s'))
+	    val hasAllDescs = Vector.all I.hasDesc imps
+	    val s           = Future.byneed(fn() => loadSig(desc, url))
+	    val s'          = Inf.emptySig()
+	    val imps'       = elabImps(E, s, s', hasAllDescs, imps)
+	    val s''         = if hasAllDescs then s'
+			      else if !Switches.Language.retainFullImport then s
+			      else Future.byneed(fn() => Inf.narrowSigExt(s,s'))
 (*DEBUG*) handle e => raise e
 	in
 	    O.ImpAnn(sigInfo(i,s''), imps', url, b)
@@ -2139,10 +2142,10 @@ prInf "j'" j';
 
   (* Imports *)
 
-    and elabImps(E, s, s', imps) =
-	Vector.map (fn imp => elabImp(E, s, s', imp)) imps
+    and elabImps(E, s, s', hasAllDescs, imps) =
+	Vector.map (fn imp => elabImp(E, s, s', hasAllDescs, imp)) imps
 
-    and elabImp(E, s, s', I.FixImp(i, vallab, desc)) =
+    and elabImp(E, s, s', hasAllDescs, I.FixImp(i, vallab, desc)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val f1          = Future.byneed(fn() =>
@@ -2155,7 +2158,7 @@ prInf "j'" j';
 		    let
 			val (f2,fix') = elabFix(E, fix)
 		    in
-			if f1 = f2
+			if hasAllDescs orelse f1 = f2
 			then O.SomeDesc(fixInfo(i',f2), fix')
 			else error(i, E.ImpMismatch(Inf.MismatchFix(l,f1,f2)))
 		    end
@@ -2164,7 +2167,7 @@ prInf "j'" j';
 	    O.FixImp(nonInfo(i), vallab', desc')
 	end
 
-      | elabImp(E, s, s', I.ValImp(i, valid, desc)) =
+      | elabImp(E, s, s', hasAllDescs, I.ValImp(i, valid, desc)) =
 	let
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
 	    val  l             = Label.fromName(O.name valid')
@@ -2178,10 +2181,11 @@ prInf "j'" j';
 		    let
 			val (t2,typ') = elabStarTyp(E, false, typ)
 		    in
-			Type.enterLevel();
-			Type.match(t1,t2) handle Type.Mismatch m =>
+			if hasAllDescs then () else
+			(Type.enterLevel();
+			 Type.match(t1,t2) handle Type.Mismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchVal(l,t1,t2,m)));
-			Type.exitLevel();
+			 Type.exitLevel());
 			(t2, O.SomeDesc(typInfo(i',t2),typ'))
 		    end
 	    val  _          = Type.unify(t0,t2)
@@ -2191,7 +2195,7 @@ prInf "j'" j';
 	    O.ValImp(nonInfo(i), valid', desc')
 	end
 
-      | elabImp(E, s, s', I.TypImp(i, typid, desc)) =
+      | elabImp(E, s, s', hasAllDescs, I.TypImp(i, typid, desc)) =
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
@@ -2207,10 +2211,11 @@ prInf "j'" j';
 			val (t2,_,typ') = elabTypRep(E, p, General.id, typ)
 			val  k2         = Type.kind t2
 		    in
-			Type.enterLevel();
-			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
+			if hasAllDescs then () else
+			(Type.enterLevel();
+			 Type.matchKind(k1,k2) handle Type.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
-			Type.exitLevel();
+			 Type.exitLevel());
 			(k2, t2, O.SomeDesc(typInfo(i',t2), typ'))
 		    end
 	    val (_,typid') = elabTypid_bind(E, p, true, t2, typid)
@@ -2219,7 +2224,7 @@ prInf "j'" j';
 	    O.TypImp(nonInfo(i), typid', desc')
 	end
 
-      | elabImp(E, s, s', I.ModImp(i, modid, desc)) =
+      | elabImp(E, s, s', hasAllDescs, I.ModImp(i, modid, desc)) =
 	let
 	    val l  = Label.fromName(I.name modid)
 	    val p  = elabNewPath(NONE, I.name modid)
@@ -2236,6 +2241,13 @@ prInf "j'" j';
 			(j1, jm1, O.NoDesc(infInfo(i', jm1)))
 		    end
 		  | I.SomeDesc(i',inf) =>
+		    if hasAllDescs then
+			let
+			    val (j2,inf') = elabGroundInf(E, SOME p, inf)
+			in
+			    (j2, j2, O.SomeDesc(infInfo(i',j2), inf'))
+			end
+		    else
 		    let
 			val (j2,inf') = elabGroundInf(E, SOME p, inf)
 			val _   = Type.enterLevel()
@@ -2253,7 +2265,7 @@ prInf "j'" j';
 	    O.ModImp(nonInfo(i), modid', desc')
 	end
 
-      | elabImp(E, s, s', I.InfImp(i, infid, desc)) =
+      | elabImp(E, s, s', hasAllDescs, I.InfImp(i, infid, desc)) =
 	let
 	    val l  = Label.fromName(I.name infid)
 	    val p  = elabNewPath(NONE, I.name infid)
@@ -2269,10 +2281,11 @@ prInf "j'" j';
 			val (j2,_,inf') = elabInfRep(E, p, General.id, inf)
 			val  k2         = Inf.kind j2
 		    in
-			Type.enterLevel();
-			Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
+			if hasAllDescs then () else
+			(Type.enterLevel();
+			 Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchInf(l,m)));
-			Type.exitLevel();
+			 Type.exitLevel());
 			(k2, j2, O.SomeDesc(infInfo(i',j2),inf'))
 		    end
 	    val (_,infid') = elabInfid_bind(E, p, true, j2, infid)
@@ -2281,10 +2294,10 @@ prInf "j'" j';
 	    O.InfImp(nonInfo(i), infid', desc')
 	end
 
-      | elabImp(E, s, s', I.RecImp(i, imps)) =
+      | elabImp(E, s, s', hasAllDescs, I.RecImp(i, imps)) =
 	let
-	    val _     = elabLHSRecImps(E, s, imps)
-	    val imps' = elabRHSRecImps(E, s, s', imps)
+	    val _     = elabLHSRecImps(E, s, hasAllDescs, imps)
+	    val imps' = elabRHSRecImps(E, s, s', hasAllDescs, imps)
 	    (* ASSUME that only TypImp is under RecImp *)
 	in
 	    O.RecImp(nonInfo(i), imps')
@@ -2293,10 +2306,10 @@ prInf "j'" j';
 
   (* Recursive specifications *)
 
-    and elabLHSRecImps(E, s, imps) =
-	    Vector.app (fn imp => elabLHSRecImp(E,s,imp)) imps
+    and elabLHSRecImps(E, s, hasAllDescs, imps) =
+	    Vector.app (fn imp => elabLHSRecImp(E,s,hasAllDescs,imp)) imps
 
-    and elabLHSRecImp(E, s, I.TypImp(i, typid, desc)) =
+    and elabLHSRecImp(E, s, hasAllDescs, I.TypImp(i, typid, desc)) =
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
@@ -2311,33 +2324,34 @@ prInf "j'" j';
 		    let
 			val k2 = elabTypKind(E, typ)
 		    in
-			Type.enterLevel();
-			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
+			if hasAllDescs then () else
+			(Type.enterLevel();
+			 Type.matchKind(k1,k2) handle Type.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
-			Type.exitLevel()
+			 Type.exitLevel())
 		    end
 	    val _  = elabTypid_bind(E, p, true, t1, typid)
 	in
 	    ()
 	end
 
-      | elabLHSRecImp(E, s, I.RecImp(i, imps)) =
-	    elabLHSRecImps(E, s, imps)
+      | elabLHSRecImp(E, s, hasAllDescs, I.RecImp(i, imps)) =
+	    elabLHSRecImps(E, s, hasAllDescs, imps)
 
-      | elabLHSRecImp(E, s, _) = ()
+      | elabLHSRecImp(E, s, hasAllDescs, _) = ()
 
 
-    and elabRHSRecImps(E, s, s', imps) =
-	    Vector.map (fn imp => elabRHSRecImp(E, s, s', imp)) imps
+    and elabRHSRecImps(E, s, s', hasAllDescs, imps) =
+	    Vector.map (fn imp => elabRHSRecImp(E, s, s', hasAllDescs, imp)) imps
 
-    and elabRHSRecImp(E, s, s', I.RecImp(i, imps)) =
+    and elabRHSRecImp(E, s, s', hasAllDescs, I.RecImp(i, imps)) =
 	let
-	    val imps' = elabRHSRecImps(E, s, s', imps)
+	    val imps' = elabRHSRecImps(E, s, s', hasAllDescs, imps)
 	in
 	    O.RecImp(nonInfo(i), imps')
 	end
 
-      | elabRHSRecImp(E, s, s', I.TypImp(i, typid, desc)) =
+      | elabRHSRecImp(E, s, s', hasAllDescs, I.TypImp(i, typid, desc)) =
 	let
 	    (*UNFINISHED *)
 	    val (t1,p,typid') = elabTypid(E, typid)
@@ -2358,8 +2372,8 @@ prInf "j'" j';
 	    O.TypImp(nonInfo(i), typid', desc')
 	end
 
-      | elabRHSRecImp(E, s, s', imp) =
-	    elabImp(E, s, s', imp)
+      | elabRHSRecImp(E, s, s', hasAllDescs, imp) =
+	    elabImp(E, s, s', hasAllDescs, imp)
 
 
   (* Components *)

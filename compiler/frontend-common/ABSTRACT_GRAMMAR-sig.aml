@@ -242,6 +242,7 @@ sig
   (* Operations *)
 
     val isValue :	exp			-> bool
+    val hasDesc :	imp			-> bool
 
     val stamp :		'a id			-> Stamp.t
     val name :		'a id			-> Name.t
