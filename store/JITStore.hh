@@ -139,6 +139,16 @@ protected:
     jit_xori_ui(Ptr, Ptr, TRTAG); // Restore tag
     jit_patch(no_transient);
   }
+  static void SaveDeref(u_int Ptr) {
+    if (Ptr == JIT_R0) {
+      jit_pushr_ui(JIT_V1);
+      jit_movr_ui(JIT_V1, JIT_R0);
+      Deref(JIT_V1);
+      jit_popr_ui(JIT_V1);
+    }
+    else
+      Deref(Ptr);
+  }
 public:
   // Logging Support
   static void InitLoggging();
