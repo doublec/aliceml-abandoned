@@ -10,6 +10,10 @@
  *   $Revision$
  *)
 
+import
+    structure OS
+from "../lib/OS"
+
 signature BATCH_COMPILER =
     sig
 	val stoc: string list -> OS.Process.status

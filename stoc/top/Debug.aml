@@ -11,6 +11,34 @@
  *   $Revision$
  *)
 
+import structure InputGrammar        from "../frontend-sml/InputGrammar"
+import structure AbstractGrammar     from "../frontend-common/AbstractGrammar"
+import structure TypedGrammar        from "../frontend-common/TypedGrammar"
+import structure IntermediateGrammar from "../common/IntermediateGrammar"
+import structure FlatGrammar         from "../backend-common/FlatGrammar"
+
+import structure Source             from "../infrastructure/Source"
+import structure Crash              from "../infrastructure/Crash"
+import structure Composer           from "Composer"
+import structure Signature          from "Signature"
+
+import functor MkSwitches           from "../infrastructure/MkSwitches"
+import functor MkMozartTarget       from "../backend-mozart/MkMozartTarget"
+import functor MkFrontendSML        from "../frontend-sml/MkFrontendSML"
+import functor MkFrontendCommon     from "../frontend-common/MkFrontendCommon"
+import functor MkBackendCommon      from "../backend-common/MkBackendCommon"
+import functor MkBackendMozart      from "../backend-mozart/MkBackendMozart"
+import functor MkCompiler           from "MkCompiler"
+import functor MkRecursiveCompiler  from "MkRecursiveCompiler"
+
+import functor MkParsingPhase       from "../frontend-sml/MkParsingPhase"
+import functor MkAbstractionPhase   from "../frontend-sml/MkAbstractionPhase"
+import functor MkElaborationPhase   from "../frontend-common/MkElaborationPhase"
+import functor MkTranslationPhase   from "../frontend-common/MkTranslationPhase"
+import functor MkTracingPhase       from "../infrastructure/MkTracingPhase"
+import functor MkResultDumpingPhase from
+					"../infrastructure/MkResultDumpingPhase"
+
 signature DEBUG =
     sig
 	val parseString:	string -> InputGrammar.t
@@ -29,45 +57,45 @@ signature DEBUG =
 	val flattenFile:	string -> FlatGrammar.t
     end
 
-structure Debug :> DEBUG =
+structure Debug : DEBUG =
     struct
 	(* Build a recursive compiler - to obtain acquireSign *)
 
-	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
+	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
 	    ref (fn _ => raise Crash.Crash "SMLToMozartMain.f")
 
 	structure MozartTarget =
-	    MakeMozartTarget(structure Switches = Switches
-			     structure Sig = Signature)
+	    MkMozartTarget(structure Switches = Switches
+			   structure Sig = Signature)
 
 	structure FrontendSML =
-	    MakeFrontendSML(fun loadSign (desc, url) = !f (desc, url)
-			    structure Switches = Switches)
+	    MkFrontendSML(fun loadSign (desc, url) = !f (desc, url)
+			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MakeFrontendCommon(fun loadSign (desc, url) = !f (desc, url)
-			       structure Switches = Switches)
+	    MkFrontendCommon(fun loadSign (desc, url) = !f (desc, url)
+			     structure Switches = Switches)
 
-	structure BackendCommon = MakeBackendCommon(Switches)
+	structure BackendCommon = MkBackendCommon(Switches)
 
 	structure BackendMozart =
-	    MakeBackendMozart(structure Switches = Switches
-			      structure MozartTarget = MozartTarget)
+	    MkBackendMozart(structure Switches = Switches
+			    structure MozartTarget = MozartTarget)
 
 	structure Compiler =
-	    MakeCompiler(structure Switches         = Switches
-			 structure Target           = MozartTarget
-			 structure FrontendSpecific = FrontendSML
-			 structure FrontendCommon   = FrontendCommon
-			 structure BackendCommon    = BackendCommon
-			 structure BackendSpecific  = BackendMozart)
+	    MkCompiler(structure Switches         = Switches
+		       structure Target           = MozartTarget
+		       structure FrontendSpecific = FrontendSML
+		       structure FrontendCommon   = FrontendCommon
+		       structure BackendCommon    = BackendCommon
+		       structure BackendSpecific  = BackendMozart)
 
 	structure RecursiveCompiler =
-	    MakeRecursiveCompiler(structure Composer = Composer
-				  structure Compiler = Compiler
-				  val extension = "ozf")
+	    MkRecursiveCompiler(structure Composer = Composer
+				structure Compiler = Compiler
+				val extension = "ozf")
 
 	(* Debugging functions *)
 
@@ -75,22 +103,22 @@ structure Debug :> DEBUG =
 *)
 
 	structure ParsingPhase =
-	    MakeTracingPhase(
-		  structure Phase    = MakeParsingPhase(Switches)
+	    MkTracingPhase(
+		  structure Phase    = MkParsingPhase(Switches)
 		  structure Switches = Switches
 		  val name = "Parsing"
 	    )
 	structure AbstractionPhase =
-	    MakeTracingPhase(
+	    MkTracingPhase(
 		  structure Phase    =
-		      MakeAbstractionPhase(val loadSign =
-					       RecursiveCompiler.acquireSign
-					   structure Switches = Switches)
+		      MkAbstractionPhase(val loadSign =
+					     RecursiveCompiler.acquireSign
+					 structure Switches = Switches)
 		  structure Switches = Switches
 		  val name = "Abstraction"
 	    )
 	structure AbstractionPhase =
-	    MakeResultDumpingPhase(
+	    MkResultDumpingPhase(
 		  structure Phase    = AbstractionPhase
 		  structure Switches = Switches
 		  val header = "Abstract Syntax"
@@ -98,15 +126,15 @@ structure Debug :> DEBUG =
 		  val switch = Switches.Debug.dumpAbstractionResult
 	    )
 	structure ElaborationPhase =
-	    MakeTracingPhase(
+	    MkTracingPhase(
 		  structure Phase    =
-		      MakeElaborationPhase(val loadSign =
-					       RecursiveCompiler.acquireSign)
+		      MkElaborationPhase(val loadSign =
+					     RecursiveCompiler.acquireSign)
 		  structure Switches = Switches
 		  val name = "Elaboration"
 	    )
 	structure ElaborationPhase =
-	    MakeResultDumpingPhase(
+	    MkResultDumpingPhase(
 		  structure Phase    = ElaborationPhase
 		  structure Switches = Switches
 		  val header = "Component Signature"
@@ -114,20 +142,20 @@ structure Debug :> DEBUG =
 		  val switch = Switches.Debug.dumpElaborationSig
 	    )
 	structure TranslationPhase =
-	    MakeTracingPhase(
-		  structure Phase    = MakeTranslationPhase(Switches)
+	    MkTracingPhase(
+		  structure Phase    = MkTranslationPhase(Switches)
 		  structure Switches = Switches
 		  val name = "Translation"
 	    )
 	structure TranslationPhase =
-	    MakeResultDumpingPhase(
+	    MkResultDumpingPhase(
 		  structure Phase    = TranslationPhase
 		  structure Switches = Switches
 		  val header = "Intermediate Syntax"
 		  val pp     = PPIntermediateGrammar.ppComp
 		  val switch = Switches.Debug.dumpIntermediate
 	    )
-	structure BackendCommon = MakeBackendCommon(Switches)
+	structure BackendCommon = MkBackendCommon(Switches)
 
 	fun processString process source =
 	    RecursiveCompiler.processString process source

@@ -10,7 +10,15 @@
  *   $Revision$
  *)
 
+import
+    structure MkBatchCompiler
+from "MkBatchCompiler"
+
+import
+    structure SMLToComPlusRecursiveCompiler
+from "SMLToComPlusRecursiveCompiler"
+
 structure SMLToComPlusBatchCompiler =
-    MakeBatchCompiler(structure RecursiveCompiler =
-			  SMLToComPlusRecursiveCompiler
-		      val executableHeader = "")
+    MkBatchCompiler(structure RecursiveCompiler =
+			SMLToComPlusRecursiveCompiler
+		    val executableHeader = "")

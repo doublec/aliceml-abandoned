@@ -9,4 +9,4 @@ Group is
     compiler.cm
     make-recursive-compiler.cm
 
-    Debug.sml
+    Debug.aml

@@ -10,11 +10,67 @@
  *   $Revision$
  *)
 
-functor MakeRecursiveCompiler(structure Composer: COMPOSER
-				  where type Sig.t = Signature.t
-			      structure Compiler: COMPILER
-				  where Target.Sig = Signature
-			      val extension: string): RECURSIVE_COMPILER =
+import
+    structure TextIO
+from "../lib/TextIO"
+
+import
+    structure IO
+from "../lib/IO"
+
+import
+    structure OS
+from "../lib/OS"
+
+import
+    structure Pickle
+from "../lib/Pickle"
+
+import
+    structure Url
+from "../misc/Url"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure Error
+from "../infrastructure/Error"
+
+import
+    signature COMPOSER
+from "../infrastructure/COMPOSER-sig"
+
+import
+    structure Path
+from "../common/Path"
+
+import
+    structure Inf
+from "../common/Inf"
+
+import
+    structure Signature
+from "Signature"
+
+import
+    signature COMPILER
+from "COMPILER-sig"
+
+import
+    signature RECURSIVE_COMPILER
+from "RECURSIVE_COMPILER-sig"
+
+functor MkRecursiveCompiler(structure Composer: COMPOSER
+				where type Sig.t = Signature.t
+			    structure Compiler: COMPILER
+				where Target.Sig = Signature
+			    val extension: string): RECURSIVE_COMPILER =
     struct
 	structure Composer = Composer
 	structure Switches = Compiler.Switches
@@ -64,7 +120,7 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 		    stockhome () ^
 		    Url.toString (Url.setScheme (Url.makeRelativePath url,
 						 NONE))
-	      | _ => raise Crash.Crash "MakeBatchCompiler.parseUrl"
+	      | _ => raise Crash.Crash "MkBatchCompiler.parseUrl"
 
 	fun readFile filename =
 	    let
@@ -129,7 +185,7 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 				Inf.strengthen (Path.invent(), inf);
 				Inf.asSig inf
 			    end
-		      | _ => raise Crash.Crash "MakeBatchCompiler.compileSign"
+		      | _ => raise Crash.Crash "MkBatchCompiler.compileSign"
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -225,7 +281,8 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 		case Composer.sign (urlCeil url) of
 		    SOME sign => sign
 		  | NONE =>
-		case Pickle.loadSign url of (* this also looks for url ^ ext *)
+		case Pickle.loadSign (Url.toString url) of
+		    (* this also looks for url ^ ext *)
 		    SOME sign =>
 			(TextIO.print ("### loaded signature from " ^
 				       Url.toString url ^ "\n");

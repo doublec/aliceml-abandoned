@@ -18,14 +18,18 @@
  * 3. Debugging: context is provided by some outside magic, discard result
  *)
 
+import structure Source   from "../infrastructure/Source"
+import signature SWITCHES from "../infrastructure/SWITCHES-sig"
+import signature TARGET   from "../infrastructure/TARGET-sig"
+
 signature COMPILER =
-  sig
+sig
     structure Switches: SWITCHES
-    structure Target: TARGET
+    structure Target:   TARGET
 
     type context
 
     val empty:   context
     val compile: context * Source.desc * Source.t ->
 		 context * Target.t  (* [Error.Error] *)
-  end
+end

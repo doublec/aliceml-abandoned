@@ -10,6 +10,34 @@
  *   $Revision$
  *)
 
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    signature COMPOSER
+from "../infrastructure/COMPOSER-sig"
+
+import
+    structure FromEqHashKey
+from "../misc/HASH_KEY-sig"
+
+import
+    structure MkHashImpMap
+from "../misc/MkHashImpMap"
+
+import
+    structure Url
+from "../misc/Url"
+
+import
+    structure Inf
+from "../common/Inf"
+
+import
+    structure Signature
+from "Signature"
+
 structure Composer: COMPOSER =
     struct
 	structure Sig = Signature
@@ -17,7 +45,7 @@ structure Composer: COMPOSER =
 	exception Corrupt
 	exception Conflict
 
-	structure UrlMap = MakeHashImpMap(FromEqHashKey(Url))
+	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
 
 	val signTable: Sig.t UrlMap.t = UrlMap.new ()
 

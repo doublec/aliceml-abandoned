@@ -10,7 +10,27 @@
  *   $Revision$
  *)
 
-functor MakeEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
+import
+    structure TextIO
+from "../lib/TextIO"
+
+import
+    structure OS
+from "../lib/OS"
+
+import
+    structure Error
+from "../infrastructure/Error"
+
+import
+    signature RECURSIVE_COMPILER
+from "RECURSIVE_COMPILER-sig"
+
+import
+    signature INTERACTIVE_TOPLEVEL
+from "INTERACTIVE_TOPLEVEL-sig"
+
+functor MkEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
     INTERACTIVE_TOPLEVEL =
     struct
 	fun usage () = TextIO.output (TextIO.stdErr, "Usage: stot\n")

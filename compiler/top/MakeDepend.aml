@@ -10,6 +10,14 @@
  *   $Revision$
  *)
 
+import
+    structure Url
+from "../misc/Url"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
 signature IMPORT_PARSER =
     sig
 	val parse: string -> string list

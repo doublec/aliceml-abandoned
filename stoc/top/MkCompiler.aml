@@ -17,7 +17,14 @@
  * Problem is, this requires applicative functors with extended paths.
  *)
 
-functor MakeCompiler(
+import structure Source   from "../infrastructure/Source"
+import signature SWITCHES from "../infrastructure/SWITCHES-sig"
+import signature PHASE    from "../infrastructure/PHASE-sig"
+import signature TARGET   from "../infrastructure/TARGET-sig"
+import signature COMPILER from "COMPILER-sig"
+
+
+functor MkCompiler(
 	structure Switches:         SWITCHES
 	structure Target:           TARGET
 	structure FrontendSpecific: PHASE where type I.t = Source.t
@@ -25,9 +32,8 @@ functor MakeCompiler(
 	structure BackendCommon:    PHASE where I = FrontendCommon.O
 	structure BackendSpecific:  PHASE where I = BackendCommon.O
 					  where type O.t = Target.t
-       ) :> COMPILER where Target = Target
-  =
-  struct
+       ) :> COMPILER where Target = Target =
+struct
     structure Switches = Switches
     structure Target = Target
 
@@ -62,4 +68,4 @@ functor MakeCompiler(
 	in
 	    (C', target)
 	end
-  end
+end

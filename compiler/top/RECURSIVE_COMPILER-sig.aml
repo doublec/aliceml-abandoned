@@ -10,6 +10,26 @@
  *   $Revision$
  *)
 
+import
+    structure Url
+from "../misc/Url"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    signature SWITCHES
+from "../infrastructure/SWITCHES-sig"
+
+import
+    signature COMPOSER
+from "../infrastructure/COMPOSER-sig"
+
+import
+    signature TARGET
+from "../infrastructure/TARGET-sig"
+
 signature RECURSIVE_COMPILER =
     sig
 	structure Composer: COMPOSER

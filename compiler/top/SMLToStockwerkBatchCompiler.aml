@@ -10,8 +10,16 @@
  *   $Revision$
  *)
 
+import
+    structure MkBatchCompiler
+from "MkBatchCompiler"
+
+import
+    structure SMLToStockwerkRecursiveCompiler
+from "SMLToStockwerkRecursiveCompiler"
+
 structure SMLToStockwerkBatchCompiler =
-    MakeBatchCompiler(structure RecursiveCompiler =
-			  SMLToStockwerkRecursiveCompiler
-		      val executableHeader =
-			  "#!/bin/sh\nexec stow $0 \"$@\"\n")
+    MkBatchCompiler(structure RecursiveCompiler =
+			SMLToStockwerkRecursiveCompiler
+		    val executableHeader =
+			"#!/bin/sh\nexec stow $0 \"$@\"\n")

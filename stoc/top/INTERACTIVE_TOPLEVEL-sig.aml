@@ -10,6 +10,10 @@
  *   $Revision$
  *)
 
+import
+    structure OS
+from "../lib/OS"
+
 signature INTERACTIVE_TOPLEVEL =
     sig
 	val stot: string list -> OS.Process.status
