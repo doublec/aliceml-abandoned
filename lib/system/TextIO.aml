@@ -14,6 +14,7 @@ import structure IODesc           from "IODesc"
 import structure IO               from "IO"
 import structure TextPrimIO       from "TextPrimIO"
 import structure StreamIO         from "StreamIO"
+import signature TEXT_STREAM_IO   from "TEXT_STREAM_IO-sig"
 import structure ImperativeIO     from "ImperativeIO"
 import structure MkTextTranslator from "MkTextTranslator"
 import signature TEXT_IO          from "TEXT_IO-sig"
@@ -22,7 +23,7 @@ import signature TEXT_IO          from "TEXT_IO-sig"
 
 structure TextIO :> TEXT_IO =
     struct
-	structure TextStreamIO = (*--** : TEXT_STREAM_IO *)
+	structure TextStreamIO =
 	    StreamIO(structure PrimIO = TextPrimIO
 		     structure Vector = CharVector
 		     structure Array = CharArray
@@ -31,6 +32,44 @@ structure TextIO :> TEXT_IO =
 	    ImperativeIO(structure StreamIO = TextStreamIO
 			 structure Vector = CharVector)
 	open TextImperativeIO
+
+	structure StreamIO: TEXT_STREAM_IO =
+	    struct
+		open StreamIO
+
+		fun inputLine f =
+		    let
+			val (s, f') = inputN (f, 1)
+		    in
+			if String.size s = 0 then ("", f')
+			else
+			    case String.sub (s, 0) of
+				#"\n" => ("\n", f')
+			      | c =>
+				    let
+					val (cs, f'') = inputLine' f'
+				    in
+					(String.implode (c::cs), f'')
+				    end
+		    end
+		and inputLine' f =
+		    let
+			val (s, f') = inputN (f, 1)
+		    in
+			if String.size s = 0 then ([#"\n"], f')
+			else
+			    case String.sub (s, 0) of
+				#"\n" => ([#"\n"], f')
+			      | c =>
+				    let
+					val (cs, f'') = inputLine' f'
+				    in
+					(c::cs, f'')
+				    end
+		    end
+
+		fun outputSubstr (f, s) = output (f, Substring.string s)
+	    end
 
 	structure TextTranslator =
 	    MkTextTranslator(structure PrimIO = TextPrimIO
