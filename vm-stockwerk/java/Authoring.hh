@@ -15,6 +15,7 @@
 
 #include "generic/Authoring.hh"
 #include "java/Data.hh"
+#include "java/ThrowWorker.hh"
 #include "java/NativeMethodTable.hh"
 
 #define BOOL_TO_WORD(b) Store::IntToWord((b)? 1: 0)
@@ -34,8 +35,8 @@
 #define RETURN_VOID RETURN0
 
 #define THROW(Class, message) {						\
-  ThrowWorker::PushFrame(ThrowWorker::Class, JavaString::New(message));	\
   Scheduler::PushFrameNoCheck(prim_self);				\
+  ThrowWorker::PushFrame(ThrowWorker::Class, JavaString::New(message));	\
   RETURN_VOID;								\
 }
 
