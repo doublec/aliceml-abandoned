@@ -22,17 +22,16 @@
 class DllExport Table: private Block {
 protected:
   enum {
-    SIZE_POS, // int
+    COUNT_POS, // int
     BASE_SIZE
     // ... elements
   };
 public:
   using Block::ToWord;
 
-  static Table *New(u_int length) {
-    Block *b = Store::AllocBlock(JavaLabel::Table, BASE_SIZE + length);
-    b->InitArg(SIZE_POS, Store::IntToWord(length));
-    for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
+  static Table *New(u_int count) {
+    Block *b = Store::AllocBlock(JavaLabel::Table, BASE_SIZE + count);
+    b->InitArg(COUNT_POS, Store::IntToWord(count));
     return static_cast<Table *>(b);
   }
   static Table *FromWord(word x) {
@@ -47,7 +46,7 @@ public:
   }
 
   u_int GetCount() {
-    return Store::DirectWordToInt(GetArg(SIZE_POS));
+    return Store::DirectWordToInt(GetArg(COUNT_POS));
   }
   void Init(u_int index, word value) {
     Assert(index < GetCount());
