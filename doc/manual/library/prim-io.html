@@ -5,22 +5,38 @@
 
   <PRE>
     signature PRIM_IO
-    structure BinPrimIO : PRIM_IO where type array  = Word8Array.t
-    				    and type vector = Word8Vector.t
-				    and type elem   = Word8.t
-				    and type pos    = Position.t
-    structure TextPrimIO : PRIM_IO where type array = CharArray.t
-    				    and type vector = CharVector.t
-				    and type elem   = Char.t
-    functor PrimIO (structure V :  MONO_VECTOR
-                    structure A :  MONO_ARRAY where Vector = V
-		    val someElem : V.elem
+    structure BinPrimIO : PRIM_IO where type elem         = Word8.t
+				    and type vector       = Word8Vector.t
+    				    and type array        = Word8Array.t
+				    and type vector_slice = Word8VectorSlice.t
+    				    and type array_slice  = Word8ArraySlice.t
+				    and type pos          = Position.t
+    structure TextPrimIO : PRIM_IO where type elem        = Char.t
+				    and type vector       = CharVector.t
+    				    and type array        = CharArray.t
+				    and type vector_slice = CharVectorSlice.t
+    				    and type array_slice  = CharArraySlice.t
+    functor PrimIO (structure Vector : MONO_VECTOR
+                    structure Array :  MONO_ARRAY
+		       where type elem   = Vector.elem
+			 and type vector = Vector.t
+		    structure VectorSlice : MONO_VECTOR_SLICE
+		       where type elem   = Vector.elem
+			 and type vector = Vector.t
+		    structure ArraySlice : MONO_ARRAY_SLICE
+		       where type elem   = Vector.elem
+		         and type vector = Vector.t
+			 and type array  = Array.t
+			 and type vector_slice = VectorSlice.t
+		    val someElem : Vector.elem
 		    eqtype pos
 		    val compare :  pos * pos -> order) :
-	    PRIM_IO where type elem   = V.elem
-	              and type vector = V.t
-		      and type array  = A.t
-		      and type pos    = pos
+	    PRIM_IO where type elem         = Vector.elem
+	              and type vector       = Vector.t
+		      and type array        = Array.t
+		      and type vector_slice = VectorSlice.t
+		      and type array_slice  = ArraySlice.t
+		      and type pos          = pos
   </PRE>
 
   <P>
@@ -49,7 +65,9 @@
     sig
 	type elem
 	type vector
+	type vector_slice
 	type array
+	type array_slice
 
 	eqtype pos
 	val compare : pos * pos -> order
@@ -58,9 +76,9 @@
 	    {name :       string,
 	     chunkSize :  int,
 	     readVec :    (int -> vector) option,
-	     readArr :    ({buf: array, i: int, sz: int option} -> int) option,
+	     readArr :    (array_slice -> int) option,
 	     readVecNB :  (int -> vector option) option,
-	     readArrNB :  ({buf: array, i: int, sz: int option} -> int option) option,
+	     readArrNB :  (array_slice -> int option) option,
 	     block :      (unit -> unit) option,
 	     canInput :   (unit -> bool) option,
 	     avail :      unit -> int option,
@@ -74,10 +92,10 @@
 	datatype writer = WR of
 	    {name :       string,
 	     chunkSize :  int,
-	     writeVec :   ({buf: vector, i: int, sz: int option} -> int) option,
-	     writeArr :   ({buf: array,  i: int, sz: int option} -> int) option,
-	     writeVecNB : ({buf: vector, i: int, sz: int option} -> int option) option,
-	     writeArrNB : ({buf: array,  i: int, sz: int option} -> int option) option,
+	     writeVec :   (vector_slice -> int) option,
+	     writeArr :   (array_slice -> int) option,
+	     writeVecNB : (vector_slice -> int option) option,
+	     writeArrNB : (array_slice -> int option) option,
 	     block :      (unit -> unit) option,
 	     canOutput :  (unit -> bool) option,
 	     getPos :     (unit -> pos) option,

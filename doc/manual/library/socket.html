@@ -39,7 +39,7 @@
 
 	val <A href="#input1">input1</A> : socket -> char option
 	val <A href="#inputN">inputN</A> : socket * int -> vector
-	val <A href="#inputLine">inputLine</A> : socket -> vector
+	val <A href="#inputLine">inputLine</A> : socket -> vector option
 	val <A href="#output">output</A> : socket * vector -> unit
 	val <A href="#output1">output1</A> : socket * char -> unit
 
@@ -130,9 +130,9 @@
     <DD>
       <P>receives characters from <TT><I>sock</I></TT> until the next newline
 	character (<TT>#"\n"</TT>) and returns them, including the newline
-	character.  If the returned string is empty, then this indicates that
+	character.  If <TT>NONE</TT> is returned, then this indicates that
 	the socket was closed by the other end.  The last line is always
-	terminates by a newline character, even if it did not end in one.
+	terminated by a newline character, even if it did not end in one.
 	Raises <TT>IO.Io</TT> if receiving failed.</P>
     </DD>
 

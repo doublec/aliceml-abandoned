@@ -58,9 +58,9 @@ and loop pp =
 
 and loop'(p1,p2) =
     case (print "> "; inputLine stdIn)
-      of ""   => ()
-       | "\n" => loop'(p1,p2)
-       | s    =>
+      of NONE      => ()
+       | SOME "\n" => loop'(p1,p2)
+       | SOME s    =>
     case String.tokens Char.isSpace s
       of non [_,_] => loop(p1,p2)
        | [s1,s2]   =>

@@ -1,7 +1,7 @@
 (*
  * Interpreter for F+rec - Main Program
  *
- * 2000/02/12 Andreas Rossberg
+ * 2000/02/12-2003/09/23 Andreas Rossberg
  *)
 
 import structure Type   from "Type"
@@ -59,9 +59,9 @@ struct
 
     fun interactive () =
 	case (print "> "; inputLine TextIO.stdIn)
-	 of ""   => ()
-	  | "\n" => interactive ()
-	  | s    => (fromString s; interactive ())
+	 of NONE      => ()
+	  | SOME "\n" => interactive ()
+	  | SOME s    => (fromString s; interactive ())
 
     fun main []    = interactive ()
       | main files = List.app (fn f => (print (f ^ "> "); fromFile f)) files

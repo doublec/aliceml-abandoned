@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The TextIO structure", "The <TT>TextIO</TT> structure") ?>
+<?php heading("The TEXT_IO signature", "The <TT>TEXT_IO</TT> signature") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
@@ -10,7 +10,8 @@
 
   <P>
     The Standard ML Basis'
-    <A href="http://SML.sourceforge.net/Basis/text-io.html"><TT>TextIO</TT></A> structure.
+    <A href="http://SML.sourceforge.net/Basis/text-io.html"><TT>TEXT_IO</TT></A>
+    signature.
   </P>
 
   <P>See also:
@@ -46,7 +47,7 @@
 	val input :        instream -> string
 	val input1 :       instream -> char option
 	val inputN :       instream * int -> string
-	val inputLine :    instream -> string
+	val inputLine :    instream -> string option
 	val inputAll :     instream -> string
 	val canInput :     instream * int -> int option
 	val lookahead :    instream -> char option
@@ -80,7 +81,8 @@
 
   <P>
     Like the Standard ML Basis'
-    <A href="http://SML.sourceforge.net/Basis/text-io.html"><TT>TextIO</TT></A> structure.
+    <A href="http://SML.sourceforge.net/Basis/text-io.html"><TT>TEXT_IO</TT></A>
+    signature.
   </P>
 
 <?php footing() ?>

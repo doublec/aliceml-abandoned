@@ -43,7 +43,7 @@
 	val input :         instream -> string * instream
 	val input1 :        instream -> (char * instream) option
 	val inputN :        instream * int -> string * instream
-	val inputLine :     instream -> string * instream
+	val inputLine :     instream -> (string * instream) option
 	val inputAll :      instream -> string * instream
 	val canInput :      instream * int -> int option
 	val closeIn :       instream -> unit

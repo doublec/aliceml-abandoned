@@ -29,10 +29,17 @@
   <PRE>
     signature UNIX =
     sig
-	type proc
+	type ('a,'b) proc
+	type signal
 
-	val execute :   string * string list -> proc
-	val streamsOf : proc -> TextIO.instream * TextIO.outstream
+	datatype exit_status =
+	    W_EXITED
+	  | W_EXITSTATUS of Word8.word
+	  | W_SIGNALED of signal
+	  | W_STOPPED of signal
+
+	val execute :   string * string list -> ('a,'b) proc
+	val streamsOf : (TextIO.instream, TextIO.outstream) proc -> TextIO.instream * TextIO.outstream
     end
   </PRE>
 
@@ -48,10 +55,15 @@
   </P>
 
   <UL>
-    <LI><TT>type</TT> <TT>signal</TT></LI>
     <LI><TT>executeInEnv</TT></LI>
+    <LI><TT>fromStatus</TT></LI>
+    <LI><TT>textInstreamOf</TT></LI>
+    <LI><TT>binInstreamOf</TT></LI>
+    <LI><TT>textOutstreamOf</TT></LI>
+    <LI><TT>binOutstreamOf</TT></LI>
     <LI><TT>reap</TT></LI>
     <LI><TT>kill</TT></LI>
+    <LI><TT>exit</TT></LI>
   </UL>
 
 <?php footing() ?>

@@ -6,11 +6,23 @@
   <PRE>
     signature STREAM_IO
     functor StreamIO (structure PrimIO : PRIM_IO
-                      structure Vector : MONO_VECTOR where type elem   = PrimIO.elem
-						       and type vector = PrimIO.vector
-		      structure Array :  MONO_ARRAY  where type elem   = PrimIO.elem
-						       and type vector = PrimIO.vector
-						       and type array  = PrimIO.array
+                      structure Vector : MONO_VECTOR
+				where type elem   = PrimIO.elem
+				  and type vector = PrimIO.vector
+		      structure Array :  MONO_ARRAY
+				where type elem   = PrimIO.elem
+				  and type vector = PrimIO.vector
+				  and type array  = PrimIO.array
+                      structure VectorSlice : MONO_VECTOR_SLICE
+				where type elem   = PrimIO.elem
+				  and type vector = PrimIO.vector
+				  and type slice  = PrimIO.vector_slice
+		      structure ArraySlice :  MONO_ARRAY_SLICE
+				where type elem         = PrimIO.elem
+				  and type vector       = PrimIO.vector
+				  and type array        = PrimIO.array
+				  and type vector_slice = PrimIO.vector_slice
+				  and type slice        = PrimIO.array_slice
                       val someElem : PrimIO.elem) :
 	    STREAM_IO where type elem   = PrimIO.elem
 	                and type vector = PrimIO.vector

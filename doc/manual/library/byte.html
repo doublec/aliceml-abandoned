@@ -21,7 +21,9 @@
     <A href="mono-vector.html"><TT>CharVector</TT></A>,
     <A href="mono-vector-slice.html"><TT>CharVectorSlice</TT></A>,
     <A href="mono-vector.html"><TT>Word8Vector</TT></A>,
-    <A href="mono-array.html"><TT>Word8Array</TT></A>
+    <A href="mono-array.html"><TT>Word8Array</TT></A>,
+    <A href="mono-vector.html"><TT>Word8VectorSlice</TT></A>,
+    <A href="mono-array.html"><TT>Word8ArraySlice</TT></A>
   </P>
 
 <?php section("import", "import") ?>
@@ -39,8 +41,8 @@
 	val charToByte :      char -> Word8.t
 	val bytesToString :   Word8Vector.t -> string
 	val stringToBytes :   string -> Word8Vector.t
-	val unpackStringVec : Word8Vector.t * int * int option -> string
-	val unpackString :    Word8Array.t * int * int option -> string
+	val unpackStringVec : Word8VectorSlice.t -> string
+	val unpackString :    Word8ArraySlice.t -> string
 	val packString :      Word8Array.t * int * Substring.t -> unit
     end
   </PRE>

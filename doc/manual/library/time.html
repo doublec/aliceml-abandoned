@@ -41,9 +41,11 @@
 	val toSeconds :        time -> LargeInt.int
 	val toMilliseconds :   time -> LargeInt.int
 	val toMicroseconds :   time -> LargeInt.int
+	val toNanoseconds :    time -> LargeInt.int
 	val fromSeconds :      LargeInt.int -> time
 	val fromMilliseconds : LargeInt.int -> time
 	val fromMicroseconds : LargeInt.int -> time
+	val fromNanoseconds :  LargeInt.int -> time
 
 	val op + :             time * time -> time
 	val op - :             time * time -> time
