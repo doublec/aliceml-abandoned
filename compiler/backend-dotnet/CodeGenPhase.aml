@@ -170,7 +170,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.emitIdRef"
 
 	(*--** remove global state *)
-	val sharedLabels: O.label StampMap.t = StampMap.new ()
+	val sharedLabels: O.label StampMap.t = StampMap.map ()
 	val handlerCont: (O.label * I.body) option ref = ref NONE
 
 	structure IdSet = IntermediateAux.IdSet
@@ -179,8 +179,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genStm (ValDec (_, idDef, exp)) = (genExp exp; declareLocal idDef)
 	  | genStm (RecDec (_, idDefExpVec)) =
 	    let
-		val unallocated = IdSet.new ()
-		val forward = IdSet.new ()
+		val unallocated = IdSet.set ()
+		val forward = IdSet.set ()
 	    in
 		Vector.app (fn (IdDef id, _) =>
 			       IdSet.insertDisjoint (unallocated, id)
@@ -429,7 +429,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    end
 	and genSwitchTestStm (intGenBodyVec, elseBodyFun) =
 	    let
-		val map = IntMap.new ()
+		val map = IntMap.map ()
 		val i = #1 (Vector.sub (intGenBodyVec, 0))
 		val (min, max) =
 		    parseTests (intGenBodyVec, map,
@@ -599,7 +599,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	       | _ =>
 		     let
 			 val info = Source.nowhere
-			 val id = Id (info, Stamp.new (), Name.InId)
+			 val id = Id (info, Stamp.stamp (), Name.InId)
 		     in
 			 defineMethod (stamp, "Apply", #[IdDef id]);
 			 emitIdRef (IdRef id); declareArgs (args, true);
