@@ -50,7 +50,7 @@
       list = tagVal->Sel(1);						\
     }									\
     if (Store::WordToInt(list) == INVALID_INT) { REQUEST(list); }	\
-    Assert(Store::IntToWord(list) == Types::nil);			\
+    Assert(Store::WordToInt(list) == Types::nil);			\
   }									\
   tagVal = TagVal::FromWord(x);
 
