@@ -50,16 +50,16 @@ define
    end
 
    fun {ImportList Xs}
-      case Xs of '::'(C#Cr) then C|{ImportList Cr}
+      case Xs of '|'(C#Cr) then C|{ImportList Cr}
       [] nil then nil
       end
    end
 
    BuiltinTable =
    builtinTable(
-      'show': fun {$ X} {System.show X} '#' end
+      'show': fun {$ X} {System.show X} unit end
       '=': fun {$ X Y} X == Y end
-      ':=': fun {$ X Y} {Assign X Y} '#' end
+      ':=': fun {$ X Y} {Assign X Y} unit end
       '~': Number.'~'   %--** overloaded for word
       '+': fun {$ X1 X2} X1 + X2 end   %--** overloaded for word
       '-': fun {$ X1 X2} X1 - X2 end   %--** overloaded for word
@@ -69,7 +69,7 @@ define
 	    try
 	       X1 div X2
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'mod':
@@ -97,8 +97,8 @@ define
 	    end
 	 end
       '<>': fun {$ X1 X2} X1 \= X2 end
-      'Application.exit':
-	 fun {$ I} {Application.exit I} '#' end
+      'Application.exit':   %--** does not belong here
+	 proc {$ I _} {Application.exit I} end
       'Array.array':
 	 fun {$ N Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
@@ -116,7 +116,7 @@ define
 	    try
 	       {Array.get A I}
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'Array.update':
@@ -126,14 +126,14 @@ define
 	    catch _ then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'}
 	    end
-	    '#'
+	    unit
 	 end
       'Char.<=': fun {$ X1 X2} X1 =< X2 end
       'Char.ord': fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
 	    if {Char.is C} then C
-	    else {Exception.raiseError BuiltinTable.'General.Chr'} '#'
+	    else {Exception.raiseError BuiltinTable.'General.Chr'} unit
 	    end
 	 end
       'Char.isAlphaNum': Char.isAlNum
@@ -175,7 +175,7 @@ define
 	    try
 	       {ByteString.get S I}
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'String.substring':
@@ -183,7 +183,7 @@ define
 	    try
 	       {ByteString.slice S I I + J}
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'String.compare':
@@ -197,11 +197,11 @@ define
 	 fun {$ S}
 	    {List.foldR {ByteString.toString S}
 	     fun {$ C Cr}
-		'::'('#'(C Cr))
+		'|'('#'(C Cr))
 	     end nil}
 	 end
       'Thread.getCurrent':
-	 fun {$ '#'} {Thread.this} end
+	 fun {$ unit} {Thread.this} end
       'Thread.getState':
 	 fun {$ T}
 	    case {Thread.state T} of runnable then 'RUNNABLE'
@@ -210,29 +210,29 @@ define
 	    end
 	 end
       'Thread.injectException':
-	 fun {$ T E} {Thread.injectException T E} '#' end
+	 fun {$ T E} {Thread.injectException T E} unit end
       'Thread.isSuspended':
 	 fun {$ T} {Thread.isSuspended T} end
       'Thread.preempt':
-	 fun {$ T} {Thread.preempt T} '#' end
+	 fun {$ T} {Thread.preempt T} unit end
       'Thread.resume':
-	 fun {$ T} {Thread.resume T} '#' end
+	 fun {$ T} {Thread.resume T} unit end
       'Thread.sleep':
-	 fun {$ N} {Delay N} '#' end
+	 fun {$ N} {Delay N} unit end
       'Thread.spawn':
-	 fun {$ P} thread {P '#' _} end '#' end
+	 fun {$ P} thread _ = {P unit} end unit end
       'Thread.suspend':
-	 fun {$ T} {Thread.suspend T} '#' end
+	 fun {$ T} {Thread.suspend T} unit end
       'Transient.await':
 	 fun {$ X} {Wait X} X end
       'Transient.byNeed':
-	 fun {$ P} {ByNeed fun {$} {P '#'} end} end
+	 fun {$ P} {ByNeed fun {$} {P unit} end} end
       'Transient.fulfill':
-	 fun {$ P X} P = X '#' end
+	 fun {$ P X} P = X unit end
       'Transient.future':
 	 fun {$ P} !!P end
       'Transient.promise':
-	 fun {$ '#'} _ end
+	 fun {$ unit} _ end
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
@@ -241,14 +241,14 @@ define
 	    try
 	       V.(I + 1)
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end)
 
    Env = env('false': false
 	     'true': true
-	     'nil': nil
-	     'cons': '::'
+	     'nil': 'nil'
+	     'cons': '|'
 	     'ref': NewCell
 	     'Match': {NewUniqueName 'General.Match'}
 	     'Bind': {NewUniqueName 'General.Bind'})
