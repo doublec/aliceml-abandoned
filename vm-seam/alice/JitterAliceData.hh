@@ -113,7 +113,6 @@ namespace JITAlice {
       JITStore::InitArg(This, BASE_SIZE + i * 2 + 1, Value);
     }
   };
-
 };
 
 #endif

@@ -109,6 +109,16 @@ public:
     Generic::StackFrame::New(This, BASE_SIZE + nLocals,
 			     NativeCodeInterpreter::self);
   }
+  // Side-Effect: Scratches JIT_R0, JIT_FP
+  static void NewNoCheck(u_int This, u_int nLocals) {
+    Generic::StackFrame::NewNoCheck(This, BASE_SIZE + nLocals,
+				    NativeCodeInterpreter::self);
+  }
+  static void NewPopAndPush(u_int This, u_int newNLocals, u_int oldNLocals) {
+    Generic::StackFrame::NewPopAndPush(This, BASE_SIZE + newNLocals,
+				       BASE_SIZE + oldNLocals,
+				       NativeCodeInterpreter::self);
+  }
   static u_int GetFrameSize(u_int nLocals) {
     return (Generic::StackFrame::BASE_SIZE + BASE_SIZE + nLocals);
   }
@@ -160,6 +170,24 @@ public:
   }
 };
 
+namespace JITAlice {
+  // to be done: inherit from real NativeConcreteCode
+  class NativeConcreteCode : public ::Generic::ConcreteCode {
+  protected:
+    enum {
+      TRANSFORM_POS, NATIVE_CODE_POS, IMMEDIATE_ENV_POS, NLOCALS_POS,
+      SKIP_CCC_PC_POS, SIZE
+    };
+  public:
+    static void GetNativeCode(u_int Dest, u_int This) {
+      ::Generic::ConcreteCode::Sel(Dest, This, NATIVE_CODE_POS);
+    }
+    static void GetImmediateArgs(u_int Dest, u_int This) {
+      ::Generic::ConcreteCode::Sel(Dest, This, IMMEDIATE_ENV_POS);
+    }
+  };
+};
+
 //
 // Register Allocation
 //
@@ -180,11 +208,9 @@ public:
   }
 };
 
-#if defined(JIT_STORE_DEBUG)
 static u_int max(u_int a, u_int b) {
   return ((a >= b) ? a : b);
 }
-#endif
 
 class RegisterBank {
 protected:
@@ -583,6 +609,7 @@ word NativeCodeJitter::inlineTable;
 u_int NativeCodeJitter::currentNLocals;
 TagVal *NativeCodeJitter::currentArgs;
 word NativeCodeJitter::currentConcreteCode;
+u_int NativeCodeJitter::currentStack;
 //
 // Environment Accessors
 //
@@ -695,13 +722,6 @@ void NativeCodeJitter::LazySelClosureNew(u_int Record, UniqueString *label) {
   JIT_LOG_MESG("returning to base\n"); \
   jit_ret();
 
-void NativeCodeJitter::ResetRegister() {
-  word empty = Store::IntToWord(0);
-  jit_movi_p(JIT_R1, empty);
-  jit_movi_p(JIT_R2, empty);
-  jit_movi_p(JIT_V0, empty);
-}
-
 void NativeCodeJitter::SaveRegister() {
   NativeCodeFrame::ReplaceEnv(JIT_V2, 0, JIT_R1);
   NativeCodeFrame::ReplaceEnv(JIT_V2, 1, JIT_R2);
@@ -726,14 +746,24 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
   switch (info->mode) {
   case NATIVE_CALL:
     {
+      if (currentStack >= info->nLocals)
+	NativeCodeFrame::NewNoCheck(JIT_V1, info->nLocals);
+      else
+	NativeCodeFrame::New(JIT_V1, info->nLocals);
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
-      jit_pushr_ui(JIT_R0); // Closure
+      NativeCodeFrame::PutClosure(JIT_V1, JIT_R0);
+      jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
+      Generic::Closure::GetConcreteCode(JIT_V1, JIT_R0);
+      JITAlice::NativeConcreteCode::GetImmediateArgs(JIT_R0, JIT_V1);
+      NativeCodeFrame::PutImmediateArgs(JIT_V2, JIT_R0);
+      JITAlice::NativeConcreteCode::GetNativeCode(JIT_R0, JIT_V1);
+      NativeCodeFrame::PutCode(JIT_V2, JIT_R0);
       jit_movi_p(JIT_R0, Store::IntToWord(1));
-      jit_pushr_ui(JIT_R0);  // Continuation
-      JITStore::Call(2, (void *) NativeCodeInterpreter::FastPushCall);
-      jit_movr_p(JIT_V2, JIT_R0); // Move to new frame
+      NativeCodeFrame::PutContinuation(JIT_V2, JIT_R0);
+      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      for (u_int i = info->nLocals; i--;)
+  	NativeCodeFrame::PutEnv(JIT_V2, i, JIT_R0);
       CheckPreempt(info->pc);
-      ResetRegister();
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
       jit_jmpr(JIT_R0);
@@ -741,7 +771,10 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
     break;
   case SELF_CALL:
     {
-      NativeCodeFrame::New(JIT_V1, currentNLocals);
+      if (currentStack >= currentNLocals)
+	NativeCodeFrame::NewNoCheck(JIT_V1, currentNLocals);
+      else
+	NativeCodeFrame::New(JIT_V1, currentNLocals);
       ImmediateSel(JIT_R0, JIT_V2, info->closure); // Closure
       NativeCodeFrame::PutClosure(JIT_V1, JIT_R0);
       NativeCodeFrame::GetImmediateArgs(JIT_R0, JIT_V2);
@@ -751,11 +784,8 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       NativeCodeFrame::PutCode(JIT_V1, JIT_R0);
       jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
-      CheckPreempt(info->pc);
       // Intra chunk jumps remain immediate
-      jit_insn *immediate =
-	(jit_insn *) ((char *) codeBuffer + info->pc  - 2 * sizeof(word));
-      drop_jit_jmpi(immediate);
+      CheckPreemptImmediate(info->pc);
     }
     break;
   case NORMAL_CALL:
@@ -793,16 +823,40 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
   switch (info->mode) {
   case NATIVE_CALL:
     {
+      u_int nLocals = info->nLocals;
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
-      jit_pushr_ui(JIT_R0); // Closure
+      if (currentNLocals == nLocals)
+	goto reuse;
+      jit_pushr_ui(JIT_R0);
       NativeCodeFrame::GetContinuation(JIT_R0, JIT_V2); // Reuse continuation
-      jit_pushr_ui(JIT_R0); // Continuation
-      u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
-      Generic::Scheduler::PopFrame(size);
-      JITStore::Call(2, (void *) NativeCodeInterpreter::FastPushCall);
-      jit_movr_p(JIT_V2, JIT_R0); // Move to new Frame
+      jit_pushr_ui(JIT_R0);
+      if (nLocals < currentNLocals) {
+	// Invariant: Enough space on the stack and all slots are valid
+	NativeCodeFrame::NewPopAndPush(JIT_V2, nLocals, currentNLocals);
+	goto no_init;
+      } else if (nLocals <= (currentNLocals + currentStack)) {
+	// Invariant: Enough space on the stack but not necessarily valid
+	NativeCodeFrame::NewPopAndPush(JIT_V2, nLocals, currentNLocals);
+      } else {
+	u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
+	Generic::Scheduler::PopFrame(size);
+	NativeCodeFrame::New(JIT_V2, info->nLocals);
+      }
+      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      for (u_int i = info->nLocals; i--;)
+  	NativeCodeFrame::PutEnv(JIT_V2, i, JIT_R0);
+    no_init:
+      jit_popr_ui(JIT_R0);
+      NativeCodeFrame::PutContinuation(JIT_V2, JIT_R0);
+      jit_popr_ui(JIT_R0);
+    reuse:
+      NativeCodeFrame::PutClosure(JIT_V2, JIT_R0);
+      Generic::Closure::GetConcreteCode(JIT_V1, JIT_R0);
+      JITAlice::NativeConcreteCode::GetImmediateArgs(JIT_R0, JIT_V1);
+      NativeCodeFrame::PutImmediateArgs(JIT_V2, JIT_R0);
+      JITAlice::NativeConcreteCode::GetNativeCode(JIT_R0, JIT_V1);
+      NativeCodeFrame::PutCode(JIT_V2, JIT_R0);
       CheckPreempt(info->pc);
-      ResetRegister();
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
       jit_jmpr(JIT_R0);
@@ -812,11 +866,8 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
     {
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
       NativeCodeFrame::ReplaceClosure(JIT_V2, JIT_R0);
-      CheckPreempt(info->pc);
       // Intra chunk jumps remain immediate
-      jit_insn *immediate =
-	(jit_insn *) ((char *) codeBuffer + info->pc  - 2 * sizeof(word));
-      drop_jit_jmpi(immediate);
+      CheckPreemptImmediate(info->pc);
     }
     break;
   case NORMAL_CALL:
@@ -1049,6 +1100,16 @@ void NativeCodeJitter::CheckPreempt(u_int pc) {
   jit_patch(no_preempt);
 }
 
+void NativeCodeJitter::CheckPreemptImmediate(u_int pc) {
+  jit_insn *immediate =
+    (jit_insn *) ((char *) codeBuffer + pc  - 2 * sizeof(word));
+  JITStore::LoadStatus(JIT_R0);
+  drop_jit_beqi_ui(immediate, JIT_R0, 0);
+  SetRelativePC(Store::IntToWord(pc));
+  jit_movi_ui(JIT_R0, Worker::PREEMPT);
+  RETURN();
+}
+
 static u_int boolTest = 0;
 
 u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
@@ -1139,7 +1200,8 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
   return Result;
 } 
 
-void NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt) {
+void NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt,
+					   u_int nLocals) {
   JIT_LOG_MESG("non-tail call\n");
   Tuple *idDefArgsInstr = Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
   jit_insn *docall      = jit_jmpi(jit_forward());
@@ -1148,7 +1210,10 @@ void NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt) {
   u_int calleeArity = GetArity(idDefArgs);
   CompileCCC(calleeArity);
   StoreResults(calleeArity, idDefArgs);
+  u_int cloneStack = currentStack;
+  currentStack = max(currentStack, nLocals);
   CompileBranch(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)));
+  currentStack = cloneStack;
   jit_patch(docall);
   SetRelativePC(contPC);
 }
@@ -1228,8 +1293,9 @@ TagVal *NativeCodeJitter::CheckBoolTest(word pos, u_int Result, word next) {
 TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
   TagVal *actualArgs = TagVal::FromWordDirect(pc->Sel(1));
   CallInfo info;
-  info.mode = NORMAL_CALL;
-  info.pc   = Store::DirectWordToInt(initialPC);
+  info.mode    = NORMAL_CALL;
+  info.pc      = Store::DirectWordToInt(initialPC);
+  info.nLocals = 0;
   if (closure != INVALID_POINTER) {
     word wConcreteCode         = closure->GetConcreteCode();
     ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
@@ -1238,6 +1304,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
       info.closure = ImmediateEnv::Register(closure->ToWord());
       if (SkipCCC(direct, actualArgs, currentArgs))
 	info.pc = Store::DirectWordToInt(initialNoCCCPC);
+      info.nLocals = currentNLocals;
       goto no_request;
     } else if (concreteCode != INVALID_POINTER) {
       Interpreter *interpreter = concreteCode->GetInterpreter();
@@ -1329,7 +1396,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
  no_request:
   TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
   if (idDefArgsInstrOpt != INVALID_POINTER)
-    CompileContinuation(idDefArgsInstrOpt);
+    CompileContinuation(idDefArgsInstrOpt, info.nLocals);
   LoadArguments(actualArgs);
   KillIdRef(pc->Sel(0));
   if (idDefArgsInstrOpt != INVALID_POINTER) {
@@ -2584,11 +2651,12 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-stockwerk/build3/lib/system/Url.aml") && (Store::DirectWordToInt(coord1->Sel(1)) == 294)) {
-      fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
-  	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
-  	    Store::DirectWordToInt(coord1->Sel(1)),
-  	    Store::DirectWordToInt(coord1->Sel(2)));
+  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/test/bench/benches.aml")) {
+    fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
+	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
+	    Store::DirectWordToInt(coord1->Sel(1)),
+	    Store::DirectWordToInt(coord1->Sel(2)));
+    fflush(stderr);
     TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
     AbstractCode::Disassemble(stderr, pc);
   }
@@ -2630,6 +2698,7 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
     assignment->Init(i, Store::IntToWord(i + ALICE_REGISTER_NB));
   u_int nSlots = nLocals + ALICE_REGISTER_NB;
 #endif
+  currentStack        = 0;
   currentNLocals      = nSlots;
   currentArgs         = TagVal::FromWord(abstractCode->Sel(3));
   livenessTable       = LivenessTable::New(nSlots);

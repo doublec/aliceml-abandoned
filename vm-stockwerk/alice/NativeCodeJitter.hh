@@ -68,6 +68,7 @@ protected:
   static word inlineTable;
   static u_int currentNLocals;
   static TagVal *currentArgs;
+  static u_int currentStack;
   // Environment Accessors
   static u_int RefToIndex(word ref);
   static u_int LocalEnvSel(u_int Dest, u_int Ptr, u_int pos);
@@ -82,7 +83,6 @@ protected:
   static TagVal *LookupSubst(u_int index);
   static void LazySelClosureNew(u_int Record, UniqueString *label);
   // StackFrame Accessors
-  static void ResetRegister();
   static void SaveRegister();
   static void RestoreRegister();
   static void PushCall(CallInfo *info);
@@ -103,9 +103,10 @@ protected:
   static void BlockOnTransient(u_int Ptr, word pc);
   static void LoadStatus(u_int Dest);
   static void CheckPreempt(u_int pc);
+  static void CheckPreemptImmediate(u_int pc);
   static void LookupTestTable(u_int Key, u_int table, bool isInt = true);
   static u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
-  static void CompileContinuation(TagVal *idDefArgsInstrOpt);
+  static void CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
   static void LoadArguments(TagVal *actualArgs);
   static TagVal *CheckBoolTest(word pos, u_int Result, word next);
   static TagVal *Apply(TagVal *pc, Closure *closure, bool direct);
