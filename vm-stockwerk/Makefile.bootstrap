@@ -626,7 +626,7 @@ build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
 	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT \
 	--exclude build2/lib/utility/Unsafe \
 	--exclude build2/lib/system/Unsafe \
-	--include build2 --rewrite build2/lib/=../ -o $@
+	--include build2 --rewrite build2/=x-alice:/ -o $@
 
 ########################################################################
 ### BUILD 3
