@@ -56,7 +56,7 @@ eine grafische Benutzeroberfl"achen (GUI) in C erstellen.
 Durch die Schnittstelle soll
 dies auch dem Alice-Programmierer m"oglich sein.
 
-\emph{Inhalt.} Im Folgenden werden die Schnittstelle und GTK+ kurz vorgestellt.
+Im Folgenden werden die Schnittstelle und GTK+ kurz vorgestellt.
 Daraufhin wird der Entwurf der Schnittstelle er"ortert, wobei auch auf
 allgemeine, nicht GTK-spezifische Konzepte hingewiesen wird.
 Es folgt eine Beschreibung der Implementierung, bevor der Bericht mit einem
@@ -71,7 +71,7 @@ Als Grundlage f"ur diese Arbeit dienen zwei bereits existierende
 Schnittstellen f"ur GTK+ 1.2 von Thorsten Brunklaus:
 eine Anbindung an Mozart, und eine an Alice auf der Mozart-VM.
 Die hier besprochene Schnittstelle bindet GTK+ 2.x an Alice auf der SEAM-VM.
-Sie ist in der Anwendung weitestgehend kompatibel mit der bereits existierenden
+Sie ist in der Benutzung weitestgehend kompatibel mit der bereits existierenden
 Alice-Anbindung. Die gr"osten Unterschiede liegen bei GTK+ selbst,
 bedingt durch den Versionssprung.
 
@@ -181,13 +181,15 @@ C-Datentypen in Alice umgegangen wird.
 
 Es gibt zwei ``extreme'' M"oglichkeiten f"ur die Datentyp-Abbildung.
 
-Eine M"oglichkeit besteht darin, alle C-Werte in Alice als Werte von abstrakten
-Datentypen darzustellen. In diesem Fall muss die Schnittstelle aber Operatoren
-f"ur diese abstrakten Typen zur Verf"ugung stellen, wie z.B. Zuweisungs- und
-Vergleichsoperatoren f"ur C-Integers.
-Zwar umschifft dieser Weg einige grunds"atzliche Probleme,
-jedoch wird durch den indirekten Zugriff auf C-Werte die Programmierung
-unter Alice deutlich erschwert.
+Eine M"oglichkeit besteht darin, das gesamte C-Typsystem durch eine Reihe von
+abstrakten Alice-Typen darzustellen. In diesem Fall muss die Schnittstelle
+aber Operatoren f"ur Werte dieser abstrakten Typen zur Verf"ugung stellen,
+wie etwa Zuweisungs- und Vergleichsoperatoren f"ur C-Integers.
+Dieser Ansatz wird beispielsweise durch Matthias Blumes
+``Foreign Function Interface'' f"ur SML implementiert \cite{blume}.
+Zwar k"onnen auf diese Weise alle Aspekte des C-Typsystems sehr genau
+abgebildet werden, jedoch wird durch den indirekten Zugriff auf C-Werte die
+Programmierung unter Alice deutlich erschwert.
 
 Als Alternative k"onnte man versuchen, f"ur alle C-Typen ein m"oglichst
 "ahnliches Alice-Pendant zu finden. Das erleichert zwar den Umgang mit
@@ -205,7 +207,7 @@ Gr"unde f"ur diese Entscheidung und Implementationsdetails werden in Abschnitt
 \subsubsection*{Die automatische Generierung und ihre Grenzen}
 
 Sobald man sich auf eine bestimmte Abbildung festgelegt hat, liegt es nahe,
-das Binding anhand der Bibliothekssignatur (???) automatisch generieren zu
+das Binding anhand der Headerdateien der C-Bibliothek automatisch generieren zu
 lassen. Leider enthalten reine C-Deklarationen manchmal zuwenig semantische
 Informationen, um eine m"oglichst akkurate Alice-Schnittstelle generieren
 zu k"onnen.\footnote{Ein Beispiel daf"ur sind Ein- und Ausgabeparameter, die
@@ -216,7 +218,7 @@ zutreffen. Ausserdem kann f"ur Einzelf"alle eine gesonderte Code-Generierung
 festgelegt werden.
 
 Die so generierte Alice-Schnittstelle ist im Wesentlichen
-eine 1:1-Abbildung der C-Bibliothek. Alice-Programme, die die Schnittstelle
+eine 1:1-Abbildung der C-Biblio\-thek. Alice-Programme, die die Schnittstelle
 benutzen, sind also reichlich imperativ und auf Seiteneffekten beruhend.
 Der Ausblick am Ende dieses Berichts erl"autert Ideen f"ur eine h"ohere,
 funktionale Schicht.
@@ -308,12 +310,12 @@ ist etwas komplizierter:
       Alice-Callback-Funktion herausfinden und aufrufen.
 \end{enumerate}
 
-Durch den Strom werden die Ereignisse nacheinander in der richtigen
-Reihenfolge abgearbeitet. Es gibt jedoch einen wichtigen Unterschied
+Es gibt einen wichtigen Unterschied
 zur Ereignisbehandlung bei einem C-Programm: Die Ereignisse werden asynchron
 abgearbeitet, d.h. die Hauptschleife kann bereits ein Ereignis bearbeiten,
 w"ahrend ein anderes noch in einer Alice-Callback-Funktion abgearbeitet wird.
-(Grund, Probleme???)
+Durch den Strom werden die Ereignisse werden aber trotzdem nacheinander
+in der richtigen Reihenfolge abgearbeitet.
 
 \subsection{Garbage Collection}
 
@@ -342,7 +344,7 @@ Daher erh"oht die Schnittstelle selbst den Referenzz"ahler automatisch:
 \end{itemize}
 
 Solange eine Referenz auf ein Objekt in Alice also sichtbar ist, muss der
-GTK-Referenzz"ahler mindestens 1 sein, was GTK am Entfernen des Objekts
+GTK-Referenz\-z"ahler mindestens 1 sein, was GTK am Entfernen des Objekts
 hindert.
 
 
@@ -374,7 +376,19 @@ und umgekehrt sorgt das Foreign Function Interface (FFI) von Alice.
 Die Generierung l"auft in mehreren Phasen ab (siehe dazu auch
 Abbildung \ref{Generator}):
 \begin{itemize}
-\item Phasen???
+\item Mithilfe des C-Pr"aprozessors und weiterer, auf Textebene arbeitender
+      Programme werden die Deklarationen in allen
+      Header-Dateien der GTK-Bibliotheken in eine Datei zusammengefasst.
+\item Die C-Deklarationen werden mithilfe der
+      CKIT-Bibliothek\footnote{Das CKIT \cite{ckit} kann beliebige C90-konforme
+      C-Programme parsen. Es ist Bestandteil der SML/NJ-Suite.}
+      geparst und in einem abstrakten Syntaxbaum dargestellt.
+\item Die CKIT-Darstellung f"ur unsere Zwecke aufgrund der reichhaltigen
+      Annotationen sehr unhandlich und ineffizient. Daher wird sie in eine
+      eigene Zwischenrepr"asentation umgewandelt, welche genau diejenigen
+      Informationen enth"alt, die f"ur die Generierung notwendig sind.
+\item Anhand dieser Repr"asentation kann schlie"slich der eigentliche
+      Schnittstelle (Alice- und C-Code) generiert werden.
 \end{itemize}
 
 \subsection{Abbildung der Datentypen}
@@ -480,7 +494,7 @@ ist bei der GTK-Programmierung in aller Regel nicht n"otig.
 \subsection{Funktionswrapper}
 
 F"ur jede Funktion wird ein Funktionswrapper generiert, der das
-Datenmarshalling durchf"uhrt, d.h. Werte eines Alice-Typs in Werte eines
+Datenmarshalling durch\-f"uhrt, d.h. Werte eines Alice-Typs in Werte eines
 C-Typs konvertiert und umgekehrt. Der Alice-Funktionstyp folgt dabei der
 C-Funktionsdeklaration; mehrere Argumente werden als Tupel "ubergeben.
 Die Funktionsnamen sind nach der ``lower CAML case''-Konvention
@@ -581,7 +595,9 @@ gleich zu nutzen. So k"onnten z.B. "ahnliche Mitteilungsfenster
 in einem Funktor zusammengefasst werden, und dieser k"onnte wiederum als
 Package im Netz zur allgemeinen Verf"ugung stehen. Weitere Ideen
 f"ur eine funktionale GUI-Programmierung bietet das Fudgets-Konzept
-\cite{fudgets}. In jedem Fall ist eine solche funktionale Schnittstelle
+\cite{fudgets}. 
+
+In jedem Fall ist eine solche funktionale Schnittstelle
 nicht mehr automatisch generierbar.
 
 \subsection*{Allgemeines Genererierungstool}
@@ -592,17 +608,28 @@ eine Anwendung f"ur andere Bibliotheken erschweren.
 
 Daher w"are es n"utzlich, diese Annahmen zu parametrisieren, um einen
 allgemeinen Generator zu erhalten, der f"ur beliebige C-Bibliotheken
-eine Anbindung an Alice generieren kann. (Sven???)
+eine Anbindung an Alice generieren kann.
 
 \begin{thebibliography}{99}
-  \bibitem{wwwgtkorg}http://www.gtk.org
-  \bibitem{inspector}Bernadette Blum, Marvin Schiller:
-                     Ein Browser f"ur Alice (Fopra), 2003\\
-                     http://www.ps.uni-sb.de/~schiller/inspector.html
-  \bibitem{fudgets}Magnus Carlsson, Thomas Hallgren:
-                   Fudgets -- Purely Functional Processes with applications
-                   to Graphical User Interfaces (PhD thesis), 1998\\
-                   http://www.cs.chalmers.se/~hallgren/Thesis
+  \bibitem{wwwgtkorg}GTK+ Homepage\\
+                     §http://www.gtk.org/§
+
+  \bibitem{inspector}Bernadette Blum, Marvin Schiller.
+                     \emph{Ein Browser f"ur Alice} (Fopra), 2003.\\
+                     §http://www.ps.uni-sb.de/~schiller/inspector.html§
+
+  \bibitem{blume}Matthias Blume. \emph{No-Longer-Foreign: Teaching an
+                 ML compiler to speak C ``natively''}, 2001.\\
+                 §http://people.cs.uchicago.edu/~blume/papers/nlffi.pdf§
+
+  \bibitem{ckit}CKIT f"ur SML/NJ\\
+                §http://www.smlnj.org/doc/ckit/§
+                 
+  \bibitem{fudgets}Magnus Carlsson, Thomas Hallgren.
+                   \emph{Fudgets -- Purely Functional Processes with
+                   applications to Graphical User Interfaces} (PhD thesis), 
+                   1998.\\
+                   §http://www.cs.chalmers.se/~hallgren/Thesis§
 \end{thebibliography}
 
 \end{document}
