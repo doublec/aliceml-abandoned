@@ -169,14 +169,14 @@ structure SearchDialog =
 
 		val _ = Gtk.dialogSetHasSeparator(dia,false)
 		val hbox1 = Gtk.hboxNew(false,0)
-		val label1 = Gtk.labelNew("Go to: ")
+		val label1 = Gtk.labelNew("Go to Line: ")
 		val entry1 = Gtk.entryNew()
 		val _ = Gtk.entrySetActivatesDefault(entry1, true)
 		val _ = Gtk.boxPackStart(hbox1,label1,false,false,0)
 		val _ = Gtk.boxPackStart(hbox1,entry1,true,true,0)
                 val _ = Gtk.containerAdd(vbox, hbox1)
             in
-                Gtk.windowSetTitle(dia, "Go to line");
+                Gtk.windowSetTitle(dia, "Go to Line");
 		Gtk.dialogSetDefaultResponse(dia, 0);
                 (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
                 Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
@@ -190,7 +190,8 @@ structure SearchDialog =
 				 val iter = Gtk.textIterNew()
 				 val _ = Gtk.textBufferGetIterAtLine(buf,iter,line-1)
 			     in
-				 Gtk.textBufferPlaceCursor(buf, iter)
+				 Gtk.textBufferPlaceCursor(buf, iter);
+				 Buffer.scrollToCursor id
 			     end)
                 else ();
                 Gtk.widgetDestroy dia

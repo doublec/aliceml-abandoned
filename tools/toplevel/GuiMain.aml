@@ -516,6 +516,7 @@ structure GuiMain =
                          (Gtk.textIterSetLineOffset(startiter, col);
                           Gtk.textIterSetLineOffset(enditer, col');
                           Buffer.selectRange(buf, startiter, enditer);
+			  Buffer.scrollToCursor id;
 			  Gtk.notebookSetCurrentPage(Gui.notebook1,
 						     valOf (findPage id));
                           Gtk.widgetGrabFocus (Buffer.getView id))

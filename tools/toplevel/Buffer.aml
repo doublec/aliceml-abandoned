@@ -480,6 +480,14 @@ structure Buffer =
               ()
           end
 
+      fun scrollToCursor id =
+          let
+              val {view,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+	  in
+              Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
+                                       0.1, false, 0.0, 0.0)
+	  end
+
       fun match (iter, back, txt, i, caseSensitive) =
           if (if caseSensitive then
                   Gtk.textIterGetChar iter = ord (String.sub(txt,i))
@@ -527,9 +535,7 @@ structure Buffer =
                       Gtk.textIterForwardChars(iter',size txt);
                       lastSearchPos := Gtk.textIterGetOffset iter;
                       selectRange(buf,iter,iter');
-                      Gtk.textViewScrollToMark(view,
-                                               Gtk.textBufferGetInsert buf,
-                                               0.0,false,0.0,0.0);
+		      scrollToCursor id;
 		      true
                   end
               else false
