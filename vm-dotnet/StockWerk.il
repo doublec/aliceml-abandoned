@@ -56,6 +56,10 @@
     .field static public initonly class StockWerk.StockWert ByNeed
     .field static public initonly class StockWerk.StockWert Pickle
     .field static public initonly class StockWerk.StockWert Component
+    .field static public initonly class StockWerk.StockWert General$Size
+    .field static public initonly class StockWerk.StockWert General$Subscript
+    .field static public initonly class StockWerk.StockWert List$Empty
+    .field static public initonly class StockWerk.StockWert Option$Option
     // Builtins
     .field static public initonly class StockWerk.StockWert show
     .field static public initonly class StockWerk.StockWert eq
@@ -109,8 +113,10 @@
     .field static public initonly class StockWerk.StockWert TextIO$stdIn
     .field static public initonly class StockWerk.StockWert TextIO$stdOut
     .field static public initonly class StockWerk.StockWert Thread$current
+    .field static public initonly class StockWerk.StockWert Thread$resume
     .field static public initonly class StockWerk.StockWert Thread$sleep
     .field static public initonly class StockWerk.StockWert Thread$spawn
+    .field static public initonly class StockWerk.StockWert Thread$suspend
     .field static public initonly class StockWerk.StockWert Transient$await
     .field static public initonly class StockWerk.StockWert Transient$byNeed
     .field static public initonly class StockWerk.StockWert Transient$fulfill
@@ -176,6 +182,18 @@
       ldstr "Component"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Component
+      ldstr "General.Size"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Size
+      ldstr "General.Subscript"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Subscript
+      ldstr "List.Empty"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::List$Empty
+      ldstr "Option.Option"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Option$Option
       // Builtins
       newobj instance void StockWerk.Builtins.show::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::show
@@ -252,10 +270,14 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$stdOut
       newobj instance void StockWerk.Builtins.Thread$current::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$current
+      newobj instance void StockWerk.Builtins.Thread$resume::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$resume
       newobj instance void StockWerk.Builtins.Thread$sleep::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$sleep
       newobj instance void StockWerk.Builtins.Thread$spawn::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$spawn
+      newobj instance void StockWerk.Builtins.Thread$suspend::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$suspend
       newobj instance void StockWerk.Builtins.Transient$await::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$await
       newobj instance void StockWerk.Builtins.Transient$byNeed::.ctor()
@@ -2109,13 +2131,13 @@
   }
 
   .class public sealed Thread extends StockWerk.StockWert {
-    .field private class System.Thread Thr
+    .field public class System.Thread Value
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       call class System.Thread System.Thread::GetCurrentThread()
-      stfld class System.Thread StockWerk.Thread::Thr
+      stfld class System.Thread StockWerk.Thread::Value
       ret
     }
     .method virtual public bool Equals(class System.Object) {
@@ -2125,9 +2147,9 @@
       brfalse.s testTransient
       ldarg.1
       castclass StockWerk.Thread
-      ldfld class System.Thread StockWerk.Thread::Thr
+      ldfld class System.Thread StockWerk.Thread::Value
       ldarg.0
-      ldfld class System.Thread StockWerk.Thread::Thr
+      ldfld class System.Thread StockWerk.Thread::Value
       ceq
       ret
     testTransient:
@@ -2287,6 +2309,11 @@
     retFalse:
       ldc.i4.0
       ret
+    }
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
     }
     .method virtual public class System.String ToString() {
       ldarg.0
@@ -3386,6 +3413,37 @@
     }
   }
 
+  .class sealed Thread$resume extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Thread
+      brfalse.s testTransient
+      ldarg.1
+      ldfld class System.Thread StockWerk.Thread::Value
+      call instance void System.Thread::Resume()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
   .class sealed Thread$sleep extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
@@ -3432,6 +3490,37 @@
       call instance void System.Thread::Start()
       ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
       ret
+    }
+  }
+
+  .class sealed Thread$suspend extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Thread
+      brfalse.s testTransient
+      ldarg.1
+      ldfld class System.Thread StockWerk.Thread::Value
+      call instance void System.Thread::Suspend()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
     }
   }
 
