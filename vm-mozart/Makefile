@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /usr/lib/mozart
+OZHOME = /opt/mozart-stable
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
