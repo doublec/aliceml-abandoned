@@ -15,6 +15,7 @@ structure GuiToplevel =
 	    GuiMain.init ();
 	    List.app GuiMain.openGivenFile files;
 	    Evaluator.init ();
+	    GuiMain.initDone ();
 	    await (Promise.future (Promise.promise ()))
 	end
   end

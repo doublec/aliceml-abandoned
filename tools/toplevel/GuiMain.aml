@@ -607,8 +607,12 @@ structure GuiMain =
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
 	     OutputWriters.makeWriters (eval false);
+	     Gtk.textViewSetEditable(Gui.compilerout, false);
              Gtk.widgetGrabFocus (Gui.compilerout)
              )                      
+
+	fun initDone () =
+	    Gtk.textViewSetEditable(Gui.compilerout, true)
 
         fun quit () = if List.all Buffer.close (!pages) then
                           OS.Process.exit OS.Process.success
