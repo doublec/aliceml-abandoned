@@ -22,8 +22,6 @@ functor MakeDepthFirstSearch
     struct
 	structure Map = Map
 
-	exception Crash of string   (*--** *)
-
 	type state =
 	     {currentId: int ref,
 	      stack: Key.t list ref,
@@ -39,7 +37,7 @@ functor MakeDepthFirstSearch
 	fun getCycle (key::keyr, key', state: state) =
 	    if Key.equals (key, key') then (#stack state := keyr; [key])
 	    else key::getCycle (keyr, key', state)
-	  | getCycle (nil, _, _) = raise Crash "MakeDepthFirstSearch.getCycle"
+	  | getCycle (nil, _, _) = raise Assert.failure
 
 	fun visit (map, key, state as {currentId, stack, done, sorted}) =
 	    let

@@ -34,7 +34,6 @@ structure Url :> URL =
 	type t = url
 
 	exception Malformed
-	exception Crash of string   (*--** *)
 
 	(*
 	 * Split a string at the 1st occurrence of a separator character.
@@ -308,8 +307,7 @@ structure Url :> URL =
 				 _::_ => pushPath prefix
 			       | nil => ();
 			     parseFragment suffix)
-		      | (_, SOME _, _) =>
-			    raise Crash "Url.fromString parseStart"
+		      | (_, SOME _, _) => raise Assert.failure
 		and parseAuthority cs =
 		    let
 			val (prefix, sep, suffix) = split isPath cs
@@ -321,8 +319,7 @@ structure Url :> URL =
 				(absolute := true; parsePath suffix)
 			  | SOME #"?" => parseQuery suffix
 			  | SOME #"#" => parseFragment suffix
-			  | SOME _ =>
-				raise Crash "Url.fromString parseAuthority"
+			  | SOME _ => raise Assert.failure
 		    end
 		and parsePathDev (c::(#":")::cr) =
 		    (device := SOME (toDevice c); parsePath cr)
@@ -337,8 +334,7 @@ structure Url :> URL =
 			  | SOME (#"/" | #"\\") => parsePath suffix
 			  | SOME #"?" => parseQuery suffix
 			  | SOME #"#" => parseFragment suffix
-			  | SOME _ =>
-				raise Crash "Url.fromString parsePath"
+			  | SOME _ => raise Assert.failure
 		    end
 		and parseQuery cs =
 		    let
@@ -348,8 +344,7 @@ structure Url :> URL =
 			case sep of
 			    NONE => ()
 			  | SOME #"#" => parseFragment suffix
-			  | SOME _ =>
-				raise Crash "Url.fromString parseQuery"
+			  | SOME _ => raise Assert.failure
 		    end
 		and parseFragment cs = fragment := SOME (String.implode cs)
 	    in
