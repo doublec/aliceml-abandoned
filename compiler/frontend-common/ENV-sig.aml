@@ -34,11 +34,11 @@ sig
     type env
     type t = env
 
-    type val_entry = { id: valid, use: bool ref, typ: typ, path: path }
-    type typ_entry = { id: typid, use: bool ref, typ: typ, path: path }
-    type var_entry = { id: typid, use: bool ref, var: var }
-    type mod_entry = { id: modid, use: use  ref, inf: inf, path: path }
-    type inf_entry = { id: infid, use: bool ref, inf: inf, path: path }
+    type val_entry = {id: valid, use: bool ref, typ: typ, qtyp: typ, path: path}
+    type typ_entry = {id: typid, use: bool ref, typ: typ, path: path}
+    type var_entry = {id: typid, use: bool ref, var: var}
+    type mod_entry = {id: modid, use: use  ref, inf: inf, path: path}
+    type inf_entry = {id: infid, use: bool ref, inf: inf, path: path}
 
     exception Collision of stamp
     exception Lookup    of stamp

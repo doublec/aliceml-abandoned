@@ -204,35 +204,36 @@ struct
 
     fun elabValid_bind(E, s, valid as I.Id(i, stamp, name)) =
 	let
-	    val  p      = Inf.newVal(s, Label.fromName name
-					handle Domain => Label.fromInt 0)
-	    val  t      = Type.unknown(Type.STAR)
-	    val  u      = ref false
+	    val  p          = Inf.newVal(s, Label.fromName name
+					    handle Domain => Label.fromInt 0)
+	    val  qt         = Type.unknown(Type.STAR)
+	    val  t          = Type.unknown(Type.STAR)
+	    val  u          = ref false
 	    (*UNFINISHED: use punning: *)
-	    val (p',t') = ( Env.insertVal(E, stamp,
-					  {id=valid, path=p, typ=t, use=u})
-			  ; (p,t) )
-			  handle Env.Collision _ =>	(* val rec or alt pat *)
-			    let val {path=p', typ=t', ...} =
-				Env.lookupVal(E, stamp)
-			    in (p',t') end
+	    val (p',t',qt') = ( Env.insertVal(E, stamp,
+				  {id=valid, path=p, typ=t, qtyp=qt, use=u})
+			      ; (p,t,qt) )
+			      handle Env.Collision _ =>	(* val rec or alt pat *)
+			      let val {path=p', typ=t', qtyp=qt', ...} =
+				  Env.lookupVal(E, stamp)
+			      in (p',t',qt') end
 	in
-	    ( t', p', O.Id(typInfo(i,t'), stamp, name) )
+	    ( t', qt', p', O.Id(typInfo(i,qt'), stamp, name) )
 	end
 
     fun elabValid(E, I.Id(i, stamp, name)) =
 	let
-	    val {typ=t, use, ...} = Env.lookupVal(E, stamp)
+	    val {typ=t, qtyp=qt, use, ...} = Env.lookupVal(E, stamp)
 	in
 	    use := true;
-	    ( t, O.Id(typInfo(i,t), stamp, name) )
+	    ( t, qt, O.Id(typInfo(i,qt), stamp, name) )
 	end
 
     and elabVallongid(E, I.ShortId(i, id)) =
 	let
-	    val (t,valid') = elabValid(E, id)
+	    val (t,qt,valid') = elabValid(E, id)
 	in
-	    ( t, O.ShortId(typInfo(i,t), valid') )
+	    ( t, O.ShortId(typInfo(i,qt), valid') )
 	end
 
       | elabVallongid(E, I.LongId(i, modlongid, vallab)) =
@@ -590,7 +591,8 @@ struct
 	    val  _        = Type.unify(t2,t4) handle Type.Unify(t5,t6) =>
 				error(I.infoExp exp,
 				      E.MatchExpUnify(t2, t4, t5, t6))
-	    val  _        = Env.deleteScope E
+	    val  E'       = Env.splitScope E
+	    val  _        = monomorphiseVals E'
 	in
 	    O.Match(nonInfo(i), pat', exp')
 	end
@@ -623,7 +625,7 @@ struct
 
       | elabPat(E, s, I.VarPat(i, valid)) =
 	let
-	    val (t,p,valid') = elabValid_bind(E, s, valid)
+	    val (t,qt,p,valid') = elabValid_bind(E, s, valid)
 	in
 	    ( t, O.VarPat(typInfo(i,t), valid') )
 	end
@@ -1228,7 +1230,7 @@ struct
 	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
 	end
 
-      | elabMod(E, I.UpMod(i, mod, inf)) =
+      | elabMod(E, I.AbsMod(i, mod, inf)) =
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
@@ -1237,7 +1239,7 @@ struct
 				error(i, E.AnnModMismatch mismatch)
 	    val  j        = j2
 	in
-	    ( j, O.UpMod(infInfo(i,j), mod', inf') )
+	    ( j, O.AbsMod(infInfo(i,j), mod', inf') )
 	end
 
       | elabMod(E, I.LetMod(i, decs, mod)) =
@@ -1553,6 +1555,7 @@ struct
 	let
 	    val  p       = Inf.newMod(s, Label.fromName(I.name modid))
 	    val (j,mod') = elabMod(E, mod)
+	    (*UNFINISHED: better strengthen a copy of j?*)
 	    val  _       = Inf.strengthen(p, j)
 	    val  p'      = case elabMod_path(E, mod)
 			     of SOME (p',_) => p'
@@ -1637,10 +1640,17 @@ struct
 		  end
 		 ) varids
 
+    and monomorphiseVals E =
+	Env.appVals (fn(x, entry as {typ=t, qtyp=qt, ...}) =>
+			Type.fill(qt,t) handle Type.Fill => ()) E
+			(* may already be generalised through WithPat *)
+
     and liftVals(E, s, az, E') =
-	Env.appVals (fn(x, entry as {id=valid, path=p, typ=t, ...}) =>
+	Env.appVals (fn(x, entry as {id=valid, path=p, typ=t, qtyp, ...}) =>
 			( Type.lift t handle Type.Lift a =>
 			    error(I.infoId valid, E.ValDecLift(valid, a))
+			; Type.fill(qtyp,t) handle Type.Fill => ()
+			  (* may already be generalised through WithPat *)
 			; Env.insertVal(E, x, entry)
 			; Inf.extendVal(s, p, t, SOME p)
 			)
@@ -1653,16 +1663,21 @@ struct
 	    val ts' = Type.close ts
 	in
 	    (*UNFINISHED: use record update:
-	    ListPair.app (fn((x,entry), t) =>
+	    ListPair.app (fn((x, entry as {qtyp=qt, ...}), t) =>
 			  let
-			      val t' = List.foldl Type.inAll t az
+			     val t' = List.foldl Type.inAll t az
 			  in
-			     Env.insertVal(E, x, {entry where typ=t'});*)
-	    ListPair.app (fn((x, {id=id, path=p, use=u, ...}), t) =>
+			     Type.fill(qt,t') handle Type.Fill => ();
+			     (* may already be generalised through WithPat *)
+			     Env.insertVal(E, x, {entry where typ=t', qtyp=t'});*)
+	    ListPair.app (fn((x, {id=id, path=p, use=u, qtyp=qt, ...}), t) =>
 			  let
-			      val t' = List.foldl Type.inAll t az
+			     val t' = List.foldl Type.inAll t az
 			  in
-			     Env.insertVal(E, x, {id=id, path=p, typ=t',use=u});
+			     Type.fill(qt,t') handle Type.Fill => ();
+			     (* may already be generalised through WithPat *)
+			     Env.insertVal(E, x, {id=id, path=p, use=u,
+						  typ=t', qtyp=t'});
 			     Inf.extendVal(s, p, t', SOME p)
 			  end
 			 ) (xes,ts')
@@ -1736,14 +1751,15 @@ struct
 
     and elabSpec(E, s, I.ValSpec(i, valid, typ)) =
 	let
-	    val (t0,p,valid') = elabValid_bind(E, s, valid)
-	    val (t,typ')      = elabStarTyp(E, typ)
-	    val  d            = case typ
-				  of I.SingTyp(_, vallongid) =>
+	    val (t0,qt,p,valid') = elabValid_bind(E, s, valid)
+	    val (t,typ')         = elabStarTyp(E, typ)
+	    val  d               = case typ
+				     of I.SingTyp(_, vallongid) =>
 					SOME(elabVallongid_path(E,vallongid))
-				   | _ => NONE
-	    val  _            = Type.fill(t0,t)
-	    val  _            = Inf.extendVal(s, p, t, d)
+				      | _ => NONE
+	    val  _               = Type.fill(t0,t)
+	    val  _               = Type.fill(qt,t)
+	    val  _               = Inf.extendVal(s, p, t, d)
 	in
 	    O.ValSpec(nonInfo(i), valid', typ')
 	end
@@ -1890,11 +1906,11 @@ struct
 
     and elabImp(E, s, I.ValImp(i, valid, desc)) =
 	let
-	    val (t0,p,valid') = elabValid_bind(E, s, valid)
-	    val  a            = Label.fromName(O.name valid')
-	    val  t1           = Inf.lookupVal(s, a) handle Inf.Lookup =>
+	    val (t0,qt,p,valid') = elabValid_bind(E, s, valid)
+	    val  a               = Label.fromName(O.name valid')
+	    val  t1              = Inf.lookupVal(s, a) handle Inf.Lookup =>
 				    error(I.infoId valid, E.ValImpUnbound a)
-	    val (t2,desc')    = case desc
+	    val (t2,desc')  = case desc
 				of I.NoDesc(i') =>
 				   (t1, O.NoDesc(typInfo(i',t1)))
 				 | I.SomeDesc(i',typ) =>
@@ -1906,7 +1922,8 @@ struct
 				      else
 					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
-	    val  _            = Type.fill(t0,t2)
+	    val  _          = Type.fill(t0,t2)
+	    val  _          = Type.fill(qt,t2)
 	in
 	    O.ValImp(nonInfo(i), valid', desc')
 	end
