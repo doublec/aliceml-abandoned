@@ -63,7 +63,14 @@ define
       {Native.signalEmitByName {ObjectToPointer Object} AtomName}
       unit
    end
-
+   fun {AllocateGDKColor Red Blue Green}
+      {PointerToObject {Native.allocateGdkColor Red Blue Green}}
+   end
+   fun {FreeGDKColor Color}
+      {Native.freeGdkColor {ObjectToPointer Color}}
+      unit
+   end
+   
    local
       local
 	 PollingIntervall = 50
@@ -154,9 +161,12 @@ define
 			  signalHandlerBlock   : SignalHandlerBlock
 			  signalHandlerUnblock : SignalHandlerUnblock
 			  signalEmit           : SignalEmit
+			  allocateGDKColor     : AllocateGDKColor
+			  freeGDKColor         : FreeGDKColor
 			  exit                 : Exit)
       
       %% Start dispatcher
       Dispatcher = {New DispatcherObject create}
    end
 end
+

@@ -394,7 +394,9 @@ structure Collect : COLLECT =
 			    "%%%\n\n",
 			    "GDK = 'GDK'(\n",
 			    "         '$object' : GTKCore.'$object'\n",
-			    "         '$va_arg' : GTKCore.'$va_arg'\n"]
+			    "         '$va_arg' : GTKCore.'$va_arg'\n",
+			    "         'allocateGDKColor' : GTKCore.'allocateGDKColor'\n",
+			    "         'freeGDKColor' : GTKCore.'freeGDKColor'\n"]
 	    
 	val expGTKEnd = ["         )\n"]
 
@@ -438,7 +440,9 @@ structure Collect : COLLECT =
 	     "        signature GDK =\n",
 	     "            sig\n",
 	     "                type object = GTKCore.object\n\n",
-	     "                datatype va_arg = datatype GTKCore.va_arg\n\n"]
+	     "                datatype va_arg = datatype GTKCore.va_arg\n\n",
+	     "                val allocateGDKColor : int * int * int -> object\n",
+	     "                val freeGDKColor : object -> unit\n"]
 
 	val sigGTKEnd =
 	    ["            end\n\n",

@@ -32,6 +32,8 @@ signature GTK_CORE_COMPONENT =
                 val signalHandlerBlock : object * int -> unit
                 val signalHandlerUnblock : object * int -> unit
                 val signalEmit : object * string -> unit
+		val allocateGDKColor : int * int * int -> object
+		val freeGDKColor : object -> unit
 		val exit : unit -> unit
 	    end
 
