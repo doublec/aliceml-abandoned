@@ -2591,6 +2591,12 @@ namespace Alice {
 	public static Object Thread_suspend     = new Thread_suspend();
 	public static Object Thread_yield       = new Thread_yield();
 
+	public static Object Unsafe_Array_sub    = new Unsafe_Array_sub();
+	public static Object Unsafe_Array_update = new Unsafe_Array_update();
+	public static Object Unsafe_String_sub   = new Unsafe_String_sub();
+	public static Object Unsafe_Vector_sub   = new Unsafe_Vector_sub();
+	public static Object Unsafe_cast         = new Unsafe_cast();
+
 	public static Object Word_fromIntQuote = new Word_fromIntQuote();
 	public static Object Word_fromInt      = new Word_fromInt();
 	public static Object Word_toInt        = new Word_toInt();
