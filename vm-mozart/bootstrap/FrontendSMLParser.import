@@ -1,8 +1,0 @@
-(* -*- sml -*- *)
-
-import
-
-###frontend-sml/PARSING_PHASE.sig
-structure ParsingPhase: PARSING_PHASE
-
-from "FrontendSMLParser.ozf"
