@@ -17,7 +17,9 @@ import structure Vector      from "Vector"
 import structure Word8       from "Word8"
 import signature MONO_VECTOR from "MONO_VECTOR-sig"
 
-structure Word8Vector :> MONO_VECTOR where type elem = Word8.word =
+structure Word8Vector :> MONO_VECTOR
+    where type elem = Word8.word
+      and type vector = Word8.word Vector.vector =
 struct
     open Vector
 

@@ -21,10 +21,11 @@ import signature MONO_VECTOR                   from "MONO_VECTOR-sig"
 
 signature MONO_ARRAY =
 sig
-    eqtype array
-    type elem
-
     structure Vector: MONO_VECTOR
+
+    eqtype array
+    type t = array
+    type elem = Vector.elem
 
     val maxLen: int
     val array: int * elem -> array
