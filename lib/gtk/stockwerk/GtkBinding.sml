@@ -18,10 +18,13 @@
 
 local
     structure SGDK = MkSpecial (val space = Util.GDK)
-    structure UGDK = MkNative(structure TypeManager = TypeManager
+    structure NGDK = MkNative(structure TypeManager = TypeManager
 			      structure Special = SGDK
 			      val space = Util.GDK)
-    structure CGDK = MkUnsafe(structure TypeManager = TypeManager
+    structure FGDK = MkNativeFields(structure TypeManager = TypeManager
+				    structure Special = SGDK
+				    val space = Util.GDK)
+    structure UGDK = MkUnsafe(structure TypeManager = TypeManager
 		 	      structure Special = SGDK
 			      val space = Util.GDK)
     structure EGDK = MkEnums(structure TypeManager = TypeManager
@@ -35,10 +38,13 @@ local
 			     val space = Util.PANGO)
 
     structure SGTK = MkSpecial (val space = Util.GTK)
-    structure UGTK = MkNative(structure TypeManager = TypeManager
+    structure NGTK = MkNative(structure TypeManager = TypeManager
                               structure Special = SGTK
 			      val space = Util.GTK)
-    structure CGTK = MkUnsafe(structure TypeManager = TypeManager
+    structure FGTK = MkNativeFields(structure TypeManager = TypeManager
+				    structure Special = SGTK
+				    val space = Util.GTK)
+    structure UGTK = MkUnsafe(structure TypeManager = TypeManager
 		 	      structure Special = SGTK
 			      val space = Util.GTK)
     structure EGTK = MkEnums(structure TypeManager = TypeManager
@@ -46,16 +52,18 @@ local
 			     val space = Util.GTK)
 
     structure SGC  = MkSpecial (val space = Util.GNOMECANVAS)
-    structure UGC  = MkNative(structure TypeManager = TypeManager
+    structure NGC  = MkNative(structure TypeManager = TypeManager
 			      structure Special = SGC
 			      val space = Util.GNOMECANVAS)
-    structure CGC  = MkUnsafe(structure TypeManager = TypeManager
+    structure FGC  = MkNativeFields(structure TypeManager = TypeManager
+				    structure Special = SGC
+				    val space = Util.GNOMECANVAS)
+    structure UGC  = MkUnsafe(structure TypeManager = TypeManager
 		 	      structure Special = SGC
 			      val space = Util.GNOMECANVAS)
     structure EGC  = MkEnums(structure TypeManager = TypeManager
 		 	     structure Special = SGC
 			     val space = Util.GNOMECANVAS)
-
 
 in
 
@@ -64,15 +72,18 @@ in
 	val tree = Parser.parse file
     in
 	(OS.FileSys.chDir dir ;
+	 NGTK.create tree ;
+	 FGTK.create tree ;
 	 UGTK.create tree ;
-	 CGTK.create tree ;
 	 EGTK.create tree ;
 	 EPAN.create tree ;
+	 NGDK.create tree ;
+	 FGDK.create tree ;
 	 UGDK.create tree ;
-	 CGDK.create tree ;
 	 EGDK.create tree ;
+	  NGC.create tree ;
+	  FGC.create tree ;
 	  UGC.create tree ;
-	  CGC.create tree ;
 	  EGC.create tree )
     end
 
