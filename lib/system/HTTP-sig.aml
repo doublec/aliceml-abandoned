@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,6 +27,12 @@ signature HTTP =
 	type simple_response =
 	     {statusCode: int, contentType: string, body: string}
 
+	datatype word =
+	    TOKEN of string
+	  | SEPARATOR of char
+	  | COMMENT of string
+	  | QUOTED_STRING of string
+
 	exception Closed (*--** why not just IO.Io? *)
 	exception Format
 
@@ -38,4 +44,6 @@ signature HTTP =
 
 	fun reasonPhrase: int -> string
 	fun makeResponse: simple_response -> response
+
+	fun parseFieldValue: string -> word list       (* Format *)
     end
