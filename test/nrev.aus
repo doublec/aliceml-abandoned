@@ -46,33 +46,28 @@ __primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
 __primitive val show: 'a -> unit = "show"
 
-fun nth (x::_, 0) = x
-  | nth (_::xr, i) = nth (xr, i - 1)
-
-fun map (f, xs) =
-    byNeed (fn () =>
-	    case xs of
-		x::xr => f x::map (f, xr))
-
-fun merge (xs, ys) =
-    byNeed (fn () =>
-	    case (xs, ys) of
-		(x::xr, y::yr) =>
-		    if x = y then x::merge (xr, yr)
-		    else if x < y then x::merge (xr, ys)
-		    else y::merge (xs, yr))
-
-fun loop 0 = ()
-  | loop n =
+fun append' (nil, ys, p) = fulfill (p, ys)
+  | append' (x::xr, ys, p) =
     let
-	val rest = promise ()
-	val hamming = 1::rest
+	val p' = promise ()
     in
-	fulfill (rest, merge (map (fn i => 2 * i, hamming),
-			      merge (map (fn i => 3 * i, hamming),
-				     map (fn i => 5 * i, hamming))));
-	nth (hamming, 1500);
-	loop (n - 1)
+	fulfill (p, x::p');
+	append' (xr, ys, p')
     end
 
-val _ = show (loop 100)
+fun append (xs, ys) =
+    let
+	val p = promise ()
+    in
+	append' (xs, ys, p); p
+    end
+
+fun rev nil = nil
+  | rev (x::xr) = append (rev xr, [x])
+
+fun makeList (0, _) = nil
+  | makeList (n, x) = x::makeList (n - 1, x)
+
+val _ = rev (makeList (2000, 0))
+
+val _ = show "done"
