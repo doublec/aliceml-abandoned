@@ -16,7 +16,7 @@
 import structure IO       from "../lib/system/IO"
 import structure TextIO   from "../lib/system/TextIO"
 import structure Config   from "../lib/system/Config"
-import structure Url      from "../lib/utility/Url"
+import structure Url      from "../lib/system/Url"
 import signature PARSER   from "PARSER-sig"
 import signature ANALYZER from "ANALYZER-sig"
 
