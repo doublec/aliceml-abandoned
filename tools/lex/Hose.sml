@@ -32,18 +32,12 @@ structure Hose :> HOSE =
 
 	(* from HaMLet *)
 
-	val version = "0.1"
-	    
-
 	fun usage() = (TextIO.output (TextIO.stdErr,"Usage: hose infile [-o outfile]\n");
 		       TextIO.flushOut TextIO.stdErr;
 		       OS.Process.failure)
 
 	    
-	fun start process = (TextIO.print("Hose "^version^" tries to run\n");
-			     process();
-			     TextIO.print "\n";
-			     OS.Process.success)
+	fun start process = (process(); OS.Process.success)
 
 
 	fun main' [infile, "-o", outfile] = (inFile := infile; outFile := outfile; start hose) 
@@ -52,8 +46,16 @@ structure Hose :> HOSE =
 	  | main' _                       = usage () 
 	    
 	fun main() = OS.Process.exit(main'(CommandLine.arguments()))
-	    handle exn =>
-		(TextIO.output(TextIO.stdErr, "Hose: unhandled internal exception " ^ General.exnName exn ^ "\n");
-		 OS.Process.exit OS.Process.failure)
+	    handle (IO.Io {name,function="openIn",cause}) => (TextIO.output (TextIO.stdErr, "input file does not exist\n");
+			   TextIO.flushOut TextIO.stdErr;
+			   OS.Process.exit OS.Process.failure)
+		 | (IO.Io {name,function="openOut",cause}) => (TextIO.output (TextIO.stdErr, "invalid output file\n");
+			   TextIO.flushOut TextIO.stdErr;
+			   OS.Process.exit OS.Process.failure)
+		 | (IO.Io {name,function="inputAll",cause}) => (TextIO.output (TextIO.stdErr, "input file seems to be a directory\n");
+			   TextIO.flushOut TextIO.stdErr;
+			   OS.Process.exit OS.Process.failure)
+		 | exn => (TextIO.output(TextIO.stdErr, "Hose: unhandled internal exception " ^ General.exnName exn ^ "\n");
+			   OS.Process.exit OS.Process.failure)
        
     end
