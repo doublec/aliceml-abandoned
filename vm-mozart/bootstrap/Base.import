@@ -32,8 +32,6 @@ val op~
 val op+
 val op-
 val op*
-val op div
-val op mod
 
 val op<
 val op>
@@ -100,6 +98,9 @@ val implode
 structure StringCvt
 
 structure Int
+val op div
+val op mod
+val abs
 
 structure LargeInt
 

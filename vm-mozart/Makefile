@@ -17,12 +17,13 @@ ERRORSOURCES = SOURCE.sig Source.sml CRASH.sig Crash.sml ERROR.sig Error.sml
 ERRORFILES = $(ERRORSOURCES:%=error/%)
 
 MISCSOURCES = \
-	Assert.sml HASH_KEY.sig StringHashKey.sml Wide.sml MISC.sig Misc.sml \
-	IMP_SET.sig MakeHashImpSet.sml IMP_MAP.sig MakeHashImpMap.sml \
-	SCOPED_IMP_SET.sig MakeScopedImpSet.sml MakeHashScopedImpSet.sml \
-	SCOPED_IMP_MAP.sig MakeScopedImpMap.sml MakeHashScopedImpMap.sml \
-	STAMP.sig MakeStamp.sml GLOBAL_STAMP.sig GlobalStamp.sml \
-	PRETTY_PRINT.sig PrettyPrint.sml PP_MISC.sig PPMisc.sml URL.sig Url.sml
+	Assert.sml HASH_KEY.sig StringHashKey.sml LargeIntHashKey.sml \
+	Wide.sml MISC.sig Misc.sml IMP_SET.sig MakeHashImpSet.sml IMP_MAP.sig \
+	MakeHashImpMap.sml SCOPED_IMP_SET.sig MakeScopedImpSet.sml \
+	MakeHashScopedImpSet.sml SCOPED_IMP_MAP.sig MakeScopedImpMap.sml \
+	MakeHashScopedImpMap.sml STAMP.sig MakeStamp.sml GLOBAL_STAMP.sig \
+	GlobalStamp.sml PRETTY_PRINT.sig PrettyPrint.sml PP_MISC.sig \
+	PPMisc.sml URL.sig Url.sml
 MISCFILES = $(MISCSOURCES:%=misc/%)
 
 TOPSOURCES = \
