@@ -193,8 +193,11 @@ Class *Class::New(ClassInfo *classInfo) {
 	case 'J':
 	  initialValue = JavaLong::New(0, 0)->ToWord();
 	  break;
-	case 'D': case 'F':
-	  Error("unsupported static field type"); //--**
+	case 'F':
+	  initialValue = Float::New(0.0)->ToWord();
+	  break;
+	case 'D':
+	  initialValue = Double::New(0.0L)->ToWord();
 	  break;
 	default:
 	  Error("invalid field descriptor");
