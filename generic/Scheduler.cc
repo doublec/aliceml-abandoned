@@ -94,8 +94,8 @@ inline void Scheduler::FlushThread() {
 }
 
 void Scheduler::Run(bool waitForever = false) {
+ retry:
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
-  retry:
     SwitchToThread();
     for (bool nextThread = false; !nextThread; ) {
       StatusWord::ClearStatus(PreemptStatus());
@@ -199,11 +199,10 @@ void Scheduler::Run(bool waitForever = false) {
     IOHandler::Poll();
   }
   // Check for both incoming signals and io
-  while (waitForever) {
+  if (waitForever) {
     IOHandler::Block();
     SignalHandler::HandlePendingSignals();
-    if ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER)
-      goto retry;
+    goto retry;
   }
 }
 
