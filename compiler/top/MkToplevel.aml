@@ -13,8 +13,6 @@
 
 import structure Foreign              from "../../lib/system/Foreign"
 import structure TextIO               from "../../lib/system/TextIO"
-import structure Time                 from "../../lib/system/Time"
-import structure Date                 from "../../lib/system/Date"
 import structure IO                   from "../../lib/system/IO"
 import structure OS                   from "../../lib/system/OS"
 import structure Url                  from "../../lib/system/Url"
