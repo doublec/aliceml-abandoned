@@ -110,7 +110,7 @@ ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
 ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec --stockwerk
 
 ALICEC_OPTS = \
-	--check-intermediate --dump-phases \
+	--check-intermediate --dump-phases --retain-full-import \
 	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = --dump-target
 
@@ -493,7 +493,7 @@ build1/%.ozf: build1/%.oz
 
 build1/%.stc: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
-	--retain-full-import --trace-component-access --no-rtt -c $< -o $@
+	--trace-component-access --no-rtt -c $< -o $@
 
 build1/Debug.ozf: build1/Helper.ozf
 build1/PrimitiveTable.ozf: build1/Helper.ozf
