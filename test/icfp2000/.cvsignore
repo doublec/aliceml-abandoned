@@ -4,3 +4,4 @@ CM
 ~*
 [a-z]*.sml
 *.x86-linux
+*.ppm
