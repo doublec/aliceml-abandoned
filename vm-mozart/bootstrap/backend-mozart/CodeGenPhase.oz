@@ -16,6 +16,7 @@ import
    WordComponent('$Word': Word) at 'x-alice:/lib/Word.ozf'
    PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
+   UrlComponent('$Url': Url) at 'x-alice:/misc/Url.ozf'
 export
    '$CodeGenPhase': CodeGenPhase
 define
@@ -53,6 +54,7 @@ define
    RecDec = 'RecDec'
    EvalStm = 'EvalStm'
    RaiseStm = 'RaiseStm'
+   ReraiseStm = 'ReraiseStm'
    HandleStm = 'HandleStm'
    EndHandleStm = 'EndHandleStm'
    TestStm = 'TestStm'
@@ -111,13 +113,13 @@ define
    end
 
    fun {TrStamp Stamp}
-      if Stamp == Prebound.stamp_false then 'false'
-      elseif Stamp == Prebound.stamp_true then 'true'
-      elseif Stamp == Prebound.stamp_nil then 'nil'
-      elseif Stamp == Prebound.stamp_cons then 'cons'
-      elseif Stamp == Prebound.stamp_ref then 'ref'
-      elseif Stamp == Prebound.stamp_Match then 'Match'
-      elseif Stamp == Prebound.stamp_Bind then 'Bind'
+      if Stamp == Prebound.valstamp_false then 'false'
+      elseif Stamp == Prebound.valstamp_true then 'true'
+      elseif Stamp == Prebound.valstamp_nil then 'nil'
+      elseif Stamp == Prebound.valstamp_cons then 'cons'
+      elseif Stamp == Prebound.valstamp_ref then 'ref'
+      elseif Stamp == Prebound.valstamp_match then 'Match'
+      elseif Stamp == Prebound.valstamp_bind then 'Bind'
       else Stamp
       end
    end
@@ -128,13 +130,13 @@ define
       end
    end
 
-   fun {TrId Id(Info#Stamp#Name)}
+   fun {TrId Id(Info Stamp Name)}
       id({TrInfo Info} {TrStamp Stamp} {TrName Name})
    end
 
    fun {TrLab Lab}
       case Lab of NUM(I) then I
-      [] ALPHA(S) then {String.toAtom S}
+      [] ALPHA(S) then {String.toAtom {ByteString.toString S}}
       end
    end
 
@@ -186,6 +188,7 @@ define
 		IsToplevel)
       [] EvalStm(Info Exp) then evalStm({TrInfo Info} {TrExp Exp})
       [] RaiseStm(Info Id) then raiseStm({TrInfo Info} {TrId Id})
+      [] ReraiseStm(Info Id) then reraiseStm({TrInfo Info} {TrId Id})
       [] HandleStm(Info Body1 Id Body2 Body3 Shared) then
 	 {Assign Shared true}
 	 handleStm({TrInfo Info} {TrBody Body1} {TrId Id}
@@ -250,13 +253,14 @@ define
       {Flatten {Map Stms TrStm}}
    end
 
-   fun {TrComponent IdStringList#Ids#Body}
-      {Map IdStringList fun {$ Id#String} {TrId Id}#{TrAtom String} end}#
-      {Map Ids TrId}#{TrBody Body}
+   fun {TrComponent Import#(Body#_)}
+      {Map Import fun {$ Id#_#U} {TrId Id}#{TrAtom {Url.toString U}} end}#
+      {TrBody Body}
    end
 
    fun {Translate InFilename Component OutFilename} F in
-      F = {CodeGen.translate InFilename {TrComponent Component}}
+      F = {CodeGen.translate InFilename {TrComponent Component}
+	   InFilename#'.ozm'}
       {Pickle.save F OutFilename}
       unit
    end
