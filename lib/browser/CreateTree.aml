@@ -530,7 +530,7 @@ struct
      and createFutureNode (va,t,p,i,d,canvas) = 
 	 let val desc = createValue(va,t)
 	     val fut = UnsafeValue.cast va
-	     val str = if Future.isLazy fut then "byneed" else "future"
+	     val str = if Future.isLazy fut then "_lazy" else "_future"
 	     val simple =  createSimple (desc,p,i,d,str,DEFAULT,canvas)
 	 in ( case Transient.iterLookup
 	                     (transdict,fn (vv,_,li) 
@@ -756,4 +756,3 @@ struct
 end 
  
 end 
- 
