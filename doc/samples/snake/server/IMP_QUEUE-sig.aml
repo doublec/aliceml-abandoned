@@ -24,8 +24,10 @@ sig
     val capacity :  'a queue -> int
 
     val app :       ('a -> unit) -> 'a queue -> unit
+    (* traverse from tail to head *)
 
     val fold :      ('a * 'b -> 'b) -> 'b -> 'a queue -> 'b
-    
+    (* traverse from tail to head *)
+ 
     val isEmpty :   'a queue -> bool 
 end

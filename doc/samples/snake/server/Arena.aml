@@ -298,9 +298,7 @@ struct
             val (hR, hC)    = Snake.head s
             val c           = Snake.color s
             val d           = Snake.direction s
-            val body        = Snake.body s
         in
-            assert List.notContains body (hR, hC);
             placeSnakeBody (a, s);
             TA.update (a, hR, hC, P.SNAKE_HEAD (d, c))
         end
@@ -308,9 +306,8 @@ struct
     and placeSnakeBody (a, s) =
         let
             val b = P.SNAKE_BODY (Snake.color s)
-            val head    = Snake.head s
         in
-            Snake.appBody (fn (r, c) => assert head <> (r, c) do TA.update (a, r, c, b)) s
+            Snake.appBody (fn (r, c) => TA.update (a, r, c, b)) s
         end
 
     

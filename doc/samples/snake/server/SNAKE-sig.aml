@@ -25,8 +25,6 @@ sig
         and maximum length [capacity] at position [p] with an empty belly 
         looking into direction [d]. *)
 
-    val start :     snake * Pos.pos * Protocol.direction -> unit
-
     val belly :     snake -> int
 
     val eat :       snake * int -> unit

@@ -34,27 +34,32 @@ struct
     
     val startSize = 3
 
+    fun valid (SN { body, ... }) =
+        let
+            val r = Q.fold ( fn (p, NONE) => SOME (true, p)
+                  | (p1, SOME (f, p2)) =>
+                     SOME (f andalso (Pos.above p1 = p2
+                              orelse Pos.below p1 = p2
+                              orelse Pos.left p1 = p2
+                              orelse Pos.right p1 = p2), p1) ) NONE body
+        in
+            isSome r andalso #1 (valOf r)
+        end
+
     fun snake (capacity, id, c, pos, d) = 
         let
             val q = Q.queue capacity
-        in
-            Q.add (q, pos);
-            SN { 
+            val _ = Q.add (q, pos);
+            val s = SN { 
                 direction   = ref d, 
                 belly       = ref (startSize - 1), 
                 color       = c,
                 id          = id,
                 body        = q
             }
+        in
+            assert valid s do s
         end
-
-    fun start (SN { belly, body, direction,... }, pos, dir) =
-        (Q.clear body;
-         Q.add (body, pos);
-         assert Q.size body = 1;
-         belly := (startSize - 1);
-         direction := dir)
-
         
     fun color (SN { color = c, ... }) = c
     
@@ -66,7 +71,7 @@ struct
 
     fun direction (SN { direction, ... })   = !direction
 
-    fun move (SN {  direction = direction as ref old_dir, 
+    fun move (s as SN {  direction = direction as ref old_dir, 
                     belly,
                     body,
                     ...
@@ -98,7 +103,8 @@ struct
             if !belly > 0 
                 then belly := !belly - 1
                 else (Q.remove body; ());
-            direction := dir
+            direction := dir;
+            assert valid s
         end
 
     fun head (SN { body, ... }) = Q.head body
@@ -115,13 +121,13 @@ struct
             val _   = assert List.length (body s) = n
         in
             Q.fold (fn (x, i) =>
-                if i >= n then i
+                if i > n then i
                 else (f x; i + 1)) 1 b;
             ()
         end
 
     fun length (SN { body, ... }) = Q.size body
 
-    fun shrink (SN { body, ... }) = (Q.remove body; ())
+    fun shrink (s as SN { body, ... }) = (Q.remove body; assert valid s; ())
 
 end

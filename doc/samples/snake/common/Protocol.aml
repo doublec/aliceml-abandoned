@@ -191,7 +191,7 @@ struct
             Color.equal (c1, c2) andalso d1 = d2
         |   (SNAKE_BODY c1, SNAKE_BODY c2)          => 
             Color.equal (c1, c2)
-        |   _                                           => false
+        |   _                                       => false
 
 end
 
