@@ -152,7 +152,7 @@ libs-mozart:
 	(cd lib/constraints && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/distribution && make depend) || exit 1 ;\
 	(cd lib/distribution && make all PREFIX=$(PREFIX) install) || exit 1 ;\
-	(cd lib/test && make all SH_EXT=ozf PREFIX=$(PREFIX) install) \
+	(cd lib/test && make SH_EXT=ozf PREFIX=$(PREFIX) all install) \
 	|| exit 1 ;\
 	(cd lib/gtk && autoconf && \
 	 ./configure --with-gtk-canvas-dir=/opt/gtk-canvas) || exit 1 ;\
