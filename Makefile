@@ -23,7 +23,7 @@ endif
 	install install-prelude install-common install-global install-mozart install-seam \
 	bootstrap-smlnj bootstrap-mozart bootstrap-seam build-seam \
 	libs-mozart libs-seam \
-	docs
+	doc man
 
 ##
 ## Do it!
@@ -36,7 +36,7 @@ install: install-mozart
 	@echo Time for build 3:
 	@cat $(TIMEDIR)3
 	
-install-common: install-prelude bootstrap-smlnj docs
+install-common: install-prelude bootstrap-smlnj doc man
 
 install-prelude:
 	@echo Installing Alice to $(PREFIX) for $(PLATFORM)...
@@ -59,11 +59,11 @@ bootstrap-smlnj:
 ##
 ## Documentation
 ##
-docs:
+doc:
 	(cd doc/manual && make PREFIX=$(PREFIX)/doc) || exit 1
 
 # this requires help2man, see http://www.gnu.org/software/help2man/
-docs-man:
+man:
 	(cd doc/man && make PREFIX=$(PREFIX) all install) || exit 1
 
 ##
