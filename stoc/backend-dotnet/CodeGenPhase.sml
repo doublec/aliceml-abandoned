@@ -346,9 +346,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (PrimExp (_, name), PREPARE) =
 	    emit (Ldsfld (StockWerk.Prebound, Builtins.lookup name,
 			  StockWerk.StockWertTy))
-	  | genExp (NewExp (_, false), PREPARE) =
+	  | genExp (NewExp (_, _, false), PREPARE) =
 	    emit (Newobj (StockWerk.Name, nil))
-	  | genExp (NewExp (_, true), PREPARE) =
+	  | genExp (NewExp (_, _, true), PREPARE) =
 	    emit (Newobj (StockWerk.Constructor, nil))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (ConExp (_, id as Id (_, stamp, _), _), PREPARE) = emitId id
