@@ -330,7 +330,7 @@ DEFINE1(UnsafeOS_Process_exit) {
 #if LIGHTNING && defined(INSTRUCTION_COUNTS)
   NativeCodeJitter::DumpInstructionCounts();
 #endif
-  exit(code);
+  std::exit(code); //--** should return to StockwerkMain instead
 } END
 
 DEFINE1(UnsafeOS_Process_atExn) {
