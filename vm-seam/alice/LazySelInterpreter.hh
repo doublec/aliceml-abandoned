@@ -19,7 +19,7 @@
 #pragma interface "alice/LazySelInterpreter.hh"
 #endif
 
-#include "Seam.hh"
+#include "alice/Base.hh"
 
 class LazySelInterpreter: public Interpreter {
 private:

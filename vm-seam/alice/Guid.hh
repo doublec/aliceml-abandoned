@@ -17,7 +17,6 @@
 #pragma interface "alice/Guid.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
 
 class AliceDll Guid: private String {

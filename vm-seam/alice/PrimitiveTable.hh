@@ -17,7 +17,6 @@
 #pragma interface "alice/PrimitiveTable.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
 
 class AliceDll PrimitiveTable {
