@@ -106,7 +106,8 @@ struct
     fun tokens
     fun fields
 *)
-    fun foldl f a ss		= List.foldl f a (explode ss)
+    fun foldl f a ss		= List.foldl f a (explode ss)	(*INEFFICIENT*)
     fun foldr f a ss		= List.foldr f a (explode ss)
     fun app f ss		= List.app f (explode ss)
+    fun appr f ss		= List.appr f (explode ss)
 end

@@ -74,6 +74,7 @@ sig
 *)
 
     val app :		(String.Char.char -> unit) -> substring -> unit
+    val appr :		(String.Char.char -> unit) -> substring -> unit	(**)
     val foldl :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
     val foldr :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
 end
