@@ -86,6 +86,9 @@ public:
     jit_stxi_p((ST_TOTAL + NV_JIT_V1) * sizeof(word), JIT_SP, JIT_V1);
     jit_stxi_p((ST_TOTAL + NV_JIT_V2) * sizeof(word), JIT_SP, JIT_V2);
   }
+  void FakeProlog() {
+    sharedReturn   = INVALID_POINTER;
+  }
   // Return from subroutine: Result is taken from JIT_R0
   void Return() {
     if (JIT_RET != JIT_R0) {
