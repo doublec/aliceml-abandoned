@@ -221,39 +221,59 @@ doc :=  simple \\
 \end{math}
 vorstellen. 
 
-paragraph{}
+\paragraph{}
 
-Dabei repr\"asentieren \"`simples\"' nur atomare Werte, die als Strings 
+Dabei repr\"asentieren ``simples'' nur atomare Werte, die als Strings 
 dargestellt werden k\"onnen. Folglich muss es sich in der Baumdarstellung 
-bei \"`simples\"' stets um Bl\"atter eiens Baumes handeln.
+bei ``simples'' stets um Bl\"atter eiens Baumes handeln.
 
-paragraph{}
+\paragraph{}
 
-Zusammengesetzte Werte bestehen im Gegenseatz zu atomaren Werten aus einer
-Ineinanderschachtelung von Teilwerten. Zu Darstellung solcher nicht atomaren
+Zusammengesetzte Werte bestehen im Gegensatz zu atomaren Werten aus einer
+Ineinanderschachtelung von Teilwerten. Zur Darstellung solcher nicht atomaren
 Werte stehen die Konkatenation \^\quad und die Akkumulation 
-\# \lbrack \, \rbrack \quad zur Verf\"ugung.\\ \vspace*{5mm} 
+\# \lbrack \, \rbrack \quad zur Verf\"ugung.
 W\"ahrend die Konkatenation stets horizontal anordnet (vergleichbar mit der 
-sogenannten \"`hbox\"' bei manchen Pretty Printern), 
+sogenannten ``hbox'' bei manchen Pretty Printern), 
 erfolgt bei der Akkumulation in der Aufbauphase 
 noch keine Entscheidung, ob die Kindknoten eines Knotens horizontal oder 
 vertikal dargestellt werden. Diese Entscheidung wird erst beim Layoutvorgang
 getroffen (n\"ahere Erl\"auterung dazu siehe 4.4).
 
-paragraph{}
+\paragraph{}
 
-Der Wert \large{(1, 2)} \normalsize wird z.B. in die folgende interne 
+Der Wert \large{(1, 2)} \normalsize wird in die folgende interne 
 baumartige Darstellung transformiert: \\
 
-\begin{figure}[h]
-\center
-\epsfig{file = ex_tree.ps, width = 13cm}
-\caption{Beispiel}
-\end{figure}
+
+\begin{center}
+\epsfig{file = ex_tree_bw.ps, width = 13cm}
+\linebreak Abbildung 4.1: Beispiel f\"ur interne Darstellung
+\end{center}
 
 \subsection{Typregistrierung}
 
 \subsection{Transientenverwaltung}
+
+\paragraph{}
+
+Transienten, die in Alice als Byneeds (bei der sogenannten ``Laziness''), 
+Promises oder Futures auftreten k\"onnen, werden in der Browserdarstellung
+als solche gekennzeichnet. Sobald sie zu einem Wert auswerten, muss
+die Darstellung des Browsers aktualisiert werden. Deshalb wird
+f\"ur jeden Transienten ein W\"achter ben\"otigt, der diesen \"uberwacht.
+Nimmt ein Transient, der in mehreren bereits dargestellten 
+Datenstrukturen bzw. mehrmals in der gleichen Datenstruktur auftritt, 
+einen konkreten Wert an, so l\"ost sein W\"achter einen Updatemechanismus 
+aus, der alle seine Auftreten durch diesen Wert ersetzt.
+Folglich muss jeder W\"achter den Transienten kennen, den er \"uberwacht, 
+und zus\"atzlich alle Knoten, die diesen Transienten repr\"asentieren. 
+
+\begin{center}
+\epsfig{file = transient1_bw.ps, width = 12cm}
+\linebreak 
+Abbildung 3.1: Transient mit W\"{a}chter
+\end{center}
 
 \subsection{Graphmodus}
 
@@ -276,8 +296,6 @@ baumartige Darstellung transformiert: \\
 
 
 \subsection{Transientenverwaltung}
-
-\newpage
 
 \subsection{Module}
 
