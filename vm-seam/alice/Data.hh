@@ -21,9 +21,9 @@
 
 #include <cstring>
 #include "generic/String.hh"
+#include "generic/ConcreteRepresentation.hh"
 
 class Transform;
-class ConcreteRepresentationHandler;
 
 class Alice {
 public:
@@ -128,12 +128,11 @@ public:
   }
 };
 
-class Constructor: private Block {
+class Constructor: private ConcreteRepresentation {
 private:
-  static const u_int HANDLER_POS = 0;
-  static const u_int NAME_POS = 1;
-  static const u_int TRANSFORM_POS = 2;
-  static const u_int SIZE = 3;
+  static const u_int NAME_POS = 0;
+  static const u_int TRANSFORM_POS = 1;
+  static const u_int SIZE = 2;
   static ConcreteRepresentationHandler *handler;
 public:
   using Block::ToWord;
@@ -142,21 +141,19 @@ public:
 
   static Constructor *New(word name, Block *guid);
   static Constructor *New(word name) {
-    Block *b = Store::AllocBlock(CONCRETE_LABEL, SIZE);
-    b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
-    b->InitArg(NAME_POS, name);
-    b->InitArg(TRANSFORM_POS, 0); // construct lazily
+    ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
+    b->Init(NAME_POS, name);
+    b->Init(TRANSFORM_POS, Store::IntToWord(0)); // constructed lazily
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == CONCRETE_LABEL && b->GetSize() == SIZE);
+    ConcreteRepresentation *b = ConcreteRepresentation::FromWord(x);
+    Assert(b == INVALID_POINTER || b->GetSize() == SIZE);
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == CONCRETE_LABEL && b->GetSize() == SIZE);
+    ConcreteRepresentation *b = ConcreteRepresentation::FromWordDirect(x);
+    Assert(b->GetSize() == SIZE);
     return static_cast<Constructor *>(b);
   }
 
@@ -179,13 +176,13 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == Alice::ConVal ||
-	   b->GetLabel() == HANDLERBLOCK_LABEL);
+	   b->GetLabel() == CONCRETE_LABEL);
     return static_cast<ConVal *>(b);
   }
   static ConVal *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::ConVal ||
-	   b->GetLabel() == HANDLERBLOCK_LABEL);
+	   b->GetLabel() == CONCRETE_LABEL);
     return static_cast<ConVal *>(b);
   }
 

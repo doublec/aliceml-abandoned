@@ -69,21 +69,20 @@ Constructor *Constructor::New(word name, Block *guid) {
   if (hashTable->IsMember(key)) {
     return Constructor::FromWordDirect(hashTable->GetItem(key));
   } else {
-    Block *b = Store::AllocBlock(CONCRETE_LABEL, SIZE);
-    b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
-    b->InitArg(NAME_POS, name);
-    b->InitArg(TRANSFORM_POS, MakeConstructorTransform(name, key)->ToWord());
+    ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
+    b->Init(NAME_POS, name);
+    b->Init(TRANSFORM_POS, MakeConstructorTransform(name, key)->ToWord());
     hashTable->InsertItem(key, b->ToWord());
     return static_cast<Constructor *>(b);
   }
 }
 
 Transform *Constructor::GetTransform() {
-  word transformWord = GetArg(TRANSFORM_POS);
+  word transformWord = Get(TRANSFORM_POS);
   if (transformWord == Store::IntToWord(0)) {
     Transform *transform =
-      MakeConstructorTransform(GetArg(NAME_POS), Guid::New()->ToWord());
-    ReplaceArg(TRANSFORM_POS, transform->ToWord());
+      MakeConstructorTransform(Get(NAME_POS), Guid::New()->ToWord());
+    Replace(TRANSFORM_POS, transform->ToWord());
     return transform;
   } else {
     return Transform::FromWordDirect(transformWord);
