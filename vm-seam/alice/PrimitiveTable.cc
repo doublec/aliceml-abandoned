@@ -13,15 +13,15 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/PrimitiveTable.hh"
+#pragma implementation "alice/PrimitiveTable.hh"
 #endif
 
 #include <cstdio>
 #include "adt/HashTable.hh"
-#include "emulator/RootSet.hh"
-#include "emulator/PrimitiveTable.hh"
-#include "emulator/Closure.hh"
-#include "emulator/Alice.hh"
+#include "generic/RootSet.hh"
+#include "generic/Closure.hh"
+#include "alice/Data.hh"
+#include "alice/PrimitiveTable.hh"
 
 word PrimitiveTable::valueTable;
 word PrimitiveTable::functionTable;
