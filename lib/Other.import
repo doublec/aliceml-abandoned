@@ -14,13 +14,21 @@
 
 (* This file is prepended to every file compiled by stoc. *)
 
+import "x-alice:/lib/system/IO-sig"
 import "x-alice:/lib/system/IO"
+import "x-alice:/lib/system/TEXT_IO-sig"
 import "x-alice:/lib/system/TextIO"
+import "x-alice:/lib/system/OS-sig"
+import "x-alice:/lib/system/OS_FILE_SYS-sig"
+import "x-alice:/lib/system/OS_PROCESS-sig"
 import "x-alice:/lib/system/OS"
+import "x-alice:/lib/system/UNIX-sig"
 import "x-alice:/lib/system/Unix"
+import "x-alice:/lib/system/COMMAND_LINE-sig"
 import "x-alice:/lib/system/CommandLine"
 
-import "x-alice:/lib/system/Tools"
+import "x-alice:/lib/system/PICKLE-sig"
+import "x-alice:/lib/system/Pickle"
 
 (*--** these should only be active for stot: *)
 (*import "x-alice:/lib/tools/Inspector"*)

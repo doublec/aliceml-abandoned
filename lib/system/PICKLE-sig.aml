@@ -12,6 +12,9 @@
 
 signature PICKLE =
 sig
+    exception Corrupt
+    exception Sited
+
     val extension : string
 
     functor Save(val file: string signature S structure X: S) : any
