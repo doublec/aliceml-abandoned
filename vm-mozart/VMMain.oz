@@ -13,7 +13,7 @@
 functor
 import
    Application(getArgs exit)
-   Property(put get)
+   Property(put)
    Module(manager)
    System(printError)
    Resolve(trace)
@@ -24,8 +24,7 @@ define
 		 typecheck(rightmost type: bool default: true))
 
    proc {Usage N}
-      {System.printError
-       'Usage: '#{Property.get 'application.url'}#' <name> <args> ...\n'}
+      {System.printError 'Usage: alicerun <name> <args> ...\n'}
       {Application.exit N}
    end
 
