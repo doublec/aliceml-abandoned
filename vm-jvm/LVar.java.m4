@@ -54,7 +54,7 @@ final public class LVar extends UnicastRemoteObject
     final synchronized public DMLValue bind(DMLValue v)
 	throws RemoteException {
 	if (ref != null) { // then this a second attempt to bind
-	    _RAISENAME(LVar.Rebind);
+	    _RAISENAME(LVar.Fulfill);
 	} else {
 	    // here I must check if the value v is admissible
 	    // avoid cycles

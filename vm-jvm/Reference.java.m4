@@ -143,7 +143,7 @@ final public class Reference implements DMLConVal {
 	throws java.io.IOException {
 	try {
 	    // the client manager is not written to the stream
-	    // since the readObject method install a new one
+	    // since the readObject method will install a new one
 	    CManager CMGR = null;
 	    if (cmgr == null) { // i.e. we are on the home site
 		CMGR = new ClientManager(this);

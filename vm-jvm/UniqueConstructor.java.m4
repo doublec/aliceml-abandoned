@@ -36,6 +36,7 @@ public class UniqueConstructor extends Constructor {
     final private Object readResolve()
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(name);
+	System.out.println("UC: "+o);
 	if (o==null) {
 	    GName.gNames.put(name,this);
 	    return this;
