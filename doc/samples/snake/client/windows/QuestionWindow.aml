@@ -34,7 +34,8 @@ struct
 
 	    question quest;
 	    Gtk.windowSetModal ((Gtk.dialogGetFieldWindow sure_window), true);
-	    Gtk.containerSetBorderWidth (Gtk.dialogGetFieldWindow sure_window, 10);
+	    Gtk.containerSetBorderWidth (Gtk.dialogGetFieldWindow sure_window,
+					 10);
 	    Gtk.windowSetTitle (Gtk.dialogGetFieldWindow sure_window, title);
 	    Gtk.windowSetPosition (Gtk.dialogGetFieldWindow sure_window,
 				   Gtk.WIN_POS_CENTER);
@@ -47,10 +48,10 @@ struct
 	    Gtk.signalConnect (button2, "clicked", 
 			       fn _ => mainQuit NO);
 	    
-	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea sure_window, button1,
-			      true, true, 5);
-	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea sure_window, button2,
-			      true, true, 5);
+	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea sure_window,
+			      button1, true, true, 5);
+	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea sure_window,
+			      button2, true, true, 5);
 	    
 	    Gtk.widgetShowAll sure_window;
 	    Promise.future ans

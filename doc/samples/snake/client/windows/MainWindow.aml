@@ -2,6 +2,7 @@ import structure Gtk                  from "x-alice:/lib/gtk/Gtk"
 import structure Gdk                  from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas            from "x-alice:/lib/gtk/GtkCanvas"
 import structure Inspector            from "x-alice:/lib/tools/Inspector"
+import structure Ctrl                 from "x-alice:/lib/utility/Ctrl"
 import structure Color                from "../../common/Color"
 import structure Config               from "../../server/Config"
 import structure Protocol             from "../../common/Protocol"
@@ -15,6 +16,8 @@ import structure QuestionWindow       from "QuestionWindow"
 
 structure MainWindow =
 struct
+
+    open Ctrl
 
     datatype mode = START | GAME
 
@@ -30,8 +33,8 @@ struct
 
     fun reset' () = 
 	(Gtk.widgetSetSensitive (menu_gu_item, false);
-	 Gtk.widgetSetSensitive(menu_m_item, false);
-	 Gtk.widgetSetSensitive(menu_hi_item, false);
+	 Gtk.widgetSetSensitive (menu_m_item, true);
+	 Gtk.widgetSetSensitive (menu_hi_item, true);
 	 Gtk.widgetHide canvas;
 	 mode := START)
 
@@ -39,12 +42,35 @@ struct
       | reset (SOME (title, msg)) =
 	(TextWindow.mkTextWindow (title, msg); reset' ())
 
-    fun gameMode (mGame, guiGame) = () (* TODO : implementation *)
+
+    fun gameMode ({turn,
+		   changeView,
+		   giveUp},
+		   guiGame) =
+	let
+	    
+	    fun gameFinished h = 
+		reset (SOME ("Highscore", "highscore"))
+
+	    fun update difflist = ArenaWidget.update (arena, difflist)
+
+	    fun updatePoints p = ()
+
+	in
+	    Gtk.widgetSetSensitive (menu_gu_item, true);
+	    Gtk.widgetSetSensitive (menu_m_item, false);
+	    Gtk.widgetSetSensitive (menu_hi_item, false);
+	    Gtk.widgetShow canvas;
+	    mode := GAME;
+	    Promise.fulfill (guiGame, {update, updatePoints, gameFinished})
+	end
+	 
 
     fun mkMainWindow ({connect, startServer}, gui) = 
 	let
 
-	    val _ = Promise.fulfill (gui, {reset})
+	    val _ = assert (Future.isFuture $ Promise.future gui) 
+		        do Promise.fulfill (gui, {reset})
 
 	    fun mainQuit () = 
 		case !mode of
@@ -61,24 +87,26 @@ struct
 			end
 
 	    fun startClient () = 
-		ConnectionWindow.mkConnectToServer {connect, reset}
+		ConnectionWindow.mkConnectToServer ({connect},
+						    {reset, gameMode})
 
 	    fun startMultiPlayer () = 
-		ServerSettingsWindow.mkServerSettings {startServer}
+		ServerSettingsWindow.mkServerSettings ({startServer},
+						       {reset, gameMode})
 
 	    fun openHighscore () = () (* TODO: implementation *)
 
 	    fun startSinglePlayer () = 
-		case startServer (SOME ("Germi", Color.fromString "brown"), 
+		case startServer (SOME ("Player", Color.fromString "brown"), 
 				  Config.defaultSingle) of
-		    FST ({start}, guiJoin) => 
+		    FST ({start}, _) => 
 			(case start () of
 			     FST (mGame, guiGame) => gameMode (mGame, guiGame)
-			   | SND   errorMsg       => reset (SOME ("ERROR!!", errorMsg)))
+			   | SND   errorMsg       => 
+				 reset (SOME ("ERROR!!", errorMsg)))
 		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
 		    
 	    fun turn x = Inspector.inspect x
-
 
 	    fun key keyval = (* abfage ob spectator oder net *)
 		if !mode = GAME
