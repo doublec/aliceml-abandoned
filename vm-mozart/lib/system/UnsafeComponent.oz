@@ -31,9 +31,9 @@ define
    SitedException = {NewUniqueName 'Component.Sited'}
    CorruptException = {NewUniqueName 'Component.Corrupt'}
 
-   proc {Trace Title Msg}
+   proc {Trace Title Msg U}
       if {Resolve.trace.get} then
-	 {System.printError '['#Title#'] '#Msg#'\n'}
+	 {System.printError '['#Title#'] '#Msg#' '#U#'\n'}
       end
    end
 
@@ -166,7 +166,7 @@ define
 	       'getInitialTable': fun {$ unit} '#[]' end   %--**
 	       'save':
 		  fun {$ Filename Component}
-		     {Trace 'component' 'save '#Filename}
+		     {Trace 'component' 'save ' Filename}
 		     try
 			{Pickle.saveWithCells {ComponentToFunctor Component}
 			 Filename '' 9}
@@ -177,8 +177,13 @@ define
 		  end
 	       'load':
 		  fun {$ U}
-		     {Trace 'component' 'load '#U}
+		     {Trace 'component' 'load ' U}
 		     {Load U}
+		  end
+	       'linkNative':
+		  fun {$ U}
+		     {Trace 'component' 'linkNative ' U}
+		     {Load U#'{native}'}
 		  end
 	       'pack_':
 		  fun {$ Component}
