@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__IO_HANDLER_HH__
-#define __EMULATOR__IO_HANDLER_HH__
+#ifndef __GENERIC__IO_HANDLER_HH__
+#define __GENERIC__IO_HANDLER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/IOHandler.hh"
+#pragma interface "generic/IOHandler.hh"
 #endif
 
-#include "emulator/Transients.hh"
+class Future;
 
 class IOHandler {
 public:
