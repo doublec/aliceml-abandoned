@@ -51,10 +51,10 @@ Set *Store::intgenSet = INVALID_POINTER;
 Set *Store::wkDictSet = INVALID_POINTER;
 u_int Store::needGC   = 0;
 
-u_int Store::totalMem = 0;
-u_int Store::oldTotalMem = 0;
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+u_int Store::totalMem = 0;
+u_int Store::gcLiveMem = 0;
 u_int MemChunk::counter =  0;
 struct timeval *Store::sum_t;
 #endif
@@ -120,7 +120,7 @@ inline char *Store::GCAlloc(u_int size, u_int header) {
       continue;
     }
     curChunkTop = newtop;
-    FillBlock((u_int *) p, ((size / sizeof(u_int)) + 2));
+    //    FillBlock((u_int *) p, ((size / sizeof(u_int)) + 2));
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
     totalMem += size;
 #endif
@@ -514,6 +514,10 @@ inline void Store::DoGC(word &root, const u_int gen) {
   intgenSet       = (Set *) ForwardSet((Block *) intgenSet);
   wkDictSet       = (Set *) ForwardSet((Block *) wkDictSet);
 
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  u_int gcStartMem = totalMem;
+#endif
+
   // Obtain scan start
   MemChunk *chunk = curChunk;
   char *scan      = (curChunkMax + curChunkTop);
@@ -559,6 +563,10 @@ inline void Store::DoGC(word &root, const u_int gen) {
   SwitchToChunk(roots[0]->GetNext());
   root = root_set->ToWord();
 
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  gcLiveMem += (totalMem - gcStartMem);
+#endif
+
   // Call Finalization Handler
   if (arr != INVALID_POINTER) {
     u_int size = Store::WordToInt(arr->GetArg(1));
@@ -601,7 +609,6 @@ void Store::DoGC(word &root) {
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
   std::printf("---\n");
-  std::printf("total allocated memory: %u\n", totalMem);
   std::printf("ingen_set size: %u\n", intgenSet->GetSize());
   std::printf("---\n");
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
@@ -625,7 +632,7 @@ void Store::MemStat() {
 
 void Store::ResetTime() {
   sum_t->tv_sec = sum_t->tv_usec = 0;
-  oldTotalMem = totalMem;
+  totalMem = gcLiveMem = 0;
 }
 
 struct timeval *Store::ReadTime() {

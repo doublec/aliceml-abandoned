@@ -29,35 +29,39 @@ static unsigned long ComputeMask(int pos, int width) {
 }
 
 static void CreateHeader(FILE *f, u_int header_size_width) {
-  unsigned long GEN_GC_SHIFT    = 0;
-  unsigned long SIZESHIFT_SHIFT = (HEADER_GEN_GC_MARK_WIDTH);
-  unsigned long SIZE_SHIFT      = (SIZESHIFT_SHIFT + HEADER_SIZESHIFT_WIDTH);
-  unsigned long TAG_SHIFT       = (SIZE_SHIFT + header_size_width);
-  unsigned long CHILDISH_SHIFT  = (TAG_SHIFT + HEADER_TAG_WIDTH);
-  unsigned long MAX_TAGSIZE     = ((1 << HEADER_TAG_WIDTH) - 1);
-  unsigned long MAX_BLOCKSIZE   = ((1 << header_size_width) - 1); // to be determined
-  unsigned long GEN_GC_MASK     = ComputeMask(GEN_GC_SHIFT, HEADER_GEN_GC_MARK_WIDTH);
-  unsigned long SIZESHIFT_MASK  = ComputeMask(SIZESHIFT_SHIFT, HEADER_SIZESHIFT_WIDTH);
-  unsigned long SIZE_MASK       = ComputeMask(SIZE_SHIFT, header_size_width);
-  unsigned long TAG_MASK        = ComputeMask(TAG_SHIFT, HEADER_TAG_WIDTH);
-  unsigned long CHILDISH_MASK   = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
+  unsigned long GEN_GC_SHIFT     = 0;
+  unsigned long SIZESHIFT_SHIFT  = (HEADER_GEN_GC_MARK_WIDTH);
+  unsigned long SIZE_SHIFT       = (SIZESHIFT_SHIFT + HEADER_SIZESHIFT_WIDTH);
+  unsigned long TAG_SHIFT        = (SIZE_SHIFT + header_size_width);
+  unsigned long CHILDISH_SHIFT   = (TAG_SHIFT + HEADER_TAG_WIDTH);
+  unsigned long MAX_TAGSIZE      = ((1 << HEADER_TAG_WIDTH) - 1);
+  unsigned long MAX_BLOCKSIZE    = ((1 << header_size_width) - 1); // to be determined
+  unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE * (1 << SIZESHIFT_SHIFT));
+  unsigned long BIGSIZE_MIN      = (1 << (1 << SIZESHIFT_SHIFT));
+  unsigned long GEN_GC_MASK      = ComputeMask(GEN_GC_SHIFT, HEADER_GEN_GC_MARK_WIDTH);
+  unsigned long SIZESHIFT_MASK   = ComputeMask(SIZESHIFT_SHIFT, HEADER_SIZESHIFT_WIDTH);
+  unsigned long SIZE_MASK        = ComputeMask(SIZE_SHIFT, header_size_width);
+  unsigned long TAG_MASK         = ComputeMask(TAG_SHIFT, HEADER_TAG_WIDTH);
+  unsigned long CHILDISH_MASK    = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
 
   std::fprintf(f, "typedef enum {\n");
 
-  std::fprintf(f, "  GEN_GC_SHIFT    = 0x%lx,\n", GEN_GC_SHIFT);
-  std::fprintf(f, "  SIZESHIFT_SHIFT = 0x%lx,\n", SIZESHIFT_SHIFT);
-  std::fprintf(f, "  SIZE_SHIFT      = 0x%lx,\n", SIZE_SHIFT);
-  std::fprintf(f, "  TAG_SHIFT       = 0x%lx,\n", TAG_SHIFT);
-  std::fprintf(f, "  CHILDISH_SHIFT  = 0x%lx,\n", CHILDISH_SHIFT);
+  std::fprintf(f, "  GEN_GC_SHIFT     = 0x%lx,\n", GEN_GC_SHIFT);
+  std::fprintf(f, "  SIZESHIFT_SHIFT  = 0x%lx,\n", SIZESHIFT_SHIFT);
+  std::fprintf(f, "  SIZE_SHIFT       = 0x%lx,\n", SIZE_SHIFT);
+  std::fprintf(f, "  TAG_SHIFT        = 0x%lx,\n", TAG_SHIFT);
+  std::fprintf(f, "  CHILDISH_SHIFT   = 0x%lx,\n", CHILDISH_SHIFT);
 
-  std::fprintf(f, "  MAX_TAGSIZE     = 0x%lx,\n", MAX_TAGSIZE);
-  std::fprintf(f, "  MAX_BLOCKSIZE   = 0x%lx,\n", MAX_BLOCKSIZE);
+  std::fprintf(f, "  MAX_TAGSIZE      = 0x%lx,\n", MAX_TAGSIZE);
+  std::fprintf(f, "  MAX_BLOCKSIZE    = 0x%lx,\n", MAX_BLOCKSIZE);
+  std::fprintf(f, "  MAX_BIGBLOCKSIZE = 0x%lx,\n", MAX_BIGBLOCKSIZE);
+  std::fprintf(f, "  BIGSIZE_MIN      = 0x%lx,\n", BIGSIZE_MIN);
 
-  std::fprintf(f, "  GEN_GC_MASK     = 0x%lx,\n", GEN_GC_MASK);
-  std::fprintf(f, "  SIZESHIFT_MASK  = 0x%lx,\n", SIZESHIFT_MASK);
-  std::fprintf(f, "  SIZE_MASK       = 0x%lx,\n", SIZE_MASK);
-  std::fprintf(f, "  TAG_MASK        = 0x%lx,\n", TAG_MASK);
-  std::fprintf(f, "  CHILDISH_MASK   = 0x%lx,\n", CHILDISH_MASK);
+  std::fprintf(f, "  GEN_GC_MASK      = 0x%lx,\n", GEN_GC_MASK);
+  std::fprintf(f, "  SIZESHIFT_MASK   = 0x%lx,\n", SIZESHIFT_MASK);
+  std::fprintf(f, "  SIZE_MASK        = 0x%lx,\n", SIZE_MASK);
+  std::fprintf(f, "  TAG_MASK         = 0x%lx,\n", TAG_MASK);
+  std::fprintf(f, "  CHILDISH_MASK    = 0x%lx,\n", CHILDISH_MASK);
 
   std::fprintf(f, "} HeaderWord;\n\n");
 }
@@ -143,16 +147,16 @@ int main(int argc, char **argv) {
     MIN_WIDTH = sizeof(short);
     int_val   = "short";
   }
-  else if (MIN_WIDTH >= sizeof(int)) {
+  else if (MIN_WIDTH <= sizeof(int)) {
     MIN_WIDTH = sizeof(int);
     int_val = "int";
   }
-  else if (MIN_WIDTH >= sizeof(long)) {
+  else if (MIN_WIDTH <= sizeof(long)) {
     MIN_WIDTH = sizeof(long);
     int_val = "long";
   }
   // #if defined(__GNUC__)
-  // else if (MIN_WIDTH >= sizeof(long long)) {
+  // else if (MIN_WIDTH <= sizeof(long long)) {
   //   MIN_WIDTH = sizeof(long long);
   //   int_val   = "long long";
   // }
@@ -177,6 +181,7 @@ int main(int argc, char **argv) {
   std::fprintf(f, "#define STORE_GENERATION_NUM %d\n", (STORE_GENERATION_NUM + 1));
   std::fprintf(f, "#define STORE_GEN_YOUNGEST   %d\n", 0);
   std::fprintf(f, "#define STORE_GEN_OLDEST     %d\n", (STORE_GENERATION_NUM - 1));
+  std::fprintf(f, "#define STORE_MEM_ALIGN      %d\n", MIN_WIDTH);
   std::fprintf(f, "#define STORE_MEMCHUNK_SIZE  %d\n", STORE_MEMCHUNK_SIZE);
   std::fprintf(f, "#define STORE_INTGENSET_SIZE %d\n", STORE_INITIAL_INTGEN);
   std::fprintf(f, "#define STORE_WKDICTSET_SIZE %d\n", STORE_INITIAL_WKDICT);

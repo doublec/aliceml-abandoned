@@ -26,7 +26,7 @@ private:
 #endif
 protected:
   MemChunk *prev, *next;
-  char *block, *max;
+  char *block, *base, *max;
   s_int top;
   u_int anchor;
 public:
@@ -34,16 +34,18 @@ public:
   u_int id;
 #endif
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int size) : prev(prv), next(nxt) {
-    block = (char *) std::malloc(size);
+    block = base = (char *) std::malloc(size + STORE_MEM_ALIGN);
     AssertStore(block != INVALID_POINTER);
-    max    = (block + size);
+    // Ensure Base Ptr Alignment
+    base += (STORE_MEM_ALIGN - ((u_int) base & (STORE_MEM_ALIGN - 1)));
+    max    = (base + size);
     top    = (sizeof(u_int) - size);
     anchor = 0;
-    u_int *b = (u_int *) block;
-    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    //    for (u_int i = (size / sizeof(u_int)); i--;) {
-    //  b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    //}
+    u_int *b = (u_int *) base;
+    //    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    for (u_int i = (size / sizeof(u_int)); i--;) {
+      b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    }
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
     id = counter++;
 #endif
@@ -55,20 +57,20 @@ public:
   }
 
   void Clear(){
-    u_int size = (u_int) (max - block);
+    u_int size = (u_int) (max - base);
 
     top = (sizeof(u_int) - size);
-    u_int *b = (u_int *) block;
-    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    //    for (u_int i = (size / sizeof(u_int)); i--;) {
-    //   b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    //}
+    u_int *b = (u_int *) base;
+    //    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    for (u_int i = (size / sizeof(u_int)); i--;) {
+      b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    }
   }
   s_int GetTop()              { return top; }
   void SetTop(s_int top)      { MemChunk::top = top; } 
   char *GetMax()              { return max; }
-  char *GetBottom()           { return block; }
-  u_int GetSize()             { return (u_int) (max - block); }
+  char *GetBottom()           { return base; }
+  u_int GetSize()             { return (u_int) (max - base); }
 
   MemChunk *GetNext()         { return next; }
   void SetNext(MemChunk *nxt) { next = nxt; }
