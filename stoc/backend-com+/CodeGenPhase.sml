@@ -358,7 +358,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			if i < max then emit Pop else ();
 			case conArgs of
 			    SOME args =>
-				(emit (Ldfld (Alice.ConVal, "Value",
+				(emit (Castclass Alice.ConValTy);
+				 emit (Ldfld (Alice.ConVal, "Value",
 					      System.ObjectTy));
 				 declareArgs (args, true))
 			  | NONE => emit Pop;
