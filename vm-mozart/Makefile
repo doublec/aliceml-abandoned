@@ -145,7 +145,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	TEXT-sig.aml THREAD-sig.aml TIME-sig.aml \
 	VECTOR-sig.aml VECTOR_PAIR-sig.aml VECTOR_SLICE-sig.aml \
 	WORD-sig.aml PACKAGE-sig.aml \
-	Alt.aml Array.aml ArraySlice.aml Bool.aml Byte.aml Char.aml \
+	Alt.aml Array.aml ArraySlice.aml Atom.aml Bool.aml Byte.aml Char.aml \
 	CharArray.aml CharArraySlice.aml CharVector.aml CharVectorSlice.aml \
 	Future.aml General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
 	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \
@@ -155,7 +155,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	MkWord.aml Option.aml Pair.aml \
 	Position.aml Promise.aml Real.aml Ref.aml Stream.aml String.aml \
 	StringCvt.aml Substring.aml \
-	Text.aml Thread.aml Time.aml Toplevel.aml Atom.aml \
+	Text.aml Thread.aml Time.aml Toplevel.aml \
 	Vector.aml VectorPair.aml VectorSlice.aml WideAtom.aml WideChar.aml \
 	WideCharArray.aml WideCharArraySlice.aml WideCharVector.aml \
 	WideCharVectorSlice.aml WideString.aml WideSubstring.aml WideText.aml \
