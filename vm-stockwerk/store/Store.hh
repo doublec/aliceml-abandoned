@@ -179,7 +179,7 @@ public:
     return PointerOp::DecodeUnmanagedPointer(PointerOp::Deref(x));
   }
   static s_int DirectWordToInt(word x) {
-    AssertStore(((u_int) x & INTTAG) == INTTAG);
+    AssertStore(((u_int) x & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeInt(x);
   }
   static Block *DirectWordToBlock(word x) {
@@ -192,7 +192,7 @@ public:
     return p;
   }
   static void *DirectWordToUnmanagedPointer(word x) {
-    AssertStore(((u_int) x & TAGMASK) == INTTAG);
+    AssertStore(((u_int) x & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeUnmanagedPointer(x);
   }
   // Calculate Block Size according to given size (used only for assertions)
