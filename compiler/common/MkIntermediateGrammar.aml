@@ -90,6 +90,7 @@ functor MakeIntermediateGrammar(type info) :>
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
 	| ConDec    of info * id * bool (* has args *)
+	| PrimDec   of info * id * string
 	| RecDec    of info * dec list
 			(* may only contain ValDec *)
 
@@ -145,6 +146,7 @@ functor MakeIntermediateGrammar(type info) :>
 
     fun infoDec(ValDec(i,_,_))		= i
       | infoDec(ConDec(i,_,_))		= i
+      | infoDec(PrimDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
 
 

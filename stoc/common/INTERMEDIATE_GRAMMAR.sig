@@ -89,6 +89,7 @@ signature INTERMEDIATE_GRAMMAR =
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
 	| ConDec    of info * id * bool (* has args *)
+	| PrimDec   of info * id * string
 	| RecDec    of info * dec list
 			(* may only contain ValDec *)
 
