@@ -45,6 +45,24 @@ structure Linear :> LINEAR 	where type space = Space.space
 
 	type domain = domain_element list
 
+	datatype b_var_sel =
+	    B_DEGREE_MAX
+	  | B_DEGREE_MIN
+	  | B_MAX_MAX
+	  | B_MAX_MIN
+	  | B_MIN_MAX
+	  | B_MIN_MIN
+	  | B_NONE
+	  | B_SIZE_MAX
+	  | B_SIZE_MIN
+	    
+	datatype b_val_sel =
+	    B_MAX
+	  | B_MED
+	  | B_MIN
+	  | B_SPLIT_MAX
+	  | B_SPLIT_MIN
+
 	datatype term =
 	    FD of intvar
 	  | `  of int
@@ -269,6 +287,10 @@ fun isProduct (FD _) = true
 (*	fun post(s,r,e) = post'(s,r,e,fn x => let val _=Print.printVal x in FD.linear x end)	*)
 	
 	fun postReified(s,r,c,e) = post'(s,r,e,(fn(s',a',r',b',e')=>FD.Reified.linear(s',a',r',b',c,e')))
+
+	val fdToFD = Vector.map (fn FD fd => fd | _ => raise Match)
+	fun distinct (s,v,cl) = FD.distinct (s,fdToFD v,cl)
+	fun branch (s,v,varsel,valsel) = FD.branch (s,fdToFD v,varsel,valsel)
 
 (*boolean stuff*)
 
