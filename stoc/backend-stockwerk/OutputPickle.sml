@@ -63,12 +63,13 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val putVec = TAG 18
 		val raise_ = TAG 19
 		val realTest = TAG 20
-		val return = TAG 21
-		val shared = TAG 22
-		val stringTest = TAG 23
-		val tagTest = TAG 24
-		val try = TAG 25
-		val vecTest = TAG 26
+		val reraise = TAG 21
+		val return = TAG 22
+		val shared = TAG 23
+		val stringTest = TAG 24
+		val tagTest = TAG 25
+		val try = TAG 26
+		val vecTest = TAG 27
 
 		val con = TAG 0
 		val staticCon = TAG 1
@@ -282,10 +283,14 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, Raise idRef) =
 	    (outputBlock (context, Label.raise_, 1);
 	     outputIdRef (context, idRef))
-	  | outputInstr (context, Try (tryInstr, idDef, handleInstr)) =
-	    (outputBlock (context, Label.try, 3);
-	     outputInstr (context, tryInstr); outputIdDef (context, idDef);
-	     outputInstr (context, handleInstr))
+	  | outputInstr (context, Reraise idRef) =
+	    (outputBlock (context, Label.reraise, 1);
+	     outputIdRef (context, idRef))
+	  | outputInstr (context,
+			 Try (tryInstr, idDef1, idDef2, handleInstr)) =
+	    (outputBlock (context, Label.try, 4);
+	     outputInstr (context, tryInstr); outputIdDef (context, idDef1);
+	     outputIdDef (context, idDef2); outputInstr (context, handleInstr))
 	  | outputInstr (context, EndTry instr) =
 	    (outputBlock (context, Label.endTry, 1);
 	     outputInstr (context, instr))

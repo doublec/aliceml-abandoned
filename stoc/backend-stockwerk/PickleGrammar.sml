@@ -57,7 +57,8 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Raise of idRef
-	  | Try of instr * idDef * instr
+	  | Reraise of idRef
+	  | Try of instr * idDef * idDef * instr
 	  | EndTry of instr
 	  | EndHandle of instr
 	  | IntTest of idRef * (Int32.int * instr) vector * instr

@@ -142,7 +142,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			 fn instr => O.GetTup (idDefs, idRef, instr))
 	  | detup (O.Raise idRef, id) =
 	    if isId (idRef, id) then USED else KILLED
-	  | detup (O.Try (_, _, _), _) = UNKNOWN
+	  | detup (O.Reraise idRef, id) =
+	    if isId (idRef, id) then USED else KILLED
+	  | detup (O.Try (_, _, _, _), _) = UNKNOWN
 	  | detup (O.EndTry _, _) = UNKNOWN
 	  | detup (O.EndHandle _, _) = UNKNOWN
 	  | detup (O.IntTest (_, _, _), _) = UNKNOWN
@@ -198,7 +200,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | doDec (ProdDec (info, labelIdDefVec, id), env) =
 	    doDec (TupDec (info, Vector.map #2 labelIdDefVec, id), env)
 	  | doDec ((RaiseStm (_, _) | ReraiseStm (_, _) |
-		    TryStm (_, _, _, _) | EndTryStm (_, _) |
+		    TryStm (_, _, _, _, _) | EndTryStm (_, _) |
 		    EndHandleStm (_, _) | TestStm (_, _, _, _) |
 		    SharedStm (_, _, _) | ReturnStm (_, _) |
 		    IndirectStm (_, _) | ExportStm (_, _)), _) =
@@ -225,7 +227,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    translateDec (TupDec (info, Vector.map #2 labelIdDefVec, id),
 			  instr, env)
 	  | translateDec ((RaiseStm (_, _) | ReraiseStm (_, _) |
-			   TryStm (_, _, _, _) | EndTryStm (_, _) |
+			   TryStm (_, _, _, _, _) | EndTryStm (_, _) |
 			   EndHandleStm (_, _) | TestStm (_, _, _, _) |
 			   SharedStm (_, _, _) | ReturnStm (_, _) |
 			   IndirectStm (_, _) | ExportStm (_, _)), _, _) =
@@ -235,11 +237,13 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.translateStm"
 	  | translateStm (RaiseStm (_, id), env) =
 	    O.Raise (lookup (env, id))
-	  | translateStm (ReraiseStm (_, id), env) = (*--** do better *)
-	    O.Raise (lookup (env, id))
-	  | translateStm (TryStm (_, tryBody, idDef, handleBody), env) =
+	  | translateStm (ReraiseStm (_, id), env) =
+	    O.Reraise (lookup (env, id)) (*--** wrong *)
+	  | translateStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
+			  env) =
 	    O.Try (translateBody (tryBody, env),
-		   translateIdDef (idDef, env),
+		   translateIdDef (idDef1, env),
+		   translateIdDef (idDef2, env),
 		   translateBody (handleBody, env))
 	  | translateStm (EndTryStm (_, body), env) =
 	    O.EndTry (translateBody (body, env))
