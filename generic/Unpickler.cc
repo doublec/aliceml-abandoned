@@ -351,6 +351,7 @@ private:
   static const u_int COUNT_POS  = 2;
 public:
   static void New(InputStream *is, word env, int count) {
+    Scheduler::nArgs = 3;
     Scheduler::currentArgs[STREAM_POS] = is->ToWord();
     Scheduler::currentArgs[ENV_POS] = env;
     Scheduler::currentArgs[COUNT_POS] = Store::IntToWord(count);
@@ -652,6 +653,12 @@ word SelFromEnv(word env, u_int index) {
     return Interpreter::CONTINUE;		\
   } else {}
 
+#define CONTINUE()					\
+  if (Scheduler::TestPreempt() || Store::NeedGC())	\
+    return Interpreter::PREEMPT;			\
+  else							\
+    return Interpreter::CONTINUE;
+
 // Core Unpickling Function
 Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
   UnpickleFrame *frame = UnpickleFrame::FromWordDirect(taskStack->GetFrame());
@@ -661,7 +668,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
   // It is safe to pop the frame, since we remember it in variable `frame':
   taskStack->PopFrame();
   if (i == n) { // we are finished!
-    return Interpreter::CONTINUE;
+    CONTINUE();
   } else {
     InputStream *is = UnpickleArgs::GetInputStream();
     word env        = UnpickleArgs::GetEnv();
@@ -675,7 +682,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, Store::IntToWord(y));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::NEGINT:
@@ -684,7 +691,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, Store::IntToWord(-(y + 1)));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::CHUNK:
@@ -698,7 +705,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleArgs::New(is, env, count + 1);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::BLOCK:
@@ -713,7 +720,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
 	UnpickleArgs::New(is, env, count + 1);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::TUPLE:
@@ -726,7 +733,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
 	UnpickleArgs::New(is, env, count + 1);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::CLOSURE:
@@ -740,7 +747,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
 	UnpickleArgs::New(is, env, count + 1);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::TRANSFORM:
@@ -755,7 +762,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	TransformInterpreter::PushFrame(taskStack, future, tuple);
 	UnpickleInterpreter::PushFrame(taskStack, tuple->ToWord(), 0, 2);
 	UnpickleArgs::New(is, env, count + 1);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
       break;
     case Tag::REF:
@@ -764,7 +771,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, SelFromEnv(env, index));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
     default:
       Scheduler::currentData = Unpickler::Corrupt;
