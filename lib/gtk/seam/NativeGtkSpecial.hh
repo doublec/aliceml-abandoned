@@ -67,15 +67,8 @@ DEFINE1(NativeGtk_treeViewGetSelectedString) {
 } END
 
 DEFINE1(NativeGtk_radioButtonNew) {
-  DECLARE_UNMANAGED_POINTER(g, x0);
-  DECLARE_TUPLE(t, x0);
-
-  GSList *l;
-  if(t==INVALID_POINTER) {
-    l = static_cast<GSList *>(g);
-  } else {
-    l = NULL;
-  }
+  DECLARE_OBJECT(g, x0);
+  GSList *l = static_cast<GSList *>(g);
   
   GtkWidget* ret =
     gtk_radio_button_new(l);
@@ -83,16 +76,9 @@ DEFINE1(NativeGtk_radioButtonNew) {
 } END
 
 DEFINE2(NativeGtk_radioButtonNewWithLabel) {
-  DECLARE_UNMANAGED_POINTER(g, x0);
-  DECLARE_TUPLE(t, x0);
+  DECLARE_OBJECT(g, x0);
+  GSList *l = static_cast<GSList *>(g);
   DECLARE_CSTRING(in1, x1);
-
-  GSList *l;
-  if(t==INVALID_POINTER) {
-    l = static_cast<GSList *>(g);
-  } else {
-    l = NULL;
-  }
   
   GtkWidget* ret =
     gtk_radio_button_new_with_label(l, reinterpret_cast<gchar*>(in1));
@@ -100,16 +86,9 @@ DEFINE2(NativeGtk_radioButtonNewWithLabel) {
 } END
 
 DEFINE2(NativeGtk_radioButtonNewWithMnemonic) {
-  DECLARE_UNMANAGED_POINTER(g, x0);
-  DECLARE_TUPLE(t, x0);
+  DECLARE_OBJECT(g, x0);
+  GSList *l = static_cast<GSList *>(g);
   DECLARE_CSTRING(in1, x1);
-
-  GSList *l;
-  if(t==INVALID_POINTER) {
-    l = static_cast<GSList *>(g);
-  } else {
-    l = NULL;
-  }
 
   GtkWidget* ret =
     gtk_radio_button_new_with_label(l, reinterpret_cast<gchar*>(in1));
@@ -120,13 +99,12 @@ DEFINE1(NativeGtk_radioButtonGetGroup) {
   DECLARE_OBJECT(t, x0);
   GtkRadioButton *i = static_cast<GtkRadioButton *>(t);
   GSList* l = gtk_radio_button_get_group(i);
-  word ret = UNMANAGED_POINTER_TO_WORD(l);
-  RETURN(ret);
+  RETURN1(OBJECT_TO_WORD(l));
 } END
 
 DEFINE2(NativeGtk_radioButtonSetGroup) {
   DECLARE_OBJECT(t, x0);
-  DECLARE_UNMANAGED_POINTER(g, x1);
+  DECLARE_OBJECT(g, x1);
   GtkRadioButton *i = static_cast<GtkRadioButton *>(t);
   GSList* l = static_cast<GSList *>(g);
   gtk_radio_button_set_group(i,l);
@@ -137,12 +115,12 @@ DEFINE1(NativeGtk_radioMenuItemGetGroup) {
   DECLARE_OBJECT(t, x0);
   GtkRadioMenuItem *i = static_cast<GtkRadioMenuItem *>(t);
   GSList* l = gtk_radio_menu_item_get_group(i);
-  RETURN(UNMANAGED_POINTER_TO_WORD(l));
+  RETURN1(OBJECT_TO_WORD(l));
 } END
 
 DEFINE2(NativeGtk_radioMenuItemSetGroup) {
   DECLARE_OBJECT(t, x0);
-  DECLARE_UNMANAGED_POINTER(g, x1);
+  DECLARE_OBJECT(g, x1);
   GtkRadioMenuItem *i = static_cast<GtkRadioMenuItem *>(t);
   GSList* l = static_cast<GSList *>(g);
   gtk_radio_menu_item_set_group(i,l);
@@ -150,15 +128,8 @@ DEFINE2(NativeGtk_radioMenuItemSetGroup) {
 } END
 
 DEFINE1(NativeGtk_radioMenuItemNew) {
-  DECLARE_UNMANAGED_POINTER(g, x0);
-  DECLARE_TUPLE(t, x0);
-
-  GSList *l;
-  if(t==INVALID_POINTER) {
-    l = static_cast<GSList *>(g);
-  } else {
-    l = NULL;
-  }
+  DECLARE_OBJECT(g, x0);
+  GSList *l = static_cast<GSList *>(g);
   
   GtkWidget* ret =
     gtk_radio_menu_item_new(l);
@@ -166,16 +137,9 @@ DEFINE1(NativeGtk_radioMenuItemNew) {
 } END
 
 DEFINE2(NativeGtk_radioMenuItemNewWithLabel) {
-  DECLARE_UNMANAGED_POINTER(g, x0);
-  DECLARE_TUPLE(t, x0);
+  DECLARE_OBJECT(g, x0);
+  GSList *l = static_cast<GSList *>(g);
   DECLARE_CSTRING(in1, x1);
-
-  GSList *l;
-  if(t==INVALID_POINTER) {
-    l = static_cast<GSList *>(g);
-  } else {
-    l = NULL;
-  }
   
   GtkWidget* ret =
     gtk_radio_menu_item_new_with_label(l, reinterpret_cast<gchar*>(in1));
@@ -183,16 +147,9 @@ DEFINE2(NativeGtk_radioMenuItemNewWithLabel) {
 } END
 
 DEFINE2(NativeGtk_radioMenuItemNewWithMnemonic) {
-  DECLARE_UNMANAGED_POINTER(g, x0);
-  DECLARE_TUPLE(t, x0);
+  DECLARE_OBJECT(g, x0);
+  GSList *l = static_cast<GSList *>(g);
   DECLARE_CSTRING(in1, x1);
-
-  GSList *l;
-  if(t==INVALID_POINTER) {
-    l = static_cast<GSList *>(g);
-  } else {
-    l = NULL;
-  }
   
   GtkWidget* ret =
     gtk_radio_menu_item_new_with_mnemonic(l, reinterpret_cast<gchar*>(in1));

@@ -42,7 +42,6 @@ structure TypeTree =
        | UNIONREF of string
        | ENUMREF of string
        | TYPEREF of string * ty             (* c_type_name / type *)
-       | UNMANAGED                          (* unmanaged pointer *)
 		    
       type struct_item = string * ty           (* field_name/type *)
       type enum_item   = string * LargeInt.int (* field_name/index *)

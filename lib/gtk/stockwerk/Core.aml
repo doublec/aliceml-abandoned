@@ -18,6 +18,7 @@ structure Core :> CORE =
 struct
     (* object is an abstract type for pointers to Gtk structures *)
     type object
+    type group
 
     (* event represents a GdkEvent *)
     datatype event =
@@ -112,6 +113,7 @@ struct
     val NULL = NativeCore.null()      (* represents the C NULL pointer *)
     val TRUE = NativeCore.gtkTrue()   (* the Gtk TRUE value as int *)
     val FALSE = NativeCore.gtkFalse() (* the Gtk FALSE value as int *)
+    val EMPTY = NativeCore.null()     (* represents empty groups *)
 
     type callback_function = object * arg list -> unit
 
