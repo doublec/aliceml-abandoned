@@ -48,7 +48,7 @@ sig
     val copyArray': 'a Array.array * 'a Array.array * int -> unit
     val copyArray: 'a Array.array * 'a Array.array  -> unit	    
 
-    (* Zugriff auf Node-Felder *)
+    (* Nodes *)
     val getKids : node -> node Array.array
     val getParent : node -> node
     val getIndex : node -> int

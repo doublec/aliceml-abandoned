@@ -191,7 +191,7 @@ struct
     and drawRelRefNode (n,x,y) = case n of
 	RelRefNode(r) => if !(#status(r)) = DIRTY
 			     then atomDraw (n,x,y)
-			 else (x+get_xdim(n),y+get_ydim(n))
+			 else (x+String.length(#rep(r)),y)
       | _ => raise DrawError
        
     (* draw *)

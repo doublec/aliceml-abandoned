@@ -139,38 +139,29 @@ struct
 				    => if checkConcKids (#kids(r),0)
 	                                 then true
 				       else checkContKids (a,i+1)
-			   (* 	  | RelNode(r) 
-				    => if !(#counter(r)) = 1 
-					   then (case !(#content(r)) of 
-						 Concat(rr)  
-					         => if checkConcKids 
-						            (#kids(rr),0) 
-							then true 
-						    else checkContKids (a,i+1) 
-					       | Container(rr) => true 
-					       | _ => checkContKids (a,i+1) ) 
-				       else checkContKids (a,i+1) *)
+			   	  | RelNode(r) 
+			            => ( case !(#content(r)) of 
+					 Concat(rr)  
+					 => checkConcKids (#kids(rr),0) 
+					    orelse checkContKids (a,i+1) 
+				       | Container(rr) => true 
+				       | _ => checkContKids (a,i+1) ) 
 				  | _ => checkContKids (a,i+1) )
 
     and checkConcKids (a,i) = if i >=  Array.length(a) 
-				  then false
+				  then false 
 			      else (case Array.sub(a,i) of
-                                    Container(r) => true
+				    Container(r) => true
                                   | Concat(r) 
-                                    => if checkConcKids(#kids(r),0)
-					   then true
-				       else checkConcKids (a,i+1)
-                            (*      | RelNode(r) 
-                                    => if !(#counter(r)) = 1 
-					   then (case !(#content(r)) of 
-						 Concat(rr)  
-						 => if checkConcKids 
-						            (#kids(rr),0) 
-							then true 
-						    else checkConcKids (a,i+1) 
-					       | Container(rr) => true 
-					       | _ => checkConcKids (a,i+1) ) 
-				       else checkConcKids (a,i+1) *)
+				    => checkConcKids(#kids(r),0)
+				       orelse checkConcKids (a,i+1)
+				  | RelNode(r) 
+				    => ( case !(#content(r)) of 
+					 Concat(rr)  
+					 => checkConcKids (#kids(rr),0)  
+					    orelse checkConcKids (a,i+1) 
+				       | Container(rr) => true 
+				       | _ => checkConcKids (a,i+1) )
                                   | _ => checkConcKids (a,i+1) )
 
    and setsVertical n = case n of

@@ -114,6 +114,7 @@ struct
 		then #l_width(r) := calc_l_xdim n 
 	    else ()
 	   ; array_map(set_l_xdim,#kids(r)) )
+      | RelNode(r) => set_l_xdim(!(#content(r)))
       | _ => ()
 
     and calc_xdim n = case n of
@@ -124,10 +125,10 @@ struct
 			       then max (li,calc_xdim) 
 			   else sum_up (li,calc_xdim,calc_l_xdim) 
 			end
-     | RelNode(r) => if !(#counter(r)) = 1 
-			 then calc_xdim (!(#content(r))) 
-		     else String.length(#rep(r)) + 
-			 calc_xdim (!(#content(r)))  
+      | RelNode(r) => if !(#counter(r)) = 1 
+			  then calc_xdim (!(#content(r))) 
+		      else String.length(#rep(r)) + 
+			   calc_xdim (!(#content(r)))  
       | RelRefNode(r) => !(#width(r))
       | Limit(r) => 1
       | Empty => 0
