@@ -3,7 +3,7 @@
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ## 
 ## Copyright:
-##   Leif Kornstaedt, 2002
+##   Leif Kornstaedt, 2002-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -37,18 +37,12 @@ SOURCES = \
 
 OBJS = $(SOURCES:%.cc=%.o)
 
-all: libjava.a
-
-libjava.a: $(OBJS)
-	-rm -f $@
-	ar rc $@ $(OBJS) || exit 1
-	ranlib $@
+all: $(OBJS)
 
 clean:
 	rm -f $(OBJS)
 
 veryclean: clean
-	rm -f libjava.a
 
 distclean: veryclean
 	rm -f Makefile.depend
