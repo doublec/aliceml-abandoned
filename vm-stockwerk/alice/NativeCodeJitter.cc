@@ -562,19 +562,23 @@ void NativeCodeJitter::ImmediateSel(u_int Dest, u_int Ptr, u_int pos) {
 }
 
 // LazySelClosure (belongs to alice, of course)
-void NativeCodeJitter::LazySelClosureNew(u_int Tuple, u_int label) {
-  jit_pushr_ui(Tuple); // Save Tuple
+void NativeCodeJitter::LazySelClosureNew(u_int Record, Vector *labels) {
+  jit_pushr_ui(Record); // Save Record
   Generic::ConcreteCode::New(JIT_V1, LazySelInterpreter::self, 0);
   jit_pushr_ui(JIT_V1); // Save ConcreteCode Ptr
-  Generic::Closure::New(JIT_V1, 3);
+  Generic::Closure::New(JIT_V1, LazySelClosure::SIZE);
   jit_popr_ui(JIT_R0); // Restore ConcreteCode Ptr
   Generic::Closure::InitCC(JIT_V1, JIT_R0);
-  jit_popr_ui(JIT_R0); // Restore Tuple
-    //  u_int reg = LoadIdRefKill(JIT_R0, tuple);
-  Generic::Closure::Put(JIT_V1, 0, JIT_R0);
-  //  u_int i1 = ImmediateEnv::Register(label);
-  ImmediateSel(JIT_R0, JIT_V2, label);
-  Generic::Closure::Put(JIT_V1, 1, JIT_R0);
+  jit_popr_ui(JIT_R0); // Restore Record
+  Generic::Closure::Put(JIT_V1, LazySelClosure::RECORD_POS, JIT_R0);
+  u_int labelsIndex = ImmediateEnv::Register(labels->ToWord());
+  ImmediateSel(JIT_R0, JIT_V2, labelsIndex);
+  Generic::Closure::Put(JIT_V1, LazySelClosure::LABELS_POS, JIT_R0);
+}
+
+void
+NativeCodeJitter::LazySelClosureInitByneeds(u_int Closure, u_int Byneeds) {
+  Generic::Closure::Put(Closure, LazySelClosure::BYNEEDS_POS, Byneeds);
 }
 
 #define RETURN() \
@@ -1340,37 +1344,54 @@ TagVal *NativeCodeJitter::InstrSel(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
-// LazyPolySel of id * idRef * label * instr
-// to be done: Eager, if determined
+// LazyPolySel of id vector * idRef * label vector * instr
 TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
   PrintPC("LazyPolySel\n");
-  u_int wRecord = LoadIdRefKill(JIT_V1, pc->Sel(1));
-  u_int label   = ImmediateEnv::Register(pc->Sel(2));
-  JITStore::Deref(wRecord);
+  u_int WRecord = LoadIdRefKill(JIT_V1, pc->Sel(1));
+  Vector *ids = Vector::FromWordDirect(pc->Sel(0));
+  Vector *labels = Vector::FromWordDirect(pc->Sel(2));
+  Assert(ids->GetLength() == labels->GetLength());
+  JITStore::Deref(WRecord);
   JITStore::LogMesg("Deref result\n");
-  JITStore::LogReg(wRecord);
+  JITStore::LogReg(WRecord);
   jit_insn *poly_sel = jit_beqi_ui(jit_forward(), JIT_R0, BLKTAG);
-  // Create LazySel Closure
-  LazySelClosureNew(wRecord, label);
-  jit_pushr_ui(JIT_V1); // Save LazySel Closure
-  Generic::Byneed::New(JIT_V1);
-  jit_popr_ui(JIT_R0); // Restore LazySel Closure
-  Generic::Byneed::InitClosure(JIT_V1, JIT_R0);
-  JITStore::SetTransientTag(JIT_V1);
+  // Record yet unknown: create byneeds
+  LazySelClosureNew(WRecord, labels);
+  jit_pushr_ui(JIT_V1); // save closure
+  u_int n = ids->GetLength();
+  JITAlice::Vector::New(JIT_V1, n); // create byneeds vector
+  jit_pushr_ui(JIT_V1); // save byneeds vector
+  for (u_int i = n; i--; ) {
+    Generic::Byneed::New(JIT_V1);
+    jit_ldxi_ui(JIT_R0, JIT_SP, 1 * sizeof(word)); // closure
+    Generic::Byneed::InitClosure(JIT_V1, JIT_R0);
+    JITStore::SetTransientTag(JIT_V1);
+    jit_ldxi_ui(JIT_R0, JIT_SP, 0 * sizeof(word)); // byneeds vector
+    JITAlice::Vector::Put(JIT_R0, i, JIT_V1);
+    LocalEnvPut(JIT_V2, ids->Sub(i), JIT_V1);
+  }
+  jit_popr_ui(JIT_R0); // byneeds
+  jit_popr_ui(JIT_V1); // closure
+  LazySelClosureInitByneeds(JIT_V1, JIT_R0);
   jit_insn *skip = jit_jmpi(jit_forward());
+  // Record known: perform selection immediately
   jit_patch(poly_sel);
-  // Do Selection
-  Prepare();
-  jit_pushr_ui(wRecord);
-  ImmediateSel(JIT_R0, JIT_V2, label);
-  jit_pushr_ui(JIT_R0);
-  void *ptr = (void *)
-    static_cast<word (*)(::UniqueString *, ::Record *)>(&::Record::PolySel);
-  JITStore::Call(2, ptr);
-  jit_movr_p(JIT_V1, JIT_R0);
-  Finish();
+  if (WRecord != JIT_V1)
+    jit_movr_p(JIT_V1, WRecord);
+  for (u_int i = ids->GetLength(); i--; ) {
+    Prepare();
+    jit_pushr_ui(JIT_V1); // record
+    u_int labelIndex = ImmediateEnv::Register(labels->Sub(i));
+    ImmediateSel(JIT_R0, JIT_V2, labelIndex);
+    // UniqueString::FromWordDirect does nothing
+    jit_pushr_ui(JIT_R0);
+    void *ptr = (void *)
+      static_cast<word (*)(::UniqueString *, ::Record *)>(&::Record::PolySel);
+    JITStore::Call(2, ptr);
+    Finish();
+    LocalEnvPut(JIT_V2, ids->Sub(i), JIT_R0);
+  }
   jit_patch(skip);
-  LocalEnvPut(JIT_V2, pc->Sel(0), JIT_V1);
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
@@ -1993,19 +2014,19 @@ void NativeCodeJitter::Init(u_int bufferSize) {
 // Function of coord * int * int * idDef args * instr * liveness
 // Specialized of coord * value vector * int * idDef args * instr * liveness
 NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
-  //#if 0
+#if 0
   // Diassemble AbstractCode
-  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  char *filename = String::FromWordDirect(coord->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:/home/kornstae/stockhausen/vm-stockwerk/build1/lib/system/Component.aml") && Store::DirectWordToInt(coord->Sel(1)) == 154) {
+  Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
+  char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
+  if (!strcmp(filename, "file:/home/kornstae/stockhausen/vm-stockwerk/build1/lib/system/Component.aml") && Store::DirectWordToInt(coord1->Sel(1)) == 154) {
   fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
-	  String::FromWordDirect(coord->Sel(0))->ExportC(),
-	  Store::DirectWordToInt(coord->Sel(1)),
-	  Store::DirectWordToInt(coord->Sel(2)));
+	  String::FromWordDirect(coord1->Sel(0))->ExportC(),
+	  Store::DirectWordToInt(coord1->Sel(1)),
+	  Store::DirectWordToInt(coord1->Sel(2)));
   TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
   AbstractCode::Disassemble(stderr, pc);
   }
-  //#endif
+#endif
 #if defined(JIT_CODE_SIZE_PROFILE)
   static u_int codeSize       = 0;
   static u_int totalSize      = 0;
@@ -2018,9 +2039,9 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   sharedTable  = HashTable::New(HashTable::INT_KEY, SHARED_TABLE_SIZE);
   // Start function compilation with prolog
 #if defined(JIT_STORE_DEBUG)
-  Tuple *coord = Tuple::FromWord(abstractCode->Sel(0));
-  String *name = String::FromWord(coord->Sel(0));
-  u_int line   = Store::WordToInt(coord->Sel(1));
+  Tuple *coord2 = Tuple::FromWord(abstractCode->Sel(0));
+  String *name  = String::FromWord(coord2->Sel(0));
+  u_int line    = Store::WordToInt(coord2->Sel(1));
   char info[1024];
   sprintf(info, "%s:%d\n", name->ExportC(), line);
   char *start = CompileProlog(strdup(info));
