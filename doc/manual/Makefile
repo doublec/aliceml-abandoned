@@ -2,9 +2,18 @@ PHP = php
 
 ifeq ($(SEAM), 1)
 INTEROP =
+CONSTRAINTS = constraints_gecode.html
+PLATFORM_LIB = \
+	fd.html fs.html space.html search.html \
+	linear.html explorer.html \
+	gtk.html gtk-canvas.html gtk-overview.html gdk.html
 PLATFORM = seam
 else
 INTEROP = interop.html
+CONSTRAINTS = constraints_mozart.html
+PLATFORM_LIB = fd.html fs.html space.html search.html \
+	linear.html explorer.html \
+	gtk.html gtk-canvas.html gtk-overview.html gdk.html
 PLATFORM = mozart
 endif
 
@@ -12,6 +21,7 @@ PREFIX = /opt/alice-devel/doc
 
 DIRS = $(PREFIX) \
 	$(PREFIX)/library \
+	$(PREFIX)/library/constraints \
 	$(PREFIX)/examples \
 	$(PREFIX)/examples/interpreter
 
@@ -59,7 +69,7 @@ INSTALLFILES_LIBRARY_0 = \
 	http-client.html http-server.html resolver-handler.html \
 	resolver.html component.html component-manager.html remote.html \
 	HttpClientExample.aml HttpServerExample.aml \
-        fd.html fs.html space.html search.html linear.html \
+        $(PLATFORM_LIB) \
 	gtk-overview.html gdk.html gtk.html gtk-canvas.html \
         inspector.html explorer.html
 INSTALLFILES_EXAMPLES_0 = \
@@ -77,16 +87,26 @@ INSTALLFILES = \
 	$(INSTALLFILES_EXAMPLES_0:%=$(PREFIX)/examples/%) \
 	$(INSTALLFILES_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/examples/interpreter/%)
 
-.PHONY: install
+.PHONY: install clean
 
 all: install
 
 install: $(DIRS) $(INSTALLFILES)
 
+clean:
+	rm -f constraints.html
+	rm -f $(PLATFORM_LIB:%=library/%)
+
+constraints.html: $(CONSTRAINTS)
+	cp $< $@
+
 examples/interpreter.tar: \
 	$(INSTALLFILES_EXAMPLES_INTERPRETER)
 	(cd examples && tar -cvf interpreter.tar \
 	 $(INSTALLFILES_EXAMPLES_INTERPRETER_0:%=interpreter/%))
+
+$(PLATFORM_LIB:%=library/%): library/% : library/$(PLATFORM)/%
+	cp $< $@
 
 $(DIRS):
 	mkdir -p -m 775 $@

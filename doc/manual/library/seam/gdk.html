@@ -1,0 +1,1838 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Gdk structure", "The <TT>Gdk</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature GDK
+    structure Gdk : GDK</PRE>
+
+ <P>
+   The <TT>Gdk</TT> structure is the platform abstraction layer of Gtk.
+   It provides access to a number of supplementary functions used by
+   Gtk and the Canvas.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+ </P>
+
+ <?php section("import", "import"); ?>
+
+  <PRE>
+    import structure Core from "x-alice:/lib/gtk/Core"
+    import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
+    import structure GdkEnums from "x-alice:/lib/gtk/GdkEnums"
+    import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
+    import structure CanvasEnums from "x-alice:/lib/gtk/CanvasEnums"</PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature GDK =
+   sig
+      type object = Gtk.object
+      datatype event =
+         EVENT_2BUTTON_PRESS of
+            {button : int, device : object, send : bool, state : int,
+             time : int, window : object, x : real, x_root : real, y : real,
+             y_root : real} |
+         EVENT_3BUTTON_PRESS of
+            {button : int, device : object, send : bool, state : int,
+             time : int, window : object, x : real, x_root : real, y : real,
+             y_root : real} |
+         EVENT_BUTTON_PRESS of
+            {button : int, device : object, send : bool, state : int,
+             time : int, window : object, x : real, x_root : real, y : real,
+             y_root : real} |
+         EVENT_BUTTON_RELEASE of
+            {button : int, device : object, send : bool, state : int,
+             time : int, window : object, x : real, x_root : real, y : real,
+             y_root : real} | EVENT_CLIENT_EVENT |
+         EVENT_CONFIGURE of
+            {height : int, send : bool, width : int, window : object, x : int,
+             y : int} | EVENT_DELETE | EVENT_DESTROY | EVENT_DRAG_ENTER |
+         EVENT_DRAG_LEAVE | EVENT_DRAG_MOTION | EVENT_DRAG_STATUS |
+         EVENT_DROP_FINISHED | EVENT_DROP_START |
+         EVENT_ENTER_NOTIFY of
+            {detail : int, focus : bool, mode : int, send : bool, state : int,
+             subwindow : object, time : int, window : object, x : real,
+             x_root : real, y : real, y_root : real} |
+         EVENT_EXPOSE of
+            {area_height : int, area_width : int, area_x : int, area_y : int,
+             count : int, region : object, send : bool, window : object} |
+         EVENT_FOCUS_CHANGE of {hasFocus : bool, send : bool, window : object} |
+         EVENT_KEY_PRESS of
+            {group : int, hardware_keycode : int, keyval : int, length : int,
+             send : bool, state : int, string : string, time : int,
+             window : object} |
+         EVENT_KEY_RELEASE of
+            {group : int, hardware_keycode : int, keyval : int, length : int,
+             send : bool, state : int, string : string, time : int,
+             window : object} |
+         EVENT_LEAVE_NOTIFY of
+            {detail : int, focus : bool, mode : int, send : bool, state : int,
+             subwindow : object, time : int, window : object, x : real,
+             x_root : real, y : real, y_root : real} | EVENT_MAP |
+         EVENT_MOTION_NOTIFY of
+            {device : object, is_hint : int, send : bool, state : int,
+             time : int, window : object, x : real, x_root : real, y : real,
+             y_root : real} | EVENT_NOTHING |
+         EVENT_NO_EXPOSE of {send : bool, window : object} |
+         EVENT_PROPERTY_NOTIFY | EVENT_PROXIMITY_IN | EVENT_PROXIMITY_OUT |
+         EVENT_SCROLL of
+            {device : object, direction : int, send : bool, state : int,
+             time : int, window : object, x : real, x_root : real, y : real,
+             y_root : real} | EVENT_SELECTION_CLEAR | EVENT_SELECTION_NOTIFY |
+         EVENT_SELECTION_REQUEST | EVENT_SETTING | EVENT_UNMAP |
+         EVENT_UNSUPPORTED of object |
+         EVENT_VISIBILITY_NOTIFY of
+            {send : bool, state : int, window : object} | EVENT_WINDOW_STATE
+      datatype arg =
+         BOOL of bool | EVENT of event | INT of int | LIST of object list |
+         OBJECT of object | REAL of real | STRING of string
+      val NULL : object
+      val TRUE : int
+      val FALSE : int
+      type callback_function = object * arg list -> unit
+      val signalConnect : object * string * callback_function -> int
+      val signalConnectAfter : object * string * callback_function -> int
+      val signalDisconnect : object * int -> unit
+      datatype GdkByteOrder = LSB_FIRST | MSB_FIRST
+      val GdkByteOrderToInt : GdkByteOrder -> int
+      val IntToGdkByteOrder : int -> GdkByteOrder
+      datatype GdkModifierType =
+         BUTTON1_MASK | BUTTON2_MASK | BUTTON3_MASK | BUTTON4_MASK |
+         BUTTON5_MASK | CONTROL_MASK | LOCK_MASK | MOD1_MASK | MOD2_MASK |
+         MOD3_MASK | MOD4_MASK | MOD5_MASK | SHIFT_MASK
+      val GdkModifierTypeToInt : GdkModifierType -> int
+      val IntToGdkModifierType : int -> GdkModifierType
+      datatype GdkInputCondition = INPUT_EXCEPTION | INPUT_READ | INPUT_WRITE
+      val GdkInputConditionToInt : GdkInputCondition -> int
+      val IntToGdkInputCondition : int -> GdkInputCondition
+      datatype GdkStatus = ERROR | ERROR_FILE | ERROR_MEM | ERROR_PARAM | OK
+      val GdkStatusToInt : GdkStatus -> int
+      val IntToGdkStatus : int -> GdkStatus
+      datatype GdkGrabStatus =
+         GRAB_ALREADY_GRABBED | GRAB_FROZEN | GRAB_INVALID_TIME |
+         GRAB_NOT_VIEWABLE | GRAB_SUCCESS
+      val GdkGrabStatusToInt : GdkGrabStatus -> int
+      val IntToGdkGrabStatus : int -> GdkGrabStatus
+      datatype GdkPixbufAlphaMode = PIXBUF_ALPHA_BILEVEL | PIXBUF_ALPHA_FULL
+      val GdkPixbufAlphaModeToInt : GdkPixbufAlphaMode -> int
+      val IntToGdkPixbufAlphaMode : int -> GdkPixbufAlphaMode
+      datatype GdkColorspace = COLORSPACE_RGB
+      val GdkColorspaceToInt : GdkColorspace -> int
+      val IntToGdkColorspace : int -> GdkColorspace
+      datatype GdkPixbufError =
+         PIXBUF_ERROR_BAD_OPTION | PIXBUF_ERROR_CORRUPT_IMAGE |
+         PIXBUF_ERROR_FAILED | PIXBUF_ERROR_INSUFFICIENT_MEMORY |
+         PIXBUF_ERROR_UNKNOWN_TYPE | PIXBUF_ERROR_UNSUPPORTED_OPERATION
+      val GdkPixbufErrorToInt : GdkPixbufError -> int
+      val IntToGdkPixbufError : int -> GdkPixbufError
+      datatype GdkInterpType =
+         INTERP_BILINEAR | INTERP_HYPER | INTERP_NEAREST | INTERP_TILES
+      val GdkInterpTypeToInt : GdkInterpType -> int
+      val IntToGdkInterpType : int -> GdkInterpType
+      datatype GdkCursorType =
+         ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP | BOAT | BOGOSITY |
+         BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER | BOTTOM_SIDE | BOTTOM_TEE |
+         BOX_SPIRAL | CENTER_PTR | CIRCLE | CLOCK | COFFEE_MUG | CROSS |
+         CROSSHAIR | CROSS_REVERSE | CURSOR_IS_PIXMAP | DIAMOND_CROSS | DOT |
+         DOTBOX | DOUBLE_ARROW | DRAFT_LARGE | DRAFT_SMALL | DRAPED_BOX |
+         EXCHANGE | FLEUR | GOBBLER | GUMBY | HAND1 | HAND2 | HEART | ICON |
+         IRON_CROSS | LAST_CURSOR | LEFTBUTTON | LEFT_PTR | LEFT_SIDE |
+         LEFT_TEE | LL_ANGLE | LR_ANGLE | MAN | MIDDLEBUTTON | MOUSE | PENCIL |
+         PIRATE | PLUS | QUESTION_ARROW | RIGHTBUTTON | RIGHT_PTR | RIGHT_SIDE |
+         RIGHT_TEE | RTL_LOGO | SAILBOAT | SB_DOWN_ARROW | SB_H_DOUBLE_ARROW |
+         SB_LEFT_ARROW | SB_RIGHT_ARROW | SB_UP_ARROW | SB_V_DOUBLE_ARROW |
+         SHUTTLE | SIZING | SPIDER | SPRAYCAN | STAR | TARGET | TCROSS |
+         TOP_LEFT_ARROW | TOP_LEFT_CORNER | TOP_RIGHT_CORNER | TOP_SIDE |
+         TOP_TEE | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM |
+         X_CURSOR
+      val GdkCursorTypeToInt : GdkCursorType -> int
+      val IntToGdkCursorType : int -> GdkCursorType
+      datatype GdkDragAction =
+         ACTION_ASK | ACTION_COPY | ACTION_DEFAULT | ACTION_LINK | ACTION_MOVE |
+         ACTION_PRIVATE
+      val GdkDragActionToInt : GdkDragAction -> int
+      val IntToGdkDragAction : int -> GdkDragAction
+      datatype GdkDragProtocol =
+         DRAG_PROTO_LOCAL | DRAG_PROTO_MOTIF | DRAG_PROTO_NONE |
+         DRAG_PROTO_OLE2 | DRAG_PROTO_ROOTWIN | DRAG_PROTO_WIN32_DROPFILES |
+         DRAG_PROTO_XDND
+      val GdkDragProtocolToInt : GdkDragProtocol -> int
+      val IntToGdkDragProtocol : int -> GdkDragProtocol
+      datatype GdkExtensionMode =
+         EXTENSION_EVENTS_ALL | EXTENSION_EVENTS_CURSOR | EXTENSION_EVENTS_NONE
+      val GdkExtensionModeToInt : GdkExtensionMode -> int
+      val IntToGdkExtensionMode : int -> GdkExtensionMode
+      datatype GdkInputSource =
+         SOURCE_CURSOR | SOURCE_ERASER | SOURCE_MOUSE | SOURCE_PEN
+      val GdkInputSourceToInt : GdkInputSource -> int
+      val IntToGdkInputSource : int -> GdkInputSource
+      datatype GdkInputMode = MODE_DISABLED | MODE_SCREEN | MODE_WINDOW
+      val GdkInputModeToInt : GdkInputMode -> int
+      val IntToGdkInputMode : int -> GdkInputMode
+      datatype GdkAxisUse =
+         AXIS_IGNORE | AXIS_LAST | AXIS_PRESSURE | AXIS_WHEEL | AXIS_X |
+         AXIS_XTILT | AXIS_Y | AXIS_YTILT
+      val GdkAxisUseToInt : GdkAxisUse -> int
+      val IntToGdkAxisUse : int -> GdkAxisUse
+      datatype GdkFilterReturn =
+         FILTER_CONTINUE | FILTER_REMOVE | FILTER_TRANSLATE
+      val GdkFilterReturnToInt : GdkFilterReturn -> int
+      val IntToGdkFilterReturn : int -> GdkFilterReturn
+      datatype GdkEventType =
+         BUTTON_PRESS | BUTTON_RELEASE | CLIENT_EVENT | CONFIGURE | DELETE |
+         DESTROY | DRAG_ENTER | DRAG_LEAVE | DRAG_MOTION | DRAG_STATUS |
+         DROP_FINISHED | DROP_START | ENTER_NOTIFY | EXPOSE | FOCUS_CHANGE |
+         GDK_2BUTTON_PRESS | GDK_3BUTTON_PRESS | KEY_PRESS | KEY_RELEASE |
+         LEAVE_NOTIFY | MAP | MOTION_NOTIFY | NOTHING | NO_EXPOSE |
+         PROPERTY_NOTIFY | PROXIMITY_IN | PROXIMITY_OUT | SCROLL |
+         SELECTION_CLEAR | SELECTION_NOTIFY | SELECTION_REQUEST | SETTING |
+         UNMAP | VISIBILITY_NOTIFY | WINDOW_STATE
+      val GdkEventTypeToInt : GdkEventType -> int
+      val IntToGdkEventType : int -> GdkEventType
+      datatype GdkEventMask =
+         ALL_EVENTS_MASK | BUTTON1_MOTION_MASK | BUTTON2_MOTION_MASK |
+         BUTTON3_MOTION_MASK | BUTTON_MOTION_MASK | BUTTON_PRESS_MASK |
+         BUTTON_RELEASE_MASK | ENTER_NOTIFY_MASK | EXPOSURE_MASK |
+         FOCUS_CHANGE_MASK | KEY_PRESS_MASK | KEY_RELEASE_MASK |
+         LEAVE_NOTIFY_MASK | POINTER_MOTION_HINT_MASK | POINTER_MOTION_MASK |
+         PROPERTY_CHANGE_MASK | PROXIMITY_IN_MASK | PROXIMITY_OUT_MASK |
+         SCROLL_MASK | STRUCTURE_MASK | SUBSTRUCTURE_MASK |
+         VISIBILITY_NOTIFY_MASK
+      val GdkEventMaskToInt : GdkEventMask -> int
+      val IntToGdkEventMask : int -> GdkEventMask
+      datatype GdkVisibilityState =
+         VISIBILITY_FULLY_OBSCURED | VISIBILITY_PARTIAL | VISIBILITY_UNOBSCURED
+      val GdkVisibilityStateToInt : GdkVisibilityState -> int
+      val IntToGdkVisibilityState : int -> GdkVisibilityState
+      datatype GdkScrollDirection =
+         SCROLL_DOWN | SCROLL_LEFT | SCROLL_RIGHT | SCROLL_UP
+      val GdkScrollDirectionToInt : GdkScrollDirection -> int
+      val IntToGdkScrollDirection : int -> GdkScrollDirection
+      datatype GdkNotifyType =
+         NOTIFY_ANCESTOR | NOTIFY_INFERIOR | NOTIFY_NONLINEAR |
+         NOTIFY_NONLINEAR_VIRTUAL | NOTIFY_UNKNOWN | NOTIFY_VIRTUAL
+      val GdkNotifyTypeToInt : GdkNotifyType -> int
+      val IntToGdkNotifyType : int -> GdkNotifyType
+      datatype GdkCrossingMode =
+         CROSSING_GRAB | CROSSING_NORMAL | CROSSING_UNGRAB
+      val GdkCrossingModeToInt : GdkCrossingMode -> int
+      val IntToGdkCrossingMode : int -> GdkCrossingMode
+      datatype GdkPropertyState = PROPERTY_DELETE | PROPERTY_NEW_VALUE
+      val GdkPropertyStateToInt : GdkPropertyState -> int
+      val IntToGdkPropertyState : int -> GdkPropertyState
+      datatype GdkWindowState =
+         WINDOW_STATE_ABOVE | WINDOW_STATE_BELOW | WINDOW_STATE_FULLSCREEN |
+         WINDOW_STATE_ICONIFIED | WINDOW_STATE_MAXIMIZED | WINDOW_STATE_STICKY |
+         WINDOW_STATE_WITHDRAWN
+      val GdkWindowStateToInt : GdkWindowState -> int
+      val IntToGdkWindowState : int -> GdkWindowState
+      datatype GdkSettingAction =
+         SETTING_ACTION_CHANGED | SETTING_ACTION_DELETED | SETTING_ACTION_NEW
+      val GdkSettingActionToInt : GdkSettingAction -> int
+      val IntToGdkSettingAction : int -> GdkSettingAction
+      datatype GdkCapStyle =
+         CAP_BUTT | CAP_NOT_LAST | CAP_PROJECTING | CAP_ROUND
+      val GdkCapStyleToInt : GdkCapStyle -> int
+      val IntToGdkCapStyle : int -> GdkCapStyle
+      datatype GdkFill = OPAQUE_STIPPLED | SOLID | STIPPLED | TILED
+      val GdkFillToInt : GdkFill -> int
+      val IntToGdkFill : int -> GdkFill
+      datatype GdkFunction =
+         AND | AND_INVERT | AND_REVERSE | CLEAR | COPY | COPY_INVERT | EQUIV |
+         INVERT | NAND | NOOP | NOR | OR | OR_INVERT | OR_REVERSE | SET | XOR
+      val GdkFunctionToInt : GdkFunction -> int
+      val IntToGdkFunction : int -> GdkFunction
+      datatype GdkJoinStyle = JOIN_BEVEL | JOIN_MITER | JOIN_ROUND
+      val GdkJoinStyleToInt : GdkJoinStyle -> int
+      val IntToGdkJoinStyle : int -> GdkJoinStyle
+      datatype GdkLineStyle = LINE_DOUBLE_DASH | LINE_ON_OFF_DASH | LINE_SOLID
+      val GdkLineStyleToInt : GdkLineStyle -> int
+      val IntToGdkLineStyle : int -> GdkLineStyle
+      datatype GdkSubwindowMode = CLIP_BY_CHILDREN | INCLUDE_INFERIORS
+      val GdkSubwindowModeToInt : GdkSubwindowMode -> int
+      val IntToGdkSubwindowMode : int -> GdkSubwindowMode
+      datatype GdkGCValuesMask =
+         GC_BACKGROUND | GC_CAP_STYLE | GC_CLIP_MASK | GC_CLIP_X_ORIGIN |
+         GC_CLIP_Y_ORIGIN | GC_EXPOSURES | GC_FILL | GC_FONT | GC_FOREGROUND |
+         GC_FUNCTION | GC_JOIN_STYLE | GC_LINE_STYLE | GC_LINE_WIDTH |
+         GC_STIPPLE | GC_SUBWINDOW | GC_TILE | GC_TS_X_ORIGIN | GC_TS_Y_ORIGIN
+      val GdkGCValuesMaskToInt : GdkGCValuesMask -> int
+      val IntToGdkGCValuesMask : int -> GdkGCValuesMask
+      datatype GdkRgbDither =
+         RGB_DITHER_MAX | RGB_DITHER_NONE | RGB_DITHER_NORMAL
+      val GdkRgbDitherToInt : GdkRgbDither -> int
+      val IntToGdkRgbDither : int -> GdkRgbDither
+      datatype GdkFontType = FONT_FONT | FONT_FONTSET
+      val GdkFontTypeToInt : GdkFontType -> int
+      val IntToGdkFontType : int -> GdkFontType
+      datatype GdkImageType = IMAGE_FASTEST | IMAGE_NORMAL | IMAGE_SHARED
+      val GdkImageTypeToInt : GdkImageType -> int
+      val IntToGdkImageType : int -> GdkImageType
+      datatype GdkPropMode =
+         PROP_MODE_APPEND | PROP_MODE_PREPEND | PROP_MODE_REPLACE
+      val GdkPropModeToInt : GdkPropMode -> int
+      val IntToGdkPropMode : int -> GdkPropMode
+      datatype GdkFillRule = EVEN_ODD_RULE | WINDING_RULE
+      val GdkFillRuleToInt : GdkFillRule -> int
+      val IntToGdkFillRule : int -> GdkFillRule
+      datatype GdkOverlapType =
+         OVERLAP_RECTANGLE_IN | OVERLAP_RECTANGLE_OUT | OVERLAP_RECTANGLE_PART
+      val GdkOverlapTypeToInt : GdkOverlapType -> int
+      val IntToGdkOverlapType : int -> GdkOverlapType
+      datatype GdkVisualType =
+         VISUAL_DIRECT_COLOR | VISUAL_GRAYSCALE | VISUAL_PSEUDO_COLOR |
+         VISUAL_STATIC_COLOR | VISUAL_STATIC_GRAY | VISUAL_TRUE_COLOR
+      val GdkVisualTypeToInt : GdkVisualType -> int
+      val IntToGdkVisualType : int -> GdkVisualType
+      datatype GdkWindowClass = INPUT_ONLY | INPUT_OUTPUT
+      val GdkWindowClassToInt : GdkWindowClass -> int
+      val IntToGdkWindowClass : int -> GdkWindowClass
+      datatype GdkWindowType =
+         WINDOW_CHILD | WINDOW_DIALOG | WINDOW_FOREIGN | WINDOW_ROOT |
+         WINDOW_TEMP | WINDOW_TOPLEVEL
+      val GdkWindowTypeToInt : GdkWindowType -> int
+      val IntToGdkWindowType : int -> GdkWindowType
+      datatype GdkWindowAttributesType =
+         WA_COLORMAP | WA_CURSOR | WA_NOREDIR | WA_TITLE | WA_VISUAL |
+         WA_WMCLASS | WA_X | WA_Y
+      val GdkWindowAttributesTypeToInt : GdkWindowAttributesType -> int
+      val IntToGdkWindowAttributesType : int -> GdkWindowAttributesType
+      datatype GdkWindowHints =
+         HINT_ASPECT | HINT_BASE_SIZE | HINT_MAX_SIZE | HINT_MIN_SIZE |
+         HINT_POS | HINT_RESIZE_INC | HINT_USER_POS | HINT_USER_SIZE |
+         HINT_WIN_GRAVITY
+      val GdkWindowHintsToInt : GdkWindowHints -> int
+      val IntToGdkWindowHints : int -> GdkWindowHints
+      datatype GdkWindowTypeHint =
+         WINDOW_TYPE_HINT_DESKTOP | WINDOW_TYPE_HINT_DIALOG |
+         WINDOW_TYPE_HINT_DOCK | WINDOW_TYPE_HINT_MENU |
+         WINDOW_TYPE_HINT_NORMAL | WINDOW_TYPE_HINT_SPLASHSCREEN |
+         WINDOW_TYPE_HINT_TOOLBAR | WINDOW_TYPE_HINT_UTILITY
+      val GdkWindowTypeHintToInt : GdkWindowTypeHint -> int
+      val IntToGdkWindowTypeHint : int -> GdkWindowTypeHint
+      datatype GdkWMDecoration =
+         DECOR_ALL | DECOR_BORDER | DECOR_MAXIMIZE | DECOR_MENU |
+         DECOR_MINIMIZE | DECOR_RESIZEH | DECOR_TITLE
+      val GdkWMDecorationToInt : GdkWMDecoration -> int
+      val IntToGdkWMDecoration : int -> GdkWMDecoration
+      datatype GdkWMFunction =
+         FUNC_ALL | FUNC_CLOSE | FUNC_MAXIMIZE | FUNC_MINIMIZE | FUNC_MOVE |
+         FUNC_RESIZE
+      val GdkWMFunctionToInt : GdkWMFunction -> int
+      val IntToGdkWMFunction : int -> GdkWMFunction
+      datatype GdkGravity =
+         GRAVITY_CENTER | GRAVITY_EAST | GRAVITY_NORTH | GRAVITY_NORTH_EAST |
+         GRAVITY_NORTH_WEST | GRAVITY_SOUTH | GRAVITY_SOUTH_EAST |
+         GRAVITY_SOUTH_WEST | GRAVITY_STATIC | GRAVITY_WEST
+      val GdkGravityToInt : GdkGravity -> int
+      val IntToGdkGravity : int -> GdkGravity
+      datatype GdkWindowEdge =
+         WINDOW_EDGE_EAST | WINDOW_EDGE_NORTH | WINDOW_EDGE_NORTH_EAST |
+         WINDOW_EDGE_NORTH_WEST | WINDOW_EDGE_SOUTH | WINDOW_EDGE_SOUTH_EAST |
+         WINDOW_EDGE_SOUTH_WEST | WINDOW_EDGE_WEST
+      val GdkWindowEdgeToInt : GdkWindowEdge -> int
+      val IntToGdkWindowEdge : int -> GdkWindowEdge
+      val pointGetFieldX : Gtk.object -> int
+      val pointGetFieldY : Gtk.object -> int
+      val pointSetFieldX : Gtk.object * int -> unit
+      val pointSetFieldY : Gtk.object * int -> unit
+      val rectangleGetFieldX : Gtk.object -> int
+      val rectangleGetFieldY : Gtk.object -> int
+      val rectangleGetFieldWidth : Gtk.object -> int
+      val rectangleGetFieldHeight : Gtk.object -> int
+      val rectangleSetFieldX : Gtk.object * int -> unit
+      val rectangleSetFieldY : Gtk.object * int -> unit
+      val rectangleSetFieldWidth : Gtk.object * int -> unit
+      val rectangleSetFieldHeight : Gtk.object * int -> unit
+      val segmentGetFieldX1 : Gtk.object -> int
+      val segmentGetFieldY1 : Gtk.object -> int
+      val segmentGetFieldX2 : Gtk.object -> int
+      val segmentGetFieldY2 : Gtk.object -> int
+      val segmentSetFieldX1 : Gtk.object * int -> unit
+      val segmentSetFieldY1 : Gtk.object * int -> unit
+      val segmentSetFieldX2 : Gtk.object * int -> unit
+      val segmentSetFieldY2 : Gtk.object * int -> unit
+      val spanGetFieldX : Gtk.object -> int
+      val spanGetFieldY : Gtk.object -> int
+      val spanGetFieldWidth : Gtk.object -> int
+      val spanSetFieldX : Gtk.object * int -> unit
+      val spanSetFieldY : Gtk.object * int -> unit
+      val spanSetFieldWidth : Gtk.object * int -> unit
+      val colorGetFieldPixel : Gtk.object -> int
+      val colorGetFieldRed : Gtk.object -> int
+      val colorGetFieldGreen : Gtk.object -> int
+      val colorGetFieldBlue : Gtk.object -> int
+      val colorSetFieldPixel : Gtk.object * int -> unit
+      val colorSetFieldRed : Gtk.object * int -> unit
+      val colorSetFieldGreen : Gtk.object * int -> unit
+      val colorSetFieldBlue : Gtk.object * int -> unit
+      val colormapGetFieldSize : Gtk.object -> int
+      val colormapGetFieldColors : Gtk.object -> Gtk.object
+      val colormapGetFieldVisual : Gtk.object -> Gtk.object
+      val colormapGetFieldWindowingData : Gtk.object -> Gtk.object
+      val colormapSetFieldSize : Gtk.object * int -> unit
+      val colormapSetFieldColors : Gtk.object * Gtk.object -> unit
+      val colormapSetFieldVisual : Gtk.object * Gtk.object -> unit
+      val colormapSetFieldWindowingData : Gtk.object * Gtk.object -> unit
+      val colormapGetType : unit -> int
+      val colormapNew : Gtk.object * bool -> Gtk.object
+      val colormapRef : Gtk.object -> Gtk.object
+      val colormapUnref : Gtk.object -> unit
+      val colormapGetSystem : unit -> Gtk.object
+      val colormapGetScreen : Gtk.object -> Gtk.object
+      val colormapGetSystemSize : unit -> int
+      val colormapChange : Gtk.object * int -> unit
+      val colormapAllocColors :
+         Gtk.object * Gtk.object * int * bool * bool * Gtk.object -> int
+      val colormapAllocColor : Gtk.object * Gtk.object * bool * bool -> bool
+      val colormapFreeColors : Gtk.object * Gtk.object * int -> unit
+      val colormapQueryColor : Gtk.object * int * Gtk.object -> unit
+      val colormapGetVisual : Gtk.object -> Gtk.object
+      val colorCopy : Gtk.object -> Gtk.object
+      val colorFree : Gtk.object -> unit
+      val colorParse : string * Gtk.object -> int
+      val colorHash : Gtk.object -> int
+      val colorEqual : Gtk.object * Gtk.object -> bool
+      val colorGetType : unit -> int
+      val colorsStore : Gtk.object * Gtk.object * int -> unit
+      val colorWhite : Gtk.object * Gtk.object -> int
+      val colorBlack : Gtk.object * Gtk.object -> int
+      val colorAlloc : Gtk.object * Gtk.object -> int
+      val colorChange : Gtk.object * Gtk.object -> int
+      val colorsAlloc : Gtk.object * bool * int * int -> int * int * int
+      val colorsAlloc' :
+         Gtk.object * bool * int * int * int * int -> int * int * int
+      val colorsFree : Gtk.object * int * int -> int
+      val colorsFree' : Gtk.object * int * int * int -> int
+      val pixbufErrorQuark : unit -> int
+      val pixbufGetType : unit -> int
+      val pixbufRef : Gtk.object -> Gtk.object
+      val pixbufUnref : Gtk.object -> unit
+      val pixbufGetColorspace : Gtk.object -> GdkColorspace
+      val pixbufGetNChannels : Gtk.object -> int
+      val pixbufGetHasAlpha : Gtk.object -> bool
+      val pixbufGetBitsPerSample : Gtk.object -> int
+      val pixbufGetPixels : Gtk.object -> string
+      val pixbufGetWidth : Gtk.object -> int
+      val pixbufGetHeight : Gtk.object -> int
+      val pixbufGetRowstride : Gtk.object -> int
+      val pixbufNew : GdkColorspace * bool * int * int * int -> Gtk.object
+      val pixbufCopy : Gtk.object -> Gtk.object
+      val pixbufNewSubpixbuf : Gtk.object * int * int * int * int -> Gtk.object
+      val pixbufNewFromFile : string -> Gtk.object * Gtk.object
+      val pixbufNewFromFile' : string * Gtk.object -> Gtk.object * Gtk.object
+      val pixbufNewFromFileAtSize :
+         string * int * int -> Gtk.object * Gtk.object
+      val pixbufNewFromFileAtSize' :
+         string * int * int * Gtk.object -> Gtk.object * Gtk.object
+      val pixbufNewFromData :
+         string * GdkColorspace * bool * int * int * int * int * Gtk.object *
+            Gtk.object -> Gtk.object
+      val pixbufNewFromInline : int * string * bool -> Gtk.object * Gtk.object
+      val pixbufNewFromInline' :
+         int * string * bool * Gtk.object -> Gtk.object * Gtk.object
+      val pixbufFill : Gtk.object * int -> unit
+      val pixbufSave :
+         Gtk.object * string * string * Core.arg -> bool * Gtk.object
+      val pixbufSave' :
+         Gtk.object * string * string * Gtk.object * Core.arg ->
+            bool * Gtk.object
+      val pixbufSavev :
+         Gtk.object * string * string -> bool * string * string * Gtk.object
+      val pixbufSavev' :
+         Gtk.object * string * string * string * string * Gtk.object ->
+            bool * string * string * Gtk.object
+      val pixbufSaveToCallback :
+         Gtk.object * Gtk.object * Gtk.object * string * Core.arg ->
+            bool * Gtk.object
+      val pixbufSaveToCallback' :
+         Gtk.object * Gtk.object * Gtk.object * string * Gtk.object *
+            Core.arg -> bool * Gtk.object
+      val pixbufSaveToCallbackv :
+         Gtk.object * Gtk.object * Gtk.object * string ->
+            bool * string * string * Gtk.object
+      val pixbufSaveToCallbackv' :
+         Gtk.object * Gtk.object * Gtk.object * string * string * string *
+            Gtk.object -> bool * string * string * Gtk.object
+      val pixbufSaveToBuffer :
+         Gtk.object * string * Core.arg -> bool * string * int * Gtk.object
+      val pixbufSaveToBuffer' :
+         Gtk.object * string * int * string * Gtk.object * Core.arg ->
+            bool * string * int * Gtk.object
+      val pixbufSaveToBufferv :
+         Gtk.object * string ->
+            bool * string * int * string * string * Gtk.object
+      val pixbufSaveToBufferv' :
+         Gtk.object * string * int * string * string * string * Gtk.object ->
+            bool * string * int * string * string * Gtk.object
+      val pixbufAddAlpha : Gtk.object * bool * int * int * int -> Gtk.object
+      val pixbufCopyArea :
+         Gtk.object * int * int * int * int * Gtk.object * int * int -> unit
+      val pixbufSaturateAndPixelate :
+         Gtk.object * Gtk.object * real * bool -> unit
+      val pixbufScale :
+         Gtk.object * Gtk.object * int * int * int * int * real * real * real *
+            real * GdkInterpType -> unit
+      val pixbufComposite :
+         Gtk.object * Gtk.object * int * int * int * int * real * real * real *
+            real * GdkInterpType * int -> unit
+      val pixbufScaleSimple :
+         Gtk.object * int * int * GdkInterpType -> Gtk.object
+      val pixbufCompositeColorSimple :
+         Gtk.object * int * int * GdkInterpType * int * int * int * int ->
+            Gtk.object
+      val pixbufAnimationGetType : unit -> int
+      val pixbufAnimationNewFromFile : string -> Gtk.object * Gtk.object
+      val pixbufAnimationNewFromFile' :
+         string * Gtk.object -> Gtk.object * Gtk.object
+      val pixbufAnimationRef : Gtk.object -> Gtk.object
+      val pixbufAnimationUnref : Gtk.object -> unit
+      val pixbufAnimationGetWidth : Gtk.object -> int
+      val pixbufAnimationGetHeight : Gtk.object -> int
+      val pixbufAnimationIsStaticImage : Gtk.object -> bool
+      val pixbufAnimationGetStaticImage : Gtk.object -> Gtk.object
+      val pixbufAnimationGetIter : Gtk.object * Gtk.object -> Gtk.object
+      val pixbufAnimationIterGetType : unit -> int
+      val pixbufAnimationIterGetDelayTime : Gtk.object -> int
+      val pixbufAnimationIterGetPixbuf : Gtk.object -> Gtk.object
+      val pixbufAnimationIterOnCurrentlyLoadingFrame : Gtk.object -> bool
+      val pixbufAnimationIterAdvance : Gtk.object * Gtk.object -> bool
+      val pixbufGetOption : Gtk.object * string -> string
+      val pixbufGetFormats : unit -> Gtk.object list
+      val pixbufFormatGetName : Gtk.object -> string
+      val pixbufFormatGetDescription : Gtk.object -> string
+      val pixbufFormatGetMimeTypes : Gtk.object -> Gtk.object
+      val pixbufFormatGetExtensions : Gtk.object -> Gtk.object
+      val pixbufFormatIsWritable : Gtk.object -> bool
+      val pixbufGetFileInfo : string -> Gtk.object * int * int
+      val pixbufGetFileInfo' : string * int * int -> Gtk.object * int * int
+      val pixbufLoaderGetFieldPriv : Gtk.object -> Gtk.object
+      val pixbufLoaderSetFieldPriv : Gtk.object * Gtk.object -> unit
+      val pixbufLoaderGetType : unit -> int
+      val pixbufLoaderNew : unit -> Gtk.object
+      val pixbufLoaderNewWithType : string -> Gtk.object * Gtk.object
+      val pixbufLoaderNewWithType' :
+         string * Gtk.object -> Gtk.object * Gtk.object
+      val pixbufLoaderNewWithMimeType : string -> Gtk.object * Gtk.object
+      val pixbufLoaderNewWithMimeType' :
+         string * Gtk.object -> Gtk.object * Gtk.object
+      val pixbufLoaderSetSize : Gtk.object * int * int -> unit
+      val pixbufLoaderWrite : Gtk.object * string * int -> bool * Gtk.object
+      val pixbufLoaderWrite' :
+         Gtk.object * string * int * Gtk.object -> bool * Gtk.object
+      val pixbufLoaderGetPixbuf : Gtk.object -> Gtk.object
+      val pixbufLoaderGetAnimation : Gtk.object -> Gtk.object
+      val pixbufLoaderClose : Gtk.object -> bool * Gtk.object
+      val pixbufLoaderClose' : Gtk.object * Gtk.object -> bool * Gtk.object
+      val pixbufLoaderGetFormat : Gtk.object -> Gtk.object
+      val pixbufAlphaModeGetType : unit -> int
+      val colorspaceGetType : unit -> int
+      val pixbufErrorGetType : unit -> int
+      val interpTypeGetType : unit -> int
+      val cursorGetFieldType : Gtk.object -> GdkCursorType
+      val cursorGetFieldRefCount : Gtk.object -> int
+      val cursorSetFieldType : Gtk.object * GdkCursorType -> unit
+      val cursorSetFieldRefCount : Gtk.object * int -> unit
+      val cursorGetType : unit -> int
+      val cursorNewForDisplay : Gtk.object * GdkCursorType -> Gtk.object
+      val cursorNew : GdkCursorType -> Gtk.object
+      val cursorNewFromPixmap :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object * int * int ->
+            Gtk.object
+      val cursorNewFromPixbuf :
+         Gtk.object * Gtk.object * int * int -> Gtk.object
+      val cursorGetDisplay : Gtk.object -> Gtk.object
+      val cursorRef : Gtk.object -> Gtk.object
+      val cursorUnref : Gtk.object -> unit
+      val dragContextGetFieldProtocol : Gtk.object -> GdkDragProtocol
+      val dragContextGetFieldIsSource : Gtk.object -> bool
+      val dragContextGetFieldSourceWindow : Gtk.object -> Gtk.object
+      val dragContextGetFieldDestWindow : Gtk.object -> Gtk.object
+      val dragContextGetFieldTargets : Gtk.object -> Gtk.object list
+      val dragContextGetFieldActions : Gtk.object -> GdkDragAction
+      val dragContextGetFieldSuggestedAction : Gtk.object -> GdkDragAction
+      val dragContextGetFieldAction : Gtk.object -> GdkDragAction
+      val dragContextGetFieldStartTime : Gtk.object -> int
+      val dragContextGetFieldWindowingData : Gtk.object -> Gtk.object
+      val dragContextSetFieldProtocol : Gtk.object * GdkDragProtocol -> unit
+      val dragContextSetFieldIsSource : Gtk.object * bool -> unit
+      val dragContextSetFieldSourceWindow : Gtk.object * Gtk.object -> unit
+      val dragContextSetFieldDestWindow : Gtk.object * Gtk.object -> unit
+      val dragContextSetFieldTargets : Gtk.object * Gtk.object list -> unit
+      val dragContextSetFieldActions : Gtk.object * GdkDragAction -> unit
+      val dragContextSetFieldSuggestedAction :
+         Gtk.object * GdkDragAction -> unit
+      val dragContextSetFieldAction : Gtk.object * GdkDragAction -> unit
+      val dragContextSetFieldStartTime : Gtk.object * int -> unit
+      val dragContextSetFieldWindowingData : Gtk.object * Gtk.object -> unit
+      val dragContextGetType : unit -> int
+      val dragContextNew : unit -> Gtk.object
+      val dragContextRef : Gtk.object -> unit
+      val dragContextUnref : Gtk.object -> unit
+      val dragStatus : Gtk.object * GdkDragAction * int -> unit
+      val dropReply : Gtk.object * bool * int -> unit
+      val dropFinish : Gtk.object * bool * int -> unit
+      val dragGetSelection : Gtk.object -> Gtk.object
+      val dragBegin : Gtk.object * Gtk.object list -> Gtk.object
+      val dragGetProtocolForDisplay : Gtk.object * int -> int * GdkDragProtocol
+      val dragGetProtocolForDisplay' :
+         Gtk.object * int * GdkDragProtocol -> int * GdkDragProtocol
+      val dragFindWindowForScreen :
+         Gtk.object * Gtk.object * Gtk.object * int * int ->
+            Gtk.object * GdkDragProtocol
+      val dragFindWindowForScreen' :
+         Gtk.object * Gtk.object * Gtk.object * int * int * Gtk.object *
+            GdkDragProtocol -> Gtk.object * GdkDragProtocol
+      val dragGetProtocol : int -> int * GdkDragProtocol
+      val dragGetProtocol' : int * GdkDragProtocol -> int * GdkDragProtocol
+      val dragFindWindow :
+         Gtk.object * Gtk.object * int * int -> Gtk.object * GdkDragProtocol
+      val dragFindWindow' :
+         Gtk.object * Gtk.object * int * int * Gtk.object * GdkDragProtocol ->
+            Gtk.object * GdkDragProtocol
+      val dragMotion :
+         Gtk.object * Gtk.object * GdkDragProtocol * int * int * GdkDragAction *
+            GdkDragAction * int -> bool
+      val dragDrop : Gtk.object * int -> unit
+      val dragAbort : Gtk.object * int -> unit
+      val deviceKeyGetFieldKeyval : Gtk.object -> int
+      val deviceKeyGetFieldModifiers : Gtk.object -> GdkModifierType
+      val deviceKeySetFieldKeyval : Gtk.object * int -> unit
+      val deviceKeySetFieldModifiers : Gtk.object * GdkModifierType -> unit
+      val deviceAxisGetFieldUse : Gtk.object -> GdkAxisUse
+      val deviceAxisGetFieldMin : Gtk.object -> real
+      val deviceAxisGetFieldMax : Gtk.object -> real
+      val deviceAxisSetFieldUse : Gtk.object * GdkAxisUse -> unit
+      val deviceAxisSetFieldMin : Gtk.object * real -> unit
+      val deviceAxisSetFieldMax : Gtk.object * real -> unit
+      val deviceGetFieldName : Gtk.object -> string
+      val deviceGetFieldSource : Gtk.object -> GdkInputSource
+      val deviceGetFieldMode : Gtk.object -> GdkInputMode
+      val deviceGetFieldHasCursor : Gtk.object -> bool
+      val deviceGetFieldNumAxes : Gtk.object -> int
+      val deviceGetFieldAxes : Gtk.object -> Gtk.object
+      val deviceGetFieldNumKeys : Gtk.object -> int
+      val deviceGetFieldKeys : Gtk.object -> Gtk.object
+      val deviceSetFieldName : Gtk.object * string -> unit
+      val deviceSetFieldSource : Gtk.object * GdkInputSource -> unit
+      val deviceSetFieldMode : Gtk.object * GdkInputMode -> unit
+      val deviceSetFieldHasCursor : Gtk.object * bool -> unit
+      val deviceSetFieldNumAxes : Gtk.object * int -> unit
+      val deviceSetFieldAxes : Gtk.object * Gtk.object -> unit
+      val deviceSetFieldNumKeys : Gtk.object * int -> unit
+      val deviceSetFieldKeys : Gtk.object * Gtk.object -> unit
+      val timeCoordGetFieldTime : Gtk.object -> int
+      val timeCoordSetFieldTime : Gtk.object * int -> unit
+      val deviceGetType : unit -> int
+      val devicesList : unit -> Gtk.object list
+      val deviceSetSource : Gtk.object * GdkInputSource -> unit
+      val deviceSetMode : Gtk.object * GdkInputMode -> bool
+      val deviceSetKey : Gtk.object * int * int * GdkModifierType -> unit
+      val deviceSetAxisUse : Gtk.object * int * GdkAxisUse -> unit
+      val deviceGetState : Gtk.object * Gtk.object -> real * GdkModifierType
+      val deviceGetState' :
+         Gtk.object * Gtk.object * real * GdkModifierType ->
+            real * GdkModifierType
+      val deviceGetHistory :
+         Gtk.object * Gtk.object * int * int -> bool * Gtk.object * int
+      val deviceGetHistory' :
+         Gtk.object * Gtk.object * int * int * Gtk.object * int ->
+            bool * Gtk.object * int
+      val deviceFreeHistory : int -> Gtk.object
+      val deviceFreeHistory' : Gtk.object * int -> Gtk.object
+      val deviceGetAxis : Gtk.object * GdkAxisUse -> bool * real * real
+      val deviceGetAxis' :
+         Gtk.object * real * GdkAxisUse * real -> bool * real * real
+      val inputSetExtensionEvents : Gtk.object * int * GdkExtensionMode -> unit
+      val deviceGetCorePointer : unit -> Gtk.object
+      val eventAnyGetFieldType : Gtk.object -> GdkEventType
+      val eventAnyGetFieldWindow : Gtk.object -> Gtk.object
+      val eventAnyGetFieldSendEvent : Gtk.object -> int
+      val eventAnySetFieldType : Gtk.object * GdkEventType -> unit
+      val eventAnySetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventAnySetFieldSendEvent : Gtk.object * int -> unit
+      val eventExposeGetFieldType : Gtk.object -> GdkEventType
+      val eventExposeGetFieldWindow : Gtk.object -> Gtk.object
+      val eventExposeGetFieldSendEvent : Gtk.object -> int
+      val eventExposeGetFieldRegion : Gtk.object -> Gtk.object
+      val eventExposeGetFieldCount : Gtk.object -> int
+      val eventExposeSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventExposeSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventExposeSetFieldSendEvent : Gtk.object * int -> unit
+      val eventExposeSetFieldRegion : Gtk.object * Gtk.object -> unit
+      val eventExposeSetFieldCount : Gtk.object * int -> unit
+      val eventNoExposeGetFieldType : Gtk.object -> GdkEventType
+      val eventNoExposeGetFieldWindow : Gtk.object -> Gtk.object
+      val eventNoExposeGetFieldSendEvent : Gtk.object -> int
+      val eventNoExposeSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventNoExposeSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventNoExposeSetFieldSendEvent : Gtk.object * int -> unit
+      val eventVisibilityGetFieldType : Gtk.object -> GdkEventType
+      val eventVisibilityGetFieldWindow : Gtk.object -> Gtk.object
+      val eventVisibilityGetFieldSendEvent : Gtk.object -> int
+      val eventVisibilityGetFieldState : Gtk.object -> GdkVisibilityState
+      val eventVisibilitySetFieldType : Gtk.object * GdkEventType -> unit
+      val eventVisibilitySetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventVisibilitySetFieldSendEvent : Gtk.object * int -> unit
+      val eventVisibilitySetFieldState : Gtk.object * GdkVisibilityState -> unit
+      val eventMotionGetFieldType : Gtk.object -> GdkEventType
+      val eventMotionGetFieldWindow : Gtk.object -> Gtk.object
+      val eventMotionGetFieldSendEvent : Gtk.object -> int
+      val eventMotionGetFieldTime : Gtk.object -> int
+      val eventMotionGetFieldX : Gtk.object -> real
+      val eventMotionGetFieldY : Gtk.object -> real
+      val eventMotionGetFieldAxes : Gtk.object -> Gtk.object
+      val eventMotionGetFieldState : Gtk.object -> int
+      val eventMotionGetFieldIsHint : Gtk.object -> int
+      val eventMotionGetFieldDevice : Gtk.object -> Gtk.object
+      val eventMotionGetFieldXRoot : Gtk.object -> real
+      val eventMotionGetFieldYRoot : Gtk.object -> real
+      val eventMotionSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventMotionSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventMotionSetFieldSendEvent : Gtk.object * int -> unit
+      val eventMotionSetFieldTime : Gtk.object * int -> unit
+      val eventMotionSetFieldX : Gtk.object * real -> unit
+      val eventMotionSetFieldY : Gtk.object * real -> unit
+      val eventMotionSetFieldAxes : Gtk.object * Gtk.object -> unit
+      val eventMotionSetFieldState : Gtk.object * int -> unit
+      val eventMotionSetFieldIsHint : Gtk.object * int -> unit
+      val eventMotionSetFieldDevice : Gtk.object * Gtk.object -> unit
+      val eventMotionSetFieldXRoot : Gtk.object * real -> unit
+      val eventMotionSetFieldYRoot : Gtk.object * real -> unit
+      val eventButtonGetFieldType : Gtk.object -> GdkEventType
+      val eventButtonGetFieldWindow : Gtk.object -> Gtk.object
+      val eventButtonGetFieldSendEvent : Gtk.object -> int
+      val eventButtonGetFieldTime : Gtk.object -> int
+      val eventButtonGetFieldX : Gtk.object -> real
+      val eventButtonGetFieldY : Gtk.object -> real
+      val eventButtonGetFieldAxes : Gtk.object -> Gtk.object
+      val eventButtonGetFieldState : Gtk.object -> int
+      val eventButtonGetFieldButton : Gtk.object -> int
+      val eventButtonGetFieldDevice : Gtk.object -> Gtk.object
+      val eventButtonGetFieldXRoot : Gtk.object -> real
+      val eventButtonGetFieldYRoot : Gtk.object -> real
+      val eventButtonSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventButtonSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventButtonSetFieldSendEvent : Gtk.object * int -> unit
+      val eventButtonSetFieldTime : Gtk.object * int -> unit
+      val eventButtonSetFieldX : Gtk.object * real -> unit
+      val eventButtonSetFieldY : Gtk.object * real -> unit
+      val eventButtonSetFieldAxes : Gtk.object * Gtk.object -> unit
+      val eventButtonSetFieldState : Gtk.object * int -> unit
+      val eventButtonSetFieldButton : Gtk.object * int -> unit
+      val eventButtonSetFieldDevice : Gtk.object * Gtk.object -> unit
+      val eventButtonSetFieldXRoot : Gtk.object * real -> unit
+      val eventButtonSetFieldYRoot : Gtk.object * real -> unit
+      val eventScrollGetFieldType : Gtk.object -> GdkEventType
+      val eventScrollGetFieldWindow : Gtk.object -> Gtk.object
+      val eventScrollGetFieldSendEvent : Gtk.object -> int
+      val eventScrollGetFieldTime : Gtk.object -> int
+      val eventScrollGetFieldX : Gtk.object -> real
+      val eventScrollGetFieldY : Gtk.object -> real
+      val eventScrollGetFieldState : Gtk.object -> int
+      val eventScrollGetFieldDirection : Gtk.object -> GdkScrollDirection
+      val eventScrollGetFieldDevice : Gtk.object -> Gtk.object
+      val eventScrollGetFieldXRoot : Gtk.object -> real
+      val eventScrollGetFieldYRoot : Gtk.object -> real
+      val eventScrollSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventScrollSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventScrollSetFieldSendEvent : Gtk.object * int -> unit
+      val eventScrollSetFieldTime : Gtk.object * int -> unit
+      val eventScrollSetFieldX : Gtk.object * real -> unit
+      val eventScrollSetFieldY : Gtk.object * real -> unit
+      val eventScrollSetFieldState : Gtk.object * int -> unit
+      val eventScrollSetFieldDirection : Gtk.object * GdkScrollDirection -> unit
+      val eventScrollSetFieldDevice : Gtk.object * Gtk.object -> unit
+      val eventScrollSetFieldXRoot : Gtk.object * real -> unit
+      val eventScrollSetFieldYRoot : Gtk.object * real -> unit
+      val eventKeyGetFieldType : Gtk.object -> GdkEventType
+      val eventKeyGetFieldWindow : Gtk.object -> Gtk.object
+      val eventKeyGetFieldSendEvent : Gtk.object -> int
+      val eventKeyGetFieldTime : Gtk.object -> int
+      val eventKeyGetFieldState : Gtk.object -> int
+      val eventKeyGetFieldKeyval : Gtk.object -> int
+      val eventKeyGetFieldLength : Gtk.object -> int
+      val eventKeyGetFieldString : Gtk.object -> string
+      val eventKeyGetFieldHardwareKeycode : Gtk.object -> int
+      val eventKeyGetFieldGroup : Gtk.object -> int
+      val eventKeySetFieldType : Gtk.object * GdkEventType -> unit
+      val eventKeySetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventKeySetFieldSendEvent : Gtk.object * int -> unit
+      val eventKeySetFieldTime : Gtk.object * int -> unit
+      val eventKeySetFieldState : Gtk.object * int -> unit
+      val eventKeySetFieldKeyval : Gtk.object * int -> unit
+      val eventKeySetFieldLength : Gtk.object * int -> unit
+      val eventKeySetFieldString : Gtk.object * string -> unit
+      val eventKeySetFieldHardwareKeycode : Gtk.object * int -> unit
+      val eventKeySetFieldGroup : Gtk.object * int -> unit
+      val eventCrossingGetFieldType : Gtk.object -> GdkEventType
+      val eventCrossingGetFieldWindow : Gtk.object -> Gtk.object
+      val eventCrossingGetFieldSendEvent : Gtk.object -> int
+      val eventCrossingGetFieldSubwindow : Gtk.object -> Gtk.object
+      val eventCrossingGetFieldTime : Gtk.object -> int
+      val eventCrossingGetFieldX : Gtk.object -> real
+      val eventCrossingGetFieldY : Gtk.object -> real
+      val eventCrossingGetFieldXRoot : Gtk.object -> real
+      val eventCrossingGetFieldYRoot : Gtk.object -> real
+      val eventCrossingGetFieldMode : Gtk.object -> GdkCrossingMode
+      val eventCrossingGetFieldDetail : Gtk.object -> GdkNotifyType
+      val eventCrossingGetFieldFocus : Gtk.object -> bool
+      val eventCrossingGetFieldState : Gtk.object -> int
+      val eventCrossingSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventCrossingSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventCrossingSetFieldSendEvent : Gtk.object * int -> unit
+      val eventCrossingSetFieldSubwindow : Gtk.object * Gtk.object -> unit
+      val eventCrossingSetFieldTime : Gtk.object * int -> unit
+      val eventCrossingSetFieldX : Gtk.object * real -> unit
+      val eventCrossingSetFieldY : Gtk.object * real -> unit
+      val eventCrossingSetFieldXRoot : Gtk.object * real -> unit
+      val eventCrossingSetFieldYRoot : Gtk.object * real -> unit
+      val eventCrossingSetFieldMode : Gtk.object * GdkCrossingMode -> unit
+      val eventCrossingSetFieldDetail : Gtk.object * GdkNotifyType -> unit
+      val eventCrossingSetFieldFocus : Gtk.object * bool -> unit
+      val eventCrossingSetFieldState : Gtk.object * int -> unit
+      val eventFocusGetFieldType : Gtk.object -> GdkEventType
+      val eventFocusGetFieldWindow : Gtk.object -> Gtk.object
+      val eventFocusGetFieldSendEvent : Gtk.object -> int
+      val eventFocusGetFieldIn : Gtk.object -> int
+      val eventFocusSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventFocusSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventFocusSetFieldSendEvent : Gtk.object * int -> unit
+      val eventFocusSetFieldIn : Gtk.object * int -> unit
+      val eventConfigureGetFieldType : Gtk.object -> GdkEventType
+      val eventConfigureGetFieldWindow : Gtk.object -> Gtk.object
+      val eventConfigureGetFieldSendEvent : Gtk.object -> int
+      val eventConfigureGetFieldX : Gtk.object -> int
+      val eventConfigureGetFieldY : Gtk.object -> int
+      val eventConfigureGetFieldWidth : Gtk.object -> int
+      val eventConfigureGetFieldHeight : Gtk.object -> int
+      val eventConfigureSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventConfigureSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventConfigureSetFieldSendEvent : Gtk.object * int -> unit
+      val eventConfigureSetFieldX : Gtk.object * int -> unit
+      val eventConfigureSetFieldY : Gtk.object * int -> unit
+      val eventConfigureSetFieldWidth : Gtk.object * int -> unit
+      val eventConfigureSetFieldHeight : Gtk.object * int -> unit
+      val eventPropertyGetFieldType : Gtk.object -> GdkEventType
+      val eventPropertyGetFieldWindow : Gtk.object -> Gtk.object
+      val eventPropertyGetFieldSendEvent : Gtk.object -> int
+      val eventPropertyGetFieldAtom : Gtk.object -> Gtk.object
+      val eventPropertyGetFieldTime : Gtk.object -> int
+      val eventPropertyGetFieldState : Gtk.object -> int
+      val eventPropertySetFieldType : Gtk.object * GdkEventType -> unit
+      val eventPropertySetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventPropertySetFieldSendEvent : Gtk.object * int -> unit
+      val eventPropertySetFieldAtom : Gtk.object * Gtk.object -> unit
+      val eventPropertySetFieldTime : Gtk.object * int -> unit
+      val eventPropertySetFieldState : Gtk.object * int -> unit
+      val eventSelectionGetFieldType : Gtk.object -> GdkEventType
+      val eventSelectionGetFieldWindow : Gtk.object -> Gtk.object
+      val eventSelectionGetFieldSendEvent : Gtk.object -> int
+      val eventSelectionGetFieldSelection : Gtk.object -> Gtk.object
+      val eventSelectionGetFieldTarget : Gtk.object -> Gtk.object
+      val eventSelectionGetFieldProperty : Gtk.object -> Gtk.object
+      val eventSelectionGetFieldTime : Gtk.object -> int
+      val eventSelectionGetFieldRequestor : Gtk.object -> int
+      val eventSelectionSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventSelectionSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventSelectionSetFieldSendEvent : Gtk.object * int -> unit
+      val eventSelectionSetFieldSelection : Gtk.object * Gtk.object -> unit
+      val eventSelectionSetFieldTarget : Gtk.object * Gtk.object -> unit
+      val eventSelectionSetFieldProperty : Gtk.object * Gtk.object -> unit
+      val eventSelectionSetFieldTime : Gtk.object * int -> unit
+      val eventSelectionSetFieldRequestor : Gtk.object * int -> unit
+      val eventProximityGetFieldType : Gtk.object -> GdkEventType
+      val eventProximityGetFieldWindow : Gtk.object -> Gtk.object
+      val eventProximityGetFieldSendEvent : Gtk.object -> int
+      val eventProximityGetFieldTime : Gtk.object -> int
+      val eventProximityGetFieldDevice : Gtk.object -> Gtk.object
+      val eventProximitySetFieldType : Gtk.object * GdkEventType -> unit
+      val eventProximitySetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventProximitySetFieldSendEvent : Gtk.object * int -> unit
+      val eventProximitySetFieldTime : Gtk.object * int -> unit
+      val eventProximitySetFieldDevice : Gtk.object * Gtk.object -> unit
+      val eventClientGetFieldType : Gtk.object -> GdkEventType
+      val eventClientGetFieldWindow : Gtk.object -> Gtk.object
+      val eventClientGetFieldSendEvent : Gtk.object -> int
+      val eventClientGetFieldMessageType : Gtk.object -> Gtk.object
+      val eventClientGetFieldDataFormat : Gtk.object -> int
+      val eventClientSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventClientSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventClientSetFieldSendEvent : Gtk.object * int -> unit
+      val eventClientSetFieldMessageType : Gtk.object * Gtk.object -> unit
+      val eventClientSetFieldDataFormat : Gtk.object * int -> unit
+      val eventSettingGetFieldType : Gtk.object -> GdkEventType
+      val eventSettingGetFieldWindow : Gtk.object -> Gtk.object
+      val eventSettingGetFieldSendEvent : Gtk.object -> int
+      val eventSettingGetFieldAction : Gtk.object -> GdkSettingAction
+      val eventSettingGetFieldName : Gtk.object -> string
+      val eventSettingSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventSettingSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventSettingSetFieldSendEvent : Gtk.object * int -> unit
+      val eventSettingSetFieldAction : Gtk.object * GdkSettingAction -> unit
+      val eventSettingSetFieldName : Gtk.object * string -> unit
+      val eventWindowStateGetFieldType : Gtk.object -> GdkEventType
+      val eventWindowStateGetFieldWindow : Gtk.object -> Gtk.object
+      val eventWindowStateGetFieldSendEvent : Gtk.object -> int
+      val eventWindowStateGetFieldChangedMask : Gtk.object -> GdkWindowState
+      val eventWindowStateGetFieldNewWindowState : Gtk.object -> GdkWindowState
+      val eventWindowStateSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventWindowStateSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventWindowStateSetFieldSendEvent : Gtk.object * int -> unit
+      val eventWindowStateSetFieldChangedMask :
+         Gtk.object * GdkWindowState -> unit
+      val eventWindowStateSetFieldNewWindowState :
+         Gtk.object * GdkWindowState -> unit
+      val eventDNDGetFieldType : Gtk.object -> GdkEventType
+      val eventDNDGetFieldWindow : Gtk.object -> Gtk.object
+      val eventDNDGetFieldSendEvent : Gtk.object -> int
+      val eventDNDGetFieldContext : Gtk.object -> Gtk.object
+      val eventDNDGetFieldTime : Gtk.object -> int
+      val eventDNDGetFieldXRoot : Gtk.object -> int
+      val eventDNDGetFieldYRoot : Gtk.object -> int
+      val eventDNDSetFieldType : Gtk.object * GdkEventType -> unit
+      val eventDNDSetFieldWindow : Gtk.object * Gtk.object -> unit
+      val eventDNDSetFieldSendEvent : Gtk.object * int -> unit
+      val eventDNDSetFieldContext : Gtk.object * Gtk.object -> unit
+      val eventDNDSetFieldTime : Gtk.object * int -> unit
+      val eventDNDSetFieldXRoot : Gtk.object * int -> unit
+      val eventDNDSetFieldYRoot : Gtk.object * int -> unit
+      val eventGetType : unit -> int
+      val eventsPending : unit -> bool
+      val eventGet : unit -> Gtk.object
+      val eventPeek : unit -> Gtk.object
+      val eventGetGraphicsExpose : Gtk.object -> Gtk.object
+      val eventPut : Gtk.object -> unit
+      val eventNew : GdkEventType -> Gtk.object
+      val eventCopy : Gtk.object -> Gtk.object
+      val eventFree : Gtk.object -> unit
+      val eventGetTime : Gtk.object -> int
+      val eventGetState : Gtk.object -> bool * GdkModifierType
+      val eventGetState' :
+         Gtk.object * GdkModifierType -> bool * GdkModifierType
+      val eventGetCoords : Gtk.object -> bool * real * real
+      val eventGetCoords' : Gtk.object * real * real -> bool * real * real
+      val eventGetRootCoords : Gtk.object -> bool * real * real
+      val eventGetRootCoords' : Gtk.object * real * real -> bool * real * real
+      val eventGetAxis : Gtk.object * GdkAxisUse -> bool * real
+      val eventGetAxis' : Gtk.object * GdkAxisUse * real -> bool * real
+      val eventHandlerSet : Gtk.object * Gtk.object * Gtk.object -> unit
+      val eventSetScreen : Gtk.object * Gtk.object -> unit
+      val eventGetScreen : Gtk.object -> Gtk.object
+      val setShowEvents : bool -> unit
+      val getShowEvents : unit -> bool
+      val addClientMessageFilter : Gtk.object * Gtk.object * Gtk.object -> unit
+      val settingGet : string * Gtk.object -> bool
+      val displayGetFieldQueuedEvents : Gtk.object -> Gtk.object list
+      val displayGetFieldQueuedTail : Gtk.object -> Gtk.object list
+      val displayGetFieldDoubleClickTime : Gtk.object -> int
+      val displayGetFieldCorePointer : Gtk.object -> Gtk.object
+      val displayGetFieldPointerHooks : Gtk.object -> Gtk.object
+      val displayGetFieldClosed : Gtk.object -> int
+      val displayGetFieldDoubleClickDistance : Gtk.object -> int
+      val displaySetFieldQueuedEvents : Gtk.object * Gtk.object list -> unit
+      val displaySetFieldQueuedTail : Gtk.object * Gtk.object list -> unit
+      val displaySetFieldDoubleClickTime : Gtk.object * int -> unit
+      val displaySetFieldCorePointer : Gtk.object * Gtk.object -> unit
+      val displaySetFieldPointerHooks : Gtk.object * Gtk.object -> unit
+      val displaySetFieldClosed : Gtk.object * int -> unit
+      val displaySetFieldDoubleClickDistance : Gtk.object * int -> unit
+      val displayGetType : unit -> int
+      val displayOpen : string -> Gtk.object
+      val displayGetName : Gtk.object -> string
+      val displayGetNScreens : Gtk.object -> int
+      val displayGetScreen : Gtk.object * int -> Gtk.object
+      val displayGetDefaultScreen : Gtk.object -> Gtk.object
+      val displayPointerUngrab : Gtk.object * int -> unit
+      val displayKeyboardUngrab : Gtk.object * int -> unit
+      val displayPointerIsGrabbed : Gtk.object -> bool
+      val displayBeep : Gtk.object -> unit
+      val displaySync : Gtk.object -> unit
+      val displayFlush : Gtk.object -> unit
+      val displayClose : Gtk.object -> unit
+      val displayListDevices : Gtk.object -> Gtk.object list
+      val displayGetEvent : Gtk.object -> Gtk.object
+      val displayPeekEvent : Gtk.object -> Gtk.object
+      val displayPutEvent : Gtk.object * Gtk.object -> unit
+      val displayAddClientMessageFilter :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object -> unit
+      val displaySetDoubleClickTime : Gtk.object * int -> unit
+      val displaySetDoubleClickDistance : Gtk.object * int -> unit
+      val displayGetDefault : unit -> Gtk.object
+      val displayGetCorePointer : Gtk.object -> Gtk.object
+      val displayGetPointer :
+         Gtk.object -> Gtk.object * int * int * GdkModifierType
+      val displayGetPointer' :
+         Gtk.object * Gtk.object * int * int * GdkModifierType ->
+            Gtk.object * int * int * GdkModifierType
+      val displayGetWindowAtPointer : Gtk.object -> Gtk.object * int * int
+      val displayGetWindowAtPointer' :
+         Gtk.object * int * int -> Gtk.object * int * int
+      val displaySetPointerHooks : Gtk.object * Gtk.object -> Gtk.object
+      val displayOpenDefaultLibgtkOnly : unit -> Gtk.object
+      val displaySupportsCursorAlpha : Gtk.object -> bool
+      val displaySupportsCursorColor : Gtk.object -> bool
+      val displayGetDefaultCursorSize : Gtk.object -> int
+      val displayGetMaximalCursorSize : Gtk.object -> int * int
+      val displayGetMaximalCursorSize' : Gtk.object * int * int -> int * int
+      val displayGetDefaultGroup : Gtk.object -> Gtk.object
+      val gCValuesGetFieldFont : Gtk.object -> Gtk.object
+      val gCValuesGetFieldFunction : Gtk.object -> GdkFunction
+      val gCValuesGetFieldFill : Gtk.object -> GdkFill
+      val gCValuesGetFieldTile : Gtk.object -> Gtk.object
+      val gCValuesGetFieldStipple : Gtk.object -> Gtk.object
+      val gCValuesGetFieldClipMask : Gtk.object -> Gtk.object
+      val gCValuesGetFieldSubwindowMode : Gtk.object -> GdkSubwindowMode
+      val gCValuesGetFieldTsXOrigin : Gtk.object -> int
+      val gCValuesGetFieldTsYOrigin : Gtk.object -> int
+      val gCValuesGetFieldClipXOrigin : Gtk.object -> int
+      val gCValuesGetFieldClipYOrigin : Gtk.object -> int
+      val gCValuesGetFieldGraphicsExposures : Gtk.object -> int
+      val gCValuesGetFieldLineWidth : Gtk.object -> int
+      val gCValuesGetFieldLineStyle : Gtk.object -> GdkLineStyle
+      val gCValuesGetFieldCapStyle : Gtk.object -> GdkCapStyle
+      val gCValuesGetFieldJoinStyle : Gtk.object -> GdkJoinStyle
+      val gCValuesSetFieldFont : Gtk.object * Gtk.object -> unit
+      val gCValuesSetFieldFunction : Gtk.object * GdkFunction -> unit
+      val gCValuesSetFieldFill : Gtk.object * GdkFill -> unit
+      val gCValuesSetFieldTile : Gtk.object * Gtk.object -> unit
+      val gCValuesSetFieldStipple : Gtk.object * Gtk.object -> unit
+      val gCValuesSetFieldClipMask : Gtk.object * Gtk.object -> unit
+      val gCValuesSetFieldSubwindowMode : Gtk.object * GdkSubwindowMode -> unit
+      val gCValuesSetFieldTsXOrigin : Gtk.object * int -> unit
+      val gCValuesSetFieldTsYOrigin : Gtk.object * int -> unit
+      val gCValuesSetFieldClipXOrigin : Gtk.object * int -> unit
+      val gCValuesSetFieldClipYOrigin : Gtk.object * int -> unit
+      val gCValuesSetFieldGraphicsExposures : Gtk.object * int -> unit
+      val gCValuesSetFieldLineWidth : Gtk.object * int -> unit
+      val gCValuesSetFieldLineStyle : Gtk.object * GdkLineStyle -> unit
+      val gCValuesSetFieldCapStyle : Gtk.object * GdkCapStyle -> unit
+      val gCValuesSetFieldJoinStyle : Gtk.object * GdkJoinStyle -> unit
+      val gCGetFieldClipXOrigin : Gtk.object -> int
+      val gCGetFieldClipYOrigin : Gtk.object -> int
+      val gCGetFieldTsXOrigin : Gtk.object -> int
+      val gCGetFieldTsYOrigin : Gtk.object -> int
+      val gCGetFieldColormap : Gtk.object -> Gtk.object
+      val gCSetFieldClipXOrigin : Gtk.object * int -> unit
+      val gCSetFieldClipYOrigin : Gtk.object * int -> unit
+      val gCSetFieldTsXOrigin : Gtk.object * int -> unit
+      val gCSetFieldTsYOrigin : Gtk.object * int -> unit
+      val gCSetFieldColormap : Gtk.object * Gtk.object -> unit
+      val gcGetType : unit -> int
+      val gcNew : Gtk.object -> Gtk.object
+      val gcNewWithValues :
+         Gtk.object * Gtk.object * GdkGCValuesMask -> Gtk.object
+      val gcRef : Gtk.object -> Gtk.object
+      val gcUnref : Gtk.object -> unit
+      val gcGetValues : Gtk.object * Gtk.object -> unit
+      val gcSetValues : Gtk.object * Gtk.object * GdkGCValuesMask -> unit
+      val gcSetForeground : Gtk.object * Gtk.object -> unit
+      val gcSetBackground : Gtk.object * Gtk.object -> unit
+      val gcSetFont : Gtk.object * Gtk.object -> unit
+      val gcSetFunction : Gtk.object * GdkFunction -> unit
+      val gcSetFill : Gtk.object * GdkFill -> unit
+      val gcSetTile : Gtk.object * Gtk.object -> unit
+      val gcSetStipple : Gtk.object * Gtk.object -> unit
+      val gcSetTsOrigin : Gtk.object * int * int -> unit
+      val gcSetClipOrigin : Gtk.object * int * int -> unit
+      val gcSetClipMask : Gtk.object * Gtk.object -> unit
+      val gcSetClipRectangle : Gtk.object * Gtk.object -> unit
+      val gcSetClipRegion : Gtk.object * Gtk.object -> unit
+      val gcSetSubwindow : Gtk.object * GdkSubwindowMode -> unit
+      val gcSetExposures : Gtk.object * bool -> unit
+      val gcSetLineAttributes :
+         Gtk.object * int * GdkLineStyle * GdkCapStyle * GdkJoinStyle -> unit
+      val gcSetDashes : Gtk.object * int * int vector * int -> unit
+      val gcOffset : Gtk.object * int * int -> unit
+      val gcCopy : Gtk.object * Gtk.object -> unit
+      val gcSetColormap : Gtk.object * Gtk.object -> unit
+      val gcGetColormap : Gtk.object -> Gtk.object
+      val gcSetRgbFgColor : Gtk.object * Gtk.object -> unit
+      val gcSetRgbBgColor : Gtk.object * Gtk.object -> unit
+      val gcGetScreen : Gtk.object -> Gtk.object
+      val rgbCmapGetFieldNColors : Gtk.object -> int
+      val rgbCmapGetFieldInfoList : Gtk.object -> Gtk.object list
+      val rgbCmapSetFieldNColors : Gtk.object * int -> unit
+      val rgbCmapSetFieldInfoList : Gtk.object * Gtk.object list -> unit
+      val rgbInit : unit -> unit
+      val rgbXpixelFromRgb : int -> int
+      val rgbGcSetForeground : Gtk.object * int -> unit
+      val rgbGcSetBackground : Gtk.object * int -> unit
+      val rgbFindColor : Gtk.object * Gtk.object -> unit
+      val drawRgbImage :
+         Gtk.object * Gtk.object * int * int * int * int * GdkRgbDither *
+            string * int -> unit
+      val drawRgbImageDithalign :
+         Gtk.object * Gtk.object * int * int * int * int * GdkRgbDither *
+            string * int * int * int -> unit
+      val drawRgb32Image :
+         Gtk.object * Gtk.object * int * int * int * int * GdkRgbDither *
+            string * int -> unit
+      val drawRgb32ImageDithalign :
+         Gtk.object * Gtk.object * int * int * int * int * GdkRgbDither *
+            string * int * int * int -> unit
+      val drawGrayImage :
+         Gtk.object * Gtk.object * int * int * int * int * GdkRgbDither *
+            string * int -> unit
+      val drawIndexedImage :
+         Gtk.object * Gtk.object * int * int * int * int * GdkRgbDither *
+            string * int * Gtk.object -> unit
+      val rgbCmapNew : int -> Gtk.object * int
+      val rgbCmapNew' : int * int -> Gtk.object * int
+      val rgbCmapFree : Gtk.object -> unit
+      val rgbSetVerbose : bool -> unit
+      val rgbSetInstall : bool -> unit
+      val rgbSetMinColors : int -> unit
+      val rgbGetColormap : unit -> Gtk.object
+      val rgbGetVisual : unit -> Gtk.object
+      val rgbDitherable : unit -> bool
+      val drawableGetType : unit -> int
+      val drawableSetData :
+         Gtk.object * string * Gtk.object * Gtk.object -> unit
+      val drawableGetData : Gtk.object * string -> Gtk.object
+      val drawableGetSize : Gtk.object -> int * int
+      val drawableGetSize' : Gtk.object * int * int -> int * int
+      val drawableSetColormap : Gtk.object * Gtk.object -> unit
+      val drawableGetColormap : Gtk.object -> Gtk.object
+      val drawableGetVisual : Gtk.object -> Gtk.object
+      val drawableGetDepth : Gtk.object -> int
+      val drawableGetScreen : Gtk.object -> Gtk.object
+      val drawableGetDisplay : Gtk.object -> Gtk.object
+      val drawableRef : Gtk.object -> Gtk.object
+      val drawableUnref : Gtk.object -> unit
+      val drawPoint : Gtk.object * Gtk.object * int * int -> unit
+      val drawLine : Gtk.object * Gtk.object * int * int * int * int -> unit
+      val drawRectangle :
+         Gtk.object * Gtk.object * bool * int * int * int * int -> unit
+      val drawArc :
+         Gtk.object * Gtk.object * bool * int * int * int * int * int * int ->
+            unit
+      val drawPolygon :
+         Gtk.object * Gtk.object * bool * Gtk.object * int -> unit
+      val drawString :
+         Gtk.object * Gtk.object * Gtk.object * int * int * string -> unit
+      val drawText :
+         Gtk.object * Gtk.object * Gtk.object * int * int * string * int -> unit
+      val drawTextWc :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int -> int
+      val drawTextWc' :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int -> int
+      val drawDrawable :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int * int *
+            int -> unit
+      val drawImage :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int * int *
+            int -> unit
+      val drawPoints : Gtk.object * Gtk.object * Gtk.object * int -> unit
+      val drawSegments : Gtk.object * Gtk.object * Gtk.object * int -> unit
+      val drawLines : Gtk.object * Gtk.object * Gtk.object * int -> unit
+      val drawPixbuf :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int * int *
+            int * GdkRgbDither * int * int -> unit
+      val drawGlyphs :
+         Gtk.object * Gtk.object * Gtk.object * int * int * Gtk.object -> unit
+      val drawLayoutLine :
+         Gtk.object * Gtk.object * int * int * Gtk.object -> unit
+      val drawLayout : Gtk.object * Gtk.object * int * int * Gtk.object -> unit
+      val drawLayoutLineWithColors :
+         Gtk.object * Gtk.object * int * int * Gtk.object * Gtk.object *
+            Gtk.object -> unit
+      val drawLayoutWithColors :
+         Gtk.object * Gtk.object * int * int * Gtk.object * Gtk.object *
+            Gtk.object -> unit
+      val drawableGetImage : Gtk.object * int * int * int * int -> Gtk.object
+      val drawableCopyToImage :
+         Gtk.object * Gtk.object * int * int * int * int * int * int ->
+            Gtk.object
+      val drawableGetClipRegion : Gtk.object -> Gtk.object
+      val drawableGetVisibleRegion : Gtk.object -> Gtk.object
+      val cursorTypeGetType : unit -> int
+      val dragActionGetType : unit -> int
+      val dragProtocolGetType : unit -> int
+      val filterReturnGetType : unit -> int
+      val eventTypeGetType : unit -> int
+      val eventMaskGetType : unit -> int
+      val visibilityStateGetType : unit -> int
+      val scrollDirectionGetType : unit -> int
+      val notifyTypeGetType : unit -> int
+      val crossingModeGetType : unit -> int
+      val propertyStateGetType : unit -> int
+      val windowStateGetType : unit -> int
+      val settingActionGetType : unit -> int
+      val fontTypeGetType : unit -> int
+      val capStyleGetType : unit -> int
+      val fillGetType : unit -> int
+      val functionGetType : unit -> int
+      val joinStyleGetType : unit -> int
+      val lineStyleGetType : unit -> int
+      val subwindowModeGetType : unit -> int
+      val gcValuesMaskGetType : unit -> int
+      val imageTypeGetType : unit -> int
+      val extensionModeGetType : unit -> int
+      val inputSourceGetType : unit -> int
+      val inputModeGetType : unit -> int
+      val axisUseGetType : unit -> int
+      val propModeGetType : unit -> int
+      val fillRuleGetType : unit -> int
+      val overlapTypeGetType : unit -> int
+      val rgbDitherGetType : unit -> int
+      val byteOrderGetType : unit -> int
+      val modifierTypeGetType : unit -> int
+      val inputConditionGetType : unit -> int
+      val statusGetType : unit -> int
+      val grabStatusGetType : unit -> int
+      val visualTypeGetType : unit -> int
+      val windowClassGetType : unit -> int
+      val windowTypeGetType : unit -> int
+      val windowAttributesTypeGetType : unit -> int
+      val windowHintsGetType : unit -> int
+      val windowTypeHintGetType : unit -> int
+      val wmDecorationGetType : unit -> int
+      val wmFunctionGetType : unit -> int
+      val gravityGetType : unit -> int
+      val windowEdgeGetType : unit -> int
+      val fontGetFieldType : Gtk.object -> GdkFontType
+      val fontGetFieldAscent : Gtk.object -> int
+      val fontGetFieldDescent : Gtk.object -> int
+      val fontSetFieldType : Gtk.object * GdkFontType -> unit
+      val fontSetFieldAscent : Gtk.object * int -> unit
+      val fontSetFieldDescent : Gtk.object * int -> unit
+      val fontGetType : unit -> int
+      val fontRef : Gtk.object -> Gtk.object
+      val fontUnref : Gtk.object -> unit
+      val fontId : Gtk.object -> int
+      val fontEqual : Gtk.object * Gtk.object -> bool
+      val fontLoadForDisplay : Gtk.object * string -> Gtk.object
+      val fontsetLoadForDisplay : Gtk.object * string -> Gtk.object
+      val fontFromDescriptionForDisplay : Gtk.object * Gtk.object -> Gtk.object
+      val fontLoad : string -> Gtk.object
+      val fontsetLoad : string -> Gtk.object
+      val fontFromDescription : Gtk.object -> Gtk.object
+      val stringWidth : Gtk.object * string -> int
+      val textWidth : Gtk.object * string * int -> int
+      val textWidthWc : Gtk.object * int -> int * int
+      val textWidthWc' : Gtk.object * int * int -> int * int
+      val charWidth : Gtk.object * int -> int
+      val charWidthWc : Gtk.object * int -> int
+      val stringMeasure : Gtk.object * string -> int
+      val textMeasure : Gtk.object * string * int -> int
+      val charMeasure : Gtk.object * int -> int
+      val stringHeight : Gtk.object * string -> int
+      val textHeight : Gtk.object * string * int -> int
+      val charHeight : Gtk.object * int -> int
+      val textExtents : Gtk.object * string * int -> int * int * int * int * int
+      val textExtents' :
+         Gtk.object * string * int * int * int * int * int * int ->
+            int * int * int * int * int
+      val textExtentsWc : Gtk.object * int -> int * int * int * int * int * int
+      val textExtentsWc' :
+         Gtk.object * int * int * int * int * int * int * int ->
+            int * int * int * int * int * int
+      val stringExtents : Gtk.object * string -> int * int * int * int * int
+      val stringExtents' :
+         Gtk.object * string * int * int * int * int * int ->
+            int * int * int * int * int
+      val fontGetDisplay : Gtk.object -> Gtk.object
+      val imageGetFieldType : Gtk.object -> GdkImageType
+      val imageGetFieldVisual : Gtk.object -> Gtk.object
+      val imageGetFieldByteOrder : Gtk.object -> GdkByteOrder
+      val imageGetFieldWidth : Gtk.object -> int
+      val imageGetFieldHeight : Gtk.object -> int
+      val imageGetFieldDepth : Gtk.object -> int
+      val imageGetFieldBpp : Gtk.object -> int
+      val imageGetFieldBpl : Gtk.object -> int
+      val imageGetFieldBitsPerPixel : Gtk.object -> int
+      val imageGetFieldMem : Gtk.object -> Gtk.object
+      val imageGetFieldColormap : Gtk.object -> Gtk.object
+      val imageGetFieldWindowingData : Gtk.object -> Gtk.object
+      val imageSetFieldType : Gtk.object * GdkImageType -> unit
+      val imageSetFieldVisual : Gtk.object * Gtk.object -> unit
+      val imageSetFieldByteOrder : Gtk.object * GdkByteOrder -> unit
+      val imageSetFieldWidth : Gtk.object * int -> unit
+      val imageSetFieldHeight : Gtk.object * int -> unit
+      val imageSetFieldDepth : Gtk.object * int -> unit
+      val imageSetFieldBpp : Gtk.object * int -> unit
+      val imageSetFieldBpl : Gtk.object * int -> unit
+      val imageSetFieldBitsPerPixel : Gtk.object * int -> unit
+      val imageSetFieldMem : Gtk.object * Gtk.object -> unit
+      val imageSetFieldColormap : Gtk.object * Gtk.object -> unit
+      val imageSetFieldWindowingData : Gtk.object * Gtk.object -> unit
+      val imageGetType : unit -> int
+      val imageNew : GdkImageType * Gtk.object * int * int -> Gtk.object
+      val imageGet : Gtk.object * int * int * int * int -> Gtk.object
+      val imageRef : Gtk.object -> Gtk.object
+      val imageUnref : Gtk.object -> unit
+      val imagePutPixel : Gtk.object * int * int * int -> unit
+      val imageGetPixel : Gtk.object * int * int -> int
+      val imageSetColormap : Gtk.object * Gtk.object -> unit
+      val imageGetColormap : Gtk.object -> Gtk.object
+      val keymapKeyGetFieldKeycode : Gtk.object -> int
+      val keymapKeyGetFieldGroup : Gtk.object -> int
+      val keymapKeyGetFieldLevel : Gtk.object -> int
+      val keymapKeySetFieldKeycode : Gtk.object * int -> unit
+      val keymapKeySetFieldGroup : Gtk.object * int -> unit
+      val keymapKeySetFieldLevel : Gtk.object * int -> unit
+      val keymapGetFieldDisplay : Gtk.object -> Gtk.object
+      val keymapSetFieldDisplay : Gtk.object * Gtk.object -> unit
+      val keymapGetType : unit -> int
+      val keymapGetDefault : unit -> Gtk.object
+      val keymapGetForDisplay : Gtk.object -> Gtk.object
+      val keymapLookupKey : Gtk.object * Gtk.object -> int
+      val keymapTranslateKeyboardState :
+         Gtk.object * int * GdkModifierType * int ->
+            bool * int * int * int * GdkModifierType
+      val keymapTranslateKeyboardState' :
+         Gtk.object * int * GdkModifierType * int * int * int * int *
+            GdkModifierType -> bool * int * int * int * GdkModifierType
+      val keymapGetEntriesForKeyval :
+         Gtk.object * int -> bool * Gtk.object * int
+      val keymapGetEntriesForKeyval' :
+         Gtk.object * int * Gtk.object * int -> bool * Gtk.object * int
+      val keymapGetEntriesForKeycode :
+         Gtk.object * int -> bool * Gtk.object * Gtk.object * int
+      val keymapGetEntriesForKeycode' :
+         Gtk.object * int * Gtk.object * Gtk.object * int ->
+            bool * Gtk.object * Gtk.object * int
+      val keymapGetDirection : Gtk.object -> PangoDirection
+      val keyvalName : int -> string
+      val keyvalFromName : string -> int
+      val keyvalConvertCase : int -> int * int
+      val keyvalConvertCase' : int * int * int -> int * int
+      val keyvalToUpper : int -> int
+      val keyvalToLower : int -> int
+      val keyvalIsUpper : int -> bool
+      val keyvalIsLower : int -> bool
+      val keyvalToUnicode : int -> int
+      val unicodeToKeyval : int -> int
+      val displayManagerGetType : unit -> int
+      val displayManagerGet : unit -> Gtk.object
+      val displayManagerGetDefaultDisplay : Gtk.object -> Gtk.object
+      val displayManagerSetDefaultDisplay : Gtk.object * Gtk.object -> unit
+      val displayManagerListDisplays : Gtk.object -> Gtk.object list
+      val pangoContextGetForScreen : Gtk.object -> Gtk.object
+      val pangoContextGet : unit -> Gtk.object
+      val pangoContextSetColormap : Gtk.object * Gtk.object -> unit
+      val pangoLayoutLineGetClipRegion :
+         Gtk.object * int * int * int -> Gtk.object * int
+      val pangoLayoutLineGetClipRegion' :
+         Gtk.object * int * int * int * int -> Gtk.object * int
+      val pangoLayoutGetClipRegion :
+         Gtk.object * int * int * int -> Gtk.object * int
+      val pangoLayoutGetClipRegion' :
+         Gtk.object * int * int * int * int -> Gtk.object * int
+      val pangoAttrStippleGetFieldStipple : Gtk.object -> Gtk.object
+      val pangoAttrStippleSetFieldStipple : Gtk.object * Gtk.object -> unit
+      val pangoAttrEmbossedGetFieldEmbossed : Gtk.object -> bool
+      val pangoAttrEmbossedSetFieldEmbossed : Gtk.object * bool -> unit
+      val pangoAttrStippleNew : Gtk.object -> Gtk.object
+      val pangoAttrEmbossedNew : bool -> Gtk.object
+      val pixbufRenderThresholdAlpha :
+         Gtk.object * Gtk.object * int * int * int * int * int * int * int ->
+            unit
+      val pixbufRenderToDrawable :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int * int *
+            int * GdkRgbDither * int * int -> unit
+      val pixbufRenderToDrawableAlpha :
+         Gtk.object * Gtk.object * int * int * int * int * int * int *
+            GdkPixbufAlphaMode * int * GdkRgbDither * int * int -> unit
+      val pixbufRenderPixmapAndMaskForColormap :
+         Gtk.object * Gtk.object * int -> Gtk.object * Gtk.object
+      val pixbufRenderPixmapAndMaskForColormap' :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object * int ->
+            Gtk.object * Gtk.object
+      val pixbufRenderPixmapAndMask :
+         Gtk.object * int -> Gtk.object * Gtk.object
+      val pixbufRenderPixmapAndMask' :
+         Gtk.object * Gtk.object * Gtk.object * int -> Gtk.object * Gtk.object
+      val pixbufGetFromDrawable :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int * int *
+            int -> Gtk.object
+      val pixbufGetFromImage :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * int * int *
+            int -> Gtk.object
+      val pixmapObjectGetFieldImpl : Gtk.object -> Gtk.object
+      val pixmapObjectGetFieldDepth : Gtk.object -> int
+      val pixmapObjectSetFieldImpl : Gtk.object * Gtk.object -> unit
+      val pixmapObjectSetFieldDepth : Gtk.object * int -> unit
+      val pixmapGetType : unit -> int
+      val pixmapNew : Gtk.object * int * int * int -> Gtk.object
+      val bitmapCreateFromData : Gtk.object * string * int * int -> Gtk.object
+      val pixmapCreateFromData :
+         Gtk.object * string * int * int * int * Gtk.object * Gtk.object ->
+            Gtk.object
+      val pixmapCreateFromXpm :
+         Gtk.object * Gtk.object * string -> Gtk.object * Gtk.object
+      val pixmapCreateFromXpm' :
+         Gtk.object * Gtk.object * Gtk.object * string ->
+            Gtk.object * Gtk.object
+      val pixmapColormapCreateFromXpm :
+         Gtk.object * Gtk.object * Gtk.object * string ->
+            Gtk.object * Gtk.object
+      val pixmapColormapCreateFromXpm' :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object * string ->
+            Gtk.object * Gtk.object
+      val pixmapCreateFromXpmD :
+         Gtk.object * Gtk.object -> Gtk.object * Gtk.object * string
+      val pixmapCreateFromXpmD' :
+         Gtk.object * Gtk.object * Gtk.object * string ->
+            Gtk.object * Gtk.object * string
+      val pixmapColormapCreateFromXpmD :
+         Gtk.object * Gtk.object * Gtk.object ->
+            Gtk.object * Gtk.object * string
+      val pixmapColormapCreateFromXpmD' :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object * string ->
+            Gtk.object * Gtk.object * string
+      val pixmapForeignNew : int -> Gtk.object
+      val pixmapLookup : int -> Gtk.object
+      val pixmapForeignNewForDisplay : Gtk.object * int -> Gtk.object
+      val pixmapLookupForDisplay : Gtk.object * int -> Gtk.object
+      val atomIntern : string * bool -> Gtk.object
+      val atomName : Gtk.object -> string
+      val propertyGet :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int ->
+            bool * Gtk.object * int * int * string
+      val propertyGet' :
+         Gtk.object * Gtk.object * Gtk.object * int * int * int * Gtk.object *
+            int * int * string -> bool * Gtk.object * int * int * string
+      val propertyChange :
+         Gtk.object * Gtk.object * Gtk.object * int * GdkPropMode * string *
+            int -> unit
+      val propertyDelete : Gtk.object * Gtk.object -> unit
+      val textPropertyToTextList :
+         Gtk.object * int * string * int -> int * Gtk.object
+      val textPropertyToTextList' :
+         Gtk.object * int * string * int * Gtk.object -> int * Gtk.object
+      val textPropertyToUtf8List :
+         Gtk.object * int * string * int -> int * Gtk.object
+      val textPropertyToUtf8List' :
+         Gtk.object * int * string * int * Gtk.object -> int * Gtk.object
+      val utf8ToCompoundText : string -> bool * Gtk.object * int * string * int
+      val utf8ToCompoundText' :
+         string * Gtk.object * int * string * int ->
+            bool * Gtk.object * int * string * int
+      val stringToCompoundText : string -> int * Gtk.object * int * string * int
+      val stringToCompoundText' :
+         string * Gtk.object * int * string * int ->
+            int * Gtk.object * int * string * int
+      val textPropertyToTextListForDisplay :
+         Gtk.object * Gtk.object * int * string * int -> int * Gtk.object
+      val textPropertyToTextListForDisplay' :
+         Gtk.object * Gtk.object * int * string * int * Gtk.object ->
+            int * Gtk.object
+      val textPropertyToUtf8ListForDisplay :
+         Gtk.object * Gtk.object * int * string * int -> int * Gtk.object
+      val textPropertyToUtf8ListForDisplay' :
+         Gtk.object * Gtk.object * int * string * int * Gtk.object ->
+            int * Gtk.object
+      val utf8ToStringTarget : string -> string
+      val stringToCompoundTextForDisplay :
+         Gtk.object * string -> int * Gtk.object * int * string * int
+      val stringToCompoundTextForDisplay' :
+         Gtk.object * string * Gtk.object * int * string * int ->
+            int * Gtk.object * int * string * int
+      val utf8ToCompoundTextForDisplay :
+         Gtk.object * string -> bool * Gtk.object * int * string * int
+      val utf8ToCompoundTextForDisplay' :
+         Gtk.object * string * Gtk.object * int * string * int ->
+            bool * Gtk.object * int * string * int
+      val freeTextList : unit -> string
+      val freeTextList' : string -> string
+      val freeCompoundText : string -> unit
+      val regionNew : unit -> Gtk.object
+      val regionPolygon : Gtk.object * int * GdkFillRule -> Gtk.object
+      val regionCopy : Gtk.object -> Gtk.object
+      val regionRectangle : Gtk.object -> Gtk.object
+      val regionDestroy : Gtk.object -> unit
+      val regionGetClipbox : Gtk.object * Gtk.object -> unit
+      val regionGetRectangles : Gtk.object -> Gtk.object * int
+      val regionGetRectangles' :
+         Gtk.object * Gtk.object * int -> Gtk.object * int
+      val regionEmpty : Gtk.object -> bool
+      val regionEqual : Gtk.object * Gtk.object -> bool
+      val regionPointIn : Gtk.object * int * int -> bool
+      val regionRectIn : Gtk.object * Gtk.object -> GdkOverlapType
+      val regionOffset : Gtk.object * int * int -> unit
+      val regionShrink : Gtk.object * int * int -> unit
+      val regionUnionWithRect : Gtk.object * Gtk.object -> unit
+      val regionIntersect : Gtk.object * Gtk.object -> unit
+      val regionUnion : Gtk.object * Gtk.object -> unit
+      val regionSubtract : Gtk.object * Gtk.object -> unit
+      val regionXor : Gtk.object * Gtk.object -> unit
+      val regionSpansIntersectForeach :
+         Gtk.object * Gtk.object * int * bool * Gtk.object * Gtk.object -> unit
+      val screenGetFieldClosed : Gtk.object -> int
+      val screenSetFieldClosed : Gtk.object * int -> unit
+      val screenGetType : unit -> int
+      val screenGetDefaultColormap : Gtk.object -> Gtk.object
+      val screenSetDefaultColormap : Gtk.object * Gtk.object -> unit
+      val screenGetSystemColormap : Gtk.object -> Gtk.object
+      val screenGetSystemVisual : Gtk.object -> Gtk.object
+      val screenGetRgbColormap : Gtk.object -> Gtk.object
+      val screenGetRgbVisual : Gtk.object -> Gtk.object
+      val screenGetRootWindow : Gtk.object -> Gtk.object
+      val screenGetDisplay : Gtk.object -> Gtk.object
+      val screenGetNumber : Gtk.object -> int
+      val screenGetWidth : Gtk.object -> int
+      val screenGetHeight : Gtk.object -> int
+      val screenGetWidthMm : Gtk.object -> int
+      val screenGetHeightMm : Gtk.object -> int
+      val screenListVisuals : Gtk.object -> Gtk.object list
+      val screenGetToplevelWindows : Gtk.object -> Gtk.object list
+      val screenMakeDisplayName : Gtk.object -> string
+      val screenGetNMonitors : Gtk.object -> int
+      val screenGetMonitorGeometry : Gtk.object * int * Gtk.object -> unit
+      val screenGetMonitorAtPoint : Gtk.object * int * int -> int
+      val screenGetMonitorAtWindow : Gtk.object * Gtk.object -> int
+      val screenBroadcastClientMessage : Gtk.object * Gtk.object -> unit
+      val screenGetDefault : unit -> Gtk.object
+      val screenGetSetting : Gtk.object * string * Gtk.object -> bool
+      val selectionOwnerSet : Gtk.object * Gtk.object * int * bool -> bool
+      val selectionOwnerGet : Gtk.object -> Gtk.object
+      val selectionOwnerSetForDisplay :
+         Gtk.object * Gtk.object * Gtk.object * int * bool -> bool
+      val selectionOwnerGetForDisplay : Gtk.object * Gtk.object -> Gtk.object
+      val selectionConvert : Gtk.object * Gtk.object * Gtk.object * int -> unit
+      val selectionPropertyGet : Gtk.object -> bool * string * Gtk.object * int
+      val selectionPropertyGet' :
+         Gtk.object * string * Gtk.object * int ->
+            bool * string * Gtk.object * int
+      val selectionSendNotify :
+         int * Gtk.object * Gtk.object * Gtk.object * int -> unit
+      val selectionSendNotifyForDisplay :
+         Gtk.object * int * Gtk.object * Gtk.object * Gtk.object * int -> unit
+      val spawnCommandLineOnScreen : Gtk.object * string -> bool * Gtk.object
+      val spawnCommandLineOnScreen' :
+         Gtk.object * string * Gtk.object -> bool * Gtk.object
+      val visualGetFieldType : Gtk.object -> GdkVisualType
+      val visualGetFieldDepth : Gtk.object -> int
+      val visualGetFieldByteOrder : Gtk.object -> GdkByteOrder
+      val visualGetFieldColormapSize : Gtk.object -> int
+      val visualGetFieldBitsPerRgb : Gtk.object -> int
+      val visualGetFieldRedMask : Gtk.object -> int
+      val visualGetFieldRedShift : Gtk.object -> int
+      val visualGetFieldRedPrec : Gtk.object -> int
+      val visualGetFieldGreenMask : Gtk.object -> int
+      val visualGetFieldGreenShift : Gtk.object -> int
+      val visualGetFieldGreenPrec : Gtk.object -> int
+      val visualGetFieldBlueMask : Gtk.object -> int
+      val visualGetFieldBlueShift : Gtk.object -> int
+      val visualGetFieldBluePrec : Gtk.object -> int
+      val visualSetFieldType : Gtk.object * GdkVisualType -> unit
+      val visualSetFieldDepth : Gtk.object * int -> unit
+      val visualSetFieldByteOrder : Gtk.object * GdkByteOrder -> unit
+      val visualSetFieldColormapSize : Gtk.object * int -> unit
+      val visualSetFieldBitsPerRgb : Gtk.object * int -> unit
+      val visualSetFieldRedMask : Gtk.object * int -> unit
+      val visualSetFieldRedShift : Gtk.object * int -> unit
+      val visualSetFieldRedPrec : Gtk.object * int -> unit
+      val visualSetFieldGreenMask : Gtk.object * int -> unit
+      val visualSetFieldGreenShift : Gtk.object * int -> unit
+      val visualSetFieldGreenPrec : Gtk.object * int -> unit
+      val visualSetFieldBlueMask : Gtk.object * int -> unit
+      val visualSetFieldBlueShift : Gtk.object * int -> unit
+      val visualSetFieldBluePrec : Gtk.object * int -> unit
+      val visualGetType : unit -> int
+      val visualGetBestDepth : unit -> int
+      val visualGetBestType : unit -> GdkVisualType
+      val visualGetSystem : unit -> Gtk.object
+      val visualGetBest : unit -> Gtk.object
+      val visualGetBestWithDepth : int -> Gtk.object
+      val visualGetBestWithType : GdkVisualType -> Gtk.object
+      val visualGetBestWithBoth : int * GdkVisualType -> Gtk.object
+      val queryDepths : unit -> Gtk.object * int
+      val queryDepths' : Gtk.object * int -> Gtk.object * int
+      val queryVisualTypes : unit -> Gtk.object * int
+      val queryVisualTypes' : Gtk.object * int -> Gtk.object * int
+      val listVisuals : unit -> Gtk.object list
+      val visualGetScreen : Gtk.object -> Gtk.object
+      val windowAttrGetFieldTitle : Gtk.object -> string
+      val windowAttrGetFieldEventMask : Gtk.object -> int
+      val windowAttrGetFieldX : Gtk.object -> int
+      val windowAttrGetFieldY : Gtk.object -> int
+      val windowAttrGetFieldWidth : Gtk.object -> int
+      val windowAttrGetFieldHeight : Gtk.object -> int
+      val windowAttrGetFieldWclass : Gtk.object -> GdkWindowClass
+      val windowAttrGetFieldVisual : Gtk.object -> Gtk.object
+      val windowAttrGetFieldColormap : Gtk.object -> Gtk.object
+      val windowAttrGetFieldWindowType : Gtk.object -> GdkWindowType
+      val windowAttrGetFieldCursor : Gtk.object -> Gtk.object
+      val windowAttrGetFieldWmclassName : Gtk.object -> string
+      val windowAttrGetFieldWmclassClass : Gtk.object -> string
+      val windowAttrGetFieldOverrideRedirect : Gtk.object -> bool
+      val windowAttrSetFieldTitle : Gtk.object * string -> unit
+      val windowAttrSetFieldEventMask : Gtk.object * int -> unit
+      val windowAttrSetFieldX : Gtk.object * int -> unit
+      val windowAttrSetFieldY : Gtk.object * int -> unit
+      val windowAttrSetFieldWidth : Gtk.object * int -> unit
+      val windowAttrSetFieldHeight : Gtk.object * int -> unit
+      val windowAttrSetFieldWclass : Gtk.object * GdkWindowClass -> unit
+      val windowAttrSetFieldVisual : Gtk.object * Gtk.object -> unit
+      val windowAttrSetFieldColormap : Gtk.object * Gtk.object -> unit
+      val windowAttrSetFieldWindowType : Gtk.object * GdkWindowType -> unit
+      val windowAttrSetFieldCursor : Gtk.object * Gtk.object -> unit
+      val windowAttrSetFieldWmclassName : Gtk.object * string -> unit
+      val windowAttrSetFieldWmclassClass : Gtk.object * string -> unit
+      val windowAttrSetFieldOverrideRedirect : Gtk.object * bool -> unit
+      val geometryGetFieldMinWidth : Gtk.object -> int
+      val geometryGetFieldMinHeight : Gtk.object -> int
+      val geometryGetFieldMaxWidth : Gtk.object -> int
+      val geometryGetFieldMaxHeight : Gtk.object -> int
+      val geometryGetFieldBaseWidth : Gtk.object -> int
+      val geometryGetFieldBaseHeight : Gtk.object -> int
+      val geometryGetFieldWidthInc : Gtk.object -> int
+      val geometryGetFieldHeightInc : Gtk.object -> int
+      val geometryGetFieldMinAspect : Gtk.object -> real
+      val geometryGetFieldMaxAspect : Gtk.object -> real
+      val geometryGetFieldWinGravity : Gtk.object -> GdkGravity
+      val geometrySetFieldMinWidth : Gtk.object * int -> unit
+      val geometrySetFieldMinHeight : Gtk.object * int -> unit
+      val geometrySetFieldMaxWidth : Gtk.object * int -> unit
+      val geometrySetFieldMaxHeight : Gtk.object * int -> unit
+      val geometrySetFieldBaseWidth : Gtk.object * int -> unit
+      val geometrySetFieldBaseHeight : Gtk.object * int -> unit
+      val geometrySetFieldWidthInc : Gtk.object * int -> unit
+      val geometrySetFieldHeightInc : Gtk.object * int -> unit
+      val geometrySetFieldMinAspect : Gtk.object * real -> unit
+      val geometrySetFieldMaxAspect : Gtk.object * real -> unit
+      val geometrySetFieldWinGravity : Gtk.object * GdkGravity -> unit
+      val windowObjectGetFieldImpl : Gtk.object -> Gtk.object
+      val windowObjectGetFieldParent : Gtk.object -> Gtk.object
+      val windowObjectGetFieldUserData : Gtk.object -> Gtk.object
+      val windowObjectGetFieldX : Gtk.object -> int
+      val windowObjectGetFieldY : Gtk.object -> int
+      val windowObjectGetFieldExtensionEvents : Gtk.object -> int
+      val windowObjectGetFieldFilters : Gtk.object -> Gtk.object list
+      val windowObjectGetFieldChildren : Gtk.object -> Gtk.object list
+      val windowObjectGetFieldBgPixmap : Gtk.object -> Gtk.object
+      val windowObjectGetFieldPaintStack : Gtk.object -> Gtk.object list
+      val windowObjectGetFieldUpdateArea : Gtk.object -> Gtk.object
+      val windowObjectGetFieldUpdateFreezeCount : Gtk.object -> int
+      val windowObjectGetFieldWindowType : Gtk.object -> int
+      val windowObjectGetFieldDepth : Gtk.object -> int
+      val windowObjectGetFieldResizeCount : Gtk.object -> int
+      val windowObjectGetFieldState : Gtk.object -> GdkWindowState
+      val windowObjectGetFieldGuffawGravity : Gtk.object -> int
+      val windowObjectGetFieldInputOnly : Gtk.object -> int
+      val windowObjectGetFieldModalHint : Gtk.object -> int
+      val windowObjectGetFieldDestroyed : Gtk.object -> int
+      val windowObjectGetFieldAcceptFocus : Gtk.object -> int
+      val windowObjectGetFieldEventMask : Gtk.object -> GdkEventMask
+      val windowObjectSetFieldImpl : Gtk.object * Gtk.object -> unit
+      val windowObjectSetFieldParent : Gtk.object * Gtk.object -> unit
+      val windowObjectSetFieldUserData : Gtk.object * Gtk.object -> unit
+      val windowObjectSetFieldX : Gtk.object * int -> unit
+      val windowObjectSetFieldY : Gtk.object * int -> unit
+      val windowObjectSetFieldExtensionEvents : Gtk.object * int -> unit
+      val windowObjectSetFieldFilters : Gtk.object * Gtk.object list -> unit
+      val windowObjectSetFieldChildren : Gtk.object * Gtk.object list -> unit
+      val windowObjectSetFieldBgPixmap : Gtk.object * Gtk.object -> unit
+      val windowObjectSetFieldPaintStack : Gtk.object * Gtk.object list -> unit
+      val windowObjectSetFieldUpdateArea : Gtk.object * Gtk.object -> unit
+      val windowObjectSetFieldUpdateFreezeCount : Gtk.object * int -> unit
+      val windowObjectSetFieldWindowType : Gtk.object * int -> unit
+      val windowObjectSetFieldDepth : Gtk.object * int -> unit
+      val windowObjectSetFieldResizeCount : Gtk.object * int -> unit
+      val windowObjectSetFieldState : Gtk.object * GdkWindowState -> unit
+      val windowObjectSetFieldGuffawGravity : Gtk.object * int -> unit
+      val windowObjectSetFieldInputOnly : Gtk.object * int -> unit
+      val windowObjectSetFieldModalHint : Gtk.object * int -> unit
+      val windowObjectSetFieldDestroyed : Gtk.object * int -> unit
+      val windowObjectSetFieldAcceptFocus : Gtk.object * int -> unit
+      val windowObjectSetFieldEventMask : Gtk.object * GdkEventMask -> unit
+      val windowObjectGetType : unit -> int
+      val windowNew : Gtk.object * Gtk.object * int -> Gtk.object
+      val windowDestroy : Gtk.object -> unit
+      val windowGetWindowType : Gtk.object -> GdkWindowType
+      val windowAtPointer : unit -> Gtk.object * int * int
+      val windowAtPointer' : int * int -> Gtk.object * int * int
+      val windowShow : Gtk.object -> unit
+      val windowHide : Gtk.object -> unit
+      val windowWithdraw : Gtk.object -> unit
+      val windowShowUnraised : Gtk.object -> unit
+      val windowMove : Gtk.object * int * int -> unit
+      val windowResize : Gtk.object * int * int -> unit
+      val windowMoveResize : Gtk.object * int * int * int * int -> unit
+      val windowReparent : Gtk.object * Gtk.object * int * int -> unit
+      val windowClear : Gtk.object -> unit
+      val windowClearArea : Gtk.object * int * int * int * int -> unit
+      val windowClearAreaE : Gtk.object * int * int * int * int -> unit
+      val windowRaise : Gtk.object -> unit
+      val windowLower : Gtk.object -> unit
+      val windowFocus : Gtk.object * int -> unit
+      val windowSetUserData : Gtk.object * Gtk.object -> unit
+      val windowSetOverrideRedirect : Gtk.object * bool -> unit
+      val windowSetAcceptFocus : Gtk.object * bool -> unit
+      val windowAddFilter : Gtk.object * Gtk.object * Gtk.object -> unit
+      val windowRemoveFilter : Gtk.object * Gtk.object * Gtk.object -> unit
+      val windowScroll : Gtk.object * int * int -> unit
+      val windowShapeCombineMask : Gtk.object * Gtk.object * int * int -> unit
+      val windowShapeCombineRegion : Gtk.object * Gtk.object * int * int -> unit
+      val windowSetChildShapes : Gtk.object -> unit
+      val windowMergeChildShapes : Gtk.object -> unit
+      val windowIsVisible : Gtk.object -> bool
+      val windowIsViewable : Gtk.object -> bool
+      val windowGetState : Gtk.object -> GdkWindowState
+      val windowSetStaticGravities : Gtk.object * bool -> bool
+      val windowForeignNew : int -> Gtk.object
+      val windowLookup : int -> Gtk.object
+      val windowForeignNewForDisplay : Gtk.object * int -> Gtk.object
+      val windowLookupForDisplay : Gtk.object * int -> Gtk.object
+      val windowSetHints :
+         Gtk.object * int * int * int * int * int * int * int -> unit
+      val windowSetTypeHint : Gtk.object * GdkWindowTypeHint -> unit
+      val windowSetModalHint : Gtk.object * bool -> unit
+      val windowSetSkipTaskbarHint : Gtk.object * bool -> unit
+      val windowSetSkipPagerHint : Gtk.object * bool -> unit
+      val windowSetGeometryHints :
+         Gtk.object * Gtk.object * GdkWindowHints -> unit
+      val setSmClientId : string -> unit
+      val windowBeginPaintRect : Gtk.object * Gtk.object -> unit
+      val windowBeginPaintRegion : Gtk.object * Gtk.object -> unit
+      val windowEndPaint : Gtk.object -> unit
+      val windowSetTitle : Gtk.object * string -> unit
+      val windowSetRole : Gtk.object * string -> unit
+      val windowSetTransientFor : Gtk.object * Gtk.object -> unit
+      val windowSetBackground : Gtk.object * Gtk.object -> unit
+      val windowSetBackPixmap : Gtk.object * Gtk.object * bool -> unit
+      val windowSetCursor : Gtk.object * Gtk.object -> unit
+      val windowGetUserData : Gtk.object -> Gtk.object
+      val windowGetUserData' : Gtk.object * Gtk.object -> Gtk.object
+      val windowGetGeometry : Gtk.object -> int * int * int * int * int
+      val windowGetGeometry' :
+         Gtk.object * int * int * int * int * int -> int * int * int * int * int
+      val windowGetPosition : Gtk.object -> int * int
+      val windowGetPosition' : Gtk.object * int * int -> int * int
+      val windowGetOrigin : Gtk.object -> int * int * int
+      val windowGetOrigin' : Gtk.object * int * int -> int * int * int
+      val windowGetDeskrelativeOrigin : Gtk.object -> bool * int * int
+      val windowGetDeskrelativeOrigin' :
+         Gtk.object * int * int -> bool * int * int
+      val windowGetRootOrigin : Gtk.object -> int * int
+      val windowGetRootOrigin' : Gtk.object * int * int -> int * int
+      val windowGetFrameExtents : Gtk.object * Gtk.object -> unit
+      val windowGetPointer :
+         Gtk.object -> Gtk.object * int * int * GdkModifierType
+      val windowGetPointer' :
+         Gtk.object * int * int * GdkModifierType ->
+            Gtk.object * int * int * GdkModifierType
+      val windowGetParent : Gtk.object -> Gtk.object
+      val windowGetToplevel : Gtk.object -> Gtk.object
+      val windowGetChildren : Gtk.object -> Gtk.object list
+      val windowPeekChildren : Gtk.object -> Gtk.object list
+      val windowGetEvents : Gtk.object -> GdkEventMask
+      val windowSetEvents : Gtk.object * GdkEventMask -> unit
+      val windowSetIconList : Gtk.object * Gtk.object list -> unit
+      val windowSetIcon :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object -> unit
+      val windowSetIconName : Gtk.object * string -> unit
+      val windowSetGroup : Gtk.object * Gtk.object -> unit
+      val windowGetGroup : Gtk.object -> Gtk.object
+      val windowSetDecorations : Gtk.object * GdkWMDecoration -> unit
+      val windowGetDecorations : Gtk.object -> bool * GdkWMDecoration
+      val windowGetDecorations' :
+         Gtk.object * GdkWMDecoration -> bool * GdkWMDecoration
+      val windowSetFunctions : Gtk.object * GdkWMFunction -> unit
+      val windowGetToplevels : unit -> Gtk.object list
+      val windowIconify : Gtk.object -> unit
+      val windowDeiconify : Gtk.object -> unit
+      val windowStick : Gtk.object -> unit
+      val windowUnstick : Gtk.object -> unit
+      val windowMaximize : Gtk.object -> unit
+      val windowUnmaximize : Gtk.object -> unit
+      val windowFullscreen : Gtk.object -> unit
+      val windowUnfullscreen : Gtk.object -> unit
+      val windowSetKeepAbove : Gtk.object * bool -> unit
+      val windowSetKeepBelow : Gtk.object * bool -> unit
+      val windowRegisterDnd : Gtk.object -> unit
+      val windowBeginResizeDrag :
+         Gtk.object * GdkWindowEdge * int * int * int * int -> unit
+      val windowBeginMoveDrag : Gtk.object * int * int * int * int -> unit
+      val windowInvalidateRect : Gtk.object * Gtk.object * bool -> unit
+      val windowInvalidateRegion : Gtk.object * Gtk.object * bool -> unit
+      val windowInvalidateMaybeRecurse :
+         Gtk.object * Gtk.object * Gtk.object * Gtk.object -> unit
+      val windowGetUpdateArea : Gtk.object -> Gtk.object
+      val windowFreezeUpdates : Gtk.object -> unit
+      val windowThawUpdates : Gtk.object -> unit
+      val windowProcessAllUpdates : unit -> unit
+      val windowProcessUpdates : Gtk.object * bool -> unit
+      val windowSetDebugUpdates : bool -> unit
+      val windowConstrainSize : Gtk.object * int * int * int -> int * int
+      val windowConstrainSize' :
+         Gtk.object * int * int * int * int * int -> int * int
+      val windowGetInternalPaintInfo : Gtk.object -> Gtk.object * int * int
+      val windowGetInternalPaintInfo' :
+         Gtk.object * Gtk.object * int * int -> Gtk.object * int * int
+      val setPointerHooks : Gtk.object -> Gtk.object
+      val getDefaultRootWindow : unit -> Gtk.object
+      val parseArgs : unit -> int * Gtk.object
+      val parseArgs' : int * Gtk.object -> int * Gtk.object
+      val exit : int -> unit
+      val setLocale : unit -> string
+      val getProgramClass : unit -> string
+      val setProgramClass : string -> unit
+      val errorTrapPush : unit -> unit
+      val errorTrapPop : unit -> int
+      val setUseXshm : bool -> unit
+      val getUseXshm : unit -> bool
+      val getDisplay : unit -> string
+      val getDisplayArgName : unit -> string
+      val inputAddFull :
+         int * GdkInputCondition * Gtk.object * Gtk.object * Gtk.object -> int
+      val inputAdd : int * GdkInputCondition * Gtk.object * Gtk.object -> int
+      val inputRemove : int -> unit
+      val pointerGrab :
+         Gtk.object * bool * GdkEventMask * Gtk.object * Gtk.object * int ->
+            GdkGrabStatus
+      val keyboardGrab : Gtk.object * bool * int -> GdkGrabStatus
+      val pointerUngrab : int -> unit
+      val keyboardUngrab : int -> unit
+      val pointerIsGrabbed : unit -> bool
+      val screenWidth : unit -> int
+      val screenHeight : unit -> int
+      val screenWidthMm : unit -> int
+      val screenHeightMm : unit -> int
+      val beep : unit -> unit
+      val flush : unit -> unit
+      val setDoubleClickTime : int -> unit
+      val rectangleIntersect : Gtk.object * Gtk.object * Gtk.object -> bool
+      val rectangleUnion : Gtk.object * Gtk.object * Gtk.object -> unit
+      val rectangleGetType : unit -> int
+      val wcstombs : unit -> string * int
+      val wcstombs' : int -> string * int
+      val mbstowcs : string * int -> int * int
+      val mbstowcs' : int * string * int -> int * int
+      val eventSendClientMessage : Gtk.object * int -> bool
+      val eventSendClientmessageToall : Gtk.object -> unit
+      val eventSendClientMessageForDisplay :
+         Gtk.object * Gtk.object * int -> bool
+      val notifyStartupComplete : unit -> unit
+      val threadsEnter : unit -> unit
+      val threadsLeave : unit -> unit
+      val threadsInit : unit -> unit
+      val threadsSetLockFunctions : Gtk.object * Gtk.object -> unit
+      val pixbufNewFromXpmData : string vector -> Gtk.object
+      val colorNew : int * int * int -> Gtk.object
+      val pointNew : int * int -> Gtk.object
+      val rectangleNew : int * int * int * int -> Gtk.object
+   end
+  </PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.html">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>
