@@ -8,7 +8,7 @@
   (lambda (n xs)
     (if (= n 1)
 	(car xs)
-	(nth (- n 1) (cdr xs)))))
+	(tail nth (- n 1) (cdr xs)))))
 
 (define map
   (lambda (f xs)
@@ -20,7 +20,7 @@
   (lambda (f b xs)
     (if (eq? xs ())
 	b
-	(foldl f (f (car xs) b) (cdr xs)))))
+	(tail foldl f (f (car xs) b) (cdr xs)))))
 
 (define foldr
   (lambda (f b xs)
@@ -35,31 +35,33 @@
 	(cons (car xs) (app (cdr xs) ys)))))
 
 (define rev_iter
-  (lambda (xs p)
+  (lambda (xs ys)
     (if (eq? xs ())
-	(cons p ())
-	(let
-	    ((cp (rev_iter (cdr xs) (car xs))))
-	  (if (eq? p ())
-	      cp
-	      (cons p cp))))))
+	ys
+	(tail rev_iter (cdr xs) (cons (car xs) ys)))))
 
 (define rev
   (lambda (xs)
-    (if (eq? xs ())
-	()
-	(app (rev (cdr xs)) (cons (car xs) ())))))
+    (tail rev_iter xs ())))
 
 (define make_list_iter
-  (lambda (n)
+  (lambda (n xs)
     (if (= n 0)
-	()
-	(cons n (make_list_iter (- n 1))))))
+	xs
+	(tail make_list_iter (- n 1) (cons n xs))))) 
 
 (define make_list
   (lambda (n)
-    (rev (make_list_iter n))))
+    (tail make_list_iter n ())))
 
 (define xs (cons 1 (cons 2 (cons 3 ()))))
 
 (define ys (cons 4 (cons 5 (cons 6 ()))))
+
+(define iter
+  (lambda (n p)
+    (if (= n 0)
+	()
+	(begin
+	  (p)
+	  (tail iter (- n 1) p)))))
