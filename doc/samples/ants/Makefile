@@ -37,8 +37,6 @@ simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 parsec/Makefile.depend:
 	(cd parsec && $(MAKE) depend)
 
-parsec/CharParser.stc: parsec
-
 parsec: parsec/Makefile.depend
 	(cd parsec && $(MAKE))
 	

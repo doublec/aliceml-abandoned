@@ -10,16 +10,22 @@ sig
 			  home | foehome
 
     datatype yesno	= onyes | onno
+    datatype otherwise	= otherwise
     type label		= string
     type stmt
+    type 'a branch	= 'a * stmt
 
     exception Malformed of string
+
+    val freshlabel : unit -> label
+
+    val on	: 'a -> 'b -> 'a * 'b
 
     infixr ++
     val ++	: stmt * stmt -> stmt
 
     val goto	: label -> stmt
-    val cont	: unit -> stmt
+    val nop	: unit -> stmt
     val fail	: unit -> stmt
 
     val label	: label -> stmt
@@ -30,12 +36,22 @@ sig
 
     val move	: yesno -> stmt -> stmt
     val pick	: yesno -> stmt -> stmt
+    val sense	: dir -> condition -> yesno -> stmt -> stmt
+    val flip	: int -> yesno -> stmt -> stmt
     val move2	: yesno -> stmt -> yesno -> stmt -> stmt
     val pick2	: yesno -> stmt -> yesno -> stmt -> stmt
-    val sense	: dir -> condition -> yesno -> stmt -> yesno -> stmt -> stmt
-    val flip	: int -> yesno -> stmt -> yesno -> stmt -> stmt
+    val sense2	: dir -> condition -> yesno -> stmt -> yesno -> stmt -> stmt
+    val flip2	: int -> yesno -> stmt -> yesno -> stmt -> stmt
 
     val flipn	: stmt list -> stmt
+    val sensen	: (dir * condition) branch list -> otherwise -> stmt -> stmt
+    val loop	: stmt -> stmt
+    val loopx	: (stmt -> stmt) -> stmt
+    val times	: int -> (unit -> stmt) -> stmt
+    val repeat	: int -> stmt -> stmt
+    val try	: (stmt -> stmt) -> otherwise -> stmt -> stmt
+
+    val turnto	: condition -> yesno -> stmt -> stmt
 
     val compile	: stmt -> unit Instructions.ant
 end

@@ -1,9 +1,13 @@
 import signature ANTE from "ANTE-sig"
 import structure Instructions from "Instructions"
 import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+
+exception Debug of string
 
 structure Ante : ANTE =
 struct
+    open Hole
     open Promise
 
     type marker		= int
@@ -15,6 +19,7 @@ struct
 
     type label		= string
     datatype yesno	= onyes | onno
+    datatype otherwise	= otherwise
     datatype instr	= Fail | Concat of instr * instr |
 			  Goto of label | Label of label * instr |
 			  Mark of marker * instr | Unmark of marker * instr |
@@ -22,7 +27,8 @@ struct
 			  Pick of instr * instr | Drop of instr |
 			  Sense of dir * condition * instr * instr |
 			  Flip of int * instr * instr
-    type stmt		= instr promise * int * instr
+    type stmt		= instr * int * instr
+    type 'a branch	= 'a * stmt
 
 
   (* Label generator *)
@@ -37,34 +43,40 @@ struct
 
     exception Malformed of string
 
+    fun on x y = (x,y)
+
     infixr ++
     fun (p1,0,i1) ++ (p2,n2,i2) = (p2, n2, Concat(i1,i2))
-      | (p1,1,i1) ++ (p2,n2,i2) = (fulfill (p1,i2); (p2,n2,i1))
+      | (p1,1,i1) ++ (p2,n2,i2) = (fill (p1,i2); (p2,n2,i1))
       | (p1,_,i1) ++ (p2,n2,i2) =
 	let
 	    val l = freshlabel ()
 	in
-	    fulfill (p1, Goto l);
+	    fill (p1, Goto l);
 	    (p2, n2, Concat(i1, Label(l,i2)))
 	end
 
-    fun fail ()		= (promise(), 0, Fail)
-    fun goto l		= (promise(), 0, Goto l)
-    fun cont ()		= let val p = promise() in (p, 1, future p) end
+    fun fail ()		= (hole(), 0, Fail)
+    fun goto l		= (hole(), 0, Goto l)
+    fun nop ()		= let val h = hole() in (h, 1, h) end
 
-    fun label l		= let val p = promise() in (p, 1, Label(l, future p)) end
-    fun mark m		= let val p = promise() in (p, 1, Mark(m, future p)) end
-    fun unmark m	= let val p = promise() in (p, 1, Unmark(m, future p)) end
-    fun turn s		= let val p = promise() in (p, 1, Turn(s, future p)) end
-    fun drop ()		= let val p = promise() in (p, 1, Drop(future p)) end
+    fun label l		= let val h = hole() in (h, 1, Label(l, h)) end
+    fun mark m		= let val h = hole() in (h, 1, Mark(m, h)) end
+    fun unmark m	= let val h = hole() in (h, 1, Unmark(m, h)) end
+    fun turn s		= let val h = hole() in (h, 1, Turn(s, h)) end
+    fun drop ()		= let val h = hole() in (h, 1, Drop h) end
 
-    fun move onyes (p,n,i)	= (p, n+1, Move(i, future p))
-      | move onno  (p,n,i)	= (p, n+1, Move(future p, i))
-    fun pick onyes (p,n,i)	= (p, n+1, Pick(i, future p))
-      | pick onno  (p,n,i)	= (p, n+1, Pick(future p, i))
+    fun move onyes (h,n,i)	= (h, n+1, Move(i, h))
+      | move onno  (h,n,i)	= (h, n+1, Move(h, i))
+    fun pick onyes (h,n,i)	= (h, n+1, Pick(i, h))
+      | pick onno  (h,n,i)	= (h, n+1, Pick(h, i))
+    fun sense d c onyes (h,n,i)	= (h, n+1, Sense(d, c, i, h))
+      | sense d c onno  (h,n,i)	= (h, n+1, Sense(d, c, h, i))
+    fun flip j onyes (h,n,i)	= (h, n+1, Flip(j, i, h))
+      | flip j onno  (h,n,i)	= (h, n+1, Flip(j, h, i))
 
     fun join f (p1,n1,i1) (p2,n2,i2) =
-	(fulfill (p2, future p1); (p1, n1+n2, f(i1,i2)))
+	(fill (p2, p1); (p1, n1+n2, f(i1,i2)))
 
     fun move2 onyes b1 onno b2		= join Move b1 b2
       | move2 onno  b1 onyes b2		= join Move b2 b1
@@ -74,20 +86,80 @@ struct
       | pick2 onno  b1 onyes b2		= join Pick b2 b1
       | pick2 _     _  _     _		= raise Malformed "pick"
 
-    fun sense d c onyes b1 onno b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b1 b2
-      | sense d c onno  b1 onyes b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b2 b1
-      | sense _ _ _     _  _     _	= raise Malformed "sense"
+    fun sense2 d c onyes b1 onno b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b1 b2
+      | sense2 d c onno  b1 onyes b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b2 b1
+      | sense2 _ _ _     _  _     _	= raise Malformed "sense"
 
-    fun flip n onyes b1 onno b2		= join (fn (i1,i2) => Flip(n,i1,i2)) b1 b2
-      | flip n onno  b1 onyes b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b2 b1
-      | flip n _     _  _     _		= raise Malformed "flip"
+    fun flip2 n onyes b1 onno b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b1 b2
+      | flip2 n onno  b1 onyes b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b2 b1
+      | flip2 n _     _  _     _	= raise Malformed "flip"
 
     fun flipn bs		= flipn' (List.length bs) bs
-    and flipn' _ []		= cont ()
+    and flipn' _ []		= nop ()
       | flipn' _ [b]		= b
-      | flipn' _ [b1,b2]	= flip 2 onyes b1 onno b2
-      | flipn' n (b::bs)	= flip n onyes b onno (flipn' (n-1) bs)
+      | flipn' _ [b1,b2]	= flip2 2 onyes b1 onno b2
+      | flipn' n (b::bs)	= flip2 n onyes b onno (flipn' (n-1) bs)
 
+    fun sensen [] otherwise b	= b
+      | sensen (((d,c),b')::bs) otherwise b =
+	    sense2 d c onyes b' onno (sensen bs otherwise b)
+
+    fun loop b =
+	let
+	    val l = freshlabel ()
+	in
+	    label l ++ b ++ goto l
+	end
+
+    fun loopx f =
+	let
+	    val l1 = freshlabel ()
+	    val l2 = freshlabel ()
+	in
+	    label l1 ++ f (goto l2) ++ goto l1 ++ label l2
+	end
+
+    fun times 0 b = nop ()
+      | times n b = b () ++ times (n-1) b
+
+    fun repeat n b =
+	loopx (fn break => flip2 n onno b onyes break)
+
+    fun try f otherwise b =
+	let
+	    val l1 = freshlabel ()
+	    val l2 = freshlabel ()
+	in
+	    f (goto l1) ++ goto l2 ++ label l1 ++ b ++ label l2
+	end
+
+
+  (* Complex abstractions *)
+
+    fun turnto c onyes b =
+	let
+	    val l1 = freshlabel ()
+	    val l2 = freshlabel ()
+	in
+	    sensen [
+		on(ahead, c) (nop ())
+	    ,
+		on(leftahead, c) (turn left)
+	    ,
+		on(rightahead, c) (turn right)
+	    ] otherwise (goto l2) ++
+	    label l1 ++ b ++
+	    label l2
+	end
+      | turnto c onno b =
+	    sensen [
+		on(ahead, c) (nop ())
+	    ,
+		on(leftahead, c) (turn left)
+	    ,
+		on(rightahead, c) (turn right)
+	    ] otherwise b
+	
 
   (* Compilation *)
 
@@ -116,16 +188,17 @@ struct
 		end
 	    )
 	  | Label(l,i') =>
-	    (case E.lookup (e,l)
-	     of SOME p => (fulfill(p, n); traverse n e a i')
-	      | NONE =>
-		let
-		    val p = promise ()
-		in
-		    fulfill (p, n);
-		    traverse n (E.insert (e,l,p)) a i'
-		end
-	    )
+	    let
+		val (p,e) = case E.lookup (e,l)
+			     of SOME p => (p,e)
+			      | NONE => let val p = promise ()
+					in (p, E.insert(e,l,p)) end
+		val result as (s',l',n',e') = traverse n e a i'
+	    in
+		if UnsafeValue.same (s', future p)
+		then (fulfill(p, n); (n, I.Flip(1,n,n,a)::l', n'+1, e'))
+		else (fulfill(p, s'); result)
+	    end
 	  | Mark(m,i') =>
 	    let
 		val (s',l',n',e') = traverse (n+1) e a i'
@@ -194,9 +267,9 @@ struct
 		(n, I.Flip(j,s1,s2,a)::l1@l2, n2, e2)
 	    end
 
-    fun compile (p,_,i) =
+    fun compile (h,_,i) =
 	let
-	    val _ = fulfill (p, Fail)
+	    val _ = fill (h, Fail)
 	    val (_,l,n,e) = traverse 0 E.empty () i
 	in
 	    assert n <= 10_000 do

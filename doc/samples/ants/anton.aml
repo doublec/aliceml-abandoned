@@ -1,0 +1,36 @@
+import "Ante"
+import "Instructions"
+open Ante
+
+fun seek_food deliver_food =
+    loop (
+	sense here home onno (
+	    pick onyes (
+		times 3 (fn _ => turn left) ++
+		deliver_food
+	    ) ++
+	    turnto food onno (nop ())
+	) ++
+	mark 0 ++
+	move onno (turn left)
+    )
+
+fun deliver_food seek_food =
+    loopx (fn break =>
+	unmark 0 ++
+	sense here home onyes break ++
+	turnto (marker 0) onno (nop ()) ++
+	move onno (nop ())
+    ) ++
+    drop () ++
+    times 3 (fn _ => turn left) ++
+    seek_food
+
+val ant =
+    label "seek" ++
+    seek_food (goto "deliver") ++
+    label "deliver" ++
+    deliver_food (goto "seek")
+
+val _ = Instructions.output ignore (TextIO.stdOut, compile ant)
+val _ = OS.Process.exit OS.Process.success
