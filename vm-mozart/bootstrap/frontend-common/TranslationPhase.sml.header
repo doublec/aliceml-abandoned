@@ -36,10 +36,6 @@ import
 from "x-alice:/common/Inf.ozf"
 
 import
-    structure PreboundType
-from "x-alice:/common/PreboundType.ozf"
-
-import
     structure StringMap
 from "x-alice:/frontend-common/StringMap.ozf"
 
