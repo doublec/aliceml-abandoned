@@ -1,0 +1,173 @@
+<?php include("macros.php3"); ?>
+<?php heading("The <TT>Alt</TT> structure", "The <TT>Alt</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature ALT
+    structure Alt : ALT
+  </PRE>
+
+  <P>
+    The <TT>Alt</TT> structure defines the <TT>alt</TT> type, used for holding
+    binary alternatives (sums), and provides a collection of common combinators.
+  </P>
+
+  <P>
+    The type <TT>alt</TT> and its constructors are available in the
+    <A href="toplevel.php3">toplevel environment</A>.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature ALT =
+    sig
+	datatype ('a,'b) alt = FST of 'a | SND of 'b
+	type     ('a,'b) t   = ('a,'b) alt
+
+	exception Alt
+
+	val isFst :   ('a,'b) alt -> bool
+	val isSnd :   ('a,'b) alt -> bool
+	val fst :     ('a,'b) alt -> 'a
+	val snd :     ('a,'b) alt -> 'b
+	val getFst :  ('a,'b) alt * 'a -> 'a
+	val getSnd :  ('a,'b) alt * 'b -> 'b
+
+	val app :     ('a -> unit) * ('b -> unit) -> ('a,'b) alt -> unit
+	val appFst :  ('a -> unit) -> ('a,'b) alt -> unit
+	val appSnd :  ('b -> unit) -> ('a,'b) alt -> unit
+	val map :     ('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
+	val mapFst :  ('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
+	val mapSnd :  ('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+
+	val equal :   ('a * 'a -> bool) * ('b * 'b -> bool) -> ('a,'b) alt * ('a,'b) alt -> bool
+	val compare : ('a * 'a -> order) * ('b * 'b -> order) -> ('a,'b) alt * ('a,'b) alt -> order
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>datatype ('a,'b) alt = FST of 'a | SND of 'b</TT> <BR>
+      <TT>type t = alt</TT>
+    </DT>
+    <DD>
+      <P>The type of binary sums. It is useful to pass values that can have
+      two alternative types.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Alt</TT>
+    </DT>
+    <DD>
+      <P>Raised on invalid accesses to alternatives.</P>
+    </DD>
+
+    <DT>
+      <TT>isFst <I>alt</I></TT> <BR>
+      <TT>isSnd <I>alt</I></TT>
+    </DT>
+    <DD>
+      <P>The function <TT>isFst</TT> returns <TT>true</TT> if
+      <TT><I>alt</I></TT> is <TT>FST <I>v</I></TT>, <TT>false</TT> otherwise.
+      The function <TT>isSnd</TT> returns <TT>true</TT> if
+      <TT><I>alt</I></TT> is <TT>SND <I>v</I></TT>, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>fst <I>alt</I></TT> <BR>
+      <TT>snd <I>alt</I></TT>
+    </DT>
+    <DD>
+      <P>The function <TT>fst</TT> returns <TT><I>v</I></TT> if
+      <TT><I>alt</I></TT> is <TT>FST <I>v</I></TT>, and raises
+      <TT>Alt</TT> otherwise.
+      The function <TT>snd</TT> returns <TT><I>v</I></TT> if
+      <TT><I>alt</I></TT> is <TT>SND <I>v</I></TT>, and raises
+      <TT>Alt</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>getFst (<I>alt</I>, <I>v'</I>)</TT> <BR>
+      <TT>getSnd (<I>alt</I>, <I>v'</I>)</TT>
+    </DT>
+    <DD>
+      <P>The function <TT>getFst</TT> returns <TT><I>v</I></TT> if
+      <TT><I>alt</I></TT> is <TT>FST <I>v</I></TT>, else <TT><I>v'</I></TT>.
+      The function <TT>getSnd</TT> returns <TT><I>v</I></TT> if
+      <TT><I>alt</I></TT> is <TT>SND <I>v</I></TT>, else <TT><I>v'</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>app (<I>f</I>,<I>g</I>) <I>alt</I></TT> <BR>
+      <TT>appFst <I>f</I> <I>alt</I></TT> <BR>
+      <TT>appSnd <I>g</I> <I>alt</I></TT>
+    </DT>
+    <DD>
+      <P>The function <TT>app</TT> applies the functions <TT><I>f</I></TT> or
+      <TT><I>g</I></TT> to the given constituent value of
+      <TT><I>alt</I></TT>, respectively. For the functions <TT>appFst</TT> and
+      <TT>appSnd</TT> the following equivalences hold:</P>
+      <PRE>
+	appFst f alt = app (f, ignore) alt
+	appSnd g alt = app (ignore, g) alt</PRE>
+    </DD>
+
+    <DT>
+      <TT>map (<I>f</I>,<I>g</I>) <I>alt</I></TT> <BR>
+      <TT>mapFst <I>f</I> <I>alt</I></TT> <BR>
+      <TT>mapSnd <I>g</I> <I>alt</I></TT>
+    </DT>
+    <DD>
+      <P>The function <TT>map</TT> produces an alternative by mapping the
+      functions <TT><I>f</I></TT> or <TT><I>g</I></TT> on the constituent
+      value of <TT><I>alt</I></TT>.
+      For the functions <TT>mapFst</TT> and <TT>mapSnd</TT> the following
+      equivalences hold:</P>
+      <PRE>
+	mapFst f alt = map (f, id) alt
+	mapSnd g alt = map (id, g) alt</PRE>
+      <P>where <TT>id</TT> is the identity function.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>equalFst</I>, <I>equalSnd</I>) (<I>alt1</I>, <I>alt2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an equality function on alternatives, given suitable equality
+      functions for each constituent type.</P>
+    </DD>
+
+    <DT>
+      <TT>compare (<I>compareFst</I>, <I>compareSnd</I>) (<I>alt1</I>, <I>alt2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an ordering function on alternatives, given suitable ordering
+      functions for each constituent type. The constructed ordering is defined
+      as follows:</P>
+      <PRE>
+      fun compare (compareFst, compareSnd) =
+	  fn (FST x1, FST x2) => compareFst (x1, x2)
+	   | (SND y1, SND y2) => compareSnd (y1, y2)
+	   | (FST _,  SND _ ) => LESS
+	   | (SND _,  FST _ ) => GREATER</PRE>
+    </DD>
+  </DL>
+
+<?php section("also", "see also") ?>
+
+  <DL><DD>
+    <A href="option.php3">Option</A>,
+    <A href="pair.php3">Pair</A>
+  </DD></DL>
+
+<?php footing() ?>
