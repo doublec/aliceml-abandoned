@@ -26,9 +26,6 @@ functor MakeElaborationPhase(
 
     nonfix mod
 
-(*DEBUG*)
-val lev = ref 0
-
   (* Error *)
 
     val error = E.error
@@ -420,7 +417,7 @@ val lev = ref 0
 	    val  s       = Inf.empty()
 	    val  decs'   = elabDecs(E, s, decs)
 (*DEBUG*)
-val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
+(*val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)*)
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = deleteScope E
@@ -1074,7 +1071,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 	    val  decs'   = elabDecs(E, s, decs)
 	    val  p       = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Label.fromString "?let")
+(*val p = Path.fromLab(Label.fromString "?let")*)
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = deleteScope E
@@ -1242,7 +1239,7 @@ val p = Path.fromLab(Label.fromString "?let")
 	    val  decs'   = elabDecs(E, s, decs)
 	    val  p       = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Label.fromString "?let")
+(*val p = Path.fromLab(Label.fromString "?let")*)
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (j,inf') = elabInf(E, inf)
 	    val  _       = deleteScope E
@@ -1254,7 +1251,7 @@ val p = Path.fromLab(Label.fromString "?let")
 	let
 	    val (j,mod') = elabMod(E, mod)
 (*DEBUG*)
-val _ = Inf.strengthen(Path.fromLab(Label.fromString "?singleton"), j)
+(*val _ = Inf.strengthen(Path.fromLab(Label.fromString "?singleton"), j)*)
 	    val  _       = Inf.strengthen(Path.invent(), j)
 	    val  j'      = Inf.singleton j
 	in
@@ -1428,7 +1425,7 @@ val _ = Inf.strengthen(Path.fromLab(Label.fromString "?singleton"), j)
 	    val decs' = elabDecs(E, s', decs)
 	    val p     = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Label.fromString "?local")
+(*val p = Path.fromLab(Label.fromString "?local")*)
 	    val _     = Inf.strengthenSig(p, s')
 	in
 	    O.LocalDec(nonInfo(i), decs')

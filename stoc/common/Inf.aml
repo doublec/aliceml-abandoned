@@ -1198,8 +1198,15 @@ structure InfPrivate =
 	    realiseSig(rea, s2) ;
 	    List.app (intersectItem rea) pairs ;
 	    itemsr1 := items1 @ left ;
-	    itemsr2 := !itemsr1
+	    itemsr2 := !itemsr1 ;
+	    List.app (fn item =>
+		      Map.insert(m1, (itemSpace item, itemLab item), [item]))
+		      left ;
+	    List.app (fn item =>
+		      Map.insert(m2, (itemSpace item, itemLab item), [item]))
+		     (!itemsr2)
 	end
+
     and intersectItem rea (item1 as ref item1', ref item2') =
 	    item1 := intersectItem'(rea, item1', item2')
 
