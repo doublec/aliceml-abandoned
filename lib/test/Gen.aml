@@ -36,7 +36,7 @@ struct
     
     fun const v (i:int)	    = v
 
-    fun oneOf vals	    = List.nth (vals, Random.int (length vals))
+    fun oneOf vals          = List.nth (vals, Random.int (length vals))
 
     fun oneOfFreq vals	    = 
 	    select (Random.int (List.foldl 
@@ -58,7 +58,7 @@ struct
 	    cond' (gen n, 1)
 	end
 
-    val bool		= oneOf [const true, const false]
+    fun bool n		= oneOf [const true, const false] n
     fun char n		= Char.chr (Random.int (Char.maxOrd + 1))
     fun string n	= String.tabulate (n, char) 
     fun int n		= if bool 0 then Random.int n else ~ (Random.int n)

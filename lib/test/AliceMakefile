@@ -10,7 +10,7 @@ endif
 export ROOT
 
 ifndef SH_EXT
-  SH_EXT := ozf
+  SH_EXT := alc
 endif
 export SH_EXT
 
