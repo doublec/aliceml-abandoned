@@ -1,6 +1,17 @@
-signature IMP_SET =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+signature IMP_SET =
+sig
     type item
     type set
     type t = set
@@ -31,5 +42,4 @@ signature IMP_SET =
     val app :		(item -> unit) -> set -> unit
     val fold :		(item * 'a -> 'a) -> 'a -> set -> 'a
     val find :		(item -> bool) -> set -> item option
-
-  end
+end
