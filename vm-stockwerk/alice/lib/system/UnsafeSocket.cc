@@ -87,6 +87,7 @@ DEFINE1(UnsafeSocket_server) {
   }
   Tuple *tuple = Tuple::New(3);
   tuple->Init(0, Store::IntToWord(sock));
+  //--** nonsense: the local address is only known when accept has been called:
   tuple->Init(1, String::New(GetHostName(&addr))->ToWord());
   tuple->Init(2, Store::IntToWord(ntohs(addr.sin_port)));
   RETURN(tuple->ToWord());
@@ -95,6 +96,8 @@ DEFINE1(UnsafeSocket_server) {
 DEFINE1(UnsafeSocket_accept) {
   DECLARE_INT(sock, x0);
 
+  //--** non-blocking accept: sock is marked as readable when accept
+  // can complete without blocking
   sockaddr_in addr;
   socklen_t addrLen = sizeof(addr);
   int client = accept(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen);
