@@ -239,7 +239,7 @@ STOCSOURCES = \
 	$(STOCFRONTENDCOMMONSOURCES) $(STOCFRONTENDSMLSOURCES) \
 	$(STOCBACKENDCOMMONSOURCES) $(STOCBACKENDMOZARTSOURCES) \
 	$(STOCTOPSOURCES)
-ALLSOURCES = Init.oz $(LIBSOURCES) $(STOCSOURCES)
+ALLSOURCES = StowMain.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
@@ -305,6 +305,9 @@ build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 build1/lib/system/%.oz: vm-mozart/%.oz
 	cp $< $@
 
+build1/%.oz: vm-mozart/%.oz
+	cp $< $@
+
 build1/lib/system/%.asig: lib/system/%.asig Rel2.import
 	cat Rel2.import $< > $@
 
@@ -356,9 +359,6 @@ build1/stoc/backend-mozart/%.asig: stoc/backend-mozart/%.asig \
 build1/stoc/top/%.aml: stoc/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/%.oz: %.oz
-	cp $< $@
-
 build1/%: %
 	cp $< $@
 
@@ -382,7 +382,7 @@ BUILD1OZLINPUTS = \
 	  $(BUILD1OZSOURCES:%.oz=%.ozf)) \
 	build1/stoc/top/StocMain.ozf
 
-build1/stow.ozf: build1/Init.ozf $(BUILD1OZLINPUTS)
+build1/stow.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
 	$(OZL) --include=.. $< -o $@
 
 build1/stoc.ozf: $(BUILD1OZLINPUTS)
@@ -541,7 +541,7 @@ BUILD3OZLINPUTS = \
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/stow.ozf build3/stoc.ozf build3/stot.ozf
 
-build3/lib/fundamental/RTT.ozf: build2/install/lib/rtt/RTT.ozf
+build3/lib/fundamental/RTT.ozf: build2/lib/rtt/RTT.ozf
 	$(OZL) --include=.. $< -o $@
 
 build3/%.ozf: build3/%.oz
@@ -561,7 +561,7 @@ $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 build3/stow.ozf: $(BUILD3OZLINPUTS)
-	$(OZL) --include=.. build3/Init.ozf -o $@
+	$(OZL) --include=.. build3/StowMain.ozf -o $@
 
 build3/stoc.ozf: $(BUILD3OZLINPUTS)
 	$(OZL) --include=.. build3/stoc/top/StocMain.ozf -o $@
