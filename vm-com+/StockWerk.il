@@ -175,12 +175,12 @@
 
   .class sealed public ExceptionWrapper extends System.RuntimeException {
     .field public initonly class StockWerk.StockWert Value
-    .field public initonly int32 Line
     .method public void .ctor(class StockWerk.StockWert) {
       ldarg.0
+      call instance void System.RuntimeException::.ctor()
+      ldarg.0
       ldarg.1
-      ldc.i4.M1
-      tail. call instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert, int32)
+      stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
       ret
     }
     .method public void .ctor(class StockWerk.StockWert, int32) {
@@ -197,9 +197,6 @@
       ldarg.0
       ldarg.1
       stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
-      ldarg.0
-      ldarg.2
-      stfld int32 StockWerk.ExceptionWrapper::Line
       ret
     }
   }
@@ -1570,13 +1567,13 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
-    .method synchronized virtual public class System.String ToString () {
+    .method synchronized virtual public class System.String ToString() {
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
       dup
       brtrue.s bound
       pop
-      ldstr "_<promise>"
+      ldstr "<transient>"
       ret
     bound:
       tail. callvirt instance class System.String System.Object::ToString()
@@ -1636,7 +1633,7 @@
       tail. call instance class StockWerk.StockWert StockWerk.Promise::AwaitInternal()
       ret
     }
-    .method synchronized virtual public class System.String ToString () {
+    .method synchronized virtual public class System.String ToString() {
       ldarg.0
       ldfld class StockWerk.Promise StockWerk.Future::Prom
       tail. callvirt instance class System.String System.Object::ToString()
@@ -1756,6 +1753,22 @@
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
       tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      ret
+    }
+    .method synchronized virtual public class System.String ToString() {
+      ldarg.0
+      ldfld int32 StockWerk.ByNeed::State
+      switch(unbound, failed, bound)
+    unbound:
+      ldstr "<byNeed>"
+      ret
+    failed:
+      ldstr "<byNeed:failed>"
+      ret
+    bound:
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+      tail. callvirt instance class System.String System.Object::ToString()
       ret
     }
   }
@@ -2603,9 +2616,9 @@
       tail. call instance void StockWerk.Procedure0::.ctor()
       ret
     }
-    .method virtual public class StockWerk.StockWert Apply() {
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
       ldarg.1
-      newobj instance void StockWerk.byNeed::.ctor(class StockWerk.StockWert)
+      newobj instance void StockWerk.ByNeed::.ctor(class StockWerk.StockWert)
       ret
     }
   }
