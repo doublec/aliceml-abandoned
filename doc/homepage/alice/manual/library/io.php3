@@ -18,7 +18,7 @@
     <A href="text-io.php3"><TT>TextIO</TT></A>,
     <A href="imperative-io.php3"><TT>IMPERATIVE_IO</TT></A>,
     <A href="stream-io.php3"><TT>STREAM_IO</TT></A>,
-    <A href="prim-io.php3"><TT>PRIM_IO</TT></A>,
+    <A href="prim-io.php3"><TT>PRIM_IO</TT></A>
   </P>
 
 <?php section("import", "import") ?>

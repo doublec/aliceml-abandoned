@@ -26,7 +26,7 @@ INSTALLFILES_MANUAL_0 = \
 INSTALLFILES_MANUAL_LIBRARY_0 = \
 	style.css macros.php3 menu.php3 index.php3 \
 	alt.php3 array.php3 array-slice.php3 \
-	bin-io.php3 bool.php3 byneed.php3 \
+	bin-io.php3 bool.php3 byneed.php3 byte.php3 \
 	char.php3 command-line.php3 \
 	future.php3 \
 	general.php3 \
