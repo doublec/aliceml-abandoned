@@ -41,6 +41,10 @@ import
     structure TextIO
 from "x-alice:/lib/TextIO.ozf"
 
+import
+    structure OS
+from "x-alice:/lib/OS.ozf"
+
 (*--------------------------------------------------------------------*)
 
 signature SYMBOL =
@@ -450,3 +454,5 @@ in
 end
 
 val _ = print (Elab.elab (env, test6))
+
+val _ = OS.Process.exit OS.Process.success
