@@ -238,12 +238,21 @@ STOCBACKENDMOZARTSOURCES0 = \
 #--** CodeGenPhase.ozf should be built via replacesign
 STOCBACKENDMOZARTSOURCES = $(STOCBACKENDMOZARTSOURCES0:%=stoc/backend-mozart/%)
 
+STOCBACKENDDOTNETSOURCES0 = \
+	SKELETON-sig.aml Skeleton.aml IL-sig.aml IL.aml System.aml \
+	Alice.aml BUILTINS-sig.aml Builtins.aml CODE_STORE-sig.aml \
+	CodeStore.aml CODE_GEN_PHASE-sig.aml CodeGenPhase.aml \
+	MkBackendDotNet.aml
+STOCBACKENDDOTNETSOURCES = $(STOCBACKENDDOTNETSOURCES0:%=stoc/backend-dotnet/%)
+
 STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
+	SMLToDotNetRecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
+	SMLToDotNetBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
 	SMLToMozartToplevel.aml
 STOCTOPSOURCES = $(STOCTOPSOURCES0:%=stoc/top/%)
@@ -253,13 +262,15 @@ STOCSOURCES = \
 	$(STOCINFRASTRUCTURESOURCES) $(STOCCOMMONSOURCES) \
 	$(STOCFRONTENDCOMMONSOURCES) $(STOCFRONTENDSMLSOURCES) \
 	$(STOCBACKENDCOMMONSOURCES) $(STOCBACKENDMOZARTSOURCES) \
-	$(STOCTOPSOURCES) $(STOCSOURCES0:%=stoc/%)
+	$(STOCBACKENDDOTNETSOURCES) $(STOCTOPSOURCES) \
+	$(STOCSOURCES0:%=stoc/%)
 ALLSOURCES = StowMain.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
 	stoc stoc/infrastructure stoc/common stoc/frontend-common \
-	stoc/frontend-sml stoc/backend-common stoc/backend-mozart stoc/top
+	stoc/frontend-sml stoc/backend-common stoc/backend-mozart \
+	stoc/backend-dotnet stoc/top
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -368,6 +379,9 @@ build1/stoc/backend-mozart/%.aml: stoc/backend-mozart/%.aml Rel2.import
 
 build1/stoc/backend-mozart/%.asig: stoc/backend-mozart/%.asig \
 	Rel2.import
+	cat Rel2.import $< > $@
+
+build1/stoc/backend-dotnet/%.aml: stoc/backend-dotnet/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/stoc/top/%.aml: stoc/top/%.aml Rel2.import
@@ -530,7 +544,8 @@ INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/Fundamental.ozf
 INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf
-INSTALL3STOCTOPFILES = Composer.ozf SMLToMozartRecursiveCompiler.ozf
+INSTALL3STOCTOPFILES = Composer.ozf \
+	SMLToMozartRecursiveCompiler.ozf SMLToDotNetRecursiveCompiler.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -558,7 +573,8 @@ build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/stoc/LinkedStocMain.ozf \
 	build3/stoc/LinkedStotMain.ozf \
 	build3/stoc/top/LinkedComposer.ozf \
-	build3/stoc/top/LinkedSMLToMozartRecursiveCompiler.ozf
+	build3/stoc/top/LinkedSMLToMozartRecursiveCompiler.ozf \
+	build3/stoc/top/LinkedSMLToDotNetRecursiveCompiler.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 	cp $< $@
@@ -600,11 +616,13 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 
 build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
-	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler $< -o $@
+	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
+	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
 
 build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
-	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler $< -o $@
+	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
+	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
 
 build3/stoc/top/LinkedComposer.ozf: build3/stoc/top/Composer.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ $< -o $@
@@ -612,6 +630,11 @@ build3/stoc/top/LinkedComposer.ozf: build3/stoc/top/Composer.ozf
 build3/stoc/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	build3/stoc/top/SMLToMozartRecursiveCompiler.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
+	--exclude=$(BUILD3)/lib,$(BUILD3)/stoc/top/Composer $< -o $@
+
+build3/stoc/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
+	build3/stoc/top/SMLToDotNetRecursiveCompiler.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
 	--exclude=$(BUILD3)/lib,$(BUILD3)/stoc/top/Composer $< -o $@
 
