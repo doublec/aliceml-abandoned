@@ -37,7 +37,7 @@ ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
                SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml \
                LINEAR-sig.aml Linear.aml
 
-NATIVES = FD FS Space Explorer
+NATIVES = FD FS Space Search Explorer
 
 OZSOURCES=$(NATIVES:%=Unsafe%.oz)
 
