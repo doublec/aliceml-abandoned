@@ -1,0 +1,25 @@
+(* Alice Snake 2.0 - HighscoreIO
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+
+import structure Highscore from "../common/Highscore"
+
+signature HIGHSCORE_IO =
+sig
+
+    val load:   unit -> Highscore.highscore
+    (* load the highscore, create a new one if no highscore exists *)
+
+    val save:   Highscore.highscore -> unit
+
+
+end
+

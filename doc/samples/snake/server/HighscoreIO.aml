@@ -1,0 +1,36 @@
+(* Alice Snake 2.0 - HighscoreIO
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import signature HIGHSCORE_IO from "HIGHSCORE_IO-sig"
+import structure Highscore    from "../common/Highscore"
+
+structure HighscoreIO :> HIGHSCORE_IO =
+struct
+
+    val path = OS.Path.currentArc ^ "/highscore/highscore.hs"
+
+    fun load () = 
+	let
+	    structure H = 
+		unpack ((Pickle.load path) handle _ =>
+			(pack (val h = Highscore.empty) 
+		           :> (val h : Highscore.highscore))) 
+		     : (val h : Highscore.highscore)
+	in
+	    H.h
+	end
+    (* load the highscore, create a new one if no highscore exists *)
+
+    fun save hs = Pickle.save (path,pack (val h = hs) 
+			              :> (val h : Highscore.highscore))
+
+end
+
