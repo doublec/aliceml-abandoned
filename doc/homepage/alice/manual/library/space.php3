@@ -14,7 +14,7 @@
     engines for problem solving.
   </P>
   <P>
-    For example, depth-first one solution search can be done as follows.
+    For example, simple depth-first one solution search can be done as follows.
   </P>
   <PRE>
     fun searchOne s =
@@ -29,8 +29,13 @@
 		      case searchOne s of
 			  NONE   => (Space.commit(c, RANGE(2, n)); searchOne c)
 			| SOME s => SOME s)
-		 end)
-	 
+		 end)</PRE>
+   <P>
+     Given the <I>money script</I> from
+     <A href="http://www.ps.uni-sb.de/alice/manual/constraints.php3">here</A,
+     a solution can be searched by invoking
+   </P>
+   <PRE>
     val solution = searchOne (Space.space money)</PRE>
 
 <?php section("import", "import"); ?>
