@@ -53,12 +53,12 @@ public:
   }
   // Calling Convention Conversion
   static word Construct(word args);
-  // Returns IntToWord(0) if need to REQUEST argument
-  // Presets Scheduler::currentData
+  //   Deconstruct returns IntToWord(0) if argument needs to be requested;
+  //   Sets Scheduler::currentData as a side-effect
   static word Deconstruct(word args);
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
-  virtual void PurgeFrame(TaskStack *taskStack);
+  virtual void PurgeFrame(word frame);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack) = 0;
   virtual Result Handle(word exn, Backtrace *trace, TaskStack *taskStack);

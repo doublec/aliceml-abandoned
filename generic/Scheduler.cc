@@ -125,12 +125,15 @@ void Scheduler::Run() {
 	break;
       }
     }
-//      if (Store::NeedGC()) {
-//        //--** add threads waiting for I/O as well as properties
-//        root = threadQueue->ToWord();
-//        RootSet::DoGarbageCollection();
-//        threadQueue = ThreadQueue::FromWordDirect(root);
-//      }
+#if 0 //--** enable GC
+    if (Store::NeedGC()) {
+      //--** add threads waiting for I/O as well as properties
+      threadQueue->Purge();
+      root = threadQueue->ToWord();
+      RootSet::DoGarbageCollection();
+      threadQueue = ThreadQueue::FromWordDirect(root);
+    }
+#endif
   }
   //--* select(...)
 }

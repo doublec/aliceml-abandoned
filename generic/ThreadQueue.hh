@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -20,14 +20,26 @@
 #include "adt/Queue.hh"
 #include "emulator/Thread.hh"
 
-class ThreadQueue : private Queue {
+class ThreadQueue: private Queue {
 private:
-  static const int threshold = 8; // to be checked
+  static const int threshold = 8; //--** to be checked
 public:
   using Queue::ToWord;
+
+  // ThreadQueue Constructor
+  static ThreadQueue *New() {
+    return static_cast<ThreadQueue *>(Queue::New(threshold));
+  }
+  // ThreadQueue Untagging
+  static ThreadQueue *FromWord(word x) {
+    return static_cast<ThreadQueue *>(Queue::FromWord(x));
+  }
+  static ThreadQueue *FromWordDirect(word x) {
+    return static_cast<ThreadQueue *>(Queue::FromWordDirect(x));
+  }
+
   // ThreadQueue Functions
-  Thread *Dequeue() {
-    //--** should respect thread priorities
+  Thread *Dequeue() { //--** should respect thread priorities
     if (IsEmpty())
       return INVALID_POINTER;
     else
@@ -39,21 +51,9 @@ public:
   void Remove(Thread *thread) {
     Queue::Remove(thread->ToWord());
   }
-  int Member(Thread *thread) {
-    thread = thread;
-    return 0;
-    //    Queue::IsMember(thread->ToWord());
-  }
-  // ThreadQueue Constructor
-  static ThreadQueue *New() {
-    return static_cast<ThreadQueue *>(Queue::New(threshold));
-  }
-  // ThreadQueue Untagging
-  static ThreadQueue *FromWord(word x) {
-    return static_cast<ThreadQueue *>(Queue::FromWord(x));
-  }
-  static ThreadQueue *FromWordDirect(word x) {
-    return static_cast<ThreadQueue *>(Queue::FromWordDirect(x));
+  void Purge() {
+    for (u_int i = GetNumberOfElements(); i--; )
+      Thread::FromWordDirect(GetNthElement(i))->Purge();
   }
 };
 
