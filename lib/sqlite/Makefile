@@ -39,7 +39,7 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool -v link $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) $(EXTRA_LIBS) -o $@
 
 %.alc: %.aml
 	alicec -c $< -o $@
