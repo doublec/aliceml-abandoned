@@ -62,7 +62,8 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    if List.null (!stack) then
 		let
 		    val s =
-			String.separate ", " (List.map idToString (!globalIds))
+			String.concatWith ", "
+					  (List.map idToString (!globalIds))
 		in
 		    raise Crash.Crash ("MkEnvironment.endTop: globalIds " ^ s)
 		end

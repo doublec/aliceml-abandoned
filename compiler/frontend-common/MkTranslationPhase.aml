@@ -1569,7 +1569,7 @@ struct
 	    val ss' = trSpecs(E, idToExp s', ss)
 	    val e'  = callInf(E, lab_sig, idToExp s')
 	in
-	    O.LetExp(typInfo(r, typ_inf E), Vector.append(#[d'], ss'), e')
+	    O.LetExp(typInfo(r, typ_inf E), Vector.concat[#[d'], ss'], e')
 	end
 
       | trInf'(E, I.FunInf(i,x,j1,j2)) =
@@ -2205,7 +2205,7 @@ struct
 	let
 	    val (xjus',ds1') = trAnns(E,a_s)
 	    val  ds2'        = trDecs(E,ds)
-	    val  ds'         = Vector.append(ds1',ds2')
+	    val  ds'         = Vector.concat[ds1',ds2']
 	    val  ids'        = ids(E,ds)
 	    val  fs'         = Vector.map (idToFld (fn x' => x')) ids'
 	    val  s           = #sign i

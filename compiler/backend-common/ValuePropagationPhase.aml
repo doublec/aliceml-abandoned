@@ -722,13 +722,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun testsAppend (NONE, testsOpt) = testsOpt
 	  | testsAppend (testsOpt, NONE) = testsOpt
 	  | testsAppend (SOME (LitTests xs), SOME (LitTests ys)) =
-	    SOME (LitTests (Vector.append (xs, ys)))
+	    SOME (LitTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME (TagTests xs), SOME (TagTests ys)) =
-	    SOME (TagTests (Vector.append (xs, ys)))
+	    SOME (TagTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME (ConTests xs), SOME (ConTests ys)) =
-	    SOME (ConTests (Vector.append (xs, ys)))
+	    SOME (ConTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME (VecTests xs), SOME (VecTests ys)) =
-	    SOME (VecTests (Vector.append (xs, ys)))
+	    SOME (VecTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME _, SOME _) =
 	    raise Crash.Crash "ValuePropagationPhase.testsAppend"
 

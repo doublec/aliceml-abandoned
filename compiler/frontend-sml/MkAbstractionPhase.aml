@@ -3614,7 +3614,7 @@ struct
 	    val  _             = deleteScope E
 	    val  _             = union(E,E'')
 	in
-	    O.Comp(i, anns', Vector.append(decs1',decs2'))
+	    O.Comp(i, anns', Vector.concat[decs1',decs2'])
 	end
 
 

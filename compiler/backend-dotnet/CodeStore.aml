@@ -59,7 +59,7 @@ structure CodeStore :> CODE_STORE =
 	    ref nil
 
 	fun className class =
-	    Vector.append (!namespace, #["P" ^ Stamp.toString class])
+	    Vector.concat [!namespace, #["P" ^ Stamp.toString class]]
 	fun sfldName i = "V" ^ Int.toString i
 	fun fldName i = "G" ^ Int.toString i
 
