@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Signature           from "../../lib/system/Signature"
 import structure Url                 from "../../lib/utility/Url"
 import structure Name                from "../../lib/rtt/Name"
 import structure Label               from "../../lib/rtt/Label"
@@ -114,7 +113,7 @@ signature FLAT_GRAMMAR =
 	  | FailExp of exp_info
 	withtype body = stm list
 
-	type sign = Signature.t
+	type sign = IntermediateGrammar.sign
 	type component =
 	     (id * sign * Url.t) vector * body * (label * id) vector * sign
 	type t = component

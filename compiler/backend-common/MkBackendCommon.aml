@@ -28,12 +28,10 @@ import structure MkFlatteningPhase        from "MkFlatteningPhase"
 import structure ValuePropagationPhase    from "ValuePropagationPhase"
 import structure MkLivenessAnalysisPhase  from "MkLivenessAnalysisPhase"
 
-functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
-			structure Switches: SWITCHES) =
+functor MkBackendCommon(structure Switches: SWITCHES) =
     let
 	structure Phase1 =
-	    MkFlatteningPhase(val loadSign = loadSign
-			      structure Switches = Switches)
+	    MkFlatteningPhase(structure Switches = Switches)
 	structure Phase1 =
 	    MkTracingPhase(structure Phase = Phase1
 			   structure Switches = Switches

@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Signature            from "../../lib/system/Signature"
 import structure Assert               from "../../lib/utility/Assert"
 import structure GlobalStamp          from "../../lib/utility/GlobalStamp"
 import structure Url                  from "../../lib/utility/Url"
@@ -37,10 +36,7 @@ import structure SimplifyRec          from "SimplifyRec"
 import signature SWITCHES             from "../infrastructure/SWITCHES-sig"
 import signature FLATTENING_PHASE     from "FLATTENING_PHASE-sig"
 
-functor MkFlatteningPhase(val loadSign:
-			      Source.desc * Url.t -> FlatGrammar.sign
-			  structure Switches: SWITCHES) :>
-    FLATTENING_PHASE =
+functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = IntermediateGrammar
@@ -1016,9 +1012,7 @@ functor MkFlatteningPhase(val loadSign:
 	    let
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
-				(translateId id,
-				 Signature.strip (loadSign (desc, url), sign),
-				 url)) imports
+				(translateId id, sign, url)) imports
 		val labelIdList =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), id), rest) =>
 				     (label, translateId id)::rest)
@@ -1037,6 +1031,6 @@ functor MkFlatteningPhase(val loadSign:
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
 		IntermediateAux.reset ();
-		(imports', body', exports', Signature.fromSig sign)
+		(imports', body', exports', sign)
 	    end
     end
