@@ -118,12 +118,6 @@ public:
   static void *WordToUnmanagedPointer(word x) {
     return PointerOp::DecodeUnmanagedPointer(x);
   }
-  static word FunctionPointerToWord(int v) {
-    return Store::IntToWord(v >> 1);
-  }
-  static int WordToFunctionPointer(word x) {
-    return Store::WordToInt(x) << 1;
-  }
 #ifdef DEBUG_CHECK
   static void MemStat();
 #endif
