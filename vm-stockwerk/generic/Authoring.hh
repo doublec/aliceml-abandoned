@@ -20,48 +20,43 @@
 #include "emulator/Backtrace.hh"
 
 #define DEFINE0(name)						\
-  static Interpreter::Result name(word, TaskStack *taskStack) {	\
+  static Interpreter::Result name(TaskStack *taskStack) {	\
     word prim_self = taskStack->GetFrame();			\
     prim_self = prim_self;					\
     taskStack->PopFrame();
-#define DEFINE1(name)							\
-  static Interpreter::Result name(word args, TaskStack *taskStack) {	\
-    word prim_self = taskStack->GetFrame();				\
-    prim_self = prim_self;						\
-    taskStack->PopFrame();						\
-    word x0 = args;
-#define DEFINE2(name)							\
-  static Interpreter::Result name(word args, TaskStack *taskStack) {	\
-    Block *pargs = Store::DirectWordToBlock(args);			\
-    word prim_self = taskStack->GetFrame();				\
-    prim_self = prim_self;						\
-    taskStack->PopFrame();						\
-    word x0 = pargs->GetArg(0);						\
-    word x1 = pargs->GetArg(1);
-#define DEFINE3(name)							\
-  static Interpreter::Result name(word args, TaskStack *taskStack) {	\
-    Block *pargs = Store::DirectWordToBlock(args);			\
-    word prim_self = taskStack->GetFrame();				\
-    prim_self = prim_self;						\
-    taskStack->PopFrame();						\
-    word x0 = pargs->GetArg(0);						\
-    word x1 = pargs->GetArg(1);						\
-    word x2 = pargs->GetArg(2);
-
+#define DEFINE1(name)						\
+  static Interpreter::Result name(TaskStack *taskStack) {	\
+    word prim_self = taskStack->GetFrame();			\
+    prim_self = prim_self;					\
+    taskStack->PopFrame();					\
+    word x0 = Scheduler::currentArgs[0];
+#define DEFINE2(name)						\
+  static Interpreter::Result name(TaskStack *taskStack) {	\
+    word prim_self = taskStack->GetFrame();			\
+    prim_self = prim_self;					\
+    taskStack->PopFrame();					\
+    word x0 = Scheduler::currentArgs[0];			\
+    word x1 = Scheduler::currentArgs[1];
+#define DEFINE3(name)						\
+  static Interpreter::Result name(TaskStack *taskStack) {	\
+    word prim_self = taskStack->GetFrame();			\
+    prim_self = prim_self;					\
+    taskStack->PopFrame();					\
+    word x0 = Scheduler::currentArgs[0];			\
+    word x1 = Scheduler::currentArgs[1];			\
+    word x2 = Scheduler::currentArgs[2];
 #define END }
 
-#define RETURN(w) {							\
-  Scheduler::currentArgs = Interpreter::OneArg(w);                      \
-  return Interpreter::CONTINUE;	                                        \
+#define RETURN(w) {				\
+  Scheduler::nArgs = Scheduler::ONE_ARG;	\
+  Scheduler::currentArgs[0] = w;		\
+  return Interpreter::CONTINUE;			\
 }
-#define RETURN_UNIT {							\
-  Scheduler::currentArgs = Interpreter::EmptyArg();                     \
-  return Interpreter::CONTINUE;		                                \
+#define RETURN_UNIT {				\
+  Scheduler::nArgs = 0;				\
+  return Interpreter::CONTINUE;			\
 }
-#define RETURN_INT(i) {							\
-  Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(i));    \
-  return Interpreter::CONTINUE;	                                        \
-}
+#define RETURN_INT(i) RETURN(Store::IntToWord(i));
 #define RETURN_BOOL(b) RETURN_INT(!!(b));
 
 #define PREEMPT {							\

@@ -26,11 +26,11 @@ private:
   static word aliceTransformName;
 public:
   // Primitive C Type
-  typedef Interpreter::Result (*function)(word, TaskStack *);
+  typedef Interpreter::Result (*function)(TaskStack *);
   // Primitive Function
-  static word MakeFunction(const char *name, function value,
+  static word MakeFunction(const char *name, function function,
 			   u_int arity, bool sited = false);
-  static word MakeClosure(const char *name, function value,
+  static word MakeClosure(const char *name, function function,
 			  u_int arity, bool sited = false);
   // Primitive Static Constructor
   static void Init();

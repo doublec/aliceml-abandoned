@@ -36,30 +36,16 @@ public:
   // Handler Methods
   virtual void PrepareForGC(Block *p);
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
-  // Argument Creation
-  static inline word EmptyArg() {
-    Block *p = Store::AllocBlock(EMPTYARG_LABEL, 1);
-    p->InitArg(0, Store::IntToWord(0));
-    return p->ToWord();
-  }
-  static inline word OneArg(word value) {
-    Block *p = Store::AllocBlock(ONEARG_LABEL, 1);
-    p->InitArg(0, value);
-    return p->ToWord();
-  }
-  static inline Block *TupArgs(u_int size) {
-    return Store::AllocBlock(TUPARGS_LABEL, size);
-  }
   // Calling Convention Conversion
-  static word Construct(word args);
-  //   Deconstruct returns IntToWord(0) if argument needs to be requested;
+  static void Construct();
+  //   Deconstruct returns true iff argument needs to be requested;
   //   Sets Scheduler::currentData as a side-effect
-  static word Deconstruct(word args);
+  static bool Deconstruct();
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   virtual void PurgeFrame(word frame);
   // Execution
-  virtual Result Run(word args, TaskStack *taskStack) = 0;
+  virtual Result Run(TaskStack *taskStack) = 0;
   virtual Result Handle(word exn, Backtrace *trace, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify() = 0;

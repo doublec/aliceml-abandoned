@@ -34,14 +34,15 @@ public:
   // EmptyTaskInterpreter Constructor
   EmptyTaskInterpreter() : Interpreter() {}
   // Execution
-  virtual Result Run(word, TaskStack *);
+  virtual Result Run(TaskStack *);
   virtual Result Handle(word, Backtrace *, TaskStack *);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
 
-Interpreter::Result EmptyTaskInterpreter::Run(word, TaskStack *) {
+Interpreter::Result EmptyTaskInterpreter::Run(TaskStack *) {
+  Scheduler::nArgs = 0;
   return Interpreter::TERMINATE;
 }
 

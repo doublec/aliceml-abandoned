@@ -84,8 +84,7 @@ DEFINE2(opeq) {
   if (result == -1) {
     taskStack->PushFrame(prim_self);
     return Interpreter::REQUEST;
-  }
-  else {
+  } else {
     RETURN_BOOL(result);
   }
 } END
@@ -95,8 +94,7 @@ DEFINE2(opnoteq) {
   if (result == -1) {
     taskStack->PushFrame(prim_self);
     return Interpreter::REQUEST;
-  }
-  else {
+  } else {
     RETURN_BOOL(!result);
   }
 } END

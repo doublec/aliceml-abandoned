@@ -34,9 +34,13 @@ private:
 
   static void Timer();
 public:
+  static const u_int maxArgs = 16;
+  static const u_int ONE_ARG = maxArgs + 1;
+
   // Scheduler public data
+  static u_int nArgs;                 // Number of arguments
+  static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or Exception
-  static word currentArgs;            // Arguments
   static Backtrace *currentBacktrace; // Backtrace
   static word vmGUID;
   // Scheduler Static Constructor
@@ -50,13 +54,14 @@ public:
     return currentThread;
   }
   // Scheduler Functions
-  static void NewThread(word args, TaskStack *taskStack) {
-    Thread *thread = Thread::New(args, taskStack);
+  static void NewThread(u_int nArgs, word args, TaskStack *taskStack) {
+    Thread *thread = Thread::New(nArgs, args, taskStack);
     threadQueue->Enqueue(thread);
   }
-  static void NewThread(word closure, word args, TaskStack *taskStack) {
+  static void NewThread(word closure, u_int nArgs, word args,
+			TaskStack *taskStack) {
     PushCallInterpreter::PushFrame(taskStack, closure);
-    NewThread(args, taskStack);
+    NewThread(nArgs, args, taskStack);
   }
   static void ScheduleThread(Thread *thread) {
     //--** precondition: must not be scheduled

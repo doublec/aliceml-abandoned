@@ -34,7 +34,7 @@ public:
   static void PushFrame(TaskStack *taskStack, word tuple, int index);
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
-  virtual Result Run(word args, TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);

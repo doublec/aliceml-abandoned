@@ -53,18 +53,17 @@ private:
   const char *name;
   Primitive::function function;
   u_int arity;
-  u_int frameSize;
   bool sited;
 public:
-  PrimitiveInterpreter(const char *s, Primitive::function f,
-		       u_int n, u_int m, bool local):
-    name(s), function(f), arity(n), frameSize(m + 1), sited(local) {}
+  PrimitiveInterpreter(const char *_name, Primitive::function _function,
+		       u_int _arity, bool _sited):
+    name(_name), function(_function), arity(_arity), sited(_sited) {}
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
-  virtual Result Run(word args, TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -77,8 +76,7 @@ Block *
 PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   if (sited) {
     return INVALID_POINTER;
-  }
-  else {
+  } else {
     ConcreteCode *concreteCode = static_cast<ConcreteCode *>(blockWithHandler);
     return Store::DirectWordToBlock(concreteCode->Get(0));
   }
@@ -90,28 +88,29 @@ void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   taskStack->PushFrame(PrimitiveFrame::New(this)->ToWord());
 }
 
-Interpreter::Result PrimitiveInterpreter::Run(word args, TaskStack *taskStack) {
-  if (arity == 0) {
-    Transient *t = Store::WordToTransient(args);
-    if (t == INVALID_POINTER) {
-      return function(INVALID_POINTER, taskStack);
+Interpreter::Result PrimitiveInterpreter::Run(TaskStack *taskStack) {
+  switch (arity) {
+  case 0:
+    if (Scheduler::nArgs == Scheduler::ONE_ARG) {
+      Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
+      if (t == INVALID_POINTER) { // is determined
+	return function(taskStack);
+      } else { // need to request
+	Scheduler::currentData = Scheduler::currentArgs[0];
+	return Interpreter::REQUEST;
+      }
     }
-    else {
-      Scheduler::currentData = args;
+  case 1:
+    Construct();
+    return function(taskStack);
+  default:
+    if (Deconstruct()) {
+      // Deconstruct has set Scheduler::currentData as a side-effect
       return Interpreter::REQUEST;
+    } else {
+      Assert(Scheduler::nArgs == arity);
+      return function(taskStack);
     }
-  }
-  else if (arity == 1) {
-    return function(Interpreter::Construct(args), taskStack);
-  }
-  else {
-    word deconstructed_args = Interpreter::Deconstruct(args);
-    if (deconstructed_args == Store::IntToWord(0)) {
-      // Deconstruct already preset Scheduler::currentData
-      return Interpreter::REQUEST;
-    }
-    Assert(Store::WordToBlock(deconstructed_args)->GetSize() == arity);
-    return function(deconstructed_args, taskStack);
   }
 }
 
@@ -121,9 +120,9 @@ const char *PrimitiveInterpreter::Identify() {
 
 void PrimitiveInterpreter::DumpFrame(word) {
   if (name)
-    fprintf(stderr, "Primitive %s\n", name);
+    std::fprintf(stderr, "Primitive %s\n", name);
   else
-    fprintf(stderr, "Primitive\n");
+    std::fprintf(stderr, "Primitive\n");
 }
 
 //
@@ -131,11 +130,11 @@ void PrimitiveInterpreter::DumpFrame(word) {
 //
 word Primitive::aliceTransformName;
 
-word Primitive::MakeFunction(const char *name,
-			     Primitive::function value, u_int arity, bool s) {
-  // to be done (transforms)
-  ConcreteCode *concreteCode =
-    ConcreteCode::New(new PrimitiveInterpreter(name, value, arity, 0, s), 1);
+word Primitive::MakeFunction(const char *name, Primitive::function function,
+			     u_int arity, bool sited) {
+  PrimitiveInterpreter *interpreter =
+    new PrimitiveInterpreter(name, function, arity, sited);
+  ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
   Transform *transform =
     Transform::New(Store::DirectWordToChunk(aliceTransformName),
 		   String::New(name)->ToWord());
@@ -143,9 +142,9 @@ word Primitive::MakeFunction(const char *name,
   return concreteCode->ToWord();
 }
 
-word Primitive::MakeClosure(const char *name, 
-			    Primitive::function value, u_int arity, bool s) {
-  word concreteCode = MakeFunction(name, value, arity, s);
+word Primitive::MakeClosure(const char *name, Primitive::function function,
+			    u_int arity, bool sited) {
+  word concreteCode = MakeFunction(name, function, arity, sited);
   return Closure::New(concreteCode, 0)->ToWord();
 }
 

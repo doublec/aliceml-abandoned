@@ -35,9 +35,10 @@ private:
   static const u_int TASK_STACK_POS   = 1;
   static const u_int STATE_POS        = 2;
   static const u_int IS_SUSPENDED_POS = 3;
-  static const u_int ARGS_POS         = 4;
-  static const u_int FUTURE_POS       = 5;
-  static const u_int SIZE             = 6;
+  static const u_int NARGS_POS        = 4;
+  static const u_int ARGS_POS         = 5;
+  static const u_int FUTURE_POS       = 6;
+  static const u_int SIZE             = 7;
 
   void SetState(state s) {
     InitArg(STATE_POS, s);
@@ -53,12 +54,13 @@ public:
   using Block::ToWord;
 
   // Thread Constructor
-  static Thread *New(word args, TaskStack *taskStack) {
+  static Thread *New(u_int nArgs, word args, TaskStack *taskStack) {
     Block *b = Store::AllocBlock(THREAD_LABEL, SIZE);
     b->InitArg(PRIORITY_POS, NORMAL);
     b->InitArg(TASK_STACK_POS, taskStack->ToWord());
     b->InitArg(STATE_POS, RUNNABLE);
     b->InitArg(IS_SUSPENDED_POS, false);
+    b->InitArg(NARGS_POS, nArgs);
     b->InitArg(ARGS_POS, args);
     b->InitArg(FUTURE_POS, 0);
     return static_cast<Thread *>(b);
@@ -79,10 +81,12 @@ public:
   TaskStack *GetTaskStack() { //--** should be private
     return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
   }
-  void SetArgs(word args) {
+  void SetArgs(u_int nArgs, word args) {
+    ReplaceArg(NARGS_POS, nArgs);
     ReplaceArg(ARGS_POS, args);
   }
-  word GetArgs() {
+  word GetArgs(u_int &nArgs) {
+    nArgs = Store::DirectWordToInt(GetArg(NARGS_POS));
     return GetArg(ARGS_POS);
   }
   priority GetPriority() {

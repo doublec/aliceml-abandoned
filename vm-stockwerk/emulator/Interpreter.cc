@@ -22,59 +22,50 @@
 #include "emulator/Backtrace.hh"
 
 // Calling Convention Conversion
-word Interpreter::Construct(word args) {
-  Block *p = Store::WordToBlock(args);
-  Assert(p != INVALID_POINTER);
-  switch (p->GetLabel()) {
-  case EMPTYARG_LABEL:
-    return p->GetArg(0);
-  case ONEARG_LABEL:
-    return p->GetArg(0);
-  case TUPARGS_LABEL:
-    {
-      u_int nargs = p->GetSize(); // Hack Alert
-      Tuple *tuple = Tuple::New(nargs);
-      for (u_int i = nargs; i--;) {
-	tuple->Init(i, p->GetArg(i));
-      }
-      return tuple->ToWord();
-    }
+void Interpreter::Construct() {
+  u_int nArgs = Scheduler::nArgs;
+  switch (nArgs) {
+  case 0:
+    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    break;
+  case Scheduler::ONE_ARG:
+    return;
   default:
-    Error("Interpreter::Construct: non-argument block");
+    {
+      Tuple *tuple = Tuple::New(nArgs);
+      for (u_int i = nArgs; i--; )
+	tuple->Init(i, Scheduler::currentArgs[i]);
+      Scheduler::currentArgs[0] = tuple->ToWord();
+    }
+    break;
   }
+  Scheduler::nArgs = Scheduler::ONE_ARG;
 }
 
-word Interpreter::Deconstruct(word args) {
-  Block *p = Store::WordToBlock(args);
-  Assert(p != INVALID_POINTER);
-  switch (p->GetLabel()) {
-  case EMPTYARG_LABEL:
-    return args;
-  case ONEARG_LABEL:
+bool Interpreter::Deconstruct() {
+  switch (Scheduler::nArgs) {
+  case 0:
+    Scheduler::nArgs = 0;
+    return false;
+  case Scheduler::ONE_ARG:
     {
-      word arg     = p->GetArg(0);
+      word arg = Scheduler::currentArgs[0];
       Transient *t = Store::WordToTransient(arg);
-      // Found Block
-      if (t == INVALID_POINTER) {
+      if (t == INVALID_POINTER) { // is determined
 	Tuple *tuple = Tuple::FromWord(arg);
 	Assert(tuple != INVALID_POINTER);
-	u_int nargs = static_cast<Block *>(tuple)->GetSize(); // to be done
-	Block *args_outp = Interpreter::TupArgs(nargs); 
-	for (u_int i = nargs; i--;) {
-	  args_outp->InitArg(i, tuple->Sel(i));
-	}
-	return args_outp->ToWord();
-      }
-      // Need to wait
-      else {
+	Scheduler::nArgs = static_cast<Block *>(tuple)->GetSize(); //--**
+	Assert(Scheduler::nArgs < Scheduler::maxArgs);
+	for (u_int i = Scheduler::nArgs; i--; )
+	  Scheduler::currentArgs[i] = tuple->Sel(i);
+	return false;
+      } else { // need to request
 	Scheduler::currentData = arg;
-	return Store::IntToWord(0);
+	return true;
       }
     }
-  case TUPARGS_LABEL:
-    return args;
   default:
-    Error("Interpreter::Deconstruct: non-argument block");
+    return false;
   }
 }
 

@@ -141,7 +141,7 @@ void PrimitiveTable::RegisterString() {
   Register("String.implode", String_implode, 1);
   Register("String.maxSize", Store::IntToWord(String::maxSize));
   Register("String.size", String_size, 1);
-  Register("String.sub", String_sub, 1);
+  Register("String.sub", String_sub, 2);
   Register("String.substring", String_substring, 3);
   Register("String.str", String_str, 1);
 }

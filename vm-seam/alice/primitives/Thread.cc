@@ -58,7 +58,7 @@ public:
     taskStack->PushFrame(RaiseFrame::New(self, exn)->ToWord());
   }
   // Execution
-  virtual Result Run(word args, TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -69,7 +69,7 @@ public:
 //
 RaiseInterpreter *RaiseInterpreter::self;
 
-Interpreter::Result RaiseInterpreter::Run(word, TaskStack *taskStack) {
+Interpreter::Result RaiseInterpreter::Run(TaskStack *taskStack) {
   RaiseFrame *frame = RaiseFrame::FromWordDirect(taskStack->GetFrame());
   Scheduler::currentData = frame->GetExn();
   return Interpreter::RAISE;
@@ -104,7 +104,7 @@ DEFINE2(Thread_raiseIn) {
       RAISE(PrimitiveTable::Thread_Terminated);
     } else {
       RaiseInterpreter::PushFrame(thread->GetTaskStack(), x1);
-      thread->SetArgs(Interpreter::EmptyArg());
+      thread->SetArgs(0, Store::IntToWord(0));
       if (state == Thread::BLOCKED) {
 	Future *future = static_cast<Future *>
 	  (Store::WordToTransient(thread->GetFuture()));

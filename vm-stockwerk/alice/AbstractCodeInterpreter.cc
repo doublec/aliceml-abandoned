@@ -149,10 +149,11 @@ inline void PushState(TaskStack *taskStack,
   formalArgs->Init(0, Vector::New(0)->ToWord());
   PushState(taskStack, pc, globalEnv, localEnv, formalArgs);
 }
-#define SUSPEND(w) {						\
-  PushState(taskStack, pc, globalEnv, localEnv);		\
-  Scheduler::currentData = w;                                   \
-  return Interpreter::REQUEST;	         	       		\
+#define SUSPEND(w) {					\
+  PushState(taskStack, pc, globalEnv, localEnv);	\
+  Scheduler::currentData = w;				\
+  Scheduler::nArgs = 0;					\
+  return Interpreter::REQUEST;				\
 }
 
 inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
@@ -197,8 +198,7 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
   taskStack->PushFrame(frame->ToWord());
 }
 
-Interpreter::Result
-AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
+Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
   Assert(frame->GetInterpreter() == this);
@@ -210,27 +210,26 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
   switch (Pickle::GetArgs(formalArgs)) {
   case Pickle::OneArg:
     {
+      Construct();
       TagVal *idDef = TagVal::FromWord(formalArgs->Sel(0));
       if (idDef != INVALID_POINTER) // IdDef id
-	localEnv->Add(idDef->Sel(0), Interpreter::Construct(args));
+	localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[0]);
     }
     break;
   case Pickle::TupArgs:
     {
       Vector *formalIdDefs = Vector::FromWord(formalArgs->Sel(0));
-      u_int nargs = formalIdDefs->GetLength();
-      if (nargs != 0) {
-	word deconstructed_args = Interpreter::Deconstruct(args);
-	Block *p = Store::WordToBlock(deconstructed_args);
-	if (p == INVALID_POINTER) {
+      u_int nArgs = formalIdDefs->GetLength();
+      if (nArgs != 0) {
+	if (Interpreter::Deconstruct()) {
 	  // Scheduler::currentData has been set by Interpreter::Deconstruct
 	  return Interpreter::REQUEST;
 	}
-	Assert(nargs == 0 || p->GetSize() == nargs); // to be done
-	for (u_int i = nargs; i--; ) {
+	Assert(Scheduler::nArgs == nArgs);
+	for (u_int i = nArgs; i--; ) {
 	  TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
 	  if (idDef != INVALID_POINTER) // IdDef id
-	    localEnv->Add(idDef->Sel(0), p->GetArg(i));
+	    localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[i]);
 	}
       }
     }
@@ -352,20 +351,11 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	}
 	// Push a call frame for the primitive
 	Vector *actualIdRefs = Vector::FromWord(pc->Sel(1));
-	u_int nargs  = actualIdRefs->GetLength();
-	if (nargs == 0) {
-	  Scheduler::currentArgs = Interpreter::EmptyArg();
-	} else if (nargs == 1) {
-	  word theArg = GetIdRef(actualIdRefs->Sub(0), globalEnv, localEnv);
-	  Scheduler::currentArgs = Interpreter::OneArg(theArg);
-	} else {
-	  Block *pargs = Interpreter::TupArgs(nargs);
-	  for (u_int i = nargs; i--; ) {
-	    word arg = GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
-	    pargs->InitArg(i, arg);
-	  }
-	  Scheduler::currentArgs = pargs->ToWord();
-	}
+	u_int nArgs = actualIdRefs->GetLength();
+	Scheduler::nArgs = nArgs == 1? Scheduler::ONE_ARG: nArgs;
+	for (u_int i = nArgs; i--; )
+	  Scheduler::currentArgs[i] =
+	    GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
 	return taskStack->PushCall(pc->Sel(0));
       }
       break;
@@ -383,24 +373,18 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	TagVal *actualArgs = TagVal::FromWord(pc->Sel(1));
 	switch (Pickle::GetArgs(actualArgs)) {
 	case Pickle::OneArg:
-	  Scheduler::currentArgs =
-	    Interpreter::OneArg(GetIdRef(actualArgs->Sel(0),
-					 globalEnv, localEnv));
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	  Scheduler::currentArgs[0] =
+	    GetIdRef(actualArgs->Sel(0), globalEnv, localEnv);
 	  break;
 	case Pickle::TupArgs:
 	  {
 	    Vector *actualIdRefs = Vector::FromWord(actualArgs->Sel(0));
-	    u_int nargs  = actualIdRefs->GetLength();
-	    if (nargs == 0) {
-	      Scheduler::currentArgs = Interpreter::EmptyArg();
-	    } else {
-	      Block *pargs = Interpreter::TupArgs(nargs);
-	      for (u_int i = nargs; i--; ) {
-		pargs->InitArg(i, GetIdRef(actualIdRefs->Sub(i),
-					   globalEnv, localEnv));
-	      }
-	      Scheduler::currentArgs = pargs->ToWord();
-	    }
+	    u_int nArgs  = actualIdRefs->GetLength();
+	    Scheduler::nArgs = nArgs;
+	    for (u_int i = nArgs; i--; )
+	      Scheduler::currentArgs[i] =
+		GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
 	  }
 	  break;
 	}
@@ -692,27 +676,31 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	TagVal *returnArgs = TagVal::FromWord(pc->Sel(0));
 	switch (Pickle::GetArgs(returnArgs)) {
 	case Pickle::OneArg:
-	  Scheduler::currentArgs =
-	    Interpreter::OneArg(GetIdRef(returnArgs->Sel(0),
-					 globalEnv, localEnv));
-	  return Interpreter::CONTINUE;
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	  Scheduler::currentArgs[0] =
+	    GetIdRef(returnArgs->Sel(0), globalEnv, localEnv);
+	  break;
 	case Pickle::TupArgs:
 	  {
 	    Vector *returnIdRefs = Vector::FromWord(returnArgs->Sel(0));
-	    u_int nargs  = returnIdRefs->GetLength();
-	    if (nargs == 0) {
-	      Scheduler::currentArgs = Interpreter::EmptyArg();
+	    u_int nArgs = returnIdRefs->GetLength();
+	    if (nArgs < Scheduler::maxArgs) {
+	      Scheduler::nArgs = nArgs;
+	      for (u_int i = nArgs; i--; )
+		Scheduler::currentArgs[i] =
+		  GetIdRef(returnIdRefs->Sub(i), globalEnv, localEnv);
 	    } else {
-	      Block *pargs = Interpreter::TupArgs(nargs);
-	      for (u_int i = nargs; i--; ) {
-		pargs->InitArg(i, GetIdRef(returnIdRefs->Sub(i),
-					   globalEnv, localEnv));
-	      }
-	      Scheduler::currentArgs = pargs->ToWord();
+	      Tuple *tuple = Tuple::New(nArgs);
+	      for (u_int i = nArgs; i--; )
+		tuple->Init(i, GetIdRef(returnIdRefs->Sub(i),
+					globalEnv, localEnv));
+	      Scheduler::nArgs = Scheduler::ONE_ARG;
+	      Scheduler::currentArgs[0] = tuple->ToWord();
 	    }
-	    return Interpreter::CONTINUE;
 	  }
+	  break;
 	}
+	return Interpreter::CONTINUE;
       }
       break;
     default:
@@ -720,7 +708,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
     }
   }
   PushState(taskStack, pc, globalEnv, localEnv);
-  Scheduler::currentArgs = Interpreter::EmptyArg();
+  Scheduler::nArgs = 0;
   return Interpreter::PREEMPT;
 }
 
@@ -733,10 +721,10 @@ AbstractCodeInterpreter::Handle(word exn, Backtrace *trace,
     Tuple *package = Tuple::New(2);
     package->Init(0, exn);
     package->Init(1, trace->ToWord());
-    Block *args = Interpreter::TupArgs(2);
-    args->InitArg(0, package->ToWord());
-    args->InitArg(1, exn);
-    return Run(args->ToWord(), taskStack);
+    Scheduler::nArgs = 2;
+    Scheduler::currentArgs[0] = package->ToWord();
+    Scheduler::currentArgs[1] = exn;
+    return Run(taskStack);
   } else {
     taskStack->PopFrame();
     trace->Enqueue(frame->ToWord());

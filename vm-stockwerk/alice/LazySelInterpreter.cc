@@ -69,22 +69,18 @@ void LazySelectionInterpreter::PushCall(TaskStack *taskStack,
 }
 
 Interpreter::Result
-LazySelectionInterpreter::Run(word args, TaskStack *taskStack) {
+LazySelectionInterpreter::Run(TaskStack *taskStack) {
   LazySelectionFrame *frame =
     LazySelectionFrame::FromWordDirect(taskStack->GetFrame());
   word block = frame->GetBlock();
   Transient *transient = Store::WordToTransient(block);
-  // Found Block
-  if (transient == INVALID_POINTER) {
+  if (transient == INVALID_POINTER) { // is determined
     taskStack->PopFrame(); // Discard Frame
-    args = Tuple::FromWord(block)->Sel(frame->GetIndex());
-    Scheduler::currentArgs = Interpreter::OneArg(args);
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = Tuple::FromWord(block)->Sel(frame->GetIndex());
     return Interpreter::CONTINUE;
-  }
-  // Need to wait for Block
-  else {
+  } else { // need to request
     Scheduler::currentData = block;
-    Scheduler::currentArgs = args;
     return Interpreter::REQUEST;
   }
 }

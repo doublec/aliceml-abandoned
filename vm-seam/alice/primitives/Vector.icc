@@ -79,7 +79,7 @@ public:
   static void PushFrame(TaskStack *taskStack,
 			Vector *vector, word fun, int i, int n);
   // Execution
-  virtual Result Run(word args, TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -99,24 +99,27 @@ void VectorTabulateInterpreter::PushFrame(TaskStack *taskStack,
 }
 
 Interpreter::Result
-VectorTabulateInterpreter::Run(word args, TaskStack *taskStack) {
+VectorTabulateInterpreter::Run(TaskStack *taskStack) {
   VectorTabulateFrame *frame =
     VectorTabulateFrame::FromWordDirect(taskStack->GetFrame());
   Vector *vector = frame->GetVector();
   word fun       = frame->GetClosure();
   int i          = frame->GetIndex();
   int n          = frame->GetNumElems();
-  vector->LateInit(i, Interpreter::Construct(args));
+  Construct();
+  vector->LateInit(i, Scheduler::currentArgs[0]);
   taskStack->PopFrame(); // Discard Frame
   if (++i == n) {
-    Scheduler::currentArgs = Interpreter::OneArg(vector->ToWord());
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = vector->ToWord();
     return Interpreter::CONTINUE;
   }
   else {
     VectorTabulateFrame *newFrame =
       VectorTabulateFrame::New(this, vector, fun, i, n);
     taskStack->PushFrame(newFrame->ToWord());
-    Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(i));
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = Store::IntToWord(i);
     return taskStack->PushCall(fun);
   }
 }
@@ -171,7 +174,8 @@ DEFINE2(Vector_tabulate) {
     word cl = closure->ToWord();
     Vector *vector = Vector::New(length);
     VectorTabulateInterpreter::PushFrame(taskStack, vector, cl, 0, length);
-    Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(0));
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = Store::IntToWord(0);
     return taskStack->PushCall(cl);
   }
 } END

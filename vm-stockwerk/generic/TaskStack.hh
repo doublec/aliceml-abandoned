@@ -62,6 +62,8 @@ public:
   Interpreter *GetInterpreter() {
     return StackFrame::FromWordDirect(GetFrame())->GetInterpreter();
   }
+  //   PushCall requires that Scheduler::nArgs and Scheduler::currentArgs
+  //   have already been set:
   Interpreter::Result PushCall(word closure);
   void Purge();
   void Dump();

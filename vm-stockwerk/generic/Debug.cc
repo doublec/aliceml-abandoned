@@ -47,12 +47,8 @@ static const char *TransLabel(BlockLabel l) {
     return "THREAD";
   case TUPLE_LABEL:
     return "TUPLE";
-  case EMPTYARG_LABEL:
-    return "EMPTYARG";
-  case ONEARG_LABEL:
-    return "ONEARG";
-  case TUPARGS_LABEL:
-    return "TUPARGS";
+  case ARGS_LABEL:
+    return "ARGS";
   case CLOSURE_LABEL:
     return "CLOSURE";
   case HANDLERBLOCK_LABEL:

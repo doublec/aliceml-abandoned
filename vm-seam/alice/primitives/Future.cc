@@ -36,7 +36,7 @@ DEFINE1(Future_concur) {
   Future *future = Future::New();
   TaskStack *newTaskStack = TaskStack::New();
   ByneedInterpreter::PushFrame(newTaskStack, future);
-  Scheduler::NewThread(x0, Interpreter::EmptyArg(), newTaskStack);
+  Scheduler::NewThread(x0, 0, Store::IntToWord(0), newTaskStack);
   RETURN(future->ToWord());
 } END
 
