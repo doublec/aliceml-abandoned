@@ -15,7 +15,6 @@ import structure Color      from "../../common/Color"
 import structure Config     from "../../common/Config"
 
 import structure Text       from "Text"
-import structure Wait       from "Wait"
 
 
 

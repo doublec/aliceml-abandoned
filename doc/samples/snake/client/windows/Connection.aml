@@ -12,7 +12,6 @@
 import structure Gtk            from "GtkSupport"
 
 import structure Text           from "Text"
-import structure PlayerSettings from "PlayerSettings"
 
 
 

@@ -15,8 +15,6 @@ import structure Gdk   from "GtkSupport"
 import structure Color from "../../common/Color"
 import structure Text  from "Text"
 
-import structure Error from "Error"
-
 
 structure PlayerSettings :>
 sig 

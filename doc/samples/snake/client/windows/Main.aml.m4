@@ -23,12 +23,8 @@ import structure Protocol       from "../../common/Protocol"
 import structure Highscore      from "../../common/Highscore"
 
 import structure Text           from "Text"
-import structure EnterName      from "EnterName"
 import structure ArenaWidget    from "ArenaWidget"
 import structure RadarWidget    from "RadarWidget"
-import structure Connection     from "Connection"
-import structure ServerSettings from "ServerSettings"
-import structure Text           from "Text"
 import structure Question       from "Question"
 
 
@@ -98,13 +94,18 @@ sig
     type start_server_cb = mainwindow_type -> unit
 
     type start_single_cb = mainwindow_type -> unit
+
+    type turn_cb         = Protocol.direction -> unit
+
+    type change_view_cb  = Protocol.view_hint -> unit
 	
     type quit_cb         = mainwindow_type -> unit
 
-    type give_up_cb      = mainwindow_type -> unit
+    type give_up_cb      = unit -> unit
 
     val mkMainWindow :   start_client_cb * start_server_cb * start_single_cb * 
-	                                give_up_cb * quit_cb -> mainwindow_type
+	                                turn_cb * change_view_cb * 
+					give_up_cb * quit_cb -> mainwindow_type
 
     val gameMode :       mainwindow_type -> unit
 
@@ -123,6 +124,7 @@ sig
 end =
 struct
 
+
     (* the modes in which the window can exists *)
 
     type radar_visibility = bool
@@ -135,15 +137,22 @@ struct
 			    arena  : ArenaWidget.arena_widget,
 			    radar  : RadarWidget.radar_widget,
 			    timeLabel : Gtk.object,
-			    mode : mode,
-			    updatePoints : Gtk.object -> unit,
-			    update : Protocol.diff list * Pos.pos * 
+			    mode : mode ref,
+			    updatePoints : Gtk.object -> 
+			                         {name : string,
+						  color : Color.color,
+						  points : int,
+						  gamePoints : int,
+						  lives : int option} list
+						                      -> unit,
+			    update : Protocol.diff list * Pos.pos option * 
 	                             ArenaWidget.arena_widget * 
 	 			     RadarWidget.radar_widget -> unit,
-			    countdown : bool option * int * Gtk.object * 
-					ArenaWidget.arena_widget,
-			    displayCountDown : bool option ref,
-			    gameMode :  {mode : mode, 
+			    countdown : (int option -> unit) option ref * 
+			                 int * Gtk.object * 
+				         ArenaWidget.arena_widget -> unit,
+			    displayCountDown : (int option -> unit) option ref,
+			    gameMode :  {mode : mode ref, 
 					 menuGiveUpItem : Gtk.object,
 					 menuMenuItem   : Gtk.object,
 					 canvas         : Gtk.object,
@@ -151,27 +160,44 @@ struct
 			    menuGiveUpItem : Gtk.object,
 			    menuMenuItem : Gtk.object,
 			    rightHBox : Gtk.object,
-			    pointsLabel : Gtk.object}
+			    pointsLabel : Gtk.object,
+			    canvas : Gtk.object}
 
-    fun getWindow w = #object w
+    type start_client_cb = mainwindow_type -> unit
 
-    fun gameFinished (p, s) = Text.mkTextWindow (p, "Highscore", 
-						 highscoreToString s)
+    type start_server_cb = mainwindow_type -> unit
 
-    fun levelStart (p, levelInf) = 
+    type start_single_cb = mainwindow_type -> unit
+
+    type turn_cb         = Protocol.direction -> unit
+
+    type change_view_cb  = Protocol.view_hint -> unit
+
+    type quit_cb         = mainwindow_type -> unit
+
+    type give_up_cb      = unit -> unit
+
+
+    fun getWindow (w : mainwindow_type) = #object w
+
+    fun gameFinished (p : mainwindow_type, s) = 
+	 (Text.mkTextWindow (getWindow p, "Highscore", highscoreToString s);())
+
+    fun levelStart (p : mainwindow_type, levelInf) = 
 	(ArenaWidget.initLevel (#arena p, levelInf);
 	 RadarWidget.initLevel (#radar p, levelInf);
 	 Gtk.labelSetText (#timeLabel p, ""))
 
-    fun levelTick (p, points, diffs, pos, time) = 
-	(Gtk.labelSetText (#timeLabel, (timeToString time) ^ "\n");
+    fun levelTick (p : mainwindow_type, points, diffs, pos, time) = 
+	(Gtk.labelSetText (#timeLabel p, (timeToString time) ^ "\n");
 	 #update p (diffs, pos, #arena p, #radar p);
-	 Option.app (#updatePoints p) (points, #pointsLabel p))
+	 Option.app (#updatePoints p (#pointsLabel p)) points)
 	
-    fun levelCountDown (p, n) = 
-	             #countdown p (#displayCountDown p, n, #object p, #arena p)
+    fun levelCountDown (p : mainwindow_type, n) = 
+	          #countdown p (#displayCountDown p, n, #object p, #arena p)
 
-    fun gameMode p = #gameMode p {mode = #mode p,
+    fun gameMode (p : mainwindow_type) = 
+	             #gameMode p {mode = #mode p,
 				  menuGiveUpItem = #menuGiveUpItem p,
 				  menuMenuItem = #menuMenuItem p,
 				  canvas = #canvas p,
@@ -180,7 +206,7 @@ struct
 		    
     (* builds the mainWindow, starting in START mode *)
     fun mkMainWindow (startClientCB, startServerCB, startSingleCB, 
-		      turnCB, changeViewCB, qiveUpCB, quitCB) = 
+		      turnCB, changeViewCB, giveUpCB, quitCB) = 
 	let
 	    val _ = log ("mkMainWindow", "starts")
 	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -251,7 +277,7 @@ struct
 
 	    (* updates the pointsLabel. different points are separated
 	     by newlines *)
-	    fun updatePoints (plist, pointsLabel) =
+	    fun updatePoints pointsLabel plist =
 		let
 		    val _ = log ("updatePoints", "starts")
 		    fun pToString p = (if p <= 9 then "    " 
@@ -289,12 +315,16 @@ struct
 		    Gtk.labelSetMarkup (pointsLabel, toString ())
 		end
 		
-	    fun gameMode z =
-		((#mode z) := GAME(false);
-		 Gtk.widgetSetSensitive (#menuGiveUpItem z, true);
-		 Gtk.widgetSetSensitive (#menuMenuItem z, false);
-		 Gtk.widgetShow (#canvas z);
-		 Gtk.widgetShow (#rightHBox z);
+	    fun gameMode {mode,
+			  menuGiveUpItem,
+			  menuMenuItem,
+			  canvas,
+			  rightHBox} =
+		(mode := GAME(false);
+		 Gtk.widgetSetSensitive (menuGiveUpItem, true);
+		 Gtk.widgetSetSensitive (menuMenuItem, false);
+		 Gtk.widgetShow canvas;
+		 Gtk.widgetShow rightHBox;
 		 log ("gameMode", "ends"))
 
 	    val mainWindowWidget = {object = mainWindow,
@@ -302,11 +332,16 @@ struct
 				    arena,
 				    mode,
 				    displayCountDown,
+				    canvas,
 				    update,
 				    updatePoints,
 				    timeLabel,
 				    countdown,
-				    gameMode}
+				    gameMode,
+				    pointsLabel,
+				    rightHBox,
+				    menuMenuItem,
+				    menuGiveUpItem}
 				    
 
 	    (* resets the window in START mode *)
@@ -319,13 +354,13 @@ struct
                  Gtk.widgetHide radarWidget;
 		 mode := START)*)
 
-	    fun reset' () = Gtk.widgetDestroy mainWindow
+(*	    fun reset' () = Gtk.widgetDestroy mainWindow
 
 	    (* resets window and also shows [msg] when needed *)
 	    fun reset NONE = reset' ()
 	      | reset (SOME (title, msg)) = (Text.mkTextWindow (title, msg);
                                              reset' ())
-		
+*)		
 
 	    (* the different behaviour by pressing the quit button *)
 	    fun mainQuit () = OS.Process.exit OS.Process.success 
@@ -339,29 +374,30 @@ struct
 			    val _ = log ("backToStart", "in GAME mode")
 			    fun cancel () = ()
 			    fun no ()     = ()
-			    fun yes ()    = (disconnect (); reset NONE)
-			    val answer    = {yes, no, cancel}
+			    fun yes ()    = giveUpCB ()
+                            val answer    = {yes, no, cancel}
 			in
 			    Question.mkQuestionBox 
-			    ("Sure?", "Do you really want to quit?", answer)
+			    (mainWindow, "Sure?", 
+			     "Do you really want to quit?", answer)
 			end)
 		     
 			
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
                   (log ("startClient", "has been called");
-		   startClientCB bla)
+		   startClientCB mainWindowWidget)
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
 		  (log ("startMultiPlayer", "has been called");
-		   startServerCB bla)
+		   startServerCB mainWindowWidget)
             (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = 
 		  (log ("startSinglePlayer", "has been called");
-		   startSingleCB bla)
+		   startSingleCB mainWindowWidget)
 	    (* procedure called by pressing GiveUp - button *)
 	    fun giveUp () = (log ("giveUp", "has been called");
-			     giveUpCB bla)
+			     giveUpCB ())
 
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval = 
@@ -369,19 +405,18 @@ struct
 		  case !mode of
 	              GAME b =>
 			  (case Gdk.keyvalName keyval of
-			        "Up"      => !turn' Protocol.UP
-			    |   "Down"    => !turn' Protocol.DOWN
-			    |   "Right"   => !turn' Protocol.RIGHT
-			    |   "Left"    => !turn' Protocol.LEFT
-			    | ("q" | "Q") => !changeView' Protocol.PREV
-			    | ("w" | "W") => !changeView' Protocol.NEXT
+			        "Up"      => turnCB Protocol.UP
+			    |   "Down"    => turnCB Protocol.DOWN
+			    |   "Right"   => turnCB Protocol.RIGHT
+			    |   "Left"    => turnCB Protocol.LEFT
+			    | ("q" | "Q") => changeViewCB Protocol.PREV
+			    | ("w" | "W") => changeViewCB Protocol.NEXT
                             | ("r" | "R") => (if b 
 					      then Gtk.widgetHide radarWidget
                                               else Gtk.widgetShow radarWidget;
 					      mode := GAME(not b))
 			    |   _         => ())
 		    |    _   => ())
-			handle Error.Error msg => reset (SOME ("Error!", msg))
 
 	    ifdef([[GTK2]],[[
 	    (* catches the canvas events *)
@@ -460,6 +495,8 @@ struct
 
 	    Gtk.widgetHide rightHBox;
 	    Gtk.widgetHide radarWidget;
-	    log ("mkmainWindow", "ends with initializing the stuff")
+	    log ("mkmainWindow", "ends with initializing the stuff");
+
+	    mainWindowWidget
 	end
 end
