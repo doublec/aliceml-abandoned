@@ -57,7 +57,7 @@ define
    TagTest        = 25
    Try            = 26
    VecTest        = 27
-   %--** WideStringTest = 28
+   WideStringTest = 28
 
    Con       = 0
    StaticCon = 1
@@ -339,7 +339,9 @@ define
 			 S StringInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
-%--** [] tag(!WideStringTest IdRef _ ElseInstr) then
+      [] tag(!WideStringTest IdRef StringInstrVec ElseInstr) then
+	 {Emulate tag(StringTest IdRef StringInstrVec ElseInstr)
+	  Closure L TaskStack}
       [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T0 in
 	 T0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
