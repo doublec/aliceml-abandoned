@@ -56,7 +56,7 @@ fi
 ##
 
 # lightning version to use
-lightningversion=1.1
+lightningversion=1.1.2
 
 if [ "$LIGHTNING" -ne 0 ]
 then

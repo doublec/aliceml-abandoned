@@ -1,0 +1,53 @@
+diff -rNu lightning-1.1.2/lightning/funcs-common.h lightning-1.1.2-seam-patches/lightning/funcs-common.h
+--- lightning-1.1.2/lightning/funcs-common.h	2003-05-15 09:15:15.000000000 +0200
++++ lightning-1.1.2-seam-patches/lightning/funcs-common.h	2004-03-16 09:47:12.000000000 +0100
+@@ -34,10 +34,10 @@
+ 
+ #include <stdio.h>
+ 
+-static int jit_fail(char *, char*, int, char *) JIT_UNUSED;
++static int jit_fail(const char *, const char*, int, const char *) JIT_UNUSED;
+ 
+ int
+-jit_fail(char *msg, char *file, int line, char *function)
++jit_fail(const char *msg, const char *file, int line, const char *function)
+ {
+   fprintf(stderr, "%s: In function `%s':\n", file, function);
+   fprintf(stderr, "%s:%d: %s\n", file, line, msg);
+diff -rNu lightning-1.1.2/lightning/i386/core.h lightning-1.1.2-seam-patches/lightning/i386/core.h
+--- lightning-1.1.2/lightning/i386/core.h	2003-11-14 23:17:17.000000000 +0100
++++ lightning-1.1.2-seam-patches/lightning/i386/core.h	2004-03-16 09:01:51.000000000 +0100
+@@ -353,10 +353,10 @@
+ #define jit_bgei_i(label, rs, is)	jit_bra_i0((rs), (is), JGEm(label,0,0,0), JNSm(label,0,0,0) )
+ #define jit_beqi_i(label, rs, is)	jit_bra_i0((rs), (is), JEm(label, 0,0,0), JEm(label, 0,0,0) )
+ #define jit_bnei_i(label, rs, is)	jit_bra_i0((rs), (is), JNEm(label,0,0,0), JNEm(label,0,0,0) )
+-#define jit_blti_ui(label, rs, is)	jit_bra_i ((rs), (is), JLm(label, 0,0,0)		    )
+-#define jit_blei_ui(label, rs, is)	jit_bra_i0((rs), (is), JLEm(label,0,0,0), JEm(label, 0,0,0) )
+-#define jit_bgti_ui(label, rs, is)	jit_bra_i0((rs), (is), JGm(label, 0,0,0), JNEm(label,0,0,0) )
+-#define jit_bgei_ui(label, rs, is)	jit_bra_i ((rs), (is), JGEm(label,0,0,0)		    )
++#define jit_blti_ui(label, rs, is)	jit_bra_i ((rs), (is), JBm(label, 0,0,0)		    )
++#define jit_blei_ui(label, rs, is)	jit_bra_i0((rs), (is), JBEm(label,0,0,0), JEm(label, 0,0,0) )
++#define jit_bgti_ui(label, rs, is)	jit_bra_i0((rs), (is), JAm(label, 0,0,0), JNEm(label,0,0,0) )
++#define jit_bgei_ui(label, rs, is)	jit_bra_i ((rs), (is), JAEm(label,0,0,0)		    )
+ #define jit_boaddi_i(label, rs, is)	(ADDLir((is), (rs)), JOm(label,0,0,0), _jit.x.pc)
+ #define jit_bosubi_i(label, rs, is)	(SUBLir((is), (rs)), JOm(label,0,0,0), _jit.x.pc)
+ #define jit_boaddi_ui(label, rs, is)	(ADDLir((is), (rs)), JCm(label,0,0,0), _jit.x.pc)
+@@ -367,6 +367,7 @@
+ 
+ #define jit_jmpi(label)		(JMPm( ((unsigned long) (label)),	0, 0, 0), _jit.x.pc)
+ #define jit_calli(label)	(CALLm( ((unsigned long) (label)),	0, 0, 0), _jit.x.pc)
++#define jit_callr(reg)          (CALLsr(reg))
+ #define jit_jmpr(reg)		JMPsr(reg)
+ #define jit_patch(jump_pc)	(*_PSL((jump_pc) - 4) = _SL(_jit.x.pc - (jump_pc)))
+ #define jit_ret()		(POPLr(_EDI), POPLr(_ESI), POPLr(_EBX), POPLr(_EBP), RET())
+diff -rNu lightning-1.1.2/lightning/ppc/core.h lightning-1.1.2-seam-patches/lightning/ppc/core.h
+--- lightning-1.1.2/lightning/ppc/core.h	2003-11-14 23:19:38.000000000 +0100
++++ lightning-1.1.2-seam-patches/lightning/ppc/core.h	2004-03-16 10:20:34.000000000 +0100
+@@ -160,6 +160,7 @@
+ #define jit_boaddr_ui(label, s1, s2)	(		  			     ADDCrr((s1), (s1), (s2)), 	   MCRXRi(0), BEQi((label)), _jit.x.pc)
+ #define jit_bosubr_ui(label, s1, s2)	(		  			     SUBCrr((s1), (s1), (s2)), 	   MCRXRi(0), BEQi((label)), _jit.x.pc)
+ #define jit_calli(label)	    (jit_movei(JIT_AUX, (label)), MTLRr(JIT_AUX), BLRL(), _jit.x.pc)
++#define jit_callr(reg)              (MTCTRr(reg), BCTRL())
+ #define jit_divi_i(d, rs, is)		jit_chk_ims(1111111, 0, DIVWrrr ((d), (rs), JIT_AUX))
+ #define jit_divi_ui(d, rs, is)		jit_chk_imu(1111111, 0, DIVWUrrr((d), (rs), JIT_AUX))
+ #define jit_divr_i(d, s1, s2)				        DIVWrrr ((d), (s1), (s2))
