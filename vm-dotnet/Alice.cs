@@ -2618,6 +2618,7 @@ namespace Alice {
 	public static Object Word_shr          = new Word_shr();
 	public static Object Word_arithshr     = new Word_arithshr();
 	public static Object Word_toString     = new Word_toString();
+	public static Object Word_wordSize     = (Int32) 32;
 
 	public static Object IO_Io = "IO.Io";
 
