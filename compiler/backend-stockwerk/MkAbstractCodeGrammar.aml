@@ -36,7 +36,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 
 	type liveness = int vector
 
-	type label = UniqueString.t
+	type label = Atom.t
 
 	datatype instr =
 	    Kill of id vector * instr

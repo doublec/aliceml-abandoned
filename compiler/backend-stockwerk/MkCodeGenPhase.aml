@@ -207,7 +207,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | detup (O.Return idRefArgs, id) =
 	    if isIdInArgs (idRefArgs, id) then USED else KILLED
 
-	fun translateLabel label = UniqueString.unique (Label.toString label)
+	fun translateLabel label = Atom.atom (Label.toString label)
 
 	fun translatePolyProd (labelIdRefVec, env) =
 	    let
@@ -215,8 +215,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val layout = Array.array (n, NONE)
 
 		fun insertPolyProd (label, idRef) =
-		    insertPolyProd' (UniqueString.hash label mod n,
-				     (label, idRef))
+		    insertPolyProd' (Atom.hash label mod n, (label, idRef))
 		and insertPolyProd' (i, entry) =
 		    case Array.sub (layout, i) of
 			SOME _ => insertPolyProd' ((i + 1) mod n, entry)

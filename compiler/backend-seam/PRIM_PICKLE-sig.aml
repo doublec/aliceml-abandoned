@@ -43,7 +43,7 @@ signature PRIM_PICKLE =
 	val outputClosure: outstream * size -> id
 	val outputReference: outstream * id -> unit
 	val outputString: outstream * string -> id
-	val outputUniqueString: outstream * UniqueString.t -> id
+	val outputAtom: outstream * Atom.t -> id
 	val outputTransform: outstream * string -> id
 	val closeOut: outstream -> unit
     end

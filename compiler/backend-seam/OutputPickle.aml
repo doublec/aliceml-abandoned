@@ -114,8 +114,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    PrimPickle.outputReference (outstream, id)
 	fun outputString ({outstream, ...}: context, s) =
 	    PrimPickle.outputString (outstream, s)
-	fun outputUniqueString ({outstream, ...}: context, s) =
-	    PrimPickle.outputUniqueString (outstream, s)
+	fun outputAtom ({outstream, ...}: context, s) =
+	    PrimPickle.outputAtom (outstream, s)
 	fun outputTransform ({outstream, ...}: context, name) =
 	    PrimPickle.outputTransform (outstream, name)
 
@@ -177,7 +177,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    end
 
 	fun outputLabel (context, label) =
-	    ignore (outputUniqueString (context, label))
+	    ignore (outputAtom (context, label))
 
 	fun outputName (context, string) =
 	    ignore (outputString (context, string))

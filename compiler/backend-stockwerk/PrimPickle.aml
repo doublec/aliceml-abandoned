@@ -20,7 +20,7 @@ structure PrimPickle :> PRIM_PICKLE =
     struct
 	open LargeInt
 
-	structure UniqueStringMap = MkHashImpMap(UniqueString)
+	structure AtomMap = MkHashImpMap(Atom)
 
 	type id = int
 
@@ -28,7 +28,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	     {stream: BinIO.outstream,
 	      id: id ref,
 	      stringMap: id StringMap.t,
-	      uniqueStringMap: id UniqueStringMap.t,
+	      atomMap: id AtomMap.t,
 	      expect: int ref}
 
 	fun inc ({id = r as ref id, ...}: outstream) = (r := id + 1; id)
@@ -60,7 +60,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	    {stream = BinIO.openOut name,
 	     id = ref 0,
 	     stringMap = StringMap.new (),
-	     uniqueStringMap = UniqueStringMap.new (),
+	     atomMap = AtomMap.new (),
 	     expect = ref 1}
 
 	fun done ({expect = r as ref n, ...}: outstream) = r := n - 1
@@ -109,16 +109,15 @@ structure PrimPickle :> PRIM_PICKLE =
 			id
 		    end
 
-	fun outputUniqueString (q as {uniqueStringMap, ...}: outstream, s) =
-	    case UniqueStringMap.lookup (uniqueStringMap, s) of
+	fun outputAtom (q as {atomMap, ...}: outstream, s) =
+	    case AtomMap.lookup (atomMap, s) of
 		SOME id => (outputReference (q, id); id)
 	      | NONE =>
 		    let
 			val id = outputUnique q
 		    in
-			UniqueStringMap.insertDisjoint
-			    (uniqueStringMap, s, id);
-			outputString (q, UniqueString.string s);
+			AtomMap.insertDisjoint (atomMap, s, id);
+			outputString (q, Atom.toString s);
 			id
 		    end
 
