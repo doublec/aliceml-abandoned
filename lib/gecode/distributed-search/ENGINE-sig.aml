@@ -1,0 +1,9 @@
+import structure Channel from "x-alice:/lib/data/Channel"
+
+signature ENGINE =
+sig
+    type solution
+
+    val start : (string * string) list ->
+		(unit -> unit) * (solution Channel.channel)
+end

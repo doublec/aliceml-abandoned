@@ -13,7 +13,7 @@ import signature PROBLEM  from "x-alice:/lib/gecode/search-factory/PROBLEM-sig"
 import signature SEARCH   from "x-alice:/lib/gecode/search-factory/SEARCH-sig"
 import signature DEBUG    from "x-alice:/lib/gecode/search-factory/DEBUG-sig"
 import signature REMOTE   from "x-alice:/lib/distribution/REMOTE-sig"
-
+import signature ENGINE   from "ENGINE-sig"
 
 import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 functor RemoteRun (val host : string
@@ -26,6 +26,7 @@ functor MkEngine (type solution val toString : solution -> string)
 			      -> PROBLEM
 				 where type space = Constraints.Space.space
 				 where type solution = solution)
+:> ENGINE where type solution = solution
 = struct
   
 val url = Url.fromString
@@ -42,6 +43,8 @@ fun a % b = Array.sub (a,b)
 
 (* Take one local instance of the problem. *)
 structure LProblem = MkProblem Constraints
+
+type solution = solution
 
 signature INTERFACE = INTERFACE where type solution = LProblem.solution
 
@@ -240,6 +243,8 @@ let
 
   structure Search = MkSearch Problem
 
+  type solution = solution
+
   fun shutdown () =
       (spawn (Utils.sleepms 500 ;
 	      OS.Process.exit OS.Process.success) ;
@@ -266,8 +271,6 @@ let
 			 raise ex))
 
   fun start () = idle id
-			
-  type solution = LProblem.solution
 
   val share    = Remote.proxy (wrapHandle Search.getUnexploredPath)
   val explore  = Remote.proxy (wrapHandle explore)

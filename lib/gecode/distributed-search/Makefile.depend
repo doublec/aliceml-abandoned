@@ -6,10 +6,13 @@ Common.alc: \
 
 INTERFACE-sig.alc: \
 
+ENGINE-sig.alc: \
+
 MkEngine.alc: \
 	Debug.alc \
 	Utils.alc \
 	INTERFACE-sig.alc \
+	ENGINE-sig.alc \
 
 Test.alc: \
 	Common.alc \

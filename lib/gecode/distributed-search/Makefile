@@ -5,13 +5,12 @@ ALICEC_OPTS =
 
 SOURCES = Debug.aml Utils.aml \
           Common.aml \
-          INTERFACE-sig.aml MkEngine.aml \
+          INTERFACE-sig.aml ENGINE-sig.aml MkEngine.aml \
           Test.aml
 
 COMPONENTS = $(SOURCES:%.aml=%.alc)
 
-#INSTALLDIRS = $(PREFIX)/lib/distribution/search
-#INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/distribution/search/%)
+INSTALLDIR=`alice-config --alicelibdir`/gecode/distributed-search
 
 .PHONY: all msg depend clean veryclean distclean message
 
@@ -27,14 +26,9 @@ $(COMPONENTS): %.alc: %.aml
 ##
 ## Installing
 ##
-
-install: $(INSTALLDIRS) $(INSTALLFILES)
-
-$(INSTALLDIRS):
-	mkdir -p -m 775 $@
-
-$(PREFIX)/lib/distribution/search/%: %
-	install -c -m 444 $< $@
+install: $(COMPONENTS)
+	mkdir -p -m 775 $(INSTALLDIR)
+	install -c -m444 $(COMPONENTS) $(INSTALLDIR)
 
 ##
 ## Cleaning Up
