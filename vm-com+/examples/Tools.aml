@@ -14,7 +14,8 @@ signature TOOLS =
 	  | TupleTy of ty vector | RecordTy of (label * ty) vector
 	  | SumTy of (label * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
-	  | ArrowTy
+	  | ArrowTy of ty * ty
+	  | ListTy of Ty | BoolTy
 
 	val toString: 'a * ty -> string
 	val inspect:  'a * ty -> unit
@@ -29,16 +30,20 @@ structure Tools :> TOOLS =
 	  | TupleTy of ty vector | RecordTy of (label * ty) vector
 	  | SumTy of (label * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
-	  | ArrowTy
+	  | ArrowTy of ty * ty
+	  | ListTy of Ty | BoolTy
 
 
-	fun tyToTy IntTy	= makeBasicType "int"
-	  | tyToTy WordTy	= makeBasicType "word"
-	  | tyToTy CharTy	= makeBasicType "char"
-	  | tyToTy StringTy	= makeBasicType "string"
-	  | tyToTy RealTy	= makeBasicType "real"
-	  | tyToTy(TupleTy tys)	= makeTupleType(Vector.map tyToTy tys)
-	  | tyToTy _		= raise Domain
+	fun tyToTy IntTy		= makeBasicType "int"
+	  | tyToTy WordTy		= makeBasicType "word"
+	  | tyToTy CharTy		= makeBasicType "char"
+	  | tyToTy StringTy		= makeBasicType "string"
+	  | tyToTy RealTy		= makeBasicType "real"
+	  | tyToTy(TupleTy tys)		= makeTupleType(Vector.map tyToTy tys)
+	  | tyToTy(ArrowTy(ty1,ty2))	= makeArrowType(tyToTy ty1, tyToTy ty2)
+	  | tyToTy BoolTy		= makeBasicType "bool"
+	  | tyToTy(ListTy ty)		= makeListType(tyToTy ty)
+	  | tyToTy _			= raise Domain
 
 	val inspect = fn(x,ty) => inspect(x, tyToTy ty)
 
