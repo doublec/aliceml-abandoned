@@ -3,7 +3,9 @@ SOURCES = AliceIdeGUI.aml \
 	OutputWriters.aml \
 	EventHandler.aml \
 	AliceIdeGUISignals.aml \
-	AliceIde.aml
+	AliceIde.aml \
+	EVALUATOR-sig.aml \
+	Evaluator.aml
 
 all: $(SOURCES:%.aml=%.alc)
 

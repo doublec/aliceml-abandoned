@@ -8,7 +8,8 @@ structure OutputWriters =
 
       fun makeWriters {logStream,
                        traceStream,
-                       stdOutStream} =
+                       stdOutStream,
+		       stdErrStream} =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
@@ -16,6 +17,7 @@ structure OutputWriters =
               Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
               Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
               spawn app (fillBuf progBuf) stdOutStream;
+              spawn app (fillBuf progBuf) stdErrStream;
               spawn app (fillBuf compilerBuf) logStream;
               spawn app (fillBuf compilerBuf) traceStream
           end

@@ -82,14 +82,14 @@ struct
 			       "-- " ^ s ^ (if filename = "" then ""
 					    else " " ^ filename) ^ "...\n")
 	in
-	    trace "Compiling";
-	    case stoppable (signal, fn _ => compile' (context, source))
+	    (trace "Compiling";
+	     case stoppable (signal, fn _ => compile' (context, source))
 	     of NONE => NONE (* interrupted *)
 	      | SOME (context', Compiler.FOREIGN _) =>
 		    raise Compiler.Crash "cross-compilation not supported"
 	      | SOME (context', Compiler.COMPONENT {eval, component, ...}) =>
 	    (trace "Evaluating";
-	    case stoppable (signal, eval o baseUrl)
+	     case stoppable (signal, eval o baseUrl)
 	     of NONE => NONE (* interrupted *)
 	      | SOME str => (* completed or stopped *)
 		if not printSig then SOME context' else
@@ -109,7 +109,10 @@ struct
 			     TextIO.output (logStream, "\n");
 			     context'
 			 end)
+	     )
 	    )
+	    finally
+	    trace "Ready"
 	end
 	handle Compiler.Error => SOME context
 	     | Compiler.Crash s =>
@@ -249,8 +252,7 @@ struct
 	    case evalString (true, context, source, signal)
 	     of NONE => Promise.fulfill (p, context)
 	      | SOME context' =>
-		Promise.fulfill (p, loopUses (context', signal));
-	    TextIO.output (traceStream, "-- Ready.\n")
+		Promise.fulfill (p, loopUses (context', signal))
 	end
 
 
