@@ -31,7 +31,7 @@ all:			$(FILES)
 install:		all
 
 clean:
-			-rm *.ozf
+			-rm *.ozf *.ozp *.ozm
 
 %.ozf:			%.aml
 			$(STOC) $(STOC_OPTS) -c $*.aml -o $@
