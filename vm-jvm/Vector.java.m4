@@ -25,7 +25,7 @@ final public class Vector implements DMLValue {
     public final static int maxLength = 65535;
 
     /** the java array that contains the vector entries */
-    protected DMLValue[] vec = null;
+    public DMLValue[] vec = null;
 
     protected Vector(int n) {
 	if (n<0 || maxLength<n) {
