@@ -15,9 +15,9 @@
 
 import structure Reflect from "x-alice:/lib/system/Reflect"
 
-import structure MkDictionary from "MkDictionary"
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
+import structure MkDictionary from "MkDictionary"
 
 import signature DICTIONARIES from "DICTIONARIES-sig"
 
