@@ -10,13 +10,13 @@
  *   $Revision$
  *)
 
-import structure Gtk          from "x-alice:/lib/gtk/Gtk"
-import structure Types        from "Types"
+import structure Gtk   from "x-alice:/lib/gtk/Gtk"
+import structure Types from "Types"
 
 
 structure OptionsWindow =
   struct
-    fun newOptionsWindow mw serve (state : Types.explorer_state option ref) =
+    fun newOptionsWindow (mw, serve, state : Types.explorer_state option ref) =
         case !state of
             SOME {refreshAfter=refreshAfter,
                   breakAfter=breakAfter,
@@ -35,44 +35,60 @@ structure OptionsWindow =
                 val label2 = Gtk.labelNew("Break after how many solutions: ")
                 val _ = Gtk.widgetShow label2
                 val _ = Gtk.miscSetAlignment(label2,0.0,0.5)
-                val solutions_adj = Gtk.adjustmentNew(Real.fromInt (!refreshAfter),
-                                                      0.0,10000.0,1.0,10.0,10.0)
+                val solutions_adj =
+                    Gtk.adjustmentNew(Real.fromInt (!refreshAfter),
+                                      0.0,10000.0,1.0,10.0,10.0)
                 val solutions = Gtk.spinButtonNew(solutions_adj,1.0,0)
-                val solutions2_adj = Gtk.adjustmentNew(Real.fromInt (!breakAfter),
-                                                       0.0,10000.0,1.0,10.0,10.0)
+                val solutions2_adj =
+                    Gtk.adjustmentNew(Real.fromInt (!breakAfter),
+                                      0.0,10000.0,1.0,10.0,10.0)
                 val solutions2 = Gtk.spinButtonNew(solutions2_adj,1.0,0)
-                val hideFailed = Gtk.checkButtonNewWithMnemonic("Hide failed subtrees")
+                val hideFailed =
+                    Gtk.checkButtonNewWithMnemonic("Hide failed subtrees")
                 val _ = Gtk.toggleButtonSetActive(hideFailed, !hf)
 
-                val _ = Gtk.tableAttach(table1,label1,0,1,0,1,Gtk.FILL,Gtk.FILL,0,0)
-                val _ = Gtk.tableAttach(table1,solutions,1,2,0,1,Gtk.FILL,Gtk.FILL,0,0)
-                val _ = Gtk.tableAttach(table1,label2,0,1,1,2,Gtk.FILL,Gtk.FILL,0,0)
-                val _ = Gtk.tableAttach(table1,solutions2,1,2,1,2,Gtk.FILL,Gtk.FILL,0,0)
-                val _ = Gtk.tableAttach(table1,hideFailed,0,2,2,3,Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,label1,0,1,0,1,
+                                        Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,solutions,1,2,0,1,
+                                        Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,label2,0,1,1,2,
+                                        Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,solutions2,1,2,1,2,
+                                        Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,hideFailed,0,2,2,3,
+                                        Gtk.FILL,Gtk.FILL,0,0)
                 val _ = Gtk.containerAdd(configure,table1)
                         
-                fun valueChangedHandler _ = serve (fn () =>
-                                                      case !state of
-                                                          SOME {refreshAfter=refreshAfter,...} =>
-                                                          refreshAfter :=
-                                                          Real.round (Gtk.adjustmentGetValue solutions_adj)
-                                                        | _ => ())
-                val _ = Gtk.signalConnect(solutions_adj, "value_changed", valueChangedHandler)
+                fun valueChangedHandler _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {refreshAfter=refreshAfter,...} =>
+                                  refreshAfter :=
+                                  Real.round
+                                      (Gtk.adjustmentGetValue solutions_adj)
+                                | _ => ())
+                val _ = Gtk.signalConnect(solutions_adj, "value_changed",
+                                          valueChangedHandler)
 
-                fun valueChangedHandler2 _ = serve (fn () =>
-                                                       case !state of
-                                                           SOME {breakAfter=breakAfter,...} =>
-                                                           breakAfter :=
-                                                           Real.round (Gtk.adjustmentGetValue solutions2_adj)
-                                                         | _ => ())
-                val _ = Gtk.signalConnect(solutions2_adj, "value_changed", valueChangedHandler2)
+                fun valueChangedHandler2 _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {breakAfter=breakAfter,...} =>
+                                  breakAfter :=
+                                  Real.round
+                                      (Gtk.adjustmentGetValue solutions2_adj)
+                                | _ => ())
+                val _ = Gtk.signalConnect(solutions2_adj, "value_changed",
+                                          valueChangedHandler2)
 
-                fun toggledHandler _ = serve (fn () =>
-                                                 case !state of
-                                                     SOME {hideFailed=hf,...} =>
-                                                     hf := Gtk.toggleButtonGetActive hideFailed
-                                                   | _ => ())
-                val _ = Gtk.signalConnect(hideFailed, "toggled", toggledHandler)
+                fun toggledHandler _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {hideFailed=hf,...} =>
+                                  hf := Gtk.toggleButtonGetActive hideFailed
+                                | _ => ())
+                val _ = Gtk.signalConnect(hideFailed, "toggled",
+                                          toggledHandler)
             in
                 configure
             end

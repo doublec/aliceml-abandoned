@@ -10,18 +10,19 @@
  *   $Revision$
  *)
 
-import structure Search from "Search"
-import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search       from "Search"
+import structure Space        from "x-alice:/lib/gecode/Space"
 import structure ExplorerNode from "ExplorerNode"
 
-import structure Types from "Types"
+import structure Types        from "Types"
 
 structure ExplorerSearch =
   struct
 
   exception SearchDone
 
-  fun initSearch serve (state : Types.explorer_state option ref) refresh resetCanvas s =
+  fun initSearch (serve, state : Types.explorer_state option ref,
+                  refresh,resetCanvas, s) =
       let
           val s' = Space.clone s
       in
@@ -33,15 +34,17 @@ structure ExplorerSearch =
                rootSpace := SOME s;
                currentNode := SOME (!tree);
                ExplorerNode.setSpace (!tree) (SOME s');
-               refresh serve state)
+               refresh (serve, state))
             | _ => ()
       end
 
-  fun searchFrom serve (state : Types.explorer_state option ref) callBack refresh node =
-      (Search.explore node callBack handle SearchDone => ();
-       refresh serve state)
+  fun searchFrom (serve, state : Types.explorer_state option ref,
+                  callBack, refresh, node) =
+      (Search.explore (node, callBack) handle SearchDone => ();
+       refresh (serve, state))
 
-  fun search serve (state : Types.explorer_state option ref) refresh breakAfter root =
+  fun search (serve, state : Types.explorer_state option ref,
+              refresh, breakAfter, root) =
       case !state of
           SOME {refreshAfter=ref refreshAfter,tree=ref tree,...} =>
           let
@@ -51,7 +54,7 @@ structure ExplorerSearch =
                                     (found2 := (!found2) + 1;
                                      if (!found2) >= refreshAfter then
                                          (found2 := 0;
-                                          refresh serve state)
+                                          refresh (serve, state))
                                      else ())
                                 else ();
                                 if breakAfter > 0 then
@@ -62,79 +65,10 @@ structure ExplorerSearch =
                                 else ())
               val fromNode = Option.getOpt(root, tree)
           in 
-              searchFrom serve state callBack refresh fromNode
+              searchFrom (serve, state, callBack, refresh, fromNode)
           end
         | _ => ()
 
-(*
-  fun searchAll serve (state : Types.explorer_state option ref) refresh =
-      case !state of
-          SOME {tree=tree,...} =>
-          let
-              fun callBack _ = () (*refresh serve state*)
-          in 
-              searchFrom serve state callBack refresh (!tree)
-          end
-        | _ => ()
-
-  fun searchOne serve (state : Types.explorer_state option ref) refresh =
-      case !state of
-          SOME {tree=tree,...} =>
-          let
-              fun callBack _ = raise SearchDone
-          in 
-              searchFrom serve state callBack refresh (!tree)
-          end
-        | _ => ()
-
-  fun searchAllFrom serve state node refresh =
-      case !state of
-          SOME {tree=tree,...} =>
-          let
-              fun callBack _ = () (*refresh serve state*)
-          in 
-              searchFrom serve state callBack refresh node
-          end
-        | _ => ()
-
-  fun searchOneFrom serve state node refresh =
-      case !state of
-          SOME {tree=tree,...} =>
-          let
-              fun callBack _ = raise SearchDone
-          in 
-              searchFrom serve state callBack refresh node
-          end
-        | _ => ()
-
-  fun searchN serve (state : Types.explorer_state option ref) refresh =
-      case !state of
-          SOME {tree=tree,refreshAfter=refreshAfter,...} =>
-          let
-              val found = ref 0
-              fun callBack _ = (found := (!found) + 1;
-                                if (!found) > (!refreshAfter) then
-                                    raise SearchDone
-                                else ())
-          in 
-              searchFrom serve state callBack refresh (!tree)
-          end
-        | _ => ()
-
-  fun searchNFrom serve (state : Types.explorer_state option ref) node refresh =
-      case !state of
-          SOME {tree=tree,refreshAfter=refreshAfter,...} =>
-          let
-              val found = ref 0
-              fun callBack _ = (found := (!found) + 1;
-                                if (!found) >= (!refreshAfter) then
-                                    raise SearchDone
-                                else ())
-          in 
-              searchFrom serve state callBack refresh node
-          end
-        | _ => ()
-*)
-  fun searchBest _ _ _ = ()
+  fun searchBest _ = ()
 
   end

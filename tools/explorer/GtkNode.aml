@@ -10,12 +10,12 @@
  *   $Revision$
  *)
 
-import structure TreeNode  from "TreeNode"
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
-import structure Gdk       from "x-alice:/lib/gtk/Gdk"
+import structure TreeNode    from "TreeNode"
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Gdk         from "x-alice:/lib/gtk/Gdk"
 import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
 
-import structure Types from "Types"
+import structure Types       from "Types"
 
 structure GtkNode =
 struct
@@ -48,7 +48,7 @@ struct
 			     [("x", Gtk.REAL 0.0),
 			      ("y", Gtk.REAL 0.0)])
 
-  fun drawHidden group shadow scale myX myY =
+  fun drawHidden (group, shadow, scale, myX, myY) =
       let
 	  val color = if shadow then shadowColor else failedColor
 	  val outline = if shadow then shadowColor else black
@@ -65,15 +65,16 @@ struct
       in
 	  (GnomeCanvas.itemCreate(group,
 				  GnomeCanvas.polygonGetType(),
-				  [("points", Gtk.OBJECT
-						  (GnomeCanvas.makePoints points)),
+				  [("points",
+                                    Gtk.OBJECT
+		                        (GnomeCanvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
 				  ))	  
       end
 
-  fun drawSuccNode group shadow scale myX myY =
+  fun drawSuccNode (group, shadow, scale, myX, myY) =
       let
 	  val color = if shadow then shadowColor else succColor
 	  val outline = if shadow then shadowColor else black
@@ -88,15 +89,16 @@ struct
       in
 	  (GnomeCanvas.itemCreate(group,
 				  GnomeCanvas.polygonGetType(),
-				  [("points", Gtk.OBJECT
-						  (GnomeCanvas.makePoints points)),
+				  [("points",
+                                    Gtk.OBJECT
+                                        (GnomeCanvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
 				  ))	  
       end
 
-  fun drawFailedNode group shadow scale myX myY =
+  fun drawFailedNode (group, shadow, scale, myX, myY) =
       let
 	  val color = if shadow then shadowColor else failedColor
 	  val outline = if shadow then shadowColor else black
@@ -117,7 +119,7 @@ struct
 				  ])
       end
 
-  fun drawChoiceNode group shadow scale myX myY =
+  fun drawChoiceNode (group, shadow, scale, myX, myY) =
       let
 	  val color = if shadow then shadowColor else choiceColor
 	  val outline = if shadow then shadowColor else black
@@ -139,7 +141,7 @@ struct
 				  ])
       end
 
-  fun drawUnknownNode group shadow scale myX myY =
+  fun drawUnknownNode (group, shadow, scale, myX, myY) =
       let
 	  val color = if shadow then shadowColor else lightgray
 	  val outline = if shadow then shadowColor else black
@@ -156,8 +158,9 @@ struct
       in
 	  (GnomeCanvas.itemCreate(group,
 				  GnomeCanvas.polygonGetType(),
-				  [("points", Gtk.OBJECT
-						  (GnomeCanvas.makePoints points)),
+				  [("points",
+                                    Gtk.OBJECT
+					(GnomeCanvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
@@ -165,30 +168,36 @@ struct
       end
 
   fun connect
-	  (state as ({canvas={rootGroup=ref rootGroup,...},...} : Types.explorer_state))
-	  hidden myStatus parentStatus myX myY momX momY =
+	  (state as ({canvas={rootGroup=ref rootGroup,...},...}
+                     : Types.explorer_state),
+	   hidden, myStatus, parentStatus, myX, myY, momX, momY) =
       let
 	  val scale = TreeNode.defScale
 	  val s = 7*256
 	  val t = 10*256
-	  val (x1,y1) = if hidden then ((itr myX)*scale,(itr (myY-t))*scale)
-			else case myStatus of
-			    TreeNode.FAILED => ((itr myX)*scale,(itr (myY-s))*scale)
-			  | TreeNode.SOLVED => ((itr myX)*scale,(itr (myY-t))*scale)
-			  | TreeNode.CHOICE => ((itr myX)*scale,(itr (myY-t))*scale)
-			  | TreeNode.UNKNOWN => ((itr myX)*scale,(itr (myY-t))*scale)
-	  val (x2, y2) = case parentStatus of
-			     TreeNode.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
-			   | TreeNode.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
-			   | TreeNode.CHOICE => ((itr momX)*scale,(itr (momY+t))*scale)
-			   | TreeNode.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
+	  val (x1,y1) =
+              if hidden then ((itr myX)*scale,(itr (myY-t))*scale)
+	      else
+                  case myStatus of
+		      TreeNode.FAILED => ((itr myX)*scale,(itr (myY-s))*scale)
+		    | TreeNode.SOLVED => ((itr myX)*scale,(itr (myY-t))*scale)
+		    | TreeNode.CHOICE => ((itr myX)*scale,(itr (myY-t))*scale)
+		    | TreeNode.UNKNOWN => ((itr myX)*scale,(itr (myY-t))*scale)
+	  val (x2, y2) =
+              case parentStatus of
+		  TreeNode.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
+		| TreeNode.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
+		| TreeNode.CHOICE => ((itr momX)*scale,(itr (momY+t))*scale)
+		| TreeNode.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
 
-	  val points = [Real.round x1,Real.round y1,Real.round x2,Real.round y2]
+	  val points = [Real.round x1,Real.round y1,
+                        Real.round x2,Real.round y2]
       in
 	  (GnomeCanvas.itemCreate(rootGroup,
 				  GnomeCanvas.lineGetType(),
 				  [("points",
-				    Gtk.OBJECT (GnomeCanvas.makePoints points)),
+				    Gtk.OBJECT
+                                        (GnomeCanvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT black),
 				   ("line_style", Gtk.INT 0),
 				   ("width_pixels", Gtk.INT 1)
@@ -198,7 +207,7 @@ struct
 
   fun unconnect connection = Gtk.objectDestroy connection
 
-  fun doDraw group shadow scale hidden status x y =
+  fun doDraw (group, shadow, scale, hidden, status, x, y) =
       let
 	  val realX = (itr x)*scale
 	  val realY = (itr y)*scale
@@ -209,15 +218,17 @@ struct
 			    | TreeNode.CHOICE => drawChoiceNode
 			    | TreeNode.UNKNOWN => drawUnknownNode
       in
-	  draw group shadow scale (Real.round realX) (Real.round realY)
+	  draw (group, shadow, scale, Real.round realX, Real.round realY)
       end
 
   fun drawNode 
-	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,actionGroup=actionGroup,...},
+	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,
+                             actionGroup=actionGroup,...},
                      scale=scale,...}
-	   : Types.explorer_state)
-	  momX momY
-	  (TreeNode.N({offset=offset,status=ref status,hidden=ref hidden,dirty=dirty,
+	   : Types.explorer_state,
+	   momX, momY,
+	   TreeNode.N({offset=offset,status=ref status,
+                       hidden=ref hidden,dirty=dirty,
 		       vNode=vNode,connection=connection,...},
 		      ref parent, ref children)) =
 	  let
@@ -227,20 +238,23 @@ struct
 	      dirty := false;
 	      connection :=
 	      (Option.map(fn p =>
-			     (connect state hidden status
-				      (TreeNode.getStatus p)
-				      myX myY momX momY))
+			     (connect (state, hidden, status,
+				       TreeNode.getStatus p,
+				       myX, myY, momX, momY)))
 			 parent);
-	      vNode := SOME (doDraw (!actionGroup) false
-				    TreeNode.defScale hidden status myX myY);
+	      vNode := SOME (doDraw (!actionGroup, false,
+				     TreeNode.defScale, hidden,
+                                     status, myX, myY));
 	      if hidden then ()
-	      else Vector.app (drawNode state myX myY) children
+	      else Vector.app (fn c => drawNode (state, myX, myY, c)) children
 	  end
 
-  fun markNode (state as {canvas={canvas=canvas,rootGroup=rootGroup,actionGroup=actionGroup,...},
+  fun markNode (state as {canvas={canvas=canvas,rootGroup=rootGroup,
+                                  actionGroup=actionGroup,...},
                           scale=scale,...}
 	        : Types.explorer_state)
-	       (TreeNode.N({offset=offset,status=ref status,hidden=ref hidden,dirty=dirty,
+	       (TreeNode.N({offset=offset,status=ref status,
+                            hidden=ref hidden,dirty=dirty,
 		            vNode=vNode,connection=connection,...},
 		           ref parent, ref children)) =
                case !vNode of
@@ -254,19 +268,23 @@ struct
 				               ("y1", Gtk.REAL y1),
 				               ("x2", Gtk.REAL x2),
 				               ("y2", Gtk.REAL y2),
-				               ("fill_color_gdk", Gtk.OBJECT black),
-				               ("outline_color_gdk", Gtk.OBJECT black)
+				               ("fill_color_gdk",
+                                                Gtk.OBJECT black),
+				               ("outline_color_gdk",
+                                                Gtk.OBJECT black)
 				               ]);
                        ()
                    end
                  | NONE => ()
 
   fun drawShadow
-	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,shadowGroup=shadowGroup,...},
+	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,
+                             shadowGroup=shadowGroup,...},
                      scale=scale,...}
-	   : Types.explorer_state)
-	  myX myY
-	  (TreeNode.N({offset=offset,status=ref status,hidden=ref hidden,dirty=dirty,
+	   : Types.explorer_state,
+	   myX, myY,
+	   TreeNode.N({offset=offset,status=ref status,
+                       hidden=ref hidden,dirty=dirty,
 		       vNode=vNode,connection=connection,...},
 		      ref parent, ref children)) =
 	  let
@@ -275,11 +293,13 @@ struct
 	  in
 	      Gtk.objectDestroy (!shadowGroup);
 	      shadowGroup := makeGroup (!rootGroup);
-	      doDraw (!shadowGroup) true TreeNode.defScale hidden status myX myY;
+	      doDraw (!shadowGroup, true, TreeNode.defScale, hidden,
+                      status, myX, myY);
 	      GnomeCanvas.itemLowerToBottom (!shadowGroup)
 	  end
 
-  fun undrawSubtree (Types.N({vNode=vNode,connection=connection,...},_,children)) =
+  fun undrawSubtree (Types.N({vNode=vNode,connection=connection,...},
+                             _,children)) =
       case (!vNode) of
 	  NONE => ()
 	| SOME v =>
@@ -290,17 +310,19 @@ struct
 					     connection:=NONE));
 	   Vector.app undrawSubtree (!children))
 
-  fun moveNode ({scale=ref scale,...}: Types.explorer_state)
-	       (v, myByX) =
-	       GnomeCanvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale, 0.0)
+  fun moveNode ({scale=ref scale,...}: Types.explorer_state,
+	        v, myByX) =
+	       GnomeCanvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
+                                    0.0)
 
   fun moveTree (state: Types.explorer_state)
-	       (Types.N({connection=connection,vNode=vNode,...},_,ref children),
+	       (Types.N({connection=connection,vNode=vNode,...},
+                        _,ref children),
 		myByX) =
 	       ((case (!vNode) of NONE => ()
-				| SOME v => moveNode state (v, myByX));
+				| SOME v => moveNode (state, v, myByX));
 		(case (!connection) of NONE => ()
-				     | SOME c => moveNode state (c, myByX));
+				     | SOME c => moveNode (state, c, myByX));
 		Vector.app (fn k => moveTree state (k, myByX)) children)
 
   fun findByXY(canvas, scale, x, y) =

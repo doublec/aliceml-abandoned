@@ -10,11 +10,11 @@
  *   $Revision$
  *)
 
-import structure Space from "x-alice:/lib/gecode/Space"
-import structure TreeNode from "TreeNode"
-import structure Types from "Types"
+import structure Space      from "x-alice:/lib/gecode/Space"
+import structure TreeNode   from "TreeNode"
+import structure Types      from "Types"
 import structure VisualNode from "VisualNode"
-import structure GtkNode from "GtkNodes"
+import structure GtkNode    from "GtkNode"
 
 structure ExplorerNode =
 struct
@@ -36,15 +36,20 @@ struct
 	   shape =ref nil}, ref mom, ref #[])
 
     fun setMom (N(_,mom,_)) newMom = mom := newMom
-    fun decOpenChildren (N({openChildren=openChildren,space=space,...},ref mom,_)) =
+    fun decOpenChildren (N({openChildren=openChildren,space=space,...},
+                           ref mom,_)) =
         (openChildren := !openChildren - 1;
          if !openChildren=0 then
              (Option.app decOpenChildren mom;
-              Option.app (fn _ => Option.app (fn s => (Space.discard s; space := NONE)) (!space)) mom)
+              Option.app (fn _ => Option.app (fn s => (Space.discard s;
+                                                       space := NONE))
+                                             (!space)) mom)
          else ())
-    fun hasOpenChildren (N({openChildren=openChildren,...},_,_)) = !openChildren>=1
+    fun hasOpenChildren (N({openChildren=openChildren,...},_,_)) =
+        !openChildren>=1
 
-    fun setStatus (node as N({status=status,openChildren=openChildren,...},ref mom,_)) newStatus = 
+    fun setStatus (node as N({status=status,openChildren=openChildren,...},
+                             ref mom,_)) newStatus = 
         (case newStatus of
              (Types.FAILED | Types.SOLVED) => Option.app decOpenChildren mom
            | _ => ();
@@ -85,7 +90,8 @@ struct
                         end
                       | s => s
 
-    fun isUnknown (node as N({status=status,...},_,_)) = (!status = Types.UNKNOWN)
+    fun isUnknown (node as N({status=status,...},_,_)) =
+        (!status = Types.UNKNOWN)
     fun isHidden (node as N({hidden=hidden,...},_,_)) = !hidden
     fun curNodeStatus (N({status=ref status,...},_,_)) = status
 
@@ -95,9 +101,12 @@ struct
                          case nodeStatus node of
                              Types.FAILED => 0
                            | Types.SOLVED => 0
-                           | Types.CHOICE => (setChildren node #[createNode (SOME node) 1, createNode (SOME node) 2];
+                           | Types.CHOICE =>
+                             (setChildren node #[createNode (SOME node) 1,
+                                                 createNode (SOME node) 2];
                                               2)
-                           | Types.UNKNOWN => raise Subscript (* can't happen*) )
+                           | Types.UNKNOWN => raise Subscript (* can't happen*)
+                                                    )
                       | _ => Vector.length (!ch)
 
     fun getLeftChild (node as N(_,_,ch)) =

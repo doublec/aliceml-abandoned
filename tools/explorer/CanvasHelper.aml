@@ -10,25 +10,26 @@
  *   $Revision$
  *)
 
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure GnomeCanvas  from "x-alice:/lib/gtk/GnomeCanvas"
 
-import structure GtkNode from "GtkNodes"
-import structure Types   from "Types"
-import structure Defaults from "Defaults"
+import structure GtkNode      from "GtkNode"
+import structure Types        from "Types"
+import structure Defaults     from "Defaults"
 import structure EventHandler from "EventHandler"
 
 structure CanvasHelper =
   struct
 
-  fun createCanvas state serve xDim yDim =
+  fun createCanvas (state, serve, xDim, yDim) =
       let
 	  val canvas = GnomeCanvas.newAa()
 	  val rootGroup = GtkNode.makeGroup (GnomeCanvas.root canvas)
 	  val shadowGroup = GtkNode.makeGroup rootGroup
 	  val actionGroup = GtkNode.makeGroup rootGroup
-          val actionHandler = Gtk.signalConnect(actionGroup, "event",
-			                        EventHandler.nodeEvent state serve);
+          val actionHandler =
+              Gtk.signalConnect(actionGroup, "event",
+			        EventHandler.nodeEvent (state, serve));
       in
 	   Gtk.widgetSetSizeRequest(canvas, xDim, yDim);
 	   GnomeCanvas.setScrollRegion(canvas, 0.0, 0.0,
@@ -50,14 +51,16 @@ structure CanvasHelper =
        Gtk.objectDestroy (!rootGroup);
        rootGroup := GtkNode.makeGroup (GnomeCanvas.root canvas);
        actionGroup := GtkNode.makeGroup (!rootGroup);
-       actionHandler := Gtk.signalConnect(!actionGroup, "event", EventHandler.nodeEvent s serve);
+       actionHandler := Gtk.signalConnect(!actionGroup, "event",
+                                          EventHandler.nodeEvent (s, serve));
        ())
     | resetCanvas _ _ = ()
 
-  fun scaleCanvasHandler serve
-			 (ref (SOME({canvas={canvas=canvas,...},scale=scale,...}
-				    : Types.explorer_state)))
-			 scaleWidget _ =
+  fun scaleCanvasHandler (serve,
+			  ref (SOME({canvas={canvas=canvas,...},
+                                     scale=scale,...}
+				    : Types.explorer_state)),
+			  scaleWidget) _ =
       (serve (fn () =>
 		 let
 		     val x = Gtk.rangeGetValue scaleWidget
@@ -65,6 +68,6 @@ structure CanvasHelper =
 		     GnomeCanvas.setPixelsPerUnit(canvas, x);
 		     scale := x / Defaults.floatScaleBase
 		 end))
-    | scaleCanvasHandler _ _ _ _ = ()
+    | scaleCanvasHandler _ _ = ()
                                    
   end

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Core        from "x-alice:/lib/gtk/Core"
-import structure Space       from "x-alice:/lib/gecode/Space"
+import structure Core  from "x-alice:/lib/gtk/Core"
+import structure Space from "x-alice:/lib/gecode/Space"
 
 structure Types =
   struct
@@ -58,7 +58,8 @@ structure Types =
   fun debug (ref (SOME ({debug=debug,...}: explorer_state))) = !debug
     | debug _ = false
 
-  fun setDebug (ref (SOME ({debug=debug,...}: explorer_state))) flag = debug:=flag
+  fun setDebug (ref (SOME ({debug=debug,...}: explorer_state))) flag =
+      debug:=flag
     | setDebug _ _ = ()
 
   end

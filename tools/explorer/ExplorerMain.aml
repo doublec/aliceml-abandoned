@@ -10,12 +10,12 @@
  *   $Revision$
  *)
 
-import structure ExplorerSearch from "ExplorerSearch"
-import structure MainWindow     from "MainWindow"
-import structure Space          from "x-alice:/lib/gecode/Space"
+import structure ExplorerSearch  from "ExplorerSearch"
+import structure MainWindow      from "MainWindow"
+import structure Space           from "x-alice:/lib/gecode/Space"
 import structure ExplorerInspect from "ExplorerInspect"
-import structure Types          from "Types"
-import structure CanvasHelper from "CanvasHelper"
+import structure Types           from "Types"
+import structure CanvasHelper    from "CanvasHelper"
 
 structure Explorer =
   struct
@@ -64,8 +64,9 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
-                                                    CanvasHelper.resetCanvas s);
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s));
 	  state
       end
 
@@ -73,9 +74,11 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
-                                                    CanvasHelper.resetCanvas s);
-	  serve (fn () => ExplorerSearch.search serve state MainWindow.refresh 0 NONE);
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s));
+	  serve (fn () => ExplorerSearch.search
+                              (serve, state, MainWindow.refresh, 0, NONE));
 	  state
       end
 
@@ -83,9 +86,11 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
-                                                    CanvasHelper.resetCanvas s);
-	  serve (fn () => ExplorerSearch.search serve state MainWindow.refresh 1 NONE);
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s));
+	  serve (fn () => ExplorerSearch.search
+                              (serve, state, MainWindow.refresh, 1, NONE));
 	  state
       end
 
@@ -93,9 +98,11 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
-                                                    CanvasHelper.resetCanvas s);
-	  serve (fn () => ExplorerSearch.searchBest serve state MainWindow.refresh);
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s));
+	  serve (fn () => ExplorerSearch.searchBest
+                              (serve, state, MainWindow.refresh));
 	  state
       end
 
@@ -107,7 +114,8 @@ structure Explorer =
            inspect := (action, name)::(!inspect);
            curInspAction := name;
 	   serve (fn () =>
-		     MainWindow.updateInspectionActionsMenu (!inspect) serve e))
+		     MainWindow.updateInspectionActionsMenu
+                         (!inspect, serve, e)))
 	| _ => ()
 
   fun deleteInfoAction (e, name) =
@@ -115,7 +123,8 @@ structure Explorer =
 	  SOME ({inspect=inspect,...} : Types.explorer_state) =>
 	  (inspect := List.filter (fn (_,n) => n<>name) (!inspect);
 	   serve (fn () =>
-		     MainWindow.updateInspectionActionsMenu (!inspect) serve e))
+		     MainWindow.updateInspectionActionsMenu
+                         (!inspect, serve, e)))
 	| _ => ()
 
   fun initScript' t script =
@@ -148,8 +157,11 @@ structure Explorer =
           e
       end
 
-  __overload 'a initScript : (Space.space -> 'a) -> explorer = initScript'
-  __overload 'a exploreAllScript : (Space.space -> 'a) -> explorer = exploreAllScript'
-  __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer = exploreOneScript'
+  __overload 'a initScript : (Space.space -> 'a) -> explorer =
+     initScript'
+  __overload 'a exploreAllScript : (Space.space -> 'a) -> explorer =
+     exploreAllScript'
+  __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer =
+     exploreOneScript'
 
   end

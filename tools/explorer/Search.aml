@@ -10,15 +10,15 @@
  *   $Revision$
  *)
 
-import structure TreeNode from "TreeNode"
-import structure Types from "Types"
+import structure TreeNode     from "TreeNode"
+import structure Types        from "Types"
 import structure ExplorerNode from "ExplorerNode"
 
 structure Search =
 struct
     open TreeNode
 
-    fun explore node callBack =
+    fun explore (node, callBack) =
         let
             fun dfe node =
                 case ExplorerNode.noOfChildren node of
@@ -27,10 +27,12 @@ struct
                             | _ => ())
                   | 2 =>
                     let val left = ExplorerNode.getLeftChild node
-                    in if ExplorerNode.isUnknown left orelse ExplorerNode.hasOpenChildren left then
+                    in if ExplorerNode.isUnknown left 
+                          orelse ExplorerNode.hasOpenChildren left then
                            dfe left else ();
                     let val right = ExplorerNode.getRightChild node
-                    in if ExplorerNode.isUnknown right orelse ExplorerNode.hasOpenChildren right then
+                    in if ExplorerNode.isUnknown right 
+                          orelse ExplorerNode.hasOpenChildren right then
                            dfe right else ()
                     end
                     end

@@ -23,7 +23,7 @@ SOURCES= \
 	ExplorerSearch.aml \
 	TreeNode.aml \
 	MainWindow.aml \
-	GtkNodes.aml \
+	GtkNode.aml \
 	Defaults.aml \
 	EventHandler.aml \
 	CanvasHelper.aml \
