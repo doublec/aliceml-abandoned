@@ -47,7 +47,6 @@ public:
   static word Sel(u_int index) {
     return values->Sel(index);
   }
-  static void Put(u_int index, u_int Value);
   static void Replace(u_int index, word item) {
     values->Init(index, item);
   }
