@@ -308,9 +308,12 @@ word getenvClosure = Tuple::FromWordDirect(interfaceValue)->Sel(0);
 <?php pslab_header3("Interrupting computations"); ?>
 
 <P>
-  SEAM supports the computation of a C function to be interrupted in different
-  ways. Note that the entire function body will be executed anew in case
-  the interrupted computation proceeds.
+  SEAM supports the computation of a native function body
+  to be interrupted in different ways.
+  However, blocking system calls made
+  in a native function body will block the entire machine.
+  Note that the entire function body will be executed anew once
+  the previously interrupted computation proceeds again.
 </P>
 <DL>
   <DT><TT>PREEMPT0</TT>
@@ -373,7 +376,7 @@ Primitive::MakeFunction(const char *name,
       <TT>DEFINEn</TT> declarations.
       <LI><TT>inArity</TT> denotes the number of input arguments.
       <LI><TT>outArity</TT> denotes the number of return arguments.
-      <LI><TT>transform</TT> specificies how this function can be transformed
+      <LI><TT>transform</TT> specifies how this function can be transformed
           to an external represenation. This value defaults
           to <TT>INVALID_POINTER</TT> denoting that there is no external
           represenation.
