@@ -293,7 +293,72 @@ final public class String implements DMLValue {
 
     _BUILTIN(ToCString) {
 	_APPLY(val) {
-	    return val;
+	    try {
+		java.lang.String result = ((java.lang.String) val).value;
+		int idx=0;
+		while ((idx=result.indexOf('\\',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\\"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('\"',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\""+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('?',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\?"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('?',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\?"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('?',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\?"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf(0x7,idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\"+String.valueOf(0x7)+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('\b',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\b"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('\n',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\n"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf(0xb,idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\"+String.valueOf(0xb)+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('\f',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\f"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('\t',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\t"+
+			result.substring(idx+1);
+		}
+		idx = 0;
+		while ((idx=result.indexOf('\r',idx)) > 0) {
+		    result = result.substring(0,idx-1)+"\\\r"+
+			result.substring(idx+1);
+		}
+	    } catch (ClassCastException c) {
+		_error("wrong argument",val);
+	    }
+	    return new STRING (result);
 	}
     }
     /** <code>val toCString : string -> java.lang.String.string </code>*/
