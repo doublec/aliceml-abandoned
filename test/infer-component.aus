@@ -1,43 +1,4 @@
 import
-    infix  7  * / div mod
-    infix  6  + - ^
-    infixr 5  :: @
-    infix  4  = <> > >= < <=
-    infix  3  := o
-    infix  0  before
-
-    type unit
-    datatype bool
-    type int
-    type string
-    datatype list
-    datatype ref
-
-    val op=
-    val op<>
-
-    val op+
-    val op-
-    val op<
-
-    val !
-    val op:=
-
-    datatype option
-
-    structure List
-
-    structure ListPair
-
-    structure String
-    val op^
-
-    structure Int
-
-    structure Char
-from "x-alice:/lib/Base.ozf"
-
-import
     structure TextIO
 from "x-alice:/lib/TextIO.ozf"
 
