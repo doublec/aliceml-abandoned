@@ -77,7 +77,7 @@ distclean: veryclean
 depend: Makefile.depend
 
 install: all
-	install -d $(PREFIX)/lib/test
+	mkdir -p -m 775 $(PREFIX)/lib/test  #install -d $(PREFIX)/lib/test
 	install *.$(SH_EXT) $(PREFIX)/lib/test
 
 Makefile.depend: $(FILTERED_SOURCES)

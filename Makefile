@@ -11,6 +11,8 @@ OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
 
+TARGET=seam
+
 PLATFORM = $(shell bootstrap/platform.sh smlnj)
 ifeq ($(PLATFORM:%win32=win32), win32)
     WINDOWS = 1
@@ -41,7 +43,7 @@ endif
 ##
 ## Do it!
 ##
-install: install-seam man
+install: install-$(TARGET) man
 	@echo -------------------------------------------------------------------------------
 	@echo Installation of Alice for $(PLATFORM) complete.
 	@echo Time for build 1:
@@ -58,16 +60,17 @@ install-prelude:
 ##
 ## Sync the global installation with local one
 ##
-install-global: #install
-	(cd $(PREFIX) && tar -cf - *) | \
-	(cd $(GLOBAL_PREFIX) && tar -xvf -)
+install-global:
+	make TARGET=$(TARGET) PREFIX=$(GLOBAL_PREFIX)
+#	(cd $(PREFIX) && tar -cf - *) | \
+#	(cd $(GLOBAL_PREFIX) && tar -xvf -)
 
 ##
 ## Build the bootstrap compiler on SML/NJ
 ##
 bootstrap-smlnj:
 	rm -f bootstrap/alicec-*.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
-	(cd bootstrap && make $(MAKECMDGOALS:install-%=%)) || exit 1
+	(cd bootstrap && make $(TARGET)) || exit 1
 
 ##
 ## Documentation

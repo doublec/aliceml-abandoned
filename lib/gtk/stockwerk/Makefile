@@ -167,5 +167,5 @@ distclean: clean
 ### INSTALLATION ################################
 #
 install: all
-	./myinstall -d $(INSTALLDIR)
+	mkdir -p -m 775 $(INSTALLDIR) # ./myinstall -d $(INSTALLDIR)
 	./myinstall $(INSTALLTARGETS) $(INSTALLDIR)
