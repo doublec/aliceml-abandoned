@@ -4,6 +4,16 @@ pathological, caught on compile time, and can easily be fixed in an SML
 compatible way.
 
 
+
+ADDITIONAL RESERVED WORDS
+
+The following are reserved words in Stockhausen and may not be used as
+identifiers:
+
+	con    non    when    withfun    withval
+
+
+
 OPEN AND INFIX
 
 Open pulls in infix status. Opening a structure that
