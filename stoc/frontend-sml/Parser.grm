@@ -51,6 +51,27 @@
 (*	  spec ::= infix <d> vid_1 ... vid_n	(n>=1)				*)
 (*		   infixr <d> vid_1 ... vid_n	(n>=1)				*)
 (*		   nonfix vid_1 ... vid_n	(n>=1)				*)
+(*   - no distinction between dec, strdec, and topdec				*)
+(*   - long functor identifiers:						*)
+(*	  strexp  ::= longfunid ( strexp )					*)
+(*	          ::= longfunid ( dec )						*)
+(*   - long signature identifiers:						*)
+(*	  sigexp  ::= longsigid							*)
+(*	  spec    ::= include longsigid_1 ... longsigid_n			*)
+(*   - functor specifications:							*)
+(*	  spec    ::= functor fundesc						*)
+(*	  fundesc ::= funid ( strid : sigexp ) : sigexp <and fundesc>		*)
+(*	          ::= funid ( spec ) : sigexp <and fundesc>			*)
+(*   - signature specifications:						*)
+(*	  spec    ::= signature sigdesc						*)
+(*	  sigdesc ::= sigid <and sigdesc>					*)
+(*	          ::= sigid = sigexp <and sigdesc>				*)
+(*   - sharing and where for signature:						*)
+(*	  spec   ::= spec sharing signature longsigid_1 = ... = longsigid_n	*)
+(*	  sigexp ::= sigexp where signature longsigid_1 = sigexp		*)
+(*										*)
+(* We did NOT introduce a sharing signature ... and signature ... derived form	*)
+(* similar to types, because we consider that completely broken.		*)
 (*										*)
 (* Notes:									*)
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
@@ -90,13 +111,8 @@
 
     (* Import *)
 
-    open PostParseGrammar_Core
-    open PostParseGrammar_Module
-    open PostParseGrammar_Program
-
-    open DerivedForms_Core
-    open DerivedForms_Module
-    open DerivedForms_Program
+    open InputGrammar
+    open DerivedForms
 
 
     (* Helper to build position fields *)
@@ -107,10 +123,8 @@
 %%
 
 
-%header	(functor LrVals(structure Token:                TOKEN
-			structure DerivedForms_Core:    DERIVEDFORMS_CORE
-			structure DerivedForms_Module:  DERIVEDFORMS_MODULE
-			structure DerivedForms_Program: DERIVEDFORMS_PROGRAM
+%header	(functor LrVals(structure Token:        TOKEN
+			structure DerivedForms: DERIVED_FORMS
 		       )
 	)
 
@@ -203,10 +217,12 @@
 	|    longvid'			of LongVId	(* excludes `=' *)
 	| longtycon			of LongTyCon
 	| longstrid			of LongStrId
+	| longsigid			of LongSigId
+	| longfunid			of LongFunId
 
 	| OP_opt			of Op
 
-	(* Nonterminals for core grammar *)
+	(* Nonterminals of the core language *)
 	| atexp				of AtExp
 	|    exp_COMMA_list0		of Exp list
 	|    exp_COMMA_list1		of Exp list
@@ -284,9 +300,6 @@
 	(* Nonterminals for the module language *)
 	| strexp			of StrExp
 	|    strexp'			of StrExp (* excludes constraints *)
-	| strdec			of StrDec
-	|    strdec1			of StrDec
-	|    strdec1'			of StrDec (* excludes sequencing *)
 	| strbind			of StrBind
 	|    AND_strbind_opt		of StrBind option
 	|    strexp__AND_strbind_opt	of StrExp * StrBind option
@@ -298,7 +311,6 @@
 
 	| sigexp			of SigExp
 	|    sigexp'			of SigExp (* excludes where *)
-	| sigdec			of SigDec
 	| sigbind			of SigBind
 	|    AND_sigbind_opt		of SigBind option
 	|    sigexp__AND_sigbind_opt	of SigExp * SigBind option
@@ -307,14 +319,23 @@
 					of TyReaDesc option * SigBind option
 	| tyreadesc			of TyReaDesc
 	|    AND_tyreadesc_opt		of TyReaDesc option
+	| funbind			of FunBind
+	|    AND_funbind_opt		of FunBind option
+	|    strexp__AND_funbind_opt	of StrExp * FunBind option
+	|    sigexp__AND_funbind_opt	of SigExp * FunBind option
+	|    tyreadesc__AND_funbind_opt	of TyReaDesc * FunBind option
+	|    AND_tyreadesc_opt__AND_funbind_opt
+					of TyReaDesc option * FunBind option
 
 	| spec				of Spec
 	|    spec1			of Spec
 	|    spec1'			of Spec (* excludes sharing and seq. *)
 	|    WITHTYPE_typdesc_opt	of TypDesc option
-	|    sigid_list2		of SigId list
+	|    longsigid_list2		of LongSigId list
 	|    longtycon_EQUALS_list1	of LongTyCon list
 	|    longtycon_EQUALS_list2	of LongTyCon list
+	|    longsigid_EQUALS_list1	of LongSigId list
+	|    longsigid_EQUALS_list2	of LongSigId list
 	|    longstrid_EQUALS_list1	of LongStrId list
 	|    longstrid_EQUALS_list2	of LongStrId list
 
@@ -338,18 +359,19 @@
 	|    tyreadesc__AND_strdesc_opt	of TyReaDesc * StrDesc option
 	|    AND_tyreadesc_opt__AND_strdesc_opt
 					of TyReaDesc option * StrDesc option
-
-	| fundec			of FunDec
-	| funbind			of FunBind
-	|    AND_funbind_opt		of FunBind option
-	|    strexp__AND_funbind_opt	of StrExp * FunBind option
-	|    sigexp__AND_funbind_opt	of SigExp * FunBind option
-	|    tyreadesc__AND_funbind_opt	of TyReaDesc * FunBind option
-	|    AND_tyreadesc_opt__AND_funbind_opt
-					of TyReaDesc option * FunBind option
-	| topdec			of TopDec
-	|    topdec1			of TopDec
-	|    topdec_opt			of TopDec option
+	| sigdesc			of SigDesc
+	|    AND_sigdesc_opt		of SigDesc option
+	|    sigexp__AND_sigdesc_opt	of SigExp * SigDesc option
+	|    tyreadesc__AND_sigdesc_opt	of TyReaDesc * SigDesc option
+	|    AND_tyreadesc_opt__AND_sigdesc_opt
+					of TyReaDesc option * SigDesc option
+	| fundesc			of FunDesc
+	|    AND_fundesc_opt		of FunDesc option
+	|    strexp__AND_fundesc_opt	of StrExp * FunDesc option
+	|    sigexp__AND_fundesc_opt	of SigExp * FunDesc option
+	|    tyreadesc__AND_fundesc_opt	of TyReaDesc * FunDesc option
+	|    AND_tyreadesc_opt__AND_fundesc_opt
+					of TyReaDesc option * FunDesc option
 
 	(* Top nonterminal *)
 	| program			of Program
@@ -437,6 +459,14 @@
 	  strid			( SHORTLong(I(stridleft,stridright), strid) )
 	| longstrid DOT strid	( DOTLong(I(longstridleft,stridright),
 					  longstrid, strid) )
+  longsigid:
+	  sigid			( SHORTLong(I(sigidleft,sigidright), sigid) )
+	| longstrid DOT sigid	( DOTLong(I(longstridleft,sigidright),
+					  longstrid, sigid) )
+  longfunid:
+	  funid			( SHORTLong(I(funidleft,funidright), funid) )
+	| longstrid DOT funid	( DOTLong(I(longstridleft,funidright),
+					  longstrid, funid) )
 
 
   OP_opt:
@@ -590,6 +620,12 @@
 	| CON dconbind	( CONDec(I(CONleft,dconbindright), dconbind) )
 	| EXCEPTION exbind
 			( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) )
+	| STRUCTURE strbind
+			( STRUCTUREDec(I(STRUCTUREleft,strbindright), strbind) )
+	| SIGNATURE sigbind
+			( SIGNATUREDec(I(SIGNATUREleft,sigbindright), sigbind) )
+	| FUNCTOR funbind
+			( FUNCTORDec(I(FUNCTORleft,funbindright), funbind) )
 	| OPEN longstrid_list1
 			( OPENMULTIDec(I(OPENleft,longstrid_list1right),
 				       longstrid_list1) )
@@ -909,38 +945,20 @@
 			( OPAQStrExp(I(strexpleft,sigexpright), strexp, sigexp))
 
      strexp':
-	  STRUCT strdec END
-			( STRUCTStrExp(I(STRUCTleft,ENDright), strdec) )
+	  STRUCT dec END
+			( STRUCTStrExp(I(STRUCTleft,ENDright), dec) )
 	| longstrid	( LONGSTRIDStrExp(I(longstridleft,longstridright),
 					  longstrid) )
-	| funid LPAR strexp RPAR
-			( APPStrExp(I(funidleft,RPARright), funid, strexp) )
-	| funid LPAR strdec RPAR
-			( APPDECStrExp(I(funidleft,RPARright), funid, strdec) )
+	| longfunid LPAR strexp RPAR
+			( APPStrExp(I(longfunidleft,RPARright),
+				    longfunid, strexp) )
+	| longfunid LPAR dec RPAR
+			( APPDECStrExp(I(longfunidleft,RPARright),
+				       longfunid, dec) )
 	| LPAR strexp RPAR
 			( PARStrExp(I(LPARleft,RPARright), strexp) )
-	| LET strdec IN strexp END
-			( LETStrExp(I(LETleft,ENDright), strdec, strexp) )
-
-
-  strdec:
-	  strdec1	( strdec1 )
-	| (*empty*)	( EMPTYStrDec(I(defaultPos,defaultPos)) )
-
-     strdec1:
-	  strdec1'	( strdec1' )
-	| strdec1 strdec1 %prec SEMICOLON
-			( SEQStrDec(I(strdec11left,strdec12right),
-				    strdec11, strdec12) )
-	| SEMICOLON	( EMPTYStrDec(I(SEMICOLONleft,SEMICOLONright)) )
-
-     strdec1':
-	  dec1'		( DECStrDec(I(dec1'left,dec1'right), dec1') )
-	| STRUCTURE strbind
-			( STRUCTUREStrDec(I(STRUCTUREleft,strbindright),
-					  strbind) )
-	| LOCAL strdec IN strdec END
-			( LOCALStrDec(I(LOCALleft,ENDright), strdec1, strdec2) )
+	| LET dec IN strexp END
+			( LETStrExp(I(LETleft,ENDright), dec, strexp) )
 
 
   strbind:
@@ -1012,16 +1030,13 @@
 					  sigexp, tyreadesc) )
      sigexp':
 	  SIG spec END	( SIGSigExp(I(SIGleft,ENDright), spec) )
-	| sigid		( SIGIDSigExp(I(sigidleft,sigidright), sigid) )
+	| longsigid	( LONGSIGIDSigExp(I(longsigidleft,longsigidright),
+					  longsigid) )
 	| LPAR sigexp RPAR
 			( PARSigExp(I(LPARleft,RPARright), sigexp) )
 	| sigexp WHERE longstrid EQUALS longstrid
 			( WHERESigExp(I(sigexpleft,longstrid2right),
 				      sigexp, longstrid1, longstrid2) )
-
-  sigdec:
-	  SIGNATURE sigbind
-			( SigDec(I(SIGNATUREleft,sigbindright), sigbind) )
 
   sigbind:
 	  sigid EQUALS sigexp__AND_sigbind_opt
@@ -1069,6 +1084,80 @@
 
 
 
+  (* Modules: Functors *)
+
+  funbind:
+	  funid LPAR strid COLON sigexp RPAR COLON_sigexp_opt EQUALS
+		strexp__AND_funbind_opt
+			( TRANSFunBind(I(funidleft,
+					 strexp__AND_funbind_optright),
+				       funid, strid, sigexp, COLON_sigexp_opt,
+				       #1 strexp__AND_funbind_opt,
+				       #2 strexp__AND_funbind_opt) )
+	| funid LPAR strid COLON sigexp RPAR COLONGREATER sigexp EQUALS
+		strexp__AND_funbind_opt
+			( OPAQFunBind(I(funidleft,strexp__AND_funbind_optright),
+				      funid, strid, sigexp1, sigexp2,
+				      #1 strexp__AND_funbind_opt,
+				      #2 strexp__AND_funbind_opt) )
+	| funid LPAR spec RPAR COLON_sigexp_opt EQUALS strexp__AND_funbind_opt
+			( TRANSSPECFunBind(I(funidleft,
+					     strexp__AND_funbind_optright),
+					   funid, spec, COLON_sigexp_opt,
+					   #1 strexp__AND_funbind_opt,
+					   #2 strexp__AND_funbind_opt) )
+	| funid LPAR spec RPAR COLONGREATER sigexp EQUALS
+		strexp__AND_funbind_opt
+			( OPAQSPECFunBind(I(funidleft,
+					    strexp__AND_funbind_optright),
+					  funid, spec, sigexp,
+					  #1 strexp__AND_funbind_opt,
+					  #2 strexp__AND_funbind_opt) )
+     AND_funbind_opt:
+	  AND funbind	( SOME funbind )
+	| (*empty*)	( NONE )
+
+     strexp__AND_funbind_opt:
+	  strexp' AND_funbind_opt
+			( ( strexp', AND_funbind_opt ) )
+	| strexp COLON sigexp__AND_funbind_opt
+			( ( TRANSStrExp(I(strexpleft,
+					  sigexp__AND_funbind_optright),
+					strexp, #1 sigexp__AND_funbind_opt),
+			    #2 sigexp__AND_funbind_opt ) )
+	| strexp COLONGREATER sigexp__AND_funbind_opt
+			( ( OPAQStrExp(I(strexpleft,
+					 sigexp__AND_funbind_optright),
+				       strexp, #1 sigexp__AND_funbind_opt),
+			    #2 sigexp__AND_funbind_opt ) )
+
+     sigexp__AND_funbind_opt:
+	  sigexp' AND_funbind_opt
+			( ( sigexp', AND_funbind_opt ) )
+	| sigexp WHERE tyreadesc__AND_funbind_opt
+			( ( WHERETYPESigExp(I(sigexpleft,
+					      tyreadesc__AND_funbind_optright),
+					   sigexp,
+					   #1 tyreadesc__AND_funbind_opt),
+			    #2 tyreadesc__AND_funbind_opt ) )
+
+     tyreadesc__AND_funbind_opt:
+	  TYPE tyvarseq longtycon EQUALS ty AND_tyreadesc_opt__AND_funbind_opt
+			( ( TyReaDesc(I(TYPEleft,
+				       AND_tyreadesc_opt__AND_funbind_optright),
+				      tyvarseq, longtycon, ty,
+				      #1 AND_tyreadesc_opt__AND_funbind_opt),
+			    #2 AND_tyreadesc_opt__AND_funbind_opt ) )
+
+     AND_tyreadesc_opt__AND_funbind_opt:
+	  AND_funbind_opt
+			( ( NONE, AND_funbind_opt ) )
+	| AND tyreadesc__AND_funbind_opt
+	  		( ( SOME(#1 tyreadesc__AND_funbind_opt),
+			    #2 tyreadesc__AND_funbind_opt ) )
+
+
+
   (* Modules: Specifications *)
 
   spec:
@@ -1089,6 +1178,16 @@
 			( SHARINGTYPESpec(I(spec1left,
 					    longtycon_EQUALS_list2right),
 					  spec1, longtycon_EQUALS_list2) )
+	| SHARING SIGNATURE longsigid_EQUALS_list2
+			( SHARINGSIGNATURESpec(I(SHARINGleft,
+						 longsigid_EQUALS_list2right),
+					       EMPTYSpec(I(SHARINGleft,
+							   SHARINGleft)),
+					       longsigid_EQUALS_list2) )
+	| spec1 SHARING SIGNATURE longsigid_EQUALS_list2
+			( SHARINGSIGNATURESpec(I(spec1left,
+						 longsigid_EQUALS_list2right),
+					       spec1, longsigid_EQUALS_list2) )
 	| SHARING longstrid_EQUALS_list2
 			( SHARINGSpec(I(SHARINGleft,
 					longstrid_EQUALS_list2right),
@@ -1120,11 +1219,15 @@
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
 	| STRUCTURE strdesc
 			( STRUCTURESpec(I(STRUCTUREleft,strdescright), strdesc))
+	| SIGNATURE sigdesc
+			( SIGNATURESpec(I(SIGNATUREleft,sigdescright), sigdesc))
+	| FUNCTOR fundesc
+			( FUNCTORSpec(I(FUNCTORleft,fundescright), fundesc))
 	| INCLUDE sigexp
 			( INCLUDESpec(I(INCLUDEleft,sigexpright), sigexp) )
-	| INCLUDE sigid_list2
-			( INCLUDEMULTISpec(I(INCLUDEleft,sigid_list2right),
-					   sigid_list2) )
+	| INCLUDE longsigid_list2
+			( INCLUDEMULTISpec(I(INCLUDEleft,longsigid_list2right),
+					   longsigid_list2) )
 	| INFIX d_opt vid_list1
 			( INFIXMULTISpec(I(INFIXleft,vid_list1right), d_opt,
 					 vid_list1) )
@@ -1139,9 +1242,9 @@
 	  WITHTYPE typdesc	( SOME typdesc )
 	| (*empty*)		( NONE )
 
-     sigid_list2:
-	  sigid sigid_list2	( sigid::sigid_list2 )
-	| sigid	sigid		( sigid1::sigid2::[] )
+     longsigid_list2:
+	  longsigid longsigid_list2	( longsigid::longsigid_list2 )
+	| longsigid longsigid		( longsigid1::longsigid2::[] )
 
      longtycon_EQUALS_list1:
 	  longtycon EQUALS longtycon_EQUALS_list1
@@ -1151,6 +1254,14 @@
      longtycon_EQUALS_list2:
 	  longtycon EQUALS longtycon_EQUALS_list1
 				( longtycon::longtycon_EQUALS_list1 )
+     longsigid_EQUALS_list1:
+	  longsigid EQUALS longsigid_EQUALS_list1
+				( longsigid::longsigid_EQUALS_list1 )
+	| longsigid		( longsigid::[] )
+
+     longsigid_EQUALS_list2:
+	  longsigid EQUALS longsigid_EQUALS_list1
+				( longsigid::longsigid_EQUALS_list1 )
      longstrid_EQUALS_list1:
 	  longstrid EQUALS longstrid_EQUALS_list1
 				( longstrid::longstrid_EQUALS_list1 )
@@ -1279,106 +1390,83 @@
 	  			( ( SOME(#1 tyreadesc__AND_strdesc_opt),
 				    #2 tyreadesc__AND_strdesc_opt ) )
 
+  sigdesc:
+	  sigid AND_sigdesc_opt
+			( NEWSigDesc(I(sigidleft,AND_sigdesc_optright),
+				     sigid, AND_sigdesc_opt) )
+	| sigid EQUALS sigexp__AND_sigdesc_opt
+			( EQUALSigDesc(I(sigidleft,
+					 sigexp__AND_sigdesc_optright),
+				       sigid, #1 sigexp__AND_sigdesc_opt,
+				       #2 sigexp__AND_sigdesc_opt) )
 
-
-
-  (* Modules: Functors *)
-
-  fundec:
-	  FUNCTOR funbind	( FunDec(I(FUNCTORleft,funbindright), funbind) )
-
-  funbind:
-	  funid LPAR strid COLON sigexp RPAR COLON_sigexp_opt EQUALS
-		strexp__AND_funbind_opt
-			( TRANSFunBind(I(funidleft,
-					 strexp__AND_funbind_optright),
-				       funid, strid, sigexp, COLON_sigexp_opt,
-				       #1 strexp__AND_funbind_opt,
-				       #2 strexp__AND_funbind_opt) )
-	| funid LPAR strid COLON sigexp RPAR COLONGREATER sigexp EQUALS
-		strexp__AND_funbind_opt
-			( OPAQFunBind(I(funidleft,strexp__AND_funbind_optright),
-				      funid, strid, sigexp1, sigexp2,
-				      #1 strexp__AND_funbind_opt,
-				      #2 strexp__AND_funbind_opt) )
-	| funid LPAR spec RPAR COLON_sigexp_opt EQUALS strexp__AND_funbind_opt
-			( TRANSSPECFunBind(I(funidleft,
-					     strexp__AND_funbind_optright),
-					   funid, spec, COLON_sigexp_opt,
-					   #1 strexp__AND_funbind_opt,
-					   #2 strexp__AND_funbind_opt) )
-	| funid LPAR spec RPAR COLONGREATER sigexp EQUALS
-		strexp__AND_funbind_opt
-			( OPAQSPECFunBind(I(funidleft,
-					    strexp__AND_funbind_optright),
-					  funid, spec, sigexp,
-					  #1 strexp__AND_funbind_opt,
-					  #2 strexp__AND_funbind_opt) )
-     AND_funbind_opt:
-	  AND funbind	( SOME funbind )
+     AND_sigdesc_opt:
+	  AND sigdesc	( SOME sigdesc )
 	| (*empty*)	( NONE )
 
-     strexp__AND_funbind_opt:
-	  strexp' AND_funbind_opt
-			( ( strexp', AND_funbind_opt ) )
-	| strexp COLON sigexp__AND_funbind_opt
-			( ( TRANSStrExp(I(strexpleft,
-					  sigexp__AND_funbind_optright),
-					strexp, #1 sigexp__AND_funbind_opt),
-			    #2 sigexp__AND_funbind_opt ) )
-	| strexp COLONGREATER sigexp__AND_funbind_opt
-			( ( OPAQStrExp(I(strexpleft,
-					 sigexp__AND_funbind_optright),
-				       strexp, #1 sigexp__AND_funbind_opt),
-			    #2 sigexp__AND_funbind_opt ) )
-
-     sigexp__AND_funbind_opt:
-	  sigexp' AND_funbind_opt
-			( ( sigexp', AND_funbind_opt ) )
-	| sigexp WHERE tyreadesc__AND_funbind_opt
+     sigexp__AND_sigdesc_opt:
+	  sigexp' AND_sigdesc_opt
+	  		( ( sigexp', AND_sigdesc_opt ) )
+	| sigexp WHERE tyreadesc__AND_sigdesc_opt
 			( ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_funbind_optright),
+					      tyreadesc__AND_sigdesc_optright),
 					   sigexp,
-					   #1 tyreadesc__AND_funbind_opt),
-			    #2 tyreadesc__AND_funbind_opt ) )
+					   #1 tyreadesc__AND_sigdesc_opt),
+			    #2 tyreadesc__AND_sigdesc_opt ) )
 
-     tyreadesc__AND_funbind_opt:
-	  TYPE tyvarseq longtycon EQUALS ty AND_tyreadesc_opt__AND_funbind_opt
+     tyreadesc__AND_sigdesc_opt:
+	  TYPE tyvarseq longtycon EQUALS ty AND_tyreadesc_opt__AND_sigdesc_opt
 			( ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_funbind_optright),
+				       AND_tyreadesc_opt__AND_sigdesc_optright),
 				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_funbind_opt),
-			    #2 AND_tyreadesc_opt__AND_funbind_opt ) )
+				      #1 AND_tyreadesc_opt__AND_sigdesc_opt),
+			    #2 AND_tyreadesc_opt__AND_sigdesc_opt ) )
 
-     AND_tyreadesc_opt__AND_funbind_opt:
-	  AND_funbind_opt
-			( ( NONE, AND_funbind_opt ) )
-	| AND tyreadesc__AND_funbind_opt
-	  		( ( SOME(#1 tyreadesc__AND_funbind_opt),
-			    #2 tyreadesc__AND_funbind_opt ) )
+     AND_tyreadesc_opt__AND_sigdesc_opt:
+	  AND_sigdesc_opt	( ( NONE, AND_sigdesc_opt) )
+	| AND tyreadesc__AND_sigdesc_opt
+	  			( ( SOME(#1 tyreadesc__AND_sigdesc_opt),
+				    #2 tyreadesc__AND_sigdesc_opt ) )
 
-
-
-  (* Modules: Top-level declarations *)
-
-  topdec:
-	  topdec1	( topdec1 )
-	| (*empty*)	( STRDECTopDec(I(defaultPos,defaultPos),
-				       EMPTYStrDec(I(defaultPos,defaultPos)),
-				       NONE) )
-     topdec1:
-	  strdec1' topdec_opt
-			( STRDECTopDec(I(strdec1'left,topdec_optright),
-				       strdec1', topdec_opt) )
-	| sigdec topdec_opt
-			( SIGDECTopDec(I(sigdecleft,topdec_optright),
-				       sigdec, topdec_opt) )
-	| fundec topdec_opt
-			( FUNDECTopDec(I(fundecleft,topdec_optright),
-				       fundec, topdec_opt) )
-     topdec_opt:
-	  topdec1	( SOME topdec1 )
+  fundesc:
+	  funid LPAR strid COLON sigexp RPAR COLON sigexp__AND_fundesc_opt
+			( FunDesc(I(funidleft,sigexp__AND_fundesc_optright),
+				  funid, strid, sigexp,
+				  #1 sigexp__AND_fundesc_opt,
+				  #2 sigexp__AND_fundesc_opt) )
+	| funid LPAR spec RPAR COLON sigexp__AND_fundesc_opt
+			( SPECFunDesc(I(funidleft,
+					sigexp__AND_fundesc_optright),
+				      funid, spec, #1 sigexp__AND_fundesc_opt,
+				      #2 sigexp__AND_fundesc_opt) )
+     AND_fundesc_opt:
+	  AND fundesc	( SOME fundesc )
 	| (*empty*)	( NONE )
+
+     sigexp__AND_fundesc_opt:
+	  sigexp' AND_fundesc_opt
+			( ( sigexp', AND_fundesc_opt ) )
+	| sigexp WHERE tyreadesc__AND_fundesc_opt
+			( ( WHERETYPESigExp(I(sigexpleft,
+					      tyreadesc__AND_fundesc_optright),
+					   sigexp,
+					   #1 tyreadesc__AND_fundesc_opt),
+			    #2 tyreadesc__AND_fundesc_opt ) )
+
+     tyreadesc__AND_fundesc_opt:
+	  TYPE tyvarseq longtycon EQUALS ty AND_tyreadesc_opt__AND_fundesc_opt
+			( ( TyReaDesc(I(TYPEleft,
+				       AND_tyreadesc_opt__AND_fundesc_optright),
+				      tyvarseq, longtycon, ty,
+				      #1 AND_tyreadesc_opt__AND_fundesc_opt),
+			    #2 AND_tyreadesc_opt__AND_fundesc_opt ) )
+
+     AND_tyreadesc_opt__AND_fundesc_opt:
+	  AND_fundesc_opt
+			( ( NONE, AND_fundesc_opt ) )
+	| AND tyreadesc__AND_fundesc_opt
+	  		( ( SOME(#1 tyreadesc__AND_fundesc_opt),
+			    #2 tyreadesc__AND_fundesc_opt ) )
 
 
 
@@ -1388,9 +1476,9 @@
 	  program'	( program' )
 
      program':
-	  topdec SEMICOLON program_opt
-	  		( TOPDECProgram(I(topdecleft,program_optright),
-					topdec, program_opt) )
+	  dec1 SEMICOLON program_opt
+	  		( DECProgram(I(dec1left,program_optright),
+				     dec1, program_opt) )
 	| exp SEMICOLON program_opt
 	  		( EXPProgram(I(expleft,program_optright),
 				     exp, program_opt) )

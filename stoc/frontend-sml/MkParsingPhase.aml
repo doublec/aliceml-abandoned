@@ -1,9 +1,9 @@
-structure Parse :> PARSE =
+structure ParsingPhase :> PARSING_PHASE =
   struct
 
     (* Import *)
 
-    structure Grammar = PostParseGrammar_Program
+    structure Grammar = InputGrammar
 
     type source  = Source.source
     type Program = Grammar.Program
@@ -11,11 +11,8 @@ structure Parse :> PARSE =
 
     (* Build Yacc parser *)
 
-    structure LrVals = LrVals(structure Token  = LrParser.Token
-			      structure DerivedForms_Core   = DerivedForms_Core
-			      structure DerivedForms_Module = DerivedForms_Module
-			      structure DerivedForms_Program =
-							DerivedForms_Program)
+    structure LrVals = LrVals(structure Token        = LrParser.Token
+			      structure DerivedForms = DerivedForms)
 
     structure Lexer  = Lexer (structure Tokens = LrVals.Tokens)
 

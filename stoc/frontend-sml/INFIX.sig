@@ -10,7 +10,7 @@ signature INFIX =
 
     (* Import *)
 
-    structure Grammar: GRAMMAR_CORE = PostParseGrammar_Core
+    structure Grammar: INPUT_GRAMMAR = InputGrammar
 
 
     (* Infix environment *)
@@ -18,7 +18,7 @@ signature INFIX =
     datatype Assoc = LEFT | RIGHT
     type InfStatus = (Assoc * int) option
 
-    type InfEnv    = (Grammar.Info * InfStatus) VIdSymtable.symtable
+    type InfEnv    = (Grammar.Info * InfStatus) VIdMap.t
 
 
     (* Resolving phrases containing infixed identifiers *)

@@ -10,7 +10,7 @@ structure Infix :> INFIX =
 
     (* Import *)
 
-    structure Grammar = PostParseGrammar_Core
+    structure Grammar = InputGrammar
 
     open Grammar
 
@@ -21,7 +21,7 @@ structure Infix :> INFIX =
 
     type InfStatus = (Assoc * int) option
 
-    type InfEnv    = (Info * InfStatus) VIdSymtable.symtable
+    type InfEnv    = (Info * InfStatus) VIdMap.t
 
 
     (* Helper for error messages *)
@@ -37,7 +37,7 @@ structure Infix :> INFIX =
 			       | INFIX  of Assoc * int * VId
 
     fun categoriseVId (IE: InfEnv) (at, vid as VId(i,vid')) =
-	(case VIdSymtable.lookup(IE,vid')
+	(case VIdMap.lookup(IE,vid')
 	   of ( NONE | SOME(_,NONE) )  => NONFIX(at)
 	    | SOME(_,SOME(assoc,prec)) => INFIX(assoc, prec, vid)
 	)
@@ -77,15 +77,15 @@ structure Infix :> INFIX =
     datatype ('a,'b) x = ATOMIC of 'a | NONATOMIC of 'b
 
     fun parse (ATXx, APPx, PARAtX, TUPLEAtX, LONGVIDAtX,
-	       info_X, info_AtX, categorise, flatten) IE x =
+	       infoX, infoAtX, categorise, flatten) IE x =
 	let
-	    fun info(ATOMIC x)         = info_AtX x
-	      | info(NONATOMIC x)      = info_X x
+	    fun info(ATOMIC x)         = infoAtX x
+	      | info(NONATOMIC x)      = infoX x
 
 	    fun atomic(ATOMIC x)       = x
-	      | atomic(NONATOMIC x)    = PARAtX(info_X x, x)
+	      | atomic(NONATOMIC x)    = PARAtX(infoX x, x)
 
-	    fun nonatomic(ATOMIC x)    = ATXx(info_AtX x, x)
+	    fun nonatomic(ATOMIC x)    = ATXx(infoAtX x, x)
 	      | nonatomic(NONATOMIC x) = x
 
 	    fun pair(x1,x2) =
@@ -108,7 +108,7 @@ structure Infix :> INFIX =
 	    fun infapply(x1,vid,x2) =
 		let
 		    val i       = Source.over(info x1, info x2)
-		    val i_vid   = info_VId vid
+		    val i_vid   = infoVId vid
 		    val longvid	= SHORTLong(i_vid, vid)
 		    val x1'	= LONGVIDAtX(i_vid, WITHOp, longvid)
 		    val x2'	= pair(x1,x2)
@@ -145,7 +145,7 @@ structure Infix :> INFIX =
 		    (* shift *)
 		    loop(INFIX(q2)::s, i')
 		else if a1 <> a2 then
-		    error(Source.over(info_VId vid1, info_VId vid2),
+		    error(Source.over(infoVId vid1, infoVId vid2),
 			  "conflicting infix associativity")
 		else if a1 = LEFT then
 		    (* reduce infix application *)
@@ -174,11 +174,11 @@ structure Infix :> INFIX =
     (* Expressions *)
 
     val exp = parse(ATEXPExp, APPExp, PARAtExp, TUPLEAtExp, LONGVIDAtExp,
-		    info_Exp, info_AtExp, categoriseAtExp, flattenExp)
+		    infoExp, infoAtExp, categoriseAtExp, flattenExp)
 
     (* Patterns *)
 
     val pat = parse(ATPATPat, APPPat, PARAtPat, TUPLEAtPat, LONGVIDAtPat,
-		    info_Pat, info_AtPat, categoriseAtPat, flattenPat)
+		    infoPat, infoAtPat, categoriseAtPat, flattenPat)
 
   end
