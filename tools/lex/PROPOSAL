@@ -1,0 +1,41 @@
+LEXER
+=====
+
+Here is the proposed grammar for the lexer:
+
+  lexdec ::=	topdec				SML toplevel declaration
+		`regexp' regbind		regular expression
+		`lexer' lexbind			lexer
+						empty
+		lexdec <`;'> lexdec		sequence
+
+  regbind ::=	regid `=' regexp <`and' regbind>
+
+  lexbind ::=	vid <atpat> `=' lmatch <`and' lexbind>
+
+  lmatch ::=	lrule <`|' lmatch>
+  lrule ::=	regexp `=>' exp
+
+  regexp ::=	`_'				any character
+		string				exact match
+		`eof'				end-of-file
+		`[' chars `]'
+		`[^' chars `]'
+		regid
+		`(' regexp `)'
+		regexp `*'
+		regexp `+'
+		regexp `?'
+		regexp `{' num <`,' num> `}'	n (or n to m) repetitions
+		regexp regexp
+		regexp `|' regexp
+
+Each lexbind will generate a single scanner function of the same name. The
+right hand sides of lex rules can contain recursive calls to the same (or to
+another) lexer, as in OCaml's Yacc. This allows continuation after recognition
+of non-token strings, such as comments.
+
+The only interesting thing to note here is the ability to pass an additional
+argument to a lexer. This has been proposed by Christian Lindig and allows
+stateless scanning of stuff like nested comments when used in recursive lexer
+calls.
