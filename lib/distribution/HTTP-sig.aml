@@ -1,0 +1,41 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature IMP_MAP from "../utility/IMP_MAP-sig"
+import structure Url     from "../utility/Url"
+import structure Socket  from "../system/Socket"
+
+signature HTTP =
+    sig
+	structure StringMap: IMP_MAP where type key = string
+
+	type request =
+	     {method: string, uri: Url.t, protocol: string,
+	      headers: string StringMap.t, content: string}
+	type response =
+	     {protocol: string, statusCode: int, reasonPhrase: string,
+	      headers: string StringMap.t, content: string}
+	type simple_response =
+	     {statusCode: int, contentType: string, content: string}
+
+	exception Closed
+	exception Format
+
+	fun readRequest: Socket.socket -> request      (* Closed, Format *)
+	fun readResponse: Socket.socket -> response    (* Closed, Format *)
+
+	fun writeRequest: Socket.socket * request -> unit
+	fun writeResponse: Socket.socket * response -> unit
+
+	fun reasonPhrase: int -> string
+	fun makeResponse: simple_response -> response
+    end

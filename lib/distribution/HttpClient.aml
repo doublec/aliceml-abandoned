@@ -1,0 +1,91 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Socket      from "../system/Socket"
+import structure Url         from "../utility/Url"
+import structure Http        from "Http"
+import signature HTTP_CLIENT from "HTTP_CLIENT-sig"
+
+structure HttpClient :> HTTP_CLIENT =
+    struct
+	type document = {contentType: string, content: string}
+
+	exception Authority
+
+	val userAgent = "Stockhausen/1.0"
+
+	fun charOffset (s, c) = charOffset' (s, c, 0)
+	and charOffset' (s, c, i) =
+	    if i = String.size s then NONE
+	    else if String.sub (s, i) = c then SOME i
+	    else charOffset' (s, c, i + 1)
+
+	fun parseAuthority authority =
+	    case charOffset (authority, #":") of
+		SOME i =>
+		    let
+			val host = String.substring (authority, 0, i)
+			val port = String.extract (authority, i + 1, NONE)
+		    in
+			(host,
+			 case Int.fromString port of
+			     SOME port => port
+			   | NONE => raise Authority)
+		    end
+	      | NONE => (authority, 80)
+
+	fun request (url, request) =
+	    let
+		val authority =
+		    case Url.getAuthority url of
+			SOME authority => authority
+		      | NONE => raise Authority
+		val (host, port) = parseAuthority authority
+		val socket = Socket.client (host, port)
+	    in
+		Http.writeRequest (socket, request);
+		Http.readResponse socket before Socket.close socket
+	    end
+
+	fun localUrl url = Url.setScheme (Url.setAuthority (url, NONE), NONE)
+
+	fun get url =
+	    let
+		val headers = Http.StringMap.new ()
+	    in
+		Http.StringMap.insert (headers, "Host",
+				       Option.valOf (Url.getAuthority url));
+		Http.StringMap.insert (headers, "User-Agent", userAgent);
+		(*--** Date *)
+		request (url, {method = "GET",
+			       uri = localUrl url,
+			       protocol = "HTTP/1.1",
+			       headers, content = ""})
+	    end
+
+	fun post (url, {contentType, content}) =
+	    let
+		val headers = Http.StringMap.new ()
+	    in
+		Http.StringMap.insert (headers, "Host",
+				       Option.valOf (Url.getAuthority url));
+		Http.StringMap.insert (headers, "User-Agent", userAgent);
+		Http.StringMap.insert (headers, "Content-Type", contentType);
+		Http.StringMap.insert (headers, "Content-Length",
+				       Int.toString (String.size content));
+		(*--** Date *)
+		request (url, {method = "POST",
+			       uri = localUrl url,
+			       protocol = "HTTP/1.1",
+			       headers, content = content})
+	    end
+    end

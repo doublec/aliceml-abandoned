@@ -14,6 +14,7 @@ import structure OS          from "../system/OS"
 import structure TextIO      from "../system/TextIO"
 import structure CommandLine from "../system/CommandLine"
 import structure Url         from "../utility/Url"
+import structure Http        from "Http"
 import structure HttpServer  from "HttpServer"
 
 signature HTTP_SERVER_MAIN =
@@ -23,28 +24,29 @@ signature HTTP_SERVER_MAIN =
 
 structure HttpServerMain :> HTTP_SERVER_MAIN =
     struct
-	structure StringMap = HttpServer.StringMap
-
 	val documentRoot = "/tmp/httproot"
 
-	fun documentHandler (request: HttpServer.request) =
+	fun documentHandler (request: Http.request) =
 	    let
 		val relFile = Url.toString (Url.setQuery (#uri request, NONE))
 		val file = TextIO.openIn (documentRoot ^ relFile)
 		val content = TextIO.inputAll file
 	    in
 		TextIO.closeIn file;
-		{code = 200, contentType = "text/plain", content}
+		Http.makeResponse
+		    {statusCode = 200, contentType = "text/plain", content}
 	    end
 
-	fun debugHandler (request: HttpServer.request) =
-	    {code = 200, contentType = "text/plain",
-	     content = (#method request ^ " " ^ Url.toString (#uri request) ^
-			" " ^ #protocol request ^ "\n" ^
-			StringMap.foldi
-			    (fn (name, value, rest) =>
-				name ^ ": " ^ value ^ "\n" ^ rest)
-			    "" (#headers request))}
+	fun debugHandler (request: Http.request) =
+	    Http.makeResponse
+		{statusCode = 200, contentType = "text/plain",
+		 content = (#method request ^ " " ^
+			    Url.toString (#uri request) ^ " " ^
+			    #protocol request ^ "\n" ^
+			    Http.StringMap.foldi
+				(fn (name, value, rest) =>
+				    name ^ ": " ^ value ^ "\n" ^ rest)
+				"" (#headers request))}
 
 	val blackHole: unit = Promise.future (Promise.promise ())
 
@@ -52,7 +54,9 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 	    let
 		val url = HttpServer.start (SOME port)
 	    in
-		HttpServer.registerFor (Url.empty, debugHandler);
+		HttpServer.registerFor
+		    (Url.setPath (Url.empty, ["debug"]), debugHandler);
+		HttpServer.registerFor (Url.empty, documentHandler);
 		TextIO.print ("started server at " ^ Url.toString url ^ "\n");
 		Future.await blackHole
 	    end

@@ -13,12 +13,11 @@
 import structure Url  from "../utility/Url"
 import structure Http from "Http"
 
-signature HTTP_SERVER =
+signature HTTP_CLIENT =
     sig
-	type handler = Http.request -> Http.response
+	type document = {contentType: string, content: string}
 
-	val start: int option -> Url.t
-	val getRootURI: unit -> Url.t
-	val registerFor: Url.t * handler -> unit
-	val register: handler -> Url.t
+	val request: Url.t * Http.request -> Http.response
+	val get: Url.t -> Http.response
+	val post: Url.t * document -> Http.response
     end

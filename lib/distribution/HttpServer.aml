@@ -13,105 +13,36 @@
 import structure TextIO        from "../system/TextIO"
 import structure Socket        from "../system/Socket"
 import structure FromEqHashKey from "../utility/HASH_KEY-sig"
-import structure StringHashKey from "../utility/StringHashKey"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "../utility/Url"
 import structure UnsafeRemote  from "UnsafeRemote"
+import structure Http          from "Http"
 import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 
 structure HttpServer :> HTTP_SERVER =
     struct
-	structure StringMap = MkHashImpMap(StringHashKey)
+	type handler = Http.request -> Http.response
 
-	type request =
-	     {method: string, uri: Url.t, protocol: string,
-	      headers: string StringMap.t, content: string}
-	type response = {code: int, contentType: string, content: string}
-	type handler = request -> response
+	val rootURI: Url.t option ref = ref NONE
 
-	exception Closed
-	exception Format
-
-	fun dropCRLF [#"\r", #"\n"] = nil
-	  | dropCRLF (c::cr) = c::dropCRLF cr
-	  | dropCRLF nil = raise Format
-
-	fun readLine socket =
-	    let
-		val s = Socket.inputLine socket handle _ => raise Closed
-	    in
-		String.implode (dropCRLF (String.explode s))
-	    end
-
-	fun charOffset (s, c) = charOffset' (s, c, 0)
-	and charOffset' (s, c, i) =
-	    if i = String.size s then NONE
-	    else if String.sub (s, i) = c then SOME i
-	    else charOffset' (s, c, i + 1)
-
-	fun trim s = String.extract (s, dropSpaces (s, 0), NONE)
-	and dropSpaces (s, i) =
-	    if i = String.size s then i
-	    else if Char.isSpace (String.sub (s, i)) then dropSpaces (s, i + 1)
-	    else i
-
-	fun readHeaders (socket, headers) =
-	    case readLine socket of
-		"" => ()
-	      | s =>
-		    let
-			val i =
-			    case charOffset (s, #":") of
-				SOME i => i
-			      | NONE => raise Format
-			val name =
-			    String.map Char.toLower
-				       (String.substring (s, 0, i))
-			val value = trim (String.extract (s, i + 1, NONE))
-		    in
-			if StringMap.member (headers, name) then raise Format
-			else StringMap.insertDisjoint (headers, name, value);
-			readHeaders (socket, headers)
-		    end
-
-	fun readContent (socket, headers) =
-	    case StringMap.lookup (headers, "contentLength") of
-		SOME s =>
-		    ((case Int.fromString s of
-			  SOME n =>
-			      let
-				  val content = Socket.inputN (socket, n)
-			      in
-				  if String.size content <> n then raise Format
-				  else content
-			      end
-			| NONE => raise Format)
-		     handle Overflow => raise Format)
-	      | NONE => ""
-
-	fun readRequest socket =
-	    let
-		val requestLine = readLine socket
-		val rl =
-		    case String.tokens (fn c => c = #" ") requestLine of
-			[method, requestURI, protocol] =>
-			    {method, uri = requestURI, protocol}
-		      | [method, requestURI] =>
-			    {method, uri = requestURI, protocol = "HTTP/1.0"}
-		      | _ => raise Format
-		val headers = StringMap.new ()
-		val _ = readHeaders (socket, headers)
-		val content = readContent (socket, headers)
-	    in
-		{method = #method rl,
-		 uri = Url.fromString (#uri rl)
-		       handle Url.Malformed => raise Format,
-		 protocol = #protocol rl,
-		 headers, content}
-	    end
-
-	fun notFoundHandler _ =
-	    {code = 404, contentType = "text/plain", content = "Not found"}
+	fun notFoundHandler (request: Http.request) =
+	    Http.makeResponse
+		{statusCode = 404,
+		 contentType = "text/html",
+		 content =
+		 "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"\n\
+		 \<HTML><HEAD>\n\
+		 \<TITLE>404 Not Found</TITLE>\n\
+		 \</HEAD><BODY>\n\
+		 \<H1>Not Found</H1>\n\
+		 \The requested URL " ^ Url.toString (#uri request) ^
+		 " was not found on this server.<P>\n\
+		 \<HR>\n\
+		 \<ADDRESS>Stockhausen HTTP Server" ^
+		 (case !rootURI of
+		      SOME uri => " at " ^ Url.toString uri
+		    | NONE => "") ^ "</ADDRESS>\n\
+		 \</BODY></HTML>\n"}
 
 	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
 
@@ -132,30 +63,23 @@ structure HttpServer :> HTTP_SERVER =
 
 	fun handleConnection (socket, host, port) =
 	    let
+		(*--** more sophisticated logging *)
 		val _ = TextIO.print ("connection from " ^ host ^ ":" ^
 				      Int.toString port ^ "\n")
-		val request = readRequest socket
+		val request = Http.readRequest socket
 		val handler = findHandler (#uri request)
-		val {code, contentType, content} =
-		    handler request
-		    handle _ => {code = 501, contentType = "text/plain",
-				 content = "Internal server error"}
+		val response = handler request
+		    handle _ =>
+			   Http.makeResponse
+			       {statusCode = 501, contentType = "text/plain",
+				content = "Internal server error"}
 	    in
-		Socket.output (socket,
-			       #protocol request ^ " " ^ Int.toString code ^
-			       " foo\r\n" ^
-			       "Content-type: " ^ contentType ^ "\r\n" ^
-			       "Content-length: " ^
-			       Int.toString (String.size content) ^ "\r\n" ^
-			       "\r\n" ^
-			       content);
+		Http.writeResponse (socket, response);
 		Socket.close socket
 	    end
-	    handle Format =>
+	    handle Http.Format =>
 		(TextIO.print "format error\n";
 		 Socket.close socket)
-
-	val rootURI: Url.t option ref = ref NONE
 
 	fun start portOpt =
 	    case !rootURI of
@@ -164,7 +88,7 @@ structure HttpServer :> HTTP_SERVER =
 		    let
 			fun server (socket, host, port) =
 			    handleConnection (socket, host, port)
-			    handle Closed => ()
+			    handle Http.Closed => ()
 			val (_, serverPort) = Socket.server (portOpt, server)
 			val serverHost = UnsafeRemote.getLocalIP ()
 			val url =
