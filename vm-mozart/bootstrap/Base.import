@@ -118,4 +118,8 @@ import
     structure Vector
     val vector
 
+    structure Transient
+
+    structure Thread
+
 from "x-alice:/lib/Base.ozf"
