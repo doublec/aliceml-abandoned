@@ -26,18 +26,31 @@
 #include "emulator/Alice.hh"
 #include "emulator/Properties.hh"
 
-// Very convienent Macro
+enum ComponentTag {
+  EVALUATED, UNEVALUATED
+};
+
 #define CONTINUE(args)           \
   Scheduler::currentArgs = args; \
   return Interpreter::CONTINUE;
 
+// Tracing
+static bool traceFlag;
+
+static void Trace(const char *prefix, Chunk *key) {
+  if (traceFlag) {
+    fprintf(stderr, "[boot-linker] %s %.*s\n", prefix,
+	    (int) key->GetSize(), key->GetBase());
+  }
+}
+
+// File name handling: Resolving, Localizing
 static u_int ParentDir(char *s, u_int offset) {
   while (offset && (s[--offset] != '/'));
   return offset;
 }
 
-// Internal Resolve
-static Chunk *ResolveUrl(Chunk *base, Chunk *rel) {
+static Chunk *Resolve(Chunk *base, Chunk *rel) {
   u_int bSize  = base->GetSize();
   u_int rSize  = rel->GetSize();
   u_int offset = bSize;
@@ -68,6 +81,20 @@ static Chunk *ResolveUrl(Chunk *base, Chunk *rel) {
   }
 }
 
+static Chunk *Localize(Chunk *key) {
+  //--** Hack to ensure NUL-terminated strings
+  Chunk *aliceHome = Store::DirectWordToChunk(Properties::aliceHome);
+  u_int hSize      = aliceHome->GetSize();
+  u_int kSize      = key->GetSize();
+  Chunk *path      = Store::AllocChunk(hSize + kSize + 5);
+  char *base       = path->GetBase();
+  memcpy(base, aliceHome->GetBase(), hSize);
+  memcpy(base + hSize, key->GetBase(), kSize);
+  memcpy(base + hSize + kSize, ".stc", 4);
+  base[hSize + kSize + 4] = '\0';
+  return path;
+}
+
 //
 // Interpreter Classes
 //
@@ -82,8 +109,8 @@ public:
     self = new ApplyInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack,
-			word closure, word imports, Chunk *key);
+  static void PushFrame(TaskStack *taskStack, Chunk *key,
+			word closure, Vector *imports);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
@@ -153,29 +180,29 @@ public:
 //
 class ApplyFrame : private StackFrame {
 private:
-  static const u_int CLOSURE_POS = 0;
-  static const u_int IMPORTS_POS = 1;
-  static const u_int KEY_POS     = 2;
+  static const u_int KEY_POS     = 0;
+  static const u_int CLOSURE_POS = 1;
+  static const u_int IMPORTS_POS = 2;
   static const u_int SIZE        = 3;
 public:
   using Block::ToWord;
   // ApplyFrame Accessors
-  word GetClosure() {
-    return StackFrame::GetArg(CLOSURE_POS);
-  }
-  word GetImports() {
-    return StackFrame::GetArg(IMPORTS_POS);
-  }
   Chunk *GetKey() {
     return Store::WordToChunk(StackFrame::GetArg(KEY_POS));
   }
+  word GetClosure() {
+    return StackFrame::GetArg(CLOSURE_POS);
+  }
+  Vector *GetImports() {
+    return Vector::FromWordDirect(StackFrame::GetArg(IMPORTS_POS));
+  }
   // ApplyFrame Constructor
-  static ApplyFrame *New(Interpreter *interpreter,
-			 word closure, word imports, Chunk *key) {
+  static ApplyFrame *New(Interpreter *interpreter, Chunk *key,
+			 word closure, Vector *imports) {
     StackFrame *frame = StackFrame::New(APPLY_FRAME, interpreter, SIZE);
-    frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(IMPORTS_POS, imports);
     frame->InitArg(KEY_POS, key->ToWord());
+    frame->InitArg(CLOSURE_POS, closure);
+    frame->InitArg(IMPORTS_POS, imports->ToWord());
     return static_cast<ApplyFrame *>(frame);
   }
   // ApplyFrame Untagging
@@ -246,7 +273,7 @@ private:
 public:
   using Block::ToWord;
   // LoadFrame Accessors
-  Chunk *GetString() {
+  Chunk *GetKey() {
     return Store::WordToChunk(StackFrame::GetArg(KEY_POS));
   }
   // LoadFrame Constructor
@@ -269,33 +296,33 @@ public:
 // ApplyInterpreter
 ApplyInterpreter *ApplyInterpreter::self;
 
-void ApplyInterpreter::PushFrame(TaskStack *taskStack,
-				 word closure, word imports, Chunk *key) {
-  taskStack->PushFrame(ApplyFrame::New(self, closure, imports, key)->ToWord());
+void ApplyInterpreter::PushFrame(TaskStack *taskStack, Chunk *key,
+				 word closure, Vector *imports) {
+  taskStack->PushFrame(ApplyFrame::New(self, key, closure, imports)->ToWord());
 }
 
 Interpreter::Result ApplyInterpreter::Run(word, TaskStack *taskStack) {
   ApplyFrame *frame = ApplyFrame::FromWordDirect(taskStack->GetFrame());
-  word bodyclosure  = frame->GetClosure();
-  Vector *imports   = Vector::FromWord(frame->GetImports());
   Chunk *key        = frame->GetKey();
+  word closure      = frame->GetClosure();
+  Vector *imports   = frame->GetImports();
   taskStack->PopFrame();
-  BootLinker::Trace("applying", key);
-  u_int n         = imports->GetLength();
-  Vector *strs    = Vector::New(n);
+  Trace("applying", key);
+  u_int n      = imports->GetLength();
+  Vector *strs = Vector::New(n);
   // Order significant here?
   for (u_int i = 0; i < n; i++) {
     // imports = (string * sign) vector
     Tuple *t = Tuple::FromWord(imports->Sub(i));
     Assert(t != INVALID_POINTER);
     t->AssertWidth(2);
-    Chunk *key2 = ResolveUrl(key, Store::WordToChunk(t->Sel(0)));
+    Chunk *key2 = Resolve(key, Store::WordToChunk(t->Sel(0)));
     Component *entry = BootLinker::LookupComponent(key2);
     Assert(entry != INVALID_POINTER);
     strs->Init(i, entry->GetStr());
   }
   Scheduler::currentArgs = Interpreter::OneArg(strs->ToWord());
-  return taskStack->PushCall(bodyclosure);
+  return taskStack->PushCall(closure);
 }
 
 const char *ApplyInterpreter::Identify() {
@@ -320,7 +347,7 @@ Interpreter::Result EnterInterpreter::Run(word args, TaskStack *taskStack) {
   Chunk *key        = frame->GetKey();
   word sign         = frame->GetSign();
   taskStack->PopFrame();
-  BootLinker::Trace("entering", key);
+  Trace("entering", key);
   word str = Interpreter::Construct(args);
   BootLinker::EnterComponent(key, sign, str);
   CONTINUE(Interpreter::OneArg(str));
@@ -343,47 +370,42 @@ void LinkInterpreter::PushFrame(TaskStack *taskStack, Chunk *key) {
   taskStack->PushFrame(LinkFrame::New(self, key)->ToWord());
 }
 
-typedef enum {
-  EVALUATED, UNEVALUATED
-} COMPONENT;
-
 Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
   LinkFrame *frame = LinkFrame::FromWordDirect(taskStack->GetFrame());
   Chunk *key       = frame->GetKey();
-  BootLinker::Trace("linking", key);
+  Trace("linking", key);
   taskStack->PopFrame();
   args = Interpreter::Construct(args);
   TagVal *targs = TagVal::FromWord(args);
   Assert(targs != INVALID_POINTER);
-  switch ((COMPONENT) targs->GetTag()) {
+  switch (static_cast<ComponentTag>(targs->GetTag())) {
   case EVALUATED:
     {
       targs->AssertWidth(2);
       word sign = targs->Sel(0);
-      word x    = targs->Sel(1);
+      word str  = targs->Sel(1);
       EnterInterpreter::PushFrame(taskStack, key, sign);
-      CONTINUE(Interpreter::OneArg(x));
+      CONTINUE(Interpreter::OneArg(str));
     }
     break;
   case UNEVALUATED:
     {
       targs->AssertWidth(3);
-      word bodyclosure = targs->Sel(0);
-      word imports     = targs->Sel(1);
-      word sign        = targs->Sel(2);
-      // Add EnterFrame
+      word closure    = targs->Sel(0);
+      Vector *imports = Vector::FromWord(targs->Sel(1));
+      word sign       = targs->Sel(2);
+      Assert(imports != INVALID_POINTER);
+      // Push EnterFrame
       EnterInterpreter::PushFrame(taskStack, key, sign);
-      // Add ApplyFrame
-      ApplyInterpreter::PushFrame(taskStack, bodyclosure, imports, key);
-      // Add the Load Frames of Imports: string * sign vector
-      Vector *iv = Vector::FromWord(imports);
-      Assert(iv != INVALID_POINTER);
-      for (u_int i = iv->GetLength(); i--;) {
-	Tuple *t = Tuple::FromWord(iv->Sub(i));
+      // Push ApplyFrame
+      ApplyInterpreter::PushFrame(taskStack, key, closure, imports);
+      // Push LoadFrames for imports: string * sign vector
+      for (u_int i = imports->GetLength(); i--;) {
+	Tuple *t = Tuple::FromWord(imports->Sub(i));
 	Assert(t != INVALID_POINTER);
 	t->AssertWidth(2);
 	Chunk *rel  = Store::WordToChunk(t->Sel(0));
-	Chunk *key2 = ResolveUrl(key, rel);
+	Chunk *key2 = Resolve(key, rel);
 	if (BootLinker::LookupComponent(key2) == INVALID_POINTER) {
 	  LoadInterpreter::PushFrame(taskStack, key2);
 	}
@@ -392,8 +414,7 @@ Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
     }
     break;
   default:
-    Assert(0);
-    CONTINUE(args);
+    Error("Boot Linker: invalid component tag");
   }
 }
 
@@ -416,15 +437,15 @@ void LoadInterpreter::PushFrame(TaskStack *taskStack, Chunk *key) {
 
 Interpreter::Result LoadInterpreter::Run(word, TaskStack *taskStack) {
   LoadFrame *frame = LoadFrame::FromWordDirect(taskStack->GetFrame());
-  Chunk *key       = frame->GetString();
+  Chunk *key       = frame->GetKey();
   taskStack->PopFrame();
   if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
     CONTINUE(Interpreter::EmptyArg());
   }
-  BootLinker::Trace("loading", key);
+  Trace("loading", key);
   LinkInterpreter::PushFrame(taskStack, key);
   taskStack->PushFrame(frame->ToWord());
-  return Unpickler::Load(BootLinker::MakeFileName(key), taskStack);
+  return Unpickler::Load(Localize(key), taskStack);
 }
 
 const char *LoadInterpreter::Identify() {
@@ -433,7 +454,7 @@ const char *LoadInterpreter::Identify() {
 
 void LoadInterpreter::DumpFrame(word frameWord) {
   LoadFrame *frame = LoadFrame::FromWordDirect(frameWord);
-  Chunk *key = frame->GetString();
+  Chunk *key = frame->GetKey();
   fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
@@ -446,38 +467,26 @@ static const u_int INITIAL_QUEUE_SIZE = 16; // to be checked
 word BootLinker::componentTable;
 word BootLinker::keyQueue;
 u_int BootLinker::numberOfEntries;
-u_int BootLinker::traceFlag;
 
-void BootLinker::Init(prim_table *builtins) {
-  componentTable = HashTable::New(HashTable::BLOCK_KEY,
-				  INITIAL_TABLE_SIZE)->ToWord();
+void BootLinker::Init(NativeComponent *nativeComponents) {
   RootSet::Add(componentTable);
-  keyQueue = Queue::New(INITIAL_QUEUE_SIZE)->ToWord();
   RootSet::Add(keyQueue);
+  componentTable =
+    HashTable::New(HashTable::BLOCK_KEY, INITIAL_TABLE_SIZE)->ToWord();
+  keyQueue = Queue::New(INITIAL_QUEUE_SIZE)->ToWord();
   numberOfEntries = 0;
   // Initialize Interpreters
   ApplyInterpreter::Init();
   EnterInterpreter::Init();
   LinkInterpreter::Init();
   LoadInterpreter::Init();
-  // Import built-in native components
-  while (builtins->name != NULL) {
-    word (*f)(void) = builtins->init;
-    EnterComponent(static_cast<Chunk *>(String::New(builtins->name)),
+  // Enter built-in native components
+  while (nativeComponents->name != NULL) {
+    word (*init)(void) = nativeComponents->init;
+    EnterComponent(static_cast<Chunk *>(String::New(nativeComponents->name)),
 		   Store::IntToWord(0), // NONE
-		   f());
-    builtins++;
-  }
-}
-
-void BootLinker::Print(Chunk *c) {
-  fprintf(stderr, "%.*s\n", (int) c->GetSize(), c->GetBase());
-}
-
-void BootLinker::Trace(const char *prefix, Chunk *key) {
-  if (traceFlag) {
-    fprintf(stderr, "[boot-linker] %s %.*s\n",
-	    prefix, (int) key->GetSize(), key->GetBase());
+		   init());
+    nativeComponents++;
   }
 }
 
@@ -493,24 +502,10 @@ Component *BootLinker::LookupComponent(Chunk *key) {
   HashTable *componentTable = GetComponentTable();
   word keyWord = key->ToWord();
   if (componentTable->IsMember(keyWord)) {
-    return Component::FromWord(componentTable->GetItem(keyWord));
+    return Component::FromWordDirect(componentTable->GetItem(keyWord));
   } else {
     return INVALID_POINTER;
   }
-}
-
-Chunk *BootLinker::MakeFileName(Chunk *key) {
-  // Hack to ensure NUL-terminated strings
-  Chunk *aliceHome = Store::DirectWordToChunk(Properties::aliceHome);
-  u_int hSize      = aliceHome->GetSize();
-  u_int kSize      = key->GetSize();
-  Chunk *path      = Store::AllocChunk(hSize + kSize + 5);
-  char *base       = path->GetBase();
-  memcpy(base, aliceHome->GetBase(), hSize);
-  memcpy(base + hSize, key->GetBase(), kSize);
-  memcpy(base + hSize + kSize, ".stc", 4);
-  base[hSize + kSize + 4] = '\0';
-  return path;
 }
 
 word BootLinker::Link(Chunk *url) {

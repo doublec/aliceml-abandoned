@@ -30,28 +30,36 @@
 #include "emulator/ByneedInterpreter.hh"
 #include "emulator/AbstractCodeInterpreter.hh"
 
-extern word UnsafeMkRefMap(void);
-extern word UnsafeReflect(void);
-extern word UnsafeIO(void);
-extern word UnsafeComponent(void);
-extern word UnsafeOS(void);
 extern word UnsafeConfig(void);
-extern word UnsafeDebug(void);
+extern word UnsafeIO(void);
+extern word UnsafeOS(void);
+//extern word UnsafeUnix(void); //--** missing
 extern word UnsafeCommandLine(void);
+extern word UnsafeComponent(void);
+extern word UnsafeDebug(void);
+//extern word UnsafeSocket(void); //--** missing
+//extern word UnsafeRand(void); //--** missing
+extern word UnsafeReflect(void);
+extern word UnsafeMkRefMap(void);
+//extern word UnsafeAddr(void); //--** missing
 
-static prim_table builtins[] =
-{ { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap},
-  { "lib/system/UnsafeReflect", UnsafeReflect},
-  { "lib/system/UnsafeIO", UnsafeIO},
-  { "lib/system/UnsafeComponent", UnsafeComponent},
-  { "lib/system/UnsafeOS", UnsafeOS},
-  { "lib/system/UnsafeConfig", UnsafeConfig},
-  { "lib/system/UnsafeDebug", UnsafeDebug},
-  { "lib/system/UnsafeCommandLine", UnsafeCommandLine},
-  {NULL, NULL} };
+static NativeComponent nativeComponents[] = {
+  {"lib/system/UnsafeConfig",      UnsafeConfig},
+  {"lib/system/UnsafeIO",          UnsafeIO},
+  {"lib/system/UnsafeOS",          UnsafeOS},
+//{"lib/system/UnsafeUnix",        UnsafeUnix}, //--** missing
+  {"lib/system/UnsafeCommandLine", UnsafeCommandLine},
+  {"lib/system/UnsafeComponent",   UnsafeComponent},
+  {"lib/system/UnsafeDebug",       UnsafeDebug},
+//{"lib/system/UnsafeSocket",      UnsafeSocket}, //--** missing
+//{"lib/system/UnsafeRand",        UnsafeRand}, //--** missing
+  {"lib/system/UnsafeReflect",     UnsafeReflect},
+  {"lib/utility/UnsafeMkRefMap",   UnsafeMkRefMap},
+//{"lib/utility/UnsafeAddr",       UnsafeAddr},
+  {NULL, NULL}
+};
 
-static inline
-Chunk *NewChunk(const char *s) {
+static inline Chunk *NewChunk(const char *s) {
   u_int len  = strlen(s);
   Chunk *p   = Store::AllocChunk(len);
   char *base = p->GetBase();
@@ -81,7 +89,7 @@ int main(int argc, char *argv[]) {
   ByneedInterpreter::Init();
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
-  BootLinker::Init(builtins);
+  BootLinker::Init(nativeComponents);
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
