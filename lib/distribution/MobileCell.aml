@@ -34,7 +34,6 @@
 
 import structure Assert        from "x-alice:/lib/utility/Assert"
 import structure GlobalStamp   from "x-alice:/lib/utility/GlobalStamp"
-import structure FromEqHashKey from "x-alice:/lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap  from "x-alice:/lib/utility/MkHashImpMap"
 import structure Remote        from "x-alice:/lib/distribution/Remote"
 
@@ -62,7 +61,7 @@ structure GlobalTable :> GLOBAL_TABLE =
 	type key = GlobalStamp.t
 	type value
 
-	structure StampMap = MkHashImpMap(FromEqHashKey(GlobalStamp))
+	structure StampMap = MkHashImpMap(GlobalStamp)
 
 	type t = Lock.lock * value option StampMap.t
 
@@ -98,7 +97,7 @@ signature MOBILE_CELL =
 	type 'a cell
 
 	val cell: 'a -> 'a cell
-	val equals: 'a cell * 'a cell -> bool
+	val equal: 'a cell * 'a cell -> bool
 	val access: 'a cell -> 'a
 	val assign: 'a cell * 'a -> unit
 	val exchange: 'a cell * 'a -> 'a
@@ -151,7 +150,7 @@ structure MobileCell :> MOBILE_CELL =
 		(stamp, Remote.proxy getState)
 	    end
 
-	fun equals ((stamp, _), (stamp', _)) = stamp = stamp'
+	fun equal ((stamp, _), (stamp', _)) = stamp = stamp'
 
 	fun withLocalState (valueNeeded, f1, f2) (stamp, getState) =
 	    let
