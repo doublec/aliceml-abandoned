@@ -627,7 +627,8 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
-	build3/install/compiler build3/install/compiler/top
+	build3/install/compiler build3/install/compiler/top \
+	build3/install/linker
 INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
 INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
@@ -638,13 +639,15 @@ INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
 	SMLToMozartRecursiveCompiler.ozf \
 	SMLToDotNetRecursiveCompiler.ozf
+INSTALL3LINKERFILES = Main.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%.bat) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
-	$(INSTALL3COMPILERTOPFILES:%=build3/install/compiler/top/%)
+	$(INSTALL3COMPILERTOPFILES:%=build3/install/compiler/top/%) \
+	$(INSTALL3LINKERFILES:%=build3/install/linker/%)
 
 ##
 ## Creating the Source Tree for Build 3
@@ -695,7 +698,8 @@ TOP3 = $(BUILD3)/compiler/top
 
 build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) $< -o $@
+	$(ALICELINK2) $(ALICELINK_OPTS) build3/lib/fundamental/Fundamental \
+	-o $@
 
 build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
 	build3/lib/system/Signature.ozf build3/lib/system/Boot.ozf
@@ -704,28 +708,38 @@ build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
-	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
+	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler \
+	build3/compiler/CompilerMain -o $@
 
-build3/compiler/LinkedCompileServerMain.ozf: build3/compiler/CompileServerMain.ozf
+build3/compiler/LinkedCompileServerMain.ozf: \
+	build3/compiler/CompileServerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
-	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
+	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler \
+	build3/compiler/CompileServerMain -o $@
 
 build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
-	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
+	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler \
+	build3/compiler/ToplevelMain -o $@
 
 build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
 	$(COMPILERBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
-	--include=$(BUILD3)/compiler $< -o $@
+	--include=$(BUILD3)/compiler \
+	build3/compiler/top/SMLToMozartRecursiveCompiler -o $@
 
 build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
-	--include=$(BUILD3)/compiler $< -o $@
+	--include=$(BUILD3)/compiler \
+	build3/compiler/top/SMLToDotNetRecursiveCompiler -o $@
+
+build3/linker/LinkedMain.ozf: build3/linker/Main.ozf
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
+	--include=$(BUILD3)/linker build3/linker/Main -o $@
 
 ##
 ## Installing Build 3
@@ -761,6 +775,9 @@ build3/install/compiler/%: build3/compiler/Linked%
 build3/install/compiler/top/%: build3/compiler/top/Linked%
 	install -c -m 444 $< $@
 
+build3/install/linker/%: build3/linker/Linked%
+	install -c -m 444 $< $@
+
 ########################################################################
 ### THINGS OF A GLOBAL NATURE
 ########################################################################
@@ -785,13 +802,15 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
 	$(PREFIX)/lib/system $(PREFIX)/lib/utility $(PREFIX)/lib/rtt \
-	$(PREFIX)/lib/ml-yacc $(PREFIX)/compiler $(PREFIX)/compiler/top
+	$(PREFIX)/lib/ml-yacc $(PREFIX)/compiler $(PREFIX)/compiler/top \
+	$(PREFIX)/linker
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
 	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
 	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
-	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%)
+	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%) \
+	$(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%)
 
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
@@ -811,6 +830,10 @@ $(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
 $(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%): $(PREFIX)/%: \
+	build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%): $(PREFIX)/%: \
 	build3/install/%
 	install -c -m 444 $< $@
 
