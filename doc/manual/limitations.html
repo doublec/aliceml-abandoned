@@ -11,7 +11,7 @@ the Alice system.</P>
 <?php section("language", "language") ?>
 
 <DL>
-  <?php if ($platform != "stockwerk") { ?>
+  <?php if ($platform != "seam") { ?>
   <DT>Equality</DT>
   <DD><P>The <TT>=</TT> operator is <A href="futures.html#request">strict</A>.
       Accordingly, in order to test two futures for equality, both have to
@@ -48,7 +48,7 @@ the Alice system.</P>
       argument (record).</P>
   </DD>
 
-  <?php if ($platform != "stockwerk") { ?>
+  <?php if ($platform != "seam") { ?>
   <DT>Holes</DT>
   <DD><P>Accessing a <A href="library/hole.html">hole</A> does not raise an
       exception as it should.  Instead, it blocks until the hole is filled.</P>
