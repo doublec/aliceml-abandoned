@@ -1,0 +1,388 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <Benedikt-Grundmann@web.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+
+(* Notes:
+ * Most of the procedures can probably be optimized somewhat but
+ * I believe that shouldn't be done before
+ * a) We have an profiler
+ * b) We have a XP-like testing framework
+ *)
+
+import structure __pervasive from "Pervasive"
+import __primitive 
+       type unit and int and vector and array
+       datatype	option and list and bool 
+				     from "ToplevelTypes"
+import __primitive
+       infix 4 = <> < > >= <= infixr 5 :: @ infix 6 + - infix 7 *
+       infix 3 := 
+       val op = and op <> and op < and op >= and op <=
+       and op > and op :=
+       val op + and op - val op *                  from "ToplevelValues"
+import __primitive structure General               from "General"
+import __primitive structure Bool                  from "Bool"
+import __primitive signature ARRAY2  from "ARRAY2-sig"
+import __primitive structure Vector  from "Vector"
+import __primitive structure Array   from "Array"
+import __primitive structure List    from "List"
+import __primitive structure Ref     from "Ref"
+
+structure Array2 :> ARRAY2 =
+struct
+   open Ref
+
+   type 'a array = { values: 'a Array.array,
+		    rows: int,
+		    cols: int
+		    }
+   type t = array
+
+   type 'a region = 
+	{ base : 'a array,
+	 row : int,
+	 col : int,
+	 nrows : int option,
+	 ncols : int option 
+	 }
+
+   datatype traversal =
+	RowMajor
+      | ColMajor
+
+   
+   (* utility functions *)
+   fun inRange (i, low, upp) = low <= i andalso i <= upp
+
+   (* implementation *)
+
+   fun array (rows, columns, default) =
+       { values = Array.array (rows * columns, default),
+	rows = rows,
+	cols = columns
+	}
+
+   fun dimensions { rows, cols, values } = (rows, cols)
+
+   fun nRows { rows, cols, values } = rows
+
+   fun nCols { rows, cols, values } = cols
+
+   fun check (exn, { values, rows, cols }, r, c) = 
+       if inRange (r, 0, rows - 1) andalso inRange (c, 0, cols - 1) then ()
+       else raise exn
+
+	   
+   fun index ({values, rows, cols}, row, col) = row * cols + col 
+
+
+   fun sub (a as {values, rows, cols}, row, col) = 
+       Array.sub (values, index (a, row, col))
+
+   fun update (a as {values, rows, cols}, row, col, v) =
+       Array.update (values, index (a, row, col), v)
+
+   fun dummy () = lazy (raise General.Fail "dummy value accessed (inside Array2)")
+
+       
+   fun fromList [] = { rows = 0, cols = 0, values = Array.array (0, dummy ()) }
+     | fromList l = 
+       let val rows = List.length l 
+	   val cols = List.length (List.hd l)
+       in
+	   if cols = 0 then
+	       array (rows, cols, dummy ())
+	   else
+	       let val res = { rows = rows,
+			  cols = cols, 
+			  values = Array.array (rows * cols, List.hd 
+							      (List.hd l)) 
+			  }
+	       in
+		   List.foldl (fn (row, r) => 
+			       (List.foldl (fn (e, c) =>
+					   (update (res, r, c, e);
+					   c + 1)) 0 row;
+			       r + 1)) 0 l;
+		   res
+	       end
+       end
+
+   fun toList src = List.tabulate (nRows src,
+				   fn r => 
+				   List.tabulate (nCols src, 
+						  fn c =>
+						  sub (src, r, c)))
+
+   fun trav (RowMajor, lowRow, lowCol, uppRow, uppCol, f) =
+       (* Sort of a 2 nested for loops substitude with
+	* builtin indice switching depending on the traversal
+	* mode
+	*)
+       let val r = ref lowRow
+	   val c = ref lowCol
+       in
+	   while !r <= uppRow do
+	       (c := lowCol;
+		while !c <= uppCol do
+		    (f (!r, !c);
+		     c := !c + 1);
+		r := !r + 1)
+       end
+     | trav (ColMajor, lowRow, lowCol, uppRow, uppCol, f) =
+       let val r = ref lowRow
+	   val c = ref lowCol
+       in
+	   while !c <= uppCol do
+	       (r := lowRow;
+		while !r <= uppRow do
+		    (f (!r, !c);
+		     r := !r + 1);
+		c := !c + 1)
+       end
+
+   fun for (low, upp, f) = let val c = ref low 
+			   in
+			       while !c <= upp do
+				   (f (!c);
+				    c := !c + 1)
+			   end
+       
+   fun tabulate trv (rows, cols, f) =
+       if rows = 0 orelse cols = 0 then
+	   array (rows, cols, dummy ())
+       else
+	   let val v = Array.array (rows * cols, f (0, 0))
+	       val res = { values = v, rows = rows, cols = cols }
+	   in
+	       case trv of 
+		   RowMajor => (for (1, cols - 1, fn c => update (res, 0, c,
+								 f (0, c)));
+				trav (RowMajor, 1, 0, rows - 1, cols - 1,
+				      fn (r, c) => update (res, r, c, 
+							   f (r, c))))
+		 | ColMajor => (for (1, rows - 1, fn r => update (res, r, 0,
+								  f (r, 0)));
+				trav (ColMajor, 0, 1, rows - 1, cols - 1,
+				      fn (r, c) => update (res, r, c,
+							   f (r, c))));
+	       res
+	   end
+		
+   fun row (a as {values, rows, cols}, r) = 
+       Vector.tabulate (cols, fn c => sub (a, r, c))
+							
+       
+   fun column (a as {values, rows, cols}, c) = 
+       Vector.tabulate (cols, fn r => sub (a, r, c))
+
+   fun transRegion exn { base, row, col, nrows, ncols } = 
+       (* Given a region return a quintuple of 
+	* (base, lowerRow, lowerCol, upperRow, upperCol) 
+	* raise exn if region is invalid
+	*)
+       let val ur = case nrows of NONE => (nRows base) - 1
+	                        | SOME r => row + r - 1
+	   val uc = case ncols of NONE => (nCols base) - 1
+	                        | SOME c => col + c - 1
+       in
+	   if inRange (row, 0, nRows base - 1) andalso
+	       inRange (col, 0, nCols base - 1) andalso
+	       inRange (ur , row, nRows base - 1) andalso
+	       inRange (uc, col, nCols base - 1) then
+	       (base, row, col, ur, uc)
+	   else
+	       raise exn
+       end
+
+   fun copy { src, dst, dst_row, dst_col } = 
+       let 
+	   val (src, lowRow, lowCol, uppRow, uppCol) = transRegion General.Subscript src
+
+	   val _ = if dst_row + (uppRow - lowRow) > nRows dst orelse
+	              dst_col + (uppCol - lowCol) > nCols dst then
+	              raise General.Subscript	       
+		   else ()
+
+	   fun cp (r, c) = update (dst, dst_row + r - lowRow, 
+				   dst_col + c - lowCol,
+				   sub (src, r, c))
+	   val r = ref 0
+	   val c = ref 0
+	   fun inc r = r := !r + 1
+	   fun dec r = r := !r - 1
+       in
+	   if lowRow > dst_row then
+	       if lowCol > dst_col then
+		   (* start at (lowRow, lowCol) *)
+		   (r := lowRow;
+		    while !r <= uppRow do
+			(c := lowCol;
+			 while !c <= uppCol do
+			     (cp (!r, !c);
+			      inc c);
+			 inc r))
+	       else
+		   (* start at (lowRow, uppCol) *)
+		   (r := lowRow;
+		    while !r <= uppRow do
+			(c := uppCol;
+			 while !c >= lowCol do
+
+
+			     (cp (!r, !c);
+			      dec c);
+			 inc r))
+	   else
+	       if lowCol > dst_col then
+		   (* start at (uppRow, lowCol) *)
+		   (r := uppRow;
+		    while !r >= lowRow do
+			(c := lowCol;
+			 while !c <= uppCol do
+			     (cp (!r, !c);
+			      inc c);
+			 dec r))
+	       else
+		   (* start at (uppRow, uppCol) *)
+		   (r := uppRow;
+		    while !r >= lowRow do
+			(c := uppCol;
+			 while !c >= lowCol do
+			     (cp (!r, !c);
+			      dec c);
+			 dec r))
+
+       end
+
+   fun appi trv f reg = 
+       let val (src, lowRow, lowCol, uppRow, uppCol) = transRegion General.Subscript
+	   reg
+
+	   fun appCell (r, c) = f (r, c, sub (src, r, c))
+       in
+	   trav (trv, lowRow, lowCol, uppRow, uppCol, appCell)
+       end
+       
+	
+   fun app trv f ar =
+       let 
+	   fun appCell (r, c) = f (sub (ar, r, c))
+       in
+	   trav (trv, 0, 0, (nRows ar - 1), (nCols ar - 1), appCell)
+       end
+		
+   fun modifyi trv f reg =
+       let
+	   val (src, lowRow, lowCol, uppRow, uppCol) = transRegion General.Subscript 
+	       reg
+
+	   fun modifyCell (r, c) = update (src, r, c, 
+					   f (r, c, sub (src, r, c)))
+       in
+	   trav (trv, lowRow, lowCol, uppRow, uppCol, modifyCell)
+       end
+
+   fun modify trv f src =
+       let
+	   fun modifyCell (r, c) = update (src, r, c, f (sub (src, r, c)))
+       in
+	   trav (trv, 0, 0, nRows src - 1, nCols src - 1, modifyCell)
+       end
+
+   fun foldi trv f init reg =
+       let 
+	   val (src, lowRow, lowCol, uppRow, uppCol) = transRegion General.Subscript
+	       reg
+
+	   val acc = ref init
+
+	   fun foldCell (r, c) = acc := f (r, c, sub (src, r, c), !acc)
+       in
+	   trav (trv, lowRow, lowCol, uppRow, uppCol, foldCell);
+	   !acc
+       end
+
+   fun fold trv f init src =
+       let
+	   val acc = ref init
+	   fun foldCell (r, c) = acc := f (sub (src, r, c), !acc)
+       in
+	   trav (trv, 0, 0, nRows src - 1, nCols src - 1, foldCell);
+	   !acc
+       end
+
+   fun exists trv f src = 
+       let 
+	   exception Exists
+       in
+	   ((trav (trv, 0, 0, nRows src - 1, nCols src - 1,
+		   (fn (r, c) => if f (sub (src, r, c)) then raise Exists
+				 else ())));
+	    false)
+	   handle Exists => true
+       end
+
+   fun existsi trv f reg = 
+       let
+	   val (src, lowRow, lowCol, uppRow, uppCol) = transRegion General.Subscript               reg
+	   exception Exists
+       in
+	   (trav (trv, lowRow, lowCol, uppRow, uppCol,
+	     (fn (r, c) => if f (r, c, (sub (src, r, c))) then
+	                      raise Exists
+			  else
+			      ()));
+	    false) handle Exists => true
+       end
+
+   fun all trv f src =
+       let
+	   exception NotAll
+       in
+	   (trav (trv, 0, 0, nRows src - 1, nCols src - 1,
+		   (fn (r, c) =>
+		    if f (sub (src, r, c)) then ()
+		    else raise NotAll));
+	    true) handle NotAll => false
+       end
+
+   fun alli trv f reg =
+       let
+	   val (src, lowRow, lowCol, uppRow, uppCol) = transRegion 
+	       General.Subscript reg
+	   exception NotAll
+       in
+	   (trav (trv, lowRow, lowCol, uppRow, uppCol,
+		   (fn (r, c) =>
+		    if f (r, c, sub (src, r, c)) then ()
+		    else raise NotAll));
+	    true) handle NotAll => false
+       end
+
+   fun contains trv src a = exists trv (fn b => b = a) src
+       
+   fun notContains trv src a = Bool.not (contains trv src a)
+
+   fun equal trv eq (a1, a2) = (dimensions a1 = dimensions a2) andalso 
+       alli trv (fn (r, c, a) => eq (a, sub (a2, r, c))) { base = a1,
+						       row = 0,
+						       col = 0,
+						       nrows = NONE,
+						       ncols = NONE }
+
+       
+end
