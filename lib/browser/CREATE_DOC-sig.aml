@@ -24,7 +24,7 @@ signature CREATE_DOC =
 sig
 
     type doc_creator = int * int * Reflect.value * Type.t -> doc  
- 
+
     val registerType : Path.path * doc_creator -> unit
 
     val castVector   :  'b -> 'c vector
