@@ -26,6 +26,9 @@ TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 all: simulator compiler
 
+test: testant.stc all
+	alicerun testant
+
 simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 %.stc: %.aml

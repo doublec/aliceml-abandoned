@@ -28,8 +28,10 @@ sig
     val turn	: side -> stmt
     val drop	: unit -> stmt
 
-    val move	: yesno -> stmt -> yesno -> stmt -> stmt
-    val pick	: yesno -> stmt -> yesno -> stmt -> stmt
+    val move	: yesno -> stmt -> stmt
+    val pick	: yesno -> stmt -> stmt
+    val move2	: yesno -> stmt -> yesno -> stmt -> stmt
+    val pick2	: yesno -> stmt -> yesno -> stmt -> stmt
     val sense	: dir -> condition -> yesno -> stmt -> yesno -> stmt -> stmt
     val flip	: int -> yesno -> stmt -> yesno -> stmt -> stmt
 

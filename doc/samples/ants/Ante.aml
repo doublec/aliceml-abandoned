@@ -58,16 +58,21 @@ struct
     fun turn s		= let val p = promise() in (p, 1, Turn(s, future p)) end
     fun drop ()		= let val p = promise() in (p, 1, Drop(future p)) end
 
+    fun move onyes (p,n,i)	= (p, n+1, Move(i, future p))
+      | move onno  (p,n,i)	= (p, n+1, Move(future p, i))
+    fun pick onyes (p,n,i)	= (p, n+1, Pick(i, future p))
+      | pick onno  (p,n,i)	= (p, n+1, Pick(future p, i))
+
     fun join f (p1,n1,i1) (p2,n2,i2) =
 	(fulfill (p2, future p1); (p1, n1+n2, f(i1,i2)))
 
-    fun move onyes b1 onno b2	= join Move b1 b2
-      | move onno  b1 onyes b2	= join Move b2 b1
-      | move _     _  _     _	= raise Malformed "move"
+    fun move2 onyes b1 onno b2		= join Move b1 b2
+      | move2 onno  b1 onyes b2		= join Move b2 b1
+      | move2 _     _  _     _		= raise Malformed "move"
 
-    fun pick onyes b1 onno b2	= join Pick b1 b2
-      | pick onno  b1 onyes b2	= join Pick b2 b1
-      | pick _     _  _     _	= raise Malformed "pick"
+    fun pick2 onyes b1 onno b2		= join Pick b1 b2
+      | pick2 onno  b1 onyes b2		= join Pick b2 b1
+      | pick2 _     _  _     _		= raise Malformed "pick"
 
     fun sense d c onyes b1 onno b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b1 b2
       | sense d c onno  b1 onyes b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b2 b1
@@ -83,15 +88,121 @@ struct
       | flipn' _ [b1,b2]	= flip 2 onyes b1 onno b2
       | flipn' n (b::bs)	= flip n onyes b onno (flipn' (n-1) bs)
 
+
   (* Compilation *)
 
     structure I = Instructions
     structure E = MkRedBlackMap String
 
-    fun traverse n e i = []
+    fun traverse n e a i =
+	case i
+	 of Fail =>
+	    (n, [I.Flip(1,n,n,a)], n+1, e)
+	  | Concat(i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse n e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(s1, l1@l2, n2, e2)
+	    end
+	  | Goto l =>
+	    (case E.lookup (e,l)
+	     of SOME p => (future p, [], n, e)
+	      | NONE =>
+		let
+		    val p = promise ()
+		in
+		    (future p, [], n, E.insert (e,l,p))
+		end
+	    )
+	  | Label(l,i') =>
+	    (case E.lookup (e,l)
+	     of SOME p => (fulfill(p, n); traverse n e a i')
+	      | NONE =>
+		let
+		    val p = promise ()
+		in
+		    fulfill (p, n);
+		    traverse n (E.insert (e,l,p)) a i'
+		end
+	    )
+	  | Mark(m,i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+	    in
+		(n, I.Mark(m,s',a)::l', n', e')
+	    end
+	  | Unmark(m,i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+	    in
+		(n, I.Unmark(m,s',a)::l', n', e')
+	    end
+	  | Turn(t,i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+		val t' = case t of left => I.Left | right => I.Right
+	    in
+		(n, I.Turn(t',s',a)::l', n', e')
+	    end
+	  | Move(i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(n, I.Move(s1,s2,a)::l1@l2, n2, e2)
+	    end
+	  | Pick(i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(n, I.PickUp(s1,s2,a)::l1@l2, n2, e2)
+	    end
+	  | Drop(i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+	    in
+		(n, I.Drop(s',a)::l', n', e')
+	    end
+	  | Sense(d,c,i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+		val d' = case d of here => I.Here
+				 | ahead => I.Ahead
+				 | leftahead => I.LeftAhead
+				 | rightahead => I.RightAhead
+		val c' = case c of friend => I.Friend
+				 | foe => I.Foe
+				 | friendwithfood => I.FriendWithFood
+				 | foewithfood => I.FoeWithFood
+				 | food => I.Food
+				 | rock => I.Rock
+				 | marker m => I.Marker m
+				 | foemarker => I.FoeMarker
+				 | home => I.Home
+				 | foehome => I.FoeHome
+	    in
+		(n, I.Sense(d',s1,s2,c',a)::l1@l2, n2, e2)
+	    end
+	  | Flip(j,i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(n, I.Flip(j,s1,s2,a)::l1@l2, n2, e2)
+	    end
 
     fun compile (p,_,i) =
-	(fulfill (p, Fail); Vector.fromList (traverse 0 E.empty i))
+	let
+	    val _ = fulfill (p, Fail)
+	    val (_,l,n,e) = traverse 0 E.empty () i
+	in
+	    assert n <= 10_000 do
+	    assert E.all (Future.isDetermined o future) e do
+	    Vector.fromList l
+	end
 end
 
 
