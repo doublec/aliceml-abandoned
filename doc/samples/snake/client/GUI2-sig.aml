@@ -1,0 +1,36 @@
+type gui
+datatype error = 
+    ERROR of string
+ |  CONN_ERROR of string
+
+exception Error of string
+
+type callbacks = {
+    (* called initially *)
+    startServer :   (string * Color.color) option * Config.config -> (string, error) alt,
+    connect :       string -> error option,
+
+    (* called during a running game *)
+    turn :          Protocol.direction -> error option,
+    changeView :    Protocol.view_hint -> error option,
+    giveUp :        unit -> error option,
+
+    (* called during the join phase *)
+    play :          string * Color.color -> error option,
+    watch :         unit -> error option
+
+    (* called anytime *)
+    disconnect :    unit -> unit
+}
+
+
+val start : callbacks -> gui
+
+val playersJoined : (string * Color.color) list -> unit
+val playersDisconnected : string * Color.color -> unit
+val gameStarted :   gui -> unit
+val levelStart :    gui * Protocol.level_info -> unit    
+val levelTick :     gui * Highscore.points list option * Protocol.diff list * Pos.pos option * Time.time -> unit
+val levelCountdown : gui * int -> unit
+val gameFinished :  gui * Highscore.highscore -> unit
+
