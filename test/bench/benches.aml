@@ -3,13 +3,17 @@ import structure Timer from "Timer"
 
 (* Alice Imports *)
 
+(*
 __primitive val + : int * int -> int  = "Int.+"
 __primitive val - : int * int -> int  = "Int.-"
 __primitive val * : int * int -> int  = "Int.*"
 __primitive val < : int * int -> bool = "Int.<"
+*)
  
-(*  __primitive val startTimer : unit -> unit = "Timer.startTimer" *)
-(*  __primitive val checkTimer : unit -> int  = "Timer.checkTimer" *)
+val _ = Future.await op+
+val _ = Future.await op-
+val _ = Future.await op*
+val _ = Future.await op<
 
 (* Tools *)
 
@@ -35,21 +39,17 @@ fun app(nil,ys)   = ys
 
 
 fun dotimes(0,p) = 0
- |  dotimes(n,p) = (p(); dotimes(n-1,p));
+  | dotimes(n,p) = (p(); dotimes(n-1,p));
 
 
 fun dobench(proc) = 
-    let 
-	val _       = Timer.start ()
-	val ignored = proc()
-	val elapsed = Timer.check ()
-    in elapsed
-    end;
+    (Timer.start ();
+     proc ();
+     Timer.check ())
 
-
-fun dobenchn(n,proc) =
-    if (n=0) then []
-    else dobench(proc)::dobenchn(n-1,proc);
+fun dobenchn (0, _) = []
+  | dobenchn (n, proc) =
+    dobench(proc)::dobenchn(n-1,proc);
 
 fun sum([],res) = res
   | sum(x::xs,res) = sum(xs,res+x);
@@ -64,23 +64,14 @@ fun dobenchavrg(n,proc) =
 	(avrg(aux,n),aux)
     end
 
-fun dobenchavrg2(name,n,sz,proc1,proc2) =
-    let 
-	val (avrg1,l1) = dobenchavrg(n,proc1)
-	val (avrg2,l2) = dobenchavrg(n,proc2)
-    in
-	(name,sz,avrg2-avrg1,l1,l2)
-    end
-
 
 (* dobenchavrg(10,fn()=>app(genlist(1000),[])); *)
 
 (* Benches *)
 
-fun fib(n) = 
-    if (2<n) 
-    then fib(n-2)+fib(n-1) 
-    else 1;
+(*--** use <? *)
+fun fib (0|1) = 1
+  | fib n = fib(n-2)+fib(n-1)
 
 fun fibf(n:real) = 
     if Real.<(2.0, n) 
@@ -135,20 +126,22 @@ and partition ([],a,left,right,cont,cmp): int list =
     if cmp(x,a) then partition(xs,a,x::left,right,cont,cmp)
     else partition(xs,a,left,x::right,cont,cmp);
 
-fun less(x,y) = x<y;
+val less = op< : int * int -> bool
 
 fun quickho(l,cmp) = quickaux(l,[],cmp);
 
 
 fun partitionarray1(ar,pivot,pindex,fro,to) =
     if fro <= to then 
-	let val old = Array.sub(ar,fro)
-	in if pivot > old then 
-	    (Array.update(ar,fro,Array.sub(ar,pindex));
-	     Array.update(ar,pindex,old);
-	     partitionarray1(ar,pivot,pindex+1,fro+1,to))
-	   else 
-	       partitionarray1(ar,pivot,pindex,fro+1,to)
+	let
+	    val old = Array.sub(ar,fro)
+	in
+	    if pivot > old then 
+		(Array.update(ar,fro,Array.sub(ar,pindex));
+		 Array.update(ar,pindex,old);
+		 partitionarray1(ar,pivot,pindex+1,fro+1,to))
+	    else
+		partitionarray1(ar,pivot,pindex,fro+1,to)
 	end
     else pindex-1;
 
