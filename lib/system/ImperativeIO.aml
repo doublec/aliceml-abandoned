@@ -16,12 +16,11 @@ import signature IMPERATIVE_IO from "IMPERATIVE_IO-sig"
 functor ImperativeIO(structure StreamIO: STREAM_IO
 		     structure Vector: MONO_VECTOR
 			 where type vector = StreamIO.vector
-			   and type elem = StreamIO.elem
-		     structure Array: MONO_ARRAY
-			 where type Vector.vector = StreamIO.vector
-			   and type Vector.elem = StreamIO.elem) :>
+			   and type elem = StreamIO.elem) :>
     IMPERATIVE_IO
-	where type StreamIO.vector = StreamIO.vector
+	where type StreamIO.instream = StreamIO.instream
+	  and type StreamIO.outstream = StreamIO.outstream
+	  and type StreamIO.vector = StreamIO.vector
 	  and type StreamIO.elem = StreamIO.elem =
     struct
 	structure StreamIO = StreamIO
