@@ -30,7 +30,9 @@ structure Component :> COMPONENT =
 
 	val extension = "ozf"
 
-	val defaultResolver = ()
+	val defaultResolver = Resolver.resolver {name = "dummy",
+						 handlers = [],
+						 memoize = false}
 
 	fun inf _ = NONE
 	fun imports _ = #[]

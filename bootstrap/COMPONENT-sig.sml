@@ -30,7 +30,7 @@ signature COMPONENT =
 
 	val extension: string
 
-	val defaultResolver: unit
+	val defaultResolver: Resolver.t
 
 	val load: Url.t -> component
 	val save: string * component -> unit

@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,6 +15,9 @@ import structure TextIO             from "../../lib/system/TextIO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
 import structure Component          from "../../lib/system/Component"
+import structure Resolver           from "../../lib/system/Resolver"
+import structure Url                from "../../lib/system/Url"
+import structure Inf                from "../../lib/rtt/Inf"
 import structure MkOptionParser     from "MkOptionParser"
 import signature BATCH_COMPILER     from "BATCH_COMPILER-sig"
 import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
@@ -42,10 +46,59 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 					    | _ => cutExtension cs))
 	    end
 
+	fun matchWith (rea, SOME inf1, SOME inf2) =
+		Inf.matchWith (rea, inf1, inf2)
+	  | matchWith (rea, _, _) = ()
+
+	fun t1 < t2 = Time.compare (t1, t2) = LESS
+
+	fun uptodate (srcfile, dstfile) =
+	    let
+		val url = Url.fromString dstfile
+		val component = Component.load url
+		val imports = Vector.map (Pair.mapFst (Url.resolve url))
+	    				 (Component.imports component)
+		val srctime = OS.FileSys.modTime srcfile
+		val dsttime = OS.FileSys.modTime dstfile
+		val rea = Inf.rea ()
+	    in
+		srctime < dsttime andalso
+		(Vector.all (fn (importUrl, importInf) => (* quick test *)
+		    let
+			val importFile = 
+			    case Resolver.localize Component.defaultResolver
+						   importUrl of
+				SOME (Resolver.FILE file) => file
+			      | _ => raise Domain
+		    in
+			OS.FileSys.modTime importFile < dsttime
+		    end
+		 ) imports orelse
+		 Vector.all (fn (importUrl, importInf) =>
+		    let
+			val importComponent = Component.load importUrl
+			val exportInf = Component.inf importComponent
+		    in
+			matchWith (rea, exportInf, importInf);
+			true
+		    end
+		 ) imports
+		)
+	    end
+	    handle _ => false
+
 	fun main_c (infile, outfile) =
 	    (RecursiveCompiler.compileFileToFile (infile, outfile);
 	     OS.Process.success)
 (*--** handle IO.Io {...} => *)
+
+	fun main_r (infile, outfile) =
+	    if uptodate (infile, outfile) then
+		(TextIO.output (TextIO.stdErr, outfile ^ " is up to date\n");
+		 TextIO.flushOut TextIO.stdErr;
+		 OS.Process.success)
+	    else
+		 main_c (infile, outfile)
 
 	fun main_x (infile, outfile) =
 	    (*--** respect executableHeader *)
@@ -60,7 +113,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 	fun usage fail =
 	    TextIO.output
 	    (if fail then TextIO.stdErr else TextIO.stdOut,
-	     "Usage: alicec [<option> ...] [-c|-x] <input file> \
+	     "Usage: alicec [<option> ...] [-c|-r|-x] <input file> \
 	      \[-o <output file>]\n" ^ OptionParser.helpText)
 
         fun main' ("--version"::_) =
@@ -82,10 +135,14 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
             (usage false; OS.Process.success)
 	  | main' ([infile] | ["-c", infile]) =
 	    main_c (infile, basename infile ^ "." ^ extension)
+	  | main' ["-r", infile] =
+	    main_r (infile, basename infile ^ "." ^ extension)
 	  | main' ["-x", infile] =
 	    main_x (infile, basename infile)
 	  | main' ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
 	    main_c (infile, outfile)
+	  | main' ["-r", infile, "-o", outfile] =
+	    main_r (infile, outfile)
 	  | main' ["-x", infile, "-o", outfile] =
 	    main_x (infile, outfile)
 	  | main' _ = (usage true; OS.Process.failure)

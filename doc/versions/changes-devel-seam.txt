@@ -22,6 +22,7 @@ Compiler:
   over all implicit import signatures, by potentially inserting additional
   imports for abstract types and signatures imported transitively. Optional
   warnings for added imports (switch --warn-added-imports).
+* Support for smart recompilation, taking component signatures into account.
 
 Linker:
 
