@@ -32,10 +32,16 @@ typedef int socklen_t;
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define EINPROGRESS WSAEINPROGRESS
 #define GetLastError() (WSAGetLastError())
+#define Interruptible(t, res, call) t res = call; res = res;
 #else
 #define ioctlsocket ioctl
 #define closesocket close
 #define GetLastError() errno
+#define Interruptible(res, call)		\
+  int res;					\
+  do {						\
+    res = call;					\
+  } while (res < 0 && GetLastError() == EINTR);
 #endif
 
 static int SetNonBlocking(int sock, bool flag) {
@@ -61,7 +67,7 @@ static const char *GetHostName(sockaddr_in *addr) {
 DEFINE1(UnsafeSocket_server) {
   DECLARE_INT(port, x0);
 
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  Interruptible(sock, socket(PF_INET, SOCK_STREAM, 0));
   if (sock < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
@@ -73,17 +79,21 @@ DEFINE1(UnsafeSocket_server) {
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
   addr.sin_port = htons(port);
-  if (bind(sock, reinterpret_cast<sockaddr *>(&addr), addrLen) < 0) {
+  Interruptible(res1, bind(sock, reinterpret_cast<sockaddr *>(&addr),
+			   addrLen));
+  if (res1 < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
 
   // listen for connections:
   static const u_int backLog = 5;
-  int ret = listen(sock, backLog);
-  Assert(ret == 0); ret = ret;
+  Interruptible(ret, listen(sock, backLog));
+  Assert(ret == 0);
   SetNonBlocking(sock, true);
 
-  if (getsockname(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen) < 0) {
+  Interruptible(res2, getsockname(sock, reinterpret_cast<sockaddr *>(&addr),
+				  &addrLen));
+  if (res2 < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
   RETURN2(Store::IntToWord(sock), Store::IntToWord(ntohs(addr.sin_port)));
@@ -95,7 +105,8 @@ DEFINE1(UnsafeSocket_accept) {
   sockaddr_in addr;
   socklen_t addrLen = sizeof(addr);
  retry:
-  int client = accept(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen);
+  Interruptible(client, accept(sock, reinterpret_cast<sockaddr *>(&addr),
+			       &addrLen));
   if (client < 0) {
     if (GetLastError() == EWOULDBLOCK) {
       Future *future = IOHandler::CheckReadable(sock);
@@ -119,7 +130,7 @@ DEFINE2(UnsafeSocket_client) {
   DECLARE_STRING(host, x0);
   DECLARE_INT(port, x1);
 
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  Interruptible(sock, socket(PF_INET, SOCK_STREAM, 0));
   if (sock < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
@@ -134,7 +145,8 @@ DEFINE2(UnsafeSocket_client) {
   std::memcpy(&addr.sin_addr, entry->h_addr_list[0], sizeof(addr.sin_addr));
   addr.sin_port = htons(port);
 
-  int ret = connect(sock, reinterpret_cast<sockaddr *>(&addr), sizeof(addr));
+  Interruptible(ret, connect(sock, reinterpret_cast<sockaddr *>(&addr),
+			     sizeof(addr)));
   if (ret < 0) {
     int error = GetLastError();
     if (error == EWOULDBLOCK || error == EINPROGRESS) {
@@ -158,7 +170,7 @@ DEFINE1(UnsafeSocket_input1) {
 
   u_char c;
  retry:
-  int n = recv(sock, reinterpret_cast<char *>(&c), 1, 0);
+  Interruptible(n, recv(sock, reinterpret_cast<char *>(&c), 1, 0));
   if (n < 0) {
     if (GetLastError() == EWOULDBLOCK) {
       Future *future = IOHandler::CheckReadable(sock);
@@ -189,7 +201,8 @@ DEFINE2(UnsafeSocket_inputN) {
   }
   String *buffer = String::New(count);
  retry:
-  int n = recv(sock, reinterpret_cast<char *>(buffer->GetValue()), count, 0);
+  Interruptible(n, recv(sock, reinterpret_cast<char *>(buffer->GetValue()),
+			count, 0));
   if (n < 0) {
     if (GetLastError() == EWOULDBLOCK) {
       Future *future = IOHandler::CheckReadable(sock);
@@ -217,7 +230,8 @@ DEFINE2(UnsafeSocket_output1) {
   DECLARE_INT(i, x1);
   u_char c = i;
  retry:
-  if (send(sock, reinterpret_cast<char *>(&c), 1, 0) < 0) {
+  Interruptible(res, send(sock, reinterpret_cast<char *>(&c), 1, 0));
+  if (res < 0) {
     if (GetLastError() == EWOULDBLOCK) {
       Future *future = IOHandler::CheckWritable(sock);
       if (future != INVALID_POINTER) {
@@ -241,7 +255,7 @@ DEFINE3(UnsafeSocket_output) {
   u_char *buffer = string->GetValue() + offset;
   u_int count = string->GetSize() - offset;
  retry:
-  int n = send(sock, reinterpret_cast<char *>(buffer), count, 0);
+  Interruptible(n, send(sock, reinterpret_cast<char *>(buffer), count, 0));
   if (n < 0) {
     if (GetLastError() == EWOULDBLOCK) {
       Future *future = IOHandler::CheckWritable(sock);
@@ -260,7 +274,7 @@ DEFINE3(UnsafeSocket_output) {
 
 DEFINE1(UnsafeSocket_close) {
   DECLARE_INT(sock, x0);
-  closesocket(sock);
+  Interruptible(res, closesocket(sock));
   RETURN_UNIT;
 } END
 
