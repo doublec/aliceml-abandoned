@@ -9,6 +9,7 @@ Group is
 
 	GLOBAL_STAMP-sig.aml
 	../../bootstrap/GlobalStamp.sml
+	../../bootstrap/DummyAddr.sml
 
 	LIST_SORT-sig.aml
 	MkListSort.aml
