@@ -70,8 +70,9 @@ public:
   // Future Static Data
   static word cyclicExn;
   static word holeExn;
+
   // Future Static Constructor
-  static void Init();
+  static void InitExceptions();
 
   // Hole Constructor
   static Hole *New() {
