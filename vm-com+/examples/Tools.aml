@@ -1,0 +1,81 @@
+signature TOOLS =
+    sig
+	type label = string
+
+	datatype ty =
+	    IntTy | WordTy | CharTy | StringTy | RealTy
+	  | TupleTy of ty vector | RecordTy of (label * ty) vector
+	  | SumTy of (label * ty option) vector
+	  | ArrayTy of ty | VectorTy of ty
+	  | ArrowTy
+
+	val toString: 'a  * ty -> string
+    end
+
+structure Tools :> TOOLS =
+    struct
+	type label = string
+
+	datatype ty =
+	    IntTy | WordTy | CharTy | StringTy | RealTy
+	  | TupleTy of ty vector | RecordTy of (label * ty) vector
+	  | SumTy of (label * ty option) vector
+	  | ArrayTy of ty | VectorTy of ty
+	  | ArrowTy
+
+	__primitive val cast: 'a -> 'b = "Unsafe.cast"
+	__primitive val getTag: 'a -> int = "Unsafe.getTag"
+	__primitive val getValue: 'a -> 'b = "Unsafe.getValue"
+
+	fun sep1 (f, xv) =
+	    let
+		fun f' i = f (Vector.sub (xv, i))
+		fun sep' 0 = f' 0
+		  | sep' i = sep' (i - 1) ^ ", " ^ f' i
+	    in
+		sep' (Vector.length xv)
+	    end
+
+	fun sep2 (f, xv, yv) =
+	    let
+		fun f' i = f (Vector.sub (xv, i), Vector.sub (yv, i))
+		fun sep' 0 = f' 0
+		  | sep' i = sep' (i - 1) ^ ", " ^ f' i
+	    in
+		sep' (Vector.length xv)
+	    end
+
+	fun toString' (x, IntTy) = Int.toString (cast x)
+	  | toString' (x, WordTy) = "0wx" ^ Word.toString (cast x)
+	  | toString' (x, CharTy) = "#\"" ^ Char.toString (cast x) ^ "\""
+	  | toString' (x, StringTy) = "\"" ^ String.toString (cast x) ^ "\""
+	  | toString' (x, RealTy) = Real.toString (cast x)
+	  | toString' (x, TupleTy tyv) =
+	    "(" ^ sep2 (toString, cast x, tyv) ^ ")"
+	  | toString' (x, RecordTy labelTyVector) =
+	    "{" ^ sep2 (fn (x, (label, ty)) => label ^ ": " ^ toString (x, ty),
+			cast x, labelTyVector) ^ "}"
+	  | toString' (x, SumTy labelTyOptVector) =
+	    (case Vector.sub (labelTyOptVector, getTag x) of
+		 (label, NONE) => label
+	       | ("::", SOME (TupleTy #[ty1, ty2])) =>
+		     let
+			 val value = getValue x
+		     in
+			 toString (Vector.sub (value, 0), ty1) ^ "::" ^
+			 toString (Vector.sub (value, 1), ty2)
+		     end
+	       | (label, SOME ty) =>
+		     label ^ " (" ^ toString (getValue x, ty) ^ ")")
+	  | toString' (x, ArrayTy ty) =
+	    "[|" ^ sep1 (fn y => toString (y, ty), cast x) ^ "|]"
+	  | toString' (x, VectorTy ty) =
+	    "#[" ^ sep1 (fn y => toString (y, ty), cast x) ^ "]"
+	  | toString' (x, ArrowTy) = cast x
+	and toString (x, ty) =
+	    if Future.isFuture x then
+		if Future.isFailed x then "<Failed>"
+		else "<Future>"
+	    else if Hole.isHole x then "<Hole>"
+	    else toString' (x, ty)
+    end

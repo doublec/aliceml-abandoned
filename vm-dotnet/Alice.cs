@@ -1992,7 +1992,33 @@ namespace Alice {
 	}
 	public class Unsafe_cast : Procedure {
 	    public static Object StaticApply(Object a) {
+		if (a is Transient) {
+		    a = ((Transient) a).Deref();
+		}
 		return a;
+	    }
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
+	    }
+	}
+	public class Unsafe_getTag : Procedure {
+	    public static Object StaticApply(Object a) {
+		a = CommonOp.Sync(a);
+		if (a is Int32) {
+		    return a;
+		}
+		else {
+		    return ((TagVal) a).GetTag();
+		}
+	    }
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
+	    }
+	}
+	public class Unsafe_getValue : Procedure {
+	    public static Object StaticApply(Object a) {
+		a = CommonOp.Sync(a);
+		return ((TagVal) a).Value;
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
@@ -2605,6 +2631,8 @@ namespace Alice {
 	public static Object Unsafe_String_sub   = new Unsafe_String_sub();
 	public static Object Unsafe_Vector_sub   = new Unsafe_Vector_sub();
 	public static Object Unsafe_cast         = new Unsafe_cast();
+	public static Object Unsafe_getTag       = new Unsafe_getTag();
+	public static Object Unsafe_getValue     = new Unsafe_getValue();
 
 	public static Object Vector_fromList = new Vector_fromList();
 	public static Object Vector_maxLen   = Int32.MaxValue;
