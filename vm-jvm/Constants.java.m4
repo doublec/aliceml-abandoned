@@ -9,8 +9,4 @@ final public class DMLConstants {
     public static final DMLExName dmlmatch = new DMLExName("[Match]",0);
     public static final DMLExName dmlbind  = new DMLExName("[Bind]",0);
 
-    public static final int CONAME  = 0;
-    public static final int EXNAME  = 1;
-    public static final int BUILTIN = 2;
-    public static final int NOTAPPLICAPLE = -1;
 }

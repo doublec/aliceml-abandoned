@@ -7,10 +7,6 @@ public class DMLLVal implements DMLValue {
     suspendVector = new java.util.Vector();
   }
 
-  final public int whatAreYou() {
-    return DMLConstants.BUILTIN;
-  }
-
   final public DMLValue getValue() { // gibt Wert zurück ohne blockieren
     if (ref==null)
       return this;

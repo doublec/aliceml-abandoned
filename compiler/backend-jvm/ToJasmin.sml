@@ -58,17 +58,17 @@ structure ToJasmin : ToJasmin =
 
 	local
 	    val instructionToJasmin =
-		fn Astore i => let val j=if i<0 then (!perslocals-i) else i
+		fn Astore i => (let val j=if i<0 then (!perslocals-i) else i
 			       in if j<4 then "astore_"^Int.toString j
 				  else "astore "^Int.toString j
-			       end
+			       end)^" ; war wirklich: "^(Int.toString i)
 		 | Aastore  => "aastore"
 		 | Aaload => "aaload"
 		 | Aconst_null => "aconst_null"
-		 | Aload i  => let val j=if i<0 then (!perslocals-i) else i
+		 | Aload i  => (let val j=if i<0 then (!perslocals-i) else i
 			       in if j<4 then "aload_"^Int.toString j
 				  else "aload "^Int.toString j
-			       end
+			       end)^" ; war wirklich: "^(Int.toString i)
 		 | Anewarray cn => "anewarray "^cn
 		 | Areturn => "areturn"
 		 | Arraylength => "arraylength"
@@ -201,5 +201,13 @@ structure ToJasmin : ToJasmin =
 		TextIO.closeOut bla
 	    end
 
+(*  	val compileJasmin = *)
+(*  	    fn (woher, verify:bool) => *)
+(*  	    let *)
+(*  		val cmd = "/bin/bash" *)
+(*  		val proc = Unix.execute(cmd,["jasmin",woher]); *)
+(*  	    in *)
+(*  		Unix.reap proc *)
+(*  	    end *)
     end
 

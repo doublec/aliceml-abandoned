@@ -6,9 +6,6 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 public interface DMLValue extends java.io.Serializable {
 
-  /** whatAreYou liefert eine Konstante zur Bestimmung der Applizierbarkeit */
-  public int whatAreYou();
-
   /** gibt Wert \in Wert zurueck */
   public DMLValue getValue();
 

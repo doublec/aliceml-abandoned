@@ -5,16 +5,14 @@ final public class DMLRecord implements DMLValue {
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
     public DMLRecord (DMLLabel[] ls, DMLValue[] vals) {
+	Object ar=null;
 	this.vals=vals;
 	arity=new DMLRecordArity(ls, vals);
-	if (! arityHash.contains(arity))
+	ar=arityHash.get(arity);
+	if (ar==null)
 	    arityHash.put(arity,arity);
 	else
-	    arity = (DMLRecordArity) arityHash.get(arity);
-    }
-
-    final public int whatAreYou() {
-	return DMLConstants.BUILTIN;
+	    arity = (DMLRecordArity) ar;
     }
 
     final public DMLValue getValue() {
@@ -27,14 +25,21 @@ final public class DMLRecord implements DMLValue {
 
     /** funktioniert nur, wenn records unique sind. */
     final public boolean equals(Object val) {
-	return ((val instanceof DMLRecord) && ((DMLRecord) val).vals==this.vals);
+	DMLRecord r=null;
+	int i=0;
+	if (!(val instanceof DMLRecord))
+	    return false;
+	else {
+	    r = (DMLRecord) val;
+	    if (!r.getRecordArity().equals(this.arity))
+		return false;
+	    for(i=0; i<vals.length; i++)
+		if (!vals[i].equals(r.vals[i])) return false;
+	    return true;
+	}
     }
 
     DMLValue vals[]=null;
-
-    final public DMLValue get(int index) {
-	return vals[index];
-    }
 
     final public String toString() {
 	String s="{";
@@ -43,11 +48,11 @@ final public class DMLRecord implements DMLValue {
 	    if (i>0) s+=", ";
 	    s+=arity.getLabel(i)+" = "+vals[i];
 	}
-	return s+"): Record";
+	return s+"}";
     }
 
     final public DMLValue getByLabel(int i) {
-	int index = arity.getByLabel(new DMLLabel(i));
+	int index = arity.getIndexOfLabel(new DMLLabel(i));
 	if (index > -1)
 	    return vals[index];
 	else
@@ -55,7 +60,7 @@ final public class DMLRecord implements DMLValue {
     }
 
     final public DMLValue getByLabel(String s) {
-	int index = arity.getByLabel(new DMLLabel(s));
+	int index = arity.getIndexOfLabel(new DMLLabel(s));
 	if (index > -1)
 	    return vals[index];
 	else
@@ -63,7 +68,7 @@ final public class DMLRecord implements DMLValue {
     }
 
     final public DMLValue getByLabel(DMLLabel label) {
-	int index = arity.getByLabel(label);
+	int index = arity.getIndexOfLabel(label);
 	if (index > -1)
 	    return vals[index];
 	else

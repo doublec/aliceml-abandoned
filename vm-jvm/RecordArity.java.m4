@@ -15,46 +15,12 @@ final public class DMLRecordArity implements java.io.Serializable {
 	hashtable=new java.util.Hashtable();
 	this.labels = labels;
 
-	qsort(labels,vals, 0,labels.length-1);
-
 	for(i=0; i<labels.length; i++) {
 	    hashtable.put(labels[i], new Integer(i));
 	}
     }
 
-    /** sortiert die Labels der Arity */
-    private static void qsort(DMLLabel[] lab, DMLValue[] vals, int p, int r) {
-	int q=0;
-	if (p < r) {
-	    q=partition(lab, vals,p,r);
-	    qsort(lab,vals, p,q);
-	    qsort(lab,vals, q+1,r);
-	}
-    }
-
-    private static int partition(DMLLabel[] lab, DMLValue[] vals,int p, int r) {
-	DMLLabel x = lab[p];
-	DMLLabel dummy = null;
-	DMLValue dumval = null;
-	int i = p-1;
-	int j = r+1;
-	while (true) {
-	    do j--; while (lab[j].compareTo(x) > 0);
-	    do i++; while (lab[i].compareTo(x) < 0);
-	    if (i<j) {
-		dummy = lab[i];
-		lab[i]=lab[j];
-		lab[j]=dummy;
-		dumval=vals[i];
-		vals[i]=vals[j];
-		vals[j]=dumval;
-	    }
-	    else
-		return j;
-	}
-    }
-
-    final public int getByLabel(DMLLabel l) {
+    final public int getIndexOfLabel(DMLLabel l) {
 	Object idx=hashtable.get(l);
 	if (idx==null)
 	    return -1;

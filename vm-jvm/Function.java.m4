@@ -6,10 +6,6 @@ abstract public class DMLFcnClosure implements DMLValue {
     super();
   }
 
-  final public int whatAreYou() {
-    return DMLConstants.BUILTIN;
-  }
-
   final public DMLValue getValue() {
     return this;
   }

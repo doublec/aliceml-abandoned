@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLThread extends Thread {
+final public class DMLThread extends Thread implements java.io.Serializable {
 
   DMLValue fcn=null;
 

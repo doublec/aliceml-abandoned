@@ -4,7 +4,6 @@ structure CodeGen : CodeGen =
 	open JVMInst
 	open AST
 	open ToJasmin
-	open StackNeed
 	open Abbrev
 
 	(* falls was böses passiert, wird eine Error-exception mit sinnvollem Inhalt 'geraist' *)
@@ -99,9 +98,6 @@ structure CodeGen : CodeGen =
 		getInitialClass = fn () => (!initial)
 	end
 
-	(* Just another mad function *)
-	val rec flatten = fn x::xs => x@flatten(xs) | nil => nil
-
 	(* Einstiegspunkt *)
 	val rec genProgramCode = fn (name,Dec dec) =>
 	    (setInitialClass name;
@@ -112,7 +108,7 @@ structure CodeGen : CodeGen =
 		     initializeLocals = fn
 		     0 => nil
 		   | x => [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
-		val iL = initializeLocals (Persistent.maxLocals())
+		 val iL = initializeLocals (Persistent.maxLocals())
 
 		 val mapply = Method([MPublic],"mapply",([Classsig CVal],Classsig CVal),
 				     Limits(Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
@@ -123,11 +119,11 @@ structure CodeGen : CodeGen =
 				      Invokevirtual (getInitialClass(), "apply",([Classsig CVal],Classsig CVal)),
 				      Areturn])
 	     in
-		 schreibsDran(getInitialClass()^".j",methodToJasmin mapply )
+		 schreibsDran(getInitialClass()^".j",methodToJasmin mapply ); print (Int.toString (Reuse.maxLocals()))
 	     end
 	     )
 	and
-	    decListCode = fn decs : DEC list => flatten (map decCode decs)
+	    decListCode = fn decs : DEC list => List.concat (map decCode decs)
 
 	and
 	    decCode =
@@ -142,11 +138,15 @@ structure CodeGen : CodeGen =
 		    fn (pat : PAT, exp : EXP) =>
 		    let
 			val expcode = expCode(exp);
-			val patcode = patCode(pat)
+			val needRequest = (case exp of
+					       Fn _ => false
+					     | SCon _ => false
+					     | _ => true)
+			val patcode = patCode(pat,needRequest)
 		    in
 			expcode@patcode@((Ifeq faillabel)::nil)
 		    end
-		val part1 = flatten (map patExpCode patexplist)
+		val part1 = List.concat (map patExpCode patexplist)
 		(* val _ = print (instructionsToJasmin part1) *)
 		val part2 = [Goto endlabel,
 			     Label faillabel,
@@ -168,7 +168,7 @@ structure CodeGen : CodeGen =
 			 Invokespecial (name,"<init>",([],Voidsig)),
 			 Astore (loc:=Persistent.nextFreeLocal(); !loc)]
 		  | _ => raise Error "Andrec initClosure"
-		val iC = flatten (map initClosure patexplist)
+		val iC = List.concat (map initClosure patexplist)
 	    in
 		iC @ decCode (Valbind patexplist)
 	    end
@@ -197,64 +197,18 @@ structure CodeGen : CodeGen =
 		@ e2 @ [Label falselabel]
 	    end
 
-	     | (Appl (exp1,exp2)) =>
+	     | Appl (exp1,exp2) =>
 	    let
-		val coname     = aNewLabel()
-		val exname     = aNewLabel()
-		val builtin    = aNewLabel()
-		val errorlabel = aNewLabel()
-		val endlabel   = aNewLabel()
 		val exp        = expCode(exp1)
 		val atexp      = expCode(exp2)
-		val h          = Reuse.nextFreeLocal()
-		val i          = Reuse.nextFreeLocal()
-		val insts = [Comment "[ apply"] @ exp @ atexp @
-		    [Astore h,
-		     Invokeinterface (CVal, "request", ([],Classsig CVal)),
-		     Dup,
-		     Invokeinterface (CVal, "whatAreYou", (nil, Intsig)),
-		     Tableswitch (0,
-				  [
-				   coname,
-				   exname,
-				   builtin
-				   ],
-				  errorlabel),
-		     Comment "error",
-		     Label errorlabel,
-		     New CInternalError,
-		     Dup,
-		     Ldc (JVMString "PANIC"),
-		     Invokespecial (CInternalError, "<init>", ([Classsig CString],Voidsig)),
-		     Athrow,
-		     Comment "coname",
-		     Label coname,
-		     Checkcast CCoName,
-		     Astore i,
-		     New CConstructor1,
-		     Dup,
-		     Aload i,
-		     Aload h,
-		     Invokespecial (CConstructor1, "<init>", ([Classsig CCoName, Classsig CVal], Voidsig)),
-		     Goto endlabel,
-		     Comment "exname",
-		     Label exname,
-		     Checkcast CExName,
-		     Astore i,
-		     New CException1,
-		     Dup,
-		     Aload i,
-		     Aload h,
-		     Invokespecial (CException1, "<init>", ([Classsig CExName, Classsig CVal], Voidsig)),
-		     Goto endlabel,
-		     Label builtin,
-		     Aload h,
-		     Invokeinterface (CVal, "apply", ([Classsig CVal],Classsig CVal)),
-		     Label endlabel,
-		     Comment "end of apply ]"
-		     ]
 	    in
-		Reuse.dropLocals(2); insts
+		[Comment "[ apply"]
+		@ exp @
+		[Invokeinterface (CVal, "request", ([],Classsig CVal))]
+		@ atexp @
+		[Invokeinterface (CVal, "apply", ([Classsig CVal],Classsig CVal)),
+		 Comment "end of apply ]"
+		 ]
 	    end
 
 	     | (Case (exp, match)) =>
@@ -279,15 +233,15 @@ structure CodeGen : CodeGen =
 		val realname = if name="main" then getInitialClass () else name
 		val Load = fn
 		    Shortvid(name, Free) => (
-(*  					     print (name^" : Free\n"); *)
+					     (*  					     print (name^" : Free\n"); *)
 					     [Aload 0, Getfield(getCurrentClass()^"/"^name,CVal)])
 		  | Shortvid(name, Bound (ref (Shortvid(n, Defining loc)))) =>
 			(
-(*  			 print ("Halligalli"^name^"  : Bound to : "^Int.toString(!loc)^"\n"); *)
+			  			 print ("Halligalli"^name^"  : Bound to : "^Int.toString(!loc)^"\n"); 
 			 [Aload (!loc), Comment ("Load loc. Var")])
 		  | _ => raise Error("cannot load scrap")
 
-		val names = flatten (map Load freevars)
+		val names = List.concat (map Load freevars)
 		val rec vals = fn _::fxs => (Classsig CVal)::(vals fxs) | nil => nil
 		val i = vals freevars
 		val result = if name="main"
@@ -495,17 +449,16 @@ structure CodeGen : CodeGen =
 	     | VId(Shortvid(vidname, Defining (loc as ref b))) => (if (!loc)= ~1
 								       then
 									   (loc:=Persistent.nextFreeLocal()
-								   (*  									   ;print (vidname^" now bound to "^Int.toString(b)^"\n") *)
+									    (*  									   ;print (vidname^" now bound to "^Int.toString(b)^"\n") *)
 									    )
 								   else
-(*  								       print (vidname^" already bound to "^Int.toString(b)^"\n") *) () ;
+								       (*  								       print (vidname^" already bound to "^Int.toString(b)^"\n") *) () ;
 								       [Comment ("Defining Constant "^vidname^"(no code)")])
 
 	     | VId(Shortvid(n,Bound b)) =>(case !b of
-					       Shortvid (_,Defining (ref wherever)) =>(
-(*  										       print (n^" bound to "^Int.toString(wherever)^"\n"); *)
-							    [Aload wherever, Comment "Bound VId"])
-		 | _ => raise Error "invalid vid")
+					       Shortvid (_,Defining (ref wherever)) =>(										         										       print (n^" bound to "^Int.toString(wherever)^"\n"); 
+										       [Aload wherever, Comment "Bound VId"])
+					     | _ => raise Error "invalid vid")
 
 	     | VId(Shortvid(vidname,Free)) =>
 	    let
@@ -539,233 +492,200 @@ structure CodeGen : CodeGen =
 		     val beforelabel = aNewLabel()
 		     val truelabel   = aNewLabel()
 		     val falselabel  = aNewLabel()
-		     val i = Reuse.nextFreeLocal()
-		     val h = Reuse.nextFreeLocal()
 		     val e1 = expCode(exp1)
 		     val e2 = expCode(exp2)
-		     val code =
-			 [Comment "[while bed",
-			  Getstatic (CConstants^"/dmlunit",CConstructor0),
-			  Astore h,
-			  Label beforelabel] @
-			 e1 @
-			 [Comment "while bed ] [while typtest",
-			  Invokeinterface (CVal,"request",(nil,Classsig CVal)),
-			  Astore i,
-			  Aload i,
-			  Getstatic (CConstants^"/dmltrue",CConstructor0),
-			  Ifacmpeq truelabel,
-			  Aload i,
-			  Getstatic (CConstants^"/dmlfalse",CConstructor0),
-			  Ifacmpeq falselabel,
-			  New CException0,
-			  Dup,
-			  Getstatic CMatch,
-			  Invokespecial (CException0,"<init>",([Classsig CExName],Voidsig)),
-			  Athrow,
-			  Label truelabel,
-			  Comment "while typtest] [while body"] @
-			 e2 @
-			 [Astore h,
-			  Comment "while body]",
-			  Goto beforelabel,
-			  Label falselabel,
-			  Aload h]
 		 in
-		     Reuse.dropLocals(2); code
+		     [Comment "[while bed",
+		      Label beforelabel] @
+		     e1 @
+		     [Comment "while bed ] [while typtest",
+		      Invokeinterface (CVal,"request",(nil,Classsig CVal)),
+		      Dup,
+		      Getstatic (CConstants^"/dmltrue",CConstructor0),
+		      Ifacmpeq truelabel,
+		      Getstatic (CConstants^"/dmlfalse",CConstructor0),
+		      Ifacmpeq falselabel,
+		      New CException0,
+		      Dup,
+		      Getstatic CMatch,
+		      Invokespecial (CException0,"<init>",([Classsig CExName],Voidsig)),
+		      Athrow,
+		      Iconst 0,
+		      Label truelabel,
+		      Pop,
+		      Comment "while typtest] [while body"] @
+		     e2 @
+		     [Pop,
+		      Comment "while body]",
+		      Goto beforelabel,
+		      Label falselabel,
+		      Getstatic (CConstants^"/dmlunit",CConstructor0)]
 		 end
 
 	and
 	    patCode = fn
-	    Patas (vid, pat) => let
-				    val p = patCode(pat)
-				    val store=
-					(case vid of (Shortvid(_, Defining loc)) => (loc  := Persistent.nextFreeLocal();
-										     [Astore (!loc)])
-				      | _ => raise Error "patas undefining crash")
-				in
-				    Dup::store@p
-				end
+	    (Patas (vid, pat), _) =>
+		let
+		    val p = patCode(pat, false)
+		    val store=
+			(case vid of (Shortvid(_, Defining loc)) => (loc  := Persistent.nextFreeLocal();
+								     [Astore (!loc)])
+		      | _ => raise Error "patas undefining crash")
+		in
+		    Dup::store@p
+		end
 
-	  | Patcon(vid, pat) =>
-				let
-				    val h = Reuse.nextFreeLocal()
-				    val endlabel = aNewLabel()
-				    val faillabel = aNewLabel()
-				    val p = patCode(pat)
-				    val l= case vid of
-					Shortvid(_, Bound (ref to)) => (case to of
-									    Shortvid (_, Defining loc) =>
-										[Aload (!loc)]
-									  | _ => raise Error "patcon")
-				      | Shortvid(vidname, Free) => [Aload 0, Getfield (getCurrentClass()^"/"^vidname, CVal)]
-				      | _ => raise Error "vidname not using in patcon"
-				    val code =
-					[Comment "[patcon",
-					 Invokeinterface (CVal, "request", (nil, Classsig CVal)),
-					 Astore h,
-					 Aload h,
-					 Instanceof CConstructor1,
-					 Ifeq faillabel,
-					 Aload h,
-					 Checkcast CConstructor1,
-					 Astore h,
-					 Aload h,
-					 Getfield (CConstructor^"/name", CString)] @
-					l@
-					[Checkcast CConstructor1,
-					 Getfield (CConstructor^"/name", CString),
-					 Invokevirtual (CString, "equals", ([Classsig CObj],Boolsig)),
-					 Ifeq faillabel,
-					 Aload h,
-					 Invokevirtual (CConstructor1, "getContent", (nil, Classsig CVal))] @
-					p @
-					[Goto endlabel,
-					 Label faillabel,
-					 Iconst 0,
-					 Label endlabel,
-					 Comment "patcon ]"]
-				in
-				    Reuse.dropLocals(1); code
-				end
+	  | (Patcoex(vid, pat), needRequest) =>
+		let
+		    val h = Reuse.nextFreeLocal()
+		    val endlabel = aNewLabel()
+		    val faillabel = aNewLabel()
+		    val p = patCode(pat, true)
+		    val l= case vid of
+			Shortvid(_, Bound (ref to)) => (case to of
+							    Shortvid (_, Defining loc) => [Aload (!loc)]
+							  | _ => raise Error "Patex")
+		      | Shortvid(vidname, Free) => [Aload 0, Getfield (getCurrentClass()^"/"^vidname, CVal)]
+		      | _ => raise Error "vidname not using in Patex"
+		    val code =
+			(if needRequest
+			     then
+				 [Comment "[Patcoex",
+				  Invokeinterface (CVal, "request", (nil, Classsig CVal))]
+			 else
+			     [Comment "[Patex"])@
+			     [Astore h,
+			      Aload h,
+			      Instanceof CException1,
+			      Ifeq faillabel,
+			      Aload h,
+			      Checkcast CException1,
+			      Astore h,
+			      Aload h,
+			      Getfield (CException^"/name", CString)] @
+			     l@
+			     [Checkcast CException1,
+			      Getfield (CException^"/name", CString),
+			      Invokevirtual (CString, "equals", ([Classsig CObj],Boolsig)),
+			      Ifeq faillabel,
+			      Aload h,
+			      Invokevirtual (CException1, "getContent", (nil, Classsig CVal))] @
+			     p @
+			     [Goto endlabel,
+			      Label faillabel,
+			      Iconst 0,
+			      Label endlabel,
+			      Comment "Patex ]"]
+		in
+		    Reuse.dropLocals(1); code
+		end
 
-	  | Patex(vid, pat) =>
-				let
-				    val h = Reuse.nextFreeLocal()
-				    val endlabel = aNewLabel()
-				    val faillabel = aNewLabel()
-				    val p = patCode(pat)
-				    val l= case vid of
-					Shortvid(_, Bound (ref to)) => (case to of
-									    Shortvid (_, Defining loc) => [Aload (!loc)]
-									  | _ => raise Error "Patex")
-				      | Shortvid(vidname, Free) => [Aload 0, Getfield (getCurrentClass()^"/"^vidname, CVal)]
-				      | _ => raise Error "vidname not using in Patex"
-				    val code =
-					[Comment "[Patex",
-					 Invokeinterface (CVal, "request", (nil, Classsig CVal)),
-					 Astore h,
-					 Aload h,
-					 Instanceof CException1,
-					 Ifeq faillabel,
-					 Aload h,
-					 Checkcast CException1,
-					 Astore h,
-					 Aload h,
-					 Getfield (CException^"/name", CString)] @
-					l@
-					[Checkcast CException1,
-					 Getfield (CException^"/name", CString),
-					 Invokevirtual (CString, "equals", ([Classsig CObj],Boolsig)),
-					 Ifeq faillabel,
-					 Aload h,
-					 Invokevirtual (CException1, "getContent", (nil, Classsig CVal))] @
-					p @
-					[Goto endlabel,
-					 Label faillabel,
-					 Iconst 0,
-					 Label endlabel,
-					 Comment "Patex ]"]
-				in
-				    Reuse.dropLocals(1); code
-				end
+	  | (Patopenrec reclabs, needRequest) =>
+		let
+		    val faillabel = aNewLabel()
+		    val endlabel = aNewLabel()
+		    val loc = Reuse.nextFreeLocal()
+		    val prc = patRowCode(reclabs, loc)
+		    val code =
+			(if needRequest
+			     then
+				 [Comment "[ patopenrec",
+				  Invokeinterface (CVal, "request", ([],Classsig CVal))]
+			 else
+			     [Comment "[ patopenrec"])@
+			     [Dup,
+			      Instanceof CRecord,
+			      Ifeq faillabel,
+			      Checkcast CRecord,
+			      Astore loc] @
+			     prc @
+			     [Goto endlabel,
+			      Label faillabel,
+			      Pop,
+			      Iconst 0,
+			      Label endlabel,
+			      Comment "patopenrec ]"]
+		in
+		    Reuse.dropLocals(1); code
+		end
 
-	  | Patopenrec reclabs =>
-				let
-				    val faillabel = aNewLabel()
-				    val endlabel = aNewLabel()
-				    val loc = Reuse.nextFreeLocal()
-				    val prc = patRowCode(reclabs, loc)
-				    val code =
-					[Comment "[ patopenrec",
-					 Dup,
-					 Instanceof CRecord,
-					 Ifeq faillabel,
-					 Checkcast CRecord,
-					 Astore loc] @
-					prc @
-					[Goto endlabel,
-					 Label faillabel,
-					 Pop,
-					 Iconst 0,
-					 Label endlabel,
-					 Comment "patopenrec ]"]
-				in
-				    Reuse.dropLocals(1); code
-				end
+	  | (Patrec reclabs, needRequest) =>
+		let
+		    val loc = Reuse.nextFreeLocal()
+		    val faillabel = aNewLabel()
+		    val endlabel = aNewLabel()
+		    val rec bauLabels =
+			fn ((RecStringlabel reclab,pat)::reclabs,k) =>
+			[Dup,
+			 Iconst k,
+			 New CLabel,
+			 Dup,
+			 Ldc (JVMString reclab),
+			 Invokespecial (CLabel,"<init>",([Classsig CString], Voidsig)),
+			 Aastore] @
+			(bauLabels (reclabs,k+1))
+			 | ((RecIntlabel reclab,pat)::reclabs,k) =>
+			[Dup,
+			 Iconst k,
+			 New CLabel,
+			 Dup,
+			 Iconst reclab,
+			 Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
+			 Aastore] @
+			(bauLabels (reclabs,k+1))
+			 | (nil,_) => nil
+		    val code =
+			(if needRequest
+			     then
+				 [Comment "[ patrec",
+				  Invokeinterface (CVal, "request", ([],Classsig CVal))]
+			 else
+			     [Comment "[ patrec"])@
+			     [Dup,
+			      Astore loc,
+			      Instanceof CRecord,
+			      Ifeq faillabel,
+			      Aload loc,
+			      Checkcast CRecord,
+			      Astore loc,
+			      Aload loc,
+			      Invokevirtual (CRecord, "getRecordArity",([],Classsig CRecordArity)),
+			      New CRecordArity,
+			      Dup,
+			      Iconst (length reclabs),
+			      Anewarray CLabel] @
+			     (bauLabels (reclabs,0)) @
+			     [Invokespecial (CRecordArity,"<init>",([Arraysig, Classsig CLabel], Voidsig)),
+			      Invokestatic (CRecord,"getRecordArity",([Classsig CRecordArity], Classsig CRecordArity)),
+			      Ifacmpne faillabel] @
+			     patRowCode(reclabs, loc) @
+			     [Goto endlabel,
+			      Label faillabel,
+			      Iconst 0,
+			      Label endlabel,
+			      Comment "patrec ]"]
+		in
+		    (Reuse.dropLocals(1); code)
+		end
 
-	  | Patrec reclabs =>
-				let
-				    val loc = Reuse.nextFreeLocal()
-				    val faillabel = aNewLabel()
-				    val endlabel = aNewLabel()
-				    val rec bauLabels =
-					fn ((RecStringlabel reclab,pat)::reclabs,k) =>
-					[Dup,
-					 Iconst k,
-					 New CLabel,
-					 Dup,
-					 Ldc (JVMString reclab),
-					 Invokespecial (CLabel,"<init>",([Classsig CString], Voidsig)),
-					 Aastore] @
-					(bauLabels (reclabs,k+1))
-					 | ((RecIntlabel reclab,pat)::reclabs,k) =>
-					[Dup,
-					 Iconst k,
-					 New CLabel,
-					 Dup,
-					 Iconst reclab,
-					 Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
-					 Aastore] @
-					(bauLabels (reclabs,k+1))
-					 | (nil,_) => nil
-				    val code =
-					[Comment "[ patrec",
-					 Dup,
-					 Astore loc,
-					 Instanceof CRecord,
-					 Ifeq faillabel,
-					 Aload loc,
-					 Checkcast CRecord,
-					 Astore loc,
-					 Aload loc,
-					 Invokevirtual (CRecord, "getRecordArity",([],Classsig CRecordArity)),
-					 New CRecordArity,
-					 Dup,
-					 Iconst (length reclabs),
-					 Anewarray CLabel] @
-					(bauLabels (reclabs,0)) @
-					[Invokespecial (CRecordArity,"<init>",([Arraysig, Classsig CLabel], Voidsig)),
-					 Invokestatic (CRecord,"getRecordArity",([Classsig CRecordArity], Classsig CRecordArity)),
-					 Ifacmpne faillabel] @
-					patRowCode(reclabs, loc) @
-					[Goto endlabel,
-					 Label faillabel,
-					 Iconst 0,
-					 Label endlabel,
-					 Comment "patrec ]"]
-				in
-				    (Reuse.dropLocals(1); code)
-				end
-    
-	  | Patscon (scon) =>
-				[Invokeinterface (CVal, "request", ([], Classsig CVal))] @
-				expCode(SCon scon) @
-				[Invokeinterface (CVal, "equals", ([Classsig CObj], Boolsig))]
+	  | (Patscon scon, needRequest) =>
+		(if needRequest then [Comment "[patscon",Invokeinterface (CVal, "request", ([], Classsig CVal))]
+		 else [Comment "[patscon"])@
+		     expCode(SCon scon) @
+		     [Invokeinterface (CVal, "equals", ([Classsig CObj], Boolsig))]
 
-	  | Patvid (Shortvid vid) =>
-				(case vid of
-				     (n, Defining loc) => (loc := Persistent.nextFreeLocal();
-(*  							   print (n^" patvid def "^(Int.toString(!loc)^"\n")); *)
-							   [Astore (!loc), Iconst 1])
-				   | (_, Bound def) => (case !def of
-							    Shortvid (_,Defining loc) =>
-								[Aload (!loc),
-								 Invokeinterface (CVal, "equals", ([Classsig CObj], Boolsig))]
-							  | _ => raise Error "patvid bound def")
-				   | (_, Free) => raise Error "patvid free"
-					 )
-	  | Patwild => [Iconst 1]
+	  | (Patvid (Shortvid vid), _) =>
+		     (case vid of
+			  (n, Defining loc) => (loc := Persistent.nextFreeLocal();
+						[Astore (!loc), Iconst 1])
+			| (_, Bound def) => (case !def of
+						 Shortvid (_,Defining loc) =>
+						     [Aload (!loc),
+						      Invokeinterface (CVal, "equals", ([Classsig CObj], Boolsig))]
+					       | _ => raise Error "patvid bound def")
+			| (_, Free) => raise Error "patvid free"
+			      )
+	  | (Patwild, _) => [Iconst 1]
 	  | _ => raise Error "patCode wasimmer"
 
 	and
@@ -777,7 +697,7 @@ structure CodeGen : CodeGen =
 			    let
 				val undef = aNewLabel()
 				val endlabel = aNewLabel()
-				val p = patCode(pat)
+				val p = patCode(pat,true)
 				val l = case lab of
 				    RecStringlabel s => [Ldc (JVMString s),
 							 Invokevirtual (CRecord, "getByLabel", ([Classsig CString], Classsig CVal))]
@@ -816,10 +736,10 @@ structure CodeGen : CodeGen =
 		val endlabel = aNewLabel()
 		val speicherMich = Reuse.nextFreeLocal()
 		val ruleCode =
-		    fn (pat,exp) =>
+		    fn needRequest => fn (pat,exp) =>
 		    let
 			val eigenerendlabel = aNewLabel()
-			val p = patCode(pat)
+			val p = patCode(pat,needRequest)
 			val e = expCode(exp)
 		    in
 			[Comment "[ Rule",
@@ -833,7 +753,12 @@ structure CodeGen : CodeGen =
 			 Ifneq endlabel,
 			 Comment "Rule ]"]
 		    end
-		val rc = flatten (map ruleCode patexplist)
+		val rc = (case patexplist of
+			      nil => raise Error "Mrule empty patexplist"
+			    | patex::nil => ruleCode true patex
+			    | patex::rest => (ruleCode true patex)
+				  @List.concat (map (ruleCode false) patexplist)
+				  )
 		val code =
 		    [Comment "[ MRule",
 		     Astore speicherMich] @
@@ -970,11 +895,11 @@ structure CodeGen : CodeGen =
 
 	     | _ => raise Error "expCodeClass"
 
-and
-    atCodeInt =
-    fn i =>
-    if i >= ~1 andalso i<=5 then Iconst i else
-	if i >= ~128 andalso i <= 127 then Bipush i else
-	    if i >= ~32768 andalso i <= 32767 then Sipush i
-	    else Ldc (JVMInt i)
+	and
+	    atCodeInt =
+	    fn i =>
+	    if i >= ~1 andalso i<=5 then Iconst i else
+		if i >= ~128 andalso i <= 127 then Bipush i else
+		    if i >= ~32768 andalso i <= 32767 then Sipush i
+		    else Ldc (JVMInt i)
     end
