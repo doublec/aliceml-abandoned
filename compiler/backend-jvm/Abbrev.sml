@@ -34,6 +34,7 @@ structure Abbrev  =
 
 	(* runtime classes *)
 	val CName          = "de/uni_sb/ps/dml/runtime/Name"
+	val CCons          = "de/uni_sb/ps/dml/runtime/Cons"
 	val CConstructor   = "de/uni_sb/ps/dml/runtime/Constructor"
 	val CConVal        = "de/uni_sb/ps/dml/runtime/ConVal"
 	fun cConVal n      = CConVal^(if n=1 orelse n>=5 then "" else Int.toString n)
@@ -74,22 +75,15 @@ structure Abbrev  =
 	val MApply = (IVal, "apply", ([Classsig IVal], [Classsig IVal]))
 	fun mApply n = (IVal, applyName n, (valList n, [Classsig IVal]))
 	val MGetBuiltin = (CBuiltin, "getBuiltin", ([Classsig CStr], [Classsig IVal]))
+	fun mSetContent n = (IConVal, "set", (valList n, [Voidsig]))
 
 	(* runtime builtins *)
-	val BUnit          = ("de/uni_sb/ps/dml/runtime/Constants/dmlunit",
-			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
-	val BMatch         = ("de/uni_sb/ps/dml/runtime/General/Match",
-			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
-	val BFalse         = ("de/uni_sb/ps/dml/runtime/Constants/dmlfalse",
-			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
-	val BTrue          = ("de/uni_sb/ps/dml/runtime/Constants/dmltrue",
-			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
-	val BNil          = ("de/uni_sb/ps/dml/runtime/List/nil",
-			     [Classsig "de/uni_sb/ps/dml/runtime/Name"])
-	val BCons          = ("de/uni_sb/ps/dml/runtime/List/cons",
-			      [Classsig "de/uni_sb/ps/dml/runtime/Constructor"])
-	val BRef          = ("de/uni_sb/ps/dml/runtime/Constants/reference",
-			     [Classsig "de/uni_sb/ps/dml/runtime/Constructor"])
-	val BBind          = ("de/uni_sb/ps/dml/runtime/General/Bind",
-			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
+	val BUnit          = ("de/uni_sb/ps/dml/runtime/Constants/dmlunit", [Classsig CName])
+	val BMatch         = ("de/uni_sb/ps/dml/runtime/General/Match", [Classsig CName])
+	val BFalse         = ("de/uni_sb/ps/dml/runtime/Constants/dmlfalse", [Classsig CName])
+	val BTrue          = ("de/uni_sb/ps/dml/runtime/Constants/dmltrue", [Classsig CName])
+	val BNil           = ("de/uni_sb/ps/dml/runtime/List/nil", [Classsig CName])
+	val BCons          = ("de/uni_sb/ps/dml/runtime/List/cons", [Classsig CConstructor])
+	val BRef           = ("de/uni_sb/ps/dml/runtime/Constants/reference", [Classsig CConstructor])
+	val BBind          = ("de/uni_sb/ps/dml/runtime/General/Bind", [Classsig CName])
     end

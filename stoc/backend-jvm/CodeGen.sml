@@ -579,18 +579,22 @@ structure CodeGen =
 			  idCode (id'', curCls),
 			  Ifacmpne elselabel]
 
-		  | testCode (ConTest (id'',SOME (Id (_,stamp''',_)))) =
+		  | testCode (ConTest (id'' as Id (_, stamp'', _),SOME (Id (_,stamp''',_)))) =
 			 [stampcode',
 			  Label retry,
 			  Dup,
-			  Instanceof IConVal,
-			  Ifeq ilselabel,
-			  Checkcast IConVal,
-			  Invokeinterface (IConVal, "getConstructor",
-					   ([], [Classsig CConstructor])),
-			  idCode (id'', curCls),
-			  Ifacmpne elselabel,
-			  stampcode',
+			  Multi (if stamp'' = stamp_cons then
+				     [Instanceof CCons,
+				      Ifeq ilselabel]
+				 else
+				     [Instanceof IConVal,
+				      Ifeq ilselabel,
+				      Checkcast IConVal,
+				      Invokeinterface (IConVal, "getConstructor",
+						       ([], [Classsig CConstructor])),
+				      idCode (id'', curCls),
+				      Ifacmpne elselabel,
+				      stampcode']),
 			  Checkcast IConVal,
 			  Invokeinterface (IConVal, "getContent",
 					   ([],[Classsig IVal])),
@@ -1147,52 +1151,40 @@ structure CodeGen =
 	    (* id'' = the constructor *)
 	    (* idargs = the content *)
 	    let
-		val store = case stampop of
-		    NONE => Nop
-		  | SOME stamp' => Astore stamp'
+		val (getParms, arity) =
+		    (case idargs of
+			 TupArgs t =>
+			     let
+				 val n = List.length t
+			     in
+				 if 2<=n andalso n<=4 then
+				     (List.foldr
+				      (fn (id', akku) => idCode (id', curCls) :: akku)
+				      nil
+				      t,
+				      n)
+				 else
+				     (idArgCode (idargs, curCls, nil), 1)
+			     end
+		       | _ => (idArgCode (idargs, curCls, nil),1))
 
-		fun normalConAppExp () =
-		    New CConVal ::
-		    Dup ::
-		    idCode (id'', curCls) ::
-		    Invokespecial (CConVal, "<init>",
-				   ([Classsig CConstructor],
-				    [Voidsig])) ::
-		    Dup ::
-		    store ::
-		    idArgCode
-		    (idargs,
-		     curCls,
-		     [Putfield (CConVal^"/content", [Classsig IVal])])
+		fun nullLoad 0 = nil
+		  | nullLoad i = Aconst_null :: nullLoad (i-1)
+
+		val (loadparms, fill) =
+		    case stampop of
+			NONE => (getParms, [])
+		      | SOME stamp' => (nullLoad arity,
+					[Astore stamp',
+					 Multi getParms,
+					 Invokeinterface (mSetContent arity)])
 	    in
-		case idargs of
-		    TupArgs t =>
-			let
-			    val n = length t
-			    val cls=cConVal n
-			    fun initTup (id'' :: rest', name::rest'') =
-				(case rest' of
-				     _::_ => Dup
-				   | nil => Nop) ::
-				     idCode (id'', curCls) ::
-				     Putfield (cls^"/"^name, [Classsig IVal]) ::
-				     initTup (rest', rest'')
-			      | initTup _ = nil
-			in
-			    if 2<=n andalso n<=4 then
-				New cls ::
-				Dup ::
-				idCode (id'', curCls) ::
-				Invokespecial
-				(cls, "<init>",
-				 ([Classsig CConstructor], [Voidsig])) ::
-				Dup ::
-				store ::
-				initTup (t, ["fst", "snd", "thr", "fur"])
-			    else
-				normalConAppExp ()
-			end
-		  | _ => normalConAppExp ()
+		idCode (id'', curCls) ::
+		Multi loadparms ::
+		Invokeinterface (mApply arity) ::
+		Checkcast IConVal ::
+		Dup ::
+		fill
 	    end
 	and
 
@@ -1517,15 +1509,6 @@ structure CodeGen =
 				    "<clinit>",
 				    ([],[Voidsig]),
 				    [Return])
-
-(*		(* prepare for pickling *)
-		val pinit = Method([MPublic, MStatic],
-				   "pinit",
-				   ([],[Voidsig]),
-				   Lambda.generatePickleFn
-				   (curCls, (Literals.generate
-					     (curCls,
-					      RecordLabel.generate curCls))))*)
 
 		(* the whole class *)
 		val class = Class([CPublic],
