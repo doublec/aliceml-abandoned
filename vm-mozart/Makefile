@@ -359,7 +359,7 @@ SOURCEDIRS = \
 
 .PHONY: all depend install clean veryclean distclean
 .PHONY: build1-all build1-install
-.PHONY: build2-all build2-install
+.PHONY: build2-all
 .PHONY: build3-all build3-install
 
 all: build3-install
