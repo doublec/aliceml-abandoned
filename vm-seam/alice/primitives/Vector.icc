@@ -14,7 +14,7 @@
 
 #include <cstdio>
 #include "generic/Closure.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 // Vector.tabulate Frame
 class VectorTabulateFrame: private StackFrame {
@@ -156,8 +156,7 @@ DEFINE2(Vector_tabulate) {
   } else if ((length < 0) || ((u_int) length > Vector::maxLen)) {
     RAISE(PrimitiveTable::General_Size);
   } else {
-    DECLARE_CLOSURE(closure, x1);
-    word wClosure = closure->ToWord();
+    word wClosure = x1;
     Vector *vector = Vector::New(length);
     VectorTabulateInterpreter::PushFrame(vector, wClosure, 0, length);
     Scheduler::nArgs = Scheduler::ONE_ARG;

@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
