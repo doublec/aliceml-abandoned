@@ -24,11 +24,13 @@
 word Properties::aliceHome;
 word Properties::rootUrl;
 word Properties::commandLineArguments;
+word Properties::atExn;
 
 void Properties::Init() {
   RootSet::Add(aliceHome);
   RootSet::Add(rootUrl);
   RootSet::Add(commandLineArguments);
+  RootSet::Add(atExn);
 
   char *home = getenv("STOCKHOME");
   if (home == NULL) {
@@ -43,4 +45,5 @@ void Properties::Init() {
 
   rootUrl = Store::IntToWord(0);
   commandLineArguments = Store::IntToWord(0);
+  atExn = Store::IntToWord(0);
 }
