@@ -13,10 +13,69 @@
 
 <?php section("interactive", "interactive") ?>
 
-<!--** missing -->
+  <P>The interactive Alice system is started with the following shell command:
+  </P>
+
+  <DL>
+    <DT><TT>alice</TT> [<I>&lt;options&gt;</I>]</DT>
+  </DL>
+
+  <P>Options are the same as for the standalone
+  <A href="#compiler">compiler</A>.</P>
+
+  <P>After preloading several components the system will enter
+  an interactive input-eval-output session. You can type in arbitrary
+  Alice components. Input can stretch several lines, it is terminated
+  by a line containing a semicolon as its last character. As a result
+  of your input the system will print the types infered for the given
+  declarations, or an appropriate error message. Note that it currently
+  does not print any result <I>values</I>. You can use the preloaded
+  <A href="inspector.php3">Inspector</A>, however, to comfortably browse
+  any results.</P>
+
+  <P>An interactive session can be terminated by typing an end-of-file character
+  (Ctrl-D on Unix systems, Ctrl-Z on Windows systems).</P>
+
+  <P>Like in other SML systems, there also is the special purpose function</P>
+
+  <PRE>
+	use : string -> unit
+  </PRE>
+
+  <P>which, given the name of an Alice source file, will process this
+  file as if it had been fed as direct input.</P>
+
+  <P>What you type in in the interactive toplevel actually is a
+  <A href="components.php3">component</A>. This implies that you
+  can use import announcements to link in separately compiled
+  components from arbitrary URIs:</P>
+
+  <PRE>
+	> import structure Url from "x-alice:/lib/utility/Url";
+	### loaded signature from x-alice:/lib/utility/Url
+	structure Url : URL = Url
+	> 
+  </PRE>
+
+  <P>You actually have to use import announcements to access library
+  components that are not preloaded, like <TT>Url</TT> above.</P>
+
+  <P>For convenience, import announcements can be abbreviated as follows:</P>
+
+  <PRE>
+	> import "x-alice:/lib/utility/Url";
+	### loaded signature from x-alice:/lib/utility/Url
+	structure Url : URL = Url
+	> 
+  </PRE>
+
+  <P>This form will import all entities contained in the corresponding
+  component.</P>
+
 
 <?php section("compiler", "compiler") ?>
-  <P>The Alice compiler can be invoked in one of the following ways:</P>
+  <P>The stand-alone Alice compiler can be invoked in one of the following
+  ways:</P>
   <DL>
     <DT><TT>alic</TT> [<I>&lt;options&gt;</I>] [<TT>-c</TT>]
       <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]</DT>
