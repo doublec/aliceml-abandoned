@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,9 +13,9 @@
 #ifndef __ALICE__PRIMITIVES__AUTHORING_HH__
 #define __ALICE__PRIMITIVES__AUTHORING_HH__
 
-#include "emulator/NativeAuthoring.hh"
-#include "emulator/Alice.hh"
-#include "emulator/PrimitiveTable.hh"
+#include "generic/NativeAuthoring.hh"
+#include "alice/Data.hh"
+#include "alice/PrimitiveTable.hh"
 
 #define DECLARE_BOOL(b, x)				\
   bool b;						\
