@@ -12,11 +12,14 @@
 
 #if defined(INTERFACE)
 #pragma implementation "store/Map.hh"
+#pragma implementation "store/MapNode.hh"
 #endif
 
 #include "store/Map.hh"
 #include "store/MapNode.hh"
 #include "store/GCHelper.hh"
+
+template BaseMap<WordKey>;
 
 class ListNode : private Block {
 protected:
