@@ -15,6 +15,14 @@ import
 from "../../lib/utility/Assert"
 
 import
+    structure GlobalStamp
+from "../../lib/utility/GlobalStamp"
+
+import
+    structure Url
+from "../../lib/utility/Url"
+
+import
     structure Name
 from "../../lib/rtt/Name"
 
@@ -94,7 +102,9 @@ import
     signature FLATTENING_PHASE
 from "FLATTENING_PHASE-sig"
 
-structure FlatteningPhase :> FLATTENING_PHASE =
+functor MkFlatteningPhase(val loadSign:
+			      Source.desc * Url.t -> FlatGrammar.sign) :>
+    FLATTENING_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = IntermediateGrammar
@@ -113,7 +123,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    fun lookup (pos, mapping) =
 		case lookup' (pos, mapping) of
 		    SOME id => id
-		  | NONE => raise Crash.Crash "FlatteningPhase.lookup"
+		  | NONE => raise Crash.Crash "MkFlatteningPhase.lookup"
 
 	    fun adjoin (pos, mapping) =
 		case lookup' (pos, mapping) of
@@ -182,21 +192,21 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | testArity (args as O.ProdArgs _, Arity.Product _, app, body) =
 	    app (args, body)
 	  | testArity (_, _, _, _) =
-	    raise Crash.Crash "FlatteningPhase.testArity"
+	    raise Crash.Crash "MkFlatteningPhase.testArity"
 
 	fun tagAppTest (label, n, args, SOME arity, body) =
 	    testArity (args, arity,
 		       fn (args, body) =>
 		       O.TagTests #[(label, n, SOME args, body)], body)
 	  | tagAppTest (_, _, _, NONE, _) =
-	    raise Crash.Crash "FlatteningPhase.tagAppTest"
+	    raise Crash.Crash "MkFlatteningPhase.tagAppTest"
 
 	fun conAppTest (con, args, SOME arity, body) =
 	    testArity (args, arity,
 		       fn (args, body) =>
 		       O.ConTests #[(con, SOME args, body)], body)
 	  | conAppTest (_, _, NONE, _) =
-	    raise Crash.Crash "FlatteningPhase.conAppTest"
+	    raise Crash.Crash "MkFlatteningPhase.conAppTest"
 
 	fun expArity (args as O.OneArg _, Arity.Unary, info, app) =
 	    (nil, app args)
@@ -228,19 +238,19 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | expArity (args as O.ProdArgs _, Arity.Product _, _, app) =
 	    (nil, app args)
 	  | expArity (_, _, _, _) =
-	    raise Crash.Crash "FlatteningPhase.expArity"
+	    raise Crash.Crash "MkFlatteningPhase.expArity"
 
 	fun tagAppExp (info, label, n, args, SOME arity) =
 	    expArity (args, arity, info,
 		      fn args => O.TagAppExp (id_info info, label, n, args))
 	  | tagAppExp (info, _, _, _, NONE) =
-	    raise Crash.Crash "FlatteningPhase.tagAppExp"
+	    raise Crash.Crash "MkFlatteningPhase.tagAppExp"
 
 	fun conAppExp (info, id, args, SOME arity) =
 	    expArity (args, arity, info,
 		      fn args => O.ConAppExp (id_info info, id, args))
 	  | conAppExp (info, _, _, NONE) =
-	    raise Crash.Crash "FlatteningPhase.conAppExp"
+	    raise Crash.Crash "MkFlatteningPhase.conAppExp"
 
 	(* Translation *)
 
@@ -657,7 +667,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			(case stms of
 			     nil => ()
 			   | _::_ =>
-			     raise Crash.Crash "FlatteningPhase.translateExp";
+				 raise Crash.Crash
+				     "MkFlatteningPhase.translateExp";
 			 isLast := false; translateExp (exp, f, cont))
 		    else
 			translateExp
@@ -825,7 +836,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateGraph (Leaf (_, ref (SOME stms)), mapping) =
 	    (stms, mapping)
 	  | translateGraph (_, _) =
-	    raise Crash.Crash "FlatteningPhase.translateGraph"
+	    raise Crash.Crash "MkFlatteningPhase.translateGraph"
 	and translateNode (pos, RefTest, thenGraph, _, mapping) =
 	    let
 		val (idDef, mapping') =
@@ -1024,8 +1035,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	fun translate () (desc, (imports, decs, idFields, sign)) =
 	    let
 		val imports' =
-		    Vector.map (fn (id, sign, url) =>
-				(O.IdDef (translateId id), sign, url)) imports
+		    Vector.map (fn (id, _, url) =>
+				(O.IdDef (translateId id),
+				 loadSign (desc, url), url)) imports
 		val labelIdList =
 		    Vector.foldr (fn (Field (_, Lab (_, label), id), rest) =>
 				  (label, translateId id)::rest) nil idFields
@@ -1041,6 +1053,6 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    Goto [O.ExportStm (stm_info Source.nowhere, exportExp)]
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
-		(imports', body', exports', sign): FlatGrammar.component
+		(imports', body', exports', (GlobalStamp.new (), sign))
 	    end
     end

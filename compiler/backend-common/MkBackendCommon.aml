@@ -3,12 +3,16 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import
+    structure Url
+from "../../lib/utility/Url"
 
 import
     structure PrettyPrint
@@ -17,6 +21,10 @@ from "../../lib/utility/PrettyPrint"
 import
     signature SWITCHES
 from "../infrastructure/SWITCHES-sig"
+
+import
+    structure Source
+from "../infrastructure/Source"
 
 import
     structure ComposePhases
@@ -35,12 +43,16 @@ import
 from "../infrastructure/MkContextDumpingPhase"
 
 import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
     structure OutputFlatGrammar
 from "OutputFlatGrammar"
 
 import
-    structure FlatteningPhase
-from "FlatteningPhase"
+    structure MkFlatteningPhase
+from "MkFlatteningPhase"
 
 import
     structure ValuePropagationPhase
@@ -54,10 +66,13 @@ import
     structure DeadCodeEliminationPhase
 from "DeadCodeEliminationPhase"
 
-functor MkBackendCommon(Switches: SWITCHES) =
+functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
+			structure Switches: SWITCHES) =
     let
 	structure Phase1 =
-	    MkTracingPhase(structure Phase = FlatteningPhase
+	    MkFlatteningPhase(val loadSign = loadSign)
+	structure Phase1 =
+	    MkTracingPhase(structure Phase = Phase1
 			   structure Switches = Switches
 			   val name = "Flattening")
 	structure Phase1 =

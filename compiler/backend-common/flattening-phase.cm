@@ -1,6 +1,6 @@
 Group
 
-    structure FlatteningPhase
+    functor MkFlatteningPhase
 
 is
 
@@ -25,4 +25,4 @@ is
     SimplifyRec.aml
 
     FLATTENING_PHASE-sig.aml
-    FlatteningPhase.aml
+    MkFlatteningPhase.aml
