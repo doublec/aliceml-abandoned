@@ -1,0 +1,47 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import signature SERVICES from "SERVICES-sig"
+
+       structure Services :> SERVICES =
+	   struct
+	       type tag = Gtk.object
+	       type color = Gtk.object
+	       type font = string
+		   
+	       fun newTag(parent,x,y) = 
+		   GtkCanvas.itemNew(parent, 
+				     GtkCanvas.GROUP,
+				     [("x", Gtk.DOUBLE y), 
+				      ("y", Gtk.DOUBLE y)])
+		   
+		   
+		   
+	       fun printXY (str,group,x,y,c,font) =  
+		   GtkCanvas.itemNew(group, 
+				     GtkCanvas.TEXT, 
+				     [("text", Gtk.STRING str),
+				      ("font", Gtk.STRING font),
+				      ("x", Gtk.DOUBLE(x)), ("y", Gtk.DOUBLE(y)),
+				      ("fill_color_gdk", Gtk.OBJECT(c) ),
+				      ("anchor", Gtk.INT(2))]) 
+		   
+		   
+	       fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
+		   
+		   
+	   end
+       
