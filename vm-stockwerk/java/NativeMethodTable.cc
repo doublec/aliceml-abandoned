@@ -28,6 +28,7 @@ word NativeMethodTable::wTable;
 void NativeMethodTable::Init() {
   wTable = HashTable::New(HashTable::BLOCK_KEY, initialSize)->ToWord();
   RootSet::Add(wTable);
+  Dump(JavaString::New("Dump"));
   java_lang_Class(JavaString::New("java/lang/Class"));
   java_lang_Object(JavaString::New("java/lang/Object"));
   java_lang_Throwable(JavaString::New("java/lang/Throwable"));

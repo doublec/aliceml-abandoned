@@ -27,6 +27,7 @@ SOURCES = \
 	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
 	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
 	Startup.cc JavaLanguageLayer.cc \
+	Dump.cc \
 	$(JAVA_LANG_SOURCES:%=java/lang/%) \
 	$(JAVA_IO_SOURCES:%=java/io/%) \
 	$(JAVA_SECURITY_SOURCES:%=java/security/%) \
