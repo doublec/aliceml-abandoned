@@ -38,6 +38,7 @@ sig
 	val retainFullImport :			bool ref
 	val implicitImport :			bool ref
 	val implicitImportFile :		string option ref
+	val dependencyFiles :			string list ref
     end
 
     structure Debug :

@@ -40,6 +40,7 @@ struct
 	val retainFullImport			= ref false
 	val implicitImport			= ref true
 	val implicitImportFile			= ref(NONE : string option)
+	val dependencyFiles			= ref(nil : string list)
     end
 
     structure Debug =
