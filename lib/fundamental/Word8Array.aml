@@ -11,24 +11,20 @@
  *)
 
 import structure __pervasive from "Pervasive"
-import structure Vector      from "Vector"
 import structure Array       from "Array"
 import structure Word8       from "Word8"
 import structure Word8Vector from "Word8Vector"
-import signature MONO_ARRAY  from "MONO_ARRAY-sig"
+import structure MkMonoArray from "MkMonoArray"
 
-structure Word8Array :> MONO_ARRAY
-    where type Vector.elem = Word8Vector.elem
-      and type Vector.vector = Word8Vector.vector
-      and type array = Word8.word Array.array
-      and type elem = Word8.word =
-struct
-    open Array
-
+structure Word8Array = MkMonoArray(
     structure Vector = Word8Vector
+    type array = Word8.word Array.array (*INEFFICIENT*)
 
-    type array = Word8.word array
-    type vector = Vector.vector
-    type t = array							(**)
-    type elem = Word8.word
-end
+    val maxLen = Array.maxLen
+
+    val array = Array.array
+    val fromList = Array.fromList
+    val length = Array.length
+    val sub = Array.sub
+    val update = Array.update
+)

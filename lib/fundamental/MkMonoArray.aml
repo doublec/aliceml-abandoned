@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2002
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -18,7 +18,7 @@
  *)
 
 import structure __pervasive                          from "Pervasive"
-import type unit and int and vector and array
+import type unit and int
        datatype bool and order and option and list    from "ToplevelTypes"
 import infix 4 = <> < > <= >= infixr 5 ::
        infix 6 + - infix 7 div
@@ -27,26 +27,33 @@ import infix 4 = <> < > <= >= infixr 5 ::
        val op + and op - and op div                   from "ToplevelValues"
 import structure General                              from "General"
 import structure List                                 from "List"
-import structure Vector                               from "Vector"
-import signature ARRAY                                from "ARRAY-sig"
+import signature MONO_VECTOR                          from "MONO_VECTOR-sig"
+import signature MONO_ARRAY                           from "MONO_ARRAY-sig"
 
-structure Array : ARRAY =
+functor MkMonoArray(BaseMonoArray: sig
+    structure Vector: MONO_VECTOR
+    type array
+
+    val maxLen: int
+
+    val array: int * Vector.elem -> array
+    val fromList: Vector.elem list -> array
+    val length: array -> int
+    val sub: array * int -> Vector.elem
+    val update: array * int * Vector.elem -> unit
+end) :> MONO_ARRAY
+    where type Vector.vector = BaseMonoArray.Vector.vector
+      and type Vector.elem = BaseMonoArray.Vector.elem
+      and type array = BaseMonoArray.array =
 struct
-    type 'a array  = 'a array
-    type 'a vector = 'a vector
-    type 'a t      = 'a array					(**)
+    open BaseMonoArray
 
-    __primitive val maxLen :	int			= "Array.maxLen"
+    type t = array							(**)
+    type elem = Vector.elem
 
-    __primitive val array :	int * 'a -> 'a array	= "Array.array"
-    __primitive val fromList :	'a list -> 'a array	= "Array.fromList"
-    __primitive val length :	'a array -> int		= "Array.length"
-    __primitive val sub :	'a array * int -> 'a	= "Array.sub"
-    __primitive val sub' :	'a array * int -> 'a	= "Unsafe.Array.sub"
-    __primitive val vsub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
-    __primitive val update :	'a array * int * 'a -> unit = "Array.update"
-    __primitive val update' :	'a array * int * 'a -> unit
-							= "Unsafe.Array.update"
+    val sub' = sub            (*INEFFICIENT*)
+    val vsub' = Vector.sub    (*INEFFICIENT*)
+    val update' = update      (*INEFFICIENT*)
 
     val new			= array					(**)
 
@@ -150,11 +157,11 @@ struct
       | foldri'(f,x,a,i,j)	= foldri'(f, f(i, sub'(a,i),x), a, i-1, j)
 
     fun all  f a		= all'(f,a,0)				(**)
-    and all'(f,a,i) 		= i = length a orelse
+    and all'(f,a,i)		= i = length a orelse
 				  f(sub'(a,i)) andalso all'(f,a,i+1)
 
     fun exists  f a		= exists'(f,a,0)			(**)
-    and exists'(f,a,i) 		= i <> length a andalso
+    and exists'(f,a,i)		= i <> length a andalso
 				  (f(sub'(a,i)) orelse exists'(f,a,i+1))
 
     fun find  f a					= find'(f,a,0)	(**)
@@ -206,7 +213,7 @@ struct
 			else (swap(a,mid,j-1);
 			      if compare(sub(a,i),sub(a,mid)) <> GREATER then ()
 			      else swap(a,i,mid))
-	  	val k = partition(i+1,j-1, sub(a,mid))
+		val k = partition(i+1,j-1, sub(a,mid))
 	    in
 		sort(i,k); sort(k,j)
 	    end
