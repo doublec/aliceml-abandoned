@@ -85,9 +85,6 @@ sig
     structure Recompute : sig
       val searchOne : (Space.space -> 'a) * int -> (Space.space * 'a) option
       val searchAll : (Space.space -> 'a) * int -> Space.space list * 'a
-      val searchBest :
-          (Space.space -> 'a) * (Space.space *  Space.space * 'a -> unit)
-          * int -> (Space.space * 'a) option
     end
 end</PRE>
 

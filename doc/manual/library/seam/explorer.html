@@ -45,9 +45,9 @@
   signature EXPLORER =
     sig
         type explorer
-        val init : (Space.space -> 'a[...]) -> explorer
-        val exploreOne : (Space.space -> 'a[...]) -> explorer
-        val exploreAll : (Space.space -> 'a[...]) -> explorer
+        val init : (Space.space -> 'a) -> explorer
+        val exploreOne : (Space.space -> 'a) -> explorer
+        val exploreAll : (Space.space -> 'a) -> explorer
     end</PRE>
 
 <?php section("description", "description"); ?>
@@ -58,7 +58,7 @@
     </DT>
     <DD>
       <P>Opens an explorer window, initialized with the constraint
-      problem specified in <I>o</I>.
+      problem specified in <I>p</I>.
       </P>
     </DD>
 
@@ -67,7 +67,7 @@
     </DT>
     <DD>
       <P>Opens an explorer window, initialized with the constraint
-      problem specified in <I>o</I>, and search for the first solution.
+      problem specified in <I>p</I>, and search for the first solution.
       </P>
     </DD>
 
@@ -76,7 +76,7 @@
     </DT>
     <DD>
       <P>Opens an explorer window, initialized with the constraint
-      problem specified in <I>o</I>, and search for all solutions.
+      problem specified in <I>p</I>, and search for all solutions.
       </P>
     </DD>
 
