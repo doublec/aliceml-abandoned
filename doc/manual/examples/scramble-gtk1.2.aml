@@ -18,10 +18,8 @@
 
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Random    from "x-alice:/lib/utility/Random"
-
-structure Canvas = GnomeCanvas
 
 local
     (* A simple server abstraction *)
@@ -52,26 +50,17 @@ local
     datatype piece = PIECE of {num : int,
 			       group : Gtk.object option,
 			       pos : (int * int) ref}
-    datatype board = BOARD of {canvas : Canvas.object,
+    datatype board = BOARD of {canvas : GtkCanvas.object,
 			       matrix : piece Array2.array,
 			       spot : (int * int) ref}
-
-    fun makeColor colormap (r, g, b) = 
-	let
-	    fun colorConv n = Real.round (65535.0 * n)
-	    val color = Gdk.colorNew (colorConv r, 
-				      colorConv g, 
-				      colorConv b)
-	in
-	    Gdk.colormapAllocColor (colormap, color, false, true);
-	    color
-	end
 
     val pieceSize = 50
     val font  = "-adobe-helvetica-bold-r-normal--24-240-75-75-p-138-iso8859-1"
     val map   = Gdk.colormapGetSystem ()
-    val black = makeColor map (0.0, 0.0, 0.0)
-    val white = makeColor map (1.0, 1.0, 1.0)
+    val black = Gdk.allocColor (0, 0, 0)
+    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+    val _     = Gdk.colormapAllocColor (map, black, false, true)
+    val _     = Gdk.colormapAllocColor (map, white, false, true)
 
 
     (* Constructing pieces *)
@@ -90,21 +79,23 @@ local
 	    val ty = Real.+(y1, 25.0)
 	    val text  = Int.toString n
 
-	    val group = Canvas.itemCreate (parent, Canvas.groupGetType (), [("x", Gtk.REAL x1), ("y", Gtk.REAL y1)])
-	    val box   = Canvas.itemCreate (group, Canvas.rectGetType (),
-			   [("x1", Gtk.REAL 0.0),
-			    ("y1", Gtk.REAL 0.0),
-			    ("x2", Gtk.REAL (real pieceSize)),
-			    ("y2", Gtk.REAL (real pieceSize)),
+	    val group = GtkCanvas.itemNew (parent, GtkCanvas.GROUP,
+			   [("x", Gtk.DOUBLE x1),
+			    ("y", Gtk.DOUBLE y1)])
+	    val box   = GtkCanvas.itemNew (group, GtkCanvas.RECTANGLE,
+			   [("x1", Gtk.DOUBLE 0.0),
+			    ("y1", Gtk.DOUBLE 0.0),
+			    ("x2", Gtk.DOUBLE (real pieceSize)),
+			    ("y2", Gtk.DOUBLE (real pieceSize)),
 			    ("fill_color_gdk", Gtk.OBJECT color),
 			    ("outline_color_gdk", Gtk.OBJECT black),
 			    ("width_pixels", Gtk.INT 0)])
-	    val text = Canvas.itemCreate (group, Canvas.textGetType (),
+	    val text = GtkCanvas.itemNew (group, GtkCanvas.TEXT,
 			   [("text", Gtk.STRING text),
-			    ("x", Gtk.REAL 25.0),
-			    ("y", Gtk.REAL 25.0),
+			    ("x", Gtk.DOUBLE 25.0),
+			    ("y", Gtk.DOUBLE 25.0),
 			    ("font", Gtk.STRING font),
-			    ("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_CENTER)),
+			    ("anchor", Gtk.INT Gtk.ANCHOR_CENTER),
 			    ("fill_color_gdk", Gtk.OBJECT black)])
 	in
 	    Gtk.signalConnect (group, "event", handler (pos, text));
@@ -118,14 +109,10 @@ local
 
     fun pieceColor (w, h) (x, y) =
 	let
-	    fun colorConv n = Real.round (65535.0 * n)
-
 	    val r      = 255 * (w - x) div w
 	    val g      = 255 * (h - y) div h
 	    val b      = 128
-	    val color  = Gdk.colorNew (colorConv 0.0, 
-				       colorConv 0.0,
-				       colorConv 0.0)
+	    val color  = Gdk.allocColor (0, 0, 0)
 	    val colStr = "#" ^ toHexString r ^ toHexString g ^ toHexString b
 	    val _      = Gdk.colorParse (colStr, color) 
 	    val _      = Gdk.colormapAllocColor (map, color, false, true)
@@ -149,7 +136,7 @@ local
 	    pos' := (x, y);
 	    Array2.update (matrix, x, y, piece);
 	    Array2.update (matrix, x', y', spot);
-	    Canvas.itemMove (valOf group, dx, dy)
+	    GtkCanvas.itemMove (valOf group, dx, dy)
 	end
 
 
@@ -162,17 +149,17 @@ local
 	then print "You win!\n"
 	else ()
 
-    fun pieceHandler (board as BOARD {spot,...}) (pos, text) (_,events) =
+    fun pieceHandler (board as BOARD {spot,...}) (pos, text) events =
         serve
 	(fn () =>
 	 case events of
-	    Gtk.EVENT (Gtk.EVENT_ENTER_NOTIFY _) :: _ =>
-		Canvas.itemSet(text, "fill_color_gdk",
+	    Gtk.EVENT (Gtk.GDK_ENTER_NOTIFY _) :: _ =>
+		GtkCanvas.itemSet(text, "fill_color_gdk",
 				  Gtk.OBJECT white)
-	  | Gtk.EVENT (Gtk.EVENT_LEAVE_NOTIFY _) :: _ =>
-		Canvas.itemSet(text, "fill_color_gdk",
+	  | Gtk.EVENT (Gtk.GDK_LEAVE_NOTIFY _) :: _ =>
+		GtkCanvas.itemSet(text, "fill_color_gdk",
 				  Gtk.OBJECT black)
-	  | Gtk.EVENT (Gtk.EVENT_BUTTON_PRESS _) :: _ =>
+	  | Gtk.EVENT (Gtk.GDK_BUTTON_PRESS _) :: _ =>
 	    let
 		val (x, y)   = !spot
 		val (x', y') = !pos
@@ -190,7 +177,7 @@ local
 
     fun board (canvas, w, h) =
 	let
-	    val parent = Canvas.root canvas
+	    val parent = GtkCanvas.root canvas
 	    val matrix = Array2.array (w, h, spot)
 	    val board  = BOARD {canvas, matrix, spot = ref (0, 0)}
 	in
@@ -234,7 +221,7 @@ local
 	    val vbox      = Gtk.vboxNew (false, 4)
  	    val alignment = Gtk.alignmentNew (0.5, 0.5, 0.0, 0.0)
 	    val frame     = Gtk.frameNew ""
-	    val canvas    = Canvas.new ()
+	    val canvas    = GtkCanvas.new 0
 	    val board     = board (canvas, w, h)
 	    val button    = Gtk.buttonNewWithLabel "Scramble"
 	in
@@ -246,7 +233,7 @@ local
 	    Gtk.containerAdd (alignment, frame);
 	    Gtk.widgetShow frame;
 	    Gtk.widgetSetUsize (canvas, w*pieceSize, h*pieceSize);
-	    Canvas.setScrollRegion (canvas, 0.0, 0.0,
+	    GtkCanvas.setScrollRegion (canvas, 0.0, 0.0,
 				       real (w*pieceSize), real (h*pieceSize));
 	    Gtk.containerAdd (frame, canvas);
 	    Gtk.widgetShow canvas;
