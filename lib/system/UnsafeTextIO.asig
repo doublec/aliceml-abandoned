@@ -11,11 +11,24 @@
  *   $Revision$
  *)
 
-import signature TEXT_IO from "TEXT_IO-sig"
-
-signature TEXT_IO_COMPONENT =
+signature UNSAFE_TEXT_IO_COMPONENT =
     sig
-	structure TextIO: TEXT_IO
+	structure UnsafeTextIO:
+	    sig
+		val stdIn: 'instream
+		val stdOut: 'outstream
+		val stdErr: 'outstream
 
-	val print : string -> unit
+		val openIn: string -> 'instream
+		val closeIn: 'instream -> unit
+		val inputAll: 'instream -> 'vector
+		val inputLine: 'instream -> 'vector
+
+		val openOut: string -> 'outstream
+		val closeOut: 'outstream -> unit
+		val flushOut: 'outstream -> unit
+		val output: 'outstream * 'vector -> unit
+		val output1: 'outstream * 'elem -> unit
+		val print: string -> unit
+	    end
     end
