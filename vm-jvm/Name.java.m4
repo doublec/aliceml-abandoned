@@ -1,21 +1,15 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLException0 extends DMLException {
+final public class DMLCoEx0 extends DMLCoEx {
 
-    public DMLException0(String name) {
+    public DMLCoEx0(String name) {
 	super();
-	this.name=name;
+	this.name=new DMLCoExName(name,0);
     }
 
-    public DMLException0(DMLExName en) {
+    public DMLCoEx0(DMLCoExName en) {
 	super();
-	this.name = en.name;
-    }
-
-    /** Gleichheit der Namen */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLException1) &&
-	    this.name.equals(((DMLException1) val).name);
+	this.name = en;
     }
 
     final public String toString() {

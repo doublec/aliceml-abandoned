@@ -16,9 +16,6 @@ abstract public class DMLValue extends RuntimeException implements java.io.Seria
 	return this;
     }
 
-    /* testet auf Gleichheit */
-    abstract public boolean equals(Object val);
-
     abstract public DMLValue apply(DMLValue val);
 
     abstract public String toString();

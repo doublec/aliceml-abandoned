@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-abstract public class DMLFcnClosure implements DMLValue {
+abstract public class DMLFcnClosure extends DMLValue {
 
   public DMLFcnClosure() {
     super();

@@ -18,9 +18,9 @@ final public class DMLCoExName extends DMLValue {
     
     /** Gleichheit des Namens und der Stelligkeit */
     final public boolean equals(Object val) {
-	return (val instanceof DMLExName) &&
-	    ((DMLExName)val).name.equals(this.name) &&
-	    this.arity==((DMLExName)val).arity;
+	return (val instanceof DMLCoExName) &&
+	    ((DMLCoExName)val).name.equals(this.name) &&
+	    this.arity==((DMLCoExName)val).arity;
     }
     
     final public String toString() {
@@ -29,9 +29,9 @@ final public class DMLCoExName extends DMLValue {
     
     final public DMLValue apply(DMLValue val) {
 	if (arity == 0)
-	    throw new DMLRuntimeError("nullary exceptionname cannot be applied.\n\t"+this+" applied to "+val);
+	    throw new DMLCoEx1(DMLConstants.runtimeError,new DMLString("nullary exceptionname cannot be applied.\n\t"+this+" applied to "+val));
 	else
-	    return new DMLException1(name,val);
+	    return new DMLCoEx1(name,val);
     }
     
     String name=null;

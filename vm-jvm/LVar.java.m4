@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLLVal extends DMLValue {
+public class DMLLVal extends DMLValue {
 
   public DMLLVal() {
       super();
@@ -53,7 +53,7 @@ final public class DMLLVal extends DMLValue {
   }
 
   public DMLValue apply(DMLValue val) {
-    throw new DMLRuntimeError("logic value cannot be applied.\n\t"+this+" applied to "+val);
+    throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("logic value cannot be applied.\n\t"+this+" applied to "+val));
   }
 
 }

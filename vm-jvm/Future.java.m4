@@ -9,7 +9,7 @@ final public class DMLFuture extends DMLLVal {
 
   /** bind ist nicht erlaubt und wirft RuntimeError */
   final public DMLValue bind(DMLValue v) {
-    throw new DMLRuntimeError("cannot bind future to "+v);
+    throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("cannot bind future to "+v));
   }
 
   final public String toString() {
@@ -19,7 +19,7 @@ final public class DMLFuture extends DMLLVal {
   }
 
   final public DMLValue apply(DMLValue val) {
-    throw new DMLRuntimeError("future cannot be applied.\n\t"+this+" applied to "+val);
+    throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("future cannot be applied.\n\t"+this+" applied to "+val));
   }
 
 }

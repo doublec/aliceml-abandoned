@@ -1,12 +1,14 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLConstants {
-    public static final DMLConstructor0 dmlunit = new DMLConstructor0("unit");
-    public static final DMLConstructor0 dmltrue = new DMLConstructor0("boolean");
-    public static final DMLConstructor0 dmlfalse= new DMLConstructor0("boolean");
-    public static final DMLConstructor0 dmlnil  = new DMLConstructor0("list");
+    public static final DMLCoEx0 dmlunit = new DMLCoEx0("unit");
+    public static final DMLCoEx0 dmltrue = new DMLCoEx0("boolean");
+    public static final DMLCoEx0 dmlfalse= new DMLCoEx0("boolean");
+    public static final DMLCoEx0 dmlnil  = new DMLCoEx0("list");
 
-    public static final DMLExName dmlmatch = new DMLExName("[Match]",0);
-    public static final DMLExName dmlbind  = new DMLExName("[Bind]",0);
+    public static final DMLCoExName dmlmatch = new DMLCoExName("[Match]",0);
+    public static final DMLCoExName dmlbind  = new DMLCoExName("[Bind]",0);
+
+    public static final DMLCoExName runtimeError = new DMLCoExName("runtimeError",1);
 
 }

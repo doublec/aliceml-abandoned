@@ -68,7 +68,7 @@ final public class DMLRecord extends DMLValue {
     }
 
     final public DMLValue apply(DMLValue val) {
-	throw new DMLRuntimeError("cannot apply record.\n\t"+this+" applied to "+val);
+	throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("cannot apply record.\n\t"+this+" applied to "+val));
     }
 
     DMLRecordArity arity=null;
