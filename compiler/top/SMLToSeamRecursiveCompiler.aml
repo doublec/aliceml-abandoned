@@ -23,6 +23,7 @@ import structure MkRecursiveCompiler
        structure InfLoader
        structure ModLoader
        structure ImportLoader        from "MkRecursiveCompiler"
+import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
 
 structure SMLToSeamRecursiveCompiler =
     let
@@ -76,5 +77,5 @@ structure SMLToSeamRecursiveCompiler =
 	val _ = acquireModRef := RecursiveCompiler.acquireMod
 	val _ = acquireImportsRef := RecursiveCompiler.acquireImports
     in
-	RecursiveCompiler
+	RecursiveCompiler : RECURSIVE_COMPILER'
     end

@@ -16,9 +16,9 @@ import structure Config             from "../../lib/system/Config"
 import structure Component          from "../../lib/system/Component"
 import structure MkOptionParser     from "MkOptionParser"
 import signature BATCH_COMPILER     from "BATCH_COMPILER-sig"
-import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
+import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
 
-functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
+functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 			val executableHeader: string
 			val extension: string): BATCH_COMPILER =
     struct

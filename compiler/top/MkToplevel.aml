@@ -25,10 +25,10 @@ import structure PrettyPrint          from "../../lib/utility/PrettyPrint"
 
 import structure Target               from "../infrastructure/Target"
 import structure MkOptionParser       from "MkOptionParser"
-import signature RECURSIVE_COMPILER   from "RECURSIVE_COMPILER-sig"
+import signature RECURSIVE_COMPILER'  from "RECURSIVE_COMPILER-sig"
 import signature INTERACTIVE_TOPLEVEL from "INTERACTIVE_TOPLEVEL-sig"
 
-functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER) :
+functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER') :
     INTERACTIVE_TOPLEVEL =
 struct
     structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)

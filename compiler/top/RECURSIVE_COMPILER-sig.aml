@@ -41,3 +41,17 @@ signature RECURSIVE_COMPILER =
 	val processFile: (Source.desc * string -> 'a) -> string -> 'a
 	val processString: (Source.desc * string -> 'a) -> string -> 'a
     end
+
+signature RECURSIVE_COMPILER' =
+    sig
+	structure Switches: SWITCHES
+	structure Context: CONTEXT
+
+	exception Error
+	exception Crash of string
+
+	val isCrossCompiler: bool
+	val compileFileToFile: string * string -> unit
+	val compileFile: Context.t * string -> Context.t * Target.t
+	val compileString: Context.t * string -> Context.t * Target.t
+    end
