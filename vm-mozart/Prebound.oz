@@ -433,7 +433,15 @@ prepare
       'GlobalStamp.fromString':
 	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
       'GlobalStamp.toString':
-	 fun {$ N} {ByteString.make {Value.toVirtualString N 0 0}} end
+	 fun {$ N}
+	    case {Value.toVirtualString N 0 0}
+	    of &<|&N|&:|& |Rest then
+	       case {Reverse Rest} of &>|Rest2 then
+		  {ByteString.make {Reverse Rest2}}
+	       end
+	    elseof S then {ByteString.make S}
+	    end
+	 end
 	 % fun {$ N} {ByteString.make {BootName.toString N}} end
       'GlobalStamp.compare':
 	 fun {$ N1 N2}
