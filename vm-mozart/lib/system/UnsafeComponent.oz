@@ -156,6 +156,17 @@ define
       end
    end
 
+   proc {Save X Filename}
+      try
+	 {Pickle.saveWithCells X Filename '' 9}
+      catch error(dp(generic 'pickle:resources' _ Args) ...) then
+	 for Y in {List.toRecord '#' Args}.'Resources' do
+	    {Wait Y}
+	 end
+	 {Save X Filename}
+      end
+   end
+
    Component =
    'Component'('Sited': SitedException
 	       '\'Sited': SitedException
@@ -188,8 +199,7 @@ define
 		  fun {$ Filename Component}
 		     {Trace 'component' 'save ' Filename}
 		     try
-			{Pickle.saveWithCells {ComponentToFunctor Component}
-			 Filename '' 9}
+			{Save {ComponentToFunctor Component} Filename}
 		     catch error(dp(generic 'pickle:nogoods' ...) ...)
 		     then {Exception.raiseError alice(SitedException)}
 		     end
