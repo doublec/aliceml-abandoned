@@ -905,7 +905,7 @@ u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
       else {
 	u_int i1 = ImmediateEnv::Register(val);
 	ImmediateSel(Dest, JIT_V2, i1);
-	if (pc != 0)
+	if (pc != (word) 0)
 	  Await(Dest, pc);
       }
     }
