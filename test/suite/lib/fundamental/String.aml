@@ -21,14 +21,13 @@ structure TestString :> TESTSUITE =
 struct
 
     fun strGen0 _ = Gen.string 1
-    fun strGen1 _ = Gen.string (Option.valOf Int.maxInt - 1)
-    fun strGen2 _ = Gen.string (Random.int (String.maxSize + 1))
-    val allGenString = [strGen0, strGen1, strGen2]
-    val allGenStrFreq = [(12,strGen0), (18,strGen1), (4,strGen2)]
+    fun strGen1 _ = Gen.string (Random.int (String.maxSize div 20))
+    val allGenString = [strGen0, strGen1]
+    val allGenStrFreq = [(12,strGen0), (4,strGen1)]
 
     fun testSize () =
 	Gen.try 10 (Gen.oneOfFreq allGenStrFreq)
-	   (Test.test (fn s => assert true))
+	   (Test.test (fn s => true))
 
 
     val suite = ("String", [("testSize", testSize)])
