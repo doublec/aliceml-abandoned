@@ -52,7 +52,7 @@ structure PickleFlatGrammar :> CODE
 	    end
 	in
 	    fun outputUrl (q, url) =
-		outputString (q, pathCeil (Url.toString url))
+		outputString (q, pathCeil (Url.toStringRaw url))
 	end
 
 	(*--** remove global state *)
@@ -140,11 +140,6 @@ structure PickleFlatGrammar :> CODE
 	  | outputFunFlag (q, IsToplevel) =
 	    ignore (outputAtom (q, "IsToplevel"))
 
-	fun outputCon (q, Con id) =
-	    (outputTuple (q, "Con", 1); outputId (q, id))
-	  | outputCon (q, StaticCon stamp) =
-	    (outputTuple (q, "StaticCon", 1); outputStamp (q, stamp))
-
 	fun outputArgs outputX (q, OneArg id) =
 	    (outputTuple (q, "OneArg", 1); ignore (outputX (q, id)))
 	  | outputArgs outputX (q, TupArgs ids) =
@@ -223,7 +218,7 @@ structure PickleFlatGrammar :> CODE
 					    outputBody)) (q, tagBodyVec))
 	  | outputTests (q, ConTests conBodyVec) =
 	    (outputTuple (q, "ConTests", 1);
-	     outputVector (outputTriple (outputCon, outputArgs outputIdDef,
+	     outputVector (outputTriple (outputId, outputArgs outputIdDef,
 					 outputBody)) (q, conBodyVec))
 	  | outputTests (q, VecTests vecBodyVec) =
 	    (outputTuple (q, "VecTests", 1);
@@ -244,9 +239,9 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, TagExp (info, label, n, args)) =
 	    (outputTuple (q, "TagExp", 4); outputArgs outputId (q, args);
 	     outputInt (q, n); outputLabel (q, label); outputExpInfo (q, info))
-	  | outputExp (q, ConExp (info, con, args)) =
+	  | outputExp (q, ConExp (info, id, args)) =
 	    (outputTuple (q, "ConExp", 3); outputArgs outputId (q, args);
-	     outputCon (q, con); outputExpInfo (q, info))
+	     outputId (q, id); outputExpInfo (q, info))
 	  | outputExp (q, RefExp (info, id)) =
 	    (outputTuple (q, "RefExp", 2); outputId (q, id);
 	     outputExpInfo (q, info))
@@ -290,9 +285,9 @@ structure PickleFlatGrammar :> CODE
 	  | parseUrl (SOME url) =
 	    case (Url.getScheme url, Url.getAuthority url) of
 		(NONE, NONE) =>
-		    SOME (Url.toString url)
+		    SOME (Url.toStringRaw url)
 	      | (SOME "file", NONE) =>
-		    SOME (Url.toString (Url.setScheme (url, NONE)))
+		    SOME (Url.toStringRaw (Url.setScheme (url, NONE)))
 	      | _ => NONE
 
 	fun toString (desc, tmpOptRef, component) =
