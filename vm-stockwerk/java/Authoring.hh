@@ -33,4 +33,10 @@
 
 #define RETURN_VOID RETURN0
 
+#define THROW(Class, message) {						\
+  ThrowWorker::PushFrame(ThrowWorker::Class, JavaString::New(message));	\
+  Scheduler::PushFrameNoCheck(prim_self);				\
+  RETURN_VOID;								\
+}
+
 #endif
