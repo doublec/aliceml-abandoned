@@ -47,7 +47,9 @@
 ../top/EmptyContext.sml
 ../top/ENGINE.sig
 ../top/MakeEngine.sml
+../top/SIGNATURE.sig
 ../top/COMPOSER.sig
+../top/Signature.sml
 ../common/Stamp.sml
 ../common/StampSet.sml
 ../common/StampMap.sml

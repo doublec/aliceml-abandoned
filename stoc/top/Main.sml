@@ -1,12 +1,5 @@
 (* Bootstrap Composer *)
 
-signature SIGNATURE =
-    sig
-	type t
-
-	val matches: t * t -> bool
-    end
-
 signature COMPOSER' =
     sig
 	structure Sig: SIGNATURE
@@ -21,12 +14,7 @@ signature COMPOSER' =
 
 structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
     struct
-	structure Sig =
-	    struct
-		type t = Inf.sign
-
-		fun matches (j1, j2) = false
-	    end
+	structure Sig = Signature
 
 	exception Corrupt
 

@@ -2163,6 +2163,7 @@ else
 ; PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
 ; print "\n"
 )
+	    val _     = Inf.strengthenSig(Path.fromLab(Label.fromString "?"), s)
 	in
 	    O.Comp(sigInfo(i,s), anns', decs')
 	end

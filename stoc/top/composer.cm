@@ -1,9 +1,11 @@
 Group
 
+	signature SIGNATURE
 	signature COMPOSER
 
 is
 
 	../misc/sources.cm
 
+	SIGNATURE.sig
 	COMPOSER.sig

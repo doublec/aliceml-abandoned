@@ -16,5 +16,6 @@ is
     composer.cm
     engine.cm
 
+    Signature.sml
     MAIN.sig
     Main.sml
