@@ -17,6 +17,12 @@
 #include "emulator/Alice.hh"
 #include "emulator/PrimitiveTable.hh"
 
+#define DECLARE_BOOL(b, x)				\
+  bool b;						\
+  {							\
+    int i = Store::WordToInt(x);			\
+    if (i == INVALID_INT) { REQUEST(x); } else b = i;	\
+  }
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
 #define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
