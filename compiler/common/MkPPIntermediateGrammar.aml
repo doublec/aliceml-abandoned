@@ -204,10 +204,10 @@ struct
 					    ppDecs decs ^/^
 					    ppExp exp
 					  )
-      | ppExp(AbsExp(i, exp))		= exptree "Abs" i (
+      | ppExp(SealExp(i, exp))		= exptree "Seal" i (
 					    ppExp exp
 					  )
-      | ppExp(UnabsExp(i, exp))		= exptree "Unabs" i (
+      | ppExp(UnsealExp(i, exp))	= exptree "Unseal" i (
 					    ppExp exp
 					  )
 

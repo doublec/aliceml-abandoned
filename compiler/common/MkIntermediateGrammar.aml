@@ -86,8 +86,8 @@ struct
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| SpawnExp  of exp_info * exp			(* concurrent thread *)
 	| LetExp    of exp_info * dec vector * exp	(* local binding *)
-	| AbsExp    of exp_info * exp			(* type abstraction *)
-	| UnabsExp  of exp_info * exp			(* type realization *)
+	| SealExp   of exp_info * exp			(* type abstraction *)
+	| UnsealExp of exp_info * exp			(* type realization *)
 
     and 'a fld = Fld of 'a fld_info * lab * 'a
 
@@ -172,8 +172,8 @@ struct
       | infoExp(LazyExp(i,_))		= i
       | infoExp(SpawnExp(i,_))		= i
       | infoExp(LetExp(i,_,_))		= i
-      | infoExp(AbsExp(i,_))		= i
-      | infoExp(UnabsExp(i,_))		= i
+      | infoExp(SealExp(i,_))		= i
+      | infoExp(UnsealExp(i,_))		= i
 
     fun infoFld(Fld(i,_,_))		= i
 
