@@ -20,7 +20,7 @@ final public class Int implements DMLValue {
     final public static Int ONE  = new Int(1);
 
     /** java-int Wert */
-    protected int value=0;
+    final protected int value;
 
     /** Baut einen neuen Int mit Wert <code>value</code>.
      *  @param value <code>int</code> Wert, der dem Int entspricht.
@@ -51,13 +51,12 @@ final public class Int implements DMLValue {
 
     _BUILTIN(Uminus) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Int.~");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
+	    _fromSingle(val,"Int.~");
+	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
 	    return new
-		Int(-((Int) v).getInt());
+		Int(-((Int) val).value);
 	}
     }
     /** <code>val ~ : int -> int </code>*/
@@ -86,8 +85,8 @@ final public class Int implements DMLValue {
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
-	    int j = ((Int) w).getInt();
+	    int i = ((Int) v).value;
+	    int j = ((Int) w).value;
 	    if (i==j) {
 		return General.EQUAL;
 	    } else if (i<j) {
@@ -111,8 +110,8 @@ final public class Int implements DMLValue {
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
-	    int j = ((Int) w).getInt();
+	    int i = ((Int) v).value;
+	    int j = ((Int) w).value;
 	    if (i==j) {
 		return ZERO;
 	    } else if (i<j) {
@@ -141,8 +140,8 @@ final public class Int implements DMLValue {
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
-	    int j = ((Int) w).getInt();
+	    int i = ((Int) v).value;
+	    int j = ((Int) w).value;
 	    if (i<j) {
 		return v;
 	    } else {
@@ -164,8 +163,8 @@ final public class Int implements DMLValue {
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
-	    int j = ((Int) w).getInt();
+	    int i = ((Int) v).value;
+	    int j = ((Int) w).value;
 	    if (i>j) {
 		return v;
 	    } else {
@@ -178,13 +177,12 @@ final public class Int implements DMLValue {
 
     _BUILTIN(Abs) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Int.abs");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
+	    _fromSingle(val,"Int.abs");
+	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
 	    return new
-		Int(java.lang.Math.abs(((Int) v).getInt()));
+		Int(java.lang.Math.abs(((Int) val).value));
 	}
     }
     /** <code>val abs : int -> int </code>*/
@@ -192,12 +190,11 @@ final public class Int implements DMLValue {
 
     _BUILTIN(Sign) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Int.sign");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
+	    _fromSingle(val,"Int.sign");
+	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
+	    int i = ((Int) val).value;
 	    if (i<0) {
 		i=-1;
 	    } else if (i>0) {
@@ -221,8 +218,8 @@ final public class Int implements DMLValue {
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
-	    int j = ((Int) w).getInt();
+	    int i = ((Int) v).value;
+	    int j = ((Int) w).value;
 	    if ((i>0 && j>0) ||
 		(i<0 && j<0) ||
 		(i==j)) {
@@ -237,12 +234,11 @@ final public class Int implements DMLValue {
 
     _BUILTIN(ToString) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Int.toString");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
+	    _fromSingle(val,"Int.toString");
+	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
+	    int i = ((Int) val).value;
 	    return new
 		STRING (java.lang.String.valueOf(i));
 	}
@@ -252,13 +248,12 @@ final public class Int implements DMLValue {
 
     _BUILTIN(FromString) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Int.fromString");
-	    _REQUESTDEC(DMLValue r,args[0]);
-	    if (!(r instanceof STRING)) {
+	    _fromSingle(val,"Int.fromString");
+	    if (!(val instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    try {
-		java.lang.String sf = ((STRING) r).getString();
+		java.lang.String sf = ((STRING) val).value;
 		int f = Integer.parseInt(sf);
 		return Option.SOME.apply(new Int(f));
 	    } catch (NumberFormatException n) {

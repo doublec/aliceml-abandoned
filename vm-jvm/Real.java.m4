@@ -16,7 +16,7 @@ package de.uni_sb.ps.dml.runtime;
 final public class Real implements DMLValue {
 
     /** java-float Wert */
-    protected float value=0.0f;
+    final protected float value;
 
     /** Baut einen neuen Real mit Inhalt <code>value</code>.
      *  @param value <code>float</code> Wert, der dem Real entspricht.
@@ -56,16 +56,16 @@ final public class Real implements DMLValue {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.+");
 	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
+	    if (!(v instanceof Real)) {
 		_error("argument 1 not Real",val);
 	    }
 	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
+	    if (!(v instanceof Real)) {
 		_error("argument 2 not Real",val);
 	    }
 	    return new
-		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() +
-					      ((de.uni_sb.ps.dml.runtime.Real) v).getFloat());
+		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).value +
+					      ((de.uni_sb.ps.dml.runtime.Real) v).value);
 	}
     }
     /** <code>val + : (real * real) -> real </code>*/
@@ -83,8 +83,8 @@ final public class Real implements DMLValue {
 		_error("argument 2 not Real",val);
 	    }
 	    return new
-		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() -
-					      ((de.uni_sb.ps.dml.runtime.Real) v).getFloat());
+		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).value -
+					      ((de.uni_sb.ps.dml.runtime.Real) v).value);
 	}
     }
     /** <code>val - : (real * real) -> real </code>*/
@@ -103,8 +103,8 @@ final public class Real implements DMLValue {
 		_error("argument 2 not Real",val);
 	    }
 	    return new
-		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() *
-					      ((de.uni_sb.ps.dml.runtime.Real) v).getFloat());
+		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).value *
+					      ((de.uni_sb.ps.dml.runtime.Real) v).value);
 	}
     }
     /** <code>val * : (real * real) -> real </code>*/
@@ -121,9 +121,8 @@ final public class Real implements DMLValue {
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 2 not Real",val);
 	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() /
-					      ((de.uni_sb.ps.dml.runtime.Real) v).getFloat());
+	    return new Real(((Real) v).value /
+			    ((Real) v).value);
 	}
     }
     /** <code>val / : (real * real) -> real </code>*/
@@ -157,13 +156,12 @@ final public class Real implements DMLValue {
     /** <code>val toString : real -> string </code>*/
     _BUILTIN(FromString) {
 	_APPLY(val) { 
-	    _fromTuple(args,val,1,"Real.fromString");
-	    _REQUESTDEC(DMLValue r,args[0]);
-	    if (!(r instanceof STRING)) {
+	    _fromSingle(val,"Real.fromString");
+	    if (!(val instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    try {
-		java.lang.String sf = ((STRING) r).getString();
+		java.lang.String sf = ((STRING) val).value;
 		float f = Float.parseFloat(sf);
 		return Option.SOME.apply(new de.uni_sb.ps.dml.runtime.Real(f));
 	    } catch (NumberFormatException n) {

@@ -51,9 +51,10 @@ public class ByNeedFuture extends Future {
 	} catch (java.rmi.RemoteException r) {
 	    System.out.println(r);
 	}
-	if (val instanceof LVar)
+	if (val instanceof LVar) {
 	    return "<unresolved>: byneed-future";
-	else
+	} else {
 	    return val.toString();
+	}
     }
 }

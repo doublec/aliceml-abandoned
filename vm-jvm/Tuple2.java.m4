@@ -10,8 +10,8 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple2 implements DMLTuple {
 
-    protected DMLValue fst = null;
-    protected DMLValue snd = null;
+    final protected DMLValue fst;
+    final protected DMLValue snd;
 
     public Tuple2(DMLValue eins,
 		  DMLValue zwei) {

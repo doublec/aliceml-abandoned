@@ -16,9 +16,8 @@ final public class Record extends Tuple {
     RecordArity arity=null;
 
     public Record (Label[] ls, DMLValue[] vals) {
-	super(null);
+	super(vals);
 	java.lang.Object ar=null;
-	this.vals=vals;
 	arity=new RecordArity(ls);
 	ar=arityHash.get(arity);
 	if (ar==null)

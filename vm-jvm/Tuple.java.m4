@@ -11,10 +11,10 @@ package de.uni_sb.ps.dml.runtime;
  */
 public class Tuple implements DMLTuple {
 
-    protected DMLValue vals[]=null;
+    final protected DMLValue vals[];
 
-    public Tuple(DMLValue[] vals) {
-	this.vals=vals;
+    public Tuple(DMLValue[] v) {
+	vals=v;
     }
 
     public DMLValue get0() { return vals[0]; }

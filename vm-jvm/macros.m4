@@ -62,21 +62,21 @@ define(_BINOP,`
 	    if (number1 instanceof Int) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Int) {
-		    return new Int(((Int) number1).getInt() $2 ((Int) number2).getInt());
+		    return new Int(((Int) number1).value $2 ((Int) number2).value);
 		} else {
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Word) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Word) {
-		    return new Word(((Word) number1).getLong() $2 ((Word) number2).getLong());
+		    return new Word(((Word) number1).value $2 ((Word) number2).value);
 		} else {
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Real) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Real) {
-		    return new Real(((Real) number1).getFloat() $2 ((Real) number2).getFloat());
+		    return new Real(((Real) number1).value $2 ((Real) number2).value);
 		} else {
 		    _error("arguments of different number type",val);
 		}
@@ -95,7 +95,7 @@ define(_COMPARE,`
 	    if (number1 instanceof Int) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Int) {
-		    return (((Int) number1).getInt() $2 ((Int) number2).getInt() ?
+		    return (((Int) number1).value $2 ((Int) number2).value ?
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
@@ -104,7 +104,7 @@ define(_COMPARE,`
 	    } else if (number1 instanceof Word) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Word) {
-		    return (((Word) number1).getLong() $2 ((Word) number2).getLong() ?
+		    return (((Word) number1).value $2 ((Word) number2).value ?
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
@@ -113,7 +113,7 @@ define(_COMPARE,`
 	    } else if (number1 instanceof Real) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Real) {
-		    return (((Real) number1).getFloat() $2 ((Real) number2).getFloat() ?
+		    return (((Real) number1).value $2 ((Real) number2).value ?
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
@@ -122,8 +122,8 @@ define(_COMPARE,`
 	    } else if (number1 instanceof STRING`') {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof STRING) {
-		    return (((STRING) number1).getString().
-			    compareTo(((STRING) number2).getString()) $2 0  ?
+		    return (((STRING) number1).value.
+			    compareTo(((STRING) number2).value) $2 0  ?
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
@@ -151,7 +151,7 @@ define(_BINOPINT,`
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    return new Int(((Int) v).getInt() $2 ((Int) w).getInt());
+	    return new Int(((Int) v).value $2 ((Int) w).value);
 	}
     }
     /** <code>val $2 : (int * int) -> int </code>*/
@@ -168,8 +168,8 @@ define(_COMPAREINT,`
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int i = ((Int) v).getInt();
-	    int j = ((Int) w).getInt();
+	    int i = ((Int) v).value;
+	    int j = ((Int) w).value;
 	    if (i $2 j) {
 		return Constants.dmltrue;
 	    } else {
@@ -190,12 +190,12 @@ define(_COMPARESTRING,`
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((STRING) v).getString();
+	    java.lang.String s = ((STRING) v).value;
 	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((STRING) v).getString();
+	    java.lang.String t = ((STRING) v).value;
 	    if (s.compareTo(t) $2 0) {
 		return Constants.dmltrue;
 	    } else {
@@ -231,3 +231,18 @@ define(_REQUESTDEC,`$1 = null;
 		 } else {
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
                  }')
+define(_fromSingle,`_REQUEST($1,$1)
+	if ($1 instanceof DMLTuple) {
+	  DMLTuple t = (DMLTuple) $1;
+	  if (t.getArity()==1) {
+	    _REQUEST($1, t.get0())
+	  } else {
+	    return Constants.
+		runtimeError.apply(new Tuple2(
+		new STRING`'("wrong number of arguments for" + $2),$1));
+	  }
+	} else {
+	    return Constants.
+		runtimeError.apply(new Tuple2(
+		new STRING`'("wrong arguments type for" + $2),$1));
+	}')

@@ -14,11 +14,10 @@ final public class List {
 
     _BUILTIN(IsNull) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.null");
-	    _REQUESTDEC(DMLValue l,args[0]);
-	    if (l instanceof Cons)
+	    _fromSingle(val,"List.null");
+	    if (val instanceof Cons)
 		return Constants.dmlfalse;
-	    else if (l==nil)
+	    else if (val==nil)
 		return Constants.dmltrue;
 	    else
 		_error("argument not List",val);
@@ -29,15 +28,14 @@ final public class List {
 
     _BUILTIN(Length) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.length");
-	    _REQUESTDEC(DMLValue l,args[0]);
+	    _fromSingle(val,"List.length");
 	    int length = 0;
-	    while (l instanceof Cons) {
+	    while (val instanceof Cons) {
 		length++;
-		DMLValue co = ((Cons) l).cdr;
-		_REQUEST(l,co);
+		DMLValue co = ((Cons) val).cdr;
+		_REQUEST(val,co);
 	    }
-	    if (l==nil)
+	    if (val==nil)
 		return new Int(length);
 	    else
 		_error("argument not List",val);
@@ -76,11 +74,10 @@ final public class List {
 
     _BUILTIN(Hd) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.hd");
-	    _REQUESTDEC(DMLValue first,args[0]);
-	    if (first instanceof Cons)
-		return ((Cons) first).car;
-	    else if (first==nil)
+	    _fromSingle(val,"List.hd");
+	    if (val instanceof Cons)
+		return ((Cons) val).car;
+	    else if (val==nil)
 		_RAISENAME(Empty);
 	    else
 		_error("argument not List",val);
@@ -91,11 +88,10 @@ final public class List {
 
     _BUILTIN(Tl) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.tl");
-	    _REQUESTDEC(DMLValue first,args[0]);
-	    if (first instanceof Cons)
-		return ((Cons) first).cdr;
-	    else if (first==nil)
+	    _fromSingle(val,"List.tl");
+	    if (val instanceof Cons)
+		return ((Cons) val).cdr;
+	    else if (val==nil)
 		_RAISENAME(Empty);
 	    else
 		_error("argument not List",val);
@@ -106,22 +102,21 @@ final public class List {
 
     _BUILTIN(Last) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.last");
-	    _REQUESTDEC(DMLValue first,args[0]);
-	    if (first==nil)
+	    _fromSingle(val,"List.last");
+	    if (val==nil)
 		_RAISENAME(Empty);
-	    else if (first instanceof Cons) {
-		_REQUESTDEC(DMLValue next,((Cons) first).cdr);
+	    else if (val instanceof Cons) {
+		_REQUESTDEC(DMLValue next,((Cons) val).cdr);
 		while (next!=nil) {
 		    if (next instanceof Cons) {
-			first = next;
+			val = next;
 			DMLValue co = ((Cons) next).cdr;
 			_REQUEST(next,co);
 		    }
 		    else
 			_error("argument not List",val);
 		}
-		return ((Cons) first).car;
+		return ((Cons) val).car;
 	    } else
 		_error("argument not List",val);
 	}
@@ -131,13 +126,12 @@ final public class List {
 
     _BUILTIN(GetItem) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.getItem");
-	    _REQUESTDEC(DMLValue first,args[0]);
-	    if (first==nil)
+	    _fromSingle(val,"List.getItem");
+	    if (val==nil)
 		return Option.NONE;
-	    else if (first instanceof Cons) {
-		DMLValue car = ((Cons) first).car;
-		DMLValue cdr = ((Cons) first).cdr;
+	    else if (val instanceof Cons) {
+		DMLValue car = ((Cons) val).car;
+		DMLValue cdr = ((Cons) val).cdr;
 		return Option.SOME.apply(new Tuple2(car,cdr));
 	    } else
 		_error("argument not List",val);
@@ -152,7 +146,7 @@ final public class List {
 	    _REQUESTDEC(DMLValue n,args[1]);
 	    if (!(n instanceof Int))
 		_error("argument 2 not Int",val);
-	    int le = ((Int) n).getInt();
+	    int le = ((Int) n).value;
 	    if (le<0)
 		_RAISENAME(General.Subscript);
 	    _REQUESTDEC(DMLValue first,args[0]);
@@ -187,7 +181,7 @@ final public class List {
 	    _REQUESTDEC(DMLValue n,args[1]);
 	    if (!(n instanceof Int))
 		_error("argument 2 not Int",val);
-	    int le = ((Int) n).getInt();
+	    int le = ((Int) n).value;
 	    if (le<0)
 		_RAISENAME(General.Subscript);
 	    _REQUESTDEC(DMLValue first,args[0]);
@@ -227,7 +221,7 @@ final public class List {
 	    _REQUESTDEC(DMLValue n,args[1]);
 	    if (!(n instanceof Int))
 		_error("argument 2 not Int",val);
-	    int le = ((Int) n).getInt();
+	    int le = ((Int) n).value;
 	    if (le<0)
 		_RAISENAME(General.Subscript);
 	    _REQUESTDEC(DMLValue first,args[0]);
@@ -259,18 +253,17 @@ final public class List {
 
     _BUILTIN(Rev) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.rev");
-	    _REQUESTDEC(DMLValue first,args[0]);
-	    if (first==nil)
+	    _fromSingle(val,"List.rev");
+	    if (val==nil)
 		_RAISENAME(Empty);
-	    else if (first instanceof Cons) {
-		Cons cons = new Cons(((Cons) first).car,nil);
-		_REQUEST(first,((Cons) first).cdr);
-		while (first!=nil) {
-		    if (first instanceof Cons) {
-			Cons fc = (Cons) first;
+	    else if (val instanceof Cons) {
+		Cons cons = new Cons(((Cons) val).car,nil);
+		_REQUEST(val,((Cons) val).cdr);
+		while (val!=nil) {
+		    if (val instanceof Cons) {
+			Cons fc = (Cons) val;
 			cons = new Cons(fc.car,cons);
-			_REQUEST(first,fc.cdr);
+			_REQUEST(val,fc.cdr);
 		    }
 		    else
 			_error("argument 1 not List",val);
@@ -285,17 +278,16 @@ final public class List {
 
     _BUILTIN(Concat) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.concat");
-	    _REQUESTDEC(DMLValue first,args[0]);
-	    if (first==nil)
+	    _fromSingle(val,"List.concat");
+	    if (val==nil)
 		return nil;
-	    else if (first instanceof Cons) {
+	    else if (val instanceof Cons) {
 		Cons result = new Cons(null,null);
 		Cons cons = result;
-		while (first!=nil) {
-		    DMLValue li = ((Cons) first).car;
+		while (val!=nil) {
+		    DMLValue li = ((Cons) val).car;
 		    if (li==nil) {
-			_REQUEST(first,((Cons) first).cdr);
+			_REQUEST(val,((Cons) val).cdr);
 			continue;
 		    }
 		    else if (li instanceof Cons) {
@@ -310,7 +302,7 @@ final public class List {
 			}
 		    } else
 			_error("argument not List",val);
-		    _REQUEST(first,((Cons) first).cdr);
+		    _REQUEST(val,((Cons) val).cdr);
 		}
 		cons.cdr=nil;
 		return result.cdr;
@@ -356,14 +348,13 @@ final public class List {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.app1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		_fromSingle(val,"List.app1");
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    fun.apply(lc.car);
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil)
+		if (val==nil)
 		    return Constants.dmlunit;
 		else
 		    _error("argument not List",val);
@@ -382,20 +373,19 @@ final public class List {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.map1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.map1");
+		if (val==nil)
 		    return nil;
 		Cons first = new Cons(null,null);
 		Cons list = first;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    list.cdr=new Cons(fun.apply(new Tuple1(lc.car)),
 				      null);
 		    list=(Cons) list.cdr;
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    list.cdr=nil;
 		    return first.cdr;
 		}
@@ -416,22 +406,21 @@ final public class List {
 	    DMLValue fun = null;
 	    MapPartial1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.mapPartial1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.mapPartial1");
+		if (val==nil)
 		    return nil;
 		Cons first = new Cons(null,null);
 		Cons list = first;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
 		    if (res!=Option.NONE) {
 			list.cdr = new Cons(lc.car,null);
 			list=(Cons)list.cdr;
 		    }
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    list.cdr=nil;
 		    return first.cdr;
 		}
@@ -452,18 +441,17 @@ final public class List {
 	    DMLValue fun = null;
 	    Find1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.find1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.find1");
+		if (val==nil)
 		    return Constants.dmlfalse;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
 		    if (res==Constants.dmltrue)
 			return Option.SOME.apply(lc.car);
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    return Option.NONE;
 		}
 		else
@@ -483,22 +471,21 @@ final public class List {
 	    DMLValue fun = null;
 	    Filter1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.filter1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.filter1");
+		if (val==nil)
 		    return nil;
 		Cons first = new Cons(null,null);
 		Cons list = first;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
 		    if (res==Constants.dmltrue) {
 			list.cdr = new Cons(lc.car,null);
 			list=(Cons)list.cdr;
 		    }
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    list.cdr=nil;
 		    return first.cdr;
 		}
@@ -519,16 +506,15 @@ final public class List {
 	    DMLValue fun = null;
 	    Partition1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.partition1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.partition1");
+		if (val==nil)
 		    return nil;
 		Cons neg = new Cons(null,null);
 		Cons nlist = neg;
 		Cons pos = new Cons(null,null);
 		Cons plist = pos;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
 		    if (res==Constants.dmltrue) {
 			plist.cdr = new Cons(lc.car,null);
@@ -538,9 +524,9 @@ final public class List {
 			nlist.cdr = new Cons(lc.car,null);
 			nlist=(Cons) nlist.cdr;
 		    }
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    plist.cdr=nil;
 		    nlist.cdr=nil;
 		    return new Tuple2(pos.cdr,neg.cdr);
@@ -572,18 +558,17 @@ final public class List {
 		    init = i;
 		}
 		_APPLY(val) {
-		    _fromTuple(args,val,1,"List.foldl2");
-		    _REQUESTDEC(DMLValue li,args[0]);
-		    if (li==nil)
+		    _fromSingle(val,"List.foldl2");
+		    if (val==nil)
 			return init;
-		    else if (li instanceof Cons) {
+		    else if (val instanceof Cons) {
 			DMLValue result=init;
-			while (li instanceof Cons) {
-			    Cons lc = (Cons) li;
+			while (val instanceof Cons) {
+			    Cons lc = (Cons) val;
 			    result=fun.apply(new Tuple2(lc.car,result));
-			    li = lc.cdr;
+			    val = lc.cdr;
 			}
-			if (li==nil)
+			if (val==nil)
 			    return result;
 			else
 			    _error("argument not List",val);
@@ -615,18 +600,17 @@ final public class List {
 		    init = i;
 		}
 		_APPLY(val) {
-		    _fromTuple(args,val,1,"List.foldr2");
-		    _REQUESTDEC(DMLValue li,args[0]);
-		    if (li==nil)
+		    _fromSingle(val,"List.foldr2");
+		    if (val==nil)
 			return init;
-		    else if (li instanceof Cons) {
-			Cons cons = new Cons(((Cons) li).car,nil);
-			_REQUEST(li,((Cons) li).cdr);
-			while (li!=nil) {
-			    if (li instanceof Cons) {
-				Cons lc = (Cons) li;
+		    else if (val instanceof Cons) {
+			Cons cons = new Cons(((Cons) val).car,nil);
+			_REQUEST(val,((Cons) val).cdr);
+			while (val!=nil) {
+			    if (val instanceof Cons) {
+				Cons lc = (Cons) val;
 				cons = new Cons(lc.car,cons);
-				_REQUEST(li,lc.cdr);
+				_REQUEST(val,lc.cdr);
 			    }
 			    else
 				_error("argument 1 not List",val);
@@ -660,18 +644,17 @@ final public class List {
 	    DMLValue fun = null;
 	    Exists1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.exists1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.exists1");
+		if (val==nil)
 		    return Constants.dmlfalse;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
 		    if (res==Constants.dmltrue)
 			return Constants.dmltrue;
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    return Constants.dmlfalse;
 		}
 		else
@@ -691,18 +674,17 @@ final public class List {
 	    DMLValue fun = null;
 	    All1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.all1");
-		_REQUESTDEC(DMLValue l,args[0]);
-		if (l==nil)
+		_fromSingle(val,"List.all1");
+		if (val==nil)
 		    return Constants.dmltrue;
-		while (l instanceof Cons) {
-		    Cons lc = (Cons) l;
+		while (val instanceof Cons) {
+		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
 		    if (res!=Constants.dmltrue)
 			return Constants.dmlfalse;
-		    _REQUEST(l,lc.cdr);
+		    _REQUEST(val,lc.cdr);
 		}
-		if (l==nil) {
+		if (val==nil) {
 		    return Constants.dmltrue;
 		}
 		else
@@ -719,7 +701,7 @@ final public class List {
 	    _REQUESTDEC(DMLValue n,args[0]);
 	    if (!(n instanceof Int))
 		_error("argument 1 not Int",val);
-	    int k = ((Int) n).getInt();
+	    int k = ((Int) n).value;
 	    if (k<0)
 		_RAISENAME(General.Size);
 	    DMLValue fun = args[1];

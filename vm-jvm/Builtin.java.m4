@@ -52,6 +52,6 @@ abstract public class Builtin implements DMLValue {
     }
 
     final public static DMLValue getBuiltin(STRING name) {
-	return getBuiltin(name.getString());
+	return getBuiltin(name.value);
     }
 }

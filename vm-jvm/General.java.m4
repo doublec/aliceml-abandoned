@@ -34,10 +34,9 @@ final public class General {
 
     _BUILTIN(Deref) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"deref");
-	    _REQUESTDEC(DMLValue arg,args[0]);
-	    if (arg instanceof DMLConVal) {
-		DMLConVal cv = (DMLConVal) arg;
+	    _fromSingle(val,"deref");
+	    if (val instanceof DMLConVal) {
+		DMLConVal cv = (DMLConVal) val;
 		if (cv.getConstructor()==Constants.reference)
 		    return cv.getContent();
 	    }
@@ -152,7 +151,7 @@ final public class General {
 	    _REQUESTDEC(DMLValue fst,args[0]);
 	    if (!(fst instanceof STRING))
 		_error("argument 1 not STRING ",val);
-	    java.lang.String whereto=((STRING) fst).getString();
+	    java.lang.String whereto=((STRING) fst).value;
 	    ExceptionWrapper ex=null;
 	    java.io.FileOutputStream outf=null;
 	    PickleOutputStream out=null;
@@ -188,7 +187,7 @@ final public class General {
 	    _REQUESTDEC(DMLValue fst,args[0]);
 	    if (!(fst instanceof STRING))
 		_error("argument 1 not STRING ",val);
-	    java.lang.String wherefrom=((STRING) fst).getString();
+	    java.lang.String wherefrom=((STRING) fst).value;
 	    ExceptionWrapper ex=null;
 	    java.io.FileInputStream inf=null;
 	    PickleInputStream in=null;
@@ -218,14 +217,13 @@ final public class General {
 
     _BUILTIN(Uminus) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"General.~");
-	    _REQUESTDEC(DMLValue number,args[0]);
-	    if (number instanceof Int) {
-		return new Int(-((Int) number).getInt());
-	    } else if (number instanceof Word) {
-		return new Word(-((Word) number).getLong());
-	    } else if (number instanceof Real) {
-		return new Real(-((Real) number).getFloat());
+	    _fromSingle(val,"General.~");
+	    if (val instanceof Int) {
+		return new Int(-((Int) val).value);
+	    } else if (val instanceof Word) {
+		return new Word(-((Word) val).value);
+	    } else if (val instanceof Real) {
+		return new Real(-((Real) val).value);
 	    } else {
 		_error("argument not Number",val);
 	    }
@@ -259,12 +257,11 @@ final public class General {
 
     _BUILTIN(Sel) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"General.sel");
-	    _REQUESTDEC(DMLValue sel,args[0]);
-	    if (sel instanceof Int) {
-		return new SelFunInt(((Int) sel).value);
-	    } else if (sel instanceof STRING) {
-		return new SelFunString(((STRING) sel).value);
+	    _fromSingle(val,"General.sel");
+	    if (val instanceof Int) {
+		return new SelFunInt(((Int) val).value);
+	    } else if (val instanceof STRING) {
+		return new SelFunString(((STRING) val).value);
 	    } else {
 		_error("argument not string or int",val);
 	    }
@@ -275,16 +272,15 @@ final public class General {
 		i = idx;
 	    }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"General.sel "+i);
-		_REQUESTDEC(DMLValue tup, args[0]);
-		if (tup instanceof DMLTuple) {
+		_fromSingle(val,"General.sel "+i);
+		if (val instanceof DMLTuple) {
 		    switch (i) {
-		    case 1: return ((DMLTuple) tup).get0();
-		    case 2: return ((DMLTuple) tup).get1();
-		    case 3: return ((DMLTuple) tup).get2();
-		    case 4: return ((DMLTuple) tup).get3();
-		    case 5: return ((DMLTuple) tup).get4();
-		    default: return ((DMLTuple) tup).get(i);
+		    case 1: return ((DMLTuple) val).get0();
+		    case 2: return ((DMLTuple) val).get1();
+		    case 3: return ((DMLTuple) val).get2();
+		    case 4: return ((DMLTuple) val).get3();
+		    case 5: return ((DMLTuple) val).get4();
+		    default: return ((DMLTuple) val).get(i);
 		    }
 		} else {
 		    _error("argument not tuple",val);
@@ -297,10 +293,9 @@ final public class General {
 		lab = str;
 	    }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"General.sel "+lab);
-		_REQUESTDEC(DMLValue tup, args[0]);
-		if (tup instanceof Record) {
-		    return ((Record) tup).get(lab);
+		_fromSingle(val,"General.sel "+lab);
+		if (val instanceof Record) {
+		    return ((Record) val).get(lab);
 		} else {
 		    _error("argument not record",val);
 		}

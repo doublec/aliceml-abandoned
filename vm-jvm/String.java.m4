@@ -16,7 +16,7 @@ package de.uni_sb.ps.dml.runtime;
 final public class String implements DMLValue {
 
     /** java-String Wert */
-    protected java.lang.String value=null;
+    final protected java.lang.String value;
 
     /** Baut einen neuen STRING  mit Inhalt <code>value</code>.
      *  @param value <code>String</code> Wert, der dem STRING  entspricht.
@@ -48,10 +48,9 @@ final public class String implements DMLValue {
     
     _BUILTIN(Size) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"String.length");
-            _REQUESTDEC(DMLValue v,args[0]);
-            if (v instanceof STRING) {
-		return new Int(((STRING) v).getString().length());
+	    _fromSingle(val,"String.length");
+            if (val instanceof STRING) {
+		return new Int(((STRING) val).value.length());
             } else {
 		_error("argument not String",val);
             }
@@ -67,12 +66,12 @@ final public class String implements DMLValue {
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((STRING) v).getString();
+	    java.lang.String s = ((STRING) v).value;
 	    _REQUEST(v,args[1]);
 	    if (!(v instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int from = ((Int) v).getInt();
+	    int from = ((Int) v).value;
 	    _REQUEST(v,args[2]);
 	    int to = s.length();
 	    if (v instanceof DMLConVal) {
@@ -80,7 +79,7 @@ final public class String implements DMLValue {
 		if (cv.getConstructor() == Option.SOME) {
 		    v = cv.getContent();
 		    if (v instanceof Int) {
-			to = ((Int) v).getInt();
+			to = ((Int) v).value;
 			return new STRING (s.substring(from,to));
 		    } else {
 			_error("argument 3 not Int option",val);
@@ -105,17 +104,17 @@ final public class String implements DMLValue {
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((STRING) v).getString();
+	    java.lang.String s = ((STRING) v).value;
 	    _REQUEST(v,args[1]);
 	    if (!(v instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
-	    int from = ((Int) v).getInt();
+	    int from = ((Int) v).value;
 	    _REQUEST(v,args[2]);
 	    if (!(v instanceof Int)) {
 		_error("argument 3 not Int",val);
 	    }
-	    int to = ((Int) v).getInt();
+	    int to = ((Int) v).value;
 	    return new STRING (s.substring(from,to));
 	}
     }
@@ -134,7 +133,7 @@ final public class String implements DMLValue {
 		    if (list instanceof Cons) {
 			Cons co = (Cons) list;
 			if (co.car instanceof STRING) {
-			    buff.append(((STRING) co.car).getString());
+			    buff.append(((STRING) co.car).value);
 			} else {
 			    _error("argument not String list",val);
 			}
@@ -164,8 +163,8 @@ final public class String implements DMLValue {
 		_error("argument 2 not String",val);
 	    }
 	    return new
-		STRING (((STRING) v).getString() +
-						((STRING) w).getString());
+		STRING (((STRING) v).value +
+						((STRING) w).value);
 	}
     }
     /** <code>val ^ : (string * string) -> string </code>*/
@@ -178,12 +177,12 @@ final public class String implements DMLValue {
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((STRING) v).getString();
+	    java.lang.String s = ((STRING) v).value;
 	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((STRING) v).getString();
+	    java.lang.String t = ((STRING) v).value;
 	    if (s.startsWith(t)) {
 		return Constants.dmltrue;
 	    } else {
@@ -201,12 +200,12 @@ final public class String implements DMLValue {
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((STRING) v).getString();
+	    java.lang.String s = ((STRING) v).value;
 	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((STRING) v).getString();
+	    java.lang.String t = ((STRING) v).value;
 	    int cmp = s.compareTo(t);
 	    if (cmp < 0) {
 		return General.LESS;
@@ -227,12 +226,12 @@ final public class String implements DMLValue {
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((STRING) v).getString();
+	    java.lang.String s = ((STRING) v).value;
 	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((STRING) v).getString();
+	    java.lang.String t = ((STRING) v).value;
 	    int cmp = s.compareTo(t);
 	    if (cmp < 0) {
 		return Int.MONE;
@@ -253,10 +252,9 @@ final public class String implements DMLValue {
 
     _BUILTIN(Str) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"String.str");
-	    _REQUESTDEC(DMLValue ch,args[0]);
-	    if (ch instanceof Char) {
-		return new STRING (java.lang.String.valueOf(((Char) ch).getChar()));
+	    _fromSingle(val,"String.str");
+	    if (val instanceof Char) {
+		return new STRING (java.lang.String.valueOf(((Char) val).value));
 	    } else {
 		_error("argument not char",val);
 	    }
@@ -272,7 +270,7 @@ final public class String implements DMLValue {
 	    if (s instanceof STRING) {
 		_REQUESTDEC(DMLValue idx,args[1]);
 		if (idx instanceof Int) {
-		    return new Char(((STRING) s).getString().charAt(((Int) idx).getInt()));
+		    return new Char(((STRING) s).value.charAt(((Int) idx).value));
 		} else {
 		    _error("argument 2 not int",val);
 		}

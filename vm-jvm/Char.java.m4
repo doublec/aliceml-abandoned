@@ -7,22 +7,23 @@
 package de.uni_sb.ps.dml.runtime;
 
 final public class Char implements DMLValue {
-    protected char ch = '_';
+
+    final protected char value;
 
     public Char(char c) {
-	ch=c;
+	value=c;
     }
 
     final public boolean equals(java.lang.Object o) {
-	return (o instanceof Char) && (((Char) o).ch==ch);
+	return (o instanceof Char) && (((Char) o).value==value);
     }
 
     final public java.lang.String toString() {
-	return ch+" : char";
+	return value+" : char";
     }
 
     final public char getChar() {
-	return ch;
+	return value;
     }
 
     _apply_fails;
@@ -33,10 +34,9 @@ final public class Char implements DMLValue {
     /** <code>val maxOrd : int </code>*/
     _BUILTIN(Ord) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Char.ord");
-	    _REQUESTDEC(DMLValue ch,args[0]);
-	    if (ch instanceof Char) {
-		return new Int(((Char) ch).ch);
+	    _fromSingle(val,"Char.ord");
+	    if (val instanceof Char) {
+		return new Int(((Char) val).value);
 	    } else {
 		_error("argument not char",val);
 	    }
@@ -47,10 +47,9 @@ final public class Char implements DMLValue {
 
     _BUILTIN(Chr) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Char.chr");
-	    _REQUESTDEC(DMLValue ch,args[0]);
-	    if (ch instanceof Int) {
-		int i = ((Int) ch).getInt(); // better?: ch.value
+	    _fromSingle(val,"Char.chr");
+	    if (val instanceof Int) {
+		int i = ((Int) val).value; // better?: val.value
 		if (i <= Character.MAX_VALUE && i >= Character.MIN_VALUE) {
 		    return new Char((char) i);
 		} else {
@@ -82,10 +81,9 @@ final public class Char implements DMLValue {
 
     _BUILTIN(IsDigit) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Char.isDigit");
-	    _REQUESTDEC(DMLValue ch,args[0]);
-	    if (ch instanceof Char) {
-		return (Character.isDigit(((Char) ch).ch) ?
+	    _fromSingle(val,"Char.isDigit");
+	    if (val instanceof Char) {
+		return (Character.isDigit(((Char) val).value) ?
 		    Constants.dmltrue :
 			Constants.dmlfalse);
 	    } else {
@@ -100,10 +98,9 @@ final public class Char implements DMLValue {
 
     _BUILTIN(IsHexDigit) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Char.isHexDigit");
-	    _REQUESTDEC(DMLValue ch,args[0]);
-	    if (ch instanceof Char) {
-		char c = ((Char) ch).ch;
+	    _fromSingle(val,"Char.isHexDigit");
+	    if (val instanceof Char) {
+		char c = ((Char) val).value;
 		switch (c) {
 		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
 		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
@@ -126,10 +123,9 @@ final public class Char implements DMLValue {
 
     _BUILTIN(IsSpace) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Char.isSpace");
-	    _REQUESTDEC(DMLValue ch,args[0]);
-	    if (ch instanceof Char) {
-		return (Character.isWhitespace(((Char) ch).ch) ?
+	    _fromSingle(val,"Char.isSpace");
+	    if (val instanceof Char) {
+		return (Character.isWhitespace(((Char) val).value) ?
 		    Constants.dmltrue :
 			Constants.dmlfalse);
 	    } else {

@@ -51,7 +51,7 @@ final public class JObject implements DMLValue {
 		Object object = null;
 		java.lang.String classname = null;
 		if (c instanceof STRING) { // nur noch Klasse
-		    classname = ((STRING) c).getString();
+		    classname = ((STRING) c).value;
 		    try {
 			cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		    } catch (ClassNotFoundException e) {
@@ -72,7 +72,7 @@ final public class JObject implements DMLValue {
 		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for methodname"),						   val));
 		}
 		else {
-		    methname = ((STRING) mn).getString();
+		    methname = ((STRING) mn).value;
 		}
 		// System.out.println("Object: "+classname+" Method: "+methname);
 		int length = v.getArity()-2; // Anzahl der Argumente für Methode
@@ -94,10 +94,10 @@ final public class JObject implements DMLValue {
 			_REQUESTDEC(DMLValue helper,v.get(i+2));
 			if (helper instanceof Int) {
 			    classes[i] = java.lang.Integer.TYPE;
-			    args[i] = new java.lang.Integer(((Int) helper).getInt());
+			    args[i] = new java.lang.Integer(((Int) helper).value);
 			} else if (helper instanceof Real) {
 			    classes[i] = Float.TYPE;
-			    args[i] = new Float(((Real) helper).getFloat());
+			    args[i] = new Float(((Real) helper).value);
 			} else if (helper instanceof STRING) {
 			    try{
 				classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
@@ -107,10 +107,10 @@ final public class JObject implements DMLValue {
 				System.err.println(e.getMessage());
 				e.printStackTrace();
 			    }
-			    args[i] = ((STRING) helper).getString();
+			    args[i] = ((STRING) helper).value;
 			} else if (helper instanceof Word) {
 			    classes[i] = Long.TYPE;
-			    args[i] = new Long(((Word) helper).getLong());
+			    args[i] = new Long(((Word) helper).value);
 			} else if (helper instanceof Name) {
 			    if (helper==Constants.dmltrue) {
 				classes[i] = Boolean.TYPE;
@@ -313,7 +313,7 @@ final public class JObject implements DMLValue {
 		DMLTuple v = (DMLTuple) val;
 		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument
 		if (c instanceof STRING) {
-		    java.lang.String classname = ((STRING) c).getString();
+		    java.lang.String classname = ((STRING) c).value;
 		    Class cl = null;
 		    try {
 			cl = ClassLoader.getSystemClassLoader().loadClass(classname);
@@ -341,10 +341,10 @@ final public class JObject implements DMLValue {
 			    _REQUESTDEC(DMLValue helper,v.get(i+1));
 			    if (helper instanceof Int) {
 				classes[i] = java.lang.Integer.TYPE;
-				args[i] = new java.lang.Integer(((Int) helper).getInt());
+				args[i] = new java.lang.Integer(((Int) helper).value);
 			    } else if (helper instanceof Real) {
 				classes[i] = Float.TYPE;
-				args[i] = new Float(((Real) helper).getFloat());
+				args[i] = new Float(((Real) helper).value);
 			    } else if (helper instanceof STRING) {
 				try{
 				    classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
@@ -354,10 +354,10 @@ final public class JObject implements DMLValue {
 				    System.err.println(e.getMessage());
 				    e.printStackTrace();
 				}
-				args[i] = ((STRING) helper).getString();
+				args[i] = ((STRING) helper).value;
 			    } else if (helper instanceof Word) {
 				classes[i] = Long.TYPE;
-				args[i] = new Long(((Word) helper).getLong());
+				args[i] = new Long(((Word) helper).value);
 			    } else if (helper instanceof Name) {
 				if (helper==Constants.dmltrue) {
 				    classes[i] = Boolean.TYPE;
@@ -568,7 +568,7 @@ _BUILTIN(Putfield) {
 	    java.lang.Object object = null;
 	    java.lang.String classname = null;
 	    if (c instanceof STRING) { // nur noch Klassenfelder
-		classname = ((STRING) c).getString();
+		classname = ((STRING) c).value;
 		try {
 		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
@@ -591,7 +591,7 @@ _BUILTIN(Putfield) {
 	    _REQUEST(c,v.get1()); // hier: Feldname
 	    java.lang.String fieldname = null;
 	    if (c instanceof STRING) 
-		fieldname = ((STRING) c).getString();
+		fieldname = ((STRING) c).value;
 	    else {
 		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for fieldname"),
 					       val));
@@ -600,13 +600,13 @@ _BUILTIN(Putfield) {
 	    _REQUEST(c,v.get2()); // hier: Wert
 	    java.lang.Object arg = null;
 	    if (c instanceof Int) {
-		arg = new Integer(((Int) c).getInt());
+		arg = new Integer(((Int) c).value);
 	    } else if (c instanceof Real) {
-		arg = new Float(((Real) c).getFloat());
+		arg = new Float(((Real) c).value);
 	    } else if (c instanceof STRING) {
-		arg = ((STRING) c).getString();
+		arg = ((STRING) c).value;
 	    } else if (c instanceof Word) {
-		arg = new Long(((Word) c).getLong());
+		arg = new Long(((Word) c).value);
 	    } else if (c instanceof Name) {
 		if (c==Constants.dmltrue) {
 		    arg = new Boolean(true);
@@ -675,7 +675,7 @@ _BUILTIN(Getfield) {
 	    java.lang.Object object = null;
 	    java.lang.String classname = null;
 	    if (c instanceof STRING) { // nur noch Klassenfelder
-		classname = ((STRING) c).getString();
+		classname = ((STRING) c).value;
 		try {
 		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
@@ -698,7 +698,7 @@ _BUILTIN(Getfield) {
 	    _REQUEST(c,v.get1()); // hier: Feldname
 	    java.lang.String fieldname = null;
 	    if (c instanceof STRING)
-		fieldname = ((STRING) c).getString();
+		fieldname = ((STRING) c).value;
 	    else {
 		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for fieldname"),
 					       val));
@@ -770,7 +770,7 @@ _BUILTIN(InstanceOf) {
 	    // 1. Argument
 	    Class cl = null;
 	    if (c instanceof STRING) {
-		java.lang.String classname = ((STRING) c).getString();
+		java.lang.String classname = ((STRING) c).value;
 		try {
 		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
@@ -788,7 +788,7 @@ _BUILTIN(InstanceOf) {
 	    _REQUEST(c,v.get1()); // zweites Argument
 	    Class cl2 = null;
 	    if (c instanceof STRING) {
-		java.lang.String classname = ((STRING) c).getString();
+		java.lang.String classname = ((STRING) c).value;
 		try {
 		    cl2 = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {

@@ -8,10 +8,10 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConValTuple2 implements DMLConVal {
 
-    private DMLValue fst = null;
-    private DMLValue snd = null;
+    protected DMLValue fst = null;
+    protected DMLValue snd = null;
 
-    private Constructor constructor=null;
+    protected Constructor constructor=null;
 
     public ConValTuple2(Constructor con) {
 	constructor = con;

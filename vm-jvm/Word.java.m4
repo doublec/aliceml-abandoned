@@ -16,7 +16,7 @@ package de.uni_sb.ps.dml.runtime;
 final public class Word implements DMLValue {
 
     /** java-long Wert */
-    protected long value=0;
+    final protected long value;
 
     /** Baut ein neues Word mit Wert <code>value</code>.
      *  @param value <code>long</code> Wert, der dem Word entspricht.

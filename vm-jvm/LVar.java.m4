@@ -65,8 +65,11 @@ public class LVar extends UnicastRemoteObject
 	    System.err.println(r);
 	    return null;
 	}
-	if (val instanceof LVar) return "<unresolved>: lvar";
-	return val.toString();
+	if (val instanceof LVar) {
+	    return "<unresolved>: lvar";
+	} else {
+	    return val.toString();
+	}
     }
 
 

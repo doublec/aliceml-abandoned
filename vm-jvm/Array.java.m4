@@ -239,7 +239,7 @@ final public class Array implements DMLValue {
 	    _REQUESTDEC(DMLValue arg,args[0]);
 	    int ar=0;
 	    if (arg instanceof Int)
-		ar = ((Int) arg).getInt();
+		ar = ((Int) arg).value;
 	    else
 		_error("argument 1 not Int",val);
 	    return new Array(ar,args[1]);
@@ -250,9 +250,8 @@ final public class Array implements DMLValue {
 
     _BUILTIN(FromList) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.fromList");
-	    _REQUESTDEC(DMLValue arg,args[0]);
-	    return new Array(arg);
+	    _fromSingle(val,"Array.fromList");
+	    return new Array(val);
 	}
     }
     /** <code>val fromList : 'a list -> 'a array </code>*/
@@ -264,7 +263,7 @@ final public class Array implements DMLValue {
 	    int ar=0;
 	    _REQUESTDEC(DMLValue arg,args[0]);
 	    if (arg instanceof Int)
-		ar = ((Int) arg).getInt();
+		ar = ((Int) arg).value;
 	    else
 		_error("argument 1 not Array",val);
 	    return new Array(args[1],ar);
@@ -275,10 +274,9 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Length) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.length");
-	    _REQUESTDEC(DMLValue arg,args[0]);
-	    if (arg instanceof Array)
-		return new Int(((Array) arg).arr.length);
+	    _fromSingle(val,"Array.length");
+	    if (val instanceof Array)
+		return new Int(((Array) val).arr.length);
 	    else
 		_error("argument 1 not Int",val);
 	}
@@ -293,7 +291,7 @@ final public class Array implements DMLValue {
 	    if (array instanceof Array) {
 		_REQUESTDEC(DMLValue idx,args[1]);
 		if (idx instanceof Int)
-		    return ((Array) array).sub(((Int) idx).getInt());
+		    return ((Array) array).sub(((Int) idx).value);
 		else
 		    _error("argument 2 not Int",val);
 	    }
@@ -312,7 +310,7 @@ final public class Array implements DMLValue {
 		_REQUESTDEC(DMLValue idx,args[1]);
 		if (idx instanceof Int)
 		    return ((Array) array).
-			update(((Int) idx).getInt(),args[2]);
+			update(((Int) idx).value,args[2]);
 		else
 		    _error("argument 2 not Int",val);
 	    }
@@ -333,7 +331,7 @@ final public class Array implements DMLValue {
 		    _REQUESTDEC(DMLValue to,args[2]);
 		    if (to==Option.NONE) {
 			Array a=(Array) array;
-			return a.extract(((Int) fr).getInt(),
+			return a.extract(((Int) fr).value,
 					 a.arr.length);
 		    }
 		    if (to instanceof DMLConVal) {
@@ -342,8 +340,8 @@ final public class Array implements DMLValue {
 			    to=cv.getContent();
 			    if (to instanceof Int)
 				return ((Array) array).
-				    extract(((Int) fr).getInt(),
-					    ((Int) to).getInt());
+				    extract(((Int) fr).value,
+					    ((Int) to).value);
 			}
 		    }
 		    _error("argument 3 not Int option",val);
@@ -366,7 +364,7 @@ final public class Array implements DMLValue {
 		_REQUESTDEC(DMLValue fr,args[1]);
 		if (!(fr instanceof Int))
 		    _error("argument 2 not Int",val);
-		int from = ((Int) fr).getInt();
+		int from = ((Int) fr).value;
 		_REQUESTDEC(DMLValue len,args[2]);
 		int le = 0;
 		if (len==Option.NONE) {
@@ -377,7 +375,7 @@ final public class Array implements DMLValue {
 		    if (c==Option.SOME) {
 			len=cv.getContent();
 			if (len instanceof Int)
-			    le = ((Int) len).getInt();
+			    le = ((Int) len).value;
 		    }
 		}
 		else
@@ -392,7 +390,7 @@ final public class Array implements DMLValue {
 		    .copy(from,
 			  le,
 			  (Array) dest,
-			  ((Int) di).getInt());
+			  ((Int) di).value);
 	    } else
 		_error("argument 1 not Array",val);
 	}
@@ -409,7 +407,7 @@ final public class Array implements DMLValue {
 		_REQUESTDEC(DMLValue fr,args[1]);
 		if (!(fr instanceof Int))
 		    _error("argument 2 not Int",val);
-		int from = ((Int) fr).getInt();
+		int from = ((Int) fr).value;
 		_REQUESTDEC(DMLValue len,args[2]);
 		int le = 0;
 		if (len==Option.NONE) {
@@ -420,7 +418,7 @@ final public class Array implements DMLValue {
 		    if (c==Option.SOME) {
 			len=cv.getContent();
 			if (len instanceof Int)
-			    le = ((Int) len).getInt();
+			    le = ((Int) len).value;
 		    }
 		}
 		else
@@ -434,7 +432,7 @@ final public class Array implements DMLValue {
 		return ((Vector) vector).copyVec(from,
 						 le,
 						 (Array) dest,
-						 ((Int) di).getInt());
+						 ((Int) di).value);
 	    } else
 		_error("argument 1 not Vector",val);
 	}
@@ -444,8 +442,7 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Appi) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.appi");
-	    _REQUEST(val, args[0]);
+	    _fromSingle(val,"Array.appi");
 	    return new Appi1(val);
 	}
 	_BUILTIN(Appi1) {
@@ -459,7 +456,7 @@ final public class Array implements DMLValue {
 		_REQUESTDEC(DMLValue fr,args[1]);
 		if (!(fr instanceof Int))
 		    _error("argument 2 not Int",val);
-		int from = ((Int) fr).getInt();
+		int from = ((Int) fr).value;
 		_REQUESTDEC(DMLValue to,args[2]);
 		int toint = 0;
 		if (to==Option.NONE)
@@ -470,7 +467,7 @@ final public class Array implements DMLValue {
 			DMLValue iv= cv.getContent();
 			if (!(iv instanceof Int))
 			    _error("argument 3 not Int option",val);
-			toint=((Int) iv).getInt();
+			toint=((Int) iv).value;
 		    }
 		} else
 		    _error("argument 3 not Int option",val);
@@ -486,19 +483,17 @@ final public class Array implements DMLValue {
 
     _BUILTIN(App) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.app");
-	    _REQUEST(val, args[0]);
+	    _fromSingle(val,"Array.app");
 	    return new App1(val);
 	}
 	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Array.app1");
-		_REQUESTDEC(DMLValue array,args[0]);
-		if (!(array instanceof Array))
+		_fromSingle(val,"Array.app1");
+		if (!(val instanceof Array))
 		    _error("argument not Array",val);
-		return ((Array) array).app(fun);
+		return ((Array) val).app(fun);
 	    }
 	}
     }
@@ -507,16 +502,14 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldli) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.foldli");
-	    _REQUEST(val,args[0]);
+	    _fromSingle(val,"Array.foldli");
 	    return new Foldli1(val);
 	}
 	_BUILTIN(Foldli1) {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Array.foldli1");
-		_REQUEST(val,args[0]);
+		_fromSingle(val,"Array.foldli1");
 		return new Foldli2(fun,val);
 	    }
 	    _BUILTIN(Foldli2) {
@@ -540,14 +533,14 @@ final public class Array implements DMLValue {
 			    DMLValue iv= cv.getContent();
 			    if (!(iv instanceof Int))
 				_error("argument 3 not Int option",val);
-			    toint=((Int) iv).getInt();
+			    toint=((Int) iv).value;
 			}
 		    } else
 			_error("argument 3 not Int option",val);
 		    return ((Array) array).
 			foldli(fun,
 			       init,
-			       ((Int) from).getInt(),
+			       ((Int) from).value,
 			       toint);
 		}
 	    }
@@ -558,16 +551,14 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldri) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.foldri");
-	    _REQUEST(val,args[0]);
+	    _fromSingle(val,1,"Array.foldri");
 	    return new Foldri1(val);
 	}
 	_BUILTIN(Foldri1) {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Array.foldri1");
-		_REQUEST(val,args[0]);
+		_fromSingle(val,"Array.foldri1");
 		return new Foldri2(fun,val);
 	    }
 	    _BUILTIN(Foldri2) {
@@ -591,14 +582,14 @@ final public class Array implements DMLValue {
 			    DMLValue iv= cv.getContent();
 			    if (!(iv instanceof Int))
 				_error("argument 3 not Int option",val);
-			    toint=((Int) iv).getInt();
+			    toint=((Int) iv).value;
 			}
 		    } else
 			_error("argument 3 not Int option",val);
 		    return ((Array) array).
 			foldri(fun,
 			       init,
-			       ((Int) from).getInt(),
+			       ((Int) from).value,
 			       toint);
 		}
 	    }
@@ -609,26 +600,24 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.foldl");
-	    _REQUEST(val,args[0]);
+	    _fromSingle(val,"Array.foldl");
 	    return new Foldl1(val);
 	}
 	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Array.foldl1");
-		return new Foldl2(fun, args[0]);
+		_fromSingle(val,"Array.foldl1");
+		return new Foldl2(fun,val);
 	    }
 	    _BUILTIN(Foldl2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
-		    _fromTuple(args,val,1,"Array.foldl2");
-		    _REQUESTDEC(DMLValue array,args[0]);
-		    if (!(array instanceof Array))
+		    _fromSingle(val,"Array.foldl2");
+		    if (!(val instanceof Array))
 			_error("argument not Array",val);
-		    return ((Array) array).foldl(fun,init);
+		    return ((Array) val).foldl(fun,init);
 		}
 	    }
 	}
@@ -638,26 +627,24 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.foldr");
-	    _REQUEST(val,args[0]);
+	    _fromSingle(val,"Array.foldr");
 	    return new Foldr1(val);
 	}
 	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Array.foldr1");
-		return new Foldr2(fun, args[0]);
+		_fromSingle(val,"Array.foldr1");
+		return new Foldr2(fun,val);
 	    }
 	    _BUILTIN(Foldr2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
-		    _fromTuple(args,val,1,"Array.foldr2");
-		    _REQUESTDEC(DMLValue array,args[0]);
-		    if (!(array instanceof Array))
+		    _fromSingle(val,"Array.foldr2");
+		    if (!(val instanceof Array))
 			_error("argument not Array",val);
- 		    return ((Array) array).foldr(fun,init);
+ 		    return ((Array) val).foldr(fun,init);
 		}
 	    }
 	}
@@ -667,8 +654,7 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Modifyi) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.modifyi");
-	    _REQUEST(val,args[0]);
+	    _fromSingle(val,"Array.modifyi");
 	    return new Modifyi1(val);
 	}
 	_BUILTIN(Modifyi1) {
@@ -692,13 +678,13 @@ final public class Array implements DMLValue {
 			DMLValue iv= cv.getContent();
 			if (!(iv instanceof Int))
 			    _error("argument 2 not Int option",val);
-			toint=((Int) iv).getInt();
+			toint=((Int) iv).value;
 		    }
 		} else
 		    _error("argument 2 not Int option",val);
 		return ((Array) array).
 		    modifyi(fun,
-			    ((Int) from).getInt(),
+			    ((Int) from).value,
 			    toint);
 	    }
 	}
@@ -708,20 +694,19 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Modify) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Array.modify");
-	    return new Modify1(args[0]);
+	    _fromSingle(val,"Array.modify");
+	    return new Modify1(val);
 	}
 	_BUILTIN(Modify1) {
 	    DMLValue fun = null;
 	    Modify1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Array.modify1");
-		_REQUESTDEC(DMLValue array,args[0]);
-		if (!(array instanceof Array)) {
+		_fromSingle(val,"Array.modify1");
+		if (!(val instanceof Array)) {
 		    _error("argument not Array",val);
 		}
 		else {
-		    return ((Array) array).modify(fun);
+		    return ((Array) val).modify(fun);
 		}
 	    }
 	}

@@ -50,7 +50,7 @@ final public class Port extends UnicastRemoteObject
 
     _BUILTIN(NewPort) {
 	_APPLY(val) {
-	    _fromTuple(_,val,1,"Port.newPort");
+	    _fromSingle(val,"Port.newPort");
 	    try {
 		return new Port();
 	    } catch (RemoteException r) {
@@ -82,11 +82,10 @@ final public class Port extends UnicastRemoteObject
 
     _BUILTIN(Recieve) {
     _APPLY(val) {
-	_fromTuple(args,val,1,"Port.recieve");
-	    _REQUESTDEC(DMLValue p,args[0]);
-	    if (!(p instanceof DMLPort))
+	_fromSingle(val,"Port.recieve");
+	    if (!(val instanceof DMLPort))
 		_error("argument 1 not DMLPort",val);
-	    DMLPort port = (DMLPort) p;
+	    DMLPort port = (DMLPort) val;
 	    try {
 		return port.recieve();
 	    } catch (RemoteException r) {

@@ -63,12 +63,11 @@ final public class Connection {
 
     _BUILTIN(Take) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Connection.take");
-	    _REQUESTDEC(DMLValue t,args[0]);
-	    if (!(t instanceof STRING)) {
+	    _fromSingle(val,"Connection.take");
+	    if (!(val instanceof STRING)) {
 		_error("argument not String",val);
 	    }
-	    java.lang.String ti = ((STRING) t).getString();
+	    java.lang.String ti = ((STRING) val).value;
 	    java.lang.String ip = ti.substring(0,ti.indexOf('\\'));
 	    java.lang.String ticket = ti.substring(ti.indexOf('\\')+1);
 	    Exporter exp = null;
