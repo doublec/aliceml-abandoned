@@ -57,6 +57,8 @@ protected:
   jit_insn *sharedReturn;
   s_int stackFrameSize;
   enum { NV_JIT_V2, NV_JIT_V1, NV_JIT_V0, NV_JIT_FP, NV_TOTAL };
+  enum { ST_TMP_R0, ST_TMP_R1, ST_TMP_R2, ST_TMP_R3,
+	 ST_TMP_R4, ST_TMP_R5, ST_TMP_R6, ST_TOTAL };
 public:
   // Stack Abstraction
   void PushStack(u_int Reg) {
@@ -65,15 +67,24 @@ public:
   void PopStack(u_int Reg) {
     jit_popr_ui(Reg);
   }
+  // Temporary Variable Abstraction
+  void StoreTmp(u_int tmp, u_int Reg) {
+    Assert((tmp >= ST_TMP_R0) && (tmp <= ST_TMP_R5));
+    jit_stxi_p(tmp * sizeof(word), JIT_SP, Reg);
+  }
+  void LoadTmp(u_int tmp, u_int Reg) {
+    Assert((tmp >= ST_TMP_R0) && (tmp <= ST_TMP_R5));
+    jit_ldxi_p(Reg, JIT_SP, tmp * sizeof(word));
+  }
   // Enter subroutine
   void Prolog() {
     sharedReturn   = INVALID_POINTER;
-    stackFrameSize = NV_TOTAL * sizeof(word);
+    stackFrameSize = (ST_TOTAL + NV_TOTAL) * sizeof(word);
     jit_subi_p(JIT_SP, JIT_SP, stackFrameSize);
-    jit_stxi_p(NV_JIT_FP * sizeof(word), JIT_SP, JIT_FP);
-    jit_stxi_p(NV_JIT_V0 * sizeof(word), JIT_SP, JIT_V0);
-    jit_stxi_p(NV_JIT_V1 * sizeof(word), JIT_SP, JIT_V1);
-    jit_stxi_p(NV_JIT_V2 * sizeof(word), JIT_SP, JIT_V2);
+    jit_stxi_p((ST_TOTAL + NV_JIT_FP) * sizeof(word), JIT_SP, JIT_FP);
+    jit_stxi_p((ST_TOTAL + NV_JIT_V0) * sizeof(word), JIT_SP, JIT_V0);
+    jit_stxi_p((ST_TOTAL + NV_JIT_V1) * sizeof(word), JIT_SP, JIT_V1);
+    jit_stxi_p((ST_TOTAL + NV_JIT_V2) * sizeof(word), JIT_SP, JIT_V2);
   }
   // Return from subroutine: Result is taken from JIT_R0
   void Return() {
@@ -82,10 +93,10 @@ public:
     }
     if (sharedReturn == INVALID_POINTER) {
       sharedReturn = jit_get_label();
-      jit_ldxi_p(JIT_FP, JIT_SP, NV_JIT_FP * sizeof(word));
-      jit_ldxi_p(JIT_V0, JIT_SP, NV_JIT_V0 * sizeof(word));
-      jit_ldxi_p(JIT_V1, JIT_SP, NV_JIT_V1 * sizeof(word));
-      jit_ldxi_p(JIT_V2, JIT_SP, NV_JIT_V2 * sizeof(word));
+      jit_ldxi_p(JIT_FP, JIT_SP, (ST_TOTAL + NV_JIT_FP) * sizeof(word));
+      jit_ldxi_p(JIT_V0, JIT_SP, (ST_TOTAL + NV_JIT_V0) * sizeof(word));
+      jit_ldxi_p(JIT_V1, JIT_SP, (ST_TOTAL + NV_JIT_V1) * sizeof(word));
+      jit_ldxi_p(JIT_V2, JIT_SP, (ST_TOTAL + NV_JIT_V2) * sizeof(word));
       jit_addi_p(JIT_SP, JIT_SP, stackFrameSize);
       RET_();
     } else {
@@ -96,8 +107,8 @@ public:
   void Prepare(u_int nbArgs, bool saveCallerSavedRegs = true) {
     JITStore::saveCallerSavedRegs = saveCallerSavedRegs;
     if (saveCallerSavedRegs) {
-      PushStack(JIT_R1);
-      PushStack(JIT_R2);
+      StoreTmp(ST_TMP_R4, JIT_R1);
+      StoreTmp(ST_TMP_R5, JIT_R2);
     }
     JITStore::nbArgs = nbArgs;
     if (nbArgs != 0) {
@@ -121,8 +132,8 @@ public:
     // Move the return value to JIT_R0
     jit_retval(JIT_R0);
     if (saveCallerSavedRegs) {
-      PopStack(JIT_R2);
-      PopStack(JIT_R1);
+      LoadTmp(ST_TMP_R4, JIT_R1);
+      LoadTmp(ST_TMP_R5, JIT_R2);
     }
   }
   void SaveAllRegs() {
@@ -197,11 +208,11 @@ public:
   }
   void SaveDeref(u_int Ptr) {
     if (Ptr == JIT_R0) {
-      PushStack(JIT_V1);
+      JITStore::StoreTmp(ST_TMP_R6, JIT_V1);
       jit_movr_ui(JIT_V1, JIT_R0);
       Deref(JIT_V1);
       jit_movr_ui(JIT_R0, JIT_V1);
-      PopStack(JIT_V1);
+      JITStore::LoadTmp(ST_TMP_R6, JIT_V1);
     }
     else
       Deref(Ptr);
