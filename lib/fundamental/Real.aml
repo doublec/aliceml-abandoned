@@ -59,6 +59,8 @@ struct
 	    | EQUAL			=> IEEEReal.EQUAL
 	) handle IEEEReal.Unordered	=> IEEEReal.UNORDERED
 
+    val equal				= op =
+
     fun *+(x,y,z)			= x*y + z
     fun *-(x,y,z)			= x*y - z
 
