@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,7 +16,7 @@ sig
     type t = stamp
 
     val reset :		unit -> unit
-    val new :		unit -> stamp
+    val stamp :		unit -> stamp
     val toString :	stamp -> string
 
     val equal :		stamp * stamp -> bool

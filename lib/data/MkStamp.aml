@@ -21,7 +21,7 @@ struct
     val lock     = Lock.lock()
 
     val reset    = Lock.sync lock (fn() => r := 0)
-    val new      = Lock.sync lock (fn() => (r := !r + 1; !r))
+    val stamp    = Lock.sync lock (fn() => (r := !r + 1; !r))
 
     val toString = Int.toString
     val compare  = Int.compare
