@@ -55,7 +55,11 @@ define
 						accepted: ?NewSocket
 						host: ?Host port: ?Port)}
 				 {System.show found}
-				 _ = {F NewSocket Host Port}
+				 case {Procedure.arity F} of 2 then
+				    _ = {F '#'(NewSocket Host Port)}
+				 [] 4 then
+				    _ = {F NewSocket Host Port}
+				 end
 				 {Accept}
 			      end
 			      {Accept}
