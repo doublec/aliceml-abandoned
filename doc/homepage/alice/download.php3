@@ -7,7 +7,7 @@
 <?php section("current", "release") ?>
 
   <P>
-    The public release of the Alice system is scheduled for first half of 2002
+    The public release of the Alice system is scheduled for second half of 2002
     and will be announced in appropriate newsgroups. 
   </P>
 
