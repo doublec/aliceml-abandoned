@@ -17,7 +17,6 @@ import structure Reflect       from "../../lib/system/Reflect"
 import structure Type          from "../../lib/rtt/Type"
 import structure PervasiveType from "../../lib/rtt/PervasiveType"
 import structure TextIO        from "../../lib/system/TextIO"
-import structure Vector        from "../../lib/fundamental/Vector"
 import signature MODEL         from "MODEL-sig"
 
 structure Model :> MODEL =
@@ -105,7 +104,7 @@ structure Model :> MODEL =
 	 * changed
 	 *)
 	fun notify ((view_list, controller_list, _), thread) = 
-	    (List.app (fn f => f thread) (!view_list) ;
+	    (List.app (fn f => f thread) (!view_list);
 	     List.app (fn f => f()) (!controller_list))
 
 	(**
@@ -248,6 +247,7 @@ structure Model :> MODEL =
 		  | getPosFromStack (BREAK(_, pos, _) :: xs) = pos
 		  | getPosFromStack (EXIT(_, pos, _, _) :: xs) = pos
 		  | getPosFromStack( _ :: xs) = getPosFromStack xs
+		  | getPosFromStack _ = raise Unknown_Thread
 	    in
 		case thread_option of
 		    SOME(_, _, (_, stack), _, _) => getPosFromStack stack

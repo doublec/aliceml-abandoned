@@ -1,0 +1,370 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature DEBUGGUI       from "DEBUGGUI-sig"
+import structure Gtk            from "../gtk/Gtk"
+import structure Gdk            from "../gtk/Gdk"
+import structure Model          from "Model"
+import structure Stream         from "Stream"
+import structure Eventlistener  from "Eventlistener"
+import structure SourceView     from "SourceView"
+import structure PrettyPrint    from "../utility/PrettyPrint"
+import structure PPValue        from "../system/PPValue"
+import structure PPType         from "../rtt/PPType"
+import structure Debugger       from "../system/Debugger"
+
+structure DebugGui :> DEBUGGUI = 
+struct
+    (* Setting up User-event stream *)
+    val stream = ref (Stream.new())
+    fun write event = 
+	stream := Stream.write(!stream, event)
+    val step = fn thread => write (Model.Step (thread))
+    val next = fn thread => write (Model.Next (thread))
+    val continue = fn thread => write (Model.Continue (thread))
+    val suspend  = fn thread => write (Model.Suspend (thread))
+    val resume   = fn thread => write (Model.Resume (thread))
+    val setBreakpoint = 
+	fn (thread,pos) => write (Model.SetBreakpoint(thread, pos))
+    val removeBreakpoint = 
+	fn (thread, pos) => write (Model.RemoveBreakpoint(thread, pos))
+    val detach = fn thread => write (Model.Detach (thread))
+    val unleash = fn (thread, n) => write (Model.Unleash (thread, n))
+    val setType = 
+	fn (thread, id, typ) => write (Model.SetType (thread, id, typ))
+    val resetType = fn (thread, id) => write (Model.ResetType (thread, id))
+
+    (* Window Stuff *)
+    (* Constants *)
+    val title  = "Alice Debugger"
+    val width  = 800
+    val height = 600
+
+    (* Functions *)
+    fun createTextField () = 
+	let
+	    val text   = Gtk.textViewNew ()
+	    val buffer = Gtk.textViewGetBuffer(text)
+	    (* Initialisation *)
+	    val _ = (Gtk.textBufferSetText(buffer, "", ~1);
+		     Gtk.textViewSetIndent(text, 5);
+		     Gtk.textViewSetEditable(text, true))
+	in
+	    (text, buffer)
+	end
+    
+    fun createTreeView () =
+	let
+	    val store = Gtk.treeStoreNew ()
+	    val view  = Gtk.treeViewNewWithModel store
+	    val cell  = Gtk.cellRendererTextNew ()
+	    val col   = Gtk.treeViewColumnNew ()
+	    (* Initialisation *)
+	    val _ = (Gtk.treeViewSetHeadersVisible(view, false);
+		     Gtk.treeViewColumnPackStart(col, cell, true); 
+		     Gtk.treeViewColumnAddAttribute(col, cell, "text", 0);
+		     Gtk.treeViewInsertColumn(view, col, ~1);
+		     Gtk.treeViewExpandAll view)
+	in
+	    (view, store)
+	end
+    
+    fun makeLabeledContainer (slabel, elem) =
+	let
+	    val box    = Gtk.vboxNew(false, 0)
+	    val label = Gtk.labelNew slabel
+	    (* Initialisation *)
+	    val _ = (Gtk.labelSetJustify(label, Gtk.JUSTIFY_CENTER);
+		     Gtk.boxPackStart(box, label, false, false, 0);
+		     Gtk.boxPackStart(box, elem, true, true, 0))
+	in
+	    box
+	end
+    
+    fun makeVarContainer(locals, globals) =
+	let
+	    val both      = Gtk.hboxNew(true, 5)
+	    val localbox  = makeLabeledContainer("Local Variables", locals)
+	    val globalbox = makeLabeledContainer("Closure", globals)
+	    (* Initialisation *)
+	    val _ = (Gtk.boxPackStart(both, localbox, true, true, 0);
+		     Gtk.boxPackStart(both, globalbox, true, true, 0))
+	in
+	    both
+	end
+    
+    fun createMenuBar () = 
+	let
+	    val menubar = Gtk.menuBarNew()
+	    val filemenu = Gtk.menuItemNewWithLabel "File"
+	    val _ = Gtk.menuShellAppend(menubar, filemenu)
+	in
+	    menubar
+	end
+    
+    fun createToolBar currThreadRef =
+	let
+	    val toolbar = Gtk.toolbarNew()
+	    (* Initialisation *)
+	    val stepbutton = Gtk.buttonNewWithLabel("step")
+	    val nextbutton = Gtk.buttonNewWithLabel("next")
+(*	    val continuebutton = Gtk.buttonNewWithLabel("continue") *)
+	    val _ = (Gtk.toolbarAppendWidget(toolbar, stepbutton, "", "");
+		     Gtk.toolbarAppendWidget(toolbar, nextbutton, "", ""))
+(*		     Gtk.toolbarAppendWidget(toolbar, continuebutton, "", ""))*)
+	    (* Handler *)
+	    fun stepHandler _ = 
+		step (Option.valOf (!currThreadRef)) handle _ => ()
+	    fun nextHandler _ = 
+		next (Option.valOf (!currThreadRef)) handle _ => ()
+	    fun continueHandler _ = 
+		continue (Option.valOf (!currThreadRef)) handle _ => ()
+	    (* Connect handler *)
+	    val _ = (Gtk.signalConnect(stepbutton, "clicked", stepHandler);
+		     Gtk.signalConnect(nextbutton, "clicked", nextHandler))
+(*
+		     Gtk.signalConnect(continuebutton, "clicked", continueHandler))
+*)
+	in 
+	    toolbar
+	end
+
+    fun createRootWindow(title, width, height, currThreadRef) =
+	let
+	    (* widget creation *)
+	    val window          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val vbox            = Gtk.vboxNew(false, 0)
+	    val hpane           = Gtk.hpanedNew () 
+	    val vpane           = Gtk.vpanedNew ()
+	    val (threads, tsto) = createTreeView ()
+	    val (stack, sbuf)   = createTextField ()
+	    val (lvars, lvbuf)  = createTextField ()
+	    val (gvars, gvbuf)  = createTextField ()
+	    val menubar         = createMenuBar ()
+	    val toolbar         = createToolBar currThreadRef
+	    val varcontainer    = makeVarContainer(lvars, gvars)
+	    val stackcontainer  = makeLabeledContainer("Call Stack", stack)
+	    val threadcontainer = makeLabeledContainer("Threads", threads)
+	    (* Container Setup *)
+	    val _ = (Gtk.widgetSet(hpane, "position", Gtk.INT (width div 3));
+		     Gtk.widgetSet(vpane, "position", Gtk.INT (height div 2));
+		     Gtk.panedAdd2(hpane, vpane);
+		     Gtk.panedAdd1(vpane, stackcontainer);
+		     Gtk.panedAdd2(vpane, varcontainer);
+		     Gtk.panedAdd1(hpane, threadcontainer);
+		     Gtk.boxPackStart(vbox, menubar, false, false, 0);
+		     Gtk.boxPackStart(vbox, toolbar, false, false, 0);
+		     Gtk.boxPackStart(vbox, hpane, true, true, 0))
+	    (* Handler creation & connection *)
+	    fun windowClosedHandler _ = OS.Process.exit OS.Process.success
+	    val _ = (Gtk.signalConnect(window, "delete-event", 
+				       windowClosedHandler))
+	    (* Window Setup *)
+	    val _ = (Gtk.windowSetTitle(window, title);
+		     Gtk.windowResize(window, width, height);
+		     Gtk.containerAdd(window, vbox))
+
+	in
+	    (window, threads, (tsto, sbuf, lvbuf, gvbuf))
+	end
+
+    (* End Window Stuff *)
+    (* DebugGui helpers *)
+    fun valueListToArgumentTuple nil acc           = acc ^ ")"
+      | valueListToArgumentTuple ((x,typ)::xs) acc = 
+	if acc <> "("
+	    then valueListToArgumentTuple xs 
+		(acc ^ ", " ^ PrettyPrint.toString(PPValue.ppVal typ x, 80))
+	else valueListToArgumentTuple xs 
+	                 (acc^PrettyPrint.toString(PPValue.ppVal typ x, 80))
+	    
+    fun stepPointToString step_point =
+	case step_point of
+	    Model.APP(f,typ,args) => 
+		let val _ = ()
+		in
+		    "Applikation: "
+		    ^PrettyPrint.toString(PPValue.ppVal typ f, 80)
+		    ^(valueListToArgumentTuple args "(")
+		end
+	  | Model.COND        (b, typ) => "Konditional => " 
+		^PrettyPrint.toString(PPValue.ppVal typ b, 80)
+	  | Model.RAISE       (exc, typ) => "Raise => "
+		^PrettyPrint.toString(PPValue.ppVal typ exc, 80)
+	  | Model.HANDLER     (exc, typ) => "Handler => "
+		^PrettyPrint.toString(PPValue.ppVal typ exc, 80)
+	  | Model.SPAWN                  => "Spawn"
+	  | Model.UNKNOWN                => "Unknown"
+		
+    fun stackToString' acc nil = acc
+      | stackToString' acc (Model.EXIT (_,_,result,typ) :: 
+			    Model.ENTRY(_,_,stp) :: xs) = 
+	stackToString' (acc ^ "\t"
+			^ PrettyPrint.toString(PPValue.ppVal typ result, 80)
+			^ "\t<- " 
+			^ (stepPointToString stp)
+			^ "\n") xs
+      | stackToString' acc (Model.EXIT (_,_,result, typ) :: 
+			    Model.BREAK(_,_,stp) :: xs) =
+	stackToString' (acc ^ "\t"
+			^ PrettyPrint.toString(PPValue.ppVal typ result, 80)
+			^ "\t<- " 
+			^ (stepPointToString stp)
+			^ "\n") xs
+      | stackToString' acc (Model.ENTRY(_,_,stp) :: xs ) =
+	stackToString' (acc ^ "\t\t-> " 
+			^ (stepPointToString stp) 
+			^ "\n") xs
+      | stackToString' acc (Model.BREAK(_,_,stp) :: xs) =
+	stackToString' (acc ^ "\t\t-> " 
+			^ (stepPointToString stp) 
+			^ "\n") xs
+      | stackToString' acc ((Model.UNCAUGHT e) :: xs) =
+	stackToString' (acc ^ "\t\t-> Uncaught Exception: " 
+			^ (General.exnName (#2 e)) ^ "\n") xs
+      | stackToString' acc (_::xs) = 
+	stackToString' (acc ^ "\t\t-> Unknown Event\n") xs
+	
+    fun stackToString eventlist = stackToString' "" eventlist
+
+    fun closureToString (model, thread) (_,clos) =
+	foldl (fn ((name, value, typ), acc) => 
+	       if name = "" 
+		   orelse String.sub(name, 0) = #"$" 
+		   orelse String.sub(name, String.size name - 1) = #"$"
+		   then acc
+	       else 
+		   let 
+		       val valueString = 
+			   PrettyPrint.toString(PPValue.ppVal 
+		   (Option.getOpt(Model.getType(model, thread) name,typ)) 
+						value, 60)
+		       val typeString  = PrettyPrint.toString(PPType.ppTyp typ,
+							      60)
+		   in
+		       acc ^ "val " ^ 
+		       name ^ " : " ^ 
+		       typeString ^ " = " ^ 
+		       valueString ^ "\n"
+		   end ) ("[\n") clos
+			
+    val newId = 
+	let
+	    val x = ref ~1
+	in
+	    fn () => (x := !x + 1; !x)
+	end
+    
+    (* Interface functions *)
+    type view = Thread.thread option ref *
+                (Gtk.object * Gtk.object * Gtk.object * Gtk.object) *
+                Model.model option ref *
+	        (int * Thread.thread) list ref
+
+    fun update view thread = 
+	let
+	    val (curThreadOptRef, buffers, modelOptRef, threadlist) = view
+	    val model = Option.valOf (!modelOptRef)
+	    val curThread = Option.valOf (!curThreadOptRef) handle _ => thread 
+	    val (threadStore, stackBuffer, localsBuffer, closureBuffer) =
+		buffers
+	    val registerThread =
+		let
+		    val treeiter = Gtk.treeIterNew()
+		    val r = ref Gtk.NULL
+		in
+		    fn t => if List.exists (fn (id,x) => x = t) (!threadlist)
+				 then ()
+			     else let
+				      val id = newId()
+				  in 
+				      (Gtk.treeStoreAppend(threadStore, treeiter, !r);
+				       Gtk.treeStoreSetValist
+				         (threadStore, 
+					  treeiter,
+					  [Gtk.INT 0,
+					   Gtk.STRING ("Thread " ^ Int.toString id),
+					   Gtk.INT ~1]);
+					 r := treeiter;
+					 threadlist:=(!threadlist) @ [(id, t)])
+				  end
+		end
+	    val _ = registerThread thread
+	    (* Building call stack *)
+	    val stackString = 
+		stackToString (Model.getEventStack(model, curThread))
+	    (* Building environment*)
+	    val env = Model.getEnvironment(model, curThread)
+	    val localString = if not(List.null env)
+				  then closureToString (model, thread)
+				                       (hd env) ^ "]\n"
+			      else ""
+	    val globalString = if not(List.null env)
+				   then String.concat 
+				       (map 
+					(fn x => closureToString 
+					         (model, thread) x ^ "]\n") 
+					(tl env))
+			       else ""
+	in
+	    (* Setting text to buffers *)
+	    (Gtk.textBufferSetText(stackBuffer, stackString, ~1);
+	     Gtk.textBufferSetText(localsBuffer, localString, ~1);
+	     Gtk.textBufferSetText(closureBuffer, globalString, ~1))
+	end handle Option => ()
+
+    fun new() = 
+	let
+	    val currThreadRef = ref NONE
+	    val (window, threadv, buffers) = 
+		createRootWindow(title, 800, 600, currThreadRef)
+	    val _ = Gtk.widgetShowAll window
+	    val view = (currThreadRef, buffers, ref NONE, ref nil)
+	    fun setCurrentThread(tv, _) =
+		let
+		    fun extractThreadId text = 
+			Option.valOf(Int.fromString(
+			   hd(tl(String.tokens (fn #" " => true | _ => false) text))))
+		    fun getThread id =
+			#2 (Option.valOf(
+					 List.find (fn (i,t) => i = id) 
+					           (!(#4 view))))
+		    val selectedItem = Gtk.treeViewGetSelectedString tv
+		    val curThread = SOME (getThread(extractThreadId selectedItem)) 
+			            handle _ => NONE
+		    val _ = (#1 view) := curThread
+		in
+		    case curThread of
+			SOME t => update view t
+		      | NONE   => ()
+		end
+	    val _ = Gtk.signalConnect(threadv, "cursor-changed", setCurrentThread)
+	in 
+	    view
+	end
+
+    fun initialize (view as (_, _, model_ref, _), model) =
+	(Model.addView(model, update view);
+	 model_ref := SOME model)
+
+    (* Controller Stuff *)
+    val breakpoint = Debugger.breakpoint
+    fun run f = spawn(breakpoint(); f())
+
+    val model = Model.new()
+    val view  = new()
+    val sview = SourceView.new()
+    val listener = Eventlistener.new(!stream)
+    val _ = Eventlistener.addModel(Model.handleEvent model, listener)
+    val _ = (initialize(view, model); SourceView.initialize(sview, model))
+end
+

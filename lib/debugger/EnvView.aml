@@ -98,7 +98,7 @@ structure EnvView :> VIEW =
 			      Socket.output(x, "ThreadID: " ^(Int.toString id)^"\n");
 			      Socket.output(x, env_string))
 		    else upd (xr, yr)
-		
+		  | upd _ = raise Match
 	    in
 		(while (length(!sockets)) < (length(!thread_list)) do
 		     (let val soc = !sockets
