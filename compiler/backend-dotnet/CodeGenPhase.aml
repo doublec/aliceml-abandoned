@@ -612,7 +612,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (LazySelAppExp (_, _, _, n, id)) =
 	    (emitId id; emit (LdcI4 n);
 	     emit (Newobj (Alice.Selector, #[ObjectTy, Int32Ty]));
-	     emit (Newobj (Alice.Byneed, #[Alice.ProcedureTy])))
+	     emit (Newobj (Alice.ByNeed, #[Alice.ProcedureTy])))
 	  | genExp (FunAppExp (info, id, _, args)) =
 	    genVarAppExp (info, id, args, false)
 	  | genExp (FailExp _) =   (*--** implement *)
