@@ -107,15 +107,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			  (LABEL (Label.fromInt (i + 1))::pos, pat))
 	     (pats, 0, NONE),
 	     O.TupArgs (Vector.map ignore pats))
-	  | makeConArgs (ProdPat (info, patFields), Arity.Product _, pos) =
+	  | makeConArgs (ProdPat (info, patFlds), Arity.Product _, pos) =
 	    (case getRow (#typ info) of
 		 (_, LabelSort.Tup n) =>
-		     (Vector.map (fn Field (_, Lab (_, label), pat) =>
-				  (LABEL label::pos, pat)) patFields,
+		     (Vector.map (fn Fld (_, Lab (_, label), pat) =>
+				  (LABEL label::pos, pat)) patFlds,
 		      O.TupArgs (Vector.tabulate (n, ignore)))
 	       | (labels, LabelSort.Prod) =>
-		     (Vector.map (fn Field (_, Lab (_, label), pat) =>
-				  (LABEL label::pos, pat)) patFields,
+		     (Vector.map (fn Fld (_, Lab (_, label), pat) =>
+				  (LABEL label::pos, pat)) patFlds,
 		      O.ProdArgs (Vector.map (fn label =>
 					      (label, ())) labels)))
 	  | makeConArgs (pat, _, pos) = (#[(pos, pat)], O.OneArg ())
@@ -165,8 +165,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			  rest, mapping))
 	    (Test (pos, TupTest (Vector.length pats))::rest, mapping)
 	    (pats, 0, NONE)
-	  | makeTestSeq (ProdPat (info, patFields), pos, rest, mapping) =
-	    Vector.foldl (fn (Field (_, Lab (_, label), pat),
+	  | makeTestSeq (ProdPat (info, patFlds), pos, rest, mapping) =
+	    Vector.foldl (fn (Fld (_, Lab (_, label), pat),
 			      (rest, mapping)) =>
 			  makeTestSeq (pat, LABEL label::pos, rest, mapping))
 	    (case getRow (#typ info) of
@@ -174,7 +174,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		     Test (pos, TupTest n)::rest
 	       | (labels, LabelSort.Prod) =>
 		     Test (pos, ProdTest labels)::rest, mapping)
-	    patFields
+	    patFlds
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    Vector.foldli
 	    (fn (i, pat, (rest, mapping)) =>
