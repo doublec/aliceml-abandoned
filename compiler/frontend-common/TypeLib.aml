@@ -55,8 +55,8 @@ struct
     val _		= Type.unknown : kind -> typ		(* verify *)
     val lab_var		= vallab "var"
     val _		= Type.var : var -> typ			(* verify *)
-    val lab_abs		= vallab "abs"
-    val _		= Type.abs : kind * path -> typ		(* verify *)
+    val lab_con		= vallab "con"
+    val _		= Type.con : path * kind -> typ		(* verify *)
     val lab_arrow	= vallab "arrow"
     val _		= Type.arrow : typ * typ -> typ		(* verify *)
     val lab_tuple	= vallab "tuple"

@@ -27,7 +27,7 @@ sig
 
     val lab_unknown :	Label.t
     val lab_var :	Label.t
-    val lab_abs :	Label.t
+    val lab_con :	Label.t
     val lab_arrow :	Label.t
     val lab_tuple :	Label.t
     val lab_prod :	Label.t

@@ -369,7 +369,7 @@ struct
 
     fun WITHVALWHEREPat(I, pat, valbind, atexp) =
 	let
-	    val I'         = Source.over(G.infoPat pat, G.infoValBind valbind)
+	    val I'         = Source.span(G.infoPat pat, G.infoValBind valbind)
 	    val withvalPat = G.WITHVALPat(I', pat, valbind)
 	in
 	    G.WHEREPat(I, withvalPat, atexp)
@@ -377,7 +377,7 @@ struct
 
     fun WITHFUNWHEREPat(I, pat, fvalbind, atexp) =
 	let
-	    val I'         = Source.over(G.infoPat pat, G.infoFvalBind fvalbind)
+	    val I'         = Source.span(G.infoPat pat, G.infoFvalBind fvalbind)
 	    val withfunPat = G.WITHFUNPat(I', pat, fvalbind)
 	in
 	    G.WHEREPat(I, withfunPat, atexp)
@@ -555,7 +555,7 @@ struct
 
 	    fun buildSigExp       []         = sigexp
 	      | buildSigExp(strpat::strpats) =
-		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+		    FCTSigExp(Source.span(G.infoStrPat strpat, I'),
 			      strpat, buildSigExp strpats)
 	in
 	    G.PRIMITIVESTRUCTUREDec(I, strid, buildSigExp strpats, string)
@@ -623,7 +623,7 @@ struct
 
 	    fun buildStrExp       []         = strexp
 	      | buildStrExp(strpat::strpats) =
-		    FCTStrExp(Source.over(G.infoStrPat strpat, I'),
+		    FCTStrExp(Source.span(G.infoStrPat strpat, I'),
 			      strpat, buildStrExp strpats)
 	in
 	    G.StrBind(I, strid, buildStrExp strpats, funbind_opt)
@@ -698,7 +698,7 @@ struct
 
 	    fun buildSigExp       []         = sigexp
 	      | buildSigExp(strpat::strpats) =
-		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+		    FCTSigExp(Source.span(G.infoStrPat strpat, I'),
 			      strpat, buildSigExp strpats)
 	in
 	    G.NEWStrDesc(I, strid, buildSigExp strpats, fundesc_opt)
@@ -780,7 +780,7 @@ struct
       | WHEREREASigExp'(I, sigexp, SOME rea) =
 	let
 	    val (sigexp2,rea_opt) = Rea rea
-	    val  I'               = Source.over(I, G.infoSigExp sigexp2)
+	    val  I'               = Source.span(I, G.infoSigExp sigexp2)
 	    val  sigexp'          = (*UNFINISHED: ugly ugly ugly hack!*)
 				    case rea
 				      of ( PRIMITIVETYPERea _
@@ -796,7 +796,7 @@ struct
 
     fun WHERELONGSTRIDSigExp(I, sigexp, longstrid1, longstrid2) =
 	let
-	    val I' = Source.over(G.infoLong longstrid1, G.infoLong longstrid2)
+	    val I' = Source.span(G.infoLong longstrid1, G.infoLong longstrid2)
 	in
 	    WHEREREASigExp(I, sigexp,
 			   STRUCTURERea(I', longstrid1, NONE, longstrid2, NONE))
@@ -841,7 +841,7 @@ struct
 
 	    fun buildSigExp       []         = sigexp
 	      | buildSigExp(strpat::strpats) =
-		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+		    FCTSigExp(Source.span(G.infoStrPat strpat, I'),
 			      strpat, buildSigExp strpats)
 	in
 	    G.DESCStrItem(I, strid, buildSigExp strpats, funitem_opt)
