@@ -14,6 +14,14 @@
     linear equality constraints using a convenient infix operator syntax.
   </P>
 
+  <P class=node><EM>Note:</EM>
+    The linear module extensively performs folding of constant expressions,
+    eventually exceeding the implementation specific integer constant limit
+    for finite domain constraints.
+    In such a case, folding can be prevented by introducing a finite domain
+    variable that is assigned a singleton value.
+  </P>
+
 <?php section("import", "import"); ?>
 
   <PRE>
