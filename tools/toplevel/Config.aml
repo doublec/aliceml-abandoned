@@ -160,10 +160,11 @@ structure Config =
       fun saveHistory {prev,current,next} =
 	  let
 	      val cDir = createConfigDir ()
-	      val prev = if current="" then current::prev else prev
-	      val prev = rev (prev@next)
 	      val prev =
-		  if List.length prev <= !historySize then prev
+		  case next of nil   => rev prev
+		             | n::nr => rev (prev@nr)
+	      val prev =
+		  if List.length prev <= !historySize then rev prev
 		  else rev (List.take (prev, !historySize))
 	      val history = {prev=prev,
 			     current="",
