@@ -44,8 +44,10 @@ import structure String		from "String"
 import structure WideString	from "WideString"
 import signature SUBSTRING	from "SUBSTRING-sig"
 import structure Substring	from "Substring"
+import structure WideSubstring	from "WideSubstring"
 import signature UNIQUE_STRING	from "UNIQUE_STRING-sig"
 import structure UniqueString	from "UniqueString"
+import structure WideUniqueString from "WideUniqueString"
 import signature STRING_CVT	from "STRING_CVT-sig"
 import structure StringCvt	from "StringCvt"
 
@@ -134,8 +136,10 @@ structure String	= String
 structure WideString	= WideString
 signature SUBSTRING	= SUBSTRING
 structure Substring	= Substring
+structure WideSubstring	= WideSubstring
 signature UNIQUE_STRING	= UNIQUE_STRING
 structure UniqueString	= UniqueString
+structure WideUniqueString = WideUniqueString
 signature STRING_CVT	= STRING_CVT
 structure StringCvt	= StringCvt
 
@@ -192,3 +196,5 @@ signature LOCK		= LOCK
 structure Lock		= Lock
 signature STREAM	= STREAM
 structure Stream	= Stream
+
+type package		= Package.package
