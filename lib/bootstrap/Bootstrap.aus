@@ -351,6 +351,8 @@ structure String =
 
 type string = String.string
 val str = String.str
+val size = String.size
+val concat = String.concat
 val implode = String.implode
 val substring = String.substring
 val op^ = String.^
@@ -421,6 +423,10 @@ signature INT =
 	val toString: int -> string
 
 	val fromString: string -> int option
+
+	val max: int * int -> int
+
+	val fromInt: int -> int
     end
 
 structure Int :> INT =
@@ -497,6 +503,10 @@ structure Int :> INT =
 	val toString = builtin "Int.toString"
 
 	val fromString = scanString (scan DEC)   (*--** crashes *)
+
+	fun max (i, j) = if i < j then j else i
+
+	fun fromInt i = i
     end
 
 type int = Int.int
@@ -646,6 +656,8 @@ type array = Array.array
 
 structure Vector =
     struct
+	type 'a vector = 'a list   (*--** *)
+
 	val fromList = builtin "Vector.fromList"
 	val sub = builtin "Vector.sub"
 
@@ -658,6 +670,9 @@ val vector = Vector.fromList
 
 structure TextIO =
     struct
+	type instream = int   (*--** *)
+	type outstream = int   (*--** *)
+
 	val stdIn = builtin "TextIO.stdIn"
 	val openIn = builtin "TextIO.openIn"
 	val inputAll = builtin "TextIO.inputAll"
