@@ -47,10 +47,9 @@ struct
     local
 	val b = Option.isSome (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
     in
-	fun trace s =
-	    if b then TextIO.output (TextIO.stdErr,
-				     "[component manager] " ^ s ^ "\n")
-	    else ()
+	fun trace s where b =
+	    TextIO.output (TextIO.stdErr, "[component manager] " ^ s ^ "\n")
+	  | trace _ = ()
     end
 
     fun create (inf, mod) = EVALUATED {inf, mod}
@@ -64,22 +63,21 @@ struct
 	    (val component = EVALUATED {inf = SOME Sig.x, mod = Mod.x})
 	end
 
-    val localize =
+    val defaultResolver =
 	let
 	    val handlers =
 		case OS.Process.getEnv "ALICE_LOAD" of
 		    SOME s => Resolver.Handler.parse s
 		  | NONE => [Resolver.Handler.default]
-	    val resolver = Resolver.new ("load", handlers)
 	in
-	    Resolver.localize resolver
+	    Resolver.new {name = "load", handlers, memoize = true}
 	end
 
-    fun load url =
+    fun load' resolver url =
 	let
 	    val name = Url.toStringRaw url   (*--** use getLocalPath instead *)
 	in
-	    case localize name of
+	    case Resolver.localize resolver name of
 		SOME (Resolver.FILE name') =>
 		    (UnsafeComponent.load name'
 		     handle Corrupt =>
@@ -98,6 +96,8 @@ struct
 	      | NONE => raise IO.Io {name, function = "load", cause = NotFound}
 	end
 
+    val load = load' defaultResolver
+
     fun save (name, component) =
 	UnsafeComponent.save (name, component)
 	handle cause => raise IO.Io {name, function = "save", cause}
@@ -107,9 +107,10 @@ struct
 
     val initialTable = lazy UnsafeComponent.getInitialTable ()
 
-    functor MkManager() :> COMPONENT_MANAGER where type component = component =
+    functor MkManager(val resolver: Resolver.t) :>
+	COMPONENT_MANAGER where type component = component =
     struct
-	(*--** urls are required to be absolute, but this is not checked *)
+	(*--** should query and fragment be rejected instead of ignored? *)
 
 	exception Conflict
 
@@ -156,23 +157,30 @@ struct
 	      | UrlMap.NEW p =>
 		    let
 			val component =
-			    lazy (load url handle e => raise Failure (url, e))
+			    lazy (load' resolver url
+				  handle e => raise Failure (url, e))
 			val inf = lazy inf component
-			val mod = lazy eval (url, component)
+			val mod = lazy eval' (url, component)
 			val entry = (inf, mod)
 		    in
 			Promise.fulfill (p, entry); entry
 		    end
-	and link url = create (link' url)
 	and typedLink (url, importInf, baseUrlOpt) =
 	    let
 		val (inf, mod) = link' url
 	    in
 		lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt)
 	    end
-	and eval (baseUrl, UNEVALUATED {imports, body, ...}) =
+	and eval' (baseUrl, UNEVALUATED {imports, body, ...}) =
 	    let
-		fun resolve s = Url.resolve baseUrl (Url.fromString s)
+		fun resolve s =
+		    let
+			val url = Url.fromString s
+			val url = Url.setQuery (url, NONE)
+			val url = Url.setFragment (url, NONE)
+		    in
+			Url.resolve baseUrl url
+		    end
 		val imports' =
 		    Vector.map (fn (importUrlS, importInf) =>
 				   typedLink (resolve importUrlS,
@@ -187,12 +195,24 @@ struct
 		before
 		trace ("evaluated  " ^ Url.toString baseUrl)
 	    end
-	  | eval (_, EVALUATED {mod, ...}) = Future.await mod
+	  | eval' (_, EVALUATED {mod, ...}) = Future.await mod
+
+	fun validate url =
+	    let
+		val cwd = Url.fromString (OS.FileSys.getDir () ^ "/")
+		val cwd = Url.setScheme (cwd, SOME "file")
+		val url = Url.resolve cwd url
+		val url = Url.setQuery (url, NONE)
+		val url = Url.setFragment (url, NONE)
+	    in
+		url
+	    end
 
 	functor Eval(val component: component val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val mod = eval (url, component)
+		val url = validate url
+		val mod = eval' (url, component)
 		val inf = inf component
 		val mod' = strictTypeCheck (inf, SOME Sig.x, mod)
 			   handle Inf.Mismatch m =>
@@ -206,7 +226,7 @@ struct
 	functor Link(val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val mod = typedLink (url, SOME Sig.x, NONE)
+		val mod = typedLink (validate url, SOME Sig.x, NONE)
 	    in
 		Reflect.Unreflect(val x = mod signature S = S)
 	    end
@@ -217,25 +237,31 @@ struct
 		structure Mod = Reflect.Reflect(signature S = S
 						structure X = X)
 		val _ =
-		    case UrlMap.lookupNew (map, url) of
+		    case UrlMap.lookupNew (map, validate url) of
 			UrlMap.EXISTING _ => raise Conflict
-		      | UrlMap.NEW p => Promise.fulfill (p, (SOME Sig.x, Mod.x))
+		      | UrlMap.NEW p =>
+			    Promise.fulfill (p, (SOME Sig.x, Mod.x))
 	    in
 		()
 	    end
 
-	fun enter (url, component) =
+	fun eval (url, component) = eval' (validate url, component)
+
+	fun link url = create (link' (validate url))
+
+	fun enter (url', component) withval url = validate url' end =
 	    case UrlMap.lookupNew (map, url) of
 		UrlMap.EXISTING _ => raise Conflict
 	      | UrlMap.NEW p =>
 		    Promise.fulfill (p, (inf component,
-					 lazy eval (url, component)))
+					 lazy eval' (url, component)))
 
 	fun lookup url =
-	    case UrlMap.lookup (map, url) of
+	    case UrlMap.lookup (map, validate url) of
 		SOME (inf, mod) => SOME (EVALUATED {inf, mod})
 	      | NONE => NONE
 
-	fun start url = ignore (eval (url, link url))
+	fun start url' withval url = validate url' end =
+	    ignore (eval' (url, create (link' url)))
     end
 end

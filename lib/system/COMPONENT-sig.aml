@@ -13,6 +13,7 @@
 import structure Inf               from "../rtt/Inf"
 import structure Reflect           from "Reflect"
 import structure Url               from "Url"
+import structure Resolver          from "Resolver"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
 signature COMPONENT =
@@ -32,6 +33,8 @@ signature COMPONENT =
 
 	val extension: string
 
+	val defaultResolver: Resolver.t
+
 	functor Create(signature S
 		       structure X: S): (val component: component)
 
@@ -41,5 +44,6 @@ signature COMPONENT =
 	val save: string * component -> unit              (* Io *)
 	val inf: component -> Inf.t option
 
-	functor MkManager(): COMPONENT_MANAGER where type component = component
+	functor MkManager(val resolver: Resolver.t):
+	    COMPONENT_MANAGER where type component = component
     end

@@ -2,4 +2,5 @@
 
 import structure Component from "Component"
 
-structure ComponentManager = Component.MkManager()
+structure ComponentManager =
+    Component.MkManager(val resolver = Component.defaultResolver)
