@@ -45,10 +45,70 @@ public:
     return static_cast<ConstantPoolEntry *>(b);
   }
 
-  word Fixup(ConstantPool *) {
-    return ToWord(); //--**
+  CONSTANT_tag GetTag() {
+    return static_cast<CONSTANT_tag>(static_cast<int>(GetLabel()));
   }
+  word Fixup(ConstantPool *);
 };
+
+word ConstantPoolEntry::Fixup(ConstantPool *constantPool) {
+  switch (GetTag()) {
+  case CONSTANT_Class:
+    {
+      JavaString *name =
+	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
+      //--** return a Class
+      Error("Fixup CONSTANT_Class not implemented");
+    }
+  case CONSTANT_Fieldref:
+    {
+      JavaString *className =
+	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
+      word nameAndType = constantPool->Get(Store::DirectWordToInt(GetArg(1)));
+      //--** return a StaticFieldRef/InstanceFieldRef
+      Error("Fixup CONSTANT_Fieldref not implemented");
+    }
+  case CONSTANT_Methodref:
+    {
+      JavaString *className =
+	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
+      word nameAndType = constantPool->Get(Store::DirectWordToInt(GetArg(1)));
+      //--** return a StaticMethodRef/VirtualMethodRef
+      Error("Fixup CONSTANT_Methodref not implemented");
+    }
+  case CONSTANT_InterfaceMethodref:
+    {
+      JavaString *className =
+	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
+      word nameAndType = constantPool->Get(Store::DirectWordToInt(GetArg(1)));
+      //--** return an InterfaceMethodRef
+      Error("Fixup CONSTANT_InterfaceMethodref not implemented");
+    }
+  case CONSTANT_String:
+    return
+      constantPool->GetString(Store::DirectWordToInt(GetArg(0)))->ToWord();
+  case CONSTANT_Integer:
+    return GetArg(0);
+  case CONSTANT_Float:
+  case CONSTANT_Long:
+  case CONSTANT_Double:
+    Error("unimplemented CONSTANT_tag"); //--**
+  case CONSTANT_NameAndType:
+    {
+      JavaString *name =
+	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
+      JavaString *descriptor =
+	constantPool->GetString(Store::DirectWordToInt(GetArg(1)));
+      //--** return a NameAndType
+      Error("Fixup CONSTANT_InterfaceMethodref not implemented");
+    }
+  case CONSTANT_Utf8:
+    return
+      constantPool->GetString(Store::DirectWordToInt(GetArg(0)))->ToWord();
+  default:
+    Error("unknown constant pool tag"); //--** raise exception
+  }
+}
 
 //
 // ClassFile Method Implementations
@@ -120,7 +180,7 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   case CONSTANT_Float:
   case CONSTANT_Long:
   case CONSTANT_Double:
-    Error("unimplemented constant pool tag"); //--**
+    Error("unimplemented CONSTANT_tag"); //--**
   case CONSTANT_NameAndType:
     {
       ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 2);
