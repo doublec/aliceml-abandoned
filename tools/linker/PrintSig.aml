@@ -32,20 +32,26 @@ structure PrintSig : PRINT_SIG =
 struct
     nonfix mod
 
+(*obsolete
     val preboundPaths =
 	let
 	    val core = MyComponent.load
-		       (Url.fromString "x-alice:/lib/fundamental/Pervasive")
-	    val inf = MyComponent.inf (Option.valOf core)
-	    val paths = Inf.paths (Option.valOf inf)
+		       (Url.fromString "x-alice:/lib/fundamental/Core")
+	    val inf = Option.valOf (MyComponent.inf (Option.valOf core))
+	    val paths = Inf.paths inf
+	    val {typ,inf,mod} = Inf.boundPaths inf
 	in
+	    PathMap.appi (fn(p,_) => PathSet.insert(paths, p)) typ;
+	    PathMap.appi (fn(p,_) => PathSet.insert(paths, p)) inf;
+	    PathMap.appi (fn(p,_) => PathSet.insert(paths, p)) mod;
 	    PathSet.union (paths, PervasiveType.paths);
 	    paths
 	end
 	handle (IO.Io _ | Option.Option) =>
 	    (TextIO.output (TextIO.stdErr,
-			    "warning: could not load pervasive library\n");
+			    "warning: could not load core library\n");
 	     PervasiveType.paths)
+*)
 
     fun collectAbstractTypes bound (url, NONE) = (url, PathSet.set())
       | collectAbstractTypes bound (url, SOME inf') =
@@ -57,7 +63,8 @@ struct
 	    PathMap.appi (fn(p,_) => PathSet.insert(bound, p)) inf;
 	    PathMap.appi (fn(p,_) => PathSet.insert(bound, p)) mod;
 	    PathSet.app (fn p => PathSet.remove(free, p)) bound;
-	    PathSet.unionDisjoint(bound, free); (* avoid duplicates *)
+	    PathSet.union(*Disjoint*)(bound, free); (* avoid duplicates *)
+	    PathSet.filter (not o Path.isPervasive) free;
 	    (url, free)
 	end
 
@@ -73,7 +80,7 @@ struct
 	let
 	    val export  = MyComponent.inf component
 	    val imports = MyComponent.imports component
-	    val bound   = PathSet.clone preboundPaths
+	    val bound   = PathSet.set () (*PathSet.clone preboundPaths*)
 	    val freeImports = Vector.map (collectAbstractTypes bound) imports
 	    val freeExport  = collectAbstractTypes bound ("", export)
 	    val free        = Vector.concat [#[freeExport], freeImports]
