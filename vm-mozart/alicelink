@@ -7,22 +7,6 @@ then
   dir=`dirname "$howcalled"`
   STOCKHOME=`(cd "$dir"; cd ..; /bin/pwd)`
 fi
+export STOCKHOME
 
-: ${OZHOME=/opt/mozart-devel}
-: ${OZ_LOAD=cache=$OZHOME/cache/}
-
-case `uname` in
-    CYGWIN*)
-	SEP=\;
-	;;
-    *)
-	SEP=:
-	;;
-esac
-
-OZ_LOAD=pattern='?{x}'='?{x}.ozf'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}$OZ_LOAD
-
-export STOCKHOME OZ_LOAD
-
-#--** note: the `--execheader' option in the next line is a hack
-exec "$STOCKHOME/bin/alicerun" "$OZHOME/bin/ozl" --execheader alicerun "$@"
+exec "$STOCKHOME/bin/alicerun" x-alice:/linker/Main "$@"
