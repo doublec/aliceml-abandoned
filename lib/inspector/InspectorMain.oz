@@ -13,6 +13,7 @@
 
 functor
 import
+   System(show)
    Inspector(inspect inspectN configure)
    TreeNodesComponent('nodes' : TreeNodes) at 'TreeNodes'
 export
@@ -205,32 +206,18 @@ define
       %% Default Width and Depth Lists
       WidthList = [1 5 10 0 ~1 ~5 ~10]
       DepthList = [1 5 10 0 ~1 ~5 ~10]
+
+      Actions = ['Reinspect'(reinspect)
+		 'Show'(System.show)]
       
       ContainerMenus = [
-			cellMenu # menu(nil
-					nil
-					nil
-					['Reinspect'(reinspect)])
-			tupleMenu # menu(WidthList
-					 DepthList
-					 nil
-					 ['Reinspect'(reinspect)])
-			vectorMenu # menu(WidthList
-					  DepthList
-					  nil
-					  ['Reinspect'(reinspect)])
-			convalMenu # menu(WidthList
-					  DepthList
-					  nil
-					  ['Reinspect'(reinspect)])
-			listMenu   # menu(WidthList
-					  DepthList
-					  nil
-					  ['Reinspect'(reinspect)])
-			recordMenu # menu(WidthList
-					  DepthList
-					  nil
-					  ['Reinspect'(reinspect)])
+			cellMenu   # menu(nil       nil       nil Actions)
+			futureMenu # menu(nil       nil       nil Actions)
+			tupleMenu  # menu(WidthList DepthList nil Actions)
+			vectorMenu # menu(WidthList DepthList nil Actions)
+			convalMenu # menu(WidthList DepthList nil Actions)
+			listMenu   # menu(WidthList DepthList nil Actions)
+			recordMenu # menu(WidthList DepthList nil Actions)
 		       ]
    in
       {ForAll ContainerMenus proc {$ Key#Menu}
