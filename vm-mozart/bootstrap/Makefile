@@ -78,7 +78,7 @@ all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc-mozart
 
 stoc-mozart:
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
-	$(OZL) -v --exclude=.. --include=x-alice:/,../../stoc -x x-alice:/top/Main.ozf -o $@
+	$(OZL) -z9 -v --exclude=.. --include=x-alice:/,../../stoc -x x-alice:/top/Main.ozf -o $@
 
 %.ozf: %.oz
 	$(OZC) -c $< -o $@
