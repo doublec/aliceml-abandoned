@@ -282,8 +282,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	     recApplies)
 
 	fun setParmStamp (funstamp:stamp, parmstamp:stamp, parm:stamp) =
-	    (print ("set ("^Stamp.toString funstamp^","^Stamp.toString parmstamp^","^Stamp.toString parm^"\n");
-	     StampHash.insert (parmStamps, parmstamp, (funstamp, parm)))
+	     StampHash.insert (parmStamps, parmstamp, (funstamp, parm))
 
 	fun getParmStamp (funstamp, stamp') =
 	    case StampHash.lookup (parmStamps, stamp') of

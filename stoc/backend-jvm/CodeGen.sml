@@ -904,9 +904,10 @@ structure CodeGen =
 	and storeCode (stamp', curFun, curCls) =
 	    let
 		val s' = Lambda.getLambda stamp'
+		val ps = Lambda.getParmStamp (curFun, s')
 	    in
-		if Lambda.getParmStamp (curFun, s') <> s'
-		    then Astore (Lambda.getLambda s')
+		if ps <> s'
+		    then Astore ps
 		else
 		    if s'=curCls
 			then (* Accessing current method. Don't overwrite. *)
