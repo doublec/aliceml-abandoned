@@ -75,7 +75,7 @@ public:
   bool IsEmpty() {
     return GetArg(READ_INDEX_POS) == GetArg(WRITE_INDEX_POS);
   }
-  word Dequeue() {
+  word Dequeue() { // precondition: queue must not be empty
     u_int readIndex = Store::WordToInt(GetArg(READ_INDEX_POS));
     Block *array = Store::WordToBlock(GetArg(ARRAY_POS));
     Assert(readIndex != Store::WordToInt(GetArg(WRITE_INDEX_POS)));
