@@ -18,9 +18,8 @@
 
 #include <cstdio>
 #include "emulator/Authoring.hh"
-#include "emulator/VectorTabulateInterpreter.hh"
 
-// VectorTabulate Frame
+// Vector.tabulate Frame
 class VectorTabulateFrame : private StackFrame {
 private:
   static const u_int VECTOR_POS  = 0;
@@ -63,6 +62,27 @@ public:
 	   p->GetLabel() == (BlockLabel) VECTOR_TABULATE_FRAME);
     return (VectorTabulateFrame *) p;
   }
+};
+
+// Vector.tabulate Interpreter
+class VectorTabulateInterpreter : public Interpreter {
+private:
+  static VectorTabulateInterpreter *self;
+public:
+  // VectorTabulateInterpreter Constructor
+  VectorTabulateInterpreter() : Interpreter() {}
+  // VectorTabulateInterpreter Static Constructor
+  static void Init() {
+    self = new VectorTabulateInterpreter();
+  }
+  // Frame Handling
+  static void PushFrame(TaskStack *taskStack,
+			Vector *vector, word fun, int i, int n);
+  // Execution
+  virtual Result Run(word args, TaskStack *taskStack);
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
 };
 
 //
@@ -157,6 +177,7 @@ DEFINE2(Vector_tabulate) {
 } END
 
 void PrimitiveTable::RegisterVector() {
+  VectorTabulateInterpreter::Init();
   Register("Vector.fromList", Vector_fromList, 1);
   Register("Vector.maxLen", Store::IntToWord(Vector::maxLen));
   Register("Vector.length", Vector_length, 1);

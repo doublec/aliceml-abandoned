@@ -28,7 +28,6 @@
 #include "emulator/PushCallInterpreter.hh"
 #include "emulator/LazySelectionInterpreter.hh"
 #include "emulator/ByneedInterpreter.hh"
-#include "emulator/VectorTabulateInterpreter.hh"
 #include "emulator/AbstractCodeInterpreter.hh"
 
 extern word UnsafeMkRefMap(void);
@@ -80,7 +79,6 @@ int main(int argc, char *argv[]) {
   PushCallInterpreter::Init();
   LazySelectionInterpreter::Init();
   ByneedInterpreter::Init();
-  VectorTabulateInterpreter::Init();
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
   BootLinker::Init(builtins);
