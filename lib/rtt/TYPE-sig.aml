@@ -61,7 +61,6 @@ sig
     val asSingKind :	kind -> typ			(* Kind *)
 
     val equalKind :	kind * kind -> bool
-    val matchesKind :	kind * kind -> bool
 
     val kind :		typ -> kind
     val kindVar :	var -> kind
@@ -76,7 +75,7 @@ sig
 
     val unknown :	kind      -> typ
     val var :		var       -> typ
-    val abs :		kind * path -> typ
+    val con :		path * kind -> typ
     val arrow :		typ * typ   -> typ		(* Kind *)
     val tuple :		typ vector  -> typ		(* Kind *)
     val prod :		row       -> typ
@@ -93,7 +92,7 @@ sig
 
     val isUnknown :	typ -> bool	(* modulo abbreviations *)
     val isVar :		typ -> bool
-    val isAbs :		typ -> bool
+    val isCon :		typ -> bool
     val isArrow :	typ -> bool
     val isTuple :	typ -> bool
     val isProd :	typ -> bool
@@ -112,7 +111,7 @@ sig
   (* Projections *)
 
     val asVar :		typ -> var			(* Type *)
-    val asAbs :		typ -> path			(* Type *)
+    val asCon :		typ -> path			(* Type *)
     val asArrow :	typ -> typ * typ		(* Type *)
     val asTuple :	typ -> typ vector		(* Type *)
     val asProd :	typ -> row			(* Type *)
@@ -147,31 +146,44 @@ sig
     val instance :	typ -> typ
     val skolem :	typ -> typ
 
-    type realise_state
-    val realiseStart :	unit -> realise_state
-    val realiseCont :	realise_state * rea * typ -> typ	(* Kind *)
-    val realiseKindCont: realise_state * rea * kind -> kind	(* Kind *)
-
     val realise :	rea * typ -> typ			(* Kind *)
     val realiseKind :	rea * kind -> kind			(* Kind *)
 
+    type realise_context
+    val realiseStart :	unit -> realise_context
+    val realiseCont :	realise_context * rea * typ -> typ	(* Kind *)
+    val realiseKindCont: realise_context * rea * kind -> kind	(* Kind *)
+
+  (* Comparison *)
+
+    type mismatch      = typ * typ
+    type kind_mismatch = mismatch option
+    exception Mismatch     of mismatch
+    exception KindMismatch of kind_mismatch
+
+    val equal :		typ * typ -> bool
+    val match :		typ * typ -> unit		(* Mismatch *)
+    val matchKind :	kind * kind -> unit		(* KindMismatch *)
+
+    type match_context
+    val matchStart :	unit -> match_context
+    val matchBranch :	match_context -> match_context
+    val matchCont :	match_context * rea * typ * typ -> unit	(* Mismatch *)
+    val equalCont :	match_context * rea * typ * typ -> unit	(* Mismatch *)
+    val matchKindCont :	match_context * rea * kind * kind -> unit (* KindM. *)
+    val equalKindCont :	match_context * rea * kind * kind -> unit (* KindM. *)
+
   (* Unification and closure *)
 
-    exception Lift  of var
-    exception Unify of typ * typ
+    exception Lift of var
 
     val lift :		typ  -> unit			(* Lift *)
-    val unify :		typ * typ  -> unit		(* Unify, Lift *)
+    val unify :		typ * typ  -> unit		(* Mismatch, Lift *)
     val close :		typ list -> typ list
     val isClosed :	typ -> bool
 
     val paths :		typ -> kind PathMap.t
     val pathsKind :	kind -> kind PathMap.t
-
-  (* Comparison *)
-
-    val equal :		typ * typ -> bool
-    val matches :	typ * typ -> bool
 
   (* Hashing *)
 
