@@ -1218,9 +1218,7 @@ namespace Alice {
 	public class Int_rem: Procedure2 {
 	    public static object StaticApply(object a, object b) {
 		try {
-		    int ai = (Int32) CommonOp.Sync(a);
-		    int bi = (Int32) CommonOp.Sync(b);
-		    return ai % bi;
+		    return (Int32) CommonOp.Sync(a) % (Int32) CommonOp.Sync(b);
 		} catch (DivideByZeroException) {
 		    throw new Values.Exception(Prebound.General_Div);
 		}
