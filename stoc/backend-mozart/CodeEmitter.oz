@@ -574,13 +574,14 @@ in
 				       {FilterNonlinearRegs Regs} VArgs)
 	    end
 	 [] vGetVariable(_ Reg _) then
-	    case Emitter, GetReg(Reg $) of none then
-	       if Emitter, IsLast(Reg $) then
-		  Emitter, Emit(getVoid(1))
-	       else R in
-		  Emitter, PredictReg(Reg ?R)
-		  Emitter, Emit(getVariable(R))
-	       end
+	    case Emitter, GetReg(Reg $) of none then skip
+	    else Emitter, FreeReg(Reg)
+	    end
+	    if Emitter, IsLast(Reg $) then
+	       Emitter, Emit(getVoid(1))
+	    else R in
+	       Emitter, PredictReg(Reg ?R)
+	       Emitter, Emit(getVariable(R))
 	    end
 	 [] vCallBuiltin(OccsRS Builtinname Regs Coord Cont) then
 	    BIInfo NewCont2
@@ -891,7 +892,7 @@ in
 	    Emitter, EmitAddrInLocalEnv(Addr2 HasLocalEnv)
 	    Emitter, RestoreAllRegisterMappings(RegMap2)
 	 [] vMatch(_ Reg Addr VHashTableEntries Coord Cont) then
-	    %--** emit testBool if possible
+	    %--** emit testBool/testLiteral/testRecord if possible
 	    HasLocalEnv R Dest NewVHashTableEntries RegMap
 	 in
 	    Emitter, MayAllocateEnvLocally(?HasLocalEnv)
