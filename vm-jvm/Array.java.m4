@@ -219,6 +219,18 @@ final public class Array implements DMLValue {
 	return s+"] : Array";
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    java.lang.String s="["+arr[0];
+	    int l=arr.length;
+	    for(int i=1; i<l; i++)
+		s+=", "+arr[i];
+	    return s+"] : Array";
+	}
+    }
+
     /** Arrays können dann nicht serialisiert werden.
      */
     final protected Object writeReplace()

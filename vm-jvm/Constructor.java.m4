@@ -26,6 +26,10 @@ public class Constructor implements DMLValue {
 	return "unnamed constructor";
     }
 
+    public java.lang.String toString(int level) {
+	return "unnamed constructor";
+    }
+
     public DMLValue apply(DMLValue val)
 	throws RemoteException {
 	return new ConVal(this,val);

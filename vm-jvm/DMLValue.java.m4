@@ -32,4 +32,6 @@ public interface DMLValue extends Serializable {
 	throws RemoteException;
     public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
 	throws RemoteException;
+    public java.lang.String toString(int level)
+	throws RemoteException;
 }

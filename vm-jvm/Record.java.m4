@@ -67,6 +67,20 @@ final public class Record implements DMLTuple {
 	return s+"}";
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    java.lang.String s="{";
+	    int i;
+	    for (i=0; i<vals.length;i++) {
+		if (i>0) s+=", ";
+		s+=arity.getLabel(i)+" = "+vals[i].toString(level-1);
+	    }
+	    return s+"}";
+	}
+    }
+
     final public DMLValue get0() { return vals[0]; }
     final public DMLValue get1() { return vals[1]; }
     final public DMLValue get2() { return vals[2]; }

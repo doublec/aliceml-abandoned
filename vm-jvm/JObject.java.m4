@@ -32,6 +32,10 @@ final public class JObject implements DMLValue {
 	return javaObject.getClass().getName()+": "+javaObject+" : APIObject";
     }
 
+    final public java.lang.String toString(int level) {
+	return javaObject.getClass().getName()+": "+javaObject+" : APIObject";
+    }
+
     _apply_fails ;
 
     /** Builtin zur Benutzung von java API Objekt/Klassen-Methoden

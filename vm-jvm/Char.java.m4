@@ -34,6 +34,10 @@ final public class Char implements DMLValue {
 	return value+" : char";
     }
 
+    final public java.lang.String toString(int level) {
+	return value+" : char";
+    }
+
     _apply_fails;
 
     // eqtype string

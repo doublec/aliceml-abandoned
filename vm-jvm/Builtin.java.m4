@@ -26,6 +26,10 @@ abstract public class Builtin implements DMLValue {
 	return "builtin function: "+this.getClass();
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	return "builtin function: "+this.getClass();
+    }
+
     final public static DMLValue getBuiltin(java.lang.String name) {
 	DMLValue b = (DMLValue) builtins.get(name);
 	if (b!=null) {

@@ -79,6 +79,12 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	    +"Is interrupted: "+this.isInterrupted();
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	return "Thread["+threadNumber+"] ("+fcn.toString(level-1)+")\n"
+	    +"Is a leif: "+this.isAlive()
+	    +"Is interrupted: "+this.isInterrupted();
+    }
+
     final protected Object writeReplace()
 	throws java.io.ObjectStreamException {
 	if (ng == null) { // falls zum ersten Mal serialisiert

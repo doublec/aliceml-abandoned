@@ -43,4 +43,8 @@ public class UniqueConstructor extends Constructor {
     final public java.lang.String toString() {
 	return this.name;
     }
+
+    final public java.lang.String toString(int level) {
+	return this.name;
+    }
 }

@@ -102,6 +102,25 @@ final public class LVar extends UnicastRemoteObject
 	}
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    DMLValue val;
+	    try {
+		val=this.getValue();
+	    } catch (RemoteException r) {
+		System.err.println(r);
+		return null;
+	    }
+	    if (val instanceof LVar) {
+		return "<unresolved>: lvar";
+	    } else {
+		return val.toString(level-1);
+	    }
+	}
+    }
+
     final public DMLValue apply(DMLValue v)  throws RemoteException {
 	return this.request().apply(v);
     }

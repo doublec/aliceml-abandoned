@@ -82,6 +82,23 @@ final public class Future extends UnicastRemoteObject
 	    return val.toString();
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    DMLValue val = null;
+	    try {
+		this.getValue();
+	    } catch (RemoteException r) {
+		System.err.println(r);
+	    }
+	    if (val instanceof LVar)
+		return "<unresolved>: future";
+	    else
+		return val.toString(level-1);
+	}
+    }
+
     /** die Referenz der Future wird appliziert */
     final public DMLValue apply(DMLValue val) throws RemoteException {
 	return ref.apply(val); // ref ist LVar !

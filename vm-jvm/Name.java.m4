@@ -24,6 +24,10 @@ public class Name implements DMLValue {
 	return "unnamed name";
     }
 
+    public java.lang.String toString(int level) {
+	return "unnamed name";
+    }
+
     /** Falls der Name noch keinen GName hat, wird jetzt ein
      *  neuer GName erzeugt und der Name wird unter dem GName in
      *  der globalen Hashtabelle eingetragen.

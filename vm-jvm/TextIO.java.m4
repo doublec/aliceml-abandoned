@@ -24,6 +24,10 @@ final public class TextIO {
 	    in = is;
 	}
 	_apply_fails ;
+
+	public java.lang.String toString(int level) {
+	    return "TextIO.IStream";
+	}
     }
 
     final public static class OStream implements DMLValue {
@@ -33,6 +37,10 @@ final public class TextIO {
 	    out = os;
 	}
 	_apply_fails ;
+
+	public java.lang.String toString(int level) {
+	    return "TextIO.OStream";
+	}
     }
 
     /** val stdIn : instream */

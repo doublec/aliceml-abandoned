@@ -65,6 +65,20 @@ public class Tuple implements DMLTuple {
 	return s+")/"+getArity();
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    java.lang.String s="(";
+	    int i;
+	    for (i=0; i<vals.length;i++) {
+		if (i>0) s+=", ";
+		s+=vals[i].toString(level-1);
+	    }
+	    return s+")/"+getArity();
+	}
+    }
+
     /** gibt den i-ten Eintrag des Tuples oder Records*/
     final public DMLValue get(int i){
 	return vals[i];

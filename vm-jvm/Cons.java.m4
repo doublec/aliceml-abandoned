@@ -39,6 +39,14 @@ final public class Cons implements DMLConVal {
 	return "("+car+". "+cdr+")";
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    return "("+car.toString(level-1)+". "+cdr.toString(level-1)+")";
+	}
+    }
+
     /** Gleichheit der  und Inhalte */
     final public boolean equals(Object val) {
 	if (val instanceof Cons) {

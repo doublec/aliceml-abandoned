@@ -41,6 +41,10 @@ final public class Port extends UnicastRemoteObject
 	return "port";
     }
 
+    final public java.lang.String toString(int level) {
+	return "port";
+    }
+
     _BUILTIN(NewPort) {
 	_APPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {

@@ -29,6 +29,10 @@ public class UniqueName extends Name {
 	return name+" : name";
     }
 
+    public java.lang.String toString(int level) {
+	return name+" : name";
+    }
+
     /** Here we use the default mechanism to store the name, since the
      *  UniqueNames are put into the GName table by their constructor.
      */

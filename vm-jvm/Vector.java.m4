@@ -309,6 +309,18 @@ final public class Vector implements DMLValue {
 	    s += ", "+vec[i];
 	return s+"] : Vector";
     }
+
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    java.lang.String s="["+vec[0];
+	    int l = vec.length;
+	    for(int i=1; i<l; i++)
+		s += ", "+vec[i].toString(level-1);
+	    return s+"] : Vector";
+	}
+    }
     //'
     /*************************************************************/
     /* Part 2

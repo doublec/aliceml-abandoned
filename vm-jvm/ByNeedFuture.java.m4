@@ -98,6 +98,24 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	}
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    DMLValue val=null;
+	    try{
+		val=this.getValue();
+	    } catch (RemoteException r) {
+		System.out.println(r);
+	    }
+	    if (val == this) {
+		return "<unresolved>: byneed-future";
+	    } else {
+		return "[BN"+val.toString(level-1)+"BN]";
+	    }
+	}
+    }
+
     final public DMLValue apply(DMLValue val) throws RemoteException {
 	return request().apply(val); // request() ist LVar !
     }

@@ -86,6 +86,14 @@ final public class ConVal3 implements DMLConVal {
 	return constructor+"("+fst+", "+snd+", "+thr+") : constructed value";
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    return constructor.toString(level-1)+"("+fst.toString(level-1)+", "+snd.toString(level-1)+", "+thr.toString(level-1)+") : constructed value";
+	}
+    }
+
     _getConstructor ;
     _apply_fails ;
 }

@@ -53,6 +53,10 @@ final public class Int implements DMLValue {
 	return value+": int";
     }
 
+    final public java.lang.String toString(int level) {
+	return value+": int";
+    }
+
     _apply_fails;
 
     _BUILTIN(Uminus) {

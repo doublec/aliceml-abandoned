@@ -49,6 +49,10 @@ final public class String implements DMLValue {
 	return "\""+value+"\": string";
     }
 
+    final public java.lang.String toString(int level) {
+	return "\""+value+"\": string";
+    }
+
     _apply_fails;
 
     _BUILTIN(Size) {

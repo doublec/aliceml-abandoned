@@ -68,6 +68,13 @@ final public class Tuple3 implements DMLTuple {
 	return "("+fst+", "+snd+", "+thr+")/3";
     }
 
+    public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	return "("+fst.toString(level-1)+", "+snd.toString(level-1)+", "+thr.toString(level-1)+")/3";
+    }
+    }
     /** gibt den i-ten Eintrag des Tuples oder Records*/
     final public DMLValue get(int i){
 	switch (i) {

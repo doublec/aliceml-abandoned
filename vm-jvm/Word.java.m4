@@ -49,6 +49,10 @@ final public class Word implements DMLValue {
 	return value + ": word";
     }
 
+    final public java.lang.String toString(int level) {
+	return value + ": word";
+    }
+
     _apply_fails;
 
     final public static int wordSizeI = 31;

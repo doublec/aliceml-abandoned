@@ -125,6 +125,22 @@ final public class Reference implements DMLConVal {
 	//      return (content==null?"remote":content.toString())+" : ref";
     }
 
+    final public java.lang.String toString(int level) throws java.rmi.RemoteException {
+	if (level<1) {
+	    return "...";
+	} else {
+	    if (Function.DEBUG) {
+		java.lang.String s = (mgr==null ? "no server-manager, " : "server: "+mgr+", ");
+		s+= (cmgr==null ? "no client-manager, " : "client: "+cmgr+", ");
+		s+=(content==null?"remote":content.toString(level-1))+" : ref";
+		return s;
+	    } else {
+		return content.toString(level-1)+" : ref";
+	    }
+	    //      return (content==null?"remote":content.toString())+" : ref";
+	}
+    }
+
     final public Constructor getConstructor() {
 	return Constants.reference;
     }

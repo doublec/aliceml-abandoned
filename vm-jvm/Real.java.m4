@@ -49,6 +49,10 @@ final public class Real implements DMLValue {
 	return value+": real";
     }
 
+    final public java.lang.String toString(int level) {
+	return value+": real";
+    }
+
     _apply_fails;
 
     /** <code>structure Math : MATH</code>*/
