@@ -25,28 +25,28 @@ struct
 
     fun compare (C (n1, _, _, _), C (n2, _, _, _)) = String.compare (n1, n2)
     
-    val all = [C("brown",0.4,0.4,0.0),
-	       C("blue",0.16,0.8,0.66),
-	       C("yellow",1.0,1.0,0.0),
-	       C("turquoise",0.24,0.66,0.61),
-	       C("violet",0.66,0.11,0.48),
-	       C("silver",0.66,0.64,0.66)]
+    val all = [C("brown",     0.4,  0.4,  0.0),
+	       C("blue",      0.16, 0.8,  0.66),
+	       C("yellow",    1.0,  1.0,  0.0),
+	       C("turquoise", 0.24, 0.66, 0.61),
+	       C("violet",    0.66, 0.11, 0.48),
+	       C("silver",    0.66, 0.64, 0.66)]
     (** [all] is a list of all available colors *)
     
-    fun toString (C(s,_,_,_)) = s
+    fun toString (C (s, _, _, _)) = s
     (** [toString c] returns the [english] name of [c]. *)
  
     fun fromString s = 
 	case List.find (fn x => toString x = s) all of
-	    NONE    => raise Unknown
-	  | SOME(x) => x
+	    NONE   => raise Unknown
+	  | SOME x => x
 
     (** [fromString name] is the inverse operation of toString.
         In case you apply ofString to a invalid/unknown color name
         [Unknown] is raised.
       *)
 
-    fun rgb (C(_,r,g,b)) = (r,g,b)
+    fun rgb (C (_, r, g, b)) = (r, g, b)
 
     (** [rgb color] returns a triple [(red, green, blue)], with
         the usual meaning and range [0.0 - 1.0]
@@ -55,8 +55,8 @@ struct
 end
 
 
-val _ = Pickle.save ("Color.ozf",pack (structure Color = Color) 
-		                       :> (structure Color : COLOR))
+val _ = Pickle.save ("Color.ozf", pack (structure Color = Color) 
+		                    :> (structure Color : COLOR))
     
 
 val _ = OS.Process.exit OS.Process.success

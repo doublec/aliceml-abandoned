@@ -20,6 +20,9 @@ import structure Protocol  from "../../common/Protocol"
 structure TextWindow =
 struct
 
+
+    (* [mkTextWindow(title, mode)] builds a text window 
+     with title 'title' and text 'mode' *)
     fun mkTextWindow (title, mode) = 
 	let
 
@@ -28,26 +31,25 @@ struct
 	    val closeButton = Gtk.buttonNewWithLabel "  Close  "
 	    val buttonHBox  = Gtk.hbuttonBoxNew ()
 	    val label       = Gtk.labelNew mode
-		    
+
 	in
-	    
+
 	    Gtk.windowSetTitle (textWindow, title);
 	    Gtk.windowSetModal (textWindow, true);
 	    Gtk.windowSetPosition (textWindow, Gtk.WIN_POS_CENTER);
+	    Gtk.containerSetBorderWidth (textWindow , 10);
 
 	    Gtk.signalConnect (textWindow , "delete-event", 
 			       fn _ => Gtk.widgetDestroy textWindow);
 	    Gtk.signalConnect (closeButton, "clicked", 
 			       fn _ => Gtk.widgetDestroy textWindow);
 
-	    Gtk.containerSetBorderWidth (textWindow , 20);
-
-	    Gtk.boxPackStart (buttonHBox, closeButton, false, false, 10);
-	    Gtk.boxPackStart (dialogVBox, label, false, false, 10);
-	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, false, 15);
+	    Gtk.boxPackStart (buttonHBox, closeButton, false, false, 5);
+	    Gtk.boxPackStart (dialogVBox, label, false, false, 5);
+	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, false, 5);
 
 	    Gtk.containerAdd (textWindow, dialogVBox);
-    	    Gtk.widgetShowAll textWindow
+    	    Gtk.widgetShowAll textWindow	    
 
 	end
 

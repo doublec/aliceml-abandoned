@@ -1,28 +1,7 @@
-Server:
+knopf für laden und speichern von config sachen... und knopf
+für default multi oder default single laden machen...
+(serversettings)
 
-++Snake
+code verschönern
 
-****Arena
-
-****Level
-
-++Participant
-
-Server
-
-****Highscore
-
-****Config   (* magic numbers *)
-
-'Move'
-
-
-GUI (* Start a game GUI *)
-
-
-Client:
-
-GUI
-
-Client (* Remote - GUI *)
-
+canvas-fehler beseitigen...

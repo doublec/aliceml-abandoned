@@ -13,6 +13,7 @@ import signature HIGHSCORE from "HIGHSCORE-sig"
 import structure OS        from "x-alice:/lib/system/OS"
 import structure Color     from "Color"
 
+
 structure Highscore :> HIGHSCORE =
 struct
 
@@ -39,16 +40,18 @@ struct
 
     val empty = nil
 
-
-    fun merge (high, p : points list,lvl) = 
+    fun merge (high, p, level) = 
 	let
             val player  = List.length p
 	    val convert = 
-		List.foldl (fn(point,xs) => {name = #name point,
-					     color = #color point,
-					     points = #points point,
-					     player = player,
-					     level = lvl}::xs) nil
+		List.foldl (fn ({name,
+				 color,
+				 points,
+				 gamePoints}, xs) => {name,
+						      color,
+						      points,
+						      player,
+						      level} :: xs) nil
 
 	    fun order (e1 : entry, e2 : entry) = 
 		if #points e1 < #points e2 
@@ -57,21 +60,21 @@ struct
 		    if #points e1 > #points e2
 			then GREATER
 		    else EQUAL
-	(* if highscore should be sorted another way,
-	   only change this procedure *)
+	    (* if highscore should be sorted another way,
+	     only change this procedure *)
 
-	    val sorted = List.sort order ((convert p)@high)
+	    val sorted = List.sort order ((convert p) @ high)
 
 	in
-	    List.take(sorted, 10)
+	    List.take(sorted, 10) handle Subscript => sorted
 	end
 
     val foldl = List.foldl (* TODO: implementation *)
 
 end
 
-val _ = Pickle.save ("Highscore.ozf",pack (structure Highscore = Highscore) 
-		                       :> (structure Highscore : HIGHSCORE))
+val _ = Pickle.save ("Highscore.ozf", pack (structure Highscore = Highscore) 
+		                        :> (structure Highscore : HIGHSCORE))
     
 
 val _ = OS.Process.exit OS.Process.success
