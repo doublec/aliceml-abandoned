@@ -31,7 +31,7 @@ private:
   enum { CLOSURE_POS, SIZE };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
+
   // LazyCompileFrame Accessors
   Closure *GetClosure() {
     return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
@@ -68,7 +68,7 @@ void LazyCompileInterpreter::PushCall(Closure *closure) {
   Scheduler::PushFrame(LazyCompileFrame::New(self, closure)->ToWord());
 }
 
-Interpreter::Result LazyCompileInterpreter::Run() {
+Worker::Result LazyCompileInterpreter::Run() {
   LazyCompileFrame *frame =
     LazyCompileFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Closure *closure     = frame->GetClosure();
@@ -76,7 +76,7 @@ Interpreter::Result LazyCompileInterpreter::Run() {
   NativeCodeJitter::currentConcreteCode = closure->Sub(1);
   Scheduler::nArgs          = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = NativeCodeJitter::Compile(abstractCode)->ToWord();
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
 const char *LazyCompileInterpreter::Identify() {
@@ -84,7 +84,7 @@ const char *LazyCompileInterpreter::Identify() {
 }
 
 void LazyCompileInterpreter::DumpFrame(word) {
-  fprintf(stderr, "LazyCompile");
+  std::fprintf(stderr, "LazyCompile");
 }
 
 //

@@ -19,7 +19,7 @@
 
 #include "generic/Interpreter.hh"
 
-typedef Interpreter::Result (*native_fun)(class NativeCodeFrame *);
+typedef Worker::Result (*native_fun)(class NativeCodeFrame *);
 
 class DllExport NativeCodeInterpreter : public Interpreter {
 public:

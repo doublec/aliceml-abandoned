@@ -37,7 +37,6 @@
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/StackFrame.hh"
-#include "generic/Interpreter.hh"
 #include "generic/Scheduler.hh"
 #include "generic/IOHandler.hh"
 #include "generic/Transients.hh"
@@ -378,13 +377,11 @@ private:
   enum { FILE_IO_POS, STRING_POS, READ_ALL_POS, SIZE };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
 
   // FdInputFrame Constructor
-  static FdInputFrame *New(Interpreter *interpreter,
-			   FdIO *fdIO, bool readAll) {
-    StackFrame *frame = StackFrame::New(FD_INPUT_FRAME, interpreter, SIZE);
-    String *string    = String::New(static_cast<u_int>(0));
+  static FdInputFrame *New(Worker *worker, FdIO *fdIO, bool readAll) {
+    StackFrame *frame = StackFrame::New(FD_INPUT_FRAME, worker, SIZE);
+    String *string = String::New(static_cast<u_int>(0));
     frame->InitArg(FILE_IO_POS, Store::UnmanagedPointerToWord(fdIO));
     frame->InitArg(STRING_POS, string->ToWord());
     frame->InitArg(READ_ALL_POS, readAll);
@@ -413,14 +410,14 @@ public:
   }
 };
 
-class IOInterpreter: public Interpreter {
+class IOWorker: public Worker {
 public:
-  static IOInterpreter *self;
-  // IOInterpreter Constructor
-  IOInterpreter(): Interpreter() {}
-  // IOInterpreter Static Constructor
+  static IOWorker *self;
+  // IOWorker Constructor
+  IOWorker(): Worker() {}
+  // IOWorker Static Constructor
   static void Init() {
-    self = new IOInterpreter();
+    self = new IOWorker();
   }
   // Execution
   virtual Result Run();
@@ -430,17 +427,17 @@ public:
 };
 
 //
-// IOInterpreter Methods
+// IOWorker Methods
 //
-IOInterpreter *IOInterpreter::self;
+IOWorker *IOWorker::self;
 
-Interpreter::Result IOInterpreter::Run() {
+Worker::Result IOWorker::Run() {
   FdInputFrame *frame = FdInputFrame::FromWordDirect(Scheduler::GetFrame());
   FdIO *fdIO = frame->GetFdIO();
   Future *future = fdIO->Fill();
   if (future != INVALID_POINTER) {
     Scheduler::currentData = future->ToWord();
-    return Interpreter::REQUEST;
+    return Worker::REQUEST;
   }
   // We have data
   String *string = frame->GetString();
@@ -474,22 +471,22 @@ Interpreter::Result IOInterpreter::Run() {
     Scheduler::PopFrame();
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = string->ToWord();
-    return Interpreter::CONTINUE;
+    return Worker::CONTINUE;
   } else {
     frame->SetString(string);
     Scheduler::nArgs = 0;
     if (StatusWord::GetStatus() != 0)
-      return Interpreter::PREEMPT;
+      return Worker::PREEMPT;
     else
-      return Interpreter::CONTINUE;
+      return Worker::CONTINUE;
   }
 }
 
-const char *IOInterpreter::Identify() {
-  return "IOInterpreter";
+const char *IOWorker::Identify() {
+  return "IOWorker";
 }
 
-void IOInterpreter::DumpFrame(word) {
+void IOWorker::DumpFrame(word) {
   FdInputFrame *frame = FdInputFrame::FromWordDirect(Scheduler::GetFrame());
   if (frame->ReadAll()) // inputAll
     std::fprintf(stderr, "Primitive UnsafeIO.inputAll\n");
@@ -536,7 +533,7 @@ DEFINE1(UnsafeIO_inputAll) {
     RETURN(String::New(static_cast<u_int>(0))->ToWord());
   } if (file == stdin) {
     FdInputFrame *frame =
-      FdInputFrame::New(IOInterpreter::self, stdinWrapper, true);
+      FdInputFrame::New(IOWorker::self, stdinWrapper, true);
     Scheduler::PushFrame(frame->ToWord());
     RETURN0;
   } else {
@@ -560,7 +557,7 @@ DEFINE1(UnsafeIO_inputLine) {
     RETURN(String::New(static_cast<u_int>(0))->ToWord());
   } else if (file == stdin) {
     FdInputFrame *frame =
-      FdInputFrame::New(IOInterpreter::self, stdinWrapper, false);
+      FdInputFrame::New(IOWorker::self, stdinWrapper, false);
     Scheduler::PushFrame(frame->ToWord());
     RETURN0;
   } else {
@@ -675,7 +672,7 @@ word UnsafeIO() {
   RootSet::Add(ClosedStreamConstructor);
 
   IOStream::Init();
-  IOInterpreter::Init();
+  IOWorker::Init();
   int handle;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   // to be done: Windows need sockets here; moved from UnsafeSocket

@@ -155,10 +155,11 @@ DEFINE2(UnsafeSocket_client) {
       //--** also check for exceptions on sock (connection failed)
       Future *future = IOHandler::CheckWritable(sock);
       if (future != INVALID_POINTER) {
+	// Don't use macro REQUEST here, as we wish to drop our frame:
 	Scheduler::currentData = future->ToWord();
 	Scheduler::nArgs = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = Store::IntToWord(sock);
-	return Interpreter::REQUEST;
+	return Worker::REQUEST;
       }
     } else {
       RAISE(Store::IntToWord(0)); //--** IO.Io

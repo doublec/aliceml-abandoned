@@ -39,7 +39,7 @@ protected:
   };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
+
   // NativeCodeFrame Accessors
   u_int GetPC() {
     return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
@@ -95,7 +95,7 @@ protected:
   enum { PC_POS, FRAME_POS, BASE_SIZE };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
+
   // NativeCodeHandlerFrame Accessors
   u_int GetPC() {
     return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
@@ -155,7 +155,7 @@ void NativeCodeInterpreter::PushCall(Closure *closure) {
   Scheduler::PushFrame(frame);
 }
 
-Interpreter::Result NativeCodeInterpreter::Run() {
+Worker::Result NativeCodeInterpreter::Run() {
   NativeCodeFrame *frame =
     NativeCodeFrame::FromWordDirect(Scheduler::GetFrame());
 #if 0
@@ -170,7 +170,7 @@ Interpreter::Result NativeCodeInterpreter::Run() {
   return execute(frame);
 }
 
-Interpreter::Result NativeCodeInterpreter::Handle() {
+Worker::Result NativeCodeInterpreter::Handle() {
   StackFrame *frame = StackFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   if (frame->GetLabel() == NATIVE_CODE_HANDLER_FRAME) {
     NativeCodeHandlerFrame *handlerFrame =
@@ -185,11 +185,11 @@ Interpreter::Result NativeCodeInterpreter::Handle() {
     Scheduler::currentArgs[0] = package->ToWord();
     Scheduler::currentArgs[1] = exn;
     Scheduler::PushFrameNoCheck(codeFrame->ToWord());
-    return Interpreter::CONTINUE;
+    return Worker::CONTINUE;
   }
   else {
     Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-    return Interpreter::RAISE;
+    return Worker::RAISE;
   }
 }
 

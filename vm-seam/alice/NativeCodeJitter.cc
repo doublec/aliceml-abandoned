@@ -135,9 +135,9 @@ public:
   static void New(u_int This) {
     u_int size = Generic::StackFrame::BASE_SIZE + BASE_SIZE;
     JITStore::AllocBlock(This, (BlockLabel) NATIVE_CODE_HANDLER_FRAME, size);
-    jit_movi_p(JIT_R0,
-	       Store::UnmanagedPointerToWord(NativeCodeInterpreter::self));
-    JITStore::InitArg(This, Generic::StackFrame::INTERPRETER_POS, JIT_R0); 
+    Worker *worker = NativeCodeInterpreter::self;
+    jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+    JITStore::InitArg(This, Generic::StackFrame::WORKER_POS, JIT_R0);
   }
   static void PutPC(u_int This, u_int Value) {
     u_int i = Generic::StackFrame::BASE_SIZE + PC_POS;
@@ -778,9 +778,9 @@ void NativeCodeJitter::CompileCCC(TagVal *idDefArgs, bool update = false) {
   switch(AbstractCode::GetArgs(idDefArgs)) {
   case AbstractCode::OneArg:
     {
-      JITStore::LogMesg("Interpreter::Construct\n");
+      JITStore::LogMesg("Worker::Construct\n");
       Prepare();
-      JITStore::Call(0, (void *) Interpreter::Construct);
+      JITStore::Call(0, (void *) Worker::Construct);
       Finish();
       if (update)
 	initialNoCCCPC = Store::IntToWord(GetRelativePC());
@@ -799,11 +799,11 @@ void NativeCodeJitter::CompileCCC(TagVal *idDefArgs, bool update = false) {
       if (nArgs != 0) {
 	JITStore::LogMesg("Deconstruct results\n");
 	Prepare();
-	JITStore::Call(0, (void *) Interpreter::Deconstruct);
+	JITStore::Call(0, (void *) Worker::Deconstruct);
 	Finish();
 	JITStore::LogReg(JIT_RET);
 	jit_insn *no_request = jit_beqi_ui(jit_forward(), JIT_R0, 0);
-	jit_movi_ui(JIT_RET, Interpreter::REQUEST);
+	jit_movi_ui(JIT_RET, Worker::REQUEST);
 	RETURN();
 	jit_patch(no_request);
 	if (update)
@@ -964,7 +964,7 @@ void NativeCodeJitter::BlockOnTransient(u_int Ptr, word pc) {
   jit_movi_ui(JIT_R0, 0);
   Generic::Scheduler::PutNArgs(JIT_R0);
   KillVariables();
-  jit_movi_ui(JIT_RET, Interpreter::REQUEST);
+  jit_movi_ui(JIT_RET, Worker::REQUEST);
   RETURN();
 }
 
@@ -972,7 +972,7 @@ void NativeCodeJitter::CheckPreempt(u_int pc) {
   JITStore::LoadStatus(JIT_R0);
   jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
   SetRelativePC(Store::IntToWord(pc));
-  jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
+  jit_movi_ui(JIT_R0, Worker::PREEMPT);
   RETURN();
   jit_patch(no_preempt);
 }
@@ -1129,16 +1129,16 @@ void NativeCodeJitter::NormalAppPrim(Closure *closure, TagVal *pc) {
       break;
     case 1:
       Prepare();
-      JITStore::Call(0, (void *) Interpreter::Construct);
+      JITStore::Call(0, (void *) Worker::Construct);
       Finish();
       break;
     default:
       Prepare();
-      JITStore::Call(0, (void *) Interpreter::Deconstruct);
+      JITStore::Call(0, (void *) Worker::Deconstruct);
       Finish();
       jit_insn *no_request = jit_beqi_ui(jit_forward(), JIT_R0, 0);
       SetRelativePC(instrPC);
-      jit_movi_ui(JIT_RET, Interpreter::REQUEST);
+      jit_movi_ui(JIT_RET, Worker::REQUEST);
       RETURN();
       jit_patch(no_request);
     }
@@ -1691,7 +1691,7 @@ TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
   JITStore::Call(1, (void *) Outline::Backtrace::New);
   Finish();
   Generic::Scheduler::SetCurrentBacktrace(JIT_RET);
-  jit_movi_ui(JIT_RET, Interpreter::RAISE);
+  jit_movi_ui(JIT_RET, Worker::RAISE);
   RETURN();
   return INVALID_POINTER;
 }
@@ -1705,7 +1705,7 @@ TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
   Generic::Scheduler::SetCurrentData(JIT_R0);
   Generic::Tuple::Sel(JIT_R0, Reg, 1);
   Generic::Scheduler::SetCurrentBacktrace(JIT_R0);
-  jit_movi_ui(JIT_RET, Interpreter::RAISE);
+  jit_movi_ui(JIT_RET, Worker::RAISE);
   RETURN();
   return INVALID_POINTER;
 }
@@ -2148,7 +2148,7 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   // This test is necessary since return inlines next application
   JITStore::LoadStatus(JIT_R0);
   jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
-  jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
+  jit_movi_ui(JIT_R0, Worker::PREEMPT);
   RETURN();
   jit_patch(no_preempt);
   NativeCodeFrame::GetContinuation(JIT_V2, JIT_V2);
@@ -2321,7 +2321,7 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   char *start = jit_set_ip(codeBuffer).ptr;
   jit_prolog(1);
   u_int destPC = GetRelativePC();
-  jit_movi_ui(JIT_RET, Interpreter::CONTINUE);
+  jit_movi_ui(JIT_RET, Worker::CONTINUE);
   jit_ret();
   char *end = jit_get_ip().ptr;
   u_int size = (end - start);
