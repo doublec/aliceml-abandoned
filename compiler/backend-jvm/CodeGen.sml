@@ -67,8 +67,8 @@ structure CodeGen =
 	    end
 
 		(* Den Feldnamen zu einer Id bestimmen. Die Id kann eine beliebige Variable sein. *)
-	fun fieldNameFromId (Id(_,stamp',ExId name')) = "field"^name'^(Int.toString stamp')
-	  | fieldNameFromId (Id(_,stamp',InId)) ="field"^(Int.toString stamp')
+	fun fieldNameFromId (Id(_,stamp',ExId name')) = "field"^name'^(Stamp.toString stamp')
+	  | fieldNameFromId (Id(_,stamp',InId)) ="field"^(Stamp.toString stamp')
 
 	(* Den Stamp aus einer Id extrahieren. *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
@@ -86,7 +86,7 @@ structure CodeGen =
 		    val localscount = ref 1
 		    val stack:int list ref = ref nil
 		    val register: int StampHash.t    = StampHash.new ()
-		    val lambda  : stamp StampHash.t  = StampHash.new ()
+		    val lambda  : int StampHash.t  = StampHash.new ()
 		    val fields  : string StampHash.t = StampHash.new ()
 		in
 		    (* Nummer des nächsten freien lokalen Registers der aktuellen Methode. *)
@@ -113,7 +113,7 @@ structure CodeGen =
 
 		    fun get stamp' =
 			case StampHash.lookup (register, stamp') of
-			    NONE => ~1
+			    NONE => illegalstamp
 			  | SOME register => register
 
 		    fun fieldNameFromStamp stamp' =
@@ -121,7 +121,7 @@ structure CodeGen =
 			(case StampHash.lookup(fields, stamp') of
 			     NONE => ""
 			   | SOME name => name)
-			     ^(Int.toString stamp')
+			     ^(Stamp.toString stamp')
 
 		    (* Zuordnung von Ids zu JVM-Registern mit definierender Funktion *)
 		    (* xxx inzwischen überflüssig ? *)
@@ -130,7 +130,7 @@ structure CodeGen =
 			 wohin)
 		    fun getLambda stamp' =
 			case StampHash.lookup(lambda,stamp') of
-			    NONE => ~1
+			    NONE => illegalstamp
 			  | SOME lambda => lambda
 		end
 	    end
@@ -336,11 +336,11 @@ structure CodeGen =
 			 if Lambda.isSelfCall stamp'
 			     then ()
 			 else
-			     (print ("eintrage stamp "^(Int.toString stamp')^"... ");
+			     (print ("eintrage stamp "^(Stamp.toString stamp')^"... ");
 			      ScopedStampSet.insert (free, stamp');
 			      print ("okay.\n"));
 		    fun delete (Id (_,stamp',_)) =
-			(print ("loesche stamp "^(Int.toString stamp')^"... ");
+			(print ("loesche stamp "^(Stamp.toString stamp')^"... ");
 			 ScopedStampSet.delete(free, stamp');
 			 print ("okay.\n"))
 
@@ -360,8 +360,8 @@ structure CodeGen =
 	    fun freeVarsExp (LitExp _) = ()
 	      | freeVarsExp (VarExp (_, id')) = fV.insert id'
 	      | freeVarsExp (ConAppExp (_, id', id'')) = (fV.insert id'; fV.insert id'')
-	      | freeVarsExp (TupExp ((i,_),ids)) = (print ("TupExp "^(Int.toString i));app fV.insert ids;
-						    print ("/TupExp "^(Int.toString i)^"\n"))
+	      | freeVarsExp (TupExp ((i,_),ids)) = (print ("TupExp "^(Stamp.toString i));app fV.insert ids;
+						    print ("/TupExp "^(Stamp.toString i)^"\n"))
 	      | freeVarsExp (RecExp (_,labids)) = app (fn (lab, id') => fV.insert id') labids
 	      | freeVarsExp (SelExp _) = ()
 	      | freeVarsExp (FunExp(_,_, idbodys)) =
@@ -481,8 +481,8 @@ structure CodeGen =
 
 	(* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
 	 Funktionsparameters ist. *)
-	fun classNameFromId (Id(_,stamp',ExId name')) = Class.getInitial()^"$class"^name'^(Int.toString stamp')
-	  | classNameFromId (Id (_,stamp',InId)) = Class.getInitial()^"$class"^(Int.toString stamp')
+	fun classNameFromId (Id(_,stamp',ExId name')) = Class.getInitial()^"$class"^name'^(Stamp.toString stamp')
+	  | classNameFromId (Id (_,stamp',InId)) = Class.getInitial()^"$class"^(Stamp.toString stamp')
 
 	fun classNameFromStamp stamp' =
 	    Class.getInitial()^"$class"^(Lambda.getName stamp')
@@ -706,7 +706,7 @@ structure CodeGen =
 	    in
 		if hasArgs then
 		    let
-			val constructorName = "constructor"^(Int.toString stamp')
+			val constructorName = "constructor"^(Stamp.toString stamp')
 		    in
 			[New CConstructor,
 			 Dup,
@@ -717,7 +717,7 @@ structure CodeGen =
 		    end
 		else
 		    let
-			val nameName = "name"^(Int.toString stamp')
+			val nameName = "name"^(Stamp.toString stamp')
 		    in
 			[New CName,
 			 Dup,
@@ -991,13 +991,13 @@ structure CodeGen =
 			     In diesem Fall kann apply nicht als statisch
 			     deklariert werden. *)
 			    (Lambda.noSapply ();
-			     [Comment ("Hi. Stamp="^(Int.toString stamp')^
-				       ". Lambda.top = "^Int.toString (Lambda.top())^
-				       " in "^Int.toString (Local.get stamp')^
-				       ". Fun = "^(Int.toString
+			     [Comment ("Hi. Stamp="^(Stamp.toString stamp')^
+				       ". Lambda.top = "^Stamp.toString (Lambda.top())^
+				       " in "^Stamp.toString (Local.get stamp')^
+				       ". Fun = "^(Stamp.toString
 						   (FreeVars.getFun
 						    stamp'))^
-				       "Id (Lambda.top) ="^(Int.toString (stampFromId
+				       "Id (Lambda.top) ="^(Stamp.toString (stampFromId
 									  (Lambda.getId(Lambda.top()))))^"\n"),
 			      Aload 0,
 			      Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)])
@@ -1181,23 +1181,23 @@ structure CodeGen =
 					 if FreeVars.getFun stamp'' = Lambda.top() then
 					     if stamp'' <> stampFromId(Lambda.getId stamp')
 						 then
-						     (print ("mache "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
+						     (print ("mache "^Stamp.toString stamp'^" in "^Stamp.toString(Lambda.top())^"\n");
 						      (* if Local.get id' = ~1 then
 						       raise Debug (Ias FreeVars.array)
 					     else *)
 						      [Dup,
-						       Comment ("Hi3: id="^Int.toString (Local.get stamp'')),
+						       Comment ("Hi3: id="^Stamp.toString (Local.get stamp'')),
 						       Aload (Local.get stamp''),
 						       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
 						       Comment ("load local variable")])
 					     else nil
 					 else
-					     (print ("bearbeite "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
+					     (print ("bearbeite "^Stamp.toString stamp'^" in "^Stamp.toString(Lambda.top())^"\n");
 					      [Dup,
 					       Aload 0,
 					       Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
-							Int.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
-							Int.toString (Lambda.top())),
+							Stamp.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
+							Stamp.toString (Lambda.top())),
 					       Getfield(Class.getCurrent()^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
 					       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0)])
 				 end

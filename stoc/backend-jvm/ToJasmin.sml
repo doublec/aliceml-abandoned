@@ -253,25 +253,32 @@ structure ToJasmin =
 			let
 			    val nd = stackNeedInstruction i
 			in
-			    (case i of
-				 Ifstatic (stamp', then', else') =>
-				     recurse
-				     (if Lambda.isStatic stamp' then
-					  then'
-				      else else',
-					  need, max)
-			       | _ =>
-					  (if noStack i then "" else
-						((*"\t\t.line "^line()^*)
-						 "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n")^
-						(instructionToJasmin (i, staticapply))^"\n")^
-						(if nd<0 then
-						     recurse (is, nd+need, max)
-						 else recurse (is, nd+need, Int.max(nd+need,max)))
+			    case i of
+				Ifstatic (stamp', then', else') =>
+				    recurse
+				    (if Lambda.isStatic stamp' then
+					 then'
+				     else else',
+					 need, max)^
+					 (instructionToJasmin(i,staticapply))^"\n"^
+					 (if nd<0 then
+					      recurse (is, nd+(!stackneed),!stackmax)
+					  else
+					      recurse (is, nd+(!stackneed),
+						       Int.max(nd+(!stackneed),!stackmax)))
+			      | _ =>
+					      if noStack i then "" else
+						  ((*"\t\t.line "^line()^*)
+						  "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n"^
+						 (instructionToJasmin (i, staticapply))^"\n"^
+						 (if nd<0 then
+						      recurse (is, nd+need, max)
+						  else recurse (is, nd+need, Int.max(nd+need,max)))
 			end
 		      | recurse (nil,need,max) =
 			(stackneed:= need;
 			 stackmax := max;
+			 print ("Stack: "^(Int.toString max));
 			 "")
 		in
 		    recurse (insts, need, max)
