@@ -19,11 +19,9 @@
 #include "alice/primitives/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
-  DECLARE_INT(nanos, x0);
-  Future *future = Future::New();
-  // Register expects milliseconds
-  SignalHandler::Register(SIGALRM, future->ToWord(), nanos / 1000);
-  RETURN(future->ToWord());
+  DECLARE_INT(microseconds, x0);
+  // RegisterAlarm expects milliseconds
+  RETURN(SignalHandler::RegisterAlarm(microseconds / 1000)->ToWord());
 } END
 
 DEFINE1(Future_await) {
