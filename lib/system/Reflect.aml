@@ -37,8 +37,6 @@ structure Reflect :> REFLECT =
 		(val x = UnsafeReflect.cast Sig.x)
 	    end
 
-(*
 	functor UnreflectSig(val x: Inf.t) =
 	    UnsafeReflect.UnreflectSig(val x = UnsafeReflect.cast x)
-*)
     end

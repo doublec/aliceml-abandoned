@@ -20,5 +20,5 @@ signature REFLECT =
 	functor Reflect(signature S structure X: S): (val x: value)
 	functor Unreflect(val x: value signature S): S
 	functor ReflectSig(signature S): (val x: Inf.t)
-	(*functor UnreflectSig(val x: Inf.t): (signature S)*)
+	functor UnreflectSig(val x: Inf.t): (signature S)
     end
