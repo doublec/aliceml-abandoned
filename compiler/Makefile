@@ -15,3 +15,6 @@ stoc-com+.$(PLATFORM):
 	-rm -f $@
 	(cd top && echo 'use "Exec-com+.sml";' | $(SML))
 	if [ ! -f $@ ]; then exit 1; fi
+
+clean:
+	rm -f stoc-mozart.* stoc-com+.*
