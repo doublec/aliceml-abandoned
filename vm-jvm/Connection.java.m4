@@ -9,6 +9,7 @@ import java.rmi.server.*;
 final public class Connection {
     static java.util.Hashtable export = null;
     static Exporter exp = null;
+    static java.util.Random rand = null;
 
     final public static class Offer extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
@@ -28,6 +29,7 @@ final public class Connection {
 		}
 		export = new java.util.Hashtable();
 		exp = new Exporter(export);
+		rand = new java.util.Random(42);
 		//hier noch properties setzen, evtl. Klassen in die codebase schreiben
 
 		java.util.Properties prop = System.getProperties();
@@ -46,7 +48,7 @@ final public class Connection {
 		    m.printStackTrace();
 		}
 	    }
-	    java.lang.String ticket = Double.toString(java.lang.Math.random());
+	    java.lang.String ticket = Long.toString(rand.nextLong());
 	    export.put(ticket,args[0]);
 	    return new de.uni_sb.ps.dml.runtime.String(i.getHostAddress()+"\\"+ticket);
 	}
