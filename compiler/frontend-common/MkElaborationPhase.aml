@@ -2349,8 +2349,12 @@ TextIO.print "\n";
 	    O.Comp(sigInfo(i,s), anns'', decs')
 	end
 
-    fun translate E (desc, component) =
-	elabComp(E, desc, component)
+    fun translate(desc, E, component) =
+	let
+	    val E' = Env.clone E
+	in
+	    (E', elabComp(E', desc, component))
+	end
 	handle e as Error.Error _ => ( Type.resetLevel() ; raise e )
 
 end
