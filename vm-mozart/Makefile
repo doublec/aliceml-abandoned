@@ -559,7 +559,8 @@ build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
-build3/LinkedStowMain.ozf: build3/StowMain.ozf build3/stoc/top/Composer.ozf
+build3/LinkedStowMain.ozf: build3/StowMain.ozf \
+	build3/lib/utility/Url.ozf build3/stoc/top/Composer.ozf
 	$(OZL) --include=.. $< -o $@
 
 build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
