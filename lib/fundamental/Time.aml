@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,11 +18,12 @@
 import structure __pervasive                   from "Pervasive"
 import __primitive infix 6 + - infix 7 * / div
        val op / val op =                       from "ToplevelValues"
+import __primitive structure Int               from "Int"
+import __primitive structure Real              from "Real"
 import __primitive structure LargeInt          from "LargeInt"
 import __primitive structure LargeReal         from "LargeReal"
 import __primitive structure IEEEReal          from "IEEEReal"
 import __primitive signature TIME              from "TIME-sig"
-
 
 structure Time :> TIME =
 struct
@@ -33,20 +34,24 @@ struct
 
     exception Time
 
-    val zeroTime		= 0
+    val thousand		= Int.toLarge 1_000
+    val million			= Int.toLarge 1_000_000
+    val realMillion		= Real.toLarge 1_000_000.0
+
+    val zeroTime		= Int.toLarge 0
 
     fun fromReal x		= LargeReal.toLargeInt IEEEReal.TO_NEAREST
-						  (LargeReal.*(x,1000000.0))
-    fun toReal t		= LargeReal.fromLargeInt t / 1000000.0
+						  (LargeReal.*(x,realMillion))
+    fun toReal t		= LargeReal.fromLargeInt t / realMillion
 
-    fun toSeconds t		= t div 1000000
-    fun toMilliseconds t	= t div 1000
+    fun toSeconds t		= t div million
+    fun toMilliseconds t	= t div thousand
     fun toMicroseconds t	= t
-    fun toNanoseconds t		= t * 1000
-    fun fromSeconds n		= n * 1000000
-    fun fromMilliseconds n	= n * 1000
+    fun toNanoseconds t		= t * thousand
+    fun fromSeconds n		= n * million
+    fun fromMilliseconds n	= n * thousand
     fun fromMicroseconds n	= n
-    fun fromNanoseconds n	= n div 1000
+    fun fromNanoseconds n	= n div thousand
 
     val equal			= op =
     val hash			= LargeInt.hash
