@@ -1,0 +1,79 @@
+import signature LOADER from "LOADER-sig"
+import structure Protocol from "../common/Protocol"
+
+structure Loader :> LOADER =
+struct
+    exception Error of string
+
+    type start_pos = Protocol.direction * Protocol.pos
+	
+    type level = 
+	{ arena: Protocol.arena_info,
+	 walls: Protocol.pos list,
+	 startPos: start_pos vector,
+	 cookiePos: Protocol.pos vector,
+	 exitPos: Protocol.pos
+	 }
+
+
+    fun load name =
+	let val cols = ref 0
+
+	    fun load' ([], row, col, walls, starts, cookies, exitP) =
+		let open Protocol
+		in
+		    if row < 5 orelse !cols < 5 then
+			raise Error ("<" ^ name ^ "> is too small.")
+		    else
+			{ arena = 
+			    { size = (row, !cols),     
+			      maxSnakeCount = List.length starts,
+			      levelName = name
+			      }, 
+			  walls = walls,
+			  startPos = Vector.fromList starts,
+			  cookiePos = Vector.fromList cookies,
+			  exitPos = (valOf exitP) handle Option => raise Error ("<" ^ name ^ "> has not defined an exit field.")
+			}
+		end
+	      | load' (#"#" :: xs, row, col, walls, starts, cookies, exitP) =
+		load' (xs, row, col+1, (row, col)::walls, starts, 
+		       cookies, exitP)
+              | load' (#"x" :: xs, row, col, walls, starts, cookies, exitP) =
+	        load' (xs, row, col + 1, walls, starts, cookies, SOME (row,col))
+	      | load' (#"." :: xs, row, col, walls, starts, cks, exitP) =
+		load' (xs, row, col+1, walls, starts, cks, exitP) 
+	      | load' (#"^" :: xs, row, col, walls, starts, cks, exitP) =
+		load' (xs, row, col+1, walls, 
+		       (Protocol.N, (row,col))::starts, cks, exitP)
+	      | load' (#"<" :: xs, row, col, walls, starts, cks, exitP) =
+		load' (xs, row, col+1, walls,
+		       (Protocol.W, (row, col))::starts, cks, exitP) 
+	      | load' (#">" :: xs, row, col, walls, starts, cks, exitP) =
+		load' (xs, row, col+1, walls,
+		       (Protocol.E, (row, col))::starts, cks, exitP) 
+	      | load' (#"v" :: xs, row, col, walls, starts, cks, exitP) =
+		load' (xs, row, col+1, walls,
+		       (Protocol.S, (row, col))::starts, cks, exitP)
+	      | load' (#"*" :: xs, row, col, walls, starts, cks, exitP) =
+		load' (xs, row, col+1, walls, starts, (row,col)::cks, exitP)
+	      | load' (#"\n" :: xs, row, col, walls, starts, cks, exitP) =
+		if col = 0 then
+		    raise Error ("<" ^ name ^ "> contains empty lines.")
+		else 
+		    if (!cols <> 0 andalso !cols <> col) then
+			raise Error ("<" ^ name ^ 
+			    "> contains lines of varying size.")
+		    else
+			(cols := col;
+			 load' (xs, row + 1, 0, walls, starts, cks, exitP))
+	      | load' (_, _, _, _, _, _, _) = 
+		raise Error ("<" ^ name ^ "> contains invalid characters.")
+
+	    val fileName = name ^ ".lev"
+	    val stream = TextIO.openIn fileName
+	in
+	    load' (explode (TextIO.inputAll stream), 0, 0, [], [], [], NONE)
+	end
+		    
+end

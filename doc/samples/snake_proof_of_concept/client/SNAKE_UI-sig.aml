@@ -1,0 +1,75 @@
+import structure Protocol from "../common/Protocol"
+import structure Log from "../common/Log"
+
+(* Parts of the gui
+ * 
+ * 1. Offer the user a possibility to enter a ticket
+ * 1a) Tell the user that the ticket is invalid
+ * 1b) Tell the user that the ticket is valid goto 2)
+ *
+ * 2) Show the user the level and all connected
+ *    opponents.  
+ *    Give him the possibility to request start
+ *    Show him a wait cursor or something
+ * 3) Show the game (user must react and be able to signal quit)
+ * 4) Show final screen:
+ *             winner
+ *             loser
+ *             draw
+ *)
+
+signature SNAKE_UI = 
+sig
+    exception Error
+
+
+    (* Invariant: No element of game_callbacks will ever be
+     * called by a conforming implementation of SNAKE_UI before
+     * it called the function stored in the element
+     * connectCB 
+     *)
+
+    type game_callbacks = 
+	{
+	 connectCB : Protocol.name * string -> (Protocol.arena_info *
+						Protocol.snake_info) option,
+	 (* UI will call [connectCB (name, ticket)] *)
+
+	 startRequestCB : unit -> unit,     (* user wants to start game *)
+	 turnCB : Protocol.heading -> unit, (* user wants to turn *)
+	 giveUpCB : unit -> unit,           (* user gives up *)
+	 disconnectCB : unit -> unit        (* user wants to disconnect *)
+	 }
+
+    val execute : game_callbacks -> unit
+
+    val update : Protocol.pos * Protocol.field -> unit
+    val tick : unit -> unit
+    val snakeKilled: Protocol.snake_id -> unit
+    val gameStarted: unit -> unit
+    val gameFinished: Protocol.snake_id option -> unit
+    val opponentHasConnected: Protocol.client_info -> unit
+    val opponentHasGivenUp: Protocol.snake_id -> unit
+    val opponentHasDisconnected: Protocol.snake_id -> unit
+end
+
+
+functor LogSnakeUI (UI: SNAKE_UI) = 
+struct
+    exception Error = UI.Error
+
+    type game_callbacks = UI.game_callbacks
+
+    val execute = Log.logFn ("SNAKE_UI.execute", UI.execute)
+    val update = Log.logFn ("SNAKE_UI.update", UI.update)
+    val tick = Log.logFn ("SNAKE_UI.tick", UI.tick)
+    val snakeKilled = Log.logFn ("SNAKE_UI.snakeKilled", UI.snakeKilled)
+    val gameStarted = Log.logFn ("SNAKE_UI.gameStarted", UI.gameStarted)
+    val gameFinished = Log.logFn ("SNAKE_UI.gameFinished", UI.gameFinished)
+    val opponentHasConnected = Log.logFn ("SNAKE_UI.opponentHasConnected",
+					  UI.opponentHasConnected)
+    val opponentHasDisconnected = Log.logFn ("SNAKE_UI.opponentHasDisconnected",
+					     UI.opponentHasDisconnected)
+    val opponentHasGivenUp = Log.logFn ("SNAKE_UI.opponentHasGivenUp",
+					UI.opponentHasGivenUp)
+end

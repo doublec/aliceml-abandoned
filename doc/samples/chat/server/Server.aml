@@ -1,4 +1,4 @@
-import structure Protocol       from "../common/Protocol"
+	import structure Protocol       from "../common/Protocol"
 import structure Stream         from "x-alice:/lib/data/Stream"
 import structure MkRedBlackMap  from "x-alice:/lib/data/MkRedBlackMap"
 import structure Remote         from "x-alice:/lib/distribution/Remote"

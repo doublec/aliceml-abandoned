@@ -1,0 +1,113 @@
+(* Protocol.aml
+ * 
+ * This file specifies a common protocol which
+ * both the client and the server have to respect.
+ * 
+ * There are basically two possibilities what to transmit
+ * at every turn:
+ *     [A] The complete state of the world
+ *     [B] Just the changes
+ *
+ * Concerning cookies option B radically reduces the
+ * amount of data reduced.  (Cookies do not change very often,
+ * but on the other hand there will be rather few cookies
+ * in comparison to the snakes)
+ *
+ * Concerning snakes it basically means that we either go for
+ *      - reduction of data transmitted [B]
+ *      - reduction of computation the client has to do [A]
+ *
+ * <interlude>
+ * Moving a snake does not really mean just moving the
+ * whole structure around.  Rather it means appending 
+ * one element at the start and depending on the content
+ * of the snakes belly removing one element at the end.
+ * </interlude>
+ *
+ * This protocol is written with [B] in mind.
+ *)
+
+
+structure Protocol =
+struct
+    exception SnakeProtocol 
+    (* Original name was Protocol but there is already an 
+     * exception of that name in Remote.Protocol and that can
+     * make debugging really nasty
+     *)
+
+    type pos = int * int (* row X column *)
+    type snake_id = int
+    type name = string
+
+    datatype direction = N | E | S | W
+    datatype heading = LEFT | RIGHT | AHEAD
+
+    type snake_info =
+	{snakeId : snake_id,
+	 initialPos: pos,
+	 initialDir: direction
+	 }
+
+    type arena_info = 
+	{ 
+	 levelName: string,
+	 size: int * int,  
+	 maxSnakeCount: int
+	 }
+
+    type client_info = name * snake_info
+	
+    val maxArenaSize = (30, 30)
+    val maxClientCount = 8
+
+    datatype field = 
+	EMPTY
+      | EXIT
+      | HEAD of snake_id * direction
+      | BODY of snake_id
+      | COOKIE of int
+      | WALL
+
+    signature SERVER =
+    sig
+	type client_id
+	type connect_info = client_id * arena_info * snake_info
+
+	val connect : package -> connect_info option
+	val disconnect : client_id -> unit
+	val giveUp : client_id -> unit
+	val startGame : client_id -> unit
+
+	val turn: client_id * heading -> unit
+    end
+	    
+    signature CLIENT =
+    sig
+	val name : name
+
+	val opponentHasConnected: client_info -> unit
+	val opponentHasDisconnected: snake_id -> unit
+	val opponentHasGivenUp : snake_id -> unit
+
+	val snakeKilled: snake_id -> unit
+	val gameStarted : unit -> unit
+	val gameFinished : snake_id option -> unit
+
+	val update : pos * field -> unit 
+	val updateSeveral : (pos * field) list -> unit
+
+	val tick : unit -> unit
+    end
+
+   (* Some more thoughts:
+      - The game is no longer started automatically.
+        It is started after *all* clients have requested
+	a start.
+
+      - connects will only be accepted as long as 
+	the game has NOT started. 
+    *)
+end
+
+

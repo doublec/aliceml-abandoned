@@ -1,0 +1,38 @@
+import structure TextIO from "x-alice:/lib/system/TextIO"
+
+structure Log :> 
+sig
+    val log: string -> unit
+    val logFn : string * ('a -> 'b) -> ('a -> 'b)
+end
+=
+struct 
+(*
+    val name = List.hd (List.rev (String.tokens (fn c => c = #"/") 
+				  (CommandLine.name ())))
+
+    val logFile = TextIO.openOut ("log-" ^ name ^ ".txt")
+
+    val lock = Lock.lock ()
+
+    val log = Lock.sync lock (fn s => (TextIO.output (logFile, s ^ "\n");
+				       TextIO.flushOut logFile))
+	
+    fun logFn (fname, f) = (fn a =>
+			    (let val _ = log ("start: " ^ fname)
+				 val res = f a
+				 val _ = log ("end: " ^ fname)
+			     in
+				 res
+			     end) handle Fail s => (log (fname ^ " raised Fail <" ^
+							 s ^ ">");
+						    raise Fail s)
+				       | e =>  (log (fname ^ " raised " ^ 
+						     exnName e);
+						raise e))
+*)
+    fun log s = ()
+
+    fun logFn (s, f) = f
+
+end

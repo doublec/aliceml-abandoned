@@ -1,0 +1,338 @@
+import structure Gtk structure Gdk structure Canvas from "Gtk"
+import structure Protocol from "../common/Protocol"
+import structure Log from "../common/Log"
+import signature SNAKE_UI from "SNAKE_UI-sig"
+import structure CanvasTools from "CanvasTools"
+
+structure Gui :> SNAKE_UI =
+struct
+    structure CT = CanvasTools (* I'm lazy *)
+    structure P = Protocol
+
+    exception Error
+
+    val snakeColors = 
+	#[ CT.C_NAMED "red",
+	  CT.C_NAMED "blue",
+	  CT.C_NAMED "yellow",
+	  CT.C_NAMED "purple",
+	  CT.C_NAMED "darkgray",
+	  CT.C_NAMED "cyan",
+	  CT.C_NAMED "pink",
+	  CT.C_NAMED "beige" ]
+
+    val msgColor = CT.C_NAMED "black"
+    val msgFont = "-*-*-*-*-*-*-40-*-*-*-*-*-*-*"
+
+    type finished_data = Canvas.object
+
+    datatype mode = 
+	CONNECTED
+      | START_REQUESTED
+      | GAMING
+      | FINISHED of finished_data
+
+    type game_callbacks = 
+	{
+	 connectCB : Protocol.name * string -> (Protocol.arena_info *
+						Protocol.snake_info) option,
+	 startRequestCB : unit -> unit,
+	 turnCB : Protocol.heading -> unit,
+	 giveUpCB : unit -> unit,
+	 disconnectCB : unit -> unit
+	 }
+    
+    type state_type = 
+	{ toplevel: Gtk.object,
+	 canvas: Canvas.object,
+	 arenaInfo: Protocol.arena_info,
+	 snakeInfo: Protocol.snake_info,
+	 clientInfos: Protocol.client_info option array,
+	 fields: Gtk.object Array2.array,
+	 done: unit Promise.promise,
+	 mode: mode ref,
+	 callbacks: game_callbacks
+	 }
+
+    val stateVar = (ref NONE : state_type option ref)
+    fun state () = valOf (! stateVar)
+
+    val cellSize           = 16
+    val (maxRows, maxCols) = Protocol.maxArenaSize 
+    val maxWidth           = cellSize * maxCols
+    val maxHeight          = cellSize * maxRows
+    val offsetX            = ref 0
+    val offsetY            = ref 0
+
+    type key_event = 
+	{ keyval: int,
+	 length: int,
+	 send: bool,
+	 state: int,
+	 string: string,
+	 time: int,
+         window: Gtk.object
+	 }
+	    
+
+    fun mkKeyEventCB (keyCB: key_event -> unit) ([Canvas.EVENT ev]) =
+	(case ev of
+	     Gtk.GDK_KEY_PRESS key => keyCB key
+           | _ => ())
+      | mkKeyEventCB _ _ = raise Fail "event callback arg=??"
+
+    fun keyHandle ({ keyval, string, ... } : key_event) =
+	let
+	    val mode = #mode (state ())
+	    val callbacks = #callbacks (state ())
+
+	    fun connectedHandle () =
+		(case string of
+		     ("s" | " ") => ((#startRequestCB callbacks) ();
+				     mode := START_REQUESTED)
+                   | _ => ())
+
+	    fun startRequestedHandle () =
+		(case string of
+		     _ => ())
+
+	    fun quit () = Promise.fulfill (#done (state ()), ())
+
+	    fun gamingHandle () =
+		(case keyval of
+		     0xff51 => (#turnCB callbacks) P.LEFT
+	           | 0xff53 => (#turnCB callbacks) P.RIGHT
+	           | 0x71   => quit ()
+		   | _      => ())
+			     
+	    fun finishedHandle () =
+		(case keyval of
+		     0x71 => quit ()          (* "q" *)
+	           | (0x73 | 0x20) =>          (* "s" | " " *)
+			 ((#startRequestCB callbacks) ();
+			  (case !mode of
+			       FINISHED ob => Gtk.objectDestroy ob
+		             | _           => () );
+			  mode := START_REQUESTED)
+	           | _ => ()) 
+	in
+	    case !mode of
+		CONNECTED => connectedHandle ()
+	      | START_REQUESTED => startRequestedHandle ()
+	      | GAMING => gamingHandle () 
+	      | FINISHED f => finishedHandle ()
+	end
+
+
+    fun executeGui (arenaInfo, name, snakeInfo) callbacks = 
+	let val top       = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val _         = Gtk.windowSetTitle (top, "Snake")
+	    val done      = Promise.promise ()
+	    val (rows, cols) = #size arenaInfo 
+	    val deleteEv  = fn _ => (Gtk.objectDestroy top;
+				     Promise.fulfill (done, ()))
+
+	    val alignment = Gtk.alignmentNew (0.5, 0.5, 0.0, 0.0)
+	    val canvas    = Canvas.new ()
+	    val _ = Gtk.widgetSetUsize (canvas, maxWidth, maxHeight)
+	    val _ = Canvas.setScrollRegion (canvas, 0.0, 0.0, 
+					       real (maxWidth), 
+					       real (maxHeight))
+
+	    val c = Vector.sub (snakeColors, #snakeId snakeInfo)
+
+	    val background = CT.drawRectangle (Canvas.root canvas,
+					    0, 0, maxWidth - 1,
+					       maxHeight - 1, c,
+					       CT.C_NAMED "green")
+	(*    val _ = Gtk.layoutFreeze canvas *)
+
+	    val _ = Gtk.containerAdd (alignment, canvas)
+	    val _ = Gtk.containerAdd (top, alignment)
+	   
+	    val _ = Gtk.signalConnect (top, "delete-event", deleteEv)
+
+	    val clientInfos =  Array.array (Protocol.maxClientCount, NONE)
+
+	    val id = #snakeId snakeInfo
+
+	    val _ = offsetX := ((maxCols - (cols)) div 2) * cellSize
+	    val _ = offsetY := ((maxRows - (rows)) div 2) * cellSize
+
+	    val _ = stateVar := SOME
+		{ toplevel = top,
+		 canvas = canvas,
+		 done = done,
+		 arenaInfo = arenaInfo,
+		 fields = Array2.array (rows, cols, Gtk.NULL),
+		 snakeInfo = snakeInfo,
+		 clientInfos = clientInfos,
+		 mode = ref CONNECTED,
+		 callbacks = callbacks
+		 }
+
+	    val _ = Gtk.signalConnect (top, "event", mkKeyEventCB keyHandle)
+	in
+	    Array.update (clientInfos, id, SOME (name, snakeInfo));
+	    Gtk.widgetShowAll top;
+	    Future.await (Promise.future done) 
+	end
+    
+	
+    fun execute (callbacks:game_callbacks) = 
+	let
+	    val connect = #connectCB callbacks
+
+	    fun tryConnect (name, ticket) =
+		case connect (name, ticket) of
+		    SOME (arenaInfo, snakeInfo) => 
+			executeGui (arenaInfo, name, snakeInfo) callbacks
+	          | NONE => ()
+
+            fun usage () = 
+                (print ("usage: " ^ CommandLine.name () ^ " <name> <ticket>\n");
+                OS.Process.exit OS.Process.failure) 
+	in
+	    case CommandLine.arguments () of
+		[name, ticket] => tryConnect (name, ticket)
+              | _ => usage ()
+	end
+
+
+    fun update ((r,c), f) = 
+	let
+	    val fields = #fields (state ())
+	    val canvas = #canvas (state ())
+
+	    fun replaceField (r, c) nf =
+		let val f = Array2.sub (fields, r, c) 
+		in
+		    if f = Gtk.NULL then ()
+		    else Gtk.objectDestroy f;
+	            Array2.update (fields, r, c, nf)
+		end
+
+	    fun draw row col f =
+		let val x1 = col * cellSize + (!offsetX)
+		    val x2 = (col + 1) * cellSize  - 1 + (!offsetX)
+		    val y1 = row * cellSize            + (!offsetY)
+		    val y2 = (row + 1) * cellSize  - 1 + (!offsetY)
+		    val g = Canvas.root canvas
+
+		    fun eyePos Protocol.N =
+			((cellSize div 4 - 3, 	    cellSize div 4 - 3, 
+			  cellSize div 4 + 3,	    cellSize div 4 + 3),
+			 (cellSize * 3 div 4 - 3,   cellSize div 4 - 3,
+			  cellSize * 3 div 4 + 3,   cellSize div 4 + 3))
+		      | eyePos P.W =
+			((cellSize div 4 - 3,       cellSize div 4 - 3,
+			  cellSize div 4 + 3,       cellSize div 4 + 3),
+			 (cellSize div 4 - 3,       cellSize * 3 div 4 - 3,
+			  cellSize div 4 + 3,       cellSize * 3 div 4 + 3))
+		      | eyePos P.S =
+			((cellSize div 4 - 3,       cellSize * 3 div 4 - 3,
+			  cellSize div 4 + 3,       cellSize * 3 div 4 + 3),
+			 (cellSize * 3 div 4 - 3,   cellSize * 3 div 4 - 3,
+			  cellSize * 3 div 4 + 3,   cellSize * 3 div 4 + 3))
+		      | eyePos P.E =
+			((cellSize * 3 div 4 - 3,   cellSize div 4 - 3,
+			  cellSize * 3 div 4 + 3,   cellSize div 4 + 3),
+			 (cellSize * 3 div 4 - 3,   cellSize * 3 div 4 - 3,
+			  cellSize * 3 div 4 + 3,   cellSize * 3 div 4 + 3))
+
+		    fun drawHead (id, h) =
+			let val gr = CT.drawGroup (g, x1, y1)
+			    val eyeFillColor = CT.C_NAMED "white"
+			    val eyeOutlColor = CT.C_NAMED "black"
+			    val ((eye1x1, eye1y1, eye1x2, eye1y2),
+				 (eye2x1, eye2y1, eye2x2, eye2y2)) =eyePos h
+			in
+			    CT.drawEllipse (gr, 0, 0, cellSize - 1, 
+					    cellSize - 1,
+					    Vector.sub (snakeColors, id),
+					    Vector.sub (snakeColors, id));
+			    CT.drawEllipse (gr, eye1x1, eye1y1, eye1x2,
+					    eye1y2, eyeOutlColor, 
+					    eyeFillColor);
+			    CT.drawEllipse (gr, eye2x1, eye2y1, eye2x2,
+					    eye2y2, eyeOutlColor,
+					    eyeFillColor);
+			    gr
+			end
+		in
+		    case f of
+			P.WALL => CT.drawRectangle (g, x1, y1, x2, y2,
+						  CT.C_NAMED "white",
+						  CT.C_NAMED "darkred")
+                      | P.EXIT => CT.drawRectangle (g, x1, y1, x2, y2,
+	   					    CT.C_NAMED "white",
+						    CT.C_NAMED "white")
+		      | P.BODY id => CT.drawEllipse (g, x1, y1, x2, y2,
+						   Vector.sub (snakeColors,
+							       id),
+						   Vector.sub (snakeColors,
+							       id))
+	              | P.HEAD (id,h) => drawHead (id, h)
+		      | P.COOKIE _ => CT.drawEllipse (g, x1, y1, x2, y2,
+						      CT.C_NAMED "brown",
+						      CT.C_NAMED "brown")
+		      | P.EMPTY => Gtk.NULL
+		end
+	in
+	   replaceField (r,c) (draw r c f)
+	end
+
+    fun thawTemporarily () = let val canvas = #canvas (state ()) 
+			     in  
+				 Gtk.layoutThaw canvas;
+				 Gtk.layoutFreeze canvas
+			     end
+	
+    fun tick () = thawTemporarily ()
+
+    fun snakeKilled id = (print ("snake " ^ Int.toString id ^ " got itself killed\n"))
+
+    fun gameStarted () =
+	let
+	    val mode = #mode (state ())
+	in
+	    case !mode of
+		START_REQUESTED => (Log.log "gaming mode started";
+				    mode := GAMING)
+	      | _ => raise Fail "Gui: internal error <gameStarted>"
+	end
+
+    fun gameFinished winner = 
+	let val canvas = #canvas (state ()) 
+	    val group = Canvas.root canvas
+	    val mode = #mode (state ())
+	    val x = maxWidth div 2
+	    val y = maxHeight div 2
+	    fun name id = #1 (valOf (Array.sub (#clientInfos (state ()), id)))
+
+	    val text = case winner of 
+		NONE => "this round ended in a draw"
+	      | SOME w =>  name w ^ " won"
+	in
+	    mode := FINISHED (Log.log "displaying draw screen";
+			      CT.drawText (group, x, y, 
+					   Gtk.ANCHOR_CENTER,
+					   text,
+					   msgFont,
+					   msgColor) before
+			      thawTemporarily ())
+	end
+
+
+    fun opponentHasConnected info = 
+	let val id = #snakeId (#2 info)
+	in
+	    Log.log ("opponent has connected");
+	    Array.update (#clientInfos (state ()), id, SOME info)
+	end
+	
+    fun opponentHasDisconnected id = Log.log "opponent has disconnected"
+
+    fun opponentHasGivenUp id = print (Int.toString id ^ " has given up\n")
+
+end

@@ -1,0 +1,42 @@
+Straight forward Client/Server.
+Basic principle: 
+	Hide as much information / logic as possible from the client.
+	
+Therefore all the client has to do is:
+	  draw the gui
+	  tell the server that his client wants to:
+	    * start the game
+            * turn
+            * giveup / quit
+
+Every "round" the server based on the information given by the client 
+computes there new position and state.  It then informs all clients
+about the *changes* (see below) and possible killings.
+
+The server maintains: 
+ - a vector of all clients (clients)
+ - two two-dimensional Arrays representing the state of the world.  
+    * lastWorldState represents the state of the world as
+      known by the clients 
+    * newWorldState represents the next state of the world
+
+Note:	Design should be changed to avoid transmitting any client ids
+	and use records instead of packages most of the time.  Have
+	a look at the chat sample to know what I mean.
+
+
+Roadmap:
+
+common/*               Everything needed by both the client and the server
+common/Protocol.aml    Start here!  Basically everything which gets
+		       transmitted is defined here.
+
+common/Log.aml         Utility structure for runtime logging of debugging 
+		       information
+
+server/LOADER-sig.aml  The level loader.  Levels are described by a very 
+server/Loader.aml      simple ascii format.
+server/Snake.aml       Represents snakes.  
+server/Server.aml      The server itself.
+
+ 
