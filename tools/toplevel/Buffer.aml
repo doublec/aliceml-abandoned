@@ -17,6 +17,8 @@ import structure Core from "x-alice:/lib/gtk/Core"
 import structure FileDialog from "FileDialog"
 import structure Config from "Config"
 
+blub
+
 structure Buffer =
    struct
       open Config
@@ -109,6 +111,66 @@ structure Buffer =
                                                startiter,enditer,
                                                false))
           end
+
+      fun doIndent(buf, line, endline, indent) =
+	  if line > endline then ()
+	  else
+	      let
+		  val iter = Gtk.textIterNew()
+		  val _ = Gtk.textBufferGetIterAtLine(buf, iter, line)
+	      in
+		  if indent then
+		      Gtk.textBufferInsert(buf,iter," ",~1)
+		  else
+		      let
+			  val c = Gtk.textIterGetChar iter
+		      in
+			  if c = ord #"\t" then
+			      let
+				  val enditer = Gtk.textIterCopy iter
+			      in
+				  Gtk.textIterForwardChar enditer;
+				  Gtk.textBufferDelete(buf,iter,enditer)
+			      end
+			  else if c = ord #" " then
+			      let
+				  val enditer = Gtk.textIterCopy iter
+			      in
+				  Gtk.textIterForwardChar enditer;
+				  Gtk.textBufferDelete(buf,iter,enditer)
+			      end
+			       else ()
+		      end;
+		  doIndent(buf, line+1, endline, indent)
+	      end
+	  
+      fun selectWholeLines buf =
+	  let
+              val startiter = Gtk.textIterNew()
+              val enditer = Gtk.textIterNew()
+	      val _ = Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+	      val _ = Gtk.textIterSetLine(startiter,
+					  Gtk.textIterGetLine startiter)
+	      val _ = if Gtk.textIterForwardLine enditer then
+		  Gtk.textIterBackwardChar enditer else false
+	  in
+	      selectRange(buf, startiter, enditer)
+	  end
+
+      fun indentSelection(id, indent) =
+	  let
+              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+	      val _ = selectWholeLines buf
+              val startiter = Gtk.textIterNew()
+              val enditer = Gtk.textIterNew()
+	      val _ = Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+	  in
+	      doIndent(buf,
+		       Gtk.textIterGetLine startiter,
+		       Gtk.textIterGetLine enditer,
+		       indent);
+	      selectWholeLines buf
+	  end
 
       fun undo id =
           let

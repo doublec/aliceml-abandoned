@@ -25,6 +25,8 @@ signature GUISIGNALS_SIG =
     val on_copy1_activate : Gtk.callback_function
     val on_paste1_activate : Gtk.callback_function
     val on_delete1_activate : Gtk.callback_function
+    val on_indent_region_activate : Gtk.callback_function
+    val on_outdent_region_activate : Gtk.callback_function
     val on_find_activate : Gtk.callback_function
     val on_find_and_replace_activate : Gtk.callback_function
     val on_go_to_line_activate : Gtk.callback_function
@@ -56,6 +58,8 @@ functor GuiSignals(structure S : GUISIGNALS_SIG) =
     val copy1_on_copy1_activate = Gtk.signalConnect(Gui.copy1, "activate",S.on_copy1_activate)
     val paste1_on_paste1_activate = Gtk.signalConnect(Gui.paste1, "activate",S.on_paste1_activate)
     val delete1_on_delete1_activate = Gtk.signalConnect(Gui.delete1, "activate",S.on_delete1_activate)
+    val indent_region_on_indent_region_activate = Gtk.signalConnect(Gui.indent_region, "activate",S.on_indent_region_activate)
+    val outdent_region_on_outdent_region_activate = Gtk.signalConnect(Gui.outdent_region, "activate",S.on_outdent_region_activate)
     val find_on_find_activate = Gtk.signalConnect(Gui.find, "activate",S.on_find_activate)
     val find_and_replace_on_find_and_replace_activate = Gtk.signalConnect(Gui.find_and_replace, "activate",S.on_find_and_replace_activate)
     val go_to_line_on_go_to_line_activate = Gtk.signalConnect(Gui.go_to_line, "activate",S.on_go_to_line_activate)

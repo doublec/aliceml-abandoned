@@ -45,4 +45,6 @@ structure EventHandler : GUISIGNALS_SIG =
 	fun on_forward_in_history_activate _ = GuiMain.forwardHistory ()
 	fun on_back_in_history_activate _ = GuiMain.backwardHistory ()
 	fun on_go_to_line_activate _ = GuiMain.gotoLine()
+	fun on_indent_region_activate _ = GuiMain.indentSelection true
+	fun on_outdent_region_activate _ = GuiMain.indentSelection false
     end

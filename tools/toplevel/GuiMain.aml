@@ -326,6 +326,8 @@ structure GuiMain =
 		 val rq2 = Gdk.rectangleNew(0,0,0,0)
 		 val _ = Gtk.textViewGetVisibleRect(Gui.progout,rq2)
 
+		 val buf = Gtk.textViewGetBuffer Gui.compilerout
+
 		 (* Hack alert: The scrollbar between the two panes *)
 		 (* seems to be about 18 pixels high...*)
 		 val h1 = Gdk.rectangleGetFieldHeight rq1 + 18
@@ -564,6 +566,10 @@ structure GuiMain =
 		  | SOME coords => jumpToError coords ()
 	    end
 
+	fun indentSelection indent =
+	    case getCurrentPage() of NONE => ()
+	  | SOME id => Buffer.indentSelection(id, indent)
+	    
 	val forwardHistory = OutputWriters.historyNext
 	val backwardHistory = OutputWriters.historyPrev
 
