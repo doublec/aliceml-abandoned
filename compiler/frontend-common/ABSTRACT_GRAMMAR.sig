@@ -101,7 +101,8 @@ signature ABSTRACT_GRAMMAR =
 	| SelMod    of info * mod * lab		(* selection *)
 	| FunMod    of info * id * inf * mod	(* functor *)
 	| AppMod    of info * mod * mod		(* application *)
-	| AnnMod    of info * mod * inf		(* annotation (ascription) *)
+	| AnnMod    of info * mod * inf		(* annotation *)
+	| UpMod     of info * mod * inf		(* coercion *)
 	| LetMod    of info * dec list * mod	(* let *)
 
     (* Interfaces *)

@@ -1055,12 +1055,24 @@ val _=print "\n"
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
+	    val  j        = Inf.clone j2
+	    val  _        = Inf.match(j1, j)
+			    handle Inf.Mismatch mismatch =>
+				error(i, E.AnnModMismatch mismatch)
+	in
+	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
+	end
+
+      | elabMod(E, I.UpMod(i, mod, inf)) =
+	let
+	    val (j1,mod') = elabMod(E, mod)
+	    val (j2,inf') = elabGroundInf(E, inf)
 	    val  _        = Inf.match(j1, Inf.clone j2)
 			    handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
 	    val  j        = Inf.clone j2	(* opaque *)
 	in
-	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
+	    ( j, O.UpMod(infInfo(i,j), mod', inf') )
 	end
 
       | elabMod(E, I.LetMod(i, decs, mod)) =

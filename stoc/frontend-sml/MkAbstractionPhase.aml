@@ -1817,7 +1817,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | TRANSStrExp(i, strexp, sigexp) =>
-	   (* UNFINISHED *)
 	   let
 		val (mod',E')  = trStrExp E strexp
 		val (inf',E'') = trSigExp E sigexp
@@ -1830,7 +1829,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (mod',E')  = trStrExp E strexp
 		val (inf',E'') = trSigExp E sigexp
 	   in
-		( O.AnnMod(i, mod', inf'), E'' )
+		( O.UpMod(i, mod', inf'), E'' )
 	   end
 
 	 | APPStrExp(i, longfunid, strexp) =>

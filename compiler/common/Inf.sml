@@ -570,7 +570,8 @@ structure InfPrivate =
 	    List.app matchItem pairs
 	end
 
-    and matchItem(ref item1', ref item2') = matchItem'(item1', item2')
+    and matchItem(ref item1', item2 as ref item2') =
+	( matchItem'(item1', item2') ; item2 := item1' )
 
     and matchItem'(VAL(x1,t1,s1,d1), VAL(x2,t2,s2,d2)) =
 	let val l = idLab x2 in
