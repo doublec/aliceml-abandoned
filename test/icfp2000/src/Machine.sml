@@ -88,7 +88,10 @@ struct
 
     fun mkPlane surface =
 	Renderer.Plane
-	    (fn Renderer.PlaneSurface => fn(u,v,_) => surface(0,u,v))
+	    (fn Renderer.PlaneSurface => fn(u,v,_) =>
+(print("[plane surface] u=" ^ Real.toString u ^ ", v=" ^ Real.toString v ^ "\n")
+	     surface(0,u,v))
+)
 
     fun mkSphere surface =	(*UNFINISHED*)
 	Renderer.Sphere
