@@ -37,12 +37,12 @@ static inline u_int HashString(const char *s, u_int len, u_int size) {
   return (h % size);
 }
 
-static inline int EqualBlocks(Block *a, Block *b) {
+static inline bool EqualBlocks(Block *a, Block *b) {
   u_int al = (a->GetSize() * sizeof(word));
   u_int bl = (b->GetSize() * sizeof(word));
   if (al == bl)
     return (!std::memcmp(a->GetBase(), b->GetBase(), al));
-  return 0;
+  return false;
 }
 
 //
@@ -62,7 +62,7 @@ inline u_int WeakDictionary::HashBlock(Block *b) {
 inline u_int WeakDictionary::HashKey(word key) {
   switch (GetKeyType()) {
   case INT_KEY:
-    return HashInt(Store::DirectWordToInt(key));
+    return HashInt(static_cast<s_int>(Store::DirectWordToInt(key)));
   case BLOCK_KEY:
     return HashBlock(Store::DirectWordToBlock(key));
   case WORD_KEY:
@@ -76,7 +76,7 @@ inline HashNode *WeakDictionary::FindKey(word key, word nodes, word & prev) {
   switch (GetKeyType()) {
   case INT_KEY:
     {
-      int v = Store::DirectWordToInt(key);
+      s_int v = Store::DirectWordToInt(key);
       while (nodes != Store::IntToWord(0)) {
 	HashNode *node = HashNode::FromWordDirect(nodes);
 	if (Store::DirectWordToInt(node->GetKey()) == v)
@@ -202,7 +202,7 @@ void WeakDictionary::DeleteItem(word key) {
     RemoveEntry(hashed_key, prev, entry);
 }
 
-int WeakDictionary::IsMember(word key) {
+bool WeakDictionary::IsMember(word key) {
   u_int hashed_key = HashKey(key);
   word nodes       = GetEntry(hashed_key);
   word prev        = Store::IntToWord(0);
