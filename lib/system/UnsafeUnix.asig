@@ -4,20 +4,18 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure TextIO from "TextIO"
-
 signature UNSAFE_UNIX_COMPONENT =
     sig
 	structure UnsafeUnix:
 	    sig
 		val execute: string * string list -> 'proc
-		val streamsOf: 'proc -> TextIO.instream * TextIO.outstream
+		val streamsOf: 'proc -> 'instream * 'outstream
 	    end
     end
