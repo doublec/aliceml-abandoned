@@ -179,7 +179,7 @@ structure Link :> LINK =
 				UrlMap.lookupExistent (includeMap, url)
 			    val imports = MyComponent.imports component
 			    val importSpec =
-				Vector.map (fn urls =>
+				Vector.map (fn url =>
 					       let
 						   val (included, index) =
 						       UrlMap.lookupExistent
