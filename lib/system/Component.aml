@@ -218,7 +218,7 @@ struct
 					       request = NONE,
 					       cause = m}
 	    in
-		Reflect.Unreflect(val x = mod' signature S = S)
+		Reflect.Reify(val x = mod' signature S = S)
 	    end
 
 	functor Link(val url: Url.t signature S): S =
@@ -226,7 +226,7 @@ struct
 		structure Sig = Reflect.ReflectSig(signature S = S)
 		val mod = typedLink (validate url, SOME Sig.x, NONE)
 	    in
-		Reflect.Unreflect(val x = mod signature S = S)
+		Reflect.Reify(val x = mod signature S = S)
 	    end
 
 	functor Enter(val url: Url.t signature S structure X: S) =
