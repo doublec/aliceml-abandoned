@@ -1,8 +1,8 @@
 //
-// Authors:
+// Author:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
-// Contributors:
+// Contributor:
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
@@ -23,6 +23,7 @@
 #include "adt/Stack.hh"
 #include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
+#include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/Closure.hh"
 #include "generic/Backtrace.hh"
@@ -44,14 +45,22 @@ static const u_int initialHandlerTableSize = 7;
 static const u_int READ_BUFFER_SIZE = 8192; // to be checked
 static const u_int READ_BUFFER_OVERSHOOT = 20; // to be checked
 
-class InputStream: private Block { //--** finalization to be done
+class InputStreamFinalizationSet: public FinalizationSet {
+public:
+  virtual void Finalize(word value);
+};
+
+class InputStream: private Block {
 private:
   enum IN_STREAM_TYPE {
     FILE_INPUT_STREAM = MIN_DATA_LABEL, STRING_INPUT_STREAM
   };
 
+  static InputStreamFinalizationSet *finalizationSet;
+
   enum { HD_POS, TL_POS, RD_POS, EOB_POS, BUFFER_POS, BASE_SIZE };
-  enum { RD_BUF_POS = BASE_SIZE, FILE_POS, FILE_INPUT_STREAM_SIZE };
+  enum { RD_BUF_POS = BASE_SIZE, FILE_POS, FINALIZATION_KEY_POS,
+	 FILE_INPUT_STREAM_SIZE };
   enum { STRING_INPUT_STREAM_SIZE = BASE_SIZE };
 
   u_int GetHd() {
@@ -93,6 +102,10 @@ private:
 public:
   using Block::ToWord;
 
+  static void Init() {
+    finalizationSet = new InputStreamFinalizationSet();
+  }
+
   // InputStream Constructors
   static InputStream *NewFromFile(const char *filename) {
     InputStream *is = New(FILE_INPUT_STREAM, FILE_INPUT_STREAM_SIZE);
@@ -104,6 +117,7 @@ public:
       is->InitArg(BUFFER_POS, buffer->ToWord());
     }
     is->InitArg(TL_POS, 0);
+    is->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(is->ToWord()));
     return is;
   }
   static InputStream *NewFromString(String *string) {
@@ -123,6 +137,11 @@ public:
   }
 
   // InputStream Methods
+  FILE *GetFile() {
+    Assert(GetLabel() == (BlockLabel) FILE_INPUT_STREAM);
+    return static_cast<FILE *>
+      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+  }
   bool IsEOB() {
     return Store::DirectWordToInt(Block::GetArg(EOB_POS));
   }
@@ -170,9 +189,9 @@ public:
     switch ((IN_STREAM_TYPE) GetLabel()) {
     case FILE_INPUT_STREAM:
       {
-	FILE *file = static_cast<FILE *>
-	  (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
-	std::fclose(file);
+	std::fclose(GetFile());
+	u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
+	finalizationSet->Unregister(key);
       }
       break;
     case STRING_INPUT_STREAM:
@@ -211,8 +230,7 @@ public:
 	SetEOB(false);
 	// here bytes and size indicate the buffer to fill;
 	// tl still needs to be written back
-	FILE *file = static_cast<FILE *>
-	  (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+	FILE *file = GetFile();
 	u_int nread = std::fread(bytes, sizeof(u_char), size, file);
 	if (ferror(file)) {
 	  Error("InputStream::FillBuffer"); //--** raise Io exception
@@ -239,11 +257,15 @@ public:
     }
   }
   bool HasException() {
-    FILE *file = static_cast<FILE *>
-      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
-    return file == NULL;
+    return GetFile() == NULL;
   }
 };
+
+InputStreamFinalizationSet *InputStream::finalizationSet;
+
+void InputStreamFinalizationSet::Finalize(word value) {
+  std::fclose(InputStream::FromWordDirect(value)->GetFile());
+}
 
 // Pickle Arguments
 class UnpickleArgs {
@@ -498,10 +520,10 @@ word SelFromEnv(word env, u_int index) {
     return Interpreter::CONTINUE;		\
   } else {}
 
-#define CONTINUE()							     \
-  if (StatusWord::GetStatus() != 0)                                          \
-    return Interpreter::PREEMPT;					     \
-  else									     \
+#define CONTINUE()				\
+  if (StatusWord::GetStatus() != 0)		\
+    return Interpreter::PREEMPT;		\
+  else						\
     return Interpreter::CONTINUE;
 
 // Core Unpickling Function
@@ -852,6 +874,7 @@ word Unpickler::Corrupt;
 
 void Unpickler::Init() {
   // Setup internal Interpreters
+  InputStream::Init();
   InputInterpreter::Init();
   TransformInterpreter::Init();
   UnpickleInterpreter::Init();

@@ -1,9 +1,13 @@
 //
-// Authors:
+// Author:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Contributor:
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -17,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "generic/RootSet.hh"
+#include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
@@ -33,111 +38,118 @@
 //
 // Stream Classes
 //
-typedef enum {
+enum OUT_STREAM_TYPE {
   FILE_OUTPUT_STREAM   = MIN_DATA_LABEL,
   STRING_OUTPUT_STREAM = (FILE_OUTPUT_STREAM + 1)
-} OUT_STREAM_TYPE;
+};
 
-class OutputStream : public Block {
+class OutputStream: private Block {
 public:
-  // OutputStream Accessors
-  void PutByte(u_char byte);
-  void PutUInt(u_int i);
-  void PutBytes(Chunk *c);
-  // OutputStream Constructor
   static OutputStream *New(OUT_STREAM_TYPE type, u_int size) {
-    Block *p =Store::AllocBlock((BlockLabel) type, size);
+    Block *p = Store::AllocBlock((BlockLabel) type, size);
     return static_cast<OutputStream *>(p);
   }
-  // OutputStream Untagging
   static OutputStream *FromWordDirect(word stream) {
     Block *p = Store::DirectWordToBlock(stream);
-    Assert(p != INVALID_POINTER);
     Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM ||
 	   p->GetLabel() == (BlockLabel) STRING_OUTPUT_STREAM);
     return static_cast<OutputStream *>(p);
   }
+
+  using Block::InitArg;
+  using Block::GetArg;
+  using Block::ReplaceArg;
+  using Block::ToWord;
+
+  OUT_STREAM_TYPE GetType() {
+    return static_cast<OUT_STREAM_TYPE>(static_cast<u_int>(this->GetLabel()));
+  }
+  void PutByte(u_char byte);
+  void PutBytes(Chunk *c);
+  void PutUInt(u_int i);
+  word Close();
 };
 
-class FileOutputStream : public OutputStream {
-private:
-  enum { FILE_POS, EXCEPTION_POS, SIZE };
+class FileOutputStreamFinalizationSet: public FinalizationSet {
 public:
-  // FileOutputStream Accessors
-  void InitFile(FILE *file) {
-    InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
+  virtual void Finalize(word value);
+};
+
+class FileOutputStream: public OutputStream {
+private:
+  enum { FILE_POS, FINALIZATION_KEY_POS, SIZE };
+
+  static FileOutputStreamFinalizationSet *finalizationSet;
+public:
+  static void Init() {
+    finalizationSet = new FileOutputStreamFinalizationSet();
   }
-  void InitException(u_int exception) {
-    InitArg(EXCEPTION_POS, exception);
+
+  static FileOutputStream *New(char *filename) {
+    OutputStream *outputStream = OutputStream::New(FILE_OUTPUT_STREAM, SIZE);
+    FILE *f = std::fopen(filename, "wb");
+    outputStream->InitArg(FILE_POS, Store::UnmanagedPointerToWord(f));
+    outputStream->InitArg(FINALIZATION_KEY_POS,
+			  finalizationSet->Register(outputStream->ToWord()));
+    return static_cast<FileOutputStream *>(outputStream);
   }
+  static FileOutputStream *FromWordDirect(word stream) {
+    Block *p = Store::DirectWordToBlock(stream);
+    Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM);
+    return static_cast<FileOutputStream *>(p);
+  }
+
   FILE *GetFile() {
     return static_cast<FILE *>
       (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
-  u_int GetException() {
-    return Store::DirectWordToInt(GetArg(EXCEPTION_POS));
-  }
-  // FileOutputStream Methods
+
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
   word Close();
-  // FileOutputStream Constructor
-  static FileOutputStream *New(char *filename);
 };
 
-class StringOutputStream : public OutputStream {
+class StringOutputStream: public OutputStream {
 private:
   enum { POS_POS, SIZE_POS, STRING_POS, SIZE };
 
-  static const u_int INITIAL_SIZE = 256;
-  void Enlarge();
-public:
-  // StringOutputStream Accessors
-  u_int GetPos() {
-    return Store::DirectWordToInt(GetArg(POS_POS));
-  }
+  static const u_int INITIAL_SIZE = 256; //--** to be determined
+
   void SetPos(u_int pos) {
     InitArg(POS_POS, pos);
   }
-  u_int GetSize() {
-    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  u_int GetPos() {
+    return Store::DirectWordToInt(GetArg(POS_POS));
   }
   void SetSize(u_int size) {
     InitArg(SIZE_POS, size);
   }
-  String *GetString() {
-    return String::FromWordDirect(GetArg(STRING_POS));
+  u_int GetSize() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
   }
   void SetString(String *string) {
     ReplaceArg(STRING_POS, string->ToWord());
   }
-  // StringOutputStream Methods
+  String *GetString() {
+    return String::FromWordDirect(GetArg(STRING_POS));
+  }
+  void Enlarge();
+public:
+  static StringOutputStream *New() {
+    StringOutputStream *stream = static_cast<StringOutputStream *>
+      (OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
+    stream->SetPos(0);
+    stream->SetSize(INITIAL_SIZE);
+    stream->SetString(String::New(INITIAL_SIZE));
+    return stream;
+  }
+
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
   word Close();
-  // StringOutputStream Constructor
-  static StringOutputStream *New();
 };
 
 // OutputStream Methods
-void OutputStream::PutByte(u_char byte) {
-  switch ((OUT_STREAM_TYPE) this->GetLabel()) {
-  case FILE_OUTPUT_STREAM:
-    static_cast<FileOutputStream *>(this)->PutByte(byte); break;
-  case STRING_OUTPUT_STREAM:
-    static_cast<StringOutputStream *>(this)->PutByte(byte); break;
-  }
-}
-
-void OutputStream::PutBytes(Chunk *c) {
-  switch ((OUT_STREAM_TYPE) this->GetLabel()) {
-  case FILE_OUTPUT_STREAM:
-    static_cast<FileOutputStream *>(this)->PutBytes(c); break;
-  case STRING_OUTPUT_STREAM:
-    static_cast<StringOutputStream *>(this)->PutBytes(c); break;
-  }
-}
-
 void OutputStream::PutUInt(u_int i) {
   while (i >= 0x80) {
     OutputStream::PutByte(i & 0x7F | 0x80);
@@ -146,16 +158,30 @@ void OutputStream::PutUInt(u_int i) {
   OutputStream::PutByte(i);
 }
 
-// FileOutputStream Methods
-FileOutputStream *FileOutputStream::New(char *filename) {
-  FileOutputStream *stream = static_cast<FileOutputStream *>
-    (OutputStream::New(FILE_OUTPUT_STREAM, SIZE));
-  FILE *f         = std::fopen(filename, "wb");
-  u_int exception = (f == NULL);
-  stream->InitFile(f);
-  stream->InitException(exception);
-  return stream;
+void OutputStream::PutByte(u_char byte) {
+  switch (GetType()) {
+  case FILE_OUTPUT_STREAM:
+    static_cast<FileOutputStream *>(this)->PutByte(byte); break;
+  case STRING_OUTPUT_STREAM:
+    static_cast<StringOutputStream *>(this)->PutByte(byte); break;
+  }
 }
+
+void OutputStream::PutBytes(Chunk *c) {
+  switch (GetType()) {
+  case FILE_OUTPUT_STREAM:
+    static_cast<FileOutputStream *>(this)->PutBytes(c); break;
+  case STRING_OUTPUT_STREAM:
+    static_cast<StringOutputStream *>(this)->PutBytes(c); break;
+  }
+}
+
+// FileOutputStream Methods
+void FileOutputStreamFinalizationSet::Finalize(word value) {
+  std::fclose(FileOutputStream::FromWordDirect(value)->GetFile());
+}
+
+FileOutputStreamFinalizationSet *FileOutputStream::finalizationSet;
 
 void FileOutputStream::PutByte(u_char byte) {
   std::fputc(byte, GetFile());
@@ -167,6 +193,8 @@ void FileOutputStream::PutBytes(Chunk *c) {
 
 word FileOutputStream::Close() {
   std::fclose(GetFile());
+  u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
+  finalizationSet->Unregister(key);
   return Store::IntToWord(0);
 }
 
@@ -186,17 +214,15 @@ void StringOutputStream::PutByte(u_char byte) {
   u_int size = GetSize();
   c[pos++] = byte;
   SetPos(pos);
-  if (pos == size) {
+  if (pos == size)
     Enlarge();
-  }
 }
 
 void StringOutputStream::PutBytes(Chunk *c) {
   u_int cSize = c->GetSize();
   u_int pos   = GetPos();
-  while (pos + cSize >= GetSize()) {
+  while (pos + cSize >= GetSize())
     Enlarge();
-  }
   std::memcpy(GetString()->GetValue() + pos, c->GetBase(), cSize);
   SetPos(pos + cSize);
 }
@@ -207,15 +233,7 @@ word StringOutputStream::Close() {
   return str->ToWord();
 }
 
-StringOutputStream *StringOutputStream::New() {
-  StringOutputStream *stream = static_cast<StringOutputStream *>
-    (OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
-  stream->SetPos(0);
-  stream->SetSize(INITIAL_SIZE);
-  stream->SetString(String::New(INITIAL_SIZE));
-  return stream;
-}
-
+// Sharing Detector
 class Seen : private Block {
 private:
   static const BlockLabel SEEN_LABEL = MIN_DATA_LABEL;
@@ -614,20 +632,22 @@ Interpreter::Result Pickler::Pack(word x) {
 Interpreter::Result Pickler::Save(String *filename, word x) {
   char *szFileName     = filename->ExportC();
   FileOutputStream *os = FileOutputStream::New(szFileName);
-  if (os->GetException()) {
+  if (os->GetFile() == NULL) {
     delete os;
     Scheduler::currentData = Store::IntToWord(0); // to be done: Io exn
     Scheduler::currentBacktrace = Backtrace::New(Scheduler::GetAndPopFrame());
     return Interpreter::RAISE;
+  } else {
+    Scheduler::PopFrame();
+    PickleSaveInterpreter::PushFrame();
+    PicklingInterpreter::PushFrame(x);
+    PickleArgs::New(os, Seen::New());
+    return Interpreter::CONTINUE;
   }
-  Scheduler::PopFrame();
-  PickleSaveInterpreter::PushFrame();
-  PicklingInterpreter::PushFrame(x);
-  PickleArgs::New(os, Seen::New());
-  return Interpreter::CONTINUE;
 }
 
 void Pickler::Init() {
+  FileOutputStream::Init();
   PicklingInterpreter::Init();
   PicklePackInterpreter::Init();
   PickleSaveInterpreter::Init();
