@@ -63,6 +63,9 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 		      (outputX (q, x); case xr of nil => () | _ =>  m q)) xs;
 	     output1 (q, #"]"))
 
+	fun outputPair (outputA, outputB) (q, (a, b)) =
+	    (outputA (q, a); output1 (q, #"#"); outputB (q, b))
+
 	fun outputCoord (q, (l, r)) =
 	    (output (q, Int.toString l);
 	     output1 (q, #"#");
@@ -103,13 +106,15 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	    (f (q, "lab"); outputCoord (q, coord); m q;
 	     outputLabString (q, s); r q)
 
-	fun outputDec (q, ValDec (coord, id, exp)) =
+	fun outputDec (q, OneDec (coord, id, exp)) =
+	    (f (q, "oneDec"); outputCoord (q, coord); m q;
+	     outputId (q, id); m q; outputExp (q, exp); r q)
+	  | outputDec (q, ValDec (coord, ids, exp)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
-	     outputId (q, id); m(q); outputExp (q, exp); r q)
-	  | outputDec (q, ValRecDec (coord, ids, exp, isRecursive)) =
-	    (f (q, "valRecDec"); outputCoord (q, coord); m q;
-	     outputList outputId (q, ids); m q; outputExp (q, exp); m q;
-	     outputBool (q, isRecursive); r q)
+	     outputList outputId (q, ids); m q; outputExp (q, exp); r q)
+	  | outputDec (q, RecDec (coord, idExps)) =
+	    (f (q, "recDec"); outputCoord (q, coord); m q;
+	     outputList (outputPair (outputId, outputExp)) (q, idExps); r q)
 	  | outputDec (q, ConDec (coord, id, hasArgs)) =
 	    (f (q, "conDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
@@ -128,9 +133,7 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     outputList outputLongid (q, longids); r q)
 	  | outputExp (q, RecExp (coord, labLongidList)) =
 	    (f (q, "recExp"); outputCoord (q, coord); m q;
-	     outputList (fn (q, (lab, longid)) =>
-			 (outputLab (q, lab); output1 (q, #"#");
-			  outputLongid (q, longid)))
+	     outputList (outputPair (outputLab, outputLongid))
 	     (q, labLongidList); r q)
 	  | outputExp (q, SelExp (coord, lab)) =
 	    (f (q, "selExp"); outputCoord (q, coord); m q;
@@ -174,6 +177,9 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     else
 		 f (q, "refExp");
 	     outputInt (q, !shared); r q)
+	  | outputExp (q, DecExp (coord, ids)) =
+	    (f (q, "decExp"); outputCoord (q, coord); m q;
+	     outputList outputId (q, ids); r q)
 	and outputTest (q, LitTest lit) =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
 	  | outputTest (q, NameTest longid) =
@@ -183,11 +189,9 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     outputId (q, id); r q)
 	  | outputTest (q, RecTest stringIdList) =
 	    (f (q, "recTest");
-	     outputList (fn (q, (string, id)) =>
-			 (outputLabString (q, string); output1 (q, #"#");
-			  outputId (q, id))) (q, stringIdList); r q)
-	  | outputTest (q, LabelTest (string, id)) =
-	    (f (q, "labelTest");
-	     outputLabString (q, string); output1 (q, #"#");
+	     outputList (outputPair (outputLabString, outputId))
+	     (q, stringIdList); r q)
+	  | outputTest (q, LabTest (string, id)) =
+	    (f (q, "labTest"); outputLabString (q, string); output1 (q, #"#");
 	     outputId (q, id); r q)
     end

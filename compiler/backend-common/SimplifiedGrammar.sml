@@ -36,9 +36,9 @@ structure Simplified :> SIMPLIFIED =
 	(* Expressions and Declarations *)
 
 	datatype dec =
-	    ValDec of coord * id * exp
-	  | ValRecDec of coord * id list * exp * bool
-	    (* all ids distinct, is recursive *)
+	    OneDec of coord * id * exp
+	  | ValDec of coord * id list * exp   (* all ids distinct *)
+	  | RecDec of coord * (id * exp) list   (* all ids distinct *)
 	  | ConDec of coord * id * bool   (* has args *)
 	and exp =
 	    LitExp of coord * lit
@@ -58,10 +58,11 @@ structure Simplified :> SIMPLIFIED =
 	  | HandleExp of coord * exp * id * exp
 	  | LetExp of coord * dec list * exp
 	  | SharedExp of coord * exp * shared
+	  | DecExp of coord * id list
 	and test =
 	    LitTest of lit
 	  | NameTest of longid
 	  | ConTest of longid * id
 	  | RecTest of (string * id) list   (* sorted, all labels distinct *)
-	  | LabelTest of string * id
+	  | LabTest of string * id
     end
