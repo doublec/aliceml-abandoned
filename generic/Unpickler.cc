@@ -20,7 +20,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <zlib.h>
 #include "adt/Stack.hh"
 #include "adt/ChunkMap.hh"
 #include "generic/RootSet.hh"
@@ -36,6 +35,7 @@
 #include "generic/Pickle.hh"
 #include "generic/UniqueString.hh"
 #include "generic/Broker.hh"
+#include "generic/ZLib.hh"
 
 static word handlerTable;
 static const u_int initialHandlerTableSize = 7;

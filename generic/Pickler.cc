@@ -20,8 +20,8 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <zlib.h>
 #include "store/Map.hh"
+#include "adt/Stack.hh"
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/ConcreteCode.hh"
@@ -32,11 +32,8 @@
 #include "generic/Transform.hh"
 #include "generic/Pickler.hh"
 #include "generic/Pickle.hh"
-
+#include "generic/ZLib.hh"
 #include "generic/UniqueString.hh"
-#include "adt/Stack.hh"
-
-#define COMPRESSIONLEVEL "9"
 
 //
 // Stream Classes
