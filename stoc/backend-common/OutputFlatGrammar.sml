@@ -96,7 +96,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "#\"", S (WideChar.toString c), S "\""]
 	  | outputLit (StringLit s) =
 	    SEQ #[S "\"", S (String.toString s), S "\""]
-	  | outputLit (RealLit r) = S r
+	  | outputLit (RealLit r) = S (LargeReal.toString r)
 
 	fun outputArgs outputX (OneArg x) = outputX x
 	  | outputArgs outputX (TupArgs xs) =

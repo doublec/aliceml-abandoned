@@ -37,7 +37,7 @@ struct
       | ppLit(WordLit w)	= text(LargeWord.toString w)
       | ppLit(CharLit c)	= text("#\"" ^ WideChar.toCString c ^ "\"")
       | ppLit(StringLit s)	= text("\"" ^ WideString.toCString s ^ "\"")
-      | ppLit(RealLit r)	= text r
+      | ppLit(RealLit r)	= text(LargeReal.toString r)
 
 
   (* Structured *)

@@ -42,7 +42,7 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	fun outputInt (q, n) = output (q, Int.toString n)
 	fun outputLargeInt (q, n) = output (q, LargeInt.toString n)
 	fun outputLargeWord (q, w) = outputLargeInt (q, LargeWord.toLargeInt w)
-	fun outputLargeReal (q, x) = output (q, (*LargeReal.toString*) x)
+	fun outputLargeReal (q, r) = output (q, LargeReal.toString r)
 	fun outputAtom (q, s) =
 	    (output1 (q, #"'");
 	     output (q, String.toCString s);

@@ -30,9 +30,7 @@ signature INTERMEDIATE_GRAMMAR =
 	| WordLit   of LargeWord.word		(* modulo arithmetic *)
 	| CharLit   of WideChar.char		(* character *)
 	| StringLit of WideString.string	(* character string *)
-(*	| RealLit   of LargeReal.real		(* floating point *)
-UNFINISHED: obsolete after bootstrapping:
-*)	| RealLit   of string			(* floating point *)
+	| RealLit   of LargeReal.real		(* floating point *)
 
     (* Identifiers *)
 

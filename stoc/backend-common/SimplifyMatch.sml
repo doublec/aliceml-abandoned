@@ -232,7 +232,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | litToString (IntLit i) = LargeInt.toString i
 	  | litToString (CharLit c) = "#\"" ^ WideChar.toString c ^ "\""
 	  | litToString (StringLit s) = "\"" ^ s ^ "\""
-	  | litToString (RealLit s) = s
+	  | litToString (RealLit r) = LargeReal.toString r
 
 	fun testToString (LitTest lit) = "lit " ^ litToString lit
 	  | testToString (TagTest (label, n, NONE, _)) =
@@ -315,7 +315,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | conArgsEq (SOME (O.ProdArgs _), SOME (O.ProdArgs _)) = true
 	  | conArgsEq (_, _) = false
 
-	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
+	fun testEq (LitTest lit1, LitTest lit2) = false (*--** lit1 = lit2*)
 	  | testEq (TagTest (_, n1, conArgs1, _),
 		    TagTest (_, n2, conArgs2, _)) =
 	    n1 = n2 andalso conArgsEq (conArgs1, conArgs2)
@@ -328,7 +328,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testEq (VecTest n1, VecTest n2) = n1 = n2
 	  | testEq (_, _) = false
 
-	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
+	fun areParallelTests (LitTest lit1, LitTest lit2) =
+	    false (*--** lit1 <> lit2 *)
 	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
 	  | areParallelTests (_, _) = false
 

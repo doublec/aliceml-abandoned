@@ -502,9 +502,7 @@ struct
       | trLit(I.WordLit w)		= O.WordLit w
       | trLit(I.CharLit c)		= O.CharLit c
       | trLit(I.StringLit s)		= O.StringLit s
-(*    | trLit(I.RealLit x)		= O.RealLit x
-UNFINISHED: obsolete after bootstrapping:
-*)    | trLit(I.RealLit x)		= O.RealLit(LargeReal.toString x)
+      | trLit(I.RealLit x)		= O.RealLit x
 
 
   (* Identifiers *)

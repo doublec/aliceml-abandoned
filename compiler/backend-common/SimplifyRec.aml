@@ -131,8 +131,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun derec' (JokPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (info, lit1), LitExp (_, lit2)) =
-	    if lit1 = lit2 then (nil, nil)
-	    else Error.error (#region info, "pattern never matches")
+	    (*--** if lit1 = lit2 then (nil, nil)
+	    else *) Error.error (#region info, "pattern never matches")
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
 	  | derec' (TagPat (info, Lab (_, label1), pat, _),
 		    TagExp (_, Lab (_, label2), exp, true)) =
@@ -213,8 +213,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun unify (JokPat _, pat2) = (nil, pat2)
 	  | unify (pat1, JokPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (info, lit1), LitPat (_, lit2)) =
-	    if lit1 = lit2 then (nil, pat1)
-	    else Error.error (#region info, "pattern never matches")
+	    (*--** if lit1 = lit2 then (nil, pat1)
+	    else *) Error.error (#region info, "pattern never matches")
 	  | unify (VarPat (info, id), pat2) = (nil, AsPat (info, id, pat2))
 	  | unify (pat1, VarPat (info, id)) = (nil, AsPat (info, id, pat1))
 	  | unify (TagPat (info, lab as Lab (_, label), pat1, isNAry),
