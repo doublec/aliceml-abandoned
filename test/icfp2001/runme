@@ -1,3 +1,16 @@
 #!/bin/sh
 
-ozengine Linked.ozf $1
+howcalled=$0
+cmd=`basename $howcalled`
+
+if test -z "${OZHOME}"
+then
+  dir=`dirname $howcalled`
+  OZHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+OZ_LOAD=cache=cache:cache=$OZHOME/cache
+
+export OZHOME OZ_LOAD
+
+exec ozengine Linked.ozf $1
