@@ -143,7 +143,12 @@ struct
 			     interruptable
 			     (fn _ =>
 			      let
-				  val (str, inf) = Reflect.reflectPackage package
+				  val (str, inf) =
+				      if Future.isFuture package then
+					  (lazy #1 (Reflect.reflectPackage package),
+					   valOf (Component.inf (component ())))
+				      else
+					  Reflect.reflectPackage package
 				  val doc = PPComponent.ppComp (str, inf)
 			      in
 				  PrettyPrint.output(TextIO.stdOut, doc, 79);
