@@ -6,57 +6,93 @@
 
 \begin{document}
 
-\begin{center}
-\begin{huge}Fopra: GTK f"ur Alice\end{huge}
+\title{Fopra: GTK f"ur Alice - Abschlussbericht}
+\author{Robert Grabowski}
+\maketitle
 
-Abschlussbericht
+\tableofcontents
 
-Robert Grabowski
+\part{Einleitung}
 
-\end{center}
-
-\section{Einleitung}
+\section{Inhalt des Berichts}
 
 In diesem Bericht werden Entwurf und Implementierung der 
-GTK+-Schnittstelle f"ur Alice beschrieben. Mit GTK+ lassen sich relativ einfach
-grafische Benutzeroberfl"achen in C erstellen. Durch die Schnittstelle soll
+GTK+-Schnittstelle f"ur Alice beschrieben. Mit GTK+ l"asst sich relativ einfach
+eine grafische Benutzeroberfl"achen (GUI) in C erstellen. 
+Durch die Schnittstelle soll
 dies auch dem Alice-Programmierer m"oglich sein.
 
-\subsection{Vorgeschichte des Bindings}
+"Inhalt. Im Folgenden werden die Schnittstelle und GTK+ kurz vorgestellt.
+Daraufhin wird der Entwurf der Schnittstelle er"ortert, wobei auch auf
+allgemeine, nicht GTK-spezifische Kozepte hingewiesen wird.
+Es folgt eine Beschreibung der Implementierung, bevor der Bericht mit einem
+Ausblick auf weiterf"uhrende Arbeiten schlie"st.
+
+\section{Die Schnittstelle}
 
 Als Grundlage f"ur diese Arbeit dienen zwei bereits existierende
 Schnittstellen f"ur GTK+ 1.2 von Thorsten Brunklaus:
 eine Anbindung an Mozart, und eine an Alice auf der Mozart-VM.
 Die hier besprochene Schnittstelle bindet GTK+ 2.x an Alice auf der SEAM-VM.
-Alle erw"ahnten Schnittstellen sind sowohl unter Windows als auch unter
-Linux lauff"ahig.
+Sie ist in der Anwendung weitestgehend kompatibel mit der bereits existierenden
+Alice-Anbindung. Die gr"osten Unterschiede liegen bei GTK+ selbst,
+bedingt durch den Versionssprung.
 
-Benutzt werden die GTK-Schnittstellen unter anderem von den Inspector-Tools.
+Alle erw"ahnten Schnittstellen sind sowohl unter Windows als auch unter
+Linux lauff"ahig. Benutzt werden die GTK+-Schnittstellen unter anderem von
+den Inspector-Tools.
 
 \section{GTK+}
 
-\subsection{Einleitung}
-
 GTK+ ist ein Bibliothekspaket zum komfortablen Erstellen von grafischen
 Benutzeroberfl"achen. Urspr"unglich im Jahr 1996 nur zur Verwendung im
-Grafikprogramm GIMP geschrieben (Fussnote: GTK=GIMP Toolkit), bildet es
+Grafikprogramm GIMP geschrieben\footnote{GTK steht f"ur ``GIMP Toolkit''}, 
+bildet es
 inzwischen die Grundlage sehr vieler Anwendungen, insbesondere des 
 GNOME-Desktops. GTK+ ist komplett
 in C geschrieben, doch bei der Entwicklung wurde von Anfang an darauf geachtet,
 m"oglichst gute Voraussetzungen f"ur die Anbindung an andere
 Programmiersprachen zu schaffen.
 
-\subsection{Konzept-"Uberblick}
+\subsection*{Konzept-"Uberblick}
 
-\subsection{Aufbau}
-
-GTK+ in der Version 2.0 besteht aus folgenden Bibliotheken: (Bild???)
+Bei der Programmierung einer Oberfl"ache mit GTK+ kommen folgende Ideen
+zum Tragen:
 
 \begin{itemize}
-\item GLib -- grundlegende Funktionen wie das Klassensystem und
-      das automatische Speichermanagement
-\item GDK -- plattformunabh"angige Abstraktion der grafischen
-      Zeichenfunktionen des Betriebssystems
+\item Widgets.
+      Ein Widget ist ein Objekt, das ein
+      Element der Benutzeroberfl"ache darstellt, wie
+      Fenster, Schaltfl"achen und Men"us.
+      Die GUI-Programmierung besteht im Wesentlichen aus der
+      Erstellung von Widgets und dem Setzen ihrer Attribute, die
+      z.B. Aussehen und Verhaltensweisen beeinflussen.
+
+\item Ereignisbehandlungsroutinen. Diese auch ``Event Handler'' oder
+      ``Callbacks'' genannten Funktionen reagieren auf bestimmte Ereignisse, 
+      wie z.B. Mausbewegungen oder Tastatureingaben. Man kann eigene
+      Callback-Funktionen bei GTK+ registrieren.
+
+\item Hauptschleife. Das Programm "ubergibt die Kontrolle an die
+      GTK+-Hauptschleife. Diese "uberpr"uft periodisch, ob Ereignisse
+      vorliegen,
+      und ruft ggf. die f"ur ein Ereignis registrierten Callback-Funktionen
+      auf.
+
+\item Speicherverwaltung. Nicht mehr ben"otigte Objekte werden von
+      GTK+ automatisch entfernt.
+
+\end{itemize}
+
+\subsection*{Aufbau}
+
+GTK+ 2.0 besteht aus den folgenden Bibliotheken:
+
+\begin{itemize}
+\item GLib -- grundlegende Funktionen wie Klassensystem und
+      Speichermanagement
+\item GDK -- plattformunabh"angige Abstraktion der Grafikfunktionen
+      des Betriebssystems
 \item Pango -- abstrahiert Schriftartenfunktionen des Betriebssystems
 \item ATK -- stellt Funktionen f"ur Eingabehilfen zur Verf"ugung
 \item GTK -- enth"alt die eigentliche Sammlung von Widgets
@@ -64,21 +100,28 @@ GTK+ in der Version 2.0 besteht aus folgenden Bibliotheken: (Bild???)
 
 In diesem Alice-GTK+-Binding werden nur Schnittstellen f"ur die Bibliotheken
 GTK und GDK generiert, denn auf die anderen Bibliotheken muss in der Regel beim
-Programmieren von GTK-Anwendungen nicht direkt zugegriffen werden.
+Programmieren von GTK+-Anwendungen nicht direkt zugegriffen werden.
 
-(??? Hinweis: GTK und GTK+ Sprachgebrauch)
+\subsection*{GnomeCanvas}
 
-\subsection{GnomeCanvas}
-
-Dar"uberhinaus enth"alt das Binding eine Schnittstelle f"ur die GnomeCanvas-
-Bibliothek. Diese enth"alt das GnomeCanvas-Widget, welches eine abstrakte
-grafische Zeichenfl"ache darstellt, auf die man Texte, Bilder und primitive
-Objekte zeichnen kann. Das GnomeCanvas ist nicht Teil von GTK+, sondern
-geh"ort bereits zum Gnome-Projekt.
-
-Die Schnittstelle f"ur das GnomeCanvas ist erforderlich, da diverse Alice-Tools
+Dar"uberhinaus enth"alt das Binding eine Schnittstelle f"ur das
+GnomeCanvas-Widget, welches eine abstrakte
+Fl"ache zum Zeichnen von Texten, Bilder und primitiven
+Objekten darstellt. Die GnomeCanvas-Bibliothek ist eigentlich nicht Teil
+von GTK+, sondern geh"ort bereits zum Gnome-Projekt. Eine Schnittstelle ist 
+dennoch erforderlich, da diverse Alice-Tools
 wie der Inspector dieses Widget zentral zum Anzeigen von Informationen
 nutzen.
+
+\subsection*{GTK und GTK+}
+
+Obwohl das Sammlung der Bibliotheken ``GTK+'' hei"st und ``GTK'' nur eine
+einzelne Bibliothek ist, wird im Folgenden aus Gr"unden der Vereinfachung
+und Lesbarkeit immer nur von ``GTK'' gesprochen, womit das gesamte
+Paket gemeint ist.
+
+
+\part{Entwurf}
 
 \section{Alice-Schnittstellen f"ur C-Bibliotheken}
 
@@ -91,18 +134,18 @@ Zus"atzlich werden komplexe Datentypen deklariert, die bei der Verwendung
 mit den Funktionen sinnvoll sind. Ein Binding hat die Aufgabe, diese
 Funktionen und Datentypen dem Alice-Programmierer zur Verf"ugung zu stellen.
 
-\subsection{Funktions-Abbildung}
+\subsection*{Funktions-Abbildung}
 
-Bei den Funktionen geschieht dies, indem f"ur alle Funktionen ein Wrapper
-geschrieben wird, der von Alice aus sichtbar ist und der den eigentlichen
-Funktionsaufruf t"atigt. (Fussnote: direkter Aufruf geht nicht)
+Weil Bibliotheksfunktionen nicht direkt von Alice aufrufbar sind,
+wird f"ur alle Funktionen ein Wrapper geschrieben, der in Alice
+sichtbar ist und der den eigentlichen Funktionsaufruf t"atigt.
 
 Ein Wrapper muss zus"atzlich ein Datenmarshalling durchf"uhren, d.h. vor
 dem eigentlichen Funktionsaufruf Alice-Werte in C-Werte umwandeln und
 umgekehrt. Die genaue Arbeitsweise h"angt nat"urlich davon ab, wie mit
 C-Datentypen in Alice umgegangen wird.
 
-\subsection{Datentyp-Abbildung}
+\subsection*{Datentyp-Abbildung}
 
 Es gibt zwei ``extreme'' M"oglichkeiten f"ur die Datentyp-Abbildung.
 
@@ -127,36 +170,36 @@ abgebildet, w"ahrend Verbundtypen in Alice abstrakt bleiben.
 Gr"unde f"ur diese Entscheidung und Implementationsdetails werden in Abschnitt
 ??? erkl"art.
 
-\subsection{Die automatische Generierung und ihre Grenzen}
+\subsection*{Die automatische Generierung und ihre Grenzen}
 
 Sobald man sich auf eine bestimmte Abbildung festgelegt hat, liegt es nahe,
 das Binding anhand der Bibliothekssignatur (???) automatisch generieren zu
 lassen. Leider enthalten reine C-Deklarationen manchmal zuwenig semantische
 Informationen, um eine m"oglichst akkurate Alice-Schnittstelle generieren
-zu k"onnen. (Fussnote: Erklaerung) Weil auch dies auch bei GTK+ der Fall
+zu k"onnen.\footnote{Ein Beispiel daf"ur sind Ein- und Ausgabeparameter, die
+weiter unten besprochen werden.} Weil auch dies auch bei GTK der Fall
 ist und eine Annotierung mit Meta-Daten nicht vorliegt, macht der Generator
-an einigen Stellen bestimmte Annahmen, die zumindest f"ur die GTK+-Bibliothek
+an einigen Stellen bestimmte Annahmen, die zumindest f"ur die GTK-Bibliotheken
 zutreffen. Ausserdem kann f"ur Einzelf"alle eine gesonderte Code-Generierung
 festgelegt werden.
 
-(*
-Die so generierte Alice-Schnittstelle ist im Wesentlichen eine 1:1-Abbildung
-der C-Bibliothek. Weil die Bibliothek unter Alice also genauso benutzt wird
-wie unter C, sind die entstehenden Alice-Programme reichlich imperativ und auf
-Seiteneffekten beruhend. W"unschenswert w"are hier eine Abstraktion der
-einzelnen Funktionsaufrufe in einer h"oheren, funktionalen Schicht.
-Dies ist jedoch nicht Teil dieses Fopras.
-*)
+Zu beachten ist, dass die so generierte Alice-Schnittstelle im Wesentlichen
+eine 1:1-Abbildung der C-Bibliothek ist. Alice-Programme, die die Schnittstelle
+benutzen, sind also reichlich imperativ und auf Seiteneffekten beruhend.
+Der Ausblick am Ende dieses Berichts erl"autert Ideen f"ur eine h"ohere,
+funktionale Schicht.
 
-Trotz allem m"ussen unter Umst"anden gewisse Teile der Schnittstelle manuell
-geschrieben werden, weil eine naive Benutzung der Bibliothek fundamentale
-Alice-Konzepte wie die Nebenl"aufigkeit aushebeln w"urde. Bei GTK sind
-dies die Hauptschleife, die Ereignisbehandlung sowie die Garbage Collection,
-welche im n"achsten Abschnitt erkl"art werden.
+Die direkte Abbildung auf unterer Ebene bringt noch ein weiteres Problem
+mit sich: Wenn die Bibliothek in Alice genauso benutzt wird wie in C, 
+k"onnen unter Umst"anden fundamentale Alice-Konzepte wie die Nebenl"aufigkeit
+ausgehebelt werden. In diesem Fall m"ussen die entsprechenden Teile der
+Schnittstelle auf jeden Fall von Hand geschrieben werden.
+Bei GTK sind dies die Hauptschleife, die Ereignisbehandlung sowie die
+Garbage Collection, welche im n"achsten Abschnitt erkl"art werden.
 
 \section{Hauptschleife und Ereignisbehandlung}
 
-\subsection{Problem}
+\subsection{Implementierung in C}
 
 Der Kontrollfluss eines in C geschriebenen GTK-Programms sieht normalerweise
 wie folgt aus: (Bild)
@@ -183,7 +226,7 @@ Zum einen sind Aufrufe von C-Funktionen f"ur die Alice-VM atomar. W"ahrend die
 Programmkontrolle bei der Hauptschleife liegt, was fast immer der Fall ist,
 ist die virtuelle Maschine blockiert. Dadurch kann sie keine weiteren
 Alice-Threads mehr abarbeiten, und die Nebenl"aufigkeit ist nicht mehr
-sichergestellt. (Fussnote: GC auch nicht).
+sichergestellt.
 
 Zum anderen k"onnen Alice-Callback-Funktionen nicht bei GTK registriert werden,
 geschweige denn von C aus aufgerufen werden.
@@ -200,17 +243,20 @@ Die Probleme werden wie folgt gel"ost:
 
 Eine schematische "Ubersicht liefert Abbildung ???.
 
-Die Hauptschleife wird aufgeteilt in einen C- und einen Alice-Teil.
-(Fussnote: kein Hack) In einem eigenen Alice-Thread wird dabei das Verhalten
+Die Hauptschleife wird aufgeteilt in einen C- und einen Alice-Teil.\footnote{
+Dies ist kein ``Hack'', sondern explizit von den GTK-Entwicklern als
+M"oglichkeit vorgesehen.}
+In einem eigenen Alice-Thread wird dabei das Verhalten
 der GTK-Hauptschleife ``simuliert'': Der Thread ruft periodisch
 GTK-Funktionen auf, die "uberpr"ufen, ob Ereignisse vorliegen bzw. diese
 abarbeiten. Durch diese Konstruktion kehrt der Programmfluss immer wieder
 zu Alice zur"uck, wodurch die VM nicht blockiert wird.
 
-Der indirekte Aufruf l"auft in folgenden Schritten ab:
+Die Realisierung des indirekten Aufrufs der Alice-Callback-Funktion 
+ist etwas komplizierter:
 
 \begin{enumerate}
-\item Soll eine Alice-Callback-Funktion f"ur ein Ereignis registriert werden,
+\item Soll eine Funktion f"ur ein Ereignis registriert werden,
       wird f"ur sie eine eindeutige ID generiert. 
       Bei GTK wird statt der Funktion ein in C geschriebener
       ``generischer Marshaller'' registriert, und zwar so, dass er bei jedem
@@ -260,11 +306,21 @@ GTK-Referenzz"ahler mindestens 1 sein, was GTK am Entfernen des Objekts
 hindert.
 
 
-\section{GTK-Schnittstelle}
+\part{Implementierung}
 
-(Uebersicht; relativ grob; wie auf Folie)
+\section{Allgemeiner Aufbau der Schnittstelle}
+
+Abbildung ??? zeigt den allgemeinen Aufbau der GTK-Schnittstelle.
+Sowohl die generierte Schnittstelle als auch der handgeschriebenen ``Kern''
+besitzen einen in C implementierten Teil, der die eigentliche Kommunikation
+mit der Bibliothek abwickelt, als auch eine in Alice implementierte
+Schicht, die von der unteren Ebene abstrahiert und u.a. eine h"ohere
+Typsicherheit bietet. F"ur den Zugriff der Alice-Schicht auf die C-Ebene
+und umgekehrt sorgt das Foreign Function Interface (FFI) von Alice.
 
 \section{Generator}
+
+Die Generierung l"auft in mehreren Phasen ab.
 
 (Aufbau wie auf Folien; Phasen)
 
@@ -275,7 +331,9 @@ liefern? Neben den primitiven Datentypen von C sind dies die in der Bibliothek
 deklarierten Funktionen, Enumerationstypen, Verbundtypen, Typ-Aliasnamen
 und externen Variablen.
 
-\textbf{Primitive Datentypen} werden in der Regel auf m"oglichst
+\paragraph{Primitive Datentypen}
+
+Primitive C-Datentypen werden in der Regel auf m"oglichst
 "ahnliche primitive Alice-Typen abgebildet. Einen "Uberblick gibt Tabelle ???.
 (Fussnote: object list)
 
@@ -290,23 +348,26 @@ betrachtet (siehe unten).
 
 Bei Strings, Arrays und Listen kann sich in C der Zustand/Inhalt "andern,
 ohne dass diese "Anderungen auf Alice-Seite reflektiert werden. Anhand der
-Konzeption von GTK+ kann jedoch davon ausgegangen werden, dass diese Typen
+Konzeption von GTK kann jedoch davon ausgegangen werden, dass diese Typen
 nur als ``Container'' f"ur den Datentransport benutzt werden, und etwaige
 "Anderungen durch eine GTK-Funktion in einem neuen ``Container'' zur"uckkommen.
 
-\textbf{Enumerationstypen} werden auf Alice-Datatypes mit nullstelligen
+\paragraph{Enumerationstypen}
+
+Enumerationstypen werden auf Alice-Datatypes mit nullstelligen
 Konstruktoren abgebildet. Dadurch wird eine neue Typsicherheit eingef"uhrt,
 die unter C nicht vorhanden war, da dort alle Enumerationskonstanten im Grunde
-Integer-Werte sind. Allerdings leidet durch die Konstruktor-Integer-Konversion
-die Geschwindigkeit ein wenig. 
-(Fussnote: nicht allzusehr, da nicht so haeufig)
+Integer-Werte sind. Die Konstruktor-Integer-Konversion geht aber
+ein wenig auf Kosten der Geschwindigkeit. 
 Eine andere M"oglichkeit w"are, auf Kosten der Typsicherheit 
 die Enumerationskonstanten direkt als Integerkonstanten (Variablen) unter Alice
 zur Verf"ugung zu stellen. Allerdings sind z.B. pattern matchings nur "uber
 Konstruktoren, nicht aber "uber Variablen m"oglich.
 
-Bei \textbf{Verbundtypen} (Fussnote: structs und unions) liegt es nahe, sie
-als Alice-Records zu repr"asentieren. Das ist aber sehr teuer, zumal in C
+\paragraph{Verbundtypen}
+Bei Verbundtypen\footnote{Das sind in C ``structs'' und ``unions''.} 
+liegt es nahe,
+sie als Alice-Records zu repr"asentieren. Das ist aber sehr teuer, zumal in C
 nur Zeiger auf Verbunde, nicht jedoch Verbunde selbst
 an Funktionen "ubergeben werden k"onnen.
 Daher reicht der Typ ``object'' f"ur die Benutzung von Verbunden aus.
@@ -317,28 +378,35 @@ k"ummern. Allerdings erfordert die GTK-Programmierung bisweilen einen direkten
 Zugriff auf Felder eines Verbunds zugreift. Daher werden f"ur jeden
 Verbundtyp Feldzugriffsfunktionen generiert.
 
-\textbf{Typaliasnamen und externe Variablen} (Fussnote: Typedefs) werden von
+\paragraph{Typaliasnamen und externe Variablen}
+Diese werden von
 der Schnittstelle nicht behandelt. Eine Abbildung von Typaliasnamen auf
 type-Deklarationen in Alice w"urde erst richtig Sinn machen, wenn man
 statt des nicht n"aher spezifizierten ``object'' einen polymorphen
 ``$\alpha$ pointer'' benutzen w"urde. Ein Zugriff auf externe Variablen
 ist bei der GTK-Programmierung in aller Regel nicht n"otig.
 
-\subsection{Funktionen}
+\section{Funktionswrapper}
 
 F"ur jede Funktion wird ein Funktionswrapper generiert, der das
 Datenmarshalling durchf"uhrt, d.h. Werte eines Alice-Typs in Werte eines
 C-Typs konvertiert und umgekehrt. Der Alice-Funktionstyp folgt dabei der
 C-Funktionsdeklaration; mehrere Argumente werden als Tupel "ubergeben.
-Die Funktionsnamen sind nach der ``lower caml case''-Konvention
+Die Funktionsnamen sind nach der ``lower CAML case''-Konvention
 umgewandelt.
 
-Abbildung ??? zeigt ein Beispiel.
+\begin{verbatim}
+void gtk_scale_set_draw_value (GtkScale*, gboolean)
+val scaleSetDrawValue : object * bool -> unit
+\end{verbatim}
 
-\subsection{Ein- und Ausgabeparameter}
+\subsection*{Ein- und Ausgabeparameter}
 
 Manche GTK-Funktionen nehmen Zeiger auf primitive Typen entgegen:
-(Beispiel)
+
+\begin{verbatim}
+void gtk_entry_get_layout_offsets (GtkEntry*, int*, int*)
+\end{verbatim}
 
 Mittels solcher Zeiger kann die Funktion zus"atzliche Ausgabewerte
 zur"uckliefern. Da in Alice mehrere R"uckgabewerte (als Tupel) m"oglich sind,
@@ -346,7 +414,9 @@ betrachtet die Schnittstelle alle Zeiger mit Ausnahme von Verbundzeigern,
 Strings und Listen als Ausgabeparameter und erstellt daher den folgende
 Wrapper:
 
-(Beispiel)
+\begin{verbatim}
+val entryGetLayoutOffsets : object -> int * int
+\end{verbatim}
 
 M"oglicherweise greift die GTK-Funktion aber zus"atzlich noch lesend auf 
 einen solchen Wert zu. Aufgrund fehlender semantischer Informationen kann
@@ -355,16 +425,18 @@ Ausgabe-Parameter handelt.
 Daher wird f"ur eine solche Funktion ein weiterer Wrapper generiert,
 der jeden Ausgabeparametern zus"atzlich als Eingabeparameter betrachtet:
 
-(Beispiel)
+\begin{verbatim}
+val entryGetLayoutOffsets' : object * int * int -> int * int
+\end{verbatim}
 
 Es liegt dann am Programmierer, die richtige Variante verantwortungsbewusst
 zu benutzen.
 
-\subsection{Funktionen mit variablen Argumentlisten}
+\subsection*{Funktionen mit variablen Argumentlisten}
 
 Im Bereich der Sprachanbindungen ist dies eines der d"ustersten Kapitel,
 welches hier aber trotzdem nicht verschwiegen werden soll, denn leider
-macht GTK+ intensiv von diesem ``Feature'' Gebrauch.
+macht GTK intensiv von diesem ``Feature'' Gebrauch.
 
 Funktionen mit variablen Argumentlisten k"onnen beliebig viele Argumente
 erhalten, und jedes Argument kann von einem beliebigen Typ sein.
@@ -373,9 +445,9 @@ Die "Ubergabe der Argumente von Alice an die Schnittstelle l"asst sich dabei
 noch halbwegs elegant gestalten. Auf Alice-Seite wird eine Liste vom Typ
 ``arg list'' "ubergeben, wobei ``arg'' wie folgt definiert ist:
 
-(...)
-
-(Fussnote: EVENT hier nicht wichtig)
+\begin{verbatim}
+datatype arg = INT of int | BOOL of bool | STRING of string | ...
+\end{verbatim}
 
 Das eigentliche Problem besteht darin, dass zur "Ubersetzungszeit
 \textit{der Schnittstelle} Anzahl und Typen der Argumente bekannt sein m"ussen.
@@ -394,9 +466,9 @@ Eine bessere L"osung w"are es, eine spezielle low-level-Bibliothek
 wie ``libffi'' zu benutzen, die das plattformabh"angige dynamische "Ubergeben
 von variablen Argumenten abstrahiert.
 
+\section{Weitere Details}
 
-
-
+(Core-Details? events: arg list; GC: object-Tupel)
 
 %% \section{Core}
 
@@ -526,13 +598,13 @@ von variablen Argumenten abstrahiert.
 
 %% (init, NULL, TRUE, FALSE ?)
 
-\section{Ausblick}
+\part{Ausblick}
 
 Weiterf"uhrende Arbeiten k"onnten sowohl ``in die Tiefe'' gehen und die
 GTK-Schnittstelle ausbauen, als auch ``in die Breite'' und die automatische
 Generierung verallgemeinern.
 
-\subsection{GTK-Schnittstelle}
+\section{Funktionale GUI-Programmierung}
 
 Die hier vorgestellte Schnitstelle bietet eine Anbindung auf niedriger Ebene.
 Durch die 1:1-Abbildung sieht die GTK-Programmierung unter Alice "ahnlich
@@ -543,29 +615,25 @@ eigentlichen GTK-Schnittstelle umgangen werden.
 Einen Anfang daf"ur bildet die GtkBuilder-Struktur von Thorsten Brunklaus.
 Das Layout ganzer Fensterinhalte kann als Wert mittels Konstruktoren
 repr"asentiert werden. Darauf hingen"ugt der Aufruf einer einzigen Funktion,
-welche diesen Wert anschlie"ssend in eine Reihe von GTK-Befehlen "ubersetzt.
+welche diesen Wert anschlie"send in eine Reihe von GTK-Befehlen "ubersetzt.
 
 W"unschenswert w"are es, spezielle Features der Programmiersprache Alice
-gleich zu nutzen. So k"onnten eine Reihe "ahnlicher Mitteilungsfenster
+gleich zu nutzen. So k"onnten z.B. "ahnliche Mitteilungsfenster
 in einem Funktor zusammengefasst werden, und dieser k"onnte wiederum als
-Package im Netz allen Anwendungen zur Verf"ugung stehen. Desweiteren k"onnte
-der Lazy-Evaluation-Mechanismus vielleicht dazu genutzt werden, Widgets erst
-dann zu zeichnen, wenn sie tats"achlich sichtbar werden.
+Package im Netz zur allgemeinen Verf"ugung stehen. In jedem Fall ist eine
+solche funktionale UI-Schnittstelle nicht mehr automatisch generierbar.
 
-In jedem Fall ist eine solche funktionale UI-Schnittstelle wahrscheinlich
-nicht mehr automatisch generierbar. (Forschungsstand???)
-
-\subsection{Allgemeines Genererierungstool}
+\section{Allgemeines Genererierungstool}
 
 Auch wenn der Generator in der jetzigen Form bereits m"oglichst unabh"angig
-von GTK+ arbeitet, macht er dennoch einige GTK-spezifische Annahmen, die
+von GTK arbeitet, macht er dennoch einige GTK-spezifische Annahmen, die
 eine Anwendung f"ur andere Bibliotheken erschweren.
 
 Daher w"are es n"utzlich, diese Annahmen zu parametrisieren, um einen
 allgemeinen Generator zu erhalten, der f"ur beliebige C-Bibliotheken
 eine Anbindung an Alice generieren kann. (Sven???)
 
-\section{Quellenangaben}
+\section*{Quellenangaben}
 
 www.gtk.org
 
