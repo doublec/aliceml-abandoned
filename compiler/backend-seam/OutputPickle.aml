@@ -157,12 +157,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputIdDef (context, Wildcard) =
 	    outputInt (context, Label.wildcard)
 
-	fun outputArgs outputArg (context, OneArg x) =
-	    (outputArg (context, x); outputBlock (context, Label.oneArg, 1))
-	  | outputArgs outputArg (context, TupArgs xs) =
-	    (outputVector outputArg (context, xs);
-	     outputBlock (context, Label.tupArgs, 1))
-
 	fun outputCoord (context, (string, line, column)) =
 	    (outputInt (context, LargeInt.fromInt column);
 	     outputInt (context, LargeInt.fromInt line);
@@ -306,7 +300,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 			 AppVar (idRef, inArgs, isDirectIn, outArgsInstrOpt)) =
 	    (outputOption (fn (context, (outArgs, instr)) =>
 			   (outputInstr (context, instr);
-			    outputArgs outputIdDef (context, outArgs);
+			    outputVector outputIdDef (context, outArgs);
 			    outputTuple (context, 2)))
 	     (context, outArgsInstrOpt);
 	     outputBool (context, isDirectIn);
@@ -445,8 +439,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 			 outputStore (context, id);
 			 StampMap.insert (shared, stamp, id)
 		     end)
-	  | outputInstr (context, Return args) =
-	    (outputArgs outputIdRef (context, args);
+	  | outputInstr (context, Return idrefs) =
+	    (outputVector outputIdRef (context, idrefs);
 	     outputBlock (context, Label.return, 1))
 	and outputIdRef (context, Immediate value) =
 	    (outputValue (context, value);

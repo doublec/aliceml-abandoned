@@ -81,6 +81,14 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateArgs f (ProdArgs labelXVec, env) =
 	    Vector.map (fn (_, x) => f (x, env)) labelXVec
 
+	fun translateSingleEntityTupArgs (idRef, env) =
+	    let
+		val id = fresh env
+	    in
+		O.PutTup (id, #[translateIdRef(idRef, env)],
+			  O.Return (#[(O.LastUseLocal id)]))
+	    end
+
 	fun argsToVector (OneArg x) = #[x]
 	  | argsToVector (TupArgs xs) = xs
 	  | argsToVector (ProdArgs labelXVec) = Vector.map #2 labelXVec
@@ -96,9 +104,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	fun isIdInVec (idRefs, id) =
 	    Vector.exists (fn idRef => isId (idRef, id)) idRefs
-
-	fun isIdInArgs (O.OneArg idRef, id) = isId (idRef, id)
-	  | isIdInArgs (O.TupArgs idRefs, id) = isIdInVec (idRefs, id)
 
 	fun getLocal (O.Immediate _) = NONE
 	  | getLocal (O.Local id) = SOME id
@@ -205,8 +210,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | detup (O.ConTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.VecTest (_, _, _), _) = UNKNOWN
 	  | detup (O.Shared (_, _), _) = UNKNOWN
-	  | detup (O.Return idRefArgs, id) =
-	    if isIdInArgs (idRefArgs, id) then USED else KILLED
+	  | detup (O.Return idRefs, id) =
+	    if isIdInVec (idRefs, id) then USED else KILLED
 
 	fun translateLabel label = Atom.atom (Label.toString label)
 
@@ -470,17 +475,21 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			 declareShared (env, stamp, instr); instr
 		     end)
 	  | translateStm (ReturnStm (_, VarExp (_, idRef)), env) =
-	    O.Return (O.OneArg (translateIdRef (idRef, env)))
+	    O.Return (#[(translateIdRef (idRef, env))])
 	  | translateStm (ReturnStm (_, TagExp (_, _, tag, TupArgs #[])), _) =
-	    O.Return (O.OneArg (O.Immediate (V.int (LargeInt.fromInt tag))))
+	    O.Return (#[(O.Immediate (V.int (LargeInt.fromInt tag)))])
 	  | translateStm (ReturnStm (_, ConExp (_, idRef, TupArgs #[])), env) =
-	    O.Return (O.OneArg (translateIdRef (idRef, env)))
+	    O.Return (#[(translateIdRef (idRef, env))])
+	  | translateStm (ReturnStm (_, TupExp (_, #[idRef])), env) =
+	    translateSingleEntityTupArgs (idRef, env)
 	  | translateStm (ReturnStm (_, TupExp (_, idRefs)), env) =
-	    O.Return (O.TupArgs (translateIdRefs (idRefs, env)))
+	    O.Return (translateIdRefs (idRefs, env))
+	  | translateStm (ReturnStm (_, ProdExp (_, #[labelIdRef])), env) =
+	    translateSingleEntityTupArgs (#2 labelIdRef, env)
 	  | translateStm (ReturnStm (_, ProdExp (_, labelIdRefVec)), env) =
-	    O.Return (O.TupArgs (Vector.map (fn (_, idRef) =>
-						translateIdRef (idRef, env))
-					    labelIdRefVec))
+	    O.Return (Vector.map (fn (_, idRef) =>
+				     translateIdRef (idRef, env))
+				 labelIdRefVec)
 	  | translateStm (ReturnStm (_, PrimAppExp (_, name, idRefs)), env) =
 	    O.AppPrim (V.prim name, translateIdRefs (idRefs, env), NONE)
 	  | translateStm (ReturnStm (_, VarAppExp (_, idRef, args)), env) =
@@ -499,8 +508,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    let
 		val id = fresh env
 	    in
-		translateExp (exp, id,
-			      O.Return (O.OneArg (O.LastUseLocal id)), env)
+		translateExp (exp, id, O.Return (#[(O.LastUseLocal id)]), env)
 	    end
 	  | translateStm (IndirectStm (_, ref bodyOpt), env) =
 	    translateBody (valOf bodyOpt, env)
@@ -602,10 +610,11 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val (returnArgs, instr) =
 		    case detup (instr, id) of
 			DECONSTRUCTED (idDefs, instr) =>
-			    (O.TupArgs idDefs, instr)
+			     (Assert.assert(Vector.length idDefs > 1);
+			      (idDefs, instr))
 		      | (USED | SIDE_EFFECTING | UNKNOWN) =>
-			    (O.OneArg (O.IdDef id), instr)
-		      | KILLED => (O.OneArg O.Wildcard, instr)
+			    (#[(O.IdDef id)], instr)
+		      | KILLED => (#[O.Wildcard], instr)
 	    in
 		O.AppVar (translateIdRef (idRef, env),
 			  translateArgs translateIdRef (args, env),
@@ -632,12 +641,12 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
 		      false,
-		      SOME (O.OneArg O.Wildcard, instr))
+		      SOME (#[O.Wildcard], instr))
 	  | translateIgnore (DirectAppExp (_, idRef, args), instr, env) =
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
 		      true,
-		      SOME (O.OneArg O.Wildcard, instr))
+		      SOME (#[O.Wildcard], instr))
 	  | translateIgnore (SelExp (_, _, _, _, idRef), instr, env) =
 	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))
@@ -646,7 +655,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
 		      true,
-		      SOME (O.OneArg O.Wildcard, instr))
+		      SOME (#[O.Wildcard], instr))
 	  | translateIgnore (FailExp _, instr, _) = instr
 	and translateIntTest (idRef, litTests, elseBody, env) =
 	    let

@@ -43,16 +43,12 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		fun lIdDef (IdDef id, i) = lId (id, i)
 		  | lIdDef (Wildcard, i) = i
 		fun lIdDefs (idDefs, i) = Vector.foldl lIdDef i idDefs
-		fun lIdDefArgs (OneArg idDef, i) = lIdDef (idDef, i)
-		  | lIdDefArgs (TupArgs idDefs, i) = lIdDefs (idDefs, i)
 		fun lIdDefsOpt (SOME idDefs, i) = lIdDefs (idDefs, i)
 		  | lIdDefsOpt (NONE, i) = i
 
 		fun lIdRef ((Local id | LastUseLocal id), i) = lId (id, i)
 		  | lIdRef (_, i) = i
 		fun lIdRefs (idRefs, i) = Vector.foldl lIdRef i idRefs
-		fun lIdRefArgs (OneArg idRef, i) = lIdRef (idRef, i)
-		  | lIdRefArgs (TupArgs idRefs, i) = lIdRefs (idRefs, i)
 
 		(*
 		 * lInstr enumerates program points important for liveness
@@ -105,10 +101,10 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		  | lInstr (AppPrim (_, idRefs, NONE), i) =
 		    lIdRefs (idRefs, i + 1)
 		  | lInstr (AppVar (idRef, idRefs, _,
-				    SOME (idDefArgs, instr)), i) =
+				    SOME (idDefs, instr)), i) =
 		    (* same as AppPrim *)
 		    let
-			val i = lIdDefArgs (idDefArgs, lInstr (instr, i) + 1)
+			val i = lIdDefs (idDefs, lInstr (instr, i) + 1)
 		    in
 			lIdRef (idRef, lIdRefs (idRefs, i + 1))
 		    end
@@ -237,8 +233,8 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    else
 			(StampSet.insert (shared, stamp);
 			 lInstr (instr, i))
-		  | lInstr (Return idRefArgs, i) =
-		    lIdRefArgs (idRefArgs, i + 1)
+		  | lInstr (Return idRefs, i) =
+		    lIdRefs (idRefs, i + 1)
 
 		val n = lIdDefs (idDefs, lInstr (instr, 0))
 

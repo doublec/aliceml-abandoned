@@ -28,10 +28,6 @@ signature ABSTRACT_CODE_GRAMMAR =
 	    IdDef of id
 	  | Wildcard
 
-	datatype 'a args =
-	    OneArg of 'a
-	  | TupArgs of 'a vector
-
 	type coord = string * int * int
 
 	type liveness = int vector
@@ -51,7 +47,8 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | Close of id * idRef vector * template * instr
 	  | Specialize of id * idRef vector * template * instr
 	  | AppPrim of value * idRef vector * (idDef * instr) option
-	  | AppVar of idRef * idRef vector * bool * (idDef args * instr) option
+	  | AppVar of idRef * idRef vector * bool *
+		      (idDef vector * instr) option
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Sel of id * idRef * int * instr
@@ -73,7 +70,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 		       (idRef * idDef vector * instr) vector * instr
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
 	  | Shared of Stamp.t * instr
-	  | Return of idRef args
+	  | Return of idRef vector
 	and idRef =
 	    Immediate of value
 	  | Local of id
