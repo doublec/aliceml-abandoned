@@ -12,7 +12,7 @@
 
 functor
 import
-   Pickle(save)
+   Pickle(saveWithCells)
    Word(toInt) at 'x-oz://boot/Word'
    PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
@@ -253,15 +253,18 @@ define
       {Flatten {Map Stms TrStm}}
    end
 
-   fun {TrComponent Import#(Body#_)}
-      {Map Import fun {$ Id#_#U} {TrId Id}#{TrAtom {Url.toString U}} end}#
-      {TrBody Body}
+   fun {TrComponent Import#(Body#Sign)}
+      {Map Import
+       fun {$ Id#Sign#U}
+	  {TrId Id}#Sign#{TrAtom {Url.toString U}}
+       end}#
+      ({TrBody Body}#Sign)
    end
 
    fun {Translate InFilename Component OutFilename} F in
       F = {CodeGen.translate InFilename {TrComponent Component}
 	   InFilename#'.ozm'}
-      {Pickle.save F OutFilename}
+      {Pickle.saveWithCells F OutFilename '' 0}
       unit
    end
 
