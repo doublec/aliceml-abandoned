@@ -10,304 +10,33 @@
  *   $Revision$
  *)
 
-import structure Url         from "x-alice:/lib/system/Url"
-import structure Reflect     from "x-alice:/lib/system/Reflect"
-import structure Component   from "x-alice:/lib/system/Component"
-import structure PPComponent from "x-alice:/lib/system/PPComponent"
-import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
-import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
-
-import structure RecursiveCompiler
-from "x-alice:/compiler/top/RecursiveCompiler"
-
-import signature EVALUATOR from "EVALUATOR-sig"
+import structure Compiler     from "x-alice:/lib/system/Compiler"
+import structure CoreToplevel from "CoreToplevel"
+import signature EVALUATOR    from "EVALUATOR-sig"
 
 structure Evaluator : EVALUATOR =
 struct
-    structure Compiler = RecursiveCompiler
+    open CoreToplevel
 
-    (* Output stream *)
+    val outStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdOut)
+    fun setOutStream os =
+	(TextIO.setOutstream (outStream, os);
+	 CoreToplevel.setOutStream os)
 
-    val outWidth  = Compiler.Switches.Global.logWidth
-    val outStream = Compiler.Switches.Global.logOut
-    val errWidth  = Compiler.Switches.Global.errWidth
-    val errStream = Compiler.Switches.Global.errOut
-    val traceStream = Compiler.Switches.Debug.dumpOut
+    fun compile f = Compiler.compileFile (f, NONE)
 
-    fun setOutWidth n   = outWidth := n
-    fun setOutStream os = TextIO.setOutstream (outStream, os)
-    fun setErrWidth n   = errWidth := n
-    fun setErrStream os = TextIO.setOutstream (errStream, os)
-    fun setTraceStream os = TextIO.setOutstream (traceStream, os)
-
-
-    (* Signal handling *)
-
-    datatype signal  = INTERRUPT | STOP
-    datatype 'a term = TERM of 'a
-    fun unTERM (TERM x) = x
-
-    fun run ((thread, result), stoppable, signal) =
-	case Future.awaitEither (result, signal) of
-	    FST (TERM x) => SOME x (* raises if f raised exn *)
-	  | SND STOP where stoppable => SOME (spawn unTERM result)
-	  | SND INTERRUPT =>
-		(Thread.terminate thread handle Thread.Terminated => (); NONE)
-
-    fun interruptable (signal, f) =
-	run (Thread.spawnThread (TERM o f), false, signal)
-    fun stoppable (signal, f) =
-	run (Thread.spawnThread (TERM o f), true, signal)
-
-
-    (* Use *)
-
-    val useFiles: string list ref = ref nil
-
-    fun use filename =
-	let
-	    val new = Promise.promise ()
-	    val old = Ref.exchange (useFiles, Promise.future new)
-	in
-	    Promise.fulfill (new, old @ [filename])
-	end
-
-
-    (* Compilation & evaluation *)
-
-    fun baseUrl () =
-	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
-		       SOME "file")
-
-    fun eval' compile (printSig, context, source, signal) =
-	let
-	    val (filename, compile') = compile source
-	    fun trace s =
-		TextIO.output (traceStream,
-			       "-- " ^ s ^ (if filename = "" then ""
-					    else " " ^ filename) ^ "...\n")
-	in
-	    (trace "Compiling";
-	     case stoppable (signal, fn _ => compile' (context, source))
-	     of NONE => NONE (* interrupted *)
-	      | SOME (context', Compiler.FOREIGN _) =>
-		    raise Compiler.Crash "cross-compilation not supported"
-	      | SOME (context', Compiler.COMPONENT {eval, component, ...}) =>
-	    (trace "Evaluating";
-	     case stoppable (signal, eval o baseUrl)
-	     of NONE => NONE (* interrupted *)
-	      | SOME package => (* completed or stopped *)
-		if not printSig then SOME context' else
-		interruptable
-		    (signal,
-		     fn _ =>
-		     let
-			 val _   = trace "Printing"
-			 val (str, inf) = Reflect.reflectPackage package
-			 val doc = PPComponent.ppComp (str, inf)
-		     in
-			 PrettyPrint.output (outStream, doc, !outWidth);
-			 TextIO.output (outStream, "\n");
-			 context'
-		     end)
-	     )
-	    )
-	    finally
-	    TextIO.output (traceStream, "-- Ready\n")
-	end
-	handle Compiler.Error => SOME context
-	     | Compiler.Crash s =>
-		   (TextIO.output (errStream,
-				   "internal failure at " ^ s ^ "\n");
-		    SOME context)   (*--** is this cool or what? *)
-	     | Component.Failure (url, Component.Eval (Assert (file, line))) =>
-		   (TextIO.output (errStream,
-				   "assertion failure at " ^
-				   file ^ ":" ^ Int.toString line ^ "\n");
-		    SOME context)
-	     | Component.Failure (url, Component.Eval exn) =>
-		   (TextIO.output (errStream,
-				   "uncaught exception " ^
-				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toString url)
-				    then "\n"
-				    else " while evaluating \"" ^
-					 Url.toString url ^ "\"\n"));
-		    SOME context)
-	     | Component.Failure (_, Component.Mismatch
-				     {component, request, cause}) =>
-	       let
-		   val s = "failure type-checking \"" ^
-			   Url.toString component ^ "\"" ^
-			   (case request of
-				NONE => "\n"
-			      | SOME url => "\nas requested by \"" ^
-					    Url.toString url ^ "\":")
-	       in
-		   PrettyPrint.output
-		   (errStream,
-		    PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
-		    !errWidth);
-		    TextIO.output (errStream, "\n");
-		   SOME context
-	       end
-	     | Component.Failure (url, IO.Io _) =>
-		   (TextIO.output (errStream,
-				   "failure loading \"" ^
-				   Url.toString url ^ "\"\n");
-		    SOME context)
-	     | Component.Failure (url, Component.Internal exn) =>
-		   (TextIO.output (errStream,
-				   "internal exception " ^
-				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toString url)
-				    then "\n"
-				    else " while linking \"" ^
-					 Url.toString url ^ "\"\n"));
-		    SOME context)
-	     | Component.Failure (url, exn) =>
-		   (TextIO.output (errStream,
-				   "unknown failure " ^
-				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toString url)
-				    then "\n"
-				    else " while linking \"" ^
-					 Url.toString url ^ "\"\n"));
-		    SOME context)
-	     | Assert (file, line) =>
-		   (TextIO.output (errStream,
-				   "internal assertion failure at " ^
-				   file ^ ":" ^ Int.toString line ^ "\n");
-		    SOME context)   (* Is this really cool? *)
-	     | exn =>
-		   (TextIO.output (errStream,
-				   "internal exception " ^
-				   General.exnName exn ^ "\n");
-		    SOME context)   (* Is this really cool? *)
-
-    val evalString = eval' (fn s => ("", Compiler.compileString))
-    val evalFile   = eval' (fn s => (s, Compiler.compileFile))
-
-
-    (* Initialization *)
-
-    val implicitImport = "x-alice:/alice.import"
-    val currentContext = ref Compiler.Context.empty
-
-    val initSource = "import \"Use\""
-
-    fun defaults () = (* override defaults from MkSwitches here *)
-	let
-	    open Compiler.Switches
-	in
-	    Language.implicitImportFile := SOME implicitImport;
-	    Language.allowUnclosedComponents := true;
-	    Language.reexportImport := true;
-	    Language.retainFullImport := true;
-	    Warn.inaccessibleExport := false;
-	    Global.traceComponentAccess := true;
-	    Debug.dumpPhases := false
-	end
+    fun prompt () =
+	(TextIO.output (outStream, CoreToplevel.prompt);
+	 TextIO.flushOut outStream)
 
     fun init () =
-	let
-	    open Compiler.Switches
-	    val dummySignal = Promise.future (Promise.promise ())
-	    val p           = Promise.promise ()
-	    val context     = Ref.exchange (currentContext, Promise.future p)
-	in
-	    defaults ();
-	    Language.unsafeImport := true;
-	    case evalString (false, context, "", dummySignal)
-	     of NONE =>
-		raise Compiler.Crash "could not initialise environment"
-	      | SOME context' =>
-		(Language.implicitImportFile := NONE;
-		 Language.unsafeImport := false;
-		 case evalString (false, context', initSource, dummySignal)
-		  of NONE => raise Compiler.Crash "could not initialise `use'"
-		   | SOME context'' => Promise.fulfill (p, context'')
-		)
-	end
+	(
+	    TextIO.output (outStream, CoreToplevel.banner);
+	    CoreToplevel.init ();
+	    prompt ()
+	)
 
-
-    (* Evaluation *)
-
-    fun loopUses (context, signal) =
-	let
-	    val new = Promise.promise ()
-	    val old = Ref.exchange (useFiles, Promise.future new)
-	in
-	    case old
-	     of filename::rest =>
-		(Promise.fulfill (new, rest);
-		 case evalFile (true, context, filename, signal)
-		   of SOME context' => loopUses (context', signal)
-		    | NONE => (TextIO.output (errStream, "interrupted");
-			       useFiles := nil;
-			       context)
-		)
-	      | nil => (Promise.fulfill (new, nil); context)
-	end
-
-    fun eval (source, signal) =
-	let
-	    val p       = Promise.promise ()
-	    val context = Ref.exchange (currentContext, Promise.future p)
-	in
-	    case evalString (true, context, source, signal)
-	     of NONE => Promise.fulfill (p, context)
-	      | SOME context' =>
-		Promise.fulfill (p, loopUses (context', signal))
-	end
-
-
-    (* Use *)
-
-    fun use filename =
-	let
-	    val new = Promise.promise ()
-	    val old = Ref.exchange (useFiles, Promise.future new)
-	in
-	    Promise.fulfill (new, old @ [filename])
-	end
-
-
-    (* Compilation *)
-
-    fun compile infile =
-	let
-	    open Compiler.Switches
-	    val implicitImportFile      = !Language.implicitImportFile
-	    val reexportImport          = !Language.reexportImport
-	    val retainFullImport        = !Language.retainFullImport
-	    val allowUnclosedComponents = !Language.allowUnclosedComponents
-	    val inaccessibleExport      = !Warn.inaccessibleExport
-	    val outfile = OS.Path.joinBaseExt {base = OS.Path.base infile,
-	    				       ext  = SOME Component.extension}
-	in
-	    Language.implicitImportFile := SOME implicitImport;
-	    Language.reexportImport     := false;
-	    Language.retainFullImport   := false;
-	    Language.allowUnclosedComponents := false;
-	    Warn.inaccessibleExport     := true;
-	    Compiler.compileFileToFile (infile, outfile)
-	    handle Compiler.Error => ()
-		 | Compiler.Crash s =>
-		       TextIO.output (errStream,
-				      "internal failure at " ^ s ^ "\n")
-		 | Assert (file, line) =>
-		       TextIO.output (errStream,
-				      "internal assertion failure at " ^
-				      file ^ ":" ^ Int.toString line ^ "\n")
-		 | exn =>
-		       TextIO.output (errStream,
-				      "internal exception " ^
-				      General.exnName exn ^ "\n");
-	    Language.implicitImportFile := implicitImportFile;
-	    Language.reexportImport     := reexportImport;
-	    Language.retainFullImport   := retainFullImport;
-	    Language.allowUnclosedComponents := allowUnclosedComponents;
-	    Warn.inaccessibleExport     := inaccessibleExport
-	end
+    fun eval s =
+	CoreToplevel.eval s
+	finally	prompt ()
 end

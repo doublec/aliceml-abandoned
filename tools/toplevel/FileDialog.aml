@@ -1,6 +1,6 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Core from "x-alice:/lib/gtk/Core"
-import structure AliceIdeGUI from "AliceIdeGUI"
+import structure Gui from "Gui"
 
 structure FileDialog =
     struct
@@ -38,7 +38,7 @@ structure FileDialog =
         fun message msg =
             let
                 val msgDia =
-                    Gtk.messageDialogNew(AliceIdeGUI.mainwidget,
+                    Gtk.messageDialogNew(Gui.mainwidget,
                                          Gtk.DIALOG_MODAL,
                                          Gtk.MESSAGE_WARNING,
                                          Gtk.BUTTONS_CLOSE,

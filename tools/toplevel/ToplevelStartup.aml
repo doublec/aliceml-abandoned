@@ -66,7 +66,7 @@ import structure FS from "x-alice:/lib/gecode/FS"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 (*import structure Explorer from "x-alice:/lib/tools/Explorer"
 *)
-import structure Toplevel : (val use : string -> unit) from "x-alice:/lib/tools/Toplevel"
+import structure Toplevel : (val use : string -> unit) from "x-alice:/tools/CoreToplevel"
 
 (* We need to repeat overloading declarations here,
    because mere reliance on reexport-import will default the types! *)

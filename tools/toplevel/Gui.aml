@@ -6,7 +6,7 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
-structure AliceIdeGUI =
+structure Gui =
   struct
     structure Helpers = struct
       val accelGroup = Gtk.accelGroupNew()

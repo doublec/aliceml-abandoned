@@ -1,6 +1,6 @@
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure AliceIdeGUI from "AliceIdeGUI"
+import structure Gui from "Gui"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure Config from "Config"
@@ -34,10 +34,8 @@ structure OutputWriters =
               Core.signalHandlerUnblock(buffer, handler)
           end
               
-      val contextId = Gtk.statusbarGetContextId(AliceIdeGUI.statusbar,
-                                                "Alice IDE")
-      val _ = Gtk.statusbarPush(AliceIdeGUI.statusbar,contextId,
-                                "Ready.");
+      val contextId = Gtk.statusbarGetContextId(Gui.statusbar, "Alice")
+      val _ = Gtk.statusbarPush(Gui.statusbar,contextId, "Ready.");
 
       fun setStatus msg = 
           let
@@ -46,14 +44,13 @@ structure OutputWriters =
                         else msg
               val msg = String.map (fn #"\n" => #" " | c => c) msg
           in
-              (Gtk.statusbarPop(AliceIdeGUI.statusbar, contextId);
-               Gtk.statusbarPush(AliceIdeGUI.statusbar, contextId, msg);
+              (Gtk.statusbarPop(Gui.statusbar, contextId);
+               Gtk.statusbarPush(Gui.statusbar, contextId, msg);
                ())
           end
 
-      val rowColId = Gtk.statusbarGetContextId(AliceIdeGUI.statusbar1,
-                                               "rowcol")
-      val _ = Gtk.statusbarPush(AliceIdeGUI.statusbar1,rowColId,
+      val rowColId = Gtk.statusbarGetContextId(Gui.statusbar1, "rowcol")
+      val _ = Gtk.statusbarPush(Gui.statusbar1,rowColId,
                                 "L 0       C 0");
 
       fun setRowCol (row, col) =
@@ -62,8 +59,8 @@ structure OutputWriters =
               val c = Int.toString col
               val msg = "L"^r^"      C"^c
           in
-              (Gtk.statusbarPop(AliceIdeGUI.statusbar1, rowColId);
-               Gtk.statusbarPush(AliceIdeGUI.statusbar1, rowColId, msg);
+              (Gtk.statusbarPop(Gui.statusbar1, rowColId);
+               Gtk.statusbarPush(Gui.statusbar1, rowColId, msg);
                ())
               
           end
@@ -116,22 +113,24 @@ structure OutputWriters =
         fun compilerInsert (eval,noedit) (buf, [Gtk.INT off,
                                             Gtk.STRING txt,
                                             Gtk.INT size]) =
-            if String.sub(txt, String.size txt - 1) = #"\n" andalso
-               lastChar(buf, off+size-1) = SOME (ord #";")
-            then
-                let
-                    val enditer = Gtk.textIterNew()
-                    val cursor = Gtk.textBufferGetInsert buf
-                    val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
-                    val startiter = Gtk.textIterCopy enditer
-                    val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
-                    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
-                    val _ = highlight(buf, startiter, enditer)
-                    val str = Core.utf8ToLatin1 str
-                    val _ = eval str
-                in
-                    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
-                end
+            if String.sub(txt, String.size txt - 1) = #"\n" then
+	       if lastChar(buf, off+size-1) = SOME (ord #";")
+        	then
+                    let
+                	val enditer = Gtk.textIterNew()
+                	val cursor = Gtk.textBufferGetInsert buf
+                	val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
+                	val startiter = Gtk.textIterCopy enditer
+                	val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
+                	val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                	val _ = highlight(buf, startiter, enditer)
+                	val str = Core.utf8ToLatin1 str
+                	val _ = eval str
+                    in
+                	Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+                    end
+		else
+		    Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
             else ()
           | compilerInsert _ _ = () (* Gtk is crazy *)
 
@@ -154,19 +153,19 @@ structure OutputWriters =
               val cSig = Gtk.signalConnect(compilerBuf, "insert-text",
                                            compilerInsert (eval, cNoEd));
           in
-              Gtk.widgetModifyFont(AliceIdeGUI.compilerout, stdFont);
-              Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
-              Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf
+              Gtk.widgetModifyFont(Gui.compilerout, stdFont);
+              Gtk.textViewSetBuffer(Gui.progout, progBuf);
+              Gtk.textViewSetBuffer(Gui.compilerout, compilerBuf);
+              spawn app (fillBuf Gui.compilerout compilerBuf
                                  cSig [cStd,cNoEd] highlight) inStream;
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf
+              spawn app (fillBuf Gui.compilerout compilerBuf
                                  cSig [cLog,cNoEd] highlight) outStream;
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf
+              spawn app (fillBuf Gui.compilerout compilerBuf
                                  cSig [cErr,cNoEd] (const ())) errStream;
               spawn app setStatus traceStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf
+              spawn app (fillBuf Gui.progout progBuf
                                  pSig [pStd,pNoEd] (const ())) stdOutStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf
+              spawn app (fillBuf Gui.progout progBuf
                                  pSig [pErr,pNoEd] (const ())) stdErrStream;
               spawn app setRowCol rowColStream
           end

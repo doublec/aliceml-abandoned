@@ -17,7 +17,6 @@ sig
     val init		: unit -> unit
     val eval		: string * signal -> unit
     val compile		: string -> unit
-    val use		: string -> unit
 
     val setOutWidth	: int -> unit
     val setOutStream	: TextIO.StreamIO.outstream -> unit

@@ -1,30 +1,30 @@
-import signature ALICEIDEGUISIGNALS_SIG from "AliceIdeGUISignals"
-import structure AliceIde from "AliceIde"
+import signature GUISIGNALS_SIG from "GuiSignals"
+import structure GuiMain from "GuiMain"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
-structure EventHandler : ALICEIDEGUISIGNALS_SIG =
+structure EventHandler : GUISIGNALS_SIG =
     struct
-        fun on_new1_activate _ = AliceIde.new()
-        fun on_open1_activate _ = AliceIde.openFile()
-        fun on_save1_activate _ = AliceIde.saveFile()
-        fun on_save_as1_activate _ = AliceIde.saveFileAs()
-        fun on_close1_activate _ = AliceIde.close()
-        fun on_compilefile_activate _ = AliceIde.compile ()
-        fun on_quit1_activate _ = AliceIde.quit()
-        fun on_undo_activate _ = AliceIde.undo()
-        fun on_cut1_activate _ = AliceIde.cut()
-        fun on_copy1_activate _ = AliceIde.copy()
-        fun on_paste1_activate _ = AliceIde.paste()
-        fun on_delete1_activate _ = AliceIde.delete()
-        fun on_syntax_colouring_activate _ = AliceIde.syntax()
-        fun on_find_activate _ = AliceIde.search()
-        fun on_find_and_replace_activate _ = AliceIde.search()
-        fun on_feedline_activate _ = AliceIde.feedLine()
-        fun on_feedparagraph_activate _ = AliceIde.feedParagraph()
-        fun on_feedselection_activate _ = AliceIde.feedSelection()
-        fun on_feedfile_activate _ = AliceIde.feedFile()
-        fun on_stop_activate _ = AliceIde.stopEval()
-        fun on_break_activate _ = AliceIde.breakEval()
+        fun on_new1_activate _ = GuiMain.new()
+        fun on_open1_activate _ = GuiMain.openFile()
+        fun on_save1_activate _ = GuiMain.saveFile()
+        fun on_save_as1_activate _ = GuiMain.saveFileAs()
+        fun on_close1_activate _ = GuiMain.close()
+        fun on_compilefile_activate _ = GuiMain.compile ()
+        fun on_quit1_activate _ = GuiMain.quit()
+        fun on_undo_activate _ = GuiMain.undo()
+        fun on_cut1_activate _ = GuiMain.cut()
+        fun on_copy1_activate _ = GuiMain.copy()
+        fun on_paste1_activate _ = GuiMain.paste()
+        fun on_delete1_activate _ = GuiMain.delete()
+        fun on_syntax_colouring_activate _ = GuiMain.syntax()
+        fun on_find_activate _ = GuiMain.search()
+        fun on_find_and_replace_activate _ = GuiMain.search()
+        fun on_feedline_activate _ = GuiMain.feedLine()
+        fun on_feedparagraph_activate _ = GuiMain.feedParagraph()
+        fun on_feedselection_activate _ = GuiMain.feedSelection()
+        fun on_feedfile_activate _ = GuiMain.feedFile()
+        fun on_stop_activate _ = GuiMain.stopEval()
+        fun on_break_activate _ = GuiMain.breakEval()
         val on_about1_activate = const()
         fun on_notebook1_switch_page (object,_) =
             let
@@ -32,7 +32,7 @@ structure EventHandler : ALICEIDEGUISIGNALS_SIG =
                 val scrWin = Gtk.notebookGetNthPage(object, curPage)
                 val textView = Gtk.binGetChild scrWin
             in
-                AliceIde.switchPage(curPage,textView)
+                GuiMain.switchPage(curPage,textView)
             end
                
     end

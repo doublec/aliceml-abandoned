@@ -1,15 +1,19 @@
-import structure AliceIde from "AliceIde"
+import structure GuiMain from "GuiMain"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure AliceIdeGUI from "AliceIdeGUI"
-import functor AliceIdeGUISignals from "AliceIdeGUISignals"
+import structure Gui from "Gui"
+import functor GuiSignals from "GuiSignals"
 import structure EventHandler from "EventHandler"
 import structure Evaluator from "Evaluator"
 
-structure Main =
+structure GuiToplevel =
   struct
-    structure S = AliceIdeGUISignals (structure S = EventHandler)
-
-    val _ = Gtk.widgetShowAll AliceIdeGUI.mainwidget
-    val _ = AliceIde.init ()
-    val _ = Evaluator.init ()
+    fun run () =
+	let
+	    structure S = GuiSignals (structure S = EventHandler)
+	in
+	    Gtk.widgetShowAll Gui.mainwidget;
+	    GuiMain.init ();
+	    Evaluator.init ();
+	    await (Promise.future (Promise.promise ()))
+	end
   end

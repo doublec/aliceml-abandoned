@@ -1,12 +1,17 @@
 INSTALLTO= `alice-config --alicetoolsdir`
 INSTALLBINTO = `alice-config --alicebindir`
 
-SOURCES = AliceIdeGUI.aml \
-	AliceIdeMain.aml \
+SOURCES = \
+	Main.aml \
+	CORE_TOPLEVEL-sig.aml CoreToplevel.aml \
+	TOPLEVEL-sig.aml \
+	TextToplevel.aml \
+	GuiToplevel.aml \
+	Gui.aml \
+	GuiMain.aml \
 	OutputWriters.aml \
 	EventHandler.aml \
-	AliceIdeGUISignals.aml \
-	AliceIde.aml \
+	GuiSignals.aml \
 	EVALUATOR-sig.aml \
 	Evaluator.aml \
 	Use.aml \
@@ -17,8 +22,8 @@ SOURCES = AliceIdeGUI.aml \
 	Config.aml \
 	BufferHighlight.aml
 
-all: AIDE.alc
-
+all: Main.alc
+#LinkedTextToplevel.alc LinkedGuiToplevel.alc LinkedCoreToplevel.alc
 AIDE.alc: $(SOURCES:%.aml=%.alc)
 	alicelink -z --include ./ ./AliceIdeMain -o $@
 

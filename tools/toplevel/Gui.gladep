@@ -2,7 +2,7 @@
 <!DOCTYPE glade-project SYSTEM "http://glade.gnome.org/glade-project-2.0.dtd">
 
 <glade-project>
-  <name>AliceIde</name>
-  <program_name>aliceide</program_name>
+  <name>AliceToplevel</name>
+  <program_name>alice</program_name>
   <gnome_support>FALSE</gnome_support>
 </glade-project>

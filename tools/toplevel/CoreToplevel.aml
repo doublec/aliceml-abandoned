@@ -18,9 +18,10 @@ import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 import structure Compiler    from "x-alice:/lib/system/Compiler"
-import signature TOPLEVEL    from "TOPLEVEL-sig"
+import structure Config      from "x-alice:/lib/system/Config"
+import signature CORE_TOPLEVEL from "CORE_TOPLEVEL-sig"
 
-structure Toplevel : TOPLEVEL =
+structure CoreToplevel : CORE_TOPLEVEL =
 struct
     (* Output streams *)
 
@@ -204,7 +205,7 @@ struct
 	      | SOME env' => Promise.fulfill (p, env')
 	end
 
-    val _ = init ()
+    (*val _ = init ()*)
 
 
     (* Evaluation *)
@@ -233,4 +234,20 @@ struct
 	     of NONE      => Promise.fulfill (p, env)
 	      | SOME env' => Promise.fulfill (p, loopUses (env', signal))
 	end
+
+
+    (* Texts *)
+
+    val major      = Int.toString (#major Config.version)
+    val minor      = Int.toString (#minor Config.version)
+    val revision   = Int.toString (#revision Config.version)
+
+    val version    = major ^ "." ^ minor ^
+		     (if revision = "0" then "" else "." ^ revision)
+    val banner     = "Alice " ^ version ^ " (\"" ^ Config.codename ^ "\") " ^
+		     (*"mastered " ^ Date.fmt "%Y/%m/%d" Config.buildDate ^*) "\n"
+    val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
+
+    val prompt     = "- "
+    val contPrompt = "  "
 end
