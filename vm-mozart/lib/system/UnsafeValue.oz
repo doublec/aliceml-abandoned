@@ -18,7 +18,7 @@ export
 define
    fun {ProjRecord Value Labels I}
       case Labels.(I + 1) of 'NUM'(I) then Value.I
-      [] 'ALPHA'(S) then Value.{String.toAtom S}
+      [] 'ALPHA'(S) then Value.{VirtualString.toAtom S}
       end
    end
 
@@ -27,8 +27,9 @@ define
    end
 
    fun {FindTag Tags Label I}
-      case Tags of 'ALPHA'(S)|_ andthen {String.toAtom S} == Label then I
-      [] _|Rest then {FindTag Rest Label I + 1}
+      case Tags.(I + 1) of 'ALPHA'(S) andthen {VirtualString.toAtom S} == Label
+      then I
+      else {FindTag Tags Label I + 1}
       end
    end
 
