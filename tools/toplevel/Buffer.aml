@@ -410,8 +410,21 @@ structure Buffer =
                       selectRange(buf,iter,iter');
                       Gtk.textViewScrollToMark(view,
                                                Gtk.textBufferGetInsert buf,
-                                               0.0,false,0.0,0.0)
+                                               0.0,false,0.0,0.0);
+		      true
                   end
-              else ()
+              else false
           end
+
+      fun replace(id, replaceString) =
+          let
+              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val startiter = Gtk.textIterNew()
+              val enditer = Gtk.textIterNew()
+          in
+              Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+	      Gtk.textBufferDelete(buf, startiter, enditer);
+	      Gtk.textBufferInsert(buf, startiter, replaceString, ~1)
+          end
+
    end

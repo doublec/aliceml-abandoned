@@ -277,6 +277,10 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id => SearchDialog.search id
 
+        fun replaceSearch() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => SearchDialog.replace id
+
 	fun gotoLine() =
             case getCurrentPage() of NONE => ()
                                    | SOME id => SearchDialog.gotoLine id

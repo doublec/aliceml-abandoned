@@ -31,6 +31,8 @@ structure SearchDialog =
         val _ = Gtk.widgetShow cancelbutton1
         val okbutton1 = Gtk.dialogAddButton(searchDialog,"Ok",Gtk.GtkResponseTypeToInt Gtk.RESPONSE_OK)
         val _ = Gtk.widgetShow okbutton1
+        val replacebutton1 = Gtk.dialogAddButton(searchDialog,"Replace",Gtk.GtkResponseTypeToInt Gtk.RESPONSE_APPLY)
+        val _ = Gtk.widgetShow replacebutton1
         val _ = Gtk.dialogSetDefaultResponse(searchDialog, Gtk.GtkResponseTypeToInt Gtk.RESPONSE_OK)
         val vbox4 = Gtk.vboxNew(false,0)
         val _ = Gtk.widgetShow vbox4
@@ -41,9 +43,18 @@ structure SearchDialog =
         val searchString = Gtk.entryNew()
         val _ = Gtk.widgetShow searchString
         val _ = Gtk.entrySetActivatesDefault(searchString,true)
+        val hbox1b = Gtk.hboxNew(false,0)
+        val _ = Gtk.widgetShow hbox1b
+        val label2b = Gtk.labelNew("Replace with:")
+        val _ = Gtk.widgetShow label2b
+        val replaceString = Gtk.entryNew()
+        val _ = Gtk.widgetShow replaceString
+        val _ = Gtk.entrySetActivatesDefault(replaceString,true)
         val _ = Gtk.boxPackStart(hbox1,label2,false,false,0)
         val _ = Gtk.boxPackStart(hbox1,searchString,true,true,5)
-        val table1 = Gtk.tableNew(2,2,false)
+        val _ = Gtk.boxPackStart(hbox1b,label2b,false,false,0)
+        val _ = Gtk.boxPackStart(hbox1b,replaceString,true,true,5)
+        val table1 = Gtk.tableNew(2,1,false)
         val _ = Gtk.widgetShow table1
         val _ = Gtk.tableSetRowSpacings(table1,0)
         val _ = Gtk.tableSetColSpacings(table1,20)
@@ -52,19 +63,11 @@ structure SearchDialog =
         val _ = Gtk.widgetShow checkbutton1
         val checkbutton2 = Gtk.checkButtonNewWithMnemonic("Backwards")
         val _ = Gtk.widgetShow checkbutton2
-        val checkbutton3 = Gtk.checkButtonNewWithMnemonic("From cursor position")
-        val _ = Gtk.toggleButtonSetActive(checkbutton3,true)
-        val _ = Gtk.widgetShow checkbutton3
-        val checkbutton4 = Gtk.checkButtonNewWithMnemonic("Whole words")
-        val _ = Gtk.widgetSetSensitive(checkbutton4,false)
-        val _ = Gtk.widgetSetSensitive(checkbutton3,false)
         val _ = Gtk.widgetSetSensitive(checkbutton2,false)
-        val _ = Gtk.widgetShow checkbutton4
         val _ = Gtk.tableAttach(table1,checkbutton1,0,1,0,1,Gtk.FILL,Gtk.FILL,0,0)
         val _ = Gtk.tableAttach(table1,checkbutton2,1,2,0,1,Gtk.FILL,Gtk.FILL,0,0)
-        val _ = Gtk.tableAttach(table1,checkbutton3,0,1,1,2,Gtk.FILL,Gtk.FILL,0,0)
-        val _ = Gtk.tableAttach(table1,checkbutton4,1,2,1,2,Gtk.FILL,Gtk.FILL,0,0)
         val _ = Gtk.boxPackStart(vbox4,hbox1,true,true,0)
+        val _ = Gtk.boxPackStart(vbox4,hbox1b,true,true,0)
         val _ = Gtk.boxPackStart(vbox4,table1,true,true,0)
         val _ = Gtk.boxPackStart(dialog_vbox1,vbox4,true,true,0)
         val vbox = Gtk.dialogGetFieldVbox searchDialog
@@ -76,7 +79,8 @@ structure SearchDialog =
         val _ = Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE)
 	(* val _ = Gtk.windowSetKeepAbove (searchDialog, true); Gtk 2.4 *)
 
-        fun closeCallback _ = Gtk.widgetUnmap searchDialog
+        fun closeCallback _ = (Gtk.windowSetModal(searchDialog, false);
+			       Gtk.widgetUnmap searchDialog)
         val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
         val _ = Gtk.signalConnect(cancelbutton1, "clicked", closeCallback)
 
@@ -87,15 +91,39 @@ structure SearchDialog =
         val _ = Gtk.windowAddAccelGroup(searchDialog,
                                         accelGroup);
 
-        fun doSearch id _ =
+	val isReplace = ref false
+
+        val searchSignal = ref NONE
+        val replaceSignal = ref NONE
+
+	fun doReplace(id, replaceString) arg =
+	    (Buffer.replace(id, replaceString);
+	     doSearch id arg)
+        and doSearch id _ =
             let
                 val txt = Gtk.entryGetText searchString
+                val replacetxt = Gtk.entryGetText replaceString
                 val caseSensitive = Gtk.toggleButtonGetActive checkbutton1
             in
-                Buffer.find id txt caseSensitive
+		if txt = "" then ()
+		else let
+		    val found = Buffer.find id txt caseSensitive
+		in
+		    if found andalso !isReplace then
+			(Gtk.windowSetModal(searchDialog, true);
+			 Option.app (fn s => Gtk.signalDisconnect(replacebutton1, s))
+			 (!replaceSignal);
+			 replaceSignal :=
+                             SOME (Gtk.signalConnect(replacebutton1,
+						     "clicked",
+						     doReplace(id, replacetxt)));
+			 Gtk.widgetSetSensitive(replacebutton1,true))
+		    else
+			(Gtk.windowSetModal(searchDialog, false);
+			 Gtk.widgetSetSensitive(replacebutton1,false))
+		end
             end
                 
-        val searchSignal = ref NONE
         fun reconnect id =
             case !searchSignal of
                 NONE => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch id)))
@@ -107,6 +135,22 @@ structure SearchDialog =
              case Buffer.getSelection id of
                  NONE => ()
                | SOME s => Gtk.entrySetText(searchString, s);
+	     Gtk.widgetSetSensitive(hbox1b,false);
+	     Gtk.widgetSetSensitive(replacebutton1,false);
+	     isReplace := false;
+	     Gtk.windowSetModal(searchDialog, false);
+             Gtk.widgetShowAll searchDialog;
+             Gtk.widgetMap searchDialog)
+
+        fun replace id =
+            (reconnect id;
+             case Buffer.getSelection id of
+                 NONE => ()
+               | SOME s => Gtk.entrySetText(searchString, s);
+	     Gtk.widgetSetSensitive(hbox1b,true);
+	     Gtk.widgetSetSensitive(replacebutton1,false);
+	     isReplace := true;
+	     Gtk.windowSetModal(searchDialog, false);
              Gtk.widgetShowAll searchDialog;
              Gtk.widgetMap searchDialog)
 
