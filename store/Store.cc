@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000-2002
+//   Thorsten Brunklaus, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -41,8 +41,9 @@
 namespace {
 #include "store/Set.hh"
 
-  Set *intgenSet = INVALID_POINTER;
-  Set *wkDictSet = INVALID_POINTER;
+  Set *intgenSet;
+  Set *wkDictSet;
+  Set *finSet;
 };
 
 // Status Word
@@ -64,29 +65,6 @@ struct timeval *Store::sum_t;
 //
 // Method Implementations
 //
-inline Block *Store::AddToFinSet(Block *p, word value, const u_int gen) {
-  if (p == INVALID_POINTER) {
-    p = (Block *) Alloc(gen, MIN_DATA_LABEL, 4);
-    p->InitArg(0, 1);
-  }
-  u_int top    = Store::DirectWordToInt(p->GetArg(0));
-  u_int newtop = (top + 1);
-  u_int size   = p->GetSize();
-  Block *np;
-  if (newtop >= size) {
-    u_int newsize = ((size * 3) >> 1);
-
-    np = (Block *) Store::Alloc(gen, MIN_DATA_LABEL, newsize);
-    AssertStore(np != INVALID_POINTER);
-    std::memcpy(np->GetBase(), p->GetBase(), size * sizeof(u_int));
-  }
-  else
-    np = p;
-  np->InitArg(0, newtop);
-  np->InitArg(top, value);
-  return np;
-}
-
 inline Block *Store::CloneBlock(Block *p, const u_int gen) {
   u_int size  = HeaderOp::DecodeSize(p);
   Block *newp = (Block *) Store::Alloc(gen, HeaderOp::DecodeLabel(p), size);
@@ -121,13 +99,21 @@ inline void Store::CheneyScan(HeapChunk *chunk, char *scan, const u_int gen) {
     while (scan < chunk->GetTop()) {
       Block *p   = (Block *) scan;
       u_int size = p->GetSize();
-       // CHUNK_LABEL and WEAK_MAP_LABEL are the largest possible labels
-      if (p->GetLabel() < CHUNK_LABEL)
+      // Move scan pointer ahead
+      scan += SIZEOF_BLOCK(size);
+      // CHUNK_LABEL, WEAK_MAP_LABEL, DYNAMIC_LABEL are the largest labels
+      BlockLabel l = p->GetLabel();
+      if (l < CHUNK_LABEL) {
+      scan:
 	for (u_int i = size; i--;) {
 	  word item = PointerOp::Deref(p->GetArg(i));
 	  p->InitArg(i, FORWARD(item, gen));
 	}
-      scan += SIZEOF_BLOCK(size);
+      }
+      else if (l == DYNAMIC_LABEL) {
+	size = ((DynamicBlock *) p)->GetScanSize();
+	goto scan;
+      }
     }
     chunk = chunk->GetPrev();
   } while (chunk != NULL);
@@ -158,12 +144,15 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
     scan = chunk->GetBase();
   have_scan:
     while (scan < chunk->GetTop()) {
-      Block *p      = (Block *) scan;
-      u_int cursize = HeaderOp::DecodeSize(p);
-      BlockLabel l  = p->GetLabel();
-      // CHUNK_LABEL and WEAK_MAP_LABEL are the largest possible labels
+      Block *p   = (Block *) scan;
+      u_int size = HeaderOp::DecodeSize(p);
+      // Move scan pointer ahead
+      scan += SIZEOF_BLOCK(size);
+      // CHUNK_LABEL, WEAK_MAP_LABEL and DYNAMIC_LABEL are the largest
+      BlockLabel l = p->GetLabel();
       if (l < CHUNK_LABEL) {
-	for (u_int i = cursize; i--;) {
+      scan:
+	for (u_int i = size; i--;) {
 	  word item = p->GetArg(i);
 	  item = PointerOp::Deref(item);
 	  if (PointerOp::IsInt(item) == 0) {
@@ -180,7 +169,10 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
 	  p->InitArg(i, item);
 	}
       }
-      scan += SIZEOF_BLOCK(cursize);
+      else if (l == DYNAMIC_LABEL) {
+	size = ((DynamicBlock *) p)->GetScanSize();
+	goto scan;
+      }
     }
     chunk = chunk->GetPrev();
   } while (chunk != NULL);
@@ -198,6 +190,7 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
+  finSet    = Set::New(1024); // to be done
   // Enable BlockHashTables
   Map::Init();
 #if defined(STORE_PROFILE)
@@ -208,34 +201,30 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
 
 void Store::CloseStore() {
   for (int i = (STORE_GENERATION_NUM - 1); i--;) {
-    HeapChunk *chain = roots[i].GetChain();
-    while (chain != NULL) {
-      HeapChunk *tmp = chain->GetNext();
-      delete chain;
-      chain = tmp;
-    }
+    Heap *heap = roots + sizeof(Heap) * i;
+    delete heap;
   }
 }
 
 void Store::AddToIntgenSet(Block *v) {
   HeaderOp::SetChildishFlag(v);
-  intgenSet = intgenSet->Push(v->ToWord());
+  intgenSet = intgenSet->Add(v->ToWord());
 }
 
 void Store::RegisterWeakDict(WeakMap *v) {
-  wkDictSet = wkDictSet->Push(v->ToWord());
+  wkDictSet = wkDictSet->Add(v->ToWord());
 }
 
 void Store::HandleInterGenerationalPointers(const u_int gen) {
-  Set *intgen_set = intgenSet;
-#if defined(STORE_GC_DEBUG)
-  std::fprintf(stderr, "initial intgen_size is %d\n", intgen_set->GetSize());
+#if defined(STORE_GC__DEBUG)
+  std::fprintf(stderr, "initial intgen_size is %d\n", intgenSet->GetSize());
 #endif
-  u_int rs_size = intgen_set->GetSize();
-  intgen_set->MakeEmpty();
-  // Traverse intgen_set entries (to be changed soon)
-  for (u_int i = 1; i <= rs_size; i++) {
-    word p = PointerOp::Deref(intgen_set->GetArg(i));
+  Set *intgen_set = intgenSet;
+  u_int size      = intgen_set->GetSize();
+  intgen_set->Clear();
+  // Traverse intgen_set entries
+  for (u_int i = 0; i < size; i++) {
+    word p = PointerOp::Deref(intgen_set->GetArgUnchecked(i));
     if (!PointerOp::IsInt(p)) {
       Block *curp = PointerOp::RemoveTag(p);
       // Block is no longer old but alive. It can't contain intgens any longer
@@ -279,7 +268,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
 	  }
 	  // p contains young ptrs and remains within intgen_set
 	  if (hasyoungptrs)
-	    intgen_set->Push(p);
+	    intgen_set->AddUnchecked(p);
 	  // p does not contain young ptrs any longer
 	  else
 	    HeaderOp::ClearChildishFlag(curp);
@@ -289,7 +278,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
     }
   }
 #if defined(STORE_GC_DEBUG)
-  std::fprintf(stderr, "new_intgen_size is %d\n", intgen_set->GetSize());
+  std::fprintf(stderr, "new_intgen_size is %d\n", intgenSet->GetSize());
 #endif
 }
 
@@ -298,23 +287,18 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
   ((p->GetLabel() != WEAK_MAP_LABEL) || \
    ((p->GetLabel() == WEAK_MAP_LABEL) && ((WeakMap *) p)->GetCounter() == 0))
 
-Block *Store::HandleWeakDictionaries(const u_int gen) {
-  Set *wkdict_set = wkDictSet;
-#if defined(STORE_GC_DEBUG)
-  std::fprintf(stderr, "initial weakdict_size is %d\n", wkdict_set->GetSize()); 
-  std::fprintf(stderr, "Handling weak dictionaries\n");
+void Store::HandleWeakDictionaries(const u_int gen) {
+#if defined(STORE_DEBUG)
+  std::fprintf(stderr, "initial weakdict_size is %d\n", wkDictSet->GetSize()); 
 #endif
-  // Allocate and initialize Finalisation Set
-  Block *finset = INVALID_POINTER;
-
-  u_int rs_size = wkdict_set->GetSize();
-  Block *db_set = (Block *) Alloc(gen, MIN_DATA_LABEL, rs_size + 1);
-  wkdict_set->MakeEmpty();
-  std::memcpy(db_set->GetBase(), ((Block *) wkdict_set)->GetBase(),
-	      (rs_size + 1) * sizeof(u_int));
-
+  // Clone wkDictSet and initialize finSet
+  Set *wkdict_set = wkDictSet;
+  u_int size      = wkdict_set->GetSize();
+  Set *db_set     = wkdict_set->Export(gen);
+  wkdict_set->Clear();
+  finSet->Clear();
   // Phase One: Forward all Dictionaries but not the contents
-  for (u_int i = rs_size; i >= 1; i--) {
+  for (u_int i = size; i--;) {
     word dict = db_set->GetArg(i);
     Block *dp = Store::DirectWordToBlock(dict);
     word ndict;
@@ -322,7 +306,7 @@ Block *Store::HandleWeakDictionaries(const u_int gen) {
     if (GCHelper::AlreadyMoved(dp)) {
       ndict = PointerOp::EncodeTag(GCHelper::GetForwardPtr(dp),
 				   PointerOp::DecodeTag(dict));
-      wkdict_set->Push(ndict);
+      wkdict_set->AddUnchecked(ndict);
     }
     // Dictionary might be finalized
     else if (HeaderOp::DecodeGeneration(dp) < gen) {
@@ -331,21 +315,20 @@ Block *Store::HandleWeakDictionaries(const u_int gen) {
       // Finalize only empty dict
       if (((WeakMap *) newp)->GetCounter() == 0) {
 	word handler = ((WeakMap *) newp)->GetHandler();
-	finset = Store::AddToFinSet(finset, ndict, gen);
-	finset = Store::AddToFinSet(finset, handler, gen);
+	finSet = finSet->Add(ndict, gen);
+	finSet = finSet->Add(handler, gen);
       }
       // Keep it alive (thanks to Denys for pointing that out)
       else
-	wkdict_set->Push(ndict);
+	wkdict_set->AddUnchecked(ndict);
     }
     // Can't decide whether it was reached or not; must assume yes.
     else {
       ndict = dict;
-      wkdict_set->Push(ndict);
+      wkdict_set->AddUnchecked(ndict);
     }
     // Keep Dict References complete for working
     db_set->InitArg(i, ndict);
-
     // Now Process DictTable and its MapNodes but NOT the content
     WeakMap *p = WeakMap::FromWordDirect(ndict);
     word arr   = ForwardBlock(p->GetTable()->ToWord(), gen);
@@ -363,10 +346,9 @@ Block *Store::HandleWeakDictionaries(const u_int gen) {
   }
   // Phase Two: Check for integer or forwarded entries
   // in all dictionaries and handle them
-  for (u_int i = rs_size; i >= 1; i--) {
+  for (u_int i = size; i--;) {
     WeakMap *dict = WeakMap::FromWordDirect(db_set->GetArg(i));
-    Block *table         = dict->GetTable();
-
+    Block *table  = dict->GetTable();
     for (u_int k = table->GetSize(); k--;) {
       word nodes = table->GetArg(k);
       while (nodes != Store::IntToWord(0)) {
@@ -393,10 +375,10 @@ Block *Store::HandleWeakDictionaries(const u_int gen) {
   // Phase Three: Forward Dictionary Contents and record Finalize Candiates
   HeapChunk *chunk = roots[gen].GetChain();
   char *scan      = chunk->GetTop();
-  for (u_int i = rs_size; i >= 1; i--) {
+  for (u_int i = size; i--;) {
     WeakMap *dict = WeakMap::FromWordDirect(db_set->GetArg(i));
-    word handler         = dict->GetHandler();
-    Block *table         = dict->GetTable();
+    word handler  = dict->GetHandler();
+    Block *table  = dict->GetTable();
     for (u_int k = table->GetSize(); k--;) {
       word nodes = table->GetArg(k);
       word prev  = Store::IntToWord(0);
@@ -423,8 +405,8 @@ Block *Store::HandleWeakDictionaries(const u_int gen) {
 	    word fVal = ForwardBlock(val, gen);
 	    if (FINALIZE_PERMITTED(valp)) {
 	      dict->RemoveEntry(k, prev, node);
-	      finset = Store::AddToFinSet(finset, fVal, gen);
-	      finset = Store::AddToFinSet(finset, handler, gen);
+	      finSet = finSet->Add(fVal, gen);
+	      finSet = finSet->Add(handler, gen);
 	    }
 	    // No, forward and save it again
 	    else
@@ -440,56 +422,42 @@ Block *Store::HandleWeakDictionaries(const u_int gen) {
     }
   }
   // Now successivly forward the finalized tree
-#if defined(STORE_GC_DEBUG)
+#if defined(STORE_DEBUG)
   std::fprintf(stderr, "HandleWeakDictionaries: performing cheney scan\n");
 #endif
   if (gen == (STORE_GENERATION_NUM - 1))
     Store::FinalizeCheneyScan(chunk, scan);
   else
     Store::CheneyScan(chunk, scan, gen);
-#if defined(STORE_GC_DEBUG)
-  std::fprintf(stderr, "new_weakdict_size is %d\n", wkdict_set->GetSize());
+#if defined(STORE_DEBUG)
+  std::fprintf(stderr, "new_weakdict_size is %d\n", wkDictSet->GetSize());
 #endif
-  return finset;
 }
 
 static inline u_int min(u_int a, u_int b) {
   return ((a <= b) ? a : b);
 }
 
-inline Block *Store::GC(word &root, const u_int gen) {
-  // Copy Root-, Intgen- and WeakDict-Set to generation gen (if appropriate)
-  Block *root_set = Store::DirectWordToBlock(ForwardBlock(root, gen));
-  intgenSet       = Set::FromWord(ForwardBlock(intgenSet->ToWord(), gen));
-  wkDictSet       = Set::FromWord(ForwardBlock(wkDictSet->ToWord(), gen));
+inline void Store::GC(word &root, const u_int gen) {
   // Obtain scan start
   HeapChunk *chunk = roots[gen].GetChain();
   char *scan       = chunk->GetTop();
-  // Copy matching rootset entries
-  for (u_int i = root_set->GetSize(); i--;) {
-    word item = root_set->GetArg(i);
-    item = PointerOp::Deref(item);
-    item = FORWARD(item, gen);
-    root_set->InitArg(i, item);
-  }
-  // Scanning chunks (root_set amount)
+  // Forward root set
+  root = CloneBlock(Store::DirectWordToBlock(root), gen)->ToWord();
+  // Scanning chunks (root set amount)
   Store::CheneyScan(chunk, scan, gen);
   // Obtain new scan start (to scan intgen set stuff)
   chunk = roots[gen].GetChain();
   scan  = chunk->GetTop();
   // Handle InterGenerational Pointers
   Store::HandleInterGenerationalPointers(gen - 1);
-  // Scan chunks (intgen_set amount)
+  // Scan chunks (intgen set amount)
   Store::CheneyScan(chunk, scan, gen);
   // Handle Weak Dictionaries, if any (performs scanning itself)
-  Block *arr = INVALID_POINTER;
   if (wkDictSet->GetSize() != 0)
-    arr = Store::HandleWeakDictionaries(gen);
+    Store::HandleWeakDictionaries(gen);
   // Rehash BlockHashTable Contents
   Map::RehashAll(gen);
-  // Adjust Root Set
-  root = root_set->ToWord();
-  return arr;
 }
 
 #if defined(STORE_DEBUG)
@@ -515,19 +483,24 @@ void Store::DoGC(word &root) {
   while ((gen > 0) && (roots[gen].GetSize()) <= roots[gen].GetLimit())
     gen--;
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "GCing up to %d...\n", gen);
+  std::fprintf(stderr, "GCing up to %d with %d set entries...\n", gen,
+	       Store::DirectWordToBlock(root)->GetSize());
   std::fflush(stderr);
 #endif
-  Block *arr;
   switch (gen) {
   case STORE_GEN_YOUNGEST:
-    arr = GC(root, STORE_GEN_YOUNGEST + 1); break;
+    GC(root, STORE_GEN_YOUNGEST + 1); break;
   case 1:
-    arr = GC(root, 2); break;
+    GC(root, 2); break;
   case STORE_GEN_OLDEST:
-    arr = GC(root, STORE_GEN_OLDEST + 1); break;
+    // Major collection
+    intgenSet = (Set *) CloneBlock((Block *) intgenSet, STORE_GEN_OLDEST + 1);
+    wkDictSet = (Set *) CloneBlock((Block *) wkDictSet, STORE_GEN_OLDEST + 1);
+    finSet    = (Set *) CloneBlock((Block *) finSet, STORE_GEN_OLDEST + 1);
+    GC(root, STORE_GEN_OLDEST + 1);
+    break;
   default:
-    arr = GC(root, gen + 1);
+    GC(root, gen + 1);
   }
   // Release Collected regions
   for (u_int i = gen + 1; i--;)
@@ -557,13 +530,11 @@ void Store::DoGC(word &root) {
   // Clear GC Flag
   StatusWord::ClearStatus(GCStatus());
   // Perform Finalization
-  if (arr != INVALID_POINTER) {
-    u_int size = (Store::WordToInt(arr->GetArg(0)) - 1);
-    for (u_int i = size; i >= 1; i--) {
-      Finalization *handler =
-	(Finalization *) Store::DirectWordToUnmanagedPointer(arr->GetArg(i--));
-      handler->Finalize(arr->GetArg(i));
-    }
+  Set *set = finSet;
+  for (u_int i = set->GetSize(); i--;) {
+    Finalization *handler =
+      (Finalization *) Store::DirectWordToUnmanagedPointer(set->GetArg(i--));
+    handler->Finalize(set->GetArg(i));
   }
 #if defined(STORE_PROFILE)
   gettimeofday(&end_t, INVALID_POINTER);

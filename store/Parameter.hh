@@ -42,9 +42,9 @@
 // to be done
 #define STORE_GENERATION_NUM     ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)
 // Initial Intgen-Pointer-Set Size
-#define STORE_INITIAL_INTGEN     4
+#define STORE_INITIAL_INTGEN     1024
 // Initial Weak-Dictionary-Set Size
-#define STORE_INITIAL_WKDICT     4
+#define STORE_INITIAL_WKDICT     256
 
 //
 // Introduce Helper Block Label (without _LABEL suffix)

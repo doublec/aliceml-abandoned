@@ -146,4 +146,66 @@ public:
   }
 };
 
+class DllExport DynamicBlock : private Block {
+protected:
+  enum {SCAN_SIZE_POS, SIZE };
+public:
+  using Block::GetBase;
+  using Block::GetLabel;
+  using Block::ToWord;
+  u_int GetSize() {
+    return (Block::GetSize() - 1);
+  }
+  u_int GetScanSize() {
+    return Store::DirectWordToInt(Block::GetArg(SCAN_SIZE_POS));
+  }
+  void SetScanSize(u_int size) {
+    AssertStore(size <= GetSize());
+    Block::ReplaceArg(SCAN_SIZE_POS, size);
+  }
+  word GetArg(u_int f) {
+    AssertStore(f < GetScanSize());
+    return GetArgUnchecked(f);
+  }
+  word GetArgUnchecked(u_int f) {
+    AssertStore(f < GetSize());
+    return ((word *) this)[f + 2];
+  }
+  void InitArg(u_int f, word v) {
+    AssertStore(f <= GetScanSize());
+    AssertStore(v != NULL);
+    ((word *) this)[f + 2] = v;
+  }
+  void InitArg(u_int f, s_int v) {
+    InitArg(f, Store::IntToWord(v));
+  }
+  void ReplaceArg(u_int f, word v) {
+    AssertStore(f < GetScanSize());
+    AssertStore(v != NULL);
+    if (!PointerOp::IsInt(v)) {
+      u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
+      u_int mygen  = HeaderOp::DecodeGeneration(this);
+      
+      if ((valgen < mygen) && (!HeaderOp::IsChildish(this))) {
+	Store::AddToIntgenSet(this);
+      }
+    }
+    ((word *) this)[f + 2] = v;
+  }
+  void ReplaceArg(u_int f, s_int v) {
+    InitArg(f, Store::IntToWord(v));
+  }
+
+  static DynamicBlock *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+    AssertStore(p->GetLabel() == DYNAMIC_LABEL);
+    return static_cast<DynamicBlock *>(p);
+  }
+  static DynamicBlock *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    AssertStore(p->GetLabel() == DYNAMIC_LABEL);
+    return static_cast<DynamicBlock *>(p);
+  }
+};
+
 #endif
