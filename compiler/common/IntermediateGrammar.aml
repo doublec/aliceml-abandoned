@@ -35,8 +35,8 @@ struct
     type longid_info	= { region: Source.region, typ: Type.t }
     type exp_info	= { region: Source.region, typ: Type.t }
     type pat_info	= { region: Source.region, typ: Type.t }
-    type 'a field_info	= { region: Source.region }
-    type match_info	= { region: Source.region }
+    type 'a fld_info	= { region: Source.region }
+    type mat_info	= { region: Source.region }
     type dec_info	= { region: Source.region }
 end
 
@@ -52,7 +52,7 @@ structure PPIntermediateGrammar = MkPPIntermediateGrammar(
 	val ppLongidInfo = ppInfo
 	val ppExpInfo	= ppInfo
 	val ppPatInfo	= ppInfo
-	val ppFieldInfo	= fn _ => ppInfo
-	val ppMatchInfo	= ppInfo
+	val ppFldInfo	= fn _ => ppInfo
+	val ppMatInfo	= ppInfo
 	val ppDecInfo	= ppInfo
 	val ppSig	= ppInfo)
