@@ -19,7 +19,7 @@ import
 from "frontend-sml/ParsingPhase.ozf"
 
 import
-    structure MakeAbstrationPhase
+    structure MakeAbstractionPhase
 from "frontend-sml/MakeAbstractionPhase.ozf"
 
 import
