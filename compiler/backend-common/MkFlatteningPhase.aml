@@ -30,6 +30,11 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	val label_true = Label.fromString "true"
 	val label_false = Label.fromString "false"
 
+	fun exp_true info =
+	    TagExp (info, Lab ({region = #region info}, label_true), false)
+	fun exp_false info =
+	    TagExp (info, Lab ({region = #region info}, label_false), false)
+
 	fun lookup (pos, (pos', id)::mappingRest) =
 	    if pos = pos' then id
 	    else lookup (pos, mappingRest)
@@ -367,13 +372,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (UpExp (_, exp), f, cont) =
 	    translateExp (exp, f, cont)   (*--** UpExp *)
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
-	    translateExp (IfExp (info, exp1, exp2,
-				 TagExp (info, Lab (info, label_false), false),
-				 f, cont)
+	    translateExp (IfExp (info, exp1, exp2, exp_false info), f, cont)
 	  | translateExp (OrExp (info, exp1, exp2), f, cont) =
-	    translateExp (IfExp (info, exp1,
-				 TagExp (info, Lab (info, label_true), false),
-				 exp2), f, cont)
+	    translateExp (IfExp (info, exp1, exp_true info, exp2), f, cont)
 	  | translateExp (IfExp (_, exp1, exp2, exp3), f, cont) =
 	    let
 		val cont' = Share (ref NONE, cont)
