@@ -324,7 +324,8 @@ IODesc::result IODesc::Close() {
   switch (flags & TYPE_MASK) {
   case TYPE_CLOSED: break;
   case TYPE_FD:
-    if (closesocket(GetFD())) res = result_socket_error;
+    Interruptible(res0, closesocket(GetFD()));
+    if (res0) res = result_socket_error;
     break;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   case TYPE_HANDLE:
@@ -647,7 +648,7 @@ bool IODesc::SupportsNonblocking() {
 #else
   case TYPE_FD:
     {
-      int flags = fcntl(GetFD(), F_GETFL, 0);
+      Interruptible(flags, fcntl(GetFD(), F_GETFL, 0));
       if (flags == -1)
 	return false;
       else
@@ -778,12 +779,13 @@ IODesc *IODesc::NewFromStdErr() {
 #else
 static IODesc *MakeStdIODesc(const char *name, int fd, u_int dir) {
   // Try to make the file descriptor nonblocking:
-  int flags = fcntl(fd, F_GETFL, 0);
+  Interruptible(flags, fcntl(fd, F_GETFL, 0));
   if (flags == -1) {
     Assert(errno == EBADF);
     return IODesc::NewClosed(String::New(name));
   } else {
-    fcntl(fd, F_SETFL, flags|O_NONBLOCK); // ignore result
+    Interruptible(res, fcntl(fd, F_SETFL, flags|O_NONBLOCK));
+    res = res; // ignore result
     return IODesc::NewFromFD(dir, String::New(name), fd);
   }
 }
