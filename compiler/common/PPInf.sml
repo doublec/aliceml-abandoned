@@ -114,8 +114,13 @@ text "@" ^^*)
     and ppItem(ref item', doc) = ppItem'(item', doc)
 
     and ppItem'(VAL((p,l,0), t, d), doc) =
+	if String.sub(Label.toString l,0) = #"'" then
+	    doc
+	else
 	    abox(
 		hbox(
+		    text "val" ^/^ ppLab l ^/^ text ":"
+(*DEBUG
 		    (if String.sub(Label.toString l,0) <> #"'" then
 			 text "val" ^/^ ppLab l
 		     else
@@ -125,6 +130,7 @@ text "@" ^^*)
 (*DEBUG
 text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
+*)
 		) ^^
 		nest(break ^^
 		    abox(PPType.ppTyp t)
@@ -137,6 +143,9 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 	    ) ^/^ doc
 
       | ppItem'(TYP((p,l,0), k, d), doc) =
+	if Option.isNone d
+	orelse let val t = Option.valOf d
+	       in Type.isCon t andalso Path.equals(#3(Type.asCon t), p) end then
 	    abox(
 		hbox(
 		    text "type" ^/^
@@ -147,14 +156,18 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		) ^^
 		nest(break ^^
 		    abox(PPType.ppKind k)
+		)
+	    ) ^/^ doc
+	else
+	    abox(
+		hbox(
+		    text "type" ^/^
+		    ppLab l ^/^
+		    text "="
 		) ^^
-		(case d of NONE => empty | SOME t =>
-		if Type.isCon t andalso Path.equals(#3(Type.asCon t), p) then
-		    empty
-		else
 		nest(break ^^
-		    abox(text "=" ^/^ PPType.ppTyp t)
-		))
+		    abox(PPType.ppTyp(Option.valOf d))
+		)
 	    ) ^/^ doc
 
       | ppItem'(MOD((p,l,0), j, d), doc) =
@@ -167,16 +180,19 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
 		) ^^
 		nest(break ^^
-		    abox(ppInf j)
-		) ^^
-		(case d of NONE => empty | SOME p' =>
-		if Path.equals(p',p) then empty else
-		nest(break ^^
-		    abox(text "=" ^/^ PPPath.ppPath p')
-		))
+		    abox(ppInf j) ^^
+		    (case d of NONE => empty | SOME p' =>
+		     if Path.equals(p',p) then empty else
+		     nest(break ^^
+			 hbox(text "=" ^/^ hbox(PPPath.ppPath p'))
+		    ))
+		)
 	    ) ^/^ doc
 
       | ppItem'(INF((p,l,0), k, d), doc) =
+	if Option.isNone d
+	orelse let val j = Option.valOf d
+	       in isCon j andalso Path.equals(#2(asCon j), p) end then
 	    abox(
 		hbox(
 		    text "signature" ^/^
@@ -187,12 +203,20 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		) ^^
 		nest(break ^^
 		    abox(ppKind k)
+		)
+	    ) ^/^ doc
+	else
+	    abox(
+		hbox(
+		    text "signature" ^/^
+		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
+		    text "="
 		) ^^
-		(case d of NONE => empty | SOME j =>
-		if isCon j andalso Path.equals(#2(asCon j), p) then empty else
 		nest(break ^^
-		    abox(text "=" ^/^ ppInf j)
-		))
+		    abox(ppInf(Option.valOf d))
+		)
 	    ) ^/^ doc
 
       | ppItem'(FIX((p,l,0), f), doc) =

@@ -102,11 +102,10 @@ structure PPType :> PP_TYPE =
 
 	      | ppTypPrec p (t as ref(MU t1 | MARK(MU t1))) =
 (*DEBUG*)
-((*print("[pp " ^ pr(!t) ^ "]");*)
 (*		if occurs(t,t1) then
 *)		    let
-(*val _=print"recursive\n"
-*)			val t'  = makeVar(true, t)
+			val t'  = makeVar(true, t)
+(*DEBUG
 			val doc = (case t' of MARK _ => text "!MU"
 					    | _      => text "MU") ^/^
 				  abox(
@@ -121,11 +120,15 @@ structure PPType :> PP_TYPE =
 			val _   = t := t'
 		    in
 			parenPrec p (1, fbox(below(nest(doc))))
+*)
+		    in
+			ppTypPrec p t1
+			before t := t'
 		    end
 (*		else
 (*(print"not recursive\n";*)
 		    ppTypPrec p t1
-*))
+*)
 
 	      | ppTypPrec p (t as ref(APPLY _)) =
 	        ( reduce t ;
@@ -215,10 +218,17 @@ text "(" ^^
 		    ppCon c
 
 	      | ppTypPrec' p (ALL(a,t)) =
+(*DEBUG
 		let
 		    val doc = ppBinder("ALL",a,t)
 		in
 		    parenPrec p (1, fbox(below doc))
+		end
+*)
+		let
+		    val a' = makeVar(true, a)
+		in
+		    ppTyp t before a := a'
 		end
 
 	      | ppTypPrec' p (EXIST(a,t)) =
@@ -260,6 +270,9 @@ text "(" ^^
 	      | ppSum(FIELD(l,t,r))	= ppField(l,t) ^/^ text "|" ^/^ ppSum r
 
 	    and ppField(l,t) =
+		if Type.equals(t, PervasiveType.typ_zero) then
+		    ppLab l
+		else
 		    abox(
 			hbox(
 			    ppLab l ^/^
