@@ -19,6 +19,8 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	         ["(* This is a generated file. ",
 		  "Modifications may get lost. *)\n\n",
 		  "import structure GtkCore from \"GtkCore\"\n",
+	          "import structure GnomeCanvasEnums ",
+		    "from \"GnomeCanvasEnums\"\n",
 		  "import structure GtkEnums from \"GtkEnums\"\n",
 		  "import structure GdkEnums from \"GdkEnums\"\n",
 		  "import structure PangoEnums from \"PangoEnums\"\n",
@@ -37,6 +39,8 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 "Modifications may get lost. *)\n\n",
 		 "import structure ",nativeName," from \"",nativeName, "\"\n",
 		 "import structure GtkCore  from \"GtkCore\"\n",
+	          "import structure GnomeCanvasEnums ",
+		    "from \"GnomeCanvasEnums\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
 		 "import structure PangoEnums from \"PangoEnums\"\n",
@@ -45,6 +49,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 "structure ", unsafeName, " :> ",
 		 Util.strUpper unsafeName, " =\n",
 		 Util.indent 1, "struct\n",
+		 wrIndent, "open GnomeCanvasEnums\n",
 		 wrIndent, "open GtkEnums\n",
 		 wrIndent, "open GdkEnums\n",
 		 wrIndent, "open PangoEnums\n",
@@ -54,25 +59,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
             } : Util.fileInfo
 
 
-        local
-	    val enumDecls = ref nil
-	    fun addToList n = if not (Util.contains n (!enumDecls))
-		                   then (enumDecls := (n::(!enumDecls)) ; true)
-                                   else false
-	    fun addEnum (ENUMREF n)     = 
-		if addToList n then
-		    [if space = getEnumSpace n then "(**)" else "", 
-		     sigIndent, "type ", n, " = ", 
-		     Util.spaceName(getEnumSpace n), "Enums.",n, "\n"] 
-		else nil
-	      | addEnum (TYPEREF (_,t)) = addEnum t
-	      | addEnum _               = nil
-	    fun getType (_,_,t) = t
-	in
-	    fun sigEnumDecls (ret,arglist) = 
-		List.concat (map addEnum (ret::(map getType arglist)))
-	end
-
 	(* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
         let
@@ -81,7 +67,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	    val aType = getAliceFunType(wname,ret,arglist,doinout) getAliceType
 	    val cType = getCFunType(funName,ret,arglist,true)
 	in
-	    sigEnumDecls (ret,arglist) @
 	    [sigIndent, "(* ", cType, " *)\n",
 	     sigIndent, aType, "\n\n"]
 	end
@@ -91,32 +76,27 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	let
 	    val wname = Util.computeWrapperName(space,funName) ^
 		        (if doinout then "'" else "")
-	    val argTypes = map removeTypeRefs (ret::(map (fn i=> #3i) arglist))
-	    val generateSimple =
-		not (List.exists (fn (ENUMREF _) => true | 
-				     (POINTER _) => true | 
-					       _ => false) argTypes)
 	    val (ins, outs') = splitInOuts (arglist, doinout)
 	    val outs = if ret = VOID then outs' else (OUT,"ret",ret)::outs'
+	    val generateSimple = ref true
 	    fun convArgs toNative (_,vname, t) =
 	       (case removeTypeRefs t of
 		    ENUMREF ename =>
-			(if toNative then ename^"ToInt" else "IntTo"^ename)
-			^" "^vname
+			(generateSimple := false ;
+			 (if toNative then ename^"ToInt" else "IntTo"^ename)
+			 ^" "^vname)
 		  | POINTER t'    =>
 			if toNative 
 			    then vname 
-			    else "GtkCore.addObject "^vname
+			    else (generateSimple := false ; 
+				  "GtkCore.addObject "^vname)
 		  | LIST (_,POINTER t') =>
 			if toNative 
 			    then vname 
-			    else "map GtkCore.addObject "^vname
+			    else (generateSimple := false ;
+				  "map GtkCore.addObject "^vname)
 		  | _ => vname)
-	in
-	    if generateSimple
-	    then
-		[wrIndent, "val ", wname, " = ", nativeName, ".", wname, "\n"]
-	    else
+	    val fullWrapperCode = 		       
 		[wrIndent, "fun ", wname, "(", 
 		 Util.makeTuple ", " "" (map (fn info => #2info) ins), 
 		 ") =\n",
@@ -127,6 +107,10 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 wrIndent, wrIndent, "in (",
 		 Util.makeTuple ", " "x" (map (convArgs false) outs), ")\n",
 		 wrIndent, wrIndent, "end\n"]
+	in
+	    if (!generateSimple)
+	    then [wrIndent, "val ", wname, " = ", nativeName, ".", wname, "\n"]
+	    else fullWrapperCode
 	end	
 
 	(* SIGNATURE AND WRAPPER ENTRIES *)

@@ -1,6 +1,8 @@
 import structure GtkCore from "GtkCore"
 import structure PangoEnums from "PangoEnums"
 import structure GdkEnums from "GdkEnums"
+import structure GtkEnums from "GtkEnums"
+import structure GnomeCanvasEnums from "GnomeCanvasEnums"
 
 signature GDK =
 sig

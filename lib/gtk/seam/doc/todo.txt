@@ -1,12 +1,11 @@
 
 *** Allgemein/Ideen ***
 
-1. zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
+- zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
+- nicht beliebig viele set/get-Methode moeglich
 
-4. Quellcode aufraeumen
-5. Dokumentation
-
-- Enum-LargeInt-Ueberpruefung sollte in TypeManager.sml erfolgen
+- Quellcode aufraeumen
+- Dokumentation
 
 * aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
 * Transient from finalStream funktioniert nicht -> finalStream abgeschafft
@@ -178,5 +177,5 @@ X finalizer thread ruft fuer ankommende objects auf eigenem Strom gtk-unref auf
 Fehler:
 - ckit2.sml in stockwerk-vm testen; ggf. in alice bugzilla eintragen
 * Int.toString(2^32) haengt sich auf
-- mehrfaches spawn (fib 40) stuerzt ab
+* mehrfaches spawn (fib 40) stuerzt ab
 * val ~1 = 1; stuerzt ab

@@ -12,6 +12,25 @@ struct
       | removeTypeRefs (TYPEREF (_,t)) = removeTypeRefs t
       | removeTypeRefs t               = t
 
+    fun isRefOfSpace space (ENUMREF n) =
+	Util.checkPrefix (Util.spaceName space) n
+      | isRefOfSpace space (STRUCTREF n) =
+	Util.checkPrefix (Util.spaceName space) n
+      | isRefOfSpace space (TYPEREF (_,t)) = isRefOfSpace space t
+      | isRefOfSpace _ _ = false
+
+    fun isItemOfSpace space (FUNC (n,_,_)) = 
+	Util.checkPrefix (Util.spaceFuncPrefix(space)) n
+      | isItemOfSpace space (ENUM (n,_)) =
+	Util.checkPrefix (Util.spaceEnumPrefix(space)) n
+      | isItemOfSpace space (STRUCT (n,_)) =
+	Util.checkPrefix (Util.spaceStructPrefix(space)) n
+      | isItemOfSpace _ _ = false
+
+    fun getEnumSpace name = 
+	foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
+	       Util.GTK Util.allSpaces
+
     local
 	fun numericToCType sign kind =
 	    (if sign then "" else "unsigned ")^
@@ -59,7 +78,8 @@ struct
       | getAliceType (FUNCTION _)          = "GtkCore.object"
       | getAliceType (STRUCTREF _)         = raise EStruct
       | getAliceType (UNIONREF _)          = raise EUnion
-      | getAliceType (ENUMREF name)        = name
+      | getAliceType (ENUMREF name)        = 
+		Util.spaceName(getEnumSpace name)^"Enums."^name
       | getAliceType (TYPEREF (_,t))       = getAliceType t
 	 
     fun getAliceNativeType t =
@@ -132,24 +152,8 @@ struct
 	(Util.makeTuple " * " "unit" (map (convFun o getType) outs))
     end
 
-    fun isRefOfSpace space (ENUMREF n) =
-	Util.checkPrefix (Util.spaceName space) n
-      | isRefOfSpace space (STRUCTREF n) =
-	Util.checkPrefix (Util.spaceName space) n
-      | isRefOfSpace space (TYPEREF (_,t)) = isRefOfSpace space t
-      | isRefOfSpace _ _ = false
 
-    fun isItemOfSpace space (FUNC (n,_,_)) = 
-	Util.checkPrefix (Util.spaceFuncPrefix(space)) n
-      | isItemOfSpace space (ENUM (n,_)) =
-	Util.checkPrefix (Util.spaceEnumPrefix(space)) n
-      | isItemOfSpace space (STRUCT (n,_)) =
-	Util.checkPrefix (Util.spaceStructPrefix(space)) n
-      | isItemOfSpace _ _ = false
-
-
-val wac = ref 0
-	
+(**)val wac = ref 0
 (**)fun workAround (STRUCT ("_GtkFileSelection",_)) = true
 (**)  | workAround s = isItemOfSpace Util.GDK s orelse
                             (wac := (!wac) + 1 ; (!wac) < 200)
@@ -185,10 +189,6 @@ val wac = ref 0
 	    then (sname'^"_get_field_"^mname, mtype, [stype])
   	    else (sname'^"_set_field_"^mname, VOID, [stype, mtype])
     end
-
-    fun getEnumSpace name = 
-	foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
-	       Util.GTK Util.allSpaces
 
 end
 
