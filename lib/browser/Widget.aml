@@ -1071,19 +1071,18 @@ struct
 	(*******         Inspection            *******)
 
 	fun inspect(v,t) = 
-	    Server.serve 
-	    (fn _ => 
-	     let
-		 val va = (busyButtonSetActive(true)
-			   ;UnsafeValue.cast v: Reflect.value)
-		 val i = Dictionaries.Main.
-		     getHighestIndexAssigned(Dictionaries.maindict) +1
-		 val canvas = (new()
-			     ; relnumber := 0
-			     ;!canvas)
-		 val save_settings = (!Settings.max_width,!Settings.max_depth)
-		 val n = (stopButtonSetActive(true)
-			  ;CreateTree.createTree(NONE,va,t,Empty,i,0,canvas))
+	    ( new()
+	    ; Server.serve 
+	     (fn _ => 
+	      let
+		  val va = (busyButtonSetActive(true)
+			    ;UnsafeValue.cast v: Reflect.value)
+		  val i = Dictionaries.Main.
+		      getHighestIndexAssigned(Dictionaries.maindict) +1
+		  val save_settings = (!Settings.max_width,!Settings.max_depth)
+		  val n = (stopButtonSetActive(true) 
+                          ; relnumber := 0
+			  ; CreateTree.createTree(NONE,va,t,Empty,i,0,!canvas))
 		 val line = (stopButtonSetActive(false)
 			     ; if !stopflag 
 				   then ( Settings.set_width(#1(save_settings))
@@ -1096,31 +1095,29 @@ struct
 						  !act_line,canvaswidth(hadj),
 						  Settings.getFontHeight()))
 	     in
-		 (GtkSupport.layoutFreeze(canvas) 
+		 (GtkSupport.layoutFreeze(!canvas) 
 		  ; Draw.draw(n,0,!act_line,false)
-		  ; GtkSupport.layoutThaw(canvas) 
+		  ; GtkSupport.layoutThaw(!canvas) 
 		  ; incr_act_line(get_ydim(n) + 1)
 		  ; (!resize)()
 		  ; show()
 		  ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)) 
 		  ;busyButtonSetActive(false))
-	     end)
+	     end) )
 	
     fun inspectMod(v,t) = 
-	Server.serve 
-	(fn _ => 
-	 let
-	     val va = (busyButtonSetActive(true)
-		       ;UnsafeValue.cast v: Reflect.module)
-	     val i = Dictionaries.Main.
-		 getHighestIndexAssigned(Dictionaries.maindict) +1
-	     val canvas = (new()
-			 ;stopButtonSetActive(true)
-			 ; relnumber := 0
-			 ;!canvas)
+        ( new ()
+	; Server.serve 
+	 (fn _ => 
+	  let
+	      val va = (busyButtonSetActive(true)
+			;UnsafeValue.cast v: Reflect.module)
+	      val i = Dictionaries.Main.
+		  getHighestIndexAssigned(Dictionaries.maindict) +1
 	     val save_settings = (!Settings.max_width,!Settings.max_depth)
 	     val n = (stopButtonSetActive(true)
-		      ;CreateTree.createTreeInf(va,t,Empty,i,0,canvas))
+		      ; relnumber := 0
+		      ; CreateTree.createTreeInf(va,t,Empty,i,0,!canvas))
 	     val line =(stopButtonSetActive(false) 
 			; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
@@ -1132,19 +1129,19 @@ struct
 			      ;createSepLine(!canvasroot,
 					     !act_line,canvaswidth(hadj),
 					     Settings.getFontHeight() ))
-	 in
-	     (GtkSupport.layoutFreeze(canvas) 
-	      ; Draw.draw(n,0,!act_line,false)
-	      ; GtkSupport.layoutThaw(canvas) 
-	      ; incr_act_line(get_ydim(n) + 1)
-	      ; (!resize)()
-	      ; show()
-	      ; stopButtonSetActive(false)
-	      ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line))
-	      ; busyButtonSetActive(false) 
-	      )
-	 end)
-     
+	  in
+	      (GtkSupport.layoutFreeze(!canvas) 
+	       ; Draw.draw(n,0,!act_line,false)
+	       ; GtkSupport.layoutThaw(!canvas) 
+	       ; incr_act_line(get_ydim(n) + 1)
+	       ; (!resize)()
+	       ; show()
+	       ; stopButtonSetActive(false)
+	       ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line))
+	       ; busyButtonSetActive(false) 
+	       )
+	  end) )
+	 
     val _ = ( inspectFct := inspect
 	     ; inspectModFct := inspectMod
 	     ; initGtk () )
