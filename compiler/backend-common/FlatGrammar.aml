@@ -76,6 +76,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | RefAppDec of stm_info * idDef * id
 	  | TupDec of stm_info * idDef vector * id
 	  | ProdDec of stm_info * (label * idDef) vector * id
+	    (* sorted, all labels distinct, no tuple *)
 	  (* the following must always be last *)
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
