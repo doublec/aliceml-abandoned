@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Url  from "../utility/Url"
+import structure Url  from "Url"
 import structure Http from "Http"
 
 signature HTTP_CLIENT =

@@ -11,7 +11,7 @@
  *   $Revision$
  *)
 
-import structure Url              from "../utility/Url"
+import structure Url              from "Url"
 import structure Component        from "Component"
 import structure ComponentManager from "ComponentManager"
 import signature PICKLE           from "PICKLE-sig"

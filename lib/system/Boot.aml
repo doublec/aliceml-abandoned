@@ -11,9 +11,9 @@
  *)
 
 import structure Reflect           from "Reflect"
+import structure Url               from "Url"
 import structure Component         from "Component"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
-import structure Url               from "../utility/Url"
 
 fun boot url =
     let

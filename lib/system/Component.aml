@@ -10,12 +10,12 @@
  *   $Revision$
  *)
 
-import structure Url               from "../utility/Url"
 import structure Inf               from "../rtt/Inf"
 import structure TextIO            from "TextIO"
 import structure IO                from "IO"
 import structure OS                from "OS"
 import structure Reflect           from "Reflect"
+import structure Url               from "Url"
 import structure Resolver          from "Resolver"
 import structure UnsafeComponent   from "UnsafeComponent"
 import structure UrlMap            from "UrlMap"

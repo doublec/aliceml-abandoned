@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Assert from "Assert"
-import signature URL from "URL-sig"
+import structure Assert from "../utility/Assert"
+import signature URL    from "URL-sig"
 
 (*
  * Parts of this have been adapted from Mozart's URL module

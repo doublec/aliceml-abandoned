@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
+import structure Url     from "Url"
 import structure Socket  from "Socket"
 import signature IMP_MAP from "../utility/IMP_MAP-sig"
-import structure Url     from "../utility/Url"
 
 signature HTTP =
     sig

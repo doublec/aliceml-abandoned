@@ -21,7 +21,7 @@ import structure Type             from "../rtt/Type"
 import structure PervasiveType    from "../rtt/PervasiveType"
 
 import structure Inf              from "../rtt/Inf"
-import structure Url              from "../utility/Url"
+import structure Url              from "../system/Url"
 import structure Component        from "../system/Component"
 import structure ComponentManager from "../system/ComponentManager"
 

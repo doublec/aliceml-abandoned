@@ -11,8 +11,8 @@
  *)
 
 import structure Inf       from "../rtt/Inf"
-import structure Url       from "../utility/Url"
 import structure Reflect   from "Reflect"
+import structure Url       from "Url"
 
 signature COMPONENT_MANAGER =
     sig

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
+import structure Url         from "Url"
 import structure Socket      from "Socket"
-import structure Url         from "../utility/Url"
 import structure Http        from "Http"
 import signature HTTP_CLIENT from "HTTP_CLIENT-sig"
 

@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure TextIO        from "TextIO"
-import structure Socket        from "Socket"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure Url           from "../utility/Url"
+import structure TextIO        from "TextIO"
+import structure Url           from "Url"
+import structure Socket        from "Socket"
 import structure Http          from "Http"
 import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 

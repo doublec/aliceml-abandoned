@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure Socket        from "Socket"
-import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure Url           from "../utility/Url"
-import signature HTTP          from "HTTP-sig"
+import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure Url          from "Url"
+import structure Socket       from "Socket"
+import signature HTTP         from "HTTP-sig"
 
 structure Http :> HTTP =
     struct

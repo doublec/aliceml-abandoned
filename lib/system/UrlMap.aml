@@ -11,7 +11,7 @@
  *)
 
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure Url           from "../utility/Url"
+import structure Url           from "Url"
 import signature URL_MAP       from "URL_MAP-sig"
 
 structure UrlMap :> URL_MAP =
