@@ -29,7 +29,7 @@ public:
 			  u_int arity, bool sited = false);
 
   // Push a new primitive frame and call primitive directly
-  static Interpreter::Result Execute(Interpreter *interpreter);
+  static Worker::Result Execute(Interpreter *interpreter);
 };
 
 #endif

@@ -33,10 +33,10 @@ private:
   enum { SIZE };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
+
   // PrimitiveFrame Constructor
-  static PrimitiveFrame *New(Interpreter *interpreter) {
-    StackFrame *frame = StackFrame::New(PRIMITIVE_FRAME, interpreter, SIZE);
+  static PrimitiveFrame *New(Worker *worker) {
+    StackFrame *frame = StackFrame::New(PRIMITIVE_FRAME, worker, SIZE);
     return static_cast<PrimitiveFrame *>(frame);
   }
   // PrimitiveFrame Untagging
@@ -68,7 +68,7 @@ public:
   word GetFrame() {
     return frame;
   }
-  static Interpreter::Result Run(PrimitiveInterpreter *interpreter);
+  static Result Run(PrimitiveInterpreter *interpreter);
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
@@ -86,7 +86,7 @@ public:
 //
 // PrimitiveInterpreter Functions
 //
-inline Interpreter::Result
+inline Worker::Result
 PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
   switch (interpreter->arity) {
   case 0:
@@ -97,19 +97,19 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
 	return interpreter->function();
       } else { // need to request
 	Scheduler::currentData = Scheduler::currentArgs[0];
-	return Interpreter::REQUEST;
+	return Worker::REQUEST;
       }
     } else {
       Assert(Scheduler::nArgs == 0);
       return interpreter->function();
     }
   case 1:
-    interpreter->Construct();
+    Construct();
     return interpreter->function();
   default:
-    if (interpreter->Deconstruct()) {
+    if (Deconstruct()) {
       // Deconstruct has set Scheduler::currentData as a side-effect
-      return Interpreter::REQUEST;
+      return Worker::REQUEST;
     } else {
       Assert(Scheduler::nArgs == interpreter->arity);
       return interpreter->function();
@@ -133,7 +133,7 @@ void PrimitiveInterpreter::PushCall(Closure *closure) {
   Scheduler::PushFrame(GetFrame());
 }
 
-Interpreter::Result PrimitiveInterpreter::Run() {
+Worker::Result PrimitiveInterpreter::Run() {
   return Run(this);
 }
 
@@ -179,7 +179,7 @@ word Primitive::MakeClosure(const char *name, Interpreter::function function,
   return Closure::New(concreteCode, 0)->ToWord();
 }
 
-Interpreter::Result Primitive::Execute(Interpreter *interpreter) {
+Worker::Result Primitive::Execute(Interpreter *interpreter) {
   PrimitiveInterpreter *primitive =
     static_cast<PrimitiveInterpreter *>(interpreter);
   Scheduler::PushFrame(primitive->GetFrame());
