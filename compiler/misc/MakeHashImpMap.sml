@@ -40,16 +40,21 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     fun find(t,k) =
 	let
+	    val i0 = Key.hash k mod Array.length t
+
 	    fun loop(i,jo) =
-		let val i' = i mod Array.length t in
-		    case Array.sub(t,i')
-		      of EMPTY       => (false, Option.getOpt(jo,i'))
-		       | DELETED     => loop(i'+1, SOME(Option.getOpt(jo,i')))
-		       | ENTRY(k',_) => if k = k' then (true,i')
-						  else loop(i'+1, jo)
+		case Array.sub(t,i)
+		  of EMPTY       => (false, Option.getOpt(jo,i))
+		   | DELETED     => next(i, SOME(Option.getOpt(jo,i)))
+		   | ENTRY(k',_) => if k = k' then (true,i)
+					      else next(i,jo)
+	    and next(i,jo) =
+		let val i' = (i+1) mod Array.length t in
+		    if i' = i0 then (false, Option.valOf jo)
+			       else loop(i',jo)
 		end
 	in
-	    loop(Key.hash k, NONE)
+	    loop(i0,NONE)
 	end
 
     fun lookup(ref(_,t),k) =
