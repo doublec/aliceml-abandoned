@@ -646,9 +646,9 @@ struct
       | idsDec(I.TypDec(_,x,_), xs')	= idsId'(trTypid x, xs')
       | idsDec(I.ModDec(_,x,_), xs')	= idsId'(trModid x, xs')
       | idsDec(I.InfDec(_,x,_), xs')	= idsId'(trInfid x, xs')
+      | idsDec(I.VarDec(_,_,d), xs')	= idsDec(d,xs')
       | idsDec(I.RecDec(_,ds), xs')	= idsDecs(ds,xs')
       | idsDec((I.FixDec _
-	      | I.VarDec _
 	      | I.LocalDec _), xs')	= ()
 
     and idsPats(ps, xs')		= Vector.app (fn p => idsPat(p,xs')) ps
