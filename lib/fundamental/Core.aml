@@ -121,7 +121,6 @@ import __primitive functor   ByNeed		from "ByNeed"
 import __primitive signature LOCK		from "LOCK-sig"
 import __primitive structure Lock		from "Lock"
 
-
 open Toplevel
 
 signature GENERAL		= GENERAL
