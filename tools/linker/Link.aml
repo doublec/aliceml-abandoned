@@ -11,6 +11,7 @@
  *)
 
 import structure TextIO             from "../lib/system/TextIO"
+import structure IO                 from "../lib/system/IO"
 import structure Inf                from "../lib/rtt/Inf"
 import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
@@ -29,6 +30,7 @@ structure Link :> LINK =
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
 	exception Cyclic of Url.t list
+	exception Io of Url.t * exn
 
 	structure UrlHashKey = FromEqHashKey(Url)
 	structure UrlMap = MkHashImpMap(UrlHashKey)
@@ -80,6 +82,8 @@ structure Link :> LINK =
 		    else
 			let
 			    val component = MyComponent.load url
+					    handle exn as IO.Io _ =>
+						raise Io (url, exn)
 			    val actualInf = MyComponent.inf component
 			    val _ = if infMatches (actualInf, expectedInf)
 				    then () else raise Mismatch (url, parent)

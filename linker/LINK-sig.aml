@@ -26,6 +26,7 @@ signature LINK =
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
 	exception Cyclic of Url.t list
+	exception Io of Url.t * exn
 
 	val collect: boundary vector -> Url.t ->
 		     {componentMap: MyComponent.t UrlMap.t,
