@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNIX =
+    sig
+	type proc
+
+	val execute: string * string list -> proc
+	val streamsOf: proc -> TextIO.instream * TextIO.outstream
+    end
+
+structure Unix :> UNIX =
+    struct
+	type proc = TextIO.instream * TextIO.outstream
+
+	__primitive val execute: string * string list -> proc = "Unix.execute"
+
+	fun streamsOf (ins, outs) = (ins, outs)
+    end
