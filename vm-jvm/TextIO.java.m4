@@ -24,7 +24,6 @@ final public class TextIO {
 	    in = is;
 	}
 	_apply_fails ;
-	_nomatch;
     }
 
     final public static class OStream implements DMLValue {
@@ -34,7 +33,6 @@ final public class TextIO {
 	    out = os;
 	}
 	_apply_fails ;
-	_nomatch;
     }
 
     /** val stdIn : instream */

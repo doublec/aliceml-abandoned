@@ -37,5 +37,4 @@ abstract public class Function implements DMLValue {
     final public java.lang.String toString() {
 	return "compiled function: "+this.getClass();
     }
-    _nomatch;
 }

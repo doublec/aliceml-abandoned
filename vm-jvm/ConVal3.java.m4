@@ -102,5 +102,4 @@ final public class ConVal3 implements DMLConVal {
 
     _getConstructor ;
     _apply_fails ;
-    _nomatch;
 }

@@ -161,15 +161,4 @@ final public class Char implements DMLValue {
     }
     /** <code>val toCString : char -> java.lang.String.string </code>*/
     _FIELD(Char,toCString);
-
-    public final boolean matchInt(int i)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchWord(int i)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchReal(float f)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchChar(char c)
-	throws java.rmi.RemoteException { return (value==c); }
-    public final boolean matchString(java.lang.String s)
-	throws java.rmi.RemoteException { return false; }
 }

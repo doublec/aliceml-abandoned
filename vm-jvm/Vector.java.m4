@@ -700,5 +700,4 @@ final public class Vector implements DMLValue {
     }
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a vector -> 'b</code>*/
     _FIELD(Vector,foldr);
-    _nomatch;
 }

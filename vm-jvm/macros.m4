@@ -331,15 +331,15 @@ define(_REQUESTDEC,`$1 = null;
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
 		 }')
 define(_fromSingle,`')
-define(_nomatch,`
-    public final boolean matchInt(int i)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchWord(int i)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchReal(float f)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchChar(char c)
-	throws java.rmi.RemoteException { return false; }
-    public final boolean matchString(java.lang.String s)
-	throws java.rmi.RemoteException { return false; }
+define(_BUILTTUP,`
+	final public DMLValue apply0() { return apply(Constants.dmlunit); }
+	final public DMLValue apply2(DMLValue v1, DMLValue v2) {
+	return apply(new Tuple2(v1,v2));
+	}
+	final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3) {
+	return apply(new Tuple3(v1,v2,v3));
+	}
+	final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4) {
+	return apply(new Tuple4(v1,v2,v3,v4));
+	}
 ')

@@ -417,7 +417,7 @@ final public class General {
     }
 
     _BUILTIN(Print) {
-	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_BUILTTUP;
 	_APPLY(val) {
 	    System.out.println(val);
 	    return Constants.dmlunit;

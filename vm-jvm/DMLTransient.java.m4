@@ -21,6 +21,8 @@ public interface DMLLVar extends Remote, DMLValue {
 
     public DMLValue request() throws RemoteException;
 
+    public DMLValue bind(DMLValue val) throws RemoteException;
+
     public DMLValue apply(DMLValue val) throws RemoteException;
     public DMLValue apply0() throws java.rmi.RemoteException;
     public DMLValue apply2(DMLValue v1, DMLValue v2)
@@ -29,15 +31,4 @@ public interface DMLLVar extends Remote, DMLValue {
 	throws java.rmi.RemoteException;
     public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
 	throws java.rmi.RemoteException;
-    public boolean matchInt(int i)
-	throws java.rmi.RemoteException;
-    public boolean matchWord(int i)
-	throws java.rmi.RemoteException;
-    public boolean matchReal(float f)
-	throws java.rmi.RemoteException;
-    public boolean matchChar(char c)
-	throws java.rmi.RemoteException;
-    public boolean matchString(java.lang.String s)
-	throws java.rmi.RemoteException;
-    public DMLValue bind(DMLValue val) throws RemoteException;
 }

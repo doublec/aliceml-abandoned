@@ -822,5 +822,4 @@ final public class JObject implements DMLValue {
 	}
     }
     _FIELD(JObject,instanceOf);
-    _nomatch;
 }

@@ -14,7 +14,7 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class RecordArity implements java.io.Serializable {
 
-    final protected Label[] labels;
+    final public Label[] labels;
     final protected java.util.Hashtable hashtable;
 
     public RecordArity(Label[] labels) {
