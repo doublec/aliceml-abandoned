@@ -70,6 +70,7 @@ struct
 					     turnCB (state, callbacks),
 					     changeViewCB (state, callbacks),
 					     giveUpCB (state, callbacks),
+					     disconnectCB (state, callbacks),
 					     quitCB)
         in
             { mainWindow = mainw, callbacks, state }
@@ -154,6 +155,21 @@ struct
 
     (* menuItem `quit' pressed *)
     and quitCB () = OS.Process.exit OS.Process.success
+
+    and disconnectCB (state, callbacks) () = 
+	let
+	    val p = Promise.promise ()
+	    val s = Ref.exchange (state, Promise.future p)
+	in
+	    case s of 
+		LEVEL_RUNNING => 
+		    (case #disconnnect callbacks () of
+			 NONE => NONE
+		       | SOME (CONN_ERROR msg) => SOME msg
+		       | SOME (ERROR msg)      => SOME msg before
+			     Promise.fulfill (p, INITIAL))
+	      |           _       => assert false
+	end
 
     (* menuItem 'giveUp' pressed, mainWindow is already set in start mode... *)
     and giveUpCB (state, callbacks) mainWindow =

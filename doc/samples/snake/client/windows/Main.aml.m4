@@ -96,6 +96,7 @@ struct
     datatype mode = START | GAME of radar_visibility
 
     type change_window_mode = {mode : mode ref, 
+                   menuGiveUpItem : Gtk.object,
 			       menuMenuItem   : Gtk.object,
 			       canvas         : Gtk.object,
 			       rightHBox      : Gtk.object }
@@ -117,6 +118,7 @@ struct
 	                  ArenaWidget.arena_widget -> unit,
 	     displayCountDown : (int option -> unit) option ref,
 	     gameMode :  change_window_mode -> unit,
+	     menuGiveUpItem : Gtk.object,
 	     menuMenuItem : Gtk.object,
 	     rightHBox : Gtk.object,
 	     pointsLabel : Gtk.object,
@@ -142,8 +144,9 @@ struct
 
     fun gameFinished (p : mainwindow_type, s) = 
 	 (Text.mkTextWindow (getWindow p, "Highscore", highscoreToString s);
-	  #reset p {mode = #mode p, menuMenuItem = #menuMenuItem p, 
-		    canvas = #canvas p, rightHBox = #rightHBox p})
+	  #reset p {mode = #mode p, menuGiveUpItem = #menuGiveUpItem p,
+		    menuMenuItem = #menuMenuItem p, canvas = #canvas p,
+		    rightHBox = #rightHBox p})
 
     fun levelStart (p : mainwindow_type, levelInf) = 
 	                     (ArenaWidget.initLevel (#arena p, levelInf);
@@ -160,6 +163,7 @@ struct
 
     fun gameMode (p : mainwindow_type) = 
 	             #gameMode p {mode = #mode p,
+				  menuGiveUpItem = #menuGiveUpItem p,
 				  menuMenuItem = #menuMenuItem p,
 				  canvas = #canvas p,
 				  rightHBox = #rightHBox p}
@@ -182,6 +186,7 @@ struct
 	    (* the menu bar items which sensitivity get 
 	     changed some times *)
 	    val menuMenuItem   = Gtk.menuItemNewWithLabel "Menu"
+	    val menuGiveUpItem = Gtk.menuItemNewWithLabel "Give Up"
 		
 	    (* the points box items *)
 	    val separator1  = Gtk.vseparatorNew ()
@@ -198,9 +203,11 @@ struct
 	    val dialogHBox     = Gtk.hboxNew (false, 5)
 	    val menuBar        = Gtk.menuBarNew ()
 	    val menuMenu       = Gtk.menuNew ()
+	    val menuLeave      = Gtk.menuNew ()
 	    val menuMenuSingle = Gtk.menuItemNewWithLabel "Single-Player"
 	    val menuMenuClient = Gtk.menuItemNewWithLabel "Multi-Player Client"
 	    val menuMenuServer = Gtk.menuItemNewWithLabel "Multi-Player Server"
+	    val menuQuit       = Gtk.menuItemNewWithLabel "Quit"
 	    val menuQuitItem   = Gtk.menuItemNewWithLabel "Quit"
 
             val radar          = RadarWidget.initialize ()
@@ -273,19 +280,24 @@ struct
 		    Gtk.labelSetMarkup (pointsLabel, toString ())
 		end
 		
-	    fun gameMode {mode, menuMenuItem, canvas, rightHBox} =
+	    fun gameMode {mode, menuGiveUpItem, menuMenuItem,
+			  canvas, rightHBox} =
 		(mode := GAME(false);
+		 Gtk.widgetSetSensitive (menuGiveUpItem, true);
 		 Gtk.widgetSetSensitive (menuMenuItem, false);
 		 Gtk.widgetShow canvas;
 		 Gtk.widgetShow rightHBox;
 		 log ("gameMode", "ends"))
 
 	    fun reset' (p : mainwindow_type) = 
-		#reset p {mode = #mode p, menuMenuItem = #menuMenuItem p, 
+		#reset p {mode = #mode p, menuGiveUpItem = #menuGiveUpItem p,
+			  menuMenuItem = #menuMenuItem p, 
 			  canvas = #canvas p, rightHBox = #rightHBox p}
 
-	    fun reset {mode, menuMenuItem, canvas, rightHBox} =
+	    fun reset {mode, menuGiveUpItem, menuMenuItem,
+		       canvas, rightHBox} =
 		(mode := GAME(false);
+		 Gtk.widgetSetSensitive (menuGiveUpItem, true);
 		 Gtk.widgetSetSensitive (menuMenuItem, false);
 		 Gtk.widgetHide canvas;
 		 Gtk.widgetHide rightHBox;
@@ -298,7 +310,8 @@ struct
 				    updatePoints,
 				    timeLabel, countdown,
 				    gameMode, pointsLabel,
-				    rightHBox, menuMenuItem}
+				    rightHBox, menuMenuItem,
+				    menuGiveUpItem}
 				    
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
@@ -315,10 +328,6 @@ struct
 	    (* procedure called by pressing GiveUp - button *)
 	    fun giveUp (p : mainwindow_type) = 
 		      (log ("giveUp", "has been called");
-		       #reset p {mode = #mode p,
-				 menuMenuItem = #menuMenuItem p,
-				 canvas = #canvas p,
-				 rightHBox = #rightHBox p};
 		       (case giveUpCB p of
 			    NONE => log ("giveUp", "everything was ok")
 			  | SOME msg => 
@@ -335,8 +344,9 @@ struct
 			    fun cancel () = ()
 			    fun no ()     = ()
 			    fun yes ()    = 
-				(log("backToStart", "called giveUp in QuestionWindow ");
-				 giveUp p)
+				(log("backToStart", 
+				     "called giveUp in QuestionWindow ");
+				 disconnectCB (); reset' p)
                             val answer    = {yes, no, cancel}
 			in
 			    Question.mkQuestionBox 
@@ -397,11 +407,16 @@ struct
 	    Gtk.menuAppend (menuMenu, menuMenuSingle);
 	    Gtk.menuAppend (menuMenu, menuMenuClient);
 	    Gtk.menuAppend (menuMenu, menuMenuServer);
+	    Gtk.menuAppend (menuLeave, menuGiveUpItem);
+	    Gtk.menuAppend (menuLeave, menuQuit);
 
 	    Gtk.menuItemSetSubmenu (menuMenuItem, menuMenu);
+	    Gtk.menuItemSetSubmenu (menuQuitItem, menuLeave);
 
 	    Gtk.menuBarAppend (menuBar, menuMenuItem);
 	    Gtk.menuBarAppend (menuBar, menuQuitItem);
+
+	    Gtk.widgetSetSensitive (menuGiveUpItem, false);
 
 	    (* just signalconnecting *)
 	    Gtk.signalConnect (mainWindow, "event",
@@ -418,8 +433,10 @@ struct
 			       fn _ => startClient ());
 	    Gtk.signalConnect (menuMenuServer, "activate", 
 			       fn _ => startMultiPlayer ());
-	    Gtk.signalConnect (menuQuitItem, "activate", 
+	    Gtk.signalConnect (menuQuit, "activate", 
 			       fn _ => backToStart mainWindowWidget);
+	    Gtk.signalConnect (menuGiveUpItem, "activate",
+			       fn _ => giveUp mainWindowWidget);
 	    
 	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 0);
 	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 0);
