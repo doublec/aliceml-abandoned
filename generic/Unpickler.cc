@@ -863,7 +863,6 @@ Worker::Result Unpickler::Load(String *filename) {
   char *szFileName = filename->ExportC();
   InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
-    delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
     fprintf(stderr, "file '%s' not found\n", szFileName);
     Scheduler::currentBacktrace = Backtrace::New(Scheduler::GetAndPopFrame());
