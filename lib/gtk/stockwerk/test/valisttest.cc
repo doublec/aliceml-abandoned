@@ -52,10 +52,12 @@ int main(int argc, char *argv[]) {
 
   //  printf("%s - %d - %f\n", a[0], a[1]);
   //  printf("%s - %d - %f\n", sa, i, f);//a[0], a[4], a[8]);
-  int b[40];
-  b[0] = (int)sa;
-  b[1] = (int)i;
-  b[2] = (int)f;
+  double b[40];
+  //  b[0] = (int)sa;
+  //  b[1] = (int)i;
+  //  b[2] = (int)f;
+  memcpy(b, &i, sizeof(int));
+
   /*
   pos = (char*)b;
   memcpy(pos, &s, sizeof(char*));
@@ -73,7 +75,8 @@ int main(int argc, char *argv[]) {
   //  printf("%s - %f\n", b[0].arg_int, (b[2].type == 2 ? (int)(b[2].arg_double) : b[2].arg_int));
   //  printf("%f\n", (false ? (int)(s) : *((char*)(&f))));
 
-  printf("%s - %d - %f\n", b[0], b[1], b[2]);
+  //  printf("%s - %d - %f\n", b[0], b[1], b[2]);
+  printf("%d\n", b[0]);
   //  printf("%s - %d - %f\n", *a);
   return 0;
 }
