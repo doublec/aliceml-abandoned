@@ -1,7 +1,6 @@
 (*
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
  *   Thorsten Brunklaus, 2000
@@ -16,6 +15,8 @@ signature FD =
     sig
 	type fd
 	type bin = fd
+
+        exception Tell of {cause: exn}
 	    
 	datatype domain_element =
 	    SINGLE of int
