@@ -26,6 +26,7 @@ public:
 
   // Pickler Static Constructor
   static void Init();
+  static void InitExceptions();
 
   // Pickler Functions
   static Interpreter::Result Pack(word x, TaskStack *taskStack);

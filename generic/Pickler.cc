@@ -661,9 +661,12 @@ Pickler::Save(Chunk *filename, word x, TaskStack *taskStack) {
 }
 
 void Pickler::Init() {
-  Sited = UniqueConstructor::New(String::New("Component.Sited"))->ToWord();
-  RootSet::Add(Sited);
   PicklingInterpreter::Init();
   PicklePackInterpreter::Init();
   PickleSaveInterpreter::Init();
+}
+
+void Pickler::InitExceptions() {
+  Sited = UniqueConstructor::New(String::New("Component.Sited"))->ToWord();
+  RootSet::Add(Sited);
 }
