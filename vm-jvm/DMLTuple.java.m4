@@ -13,6 +13,7 @@ public interface DMLTuple extends DMLValue {
 
     /** gibt die Stelligkeit des Tuples oder Records an */
     public int getArity();
+    public DMLValue[] getVals();
 
     public DMLValue get0();
     public DMLValue get1();

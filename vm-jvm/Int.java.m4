@@ -123,9 +123,24 @@ final public class Int implements DMLValue {
     _FIELD(Int,compare_);
 
     _COMPAREINT(greater,>);
+    static {
+	Builtin.builtins.put("Int.>",greater);
+    }
+
     _COMPAREINT(geq,>=);
+    static {
+	Builtin.builtins.put("Int.>=",geq);
+    }
+
     _COMPAREINT(less,<);
+    static {
+	Builtin.builtins.put("Int.<",less);
+    }
+
     _COMPAREINT(leq,<=);
+    static {
+	Builtin.builtins.put("Int.<=",leq);
+    }
 
     _BUILTIN(Min) {
 	_APPLY(val) {

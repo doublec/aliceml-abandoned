@@ -88,5 +88,10 @@ final public class Tuple2 implements DMLTuple {
 	return 2;
     }
 
+    final public DMLValue[] getVals() {
+	DMLValue[] r = {fst,snd};
+	return r;
+    }
+
     _apply_fails ;
 }

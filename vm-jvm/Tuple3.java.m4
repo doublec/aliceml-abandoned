@@ -93,5 +93,10 @@ final public class Tuple3 implements DMLTuple {
 	return 3;
     }
 
+    final public DMLValue[] getVals() {
+	DMLValue[] r = {fst,snd,thr};
+	return r;
+    }
+
     _apply_fails ;
 }

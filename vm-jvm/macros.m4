@@ -184,7 +184,10 @@ define(_COMPAREINT,`
 	}
     }
     /** <code>val $2 : (int * int) -> bool </code>*/
-    _FIELD(Int,$1);')
+    final public static DMLValue $1 = new capitalize($1)();
+    static {
+	Builtin.builtins.put("Int.$2",$1);
+    }')
 dnl
 dnl String
 dnl

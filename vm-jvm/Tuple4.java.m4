@@ -100,5 +100,10 @@ final public class Tuple4 implements DMLTuple {
 	return 4;
     }
 
+    final public DMLValue[] getVals() {
+	DMLValue[] r = {fst,snd,thr,fur};
+	return r;
+    }
+
     _apply_fails ;
 }

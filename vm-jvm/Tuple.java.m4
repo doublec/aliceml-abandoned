@@ -133,5 +133,8 @@ public class Tuple implements DMLTuple {
 	return vals.length;
     }
 
+    final public DMLValue[] getVals() {
+	return vals;
+    }
     _apply_fails ;
 }
