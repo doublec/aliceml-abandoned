@@ -15,11 +15,15 @@
 import structure TextIO   from "../../lib/system/TextIO"
 import signature SWITCHES from "SWITCHES-sig"
 
-
-functor MkSwitches(val logOut : TextIO.outstream) :> SWITCHES =
+functor MkSwitches() :> SWITCHES =
 struct
+    val dupOut = TextIO.mkOutstream o TextIO.getOutstream
+
     structure Global =
     struct
+	val errOut				= dupOut TextIO.stdErr
+	val errWidth				= ref 79
+
 	val minimizeComponent			= ref false
 	val recursiveCompilation		= ref false
 	val traceComponentAccess		= ref false
@@ -49,7 +53,7 @@ struct
 
     structure Debug =
     struct
-	val logOut				= logOut
+	val logOut				= dupOut TextIO.stdOut
 	val logWidth				= ref 79
 
 	val dumpPhases				= ref false

@@ -11,6 +11,7 @@
  *)
 
 import structure Url       from "../../lib/system/Url"
+import structure Component from "../../lib/system/Component"
 import structure TextIO    from "../../lib/system/TextIO"
 import structure Reflect   from "../../lib/system/Reflect"
 import structure Inf       from "../../lib/rtt/Inf"
@@ -30,15 +31,19 @@ signature RECURSIVE_COMPILER =
 
 	val extension: string
 
-	val setErrorStream: TextIO.outstream -> unit
+	datatype target =
+	    COMPONENT of {component: unit -> Component.t,
+			  eval: Url.t -> Reflect.module}
+	  | FOREIGN   of {inf: Inf.t,
+			  save: string -> unit}
 
 	val compileFileToFile: string * string -> unit     (* IO.Io *)
 	val acquireSig: Source.desc * Url.t -> Inf.sign
 	val acquireMod: Source.desc * Url.t -> Reflect.module
 	val acquireImports: Source.desc * Url.t -> (Url.t * Inf.sign) vector
 
-	val compileFile: Context.t * string -> Context.t * Target.t
-	val compileString: Context.t * string -> Context.t * Target.t
+	val compileFile: Context.t * string -> Context.t * target
+	val compileString: Context.t * string -> Context.t * target
 
 	(*DEBUG*)
 	val processFile: (Source.desc * string -> 'a) -> string * string option -> 'a
@@ -53,10 +58,14 @@ signature RECURSIVE_COMPILER' =
 	exception Error
 	exception Crash of string
 
-	val setErrorStream: TextIO.outstream -> unit
+	datatype target =
+	    COMPONENT of {component: unit -> Component.t,
+			  eval: Url.t -> Reflect.module}
+	  | FOREIGN   of {inf: Inf.t,
+			  save: string -> unit}
 
 	val isCrossCompiler: bool
 	val compileFileToFile: string * string -> unit
-	val compileFile: Context.t * string -> Context.t * Target.t
-	val compileString: Context.t * string -> Context.t * Target.t
+	val compileFile: Context.t * string -> Context.t * target
+	val compileString: Context.t * string -> Context.t * target
     end

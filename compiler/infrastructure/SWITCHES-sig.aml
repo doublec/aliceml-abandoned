@@ -18,6 +18,9 @@ signature SWITCHES =
 sig
     structure Global :
     sig
+	val errOut :				TextIO.outstream
+	val errWidth :				int ref
+
 	val minimizeComponent :			bool ref
 	val recursiveCompilation :		bool ref
 	val traceComponentAccess :		bool ref

@@ -32,8 +32,10 @@ struct
 
     exception Error of region * doc
 
-    val outstream = ref TextIO.stdErr
-    fun setOutstream os = outstream := os
+    val outWidth  = ref 79
+    val outstream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
+    fun setOutWidth n   = outWidth := n
+    fun setOutstream os = TextIO.setOutstream (outstream, os)
 
     val currentUrl : Url.t option ref = ref NONE
     fun setCurrentUrl uo = currentUrl := uo
@@ -55,12 +57,12 @@ struct
 	    Url.toString url
 
     fun print(reg, doc) =
-	output(!outstream,
+	output(outstream,
 	       fbox(
 		   (case !currentUrl of NONE   => empty
 			| SOME f => text(urlToString f) ^^ text ":") ^^
 		   text(Source.regionToString reg) ^^ text ":" ^^ break
-		) ^^ doc ^^ break, 78)
+		) ^^ doc ^^ break, !outWidth)
 
     fun error(reg, message)   = ( print(reg,message) ; raise Error(reg,message) )
     fun warn(b, reg, message) = if not b then () else

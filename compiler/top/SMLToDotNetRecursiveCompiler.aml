@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,7 +29,7 @@ import structure MkRecursiveCompiler
 
 structure SMLToDotNetRecursiveCompiler =
     let
-	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
+	structure Switches = MkSwitches()
 
 	val acquireSigRef: InfLoader.t ref = ref (fn _ => assert false)
 	val acquireModRef: ModLoader.t ref = ref (fn _ => assert false)

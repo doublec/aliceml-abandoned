@@ -27,7 +27,6 @@ import structure Inf                from "../../lib/rtt/Inf"
 
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
-import structure Error              from "../infrastructure/Error"
 import structure Target             from "../infrastructure/Target"
 import structure Dependency         from "Dependency"
 import signature COMPILER           from "COMPILER-sig"
@@ -49,19 +48,19 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	structure Context = Compiler.Context
 	val isCrossCompiler = Compiler.isCrossCompiler
 
+	datatype target = datatype Target.t
+
 	exception Error = Compiler.Error
 	exception Crash = Crash.Crash
 
 	val extension = extension
 
-	val errOut = ref TextIO.stdErr
-	fun setErrorStream os = (Error.setOutstream os; errOut := os)
-
+	val errOut = Switches.Global.errOut
 	fun error message =
-	    (TextIO.output (!errOut, "### error: " ^ message ^ "\n");
+	    (TextIO.output (errOut, "### error: " ^ message ^ "\n");
 	     raise Error)
 	fun warn message =
-	    TextIO.output (!errOut, "### warning: " ^ message ^ "\n")
+	    TextIO.output (errOut, "### warning: " ^ message ^ "\n")
 
 	fun trace message =
 	    if !Switches.Global.traceComponentAccess then
@@ -403,7 +402,7 @@ let val j = #export (acquireInfs (desc, url))
 in Inf.asSig j
 	    handle Inf.Interface =>
 (*DEBUG*)
-(PrettyPrint.output(TextIO.stdOut,PPInf.ppInf j,79);
+(PrettyPrint.output(errOut, PPInf.ppInf j,79);
 TextIO.print"\n";
 		error ("higher-order content found in " ^ Url.toStringRaw url)
 ) end

@@ -11,6 +11,7 @@
  *   $Revision$
  *)
 
+import structure TextIO           from "../../lib/system/TextIO"
 import structure Source           from "../infrastructure/Source"
 import structure Error            from "../infrastructure/Error"
 import signature SWITCHES         from "../infrastructure/SWITCHES-sig"
@@ -53,6 +54,10 @@ struct
     fun compile (desc, {feSpec, feComm, beComm, beSpec}, source) =
 	let
 	    val _ = Error.setCurrentUrl (Source.sourceUrl desc)
+	    val _ = Error.setOutstream
+			(TextIO.getOutstream Switches.Global.errOut)
+	    val _ = Error.setOutWidth (!Switches.Global.errWidth)
+
 	    val (c1,rep) = FrontendSpecific.translate (desc, feSpec, source)
 	    val (c2,rep) = FrontendCommon.translate (desc, feComm, rep)
 	    val (c3,rep) = BackendCommon.translate (desc, beComm, rep)

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,7 +27,7 @@ import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
 
 structure SMLToSeamRecursiveCompiler =
     let
-	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
+	structure Switches = MkSwitches()
 
 	val _ = General.Assert	(* dummy to force CM importing ExtendedBasis *)
 

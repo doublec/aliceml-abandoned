@@ -29,7 +29,8 @@ sig
     exception Error of region * doc
 
     val setCurrentUrl :	Url.t option -> unit
-    val setOutstream :	TextIO.outstream -> unit
+    val setOutstream :	TextIO.StreamIO.outstream -> unit
+    val setOutWidth :	int -> unit
 
     val error :		region * doc -> 'a
     val warn :		bool * region * doc -> unit
