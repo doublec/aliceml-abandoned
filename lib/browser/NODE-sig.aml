@@ -24,13 +24,6 @@ sig
     
     datatype value = V of Reflect.value | M of Reflect.module
     
-    datatype desc = 
-	INTERPUNCT
-      | VALUE of {value : Reflect.value,
-		  typ : Type.typ}
-      | I_VALUE of {value : Reflect.module,
-		    typ : Inf.t} 
-
     datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 	
     datatype status = CLEAN | DIRTY | DAZZLED 
@@ -50,6 +43,15 @@ sig
                          | REL_COLOR
                          | DEFAULT
 
+    (* Datentyp zum Speichern von Wert-/Typinformationen in Knoten *)   
+    datatype desc = 
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.typ}
+      | I_VALUE of {value : Reflect.module,
+		    typ : Inf.t} 
+
+    (* Datentyp zur internen Darstellung von Werten als Knoten *)
     datatype node = 
 	Simple of {desc : desc, 
 		   parent : node,
@@ -117,17 +119,22 @@ sig
 	
       | Empty
 
-    val relnumber: int ref
-    (* Operationen auf value *)
+    (**********************************************)
 
-    val isValue: value -> bool
-    val isModule: value -> bool
-
-    val asValue: value -> Reflect.value
-    val asModule: value -> Reflect.module
+    (* Test auf Spezialfall Liste *) 
 
     val compList : Type.t
     val isListType: Type.t -> bool
+
+    (**********************************************)
+
+    (* Operationen auf value *)
+    
+    val asValue: value -> Reflect.value
+    val asModule: value -> Reflect.module
+
+    val isValue: value -> bool
+    val isModule: value -> bool
 
     (* Operationen auf desc *)
 
@@ -140,63 +147,45 @@ sig
     val getTyp : desc -> Type.typ
     val getInf : desc -> Inf.t
 	
-    (* Operationen auf node *)
+    (****** Operationen auf node ******)
 
-    (* boolsche Tests auf nodes *)
-
-    val isSimple : node -> bool
-    val isRelNode : node -> bool
-    val isRelRefNode : node -> bool
-    val isLimit : node -> bool
-    val isContainer: node -> bool
-
-    val setsVertical : node -> bool (* nur bei Container moeglich! *)  
-
-    (* Rueckgabe des Inhalts bestimmter node-Felder *)
+    (** get-Funktionen **)
 
     val getDesc : node -> desc
+    val getReflectValue : node -> Reflect.value
+
     val getParent : node -> node
     val getIndex : node -> int
     val getDepth : node -> int
-
     val getRep : node -> string
     val getKids : node -> node Array.array
     val getContent : node -> node
-
     val getStatus : node -> status ref
     val getGroup : node -> GtkSupport.tag
     val getColor : node -> color_class
-
     val getSort : node -> limit
 
-    val getReflectValue : node -> Reflect.value
-    
+    (* fuer Layout *)
     val get_xdim : node -> int
     val get_ydim : node -> int
     val get_l_xdim : node -> int
-
-    (* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)
-
+    
+    (* Information ueber Vorfahren *)
     val getValueAnc : node -> node
     val getNoRelAnc : node -> node * int
     val getAncIndex : node -> int 
 
-    val updateChild : node * int * node -> unit   
-
-    (* Operationen auf RelNodes *)
+    (** Veraenderung von node-Feldern **)
 
     val setContent : node * node -> unit
-    val incrCounter : node -> node
+    val setGroup :  GtkSupport.tag * node -> GtkSupport.tag
 
-    (* Erzeugung einer Gtk-Gruppe fuer eine node *)
-	
-    val setGroup:  GtkSupport.tag * node -> GtkSupport.tag
+    val setDazzled : node -> unit
+    val updateChild : node * int * node -> unit   
 
-    (* Status wird auf DAZZLED gesetzt *)
+    (** low-level-Konstruktion **)
 
-    val setDazzled: node -> unit
-
-    (* low-level-Konstruktion der verschiedenen node-Arten *)
+    val relnumber: int ref
 
     val createSimple: 
         desc * node * int * int * string * color_class * GtkSupport.tag 
@@ -221,12 +210,20 @@ sig
 	desc * node * int * int * string * GtkSupport.tag 
 	-> node
 
-    (* Hilfsfunktion zur Bestimmung, ob eine node eine byneed-Future
-       repraesentiert *)
+    (** boolsche Tests **)
 
-    val isByneed: node -> bool 
+    val isSimple : node -> bool
+    val isContainer : node -> bool
+    val isRelNode : node -> bool
+    val isRelRefNode : node -> bool
+    
+    val isLimit : node -> bool
+    val isDepthLimit : node -> bool
+    val isWidthLimit : node -> bool
+    
+    val isByneed : node -> bool 
 
-    val isDepthLimit: node -> bool
-    val isWidthLimit: node -> bool
+    (* Layout-Information *)
+    val setsVertical : node -> bool 
 
 end
