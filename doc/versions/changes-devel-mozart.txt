@@ -1,5 +1,6 @@
 Library:
 
+* Fixed broken string type in GTK.
 * Added List.split.
 
 Compiler:
