@@ -140,11 +140,13 @@ namespace Generic {
     static void PopAndPushFrame(u_int Dest, u_int oldSize, u_int newSize) {
       if (oldSize == newSize) {
 	jit_ldi_p(Dest, &::Scheduler::stackTop);
-      }
-      else {
-	Assert(oldSize >= newSize);
+      } else if (oldSize > newSize) {
 	jit_ldi_p(Dest, &::Scheduler::stackTop);
 	jit_subi_p(Dest, Dest, ((oldSize - newSize) * sizeof(word)));
+	jit_sti_p(&::Scheduler::stackTop, Dest);
+      } else {
+	jit_ldi_p(Dest, &::Scheduler::stackTop);
+	jit_addi_p(Dest, Dest, ((newSize - oldSize) * sizeof(word)));
 	jit_sti_p(&::Scheduler::stackTop, Dest);
       }
     }
@@ -172,6 +174,14 @@ namespace Generic {
     static void NewNoCheck(u_int This, u_int size, Worker *worker) {
       u_int frSize = BASE_SIZE + size;
       Scheduler::PushFrameNoCheck(This, frSize);
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+      InitArg(This, WORKER_POS, JIT_R0);
+    }
+    // Side Effect: Scratches JIT_R0
+    static void NewPopAndPush(u_int This,
+			      u_int newSize, u_int oldSize, Worker *worker) {
+      Scheduler::PopAndPushFrame(This,
+				 BASE_SIZE + oldSize, BASE_SIZE + newSize);
       jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
       InitArg(This, WORKER_POS, JIT_R0);
     }
