@@ -12,8 +12,6 @@
 #ifndef __STORE__STORE_HH__
 #define __STORE__STORE_HH__
 
-#include <cstdio>
-
 #if defined(INTERFACE)
 #pragma interface "store/Store.hh"
 #endif
