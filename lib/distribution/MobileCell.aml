@@ -33,8 +33,8 @@
  * executing them itself - but this does not work with functional proxies *)
 
 import structure Assert        from "x-alice:/lib/utility/Assert"
-import structure GlobalStamp   from "x-alice:/lib/utility/GlobalStamp"
-import structure MkHashImpMap  from "x-alice:/lib/utility/MkHashImpMap"
+import structure GlobalStamp   from "x-alice:/lib/data/GlobalStamp"
+import structure MkHashImpMap  from "x-alice:/lib/data/MkHashImpMap"
 import structure Remote        from "x-alice:/lib/distribution/Remote"
 
 structure Remote =
