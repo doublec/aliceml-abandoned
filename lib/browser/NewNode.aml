@@ -408,7 +408,8 @@ struct
 				       ~1,~1,setGroup)
 	    val sep_node = createSimple (INTERPUNCT,concat,1,d,", ",
 					 SEP_COLOR,setGroup)
-	    val node = createGraph (va,t,concat,0,d+1)
+	    val node = createGraph (va,t,if last then p else concat,
+				    if last then i else 0,d+1)
 	    val concat_kids = getKids(concat)
 	in
 	    if last 

@@ -398,9 +398,6 @@ struct
 
      and move (n,x,y) = 
 	let
-	    val _ = TextIO.print("Moving!\n")
-	    val _ = Inspector.inspect ("Treating node:")
-	    val _ = Inspector.inspect(n)
 	    val group = getGroup(n)
 	    val w = WindowHelper.fontWidth(!Settings.font)
 	    val h = WindowHelper.fontHeight(!Settings.font)
@@ -413,34 +410,41 @@ struct
     
     (* draw *)
     and draw (n,x,y,intent) = 
-      ( TextIO.print ("DRAW: drawing with y = "^Int.toString(y)^"\n")
+      ( TextIO.print ("DRAW: drawing with x = "
+		      ^Int.toString(x)^" and y = "
+		      ^Int.toString(y)^"\n")
         ;
 	case n of
 	Simple(r) => (case intent of 
 			  DRAW =>
 			      if !(#status(r)) = DIRTY  
-				  then drawSimple (n,x,y,intent)
+				  then (drawSimple (n,x,y,intent)
+					; move(n,x,y))
 			      else move(n,x,y)  	
 			| SEARCH _ =>  drawSimple (n,x,y,intent))
       | Concat(r) => (case intent of 
 			  DRAW => if !(#status(r)) = DIRTY  
-			 then drawConcat (n,x,y,intent)
+			 then (drawConcat (n,x,y,intent)
+			       ; move(n,x,y))
 			     else move(n,x,y)  
 			  | SEARCH _ => drawConcat (n,x,y,intent))
       | Container(r) => (case intent of
 			     DRAW => if !(#status(r)) = DIRTY  
-			    then drawContainer (n,x,y,intent)
+			    then (drawContainer (n,x,y,intent)
+				  ; move(n,x,y))
 			else move(n,x,y) 
 		| SEARCH _ => drawContainer(n,x,y,intent))	     
       | Limit(r) => (case intent of
 			 DRAW => if  !(#status(r)) = DIRTY  
-			then drawLimit (n,x,y,intent)
+			then (drawLimit (n,x,y,intent)
+			      ; move(n,x,y))
 		    else  move(n,x,y) 
 		       | SEARCH _ => drawLimit (n,x,y,intent))
       | RelNode(r) 
 	    => (case intent of
 		    DRAW => (if  !(#status(r)) = DIRTY 
-				 then drawRelNode (n,x,y,intent)
+				 then (drawRelNode (n,x,y,intent)
+				       ; move(n,x,y))
 			     else ( move(n,x,y) 
 				   ;( case !(#counter(r)) of
 				   1 => (x+get_xdim(!(#content(r))),
@@ -450,7 +454,8 @@ struct
 		  | SEARCH _ =>  drawRelNode (n,x,y,intent))
 	  | RelRefNode(r) => (case intent of
 			      DRAW => if  !(#status(r)) = DIRTY  
-					  then drawRelRefNode (n,x,y,intent)
+					  then (drawRelRefNode (n,x,y,intent)
+						; move(n,x,y))
 				      else  move(n,x,y) 
 			    | SEARCH _ =>  drawRelRefNode (n,x,y,intent))
 	  | Empty => (x,y,NONE)

@@ -104,20 +104,24 @@ import signature SERVICES from "SERVICES-sig"
 		   val (rx1,ry1,_,_) = 
 		       GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 
 					       1000.0 , 1000.0)
-		   val _ = Inspector.inspect (rx1,ry1)
-		   val _ = TextIO.print("ITEM MOVE FROM " 
-					^ Real.toString(rx1)
+		   val (absx,absy) = GtkCanvas.itemI2w(group,rx1,ry1)
+		   val _ = if absy <> ry1 then TextIO.print("DIFFERENT!\n")
+			   else ()
+		   val dx = Real.- (rx, absx)
+		   val dy = Real.- (ry, absy)
+	       in
+		   if absx = rx andalso absy = ry
+		       then ()
+		   else (GtkCanvas.itemMove(group,dx,dy)
+			 ; TextIO.print("ITEM MOVE FROM " 
+					^ Real.toString(absx)
 					^ "/" 
-					^ Real.toString(ry1)
+					^ Real.toString(absy)
 					^ " TO "
 					^ Real.toString(rx)
 					^ "/" 
 					^ Real.toString(ry)
-					^ "\n")
-		   val dx = Real.- (rx, rx1)
-		   val dy = Real.- (ry ,ry1)
-	       in
-		   GtkCanvas.itemMove(group,dx,dy)
+					^ "\n"))
 	       end
 
 	   end

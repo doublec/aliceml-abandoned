@@ -92,23 +92,29 @@ struct
     (* update *)
     and update (n,va,f) = 
 	( setDazzled n 
+         ; TextIO.print("UPDATE: Knoten auf DAZZLED gesetzt!\n")
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
+               val _ = TextIO.print("UPDATE: anc erfolgreich bestimmt\n")
 	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
 	       val y_pos = Layout.sum_up(li,fn n 
 					 => if n = Empty then 0
 					    else Layout.get_ydim(n)+1)
-               val m_li = List.map Layout.get_ydim li
 	       val old_ydim = Layout.get_ydim(anc)
 	       val t = getTyp(getDesc(n)) 
 		   handle General.Match => raise UpdateError
-	       val new = f(va,t,getParent(n), getIndex(n),getDepth(n)) 
-	       val node = if getParent(n) = Empty then new else  anc
+	       val new = f(va,t,getParent(n),getIndex(n),getDepth(n))
+              (* val _ = TextIO.print("UPDATE: neuen Knoten erzeugt :-)\n") *)
+	       val _ = updateChild(getParent(n),getIndex(n),new)
+              (*  val _ = TextIO.print("UPDATE: updateChild gemacht\n") *)
+	       val node = if getParent(new) = Empty then new else anc
+              (* val _ = TextIO.print("UPDATE: node zugewiesen\n") *)
 	   in ( Gtk.objectDestroy(getGroup(n)) 
-	       ; updateChild(getParent(n),getIndex(n),new) 
+              (* ; TextIO.print("UPDATE: alte Gruppe zerstoert\n") *)
 	       ; Layout.layout(node)
-	       ; MainDictionary.update(Dictionaries.dict, (ind,node))  
+               ; TextIO.print ("UPDATE: beginne zu zeichnen...\n")
+	       ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
                ; DrawNodes.draw(node,0,y_pos,DrawNodes.DRAW) 
 	       ; TextIO.print ("UPDATE: drawing with y = "
 			       ^Int.toString(y_pos)^"\n")
@@ -117,8 +123,11 @@ struct
 		     ; iterMove (Dictionaries.dict,dy,getIndex(node) + 1,
 				 MainDictionary.getHighestIndexAssigned
 				 (Dictionaries.dict))
+		    (* ; TextIO.print("UPDATE: iterMove beendet !! \n") *)
 		     ; Layout.setVisible(Layout.get_xdim(node),dy)
-		     ; !WindowManager.resize())
+		     ; !WindowManager.resize()
+		    (*  ; TextIO.print
+		    ("UPDATE: Fenster an neue Groesse angepasst\n") *) )
 		 end)
 	   end )
 	
@@ -151,7 +160,9 @@ struct
 		       end ) ))
 
     (* reinspect *)
-    and reinspect (n,f) =  
+    and reinspect (n,f) = 
+       (Thread.thread
+	(fn () =>
         (let val va = getValue(getDesc(n))
 	 in Server.serve(fn () => update(n,va,f))
 	 end
@@ -160,7 +171,8 @@ struct
 			^" und Tiefenlimit ist "
 			^Int.toString(!(Settings.max_depth))
 			^" !!!\n") )
-    handle General.Match => raise UpdateError
+	     handle General.Match => raise UpdateError )
+      ; () )
  	    
 end
 
