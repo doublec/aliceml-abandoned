@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -30,9 +30,7 @@ sig
     val wordSize :	int
 
     val toLargeWord :	word -> __pervasive.LargeWord.word
-(*MISSING
     val toLargeWordX :	word -> __pervasive.LargeWord.word
-*)
     val fromLargeWord :	__pervasive.LargeWord.word -> word
     val toLargeInt :	word -> __pervasive.LargeInt.int
     val toLargeIntX :	word -> __pervasive.LargeInt.int
@@ -66,11 +64,11 @@ sig
     val max :		word * word -> word
 *)
 
-    val toString :	word -> string
 (*TODO
-    val fromString :	string -> word option
     val fmt :		StringCvt.radix -> word -> string
 *)
+    val toString :	word -> string
     val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
 					-> (word,'a) StringCvt.reader
+    val fromString :	string -> word option
 end

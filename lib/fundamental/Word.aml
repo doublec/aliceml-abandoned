@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -40,6 +40,7 @@ struct
     __primitive val fromInt' :		int * int -> word    = "Word.fromInt'"
 
     fun toLargeWord w	= w
+    fun toLargeWordX w	= w
     fun fromLargeWord w	= w
     fun fromInt x	= fromInt'(wordSize,x)
     fun fromLargeInt x	= fromInt'(wordSize,x)
@@ -58,8 +59,6 @@ struct
     __primitive val op << :  word * word -> word = "Word.<<"
     __primitive val op >> :  word * word -> word = "Word.>>"
     __primitive val op ~>> : word * word -> word = "Word.~>>"
-
-    __primitive val toString : word -> string = "Word.toString"
 
     local
 	open StringCvt
@@ -122,4 +121,8 @@ struct
 		  | NONE   => NONE
 	    end
     end
+
+    val fromString = StringCvt.scanString (scan StringCvt.HEX)
+
+    __primitive val toString : word -> string = "Word.toString"
 end
