@@ -269,6 +269,7 @@ lib/New%: lib/% lib/%.sig $(MINIMALINSTALL)
 
 clean:
 	-rm -f $(ALLFILES) LocalBase.import
+	-rm -f frontend-sml/Lexer.lex* frontend-sml/Parser.grm*
 	-rm -f *.ozf */*.ozf */*/*.ozf
 	-rm -f *.ozm */*.ozm */*/*.ozm
 	-rm -f *.ozp */*.ozp */*/*.ozp
