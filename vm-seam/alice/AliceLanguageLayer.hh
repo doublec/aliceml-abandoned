@@ -17,15 +17,16 @@
 #pragma interface "alice/AliceLanguageLayer.hh"
 #endif
 
-#include "store/Store.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
 class TagVal;
 
 typedef word (*concrete_constructor)(TagVal *);
 
-class DllExport AliceLanguageLayer {
+class AliceDll AliceLanguageLayer {
 public:
-  class DllExport TransformNames {
+  class AliceDll TransformNames {
   public:
     static word primitiveValue;
     static word primitiveFunction;
