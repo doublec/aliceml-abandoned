@@ -22,9 +22,9 @@ structure InfPrivate =
 
     (* A map for signatures *)
 
-    datatype dom = VAL' | TYP' | MOD' | INF'
+    datatype space = VAL' | TYP' | MOD' | INF'
 
-    structure Map = MakeHashImpMap(struct type t = dom * lab
+    structure Map = MakeHashImpMap(struct type t = space * lab
 					  fun hash(_,l) = Lab.hash l end)
 
 
@@ -92,11 +92,11 @@ structure InfPrivate =
     fun itemLab   item		= idLab(itemId item)
     fun itemIndex item		= idIndex(itemId item)
 
-    fun itemDom(ref item')	= itemDom' item'
-    and itemDom'(VAL _)		= VAL'
-      | itemDom'(TYP _)		= TYP'
-      | itemDom'(MOD _)		= MOD'
-      | itemDom'(INF _)		= INF'
+    fun itemSpace(ref item')	= itemSpace' item'
+    and itemSpace'(VAL _)	= VAL'
+      | itemSpace'(TYP _)	= TYP'
+      | itemSpace'(MOD _)	= MOD'
+      | itemSpace'(INF _)	= INF'
 
 
   (* Follow a path of links (performing path compression on the fly) *)
@@ -115,7 +115,7 @@ structure InfPrivate =
 
   (* Signature construction *)
 
-    fun empty() = (ref [], Map.new())
+    fun empty()			= (ref [], Map.new())
 
     fun newItem(s, l)		= Path.fromLab l
     val newVal			= newItem
@@ -130,17 +130,14 @@ structure InfPrivate =
       | hide'(MOD(id,j,d))	= MOD(hideId id, j, d)
       | hide'(INF(id,k,d))	= INF(hideId id, k, d)
 
-    fun extend((itemsr,map), dom, p, makeItem') =
+    fun extend((itemsr,map), space, p, makeItem') =
 	let
 	    val l    = Path.toLab p
 	    val item = ref(makeItem'(p,l,0))
-
-	    val _ = itemsr := item :: !itemsr
-	    val _ = Map.insertWith (fn(items,_) =>
-					( List.app hide items ; item::items )
-				   ) (map, (dom,l), [item])
 	in
-	    p
+	    itemsr := item :: !itemsr ;
+	    Map.insertWith (fn(items,_) => (List.app hide items ; item::items))
+			   (map, (space,l), [item])
 	end
 
     fun extendVal(s,p,t,w,d)	= extend(s, VAL', p, fn x => VAL(x,t,w,d))
@@ -174,13 +171,13 @@ structure InfPrivate =
       | selectInf _			= raise Crash.Crash "Inf.selectInf"
 
 
-    fun lookup dom ((_,m), l) =
-	case Map.lookup(m, (dom,l))
+    fun lookup space ((_,m), l) =
+	case Map.lookup(m, (space,l))
 	  of SOME(item::items) => !item
 	   | _                 => raise Crash.Crash "Inf.lookup"
 
-    fun lookup' dom ((_,m), l, n) =
-	case Map.lookup(m, (dom,l))
+    fun lookup' space ((_,m), l, n) =
+	case Map.lookup(m, (space,l))
 	  of SOME(item::items) =>
 		!(Option.valOf(List.find (fn item => itemIndex item = n) items))
 	   | _ => raise Crash.Crash "Inf.lookup'"
@@ -278,10 +275,10 @@ structure InfPrivate =
 		       end
 	   | NONE   => ( realiseKind(rea, k) ; CON kp )
 
-    and realisePath(rea', p)		= case PathMap.lookup(rea', p)
+    and realisePath(rea', p)		=
+	 case PathMap.lookup(rea', p)
 					    of NONE    => p
 					     | SOME p' => realisePath(rea', p')
-
     and realisePathDef(rea', NONE  )	= NONE
       | realisePathDef(rea', SOME p)	= SOME(realisePath(rea', p))
 
@@ -306,30 +303,29 @@ structure InfPrivate =
       | instanceInf'(rea, ANY)		= ANY
       | instanceInf'(rea, CON c)	= CON(instanceCon(rea, c))
       | instanceInf'(rea, SIG s)	= SIG(instanceSig(rea, s))
-      | instanceInf'(rea, ARR(p,j1,j2))	= ARR(instancePathBinder(rea, p),
+      | instanceInf'(rea, ARR(p,j1,j2))	= ARR(instancePath(rea, p),
 					      instanceInf(rea, j1),
 					      instanceInf(rea, j2))
-      | instanceInf'(rea, LAM(p,j1,j2))	= LAM(instancePathBinder(rea, p),
+      | instanceInf'(rea, LAM(p,j1,j2))	= LAM(instancePath(rea, p),
 					      instanceInf(rea, j1),
-					      instanceInf(rea, j2) )
+					      instanceInf(rea, j2))
       | instanceInf'(rea, APP(j1,p,j2))	= APP(instanceInf(rea, j1),
-					      instancePath(rea, p),
-					      instanceInf(rea, j2) )
+					      realisePath(rea, p),
+					      instanceInf(rea, j2))
 
     and instanceCon(rea, (k,p))		= ( instanceKind(rea, k),
-					    instancePath(rea, p) )
-    and instancePath(rea, p)		= Path.cloneFree PathMap.lookup (rea, p)
+					    realisePath(rea, p) )
 
     and instanceKind (rea, ref k')	= ref(instanceKind'(rea, k'))
     and instanceKind'(rea, GROUND)	= GROUND
-      | instanceKind'(rea, DEP(p,j,k))	= DEP(instancePathBinder(rea, p),
+      | instanceKind'(rea, DEP(p,j,k))	= DEP(instancePath(rea, p),
 					      instanceInf(rea, j),
 					      instanceKind(rea, k))
-
-    and instancePathBinder(rea, p) =
+    and instancePath(rea, p) =
 	let
-	    val p' = Path.cloneBinder PathMap.lookup (rea, p)
+	    val p' = Path.instance PathMap.lookup (rea, p)
 	in
+	   (*UNFINISHED: do we need to make the check? *)
 	    if p' <> p then PathMap.insert(rea, p, p') else () ;
 	    p'
 	end
@@ -338,14 +334,14 @@ structure InfPrivate =
 	let
 	    val s as (itemsr,map) = empty()
 
-	    fun extendSig(doml, item) =
+	    fun extendSig(space_l, item) =
 		( itemsr := item :: !itemsr
-		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, doml, [item])
+		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, space_l, [item])
 		)
 
 	    fun instanceItem(ref(VAL((p,l,n), t, w, d))) =
 		let
-		    val p'   = instancePathBinder(rea, p)
+		    val p'   = instancePath(rea, p)
 		    val t'   = instanceTyp(rea, t)
 		    val d'   = instancePathDef(rea, d)
 		    val item = ref(VAL((p',l,n), t', w, d'))
@@ -355,7 +351,7 @@ structure InfPrivate =
 
 	      | instanceItem(ref(TYP((p,l,n), k, w, d))) =
 		let
-		    val p'   = instancePathBinder(rea, p)
+		    val p'   = instancePath(rea, p)
 		    val d'   = instanceTypDef(rea, d)
 		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
@@ -364,7 +360,7 @@ structure InfPrivate =
 
 	      | instanceItem(ref(MOD((p,l,n), j, d))) =
 		let
-		    val p'   = instancePathBinder(rea, p)
+		    val p'   = instancePath(rea, p)
 		    val j'   = instanceInf(rea, j)
 		    val d'   = instancePathDef(rea, d)
 		    val item = ref(MOD((p',l,n), j', d'))
@@ -374,7 +370,7 @@ structure InfPrivate =
 
 	      | instanceItem(ref(INF((p,l,n), k, d))) =
 		let
-		    val p'   = instancePathBinder(rea, p)
+		    val p'   = instancePath(rea, p)
 		    val k'   = instanceKind(rea, k)
 		    val d'   = instanceInfDef(rea, d)
 		    val item = ref(INF((p',l,n), k', d'))
@@ -400,6 +396,102 @@ structure InfPrivate =
 					  end
 
 
+  (* Creation of singleton (shallow instantiation) *)
+
+    and singleton j			= singletonInf(PathMap.new(), j)
+
+    and singletonInf (rea, ref j')	= ref(singletonInf'(rea, j'))
+    and singletonInf'(rea, LINK j)	= singletonInf'(rea, !j)
+      | singletonInf'(rea, ANY)		= ANY
+      | singletonInf'(rea, CON c)	= CON(singletonCon(rea, c))
+      | singletonInf'(rea, SIG s)	= SIG(singletonSig(rea, s))
+      | singletonInf'(rea,ARR(p,j1,j2))	= ARR(singletonPath(rea, p),
+					      singletonInf(rea, j1),
+					      singletonInf(rea, j2))
+      | singletonInf'(rea,LAM(p,j1,j2))	= LAM(singletonPath(rea, p),
+					      singletonInf(rea, j1),
+					      singletonInf(rea, j2))
+      | singletonInf'(rea,APP(j1,p,j2))	= APP(singletonInf(rea, j1),
+					      realisePath(rea, p),
+					      singletonInf(rea, j2))
+
+    and singletonCon(rea, (k,p))	= ( singletonKind(rea, k),
+					    realisePath(rea, p) )
+
+    and singletonKind (rea, ref k')	= ref(singletonKind'(rea, k'))
+    and singletonKind'(rea, GROUND)	= GROUND
+      | singletonKind'(rea, DEP(p,j,k))	= DEP(singletonPath(rea, p),
+					      singletonInf(rea, j),
+					      singletonKind(rea, k))
+
+    and singletonPath(rea, p) = Path.instance PathMap.lookup (rea, p)
+
+    and singletonSig(rea, (ref items,_)) =
+	let
+	    val s as (itemsr,map) = empty()
+
+	    fun extendSig(space_l, item) =
+		( itemsr := item :: !itemsr
+		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, space_l, [item])
+		)
+
+	    fun singletonItem(ref(VAL((p,l,n), t, w, d))) =
+		let
+		    val p'   = singletonPath(rea, p)
+		    val t'   = singletonTyp(rea, t)
+		    val d'   = singletonPathDef(rea, d)
+		    val item = ref(VAL((p',l,n), t', w, d'))
+		in
+		    extendSig((VAL',l), item)
+		end
+
+	      | singletonItem(ref(TYP((p,l,n), k, w, d))) =
+		let
+		    val p'   = singletonPath(rea, p)
+		    val d'   = singletonTypDef(rea, d)
+		    val item = ref(TYP((p',l,n), k, w, d'))
+		in
+		    extendSig((TYP',l), item)
+		end
+
+	      | singletonItem(ref(MOD((p,l,n), j, d))) =
+		let
+		    val p'   = singletonPath(rea, p)
+		    val j'   = singletonInf(rea, j)
+		    val d'   = singletonPathDef(rea, d)
+		    val item = ref(MOD((p',l,n), j', d'))
+		in
+		    extendSig((MOD',l), item)
+		end
+
+	      | singletonItem(ref(INF((p,l,n), k, d))) =
+		let
+		    val p'   = singletonPath(rea, p)
+		    val k'   = singletonKind(rea, k)
+		    val d'   = singletonInfDef(rea, d)
+		    val item = ref(INF((p',l,n), k', d'))
+		in
+		    extendSig((INF',l), item)
+		end
+	in
+	    Misc.List_appr singletonItem items ;
+	    s
+	end
+
+    and singletonPathDef(rea, NONE  )	= NONE
+      | singletonPathDef(rea, SOME p)	= SOME(realisePath(rea, p))
+
+    and singletonTypDef(rea, NONE  )	= NONE
+      | singletonTypDef(rea, SOME t)	= SOME(singletonTyp(rea, t))
+
+    and singletonInfDef(rea, NONE  )	= NONE
+      | singletonInfDef(rea, SOME j)	= SOME(singletonInf(rea, j))
+
+    and singletonTyp(rea, t)		= let val t' = Type.clone t in
+					     Type.realisePath(rea, t') ; t'
+					  end
+
+
   (* Cloning (does not instantiate paths!) *)
 
     fun clone(ref j')		= ref(clone' j')
@@ -421,9 +513,9 @@ structure InfPrivate =
 	let
 	    val s as (itemsr,map) = empty()
 
-	    fun extendSig(doml, item) =
+	    fun extendSig(space_l, item) =
 		( itemsr := item :: !itemsr
-		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, doml, [item])
+		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, space_l, [item])
 		)
 
 	    fun cloneItem(ref(item' as VAL(x,t,w,d))) =
@@ -509,6 +601,7 @@ structure InfPrivate =
       | strengthenItem(p, item as ref(MOD(x, j, d))) =
 	let
 	    val _  = strengthenId(p, x)
+	    val _  = strengthen(idPath x, j)
 	    val d' = strengthenPathDef(idPath x, d)
 	in
 	    item := MOD(x, j, d')
@@ -599,11 +692,11 @@ structure InfPrivate =
 	      | pair(m1, item2::items, pairs) =
 		let
 		    val (p,l,n) = itemId item2
-		    val  dom    = itemDom item2
-		    val  item1  = List.hd(Map.lookupExistent(m1, (dom,l)))
+		    val  space  = itemSpace item2
+		    val  item1  = List.hd(Map.lookupExistent(m1, (space,l)))
 		in
 		    if p = itemPath item1 then () else
-		    case dom
+		    case space
 		     of VAL' => PathMap.insert(val_rea, p, selectVal(!item1))
 		      | TYP' => PathMap.insert(typ_rea, p, selectTyp(!item1))
 		      | INF' => PathMap.insert(inf_rea, p, selectInf(!item1))
@@ -775,8 +868,8 @@ structure InfPrivate =
 	      | pair1(b, TYP(x1,k1,w1,d1), TYP(x2,k2,w2,d2)) =
 		    pairDef(#typ_rea rea, pathToTyp k1, b, x1, d1, x2, d2)
 	      | pair1(b, MOD(x1,j1,d1), MOD(x2,j2,d2)) =
-		  ( pairNested(j1,j2)
-		  ; pairDef(#mod_rea rea, pathToPath, b, x1, d1, x2, d2) )
+		    pairDef(#mod_rea rea, pathToPath, b, x1, d1, x2, d2)
+		    before pairNested(j1,j2)
 	      | pair1(b, INF(x1,k1,d1), INF(x2,k2,d2)) =
 		    pairDef(#inf_rea rea, pathToInf k1, b, x1, d1, x2, d2)
 	      | pair1 _ =
@@ -784,7 +877,7 @@ structure InfPrivate =
 
 	    and pair(m1, [], pairs, left) = ( List.rev pairs, List.rev left )
 	      | pair(m1, item2::items, pairs, left) =
-		case Map.lookup(m1, (itemDom item2, itemLab item2))
+		case Map.lookup(m1, (itemSpace item2, itemLab item2))
 		  of NONE => pair(m1, items, pairs, item2::left)
 		   | SOME [] => raise Crash.crash "Inf.intersectSig: lookup"
 		   | SOME(item1::_) =>
@@ -814,7 +907,6 @@ structure InfPrivate =
 	    itemsr1 := items1 @ left ;
 	    itemsr2 := !itemsr1
 	end
-
     and intersectItem rea (item1 as ref item1', ref item2') =
 	    item1 := intersectItem'(rea, item1', item2')
 
