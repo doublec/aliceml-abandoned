@@ -131,23 +131,37 @@ struct
               [actualInvoke (event, chan)]
               processes outstanding RPCs on channel [chan].
              *)
+
             fun actualInvoke (event : event, chan) =
+                actualInvoke' (event, chan) handle Channel.Closed => ()
+
+            and actualInvoke' (event : event, chan) =
                 if not (! $ #disconnected event) then
                     let
                         val rpc     = Channel.receive chan
-
-                        val _       = rpc () handle e =>
-                            ((* client has raised an exception,
-                                this shouldn't happen therefore
-                                remove it! *)
-                             (* by notifying tick that this client
-                                is disconnected. *)
-                            #disconnected event := true;
-                            (* and destroying this channel. *)
-                            Channel.destroy chan)
+                        
+                        fun try (rpc, event : event, chan, num) =
+                            if num <= 0 then (
+                                #disconnected event := true;
+                                Channel.destroy chan;
+                                false
+                            ) else 
+                                    (rpc (); true)
+                                handle Remote.Proxy _ =>
+                                    (* RPC call failed.
+                                       this shouldn't happen,
+                                       try again *)
+                                    try (rpc, event, chan, num - 1)
+                                |   _   =>
+                                    (* client has raised an exception
+                                       this shouldn't happen therefore remove 
+                                       it *)
+                                    try (rpc, event, chan, 0)
                     in
-                        actualInvoke (event, chan)
-                    end handle Channel.Closed => ()
+                        if try (rpc, event, chan, 3) then
+                            actualInvoke (event, chan)
+                        else ()
+                    end 
                 else ()
                     
                  
