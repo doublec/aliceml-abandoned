@@ -40,6 +40,8 @@
  *  label         ::=  <uint>
  *)
 
+import structure Atom from "../../lib/data/Atom"
+
 signature PRIM_PICKLE =
     sig
 	type outstream

@@ -15,6 +15,7 @@
  *)
 
 import structure BinIO        from "../../lib/system/BinIO"
+import structure Atom         from "../../lib/data/Atom"
 import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
 import structure Crash        from "../infrastructure/Crash"
 import structure StringMap    from "../infrastructure/StringMap"
