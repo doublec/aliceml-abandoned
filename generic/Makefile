@@ -22,8 +22,7 @@ SOURCES = \
 	StackFrame.cc TaskStack.cc IOHandler.cc IODesc.cc SignalHandler.cc \
 	Scheduler.cc Transients.cc Worker.cc Interpreter.cc \
 	Primitive.cc PushCallWorker.cc BindFutureWorker.cc \
-	Unpickler.cc Pickler.cc BootLinker.cc \
-	Profiler.cc
+	Unpickler.cc Pickler.cc Profiler.cc
 
 OBJS = $(SOURCES:%.cc=%.o)
 
