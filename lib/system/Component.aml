@@ -48,7 +48,7 @@ struct
     fun trace (NONE, s)   = ()
       | trace (SOME f, s) = TextIO.output (f, "[component manager] " ^ s ^ "\n")
 
-    val defaultLogStream = 
+    val defaultLogStream =
 	Option.map (fn "" => TextIO.stdErr
 		     | s  => TextIO.openOut s handle IO.Io _ =>
 			     (trace (SOME TextIO.stdErr,
