@@ -62,6 +62,8 @@ signature UPDATE =
        (* wird in Init bei "shrink" benoetigt *)
 	val findHighestDepth: node -> int
 
+	val setVisible: int * int -> unit
+
 end
 
 end

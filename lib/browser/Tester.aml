@@ -3,9 +3,10 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 
 (* ganz einfache Liste *)
 
-structure SList = Reflect.ReflectType (type t = int list);
+structure SList = Reflect.ReflectType (type t = int list list);
 
 UnsafeInspector.inspect ([1,2],SList.x);
+UnsafeInspector.inspect([[1,2,3],[4,5,6,7],[8,9,10,11,12,13]],SList.x);
 
 val rec x = 1::x;
 UnsafeInspector.inspect(x,SList.x);
@@ -77,14 +78,24 @@ structure Fut = Reflect.ReflectType (type t = int vector list);
 val fut = Fut.x;
 val prom1 = Promise.promise();
 val prom2 = Promise.promise();
+val prom3 = Promise.promise();    
 val future1 = Promise.future prom1;
 val future2 = Promise.future prom2;
+val future3 = Promise.future prom3;
 
 UnsafeInspector.inspect([future1,future2,future1,future1],fut);
 
 Promise.fulfill(prom1,#[1,2]);
 
 Promise.fulfill(prom2,#[2,3,4,5,6]);
+
+(* Liste mit future *)
+
+val lf = [#[7,8]]@future3;
+
+UnsafeInspector.inspect(lf,fut);
+
+Promise.fulfill(prom3,[#[1,2],#[9,10]]);
 
 (* Promises *)
 structure Prom = Reflect.ReflectType (type t = char Promise.promise list);

@@ -415,12 +415,12 @@ struct
     (* createLimit *)
 
     fun createLimit (desc,sort,p,i,d,root) =  Limit  {desc = desc,
-							sort = sort, 
-							parent = p,
-							index  = i,
-							depth = d,
-							status = ref DAZZLED,
-							group = setGroup(root,p)}
+						      sort = sort, 
+						      parent = p,
+						      index  = i,
+						      depth = d,
+						      status = ref DAZZLED,
+						      group = setGroup(root,p)}
 
     (* createRelNode *)
 

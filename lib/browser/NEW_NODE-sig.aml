@@ -39,8 +39,8 @@ sig
 
     val newNode: Reflect.value * Type.t * int * GtkSupport.tag -> node
 
-    val createGraph: Reflect.value * Type.t  * node * int * int * GtkSupport.tag 
-	-> node 
+    val createGraph: int option * Reflect.value * Type.t  * node * int * int * 
+	GtkSupport.tag -> node 
 
     (* interne Repraesentation von Strukturen *)
 
