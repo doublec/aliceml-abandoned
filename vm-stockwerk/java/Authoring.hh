@@ -40,4 +40,6 @@
   RETURN_VOID;								\
 }
 
+#define DRETURN(x) RETURN2(x, null)
+
 #endif
