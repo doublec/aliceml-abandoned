@@ -111,7 +111,7 @@ DEFINE1(UnsafeSocket_accept) {
 			       &addrLen));
   if (client < 0) {
     if (GetLastError() == EWOULDBLOCK) {
-      Future *future = IOHandler::CheckReadable(sock);
+      Future *future = IOHandler::WaitReadable(sock);
       if (future != INVALID_POINTER) {
 	REQUEST(future->ToWord());
       } else {
@@ -153,7 +153,7 @@ DEFINE2(UnsafeSocket_client) {
     int error = GetLastError();
     if (error == EWOULDBLOCK || error == EINPROGRESS) {
       //--** also check for exceptions on sock (connection failed)
-      Future *future = IOHandler::CheckWritable(sock);
+      Future *future = IOHandler::WaitWritable(sock);
       if (future != INVALID_POINTER) {
 	// Don't use macro REQUEST here, as we wish to drop our frame:
 	Scheduler::currentData = future->ToWord();
@@ -176,7 +176,7 @@ DEFINE1(UnsafeSocket_input1) {
   Interruptible(n, recv(sock, reinterpret_cast<char *>(&c), 1, 0));
   if (n < 0) {
     if (GetLastError() == EWOULDBLOCK) {
-      Future *future = IOHandler::CheckReadable(sock);
+      Future *future = IOHandler::WaitReadable(sock);
       if (future != INVALID_POINTER) {
 	REQUEST(future->ToWord());
       } else {
@@ -208,7 +208,7 @@ DEFINE2(UnsafeSocket_inputN) {
 			count, 0));
   if (n < 0) {
     if (GetLastError() == EWOULDBLOCK) {
-      Future *future = IOHandler::CheckReadable(sock);
+      Future *future = IOHandler::WaitReadable(sock);
       if (future != INVALID_POINTER) {
 	REQUEST(future->ToWord());
       } else {
@@ -236,7 +236,7 @@ DEFINE2(UnsafeSocket_output1) {
   Interruptible(res, send(sock, reinterpret_cast<char *>(&c), 1, 0));
   if (res < 0) {
     if (GetLastError() == EWOULDBLOCK) {
-      Future *future = IOHandler::CheckWritable(sock);
+      Future *future = IOHandler::WaitWritable(sock);
       if (future != INVALID_POINTER) {
 	REQUEST(future->ToWord());
       } else {
@@ -261,7 +261,7 @@ DEFINE3(UnsafeSocket_output) {
   Interruptible(n, send(sock, reinterpret_cast<char *>(buffer), count, 0));
   if (n < 0) {
     if (GetLastError() == EWOULDBLOCK) {
-      Future *future = IOHandler::CheckWritable(sock);
+      Future *future = IOHandler::WaitWritable(sock);
       if (future != INVALID_POINTER) {
 	REQUEST(future->ToWord());
       } else {

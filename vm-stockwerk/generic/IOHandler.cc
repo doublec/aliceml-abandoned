@@ -185,21 +185,36 @@ void IOHandler::Purge() {
   Set::FromWordDirect(Writable)->Blank();
 }
 
-Future *IOHandler::CheckReadable(int fd) {
+bool IOHandler::IsReadable(int fd) {
   fd_set readFDs;
   FD_ZERO(&readFDs);
   FD_SET(fd, &readFDs);
-
   struct timeval timeout;
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
-
  retry:
   int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout);
   if (ret < 0) {
     if (GetLastError() == EINTR)
       goto retry;
-    Error("IOHandler::CheckReadable");
+    Error("IOHandler::IsReadable");
+  }
+  return ret != 0;
+}
+
+Future *IOHandler::WaitReadable(int fd) {
+  fd_set readFDs;
+  FD_ZERO(&readFDs);
+  FD_SET(fd, &readFDs);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
+ retry:
+  int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout);
+  if (ret < 0) {
+    if (GetLastError() == EINTR)
+      goto retry;
+    Error("IOHandler::WaitReadable");
   } else if (ret == 0) {
     Future *future = Future::New();
     Entry *entry = Entry::New(fd, future);
@@ -210,21 +225,36 @@ Future *IOHandler::CheckReadable(int fd) {
   }
 }
 
-Future *IOHandler::CheckWritable(int fd) {
+bool IOHandler::IsWritable(int fd) {
   fd_set writeFDs;
   FD_ZERO(&writeFDs);
   FD_SET(fd, &writeFDs);
-
   struct timeval timeout;
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
+ retry:
+  int ret = select(fd + 1, &writeFDs, NULL, NULL, &timeout);
+  if (ret < 0) {
+    if (GetLastError() == EINTR)
+      goto retry;
+    Error("IOHandler::IsWritable");
+  }
+  return ret != 0;
+}
 
+Future *IOHandler::WaitWritable(int fd) {
+  fd_set writeFDs;
+  FD_ZERO(&writeFDs);
+  FD_SET(fd, &writeFDs);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
  retry:
   int ret = select(fd + 1, NULL, &writeFDs, NULL, &timeout);
   if (ret < 0) {
     if (GetLastError() == EINTR)
       goto retry;
-    Error("IOHandler::CheckWritable");
+    Error("IOHandler::WaitWritable");
   } else if (ret == 0) {
     Future *future = Future::New();
     Entry *entry = Entry::New(fd, future);

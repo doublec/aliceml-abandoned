@@ -347,7 +347,7 @@ public:
     // data in the buffer or we have reached EOF.
     if (nBytes != 0)
       return INVALID_POINTER;
-    Future *future = IOHandler::CheckReadable(fd);
+    Future *future = IOHandler::WaitReadable(fd);
     if (future != INVALID_POINTER)
       return future;
 #if defined(__MINGW32__) || defined(_MSC_VER)
