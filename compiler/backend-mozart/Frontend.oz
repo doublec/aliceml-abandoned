@@ -61,7 +61,7 @@ define
    fun {StockhausenToImperative File} Pipe S in
       Pipe = {New TextPipe
 	      init(cmd: 'sml-cm'
-		   args: ['@SMLload=../top/stoc-frontend' File])}
+		   args: ['@SMLload=../top/stoc-mozart' File])}
       {Pipe get(?S)}
       {Pipe close()}
       S
