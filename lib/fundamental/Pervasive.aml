@@ -87,7 +87,8 @@ structure Word		= struct __primitive eqtype word   = "word"   end
 structure Real		= struct __primitive eqtype real   = "real"   end
 structure Char		= struct __primitive eqtype char   = "char"   end
 structure String	= struct __primitive eqtype string = "string" end
-structure LargeInt	= Int
+structure IntInf	= struct type int end
+structure LargeInt	= Int(*Inf*)
 structure LargeWord	= Word
 structure LargeReal	= Real
 structure WideChar	= Char

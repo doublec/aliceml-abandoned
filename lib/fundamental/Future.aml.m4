@@ -20,10 +20,12 @@ changequote([[,]])
 
 import structure __pervasive          from "Pervasive"
 import __primitive
-       type unit and bool and exn
+       type unit and bool and exn and int
        datatype alt                   from "ToplevelTypes"
 import __primitive infix 4 = val op = from "ToplevelValues"
 import __primitive structure Hole     from "Hole"
+import __primitive structure Int      from "Int"
+import __primitive structure LargeInt from "LargeInt"
 import __primitive structure Time     from "Time"
 import __primitive signature FUTURE   from "FUTURE-sig"
 
@@ -34,9 +36,11 @@ struct
     __primitive exception Cyclic			= "Future.Cyclic"
     __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
     __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
-    __primitive val alarm :	Time.time -> unit	= "Future.alarm'"
-
     __primitive val await :	'a -> 'a		= "Future.await"
+    __primitive val alarm' :	int -> unit		= "Future.alarm'"
+
+    fun alarm t = alarm' (Int.fromLarge (Time.toMilliseconds t))
+
 
 ifdef([[FUTURE_AWAIT_EITHER_IS_PRIMITIVE]],[[
 (* The implementation of awaitEither has a race condition under Mozart,

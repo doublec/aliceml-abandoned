@@ -13,10 +13,9 @@
 #include "alice/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
-  DECLARE_INT(microseconds, x0);
-  if (microseconds <= 0) RETURN_UNIT;
-  // RegisterAlarm expects milliseconds
-  RETURN(SignalHandler::RegisterAlarm(microseconds / 1000)->ToWord());
+  DECLARE_INT(milliseconds, x0);
+  if (milliseconds <= 0) RETURN_UNIT;
+  RETURN(SignalHandler::RegisterAlarm(milliseconds)->ToWord());
 } END
 
 DEFINE1(Future_await) {

@@ -319,10 +319,10 @@ prepare
       'Future.Cyclic': {NewUniqueName 'Future.Cyclic'}
       'Future.alarm\'':
 \ifdef OLD_BYNEED
-	 fun {$ X} !!{Alarm (X + 500) div 1000} end
+	 fun {$ X} !!{Alarm X + 500} end
 \else
 	 fun {$ X} Y in
-	    Y = !!{Alarm (X + 500) div 1000}
+	    Y = !!{Alarm X + 500}
 	    {Value.makeNeeded Y}
 	    Y
 	 end
