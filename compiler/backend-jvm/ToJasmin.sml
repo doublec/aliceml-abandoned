@@ -905,7 +905,7 @@ structure ToJasmin =
 			 staticapply,
 			 io);
 			TextIO.output(io,".limit locals "^
-				      Int.toString(JVMreg.max perslocs+parmscount)
+				      Int.toString(JVMreg.max perslocs+1+parmscount)
 				      ^"\n");
 			TextIO.output(io,".end method\n\n")
 		    end

@@ -557,6 +557,7 @@ structure CodeGen =
 	    let
 		val danach = Label.new ()
 		val elselabel = Label.new ()
+		val ilselabel = Label.new ()
 		val stampcode' = stampCode stamp'
 
 		fun switchNumber (LitTest (WordLit a)) =
@@ -679,9 +680,9 @@ structure CodeGen =
 		    (case lit' of
 			 WordLit w' =>
 			     stampcode' ::
+			     Dup ::
 			     Instanceof CWord ::
-			     Ifeq elselabel ::
-			     stampcode' ::
+			     Ifeq ilselabel ::
 			     Checkcast CWord ::
 			     Getfield (CWord^"/value", [Intsig]) ::
 			     atCodeWord w' ::
@@ -689,9 +690,9 @@ structure CodeGen =
 			     nil
 		       | IntLit i' =>
 			     stampcode' ::
+			     Dup ::
 			     Instanceof CInt ::
-			     Ifeq elselabel ::
-			     stampcode' ::
+			     Ifeq ilselabel ::
 			     Checkcast CInt ::
 			     Getfield (CInt^"/value", [Intsig]) ::
 			     atCodeInt i' ::
@@ -699,9 +700,9 @@ structure CodeGen =
 			     nil
 		       | CharLit c' =>
 			     stampcode' ::
+			     Dup ::
 			     Instanceof CChar ::
-			     Ifeq elselabel ::
-			     stampcode' ::
+			     Ifeq ilselabel ::
 			     Checkcast CChar ::
 			     Getfield (CChar^"/value", [Charsig]) ::
 			     atCodeInt (Int.toLarge (Char.ord c')) ::
@@ -709,9 +710,9 @@ structure CodeGen =
 			     nil
 		       | StringLit s' =>
 			     stampcode' ::
+			     Dup ::
 			     Instanceof CStr ::
-			     Ifeq elselabel ::
-			     stampcode' ::
+			     Ifeq ilselabel ::
 			     Checkcast CStr ::
 			     Getfield (CStr^"/value", [Classsig CString]) ::
 			     Ldc (JVMString s') ::
@@ -720,9 +721,9 @@ structure CodeGen =
 			     nil
 		       | r as (RealLit r') =>
 			     stampcode' ::
+			     Dup ::
 			     Instanceof CReal ::
-			     Ifeq elselabel ::
-			     stampcode' ::
+			     Ifeq ilselabel ::
 			     Checkcast CReal ::
 			     Getfield (CReal^"/value", [Floatsig]) ::
 			     atCode r ::
@@ -742,9 +743,9 @@ structure CodeGen =
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			stampcode' ::
+			Dup ::
 			Instanceof CConVal ::
-			Ifeq elselabel ::
-			stampcode' ::
+			Ifeq ilselabel ::
 			Checkcast CConVal ::
 			Invokeinterface (CConVal, "getConstructor",
 					 ([], [Classsig CConstructor])) ::
@@ -787,24 +788,20 @@ structure CodeGen =
 				bindit(rest,i+1)
 			    end
 			  | bindit (nil,_) = nil
+
 		    in
 			stampcode' ::
-			Instanceof CRecord::
-			Ifeq elselabel::
-			New CRecordArity ::
 			Dup ::
+			Instanceof CRecord ::
+			Ifeq ilselabel ::
+			Checkcast CRecord ::
 			Getstatic (RecordLabel.insert
 				   (stringids2strings (stringid, nil))) ::
-			Invokespecial (CRecordArity,"<init>",
-				       ([Arraysig,Classsig CLabel],
-					[Voidsig])) ::
-			stampcode' ::
-			Checkcast CRecord::
-			Getfield (CRecord^"/arity",[Classsig CRecordArity]) ::
-			Ifacmpne elselabel ::
-			stampcode' ::
-			Checkcast CTuple ::
-			Getfield (CTuple^"/vals",[Arraysig, Classsig CVal]) ::
+			Invokevirtual (CRecord, "checkArity",
+				       ([Arraysig, Classsig CLabel],
+					[Arraysig, Classsig CVal])) ::
+			Dup ::
+			Ifnull ilselabel ::
 			bindit (stringid,0)
 		    end
 
@@ -848,9 +845,9 @@ structure CodeGen =
 				     val _ = FreeVars.setFun (i1, Lambda.top())
 				 in
 				     (case lgt of
-					  2 => Instanceof CTuple2 ::
-					      Ifeq elselabel ::
-					      stampcode' ::
+					  2 => Dup ::
+					      Instanceof CTuple2 ::
+					      Ifeq ilselabel ::
 					      Checkcast CTuple2 ::
 					      Dup ::
 					      Invokevirtual
@@ -868,9 +865,9 @@ structure CodeGen =
 						       (i2, Register.new())
 						   val _ = FreeVars.setFun (i2, Lambda.top())
 					       in
+						   Dup ::
 						   Instanceof CTuple3 ::
-						   Ifeq elselabel ::
-						   stampcode' ::
+						   Ifeq ilselabel ::
 						   Checkcast CTuple3 ::
 						   Dup ::
 						   Invokevirtual
@@ -897,38 +894,38 @@ structure CodeGen =
 						   val r3 = Register.assign
 						       (i3, Register.new())
 						   val _ = FreeVars.setFun (i3, Lambda.top())
-					       in
-						   Instanceof CTuple4 ::
-						   Ifeq elselabel ::
-						   stampcode' ::
-						   Checkcast CTuple4 ::
-						   Dup ::
-						   Invokevirtual
-						   (CTuple4, "get0",
-						    ([], [Classsig CVal])) ::
-						   Astore r0 ::
-						   Dup ::
-						   Invokevirtual
-						   (CTuple4, "get1",
-						    ([], [Classsig CVal])) ::
-						   Astore r1 ::
-						   Dup ::
-						   Invokevirtual
-						   (CTuple4, "get2",
-						    ([], [Classsig CVal])) ::
-						   Astore r2 ::
-						   Invokevirtual
-						   (CTuple4, "get3",
-						    ([], [Classsig CVal])) ::
-						   Astore r3 ::
-						   nil
+					   in
+					       Dup ::
+					       Instanceof CTuple4 ::
+					       Ifeq ilselabel ::
+					       Checkcast CTuple4 ::
+					       Dup ::
+					       Invokevirtual
+					       (CTuple4, "get0",
+						([], [Classsig CVal])) ::
+					       Astore r0 ::
+					       Dup ::
+					       Invokevirtual
+					       (CTuple4, "get1",
+						([], [Classsig CVal])) ::
+					       Astore r1 ::
+					       Dup ::
+					       Invokevirtual
+					       (CTuple4, "get2",
+						([], [Classsig CVal])) ::
+					       Astore r2 ::
+					       Invokevirtual
+					       (CTuple4, "get3",
+						([], [Classsig CVal])) ::
+					       Astore r3 ::
+					       nil
 					   end
 				    | _ => raise Mitch)
 				 end
 			     else
+				 Dup ::
 				 Instanceof CDMLTuple ::
-				 Ifeq elselabel ::
-				 stampcode' ::
+				 Ifeq ilselabel ::
 				 Checkcast CDMLTuple ::
 				 Invokeinterface
 				 (CDMLTuple, "getArity",
@@ -952,9 +949,9 @@ structure CodeGen =
 				else r
 		    in
 			stampcode' ::
+			Dup ::
 			Instanceof CDMLTuple ::
-			Ifeq elselabel ::
-			stampcode' ::
+			Ifeq ilselabel ::
 			Checkcast CDMLTuple ::
 			Ldc (JVMString s') ::
 			Invokeinterface (CDMLTuple,"get",([Classsig CString],[Classsig CVal])) ::
@@ -971,6 +968,8 @@ structure CodeGen =
 		    Multi
 		    (decListCode body') ::
 		    Goto danach ::
+		    Label ilselabel ::
+		    Pop ::
 		    Label elselabel ::
 		    Multi
 		    (decListCode body'') ::
