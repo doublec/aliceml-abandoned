@@ -80,10 +80,6 @@ private:
 	continue;
       }
       curChunkTop = newtop;
-      // FillBlock((u_int *) p, ((size / sizeof(u_int)) + 1));
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-      totalMem += size;
-#endif
       return p;
     }
   }

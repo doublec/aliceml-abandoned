@@ -120,10 +120,6 @@ inline char *Store::GCAlloc(u_int size, u_int header) {
       continue;
     }
     curChunkTop = newtop;
-    //    FillBlock((u_int *) p, ((size / sizeof(u_int)) + 2));
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-    totalMem += size;
-#endif
     return p;
   }
 }
@@ -498,14 +494,6 @@ inline void Store::DoGC(word &root, const u_int gen) {
   dstGen = (gen + 1);
   hdrGen = ((dstGen == (STORE_GENERATION_NUM - 1)) ? gen : dstGen);
 
-#if defined(STORE_DEBUG)
-  std::printf("GCing all gens <= %d.\n", gen);
-
-  std::printf("root_set   gen %d\n", HeaderOp::DecodeGeneration(Store::WordToBlock(root)));
-  std::printf("intgen_set gen %d\n", HeaderOp::DecodeGeneration((Block *) intgenSet));
-  std::printf("wkdict_set gen %d\n", HeaderOp::DecodeGeneration((Block *) wkDictSet));
-#endif
-
   // Switch to the new Generation
   SwitchToChunk(roots[dstGen]->GetNext());
 
@@ -513,10 +501,6 @@ inline void Store::DoGC(word &root, const u_int gen) {
   Block *root_set = ForwardSet(Store::WordToBlock(root));
   intgenSet       = (Set *) ForwardSet((Block *) intgenSet);
   wkDictSet       = (Set *) ForwardSet((Block *) wkDictSet);
-
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-  u_int gcStartMem = totalMem;
-#endif
 
   // Obtain scan start
   MemChunk *chunk = curChunk;
@@ -563,10 +547,6 @@ inline void Store::DoGC(word &root, const u_int gen) {
   SwitchToChunk(roots[0]->GetNext());
   root = root_set->ToWord();
 
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-  gcLiveMem += (totalMem - gcStartMem);
-#endif
-
   // Call Finalization Handler
   if (arr != INVALID_POINTER) {
     u_int size = Store::WordToInt(arr->GetArg(1));
@@ -575,9 +555,6 @@ inline void Store::DoGC(word &root, const u_int gen) {
       h->Finalize(arr->GetArg(i + 1));
     }
   }
-#if defined(STORE_DEBUG)
-  std::printf("Done GC.\n");
-#endif
 }
 
 void Store::DoGC(word &root) {
@@ -591,6 +568,20 @@ void Store::DoGC(word &root) {
     gen--;
   }
 
+#if defined(STORE_DEBUG)
+  std::printf("GCing all gens <= %d.\n", gen);
+
+  std::printf("root_set   gen %d\n", HeaderOp::DecodeGeneration(Store::WordToBlock(root)));
+  std::printf("intgen_set gen %d\n", HeaderOp::DecodeGeneration((Block *) intgenSet));
+  std::printf("wkdict_set gen %d\n", HeaderOp::DecodeGeneration((Block *) wkDictSet));
+#endif
+
+#if defined(STORE_PROFILE)
+  u_int dstGen   = (gen + 1);
+  u_int hdrGen   = ((dstGen == (STORE_GENERATION_NUM - 1)) ? gen : dstGen);
+  u_int memUsage = GetMemUsage(roots[hdrGen]);
+#endif
+
   switch (gen) {
   case STORE_GEN_YOUNGEST:
     DoGC(root, STORE_GEN_YOUNGEST); break;
@@ -599,10 +590,14 @@ void Store::DoGC(word &root) {
   default:
     DoGC(root, gen); break;
   }
+#if defined(STORE_DEBUG)
+  std::printf("Done GC.\n");
+#endif
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   gettimeofday(&end_t, INVALID_POINTER);
   sum_t->tv_sec  += (end_t.tv_sec - start_t.tv_sec);
   sum_t->tv_usec += (end_t.tv_usec - start_t.tv_usec);
+  gcLiveMem += (GetMemUsage(roots[hdrGen]) - memUsage);
 #endif
 }
 
@@ -632,10 +627,21 @@ void Store::MemStat() {
 
 void Store::ResetTime() {
   sum_t->tv_sec = sum_t->tv_usec = 0;
-  totalMem = gcLiveMem = 0;
+
+  totalMem = 0;
+  for (u_int i = STORE_GENERATION_NUM; i--;) {
+    totalMem += Store::GetMemUsage(roots[i]);
+  }
+  gcLiveMem = 0;
 }
 
 struct timeval *Store::ReadTime() {
+  u_int total = 0;
+
+  for (u_int i = STORE_GENERATION_NUM; i--;) {
+    total += Store::GetMemUsage(roots[i]);
+  }
+  totalMem = (total - totalMem);
   return sum_t;
 }
 #endif
