@@ -21,7 +21,7 @@
 
 #include "generic/Interpreter.hh"
 
-class AbstractCodeInterpreter: public Interpreter {
+class DllExport AbstractCodeInterpreter: public Interpreter {
 private:
   // AbstractCodeInterpreter Constructor
   AbstractCodeInterpreter(): Interpreter() {}

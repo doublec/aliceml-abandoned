@@ -22,7 +22,7 @@
 #include "alice/Data.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 
-class AliceConcreteCode: private ConcreteCode {
+class DllExport AliceConcreteCode: private ConcreteCode {
 private:
   enum { ABSTRACT_CODE_POS, TRANSFORM_POS, SIZE };
 public:
