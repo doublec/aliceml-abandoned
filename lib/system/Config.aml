@@ -23,7 +23,7 @@ struct
     val vm = UnsafeConfig.vm
 
 (*--** obtain from UnsafeConfig; normalize *)
-    fun homeDir () = Option.valOf (OS.Process.getEnv "STOCKHOME")
+    fun homeDir () = Option.valOf (OS.Process.getEnv "ALICE_HOME")
 
     val pathEscape =
 	case platform of
