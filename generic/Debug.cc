@@ -47,12 +47,12 @@ static const char *TransLabel(BlockLabel l) {
     return "THREAD";
   case TUPLE_LABEL:
     return "TUPLE";
+  case CONCRETE_LABEL:
+    return "CONCRETE";
   case ARGS_LABEL:
     return "ARGS";
   case CLOSURE_LABEL:
     return "CLOSURE";
-  case HANDLERBLOCK_LABEL:
-    return "HANDLER";
   default:
     return "UNKNOWN";
   }
