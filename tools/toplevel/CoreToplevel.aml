@@ -33,12 +33,6 @@ struct
     val errStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
     val traceStream = TextIO.mkOutstream null
 
-    fun setOutWidth n   = outWidth  := n
-    fun setOutStream os = TextIO.setOutstream (outStream, os)
-    fun setErrWidth n   = errWidth  := n
-    fun setErrStream os = TextIO.setOutstream (errStream, os)
-    fun setTraceStream os = TextIO.setOutstream (traceStream, os)
-
     val null = TextIO.StreamIO.mkOutstream (TextPrimIO.nullWr (), IO.NO_BUF)
 
 
@@ -144,17 +138,17 @@ struct
 				   General.exnName exn ^
 				   (if String.isSuffix "/" (Url.toString url)
 				    then "\n"
-				    else " while evaluating \n\t" ^
+				    else " while evaluating \n   " ^
 					 Url.toString url ^ "\n"))
 	      | Component.Failure (_, Component.Mismatch
 				     {component, request, cause}) =>
 		let
-		    val s = "Failure type-checking \n\t" ^
+		    val s = "Failure type-checking \n   " ^
 			    Url.toString component ^
 			    (case request of
 				 NONE => "\n"
-			       | SOME url => "\nas requested by \n\t" ^
-					     Url.toString url ^ "\n:")
+			       | SOME url => "\nas requested by \n   " ^
+					     Url.toString url ^ "\nbecause")
 		in
 		   PrettyPrint.output
 		   (errStream,
@@ -164,7 +158,7 @@ struct
 		end
 	      | Component.Failure (url, IO.Io _) =>
 		    TextIO.output (errStream,
-				   "Failure loading \n\t" ^
+				   "Failure loading \n   " ^
 				   Url.toString url ^ "\n")
 	      | Component.Failure (url, Component.Internal exn) =>
 		    TextIO.output (errStream,
@@ -172,7 +166,7 @@ struct
 				   General.exnName exn ^
 				   (if String.isSuffix "/" (Url.toString url)
 				    then "\n"
-				    else " while linking \n\t" ^
+				    else " while linking \n   " ^
 					 Url.toString url ^ "\n"))
 	      | Component.Failure (url, exn) =>
 		    TextIO.output (errStream,
@@ -180,7 +174,7 @@ struct
 				   General.exnName exn ^
 				   (if String.isSuffix "/" (Url.toString url)
 				    then "\n"
-				    else " while linking \n\t" ^
+				    else " while linking \n   " ^
 					 Url.toString url ^ "\n"))
 	      | Assert (file, line) =>
 		    TextIO.output (errStream,

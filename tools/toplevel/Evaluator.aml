@@ -18,16 +18,30 @@ structure Evaluator : EVALUATOR =
 struct
     open CoreToplevel
 
-    val outStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdOut)
-    fun setOutStream os =
-	(TextIO.setOutstream (outStream, os);
-	 CoreToplevel.setOutStream os)
-
-    fun compile f = Compiler.compileFile (f, NONE)
+    fun setOutWidth n   = outWidth := n
+    fun setErrWidth n   = errWidth := n
+    fun setOutStream os = TextIO.setOutstream (outStream, os)
+    fun setErrStream os = TextIO.setOutstream (errStream, os)
+    fun setTraceStream os = TextIO.setOutstream (traceStream, os)
 
     fun prompt () =
 	(TextIO.output (outStream, CoreToplevel.prompt);
 	 TextIO.flushOut outStream)
+
+    fun compile' file =
+	(Compiler.withTraceStream (TextIO.getOutstream traceStream)
+	 (Compiler.withOutStream (TextIO.getOutstream outStream)
+	  (Compiler.withErrStream (TextIO.getOutstream errStream)
+	   (Compiler.withOutWidth (!outWidth)
+	    (Compiler.withErrWidth (!errWidth)
+	     Compiler.compileFile))))) (file, NONE)
+
+    fun compile file =
+	((TextIO.output (outStream, "\n");
+	  compile' file;
+	  TextIO.output (outStream, "### compiled " ^ file ^ "\n"))
+	 handle Compiler.Error => ())
+	finally prompt ()
 
     fun init () =
 	(

@@ -18,11 +18,11 @@ sig
     val eval		: string * signal -> unit
     val use		: string -> unit
 
-    val setOutWidth	: int -> unit
-    val setOutStream	: TextIO.StreamIO.outstream -> unit
-    val setErrWidth	: int -> unit
-    val setErrStream	: TextIO.StreamIO.outstream -> unit
-    val setTraceStream	: TextIO.StreamIO.outstream -> unit
+    val outWidth	: int ref
+    val errWidth	: int ref
+    val outStream	: TextIO.outstream
+    val errStream	: TextIO.outstream
+    val traceStream	: TextIO.outstream
 
     val banner		: string
     val bye		: string
