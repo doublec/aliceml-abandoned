@@ -18,13 +18,12 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	open I
 	open IntermediateAux
 	open SimplifyMatch
-	open Prebound
 
-	val id_false = Id (Source.nowhere, stamp_false, ExId "false")
-	val id_true = Id (Source.nowhere, stamp_true, ExId "true")
-	val id_ref = Id (Source.nowhere, stamp_ref, ExId "ref")
-	val id_Match = Id (Source.nowhere, stamp_Match, ExId "Match")
-	val id_Bind = Id (Source.nowhere, stamp_Bind, ExId "Bind")
+	val id_false = Id (Source.nowhere, Prebound.stamp_false, ExId "false")
+	val id_true = Id (Source.nowhere, Prebound.stamp_true, ExId "true")
+	val id_ref = Id (Source.nowhere, Prebound.stamp_ref, ExId "ref")
+	val id_Match = Id (Source.nowhere, Prebound.stamp_Match, ExId "Match")
+	val id_Bind = Id (Source.nowhere, Prebound.stamp_Bind, ExId "Bind")
 
 	val longid_true = ShortId (Source.nowhere, id_true)
 	val longid_false = ShortId (Source.nowhere, id_false)
