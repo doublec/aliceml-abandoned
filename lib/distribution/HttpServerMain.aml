@@ -1,0 +1,58 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS          from "../system/OS"
+import structure TextIO      from "../system/TextIO"
+import structure CommandLine from "../system/CommandLine"
+import structure Url         from "../utility/Url"
+import structure HttpServer  from "HttpServer"
+
+signature HTTP_SERVER_MAIN =
+    sig
+	val main: string list -> OS.Process.status
+    end
+
+structure HttpServerMain :> HTTP_SERVER_MAIN =
+    struct
+	val documentRoot = "/tmp/httproot"
+
+	fun documentHandler (request: HttpServer.request) =
+	    let
+		val relFile = Url.toString (Url.setQuery (#uri request, NONE))
+		val file = TextIO.openIn (documentRoot ^ relFile)
+		val content = TextIO.inputAll file
+	    in
+		TextIO.closeIn file;
+		{code = 200, contentType = "text/plain", content}
+	    end
+
+	val blackHole: unit = Promise.future (Promise.promise ())
+
+	fun start port =
+	    (HttpServer.start (SOME port);
+	     HttpServer.registerFor (Url.fromString "/", documentHandler);
+	     Future.await blackHole)
+
+	fun usage s =
+	    (TextIO.output
+	     (TextIO.stdErr,
+	      "Usage: " ^ CommandLine.name () ^ " <port>\n");
+	     OS.Process.failure)
+
+	fun main [portString] =
+	    (case Int.fromString portString of
+		 SOME port => (start port; OS.Process.success)
+	       | NONE => usage ())
+	  | main _ = usage ()
+    end
+
+val _ = OS.Process.exit (HttpServerMain.main (CommandLine.arguments ()))

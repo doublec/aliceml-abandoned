@@ -1,0 +1,180 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO        from "../system/TextIO"
+import structure Socket        from "../system/Socket"
+import structure FromEqHashKey from "../utility/HASH_KEY-sig"
+import structure StringHashKey from "../utility/StringHashKey"
+import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure Url           from "../utility/Url"
+import signature HTTP_SERVER   from "HTTP_SERVER-sig"
+
+structure HttpServer :> HTTP_SERVER =
+    struct
+	structure StringMap = MkHashImpMap(StringHashKey)
+
+	type request =
+	     {method: string, uri: Url.t, protocol: string,
+	      headers: string StringMap.t, content: string}
+	type response = {code: int, contentType: string, content: string}
+	type handler = request -> response
+
+	exception Closed
+
+	fun dropCRLF [#"\r", #"\n"] = nil
+	  | dropCRLF (c::cr) = c::dropCRLF cr
+
+	fun readLine socket =
+	    let
+		val s = Socket.inputLine socket handle _ => raise Closed
+	    in
+		String.implode (dropCRLF (String.explode s))
+	    end
+
+	fun charOffset (s, c) = charOffset' (s, c, 0)
+	and charOffset' (s, c, i) =
+	    if i = String.size s then NONE
+	    else if String.sub (s, i) = c then SOME i
+	    else charOffset' (s, c, i + 1)
+
+	fun trim s = String.extract (s, dropSpaces (s, 0), NONE)
+	and dropSpaces (s, i) =
+	    if i = String.size s then i
+	    else if Char.isSpace (String.sub (s, i)) then dropSpaces (s, i + 1)
+	    else i
+
+	fun readHeaders (socket, headers) =
+	    case readLine socket of
+		"" => ()
+	      | s =>
+		    let
+			val i = Option.valOf (charOffset (s, #":"))
+			val name =
+			    String.map Char.toLower
+				       (String.substring (s, 0, i))
+			val value = trim (String.extract (s, i + 1, NONE))
+		    in
+			StringMap.insertDisjoint (headers, name, value);
+			readHeaders (socket, headers)
+		    end
+
+	fun readRequest socket =
+	    let
+		val requestLine = readLine socket
+		val rl =
+		    case String.tokens (fn c => c = #" ") requestLine of
+			[method, requestURI, protocol] =>
+			    {method, uri = Url.fromString requestURI, protocol}
+		      | [method, requestURI] =>
+			    {method, uri = Url.fromString requestURI,
+			     protocol = "HTTP/1.0"}
+		      | _ => raise Match
+		val headers = StringMap.new ()
+		val _ = readHeaders (socket, headers)
+		val content =
+		    case StringMap.lookup (headers, "content-length") of
+			SOME s =>
+			    Socket.inputN (socket,
+					   Option.valOf (Int.fromString s))
+		      | NONE => ""
+	    in
+		{method = #method rl, uri = #uri rl, protocol = #protocol rl,
+		 headers, content}
+	    end
+
+	fun notFoundHandler _ =
+	    {code = 404, contentType = "text/plain", content = "Not found"}
+
+	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+
+	val handlerMap: handler UrlMap.t = UrlMap.new ()
+
+	fun findHandler uri = findHandler' (List.rev (Url.getPath uri))
+	and findHandler' ss =
+	    let
+		val uri = Url.setPath (Url.empty, List.rev ss)
+	    in
+		case UrlMap.lookup (handlerMap, uri) of
+		    SOME handler => handler
+		  | NONE =>
+			case ss of
+			    _::sr => findHandler' sr
+			  | nil => notFoundHandler
+	    end
+
+	fun handleConnection (socket, host, port) =
+	    let
+		val _ = TextIO.print ("connection from " ^ host ^ ":" ^
+				      Int.toString port ^ "\n")
+		val request = readRequest socket
+		val handler = findHandler (#uri request)
+		val {code, contentType, content} =
+		    handler request
+		    handle _ => {code = 501, contentType = "text/plain",
+				 content = "Internal server error"}
+	    in
+		Socket.output (socket,
+			       #protocol request ^ " " ^ Int.toString code ^
+			       " foo\r\n");   (*--** message *)
+		Socket.output (socket,
+			       "Content-type: " ^ contentType ^ "\r\n");
+		Socket.output (socket,
+			       "Content-length: " ^
+			       Int.toString (String.size content) ^ "\r\n");
+		Socket.output (socket, "\r\n");
+		Socket.output (socket, content);
+		Socket.close socket
+	    end
+
+	val rootURI: Url.t option ref = ref NONE
+
+	fun start portOpt =
+	    case !rootURI of
+		SOME uri => uri
+	      | NONE =>
+		    let
+			fun server (socket, host, port) =
+			    handleConnection (socket, host, port)
+			    handle Closed => ()
+			val (_, serverHost, serverPort) =
+			    Socket.server (portOpt, server)
+			val url =
+			    Url.fromString ("http://" ^ serverHost ^ ":" ^
+					    Int.toString serverPort ^ "/")
+		    in
+			rootURI := SOME url; url
+		    end
+
+	fun getRootURI () =
+	    case !rootURI of
+		SOME uri => uri
+	      | NONE => start NONE
+
+	fun registerFor (uri, handler) =
+	    let
+		val uri' = Url.setPath (Url.empty, Url.getPath uri)
+	    in
+		UrlMap.insert (handlerMap, uri', handler)
+	    end
+
+	val counter = ref 0
+
+	fun register handler =
+	    let (*--** thread-safety *)
+		val n = !counter
+		val uri = Url.setPath (Url.empty, ["export", Int.toString n])
+	    in
+		counter := n + 1;
+		registerFor (uri, handler);
+		uri
+	    end
+    end

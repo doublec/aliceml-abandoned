@@ -1,0 +1,30 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature IMP_MAP from "../utility/IMP_MAP-sig"
+import structure Url     from "../utility/Url"
+
+signature HTTP_SERVER =
+    sig
+	structure StringMap: IMP_MAP where type key = string
+
+	type request =
+	     {method: string, uri: Url.t, protocol: string,
+	      headers: string StringMap.t, content: string}
+	type response = {code: int, contentType: string, content: string}
+	type handler = request -> response
+
+	val start: int option -> Url.t
+	val getRootURI: unit -> Url.t
+	val registerFor: Url.t * handler -> unit
+	val register: handler -> Url.t
+    end
