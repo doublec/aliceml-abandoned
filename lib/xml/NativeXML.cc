@@ -21,6 +21,8 @@ public:
 
 static XMLFinalizationSet *xmlFinalizationSet;
 
+static int xmlTypeMapping[22];
+
 void XMLFinalizationSet::Finalize(word value) {
   Tuple *b = Tuple::FromWordDirect(value);
   word docptr = b->Sel(0);
@@ -145,6 +147,12 @@ DEFINE2(xml_nodeListGetString) {
   RETURN(tv->ToWord()); // SOME retName
 } END
 
+DEFINE1(xml_getType) {
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  RETURN_INT(xmlTypeMapping[cur->type]);
+} END
+
 DEFINE2(xml_getProp) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
@@ -186,8 +194,30 @@ DEFINE2(xml_getProp) {
 } END
 
 word InitComponent() {
-  Record *record = Record::New(10);
+  Record *record = Record::New(11);
   xmlFinalizationSet = new XMLFinalizationSet();
+
+  xmlTypeMapping[1] = 10;
+  xmlTypeMapping[2] = 1;
+  xmlTypeMapping[3] = 18;
+  xmlTypeMapping[4] = 2;
+  xmlTypeMapping[5] = 13;
+  xmlTypeMapping[6] = 12;
+  xmlTypeMapping[7] = 17;
+  xmlTypeMapping[8] = 3;
+  xmlTypeMapping[9] = 6;
+  xmlTypeMapping[10] = 7;
+  xmlTypeMapping[11] = 5;
+  xmlTypeMapping[12] = 16;
+  xmlTypeMapping[13] = 14;
+  xmlTypeMapping[14] = 8;
+  xmlTypeMapping[15] = 9;
+  xmlTypeMapping[16] = 0;
+  xmlTypeMapping[17] = 11;
+  xmlTypeMapping[18] = 15;
+  xmlTypeMapping[19] = 20;
+  xmlTypeMapping[20] = 19;
+  xmlTypeMapping[21] = 4;
 
   INIT_STRUCTURE(record, "NativeAliceXML", "parse",
 		 xml_parse, 1);
@@ -205,6 +235,8 @@ word InitComponent() {
 		 xml_properties, 1);
   INIT_STRUCTURE(record, "NativeAliceXML", "name",
 		 xml_name, 1);
+  INIT_STRUCTURE(record, "NativeAliceXML", "getType",
+		 xml_getType, 1);
   INIT_STRUCTURE(record, "NativeAliceXML", "getProp",
 		 xml_getProp, 2);
   INIT_STRUCTURE(record, "NativeAliceXML", "nodeListGetString",
