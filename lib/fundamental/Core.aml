@@ -49,9 +49,6 @@ import __primitive structure StringCvt		from "StringCvt"
 import __primitive signature TEXT		from "TEXT-sig"
 import __primitive structure Text		from "Text"
 import __primitive structure WideText		from "WideText"
-import __primitive signature ATOM		from "ATOM-sig"
-import __primitive structure Atom		from "Atom"
-import __primitive structure WideAtom		from "WideAtom"
 
 import __primitive signature INTEGER		from "INTEGER-sig"
 import __primitive structure Int		from "Int"
@@ -185,9 +182,6 @@ structure StringCvt		= StringCvt
 signature TEXT			= TEXT
 structure Text			= Text
 structure WideText		= WideText
-signature ATOM			= ATOM
-structure Atom			= Atom
-structure WideAtom		= WideAtom
 
 signature INTEGER		= INTEGER
 structure Int			= Int
