@@ -1,0 +1,36 @@
+OPEN SUMS
+=========
+
+Stockhausen generalises SML's exceptions to user-definable open sum types. They
+provide a typed alternative to names. The following syntax is used:
+
+	dec ::=		...
+			`con' dconbind
+
+	datbind ::=	...
+			tyvarseq tycon
+	
+	dconbind ::=	<`op'> vid <`of' ty> `:' tyvarseq longtycon <`and' dconbind>
+			<`op'> vid `=' <`op'> longvid <`and' dconbind>
+
+
+	spec ::=	...
+			`con' dcondesc
+
+	datdesc ::=	...
+			tyvarseq tycon
+
+	dcondesc ::=	vid <`of' ty> : tyvarseq longtycon <`and' dcondesc>
+
+You can declare an open datatype like follows:
+
+	datatype 'a message
+
+	con DoThis of int : 'a message
+	con DoThat of bool * 'a : 'a message
+	con StopIt : message
+	con Abort = StopIt
+
+Exception declarations and specifications become a derived form, e.g.
+
+	exception Error of string    ==>    con Error of string : exn
