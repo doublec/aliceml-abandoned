@@ -9,6 +9,10 @@
               where type elem   = char
 	        and type vector = string
 		and type slice  = substring
+    structure WideCharVectorSlice : MONO_VECTOR_SLICE
+              where type elem   = WideChar.t
+	        and type vector = WideString.t
+		and type slice  = WideSubstring.t
     structure Word8VectorSlice : MONO_VECTOR_SLICE
               where type elem   = Word8.t
 	        and type vector = Word8Vector.t
