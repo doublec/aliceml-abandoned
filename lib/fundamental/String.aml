@@ -64,7 +64,7 @@ struct
 				  andalso isSuffix'(s1,s2,i1-1,i2-1)
 
     fun isSubstring s1 s2	= isSubstring'(s1,s2,0)
-    and isSubstring'(s1,s2,i)	= i + size s1 < size s2 andalso
+    and isSubstring'(s1,s2,i)	= i + size s1 <= size s2 andalso
 				  (isSubstring''(s1,s2,i,0)
 				  orelse isSubstring'(s1,s2,i+1))
     and isSubstring''(s1,s2,i,j)= j = size s1 orelse
