@@ -19,7 +19,13 @@ public class DMLByNeedFuture extends DMLFuture {
 	else {
 	    DMLValue temp = closure;
 	    closure = null;
-	    ref.bind(temp.apply(DMLConstants.dmlunit));
+	    try {
+		ref.bind(temp.apply(DMLConstants.dmlunit));
+	    } catch (Throwable t) {
+		System.err.println(t);
+		closure = temp;
+		return this;
+	    }
 	    return ref.request();
 	}
     }
