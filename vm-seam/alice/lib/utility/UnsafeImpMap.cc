@@ -528,7 +528,7 @@ void ImpMapFindWorker::DumpFrame(StackFrame *sFrame) {
 // Primitives
 //
 
-DEFINE0(UnsafeImpMap_new) {
+DEFINE0(UnsafeImpMap_map) {
   RETURN(ImpMap::New()->ToWord());
 } END
 
@@ -677,8 +677,8 @@ word UnsafeImpMap() {
   ImpMapFindWorker::Init();
 
   Record *record = Record::New(14);
-  INIT_STRUCTURE(record, "UnsafeImpMap", "new",
-		 UnsafeImpMap_new, 0);
+  INIT_STRUCTURE(record, "UnsafeImpMap", "map",
+		 UnsafeImpMap_map, 0);
   INIT_STRUCTURE(record, "UnsafeImpMap", "clone",
 		 UnsafeImpMap_clone, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "insertWithi",
