@@ -11,7 +11,10 @@ import structure Env    from "Env"
 
 signature TYPE =
   sig
-    datatype typ = datatype Syntax.typ
+    (* datatype typ = datatype Syntax.typ   Currently does not work with RTTs *)
+    datatype typ = Bool
+		 | Int
+		 | Arrow of typ * typ
 
     val constant: Syntax.con -> typ
     val base:     typ Env.env
