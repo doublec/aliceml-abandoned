@@ -36,14 +36,15 @@ public:
   static const BlockLabel ClassInfo           = (BlockLabel) (base + 5);
   // Code
   static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 6);
+  static const BlockLabel VirtualTable        = (BlockLabel) (base + 7);
   // Types
-  static const BlockLabel Class               = (BlockLabel) (base + 7);
-  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 8);
-  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 9);
+  static const BlockLabel Class               = (BlockLabel) (base + 8);
+  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 9);
+  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 10);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 10);
-  static const BlockLabel Object              = (BlockLabel) (base + 11);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 12);
+  static const BlockLabel Lock                = (BlockLabel) (base + 11);
+  static const BlockLabel Object              = (BlockLabel) (base + 12);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 13);
 };
 
 //
@@ -56,6 +57,8 @@ class DllExport Class: private Type {
 protected:
   enum {
     CLASS_INFO_POS, // ClassInfo
+    NUMBER_OF_VIRTUAL_METHODS_POS, // int
+    NUMBER_OF_INSTANCE_FIELDS_POS, // int
     VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
     LOCK_POS,
     INITIALIZATION_THREAD_POS, // Thread | int(0)
@@ -66,14 +69,34 @@ protected:
 public:
   using Block::ToWord;
 
+  static Class *New(class ClassInfo *classInfo);
   static Class *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER && b->GetLabel() == JavaLabel::Class);
     return static_cast<Class *>(b);
   }
+  static Class *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Class);
+    return static_cast<Class *>(b);
+  }
 
-  word GetStaticField(u_int index);
-  Closure *GetStaticMethod(u_int index);
+  Class *GetSuperClass();
+  u_int GetNumberOfInstanceFields() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
+  }
+  u_int GetNumberOfVirtualMethods() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_VIRTUAL_METHODS_POS));
+  }
+  Block *GetVirtualTable() {
+    return Store::DirectWordToBlock(GetArg(VIRTUAL_TABLE_POS));
+  }
+  word GetStaticField(u_int index) {
+    return GetArg(BASE_SIZE + index);
+  }
+  Closure *GetStaticMethod(u_int index) {
+    return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
+  }
 };
 
 class DllExport ObjectArrayType: private Type {
@@ -136,8 +159,24 @@ protected:
     // ... instance fields
   };
 public:
-  word GetInstanceField(u_int index);
-  Closure *GetVirtualMethod(u_int index);
+  static Object *New(Class *theClass) {
+    u_int size = theClass->GetNumberOfInstanceFields();
+    Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
+    b->InitArg(0, theClass->ToWord());
+    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
+    return static_cast<Object *>(b);
+  }
+
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  word GetInstanceField(u_int index) {
+    return GetArg(BASE_SIZE + index);
+  }
+  Closure *GetVirtualMethod(u_int index) {
+    Block *vTable = GetClass()->GetVirtualTable();
+    return Closure::FromWordDirect(vTable->GetArg(index));
+  }
 };
 
 class DllExport JavaString: private Chunk {

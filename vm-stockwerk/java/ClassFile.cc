@@ -306,7 +306,7 @@ Table *ClassFile::ParseInterfaces(u_int &offset, Table *runtimeConstantPool) {
   u_int interfacesCount = GetU2(offset);
   Table *interfaces = Table::New(interfacesCount);
   for (u_int i = 0; i < interfacesCount; i++)
-    interfaces->Assign(i, runtimeConstantPool->Get(GetU2(offset)));
+    interfaces->Init(i, runtimeConstantPool->Get(GetU2(offset)));
   return interfaces;
 }
 
@@ -322,7 +322,7 @@ Table *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool,
     FieldInfo *fieldInfo =
       ParseFieldInfo(offset, constantPool, runtimeConstantPool);
     if (fieldInfo == INVALID_POINTER) return INVALID_POINTER;
-    fields->Assign(i, fieldInfo->ToWord());
+    fields->Init(i, fieldInfo->ToWord());
   }
   return fields;
 }
@@ -384,7 +384,7 @@ Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
     MethodInfo *methodInfo =
       ParseMethodInfo(offset, constantPool, runtimeConstantPool);
     if (methodInfo == INVALID_POINTER) return INVALID_POINTER;
-    methods->Assign(i, methodInfo->ToWord());
+    methods->Init(i, methodInfo->ToWord());
   }
   return methods;
 }
@@ -519,6 +519,6 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
   SkipAttributes(offset);
   Assert(offset == GetSize());
   return ClassInfo::New(classLoader, accessFlags, name,
-			super, interfaces, fields, methods, 
+			super, interfaces, fields, methods,
 			runtimeConstantPool);
 }

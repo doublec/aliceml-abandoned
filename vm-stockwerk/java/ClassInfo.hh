@@ -57,6 +57,9 @@ private:
     b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
     return static_cast<FieldInfo *>(b);
   }
+  u_int GetAccessFlags() {
+    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
+  }
 public:
   using Block::ToWord;
 
@@ -72,6 +75,15 @@ public:
     fieldInfo->InitArg(HAS_CONSTANT_VALUE_POS, true);
     fieldInfo->InitArg(CONSTANT_VALUE_POS, constantValue);
     return fieldInfo;
+  }
+  static FieldInfo *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::FieldInfo);
+    return static_cast<FieldInfo *>(b);
+  }
+
+  bool IsStatic() {
+    return GetAccessFlags() & ACC_STATIC;
   }
 };
 
@@ -111,6 +123,9 @@ private:
     b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
     return static_cast<MethodInfo *>(b);
   }
+  u_int GetAccessFlags() {
+    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
+  }
 public:
   using Block::ToWord;
 
@@ -125,6 +140,15 @@ public:
     MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
     methodInfo->InitArg(BYTE_CODE_POS, byteCode->ToWord());
     return methodInfo;
+  }
+  static MethodInfo *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::MethodInfo);
+    return static_cast<MethodInfo *>(b);
+  }
+
+  bool IsStatic() {
+    return GetAccessFlags() & ACC_STATIC;
   }
 };
 
@@ -185,6 +209,12 @@ public:
   }
   Table *GetInterfaces() {
     return Table::FromWordDirect(GetArg(INTERFACES_POS));
+  }
+  Table *GetFields() {
+    return Table::FromWordDirect(GetArg(FIELDS_POS));
+  }
+  Table *GetMethods() {
+    return Table::FromWordDirect(GetArg(METHODS_POS));
   }
 
   bool Verify();

@@ -126,8 +126,7 @@ Worker::Result BuildClassWorker::Run() {
   //--** if (!classInfo->Verify()) raise VerifyError
   Scheduler::PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] =
-    classInfo->ToWord(); //--** return the class object
+  Scheduler::currentArgs[0] = classInfo->Prepare()->ToWord();
   return Worker::CONTINUE;
 }
 
