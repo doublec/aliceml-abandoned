@@ -1,4 +1,4 @@
-SML = sml-cm
+SML := $(shell pwd)/../bootstrap/smla
 PLATFORM = x86-linux
 
 SUBDIRS = backend-mozart
