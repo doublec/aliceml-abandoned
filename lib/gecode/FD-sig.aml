@@ -14,8 +14,8 @@ import structure Space from "Space"
 
 signature FD =
 sig
-    type 'problem fdvar
-    type 'problem boolvar
+    type fdvar
+    type boolvar
 
     datatype domain_element =
 	     SINGLE of int
@@ -24,24 +24,24 @@ sig
     type domain = domain_element vector
 
     (* Allocation of finite domain variables *)
-    val fdvar : 'p Space.space * domain -> 'p fdvar
-    val fdvarVec : 'p Space.space * int * domain -> 'p fdvar vector
-    val range : 'p Space.space * (int * int) -> 'p fdvar
-    val rangeVec : 'p Space.space * int * (int * int) -> 'p fdvar vector
+    val fdvar :  Space.space * domain ->  fdvar
+    val fdvarVec :  Space.space * int * domain ->  fdvar vector
+    val range :  Space.space * (int * int) ->  fdvar
+    val rangeVec :  Space.space * int * (int * int) ->  fdvar vector
 
     (* Allocation of reified finite domain variables *)
-    val fdvarR : 'p Space.space * domain * 'p boolvar -> 'p fdvar
-    val fdvarVecR : 'p Space.space * int * domain * 'p boolvar ->
-		    'p fdvar vector
+    val fdvarR :  Space.space * domain *  boolvar ->  fdvar
+    val fdvarVecR :  Space.space * int * domain *  boolvar ->
+		     fdvar vector
 
     (* Allocation of boolean (0/1) finite domain variables *)
-    val boolvar : 'p Space.space -> 'p boolvar
-    val boolvarVec : 'p Space.space * int -> 'p boolvar vector
+    val boolvar :  Space.space ->  boolvar
+    val boolvarVec :  Space.space * int ->  boolvar vector
 
     (* Domain constraints *)
-    val dom : 'p Space.space * 'p fdvar * (int * int) vector -> unit
-    val domR : 'p Space.space * 'p fdvar * (int * int) vector *
-	       'p boolvar -> unit
+    val dom :  Space.space *  fdvar * (int * int) vector -> unit
+    val domR :  Space.space *  fdvar * (int * int) vector *
+	        boolvar -> unit
 
     (* *********** *)
     (* PROPAGATORS *)
@@ -61,74 +61,74 @@ sig
 	     BND | BND_EX | DEF | DOM | DOM_EX | 
 	     OTR | VAL | VAL_EX
 
-    val rel : 'p Space.space * 'p fdvar * relation *
-	      'p fdvar -> unit
-    val relI : 'p Space.space * 'p fdvar * relation * int -> unit
-    val relR : 'p Space.space * 'p fdvar * relation * 'p fdvar *
-	       'p boolvar -> unit
-    val relIR : 'p Space.space * 'p fdvar * relation * int *
-		'p boolvar -> unit
-    val eq : 'p Space.space * 'p fdvar * 'p fdvar *
+    val rel :  Space.space *  fdvar * relation *
+	       fdvar -> unit
+    val relI :  Space.space *  fdvar * relation * int -> unit
+    val relR :  Space.space *  fdvar * relation *  fdvar *
+	        boolvar -> unit
+    val relIR :  Space.space *  fdvar * relation * int *
+		 boolvar -> unit
+    val eq :  Space.space *  fdvar *  fdvar *
 	     conlevel -> unit
-    val eqV : 'p Space.space * 'p fdvar vector * conlevel -> unit
-    val eqR : 'p Space.space * 'p fdvar * 'p fdvar *
-	      'p boolvar * conlevel -> unit
-    val eqVR : 'p Space.space * 'p fdvar vector * 'p boolvar *
+    val eqV :  Space.space *  fdvar vector * conlevel -> unit
+    val eqR :  Space.space *  fdvar *  fdvar *
+	       boolvar * conlevel -> unit
+    val eqVR :  Space.space *  fdvar vector *  boolvar *
 	       conlevel -> unit
 
     (* Distinct constraints *)
-    val distinct : 'p Space.space * 'p fdvar vector * conlevel -> unit
-    val distinctI : 'p Space.space * (int * 'p fdvar) vector *
+    val distinct :  Space.space *  fdvar vector * conlevel -> unit
+    val distinctI :  Space.space * (int *  fdvar) vector *
 		    conlevel -> unit
 
     (* Counting constraints *)
-    val countII : 'p Space.space * 'p fdvar vector * relation *
+    val countII :  Space.space *  fdvar vector * relation *
 		  int * relation * int -> unit
-    val countVI : 'p Space.space * 'p fdvar vector * relation *
-		  'p fdvar * relation * int -> unit
-    val countIV : 'p Space.space * 'p fdvar vector * relation *
-		  int * relation * 'p fdvar -> unit
-    val countVV : 'p Space.space * 'p fdvar vector * relation *
-		  'p fdvar * relation * 'p fdvar -> unit
+    val countVI :  Space.space *  fdvar vector * relation *
+		   fdvar * relation * int -> unit
+    val countIV :  Space.space *  fdvar vector * relation *
+		  int * relation *  fdvar -> unit
+    val countVV :  Space.space *  fdvar vector * relation *
+		   fdvar * relation *  fdvar -> unit
 
     (* Access constraints *)
-    val element : 'p Space.space * 'p fdvar vector * 'p fdvar *
-		  'p fdvar -> unit
-    val elementI : 'p Space.space * int vector * 'p fdvar *
-		   'p fdvar -> unit
-    val lex : 'p Space.space * 'p fdvar vector * relation *
-	      'p fdvar vector -> unit
+    val element :  Space.space *  fdvar vector *  fdvar *
+		   fdvar -> unit
+    val elementI :  Space.space * int vector *  fdvar *
+		    fdvar -> unit
+    val lex :  Space.space *  fdvar vector * relation *
+	       fdvar vector -> unit
 			       
     (* Boolean constraints *)			     
-    val bool_not : 'p Space.space * 'p boolvar * 'p boolvar -> unit
-    val bool_and : 'p Space.space * 'p boolvar * 'p boolvar *
-		   'p boolvar -> unit
-    val bool_or  : 'p Space.space * 'p boolvar * 'p boolvar *
-		   'p boolvar -> unit
-    val bool_imp : 'p Space.space * 'p boolvar * 'p boolvar *
-		   'p boolvar -> unit
-    val bool_eq  : 'p Space.space * 'p boolvar * 'p boolvar *
-		   'p boolvar -> unit
-    val bool_xor : 'p Space.space * 'p boolvar * 'p boolvar *
-		   'p boolvar -> unit
-    val bool_andV: 'p Space.space * 'p boolvar vector *
-		   'p boolvar -> unit
-    val bool_orV : 'p Space.space * 'p boolvar vector *
-		   'p boolvar -> unit
+    val bool_not :  Space.space *  boolvar *  boolvar -> unit
+    val bool_and :  Space.space *  boolvar *  boolvar *
+		    boolvar -> unit
+    val bool_or  :  Space.space *  boolvar *  boolvar *
+		    boolvar -> unit
+    val bool_imp :  Space.space *  boolvar *  boolvar *
+		    boolvar -> unit
+    val bool_eq  :  Space.space *  boolvar *  boolvar *
+		    boolvar -> unit
+    val bool_xor :  Space.space *  boolvar *  boolvar *
+		    boolvar -> unit
+    val bool_andV:  Space.space *  boolvar vector *
+		    boolvar -> unit
+    val bool_orV :  Space.space *  boolvar vector *
+		    boolvar -> unit
 
     (* Linear equations *)
-    val linear : 'p Space.space * (int * 'p fdvar) vector * relation *
+    val linear :  Space.space * (int *  fdvar) vector * relation *
 		 int * conlevel -> unit
-    val linearR : 'p Space.space * (int * 'p fdvar) vector * relation *
-		  int * 'p boolvar * conlevel -> unit
+    val linearR :  Space.space * (int *  fdvar) vector * relation *
+		  int *  boolvar * conlevel -> unit
 
     (* Arithmetic constraints *)					
-    val min : 'p Space.space * 'p fdvar vector * 'p fdvar -> unit
-    val max : 'p Space.space * 'p fdvar vector * 'p fdvar -> unit
-    val abs : 'p Space.space * 'p fdvar * 'p fdvar * conlevel ->
+    val min :  Space.space *  fdvar vector *  fdvar -> unit
+    val max :  Space.space *  fdvar vector *  fdvar -> unit
+    val abs :  Space.space *  fdvar *  fdvar * conlevel ->
 	      unit
-    val mult: 'p Space.space * 'p fdvar * 'p fdvar *
-	      'p fdvar -> unit
+    val mult:  Space.space *  fdvar *  fdvar *
+	       fdvar -> unit
 						  
     (* Branching strategies *)
 
@@ -151,25 +151,24 @@ sig
 	   | B_SPLIT_MIN
 	   | B_VAL
 
-    val branch : 'p Space.space * 'p fdvar vector * b_var_sel *
+    val branch :  Space.space *  fdvar vector * b_var_sel *
 		 b_val_sel -> unit
 				
     (* Value assignment *)
 
     datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
 
-    val assign : 'p Space.space * 'p fdvar vector * avalsel -> unit
+    val assign :  Space.space *  fdvar vector * avalsel -> unit
 
     (* Access to variables *)
 
     exception NoFD
     exception NoBool
 
-    val boolvar2fdvar : 'p boolvar -> 'p fdvar
+    val boolvar2fdvar :  boolvar ->  fdvar
 					     
-    val getMin : 'p Space.space * 'p fdvar -> int
-    val getMax : 'p Space.space * 'p fdvar -> int
-    val getVal : 'p Space.space * 'p fdvar -> int      (* NoVal *)
-    val getBool : 'p Space.space * 'p boolvar -> bool  (* NoBool *)
-
+    val getMin :  Space.space *  fdvar -> int
+    val getMax :  Space.space *  fdvar -> int
+    val getVal :  Space.space *  fdvar -> int      (* NoVal *)
+    val getBool :  Space.space *  boolvar -> bool  (* NoBool *)
 end
