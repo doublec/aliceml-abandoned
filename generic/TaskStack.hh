@@ -38,7 +38,7 @@ public:
   // TaskStack Constructor
   static TaskStack *New() {
     TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(INITIAL_SIZE));
-    taskStack->PushFrame(emptyTask);
+    taskStack->SlowPush(emptyTask);
     return taskStack;
   }
   // TaskStack Untagging
