@@ -157,6 +157,10 @@ struct
 
 	    val alreadyConn = ref nil
 
+	    val serverSettingsWidget = {object = serverSettings,
+					alreadyConn}
+
+
 	    fun mainQuit () = (Gtk.widgetDestroy serverSettings; cancelCB ())
 		
 	    fun changedNameText () = 
@@ -291,14 +295,15 @@ struct
 				    Gtk.entryGetText 
 				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
-				alreadyConn := [(name, color)];
+				(#alreadyConn serverSettingsWidget) := 
+				                               [(name, color)];
                                 print "start\n";
 				readyCB (SOME (name, color), config) 
 				before print "end\n"
 			    end
 
 		in
-		    Gtk.widgetDestroy serverSettings;
+		    Gtk.widgetDestroy (#object serverSettingsWidget);
 		    case return () of 
 			NONE => ()
 		      | SOME errorMsg => 
@@ -410,9 +415,8 @@ struct
 	    Gtk.containerAdd (serverSettings, dialogVBox);
 
 	    Gtk.widgetShowAll serverSettings;
-
-	    {object = serverSettings,
-	     alreadyConn}
+	    
+	    serverSettingsWidget
 
 	end
 

@@ -55,7 +55,7 @@ struct
 					     startSingleCB (state, callbacks),
 					     turnCB (state, callbacks),
 					     changeViewCB (state, callbacks),
-					     giveUpCB callbacks
+					     giveUpCB (state, callbacks),
 					     quitCB)
         in
             { mainWindow = mainw, callbacks, state }
@@ -64,37 +64,63 @@ struct
 (* -------------------------------- *)
     (* menuItem `start client' pressed . displays connection window*)
     and startClientCB (state, callbacks) mainWindow =
-        state := CONNECT (Connection.mkConnectionWindow 
-			      (Main.getWindow mainWindow, 
-			       connectCB        state,
-			       cancelConnectCB (state, mainWindow, callbacks)))
+        (case state of 
+	    INITIAL => state := CONNECT (Connection.mkConnectionWindow 
+					 (Main.getWindow mainWindow, 
+					  connectCB        state,
+					  cancelConnectCB (state, mainWindow, 
+							   callbacks)))
+	  |     _   => assert false)
 
     (* menuItem `start server' pressed *)
     and startServerCB (state, callbacks) mainWindow = 
-        state := SERVER_SETTINGS (ServerSettings.mkServerSettingsWindow 
-				    (Main.getWindow mainWindow,
-				     readySSettingsCB  (state, mainWindow, 
-							callbacks),
-				     cancelSSettingsCB state))
+        (case state of
+	    INITIAL => 
+	       state := SERVER_SETTINGS (ServerSettings.mkServerSettingsWindow 
+					 (Main.getWindow mainWindow,
+					  readySSettingsCB  (state, mainWindow,
+							     callbacks),
+					  cancelSSettingsCB state))
+	  |   _     => assert false)
 
     (* menuItem 'start singleplayer' pressed *)
     and startSingleCB (state, callbacks) mainWindow =
-	state := SINGLE_SETTINGS (EnterName.mkEnterName
+	(case state of
+	     INITIAL => state := SINGLE_SETTINGS (EnterName.mkEnterName
 				    (Main.getWindow mainWindow,
 				     readySingleCB (state, mainWindow,
 						    callbacks),
 				     cancelSingleCB state))
+	   |    _    => assert false)
 
-    and turnCB callbacks (mainWindow, d) = #turn callbacks d
+    and turnCB (state, callbacks) d = 
+	(case state of 
+	     LEVEL_RUNNING => (case #turn callbacks d of
+				   NONE                  => NONE
+				 | SOME (CONN_ERROR msg) => SOME msg
+				 | SOME (ERROR msg)      => SOME msg)
+	   |       _       => assert false)
 
-    and changeViewCB callbacks (mainWindow, d) = #changeView callbacks d
+    and changeViewCB (state, callbacks) vh = 
+	(case state of
+	     LEVEL_RUNNING => (case #changeView callbacks vh of
+				   NONE                  => NONE
+				 | SOME (CONN_ERROR msg) => SOME msg
+				 | SOME (ERROR msg)      => SOME msg)
+	   |       _       => assert false)
 
     (* menuItem `quit' pressed *)
-    and quitCB mainWindow = ()
+    and quitCB () = OS.Process.exit OS.Process.success
 
-    (* menuItem 'giveUp' pressed *)
-    and giveUpCB callbacks mainWindow (#disconnect callbacks ();
-				       state := INITIAL)
+    (* menuItem 'giveUp' pressed, mainWindow is already set in start mode... *)
+    and giveUpCB (state, callbacks) mainWindow = 
+	(case state of
+	     LEVEL_RUNNING => (state := INITIAL;
+			       case #disconnect callbacks () of
+				   NONE                  => NONE
+				 | SOME (CONN_ERROR msg) => SOME msg
+				 | SOME (ERROR msg)      => SOME msg)
+	   |        _      => assert false)
 
 
 (* -------------------------------- *)
@@ -139,17 +165,17 @@ struct
        and Player. *)
     and readySSettingsCB (state, mainWindow, callbacks) (player, config) = 
 	(case state of 
-	  SERVER_SETTINGS s => (case #startServer callbacks (player, config) of
-				   FST ticket => (state := WAIT (Wait.mkWaitWindow 
-						   (Main.getWindow mainWindow,
-						    ServerSettings.alreadyConnected s,
-						            readyWaitCB (),
-							    cancelWaitCB (),
-							    ticket);
-							  NONE)
-				 | SND (CONN_ERROR msg) => SOME msg
-				 | SND (ERROR msg)      => SOME msg)
-	 |            _        => assert false)
+	  SERVER_SETTINGS s => 
+	      (case #startServer callbacks (player, config) of
+		   FST ticket => 
+		       (state := WAIT (Wait.mkWaitWindow 
+				       (Main.getWindow mainWindow,
+					ServerSettings.alreadyConnected s,
+					readyWaitCB (), cancelWaitCB (),
+					ticket); NONE)
+		 | SND (CONN_ERROR msg) => (state := INITIAL; SOME msg)
+		 | SND (ERROR msg)      => (state := INITIAL; SOME msg))
+		 |            _        => assert false))
 
 
     (* the ServerSettingsWindow should have been closed before calling 
@@ -167,23 +193,25 @@ struct
        message will be displayed and the PlayerSettingsWindow is closed. *)
     and readyPSettingsCB (state, mainWindow, callbacks) NONE =
 	(case state of
-	    PLAYER_SETTINGS _ => (case #watch callbacks () of
-				      NONE                  => NONE
-	                            | SOME (CONN_ERROR msg) => (state := INITIAL;
-								SOME msg)
-	                            | SOME (ERROR msg)      => (state := INITIAL;
-								SOME msg))
+	    PLAYER_SETTINGS _ => 
+		(case #watch callbacks () of
+		     NONE                  => NONE
+		   | SOME (CONN_ERROR msg) => (state := INITIAL;
+					       SOME msg)
+		   | SOME (ERROR msg)      => (state := INITIAL;
+					       SOME msg))
            |           _      => assert false)
       | readyPSettingsCB (state, mainWindow, callbacks) player = 
-	(case state of
-	    PLAYER_SETTINGS _ => (case #play callbacks player of
-				      NONE                  => NONE
-	                            | SOME (CONN_ERROR msg) => (state := INITIAL;
-								SOME msg)
-	                            | SOME (ERROR msg)      => (state := INITIAL;
-								SOME msg))
-          |           _       => assert false)
-
+	     (case state of
+		  PLAYER_SETTINGS _ => 
+		      (case #play callbacks player of
+			   NONE                  => NONE
+			 | SOME (CONN_ERROR msg) => (state := INITIAL;
+						     SOME msg)
+			 | SOME (ERROR msg)      => (state := INITIAL;
+						     SOME msg))
+		|           _       => assert false)
+		  
     (* this function is called by the PlayerSettingsWindow. It should also have
        already closed itself before callinng cancelPSettingsCB *)
     and cancelPSettingsCB (state, callbacks) = 
@@ -201,8 +229,7 @@ struct
 	     SINGLE_SETTINGS => (case #startServer callbacks settings of
 				     FST _             => 
 					 (case #start callbacks () of
-					      NONE => (state := LEVEL_RUNNING;
-						       NONE)
+					      NONE                 => NONE
 					   | SOME (CONN_ERROR msg) => SOME msg
 					   | SOME (ERROR msg)      => SOME msg)
 	                           | SND (CONN_ERROR msg) => SOME msg
@@ -217,13 +244,14 @@ struct
 
 (* -------------------------------- *)
     (* this is called from the WaitWindow, after it's closing *)
-    and readyWaitCB (state, mainWindow, callbacks) =
+    and readyWaitCB (state, mainWindow, callbacks) () =
 	(case state of 
 	    WAIT _ => (case #start callbacks () of
-			   NONE                  => (state := LEVEL_RUNNING;
-						     NONE)
-			 | SOME (CONN_ERROR msg) => SOME msg 
-			 | SOME (ERROR msg)      => SOME msg)
+			   NONE                  => NONE
+			 | SOME (CONN_ERROR msg) => (state := INITIAL; 
+						     SOME msg) 
+			 | SOME (ERROR msg)      => (state := INITIAL;
+						     SOME msg))
 	  |   _    => assert false)
 
     (* cancelWaitCB is called after the termination of WaitWindow *)
@@ -262,15 +290,13 @@ struct
 	  | WAIT win          => ((#state gui) := LEVEL_RUNNING;
 				  Wait.gameStarted win;
 				  Main.gameMode (#mainWindow gui))
+	  | SINGLE_SETTINGS   => ((#state gui) := LEVEL_RUNNING;
+				  Main.gameMode (#mainWindow gui))
 	  |  _ => raise Error "Error, while sending gameStarted signal")
 
     fun levelStart (gui : gui, levelInf) = 
 	(case !(#state gui) of
-	    PLAYER_SETTINGS p  => ((#state gui) := LEVEL_RUNNING;
-				  Main.levelStart (#mainWindow gui, levelInf))
-	  | WAIT      w        => ((#state gui) := LEVEL_RUNNING;
-				  Main.levelStart (#mainWindow gui, levelInf))
-	  | LEVEL_RUNNING      => Main.levelStart (#mainWindow gui, levelInf)
+	    LEVEL_RUNNING      => Main.levelStart (#mainWindow gui, levelInf)
 	  |  _ => raise Error "Error, while sending levelStart signal")
 	
     fun levelTick (gui : gui, points, diffs, pos, time) = 

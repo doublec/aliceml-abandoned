@@ -58,7 +58,8 @@ struct
 	end
 
     (* inserts all connected players into text widget *)
-    fun playersJoined (p : wait_widget, players) = List.app (#insertPlayer p) players
+    fun playersJoined (p : wait_widget, players) = 
+	                 List.app (#insertPlayer p) players
 	
     (* removes one player from text widget *)
     fun playerDisconnected (p : wait_widget, name, color) = 

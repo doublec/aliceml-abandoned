@@ -235,7 +235,7 @@ struct
 			       Gtk.widgetSetSensitive (colorHBox, false);
 			       Gtk.widgetSetSensitive (spectatorCheckButton, 
 						       false);
-			       state := WAITING;
+			       (#state p) := WAITING;
 			       if Gtk.toggleButtonGetActive spectator
 				   then ()
 			       else playersJoined (p, [(name, color)]);

@@ -95,13 +95,13 @@ sig
 
     type start_single_cb = mainwindow_type -> unit
 
-    type turn_cb         = Protocol.direction -> unit
+    type turn_cb         = Protocol.direction -> string option
 
-    type change_view_cb  = Protocol.view_hint -> unit
+    type change_view_cb  = Protocol.view_hint -> string option
 	
-    type quit_cb         = mainwindow_type -> unit
+    type quit_cb         = unit -> unit
 
-    type give_up_cb      = unit -> unit
+    type give_up_cb      = mainwindow_type -> string option
 
     val mkMainWindow :   start_client_cb * start_server_cb * start_single_cb * 
 	                                turn_cb * change_view_cb * 
@@ -131,7 +131,11 @@ struct
 
     datatype mode = START | GAME of radar_visibility
 
-
+    type change_window_mode = {mode : mode ref, 
+			       menuGiveUpItem : Gtk.object,
+			       menuMenuItem   : Gtk.object,
+			       canvas         : Gtk.object,
+			       rightHBox      : Gtk.object }
 
     type mainwindow_type = {object : Gtk.object,
 			    arena  : ArenaWidget.arena_widget,
@@ -152,16 +156,13 @@ struct
 			                 int * Gtk.object * 
 				         ArenaWidget.arena_widget -> unit,
 			    displayCountDown : (int option -> unit) option ref,
-			    gameMode :  {mode : mode ref, 
-					 menuGiveUpItem : Gtk.object,
-					 menuMenuItem   : Gtk.object,
-					 canvas         : Gtk.object,
-					 rightHBox      : Gtk.object } -> unit,
+			    gameMode :  change_window_mode -> unit
 			    menuGiveUpItem : Gtk.object,
 			    menuMenuItem : Gtk.object,
 			    rightHBox : Gtk.object,
 			    pointsLabel : Gtk.object,
-			    canvas : Gtk.object}
+			    canvas : Gtk.object,
+			    reset : change_window_mode -> unit}
 
     type start_client_cb = mainwindow_type -> unit
 
@@ -169,19 +170,24 @@ struct
 
     type start_single_cb = mainwindow_type -> unit
 
-    type turn_cb         = Protocol.direction -> unit
+    type turn_cb         = Protocol.direction -> string option
 
-    type change_view_cb  = Protocol.view_hint -> unit
+    type change_view_cb  = Protocol.view_hint -> string option
 
-    type quit_cb         = mainwindow_type -> unit
+    type quit_cb         = unit -> unit
 
-    type give_up_cb      = unit -> unit
+    type give_up_cb      = mainwindow_type -> string option
 
 
     fun getWindow (w : mainwindow_type) = #object w
 
     fun gameFinished (p : mainwindow_type, s) = 
-	 (Text.mkTextWindow (getWindow p, "Highscore", highscoreToString s);())
+	 (Text.mkTextWindow (getWindow p, "Highscore", highscoreToString s);
+	  #reset p {mode = #mode p,
+		    menuGiveUpItem = #menuGiveUpItem p,
+		    menuMenuItem = #menuMenuItem p,
+		    canvas = #canvas p,
+		    rightHBox = #rightHBox p})
 
     fun levelStart (p : mainwindow_type, levelInf) = 
 	(ArenaWidget.initLevel (#arena p, levelInf);
@@ -327,6 +333,18 @@ struct
 		 Gtk.widgetShow rightHBox;
 		 log ("gameMode", "ends"))
 
+	    fun reset {mode,
+		       menuGiveUpItem,
+		       menuMenuItem,
+		       canvas,
+		       rightHBox} =
+		(mode := START;
+		 Gtk.widgetSetSensitive (menuGiveUpItem, false);
+		 Gtk.widgetSetSensitive (menuMenuItem, true);
+		 Gtk.widgetHide canvas;
+		 Gtk.widgetHide rightHBox;
+		 log ("reset", "ends"))
+
 	    val mainWindowWidget = {object = mainWindow,
 				    radar,
 				    arena,
@@ -343,46 +361,6 @@ struct
 				    menuMenuItem,
 				    menuGiveUpItem}
 				    
-
-	    (* resets the window in START mode *)
-	(*    fun reset' () =
-		(print "resetting window\n";
-                 Gtk.widgetSetSensitive (menuGiveUpItem, false);
-		 Gtk.widgetSetSensitive (menuMenuItem, true);
-		 Gtk.widgetHide canvas;
-		 Gtk.widgetHide rightHBox;
-                 Gtk.widgetHide radarWidget;
-		 mode := START)*)
-
-(*	    fun reset' () = Gtk.widgetDestroy mainWindow
-
-	    (* resets window and also shows [msg] when needed *)
-	    fun reset NONE = reset' ()
-	      | reset (SOME (title, msg)) = (Text.mkTextWindow (title, msg);
-                                             reset' ())
-*)		
-
-	    (* the different behaviour by pressing the quit button *)
-	    fun mainQuit () = OS.Process.exit OS.Process.success 
-
-	    fun backToStart () = 
-		(case !mode of
-		    START  => (log ("backToStart", "in START mode");
-			       mainQuit ())
-		  | GAME _ =>
-			let
-			    val _ = log ("backToStart", "in GAME mode")
-			    fun cancel () = ()
-			    fun no ()     = ()
-			    fun yes ()    = giveUpCB ()
-                            val answer    = {yes, no, cancel}
-			in
-			    Question.mkQuestionBox 
-			    (mainWindow, "Sure?", 
-			     "Do you really want to quit?", answer)
-			end)
-		     
-			
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
                   (log ("startClient", "has been called");
@@ -397,7 +375,25 @@ struct
 		   startSingleCB mainWindowWidget)
 	    (* procedure called by pressing GiveUp - button *)
 	    fun giveUp () = (log ("giveUp", "has been called");
+			     reset ();
 			     giveUpCB ())
+
+	    fun backToStart () = 
+		(case !mode of
+		    START  => (log ("backToStart", "in START mode");
+			       quitCB ())
+		  | GAME _ =>
+			let
+			    val _ = log ("backToStart", "in GAME mode")
+			    fun cancel () = ()
+			    fun no ()     = ()
+			    fun yes ()    = giveUp ()
+                            val answer    = {yes, no, cancel}
+			in
+			    Question.mkQuestionBox 
+			    (mainWindow, "Sure?", 
+			     "Do you really want to quit?", answer)
+			end)
 
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval = 
@@ -464,7 +460,7 @@ struct
                                canvasEvent);
                                ]])
 	    Gtk.signalConnect (mainWindow, "delete-event", 
-			       fn _ => mainQuit ());
+			       fn _ => quitCB ());
 	    Gtk.signalConnect (menuMenuSingle, "activate", 
 			       fn _ => startSinglePlayer ());
 	    Gtk.signalConnect (menuMenuClient, "activate", 
