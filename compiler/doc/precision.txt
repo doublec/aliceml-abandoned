@@ -1,0 +1,15 @@
+- PervasiveType knows width of builtin types
+  (or some other instance in the backend, so that PervasiveType does not
+  become backend dependent - otherwise we had to functorize over it)
+- abstract literal representation:
+  number = Int8Vector.vector
+  sign   = bool
+  base   = int
+  word_rep = base * number
+  int_rep  = base * sign * number
+  real_rep = base * sign * number * number * sign * number
+  char_rep = WideChar.char
+  string_rep = WideString.string = WideCharVector.vector
+- FlatGrammar annotates literal widths
+- ElaborationPhase checks for overflows wrt. widths
+- rework Wide{Char,String} in basis lib
