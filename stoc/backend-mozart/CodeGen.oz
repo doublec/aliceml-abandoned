@@ -86,14 +86,16 @@ define
       [] evalStm(_ Exp) then
 	 {TranslateExp Exp {State.cs newReg($)} VHd VTl State}
       [] handleStm(Coord Body1 Id Body2 Body3 Shared) then
-	 Reg TryVInstr CatchVInstr VInter
+	 Reg1 Reg2 TryVInstr CatchVInstr CatchVInter VInter
       in
-	 Reg = {MakeReg Id State}
-	 VHd = vExHandler(_ TryVInstr Reg CatchVInstr
+	 {State.cs newReg(?Reg1)}
+	 Reg2 = {MakeReg Id State}
+	 VHd = vExHandler(_ TryVInstr Reg1 CatchVInstr
 			  {TranslateCoord Coord State} VInter _)
 	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
 	 {Assign Shared false}
-	 {TranslateBody Body2 ?CatchVInstr nil State ReturnReg}
+	 CatchVInstr = vInlineDot(_ Reg1 1 Reg2 false unit CatchVInter)
+	 {TranslateBody Body2 ?CatchVInter nil State ReturnReg}
 	 {TranslateBody Body3 ?VInter nil State ReturnReg}
       [] endHandleStm(Coord Shared) then
 	 if {Access Shared} then
@@ -166,7 +168,7 @@ define
 	 {TranslateBody Body1 ?ThenVInstr nil State ReturnReg}
 	 {TranslateBody Body2 ?ElseVInstr nil State ReturnReg}
       [] raiseStm(Coord Id) then
-	 VHd = vCallBuiltin(_ 'Exception.raise' [{GetReg Id State}]
+	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
 			    {TranslateCoord Coord State} VTl)
       [] sharedStm(_ Body I) then
 	 if {Dictionary.member State.shareDict I} then

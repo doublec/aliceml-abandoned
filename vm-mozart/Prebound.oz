@@ -68,7 +68,7 @@ define
 	    try
 	       X1 div X2
 	    catch _ then
-	       {Raise BuiltinTable.'General.Div'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Div'} '#'
 	    end
 	 end
       'mod':
@@ -100,7 +100,7 @@ define
       'Char.chr':
 	 fun {$ C}
 	    if {Char.is C} then C
-	    else {Raise BuiltinTable.'General.Chr'} '#'
+	    else {Exception.raiseError BuiltinTable.'General.Chr'} '#'
 	    end
 	 end
       'Char.isDigit': Char.isDigit
@@ -142,7 +142,7 @@ define
 	    try
 	       {ByteString.get S I}
 	    catch _ then
-	       {Raise BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
 	    end
 	 end
       'String.substring':
@@ -150,7 +150,7 @@ define
 	    try
 	       {ByteString.slice S I I + J}
 	    catch _ then
-	       {Raise BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
 	    end
 	 end
       'String.compare\'':
@@ -184,7 +184,7 @@ define
 	    try
 	       {Array.get A I}
 	    catch _ then
-	       {Raise BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
 	    end
 	 end
       'Array.update':
@@ -192,7 +192,7 @@ define
 	    try
 	       {Array.put A I X}
 	    catch _ then
-	       {Raise BuiltinTable.'General.Subscript'}
+	       {Exception.raiseError BuiltinTable.'General.Subscript'}
 	    end
 	    '#'
 	 end
@@ -203,7 +203,7 @@ define
 	    try
 	       V.(I + 1)
 	    catch _ then
-	       {Raise BuiltinTable.'General.Subscript'} '#'
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
 	    end
 	 end)
 
