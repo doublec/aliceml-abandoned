@@ -12,43 +12,96 @@
  *   $Revision$
  *)
 
+import
+    structure TextIO
+from "../lib/TextIO"
+
+import
+    structure Url
+from "../misc/Url"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure MkSwitches
+from "../infrastructure/MkSwitches"
+
+import
+    structure MkFrontendCommon
+from "../frontend-common/MkFrontendCommon"
+
+import
+    structure MkFrontendSML
+from "../frontend-sml/MkFrontendSML"
+
+import
+    structure MkBackendCommon
+from "../backend-common/MkBackendCommon"
+
+import
+    structure MkMozartTarget
+    structure MkBackendMozart
+from "../backend-mozart/MkBackendMozart"
+
+import
+    structure Signature
+from "Signature"
+
+import
+    structure Composer
+from "Composer"
+
+import
+    structure MkCompiler
+from "MkCompiler"
+
+import
+    structure MkRecursiveCompiler
+from "MkRecursiveCompiler"
+
 structure SMLToMozartRecursiveCompiler =
     let
-	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
+	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
 	    ref (fn _ => raise Crash.Crash "SMLToMozartMain.f")
 
 	structure MozartTarget =
-	    MakeMozartTarget(structure Switches = Switches
-			     structure Sig = Signature)
+	    MkMozartTarget(structure Switches = Switches
+			   structure Sig = Signature)
 
 	structure FrontendSML =
-	    MakeFrontendSML(fun loadSign (desc, url) = !f (desc, url)
-			    structure Switches = Switches)
+	    MkFrontendSML(fun loadSign (desc, url) = !f (desc, url)
+			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MakeFrontendCommon(fun loadSign (desc, url) = !f (desc, url)
-			       structure Switches = Switches)
+	    MkFrontendCommon(fun loadSign (desc, url) = !f (desc, url)
+			     structure Switches = Switches)
 
-	structure BackendCommon = MakeBackendCommon(Switches)
+	structure BackendCommon = MkBackendCommon(Switches)
 
 	structure BackendMozart =
-	    MakeBackendMozart(structure Switches = Switches
-			      structure MozartTarget = MozartTarget)
+	    MkBackendMozart(structure Switches = Switches
+			    structure MozartTarget = MozartTarget)
 
 	structure Compiler =
-	    MakeCompiler(structure Switches         = Switches
-			 structure Target           = MozartTarget
-			 structure FrontendSpecific = FrontendSML
-			 structure FrontendCommon   = FrontendCommon
-			 structure BackendCommon    = BackendCommon
-			 structure BackendSpecific  = BackendMozart)
+	    MkCompiler(structure Switches         = Switches
+		       structure Target           = MozartTarget
+		       structure FrontendSpecific = FrontendSML
+		       structure FrontendCommon   = FrontendCommon
+		       structure BackendCommon    = BackendCommon
+		       structure BackendSpecific  = BackendMozart)
 
 	structure RecursiveCompiler =
-	    MakeRecursiveCompiler(structure Composer = Composer
-				  structure Compiler = Compiler
-				  val extension = "ozf")
+	    MkRecursiveCompiler(structure Composer = Composer
+				structure Compiler = Compiler
+				val extension = "ozf")
 
 	val _ = f := RecursiveCompiler.acquireSign
     in
