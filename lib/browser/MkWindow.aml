@@ -140,8 +140,35 @@ struct
 			Gtk.toggleButtonSetActive(relmode_button,1)
 			else
 			Gtk.toggleButtonSetActive(treemode_button,1)
-	    (* Buttonbox *)  
-	    val bbox = Gtk.hbuttonBoxNew()
+	    (* Buttonbox *)
+
+	    val bbox = createButtonBox{buttons = [BObj("ok",[Handler("clicked",
+		    (fn _ => let
+			val _ =Settings.max_width := 
+			       Gtk.spinButtonGetValueAsInt(width_s) 
+		        val _ =Settings.max_depth := 
+			       Gtk.spinButtonGetValueAsInt(depth_s)
+		        val _ = Settings.relmode := (if 
+			       Gtk.toggleButtonGetActive(relmode_button) = 1
+							 orelse 
+			       Gtk.toggleButtonGetActive(tokenmode_button) = 1
+							 then true 
+						     else false)
+			val _ = Settings.tokenmode := (if 
+		               Gtk.toggleButtonGetActive(tokenmode_button) = 1
+							   then 
+							       true 
+						       else false)
+			val _ =   Gtk.widgetDestroy(w)
+			in
+					()
+			end))]),
+				     BObj("apply",[]),
+				     BObj("cancel",
+					  [Handler("clicked",fn _ => 
+						   Gtk.widgetDestroy(w))])]}
+  
+(* 	    val bbox = Gtk.hbuttonBoxNew()
 	    val _ = Gtk.containerSetBorderWidth(bbox,10)
 	    val _ = Gtk.buttonBoxSetLayout(bbox,Gtk.BUTTONBOX_END)
 	    val ok_button = Gtk.buttonNewWithLabel("ok")

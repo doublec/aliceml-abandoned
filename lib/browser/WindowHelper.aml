@@ -42,6 +42,9 @@ datatype MenuConstructObj =
 (* Represents one radio button and associated handlers *)
 datatype RadioButtonObj = RBObj of string * Handler list
 
+(* Represents one button and associated handlers *)
+datatype ButtonObj = BObj of string * Handler list
+
 val uglyNULL = UnsafeValue.cast () : Gtk.object
 
 fun setSensitive (widget,true) = Gtk.widgetSetSensitive(widget,1)
@@ -97,65 +100,7 @@ fun createMenu (BarObj(l)) =let
 	 ; item)
     end
 
-(*
 
-(* createMenu - creates menubar from a list of submenus *)
-fun createMenu l = let
-		       val bar = Gtk.menuBarNew()
-		       val create = fn i => createMenuObj(bar,i)
-		   in 
-		       (List.app create l ; bar)
-		   end
-
-(* createMenuObj - creates one submenu *)	       
-and createMenuObj (bar,MenuObj(r)) = 
-    let
-	val menu_item = Gtk.menuItemNewWithLabel( #title(r))
-	val _         = Gtk.menuBarAppend(bar,menu_item)
-	val menu = Gtk.menuNew()
-	val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
-	val create = fn i => createMenuEntry(menu,i)
-    in
-	List.app create (#items(r))
-    end
-
-(* createMenuEntry - creates one submenu entry and connects handlers *)
-and createMenuEntry (menu,(label,handlerlist)) = 
-    let
-	val item = case label of
-	    SEP => Gtk.menuItemNew()
-	  | LABEL(label) => Gtk.menuItemNewWithLabel(label)
-	val _ = Gtk.menuAppend(menu,item)
-	val connect = fn Handler(str,handler) 
-	    => (Gtk.signalConnect (item,str, handler);())
-    in
-	List.app connect handlerlist
-    end
-
-and createMenuObjPopup (menu,MenuObj(r)) = 
-    let
-	val menu_item = Gtk.menuItemNewWithLabel( #title(r))
-	val _         = Gtk.menuAppend(menu,menu_item)
-	val menu = Gtk.menuNew()
-	val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
-	val create = fn i => createMenuObjPopup(menu,i)
-    in
-	List.app create (#items(r))
-    end
-  | createMenuObjPopup (menu,(l,h)) = createMenuEntry(menu,(l,h))
-
-fun createPopupMenu l =
-    let
-	val menu = Gtk.menuNew()
-	val create = fn i => createMenuObjPopup(menu,i)
-	val _ = List.app create l
-	val _ = Gtk.menuPopup(menu,uglyNULL,uglyNULL,uglyNULL,uglyNULL,3,0)
-	val _ = Gtk.widgetShowAll (menu)
-    in
-	menu
-    end
-	
-*)
        
 fun createCombo strlist = 
     let
@@ -213,23 +158,7 @@ fun createRadioButtons li =
 	(List.foldl create uglyNULL li; box)
     end
 
-(* 
 
-fun fontHeight font_name = let 
-			       val font = Gdk.fontLoad(font_name)
-			       val height = Gdk.fontGetFieldAscent(font)+
-				   Gdk.fontGetFieldDescent(font)
-			   in
-			       height
-			   end
-
-fun fontWidth font_name = let
-			      val font = Gdk.fontLoad(font_name)
-			  in
-			      Gdk.stringWidth(font,"W")
-			  end
-
-*)
 
 fun createRectangle (group,x1,y1,x2,y2) = 
     GtkCanvas.itemNew 
@@ -270,6 +199,30 @@ fun copyArray(a,b) = if Array.length(a) = Array.length(b)
 			 then copyArray' (a,b,0)
 		     else ()
 
+fun connect item = (fn Handler(str,handler) 
+		    => (Gtk.signalConnect (item,str, handler);()))
+		    
+fun createButton (BObj(title,handlerlist)) = 
+		    let
+			val button =  Gtk.buttonNewWithLabel(title)
+			val con = connect button
+		    in
+			(List.app con handlerlist
+			 ; button)
+		    end
+		       
+
+fun createButtonBox {buttons = l, borderwidth = b} =  
+		    let
+			val bbox = Gtk.hbuttonBoxNew()
+		    in
+			(Gtk.containerSetBorderWidth(bbox,b)
+			 ;Gtk.buttonBoxSetLayout(bbox,
+						 Gtk.BUTTONBOX_END)
+			 ; List.app (fn b => Gtk.containerAdd(bbox,
+				    (createButton b))) l
+			 ; bbox)
+		    end
 end
 
  

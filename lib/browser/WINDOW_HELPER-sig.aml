@@ -30,6 +30,8 @@ datatype MenuConstructObj =
 
 datatype RadioButtonObj = RBObj of string * Handler list
 
+datatype ButtonObj = BObj of string * Handler list
+
 val setSensitive: Gtk.object * bool -> unit
 
 val createMenu:  MenuConstructObj -> Gtk.object
@@ -52,5 +54,9 @@ val createRectangle: Gtk.object * real * real * real * real -> Gtk.object
 
 val copyArray' : 'a Array.array * 'a Array.array * int -> unit
 val copyArray : 'a Array.array * 'a Array.array -> unit
+
+val createButton : ButtonObj -> Gtk.object
+val createButtonBox: {buttons: ButtonObj list, borderwidth: int}
+    -> Gtk.object
 
 end
