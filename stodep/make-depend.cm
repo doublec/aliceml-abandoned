@@ -1,9 +1,0 @@
-Group is
-
-	sml-parser.cm
-
-	ANALYZER-sig.aml
-	MkAnalyzer.aml
-
-	MAKE_DEPEND-sig.aml
-	SMLToMozartMakeDepend.aml
