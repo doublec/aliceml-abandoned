@@ -18,6 +18,7 @@
 #pragma implementation "emulator/Thread.hh"
 #pragma implementation "emulator/ThreadQueue.hh"
 #pragma implementation "emulator/Tuple.hh"
+#pragma implementation "emulator/StackFrame.hh"
 #endif
 
 #include "emulator/Backtrace.hh"
@@ -27,3 +28,4 @@
 #include "emulator/Thread.hh"
 #include "emulator/ThreadQueue.hh"
 #include "emulator/Tuple.hh"
+#include "emulator/StackFrame.hh"
