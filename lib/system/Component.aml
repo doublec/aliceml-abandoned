@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -76,7 +76,11 @@ struct
 		else ()
 	end
 
-	val map: (sign * str) UrlMap.t = UrlMap.new ()
+	val map: (sign * str) UrlMap.t =
+	    UrlMap.new (Vector.map (fn (s, sign, str) =>
+				       (Url.fromString ("x-alice:/" ^ s),
+					(sign, str)))
+				   (UnsafeComponent.getInitialTable ()))
 
 	fun lazyTypeCheck (SOME sign, SOME importSign, str, url, baseUrlOpt) =
 	    byneed (fn () =>
