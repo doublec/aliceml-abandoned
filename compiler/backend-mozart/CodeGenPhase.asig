@@ -30,13 +30,15 @@ signature CODE_GEN_PHASE_COMPONENT =
     sig
 	structure CodeGenPhase:
 	    sig
-		structure C: CONTEXT
+		structure C :
+		sig 
+		    val new :	unit -> 't
+		    val clone :	't -> 't
+		end
 
-		type t
-
-		val translate: C.t * Source.desc * FlatGrammar.component -> t
-		val sign: t -> Signature.t
-		val save: t * string * bool -> unit
-		val apply: t -> unit
+		val translate: 'C_t * Source.desc * FlatGrammar.component -> 't
+		val sign: 't -> Signature.t
+		val save: 't * string * bool -> unit
+		val apply: 't -> unit
 	    end
     end

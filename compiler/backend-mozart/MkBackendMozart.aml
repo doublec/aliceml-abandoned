@@ -49,7 +49,7 @@ functor MkMozartTarget(structure Switches: SWITCHES
 	structure C = EmptyContext
 	structure Sig = Sig
 
-	type t = CodeGenPhase.t
+	type t
 
 	val sign = CodeGenPhase.sign
 
@@ -60,11 +60,10 @@ functor MkMozartTarget(structure Switches: SWITCHES
     end
 
 functor MkBackendMozart(structure Switches: SWITCHES
-			structure MozartTarget: TARGET
-			    where type t = CodeGenPhase.t): PHASE =
+			structure MozartTarget: TARGET): PHASE =
     MkTracingPhase(structure Phase =
 		       struct
-			   structure C = CodeGenPhase.C
+			   structure C = struct type t open CodeGenPhase.C end
 			   structure I = FlatGrammar
 			   structure O = MozartTarget
 

@@ -255,14 +255,11 @@ define
    end
 
    C =
-   'CodeGenPhase.C'('$t': {Value.byNeedFail rttNotImplemented}
-		    new: fun {$ unit} {Dictionary.new} end
+   'CodeGenPhase.C'(new: fun {$ unit} {Dictionary.new} end
 		    clone: Dictionary.clone)
 
    CodeGenPhase =
    'CodeGenPhase'('C$': C
-		  '$t': {Value.byNeedFail rttNotImplemented}
-		  '$value': {Value.byNeedFail rttNotImplemented}
 		  translate: Translate
 		  sign: Sign
 		  save: Save
