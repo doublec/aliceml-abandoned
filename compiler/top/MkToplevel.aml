@@ -15,6 +15,10 @@ import structure TextIO               from "../../lib/system/TextIO"
 import structure OS                   from "../../lib/system/OS"
 import structure Url                  from "../../lib/utility/Url"
 
+import structure Component            from "../../lib/system/Component"
+import structure PPComponent          from "../../lib/system/PPComponent"
+import structure PrettyPrint          from "../../lib/utility/PrettyPrint"
+
 import structure Crash                from "../infrastructure/Crash"
 import structure Error                from "../infrastructure/Error"
 import structure Target               from "../infrastructure/Target"
@@ -67,10 +71,24 @@ struct
 	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
 		       SOME "file")
 
-    fun eval compile (source, context) =
+    fun eval compile (printSig, source, context) =
 	(case compile context source of
-	     (context, Target.COMPONENT {eval, ...}) =>
-		 (eval (baseUrl ()); context)
+	     (context, Target.COMPONENT {eval, component, ...}) =>
+		 let
+		     val str = eval (baseUrl ())
+		 in
+		     if not printSig then () else
+		     case Component.inf (component ()) of
+		          NONE => TextIO.print "[no result signature]\n"
+		        | SOME inf =>
+			      let
+				  val doc = PPComponent.ppComp (str, inf);
+			      in
+				  PrettyPrint.output(TextIO.stdOut, doc, 79);
+				  TextIO.print "\n"
+			      end;
+		     context
+		 end
 	   | (_, Target.FOREIGN _) =>
 		 raise Crash.Crash
 		     "MkToplevel.eval: cross-compilation not supported")
@@ -86,7 +104,7 @@ struct
 
     fun loop context =
 	case readInput() of
-	    SOME source => loopUses(evalString(source, context))
+	    SOME source => loopUses (evalString (true, source, context))
 	  | NONE => TextIO.print "\n"
     and loopUses context =
 	let
@@ -96,7 +114,7 @@ struct
 	    case old of
 		filename::rest =>
 		    (Hole.fill (new, rest);
-		     loopUses (evalFile (filename, context)))
+		     loopUses (evalFile (true, filename, context)))
 	      | nil =>
 		    (Hole.fill (new, nil);
 		     loop context)
@@ -106,11 +124,8 @@ struct
       | main' nil =
 	let
 	    open RecursiveCompiler.Switches
-	    val dumpSig = !Debug.dumpElaborationSig
-	    val _ = Debug.dumpElaborationSig := false
-	    val context = evalString("", RecursiveCompiler.empty)
+	    val context = evalString (false, "", RecursiveCompiler.empty)
 	in
-	    Debug.dumpElaborationSig := dumpSig;
 	    Language.implicitImport  := false;
 	    loop context;
 	    OS.Process.success
@@ -126,7 +141,6 @@ struct
 	    open RecursiveCompiler.Switches
 	in
 	    defaults ();
-	    Debug.dumpElaborationSig := true;
 	    Debug.dumpPhases := false;
 	    Language.allowUnclosedComponents := true;
 	    Language.reexportImport := true;

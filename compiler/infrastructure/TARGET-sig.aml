@@ -14,13 +14,14 @@
 
 import structure Inf       from "../../lib/rtt/Inf"
 import structure Component from "../../lib/system/Component"
+import structure Reflect   from "../../lib/system/Reflect"
 import structure Url       from "../../lib/utility/Url"
 
 signature TARGET =
 sig
     datatype t =
 	COMPONENT of {component: unit -> Component.t,
-		      eval: Url.t -> unit}
+		      eval: Url.t -> Reflect.value}
       | FOREIGN of {inf: Inf.t,
 		    save: string -> unit}
 end

@@ -41,7 +41,8 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 		val component = CodeGenPhase.component x
 		val str = ComponentManager.eval (baseUrl, component)
 	    in
-		CodeGenPhase.eval (x, str)
+		CodeGenPhase.eval (x, str);
+		str
 	    end
 
 	structure ThePhase =

@@ -1,0 +1,228 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeValue   from "../system/UnsafeValue"
+import structure Reflect       from "../system/Reflect"
+
+import structure Name          from "../rtt/Name"
+import structure Label         from "../rtt/Label"
+import structure Path          from "../rtt/Path"
+import structure PathMap       from "../rtt/PathMap"
+import structure Type          from "../rtt/Type"
+import structure Inf           from "../rtt/Inf"
+import structure Fixity        from "../rtt/Fixity"
+import structure PervasiveType from "../rtt/PervasiveType"
+
+import structure PrettyPrint   from "../utility/PrettyPrint"
+import structure PPMisc        from "../rtt/PPMisc"
+import structure PPPath        from "../rtt/PPPath"
+import structure PPType        from "../rtt/PPType"
+import structure PPInf         from "../rtt/PPInf"
+import structure PPValue       from "../system/PPValue"
+import signature PP_COMPONENT  from "PP_COMPONENT-sig"
+
+structure PPComponent :> PP_COMPONENT =
+struct
+    type doc   = PrettyPrint.doc
+    type value = Reflect.value
+    type inf   = Inf.t
+
+    open PrettyPrint
+    open PPMisc
+    infixr ^^ ^/^
+
+
+  (* Simple objects *)
+
+    open Fixity
+
+    fun ppLab l			= text(Label.toString l)
+
+    fun ppFix NONFIX		= text "nonfix"
+      | ppFix(PREFIX n)		= text "prefix" ^/^ text(Int.toString n)
+      | ppFix(POSTFIX n)	= text "postfix"^/^ text(Int.toString n)
+      | ppFix(INFIX(n,LEFT))	= text "infix"  ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,RIGHT))	= text "infixr" ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,NEITHER))	= text "infixn" ^/^ text(Int.toString n)
+
+
+  (* Items *)
+
+    fun ppItem str (item, doc) =
+	case Inf.inspectItem item
+	 of Inf.FixItem(l,f) =>
+		hbox(
+		    ppFix f ^/^
+		    ppLab l
+		) ^/^ doc
+	  | Inf.ValItem(l,t) =>
+	    if String.sub(Label.toString l,0) = #"'" then
+		doc
+	    else
+		abox(
+		    abox(
+			hbox(
+			    text "val" ^/^ ppLab l ^/^ text ":"
+			) ^^
+			nest(break ^^
+			    abox(PPType.ppTyp t)
+			)
+		    ) ^/^
+		    hbox(
+			text "=" ^^ break
+		    ) ^^
+		    abox(below(
+			PPValue.ppVal t (UnsafeValue.projPoly(str,l))
+		    ))
+		) ^/^ doc
+	  | Inf.TypItem(p,k) =>
+	    if Type.isSingKind k then
+		abox(
+		    hbox(
+			text "type" ^/^
+			ppLab(Path.toLab p) ^/^
+			text "="
+		    ) ^^
+		    nest(break ^^
+			let
+			    val t  = Type.asSingKind k
+			    val t' = if not(Type.isAbbrev t) then t else
+				     let val (t1,t2) = Type.asAbbrev t in
+					 case Type.inspect t1
+					 of Type.Con p1 =>
+					    if Path.equal(p1,p) then t2
+					    else t
+					  | _ => t
+				     end
+			in
+			    abox(PPType.ppTyp t')
+			end
+		    )
+		) ^/^ doc
+	    else
+		abox(
+		    hbox(
+			text "type" ^/^
+			ppLab(Path.toLab p) ^/^
+			text ":"
+		    ) ^^
+		    nest(break ^^
+			abox(PPType.ppKind k)
+		    )
+		) ^/^ doc
+	  | Inf.ModItem(p,j) =>
+		abox(
+		    hbox(
+			text(if Inf.isArrow j then "functor"
+					      else "structure") ^/^
+			    ppLab(Path.toLab p) ^/^
+			text ":"
+		    ) ^^
+		    nest(break ^^
+			(if Inf.isSing j then
+			     let
+				 val (p',j') = Inf.asMod(Inf.asSing j)
+			     in
+				 abox(PPInf.ppInf j') ^/^
+				 hbox(text "=" ^/^ PPPath.ppPath p')
+			     end
+			 else
+			     abox(PPInf.ppInf j)
+			)
+		    )
+		) ^/^ doc
+	  | Inf.InfItem(p,k) =>
+	    if Inf.isSingKind k then
+		abox(
+		    hbox(
+			text "signature" ^/^
+			ppLab(Path.toLab p) ^/^
+			text "="
+		    ) ^^
+		    nest(break ^^
+			let
+			    val j  = Inf.asSingKind k
+			    val j' = if not(Inf.isAbbrev j) then j else
+				     let val (j1,j2) = Inf.asAbbrev j in
+					 if Inf.isCon j1 andalso
+					    Path.equal(Inf.asCon j1, p)
+					 then j2
+					 else j
+				     end
+			in
+			    abox(PPInf.ppInf j')
+			end
+		    )
+		) ^/^ doc
+	    else
+		abox(
+		    hbox(
+			text "signature" ^/^
+			ppLab(Path.toLab p) ^/^
+			text ":"
+		    ) ^^
+		    nest(break ^^
+			abox(ppKind k)
+		    )
+		) ^/^ doc
+	  | Inf.HiddenItem item' =>
+		doc
+
+  (* Kinds *)
+
+    and ppKind k = fbox(below(ppKind' k))
+
+    and ppKind' k =
+	case Inf.inspectKind k
+	 of Inf.GroundKind => text "#"
+	  | Inf.DepKind(p,j,k') =>
+		fbox(below(
+		    abox(
+			fbox(
+			    text "PI" ^/^
+			    text "(" ^^
+			    below(break ^^
+				PPPath.ppPath p ^/^
+				text ":" ^^
+				nest(break ^^
+				    PPInf.ppInf j
+				)
+			    ) ^/^
+			    text ")" ^/^
+			    text "."
+			) ^^
+			nest(break ^^
+			    ppKind' k
+			)
+		    )
+		))
+	  | Inf.SingKind j =>
+		abox(
+		    fbox(
+			text "<" ^^
+			below(break ^^
+			    PPInf.ppInf j
+			) ^/^
+			text ">"
+		    )
+		)
+
+  (* Components *)
+
+    fun ppComp(m,j) =
+	let
+	    val items = Inf.items(Inf.asSig j)
+	in
+	    vbox(List.foldl (ppItem m) empty items)
+	end
+	handle Inf.Interface => PPInf.ppInf j
+end

@@ -1,0 +1,296 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeValue   from "../system/UnsafeValue"
+import structure Reflect       from "../system/Reflect"
+
+import structure Name          from "../rtt/Name"
+import structure Label         from "../rtt/Label"
+import structure Path          from "../rtt/Path"
+import structure PathMap       from "../rtt/PathMap"
+import structure Type          from "../rtt/Type"
+import structure PervasiveType from "../rtt/PervasiveType"
+
+import structure PrettyPrint   from "../utility/PrettyPrint"
+import structure PPMisc        from "../rtt/PPMisc"
+import structure PPPath        from "../rtt/PPPath"
+import signature PP_VALUE      from "PP_VALUE-sig"
+
+structure PPValue :> PP_VALUE =
+struct
+    type doc   = PrettyPrint.doc
+    type path  = Path.t
+    type typ   = Type.t
+    type value = Reflect.value
+
+    open Type
+    open PrettyPrint
+    open PPMisc
+    infixr ^^ ^/^
+
+
+  (* Type registration *)
+
+    val registry = PathMap.new() : (typ -> value -> doc option) list PathMap.t
+
+    fun registerTyp(p,f) =
+	PathMap.insertWith (op @) (registry, p, [UnsafeValue.cast f])
+
+    fun unregisterTyp p =
+	PathMap.delete(registry, p)
+
+    fun tryRegistry(p,t,x) =
+	case PathMap.lookup(registry, p)
+	 of NONE		=> NONE
+	  | SOME fs		=> tryRegistry'(fs,t,x)
+    and tryRegistry'([],   t,x)	= NONE
+      | tryRegistry'(f::fs,t,x)	= case f t (UnsafeValue.cast x)
+				   of NONE => tryRegistry'(fs,t,x)
+				    | some => some
+
+
+  (* Type inspection helpers *)
+
+    datatype tag_desc = Nullary | Unary of typ | Nary of Type.row
+
+    fun unapply  t     = unapply'(t,[])
+    and unapply'(t,ts) =
+	case inspect t
+	 of Apply(t1,t2) => unapply'(t1,t2::ts)
+	  | _            => (t,ts)
+	
+    fun unarg t =
+	case inspect t
+	 of Apply(t1,t2) =>
+	    if not(equal(t1, PervasiveType.typ_strict)) then Unary t else
+	    (case inspect t2
+	     of Prod r =>
+		if isEmptyRow r
+		then Nullary
+		else Nary r
+	      | _ => raise Type.Type
+	    )
+	  | _ => Unary t
+
+    fun rowToLabs r = Vector.fromList(rowToLabs' r)
+    and rowToLabs' r =
+	case inspectRow r
+	 of (UnknownRow | EmptyRow) => []
+	  | FieldRow(l,_,r')        => l :: rowToLabs' r'
+
+    fun rowToTyps r = Vector.fromList(rowToTyps' r)
+    and rowToTyps' r =
+	case inspectRow r
+	 of (UnknownRow | EmptyRow) => []
+	  | FieldRow(_,t,r')        => t :: rowToTyps' r'
+
+
+  (* PP helpers *)
+
+    fun parenPrec p (p',doc) =
+	if p > p'
+	then paren doc
+	else doc
+
+
+  (* Precedences *)
+
+    val rootPrec	= 0
+    val infixPrec	= rootPrec + 1	(* infix operators *)
+    val applyPrec	= infixPrec + 1	(* standard application *)
+
+
+  (* Values *)
+
+    val absDoc = text "val"
+
+    fun ppLab l = text(Label.toString l)
+
+    fun ppVal t x =
+	if Future.isFuture x then text "_" else
+	if Future.isFailed x then text "raise" else
+	case inspect t
+	 of (Unknown | Var _) =>
+		absDoc
+	  | Con p =>
+		ppCon p t x
+	  | Arrow _ =>
+		text "fn"
+	  | Prod r =>
+		ppProd (UnsafeValue.proj,UnsafeValue.projTuple) r x
+	  | Sum r =>
+	    let
+		val ls   = rowToLabs r
+		val i    = UnsafeValue.tag(x,ls)
+		val l    = Vector.sub(ls,i)
+		val doc0 = text(Label.toString l)
+	    in
+		case unarg(lookupRow(r,l))
+		 of Nullary  => doc0
+		  | Unary t' =>
+		    let
+			val x' = UnsafeValue.projTaggedTuple(x,1,0)
+		    in
+			apply(doc0, [ppVal t' x'])
+		    end
+		  | Nary r' =>
+		    let
+			val doc' = ppProd (UnsafeValue.projTagged,
+					   UnsafeValue.projTaggedTuple) r' x
+		    in
+			apply(doc0, [doc'])
+		    end
+	    end
+	  | (All(a,t') | Exist(a,t')) =>
+		ppVal t' x
+	  | Lambda(a,t') =>
+		raise Type.Type
+	  | Apply _ =>
+	    let
+		val (t',ts) = unapply t
+	    in
+		case inspect t'
+		 of Mu _  => ppVal (unroll t) x
+		  | Con p => ppCon p t x
+		  | _     => raise Type.Type
+	    end
+	  | Mu t' =>
+		ppVal (unroll t) x
+
+    and ppCon p t x =
+	case tryRegistry(p,t,x)
+	 of SOME doc => doc
+	  | NONE     =>
+	if not(isExtKind(kind t)) then absDoc else
+	let
+	    val con  = UnsafeValue.con x
+	    val doc0 = text(Name.toString(UnsafeValue.conName con))
+	in
+	    if UnsafeValue.same(con,x)
+	    then doc0
+	    else apply(doc0, [absDoc])
+	end
+
+    and ppProd (unsafe_proj, unsafe_projTuple) r x =
+	if isTupleRow r andalso Vector.length(asTupleRow r) <> 1 then
+	    let
+		val ts    = asTupleRow r
+		val n     = Vector.length ts
+		val docs' = Vector.mapi
+				(fn(i,t') =>
+				    ppVal t' (unsafe_projTuple(x,n,i))
+				) (ts,0,NONE)
+	    in
+		paren(
+		    ppCommaList (fn doc => doc) (Vector.toList docs')
+		)
+	    end
+	else
+	    let
+		val ls    = rowToLabs r
+		val ts    = rowToTyps r
+		val docs' = Vector.mapi 
+				(fn(i,t') =>
+				 let
+				    val l    = Vector.sub(ls,i)
+				    val doc' = ppVal t' (unsafe_proj(x,ls,i))
+				 in
+				    abox(
+					hbox(
+					    text(Label.toString l) ^/^
+					    text "="
+					) ^^
+					nest(break ^^ doc')
+				    )
+				 end) (ts,0,NONE)
+	    in
+		brace(
+		    ppCommaList (fn doc => doc) (Vector.toList docs')
+		)
+	    end
+
+
+  (* Pervasive types *)
+
+    fun ppInt t x	= SOME(text(Int.toString x))
+    fun ppWord t x	= SOME(text("0wx" ^ Word.toString x))
+    fun ppReal t x	= SOME(text(Real.toString x))
+    fun ppChar t x	= SOME(text("#\"" ^ Char.toString x ^ "\""))
+    fun ppString t x	= SOME(text("\"" ^ String.toString x ^ "\""))
+
+    fun ppExn t x =
+	case x
+	 of ( Bind | Chr | Div | Domain | Match | Overflow
+	    | Size | Span | Subscript | IEEEReal.Unordered
+	    | Alt.Alt | Option.Option | Time.Time
+	    | Future.Cyclic | Promise.Promise
+	    | Thread.Terminate | Thread.Terminated | Package.MismatchVal ) =>
+	    SOME(
+		text(General.exnName x)
+	    )
+	  | Fail x' =>
+	    SOME(
+		apply(text(General.exnName x),
+		      [ppVal PervasiveType.typ_string x'])
+	    )
+	  | Package.Mismatch _ =>
+	    SOME(
+		apply(text(General.exnName x), [absDoc])
+	    )
+	  | _ => NONE
+
+    fun ppRef t x =
+	let
+	    val (_,t') = Type.asApply t
+	    val ppElem = ppVal t'
+	in
+	    SOME(
+		apply(text "ref", [ppElem(!x)])
+	    )
+	end
+
+    fun ppVec t =
+	let
+	    val (_,t') = Type.asApply t
+	    val ppElem = ppVal t'
+	in
+	    fn x =>
+		SOME(
+		    contain ("#[", "]") (
+			ppCommaList ppElem (Vector.toList x)
+		    )
+		)
+	end
+
+    fun ppArray t =
+	let
+	    val (_,t') = Type.asApply t
+	    val ppElem = ppVal t'
+	in
+	    fn x =>
+		SOME(
+		    contain ("[|", "|]") (
+			ppCommaList ppElem (Array.toList x)
+		    )
+		)
+	end
+
+    val _ = registerTyp(PervasiveType.path_int,    ppInt)
+    val _ = registerTyp(PervasiveType.path_word,   ppWord)
+    val _ = registerTyp(PervasiveType.path_real,   ppReal)
+    val _ = registerTyp(PervasiveType.path_char,   ppChar)
+    val _ = registerTyp(PervasiveType.path_string, ppString)
+    val _ = registerTyp(PervasiveType.path_exn,    ppExn)
+    val _ = registerTyp(PervasiveType.path_ref,    ppRef)
+    val _ = registerTyp(PervasiveType.path_vec,    ppVec)
+    val _ = registerTyp(PervasiveType.path_array,  ppArray)
+end

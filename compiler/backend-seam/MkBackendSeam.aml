@@ -57,7 +57,8 @@ functor MkBackendStockwerk(structure ComponentManager:
 					StampMap.insert
 					    (context, stamp,
 					     selRecord (str, label)))
-				    exportDesc
+				    exportDesc;
+				str
 			    end
 		    in
 			Target.COMPONENT {component = fn () => component, eval}

@@ -56,8 +56,7 @@ functor MkFrontendCommon(
 		  MkResultDumpingPhase(
 			structure Phase    = Phase1
 			structure Switches = Switches
-			(*TODO: Gert Hack... val header = "Component Signature" *)
-			val header = ""
+			val header = "Component Signature"
 			val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
 			val switch = Switches.Debug.dumpElaborationSig
 		  )
