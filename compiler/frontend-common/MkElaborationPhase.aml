@@ -161,7 +161,7 @@ struct
 
   (* Unification of vectors *)
 
-    exception UnifyVec of int * Env.typ * Env.typ
+    exception MismatchVec of int * Env.typ * Env.typ
 
     fun unifyVec ts =
 	if Vector.length ts = 0 then
@@ -169,8 +169,9 @@ struct
 	else let
 	    val t0 = Vector.sub(ts,0)
 	in
-	    Vector.appi (fn(i,t) => Type.unify(t0,t) handle Type.Unify(t1,t2) =>
-				    raise UnifyVec(i,t1,t2)) (ts,1,NONE)
+	    Vector.appi (fn(i,t) => Type.unify(t0,t)
+				    handle Type.Mismatch(t1,t2) =>
+					raise MismatchVec(i,t1,t2)) (ts,1,NONE)
 	end
 
 
@@ -319,8 +320,8 @@ struct
 	    val (t1,exp')   = elabExp(E, exp)
 	    val  t2         = selLab(t,l) handle Type.Type =>
 				    error(I.infoLab vallab, E.TagExpLab l)
-	    val  _          = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				    error(i, E.TagExpArgUnify(t1, t2, t3, t4))
+	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				    error(i, E.TagExpArgMismatch(t1,t2, t3,t4))
 	in
 	    ( t, O.TagExp(typInfo(i,t), vallab', SOME typ', exp') )
 	end
@@ -333,11 +334,13 @@ struct
 	    val  t11            = Type.unknown(Type.starKind())
 	    val  t12            = Type.unknown(Type.starKind())
 	    val  t3             = conarrowTyp(E, t11, t12)
-	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
+	    val  _              = Type.unify(t3,t1')
+				  handle Type.Mismatch(t4,t5) =>
 				    error(I.infoLongid vallongid,
-					  E.ConExpConUnify(t3, t1', t4, t5))
-	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5)=>
-				    error(i, E.ConExpArgUnify(t11, t2, t4, t5))
+					  E.ConExpConMismatch(t3, t1', t4, t5))
+	    val  _              = Type.unify(t11,t2)
+				  handle Type.Mismatch(t4,t5)=>
+				    error(i, E.ConExpArgMismatch(t11, t2, t4, t5))
 	in
 	    ( t12, O.ConExp(typInfo(i,t12), vallongid', exp') )
 	end
@@ -379,8 +382,8 @@ struct
 	    val (t1,exp')    = elabExp(E, exp)
 	    val (r,exprow')  = elabRow(elabExp, E, I.Row(i',fs,true))
 	    val  t2          = Type.prod r
-	    val  _           = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.UpdExpUnify(t2, t1, t4, t3))
+	    val  _           = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.UpdExpMismatch(t2, t1, t4, t3))
 	in
 	    ( t1, O.UpdExp(typInfo(i,t1), exp', exprow') )
 	end
@@ -392,8 +395,8 @@ struct
 	    val  t          = Type.unknown(Type.starKind())
 	    val  r          = Type.extendRow(l, t, Type.unknownRow())
 	    val  t2         = Type.prod r
-	    val  _          = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.SelExpUnify(t1, t2, t3, t4))
+	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.SelExpMismatch(t1, t2, t3, t4))
 	in
 	    ( t, O.SelExp(typInfo(i,t), vallab', exp') )
 	end
@@ -404,9 +407,9 @@ struct
 	    val  t0        = case ts of #[] => Type.unknown(Type.starKind())
 				      |  _  => Vector.sub(ts,0)
 	    val  t         = vecTyp(E, t0)
-	    val  _         = unifyVec ts handle UnifyVec(n,t1,t2) =>
+	    val  _         = unifyVec ts handle MismatchVec(n,t1,t2) =>
 				error(I.infoExp(Vector.sub(exps,n)),
-				      E.VecExpUnify(t, Vector.sub(ts,n), t1,t2))
+				      E.VecExpMismatch(t, Vector.sub(ts,n), t1,t2))
 	in
 	    ( t, O.VecExp(typInfo(i,t), exps') )
 	end
@@ -427,11 +430,11 @@ struct
 	    val  t11       = Type.unknown(Type.starKind())
 	    val  t12       = Type.unknown(Type.starKind())
 	    val  t1'       = Type.arrow(t11,t12)
-	    val  _         = Type.unify(t1,t1') handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,t1') handle Type.Mismatch(t3,t4) =>
 				error(I.infoExp exp1,
-				      E.AppExpFunUnify(t1, t1', t3, t4))
-	    val  _         = Type.unify(t2,t11) handle Type.Unify(t3,t4) =>
-				error(i, E.AppExpArgUnify(t2, t11, t3, t4))
+				      E.AppExpFunMismatch(t1, t1', t3, t4))
+	    val  _         = Type.unify(t2,t11) handle Type.Mismatch(t3,t4) =>
+				error(i, E.AppExpArgMismatch(t2, t11, t3, t4))
 	in
 	    ( t12, O.AppExp(typInfo(i,t12), exp1', exp2') )
 	end
@@ -441,10 +444,10 @@ struct
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  t         = boolTyp E
-	    val  _         = Type.unify(t1,t) handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1, E.AndExpUnify(t1,t,t3,t4))
-	    val  _         = Type.unify(t2,t) handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp2, E.AndExpUnify(t2,t,t3,t4))
+	    val  _         = Type.unify(t1,t) handle Type.Mismatch(t3,t4) =>
+				error(I.infoExp exp1, E.AndExpMismatch(t1,t,t3,t4))
+	    val  _         = Type.unify(t2,t) handle Type.Mismatch(t3,t4) =>
+				error(I.infoExp exp2, E.AndExpMismatch(t2,t,t3,t4))
 	in
 	    ( t, O.AndExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -454,10 +457,10 @@ struct
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  t         = boolTyp E
-	    val  _         = Type.unify(t1,t) handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1, E.OrExpUnify(t1,t,t3,t4))
-	    val  _         = Type.unify(t2,t) handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp2, E.OrExpUnify(t2,t,t3,t4))
+	    val  _         = Type.unify(t1,t) handle Type.Mismatch(t3,t4) =>
+				error(I.infoExp exp1, E.OrExpMismatch(t1,t,t3,t4))
+	    val  _         = Type.unify(t2,t) handle Type.Mismatch(t3,t4) =>
+				error(I.infoExp exp2, E.OrExpMismatch(t2,t,t3,t4))
 	in
 	    ( t, O.OrExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -468,11 +471,11 @@ struct
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val (t3,exp3') = elabExp(E, exp3)
 	    val  tb        = boolTyp E
-	    val  _         = Type.unify(t1,tb) handle Type.Unify(t4,t5) =>
+	    val  _         = Type.unify(t1,tb) handle Type.Mismatch(t4,t5) =>
 				error(I.infoExp exp1,
-				      E.IfExpCondUnify(t1, tb, t4, t5))
-	    val  _         = Type.unify(t2,t3) handle Type.Unify(t4,t5) =>
-				error(i, E.IfExpBranchUnify(t2, t3, t4, t5))
+				      E.IfExpCondMismatch(t1, tb, t4, t5))
+	    val  _         = Type.unify(t2,t3) handle Type.Mismatch(t4,t5) =>
+				error(i, E.IfExpBranchMismatch(t2, t3, t4, t5))
 	in
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
 	end
@@ -519,9 +522,9 @@ struct
 	    val (t1,exp') = elabExp(E, exp)
 	    val  te       = exnTyp E
 	    val  t        = Type.unknown(Type.starKind())
-	    val  _        = Type.unify(t1,te) handle Type.Unify(t2,t3) =>
+	    val  _        = Type.unify(t1,te) handle Type.Mismatch(t2,t3) =>
 				error(I.infoExp exp,
-				      E.RaiseExpUnify(t1, te, t2, t3))
+				      E.RaiseExpMismatch(t1, te, t2, t3))
 	in
 	    ( t, O.RaiseExp(typInfo(i,t), exp') )
 	end
@@ -530,8 +533,8 @@ struct
 	let
 	    val (t1,exp')  = elabExp(E, exp)
 	    val (t2,mats') = elabMats(E, exnTyp E, mats)
-	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.HandleExpUnify(t1, t2, t3, t4))
+	    val  _         = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.HandleExpMismatch(t1, t2, t3, t4))
 	in
 	    ( t1, O.HandleExp(typInfo(i,t1), exp', mats') )
 	end
@@ -540,8 +543,8 @@ struct
 	let
 	    val (t1,exp') = elabExp(E, exp)
 	    val (t2,typ') = elabStarTyp(E, true, typ)
-	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.AnnExpUnify(t1, t2, t3, t4))
+	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.AnnExpMismatch(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnExp(typInfo(i,t2), exp', typ') )
 	end
@@ -550,7 +553,7 @@ struct
 	let
 	    val  _       = Env.insertScope E
 	    val  s       = Inf.emptySig()
-	    val  decs'   = elabDecs(E, s, decs)
+	    val  decs'   = elabDecs(E, s, NONE, decs)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = Env.deleteScope E
 	in
@@ -559,7 +562,7 @@ struct
 
       | elabExp(E, I.PackExp(i, mod)) =
 	let
-	    val (j,mod') = elabMod(E, mod)
+	    val (j,mod') = elabMod(E, NONE, mod)
 	    (*UNFINISHED*)
 	    val  t       = Type.unknown(Type.starKind())
 	in
@@ -577,13 +580,13 @@ struct
 	let
 	    val  _        = Env.insertScope E
 	    val (t3,pat') = elabPat(E, Inf.emptySig(), pat)
-	    val  _        = Type.unify(t1,t3) handle Type.Unify(t5,t6) =>
+	    val  _        = Type.unify(t1,t3) handle Type.Mismatch(t5,t6) =>
 				error(I.infoPat pat,
-				      E.MatPatUnify(t1, t3, t5, t6))
+				      E.MatPatMismatch(t1, t3, t5, t6))
 	    val (t4,exp') = elabExp(E, exp)
-	    val  _        = Type.unify(t2,t4) handle Type.Unify(t5,t6) =>
+	    val  _        = Type.unify(t2,t4) handle Type.Mismatch(t5,t6) =>
 				error(I.infoExp exp,
-				      E.MatExpUnify(t2, t4, t5, t6))
+				      E.MatExpMismatch(t2, t4, t5, t6))
 	    val  E'       = Env.splitScope E
 	    val  _        = monomorphiseVals E'
 	in
@@ -639,8 +642,8 @@ struct
 	    val (t1,pat')   = elabPat(E, s, pat)
 	    val  t2         = selLab(t,l) handle Domain =>
 				    error(I.infoLab vallab, E.TagPatLab l)
-	    val  _          = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				    error(i, E.TagPatArgUnify(t1, t2, t3, t4))
+	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				    error(i, E.TagPatArgMismatch(t1, t2, t3, t4))
 	in
 	    ( t, O.TagPat(typInfo(i,t), vallab', SOME typ', pat') )
 	end
@@ -653,11 +656,13 @@ struct
 	    val  t11            = Type.unknown(Type.starKind())
 	    val  t12            = Type.unknown(Type.starKind())
 	    val  t3             = conarrowTyp(E, t11, t12)
-	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
+	    val  _              = Type.unify(t3,t1')
+				  handle Type.Mismatch(t4,t5) =>
 				    error(I.infoLongid vallongid,
-					  E.ConPatConUnify(t3, t1', t4, t5))
-	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5)=>
-				    error(i, E.ConPatArgUnify(t11, t2, t4, t5))
+					  E.ConPatConMismatch(t3, t1', t4, t5))
+	    val  _              = Type.unify(t11,t2)
+				  handle Type.Mismatch(t4,t5)=>
+				    error(i, E.ConPatArgMismatch(t11, t2, t4, t5))
 	in
 	    ( t12, O.ConPat(typInfo(i,t12), vallongid', pat') )
 	end
@@ -700,9 +705,9 @@ struct
 	    val  t0        = case ts of #[] => Type.unknown(Type.starKind())
 				      |  _  => Vector.sub(ts,0)
 	    val  t         = vecTyp(E, t0)
-	    val  _         = unifyVec ts handle UnifyVec(n,t1,t2) =>
+	    val  _         = unifyVec ts handle MismatchVec(n,t1,t2) =>
 				error(I.infoPat(Vector.sub(pats,n)),
-				      E.VecPatUnify(t, Vector.sub(ts,n), t1,t2))
+				      E.VecPatMismatch(t, Vector.sub(ts,n), t1,t2))
 	in
 	    ( t, O.VecPat(typInfo(i,t), pats') )
 	end
@@ -711,8 +716,8 @@ struct
 	let
 	    val (t1,pat1') = elabPat(E, s, pat1)
 	    val (t2,pat2') = elabPat(E, s, pat2)
-	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.AsPatUnify(t1, t2, t3, t4))
+	    val  _         = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.AsPatMismatch(t1, t2, t3, t4))
 	in
 	    ( t2, O.AsPat(typInfo(i,t2), pat1', pat2') )
 	end
@@ -721,8 +726,8 @@ struct
 	let
 	    val (t1,pat1') = elabPat(E, s, pat1)
 	    val (t2,pat2') = elabPat(E, s, pat2)
-	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.AltPatUnify(t1, t2, t3, t4))
+	    val  _         = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.AltPatMismatch(t1, t2, t3, t4))
 	in
 	    ( t2, O.AltPat(typInfo(i,t2), pat1', pat2') )
 	end
@@ -739,8 +744,8 @@ struct
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val (t2,exp') = elabExp(E, exp)
 	    val  tb       = boolTyp E
-	    val  _        = Type.unify(t2,tb) handle Type.Unify(t3,t4) =>
-				error(i, E.GuardPatUnify(t2, tb, t3, t4))
+	    val  _        = Type.unify(t2,tb) handle Type.Mismatch(t3,t4) =>
+				error(i, E.GuardPatMismatch(t2, tb, t3, t4))
 	in
 	    ( t1, O.GuardPat(typInfo(i,t1), pat', exp') )
 	end
@@ -749,8 +754,8 @@ struct
 	let
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val (t2,typ') = elabStarTyp(E, true, typ)
-	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.AnnPatUnify(t1, t2, t3, t4))
+	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.AnnPatMismatch(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnPat(typInfo(i,t2), pat', typ') )
 	end
@@ -758,7 +763,7 @@ struct
       | elabPat(E, s, I.WithPat(i, pat, decs)) =
 	let
 	    val (t,pat') = elabPat(E, s, pat)
-	    val  decs'   = elabDecs(E, s, decs)
+	    val  decs'   = elabDecs(E, s, NONE, decs)
 	in
 	    ( t, O.WithPat(typInfo(i,t), pat', decs') )
 	end
@@ -798,7 +803,7 @@ struct
 
     and elabTypid_bind(E, p, t, typid as I.Id(i, stamp, name)) =
 	let
-	    val t' = Type.abbrev(Type.abs(Type.kind t, p), t)
+	    val t' = Type.abbrev(Type.con(p, Type.kind t), t)
 	    val u  = ref false
 	    val _  = Env.insertTyp(E, stamp, {id=typid, path=p, typ=t', use=u})
 	in
@@ -998,7 +1003,7 @@ struct
 
       | elabTyp'(E, allowJok, I.PackTyp(i, inf)) =
 	let
-	    val (j,inf') = elabInf(E, inf)
+	    val (j,inf') = elabInf(E, NONE, inf)
 	    (*UNFINISHED*)
 	    val  t       = Type.unknown(Type.starKind())
 	in
@@ -1064,7 +1069,7 @@ struct
       | elabTypRep(E, p, mkKind, I.AbsTyp(i, isExtensible)) =
 	let
 	    val k = (if isExtensible then Type.extKind else Type.starKind)()
-	    val t = Type.abs(mkKind k, p)
+	    val t = Type.con(p, mkKind k)
 	in
 	    ( t, true, O.AbsTyp(typInfo(i,t), isExtensible) )
 	end
@@ -1079,23 +1084,24 @@ struct
 
   (* Module identifiers *)
 
-    and elabModid_bind'(E, p, j, modid as I.Id(i, stamp, name)) =
+    and elabModid_bind(E, p, doSingleton, j, modid as I.Id(i, stamp, name)) =
 	let
-	    val j' = Inf.sing(p,j)
+(*DEBUG
+val _ = (
+TextIO.print("elabModid_bind " ^ Name.toString name ^ " : \n");
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
+TextIO.print "\n";
+())
+*)
+	    val j' = Inf.sing(Inf.mod(p,j))
 	    val u  = ref(if name = PervasiveType.name_pervasive
 			 then UseEnv.FULL
 			 else UseEnv.PARTIAL(UseEnv.new()))
 	    val _  = Env.insertMod(E, stamp, {id=modid, path=p, inf=j', use=u})
 	in
+	    (* EXPERIMENTAL: make arguments non-generative *)
+	    if doSingleton then () else Path.hide p;
 	    ( j, O.Id(infInfo(i,j'), stamp, name) )
-	end
-
-    and elabModid_bind(E, p, j, modid) =
-	let
-	    val (j',_) = Inf.instance(p, j)
-handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
-	in
-	    elabModid_bind'(E, p, j', modid)
 	end
 
     and elabModid(E, I.Id(i, stamp, name)) =
@@ -1156,24 +1162,25 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
   (* Modules *)
 
-    and elabMod(E, I.PrimMod(i, s, inf)) =
+    and elabMod(E, po, I.PrimMod(i, s, inf)) =
 	let
-	    val (j,inf') = elabGroundInf(E, inf)
+	    val  p       = case po of SOME p => p | NONE => Path.invent()
+	    val (j,inf') = elabGroundInf(E, SOME p, inf)
 	in
 	    ( j, O.PrimMod(infInfo(i,j), s, inf') )
 	end
 
-      | elabMod(E, I.VarMod(i, modlongid)) =
+      | elabMod(E, po, I.VarMod(i, modlongid)) =
 	let
 	    val (j,modlongid') = elabModlongid(E, modlongid)
 	in
 	    ( j, O.VarMod(infInfo(i,j), modlongid') )
 	end
 
-      | elabMod(E, I.StrMod(i, decs)) =
+      | elabMod(E, po, I.StrMod(i, decs)) =
 	let
 	    val s     = Inf.emptySig()
-	    val decs' = elabDecs(E, s, decs)
+	    val decs' = elabDecs(E, s,po, decs)
 (*UNFINISHED: results in incomplete type inference
 	    val _     = Inf.close s handle Inf.Unclosed lt =>
 			    error(i, E.StrModUnclosed lt)
@@ -1183,10 +1190,10 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    ( j, O.StrMod(infInfo(i,j), decs') )
 	end
 
-      | elabMod(E, I.SelMod(i, modlab, mod)) =
+      | elabMod(E, po, I.SelMod(i, modlab, mod)) =
 	let
 	    val (l,modlab') = elabLab(E, modlab)
-	    val (j1,mod')   = elabMod(E, mod)
+	    val (j1,mod')   = elabMod(E, NONE, mod)
 	    val  s          = Inf.asSig' j1 handle Inf.Interface =>
 				error(I.infoMod mod, E.SelModInf j1)
 	    val  j          = Inf.sing(Inf.lookupMod'(s, l))
@@ -1194,69 +1201,136 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    ( j, O.SelMod(infInfo(i,j), modlab', mod') )
 	end
 
-      | elabMod(E, I.FunMod(i, modid, inf, mod)) =
+      | elabMod(E, po, I.FunMod(i, modid, inf, mod)) =
 	let
 	    val  _           = Env.insertScope E
-	    val (j1,inf')    = elabGroundInf(E, inf)
-	    val  p           = Path.name(I.name modid)
-	    val (j1',modid') = elabModid_bind(E, p, j1, modid)
-	    val (j2,mod')    = elabMod(E, mod)
+	    val  p           = elabNewPath(NONE, I.name modid)
+	    val (j1,inf')    = elabGroundInf(E, SOME p, inf)
+	    val (j1',modid') = elabModid_bind(E, p, false, j1, modid)
+	    val (j2,mod')    = elabMod(E, NONE, mod)
 	    val  _           = Env.deleteScope E
 	    val  j           = Inf.arrow(p, j1', j2)
 	in
+(*DEBUG
+TextIO.print "ElabMod FunMod: j = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
+TextIO.print "\n";
+*)
 	    ( j, O.FunMod(infInfo(i,j), modid', inf', mod') )
 	end
 
-      | elabMod(E, I.AppMod(i, mod1, mod2)) =
+      | elabMod(E, po, I.AppMod(i, mod1, mod2)) =
 	let
-	    val (j1,mod1')    = elabMod(E, mod1)
-	    val (p2,j2,mod2') = elabSingInf(E, mod2)
-	    val (p,j11,j12)   = Inf.asArrow' j1 handle Inf.Interface =>
+	    val (j1,mod1')  = elabMod(E, NONE, mod1)
+	    val (m2,mod2')  = elabMod'(E, mod2)
+	    val (p2,j2)     = Inf.asMod m2
+	    val (p,j11,j12) = Inf.asArrow' j1 handle Inf.Interface =>
 				error(I.infoMod mod1, E.AppModFunMismatch j1)
-	    val (j11',rea)    = Inf.match(j2,j11) handle Inf.Mismatch mismatch=>
+(*DEBUG
+val _ =
+(TextIO.print "elabMod AppMod: matching...\n";
+TextIO.print "j_arg =\n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
+TextIO.print "\n";
+TextIO.print "j_param =\n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j11, 80);
+TextIO.print "\n";
+())
+*)
+	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
+(*DEBUG
+(TextIO.print "elabMod AppMod: mismatch\n";
+TextIO.print "j2 =\n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
+TextIO.print "\n";
+TextIO.print "j11 =\n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j11, 80);
+TextIO.print "\n";
+*)
 				error(i, E.AppModArgMismatch mismatch)
-	    val  _            = PathMap.insert(#mod_rea rea, p, (p2,j11'))
-	    val  j            = Inf.realise(rea, j12)
+	    val  _          = PathMap.insertDisjoint(#mod_rea rea, p,
+						     Inf.narrowMod(m2,j11))
+(*DEBUG handle e =>
+(TextIO.print "j2 = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
+TextIO.print "\n";
+raise e)
+*)
+	    val  j'         = Inf.realise(rea, j12)
+	    val  j          = case po of NONE   => j'
+				       | SOME p => #1(Inf.instance(p,j'))
 	in
+(*DEBUG
+TextIO.print "ElabMod AppMod: j = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
+TextIO.print "\n";
+*)
 	    ( j, O.AppMod(infInfo(i,j), mod1', mod2') )
 	end
 
-      | elabMod(E, I.AnnMod(i, mod, inf)) =
+      | elabMod(E, po, I.AnnMod(i, mod, inf)) =
 	let
-	    val (j1,mod') = elabMod(E, mod)
-	    val (j2,inf') = elabGroundInf(E, inf)
-	    val (j,r)     = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
+	    val (j1,mod') = elabMod(E, po, mod)
+	    val (j2,inf') = elabGroundInf(E, NONE, inf)
+	    val  _        = Inf.match(j1,j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
+	    val  j        = Inf.narrow(j1,j2)
+(*DEBUG*) handle e => raise e
 	in
 	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
 	end
 
-      | elabMod(E, I.AbsMod(i, mod, inf)) =
+      | elabMod(E, po, I.SealMod(i, mod, inf)) =
 	let
-	    val (j1,mod') = elabMod(E, mod)
-	    val (j2,inf') = elabGroundInf(E, inf)
-	    val  _        = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
+	    val (j1,mod') = elabMod(E, NONE, mod)
+	    val (j2,inf') = elabGroundInf(E, po, inf)
+	    val  _        = Inf.match(j1,j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
 	    val  j        = j2
+(*DEBUG
+val _ = (
+TextIO.print "ElabMod SealMod:\n";
+TextIO.print "j1 = \n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j1, 80);
+TextIO.print "\n";
+TextIO.print "j2 = \n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 80);
+TextIO.print "\n";
+())
+*)
 	in
-	    ( j, O.AbsMod(infInfo(i,j), mod', inf') )
+	    ( j, O.SealMod(infInfo(i,j), mod', inf') )
 	end
 
-      | elabMod(E, I.LetMod(i, decs, mod)) =
+      | elabMod(E, po, I.LetMod(i, decs, mod)) =
 	let
-	    val  _       = Env.insertScope E
-	    val  s       = Inf.emptySig()
-	    val  decs'   = elabDecs(E, s, decs)
-	    val (j,mod') = elabMod(E, mod)
-	    val  _       = Env.deleteScope E
+	    val  _        = Env.insertScope E
+	    val  p        = Path.invent()
+	    val  s        = Inf.emptySig()
+	    val  decs'    = elabDecs(E, s, SOME p, decs)
+	    val  j1       = Inf.sign s
+	    val (j2,mod') = elabMod(E, po, mod)
+	    val  _        = Env.deleteScope E
+(*DEBUG
+val _ = (
+TextIO.print "ElabMod LetMod:\n";
+TextIO.print "j1 = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j1, 80);
+TextIO.print "\n";
+TextIO.print "j1' = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j1', 80);
+TextIO.print "\n";
+())
+*)
+	    val  j        = Inf.exist(p,j1,j2)
 	in
 	    ( j, O.LetMod(infInfo(i,j), decs', mod') )
 	end
 
-      | elabMod(E, I.UnpackMod(i, exp, inf)) =
+      | elabMod(E, po, I.UnpackMod(i, exp, inf)) =
 	let
 	    val (t,exp') = elabExp(E, exp)
-	    val (j,inf') = elabInf(E, inf)
+	    val (j,inf') = elabInf(E, po, inf)
 	    (*UNFINISHED*)
 	in
 	    unfinished i "elabMod" "packages";
@@ -1264,11 +1338,24 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	end
 
 
+  (* Modules without external path *)
+
+    and elabMod'(E, mod) =
+	let
+	    val  p       = Path.invent()
+	    val (j,mod') = elabMod(E, SOME p, mod)
+	    val  m       = if Inf.isSing j then Inf.asSing j
+			   else Inf.mod(p,j)
+	in
+	    (m,mod')
+	end
+
+
   (* Interface identifiers *)
 
     and elabInfid_bind(E, p, j, infid as I.Id(i, stamp, name)) =
 	let
-	    val j' = Inf.abbrev(Inf.abs(Inf.kind j, p), j)
+	    val j' = Inf.abbrev(Inf.con(p, Inf.kind j), j)
 	    val u  = ref false
 	    val _  = Env.insertInf(E, stamp, {id=infid, path=p, inf=j', use=u})
 	in
@@ -1304,14 +1391,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
   (* Interfaces *)
 
-    and elabInf(E, I.TopInf(i)) =
+    and elabInf(E, po, I.TopInf(i)) =
 	let
 	    val j = Inf.top()
 	in
 	    ( j, O.TopInf(infInfo(i,j)) )
 	end
 
-      | elabInf(E, I.PrimInf(i, s)) =
+      | elabInf(E, po, I.PrimInf(i, s)) =
 	let
 	    (* No pervasive interfaces yet... *)
 	    val j = (*PervasiveInf.lookup s handle PervasiveInf.Lookup =>*)
@@ -1320,99 +1407,121 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    ( j, O.PrimInf(infInfo(i,j), s) )
 	end
 
-      | elabInf(E, I.ConInf(i, inflongid)) =
+      | elabInf(E, po, I.ConInf(i, inflongid)) =
 	let
-	    val (j,inflongid') = elabInflongid(E, inflongid)
+	    val (j',inflongid') = elabInflongid(E, inflongid)
+	    val  j              = case po of NONE   => j'
+					   | SOME p => #1(Inf.instance(p,j'))
+(*DEBUG
+val _ = (
+TextIO.print "elabInf ConInf: j =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 80);
+TextIO.print "\n";
+())
+*)
 	in
 	    ( j, O.ConInf(infInfo(i,j), inflongid') )
 	end
 
-      | elabInf(E, I.SigInf(i, specs)) =
+      | elabInf(E, po, I.SigInf(i, specs)) =
 	let
 	    val s      = Inf.emptySig()
-	    val specs' = elabSpecs(E, s, specs)
+	    val specs' = elabSpecs(E, s,po, specs)
 	    val j      = Inf.sign s
 	in
 	    ( j, O.SigInf(infInfo(i,j), specs') )
 	end
 
-      | elabInf(E, I.ArrInf(i, modid, inf1, inf2)) =
+      | elabInf(E, po, I.ArrInf(i, modid, inf1, inf2)) =
 	let
 	    val  _           = Env.insertScope E
-	    val (j1,inf1')   = elabGroundInf(E, inf1)
-	    val  p           = Path.name(I.name modid)
-	    val (j1',modid') = elabModid_bind(E, p, j1, modid)
-	    val (j2,inf2')   = elabGroundInf(E, inf2)
+	    val  p           = elabNewPath(NONE, I.name modid)
+	    val (j1,inf1')   = elabGroundInf(E, SOME p, inf1)
+	    val (j1',modid') = elabModid_bind(E, p, false, j1, modid)
+	    val (j2,inf2')   = elabGroundInf(E, NONE, inf2)
 	    val  _           = Env.deleteScope E
 	    val  j           = Inf.arrow(p, j1', j2)
 	in
 	    ( j, O.ArrInf(infInfo(i,j), modid', inf1', inf2') )
 	end
 
-      | elabInf(E, I.FunInf(i, modid, inf1, inf2)) =
+      | elabInf(E, po, I.FunInf(i, modid, inf1, inf2)) =
 	let
 	    val  _           = Env.insertScope E
-	    val (j1,inf1')   = elabGroundInf(E, inf1)
-	    val  p           = Path.name(I.name modid)
-	    val (j1',modid') = elabModid_bind(E, p, j1, modid)
-	    val (j2,inf2')   = elabInf(E, inf2)
+	    val  p           = elabNewPath(NONE, I.name modid)
+	    val (j1,inf1')   = elabGroundInf(E, SOME p, inf1)
+	    val (j1',modid') = elabModid_bind(E, p, false, j1, modid)
+	    val (j2,inf2')   = elabInf(E, NONE, inf2)
 	    val  _           = Env.deleteScope E
 	    val  j           = Inf.lambda(p, j1', j2)
 	in
 	    ( j, O.FunInf(infInfo(i,j), modid', inf1', inf2') )
 	end
 
-      | elabInf(E, I.AppInf(i, inf, mod)) =
+      | elabInf(E, po, I.AppInf(i, inf, mod)) =
 	let
-	    val (j1,inf')    = elabInf(E, inf)
-	    val (p2,j2,mod') = elabSingInf(E, mod)
-	    val (p,j11,j12)  = Inf.asLambda j1 handle Inf.Interface =>
+	    val (j1,inf')   = elabInf(E, NONE, inf)
+	    val (m2,mod')   = elabMod'(E, mod)
+	    val (p2,j2)     = Inf.asMod m2
+	    val (p,j11,j12) = Inf.asLambda j1 handle Inf.Interface =>
 				error(I.infoMod mod, E.AppInfFunMismatch j1)
-	    val (j11',rea)   = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
+	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 				error(i, E.AppInfArgMismatch mismatch)
-	    val  _           = PathMap.insert(#mod_rea rea, p, (p2,j11'))
-	    val  j           = Inf.realise(rea, j12)
+	    val  _          = PathMap.insertDisjoint(#mod_rea rea, p,
+						     Inf.narrowMod(m2,j11))
+(*DEBUG*) handle e => raise e
+	    val  j'         = Inf.realise(rea, j12)
+	    val  j          = case po of NONE   => j'
+				       | SOME p => #1(Inf.instance(p,j'))
 	in
 	    ( j, O.AppInf(infInfo(i,j), inf', mod') )
 	end
 
-      | elabInf(E, I.InterInf(i, inf1, inf2)) =
+      | elabInf(E, po, I.InterInf(i, inf1, inf2)) =
 	let
-	    val (j1,inf1') = elabGroundInf(E, inf1)
-	    val (j2,inf2') = elabGroundInf(E, inf2)
-	    val  j         = Inf.intersect(j1,j2) handle Inf.Mismatch mismatch=>
+	    val (j1,inf1') = elabGroundInf(E, po, inf1)
+	    val (j2,inf2') = elabGroundInf(E, po, inf2)
+	    val  j         = Inf.infimum(j1,j2) handle Inf.Mismatch mismatch =>
 				error(i, E.InterInfMismatch mismatch)
 	in
 	    ( j, O.InterInf(infInfo(i,j), inf1', inf2') )
 	end
 
-      | elabInf(E, I.LetInf(i, decs, inf)) =
+      | elabInf(E, po, I.LetInf(i, decs, inf)) =
 	let
-	    val  _       = Env.insertScope E
-	    val  s       = Inf.emptySig()
-	    val  decs'   = elabDecs(E, s, decs)
-	    val (j,inf') = elabInf(E, inf)
-	    val  _       = Env.deleteScope E
+	    val  _        = Env.insertScope E
+	    val  p        = Path.invent()
+	    val  s        = Inf.emptySig()
+	    val  decs'    = elabDecs(E, s, SOME p, decs)
+	    val  j1       = Inf.sign s
+	    val (j2,inf') = elabInf(E, po, inf)
+	    val  _        = Env.deleteScope E
+	    val  j        = Inf.exist(p,j1,j2)	(* maximises *)
+	    val  _        = if not(Inf.isExist j) then () else
+				error(i, E.LetInfGenerative(#2(Inf.asExist j)))
 	in
 	    ( j, O.LetInf(infInfo(i,j), decs', inf') )
 	end
 
-      | elabInf(E, I.SingInf(i, mod)) =
+      | elabInf(E, po, I.SingInf(i, mod)) =
 	let
-	    val (p,j',mod') = elabSingInf(E, mod)
-	    val  j          = Inf.sing(p,j')
+	    val (j,mod') = elabMod(E, po, mod)
+	    val  _       = if Inf.isSing j andalso
+			      (* EXPERIMENTAL: make arguments non-generative *)
+			      not(Path.isHidden(#1(Inf.asMod(Inf.asSing j))))
+			   then () else error(i, E.SingInfNonSing j)
 	in
 	    ( j, O.SingInf(infInfo(i,j), mod') )
 	end
 
-      | elabInf(E, I.AbsInf _) =
+      | elabInf(E, po, I.AbsInf _) =
 	    raise Crash.Crash "Elab.elabInf: AbsInf"
 
   (* Interfaces in positions where they not may be higher order *)
 
-    and elabGroundInf(E, inf) =
+    and elabGroundInf(E, po, inf) =
 	let
-	    val (j,inf') = elabInf(E, inf)
+	    val (j,inf') = elabInf(E, po, inf)
 	    val  k       = Inf.kind j
 	in
 	    if Inf.isGroundKind k
@@ -1421,34 +1530,21 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	end
 
 
-  (* Modules inside interfaces *)
-
-    and elabSingInf(E, mod) =
-	let
-	    val (j,mod') = elabMod(E, mod)
-	    val (p,j')   = if Inf.isSing j then Inf.asSing j else
-			   let val p = Path.invent()
-			   in (p, #1(Inf.instance(p,j))) end
-	in
-	    (p,j',mod')
-	end
-
-
   (* Interfaces representations (RHSs of bindings) *)
 
     and elabInfRep(E, p, mkKind, I.FunInf(i, modid, inf1, inf2)) =
 	let
 	    val  _             = Env.insertScope E
-	    val (j1,inf1')     = elabGroundInf(E, inf1)
-	    val  p'            = Path.name(I.name modid)
-	    val (j1',modid')   = elabModid_bind(E, p', j1, modid)
+	    val  p'            = elabNewPath(NONE, I.name modid)
+	    val (j1,inf1')     = elabGroundInf(E, SOME p', inf1)
+	    val (j1',modid')   = elabModid_bind(E, p', false, j1, modid)
 	    val (j2,gen,inf2') = elabInfRep(E, p,
 				     fn k => mkKind(Inf.depKind(p',j1,k)),
 				     inf2)
 	    val  _             = Env.deleteScope E
 	    val  j             = if gen then j2 else Inf.lambda(p', j1', j2)
-				   (* If interface is generative then we
-				    * get a constructor with appropriate kind
+				   (* If interface is generative we get back
+				    * a constructor with appropriate kind
 				    * and do not need to insert lambdas.
 				    *)
 	in
@@ -1457,14 +1553,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
       | elabInfRep(E, p, mkKind, I.AbsInf(i)) =
 	let
-	    val j = Inf.abs(mkKind(Inf.groundKind()), p)
+	    val j = Inf.con(p, mkKind(Inf.groundKind()))
 	in
 	    ( j, true, O.AbsInf(infInfo(i,j)) )
 	end
 
       | elabInfRep(E, p, mkKind, inf) =
 	let
-	    val (j,inf') = elabInf(E, inf)
+	    val (j,inf') = elabInf(E, NONE, inf)
 	in
 	    ( j, false, inf' )
 	end
@@ -1472,7 +1568,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
   (* Declarations *)
 
-    and elabDec(E, s, varids, I.FixDec(i, vallab, fix)) =
+    and elabNewPath(NONE,   name) = Path.name name
+      | elabNewPath(SOME p, name) = Path.dot(p, Label.fromName name)
+
+    and elabDecs(E, s, po, decs)          = elabDecs'(E, s, po, [], decs)
+    and elabDecs'(E, s, po, varids, decs) =
+	    Vector.map (fn dec => elabDec(E, s, po, varids, dec)) decs
+
+    and elabDec(E, s,po,varids, I.FixDec(i, vallab, fix)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (f,fix')    = elabFix(E, fix)
@@ -1481,7 +1584,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.FixDec(nonInfo(i), vallab', fix')
 	end
 
-      | elabDec(E, s, varids, I.ValDec(i, pat, exp)) =
+      | elabDec(E, s,po,varids, I.ValDec(i, pat, exp)) =
 	let
 	    val  _        = Env.insertScope E
 	    val  _        = Type.enterLevel()
@@ -1492,17 +1595,17 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val  _        = Type.exitLevel()
 	    val  E'       = Env.splitScope E
-	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.ValDecUnify(t1, t2, t3, t4))
+	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.ValDecMismatch(t1, t2, t3, t4))
 	    val  _        = if I.isValue exp then generaliseVals(E, s, az, E')
 					     else liftVals(E, s, az, E')
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
 
-      | elabDec(E, s, varids, I.TypDec(i, typid, typ)) =
+      | elabDec(E, s,po,varids, I.TypDec(i, typid, typ)) =
 	let
-	    val  p          = Path.name(I.name typid)
+	    val  p          = elabNewPath(po, I.name typid)
 	    val (t,_,typ')  = elabTypRep(E, p, fn k => k, typ)
 	    val (t',typid') = elabTypid_bind(E, p, t, typid)
 	    val  _          = Inf.extendTyp(s, p, Type.singKind t')
@@ -1510,40 +1613,54 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.TypDec(nonInfo(i), typid', typ')
 	end
 
-      | elabDec(E, s, varids, I.ModDec(i, modid, mod)) =
+      | elabDec(E, s,po,varids, I.ModDec(i, modid, mod)) =
 	let
-	    val  p          = Path.name(I.name modid)
-	    val (j,mod')    = elabMod(E, mod)
-	    val (j',modid') = elabModid_bind(E, p, j, modid)
+	    val  p          = elabNewPath(po, I.name modid)
+	    val (j,mod')    = elabMod(E, SOME p, mod)
+	    val (j',modid') = elabModid_bind(E, p, true, j, modid)
+(*DEBUG
+val _ = (
+TextIO.print("elabDec ModDec: " ^ PrettyPrint.toString(PPPath.ppPath p, 80) ^ " : \n");
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j', 80);
+TextIO.print "\n";
+())
+*)
 	    val  _          = Inf.extendMod(s, p, j')
 	in
 	    O.ModDec(nonInfo(i), modid', mod')
 	end
 
-      | elabDec(E, s, varids, I.InfDec(i, infid, inf)) =
+      | elabDec(E, s,po,varids, I.InfDec(i, infid, inf)) =
 	let
-	    val  p          = Path.name(I.name infid)
+	    val  p          = elabNewPath(po, I.name infid)
 	    val (j,_,inf')  = elabInfRep(E, p, fn k => k, inf)
 	    val (j',infid') = elabInfid_bind(E, p, j, infid)
 	    val  _          = Inf.extendInf(s, p, Inf.singKind j')
+(*DEBUG
+val _ = (
+TextIO.print("elabDec InfDec: " ^ PrettyPrint.toString(PPPath.ppPath p, 80) ^ " = \n");
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j', 80);
+TextIO.print "\n";
+())
+*)
 	in
 	    O.InfDec(nonInfo(i), infid', inf')
 	end
 
-      | elabDec(E, s, varids, I.VarDec(i, varid, dec)) =
+      | elabDec(E, s,po,varids, I.VarDec(i, varid, dec)) =
 	let
 	    val varid'  = elabVarid_bind'(E, Type.starKind(), varid)
-	    val dec'    = elabDec(E, s, varid::varids, dec)
+	    val dec'    = elabDec(E, s,po,varid::varids, dec)
 	in
 	    O.VarDec(nonInfo(i), varid', dec')
 	end
 
-      | elabDec(E, s, varids, I.RecDec(i, decs)) =
+      | elabDec(E, s,po,varids, I.RecDec(i, decs)) =
 	let
 	    val _      = Env.insertScope E
 	    val _      = Type.enterLevel()
 	    val az     = enterVarids(E, varids)
-	    val tpats' = elabLHSRecDecs(E, s, decs)
+	    val tpats' = elabLHSRecDecs(E, s,po, decs)
 	    val (decs',eqs) = elabRHSRecDecs(E, s, ref tpats', decs)
 	    val _      = Type.fix eqs
 	    val _      = Type.exitLevel()
@@ -1556,18 +1673,31 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.RecDec(nonInfo(i), decs')
 	end
 
-      | elabDec(E, s, varids, I.LocalDec(i, decs)) =
+      | elabDec(E, s,po,varids, I.LocalDec(i, decs)) =
 	let
-	    val s'    = Inf.emptySig()
-	    val decs' = elabDecs(E, s', decs)
+	    val p'     = Path.invent()
+	    val s'     = Inf.emptySig()
+	    val decs'  = elabDecs(E, s', SOME p', decs)
+	    val s''    = Inf.emptySig()
 	in
+	    List.appr (fn item =>
+			  let val (p,k) = Inf.asTypItem item in
+			      if Type.isSingKind k then () else
+			      Inf.extendTyp(s'',p,k)
+			  end handle Inf.Item =>
+			  let val (p,j) = Inf.asModItem item in
+			      if Inf.isSing j then () else
+			      Inf.extendMod(s'',p,j)
+			  end handle Inf.Item =>
+			  let val (p,k) = Inf.asInfItem item in
+			      if Inf.isSingKind k then () else
+			      Inf.extendInf(s'',p,k)
+			  end handle Inf.Item => ()
+		      ) (Inf.items s');
+	    if List.null(Inf.items s'') then ()
+	    else Inf.extendHiddenMod(s, p', Inf.sign s'');
 	    O.LocalDec(nonInfo(i), decs')
 	end
-
-    and elabDecs(E, s, decs)          = elabDecs'(E, s, [], decs)
-    and elabDecs'(E, s, varids, decs) =
-	    Vector.map (fn dec => elabDec(E, s, varids, dec)) decs
-
 
     and enterVarids(E, varids) =
 	List.map (fn varid as I.Id(_, stamp, name) =>
@@ -1581,7 +1711,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
     and monomorphiseVals E =
 	Env.appVals (fn(x, entry as {typ=t, qtyp=qt, ...}) =>
-			Type.unify(qt,t) handle Type.Unify _ => ()) E
+			Type.unify(qt,t) handle Type.Mismatch _ => ()) E
 			(* may already be generalised through WithPat *)
 
     and liftVals(E, s, az, E') =
@@ -1591,7 +1721,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 		     in
 			Type.lift t handle Type.Lift a =>
 			    error(I.infoId id, E.ValDecLift(id, a));
-			Type.unify(qtyp,t) handle Type.Unify _ => ();
+			Type.unify(qtyp,t) handle Type.Mismatch _ => ();
 			    (* may already be generalised through WithPat *)
 			Env.insertVal(E, x, entry);
 			Inf.extendVal(s, l, t)
@@ -1609,7 +1739,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 			     val l  = Label.fromName(I.name id)
 			     val t' = List.foldl Type.all t az
 			  in
-			     Type.unify(qt,t') handle Type.Unify _ => ();
+			     Type.unify(qt,t') handle Type.Mismatch _ => ();
 			     (* may already be generalised through WithPat *)
 			     Env.insertVal(E, x, {id=id,use=u, typ=t',qtyp=t'});
 			     Inf.extendVal(s, l, t')
@@ -1620,15 +1750,15 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
   (* Recursive declarations *)
 
-    and elabLHSRecDecs(E, s, decs) =
-	    Vector.foldr (fn(dec,xs) => elabLHSRecDec(E,s,dec) @ xs) [] decs
+    and elabLHSRecDecs(E, s,po, decs) =
+	    Vector.foldr (fn(dec,xs) => elabLHSRecDec(E,s,po,dec) @ xs) [] decs
 
-    and elabLHSRecDec(E, s, I.ValDec(i, pat, exp)) =
+    and elabLHSRecDec(E, s,po, I.ValDec(i, pat, exp)) =
 	    [elabPat(E, s, pat)]
 
-      | elabLHSRecDec(E, s, I.TypDec(i, typid, typ)) =
+      | elabLHSRecDec(E, s,po, I.TypDec(i, typid, typ)) =
 	let
-	    val p = Path.name(I.name typid)
+	    val p = elabNewPath(po, I.name typid)
 	    val k = elabTypKind(E, typ)
 	    val t = Type.unknown k
 	    val _ = elabTypid_bind(E, p, t, typid)
@@ -1636,10 +1766,10 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    []
 	end
 
-      | elabLHSRecDec(E, s, I.RecDec(i, decs)) =
-	    elabLHSRecDecs(E, s, decs)
+      | elabLHSRecDec(E, s,po, I.RecDec(i, decs)) =
+	    elabLHSRecDecs(E, s,po, decs)
 
-      | elabLHSRecDec(E, s, _) = raise Crash.Crash "elabLHSRecDec"
+      | elabLHSRecDec(E, s,po, _) = raise Crash.Crash "elabLHSRecDec"
 
 
     and elabRHSRecDecs(E, s, rtpats', decs) =
@@ -1657,8 +1787,8 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    val (t2,exp') = elabExp(E, exp)
 	    val  _        = Env.deleteScope E
 	    val  _        = r := tpats'
-	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.ValDecUnify(t1, t2, t3, t4))
+	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.ValDecMismatch(t1, t2, t3, t4))
 	in
 	    ( O.ValDec(nonInfo(i), pat', exp'), [] )
 	end
@@ -1687,7 +1817,10 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
   (* Specifications *)
 
-    and elabSpec(E, s, I.FixSpec(i, vallab, fix)) =
+    and elabSpecs(E, s,po, specs) =
+	    Vector.map (fn spec => elabSpec(E, s,po, spec)) specs
+
+    and elabSpec(E, s,po, I.FixSpec(i, vallab, fix)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (f,fix')    = elabFix(E, fix)
@@ -1696,7 +1829,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.FixSpec(nonInfo(i), vallab', fix')
 	end
 
-      | elabSpec(E, s, I.ValSpec(i, valid, typ)) =
+      | elabSpec(E, s,po, I.ValSpec(i, valid, typ)) =
 	let
 	    val  l             = Label.fromName(I.name valid)
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
@@ -1708,9 +1841,9 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.ValSpec(nonInfo(i), valid', typ')
 	end
 
-      | elabSpec(E, s, I.TypSpec(i, typid, typ)) =
+      | elabSpec(E, s,po, I.TypSpec(i, typid, typ)) =
 	let
-	    val  p           = Path.name(I.name typid)
+	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, fn k => k, typ)
 	    val (t',typid')  = elabTypid_bind(E, p, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
@@ -1719,19 +1852,19 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.TypSpec(nonInfo(i), typid', typ')
 	end
 
-      | elabSpec(E, s, I.ModSpec(i, modid, inf)) =
+      | elabSpec(E, s,po, I.ModSpec(i, modid, inf)) =
 	let
-	    val  p          = Path.name(I.name modid)
-	    val (j,inf')    = elabGroundInf(E, inf)
-	    val (j',modid') = elabModid_bind(E, p, j, modid)
+	    val  p          = elabNewPath(po, I.name modid)
+	    val (j,inf')    = elabGroundInf(E, SOME p, inf)
+	    val (j',modid') = elabModid_bind(E, p, true, j, modid)
 	    val  _          = Inf.extendMod(s, p, j')
 	in
 	    O.ModSpec(nonInfo(i), modid', inf')
 	end
 
-      | elabSpec(E, s, I.InfSpec(i, infid, inf)) =
+      | elabSpec(E, s,po, I.InfSpec(i, infid, inf)) =
 	let
-	    val  p           = Path.name(I.name infid)
+	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, fn k => k, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
 	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
@@ -1740,9 +1873,9 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.InfSpec(nonInfo(i), infid', inf')
 	end
 
-      | elabSpec(E, s, I.RecSpec(i, specs)) =
+      | elabSpec(E, s,po, I.RecSpec(i, specs)) =
 	let
-	    val _            = elabLHSRecSpecs(E, s, specs)
+	    val _            = elabLHSRecSpecs(E, s,po, specs)
 	    val (specs',eqs) = elabRHSRecSpecs(E, s, specs)
 	    val _            = Type.fix eqs
 	    (* ASSUME that only TypSpec is under RecSpec *)
@@ -1750,9 +1883,9 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    O.RecSpec(nonInfo(i), specs')
 	end
 
-      | elabSpec(E, s, I.ExtSpec(i, inf)) =
+      | elabSpec(E, s,po, I.ExtSpec(i, inf)) =
 	let
-	    val (j,inf') = elabGroundInf(E, inf)
+	    val (j,inf') = elabGroundInf(E, po, inf)
 	(*UNFINISHED: insert stuff*)
 	in
 	    unfinished i "elabSpec" "signature extension";
@@ -1760,18 +1893,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	end
 
 
-    and elabSpecs(E, s, specs) =
-	    Vector.map (fn spec => elabSpec(E, s, spec)) specs
-
-
   (* Recursive specifications *)
 
-    and elabLHSRecSpecs(E, s, specs) =
-	    Vector.app (fn spec => elabLHSRecSpec(E,s,spec)) specs
+    and elabLHSRecSpecs(E, s,po, specs) =
+	    Vector.app (fn spec => elabLHSRecSpec(E,s,po,spec)) specs
 
-    and elabLHSRecSpec(E, s, I.TypSpec(i, typid, typ)) =
+    and elabLHSRecSpec(E, s,po, I.TypSpec(i, typid, typ)) =
 	let
-	    val p = Path.name(I.name typid)
+	    val p = elabNewPath(po, I.name typid)
 	    val k = elabTypKind(E, typ)
 	    val t = Type.unknown k
 	    val _ = elabTypid_bind(E, p, t, typid)
@@ -1779,10 +1908,11 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    ()
 	end
 
-      | elabLHSRecSpec(E, s, I.RecSpec(i, specs)) =
-	    elabLHSRecSpecs(E, s, specs)
+      | elabLHSRecSpec(E, s,po, I.RecSpec(i, specs)) =
+	    elabLHSRecSpecs(E, s,po, specs)
 
-      | elabLHSRecSpec(E, s, _) = ()
+      | elabLHSRecSpec(E, s,po, _) =
+	    raise Crash.Crash "elabLHSRecSpec"
 
 
     and elabRHSRecSpecs(E, s, specs) =
@@ -1812,8 +1942,8 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    ( O.RecSpec(nonInfo(i), specs'), Vector.toList tts )
 	end
 
-      | elabRHSRecSpec(E, s, spec) =
-	    ( elabSpec(E, s, spec), [] )
+      | elabRHSRecSpec(E, s, _) =
+	    raise Crash.Crash "elabRHSRecSpec"
 
 
   (* Announcements *)
@@ -1821,9 +1951,11 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
     fun elabAnn(E, desc, I.ImpAnn(i, imps, url)) =
 	let
 	    val s     = loadSig(desc, url)
-	    val s'    = Inf.emptySig' s		(* TODO: Efficiency hack! *)
+	    val s'    = Inf.emptySig()
 	    val imps' = elabImps(E, s, s', imps)
-	    val s''   = if !Switches.Language.retainFullImport then s else s'
+	    val s''   = if !Switches.Language.retainFullImport then s
+			else Inf.narrowSig(s,s')
+(*DEBUG*) handle e => raise e
 	in
 	    O.ImpAnn(sigInfo(i,s''), imps', url)
 	end
@@ -1842,17 +1974,17 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    val (l,vallab') = elabLab(E, vallab)
 	    val f1          = Inf.lookupFix(s, l) handle Inf.Lookup =>
 				error(i, E.ImpMismatch(Inf.MissingFix l))
-	    val desc'       = case desc
-				of I.NoDesc(i')       => O.NoDesc(fixInfo(i',f1))
-				 | I.SomeDesc(i',fix) =>
-				   let
-				       val (f2,fix') = elabFix(E, fix)
-				   in
-				       if f1 = f2
-				       then O.SomeDesc(fixInfo(i',f2), fix')
-				       else error(i, E.ImpMismatch
-						     (Inf.MismatchFix(l,f1,f2)))
-				   end
+	    val desc'       =
+		case desc
+		 of I.NoDesc(i')       => O.NoDesc(fixInfo(i',f1))
+		  | I.SomeDesc(i',fix) =>
+		    let
+			val (f2,fix') = elabFix(E, fix)
+		    in
+			if f1 = f2
+			then O.SomeDesc(fixInfo(i',f2), fix')
+			else error(i, E.ImpMismatch(Inf.MismatchFix(l,f1,f2)))
+		    end
 	in
 	    Inf.extendFix(s', l, f1);
 	    O.FixImp(nonInfo(i), vallab', desc')
@@ -1864,18 +1996,17 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    val  l             = Label.fromName(O.name valid')
 	    val  t1            = Inf.lookupVal(s, l) handle Inf.Lookup =>
 				   error(i, E.ImpMismatch(Inf.MissingVal l))
-	    val (t2,desc')  = case desc
-				of I.NoDesc(i') =>
-				   (t1, O.NoDesc(typInfo(i',t1)))
-				 | I.SomeDesc(i',typ) =>
-				   let
-				      val (t2,typ') = elabStarTyp(E, false, typ)
-				   in
-				      if Type.matches(t1,t2)
-				      then (t2, O.SomeDesc(typInfo(i',t2),typ'))
-				      else error(i, E.ImpMismatch
-						    (Inf.MismatchVal(l,t1,t2)))
-				   end
+	    val (t2,desc')     =
+		case desc
+		 of I.NoDesc(i')       => (t1, O.NoDesc(typInfo(i',t1)))
+		  | I.SomeDesc(i',typ) =>
+		    let
+			val (t2,typ') = elabStarTyp(E, false, typ)
+		    in
+			Type.match(t1,t2) handle Type.Mismatch m =>
+			    error(i, E.ImpMismatch(Inf.MismatchVal(l,t1,t2,m)));
+			(t2, O.SomeDesc(typInfo(i',t2),typ'))
+		    end
 	    val  _          = Type.unify(t0,t2)
 	    val  _          = Type.unify(qt,t2)
 	in
@@ -1885,26 +2016,23 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
       | elabImp(E, s, s', I.TypImp(i, typid, desc)) =
 	let
-	    val  l         = Label.fromName(I.name typid)
-	    val  p         = Path.name(I.name typid)
-	    val  k1        = Inf.lookupTyp(s, l) handle Inf.Lookup =>
-				error(i, E.ImpMismatch(Inf.MissingTyp l))
-	    val  t1        = Inf.lookupTyp'(s, l)
-	    val (k2,t2,desc') = case desc
-			       of I.NoDesc(i') =>
-				      (k1, t1, O.NoDesc(typInfo(i', t1)))
-				| I.SomeDesc(i',typ) =>
-				  let
-				      val (t2,_,typ') =
-					   elabTypRep(E, p, fn k => k, typ)
-				      val  k2 = Type.kind t2
-				  in
-				      if Type.matchesKind(k1, k2)
-				      then (k2, t2,
-				            O.SomeDesc(typInfo(i',t2), typ'))
-				      else error(i, E.ImpMismatch
-						    (Inf.MismatchTyp(l,k1,k2)))
-				  end
+	    val l  = Label.fromName(I.name typid)
+	    val p  = elabNewPath(NONE, I.name typid)
+	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup =>
+			error(i, E.ImpMismatch(Inf.MissingTyp l))
+	    val t1 = Inf.lookupTyp'(s, l)
+	    val (k2,t2,desc') =
+		case desc
+		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i', t1)))
+		  | I.SomeDesc(i',typ) =>
+		    let
+			val (t2,_,typ') = elabTypRep(E, p, fn k => k, typ)
+			val  k2         = Type.kind t2
+		    in
+			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
+			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
+			(k2, t2, O.SomeDesc(typInfo(i',t2), typ'))
+		    end
 	    val (_,typid') = elabTypid_bind(E, p, t2, typid)
 	in
 	    Inf.extendTyp(s', p, k2);
@@ -1913,33 +2041,30 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
       | elabImp(E, s, s', I.ModImp(i, modid, desc)) =
 	let
-	    val  l         = Label.fromName(I.name modid)
-	    val  p         = Path.name(I.name modid)
-	    val  j1        = Inf.lookupMod(s, l) handle Inf.Lookup =>
-				error(i, E.ImpMismatch(Inf.MissingMod l))
-	    val  m1        = Inf.lookupMod'(s, l)
-	    val (j2,j2',desc') = case desc
-				of I.NoDesc(i') =>
-				   let
-				       val j1' = Inf.sing m1
-				   in
-				       (j1, j1', O.NoDesc(infInfo(i', j1')))
-				   end
-				 | I.SomeDesc(i',inf) =>
-				   let
-				       val (j2,inf') = elabGroundInf(E, inf)
-				       val (j2',_)   = Inf.match(j1,j2)
-					   handle Inf.Mismatch m =>
-					   error(i, E.ImpMismatch
-						    (Inf.MismatchMod(l,m)))
-				       val p2 = #1 m1
-				       val m2 = (p2, #1(Inf.instance(p2,j2')))
-				       val j2'' = Inf.sing m2
-				   in
-				       (j2', j2'',
-				       O.SomeDesc(infInfo(i',j2''),inf'))
-				   end
-	    val (_,modid') = elabModid_bind'(E, p, j2', modid)
+	    val l  = Label.fromName(I.name modid)
+	    val p  = elabNewPath(NONE, I.name modid)
+	    val j1 = Inf.lookupMod(s, l) handle Inf.Lookup =>
+			error(i, E.ImpMismatch(Inf.MissingMod l))
+	    val m1 = Inf.lookupMod'(s, l)
+	    val (j2,jm2,desc') =
+		case desc
+		 of I.NoDesc(i') =>
+		    let
+			val jm1 = Inf.sing m1
+		    in
+			(j1, jm1, O.NoDesc(infInfo(i', jm1)))
+		    end
+		  | I.SomeDesc(i',inf) =>
+		    let
+			val (j2,inf') = elabGroundInf(E, SOME p, inf)
+			val _   = Inf.match(j1,j2) handle Inf.Mismatch m =>
+				   error(i, E.ImpMismatch(Inf.MismatchMod(l,m)))
+			val jm2 = Inf.sing(Inf.narrowMod(m1,j2))
+(*DEBUG*) handle e => raise e
+		    in
+			(j2, jm2, O.SomeDesc(infInfo(i',jm2),inf'))
+		    end
+	    val (_,modid') = elabModid_bind(E, p, true, jm2, modid)
 	in
 	    Inf.extendMod(s', p, j2);
 	    O.ModImp(nonInfo(i), modid', desc')
@@ -1947,26 +2072,23 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
       | elabImp(E, s, s', I.InfImp(i, infid, desc)) =
 	let
-	    val  l         = Label.fromName(I.name infid)
-	    val  p         = Path.name(I.name infid)
-	    val  k1        = Inf.lookupInf(s, l) handle Inf.Lookup =>
-				error(i, E.ImpMismatch(Inf.MissingInf l))
-	    val  j1        = Inf.lookupInf'(s, l)
-	    val (k2,j2,desc') = case desc
-				of I.NoDesc(i') =>
-				   (k1, j1, O.NoDesc(infInfo(i',j1)))
-				 | I.SomeDesc(i',inf) =>
-				   let				
-					val (j2,_,inf') =
-					     elabInfRep(E, p, fn k => k, inf)
-					val  k2 = Inf.kind j2
-				   in
-					Inf.matchKind(k1, k2)
-					handle Inf.Mismatch m =>
-					    error(i, E.ImpMismatch
-						     (Inf.MismatchMod(l,m)));
-					(k2,j2,O.SomeDesc(infInfo(i',j2),inf'))
-				   end
+	    val l  = Label.fromName(I.name infid)
+	    val p  = elabNewPath(NONE, I.name infid)
+	    val k1 = Inf.lookupInf(s, l) handle Inf.Lookup =>
+			error(i, E.ImpMismatch(Inf.MissingInf l))
+	    val j1 = Inf.lookupInf'(s, l)
+	    val (k2,j2,desc') =
+		case desc
+		 of I.NoDesc(i')       => (k1, j1, O.NoDesc(infInfo(i',j1)))
+		  | I.SomeDesc(i',inf) =>
+		    let				
+			val (j2,_,inf') = elabInfRep(E, p, fn k => k, inf)
+			val  k2         = Inf.kind j2
+		    in
+			Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
+			    error(i, E.ImpMismatch(Inf.MismatchInf(l,m)));
+			(k2, j2, O.SomeDesc(infInfo(i',j2),inf'))
+		    end
 	    val (_,infid') = elabInfid_bind(E, p, j2, infid)
 	in
 	    Inf.extendInf(s', p, k2);
@@ -1991,22 +2113,21 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
     and elabLHSRecImp(E, s, I.TypImp(i, typid, desc)) =
 	let
 	    val l  = Label.fromName(I.name typid)
-	    val p  = Path.name(I.name typid)
+	    val p  = elabNewPath(NONE, I.name typid)
 	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup =>
 			error(i, E.ImpMismatch(Inf.MissingTyp l))
 	    val t1 = Inf.lookupTyp'(s, l) handle Inf.Lookup =>
 			error(i, E.ImpMismatch(Inf.MissingTyp l))
-	    val _  = case desc
-			of I.NoDesc(i')       => ()
-			 | I.SomeDesc(i',typ) =>
-			   let
-				val k2 = elabTypKind(E, typ)
-			   in
-				if Type.matchesKind(k1,k2)
-				then ()
-				else error(i, E.ImpMismatch
-					      (Inf.MismatchTyp(l,k1,k2)))
-			   end
+	    val _  =
+		case desc
+		 of I.NoDesc(i')       => ()
+		  | I.SomeDesc(i',typ) =>
+		    let
+			val k2 = elabTypKind(E, typ)
+		    in
+			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
+			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)))
+		    end
 	    val _  = elabTypid_bind(E, p, t1, typid)
 	in
 	    ()
@@ -2033,17 +2154,16 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    (*UNFINISHED *)
 	    val (t1,p,typid') = elabTypid(E, typid)
 	    val  k1           = Inf.lookupTyp(s, Label.fromName(I.name typid))
-	    val (k2,t2,desc') = case desc
-				  of I.NoDesc(i') =>
-					(k1, t1, O.NoDesc(typInfo(i',t1)))
-				   | I.SomeDesc(i',typ) =>
-				     let
-					 val (t2,_,typ') =
-					     elabTypRep(E, p, fn k'=>k', typ)
-					 val k2 = Type.kind t2
-				     in
-					 (k2,t2,O.SomeDesc(typInfo(i',t2),typ'))
-				     end
+	    val (k2,t2,desc') =
+		case desc
+		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i',t1)))
+		  | I.SomeDesc(i',typ) =>
+		    let
+			val (t2,_,typ') = elabTypRep(E, p, fn k'=>k', typ)
+			val  k2         = Type.kind t2
+		    in
+			(k2, t2, O.SomeDesc(typInfo(i',t2),typ'))
+		    end
 	in
 	    Inf.extendTyp(s', p, k2);
 	    O.TypImp(nonInfo(i), typid', desc')
@@ -2063,12 +2183,13 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	let
 	    val UE     = UseEnv.new()
 	    val imps'' = stripImps(E, UE, imps')
+	    val sign'  = Inf.narrowSigExt(sign, stripSig(UE,sign))
+(*DEBUG*) handle e => raise e
 	in
 	    if Vector.length imps'' = 0 then
 		NONE
 	    else
-		SOME(O.ImpAnn({region=region, sign=stripSig(UE, sign)},
-			      imps'', url))
+		SOME(O.ImpAnn({region=region, sign=sign'}, imps'', url))
 	end
 
     and stripImps(E, UE, imps') =
@@ -2119,13 +2240,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 		 )
 	       | UseEnv.PARTIAL UE' =>
 		 if not(UseEnv.isEmpty UE') then
-		    (*UNFINISHED: if we strip inner interfaces, then we
-		      would need to adapt all occurances of longids. Urgh...
 		    ( UseEnv.insertMod(UE, l, !use)
-		    ; SOME(O.ModImp(i, modid', stripModDesc(!use, desc')))
-		    )
-		    *)
-		    ( UseEnv.insertMod(UE, l, UseEnv.FULL)
 		    ; SOME imp'
 		    )
 		 else
@@ -2164,10 +2279,6 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 		SOME(O.RecImp(i, imps''))
 	end
 
-    and stripModDesc(use, O.NoDesc{region,inf}) =
-	    O.NoDesc{region = region, inf = stripInf(use, inf)}
-      | stripModDesc(use, desc') = desc'
-
     (* Now this is real ugly... *)
 
     and stripInf(UseEnv.FULL,       j) = j
@@ -2175,15 +2286,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
     and stripSig(UE, s) =
 	let
-	    val s' = Inf.emptySig' s	(* TODO: Efficiency hack! *)
+	    val s' = Inf.emptySig()
 	in
 	    List.app (stripItem (UE,s,s')) (Inf.items s);
 	    s'
 	end
 
     and stripItem (UE,s,s') item =
-	(*UNFINISHED: this will not work for uninstantiated import sigs *)
-	if Inf.isValItem item then
+	(if Inf.isValItem item then
 	    let
 		val (l,t) = Inf.asValItem item
 	    in
@@ -2203,8 +2313,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    in
 		case UseEnv.lookupMod(UE, Path.toLab p)
 		  of NONE     => ()
-		   | SOME use => Inf.extendMod(s', p, j(*stripInf(use, j)*))
-				(*UNFINISHED: if we strip here, see above... *)
+		   | SOME use => Inf.extendMod(s', p, stripInf(use, j))
 	    end
 	else if Inf.isInfItem item then
 	    let
@@ -2215,6 +2324,8 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    end
 	else (* FixItem *)
 	    ()
+	) handle Path.Path => ()	(* hidden item *)
+
 
   (* Components *)
 
@@ -2223,7 +2334,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    val _      = Env.insertScope E
 	    val anns'  = elabAnns(E, desc, anns)
 	    val s      = Inf.emptySig()
-	    val decs'  = elabDecs(E, s, decs)
+	    val decs'  = elabDecs(E, s, NONE, decs)
 	    val _      = if !Switches.Language.allowUnclosedComponents then ()
 			 else Inf.close s handle Inf.Unclosed lnt =>
 			     error(i, E.CompUnclosed lnt)
