@@ -22,6 +22,7 @@
 #include "generic/Transients.hh"
 #include "generic/Transform.hh"
 #include "alice/Data.hh"
+#include "alice/StackFrame.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeConcreteCode.hh"
 #include "alice/NativeCodeInterpreter.hh"

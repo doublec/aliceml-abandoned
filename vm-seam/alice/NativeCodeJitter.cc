@@ -31,6 +31,7 @@
 #include "generic/RootSet.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/Data.hh"
+#include "alice/StackFrame.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
 #include "alice/NativeCodeInterpreter.hh"

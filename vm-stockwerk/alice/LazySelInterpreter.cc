@@ -17,8 +17,8 @@
 #endif
 
 #include <cstdio>
-#include "generic/StackFrame.hh"
 #include "generic/Scheduler.hh"
+#include "alice/StackFrame.hh"
 #include "alice/Data.hh"
 #include "alice/LazySelInterpreter.hh"
 

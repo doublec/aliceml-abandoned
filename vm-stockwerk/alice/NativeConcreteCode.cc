@@ -20,6 +20,7 @@
 #include "generic/RootSet.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Transients.hh"
+#include "alice/StackFrame.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeCodeJitter.hh"
 #include "alice/AliceConcreteCode.hh"

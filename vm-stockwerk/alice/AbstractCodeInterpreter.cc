@@ -24,6 +24,7 @@
 #include "generic/Transients.hh"
 #include "generic/Closure.hh"
 #include "alice/Data.hh"
+#include "alice/StackFrame.hh"
 #include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
