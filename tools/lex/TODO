@@ -185,7 +185,17 @@ TO-DO!
 
 *OK* -Output.sml: REGCASE-Ausgabe vervollständigen.
 
--bei regcase ... of ( ... ) müssen die Klammern stehen
+*fixed* -bei regcase ... of ( ... ) müssen die Klammern stehen
+
+-statt Ausnahme Error: RegMatch of string
+
+-statt getChar : unit -> char option
+       getString : unit -> string option
+
+    Idee: CharArray.array als Buffer (evtl. wie bei ml-lex)
+          oder string list
+
+-zusätzlich Lexer.fromList : string list -> (unit -> string option)
 
 -tagged transitions einführen
 

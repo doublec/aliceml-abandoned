@@ -238,6 +238,8 @@ fun addEof [] ys = rev ys
 	| regexp' of regexp 
 	| regexp'' of regexp 
 	| explist of atexp list
+	| explist' of atexp list
+        | caseexp of atexp
         | atexp' of atexp
 	| atexp of atexp
 
@@ -247,8 +249,8 @@ fun addEof [] ys = rev ys
 %nodefault
 
 
-
-
+%left DRARROW
+%left BAR
 
 %%
 
@@ -302,7 +304,7 @@ lexbind	: ID EQ lmatch AND lexbind     ( LEXBIND (ID,
 
 lmatch	: lrule BAR lmatch	( (lrule::lmatch) )
 
-	| lrule			( [lrule] )
+	| lrule	%prec DRARROW	( [lrule] )
 
 
 lrule	: regexp'' DRARROW LPAR explist lexdec' RPAR
@@ -368,17 +370,25 @@ regexp	: LPAR regexp'' RPAR	  ( regexp'' )
               ( makeRep (regexp, NUM1, NUM2, (regexpleft, RBRACEright) ) )
 
 
-explist	: atexp' explist    ( atexp' :: explist )
-	| 		    ( [] )
+explist	: caseexp explist    ( caseexp :: explist )
+	| 		     ( [] )
 
-atexp'  : REGCASE explist OF LPAR lmatch RPAR
-                     ( REGCASE (explist,
-				LMATCH (addEof lmatch [],(LPARleft, RPARright)),
-				(REGCASEleft, RPARright) ) )
+explist': atexp'             ( [atexp'] )
+        | atexp' explist'    ( atexp' :: explist')
+
+caseexp  : REGCASE explist' OF lmatch
+                     ( REGCASE (explist',
+				LMATCH (addEof lmatch [],
+					(lmatchleft, lmatchright)),
+				(REGCASEleft, lmatchright) ) )
 
         | atexp      ( atexp )
 
-atexp	: AND		    ( ATEXP ("and", (ANDleft, ANDright) ) )
+atexp   : atexp'            ( atexp' )
+        | OF                ( ATEXP ("of", (OFleft, OFright) ) )
+
+
+atexp'	: AND		    ( ATEXP ("and", (ANDleft, ANDright) ) )
 	| EQ		    ( ATEXP ("=", (EQleft, EQright) ) )
 	| TIMES		    ( ATEXP ("*", (TIMESleft, TIMESright) ) )
 	| PLUS		    ( ATEXP ("+", (PLUSleft, PLUSright) ) )
