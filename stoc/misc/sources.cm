@@ -1,5 +1,7 @@
 Group is
 
+    ../error/sources.cm
+
     (* Utilities *)
 
     Assert.sml
