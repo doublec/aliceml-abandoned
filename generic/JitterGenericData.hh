@@ -26,10 +26,10 @@ namespace Generic {
   public:
     static void New(u_int This,
 		    FrameLabel label, u_int size,
-		    Interpreter *interpreter) {
+		    Worker *worker) {
       JITStore::AllocBlock(This, (BlockLabel) label, BASE_SIZE + size);
-      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(interpreter));
-      JITStore::InitArg(This, INTERPRETER_POS, JIT_R0);
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+      JITStore::InitArg(This, WORKER_POS, JIT_R0);
     }
     static void Sel(u_int Dest, u_int This, u_int pos) {
       JITStore::GetArg(Dest, This, BASE_SIZE + pos);
@@ -152,7 +152,8 @@ namespace Generic {
     // Side-Effect: Scratches JIT_R0, JIT_FP
     static void New(u_int This, Interpreter *interpreter, u_int size) {
       JITStore::AllocBlock(This, CONCRETE_LABEL, BASE_SIZE + size);
-      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(interpreter));
+      ConcreteRepresentationHandler *handler = interpreter;
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(handler));
       JITStore::InitArg(This, HANDLER_POS, JIT_R0);
     }
     static void Sel(u_int Dest, u_int This, u_int pos) {
@@ -181,7 +182,7 @@ namespace Generic {
       Scheduler::PutZeroArg(Value);
       jit_movi_ui(JIT_R0, ::Scheduler::ONE_ARG);
       Scheduler::PutNArgs(JIT_R0);
-      jit_movi_ui(JIT_R0, Interpreter::CONTINUE);
+      jit_movi_ui(JIT_R0, Worker::CONTINUE);
       jit_ret();
     }
   };
