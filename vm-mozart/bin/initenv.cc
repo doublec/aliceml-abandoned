@@ -67,20 +67,35 @@ char *getAliceHome(bool toUnix)
   return ret;
 }
 
-#ifndef MOZART_1_2_0
-static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.3.0";
-#else
+#ifdef MOZART_1_2_0
 static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.2.5";
 #endif
 
 char *getOzHome(bool toUnix)
 {
+#ifndef MOZART_1_2_0
+  char mozartKey[1024];
+  int subversion = 0;
+  char *ozhome;
+  do {
+    sprintf(mozartKey,
+	    "SOFTWARE\\Mozart Consortium\\Mozart\\1.3.%d",
+	    subversion++);
+    ozhome = getRegistry(mozartKey,"OZHOME");
+  } while ((ozhome == NULL) && (subversion <= 9));
+  if (ozhome == NULL)
+    panic(true, "Could not locate value `%s\\%s´ in registry\n",
+	  mozartKey, "OZHOME");
+  else
+    ozhome = strdup(ozhome);
+#else
   char *ozhome = getRegistry(mozartKey,"OZHOME");
   if (ozhome == NULL)
     panic(true, "Could not locate value `%s\\%s´ in registry\n",
 	  mozartKey, "OZHOME");
   else
     ozhome = strdup(ozhome);
+#endif
   normalizePath(ozhome,toUnix);
   return ozhome;
 }
