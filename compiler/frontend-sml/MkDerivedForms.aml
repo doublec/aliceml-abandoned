@@ -110,9 +110,7 @@ import structure SCon	       from "SCon"
 import structure Lab           from "Lab"
 import structure VId
        structure TyCon
-       structure StrId
-       structure SigId         from "Ids"
-import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
+       structure StrId         from "Ids"
 import structure InputGrammar  from "InputGrammar"
 import structure ParsingError  from "ParsingError"
 import signature DERIVED_FORMS from "DERIVED_FORMS-sig"

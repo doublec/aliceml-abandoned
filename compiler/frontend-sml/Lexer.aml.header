@@ -13,7 +13,3 @@ from "ParsingError"
 import
     signature LEXER_ERROR
 from "LEXER_ERROR-sig"
-
-import
-    structure MkLexerError
-from "MkLexerError"

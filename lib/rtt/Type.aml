@@ -203,7 +203,6 @@ type variables allowed under MU, there can never be a hole either, anyway.
 *******************************************************************************)
 
 import structure Cell    from "../utility/Cell"
-import structure Name    from "Name"
 import structure Label   from "Label"
 import structure Path    from "Path"
 import structure PathMap from "PathMap"

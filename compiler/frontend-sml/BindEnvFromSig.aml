@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,9 +11,7 @@
  *)
 
 import structure Crash         from "../infrastructure/Crash"
-import structure Source        from "../infrastructure/Source"
 import structure Stamp         from "../common/Stamp"
-import structure Name          from "../../lib/rtt/Name"
 import structure Label         from "../../lib/rtt/Label"
 import structure Fixity        from "../../lib/rtt/Fixity"
 import structure Path          from "../../lib/rtt/Path"

@@ -5,7 +5,7 @@
  *
  * Copyright:
  *   Leif Kornstaedt, 2002
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,7 +14,6 @@
 
 import structure Name  from "../rtt/Name"
 import structure Label from "../rtt/Label"
-import structure Type  from "../rtt/Type"
 
 signature UNSAFE_VALUE_COMPONENT =
     sig

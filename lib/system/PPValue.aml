@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2003
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,7 +29,6 @@ import structure Atom             from "../data/Atom"
 
 import structure PrettyPrint      from "../utility/PrettyPrint"
 import structure PPMisc           from "../rtt/PPMisc"
-import structure PPPath           from "../rtt/PPPath"
 import signature PP_VALUE         from "PP_VALUE-sig"
 
 structure PPValue :> PP_VALUE =

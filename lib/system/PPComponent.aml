@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2003
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,7 +20,6 @@ import structure Name          from "../rtt/Name"
 import structure Label         from "../rtt/Label"
 import structure LabelSet      from "../rtt/LabelSet"
 import structure Path          from "../rtt/Path"
-import structure PathMap       from "../rtt/PathMap"
 import structure Type          from "../rtt/Type"
 import structure Inf           from "../rtt/Inf"
 import structure Fixity        from "../rtt/Fixity"

@@ -10,12 +10,9 @@
  *   $Revision$
  *)
 
-import signature SOURCE          from "../infrastructure/SOURCE-sig"
 import structure Source          from "../infrastructure/Source"
-import signature CONTEXT         from "../infrastructure/CONTEXT-sig"
 import structure EmptyContext    from "../infrastructure/EmptyContext"
 import signature SWITCHES        from "../infrastructure/SWITCHES-sig"
-import signature INPUT_GRAMMAR   from "INPUT_GRAMMAR-sig"
 import structure InputGrammar    from "InputGrammar"
 
 import functor   MkLexer         from "Lexer"
@@ -27,7 +24,6 @@ import structure MkDerivedForms  from "MkDerivedForms"
 import functor   MkLexerError    from "MkLexerError"
 import structure ParsingError    from "ParsingError"
 import signature PARSING_PHASE   from "PARSING_PHASE-sig"
-
 
 functor MkParsingPhase(Switches : SWITCHES) :> PARSING_PHASE =
 struct

@@ -3,14 +3,13 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Error          from "Error"
 import structure Source         from "Source"
 import signature CONTEXT        from "CONTEXT-sig"
 import signature REPRESENTATION from "REPRESENTATION-sig"

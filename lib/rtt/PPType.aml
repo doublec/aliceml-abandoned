@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,7 +12,6 @@
 
 
 import structure Label         from "Label"
-import structure Path          from "Path"
 import structure Type          from "Type"
 import structure PervasiveType from "PervasiveType"
 

@@ -85,8 +85,6 @@
  *   realisation signature expressions.
  *)
 
-
-import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
 import structure InputGrammar  from "InputGrammar"
 import structure Source	       from "../infrastructure/Source"
 

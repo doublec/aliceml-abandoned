@@ -22,7 +22,6 @@ import __primitive
        val op = and op <>
        val op + and op -                    from "ToplevelValues"
 import __primitive structure Int            from "Int"
-import __primitive structure List           from "List"
 import __primitive structure Vector         from "Vector"
 import __primitive signature VECTOR_PAIR    from "VECTOR_PAIR-sig"
 

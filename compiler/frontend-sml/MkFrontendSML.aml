@@ -3,15 +3,13 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Url               from "../../lib/system/Url"
-import structure Source            from "../infrastructure/Source"
 import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
 import signature PHASE             from "../infrastructure/PHASE-sig"
 import structure ComposePhases'    from "../infrastructure/ComposePhases"
@@ -20,7 +18,6 @@ import structure MkResultDumpingPhase
 				   from "../infrastructure/MkResultDumpingPhase"
 
 import structure PPAbstractGrammar from "../frontend-common/AbstractGrammar"
-import structure BindEnv           from "BindEnv"
 import structure MkParsingPhase    from "MkParsingPhase"
 import structure MkAbstractionPhase
        structure SigLoader         from "MkAbstractionPhase"

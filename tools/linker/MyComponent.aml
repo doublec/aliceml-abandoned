@@ -12,7 +12,6 @@
 
 import structure Inf             from "../../lib/rtt/Inf"
 import structure IO              from "../../lib/system/IO"
-import structure OS              from "../../lib/system/OS"
 import structure Reflect         from "../../lib/system/Reflect"
 import structure Url             from "../../lib/system/Url"
 import structure Resolver        from "../../lib/system/Resolver"

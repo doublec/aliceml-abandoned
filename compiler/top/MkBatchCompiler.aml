@@ -13,7 +13,6 @@
 import structure TextIO             from "../../lib/system/TextIO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
-import structure Url                from "../../lib/system/Url"
 import structure Component          from "../../lib/system/Component"
 import structure MkOptionParser     from "MkOptionParser"
 import signature BATCH_COMPILER     from "BATCH_COMPILER-sig"

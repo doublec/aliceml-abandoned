@@ -19,7 +19,6 @@ import __primitive type unit and int          from "ToplevelTypes"
 import __primitive
        infix 4 < <= infix 6 +
        val < and op <= and op +               from "ToplevelValues"
-import __primitive structure List             from "List"
 import __primitive structure General          from "General"
 import __primitive functor MkArray            from "MkArray"
 import functor MkSlice                        from "MkSlice"
