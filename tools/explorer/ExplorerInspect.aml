@@ -24,17 +24,23 @@ import structure Label            from "x-alice:/lib/rtt/Label"
 import structure Url              from "x-alice:/lib/system/Url"
 import structure Component        from "x-alice:/lib/system/Component"
 import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+import structure Reflect from "x-alice:/lib/system/Reflect" 
 import structure UnsafeValue      from  "x-alice:/lib/system/UnsafeValue"
 
 structure ExplorerInspect =
   struct
 
-    val fdSig = Inf.asSig(Option.valOf
-	                      (Component.inf(ComponentManager.link
-		               (Url.fromString "x-alice:/lib/gecode/FD"))))
-    val fsSig = Inf.asSig(Option.valOf
-	                      (Component.inf(ComponentManager.link
-		               (Url.fromString "x-alice:/lib/gecode/FS"))))
+    val coreSign = Inf.asSig(#2 
+	     (Reflect.reflectPackage(ComponentManager.link 
+	       (Url.fromString "x-alice:/lib/fundamental/Core")))) 
+
+    val fdSig = Inf.asSig(#2
+	     (Reflect.reflectPackage(ComponentManager.link
+	       (Url.fromString "x-alice:/lib/gecode/FD"))))
+
+    val fsSig = Inf.asSig(#2
+	     (Reflect.reflectPackage(ComponentManager.link
+	       (Url.fromString "x-alice:/lib/gecode/FS"))))
                 
     fun lookupTyp(sign, modLab, typLab) =
         let
