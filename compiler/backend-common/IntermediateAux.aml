@@ -19,7 +19,8 @@ import structure PervasiveType       from "../../lib/rtt/PervasiveType"
 import structure Crash               from "../infrastructure/Crash"
 import structure Stamp               from "../common/Stamp"
 import structure StampSet            from "../common/StampSet"
-import structure IntermediateGrammar from "../common/IntermediateGrammar"
+import structure IntermediateInfo
+       structure IntermediateGrammar from "../common/IntermediateGrammar"
 import structure Arity               from "Arity"
 import structure FlatGrammar         from "FlatGrammar"
 import signature INTERMEDIATE_AUX    from "INTERMEDIATE_AUX-sig"
@@ -30,8 +31,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure O = FlatGrammar
 
 	open I
-
-	fun id_info {region, typ = _} = {region = region}
 
 	fun freshIntermediateId info = Id (info, Stamp.new (), Name.InId)
 
@@ -181,7 +180,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		val decs =
 		    List.map
 		    (fn (id, id', info) =>
-		     ValDec (id_info info, VarPat (info, id),
+		     ValDec ({region = #region info,
+			      origin = IntermediateInfo.Aux},
+			     VarPat (info, id),
 			     VarExp (info, ShortId (info, id')))) subst
 	    in
 		case decs of

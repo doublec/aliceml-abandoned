@@ -25,8 +25,6 @@ signature INTERMEDIATE_AUX =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val id_info: I.exp_info -> I.dec_info
-
 	val freshIntermediateId: I.id_info -> I.id
 
 	val translateLit: I.lit -> O.lit
