@@ -108,7 +108,7 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 #define REALINSTRVEC      VECTOR(pc->Sel(operand++), RealInstr)
 #define STRINGINSTRVEC    VECTOR(pc->Sel(operand++), StringInstr)
 #define NULLARYTAGTESTS   INTINSTRVEC
-#define NARYTAGTESTS      TRIPLE(pc->Sel(operand++), Int, IdDefs, Instr)
+#define NARYTAGTESTS      VECTOR(pc->Sel(operand++), NaryTagTest)
 #define IDDEFSOPTINSTRVEC VECTOR(pc->Sel(operand++), IdDefsOptInstr)
 #define NULLARYCONTESTS   VECTOR(pc->Sel(operand++), IdRefInstr)
 #define NARYCONTESTS      VECTOR(pc->Sel(operand++), IdRefIdDefsInstr)
@@ -226,6 +226,9 @@ private:
   void IdDefsInstr(word w) {
     TUPLE(w, IdDefs, Instr);
   }
+  void NaryTagTest(word w) {
+    TRIPLE(w, Int, IdDefs, Instr);
+  }
 public:
   Disassembler(std::FILE *f, TagVal *pc): file(f) {
     todo = Stack::New(initialSize);
@@ -332,4 +335,5 @@ void AbstractCode::Disassemble(std::FILE *f, TagVal *pc) {
   Disassembler disassembler(f, pc);
   disassembler.Start();
   disassembler.DumpImmediates();
+  std::fflush(f);
 }
