@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /tmp/install
+OZHOME = /opt/mozart-devel
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
@@ -671,12 +671,12 @@ build3/%.ozf: build3/%.aml
 
 build3/lib/fundamental/LinkedPervasive.ozf: \
 	build3/lib/fundamental/Pervasive.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3 \
 	build3/lib/fundamental/Pervasive -o $@
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
@@ -685,7 +685,7 @@ build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 
 build3/compiler/LinkedCompileServerMain.ozf: \
 	build3/compiler/CompileServerMain.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
@@ -693,7 +693,7 @@ build3/compiler/LinkedCompileServerMain.ozf: \
 	build3/compiler/CompileServerMain -o $@
 
 build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
@@ -705,29 +705,29 @@ build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	build3/compiler/backend-mozart/CodeGenPhase.ozf \
 	build3/compiler/backend-mozart/CodeGen.ozf \
 	build3/compiler/backend-mozart/Prebound.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}"="../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToMozartRecursiveCompiler -o $@
 
 build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToDotNetRecursiveCompiler -o $@
 
 build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToStockwerkRecursiveCompiler.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToStockwerkRecursiveCompiler -o $@
 
 build3/linker/LinkedMain.ozf: $(LINKERSOURCES:%.aml=build3/%.ozf)
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--include build3/linker \
 	build3/linker/Main -o $@
 
 build3/depend/LinkedMain.ozf: $(DEPENDSOURCES:%.aml=build3/%.ozf)
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--include build3/depend \
 	build3/depend/Main -o $@
 
