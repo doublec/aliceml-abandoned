@@ -21,3 +21,6 @@ is
 	PathSet.sml
 	TYPE.sig
 	Type.sml
+	ENV.sig
+	Env.sml
+
