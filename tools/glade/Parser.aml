@@ -11,7 +11,7 @@
  *)
 
 import structure CodeEmitter from "CodeEmitter"
-import structure AliceXML    from "x-alice:/lib/xml/AliceXML"
+import structure XML         from "x-alice:/lib/xml/XML"
 
 signature PARSER =
   sig
@@ -23,7 +23,7 @@ signature PARSER =
 structure Parser :> PARSER =
   struct
       open CodeEmitter
-      open AliceXML
+      open XML
 
       exception ParseError of string
 
@@ -166,7 +166,7 @@ structure Parser :> PARSER =
 
       fun parse(gladeFile, doc, sigDoc) =
 	  let
-	      val xml = AliceXML.parse gladeFile
+	      val xml = XML.parse gladeFile
 	  in
 	      parseInterface(doc, sigDoc, xml)
 	  end
