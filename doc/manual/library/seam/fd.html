@@ -29,19 +29,23 @@
     Some propagators take a "consistency level" argument to determine 
     the desired mode of operation.
   </P>
-  <P>
-    A propagator ceases to exist if all the variables
-    it is posted on are determined. In the following sections,
-    only exceptions from this rule are mentioned,
-    i. e. if the propagator ceases to exist earlier.
-    For example, <TT>FD.lessEq(x, y)</TT> ceases
-    to exist if the current upper bound
-    of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
-  </P>
+
+<?php
+#  <P>
+#    A propagator ceases to exist if all the variables
+#    it is posted on are determined. In the following sections,
+#    only exceptions from this rule are mentioned,
+#    i. e. if the propagator ceases to exist earlier.
+#    For example, <TT>FD.lessEq(x, y)</TT> ceases
+#    to exist if the current upper bound
+#    of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
+#  </P>
+?>
 
   <P>See also:
     <A href="fs.html"><TT>FS</TT></A>,
-    <A href="linear.html"><TT>Linear</TT></A>
+    <A href="linear.html"><TT>Linear</TT></A>,
+    <A href="space.html"><TT>Space</TT></A>
   </P>
 
 <?php section("import", "import"); ?>
@@ -161,7 +165,6 @@ sig
     val max : space * intvar vector * intvar -> unit
     val abs : space * intvar * intvar * conlevel -> unit
     val mult: space * intvar * intvar * intvar -> unit
-(*    val power: space * intvar * intvar * intvar -> unit*)
 
     structure Reified :
 	sig
@@ -174,8 +177,6 @@ sig
 		      boolvar -> unit
 	    val relI : space * intvar * relation * int *
 		       boolvar -> unit
-(*	    val equal : space * intvar * intvar *
-			boolvar * conlevel -> unit*)
 	    val linear : space * (int * intvar) vector * relation *
 			 int * boolvar * conlevel -> unit
 	end
@@ -188,16 +189,10 @@ sig
 	    val value : space * intvar -> int (* NotAssigned *)
 	    val boolVal : space * boolvar -> bool (* NotAssigned *)
 	    val boolvar2intvar : boolvar -> intvar
-(*	    val mid : space * intvar -> int *)
-(*	    val nextLarger : space * fd * int -> int *)
-(*	    val nextSmaller : space * fd * int -> int *)
 	    val size : space * intvar -> int
 	    val dom : space * intvar -> domain
             val assigned : space * intvar -> bool
             val range : space * intvar -> bool
-(*	    val domList : fd -> int list *)
-(*	    val nbSusps : fd -> int *)
-(*	    val eq : fd * fd -> bool (* token eq *) *)
 	end
 						  
     (* Branching strategies *)
@@ -232,7 +227,7 @@ end</PRE>
       <TT>type space</TT>
     </DT>
     <DD>
-      <P>The type of the first class comutational space. Usually equal to <TT>SPACE.space</TT>.
+      <P>The type of first class comutational spaces. Usually equal to <TT>SPACE.space</TT>.
     </P></DD>
 
     <DT
@@ -302,7 +297,7 @@ end</PRE>
       <TT>intvarVec (<I>s, n, d</I>)</TT>
     </DT>
     <DD>
-      <P>Returns <I>n<\I> FD variables freshly created in <I>s</I>.
+      <P>Returns <I>n</I> FD variables freshly created in <I>s</I>.
       They are already constrained to be in <I>d</I>.
     </P></DD>
 
@@ -318,7 +313,7 @@ end</PRE>
       <TT>rangeVec (<I>s, n, (min, max)</I>)</TT>
     </DT>
     <DD>
-      <P>Returns <I>n<\I> FD variables freshly created in <I>s</I>.
+      <P>Returns <I>n</I> FD variables freshly created in <I>s</I>.
       They are already constrained to be between <I>min</I> and <I>max</I>, inclusive.
     </P></DD>
 
@@ -333,7 +328,7 @@ end</PRE>
       <TT>boolvarVec (<I>s, n</I>)</TT>
     </DT>
     <DD>
-      <P>Returns <I>n<\I> true-false domain variables freshly created in <I>s</I>.
+      <P>Returns <I>n</I> true-false domain variables freshly created in <I>s</I>.
     </P></DD>
 
     <DT>
@@ -417,7 +412,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Constrains <I>x</I> in <I>s</I> 
-      to be in the given <I>relation</I> with <I>n</I>.
+      to be in the given <I>relation</I> with the integer <I>n</I>.
     </P></DD>
 
     <DT>
@@ -425,9 +420,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator to constrain <I>x</I> and <I>y</I> in <I>s</I> 
-      to be equal. As gecode currently uses a propagator to enforce this, 
-      a performance increase might be achieved by 
-      eliminating the need for this constraint with smarter modeling.
+      to be equal.
     </P></DD>
 
     <DT>
@@ -443,7 +436,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator to constrain all elements of <I>v</I> in <I>s</I> 
-      to be different, pairvise non-equal.
+      to be different, pairwise non-equal.
     </P></DD>
 
     <DT>
@@ -471,7 +464,7 @@ end</PRE>
     </P></DD>
 
     <DT>
-      <TT>elemenet (<I>s, v, x, y</I>)</TT><BR>
+      <TT>element (<I>s, v, x, y</I>)</TT><BR>
       <TT>elementI (<I>s, v, x, y</I>)</TT><BR>
     </DT>
     <DD>
@@ -527,7 +520,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring 
-      <I>b1</I> is the equality of <I>b2</I> and <I>b3</I>
+      <I>b1</I> is the equivalence of <I>b2</I> and <I>b3</I>
     </P></DD>
 
     <DT>
@@ -580,11 +573,11 @@ end</PRE>
     </P></DD>
 
     <DT>
-      <TT>max (<I>s, x, y</I>)</TT>
+      <TT>abs (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring
-      <I>x</I> is equal to <I>y</I> if <I>y</I> > 0, or -<I>y</I> othervise.
+      <I>x</I> is equal to the absolute value of <I>y</I>.
     </P></DD>
 
     <DT>
@@ -642,14 +635,15 @@ end</PRE>
       <TT>Reflect.min (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P> Returns the smallest possible value <I>x</I> may take in <I>s</I>.
+      <P> Returns the smallest possible value in the current domain of
+      <I>x</I> in <I>s</I>.
     </P></DD>
 
     <DT>
       <TT>Reflect.max (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P> Returns the largest possible value <I>x</I> may take in <I>s</I>.
+      <P> Returns the largest possible value in the current domain of <I>x</I> in <I>s</I>.
     </P></DD>
 
     <DT>
@@ -684,7 +678,7 @@ end</PRE>
       <TT>Reflect.dom (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P> Returns all possible values <I>x</I> may take in <I>s</I> in the form of a domain.
+      <P> Returns the current domain of <I>x</I> in <I>s</I>.
     </P></DD>
 
     <DT>
@@ -698,7 +692,7 @@ end</PRE>
       <TT>Reflect.range (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P> Returns true if the possible values <I>x</I> may take in <I>s</I> form a single, continous range.
+      <P> Returns true if the possible values <I>x</I> may take in <I>s</I> form a single, continuous range.
     </P></DD>
 
     <DT>

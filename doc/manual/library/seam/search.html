@@ -10,6 +10,15 @@
    <P>This section describes the search engines found in the structure
       <TT>Search</TT>. 
    </P>
+
+   <P>
+      Constraint problems have to be formulated as a script, a unary
+      function taking as argument a computation space and posting the
+      necessary constraints in this space. This script can then be
+      passed to different search engines, which will return none, one
+      or several solutions of the problem.
+   </P>
+
    <P>Scripts which create a large number of variables or
       propagators or scripts for which the search tree is very deep might
       use too much memory to be feasible. The search engines described
@@ -17,7 +26,7 @@
       Recomputation reduces the space requirements for these scripts
       in that it trades space for time. 
    </P>
-   <P>Search engines that do not use recomputation, create a copy of
+   <P>Search engines that do not use recomputation create a copy of
       a computation space in each distribution step.
       This copy is needed such that the engine is able to follow more
       than one alternative of a choice. 
@@ -50,13 +59,6 @@
       not used. Recomputation avoids this, resulting in improvement
       with respect to both space and time. 
    </P>
-   <P>Recomputation requires that the distribution strategy used in the
-      script be <EM>deterministic</EM>. Deterministic means that the
-      created choices and their order are identical in repeated runs of
-      the script. This is true for all strategies in the finite
-      domain structure, but for example not for strategies with
-      randomized components.
-   </P>
    <P>
      To get an idea on how search engines are programmed in Alice,
      take a look at the example given
@@ -73,19 +75,19 @@
   <PRE>
 signature SEARCH =
 sig
-    val searchOne : (Space.space -> 'a) -> (Space.space *'a) option
+    val searchOne : (Space.space -> 'a) -> (Space.space * 'a) option
     val searchAll : (Space.space -> 'a) -> Space.space list * 'a
 
     val searchBest :
-        (Space.space -> 'a) * (Space.space *  Space.space * 'a -> unit) ->
-        Space.space option
+        (Space.space -> 'a) * (Space.space * Space.space * 'a -> unit) ->
+        (Space.space * 'a) option
 
     structure Recompute : sig
-      val searchOne : (Space.space -> 'a) * int -> Space.space option
-      val searchAll : (Space.space -> 'a) * int -> Space.space list
+      val searchOne : (Space.space -> 'a) * int -> (Space.space * 'a) option
+      val searchAll : (Space.space -> 'a) * int -> Space.space list * 'a
       val searchBest :
           (Space.space -> 'a) * (Space.space *  Space.space * 'a -> unit)
-          * int -> Space.space option
+          * int -> (Space.space * 'a) option
     end
 end</PRE>
 

@@ -1,0 +1,512 @@
+<?php include("macros.php3"); ?>
+<?php heading("The FS structure", "The <TT>FS</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature FS
+    structure FS : FS where type fd = FD.fd</PRE>
+
+  <P>
+    The <TT>FS</TT> structure provides access to finite set variables and
+    propagators.
+  </P>
+  <P>
+    Finite set variables are variables whose values are sets of
+    non-negative integers.
+  </P>
+  <P>
+    Note that every propagator creation
+    can raise a <TT>Tell</TT> exception if it is performed on toplevel and
+    the constraint is inconsistent with other constraints.
+  </P>
+
+  <P>See also:
+    <A href="fd.html"><TT>FD</TT></A>
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature FS from "x-alice:/lib/constraints/FS-sig"
+    import structure FS from "x-alice:/lib/constraints/FS"</PRE>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+    signature FS =
+    sig
+	type fd
+	type bin = fd
+	type fs
+
+	exception Tell of {cause : exn}
+
+	(* Implementation dependent fs limits *)
+	val inf : int
+	val sup : int
+	    
+	(* Allocation Function *)
+	val fs : (FD.domain * FD.domain) option -> fs (* Domain, Overflow *)
+	val fsVec : int * FD.domain * FD.domain -> fs vector (* Domain, Overflow *)
+
+	(* Standard Propagators *)
+	val compl : fs * fs -> unit
+	val complIn : fs * fs * fs -> unit
+	val incl : fd * fs -> unit
+	val excl : fd * fs -> unit
+	val card : fs * fd -> unit
+	val cardRange : int * int * fs -> unit
+	val isIn : int * fs -> bool
+	val isEmpty : fs -> bool
+
+	val difference : fs * fs * fs -> unit
+	val intersect : fs * fs * fs -> unit
+	val intersectN : fs vector * fs -> unit
+	val union : fs * fs * fs -> unit
+	val unionN : fs vector * fs -> unit
+	val subset : fs * fs -> unit
+	val disjoint : fs * fs -> unit
+	val disjointN : fs vector -> unit
+	val distinct : fs * fs -> unit
+	val distinctN : fs vector -> unit
+	val partition : fs vector * fs -> unit
+
+	(* Values *)
+	val value : FD.domain -> fs (* Domain, Overflow *)
+	val emptyValue : unit -> fs
+	val singletonValue : int -> fs
+	(*	    val upperBound : FD.domain -> fs *)
+	val universalValue : unit -> fs
+	val isValue : fs -> bool
+	    
+	(* Integer FS *)
+	structure Int :
+	    sig
+		val min : fs * fd -> unit
+		val max : fs * fd -> unit
+		val convex : fs -> unit
+		val match : fs * fd vector -> unit
+		val minN : fs * fd vector -> unit
+		val maxN : fs * fd vector -> unit
+	    end
+
+	(* Reified Propagators *)
+	structure Reified :
+	    sig
+		val isIn : int * fs * bin -> unit
+		val areIn : int list * fs * bin list -> unit
+		val incl : fd * fs * bin -> unit
+		val equal : fs * fs * bin -> unit
+		val partition : fs list * int list * fs * bin list -> unit
+	    end
+
+	(* Reflection *)
+	structure Reflect :
+	    sig
+		val card : fs -> FD.domain
+		val lowerBound : fs -> FD.domain
+		val unknown : fs -> FD.domain
+		val upperBound : fs -> FD.domain
+
+		val cardOfLowerBound : fs -> int
+		val cardOfUnknown : fs -> int
+		val cardOfUpperBound : fs -> int
+	    end
+    end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type fd</TT> <BR>
+      <TT>type bin = fd</TT>
+    </DT>
+    <DD>
+      <P>The type of finite domain variables. Usually equal to <TT>FD.fd</TT>.
+    </P></DD>
+
+    <DT>
+      <TT>type fs</TT>
+    </DT>
+    <DD>
+      <P>The type of finite set variables.
+    </P></DD>
+
+    <DT>
+      <TT>exception Tell of {cause : exn}</TT>
+    </DT>
+    <DD>
+      <P>is raised when a propagator is created on toplevel and is inconsistent
+         with other constraints. Usually equal to <TT>FD.Tell</TT>.
+    </P></DD>
+
+    <DT>
+      <TT>inf</TT>
+    </DT>
+    <DD>
+      <P>denotes the implementation dependent smallest possible
+         element of a finite set.
+    </P></DD>
+
+    <DT>
+      <TT>sup</TT>
+    </DT>
+    <DD>
+      <P>denotes the implementation dependent largest possible element
+         of a finite set.
+    </P></DD>
+
+    <DT>
+      <TT>fs <I>spec</I></TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created finite set variables initialized according
+         to <I>spec</I>.
+    </P></DD>
+
+    <DT>
+      <TT>fsVec (<I>n</I>,<I>spec</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a vector of size <I>n</I> containing
+         freshly created finite set variables initialized according
+         to <I>spec</I>.
+    </P></DD>
+
+    <DT>
+      <TT>compl (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P><TT>y = [FS.inf, ..., FS.sup] - x</TT>
+    </P></DD>
+
+    <DT>
+      <TT>compl (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P><TT>y = [FS.inf, ..., FS.sup] - x</TT>
+    </P></DD>
+
+    <DT>
+      <TT>complIn (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+    </DT>
+    <DD>
+      <P><TT>z = y - x</TT>
+    </P></DD>
+
+    <DT>
+      <TT>incl (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that <I>x</I> is an element of <I>y</I> and
+         that <TT>inf &lt;= x &lt;= sup</TT> holds.
+    </P></DD>
+
+    <DT>
+      <TT>excl (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that <I>x</I> is not an element of <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <TT>card (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>y</I> is constrained to denote the cardinality of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>cardRange (<I>l</I>,<I>u</I>,<I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that the cardinality of <I>x</I>
+         is greater than or equal to <I>l</I>
+         and less than or equal to <I>h</I>.
+    </P></DD>
+
+    <DT>
+      <TT>isIn (<I>i</I>,<I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns <TT>true</TT> iff <I>i</I> is an element of <I>x</I>,
+         <TT>false</TT> otherwise.
+    </P></DD>
+
+    <DT>
+      <TT>difference (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that <TT>z = x - y</TT>.
+    </P></DD>
+
+    <DT>
+      <TT>intersect (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that <I>z</I> is the intersection of <I>y</I>
+         and <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <TT>intersectN (<I>v</I>,<I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>x</I> constraint to the the intersection of all
+         <I>v1</I>, ..., <I>vn</I>.
+    </P></DD>
+
+    <DT>
+      <TT>union (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that <I>z</I> is the union of <I>y</I>
+         and <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <TT>unionN (<I>v</I>,<I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>x</I> constraint to the the union of all
+         <I>v1</I>, ..., <I>vn</I>.
+    </P></DD>
+
+    <DT>
+      <TT>subset (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P>Post the constraint that <I>x</I> must be a subset of or equal to
+         <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <tt>disjoint (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>x</I> and <I>y</I> must be disjoint.
+    </P></DD>
+
+    <DT>
+      <tt>disjointN <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>All elements <I>x</I> must be pairwise disjoint.
+    </P></DD>
+
+    <DT>
+      <tt>distinct (<I>x</I>,<I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>x</I> and <I>y</I> must be distinct.
+    </P></DD>
+
+    <DT>
+      <tt>distinctN <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>All elements of <I>v</I> must be pairwise distinct.
+    </P></DD>
+
+    <DT>
+      <tt>partition (<I>v</I>,<I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>v</I> is a partition of <I>x</I>, that is, <I>v</I> containts
+      pairwise disjoint set such that the union yields <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <tt>value <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created finite set value according to <I>spec</I>.
+    </P></DD>
+
+    <DT>
+      <tt>emptyValue ()</TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created finite set value denoting the empty set.
+    </P></DD>
+
+    <DT>
+      <tt>singletonValue <I>i</I></TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created finite set value denoting the
+         the singleton value <I>i</I>.
+    </P></DD>
+
+    <DT>
+      <tt>universalValue ()</TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created finite set value denoting the
+         universal value.
+    </P></DD>
+
+    <DT>
+      <tt>isValue <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns <TT>true</TT> iff <I>x</I> denotes a finite set value,
+         <TT>false</TT> otherwise.
+    </P></DD>
+
+    <DT>
+      <tt>Int.min (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>y</I> is constrained to denote the minimal element of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <tt>Int.max (<I>x</I>,<I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>y</I> is constrained to denote the maximal element of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <tt>Int.convex <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Whenever <I>l</I> and <I>h</I> are elements of <I>x</I>, then
+         every value between <I>l</I> and <I>h</I> is also in <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <tt>Int.match (<I>x</I>,<I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
+         the elements of <I>x</I> in ascending order. 
+    </P></DD>
+
+    <DT>
+      <tt>Int.minN (<I>x</I>,<I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
+         the <I>n</I> minimal elements of <I>x</I> in ascending order. 
+    </P></DD>
+
+    <DT>
+      <tt>Int.maxN (<I>x</I>,<I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
+         the <I>n</I> maximal elements of <I>x</I> in ascending order. 
+    </P></DD>
+
+    <DT>
+      <tt>Reified.isIn (<I>i</I>,<I>x</I>,<I>c</I>)</TT>
+    </DT>
+    <DD>
+      <P>Reifies <TT>FS.isIn(i, x)</TT> into <I>c</I>.
+    </P></DD>
+
+    <DT>
+      <tt>Reified.areIn (<I>is</I>,<I>x</I>,<I>cs</I>)</TT>
+    </DT>
+    <DD>
+      <P>Equivalent to
+      <TT>ListPair.app (fn (i, c) => Reified.isIn(i, x, c)) (is, cs)</TT>.
+    </P></DD>
+
+    <DT>
+      <TT>Reified.incl (<I>x</I>,<I>y</I>,<I>c</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>c</I> reifies the presence of <I>x</I> in <I>y</I>.
+         This propagator detects in contrast to <TT>Reified.isIn</TT>
+         earlier if <I>x</I> is or is not constrained in <I>y</I>. 
+    </P></DD>
+
+    <DT>
+      <TT>Reified.equal (<I>x</I>,<I>y</I>,<I>c</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>c</I> reifies the equality of <I>x</I> and <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reified.partition (<I>vs</I>,<I>is</I>,<I>x</I>,<I>cs</I>)</TT>
+    </DT>
+    <DD>
+      <P>The propagator partitions the set value <I>x</I>
+         by selecting elements from the list of set values <I>vs</I>.
+         The positive integers in <I>is</I> denote the cost resp. benefit
+         of the corresponding set value in <I>vs</I> if it is selected
+         for the partition. Each element of <I>cs</I> is either 0
+         or the corresponding integer value in <I>is</I> depending
+         on whether the corresponding set value in <I>vs</I>
+         is part of the partition or not. Excluding a set value
+         from the partition is done by constraining the corresponding
+         element of <I>cs</I> to 0.
+         An element in <I>cs</I> not equal to 0 includes
+         the corresponding set value in <I>vs</I> in the partition.
+         The propagator ensures a valid partition
+         according to the values of <I>cs</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.card <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns a description of the current information on the cardinality
+         of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.lowerBound <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns a specification of the greatest lower bound that
+         is currently known about the set <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.unknown <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns a specification of the set of elements that
+        are neither known to included in <I>x</I> nor excluded from <I>x</I>. 
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.upperBound <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns a specification of the least upper bound that
+         is currently known about the set <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.cardOfLowerBound <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns the cardinality of the current greatest lower bound for
+         <I>x</I>. 
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.cardOfUnknown <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns the number of elements that are currently
+         not known to be included or excluded from <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.cardOfUpperBound <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>returns the cardinality of the current least upper bound for
+         <I>x</I>. 
+    </P></DD>
+  </DL>
+
+<?php footing() ?>

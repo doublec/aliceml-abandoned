@@ -18,16 +18,16 @@
   </P>
   <PRE>
     fun searchOne s =
-	case ask s of
-	     FAILED          => NONE
-	   | SUCCEEDED       => SOME (Space.merge s)
-	   | ALTERNATIVES(n) =>
+	case Space.status s of
+	     Space.FAILED          => NONE
+	   | Space.SOLVED          => SOME s
+	   | Space.BRANCH(desc) =>
 		 let
 		     val c = Space.clone s
 		 in
-		     Space.commit(s, SINGLE 1);
+		     Space.commit(s, 1, desc);
 		     case searchOne s of
-			  NONE   => (Space.commit(c, RANGE(2, n)); searchOne c)
+			  NONE   => (Space.commit(c, 2, desc); searchOne c)
 			| SOME s => SOME s
 		 end</PRE>
    <P>
@@ -36,7 +36,8 @@
      a solution can be searched by invoking
    </P>
    <PRE>
-    val solution = searchOne (Space.space money)</PRE>
+    val s = Space.new()
+    val solution = searchOne (money s)</PRE>
 
    <P>
      More sophisticated search engines are provided by the
@@ -47,50 +48,35 @@
 <?php section("import", "import"); ?>
 
   <PRE>
-    import signature SPACE from "x-alice:/lib/constraints/SPACE-sig"
-    import structure Space from "x-alice:/lib/constraints/Space"</PRE>
+    import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
+    import structure Space from "x-alice:/lib/gecode/Space"</PRE>
 
 <?php section("interface", "interface"); ?>
   <PRE>
     signature SPACE =
     sig
-	eqtype 'a space
-	    
-	datatype state =
-	    MERGED
-	  | FAILED
-	  | SUCCEEDED
-	  | ALTERNATIVES of int
+        eqtype space
+        type description
 
-	datatype verbose_state =
-            VERBOSE_SUSPENDED of verbose_state
-	  | VERBOSE_MERGED
-	  | VERBOSE_FAILED
-	  | VERBOSE_SUCCEEDED_STUCK
-	  | VERBOSE_SUCCEEDED_ENTAILED
-	  | VERBOSE_ALTERNATIVES of int
-	    
-	datatype choice =
-	    SINGLE of int
-	  | RANGE of int * int
-	    
-	val space : (unit -> 'a) -> 'a space
-	    
-	val ask : 'a space -> state
-        val askVerbose : 'a space -> verbose_state
-	val clone : 'a space -> 'a space
-	val commit : 'a space * choice -> unit
-	val inject : 'a space * ('a -> unit) -> unit
-	val merge : 'a space -> 'a
-        val kill : 'a space -> unit
-        val waitStable : 'a space -> unit
+	exception InvalidSpace
+	exception InvalidVar
+	exception Description
+
+	datatype status = BRANCH of int * description | FAILED | SOLVED
+	val new         : unit -> space
+	val status      : space -> status
+	val commit      : space * int * description -> unit
+	val clone       : space -> space
+	val discard     : space -> unit
+	val alive       : space -> bool
+	val fail        : space -> unit
     end</PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
     <DT>
-      <TT>eqtype 'a space</TT>
+      <TT>eqtype space</TT>
     </DT>
     <DD>
       <P>The type of computation spaces.
@@ -98,99 +84,53 @@
     </DD>
 
     <DT>
-      <TT>datatype state = MERGED | FAILED | SUCCEEDED | ALTERNATIVES of int</TT>
+      <TT>type description</TT>
     </DT>
     <DD>
-      <P>This datatype is used to communicate the state of a computation space.
+      <P>A branch description. 
+      </P>
+    </DD>
+    
+    <DT>
+      <TT>datatype status = BRANCH of int * description | FAILED | SOLVED</TT>
+    </DT>
+    <DD>
+      <P>This datatype is used to communicate the state of a
+      computation space. If the status is <TT>BRANCH(x,d)</TT>, the
+      <I>x</I> is the number of alternatives, and <I>d</I> is a
+      branching description that can be used for commiting to an
+      alternative.
       </P>
     </DD>
 
     <DT>
-      <TT>datatype verbose_state = VERBOSE_SUSPENDED of verbose_state | VERBOSE_MERGED | VERBOSE_FAILED | VERBOSE_SUCCEEDED_STUCK | VERBOSE_SUCCEEDED_ENTAILED | VERBOSE_ALTERNATIVES of int</TT>
+      <TT>new</TT>
     </DT>
     <DD>
-      <P>This datatype is used to communicate the verbose state
-        of a computation space.
+      <P>returns a newly created space.
       </P>
     </DD>
 
     <DT>
-      <TT>datatype choice = SINGLE of int | RANGE of int * int</TT>
+      <TT>status <I>s</I></TT>
     </DT>
     <DD>
-      <P>This datatype is used to select alternatives of the selected
-         choice of a space.
+      <P>runs propagation in <I>s</I> until it reaches a fixed point and then
+         returns the status of <I>s</I>.
       </P>
-    </DD>
-
-    <DT>
-      <TT>space <I>p</I></TT>
-    </DT>
-    <DD>
-      <P>returns a newly created space,
-         in which a thread containing an application of
-         the unary function <I>p</I> to the root variable of
-         the space is created.
+      <P>If <I>s</I> is failed, <TT>FAILED</TT> is returned.
       </P>
-    </DD>
-
-    <DT>
-      <TT>ask <I>s</I></TT>
-    </DT>
-    <DD>
-      <P>waits until <I>s</I> becomes stable or merged and then returns the
-         state of <I>s</I>.
+      <P>If <I>s</I> is not failed and there are no active distributors
+         in <I>s</I> waiting for choices, <TT>SOLVED</TT> is returned.
       </P>
-      <P>If <I>s</I> is merged, <TT>MERGED</TT> is returned.
+      <P>If <I>s</I> is not failed and there is at least one active distributor
+         in <I>s</I> which is waiting for a choice,
+         <TT>BRANCH(<I>x, d)</I></TT> is returned, where <I>x</I> is
+         the number of alternatives and <I>d</I> is an abstract
+         description of the choice.
       </P>
-      <P>If <I>s</I> is stable and failed, <TT>FAILED</TT> is returned.
-      </P>
-      <P>If <I>s</I> is stable and succeeded and there are no threads
-         in <I>s</I> synchronizing on choices, <TT>SUCCEEDED</TT> is returned.
-      </P>
-      <P>If <I>s</I> is stable and succeeded and there is at least one thread
-         in <I>s</I> which synchronizes on a choice,
-         <TT>ALTERNATIVES <I>i</I></TT> is returned, where <I>i</I> gives
-         the number of alternatives on the selected choice.
-      </P>
-      <P>Synchronizes on stability of <I>s</I>.
-      </P>
-      <P>Raises a runtime error if the current space is not admissible for
-        <I>s</I>.
-      </P>
-    </DD>
-
-    <DT>
-      <TT>askVerbose <I>s</I></TT>
-    </DT>
-    <DD>
-      <P>returns the state of <I>s</I> in verbose form. Reduces immediately,
-         even if <I>s</I> is not yet stable.
-      </P>
-      <P>If <I>s</I> becomes merged, <TT>VERBOSE_MERGED</TT> is returned.
-      </P>
-      <P>If <I>s</I> becomes suspended (that is, blocked but not stable),
-         <TT>VERBOSE_SUSPENDED <I>t</I></TT> is returned. <I>t</I> is a future
-         that is bound to the verbose state of <I>s</I> when <I>s</I>
-         becomes stable again.
-      </P>
-      <P>If <I>s</I> is stable and failed, <TT>VERBOSE_FAILED</TT> is returned.
-      </P>
-      <P>If <I>s</I> is stable and succeeded and there are no threads
-         in <I>s</I> synchronizing on choices, either
-         <TT>VERBOSE_SUCCEEDED_STUCK</TT>,
-         or <TT>VERBOSE_SUCCEEDED_ENTAILED</TT> is returned.
-         The former happens when <I>s</I> still contains threads.
-      </P>
-      <P>If <I>s</I> is stable and succeeded and there is at least one thread
-         in <I>s</I> which synchronizes on a choice,
-         <TT>VERBOSE_ALTERNATIVES <I>i</I></TT> is returned,
-         where <I>i</I> gives the number of alternatives on the selected choice.
-      </P>
-      <P>Does not synchronize on stability of <I>s</I>.
-      </P>
-      <P>Raises a runtime error if the current space is not admissible for
-        <I>s</I>.
+      <P>Raises a runtime error if the space <I>s</I> has already been
+         discarded.
       </P>
     </DD>
 
@@ -198,80 +138,48 @@
       <TT>clone <I>s</I></TT>
     </DT>
     <DD>
-      <P>blocks until <I>s</I> becomes stable and returns
-         a new space which is a copy of <I>s</I>. 
+      <P>returns a new space which is a copy of <I>s</I>. 
       </P>
-      <P>Synchronizes on stability of <I>s</I>. 
-      </P>
-      <P>Raises a runtime error if <I>s</I> is already merged,
-         or if the current space is not admissible for <I>s</I>. 
+      <P>Raises a runtime error if the space <I>s</I> has already been
+         discarded.
       </P>
     </DD>
 
     <DT>
-      <TT>commit (<I>s</I>, <I>c</I>)</TT>
+      <TT>commit (<I>s</I>, <I>d</I>, <I>i</I>)</TT>
     </DT>
     <DD>
-      <P>blocks until <I>s</I> becomes stable and then commits
-         to alternatives of the selected choice of <I>s</I>.
+      <P>commits to alternative <I>i</I> of <I>s</I>,
+         using branching description <I>d</I>.
       </P>
-      <P>if <I>c</I> is <TT>RANGE(l, h)</TT>, then all but
-         the <TT>l,l+1,...,h</TT> alternatives of the selected choice of
-         <I>s</I> are discarded. If a single alternative remains,
-         the topmost choice is replaced by this alternative.
-         If no alternative remains, the space is failed. 
-      </P>
-      <P><TT>SINGLE i</TT> is an abbreviation for <TT>RANGE(i, i)</TT>.
-      </P>
-      <P>Synchronizes on stability of <I>s</I>. 
-      </P>
-      <P>Raises a runtime error, if <I>s</I> has been merged already,
-         if there exists no selected choice in <I>s</I>,
-         or if the current space is not admissible for <I>s</I>.
+      <P>Raises a runtime error if the space <I>s</I> has already been
+         discarded, or description <I>d</I> is invalid for this space.
       </P>
     </DD>
 
     <DT>
-      <TT>inject (<I>s</I>, <I>p</I>)</TT>
+      <TT>discard <I>s</I></TT>
     </DT>
     <DD>
-      <P>creates a thread in <I>s</I> which contains an application of
-         <I>p</I> to the root variable of <I>s</I>.
-      </P>
-      <P>Does not synchronize on stability of <I>s</I>. 
-      </P>
-      <P>Raises a runtime error if <I>s</I> is already merged,
-         or if the current space is not admissible for <I>s</I>.
+      <P>discards the space <I>s</I>, freeing up the memory it uses. Subsequent
+         operations on this space will raise a runtime error.
       </P>
     </DD>
 
     <DT>
-      <TT>merge <I>s</I></TT>
+      <TT>alive <I>s</I></TT>
     </DT>
     <DD>
-      <P>merges <I>s</I> with the current space and returns
-         the root variable of <I>s</I>.
-      </P>
-      <P>Does not synchronizes on stability of <I>s</I>. 
-      </P>
-      <P>Raises a runtime error if <I>s</I> is already merged,
-         or if the current space is not admissible for <I>s</I>.
+      <P>tests whether the space <I>s</I> is still alive, i.e. whether it has
+         not been discarded.
       </P>
     </DD>
-
+  
     <DT>
-      <TT>kill <I>s</I></TT>
+      <TT>fail <I>s</I></TT>
     </DT>
     <DD>
-      <P>kills <I>s</I> by injecting a failure into a space.
-      </P>
-    </DD>
-
-    <DT>
-      <TT>waitStable <I>s</I></TT>
-    <DT>
-    <DD>
-      <P>Synchronizes on stability of <I>s</I> and returns <TT>unit</TT>.
+      <P>injects a failure into <I>s</I>.
       </P>
     </DD>
   </DL>

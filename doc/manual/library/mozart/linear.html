@@ -37,27 +37,13 @@
 <?php section("interface", "interface"); ?>
 
   <PRE>
-signature LINEAR =
-sig
-	type space
-	type intvar
-	type boolvar
-
-        datatype conlevel = 
-	         BND | DEF | DOM | VAL
-
-	infix  7  `*
-	infix  6  `+ `-
-	infix  5  `#
-	infix  4  `= `<> `> `>= `< `<=
-
-	infix  3  `->
-	infix  3  `<-
-	infix  3  `==
-	infix  3  `&
-	infix  3  `|
-	infix  3  XOR
-
+    signature LINEAR =
+    sig
+	infix 7 `*
+	infix 6 `+ `-
+	infix 5 `#
+	infix 4 `= `&lt;&gt; `> `>= `&lt; `&lt;=
+	infix 3 `&lt;->
 
 	datatype domain_element =
 	    `` of int
@@ -66,85 +52,33 @@ sig
 	type domain = domain_element list
 
 	datatype term =
-	    FD of intvar
+	    FD of FD.fd
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term
 	  | `* of term * term
 
 	datatype rel =
-	    `<   of term * term
-	  | `<=  of term * term
+	    `&lt;   of term * term
+	  | `&lt;=  of term * term
 	  | `=   of term * term
-	  | `<>  of term * term
+	  | `&lt;&gt;  of term * term
 	  | `>=  of term * term
 	  | `>   of term * term
-	 
-	val fdterm : space * domain -> term
-	val fdtermVec : space * int * domain -> term vector
-	
-	val post : space * rel * conlevel -> unit
+	  | `&lt;-> of rel * term
 
+	val var : domain option -> term
+	val bin : unit -> term
+	val vec : int * domain -> term vector
 
-	datatype b_term = 
-	  BV of boolvar
-	 | BC of bool
-	 | HOLDS of rel
-	 | `== of b_term * b_term
-	 | `-> of b_term * b_term
-	 | `<- of b_term * b_term
-	 | `! of b_term
-	 | `& of b_term * b_term
-	 | XOR of b_term * b_term
-	 | `| of b_term * b_term
-
-	val boolterm : space -> b_term
-	val booltermVec : space * int -> b_term vector
-
-	val postTrue : space * b_term -> unit
-
+	val distribute : FD.dist_mode * term vector -> unit
+	val distinct : term vector -> unit
+	val post : rel -> unit
     end</PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
-    <DT
-      <TT>type space</TT>
-    </DT>
-    <DD>
-      <P>The type of first class comutational spaces. Usually equal to
-      <TT>SPACE.space</TT>.
-    </P></DD>
-
-    <DT
-      <TT>type intvar</TT> 
-    </DT>
-    <DD>
-      <P>The type of finite domain variables.
-    </P></DD>
-
-    <DT
-      <TT>type boolvar</TT> 
-    </DT>
-    <DD>
-      <P>The type of boolean constraint variables.
-      Fundamentally, they are FD variables constrained to the 0-1 domain.
-    </P></DD>
-
-    <DT>
-      <TT>datatype conlevel</TT>
-    </DT>
-    <DD>
-      <P>Type to identify the eagerness of propagation. 
-      When the required level is not implemented for a propagator,
-      the closest, stricter version is used.<BR>
-      <TT>DOM</TT>: Domain Proagatin. Strictest.<BR>      
-      <TT>BND</TT>: Bounds Propagation.<BR>
-      <TT>VAL</TT>: Value Propagation. Most loose. <BR>
-      <BR>
-      <TT>DEF</TT>: The default for the propagator.<BR>      
-    </P></DD>
-
     <DT>
       <TT>datatype domain_element = `` of int | `# of int *int<BR>
           type domain = domain_element list</TT>
@@ -216,98 +150,59 @@ sig
     </DD>
 
     <DT>
-      <TT>fdterm (<I>s, d</I>)</TT>
+      <TT>var <I>dom</I></TT>
     </DT>
     <DD>
       <P>returns a freshly created finite domain variable term initialized
-         with <I>d</I>.
+         with <I>dom</I>.
       </P>
     </DD>
 
     <DT>
-      <TT>fdtermVec (<I>s, n, d</I>)</TT>
+      <TT>bin ()</TT>
     </DT>
     <DD>
-      <P>returns a vector of <I>n</I> freshly created finite domain
-         variable terms initialized with <I>d</I>.
+      <P>returns a freshly created <TT>0/1</TT> variable term which can be used
+         for reification.
       </P>
     </DD>
 
     <DT>
-      <TT>post (<I>s,r,cl</I>)</TT>
+      <TT>vec (<I>n</I>,<I>dom</I>)</TT>
     </DT>
     <DD>
-      <P>post the constraint denoted by <I>r</I> in space <I>s</I>
-      using consistency level <I>cl</I>.
+      <P>returns a vector of size <I>n</I> of
+         freshly created finite domain variable terms. Each variable
+         is initialized with <I>dom</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>distribute (<I>s</I>,<I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P>distributes the variables in <I>v</I> according to the
+         given strategy <I>s</I>. For details, see
+         <A HREF="fd.html">here</A>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>distinct <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>posts the distinct constraint on all variables in <I>v</I>.
+         For details, see <A HREF="fd.html">here</A>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>post <I>r</I></TT>
+    </DT>
+    <DD>
+      <P>post the constraint denoted by <I>r</I>.
       </P>
     </DD>
   </DL>
-
-    <DT>
-      <TT>datatype b_term =<BR>
-	  &nbsp;&nbsp;&nbsp;&nbsp;BV of boolvar<BR>
-	  &nbsp;&nbsp;| BC of bool<BR>
-	  &nbsp;&nbsp;| HOLDS of rel<BR>
-	  &nbsp;&nbsp;| `== of b_term * b_term<BR>
-	  &nbsp;&nbsp;| `-> of b_term * b_term<BR>
-	  &nbsp;&nbsp;| `<- of b_term * b_term<BR>
-	  &nbsp;&nbsp;| `! of b_term<BR>
-	  &nbsp;&nbsp;| `& of b_term * b_term<BR>
-	  &nbsp;&nbsp;| XOR of b_term * b_term<BR>
-	  &nbsp;&nbsp;| `| of b_term * b_term<BR>
-       </TT>
-    </DT>
-    <DD>
-      <P>This datatype is used to post boolean constraints.
-      </P>
-      <UL>
-        <LI><TT>BV <I>b</I></TT> injects the true/false domain variable
-          <I>b</I> into a term.
-        <LI><TT>BC <I>c</I></TT> injects the boolean value <I>c</I>
-          into a term.
-        <LI><TT>HOLDS <I>f</I></TT> denotes that the boolean term
-          <I>f</I> is true.
-        <LI><TT>`== (<I>b1, b2</I>)</TT> denotes that the two boolean
-          terms <I>b1</I> and <I>b2</I> are equivalent.
-        <LI><TT>`-> (<I>b1, b2</I>)</TT> denotes that <I>b1</I>
-          implies <I>b2</I>.
-        <LI><TT>`-> (<I>b1, b2</I>)</TT> denotes that <I>b2</I>
-          implies <I>b1</I>.
-        <LI><TT>`! <I>b</I></TT> denotes the negation of <I>b</I>.
-        <LI><TT>`& (<I>b1, b2</I>)</TT> denotes the conjunction of <I>b1</I>
-          and<I>b2</I>.
-        <LI><TT>XOR (<I>b1, b2</I>)</TT> denotes the exclusive
-          disjunction of <I>b1</I> and<I>b2</I>.
-        <LI><TT>`| (<I>b1, b2</I>)</TT> denotes the disjunction of <I>b1</I>
-          and<I>b2</I>.
-      </UL>
-      <P></P>
-    </DD>
-
-    <DT>
-      <TT>boolterm <I>s</I></TT>
-    </DT>
-    <DD>
-      <P>returns a freshly created true/false domain variable term.
-      </P>
-    </DD>
-
-    <DT>
-      <TT>booltermVec (<I>s, n</I>)</TT>
-    </DT>
-    <DD>
-      <P>returns a vector of <I>n</I> freshly created true/false domain
-         variable terms.
-      </P>
-    </DD>
-
-    <DT>
-      <TT>postTrue (<I>s, t</I>)</TT>
-    </DT>
-    <DD>
-      <P>post the constraint that the boolean term denoted by <I>t</I>
-      holds in space <I>s</I>.
-      </P>
-    </DD>
 
 <?php footing() ?>

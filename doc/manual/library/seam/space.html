@@ -1,4 +1,4 @@
-<?php include("../macros.php3"); ?>
+<?php include("macros.php3"); ?>
 <?php heading("The Space structure", "The <TT>Space</TT> structure"); ?>
 
 <P></P>
@@ -62,7 +62,7 @@
 	exception InvalidVar
 	exception Description
 
-	datatype status = BRANCH of description | FAILED | SOLVED
+	datatype status = BRANCH of int * description | FAILED | SOLVED
 	val new         : unit -> space
 	val status      : space -> status
 	val commit      : space * int * description -> unit
@@ -92,10 +92,14 @@
     </DD>
     
     <DT>
-      <TT>datatype status = BRANCH of description | FAILED | SOLVED</TT>
+      <TT>datatype status = BRANCH of int * description | FAILED | SOLVED</TT>
     </DT>
     <DD>
-      <P>This datatype is used to communicate the state of a computation space.
+      <P>This datatype is used to communicate the state of a
+      computation space. If the status is <TT>BRANCH(x,d)</TT>, the
+      <I>x</I> is the number of alternatives, and <I>d</I> is a
+      branching description that can be used for commiting to an
+      alternative.
       </P>
     </DD>
 
@@ -121,7 +125,8 @@
       </P>
       <P>If <I>s</I> is not failed and there is at least one active distributor
          in <I>s</I> which is waiting for a choice,
-         <TT>BRANCH <I>d</I></TT> is returned, where <I>d</I> is an abstract
+         <TT>BRANCH(<I>x, d)</I></TT> is returned, where <I>x</I> is
+         the number of alternatives and <I>d</I> is an abstract
          description of the choice.
       </P>
       <P>Raises a runtime error if the space <I>s</I> has already been
