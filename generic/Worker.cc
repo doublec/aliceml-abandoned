@@ -71,10 +71,6 @@ bool Interpreter::Deconstruct() {
 //
 // Interpreter virtual functions: default implementations
 //
-void Interpreter::PrepareForGC(Block *) {
-  return; // default: nothing to do
-}
-
 Block *Interpreter::GetAbstractRepresentation(Block *) {
   return INVALID_POINTER; // default: may not be pickled
 }
