@@ -3,5 +3,5 @@ Group is
     ../infrastructure/composer.cm
     ../common/interface.cm
 
-    Signature.sml
-    Composer.sml
+    Signature.aml
+    Composer.aml

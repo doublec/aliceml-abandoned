@@ -10,8 +10,16 @@
  *   $Revision$
  *)
 
+import
+    structure MkBatchCompiler
+from "MkBatchCompiler"
+
+import
+    structure SMLToMozartRecursiveCompiler
+from "SMLToMozartRecursiveCompiler"
+
 structure SMLToMozartBatchCompiler =
-    MakeBatchCompiler(structure RecursiveCompiler =
-			  SMLToMozartRecursiveCompiler
-		      val executableHeader =
-			  "#!/bin/sh\nexec stow $0 \"$@\"\n")
+    MkBatchCompiler(structure RecursiveCompiler =
+			SMLToMozartRecursiveCompiler
+		    val executableHeader =
+			"#!/bin/sh\nexec stow $0 \"$@\"\n")

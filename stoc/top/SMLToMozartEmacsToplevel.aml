@@ -10,6 +10,14 @@
  *   $Revision$
  *)
 
+import
+    structure MkEmacsToplevel
+from "MkEmacsToplevel"
+
+import
+    structure SMLToMozartRecursiveCompiler
+from "SMLToMozartRecursiveCompiler"
+
 structure SMLToMozartEmacsToplevel =
-    MakeEmacsToplevel(structure RecursiveCompiler =
-			  SMLToMozartRecursiveCompiler)
+    MkEmacsToplevel(structure RecursiveCompiler =
+			SMLToMozartRecursiveCompiler)

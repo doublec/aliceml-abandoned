@@ -4,5 +4,5 @@ Group is
 	../infrastructure/target.cm
 	../infrastructure/switches.cm
 
-	COMPILER.sig
-	MakeCompiler.sml
+	COMPILER-sig.aml
+	MkCompiler.aml

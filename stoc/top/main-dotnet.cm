@@ -8,5 +8,5 @@ Group is
     make-recursive-compiler.cm
     make-batch-compiler.cm
 
-    SMLToComPlusRecursiveCompiler.sml
-    SMLToComPlusBatchCompiler.sml
+    SMLToComPlusRecursiveCompiler.aml
+    SMLToComPlusBatchCompiler.aml
