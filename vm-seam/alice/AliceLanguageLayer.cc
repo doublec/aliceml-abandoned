@@ -94,7 +94,12 @@ void AliceLanguageLayer::Init() {
 #if LIGHTNING
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
-  NativeCodeJitter::Init(20 * STORE_MEMCHUNK_SIZE);
+#if defined(JIT_STORE_DEBUG)
+  u_int codeSizeInChunks = 40;
+#else
+  u_int codeSizeInChunks = 20;
+#endif
+  NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
 
   const char *jitMode = std::getenv("ALICE_JIT_MODE");
   if (jitMode != NULL && !strcmp(jitMode, "0"))
