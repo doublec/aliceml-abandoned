@@ -26,7 +26,7 @@ if test -z "${ALICE_HOME}"; then
 fi
 
 if test -z "${OZHOME}"; then
-    OZHOME=$(find_in share/Init.ozf /usr/lib/mozart "$PROGRAMFILES/Mozart" /opt/mozart-stable)
+    OZHOME=$(find_in share/Init.ozf /usr/share/mozart "$PROGRAMFILES/Mozart" /opt/mozart-stable)
 fi
 
 case $(uname) in
