@@ -14,6 +14,7 @@ signature IMP_SET =
     val delete :	set * item -> unit
     val deleteExistent:	set * item -> unit		(* Delete *)
     val deleteWith :	(item -> unit) -> set * item -> unit
+    val deleteAll :	set -> unit
 
     val insert :	set * item -> unit
     val insertDisjoint:	set * item -> unit		(* Collision *)

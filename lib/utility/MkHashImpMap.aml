@@ -13,6 +13,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     val initialSize		= 19
 
     fun new()			= (ref(Array.array(initialSize,[])), ref 0)
+    fun deleteAll (m,k)		= ( m := Array.array(initialSize,[]) ; k := 0 )
 
     fun size(_, ref n)		= n
     fun isEmpty(_, ref n)	= n = 0
@@ -71,7 +72,6 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     fun delete x		= deleteWith ignore x
     fun deleteExistent x	= deleteWith(fn k => raise Delete k) x
-
 
     fun reinsert t (ka as(k,_))	= let val i = hash(t,k) in
 				      Array.update(t, i, ka::Array.sub(t,i))

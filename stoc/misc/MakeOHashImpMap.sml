@@ -25,6 +25,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     val initialSize		= 19
 
     fun new()			= (ref 0, ref(Array.array(initialSize,EMPTY)))
+    fun deleteAll (k,m)		= (k := 0 ; m := Array.array(initialSize,EMPTY))
 
     fun size(ref n, _)		= n
     fun isEmpty(ref n, _)	= n = 0

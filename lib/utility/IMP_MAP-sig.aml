@@ -15,6 +15,7 @@ signature IMP_MAP =
     val delete :	'a map * key -> unit
     val deleteExistent:	'a map * key -> unit		(* Delete *)
     val deleteWith :	(key -> unit) -> 'a map * key -> unit
+    val deleteAll :	'a map -> unit
 
     val insert :	'a map * key * 'a -> unit
     val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)

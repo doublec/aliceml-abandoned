@@ -17,6 +17,7 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     fun cloneScope(ref ss)	= ref[ImpSet.clone(List.hd ss)]
     fun insertScope r		= r := ImpSet.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
+    fun deleteAll r		= r := [ImpSet.new()]
     fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 

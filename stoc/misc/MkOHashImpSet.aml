@@ -22,6 +22,7 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     val initialSize		= 19
 
     fun new()			= (ref 0, ref(Array.array(initialSize,EMPTY)))
+    fun deleteAll (k,s)		= (k := 0 ; s := Array.array(initialSize,EMPTY))
 
     fun size(ref n, _)		= n
     fun isEmpty(ref n, _)	= n = 0

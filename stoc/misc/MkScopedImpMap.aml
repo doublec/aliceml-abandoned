@@ -16,6 +16,7 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun cloneScope(ref ms)	= ref[ImpMap.clone(List.hd ms)]
     fun insertScope r		= r := ImpMap.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
+    fun deleteAll r		= r := [ImpMap.new()]
     fun splitScope(r as ref ms)	= ( deleteScope r ; ref[List.hd ms] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
