@@ -13,6 +13,8 @@
 #ifndef __ENVIRONMENT_HH__
 #define __ENVIRONMENT_HH__
 
+#include "datalayer/alicedata.hh"
+
 static const u_int envSize = 19;
 
 class Environment: private Array {

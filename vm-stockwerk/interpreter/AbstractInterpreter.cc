@@ -10,12 +10,12 @@
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
-#include "scheduler/scheduler.hh"
-
 #include "Pickle.hh"
-
+#include "datalayer/alicedata.hh"
+#include "scheduler/Scheduler.hh"
+#include "scheduler/TaskStack.hh"
 #include "interpreter/bootstrap/Environment.hh"
+#include "interpreter/bootstrap/BootstrapInterpreter.hh"
 
 //
 // Helper Classes
@@ -52,60 +52,44 @@ public:
 };
 
 //
-// Scheduler Interface
-//
-
-typedef enum {
-  EXCEPTION, // of stack * exception
-  PREEMPT,   // of stack
-  SUSPEND,   // of stack * future
-  TERMINATE  // (nullary)
-} interpreter_result_label;
-
-static word mkException(StackFrame *stack, word exception) {
-  TagVal *tagVal = TagVal::New(EXCEPTION, 2);
-  tagVal->InitArg(1, stack->ToWord());
-  tagVal->InitArg(2, exception);
-  return tagVal->ToWord();
-}
-
-static word mkPreempt(StackFrame *stack) {
-  TagVal *tagVal = TagVal::New(PREEMPT, 1);
-  tagVal->InitArg(1, stack->ToWord());
-  return tagVal->ToWord();
-}
-
-static word mkSuspend(TagVal *pc, Vector *globalEnv, Environment *localEnv,
-		      StackFrame *stack, word future) {
-  //--** make new stack frame
-  TagVal *tagVal = TagVal::New(SUSPEND, 2);
-  tagVal->InitArg(1, stack->ToWord());
-  tagVal->InitArg(2, future);
-  return tagVal->ToWord();
-}
-
-static word mkTerminate() {
-  return Store::IntToWord(TERMINATE);
-}
-
-//
 // The Interpreter Proper
 //
+
+#define FRAME_SIZE 3
+#define PC_POS 0
+#define GLOBAL_ENV_POS 1
+#define LOCAL_ENV_POS 2
+
+void BootstrapInterpreter::PushState
+(TaskStack *stack, TagVal *pc, Vector *globalEnv, Environment *localEnv) {
+  stack->PushFrame(this, FRAME_SIZE);
+  stack->PutWord(PC_POS, pc->ToWord());
+  stack->PutWord(GLOBAL_ENV_POS, globalEnv->ToWord());
+  stack->PutWord(LOCAL_ENV_POS, localEnv->ToWord());
+}
 
 #define combineArgs(args1, args2) ((args1) * 2 + (args2))
 
 //--** reading operands: FromWord tests for transients, but we don't
 
-Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
+#define suspend \
+	{						\
+	  PushState(stack, pc, globalEnv, localEnv);	\
+	  data = suspendWord;				\
+	  return SUSPEND;				\
+	}
+
+Interpreter::result BootstrapInterpreter::Run
+(int nargs, TaskStack *&stack, word &data) {
   if (nargs < 0) { // return
   } else if (nargs > 0) { // call
   } else { // nargs == 0: start
   }
 
   word suspendWord = Store::IntToWord(0);
-  TagVal *pc = stack->GetPC();
-  Vector *globalEnv = stack->GetGlobalEnv();
-  Environment *localEnv = stack->GetEnvironment();
+  TagVal *pc = TagVal::FromWord(stack->GetWord(PC_POS));
+  Vector *globalEnv = Vector::FromWord(stack->GetWord(GLOBAL_ENV_POS));
+  Environment *localEnv = Environment::FromWord(stack->GetWord(LOCAL_ENV_POS));
   while (!Store::NeedGC()) { //--** test preemption flag
     switch (static_cast<Pickle::instr_label>(pc->GetLabel())) {
     case Pickle::PutConst: // of id * value * instr
@@ -148,8 +132,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	case Pickle::Con:
 	  suspendWord = localEnv->Lookup(conBlock->GetArg(1));
 	  constructor = Constructor::FromWord(suspendWord);
-	  if (constructor == INVALID_POINTER)
-	    return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	  if (constructor == INVALID_POINTER) suspend;
 	  break;
 	case Pickle::StaticCon:
 	  constructor = Constructor::FromWord(conBlock->GetArg(1));
@@ -185,8 +168,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
       {
 	suspendWord = localEnv->Lookup(pc->GetArg(3));
 	Tuple *tuple = Tuple::FromWord(suspendWord);
-	if (tuple == INVALID_POINTER)
-	  return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	if (tuple == INVALID_POINTER) suspend;
 	word value = tuple->GetArg(Store::WordToInt(pc->GetArg(2)));
 	localEnv->Add(pc->GetArg(1), value);
 	pc = TagVal::FromWord(pc->GetArg(4));
@@ -275,8 +257,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
       {
 	suspendWord = pc->GetArg(2);
 	Closure *closure = Closure::FromWord(suspendWord);
-	if (closure == INVALID_POINTER)
-	  return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	if (closure == INVALID_POINTER) suspend;
 	// Test for calling convention conversion:
 	TagVal *actualArgs = TagVal::FromWord(pc->GetArg(3));
 	TagVal *formalArgs = closure->GetFormalArgs();
@@ -284,10 +265,11 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	switch (combineArgs(actualArgs->GetLabel(), formalArgs->GetLabel())) {
 	case combineArgs(Pickle::OneArg, Pickle::OneArg):
 	  {
-	    TagVal formalIdDef = TagVal::FromWord(formalArgs->GetArg(1));
+	    TagVal *formalIdDef = TagVal::FromWord(formalArgs->GetArg(1));
 	    if (formalIdDef != INVALID_POINTER) { // SOME id
 	      word actualArg = localEnv->Lookup(actualArgs->GetArg(1));
 	      calleeEnv->Add(formalIdDef->GetArg(1), actualArg);
+	    }
 	  }
 	  break;
 	case combineArgs(Pickle::OneArg, Pickle::TupArgs): // deconstruct
@@ -295,11 +277,10 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	    TagVal *formals = TagVal::FromWord(formalArgs->GetArg(1));
 	    suspendWord = localEnv->Lookup(actualArgs->GetArg(1));
 	    Tuple *tuple = Tuple::FromWord(suspendWord);
-	    if (tuple == INVALID_POINTER)
-	      return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	    if (tuple == INVALID_POINTER) suspend;
 	    u_int nargs = tuple->GetSize();
 	    for (u_int i = 1; i <= nargs; i++) {
-	      TagVal formalIdDef = TagVal::FromWord(formals->GetArg(1));
+	      TagVal *formalIdDef = TagVal::FromWord(formals->GetArg(1));
 	      if (formalIdDef != INVALID_POINTER) { // SOME id
 		word actualArg = localEnv->Lookup(actualArgs->GetArg(1));
 		calleeEnv->Add(formalIdDef->GetArg(1), tuple->GetArg(i));
@@ -309,14 +290,14 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	  break;
 	case combineArgs(Pickle::TupArgs, Pickle::OneArg): // construct
 	  {
-	    TagVal formalIdDef = TagVal::FromWord(formalArgs->GetArg(1));
+	    TagVal *formalIdDef = TagVal::FromWord(formalArgs->GetArg(1));
 	    if (formalIdDef != INVALID_POINTER) { // SOME id
 	      TagVal *actuals = TagVal::FromWord(actualArgs->GetArg(1));
 	      u_int nargs = actuals->GetSize();
 	      Tuple *tuple = Tuple::New(nargs);
 	      for (u_int i = 1; i <= nargs; i++)
 		tuple->InitArg(i, localEnv->Lookup(actuals->GetArg(i)));
-	      calleeEnv->Add(formalId, tuple->ToWord());
+	      calleeEnv->Add(formalIdDef->GetArg(1), tuple->ToWord());
 	    }
 	  }
 	  break;
@@ -327,7 +308,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	    u_int nargs = formals->GetSize();
 	    Assert(actuals->GetSize() == nargs);
 	    for (u_int i = 1; i <= nargs; i++) {
-	      TagVal formalIdDef = TagVal::FromWord(formals->GetArg(1));
+	      TagVal *formalIdDef = TagVal::FromWord(formals->GetArg(1));
 	      if (formalIdDef != INVALID_POINTER) { // SOME id
 		word actualArg = localEnv->Lookup(actuals->GetArg(i));
 		calleeEnv->Add(formalIdDef->GetArg(i), actualArg);
@@ -337,8 +318,8 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	  break;
 	}
 	// Set up interpreter registers for callee:
-	stack = stack->Push(TagVal::FromWord(pc->GetArg(4)), globalEnv,
-			    localEnv, Store::WordToInt(pc->GetArg(1)));
+	//--** return ids?
+	PushState(stack, TagVal::FromWord(pc->GetArg(4)), globalEnv, localEnv);
 	pc = closure->GetPC();
 	globalEnv = closure->GetGlobalEnv();
 	localEnv = calleeEnv;
@@ -348,8 +329,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
       {
 	suspendWord = pc->GetArg(2);
 	Tuple *tuple = Tuple::FromWord(suspendWord);
-	if (tuple == INVALID_POINTER)
-	  return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	if (tuple == INVALID_POINTER) suspend;
 	Vector *idDefs = Vector::FromWord(pc->GetArg(1));
 	u_int nargs = idDefs->GetSize();
 	for (u_int i = 1; i <= nargs; i++) {
@@ -381,8 +361,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
       {
 	suspendWord = localEnv->Lookup(pc->GetArg(1));
 	Real *real = Real::FromWord(suspendWord);
-	if (real == INVALID_POINTER)
-	  return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	if (real == INVALID_POINTER) suspend;
 	double value = real->GetValue();
 	Vector *tests = Vector::FromWord(pc->GetArg(2));
 	u_int ntests = tests->GetSize();
@@ -443,8 +422,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
       {
 	suspendWord = localEnv->Lookup(pc->GetArg(1));
 	ConVal *conVal = ConVal::FromWord(suspendWord);
-	if (conVal == INVALID_POINTER)
-	  return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	if (conVal == INVALID_POINTER) suspend;
 	if (conVal->IsConVal()) { // non-nullary constructor
 	  Constructor *constructor = conVal->GetConstructor();
 	  Vector *tests = Vector::FromWord(pc->GetArg(3));
@@ -457,8 +435,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	    case Pickle::Con:
 	      suspendWord = localEnv->Lookup(conBlock->GetArg(1));
 	      testConstructor = Constructor::FromWord(suspendWord);
-	      if (testConstructor == INVALID_POINTER)
-		return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	      if (testConstructor == INVALID_POINTER) suspend;
 	      break;
 	    case Pickle::StaticCon:
 	      testConstructor = Constructor::FromWord(conBlock->GetArg(1));
@@ -486,8 +463,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
 	    case Pickle::Con:
 	      suspendWord = localEnv->Lookup(conBlock->GetArg(1));
 	      testConstructor = Constructor::FromWord(suspendWord);
-	      if (testConstructor == INVALID_POINTER)
-		return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	      if (testConstructor == INVALID_POINTER) suspend;
 	      break;
 	    case Pickle::StaticCon:
 	      testConstructor = Constructor::FromWord(conBlock->GetArg(1));
@@ -506,8 +482,7 @@ Scheduler::action interpret(int nargs, TaskStack *&stack, word &data) {
       {
 	suspendWord = localEnv->Lookup(pc->GetArg(1));
 	Vector *vector = Vector::FromWord(suspendWord);
-	if (vector == INVALID_POINTER)
-	  return mkSuspend(pc, globalEnv, localEnv, stack, suspendWord);
+	if (vector == INVALID_POINTER) suspend;
 	int value = vector->GetSize();
 	Vector *tests = Vector::FromWord(pc->GetArg(2));
 	u_int ntests = tests->GetSize();

@@ -16,6 +16,9 @@
 #include "scheduler/Interpreter.hh"
 
 class BootstrapInterpreter: Interpreter {
+private:
+  void PushState(TaskStack *stack,
+		 TagVal *pc, Vector *globalEnv, Environment *localEnv);
 public:
   virtual result Run(int nargs, TaskStack *&taskStack, word &data);
   virtual Thread *NewThread(word code);
