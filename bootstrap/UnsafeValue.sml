@@ -1,6 +1,6 @@
 (* Dummy replacement for bootstrapping *)
 
-structure UnsafeValue :> UNSAFE_VALUE =
+structure UnsafeValue =
     struct
 	exception NotSupported
 
@@ -8,31 +8,36 @@ structure UnsafeValue :> UNSAFE_VALUE =
 	fun same (x, y) = false
 	fun awaitRequest x = x
 
-	fun proj (prod, labels, i) = raise NotSupported
-	fun projTuple (tuple, width, i) = raise NotSupported
+	fun realToVector r =
+	    let
+		val vec = Unsafe.blastWrite r
+		val mkIndex =
+		    case Word8Vector.sub (vec, 0) of
+			0wx33 => (fn i => 103 - i)
+		      | 0wx00 => (fn i => i + 96)
+		      | _ => raise Match
+	    in
+		Word8Vector.tabulate
+		    (8, fn i => Word8Vector.sub (vec, mkIndex i))
+	    end
 
-	fun tag (sum, labels) = raise NotSupported
-	fun projTagged (sum, labels, i) = raise NotSupported
-	fun projTaggedTuple (sum, width, i) = raise NotSupported
+	fun proj _		= raise NotSupported
+	fun projTuple _		= raise NotSupported
+	fun tag _		= raise NotSupported
+	fun projTagged _	= raise NotSupported
+	fun projTaggedTuple _	= raise NotSupported
+	fun con _		= raise NotSupported
+	fun projConstructed _	= raise NotSupported
+	fun projConstructedTuple _ = raise NotSupported
+	fun projPoly _		= raise NotSupported
+	fun prod _		= raise NotSupported
+	fun tuple _		= raise NotSupported
+	fun tagged _		= raise NotSupported
+	fun taggedTuple _	= raise NotSupported
+	fun closure _		= raise NotSupported
+	fun prim _		= raise NotSupported
+	fun conName _		= raise NotSupported
 
-	fun con ext = raise NotSupported
-	fun projConstructed (ext, labels, i) = raise NotSupported
-	fun projConstructedTuple (ext, width, i) = raise NotSupported
-
-	fun projPoly (prod, label) = raise NotSupported
-
-	fun prod labelValueVec = raise NotSupported
-	fun tuple values = raise NotSupported
-
-	fun tagged (labels, i, labelValueVec) = raise NotSupported
-	fun taggedTuple (labels, i, values) = raise NotSupported
-
-	fun closure (code, values) = raise NotSupported
-
-	fun prim name = raise NotSupported
-
-	fun conName con = raise NotSupported
-
-	fun inArity function = ~2
-	fun outArity function = ~2
+	fun inArity _		= ~2
+	fun outArity _		= ~2
     end

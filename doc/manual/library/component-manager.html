@@ -51,23 +51,22 @@
 
 	val <A href="#logStream">logStream</A> : TextIO.outstream option ref
 
-	functor <A href="#Eval-fn">Eval</A>(val component : Component.t
-		     val url : <A href="url.html#t">Url.t</A>
-		     signature S) : S
-
-	functor <A href="#Link-fn">Link</A>(val url : <A href="url.html#t">Url.t</A>
-		     signature S) : S
-
-	functor <A href="#Enter-fn">Enter</A>(val url: <A href="url.html#t">Url.t</A>
-		      signature S
-		      structure X : S) : any
-
 	val <A href="#load">load</A> : <A href="url.html#t">Url.t</A> -> Component.t
-	val <A href="#link">link</A> : <A href="url.html#t">Url.t</A> -> Component.t
+	val <A href="#eval">eval</A> : <A href="url.html#t">Url.t</A> * Component.t -> package
+	val <A href="#link">link</A> : <A href="url.html#t">Url.t</A> -> package
 	val <A href="#enter">enter</A> : <A href="url.html#t">Url.t</A> * Component.t -> unit
 	val <A href="#lookup">lookup</A> : <A href="url.html#t">Url.t</A> -> Component.t option
 
-	val <A href="#start">start</A> : <A href="url.html#t">Url.t</A> -> unit
+	functor <A href="#Eval-fn">Eval</A> (val component : Component.t
+		     val url : <A href="url.html#t">Url.t</A>
+		     signature S) : S
+
+	functor <A href="#Link-fn">Link</A> (val url : <A href="url.html#t">Url.t</A>
+		     signature S) : S
+
+	functor <A href="#Enter-fn">Enter</A> (val url: <A href="url.html#t">Url.t</A>
+		      signature S
+		      structure X : S) : any
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -93,69 +92,42 @@
     </DD>
 
     <DT>
-      <TT><A name="Eval-fn">Eval</A>(val component = <I>comp</I>
-	val url = <I>url</I>
-	signature S = <I>S</I>)</TT>
+      <TT><A name="load">load</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>localizes <TT><I>url</I></TT> and loads a first-class component
+	from the file found, without evaluating or linking it. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
+	<TT><A href="io.html">IO.Io</A></TT> as cause if resolving, loading
+	or unpickling fails.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="eval">eval</A> (<I>url</I>, <I>comp</I></TT>
     </DT>
     <DD>
       <P>evaluates <TT><I>comp</I></TT>, rooted at <TT><I>url</I></TT>,
 	in the context of the component table managed by this component
-	manager, and returns the computed structure.  Raises <TT><A
-	href="component.html#Mismatch">Component.Mismatch</A></TT> if
-	the computed structure does not match&nbsp;<TT><I>S</I></TT>,
-	<EM>after</EM> evaluating the declarations contained in
-	<TT><I>comp</I></TT>.  Note that no entry for <TT><I>url</I></TT>
+	manager, and returns the computed module as a package.
+	No entry for <TT><I>url</I></TT>
 	is created in the component table, but entries may be created for
 	components imported (directly or indirectly) by <TT><I>comp</I></TT>.
 	Relative import URLs in <TT><I>comp</I></TT> are resolved using
-	<TT><I>url</I></TT> as a base url, which should be absolute.</P>
-    </DD>
-
-    <DT>
-      <TT><A name="Link-fn">Link</A>(val url = <I>url</I>
-	signature S = <I>S</I>)</TT>
-    </DT>
-    <DD>
-      <P>returns a new by-need future that, when triggered, causes the
-	component from <TT><I>url</I></TT> to be linked and evaluated and
-	its signature to be matched against&nbsp;<TT><I>S</I></TT>.  The
-	future is then bound to the structure computed by the component.
-	If the component table has no entry for <TT><I>url</I></TT> yet, a
-	new entry is created immediately.</P>
-    </DD>
-
-    <DT>
-      <TT><A name="Enter-fn">Enter</A>(val url = <I>url</I>
-	signature S = <I>S</I>
-	structure X = <I>X</I>)</TT>
-    </DT>
-    <DD>
-      <P>enters an evaluated component with export structure&nbsp;<TT><I
-	>X</I></TT> of signature&nbsp;<TT><I>S</I></TT> into the component
-	table, under name <TT><I>url</I></TT>.  Raises <TT><A href="#Conflict"
-	>Conflict</A></TT> if the component table already had an entry for
-	<TT><I>url</I></TT>.</P>
+	<TT><I>url</I></TT> as a base url, which should be absolute. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> if
+	evaluation of the component fails.</P>
     </DD>
 
     <DT>
       <TT><A name="link">link</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>returns a new by-need future that, when triggered, causes the
-	component from <TT><I>url</I></TT> to be linked and evaluated.
-	The future is then bound to the component.  If the component table
+      <P>loads, evaluates and links the
+	component from <TT><I>url</I></TT>.
+	Returns a package representing the export of
+	the component.  If the component table
 	has no entry for <TT><I>url</I></TT> yet, a new entry is created
 	immediately.</P>
-    </DD>
-
-    <DT>
-      <TT><A name="load">load</A> <I>url</I></TT>
-    </DT>
-    <DD>
-      <P>localizes <TT><I>url</I></TT> and loads a first-class component
-        from the file found, without linking or evaluating it.
-	Raises <TT><A href="io.html">IO.Io</A></TT> if resolving, loading
-	or unpickling fails.</P>
     </DD>
 
     <DT>
@@ -178,12 +150,45 @@
     </DD>
 
     <DT>
-      <TT><A name="start">start</A> <I>url</I></TT>
+      <TT><A name="Eval-fn">Eval</A> (val component = <I>comp</I>
+	val url = <I>url</I>
+	signature S = <I>S</I>)</TT>
     </DT>
     <DD>
-      <P>links and evaluates the component at <TT><I>url</I></TT> eagerly.
-	Raises <TT><A href="component.html#Failure">Component.Failure</A></TT>
-	if this fails.</P>
+      <P>like the function <TT><A href="#eval">eval</A></TT>, but
+        matches the component's export against the signature <TT><I>S</I></TT>
+	and returns the export module itself. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
+	<TT><A href="component.html#Mismatch">Component.Mismatch</A></TT> as
+	cause if the component does not match <TT><I>S</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Link-fn">Link</A> (val url = <I>url</I>
+	signature S = <I>S</I>)</TT>
+    </DT>
+    <DD>
+      <P>like the function <TT><A href="#link">link</A></TT>, but
+        matches the component's export against the signature <TT><I>S</I></TT>
+	and returns the export module itself. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
+	<TT><A href="component.html#Mismatch">Component.Mismatch</A></TT> as
+	cause if the component does not match <TT><I>S</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Enter-fn">Enter</A> (val url = <I>url</I>
+	signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>enters the module<TT><I>X</I></TT> of signature&nbsp;<TT><I>S</I></TT>
+        as an evaluated component into the component
+	table, under name <TT><I>url</I></TT>.  Raises <TT><A href="#Conflict"
+	>Conflict</A></TT> if the component table already had an entry for
+	<TT><I>url</I></TT>. Equivalent to</P>
+	<PRE>
+	enter (<I>url</I>, Component.fromPackage (pack <I>X</I> : <I>S</I>))</PRE>
     </DD>
   </DL>
 

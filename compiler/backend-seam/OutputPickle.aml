@@ -14,7 +14,7 @@
  *   $Revision$
  *)
 
-import structure Reflect             from "../../lib/system/Reflect"
+import structure UnsafeValue         from "../../lib/system/UnsafeValue"
 import structure Crash               from "../infrastructure/Crash"
 import structure Stamp               from "../common/Stamp"
 import structure StampMap            from "../common/StampMap"
@@ -228,7 +228,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 	fun outputReal (context, r) =
 	    let
-		val vec = Reflect.realToVector r
+		val vec = UnsafeValue.realToVector r
 	    in
 		outputChunk (context, vec)
   	    end

@@ -1,6 +1,4 @@
 Group is
 
     sources.cm
-    ../lib/rtt/label.cm
-    UNSAFE_VALUE-sig.sml
     UnsafeValue.sml

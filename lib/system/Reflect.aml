@@ -15,7 +15,6 @@ import structure Label         from "../rtt/Label"
 import structure Type          from "../rtt/Type"
 import structure Inf           from "../rtt/Inf"
 import structure UnsafeReflect from "UnsafeReflect"
-import structure UnsafeValue   from "UnsafeValue"
 import signature REFLECT       from "REFLECT-sig"
 
 structure Reflect : REFLECT =
@@ -23,27 +22,15 @@ structure Reflect : REFLECT =
 	__primitive type value  = "Reflect.value"
 	__primitive type module = "Reflect.module"
 
-	val cast = UnsafeValue.cast
-	val realToVector = UnsafeReflect.realToVector
-
+	__primitive val cast : 'a -> 'b = "Unsafe.cast"
 	val reflect = cast
 	val reify   = cast
 
 	(* TODO: Q&D, has to correspond to translation *)
 	datatype package' = Package__ of module * Inf.t
 
-	val lab_x = Label.fromString "x"
-	val lab_t = Label.fromString "$t"
-
-	fun reflectPackage p = case cast p : package' of Package__ mj => mj
-	fun reflectValPackage p =
-	    let
-		val (m,j) = reflectPackage p
-	    in
-		(UnsafeValue.projPoly(m,lab_x) : value,
-		 UnsafeValue.projPoly(m,lab_t) : Type.t)
-	    end
-
+	fun reflectPackage p = case cast p of Package__ mj => mj
+	fun reifyPackage mj  = cast(Package__ mj)
 
 	functor Reflect(signature S structure X: S) =
 	    let
@@ -72,5 +59,24 @@ structure Reflect : REFLECT =
 	    in
 		(val x = Inf.lookupTyp'(Inf.asSig(cast Sig.x),
 					Label.fromString "t"))
+	    end
+(*
+	functor ReifyType(val x : Type.t) =
+	    let
+		val s = Inf.emptySig()
+		val p = Path.fromString "t"
+		val _ = Inf.extendTyp(s, p, Type.singKind x)
+		val j = Inf.sign s
+	    in
+	    end
+*)
+
+	functor LiftPackage(val package : package) =
+	    let
+		val (m,j) = reflectPackage package
+		structure Sig = ReifySig(val x = j)
+		structure Mod = Reify(val x = m signature S = Sig.S)
+	    in
+		(signature S = Sig.S structure X = Mod)
 	    end
     end

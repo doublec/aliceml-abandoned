@@ -44,15 +44,14 @@
     sig
 	type package
 	type t = package
-	type val_package
 
 	type mismatch = Inf.mismatch
 	exception Mismatch of mismatch
 
 	functor Pack (signature S  structure X : S) : (val package : package)
 	functor Unpack (val package : package  signature S) : S
-	functor PackVal (type t  val x : t) : (val package : val_package)
-	functor UnpackVal (val package : val_package  type t) : (val x : t)
+	functor PackVal (type t  val x : t) : (val package : package)
+	functor UnpackVal (val package : package  type t) : (val x : t)
     end
   </PRE>
 
@@ -66,14 +65,6 @@
     <DD>
       <P>The type of packages. A package contains an arbitrary module and
       its signature.</P>
-    </DD>
-
-    <DT>
-      <TT>type val_package</TT>
-    </DT>
-    <DD>
-      <P>The type of value packages. Value packages are a convenient
-      specialisation for encapsulating single values.</P>
     </DD>
 
     <DT>
@@ -119,7 +110,8 @@
       <TT>PackVal (type t = <I>t</I>  val x = <I>v</I>)</TT>
     </DT>
     <DD>
-      <P>Creates a value package encapsulating the value <TT><I>v</I></TT>
+      <P>Creates a value package with signature <TT>(val x : <I>t</I>)</TT>,
+      encapsulating the value <TT><I>v</I></TT>
       under type <TT><I>t</I></TT>. Returns a structure containing
       the package value as its only field.</P>
     </DD>

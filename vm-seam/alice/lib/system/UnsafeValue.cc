@@ -159,6 +159,15 @@ DEFINE1(UnsafeValue_awaitRequest) {
   }
 } END
 
+DEFINE1(UnsafeValue_realToVector) {
+  DECLARE_REAL(r, x0);
+  Word8Vector *vector = Word8Vector::New(sizeof(double));
+  u_char *c = r->GetNetworkRepresentation();
+  for (u_int i = sizeof(double); i--; )
+    vector->Init(i, Store::IntToWord(c[i]));
+  RETURN(vector->ToWord());
+} END
+
 DEFINE3(UnsafeValue_proj) {
   DECLARE_TUPLE(record, x0);
   x1 = x1; // ignored
@@ -389,13 +398,15 @@ DEFINE1(UnsafeValue_outArity) {
 
 AliceDll word UnsafeValue() {
   RequestInterpreter::Init();
-  Record *record = Record::New(22);
+  Record *record = Record::New(23);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
 		 UnsafeValue_same, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "awaitRequest",
 		 UnsafeValue_awaitRequest, 1);
+  INIT_STRUCTURE(record, "UnsafeValue", "realToVector",
+		 UnsafeValue_realToVector, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "proj",
 		 UnsafeValue_proj, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "projTuple",

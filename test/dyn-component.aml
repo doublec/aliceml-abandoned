@@ -1,0 +1,21 @@
+import structure Url from "x-alice:/lib/system/Url"
+import structure Component from "x-alice:/lib/system/Component"
+import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import signature TEXT_IO from "x-alice:/lib/system/TEXT_IO-sig"
+import val f : unit -> unit from "/tmp/Bla"
+
+functor BlaF (CM : COMPONENT_MANAGER) =
+let
+    structure TextIOComp =
+	CM.Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+		 signature S = (structure TextIO : TEXT_IO))
+    val _ = TextIOComp.TextIO.print "blah\n"
+in
+    (fun f () = TextIOComp.TextIO.print "blub\n")
+end
+
+structure C = Component.Create (signature S = (val f : unit -> unit)
+				structure F = BlaF)
+val _ = Component.save ("/tmp/Bla", C.component)
+val _ = f ()
+val _ = OS.Process.exit OS.Process.success

@@ -18,7 +18,6 @@ structure Package : PACKAGE where type package = package =
 struct
     type package = package
     type t = package
-    type val_package = package
 
     type      mismatch = __pervasive.RTT.Inf.mismatch
     exception Mismatch = __pervasive.RTT.Inf.Mismatch
@@ -28,7 +27,6 @@ struct
 
     functor PackVal(type t val x : t) =
 	(val package = pack (val x = x) : (val x : t))
-
-    functor UnpackVal(val package : val_package type t) =
+    functor UnpackVal(val package : package type t) =
 	unpack package : (val x : t)
 end

@@ -18,15 +18,6 @@ DEFINE1(UnsafeReflect_cast) {
   RETURN(x0);
 } END
 
-DEFINE1(UnsafeReflect_realToVector) {
-  DECLARE_REAL(r, x0);
-  Word8Vector *vector = Word8Vector::New(sizeof(double));
-  u_char *c = r->GetNetworkRepresentation();
-  for (u_int i = sizeof(double); i--; )
-    vector->Init(i, Store::IntToWord(c[i]));
-  RETURN(vector->ToWord());
-} END
-
 DEFINE1(UnsafeReflect_Reflect) {
   DECLARE_RECORD(argRecord, x0);
   Record *record = Record::New(1);
@@ -54,11 +45,9 @@ DEFINE1(UnsafeReflect_ReifySig) {
 } END
 
 AliceDll word UnsafeReflect() {
-  Record *record = Record::New(6);
+  Record *record = Record::New(5);
   INIT_STRUCTURE(record, "UnsafeReflect", "cast",
 		 UnsafeReflect_cast, 1);
-  INIT_STRUCTURE(record, "UnsafeReflect", "realToVector",
-		 UnsafeReflect_realToVector, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "Reflect$",
 		 UnsafeReflect_Reflect, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "Reify$",

@@ -12,7 +12,7 @@
 
 (* Dummy replacement for bootstrapping *)
 
-structure UnsafeComponent :> UNSAFE_COMPONENT =
+structure UnsafeComponent =
     struct
 	fun unavailable f =
 	    (TextIO.output (TextIO.stdErr,
@@ -21,6 +21,5 @@ structure UnsafeComponent :> UNSAFE_COMPONENT =
 	     raise Fail ("UnsafeComponent." ^ f))
 
 	fun load _ = unavailable "load"
-	fun replaceSign (_, _) = unavailable "replaceSign"
-	fun save (_, _) = unavailable "save"
+	fun save _ = unavailable "save"
     end

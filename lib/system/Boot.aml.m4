@@ -82,4 +82,4 @@ end
 ]],[[
 ]])
 
-fun boot url = ComponentManager.start (Url.fromString url)
+fun boot url = ignore (ComponentManager.link (Url.fromString url))

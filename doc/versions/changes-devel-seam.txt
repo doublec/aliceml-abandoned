@@ -53,14 +53,22 @@ Library:
 
 * Constraint library now based on Gecode, with changed interface.
 * A new binding for Gtk 2.2, with a lot of interface changes.
+* Component:
+  - Added fromPackage.
+  - Create now takes a functor as argument to support unevaluated components.
+  - Added exception Internal.
+* ComponentManager:
+  - Added load function.
+  - Functions eval and link return packages now.
+  - Link and link are no longer lazy.
+  - Removed start (equivalent to ignore o link).
+  - logStream reference to configure trace destinations. Preconfigurable
+    through value of ALICE_TRACE_COMPONENT.
+  - Trace messages are more informative, particularly wrt signature mismatches.
 * Default int type is now 31 bit, infinite precision integers are
   available through the IntInf structure.
 * FixedInt added.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
-* ComponentManager: added load function, and logStream reference to configure
-  trace destinations. Preconfigurable through value of ALICE_TRACE_COMPONENT.
-  Trace messages are more informative, particularly wrt signature mismatches.
-  Also added exception Internal.
 * Exn: new structure for dealing with exceptions and backtraces.
 * OS.Process: atExn takes an Exn.packet now.
 * Hole: fixed semantics of synchronisation on holes.
@@ -72,6 +80,7 @@ Library:
 * StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
+* Package: deleted separate val_package type.
 * Channel: new module for concurrent message channels.
 * RefMap: new module for stable polymorphic hash tables over references.
 * Print: added function register for hooking user-defined printing functions.

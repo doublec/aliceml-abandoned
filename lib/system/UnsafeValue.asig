@@ -24,6 +24,8 @@ signature UNSAFE_VALUE_COMPONENT =
 		val same: 'a * 'b -> bool
 		val awaitRequest : 'a -> unit
 
+		val realToVector: real -> Word8Vector.vector
+
 		(* Projections *)
 
 		val proj: 'prod_value * 'lab vector * int -> 'value

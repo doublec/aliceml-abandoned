@@ -1,40 +1,43 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ $Author$
  *   $Revision$
  *)
 
-import structure TextIO    from "TextIO"
-import structure Reflect   from "Reflect"
-import structure Url       from "Url"
-import structure Component from "Component"
+import structure Reflect from "Reflect"
+import structure Url     from "Url"
 
-signature COMPONENT_MANAGER =
+local
+    __primitive type component = "Component.component"
+in
+    signature COMPONENT_MANAGER =
     sig
+	type outstream
+
 	exception Conflict
 
-	val logStream: TextIO.outstream option ref
+	val logStream: outstream option ref
 
-	functor Eval(val component: Component.t
+	val load: Url.t -> component                (* Component.Failure *)
+	val eval: Url.t * component -> package      (* Component.Failure *)
+	val link: Url.t -> package                  (* Component.Failure *)
+	val enter: Url.t * component -> unit        (* Conflict *)
+	val lookup: Url.t -> component option
+
+	functor Eval(val component: component
 		     val url: Url.t
-		     signature S): S                (* Component.Mismatch *)
+		     signature S): S                (* Component.Failure *)
 	functor Link(val url: Url.t
 		     signature S): S                (* Component.Failure *)
 	functor Enter(val url: Url.t
 		      signature S
 		      structure X: S): any          (* Conflict *)
-
-	val eval: Url.t * Component.t -> Reflect.module (* Component.Failure *)
-	val load: Url.t -> Component.t              (* IO.Io *)
-	val enter: Url.t * Component.t -> unit      (* Conflict *)
-	val link: Url.t -> Component.t              (* Component.Failure *)
-	val lookup: Url.t -> Component.t option
-
-	val start: Url.t -> unit                    (* Component.Failure *)
     end
+end

@@ -40,11 +40,19 @@ Interactive Toplevel:
 
 Library:
 
+* Component:
+  - Added fromPackage.
+  - Create now takes a functor as argument to support unevaluated components.
+  - Added exception Internal.
+* ComponentManager:
+  - Added load function.
+  - Functions eval and link return packages now.
+  - Link and link are no longer lazy.
+  - Removed start (equivalent to ignore o link).
+  - logStream reference to configure trace destinations. Preconfigurable
+    through value of ALICE_TRACE_COMPONENT.
+  - Trace messages are more informative, particularly wrt signature mismatches.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
-* ComponentManager: added load function, and logStream reference to configure
-  trace destinations. Preconfigurable through value of ALICE_TRACE_COMPONENT.
-  Trace messages are more informative, particularly wrt signature mismatches.
-  Also added exception Internal.
 * Exn: new structure for dealing with exceptions and backtraces.
 * OS.Process: atExn takes an Exn.packet now.
 * Promise: fulfilling with a cycle no longer fails the promise.
@@ -55,6 +63,7 @@ Library:
 * StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
+* Package: deleted separate val_package type.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.

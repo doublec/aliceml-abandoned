@@ -70,7 +70,10 @@
 
 	val <A href="#defaultResolver">defaultResolver</A> : <A href="resolver.html#t">Resolver.t</A>
 
-	functor <A href="#Create">Create</A>(signature S  structure X : S) : (val component : component)
+	val <A href="#fromPackage">fromPackage</A> : package -> component
+
+	functor <A href="#Create">Create</A>(signature S
+	              functor F (CM : COMPONENT_MANAGER) : S) : (val component : component)
 
 	val <A href="#load">load</A> : <A href="url.html#t">Url.t</A> -> component
 	val <A href="#save">save</A> : string * component -> unit
@@ -194,12 +197,29 @@
     </DD>
 
     <DT>
-      <TT><A name="Create">Create</A>(signature S = <I>S</I>  structure X = <I>X</I>)</TT>
+      <TT><A name="fromPackage">fromPackage</A> <I>p</I></TT>
     </DT>
     <DD>
-      <P>returns an evaluated component (as <TT>val component</TT> of the
-	resulting structure) representing structure&nbsp;<TT><I>X</I></TT>
-	with export signature&nbsp;<TT><I>S</I></TT>.</P>
+      <P>creates an evaluated component with the module and signature
+      from package <TT><I>p</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Create">Create</A>(signature S = <I>S</I> <BR>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	  functor F (<I>CM</I> : COMPONENT_MANAGER) = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a component (as <TT>val component</TT> of the
+	resulting structure) whose body is given by the
+	functor body&nbsp;<TT><I>X</I></TT>, and which has
+	export signature&nbsp;<TT><I>S</I></TT>. The component manager
+	<TT><I>CM</I></TT> can be used to import other
+	components inside the body. If the manager is not required, the
+	definition of functor <TT>F</TT> can be simplified to</P>
+	<PRE>
+	functor F () = <I>X</I></PRE>
+	<P>thanks to subtyping on functor signatures.</P>
     </DD>
 
     <DT>

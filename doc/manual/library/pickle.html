@@ -66,16 +66,13 @@
 
 	val extension : string
 
-	val save :    string * package -> unit
-	val load :    string -> package
-        val saveVal : string * Package.val_package -> unit
-        val loadVal : string -> Package.val_package
+	val save : string * package -> unit
+	val load : string -> package
 
-	functor Save(val file : string signature S structure X : S) : any
-	functor Load(val file : string signature S) : S
-
-	functor SaveVal(val file : string type t val x : t) : any
-	functor LoadVal(val file : string type t) : (val x : t)
+	functor Save (val file : string signature S structure X : S) : any
+	functor Load (val file : string signature S) : S
+	functor SaveVal (val file : string type t val x : t) : any
+	functor LoadVal (val file : string type t) : (val x : t)
     end
   </PRE>
 
@@ -120,6 +117,9 @@
       Synchronizes on all futures contained in (the closure of) the package.
       Raises <TT>IO.Io</TT> if writing the pickle fails. Particular causes
       for failure may be that <TT><I>package</I></TT> refers to sited values.</P>
+      <P>Equivalent to:</P>
+	<PRE>
+	Component.save (<I>name</I>, Component.fromPackage <I>package</I>)</PRE>
     </DD>
 
     <DT>
@@ -132,16 +132,14 @@
       Raises <TT>IO.Io</TT> if reading or evaluating the component fails.
       Particular causes
       for failure may be that file is corrupt, i.e. not a valid pickle file.
-      This is indicated by the exception <TT>Component.Corrupt</TT>.</P>
-    </DD>
-
-    <DT>
-      <TT>saveVal (<I>name</I>, <I>package</I>)</TT> <BR>
-      <TT>loadVal <I>name</I></TT>
-    </DT>
-    <DD>
-      <P>Like <TT>save</TT> and <TT>load</TT>, but operate on value
-      packages.</P>
+      This is indicated by the exception
+      <TT><A href="component.html#Corrupt">Component.Corrupt</A></TT>.
+      Raises <TT><A href="component.html#Failure">Component.Failure</A></TT> if
+      the pickle is an unevaluated component whose evaluation fails.</P>
+      <P>Equivalent to:</P>
+	<PRE>
+	ComponentManager.eval (<I>url</I>, Component.load <I>url</I>)</PRE>
+      <P>where <TT><I>url</I> = Url.fromString <I>name</I></TT>.</P>
     </DD>
 
     <DT>
@@ -172,9 +170,10 @@
     </DT>
     <DD>
       <P>Similar to <TT>Save</TT> and <TT>Load</TT>, but operate on value
-      packages, corresponding to <TT>saveVal</TT> and <TT>loadVal</TT>. The
-      functor <TT>LoadVal</TT> raises <TT>Package.MismatchVal</TT> if the
-      found package does not possess the desired type.</P>
+      packages. Equivalent respectively to:</P>
+      <PRE>
+	save (<I>name</I>, pack (val x = <I>v</I>) : (val x : <I>t</I>))
+	unpack (load <I>name</I>) : (val x : <I>t</I>)</PRE>
     </DD>
   </DL>
 

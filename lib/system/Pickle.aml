@@ -24,75 +24,23 @@ struct
     exception Corrupt = Component.Corrupt
     val extension     = Component.extension
 
-    functor Save(val file : string signature S structure X : S) =
-	let
-	    structure C = Component.Create(signature S = S structure X = X)
-	    val _ = Component.save(file, C.component)
-	in
-	    ()
-	end
-
-    functor Load(val file : string signature S) =
-	let
-	    val url       = Url.fromString file
-	    val component = Component.load url
-	in
-	    ComponentManager.Eval(val url = url
-				  val component = component
-				  signature S = S)
-	end
-
-    signature S = sig type t val x : t end
-
-    functor SaveVal(Arg : sig val file : string type t val x : t end) =
-	Save(val file = Arg.file
-	     signature S = S where type t = Arg.t
-	     structure X = Arg)
-
-    functor LoadVal(val file : string type t) =
-	Load(val file = file
-	     signature S = S where type t = t)
-
-    fun save(file, package) =
-	let
-	    val (m,j) = Reflect.reflectPackage package
-	    val component = Component.create(m, SOME j)
-	in
-	    Component.save(file, component)
-	end
+    fun save (file, package) =
+	Component.save (file, Component.fromPackage package)
 
     fun load file =
 	let
-	    val url       = Url.fromString file
-	    val component = Component.load url
-	    val j         = case Component.inf component
-			     of SOME j => j
-			      | NONE   => raise IO.Io{name = "Pickle",
-						      function = "load",
-						      cause = Component.Corrupt}
-	    structure S = Reflect.ReifySig(val x = j)
-	    structure X = ComponentManager.Eval(val url = url
-						val component = component
-						signature S = S.S)
-	    structure P = Package.Pack(signature S = S.S structure X = X)
+	    val url = Url.fromString file
 	in
-	    P.package
+	    ComponentManager.eval (url, Component.load url)
 	end
 
-    (*TODO: make these proper once components and packages have
-           truly been unified *)
-    fun saveVal(file, package) =
-	let
-	    structure _ = SaveVal(val file = file type t = Package.val_package
-						  val  x = package)
-	in
-	    ()
-	end
+    functor Save (val file : string signature S structure X : S) =
+	(val _ = save (file, pack X : S))
+    functor Load (val file : string signature S) =
+	unpack load file : S
 
-    fun loadVal file =
-	let
-	    structure X = LoadVal(val file = file type t = Package.val_package)
-	in
-	    X.x
-	end
+    functor SaveVal (val file : string type t val x : t) =
+	(val _ = save (file, pack (val x = x) : (val x : t)))
+    functor LoadVal (val file : string type t) =
+	unpack load file : (val x : t)
 end

@@ -11,6 +11,7 @@
  *)
 
 import structure UnsafeValue           from "../../lib/system/UnsafeValue"
+import structure Reflect               from "../../lib/system/Reflect"
 import structure Component             from "../../lib/system/Component"
 import signature COMPONENT_MANAGER
     from "../../lib/system/COMPONENT_MANAGER-sig"
@@ -32,20 +33,18 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 	    MkCodeGenPhase(structure AbstractCodeGrammar = AbstractCodeGrammar
 			   structure Switches = Switches)
 
-	type value = AbstractCodeGrammar.value
-
 	structure ThePhase =
 	    struct
 		structure C = CodeGenPhase.C
 		structure I = CodeGenPhase.I
 		structure O = Target
 
-		fun translate x =
+		fun translate (desc, env, component) =
 		    let
 			val (context, (value, exportDesc)) =
-			    CodeGenPhase.translate x
+			    CodeGenPhase.translate (desc, env, component)
 			val component: Component.t = UnsafeValue.cast value
-			fun eval url =
+			fun eval baseUrl =
 			    let
 				(* Extend environment first, so that
 				 * background evaluation for toplevel works. *)
@@ -65,13 +64,14 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 							     Promise.future p);
 					    (p, label)
 					end) exportDesc
-				val str =
-				    ComponentManager.eval (url, component)
+				val package =
+				    ComponentManager.eval (baseUrl, component)
 				    handle exn =>
 					(Vector.app
 					 (fn (p, _) => Promise.fail (p, exn))
 					 exports;
 					 raise exn)
+				val str = #1 (Reflect.reflectPackage package)
 			    in
 				Vector.app
 				    (fn (p, label) =>

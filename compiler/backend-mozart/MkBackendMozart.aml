@@ -11,6 +11,7 @@
  *)
 
 import structure TextIO            from "../../lib/system/TextIO"
+import structure Reflect           from "../../lib/system/Reflect"
 import signature COMPONENT_MANAGER from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
@@ -29,33 +30,30 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 	    SOME (Url.toLocalFile url)
 	    handle Url.NotLocal => NONE
 
-	fun eval x baseUrl =
-	    let
-		val component = CodeGenPhase.component x
-		val str = ComponentManager.eval (baseUrl, component)
-	    in
-		CodeGenPhase.eval (x, str);
-		str
-	    end
-
 	structure ThePhase =
 	    struct
-		structure C =
-		    struct
-			type t
-			open CodeGenPhase.C
-		    end
+		structure C = struct type t open CodeGenPhase.C end
 		structure I = FlatGrammar
 		structure O = Target
 
 		fun translate (desc, env, component) =
 		    let
-			val (env', x) =
+			val (context, x) =
 			    CodeGenPhase.translate (desc, env, component)
+			val component = CodeGenPhase.component x
+			fun eval baseUrl =
+			    let
+				val package =
+				    ComponentManager.eval (baseUrl, component)
+				val str = #1 (Reflect.reflectPackage package)
+			    in
+				CodeGenPhase.eval (x, str);
+				str
+			    end
 		    in
-			case parseUrl (Source.url desc) of
-			    SOME filename =>
-				if !Switches.Debug.dumpTarget then
+			if not (!Switches.Debug.dumpTarget) then () else
+			    case parseUrl (Source.url desc) of
+				SOME filename =>
 				    let
 					val q =
 					    TextIO.openOut (filename ^ ".ozm")
@@ -64,12 +62,13 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 					    (q, CodeGenPhase.dumpTarget x);
 					TextIO.closeOut q
 				    end
-				else ()
-			  | NONE => ();   (*--** dump to stdout *)
-			(env',
+			      | NONE =>
+				    TextIO.output (TextIO.stdOut,
+						   CodeGenPhase.dumpTarget x);
+			(context,
 			 Target.COMPONENT
 			     {component = fn () => CodeGenPhase.component x,
-			      eval = eval x})
+			      eval})
 		    end
 	    end
 	structure TracingPhase =

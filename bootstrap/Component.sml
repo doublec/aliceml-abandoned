@@ -48,9 +48,9 @@ structure Component :> COMPONENT =
 
 		fun eval (url, _) = raise Failure (url, Eval NotFound)
 		fun load url =
-		    raise IO.Io {name = Url.toStringRaw url,
-				 function = "load",
-				 cause = Corrupt}
+		    raise Failure (url, IO.Io {name = Url.toStringRaw url,
+					       function = "load",
+					       cause = Corrupt})
 		fun link url =
 		    raise Failure (url, IO.Io {name = Url.toStringRaw url,
 					       function = "link",

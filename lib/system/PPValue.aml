@@ -537,13 +537,6 @@ local
     fun ppLock t fm (x : Lock.lock) =
 	SOME(ppCustom fm (text "lock", []))
 
-    fun ppValPackage t fm (x : Package.val_package) =
-	let
-	    (* TODO: extract value *)
-	in
-	    SOME(ppCustom fm (text "val_package", [text "..."]))
-	end
-
     fun ppPackage t fm (x : Package.package) =
 	let
 	    (* TODO: what do we display here? *)
@@ -582,7 +575,6 @@ in
     val _ = registerTyp ppThread
     val _ = registerTyp ppLock
     val _ = registerTyp ppPackage
-    val _ = registerTyp ppValPackage
     val _ = registerTyp ppWord8Vector
     val _ = registerTyp ppWord8Array
     val _ = registerTyp ppCharArray

@@ -27,6 +27,7 @@ import structure UnsafeComponent   from "UnsafeComponent"
 import structure DynMatch          from "DynMatch"
 import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
+import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
 structure Component : COMPONENT =
 struct
@@ -41,6 +42,9 @@ struct
 			 body:    mod vector -> mod,
 			 inf:     inf }
       | EVALUATED of { inf: inf, mod: mod }
+
+    signature CM_COMPONENT = (structure ComponentManager : COMPONENT_MANAGER)
+    structure CMSig = lazy Reflect.ReflectSig (signature S = CM_COMPONENT)
 
     __primitive val cast : 'a -> 'b = "Unsafe.cast"
 
@@ -68,15 +72,29 @@ struct
 			      TextIO.stdErr))
 		   (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
 
-    fun create (mod, inf) = cast (EVALUATED {inf, mod})
+    fun createEvaluated (mod, inf) = cast (EVALUATED {inf, mod}) : component
+    fun createUnevaluated (imports, body, inf) =
+	cast (UNEVALUATED {imports, body, inf}) : component
 
-    functor Create(signature S structure X: S) =
+    fun fromPackage p =
 	let
-	    structure Sig = Reflect.ReflectSig(signature S = S)
-	    structure Mod = Reflect.Reflect(signature S = S
-					    structure X = X)
+	    val (mod, j) = Reflect.reflectPackage p
 	in
-	    (val component = create (Mod.x, SOME Sig.x))
+	     createEvaluated (mod, SOME j)
+	end
+
+    functor Create (signature S  functor F (CM: COMPONENT_MANAGER): S) =
+	let
+	    functor Body (CMComp: CM_COMPONENT) = F CMComp.ComponentManager
+	    structure Sig = Reflect.ReflectSig (signature S = S)
+	    structure Mod = Reflect.Reflect (signature S = CM_COMPONENT -> S
+					     structure X = Body)
+	    val imports = #[("x-alice:/lib/system/ComponentManager",
+			     SOME CMSig.x)]
+	    val body' = cast Mod.x
+	    val body = fn #[cm] => body' cm
+	in
+	    (val component = createUnevaluated (imports, body, SOME Sig.x))
 	end
 
     val defaultResolver =
@@ -133,35 +151,10 @@ struct
 
     val initialTable = lazy UnsafeComponent.getInitialTable ()
 
-    signature COMPONENT_MANAGER =
-    sig
-	exception Conflict
-
-	val logStream: TextIO.outstream option ref
-
-	functor Eval(val component: component
-		     val url: Url.t
-		     signature S): S
-
-	functor Link(val url: Url.t
-		     signature S): S
-
-	functor Enter(val url: Url.t
-		      signature S
-		      structure X: S): any
-
-	val eval: Url.t * component -> Reflect.module
-	val load: Url.t -> component
-	val link: Url.t -> component
-	val enter: Url.t * component -> unit
-	val lookup: Url.t -> component option
-
-	val start: Url.t -> unit
-    end
-
-    functor MkManager(val resolver: Resolver.t) : COMPONENT_MANAGER =
+    functor MkManager (val resolver: Resolver.t) : COMPONENT_MANAGER =
     struct
 	(*--** should query and fragment be rejected instead of ignored? *)
+	type outstream = TextIO.outstream
 
 	exception Conflict
 
@@ -240,21 +233,17 @@ struct
 		mod
 	    end
 
-	val load = load' (!logStream, resolver)
+	fun load url =
+	    Exn.catch (fn packet =>
+			reraiseAs (packet, Failure(url, Exn.fromPacket packet)))
+		      (fn _ => 	load' (!logStream, resolver) url)
 
 	fun lazyLink url : mod * inf =
 	    case UrlMap.lookupNew (map, url) of
 		UrlMap.EXISTING entry => entry
 	      | UrlMap.NEW p =>
 		    let
-			val result =
-			    lazy eval' (url, Exn.catch
-					     (fn packet =>
-						 reraiseAs
-						 (packet,
-						  Failure
-						  (url, Exn.fromPacket packet)))
-					     (fn _ => load url))
+			val result = lazy eval' (url, load url)
 			val entry = (lazy #1 result, lazy #2 result)
 		    in
 			Promise.fulfill (p, entry); entry
@@ -331,44 +320,23 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 		url
 	    end
 
-	functor Eval(val component: component val url: Url.t signature S): S =
+	fun eval (url, component) =
 	    let
-		structure Sig = Reflect.ReflectSig(signature S = S)
-		val url = validate url
-		val (mod, inf) = eval' (url, component)
-		val _ = matchWith (Inf.rea (), inf, SOME Sig.x)
-			handle Inf.Mismatch m =>
-			    raise Mismatch
-				  {component = url, request = NONE, cause = m}
+		val (mod, inf) = eval' (validate url, component)
 	    in
-		Reflect.Reify(val x = mod signature S = S)
+		case inf of
+		    SOME j => Reflect.reifyPackage (mod, j)
+		  | NONE => raise Failure (url, Internal Corrupt)
 	    end
 
-	functor Link(val url: Url.t signature S): S =
+	fun link url =
 	    let
-		structure Sig = Reflect.ReflectSig(signature S = S)
-		val mod = typedLink (validate url, Inf.rea (), SOME Sig.x, NONE)
+		val (mod, inf) = lazyLink (validate url)
 	    in
-		Reflect.Reify(val x = mod signature S = S)
+		case inf of
+		    SOME j => Reflect.reifyPackage (mod, j)
+		  | NONE => raise Failure (url, Internal Corrupt)
 	    end
-
-	functor Enter(val url: Url.t signature S structure X: S) =
-	    let
-		structure Sig = Reflect.ReflectSig(signature S = S)
-		structure Mod = Reflect.Reflect(signature S = S
-						structure X = X)
-		val _ =
-		    case UrlMap.lookupNew (map, validate url) of
-			UrlMap.EXISTING _ => raise Conflict
-		      | UrlMap.NEW p =>
-			    Promise.fulfill (p, (Mod.x, SOME Sig.x))
-	    in
-		()
-	    end
-
-	fun eval (url, component) = #1 (eval' (validate url, component))
-
-	fun link url = create (lazyLink (validate url))
 
 	fun enter (url', component) withval url = validate url' end =
 	    case UrlMap.lookupNew (map, url) of
@@ -377,10 +345,32 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 
 	fun lookup url =
 	    case UrlMap.lookup (map, validate url) of
-		SOME entry => SOME (create entry)
+		SOME entry => SOME (createEvaluated entry)
 	      | NONE => NONE
 
-	fun start url' withval url = validate url' end =
-	    ignore (eval' (url, create (lazyLink url)))
+	functor Eval (val component: component val url: Url.t signature S): S =
+	    let
+		structure Sig = Reflect.ReflectSig(signature S = S)
+		val url = validate url
+		val (mod, inf) = eval' (url, component)
+		val _ = matchWith (Inf.rea (), inf, SOME Sig.x)
+			handle Inf.Mismatch m =>
+			    raise Failure (url, Mismatch
+						{component = Url.fromString "",
+						 request = NONE, cause = m})
+	    in
+		Reflect.Reify(val x = mod signature S = S)
+	    end
+
+	functor Link (val url: Url.t signature S): S =
+	    let
+		structure Sig = Reflect.ReflectSig(signature S = S)
+		val mod = typedLink (validate url, Inf.rea (), SOME Sig.x, NONE)
+	    in
+		Reflect.Reify(val x = mod signature S = S)
+	    end
+
+	functor Enter (val url: Url.t signature S structure X: S) =
+	    (val _ = enter (url, fromPackage (pack X : S)))
     end
 end
