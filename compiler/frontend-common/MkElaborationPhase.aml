@@ -561,8 +561,10 @@ struct
 	let
 	    val (j1,mod') = elabMod(E, NONE, mod)
 	    val (j2,inf') = elabGroundInf(E, NONE, inf)
+	    val  _        = Type.enterLevel()
 	    val  _        = Inf.match(j1,j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
+	    val  _        = Type.exitLevel()
 	    val  t        = PervasiveType.typ_package
 	in
 	    ( t, O.PackExp(typInfo(i,t), mod', inf') )
@@ -1225,6 +1227,7 @@ PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j11, 80);
 TextIO.print "\n";
 ())
 *)
+	    val  _          = Type.enterLevel()
 	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 (*DEBUG
 (TextIO.print "elabMod AppMod: mismatch\n";
@@ -1236,6 +1239,7 @@ PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j11, 80);
 TextIO.print "\n";
 *)
 				error(i, E.AppModArgMismatch mismatch)
+	    val  _          = Type.exitLevel()
 	    val  _          = PathMap.insertDisjoint(#mod_rea rea, p,
 						     Inf.narrowMod(m2,j11))
 (*DEBUG handle e =>
@@ -1260,8 +1264,10 @@ TextIO.print "\n";
 	let
 	    val (j1,mod') = elabMod(E, po, mod)
 	    val (j2,inf') = elabGroundInf(E, NONE, inf)
+	    val  _        = Type.enterLevel()
 	    val  _        = Inf.match(j1,j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
+	    val  _        = Type.exitLevel()
 	    val  j        = Inf.narrow(j1,j2)
 (*DEBUG*) handle e => raise e
 	in
@@ -1283,8 +1289,10 @@ TextIO.print "\n";
 	let
 	    val (j1,mod') = elabMod(E, NONE, mod)
 	    val (j2,inf') = elabGroundInf(E, po, inf)
+	    val  _        = Type.enterLevel()
 	    val  _        = Inf.match(j1,j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
+	    val  _        = Type.exitLevel()
 	    val  j        = j2
 (*DEBUG
 val _ = (
@@ -1465,8 +1473,10 @@ TextIO.print "\n";
 	    val (p2,j2)     = Inf.asMod m2
 	    val (p,j11,j12) = Inf.asLambda j1 handle Inf.Interface =>
 				error(I.infoMod mod, E.AppInfFunMismatch j1)
+	    val  _          = Type.enterLevel()
 	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 				error(i, E.AppInfArgMismatch mismatch)
+	    val  _          = Type.exitLevel()
 	    val  _          = PathMap.insertDisjoint(#mod_rea rea, p,
 						     Inf.narrowMod(m2,j11))
 (*DEBUG*) handle e => raise e
@@ -1845,6 +1855,7 @@ TextIO.print "\n";
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
 	    val (t,typ')       = elabStarTyp(E, false, typ)
 	    val  _             = Type.unify(t0,t)
+(*DEBUG*)handle e => raise e
 	    val  _             = Type.unify(qt,t)
 	    val  _             = Inf.extendVal(s, l, t)
 	in
@@ -2015,8 +2026,10 @@ TextIO.print "\n";
 		    let
 			val (t2,typ') = elabStarTyp(E, false, typ)
 		    in
+			Type.enterLevel();
 			Type.match(t1,t2) handle Type.Mismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchVal(l,t1,t2,m)));
+			Type.exitLevel();
 			(t2, O.SomeDesc(typInfo(i',t2),typ'))
 		    end
 	    val  _          = Type.unify(t0,t2)
@@ -2042,8 +2055,10 @@ TextIO.print "\n";
 			val (t2,_,typ') = elabTypRep(E, p, General.id, typ)
 			val  k2         = Type.kind t2
 		    in
+			Type.enterLevel();
 			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
+			Type.exitLevel();
 			(k2, t2, O.SomeDesc(typInfo(i',t2), typ'))
 		    end
 	    val (_,typid') = elabTypid_bind(E, p, t2, typid)
@@ -2071,8 +2086,10 @@ TextIO.print "\n";
 		  | I.SomeDesc(i',inf) =>
 		    let
 			val (j2,inf') = elabGroundInf(E, SOME p, inf)
+			val _   = Type.enterLevel()
 			val _   = Inf.match(j1,j2) handle Inf.Mismatch m =>
 				   error(i, E.ImpMismatch(Inf.MismatchMod(l,m)))
+			val _   = Type.exitLevel()
 			val jm2 = Inf.sing(Inf.narrowMod(m1,j2))
 (*DEBUG*) handle e => raise e
 		    in
@@ -2100,8 +2117,10 @@ TextIO.print "\n";
 			val (j2,_,inf') = elabInfRep(E, p, General.id, inf)
 			val  k2         = Inf.kind j2
 		    in
+			Type.enterLevel();
 			Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchInf(l,m)));
+			Type.exitLevel();
 			(k2, j2, O.SomeDesc(infInfo(i',j2),inf'))
 		    end
 	    val (_,infid') = elabInfid_bind(E, p, j2, infid)
@@ -2140,8 +2159,10 @@ TextIO.print "\n";
 		    let
 			val k2 = elabTypKind(E, typ)
 		    in
+			Type.enterLevel();
 			Type.matchKind(k1,k2) handle Type.KindMismatch m =>
-			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)))
+			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
+			Type.exitLevel()
 		    end
 	    val _  = elabTypid_bind(E, p, t1, typid)
 	in

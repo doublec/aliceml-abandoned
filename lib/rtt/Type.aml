@@ -273,11 +273,15 @@ struct
 
   (* Level management *)
 
+    exception Level
+
     val globalLevel	= 0
+    val boundLevel	= globalLevel
     val level		= ref(globalLevel+1)
 
     fun enterLevel()	= level := !level+1
-    fun exitLevel()	= level := !level-1
+    fun exitLevel()	= if !level = globalLevel+1 then raise Level else
+			  level := !level-1
     fun resetLevel()	= level := globalLevel+1
 
 
@@ -325,15 +329,15 @@ struct
     fun pth p = PrettyPrint.toString(PPPath.ppPath p, 1000000)
 
     fun id t = Int.toString(Addr.addr t) (* only works from build2 on *)
-    (*fun id t = Int.toString(#1 t)
-    		(* For NJ, have to make bootstrap/Cell transparent! *)*)
+    (*fun id t = Int.toString(Cell.hash t)*)
+    		(* For NJ, have to make bootstrap/Cell transparent! *)
 
     val rec typ'ToString = fn ads =>
 	fn t =>	if Hole.isHole t then "_" else
 	case t
 	of LINK t	=> "LINK(" ^ typ ads t ^ ")"
-	 | HOLE _	=> "HOLE"
-	 | VAR _	=> "VAR"
+	 | HOLE(_,n)	=> "HOLE_" ^ Int.toString n
+	 | VAR(_,n)	=> "VAR_" ^ Int.toString n
 	 | CON(p,_)	=> "CON(" ^ pth p ^ ")"
 	 | FUN(t1,t2)	=> "FUN(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 	 | PROD r	=> "PROD(" ^ rowToString ads r ^ ")"
@@ -346,8 +350,8 @@ struct
 	 | ABBREV(t1,t2) => "ABBREV(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 
     and rowToString = fn ads =>
-	fn INDEXED ts   => String.separate "," (Vector.toList(Vector.map (typ ads) ts))
-	 | NAMED(lts,d) => String.separate "," (List.map (fieldToString ads) lts @
+	fn INDEXED ts   => String.concatWith "," (Vector.toList(Vector.map (typ ads) ts))
+	 | NAMED(lts,d) => String.concatWith "," (List.map (fieldToString ads) lts @
 				      (if Option.isNone d then [] else ["..."]))
     and fieldToString = fn ads =>
 	fn (l,t)        => Label.toString l ^ ":" ^ typ ads t
@@ -521,9 +525,9 @@ struct
     fun canonicalVar t	=
 	let val t' = canonical t in
 	    case content t'
-	      of VAR(k,n)		=> if n = globalLevel then ()
-					   else replace(t', VAR(k,globalLevel))
-	       | HOLE(k,n)		=> replace(t', VAR(k,globalLevel))
+	      of VAR(k,n)		=> if n = boundLevel then ()
+					   else replace(t', VAR(k,boundLevel))
+	       | HOLE(k,n)		=> replace(t', VAR(k,boundLevel))
 	       | _			=> raise Type;
 	    t'
 	end
@@ -1260,7 +1264,7 @@ val _ = checkMuFwd := checkMu
 	   | ABBREV(t1,t2) => instance'(f,m,t2, SOME(Option.getOpt(to,t1)))
 	   | ALL(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
 			    instance'(f,m,t,to))
-	   | EXIST(a,t)	=> ((*Map.insert(m, canonical a, newVar'(kind a));*)
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
 			    instance'(f,m,t,to))
 	   | _		=> case to of NONE    => f(m,t)
 				    | SOME t1 => f(m,abbrev'(t1,t))
@@ -1270,7 +1274,7 @@ val _ = checkMuFwd := checkMu
 	case content t
 	  of LINK t	=> skolem'(f,m,t,to)
 	   | ABBREV(t1,t2) => skolem'(f,m,t2, SOME(Option.getOpt(to,t1)))
-	   | ALL(a,t)	=> ((*Map.insert(m, canonical a, newVar'(kind a));*)
+	   | ALL(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
 			    skolem'(f,m,t,to))
 	   | EXIST(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
 			    skolem'(f,m,t,to))
@@ -1361,6 +1365,7 @@ val _ = checkMuFwd := checkMu
 	in
 	    lift t2
 	end
+(*DEBUG*)handle e => raise e
 
     val dummy      = newVar(starKind())
     fun lift'(n,t) = liftAndCheck(n, dummy, t)
@@ -1426,7 +1431,7 @@ val _ = checkMuFwd := checkMu
      *
      * However, the maps give us a simple way to abuse unification for
      * continuous matching module a realisation. We pass in an additional
-     * realisation and an initial mapping (for contuity). When we encounter
+     * realisation and an initial mapping (for continuity). When we encounter
      * a constant type, we look it up and eventually add the counterpart in
      * lowermost (the initial) mapping. Thus terms containing elements in the
      * realisation's domain are never actually merged.
@@ -1499,8 +1504,6 @@ val _ = checkMuFwd := checkMu
 	let
 	    val _   = matchKindCont'(i,ms,rea, kind t2, k1)
 		      handle KindMismatch _ => raise Mismatch(t1,t2)
-	    val _   = liftAndCheck(n1,t1,t2)
-		      handle Lift _ => raise Mismatch(t1,t2)
 	    val t2' = case rea
 			of NONE      => canonical t2
 			 | SOME rea' =>
@@ -1511,6 +1514,8 @@ val _ = checkMuFwd := checkMu
 			       List.app (fn m => Map.unionDisjoint(mt,m)) ms;
 			       canonical(build(mt,mk,rea',t2))
 			   end
+	    val _   = liftAndCheck(n1,t1,t2')
+		      handle Lift _ => raise Mismatch(t1,t2')
 	in
 (*DEBUG
 TextIO.print("bind "^typToString t1^" "^typToString t2^"\n");
@@ -1523,33 +1528,25 @@ TextIO.print("i = "^Int.toString i^"\n");
 	    merge(ms,t1,t2',i)
 	end
 
-    fun expand'(ms,t) =
-	case lookup(1,ms,t)
-	 of NONE               => NONE
-	  | some as SOME(t',k) =>
-	case content t'
-	 of LINK _ =>
-		(* Necessary because t' might have been a hole formerly... *)
-		(case expand'(ms,t')
-		 of NONE         => some
-		  | SOME(t'',k') => SOME(t'', Int.max(k,k'))
-		)
-	 | _ => some
-
     fun expand(i,ms,rea,t) =
-	case expand'(ms,t)
+	case expand'(i,ms,rea,t)
+	 of NONE => NONE
+	  | some as SOME(t',k') =>
+	case expand(i,ms,rea,t')
+	 of NONE => some
+	  | SOME(t'',k'') => SOME(t'', Int.max(k',k''))
+
+    and expand'(i,ms,rea,t) =
+	case lookup(1,ms,t)
 	 of some as SOME _ => some
 	  | NONE =>
 	case content t
 	 of LINK t1 =>
-		(case expand(i,ms,rea,t1)
-		 of NONE => SOME(t1,0)
-		  | some => some
-		)
+		SOME(t1,0)
 	  | ABBREV(_,t2) =>
 		(case expand(i,ms,rea,t2)
-		 of (NONE | SOME(_,0)) => NONE
-		  | some => some
+		 of SOME(_,0) => NONE
+		  | other => other
 		)
 	  | CON(p,k) =>
 		(case rea
@@ -1590,13 +1587,28 @@ TextIO.print("i = "^Int.toString i^"\n");
 	  | _ => NONE
 
     fun unify'(i,ms,rea,t1,t2) =
+(*DEBUG
+(TextIO.print("unify " ^ typToString t1 ^ " " ^ typToString t2 ^ " ...\n");
+case rea of NONE => TextIO.print("rea = -\n")
+| SOME rea' => TextIO.print("rea = {\n" ^ reaToString rea' ^ "}\n");
+List.appri (fn(i,m) => TextIO.print("m"^Int.toString i^" = {\n" ^ substToString m ^ "}\n")) ms;
+TextIO.print("i = "^Int.toString i^"\n");
+*)
 	if Cell.equal(t1,t2) then 0 else
 	let
 	    val (t1',i1) = Option.getOpt(expand(i,ms,rea,t1), (t1,0))
 	    val (t2',i2) = Option.getOpt(expand(i,ms,rea,t2), (t2,0))
 	in
 	    Int.max(Int.max(i1,i2), unify''(i,ms,rea,t1',t2'))
+(*
+before TextIO.print("unify done " ^ typToString t1 ^ " " ^ typToString t2 ^ " .\n")
+*)
 	end
+(*DEBUG
+handle e => 
+(TextIO.print("unify failure " ^ typToString t1 ^ " " ^ typToString t2 ^ " !\n"); raise e)
+)
+*)
 
     and unify''(i,ms,rea,t1,t2) =
 	if Cell.equal(t1,t2) then 0 else
@@ -1752,6 +1764,7 @@ TextIO.print("i = "^Int.toString i^"\n");
   (* Equality, matching, and public interface to unification *)
 
     fun unify(t1,t2) = ignore(unify'(0,[],NONE, t1,t2))
+(*DEBUG*)handle e => raise e
     fun equal(t1,t2) = (unify(t1,t2); true) handle Mismatch _ => false
 
 (*DEBUG
@@ -1782,6 +1795,7 @@ equal(t1,t2)
 	    val ms' = if Map.isEmpty m then ms else m::ms
 	in
 	    ignore(unify'(if List.null ms' then 0 else 1, ms', rea, t1',t2'))
+(*DEBUG*)handle e => raise e
 	end
 
     fun match(t1,t2)		= matchCont'([], NONE, t1,t2)
