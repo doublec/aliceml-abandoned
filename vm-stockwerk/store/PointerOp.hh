@@ -99,11 +99,11 @@ public:
     return DirectDecodeUnmanagedPointer(v);
   }
   static void EncodeHandler(Block *p, Handler *h) {
-    AssertStore(p->GetLabel() == HANDLERBLOCK_LABEL);
+    AssertStore(HeaderOp::DecodeLabel(p) == HANDLERBLOCK_LABEL);
     ((word *) p)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
   }
   static Handler *DecodeHandler(Block *p) {
-    AssertStore(p->GetLabel() == HANDLERBLOCK_LABEL);
+    AssertStore(HeaderOp::DecodeLabel(p) == HANDLERBLOCK_LABEL);
     return (Handler *) PointerOp::DecodeUnmanagedPointer(((word *) p)[1]);
   }
   // Deref Function
