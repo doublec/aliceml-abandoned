@@ -12,7 +12,7 @@
 
 signature DEBUG =
     sig
-	structure Intermediate: INTERMEDIATE = PostTranslationIntermediate
+	structure Intermediate: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
 	val seqToString: string -> ('a -> string) -> 'a list -> string
 	val listToString: ('a -> string) -> 'a list -> string

@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-structure IntermediateAux :> INTERMEDIATEAUX =
+structure IntermediateAux :> INTERMEDIATE_AUX =
     struct
-	structure Intermediate = PostTranslationIntermediate
-	open PostTranslationIntermediate
+	structure Intermediate = IntermediateGrammar
+	open Intermediate
 
 	fun freshId coord = Id (coord, Stamp.new (), InId)
 
@@ -89,7 +89,9 @@ structure IntermediateAux :> INTERMEDIATEAUX =
 		    List.map (fn Field (coord, lab, exp) =>
 			      Field (coord, lab, substExp (exp, subst)))
 		    expFields)
-	  | substExp (exp as SelExp (_, _), _) = exp
+	  | substExp (exp as SelExp (_, _, NONE), _) = exp
+	  | substExp (SelExp (coord, lab, SOME exp), subst) =
+	    SelExp (coord, lab, SOME (substExp (exp, subst)))
 	  | substExp (FunExp (coord, id, exp), subst) =
 	    FunExp (coord, id, substExp (exp, subst))
 	  | substExp (AppExp (coord, exp1, exp2), subst) =
@@ -175,13 +177,13 @@ structure IntermediateAux :> INTERMEDIATEAUX =
 		    List.foldl
 		    (fn ((id, id'), decs) =>
 		     let
-			 val coord = info_id id
+			 val coord = infoId id
 			 val exp = VarExp (coord, ShortId (coord, id'))
 		     in
 			 ValDec (coord, VarPat (coord, id), exp, false)::decs
 		     end) nil subst
 	    in
-		WithPat (info_pat pat', pat', decs)
+		WithPat (infoPat pat', pat', decs)
 	    end
 	and relax (pat as WildPat _, subst) = (pat, subst)
 	  | relax (pat as LitPat (_, _), subst) = (pat, subst)

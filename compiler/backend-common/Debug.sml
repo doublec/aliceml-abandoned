@@ -12,7 +12,7 @@
 
 structure Debug :> DEBUG =
     struct
-	structure Intermediate = PostTranslationIntermediate
+	structure Intermediate = IntermediateGrammar
 	open Intermediate
 
 	fun seqToString sep toString (x::xs) =

@@ -10,21 +10,21 @@
  *   $Revision$
  *)
 
-signature SIMPLIFIED =
+signature SIMPLIFIED_GRAMMAR =
     sig
 	type coord = Source.position
 
 	(* Literals *)
 
-	datatype lit = datatype PostTranslationIntermediate.lit
+	datatype lit = datatype IntermediateGrammar.lit
 
 	(* Identifiers *)
 
-	type stamp = PostTranslationIntermediate.stamp
-	datatype name = datatype PostTranslationIntermediate.name
-	datatype lab = datatype PostTranslationIntermediate.lab
-	datatype id = datatype PostTranslationIntermediate.id
-	datatype longid = datatype PostTranslationIntermediate.longid
+	type stamp = IntermediateGrammar.stamp
+	datatype name = datatype IntermediateGrammar.name
+	datatype lab = datatype IntermediateGrammar.lab
+	datatype id = datatype IntermediateGrammar.id
+	datatype longid = datatype IntermediateGrammar.longid
 
 	(* Generic *)
 
@@ -72,4 +72,6 @@ signature SIMPLIFIED =
 	  | TupArgs of 'a list
 	  | RecArgs of (string * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
+
+	type program = dec list
     end

@@ -10,15 +10,13 @@
  *   $Revision$
  *)
 
-structure Simplify :> SIMPLIFY =
+structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
     struct
+	structure I = IntermediateGrammar
+	structure O = SimplifiedGrammar
+
+	open I
 	open IntermediateAux
-
-	structure Intermediate = PostTranslationIntermediate
-	structure Simplified = Simplified
-
-	open PostTranslationIntermediate
-	structure S = Simplified
 
 	(* Pattern Matching Compilation: Tests *)
 
@@ -31,7 +29,7 @@ structure Simplify :> SIMPLIFY =
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string
 	  | GuardTest of mapping * exp
-	  | DecTest of mapping * S.coord * dec list
+	  | DecTest of mapping * O.coord * dec list
 	withtype mapping = (string list * id) list
 
 	(* Test Sequences *)
@@ -132,8 +130,8 @@ structure Simplify :> SIMPLIFY =
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref *
-		    testList ref * testList ref * int ref * S.exp option ref
-	  | Leaf of S.exp * int ref * S.exp option ref
+		    testList ref * testList ref * int ref * O.exp option ref
+	  | Leaf of O.exp * int ref * O.exp option ref
 	  | Default
 	withtype testList = (pos * test) list option
 
@@ -215,7 +213,7 @@ structure Simplify :> SIMPLIFY =
 	       | _ => propagateElses (!thenTreeRef, !elseTreeRef))
 	  | propagateElses (Leaf (_, _, _), _) = ()
 	  | propagateElses (Default, _) =
-	    Crash.crash "Simplify.propagateElses"
+	    Crash.crash "MatchCompilationPhase.propagateElses"
 
 	(*--** this can be optimized by imposing a total ordering on pos *)
 	fun testSetMember (pos, test, (pos', test')::testSetRest) =
@@ -249,7 +247,7 @@ structure Simplify :> SIMPLIFY =
 				  trueTests, (pos, test)::falseTests))
 	      | computeTestSets (Leaf (_, _, _), _, _) = ()
 	      | computeTestSets (Default, _, _) =
-		Crash.crash "Simplify.computeTestSets"
+		Crash.crash "MatchCompilationPhase.computeTestSets"
 	end
 
 	fun disentailed (pos, test, (pos', test')::rest) =
@@ -274,7 +272,7 @@ structure Simplify :> SIMPLIFY =
 		 optimizeGraph thenGraphRef;
 		 optimizeGraph elseGraphRef)
 	  | optimizeGraph (ref (Leaf (_, _, _))) = ()
-	  | optimizeGraph _ = Crash.crash "Simplify.optimizeGraph"
+	  | optimizeGraph _ = Crash.crash "MatchCompilationPhase.optimizeGraph"
 
 	fun countShared (Node (_, _, ref thenGraph, ref elseGraph,
 			       _, _, count, _)) =
@@ -288,7 +286,7 @@ structure Simplify :> SIMPLIFY =
 		else ()
 	    end
 	  | countShared (Leaf (_, count, _)) = count := !count + 1
-	  | countShared Default = Crash.crash "Simplify.countShared"
+	  | countShared _ = Crash.crash "MatchCompilationPhase.countShared"
 
 	fun buildGraph (matches, elseExp) =
 	    let
@@ -333,25 +331,27 @@ structure Simplify :> SIMPLIFY =
 	fun lookup (pos, (pos', id)::mappingRest) =
 	    if pos = pos' then id
 	    else lookup (pos, mappingRest)
-	  | lookup (pos, nil) = Crash.crash "Simplify.lookup"
+	  | lookup (pos, nil) = Crash.crash "MatchCompilationPhase.lookup"
 
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, id) => (id, lookup (pos, mapping))) mapping0
 
 	fun makeRaise (coord, longid) =
-	    S.RaiseExp (coord, S.VarExp (coord, longid))
+	    O.RaiseExp (coord, O.VarExp (coord, longid))
 
 	fun share exp =
-	    (*--** replace Source.nowhere by S.info_exp exp *)
-	    S.SharedExp (Source.nowhere, exp, ref Simplified.backendInfoDummy)
+	    (*--** replace Source.nowhere by O.infoExp exp *)
+	    O.SharedExp (Source.nowhere, exp,
+			 ref SimplifiedGrammar.backendInfoDummy)
 
-	fun makeShared (exp, ref 0) = Crash.crash "Simplify.makeShared"
+	fun makeShared (exp, ref 0) =
+	    Crash.crash "MatchCompilationPhase.makeShared"
 	  | makeShared (exp, ref 1) = exp
 	  | makeShared (exp, ref _) = share exp
 
 	fun idToVarExp id =
 	    let
-		val coord = info_id id
+		val coord = infoId id
 	    in
 		VarExp (coord, ShortId (coord, id))
 	    end
@@ -410,7 +410,8 @@ structure Simplify :> SIMPLIFY =
 		     else Error.error (coord, "pattern never matches")
 	       | (_, PatFieldSort.Rec) =>
 		     if hasDots then
-			 Crash.crash "Simplify.unify: not yet implemented 1"
+			 Crash.crash
+			 "MatchCompilationPhase.unify: not yet implemented 1"
 		     else Error.error (coord, "pattern never matches"))
 	  | unify (pat1 as RecPat (_, _, _), pat2 as TupPat (_, _)) =
 	    unify (pat2, pat1)
@@ -420,16 +421,16 @@ structure Simplify :> SIMPLIFY =
 		val (fieldPats1', _) = PatFieldSort.sort fieldPats1
 		val (fieldPats2', _) = PatFieldSort.sort fieldPats2
 	    in
-		Crash.crash "Simplify.unify: not yet implemented 2"
+		Crash.crash "MatchCompilationPhase.unify: not yet implemented 2"
 	    end
 	  | unify (RecPat (coord, fieldPats1, true),
 		   RecPat (_, fieldPats2, false)) =
-	    Crash.crash "Simplify.unify: not yet implemented 3"
+	    Crash.crash "MatchCompilationPhase.unify: not yet implemented 3"
 	  | unify (pat1 as RecPat (_, _, false), pat2 as RecPat (_, _, true)) =
 	    unify (pat2, pat1)
 	  | unify (RecPat (coord, fieldPats1, true),
 		   RecPat (_, fieldPats2, true)) =
-	    Crash.crash "Simplify.unify: not yet implemented 4"
+	    Crash.crash "MatchCompilationPhase.unify: not yet implemented 4"
 	  | unify (AsPat (_, pat1, pat2), pat3) =
 	    unify (unify (pat1, pat2), pat3)
 	  | unify (AltPat (coord, _), _) =
@@ -449,7 +450,7 @@ structure Simplify :> SIMPLIFY =
 	  | unify (_, WithPat (coord, _, _)) =
 	    Error.error (coord, "with pattern not allowed in let rec")
 	  | unify (_, pat) =
-	    Error.error (info_pat pat, "pattern never matches")
+	    Error.error (infoPat pat, "pattern never matches")
 
 	fun tame (WildPat coord) = VarPat (coord, freshId coord)
 	  | tame (pat as LitPat (_, _)) = pat
@@ -475,7 +476,7 @@ structure Simplify :> SIMPLIFY =
 	  | tame (WithPat (coord, _, _)) =
 	    Error.error (coord, "with pattern not allowed in let rec")
 
-	fun patToExp (WildPat _) = Crash.crash "Simplify.patToExp"
+	fun patToExp (WildPat _) = Crash.crash "MatchCompilationPhase.patToExp"
 	  | patToExp (LitPat (coord, lit)) = LitExp (coord, lit)
 	  | patToExp (VarPat (coord, id)) = VarExp (coord, ShortId (coord, id))
 	  | patToExp (ConPat (coord, longid, NONE)) =
@@ -488,10 +489,10 @@ structure Simplify :> SIMPLIFY =
 	    TupExp (coord, List.map patToExp pats)
 	  | patToExp (RecPat (coord, patFields, hasDots)) =
 	    (*--** record patterns with dots must be resolved using the rhs *)
-	    Crash.crash "Simplify.patToExp"
+	    Crash.crash "MatchCompilationPhase.patToExp"
 	  | patToExp (AsPat (coord, pat as VarPat (_, _), _)) = patToExp pat
 	  | patToExp (AsPat (coord, _, pat as VarPat (_, _))) = patToExp pat
-	  | patToExp _ = Crash.crash "Simplify.patToExp"
+	  | patToExp _ = Crash.crash "MatchCompilationPhase.patToExp"
 
 	fun derec (WildPat _, exp) = [(nil, exp)]
 	  | derec (LitPat (coord, lit1), LitExp (_, lit2)) =
@@ -536,7 +537,7 @@ structure Simplify :> SIMPLIFY =
 				   | NONE => false) patFields'
 		    then
 			Crash.crash
-			"Simplify.derec: not implemented 1"   (*--** *)
+			"MatchCompilationPhase.derec: not implemented 1" (*--** *)
 		    else Error.error (coord, "pattern never matches")
 		else
 		    case arity of
@@ -558,7 +559,7 @@ structure Simplify :> SIMPLIFY =
 		if hasDots then
 		    if isSubarity (patFields', expFields') then
 			Crash.crash
-			"Simplify.derec: not implemented 2"   (*--** *)
+			"MatchCompilationPhase.derec: not implemented 2"   (*--** *)
 		    else Error.error (coord, "pattern never matches")
 		else
 		    if ListPair.all (fn (Field (_, Lab (_, s), _),
@@ -594,63 +595,63 @@ structure Simplify :> SIMPLIFY =
 	  | derec (WithPat (coord, _, _), _) =
 	    Error.error (coord, "with pattern not allowed in let rec")
 	  | derec (pat, _) =
-	    Error.error (info_pat pat, "pattern never matches")
+	    Error.error (infoPat pat, "pattern never matches")
 
 	fun simplifyDec (ValDec (coord, VarPat (_, id), exp, false)) =
 	    (* this is needed to end recursion with introduced WithPats *)
-	    S.OneDec (coord, id, simplifyExp exp)
+	    O.OneDec (coord, id, simplifyExp exp)
 	  | simplifyDec (ValDec (coord, VarPat (_, id), exp, true)) =
-	    S.RecDec (coord, [([id], simplifyExp exp)])
+	    O.RecDec (coord, [([id], simplifyExp exp)])
 	  | simplifyDec (ValDec (coord, pat, exp, false)) =
 	    let
 		val ids = patternVariablesOf pat
-		val decExp = S.DecExp (coord, ids)
+		val decExp = O.DecExp (coord, ids)
 		val matches = [(coord, pat, decExp)]
 	    in
-		S.ValDec (coord, ids,
+		O.ValDec (coord, ids,
 			  simplifyCase (coord, exp, matches, longid_Bind))
 	    end
 	  | simplifyDec (ValDec (coord, pat, exp, true)) =
-	    S.RecDec (coord,
+	    O.RecDec (coord,
 		      List.map (fn (ids, exp) => (ids, simplifyExp exp))
 		      (derec (pat, exp)))
 	  | simplifyDec (ConDec (coord, id, hasArgs)) =
-	    S.ConDec (coord, id, hasArgs)
+	    O.ConDec (coord, id, hasArgs)
 	and simplifyTerm (VarExp (_, longid)) = (NONE, longid)
 	  | simplifyTerm exp =
 	    let
-		val coord = info_exp exp
+		val coord = infoExp exp
 		val id' = freshId coord
-		val dec' = S.OneDec (coord, id', simplifyExp exp)
+		val dec' = O.OneDec (coord, id', simplifyExp exp)
 	    in
 		(SOME dec', ShortId (coord, id'))
 	    end
 	and simplifyExp (LitExp (coord, lit)) =
-	    S.LitExp (coord, lit)
+	    O.LitExp (coord, lit)
 	  | simplifyExp (VarExp (coord, longid)) =
-	    S.VarExp (coord, longid)
+	    O.VarExp (coord, longid)
 	  | simplifyExp (ConExp (coord, longid, SOME exp)) =
 	    let
 		val (decOpt, longid) = simplifyTerm exp
-		val exp' = S.ConExp (coord, longid, SOME longid)
+		val exp' = O.ConExp (coord, longid, SOME longid)
 	    in
 		case decOpt of
 		    NONE => exp'
-		  | SOME dec' => S.LetExp (info_exp exp, [dec'], exp')
+		  | SOME dec' => O.LetExp (infoExp exp, [dec'], exp')
 	    end
 	  | simplifyExp (ConExp (coord, longid, NONE)) =
-	    S.ConExp (coord, longid, NONE)
+	    O.ConExp (coord, longid, NONE)
 	  | simplifyExp (RefExp (coord, SOME exp)) =
 	    let
 		val (decOpt, longid) = simplifyTerm exp
-		val exp' = S.ConExp (coord, longid_ref, SOME longid)
+		val exp' = O.ConExp (coord, longid_ref, SOME longid)
 	    in
 		case decOpt of
 		    NONE => exp'
-		  | SOME dec' => S.LetExp (info_exp exp, [dec'], exp')
+		  | SOME dec' => O.LetExp (infoExp exp, [dec'], exp')
 	    end
 	  | simplifyExp (RefExp (coord, NONE)) =
-	    S.ConExp (coord, longid_ref, NONE)
+	    O.ConExp (coord, longid_ref, NONE)
 	  | simplifyExp (TupExp (coord, exps)) =
 	    let
 		val (decs', longids) =
@@ -663,11 +664,11 @@ structure Simplify :> SIMPLIFY =
 			     NONE => (decs', longid::longids)
 			   | SOME dec' => (dec'::decs', longid::longids)
 		     end) (nil, nil) exps
-		val exp' = S.TupExp (coord, longids)
+		val exp' = O.TupExp (coord, longids)
 	    in
 		case decs' of
 		    nil => exp'
-		  | _::_ => S.LetExp (coord, decs', exp')
+		  | _::_ => O.LetExp (coord, decs', exp')
 	    end
 	  | simplifyExp (RecExp (coord, expFields)) =
 	    let
@@ -685,24 +686,24 @@ structure Simplify :> SIMPLIFY =
 		val exp' =
 		    case FieldLabelSort.sort fields of
 			(fields', FieldLabelSort.Tup _) =>
-			    S.TupExp (coord,
+			    O.TupExp (coord,
 				      List.map (fn (_, exp') => exp') fields')
 		      | (fields', FieldLabelSort.Rec) =>
-			    S.RecExp (coord, fields)
+			    O.RecExp (coord, fields)
 	    in
 		case decs' of
 		    nil => exp'
-		  | _::_ => S.LetExp (coord, decs', exp')
+		  | _::_ => O.LetExp (coord, decs', exp')
 	    end
-	  | simplifyExp (SelExp (coord, lab)) =
-	    S.SelExp (coord, lab)
+	  | simplifyExp (SelExp (coord, lab, _)) =  (*--**)
+	    O.SelExp (coord, lab)
 	  | simplifyExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
-	    S.FunExp (coord, "", [(S.OneArg id, simplifyExp exp)])
+	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])
 	  | simplifyExp (AppExp (coord, exp1, exp2)) =
-	    S.AppExp (coord, simplifyExp exp1, simplifyExp exp2, ref false)
+	    O.AppExp (coord, simplifyExp exp1, simplifyExp exp2, ref false)
 	  | simplifyExp (AdjExp (coord, exp1, exp2)) =
-	    S.AdjExp (coord, simplifyExp exp1, simplifyExp exp2)
+	    O.AdjExp (coord, simplifyExp exp1, simplifyExp exp2)
 	  | simplifyExp (AndExp (coord, exp1, exp2)) =
 	    simplifyExp (IfExp (coord, exp1,
 				exp2, VarExp (coord, longid_false)))
@@ -712,19 +713,19 @@ structure Simplify :> SIMPLIFY =
 	  | simplifyExp (IfExp (_, exp1, exp2, exp3)) =
 	    simplifyIf (exp1, simplifyExp exp2, simplifyExp exp3)
 	  | simplifyExp (WhileExp (coord, exp1, exp2)) =
-	    S.WhileExp (coord, simplifyExp exp1, simplifyExp exp2)
+	    O.WhileExp (coord, simplifyExp exp1, simplifyExp exp2)
 	  | simplifyExp (SeqExp (coord, exps)) =
-	    S.SeqExp (coord, List.map simplifyExp exps)
+	    O.SeqExp (coord, List.map simplifyExp exps)
 	  | simplifyExp (CaseExp (coord, exp, matches)) =
 	    let
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
-			      (info_exp exp, pat, simplifyExp exp)) matches
+			      (infoExp exp, pat, simplifyExp exp)) matches
 	    in
 		simplifyCase (coord, exp, matches', longid_Match)
 	    end
 	  | simplifyExp (RaiseExp (coord, exp)) =
-	    S.RaiseExp (coord, simplifyExp exp)
+	    O.RaiseExp (coord, simplifyExp exp)
 	  | simplifyExp (HandleExp (coord, exp, matches)) =
 	    let
 		val id = freshId coord
@@ -734,10 +735,10 @@ structure Simplify :> SIMPLIFY =
 		val exp' = CaseExp (coord, VarExp (coord, longid),
 				    matches @ [reraise])
 	    in
-		S.HandleExp (coord, simplifyExp exp, id, simplifyExp exp')
+		O.HandleExp (coord, simplifyExp exp, id, simplifyExp exp')
 	    end
 	  | simplifyExp (LetExp (coord, decs, exp)) =
-	    S.LetExp (coord, List.map simplifyDec decs, simplifyExp exp)
+	    O.LetExp (coord, List.map simplifyDec decs, simplifyExp exp)
 	and simplifyIf (AndExp (_, exp1, exp2), thenExp, elseExp) =
 	    let
 		val elseExp' = share elseExp
@@ -754,19 +755,19 @@ structure Simplify :> SIMPLIFY =
 	    end
 	  | simplifyIf (exp, thenExp, elseExp) =
 	    let
-		val coord = info_exp exp
+		val coord = infoExp exp
 		val (decOpt, longid) = simplifyTerm exp
 		val errExp = makeRaise (coord, longid_Match)
 		val exp' =
-		    S.TestExp (coord, longid,
-			       S.ConTest (longid_true, NONE), thenExp,
-			       S.TestExp (coord, longid,
-					  S.ConTest (longid_false, NONE),
+		    O.TestExp (coord, longid,
+			       O.ConTest (longid_true, NONE), thenExp,
+			       O.TestExp (coord, longid,
+					  O.ConTest (longid_false, NONE),
 					  elseExp, errExp))
 	    in
 		case decOpt of
 		    NONE => exp'
-		  | SOME dec' => S.LetExp (coord, [dec'], exp')
+		  | SOME dec' => O.LetExp (coord, [dec'], exp')
 	    end
 	and simplifyCase (coord, exp, matches, longid) =
 	    let
@@ -774,14 +775,14 @@ structure Simplify :> SIMPLIFY =
 		    case exp of
 			VarExp (_, ShortId (_, id')) => (NONE, id')
 		      | _ => let
-				 val coord = info_exp exp
+				 val coord = infoExp exp
 				 val id' = freshId coord
 				 val dec' =
-				     S.OneDec (coord, id', simplifyExp exp)
+				     O.OneDec (coord, id', simplifyExp exp)
 			     in
 				 (SOME dec', id')
 			     end
-		val errExp = S.RaiseExp (coord, S.VarExp (coord, longid))
+		val errExp = O.RaiseExp (coord, O.VarExp (coord, longid))
 		val (graph, consequents) = buildGraph (matches, errExp)
 		val exp' = simplifyGraph (graph, [(nil, id)])
 	    in
@@ -792,7 +793,7 @@ structure Simplify :> SIMPLIFY =
 			    | SOME _ => ()) consequents;
 		case decOpt of
 		    NONE => exp'
-		  | SOME dec' => S.LetExp (info_exp exp, [dec'], exp')
+		  | SOME dec' => O.LetExp (infoExp exp, [dec'], exp')
 	    end
 	and simplifyGraph (Node (_, _, _, _, _, _, _, ref (SOME exp)), _) = exp
 	  | simplifyGraph (Node (pos, test, ref thenGraph, ref elseGraph, _, _,
@@ -813,7 +814,7 @@ structure Simplify :> SIMPLIFY =
 		exp'
 	    end
 	  | simplifyGraph (Default, _) =
-	    Crash.crash "Simplify.simplifyGraph"
+	    Crash.crash "MatchCompilationPhase.simplifyGraph"
 	and simplifyNode (pos, GuardTest (mapping0, exp),
 			  thenGraph, elseGraph, mapping) =
 	    let
@@ -822,16 +823,16 @@ structure Simplify :> SIMPLIFY =
 		val longid = ShortId (coord, id)
 		val subst = mappingsToSubst (mapping0, mapping)
 		val dec' =
-		    S.OneDec (coord, id, simplifyExp (substExp (exp, subst)))
+		    O.OneDec (coord, id, simplifyExp (substExp (exp, subst)))
 		val thenExp = simplifyGraph (thenGraph, mapping)
 		val elseExp = simplifyGraph (elseGraph, mapping)
 		val errExp = makeRaise (coord, longid_Match)
 	    in
-		S.LetExp (coord, [dec'],
-			  S.TestExp (coord, longid,
-				     S.ConTest (longid_true, NONE), thenExp,
-				     S.TestExp (coord, longid,
-						S.ConTest (longid_false, NONE),
+		O.LetExp (coord, [dec'],
+			  O.TestExp (coord, longid,
+				     O.ConTest (longid_true, NONE), thenExp,
+				     O.TestExp (coord, longid,
+						O.ConTest (longid_false, NONE),
 						elseExp, errExp)))
 	    end
 	  | simplifyNode (pos, DecTest (mapping0, coord, decs),
@@ -843,7 +844,7 @@ structure Simplify :> SIMPLIFY =
 		    decs
 		val thenExp = simplifyGraph (thenGraph, mapping)
 	    in
-		S.LetExp (coord, decs', thenExp)
+		O.LetExp (coord, decs', thenExp)
 	    end
 	  | simplifyNode (pos, test, thenGraph, elseGraph, mapping) =
 	    let
@@ -852,25 +853,25 @@ structure Simplify :> SIMPLIFY =
 		val thenExp = simplifyGraph (thenGraph, mapping')
 		val elseExp = simplifyGraph (elseGraph, mapping')
 	    in
-		S.TestExp (Source.nowhere, longid, test', thenExp, elseExp)
+		O.TestExp (Source.nowhere, longid, test', thenExp, elseExp)
 	    end
 	and simplifyTest (LitTest lit, _, mapping) =
-	    (S.LitTest lit, mapping)
+	    (O.LitTest lit, mapping)
 	  | simplifyTest (ConTest (longid, false), _, mapping) =
-	    (S.ConTest (longid, NONE), mapping)
+	    (O.ConTest (longid, NONE), mapping)
 	  | simplifyTest (ConTest (longid, true), pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((""::pos), id)::mapping
 	    in
-		(S.ConTest (longid, SOME id), mapping')
+		(O.ConTest (longid, SOME id), mapping')
 	    end
 	  | simplifyTest (RefTest, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((""::pos), id)::mapping
 	    in
-		(S.ConTest (longid_ref, SOME id), mapping')
+		(O.ConTest (longid_ref, SOME id), mapping')
 	    end
 	  | simplifyTest (TupTest n, pos, mapping) =
 	    let
@@ -880,7 +881,7 @@ structure Simplify :> SIMPLIFY =
 		    foldlind (fn (i, id, mapping) =>
 			      (Int.toString i::pos, id)::mapping) mapping ids
 	    in
-		(S.TupTest ids, mapping')
+		(O.TupTest ids, mapping')
 	    end
 	  | simplifyTest (RecTest labs, pos, mapping) =
 	    let
@@ -891,15 +892,17 @@ structure Simplify :> SIMPLIFY =
 				    (s::pos, i)::mapping)
 		    mapping (labs, stringIdList)
 	    in
-		(S.RecTest stringIdList, mapping')
+		(O.RecTest stringIdList, mapping')
 	    end
 	  | simplifyTest (LabTest string, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((string::pos), id)::mapping
 	    in
-		(S.LabTest (string, id), mapping')
+		(O.LabTest (string, id), mapping')
 	    end
 	  | simplifyTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
-	    Crash.crash "Simplify.simplifyTest"
+	    Crash.crash "MatchCompilationPhase.simplifyTest"
+
+	val simplify = List.map simplifyDec
     end

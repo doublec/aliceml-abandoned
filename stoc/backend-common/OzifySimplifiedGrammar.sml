@@ -12,10 +12,9 @@
  *   $Revision$
  *)
 
-structure OzifySimplified :> OZIFYSIMPLIFIED =
+structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
     struct
-	structure Simplified = Simplified
-	open Simplified
+	open SimplifiedGrammar
 
 	local
 	    val count = ref 0

@@ -1,9 +1,9 @@
-functor Hashtable(Key: HASH_KEY) :> HASHTABLE where type key = Key.t =
+functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
   struct
 
-    type key          = Key.t
-    type 'a hashtable = (key * 'a) list array
-    type 'a t         = 'a hashtable
+    type key    = Key.t
+    type 'a map = (key * 'a) list array
+    type 'a t   = 'a map
 
     exception Delete
     exception Collision of key
@@ -58,7 +58,7 @@ functor Hashtable(Key: HASH_KEY) :> HASHTABLE where type key = Key.t =
     fun app f			= Array.app(List.app f)
     fun fold f			= Array.foldl(fn(kas,b) => List.foldl f b kas)
 
-    fun plus(t1,t2)		= app (fn(k,a) => insert(t1,k,a)) t2
-    fun plusDisjoint(t1,t2)	= app (fn(k,a) => insertDisjoint(t1,k,a)) t2
+    fun plus(m1,m2)		= app (fn(k,a) => insert(m1,k,a)) m2
+    fun plusDisjoint(m1,m2)	= app (fn(k,a) => insertDisjoint(m1,k,a)) m2
 
   end

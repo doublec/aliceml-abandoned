@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-signature SIMPLIFY =
+signature MATCH_COMPILATION_PHASE =
     sig
-	structure Intermediate: INTERMEDIATE = PostTranslationIntermediate
-	structure Simplified: SIMPLIFIED = Simplified
+	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
+	structure O: SIMPLIFIED_GRAMMAR = SimplifiedGrammar
 
-	val simplifyDec: Intermediate.dec -> Simplified.dec
+	val simplify: I.program -> O.program
     end

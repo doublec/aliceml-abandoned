@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-signature INTERMEDIATEAUX =
+signature INTERMEDIATE_AUX =
     sig
-	structure Intermediate: INTERMEDIATE = PostTranslationIntermediate
+	structure Intermediate: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
 	val freshId: Intermediate.info -> Intermediate.id
 

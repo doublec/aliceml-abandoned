@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-functor LabelSort(type t val get: t -> string) :> LABELSORT
+functor LabelSort(type t val get: t -> string) :> LABEL_SORT
     where type t = t =
     struct
 	type t = t

@@ -12,11 +12,10 @@
  *   $Revision$
  *)
 
-signature OZIFYSIMPLIFIED =
+signature OZIFY_SIMPLIFIED_GRAMMAR =
     sig
-	structure Simplified: SIMPLIFIED = Simplified
 	val outputList:
 	    (TextIO.outstream * 'a -> unit) ->
 	    TextIO.outstream * 'a list -> unit
-	val outputDec: TextIO.outstream * Simplified.dec -> unit
+	val outputDec: TextIO.outstream * SimplifiedGrammar.dec -> unit
     end

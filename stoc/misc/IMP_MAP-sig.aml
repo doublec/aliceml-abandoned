@@ -1,32 +1,26 @@
-signature HASH_KEY =
-  sig
-    eqtype t
-    val hash :  t -> int
-  end
-
-signature HASHTABLE =
+signature IMP_MAP =
   sig
 
-    type key (* = Key.t *)
-    type 'a hashtable
-    type 'a t = 'a hashtable
+    type key
+    type 'a map
+    type 'a t = 'a map
 
     exception Delete
     exception Collision of key
 
-    val new :		int -> 'a hashtable
-    val copy :		'a hashtable -> 'a hashtable
+    val new :		int -> 'a map
+    val copy :		'a map -> 'a map
 
-    val delete :	'a hashtable * key -> unit		(* Delete *)
-    val insert :	'a hashtable * key * 'a -> unit
-    val insertDisjoint:	'a hashtable * key * 'a -> unit		(* Collision *)
-    val plus :		'a hashtable * 'a hashtable -> unit
-    val plusDisjoint :	'a hashtable * 'a hashtable -> unit	(* Collision *)
+    val delete :	'a map * key -> unit		(* Delete *)
+    val insert :	'a map * key * 'a -> unit
+    val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
+    val plus :		'a map * 'a map -> unit
+    val plusDisjoint :	'a map * 'a map -> unit		(* Collision *)
 
-    val lookup :	'a hashtable * key -> 'a option
-    val isEmpty :	'a hashtable -> bool
+    val lookup :	'a map * key -> 'a option
+    val isEmpty :	'a map -> bool
 
-    val app :		(key * 'a -> unit) -> 'a hashtable -> unit
-    val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a hashtable -> 'b
+    val app :		(key * 'a -> unit) -> 'a map -> unit
+    val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
 
   end

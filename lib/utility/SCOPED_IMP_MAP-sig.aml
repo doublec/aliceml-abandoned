@@ -1,38 +1,40 @@
 (*
- * A stateful scoped symbol table (a stack of hashtables).
+ * A stateful scoped map (a stateful stack of stateful maps).
  *)
 
-signature SYMTABLE =
+signature SCOPED_IMP_MAP =
   sig
 
     type key
-    type 'a symtable
-    type 'a t = 'a symtable
+    type 'a map
+    type 'a t = 'a map
 
+    exception Delete
     exception Collision of key
 
-    val new :		unit -> 'a symtable
-    val copy :		'a symtable -> 'a symtable
-    val copyScope:	'a symtable -> 'a symtable
+    val new :		unit -> 'a map
+    val copy :		'a map -> 'a map
+    val copyScope:	'a map -> 'a map
 
-    val insertScope :	'a symtable -> unit
-    val deleteScope :	'a symtable -> unit
-    val delete2ndScope:	'a symtable -> unit
-    val mergeScope :	'a symtable -> unit
+    val insertScope :	'a map -> unit
+    val deleteScope :	'a map -> unit
+    val delete2ndScope:	'a map -> unit
+    val mergeScope :	'a map -> unit
 
-    val insert :	'a symtable * key * 'a -> unit
-    val insertDisjoint:	'a symtable * key * 'a -> unit		(* Collision *)
-    val plus :		'a symtable * 'a symtable -> unit
-    val plusDisjoint :	'a symtable * 'a symtable -> unit	(* Collision *)
+    val delete :	'a map * key -> unit		(* Delete *)
+    val insert :	'a map * key * 'a -> unit
+    val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
+    val plus :		'a map * 'a map -> unit
+    val plusDisjoint :	'a map * 'a map -> unit		(* Collision *)
 
-    val lookup :	'a symtable * key -> 'a option
-    val lookupScope :	'a symtable * key -> 'a option
-    val isEmpty :	'a symtable -> bool
-    val isEmptyScope :	'a symtable -> bool
+    val lookup :	'a map * key -> 'a option
+    val lookupScope :	'a map * key -> 'a option
+    val isEmpty :	'a map -> bool
+    val isEmptyScope :	'a map -> bool
 
-    val app :		(key * 'a -> unit) -> 'a symtable -> unit
-    val appScope :	(key * 'a -> unit) -> 'a symtable -> unit
-    val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a symtable -> 'b
-    val foldScope :	((key * 'a) * 'b -> 'b) -> 'b -> 'a symtable -> 'b
+    val app :		(key * 'a -> unit) -> 'a map -> unit
+    val appScope :	(key * 'a -> unit) -> 'a map -> unit
+    val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldScope :	((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
 
   end

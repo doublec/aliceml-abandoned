@@ -41,7 +41,7 @@ signature INTERMEDIATE_GRAMMAR =
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 			(* all labels distinct *)
-	| SelExp    of info * lab
+	| SelExp    of info * lab * exp option
 	| FunExp    of info * id * exp
 	| AppExp    of info * exp * exp
 	| AdjExp    of info * exp * exp
@@ -88,6 +88,10 @@ signature INTERMEDIATE_GRAMMAR =
 			 *     RefExp, TupExp, RecExp, FunExp *)
 	| ConDec    of info * id * bool (* has args *)
 
+    (* Programs *)
+
+    type program = dec list
+
 
     (* Predefined *)
 
@@ -124,13 +128,13 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Operations *)
 
-    val info_lab :	lab	-> info
-    val info_id :	id	-> info
-    val info_longid :	longid	-> info
-    val info_exp :	exp	-> info
-    val info_field :	'a field-> info
-    val info_match :	match	-> info
-    val info_pat :	pat	-> info
-    val info_dec :	dec	-> info
+    val infoLab :	lab	-> info
+    val infoId :	id	-> info
+    val infoLongid :	longid	-> info
+    val infoExp :	exp	-> info
+    val infoField :	'a field-> info
+    val infoMatch :	match	-> info
+    val infoPat :	pat	-> info
+    val infoDec :	dec	-> info
 
   end

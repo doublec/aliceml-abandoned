@@ -1,0 +1,14 @@
+Group is
+
+    ../misc/sources.cm
+    ../common/intermediate-grammar.cm
+
+    (* Simplified intermediate language *)
+
+    SIMPLIFIED_GRAMMAR.sig
+    SimplifiedGrammar.sml
+
+    (* Externalisation (into Oz syntax) *)
+
+    OZIFY_SIMPLIFIED_GRAMMAR.sig
+    OzifySimplifiedGrammar.sml

@@ -1,62 +1,65 @@
-functor Symtable(Key: HASH_KEY) :> SYMTABLE where type key = Key.t =
+functor MakeHashScopedImpMap(Key: HASH_KEY) :>
+  SCOPED_IMP_MAP where type key = Key.t =
   struct
 
-    structure Hashtable = Hashtable(Key)
+    structure ImpMap = MakeHashImpMap(Key)
 
-    type key            = Key.t
-    type 'a symtable    = 'a Hashtable.t list ref
-    type 'a t           = 'a symtable
+    type key    = Key.t
+    type 'a map = 'a ImpMap.t list ref
+    type 'a t   = 'a map
 
-    exception Collision = Hashtable.Collision
+    exception Delete    = ImpMap.Delete
+    exception Collision = ImpMap.Collision
 
 
     val scopeSize = 19
 
-    fun new()			= ref[Hashtable.new scopeSize]
-    fun copy(ref ts)		= ref(List.map Hashtable.copy ts)
-    fun copyScope(ref ts)	= ref[Hashtable.copy(List.hd ts)]
+    fun new()			= ref[ImpMap.new scopeSize]
+    fun copy(ref ms)		= ref(List.map ImpMap.copy ms)
+    fun copyScope(ref ms)	= ref[ImpMap.copy(List.hd ms)]
 
-    fun insertScope r		= r := Hashtable.new scopeSize :: !r
+    fun insertScope r		= r := ImpMap.new scopeSize :: !r
     fun deleteScope r		= r := List.tl(!r)
     fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
 
-    fun mergeScope(r as ref ts)	= let val ts' = List.tl ts in
-				      Hashtable.plus(List.hd ts', List.hd ts) ;
-				      r := ts'
+    fun mergeScope(r as ref ms)	= let val ms' = List.tl ms in
+				      ImpMap.plus(List.hd ms', List.hd ms) ;
+				      r := ms'
 				  end
 
 
     fun lookup'( [],   k)	= NONE
-      | lookup'(t::ts, k)	= case Hashtable.lookup(t,k)
-				    of NONE => lookup'(ts,k)
+      | lookup'(m::ms, k)	= case ImpMap.lookup(m,k)
+				    of NONE => lookup'(ms,k)
 				     | some => some
 
-    fun lookup(ref ts, k)	= lookup'(ts,k)
+    fun lookup(ref ms, k)	= lookup'(ms,k)
 
-    fun lookupScope(ref ts, k)	= Hashtable.lookup(List.hd ts, k)
+    fun lookupScope(ref ms, k)	= ImpMap.lookup(List.hd ms, k)
 
-    fun isEmptyScope(ref ts)	= Hashtable.isEmpty(List.hd ts)
-    fun isEmpty(ref ts)		= List.all Hashtable.isEmpty ts
+    fun isEmptyScope(ref ms)	= ImpMap.isEmpty(List.hd ms)
+    fun isEmpty(ref ms)		= List.all ImpMap.isEmpty ms
 
 
-    fun appScope f (ref ts)	= Hashtable.app f (List.hd ts)
-    fun app f (ref ts)		= List.app (Hashtable.app f) (List.rev ts)
-    fun foldScope f b (ref ts)	= Hashtable.fold f b (List.hd ts)
-    fun fold f b (ref ts)	= List.foldr (fn(t,b') => Hashtable.fold f b' t)
-					     b ts
+    fun appScope f (ref ms)	= ImpMap.app f (List.hd ms)
+    fun app f (ref ms)		= List.app (ImpMap.app f) (List.rev ms)
+    fun foldScope f b (ref ms)	= ImpMap.fold f b (List.hd ms)
+    fun fold f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.fold f b' m)
+					     b ms
 
-    fun insert(ref ts, k, a)	= Hashtable.insert(List.hd ts, k, a)
-    fun insertDisjoint(ref ts, k, a)
-				= Hashtable.insertDisjoint(List.hd ts, k, a)
+    fun delete(ref ms, k)	= ImpMap.delete(List.hd ms, k)
+    fun insert(ref ms, k, a)	= ImpMap.insert(List.hd ms, k, a)
+    fun insertDisjoint(ref ms, k, a)
+				= ImpMap.insertDisjoint(List.hd ms, k, a)
 
-    fun plus(ref ts1, ref ts2)	= let val t = List.hd ts1 in
-				    List.app (fn t' => Hashtable.plus(t,t')) ts2
+    fun plus(ref ms1, ref ms2)	= let val m = List.hd ms1 in
+				    List.app (fn m' => ImpMap.plus(m,m')) ms2
 				  end
 
-    fun plusDisjoint(ref ts1, ref ts2)
-				= let val t = List.hd ts1 in
-				      List.app (fn t' =>
-					     Hashtable.plusDisjoint(t,t')) ts2
+    fun plusDisjoint(ref ms1, ref ms2)
+				= let val m = List.hd ms1 in
+				      List.app (fn m' =>
+					     ImpMap.plusDisjoint(m,m')) ms2
 				  end
 
   end

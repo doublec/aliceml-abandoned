@@ -1,0 +1,16 @@
+Group is
+
+    ../common/intermediate-grammar.cm
+    ../misc/sources.cm
+    simplified-grammar.cm
+
+    Stamp.sml
+    LABEL_SORT.sig
+    LabelSort.sml
+    DEBUG.sig
+    Debug.sml
+    INTERMEDIATE_AUX.sig
+    IntermediateAux.sml
+
+    MATCH_COMPILATION_PHASE.sig
+    MatchCompilationPhase.sml

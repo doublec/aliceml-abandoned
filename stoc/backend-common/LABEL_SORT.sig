@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-signature LABELSORT =
+signature LABEL_SORT =
     sig
 	type t
 
