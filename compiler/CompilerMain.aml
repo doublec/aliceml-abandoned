@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2002
+ *   Leif Kornstaedt, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,23 +16,22 @@ import structure OS                       from "../lib/system/OS"
 import structure CommandLine              from "../lib/system/CommandLine"
 import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
 import structure SMLToDotNetBatchCompiler from "top/SMLToDotNetBatchCompiler"
-import structure SMLToStockwerkBatchCompiler
-		     from "top/SMLToStockwerkBatchCompiler"
+import structure SMLToSeamBatchCompiler   from "top/SMLToSeamBatchCompiler"
 
 val _ =
     case CommandLine.arguments () of
 	"--mozart"::args =>
 	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
-      | "--stockwerk"::args =>
-	    OS.Process.exit (SMLToStockwerkBatchCompiler.main args)
+      | "--seam"::args =>
+	    OS.Process.exit (SMLToSeamBatchCompiler.main args)
       | "--dotnet"::args =>
 	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
       | args =>
 	    case Config.vm of
 		"mozart" =>
 		    OS.Process.exit (SMLToMozartBatchCompiler.main args)
-	      | "stockwerk" =>
-		    OS.Process.exit (SMLToStockwerkBatchCompiler.main args)
+	      | "seam" =>
+		    OS.Process.exit (SMLToSeamBatchCompiler.main args)
 	      | "dotnet" =>
 		    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
 	      | _ =>
