@@ -9,7 +9,7 @@ struct
     (* evaluate only after parse? *)
     val closure = false
     (* print error structure at the beginning ? *)
-    val printErrorStruct = true
+    val printErrorStruct = false
     (* print description file *)
     val description = false
 
@@ -368,7 +368,7 @@ struct
 			  (absSynToString  lrTableString)
 			  (removeRuleDecs true p))
 
-	    val outfile = TextIO.openOut (filename ^ ".out")
+	    val outfile = TextIO.openOut (filename ^ ".aml")
 
 	    val _ = TextIO.output(outfile,code)
 

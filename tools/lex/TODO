@@ -198,9 +198,17 @@ TO-DO!
 
 *OK* -statt Ausnahme Error: RegMatch of string
 
+-welche Variablen werden benutzt, ggf. umbenennen (z.B. pos)
+
 -tagged transitions einführen
 
 -Jacke zum laufen kriegen
+
+-bootstrap einchecken
+
+-kurze Anleitung schreiben
+
+-Jacke bootstrap
 
 
 --------------------------------------------------------------------------------

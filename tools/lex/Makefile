@@ -20,9 +20,12 @@ FILES = AbsSyn.sml \
 	PARSE-sig.sml \
 	TABLE-sig.sml
 
-.PHONY: with-smlnj clean distclean
+.PHONY: with-smlnj bootstrap clean distclean
 
 with-smlnj: hose-image
+
+bootstrap: with-smlnj
+	make -C bootstrap
 
 hose-image: ${FILES}
 	sml <wrap-smlnj.sml

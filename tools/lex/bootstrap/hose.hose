@@ -1,0 +1,132 @@
+import structure Jacke from "jacke.jacke"
+import structure AbsSyn from "AbsSyn"
+import structure Lexer from "Lexer"
+import signature HOSE_LEXER from "HOSE_LEXER-sig"
+
+structure HoseLexer :> HOSE_LEXER =
+struct
+
+open Jacke
+
+val nesting = ref 0
+
+val comLine = ref ~1
+
+val comCol = ref ~1
+
+fun ++ x = x := !x + 1
+
+fun -- x = x := !x - 1
+
+fun toInt s = valOf(Int.fromString s)
+
+fun toReal s = valOf(Real.fromString s)
+
+fun error (e, line, col) =
+    raise AbsSyn.Error ("Lex Error in line " ^ Int.toString line ^ ", column "
+			^ Int.toString col ^ ": " ^ e ^ "\n")
+regexp
+    formatting' = [" \t\011\012\013"]
+and formatting  = formatting' | "\n"
+and symbol      = ["-!%&$#+/:<=>?@\\~`|*^"]
+and digit       = ["0-9"]
+and hexdigit    = ["0-9a-fA-F"]
+and posdecint   = digit +
+and negdecint   = "~" posdecint
+and decint      = posdecint | negdecint
+and exp         = "E" | "e"
+and real        = (decint "." digit + (exp decint)?) | (decint exp decint)
+and printable   = [^"\000-\032\"\127\\"]
+and escape      = "\\a" | "\\b" | "\\t" | "\\n" | "\\v" | "\\f" | "\\r"
+                | ("\\^"["@-_"])  | ("\\" digit{3})  | ("\\u" hexdigit{4})
+                | "\\\"" | "\\\\"
+and gap         = "\\" formatting + "\\"
+and stringchar  = printable | " " | escape
+and string      = "\"" (stringchar | gap)*"\""
+and char        = "#\"" gap * stringchar gap * "\""
+and alpha       = ["A-Za-z"]
+and alphaNum    = ["A-Za-z0-9_'"]
+and mlId        = "'" ? ["A-Za-z"] ["A-Za-z0-9_'."] *
+
+
+
+lexer initial =
+    "\n"             => (initial ())
+  | formatting' +    => (initial ())
+  | "regexp"         => (SOME (REGEXP(        yyline, yycol)), yyline, yyline)
+  | "lexer"          => (SOME (LEXER (        yyline, yycol)), yyline, yyline)
+  | "and"            => (SOME (AND   (        yyline, yycol)), yyline, yyline)
+  | "regcase"        => (SOME (RCASE (        yyline, yycol)), yyline, yyline)
+  | "of"             => (SOME (OF    (        yyline, yycol)), yyline, yyline)
+  | "constructor"    => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "datatype"       => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "end"            => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "eqtype"         => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "exception"      => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "exttype"        => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "from"           => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "fun"            => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "functor"        => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "in"             => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "include"        => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "infix"          => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "infixr"         => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "import"         => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "local"          => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "nonfix"         => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "open"           => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "sharing"        => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "signature"      => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "structure"      => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "type"           => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "val"            => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "withtype"       => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | ";"              => (SOME (MLKEY (yytext, yyline, yycol)), yyline, yyline)
+  | "="              => (SOME (EQ    (        yyline, yycol)), yyline, yyline)
+  | "("              => (SOME (LPAR  (        yyline, yycol)), yyline, yyline)
+  | ")"              => (SOME (RPAR  (        yyline, yycol)), yyline, yyline)
+  | "*"              => (SOME (TIMES (        yyline, yycol)), yyline, yyline)
+  | "+"              => (SOME (PLUS  (        yyline, yycol)), yyline, yyline)
+  | "?"              => (SOME (QMARK (        yyline, yycol)), yyline, yyline)
+  | "=>"             => (SOME (DRARROW(       yyline, yycol)), yyline, yyline)
+  | "|"              => (SOME (BAR   (        yyline, yycol)), yyline, yyline)
+  | "^"              => (SOME (CARAT (        yyline, yycol)), yyline, yyline)
+  | "["              => (SOME (LBRACK(        yyline, yycol)), yyline, yyline)
+  | "]"              => (SOME (RBRACK(        yyline, yycol)), yyline, yyline)
+  | ","              => (SOME (COMMA (        yyline, yycol)), yyline, yyline)
+  | "{"              => (SOME (LBRACE(        yyline, yycol)), yyline, yyline)
+  | "}"              => (SOME (RBRACE(        yyline, yycol)), yyline, yyline)
+  | "_"              => (SOME (WILDCARD(      yyline, yycol)), yyline, yyline)
+  | symbol +         => (SOME (MLOP (yytext,  yyline, yycol)), yyline, yyline)
+  | alpha alphaNum * => (SOME (ID    (yytext, yyline, yycol)), yyline, yyline)
+  | char             => (SOME (MLTOK (yytext, yyline, yycol)), yyline, yyline)
+  | mlId             => (SOME (MLTOK (yytext, yyline, yycol)), yyline, yyline)
+  | eof              => (NONE, yyline, yyline)
+  | decint           => (SOME (NUM  (toInt yytext, yyline, yycol)),
+			 yyline, yyline)
+  | real             => (SOME (REAL (toReal yytext,yyline, yycol)),
+			 yyline, yyline)
+  | string           => (SOME (STRING (yytext, yyline, yycol)),
+			 yyline, yyline)
+  | "(*"             => (nesting := 1; comLine := yyline; comCol := yycol;
+	                 comment ())
+  | _                => (error ("bad character '" ^ yytext ^ "'",
+	                 yyline, yycol))
+
+and comment =
+    "(*"             => (++ nesting; comment ())
+  | "*)"             => (-- nesting;
+			 if !nesting = 0 then initial () else comment ())
+  | eof              => (error ("beginning of unclosed comment",
+				   !comLine, !comCol))
+  | _                => (comment ())
+
+
+fun lexString s =
+    let
+	val lexing = initial (Lexer.fromString s)
+    in
+	fn x => lexing x
+    end
+
+end

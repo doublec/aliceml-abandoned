@@ -1,0 +1,11 @@
+import structure Jacke from "jacke.jacke"
+
+signature HOSE_LEXER =
+    sig
+	(* lexString returns a lexer operating on the given string
+	 * the additional position-entries are unused in the current
+	 * implementation because the abstract datatype already includes
+	 * these positions
+	 *)
+	val lexString : string -> unit -> Jacke.token option * int * int
+    end
