@@ -42,28 +42,41 @@ IntermediateGrammar
  |
  | -------- backend-common -------------
  |
- | MatchCompilationPhase:
+ | FlatteningPhase:
  |	- Pattern matching compilation
- |	- Trivialisation of recursive bindings
- |	- Linearisation
+ |	- Trivialization of recursive bindings
+ |	- Linearization
  V
-ImperativeGrammar
+FlatGrammar
  |
- | PartialEvaluationPhase:
+ | ValuePropagationPhase:
  |	- Value propagation
- |	- Constant folding
- |	- Dead code elimination
- |	- Inlining
- |	- Specialisation
+ |	- Reraise detection
+ |	- Test parallelization
+ |	- Selection evaluation
+ |	- Selection lifting (TBD)
+ |	- Constant folding (TBD)
+ |	- Constant hoisting (TBD)
+ |	- Inlining (TBD)
+ |	- Specialization (TBD)
+ |	- Function and constructor print name computation (TBD)
  V
-ImperativeGrammar'
+FlatGrammar'
  |
- | LivenessAnalysisPhase (optional):
+ | LivenessAnalysisPhase:
  |	- Liveness analysis
+ V
+FlatGrammar''
+ |
+ | DeadCodeEliminationPhase (TBD):
+ |	- Removal of unreferenced side-effect-free expressions
+ |	- Removal of bogus shared statements
+ |	- Removal of unused imports
+ |	- Initialization reordering
  |
  | -------------------------------------
  V
-ImperativeGrammar''
+FlatGrammar'''
  |
  | -------- backend-stockwerk ----------
  |
