@@ -41,18 +41,16 @@ struct
 	     loop compile connection)
 	     | _ => loop compile connection
 
-(*UNFINISHED: why do I need "fn(s,h,p) => loop compile (s,h,p)"
- instead of "loop compile"??? (raises illegal number of arguments exception) *)
 
     fun main' compile [] =
 	let
-	    val (_, port) = Socket.server(NONE, fn(s,h,p) => loop compile (s,h,p))
+	    val (_, port) = Socket.server(NONE, loop compile)
 	in
 	    TextIO.print("aliceserv: using port " ^ Int.toString port ^ "\n")
 	end
       | main' compile [port] =
 	(case Int.fromString port
-	   of SOME port' => ignore(Socket.server(SOME port', fn(s,h,p) => loop compile (s,h,p)))
+	   of SOME port' => ignore(Socket.server(SOME port', loop compile))
 	    | NONE => (usage(); OS.Process.exit OS.Process.failure)
 	)
       | main' compile args = (usage(); OS.Process.exit OS.Process.failure)
