@@ -32,7 +32,7 @@ SIGFILES	= $(SIGS:%=%-sig.stc)
 STRUCTFILES	= $(STRUCTS:%=%.stc)
 FILES		= $(SIGFILES) $(STRUCTFILES)
 
-INSTALLTO = `alice-config --alicetoolsdir`
+INSTALLTO = `alice-config --alicelibdir`/tools
 
 all: $(FILES) LinkedInspector.stc
 
