@@ -26,13 +26,14 @@ OZOBJS   = FD.ozf    \
            Space.ozf \
            Explorer.ozf
 
-SOURCES  = FD.asig       \
-           FS.asig       \
-           Space.asig    \
-           Explorer.asig \
-           Inspector.asig \
-           Search.aml       \
-           SEARCH-sig.aml
+INSTALLFILES = \
+	   $(OZOBJS)      \
+	   FD.asig        \
+           FS.asig        \
+           Space.asig     \
+           Explorer.asig  \
+           Search.ozf     \
+           SEARCH-sig.ozf
 
 PREFIX=/opt/stockhausen-devel0
 
@@ -47,5 +48,4 @@ clean:
 install: all
 	(cd $(PREFIX)/lib && rm -rf constraints) || exit 1
 	mkdir $(PREFIX)/lib/constraints
-	cp $(OZOBJS) $(PREFIX)/lib/constraints
-	cp $(SOURCES) $(PREFIX)/lib/constraints
+	cp $(INSTALLFILES) $(PREFIX)/lib/constraints
