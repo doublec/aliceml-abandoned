@@ -12,12 +12,15 @@
 
 functor
 import
+   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    System(printInfo)
    Open(file text)
 export
    '$TextIO': TextIO
    Print
 define
+   IoException = {NewUniqueName 'IO.Io'}
+
    class TextFile from Open.file Open.text end
 
    fun {TextIOInputAll F}
@@ -36,7 +39,11 @@ define
 	 {New TextFile init(name: stdin flags: [read])}
       'openIn':
 	 fun {$ S}
-	    {New TextFile init(name: S flags: [read])}
+	    try
+	       {New TextFile init(name: S flags: [read])}
+	    catch system(os(os ...) ...) then
+	       {Exception.raiseError IoException} unit
+	    end
 	 end
       'inputAll':
 	 fun {$ F} {ByteString.make {TextIOInputAll F}} end
