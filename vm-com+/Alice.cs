@@ -122,7 +122,6 @@ namespace Alice {
 	}
 	public class Cell {
 	    public object Value;
-	    public Cell() {}
 	    public Cell(object value) {
 		Value = value;
 	    }
@@ -351,9 +350,6 @@ namespace Alice {
 	public class TagVal {
 	    int Tag;
 	    public object Value;
-	    public TagVal(int tag) {
-		Tag = tag;
-	    }
 	    public TagVal(int tag, object value) {
 		Tag = tag;
 		Value = value;
@@ -373,9 +369,6 @@ namespace Alice {
 	public class ConVal {
 	    object Id;
 	    public object Value;
-	    public ConVal(object id) {
-		Id = CommonOp.Sync(id);
-	    }
 	    public ConVal(object id, object value) {
 		Id = CommonOp.Sync(id);
 		Value = value;
