@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000
+%%%   Leif Kornstaedt, 2000-2001
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -15,14 +15,9 @@ import
    Open(socket)
    System(show)
 export
-   'Socket$': Socket
+   'UnsafeSocket$': Socket
 define
-   Socket = 'Socket'('$t': {Value.byNeedFail rttNotImplemented}
-		     '$vector': {Value.byNeedFail rttNotImplemented}
-		     '$elem': {Value.byNeedFail rttNotImplemented}
-		     '$host': {Value.byNeedFail rttNotImplemented}
-		     '$port': {Value.byNeedFail rttNotImplemented}
-		     server:
+   Socket = 'Socket'(server:
 			fun {$ PortOpt F} Socket Port in
 			   Socket = {New Open.socket init()}
 			   case PortOpt of 'NONE' then
