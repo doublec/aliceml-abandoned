@@ -139,26 +139,6 @@
     <DT><TT>--(no-)warn-shadowing</TT></DT>
     <DD><P>Whether to warn about shadowing of identifiers.</P></DD>
   </DL>
-  <P>The following language options may be given:</P>
-  <DL>
-    <DT><TT>--no-reexport-import</TT></DT>
-    <DD><P>Make imported entities part of the component.</P></DD>
-    <DT><TT>--no-implicit-import</TT></DT>
-    <DD><P>Do not make the SML Standard Basis top-level environment available
-      to source files.  This option is necessary for bootstrapping the
-      top-level environment itself.  Improper use will most probably
-      crash the compiler.</P></DD>
-    <DT><TT>--implicit-import-file</TT> <I>&lt;file&gt;</I></DT>
-    <DD><P>Name a file containing import announcements that is automatically
-      prepended to any Alice source file before compilation.  Improper use
-      will most probably crash the compiler.</P></DD>
-    <DT><TT>--rtt-level=no</TT></DT>
-    <DD><P>Do not generate code for runtime types.</P></DD>
-    <DT><TT>--rtt-level=core</TT></DT>
-    <DD><P>Only generate code for core runtime types.</P></DD>
-    <DT><TT>--rtt-level=full</TT></DT>
-    <DD><P>Full support for runtime types.</P></DD>
-  </DL>
   <P>The following debugging options may be given:</P>
   <DL>
     <DT><TT>--version</TT></DT>
