@@ -25,6 +25,12 @@
   <PRE>
     signature LINEAR =
     sig
+	infix 7 `*
+	infix 6 `+ `-
+	infix 5 `#
+	infix 4 `= `<> `> `>= `< `<=
+	infix 3 `<->
+
 	datatype domain_element =
 	    `` of int
 	  | `# of int * int
@@ -54,11 +60,6 @@
 	val distribute : FD.dist_mode * term vector -> unit
 	val distinct : term vector -> unit
 	val post : rel -> unit
-
-	infix  7  `*
-	infix  6  `+ `-
-	infix  5  `#
-	infix  4  `= `<> `> `>= `< `<= `<->
     end</PRE>
 
 <?php section("description", "description"); ?>
