@@ -260,7 +260,7 @@ fun scrollY (y,scrolled,vadj) =
 
 (* Popup window for selection *)
  fun makePopup {node = n, widthhandler = w, depthhandler = d, 
-		   reinspecthandler = r} = 
+		   reinspecthandler = r, forcehandler = f} = 
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
 	    val width_item_list = [EntryObj(LABEL("-5"),
@@ -359,7 +359,10 @@ fun scrollY (y,scrolled,vadj) =
 		  MenuObj{title = "Actions",
 			  items = [EntryObj(LABEL("reinspect"),
 					    [Handler("activate",r)],
-					    reinspect_active)],
+					    reinspect_active),
+				  EntryObj(LABEL("force evaluation"),
+					   [Handler("activate",f)],
+					   true)],
 			  sensitive = true}])
 		;()))
 	end
@@ -390,13 +393,14 @@ struct
 	
     fun Delete _ = (Gtk.widgetDestroy(window);alive:= false)
 
-    val handlers = Array.array(5,(fn (n,i) => ()))
+    val handlers = Array.array(6,(fn (n,i) => ()))
 
     fun selectHandler "reinspect" = Array.sub(handlers,0)
       | selectHandler "width"     = Array.sub(handlers,1)
       | selectHandler "depth"     = Array.sub(handlers,2)
       | selectHandler "shrink"    = Array.sub(handlers,3)
       | selectHandler "expand"    = Array.sub(handlers,4)
+      | selectHandler "force evaluation" = Array.sub(handlers,5)
 
     fun register (str,handler) = 
 	let
@@ -405,6 +409,7 @@ struct
 	  | "depth" =>  2
 	  | "shrink" => 3
 	  | "expand" => 4
+          | "force evaluation" => 5
 	in
 	    Array.update(handlers,i,handler)
 	end
@@ -442,6 +447,9 @@ struct
 
      fun handleDepth node =
 	 fn i => fn _ => (selectHandler("depth")) (node,i)
+
+     fun handleForce node _ = 
+	 (selectHandler("force evaluation")) (getSelectionNode(),0)
 
 	 (* Menu-Bar *)
      val bar = WindowHelper.createMenu
@@ -559,7 +567,8 @@ struct
 					   (makePopup({node = n,
 				    widthhandler = handleWidth(n), 
 				    depthhandler = handleDepth(n), 
-				    reinspecthandler = handleReinspect(n)})
+				    reinspecthandler = handleReinspect(n),
+				    forcehandler = handleForce(n)})
 					    ;())
 				    | _   => () ) 
 				end
