@@ -30,8 +30,9 @@ public:
   static const BlockLabel Array   = MIN_DATA_LABEL;
   static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 1);
   static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 2);
-  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 3);
-  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 4);
+  static const BlockLabel Record  = (BlockLabel) (MIN_DATA_LABEL + 3);
+  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 4);
+  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 5);
   static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
 
   static bool IsTag(BlockLabel l) {
@@ -304,9 +305,15 @@ public:
     return static_cast<UniqueString *>(b);
   }
   static UniqueString *FromWordDirect(word x) {
+    //--** hack
+    UniqueString *uniqueString = FromWord(x);
+    Assert(uniqueString != INVALID_POINTER);
+    return uniqueString;
+    /*
     ConcreteRepresentation *b = ConcreteRepresentation::FromWordDirect(x);
     Assert(b->GetSize() == SIZE);
     return static_cast<UniqueString *>(b);
+    */
   }
 
   Transform *GetTransform();
@@ -350,6 +357,74 @@ public:
   }
   word Sub(u_int index) {
     return GetArg(BASE_SIZE + index);
+  }
+};
+
+class Record: private Block {
+private:
+  static const u_int WIDTH_POS = 0;
+  static const u_int BASE_SIZE = 1;
+public:
+  using Block::ToWord;
+
+  static Record *New(u_int n) {
+    Block *b = Store::AllocBlock(Alice::Record, BASE_SIZE + n * 2);
+    b->InitArg(WIDTH_POS, n);
+    return static_cast<Record *>(b);
+  }
+  static Record *New(Vector *labels) {
+    u_int n = labels->GetLength();
+    Block *b = Store::AllocBlock(Alice::Record, BASE_SIZE + n * 2);
+    b->InitArg(WIDTH_POS, n);
+    for (u_int i = n; i--; ) {
+      UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+      b->InitArg(BASE_SIZE + i * 2, label->ToWord());
+    }
+    return static_cast<Record *>(b);
+  }
+  static Record *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+    Assert(p == INVALID_POINTER || p->GetLabel() == Alice::Record);
+    return static_cast<Record *>(p);
+  }
+  static Record *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() == Alice::Record);
+    return static_cast<Record *>(p);
+  }
+
+  void Init(u_int i, word value) {
+    InitArg(BASE_SIZE + i * 2 + 1, value);
+  }
+  void Init(const char *s, word value) {
+    UniqueString *label = UniqueString::New(String::New(s));
+    u_int n = Store::DirectWordToInt(GetArg(WIDTH_POS));
+    u_int index = label->Hash() % n;
+    u_int i = index;
+    while (true) {
+      if (Store::WordToInt(GetArg(BASE_SIZE + i * 2)) != INVALID_INT) {
+	InitArg(BASE_SIZE + i * 2, label->ToWord());
+	InitArg(BASE_SIZE + i * 2 + 1, value);
+	return;
+      }
+      i = (i + 1) % n;
+      Assert(i != index);
+    }
+  }
+  void AssertLabel(u_int i, UniqueString *label) {
+    Assert(GetArg(BASE_SIZE + i * 2) == label->ToWord()); i = i; label = label;
+  }
+  word PolySel(UniqueString *label) {
+    word wLabel = label->ToWord();
+    u_int n = Store::DirectWordToInt(GetArg(WIDTH_POS));
+    u_int index = label->Hash() % n;
+    u_int i = index;
+    while (true) {
+      if (GetArg(BASE_SIZE + i * 2) == wLabel)
+	return GetArg(BASE_SIZE + i * 2 + 1);
+      i = (i + 1) % n;
+      Assert(i != index);
+    }
   }
 };
 
