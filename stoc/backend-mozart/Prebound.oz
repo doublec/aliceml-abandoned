@@ -358,8 +358,8 @@ define
 	    {FloatToInt {Round R}}
 	 end
       'Real.toString':
-	 fun {$ F}
-	    {ByteString.make {FloatToString F}}
+	 fun {$ R}
+	    {ByteString.make {FloatToString R}}
 	 end
       'Real.trunc':
 	 fun {$ R}

@@ -23,6 +23,7 @@ import
 export
    '$INSPECTOR$': INSPECTOR
    'Inspector$': AliceInspector
+   'inspect' : AliceInspect
 define
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %% Change Default Inspector Bindings
@@ -415,6 +416,12 @@ define
        ConfigureMenu}
    end
 
+   %% Create Inspect Function
+   fun {AliceInspect V}
+      {Inspector.inspect V}
+      unit
+   end
+
    %% Create Inspector Interface
    AliceInspector =
    'Inspector'(%% Types
@@ -500,11 +507,7 @@ define
 	       '\'MISC':               'MISC'
 
 	       %% Functions
-	       'inspect':
-		  fun {$ V}
-		     {Inspector.inspect V}
-		     unit
-		  end
+	       'inspect': AliceInspect
 	       'inspectN':
 		  fun {$ N V}
 		     {Inspector.inspectN N V}

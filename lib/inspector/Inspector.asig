@@ -78,4 +78,5 @@ signature INSPECTOR_COMPONENT =
 	    end
 
 	structure Inspector : INSPECTOR
+	val inspect : 'a -> unit
     end

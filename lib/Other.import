@@ -31,5 +31,5 @@ import "x-alice:/lib/system/PICKLE-sig"
 import "x-alice:/lib/system/Pickle"
 
 (*--** these should only be active for stot: *)
-(*import "x-alice:/lib/tools/Inspector"*)
+import "x-alice:/lib/tools/Inspector"
 import "x-alice:/stoc/StotMain"
