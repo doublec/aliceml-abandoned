@@ -143,7 +143,7 @@ struct
                         fun remove (event : event, chan, num) =
                             (print ("registering not responding client as " ^
                                         "disconnected after " ^
-                                    Int.toString num ^ " tries to talk to him");
+                                    Int.toString num ^ " tries to talk to him\n");
                              #disconnected event := true;
                              Channel.destroy chan;
                              false)
