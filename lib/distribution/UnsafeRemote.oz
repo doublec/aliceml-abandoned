@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2001
+%%%   Leif Kornstaedt, 2001-2002
 %%%
 %%% Last Change:
 %%%   $Date$ by $Author$
@@ -15,72 +15,40 @@ import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Alice(rpc) at 'x-oz://boot/Alice'
    Pickle(packWithCells unpack) at 'x-oz://boot/Pickle'
-   Property(put get)
-   Connection(offerUnlimited take)
+   Property(put)
+   Connection(offer)
 export
    'UnsafeRemote$' : Remote
 define
    SitedException = {NewUniqueName 'Pickle.Sited'}
-   TicketException = {NewUniqueName 'Remote.Ticket'}
-
-   {Property.put 'alice.rpc'
-    fun {$ Ticket X} Res in
-       try
-	  {Port.send {Connection.take Ticket} {Pickle.packWithCells X}#Res}
-       catch error(dp(generic 'pickle:nogoods' ...) ...) then
-	  {Exception.raiseError alice(SitedException)}
-       [] error(connection(illegalTicket ...) ...) then
-	  {Exception.raiseError alice(TicketException)}
-       end
-       case {Pickle.unpack Res} of result(X) then X
-       [] exception(E) then raise E end
-       end
-    end}
 
    Remote =
-   'Remote'('Ticket': TicketException
-	    '\'Ticket': TicketException
-	    proxy:
-	       fun {$ F} Ticket Xs in
-		  Ticket = {Connection.offerUnlimited {Port.new ?Xs}}
-		  thread
-		     {ForAll Xs
-		      proc {$ X#Res}
-			 try
-			    Res = {Pickle.packWithCells
-				   try
-				      result({F {Pickle.unpack X}})
-				   catch system(E ...) then
-				      exception(system(E))
-				   [] error(E ...) then
-				      exception(error(E))
-				   [] E then
-				      exception(E)
-				   end}
-			 catch error(dp(generic 'pickle:nogoods' ...) ...) then
-			    {Exception.raiseError alice(SitedException)}
-			 end
-		      end}
-		  end
-		  fun {$ X}
-		     {Alice.rpc Ticket X}
+   'Remote'(getLocalIP:
+	       fun {$ unit}   % generate a ticket just to guess our IP
+		  case {VirtualString.toString {Connection.offer 7}}
+		  of &x|&-|&o|&z|&t|&i|&c|&k|&e|&t|&:|&/|&/|Rest then
+		     {ByteString.make
+		      {List.takeWhile Rest fun {$ C} C \= &: end}}
 		  end
 	       end
-	    offer:
-	       fun {$ Package}
-		  try
-		     {ByteString.make {Connection.offerUnlimited
-				       {Pickle.packWithCells Package}}}
+	    setCallback:
+	       fun {$ Callback}
+		  {Property.put 'alice.rpc'
+		   if {Procedure.arity Callback} == 3 then Callback
+		   else fun {$ A B} {Callback A#B} end
+		   end}
+		  unit
+	       end
+	    dynamicCall:
+	       fun {$ A B}
+		  {Alice.rpc A B}
+	       end
+	    packValue:
+	       fun {$ X}
+		  try {Pickle.packWithCells X}
 		  catch error(dp(generic 'pickle:nogoods' ...) ...) then
 		     {Exception.raiseError alice(SitedException)} unit
 		  end
 	       end
-	    take:
-	       fun {$ Ticket}
-		  try
-		     {Pickle.unpack {Connection.take Ticket}}
-		  catch error(connection(illegalTicket ...) ...) then
-		     {Exception.raiseError alice(TicketException)} unit
-		  end
-	       end)
+	    unpackValue: Pickle.unpack)
 end
