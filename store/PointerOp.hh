@@ -30,6 +30,7 @@ public:
   }
   // Block<->Word Conversion
   static word EncodeBlock(Block *p) {
+    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) EMPTYTAG);
     return (word) ((u_int) p | (u_int) BLKTAG);
   }
   static Block *DecodeBlock(word p) {
@@ -37,7 +38,7 @@ public:
   }
   // Transient<->Word Conversion
   static word EncodeTransient(Transient *p) {
-    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG);
+    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) EMPTYTAG);
     return (word) ((u_int) p | (u_int) TRTAG);
   }
   static Transient *DecodeTransient(word p) {

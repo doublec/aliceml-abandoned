@@ -31,9 +31,10 @@ typedef word_s * word;
 
 // Pointer Tags
 typedef enum {
-  BLKTAG = 0,
-  INTTAG = 1,
-  TRTAG  = 2
+  EMPTYTAG = 0,
+  BLKTAG   = 0,
+  INTTAG   = 1,
+  TRTAG    = 2
 } PointerTag;
 
 // Pointer Masks
