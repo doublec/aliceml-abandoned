@@ -465,7 +465,8 @@ structure TypePrivate =
      * eta-convertible type functions. It's done on demand.
      *)
 
-    fun reduceEta(t as ref(LAMBDA _)) =
+    fun reduceEta t = reduceEta2(t, false)
+    and reduceEta2(t as ref(LAMBDA _), modified) =
 	let
 	    fun reduceLambda(ref(LAMBDA(a,t1)), vs) =
 		reduceLambda(t1, a::vs)
@@ -478,11 +479,11 @@ structure TypePrivate =
 		    if t2' = a' andalso not(occurs(a',t1)) then
 			reduceLambda(t1, vs)
 		    else
-			()
+			modified
 		end
 
 	      | reduceLambda(t1, []) =
-		    ( t := LINK t1 ; reduceEta t1 )
+		    ( t := LINK t1 ; reduceEta2(t1, true) )
 
 	      | reduceLambda(ref(LINK t1), vs) =
 		    reduceLambda(t1, vs)
@@ -490,14 +491,14 @@ structure TypePrivate =
 	      | reduceLambda(ref(ABBREV(t1,t2)), vs) =
 		    reduceLambda(t2, vs)
 
-	      | reduceLambda _ = ()
+	      | reduceLambda _ = modified
 	in
 	    reduceLambda(t, [])
 	end
 
-      | reduceEta(ref(LINK t)) = reduceEta t
+      | reduceEta2(ref(LINK t), modified) = reduceEta2(t, modified)
 
-      | reduceEta _ = ()
+      | reduceEta2(t, modified) = modified
 
 
   (* Creation and injections *)
@@ -528,13 +529,11 @@ structure TypePrivate =
     fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
     fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
 
-    fun asType(ref(LINK t))		= asType t
-      | asType(ref(ABBREV(_,t)))	= asType t
-      | asType(t as ref(LAMBDA _))	= (reduceEta t;
-					   case !t of t' as LAMBDA _ => t'
-						    | _              => asType t
-					  )
-      | asType(ref t')			= t'
+    fun asType(ref(LINK t))			= asType t
+      | asType(ref(ABBREV(_,t)))		= asType t
+      | asType(t as ref(t' as LAMBDA _))	= if reduceEta t then asType t
+								 else t'
+      | asType(ref t')				= t'
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
     fun isArrow t	= case asType t of FUN _    => true | _ => false
@@ -565,11 +564,8 @@ structure TypePrivate =
       | isType'(ref(ABBREV(_,t)))		= isType' t
       | isType'(t as ref(APPLY _))		= isTypeApply'(t,0)
       | isType'(ref(MU t))			= isType' t
-      | isType'(t as ref(LAMBDA _))		= (reduceEta t;
-						   case !t
-						     of t' as LAMBDA _ => t'
-						      | _ => isType' t
-						  )
+      | isType'(t as ref(t' as LAMBDA _))	= if reduceEta t then isType' t
+								 else t'
       | isType'(ref t')				= t'
     and isTypeApply'(ref(LINK t1 | MU t1), n)	= isTypeApply''(t1,n)
       | isTypeApply'(ref(APPLY(t1,t2)), n)	= isTypeApply'(t1,n+1)
@@ -597,11 +593,8 @@ structure TypePrivate =
       | asType'(ref(ABBREV(_,t)))		= asType' t
       | asType'(t as ref(t' as APPLY _))	= asTypeApply'(t',t,[])
       | asType'(ref(MU t))			= asType' t
-      | asType'(t as ref(LAMBDA _))		= (reduceEta t;
-						   case !t
-						     of t' as LAMBDA _ => t'
-						      | _ => asType' t
-						  )
+      | asType'(t as ref(t' as LAMBDA _))	= if reduceEta t then asType' t
+								 else t'
       | asType'(ref t')				= t'
     (* Note that we can only legally have a LAMBDA node following an APPLY
        node if there is a MU node inbetween. *)
@@ -1099,15 +1092,18 @@ end*)
 		       | (APPLY(tt1), APPLY(tt2)) =>
 			 recur equalsPair (tt1,tt2)
 
-		       | ( (LAMBDA _, _) | (_, LAMBDA _) ) =>
-			 ( reduceEta t1
-			 ; reduceEta t2
-			 ; case (!t1,!t2)
-			     of (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
-				recurBinder(a1, a2, t11, t21)
-			      | ( (LAMBDA _, _) | (_, LAMBDA _) ) => false
-			      | _ => equals(t1,t2)
-			 )
+		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
+			 if reduceEta t1 orelse reduceEta t2 then
+			     equals(t1,t2)
+			 else
+			     recurBinder(a1, a2, t11, t21)
+
+		       | (LAMBDA _, _) =>
+			 reduceEta t1 andalso equals(t1,t2)
+
+		       | (_, LAMBDA _) =>
+			 reduceEta t2 andalso equals(t1,t2)
+
 		       | ( (ALL(a1,t11),   ALL(a2,t21))
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
