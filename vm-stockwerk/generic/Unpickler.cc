@@ -32,21 +32,9 @@
 #include "generic/Scheduler.hh"
 #include "generic/Transform.hh"
 #include "generic/Unpickler.hh"
+#include "generic/Pickle.hh"
 
 #include "alice/Data.hh" //--** should not be here
-
-// pickle    ::= int | chunk | block | tuple | closure | transform
-// int       ::= POSINT <uint> | NEGINT <uint>
-// chunk     ::= CHUNK size <byte>*size
-// size      ::= <uint>
-// block     ::= BLOCK label size field*size
-// tuple     ::= TUPLE size field*size
-// closure   ::= CLOSURE size field*size
-// label     ::= <uint>
-// field     ::= pickle | reference
-// reference ::= REF id
-// id        ::= <uint>
-// transform ::= TRANSFORM (chunk|reference) field
 
 static word handlerTable;
 static const u_int initialHandlerTableSize = 7;
@@ -552,21 +540,6 @@ private:
   // UnpickleInterpreter Constructor
   UnpickleInterpreter() : Interpreter() {}
 public:
-  // Pickle Tags //--** move to some other file Pickle.hh
-  class Tag {
-  public:
-    enum PickleTags {
-      POSINT,
-      NEGINT,
-      CHUNK,
-      BLOCK,
-      TUPLE,
-      CLOSURE,
-      REF,
-      TRANSFORM
-    };
-  };
-
   // UnpickleInterpreter Static Constructor
   static void Init() {
     self = new UnpickleInterpreter();
@@ -649,8 +622,8 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
     u_int count     = UnpickleArgs::GetCount();
     u_char tag      = is->GetByte();
     CHECK_EOB();
-    switch ((Tag::PickleTags) tag) {
-    case Tag::POSINT:
+    switch (static_cast<Pickle::Tag>(tag)) {
+    case Pickle::POSINT:
       {
 	u_int y = is->GetUInt(); CHECK_EOB();
 	Set(x, i, Store::IntToWord(y));
@@ -659,7 +632,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::NEGINT:
+    case Pickle::NEGINT:
       {
 	u_int y = is->GetUInt(); CHECK_EOB();
 	Set(x, i, Store::IntToWord(-(y + 1)));
@@ -668,7 +641,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::CHUNK:
+    case Pickle::CHUNK:
       {
 	u_int size    = is->GetUInt(); CHECK_EOB();
 	u_char *bytes = is->GetBytes(size); CHECK_EOB();
@@ -682,7 +655,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::BLOCK:
+    case Pickle::BLOCK:
       {
 	u_int label  = is->GetUInt(); CHECK_EOB();
 	u_int size   = is->GetUInt(); CHECK_EOB();
@@ -697,7 +670,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::TUPLE:
+    case Pickle::TUPLE:
       {
 	u_int size = is->GetUInt(); CHECK_EOB();
 	word y     = Tuple::New(size)->ToWord();
@@ -710,7 +683,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::CLOSURE:
+    case Pickle::CLOSURE:
       {
 	u_int size = is->GetUInt(); CHECK_EOB();
 	word cc    = Store::IntToWord(0); // will be replaced by concrete code
@@ -724,7 +697,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::TRANSFORM:
+    case Pickle::TRANSFORM:
       {
 	Future *future = Future::New();
 	word y         = future->ToWord();
@@ -739,7 +712,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	CONTINUE();
       }
       break;
-    case Tag::REF:
+    case Pickle::REF:
       {
 	u_int index = is->GetUInt(); CHECK_EOB();
 	Set(x, i, SelFromEnv(env, index));

@@ -27,24 +27,12 @@
 #include "generic/Scheduler.hh"
 #include "generic/Transform.hh"
 #include "generic/Pickler.hh"
-#include "generic/Debug.hh" //--** remove
-#include "alice/Data.hh" //--** avoid Alice dependencies
+#include "generic/Pickle.hh"
 
-// pickle    ::= int | chunk | block | tuple | closure | transform
-// int       ::= POSINT <uint> | NEGINT <uint>
-// chunk     ::= CHUNK size <byte>*size
-// size      ::= <uint>
-// block     ::= BLOCK label size field*size
-// tuple     ::= TUPLE size field*size
-// closure   ::= CLOSURE size field*size
-// label     ::= <uint>
-// field     ::= pickle | reference
-// reference ::= REF id
-// id        ::= <uint>
-// transform ::= TRANSFORM (chunk|reference) field
+#include "alice/Data.hh" //--** should not be here
 
 //
-// Streaming Classes
+// Stream Classes
 //
 typedef enum {
   FILE_OUTPUT_STREAM   = MIN_DATA_LABEL,
@@ -298,21 +286,6 @@ public:
 // PicklingInterpreter
 class PicklingInterpreter : public Interpreter {
 private:
-  // Pickle Tags
-  class Tag { //--** move to Pickle.hh
-  public:
-    enum PickleTags {
-      POSINT,
-      NEGINT,
-      CHUNK,
-      BLOCK,
-      TUPLE,
-      CLOSURE,
-      REF,
-      TRANSFORM
-    };
-  };
-
   static PicklingInterpreter *self;
   // PicklingInterpreter Constructor
   PicklingInterpreter() : Interpreter() {}
@@ -385,10 +358,10 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   int i;
   if ((i = Store::WordToInt(x0)) != INVALID_INT) {
     if (i >= 0) {
-      outputStream->PutByte(Tag::POSINT);
+      outputStream->PutByte(Pickle::POSINT);
       outputStream->PutUInt(i);
     } else {
-      outputStream->PutByte(Tag::NEGINT);
+      outputStream->PutByte(Pickle::NEGINT);
       outputStream->PutUInt(-(i + 1));
     }
     CONTINUE();
@@ -398,7 +371,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   Block *v   = Store::WordToBlock(x0);
   u_int ref  = seen->Find(v);
   if (ref != Seen::NOT_FOUND) {
-    outputStream->PutByte(Tag::REF);
+    outputStream->PutByte(Pickle::REF);
     outputStream->PutUInt(ref);
     CONTINUE();
   }
@@ -408,7 +381,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   case CHUNK_LABEL:
     {
       Chunk *c = static_cast<Chunk *>(v);
-      outputStream->PutByte(Tag::CHUNK);
+      outputStream->PutByte(Pickle::CHUNK);
       outputStream->PutUInt(c->GetSize());
       outputStream->PutBytes(c);
       seen->Add(v);
@@ -418,7 +391,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   case TUPLE_LABEL:
     {
       u_int size = v->GetSize();
-      outputStream->PutByte(Tag::TUPLE);
+      outputStream->PutByte(Pickle::TUPLE);
       outputStream->PutUInt(size);
       seen->Add(v);
       for (u_int i = size; i--; )
@@ -429,7 +402,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   case CLOSURE_LABEL:
     {
       u_int size = v->GetSize();
-      outputStream->PutByte(Tag::CLOSURE);
+      outputStream->PutByte(Pickle::CLOSURE);
       outputStream->PutUInt(size);
       seen->Add(v);
       for (u_int i = size; i--; )
@@ -454,7 +427,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   case TRANSFORM_LABEL:
     {
       Transform *transform = reinterpret_cast<Transform *>(v);
-      outputStream->PutByte(Tag::TRANSFORM);
+      outputStream->PutByte(Pickle::TRANSFORM);
       seen->Add(v);
       PicklingInterpreter::PushFrame(taskStack, transform->GetArgument());
       PicklingInterpreter::PushFrame(taskStack, transform->GetName()->ToWord());
@@ -464,7 +437,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   default:
     {
       u_int size = v->GetSize(); // to be done
-      outputStream->PutByte(Tag::BLOCK);
+      outputStream->PutByte(Pickle::BLOCK);
       outputStream->PutUInt(l);
       outputStream->PutUInt(size);
       seen->Add(v);
@@ -481,8 +454,7 @@ const char *PicklingInterpreter::Identify() {
 
 void PicklingInterpreter::DumpFrame(word frameWord) {
   PicklingFrame *frame = PicklingFrame::FromWordDirect(frameWord);
-  std::fprintf(stderr, "Pickling Value:\n");
-  Debug::Dump(frame->GetData());
+  std::fprintf(stderr, "Pickling Task\n");
 }
 
 // PicklePackInterpreter Frame
@@ -516,7 +488,7 @@ public:
   static void Init() {
     self = new PicklePackInterpreter();
   }
-  // Frame Handing
+  // Frame Handling
   static void PushFrame(TaskStack *taskStack);
   // Execution
   virtual Result Run(TaskStack *taskStack);
