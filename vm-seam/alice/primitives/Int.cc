@@ -27,15 +27,6 @@
     }						\
   } END
 
-#define INT_INT_TO_INT_OP_DIV(name, op)		\
-  DEFINE2(name) {				\
-    DECLARE_INT(i, x0);				\
-    DECLARE_INT(j, x1);				\
-    if (j == 0)					\
-      RAISE(PrimitiveTable::General_Div);	\
-    RETURN_INT(i op j);				\
-  } END
-
 #define INT_INT_TO_BOOL_OP(name, op)		\
   DEFINE2(name) {				\
     DECLARE_INT(i, x0);				\
@@ -112,6 +103,8 @@ DEFINE2(Int_div) {
     RAISE(PrimitiveTable::General_Div);
   bool b1 = i >= 0, b2 = j >= 0;
   if (b1 == b2) {
+    if (i == MIN_VALID_INT && j == -1)
+      RAISE(PrimitiveTable::General_Overflow);
     RETURN_INT(i / j);
   } else if (b2) {
     RETURN_INT((i - j + 1) / j);
@@ -130,7 +123,7 @@ DEFINE2(Int_mod) {
     RETURN_INT(c);
   } else {
     if (c < 0) {
-      if (j <= 0) {
+      if (j < 0) {
 	RETURN_INT(c);
       } else {
 	RETURN_INT(c + j);
@@ -145,8 +138,24 @@ DEFINE2(Int_mod) {
   }
 } END
 
-INT_INT_TO_INT_OP_DIV(Int_quot, /)
-INT_INT_TO_INT_OP_DIV(Int_rem, %)
+DEFINE2(Int_quot) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  if (j == 0)
+    RAISE(PrimitiveTable::General_Div);
+  if (i == MIN_VALID_INT && j == -1)
+    RAISE(PrimitiveTable::General_Overflow);
+  RETURN_INT(i / j);
+} END
+
+DEFINE2(Int_rem) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  if (j == 0)
+    RAISE(PrimitiveTable::General_Div);
+  RETURN_INT(i % j);
+} END
+
 
 static word Some(s_int i) {
   TagVal *some = TagVal::New(Types::SOME, 1);
