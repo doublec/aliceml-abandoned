@@ -69,10 +69,14 @@
 
 #define INIT_STRUCTURE(r, s1, s2, f, i, b) {				      \
   word transformName = AliceLanguageLayer::TransformNames::primitiveFunction; \
-  Transform *abstract =							      \
-    Transform::New(Store::DirectWordToChunk(transformName),		      \
-		   String::New(s1 "." s2)->ToWord());			      \
-  word function = Primitive::MakeFunction(abstract, s1 "." s2, f, i, b);      \
+  Transform *abstract;							      \
+  if (b)								      \
+    abstract = INVALID_POINTER;						      \
+  else									      \
+    abstract =								      \
+      Transform::New(Store::DirectWordToChunk(transformName),		      \
+		     String::New(s1 "." s2)->ToWord());			      \
+  word function = Primitive::MakeFunction(s1 "." s2, f, i, abstract);	      \
   r->Init(s2, Closure::New(function, 0)->ToWord());			      \
 }
 

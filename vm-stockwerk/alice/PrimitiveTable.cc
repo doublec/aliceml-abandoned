@@ -93,7 +93,7 @@ void PrimitiveTable::Register(const char *name,
   Transform *abstract =
     Transform::New(Store::DirectWordToChunk(transformName),
 		   String::New(name)->ToWord());
-  word function = Primitive::MakeFunction(abstract, name, value, arity);
+  word function = Primitive::MakeFunction(name, value, arity, abstract);
   word closure  = Closure::New(function, 0)->ToWord();
   Register(name, closure);
   HashTable::FromWordDirect(functionTable)->
