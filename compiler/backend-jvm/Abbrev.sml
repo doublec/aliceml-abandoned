@@ -46,6 +46,9 @@ structure Abbrev  =
 	val CExWrap        = "de/uni_sb/ps/dml/runtime/ExceptionWrapper"
 	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/Function"
 	val CFuture        = "de/uni_sb/ps/dml/runtime/Future"
+	val CByNeedFuture  = "de/uni_sb/ps/dml/runtime/ByNeedFuture"
+	val ITransient  = "de/uni_sb/ps/dml/runtime/DMLTransient"
+
 	val CInt           = "de/uni_sb/ps/dml/runtime/Int"
 	val CWord          = "de/uni_sb/ps/dml/runtime/Word"
 	val CChar          = "de/uni_sb/ps/dml/runtime/Char"
@@ -88,6 +91,8 @@ structure Abbrev  =
 	val CReference     = "de/uni_sb/ps/dml/runtime/Reference"
 
 	val MForName       = (CClass, "forName", ([Classsig CString], [Classsig CClass]))
+
+	val MRequest       = (ITransient, "request", ([], [Classsig CVal]))
 
 	val MPickle = ("de/uni_sb/ps/dml/runtime/General$Pickle","apply",
 		       ([Classsig CString, Classsig CVal, Classsig CVal], [Classsig CVal]))

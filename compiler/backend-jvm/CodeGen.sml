@@ -55,8 +55,12 @@ structure CodeGen =
 	      | freeVarsExp (AdjExp(_,id',id''), free, curFun) =
 		(markfree (free, id', curFun, "AdjExp");
 		 markfree (free, id'', curFun, "AdjExp2"))
-	      | freeVarsExp (AppExp(_,id', idargs'), free, curFun) =
-		(markfree (free, id', curFun, "AppExp");
+	      | freeVarsExp (AppExp(_,Id (_, stamp',_), idargs'), free, curFun) =
+		(markfree (free, Id (dummyPos, (* XXX Pfeffer.Hase *)
+				     Lambda.getClassStamp
+				     (stamp', Lambda.argSize idargs'),
+				     InId),
+			   curFun, "AppExp");
 		 argApp (markfree, idargs', free, curFun, "AppExp2"))
 	      | freeVarsExp (ConExp(_, id', _), free, curFun) =
 		markfree (free, id', curFun, "ConExp")
@@ -442,7 +446,9 @@ structure CodeGen =
 		val danach = Label.new ()
 		val elselabel = Label.new ()
 		val ilselabel = Label.new ()
+		val retry = Label.new ()
 		val stampcode' = stampCode (stamp', curCls)
+		val notByNeed = Label.new ()
 
 		fun switchNumber (LitTest (WordLit a)) =
 		    LargeWord.toLargeInt a
@@ -510,6 +516,15 @@ structure CodeGen =
 					 Multi (decListCode (body', curFun, curCls)) ::
 					 Multi akku ::
 					 Label behind ::
+					 stampcode' ::
+					 Dup ::
+					 Instanceof ITransient ::
+					 Ifeq notByNeed ::
+					 Checkcast ITransient ::
+					 Invokeinterface MRequest ::
+					 Dup ::
+					 storeCode (stamp', curFun, curCls) ::
+					 Goto retry ::
 					 decListCode (body'', curFun, curCls),
 					 number::switchlist,
 					 lab :: labelList,
@@ -544,6 +559,7 @@ structure CodeGen =
 		    in
 			Label begin ::
 			stampcode' ::
+			Label retry ::
 			(case test' of
 			     LitTest (WordLit _) =>
 				 litTest (CWord, [Intsig])
@@ -556,6 +572,7 @@ structure CodeGen =
 
 		fun tcode (cls, ret, cmpcode) =
 		    stampcode' ::
+		    Label retry ::
 		    Dup ::
 		    Instanceof cls ::
 		    Ifeq ilselabel ::
@@ -591,12 +608,14 @@ structure CodeGen =
 
 		  | testCode (ConTest (id'',NONE)) =
 			 stampcode' ::
+			 Label retry ::
 			 idCode (id'', curCls) ::
 			 Ifacmpne elselabel ::
 			 nil
 
 		  | testCode (ConTest (id'',SOME (Id (_,stamp''',_)))) =
 			 stampcode' ::
+			 Label retry ::
 			 Dup ::
 			 Instanceof CConVal ::
 			 Ifeq ilselabel ::
@@ -614,6 +633,7 @@ structure CodeGen =
 
 		  | testCode (RefTest (Id (_,stamp''',_))) =
 			 stampcode' ::
+			 Label retry ::
 			 Dup ::
 			 Instanceof CReference ::
 			 Ifeq ilselabel ::
@@ -644,6 +664,7 @@ structure CodeGen =
 			  | bindit (nil,_) = nil
 		    in
 			stampcode' ::
+			Label retry ::
 			Dup ::
 			Instanceof CRecord ::
 			Ifeq ilselabel ::
@@ -684,6 +705,7 @@ structure CodeGen =
 				nil
 			else
 			    stampcode' ::
+			    Label retry ::
 			    (if lgt >=2 andalso lgt <=4 then
 				 let
 				     val s0 = stampFromId (hd ids)
@@ -779,6 +801,7 @@ structure CodeGen =
 
 		  | testCode (LabTest (s', Id (_,stamp'',_))) =
 		    stampcode' ::
+		    Label retry ::
 		    Dup ::
 		    Instanceof CDMLTuple ::
 		    Ifeq ilselabel ::
@@ -788,8 +811,6 @@ structure CodeGen =
 		    Astore stamp'' ::
 		    nil
 
-		val begin = Label.new ()
-
 		fun normalTest () =
 		    Multi (testCode test') ::
 		    Multi
@@ -797,6 +818,15 @@ structure CodeGen =
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label ilselabel ::
+		    Dup ::
+		    Instanceof ITransient ::
+		    Ifeq notByNeed ::
+		    Checkcast ITransient ::
+		    Invokeinterface MRequest ::
+		    Dup ::
+		    storeCode (stamp', curFun, curCls) ::
+		    Goto retry ::
+		    Label notByNeed ::
 		    Pop ::
 		    Label elselabel ::
 		    Multi
@@ -805,7 +835,7 @@ structure CodeGen =
 	    in
 		if !OPTIMIZE >=3 then
 		    case checkForSwitch (test', body'', 0) of
-			(true, _, _) => generateSwitch begin
+			(true, _, _) => generateSwitch (Label.new ())
 		      | _ => normalTest ()
 		else normalTest ()
 	    end
@@ -827,7 +857,7 @@ structure CodeGen =
 	  | decCode (ReturnStm (_,AppExp(_,Id (_,stamp',_),arg')), curFun, curCls) =
 		(* tailcall applikation *)
 		normalReturn
-		([Multi (invokeRecApply (stamp', arg', curFun, true, curCls)),
+		([Multi (invokeRecApply (stamp', arg', curFun, true, curCls, false)),
 		  Areturn],
 		 curCls)
 
@@ -863,6 +893,7 @@ structure CodeGen =
 		    nil
 
 	  | decCode (EvalStm (_, exp'), curFun, curCls) =
+		    Comment ("EvalStm. curFun = "^Stamp.toString curFun^" curCls = "^Stamp.toString curCls) ::
 		    Multi (expCode (exp', curFun, curCls)) ::
 		    [Pop]
 
@@ -882,9 +913,14 @@ structure CodeGen =
 	    idCode (Id(_,stamp',_), curCls) = stampCode (stamp', curCls)
 
 	and
+	    isParmStamp stamp' =
+	    stamp' = parm1Stamp orelse stamp' = parm2Stamp orelse stamp' = parm3Stamp
+	    orelse stamp' = parm4Stamp orelse stamp' = thisStamp
+
+	and
 	    stampCode (stamp', curCls) =
 	    let
-		val (bstamp,isBuiltin) = builtinStamp stamp'
+		val (bstamp,isBuiltin) = builtinStamp (Lambda.getLambda stamp')
 	    in
 		if isBuiltin then bstamp
 		else
@@ -914,6 +950,37 @@ structure CodeGen =
 					   (fieldNameFromStamp stamp'),
 					   [Classsig CVal])]
 	    end
+
+	and storeCode (stamp', curFun, curCls) =
+	    if isParmStamp (Lambda.getLambda stamp')
+		then Astore (Lambda.getLambda stamp')
+	    else
+		if Lambda.getLambda stamp'=curCls
+		    then (* Accessing current method. Don't overwrite. *)
+			Multi [Comment ("Astore thisStamp. curCls ="^Stamp.toString curCls^". stamp' = "^
+					Stamp.toString stamp'^". Lambda.getLambda stamp' = "^
+					Stamp.toString (Lambda.getLambda stamp')),
+			       Pop]
+		else
+		    if FreeVars.getFun stamp' = curCls
+			(* In case stamp' is bound in current lambda,
+			 store to a register. *)
+			then
+			    Astore stamp'
+		    else
+			(* We access a free variable which got copied into
+			 a field of the actual class. Change it there. *)
+			Get [Comment ("Store to var "^Stamp.toString stamp'^
+				      " FreeVars.getFun stamp' = "^Stamp.toString
+				      (FreeVars.getFun stamp')^"; curCls = "^
+				      Stamp.toString curCls^", Lambda.getLambda stamp' = "^
+				      Stamp.toString (Lambda.getLambda stamp')),
+			     stampCode (curFun, curCls),
+			     Checkcast (classNameFromStamp curCls),
+			     Swap,
+			     Putfield (classNameFromStamp curCls^"/"^
+				       (fieldNameFromStamp stamp'),
+				       [Classsig CVal])]
 	and
 	    createTuple (ids:id list, init, curCls) =
 	    let
@@ -1037,7 +1104,7 @@ structure CodeGen =
 	    Comment "RecArgs" ::
 	    createRecord (stringids, init)
 	and
-	    invokeRecApply (stamp', args, curFun, tailCallPos, curCls) =
+	    invokeRecApply (stamp', args, curFun, tailCallPos, curCls, defaultApply) =
 	    let
 		val fnstamp = Lambda.getLambda stamp'
 		val (parms, ids) =
@@ -1049,15 +1116,16 @@ structure CodeGen =
 		  | nullLoad (n, akku) = nullLoad (n-1, Aconst_null::akku)
 
 		fun loadparms (p, ending)=
-		    if p<>parms orelse parms=1 then
-			Comment "loadparms:" ::
-			idArgCode (args, curCls, ending)
-		    else
-			List.foldr
-			(fn (id', akku) =>
-			 idCode (id', curCls) :: akku)
-			ending
-			ids
+		    Comment ("p = "^Int.toString p^"; parms = "^Int.toString parms) ::
+		    (if p<>parms orelse parms=1 then
+			 Comment "loadparms:" ::
+			 idArgCode (args, curCls, ending)
+		     else
+			 List.foldr
+			 (fn (id', akku) =>
+			  idCode (id', curCls) :: akku)
+			 ending
+			 ids)
 
 		fun updateparms (p, ending)=
 		    if p<>parms orelse parms=1 then
@@ -1101,13 +1169,17 @@ structure CodeGen =
 				     call'
 			     end
 		       | NormalApply p =>
-			     stampCode (fnstamp, curCls) ::
-			     Comment "NormalApply" ::
-			     loadparms (p,
-					[Invokeinterface
-					 (CVal,
-					  applyName p,
-					  (valList p, [Classsig CVal]))]))
+			     let
+				 val p' = if defaultApply then 1 else p
+			     in
+				 stampCode (fnstamp, curCls) ::
+				 Comment "NormalApply" ::
+				 loadparms (p',
+					    [Invokeinterface
+					     (CVal,
+					      applyName p',
+					      (valList p', [Classsig CVal]))])
+			     end)
 	    in
 		Comment ("invokeRecApply: "^Stamp.toString fnstamp^":"^Int.toString parms^" in "^Stamp.toString fnstamp) ::
 		code'
@@ -1122,7 +1194,7 @@ structure CodeGen =
 	and
 	    expCode (AppExp(_,Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
-	    invokeRecApply (stamp', args, curFun, false, curCls)
+	    invokeRecApply (stamp', args, curFun, false, curCls, true)
 	  | expCode (NewExp (_, hasArgs), _, _) =
 	    if hasArgs then
 		[New CConstructor,
@@ -1263,7 +1335,7 @@ structure CodeGen =
 
 	  | expCode (ConAppExp (_, Id (_,stamp', _), idargs), curFun, curCls) =
 			  Comment "ConAppExp:" ::
-			  invokeRecApply (stamp', idargs, curFun, false, curCls)
+			  invokeRecApply (stamp', idargs, curFun, false, curCls, false)
 
 	  | expCode (RefAppExp (_, idargs), curFun, curCls) =
 			  New CReference ::
@@ -1339,7 +1411,7 @@ structure CodeGen =
 			val b'' = if l = 0 orelse (l>=2 andalso l<=4)
 				      then
 					  (setId (Vector.sub (parmIds, l), ids);
-					   decListCode (body'', curFun, curFun))
+					   decListCode (body'', curFun, curCls))
 				  else nil
 		    in
 			case l of
@@ -1488,13 +1560,13 @@ structure CodeGen =
 				 (insts, curFun, parms);
 				 normalReturn
 				 (Comment "makeApplyMethod:" ::
-				  invokeRecApply (curFun, ta, curFun, true, curFun),
+				  invokeRecApply (curFun, ta, curFun, true, curFun, true),
 				  curCls))
 			    else
 				(case insts of
 				     nil =>
 					 Multi (Comment "makeApplyMethod2:" ::
-						invokeRecApply (curFun, ta, curFun, true, curFun)) ::
+						invokeRecApply (curFun, ta, curFun, true, curFun, true)) ::
 					 normalReturn ([Areturn], curCls)
 				   | _ => insts)
 		    in
