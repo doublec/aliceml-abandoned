@@ -32,7 +32,6 @@
 #include "alice/Authoring.hh"
 
 static word SysErrConstructor;
-static word IoConstructor;
 static word ClosedStreamConstructor;
 
 //
@@ -82,15 +81,6 @@ static word MakeSysErr(int errorCode, String *message) {
   RAISE(MakeSysErr(errorCode, ErrorCodeToString(errorCode)));	\
 }
 
-#define RAISE_CLOSED(fct, ioDesc) {				\
-  ConVal *conVal =						\
-    ConVal::New(Constructor::FromWord(IoConstructor), 3);	\
-  conVal->Init(Types::cause, ClosedStreamConstructor);		\
-  conVal->Init(Types::function, String::New(fct)->ToWord());	\
-  conVal->Init(Types::name, ioDesc->GetName()->ToWord());	\
-  RETURN(conVal->ToWord());					\
-}
-
 //
 // Primitives
 //
@@ -98,14 +88,6 @@ static word MakeSysErr(int errorCode, String *message) {
 #define x_i x1
 #define x_iodesc x2
 #define x_sz x3
-
-DEFINE3(UnsafeIODesc_Io) {
-  ConVal *conVal = ConVal::New(Constructor::FromWord(IoConstructor), 3);
-  conVal->Init(0, x0);
-  conVal->Init(1, x1);
-  conVal->Init(2, x2);
-  RETURN(conVal->ToWord());
-} END
 
 DEFINE1(UnsafeIODesc_hash) {
   DECLARE_IODESC(ioDesc, x0);
@@ -171,7 +153,7 @@ DEFINE1(UnsafeIODesc_capabilities) {
 #define INTERPRET_RESULT(result, fct) {				\
   switch (result) {						\
   case IODesc::result_ok: RETURN_UNIT;				\
-  case IODesc::result_closed: RAISE_CLOSED(fct, ioDesc);	\
+  case IODesc::result_closed: RAISE(ClosedStreamConstructor);	\
   case IODesc::result_request: return Worker::REQUEST;		\
   case IODesc::result_system_error: RAISE_SYS_ERR();		\
   case IODesc::result_socket_error: RAISE_SOCK_ERR();		\
@@ -416,19 +398,13 @@ word UnsafeIODesc() {
   SysErrConstructor =
     UniqueConstructor::New(String::New("OS.SysErr"))->ToWord();
   RootSet::Add(SysErrConstructor);
-  IoConstructor =
-    UniqueConstructor::New(String::New("IO.Io"))->ToWord();
-  RootSet::Add(IoConstructor);
   ClosedStreamConstructor =
     UniqueConstructor::New(String::New("IO.ClosedStream"))->ToWord();
   RootSet::Add(ClosedStreamConstructor);
 
-  Record *record = Record::New(41);
+  Record *record = Record::New(32);
   record->Init("'ClosedStream", ClosedStreamConstructor);
   record->Init("ClosedStream", ClosedStreamConstructor);
-  record->Init("'Io", IoConstructor);
-  INIT_STRUCTURE(record, "UnsafeIODesc", "Io",
-		 UnsafeIODesc_Io, 3, true);
   // common operations supported by all readers/writers
   INIT_STRUCTURE(record, "UnsafeIODesc", "hash",
 		 UnsafeIODesc_hash, 1, true);
