@@ -6,4 +6,4 @@ dir=`(cd $dir && pwd)`
 STOC_MOZART=$dir/stoc-mozart.exe
 export STOC_MOZART
 
-exec sml @SMLload=$dir/stoc-mozart
+exec sml @SMLload=$dir/stoc-mozart "$@"

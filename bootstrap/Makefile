@@ -10,10 +10,31 @@
 ###   $Revision$
 ###
 
+SRCDIR=..
+
 SML := $(shell pwd)/smla
 PLATFORM = x86-linux
 
-all: stodep.$(PLATFORM) stoc-mozart.$(PLATFORM)
+OZC = ozc
+OZCFLAGS =
+OZL = ozl
+OZLFLAGS =
+
+FUNCTORS = \
+	Builtins.ozf Prebound.ozf CodeStore.ozf CodeGen.ozf Assembler.ozf \
+	Main.ozf
+
+%.ozf: $(SRCDIR)/stoc/backend-mozart/%.oz
+	$(OZC) $(OZCFLAGS) -c $< -o $@
+
+.PHONY: all clean
+
+all: stodep.$(PLATFORM) stoc-mozart.exe stoc-mozart.$(PLATFORM)
+
+stoc-mozart.exe: $(FUNCTORS)
+	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
+
+CodeStore.ozf: $(SRCDIR)/stoc/backend-mozart/CodeEmitter.oz
 
 stodep.$(PLATFORM):
 	-rm -f $@
@@ -36,4 +57,10 @@ stoc-com+.$(PLATFORM):
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
-	rm -f stodep.* stoc-mozart.* stot-mozart.* stoc-com+.*
+	-rm -f *.ozf
+
+veryclean: clean
+	-rm -f stoc-mozart.exe
+	-rm -f stodep.* stoc-mozart.* stot-mozart.* stoc-com+.*
+
+distclean: veryclean
