@@ -1,12 +1,13 @@
 Group is
 
 	../../lib/utility/sources.cm
+	../../lib/rtt/name.cm
+	../../lib/rtt/type.cm
+	../../lib/rtt/interface.cm
 	../infrastructure/sources.cm
 
 	input-grammar.cm
 	../frontend-common/abstract-grammar.cm
-	../common/name.cm
-	../common/interface.cm
 
 	BIND_ENV-sig.aml
 	BindEnv.aml
