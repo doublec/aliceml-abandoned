@@ -93,6 +93,8 @@ import functor   ByNeed		from "ByNeed"
 
 import signature LOCK		from "LOCK-sig"
 import structure Lock		from "Lock"
+import signature STREAM		from "STREAM-sig"
+import structure Stream		from "Stream"
 
 
 open Toplevel
@@ -174,3 +176,5 @@ structure ByNeed	= ByNeed
 
 signature LOCK		= LOCK
 structure Lock		= Lock
+signature STREAM	= STREAM
+structure Stream	= Stream
