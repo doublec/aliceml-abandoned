@@ -679,13 +679,6 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
     {
       jit_pushr_ui(Closure);
       JITStore::Call(1, (void *) Scheduler::PushCall);
-      jit_insn *no_cont =
-	jit_bnei_ui(jit_forward(), JIT_R0, Interpreter::CONTINUE);
-      LoadStatus(JIT_FP);
-      jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_FP, 0);
-      jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
-      jit_patch(no_preempt);
-      jit_patch(no_cont);
       RETURN();
     }
     break;
@@ -736,13 +729,6 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
       jit_pushr_ui(Closure);
       Generic::Scheduler::PopFrames(1);
       JITStore::Call(1, (void *) Scheduler::PushCall);
-      jit_insn *no_cont =
-	jit_bnei_ui(jit_forward(), JIT_R0, Interpreter::CONTINUE);
-      LoadStatus(JIT_FP);
-      jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_FP, 0);
-      jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
-      jit_patch(no_preempt);
-      jit_patch(no_cont);
       RETURN();
     }
     break;
@@ -972,14 +958,8 @@ void NativeCodeJitter::BlockOnTransient(u_int Ptr, word pc) {
   RETURN();
 }
 
-void NativeCodeJitter::LoadStatus(u_int Dest) {
-  JITStore::LoadStatus(Dest);
-  u_int mask = Store::GCStatus() | Scheduler::PreemptStatus();
-  jit_andi_ui(Dest, Dest, mask);
-}
-
 void NativeCodeJitter::CheckPreempt(u_int pc) {
-  LoadStatus(JIT_R0);
+  JITStore::LoadStatus(JIT_R0);
   jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
   SetRelativePC(Store::IntToWord(pc));
   jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
@@ -2158,9 +2138,8 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
     break;
   }
   Generic::Scheduler::PopFrames(1);
+  // This test is necessary since return inlines next application
   JITStore::LoadStatus(JIT_R0);
-  u_int mask = Store::GCStatus() | Scheduler::PreemptStatus();
-  jit_andi_ui(JIT_R0, JIT_R0, mask);
   jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
   jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
   RETURN();
