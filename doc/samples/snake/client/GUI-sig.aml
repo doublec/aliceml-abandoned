@@ -8,28 +8,9 @@ signature GUI =
 sig
 type error = string
 
-type model_initial = 
-    {
-     connect : string -> error option,
-     (* connect to an existing server. If successful i.e
-      NONE is returned the gui displays the select snake
-      dialog. Otherwise it shows the error message and
-      stays in the initial mode.
-      *)
-
-     startServer : Config.config -> error option
-     (* start a new server and display the snake selection
-      dialog (in server mode i.e. with the ability to
-      start a tournament)
-      *)
-     }
-
-type model_join = 
-    {
-     play :  string * Color.color -> error option,
-     
-     watch : unit -> error option
-     }
+(* register a callback here to get notified, when some event
+ is triggered by the gui.  
+ *)
 
 type model_game = 
     {
@@ -38,30 +19,13 @@ type model_game =
      giveUp     : unit -> unit
      }
     
-(* register a callback here to get notified, when some event
- is triggered by the gui.  
- *)
-
-type  model = 
-    {
-     quit :  unit -> unit,
-     (* user wants to quit. *)
-     
-     initial:    model_initial,
-     join:       model_join,
-     game:       model_game
-     }
-    
-(* call these functions provided by the gui, if something
- happens to the model.
- *)
-    
-type gui_join = 
+and gui_join = 
     {
      playersJoined : (string * Color.color) list -> unit,
      playerDisconnected : string * Color.color -> unit,
      gameStarted : unit -> unit
      }
+
 
 type gui_game = 
     {
@@ -70,12 +34,40 @@ type gui_game =
      gameFinished : Highscore.highscore -> unit
      }
 
+ 
+type model_join = 
+    {
+     play :  string * Color.color -> (model_game * gui_game Promise.promise, error) alt,
+     watch : unit -> (model_game * gui_game Promise.promise, error) alt
+     }
+
+
+and model_initial = 
+    {
+     connect : string -> (model_join * gui_join Promise.promise, error) alt,
+     (* connect to an existing server. If successful i.e
+      NONE is returned the gui displays the select snake
+      dialog. Otherwise it shows the error message and
+      stays in the initial mode.
+      *)
+
+     startServer : Config.config -> (model_join * gui_join Promise.promise, error) alt
+     (* start a new server and display the snake selection
+      dialog (in server mode i.e. with the ability to
+      start a tournament)
+      *)
+     }
+
+   
+(* call these functions provided by the gui, if something
+ happens to the model.
+ *)
 type gui =  
     {
      reset : (string * string) option -> unit
      (* [reset NONE] reset's the gui to show the inital
       startup screen.  
-      [reset (SOME (title, msg))] first shows an messagebox
+      [reset SOME (title, msg)] first shows an messagebox
       with title [title] displaying message [message] and
       reset's the gui afterwards
       *)
@@ -83,7 +75,6 @@ type gui =
      }
 
 
-
-val execute: model * gui Promise.promise -> unit
+val execute: model_initial * gui Promise.promise -> unit
 
 end
