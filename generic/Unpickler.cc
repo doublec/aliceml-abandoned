@@ -349,8 +349,8 @@ private:
   static const u_int STREAM_POS = 0;
   static const u_int ENV_POS    = 1;
   static const u_int COUNT_POS  = 2;
-  static const u_int SIZE       = 3;
 public:
+  static const u_int SIZE       = 3;
   static void New(InputStream *is, word env, int count) {
     Scheduler::nArgs = SIZE;
     Scheduler::currentArgs[STREAM_POS] = is->ToWord();
@@ -683,6 +683,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, Store::IntToWord(y));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
+	Scheduler::nArgs = UnpickleArgs::SIZE;
 	CONTINUE();
       }
       break;
@@ -692,6 +693,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, Store::IntToWord(-(y + 1)));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
+	Scheduler::nArgs = UnpickleArgs::SIZE;
 	CONTINUE();
       }
       break;
@@ -772,6 +774,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, SelFromEnv(env, index));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
+	Scheduler::nArgs = UnpickleArgs::SIZE;
 	CONTINUE();
       }
     default:
