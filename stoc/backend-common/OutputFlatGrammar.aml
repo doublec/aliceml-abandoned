@@ -81,7 +81,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
 	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
-	  | outputLit (CharLit c) = "char " ^ Char.toCString c
+	  | outputLit (CharLit c) = "char " ^ WideChar.toCString c
 	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
 	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
 

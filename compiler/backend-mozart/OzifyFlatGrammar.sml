@@ -73,7 +73,7 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 		      (outputX (q, x); case xr of nil => () | _ =>  m q)) xs;
 	     output1 (q, #"]"))
 
-	fun outputChar (q, c) = output (q, Int.toString (Char.ord c))
+	fun outputChar (q, c) = output (q, Int.toString (WideChar.ord c))
 
 	fun outputString (q, s) =
 	    outputList outputChar (q, String.explode s)
