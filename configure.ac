@@ -129,5 +129,10 @@ AC_SEAM_ARG_ENABLE_WARNINGS
 # Output files
 # -------------------------------------------------------------------------
 
-AC_CONFIG_FILES([Makefile store/Makefile seamtool])
+AC_CONFIG_FILES([
+   Makefile
+   adt/Makefile
+   generic/Makefile
+   store/Makefile
+   seamtool])
 AC_OUTPUT
