@@ -759,6 +759,45 @@ structure Vector =
 val vector = Vector.fromList
 
 
+(* Transient *)
+
+structure Transient =
+    struct
+	__primitive val await: 'a -> 'a = "Transient.await"
+	__primitive val promise: unit -> 'a = "Transient.promise"
+	__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+	__primitive val future: 'a -> 'a = "Transient.future"
+	__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+    end
+
+
+(* Thread *)
+
+structure Thread =
+    struct
+	type t
+
+	datatype state =
+	    RUNNABLE
+	  | BLOCKED
+	  | TERMINATED
+
+	__primitive val spawn: (unit -> 'a) -> 'a = "Thread.spawn"
+	__primitive val getCurrent: unit -> t = "Thread.getCurrent"
+	__primitive val getState: t -> state = "Thread.getState"
+
+	__primitive val preempt: t -> unit = "Thread.preempt"
+	__primitive val sleep: int -> unit = "Thread.sleep"
+
+	__primitive val injectException: t * exn -> unit =
+	    "Thread.injectException"
+
+	__primitive val suspend: t -> unit = "Thread.suspend"
+	__primitive val resume: t -> unit = "Thread.resume"
+	__primitive val isSuspended: t -> bool = "Thread.isSuspended"
+    end
+
+
 (* More members exported to toplevel *)
 
 val getOpt = Option.getOpt
