@@ -1,6 +1,0 @@
-structure P = Package.Pack (signature S = REAL
-			    structure X = Real);
-structure Pack = Reflect.ReflectType (type t = Package.package);
-
-UnsafeInspector.inspect(P.package,Pack.x);
-  
