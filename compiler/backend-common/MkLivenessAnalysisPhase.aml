@@ -37,14 +37,11 @@
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import structure Crash                   from "../infrastructure/Crash"
 import signature SWITCHES                from "../infrastructure/SWITCHES-sig"
-import signature CONTEXT                 from "../infrastructure/CONTEXT-sig"
 import structure ComposePhases           from "../infrastructure/ComposePhases"
 import structure MkTracingPhase
     from "../infrastructure/MkTracingPhase"
 import structure MkResultDumpingPhase
     from "../infrastructure/MkResultDumpingPhase"
-import structure MkContextDumpingPhase
-    from "../infrastructure/MkContextDumpingPhase"
 import structure EmptyContext            from "../infrastructure/EmptyContext"
 import structure Stamp                   from "../common/Stamp"
 import structure StampSet                from "../common/StampSet"
@@ -253,10 +250,10 @@ structure LivenessAnalysisPhase1 :>
 	    (scanBody (body, StampSet.new ()); component)
     end
 
-structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
-    where type C.t = StampSet.t =
+structure LivenessAnalysisPhase2 :>
+    LIVENESS_ANALYSIS_PHASE where type C.t = unit =
     struct
-	structure C: CONTEXT = StampSet
+	structure C = EmptyContext
 	structure I = FlatGrammar
 	structure O = FlatGrammar
 
@@ -277,65 +274,61 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
 	fun insDefVec (set, idDefs) =
 	    Vector.app (fn idDef => insDef (set, idDef)) idDefs
 
-	fun initStm (ValDec (_, idDef, exp), set) =
-	    (insDef (set, idDef); initExp exp)
-	  | initStm (RefDec (_, idDef, _), set) = insDef (set, idDef)
-	  | initStm (TupDec (_, idDefs, _), set) =
-	    Vector.app (fn idDef => insDef (set, idDef)) idDefs
-	  | initStm (ProdDec (_, labelIdDefVec, _), set) =
-	    Vector.app (fn (_, idDef) => insDef (set, idDef)) labelIdDefVec
+	fun initStm (ValDec (_, idDef, exp), defSet) =
+	    (insDef (defSet, idDef); initExp exp)
+	  | initStm (RefDec (_, idDef, _), defSet) = insDef (defSet, idDef)
+	  | initStm (TupDec (_, idDefs, _), defSet) =
+	    Vector.app (fn idDef => insDef (defSet, idDef)) idDefs
+	  | initStm (ProdDec (_, labelIdDefVec, _), defSet) =
+	    Vector.app (fn (_, idDef) => insDef (defSet, idDef)) labelIdDefVec
 	  | initStm (RaiseStm (_, _), _) = ()
 	  | initStm (ReraiseStm (_, _), _) = ()
-	  | initStm (TryStm (_, tryBody, idDef1, idDef2, handleBody), set) =
-	    let
-		val set' = StampSet.clone set
-	    in
-		initBody (tryBody, StampSet.clone set);
-		insDef (set', idDef1); insDef (set', idDef2);
-		initBody (handleBody, set')
-	    end
-	  | initStm (EndTryStm (_, body), set) = initBody (body, set)
-	  | initStm (EndHandleStm (_, body), set) = initBody (body, set)
-	  | initStm (TestStm (_, _, tests, body), set) =
-	    (initTests (tests, set); initBody (body, set))
+	  | initStm (TryStm (_, tryBody, idDef1, idDef2, handleBody), defSet) =
+	    (initBody (tryBody, StampSet.clone defSet);
+	     insDef (defSet, idDef1); insDef (defSet, idDef2);
+	     initBody (handleBody, defSet))
+	  | initStm (EndTryStm (_, body), defSet) = initBody (body, defSet)
+	  | initStm (EndHandleStm (_, body), defSet) = initBody (body, defSet)
+	  | initStm (TestStm (_, _, tests, body), defSet) =
+	    (initTests (tests, defSet); initBody (body, defSet))
 	  | initStm (SharedStm ({liveness = ref (Kill _), ...}, _, _), _) = ()
-	  | initStm (SharedStm (_, body, _), set) = initBody (body, set)
+	  | initStm (SharedStm (_, body, _), defSet) = initBody (body, defSet)
 	  | initStm (ReturnStm (_, exp), _) = initExp exp
-	  | initStm (IndirectStm (_, ref bodyOpt), set) =
-	    initBody (valOf bodyOpt, set)
+	  | initStm (IndirectStm (_, ref bodyOpt), defSet) =
+	    initBody (valOf bodyOpt, defSet)
 	  | initStm (ExportStm (_, _), _) = ()
-	and initTests (LitTests litBodyVec, set) =
-	    Vector.app (fn (_, body) => initBody (body, StampSet.clone set))
+	and initTests (LitTests litBodyVec, defSet) =
+	    Vector.app (fn (_, body) => initBody (body, StampSet.clone defSet))
 	    litBodyVec
-	  | initTests (TagTests tagBodyVec, set) =
+	  | initTests (TagTests tagBodyVec, defSet) =
 	    Vector.app (fn (_, _, args, body) =>
 			let
-			    val set' = StampSet.clone set
+			    val defSet' = StampSet.clone defSet
 			in
-			    processArgs (args, set', insDef);
-			    initBody (body, set')
+			    processArgs (args, defSet', insDef);
+			    initBody (body, defSet')
 			end) tagBodyVec
-	  | initTests (ConTests conBodyVec, set) =
+	  | initTests (ConTests conBodyVec, defSet) =
 	    Vector.app (fn (_, args, body) =>
 			let
-			    val set' = StampSet.clone set
+			    val defSet' = StampSet.clone defSet
 			in
-			    processArgs (args, set', insDef);
-			    initBody (body, set')
+			    processArgs (args, defSet', insDef);
+			    initBody (body, defSet')
 			end) conBodyVec
-	  | initTests (VecTests vecBodyVec, set) =
+	  | initTests (VecTests vecBodyVec, defSet) =
 	    Vector.app (fn (idDefs, body) =>
 			let
-			    val set' = StampSet.clone set
+			    val defSet' = StampSet.clone defSet
 			in
-			    insDefVec (set', idDefs);
-			    initBody (body, set')
+			    insDefVec (defSet', idDefs);
+			    initBody (body, defSet')
 			end) vecBodyVec
 	and initExp (FunExp (_, _, _, args, body)) =
 	    let
-		val set = StampSet.new ()
+		val defSet = StampSet.new ()
 	    in
-		processArgs (args, set, insDef); initBody (body, set)
+		processArgs (args, defSet, insDef); initBody (body, defSet)
 	    end
 	  | initExp _ = ()
 	and initBody (stm::stms, defSet) =
@@ -360,11 +353,18 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
 	       | ref (Kill _) => ())
 	  | initBody (nil, _) = ()
 
-	fun translate defSet (_, component as (_, body, exportDesc, _)) =
-	    (initBody (body, StampSet.clone defSet);
-	     Vector.app (fn (_, Id (_, stamp, _)) =>
-			 StampSet.insert (defSet, stamp)) exportDesc;
-	     component)
+	fun translate () (_, component as (importDesc, body, _, _)) =
+	    let
+		val defSet = StampSet.new ()
+	    in
+		Vector.app (fn (idDef, _, _) =>
+			       case idDef of
+				   IdDef (Id (_, stamp, _)) =>
+				       StampSet.insert (defSet, stamp)
+				 | Wildcard => ()) importDesc;
+		initBody (body, StampSet.clone defSet);
+		component
+	    end
     end
 
 functor MkLivenessAnalysisPhase(Switches: SWITCHES) =
@@ -385,23 +385,6 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) =
 	    MkTracingPhase(structure Phase = LivenessAnalysisPhase2
 			   structure Switches = Switches
 			   val name = "Liveness Analysis - Pass 2")
-	structure Phase2 =
-	    MkContextDumpingPhase(
-		structure Phase = Phase2
-		structure Switches = Switches
-		val header = "Set of defined stamps after liveness analysis"
-		fun pp set =
-		    let
-			open PrettyPrint
-			infix ^/^
-		    in
-			hbox (text "{" ^/^
-			      fbox (below (StampSet.fold
-					   (fn (stamp, rest) =>
-					    text (Stamp.toString stamp) ^/^
-					    rest) (text "}") set)))
-		    end
-		val switch = Switches.Debug.dumpLivenessAnalysisContext)
 	structure Phase2 =
 	    MkResultDumpingPhase(
 		structure Phase = Phase2
