@@ -425,11 +425,11 @@ define
 	 fun {$ N F} V in
 	    try
 	       V = {Tuple.make '#[]' N}
-	       {For 1 N 1 proc {$ I} V.I = {F I} end}
-	       V
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Size'} unit
+	       {RaiseAliceException BuiltinTable.'General.Size'}
 	    end
+	    {For 1 N 1 proc {$ I} V.I = {F I - 1} end}
+	    V
 	 end
       'Word.+': BootWord.'+'
       'Word.-': BootWord.'-'
