@@ -12,6 +12,7 @@
 
 signature RANDOM =
 sig
+    val randomize : unit -> unit
     val int :	    int -> int
     val real :	    real -> real
     val largeInt :  LargeInt.int -> LargeInt.int

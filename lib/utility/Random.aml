@@ -18,11 +18,11 @@ import signature RANDOM from "RANDOM-sig"
 
 structure Random : RANDOM =
 struct
-    val seed       = Time.hash (Time.now ()) mod 100
-    val  _         = Rand.srand seed
-    val (min,max)  = Rand.randLimits()
-    val  range     = max - min
-    val bigInt     = 536870912 (* 2 ^ 29 *)
+    val  _           = Rand.srand 0
+    fun randomize () = Rand.srand (Time.hash (Time.now ()))
+    val (min, max)   = Rand.randLimits()
+    val range        = max - min
+    val bigInt       = 536870912 (* 2 ^ 29 *)
 
     fun int limit  = if limit = 0 then 0 else (Rand.rand() mod limit)
 	
