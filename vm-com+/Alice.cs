@@ -258,7 +258,7 @@ namespace Alice {
 		lock (this) {
 		    if (Ref == null) {
 			if (x is Transient && ((Transient) x).IsVariantOf(this)) {
-			    throw new Exception(Prebound.Hole_Hole);
+			    throw new Exception(Prebound.Hole_Cyclic);
 			}
 			Ref = x;
 			System.Threading.Monitor.PulseAll(this);
@@ -326,7 +326,7 @@ namespace Alice {
 			    if (r is Transient) {
 				Transient t = (Transient) r;
 				if (t.IsVariantOf(this)) {
-				    throw new Exception(null);   // to be determined
+				    throw new Exception(Prebound.Hole_Cyclic);
 				}
 				State = ByneedState.Bound;
 				Ref = t.Await();
@@ -2475,6 +2475,7 @@ namespace Alice {
 	public static Object GlobalStamp_compare    = new GlobalStamp_compare();
 	public static Object GlobalStamp_hash       = new GlobalStamp_hash();
 
+	public static Object Hole_Cyclic   = "Hole.Cyclic";
 	public static Object Hole_Hole     = "Hole.Hole";
 	public static Object Hole_fail     = new Hole_fail();
 	public static Object Hole_fill     = new Hole_fill();
