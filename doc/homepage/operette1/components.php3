@@ -42,8 +42,8 @@
   </P>
 
   <PRE>
-	import signature BLA       from "http://ps.uni-sb.de/stockhausen/BLA.xtc"
-	import structure Bla : BLA from "http://ps.uni-sb.de/stockhausen/bla.xtc"
+	import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO.xtc"
+	import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo.xtc"
   </PRE>
 
   <P>

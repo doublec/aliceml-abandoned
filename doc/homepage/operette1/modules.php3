@@ -173,7 +173,7 @@
 	signature S =
 	    sig
 	        signature T
-	        structure X: T
+	        structure X : T
 	    end
   </PRE>
 
