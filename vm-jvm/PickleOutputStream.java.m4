@@ -1,6 +1,7 @@
 package de.uni_sb.ps.dml.runtime;
 
 import de.uni_sb.ps.dml.builtin.DMLArray;
+import java.rmi.server.*;
 
 final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
@@ -40,7 +41,20 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 	    byte[] bytes = null;
 	    java.lang.String name = cls.getName();
 	    ClassLoader cl = cls.getClassLoader();
-	    if (cl==PickleClassLoader.loader)
+	    if (cl instanceof java.net.URLClassLoader) { // Klasse wurde über Netz geladen
+		java.net.URL[] urls = ((java.net.URLClassLoader) cl).getURLs();
+		for(int i=0; i<urls.length; i++) {
+		    try {
+			java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
+			bytes=new byte[in.available()];
+			in.readFully(bytes);
+			break; // bei Erfolg for verlassen
+		    } catch (java.io.IOException io) {
+			System.err.println(urls[i]+" IOException");
+			io.printStackTrace();
+		    }
+		}
+	    } else if (cl==PickleClassLoader.loader)
 		bytes = ((PickleClassLoader) cl).getBytes(name);
 	    else {
 		java.io.InputStream in = null;

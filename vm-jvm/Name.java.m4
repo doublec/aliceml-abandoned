@@ -1,6 +1,3 @@
-//-- Alles Stuss - geht doch mit readResolve und writeReplace
-// Name, Constructor, Array und Vector (und ?) müssen also mit
-// writeReplace und readResolve ausgestattet werden
 package de.uni_sb.ps.dml.runtime;
 
 public class Name implements DMLValue {
@@ -20,19 +17,11 @@ public class Name implements DMLValue {
 	this.gName=null;
     }
 
-    public Name(GName g) {
-	super();
-	this.name = "unnamed";
-	this.gName= g;
-    }
-
     final public java.lang.String toString() {
 	return name+" : name";
     }
 
     final public boolean equals(java.lang.Object o) {
-	//	return (o instanceof Name) &&
-	//  ((Name) o).gName == gName;
 	return (this == o);
     }
 

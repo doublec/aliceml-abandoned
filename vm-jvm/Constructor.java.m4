@@ -1,6 +1,6 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class Constructor implements DMLValue {
+public class Constructor implements DMLValue {
 
     java.lang.String name = null;
     GName gName = null;
@@ -9,12 +9,6 @@ final public class Constructor implements DMLValue {
 	super();
 	this.name="unnamed";
 	this.gName = null;
-    }
-
-    public Constructor(GName g) {
-	super();
-	this.name="unnamed";
-	this.gName=g;
     }
 
     public Constructor(java.lang.String name) {
