@@ -13,6 +13,8 @@ Library:
 
 * Sync'ed with latest updates to Basis spec
   (see http://sml.sourceforge.net/Basis/history.html).
+* Added lib/system/Print and toplevel printVal, printType for generic
+  value and type printing.
 * Added intersect and difference functions to map types.
 * Added disjoint function to set and map types.
 * Moved Atom to lib/data.
