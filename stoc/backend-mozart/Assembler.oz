@@ -104,23 +104,21 @@ define
 
       local
 	 BINewHashTable  = CompilerSupport.newHashTable
-	 BIStoreHTScalar = CompilerSupport.storeHTScalar
-	 BIStoreHTRecord = CompilerSupport.storeHTRecord
       in
 	 proc {StoreHashTableRef CodeBlock ht(ElseLabel List) LabelDict}
-	    Addr = {Dictionary.get LabelDict ElseLabel}
-	    HTable = {BINewHashTable CodeBlock {Length List} Addr}
-	 in
-	    {ForAll List
-	     proc {$ Entry}
-		case Entry of onScalar(NumOrLit Lbl) then Addr in
-		   Addr = {Dictionary.get LabelDict Lbl}
-		   {BIStoreHTScalar CodeBlock HTable NumOrLit Addr}
-		[] onRecord(Label RecordArity Lbl) then Addr in
-		   Addr = {Dictionary.get LabelDict Lbl}
-		   {BIStoreHTRecord CodeBlock HTable Label RecordArity Addr}
-		end
-	     end}
+	    {BINewHashTable
+	     CodeBlock
+	     {Dictionary.get LabelDict ElseLabel}
+	     {Length List}
+	     {Map List
+	      fun {$ Entry}
+		 case Entry
+		 of onScalar(NumOrLit Lbl) then
+		    scalar(NumOrLit {Dictionary.get LabelDict Lbl})
+		 [] onRecord(Label RecordArity Lbl) then
+		    record(Label RecordArity {Dictionary.get LabelDict Lbl})
+		 end
+	      end}}
 	 end
       end
 
