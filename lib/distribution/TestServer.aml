@@ -15,7 +15,7 @@ import structure OS          from "x-alice:/lib/system/OS"
 import structure TextIO      from "x-alice:/lib/system/TextIO"
 import signature URL         from "x-alice:/lib/system/URL-sig"
 import structure Url         from "x-alice:/lib/system/Url"
-import structure Remote      from "x-alice:/lib/distribution/Remote"
+import structure Remote      from "Remote"
 
 signature TEST_SERVER =
     sig
