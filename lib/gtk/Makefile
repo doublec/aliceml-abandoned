@@ -38,7 +38,7 @@ OZTOOL = oztool
 OZTOOLOPTS =
 
 STOC = stoc
-STOCOPTS = --no-dump-phases
+STOCOPTS = #--no-dump-phases
 
 OZSOURCES = GtkCoreOz.oz Gtk.oz Gdk.oz Canvas.oz
 COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
@@ -130,6 +130,7 @@ $(NATIVEOBJS):%.o: %.c
 %.so-$(OZPLATFORM): %.o
 	oztool ld -o $@ $< $(NATIVEFLAGS)
 
+GtkCoreOz.ozf: GtkCoreTypes.ozf
 UntypedGtk.ozf: GtkWrapper.oz GtkExport.oz
 Gtk.ozf: GtkCore.ozf
 UntypedGdk.ozf: GdkWrapper.oz GdkExport.oz
