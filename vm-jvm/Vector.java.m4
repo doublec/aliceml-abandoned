@@ -12,33 +12,42 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+/** This class represents the builtin type <code>vector</code>.
+ *  @see Array
+ */
 final public class Vector implements DMLValue {
 
-    /** nachschauen wieviel in Java machbar ist*/
+    /** the maximum length of a vector */
     public final static int maxLength = 65535;
 
-    /** das Array mit den Werten */
+    /** the java array that contains the vector entries */
     protected DMLValue[] vec = null;
 
     protected Vector(int n) {
 	if (n<0 || maxLength<n) {
 	    _RAISENAME(General.Size);
 	} else {
-	    vec=new DMLValue[n];
+	    vec = new DMLValue[n];
 	}
     }
 
-    public Vector(DMLValue f, int n)  throws java.rmi.RemoteException {// das ist tabulate
+    /** The constructor invoked by <code>tabulate</code>.
+     *  @param f <code>val f : int -> 'a</code>
+     *  @param n integer, to which <code>tabulate</code> is called
+     */
+    public Vector(DMLValue f, int n)
+	throws java.rmi.RemoteException {// das ist tabulate
 	if (n<0 || maxLength<n) {
 	    _RAISENAME(General.Size);
 	} else {
 	    vec = new DMLValue[n];
 	    for(int i=0; i<n; i++) {
-		vec[i]=f.apply(new Int(i));
+		vec[i] = f.apply(new Int(i));
 	    }
 	}
     }
 
+    // who needs this one? this is remainder of Array
     public Vector(int len, DMLValue init) {
 	if (len<0 || maxLength<len) {
 	    _RAISENAME(General.Size);
@@ -70,7 +79,7 @@ final public class Vector implements DMLValue {
 
     protected Vector(DMLValue list)  throws java.rmi.RemoteException {
 	DMLValue li = list;
-	if (list==List.nil)
+	if (list == List.nil)
 	    vec = new DMLValue[0];
 	else if (list instanceof Cons) {
 	    int le = 0;
@@ -84,9 +93,9 @@ final public class Vector implements DMLValue {
 	    }
 	    vec = new DMLValue[le];
 	    int index = 0;
-	    while (list!=List.nil) {
+	    while (list != List.nil) {
 		Cons l = (Cons) list;
-		vec[index++]=l.car;
+		vec[index++] = l.car;
 		list = l.cdr;
 	    }
 	} else {
@@ -106,14 +115,16 @@ final public class Vector implements DMLValue {
 	}
     }
 
-    final public DMLValue app(DMLValue f)  throws java.rmi.RemoteException {
+    final public DMLValue app(DMLValue f)
+	throws java.rmi.RemoteException {
 	int length = vec.length;
 	for(int i=0; i<length; i++)
 	    f.apply(vec[i]);
 	return Constants.dmlunit;
     }
 
-    final public DMLValue appi(int from, int to, DMLValue f) throws java.rmi.RemoteException {
+    final public DMLValue appi(int from, int to, DMLValue f)
+	throws java.rmi.RemoteException {
 	if (to<0 || from<0 || vec.length<to || to<from) {
 	    _RAISENAME(General.Subscript);
 	} else {
@@ -124,7 +135,8 @@ final public class Vector implements DMLValue {
 	}
     }
 
-    final public DMLValue foldl(DMLValue f, DMLValue init) throws java.rmi.RemoteException {
+    final public DMLValue foldl(DMLValue f, DMLValue init)
+	throws java.rmi.RemoteException {
 	DMLValue[] args = new DMLValue[2];
 	int length=vec.length;
 	args[1]=init;
@@ -135,7 +147,8 @@ final public class Vector implements DMLValue {
 	return args[1];
     }
 
-    final public DMLValue foldr(DMLValue f, DMLValue init) throws java.rmi.RemoteException {
+    final public DMLValue foldr(DMLValue f, DMLValue init)
+	throws java.rmi.RemoteException {
 	DMLValue[] args = new DMLValue[2];
 	args[1]=init;
 	for(int i=vec.length-1; i>=0; i--) {
@@ -145,7 +158,8 @@ final public class Vector implements DMLValue {
 	return args[1];
     }
 
-    final public DMLValue foldli(DMLValue f, DMLValue init, int from, int to) throws java.rmi.RemoteException {
+    final public DMLValue foldli(DMLValue f, DMLValue init, int from, int to)
+	throws java.rmi.RemoteException {
 	int length = vec.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -161,7 +175,8 @@ final public class Vector implements DMLValue {
 	}
     }
 
-    final public DMLValue foldri(DMLValue f, DMLValue init, int from, int to) throws java.rmi.RemoteException {
+    final public DMLValue foldri(DMLValue f, DMLValue init, int from, int to)
+	throws java.rmi.RemoteException {
 	int length = vec.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -177,7 +192,8 @@ final public class Vector implements DMLValue {
 	}
     }
 
-    final public DMLValue tabulate(int n, DMLValue f) throws java.rmi.RemoteException {
+    final public DMLValue tabulate(int n, DMLValue f)
+	throws java.rmi.RemoteException {
 	return new Vector(f,n);
     }
 
@@ -189,18 +205,20 @@ final public class Vector implements DMLValue {
 	}
     }
 
-    final public DMLValue map(DMLValue f) throws java.rmi.RemoteException {
-	int size=vec.length;
-	Vector ret=new Vector(size);
+    final public DMLValue map(DMLValue f)
+	throws java.rmi.RemoteException {
+	int size = vec.length;
+	Vector ret = new Vector(size);
 	DMLValue[] val = ret.vec;
 	for(int i=0; i<size; i++)
-	    val[i]=f.apply(vec[i]);
+	    val[i] = f.apply(vec[i]);
 	return ret;
     }
 
     /** @return Vector ein neuer Vektor */
-    final public DMLValue mapi(DMLValue f, int from, int to) throws java.rmi.RemoteException {
-	int size=vec.length;
+    final public DMLValue mapi(DMLValue f, int from, int to)
+	throws java.rmi.RemoteException {
+	int size = vec.length;
 	if (to<0 || from<0 || to<from || vec.length<to) {
 	    _RAISENAME(General.Subscript);
 	} else {
@@ -208,7 +226,7 @@ final public class Vector implements DMLValue {
 	    Vector ret=new Vector(size);
 	    DMLValue[] val = ret.vec;
 	    for(int i=0; i<size; i++)
-		val[i]=f.apply(vec[from+i]);
+		val[i] = f.apply(vec[from+i]);
 	    return ret;
 	}
     }
@@ -221,25 +239,26 @@ final public class Vector implements DMLValue {
 	    _RAISENAME(General.Subscript);
 	} else {
 	    for(int i=0; i<len; i++)
-		destArray[dfrom+i]=vec[from+i];
+		destArray[dfrom+i] = vec[from+i];
 	    return Constants.dmlunit;
 	}
     }
 
-    final public static DMLValue concat(DMLValue list) throws java.rmi.RemoteException {
-	int total=0;
-	if (list==List.nil)
+    final public static DMLValue concat(DMLValue list)
+	throws java.rmi.RemoteException {
+	int total = 0;
+	if (list == List.nil)
 	    return new Vector(0);
 	else if (list instanceof Cons) {
 	    DMLValue li = list;
-	    while (li!=List.nil) {
+	    while (li != List.nil) {
 		if (li instanceof Cons) {
 		    Cons lc = (Cons) li;
 		    DMLValue car = lc.car;
 		    if (!(car instanceof Vector)) {
 			_RAISENAME(General.Match);
 		    }
-		    total+=((Vector) car).vec.length;
+		    total += ((Vector) car).vec.length;
 		    li = lc.cdr;
 		} else {
 		    _RAISENAME(General.Match);
@@ -255,8 +274,8 @@ final public class Vector implements DMLValue {
 		DMLValue[] car = ((Vector) lc.car).vec;
 		int length = car.length;
 		for(int j=0; j<length; j++)
-		    retvector[j+offset]=car[j];
-		offset+=length;
+		    retvector[j+offset] = car[j];
+		offset += length;
 		li = lc.cdr;
 	    }
 	    return ret;
@@ -269,9 +288,9 @@ final public class Vector implements DMLValue {
 
     final public java.lang.String toString() {
 	java.lang.String s="["+vec[0];
-	int l=vec.length;
+	int l = vec.length;
 	for(int i=1; i<l; i++)
-	    s+=", "+vec[i];
+	    s += ", "+vec[i];
 	return s+"] : Vector";
     }
     //' 

@@ -1,55 +1,53 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
-/** Diese Klasse repräsentiert Word.
+/** This is the wrapper class for word values.
+ *  @see Char
  *  @see Int
  *  @see Real
- *  @see SCon
- *  @see STRING 
+ *  @see STRING
  *  @see DMLValue
  */
 final public class Word implements DMLValue {
 
-    /** java-long Wert */
+    /** java-long value */
     final public int value;
 
-    /** Baut ein neues Word mit Wert <code>value</code>.
-     *  @param value <code>long</code> Wert, der dem Word entspricht.
+    /** Create a new Word with <code>value</code> as its content.
+     *  @param value <code>long</code> value corresponding to the Word
      */
     public Word(int value) {
 	this.value=value;
     }
 
-    final public static boolean equals(Word v, Word w) {
-	return v.value == w.value;
+    /** Equality for primitive longs. */
+    final public boolean equals(Object val) {
+	return (val instanceof Word) &&
+	    (((Word) val).value == this.value);
     }
 
-    /** Gleichheit auf Long-Werten */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Word) && (((Word)val).value==this.value);
-    }
-
-    /** java.lang.Stringdarstellung des Wertes erzeugen.
-     *  @return java.lang.String java.lang.Stringdarstellung des Wertes
+    /** String representation of the Word.
+     *  @return java.lang.String the string representation
      */
     final public java.lang.String toString() {
-	return value+": word";
+	return value + ": word";
     }
 
     _apply_fails;
 
     final public static int wordSizeI = 31;
+
     /** <code>val wordSize : int </code>*/
     final public static DMLValue wordSize = new Int(wordSizeI);
 
@@ -69,7 +67,7 @@ final public class Word implements DMLValue {
 	    } catch (ClassCastException c) {
 		_RAISENAME(General.Match);
 	    }
- 	}
+	}
     }
     /** <code>val toInt : word -> Int.int </code>*/
     _FIELD(Word,toInt);
