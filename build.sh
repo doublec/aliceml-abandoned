@@ -5,6 +5,7 @@ set -e
 AUTOMAKE="yes"
 LIGHTNING=1
 BUILD_GMP=0
+BUILD_SQLITE=0
 SUPPORTDIR="$(pwd)"
 : ${prefix="$SUPPORTDIR/install"}
 
@@ -120,6 +121,31 @@ then
 	mkdir -p "${SUPPORTDIR}/build/gmp" 2>/dev/null &&
 	cd "${SUPPORTDIR}/build/gmp" &&
 	"${SUPPORTDIR}/gmp/gmp-${gmpversion}/configure" --build i586 CC="$CC" --prefix="$prefix" &&
+	echo "### - building and installing" >&2 &&
+	make all install
+    ) || exit 1
+fi
+fi
+
+##
+## Build Support Libraries: sqlite
+##
+# sqlite version to use
+sqliteversion=3.1.3
+
+if [ "$BUILD_SQLITE" -ne 0 ]
+then
+if [ ! -f "$prefix/include/sqlite3.h" ]
+then
+    (
+	echo "### Building sqlite" >&2
+        cd "$SUPPORTDIR/sqlite" &&
+	echo "### - extracting the source" >&2 &&
+	tar xzf sqlite-${sqliteversion}.tar.gz &&
+	echo "### - reconfiguring the source" >&2 &&
+	mkdir -p "${SUPPORTDIR}/build/sqlite" 2>/dev/null &&
+	cd "${SUPPORTDIR}/build/sqlite" &&
+	"${SUPPORTDIR}/sqlite/sqlite-${sqliteversion}/configure" CC="$CC" --prefix="$prefix" --disable-tcl --disable-shared --enable-static &&
 	echo "### - building and installing" >&2 &&
 	make all install
     ) || exit 1
