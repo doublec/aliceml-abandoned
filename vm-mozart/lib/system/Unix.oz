@@ -25,5 +25,6 @@ define
 	 fun {$ Cmd Args} P in
 	    P = {New TextPipe init(cmd: Cmd args: Args)}
 	    P#P
-	 end)
+	 end
+      'streamsOf':fun {$ X} X end)
 end
