@@ -273,22 +273,22 @@ word UnsafeSocket() {
   }
 #endif
 
-  Tuple *t = Tuple::New(8);
-  t->Init(0, Primitive::MakeClosure("UnsafeSocket.accept",
-				    UnsafeSocket_accept, 1, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeSocket.client",
-				    UnsafeSocket_client, 2, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeSocket.close",
-				    UnsafeSocket_close, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeSocket.input1",
-				    UnsafeSocket_input1, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeSocket.inputN",
-				    UnsafeSocket_inputN, 2, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeSocket.output",
-				    UnsafeSocket_output, 3, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeSocket.output1",
-				    UnsafeSocket_output1, 2, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeSocket.server",
-				    UnsafeSocket_server, 1, true));
-  RETURN_STRUCTURE(t);
+  Record *record = Record::New(8);
+  INIT_STRUCTURE(record, "UnsafeSocket", "server",
+		 UnsafeSocket_server, 1, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "accept",
+		 UnsafeSocket_accept, 1, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "client",
+		 UnsafeSocket_client, 2, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "input1",
+		 UnsafeSocket_input1, 1, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "inputN",
+		 UnsafeSocket_inputN, 2, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "output1",
+		 UnsafeSocket_output1, 2, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "output",
+		 UnsafeSocket_output, 3, true);
+  INIT_STRUCTURE(record, "UnsafeSocket", "close",
+		 UnsafeSocket_close, 1, true);
+  RETURN_STRUCTURE("UnsafeSocket$", record);
 }
