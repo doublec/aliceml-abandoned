@@ -174,15 +174,15 @@ define
    primitives('=':
 		 fun {$ X Y TaskStack}
 		    case {Equals X Y} of request(Transient) then
-		       request(Transient args(X Y) TaskStack.2)
+		       request(Transient args(X Y) TaskStack)
 		    [] true then continue(arg(1) TaskStack.2)
 		    [] false then continue(arg(0) TaskStack.2)
 		    end
 		 end#ii_t
-	      '<>': 
+	      '<>':
 		 fun {$ X Y TaskStack}
 		    case {Equals X Y} of request(Transient) then
-		       request(Transient args(X Y) TaskStack.2)
+		       request(Transient args(X Y) TaskStack)
 		    [] true then continue(arg(0) TaskStack.2)
 		    [] false then continue(arg(1) TaskStack.2)
 		    end
