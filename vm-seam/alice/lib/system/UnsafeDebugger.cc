@@ -214,10 +214,6 @@ DEFINE2(UnsafeDebugger_lookup) {
 
 } END			  
 
-DEFINE1(UnsafeDebugger_valueToString) {
-  RETURN1(String::New("not implemented")->ToWord());
-} END
-
 
 // Exceptions & Structure
 
@@ -257,7 +253,7 @@ word UnsafeDebugger() {
 			   invalidThreadStateString)->ToWord();
   RootSet::Add(invalidThreadState);
 
-  Record *record = Record::New(14);
+  Record *record = Record::New(13);
   record->Init("'UnknownThread", unknownThread);
   INIT_STRUCTURE(record, "UnsafeDebugger", "UnknownThread",
 		 UnsafeDebugger_UnknownThread , 0);
@@ -275,8 +271,6 @@ word UnsafeDebugger() {
 		 UnsafeDebugger_getEventStream, 0);
   INIT_STRUCTURE(record, "UnsafeDebugger", "readEventStream",
 		 UnsafeDebugger_readEventStream, 1);
-  INIT_STRUCTURE(record, "UnsafeDebugger", "valueToString",
-		 UnsafeDebugger_valueToString, 1);
   INIT_STRUCTURE(record, "UnsafeDebugger", "getRuntimeEnvironment",
 		 UnsafeDebugger_getRuntimeEnvironment, 1);
   INIT_STRUCTURE(record, "UnsafeDebugger", "lookup",

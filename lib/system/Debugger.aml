@@ -50,6 +50,4 @@ structure Debugger :> DEBUGGER =
 	val breakpoint = UnsafeDebugger.breakpoint
 	val getRuntimeEnvironment = UnsafeDebugger.getRuntimeEnvironment
 	val lookup = UnsafeDebugger.lookup
-
-	val valueToString = UnsafeDebugger.valueToString
     end

@@ -47,6 +47,4 @@ signature DEBUGGER =
 	val breakpoint: unit -> unit
 	val getRuntimeEnvironment: Thread.thread -> environment
 	val lookup: Thread.thread * string -> value * Type.t
-
-	val valueToString: value -> string
     end
