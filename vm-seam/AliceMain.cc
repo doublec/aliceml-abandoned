@@ -79,7 +79,7 @@ Worker::Result Load(String *name) {
   //--** this can be called multiple times, concurrently
   const char *argv[] = {""};
   InitAlice(1, argv);
-  if (name == NULL)
-    return Worker::CONTINUE;
-  BootLinker::Link(name);
+  if (name != NULL)
+    BootLinker::Link(name);
+  return Worker::CONTINUE;
 }
