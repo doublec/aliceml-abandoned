@@ -491,9 +491,6 @@ define
       end
    end
 
-{Property.put 'print.depth' 10}
-{Property.put 'print.width' 10}
-
    Me = abstractCodeInterpreter(run: Run
 				handle: Handle
 				pushCall: PushCall)
