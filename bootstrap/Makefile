@@ -27,7 +27,8 @@ FUNCTORS = Prebound.ozf CodeGen.ozf Main.ozf
 
 .PHONY: all clean
 
-all: alicedep.$(PLATFORM) alicec-mozart.exe alicec-mozart.$(PLATFORM)
+all: alicedep.$(PLATFORM) alicec-mozart.exe \
+	alicec-mozart.$(PLATFORM) alicec-stockwerk.$(PLATFORM)
 
 alicec-mozart.exe: $(FUNCTORS)
 	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
