@@ -97,6 +97,8 @@ public:
   }
 };
 
+BuildClassWorker *BuildClassWorker::self;
+
 void BuildClassWorker::PushFrame(ClassInfo *classInfo) {
   Scheduler::PushFrame(BuildClassFrame::New(classInfo)->ToWord());
 }
@@ -226,6 +228,8 @@ public:
     return JavaString::FromWordDirect(GetArg(DESCRIPTOR_POS));
   }
 };
+
+ResolveInterpreter *ResolveInterpreter::self;
 
 Worker::Result ResolveInterpreter::Run() {
   ResolveFrame *frame = ResolveFrame::FromWordDirect(Scheduler::GetFrame());
