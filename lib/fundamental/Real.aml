@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -107,99 +106,7 @@ struct
     fun fromLarge mode x			= x
 
 
-    fun scan getc source =
-	let
-	    fun decval c = Int.- (Char.ord c, 48)
-	    fun pow10 0 = 1.0
-	      | pow10 n =
-		if n mod 2 = 0 then
-		    let val x = pow10 (n div 2) in x * x end
-		else 10.0 * pow10 (Int.- (n, 1))
-	    fun pointsym src =
-		case getc src of
-		    NONE           => (false, src)
-		  | SOME (c, rest) => if c = #"." then (true, rest)
-				      else (false, src)
-	    fun esym src =
-		case getc src of
-		    NONE           => (false, src)
-		  | SOME (c, rest) =>
-			if c = #"e" orelse c = #"E"  then
-			    (true, rest)
-			else (false, src)
-	    fun scandigs (first, next, final, source) =
-		let fun digs (state, src) =
-		    case getc src of
-			NONE          => (SOME (final state), src)
-		      | SOME(c, rest) =>
-			    if Char.isDigit c then
-				digs (next(state, decval c), rest)
-			    else
-				(SOME (final state), src)
-		in
-		    case getc source of
-			NONE          => (NONE, source)
-		      | SOME(c, rest) =>
-			    if Char.isDigit c then
-				digs (first (decval c), rest)
-			    else (NONE, source)
-		end
-
-	    fun ident x = x
-	    fun getint source =
-		scandigs (fromInt,
-			  fn (res, cval) => 10.0 * res + fromInt cval,
-			  ident, source)
-	    fun getfrac source =
-		scandigs (fn cval => (1, fromInt cval),
-			  fn ((decs, frac), cval) =>
-			  (Int.+(decs,1), 10.0*frac+fromInt cval),
-			  fn (decs, frac) => frac / pow10 decs, source)
-	    fun getexp source =
-		scandigs (ident, fn (res, cval) => Int.+(Int.*(10,res),cval),
-			  ident, source)
-
-	    fun sign src =
-		case getc src of
-		    SOME(#"+", rest) => (true,  rest)
-		  | SOME(#"-", rest) => (false, rest)
-		  | SOME(#"~", rest) => (false, rest)
-		  | _                => (true,  src )
-
-	    val src = StringCvt.dropl Char.isSpace getc source
-	    val (manpos, src1) = sign src
-	    val (intg,   src2) = getint src1
-	    val (decpt,  src3) = pointsym src2
-	    val (frac,   src4) = getfrac src3
-
-	    fun mkres (v, rest) =
-		SOME(if manpos then v else ~v, rest)
-
-	    fun expopt (manval, src) =
-		let val (esym,   src1) = esym src
-		    val (exppos, src2) = sign src1
-		    val (expv,   rest) = getexp src2
-		in
-		    case (esym, expv) of
-			(_,     NONE)     => mkres (manval, src)
-		      | (true,  SOME exp) =>
-			    if exppos then mkres (manval * pow10 exp, rest)
-			    else mkres (manval / pow10 exp, rest)
-		      | _                 => NONE
-		end
-	in
-	    case (intg,     decpt, frac) of
-		(NONE,      true,  SOME fval) => expopt (fval, src4)
-	      | (SOME ival, false, SOME _   ) => NONE
-	      | (SOME ival, true,  NONE     ) => mkres (ival, src2)
-	      | (SOME ival, false, NONE     ) => expopt (ival, src2)
-	      | (SOME ival, _    , SOME fval) => expopt (ival+fval, src4)
-	      | _                             => NONE
-	end
-
-    __primitive val toString: real -> string = "Real.toString"
-
-    val fromString = StringCvt.scanString scan
+    (* Math *)
 
     structure Math =
     struct
@@ -230,4 +137,100 @@ struct
 	__primitive val acosh :	real -> real		= "Math.acosh"	(**)
 	__primitive val atanh :	real -> real		= "Math.atanh"	(**)
     end
+
+
+    (* Formatting *)
+
+    (*TODO*)
+    __primitive val toString: real -> string = "Real.toString"
+
+
+    (* Scanning *)
+
+    fun value c = fromInt(Int.-(Char.ord c, Char.ord #"0"))
+
+    fun scanSign getc src =
+	case getc src
+	  of SOME(#"-", src') => (~1.0, src')
+	   | SOME(#"~", src') => (~1.0, src')
+	   | SOME(#"+", src') => (1.0, src')
+	   | _                => (1.0, src)
+
+    fun scanFractional getc src =
+        case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then SOME(scanFractional' getc src 0.0 0.1)
+	     else NONE
+	   | NONE => NONE
+    and scanFractional' getc src r d =
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanFractional' getc src' (r + d * value c) (d/10.0)
+	     else (r, src)
+	   | NONE => (r, src)
+
+    fun scanMantissa getc src =
+	case getc src
+	  of SOME(#".", src') => scanFractional getc src'
+	   | SOME(c, src') =>
+	     if Char.isDigit c
+	     then SOME(scanMantissa' getc src 0.0)
+	     else NONE
+	   | NONE => NONE
+    and scanMantissa' getc src r =
+	case getc src
+	  of SOME(#".", src') =>
+	     (case scanFractional getc src'
+		of SOME(r', src'') => (r + r', src'')
+		 | NONE => (r, src)
+	     )
+	   | SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanMantissa' getc src' (10.0*r + value c)
+	     else (r, src)
+	   | NONE => (r, src)
+
+    fun scanExp getc src =
+	case getc src
+	  of SOME(#"e", src') => scanExp' getc src'
+	   | SOME(#"E", src') => scanExp' getc src'
+	   | _                => NONE
+    and scanExp' getc src =
+	let
+	    val (sign, src') = scanSign getc src
+	in
+	    case getc src'
+	      of SOME(c, _) =>
+		 if Char.isDigit c
+		 then let val (r,src'') = scanExp'' getc src' 0.0
+		      in SOME(sign*r, src'') end
+		 else NONE
+	       | NONE => NONE
+	end
+    and scanExp'' getc src exp =
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanExp'' getc src' (10.0*exp + value c)
+	     else (exp, src)
+	   | NONE => (exp, src)
+
+    fun scan getc src =
+	let
+	    val       src1  = StringCvt.skipWS getc src
+	    val (sign,src2) = scanSign getc src1
+	in
+	    case scanMantissa getc src2
+	      of NONE => NONE
+	       | SOME(man, src3) =>
+	    case scanExp getc src3
+	      of NONE => SOME(sign * man, src3)
+	       | SOME(exp, src4) => SOME(if man == 0.0 then 0.0
+					 else sign * man * Math.pow(10.0, exp),
+					 src4)
+	end
+
+    val fromString = StringCvt.scanString scan
 end

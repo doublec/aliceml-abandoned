@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,7 +17,7 @@
 
 import structure __pervasive                  from "Pervasive"
 import type int and bool and order and option from "ToplevelTypes"
-
+import structure StringCvt                    from "StringCvt"
 
 signature CHAR =
 sig
@@ -53,6 +52,8 @@ sig
     val isAlpha :	char -> bool
     val isAlphaNum :	char -> bool
     val isDigit :	char -> bool
+    val isBinDigit :	char -> bool					(**)
+    val isOctDigit :	char -> bool					(**)
     val isHexDigit :	char -> bool
     val isPunct :	char -> bool
     val isPrint :	char -> bool
@@ -66,9 +67,9 @@ sig
 
     val toString :	char -> string
     val toCString :	char -> string
-(*TODO
     val fromString :	string -> char option
     val fromCString :	string -> char option
     val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
-*)
+    val scanC :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
+									(**)
 end

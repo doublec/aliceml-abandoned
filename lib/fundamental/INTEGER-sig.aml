@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -58,9 +57,7 @@ sig
 
     val toString :	int -> string
     val fromString:	string -> int option
-(*TODO
     val fmt :		StringCvt.radix -> int -> string
-*)
-    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader -> 'a
-					-> (int * 'a) option
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (int,'a) StringCvt.reader
 end

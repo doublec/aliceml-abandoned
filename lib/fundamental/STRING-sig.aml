@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,10 +15,11 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                           from "Pervasive"
-import type int and bool and order and option and list from "ToplevelTypes"
-import signature CHAR                                  from "CHAR-sig"
-
+import structure __pervasive          from "Pervasive"
+import type int and bool and char 
+       type order and option and list from "ToplevelTypes"
+import signature CHAR                 from "CHAR-sig"
+import structure StringCvt            from "StringCvt"
 
 signature STRING =
 sig
@@ -68,8 +68,10 @@ sig
 
     val toString :	string -> string
     val toCString :	string -> string
-(*TODO
     val fromString :	string -> string option
     val fromCString :	string -> string option
-*)
+    val scan :		(char,'a) StringCvt.reader ->			(**)
+			(string,'a) StringCvt.reader
+    val scanC :		(char,'a) StringCvt.reader ->			(**)
+			(string,'a) StringCvt.reader
 end

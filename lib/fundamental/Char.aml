@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,15 +15,16 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                           from "Pervasive"
+import structure __pervasive                            from "Pervasive"
 import type char and string and int
-       type bool and order and list                    from "ToplevelTypes"
-import infix 4 = < > <= >= infix 6 + - infix 7 div mod
-       val op = and op >=
-       val op + and op - and op div and op mod         from "ToplevelValues"
-import structure General                               from "General"
-import structure Bool                                  from "Bool"
-import signature CHAR                                  from "CHAR-sig"
+       datatype bool and order and option and list      from "ToplevelTypes"
+import infix 4 = < > <= >= infixr 5 :: infix 6 + - infix 7 * div mod
+       val op = and op < and op <= and op >=
+       val op + and op - and op * and op div and op mod from "ToplevelValues"
+import structure General                                from "General"
+import structure Bool                                   from "Bool"
+import structure StringCvt                              from "StringCvt"
+import signature CHAR                                   from "CHAR-sig"
 
 
 structure Char : CHAR =
@@ -60,11 +60,6 @@ struct
     fun notContains s c = Bool.not(contains s c)
 
 
-    __primitive val op < :	char * char -> bool = "Char.<"
-    __primitive val op > :	char * char -> bool = "Char.>"
-    __primitive val op <= :	char * char -> bool = "Char.<="
-    __primitive val op >= :	char * char -> bool = "Char.>="
-
     __primitive val toLower :	char -> char = "Char.toLower"
     __primitive val toUpper :	char -> char = "Char.toUpper"
 
@@ -80,14 +75,20 @@ struct
     __primitive val isSpace :	char -> bool = "Char.isSpace"
     __primitive val isCntrl :	char -> bool = "Char.isCntrl"
 
-    fun isAscii c = chr 0 <= c andalso c <= chr 127
+    val zero				= ord #"0"
+    val seven				= ord #"7"
 
-    fun toWide c	= c						(**)
-    fun fromWide c	= c						(**)
+    fun isBinDigit c			= c = #"0" orelse c = #"1"
+    fun isOctDigit c			= zero <= ord c andalso ord c <= seven
+    fun isAscii c			= 0 <= ord c andalso ord c <= 127
+
+    fun toWide c			= c				(**)
+    fun fromWide c			= c				(**)
+
+    (* Formatting *)
 
     fun toString #"\\"			= "\\\\"
       | toString #"\""			= "\\\""
-      | toString c where (isPrint c)	= String_str c
       | toString #"\a"			= "\\a"
       | toString #"\b"			= "\\b"
       | toString #"\t"			= "\\t"
@@ -95,23 +96,25 @@ struct
       | toString #"\v"			= "\\v"
       | toString #"\f"			= "\\f"
       | toString #"\r"			= "\\r"
-      | toString c where (c < #" ")	= String_implode
+      | toString c where (isPrint c)	= String_str c
+      | toString c where (ord c < 32)	= String_implode
 					    [#"\\", #"^", chr(ord c + ord #"@")]
-      | toString c =   (*TODO: does not work properly for WideChar *)
-	let
-	    val n    = ord c
-	    val zero = ord #"0"
-	in
-	    String_implode [#"\\", chr(n div 100 + zero),
-				   chr(n div 10 mod 10 + zero),
-				   chr(n mod 10 + zero)]
-	end
+      | toString c withval n=ord c end	= String_implode
+					    [#"\\", chr(n div 100 + zero),
+						    chr(n div 10 mod 10 + zero),
+						    chr(n mod 10 + zero)]
+					  (*TODO: not working for WideChar*)
+
+    fun toOctAscii 0			= "\\0"
+      | toOctAscii i			= toOctAscii'(i, nil)
+    and toOctAscii'(0, cs)		= String_implode(#"\\" :: cs)
+      | toOctAscii'(i, cs)		= toOctAscii'(i div 8,
+						  chr(i mod 8 + ord #"0") :: cs)
 
     fun toCString #"\\"			= "\\\\"
       | toCString #"\""			= "\\\""
       | toCString #"?"			= "\\?"
       | toCString #"'"			= "\\'"
-      | toCString c where (isPrint c)	= String_str c
       | toCString #"\a"			= "\\a"
       | toCString #"\b"			= "\\b"
       | toCString #"\t"			= "\\t"
@@ -119,13 +122,123 @@ struct
       | toCString #"\v"			= "\\v"
       | toCString #"\f"			= "\\f"
       | toCString #"\r"			= "\\r"
-      | toCString c =   (*TODO: does not work properly for WideChar *)
-	let
-	    val n    = ord c
-	    val zero = ord #"0"
-	in
-	    String_implode [#"\\", chr(n div 64 + zero),
-				   chr(n div 8 mod 8 + zero),
-				   chr(n mod 8 + zero)]
-	end
+      | toCString c where (isPrint c)	= String_str c
+      | toCString c			= toOctAscii(ord c)
+
+
+    (* Scanning *)
+
+    val a = ord #"A"
+
+    fun value c = ord(toUpper c) - (if ord c < a then zero else a - 10)
+
+    fun scanAscii getc src0 =
+	case getc src0 of NONE => NONE | SOME(c1, src1) =>
+	case getc src1 of NONE => NONE | SOME(c2, src2) =>
+	case getc src2 of NONE => NONE | SOME(c3, src3) =>
+	if isDigit c1 andalso isDigit c2 andalso isDigit c3
+	then let val i = 100*value c1 + 10*value c2 + value c3
+	     in if i <= 255 then SOME(chr i, src3) else NONE end
+	else NONE
+
+    fun scanUnicode getc src0 =
+	case getc src0 of NONE => NONE | SOME(c1, src1) =>
+	case getc src1 of NONE => NONE | SOME(c2, src2) =>
+	case getc src2 of NONE => NONE | SOME(c3, src3) =>
+	case getc src3 of NONE => NONE | SOME(c4, src4) =>
+	if Bool.not(isHexDigit c1 andalso isHexDigit c2 andalso
+		    isHexDigit c3 andalso isHexDigit c4) then NONE else
+	SOME(chr(4096*value c1 + 256*value c2 + 16*value c3 + value c4), src4)
+	handle Chr => NONE
+
+    fun scanControl getc src =
+	case getc src
+	  of SOME(c, src') where (64 <= ord c andalso ord c <= 95) =>
+		SOME(chr(ord c - 64), src')
+	   | _ => NONE
+
+    fun scanEscape getc src =
+	case getc src
+	  of SOME(#"a",  src')                   => SOME(#"\a", src')
+	   | SOME(#"b",  src')                   => SOME(#"\b", src')
+	   | SOME(#"t",  src')                   => SOME(#"\t", src')
+	   | SOME(#"n",  src')                   => SOME(#"\n", src')
+	   | SOME(#"v",  src')                   => SOME(#"\v", src')
+	   | SOME(#"f",  src')                   => SOME(#"\f", src')
+	   | SOME(#"r",  src')                   => SOME(#"\r", src')
+	   | SOME(#"\\", src')                   => SOME(#"\\", src')
+	   | SOME(#"\"", src')                   => SOME(#"\"", src')
+	   | SOME(#"^",  src')                   => scanControl getc src'
+	   | SOME(#"u",  src')                   => scanUnicode getc src'
+	   | SOME(  c,   src') where (isDigit c) => scanAscii getc src
+	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
+	   | _                                   => NONE
+
+    and scanGap getc src =
+	case getc src
+	  of SOME(#"\\", src')                   => scanEscape getc src'
+	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
+	   | NONE                                => NONE
+
+    fun scan getc src =
+	case getc src
+	  of SOME(#"\\", src')                   => scanEscape getc src'
+	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
+	   | NONE                                => NONE
+
+    fun scanCAscii getc src      = scanCAscii' getc src 0 0
+    and scanCAscii' getc src i 3 = SOME(chr i, src)
+      | scanCAscii' getc src i k =
+	case getc src
+	  of SOME(c, src') where (isOctDigit c) =>
+		scanCAscii' getc src (8*i + value c) k
+	   | _ => scanCAscii'' src i k
+
+    and scanCAscii'' src i 0 = NONE
+      | scanCAscii'' src i k = SOME(chr i, src)
+
+    fun scanCUnicode getc src = scanCUnicode' getc src 0 0
+				handle Overflow => NONE
+    and scanCUnicode' getc src i k =
+	case getc src
+	  of SOME(c, src') where (isHexDigit c) =>
+		scanCUnicode' getc src (16*i + value c) k
+	   | _ => scanCUnicode'' src i k
+
+    and scanCUnicode'' src i 0 = NONE
+      | scanCUnicode'' src i k = SOME(chr i, src)
+
+    fun scanCEscape getc src =
+	case getc src
+	  of SOME(#"a",  src')                   => SOME(#"\a", src')
+	   | SOME(#"b",  src')                   => SOME(#"\b", src')
+	   | SOME(#"t",  src')                   => SOME(#"\t", src')
+	   | SOME(#"n",  src')                   => SOME(#"\n", src')
+	   | SOME(#"v",  src')                   => SOME(#"\v", src')
+	   | SOME(#"f",  src')                   => SOME(#"\f", src')
+	   | SOME(#"r",  src')                   => SOME(#"\r", src')
+	   | SOME(#"?",  src')                   => SOME(#"?",  src')
+	   | SOME(#"\\", src')                   => SOME(#"\\", src')
+	   | SOME(#"\"", src')                   => SOME(#"\"", src')
+	   | SOME(#"'",  src')                   => SOME(#"'", src')
+	   | SOME(#"^",  src')                   => scanControl getc src'
+	   | SOME(#"u",  src')                   => scanCUnicode getc src'
+	   | SOME(  c,   src') where (isDigit c) => scanCAscii getc src'
+	   | _                                   => NONE
+
+    fun scanC getc src =
+	case getc src
+	  of SOME(#"\\", src')                   => scanCEscape getc src'
+	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
+	   | _                                   => NONE
+
+    val fromString	= StringCvt.scanString scan
+    val fromCString	= StringCvt.scanString scanC
+
+    (* Put these here to avoid shadowing *)
+
+    __primitive val op < :	char * char -> bool = "Char.<"
+    __primitive val op > :	char * char -> bool = "Char.>"
+    __primitive val op <= :	char * char -> bool = "Char.<="
+    __primitive val op >= :	char * char -> bool = "Char.>="
 end

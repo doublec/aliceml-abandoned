@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,19 +15,22 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                  from "Pervasive"
+import structure __pervasive                       from "Pervasive"
 import type char and string and int
-       datatype bool and order and option     from "ToplevelTypes"
+       datatype bool and order and option and list from "ToplevelTypes"
 import infix 4 = <> > < >= <=
+       infixr 5 ::
        infix 6 + -
        infix 7 * div mod
        val op = and op <>
        and op > and op < and op >= and op <=
        val   ~  and abs  and op +  and op -
-       and op * and op div and op mod         from "ToplevelValues"
-import structure Char                         from "Char"
-import structure StringCvt                    from "StringCvt"
-import signature INTEGER                      from "INTEGER-sig"
+       and op * and op div and op mod              from "ToplevelValues"
+import structure Option                            from "Option"
+import structure Char                              from "Char"
+import structure String                            from "String"
+import structure StringCvt                         from "StringCvt"
+import signature INTEGER                           from "INTEGER-sig"
 
 
 structure Int : INTEGER =
@@ -74,72 +76,83 @@ struct
     fun sameSign(i,j)		= sign i = sign j
 
 
+    (* Formatting *)
+
     open StringCvt
 
-    fun decval c = Char.ord c - Char.ord #"0"
-    fun hexval c =
-	if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
-	then Char.ord c - Char.ord #"0"
-	else (Char.ord c - Char.ord #"A" + 10) mod 32
+    (* fmt and scan both use inverted signs to cope with minInt! *)
 
-    fun skipWSget (getc, src) = getc (dropl Char.isSpace getc src)
+    fun base BIN	= 2
+      | base OCT	= 8
+      | base DEC	= 10
+      | base HEX	= 16
 
-    fun isBinDigit #"0" = true
-      | isBinDigit #"1" = true
-      | isBinDigit _    = false
+    fun toIsDigit BIN	= Char.isBinDigit
+      | toIsDigit OCT	= Char.isOctDigit
+      | toIsDigit DEC	= Char.isDigit
+      | toIsDigit HEX	= Char.isHexDigit
 
-    fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
-		       Char.ord c <= Char.ord #"7"
+    val zero		= Char.ord #"0"
+    val ten		= Char.ord #"A" - 10
+    fun digit i		= Char.chr(i + (if i < 10 then zero else ten))
+    fun value c		= Char.ord(Char.toUpper c) -
+			  (if Char.ord c < ten+10 then zero else ten)
 
-    fun scan radix getc source =
+    fun fmt radix 0	= "0"
+      | fmt radix i	= if i > 0
+			  then String.implode(fmt'(base radix, ~i, []))
+			  else String.implode(#"~" :: fmt'(base radix, i, []))
+    and fmt'(b, 0, cs)	= cs
+      | fmt'(b, i, cs)	= fmt'(b, quot(i, b), digit(~(rem(i, b))) :: cs)
+
+
+    (* Scanning *)
+
+    fun scanSign getc src =
+	case getc src
+	  of SOME(#"-", src') => (1, src')
+	   | SOME(#"~", src') => (1, src')
+	   | SOME(#"+", src') => (~1, src')
+	   | _                => (~1, src)
+
+    fun scanPrefix getc src =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"x", src'') => (true, src'')
+		 | SOME(#"X", src'') => (true, src'')
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanNum (isDigit, b) getc src =
+	case getc src
+	  of SOME(c, _) =>
+	     if isDigit c
+	     then SOME(scanNum' (isDigit, b) getc src 0)
+	     else NONE
+	   | NONE => NONE
+    and scanNum' (isDigit, b) getc src i =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then scanNum' (isDigit, b) getc src' (b*i - value c)
+	     else (i, src)
+	   | NONE => (i, src)
+
+    fun scan radix getc src =
 	let
-	    val (isDigit, factor) = case radix of
-				      BIN => (isBinDigit,       2)
-				    | OCT => (isOctDigit,       8)
-				    | DEC => (Char.isDigit,    10)
-				    | HEX => (Char.isHexDigit, 16)
-
-	    fun dig1 (sgn, NONE) = NONE
-	      | dig1 (sgn, SOME (c, rest)) =
-		let
-		    fun digr (res, src) =
-			case getc src of
-			    NONE => SOME (sgn * res, src)
-			  | SOME (c', rest') =>
-				if isDigit c' then
-				    digr (factor * res + hexval c', rest')
-				else
-				    SOME (sgn * res, src)
-		in
-		    if isDigit c then digr (hexval c, rest) else NONE
-		end
-
-	    fun getdigs (sgn, after0, inp) =
-		case dig1 (sgn, inp) of
-		    NONE => SOME (0, after0)
-		  | res => res
-
-	    fun hexopt (sgn, NONE) = NONE
-	      | hexopt (sgn, SOME (#"0", after0)) =
-		if radix <> HEX then getdigs (sgn, after0, getc after0)
-		else
-		    (case getc after0 of
-			 NONE => SOME(0, after0)
-		       | SOME ((#"x" | #"X"), rest) =>
-			     getdigs (sgn, after0, getc rest)
-		       | inp => getdigs (sgn, after0, inp))
-	      | hexopt (sgn, inp) = dig1 (sgn, inp)
-
-	    fun sign NONE = NONE
-	      | sign(SOME (#"~", rest)) = hexopt (~1, getc rest)
-	      | sign(SOME (#"-", rest)) = hexopt (~1, getc rest)
-	      | sign(SOME (#"+", rest)) = hexopt (1, getc rest)
-	      | sign inp = hexopt (1, inp)
+	    val       src1  = skipWS getc src
+	    val (sign,src2) = scanSign getc src1
+	    val (pref,src3) = if radix = HEX then scanPrefix getc src2
+					     else (false, src2)
 	in
-	    sign (skipWSget (getc, source))
+	    case scanNum (toIsDigit radix, base radix) getc src3
+	      of SOME(num, src4) => SOME(sign*num, src4)
+	       | NONE => if pref then SOME(0, #2(Option.valOf(getc src2)))
+				 else NONE
 	end
 
-    __primitive val toString : int -> string = "Int.toString"
-
-    val fromString = scanString(scan DEC)   (*TODO: crashes *)
+    val toString	= fmt DEC
+    val fromString	= scanString(scan DEC)
 end
