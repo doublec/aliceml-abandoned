@@ -1,3 +1,7 @@
+#
+# alicedepend.awk does the same as the alicedep tool.
+# Well, a hundred times faster.
+#
 
 BEGIN { FS = "\""; }
 
