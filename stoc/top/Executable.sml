@@ -13,13 +13,18 @@
 SMLofNJ.Internals.GC.messages false;
 CM.make();
 local
+    fun hdl f x =
+	(f x; OS.Process.success)
+	handle e =>
+	    (TextIO.output (TextIO.stdErr,
+			    "uncaught exception " ^ exnName e ^ "\n");
+	     OS.Process.failure)
     fun stoc (_, []) =
-	(Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
-	;OS.Process.success)
+	hdl Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
       | stoc (_, [infile]) =
-	(Main.ozifyFileToStdOut infile; OS.Process.success)
+	hdl Main.ozifyFileToStdOut infile
       | stoc (_, [infile, outfile]) =
-	(Main.ozifyFileToFile (infile, outfile); OS.Process.success)
+	hdl Main.ozifyFileToFile (infile, outfile)
       | stoc (_, _) = 2
 in
     val _ = SMLofNJ.exportFn ("stoc-frontend", stoc)
