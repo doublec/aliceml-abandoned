@@ -19,5 +19,4 @@ signature SPECIAL =
         val changedFuns :    TypeTree.decl list
 
         val isIgnored :      TypeTree.decl -> bool
-        val isIgnoredSafe :  TypeTree.decl -> bool
     end
