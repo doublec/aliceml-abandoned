@@ -57,9 +57,10 @@ define
 		  'extension': Extension
 		  'load':
 		     fun {$ URL}
-			case {LoadSign URL} of 'SOME'(_#Type) then
+			case {LoadSign URL} of 'SOME'(_#Type) then F in
+			   F = {Pickle.load URL}
 			   Type#{{Property.get 'alice.modulemanager'}
-				 link(url: URL $)}
+				 apply(F $)}
 			[] 'NONE' then
 			   {Exception.raiseError alice(CorruptException)} unit
 			end
