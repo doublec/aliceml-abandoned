@@ -87,7 +87,7 @@
 	    val extendRow :	lab * typ * row -> row
 
 	    val fill :		typ * typ -> unit
-	    val equals :	typ * typ -> bool
+	    val equal :		typ * typ -> bool
 	end
 
 	structure Fixity :
