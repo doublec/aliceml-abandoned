@@ -278,6 +278,7 @@ private:
   static const u_int SEEN_POS   = 1;
 public:
   static void New(OutputStream *stream, Seen *seen) {
+    Scheduler::nArgs = 2;
     Scheduler::currentArgs[STREAM_POS] = stream->ToWord();
     Scheduler::currentArgs[SEEN_POS] = seen->ToWord();
   }
