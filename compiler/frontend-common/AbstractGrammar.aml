@@ -1,5 +1,23 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import functor MkAbstractGrammar   from "MkAbstractGrammar"
+import functor MkPPAbstractGrammar from "MkPPAbstractGrammar"
+import structure PrettyPrint       from "../misc/PrettyPrint"
+import structure Source            from "../infrastructure/Source"
+
+
 structure AbstractInfo =
-  struct
+struct
     type fix_info	= Source.region
     type vallab_info	= Source.region
     type typlab_info	= Source.region
@@ -27,11 +45,11 @@ structure AbstractInfo =
     type imp_info	= Source.region
     type ann_info	= Source.region
     type comp_info	= Source.region
-  end
+end
 
-structure AbstractGrammar = MakeAbstractGrammar(AbstractInfo)
+structure AbstractGrammar = MkAbstractGrammar(AbstractInfo)
 
-structure PPAbstractGrammar = MakePPAbstractGrammar(
+structure PPAbstractGrammar = MkPPAbstractGrammar(
 	structure AbstractGrammar = AbstractGrammar
 	fun ppInfo _		= PrettyPrint.empty
 	val ppFixInfo		= ppInfo

@@ -1,6 +1,27 @@
-signature ELABORATION_ERROR =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Source from "../infrastructure/Source"
+import structure Fixity from "../common/Fixity"
+import structure Name   from "../common/Name"
+import structure Label  from "../common/Label"
+import structure Stamp  from "../common/Stamp"
+import structure Type   from "../common/Type"
+import structure Inf    from "../common/Inf"
+import structure AbstractGrammar from "AbstractGrammar"
+
+
+signature ELABORATION_ERROR =
+sig
     type lab       = Label.t
     type typ       = Type.t
     type var       = Type.var
@@ -88,5 +109,4 @@ signature ELABORATION_ERROR =
 
     val error :	Source.region * error -> 'a
     val warn :	Source.region * warning -> unit
-
-  end
+end

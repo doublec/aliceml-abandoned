@@ -1,6 +1,24 @@
-signature ABSTRACT_GRAMMAR =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Url    from "../misc/Url"
+import structure Fixity from "../common/Fixity"
+import structure Name   from "../common/Name"
+import structure Label  from "../common/Label"
+import structure Stamp  from "../common/Stamp"
+
+
+signature ABSTRACT_GRAMMAR =
+sig
     (* Generic *)
 
     type fix_info
@@ -235,5 +253,4 @@ signature ABSTRACT_GRAMMAR =
     val infoAnn :	ann			-> ann_info
     val infoDesc :	('a,'b) desc		-> 'a
     val infoComp :	comp			-> comp_info
-
-  end
+end
