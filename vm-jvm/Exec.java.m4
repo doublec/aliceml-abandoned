@@ -51,7 +51,12 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    DMLValue r = (DMLValue) in.readObject();
 	    System.out.println(r);
 	    time = System.currentTimeMillis();
-	    v=((Record) r).get("main").apply(arglist);
+	    t = ((Record) r).get("main");
+	    if (t==null) {
+		System.err.println("No main defined.");
+		System.exit(1);
+	    }
+	    v=t.apply(arglist);
 	    while (tail!=null) {
 		t = tail;
 		tail = null;
