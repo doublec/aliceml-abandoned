@@ -1,0 +1,14 @@
+import structure ExplorerMain from "ExplorerMain"
+import structure Space           from "x-alice:/lib/gecode/Space"
+
+structure Explorer =
+  struct
+    type explorer = ExplorerMain.explorer
+
+  __overload 'a initScript : (Space.space -> 'a) -> explorer =
+     ExplorerMain.initScript'
+  __overload 'a exploreAllScript : (Space.space -> 'a) -> explorer =
+     ExplorerMain.exploreAllScript'
+  __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer =
+     ExplorerMain.exploreOneScript'
+  end

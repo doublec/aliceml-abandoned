@@ -13,11 +13,27 @@
 import structure ExplorerSearch  from "ExplorerSearch"
 import structure MainWindow      from "MainWindow"
 import structure Space           from "x-alice:/lib/gecode/Space"
+import structure Type            from "x-alice:/lib/rtt/Type"
 import structure ExplorerInspect from "ExplorerInspect"
 import structure Types           from "Types"
 import structure CanvasHelper    from "CanvasHelper"
 
-structure Explorer =
+signature EXPLORER =
+  sig
+      type explorer
+      val initExplorer : unit -> explorer
+      val initWithSpace : Space.space -> explorer
+      val exploreAll : Space.space -> explorer
+      val exploreOne : Space.space -> explorer
+(*      val exploreBest : Space.space * better -> explorer*)
+      val addInfoAction : explorer * (Space.space -> unit) * string -> unit
+      val deleteInfoAction : explorer * string -> unit
+
+      val initScript' : Type.typ -> (Space.space -> 'a) -> explorer
+      val exploreAllScript' : Type.typ -> (Space.space -> 'a) -> explorer
+      val exploreOneScript' : Type.typ -> (Space.space -> 'a) -> explorer
+  end
+structure ExplorerMain :> EXPLORER =
   struct
 
   type explorer = Types.explorer_state option ref
@@ -160,12 +176,5 @@ structure Explorer =
           addInfoAction(e, ExplorerInspect.inspect t root, "default");
           e
       end
-
-  __overload 'a initScript : (Space.space -> 'a) -> explorer =
-     initScript'
-  __overload 'a exploreAllScript : (Space.space -> 'a) -> explorer =
-     exploreAllScript'
-  __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer =
-     exploreOneScript'
 
   end

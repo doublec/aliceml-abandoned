@@ -19,6 +19,7 @@ GLADE_SOURCES = ExplorerGUI.glade
 GLADE_TARGETS = ExplorerGUI.aml ExplorerGUISignals.aml
 
 SOURCES= \
+	Explorer.aml \
 	ExplorerMain.aml \
 	ExplorerSearch.aml \
 	TreeNode.aml \
@@ -37,10 +38,10 @@ TARGETS= $(SOURCES:%.aml=%.stc)
 
 .PHONY: clean all
 
-all: Explorer.stc
+all: LinkedExplorer.stc
 
-Explorer.stc: $(TARGETS)
-	alicelink --include ./ ./ExplorerMain -o $@
+LinkedExplorer.stc: $(TARGETS)
+	alicelink --include ./ ./Explorer -o $@
 
 $(GLADE_TARGETS): $(GLADE_SOURCES)
 	aliceglade $< -o $(GLADE_SOURCES:%.glade=%)
@@ -56,6 +57,6 @@ depend: $(SOURCES)
 
 install: all
 	install -d $(INSTALLTO)
-	install Explorer.stc $(INSTALLTO)
+	install LinkedExplorer.stc $(INSTALLTO)/Explorer.stc
 
 -include Makefile.depend
