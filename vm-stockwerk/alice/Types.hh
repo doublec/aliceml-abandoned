@@ -29,6 +29,20 @@ public:
   enum { cons, nil };
   // Future.status
   enum { DETERMINED, FAILED, FUTURE };
+  // IODesc
+  //    Io
+  enum { cause, function, name };
+  //    iodesc_kind
+  enum { CLOSED, DEVICE, DIR, FILE, PIPE, SOCKET, SYMLINK, TTY, UNKNOWN };
+  //    capabilities
+  enum { block, endPos, setPos, verifyPos,
+	 CAPABILITIES_SIZE };
+  //    readerCapabilities
+  enum { canInput, readArr, readArrNB, readVec, readVecNB,
+	 READER_CAPABILITIES_SIZE };
+  //    writerCapabilities
+  enum { canOutput, writeArr, writeArrNB, writeVec, writeVecNB,
+	 WRITER_CAPABILITIES_SIZE };
   // Component.component
   enum { EVALUATED, UNEVALUATED };
   enum { inf1, mod };                   // EVALUATED labels
