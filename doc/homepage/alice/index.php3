@@ -55,7 +55,7 @@
     Alice builds on our experience with developing the
     <A href="http://www.mozart-oz.org/">Mozart</A> system.
     The current version of Alice is based on the Mozart virtual machine. Alice
-    programs can therefore <A href="interop.php3">interoperate</A> with Oz.
+    programs can therefore <A href="manual/interop.php3">interoperate</A> with Oz.
   </P>
 
   <BR>
