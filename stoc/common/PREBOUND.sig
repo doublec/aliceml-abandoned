@@ -35,7 +35,7 @@ signature PREBOUND =
     val typstamp_bool :		stamp
     val typstamp_int :		stamp
     val typstamp_word :		stamp
-    val typstamp_real :	stamp
+    val typstamp_real :		stamp
     val typstamp_string :	stamp
     val typstamp_char :		stamp
     val typstamp_list :		stamp

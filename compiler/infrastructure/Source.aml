@@ -6,11 +6,15 @@
 structure Source :> SOURCE =
   struct
 
-    type source = string
-    type pos    = int * int
-    type region = pos * pos
+    type source	= string
+    type pos	= int * int
+    type region	= pos * pos
+    type t	= source
 
     val nowhere = ((0,0),(0,0))
+
+    fun fromString s = s
+    fun toString s   = s
 
     fun over(reg1: region, reg2: region)	= (#1 reg1, #2 reg2)
     fun between(reg1: region, reg2: region)	= (#2 reg1, #1 reg2)

@@ -6,9 +6,13 @@
 signature SOURCE =
   sig
 
-    type source = string
-    type pos    = int * int
-    type region = pos * pos
+    type source
+    type pos	= int * int
+    type region	= pos * pos
+    type t	= source
+
+    val fromString:	string -> source
+    val toString:	source -> string
 
     val nowhere:	region
     val over:		region * region -> region

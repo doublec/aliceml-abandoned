@@ -36,7 +36,7 @@ structure ParsingPhase :> PARSING_PHASE =
 		if !yyread then
 		    ""
 		else
-		    ( yyread := true; source )
+		    ( yyread := true; Source.toString source )
 
 	    val lexer = Parser.makeLexer yyinput
 
