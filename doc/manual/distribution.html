@@ -112,18 +112,118 @@ the cloned argument to be transferred to <TT>f</TT>'s home site&nbsp;A,
 where <TT>f</TT> is applied and the result (or exception) cloned and
 transferred back to&nbsp;B.</P>
 
+<?php subsection("proxies-example", "Example") ?>
+
+<P>As an example, say you want to provide a simple compute service.  The
+compute server exports a function which clients can apply to computations
+that are then executed on the server.  We provide both server and client
+with the signature of the server:</P>
+
+<PRE class=code>
+signature COMPUTE_SERVER =
+    sig
+	val apply : ('a -> 'b) * 'a -> 'b
+    end</PRE>
+
+<P>The compute server makes the ticket under which it offers its service
+available through the local web server.  We assume the local server's
+document root is <TT>/docroot/</TT>.</P>
+
+<PRE class=code>
+structure ComputeServer : COMPUTE_SERVER =
+    struct
+	val apply = proxy (fn (f, x) => f x)
+    end
+val ticket = offer (pack ComputeServer : COMPUTE_SERVER)
+val _ = Pickle.save ("/docroot/computeServer",
+		     pack (val x = ticket) :
+			  (val x : string))</PRE>
+
+<P>Clients can use this service by acquiring the ticket from the well-known
+URL <TT>http://www/computeServer</TT>:</P>
+
+<PRE class=code>
+structure Ticket =
+    unpack Pickle.load "http://www/computeServer" : (val x : string)
+structure ComputeServer = unpack (take Ticket.x) : COMPUTE_SERVER
+fun fak (0|1) = 1
+  | fak n = n * fak (n - 1)
+val result = ComputeServer.apply (fak, 5)</PRE>
+
+<P>In the example, the function <TT>fak</TT> and the argument <TT>5</TT> are
+cloned to the compute server, where the application is evaluated.  The result
+<TT>120</TT> is cloned back to the client.</P>
+
 
 <?php section("remote", "remote execution") ?>
 
-<!--**
+<P>In the preceding sections, all parties in the distributed application were
+assumed to be already running.  Sometimes applications want to spawn new
+sites themselves.  To do this, Alice provides for <EM>remote execution</EM>.
+Given a host and a service, a new site is created on the remote host (using
+<TT>ssh</TT>) and the service is run there.  Both the spawning and the spawned
+site open communication ports to connect to each other.</P>
+
+<PRE class=code>
 Execute : fct (val host : string
 	       signature RESULT
-	       functor Start (ComponentManager : COMPONENT_MANAGER) : RESULT) -> RESULT
+	       functor Start (ComponentManager : COMPONENT_MANAGER) : RESULT) -> RESULT</PRE>
 
-Execute (val host = "amy"
-	 signature RESULT
-	 functor Start (ComponentManager : COMPONENT_MANAGER) : RESULT) : RESULT
--->
+<P>As an example, consider an application consisting of a manager and a number
+of identical worker sites, to parallelize a computation.  Say that the manager
+has access to a large database, which the workers need to execute their tasks.
+This database should reside on the manager and not be cloned to the workers
+because we expect only few lookups from each worker.  The code for the
+application is outlined below.  We first define a structure <TT>Database</TT>
+to represent the database, then repackage it as <TT>RemoteDatabase</TT> for use
+by workers, using a proxy to ensure that the database stays on the server only.
+Then follows the implementation of the workers:  The signature <TT>WORKER</TT>
+states that each worker provides for a function to execute a task.  The
+implementation sketch for <TT>MkWorker</TT>, which instantiates a worker,
+shows how this worker would access the database and use local resources of
+the worker's site to perform a task.  A proxy is used to ensure that the
+task is performed on the worker site (else the implementation of
+<TT>executeTask</TT> would be cloned back to the manager site, which would
+fail anyway because of references to <TT>TextIO.print</TT>).  Then five
+workers are spawned on different hosts, whereupon the manager can start
+to attend to its business.</P>
+
+<PRE class=code>
+signature DATABASE =
+    sig
+	val lookup : string -> string
+    end
+structure Database : DATABASE =
+    struct
+	fun lookup key = ...
+    end
+structure RemoteDatabase : DATABASE =
+    struct
+	val lookup = proxy Database.lookup
+    end
+signature WORKER =
+    sig
+	val executeTask : (unit -> 'a) -> 'a
+    end
+functor MkWorker(ComponentManager : COMPONENT_MANAGER) : WORKER =
+    struct
+	structure TextIO =
+	    ComponentManager.Link(val url = "x-alice:/lib/system/TextIO"
+				  signature S = TEXT_IO)
+	val executeTask = proxy
+	    (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
+    end
+val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
+val workers = List.map (fn host =>
+			let
+			    structure Worker =
+				Execute(val host = "fry"
+					signature RESULT = WORKER
+					functor Start = MkWorker)
+			in
+			    Worker.executeTask
+			end) hosts
+... (* use workers *) ...</PRE>
 
 
 <?php footing() ?>
