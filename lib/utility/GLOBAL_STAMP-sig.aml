@@ -24,5 +24,6 @@ sig
     val fromString :	string -> stamp
     val toString :	stamp  -> string
 
+    val equal :		stamp * stamp -> bool
     val hash :		stamp -> int
 end

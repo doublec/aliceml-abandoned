@@ -13,8 +13,8 @@
 signature HASH_KEY =
 sig
     type t
-    val equals :  t * t -> bool
-    val hash :    t -> int
+    val equal :  t * t -> bool
+    val hash :   t -> int
 end
 
 signature EQ_HASH_KEY =
@@ -26,6 +26,6 @@ end
 functor FromEqHashKey(EqHashKey: EQ_HASH_KEY) : HASH_KEY =
 struct
     type t	= EqHashKey.t
-    val equals	= op=
+    val equal	= op=
     val hash	= EqHashKey.hash
 end
