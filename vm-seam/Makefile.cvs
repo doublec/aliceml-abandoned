@@ -6,7 +6,7 @@
 # This is a temporary hack.
 
 cvs:
-	aclocal-seam
+	aclocal-seam -I .
 	autoconf
 	automake-seam --add-missing
 
