@@ -47,20 +47,20 @@ struct
     fun succ c where (c = maxChar)	= raise General.Chr
       | succ c				= chr(ord c + 1)
 
-    __primitive val Int_compare : int * int -> order     = "Int.compare"
-    __primitive val String_size : string -> int          = "CharVector.length"
-    __primitive val String_sub :  string * int -> char   = "CharVector.sub"
-    __primitive val String_str :  char -> string         = "String.str"
-    __primitive val String_implode : char list -> string = "CharVector.fromList"
+    __primitive val int_compare : int * int -> order     = "Int.compare"
+    __primitive val string_size : string -> int          = "CharVector.length"
+    __primitive val string_sub :  string * int -> char   = "CharVector.sub"
+    __primitive val string_str :  char -> string         = "String.str"
+    __primitive val string_implode : char list -> string = "CharVector.fromList"
 
     val equal            = op =
     val hash             = ord
 
-    fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
+    fun compare(c1,c2)   = int_compare(ord c1, ord c2)
 
-    fun contains  s c    = contains'(s, c, String_size s - 1)
+    fun contains  s c    = contains'(s, c, string_size s - 1)
     and contains'(s,c,i) = i >= 0 andalso
-			   (String_sub(s,i) = c orelse contains'(s, c, i-1))
+			   (string_sub(s,i) = c orelse contains'(s, c, i-1))
     fun notContains s c  = Bool.not(contains s c)
 
 
@@ -100,16 +100,16 @@ struct
       | toString #"\v"			= "\\v"
       | toString #"\f"			= "\\f"
       | toString #"\r"			= "\\r"
-      | toString c where (isPrint c)	= String_str c
-      | toString c where (ord c < 32)	= String_implode
+      | toString c where (isPrint c)	= string_str c
+      | toString c where (ord c < 32)	= string_implode
 					    [#"\\", #"^", chr(ord c + ord #"@")]
-      | toString c withval n=ord c end	= String_implode
+      | toString c withval n=ord c end	= string_implode
 					    [#"\\", chr(n div 100 + zero),
 						    chr(n div 10 mod 10 + zero),
 						    chr(n mod 10 + zero)]
 					  (*TODO: not working for WideChar*)
 
-    fun toOctAscii i			= String_implode
+    fun toOctAscii i			= string_implode
 					    [#"\\", chr(i div 64 + zero),
 						    chr(i div 8 mod 8 + zero),
 						    chr(i mod 8 + zero)]
@@ -126,7 +126,7 @@ struct
       | toCString #"\v"			= "\\v"
       | toCString #"\f"			= "\\f"
       | toCString #"\r"			= "\\r"
-      | toCString c where (isPrint c)	= String_str c
+      | toCString c where (isPrint c)	= string_str c
       | toCString c			= toOctAscii(ord c)
 
 
@@ -153,7 +153,7 @@ struct
 	if Bool.not(isHexDigit c1 andalso isHexDigit c2 andalso
 		    isHexDigit c3 andalso isHexDigit c4) then NONE else
 	SOME(chr(4096*value c1 + 256*value c2 + 16*value c3 + value c4), src4)
-	handle Chr => NONE
+	handle General.Chr => NONE
 
     fun scanControl getc src =
 	case getc src
@@ -202,7 +202,7 @@ struct
       | scanCAscii'' src i k = SOME(chr i, src)
 
     fun scanCUnicode getc src = scanCUnicode' getc src 0 0
-				handle Overflow => NONE
+				handle General.Overflow => NONE
     and scanCUnicode' getc src i k =
 	case getc src
 	  of SOME(c, src') where (isHexDigit c) =>
