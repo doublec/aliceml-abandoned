@@ -27,7 +27,7 @@ define
    end
 
    fun {FindTag Tags Label I}
-      case Tags of 'ALPHA'(S)|Rest andthen {String.toAtom S} == Label then I
+      case Tags of 'ALPHA'(S)|_ andthen {String.toAtom S} == Label then I
       [] _|Rest then {FindTag Rest Label I + 1}
       end
    end
