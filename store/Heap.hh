@@ -51,11 +51,11 @@ public:
   void Enlarge();
   void Shrink();
   u_int GetExactSize();
-  HeapChunk *GetChain()                    { return chain; }
-  u_int GetSize()                          { return size; }
-  u_int GetLimit()                         { return limit; }
-  void SetLimit(u_int l)                   { limit = l; }
-  void *operator new(size_t size, void *p) { return p; }
+  HeapChunk *GetChain()               { return chain; }
+  u_int GetSize()                     { return size; }
+  u_int GetLimit()                    { return limit; }
+  void SetLimit(u_int l)              { limit = l; }
+  void *operator new(size_t, void *p) { return p; }
 };
 
 #endif
