@@ -75,6 +75,8 @@ programming language (SML), as defined in</P>
 
   <LI> <A href="distribution.php3">Distributed programming:</A>
   <UL>
+    <LI> <A href="distribution.php3#tickets">tickets</A> </LI>
+    <LI> <A href="distribution.php3#proxies">proxies</A> </LI>
   </UL>
   </LI>
 
@@ -613,6 +615,244 @@ application.</P>
          &lt;<TT>=</TT> <I>sigexp</I>&gt;
          &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
     <TD> <A href="modules.php3#sigmembers">signature description</A> (<I>n</I>&ge;0) </TD>
+  </TR>
+-->
+</TABLE>
+
+
+<?php subsection("syntax-components", "Components") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>component</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>ann</I> &lt;<I>program</I>&gt; </TD>
+    <TD> <A href="components.php3">component</A> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>ann</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>import</TT> <I>imp</I> <TT>from</TT> <I>string</I> </TD>
+    <TD> <A href="components.php3">import announcement</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD>  </TD>
+    <TD> empty </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>ann</I> &lt;<TT>;</TT>&gt; <I>ann</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>imp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>val</TT> <I>valitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>type</TT> <I>typitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>datatype</TT> <I>datitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exception</TT> <I>exitem</I> </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>structure</TT> <I>stritem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>functor</TT> <I>funitem</I> </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>sigitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>infix</TT> &lt;<I>d</I>&gt; <I>vid</I><SUB>1</SUB>
+                                     ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>infixr</TT> &lt;<I>d</I>&gt; <I>vid</I><SUB>1</SUB>
+                                      ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>nonfix</TT> <I>vid</I><SUB>1</SUB>
+                     ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD>  </TD>
+    <TD> empty </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>imp</I> &lt;<TT>;</TT>&gt; <I>imp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>valitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         &lt;<TT>and</TT> <I>valitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>:</TT> <I>ty</I>
+         &lt;<TT>and</TT> <I>valitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>typitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>typitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I>
+         &lt;<TT>and</TT> <I>typitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>datitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> <I>conitem</I>
+         &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>conitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         &lt;<TT>|</TT> <I>conitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>extitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> 
+         &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>econitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+         &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+	 <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+         &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+-->
+  <TR></TR>
+  <TR>
+    <TD> <I>exitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+         &lt;<TT>and</TT> <I>exitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>of</TT> <I>ty</I>
+         &lt;<TT>and</TT> <I>exitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>stritem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> &lt;<TT>and</TT> <I>stritem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>stritem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>funitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+	 <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
+    <TD> (<I>n</I>&ge;1) (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
+    <TD> (<I>n</I>&ge;1) </TD>
   </TR>
 -->
 </TABLE>

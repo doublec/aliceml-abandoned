@@ -19,7 +19,7 @@ INSTALLFILES_MANUAL_0 = \
 	style.css macros.php3 menu.php3 bg.gif logo-small.gif logo-large.gif \
 	index.php3 features.php3 \
 	language.php3 futures.php3 types.php3 modules.php3 sugar.php3 \
-	threads.php3 components.php3 \
+	threads.php3 components.php3 distribution.php3 \
 	packages.php3 pickling.php3 constraints.php3 gtk.php3 \
 	incompatibilities.php3 usage.php3 \
 	explorer.php3 interop.php3 examples.php3 tour.php3 \
