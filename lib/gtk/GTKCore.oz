@@ -123,7 +123,7 @@ define
       end
    in
       fun {Exit _}
-	 {Native.exit 0}
+	 {Native.exit}
 	 {Dispatcher exit}
 	 unit
       end

@@ -23,7 +23,7 @@ local
     fun Hello () = print "Hello, World!"
     fun DeleteEvent () = print "Delete Event occurred"
     fun Destroy () = print "Destroy Event occurred"
-    val Window = GTK.windowNew 0
+    val Window = GTK.windowNew GTK.WINDOW_TOPLEVEL
     val DestroyId = GTK.signalConnect(Window, "destroy", Destroy)
     val Button = GTK.buttonNewWithLabel "Hello, World!"
     val ClickedId = GTK.signalConnect(Button, "clicked", Hello)

@@ -38,7 +38,7 @@ local
 
     fun runDemo demo =
 	let
-	    val Window  = GTK.windowNew 0
+	    val Window  = GTK.windowNew GTK.WINDOW_TOPLEVEL
 	    val Box1    = GTK.vboxNew(false, 0)
 	    val QuitBox = GTK.hboxNew(false, 0)
 	    val Button  = GTK.buttonNewWithLabel "Quit"

@@ -20,12 +20,15 @@ structure Collect : COLLECT =
     struct
 	open Ast
 	open Tables
+	open Bindings
 
 	datatype CType =
 	    POINTER  of CType
 	  | VALUE    of string
 	  | FUNCARGS of CType * (ARGVAL list)
 	  | FUNCTION of string * CType
+	  | CONSTANT of string * string
+	  | ENUM     of CType list
 	  | IGNORED
 	and ARGVAL = ARG of CType * int
 
@@ -66,8 +69,26 @@ structure Collect : COLLECT =
 	and transArgs (nil, tab, i)   = nil
 	  | transArgs (a::ar, tab, i) = (ARG(transform(a, tab), i))::transArgs(ar, tab, (i + 1))
 
-	fun collectDecl (TypeDecl(_), tab)        = IGNORED
-	  | collectDecl (VarDecl(var, expr), tab) =
+	fun collectEnumEntry({name=s, kind=ENUMmem(e), ...} : Ast.member, v) =
+	    CONSTANT(Symbol.name s, LargeInt.toString v)
+	  | collectEnumEntry(_, v)                                           = IGNORED
+
+	fun collectEnumValues(nil, t)        = nil
+	  | collectEnumValues((m, v)::xr, t) = collectEnumEntry(m, v)::collectEnumValues(xr, t)
+
+	fun collectType(i, tab) =
+	    (case Tidtab.find(tab, i) of
+		 SOME({ntype=SOME(Enum(_, vl)), ...} : tidBinding) =>
+		     let
+			 val es  = collectEnumValues(vl, tab)
+			 val fes = List.filter (fn IGNORED => false | _ => true) es
+		     in
+			 ENUM(fes)
+		     end
+	       | _                                                 => IGNORED)
+
+	fun collectDecl(TypeDecl({tid=t, ...}), tab) = collectType(t, tab)
+	  | collectDecl(VarDecl(var, expr), tab)     =
 	    let
 		val transRes = transform ((#ctype var), tab)
 	    in
@@ -92,14 +113,19 @@ structure Collect : COLLECT =
 				c::cr => (Char.toLower c)::cr
 			      | nil   => nil)
 
-	fun hasPrefix (p, FUNCTION(s, t)) =
+	fun checkPrefix(p, s) =
 	    (case String.tokens (fn #"_" => true | _ => false) s of
 		 s::_ => (case String.compare(p, s) of
 			      EQUAL => true
 			    | _     => false)
 	       | _    => false)
-	  | hasPrefix (p, _)              = false
 		 
+	fun hasPrefix(p, FUNCTION(s, _)) = checkPrefix(p, s)
+	  | hasPrefix(p, ENUM(cs))       = (case cs of
+						CONSTANT(s,_)::_ => checkPrefix(p, s)
+					      | _                => false)
+	  | hasPrefix(p, _)              = false
+
 	fun cNameToOzName(f, s) =
 	    let
 		val tokens = String.tokens (fn #"_" => true | _ => false) s
@@ -125,18 +151,37 @@ structure Collect : COLLECT =
 	  | glbFilter(FUNCTION("gtk_main_quit", _))              = false
 	  | glbFilter _                                          = true
 
+	fun createName (nil)    = ""
+	  | createName (s::nil) = s
+	  | createName (s::sr)  = s ^ "_" ^ createName sr
+
+	fun transConstName(CONSTANT(s, v)) =
+	    (case String.tokens (fn #"_" => true | _ => false) s of
+		 _::sr => CONSTANT(createName sr, v)
+	       |  nil  => CONSTANT(s, v))
+	  | transConstName v               = v
+
+
+	fun transEnumName (ENUM(cs)) = ENUM(map transConstName cs)
+	  | transEnumName v          = v
+
 	fun collect file =
 	    let
 		val tree  = ParseToAst.fileToAst file
 		val ast   = #ast tree
 		val tab   = #tidtab tree
-		val filFn  = fn IGNORED => false | VALUE(_) => false | _ => true
-		val funcs = List.filter filFn (collect' (ast, tab))
+		val defs  = collect'(ast, tab)
+		val cnsts = List.filter (fn (ENUM(_)) => true | _ => false) defs
+		val funcs = List.filter (fn (FUNCTION(_, _)) => true | _ => false) defs
 		val gtkfs = List.filter glbFilter (List.filter (fn x => hasPrefix("gtk", x)) funcs)
+		val gtkcs = List.filter (fn x => hasPrefix("GTK", x)) cnsts
 		val gdkfs = List.filter (fn x => hasPrefix("gdk", x)) funcs
+		val gdkcs = List.filter (fn x => hasPrefix("GDK", x)) cnsts
 	    in
 		(map (fn x => transName((fn "gtk" => false | _ => true), x)) gtkfs,
-		 map (fn x => transName((fn "gdk" => false | _ => true), x)) gdkfs)
+		 map transEnumName gtkcs,
+		 map (fn x => transName((fn "gdk" => false | _ => true), x)) gdkfs,
+		 map transEnumName gdkcs)
 	    end
 
 	val ptrLs          = ["char", "unsigned char",
@@ -231,13 +276,27 @@ structure Collect : COLLECT =
 	     ps (returnType rt);
 	     ps "\n")
 	    
+	fun constChange "2BUTTON_PRESS" = "TWO_BUTTON_PRESS"
+	  | constChange "3BUTTON_PRESS" = "THREE_BUTTON_PRESS"
+	  | constChange c               = c
+
+	fun emitConstSignatures(ps, CONSTANT(s, _)::cr) =
+	    (ps("                val " ^ constChange(s) ^ " : int\n"); emitConstSignatures(ps, cr))
+	  | emitConstSignatures(ps, _)                  = ()
+
+	fun emitConstValues(ps, CONSTANT(s, v)::cr) =
+	    (ps("         '" ^ constChange(s) ^ "' : " ^ v ^ "\n"); emitConstValues(ps, cr))
+	  | emitConstValues(ps, _)                  = ()
+	    
 	fun emitWrapperInterface(ps, is, sis, FUNCTION(s, FUNCARGS(rt, args))) =
 	    (emitHeader(ps, s, args);
 	     emitSignature(sis, s, rt, args);
-	     is ("         " ^ (firstLower s) ^ " : " ^ s ^ "\n");
+	     is("         " ^ (firstLower s) ^ " : " ^ s ^ "\n");
 	     emitCore(ps, s, rt, args);
 	     ps "end\n")
-	  | emitWrapperInterface (_, _, _, _)                                  = ()
+	  | emitWrapperInterface(_, is, sis, ENUM(cs))                        =
+	     (emitConstValues(is, cs); emitConstSignatures(sis, cs))
+	  | emitWrapperInterface(_, _, _, _)                                   = ()
 	    
 	fun writeText(ps, nil)   = ()
 	  | writeText(ps, s::sr) = (ps s; writeText(ps, sr))
@@ -345,18 +404,19 @@ structure Collect : COLLECT =
 
 	fun alicegtk inFile =
 	    let
-		val (gtks, gdks) = collect inFile
-		val ws           = ref (TextIO.openOut wrpGTKFile)
-		val is           = ref (TextIO.openOut expGTKFile)
-		val ss           = ref (TextIO.openOut sigGTKFile)
-		val pws          = fn s => TextIO.output(!ws, s)
-		val pis          = fn s => TextIO.output(!is, s)
-		val sis          = fn s => TextIO.output(!ss, s)
+		val (gtks, gtkcs, gdks, gdkcs) = collect inFile
+		val ws                         = ref (TextIO.openOut wrpGTKFile)
+		val is                         = ref (TextIO.openOut expGTKFile)
+		val ss                         = ref (TextIO.openOut sigGTKFile)
+		val pws                        = fn s => TextIO.output(!ws, s)
+		val pis                        = fn s => TextIO.output(!is, s)
+		val sis                        = fn s => TextIO.output(!ss, s)
 	    in
 		(writeText(pws, wrpGTKPrefix);
 		 writeText(pis, expGTKPrefix);
 		 writeText(sis, sigGTKPrefix);
-		 List.map (fn x => emitWrapperInterface(pws, pis, sis, x)) gtks;
+		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtks;
+		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtkcs;
 		 writeText(pis, expGTKEnd); writeText(sis, sigGTKEnd);
 		 TextIO.closeOut (!ws); TextIO.closeOut (!is); TextIO.closeOut (!ss);
 		 ws := (TextIO.openOut wrpGDKFile);
@@ -365,7 +425,8 @@ structure Collect : COLLECT =
 		 writeText(pws, wrpGDKPrefix);
 		 writeText(pis, expGDKPrefix);
 		 writeText(sis, sigGDKPrefix);
-		 List.map (fn x => emitWrapperInterface(pws, pis, sis, x)) gdks;
+		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdks;
+		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdkcs;
 		 writeText(pis, expGDKEnd); writeText(sis, sigGDKEnd);
 		 TextIO.closeOut (!ws); TextIO.closeOut (!is); TextIO.closeOut (!ss))
 	    end
