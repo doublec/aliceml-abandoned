@@ -10,13 +10,10 @@ Bugs:
 * propagate output width on init and after resize
 * pane resize upon opening first tab shrinks output pane to 0 size
 * gui hangs when files are given on command line
-* undo shortcut not shown in menu
 * modified files dialogue is too ugly
 
 Missing Features:
 
-* signal shortcuts (Ctrl-B, Ctrl-I?)
-* shortcut for compile (Ctrl-K?)
 * shortcut for jump-to-error (Ctrl-E?)
 * cumulative undo
 * redo

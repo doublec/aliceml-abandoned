@@ -15,7 +15,6 @@ import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gui from "Gui"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
-import structure Key from "x-alice:/lib/gtk/Key"
 import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
@@ -23,7 +22,7 @@ import structure Config from "Config"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
-(*import structure Inspector from "x-alice:/lib/tools/Inspector"*)
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure BufferHighlight from "BufferHighlight"
 
 structure GuiMain =
@@ -200,7 +199,7 @@ structure GuiMain =
             let
                 val buf = Gtk.textViewGetBuffer view
                 val (startiter, enditer) = paragraphIters(buf)
-                val startline = 1 + Gtk.textIterGetLine startiter
+                val startline = Gtk.textIterGetLine startiter
                 val str = addNewlines(startline,
                                       Core.utf8ToLatin1
                                           (Gtk.textBufferGetText(buf, startiter, enditer, false)))
@@ -269,7 +268,27 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id => SearchDialog.search id
 
-        fun changeFocus view _ = curtextview := view
+	fun bufferMenus activate =
+	    app (fn w => Gtk.widgetSetSensitive(w,activate))
+	    [Gui.save1,Gui.save_as1,
+	     Gui.undo,Gui.find,Gui.find_and_replace,
+	     Gui.syntax_colouring,Gui.feed1]
+
+        fun changeFocus view _ =
+	    let
+		val _ = curtextview := view
+		val _ = case view of
+		    BUFFER _ => bufferMenus true
+		  | _ => bufferMenus false
+		val _ = case getCurrentPage() of
+		    NONE => Gtk.widgetSetSensitive(Gui.compilefile,false)
+		  | SOME id =>
+			Option.app (fn _ => Gtk.widgetSetSensitive(Gui.compilefile,true))
+			(Buffer.getFileName id)
+					  
+	    in ()
+	    end
+
         fun markSet (buf,_) =
             let
                 val cursor = Gtk.textBufferGetInsert buf
@@ -281,12 +300,18 @@ structure GuiMain =
                              Gtk.textIterGetLineOffset iter))
             end
 
-        fun switchPage(cur,view) =
-            (currentPage := cur;
-             case !curtextview of
-                 BUFFER _ => (curtextview := BUFFER view;
-                              Option.app SearchDialog.reconnect (getCurrentPage()))
-               | _ => ())
+        fun switchPage notebook =
+            let
+                val curPage = Gtk.notebookGetCurrentPage notebook
+                val scrWin = Gtk.notebookGetNthPage(notebook, curPage)
+                val textView = Gtk.binGetChild scrWin
+            in
+		currentPage := curPage;
+		case !curtextview of
+		    BUFFER _ => (curtextview := BUFFER textView;
+				 Option.app SearchDialog.reconnect (getCurrentPage()))
+		  | _ => ()                
+            end
 
         fun checkNotebookSize() =
             (if Gtk.notebookGetNPages Gui.notebook1 > 0
@@ -303,13 +328,14 @@ structure GuiMain =
                                                     file=file,
                                                     loadFile=false}
             in
-                curtextview := BUFFER view;
                 Gtk.widgetGrabFocus (view);
                 Gtk.signalConnect(buf, "mark-set", markSet);
                 Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
                 markSet (buf, nil);
                 addPage(!numberOfPages);
                 numberOfPages := (!numberOfPages) + 1;
+		switchPage Gui.notebook1;
+                changeFocus (BUFFER view) ();
                 checkNotebookSize()
             end
         fun new() = new' NONE
@@ -321,13 +347,14 @@ structure GuiMain =
                                                         file=SOME f,
                                                         loadFile=true}
                 in
-                    curtextview := BUFFER view;
                     Gtk.widgetGrabFocus (view);
                     Gtk.signalConnect(buf, "mark-set", markSet);
                     Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
                     markSet (buf, nil);
                     addPage(!numberOfPages);
                     numberOfPages := (!numberOfPages) + 1;
+		    switchPage Gui.notebook1;
+		    changeFocus (BUFFER view) ();
                     checkNotebookSize()
                 end
 
@@ -364,11 +391,11 @@ structure GuiMain =
                       reallyClose (!currentPage);
              checkNotebookSize())
 
-        fun breakEval() =
+        fun interruptEval() =
             case (!evalSignal) of
                 NONE => ()
               | SOME s => Promise.fulfill(s,Evaluator.INTERRUPT)
-        fun stopEval() =
+        fun backgroundEval() =
             case (!evalSignal) of
                 NONE => ()
               | SOME s => Promise.fulfill(s,Evaluator.STOP)
@@ -377,7 +404,15 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
-                val buf = Buffer.getBuffer id
+                val buf =
+		    case file of
+			NONE => SOME (Buffer.getBuffer id)
+		      | SOME f => Buffer.getBufferByName f
+	    in
+		case buf of
+		    NONE => ()
+		  | SOME buf =>
+	    let
                 val lineCount = Gtk.textBufferGetLineCount buf
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf, startiter)
@@ -397,12 +432,20 @@ structure GuiMain =
                      else ())
                 else ()
             end
+	    end
 
-        fun findErrorStart iter tag =
+        fun findErrorStart' (iter, tag) =
             if Gtk.textIterHasTag(iter, tag) then
-                (Gtk.textIterBackwardChar iter; findErrorStart iter tag)
+                (Gtk.textIterBackwardChar iter; findErrorStart' (iter, tag))
             else
-                Gtk.textIterForwardChar iter
+                ignore (Gtk.textIterForwardChar iter)
+		
+        fun findErrorStart (iter, tag) =
+            if Gtk.textIterHasTag(iter, tag) then
+		findErrorStart'(iter,tag)
+            else
+                if Gtk.textIterBackwardChar iter then findErrorStart(iter, tag)
+		else ()
 
         fun parseErrorCoords s =
             let
@@ -447,7 +490,7 @@ structure GuiMain =
                                        onErrorLine);
                 if onErrorLine then
                     let
-                        val _ = findErrorStart iter errorTag
+                        val _ = findErrorStart (iter, errorTag)
                         val iter2 = Gtk.textIterCopy iter
                         val _ = Gtk.textIterForwardLine iter2
                         val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
@@ -468,6 +511,25 @@ structure GuiMain =
             end
           | populatePopup _ = print "Gtk is crazy\n"
 
+	fun jumpToLastError () =
+	    let
+		val buf = Gtk.textViewGetBuffer Gui.compilerout
+		val iter = Gtk.textIterNew();
+		val _ = Gtk.textBufferGetEndIter(buf, iter)
+                val errorTag =
+                    Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
+                                           "error")
+		val _ = findErrorStart (iter, errorTag)
+		val iter2 = Gtk.textIterCopy iter
+		val _ = Gtk.textIterForwardLine iter2
+		val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+		val coords = parseErrorCoords str
+	    in
+		case coords of
+		    NONE => ()
+		  | SOME coords => jumpToError coords ()
+	    end
+
         fun init () =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
              Gtk.signalConnect(Gui.compilerout, "focus-in-event",
@@ -475,16 +537,6 @@ structure GuiMain =
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
 	     OutputWriters.makeWriters (eval false);
-             Gtk.windowAddAccelGroup(Gui.mainwidget,
-                                     Gui.Helpers.accelGroup);
-             Gtk.widgetAddAccelerator(Gui.undo, "activate",
-                                      Gui.Helpers.accelGroup,
-                                      Key.keyvalToInt Key.K_Z,
-                                      Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED);
-             Gtk.widgetAddAccelerator(Gui.feedparagraph, "activate",
-                                      Gui.Helpers.accelGroup,
-                                      Key.keyvalToInt Key.K_Return,
-                                      Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED);
              Gtk.widgetGrabFocus (Gui.compilerout)
              )                      
 
