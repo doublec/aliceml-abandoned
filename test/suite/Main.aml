@@ -25,6 +25,8 @@ import structure TestIEEEReal    from "lib/fundamental/IEEEReal"
 import structure TestChar        from "lib/fundamental/Char"
 import structure TestReal        from "lib/fundamental/Real"
 import structure TestWord        from "lib/fundamental/Word"
+import structure TestWord8       from "lib/fundamental/Word8"
+import structure TestWord32      from "lib/fundamental/Word32"
 import structure TestInteger     from "lib/fundamental/Integer"
 import structure TestIntInf      from "lib/fundamental/IntInf"
 import structure TestByte        from "lib/fundamental/Byte"
@@ -65,6 +67,8 @@ fun randomizeTests () =
 			TestTime.randomize,
 			TestReal.randomize,
 			TestTimer.randomize,
+			TestWord8.randomize,
+			TestWord32.randomize,
 			TestArray2.randomize,
 			TestOSPath.randomize,
 			TestRef.randomize,
@@ -83,6 +87,8 @@ val allTests = [TestRegressions.suite,
 		TestBool.suite,
 		TestGeneral.suite,
 		TestWord.suite,
+		TestWord8.suite,
+		TestWord32.suite,
 		TestReal.suite,
 		TestOption.suite, 
 		TestList.suite,
