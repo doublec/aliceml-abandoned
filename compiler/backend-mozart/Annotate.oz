@@ -32,7 +32,8 @@
 %%              |  <foreignPointer>
 %% <fast> ::= unit
 %%         |  <arity>#<reg>#<immediate>
-%% <arity> ::= [<feature>]
+%% <arity> ::= <int>
+%%          |  [<feature>]
 %%
 
 functor
@@ -41,6 +42,7 @@ import
    at 'x-oz://boot/CompilerSupport'
    Info(setValRep: SetValRep)
    Intermediate(getPrintName infoOf litToValue)
+   Predefined(env)
 export
    ValRepToValue
    LongIdValRep
@@ -55,11 +57,22 @@ define
    %%                   regStamps: [<dictionary>(<reg> -> [<stamp>])])
    %%
 
-   fun {NewState}
-      state(isToplevel: {NewCell true}
-	    counter: {NewCell 0}
-	    env: {NewCell [{NewDictionary}]}
-	    regStamps: {NewCell [{NewDictionary}]})
+   fun {NewState} State in
+      State = state(isToplevel: {NewCell true}
+		    counter: {NewCell 0}
+		    env: {NewCell [{NewDictionary}]}
+		    regStamps: {NewCell [{NewDictionary}]})
+      {Record.forAllInd Predefined.env
+       proc {$ Stamp X} V in
+	  V = case X of fn(Slow Fast) then
+		 fn(Slow case Fast of unit then unit
+			 else ({Procedure.arity Fast} - 1)#{NewReg State}#Fast
+			 end)
+	      else X
+	      end
+	  {EnterValRep State Stamp {NewReg State}#V}
+       end}
+      State
    end
 
    fun {IsToplevel State}
