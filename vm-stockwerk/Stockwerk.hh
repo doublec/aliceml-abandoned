@@ -16,7 +16,10 @@
 #define STOCKWERK_FOREIGN
 
 #include "store/Store.hh"
-#include "adt/HashTable.hh"
+#include "store/Map.hh"
+#include "store/WeakMap.hh"
+#include "adt/IntMap.hh"
+#include "adt/ChunkMap.hh"
 #include "adt/Queue.hh"
 #include "adt/Stack.hh"
 #include "generic/FinalizationSet.hh"
