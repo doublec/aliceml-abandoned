@@ -6,6 +6,7 @@ libsystem_a_SOURCES = \
 	UnsafeConfig.cc \
 	UnsafeIODesc.cc \
 	UnsafeOS.cc \
+	UnsafeUnix.cc \
 	UnsafeCommandLine.cc \
 	UnsafeComponent.cc \
 	UnsafeDebug.cc \

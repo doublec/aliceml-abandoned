@@ -19,7 +19,7 @@
 extern word UnsafeConfig();
 extern word UnsafeIODesc();
 extern word UnsafeOS();
-//extern word UnsafeUnix(); //--** missing
+extern word UnsafeUnix();
 extern word UnsafeCommandLine();
 extern word UnsafeComponent();
 extern word UnsafeDebug();
@@ -40,7 +40,7 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeConfig",       UnsafeConfig},
   {"lib/system/UnsafeIODesc",       UnsafeIODesc},
   {"lib/system/UnsafeOS",           UnsafeOS},
-//{"lib/system/UnsafeUnix",         UnsafeUnix}, //--** missing
+  {"lib/system/UnsafeUnix",         UnsafeUnix},
   {"lib/system/UnsafeCommandLine",  UnsafeCommandLine},
   {"lib/system/UnsafeComponent",    UnsafeComponent},
   {"lib/system/UnsafeDebug",        UnsafeDebug},
