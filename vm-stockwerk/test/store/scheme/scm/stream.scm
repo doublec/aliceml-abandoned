@@ -7,7 +7,7 @@
   (lambda (s n)
     (if (= n 1)
 	(car s)
-	(snth ((cdr s)) (- n 1)))))
+	(tail snth ((cdr s)) (- n 1)))))
 
 (define smap
   (lambda (f s)
