@@ -1,0 +1,54 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label from "../../lib/rtt/Label"
+
+signature TYPE_TRANSLATION =
+sig
+    val modlab_type :	Label.t
+    val typlab_sort :	Label.t
+    val typlab_kind :	Label.t
+    val typlab_con :	Label.t
+    val typlab_typ :	Label.t
+    val typlab_var :	Label.t
+    val typlab_row :	Label.t
+
+    val lab_open :	Label.t
+    val lab_closed :	Label.t
+
+    val lab_star :	Label.t
+    val lab_arrow :	Label.t
+
+    val lab_unknown :	Label.t
+    val lab_inArrow :	Label.t
+    val lab_inTuple :	Label.t
+    val lab_inProd :	Label.t
+    val lab_inSum :	Label.t
+    val lab_inVar :	Label.t
+    val lab_inCon :	Label.t
+    val lab_inAll :	Label.t
+    val lab_inExist :	Label.t
+    val lab_inApply :	Label.t
+    val lab_inLambda :	Label.t
+    val lab_inMu :	Label.t
+
+    val lab_var :	Label.t
+    val lab_kind :	Label.t
+
+    val lab_unknownRow:	Label.t
+    val lab_emptyRow :	Label.t
+    val lab_extendRow :	Label.t
+
+    val lab_fill :	Label.t
+
+    val lab_equals :	Label.t  
+end
