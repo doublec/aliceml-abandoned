@@ -1,0 +1,22 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Vector2 : REGRESSION =
+struct
+
+val name = "vector2"
+
+val ok = SOME "vector2.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+open Vector
+val v = tabulate(13, fn i => fn j => i + j)
+val _ = concatResult(Int.toString(sub(v, 5) 1))
+val _ = concatResult "\n"
+
+val result = !result
+
+end

@@ -1,0 +1,39 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Vector4 : REGRESSION =
+struct
+
+val name = "vector4"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+open Vector
+
+fun asser(msg,b) =
+   (if b then ()
+    else concatResult("assertion failed: " ^ msg ^ "\n"))
+
+val v1 = fromList[1,2,3]
+val v2 = fromList[1,2,3]
+
+val _ = asser("vector equality",
+	       v1 = v2
+	       andalso fromList[v1, v2] = fromList[v2, v1]
+	       andalso v1 <> fromList[1,2]
+	       andalso v1 <> fromList[1,2,4])
+
+open Array
+
+val a1 = fromList[1,2,3]
+val a2 = fromList[1,2,3]
+
+val _ = asser("array equality", a1 <> a2)
+
+val result = !result
+
+end

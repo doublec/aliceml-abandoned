@@ -1,0 +1,21 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Vector3 : REGRESSION =
+struct
+
+val name = "vector3"
+
+val ok = SOME "vector3.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+val v = Vector.tabulate (1000, fn i => ())
+val r = ref 0
+val _ = r := Vector.length v
+val _ = concatResult (concat [Int.toString (!r), "\n"])
+
+val result = !result
+
+end

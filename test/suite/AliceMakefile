@@ -25,7 +25,7 @@ endif
 export ALICERUN
 
 ifndef ALICEC
-  ALICEC := alicec --no-warn-unused-imports
+  ALICEC := alicec --no-warn-conventions
 endif
 export ALICEC
 

@@ -1,0 +1,401 @@
+import signature TESTSUITE from "../../../src/TESTSUITE-sig"
+import structure Test      from "../../../src/Test"
+
+import structure Array5    from "array5"
+import structure Array6    from "array6"
+import structure BigArray  from "big-array"
+import structure CharScan  from "char.scan"
+import structure CheckArrays from "check_arrays"
+import structure CmdLine   from "cmdline"
+import structure CommandLine from "command-line"
+import structure CommentEnd from "comment-end"
+import structure Constraint from "constraint"
+import structure Conv from "conv"
+import structure DeepFlatten from "deep-flatten"
+import structure DefaultOverloads from "default-overloads"
+import structure EqualityTypes from "equality-types"
+import structure Ex from "ex"
+import structure Exhaustive from "exhaustive"
+import structure Exn from "exn"
+import structure Fast from "fast"
+import structure Fft from "fft"
+import structure FlatArray2 from "flat-array.2"
+import structure FlatArray from "flat-array"
+import structure Format from "format"
+import structure FuhMishra from "FuhMishra"
+import structure Functor from "functor"
+import structure General from "general"
+import structure GrowRaise from "grow-raise"
+import structure Int from "int"
+import structure IntInf1 from "int-inf.1"
+import structure IntInf2 from "int-inf.2"
+import structure IntInf3 from "int-inf.3"
+import structure Jump from "jump"
+import structure KitDangle3 from "kitdangle3"
+import structure KitDangle from "kitdangle"
+import structure KitFib35 from "kitfib35"
+import structure KitKbjul9 from "kitkbjul9"
+import structure KitLoop2 from "kitloop2"
+import structure KitQsort from "kitqsort"
+import structure KitReynolds2 from "kitreynolds2"
+import structure KitReynolds3 from "kitreynolds3"
+import structure KitSimple from "kitsimple"
+import structure KitTmergesort from "kittmergesort"
+import structure Kkb36c from "kkb36c"
+import structure KkbEq from "kkb_eq"
+import structure KnownCase0 from "known-case0"
+import structure KnownCase1 from "known-case1"
+import structure LambdaListRef from "lambda-list-ref"
+import structure Layout from "layout"
+import structure Lex from "lex"
+import structure Lib from "lib"
+import structure ListPair from "listpair"
+import structure LocalRef from "local-ref"
+import structure NestedLoop from "nested-loop"
+import structure NonExhaustive from "nonexhaustive"
+import structure Opaque2 from "opaque2"
+import structure Pat from "pat"
+import structure PolyEqual2 from "poly-equal.2"
+import structure PolyEqual from "poly-equal"
+import structure PolymorphicRecursion from "polymorphic-recursion"
+import structure PrintSelf from "print-self"
+import structure Pseudokit from "pseudokit"
+import structure RefFlatten2 from "ref-flatten.2"
+import structure RefFlatten from "ref-flatten"
+import structure Ring from "ring"
+import structure Semicolon from "semicolon"
+import structure SmithNormalForm from "smith-normal-form"
+import structure String2 from "string2"
+import structure StringCvt from "stringcvt"
+import structure Tak from "tak"
+import structure Taut from "taut"
+import structure TestDyn1 from "testdyn1"
+import structure TestMatrix from "testmatrix"
+import structure StringT from "string"
+import structure StringFromString from "string.fromString"
+import structure Time2 from "time2"
+import structure Time3 from "time3"
+import structure Tststrcmp from "tststrcmp"
+import structure TypeCheck from "type-check"
+import structure Typespec from "typespec"
+import structure Unary2 from "unary.2"
+import structure Unary from "unary"
+import structure Undetermined2 from "undetermined2"
+import structure Undetermined from "undetermined"
+import structure UselessString from "useless-string"
+import structure Vector2 from "vector2"
+import structure Vector3 from "vector3"
+import structure Vector from "vector"
+import structure VectorLoop from "vector-loop"
+import structure WhereAnd from "where-and"
+import structure Word from "word"
+import structure Word8Vector from "word8vector"
+
+(*
+val xs = [("Word8Vector", "word8vector")]
+
+fun ti xs = List.app (fn (x, y) => print ("\nimport structure " ^ x ^
+					  " from \"" ^ y ^ "\"")) xs
+
+
+
+fun te xs = List.app (fn (x, _) => print ("\nfun test" ^ x ^ " () = test' " ^
+				     x ^ ".ok " ^ x ^ ".result\n")) xs
+*)
+
+structure TestRegressions : TESTSUITE =
+struct
+
+   fun randomize () = ()
+
+   val path = "lib/regression/results/"
+
+   fun test' NONE     r = Test.test (fn _ => r = "") ()
+     | test' (SOME f) r =
+        let
+	    val inStr = TextIO.openIn (path ^ f)
+	    val res = TextIO.inputAll inStr
+	    val  _  = TextIO.closeIn inStr
+	in
+	    Test.test (fn _ => r = res) ()
+	end
+
+   fun testArray5 () = test' Array5.ok Array5.result
+
+   fun testArray6 () = test' Array6.ok Array6.result
+
+   fun testBigArray () = test' BigArray.ok BigArray.result
+
+   fun testCharScan () = test' CharScan.ok CharScan.result
+			 
+   fun testCheckArrays () = test' CheckArrays.ok CheckArrays.result
+
+   fun testCmdLine () = test' CmdLine.ok CmdLine.result 
+
+   fun testCommandLine () = test' CommandLine.ok CommandLine.result
+
+   fun testCommentEnd () = test' CommentEnd.ok CommentEnd.result
+
+   fun testConstraint () = test' Constraint.ok Constraint.result
+
+   fun testConv () = test' Conv.ok Conv.result
+
+   fun testDeepFlatten () = test' DeepFlatten.ok DeepFlatten.result
+
+   fun testDefaultOverloads () = 
+                             test' DefaultOverloads.ok DefaultOverloads.result
+			     
+   fun testEqualityTypes () = test' EqualityTypes.ok EqualityTypes.result
+
+   fun testEx () = test' Ex.ok Ex.result
+
+   fun testExhaustive () = test' Exhaustive.ok Exhaustive.result
+
+   fun testExn () = test' Exn.ok Exn.result
+
+   fun testFast () = test' Fast.ok Fast.result
+
+   fun testFft () = test' Fft.ok Fft.result
+
+   fun testFlatArray2 () = test' FlatArray2.ok FlatArray2.result
+			   
+   fun testFlatArray () = test' FlatArray.ok FlatArray.result
+			  
+   fun testFormat () = test' Format.ok Format.result
+		       
+   fun testFuhMishra () = test' FuhMishra.ok FuhMishra.result
+			  
+   fun testFunctor () = test' Functor.ok Functor.result
+			
+   fun testGeneral () = test' General.ok General.result
+			
+   fun testGrowRaise () = test' GrowRaise.ok GrowRaise.result
+			  
+   fun testInt () = test' Int.ok Int.result
+		    
+   fun testIntInf1 () = test' IntInf1.ok IntInf1.result
+			
+   fun testIntInf2 () = test' IntInf2.ok IntInf2.result
+			
+   fun testIntInf3 () = test' IntInf3.ok IntInf3.result
+			
+   fun testJump () = test' Jump.ok Jump.result
+		     
+   fun testKitDangle3 () = test' KitDangle3.ok KitDangle3.result
+			   
+   fun testKitDangle () = test' KitDangle.ok KitDangle.result
+
+   fun testKitFib35 () = test' KitFib35.ok KitFib35.result
+
+   fun testKitKbjul9 () = test' KitKbjul9.ok KitKbjul9.result
+			  
+   fun testKitLoop2 () = test' KitLoop2.ok KitLoop2.result
+			 
+   fun testKitQsort () = test' KitQsort.ok KitQsort.result
+			 
+   fun testKitReynolds2 () = test' KitReynolds2.ok KitReynolds2.result
+			     
+   fun testKitReynolds3 () = test' KitReynolds3.ok KitReynolds3.result
+			     
+   fun testKitSimple () = test' KitSimple.ok KitSimple.result
+			  
+   fun testKitTmergesort () = test' KitTmergesort.ok KitTmergesort.result
+			      
+   fun testKkb36c () = test' Kkb36c.ok Kkb36c.result
+		       
+   fun testKkbEq () = test' KkbEq.ok KkbEq.result
+		      
+   fun testKnownCase0 () = test' KnownCase0.ok KnownCase0.result
+			   
+   fun testKnownCase1 () = test' KnownCase1.ok KnownCase1.result
+
+   fun testLambdaListRef () = test' LambdaListRef.ok LambdaListRef.result
+
+   fun testLayout () = test' Layout.ok Layout.result
+		       
+   fun testLex () = test' Lex.ok Lex.result
+		    
+   fun testLib () = test' Lib.ok Lib.result
+		    
+   fun testListPair () = test' ListPair.ok ListPair.result
+			 
+   fun testLocalRef () = test' LocalRef.ok LocalRef.result
+
+   fun testNestedLoop () = test' NestedLoop.ok NestedLoop.result
+			   
+   fun testNonExhaustive () = test' NonExhaustive.ok NonExhaustive.result
+			      
+   fun testOpaque2 () = test' Opaque2.ok Opaque2.result
+			
+   fun testPat () = test' Pat.ok Pat.result
+		    
+   fun testPolyEqual2 () = test' PolyEqual2.ok PolyEqual2.result
+			   
+   fun testPolyEqual () = test' PolyEqual.ok PolyEqual.result
+			  
+   fun testPolymorphicRecursion () = 
+       test' PolymorphicRecursion.ok PolymorphicRecursion.result
+					   
+   fun testPrintSelf () = test' PrintSelf.ok PrintSelf.result
+		       
+   fun testPseudokit () = test' Pseudokit.ok Pseudokit.result
+
+   fun testRefFlatten2 () = test' RefFlatten2.ok RefFlatten2.result
+
+   fun testRefFlatten () = test' RefFlatten.ok RefFlatten.result
+			   
+   fun testRing () = test' Ring.ok Ring.result
+		     
+   fun testSemicolon () = test' Semicolon.ok Semicolon.result
+			  
+   fun testSmithNormalForm () = test' SmithNormalForm.ok SmithNormalForm.result
+
+   fun testString2 () = test' String2.ok String2.result
+
+   fun testStringT () = test' StringT.ok StringT.result
+			
+   fun testStringCvt () = test' StringCvt.ok StringCvt.result
+			  
+   fun testTak () = test' Tak.ok Tak.result
+		    
+   fun testTaut () = test' Taut.ok Taut.result
+		     
+   fun testTestDyn1 () = test' TestDyn1.ok TestDyn1.result
+			 
+   fun testTestMatrix () = test' TestMatrix.ok TestMatrix.result
+
+   fun testStringFromString () = 
+       test' StringFromString.ok StringFromString.result
+       
+   fun testTime2 () = test' Time2.ok Time2.result
+       
+   fun testTime3 () = test' Time3.ok Time3.result
+       
+   fun testTststrcmp () = test' Tststrcmp.ok Tststrcmp.result
+       
+   fun testTypeCheck () = test' TypeCheck.ok TypeCheck.result
+       
+   fun testTypespec () = test' Typespec.ok Typespec.result
+       
+   fun testUnary2 () = test' Unary2.ok Unary2.result
+       
+   fun testUnary () = test' Unary.ok Unary.result
+       
+   fun testUndetermined2 () = test' Undetermined2.ok Undetermined2.result
+       
+   fun testUndetermined () = test' Undetermined.ok Undetermined.result
+       
+   fun testUselessString () = test' UselessString.ok UselessString.result
+       
+   fun testVector2 () = test' Vector2.ok Vector2.result
+       
+   fun testVector3 () = test' Vector3.ok Vector3.result
+       
+   fun testVector () = test' Vector.ok Vector.result
+       
+   fun testVectorLoop () = test' VectorLoop.ok VectorLoop.result
+       
+   fun testWhereAnd () = test' WhereAnd.ok WhereAnd.result
+       
+   fun testWord () = test' Word.ok Word.result
+       
+   fun testWord8Vector () = test' Word8Vector.ok Word8Vector.result
+(*
+
+fun ts xs = List.app (fn (x, _) => print ("\n(" ^ x ^ ".name, test" ^ x ^ "),")) xs
+*)
+
+   val suite = ("Regressions", [(Array5.name, testArray5),
+				(Array6.name, testArray6),
+				(BigArray.name, testBigArray),
+				(CharScan.name, testCharScan),
+				(CheckArrays.name, testCheckArrays),
+				(CmdLine.name, testCmdLine),
+				(CommandLine.name, testCommandLine),
+				(CommentEnd.name, testCommentEnd),
+				(Constraint.name, testConstraint),
+				(Conv.name, testConv),
+				(DeepFlatten.name, testDeepFlatten),
+				(DefaultOverloads.name, testDefaultOverloads),
+				(EqualityTypes.name, testEqualityTypes),
+				(Ex.name, testEx),
+				(Exhaustive.name, testExhaustive),
+				(Exn.name, testExn),
+				(Fast.name, testFast),
+	                        (Fft.name, testFft),
+				(FlatArray2.name, testFlatArray2),
+				(FlatArray.name, testFlatArray),
+				(Format.name, testFormat),
+				(FuhMishra.name, testFuhMishra),
+				(Functor.name, testFunctor),
+				(General.name, testGeneral),
+				(GrowRaise.name, testGrowRaise),
+				(Int.name, testInt),
+				(IntInf1.name, testIntInf1),
+				(IntInf2.name, testIntInf2),
+				(IntInf3.name, testIntInf3),
+				(Jump.name, testJump),
+				(KitDangle3.name, testKitDangle3),
+				(KitDangle.name, testKitDangle),
+				(KitFib35.name, testKitFib35),
+				(KitKbjul9.name, testKitKbjul9),
+				(KitLoop2.name, testKitLoop2),
+				(KitQsort.name, testKitQsort),
+				(KitReynolds2.name, testKitReynolds2),
+				(KitReynolds3.name, testKitReynolds3),
+				(KitSimple.name, testKitSimple),
+				(KitTmergesort.name, testKitTmergesort),
+				(Kkb36c.name, testKkb36c),
+				(KkbEq.name, testKkbEq),
+				(KnownCase0.name, testKnownCase0),
+				(KnownCase1.name, testKnownCase1),
+				(LambdaListRef.name, testLambdaListRef),
+				(Layout.name, testLayout),
+				(Lex.name, testLex),
+				(Lib.name, testLib),
+				(ListPair.name, testListPair),
+				(LocalRef.name, testLocalRef),
+				(NestedLoop.name, testNestedLoop),
+				(NonExhaustive.name, testNonExhaustive),
+				(Opaque2.name, testOpaque2),
+				(Pat.name, testPat),
+				(PolyEqual2.name, testPolyEqual2),
+				(PolyEqual.name, testPolyEqual),
+				(PolymorphicRecursion.name, 
+				 testPolymorphicRecursion),
+				(PrintSelf.name, testPrintSelf),
+				(Pseudokit.name, testPseudokit),
+				(RefFlatten2.name, testRefFlatten2),
+				(RefFlatten.name, testRefFlatten),
+				(Ring.name, testRing),
+				(Semicolon.name, testSemicolon),
+				(SmithNormalForm.name, testSmithNormalForm),
+				(String2.name, testString2),
+				(StringCvt.name, testStringCvt),
+				(Tak.name, testTak),
+				(Taut.name, testTaut),
+				(TestDyn1.name, testTestDyn1) ,
+				(TestMatrix.name, testTestMatrix),
+				(StringT.name, testStringT),
+			        (StringFromString.name, testStringFromString),
+				(Time2.name, testTime2),
+				(Time3.name, testTime3),
+				(Tststrcmp.name, testTststrcmp),
+				(TypeCheck.name, testTypeCheck),
+				(Typespec.name, testTypespec),
+				(Unary2.name, testUnary2),
+				(Unary.name, testUnary),
+				(Undetermined2.name, testUndetermined2),
+				(Undetermined.name, testUndetermined),
+				(UselessString.name, testUselessString),
+				(Vector2.name, testVector2),
+				(Vector3.name, testVector3),
+				(Vector.name, testVector),
+				(VectorLoop.name, testVectorLoop),
+				(WhereAnd.name, testWhereAnd),
+				(Word.name, testWord),
+				(Word8Vector.name, testWord8Vector)])
+
+end
+
+

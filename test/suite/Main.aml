@@ -10,27 +10,29 @@
  *   $Revision$
  *)
 
-import structure Report       from "x-alice:/lib/test/Report"
-import structure Test         from "x-alice:/lib/test/Test"
+import structure Report          from "x-alice:/lib/test/Report"
+(*
+import structure Test            from "x-alice:/lib/test/Test"
+*)
+import structure Time            from "x-alice:/lib/system/Time"
 
-import structure Time         from "x-alice:/lib/system/Time"
-
-import structure TestBool     from "lib/fundamental/Bool"
-import structure TestString   from "lib/fundamental/String"
-import structure TestGeneral  from "lib/fundamental/General"
-import structure TestOption   from "lib/fundamental/Option"
-import structure TestAlt      from "lib/fundamental/Alt"
-import structure TestIEEEReal from "lib/fundamental/IEEEReal"
-import structure TestChar     from "lib/fundamental/Char"
-import structure TestInteger  from "lib/fundamental/Integer"
-import structure TestIntInf   from "lib/fundamental/IntInf"
-import structure TestByte     from "lib/fundamental/Byte"
-import structure TestList     from "lib/fundamental/List"
-import structure TestArray    from "lib/fundamental/Array"
-import structure TestArray2   from "lib/fundamental/Array2"
-import structure TestVector   from "lib/fundamental/Vector"
-import structure TestTime     from "lib/system/Time"
-import structure TestCompiler from "lib/compiler/Compiler"
+import structure TestBool        from "lib/fundamental/Bool"
+import structure TestString      from "lib/fundamental/String"
+import structure TestGeneral     from "lib/fundamental/General"
+import structure TestOption      from "lib/fundamental/Option"
+import structure TestAlt         from "lib/fundamental/Alt"
+import structure TestIEEEReal    from "lib/fundamental/IEEEReal"
+import structure TestChar        from "lib/fundamental/Char"
+import structure TestInteger     from "lib/fundamental/Integer"
+import structure TestIntInf      from "lib/fundamental/IntInf"
+import structure TestByte        from "lib/fundamental/Byte"
+import structure TestList        from "lib/fundamental/List"
+import structure TestArray       from "lib/fundamental/Array"
+import structure TestArray2      from "lib/fundamental/Array2"
+import structure TestVector      from "lib/fundamental/Vector"
+import structure TestTime        from "lib/system/Time"
+import structure TestCompiler    from "lib/compiler/Compiler"
+import structure TestRegressions from "lib/regression/tests/TestRegressions"
 
 fun randomizeTests () = 
     let
@@ -49,12 +51,14 @@ fun randomizeTests () =
 			TestByte.randomize,
 			TestList.randomize,
 			TestTime.randomize,
-			TestArray2.randomize]
+			TestArray2.randomize,
+		        TestRegressions.randomize]
     in
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [TestCompiler.suite,
+val allTests = [TestRegressions.suite,
+		TestCompiler.suite,
 		TestAlt.suite,
 		TestBool.suite,
 		TestGeneral.suite,
@@ -68,8 +72,8 @@ val allTests = [TestCompiler.suite,
 		TestIEEEReal.suite,
 		TestInteger.suite(*,
 		TestIntInf.suite*),
-		TestByte.suite,
-		TestTime.suite]
+		TestByte.suite(*,
+		TestTime.suite*)]
 
 val defaultConfig = {
 	    timeout = Time.fromSeconds (Int.toLarge 20),
@@ -125,3 +129,9 @@ val _ = (main ();
 	 displayNeededTime ();
 	 TextIO.output (TextIO.stdOut, "\ndone.\n");
 	 OS.Process.exit OS.Process.success)
+
+
+
+
+
+

@@ -1,0 +1,26 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Exn : REGRESSION =
+struct
+
+val name = "exn"
+
+val ok = SOME "exn.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+exception E
+
+fun loop n =
+   if n = 0
+      then raise E
+   else (loop(n - 1) handle e => (concatResult "z"; raise e))
+
+val _ = loop 13 handle _ => concatResult "\n"
+
+val result = !result
+
+end

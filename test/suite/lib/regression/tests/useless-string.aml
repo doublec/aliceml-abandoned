@@ -1,0 +1,27 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure UselessString : REGRESSION =
+struct
+
+val name = "useless-string"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val x = "abc"
+val y = "defg"
+val _ =
+   if 3 = (String.size
+	   (if 0 = length (CommandLine.arguments ())
+	       then x
+	    else y))
+      then ()
+   else raise Fail "bug"
+
+val result = !result
+
+end

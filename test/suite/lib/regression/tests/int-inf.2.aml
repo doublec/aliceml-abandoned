@@ -1,0 +1,63 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure IntInf2 : REGRESSION =
+struct
+
+val name = "int-inf.2"
+
+val ok = SOME "int-inf.2.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val big: IntInf.int = IntInf.fromInt (valOf Int.maxInt) + IntInf.fromInt 1
+
+fun try (barg: IntInf.int): unit =
+       let
+	  val small = SOME (IntInf.toInt barg)
+		  handle Overflow => NONE
+	   val bstr = IntInf.toString barg
+	   val _ = concatResult (concat ["trying ", bstr, "\n"])
+	   fun fail msg = concatResult ("Fail " ^ msg ^ ": " ^ bstr ^ "\n")
+	   val isSmall = ~ big <= barg andalso barg < big
+       in case small of
+	     NONE => if isSmall
+			then fail "1"
+			else ()
+	     | SOME sarg => if isSmall
+			       then let val sstr = Int.toString sarg
+				    in if bstr = sstr
+				       andalso barg = IntInf.fromInt sarg
+					  then ()
+					  else fail "2"
+				    end
+			       else fail "3"
+       end
+
+fun spin (low: IntInf.int, limit: IntInf.int): unit =
+       let fun loop (arg: IntInf.int): unit =
+		  if arg = limit
+		     then ()
+		     else (
+			try arg;
+			try (~ arg);
+			loop (arg + IntInf.fromInt 1)
+		     )
+       in loop low
+       end
+
+val f = IntInf.fromInt 
+
+val _ = spin (f 0, f 1000)
+val _ = concatResult "nxtStep\n"
+val _ = spin ((big div (f 2)) - f 1000, (big div (f 2)) + f 1000)
+val _ = concatResult "nxtStep\n"
+val _ = spin (big - f 1000, big + f 1000) 
+
+val _ = concatResult "All ok\n"
+
+val result = !result
+
+end

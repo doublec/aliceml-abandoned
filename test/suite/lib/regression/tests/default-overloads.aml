@@ -1,0 +1,42 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure DefaultOverloads : REGRESSION =
+struct
+
+val name = "default-overloads"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+fun f x = ~ x;
+fun g (x: int) = f x;
+fun f x = abs x;
+fun g (x: int) = f x;
+fun f x = x + x;
+fun g (x: int) = f x;
+fun f x = x - x;
+fun g (x: int) = f x;
+fun f x = x * x;
+fun g (x: int) = f x;
+fun f x = x div x;
+fun g (x: int) = f x;
+fun f x = x mod x;
+fun g (x: int) = f x;
+fun f x = x < x;
+fun g (x: int) = f x;
+fun f x = x <= x;
+fun g (x: int) = f x;
+fun f x = x > x;
+fun g (x: int) = f x;
+fun f x = x >= x;
+fun g (x: int) = f x;
+fun f x = x / x;
+fun g (x: real) = f x;
+
+val result = !result
+
+end

@@ -1,0 +1,19 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure PrintSelf : REGRESSION =
+struct
+
+val name = "print-self"
+
+val ok = SOME "print-self.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+val K = "\nval _ = print (concat [\"val K = \\\"\", String.translate (fn #\"\\n\" => \"\\\\n\" | #\"\\\\\" => \"\\\\\\\\\" | #\"\\\"\" => \"\\\\\\\"\" | c => str c) K, \"\\\"\", K, \"\\n\"])"
+val _ = concatResult (concat ["val K = \"", String.translate (fn #"\n" => "\\n" | #"\\" => "\\\\" | #"\"" => "\\\"" | c => str c) K, "\"", K, "\n"])
+
+val result = !result
+
+end

@@ -1,0 +1,49 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure CmdLine : REGRESSION =
+struct
+
+val name = "cmdline"
+
+val ok = SOME "cmdline.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+(* Auxiliary functions for test cases *)
+
+infix 1 seq
+fun e1 seq e2 = e2;
+fun check b = if b then "OK" else "WRONG";
+fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
+
+fun range (f, to) p = 
+    let open Int 
+    in
+	(f > to) orelse (p f) andalso (range (f+1, to) p)
+    end;
+
+fun checkrange bounds = check o range bounds;
+
+fun tst0 s s' = concatResult (s ^ "    \t" ^ s' ^ "\n");
+fun tst  s b = tst0 s (check  b);
+fun tst' s f = tst0 s (check' f);
+
+fun tstrange s bounds = (tst s) o range bounds  
+
+(* test/cmdline.sml, PS 1997-03-07 *)
+
+val _ = 
+    (app concatResult ["This program is invoked as `", 
+		       CommandLine.name(), "'\n",
+		"with arguments:\n"];
+     app (fn a => (concatResult a; 
+		   concatResult "\n")) (CommandLine.arguments ()))
+
+val _ = concatResult "\n"
+
+val result = !result
+
+end

@@ -1,0 +1,44 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure PolyEqual2 : REGRESSION =
+struct
+
+val name = "poly-equal.2"
+
+val ok = SOME "poly-equal.2.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+fun asser (msg,b) =
+   if b then ()
+   else concatResult ("assertion failed: " ^ msg ^ "\n")
+
+datatype 'a tree =
+   Leaf of 'a
+  | Node of 'a * 'a tree * 'a tree
+      
+val _ =
+   (asser ("string equal", "foobar" = "foobar") ;
+    asser ("string not equal", "foobar" <> "foobaz") ;
+    asser ("tuple equal", (1,2,3) = (1,2,3)) ;
+    asser ("tuple not equal", (1,2,3) <> (1,2,4)) ;
+    asser ("list equal", [1,2,3] = [1,2,3]) ;
+    asser ("list not equal", [1,2,3] <> [1,2,3,4]) ;
+    asser ("pair list equal", [(1,2), (3,4)] = [(1,2), (3,4)]) ;
+    asser ("pair list not equal", [(1,2), (3,4)] <> [(1,2), (3,5)]) ;
+    asser ("tree equal",
+	   let val t = Node (1, Leaf 2, Node (3, Leaf 4, Leaf 5))
+	   in t = t
+	   end))
+
+val _ = concatResult "done\n"
+
+val result = !result
+
+end
+
+
+    
+

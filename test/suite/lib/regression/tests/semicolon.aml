@@ -1,0 +1,26 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Semicolon : REGRESSION =
+struct
+
+val name = "semicolon"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+(* semicolon.sml *)
+
+(* Checks parsing of semicolons. *)
+
+structure A = struct ;;;;;;;; end;
+signature S = sig ;;;;;;;;;;; end;
+
+;;;;;;;;;;;;;;;;
+
+val result = !result
+
+end

@@ -1,0 +1,43 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure RefFlatten2 : REGRESSION =
+struct
+
+val name = "ref-flatten.2"
+
+val ok = SOME "ref-flatten.2.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+datatype t =
+   A of word ref * word ref * int list
+ | B
+
+val a = Array.tabulate (100, fn i =>
+			let
+			   val l = [100 + i, 2, 3]
+			in
+			   case i mod 2 of
+			      0 => A (ref 0w13, ref 0w123, l)
+			    | 1 => B
+			end)
+
+val _ =
+   Array.app
+   (fn B => ()
+     | A (r, r', l) => (r := !r + Word.fromLarge (LargeWord.fromInt (hd l))
+			; r' := !r' + !r))
+   a
+
+val A (w, w', _) = Array.sub (a, 0)
+
+val _ = concatResult (concat [Word.toString (!w), " ",
+		       Word.toString (!w'), "\n"])
+	 
+val result = !result
+
+end   
+				      

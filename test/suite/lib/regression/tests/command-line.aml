@@ -1,0 +1,26 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure CommandLine : REGRESSION =
+struct
+
+val name = "command-line"
+
+val ok = SOME "command-line.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+(* print out the command name and all of the command line arguments on separate
+ lines *)
+
+val _ =
+   (concatResult(CommandLine.name()) ;
+    concatResult "\n" ;
+    app (fn s => (concatResult s ; concatResult "\n")) 
+	(CommandLine.arguments()))
+
+
+val result = !result
+
+end

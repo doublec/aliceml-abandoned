@@ -1,0 +1,20 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure CommentEnd : REGRESSION =
+struct
+
+val name = "comment-end"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+val ** = 13
+val x = ( **)
+val _ = 1 + ** + x
+
+val result = !result
+
+end

@@ -1,0 +1,42 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Time2 : REGRESSION =
+struct
+
+val name = "time2"
+
+val ok = SOME "time2.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+open Time
+
+val f = valOf o IntInf.fromString
+
+val _ =
+   if (f "1000000000000") = toMilliseconds (fromSeconds (f "1000000000"))
+      then concatResult "OK\n"
+   else concatResult "ERROR\n"
+
+val _ =
+   if (f "1000000000000") = toMicroseconds (fromSeconds (f "1000000"))
+      then concatResult "OK\n"
+   else concatResult "ERROR\n"
+
+val _ =
+   if (f "1000000000") = toSeconds (fromMilliseconds (f "1000000000000"))
+      then concatResult "OK\n"
+   else concatResult "ERROR\n"
+
+val _ =
+   if (f "1000000000") = toSeconds (fromMicroseconds (f "1000000000000000"))
+      then concatResult "OK\n"
+   else concatResult "ERROR\n"
+
+val result = !result
+
+
+end

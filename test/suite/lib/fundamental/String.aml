@@ -192,7 +192,11 @@ struct
 	end
 
     fun testStr () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t c = c = List.hd (String.explode (String.str c))
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
 
     fun testArithmetic () =
 	let
@@ -214,9 +218,6 @@ struct
 	      (Test.test (fn s => String.< s = tS s andalso 
 			          String.> s = tG s))
 	end
-
-    fun testHash () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testToFromWide () =
 	let
@@ -394,7 +395,6 @@ struct
 			    ("concat2", testConcat2),
 			    ("str", testStr),
 			    ("sub", testSub),
-			    ("hash", testHash),
 			    ("implodeExplode", testImplodeExplode),
 			    ("implode", testImplode),
 			    ("toString", testToString),

@@ -163,8 +163,15 @@ struct
 	    Gen.try 10000 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
 	end
 
-    fun testToFromString () = 
+    fun testFromString () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToString () =
+	let
+	    fun t i = Int.toString i = Int.fmt StringCvt.DEC i
+	in
+	    Gen.try 1000 Gen.int (Test.test t)
+	end
 
     fun testQuot () = 
 	let
@@ -240,7 +247,99 @@ struct
 	end
 
     fun testFmt () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun tS r i = if i < 0 
+			 then List.hd (String.explode (Int.fmt r i)) = #"~"
+			 else true
+
+	    fun test' () = Int.toString 0 = "0" andalso
+			   Int.toString 1 = "1" andalso
+			   (valOf (Int.fromString "0")) = 0 andalso
+			   (valOf (Int.fromString "1")) = 1
+
+	    fun h' (x, 0) a = a
+	      | h' (x, i) a = h' (x, i - 1) (a * x)
+
+	    fun h (x, i) = h' (x, i) 1
+
+	    fun dBin x b = if x = 0 
+			    then b
+			    else dBin (x div 2) 
+				      ((Int.toString (x mod 2)) ^ b)
+
+	    fun fr s = valOf (Int.fromString s)
+
+	    fun dOct []       oc = oc
+	      | dOct [b]      oc = b ^ oc
+	      | dOct [b0, b1] oc = 
+		   (Int.toString (fr b0 + 
+				  fr b1 * h (2, 1))) ^ oc
+	      | dOct (b0::b1::b2::bs) oc = 
+		   dOct bs (Int.toString (fr b0 + 
+					  fr b1 * h (2, 1) + 
+					  fr b2 * h (2, 2))) ^ oc
+
+	    fun decToHexString 0 = "0"
+	      | decToHexString 1 = "1"
+	      | decToHexString 2 = "2"
+	      | decToHexString 3 = "3"
+	      | decToHexString 4 = "4"
+	      | decToHexString 5 = "5"
+	      | decToHexString 6 = "6"
+	      | decToHexString 7 = "7"
+	      | decToHexString 8 = "8"
+	      | decToHexString 9 = "9"
+	      | decToHexString 10 = "A"
+	      | decToHexString 11 = "B"
+	      | decToHexString 12 = "C"
+	      | decToHexString 13 = "D"
+	      | decToHexString 14 = "E"
+	      | decToHexString 15 = "F"
+	      | decToHexString _  = raise Overflow
+
+
+	    fun dHex []           oc = oc
+	      | dHex [b]          oc = b ^ oc
+	      | dHex [b0, b1]     oc = 
+		   (decToHexString (fr b0 + 
+				  fr b1 * h (2, 1))) ^ oc
+	      | dHex [b0, b1, b2] oc = 
+		   (decToHexString (fr b0 + 
+				  fr b1 * h (2, 1) + 
+				  fr b2 * h (2, 2))) ^ oc
+	      | dHex (b0::b1::b2::b3::bs) oc = 
+		   dHex bs (decToHexString (fr b0 + 
+					  fr b1 * h (2, 1) + 
+					  fr b2 * h (2, 2) +
+					  fr b3 * h (2, 3))) ^ oc
+
+	    fun sign i f = if i < 0 
+			   then "~" ^ (f (~i) "")
+			   else if i = 0 then "0" else f i ""
+
+	    fun dB x = sign x dBin
+
+	    fun dO x = sign x (fn y => 
+				  dOct (rev 
+					    (List.map String.str 
+						  (String.explode (dB y)))))
+
+	    fun dH x = sign x (fn y => 
+				  dHex (rev 
+					    (List.map String.str 
+						  (String.explode (dB y)))))
+
+	    fun tB i = Int.fmt StringCvt.BIN i = dB i
+
+	    fun tO i = Int.fmt StringCvt.OCT i = dO i
+
+	    fun tH i = Int.fmt StringCvt.HEX i = dH i
+	in
+	    Gen.try 1000 Gen.int 
+		    (Test.test (fn i => tS StringCvt.DEC i andalso test' () 
+					andalso tB i andalso tO i 
+					andalso tH i))
+	end
 
     fun testMax () = 
 	let
@@ -286,7 +385,8 @@ struct
 			     ("toFromLarge", testToFromLarge),
 			     ("sameSign", testSameSign),
 			     ("min", testMin),
-			     ("toFromString", testToFromString),
+			     ("toString", testToString),
+			     ("fromString", testFromString),
 			     ("quot", testQuot),
 			     ("scan", testScan),
 			     ("equal", testEqual),
