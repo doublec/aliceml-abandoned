@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Reflection;
 using System.IO;
 
 namespace Alice {
@@ -2431,6 +2432,44 @@ namespace Alice {
 	public class CommandLine {
 	    public static Object name      = new Alice.CommandLine.name();
 	    public static Object arguments = new Alice.CommandLine.arguments();
+	}
+    }
+    public class Komponist {
+	static public Komponist global_k          = null;
+	static System.Collections.Hashtable table = new System.Collections.Hashtable();
+	class link : Procedure {
+	    public static Object StaticApply(Object obj) {
+		Module mod  = Assembly.LoadFrom((System.String) obj).GetModule((System.String)obj);
+		Type type   = mod.GetType("Execute");
+		if (mod == null) {
+		    Console.Write("Hmm, unable to obtain Module ");
+		    Console.WriteLine(obj);
+		    return null;
+		}
+		else if (type == null) {
+		    Console.WriteLine("Hmm, unable to obtain class Execute");
+		    return null;
+		}
+		else {
+		    MethodInfo minf = type.GetMethod("Main");
+		    Object[] args   = new Object[1];
+		    args[0] = Komponist.global_k;
+		    return minf.Invoke(null, args);
+		}
+	    }
+	    public override Object Apply(Object obj) {
+		return StaticApply(obj);
+	    }
+	}
+	public Object Import(System.String url) {
+	    if (table.ContainsKey(url)) {
+		return table[url];
+	    }
+	    else {
+		Object val = link.StaticApply(url);
+		table.Add(url, val);
+		return val;
+	    }
 	}
     }
 }
