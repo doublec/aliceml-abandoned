@@ -27,7 +27,8 @@
     If the environment variable <TT>ALICE_TRACE_COMPONENT</TT> is set,
     then trace messages concerning link failures of native components
     and type-checking and evaluation of components will be printed to
-    the standard error output stream <TT>TextIO.stdErr</TT>.
+    the standard error output stream <TT><A href="text-io.php3"
+    >TextIO.stdErr</A></TT>.
   </P>
 
   <P>
@@ -54,6 +55,7 @@
 
 	exception <A href="#Sited">Sited</A>
 	exception <A href="#Corrupt">Corrupt</A>
+	exception <A href="#NotFound">NotFound</A>
 
 	exception <A href="#Mismatch">Mismatch</A> of {component : <A href="url.php3#t">Url.t</A>,
 			       request : <A href="url.php3#t">Url.t</A> option,
@@ -61,7 +63,9 @@
 	exception <A href="#Eval">Eval</A> of exn
 	exception <A href="#Failure">Failure</A> of <A href="url.php3#t">Url.t</A> * exn
 
-	val <A href="#extension">extension</A>: string
+	val <A href="#extension">extension</A> : string
+
+	val <A href="#defaultResolver">defaultResolver</A> : <A href="resolver.php3#t">Resolver.t</A>
 
 	functor <A href="#Create">Create</A>(signature S  structure X : S) :
 	    sig  val component : component  end
@@ -70,7 +74,7 @@
 	val <A href="#save">save</A>: string * component -> unit
 	val <A href="#inf">inf</A>: component -> Inf.t option
 
-	functor <A href="#MkManager">MkManager</A>() : COMPONENT_MANAGER where type component = component
+	functor <A href="#MkManager">MkManager</A>(val resolver : <A href="resolver.php3#t">Resolver.t</A>) : <A href="component-manager.php3">COMPONENT_MANAGER</A> where type <A href="component-manager.php3#component">component</A> = component
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -88,20 +92,31 @@
       <TT>exception <A name="Sited">Sited</A></TT>
     </DT>
     <DD>
-      <P>used by the <TT>save</TT> operation to indicate that a first-class
-	component contains sited data structures.  This exception is never
-	raised directly; it only appears as the <TT>cause</TT> of an
-	<TT>IO.Io</TT> exception.</P>
+      <P>used by the <TT><A href="#save">save</A></TT> operation to indicate
+	that a first-class component contains sited data structures.  This
+	exception is never raised directly; it only appears as the <TT
+	>cause</TT> of an <TT><A href="io.php3">IO.Io</A></TT> exception.</P>
     </DD>
 
     <DT>
       <TT>exception <A name="Corrupt">Corrupt</A></TT>
     </DT>
     <DD>
-      <P>used by the <TT>load</TT> operation to indicate that the contents
-	of a file did not represent a well-formed pickled component.
-	This exception is never raised directly; it only appears as the
-	<TT>cause</TT> of an <TT>IO.Io</TT> exception.</P>
+      <P>used by the <TT><A href="#load">load</A></TT> operation to indicate
+	that the contents of a file did not represent a well-formed pickled
+	component.  This exception is never raised directly; it only appears
+	as the <TT>cause</TT> of an <TT><A href="io.php3">IO.Io</A></TT>
+	exception.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="NotFound">NotFound</A></TT>
+    </DT>
+    <DD>
+      <P>used by the <TT><A href="#load">load</A></TT> operation to
+	indicate that a component could not be located.  This exception
+	is never raised directly; it only appears as the <TT>cause</TT>
+	of an <TT><A href="io.php3">IO.Io</A></TT> exception.</P>
     </DD>
 
     <DT>
@@ -135,10 +150,11 @@
     <DD>
       <P>indicates that the loading, evaluating or signature matching
 	of a component failed.  The URL is that of the component.  If
-	loading failed, the exception is an <TT>IO.Io</TT> exception.
-	If evaluating failed, the exception is an <TT><A href="#Eval">Eval</A
-	></TT> exception.  If signature matching failed, the exception is a
-	<TT><A href="#Mismatch">Mismatch</A></TT> exception.</P>
+	loading failed, the exception is an <TT><A href="io.php3">IO.Io</A
+	></TT> exception.  If evaluating failed, the exception is an
+	<TT><A href="#Eval">Eval</A></TT> exception.  If signature matching
+	failed, the exception is a <TT><A href="#Mismatch">Mismatch</A></TT>
+	exception.</P>
     </DD>
 
     <DT>
@@ -149,6 +165,17 @@
 	name files containing pickled components.  This does not include
 	the period commonly used to separate file names' base and extension
 	parts.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="defaultResolver">defaultResolver</A></TT>
+    </DT>
+    <DD>
+      <P>is a <A href="resolver.php3">resolver</A> initialized by parsing
+	the contents of the <TT>ALICE_LOAD</TT> environment variable.
+	<TT>defaultResolver</TT> is a memoizing resolver with the name
+	<TT>"load"</TT>.  It is the resolver used by <TT><A href="#load"
+	>load</A></TT>.</P>
     </DD>
 
     <DT>
@@ -164,12 +191,11 @@
       <TT><A name="load">load</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>localizes <TT><I>url</I></TT> using the <A href="resolver.php3"
-	>resolver</A> initialized from the <TT>ALICE_LOAD</TT> environment
-	variable and attempts to unpickle a first-class component from the
-	file found, which it returns upon success.  Raises <TT>IO.Io</TT>
-	if resolving, loading or unpickling fails.  If resolving fails, the
-	<TT>cause</TT> is <TT>Option</TT>.</P>
+      <P>localizes <TT><I>url</I></TT> using <TT><A href="#defaultResolver"
+	>defaultResolver</A></TT> and attempts to unpickle a first-class
+	component from the file found, which it returns upon success.
+	Raises <TT><A href="io.php3">IO.Io</A></TT> if resolving, loading
+	or unpickling fails.</P>
     </DD>
 
     <DT>
@@ -177,8 +203,8 @@
     </DT>
     <DD>
       <P>pickles <TT><I>comp</I></TT> and saves it to a new file with
-	name&nbsp;<TT><I>s</I></TT>.  Raises <TT>IO.Io</TT> if pickling
-	or saving fails.</P>
+	name&nbsp;<TT><I>s</I></TT>.  Raises <TT><A href="io.php3">IO.Io</A
+	></TT> if pickling or saving fails.</P>
     </DD>
 
     <DT>
@@ -193,15 +219,15 @@
     </DD>
 
     <DT>
-      <TT><A name="MkManager">MkManager</A>()</TT>
+      <TT><A name="MkManager">MkManager</A
+	>(val resolver = <I>resolver</I>)</TT>
     </DT>
     <DD>
       <P>returns a new component manager with a component table empty but
 	for the virtual machine's built-in components and those components
 	that had to be loaded to initialize the system's boot component
-	manager.  The returned component manager uses <TT><A href="#load"
-	>load</A></TT> to load its components, and as such the corresponding
-	resolver.</P>
+	manager.  The returned component manager uses <TT><I>resolver</I></TT>
+	to locate its components.</P>
     </DD>
   </DL>
 

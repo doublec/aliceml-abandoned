@@ -20,8 +20,15 @@
   </P>
 
   <P>
+    URLs given to any of the functions below are first resolved with
+    respect to the current working directory and stripped of their query
+    and fragment constituents.
+  </P>
+
+  <P>
     See also:
-    <A href="component.php3"><TT>Component</TT></A>
+    <A href="component.php3"><TT>Component</TT></A>,
+    <A href="url.php3"><TT>Url</TT></A>
   </P>
 
 <?php section("import", "import") ?>
