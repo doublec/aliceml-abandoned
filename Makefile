@@ -129,7 +129,7 @@ distclean: veryclean
 ## Install Alice on Mozart
 ##
 install-mozart:
-	make TARGET=mozart install
+	make TARGET=mozart install-mozart-rec
 install-mozart-rec: install-common bootstrap-mozart libs-mozart
 
 bootstrap-mozart:
@@ -168,7 +168,7 @@ libs-mozart:
 ## Install Alice on Seam
 ##
 install-seam:
-	make TARGET=seam install
+	make TARGET=seam install-seam-rec
 install-seam-rec: install-common bootstrap-seam libs-seam
 
 bootstrap-seam: build-seam
