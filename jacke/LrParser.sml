@@ -14,10 +14,9 @@ signature LR_PARSER_ENG =
 	structure LrTable : LR_TABLE
 	structure Token : TOKEN
 
-(*	sharing LrTable = Token.LrTable *)
 	sharing type LrTable.table = Token.LrTable.table
 
-	exception ParseError
+	(* exception ParseError *)
 
 	val parse : {table : LrTable.table,
 		     lexer : unit -> ('_b,'_c) Token.token,
@@ -29,7 +28,7 @@ signature LR_PARSER_ENG =
 				     ('_b * '_c * '_c) *
 				     ((LrTable.state *('_b * '_c * '_c)) list),
 		     void : '_b,
-		     error: '_c -> string -> unit  
+		     error: '_c -> '_b 
 		     } -> '_b
     end
 
@@ -51,7 +50,7 @@ structure LrParserEng : LR_PARSER_ENG =
      open Token
 
      val DEBUG = false
-     exception ParseError
+     (* exception ParseError *)
 
       type ('a,'b) elem = (state * ('a * 'b * 'b))
       type ('a,'b) stack = ('a,'b) elem list
@@ -109,11 +108,9 @@ structure LrParserEng : LR_PARSER_ENG =
 		    in parseStep(next,(goto(state,nonterm),value)::stack)
 		    end
                | ERROR => let val (_,leftPos,rightPos) = value
-		          in error leftPos "syntax error\n";
-			     raise ParseError
+		          in error leftPos 
 			  end
   	       | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
-			       (*val (token,restLexer) = next*)
 			   in topvalue
 			   end
       val next as (TOKEN (terminal,(_,leftPos,_))) = get lexer
