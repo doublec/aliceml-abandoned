@@ -1,4 +1,4 @@
-PREFIX = /services/ps/httpd/html/alice/manual
+PREFIX = /opt/stockhausen-devel/doc
 
 DIRS = $(PREFIX) \
 	$(PREFIX)/library \
