@@ -49,7 +49,7 @@ final public class Int implements DMLValue {
 
     _BUILTIN(Uminus) {
 	_APPLY(val) {
-	    _fromSingle(val,"Int.~");
+	    // _FROMSINGLE(val,"Int.~");
 	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -175,7 +175,7 @@ final public class Int implements DMLValue {
 
     _BUILTIN(Abs) {
 	_APPLY(val) {
-	    _fromSingle(val,"Int.abs");
+	    // _FROMSINGLE(val,"Int.abs");
 	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -188,7 +188,7 @@ final public class Int implements DMLValue {
 
     _BUILTIN(Sign) {
 	_APPLY(val) {
-	    _fromSingle(val,"Int.sign");
+	    // _FROMSINGLE(val,"Int.sign");
 	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -232,7 +232,7 @@ final public class Int implements DMLValue {
 
     _BUILTIN(ToString) {
 	_APPLY(val) {
-	    _fromSingle(val,"Int.toString");
+	    // _FROMSINGLE(val,"Int.toString");
 	    if (!(val instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -246,7 +246,7 @@ final public class Int implements DMLValue {
 
     _BUILTIN(FromString) {
 	_APPLY(val) {
-	    _fromSingle(val,"Int.fromString");
+	    // _FROMSINGLE(val,"Int.fromString");
 	    if (!(val instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }

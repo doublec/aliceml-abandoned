@@ -274,7 +274,7 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Length) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.length");
+	    // _FROMSINGLE(val,"Array.length");
 	    if (val instanceof Array)
 		return new Int(((Array) val).arr.length);
 	    else
@@ -442,7 +442,7 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Appi) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.appi");
+	    // _FROMSINGLE(val,"Array.appi");
 	    return new Appi1(val);
 	}
 	_BUILTIN(Appi1) {
@@ -483,14 +483,14 @@ final public class Array implements DMLValue {
 
     _BUILTIN(App) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.app");
+	    // _FROMSINGLE(val,"Array.app");
 	    return new App1(val);
 	}
 	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Array.app1");
+		// _FROMSINGLE(val,"Array.app1");
 		if (!(val instanceof Array))
 		    _error("argument not Array",val);
 		return ((Array) val).app(fun);
@@ -502,14 +502,14 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldli) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.foldli");
+	    // _FROMSINGLE(val,"Array.foldli");
 	    return new Foldli1(val);
 	}
 	_BUILTIN(Foldli1) {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Array.foldli1");
+		// _FROMSINGLE(val,"Array.foldli1");
 		return new Foldli2(fun,val);
 	    }
 	    _BUILTIN(Foldli2) {
@@ -551,14 +551,14 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldri) {
 	_APPLY(val) {
-	    _fromSingle(val,1,"Array.foldri");
+	    // _FROMSINGLE(val,"Array.foldri");
 	    return new Foldri1(val);
 	}
 	_BUILTIN(Foldri1) {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Array.foldri1");
+		// _FROMSINGLE(val,"Array.foldri1");
 		return new Foldri2(fun,val);
 	    }
 	    _BUILTIN(Foldri2) {
@@ -600,21 +600,21 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.foldl");
+	    // _FROMSINGLE(val,"Array.foldl");
 	    return new Foldl1(val);
 	}
 	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Array.foldl1");
+		// _FROMSINGLE(val,"Array.foldl1");
 		return new Foldl2(fun,val);
 	    }
 	    _BUILTIN(Foldl2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
-		    _fromSingle(val,"Array.foldl2");
+		    // _FROMSINGLE(val,"Array.foldl2");
 		    if (!(val instanceof Array))
 			_error("argument not Array",val);
 		    return ((Array) val).foldl(fun,init);
@@ -627,21 +627,21 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.foldr");
+	    // _FROMSINGLE(val,"Array.foldr");
 	    return new Foldr1(val);
 	}
 	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Array.foldr1");
+		// _FROMSINGLE(val,"Array.foldr1");
 		return new Foldr2(fun,val);
 	    }
 	    _BUILTIN(Foldr2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
-		    _fromSingle(val,"Array.foldr2");
+		    // _FROMSINGLE(val,"Array.foldr2");
 		    if (!(val instanceof Array))
 			_error("argument not Array",val);
  		    return ((Array) val).foldr(fun,init);
@@ -654,7 +654,7 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Modifyi) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.modifyi");
+	    // _FROMSINGLE(val,"Array.modifyi");
 	    return new Modifyi1(val);
 	}
 	_BUILTIN(Modifyi1) {
@@ -694,14 +694,14 @@ final public class Array implements DMLValue {
 
     _BUILTIN(Modify) {
 	_APPLY(val) {
-	    _fromSingle(val,"Array.modify");
+	    // _FROMSINGLE(val,"Array.modify");
 	    return new Modify1(val);
 	}
 	_BUILTIN(Modify1) {
 	    DMLValue fun = null;
 	    Modify1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Array.modify1");
+		// _FROMSINGLE(val,"Array.modify1");
 		if (!(val instanceof Array)) {
 		    _error("argument not Array",val);
 		}

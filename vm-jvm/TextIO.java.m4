@@ -43,7 +43,7 @@ final public class TextIO {
 
     _BUILTIN(OpenIn) {
 	_APPLY(val) {
-	    _fromSingle(val,"TextIO.openIn");
+	    // _FROMSINGLE(val,"TextIO.openIn");
 	    if (val instanceof STRING) {
 		java.lang.String filename = ((STRING) val).value;
 		FileInputStream fs = null;
@@ -65,7 +65,7 @@ final public class TextIO {
 
     _BUILTIN(CloseIn) {
 	_APPLY(val) {
-	    _fromSingle(val,"TextIO.closeIn");
+	    // _FROMSINGLE(val,"TextIO.closeIn");
 	    if (val instanceof IStream) {
 		try {
 		    ((IStream) val).in.close();
@@ -85,7 +85,7 @@ final public class TextIO {
 
     _BUILTIN(InputAll) {
 	_APPLY(val) {
-	    _fromSingle(val,"TextIO.inputAll");
+	    // _FROMSINGLE(val,"TextIO.inputAll");
 	    if (val instanceof IStream) {
 		try {
 		    InputStream in = ((IStream) val).in;

@@ -34,7 +34,7 @@ final public class General {
 
     _BUILTIN(Deref) {
 	_APPLY(val) {
-	    _fromSingle(val,"deref");
+	    // _FROMSINGLE(val,"deref");
 	    if (val instanceof DMLConVal) {
 		DMLConVal cv = (DMLConVal) val;
 		if (cv.getConstructor()==Constants.reference)
@@ -126,8 +126,8 @@ final public class General {
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
     _BUILTIN(Ref) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"General.ref");
-	    return new Reference(args[0]);
+	    // FROMTUPLE(args,val,1,"General.ref");
+	    return new Reference(val);
 	}
     }
     /** <code>val ref : 'a -> ref 'a</code>*/
@@ -138,8 +138,8 @@ final public class General {
 
     _BUILTIN(Spawn) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"spawn");
-	    de.uni_sb.ps.dml.runtime.Thread t=new de.uni_sb.ps.dml.runtime.Thread(args[0]);
+	    // FROMTUPLE(args,val,1,"spawn");
+	    de.uni_sb.ps.dml.runtime.Thread t=new de.uni_sb.ps.dml.runtime.Thread(val);
 	    t.start();
 	    return Constants.dmlunit;
 	}
@@ -236,7 +236,7 @@ final public class General {
 
     _BUILTIN(Uminus) {
 	_APPLY(val) {
-	    _fromSingle(val,"General.~");
+	    // _FROMSINGLE(val,"General.~");
 	    if (val instanceof Int) {
 		return new Int(-((Int) val).value);
 	    } else if (val instanceof Word) {
@@ -297,7 +297,7 @@ final public class General {
     }
     _BUILTIN(Sel) {
 	_APPLY(val) {
-	    _fromSingle(val,"General.sel");
+	    // _FROMSINGLE(val,"General.sel");
 	    if (val instanceof Int) {
 		return new SelFunInt(((Int) val).value);
 	    } else if (val instanceof STRING) {
@@ -312,7 +312,7 @@ final public class General {
 		i = idx;
 	    }
 	    _APPLY(val) {
-		_fromSingle(val,"General.sel "+i);
+		// _FROMSINGLE(val,"General.sel "+i);
 		if (val instanceof DMLTuple) {
 		    switch (i) {
 		    case 1: return ((DMLTuple) val).get0();
@@ -333,7 +333,7 @@ final public class General {
 		lab = str;
 	    }
 	    _APPLY(val) {
-		_fromSingle(val,"General.sel "+lab);
+		// _FROMSINGLE(val,"General.sel "+lab);
 		if (val instanceof Record) {
 		    return ((Record) val).get(lab);
 		} else {

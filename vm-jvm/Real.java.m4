@@ -155,7 +155,7 @@ final public class Real implements DMLValue {
     /** <code>val toString : real -> string </code>*/
     _BUILTIN(FromString) {
 	_APPLY(val) { 
-	    _fromSingle(val,"Real.fromString");
+	    // _FROMSINGLE(val,"Real.fromString");
 	    if (!(val instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }

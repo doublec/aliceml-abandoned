@@ -25,10 +25,6 @@ final public class String implements DMLValue {
 	this.value=value;
     }
 
-    final public static boolean equals(STRING s, STRING t) {
-	return s.equals(t);
-    }
-
     /** Testet Gleichheit der Java-Strings */
     final public boolean equals(java.lang.Object val) {
 	return (val instanceof STRING) &&
@@ -46,7 +42,7 @@ final public class String implements DMLValue {
     
     _BUILTIN(Size) {
 	_APPLY(val) {
-	    _fromSingle(val,"String.length");
+	    // _FROMSINGLE(val,"String.length");
             if (val instanceof STRING) {
 		return new Int(((STRING) val).value.length());
             } else {
@@ -253,7 +249,7 @@ final public class String implements DMLValue {
 
     _BUILTIN(Str) {
 	_APPLY(val) {
-	    _fromSingle(val,"String.str");
+	    // _FROMSINGLE(val,"String.str");
 	    if (val instanceof Char) {
 		return new STRING (java.lang.String.valueOf(((Char) val).value));
 	    } else {

@@ -34,7 +34,7 @@ final public class Char implements DMLValue {
     /** <code>val maxOrd : int </code>*/
     _BUILTIN(Ord) {
 	_APPLY(val) {
-	    _fromSingle(val,"Char.ord");
+	    // _FROMSINGLE(val,"Char.ord");
 	    if (val instanceof Char) {
 		return new Int(((Char) val).value);
 	    } else {
@@ -47,7 +47,7 @@ final public class Char implements DMLValue {
 
     _BUILTIN(Chr) {
 	_APPLY(val) {
-	    _fromSingle(val,"Char.chr");
+	    // _FROMSINGLE(val,"Char.chr");
 	    if (val instanceof Int) {
 		int i = ((Int) val).value; // better?: val.value
 		if (i <= Character.MAX_VALUE && i >= Character.MIN_VALUE) {
@@ -81,7 +81,7 @@ final public class Char implements DMLValue {
 
     _BUILTIN(IsDigit) {
 	_APPLY(val) {
-	    _fromSingle(val,"Char.isDigit");
+	    // _FROMSINGLE(val,"Char.isDigit");
 	    if (val instanceof Char) {
 		return (Character.isDigit(((Char) val).value) ?
 		    Constants.dmltrue :
@@ -98,7 +98,7 @@ final public class Char implements DMLValue {
 
     _BUILTIN(IsHexDigit) {
 	_APPLY(val) {
-	    _fromSingle(val,"Char.isHexDigit");
+	    // _FROMSINGLE(val,"Char.isHexDigit");
 	    if (val instanceof Char) {
 		char c = ((Char) val).value;
 		switch (c) {
@@ -123,7 +123,7 @@ final public class Char implements DMLValue {
 
     _BUILTIN(IsSpace) {
 	_APPLY(val) {
-	    _fromSingle(val,"Char.isSpace");
+	    // _FROMSINGLE(val,"Char.isSpace");
 	    if (val instanceof Char) {
 		return (Character.isWhitespace(((Char) val).value) ?
 		    Constants.dmltrue :

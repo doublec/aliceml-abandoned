@@ -234,18 +234,4 @@ define(_REQUESTDEC,`$1 = null;
 		 } else {
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
                  }')
-define(_fromSingle,`_REQUEST($1,$1)
-	if ($1 instanceof DMLTuple) {
-	  DMLTuple t = (DMLTuple) $1;
-	  if (t.getArity()==1) {
-	    _REQUEST($1, t.get0())
-	  } else {
-	    return Constants.
-		runtimeError.apply(new Tuple2(
-		new STRING`'("wrong number of arguments for" + $2),$1));
-	  }
-	} else {
-	    return Constants.
-		runtimeError.apply(new Tuple2(
-		new STRING`'("wrong arguments type for" + $2),$1));
-	}')
+define(_fromSingle,`')

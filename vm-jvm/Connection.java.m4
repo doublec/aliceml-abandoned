@@ -18,7 +18,7 @@ final public class Connection {
 
     _BUILTIN(Offer) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"Connection.offer");
+	    // FROMSINGLE(args,val,1,"Connection.offer");
 	    java.net.InetAddress i=null;
 	    try {
 		i=java.net.InetAddress.getLocalHost();
@@ -59,7 +59,7 @@ final public class Connection {
 		}
 	    }
 	    java.lang.String ticket = Long.toString(rand.nextLong());
-	    export.put(ticket,args[0]);
+	    export.put(ticket,val);
 	    return new STRING (i.getHostAddress()+"\\"+ticket);
 	}
     }
@@ -68,7 +68,7 @@ final public class Connection {
 
     _BUILTIN(Take) {
 	_APPLY(val) {
-	    _fromSingle(val,"Connection.take");
+	    // _FROMSINGLE(val,"Connection.take");
 	    if (!(val instanceof STRING)) {
 		_error("argument not String",val);
 	    }

@@ -274,7 +274,7 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(FromList) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.fromList");
+	    // _FROMSINGLE(val,"Vector.fromList");
 	    return new Vector(val);
 	}
     }
@@ -298,7 +298,7 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Length) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.length");
+	    // _FROMSINGLE(val,"Vector.length");
 	    if (val instanceof Vector)
 		return new Int(((Vector) val).vec.length);
 	    else
@@ -363,7 +363,7 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Concat) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.fromList");
+	    // _FROMSINGLE(val,"Vector.fromList");
 	    return Vector.concat(val);
 	}
     }
@@ -372,7 +372,7 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Mapi) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.mapi");
+	    // _FROMSINGLE(val,"Vector.mapi");
 	    return new Mapi1(val);
 	}
 	_BUILTIN(Mapi1) {
@@ -414,14 +414,14 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Map) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.map");
+	    // _FROMSINGLE(val,"Vector.map");
 	    return new Map1(val);
 	}
 	_BUILTIN(Map1) {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Vector.map1");
+		// _FROMSINGLE(val,"Vector.map1");
 		if (!(val instanceof Vector))
 		    _error("argument not Vector",val);
 		return ((Vector) val).map(fun);
@@ -433,7 +433,7 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Appi) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.appi");
+	    // _FROMSINGLE(val,"Vector.appi");
 	    return new Appi1(val);
 	}
 	_BUILTIN(Appi1) {
@@ -473,14 +473,14 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(App) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.app");
+	    // _FROMSINGLE(val,"Vector.app");
 	    return new App1(val);
 	}
 	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Vector.app1");
+		// _FROMSINGLE(val,"Vector.app1");
 		if (!(val instanceof Vector))
 		    _error("argument not Vector",val);
 		return ((Vector) val).app(fun);
@@ -492,14 +492,14 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Foldli) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.foldli");
+	    // _FROMSINGLE(val,"Vector.foldli");
 	    return new Foldli1(val);
 	}
 	_BUILTIN(Foldli1) {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Vector.foldli1");
+		// _FROMSINGLE(val,"Vector.foldli1");
 		return new Foldli2(fun,val);
 	    }
 	    _BUILTIN(Foldli2) {
@@ -542,14 +542,14 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Foldri) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.foldri");
+	    // _FROMSINGLE(val,"Vector.foldri");
 	    return new Foldri1(val);
 	}
 	_BUILTIN(Foldri1) {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Vector.foldri1");
+		// _FROMSINGLE(val,"Vector.foldri1");
 		return new Foldri2(fun,val);
 	    }
 	    _BUILTIN(Foldri2) {
@@ -592,21 +592,21 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.foldl");
+	    // _FROMSINGLE(val,"Vector.foldl");
 	    return new Foldl1(val);
 	}
 	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"Vector.foldl1");
+		// _FROMSINGLE(val,"Vector.foldl1");
 		return new Foldl2(fun,val);
 	    }
 	    _BUILTIN(Foldl2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
-		    _fromSingle(val,"Vector.foldl2");
+		    // _FROMSINGLE(val,"Vector.foldl2");
 		    if (!(val instanceof Vector))
 			_error("argument not Vector",val);
 		    return ((Vector) val).foldl(fun,init);
@@ -619,21 +619,21 @@ final public class Vector implements DMLValue {
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
-	    _fromSingle(val,"Vector.foldr");
+	    // _FROMSINGLE(val,"Vector.foldr");
 	    return new Foldr1(val);
 	}
 	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"Vector.foldr1");
-		return new Foldr2(fun, args[0]);
+		// _fromTuple(args,val,1,"Vector.foldr1");
+		return new Foldr2(fun,val);
 	    }
 	    _BUILTIN(Foldr2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
-		    _fromSingle(val,"Vector.foldr2");
+		    // _FROMSINGLE(val,"Vector.foldr2");
 		    if (!(val instanceof Vector)) {
 			_error("argument not Vector",val);
 		    } else {

@@ -14,7 +14,7 @@ final public class List {
 
     _BUILTIN(IsNull) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.null");
+	    // _FROMSINGLE(val,"List.null");
 	    if (val instanceof Cons)
 		return Constants.dmlfalse;
 	    else if (val==nil)
@@ -28,7 +28,7 @@ final public class List {
 
     _BUILTIN(Length) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.length");
+	    // _FROMSINGLE(val,"List.length");
 	    int length = 0;
 	    while (val instanceof Cons) {
 		length++;
@@ -74,7 +74,7 @@ final public class List {
 
     _BUILTIN(Hd) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.hd");
+	    // _FROMSINGLE(val,"List.hd");
 	    if (val instanceof Cons)
 		return ((Cons) val).car;
 	    else if (val==nil)
@@ -88,7 +88,7 @@ final public class List {
 
     _BUILTIN(Tl) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.tl");
+	    // _FROMSINGLE(val,"List.tl");
 	    if (val instanceof Cons)
 		return ((Cons) val).cdr;
 	    else if (val==nil)
@@ -102,7 +102,7 @@ final public class List {
 
     _BUILTIN(Last) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.last");
+	    // _FROMSINGLE(val,"List.last");
 	    if (val==nil)
 		_RAISENAME(Empty);
 	    else if (val instanceof Cons) {
@@ -126,7 +126,7 @@ final public class List {
 
     _BUILTIN(GetItem) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.getItem");
+	    // _FROMSINGLE(val,"List.getItem");
 	    if (val==nil)
 		return Option.NONE;
 	    else if (val instanceof Cons) {
@@ -253,7 +253,7 @@ final public class List {
 
     _BUILTIN(Rev) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.rev");
+	    // _FROMSINGLE(val,"List.rev");
 	    if (val==nil)
 		_RAISENAME(Empty);
 	    else if (val instanceof Cons) {
@@ -278,7 +278,7 @@ final public class List {
 
     _BUILTIN(Concat) {
 	_APPLY(val) {
-	    _fromSingle(val,"List.concat");
+	    // _FROMSINGLE(val,"List.concat");
 	    if (val==nil)
 		return nil;
 	    else if (val instanceof Cons) {
@@ -341,14 +341,14 @@ final public class List {
 
     _BUILTIN(App) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.app");
-	    return new App1(args[0]);
+	    // _FROMTUPLE(args,val,1,"List.app");
+	    return new App1(val);
 	}
 	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.app1");
+		// _FROMSINGLE(val,"List.app1");
 		while (val instanceof Cons) {
 		    Cons lc = (Cons) val;
 		    fun.apply(lc.car);
@@ -366,14 +366,14 @@ final public class List {
 
     _BUILTIN(Map) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.map");
-	    return new Map1(args[0]);
+	    //	    _FROMTUPLE(args,val,1,"List.map");
+	    return new Map1(val);
 	}
 	_BUILTIN(Map1) {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.map1");
+		// _FROMSINGLE(val,"List.map1");
 		if (val==nil)
 		    return nil;
 		Cons first = new Cons(null,null);
@@ -399,14 +399,14 @@ final public class List {
 
     _BUILTIN(MapPartial) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.mapPartial");
-	    return new MapPartial1(args[0]);
+	    // _FROMTUPLE(args,val,1,"List.mapPartial");
+	    return new MapPartial1(val);
 	}
 	_BUILTIN(MapPartial1) {
 	    DMLValue fun = null;
 	    MapPartial1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.mapPartial1");
+		// _FROMSINGLE(val,"List.mapPartial1");
 		if (val==nil)
 		    return nil;
 		Cons first = new Cons(null,null);
@@ -434,14 +434,14 @@ final public class List {
 
     _BUILTIN(Find) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.find");
-	    return new Find1(args[0]);
+	    //	    _FROMTUPLE(args,val,1,"List.find");
+	    return new Find1(val);
 	}
 	_BUILTIN(Find1) {
 	    DMLValue fun = null;
 	    Find1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.find1");
+		// _FROMSINGLE(val,"List.find1");
 		if (val==nil)
 		    return Constants.dmlfalse;
 		while (val instanceof Cons) {
@@ -464,14 +464,14 @@ final public class List {
 
     _BUILTIN(Filter) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.filter");
-	    return new Filter1(args[0]);
+	    //_FROMTUPLE(args,val,1,"List.filter");
+	    return new Filter1(val);
 	}
 	_BUILTIN(Filter1) {
 	    DMLValue fun = null;
 	    Filter1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.filter1");
+		// _FROMSINGLE(val,"List.filter1");
 		if (val==nil)
 		    return nil;
 		Cons first = new Cons(null,null);
@@ -499,14 +499,14 @@ final public class List {
 
     _BUILTIN(Partition) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.partition");
-	    return new Partition1(args[0]);
+	    //_FROMTUPLE(args,val,1,"List.partition");
+	    return new Partition1(val);
 	}
 	_BUILTIN(Partition1) {
 	    DMLValue fun = null;
 	    Partition1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.partition1");
+		// _FROMSINGLE(val,"List.partition1");
 		if (val==nil)
 		    return nil;
 		Cons neg = new Cons(null,null);
@@ -541,15 +541,15 @@ final public class List {
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.foldl");
-	    return new Foldl1(args[0]);
+	    //_FROMTUPLE(args,val,1,"List.foldl");
+	    return new Foldl1(val);
 	}
 	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.foldl1");
-		return new Foldl2(fun,args[0]);
+		//		_FROMTUPLE(args,val,1,"List.foldl1");
+		return new Foldl2(fun,val);
 	    }
 	    _BUILTIN(Foldl2) {
 		DMLValue fun = null; DMLValue init = null;
@@ -558,7 +558,7 @@ final public class List {
 		    init = i;
 		}
 		_APPLY(val) {
-		    _fromSingle(val,"List.foldl2");
+		    // _FROMSINGLE(val,"List.foldl2");
 		    if (val==nil)
 			return init;
 		    else if (val instanceof Cons) {
@@ -583,15 +583,15 @@ final public class List {
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.foldr");
-	    return new Foldr1(args[0]);
+	    //	    _FROMTUPLE(args,val,1,"List.foldr");
+	    return new Foldr1(val);
 	}
 	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,1,"List.foldr1");
-		return new Foldr2(fun,args[0]);
+		//_FROMTUPLE(args,val,1,"List.foldr1");
+		return new Foldr2(fun,val);
 	    }
 	    _BUILTIN(Foldr2) {
 		DMLValue fun = null; DMLValue init = null;
@@ -600,7 +600,7 @@ final public class List {
 		    init = i;
 		}
 		_APPLY(val) {
-		    _fromSingle(val,"List.foldr2");
+		    // _FROMSINGLE(val,"List.foldr2");
 		    if (val==nil)
 			return init;
 		    else if (val instanceof Cons) {
@@ -637,14 +637,14 @@ final public class List {
 
     _BUILTIN(Exists) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.exists");
-	    return new Exists1(args[0]);
+	    //FROMTUPLE(args,val,1,"List.exists");
+	    return new Exists1(val);
 	}
 	_BUILTIN(Exists1) {
 	    DMLValue fun = null;
 	    Exists1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.exists1");
+		// _FROMSINGLE(val,"List.exists1");
 		if (val==nil)
 		    return Constants.dmlfalse;
 		while (val instanceof Cons) {
@@ -667,14 +667,14 @@ final public class List {
 
     _BUILTIN(All) {
 	_APPLY(val) {
-	    _fromTuple(args,val,1,"List.all");
-	    return new All1(args[0]);
+	    // _fromTuple(args,val,1,"List.all");
+	    return new All1(val);
 	}
 	_BUILTIN(All1) {
 	    DMLValue fun = null;
 	    All1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromSingle(val,"List.all1");
+		// _FROMSINGLE(val,"List.all1");
 		if (val==nil)
 		    return Constants.dmltrue;
 		while (val instanceof Cons) {
