@@ -3,12 +3,14 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 
 (* ganz einfache Liste *)
 
-structure SList = Reflect.ReflectType (type t = int list);
+structure SList = Reflect.ReflectType (type t = int list list);
 
-UnsafeInspector.inspect ([1,2],SList.x)
+UnsafeInspector.inspect ([[1,2],[1,2]],SList.x);
 
+(*
 val rec x = 1::x;
 UnsafeInspector.inspect(x,SList.x);
+*)
 
 (* Tupel mir verschiedenen "einfachen" Werten - zum Testen des Breitenfilters
    geeignet *)

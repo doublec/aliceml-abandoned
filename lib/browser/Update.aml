@@ -16,6 +16,7 @@
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
@@ -42,11 +43,23 @@ structure Update :> UPDATE =
 struct
     
     exception UpdateError
-    
+
+      
 (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
        - werden beim Starten des Inspectors "gefuellt" *)
     val incrActLine = ref (fn _ => ())
     val resize = ref (fn () => ()) 
+
+    val compList = 
+	let structure UnitList = Reflect.ReflectType(type t = unit list)
+	    val unitList = UnitList.x
+	in #1(Type.asApply(unitList))
+	end 
+    
+    fun isListType t = Type.isApply t 
+	               andalso let val typ = #1(Type.asApply(t)) 
+			       in Type.equal(typ,compList)
+			       end 
 
     val stopflag = ref false;
         

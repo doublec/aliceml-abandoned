@@ -74,13 +74,6 @@ struct
       | Inf.HiddenItem(i) => itemToLabel i
 
     (* zur Behandlung von Listen *)
-	
-     val compList = 
-	let structure UnitList = Reflect.ReflectType(type t = unit list)
-	    val unitList = UnitList.x
-	in #1(Type.asApply(unitList))
-	end 
-
     fun inspectList(n,x) = inspectList'(n,x,[])
 	
     and inspectList'(n,x,xs) =

@@ -78,7 +78,8 @@ struct
     (* createGraph *)
     and createGraph (opt,va,t,p,i,d,root) = ( (*Window.testIfStop() *) ()
 	;if !relmode (* Konstruktion im Relationsmodus *)
-	 andalso not(isAtomType(t))
+	 andalso not(isAtomType(t)) andalso ( not(Update.isListType t andalso 
+						  null(castList(va))) )
 	     then let val ind = if p = Empty then i else getAncIndex p 
 		     (* 'oberster' Index: Urindex *)
                      val relman = case RelMan.lookup(reldict,ind)
@@ -116,10 +117,10 @@ struct
 		    | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
 		      => (  count := !count + 1
 			 ;  let val str = "Ref "^Int.toString(number)
-				val node = if !count = 1
+				val node = if !count = 1 
 					       then createRelNode (desc,Empty,p,i,d,count,
 								   "Ref0 as ",relman,root)
-					   else createRelRefNode (desc,p,i,d,str,root)
+					   else createRelRefNode(desc,p,i,d,str,root) 
 			    in ( if !count = 1 
 				     then let val c = createUsualGraph (opt,va,t,node,0,d,root)
 					  in setContent (node,c)  
@@ -166,29 +167,27 @@ struct
 		      | Type.Lambda(var,typ) (* Abstraktion *)
 				=> raise  createGraph_unknownNode 
 		      | Type.Apply(t1,t2) 
-			    => (case unApply (Type.inspect(t)) of 
-				    (Type.Con path, ts) (* zusammengesetzter Pfadtyp *) 
-				    => let val p_path = 
-				    if String.equal(Label.toString(Path.toLab(path)),
-						    "promise") (* Promise *)
-					then lookupPath(coreSign,"Promise","promise") 
-				    else path 
-				       in 
-					   newPath (va,t,p,i,d,p_path,root)
-				       end 
-				  | _ => let val new_opt = if isNone opt 
+			    =>  if Update.isListType t 
+				    then let val new_opt = if isNone opt 
 							       then SOME 2
 							   else SOME (valOf(opt)+1)
-					     val typ = #1(Type.asApply(t)) 
-					 in if Type.equal(typ,compList) (* Liste *)
-						then let val vv = castList va
-							 val listdesc = 
-							     inspectList(!max_width,vv)
-						     in listdescToNode(new_opt,va,t,p,i,d,
-								       listdesc,root)
-						     end
-					    else raise createGraph_unknownNode (* unbekannt *)
-					 end)  
+					     val vv = castList va
+					     val listdesc = 
+						 inspectList(!max_width,vv)
+					 in listdescToNode(new_opt,va,t,p,i,d,
+							   listdesc,root)
+					 end
+				else ( case unApply (Type.inspect(t)) of 
+				       (Type.Con path, ts) (* zusammengesetzter Pfadtyp *) 
+				       => let val p_path = 
+				                  if String.equal(Label.toString(Path.toLab(path)),
+								  "promise") (* Promise *)
+						      then lookupPath(coreSign,"Promise","promise") 
+						  else path 
+					  in 
+					      newPath (va,t,p,i,d,p_path,root)
+					  end 
+				     | _ => raise createGraph_unknownNode ) (* unbekannt *)
 		      | Type.Prod(row) => treatProd(va,t,p,i,d,row,root) 
 		      (* Record *)
 		      | Type.Mu(sum) => createUsualGraph (NONE,va,sum,p,i,d,root) (* Rekursion *)
@@ -290,30 +289,39 @@ struct
 
      and createConsList (opt,va,t,list,p,i,d,root) = 
 	 if null(list)
-	     then createSimple(createValue(va,t),p,i,d,
+	     then createSimple(INTERPUNCT,p,i,d,
 			       "nil",DEFAULT,root)
 	 else 
 	 let val br = valOf(opt) handle Option => ~1
-	     val _ = TextIO.print
-	     ("CREATE_CONS_LIST:nicht leer mit Breite "
-             ^Int.toString(br)^"\n")
 	     val desc = createValue(va,t)
 	     val inty = #2(Type.asApply(t))
 	     val head = UnsafeValue.cast(hd(list)) : Reflect.value 
 	     val tail = UnsafeValue.cast(tl(list)) : Reflect.value
 	     val inty = #2(Type.asApply(t))
 	     val concnode = createConcat(desc,p,i,d,
-					 Array.array(1,Empty),root)
-	     val contnode = createContainer(INTERPUNCT,concnode,0,d,
-					    Array.array(3,Empty),root)
-	     val headnode = createGraph(NONE,head,inty,contnode,0,d,root)			      
-	     val sepnode = createSimple(INTERPUNCT,contnode,1,d,
+					 Array.array(3,Empty),root)
+	     val headnode = if  not(Update.isListType(inty))
+				then createGraph(NONE,head,inty,concnode,0,d,root)
+			    else let val conc = createConcat(INTERPUNCT,concnode,0,d,
+							     Array.array(3,Empty),root)
+				     val lpar = createSimple(INTERPUNCT,conc,0,d,
+							     "(",BRACK_COLOR,root)
+				     val rpar = createSimple(INTERPUNCT,conc,2,d,
+							     ")",BRACK_COLOR,root)
+				     val hnode = createGraph(NONE,head,inty,conc,1,d,root)
+				 in ( Array.update(getKids(conc),0,lpar)
+				     ; Array.update(getKids(conc),1,hnode)
+				     ; Array.update(getKids(conc),2,rpar)
+				     ; Array.update(getKids(concnode),0,conc)
+				     ; conc )
+				 end 
+			      
+	     val sepnode = createSimple(INTERPUNCT,concnode,1,d,
 					"::",SEP_COLOR,root)
-	     val tailnode = createGraph(opt,tail,t,contnode,2,d,root)
-	 in ( Array.update(getKids(contnode),0,headnode)
-	    ; Array.update(getKids(contnode),1,sepnode)
-	    ; Array.update(getKids(contnode),2,tailnode)
-	    ; Array.update(getKids(concnode),0,contnode)
+	     val tailnode = createGraph(opt,tail,t,concnode,2,d,root)
+	 in ( Array.update(getKids(concnode),0,headnode)
+	    ; Array.update(getKids(concnode),1,sepnode)
+	    ; Array.update(getKids(concnode),2,tailnode)
 	    ; concnode )
 	 end 
 

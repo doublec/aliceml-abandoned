@@ -42,8 +42,6 @@ sig
 
   (* Behandlung von Listen *)
 	
-    val compList : Type.t
-
     val inspectList : int * 'a list  -> 'a list_desc 
     val castList : 'a -> 'b list
 

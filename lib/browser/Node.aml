@@ -455,9 +455,8 @@ struct
 				color = REL_COLOR  , 
 				status = ref DAZZLED, 
 				group = setGroup(root,p)}
-	    val _ = relnumber := (!relnumber) + 1
-	in node
-	end
+	in (relnumber := (!relnumber) + 1 ; node)
+	end 
 
     (* createRelRefNode *)
 
