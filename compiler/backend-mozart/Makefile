@@ -10,3 +10,7 @@ all: $(FUNCTORS:%=%.ozf)
 
 clean:
 	-rm -f $(FUNCTORS:%=%.ozf)
+
+veryclean: clean
+
+distclean: veryclean
