@@ -81,18 +81,36 @@ OZWRPSRCS = UnsafeGDK.oz \
 OZWRPOBJS = $(OZWRPSRCS:%.oz=%.ozf)
 OZWRPSIGS = $(OZWRPSRCS:%.oz=%.asig)
 
-WRPSRCS    = Gdk.aml \
+WRPSRCS    = GDK-sig.aml \
+             GTK-sig.aml \
+             GTK_CANVAS-sig.aml \
+             Gdk.aml \
              Gtk.aml \
              GtkCanvas.aml
 WRPOBJS    = $(WRPSRCS:%.aml=%.ozf)
 COMPONENTS = $(WRPOBJS:%.ozf=Linked%.ozf)
 
+TMPSRCS = UnsafeGDK.tsig \
+          UnsafeGTK.tsig \
+          UnsafeGTKCANVAS.tsig
+TMPOBJS = $(TMPSRCS:%.tsig=%.asig)
+
+TMPSIGSRCS = GDK-sig.tml \
+             GTK-sig.tml \
+             GTK_CANVAS-sig.tml
+TMPSIGOBJS = $(TMPSIGSRCS:%.tml=%.aml)
+
+INTWRPSRCS = GDK_INTERFACE.aml \
+             GTK_INTERFACE.aml \
+             GTK_CANVAS_INTERFACE.aml
+
 #---------------------------------------------------------------------
 # Target Variables
 #---------------------------------------------------------------------
 
-TARGETS         = gtkraw.c $(ALICEOBJS) $(OZOBJS)
-WRAPPER_TARGETS = $(OZWRPOBJS)
+TARGETS          = gtkraw.c $(ALICEOBJS) $(OZOBJS)
+TEMPLATE_TARGETS = $(TMPOBJS) $(TMPSIGOBJS)
+WRAPPER_TARGETS  = $(OZWRPOBJS)
 
 INSTALLDIRS  = $(PREFIX)/lib/gtk
 INSTALLFILES = $(COMPONENTS:Linked%=$(PREFIX)/lib/gtk/%)
@@ -111,6 +129,12 @@ INSTALLFILES = $(COMPONENTS:Linked%=$(PREFIX)/lib/gtk/%)
 Linked%.ozf: %.ozf
 	$(ALICELINK) $(ALICELINK_OPTS) $* \
 	--include $* --include Unsafe --include GtkTypes -o $@
+
+%.asig: %.tsig
+	$(CPP) -P -E -o $@ $<
+
+%.aml: %.tml
+	$(CPP) -P -E -o $@ $<
 
 #---------------------------------------------------------------------
 # Building
@@ -134,8 +158,10 @@ gtkraw.c: gtkdefs.c
 binding:
 	alicerun "x-oz://system/gtk/Generator.ozf" \
           --no-native AliceWrapper.ozf
+	@$(MAKE) template_files
 	@$(MAKE) wrapper_files
 
+template_files: $(TMPOBJS) $(TMPSIGOBJS)
 wrapper_files: $(WRAPPER_TARGETS)
 wrapper: $(WRPOBJS) $(COMPONENTS)
 
@@ -157,10 +183,13 @@ $(PREFIX)/lib/gtk/%: Linked%
 
 clean veryclean:
 	-$(RM) $(ALICEOBJS) $(OZWRPSRCS) $(OZWRPSIGS) $(OZWRPOBJS) $(WRPOBJS)
-	-$(RM) $(COMPONENTS)
+	-$(RM) $(COMPONENTS) $(TMPOBJS) $(TMPSIGOBJS) $(INTWRPSRCS)
 
 wrapper_clean:
 	-$(RM) $(WRPOBJS)
+
+template_clean:
+	-$(RM) $(TMPOBJS) $(TMPSIGOBJS)
 
 distclean: clean
 	-$(RM) gtkraw.c config.* Makefile
