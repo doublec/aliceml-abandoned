@@ -1098,8 +1098,10 @@ struct
 	let
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
+(*UNFINISHED: results in incomplete type inference
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
 			    error(i, E.StrModUnclosed lnt)
+*)
 	    val j     = Inf.inSig s
 	in
 	    ( j, O.StrMod(infInfo(i,j), decs') )
