@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -32,6 +32,7 @@ functor MkPervasiveType(val labid_false :	string
 			val typid_array :	string
 			val typid_strict :	string
 			val typid_conarrow :	string
+			val typid_package :	string
 			val valid_match :	string
 			val valid_bind :	string
 			val modid_pervasive :	string
@@ -58,6 +59,7 @@ struct
     val name_array	= Name.ExId typid_array
     val name_strict	= Name.ExId typid_strict
     val name_conarrow	= Name.ExId typid_conarrow
+    val name_package	= Name.ExId typid_package
 
     val name_match	= Name.ExId valid_match
     val name_bind	= Name.ExId valid_bind
@@ -87,6 +89,8 @@ struct
     val _		= PathSet.insert(paths, path_strict)
     val path_conarrow	= Path.pervasive typid_conarrow
     val _		= PathSet.insert(paths, path_conarrow)
+    val path_package	= Path.pervasive typid_package
+    val _		= PathSet.insert(paths, path_package)
 
     val kind_star	= Type.starKind()
     val kind_ext	= Type.extKind()
@@ -103,6 +107,7 @@ struct
     val typ_array	= Type.con(path_array,    kind_arrow)
     val typ_strict	= Type.con(path_strict,   kind_arrow)
     val typ_conarrow	= Type.con(path_conarrow, kind_arrow)
+    val typ_package	= Type.con(path_package,  kind_star)
 
     val typ_zero	= Type.apply(typ_strict, Type.tuple #[])
     val row_bool	= Type.extendRow(lab_false, typ_zero,
@@ -126,5 +131,6 @@ struct
 	else if s = typid_array  then typ_array
 	else if s = typid_strict then typ_strict
 	else if s = typid_conarrow then typ_conarrow
+	else if s = typid_package  then typ_package
 	else raise Lookup s
 end
