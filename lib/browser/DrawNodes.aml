@@ -35,16 +35,35 @@ struct
 
     exception MissingColor
     exception DrawError
-    exception NodeFound of int * int * node
+    exception NodeFound of int * int * node 
     	   
-    fun groupToPosition (node,x,y) = GtkSupport.moveGroup(getGroup(node),x,y)
+    fun groupToPosition (node,x,y) = GtkSupport.moveGroup(getGroup(node),x,y,
+							  Settings.getFontHeight(),
+							  Settings.getFontWidth())
+
+    fun getCoordinates group =  GtkSupport.getCoordinates (group,
+							   Settings.getFontHeight(),
+							   Settings.getFontWidth()) 
+
+    fun moveGroup(group,dx,dy) = GtkSupport.moveGroup(group,dx,dy,
+						      Settings.getFontHeight(),
+						      Settings.getFontWidth()) 
+
+    fun createArrowDown (group,color) =  GtkSupport.createArrowDown(group,color,
+							    Settings.getFontHeight(),
+							    Settings.getFontWidth()) 
+
+    fun createArrowRight (group,color) =  GtkSupport.createArrowDown(group,color,
+							    Settings.getFontHeight(),
+							    Settings.getFontWidth()) 
+							    
 				      
     fun move'(n,x,y) = let
 			   val group = getGroup(n)
 			   val (old_x,
 				old_y,
 				old_x2,
-				old_y2) = GtkSupport.getCoordinates group 
+				old_y2) = getCoordinates (group) 
 			   val needs_printing =  old_x = 0 
 			                         andalso old_y = 0
 			                         andalso old_x2 = 0
@@ -52,7 +71,7 @@ struct
 			   val dx = x-old_x
 			   val dy = y-old_y
 		       in
-			   (GtkSupport.moveGroup(group,dx,dy)
+			   (moveGroup(group,dx,dy)
 			    ; needs_printing)
 		       end
 
@@ -84,8 +103,8 @@ struct
     fun drawLimit (node,x,y,upd) = 
 	let 
 	    val createArrow = if getSort(node) = DEPTH_LIMIT
-				  then GtkSupport.createArrowDown
-			      else GtkSupport.createArrowRight
+				  then createArrowDown
+			      else createArrowRight
 	in
 	    (if upd 
 		 then if move'(node,x,y)

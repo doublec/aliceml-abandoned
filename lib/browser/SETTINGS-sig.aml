@@ -36,6 +36,9 @@ sig
     val fontWidth: int ref
     val fontSize: int ref
 
+    val getFontHeight: unit -> int 
+    val getFontWidth: unit -> int
+
     val setFontSize: int -> unit
 
     val set_width: int -> unit

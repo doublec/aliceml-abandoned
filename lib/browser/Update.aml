@@ -105,8 +105,10 @@ struct
 	else ( case Dictionaries.Main.lookup(Dictionaries.maindict,i) of
 	            NONE => ()
                   | SOME (node,line) 
-			=> ( GtkSupport.moveGroup(getGroup(node),0,dy)
-			   ; GtkSupport.yPosSepLine(line,getGroup(node)) )
+			=> ( GtkSupport.moveGroup(getGroup(node),0,dy,
+						  Settings.getFontHeight(),Settings.getFontWidth())
+			   ; GtkSupport.yPosSepLine(line,getGroup(node),
+						    Settings.getFontHeight()) )
              ; iterMove(dy,i+1) )
 
     (* calcMaxXDim *) 
@@ -157,7 +159,7 @@ struct
 			       ; relnumber := 0 )
 		     else ()  
 		   ; case getDesc(n) of
-			 VALUE(r) => f(va,#typ(r),p,index,
+			 VALUE(r) => f(NONE va,#typ(r),p,index,
 				       getDepth(n),root)
 		       | I_VALUE(r) => let val va_inf =   
 			     UnsafeValue.cast va : Reflect.module
@@ -174,7 +176,9 @@ struct
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
 		       else ()
-	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
+	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc),
+						      Settings.getFontHeight(),
+						      Settings.getFontWidth())
 	   in ( setDazzled n
 	       ; Gtk.objectDestroy(getGroup(n))
                ; Layout.layout(node)  

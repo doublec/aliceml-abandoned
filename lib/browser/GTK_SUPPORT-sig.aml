@@ -108,12 +108,12 @@ signature GTK_SUPPORT =
 	val createVBoxDefaults: Gtk.object list -> Gtk.object   
 	val createVBox: (Gtk.object * bool * bool * int) list -> Gtk.object
 	val createFrame : string * Gtk.object -> Gtk.object
-	val createScrollWindowDefaults: real * real 
+	val createScrollWindowDefaults: real * real * real * real
 	    -> Gtk. object * Gtk.object * Gtk.object
 	val createStatusbar: unit 
 	    -> Gtk.object * (string -> int) * (string -> int)
 
-	val changeFontSize: int -> unit
+(*	val changeFontSize: int -> unit *)
 	
 (* More complex stuff *)
 
@@ -129,21 +129,21 @@ signature GTK_SUPPORT =
 (* Canvas Items & Handling *)
 
 	val allocColor : int * int * int -> tag
-	val fontWidth     : unit -> int
-        val fontHeight    : unit -> int
+(*	val fontWidth     : unit -> int
+        val fontHeight    : unit -> int *)
 	val newTag        : tag * real * real -> tag
 	val move          : tag * real * real -> unit   
 	val print00       : string * tag * tag * string -> tag
 	val positionGroup : tag * real * real -> unit
-	val moveGroup     : tag * int * int  -> unit
-	val getCoordinates: tag  -> int * int * int * int 
-	val getPosition   : tag  -> int * int
+	val moveGroup     : tag * int * int * int * int -> unit
+	val getCoordinates: tag * int * int -> int * int * int * int 
+	val getPosition   : tag * int * int -> int * int
 	val itemMoveTo    : tag * real * real -> unit
-	val createSepLine : tag * int * real -> tag
+	val createSepLine : tag * int * real * int -> tag
 	val resizeSepLine : tag * int -> unit
-	val yPosSepLine   : tag * tag -> unit 
-	val createArrowRight: tag * tag  -> tag
-	val createArrowDown: tag * tag -> tag
+	val yPosSepLine   : tag * tag * int -> unit 
+	val createArrowRight: tag * tag * int * int  -> tag
+	val createArrowDown: tag * tag * int * int -> tag
 	val createRectangle: Gtk.object * real * real * real * real 
 	    -> Gtk.object
 

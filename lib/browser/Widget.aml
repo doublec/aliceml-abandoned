@@ -284,7 +284,7 @@ struct
 
     val (status,postType,postMode) = createStatusbar() 
 	 
-    val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0)
+    val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0,!Settings.max_x, !Settings.max_y)
 
     fun freezeThaw(x) = (layoutFreeze(x)
 		       ; layoutThaw(x))
@@ -1042,7 +1042,8 @@ fun setVisible (x,y) = let
 	    val n = NewNode.newNode(va,t,i,root)	
             val line = (Layout.layout(n)
 			;setVisible(get_xdim(n),get_ydim(n)+1)
-			;createSepLine(root,!act_line,canvaswidth(hadj)))
+			;createSepLine(root,!act_line,canvaswidth(hadj),
+				       Settings.getFontHeight()))
 	in
 	    ( DrawNodes.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
@@ -1067,7 +1068,8 @@ fun setVisible (x,y) = let
 	    val n = NewNode.newNodeInf(va,t,i,root)	
             val line =( Layout.layout(n)
 		       ;setVisible(get_xdim(n),get_ydim(n)+1)
-		       ;createSepLine(root,!act_line,canvaswidth(hadj)))
+		       ;createSepLine(root,!act_line,canvaswidth(hadj),
+				      Settings.getFontHeight() ))
 	in
 	    ( DrawNodes.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)

@@ -38,6 +38,10 @@ struct
     val fontWidth = ref (Gdk.stringWidth(!font,"W"))
     val fontSize = ref 14
 
+    fun getFontHeight() = !fontHeight 
+     
+    fun getFontWidth() = !fontWidth
+
     fun setFontSize i = (fontSize:= i
 			 ;fontname:=  ("-*-*-medium-r-normal--"
 			 ^ Int.toString(i) 

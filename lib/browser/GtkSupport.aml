@@ -289,12 +289,12 @@ fun createFrame (title,obj) =
 	 ; frame)
     end
 
-fun  createScrollWindowDefaults(inc1,inc2) =  
+fun  createScrollWindowDefaults(inc1,inc2,max_x, max_y) =  
     let
-	val adj1 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_x ,
-				     inc1,inc2,!Settings.max_x )
-	val adj2 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_y ,
-				     inc1,inc2,!Settings.max_y ) 
+	val adj1 = Gtk.adjustmentNew(0.0,0.0,max_x ,
+				     inc1,inc2,max_x )
+	val adj2 = Gtk.adjustmentNew(0.0,0.0,max_y ,
+				     inc1,inc2,max_y ) 
 	    
 	val scrolled = Gtk.scrolledWindowNew(adj1,adj2)
 	val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
@@ -326,6 +326,7 @@ fun createStatusbar()  = let
 			     (status,postMessageType,postMessageMode)
 			 end
 
+(* 
 fun changeFontSize i = let
                            val fontname =  "-*-*-medium-r-normal--" 
 			       ^ Int.toString(i) 
@@ -340,7 +341,7 @@ fun changeFontSize i = let
 			    ; Settings.fontWidth :=
 			    (Gdk.stringWidth(font,"W"))
 			    ;Settings.fontSize := i)
-		       end
+		       end *)
 
 (******************** More Complex Stuff **************************)
 
@@ -453,10 +454,10 @@ fun setExpandSensitive (bar,sensitive)=
 	    c
 	end
     
-		  
+(* 		  
  fun fontHeight() = !Settings.fontHeight 
      
- fun fontWidth() = !Settings.fontWidth
+ fun fontWidth() = !Settings.fontWidth *)
 
  fun newTag(parent,x,y) = 
      GtkCanvas.itemNew(parent, 
@@ -481,13 +482,11 @@ fun setExpandSensitive (bar,sensitive)=
 	            (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
 	 	     ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
 					       
- fun moveGroup (group,x,y) = if x=0 andalso y=0 then ()
+ fun moveGroup (group,x,y,font_height,font_width) = if x=0 andalso y=0 then ()
 		  else
 		 let
-		      val w = fontWidth()
-		      val h =   fontHeight()
-		      val rx = Real.fromInt(x * w)
-		      val ry = Real.fromInt(y * h)
+		      val rx = Real.fromInt(x * font_width)
+		      val ry = Real.fromInt(y * font_height)
 		      val _ = () (* TextIO.print("ITEM MOVE BY " 
 				  ^ Real.toString(rx)
 				  ^ "/" 
@@ -498,28 +497,24 @@ fun setExpandSensitive (bar,sensitive)=
 		  end
 	  
 			     
- fun getCoordinates group = 
+ fun getCoordinates (group,font_height,font_width) = 
      let
-	 val w = fontWidth()
-	 val h = fontHeight()
 	 val (rx1,ry1,rx2,ry2) = 
 	     GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
-	 val x1 = (Real.trunc rx1) div w
-	 val y1 = (Real.trunc ry1) div h
-	 val x2 = (Real.trunc rx2) div w
-	 val y2 = (Real.trunc ry2) div h
+	 val x1 = (Real.trunc rx1) div font_width
+	 val y1 = (Real.trunc ry1) div font_height
+	 val x2 = (Real.trunc rx2) div font_width
+	 val y2 = (Real.trunc ry2) div font_height
      in
 	 (x1,y1,x2,y2)
      end
 		   
- fun getPosition group = 
+ fun getPosition (group,font_height, font_width) = 
      let
-	 val w = fontWidth()
-	 val h = fontHeight()
 	 val (rx1,ry1,_,_) = 
 	     GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
-	 val x1 = (Real.trunc rx1) div w
-	 val y1 = (Real.trunc ry1) div h
+	 val x1 = (Real.trunc rx1) div font_width
+	 val y1 = (Real.trunc ry1) div font_height
      in
 	 (x1,y1)
      end
@@ -549,13 +544,13 @@ fun setExpandSensitive (bar,sensitive)=
 		  ^ "\n") *) () )
      end
 
- fun createSepLine (group,actline,x)= 
+ fun createSepLine (group,actline,x,font_height)= 
      if actline > 0 
 	 then
 	     let
 		 val mx = Real.trunc(x)
-		 val linepos = actline * fontHeight()
-		     - (fontHeight() div 2)
+		 val linepos = actline * font_height
+		     - (font_height div 2)
 	     in
 		 GtkCanvas.itemNew(group,   		 
 				   GtkCanvas.LINE, 
@@ -582,14 +577,14 @@ fun setExpandSensitive (bar,sensitive)=
 			    Gdk.POINTS ([0, y1, x, y1])))
      end
 			 
- fun yPosSepLine (item,group) = 
+ fun yPosSepLine (item,group,font_height) = 
      let
 	 val (_,ry1,_,_) = 
 	     GtkCanvas.itemGetBounds(group, 0.0,
 				     0.0,
 				     0.0,
 				     0.0)
-	 val y = Real.trunc(ry1) - (fontHeight() div 2)
+	 val y = Real.trunc(ry1) - (font_height div 2)
 	 val (_,_,lx2,_) = 
 	     GtkCanvas.itemGetBounds(item, 0.0,
 				     0.0,
@@ -621,10 +616,10 @@ fun setExpandSensitive (bar,sensitive)=
 			    ("width_pixels", Gdk.INT 1)])
 
  	       
- fun createArrowRight(group,color) = 
+ fun createArrowRight(group,color,font_height,font_width) = 
      let
-	 val w = (fontWidth() * 3) div 2
-	 val h = fontHeight()  
+	 val w = (font_width * 3) div 2
+	 val h = font_height  
 	 val points = [4,0, 4,2, 0,2, 0,6, 4,6, 4,8, 8,4]
 	 val points' = translate(points,w,h,0,0)
 	 val group' = newTag(group,0.5,0.5)
@@ -632,10 +627,10 @@ fun setExpandSensitive (bar,sensitive)=
 	 createArrow(group',points',color)
      end
 
- fun createArrowDown(group,color) = 
+ fun createArrowDown(group,color,font_height,font_width) = 
      let
-	 val w = (fontWidth() * 3) div 2
-	 val h = fontHeight() 
+	 val w = (font_width * 3) div 2
+	 val h = font_height 
 	 val points = [2,0, 2,4, 0,4, 4,8, 8,4, 6,4, 6,0]
 	 val points' = translate(points,w,h,0,0)
 	 val group' = newTag(group,0.5,0.5)
