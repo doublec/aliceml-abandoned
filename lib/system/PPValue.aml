@@ -276,13 +276,11 @@ struct
 				    val doc' =
 					ppVal' t' fm' (unsafe_proj(x,ls,i))
 				 in
-				    abox(
-					hbox(
-					    text(Label.toString l) ^/^
-					    text "="
-					) ^^
-					nest(break ^^ doc')
-				    ) :: docs
+				    abox(nest(
+					text(Label.toString l) ^^
+					text " =" ^/^
+					doc'
+				    )) :: docs
 				 end) ds (ts,0,SOME n')
 	    in
 		brace(
@@ -358,7 +356,9 @@ struct
 	    val (_,t') = Type.asApply t
 	    val ppElem = ppVal' t' (arg fm)
 	in
-	    SOME(ppApply fm (text "ref", [ppElem(!x)]))
+	    SOME(
+		ppApply fm (text "ref", [ppElem(!x)])
+	    )
 	end
 
     fun ppVec t fm =
