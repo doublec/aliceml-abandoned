@@ -111,7 +111,7 @@ structure IL :> IL =
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
-	  | LdcR8 of string
+	  | LdcR8 of LargeReal.real
 	  | LdelemRef
 	  | Ldfld of dottedname * id * ty
 	  | LdindI4
@@ -497,7 +497,7 @@ structure IL :> IL =
 		 (output (q, ".s "); output (q, intToString i))
 	     else (output1 (q, #" "); output (q, intToString i)))
 	  | outputInstr (q, LdcR8 r) =
-	    (output (q, "ldc.r8 "); output (q, r))
+	    (output (q, "ldc.r8 "); output (q, (LargeReal.toString r)))
 	  | outputInstr (q, LdelemRef) = output (q, "ldelem.ref")
 	  | outputInstr (q, Ldfld (dottedname, id, ty)) =
 	    (output (q, "ldfld "); outputTy (q, ty); output1 (q, #" ");

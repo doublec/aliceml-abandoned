@@ -315,7 +315,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | conArgsEq (SOME (O.ProdArgs _), SOME (O.ProdArgs _)) = true
 	  | conArgsEq (_, _) = false
 
-	fun testEq (LitTest lit1, LitTest lit2) = false (*--** lit1 = lit2*)
+	fun testEq (LitTest lit1, LitTest lit2) = O.litEq (lit1, lit2)
 	  | testEq (TagTest (_, n1, conArgs1, _),
 		    TagTest (_, n2, conArgs2, _)) =
 	    n1 = n2 andalso conArgsEq (conArgs1, conArgs2)
@@ -329,7 +329,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) =
-	    false (*--** lit1 <> lit2 *)
+	    O.litEq (lit1, lit2)
 	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
 	  | areParallelTests (_, _) = false
 

@@ -319,7 +319,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | argsMin (_, _) = raise Crash.Crash "ValuePropagationPhase.argsMin"
 
 	fun valueMin (value as LitVal lit, LitVal lit') =
-	    (*--** if lit = lit' then value else *) UnknownVal
+	    if litEq (lit, lit') then value else UnknownVal
 	  | valueMin (value as PrimVal name, PrimVal name') =
 	    if name = name' then value else UnknownVal
 	  | valueMin (value as VarVal (Id (_, stamp, _)),
@@ -685,8 +685,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     in
 			 case entry of
 			     (LitVal lit', _) =>
-				 (*--** if lit = lit' then (nil, body)
-				 else *) (nil, elseBody)
+				 if litEq (lit, lit') then (nil, body)
+				 else (nil, elseBody)
 			   | _ => ((lit, body)::litBodyList, elseBody)
 		     end) (nil, elseBody) litBodyVec
 	    in

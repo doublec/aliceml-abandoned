@@ -155,8 +155,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (LdcI4 (Char.ord c)); emitBox (CharTy, System.Char))
 	  | genLit (StringLit s) = emit (Ldstr s)
 	  | genLit (RealLit r) =
-	    (emit (LdcR8 (LargeReal.toString r));
-	     emitBox (Float64Ty, System.Double))
+	    (emit (LdcR8 r); emitBox (Float64Ty, System.Double))
 
 	(*--** remove global state *)
 	val sharedLabels: label StampMap.t = StampMap.new ()
@@ -307,8 +306,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				 val regState = saveRegState ()
 			     in
 				 if i < max then emit Dup else ();
-				 emit (LdcR8 (LargeReal.toString r));
-				 emit (B (NE_UN, elseLabel));
+				 emit (LdcR8 r); emit (B (NE_UN, elseLabel));
 				 if i < max then emit Pop else ();
 				 genBody body; emit (Label elseLabel);
 				 restoreRegState regState

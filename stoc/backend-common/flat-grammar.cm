@@ -8,6 +8,7 @@ Group
 is
 
     ../misc/sources.cm
+    ../infrastructure/crash.cm
     ../infrastructure/source.cm
     ../common/id-stamp.cm
     ../common/intermediate-grammar.cm

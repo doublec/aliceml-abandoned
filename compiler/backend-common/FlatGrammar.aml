@@ -129,4 +129,11 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | infoStm (ReturnStm (info, _)) = info
 	  | infoStm (IndirectStm (info, _)) = info
 	  | infoStm (ExportStm (info, _)) = info
+
+	fun litEq (IntLit i1, IntLit i2) = i1 = i2
+	  | litEq (WordLit w1, WordLit w2) = w1 = w2
+	  | litEq (CharLit c1, CharLit c2) = c1 = c2
+	  | litEq (StringLit s1, StringLit s2) = s1 = s2
+	  | litEq (RealLit r1, RealLit r2) = Real.== (r1, r2)
+	  | litEq (_, _) = raise Crash.Crash "IntermediateAux.litEq"
     end

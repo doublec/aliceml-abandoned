@@ -111,7 +111,7 @@ signature IL =
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
-	  | LdcR8 of string
+	  | LdcR8 of LargeReal.real
 	  | LdelemRef
 	  | Ldfld of dottedname * id * ty
 	  | LdindI4

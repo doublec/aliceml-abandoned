@@ -114,4 +114,5 @@ signature FLAT_GRAMMAR =
 
 	val freshId: id_info -> id
 	val infoStm: stm -> stm_info
+	val litEq: lit * lit -> bool
     end
