@@ -26,6 +26,7 @@ TODO: Eliminate SingTyp in abstract grammar by proper encoding of datatypes.
 import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
 
+import structure Name              from "../../lib/rtt/Name"
 import structure Label             from "../../lib/rtt/Label"
 import structure Path              from "../../lib/rtt/Path"
 import structure PathMap           from "../../lib/rtt/PathMap"
@@ -144,6 +145,12 @@ struct
   (* Predefined types *)
 
     val localName	= "_local"
+
+    fun nonlocalPath NONE    = true
+      | nonlocalPath(SOME p) =
+	case Path.inspect p
+	 of Path.Name n => n <> Name.ExId localName
+	  | _           => true
 
     fun boolTyp E	= PervasiveType.typ_bool
     fun exnTyp E	= PervasiveType.typ_exn
@@ -1752,10 +1759,10 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.TypDec(i, typid, typ)) =
 	let
-	    val abbrev = case typ of I.ConTyp(_,I.ShortId(_,typid')) =>
+	    val abbrev = (case typ of I.ConTyp(_,I.ShortId(_,typid')) =>
 				     I.name typid' <> I.name typid
 				   | I.PrimTyp _ => false
-				   | _ => true
+				   | _ => true) andalso nonlocalPath po
 	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
 	    val (t',typid')  = elabTypid_bind(E, p, abbrev, t, typid)
@@ -1784,10 +1791,10 @@ prInf "j'" j';
 
       | elabDec(E, s,po,varids, I.InfDec(i, infid, inf)) =
 	let
-	    val abbrev = case inf of I.ConInf(_,I.ShortId(_,infid')) =>
+	    val abbrev = (case inf of I.ConInf(_,I.ShortId(_,infid')) =>
 				     I.name infid' <> I.name infid
 				   | I.PrimInf _ => false
-				   | _ => true
+				   | _ => true) andalso nonlocalPath po
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, abbrev, j, infid)
