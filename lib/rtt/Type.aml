@@ -845,10 +845,12 @@ struct
     fun fill(t1, t2) =
 	case typ' t1
 	  of HOLE(k,n)	=>
+(*Assertions trigger lazy types...
 (*ASSERT		   assert k1 = kind t2 =>*)
 			   if k <> kind t2 then raise Assert.failure else
 (*ASSERT		   assert not(isLambda t2) =>*) (* should be MU! *)
 			   if isLambda t2 then raise Assert.failure else
+*)
 			   replace(t1, LINK t2)
 	   | _		=> raise Fill
 
