@@ -1,0 +1,29 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Rand   from "../system/Rand"
+import signature RANDOM from "RANDOM-sig"
+
+(* Quick & dirty *)
+
+structure Random : RANDOM =
+struct
+    val  _         = Rand.srand 0
+    val (min,max)  = Rand.randLimits()
+    val  range     = max - min
+
+    fun int limit  = Rand.rand() mod limit
+    fun real limit = Real./(Real.*(Real.fromInt(Rand.rand()-min), limit),
+			    Real.fromInt range)
+    val largeInt   = int
+    val largeReal  = real
+end
