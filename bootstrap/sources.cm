@@ -1,6 +1,6 @@
 Group is
 
-	ExtendedBase.sml
+	ExtendedBasis.sml
 
 #if (!defined(structure Posix))
 	DummyPosix.sml
