@@ -1,0 +1,77 @@
+diff -rNu lightning-1.1.3pre/lightning/i386/core.h lightning-1.1.3pre-seam-patches/lightning/i386/core.h
+--- lightning-1.1.3pre/lightning/i386/core.h	2004-03-15 11:55:48.000000000 +0100
++++ lightning-1.1.3pre-seam-patches/lightning/i386/core.h	2004-04-13 15:48:27.000000000 +0200
+@@ -344,10 +344,10 @@
+ #define jit_bgei_i(label, rs, is)	jit_bra_i0((rs), (is), JGEm(label,0,0,0), JNSm(label,0,0,0) )
+ #define jit_beqi_i(label, rs, is)	jit_bra_i0((rs), (is), JEm(label, 0,0,0), JEm(label, 0,0,0) )
+ #define jit_bnei_i(label, rs, is)	jit_bra_i0((rs), (is), JNEm(label,0,0,0), JNEm(label,0,0,0) )
+-#define jit_blti_ui(label, rs, is)	jit_bra_i ((rs), (is), JLm(label, 0,0,0)		    )
+-#define jit_blei_ui(label, rs, is)	jit_bra_i0((rs), (is), JLEm(label,0,0,0), JEm(label, 0,0,0) )
+-#define jit_bgti_ui(label, rs, is)	jit_bra_i0((rs), (is), JGm(label, 0,0,0), JNEm(label,0,0,0) )
+-#define jit_bgei_ui(label, rs, is)	jit_bra_i ((rs), (is), JGEm(label,0,0,0)		    )
++#define jit_blti_ui(label, rs, is)	jit_bra_i ((rs), (is), JBm(label, 0,0,0)		    )
++#define jit_blei_ui(label, rs, is)	jit_bra_i0((rs), (is), JBEm(label,0,0,0), JEm(label, 0,0,0) )
++#define jit_bgti_ui(label, rs, is)	jit_bra_i0((rs), (is), JAm(label, 0,0,0), JNEm(label,0,0,0) )
++#define jit_bgei_ui(label, rs, is)	jit_bra_i ((rs), (is), JAEm(label,0,0,0)		    )
+ #define jit_boaddi_i(label, rs, is)	(ADDLir((is), (rs)), JOm(label,0,0,0), _jit.x.pc)
+ #define jit_bosubi_i(label, rs, is)	(SUBLir((is), (rs)), JOm(label,0,0,0), _jit.x.pc)
+ #define jit_boaddi_ui(label, rs, is)	(ADDLir((is), (rs)), JCm(label,0,0,0), _jit.x.pc)
+@@ -358,6 +358,7 @@
+ 
+ #define jit_jmpi(label)		(JMPm( ((unsigned long) (label)),	0, 0, 0), _jit.x.pc)
+ #define jit_calli(label)	(CALLm( ((unsigned long) (label)),	0, 0, 0), _jit.x.pc)
++#define jit_callr(reg)          (CALLsr(reg))
+ #define jit_jmpr(reg)		JMPsr(reg)
+ #define jit_patch_at(jump_pc,v)	(*_PSL((jump_pc) - 4) = _jit_SL((v) - (jump_pc)))
+ #define jit_ret()		(POPLr(_EDI), POPLr(_ESI), POPLr(_EBX), POPLr(_EBP), RET())
+diff -rNu lightning-1.1.3pre/lightning/i386/fp.h lightning-1.1.3pre-seam-patches/lightning/i386/fp.h
+--- lightning-1.1.3pre/lightning/i386/fp.h	2004-03-15 11:55:48.000000000 +0100
++++ lightning-1.1.3pre-seam-patches/lightning/i386/fp.h	2004-04-13 15:52:59.000000000 +0200
+@@ -242,21 +242,21 @@
+         jit_fxch ((rs), FISTPLm(0, _ESP, 0, 0)),       \
+ 	POPLr((rd)))
+ 
+-#define jit_fp_test(d, s1, s2, n, and, res)            \
++#define jit_fp_test(d, s1, s2, n, _and, res)            \
+        (((s1) == 0 ? FUCOMr((s2)) : (FLDr((s1)), FUCOMPr((s2) + 1))),                          \
+         ((d) != _EAX ? MOVLrr(_EAX, (d)) : 0),                 \
+         FNSTSWr(_EAX),                                         \
+         SHRLir(n, _EAX),                                       \
+-        ((and) ? ANDLir((and), _EAX) : MOVLir(0, _EAX)),       \
++        ((_and) ? ANDLir((_and), _EAX) : MOVLir(0, _EAX)),       \
+         res,                                                   \
+         ((d) != _EAX ? _O (0x90 + ((d) & 7)) : 0))     /* xchg */
+ 
+-#define jit_fp_btest(d, s1, s2, n, and, cmp, res)                      \
++#define jit_fp_btest(d, s1, s2, n, _and, cmp, res)                      \
+        (((s1) == 0 ? FUCOMr((s2)) : (FLDr((s1)), FUCOMPr((s2) + 1))),                          \
+         PUSHr(_EAX),                                           \
+         FNSTSWr(_EAX),                                         \
+         SHRLir(n, _EAX),                                       \
+-        ((and) ? ANDLir ((and), _EAX) : 0),                    \
++        ((_and) ? ANDLir ((_and), _EAX) : 0),                    \
+         ((cmp) ? CMPLir ((cmp), _AL) : 0),                     \
+         POPr(_EAX),                                            \
+         res ((d)))
+diff -rNu lightning-1.1.3pre/lightning/ppc/core.h lightning-1.1.3pre-seam-patches/lightning/ppc/core.h
+--- lightning-1.1.3pre/lightning/ppc/core.h	2004-04-05 21:56:38.000000000 +0200
++++ lightning-1.1.3pre-seam-patches/lightning/ppc/core.h	2004-04-13 15:48:27.000000000 +0200
+@@ -182,6 +182,7 @@
+ #define jit_boaddr_ui(label, s1, s2)	(		  			     ADDCrr((s1), (s1), (s2)), 	   MCRXRi(0), BEQi((label)), _jit.x.pc)
+ #define jit_bosubr_ui(label, s1, s2)	(		  			     SUBCrr((s1), (s1), (s2)), 	   MCRXRi(0), BEQi((label)), _jit.x.pc)
+ #define jit_calli(label)	        (jit_movi_p(JIT_AUX, (label)), MTLRr(JIT_AUX), BLRL(), _jitl.nextarg_puti = _jitl.nextarg_putf = _jitl.nextarg_putd = 0, _jit.x.pc)
++#define jit_callr(reg)              (MTCTRr(reg), BCTRL())
+ #define jit_divi_i(d, rs, is)		jit_big_ims((is), DIVWrrr ((d), (rs), JIT_AUX))
+ #define jit_divi_ui(d, rs, is)	jit_big_imu((is), DIVWUrrr((d), (rs), JIT_AUX))
+ #define jit_divr_i(d, s1, s2)		DIVWrrr ((d), (s1), (s2))
+diff -rNu lightning-1.1.3pre/lightning/sparc/core.h lightning-1.1.3pre-seam-patches/lightning/sparc/core.h
+--- lightning-1.1.3pre/lightning/sparc/core.h	2004-03-15 11:16:08.000000000 +0100
++++ lightning-1.1.3pre-seam-patches/lightning/sparc/core.h	2004-04-13 16:39:23.000000000 +0200
+@@ -178,6 +178,7 @@
+ #define jit_boaddr_ui(label, s1, s2)	(		   ADDCCrrr((s1), (s2), (s1)),			         BCSi((label)), NOP(), _jit.x.pc - 1)
+ #define jit_bosubr_ui(label, s1, s2)	(		   SUBCCrrr((s1), (s2), (s1)),			         BCSi((label)), NOP(), _jit.x.pc - 1)
+ #define jit_calli(label)		(CALLi(label), NOP(), _jit.x.pc - 1)
++#define jit_callr(reg)                  (JMPLmr(reg, 0, _Ro(7)), NOP())
+ #define jit_divi_i(d, rs, is)		(jit_prepare_y((rs), 0x12345678), SETir((is), JIT_BIG), SDIVrrr((rs), JIT_BIG, (d)) )
+ #define jit_divi_ui(d, rs, is)		(jit_clr_y((rs)),    0x12345678), SETir((is), JIT_BIG), UDIVrrr((rs), JIT_BIG, (d)) )
+ #define jit_divr_i(d, s1, s2)		(jit_prepare_y((s1), 0), 				SDIVrrr((s1), (s2), (d)))
