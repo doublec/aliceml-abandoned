@@ -1,0 +1,2 @@
+#!/bin/sh
+(make generate && make depend && make compile docs)
