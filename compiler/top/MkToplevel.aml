@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,7 +19,6 @@ import structure IO                   from "../../lib/system/IO"
 import structure OS                   from "../../lib/system/OS"
 import structure Url                  from "../../lib/system/Url"
 import structure Signal               from "../../lib/system/Signal"
-import structure Config               from "../../lib/system/Config"
 
 import structure Component            from "../../lib/system/Component"
 import structure PPComponent          from "../../lib/system/PPComponent"
@@ -43,13 +42,7 @@ struct
                                    "Usage: alice [options]\n" ^
 				   OptionParser.helpText)
 
-    val banner     = "Alice 1.0 (\"" ^
-		     (case Config.vm
-		       of "mozart" => "Stockhausen Operette 4 Original Mix"
-		        | "seam" => "Kraftwerk Album 1"
-			| _ => "Alien Invaderz Breakz Mix"
-		     ) ^ "\"), mastered " ^
-		     Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
+    val banner     = OptionParser.banner
     val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
     val prompt     = "- "
     val contPrompt = "  "

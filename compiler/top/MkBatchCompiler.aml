@@ -57,7 +57,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 		val url = Url.fromString dstfile
 		val component = Component.load url
 		val imports = Vector.map (Pair.mapFst (Url.resolve url))
-	    				 (Component.imports component)
+					 (Component.imports component)
 		val srctime = OS.FileSys.modTime srcfile
 		val dsttime = OS.FileSys.modTime dstfile
 		val rea = Inf.rea ()
@@ -88,15 +88,13 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 	    handle _ => false
 
 	fun main_c (infile, outfile) =
-	    (RecursiveCompiler.compileFileToFile (infile, outfile);
-	     OS.Process.success)
+	    RecursiveCompiler.compileFileToFile (infile, outfile)
 (*--** handle IO.Io {...} => *)
 
 	fun main_r (infile, outfile) =
 	    if uptodate (infile, outfile) then
 		(TextIO.output (TextIO.stdErr, outfile ^ " is up to date\n");
-		 TextIO.flushOut TextIO.stdErr;
-		 OS.Process.success)
+		 TextIO.flushOut TextIO.stdErr)
 	    else
 		 main_c (infile, outfile)
 
@@ -104,8 +102,8 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 	    (*--** respect executableHeader *)
 	    (RecursiveCompiler.compileFileToFile (infile, outfile);
 	     case Config.platform of
-		 Config.WIN32 => OS.Process.success
-	       | Config.UNIX => OS.Process.system ("chmod +x " ^ outfile))
+		 Config.WIN32 => ()
+	       | Config.UNIX => (OS.Process.system ("chmod +x " ^ outfile); ()))
 (*--** handle IO.Io {...} => *)
 
 	structure OptionParser = MkOptionParser (RecursiveCompiler.Switches)
@@ -116,11 +114,12 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 	     "Usage: alicec [<option> ...] [-c|-r|-x] <input file> \
 	      \[-o <output file>]\n" ^ OptionParser.helpText)
 
-        fun main' ("--version"::_) =
-	    (TextIO.output (TextIO.stdOut, "alicec "^OptionParser.version ^ "\n\n");
-             TextIO.output (TextIO.stdOut, OptionParser.copyright ^ "\n");
-             OS.Process.success)
-          | main' ["--dryrun"] =
+	fun main' [] = (usage true; OS.Process.failure)
+	  | main' ("--version"::_) =
+	    (TextIO.output (TextIO.stdOut, OptionParser.banner ^ "\n");
+	     TextIO.output (TextIO.stdOut, OptionParser.copyright ^ "\n");
+	     OS.Process.success)
+	  | main' ["--dryrun"] =
 	    let
 		val s = TextIO.inputAll TextIO.stdIn
 	    in
@@ -131,21 +130,18 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 	  | main' ["--print-component-extension"] =
 	    (TextIO.print (Component.extension ^ "\n");
 	     OS.Process.success)
-          | main' (("--help"|"-h"|"-?")::_) =
-            (usage false; OS.Process.success)
-	  | main' ([infile] | ["-c", infile]) =
-	    main_c (infile, basename infile ^ "." ^ extension)
-	  | main' ["-r", infile] =
-	    main_r (infile, basename infile ^ "." ^ extension)
-	  | main' ["-x", infile] =
-	    main_x (infile, basename infile)
-	  | main' ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
-	    main_c (infile, outfile)
-	  | main' ["-r", infile, "-o", outfile] =
-	    main_r (infile, outfile)
-	  | main' ["-x", infile, "-o", outfile] =
-	    main_x (infile, outfile)
-	  | main' _ = (usage true; OS.Process.failure)
+	  | main' (("--help"|"-h"|"-?")::_) = (usage false; OS.Process.success)
+	  | main' ("-c"::(rest as _::_)) = main'' (main_c, rest)
+	  | main' ("-r"::(rest as _::_)) = main'' (main_r, rest)
+	  | main' ("-x"::(rest as _::_)) = main'' (main_x, rest)
+	  | main' rest = main'' (main_c, rest)
+	and main'' (main_, infile::"-o"::outfile::rest) =
+	    (main_ (infile, outfile);
+	     main'' (main_, rest))
+	  | main'' (main_, infile::rest) =
+	    (main_ (infile, basename infile ^ "." ^ extension);
+	     main'' (main_, rest))
+	  | main'' (main_, []) = OS.Process.success
 
 	fun defaults () = (* override defaults from MkSwitches here *)
 	    RecursiveCompiler.Switches.Language.implicitImportFile :=
@@ -153,6 +149,6 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER'
 
 	fun main arguments =
 	    (defaults ();
-             main' (OptionParser.parse arguments))
+	     main' (OptionParser.parse arguments))
 	     handle RecursiveCompiler.Error => OS.Process.failure
     end

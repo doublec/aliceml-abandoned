@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -529,7 +529,7 @@ end
 
     fun FILEAtExp(I, desc) =
 	let
-	    val file = case Source.url desc
+	    val file = case Source.sourceUrl desc
 			of NONE     => ""
 			 | SOME url => Url.toString url
 	in

@@ -358,7 +358,7 @@ structure PickleFlatGrammar :> CODE
 	    let
 		val q = openOut ()
 		val (sourcename, filename') =
-		    case parseUrl (Source.url desc) of
+		    case parseUrl (Source.anyUrl desc) of
 			SOME filename => (filename, filename ^ ".ozp")
 		      | NONE =>
 			    let

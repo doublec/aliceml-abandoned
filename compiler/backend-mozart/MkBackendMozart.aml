@@ -52,7 +52,7 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 			    end
 		    in
 			if not (!Switches.Debug.dumpTarget) then () else
-			    case parseUrl (Source.url desc) of
+			    case parseUrl (Source.anyUrl desc) of
 				SOME filename =>
 				    let
 					val q =

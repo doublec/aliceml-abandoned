@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,7 +24,7 @@ struct
     type pos	= int * int
     type region	= pos * pos
 
-    type desc	= Url.t option
+    type desc	= {source : Url.t, target : Url.t option} option
 
     val nowhere = ((0,0),(0,0))
 
@@ -46,5 +46,11 @@ struct
 
     val stringDesc = NONE
     val urlDesc    = SOME
-    fun url d      = d
+
+    fun sourceUrl NONE = NONE
+      | sourceUrl(SOME{source, target}) = SOME source
+    fun targetUrl NONE = NONE
+      | targetUrl(SOME{source, target}) = target
+    fun anyUrl NONE = NONE
+      | anyUrl(SOME{source, target}) = SOME(Option.getOpt(target, source))
 end

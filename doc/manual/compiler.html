@@ -11,9 +11,11 @@ href="components.html">components</A> from source files.</A>
 
 <DL>
   <DT><TT>alicec</TT> [<I>&lt;options&gt;</I>] [<TT>-c</TT>]
-    <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]</DT>
+    <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]
+    [&lt;input file&gt; [<TT>-o</TT> <I>&lt;output file&gt;</I>] ...] </DT>
   <DT><TT>alicec</TT> [<I>&lt;options&gt;</I>] <TT>-r</TT>
-    <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]</DT>
+    <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]
+    [&lt;input file&gt; [<TT>-o</TT> <I>&lt;output file&gt;</I>] ...] </DT>
 <!--
   <DT><TT>alicec</TT> [<I>&lt;options&gt;</I>] <TT>-x</TT>
     <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]</DT>
@@ -26,15 +28,14 @@ href="components.html">components</A> from source files.</A>
 
 <?php section("description", "description") ?>
 
-<P>The <I>&lt;input file&gt;</I> is compiled as an Alice source program and a
-corresponding component is written as output.  If <I>&lt;output file&gt;</I> is
-given, it is used as the output file name, else the basename of <I>&lt;input
-file&gt;</I> is used with <TT>.alc</TT> as extension. Compiled components can
+<P>All <I>&lt;input file&gt;</I>s are compiled as Alice source programs and corresponding components are written as output. If <I>&lt;output file&gt;</I> is
+given after an <I>&lt;input file&gt;</I>, it is used as the respective output
+file name, else the basename of <I>&lt;input file&gt;</I> is used with <TT>.alc</TT> as extension. Compiled components can
 be executed by invoking the <A href="machine.html">virtual machine</A>.</P>
 
-<P><I>&lt;input file&gt;</I> may be a URL.  See <A
-href="#environment-variables">below</A> for notes on how it is
-interpreted. <I>&lt;output file&gt;</I> may only be omitted if
+<P><I>&lt;input file&gt;</I>s may be a URL.  See <A
+href="#environment-variables">below</A> for notes on how they are
+interpreted. An <I>&lt;output file&gt;</I> may only be omitted if the preceding
 <I>&lt;input file&gt;</I> represents a local file.</P>
 
 <!--
@@ -45,7 +46,7 @@ file&gt;</I> is given, it is used as the output file name, else the basename of
 -->
 
 <P>To compile a component, the compiler requires access to all imported
-component files. If one does not exist, but a source file for it
+component files whose import signature omit type information in the source file. If one does not exist, but a source file for it
 (i.e., a file with same name but ending in <TT>.aml</TT>, <TT>.sml</TT>,
 or <TT>.sig</TT>) can be located, the compiler first invokes itself
 recursively to compile the imported component.  If a component <EM>does</EM>

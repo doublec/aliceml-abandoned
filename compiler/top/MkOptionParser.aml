@@ -10,17 +10,27 @@
  *   $Revision$
  *)
 
+import structure Date          from "../../lib/system/Date"
+import structure Config        from "../../lib/system/Config"
 import signature SWITCHES      from "../infrastructure/SWITCHES-sig"
 import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
 functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
     struct
-	val version = "0.9.3"
-        val copyright = "Copyright (c) 1999-2004 Programming Systems Lab, Saarland University,\n" ^
-                        "and the individual authors"
+	val version = "1.0"
+	val banner = "Alice " ^ version ^ " (\"" ^
+		     (case Config.vm of
+			  "mozart" => "Stockhausen Operette 4 Original Mix"
+			| "seam" => "Kraftwerk Album 1"
+			| _ => "Alien Invaderz Breakz Mix"
+		     ) ^ "\"), mastered " ^
+		     Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
+	val copyright = "Copyright (c) 1999-" ^ Date.fmt "%Y" Config.buildDate
+			^ " Programming Systems Lab, Saarland University,\n"
+			^ "and the individual authors"
 
 	val helpText =
-            "Options:\n\
+	    "Options:\n\
 	    \Gobal options:\n\
 	    \\t--recursive-compilation \n\
 	    \\t\tCompile imported components recursively if necessary.\n\
@@ -137,4 +147,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    if checkBooleanSwitches (s, booleanSwitches) then parse rest
 	    else s::rest
 	  | parse nil = nil
+
+	fun isOption "" = false
+	  | isOption s  = String.sub (s, 0) = #"-"
     end

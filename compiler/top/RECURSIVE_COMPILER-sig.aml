@@ -38,7 +38,7 @@ signature RECURSIVE_COMPILER =
 	val compileString: Context.t * string -> Context.t * Target.t
 
 	(*DEBUG*)
-	val processFile: (Source.desc * string -> 'a) -> string -> 'a
+	val processFile: (Source.desc * string -> 'a) -> string * string option -> 'a
 	val processString: (Source.desc * string -> 'a) -> string -> 'a
     end
 

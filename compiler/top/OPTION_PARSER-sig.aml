@@ -14,7 +14,9 @@ signature OPTION_PARSER =
     sig
 	val helpText: string
         val version: string
+	val banner: string
         val copyright: string
 
 	val parse: string list -> string list
+	val isOption: string -> bool
     end

@@ -130,7 +130,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	end
 
 	fun isBaseSig desc =   (*--** only needed for .NET backend *)
-	    case Source.url desc of
+	    case Source.sourceUrl desc of
 		SOME url =>
 		    ((Url.toLocalFile url =
 		      Url.toLocalFile
@@ -149,7 +149,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	fun processString process source =
 	    processBasic process (Source.stringDesc, source)
 
-	fun processFile process filename =
+	fun processFile process (filename, targetFilenameOpt) =
 	    let
 		val url = resolveWrtCwd (Url.fromString filename)
 		val s = valOf (readUrl url)
@@ -173,15 +173,19 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				      "import \"" ^ f ^ "\" " ^ s)
 				     s' (Dependency.lookup
 					 (d, OS.Path.base filename))
+		val desc = Source.urlDesc {source = url,
+					   target = Option.map Url.fromString
+							targetFilenameOpt}
 	    in
-		processBasic process (Source.urlDesc url, s'')
+		processBasic process (desc, s'')
 	    end handle (Url.NotLocal | Option.Option) =>
 		    error ("could not locate source file " ^ filename)
 
 	local
 	    fun compileSign' (desc, s) =
 		let
-		    val sigFilename = Url.toStringRaw (valOf (Source.url desc))
+		    val sigFilename =
+			Url.toStringRaw (valOf (Source.sourceUrl desc))
 		    val _ = trace ("reading signature from " ^ sigFilename)
 		    val switch =
 			Ref.exchange (Switches.Warn.unusedImport, false)
@@ -215,7 +219,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    {export = export', imports = imports}
 		end
 	in
-	    fun compileSign filename = processFile compileSign' filename
+	    fun compileSign filename = processFile compileSign' (filename, NONE)
 	end
 
 	local
@@ -240,7 +244,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    fun compileFileToFile' (sourceFilename, targetFilename) =
 		(trace ("compiling file " ^ sourceFilename);
 		 fileStack := sourceFilename::(!fileStack);
-		 processFile (compile' targetFilename) sourceFilename
+		 processFile (compile' targetFilename)
+			     (sourceFilename, SOME targetFilename)
 		 before (trace ("wrote file " ^ targetFilename);
 			 case !fileStack of
 			     _::(rest as resumeFilename::_) =>
@@ -320,7 +325,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	fun acquireInfs (desc, url) =
 	    let
 		val url' =
-		    case Source.url desc of
+		    case Source.anyUrl desc of
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
 	    in
@@ -402,7 +407,7 @@ TextIO.print"\n";
 	fun acquireMod (desc, url) =
 	    let
 		val url' =
-		    case Source.url desc of
+		    case Source.anyUrl desc of
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
 	    in
@@ -422,7 +427,7 @@ TextIO.print"\n";
 	    val compileFileToFile = ignore o compileFileToFile'
 
 	    fun compileFile (context, sourceFilename) =
-		processFile (compile' context) sourceFilename
+		processFile (compile' context) (sourceFilename, NONE)
 
 	    fun compileString (context, sourceText) =
 		processString (compile' context) sourceText

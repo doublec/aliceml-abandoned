@@ -844,7 +844,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    let
 		val context' = StampMap.clone context
 		val filename =
-		    case Source.url desc of
+		    case Source.sourceUrl desc of
 			SOME url => Url.toString url
 		      | NONE => ""
 		val imports' =
