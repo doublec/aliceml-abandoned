@@ -123,7 +123,6 @@ struct
 			       fn _ => mainQuit ());
 	    
 	    (* set some default configurations *)
-	    Gtk.entrySetFieldTextSize (serverUrl, String.size serverUrlStr);
 	    Gtk.entrySetText (serverUrl, serverUrlStr);
 	    Gtk.containerSetBorderWidth (waiting, 10);
 	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);

@@ -128,8 +128,11 @@ struct
 
     fun initialize () = 
         let
+	    ifdef([[GTK2]],[[
 	    val canvas = Canvas.newAa 0
-
+	    ]],[[
+	    val canvas = Canvas.newAa ()
+	    ]])
         in
 	    {
 	        canvas,

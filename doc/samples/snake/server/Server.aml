@@ -1,4 +1,4 @@
-import structure DynArray       from "DynArray"
+import structure DynArray       from "x-alice:/lib/utility/DynArray"
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 import structure Random         from "x-alice:/lib/utility/Random"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
