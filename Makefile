@@ -26,7 +26,11 @@ LIBS = $(SUBDIRS:%=-L%) -lalice -lgeneric -ladt -lstore $(EXTRA_LIBS)
 
 all: all-subdirs stow$(EXE)
 
-stow$(EXE): $(OBJS)
+.PHONY: dummy
+
+dummy: ;
+
+stow$(EXE): $(OBJS) dummy
 	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 all-subdirs:
