@@ -1,7 +1,7 @@
 Group
 
     structure FlatGrammar
-    structure BackendCommon
+    functor MakeBackendCommon
 
 is
 

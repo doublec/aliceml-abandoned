@@ -3,9 +3,21 @@ functor MakeFrontendSML(
 		structure Switches: SWITCHES
 	) : PHASE =
     let
+	structure Phase1 =
+		  MakeTracingPhase(
+			structure Phase    = MakeParsingPhase(Switches)
+			structure Switches = Switches
+			val name = "Parsing"
+		  )
 	structure Phase2 =
-		  MakeDumpingPhase(
+		  MakeTracingPhase(
 			structure Phase    = MakeAbstractionPhase(Composer)
+			structure Switches = Switches
+			val name = "Abstraction"
+		  )
+	structure Phase2' =
+		  MakeDumpingPhase(
+			structure Phase    = Phase2
 			structure Switches = Switches
 			val header = "Abstract Syntax"
 			val pp     = PPAbstractGrammar.ppComp
@@ -13,8 +25,8 @@ functor MakeFrontendSML(
 		  )
     in
 	ComposePhases(
-	    structure Phase1  = MakeParsingPhase(Switches)
-	    structure Phase2  = Phase2
+	    structure Phase1  = Phase1
+	    structure Phase2  = Phase2'
 	    structure Context = BindEnv
 	    fun context1 E    = ()
 	    fun context2 E    = E

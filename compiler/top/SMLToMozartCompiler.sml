@@ -27,6 +27,8 @@ structure SMLToMozartCompiler =
 	    MakeFrontendCommon(structure Composer = Composer
 			       structure Switches = Switches)
 
+	structure BackendCommon = MakeBackendCommon(Switches)
+
 	structure BackendMozart = MakeBackendMozart(MozartTarget)
     in
 	MakeCompiler(structure Switches         = Switches

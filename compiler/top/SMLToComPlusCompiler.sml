@@ -24,6 +24,8 @@ structure SMLToComPlusCompiler =
 	    MakeFrontendCommon(structure Composer = Composer
 			       structure Switches = Switches)
 
+	structure BackendCommon = MakeBackendCommon(Switches)
+
 	structure BackendComPlus = MakeBackendComPlus(ComPlusTarget)
     in
 	MakeCompiler(structure Switches         = Switches

@@ -16,7 +16,7 @@ signature SWITCHES =
 	val logOut :				TextIO.outstream
 	val logWidth :				int ref
 
-	val dumpPhase :				bool ref
+	val dumpPhases :			bool ref
 	val dumpAbstractionResult :		bool ref
 	val dumpElaborationResult :		bool ref
 	val dumpElaborationSig :		bool ref

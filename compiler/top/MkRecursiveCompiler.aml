@@ -251,8 +251,8 @@ functor MakeMain(structure Composer: COMPOSER'
 	      \Debug options:\n\
 	      \\t--(no-)dryrun\n\
 	      \\t\tCompile standard input, not writing any output.\n\
-	      \\t--(no-)dump-phase\n\
-	      \\t\tTrace the currently running phase.\n\
+	      \\t--(no-)dump-phases\n\
+	      \\t\tTrace the running phases.\n\
 	      \\t--(no-)dump-abstraction-result\n\
 	      \\t\tDump abstract representation.\n\
 	      \\t--(no-)dump-elaboration-result\n\
@@ -297,7 +297,7 @@ functor MakeMain(structure Composer: COMPOSER'
 
 	val booleanSwitches =
 	    [("implicit-import", Switches.Bootstrap.implicitImport),
-	     ("dump-phase", Switches.Debug.dumpPhase),
+	     ("dump-phases", Switches.Debug.dumpPhases),
 	     ("dump-abstraction-result", Switches.Debug.dumpAbstractionResult),
 	     ("dump-elaboration-result", Switches.Debug.dumpElaborationResult),
 	     ("dump-elaboration-sig", Switches.Debug.dumpElaborationSig),
@@ -343,31 +343,55 @@ functor MakeMain(structure Composer: COMPOSER'
 
 	(*DEBUG*)
 	local
-	    structure ParsingPhase = MakeParsingPhase(Switches)
+	    structure ParsingPhase =
+		  MakeTracingPhase(
+			structure Phase    = MakeParsingPhase(Switches)
+			structure Switches = Switches
+			val name = "Parsing"
+		  )
+	    structure AbstractionPhase =
+		  MakeTracingPhase(
+			structure Phase    = MakeAbstractionPhase(Composer)
+			structure Switches = Switches
+			val name = "Abstraction"
+		  )
 	    structure AbstractionPhase =
 		  MakeDumpingPhase(
-			structure Phase    = MakeAbstractionPhase(Composer)
+			structure Phase    = AbstractionPhase
 			structure Switches = Switches
 			val header = "Abstract Syntax"
 			val pp     = PPAbstractGrammar.ppComp
 			val switch = Switches.Debug.dumpAbstractionResult
 		  )
 	    structure ElaborationPhase =
-		  MakeDumpingPhase(
+		  MakeTracingPhase(
 			structure Phase    = MakeElaborationPhase(Composer)
+			structure Switches = Switches
+			val name = "Elaboration"
+		  )
+	    structure ElaborationPhase =
+		  MakeDumpingPhase(
+			structure Phase    = ElaborationPhase
 			structure Switches = Switches
 			val header = "Component Signature"
 			val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
 			val switch = Switches.Debug.dumpElaborationSig
 		  )
 	    structure TranslationPhase =
-		  MakeDumpingPhase(
+		  MakeTracingPhase(
 			structure Phase    = MakeTranslationPhase(Switches)
+			structure Switches = Switches
+			val name = "Translation"
+		  )
+	    structure TranslationPhase =
+		  MakeDumpingPhase(
+			structure Phase    = TranslationPhase
 			structure Switches = Switches
 			val header = "Intermediate Syntax"
 			val pp     = PPIntermediateGrammar.ppComp
 			val switch = Switches.Debug.dumpIntermediate
 		  )
+	    structure BackendCommon = MakeBackendCommon(Switches)
 
 	    fun parse' x     = ParsingPhase.translate () x
 	    fun abstract' x  = AbstractionPhase.translate (BindEnv.new()) x

@@ -5,6 +5,7 @@ Group is
     ../frontend-sml/sources.cm
     ../frontend-common/sources.cm
     ../backend-common/sources.cm
+    ../backend-common/output-flat-grammar.cm
     ../backend-mozart/sources.cm
     ../backend-com+/sources.cm
 

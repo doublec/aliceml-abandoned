@@ -14,7 +14,7 @@ struct
 	val logOut				= logOut
 	val logWidth				= ref 79
 
-	val dumpPhase				= ref true
+	val dumpPhases				= ref true
 	val dumpAbstractionResult		= ref false
 	val dumpElaborationResult		= ref false
 	val dumpElaborationSig			= ref true
