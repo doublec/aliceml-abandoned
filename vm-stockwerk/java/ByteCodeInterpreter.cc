@@ -460,6 +460,25 @@ Worker::Result ByteCodeInterpreter::Run() {
   while (1) {
     switch (static_cast<Instr::Opcode>(code[pc])) {
     case Instr::AALOAD:
+      {
+	JavaDebug::Print("AALOAD");
+	u_int index        = JavaInt::FromWord(frame->Pop());
+	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
+	if (array != INVALID_POINTER) {
+	  if (index < array->GetLength())
+	    frame->Push(array->Get(index));
+	  else {
+	    // to be done: raise ArrayIndexOutOfBoundsException
+	    Error("ArrayIndexOutOfBoundsException");
+	  }
+	}
+	else {
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
+	}
+	pc += 1;
+      }
+      break;
     case Instr::CALOAD:
     case Instr::DALOAD: // reals are boxed
     case Instr::FALOAD: // reals are boxed
@@ -467,9 +486,9 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LALOAD:
     case Instr::SALOAD:
       {
-	JavaDebug::Print("(A|C|D||F|I|L|S)ASTORE");
-	u_int index        = JavaInt::FromWord(frame->Pop());
-	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
+	JavaDebug::Print("(C|D||F|I|L|S)ALOAD");
+	u_int index      = JavaInt::FromWord(frame->Pop());
+	BaseArray *array = BaseArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength())
 	    frame->Push(array->Get(index));
@@ -525,9 +544,9 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::SASTORE:
       {
 	JavaDebug::Print("(C|D|F|I|L|S)ASTORE");
-	word value         = frame->Pop();
-	u_int index        = Store::DirectWordToInt(frame->Pop());
-	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
+	word value       = frame->Pop();
+	u_int index      = Store::DirectWordToInt(frame->Pop());
+	BaseArray *array = BaseArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength())
 	    array->Assign(index, value);
@@ -662,6 +681,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  case JavaLabel::ObjectArray:
 	    {
 	      ObjectArray *array = static_cast<ObjectArray *>(p);
+	      length = array->GetLength();
+	    }
+	    break;
+	  case JavaLabel::BaseArray:
+	    {
+	      BaseArray *array = static_cast<BaseArray *>(p);
 	      length = array->GetLength();
 	    }
 	    break;
@@ -1742,8 +1767,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    break;
 	  default:
 	    {
-	      Type *type = static_cast<Type *>(BaseType::New(baseType));
-	      array = ObjectArray::New(type, count)->ToWord();
+	      BaseType *type = BaseType::New(baseType);
+	      array = BaseArray::New(type, count)->ToWord();
 	    }
 	  }
 	  frame->Push(array);

@@ -51,6 +51,7 @@ public:
   static const BlockLabel Lock                = (BlockLabel) (base + 16);
   static const BlockLabel Object              = (BlockLabel) (base + 17);
   static const BlockLabel ObjectArray         = (BlockLabel) (base + 18);
+  static const BlockLabel BaseArray           = (BlockLabel) (base + 19);
 };
 
 //
@@ -321,6 +322,53 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::ObjectArray);
     return static_cast<ObjectArray *>(b);
+  }
+
+  u_int GetLength() {
+    return Store::DirectWordToInt(GetArg(LENGTH_POS));
+  }
+  void Init(u_int index, word value) {
+    Assert(index < GetLength());
+    InitArg(BASE_SIZE + index, value);
+  }
+  void Assign(u_int index, word value) {
+    Assert(index < GetLength());
+    ReplaceArg(BASE_SIZE + index, value);
+  }
+  word Get(u_int index) {
+    Assert(index < GetLength());
+    return GetArg(BASE_SIZE + index);
+  }
+};
+
+class BaseArray: private Block {
+protected:
+  enum {
+    TYPE_POS, // ArrayType (Type == BaseType);
+    LENGTH_POS, // int
+    BASE_SIZE
+    // ... elements
+  };
+public:
+  using Block::ToWord;
+
+  static BaseArray *New(BaseType *type, u_int length) {
+    Block *b = Store::AllocBlock(JavaLabel::BaseArray, BASE_SIZE + length);
+    b->InitArg(TYPE_POS, type->ToWord());
+    b->InitArg(LENGTH_POS, Store::IntToWord(length));
+    // to be done: proper initialization
+    for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
+    return static_cast<BaseArray *>(b);
+  }
+  static BaseArray *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::BaseArray);
+    return static_cast<BaseArray *>(b);
+  }
+  static BaseArray *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::BaseArray);
+    return static_cast<BaseArray *>(b);
   }
 
   u_int GetLength() {
