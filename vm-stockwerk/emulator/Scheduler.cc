@@ -52,6 +52,8 @@ static const char *ResultToString(Interpreter::Result result) {
     return "REQUEST";
   case Interpreter::TERMINATE:
     return "TERMINATE";
+  default:
+    return "<unknown>";
   }
 }
 
@@ -86,7 +88,7 @@ void Scheduler::Run() {
 	raise:
 	  currentThread->SetArgs(Interpreter::EmptyArg());
 	  interpreter = taskStack->GetInterpreter();
-	  result      = interpreter->Handle(currentThread->GetArgs(),
+	  result      = interpreter->Handle(currentData, Store::IntToWord(0),
 					    taskStack);
 	  goto interpretResult;
 	}

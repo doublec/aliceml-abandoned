@@ -54,6 +54,7 @@ public:
 //
 // PushCallInterpreter Functions
 //
+
 PushCallInterpreter *PushCallInterpreter::self;
 
 void PushCallInterpreter::PushFrame(TaskStack *taskStack, word closure) {
@@ -66,14 +67,6 @@ PushCallInterpreter::Run(word args, TaskStack *taskStack) {
   taskStack->PopFrame();
   Scheduler::currentArgs = args;
   return taskStack->PushCall(closure);
-}
-
-Interpreter::Result
-PushCallInterpreter::Handle(word args, TaskStack *taskStack) {
-  // To be done
-  taskStack->PopFrame();
-  Scheduler::currentArgs = args;
-  return Interpreter::RAISE;
 }
 
 const char *PushCallInterpreter::Identify() {

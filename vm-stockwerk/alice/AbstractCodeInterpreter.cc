@@ -746,16 +746,17 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 }
 
 Interpreter::Result
-AbstractCodeInterpreter::Handle(word args, TaskStack *taskStack) {
-  //--** must be Handle(word debug, word exn, TaskStack *taskStack)
+AbstractCodeInterpreter::Handle(word exn, word debug, TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWord(taskStack->GetFrame());
   if (frame->IsHandlerFrame()) {
-    //--** construct args from debug and exn as a tuple
-    return Run(args, taskStack);
+    Block *args = Interpreter::TupArgs(2);
+    args->InitArg(0, exn);
+    args->InitArg(1, exn); //--** support debug
+    return Run(args->ToWord(), taskStack);
   } else {
     taskStack->PopFrame();
-    Scheduler::currentArgs = args;
+    Scheduler::currentData = exn;
     return Interpreter::RAISE;
   }
 }

@@ -61,7 +61,6 @@ public:
 
 // Internal Resolve
 static Chunk *ResolveUrl(Chunk *base, Chunk *rel) {
-  u_int bSize  = base->GetSize();
   u_int rSize  = rel->GetSize();
   char *bptr   = base->GetBase();
   char *bmax   = strrchr(bptr, '/');

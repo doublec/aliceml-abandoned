@@ -31,13 +31,13 @@ public:
   EmptyTaskInterpreter() : Interpreter() {}
   // Execution
   virtual Result Run(word, TaskStack *);
-  virtual Result Handle(word, TaskStack *);
+  virtual Result Handle(word, word, TaskStack *);
   // Debugging
   virtual const char *Identify();
   virtual const char *ToString(word, TaskStack *);
 };
 
-Interpreter::Result EmptyTaskInterpreter::Handle(word, TaskStack *) {
+Interpreter::Result EmptyTaskInterpreter::Handle(word, word, TaskStack *) {
   //--** output information about the unhandled exception
   fprintf(stderr, "uncaught exception\n");
   return Interpreter::TERMINATE;

@@ -41,10 +41,6 @@ Chunk *NewChunk(const char *s) {
   return p;
 }
 
-static void Print(Chunk *c) {
-  fprintf(stderr, "'%*s'\n", c->GetSize(), c->GetBase());
-}
-
 int main(int argc, char *argv[]) {
   // Setup the store
   u_int memLimits[STORE_GENERATION_NUM];
