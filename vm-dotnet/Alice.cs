@@ -2291,9 +2291,9 @@ Console.WriteLine(i);
 		Uri uri = resolvedUri;
 		if (uri.Scheme.Equals("x-alice")) {
 		    string home =
-			Environment.GetEnvironmentVariable("STOCKHOME");
+			Environment.GetEnvironmentVariable("ALICE_HOME");
 		    if (home == null) {
-			Error("Environment variable STOCKHOME not set.");
+			Error("Environment variable ALICE_HOME not set.");
 		    }
 		    uri = new Uri(home + uri.AbsolutePath);
 		}
