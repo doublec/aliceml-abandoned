@@ -35,6 +35,23 @@ public:
   static u_int DecodeGen(Block *p) {
     return ((((u_int *) p)[0] & GEN_GC_MASK) >> GEN_GC_SHIFT);
   }
+  // like PointerOp::Deref, but be careful about forwards
+  static word Deref(word v) {
+  loop:
+    u_int vi = (u_int) v;
+
+    if (!((vi ^ TRTAG) & TAGMASK)) {
+      vi ^= (u_int) TRTAG;
+      
+      if (!AlreadyMoved((Block *) vi) &&
+	  HeaderOp::DecodeLabel((Block *) vi) == REF_LABEL) {
+	v = ((word *) vi)[1];
+	goto loop;
+      }
+    }
+
+    return v;
+  }
 };
 
 #endif

@@ -109,7 +109,7 @@ inline void Store::CheneyScan(HeapChunk *chunk, char *scan, const u_int gen) {
       if (l < CHUNK_LABEL) {
       scan:
 	for (u_int i = size; i--;) {
-	  word item = PointerOp::Deref(p->GetArg(i));
+	  word item = GCHelper::Deref(p->GetArg(i));
 	  p->InitArg(i, FORWARD(item, gen));
 	}
       }
@@ -162,7 +162,7 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
       scan:
 	for (u_int i = size; i--;) {
 	  word item = p->GetArg(i);
-	  item = PointerOp::Deref(item);
+	  item = GCHelper::Deref(item);
 	  if (PointerOp::IsInt(item) == 0) {
 	    Block *sp = PointerOp::RemoveTag(item);
 	    if (GCHelper::AlreadyMoved(sp)) {
@@ -233,7 +233,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
   intgen_set->Clear();
   // Traverse intgen_set entries (set reusage enforces upward traversal)
   for (u_int i = 0; i < size; i++) {
-    word wEntry = PointerOp::Deref(intgen_set->GetArgUnchecked(i));
+    word wEntry = GCHelper::Deref(intgen_set->GetArgUnchecked(i));
     AssertStore(PointerOp::IsInt(wEntry) == 0);
     Block *entry = PointerOp::RemoveTag(wEntry);
     // entry is no longer old but alive
@@ -249,7 +249,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
 	  ((entry->GetLabel() == DYNAMIC_LABEL) ?
 	   ((DynamicBlock *) entry)->GetScanSize() : entry->GetSize());
 	for (u_int k = entrySize; k--;) {
-	  word wItem = PointerOp::Deref(entry->GetArg(k));
+	  word wItem = GCHelper::Deref(entry->GetArg(k));
 	  if (PointerOp::IsInt(wItem))
 	    entry->InitArg(k, wItem);
 	  else {
@@ -350,7 +350,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
       while (nodes != Store::IntToWord(0)) {
 	MapNode *node = MapNode::FromWordDirect(nodes);
 	bool deleted  = false;
-	word val      = PointerOp::Deref(node->GetValue());
+	word val      = GCHelper::Deref(node->GetValue());
 	// Immediately finalize integer values
 	if (PointerOp::IsInt(val)) {
 	  dict->RemoveEntry(k, prev, node);
