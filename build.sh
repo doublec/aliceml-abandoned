@@ -42,6 +42,10 @@ if [ "x${AUTOMAKE}" != "x" ]; then
 		./configure --prefix="${prefix}" &&
 		echo "### - building and installing" >&2
 		make all install
+		echo "### - linking local and global ac dir" >&2
+		if which aclocal; then
+		    aclocal --print-ac-dir > "${prefix}/share/aclocal/dirlist"
+		fi
 	    )
 	)
     fi
