@@ -14,14 +14,15 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
     }
 
     public void run() {
+	DMLValue v = null;
 	try {
 	    FileInputStream fin = new FileInputStream(argv[0]);
 	    PickleInputStream in = new PickleInputStream(fin);
 	    DMLValue r = (DMLValue) in.readObject();
 	    System.out.println(r);
-	    ((Record) r).getByLabel("main").apply(Constants.dmlunit);
+	    v=((Record) r).getByLabel("main").apply(Constants.dmlunit);
 	    while (tail!=null) {
-		tail.apply(Constants.dmlunit);
+		v=tail.apply(v);
 	    }
     } catch (Exception e) {
 	    System.err.println(e);
