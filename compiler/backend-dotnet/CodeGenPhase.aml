@@ -164,6 +164,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit (Ldsfld (dottedname, id, ObjectTy))
 	    end
+	  | emitIdRef (Value _) =
+	    raise Crash.Crash "CodeGenPhase.emitIdRef"
 
 	(*--** remove global state *)
 	val sharedLabels: O.label StampMap.t = StampMap.new ()
@@ -227,6 +229,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     end
 	       | SOME label => emit (Br label))
 	  | genStm (ReturnStm (_, VarAppExp (info, id, args))) =
+	    (genVarAppExp (info, id, args, true); emit Ret)
+	  | genStm (ReturnStm (_, DirectAppExp (info, id, args))) =
 	    (genVarAppExp (info, id, args, true); emit Ret)
 	  | genStm (ReturnStm (_, FunAppExp (info, id, _, args))) =
 	    (genVarAppExp (info, id, args, true); emit Ret)
@@ -568,6 +572,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			    Vector.map (fn _ => ObjectTy) idRefs, ObjectTy))
 	    end
 	  | genExp (VarAppExp (info, id, args)) =
+	    genVarAppExp (info, id, args, false)
+	  | genExp (DirectAppExp (info, id, args)) =
 	    genVarAppExp (info, id, args, false)
 	  | genExp (SelExp (_, _, _, n, idRef)) =
 	    (emitIdRef idRef; emitAwait ();

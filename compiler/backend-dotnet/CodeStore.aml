@@ -173,7 +173,7 @@ structure CodeStore :> CODE_STORE =
 
 	fun emitIdRef (IdRef id) = emitId id
 	  | emitIdRef (LastIdRef id) = emitId id
-	  | emitIdRef (Lit _ | Prim _) =
+	  | emitIdRef (Lit _ | Prim _ | Value _) =
 	    raise Crash.Crash "CodeStore.emitIdRef"
 
 	fun allocateLocal ty =
