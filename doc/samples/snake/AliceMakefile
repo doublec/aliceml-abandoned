@@ -44,7 +44,11 @@ endif
 export ALICEDEP
 
 ifndef M4
-  M4 := m4
+  ifeq (${EXT},stc)
+    M4 := m4 -DGTK2
+  else
+    M4 := m4
+  endif
 endif
 export M4
 
