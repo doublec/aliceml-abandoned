@@ -37,7 +37,7 @@ sig
 
     val newNodeInf: 'a * Inf.t -> Types.node
 
-    val createGraphInf: Reflect.value * Inf.t  * node * int * int -> node
+    val createGraphInf: Reflect.module * Inf.t  * node * int * int -> node
 
 end
 

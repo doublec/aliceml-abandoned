@@ -29,7 +29,7 @@ struct
       | VALUE of {value : Reflect.value,
 		  typ : Type.t,
 		  actions : actions}
-      | I_VALUE of {value : Reflect.value,
+      | I_VALUE of {value : Reflect.module,
 		    typ : Inf.t,
 		    actions : actions} 
 
@@ -144,7 +144,7 @@ struct
        
      | EMBEDDED of Reflect.value * Type.t 
 
-     | EMBEDDED_INF of Reflect.value * Inf.t 
+     | EMBEDDED_INF of Reflect.module * Inf.t 
 
    (* zur Behandlung von Listen *)
    datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)

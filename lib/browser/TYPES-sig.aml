@@ -29,12 +29,12 @@ sig
       | VALUE of {value : Reflect.value,
 		  typ : Type.typ,
 		  actions : actions}
-      | I_VALUE of {value : Reflect.value,
+      | I_VALUE of {value : Reflect.module,
 		    typ : Inf.t,
 		    actions : actions} 
 
     val createValue  :  Reflect.value * Type.t * actions -> desc
-    val createIValue :  Reflect.value * Inf.t * actions -> desc
+    val createIValue :  Reflect.module * Inf.t * actions -> desc
 	
    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 
@@ -139,7 +139,7 @@ sig
 
      | EMBEDDED of Reflect.value * Type.t
 
-     | EMBEDDED_INF of Reflect.value * Inf.t
+     | EMBEDDED_INF of Reflect.module * Inf.t
 
    (* zur Behandlung von Listen *)
    datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)

@@ -48,6 +48,7 @@ sig
     val getAncIndex : node -> int
     val getDesc : node -> desc
     val getValue : desc -> Reflect.value
+    val getInfValue : desc -> Reflect.module
     val getTyp : desc -> Type.typ
     val getInf : desc -> Inf.t
     val getDepth : node -> int
@@ -77,7 +78,5 @@ sig
 
     (* Strings *)
     val iterTake : string -> string
-
-    val castPromise : 'a -> 'b Promise.promise 
 
 end;

@@ -115,9 +115,11 @@ struct
                             | RelRefNode(r) => #desc(r)
                             | Empty => INTERPUNCT
 
-    fun getValue desc = case desc of INTERPUNCT => raise Match
-                                   | VALUE(r) => #value(r)
-                                   | I_VALUE(r) => #value(r)
+    fun getValue desc = case desc of VALUE(r) => #value(r)
+                                   | _ => raise Match
+
+    fun getInfValue desc = case desc of I_VALUE(r) => #value(r)
+	                              | _ => raise Match
 
     fun getTyp desc = case desc of VALUE(r) => #typ(r)
                                  | _ => raise Match
@@ -268,9 +270,6 @@ struct
 		  then a
 	      else iterTake' (str,i+1, a ^ Char.toString(test))
 	   end  
-
-   fun castPromise value = UnsafeValue.cast value 
-                            : 'a Promise.promise (*!!!*)
 
 end
 

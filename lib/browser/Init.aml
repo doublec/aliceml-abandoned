@@ -34,7 +34,9 @@ struct
       
     val path_promise = lookupPath("Promise","promise")   
 
-    val path_package = lookupPath("Package","package")   
+    val path_package = lookupPath("Package","package") 
+
+    val path_val_package = lookupPath("Package","val_package")  
  
     (* init *)
     fun init () = ( registerType(PervasiveType.path_int, createInt)
@@ -47,7 +49,9 @@ struct
 		   ; registerType(PervasiveType.path_vec, createVector)
 		   ; registerType(PervasiveType.path_array, createArray)
                    ; registerType(path_promise, createPromise)
-                   ; registerType(path_package, createPackage)   
+                   ; registerType(path_package, createPackage)  
+		   ; registerType(path_val_package, createValPackage) 
+ 
 		   ; registerColor(INT_COLOR,  allocColor(0,45000,0))
 		   ; registerColor(REAL_COLOR, allocColor(0,45000,0))
 		   ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
@@ -62,6 +66,7 @@ struct
 	           ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
 	           ; registerColor(REL_COLOR, allocColor (60000,20000,0))
 	           ; registerColor(DEFAULT, allocColor(0,0,0)) 
+
 	           ; !WindowManager.register
 	                    ("reinspect",fn (n,_) 
 			                 => Update.reinspect(n,createGraph,

@@ -152,7 +152,10 @@ struct
 		   if String.equal(Label.toString(Path.toLab(path)),
 				   "package")
 		       then lookupPath("Package","package")
-		   else path 
+		   else if String.equal(Label.toString(Path.toLab(path)),
+					"val_package")
+			    then lookupPath("Package","val_package")
+			else path 
 	       in newPath (va,t,p,i,d,p_path)
 	       end
 	   | Type.Arrow _ 
@@ -562,7 +565,7 @@ struct
    Funktoren - analog zu newNode, createGraph und createUsualGraph (s.o.) *)
 
     (* newNodeInf *)
-    and newNodeInf (v,t) = let val va = UnsafeValue.cast v: Reflect.value 
+    and newNodeInf (v,t) = let val va = UnsafeValue.cast v: Reflect.module 
 			       val i = MainDictionary. 
 				   getHighestIndexAssigned(dict) +1 
 			       val _ = RelManDictionary.update(reldict,(i,nil))
@@ -588,11 +591,13 @@ struct
 				     => if getDesc(x) = INTERPUNCT  
 					    then false  
 					else UnsafeValue.same
-					    (getValue(getDesc(x)),va)   
+					    (getInfValue(getDesc(x)),va) 
+					    handle General.Match => false  
 			     else fn x   
 				 => if getDesc(x) = INTERPUNCT  
 					then false  
-				    else getValue(getDesc(x)) = va 
+				    else getInfValue(getDesc(x)) = va
+					handle General.Match => false 
 		 in 
 		     (case List.find f relman of   
 			  NONE 
@@ -746,7 +751,8 @@ struct
 					LABEL_COLOR,setGroup)
 	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
 				       setGroup)
-	       val value =  createGraphInf (vv,inf,conc,3,d) 
+	       val vv_inf = UnsafeValue.cast vv : Reflect.module
+	       val value =  createGraphInf (vv_inf,inf,conc,3,d) 
 	   in ( Array.update(getKids(conc),0,s_struct)
 	       ; Array.update(getKids(conc),1,name)
 	       ; Array.update(getKids(conc),2,equ)

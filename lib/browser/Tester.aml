@@ -88,3 +88,21 @@ val x = lazy 4711;
 structure Int = Reflect.ReflectType (type t = int);
 
 UnsafeInspector.inspect(x,Int.x);
+
+(* Packages *)
+
+structure P = Package.Pack (signature S = LIST structure X = List);
+structure Pack = Reflect.ReflectType (type t = Package.package);
+
+UnsafeInspector.inspect(P.package,Pack.x);
+
+(* val_Packages *)
+
+structure P_v = Package.PackVal (type t = char vector * char vector
+				 val x = (#[#"h",#"i"],#[#"d",#"u"]));
+structure Pack_v = Reflect.ReflectType (type t = Package.val_package);
+
+UnsafeInspector.inspect(P_v.package,Pack_v.x);
+
+
+

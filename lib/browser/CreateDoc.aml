@@ -252,25 +252,36 @@ struct
 
     (* createPackage *)
     and createPackage (m_width,d,va,t) = 
+	let val (inva,inty) = Reflect.reflectPackage
+	                      (UnsafeValue.cast va : Package.package)
+	    val inner_doc = EMBEDDED_INF(inva,inty)
+	in handlePackages (d,va,t,inner_doc)
+	end 
+
+    (* createValPackage *)
+    and createValPackage (m_width,d,va,t) = 
+	let val (inva,inty) = Reflect.reflectValPackage
+	                     (UnsafeValue.cast va: Package.val_package)
+	    val inner_doc = EMBEDDED(inva,inty)
+	in handlePackages (d,va,t,inner_doc) 
+	end 
+
+    (* handlePackages *)
+    and handlePackages (d,va,t,inner_doc) = 
 	let val descr = createValue(va,t,NO_ACTIONS)
 	in if d > !(Settings.max_depth)
-	       then LIMIT{desc = descr, 
+	       then LIMIT{desc = descr,
 			  sort = DEPTH_LIMIT}
-	   else let val (inv,inty) = 
-	                Reflect.reflectPackage (UnsafeValue.cast va)
-		    val inva = UnsafeValue.cast inv : Reflect.value
-		in
-		    CONCAT{desc = INTERPUNCT, 
-			   kids = 
-			   #[SIMPLE{desc = INTERPUNCT,
-				    rep = "Package{|",
-				    color = DEFAULT},
-			     EMBEDDED_INF(inva,inty),
-			     SIMPLE{desc = INTERPUNCT,
-				    rep = "|}",
-				    color = DEFAULT}]}
-		end
-	end
+	   else CONCAT{desc = descr, 
+		       kids = 
+		       #[SIMPLE{desc = INTERPUNCT,
+				rep = "Package{|",
+				color = DEFAULT},
+			 inner_doc,
+			 SIMPLE{desc = INTERPUNCT,
+				rep = "|}",
+				color = DEFAULT}]}
+	end 
 
 end
 
