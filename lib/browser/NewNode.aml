@@ -113,23 +113,20 @@ struct
 			    ; node )
 			 end     
 		    | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
-		      => let val str = "Ref "^Int.toString(number)	
+		      => let val _ = TextIO.print("was gefunden :) - erhoehe Zaehler auf "
+                                     ^Int.toString(!count+1)^"\n")
+			     val str = "Ref "^Int.toString(number)	
 			     val node = if !count > 0 
 					    then createRelRefNode (desc,p,i,d,str,root)
 					else  createRelNode (desc,Empty,p,i,d,
 							     count,"Ref0 as ",
 							     relman,root)
 			 in ( count := !count + 1
-			    ; if !count > 0 
+			    ; if !count = 1 
 				  then let val c = createUsualGraph (opt,va,t,node,0,d,root)
-					   val actrelman = valOf(RelMan.lookup(reldict,ind))
-					       handle Option => []
-					   val new_relman = (V va,count,!relnumber-1)::actrelman
-				       in ( setContent (node,c)   
-					   ; RelMan.update(reldict,(ind,new_relman))
-					   ; TextIO.print("CREATE_GRAPH: Eintrag in RelDict!\n") )
+				       in setContent (node,c)  
 				       end 
-			      else ()    
+			      else ()
 			     ; node)
 			 end)
 		 end
