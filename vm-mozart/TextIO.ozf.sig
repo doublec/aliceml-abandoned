@@ -25,12 +25,14 @@ signature TEXT_IO_COMPONENT =
 		val stdIn : instream
 		val openIn : string -> instream
 		val inputAll : instream -> vector
+		val inputLine : instream -> vector
 		val closeIn : instream -> unit
 		val stdOut : outstream
 		val stdErr : outstream
 		val openOut : string -> outstream
 		val output : outstream * vector -> unit
 		val output1 : outstream * elem -> unit
+		val flushOut : outstream -> unit
 		val closeOut : outstream -> unit
 		val print : string -> unit
 	    end
