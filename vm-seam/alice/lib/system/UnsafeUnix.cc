@@ -17,15 +17,19 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#define GetLastError() errno
 #define WSAGetLastError() errno
 #define Interruptible(res, call)		\
   int res;					\
   do {						\
     res = call;					\
-  } while (res < 0 && WSAGetLastError() == EINTR);
+  } while (res < 0 && GetLastError() == EINTR);
 
 #endif
 
@@ -40,27 +44,17 @@ DEFINE2(UnsafeUnix_execute) {
   word args = x1;
   TagVal *tagVal;
   // Request list and its content
+  u_int nbArgs = 0;
   while ((tagVal = TagVal::FromWord(args)) != INVALID_POINTER) {
     Assert(tagVal->GetTag() == Types::cons);
     DECLARE_STRING(arg, tagVal->Sel(0));
     arg = arg; // Ignored
+    nbArgs++;
     args = tagVal->Sel(1);
   }
   if (Store::WordToInt(args) == INVALID_INT)
     REQUEST(args);
   Assert(Store::WordToInt(args) == Types::nil);
-  // Build the command string
-  static char cmdLine[4096];
-  strcpy(cmdLine, "\"");
-  strcat(cmdLine, prog->ExportC());
-  strcat(cmdLine, "\"");
-  args = x1;
-  while ((tagVal = TagVal::FromWord(args)) != INVALID_POINTER) {
-    strcat(cmdLine, " \"");
-    strcat(cmdLine, String::FromWord(tagVal->Sel(0))->ExportC());
-    strcat(cmdLine, "\"");
-    args = tagVal->Sel(1);
-  }
   // Create the pipes and its associated process
   Tuple *streams = Tuple::New(2);
   IODesc *reader, *writer;
@@ -111,6 +105,18 @@ DEFINE2(UnsafeUnix_execute) {
   si.hStdError  = stderrWr;
   PROCESS_INFORMATION pinf;
   ZeroMemory(&pinf, sizeof(pinf));
+  // Build the command string
+  static char cmdLine[4096];
+  strcpy(cmdLine, "\"");
+  strcat(cmdLine, prog->ExportC());
+  strcat(cmdLine, "\"");
+  args = x1;
+  while ((tagVal = TagVal::FromWord(args)) != INVALID_POINTER) {
+    strcat(cmdLine, " \"");
+    strcat(cmdLine, String::FromWord(tagVal->Sel(0))->ExportC());
+    strcat(cmdLine, "\"");
+    args = tagVal->Sel(1);
+  }
   if (!CreateProcess(NULL, cmdLine,
 		     NULL, NULL, TRUE, 0, NULL, NULL, &si, &pinf)) {
     RAISE_SYS_ERR();
@@ -133,6 +139,14 @@ DEFINE2(UnsafeUnix_execute) {
   if (ret < 0) {
     RAISE_SOCK_ERR();
   }
+  // Populate arguments array
+  char *argArr[nbArgs];
+  args = x1;
+  u_int i = 0;
+  while ((tagVal = TagVal::FromWord(args)) != INVALID_POINTER) {
+    argArr[i++] = String::FromWord(tagVal->Sel(0))->ExportC();
+    args = tagVal->Sel(1);
+  }
   int pid = fork();
   switch (pid) {
   case 0: // Child process
@@ -153,7 +167,7 @@ DEFINE2(UnsafeUnix_execute) {
       dup(sv[1]);
       dup(sv[1]);
       // Execute command
-      if (execvp(prog, argArr) < 0) {
+      if (execvp(prog->ExportC(), argArr) < 0) {
 	fprintf(stderr, "execvp failed\n");
 	exit(-1);
       }
