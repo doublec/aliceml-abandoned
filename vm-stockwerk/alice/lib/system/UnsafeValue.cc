@@ -156,19 +156,13 @@ DEFINE1(UnsafeValue_conName) {
   RETURN(exId->ToWord());
 } END
 
-DEFINE2(UnsafeValue_inArity) {
-  DECLARE_BOOL(eager, x1);
+DEFINE1(UnsafeValue_inArity) {
   Closure *closure = Closure::FromWord(x0);
-  if (closure == INVALID_POINTER) {
-    if (!eager) RETURN_INT(-2);
-    REQUEST(x0);
-  }
+  if (closure == INVALID_POINTER)
+    RETURN_INT(-2);
   word wConcreteCode = closure->GetConcreteCode();
   ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
-  if (concreteCode == INVALID_POINTER) {
-    if (!eager) RETURN_INT(-2);
-    REQUEST(wConcreteCode);
-  }
+  if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetInArity(concreteCode);
   if (arity == static_cast<u_int>(INVALID_INT))
@@ -176,8 +170,8 @@ DEFINE2(UnsafeValue_inArity) {
   RETURN_INT(arity == Scheduler::ONE_ARG? -1: static_cast<s_int>(arity));
 } END
 
-DEFINE2(UnsafeValue_outArity) {
-  x0 = x0; x1 = x1; // ignored
+DEFINE1(UnsafeValue_outArity) {
+  x0 = x0; // ignored
   RETURN_INT(-2); //--** try to do better
 } END
 
@@ -220,8 +214,8 @@ word UnsafeValue() {
   INIT_STRUCTURE(record, "UnsafeValue", "conName",
 		 UnsafeValue_conName, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "inArity",
-		 UnsafeValue_inArity, 2, true);
+		 UnsafeValue_inArity, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "outArity",
-		 UnsafeValue_outArity, 2, true);
+		 UnsafeValue_outArity, 1, true);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }

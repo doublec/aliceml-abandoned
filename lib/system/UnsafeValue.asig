@@ -64,7 +64,7 @@ signature UNSAFE_VALUE_COMPONENT =
 		 *   -1      single-argument
 		 *   n >= 0  tuple/record with n fields
 		 *)
-		val inArity: 'function_value * bool -> int
-		val outArity: 'function_value * bool -> int
+		val inArity: 'function_value -> int
+		val outArity: 'function_value -> int
 	    end
     end

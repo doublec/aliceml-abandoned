@@ -126,8 +126,8 @@ define
 		 'ExId'({ByteString.make {System.printName Value}})
 	      end
 	   'inArity':
-	      fun {$ F Eager}
-		 if {IsDet F} orelse Eager then
+	      fun {$ F}
+		 if {IsDet F} then
 		    case {Procedure.arity F} of 2 then ~1
 		    [] 1 then ~2
 		    elseof Arity then Arity - 1
