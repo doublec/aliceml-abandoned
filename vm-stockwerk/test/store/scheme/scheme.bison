@@ -15,6 +15,7 @@
 %token TK_STRING
 %token TK_NIL
 %token TK_TAIL
+%token TK_SETQ
 
 %%
 
@@ -97,6 +98,10 @@ expr:		TK_ID
 			word exarr = ConsCell::FromWord($3)->ToArray(T_EXPRARR)->ToWord();
 
 			$$ = ApplicationNode::New(exarr, 1)->ToWord();
+		}
+	|	TK_OPARENT TK_SETQ TK_ID expr TK_CPARENT
+		{
+			$$ = SetQNode::New($3, $4)->ToWord();
 		}
 	|	TK_OPARENT TK_BEGIN exprlist TK_CPARENT
 		{
