@@ -2112,14 +2112,14 @@ struct
 
     fun trAnns(E, a_s) =
 	let
-	    val (rxsus',ds') = Vector.foldl (trAnn E) ([],[]) a_s
-	    val  xsus'       = Vector.rev(Vector.fromList rxsus')
+	    val (rxjus',ds') = Vector.foldl (trAnn E) ([],[]) a_s
+	    val  xjus'       = Vector.rev(Vector.fromList rxjus')
 	    val  ds''        = Vector.rev(Vector.fromList ds')
 	in
-	    ( xsus', ds'' )
+	    ( xjus', ds'' )
 	end
 
-    and trAnn E (I.ImpAnn(i,is,u), (xsus',ds')) =
+    and trAnn E (I.ImpAnn(i,is,u), (xjus',ds')) =
 	let
 	    val r    = #region i
 	    val s    = #sign i
@@ -2131,7 +2131,7 @@ struct
 	    val _    = Type.unify(t, infToTyp(E, Inf.sign s))
 	    val _    = Inf.compressSig s
 	in
-	    ( (x',s,u)::xsus', ds'' )
+	    ( (x',Inf.sign s,u)::xjus', ds'' )
 	end
 
     and trImps(E, is, y, ds')             = Vector.foldl (trImp (E,y)) ds' is
@@ -2151,7 +2151,7 @@ struct
 
     fun trComp(E, I.Comp(i,a_s,ds)) =
 	let
-	    val (xsus',ds1') = trAnns(E,a_s)
+	    val (xjus',ds1') = trAnns(E,a_s)
 	    val  ds2'        = trDecs(E,ds)
 	    val  ds'         = Vector.append(ds1',ds2')
 	    val  ids'        = ids(E,ds)
@@ -2159,7 +2159,7 @@ struct
 	    val  s           = #sign i
 	    val  _           = Inf.compressSig s
 	in
-	    ( xsus', ds', fs', s )
+	    ( xjus', ds', fs', Inf.sign s )
 	end
 
     fun translate E (desc, comp) =
