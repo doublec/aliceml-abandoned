@@ -14,7 +14,7 @@ functor MakeIntermediateGrammar(type info) :>
 
     (* Literals *)
 
-    datatype lit =
+    datatype lit =	(* Add type name annotation later. *)
 	  WordLit   of LargeWord.word
 	| IntLit    of LargeInt.int
 	| CharLit   of Char.char
@@ -37,12 +37,12 @@ functor MakeIntermediateGrammar(type info) :>
     datatype exp =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
-	| ConExp    of info * longid * exp option
-	| RefExp    of info * exp option
+	| ConExp    of info * longid
+	| RefExp    of info
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 			(* all labels distinct *)
-	| SelExp    of info * lab * exp option
+	| SelExp    of info * lab
 	| FunExp    of info * id * exp
 	| AppExp    of info * exp * exp
 	| AdjExp    of info * exp * exp
@@ -103,11 +103,11 @@ functor MakeIntermediateGrammar(type info) :>
 
     fun infoExp(LitExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
-      | infoExp(ConExp(i,_,_))		= i
-      | infoExp(RefExp(i,_))		= i
+      | infoExp(ConExp(i,_))		= i
+      | infoExp(RefExp(i))		= i
       | infoExp(TupExp(i,_))		= i
       | infoExp(RecExp(i,_))		= i
-      | infoExp(SelExp(i,_,_))		= i
+      | infoExp(SelExp(i,_))		= i
       | infoExp(FunExp(i,_,_))		= i
       | infoExp(AppExp(i,_,_))		= i
       | infoExp(AdjExp(i,_,_))		= i

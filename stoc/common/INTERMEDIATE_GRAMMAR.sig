@@ -13,7 +13,7 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Literals *)
 
-    datatype lit =
+    datatype lit =	(* Add type name annotation later. *)
 	  WordLit   of LargeWord.word
 	| IntLit    of LargeInt.int
 	| CharLit   of Char.char
@@ -36,12 +36,12 @@ signature INTERMEDIATE_GRAMMAR =
     datatype exp =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
-	| ConExp    of info * longid * exp option
-	| RefExp    of info * exp option
+	| ConExp    of info * longid
+	| RefExp    of info
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 			(* all labels distinct *)
-	| SelExp    of info * lab * exp option
+	| SelExp    of info * lab
 	| FunExp    of info * id * exp
 	| AppExp    of info * exp * exp
 	| AdjExp    of info * exp * exp
