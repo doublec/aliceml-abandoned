@@ -8,8 +8,9 @@ signature LEXER =
 	    * ('a * int * string * int * int -> 'b)
 	    * int vector 
 	    ->
-	    (unit -> char option) * string ref
-	    * bool ref * int ref * int ref * 'a
+	    (unit -> char option) * bool ref
+	    * char option list ref * char option list ref
+	    * int ref * int ref * 'a
 	    ->
 	    (unit -> 'b)
 

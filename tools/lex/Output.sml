@@ -84,7 +84,7 @@ structure Output :> OUTPUT =
 	    let
 		fun printOne id =
 		    (say ("  val " ^ id ^ " = " ^ id
-			  ^ "(getChar, strBuf, eof, lexPos, lineNum, (");
+			^ "(getChar, eof, strBuf, strBack, lexPos, lineNum, (");
 		     pIdList "dummy_" idList;
 		     say "))\n")
 	    in
@@ -393,8 +393,8 @@ structure Output :> OUTPUT =
 			 \problems (thanks to Andreas Rossberg) ***)\n\n";
 			pAnLb idList;
 			say "\nfun annot f = (fn () => f (\
-			 \fn () => SOME #\" \", ref \"\", ref true, ref 0, \
-			 \ref 0, (";
+			 \fn () => SOME #\" \", ref true, ref [], ref [], \
+			 \ref 0, ref 0, (";
 			pIdList "annot_" idList;
 			say ")); f)\n\n";
 
@@ -402,7 +402,8 @@ structure Output :> OUTPUT =
 			 \(table_", ", action_", ", final_", "))\n"];
 
 			say "fun build getChar =\n  let\n";
-			say "  val strBuf = ref \"\"\n";
+			say "  val strBuf = ref []\n";
+			say "  val strBack = ref []\n";
 			say "  val eof = ref false\n";
 			say "  val lexPos = ref 0\n";
 			say "  val lineNum = ref 1\n\n";
