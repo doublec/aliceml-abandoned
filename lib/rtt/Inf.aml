@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -100,8 +100,8 @@ TODO:
 
 import structure Assert       from "../utility/Assert"
 import structure Cell         from "../utility/Cell"
-import functor   MkHashImpMap from "../utility/MkHashImpMap"
-import structure GlobalStamp  from "../utility/GlobalStamp"
+import functor   MkHashImpMap from "../data/MkHashImpMap"
+import structure GlobalStamp  from "../data/GlobalStamp"
 import structure Name         from "Name"
 import structure Label        from "Label"
 import structure Path         from "Path"
@@ -189,9 +189,9 @@ struct
 		   , inf_rea : inf_rea
 		   }
 
-    fun newRea() = { typ_rea = PathMap.new()
-		   , mod_rea = PathMap.new()
-		   , inf_rea = PathMap.new()
+    fun rea()    = { typ_rea = PathMap.map()
+		   , mod_rea = PathMap.map()
+		   , inf_rea = PathMap.map()
 		   } : rea
 
     fun isEmptyRea {typ_rea, mod_rea, inf_rea} =
@@ -199,7 +199,7 @@ struct
 	PathMap.isEmpty mod_rea andalso
 	PathMap.isEmpty inf_rea
 
-    val dummyRea = newRea()
+    val dummyRea = rea()
 
     fun cloneRea {typ_rea, mod_rea, inf_rea} : rea =
 	{ typ_rea = PathMap.clone typ_rea
@@ -286,7 +286,8 @@ struct
 
   (* Debugging aids *)
 
-    val newKind = new
+    val new     = cell
+    val newKind = cell
 
     (*DEBUG: The following allows tracing of all interface nodes.
 
@@ -333,7 +334,7 @@ struct
 
     val new = fn j' =>
 	let
-	    val j = new j'
+	    val j = cell j'
 	in
 	    TextIO.print("new " ^ id j ^ " = " ^ inf'ToString j' ^ "\n");
 	    j
@@ -379,7 +380,7 @@ struct
     fun tab((itemsr, ref(SOME tab), _) : sign) = tab
       | tab((itemsr, r as ref NONE, _) : sign) =
 	let
-	    val tab = Tab.new()
+	    val tab = Tab.map()
 	in
 	    List.app (fn item => Tab.insertDisjoint(tab, itemDom item, item)
 				 handle Hidden => ()) (!itemsr);
@@ -397,7 +398,7 @@ struct
 
   (* Calculating free paths *)
 
-    fun paths j = let val u = PathSet.new() in paths'(u,j); u end
+    fun paths j = let val u = PathSet.set() in paths'(u,j); u end
     and paths'(u,j) =
 	case content j
 	 of TOP			=> ()
@@ -423,7 +424,7 @@ struct
       | pathsItem' u (INF(p,k))	= pathsKind'(u,k)
       | pathsItem' u (HIDDEN i)	= pathsItem' u i
 
-    and pathsKind k = let val u = PathSet.new() in pathsKind'(u,k); u end
+    and pathsKind k = let val u = PathSet.set() in pathsKind'(u,k); u end
     and pathsKind'(u,k) =
 	case content k
 	 of GROUND		=> ()
@@ -730,7 +731,7 @@ struct
 
   (* Signature construction *)
 
-    fun newSig'(is,zs)	= (ref is, ref NONE, GlobalStamp.new()::zs)
+    fun newSig'(is,zs)	= (ref is, ref NONE, GlobalStamp.stamp()::zs)
     fun newSig is	= newSig'(is, [])
     fun emptySig()	= newSig []
 
@@ -1043,8 +1044,8 @@ struct
 
     fun narrowContext extend =
 	{extend  = extend,
-	 used    = PathSet.new(),
-	 typ_rea = PathMap.new(),
+	 used    = PathSet.set(),
+	 typ_rea = PathMap.map(),
 	 typ     = Type.realiseStart()}
 
     fun narrow'(c,j1,j2) =
@@ -1204,7 +1205,7 @@ struct
 	      | narrowTypReaItem _ = ()
 	in
 	    List.app narrowTypReaItem (items s2)
-	    handle Tab.Lookup dom => raise Mismatch(missing dom)
+	    handle Tab.Unknown dom => raise Mismatch(missing dom)
 	end
 
 
@@ -1353,7 +1354,7 @@ TextIO.print "\n";
 	case PathMap.lookup(#mod_rea(#rea c), p)
 	 of NONE    => m
 	  | SOME m' => narrowMod'({extend  = false,
-				   used    = PathSet.new(),
+				   used    = PathSet.set(),
 				   typ_rea = #typ_rea(#rea c),
 				   typ     = #typ c}, m', j)
 
@@ -1512,19 +1513,19 @@ TextIO.print "\n";
 
     and realise(rea, j) =
 	if isEmptyRea rea then j else
-	build({inf  = Map.new(),
-	       kind = KindMap.new(),
+	build({inf  = Map.map(),
+	       kind = KindMap.map(),
 	       typ  = Type.realiseStart(),
 	       rea  = rea,
 	       inst = InstTop}, j)
 
     and replaceNarrowed(p,j,j') =
 	let
-	    val rea = newRea()
+	    val rea = rea()
 	in
 	    PathMap.insertDisjoint(#mod_rea rea, p, mod(p,j));
-	    build({inf  = Map.new(),
-		   kind = KindMap.new(),
+	    build({inf  = Map.map(),
+		   kind = KindMap.map(),
 		   typ  = Type.realiseStart(),
 		   rea  = rea,
 		   inst = NoInst LeftSingleton}, j')
@@ -1539,9 +1540,9 @@ TextIO.print "\n";
 val _ = TextIO.print "Inf.instance...\n"
 val _ = TextIO.print("j = " ^ infToString j ^ "\n")
 *)
-	    val rea = newRea()
-	    val j'  = build({inf  = Map.new(),
-			     kind = KindMap.new(),
+	    val rea = rea()
+	    val j'  = build({inf  = Map.map(),
+			     kind = KindMap.map(),
 			     typ  = Type.realiseStart(),
 			     rea  = rea,
 			     inst = InstDot p}, j)
@@ -1558,7 +1559,7 @@ TextIO.print "Inf.instance done.\n";
 
     fun match(j1,j2) =
 	let
-	    val rea = newRea()
+	    val rea = rea()
 	in
 (*DEBUG
 TextIO.print "Inf.match...\n";
@@ -1725,10 +1726,10 @@ TextIO.print "\n"
 		)
 	      | _ => raise Assert.failure
 	end
-	handle Hidden         => ()
-	     | Tab.Lookup dom => raise Mismatch(missing dom)
+	handle Hidden          => ()
+	     | Tab.Unknown dom => raise Mismatch(missing dom)
 
-    and matchKind(k1,k2) = matchKind'(Type.matchStart(), newRea(), k1,k2)
+    and matchKind(k1,k2) = matchKind'(Type.matchStart(), rea(), k1,k2)
     and matchKind'(mt,rea,k1,k2) =
 	if Cell.equal(k1,k2) then () else
 	case (content k1, content k2)
@@ -1781,10 +1782,10 @@ TextIO.print "\n"
 
 (*DEBUG*)
     fun infimum(j1,j2) =
-	infimum'({inf  = Map.new(),
-		  kind = KindMap.new(),
+	infimum'({inf  = Map.map(),
+		  kind = KindMap.map(),
 		  typ  = Type.realiseStart(),
-		  rea  = newRea(),
+		  rea  = rea(),
 		  inst = InstTop}, j1, j2)
 (*
 fun infimum(j1,j2) =
@@ -1792,10 +1793,10 @@ fun infimum(j1,j2) =
 TextIO.print "Inf.infimum...\n";
 TextIO.print("j1 = " ^ infToString j1 ^ "\n");
 TextIO.print("j2 = " ^ infToString j2 ^ "\n");
-infimum'({inf  = Map.new(),
-	    kind = KindMap.new(),
+infimum'({inf  = Map.map(),
+	    kind = KindMap.map(),
 	    typ  = Type.realiseStart(),
-	    rea  = newRea(),
+	    rea  = rea(),
 	    inst = InstTop}, j1, j2)
 before
 TextIO.print "Inf.infimum done.\n")
@@ -1907,7 +1908,7 @@ TextIO.print "Inf.infimum done.\n")
 		PathMap.insertDisjoint(#mod_rea rea, p1, (p2,j11'));
 		equal(realise(rea,j12), j22) handle Mismatch m =>
 				    raise Mismatch(MismatchBody m);
-		(j2, newRea())
+		(j2, rea())
 	    end
 	  | (APPLY(j1',m1), APPLY(j2',m2)) =>
 	    let
