@@ -14,6 +14,7 @@ import structure Stamp           from "../common/Stamp"
 import structure Path            from "../../lib/rtt/Path"
 import structure Type            from "../../lib/rtt/Type"
 import structure Inf             from "../../lib/rtt/Inf"
+import structure UseEnv          from "UseEnv"
 import structure AbstractGrammar from "AbstractGrammar"
 
 
@@ -28,15 +29,16 @@ sig
     type typ   = Type.t
     type var   = Type.var
     type inf   = Inf.t
+    type use   = UseEnv.use
 
     type env
     type t = env
 
-    type val_entry = { id: valid, path: path, typ: typ }
-    type typ_entry = { id: typid, path: path, typ: typ }
-    type var_entry = { id: typid, var: var }
-    type mod_entry = { id: modid, path: path, inf: inf }
-    type inf_entry = { id: infid, path: path, inf: inf }
+    type val_entry = { id: valid, use: bool ref, typ: typ, path: path }
+    type typ_entry = { id: typid, use: bool ref, typ: typ, path: path }
+    type var_entry = { id: typid, use: bool ref, var: var }
+    type mod_entry = { id: modid, use: use  ref, inf: inf, path: path }
+    type inf_entry = { id: infid, use: bool ref, inf: inf, path: path }
 
     exception Collision of stamp
     exception Lookup    of stamp

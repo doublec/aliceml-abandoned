@@ -105,7 +105,13 @@ sig
 	| CompUnclosed		of lab * int * typ
 
     datatype warning =
-	  NotGeneralized	of valid * typ
+	(* Imports *)
+	  ValImpUnused		of lab
+	| TypImpUnused		of lab
+	| ModImpUnused		of lab
+	| InfImpUnused		of lab
+	(* Imports *)
+	| NotGeneralized	of valid * typ
 
     val error :	Source.region * error -> 'a
     val warn :	Source.region * warning -> unit

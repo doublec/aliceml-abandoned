@@ -123,7 +123,13 @@ struct
 	| CompUnclosed		of lab * int * typ
 
     datatype warning =
-	  NotGeneralized	of valid * typ
+	(* Imports *)
+	  ValImpUnused		of lab
+	| TypImpUnused		of lab
+	| ModImpUnused		of lab
+	| InfImpUnused		of lab
+	(* Imports *)
+	| NotGeneralized	of valid * typ
 
 
   (* Pretty printing *)
@@ -481,7 +487,15 @@ struct
 	ppUnclosed(
 	  textpar["component","is","not","closed:"], ant)
 
-    fun ppWarning(NotGeneralized(x,t)) =
+    fun ppWarning(ValImpUnused a) =
+	  textpar["imported","value",ppLab a,"is","not","used"]
+      | ppWarning(TypImpUnused a) =
+	  textpar["imported","type",ppLab a,"is","not","used"]
+      | ppWarning(ModImpUnused a) =
+	  textpar["imported","structure",ppLab a,"is","not","used"]
+      | ppWarning(InfImpUnused a) =
+	  textpar["imported","signature",ppLab a,"is","not","used"]
+      | ppWarning(NotGeneralized(x,t)) =
 	vbox(
 	    textpar["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^

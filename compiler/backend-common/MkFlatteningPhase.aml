@@ -1037,9 +1037,10 @@ functor MkFlatteningPhase(val loadSign:
 	fun translate () (desc, (imports, decs, idFields, sign)) =
 	    let
 		val imports' =
-		    Vector.map (fn (id, _, url) =>
+		    Vector.map (fn (id, sign, url) =>
 				(O.IdDef (translateId id),
-				 loadSign (desc, url), url)) imports
+				 (#1(loadSign (desc, url)), 
+				  Inf.inSig sign), url)) imports  (*--** *)
 		val labelIdList =
 		    Vector.foldr (fn (Field (_, Lab (_, label), id), rest) =>
 				  (label, translateId id)::rest) nil idFields
