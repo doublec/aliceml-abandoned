@@ -348,7 +348,7 @@ define
       {CS newReg(?ExportReg)}
       State = state(regDict: RegDict shareDict: {NewDictionary} cs: CS)
       {FoldL Import
-       fun {$ VHd (Id=id(_ Stamp _))#_ VTl}
+       proc {$ VHd (Id=id(_ Stamp _))#_ VTl}
 	  VHd = vInlineDot(_ ImportReg {VirtualString.toAtom Stamp}
 			   {MakeReg Id State} false unit VTl)
        end VInstr VInter}
