@@ -7,6 +7,7 @@ structure Component :> COMPONENT =
 
 	exception Sited
 	exception Corrupt
+	exception NotFound
 
 	exception Mismatch of {component : Url.t,
 			       request : Url.t option,
@@ -27,6 +28,7 @@ structure Component :> COMPONENT =
 
 		type component = component
 
+		fun eval (url, _) = raise Failure (url, Eval NotFound)
 		fun link url =
 		    raise Failure (url, IO.Io {name = Url.toStringRaw url,
 					       function = "link",

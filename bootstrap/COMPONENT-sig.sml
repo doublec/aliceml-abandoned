@@ -7,6 +7,7 @@ signature COMPONENT =
 
 	exception Sited
 	exception Corrupt
+	exception NotFound
 
 	exception Mismatch of {component : Url.t,
 			       request : Url.t option,

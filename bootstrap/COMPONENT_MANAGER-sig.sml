@@ -6,7 +6,8 @@ signature COMPONENT_MANAGER =
 
 	type component
 
-	val link: Url.t -> component
-	val enter: Url.t * component -> unit    (* Conflict *)
+	val eval: Url.t * component -> Reflect.module (* Component.Failure *)
+	val link: Url.t -> component                  (* Component.Failure *)
+	val enter: Url.t * component -> unit          (* Conflict *)
 	val lookup: Url.t -> component option
     end
