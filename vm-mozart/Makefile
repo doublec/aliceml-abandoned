@@ -538,6 +538,8 @@ build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
 	$(ALICELINK1) $(ALICELINK_OPTS) --include=.. $< -o $@
 
+$(LIBNATIVES:%.ozf=build2/%.asig): %.asig: %.ozf
+
 ##
 ## Installing Build 2
 ##
@@ -712,12 +714,13 @@ build3/install/compiler/top/%: build3/compiler/top/Linked%
 ## Automatic Dependency Management
 ##
 
-BUILD2ALICESOURCES = $(filter %.aml %.asig, $(BUILD2SOURCES))
-BUILD3ALICESOURCES = $(filter %.aml %.asig, $(BUILD3SOURCES))
+BUILD2ALICESOURCES = $(filter %.aml, $(BUILD2SOURCES))
+BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
-	$(ALICEDEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
+	> Makefile.depend
 
 -include Makefile.depend
 
