@@ -14,18 +14,17 @@ import structure Url       from "../../lib/system/Url"
 import structure Reflect   from "../../lib/system/Reflect"
 import structure Inf       from "../../lib/rtt/Inf"
 import structure Source    from "../infrastructure/Source"
+import signature CONTEXT   from "../infrastructure/CONTEXT-sig"
 import signature SWITCHES  from "../infrastructure/SWITCHES-sig"
 import structure Target    from "../infrastructure/Target"
 
 signature RECURSIVE_COMPILER =
     sig
 	structure Switches: SWITCHES
+	structure Context: CONTEXT
 	val isCrossCompiler: bool
 
 	exception Error
-
-	type context
-	val empty: context
 
 	val extension: string
 
@@ -33,8 +32,8 @@ signature RECURSIVE_COMPILER =
 	val acquireSig: Source.desc * Url.t -> Inf.sign
 	val acquireMod: Source.desc * Url.t -> Reflect.module
 
-	val compileFile: context -> string -> context * Target.t
-	val compileString: context -> string -> context * Target.t
+	val compileFile: Context.t * string -> Context.t * Target.t
+	val compileString: Context.t * string -> Context.t * Target.t
 
 	(*DEBUG*)
 	val processFile: (Source.desc * string -> 'a) -> string -> 'a
