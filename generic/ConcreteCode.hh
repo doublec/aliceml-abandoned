@@ -1,9 +1,9 @@
 //
-// Authors:
+// Author:
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000-2001
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -17,43 +17,33 @@
 #pragma interface "generic/ConcreteCode.hh"
 #endif
 
+#include "generic/ConcreteRepresentation.hh"
 #include "generic/Interpreter.hh"
 
-class ConcreteCode: private Block {
-private:
-  static const u_int INTERPRETER_POS = 0;
-  static const u_int BASE_SIZE       = 1;
+class ConcreteCode: private ConcreteRepresentation {
 public:
   using Block::ToWord;
+  using ConcreteRepresentation::Init;
+  using ConcreteRepresentation::Get;
 
   // ConcreteCode Constructor
   static ConcreteCode *New(Interpreter *interpreter, u_int size) {
-    Block *b = Store::AllocBlock(CONCRETE_LABEL, BASE_SIZE + size);
-    b->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
-    return static_cast<ConcreteCode *>(b);
+    return static_cast<ConcreteCode *>
+      (ConcreteRepresentation::New(interpreter, size));
   }
   // ConcreteCode Untagging
   static ConcreteCode *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == CONCRETECODE_LABEL);
-    return static_cast<ConcreteCode *>(b);
+    return static_cast<ConcreteCode *>
+      (ConcreteRepresentation::FromWord(x));
   }
   static ConcreteCode *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == CONCRETE_LABEL);
-    return static_cast<ConcreteCode *>(b);
+    return static_cast<ConcreteCode *>
+      (ConcreteRepresentation::FromWordDirect(x));
   }
 
   // ConcreteCode Accessors
   Interpreter *GetInterpreter() {
-    return static_cast<Interpreter *>
-      (Store::DirectWordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
-  }
-  void Init(u_int index, word value) {
-    InitArg(BASE_SIZE + index, value);
-  }
-  word Get(u_int index) {
-    return GetArg(BASE_SIZE + index);
+    return static_cast<Interpreter *>(GetHandler());
   }
 };
 
