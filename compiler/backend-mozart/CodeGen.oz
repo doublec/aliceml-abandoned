@@ -37,6 +37,18 @@ define
       {Dictionary.put State.regDict Stamp Reg}
    end
 
+   proc {CondMakeReg id(_ Stamp _) State ?Reg} RegDict in
+      RegDict = State.regDict
+      case {Dictionary.condGet RegDict Stamp unit} of unit then
+	 {State.cs newReg(?Reg)}
+	 {Dictionary.put RegDict Stamp Reg}
+      elseof Reg0 then
+	 %% This test is needed because of shared statements:
+	 %% The same variable may be declared on two different paths.
+	 Reg = Reg0
+      end
+   end
+
    fun {GetReg id(_ Stamp _) State}
       {Dictionary.get State.regDict Stamp}
    end
@@ -66,7 +78,7 @@ define
 
    proc {TranslateStm Stm VHd VTl State ReturnReg}
       case Stm of valDec(_ Id Exp _) then
-	 {TranslateExp Exp {MakeReg Id State} VHd VTl State}
+	 {TranslateExp Exp {CondMakeReg Id State} VHd VTl State}
       [] recDec(_ IdExpList _) then
 	 {ForAll IdExpList proc {$ Id#_} {MakeReg Id State _} end}
 	 {FoldL IdExpList
