@@ -14,7 +14,12 @@ fun ispawn f a =
        return unit (directly)
      *)
     (spawn ((f a) 
-      handle e => 
+      handle List.Empty =>
+            (TextIO.output (TextIO.stdErr,
+                "ispawn failed with List.Empty exception \n");
+            OS.Process.exit OS.Process.failure)
+      
+        |    e => 
         (TextIO.output (TextIO.stdErr, 
             "ispawn failed with exception " ^ exnName e ^ "\n");
          OS.Process.exit OS.Process.failure));

@@ -328,6 +328,8 @@ struct
                         ) (p, startPos);
                     invokeSeveral (allConnected (), #levelStarted, 
                             { dimensions = dims });
+                    invokeSeveral (allConnected (), #update, 
+                        Arena.toDiffList newArena);
                     (levels, oldArena, newArena)
                 end
             
@@ -450,15 +452,18 @@ struct
                     val oldArena    = Arena.emptyCopy arena
 
                     fun loop (levels, old, new) =
-                        let val (levels, old, new) = tick (levels, old, new)
+                        let 
+                            val _   = invokeSeveral (allConnected (), #update, 
+                                            Arena.toDiffList new)
+                            val (levels, old, new) = tick (levels, old, new)
                         in
                             Thread.sleep (#tick config);
                             loop (levels, old, new)
                         end
                 in
                     loop (List.tl levels, oldArena, arena) 
-                end handle TournamentFinished => ()
-                            
+                end handle  TournamentFinished  => ()
+
                 
             val startGame = Lock.sync lock (fn () => (
                 (* test wether there is any player at all... *)
@@ -469,8 +474,7 @@ struct
                 invokeSeveral (allConnected (), #tournamentStarted, ());
                 
                 (* start tick signal sender *)
-                spawn ticker ();    
-                ()
+                ispawn ticker ()
                 ))
 
 

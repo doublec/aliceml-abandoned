@@ -44,8 +44,9 @@ sig
     val removeSnakes :  arena * Snake.snake list -> unit
     (** removes all snakes *)
 
-    val diff : arena * arena -> (Pos.pos * Protocol.field) list
+    val diff : arena * arena -> Protocol.diff list
 
+    val toDiffList : arena -> Protocol.diff list
 end
 
 

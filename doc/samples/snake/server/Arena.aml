@@ -395,6 +395,8 @@ struct
 	  help ((0,0), nil)
       end
 
+    fun toDiffList a = diff (a, emptyCopy a)
+
 end
 
 
