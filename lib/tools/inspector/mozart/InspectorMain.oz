@@ -233,7 +233,7 @@ define
    in
       {Inspector.configure typeConversion ConversionTable}
    end
-   
+
    %% Create Inspector Interface
    AliceInspector = 'Inspector'('inspect'      : InspectFun
 				'inspectN'     : InspectNFun

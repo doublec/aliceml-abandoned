@@ -389,13 +389,16 @@ define
 	    @tag    = {Visual newTag($)}
 	    @node   = Node
 	    @secTag = {Visual newTag($)}
-	    String  = if {IsAtom FeaVal}
-		      then {ConvertAtom {Atom.toString FeaVal} _}
-		      elseif {IsName FeaVal}
-		      then '<N:'#{System.printName FeaVal}#'>'
-		      else FeaVal
-		      end
-	    @sDim   = {VirtualString.length String}
+	    if {IsAtom FeaVal}
+	    then
+	       @sDim = {VirtualString.length {ConvertAtom {Atom.toString FeaVal} String}}
+	    else
+	       String = if {IsName FeaVal}
+			then '<N:'#{System.printName FeaVal}#'>'
+			else FeaVal
+			end
+	       @sDim  = {VirtualString.length String}
+	    end
 	 end
 	 meth draw(X Y)
 	    Visual = @visual
