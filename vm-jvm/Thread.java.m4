@@ -36,7 +36,7 @@ public class DMLThread extends Thread implements DMLValue {
      *  Der Wert wird mit Argument unit appliziert. Der Rückgabewert wird
      *  verworfen.
      */
-    final public void run() {
+    public void run() {
 	try {
 	    fcn.apply(DMLConstants.dmlunit);
 	} catch (java.rmi.RemoteException r) {
