@@ -221,7 +221,8 @@ DEFINE0(currentTimeMillis) {
     Error("SystemTimeToFileTime failed"); //--**
   DRETURN(JavaLong::New(ft.dwHighDateTime, ft.dwLowDateTime)->ToWord());
 #else
-  DRETURN(JavaLong::New(time(NULL) * 1000)->ToWord()); //--**
+  s_int64 t = time(NULL);
+  DRETURN(JavaLong::New(t * 1000)->ToWord()); //--**
 #endif
 } END
 
