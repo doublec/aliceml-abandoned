@@ -310,7 +310,7 @@ structure OutputWriters =
 		  let
 		      fun receive (text, mark) =
 			  if String.size text = 0 then mark else
-			  if String.sub (text, 0) < #"\010"
+			  if String.sub (text, 0) <= #"\002"
 			  then receive (String.extract (text, 1, NONE),
 					Char.ord (String.sub (text, 0)))
 			  else (
