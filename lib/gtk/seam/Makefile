@@ -42,15 +42,24 @@ OBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll) \
 INSTALLTARGETS = $(CPPSOURCES:%.cc=%.dll) \
 	  $(ALICESOURCES:%.aml=%.alc)
 
+PLATFORM := $(shell ./platform.sh smlnj)
+ifeq ("$(PLATFORM)", "")
+  $(error Unknown platform)
+endif
+
+GENERATOR = GtkBinding.$(PLATFORM)
 # platform specific settings
-ifeq ($(WINDOWS),1)
-GENERATOR = GtkBinding.x86-win32
+ifeq ("$(PLATFORM)", "x86-win32")
 CC_OPTS = -mno-cygwin -mms-bitfields
 SML = cmd /c sml
 else
-GENERATOR = GtkBinding.x86-linux
+ifeq ("$(PLATFORM)", "ppc-darwin")
+CC_OPTS = -D__ppc__
+SML = sml
+else
 CC_OPTS =
 SML = sml
+endif
 endif
 
 ifndef PC_OPTS
@@ -81,7 +90,6 @@ $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 	$(SML) $(OUTDIR) $(INPUTFILE) @SMLload=$(GENERATOR)
 	./prepare-keyval.sh && mv Key.aml ${OUTDIR} || exit
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
-	
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
 	touch $(LASTGENERATE)
