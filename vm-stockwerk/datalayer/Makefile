@@ -8,12 +8,14 @@ OBJS = alicedata.o
 all: libdatalayer.a
 
 libdatalayer.a: $(OBJS)
-	ar rc $@ $(OBJS) || exit 1
-	ranlib $@ 
+	ar rc $@ $(OBJS) && ranlib $@ 
 
 alicedata.o: alicedata.cc alicedata.hh
 
 clean:
-	rm -f $(OBJS) libdatalayer.a
+	rm -f $(OBJS)
 
-distclean: clean
+veryclean: clean
+	rm -f libdatalayer.a
+
+distclean: veryclean
