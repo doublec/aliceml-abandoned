@@ -114,7 +114,7 @@ final public class Int implements DMLValue {
     _BUILTIN(Compare_) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.compare'");
+	    _sfromTuple(args,val,2,"Int.compare'");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -145,7 +145,7 @@ final public class Int implements DMLValue {
     _BUILTIN(Min) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.min");
+	    _sfromTuple(args,val,2,"Int.min");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -169,7 +169,7 @@ final public class Int implements DMLValue {
     _BUILTIN(Max) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.max");
+	    _sfromTuple(args,val,2,"Int.max");
 	}
 	_SAPPLY2(v) {
 	    try{
@@ -227,7 +227,7 @@ final public class Int implements DMLValue {
     _BUILTIN(SameSign) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.sameSign");
+	    _sfromTuple(args,val,2,"Int.sameSign");
 	}
 	_SAPPLY2(v) {
 	    try {
