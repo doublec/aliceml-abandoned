@@ -21,7 +21,7 @@ public:
   // Header Creation and Access
   static void EncodeHeader(Block *t, BlockLabel l, u_int s) {
     AssertStore(t != INVALID_POINTER);
-    ((u_int *) t)[0] = (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT);
+    ((u_int *) t)[0] = (1 << GEN_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT);
   }
   static u_int GetHeader(Block *p) {
     AssertStore(p != INVALID_POINTER);
@@ -48,7 +48,7 @@ public:
   // Generation Access
   static u_int DecodeGeneration(Block *p) {
     AssertStore(p != INVALID_POINTER);
-    return ((*((u_int *) p)) >> GEN_SHIFT);
+    return (((*((u_int *) p)) >> GEN_SHIFT) - 1);
   }
   // Intgen Mark Access
   static void SetIntgenMark(Block *p) {

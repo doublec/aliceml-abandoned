@@ -436,7 +436,7 @@ inline void Store::HandleInterGenerationalPointers(Set *intgen_set, Set *new_int
   }
 
 #if defined(STORE_DEBUG)
-  std::printf("new_intgen_size is %d\n", new_intgen_size->GetSize());
+  std::printf("new_intgen_size is %d\n", new_intgen_set->GetSize());
 #endif
 }
 
@@ -465,14 +465,21 @@ inline Block *Store::HandleWeakDictionaries(Set *wkdict_set, Set *new_wkdict_set
 	ndict = GCHelper::GetForwardPtr(dp);
 	new_wkdict_set->Push(ndict);
       }
-      // Dictionary must be finalized
+      // Dictionary may be finalized
       else {
 	Handler *h  = dp->GetHandler();
 	Block *newp = CopyBlockToDst(dp, dst_gen, cpy_gen);
 	
 	ndict = PointerOp::EncodeTag(newp, PointerOp::DecodeTag(dict));
 	GCHelper::MarkMoved(dp, ndict);
-	finset = Store::PushToFinSet(finset, h, ndict, dst_gen, cpy_gen);
+	// Do finalize if empty dict
+	if (((WeakDictionary *) newp)->GetCounter() == 0) {
+	  finset = Store::PushToFinSet(finset, h, ndict, dst_gen, cpy_gen);
+	}
+	// Keep it alive (thanks to Deny for pointing that out)
+	else {
+	  new_wkdict_set->Push(ndict);
+	}
       }
     }
     // Can't decide whether it was reached or not; must assume yes.
@@ -519,13 +526,22 @@ inline Block *Store::HandleWeakDictionaries(Set *wkdict_set, Set *new_wkdict_set
 	    if (GCHelper::AlreadyMoved(valp)) {
 	      node->SetValue(GCHelper::GetForwardPtr(valp));
 	    }
-	    // Value should be finalized
+	    // Value might be finalized
 	    else {
-	      dict->RemoveEntry(node);
-	      // This Is A Finalization Candidate
-	      finset = Store::PushToFinSet(finset, h,
-					   ForwardBlock(val, dst_gen, cpy_gen, match_gen),
-					   dst_gen, cpy_gen);
+	      BlockLabel l = valp->GetLabel();
+
+	      // Value is non Dict or empty Dict ?
+	      if ((l != WEAK_DICT_LABEL) ||
+		  ((l == WEAK_DICT_LABEL) && ((WeakDictionary *) valp)->GetCounter() == 0)) {
+		dict->RemoveEntry(node);
+		finset = Store::PushToFinSet(finset, h,
+					     ForwardBlock(val, dst_gen, cpy_gen, match_gen),
+					     dst_gen, cpy_gen);
+	      }
+	      // No, save it again
+	      else {
+		node->SetValue(ForwardBlock(val, dst_gen, cpy_gen, match_gen));
+	      }
 	    }
 	  }
 	}
@@ -596,9 +612,12 @@ void Store::DoGC(word &root) {
   // Scan chunks (intgen_set amount)
   Store::ScanChunks(dst_gen, cpy_gen, match_gen, anchor, scan);
 
-  // Handle Weak Dictionaries (performs scanning itself)
-  Block *arr = Store::HandleWeakDictionaries(wkdict_set, new_wkdict_set,
-					     match_gen, dst_gen, cpy_gen);
+  // Handle Weak Dictionaries, if any (performs scanning itself)
+  Block *arr = INVALID_POINTER;
+  if (wkdict_set->GetSize() != 0) {
+    arr = Store::HandleWeakDictionaries(wkdict_set, new_wkdict_set,
+					match_gen, dst_gen, cpy_gen);
+  }
 
   // change to new dict list
   wkDictSet = new_wkdict_set->ToWord();
@@ -632,9 +651,12 @@ void Store::DoGC(word &root) {
   root = new_root_set->ToWord();
 
   // Call Finalisation Handler
-  rs_size = arr->GetSize();
-  for (u_int i = 1; i <= rs_size; i += 2) {
-    ((Handler *) PointerOp::DecodeUnmanagedPointer(arr->GetArg(i)))->Finalize(arr->GetArg(i + 1));
+  if (arr != INVALID_POINTER) {
+    rs_size = Store::WordToInt(arr->GetArg(1));
+    for (u_int i = 2; i < rs_size; i += 2) {
+      Handler *h = (Handler *) PointerOp::DecodeUnmanagedPointer(arr->GetArg(i));
+      h->Finalize(arr->GetArg(i + 1));
+    }
   }
 }
 
