@@ -1,10 +1,9 @@
-import functor   MkProblem from "MkProblem"
+import structure Space     from "Space"
 import structure FD        from "FD"
 
 fun queens n cl =
     let
-	structure S = MkProblem()
-	open S
+	val space = Space.new()
 	open FD
 
 	val v = rangeVec(space, n, (0, n-1))
@@ -20,8 +19,7 @@ fun queens n cl =
 
 fun money cl = 
     let
-	structure S = MkProblem()
-	open S
+	val space = Space.new()
 	open FD
 
 	val v as #[s,e,n,d,m,o',r,y] = rangeVec(space, 8, (0,9))
@@ -52,8 +50,7 @@ fun money cl =
 
 fun photo () =
     let
-	structure S = MkProblem()
-	open S
+	val space = Space.new()
 	open FD
 
 	val s_prefs = #[(0,2), (1,4), (2,3), 
@@ -112,8 +109,7 @@ fun for f start max = if start>max then ()
 
 fun golomb n cl =
     let
-	structure S = MkProblem()
-	open S
+	val space = Space.new()
 	open FD
 
 	fun diag(i,j) = (i*(2*n-i-1)) div 2 + j - i - 1
