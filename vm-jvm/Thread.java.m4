@@ -1,4 +1,6 @@
 package de.uni_sb.ps.dml.runtime;
+
+import de.uni_sb.ps.dml.builtin.NoGood;
 /** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.Threads.
  *  java.lang.Threads sind First-Class; indem das Interface <code>DMLValue</code>
  *  implementiert wird, können sie wie andere Werte in DML verwendet werden.
@@ -7,7 +9,7 @@ package de.uni_sb.ps.dml.runtime;
 public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
     public DMLValue tail=null;
-
+    private NoGood ng = null;
     /** Die Funktion (oder etwas, das zu einer Funktion wird),
      *  die der java.lang.Thread ausführt.
      *  Die Funktion sollte den Typ fcn : unit -> 'a haben.
@@ -76,8 +78,15 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	throw new ExceptionWrapper(this);
     }
 
-    /** Die Methode verhindert, daß java.lang.Threads gepickelt werden können.*/
-    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle de.uni_sb.ps.dml.runtime.Thread")).raise();
+    private Object writeReplace()
+	throws java.io.ObjectStreamException {
+	if (ng==null) { // falls zum ersten Mal serialisiert
+	    GName gn=new GName();
+	    ng=new NoGood(gn);
+	    GName.gNames.put(gn,ng);
+	    return ng;
+	} else {
+	    return ng;
+	}
     }
 }
