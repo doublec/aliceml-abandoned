@@ -53,8 +53,6 @@ __primitive val op~ :	int -> int = "~"
 __primitive val op+ :	int * int -> int = "+"
 __primitive val op- :	int * int -> int = "-"
 __primitive val op* :	int * int -> int = "*"
-__primitive val op div:	int * int -> int = "div"
-__primitive val op mod:	int * int -> int = "mod"
 
 __primitive val op< :	int * int -> bool = "<"
 __primitive val op> :	int * int -> bool = ">"
@@ -450,7 +448,13 @@ structure Int =
 
 	open StringCvt
 
+	val maxInt = NONE
+
 	val op+ = op+
+
+	__primitive val op div: int * int -> int = "Int.div"
+	__primitive val op mod: int * int -> int = "Int.mod"
+	__primitive val abs: int -> int = "Int.abs"
 
 	fun decval c = Char.ord c - Char.ord #"0"
 	fun hexval c =
@@ -525,6 +529,7 @@ structure Int =
 
 	fun fromInt i   = i
 	fun fromLarge i = i
+	fun toInt i     = i
 	fun toLarge i   = i
     end
 
@@ -536,7 +541,12 @@ signature INTEGER =
     sig
 	type int
 
+	val maxInt : int option
+
 	val + : int * int -> int
+	val div : int * int -> int
+	val mod : int * int -> int
+	val abs : int -> int
 	val >= : int * int -> bool
 	val < : int * int -> bool
 
@@ -555,6 +565,7 @@ signature INTEGER =
 
 	val fromInt: Int.int -> int
 	val fromLarge: LargeInt.int -> int
+	val toInt : int -> Int.int
 	val toLarge: int -> LargeInt.int
     end
 
@@ -653,6 +664,10 @@ val vector = Vector.fromList
 val getOpt = Option.getOpt
 val isSome = Option.isSome
 val valOf = Option.valOf
+
+val op div = Int.div
+val op mod = Int.mod
+val abs = Int.abs
 
 val null = List.null
 val hd = List.hd

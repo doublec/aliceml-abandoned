@@ -58,18 +58,6 @@ define
       '+': fun {$ X1 X2} X1 + X2 end   %--** overloaded for word
       '-': fun {$ X1 X2} X1 - X2 end   %--** overloaded for word
       '*': fun {$ X1 X2} X1 * X2 end   %--** overloaded for word
-      'div':
-	 fun {$ X1 X2}   %--** overloaded for word
-	    try
-	       X1 div X2
-	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
-	    end
-	 end
-      'mod':
-	 fun {$ X1 X2}   %--** overloaded for word
-	    X1 mod X2
-	 end
       '<':
 	 fun {$ X1 X2}
 	    if {ByteString.is X1} then {StringLess X1 X2} else X1 < X2 end
@@ -146,11 +134,29 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
+      'Int.abs':
+	 fun {$ I} {Abs I} end
       'Int.compare':
 	 fun {$ I J}
 	    if I == J then 'EQUAL'
 	    elseif I < J then 'LESS'
 	    else 'GREATER'
+	    end
+	 end
+      'Int.div':
+	 fun {$ X1 X2}   %--** overloaded for word
+	    try
+	       X1 div X2
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	    end
+	 end
+      'Int.mod':
+	 fun {$ X1 X2}   %--** overloaded for word
+	    try
+	       X1 mod X2
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Int.toString':
