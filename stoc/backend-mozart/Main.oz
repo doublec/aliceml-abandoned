@@ -16,7 +16,7 @@ import
    System(printInfo printError gcDo)
    Application(getArgs exit)
    Property(get)
-   Pickle(save)
+   Pickle(saveWithCells)
    Frontend(translateVirtualString)
    CodeGen(translate)
 prepare
@@ -86,12 +86,12 @@ define
       case {ReadCommand File} of 'buildFunctor'#[Code] then
 	 case {Frontend.translateVirtualString Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
-	 [] Filename#Import#Body then Id in
-	    Id = {Put {CodeGen.translate Filename Import#Body Filename#'.ozm'}}
+	 [] Filename#AST then Id in
+	    Id = {Put {CodeGen.translate Filename AST Filename#'.ozm'}}
 	    {System.printInfo 'Result: '#Id#'\n\n'}
 	 end
       [] 'saveValue'#[OutFilename Id] then
-	 {Pickle.save {Get {String.toInt Id}} OutFilename}
+	 {Pickle.saveWithCells {Get {String.toInt Id}} OutFilename '' 0}
 	 {System.printInfo 'Result: 0\n\n'}
       [] 'stop'#nil then
 	 {System.printInfo 'Result: 0\n\n'}

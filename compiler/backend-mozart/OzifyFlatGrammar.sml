@@ -33,9 +33,11 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	val output = TextIO.output
 	val output1 = TextIO.output1
 
-	fun f (q, s) = (output (q, s); output1 (q, #"("))
+	fun l q = output1 (q, #"(")
 	fun m q = output1 (q, #" ")
+	fun h q = output1 (q, #"#")
 	fun r q = output1 (q, #")")
+	fun f (q, s) = (output (q, s); l q)
 
 	fun outputBool (q, b) = output (q, Bool.toString b)
 	fun outputInt (q, n) = output (q, Int.toString n)
@@ -78,14 +80,13 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    outputList outputChar (q, String.explode s)
 
 	fun outputPair (outputA, outputB) (q, (a, b)) =
-	    (output1 (q, #"("); outputA (q, a);
-	     output1 (q, #"#"); outputB (q, b); output1 (q, #")"))
+	    (l q; outputA (q, a); h q; outputB (q, b); r q)
 
 	local
 	    fun outputRegion (q, ((ll, lc), (rl, rc))) =
-		(output (q, Int.toString ll); output1 (q, #"#");
-		 output (q, Int.toString lc); output1 (q, #"#");
-		 output (q, Int.toString rl); output1 (q, #"#");
+		(output (q, Int.toString ll); h q;
+		 output (q, Int.toString lc); h q;
+		 output (q, Int.toString rl); h q;
 		 output (q, Int.toString rc))
 	in
 	    fun outputIdInfo (q, info: id_info) =
@@ -282,11 +283,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
 	fun externalize (q, (filename, (importList, (stms, _)))) =
-	    (outputString (q, filename);
-	     output1 (q, #"#");
+	    (outputString (q, filename); h q; l q;
 	     outputList (fn (q, (id, _, url)) =>
-			 outputPair (outputId, outputString)
-			 (q, (id, Url.toString url))) (q, importList);
-	     output1 (q, #"#");
-	     outputList outputStm (q, stms))
+			 (l q; outputId (q, id);
+			  h q; outputString (q, "unit");
+			  h q; outputString (q, Url.toString url); r q))
+	     (q, importList);
+	     h q; l q; outputList outputStm (q, stms); h q;
+	     outputString (q, "unit"); r q; r q)
     end

@@ -96,11 +96,12 @@ define
       {Map Stms fun {$ Stm} {ShareStm Stm ShareDict} end}
    end
 
-   fun {TranslateVirtualString VS} C InFilename Imports Body in
+   fun {TranslateVirtualString VS} C in
       C = {New Compiler.engine init()}
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
-      InFilename#Imports#Body = {VirtualStringToValue VS}
-      InFilename#Imports#{ShareBody Body {NewDictionary}}
+      case {VirtualStringToValue VS} of InFilename#(Imports#(Body#Sign)) then
+	 InFilename#(Imports#({ShareBody Body {NewDictionary}}#Sign))
+      end
    end
 end
