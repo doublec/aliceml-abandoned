@@ -11,6 +11,7 @@
  *)
 
 import structure Assert                from "../../lib/utility/Assert"
+import structure Atom                  from "../../lib/data/Atom"
 import structure MkHashImpSet          from "../../lib/data/MkHashImpSet"
 import structure MkHashImpMap          from "../../lib/data/MkHashImpMap"
 import structure Url                   from "../../lib/system/Url"

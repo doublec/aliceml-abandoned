@@ -11,6 +11,7 @@
  *)
 
 import structure Label       from "../../lib/rtt/Label"
+import structure Atom        from "../../lib/data/Atom"
 import structure Stamp       from "../common/Stamp"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 import signature VALUE       from "VALUE-sig"
