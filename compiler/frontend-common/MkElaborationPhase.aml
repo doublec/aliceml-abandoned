@@ -1750,8 +1750,8 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.TypDec(i, typid, typ)) =
 	let
-	    val abbrev = case typ of I.ConTyp(_,typlongid) =>
-				     I.longname typlongid <> I.name typid
+	    val abbrev = case typ of I.ConTyp(_,I.ShortId(_,typid')) =>
+				     I.name typid' <> I.name typid
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
@@ -1781,8 +1781,8 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.InfDec(i, infid, inf)) =
 	let
-	    val abbrev = case inf of I.ConInf(_,inflongid) =>
-				     I.longname inflongid <> I.name infid
+	    val abbrev = case inf of I.ConInf(_,I.ShortId(_,infid')) =>
+				     I.name infid' <> I.name infid
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
@@ -1999,8 +1999,8 @@ TextIO.print "\n";
 
       | elabSpec(E, s,po, I.TypSpec(i, typid, typ)) =
 	let
-	    val abbrev = case typ of I.ConTyp(_,typlongid) =>
-				     I.longname typlongid <> I.name typid
+	    val abbrev = case typ of I.ConTyp(_,I.ShortId(_,typid')) =>
+				     I.name typid' <> I.name typid
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
@@ -2023,8 +2023,8 @@ TextIO.print "\n";
 
       | elabSpec(E, s,po, I.InfSpec(i, infid, inf)) =
 	let
-	    val abbrev = case inf of I.ConInf(_,inflongid) =>
-				     I.longname inflongid <> I.name infid
+	    val abbrev = case inf of I.ConInf(_,I.ShortId(_,infid')) =>
+				     I.name infid' <> I.name infid
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
