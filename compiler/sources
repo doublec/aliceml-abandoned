@@ -154,6 +154,8 @@ backend-common/FLAT_GRAMMAR.sig
 backend-common/FlatGrammar.sml
 backend-common/OUTPUT_FLAT_GRAMMAR.sig
 backend-common/OutputFlatGrammar.sml
+backend-common/ARITY.sig
+backend-common/Arity.sml
 backend-common/INTERMEDIATE_AUX.sig
 backend-common/IntermediateAux.sml
 backend-common/SIMPLIFY_MATCH.sig
