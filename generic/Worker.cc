@@ -13,21 +13,20 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "generic/Interpreter.hh"
+#pragma implementation "generic/Worker.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Tuple.hh"
 
 #if PROFILE
 #include "generic/String.hh"
-#include "generic/ConcreteCode.hh"
 #endif
 
 // Calling Convention Conversion
-void Interpreter::Construct() {
+void Worker::Construct() {
   u_int nArgs = Scheduler::nArgs;
   switch (nArgs) {
   case 0:
@@ -47,7 +46,7 @@ void Interpreter::Construct() {
   Scheduler::nArgs = Scheduler::ONE_ARG;
 }
 
-u_int Interpreter::Deconstruct() {
+u_int Worker::Deconstruct() {
   switch (Scheduler::nArgs) {
   case 0:
     return 0;
@@ -74,48 +73,24 @@ u_int Interpreter::Deconstruct() {
 }
 
 //
-// Interpreter virtual functions: default implementations
+// Worker virtual functions: default implementations
 //
-Block *Interpreter::GetAbstractRepresentation(Block *) {
-  return INVALID_POINTER; // default: may not be pickled
-}
-
-void Interpreter::PushCall(Closure *) {
-  Error("Interpreter::PushCall must never be called");
-}
-
-void Interpreter::PurgeFrame(word) {
+void Worker::PurgeFrame(word) {
   return; // default: nothing to do
 }
 
-u_int Interpreter::GetArity() {
-  return 0; // to be done
-}
-
-Interpreter::function Interpreter::GetCFunction() {
-  return NULL; // default: no c function available
-}
-
-Interpreter::Result Interpreter::Handle() {
+Worker::Result Worker::Handle() {
   // default: pass the exception up the stack
   Scheduler::currentBacktrace->Enqueue(Scheduler::GetAndPopFrame());
-  return Interpreter::RAISE;
+  return RAISE;
 }
 
 #if PROFILE
-word Interpreter::GetProfileKey(StackFrame *) {
+word Worker::GetProfileKey(StackFrame *) {
   return Store::UnmanagedPointerToWord(this);
 }
 
-word Interpreter::GetProfileKey(ConcreteCode *concreteCode) {
-  return concreteCode->ToWord();
-}
-
-String *Interpreter::GetProfileName(StackFrame *) {
-  return String::New(this->Identify());
-}
-
-String *Interpreter::GetProfileName(ConcreteCode *) {
+String *Worker::GetProfileName(StackFrame *) {
   return String::New(this->Identify());
 }
 #endif

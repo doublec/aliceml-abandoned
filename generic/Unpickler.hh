@@ -17,7 +17,7 @@
 #pragma interface "generic/Unpickler.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/String.hh"
 
 class DllExport Unpickler {
@@ -33,8 +33,8 @@ public:
   static void RegisterHandler(String *name, handler handler);
 
   // Unpickler Functions
-  static Interpreter::Result Unpack(String *string);
-  static Interpreter::Result Load(String *filename);
+  static Worker::Result Unpack(String *string);
+  static Worker::Result Load(String *filename);
 };
 
 #endif
