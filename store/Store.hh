@@ -161,7 +161,8 @@ public:
     return p;
   }
   static Chunk *DirectWordToChunk(word x) {
-    AssertStore(Store::DirectWordToBlock(x)->GetLabel() == CHUNK_LABEL);
+    AssertStore(HeaderOp::DecodeLabel(Store::DirectWordToBlock(x)) ==
+		CHUNK_LABEL);
     Chunk *p = PointerOp::DirectDecodeChunk(x);
     return p;
   }
