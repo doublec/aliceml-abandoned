@@ -21,6 +21,8 @@ signature TOOLS_COMPONENT =
 		val toString: 'a -> string
 		val browse: 'a -> unit
 		val inspect: 'a -> unit
+
+		functor Inspect(_: any): any
 	    end
 
 	structure Tools: TOOLS
