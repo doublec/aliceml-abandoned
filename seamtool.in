@@ -81,7 +81,7 @@ case "$mode" in
 	cmd @CXX@ -M ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ "$@"
 	;;
     compile)
-	cmd @CXX@ ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ @SEAMTOOL_LDFLAGS@ "$@"
+	cmd @CXX@ ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ -L${libdir} "$@"
 	;;
     link)
 	cmd @CXX@ @SEAMTOOL_LDFLAGS@ "$@" -shared -L${libdir} -lseam
