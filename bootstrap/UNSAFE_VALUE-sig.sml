@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (* Dummy replacement for bootstrapping *)
 
 signature UNSAFE_VALUE =
