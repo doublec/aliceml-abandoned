@@ -78,7 +78,7 @@ fun toString pos s =
 alpha=[A-Za-z];
 symbol     = [-!%&$#+/:<=>?@\\~`|*^];
 digit=[0-9];
-alphanum = {alpha} ({alpha} | {digit} | "_" | "'")*;
+alphanum = {alpha} ({alpha} | {digit} | "_" | "'" | ".")*;
 formatting = [\ \t\011\012\013]+;
 printable  = [^\000-\032"\127\\];
 escape     = "\\a" | "\\b" | "\\t" | "\\n" | "\\v" | "\\f" | "\\r" |
@@ -171,10 +171,10 @@ string     = "\""({stringchar} | {gap})*"\"";
 <INITIAL>">"    => (Tokens.MLOP(">",yypos,yypos+1));
 <INITIAL>">="   => (Tokens.MLOP(">=",yypos,yypos+2));
 <INITIAL>":="   => (Tokens.MLOP(":=",yypos,yypos+2));
+<INITIAL>"::"   => (Tokens.MLOP("::",yypos,yypos+2));
 <INITIAL>"!"    => (Tokens.MLOP("!",yypos,yypos+1));
 <INITIAL>"@"    => (Tokens.MLOP("@",yypos,yypos+1));
 <INITIAL>"^"    => (Tokens.MLOP("=",yypos,yypos+1));
-<INITIAL>"."    => (Tokens.MLOP(".",yypos,yypos+1));
 
 
 <INITIAL>{alphanum} => (Tokens.ID(yytext,yypos,yypos+

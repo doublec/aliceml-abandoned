@@ -1,6 +1,9 @@
 (* print after preprocessing: ML code + embedded tokens + parsers *)
 structure Output =
 struct
+    (* evaluate only after parse? *)
+    val closure = false
+
     structure A = AbsSyn
 
     fun cr s = s^"\n"
@@ -130,11 +133,19 @@ struct
 		val posInfo = case posInfo of SOME s => s^"\n" | _ => ""  
 	    in
 		(blank 1)^posInfo
-		^(blank 1)^(mkPat n (List.rev rhs))
-		^(blank 12)^"=> let val result =\n"
-		^(blank 20)^"SValue."^lhs^" (fn () => let\n"
+		^(blank 1)^(mkPat n (List.rev rhs))^
+(* ------------------------------------------------- *)
+		(if closure then
+		    ((blank 12)^"=> let val result =\n"
+			^(blank 20)^"SValue."^lhs^" (fn () => let\n"
+			^(mkMatch rhs)
+			^(blank 40)^"in ( "^code^" ) end )\n")  
+(* ------------------------------------------------- *)
+		else ((blank 12)^"=> let val result =\n"
+		^(blank 20)^"let\n"
 		^(mkMatch rhs)
-		^(blank 40)^"in ( "^code^" ) end )\n"
+		^"in SValue."^lhs^" (fn () => ( "^code^" )) end "))
+(* ------------------------------------------------- *)
 		^(blank 15)^"in "
 		^"(LrTable.NT "
 		^(Int.toString (case stringToNonterm lhs of LrTable.NT i => i))

@@ -1,6 +1,14 @@
 (* adapted from ML-Yacc Parser Generator 
    (c) 1989 Andrew W. Appel, David R. Tarditi 
 *)
+signature TOKEN =
+    sig
+	structure LrTable : LR_TABLE
+        datatype ('a,'b) token = TOKEN of LrTable.term * ('a * 'b * 'b)
+	val sameToken : ('a,'b) token * ('a,'b) token -> bool
+    end
+
+
 signature LR_PARSER_ENG =
     sig
 	structure LrTable : LR_TABLE
