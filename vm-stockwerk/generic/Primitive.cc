@@ -13,19 +13,19 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Primitive.hh"
+#pragma implementation "generic/Primitive.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/Closure.hh"
-#include "emulator/ConcreteCode.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/RootSet.hh"
-#include "emulator/StackFrame.hh"
-#include "emulator/Alice.hh"
-#include "emulator/Primitive.hh"
-#include "emulator/Transform.hh"
+#include "generic/Closure.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "generic/RootSet.hh"
+#include "generic/StackFrame.hh"
+#include "generic/Transform.hh"
+#include "generic/Primitive.hh"
+#include "alice/Data.hh"
 
 // Primitive Frame
 class PrimitiveFrame : private StackFrame {
@@ -135,6 +135,7 @@ word Primitive::MakeFunction(const char *name, Primitive::function function,
   PrimitiveInterpreter *interpreter =
     new PrimitiveInterpreter(name, function, arity, sited);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
+  //--** use a more direct representation:
   TagVal *tagVal = TagVal::New(0, 1);
   tagVal->Init(0, String::New(name)->ToWord());
   Transform *transform =
@@ -151,6 +152,7 @@ word Primitive::MakeClosure(const char *name, Primitive::function function,
 }
 
 void Primitive::Init() {
+  //--** this is an Alice dependency:
   RootSet::Add(aliceTransformName);
   aliceTransformName = String::New("Alice.primitive.function")->ToWord();
 }

@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR_PICKLER_HH__
-#define __EMULATOR_PICKLER_HH__
+#ifndef __GENERIC__PICKLER_HH__
+#define __GENERIC__PICKLER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Pickler.hh"
+#pragma interface "generic/Pickler.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
 class Pickler {
 public:
