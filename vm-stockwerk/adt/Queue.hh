@@ -65,7 +65,7 @@ protected:
   u_int GetNumberOfElements() {
     u_int size = GetArray()->GetSize();
     u_int nentries = GetWriteIndex() + size - GetReadIndex();
-    return nentries > size? nentries - size: nentries;
+    return nentries >= size? nentries - size: nentries;
   }
   word GetNthElement(u_int n) {
     Assert(n < GetNumberOfElements());
