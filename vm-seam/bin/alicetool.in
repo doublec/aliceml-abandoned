@@ -1,0 +1,90 @@
+#!/bin/sh
+# 
+# Author:
+#   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+#   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+# 
+# Copyright:
+#   Leif Kornstaedt, 2003
+#   Marco Kuhlmann, 2003
+# 
+# Last Change:
+#   $Date$
+#   $Revision$
+# 
+
+set -e
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+pkgincludedir=@includedir@/@PACKAGE@
+libdir=@libdir@
+pkglibdir=@libdir@/@PACKAGE@
+
+usage () {
+    echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
+    echo "Compilation utility for Alice                              " >&2
+    echo "                                                           " >&2
+    echo "Generic options:                                           " >&2
+    echo "  -h, --help       display this message and exit           " >&2
+    echo "  -v, --verbose    enable verbose shell tracing            " >&2
+    echo "  -V, --version    show version information and exit       " >&2
+    echo "                                                           " >&2
+    echo "MODE must be one of the following:                         " >&2
+    echo "  compile          compile a source file                   " >&2
+    echo "  link             create a library or an executable       " >&2
+    echo "  makedepend       create a dependency stub                " >&2
+    echo "                                                           " >&2
+    echo "MODE-ARGs vary depending on the MODE.                      " >&2
+}
+
+version () {
+    echo "$0 (Alice compilation utility) @PACKAGE_VERSION@" >&2
+    echo "                                                           " >&2
+    echo "Copyright (C) 2003  Programming Systems Lab                " >&2
+    echo "See the source for copying conditions.                     " >&2
+}
+
+if [ $# -lt 1 ]; then
+    usage
+    exit 2
+fi
+
+verbose=" "
+
+case "$1" in
+    -h|--help)
+	usage
+	exit 0
+	;;
+    -V|--version)
+	version
+	exit 0
+	;;
+    -v|--verbose)
+	verbose="--verbose "
+	shift
+	;;
+esac
+
+mode=$1
+shift
+
+case "$mode" in
+    makedepend)
+	exec seamtool${verbose} makedepend -I"${pkgincludedir}" "$@"
+	;;
+    compile)
+	exec seamtool${verbose} compile -I"${pkgincludedir}" "$@"
+	;;
+    link)
+	exec seamtool${verbose} link "$@" -L"${pkglibdir}" -lalice
+	;;
+    *)
+	echo "$0: unknown mode \`$1\'" >&2
+	exit 2
+	;;
+esac
+
+exit 0

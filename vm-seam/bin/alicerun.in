@@ -1,7 +1,24 @@
 #!/bin/sh
+#
+# Author:
+#   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+#
+# Copyright:
+#   Marco Kuhlmann, 2003
+#
+# Last Change:
+#   $Date$
+#   $Revision$
+#
 
-# TODO: This file should eventually be generated from configure
-# with the proper paths substituted.
+set -e
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datadir=@datadir@
+libdir=@libdir@
+
+seamlibdir=@seamlibdir@
 
 set -e
 
@@ -38,35 +55,32 @@ abs_path () {
 if test -z "${ALICE_HOME}"; then
     dir=$(dirname "$0")
     dir=$(dirname "$dir")
-    ALICE_HOME=$(find_in alice.dll /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
+    ALICE_HOME=$(find_in alice.dll "${datadir}/@PACKAGE@" "$PROGRAMFILES/Alice" "$dir")
 fi
+
 ALICE_HOME=$(abs_path "$ALICE_HOME")
 
 case $(uname) in
     CYGWIN*)
 	PATH="$ALICE_HOME:$PATH"
 	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
-	ext=".exe"
-	sep=\;
 	;;
     *)
 	LD_LIBRARY_PATH="${ALICE_HOME}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
 	export LD_LIBRARY_PATH
-	ext=""
-	sep=:
 	;;
 esac
 
-ALICE_LOAD=cache=$HOME/.alice/cache${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
+add_to_alice_load () {
+    ALICE_LOAD="${ALICE_LOAD}${ALICE_LOAD:+@CACHESEP@}$1"
+}
 
-if [ ! -z "$ALICE_LOAD_PREFIX" ]
-then
-    ALICE_LOAD="$ALICE_LOAD_PREFIX${sep}$ALICE_LOAD"
-fi
-if [ ! -z "$ALICE_LOAD_SUFFIX" ]
-then
-    ALICE_LOAD="$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX"
-fi
+add_to_alice_load "cache=${HOME}/.@PACKAGE@/cache"
+add_to_alice_load "cache=${datadir}/@PACKAGE@/cache"
+add_to_alice_load "cache=${libdir}/@PACKAGE@/cache"
+
+add_to_alice_load "pattern=?{x}=?{x}.stc"
+add_to_alice_load "pattern=?{x}=?{x}.dll"
 
 export ALICE_HOME ALICE_LOAD
 
@@ -78,4 +92,4 @@ export ALICE_HOME ALICE_LOAD
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
 #exec gdb seam
 
-exec seam${ext} alice "$@"
+exec seam alice "$@"
