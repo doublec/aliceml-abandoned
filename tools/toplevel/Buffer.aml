@@ -382,11 +382,8 @@ structure Buffer =
       (* Hack for Windows *)
       fun unixPath path = String.map (fn #"\\" => #"/" | c => c) path
       fun mkAbsolute{path,relativeTo} =
-let val s =
 	  String.extract(OS.Path.mkAbsolute{path = unixPath path,
 	  		 relativeTo = "/--" ^ unixPath relativeTo}, 3, NONE)
-in
-print("["^s^"]"); s end
 
       fun buffer {notebook,id,file,loadFile} =
           let
