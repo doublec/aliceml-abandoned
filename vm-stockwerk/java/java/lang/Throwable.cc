@@ -67,7 +67,7 @@ void NativeMethodTable::java_lang_Throwable(JavaString *className) {
   RootSet::Add(wStackTraceElementClass);
   Register(className, "fillInStackTrace", "()Ljava/lang/Throwable;",
 	   fillInStackTrace, 1, true);
-  Register(className, "getStackTraceDepth", "()I", 
+  Register(className, "getStackTraceDepth", "()I",
 	   getStackTraceDepth, 1, true);
   Register(className, "getStackTraceElement",
 	   "(I)Ljava/lang/StackTraceElement;", getStackTraceElement, 2, true);
