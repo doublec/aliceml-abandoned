@@ -146,12 +146,13 @@ LIBRTTSOURCES0 = \
 	PPInf.aml
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
-LIBSOURCES = \
-	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
-	$(LIBSYSTEMSOURCES0:%=lib/system/%) \
-	$(LIBUTILITYSOURCES0:%=lib/utility/%) \
-	$(LIBRTTSOURCES0:%=lib/rtt/%) \
-	$(LIBMLYACCSOURCES0:%=lib/ml-yacc/%)
+LIBSOURCES0 = \
+	$(LIBFUNDAMENTALSOURCES0:%=fundamental/%) \
+	$(LIBSYSTEMSOURCES0:%=system/%) \
+	$(LIBUTILITYSOURCES0:%=utility/%) \
+	$(LIBRTTSOURCES0:%=rtt/%) \
+	$(LIBMLYACCSOURCES0:%=ml-yacc/%)
+LIBSOURCES = $(LIBSOURCES0:%=lib/%)
 
 STOCINFRASTRUCTURESOURCES0 = \
 	CRASH-sig.aml Crash.aml SOURCE-sig.aml Source.aml ERROR-sig.aml \
@@ -405,8 +406,8 @@ build1/install/bin/%: %
 
 BUILD2DIRS = \
 	build2 build2/lib build2/lib/fundamental build2/lib/system \
-	build2/lib/utility build2/lib/rtt
-BUILD2SOURCES = $(LIBFUNDAMENTALSOURCES0:%=build2/lib/fundamental/%)
+	build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
+BUILD2SOURCES = $(LIBSOURCES:%=build2/%)
 
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \
@@ -415,8 +416,8 @@ INSTALL2DIRS = build2/install build2/install/bin \
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
 INSTALL2LIBFILES = \
-	$(LIBFUNDAMENTALSOURCES0:%.aml=fundamental/%.ozf) \
-	$(NATIVECOMPONENTS:%=system/%.ozf)
+	$(LIBSOURCES0:%.aml=%.ozf) \
+	$(LIBSOURCES0:%.asig=%.ozf)
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -498,11 +499,9 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt
-INSTALL3TOPFILES = stow.ozf stoc.ozf stot.ozf Default.import
-INSTALL3BINFILES = stow stoc stol stot
-INSTALL3LIBFILES = \
-	$(LIBFUNDAMENTALSOURCES0:%.aml=fundamental/%.ozf) \
-	$(NATIVECOMPONENTS:%=system/%.ozf)
+INSTALL3TOPFILES = $(INSTALL2TOPFILES) stot.ozf
+INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
+INSTALL3LIBFILES = $(INSTALL2LIBFILES)
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
