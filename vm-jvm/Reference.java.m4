@@ -92,7 +92,11 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
     final public String toString() {
-	return (content==null?"remote":content.toString())+" : ref";
+	String s = (mgr==null ? "no server-manager, " : "server: "+mgr+", ");
+	s+= (cmgr==null ? "no client-manager, " : "client: "+cmgr+", ");
+	s+=(content==null?"remote":content.toString())+" : ref";
+	return s;
+	//	return (content==null?"remote":content.toString())+" : ref";
     }
 
     final public DMLValue getValue() {
@@ -123,32 +127,41 @@ final public class Reference implements DMLConVal, DMLReference {
 	content = val;
 	return ret;
     }
-    private void writeObject(java.io.ObjectOutputStream stream)
-	throws IOException {
-	if (mgr==null) {
-	    ClientManager CMGR=null;
-	    if (cmgr==null)
-		CMGR = new ClientManager(this);
-	    ServerManager MGR = new ServerManager(CMGR);
-	    mgr=MGR;
-	    DMLValue t = content;
-	    content = null;
-	    out.defaultWriteObject();
-	    cmgr=CMGR;
-	    content = t;
-	} else {
-	    ClientManager CMGR = cmgr;
-	    cmgr=null;
-	    DMLValue t = content;
-	    content = null;
-	    out.defaultWriteObject();
-	    content = t;
-	    cmgr = CMGR;
+
+    private void writeObject(java.io.ObjectOutputStream out)
+	throws java.io.IOException {
+	if (out instanceof DMLObjectOutputStream) // damit beim Pickling keine Probleme auftreten
+	    return;
+	try {
+	    if (mgr==null) {
+		ClientManager CMGR=null;
+		if (cmgr==null)
+		    CMGR = new ClientManager(this);
+		ServerManager MGR = new ServerManager(CMGR);
+		mgr=MGR;
+		DMLValue t = content;
+		content = null;
+		out.defaultWriteObject();
+		cmgr=CMGR;
+		content = t;
+	    } else {
+		ClientManager CMGR = cmgr;
+		cmgr=null;
+		DMLValue t = content;
+		content = null;
+		out.defaultWriteObject();
+		content = t;
+		cmgr = CMGR;
+	    }
+	} catch (java.rmi.RemoteException e) {
+	    System.err.println(e);
 	}
     }
 
     private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
+	if (in instanceof DMLObjectInputStream) // Pickling !
+	    return;
 	in.defaultReadObject();
 	cmgr = new ClientManager(this);
     }
