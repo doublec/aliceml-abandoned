@@ -1,0 +1,9 @@
+import structure Toplevel from "x-alice:/lib/fundamental/Toplevel"
+
+val Toplevel.ref x = Toplevel.ref 0
+
+structure T = struct datatype ref = datatype Toplevel.ref end
+val T.ref y = T.ref 0
+
+structure U = struct open T end
+val U.ref z = U.ref 0
