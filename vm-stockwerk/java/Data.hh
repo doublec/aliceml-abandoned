@@ -851,6 +851,15 @@ public:
   };
 };
 
+class DllExport Throwable: public Object {
+public:
+  enum {
+    BACKTRACE_INDEX,
+    DETAIL_MESSAGE_INDEX,
+    CAUSE_INDEX
+  };
+};
+
 //
 // Runtime Constant Pool Entries
 //
