@@ -550,7 +550,6 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
 	fprintf(stderr, "OBJECT_TO_WORD: type warning: old %s != new %s\n",
 		getObjectType(objectType), getObjectType(type));
 	fflush(stderr);
-        DumpCurrentTaskStack();
       }
       return object->ToWord();
     }
