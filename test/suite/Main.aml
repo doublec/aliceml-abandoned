@@ -23,6 +23,8 @@ import structure TestOption      from "lib/fundamental/Option"
 import structure TestAlt         from "lib/fundamental/Alt"
 import structure TestIEEEReal    from "lib/fundamental/IEEEReal"
 import structure TestChar        from "lib/fundamental/Char"
+import structure TestReal        from "lib/fundamental/Real"
+import structure TestWord        from "lib/fundamental/Word"
 import structure TestInteger     from "lib/fundamental/Integer"
 import structure TestIntInf      from "lib/fundamental/IntInf"
 import structure TestByte        from "lib/fundamental/Byte"
@@ -49,6 +51,7 @@ fun randomizeTests () =
 			TestChar.randomize,
 			TestArray.randomize,
 			TestVector.randomize,
+			TestWord.randomize,
 			TestVectorPair.randomize,
 			TestGeneral.randomize,
 			TestOption.randomize, 
@@ -60,6 +63,7 @@ fun randomizeTests () =
 			TestList.randomize,
 			TestListPair.randomize,
 			TestTime.randomize,
+			TestReal.randomize,
 			TestTimer.randomize,
 			TestArray2.randomize,
 			TestOSPath.randomize,
@@ -78,11 +82,13 @@ val allTests = [TestRegressions.suite,
 		TestAlt.suite,
 		TestBool.suite,
 		TestGeneral.suite,
+		TestWord.suite,
+		TestReal.suite,
 		TestOption.suite, 
 		TestList.suite,
 		TestListPair.suite,
 		TestArray2.suite,
-(*		TestArray.suite,*)
+		TestArray.suite,
 		TestVector.suite,
 		TestVectorPair.suite,
 		TestChar.suite,
@@ -108,8 +114,15 @@ fun displayNeededTime () =
     let
 	val ending = Time.now ()
 	val result = Time.-(ending, !beg)
+	val result = IntInf.toInt (Time.toSeconds result)
+	val h = result div 3600
+	val m = (result mod 3600) div 60
+	val s = (result mod 3600) mod 60
     in
-	TextIO.output (TextIO.stdOut, "\nneeded " ^ Time.toString result ^ " seconds")
+	TextIO.output (TextIO.stdOut, "\nneeded " ^ Int.toString h 
+				    ^ " hours " ^ Int.toString m 
+				    ^ " minutes " ^ Int.toString s 
+				    ^ " seconds")
     end
 
 fun usage () = print "usage: alicerun Main [timeout, seperate, showMissing]\n"

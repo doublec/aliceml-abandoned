@@ -1,0 +1,95 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestWord :> TESTSUITE = (* the word test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testWordSize () =
+	Test.test (fn x => x = 31) Word.wordSize
+
+    fun testToLarge () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToLargeX () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFromLarge () =
+	let
+	    fun t w = w = Word.fromLarge (Word.toLarge w)
+	in
+	    Gen.try 1000 Gen.word (Test.test t)
+	end
+
+    fun testToInt () = 
+	let
+	    fun t x = x < (Real.round (Math.pow (2.0, 
+						 Real.fromInt (Word.wordSize))
+				       - 1.0)) andalso x > 0
+	in
+	    Gen.try 1000 Gen.word
+		    (Test.test (fn w => t (Word.toInt w)))
+	end
+
+    fun testToInt () = 
+	let
+	    fun t x = x < (Real.round (Math.pow (2.0, 
+					      Real.fromInt (Word.wordSize - 1))
+				       - 1.0)) andalso
+		      x > (Real.round (~ (Math.pow (2.0, 
+				              Real.fromInt (Word.wordSize - 1))
+				       - 1.0)))
+	in
+	    Gen.try 1000 Gen.word
+		    (Test.test (fn w => t (Word.toInt w)))
+	end
+
+    fun testFromInt () =
+	let
+	    fun t w = w = Word.fromInt (Word.toInt w)
+	in
+	    Gen.try 1000 Gen.word (Test.test t)
+	end
+
+    fun testAndB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testOrB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testXorB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testNotB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testLeftShift () =
+	let
+	    (* i >> n == (i* 2^(n))(mod (2^(wordSize))) *)
+	    fun t (i, n) = Word.fromInt (
+		           IntInf.toInt (
+			   IntInf.fromInt i * 
+			   IntInf.pow (IntInf.fromInt 2,
+				       Word.wordSize) mod 
+			   (IntInf.pow (IntInf.fromInt 2, 
+					Word.wordSize))))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) 
+		    (Test.test (fn (i, n) => Word.>> (i, n) = 
+					     t (Word.toInt i, 
+						Word.toInt n)))
+	end
+
+    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    val suite = ("Word", [])
+end

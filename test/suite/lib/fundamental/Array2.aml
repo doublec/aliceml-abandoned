@@ -36,8 +36,9 @@ struct
 				  else (r >= 0 andalso c >= 0 andalso
 					Array2.nRows (valOf a) = r andalso
 					Array2.nCols (valOf a) = c andalso
-					Array2.sub ((valOf a), Gen.int r,
-						    Gen.int c) = x)
+					Array2.sub (valOf a, 
+						    Int.abs (Gen.int r),
+						    Int.abs (Gen.int c)) = x)
 				       handle Subscript => r = 0 orelse c = 0
 			      end
 	in
@@ -71,7 +72,8 @@ struct
 
     fun testDimensions () =
 	let
-	    fun t a = Array2.dimensions a = (Array2.nRows a, Array2.nCols a)
+	    fun t a = Array2.dimensions a = 
+		      (Array2.nRows a, Array2.nCols a)
 	in
 	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
 	end

@@ -275,7 +275,7 @@ struct
 	    fun t (i, w) = IntInf.div (i, IntInf.pow (fromI 2, Word.toInt w))
 	in
 	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.word))
-	      (Test.test (fn x => t x = IntInf.<< x))
+	      (Test.test (fn x => t x = IntInf.~>> x))
 	end
 
     fun testAbs () =
@@ -307,8 +307,10 @@ struct
 				   then IntInf.min (x1, x2) = x2
 			       else IntInf.min (x2, x1) = x1
 	in
-	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t);
-	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t'')
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) 
+		    (Test.test t);
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) 
+		    (Test.test t'')
 	end
 
     fun testSign () =
@@ -364,7 +366,12 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFromString () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t s = StringCvt.scanString (IntInf.scan StringCvt.DEC) s = 
+		      IntInf.fromString s
+	in
+	    Gen.try 5000 Gen.string (Test.test t)
+	end
 
     fun testToFromString () =
 	let

@@ -1,0 +1,235 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestReal :> TESTSUITE = (* the real test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testRadix () = 
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testPrecision () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testMaxFinite () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testMinPos () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testMinNormal () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testUnordered () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testNextAfter () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testToManExp () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testFromManExp () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testSplit () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testRealMod () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testToDecimal () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testFromDecimal () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testFmt () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+
+    fun testEqual () = 
+	Gen.try 1000 (Gen.pair (Gen.real, Gen.real)) 
+	  (Test.test (fn (r1, r2) => (Real.equal (r1, r1) = true andalso
+				      Real.equal (r2, r2) = true andalso
+				      Real.equal (r1, r2) = (r1 = r2))))
+
+    fun testHash () =
+	let
+	    fun t x = if Real.isNan x then 0 else
+		      if Bool.not (Real.isFinite x) then 1 else
+		      Real.toInt IEEEReal.TO_NEAREST (
+		             case Int.maxInt 
+			      of NONE => x
+			       | SOME n => Real.rem (x, Real.fromInt n))
+	in
+	    Gen.try 1000 Gen.real (Test.test (fn x => t (Real.abs x) = 
+						      Real.hash x))
+	end
+
+    fun testAbs () =
+	let
+	    fun t x = if x < 0.0 then ~x else if x > 0.0 then x else 0.0
+	in
+	    Gen.try 1000 Gen.real (Test.test (fn x => Real.abs x = t x))
+	end
+
+    fun testTilde () =
+	let
+	    fun t' (x, y) = if x < 0.0 then y > 0.0 
+			    else if x > 0.0 then y < 0.0 else
+			    Real.==(y, 0.0)
+
+	    fun t (x, y) = Real.== (0.0 - x, y) andalso t' (x, y)
+	in
+	    Gen.try 1000 Gen.real (Test.test (fn x => t (x, ~x)))
+	end
+
+    fun testPlus () =
+	let
+	    fun t' (x, y) = if y <= 0.0 then (x + y) <= x
+			    else (x + y) > x
+	    fun t'' (x, y) = if y <= 0.0 then (x + y) <= x
+			     else (x + y) > x
+	    fun t (x, y) = if x > 0.0 then t' (x, y) 
+			   else t'' (x, y)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.real, Gen.real)) (Test.test t);
+      Test.test (fn (x, y) => x + y = Real.posInf) (Real.posInf, Real.posInf);
+      Test.test (fn (x, y) => x + y = Real.negInf) (Real.negInf, Real.negInf);
+      Test.test (fn (x, y) => x + y = Real.posInf) (Real.posInf, Gen.real 100);
+      Test.test (fn (x, y) => x + y = Real.negInf) (Real.negInf, Gen.real 100);
+      Test.test (fn (x, y) => Real.isNan (x + y))  (Real.posInf, Real.negInf);
+      Test.test (fn (x, y) => Real.isNan (x + y))  (Real.negInf, Real.posInf)
+	end
+
+    fun testMinus () =
+	let
+	    fun t' (x, y) = if y <= 0.0 then (x - y) >= x
+			    else (x - y) < x
+	    fun t'' (x, y) = if y <= 0.0 then (x - y) >= x
+			     else (x - y) < x
+	    fun t (x, y) = if x > 0.0 then t' (x, y)
+			   else t'' (x, y)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.real, Gen.real)) (Test.test t);
+      Test.test (fn (x, y) => x - y = Real.posInf) (Real.posInf, Real.negInf);
+      Test.test (fn (x, y) => x - y = Real.negInf) (Real.negInf, Real.posInf);
+      Test.test (fn (x, y) => x - y = Real.posInf) (Real.posInf, Gen.real 100);
+      Test.test (fn (x, y) => x - y = Real.negInf) (Real.negInf, Gen.real 100);
+      Test.test (fn (x, y) => Real.isNan (x - y))  (Real.posInf, Real.posInf);
+      Test.test (fn (x, y) => Real.isNan (x - y))  (Real.negInf, Real.negInf)
+	end
+
+    fun testTimes () =
+	let
+	    (*TODO: what if the arguments are between 0.0 and 1.0? *)
+	    
+	    fun t' (x, y) = if y < 0.0 then if y > 1.0 then true else
+				    (x * y) < x
+			    else if y > 0.0 then if y < 1.0 then true 
+						 else (x * y) >= x
+			    else Real.== (x * y, 0.0)
+	    fun t'' (x, y) = if y < 0.0 then if y > 1.0 then true else
+					     (x * y) >= x
+			     else if y > 0.0 then if y < 1.0 then true else
+						  (x * y) < x
+			     else Real.== (x * y, 0.0)
+	    fun t (x, y) = if x > 0.0 then t' (x, y) 
+			   else if x < 0.0 then t'' (x, y)
+			   else Real.== (x * y, 0.0)
+	    fun tInf (x : real, y : real, r) = x * y = r orelse 
+					       Real.== (y, 0.0)
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.real, Gen.real)) (Test.test t);
+       Test.test tInf (Real.posInf, Real.posInf, Real.posInf);
+       Test.test tInf (Real.negInf, Real.negInf, Real.posInf);
+       Test.test tInf (Real.posInf, Real.abs (Gen.real 100), Real.posInf);
+       Test.test tInf (Real.negInf, Real.abs (Gen.real 100), Real.negInf);
+       Test.test tInf (Real.posInf, ~ (Real.abs (Gen.real 100)), Real.negInf);
+       Test.test tInf (Real.negInf, ~ (Real.abs (Gen.real 100)), Real.posInf);
+       Test.test tInf (Real.posInf, Real.negInf, Real.negInf);
+       Test.test tInf (Real.negInf, Real.posInf, Real.negInf)
+	end
+
+    fun testThrough () =
+	let
+	    (*TODO: what if the arguments are between 0.0 and 1.0? *)
+
+	    fun t' (x, y) = if y < 0.0 then
+				(x + y) <= x
+			    else (x + y) > x
+	    fun t'' (x, y) = if y <= 0.0 then (x + y) <= x
+			     else (x + y) > x
+	    fun t (x, y) = if Real.== (x, 0.0) orelse
+			      Real.== (y, 0.0) then true else
+			   if x > 0.0 then
+			       t' (x, y) 
+			   else t'' (x, y)
+	    fun tInf (x : real, y : real, r) = Real.== (x + y, r)
+
+	    fun gen () = 
+		let
+		    val r = Gen.real 100
+	        in
+		    if r <> 0.0 andalso r <> ~0.0 then r else gen ()
+	        end
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.real, Gen.real)) (Test.test t);
+       Test.test tInf (Real.posInf, Real.posInf, Real.posInf);
+       Test.test tInf (Real.negInf, Real.negInf, Real.posInf);
+       Test.test tInf (Real.posInf, Real.negInf, Real.negInf);
+       Test.test tInf (Real.negInf, Real.posInf, Real.negInf);
+       Test.test tInf (0.0, 0.0, Real.negInf);
+       Test.test tInf (Real.posInf, Gen.real 100, Real.posInf);
+       Test.test tInf (Real.negInf, Gen.real 100, Real.negInf);
+       Test.test tInf (Real.abs (gen ()), 0.0, Real.posInf);
+       Test.test tInf (~ (Real.abs (gen ())), 0.0, Real.negInf);
+       Test.test tInf (Real.abs (gen ()), Real.posInf, 0.0);
+       Test.test tInf (~ (Real.abs (gen ())), Real.negInf, 0.0)
+	end
+
+    fun testRem () =
+	let
+	    fun t' (x, y) = true
+
+	    fun t (x : real, y, n, r) = r = x - (Real.fromInt n) * y
+	in
+	    Gen.try 1000 (Gen.pair (Gen.real, Gen.real))
+	      (Test.test (fn (x, y) => if Real.== (x, 0.0) orelse
+					  Real.== (y, 0.0) then t' (x, y)
+				       else t (x, y, 
+					       Real.trunc (x / y), 
+					       Real.rem (x, y))))
+	end
+
+
+    val suite = ("Real", [("equal", testEqual),
+			(*  ("hash", testHash),*)
+			  ("abs", testAbs),
+			  ("~", testTilde),
+			  ("+", testPlus),
+			  ("-", testMinus),
+			  ("*", testTimes),
+			  ("/", testThrough),
+			  ("rem", testRem)])
+end
+
+

@@ -84,10 +84,11 @@ struct
 
     fun testArray () = 
 	let
-	    fun t' (0, x) xs = List.rev xs
-	      | t' (i, x) xs = t' (i - 1, x) (x::xs)
+	    fun t' (xs, x, i) = List.all (fn a => a = x) xs andalso
+			     List.length xs = i
 
-	    fun t (i, x) = t' (i, x) [] = Array.toList (Array.array (i, x))
+	    fun t (i, x) = t' (Array.toList (Array.array (i, x)), x, i) 
+			      handle Size => i < 0
 	in
 	    Gen.try 100 (Gen.pair (Gen.int, Gen.int))
 	       (Test.test  t)
