@@ -37,9 +37,21 @@ final public class TextIO {
 
     /** val stdIn : instream */
     final public static DMLValue stdIn = new IStream(System.in);
+    static {
+	Builtins.builtin.put("TextIO.stdIn",stdIn);
+    }
 
-    /** val stdOut : instream */
+    /** val stdOut : outstream */
     final public static DMLValue stdOut = new OStream(System.out);
+    static {
+	Builtins.builtin.put("TextIO.stdOut",stdOut);
+    }
+
+    /** val stdErr : outstream */
+    final public static DMLValue stdErr = new OStream(System.err);
+    static {
+	Builtins.builtin.put("TextIO.stdErr",stdErr);
+    }
 
     _BUILTIN(OpenIn) {
 	_APPLY(val) {
