@@ -15,6 +15,10 @@
 
 \vspace{1cm}
 
+\center{\large{\today}}
+
+\vspace{1cm}
+
 \begin{center}
   \begin{minipage}[center]{10cm}
     \begin{tabbing} 
@@ -23,30 +27,20 @@
 
       Betreuer: \\[2mm]
       Thorsten Brunklaus \> Andreas Rossberg\\
-      \small{brunklaus@ps.uni-sb.de} \> \small{rossberg@ps.uni-sb.de}
+      \small{brunklaus@ps.uni-sb.de} \> \small{rossberg@ps.uni-sb.de}\\[5mm]
 
-    \end{tabbing}
-  \end{minipage}
-\end{center}
 
-\vspace{5mm}
-\begin{center}
-\large{\today}
-\end{center}
-
-\vspace{8mm}
-
-\begin{center}
-  \begin{minipage}[center]{15cm}
-    \begin{tabbing}
-     Leitung: \\
-     Prof. Dr. Gert Smolka \hspace{1cm}\= \small Fachbereich Informatik \\ 
-    \small{smolka@ps.uni-sb.de} \> \small Universit\"{a}t des Saarlandes\\ 
+      Leitung: \\
+      Prof. Dr. Gert Smolka \> \small Fachbereich Informatik \\ 
+      \small{smolka@ps.uni-sb.de} \> \small Universit\"{a}t des Saarlandes\\ 
     \> \small Im Stadtwald \\
     \> \small  66123 Saarbr\"{u}cken \\[5mm]
+
     \end{tabbing}
   \end{minipage}
 \end{center}
+
+
 
 \vspace*{\fill}
 
@@ -333,7 +327,7 @@ baumartige Darstellung transformiert: \\
 \put(87,200){\line(0,-4){50}}
 
 
-\end{picture} \newline
+\end{picture} \\[3mm]
 Abbildung 3.3: Beispiel f\"ur interne Darstellung
 \end{center}
 
@@ -404,15 +398,21 @@ Definiert man sich also einen neuen Typen \newline
 type \, 'a \, doc\_creator \, $=$ \, \,'a \, * Type.t \rightarrow doc',
 \end{math} \newline
 so sind die oben beschriebenen Prozeduren zur 
-Zerlegung abstrakter Typen vom Typ 'a doc\_creator. 
+Zerlegung abstrakter Typen vom Typ 'a doc\_creator (siehe Abbildung 3.5). 
+
+\pagebreak
+
 \begin{center}
 \begin{math}
 createAbsType1: \, 'a \, doc\_creator \newline
 createAbsType2: \, 'a \, doc\_creator \newline 
 usw. \newline
-\end{math} \nopagebreak \newline \nopagebreak
+\end{math} \newline 
 Abbildung 3.5: Prozeduren zur Zerlegung abstrakter Typen
 \end{center}
+
+\paragraph{}
+
 Hierbei ist die durch Typreflektion gewonnene Typinformation 
 zu einem Alice-Wert jeweils vom Typ Type.t.
  
