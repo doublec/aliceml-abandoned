@@ -283,6 +283,7 @@ define
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple vector Xs} end
+      'Vector.length': Width
       'Vector.sub':
 	 fun {$ V I}
 	    try
