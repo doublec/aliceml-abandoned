@@ -210,7 +210,8 @@ val _=print(" (* current level = " ^ Int.toString(!TypePrivate.level) ^ " *)\n")
 
       | elabExp(E, I.RefExp(i)) =
 	let
-	    val t = refTyp(E, Type.unknown Type.STAR)
+	    val ta = Type.unknown(Type.STAR)
+	    val t  = Type.inArrow(ta, refTyp(E, ta))
 	in
 	    ( t, O.RefExp(typInfo(i,t)) )
 	end
