@@ -2,8 +2,12 @@
 // Author:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
+// Contributor:
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+//
 // Copyright:
 //   Thorsten Brunklaus, 2000-2001
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,6 +17,29 @@
 #include <cstdlib>
 
 #include "Parameter.hh"
+
+union Endianness {
+  unsigned char c[sizeof(double)];
+  double d;
+};
+
+enum doubleEndianness { littleEndian, bigEndian, badSize, nonIEC };
+
+static int CheckDoubleEndianness() {
+  static char littleOne[8] =
+    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F };
+  static char bigOne[8] =
+    { 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  Endianness x;
+  x.d = 1.0;
+  if (sizeof(double) != 8)
+    return badSize;
+  if (!std::memcmp(littleOne, x.c, 8))
+    return littleEndian;
+  if (!std::memcmp(bigOne, x.c, 8))
+    return bigEndian;
+  return nonIEC;
+}
 
 //
 // Helper Functions
@@ -191,6 +218,24 @@ int main(int argc, char **argv) {
   std::fprintf(f, "typedef %s s_int;\n", int_val);
   std::fprintf(f, "typedef unsigned %s u_int;\n", int_val);
   std::fprintf(f, "typedef unsigned char u_char;\n\n");
+
+  switch (CheckDoubleEndianness()) {
+  case bigEndian:
+    std::fprintf(f, "#define DOUBLE_BIG_ENDIAN 1\n");
+    std::fprintf(f, "#define DOUBLE_LITTLE_ENDIAN 0\n\n");
+    break;
+  case littleEndian:
+    std::fprintf(f, "#define DOUBLE_BIG_ENDIAN 0\n");
+    std::fprintf(f, "#define DOUBLE_LITTLE_ENDIAN 1\n\n");
+    break;
+  case badSize:
+    std::fprintf(stderr, "%s: `double' type is not 8 bytes\n", argv[0]);
+    exit(1);
+  case nonIEC:
+    std::fprintf(stderr, "%s: `double' type is not IEC 60559 conformant\n",
+		 argv[0]);
+    exit(1);
+  }
 
   std::fprintf(f, "#endif\n");
   std::fclose(f);
