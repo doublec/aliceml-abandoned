@@ -30,6 +30,7 @@ import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
+import structure Update from "Update"
 import structure MkPathTable from "MkPathTable"
 import structure Settings from "Settings"
 import structure WindowManager from "WindowManager"
@@ -576,41 +577,45 @@ struct
 
     (* createTransient *) 
     and createTransient (va,t,p,i,d,tt) = 
-	let val desc = createValue(va,t,NO_ACTIONS)
-            val indesc = createValue(va,tt,NO_ACTIONS)
-	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),~1,~1,
-				      setGroup)
-	    val first = createSimple(INTERPUNCT,concat,0,"promise {|",
-				     DEFAULT,setGroup)
-            val middle = 
-		let val future = UnsafeValue.cast va
-		in if Future.isDetermined future 
-		       then createGraph (va,tt,concat,1,d+1) 
-		   else if d+1 <= !max_depth
-			    then createSimple(indesc,concat,1,"future",
-					      DEFAULT,setGroup)
-			else createLimit(indesc,DEPTH_LIMIT,concat,1,d+1,
-					 setGroup)
-		end
+	let val future = UnsafeValue.cast va
+	    val desc = createValue(va,t,NO_ACTIONS) 
+            val indesc = createValue(va,tt,NO_ACTIONS) 
+	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),~1,~1, 
+				      setGroup) 
+	    val first = createSimple(INTERPUNCT,concat,0,"promise {|", 
+				     DEFAULT,setGroup) 
+            val middle =  
+		if Future.isDetermined future  
+		    then createGraph (va,tt,concat,1,d+1)  
+		else if d+1 <= !max_depth 
+			 then createSimple(indesc,concat,1,"future", 
+					    DEFAULT,setGroup) 
+		     else createLimit(indesc,DEPTH_LIMIT,concat,1,d+1, 
+				      setGroup) 
             val last = createSimple(INTERPUNCT,concat,2,"|}",DEFAULT,setGroup)
-	in (Array.update(getKids(concat),0,first)
-	    ; Array.update(getKids(concat),1,middle)
-	    ; Array.update(getKids(concat),2,last)
-	    ; case TransientDictionary.iterLookup 
-	               (transdict,
-			fn (_,li) 
-			=> List.exists(fn n 
-				       => UnsafeValue.same
-				       (getValue(getDesc(n)),va)) 
-			               li
-		        handle General.Match => false) of
-	      SOME ((vv,li),i)  
-	      => TransientDictionary.update(transdict, 
-					 (i,(vv,List.append(li,[concat])))) 
-            | NONE 
-	      => (TransientDictionary.insertI(transdict,(va,[concat])) ; () ) 
-	    ; concat)
-	end 
+	in (Array.update(getKids(concat),0,first) 
+	    ; Array.update(getKids(concat),1,middle) 
+	    ; Array.update(getKids(concat),2,last) 
+	    ; case TransientDictionary.iterLookup  
+	               (transdict, 
+			fn (_,li)  
+			=> List.exists(fn n  
+				       => UnsafeValue.same 
+				       (getValue(getDesc(n)),va))  
+			               li 
+		        handle General.Match => false) of 
+	      SOME ((vv,li),i)   
+	      => TransientDictionary.update(transdict,  
+					 (i,(vv,List.append(li,[concat]))))  
+            | NONE  
+	      => (TransientDictionary.insertI(transdict,(va,[concat])) ; ()) 
+ 	   ; if not(Future.isDetermined(future)) (*
+		 then TextIO.print "not determined !!! \n"
+	     else TextIO.print "determined !!! \n" *)
+		 then (Update.watcher(future,va,createGraph); () )    
+	     else ()  
+	   ; concat)    
+	end  
     
     (* queryDepth *)
     and queryDepth (va,t,p,i,d,row,f) = 
