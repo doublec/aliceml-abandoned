@@ -42,8 +42,14 @@ struct
        (Test.test (fn x => Int.hash x = (valOf Int.maxInt)) (valOf Int.maxInt);
 	Test.test (fn x => Int.hash x = 0)                  (valOf Int.minInt))
  
+    fun testAbs () =
+	Gen.try 10000 Gen.int 
+		(Test.test 
+		     (fn x => if x < 0 then abs x = ~ x else abs x = x))
+
     val suite = ("Integer", [("testHash", testHash),
 			     ("testMinInt", testMinInt),
 			     ("testMaxInt", testMaxInt),
-			     ("testPrecision", testPrecision)])
+			     ("testPrecision", testPrecision),
+			     ("testAbs", testAbs)])
 end

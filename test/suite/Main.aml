@@ -19,15 +19,17 @@ import structure TestGeneral  from "lib/fundamental/General"
 import structure TestOption   from "lib/fundamental/Option"
 import structure TestAlt      from "lib/fundamental/Alt"
 import structure TestIEEEReal from "lib/fundamental/IEEEReal"
-import structure TestCompiler from "lib/compiler/Compiler"
+import structure TestChar     from "lib/fundamental/Char"
 import structure TestInteger  from "lib/fundamental/Integer"
+import structure TestCompiler from "lib/compiler/Compiler"
 
 val allTests = [TestBool.suite, TestOption.suite, 
 		TestGeneral.suite,
 		TestString.suite,
 		TestAlt.suite,
 		TestIEEEReal.suite,
-		TestInteger.suite
+		TestInteger.suite,
+		TestChar.suite
 		(*TestCompiler.suite*)]
 
 
