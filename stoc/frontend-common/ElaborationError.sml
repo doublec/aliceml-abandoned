@@ -184,7 +184,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 		    below(PPType.ppTyp t)
 		))
 	    ) ^/^
-	    par["contains","free","type","variable"]
+	    par["contains","free","type","variable",
+		"or","unresolved","record","type"]
 	)
 
 

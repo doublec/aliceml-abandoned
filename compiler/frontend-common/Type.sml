@@ -407,8 +407,16 @@ structure TypePrivate =
 
     exception Unclosed
 
+    fun checkClosedRow NIL		= ()
+      | checkClosedRow(RHO _)		= raise Unclosed
+      | checkClosedRow(FLD(l,t,r))	= checkClosedRow r
+
+    fun checkClosed'(HOLE _)		= raise Unclosed
+      | checkClosed'(ROW r | SUM r)	= checkClosedRow r
+      | checkClosed' _			= ()
+
     fun isClosed t =
-	( app (fn ref(HOLE _) => raise Unclosed | _ => ()) t ; true )
+	( app (fn ref t' => checkClosed' t') t ; true )
 	handle Unclosed => false
 
 
@@ -483,11 +491,11 @@ structure TypePrivate =
 		    fn t => f(inAll(a,t))
 		else f
 
-	      | close(t as ref(ROW r), f) = ( t := ROW(closeRow r) ; f )
-	      | close(t as ref(SUM r), f) = ( t := SUM(closeRow r) ; f )
-
 	      | close(ref(ALL(a,t) | EX(a,t)), f) =
 		( a := MARK(!a) ; f )	(* bit of a hack... *)
+
+	      | close(t as ref(ROW r), f) = ( t := ROW(closeRow r) ; f )
+	      | close(t as ref(SUM r), f) = ( t := SUM(closeRow r) ; f )
 
 	      | close(_, f) = f
 
