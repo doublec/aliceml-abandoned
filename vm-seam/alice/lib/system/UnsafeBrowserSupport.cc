@@ -102,7 +102,7 @@ void RequestInterpreter::PushCall(Closure *closure) {
   Scheduler::PushFrame(frame->ToWord());
 }
 
-DEFINE1(UnsafeBrowser_waitRequest) {
+DEFINE1(UnsafeBrowserSupport_waitRequest) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER) {
     RETURN(x0);
@@ -134,10 +134,10 @@ DEFINE1(UnsafeBrowser_waitRequest) {
   REQUEST(x0);
 } END
 
-word UnsafeBrowser() {
+word UnsafeBrowserSupport() {
   Record *record = Record::New(1);
   RequestInterpreter::Init();
-  INIT_STRUCTURE(record, "UnsafeBrowser", "waitRequest",
-		 UnsafeBrowser_waitRequest, 1, true);
-  RETURN_STRUCTURE("UnsafeBrowser$", record);
+  INIT_STRUCTURE(record, "UnsafeBrowserSupport", "waitRequest",
+		 UnsafeBrowserSupport_waitRequest, 1, true);
+  RETURN_STRUCTURE("UnsafeBrowserSupport$", record);
 }
