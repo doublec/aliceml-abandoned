@@ -13,57 +13,12 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     structure O = IntermediateGrammar
 
 
-    (* Extract bound ids from declarations. *)
+    (* Create fields for all structures and values in an environment *)
 
-    fun idsRow    idsZ (I.Row(i,fs,_), xs')  = idsFields idsZ (fs, xs')
-    and idsField  idsZ (I.Field(i,a,z), xs') = idsZ(z, xs')
-    and idsFields idsZ (fs, xs')	     = List.foldr (idsField idsZ) xs' fs
+    fun idToField(id' as O.Id(i,_,O.ExId s)) =
+	    O.Field(i, O.Lab(i,s), O.VarExp(i, O.ShortId(i, id')))
 
-    fun idsDec(I.ValDec(i,p,e), xs')	= idsPat(p, xs')
-      | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
-      | idsDec(I.TypDec(i,x,t), xs')	= idsTyp(t, xs')
-      | idsDec(I.ModDec(i,x,m), xs')	= x::xs'
-      | idsDec(I.InfDec(i,x,j), xs')	= xs'
-      | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
-      | idsDec(I.TypvarDec(i,x,ds),xs')	= idsDecs(ds, xs')
-      | idsDec(I.LocalDec(i,ds), xs')	= xs'
-    and idsDecs(ds, xs')		= List.foldr idsDec xs' ds
-
-    and idsPat(I.JokPat(i), xs')	= xs'
-      | idsPat(I.LitPat(i,l), xs')	= xs'
-      | idsPat(I.VarPat(i,x), xs')	= x::xs'
-      | idsPat(I.ConPat(i,y,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.RefPat(i,p), xs')	= idsPat(p, xs')
-      | idsPat(I.TupPat(i,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.RowPat(i,r), xs')	= idsRow idsPat (r, xs')
-      | idsPat(I.VecPat(i,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.AsPat(i,p1,p2), xs')	= idsPat(p1, idsPat(p2, xs'))
-      | idsPat(I.AltPat(i,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.NegPat(i,p), xs')	= idsPat(p, xs')
-      | idsPat(I.GuardPat(i,p,e), xs')	= idsPat(p, xs')
-      | idsPat(I.AnnPat(i,p,t), xs')	= idsPat(p, xs')
-      | idsPat(I.WithPat(i,p,ds), xs')	= idsPat(p, idsDecs(ds, xs'))
-    and idsPats(ps, xs')		= List.foldr idsPat xs' ps
-
-    and idsCon(I.Con(i,x,ts), xs')	= x::xs'
-    and idsCons(cs, xs')		= List.foldr idsCon xs' cs
-
-    and idsTyp(I.AbsTyp(i), xs')	= xs'
-      | idsTyp(I.VarTyp(i,x), xs')	= xs'
-      | idsTyp(I.ConTyp(i,y), xs')	= xs'
-      | idsTyp(I.FunTyp(i,x,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.AppTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
-      | idsTyp(I.RefTyp(i,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.TupTyp(i,ts), xs')	= idsTyps(ts, xs')
-      | idsTyp(I.RowTyp(i,r), xs')	= idsRow idsTyp (r, xs')
-      | idsTyp(I.ArrTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
-      | idsTyp(I.SumTyp(i,cs), xs')	= idsCons(cs, xs')
-      | idsTyp(I.ExtTyp(i), xs')	= xs'
-      | idsTyp(I.AllTyp(i,x,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.ExTyp(i,x,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.SingTyp(i,y), xs')	= xs'
-    and idsTyps(ts, xs')		= List.foldr idsTyp xs' ts
-
+      | idToField _ = Crash.crash "TranslationPhase.idToField: internal id"
 
 
     (* Literals *)
@@ -84,6 +39,59 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     fun trLongid(I.ShortId(i,x))	= O.ShortId(i, trId x)
       | trLongid(I.LongId(i,y,a))	= O.LongId(i, trLongid y, trLab a)
+
+
+    (* Extract bound ids from declarations. *)
+
+    fun idsRow    idsZ (I.Row(i,fs,_), xs')  = idsFields idsZ (fs, xs')
+    and idsField  idsZ (I.Field(i,a,z), xs') = idsZ(z, xs')
+    and idsFields idsZ (fs, xs')	     = List.foldr (idsField idsZ) xs' fs
+
+    fun idsDec(I.ValDec(i,p,e), xs')	= idsPat(p, xs')
+      | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
+      | idsDec(I.TypDec(i,x,t), xs')	= idsTyp(t, xs')
+      | idsDec(I.ModDec(i,x,m), xs')	= trId x::xs'
+      | idsDec(I.InfDec(i,x,j), xs')	= xs'
+      | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
+      | idsDec(I.TypvarDec(i,x,ds),xs')	= idsDecs(ds, xs')
+      | idsDec(I.LocalDec(i,ds), xs')	= xs'
+    and idsDecs(ds, xs')		= List.foldr idsDec xs' ds
+
+    and idsPat(I.JokPat(i), xs')	= xs'
+      | idsPat(I.LitPat(i,l), xs')	= xs'
+      | idsPat(I.VarPat(i,x), xs')	= trId x::xs'
+      | idsPat(I.ConPat(i,y,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.RefPat(i,p), xs')	= idsPat(p, xs')
+      | idsPat(I.TupPat(i,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.RowPat(i,r), xs')	= idsRow idsPat (r, xs')
+      | idsPat(I.VecPat(i,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.AsPat(i,p1,p2), xs')	= idsPat(p1, idsPat(p2, xs'))
+      | idsPat(I.AltPat(i,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.NegPat(i,p), xs')	= idsPat(p, xs')
+      | idsPat(I.GuardPat(i,p,e), xs')	= idsPat(p, xs')
+      | idsPat(I.AnnPat(i,p,t), xs')	= idsPat(p, xs')
+      | idsPat(I.WithPat(i,p,ds), xs')	= idsPat(p, idsDecs(ds, xs'))
+    and idsPats(ps, xs')		= List.foldr idsPat xs' ps
+
+    and idsCon(I.Con(i,x,ts), xs')	= trId x::xs'
+    and idsCons(cs, xs')		= List.foldr idsCon xs' cs
+
+    and idsTyp(I.AbsTyp(i), xs')	= xs'
+      | idsTyp(I.VarTyp(i,x), xs')	= xs'
+      | idsTyp(I.ConTyp(i,y), xs')	= xs'
+      | idsTyp(I.FunTyp(i,x,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.AppTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
+      | idsTyp(I.RefTyp(i,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.TupTyp(i,ts), xs')	= idsTyps(ts, xs')
+      | idsTyp(I.RowTyp(i,r), xs')	= idsRow idsTyp (r, xs')
+      | idsTyp(I.ArrTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
+      | idsTyp(I.SumTyp(i,cs), xs')	= idsCons(cs, xs')
+      | idsTyp(I.ExtTyp(i), xs')	= xs'
+      | idsTyp(I.AllTyp(i,x,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.ExTyp(i,x,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.SingTyp(i,y), xs')	= xs'
+    and idsTyps(ts, xs')		= List.foldr idsTyp xs' ts
+
 
 
     (* Expressions *)
@@ -157,15 +165,17 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     and trMod(I.VarMod(i,x))		= let val x' as O.Id(i',_,_) = trId x in
 					      O.VarExp(i, O.ShortId(i', x'))
 					  end
-      | trMod(I.StrMod(i,ds))		= trStr ds
+      | trMod(I.StrMod(i,ds))		= let val ids' = idsDecs(ds, [])
+					      val fs'  = List.map idToField ids'
+					      val ds'  = trDecs ds in
+					      O.LetExp(i, ds', O.RowExp(i, fs'))
+					  end
       | trMod(I.SelMod(i,m,a))		= O.AppExp(i, O.SelExp(i, trLab a),
 						      trMod m)
       | trMod(I.FunMod(i,x,j,m))	= O.FunExp(i, trId x, trMod m)
       | trMod(I.AppMod(i,m1,m2))	= O.AppExp(i, trMod m1, trMod m2)
       | trMod(I.AnnMod(i,m,j))		= trMod m
       | trMod(I.LetMod(i,ds,m))		= O.LetExp(i, trDecs ds, trMod m)
-
-    and trStr ds			= raise Fail "StrMod"
 
 
 
@@ -215,27 +225,6 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     (* Programs *)
 
     fun translate program =
-	( trDecs program, List.map trId (idsDecs(program, [])) )
-
-
-
-    (* Create fields for all structures and values in an environment *)
-(*
-    fun fields CE =
-	let
-	    fun f toString (id, (i,stamp,_), fs) =
-		let
-		    val s       = toString id
-		    val lab'    = O.Lab(i, s)
-		    val id'     = O.Id(i, stamp, O.ExId s)
-		    val longid' = O.ShortId(i,id')
-		in
-		    O.Field(i, lab', O.VarExp(i, longid')) :: fs
-		end
-	in
-	    (CoreEnv.foldStrs (f (toStrName o StrId.toString))
-	    (CoreEnv.foldVals (f VId.toString) nil CE) CE)
-	end
-*)
+	( trDecs program, idsDecs(program, []) )
 
   end
