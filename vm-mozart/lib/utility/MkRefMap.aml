@@ -33,7 +33,7 @@ struct
 	    val stamp = stamp(!r)
 	in
 	    case UnsafeDictionary.lookup(m, stamp)
-	      of NONE    => UnsafeDictionary.insert(m, stamp, ref[r])
+	      of NONE    => UnsafeDictionary.insert(m, stamp, ref[(r,x)])
 	       | SOME r' => r' := (r,x)::(!r')
 	end
 
