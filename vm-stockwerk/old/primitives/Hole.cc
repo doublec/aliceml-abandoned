@@ -21,6 +21,7 @@ DEFINE2(Hole_fail) {
     Constructor::FromWordDirect(PrimitiveTable::Future_Future);
   ConVal *exn = ConVal::New(constructor, 1);
   exn->Init(0, x1);
+  //--** if there is an associated future, fail it too (waking up threads)
   transient->Become(CANCELLED_LABEL, exn->ToWord());
   RETURN_UNIT;
 } END
