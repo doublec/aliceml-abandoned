@@ -221,7 +221,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			    (constraints, (ids, exp')::idsExpList)
 			end
 	    end
-	  | derec' (pat, _) =
+	  | derec' (_, _) =
 	    raise Crash.Crash "SimplifyRec.derec' 3 internal error"
 
 	fun unify (JokPat _, pat2) = (nil, pat2)
