@@ -76,7 +76,7 @@ struct
 					     p,i,Array.array(3,Empty)
 					     ,~1,~1,setGroup)
 	      val (lbra,rbra) = if Type.isTupleRow(row) 
-				    then ("(","(")
+				    then ("(",")")
 				else ("{","}")
 	      val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
 						       0,lbra,BRACK_COLOR,
@@ -106,21 +106,24 @@ struct
 	    val label     = Label.toString(Vector.sub(l_vector,index))
 	    val labelnode =  createSimple (INTERPUNCT,upperConcat,
 					   0,label,LABEL_COLOR,setGroup)
-	    val (lbra,rbra) =  if Type.isTupleRow(row) 
-				   then ("(","(")
-			       else ("{","}")
-	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
-						     1,lbra,BRACK_COLOR,
-						     setGroup),
-				       createSimple (INTERPUNCT,upperConcat,
-						     3,rbra,BRACK_COLOR,
-						     setGroup))
 	    val typ = #2(List.nth(lt_list,index))
 	    val intyp = if Type.isApply(typ) 
 		        andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
 					   PervasiveType.path_strict)
 			    then  #2(Type.asApply(typ))
 			else typ
+	    val (lbra,rbra) =  let val row' = Type.asProd(intyp)
+			       in if Type.isTupleRow(row')
+				      then ("(",")")
+				   else ("{","}")
+			       end
+			       handle Type.Type => ("","")
+	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
+						     1,lbra,BRACK_COLOR,
+						     setGroup),
+				       createSimple (INTERPUNCT,upperConcat,
+						     3,rbra,BRACK_COLOR,
+						     setGroup))
 	    val container = case Type.inspect(intyp) of 
 		Type.Prod(row') 
 		=> if Type.isEmptyRow(row') 
@@ -154,7 +157,7 @@ struct
 	    val l         = if wlimit then !max_width
 			    else List.length(lt_list)
 	    val al = if wlimit then !max_width +1 else l
-	    val container = createContainer(createValue(va,t,NO_ACTIONS),
+	    val container = createContainer(INTERPUNCT,
 					    p,i,Array.array(al,Empty)
 					    ,~1,~1,~1,setGroup)
 	    val createProdC = if Type.isTupleRow(row)
