@@ -27,7 +27,7 @@ VPATH = $(SRCDIR)
 OZC = ozc
 OZCOPTS = -z9
 STOC = alicec
-STOCOPTS = --recursive-compilation # --rtt-level=no
+STOCOPTS = 
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOL = alicelink
 STOLOPTS = -v
