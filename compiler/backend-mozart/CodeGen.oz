@@ -55,8 +55,10 @@ define
       {Dictionary.get State.regDict Stamp}
    end
 
-   fun {GetPrintName id(_ _ Name)}
-      case Name of inId then ''
+   fun {GetPrintName id(L#C#_#_ _ Name) State}
+      case Name of inId then
+	 {VirtualString.toAtom
+	  'File '#State.filename#', line '#L#', column '#C}
       [] exId(PrintName) then PrintName
       end
    end
@@ -221,7 +223,7 @@ define
 	 VInstr NameReg VInter1 VInter2 GRegs Code
       in
 	 Pos = {TranslateCoord Coord State}
-	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
+	 PredId = pid({GetPrintName Id State} 2 Pos nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ArgReg)}
 	 {State.cs newReg(?TmpReg)}
