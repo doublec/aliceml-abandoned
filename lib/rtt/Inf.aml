@@ -1032,7 +1032,7 @@ struct
      * identifiers (for which we have to maintain a realisation). This requires
      * prior calculation of a type realisation and thus a 2-pass approach.
      *
-     * Minimisation removes redundant existentials or hidden items.
+     * Maximisation removes redundant existentials or hidden items.
      *)
 
     type narrow_context =
@@ -1228,7 +1228,14 @@ struct
     fun narrowExt(j1,j2)    = narrow''(true,j1,j2)
     fun narrowSig(s1,s2)    = narrowSig''(false,s1,s2)
     fun narrowSigExt(s1,s2) = narrowSig''(true,s1,s2)
-    fun narrowMod(m1,j2)    = narrowMod'(narrowContext false, m1,j2)
+
+    fun narrowMod(m1 as (p1,j1), j2) =
+	let
+	    val c = narrowContext false
+	in
+	    narrowTypRea(#typ_rea c,j1,j2);
+	    narrowMod'(c,m1,j2)
+	end
 
 
   (* Cloning for substitution. *)
