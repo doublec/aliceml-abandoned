@@ -521,7 +521,7 @@ public:
   }
 };
 
-class DllExport StaticFieldRef: private Block {
+class DllExport StaticFieldRef: private FieldRef {
 protected:
   enum { CLASS_POS, INDEX_POS, SIZE };
 public:
@@ -547,7 +547,7 @@ public:
   }
 };
 
-class DllExport InstanceFieldRef: private Block {
+class DllExport InstanceFieldRef: private FieldRef {
 protected:
   enum { INDEX_POS, SIZE };
 public:
@@ -581,7 +581,7 @@ public:
   }
 };
 
-class DllExport StaticMethodRef: private Block {
+class DllExport StaticMethodRef: private MethodRef {
 protected:
   enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
 public:
@@ -612,7 +612,7 @@ public:
   }
 };
 
-class DllExport VirtualMethodRef: private Block {
+class DllExport VirtualMethodRef: private MethodRef {
 protected:
   enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
 public:
