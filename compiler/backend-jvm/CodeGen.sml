@@ -277,11 +277,9 @@ structure CodeGen =
 				   Literals.makefields
 				   (RecordLabel.makefields ()),
 				   [main, clinit, init, run])
-		 val ziel = schreibsAuf (name^".j");
 	     in
 		 print "Erzeuge Hauptklasse...";
-		 classToJasmin (class,ziel);
-		 schreibsZu ziel;
+		 classToJasmin (class);
 		 print "ferdich\n"
 	     end
 	 )
@@ -459,7 +457,7 @@ structure CodeGen =
 				 Ifeq elselabel] @
 				(stampCode stamp') @
 				[Checkcast CWord,
-				 Getfield (CWord^"/value", [Wordsig]),
+				 Getfield (CWord^"/value", [Intsig]),
 				 atCodeWord w',
 				 Ificmpne elselabel]
 			  | IntLit i' =>
@@ -1181,10 +1179,8 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 				   (if Lambda.sapplyPossible () then
 					[sapply]
 				    else nil)))
-		val ziel = schreibsAuf (className^".j");
 	    in
-		classToJasmin (class,ziel);
-		schreibsZu ziel
+		classToJasmin (class)
 	    end
 and
     compile prog = genProgramCode ("Emil", imperatifyString prog)

@@ -16,6 +16,7 @@ structure ToJasmin =
 	fun intToString i = if i<0 then "-"^Int.toString(~i) else Int.toString i
 	fun int32ToString i = if LargeInt.< (i, Int.toLarge 0) then "-"^LargeInt.toString(~i)
 			      else LargeInt.toString i
+	fun word32ToString i = LargeWord.toString i
 	fun realToString r = if Real.<(r,0.0) then "-"^Real.toString(~r) else Real.toString r
 
 	local
@@ -235,6 +236,8 @@ structure ToJasmin =
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^s^"\""
 	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^realToString r
 	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^int32ToString i
+	      | instructionToJasmin (Ldc(JVMWord w),_) = "ldc "^word32ToString w
+	      | instructionToJasmin (Ldc(JVMChar c),_) = "ldc "^Int.toString (Char.ord c)
 	      | instructionToJasmin (New cn,_) = "new "^cn
 	      | instructionToJasmin (Pop,_) = "pop"
 	      | instructionToJasmin (Putfield(cn,arg),_) = "putfield "^cn^" "^
@@ -282,11 +285,11 @@ structure ToJasmin =
 				       else
 					   ((*TextIO.output (ziel,"\t\t.line "^line());*)
 					    TextIO.output (ziel,"\t; Stack: "^Int.toString need^
-							   " Max: "^Int.toString max^"\n"));
+							   " Max: "^Int.toString max^"\n")));
 					   TextIO.output (ziel,instructionToJasmin (i, staticapply)^"\n");
-					   (if nd<0 then
+					   (if nd<=0 then
 						recurse (is, nd+need, max)
-					    else recurse (is, nd+need, (Int.max (nd+need,max))))))
+					    else recurse (is, nd+need, (Int.max (nd+need,max)))))
 			end
 		      | recurse (nil,need,max) =
 			(stackneed:= need;
@@ -296,56 +299,47 @@ structure ToJasmin =
 		end
 	end
 
-	fun classToJasmin (Class(access,name,super,fields,methods),ziel) =
-	  let
-	      fun fieldToJasmin (Field(access,fieldname,arg)) =
-		  TextIO.output(ziel,".field "^
-				fAccessToString access
-				^" "^fieldname^" "^(desclist2string arg)^"\n")
-	      fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
-					 instructions, catches, staticapply)) =
+	fun classToJasmin (Class(access,name,super,fields,methods)) =
+	    let
+		val io = TextIO.openOut (name^".j")
+		fun fieldToJasmin (Field(access,fieldname,arg)) =
+		    TextIO.output(io,".field "^
+				  fAccessToString access
+				  ^" "^fieldname^" "^(desclist2string arg)^"\n")
+		fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
+					   instructions, catches, staticapply)) =
 		  (* apply hat derzeit oft ein doppeltes Areturn am Ende.
 		   Wird spaeter wegoptimiert. *)
-		  ((if !stackneed = 0
-			orelse
-			!stackneed = ~1
-			andalso
-			((methodname="apply")
-			 orelse (methodname="sapply"))
-			then ()
-		    else
-			print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
-			       " in "^(!actclass)^"."^methodname^".\n"));
-		    TextIO.output(ziel,".method "^
-				  (mAccessToString access)^
-				  methodname^
-				  (descriptor2string methodsig)^"\n");
-		    instructionsToJasmin(catches,0,0, staticapply, ziel);
-		    (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
-		    instructionsToJasmin(instructions,0,0, staticapply, ziel);
-		    TextIO.output(ziel,".limit locals "^Int.toString(perslocs+1)^"\n");
-		    TextIO.output(ziel,".limit stack "^Int.toString (2+(!stackmax))^"\n");
-		    TextIO.output(ziel,".end method\n"))
-	  in
-	      actclass:=name;
-	      TextIO.output(ziel,
-			    ".source "^name^".j\n");
-	      TextIO.output(ziel,
-			    ".class "^(cAccessToString access)^name^"\n"^
-			    ".super "^super^"\n");
-	      app fieldToJasmin fields;
-	      app methodToJasmin methods
-	  end
-
-	val schreibsAuf = TextIO.openOut
-	val schreibsZu  = TextIO.closeOut
-
-	fun schreibsDran (wohin,was) =
-	    let
-		val bla=TextIO.openAppend wohin
+		    (TextIO.output(io,".method "^
+				   (mAccessToString access)^
+				   methodname^
+				   (descriptor2string methodsig)^"\n");
+		     instructionsToJasmin(catches,0,0, staticapply, io);
+		     (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
+		     instructionsToJasmin(instructions,0,0, staticapply, io);
+		     (if !stackneed = 0
+			  orelse
+			  !stackneed = ~1
+			  andalso
+			  ((methodname="apply")
+			   orelse (methodname="sapply"))
+			  then ()
+		      else
+			  print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
+				 " in "^(!actclass)^"."^methodname^".\n"));
+		      TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
+		      TextIO.output(io,".limit stack "^Int.toString (2+(!stackmax))^"\n");
+		      TextIO.output(io,".end method\n"))
 	    in
-		TextIO.output(bla,was);
-		TextIO.closeOut bla
+		actclass:=name;
+		TextIO.output(io,
+			      ".source "^name^".j\n");
+		TextIO.output(io,
+			      ".class "^(cAccessToString access)^name^"\n"^
+			      ".super "^super^"\n");
+		app fieldToJasmin fields;
+		app methodToJasmin methods;
+		TextIO.closeOut io
 	    end
 
 (*  	val compileJasmin = *)

@@ -13,7 +13,6 @@ structure JVMInst =
 	  | Floatsig
 	  | Intsig
 	  | Voidsig
-	  | Wordsig
 
 	datatype LABEL =
 	    StringLabel of string
