@@ -1199,7 +1199,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val  E'          = Env.new()
 		val (pat',arity) = trFpat_rhs (E,E') fpat
-		val  _   = inheritScope(E,E')
+		val  _           = inheritScope(E,E')
 		val  exp'        = trExp E exp
 		val  _           = deleteScope E
 	   in
@@ -1218,7 +1218,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | TYPEDPat(i, fpat, ty) =>
-		trFpat_rhs (E,E') fpat
+	   let
+		val (pat',arity) = trFpat_rhs (E,E') fpat
+		val  typ'        = trTy E ty
+	   in
+		( O.AnnPat(i, pat', typ'), arity )
+	   end
 
 	 | WHENPat(i, fpat, atexp) =>
 	   let
@@ -1239,26 +1244,22 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		error(i,"invalid function pattern")
 
     and trFatPat_rhs (E,E') =
-	fn ALTAtPat(i, fpats)	=>
-	   (* BUG: bindings not allowed *)
+	fn ALTAtPat(i, fpats) =>
 	   let
 		val  _              = insertScope E'
-		val  pat'arities    = trFpats_rhs (E,E') fpats
+		val (pat', arity)   = trFpat_rhs (E,E') (List.hd fpats)
+		val  pat'arities    = trAltFpats_rhs (E,E') (List.tl fpats)
 		val (pats',arities) = ListPair.unzip pat'arities
-		val  arity          = List.hd arities
+		val  _              = mergeDisjointScope E'
+				      handle CollisionVal vid' =>
+				      errorVId'("duplicate variable ", E',vid',
+					  " in pattern or binding group")
 	   in
-		case List.find (fn(_,arity') => arity<>arity')
-				(List.tl pat'arities)
-		  of SOME(pat',_) =>
+		case List.find (fn(_,arity') => arity<>arity') pat'arities
+		  of NONE         => ( O.AltPat(i, pat'::pats'), arity )
+		   | SOME(pat',_) =>
 			error(O.infoPat pat', "inconsistent number of \
 					       \arguments in function clause")
-		   | NONE =>
-			if isEmptyValScope E' then
-			    ( deleteScope E'
-			    ; ( O.AltPat(i, pats'), arity )
-			    )
-			else
-			    error(i,"variables in alternative function pattern")
 	   end
 
 	 | PARAtPat(i, fpat)	=> trFpat_rhs (E,E') fpat
@@ -1266,17 +1267,32 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | fatpat		=> error(infoAtPat fatpat,
 					 "invalid function pattern")
 
-    and trFpats_rhs (E,E') = List.map(trFpat_rhs (E,E'))
+    and trAltFpats_rhs (E,E') = List.map(trAltFpat_rhs (E,E'))
+
+    and trAltFpat_rhs (E,E') fpat =
+	let
+	    val _    = insertScope E'
+	    val pat'arity = trFpat_rhs (E,E') fpat
+	    val E''  = splitScope E'
+	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
+			  error(infoPat fpat,"inconsistent pattern alternative")
+	    val _    = Env.appiVals
+			    (fn(vid,_) =>
+				if Option.isSome(lookupVal(E'',vid)) then ()
+				else error(infoPat fpat, "inconsistent pattern\
+							 \ alternative")
+			    ) E'
+	in
+	    pat'arity
+	end
+
 
     and trFappPat_rhs (E,E') =
 	fn ATPATPat(i, fatpat)	  => trFappAtPat_rhs (E,E') fatpat
 	 | APPPat(i, fpat, atpat) => trFappPat_rhs (E,E') fpat
 				     @ [trAtPat (E,E') atpat]
-	 | TYPEDPat(i, fpat, ty)  => trFappPat_rhs (E,E') fpat
-
-	 | ( NONPat(i,_) | ASPat(i,_,_) | WHENPat(i,_,_)
-	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
-		error(i, "invalid function pattern")
+	 | pat =>
+		error(infoPat pat, "invalid function pattern")
 
     and trFappAtPat_rhs (E,E') =
 	fn LONGVIDAtPat _	=> nil
