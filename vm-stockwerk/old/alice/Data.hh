@@ -29,27 +29,36 @@
 class Alice {
 public:
   enum label {
-    MIN_LABEL    = MIN_DATA_LABEL,
-    MAX_LABEL    = MAX_DATA_LABEL - 9,
+    Array        = MIN_DATA_LABEL,
+    ArrayZero    = MIN_DATA_LABEL + 1,
+    Cell         = MIN_DATA_LABEL + 2,
+    Constructor  = MIN_DATA_LABEL + 3,
+    ConVal       = MIN_DATA_LABEL + 4,
+    GlobalStamp  = MIN_DATA_LABEL + 5,
+    Tuple        = MIN_DATA_LABEL + 6,
+    Vector       = MIN_DATA_LABEL + 7,
+    VectorZero   = MIN_DATA_LABEL + 8,
+    FIRST_LABEL  = MIN_DATA_LABEL,
+    LAST_LABEL   = MIN_DATA_LABEL + 8,
 
-    Array        = MAX_DATA_LABEL - 8,
-    ArrayZero    = MAX_DATA_LABEL - 7,
-    Cell         = MAX_DATA_LABEL - 6,
-    Constructor  = MAX_DATA_LABEL - 5,
-    ConVal       = MAX_DATA_LABEL - 4,
-    GlobalStamp  = MAX_DATA_LABEL - 3,
-    Tuple        = MAX_DATA_LABEL - 2,
-    Vector       = MAX_DATA_LABEL - 1,
-    VectorZero   = MAX_DATA_LABEL,
-    LAST_LABEL   = VectorZero
+    MIN_TAG      = MIN_DATA_LABEL + 9,
+    MAX_TAG      = MAX_DATA_LABEL
   };
-  
-  static BlockLabel MakeLabel(u_int l) {
-    Assert(l <= MAX_LABEL - MIN_LABEL);
-    return Store::MakeLabel(MIN_LABEL + l);
+
+  static BlockLabel TagToLabel(u_int l) {
+    Assert(l <= MAX_TAG - MIN_TAG);
+    return Store::MakeLabel(MIN_TAG + l);
+  }
+  static bool IsTag(BlockLabel l) {
+    u_int i = static_cast<u_int>(l);
+    return i >= MAX_TAG && i <= MIN_TAG;
+  }
+  static u_int LabelToTag(BlockLabel l) {
+    Assert(IsTag(l));
+    return static_cast<u_int>(l) - MIN_TAG;
   }
   static BlockLabel ToBlockLabel(label l) {
-    Assert(l > MAX_LABEL && l <= LAST_LABEL);
+    Assert(l >= FIRST_LABEL && l <= LAST_LABEL);
     return Store::MakeLabel(l);
   }
 };
@@ -286,24 +295,21 @@ public:
   using Block::ToWord;
 
   static TagVal *New(u_int tag, u_int n) {
-    return static_cast<TagVal *>(Store::AllocBlock(Alice::MakeLabel(tag), n));
+    return static_cast<TagVal *>(Store::AllocBlock(Alice::TagToLabel(tag), n));
   }
   static TagVal *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() >= Alice::ToBlockLabel(Alice::MIN_LABEL) &&
-	   p->GetLabel() <= Alice::ToBlockLabel(Alice::MAX_LABEL));
+    Assert(p == INVALID_POINTER || Alice::IsTag(p->GetLabel()));
     return static_cast<TagVal *>(p);
   }
   static TagVal *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
-    Assert(p->GetLabel() >= Alice::ToBlockLabel(Alice::MIN_LABEL) &&
-	   p->GetLabel() <= Alice::ToBlockLabel(Alice::MAX_LABEL));
+    Assert(Alice::IsTag(p->GetLabel()));
     return static_cast<TagVal *>(p);
   }
 
   u_int GetTag() {
-    return static_cast<u_int>(GetLabel());
+    return Alice::LabelToTag(GetLabel());
   }
   u_int GetWidth() {
     return GetSize();
