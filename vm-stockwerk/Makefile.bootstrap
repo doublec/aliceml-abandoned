@@ -109,7 +109,7 @@ ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
 ALICEC2 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
 
 ALICEC_OPTS = \
-	--check-intermediate --retain-full-import \
+	--check-intermediate \
 	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = 
 
