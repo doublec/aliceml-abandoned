@@ -22,10 +22,10 @@ BEGIN {
 
 {
    if (!import) {
-      if (match($0, /^import[^"]*"[^"]*".*$/)) {
+      if (match($0, /^import[^a-zA-Z][^"]*"[^"]*".*$/)) {
          print "";
       }
-      else if (match($0, /^import[^"]*$/)) {
+      else if (match($0, /^import[^a-zA-Z][^"]*$/)) {
          import = 1;
          print "";
       }
