@@ -172,12 +172,11 @@ struct
 						      WIDTH_LIMIT,
 						      container,
 						      i,d,setGroup)
-				else 
-				    createProdC (Label.toString
-						 (#1(List.nth(lt_list,i))),
-						 proj(va,l_vector,i),
-						 #2(List.nth(lt_list,i)),
-						 container,i,d,l)))
+				else createProdC (Label.toString
+						  (#1(List.nth(lt_list,i))),
+						  proj(va,l_vector,i),
+						  #2(List.nth(lt_list,i)),
+						  container,i,d,l)) )
 	    val _ = copyArray(nodes,getKids(container))
 	in
 	    container
@@ -221,11 +220,18 @@ struct
 	    val node = createGraph (va,t,concat,0,d+1)
 	    val concat_kids = getKids(concat)
 	in
-	    (Array.update(concat_kids,0,node  )
+	    if last 
+		then node 
+	    else 
+		(Array.update(concat_kids,0,node)
+		 ; Array.update(concat_kids,1,sep_node)
+		 ;concat)                                       
+	end
+    
+(*           (Array.update(concat_kids,0,node  )
 	     ; if last then () else 
 	     Array.update(concat_kids,1,sep_node)
-	     ;concat)
-	end
+	     ;concat)                                        *)
 
     (* newPath *)
     and newPath (v,t,p,i,d,path) =

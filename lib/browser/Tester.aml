@@ -9,31 +9,31 @@ UnsafeInspector.init();
 structure SInt = Reflect.ReflectType ( type t = int);
 val t_int = SInt.x;
 
-val test1 = NewNode.newNode(44,t_int);
+UnsafeInspector.inspect (44,t_int);
 
 (* Char *)
 structure Char = Reflect.ReflectType ( type t = char);
 val t_char = Char.x;
 
-val test2 = NewNode.newNode(#"7", t_char);
+UnsafeInspector.inspect (#"7", t_char);
 
 (* Referenz *)
 structure Ref = Reflect.ReflectType ( type t = string vector ref);
 val t_ref = Ref.x;
 
-val test3 = NewNode.newNode(ref #["hallo"],t_ref);
+UnsafeInspector.inspect (ref #["hallo"],t_ref);
 
 (* Vector *)
 structure Vec = Reflect.ReflectType ( type t = real vector);
 val t_vec = Vec.x;
 
-val test4 = NewNode.newNode(#[1.0,2.0], t_vec);
+UnsafeInspector.inspect (#[1.0,2.0], t_vec);
 
 (* Matrix *)
 structure Mat = Reflect.ReflectType ( type t = real vector vector);
 val t_mat = Mat.x;
 
-val test5 = NewNode.newNode(#[#[1.0]],t_mat);
+UnsafeInspector.inspect (#[#[1.0]],t_mat);
 
 (* Array *)
 structure Arr = Reflect.ReflectType ( type t = string array);
@@ -42,24 +42,24 @@ val my_array = Array.array(2,"");
 Array.update(my_array,0,"h"); 
 Array.update(my_array,1,"i");
 
-val test6 = NewNode.newNode(my_array, t_array);
+UnsafeInspector.inspect (my_array, t_array);
 
 (* Record *)
 structure Rec1 = Reflect.ReflectType
     (type t = {vec1: string vector , vec2: int vector}); 
 val t_rec1 = Rec1.x; 
 
-val test7 = NewNode.newNode({vec1 = #["Marvin","Berni"],vec2 = #[23,21]}, 
-			    t_rec1);
+UnsafeInspector.inspect ({vec1 = #["Marvin","Berni"],vec2 = #[23,21]}, 
+			 t_rec1);
 
 (* Tupel *) 
 structure Rec2 = Reflect.ReflectType
     (type t = string vector vector * int vector vector);
 val t_rec2 = Rec2.x;
 
-val test8 = NewNode.newNode({1 = #[#["hi","du"],#["guck","mal"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			    t_rec2);
+UnsafeInspector.inspect ({1 = #[#["hi","du"],#["guck","mal"]], 
+			  2 = #[#[0,8,1,5],#[4,7,1,1]]},
+			 t_rec2);
 
 (* Datentyp *)
 datatype S = A | B of int * int | C of real vector
@@ -68,23 +68,10 @@ datatype S = A | B of int * int | C of real vector
 structure P = Reflect.ReflectType ( type t = S);
 val t_S = P.x;
 
-val test9A = NewNode.newNode(A, t_S);
-val test9B = NewNode.newNode(B (4,5), t_S);
-val test9C = NewNode.newNode (C #[5.0,7.0], t_S);
-val test9D = NewNode.newNode (D A, t_S);
-val test9E = NewNode.newNode (E {bla = "hello", blubb = #"w"}, t_S);
-val test9F = NewNode.newNode (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
+UnsafeInspector.inspect (A, t_S);
+UnsafeInspector.inspect (B (4,5), t_S);
+UnsafeInspector.inspect (C #[5.0,7.0], t_S);
+UnsafeInspector.inspect (D A, t_S);
+UnsafeInspector.inspect (E {bla = "hello", blubb = #"w"}, t_S);
+UnsafeInspector.inspect (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
 
-(* Layout *)
-Layout.layout test3;
-Layout.layout test4;
-Layout.layout test5;
-Layout.layout test6;
-Layout.layout test7;
-Layout.layout test8;
-Layout.layout test9A;
-Layout.layout test9B;
-Layout.layout test9C;
-Layout.layout test9D;
-Layout.layout test9E;
-Layout.layout test9F;
