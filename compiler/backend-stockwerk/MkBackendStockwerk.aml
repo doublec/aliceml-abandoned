@@ -10,15 +10,15 @@
  *   $Revision$
  *)
 
+import structure Reflect               from "../../lib/system/Reflect"
 import structure Component             from "../../lib/system/Component"
 import signature COMPONENT_MANAGER
     from "../../lib/system/COMPONENT_MANAGER-sig"
 import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
 import signature PHASE                 from "../infrastructure/PHASE-sig"
 import structure MkTracingPhase        from "../infrastructure/MkTracingPhase"
-import structure EmptyContext          from "../infrastructure/EmptyContext"
 import structure Target                from "../infrastructure/Target"
-import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import structure StampMap              from "../common/StampMap"
 import structure Value                 from "Value"
 import structure MkAbstractCodeGrammar from "MkAbstractCodeGrammar"
 import structure MkCodeGenPhase        from "MkCodeGenPhase"
@@ -31,26 +31,40 @@ functor MkBackendStockwerk(structure ComponentManager:
 	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
 
-	__primitive val cast: AbstractCodeGrammar.t -> Component.t =
-	    "Unsafe.cast"
+	type value = AbstractCodeGrammar.value
+	__primitive val cast: value -> Component.t = "Unsafe.cast"
+	__primitive val selTuple: Reflect.value * int -> value =
+	    "Unsafe.selTuple"
 
-	fun translate () x =
-	    let
-		val component = cast (CodeGenPhase.translate () x)
-		(*--** eval needs to enrich the environment *)
-		fun eval url = ignore (ComponentManager.eval (url, component))
-	    in
-		Target.COMPONENT {component = fn () => component, eval}
+	structure ThePhase =
+	    struct
+		structure C = CodeGenPhase.C
+		structure I = CodeGenPhase.I
+		structure O = Target
+
+		fun translate context x =
+		    let
+			val (value, exportDesc) =
+			    CodeGenPhase.translate context x
+			val component = cast value
+			fun eval url =
+			    let
+				val str =
+				    ComponentManager.eval (url, component)
+			    in
+				Vector.appi
+				    (fn (i, stamp) =>
+					StampMap.insert
+					    (context, stamp,
+					     selTuple (str, i)))
+				    (exportDesc, 0, NONE)
+			    end
+		    in
+			Target.COMPONENT {component = fn () => component, eval}
+		    end
 	    end
     in
-	MkTracingPhase(structure Phase =
-			   struct
-			       structure C = EmptyContext
-			       structure I = FlatGrammar
-			       structure O = Target
-
-			       val translate = translate
-			   end
+	MkTracingPhase(structure Phase = ThePhase
 		       structure Switches = Switches
-		       val name = "Generating Abstract Code")
+		       val name = "Code Generation")
     end
