@@ -23,7 +23,17 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	fun apply () component =
 	    raise Crash.Crash "ComPlusTarget.apply: not implemented"
 
-	fun save () filename component = IL.outputProgram (filename, component)
+	fun save () filename component =
+	    let
+		val ilFilename = filename ^ ".il"
+		val ilasm = "ilasm /dll " ^ ilFilename ^ " /out=" ^ filename
+	    in
+		IL.outputProgram (ilFilename, component);
+		if OS.Process.system ilasm = OS.Process.success then ()
+		else
+		    raise Error.Error (Source.nowhere,
+				       "invocation of `" ^ ilasm ^ "' failed")
+	    end
     end
 
 functor MakeBackendComPlus
