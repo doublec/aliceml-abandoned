@@ -50,12 +50,12 @@ fun towards_hill' trailstep trailaction homeaction blockaction =
 
 fun towards_hill (l0,l1,l2) trailaction homeaction blockaction =
     loop (
-	label l0 ++ (* we are on mark 0 *)
-	towards_hill' 0 trailaction homeaction blockaction ++
+	label l2 ++ (* we are on mark 2 *)
+	towards_hill' 2 trailaction homeaction blockaction ++
 	label l1 ++ (* we are on mark 1 *)
 	towards_hill' 1 trailaction homeaction blockaction ++
-	label l2 ++ (* we are on mark 2 *)
-	towards_hill' 2 trailaction homeaction blockaction
+	label l0 ++ (* we are on mark 0 *)
+	towards_hill' 0 trailaction homeaction blockaction
     )
 
 fun sync_towards_hill trailaction homeaction blockaction otherwise failaction =
