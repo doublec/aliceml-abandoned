@@ -51,10 +51,10 @@ structure JVMInst =
 	  | Ifnull of label
 	  | Iload of int
 	  | Instanceof of classname
-	  | Invokeinterface of classname * methodname * (ARG list * ARG)
-	  | Invokespecial of classname * methodname * (ARG list * ARG)
-	  | Invokestatic of classname * methodname * (ARG list * ARG)
-	  | Invokevirtual of classname * methodname * (ARG list * ARG)
+	  | Invokeinterface of classname * methodname * (ARG list * ARG list)
+	  | Invokespecial of classname * methodname * (ARG list * ARG list)
+	  | Invokestatic of classname * methodname * (ARG list * ARG list)
+	  | Invokevirtual of classname * methodname * (ARG list * ARG list)
 	  | Ireturn
 	  | Istore of int
 	  | Label of label
