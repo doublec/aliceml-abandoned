@@ -10,33 +10,37 @@
 //   $Revision$
 //
 
-#include "Environment.hh"
+#include "interpreter/bootstrap/Environment.hh"
+
+#define ENTRY_SIZE 3
+#define ID_POS 0
+#define VALUE_POS 1
+#define CDR_POS 2
 
 void Environment::Add(word id, word value) {
   int stamp = Store::WordToInt(id);
-  int index = stamp % GetSize();
+  int index = stamp % GetLength();
   Array *newEntry = Array::New(ENTRY_SIZE);
-  newEntry->InitArg(ID_POS, id);
-  newEntry->InitArg(VALUE_POS, value);
-  newEntry->InitArg(CDR_POS, GetArg(index));
-  SetArg(index, newEntry->ToWord());
+  newEntry->Init(ID_POS, id);
+  newEntry->Init(VALUE_POS, value);
+  newEntry->Init(CDR_POS, Sub(index));
+  Update(index, newEntry->ToWord());
 }
 
 word Environment::Lookup(word id) {
   int stamp = Store::WordToInt(id);
-  int index = stamp % GetSize();
-  Array *entry = Array::FromWord(GetArg(index));
-  while (entry->GetArg(ID_POS) != id)
-    entry = Array::FromWord(entry->GetArg(CDR_POS));
-  return entry->GetArg(VALUE_POS);
+  int index = stamp % GetLength();
+  Array *entry = Array::FromWord(Sub(index));
+  while (entry->Sub(ID_POS) != id)
+    entry = Array::FromWord(entry->Sub(CDR_POS));
+  return entry->Sub(VALUE_POS);
 }
 
 void Environment::Kill(word id) {
   int stamp = Store::WordToInt(id);
-  int index = stamp % GetSize();
-  Array *entry = Array::FromWord(GetArg(index));
-  Assert(entry != INVALID_POINTER);
-  while (entry->GetArg(ID_POS) != id)
-    entry = Array::FromWord(entry->GetArg(CDR_POS));
-  entry->SetArg(CDR_POS, entry->GetArg(CDR_POS));
+  int index = stamp % GetLength();
+  Array *entry = Array::FromWord(Sub(index));
+  while (entry->Sub(ID_POS) != id)
+    entry = Array::FromWord(entry->Sub(CDR_POS));
+  entry->Update(CDR_POS, entry->Sub(CDR_POS));
 }

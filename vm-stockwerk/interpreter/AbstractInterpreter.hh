@@ -15,13 +15,17 @@
 
 #include "scheduler/Interpreter.hh"
 
-class BootstrapInterpreter: Interpreter {
-private:
-  void PushState(TaskStack *stack,
-		 TagVal *pc, Vector *globalEnv, Environment *localEnv);
+class BootstrapInterpreter: public Interpreter {
 public:
-  virtual result Run(int nargs, TaskStack *&taskStack, word &data);
-  virtual Thread *NewThread(word code);
+  // Handling code:
+  virtual ConcreteCode *Prepare(word abstractCode);
+
+  // Handling stack frames:
+  void PushCall(TaskStack *taskStack, word closure);
+  void PopFrame(TaskStack *taskStack);
+
+  // Execution:
+  result Run(TaskStack *taskStack, int nargs, word &out);
 };
 
-#endif
+#endif __BOOTSTRAP_INTERPRETER_HH__

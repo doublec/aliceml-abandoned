@@ -15,18 +15,13 @@
 
 #include "datalayer/alicedata.hh"
 
-static const u_int envSize = 19;
-
 class Environment: private Array {
 private:
-  static const int ID_POS = 1;
-  static const int VALUE_POS = 2;
-  static const int CDR_POS = 3;
-  static const u_int ENTRY_SIZE = 3;
+  static const u_int size = 19;
 public:
   using Array::ToWord;
 
-  static Environment *New(u_int size) {
+  static Environment *New() {
     return static_cast<Environment *>(Array::New(size));
   }
   static Environment *FromWord(word w) {
