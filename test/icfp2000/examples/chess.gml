@@ -104,6 +104,30 @@ white1 white2 tower apply /whiteTower
 black1 black2 tower apply /blackTower
 
 %%
+%% Knights
+%%
+
+{ /col2 /col1
+  col1 col2 figureSurface apply /surface
+  % Base
+  surface cylinder 1.0 0.75 1.0 scale
+  % Body
+  surface cone 180.0 rotatez 30.0 rotatey 0.0 1.0 0.0 translate
+  1.0 5.0 1.0 scale
+  surface plane 0.0 3.0 0.0 translate intersect union
+  % Head
+  surface cone 1.0 3.0 1.0 scale 0.0 -1.0 0.0 translate
+  surface cylinder 1.0 2.0 1.0 scale intersect 0.0 -1.5 0.0 translate /head
+  head 1.25 1.0 1.25 scale 0.0 0.5 0.0 translate -90.0 rotatex
+  0.0 3.2 0.0 translate difference
+  head 0.8 1.0 0.8 scale -90.0 rotatex 0.0 3.2 0.0 translate union
+  0.4 uscale
+} /knight
+
+white1 white2 knight apply /whiteKnight
+black1 black2 knight apply 180.0 rotatey /blackKnight
+
+%%
 %% Bishops
 %%
 
@@ -198,15 +222,6 @@ black1 black2 king apply /blackKing
 %% The scene
 %%
 
-%board
-%whiteTower -0.5 0.0 -3.5 translate union
-%blackTower 0.5 0.0 0.5 translate union
-%whitePawn 2.5 0.0 -1.5 translate union
-%blackPawn 1.5 0.0 -2.5 translate union
-%30.0 rotatey -20.0 rotatex 0.4 uscale 0.3 0.0 3.0 translate
-
-%whiteTower -70.0 rotatex 0.0 0.0 4.0 translate
-
 board
 whitePawn -3.5 0.0 -2.5 translate union
 whitePawn -2.5 0.0 -2.5 translate union
@@ -218,6 +233,8 @@ whitePawn 2.5 0.0 -2.5 translate union
 whitePawn 3.5 0.0 -2.5 translate union
 whiteTower -3.5 0.0 -3.5 translate union
 whiteTower 3.5 0.0 -3.5 translate union
+whiteKnight -2.5 0.0 -3.5 translate union
+whiteKnight 2.5 0.0 -3.5 translate union
 whiteBishop -1.5 0.0 -3.5 translate union
 whiteBishop 1.5 0.0 -3.5 translate union
 whiteQueen -0.5 0.0 -3.5 translate union
@@ -232,11 +249,15 @@ blackPawn 2.5 0.0 2.5 translate union
 blackPawn 3.5 0.0 2.5 translate union
 blackTower -3.5 0.0 3.5 translate union
 blackTower 3.5 0.0 3.5 translate union
+blackKnight -2.5 0.0 3.5 translate union
+blackKnight 2.5 0.0 3.5 translate union
 blackBishop -1.5 0.0 3.5 translate union
 blackBishop 1.5 0.0 3.5 translate union
 blackQueen -0.5 0.0 3.5 translate union
 blackKing 0.5 0.0 3.5 translate union
 30.0 rotatey -20.0 rotatex 0.4 uscale 0.3 0.0 3.0 translate
+
+%whiteTower -70.0 rotatex 0.0 0.0 4.0 translate
 
 /scene
 
