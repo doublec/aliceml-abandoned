@@ -2,9 +2,10 @@
 
 OZVERSION=1.1.1
 OZHOME=/opt/mozart-$OZVERSION
+
 PATH=$OZHOME/bin:$PATH
-OZ_LOAD=prefix=x-alice\\:/home/=/home/:prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
+OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
 
 export OZHOME PATH OZ_LOAD
 
-exec ozengine ../Init.ozf $@
+exec ozengine "$@"

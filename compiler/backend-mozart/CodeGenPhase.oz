@@ -13,7 +13,7 @@
 functor
 import
    Pickle(save)
-   WordComponent('$Word': Word) at 'x-alice:/lib/Word.ozf'
+   Word(toInt) at 'x-oz://boot/Word'
    PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
    UrlComponent('$Url': Url) at 'x-alice:/misc/Url.ozf'

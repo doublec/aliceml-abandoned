@@ -1,7 +1,3 @@
 import
-    structure Word
-from "x-alice:/lib/Word.ozf"
-
-import
     signature HASH_KEY
 from "x-alice:/misc/HASH_KEY.ozf"

@@ -2,116 +2,120 @@
 
 import
 
-type unit
-datatype bool
-type int
-type word
-type real
-type string
-type char
-type 'a vector
-datatype list
-datatype ref
-datatype exn
+    type unit
+    datatype bool
+    type int
+    type word
+    type real
+    type string
+    type char
+    type 'a vector
+    datatype list
+    datatype ref
+    datatype exn
 
-exception Match
-exception Bind
+    exception Match
+    exception Bind
 
-infix  7  * / div mod
-infix  6  + - ^
-infixr 5  :: @
-infix  4  = <> > >= < <=
-infix  3  := o
-infix  0  before
+    infix  7  * / div mod
+    infix  6  + - ^
+    infixr 5  :: @
+    infix  4  = <> > >= < <=
+    infix  3  := o
+    infix  0  before
 
-val op=
-val op<>
+    val op=
+    val op<>
 
-val op~
+    val op~
 
-val op+
-val op-
-val op*
+    val op+
+    val op-
+    val op*
 
-val op<
-val op>
-val op<=
-val op>=
+    val op<
+    val op>
+    val op<=
+    val op>=
 
-structure General
+    structure General
 
-exception Chr
-exception Div
-exception Domain
-exception Fail of string
+    exception Chr
+    exception Div
+    exception Domain
+    exception Fail of string
 
-exception Overflow
-exception Size
-exception Span
-exception Subscript
+    exception Overflow
+    exception Size
+    exception Span
+    exception Subscript
 
-datatype order
+    datatype order
 
-val !
-val op:=
+    val !
+    val op:=
 
-val op o
-val op before
-val ignore
+    val op o
+    val op before
+    val ignore
 
-structure Option
-datatype option
-val getOpt
-val isSome
-val valOf
+    structure Option
+    datatype option
+    val getOpt
+    val isSome
+    val valOf
 
-structure Bool
-val not
+    structure Bool
+    val not
 
-structure List
-val null
-val hd
-val tl
-val length
-val rev
-val op@
-val app
-val map
-val foldl
-val foldr
+    structure List
+    val null
+    val hd
+    val tl
+    val length
+    val rev
+    val op@
+    val app
+    val map
+    val foldl
+    val foldr
 
-structure ListPair
+    structure ListPair
 
-structure Char
-val ord
-val chr
+    structure Char
+    val ord
+    val chr
 
-structure String
-val op^
-val str
-val size
-val substring
-val explode
-val concat
-val implode
+    structure String
+    val op^
+    val str
+    val size
+    val substring
+    val explode
+    val concat
+    val implode
 
-structure StringCvt
+    structure StringCvt
 
-structure Int
-val op div
-val op mod
-val abs
+    structure Int
+    val op div
+    val op mod
+    val abs
 
-structure LargeInt
+    structure LargeInt
 
-structure Real
+    structure Word
 
-structure LargeReal
+    structure LargeWord
 
-structure Array
-type array
+    structure Real
 
-structure Vector
-val vector
+    structure LargeReal
+
+    structure Array
+    type array
+
+    structure Vector
+    val vector
 
 from "x-alice:/lib/Base.ozf"

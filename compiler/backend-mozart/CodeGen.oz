@@ -13,6 +13,7 @@
 functor
 import
    CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
+   Word(make) at 'x-oz://boot/Word'
    System(printName printError)
    Narrator('class')
    ErrorListener('class')
@@ -20,7 +21,6 @@ import
    CodeStore('class')
    Prebound(builtinTable env)
    Assembler(assemble)
-   Word at '/home/kornstae/stockhausen/vm-mozart/Word.so{native}'
 export
    Translate
 define

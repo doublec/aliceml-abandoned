@@ -1,8 +1,4 @@
 import
-    structure LargeWord
-from "x-alice:/lib/Word.ozf"
-
-import
     structure Url
 from "x-alice:/misc/Url.ozf"
 

@@ -1,14 +1,10 @@
 import
-    structure Source
-from "x-alice:/error/Source.ozf"
-
-import
-    structure LargeWord
-from "x-alice:/lib/Word.ozf"
-
-import
     signature TOKEN
 from "x-alice:/lib/ml-yacc/base.ozf"
+
+import
+    structure Source
+from "x-alice:/error/Source.ozf"
 
 import
     structure WideChar

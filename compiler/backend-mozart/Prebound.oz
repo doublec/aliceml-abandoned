@@ -13,6 +13,7 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
+   BootWord at 'x-oz://boot/Word'
    System(show printInfo)
    Browser(browse)
    Application(exit)
@@ -48,6 +49,12 @@ define
 	 end
       elseof S then S
       end
+   end
+
+   Hex = hex(&0 &1 &2 &3 &4 &5 &6 &7 &8 &9 &a &b &c &d &e &f)
+
+   fun {ToHex X}
+      if X > 15 then {ToHex X div 16} else '' end#Hex.(X mod 16)
    end
 
    BuiltinTable =
@@ -238,6 +245,22 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
+      'Word.fromInt\'': BootWord.make
+      'Word.toInt': BootWord.toInt
+      'Word.toIntX': BootWord.toIntX
+      'Word.+': BootWord.'+'
+      'Word.-': BootWord.'-'
+      'Word.*': BootWord.'*'
+      'Word.mod': BootWord.'mod'
+      'Word.orb': BootWord.'orb'
+      'Word.xorb': BootWord.'xorb'
+      'Word.andb': BootWord.'andb'
+      'Word.notb': BootWord.notb
+      'Word.<<': BootWord.'<<'
+      'Word.>>': BootWord.'>>'
+      'Word.~>>': BootWord.'~>>'
+      'Word.toString':
+	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
       'Debug.show': fun {$ X} {System.show X} unit end
       'Debug.print': fun {$ X} {System.printInfo X} unit end
       'Debug.browse': fun {$ X} {Browser.browse X} unit end)

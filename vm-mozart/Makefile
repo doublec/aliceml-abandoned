@@ -2,12 +2,12 @@ STOC_MOZART = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/top/stoc-mozart
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
-OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
+OZL = ozl
 
-NATIVESOURCES = BootWord IO TextIO OS Unix CommandLine Debug
+NATIVESOURCES = IO TextIO OS Unix CommandLine Debug
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
 
-LIBSOURCES = Base.sml Word.sml $(NATIVESOURCES:%=%.ozf.sig)
+LIBSOURCES = Base.sml $(NATIVESOURCES:%=%.ozf.sig)
 LIBFILES = $(LIBSOURCES:%=lib/%)
 
 MLYACCSOURCES = base.sig join.sml lrtable.sml stream.sml parser2.sml

@@ -1,8 +1,4 @@
 import
-    structure LargeWord
-from "x-alice:/lib/Word.ozf"
-
-import
     structure WideChar
     structure WideString
 from "x-alice:/misc/Wide.ozf"
