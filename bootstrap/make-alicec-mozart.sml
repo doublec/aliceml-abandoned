@@ -30,7 +30,9 @@ local
 			    "uncaught exception " ^ exnName e ^ "\n");
 	     OS.Process.failure)
 
-    fun stoc [infile, outfile] =
+    fun stoc nil =   (* for testing bootstrapping *)
+	hdl Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
+      | stoc [infile, outfile] =
 	hdl Main.compileForMozart (infile, outfile)
       | stoc _ = OS.Process.failure
 in

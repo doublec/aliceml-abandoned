@@ -1,6 +1,7 @@
 ../../lib/bootstrap/Bootstrap.aus
 ../../lib/bootstrap/Word.aus
 ../../lib/bootstrap/TextIO.aus
+../../lib/bootstrap/Unix.aus
 ../../lib/bootstrap/ml-yacc/base.sig
 ../../lib/bootstrap/ml-yacc/join.sml
 ../../lib/bootstrap/ml-yacc/lrtable.sml
@@ -39,6 +40,8 @@
 ../top/PHASE.sig
 ../top/TARGET.sig
 ../top/EmptyContext.sml
+../top/ENGINE.sig
+../top/MakeEngine.sml
 ../common/Stamp.sml
 ../common/StampSet.sml
 ../common/StampMap.sml
@@ -136,8 +139,8 @@
 ../backend-common/FlatteningPhase.sml
 ../backend-common/LIVENESS_ANALYSIS_PHASE.sig
 ../backend-common/LivenessAnalysisPhase.sml
-../backend-mozart/OZIFY_FLAT_GRAMMAR.sig
 ../backend-mozart/OzifyFlatGrammar.sml
+../backend-mozart/MozartGenerationPhase.sml
 ../backend-com+/IL.sig
 ../backend-com+/IL.sml
 ../backend-com+/StockWerk.sml
