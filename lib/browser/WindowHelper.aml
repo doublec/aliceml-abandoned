@@ -272,6 +272,25 @@ fun  createScrollWindowDefaults(inc1,inc2) =
 	 ; (scrolled,hadj,vadj))
     end
 
+fun createStatusbar()  = let 
+			     val status = Gtk.statusbarNew()
+			     val type_context = 
+				 Gtk.statusbarGetContextId(status,"type")
+			     val postMessageType = fn str =>
+				 (Gtk.statusbarPop(status,
+						  type_context)
+				  ;Gtk.statusbarPush(status,type_context,
+						     str))
+			     val mode_context = 
+				 Gtk.statusbarGetContextId(status,"mode")
+			     val postMessageMode = fn str =>
+				 (Gtk.statusbarPop(status,
+						   mode_context)
+				  ;Gtk.statusbarPush(status,mode_context,
+						     str)) 
+			 in
+			     (status,postMessageType,postMessageMode)
+			 end
      
 end
 

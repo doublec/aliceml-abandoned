@@ -62,9 +62,11 @@ val createSpinButton:  {init : int,
 			inc : int, 
 			dec : int} -> Gtk.object
 
-val createVBoxDefaults: Gtk.object list -> Gtk.object
+val createVBoxDefaults: Gtk.object list -> Gtk.object   
 val createVBox: (Gtk.object * int * int * int) list -> Gtk.object
 val createFrame : string * Gtk.object -> Gtk.object
 val createScrollWindowDefaults: real * real -> Gtk. object * Gtk.object * Gtk.object
+val createStatusbar: unit -> Gtk.object * (string -> int) * (string -> int)
+
 
 end
