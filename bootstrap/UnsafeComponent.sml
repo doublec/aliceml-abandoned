@@ -1,20 +1,14 @@
 (* Dummy replacement for bootstrapping *)
 
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-signature UNSAFE_PICKLE =
-    sig
-	val loadSign: string -> 'a option
-	val replaceSign: string * 'a * string -> unit
-    end
-
-structure UnsafePickle :> UNSAFE_PICKLE =
+structure UnsafeComponent :> UNSAFE_COMPONENT =
     struct
-	fun loadSign _ = NONE
+	fun unavailable f =
+	    (TextIO.output (TextIO.stdErr,
+			    "UnsafeComponent." ^ f ^
+			    "unavailable in bootstrap compiler");
+	     raise Assert.failure)
 
-	fun replaceSign (_, _, _) =
-	    raise Crash.Crash
-		"UnsafePickle.replaceSign not available in bootstrap compiler"
+	fun load _ = unavailable "load"
+	fun replaceSign (_, _) = unavailable "replaceSign"
+	fun save (_, _) = unavailable "save"
     end
