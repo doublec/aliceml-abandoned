@@ -34,7 +34,7 @@ sig
     type env
     type t = env
 
-    type val_entry = {id: valid, use: bool ref, typ: typ, qtyp: typ, path: path}
+    type val_entry = {id: valid, use: bool ref, typ: typ, qtyp: typ}
     type typ_entry = {id: typid, use: bool ref, typ: typ, path: path}
     type var_entry = {id: typid, use: bool ref, var: var}
     type mod_entry = {id: modid, use: use  ref, inf: inf, path: path}
