@@ -1,6 +1,7 @@
 Group is
 
     ../../bootstrap/component.cm
+    ../../lib/system/resolver.cm
     ../infrastructure/crash.cm
     compiler.cm
 

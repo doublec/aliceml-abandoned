@@ -17,6 +17,7 @@ import structure TextIO             from "../../lib/system/TextIO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
 import structure Url                from "../../lib/system/Url"
+import structure Resolver           from "../../lib/system/Resolver"
 import structure Reflect            from "../../lib/system/Reflect"
 import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Component          from "../../lib/system/Component"
@@ -88,16 +89,30 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		Url.resolve base url
 	    end
 
-	fun readFile filename =
-	    let
-		val file   = TextIO.openIn filename handle IO.Io {...} =>
-				error("could not open " ^ filename)
-		val source = TextIO.inputAll file handle IO.Io {...} =>
-				error("error reading " ^ filename)
-		val _      = TextIO.closeIn file
-	    in
-		source
-	    end
+	val sourceResolver =
+	    Resolver.new {name = "source",
+			  handlers =
+			      case OS.Process.getEnv "ALICE_SOURCE_PATH" of
+				  SOME s => Resolver.Handler.parse s
+				| NONE => [Resolver.Handler.default],
+			  memoize = false}
+
+	fun readUrl url =
+	    case Resolver.localize sourceResolver url of
+		SOME (Resolver.FILE name) =>
+		    let
+			val name' = Url.toStringRaw url
+			val f = TextIO.openIn name handle IO.Io {...} =>
+				    error("could not open " ^ name')
+			val s = TextIO.inputAll f handle IO.Io {...} =>
+				    error("error reading " ^ name')
+			val _ = TextIO.closeIn f handle IO.Io {...} =>
+				    error("error reading " ^ name')
+		    in
+			s
+		    end
+	      | SOME (Resolver.STRING s) => s
+	      | NONE => error("could not locate " ^ Url.toStringRaw url)
 
 	local
 	    val implicitImportRef = ref NONE	(* poor man's laziness *)
@@ -110,9 +125,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		  of NONE => ""
 		   | SOME url =>
 		let
-		    val filename = Url.toLocalFile (Url.fromString url)
 		    val s = String.map (fn #"\n" => #" " | c => c)
-				       (readFile filename)
+				       (readUrl (Url.fromString url))
 		in
 		    implicitImportRef := SOME s;
 		    s
@@ -147,15 +161,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    let
 		val url = resolveWrtCwd (Url.fromString filename)
 	    in
-		processBasic process (Source.urlDesc url,
-				      readFile (Url.toLocalFile url))
+		processBasic process (Source.urlDesc url, readUrl url)
 	    end handle Url.NotLocal =>
 		    error ("could not locate source file " ^ filename)
 
 	local
 	    fun compileSign' (desc, s) =
 		let
-		    val sigFilename = Url.toLocalFile (valOf (Source.url desc))
+		    val sigFilename = Url.toStringRaw (valOf (Source.url desc))
 		    val _ = trace ("reading signature from " ^ sigFilename)
 		    val s' = implicitImport() ^ "\n" ^ s
 		    val (_, target) =
@@ -333,7 +346,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    in
 		if existsFile sourceFilename then
 		    SOME (compileFileToFile' (sourceFilename,
-					     pathCeil targetFilename))
+					      pathCeil targetFilename))
 		else NONE
 	    end
 
