@@ -275,8 +275,8 @@ public:
     MemoryNode::Reset();
     nodes = INVALID_POINTER;
   }
-  static MemoryNode *Alloc() {
-    if (nodes != INVALID_POINTER) {
+  static MemoryNode *Alloc(bool useFresh) {
+    if (!useFresh && (nodes != INVALID_POINTER)) {
       MemoryNode *node = nodes;
       nodes = nodes->GetNext();
       return node;
@@ -369,8 +369,8 @@ public:
     }
     return node->reg;
   }
-  static u_int AddMem(u_int expiration) {
-    MemoryNode *node = MemorySlots::Alloc();
+  static u_int AddMem(u_int expiration, bool useFresh) {
+    MemoryNode *node = MemorySlots::Alloc(useFresh);
     node->SetExpiration(expiration);
     if (memActive == INVALID_POINTER)
       memActive = node;
@@ -392,13 +392,23 @@ public:
 RegisterNode *ActiveSet::regActive;
 MemoryNode *ActiveSet::memActive;
 
+// Register Allocation is performed globally.
+// Prior to spilling the current variable,
+// it is checked for a longer-lived variable already assigned to a register.
+//   If one is found, their positions will be exchanged, requiring a memory slot
+// to be allocated. It cannot be taken from the slot free list without
+// checking their liveness constraints (because of jumping back in time).
+// Currently, the free list does not store this liveness information.
+// Thus, a freshly created allocation slot must be assigned in this case.
+//   If no longer-lived variable can be found, a memory slot will be allocated.
+// This time no constraints are needed since we proceed linear in time.
 class RegisterAllocator {
 protected:
   static  word NewReg(u_int reg) {
     return Store::IntToWord(reg);
   }
-  static word NewMem(u_int expiration) {
-    return Store::IntToWord(ActiveSet::AddMem(expiration));
+  static word NewMem(u_int expiration, bool useFresh = false) {
+    return Store::IntToWord(ActiveSet::AddMem(expiration, useFresh));
   }
 public:
   static Tuple *Run(u_int nLocals, Vector *liveness) {
@@ -410,7 +420,7 @@ public:
       u_int curStart = Store::DirectWordToInt(liveness->Sub(i + 1));
       u_int curEnd   = Store::DirectWordToInt(liveness->Sub(i + 2));
       ActiveSet::ExpireRegs(curStart);
-      //ActiveSet::ExpireSlots(curStart);
+      ActiveSet::ExpireSlots(curStart);
       if (RegisterBank::HaveRegister()) {
 	u_int reg = ActiveSet::Add(curIndex, curEnd);
 	assignment->Init(curIndex, NewReg(reg));
@@ -421,7 +431,7 @@ public:
 	  u_int nodeIndex      = node->index;
 	  u_int nodeExpiration = node->expiration;
 	  ActiveSet::Remove(node);
-	  assignment->Init(nodeIndex, NewMem(nodeExpiration));
+	  assignment->Init(nodeIndex, NewMem(nodeExpiration, true));
 	  u_int reg = ActiveSet::Add(curIndex, curEnd);
 	  assignment->Init(curIndex, NewReg(reg));
 	}
@@ -516,7 +526,7 @@ public:
   // LivenessTable Constructor
   static LivenessTable *New(u_int size) {
     Chunk *table = Store::AllocChunk(size);
-    std::memset(table->GetBase(), 0, size);
+    std::memset(table->GetBase(), DEAD, size);
     return (LivenessTable *) table;
   }
   // LivenessTable Untagging
@@ -1011,12 +1021,12 @@ u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
 
 void NativeCodeJitter::KillVariables() {
   jit_movi_p(JIT_R0, Store::IntToWord(4711));
-  for (u_int i = livenessTable->GetSize(); i--;)
-    if (livenessTable->NeedsKill(i))
+  for (u_int i = livenessTable->GetSize(); i--;) {
+    if (livenessTable->NeedsKill(i)) {
+      livenessTable->SetDead(i);
       NativeCodeFrame::PutEnv(JIT_V2, i, JIT_R0);
-//      else if (i < ALICE_REGISTER_NB)
-//        NativeCodeFrame::ReplaceEnv(JIT_V2, i,
-//  				  RegisterBank::IndexToRegister(i));
+    }
+  }
   SaveRegister();
 }
 
@@ -1852,15 +1862,11 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
   JIT_LOG_MESG("executing exception handler\n");
   TagVal *idDef1 = TagVal::FromWord(pc->Sel(1));
-  if (idDef1 != INVALID_POINTER) {
-    Generic::Scheduler::GetZeroArg(JIT_R0);
-    LocalEnvPut(JIT_V2, idDef1->Sel(0), JIT_R0);
-  }
+  if (idDef1 != INVALID_POINTER)
+    MoveMemValToLocalEnv(idDef1->Sel(0), Generic::Scheduler::GetZeroArg());
   TagVal *idDef2 = TagVal::FromWord(pc->Sel(2));
-  if (idDef2 != INVALID_POINTER) {
-    Generic::Scheduler::GetOneArg(JIT_R0);
-    LocalEnvPut(JIT_V2, idDef2->Sel(0), JIT_R0);
-  }
+  if (idDef2 != INVALID_POINTER)
+    MoveMemValToLocalEnv(idDef2->Sel(0), Generic::Scheduler::GetOneArg());
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
@@ -2374,6 +2380,7 @@ char *NativeCodeJitter::CompileProlog(const char *info) {
 }
 
 void NativeCodeJitter::CompileBranch(TagVal *pc) {
+  // This breaks abstraction barriers: NextPtr overrides block header
   LivenessTable *cloneTable;
   if (livenessFreeList == NULL) {
     cloneTable = livenessTable->Clone();
@@ -2381,7 +2388,7 @@ void NativeCodeJitter::CompileBranch(TagVal *pc) {
   else {
     cloneTable = livenessFreeList;
     livenessFreeList = ((LivenessTable **) cloneTable)[0];
-    livenessTable->Clone(cloneTable);
+    livenessTable->Clone(cloneTable); // CloneInto
   }
   CompileInstr(pc);
   ((LivenessTable **) livenessTable)[0] = livenessFreeList;
@@ -2578,14 +2585,13 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-stockwerk/build3/lib/system/Resolver.aml") && (Store::DirectWordToInt(coord1->Sel(1)) == 113)) {
-    allowOpt = 1;
-//      fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
-//  	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
-//  	    Store::DirectWordToInt(coord1->Sel(1)),
-//  	    Store::DirectWordToInt(coord1->Sel(2)));
-//    TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
-//    AbstractCode::Disassemble(stderr, pc);
+  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-stockwerk/build3/lib/system/Url.aml") && (Store::DirectWordToInt(coord1->Sel(1)) == 294)) {
+      fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
+  	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
+  	    Store::DirectWordToInt(coord1->Sel(1)),
+  	    Store::DirectWordToInt(coord1->Sel(2)));
+    TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
+    AbstractCode::Disassemble(stderr, pc);
   }
 #endif
 #if defined(JIT_CODE_SIZE_PROFILE)
@@ -2616,7 +2622,7 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(5));
   assignment = RegisterAllocator::Run(nLocals, liveness);
 #if defined(JIT_STORE_DEBUG)
-  //RegisterAllocator::Dump(abstractCode->Sel(0), nLocals, assignment);
+  RegisterAllocator::Dump(abstractCode->Sel(0), nLocals, assignment);
 #endif
   u_int nSlots = MemoryNode::GetNbSlots();
 #else

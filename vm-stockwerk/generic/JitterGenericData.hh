@@ -55,6 +55,9 @@ namespace Generic {
     static void GetZeroArg(u_int Dest) {
       Sel(&::Scheduler::currentArgs[0], Dest);
     }
+    static void *GetOneArg() {
+      return (void *) &::Scheduler::currentArgs[1];
+    }
     static void GetOneArg(u_int Dest) {
       Sel(&::Scheduler::currentArgs[1], Dest);
     }

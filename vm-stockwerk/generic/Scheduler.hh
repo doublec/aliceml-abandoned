@@ -138,4 +138,6 @@ public:
   }
 };
 
+void DumpCurrentTaskStack();
+
 #endif

@@ -134,14 +134,7 @@ public:
     }
     Assert(newTop < taskStack->GetSize());
     taskStack->SetTop(newTop);
-#if 0
-    StackFrame *p = taskStack->GetFrame(top);
-    for (u_int i = size; i--;)
-      ((word *) p)[i] = Store::deadWord;
     return taskStack->GetFrame(newTop - 1);
-#else
-    return taskStack->GetFrame(newTop - 1);
-#endif
   }
   void PushHandler(u_int frame, word data) {
     DynamicBlock *exnHandlerStack =
@@ -163,7 +156,9 @@ public:
   }
   void PushHandler(word data) {
     TaskStack *taskStack = TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
-    PushHandler(taskStack->GetTop(), data);
+    u_int top = taskStack->GetTop();
+    Assert(top >= 2);
+    PushHandler(top - 1, data);
   }
   void GetHandler(u_int &frame, word &data) {
     DynamicBlock *exnHandlerStack =
