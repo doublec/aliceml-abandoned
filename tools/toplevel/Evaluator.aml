@@ -11,6 +11,7 @@
  *)
 
 import structure Url         from "x-alice:/lib/system/Url"
+import structure Reflect     from "x-alice:/lib/system/Reflect"
 import structure Component   from "x-alice:/lib/system/Component"
 import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
@@ -95,28 +96,24 @@ struct
 	    (trace "Evaluating";
 	     case stoppable (signal, eval o baseUrl)
 	     of NONE => NONE (* interrupted *)
-	      | SOME str => (* completed or stopped *)
+	      | SOME package => (* completed or stopped *)
 		if not printSig then SOME context' else
-		case Component.inf (component ())
-		 of NONE =>
-		    (TextIO.output (outStream, "no result signature\n");
-		     SOME context')
-		  | SOME inf =>
-		    interruptable
-			(signal,
-			 fn _ =>
-			 let
-			     val _   = trace "Printing"
-			     val doc = PPComponent.ppComp (str, inf)
-			 in
-			     PrettyPrint.output (outStream, doc, !outWidth);
-			     TextIO.output (outStream, "\n");
-			     context'
-			 end)
+		interruptable
+		    (signal,
+		     fn _ =>
+		     let
+			 val _   = trace "Printing"
+			 val (str, inf) = Reflect.reflectPackage package
+			 val doc = PPComponent.ppComp (str, inf)
+		     in
+			 PrettyPrint.output (outStream, doc, !outWidth);
+			 TextIO.output (outStream, "\n");
+			 context'
+		     end)
 	     )
 	    )
 	    finally
-	    trace "Ready"
+	    TextIO.output (traceStream, "-- Ready\n")
 	end
 	handle Compiler.Error => SOME context
 	     | Compiler.Crash s =>
@@ -197,6 +194,8 @@ struct
     val implicitImport = "x-alice:/alice.import"
     val currentContext = ref Compiler.Context.empty
 
+    val initSource = "import \"Use\""
+
     fun defaults () = (* override defaults from MkSwitches here *)
 	let
 	    open Compiler.Switches
@@ -219,13 +218,16 @@ struct
 	in
 	    defaults ();
 	    Language.unsafeImport := true;
-	    case evalString (false, Compiler.Context.empty, "", dummySignal)
+	    case evalString (false, context, "", dummySignal)
 	     of NONE =>
 		raise Compiler.Crash "could not initialise environment"
-	      | SOME context =>
+	      | SOME context' =>
 		(Language.implicitImportFile := NONE;
 		 Language.unsafeImport := false;
-		 Promise.fulfill (p, context))
+		 case evalString (false, context', initSource, dummySignal)
+		  of NONE => raise Compiler.Crash "could not initialise `use'"
+		   | SOME context'' => Promise.fulfill (p, context'')
+		)
 	end
 
 
@@ -257,6 +259,17 @@ struct
 	     of NONE => Promise.fulfill (p, context)
 	      | SOME context' =>
 		Promise.fulfill (p, loopUses (context', signal))
+	end
+
+
+    (* Use *)
+
+    fun use filename =
+	let
+	    val new = Promise.promise ()
+	    val old = Ref.exchange (useFiles, Promise.future new)
+	in
+	    Promise.fulfill (new, old @ [filename])
 	end
 
 

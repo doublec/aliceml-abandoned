@@ -6,6 +6,7 @@ SOURCES = AliceIdeGUI.aml \
 	AliceIde.aml \
 	EVALUATOR-sig.aml \
 	Evaluator.aml \
+	Use.aml \
 	Highlight.aml \
 	Buffer.aml \
 	FileDialog.aml
