@@ -379,7 +379,7 @@ structure GtkSupport =
 
 	val stopButton =
 	    let
-		val urlString = "x-alice:/tools/stop.xbm"
+		val urlString = "x-alice:/lib/tools/stop.xbm"
 		val fileName  = Url.toLocalFile (Url.fromString urlString)
 		val image     = Gtk.imageNewFromFile fileName
 		val button    = Gtk.imageMenuItemNew ()
