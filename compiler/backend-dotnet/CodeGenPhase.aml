@@ -99,6 +99,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		end
 	end
 
+	fun emitCoord (l, r) =   (*--** for debugging *)
+	    emit (Comment (Int.toString l ^ "-" ^ Int.toString r))
+
 	fun emitRecordArity labs =
 	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
 	     appi (fn (i, lab) =>
@@ -167,8 +170,13 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit Dup; emit (Isinst StockWerk.Ref);
 	     emit (B (FALSE, elseLabel));
 	     emit (Castclass StockWerk.Ref);
-	     emit (Ldfld (StockWerk.Ref, "Value", StockWerk.StockWertTy));
+	     emit (Call (true, StockWerk.Ref, "Access", nil,
+			 StockWerk.StockWertTy));
 	     declareLocal id)
+	  | genTest (TupTest nil, elseLabel) =
+	    (emit Dup;
+	     emit (Ldsfld (StockWerk.Prebound, "unit", StockWerk.StockWertTy));
+	     emit (B (NE_UN, elseLabel)))
 	  | genTest (TupTest [id1, id2], elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Tuple2);
 	     emit (B (FALSE, elseLabel));
@@ -177,6 +185,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     declareLocal id1;
 	     emit (Ldfld (StockWerk.Tuple2, "Value2", StockWerk.StockWertTy));
 	     declareLocal id2)
+	  | genTest (TupTest [id1, id2, id3], elseLabel) =
+	    (emit Dup; emit (Isinst StockWerk.Tuple3);
+	     emit (B (FALSE, elseLabel));
+	     emit (Castclass StockWerk.Tuple3); emit Dup;
+	     emit (Ldfld (StockWerk.Tuple3, "Value1", StockWerk.StockWertTy));
+	     declareLocal id1; emit Dup;
+	     emit (Ldfld (StockWerk.Tuple3, "Value2", StockWerk.StockWertTy));
+	     declareLocal id2;
+	     emit (Ldfld (StockWerk.Tuple3, "Value3", StockWerk.StockWertTy));
+	     declareLocal id3)
 	  | genTest (TupTest ids, elseLabel) =
 	    let
 		val thenLabel = newLabel ()
@@ -321,8 +339,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (RefExp _, PREPARE) =
 	    emit (Ldsfld (StockWerk.Prebound, "ref", StockWerk.StockWertTy))
 	  | genExp (TupExp (_, nil), PREPARE) =
-	    emit (Ldsfld (StockWerk.Prebound, "Unit", StockWerk.StockWertTy))
+	    emit (Ldsfld (StockWerk.Prebound, "unit", StockWerk.StockWertTy))
 	  | genExp (TupExp (_, nil), FILL) = ()
+	  | genExp (TupExp (_, nil), BOTH) =
+	    emit (Ldsfld (StockWerk.Prebound, "unit", StockWerk.StockWertTy))
 	  | genExp (TupExp (_, [id1, id2]), PREPARE) =
 	    emit (Newobj (StockWerk.Tuple2, nil))
 	  | genExp (TupExp (_, [id1, id2]), FILL) =
@@ -336,8 +356,26 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Stfld (StockWerk.Tuple2, "Value1", StockWerk.StockWertTy));
 	     emit Dup; emitId id2;
 	     emit (Stfld (StockWerk.Tuple2, "Value2", StockWerk.StockWertTy)))
+	  | genExp (TupExp (_, [id1, id2, id3]), PREPARE) =
+	    emit (Newobj (StockWerk.Tuple3, nil))
+	  | genExp (TupExp (_, [id1, id2, id3]), FILL) =
+	    (emit Dup; emitId id1;
+	     emit (Stfld (StockWerk.Tuple3, "Value1", StockWerk.StockWertTy));
+	     emit Dup; emitId id2;
+	     emit (Stfld (StockWerk.Tuple3, "Value2", StockWerk.StockWertTy));
+	     emitId id3;
+	     emit (Stfld (StockWerk.Tuple3, "Value3", StockWerk.StockWertTy)))
+	  | genExp (TupExp (_, [id1, id2, id3]), BOTH) =
+	    (emit (Newobj (StockWerk.Tuple3, nil));
+	     emit Dup; emitId id1;
+	     emit (Stfld (StockWerk.Tuple3, "Value1", StockWerk.StockWertTy));
+	     emit Dup; emitId id2;
+	     emit (Stfld (StockWerk.Tuple3, "Value2", StockWerk.StockWertTy));
+	     emit Dup; emitId id3;
+	     emit (Stfld (StockWerk.Tuple3, "Value3", StockWerk.StockWertTy)))
 	  | genExp (TupExp (_, ids), PREPARE) =
-	    (emit (Newarr StockWerk.StockWertTy);
+	    (emit (LdcI4 (List.length ids));
+	     emit (Newarr StockWerk.StockWertTy);
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
 	  | genExp (TupExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Tuple, "Values",
@@ -346,7 +384,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit Pop)
 	  | genExp (TupExp (_, ids), BOTH) =
-	    (emit (Newarr StockWerk.StockWertTy);
+	    (emit (LdcI4 (List.length ids));
+	     emit (Newarr StockWerk.StockWertTy);
 	     appi (fn (i, id) =>
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
@@ -363,7 +402,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (Ldstr s);
 	     emit (Newobj (StockWerk.Selector, [System.StringTy])))
 	  | genExp (VecExp (_, ids), PREPARE) =
-	    (emit (Newarr StockWerk.StockWertTy);
+	    (emit (LdcI4 (List.length ids));
+	     emit (Newarr StockWerk.StockWertTy);
 	     emit (Newobj (StockWerk.Vector, [ArrayTy StockWerk.StockWertTy])))
 	  | genExp (VecExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Vector, "Values",
@@ -377,13 +417,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     (emit (Newobj (className stamp, nil));
 		      defineClass (stamp, StockWerk.Procedure, nil))
 	       | _ => Crash.crash "CodeGenPhase.genExp")
-	  | genExp (FunExp (_, _, argsBodyList), FILL) =
+	  | genExp (FunExp (coord, _, argsBodyList), FILL) =
 	    (case argsBodyList of
 		 (OneArg (id as Id (_, stamp, _)), body)::_ =>
 		     (defineMethod (stamp, "Apply", [id]);
-		      genBody body;
-		      closeMethod ();
-		      emit Pop)
+		      emitCoord (coord); genBody body;
+		      closeMethod (); emit Pop)
 	       | _ => Crash.crash "CodeGenPhase.genExp")
 	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
@@ -411,7 +450,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    emit (Newobj (StockWerk.Ref, nil))
 	  | genExp (RefAppExp (_, args), FILL) =
 	    (genArgs args;
-	     emit (Stfld (StockWerk.Ref, "Value", StockWerk.StockWertTy)))
+	     emit (Call (true, StockWerk.Ref, "Assign",
+			 [StockWerk.StockWertTy], VoidTy)))
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =
 	    (*--** *)
 	    Crash.crash "CodeGenPhase.genExp: PrimAppExp"
