@@ -88,6 +88,7 @@ Worker::Result RunMainWorker::Run() {
   Scheduler::PopFrame();
   Closure *closure =
     staticMethodRef->GetClass()->GetStaticMethod(staticMethodRef->GetIndex());
+  //--** pass string array as argument
   return Scheduler::PushCall(closure->ToWord());
 }
 
@@ -113,4 +114,5 @@ void Startup() {
   word methodRef = classLoader->ResolveMethodRef(theClass, name, descriptor);
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
   RunMainWorker::PushFrame(thread, methodRef);
+  ClassLoader::PushPreloadFrame(thread);
 }
