@@ -173,13 +173,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Ldfld (Alice.TagVal, "Value", System.ObjectTy));
 	     declareArgs (args, true))
 	  | genTest (ConTest id, elseLabel) =
-	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
+	    (emit Dup; emitId id; emitAwait (); emit (B (NE_UN, elseLabel));
+	     emit Pop)
 	  | genTest (ConAppTest (id, args), elseLabel) =
 	    (emit Dup; emit (Isinst Alice.ConValTy);
 	     emit (B (FALSE, elseLabel)); emit (Castclass Alice.ConValTy);
 	     emit Dup;
 	     emit (Call (true, Alice.ConVal, "GetId", nil, System.ObjectTy));
-	     emitId id; emit (B (NE_UN, elseLabel));
+	     emitId id; emitAwait (); emit (B (NE_UN, elseLabel));
 	     emit (Ldfld (Alice.ConVal, "Value", System.ObjectTy));
 	     declareArgs (args, true))
 	  | genTest (StaticConTest _, _) =   (*--** implement *)
@@ -279,7 +280,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				 emit (Unbox System.Int32); emit LdindI4)
 		fun gen (_, body) = genBody body
 	    in
-		genSwitchTestStm (toInt, getInt, gen,
+		genSwitchTestStm (toInt, getInt, gen, false,
 				  testBodyList, elseBodyFun)
 	    end
 	  | genTestStm' (testBodyList as (LitTest (IntLit _), _)::_::_,
@@ -291,7 +292,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				 emit (Unbox System.Int32); emit LdindI4)
 		fun gen (_, body) = genBody body
 	    in
-		genSwitchTestStm (toInt, getInt, gen,
+		genSwitchTestStm (toInt, getInt, gen, false,
 				  testBodyList, elseBodyFun)
 	    end
 	  | genTestStm' (testBodyList as (LitTest (CharLit _), _)::_::_,
@@ -303,7 +304,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				 emit (Unbox System.Char); emit LdindU2)
 		fun gen (_, body) = genBody body
 	    in
-		genSwitchTestStm (toInt, getInt, gen,
+		genSwitchTestStm (toInt, getInt, gen, false,
 				  testBodyList, elseBodyFun)
 	    end
 	  | genTestStm' (testBodyList as (TagTest (_, _), _)::_::_,
@@ -324,7 +325,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			val thenLabel = newLabel ()
 			val contLabel = newLabel ()
 		    in
-			emit Dup; emit Dup; emit (Isinst Alice.TagValTy);
+			emit Dup; emit (Isinst Alice.TagValTy);
 			emit (B (TRUE, thenLabel));
 			emit (Castclass System.Int32Ty);
 			emit (Unbox System.Int32); emit LdindI4;
@@ -339,10 +340,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     declareArgs (args, true); genBody body)
 		  | gen (_, body) = (emit Pop; genBody body)
 	    in
-		genSwitchTestStm (toInt, getInt, gen,
+		genSwitchTestStm (toInt, getInt, gen, true,
 				  testBodyList, elseBodyFun)
 	    end
-	and genSwitchTestStm (toInt, getInt, gen, testBodyList, elseBodyFun) =
+	and genSwitchTestStm (toInt, getInt, gen, dupPop,
+			      testBodyList, elseBodyFun) =
 	    let
 		val map = IntMap.new ()
 		val i = toInt (#1 (List.hd testBodyList))
@@ -358,13 +360,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 					       SOME (label, _, _) => label
 					     | NONE => elseLabel)
 		    in
-			getInt ();
+			if dupPop then emit Dup else (); getInt ();
 			if min = 0 then () else (emit (LdcI4 min); emit Sub);
 			emit (Switch labels);
 			let
 			    val regState = saveRegState ()
 			in
-			    emit (Label elseLabel); elseBodyFun ();
+			    emit (Label elseLabel);
+			    if dupPop then emit Pop else (); elseBodyFun ();
 			    restoreRegState regState
 			end;
 			IntMap.app (fn (label, test, body) =>
@@ -506,7 +509,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			 val info = {region = Source.nowhere}
 			 val id = Id (info, Stamp.new (), Name.InId)
 		     in
-			 defineMethod (stamp, "Apply", [id]);
+			 defineMethod (stamp, "Apply", [id]); emitId id;
 			 declareArgs (args, true); genBody body; closeMethod ()
 		     end;
 	     emit Pop)
