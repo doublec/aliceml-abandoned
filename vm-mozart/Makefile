@@ -520,11 +520,13 @@ INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/RTT.ozf
 INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf
+INSTALL3STOCTOPFILES = Composer.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
-	$(INSTALL3STOCFILES:%=build3/install/stoc/%)
+	$(INSTALL3STOCFILES:%=build3/install/stoc/%) \
+	$(INSTALL3STOCTOPFILES:%=build3/install/stoc/top/%)
 
 ##
 ## Creating the Source Tree for Build 3
@@ -542,7 +544,8 @@ $(BUILD3SOURCES): build3/%: build1/%
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/LinkedStowMain.ozf \
-	build3/stoc/LinkedStocMain.ozf build3/stoc/LinkedStotMain.ozf
+	build3/stoc/LinkedStocMain.ozf build3/stoc/LinkedStotMain.ozf \
+	build3/stoc/top/LinkedComposer.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 	cp $< $@
@@ -576,6 +579,9 @@ build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
 
 build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+	$(OZL) --include=.. $< -o $@
+
+build3/stoc/top/LinkedComposer.ozf: build3/stoc/top/Composer.ozf
 	$(OZL) --include=.. $< -o $@
 
 ##
@@ -629,7 +635,9 @@ INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
-	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%)
+	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
+	$(INSTALL3STOCFILES:%=$(PREFIX)/stoc/%) \
+	$(INSTALL3STOCTOPFILES:%=$(PREFIX)/stoc/top/%)
 
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
@@ -643,6 +651,12 @@ $(INSTALL3BINFILES:%=$(PREFIX)/bin/%): $(PREFIX)/%: build3/install/%
 	install -c -m 555 $< $@
 
 $(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3STOCFILES:%=$(PREFIX)/stoc/%): $(PREFIX)/%: build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3STOCTOPFILES:%=$(PREFIX)/stoc/top/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
 ##
