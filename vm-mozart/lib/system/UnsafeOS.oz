@@ -27,6 +27,7 @@ define
    OS =
    'OS'('\'SysErr': SysErr
 	'SysErr': fun {$ A B} SysErr(A B) end
+	'errorMsg': fun {$ X} {ByteString.make 'Unknown error code '#X} end
 	'FileSys$':
 	   'FileSys'('chDir':
 			fun {$ Name}
