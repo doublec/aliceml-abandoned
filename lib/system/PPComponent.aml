@@ -76,13 +76,15 @@ struct
 			nest(break ^^
 			    abox(PPType.ppTyp t)
 			)
-		    ) ^/^
-		    hbox(
-			text "=" ^^ break
 		    ) ^^
-		    abox(below(
-			PPValue.ppVal t (UnsafeValue.projPoly(str,l))
-		    ))
+		    nest(break ^^
+			hbox(
+			    text "=" ^^ break
+			) ^^
+			abox(below(
+			    PPValue.ppVal t (UnsafeValue.projPoly(str,l))
+			))
+		    )
 		) ^/^ doc
 	  | Inf.TypItem(p,k) =>
 	    if Type.isSingKind k then
