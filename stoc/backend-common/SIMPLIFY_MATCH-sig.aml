@@ -36,6 +36,8 @@ signature SIMPLIFY_MATCH =
 	  | Default
 	and nodeStatus =
 	    Initial
+	  | Count of int
+	  | Checking
 	  | Raw of testGraph list * testGraph list
 	  | Cooked of (pos * test) list * (pos * test) list
 	  | Optimized of (pos * test) list * (pos * test) list
