@@ -59,7 +59,8 @@
     "THREAD", \
     "CONCRETECODE", \
     "CLOSURE", \
-    "TUPLE" \
+    "TUPLE", \
+    "PICKLEINPUTSTREAM" \
   }
 
 #endif __STORE__PARAMETER_HH__
