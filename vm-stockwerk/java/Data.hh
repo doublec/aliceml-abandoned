@@ -92,6 +92,9 @@ public:
   Block *GetVirtualTable() {
     return Store::DirectWordToBlock(GetArg(VIRTUAL_TABLE_POS));
   }
+  Closure *GetVirtualMethod(u_int index) {
+    return Closure::FromWordDirect(GetVirtualTable()->GetArg(index));
+  }
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
@@ -184,8 +187,7 @@ public:
     return GetArg(BASE_SIZE + index);
   }
   Closure *GetVirtualMethod(u_int index) {
-    Block *vTable = GetClass()->GetVirtualTable();
-    return Closure::FromWordDirect(vTable->GetArg(index));
+    return GetClass()->GetVirtualMethod(index);
   }
 };
 
