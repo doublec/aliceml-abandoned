@@ -54,12 +54,10 @@ void Scheduler::Run() {
     while (!nextThread) {
       preempt = false;
       Interpreter *interpreter = taskStack->GetInterpreter();
-      //      fprintf(stderr, "Executing frame %s\n", interpreter->Identify());
       Scheduler::currentArgs = currentThread->GetArgs();
       Interpreter::Result result =
 	interpreter->Run(Scheduler::currentArgs, taskStack);
     interpretResult:
-      //      fprintf(stderr, "Got result %s\n", ResultToString(result));
       switch (result) {
       case Interpreter::CONTINUE:
 	currentThread->SetArgs(currentArgs);
@@ -101,7 +99,7 @@ void Scheduler::Run() {
 	      ByneedInterpreter::PushFrame(newTaskStack, transient);
 	      NewThread(transient->GetArg(),
 			Interpreter::EmptyArg(), newTaskStack);
-	      // empty queue
+	      // The future's argument is an empty wait queue:
 	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 	      taskStack->Purge();
 	      currentThread->SetArgs(currentArgs);
@@ -117,7 +115,7 @@ void Scheduler::Run() {
 	}
 	break;
       case Interpreter::TERMINATE:
-	currentThread->SetState(Thread::TERMINATED);
+	currentThread->SetTerminated();
 	nextThread = true;
 	break;
       }
