@@ -20,6 +20,7 @@
 
 #include <cstring>
 #include "generic/Closure.hh"
+#include "generic/Transients.hh"
 
 typedef unsigned short u_wchar; //--** ensure that this is always 16-bit
 
@@ -173,12 +174,60 @@ static const word null = Store::IntToWord(0);
 
 class DllExport Lock: private Block {
 protected:
-  enum { SIZE };
+  enum { COUNT_POS, THREAD_POS, FUTURE_POS, SIZE };
 public:
   using Block::ToWord;
 
   static Lock *New() {
-    return static_cast<Lock *>(Store::AllocBlock(JavaLabel::Lock, SIZE));
+    Block *b = Store::AllocBlock(JavaLabel::Lock, SIZE);
+    b->InitArg(COUNT_POS, 0);
+    return static_cast<Lock *>(b);
+  }
+
+  bool AcquireLock() {
+    u_int count = Store::DirectWordToInt(GetArg(COUNT_POS));
+    if (count == 0) {
+      ReplaceArg(COUNT_POS, 1);
+      ReplaceArg(THREAD_POS, Scheduler::GetCurrentThread()->ToWord());
+      ReplaceArg(FUTURE_POS, 0);
+      return true;
+    } else {
+      Thread *thread = Thread::FromWordDirect(GetArg(THREAD_POS));
+      if (thread == Scheduler::GetCurrentThread()) {
+	ReplaceArg(COUNT_POS, count + 1);
+	return true;
+      } else {
+	word wFuture = GetArg(FUTURE_POS);
+	Future *future;
+	if (wFuture == Store::IntToWord(0)) {
+	  future = Future::New();
+	  ReplaceArg(FUTURE_POS, future->ToWord());
+	} else {
+	  future = static_cast<Future *>
+	    (Store::DirectWordToTransient(wFuture));
+	}
+	future->AddToWaitQueue(thread);
+	Scheduler::currentData = future->ToWord();
+	return false;
+      }
+    }
+  }
+  void ReleaseLock() {
+    u_int count = Store::DirectWordToInt(GetArg(COUNT_POS));
+    Assert(count > 0);
+    Assert(Thread::FromWordDirect(GetArg(THREAD_POS)) ==
+	   Scheduler::GetCurrentThread());
+    if (count > 1) {
+      ReplaceArg(COUNT_POS, count - 1);
+    } else {
+      word wFuture = GetArg(FUTURE_POS);
+      if (wFuture != Store::IntToWord(0)) {
+	Future *future = static_cast<Future *>
+	  (Store::DirectWordToTransient(wFuture));
+	future->ScheduleWaitingThreads();
+      }
+      ReplaceArg(COUNT_POS, 0);
+    }
   }
 };
 
