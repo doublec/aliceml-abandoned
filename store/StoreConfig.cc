@@ -28,7 +28,7 @@ static unsigned long ComputeMask(int pos, int width) {
   return mask;
 }
 
-static void CreateHeader(FILE *f, u_int header_size_width) {
+static void CreateHeader(FILE *f, unsigned int header_size_width) {
   unsigned long GEN_GC_SHIFT     = 0;
   unsigned long SIZESHIFT_SHIFT  = (HEADER_GEN_GC_MARK_WIDTH);
   unsigned long SIZE_SHIFT       = (SIZESHIFT_SHIFT + HEADER_SIZESHIFT_WIDTH);
