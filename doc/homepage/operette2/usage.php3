@@ -49,6 +49,8 @@
     <DT><TT>--outputassembly</TT></DT>
     <DD><P>Write a file <I>&lt;output file&gt;</I><TT>.ozm</TT> containing
       the assembly code for the compiled component.</P></DD>
+    <DT><TT>--noprintcomponentsig</TT></DT>
+    <DD><P>Omit output of component signatures.</P></DD>
   </DL>
 
 <?php section("vm", "vm") ?>

@@ -29,8 +29,9 @@ MISCSOURCES = \
 MISCFILES = $(MISCSOURCES:%=misc/%)
 
 TOPSOURCES = \
-	PHASE.sig ComposePhases.sml TARGET.sig EmptyContext.sml ENGINE.sig \
-	MakeEngine.sml SIGNATURE.sig Signature.sml COMPOSER.sig Composer.sml
+	SWITCHES.sig Switches.sml PHASE.sig ComposePhases.sml TARGET.sig \
+	EmptyContext.sml ENGINE.sig MakeEngine.sml SIGNATURE.sig \
+	Signature.sml COMPOSER.sig Composer.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 COMMONSOURCES = \

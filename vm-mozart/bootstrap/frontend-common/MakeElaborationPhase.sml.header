@@ -77,6 +77,10 @@ import
 from "x-alice:/frontend-common/ElaborationError.ozf"
 
 import
+    structure Switches
+from "x-alice:/top/Switches.ozf"
+
+import
     signature COMPOSER
 from "x-alice:/top/COMPOSER.ozf"
 

@@ -89,6 +89,10 @@ import
 from "x-alice:/backend-mozart/CodeGenPhase.ozf"
 
 import
+    structure Switches
+from "x-alice:/top/Switches.ozf"
+
+import
     signature SIGNATURE
 from "x-alice:/top/SIGNATURE.ozf"
 
@@ -305,16 +309,20 @@ local
 
     fun defaults () =
 	(defaultImport := readDefaultImport ();
-	 outputAssembly := false)
+	 outputAssembly := false;
+	 Switches.printComponentSig := true)
 
     fun options ("--nodefaultimport"::rest) =
 	(defaultImport := ""; options rest)
       | options ("--outputassembly"::rest) =
 	(outputAssembly := true; options rest)
+      | options ("--noprintcomponentsig"::rest) =
+	(Switches.printComponentSig := false; options rest)
       | options rest = rest
 
     fun stoc ["--replacesign", infile, signfile, outfile] =
-	(Pickle.replaceSign (Url.fromString infile,
+	(defaultImport := readDefaultImport ();
+	 Pickle.replaceSign (Url.fromString infile,
 			     compileSign signfile, outfile);
 	 OS.Process.success)
       | stoc args =
