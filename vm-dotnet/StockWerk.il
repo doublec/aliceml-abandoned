@@ -69,6 +69,7 @@
     .field static public initonly class StockWerk.StockWert eq
     .field static public initonly class StockWerk.StockWert ne
     .field static public initonly class StockWerk.StockWert Application$exit
+    .field static public initonly class StockWerk.StockWert Application$getArgs
     .field static public initonly class StockWerk.StockWert Array$array
     .field static public initonly class StockWerk.StockWert Array$fromList //--**
     .field static public initonly class StockWerk.StockWert Array$length
@@ -87,7 +88,7 @@
     .field static public initonly class StockWerk.StockWert Int$ge
     .field static public initonly class StockWerk.StockWert Int$gt
     .field static public initonly class StockWerk.StockWert Int$le
-    .field static public initonly class StockWerk.StockWert Int$less
+    .field static public initonly class StockWerk.StockWert Int$lt
     .field static public initonly class StockWerk.StockWert Int$minus
     .field static public initonly class StockWerk.StockWert Int$mod
     .field static public initonly class StockWerk.StockWert Int$plus
@@ -229,6 +230,8 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::ne
       newobj instance void StockWerk.Builtins.Application$exit::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Application$exit
+      newobj instance void StockWerk.Builtins.Application$getArgs::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Application$getArgs
       newobj instance void StockWerk.Builtins.Array$array::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Array$array
       newobj instance void StockWerk.Builtins.Array$length::.ctor()
@@ -259,8 +262,8 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$gt
       newobj instance void StockWerk.Builtins.Int$le::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$le
-      newobj instance void StockWerk.Builtins.Int$less::.ctor()
-      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$less
+      newobj instance void StockWerk.Builtins.Int$lt::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$lt
       newobj instance void StockWerk.Builtins.Int$minus::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$minus
       newobj instance void StockWerk.Builtins.Int$mod::.ctor()
@@ -2463,6 +2466,52 @@
     }
   }
 
+  .class sealed Application$getArgs extends StockWerk.Procedure0 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure0::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply0() {
+      .locals(class System.String[], int32, int32)
+      call class System.String[] System.Runtime::GetCommandLineArgs()
+      stloc.0
+      ldloc.0
+      ldlen
+      ldc.i4.1
+      sub
+      stloc.1
+      ldc.i4.0
+      stloc.2
+      ldloc.1
+      ldnull
+      newobj instance void StockWerk.Array::.ctor(int32, class StockWerk.StockWert)
+      dup
+      ldfld class StockWerk.StockWert[] StockWerk.Array::Values
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s return
+      dup
+      ldloc.2
+      ldloc.0
+      ldloc.2
+      ldc.i4.1
+      add
+      ldelem.ref
+      newobj instance void StockWerk.String::.ctor(class System.String)
+      stelem.ref
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    return:
+      pop
+      ret
+    }
+  }
+
   .class sealed Array$array extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
@@ -2501,7 +2550,7 @@
       /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
-    .method virtual public class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
     retry:
       ldarg.1
       isinst StockWerk.Array
@@ -3050,7 +3099,7 @@
     }
   }
 
-  .class sealed Int$less extends StockWerk.Procedure2 {
+  .class sealed Int$lt extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
       /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
