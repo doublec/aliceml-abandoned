@@ -1,7 +1,5 @@
-import
-    infixr 5 ::
-    datatype list
-from "x-alice:/lib/Base.ozf"
+infixr 5 ::
+datatype 'a list = :: of 'a * 'a list | nil
 
 fun f ((#"/" | #"\\")::(#"/" | #"\\")::rest) = rest
   | f ((#"/" | #"\\")::rest) = rest
