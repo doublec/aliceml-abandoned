@@ -14,8 +14,9 @@ import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FD        from "x-alice:/lib/gecode/FD"
 import structure FS        from "x-alice:/lib/gecode/FS"
 import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Linear    from "x-alice:/lib/gecode/Linear"
 import structure Print     from "x-alice:/lib/system/Print"
-
+open Linear
 
 fun appTail f nil = ()
   | appTail f (x::xr) = (f x xr;
@@ -44,11 +45,9 @@ fun hamming bits dist num =
 
                        	   FS.Int.card(space,d1c,d1);
                      	   FS.Int.card(space,d2c,d2);
-                       	   FD.linear(space, #[(1,d1c),(1,d2c)],
-                       	   	FD.GQ, dist, FD.DEF
-                       	   )
+                       	   post(space, FD(d1c) `+ FD(d2c)`>= `dist, FD.DEF );
+                       	   ()
                        end) root;
-
         (* distribution *)
         FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
         (Vector.fromList root,space)
