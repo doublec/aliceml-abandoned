@@ -62,8 +62,9 @@ signature INTERMEDIATE =
 	| RecPat    of info * pat field list * bool (* dots *)
 	| AsPat     of info * id * pat
 	| AltPat    of info * pat list
+	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
-	| LetPat    of info * pat * dec
+	| LetPat    of info * dec * pat
 
     (* Declarations *)
 

@@ -78,7 +78,7 @@ functor Intermediate(type info
     (* Projections *)
 
     fun info_id(Id(i,_,_))		= i
-    fun info_longid(Longid(i,_))	= i
+    fun info_longid(Longid(i,_,_))	= i
     fun info_lab(Lab(i,_))		= i
 
     fun info_exp(LitExp(i,_))		= i
@@ -129,7 +129,7 @@ functor Intermediate(type info
     fun m(q)				= output1(q,#" ")
     fun r(q)				= output1(q,#")")
 
-    fun output_boof(q,b)		= output(q, Bool.toString b)
+    fun output_bool(q,b)		= output(q, Bool.toString b)
     fun output_int(q,n)			= output(q, Int.toString n)
     fun output_string(q,s)		= ( output1(q,#"\"")
 					  ; output(q, String.toCString s)
@@ -184,9 +184,10 @@ functor Intermediate(type info
 					  ; output_name(q,n) ; r(q)
 					  )
 
-    fun output_longid(q, Longid(i,xs))	= ( f(q,"Longid")
+    fun output_longid(q, Longid(i,xs,x))= ( f(q,"Longid")
 					  ; output_info(q,i) ; m(q)
-					  ; output_list output_id (q,xs) ; r(q)
+					  ; output_list output_id (q,xs) ; m(q)
+					  ; output_id(q,x) ; r(q)
 					  )
 
     fun output_lab(q, Lab(i,s))		= ( f(q,"Lab")
@@ -325,7 +326,7 @@ functor Intermediate(type info
 					  ; output_info(q,i) ; m(q)
 					  ; output_list(output_field output_pat)
 					               (q,fs) ; m(q)
-					  ; output_boof(q,b) ; r(q)
+					  ; output_bool(q,b) ; r(q)
 					  )
       | output_pat(q, AsPat(i,x,p))	= ( f(q,"AsPat")
 					  ; output_info(q,i) ; m(q)
@@ -336,7 +337,7 @@ functor Intermediate(type info
 					  ; output_info(q,i) ; m(q)
 					  ; output_list output_pat (q,ps) ; r(q)
 					  )
-      | output_pat(q, AltPat(i,p))	= ( f(q,"NegPat")
+      | output_pat(q, NegPat(i,p))	= ( f(q,"NegPat")
 					  ; output_info(q,i) ; m(q)
 					  ; output_pat(q,p) ; r(q)
 					  )
@@ -345,10 +346,10 @@ functor Intermediate(type info
 					  ; output_pat(q,p) ; m(q)
 					  ; output_exp(q,e) ; r(q)
 					  )
-      | output_pat(q, LetPat(i,p,d))	= ( f(q,"LetPat")
+      | output_pat(q, LetPat(i,d,p))	= ( f(q,"LetPat")
 					  ; output_info(q,i) ; m(q)
-					  ; output_pat(q,p) ; m(q)
-					  ; output_dec(q,d) ; r(q)
+					  ; output_dec(q,d) ; m(q)
+					  ; output_pat(q,p) ; r(q)
 					  )
 
     and output_dec(q, ValDec(i,xs,e))	= ( f(q,"ValDec")
