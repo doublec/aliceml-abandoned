@@ -64,12 +64,13 @@ functor MakeEngine(val cmd: unit -> string * string list
 		case TextIO.inputLine (instream proc) of
 		    "\n" => nil
 		  | s =>
-			let
-			    val (name, value) = split (String.explode s)
-			in
-			    (String.implode name, String.implode value)::
-			    parseResult proc
-			end
+			(case split (String.explode s) of
+			     ([#"D", #"e", #"b", #"u", #"g"], s) =>
+				 (TextIO.print (String.implode s);
+				  parseResult proc)
+			   | (name, value) =>
+				 (String.implode name, String.implode value)::
+				 parseResult proc)
 	end
 
 	fun stop proc =
