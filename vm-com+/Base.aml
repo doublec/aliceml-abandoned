@@ -1160,7 +1160,7 @@ structure Real: REAL =
 
 	val fromString = StringCvt.scanString scan
 
-	fun toString(x: real) = "<real>"   (*--** *)
+	__primitive val toString: real -> string = "Real.toString"
     end
 
 structure LargeReal = Real
