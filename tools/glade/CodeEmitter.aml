@@ -283,7 +283,7 @@ structure CodeEmitter :> CODE_EMITTER =
     (* Process remaining properties *)
     fun processProperties(doc, class, id, nil) = ()
       | processProperties(doc, class, id, ("visible", "True")::ps) =
-	(output(doc, "val _ = Gtk.widgetShow "^id^"\n");
+	((*output(doc, "val _ = Gtk.widgetShow "^id^"\n");*)
 	 processProperties(doc, class, id, ps))
       | processProperties(doc, class, id, ("visible",_)::ps) =
 	processProperties(doc, class, id, ps)
