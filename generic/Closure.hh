@@ -47,7 +47,7 @@ public:
   word GetConcreteCode() {
     return GetArg(CONCRETE_CODE_POS);
   }
-  void PutConcreteCode(word wConcreteCode) {
+  void SetConcreteCode(word wConcreteCode) {
     ReplaceArg(CONCRETE_CODE_POS, wConcreteCode);
   }
   u_int GetSize() {
