@@ -48,10 +48,10 @@ public:
     return Block::GetArg(pos + 1);
   }
   void InitArg(u_int pos, word value) {
-    Block::InitArg(pos, value);
+    Block::InitArg(pos + 1, value);
   }
   void ReplaceArg(u_int pos, word value) {
-    Block::ReplaceArg(pos, value);
+    Block::ReplaceArg(pos + 1, value);
   }
   Interpreter *GetInterpreter() {
     return (Interpreter *)
@@ -65,8 +65,7 @@ public:
     return (StackFrame *) p;
   }
   static StackFrame *New(FrameLabel l, Interpreter *interpreter, u_int size) {
-    size +=1;
-    Block *p = Store::AllocBlock((BlockLabel) l, size);
+    Block *p = Store::AllocBlock((BlockLabel) l, size + 1);
     Assert(p != INVALID_POINTER);
     p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
     return (StackFrame *) p;
