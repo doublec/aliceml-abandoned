@@ -11,15 +11,27 @@ the Alice system.</P>
 <?php section("language", "language") ?>
 
 <DL>
-  <DT>Overloading</DT>
-  <DD><P>Overloading is not supported. Top-level arithmetic operators are
-      only defined for type <TT>int</TT>.</P>
+  <DT>Equality</DT><!--mozart-->
+  <DD><P>The <TT>=</TT> operator is <A href="futures.html#request">strict</A>.
+      Accordingly, in order to test two futures for equality, both have to
+      be requested.  The current implementation will not request futures if
+      they are physically equal.</P>
   </DD>
 
   <DT>Equality types</DT>
   <DD><P>The equality attribute of types is ignored. The <TT>=</TT> operator
       may be applied to values of any type. For functions and similar values
       it uses physical equality.</P>
+  </DD>
+
+  <DT>Overloading</DT>
+  <DD><P>Overloading is not supported. Top-level arithmetic operators are
+      only defined for type <TT>int</TT>.</P>
+  </DD>
+
+  <DT>Holes</DT><!--mozart-->
+  <DD><P>Accessing a <A href="library/hole.html">hole</A> does not raise an
+      exception as it should.  Instead, it blocks until the hole is filled.</P>
   </DD>
 
   <DT>Signature inclusion</DT>
@@ -30,18 +42,6 @@ the Alice system.</P>
   <DT>Polymorphic sealing</DT>
   <DD><P><A href="packages.html#dynamic">Dynamic sealing</A> is not performed
       in cases where the signature is not statically known.</P>
-  </DD>
-
-  <DT>Equality</DT><!--mozart-->
-  <DD><P>The <TT>=</TT> operator is <A href="futures.html#request">strict</A>.
-      Accordingly, in order two test two futures for equality, both have to
-      be requested.  The current implementation will not request futures if
-      they are physically equal.</P>
-  </DD>
-
-  <DT>Holes</DT><!--mozart-->
-  <DD><P>Accessing a <A href="library/hole.html">hole</A> does not raise an
-      exception as it should.  Instead, it blocks until the hole is filled.</P>
   </DD>
 </DL>
 

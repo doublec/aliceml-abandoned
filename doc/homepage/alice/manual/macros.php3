@@ -33,7 +33,7 @@
   <BR><BR>
   </H1>
 
-  <?php include("menu.php3") ?>
+  <?php include("menu.html") ?>
 
   <A href="http://www.ps.uni-sb.de/alice/">
   <IMG src="logo-small.gif"

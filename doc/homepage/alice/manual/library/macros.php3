@@ -34,7 +34,7 @@
   </H1>
 
   <?php
-    include("menu.php3")
+    include("menu.html")
   ?>
 
   <A href="http://www.ps.uni-sb.de/alice/">
