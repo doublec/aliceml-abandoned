@@ -18,6 +18,7 @@ is
 	ExtendedBasis.sml
 	DummyFuture.sml
 	DummyLock.sml
+	DummyStore.sml
 	Config.sml
 	Reflect.sml
 

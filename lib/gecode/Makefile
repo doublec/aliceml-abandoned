@@ -81,7 +81,7 @@ Generator.alc: DescParser.alc
 	$(GECODEOBJ) $(EXTRA_LIBS) -o $@
 
 %.alc: %.aml
-	alicec -c $< -o $@
+	alicec -z $< -o $@
 
 clean:
 	rm -f $(NATIVES:%=%.o) $(SOURCES:%.cc=%.o)

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -21,6 +21,7 @@ import structure Resolver           from "../../lib/system/Resolver"
 import structure Reflect            from "../../lib/system/Reflect"
 import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Component          from "../../lib/system/Component"
+import structure Store              from "../../lib/system/Store"
 import structure MkHashImpMap       from "../../lib/data/MkHashImpMap"
 import structure Inf                from "../../lib/rtt/Inf"
 
@@ -229,6 +230,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    (_, Target.COMPONENT {component, ...}) =>
 			let
 			    val component = component ()
+			    val component =
+				if !Switches.Global.minimizeComponent
+				then Store.minimize component
+				else component
 			in
 			    Component.save (outFilename, component);
 			    {export = valOf (Component.inf component),

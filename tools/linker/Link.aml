@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002-2004
+ *   Andreas Rossberg and Leif Kornstaedt, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,6 +29,7 @@ struct
 	INCLUDE of string
       | EXCLUDE of string
 
+    exception ExcludedRoot of Url.t
     exception Mismatch of Url.t * Url.t * Inf.mismatch
     exception Rewrite of Url.t * Url.t * Url.t
     exception Cycle of Url.t list
@@ -92,6 +93,7 @@ struct
 	    val bound = emptyBoundPaths ()
 
 	    fun excludeNew (url, rea, expectedInf) =
+		if url = root then raise ExcludedRoot root else
 		let
 		    val index = allocateIndex importIndex
 		    val url'  = rewrite url
@@ -211,6 +213,8 @@ struct
 		else TextIO.print ("Imports (after rewrite):\n");
 		List.app (fn url => TextIO.print ("   " ^ url ^ "\n")) outer
 	    end;
-	    MyComponent.component {imports, body, inf}
+	    if UrlMap.size includes = 1 andalso List.length handlers = 1
+	    then Option.valOf (MyComponent.load root)
+	    else MyComponent.component {imports, body, inf}
 	end
 end

@@ -28,7 +28,7 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 	$(ALICETOOL) link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.alc: %.aml
-	alicec -c $< -o $@
+	alicec -z $< -o $@
 
 clean:
 	rm -f $(NATIVES:%=%.o)

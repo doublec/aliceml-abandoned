@@ -27,10 +27,10 @@ SRCDIR = $(SRCTOP)/lib/constraints
 VPATH = $(SRCDIR)
 
 ALICEC = alicec
-ALICEC_OPTS = 
+ALICEC_OPTS = -z
 ALICEDEP = alicedep
 ALICELINK = alicelink
-ALICELINK_OPTS = -v
+ALICELINK_OPTS = -z -v
 ifeq ($(TARGET), seam)
 NATIVES = 
 EXT = alc

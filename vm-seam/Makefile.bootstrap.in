@@ -106,13 +106,13 @@ VPATH = $(SRCTOP)
 
 ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-seam
 ALICEC1 = ALICE_HOME=build1/install ${bindir}/alicec --seam
-ALICEC2 = ALICE_HOME=build1/install ${bindir}/alicec --seam
+ALICEC2 = ALICE_HOME=build1/install ${bindir}/alicec --seam -z
 
 ALICEC_EXTRA_OPTS = --no-warn-conventions
 ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 
 ALICELINK1 = ALICE_HOME=build1/install ${bindir}/alicelink
-ALICELINK2 = ALICE_HOME=build1/install ${bindir}/alicelink
+ALICELINK2 = ALICE_HOME=build1/install ${bindir}/alicelink -z
 
 ALICELINK_OPTS = -v
 

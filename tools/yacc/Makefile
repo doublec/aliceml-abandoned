@@ -33,7 +33,7 @@ install: aliceyacclib $(LINKED_YACC)
 	install aliceyacc $(INSTALL_BIN_TO)
 
 $(LINKED_YACC):	$(AML_FILES:%.aml=%.alc) $(GENERATED_AML_FILES:%.aml=%.alc)
-	alicelink -v ./Main --include ./ -o $(LINKED_YACC) 
+	alicelink -z -v ./Main --include ./ -o $(LINKED_YACC)
 
 clean:
 	rm -f *.u[oi]
@@ -49,7 +49,7 @@ distclean:	clean
 	rm -f $(GENERATED_AML_FILES)
 	
 %.alc:	%.aml
-	alicec --no-warn-conventions $< -o $@
+	alicec -z --no-warn-conventions $< -o $@
 
 JackeParser.aml JACKE_PARSER-sig.aml:	jacke.grm
 	ml-yacc jacke.grm

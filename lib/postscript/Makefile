@@ -26,4 +26,4 @@ clean:
 	rm PS.alc
 
 %.alc: %.aml
-	alicec -c $< -o $@
+	alicec -z $< -o $@

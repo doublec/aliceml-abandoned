@@ -17,12 +17,12 @@ import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
 functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
     struct
-	val version = "1.0"
+	val version = "1.0.1"
 	val banner = "Alice " ^ version ^ " (\"" ^
 		     (case Config.vm of
 			  "mozart" => "Stockhausen Operette 4 Original Mix"
 			| "seam" => "Kraftwerk Album 1"
-			| _ => "Alien Invaderz Breakz Mix"
+			| _ => "Alien Invaders Breakz Mix"
 		     ) ^ "\"), mastered " ^
 		     Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
 	val copyright = "Copyright (c) 1999-" ^ Date.fmt "%Y" Config.buildDate
@@ -32,7 +32,9 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	val helpText =
 	    "Options:\n\
 	    \Gobal options:\n\
-	    \\t--recursive-compilation \n\
+	    \\t -z, --minimize\n\
+	    \\t\tMinimize output components.\n\
+	    \\t--recursive-compilation\n\
 	    \\t\tCompile imported components recursively if necessary.\n\
 	    \\t--trace-component-access\n\
 	    \\t\tTrace component loads and saves by the compiler.\n\
@@ -99,7 +101,9 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	open Switches
 
 	val booleanSwitches =
-	    [("recursive-compilation", Global.recursiveCompilation),
+	    [("z", Global.minimizeComponent),
+	     ("minimize", Global.minimizeComponent),
+	     ("recursive-compilation", Global.recursiveCompilation),
 	     ("trace-component-access", Global.traceComponentAccess),
 	     ("warn-conventions", Warn.conventions),
 	     ("warn-shadowing", Warn.shadowing),
@@ -127,7 +131,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	     ("generate-debug-code", CodeGen.debugMode)]
 
 	fun checkBooleanSwitches (s, (name, switch)::rest) =
-	    if "--" ^ name = s then (switch := true; true)
+	    if size name = 1 andalso "-" ^ name = s orelse "--" ^ name = s
+	    then (switch := true; true)
 	    else if "--no-" ^ name = s then (switch := false; true)
 	    else checkBooleanSwitches (s, rest)
 	  | checkBooleanSwitches (_, nil) = false

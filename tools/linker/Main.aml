@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,6 +17,7 @@ import structure OS          from "../../lib/system/OS"
 import structure CommandLine from "../../lib/system/CommandLine"
 import structure Url         from "../../lib/system/Url"
 import structure Resolver    from "../../lib/system/Resolver"
+import structure Store       from "../../lib/system/Store"
 import structure MyComponent from "MyComponent"
 import structure Link        from "Link"
 import structure PrintSig    from "PrintSig"
@@ -33,6 +34,7 @@ structure Main :> MAIN =
 	val root: string option ref = ref NONE
 	val outputFile: string option ref = ref NONE
 	val verbose = ref false
+	val minimize = ref false
 	val dumpsig = ref false
 	val boundary: Link.boundary list ref = ref nil
 	val rewrite: Resolver.Handler.t list ref = ref nil
@@ -59,6 +61,8 @@ structure Main :> MAIN =
 	      \    Specify the output file name (mandatory).\n\
 	      \-v, --verbose\n\
 	      \    Summarize which components are included/imported.\n\
+	      \-z, --minimize\n\
+	      \    Minimize output component.\n\
 	      \-d, --dumpsig\n\
 	      \    Print component's import and export signatures.\n\
 	      \--include PREFIX,...,PREFIX\n\
@@ -80,13 +84,18 @@ structure Main :> MAIN =
 			       verbose = !verbose,
 			       boundary = !boundary,
 			       rewrite = !rewrite @ [Resolver.Handler.default]}
+		val component =
+		    if !minimize then Store.minimize component else component
 	    in
 		MyComponent.save (outputFile, component);
 		if !dumpsig then PrintSig.printSig (outputFile, component)
 		else ();
 		OS.Process.success
 	    end
-	    handle Link.Mismatch (url, url', _) =>
+	    handle Link.ExcludedRoot url =>
+		       error ("cannot include root component\n\
+			      \   " ^ Url.toString url ^ "\n")
+		 | Link.Mismatch (url, url', _) =>
 		       error ("signature of component\n\
 			      \   " ^ Url.toString url ^ "\n\
 			      \does not match import requirement of component\n\
@@ -130,6 +139,7 @@ structure Main :> MAIN =
 	fun main (("-h"|"-?"|"--help"|"--usage")::_) = help ()
           | main (("--version")::_) = version ()
 	  | main (("-v"|"--verbose")::rest) = (verbose := true; main rest)
+	  | main (("-z"|"--minimize")::rest) = (minimize := true; main rest)
 	  | main (("-d"|"--dumpsig")::rest) = (dumpsig := true; main rest)
 	  | main ("--include"::includes::rest) =
 	    (boundary := (!boundary @ List.map Link.INCLUDE (csl includes));

@@ -43,7 +43,7 @@ depend:	$(GENERATED_FILES)
 	alicedep $(FILES) $(GENERATED_FILES) > Makefile.depend
 
 $(LINKED_HOSE): $(FILES:%.aml=%.alc) $(GENERATED_FILES:%.aml=%.alc)
-	alicelink -v ./Hose --include ./ -o $(LINKED_HOSE)
+	alicelink -z -v ./Hose --include ./ -o $(LINKED_HOSE)
 
 clean:
 	rm -f *.u[oi]
@@ -55,7 +55,7 @@ distclean:	clean
 	rm -f $(GENERATED_FILES)
 
 %.alc:	%.aml
-	alicec --no-warn-conventions $< -o $@
+	alicec -z --no-warn-conventions $< -o $@
 
 HoseParser.aml HOSE_PARSER-sig.aml:	hose.grm
 	ml-yacc hose.grm

@@ -91,13 +91,13 @@ sh_library: sh_components
 	$(ALICELINK) --include ./$(SH_ROOT) -o $(SH_LINKED)
 
 sw_library: sw_components
-	$(ALICELINK) --include ./$(SW_ROOT) -o $(SW_LINKED)
+	$(ALICELINK) -z --include ./$(SW_ROOT) -o $(SW_LINKED)
 
 %.$(SH_EXT) : %.aml
 	$(ALICEC) $< -o $@
 
 %.$(SW_EXT) : %.aml
-	$(ALICEC) $< -o $@
+	$(ALICEC) -z $< -o $@
 
 sh_clean: 
 	rm -f $(SH_COMPONENTS) $(SH_ROOT) Makefile.depend
