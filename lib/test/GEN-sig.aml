@@ -36,14 +36,15 @@ sig
     val oneOfFreq:  (int * 'a gen) list -> 'a gen
     val filter:	    'a gen * ('a -> bool) -> 'a gen 
   
-    val list:	    'a gen -> 'a list gen
-    val option:	    'a gen -> 'a option gen
-    val alt:	    'a gen * 'b gen -> ('a, 'b) alt gen
-    val vector:	    'a gen -> 'a vector gen
-    val array:	    'a gen -> 'a array gen
-    val arraySlice: 'a gen -> 'a ArraySlice.slice gen
-    val array2:     'a gen -> 'a Array2.array gen
-    val refOf:	    'a gen -> 'a ref gen
+    val list:	     'a gen -> 'a list gen
+    val option:	     'a gen -> 'a option gen
+    val alt:	     'a gen * 'b gen -> ('a, 'b) alt gen
+    val vector:	     'a gen -> 'a vector gen
+    val vectorSlice: 'a gen -> 'a VectorSlice.slice gen
+    val array:	     'a gen -> 'a array gen
+    val arraySlice:  'a gen -> 'a ArraySlice.slice gen
+    val array2:      'a gen -> 'a Array2.array gen
+    val refOf:	     'a gen -> 'a ref gen
 
     (* Standard generators *)
     val word:	    word gen

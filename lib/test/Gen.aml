@@ -58,29 +58,33 @@ struct
 	    cond' (gen n, 1)
 	end
 
+    val cardinaln	= Random.int
     fun bool n		= oneOf [const true, const false] n
-    fun char n		= Char.chr (Random.int (Char.maxOrd + 1))
+    fun char n		= Char.chr (cardinal (Char.maxOrd + 1))
     fun string n	= String.tabulate (Int.abs n, char) 
-    fun int n		= if bool 0 then Random.int n else ~ (Random.int n)
+    fun int n		= if bool 0 then cardinal n else ~ (cardinal n)
     fun largeInt n      = IntInf.* (IntInf.fromInt (int n), 
 				    IntInf.fromInt (int n))
-    fun word n		= Word.fromInt (Random.int n)
-    fun word8 n         = Word8.fromInt (Random.int n)
-    fun word32 n        = LargeWord.fromInt (Random.int n)
+    fun word n		= Word.fromInt (cardinal n)
+    fun word8 n         = Word8.fromInt (cardinal n)
+    fun word32 n        = LargeWord.fromInt (cardinal n)
     fun real n		= Random.real (Real.fromInt n)
-    fun cardinal n	= Random.int n
 
     fun option gen n	= if bool 0 then SOME (gen n) else NONE
     fun alt (ga, gb) n	= if bool 0 then FST (ga n) else SND (gb n)	
-    fun vector gen n	= Vector.tabulate (Int.abs n, gen)
-    fun array gen n	= Array.tabulate (Int.abs n, gen)
+    fun vector gen n	= Vector.tabulate (cardinal n, gen)
+    fun vectorSlice gen n = VectorSlice.slice (vector gen n,
+					       cardinal n,
+					       option cardinal n)
+			    handle Subscript => vectorSlice gen n
+    fun array gen n	= Array.tabulate (cardinal n, gen)
     fun arraySlice gen n = ArraySlice.slice (array gen n, 
-					     int n,
-					     option int n) 
+					     cardinal n,
+					     option cardinal n) 
 			    handle Subscript => arraySlice gen n
     fun array2 gen n    = Array2.tabulate Array2.ColMajor 
-			                  (Int.abs (int n), 
-					   Int.abs (int n), 
+			                  (cardinal n, 
+					   cardinal n, 
 					   fn (a, b) => gen (a + b))
     fun refOf gen n	= ref (gen n)
     
