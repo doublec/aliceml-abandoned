@@ -234,29 +234,4 @@
   </P>
 
 
-
-<?php section("cell", "cells") ?>
-
-  <P>
-    For concurrent programming, there exists a concurrent variant of
-    ML references in the structure <TT>Cell</TT>:
-  </P>
-
-  <PRE>
-	structure Cell :
-	sig
-	    type 'a cell
-
-	    val cell :		'a -> 'a cell
-	    val exchange :	'a cell * 'a -> 'a
-	end
-  </PRE>
-
-  <P>
-    The operation <TT>cell</TT> creates a new cell and initializes it with
-    the given value. With <TT>exchange</TT>, the content of a cell can be
-    replaced by a new value. The old value is returned. The <TT>exchange</TT>
-    operation is atomic, and can thus be used for synchronisation.
-  </P>
-
 <?php footing() ?>
