@@ -38,19 +38,28 @@ DEFINE0(UnsafeComponent_getInitialTable) {
   RETURN(result);
 } END
 
+DEFINE2(UnsafeComponent_save) {
+  DECLARE_STRING(s, x0);
+  return Pickler::Save(static_cast<Chunk *>(s), x1, taskStack);
+} END
+
 DEFINE1(UnsafeComponent_load) {
   DECLARE_STRING(s, x0);
   taskStack->PushFrame(prim_self);
   return Unpickler::Load(static_cast<Chunk *>(s), taskStack);
 } END
 
-DEFINE2(UnsafeComponent_save) {
+DEFINE1(UnsafeComponent_pack_) {
+  return Pickler::Pack(x0, taskStack);
+} END
+
+DEFINE1(UnsafeComponent_unpack_) {
   DECLARE_STRING(s, x0);
-  return Pickler::Save(static_cast<Chunk *>(s), x1, taskStack);
+  return Unpickler::Unpack(static_cast<Chunk *>(s), taskStack);
 } END
 
 word UnsafeComponent(void) {
-  Tuple *t = Tuple::New(8);
+  Tuple *t = Tuple::New(10);
   t->Init(0, Unpickler::Corrupt);
   t->Init(1, Pickler::Sited);
   t->Init(2, Unpickler::Corrupt);
@@ -60,7 +69,11 @@ word UnsafeComponent(void) {
 				    UnsafeComponent_getInitialTable, 0, true));
   t->Init(6, Primitive::MakeClosure("UnsafeComponent.load",
 				    UnsafeComponent_load, 1, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeComponent.save",
+  t->Init(7, Primitive::MakeClosure("UnsafeComponent.pack_",
+				    UnsafeComponent_pack_, 1, true));
+  t->Init(8, Primitive::MakeClosure("UnsafeComponent.save",
 				    UnsafeComponent_save, 2, true));
+  t->Init(9, Primitive::MakeClosure("UnsafeComponent.unpack_",
+				    UnsafeComponent_unpack_, 1, true));
   RETURN_STRUCTURE(t);
 }
