@@ -35,6 +35,8 @@ Group is
 	CELL-sig.aml
 	Cell.aml
 
+	../../bootstrap/DummyHole.sml
+
 	DEPTH_FIRST_SEARCH-sig.aml
 	MkDepthFirstSearch.aml
 
