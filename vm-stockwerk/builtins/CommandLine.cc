@@ -1,27 +1,23 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "CommandLine.hh"
+DEFINE1(CommandLine_name) {
+  RETURN_UNIT; //--** not implemented
+} END
 
-namespace Builtins {
-  namespace CommandLine {
-    word name(word a) {
-      return a; // to be determined
-    }
-    word arguments(word a) {
-      return a; // to be determined
-    }
-  }
-}
+DEFINE1(CommandLine_arguments) {
+  RETURN_UNIT; //--** not implemented
+} END

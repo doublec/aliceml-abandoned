@@ -1,65 +1,52 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
+DEFINE2(Unsafe_Array_sub) {
+  DECLARE_ARRAY(array, x0);
+  DECLARE_INT(index, x1);
+  RETURN(array->Sub(index));
+} END
 
-namespace Builtins {
-  namespace Unsafe {
-    namespace Array {
-      word sub(word a, word i) {
-	a = CommonOp::Sync(a);
-	i = CommonOp::Sync(i);
-	return Store::WordToBlock(a)->GetArg(1 + Store::WordToInt(i));
-      }
-      word update(word a, word i, word x) {
-	a = CommonOp::Sync(a);
-	i = CommonOp::Sync(i);
-	Store::WordToBlock(a)->ReplaceArg(1 + Store::WordToInt(i), x);
-	return Store::IntToWord(0); // to be determined
-      }
-    }
-    namespace String {
-      word sub(word a, word i) {
-	int iv = Store::WordToInt(CommonOp::Sync(i));
+DEFINE3(Unsafe_Array_update) {
+  DECLARE_ARRAY(array, x0);
+  DECLARE_INT(index, x1);
+  array->Update(index, x2);
+  RETURN_UNIT;
+} END
 
-	a = CommonOp::Sync(a);
-	return Store::IntToWord((((::String *) Store::WordToBlock(a))->GetValue())[iv]);
-      }
-    }
-    namespace Vector {
-      word sub(word v, word i) {
-	v = CommonOp::Sync(v);
-	i = CommonOp::Sync(i);
-	return Store::WordToBlock(v)->GetArg(1 + Store::WordToInt(i));
-      }
-    }
-    word cast(word a) {
-      return a; // to be determined
-    }
-    word getTag(word a) {
-      Block *b;
-      a = CommonOp::Sync(a);
-      
-      if ((b = Store::WordToBlock(a)) != INVALID_POINTER) {
-	return Store::IntToWord((int) b->GetLabel());
-      }
-      else {
-	return a; // to be determined
-      } 
-    }
-    word getValue(word a) {
-      return a; // to be determined
-    }
-  }
-}
+DEFINE2(Unsafe_String_sub) {
+  DECLARE_STRING(string, x0);
+  DECLARE_INT(index, x1);
+  RETURN_INT(string->GetValue()[index]);
+} END
+
+DEFINE2(Unsafe_Vector_sub) {
+  DECLARE_VECTOR(vector, x0);
+  DECLARE_INT(index, x1);
+  RETURN(vector->Sub(index));
+} END
+
+DEFINE1(Unsafe_cast) {
+  RETURN(x0);
+} END
+
+void Primitive::RegisterUnsafe() {
+  Register("Unsafe.Array.sub", Unsafe_Array_sub);
+  Register("Unsafe.Array.update", Unsafe_Array_update);
+  Register("Unsafe.String.sub", Unsafe_String_sub);
+  Register("Unsafe.Vector.sub", Unsafe_Vector_sub);
+  Register("Unsafe.cast", Unsafe_cast);
+};

@@ -1,9 +1,11 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -12,30 +14,33 @@
 
 #include <cstdlib>
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "OS.hh"
+static char *ToCString(String *string) {
+  int length = string->GetLength();
+  char *s = static_cast<char *>(malloc(length + 1));
+  memcpy(s, string->GetValue(), length);
+  s[length] = '\0';
+  return s;
+};
 
-namespace Builtins {
-  namespace OS {
-    namespace Process {
-      word system(word a) {
-	String *s = (String *) Store::WordToBlock(CommonOp::Sync(a));
-	char *buf = s->GetValue();
-	buf[s->GetLength()] = 0x00;
-	return Store::IntToWord(std::system(buf));
-      }
-      word exit(word a) {
-	std::exit(Store::WordToInt(CommonOp::Sync(a)));
-	return Store::IntToWord(0); // to be determined
-      }
-      word getEnv(word a) {
-	String *s = (String *) Store::WordToBlock(CommonOp::Sync(a));
-	char *buf = s->GetValue();
-	buf[s->GetLength()] = 0x00;
-	return String::New(std::getenv(buf))->ToWord();
-      }
-    }
-  }
-}
+DEFINE1(OS_Process_system) {
+  DECLARE_STRING(string, x0);
+  char *command = ToCString(string);
+  int result = std::system(command);
+  free(command);
+  RETURN_INT(result);
+} END
+
+DEFINE1(OS_Process_exit) {
+  DECLARE_INT(i, x0);
+  std::exit(i);
+} END
+
+DEFINE1(getEnv) {
+  DECLARE_STRING(string, x0);
+  char *name = ToCString(string);
+  char *value = std::getenv(name);
+  free(name);
+  RETURN(String::New(value)->ToWord());
+} END

@@ -1,33 +1,46 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "General.hh"
-#
-namespace Builtins {
-  namespace General {
-    word assign(word c, word v) {
-      Cell *cv = (Cell *) Store::WordToBlock(CommonOp::Sync(c));
-      cv->Assign(v);
-      return Store::IntToWord(0); // to be determined
-    }
-    word exchange(word c, word nv) {
-      Cell *cv = (Cell *) Store::WordToBlock(CommonOp::Sync(c));
-      return cv->Exchange(nv);
-    }
-    word exnName(word a) {
-      return a; // to be determined
-    }
-  }
-}
+DEFINE2(General_assign) {
+  DECLARE_CELL(cell, x0);
+  cell->Assign(x1);
+  RETURN_UNIT;
+} END
+
+DEFINE2(General_exchange) {
+  DECLARE_CELL(cell, x0);
+  RETURN(cell->Exchange(x1));
+} END
+
+DEFINE1(General_exnName) {
+  RETURN(String::New("")->ToWord()); //--** to be determined
+} END
+
+void Primitive::RegisterGeneral() {
+  Register("General.:=", General_assign);
+  Register("General.Bind", Constructor::New()->ToWord()); //--** unique
+  Register("General.Chr", Constructor::New()->ToWord()); //--** unique
+  Register("General.Div", Constructor::New()->ToWord()); //--** unique
+  Register("General.Domain", Constructor::New()->ToWord()); //--** unique
+  Register("General.Fail", Constructor::New()->ToWord()); //--** unique
+  Register("General.Match", Constructor::New()->ToWord()); //--** unique
+  Register("General.Overflow", Constructor::New()->ToWord()); //--** unique
+  Register("General.Size", Constructor::New()->ToWord()); //--** unique
+  Register("General.Span", Constructor::New()->ToWord()); //--** unique
+  Register("General.Subscript", Constructor::New()->ToWord()); //--** unique
+  Register("General.exchange", General_exchange);
+  Register("General.exnName", General_exnName);
+};

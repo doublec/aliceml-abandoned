@@ -1,95 +1,109 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "Word.hh"
+#define WORD_WORD_TO_WORD_OP(name, op)		\
+  DEFINE2(name) {				\
+    DECLARE_INT(i, x0);				\
+    DECLARE_INT(j, x1);				\
+    RETURN_INT(i op j);				\
+  } END
 
-namespace Builtins {
-  namespace Word {
-    word fromIntQuote(word a) {
-      return a; // to be determined
-    }
-    word fromInt(word a) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)));
-    }
-    word toInt(word a) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)));
-    }
-    word toIntX(word a) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)));
-    }
-    word opadd(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) +
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opsub(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) -
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opmul(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) *
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opdiv(word a, word b) {
-      // exception handling to be determined
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) /
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word mod(word a, word b) {
-      // exception handling to be determined
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord((ai - ((int) (ai / bi))));
-    }
-    word orb(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord(ai | bi);
-    }
-    word xorb(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord(ai ^ bi);
-    }
-    word andb(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord(ai & bi);
-    }
-    word notb(word a) {
-      return Store::IntToWord(~Store::WordToInt(CommonOp::Sync(a)));
-    }
-    word shl(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord(ai << bi);
-    }
-    word shr(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord(((u_int) ai) >> bi);
-    }
-    word arithshr(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      return Store::IntToWord(ai >> bi); // to be determined
-    }
-    word toString(word a) {
-      static char buf[200];
-      
-      std::sprintf(buf, "%d", Store::WordToInt(CommonOp::Sync(a)));
-      return String::New(buf)->ToWord();
-    }
-  }
-}
+//--** operations can be implemented more efficiently by not right-shifting!
+//--** else topmost bit has to be truncated (or assertions fail)
+
+WORD_WORD_TO_WORD_OP(Word_opadd, +)
+WORD_WORD_TO_WORD_OP(Word_opsub, -)
+WORD_WORD_TO_WORD_OP(Word_opmul, *)
+WORD_WORD_TO_WORD_OP(Word_opshl, <<)
+
+DEFINE2(Word_opshr) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  RETURN_INT((i & 0x7FFFFFFF) >> j);
+} END
+
+DEFINE2(Word_oparithshr) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  signed int v = i << 1;
+  RETURN_INT(v >> (j + 1));
+} END
+
+WORD_WORD_TO_WORD_OP(Word_andb, &)
+
+DEFINE2(Word_div) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  if (j == 0)
+    RAISE(GlobalPrimitives::General_Div);
+  RETURN_INT(i / j);
+} END
+
+DEFINE2(Word_fromIntQuote) { //--** should be fromInt (not Quote)
+  DECLARE_INT(i, x0);
+  RETURN(x0);
+} END
+
+WORD_WORD_TO_WORD_OP(Word_mod, %)
+
+DEFINE1(Word_notb) {
+  DECLARE_INT(i, x0);
+  RETURN_INT(~i);
+} END
+
+WORD_WORD_TO_WORD_OP(Word_orb, |)
+
+DEFINE1(Word_toInt) {
+  DECLARE_INT(i, x0);
+  if (i < 0)
+    RAISE(GlobalPrimitives::General_Overflow);
+  RETURN(x0);
+} END
+
+DEFINE1(Word_toIntX) {
+  DECLARE_INT(i, x0);
+  RETURN(x0);
+} END
+
+DEFINE1(Word_toString) {
+  //--** inelegant; string is traversed twice
+  static char buf[200];
+  DECLARE_INT(i, x0);
+  std::sprintf(buf, "%x", i);
+  RETURN(String::New(buf)->ToWord());
+} END
+
+WORD_WORD_TO_WORD_OP(Word_xorb, ^)
+
+void Primitive::RegisterWord() {
+  Register("Word.+", Word_opadd);
+  Register("Word.-", Word_opsub);
+  Register("Word.*", Word_opmul);
+  Register("Word.<<", Word_opshl);
+  Register("Word.>>", Word_opshr);
+  Register("Word.~>>", Word_oparithshr);
+  Register("Word.andb", Word_andb);
+  Register("Word.div", Word_div);
+  Register("Word.fromInt'", Word_fromIntQuote);
+  Register("Word.mod", Word_mod);
+  Register("Word.notb", Word_notb);
+  Register("Word.orb", Word_orb);
+  Register("Word.toInt", Word_toInt);
+  Register("Word.toIntX", Word_toIntX);
+  Register("Word.toString", Word_toString);
+  Register("Word.wordSize", Store::IntToWord(31));
+  Register("Word.xorb", Word_xorb);
+};

@@ -1,9 +1,11 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -12,126 +14,132 @@
 
 #include <cstdlib>
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "Int.hh"
+//--** overflow checking missing everywhere
 
-namespace Builtins {
-  namespace Int {
-    word opnegate(word a) {
-      // overflow checking to be determined
-      return Store::IntToWord(-Store::WordToInt(CommonOp::Sync(a)));
-    }
-    word opadd(word a, word b) {
-      // overflow checking
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) +
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opsub(word a, word b) {
-      // overflow checking
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) -
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opmul(word a, word b) {
-      // overflow checking
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) *
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opless(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) <
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opgreater(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) >
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word oplessEq(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) <=
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word opgreaterEq(word a, word b) {
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) >=
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word abs(word a) {
-      // overflow checking
-      return Store::IntToWord(std::abs(Store::WordToInt(CommonOp::Sync(a))));
-    }
-    word compare(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      // to be determined
-      if (ai == bi) {
-	return Store::IntToWord(0); // EQUAL
-      }
-      else if (ai < bi) {
-	return Store::IntToWord(0); // LESS
-      }
-      else {
-	return Store::IntToWord(0); // GREATER
-      }
-    }
-    word div(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      int b1 = (ai >= 0);
-      int b2 = (bi >= 0);
-      // overflow checking
+#define INT_INT_TO_INT_OP(name, op)		\
+  DEFINE2(name) {				\
+    DECLARE_INT(i, x0);				\
+    DECLARE_INT(j, x1);				\
+    RETURN_INT(i op j);				\
+  } END
 
-      if (b1 == b2) {
-	return Store::IntToWord((ai / bi));
-      }
-      else if (b2) {
-	return Store::IntToWord(((ai - bi + 1) / bi));
-      }
-      else {
-	return Store::IntToWord(((ai - bi - 1) / bi));
-      }
-    }
-    word mod(word a, word b) {
-      int ai = Store::WordToInt(CommonOp::Sync(a));
-      int bi = Store::WordToInt(CommonOp::Sync(b));
-      int c  = (ai % bi);
-      // overflow checking
+#define INT_INT_TO_INT_OP_DIV(name, op)		\
+  DEFINE2(name) {				\
+    DECLARE_INT(i, x0);				\
+    DECLARE_INT(j, x1);				\
+    if (j == 0)					\
+      RAISE(GlobalPrimitives::General_Div);	\
+    RETURN_INT(i op j);				\
+  } END
 
-      if (c == 0) {
-	return Store::IntToWord(c);
-      }
-      else {
-	if (c < 0) {
-	  if (bi <= 0) {
-	    return Store::IntToWord(c);
-	  }
-	  else {
-	    return Store::IntToWord((c + bi));
-	  }
-	}
-	else {
-	  if (bi < 0) {
-	    return Store::IntToWord((c + bi));
-	  }
-	  else {
-	    return Store::IntToWord(c);
-	  }
-	}
-      }
-    }
-    word quot(word a, word b) {
-      // overflow checking
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) /
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word rem(word a, word b) {
-      // overflow checking
-      return Store::IntToWord(Store::WordToInt(CommonOp::Sync(a)) %
-			      Store::WordToInt(CommonOp::Sync(b)));
-    }
-    word toString(word a) {
-      static char buf[20];
+#define INT_INT_TO_BOOL_OP(name, op)		\
+  DEFINE2(name) {				\
+    DECLARE_INT(i, x0);				\
+    DECLARE_INT(j, x1);				\
+    RETURN_BOOL(i op j);			\
+  } END
 
-      std::sprintf(buf, "%d", Store::WordToInt(CommonOp::Sync(a)));
-      return String::New(buf)->ToWord();
+DEFINE1(Int_opnegate) {
+  DECLARE_INT(i, x0);
+  RETURN_INT(-i);
+} END
+
+INT_INT_TO_INT_OP(Int_opadd, +)
+INT_INT_TO_INT_OP(Int_opsub, -)
+INT_INT_TO_INT_OP(Int_opmul, *)
+INT_INT_TO_BOOL_OP(Int_opless, <)
+INT_INT_TO_BOOL_OP(Int_opgreater, >)
+INT_INT_TO_BOOL_OP(Int_oplessEq, <=)
+INT_INT_TO_BOOL_OP(Int_opgreaterEq, >=)
+
+DEFINE1(Int_abs) {
+  DECLARE_INT(i, x0);
+  RETURN_INT(std::abs(i));
+} END
+
+DEFINE2(Int_compare) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  if (i == j) {
+    RETURN_INT(0);   // EQUAL
+  } else if (i < j) {
+    RETURN_INT(2);   // LESS
+  } else { // i > j
+    RETURN_INT(1);   // GREATER
+  }
+} END
+
+DEFINE2(Int_div) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  if (j == 0)
+    RAISE(GlobalPrimitives::General_Div);
+  int b1 = i >= 0;
+  int b2 = j >= 0;
+  if (b1 == b2) {
+    RETURN_INT(i / j);
+  } else if (b2) {
+    RETURN_INT((i - j + 1) / j);
+  } else {
+    RETURN_INT((i - j - 1) / j);
+  }
+} END
+
+DEFINE2(Int_mod) {
+  DECLARE_INT(i, x0);
+  DECLARE_INT(j, x1);
+  if (j == 0)
+    RAISE(GlobalPrimitives::General_Div);
+  int c = i % j;
+  if (c == 0) {
+    RETURN_INT(c);
+  } else {
+    if (c < 0) {
+      if (j <= 0) {
+	RETURN_INT(c);
+      } else {
+	RETURN_INT(c + j);
+      }
+    } else {
+      if (j < 0) {
+	RETURN_INT(c + j);
+      } else {
+	RETURN_INT(c);
+      }
     }
   }
-}
+} END
+
+INT_INT_TO_INT_OP_DIV(Int_quot, /)
+INT_INT_TO_INT_OP_DIV(Int_rem, %)
+
+DEFINE1(Int_toString) {
+  //--** not elegant: string is traversed twice
+  static char buf[20];
+  DECLARE_INT(i, x0);
+  std::sprintf(buf, "%d", i);
+  RETURN(String::New(buf)->ToWord());
+} END
+
+void Primitive::RegisterInt() {
+  Register("Int.~", Int_opnegate);
+  Register("Int.+", Int_opadd);
+  Register("Int.-", Int_opsub);
+  Register("Int.*", Int_opmul);
+  Register("Int.<", Int_opless);
+  Register("Int.>", Int_opgreater);
+  Register("Int.<=", Int_oplessEq);
+  Register("Int.>=", Int_opgreaterEq);
+  Register("Int.abs", Int_abs);
+  Register("Int.compare", Int_compare);
+  Register("Int.div", Int_div);
+  Register("Int.maxInt", Store::IntToWord(0x3FFFFFFF));
+  Register("Int.minInt", Store::IntToWord(-0x40000000));
+  Register("Int.mod", Int_mod);
+  Register("Int.precision", Store::IntToWord(31));
+  Register("Int.quot", Int_quot);
+  Register("Int.rem", Int_rem);
+  Register("Int.toString", Int_toString);
+};

@@ -4,17 +4,21 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 OBJS = \
-	Array.o Char.o CommandLine.o Future.o General.o Hole.o Int.o Math.o \
-	OS.o Real.o String.o TextIO.o Thread.o Unsafe.o Vector.o Word.o \
-	Builtins.o #Prebound.o
+	GlobalPrimitives.o Primitive.o Internal.o Unqualified.o \
+	Array.o Char.o Future.o General.o Hole.o Int.o List.o Math.o \
+	Option.o Real.o String.o Thread.o Unsafe.o Vector.o Word.o
+
+#--** CommandLine, OS, TextIO do not belong here
 
 all: libbuiltins.a
 
 libbuiltins.a: $(OBJS)
-	ar rc $@ $(OBJS) || exit 1
-	ranlib $@
+	ar rc $@ $(OBJS) && ranlib $@
 
 clean:
-	rm -rf $(OBJS) libbuiltins.a
+	rm -f $(OBJS)
 
-distclean: clean
+veryclean: clean
+	rm -f libbuiltins.a
+
+distclean: veryclean

@@ -1,36 +1,68 @@
 //
 // Author:
-//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
+#include "scheduler/Transients.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "Hole.hh"
+DEFINE2(Hole_fail) {
+  Transient *transient = Store::WordToTransient(x0);
+  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE)
+    RAISE(GlobalPrimitives::Hole_Hole);
+  ConVal *exn = 
+    ConVal::New(Constructor::FromWord(GlobalPrimitives::Future_Future), 1);
+  exn->Init(0, x1);
+  transient->Become(CANCELLED, exn->ToWord());
+  RETURN_UNIT;
+} END
 
-namespace Builtins {
-  namespace Hole {
-    word fail(word a, word b) {
-      return a; // to be determined
-    }
-    word fill(word a, word b) {
-      return a; // to be determined
-    }
-    word future(word a) {
-      return a; // to be determined
-    }
-    word hole(word a) {
-      return a; // to be determined
-    }
-    word isfailed(word a) {
-      return a; // to be determined
-    }
-  }
-}
+DEFINE2(Hole_fill) {
+  Transient *transient = Store::WordToTransient(x0);
+  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE)
+    RAISE(GlobalPrimitives::Hole_Hole);
+  if (!static_cast<Hole *>(transient)->Fill(x1))
+    RAISE(GlobalPrimitives::Hole_Cyclic);
+  RETURN_UNIT;
+} END
+
+DEFINE1(Hole_future) {
+  Transient *transient = Store::WordToTransient(x0);
+  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE)
+    RAISE(GlobalPrimitives::Hole_Hole);
+  RETURN(static_cast<Hole *>(transient)->GetFuture()->ToWord());
+} END
+
+DEFINE0(Hole_hole) {
+  RETURN(Hole::New()->ToWord());
+} END
+
+DEFINE1(Hole_isFailed) {
+  Transient *transient = Store::WordToTransient(x0);
+  RETURN_BOOL(transient != INVALID_POINTER &&
+	      transient->GetLabel() == CANCELLED);
+} END
+
+DEFINE1(Hole_isHole) {
+  Transient *transient = Store::WordToTransient(x0);
+  RETURN_BOOL(transient != INVALID_POINTER &&
+	      transient->GetLabel() == HOLE);
+} END
+
+void Primitive::RegisterHole() {
+  Register("Hole.Cyclic", Constructor::New()->ToWord()); //--** unique
+  Register("Hole.Hole", Constructor::New()->ToWord()); //--** unique
+  Register("Hole.fail", Hole_fail);
+  Register("Hole.fill", Hole_fill);
+  Register("Hole.future", Hole_future);
+  Register("Hole.hole", Hole_hole);
+  Register("Hole.isFailed", Hole_isFailed);
+  Register("Hole.isFailed", Hole_isHole);
+};

@@ -1,9 +1,11 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -12,136 +14,131 @@
 
 #include <cstring>
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#include "CommonOp.hh"
-#include "ListOp.hh"
-#include "String.hh"
+DEFINE2(String_opconcat) {
+  DECLARE_STRING(string1, x0);
+  DECLARE_STRING(string2, x1);
+  int length1 = string1->GetLength();
+  int length2 = string2->GetLength();
+  String *newString = String::New(length1 + length2);
+  char *base = newString->GetValue();
+  std::memcpy(base, string1->GetValue(), length1);
+  std::memcpy(base + length1, string2->GetValue(), length2);
+  RETURN(newString->ToWord());
+} END
 
-#define MIN(a, b) (((a) > (b)) ? (b) : (a))
-
-static int DoCompare(word a, word b) {
-  String *as = (::String *) Store::WordToBlock(CommonOp::Sync(a));
-  String *bs = (::String *) Store::WordToBlock(CommonOp::Sync(b));
-  int alen   = as->GetLength();
-  int blen   = bs->GetLength();
-  int val    = std::memcmp(as->GetValue(), bs->GetValue(), MIN(alen, blen)); 
-
-  if (val == 0) {
-    if (alen < blen) {
+static inline int DoCompare(String *string1, String *string2) {
+  int length1 = string1->GetLength();
+  int length2 = string2->GetLength();
+  int result = std::memcmp(string1->GetValue(), string2->GetValue(),
+			   length1 < length2? length1: length2);
+  if (result == 0) {
+    if (length1 < length2)
       return -1;
-    }
-    else if (alen == blen) {
+    else if (length1 == length2)
       return 0;
-    }
-    else {
+    else
       return 1;
-    }
-  }
-  else {
-    return val;
-  }
+  } else
+    return result;
 }
 
-namespace Builtins {
-  namespace String {
-    word append(word a, word b) {
-      ::String *as = (::String *) Store::WordToBlock(CommonOp::Sync(a));
-      ::String *bs = (::String *) Store::WordToBlock(CommonOp::Sync(b));
-      int alen     = as->GetLength();
-      int blen     = bs->GetLength();
-      ::String *ns = ::String::New(alen + blen);
-      char *cs     = ns->GetValue();
+#define COMPARISON(name, op)				\
+  DEFINE2(name) {					\
+    DECLARE_STRING(string1, x0);			\
+    DECLARE_STRING(string2, x1);			\
+    RETURN_BOOL(DoCompare(string1, string2) op 0);	\
+  } END
 
-      std::memcpy(cs, as->GetValue(), alen);
-      std::memcpy(cs + alen, bs->GetValue(), blen);
-      return ns->ToWord();
-    }
-    word opless(word a, word b) {
-      return Store::IntToWord(DoCompare(a, b) == -1);
-    }
-    word opgreater(word a, word b) {
-      return Store::IntToWord(DoCompare(a, b) == 1);
-    }
-    word oplessEq(word a, word b) {
-      return Store::IntToWord(DoCompare(a, b) <= 0);
-    }
-    word opgreaterEq(word a, word b) {
-      return Store::IntToWord(DoCompare(a, b) >= 0);
-    }
-    word compare(word a, word b) {
-      switch (DoCompare(a, b)) {
-      case -1:
-	return Store::IntToWord(0); // LESS
-      case 1:
-	return Store::IntToWord(0); // GREATER
-      default:
-	return Store::IntToWord(0); // EQUAL
-      }
-    }
-    word explode(word a) {
-      ::String *as = (::String *) Store::WordToBlock(CommonOp::Sync(a));
-      char *base   = as->GetValue();
-      word cell    = Store::IntToWord(1);
-      
-      for (int i = (as->GetLength() - 1); i >= 0; i--) {
-	cell = ListOp::Cons(Store::IntToWord((int) base[i]), cell);
-      }
-      
-      return cell;
-    }
-    word implode(word a) {
-      ::String *s = ::String::New(ListOp::Length(a)); 
-      char *base  = s->GetValue();
-      int i       = 0;
+COMPARISON(String_opless, <)
+COMPARISON(String_opgreater, >)
+COMPARISON(String_oplessEq, <=)
+COMPARISON(String_opgreaterEq, >=)
 
-      while (true) {
-	Block *cell = Store::WordToBlock(CommonOp::Sync(a));
-
-	if (cell != INVALID_POINTER) {
-	  base[i++] = (char) Store::WordToBlock(cell->GetArg(1));
-	  a         = cell->GetArg(2);
-	}
-	else {
-	  return s->ToWord();
-	}
-      }
-    }
-    word size(word a) {
-      return Store::IntToWord(((::String *) Store::WordToBlock(CommonOp::Sync(a)))->GetLength());
-    }
-    word sub(word a, word b) {
-      ::String *as = (::String *) Store::WordToBlock(CommonOp::Sync(a));
-      int i        = Store::WordToInt(CommonOp::Sync(b));
-      
-      if (i < as->GetLength()) {
-	return Store::IntToWord((as->GetValue())[i]);
-      }
-      else {
-	return Store::IntToWord(0); // to be determined
-      }
-    }
-    word substring(word a, word b, word c) {
-      ::String *as = (::String *) Store::WordToBlock(CommonOp::Sync(a));
-      int si       = Store::WordToInt(CommonOp::Sync(b));
-      int ei       = Store::WordToInt(CommonOp::Sync(c));
-      int len      = as->GetLength();
-
-      if ((si >= 0) && (si < len) && (ei >= 0) && (ei < len) && (ei >= si)) {
-	int nlen     = (ei - si + 1);
-	::String *ns = ::String::New(nlen);
-	
-	std::memcpy(ns->GetValue(), as->GetValue() + si, nlen);
-	return ns->ToWord();
-      }
-      else {
-	return Store::IntToWord(0); // to be determined
-      }
-    }
-    word str(word a) {
-      static char *buf = " ";
-      buf[0] = (char) Store::WordToInt(CommonOp::Sync(a));
-      return ::String::New(buf, 1)->ToWord();
-    }
+DEFINE2(String_compare) {
+  DECLARE_STRING(string1, x0);
+  DECLARE_STRING(string2, x1);
+  int result = DoCompare(string1, string2);
+  if (result < 0) {
+    RETURN_INT(2);   // LESS
+  } else if (result == 0) {
+    RETURN_INT(0);   // EQUAL
+  } else { // result > 0
+    RETURN_INT(1);   // GREATER
   }
-}
+} END
+
+DEFINE1(String_explode) {
+  DECLARE_STRING(string, x0);
+  char *base = string->GetValue();
+  word list = Store::IntToWord(1); // nil
+  for (int i = string->GetLength(); i--; ) {
+    TagVal *cons = TagVal::New(0, 2);
+    cons->Init(0, Store::IntToWord(base[i]));
+    cons->Init(1, list);
+    list = cons->ToWord();
+  }
+  RETURN(list);
+} END
+
+DEFINE1(String_implode) {
+  DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
+  String *string = String::New(length);
+  char *base = string->GetValue();
+  int i = 1;
+  while (tagVal != INVALID_POINTER) {
+    base[i++] = Store::WordToInt(tagVal->Sel(0));
+    tagVal = TagVal::FromWord(tagVal->Sel(1));
+  }
+  RETURN(string->ToWord());
+} END
+
+DEFINE1(String_size) {
+  DECLARE_STRING(string, x0);
+  RETURN_INT(string->GetLength());
+} END
+
+DEFINE2(String_sub) {
+  DECLARE_STRING(string, x0);
+  DECLARE_INT(index, x1);
+  if (index < 0 || index >= string->GetLength())
+    RAISE(GlobalPrimitives::General_Subscript);
+  RETURN_INT(string->GetValue()[index]);
+} END
+
+DEFINE3(String_substring) {
+  DECLARE_STRING(string, x0);
+  DECLARE_INT(startIndex, x1);
+  DECLARE_INT(sliceLength, x2);
+  int stringLength = string->GetLength();
+  if (startIndex < 0 || sliceLength < 0 ||
+      startIndex + sliceLength > stringLength)
+    RAISE(GlobalPrimitives::General_Subscript);
+  String *substring = String::New(sliceLength);
+  std::memcpy(substring->GetValue(),
+	      string->GetValue() + startIndex, sliceLength);
+  RETURN(substring->ToWord());
+} END
+
+DEFINE1(String_str) {
+  DECLARE_INT(i, x0);
+  char c = static_cast<char>(i);
+  RETURN(String::New(&c, 1)->ToWord());
+} END
+
+void Primitive::RegisterString() {
+  Register("String.^", String_opconcat);
+  Register("String.<", String_opless);
+  Register("String.>", String_opgreater);
+  Register("String.<=", String_oplessEq);
+  Register("String.>=", String_opgreaterEq);
+  Register("String.compare", String_compare);
+  Register("String.explode", String_explode);
+  Register("String.implode", String_implode);
+  Register("String.maxSize", Store::IntToWord(0x3FFFFFFF));
+  Register("String.size", String_size);
+  Register("String.sub", String_sub);
+  Register("String.substring", String_substring);
+  Register("String.str", String_str);
+};

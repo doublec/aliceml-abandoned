@@ -1,70 +1,67 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "datalayer/alicedata.hh"
+#include "builtins/Authoring.hh"
 
-#if defined(INTERFACE)
-#pragma implementation "CommonOp.hh"
-#endif
-#include "CommonOp.hh"
-#if defined(INTERFACE)
-#pragma implementation "ListOp.hh"
-#endif
-#include "ListOp.hh"
+DEFINE2(Array_array) {
+  DECLARE_INT(length, x0);
+  if (length < 0)
+    RAISE(GlobalPrimitives::General_Size);
+  Array *array = Array::New(length);
+  for (int i = length; i--; )
+    array->Init(i, x1);
+  RETURN(array->ToWord());
+} END
 
-#include "Array.hh"
-
-namespace Builtins {
-  namespace Array {
-    word array(word n, word x) {
-      int elems = Store::WordToInt(CommonOp::Sync(n));
-      Block *a  = (Block *) ::Array::New(elems);
-
-      for (int i = 1; i <= elems; i++) {
-	a->InitArg(i, x);
-      }
-
-      return a->ToWord();
-    }
-    word fromList(word l) {
-      Block *a = (Block *) ::Array::New(ListOp::Length(l));
-      int i    = 1;
-
-      while (true) {
-	Block *cell = Store::WordToBlock(CommonOp::Sync(l));
-
-	if (cell != INVALID_POINTER) {
-	  a->InitArg(i++, ListOp::Car(cell));
-	  l = ListOp::Cdr(cell);
-	}
-	else {
-	  return a->ToWord();
-	}
-      }
-    }
-    word length(word l) {
-      l = CommonOp::Sync(l);
-      return Store::IntToWord(((::Array *) Store::WordToBlock(l))->GetSize());
-    }
-    word sub(word a, word i) {
-      a = CommonOp::Sync(a);
-      i = CommonOp::Sync(i);
-      return ((::Array *) Store::WordToBlock(a))->GetArg(Store::WordToInt(i));
-    }
-    word update(word a, word i, word x) {
-      a = CommonOp::Sync(a);
-      i = CommonOp::Sync(i);
-      ((::Array *) Store::WordToBlock(a))->SetArg(Store::WordToInt(i), x);
-      return Store::IntToWord(0); // to be determined
-    }
+DEFINE1(Array_fromList) {
+  DECLARE_LIST(tagVal, length, x0);
+  Array *array = Array::New(length);
+  int i = 0;
+  while (tagVal != INVALID_POINTER) {
+    array->Init(i++, tagVal->Sel(0));
+    tagVal = TagVal::FromWord(tagVal->Sel(1));
   }
+  RETURN(array->ToWord());
+} END
+
+DEFINE1(Array_length) {
+  DECLARE_ARRAY(array, x0);
+  RETURN_INT(array->GetLength());
+} END
+
+DEFINE2(Array_sub) {
+  DECLARE_ARRAY(array, x0);
+  DECLARE_INT(index, x1);
+  if (index < 0 || index >= array->GetLength())
+    RAISE(GlobalPrimitives::General_Subscript);
+  RETURN(array->Sub(index));
+} END
+
+DEFINE3(Array_update) {
+  DECLARE_ARRAY(array, x0);
+  DECLARE_INT(index, x1);
+  if (index < 0 || index >= array->GetLength())
+    RAISE(GlobalPrimitives::General_Subscript);
+  array->Update(index, x2);
+  RETURN_UNIT;
+} END
+
+void Primitive::RegisterArray() {
+  Register("Array.array", Array_array);
+  Register("Array.fromList", Array_fromList);
+  Register("Array.length", Array_length);
+  Register("Array.maxLen", Store::IntToWord(0x3FFFFFFF));
+  Register("Array.sub", Array_sub);
+  Register("Array.update", Array_update);
 }
