@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -136,16 +136,16 @@ struct
 	    DepthFirstSearch.search graph
 	end
 
-(*--** try to output trace messages only once *)
     val trace =
 	if Option.isSome (OS.Process.getEnv "ALICE_TRACE_REWRITE") then
 	    (fn s => TextIO.output (TextIO.stdErr, "[rewrite] " ^ s))
 	else ignore
 
     fun rewrite handlers url =
-	#1 (Option.valOf (Resolver.Handler.tracingApply trace url handlers))
+	(trace ("rewrite request: " ^ Url.toStringRaw url ^ "\n");
+	 #1 (Option.valOf (Resolver.Handler.tracingApply trace url handlers)))
 
-    fun build (root, componentMap, includeMap, excludeMap, rewrite) =
+    fun build (root, componentMap, includeMap, excludeMap, rewritesMap) =
 	let
 	    fun getComponent url =
 		UrlMap.lookupExistent (componentMap, url)
@@ -166,20 +166,12 @@ struct
 		Vector.appi (fn (i, url) =>
 				UrlMap.insert (urlToIndexMap, url, (false, i)))
 			    excludes
-	    val rewritesMap = UrlMap.new ()
 	    val imports =
 		Vector.map (fn url =>
-			       let
-				   val url' = rewrite url
-			       in
-				   case UrlMap.lookup (rewritesMap, url') of
-				       SOME url'' =>
-					   raise Rewrite (url'', url, url')
-				     | NONE => ();
-				   UrlMap.insert (rewritesMap, url', url);
-				   (Url.toString url',
-				    UrlMap.lookupExistent (excludeMap, url))
-			       end) excludes
+			       (Url.toString (UrlMap.lookupExistent
+						  (rewritesMap, url)),
+				UrlMap.lookupExistent (excludeMap, url)))
+			   excludes
 	    val includeTable =
 		Vector.map
 		    (fn url =>
@@ -240,7 +232,20 @@ struct
 		collect (boundary, typeCheck) root
 	    val rewrite = rewrite handlers
 	    val order = sort (includeMap, excludeMap)
+	    val rewritesMap = UrlMap.new ()
+	    val invRewritesMap = UrlMap.new ()
 	in
+	    UrlMap.appi (fn (url, _) =>
+			    let
+				val url' = rewrite url
+			    in
+				UrlMap.insert (rewritesMap, url, url');
+				case UrlMap.lookup (invRewritesMap, url') of
+				    SOME url'' =>
+					raise Rewrite (url'', url, url')
+				  | NONE => ();
+				UrlMap.insert (invRewritesMap, url', url)
+			    end) excludeMap;
 	    if verbose then
 		let
 		    val includes =
@@ -253,7 +258,9 @@ struct
 			List.sort String.compare
 				  (UrlMap.foldi
 				       (fn (url, _, rest) =>
-					   Url.toString (rewrite url)::rest)
+					   Url.toString
+					       (UrlMap.lookupExistent
+						    (rewritesMap, url))::rest)
 				       nil excludeMap)
 		in
 		    TextIO.print ("Included components:\n");
@@ -270,6 +277,6 @@ struct
 	    List.app (fn urls =>
 			 if List.null (List.tl urls) then ()
 			 else warnCycle urls) order;
-	    build (root, componentMap, includeMap, excludeMap, rewrite)
+	    build (root, componentMap, includeMap, excludeMap, rewritesMap)
 	end
 end
