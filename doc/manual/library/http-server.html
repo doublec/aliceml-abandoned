@@ -34,6 +34,7 @@
     sig
 	type <A href="#handler">handler</A> = <A href="http.html#request">Http.request</A> -> <A href="http.html#response">Http.response</A>
 
+	val <A href="#logOut">logOut</A> : <A href="text-io.html#outstream">TextIO.outstream</A> option ref
 	val <A href="#idleTime">idleTime</A> : <A href="time.html#t">Time.t</A> ref
 
 	val <A href="#start">start</A> : int option -> int
@@ -50,6 +51,14 @@
     </DT>
     <DD>
       <P>The type of handlers for HTTP requests.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="#logOut">logOut</A></TT>
+    </DT>
+    <DD>
+      <P>specifies a stream on which to write log messages about incoming
+	connections and closed idle connections.</P>
     </DD>
 
     <DT>
