@@ -327,6 +327,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 	}
 	break;
       default:
+	nLocals = 0;
 	Assert(false);
       }
       AbstractCodeFrame::New(AbstractCodeInterpreter::self,
