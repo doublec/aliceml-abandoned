@@ -65,6 +65,13 @@
       <TR><TD>Any other function<TD>Binary procedure
     </TABLE>
   </CENTER>
+  <P>When applying functions in Alice, a <EM><A name="ccc">calling convention
+    conversion</A></EM> is performed:  If a single-argument function is
+    applied to several arguments (that is, a manifest tuple), these arguments
+    are tupled to form a single argument.  Conversely, when a multiple-argument
+    function (that is, a function expecting a manifest tuple) is applied to a
+    single argument, it is deconstructed as a tuple.  See <A href="#hofs"
+    >below</A> for more information.</P>
 
   <H3>Constructors</H3>
   <P>With a few exceptions simplifying interoperability, constructors of
@@ -245,5 +252,23 @@
             {System.show
              {{Example.count fun {$ X} X == 0 end} [1 0 2 0]}}
         end</PRE>
+
+<?php section("hofs", "higher-order functions") ?>
+  <P>As mentioned above, Alice function applications perform <A href="#ccc"
+    >calling convention conversions</A>.  This means that care must be taken
+    when calling a first-class function defined in Alice from an Oz procedure:
+    calling procedures from Oz does not perform calling convention conversion
+    automatically.  Therefore, the user must write code to do this explicitly
+    using the <TT>Procedure.arity</TT> and <TT>Procedure.apply</TT> builtins.
+    For instance, if F is to be called with three arguments, but may have
+    been defined in Alice:</P>
+  <PRE>
+    X = case {Procedure.arity F}
+        of 4 then {F A B C}   % call with three arguments directly
+        [] 2 then {F A#B#C}   % call with one (constructed) argument
+        end</PRE>
+  <P>Note that a three-argument Alice function is a four-argument Oz procedure
+    (because of the return value), and that a one-argument Alice function is
+    a two-argument Oz procedure.</P>
 
 <?php footing() ?>
