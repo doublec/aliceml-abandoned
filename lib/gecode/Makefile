@@ -94,7 +94,7 @@ depend: UnsafeGecode.cc
 
 install: all
 	mkdir -p -m 775 $(INSTALLTO)
-	install -c -m555 $(NATIVES:%=%.dll)
+	install -c -m555 $(NATIVES:%=%.dll) $(INSTALLTO)
 	install -c -m444 $(TARGETS) $(INSTALLTO)
 
 -include Makefile.depend
