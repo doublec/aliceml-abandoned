@@ -260,7 +260,7 @@ struct
 
     fun dummy _			= raise Assert.failure
     val modFwd			= ref(dummy : path * inf -> mod)
-    val apply'Fwd		= ref(dummy : inf * mod -> inf)
+    val applyFwd'		= ref(dummy : inf * mod -> inf)
     val narrowFwd 		= ref(dummy : inf * inf -> inf)
     val narrowModFwd 		= ref(dummy : mod * inf -> mod)
     val realiseFwd		= ref(dummy : rea * inf -> inf)
@@ -272,7 +272,7 @@ struct
     val maximiseExistFwd	= ref(dummy : PathSet.t * path* inf* inf -> inf)
 
     fun mod(p,j)		= !modFwd(p,j)
-    fun apply'(j,m)		= !apply'Fwd(j,m)
+    fun apply'(j,m)		= !applyFwd'(j,m)
     fun narrow(j1,j2)		= !narrowFwd(j1,j2)
     fun narrowMod(m,j)		= !narrowModFwd(m,j)
     fun realise(rea,j)		= !realiseFwd(rea,j)
@@ -2124,7 +2124,7 @@ TextIO.print "\n";
   (* Tie forwarding knots *)
 
     val _ = modFwd             := mod
-    val _ = apply'Fwd          := apply'
+    val _ = applyFwd'          := apply'
     val _ = narrowFwd          := narrow
     val _ = narrowModFwd       := narrowMod
     val _ = realiseFwd         := realise
