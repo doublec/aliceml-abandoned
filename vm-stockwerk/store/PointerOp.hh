@@ -107,4 +107,4 @@ public:
   }
 };
 
-#endif __STORE__POINTEROP_HH__
+#endif

@@ -20,4 +20,4 @@
 #define AssertStore(Cond)
 #endif
 
-#endif __STORE__BASE_HH__
+#endif
