@@ -33,12 +33,8 @@ Transform *Interpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
   return INVALID_POINTER; // default: may not be pickled
 }
 
-u_int Interpreter::GetArity() {
-  return 0; // to be done
-}
-
 Interpreter::function Interpreter::GetCFunction() {
-  return NULL; // default: no c function available
+  return NULL; // default: no corresponding C function
 }
 
 #if PROFILE
