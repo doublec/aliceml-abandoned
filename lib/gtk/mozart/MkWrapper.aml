@@ -72,6 +72,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	local
 	    fun emitArg (_, IN("void"), _)   = ()
 	      | emitArg (i, IN(_), "none")   = psl ["A", iToS i, " "]
+	      | emitArg (i, IN(_), "string") = psl ["A", iToS i, " "]
 	      | emitArg (i, IN(_), "object") = psl ["{O2P A", iToS i, "} "]
 	      | emitArg (i, IN(_), "glist")  =
 		psl ["{ExportList A", iToS i, "} "]
@@ -115,6 +116,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 			 (case conv of
 			      "object" => "{P2O " ^ (getClassType tStr) ^ " R}"
 			    | "glist"  => "{ImportList R}"
+			    | "string" => "{ByteString.make R}"
 			    | _        => "R")
 		   | OUT(tStr) => "{P2O none R}")
 	    end
