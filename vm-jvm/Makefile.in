@@ -6,6 +6,7 @@ SHELL   = /bin/bash
 
 JAVAC   = @javac@
 JFLAGS  = -g -O #+E
+RMIC    = rmic
 RMIFLAGS= -v1.2
 
 M4      = @m4@
@@ -14,6 +15,7 @@ SRCDIR  = @srcdir@
 
 CLASSROOT  = ../../classes/
 RUNTIME = de/uni_sb/ps/dml/runtime/
+rt      = de.uni_sb.ps.dml.runtime.
 
 files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Builtin.class \
@@ -86,8 +88,6 @@ rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 	$(CLASSROOT)$(RUNTIME)DMLPort_Stub.class
 
 all:	link $(files) rmi
-	cd tools; $(MAKE)
-	cd test; $(MAKE)
 
 link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)
@@ -110,4 +110,4 @@ $(files): $(CLASSROOT)$(RUNTIME)%.class : $(SRCDIR)/%.java.m4
 	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) `basename $< .m4`
 
 $(rmifil): $(CLASSROOT)$(RUNTIME)%_Stub.class : $(CLASSROOT)$(RUNTIME)%.class
-	CLASSPATH=$(CLASSROOT):$(CLASSPATH) rmic $(RMIFLAGS) -d $(CLASSROOT) $(rt)`basename $< .class`
+	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(RMIC) $(RMIFLAGS) -d $(CLASSROOT) $(rt)`basename $< .class`

@@ -4,9 +4,7 @@
  * $Author$
  */
 
-package de.uni_sb.ps.dml.builtin;
-
-import de.uni_sb.ps.dml.runtime.*;
+package de.uni_sb.ps.dml.runtime;
 
 final public class Char {
     // eqtype string

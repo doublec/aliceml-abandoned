@@ -4,9 +4,7 @@
  * $Author$
  */
 
-package de.uni_sb.ps.dml.builtin;
-
-import de.uni_sb.ps.dml.runtime.*;
+package de.uni_sb.ps.dml.runtime;
 
 final public class General {
     /** <code>datatype order = LESS | EQUAL | GREATER</code>*/
@@ -348,26 +346,26 @@ final public class General {
  * $Author$
  */
 
-package de.uni_sb.ps.dml.builtin;
+//  package de.uni_sb.ps.dml.builtin;
 
-import de.uni_sb.ps.dml.runtime.*;
+//  import de.uni_sb.ps.dml.runtime.*;
 
-final public class BoolFromString extends Builtin {
+//  final public class BoolFromString extends Builtin {
 
-  final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-      val = val.request();
-      if (val instanceof de.uni_sb.ps.dml.runtime.String) {
-	  java.lang.String s=((de.uni_sb.ps.dml.runtime.String) val).getString();
-	  if (s.equalsIgnoreCase("TRUE"))
-	      return Constants.dmltrue;
-	  else if (s.equalsIgnoreCase("FALSE"))
-	      return Constants.dmlfalse;
-	  else
-	      return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("NoBoolException"+val)).raise();
-	  }
-      else
-	  return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("invalid argument for primitive boolfromstring operation in "+val)).raise();
-  }
-}
+//    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+//        val = val.request();
+//        if (val instanceof de.uni_sb.ps.dml.runtime.String) {
+//  	  java.lang.String s=((de.uni_sb.ps.dml.runtime.String) val).getString();
+//  	  if (s.equalsIgnoreCase("TRUE"))
+//  	      return Constants.dmltrue;
+//  	  else if (s.equalsIgnoreCase("FALSE"))
+//  	      return Constants.dmlfalse;
+//  	  else
+//  	      return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("NoBoolException"+val)).raise();
+//  	  }
+//        else
+//  	  return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("invalid argument for primitive boolfromstring operation in "+val)).raise();
+//    }
+//  }
 
 }

@@ -6,7 +6,6 @@
 
 package de.uni_sb.ps.dml.runtime;
 
-import de.uni_sb.ps.dml.builtin.Array;
 import java.rmi.server.*;
 
 /** This is the OutputStream used to create pickles.
