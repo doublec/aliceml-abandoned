@@ -18,7 +18,7 @@ signature INTERMEDIATE =
 
     type stamp      = int
 
-    datatype name   = ExId of string | InId 
+    datatype name   = ExId of string | InId
 
     datatype lab    = Lab     of info * string
     datatype id     = Id      of info * stamp * name
@@ -31,7 +31,6 @@ signature INTERMEDIATE =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
 	| ConExp    of info * longid * exp option
-	| RefExp    of info
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 	| SelExp    of info * lab
@@ -43,7 +42,7 @@ signature INTERMEDIATE =
 	| IfExp     of info * exp * exp * exp
 	| WhileExp  of info * exp * exp
 	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list	(* always total *)
+	| CaseExp   of info * exp * match list
 	| RaiseExp  of info * exp
 	| HandleExp of info * exp * id * exp
 	| LetExp    of info * dec list * exp
@@ -58,7 +57,6 @@ signature INTERMEDIATE =
 	  LitPat    of info * lit
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
-	| RefPat    of info * pat
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)
 	| AsPat     of info * id * pat

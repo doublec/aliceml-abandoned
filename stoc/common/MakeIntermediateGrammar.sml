@@ -33,7 +33,6 @@ functor Intermediate(type info
 	  LitExp    of info * lit
 	| VarExp    of info * longid
 	| ConExp    of info * longid * exp option
-	| RefExp    of info
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 	| SelExp    of info * lab
@@ -45,7 +44,7 @@ functor Intermediate(type info
 	| IfExp     of info * exp * exp * exp
 	| WhileExp  of info * exp * exp
 	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list	(* always total *)
+	| CaseExp   of info * exp * match list
 	| RaiseExp  of info * exp
 	| HandleExp of info * exp * id * exp
 	| LetExp    of info * dec list * exp
@@ -60,7 +59,6 @@ functor Intermediate(type info
 	  LitPat    of info * lit
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
-	| RefPat    of info * pat
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)
 	| AsPat     of info * id * pat
@@ -86,7 +84,6 @@ functor Intermediate(type info
     fun info_exp(LitExp(i,_))		= i
       | info_exp(VarExp(i,_))		= i
       | info_exp(ConExp(i,_,_))		= i
-      | info_exp(RefExp(i))		= i
       | info_exp(TupExp(i,_))		= i
       | info_exp(RecExp(i,_))		= i
       | info_exp(SelExp(i,_))		= i
@@ -109,7 +106,6 @@ functor Intermediate(type info
     fun info_pat(LitPat(i,_))		= i
       | info_pat(VarPat(i,_))		= i
       | info_pat(ConPat(i,_,_))		= i
-      | info_pat(RefPat(i,_))		= i
       | info_pat(TupPat(i,_))		= i
       | info_pat(RecPat(i,_,_))		= i
       | info_pat(AsPat(i,_,_))		= i
@@ -221,9 +217,6 @@ functor Intermediate(type info
 					  ; output_longid(q,y) ; m(q)
 					  ; output_option output_exp(q,eo); r(q)
 					  )
-      | output_exp(q, RefExp(i))	= ( f(q,"RefExp")
-					  ; output_info(q,i) ; r(q)
-					  )
       | output_exp(q, TupExp(i,es))	= ( f(q,"TupExp")
 					  ; output_info(q,i) ; m(q)
 					  ; output_list output_exp (q,es) ; r(q)
@@ -320,10 +313,6 @@ functor Intermediate(type info
 					  ; output_info(q,i) ; m(q)
 					  ; output_longid(q,y) ; m(q)
 					  ; output_option output_pat(q,po); r(q)
-					  )
-      | output_pat(q, RefPat(i,p))	= ( f(q,"RefPat")
-					  ; output_info(q,i) ; m(q)
-					  ; output_pat(q,p) ; r(q)
 					  )
       | output_pat(q, TupPat(i,ps))	= ( f(q,"TupPat")
 					  ; output_info(q,i) ; m(q)
