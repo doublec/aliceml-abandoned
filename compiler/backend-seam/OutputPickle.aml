@@ -10,17 +10,19 @@
  *   $Revision$
  *)
 
-import structure Reflect       from "../../lib/system/Reflect"
-import structure Crash         from "../infrastructure/Crash"
-import structure Stamp         from "../common/Stamp"
-import structure StampMap      from "../common/StampMap"
-import structure PrimPickle    from "PrimPickle"
-import structure PickleGrammar from "PickleGrammar"
-import signature OUTPUT_PICKLE from "OUTPUT_PICKLE-sig"
+import structure Reflect             from "../../lib/system/Reflect"
+import structure Crash               from "../infrastructure/Crash"
+import structure Stamp               from "../common/Stamp"
+import structure StampMap            from "../common/StampMap"
+import structure PrimPickle          from "PrimPickle"
+import structure Value               from "Value"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
+import signature OUTPUT_PICKLE       from "OUTPUT_PICKLE-sig"
 
 structure OutputPickle :> OUTPUT_PICKLE =
     struct
-	open PickleGrammar
+	structure V = Value
+	open AbstractCodeGrammar
 
 	structure Label =
 	    struct
@@ -164,31 +166,31 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		()
 	    end
 
-	fun outputValue (context, Prim name) =
+	fun outputValue (context, V.Prim name) =
 	    (outputTransform (context, "Alice.primitive.value");
 	     outputBlock (context, Label.TAG 0, 1);
 	     outputString (context, name); ())
-	  | outputValue (context, Int i) = outputInt (context, i)
-	  | outputValue (context, String s) =
+	  | outputValue (context, V.Int i) = outputInt (context, i)
+	  | outputValue (context, V.String s) =
 	    ignore (outputString (context, s))
-	  | outputValue (context, WideString s) =
+	  | outputValue (context, V.WideString s) =
 	    ignore (outputWideString (context, s))
-	  | outputValue (context, Real r) = outputReal (context, r)
-	  | outputValue (context, TaggedValue (i, values)) =
+	  | outputValue (context, V.Real r) = outputReal (context, r)
+	  | outputValue (context, V.TaggedValue (i, values)) =
 	    (outputBlock (context, Label.TAG i, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Tuple values) =
+	  | outputValue (context, V.Tuple values) =
 	    (outputTuple (context, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Vector values) =
+	  | outputValue (context, V.Vector values) =
 	    (outputBlock (context, Label.VECTOR, Vector.length values + 1);
 	     outputInt (context, LargeInt.fromInt (Vector.length values));
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Closure (function, values)) =
+	  | outputValue (context, V.Closure (function, values)) =
 	    (outputClosure (context, 1 + Vector.length values);
 	     outputFunction (context, function);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Sign _) =
+	  | outputValue (context, V.Sign _) =
 	    outputInt (context, 0) (*--** i.e., `NONE' *)
 	and outputFunction (context,
 			    Function (coord, nglobals, nlocals, args, body)) =

@@ -10,34 +10,35 @@
  *   $Revision$
  *)
 
-import structure Assert         from "../../lib/utility/Assert"
-import structure Url            from "../../lib/utility/Url"
-import structure Crash          from "../infrastructure/Crash"
-import structure EmptyContext   from "../infrastructure/EmptyContext"
-import structure Source         from "../infrastructure/Source"
-import structure StampSet       from "../common/StampSet"
-import structure FlatGrammar    from "../backend-common/FlatGrammar"
-import structure PickleGrammar  from "PickleGrammar"
-import structure Environment    from "Environment"
-import signature CODE_GEN_PHASE from "CODE_GEN_PHASE-sig"
+import structure Assert              from "../../lib/utility/Assert"
+import structure Url                 from "../../lib/utility/Url"
+import structure Crash               from "../infrastructure/Crash"
+import structure EmptyContext        from "../infrastructure/EmptyContext"
+import structure Source              from "../infrastructure/Source"
+import structure StampSet            from "../common/StampSet"
+import structure FlatGrammar         from "../backend-common/FlatGrammar"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
+import structure Environment         from "Environment"
+import signature CODE_GEN_PHASE      from "CODE_GEN_PHASE-sig"
 
 structure CodeGenPhase: CODE_GEN_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
-	structure O = PickleGrammar
+	structure O = AbstractCodeGrammar
 
 	open I
 	open Environment
+	structure V = O.Value
 
 	fun isNAry (TupArgs #[]) = false
 	  | isNAry _ = true
 
-	fun translateLit (IntLit i) = O.Int i
-	  | translateLit (WordLit w) = O.Int (LargeWord.toLargeInt w)
-	  | translateLit (CharLit c) = O.Int (LargeInt.fromInt (Char.ord c))
-	  | translateLit (StringLit s) = O.String s
-	  | translateLit (RealLit r) = O.Real r
+	fun translateLit (IntLit i) = V.int i
+	  | translateLit (WordLit w) = V.int (LargeWord.toLargeInt w)
+	  | translateLit (CharLit c) = V.int (LargeInt.fromInt (Char.ord c))
+	  | translateLit (StringLit s) = V.string s
+	  | translateLit (RealLit r) = V.real r
 
 	fun litToInt (IntLit i) = i
 	  | litToInt (WordLit w) = LargeWord.toLargeInt w
@@ -377,12 +378,12 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	and translateExp (LitExp (_, lit), id, instr, _) =
 	    O.PutConst (id, translateLit lit, instr)
 	  | translateExp (PrimExp (_, name), id, instr, _) =
-	    O.PutConst (id, O.Prim name, instr)
+	    O.PutConst (id, V.prim name, instr)
 	  | translateExp (NewExp (_, _), id, instr, _) = O.PutNew (id, instr)
 	  | translateExp (VarExp (_, id'), id, instr, env) =
 	    O.PutVar (id, lookup (env, id'), instr)
 	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
-	    O.PutConst (id, O.Int (LargeInt.fromInt tag), instr)
+	    O.PutConst (id, V.int (LargeInt.fromInt tag), instr)
 	  | translateExp (TagExp (_, _, tag, args), id, instr, env) =
 	    O.PutTag (id, tag, translateIds (argsToVector args, env), instr)
 	  | translateExp (ConExp (_, id', TupArgs #[]), id, instr, env) =
@@ -474,8 +475,8 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		      | NONE => ""
 		val imports' =
 		    Vector.map (fn (_, sign, url) =>
-				   O.Tuple #[O.String (Url.toString url),
-					     O.Sign sign]) imports
+				   V.tuple #[V.string (Url.toString url),
+					     V.sign sign]) imports
 		val env = new filename
 		val _ = startFn env
 		val formalId = fresh env
@@ -487,7 +488,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		val (globals, nlocals) = endFn env
 		val _ = Assert.assert (Vector.length globals = 0)
 		val elseInstr =
-		    O.PutConst (raiseId, O.Prim "General.Match",
+		    O.PutConst (raiseId, V.prim "General.Match",
 				O.Raise (O.Local raiseId))
 		val bodyInstr =
 		    O.VecTest (O.Local formalId, #[(idDefs, instr)], elseInstr)
@@ -499,9 +500,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		(* This is an instance of the component type
 		 * defined in lib/system/Component.aml:
 		 *)
-		O.TaggedValue (LargeInt.fromInt 1,            (* UNEVALUATED *)
-			       #[O.Closure (function, #[]),   (* body *)
-				 O.Vector imports',           (* imports *)
-				 O.Sign sign])                (* sign *)
+		V.taggedValue (LargeInt.fromInt 1,            (* UNEVALUATED *)
+			       #[V.closure (function, #[]),   (* body *)
+				 V.vector imports',           (* imports *)
+				 V.sign sign])                (* sign *)
 	    end
     end

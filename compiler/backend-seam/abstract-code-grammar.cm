@@ -1,0 +1,11 @@
+Group is
+
+    ../../lib/utility/sources.cm
+    ../common/id-stamp.cm
+    ../backend-common/flat-grammar.cm
+
+    ABSTRACT_CODE_GRAMMAR-sig.aml
+    MkAbstractCodeGrammar.aml
+    VALUE-sig.aml
+    Value.aml
+    AbstractCodeGrammar.aml

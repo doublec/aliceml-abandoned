@@ -1,0 +1,80 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stamp       from "../common/Stamp"
+import structure FlatGrammar from "../backend-common/FlatGrammar"
+import signature VALUE       from "VALUE-sig"
+
+signature ABSTRACT_CODE_GRAMMAR =
+    sig
+	structure Value: VALUE
+
+	type sign = FlatGrammar.sign
+
+	type id = int
+
+	datatype idDef =
+	    IdDef of id
+	  | Wildcard
+
+	datatype idRef =
+	    Local of id
+	  | Global of int
+	(*--** | Immediate of value *)
+
+	datatype 'a args =
+	    OneArg of 'a
+	  | TupArgs of 'a vector
+
+	type coord = string * int * int
+
+	type value
+
+	datatype function = Function of coord * int * int * idDef args * instr
+	and instr =
+	    Kill of id vector * instr
+	  | PutConst of id * value * instr
+	  | PutVar of id * idRef * instr
+	  | PutNew of id * instr
+	  | PutTag of id * int * idRef vector * instr
+	  | PutCon of id * idRef * idRef vector * instr
+	  | PutRef of id * idRef * instr
+	  | PutTup of id * idRef vector * instr
+	  | PutVec of id * idRef vector * instr
+	  | PutFun of id * idRef vector * function * instr
+	  | AppPrim of string * idRef vector * (idDef * instr) option
+	  | AppVar of idRef * idRef args * (idDef args * instr) option
+	  | AppConst of value * idRef args * (idDef args * instr) option
+	  | GetRef of id * idRef * instr
+	  | GetTup of idDef vector * idRef * instr
+	  | Sel of id * idRef * int * instr
+	  | LazySel of id * idRef * int * instr
+	  | Raise of idRef
+	  | Reraise of idRef
+	  | Try of instr * idDef * idDef * instr
+	  | EndTry of instr
+	  | EndHandle of instr
+	  | IntTest of idRef * (LargeInt.int * instr) vector * instr
+	  | RealTest of idRef * (Real.real * instr) vector * instr
+	  | StringTest of idRef * (String.string * instr) vector * instr
+	  | WideStringTest of idRef * (WideString.string * instr) vector
+				    * instr
+	  | TagTest of idRef * (int * instr) vector
+			     * (int * idDef vector * instr) vector * instr
+	  | ConTest of idRef * (idRef * instr) vector
+			     * (idRef * idDef vector * instr) vector * instr
+	  | VecTest of idRef * (idDef vector * instr) vector * instr
+	  | Shared of Stamp.t * instr
+	  | Return of idRef args
+
+	type t = value
+    end
