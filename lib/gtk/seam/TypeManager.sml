@@ -168,9 +168,6 @@ struct
 	handle
 	   EStruct   => error "struct in arglist or retval"
 	 | EUnion    => error "union in arglist or retval"
-      (* | EFunction => warning "function in arglist or retval"
-	 | EEllipses => error "ellipses in argument list"
-         | EArray    => warning "array in arglist or retval" *)
     end		    
 (***) | checkItem (s as (STRUCT _)) = isItemOfSpace Util.GDK s
       | checkItem _ = true

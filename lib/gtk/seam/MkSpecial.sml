@@ -20,7 +20,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
 			     "gdk_pixbuf_new_from_xpm_data"]
-	      | Util.GNOMECANVAS => ["gnome_canvas_join_gdk_to_art", (**)
+	      | Util.GNOMECANVAS => ["gnome_canvas_item_new",
+				     "gnome_canvas_join_gdk_to_art", (**)
 				     "gnome_canvas_cap_gdk_to_art" (**)]
 	      | _ => nil
 
@@ -50,7 +51,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	  | Util.GNOMECANVAS =>
 	       [FUNC("gnome_canvas_points_set_coords", VOID,
 		     [POINTER VOID, NUMERIC (true,false,INT), 
-		      NUMERIC (true,false,INT)])]
+		      NUMERIC (true,false,INT)]),
+		FUNC("gnome_canvas_item_new", POINTER VOID,
+		     [POINTER VOID, NUMERIC (true,false,INT)])]
 	  | _ => nil
 
        (* changedFuns: generate different asig and code for: *)

@@ -9,4 +9,13 @@ DEFINE3(NativeGnomeCanvas_pointsSetCoords) {
   RETURN_UNIT;
 } END
 
+DEFINE2(NativeGnomeCanvas_itemNew) {
+  DECLARE_UNMANAGED_POINTER(parent,x0);
+  DECLARE_INT(type,x1);
+  GnomeCanvasItem *ret = gnome_canvas_item_new(
+		           static_cast<GnomeCanvasGroup*>(parent), 
+			   static_cast<GtkType>(type), NULL);
+  RETURN(Store::UnmanagedPointerToWord(ret));
+} END
+
 #endif

@@ -72,9 +72,6 @@ void push_front(word *list, word value) {
   *list = cons->ToWord();
 }
 
-GType G_LIST_TYPE = g_type_from_name("GList");
-GType G_SLIST_TYPE = g_type_from_name("GSList");
-
 word create_param(int tag, word value) {
   TagVal *param = TagVal::New(tag,1);
   param->Init(0, value);
@@ -82,6 +79,10 @@ word create_param(int tag, word value) {
 }
 
 word create_object(GType t, gpointer p) {
+  static const GType G_LIST_TYPE = g_type_from_name("GList");
+  static const GType G_SLIST_TYPE = g_type_from_name("GSList");
+  static const GType GDK_EVENT_TYPE = gdk_event_get_type();
+
   int tag = OBJECT;
   word value;
   if (g_type_is_a(t, G_LIST_TYPE)) {
@@ -94,7 +95,8 @@ word create_object(GType t, gpointer p) {
       value = GSListToObjectList(static_cast<GSList*>(p));
     }
     else
-      value = Store::UnmanagedPointerToWord(p);
+      value = Store::UnmanagedPointerToWord(
+	(t != GDK_EVENT_TYPE) ? p : gdk_event_copy(static_cast<GdkEvent*>(p)));
   return create_param(tag, value);
 }
 
@@ -110,7 +112,6 @@ void sendArgsToStream(gint connid, guint n_param_values,
     word value;
 
     const GValue *val = param_values + i;
-
     /*
     GTypeQuery q;
     memset(&q, 0, sizeof(q));
@@ -118,7 +119,6 @@ void sendArgsToStream(gint connid, guint n_param_values,
     g_print("Param #%d, Type: %ld, Name: %s\n", i, G_VALUE_TYPE(val), 
 	    q.type_name);
     */
-
     switch(G_VALUE_TYPE(val)) {
     case G_TYPE_CHAR:   
       value = create_param(INT, 
@@ -166,11 +166,13 @@ void sendArgsToStream(gint connid, guint n_param_values,
 			  String::New(g_value_get_string(val))->ToWord());
       break;
     default:
-      //  g_print("NAFT AS POINTER: %p\n", g_value_peek_pointer(val));
+      //g_print("NAFT AS POINTER: %p\n", g_value_peek_pointer(val));
       if (i==0)
 	widget = g_value_peek_pointer(val);
-      else
+      else {
+	//g_print("** %d\n", ((GdkEvent*)g_value_peek_pointer(val))->type); 
 	value = create_object(G_VALUE_TYPE(val), g_value_peek_pointer(val));
+      }
     }
     if (!widget) push_front(&paramlist,value);
   }
@@ -198,8 +200,8 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
 
   sendArgsToStream(connid,n_param_values,param_values);
 
-  if ((isDelete != 0) && G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
-      g_value_set_boolean(return_value, TRUE);
+  if (G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
+    g_value_set_boolean(return_value, (isDelete != 0) ? TRUE : FALSE);
 }
 
 DEFINE3(NativeGtk_signalConnect) {

@@ -19,6 +19,7 @@ local
     fun Delete _ = OS.Process.exit OS.Process.success
     val Window   = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
     val _        = Gtk.signalConnect (Window, "delete-event", Delete)
+    val _        = Gtk.windowSetTitle(Window,"GnomeCanvas")
 
     val map      = Gdk.colormapGetSystem ()
     val black    = Gdk.colorNew (0,0,0)
@@ -28,24 +29,15 @@ local
     val MyCanvas = GnomeCanvas.new()
     val root     = GnomeCanvas.root MyCanvas
 
-    val targs =
-	[("text", Gtk.STRING "Dies ist ein Test"),
-	 ("x", Gtk.REAL 100.0),
-	 ("y", Gtk.REAL 100.0),
-	 ("font", 
-     Gtk.STRING "-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"),
-	 ("fill_color_gdk", Gtk.OBJECT black)]
-    val titem = GnomeCanvas.itemCreate (root, GnomeCanvas.textGetType(), targs)
-			       
     val rargs = 
 	[("x1", Gtk.REAL 10.0),
 	 ("y1", Gtk.REAL 20.0),
 	 ("x2", Gtk.REAL 380.0),
          ("y2", Gtk.REAL 380.0),
 	 ("fill_color_gdk", Gtk.OBJECT white),
-	 ("outline_color_gdk",Gtk.OBJECT black)]
+	 ("outline_color_gdk", Gtk.OBJECT black)]
     val ritem = GnomeCanvas.itemCreate (root, GnomeCanvas.rectGetType(), rargs)
-
+(*
     val cargs =
        [("fill_color", Gtk.STRING "blue"),
 	("x1", Gtk.REAL 10.0),
@@ -53,14 +45,17 @@ local
 	("x2", Gtk.REAL 90.0),
 	("y2", Gtk.REAL 90.0)]
     val citem = GnomeCanvas.itemCreate(root,GnomeCanvas.ellipseGetType(),cargs)
-
+*)
 
     fun show s = print (s^"\n")
+    fun showDelta event = 
+	print ("(x: "^(Real.toString (Gdk.eventMotionGetFieldX event))^
+	      ", y: "^(Real.toString (Gdk.eventMotionGetFieldY event))^") ")
 
     fun canvasEvent (_, [Gtk.OBJECT event]) =
 	(case Gdk.eventAnyGetFieldType event of
 	     Gdk.EXPOSE            => show "Got Expose Event"
-	   | Gdk.MOTION_NOTIFY     => show "Got Motion Event"
+	   | Gdk.MOTION_NOTIFY     => (showDelta event;show "Got Motion Event")
 	   | Gdk.BUTTON_PRESS      => show "Got ButtonPress Event"
 	   | Gdk.GDK_2BUTTON_PRESS => show "Got Button2Press Event"
 	   | Gdk.GDK_3BUTTON_PRESS => show "Got Button3Press Event"
@@ -92,10 +87,6 @@ local
 	   | Gdk.CLIENT_EVENT      => show "Got Client Event"
 	   | _                     => show "Got Strange Event")
 	     
-    val _ = Gtk.signalConnect (citem, "event", canvasEvent)
-    val _ = Gtk.signalConnect (ritem, "event", canvasEvent)
-
-
     val pargs =
 	 [("points", 
 	     Gtk.OBJECT (GnomeCanvas.makePoints [20, 20, 380, 200, 20, 380])),
@@ -103,9 +94,22 @@ local
 	  ("width_pixels", Gtk.INT 2)]
     val pitem = GnomeCanvas.itemCreate (root, GnomeCanvas.lineGetType(), pargs)
 
+    val targs =
+	[("text", Gtk.STRING "Dies ist ein Test"),
+	 ("x", Gtk.REAL 100.0),
+	 ("y", Gtk.REAL 100.0),
+	 ("font", 
+     Gtk.STRING "-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"),
+	 ("fill_color_gdk", Gtk.OBJECT black)]
+    val titem = GnomeCanvas.itemCreate (root, GnomeCanvas.textGetType(), targs)
+
+    val _ = Gtk.signalConnect (pitem, "event", canvasEvent)
+
+			       
 in
     val _ = (Gtk.containerSetBorderWidth (Window, 10);
-	     Gtk.widgetSetSizeRequest(MyCanvas, 200, 200);
+	     Gtk.widgetSetSizeRequest(MyCanvas, 400, 400);
+	     GnomeCanvas.setScrollRegion(MyCanvas, 0.0, 0.0, 400.0, 400.0);
 	     Gtk.containerAdd (Window, MyCanvas);
 	     Gtk.widgetShowAll Window)
 end

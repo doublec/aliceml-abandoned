@@ -11,20 +11,17 @@
  *
  *)
 
-import structure Gdk        from "x-alice:/lib/gtk/Gdk"
-import structure Gtk        from "x-alice:/lib/gtk/Gtk"
-import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
+import structure Gdk        from "../Gdk"
+import structure Gtk        from "../Gtk"
+import structure GnomeCanvas  from "../GnomeCanvas"
 import structure GtkBuilder from "GtkBuilder"
 
 local
-    datatype event = datatype Gtk.event
-    datatype arg   = datatype Gtk.arg
-
     open GtkBuilder
 
     (* Create Canvas and obtain the Root Group *)
     val canvas = MakeWidget (Canvas {pic=0, width=600, height=360})
-    val root   = GtkCanvas.root canvas
+    val root   = GnomeCanvas.root canvas
 
     (* Set up the Colors
      * 1. Obtain the system colormap
@@ -34,8 +31,8 @@ local
      * 4. Use color black and white
      *)
     val colormap = Gdk.colormapGetSystem ()
-    val black    = Gdk.allocColor(0,0,0)
-    val white    = Gdk.allocColor(65535,65535,65535)
+    val black    = Gdk.colorNew(0,0,0)
+    val white    = Gdk.colorNew(65535,65535,65535)
     val _        = Gdk.colormapAllocColor(colormap, black, 0, 1)
     val _        = Gdk.colormapAllocColor(colormap, white, 0, 1)
 
@@ -55,8 +52,8 @@ local
     (* Create Rectangle Handler *)
     local
 	fun toggleColor(item, fill, outline) =
-	    (GtkCanvas.itemSet(item, "fill_color_gdk", OBJECT fill);
-	     GtkCanvas.itemSet(item, "outline_color_gdk", OBJECT outline))
+	    (GnomeCanvas.itemSet(item, "fill_color_gdk", [Gtk.OBJECT fill]);
+	     GnomeCanvas.itemSet(item, "outline_color_gdk", [Gtk.OBJECT outline]))
 
 	val pressed = ref false
 	val buttonx = ref (0.0)
@@ -64,21 +61,21 @@ local
     in
 	fun rectangleHandler(item, event) =
 	    (case event of
-		 GDK_BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
+		 Gdk.BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
 		     (case button of
 			  1 => (toggleColor(item, white, black);
 				pressed := true; buttonx := x; buttony := y)
 			| _ => ())
-	       | GDK_BUTTON_RELEASE _                             =>
+	       | Gdk.BUTTON_RELEASE _                             =>
 		     (toggleColor(item, black, white); pressed := false)
-	       | GDK_MOTION_NOTIFY {x=x, y=y, ...} =>
+	       | Gdk.MOTION_NOTIFY {x=x, y=y, ...} =>
 		     (case !pressed of
 		      true  =>
 			  let
 			      val newx = Real.- (x, !buttonx)
 			      val newy = Real.- (y, !buttony)
 			  in
-			      (GtkCanvas.itemMove(item, newx, newy);
+			      (GnomeCanvas.itemMove(item, newx, newy);
 			       buttonx := x;
 			       buttony := y)
 			  end

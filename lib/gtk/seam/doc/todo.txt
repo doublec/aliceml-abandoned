@@ -15,9 +15,9 @@ fuer GtkObjects gilt:
   (keine Referenz mehr), ruft alle user-defined destroy-handler auf und
   loescht alle Handler, die an das Objekt gebunden sind
 
-- get/set-Methoden fuer GdkEvent-Structs, wie Typsicherheit herstellen?
-- Classes -> haben bereits set/get-Methoden
-- bestimmte Structs (z.B. GdkPoint) bekommen welche
+* get/set-Methoden fuer GdkEvent-Structs, wie Typsicherheit herstellen?
+* Classes -> haben bereits set/get-Methoden
+* bestimmte Structs (z.B. GdkPoint) bekommen welche
 
 * Enums
 - GC (Weak Dictionary)
@@ -25,7 +25,7 @@ fuer GtkObjects gilt:
 * Dateien komplett umbenennen
 * libgnomecanvas statt GtkCanvas installieren
 * GnomeCanvas-Bindings
-- get/set-Funktionen, TODO: structs in structs sicher rausschmeissen
+* get/set-Funktionen
 - Windows
 - Namespace-Aufteilung: Gtk.Button.new ...
 - eigene Native-Hilfsfunktionen besser benennen

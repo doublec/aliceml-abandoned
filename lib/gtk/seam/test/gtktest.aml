@@ -27,35 +27,29 @@ in
   val canvas = GnomeCanvas.new()
   val _ = widgetSetSizeRequest(canvas, 100, 100)
   val root = GnomeCanvas.root canvas
-  val rect = GnomeCanvas.itemNew(root, GnomeCanvas.rectGetType(),
-		  	         "fill_color", [STRING "white", OBJECT NULL])
-  val _ = GnomeCanvas.itemSetValist(rect, 
-				    "x1", [REAL 5.0,
-				    STRING "y1", REAL 5.0,
-				    STRING "x2", REAL 95.0,
-				    STRING "y2", REAL 95.0,
-				    STRING "outline_color", STRING "black",
-				    OBJECT NULL])
 
-  val circle = GnomeCanvas.itemNew(root, GnomeCanvas.ellipseGetType(),
-		  	         "fill_color", [STRING "blue", OBJECT NULL])
-  val _ = GnomeCanvas.itemSetValist(circle, 
-				    "x1", [REAL 10.0,
-				    STRING "y1", REAL 10.0,
-				    STRING "x2", REAL 90.0,
-				    STRING "y2", REAL 90.0,
-				    STRING "outline_color", STRING "black",
-				    OBJECT NULL])
+  val rect = GnomeCanvas.itemCreate(root, GnomeCanvas.rectGetType(),
+  	         [("fill_color", STRING "white"),
+		  ("x1", REAL 5.0),
+		  ("y1", REAL 5.0),
+		  ("x2", REAL 95.0),
+		  ("y2", REAL 95.0),
+		  ("outline_color", STRING "black")])
 
-  val text = GnomeCanvas.itemNew(root, GnomeCanvas.textGetType(),
-		  	         "fill_color", [STRING "white", OBJECT NULL])
-  val _ = GnomeCanvas.itemSetValist(text, 
-				    "text", [STRING "Canvas",
-                                    STRING "x", REAL 50.0,
-				    STRING "y", REAL 50.0,
-				    OBJECT NULL])
+  val circle = GnomeCanvas.itemCreate(root, GnomeCanvas.ellipseGetType(),
+		 [("fill_color", STRING "blue"),
+		  ("x1", REAL 10.0),
+		  ("y1", REAL 10.0),
+		  ("x2", REAL 90.0),
+		  ("y2", REAL 90.0),
+		  ("outline_color", STRING "black")])
+
+  val text = GnomeCanvas.itemCreate(root, GnomeCanvas.textGetType(),
+		 [("fill_color", STRING "white"),
+		  ("text", STRING "Canvas"),
+		  ("x", REAL 50.0),
+		  ("y", REAL 50.0)])
    
-
   val box = vboxNew(false,0)
 
   val _ = ( boxPackStart(box,button,   false,false,0) ;

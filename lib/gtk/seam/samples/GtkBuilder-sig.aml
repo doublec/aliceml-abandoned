@@ -11,10 +11,9 @@
  *
  *)
 
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gtk from "../Gtk"
 
 local
-    datatype event = datatype Gtk.event
     datatype arg   = datatype Gtk.arg
 in
     signature GtkBuilder =
@@ -30,24 +29,23 @@ in
 				entries:GtkTableEntry list}
 	      | Frame       of {title:string, ftype:GtkFrameType,
 				inner:GtkWidget}
-	      | AspectFrame of {title:string, xalign:real,
-				yalign:real, ratio: real option,
-				inner:GtkWidget}
+	      | AspectFrame of {title:string, xalign:real, yalign:real,
+				ratio: real option, inner:GtkWidget}
 	      | Alignment   of {xalign:real, yalign:real,
-				xscale:real, yscale:real,
-				inner:GtkWidget}
+				xscale:real, yscale:real, inner:GtkWidget}
 	      | HPane       of {left:GtkWidget, right:GtkWidget}
 	      | VPane       of {up:GtkWidget, down:GtkWidget}
 	      | Adjustment  of {value:real, lower:real, upper:real, 
 				step_inc:real, page_inc:real, page_size:real}
 	      | AccelLabel  of string
 	      | Label       of string
-	      | Arrow       of {artyp:int, arshadow:int}
+	      | Arrow       of {artyp:Gtk.GtkArrowType, 
+				arshadow:Gtk.GtkShadowType}
 	      | Entry       of {max:int option}
 	      | Button      of string * GtkSignalHandler list
 	      | CheckButton of string * GtkSignalHandler list
-	      | Text        of {xdim:real, ydim:real, text:string list}
 	      | Canvas      of {pic:int, width:int, height:int}
+	      | Text        of {xdim:real, ydim:real, text:string list}
 	      | Calendar    of GtkSignalHandler list
 	      | Notebook    of bool * ({label:string, note:GtkWidget} list)
 	      | Tree        of GtkTreeItem list * (string * string -> unit)
@@ -61,11 +59,9 @@ in
 	      | BoxEnd    of bool * bool * int * GtkWidget
 	    and GtkTableEntry =
 		TableSimple of {x:int, y:int, item:GtkWidget}
-	      | TableEntry  of {x1:int, x2:int,
-				y1:int, y2:int, item:GtkWidget} 
+	      | TableEntry of {x1:int, x2:int, y1:int, y2:int, item:GtkWidget} 
 	    and GtkSignalHandler =
-		Handler     of string * (arg list -> unit)
-	      | FullHandler of string * (Gtk.object * arg list -> unit)
+	        Handler of string * (Gtk.object * arg list -> unit)
 	    and GtkFrameType =
 		ShadowNone | ShadowIn | ShadowOut
 	      | ShadowEtchedIn | ShadowEtchedOut
