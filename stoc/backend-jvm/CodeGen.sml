@@ -112,6 +112,7 @@ structure CodeGen =
 			 )
 	      | freeVarsExp (ConExp(_, id', _)) = fV.insert id'
 	      | freeVarsExp (SelAppExp(_,lab',id')) = fV.insert id'
+	      | freeVarsExp (PrimExp (_, name)) = ()
 	      | freeVarsExp e = raise Debug (Exp e)
 
 	    and freeVarsDec (RaiseStm(_,id')) = fV.insert id'
@@ -281,11 +282,6 @@ structure CodeGen =
 		 if !ECHO >=2 then print "Okay.\n" else ()
 	     end
 	 )
-
-	and getBuiltin builtin' =
-	    Multi [Getstatic (Literals.insert (StringLit builtin'), [Classsig CStr]),
-		   Invokestatic (CBuiltin, "getBuiltin",
-				 ([Classsig CStr], [Classsig CVal]))]
 
 	and builtinStamp stamp' =
 	    if stamp'=stamp_Match then (Getstatic CMatch,true) else
@@ -557,7 +553,7 @@ structure CodeGen =
 			    end
 
 			fun isTableSwitch (i::(rest as (j::_))) =
-			    if LargeInt.- (i,Int.toLarge 1) = j then
+			    if LargeInt.+ (j,Int.toLarge 1) = i then
 				isTableSwitch rest
 			    else (false, 0)
 			  | isTableSwitch (i::nil) = (true, i)
@@ -1026,30 +1022,22 @@ structure CodeGen =
 
 	and
 	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
-	    (*if stamp'=stamp_builtin then
-		idArgCode
-		(ida'',
-		 Invokestatic (CBuiltin, "getBuiltin",
-			       ([Classsig CStr],
-				[Classsig CVal])) ::
-		 nil)
-		else*)
-		    [Ifstatic
-		     (stamp',
-		      idArgCode
-		      (ida'',
-		       [Invokestatic (classNameFromStamp
-				     (Lambda.getLambda stamp'),
-				     "sapply",
-				     ([Classsig CVal],
-				      [Classsig CVal]))]),
-		      stampCode stamp' ::
-		      idArgCode
-		      (ida'',
-		       [Invokeinterface
-			(CVal, "apply",
-			 ([Classsig CVal],
-			  [Classsig CVal]))]))]
+	    [Ifstatic
+	     (stamp',
+	      idArgCode
+	      (ida'',
+	       [Invokestatic (classNameFromStamp
+			      (Lambda.getLambda stamp'),
+			      "sapply",
+			      ([Classsig CVal],
+			       [Classsig CVal]))]),
+	      stampCode stamp' ::
+	      idArgCode
+	      (ida'',
+	       [Invokeinterface
+		(CVal, "apply",
+		 ([Classsig CVal],
+		  [Classsig CVal]))]))]
 
 	  | expCode (PrimAppExp (_, name, ids)) =
 		(case name of
@@ -1058,7 +1046,12 @@ structure CodeGen =
 				 Invokevirtual (CPrintStream, "print",
 						 ([Classsig CObj],[Voidsig])),
 				 Getstatic CUnit]
-		   | _ => nil)
+		   | _ => (print ("PrimAppExp: "^name); nil))
+
+	  | expCode (PrimExp (_, name)) =
+		     [Getstatic (Literals.insert (StringLit name), [Classsig CStr]),
+		      Invokestatic (CBuiltin, "getBuiltin",
+				    ([Classsig CStr], [Classsig CVal]))]
 
 	  | expCode (FunExp(coord',string', (lambda as (OneArg (id' as Id (_,stamp',_)), _))::rest)) =
 		     (* FunExp of coord * string * (id args * dec) list *)

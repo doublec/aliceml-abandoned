@@ -234,7 +234,7 @@ structure Backend=
 	    in
 		if (Real.compare (r,0.0)=EQUAL)
 		    orelse (Real.compare(r,1.0)=EQUAL)
-		    orelse (Real.compare(r,2.0)=EQUAL) then Fconst (trunc r)
+		    orelse (Real.compare(r,2.0)=EQUAL) then Fconst (Real.trunc r)
 		else Ldc (JVMFloat r)
 	    end
 	  | atCode (StringLit s)= Ldc (JVMString s)
