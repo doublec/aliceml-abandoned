@@ -30,9 +30,11 @@
 #include "emulator/AbstractCodeInterpreter.hh"
 
 extern word UnsafeMkRefMap(void);
+extern word UnsafeReflect(void);
 
 static prim_table builtins[] =
-{ { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap}, 
+{ { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap},
+  { "lib/system/UnsafeReflect", UnsafeReflect},
   {NULL, NULL} };
 
 static inline
