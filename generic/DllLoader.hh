@@ -17,7 +17,7 @@
 #pragma interface "generic/DllLoader.hh"
 #endif
 
-#include "ltdl.h"
+#include "libltdl/ltdl.h"
 #include "generic/String.hh"
 
 class SeamDll DllLoader {

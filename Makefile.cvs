@@ -7,6 +7,8 @@
 
 cvs:
 	libtoolize --copy --force --automake --ltdl
+	rm -rf lightning
+	lightningize --copy --force --automake
 	aclocal -I .
 	autoconf
 	automake --add-missing

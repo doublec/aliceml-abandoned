@@ -22,7 +22,7 @@
 #include "store/Store.hh"
 
 #define SEAM_LIGHTNING
-#include <lightning.h>
+#include "lightning/lightning.h"
 
 #ifdef JIT_FP
 # define HAVE_JIT_FP 1

@@ -36,12 +36,21 @@ seam_DEPENDENCIES = libseam.la
 
 bin_SCRIPTS = seamtool
 
-# Header files
+# Header files (including lightning)
 
-dist_pkginclude_HEADERS = \
+nobase_dist_pkginclude_HEADERS = \
 	Base.hh \
 	Seam.hh \
-	libltdl/ltdl.h
+	libltdl/ltdl.h \
+	lightning/funcs-common.h \
+	lightning/core-common.h \
+	lightning/fp-common.h \
+	lightning/asm-common.h \
+	lightning/asm.h \
+	lightning/core.h \
+	lightning/funcs.h \
+	lightning/fp.h \
+	lightning/lightning.h
 
 # Autoconf macros
 
