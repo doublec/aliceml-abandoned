@@ -1,0 +1,62 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date: 2004/05/04 07:53:07 $ by $Author: tack $
+ *   $Revision: 1.3 $
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Print     from "x-alice:/lib/system/Print"
+
+
+fun appTail f nil = ()
+  | appTail f (x::xr) = (f x xr;
+                         appTail f xr)
+
+fun cardProd f = appTail (fn x => List.app (fn y => f(x,y)))
+
+
+fun hamming bits dist num =
+    let
+	    val space = Space.new()
+        val bitmask = Vector.tabulate (bits, fn i => i)
+        val root = List.tabulate (num,
+                                    fn _ => FS.upperBound(space,bitmask))
+    in
+        cardProd (fn (x,y) =>
+                       let
+                           val d1 = FS.setvar space
+                           val d2 = FS.setvar space   
+                           val d1c = FD.range (space,(0,dist))                        
+                           val d2c = FD.range (space,(0,dist))
+                       in
+                      	   FS.difference(space,d1,x,y);
+
+                       	   FS.difference(space,d2,y,x);
+
+                       	   FS.Int.card(space,d1c,d1);
+                     	   FS.Int.card(space,d2c,d2);
+                       	   FD.linear(space, #[(1,d1c),(1,d2c)],
+                       	   	FD.GQ, dist, FD.DEF
+                       	   )
+                       end) root;
+
+        (* distribution *)
+        FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
+        (Vector.fromList root,space)
+     end
+
+
+val (root,space) = hamming 7 2 8
+val (SOME sol) = Search.searchOne space
+val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
+val _ = Print.printVal s
+val _ = OS.Process.exit OS.Process.success
