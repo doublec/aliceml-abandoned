@@ -12,7 +12,6 @@
 
 import structure GlobalStamp   from "GlobalStamp"
 import functor   MkHashImpMap  from "MkHashImpMap"
-import functor   FromEqHashKey from "HASH_KEY-sig"
 import signature STAT          from "STAT-sig"
 
 structure Stat :> STAT =
@@ -22,7 +21,7 @@ struct
 
     exception Remote
 
-    structure Map = MkHashImpMap(FromEqHashKey(GlobalStamp))
+    structure Map = MkHashImpMap(GlobalStamp)
 
     val map = Map.new() : value Map.t
 

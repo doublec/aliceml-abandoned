@@ -51,7 +51,7 @@ functor MkDepthFirstSearch
 	     sorted = ref nil}
 
 	fun getCycle (key::keyr, key', state: state) =
-	    if Key.equals (key, key') then (#stack state := keyr; [key])
+	    if Key.equal (key, key') then (#stack state := keyr; [key])
 	    else key::getCycle (keyr, key', state)
 	  | getCycle (nil, _, _) = raise Assert.failure
 
