@@ -270,7 +270,7 @@ struct
 
     val random = random 0 
         
-    fun placeSnakes (a,snakes) =
+    fun placeSnakes (a, snakes) =
 	let
 	    val died    = ref nil
 	    val fin     = ref nil
@@ -278,24 +278,24 @@ struct
 
 	    fun killSnake s = 
 		let
-		    val hb = (Snake.head s)::(Snake.body s)
+		    val hb = (Snake.head s) :: (Snake.body s)
 		in
-		    died := s::(!died);
+		    died := s :: (!died);
 		    List.app 
-		        (fn (r,c) => 
-                            Array2.update(a,r,c,P.EMPTY)) hb
+		        (fn (r, c) => 
+                            Array2.update (a, r, c, P.EMPTY)) hb
 		end
 
 	    fun placeHead snake =
 		let
-		    val (r,c) = Snake.head snake
+		    val (r, c) = Snake.head snake
 		    val color = Snake.color snake
 		    val dir   = Snake.direction snake
-		    val collObject = Array2.sub(a,r,c)
+		    val collObject = Array2.sub (a, r, c)
 		    fun hitSnake s     nil     = false
-		      | hitSnake s (sn::slist) = 
+		      | hitSnake s (sn :: slist) = 
 			let
-			    val hb = (Snake.head sn)::(Snake.body sn)
+			    val hb = (Snake.head sn) :: (Snake.body sn)
 			in
 			    if List.exists (fn x => Snake.head s = x) hb
 				then true
@@ -306,7 +306,8 @@ struct
 			    List.filter (fn x => not (snake = x)) snakes
 		    val hit = hitSnake snake othersnakes
 		    
-                    fun place () = Array2.update(a,r,c, P.SNAKE_HEAD(dir,color)) 
+                    fun place () = Array2.update(a, r, c, P.SNAKE_HEAD(dir,
+								       color)) 
                 in
 		    if hit
 			then killSnake snake
@@ -319,12 +320,12 @@ struct
 		       | P.WALL     => killSnake snake
                        | P.GATE (_, P.CLOSED) => killSnake snake
 		       | P.GATE (col, P.OPEN) => 
-                            if col = color
-			        then (fin := snake::(!fin);
-				        Array2.update(a,r,c,collObject))
+                            if Color.equal (col, color)
+			        then (fin := snake :: (!fin);
+				        Array2.update(a, r, c, collObject))
 			    else killSnake snake
 		       | P.SNAKE_HEAD(_,col) => 
-				 if col <> color 
+				 if not (Color.equal (col, color))
 				     then killSnake snake
 				 else ()
 		       |     _      => killSnake snake
@@ -335,13 +336,13 @@ struct
                     val headP   = Snake.head snake
 		    val color   = Snake.color snake
 		    val body    = Snake.body snake
-		    fun thisSnake s = color = Snake.color s
+		    fun thisSnake s = Color.equal (color, Snake.color s)
                     (* have we already died? *)
 		    val dead = List.exists thisSnake (!died)
 		
                     fun place [] = ()
-                      | place ((r,c) :: bodyRest) =
-                        if (r,c) = headP then 
+                      | place ((r, c) :: bodyRest) =
+                        if (r, c) = headP then 
                             (* ouch! our head has hit ourself! *)
                             killSnake snake
                         else
