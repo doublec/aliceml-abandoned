@@ -12,12 +12,42 @@
 
 functor
 import
+   Parser(virtualString) at 'x-oz://boot/Parser'
    Open(text pipe)
+   System(showInfo)
    Compiler(engine interface)
 export
    TranslateFile
 define
    class TextPipe from Open.pipe Open.text end
+
+   local
+      fun {Trans X}
+	 case X of fAtom(A _) then A
+	 [] fInt(I _) then I
+	 [] fFloat(F _) then F
+	 [] fRecord(Label Args) then ArgCounter in
+	    ArgCounter = {NewCell 1}
+	    {List.toRecord {Trans Label}
+	     {Map Args
+	      fun {$ Arg}
+		 case Arg of fColon(F T) then
+		    {Trans F}#{Trans T}
+		 else N NewN in
+		    {Exchange ArgCounter ?N NewN}
+		    NewN = N + 1
+		    N#{Trans Arg}
+		 end
+	      end}}
+	 end
+      end
+   in
+      fun {VirtualStringToValue VS}
+	 case {Parser.virtualString VS options(defines: {NewDictionary})}
+	 of [ParseTree]#_ then {Trans ParseTree}
+	 end
+      end
+   end
 
    fun {StockhausenToImperative File} Pipe S in
       Pipe = {New TextPipe
@@ -83,7 +113,9 @@ define
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
       VS = {StockhausenToImperative File}
-      {C enqueue(feedVirtualString(VS return(result: ?Program)))}
+      {System.showInfo 'reading imperative syntax ...'}
+      Program = {VirtualStringToValue VS}
+      {System.showInfo 'sharing bodies ...'}
       {ShareBody Program {NewDictionary}}
    end
 end
