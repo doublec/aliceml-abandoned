@@ -3,19 +3,39 @@
 0.0  0.0  0.0  point /black
 1.0  1.0  1.0  point /white
 1.0  0.0  0.0  point /red
-1.0  0.4  0.0  point /orange
-0.0  0.5  0.0  point /green
+1.0  0.5  0.0  point /orange
+%1.0  0.3  0.0  point /brown
+0.0  0.7  0.0  point /green
+0.0  0.5  0.0  point /darkgreen
 0.0  0.0  1.0  point /blue
 1.0  0.0  1.0  point /magenta
 1.0  1.0  0.0  point /yellow
 0.0  1.0  1.0  point /cyan
+0.2  0.0  0.3  point /darkpurple
 
-{ /v/u/f orange 1.0 0.0 1.0 } /bodysurface
-{ /v/u/f red 1.0 0.0 1.0 }   /rotorsurface
-{ /v/u/f white 1.0 0.0 1.0 } /rotorsurface2
-{ /v/u/f green 1.0 0.0 1.0 } /vatsurface
+{ /v/u/f orange 0.2 0.8 1.0 } /bodysurface
+%{ /v/u/f v 0.25 lessf {brown} {orange} if 0.2 0.8 1.0 } /bodysurface2
 
-bodysurface sphere	% cockpit
+{ /v/u/f
+  f 4 modi 2 lessi
+  {
+     u 0.1 lessf
+     {white}
+     {0.9 u lessf {white} {red} if}
+     if
+  }
+  {white}
+  if
+  1.0 0.0 1.0
+} /rotorsurface
+
+{ /v/u/f darkgreen 1.0 0.0 1.0 } /vatsurface
+
+%{ /v/u/f v 33.0 mulf floor 2 modi 0 eqi {darkgreen} {green} if 1.0 0.0 1.0 } /vatsurface
+
+{ /v/u/f darkpurple 0.1 0.9 1.0 } /windowsurface
+
+bodysurface sphere	% main body
 
 bodysurface cylinder	% extension
 0.3 3.2 0.3 scale
@@ -23,15 +43,19 @@ bodysurface cylinder	% extension
 0.0 0.7 0.0 translate
 union
 
+bodysurface cylinder	% cockpit
+0.5 2.0 0.5 scale
+90.0 rotatex
+-0.7 0.5 -1.0 translate
+difference
+
+windowsurface sphere	% window
+0.92 uscale
+union
+
 rotorsurface cube	% rotor blade
 -0.5 -0.5 -0.5 translate
-4.0 0.02 0.3 scale
-rotorsurface2 cube
--0.5 -0.5 -0.5 translate
-0.4 0.02 0.3 scale
-/tip
-tip 2.06 0.0 0.0 translate union
-tip -2.06 0.0 0.0 translate union
+4.8 0.02 0.3 scale
 /blade
 
 blade blade		% rotor
@@ -40,7 +64,7 @@ union
 /rotor
 
 rotor			% main rotor
-75.0 rotatey
+70.0 rotatey
 0.0 1.1 0.0 translate
 union
 
@@ -72,10 +96,14 @@ union
 
 -0.5 0.0 -1.0 point
 white
-pointlight /lig
+pointlight /lig1
+
+-3.9 4.5 2.0 point
+white
+pointlight /lig2
 
 0.2 0.2	0.2 point	% ambient
-[lig]			% lights
+[lig1 lig2]		% light
 scene			% object
 1			% depth
 90.0			% fov
