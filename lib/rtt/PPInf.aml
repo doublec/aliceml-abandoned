@@ -10,320 +10,473 @@
  *   $Revision$
  *)
 
-import structure Assert      from "../utility/Assert"
+import structure Assert        from "../utility/Assert"
 
-import structure Label       from "Label"
-import structure Path        from "Path"
-import structure Type        from "Type"
-import structure Fixity      from "Fixity"
-import structure Inf         from "Inf"
+import structure Label         from "Label"
+import structure LabelSet      from "LabelSet"
+import structure Path          from "Path"
+import structure Type          from "Type"
+import structure PervasiveType from "PervasiveType"
+import structure Fixity        from "Fixity"
+import structure Inf           from "Inf"
 
-import structure PrettyPrint from "../utility/PrettyPrint"
-import structure PPMisc      from "PPMisc"
-import structure PPPath      from "PPPath"
-import structure PPType      from "PPType"
-import signature PP_INF      from "PP_INF-sig"
-
+import structure PrettyPrint   from "../utility/PrettyPrint"
+import structure PPMisc        from "PPMisc"
+import structure PPPath        from "PPPath"
+import structure PPType        from "PPType"
+import signature PP_INF        from "PP_INF-sig"
 
 structure PPInf :> PP_INF =
 struct
-
-    (* Import *)
-
     open Inf
     open Fixity
     open PrettyPrint
     open PPMisc
-
     infixr ^^ ^/^
 
 
-    (* Helpers *)
+  (* Deconstruction helpers *)
 
-    fun unapply  t     = unapply'(t,[])
-    and unapply'(t,ps) =
-	case inspect t
+    fun unapply  j     = unapply'(j,[])
+    and unapply'(j,ps) =
+	case inspect j
 	 of Apply(j',m) => unapply'(j',#1(asMod m)::ps)
-	  | _           => (t,ps)
+	  | _           => (j,ps)
+
+    fun unlambda  j        = unlambda'(j,[])
+    and unlambda'(j,binds) =
+	case inspect j
+	 of Lambda(p,j1,j2)	=> unlambda'(j2, ("","",p,j1)::binds)
+	  | _			=> (List.rev binds, j)
+
+    fun unbind  j        = unbind'(j,[])
+    and unbind'(j,binds) =
+	case inspect j
+	 of Arrow(p,j1,j2)	=> unbind'(j2, ("fct"," ->",p,j1)::binds)
+	  | Exist(p,j1,j2)	=> unbind'(j2, binds)
+(*DEBUG
+				   unbind'(j2, ("exist"," =>",p,j1)::binds)
+*)
+	  | Lambda(p,j1,j2)	=> unbind'(j2, ("fn"," =>",p,j1)::binds)
+	  | _			=> (List.rev binds, j)
+
+    fun unarrowKind  k        = unarrowKind'(k,[])
+    and unarrowKind'(k,binds) =
+	case inspectKind k
+	 of DepKind(p,j,k')	=> unarrowKind'(k', ("","",p,j)::binds)
+	  | _			=> (List.rev binds, k)
+
+    fun unbindKind  k        = unbindKind'(k,[])
+    and unbindKind'(k,binds) =
+	case inspectKind k
+	 of DepKind(p,j,k')	=> unbindKind'(k', ("fct"," ->",p,j)::binds)
+	  | _			=> (List.rev binds, k)
+
+    fun unlambdaTyp  t     = unlambdaTyp'(t,[])
+    and unlambdaTyp'(t,vs) =
+	case Type.inspect t
+	 of Type.Lambda(v,t')	=> unlambdaTyp'(t',v::vs)
+	  | Type.Mu t'		=> unlambdaTyp'(t',vs)
+	  | _			=> (List.rev vs, t)
+
+    fun unarrowTKind  k     = unarrowTKind'(k,[])
+    and unarrowTKind'(k,ks) =
+	case Type.inspectKind k
+	 of Type.ArrowKind(k1,k2) => unarrowTKind'(k2,k1::ks)
+	  | _                     => (List.rev ks, k)
+
+    fun unquantifyTyp  t     = unquantifyTyp'(t,[])
+    and unquantifyTyp'(t,vs) =
+	case Type.inspect t
+	 of Type.All(v,t')	=> unquantifyTyp'(t',v::vs)
+	  | _			=> (List.rev vs, t)
+
+    fun unargTyp t =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if not(Type.equal(t1, PervasiveType.typ_strict)) then SOME t else
+	    (case Type.inspect t2
+	     of Type.Prod r =>
+		if Type.isEmptyRow r
+		then NONE
+		else SOME t2
+	      | _ => SOME t2
+	    )
+	  | _ => SOME t
 
 
-    (* Simple objects *)
+    fun typToLabs(s,t) =
+	case Type.inspect t
+	 of Type.Mu t'		=> typToLabs(s,t')
+	  | Type.Lambda(v,t')	=> typToLabs(s,t')
+	  | Type.Sum r		=> rowToLabs(s,r)
+	  | _			=> ()
+    and rowToLabs(s,r) =
+	case Type.inspectRow r
+	 of (Type.EmptyRow | Type.UnknownRow)	=> ()
+	  |  Type.FieldRow(l,t,r')		=> (LabelSet.insert(s,l);
+						    rowToLabs(s,r'))
+
+
+  (* Simple objects *)
 
     fun ppLab l			= text(Label.toString l)
 
     fun ppFix NONFIX		= text "nonfix"
-      | ppFix(PREFIX n)		= text "prefix" ^/^ text(Int.toString n)
-      | ppFix(POSTFIX n)	= text "postfix"^/^ text(Int.toString n)
-      | ppFix(INFIX(n,LEFT))	= text "infix"  ^/^ text(Int.toString n)
-      | ppFix(INFIX(n,RIGHT))	= text "infixr" ^/^ text(Int.toString n)
-      | ppFix(INFIX(n,NEITHER))	= text "infixn" ^/^ text(Int.toString n)
+      | ppFix(PREFIX n)		= text "prefix " ^^ text(Int.toString n)
+      | ppFix(POSTFIX n)	= text "postfix "^^ text(Int.toString n)
+      | ppFix(INFIX(n,LEFT))	= text "infix "  ^^ text(Int.toString n)
+      | ppFix(INFIX(n,RIGHT))	= text "infixr " ^^ text(Int.toString n)
+      | ppFix(INFIX(n,NEITHER))	= text "infixn " ^^ text(Int.toString n)
 
 
-    (* Interfaces *)
+  (* Precedences *)
 
-    (* Precedence:
-     *	0 : binders (LAMBDA(id : inf1) . inf2)
-     *	1 : constructed type (inf(path))
-     *)
+    val rootPrec	= 0
+    val bindPrec	= 0	(* binders (fct(id : inf1) => inf2) *)
+    val asPrec		= 1	(* synomyms (inf1 as inf2) *)
+    val appPrec		= 2	(* constructed type (inf path) *)
+    val atomPrec	= 3
 
-    fun ppInf j = fbox(below(ppInf'([], j)))
+    fun parenPrec p (p',doc) =
+	if p > p'
+	then paren doc
+	else doc
 
-    and ppInf'(ps,j) =
+
+  (* Variables *)
+
+    fun ppVar prec (n,v) =
+	let
+	    val k    = Type.kindVar v
+	    val doc0 = PPType.ppVar(n,v)
+	in
+	    case Type.inspectKind k
+	     of (Type.StarKind | Type.ExtKind) =>
+		    (doc0, doc0)
+	      | Type.ArrowKind _ =>
+		let
+		    val doc1 = PPType.ppKind k
+		    val doc  = abox(below(nest(doc0 ^^ text " :" ^/^ doc1)))
+		in
+		    (doc0, parenPrec prec (0,doc))
+		end
+	      | Type.SingKind t =>
+		let
+		    val doc1 = PPType.ppTyp t
+		    val doc  = abox(below(nest(doc0 ^^ text " =" ^/^ doc1)))
+		in
+		    (doc1, parenPrec prec (0,doc))
+		end
+	end
+
+    fun ppVars vs =
+	let
+	    val m     = Type.Map.new()
+	    val prec  = case vs of ([] | [_]) => 1 | _ => 0
+	    val ddocs = List.mapi (ppVar prec) vs
+	    val doc   = ppCommaList #2 ddocs
+	in
+	    ListPair.app (fn(v, (doc,_)) =>
+			  Type.Map.insert(m, Type.canonical(Type.var v), doc))
+			 (vs, ddocs);
+	    (if prec = 1 then doc else paren doc, m)
+	end
+
+
+  (* Interfaces *)
+
+    fun ppInf          j  = ppInf'([],rootPrec,j)
+    and ppInf'(ps,prec,j) =
 	if isAbbrev j then
 	    let
 		val (j1,j2) = asAbbrev j
 	    in
-		ppInf'(ps,j1)
+		ppInf'(ps,prec,j1)
 (*DEBUG
-		paren(ppInf'(ps,j1) ^/^ text "as" ^/^ ppInf'(ps,j2))
+		parenPrec prec (asPrec,
+		    fbox(
+			ppInf'(ps, asPrec+1, j1) ^^
+			text " as" ^/^
+			ppInf'(ps, asPrec+1, j2)
+		    )
+		)
 *)
 	    end
 	else case inspect j
 	 of Top   => text "any"
 	  | Con p => PPPath.ppPath' ps p
 	  | Sig s => ppSig'(ps, s)
-	  | Arrow(p,j1,j2) => fbox(below(ppBinder("fct",ps,p,j1,j2)))
-	  | Exist(p,j1,j2) => ppInf'(ps,j2)
-(*DEBUG
-			      fbox(below(ppBinder("ex",ps,p,j1,j2)))
-*)
-	  | Lambda(p,j1,j2) => fbox(below(ppBinder("fn",ps,p,j1,j2)))
+	  | (Arrow _ | Exist _ | Lambda _) =>
+	    let
+		val (binds,j') = unbind j
+	    in
+		parenPrec prec (bindPrec,
+		    abox(below(
+			List.foldr (ppBind ps) empty binds ^/^
+			ppInf'(ps, bindPrec+1, j')
+		    ))
+		)
+	    end
 	  | Apply _ =>
 	    let
 		val (j',ps') = unapply j
 	    in
-		fbox(nest(List.foldl
-				(fn(p,d) => d ^/^ paren(PPPath.ppPath' ps p))
-				(ppInf'(ps,j')) ps'))
+		parenPrec prec (appPrec,
+		    fbox(below(nest(
+			ppInf'(ps, appPrec, j') ^/^
+			List.foldr (fn(p,doc) => PPPath.ppPath' ps p ^/^ doc)
+				   empty ps'
+		    )))
+		)
 	    end
 	  | Sing m =>
 	    let
 		val (p,j') = asMod m
 	    in
-		abox(
-		    fbox(
-			text "(" ^^
-			below(break ^^
-			    PPPath.ppPath' ps p ^/^
-			    text ":" ^^
-			    nest(break ^^
-				ppInf'(ps,j')
-			    )
-			) ^/^
-			text ")"
-		    )
-		)
+		fbox(below(nest(
+		    text "<" ^^
+		    PPPath.ppPath' ps p ^^ text " :" ^/^
+		    ppInf'(ps, rootPrec, j') ^^
+		    text ">"
+		)))
 	    end
 
-    and ppBinder(s,ps,p,j1,j2) =
-	    abox(
-		fbox(
-		    text s ^^
-		    text "(" ^^
-		    below(
-			PPPath.ppPath p ^/^
-			text ":" ^^
-			nest(break ^^
-			    ppInf'(p::ps,j1)
-			)
-		    ) ^^
-		    text ")" ^/^
-		    text "->"
-		) ^^
-		nest(break ^^
-		    ppInf'(ps,j2)
-		)
-	    )
+    and ppBind ps ((head,sep,p,j), doc) =
+	text head ^^
+	text "(" ^^
+	fbox(below(nest(
+	    PPPath.ppPath p ^^ text " :" ^/^
+	    ppInf'(p::ps, rootPrec, j)
+	))) ^^
+	text ")" ^^
+	text sep ^/^
+	doc
 
 
-    (* Signatures *)
+  (* Signatures *)
 
-    and ppSig s = ppSig''([],s)
+    and ppSig s =
+	vbox(below(
+	    List.foldr (ppItem([], LabelSet.new())) empty (items s)
+	))
 
     and ppSig'(ps,s) =
-	let
-	    val doc = ppSig''(ps,s)
-	in
-	    abox(below(
-		text "sig" ^^
-		(if isEmpty doc then
-		    empty
-		 else
-		    nest(vbox(break ^^ doc))
-		) ^^ break ^^
-		text "end"
-	    ))
-	end
+	abox(below(
+	    nest(
+		text "sig" ^/^
+		vbox(
+		    List.foldr (ppItem(ps, LabelSet.new())) empty (items s)
+		)
+	    ) ^/^
+	    text "end"
+	))
 
-    and ppSig''(ps,s) = vbox(List.foldl (ppItem ps) empty (items s))
-
-    and ppItem ps (item, doc) =
+    and ppItem (ps,ls) (item,doc) =
 	case inspectItem item
 	 of FixItem(l,f) =>
-		hbox(
-		    ppFix f ^/^
+	    let
+	    in
+		LabelSet.deleteAll ls;
+		doc ^/^
+		fbox(nest(
+		    ppFix f ^^ text " " ^^
 		    ppLab l
-		) ^/^ doc
+		))
+	    end
 	  | ValItem(l,t) =>
-	    if String.sub(Label.toString l,0) = #"'" then
-		doc
-	    else
-		abox(
-		    hbox(
-			text "val" ^/^ ppLab l ^/^ text ":"
-		    ) ^^
-		    nest(break ^^
-			abox(PPType.ppTyp' ps t)
-		    )
-		) ^/^ doc
+	    let
+		val s = Label.toString l
+	    in
+		if String.sub(s,0) = #"'" then
+		    let
+			val  l'     = Label.fromString(String.extract(s,1,NONE))
+			val (vs,t') = unquantifyTyp t
+			val (t1,t2) = Type.asArrow(#2(Type.asApply t'))
+			val  to     = unargTyp t1
+			val (_,m)   = ppVars vs
+			val    n    = List.length vs
+			val  isExn  = Type.equal(t2, PervasiveType.typ_exn)
+		    in
+			LabelSet.deleteAll ls;
+			LabelSet.insert(ls,l');
+			doc ^/^
+			fbox(nest(
+			    text(if isExn then "exception "
+					  else "constructor ") ^^
+			    ppLab l' ^/^
+			    (case to
+			     of NONE     => empty
+			      | SOME t1' =>
+				text "of" ^/^
+				PPType.ppTyp' (ps,n,m) t1'
+			    ) ^/^
+			    (if isExn then empty else
+				text ":" ^/^
+				PPType.ppTyp' (ps,n,m) t2
+			    )
+			))
+		    end
+		else if LabelSet.member(ls,l) then
+		    doc
+		else
+		    (LabelSet.deleteAll ls;
+		    doc ^/^
+		    fbox(nest(
+			text "val " ^^
+			ppLab l ^/^
+			text ":" ^/^
+			PPType.ppTyp' (ps,0,Type.Map.new()) t
+		    )))
+	    end
 	  | TypItem(p,k) =>
-	    if Type.isSingKind k then
-		abox(
-		    hbox(
-			text "type" ^/^
-			ppLab(Path.toLab p) ^/^
-(*DEBUG
-			PPPath.ppPath' ps p ^/^
-*)
-			text "="
+	    let
+		val (ks,k')   = unarrowTKind k
+		val  vs       = List.map Type.newVar ks
+		val (vs',to,isDatatype) =
+				if not(Type.isSingKind k)
+				then (vs,NONE,false) else
+				let
+				    val t = Type.asSingKind k
+				    val t = if not(Type.isAbbrev t) then t else
+					    let val (t1,t2) = Type.asAbbrev t in
+						if Type.isCon t1 andalso
+						   Path.equal(Type.asCon t1, p)
+						then t2
+						else t
+					    end
+				in
+				    if Type.isAbbrev t
+				    then (vs, SOME t, false) else
+				    let
+					val (vs2,t') = unlambdaTyp t
+				    in
+					(vs@vs2, SOME t', Type.isMu t)
+				    end
+				end
+		val (doc1,m)  = ppVars vs'
+	    in
+		if isDatatype
+		then typToLabs(ls, Option.valOf to)
+		else LabelSet.deleteAll ls;
+		doc ^/^
+		fbox(nest(
+		    text(case Type.inspectKind k'
+			 of Type.StarKind    => "type "
+			  | Type.ExtKind     => "exttype "
+			  | Type.SingKind t  => if isDatatype
+						then "datatype "
+						else "type "
+			  | Type.ArrowKind _ => raise Assert.failure
 		    ) ^^
-		    nest(break ^^
-			let
-			    val t  = Type.asSingKind k
-			    val t' = if not(Type.isAbbrev t) then t else
-				     let val (t1,t2) = Type.asAbbrev t in
-					 case Type.inspect t1
-					 of Type.Con p1 =>
-					    if Path.equal(p1,p) then t2
-					    else t
-					  | _ => t
-				     end
-			in
-			    abox(PPType.ppTyp' ps t')
-			end
-		    )
-		) ^/^ doc
-	    else
-		abox(
-		    hbox(
-			text "type" ^/^
-			ppLab(Path.toLab p) ^/^
+		    hbox(doc1 ^/^ text "") ^^
+		    ppLab(Path.toLab p) ^/^
 (*DEBUG
-			PPPath.ppPath' ps p ^/^
+		    PPPath.ppPath' ps p ^/^
 *)
-			text ":"
-		    ) ^^
-		    nest(break ^^
-			abox(PPType.ppKind k)
+		    (case to
+		     of NONE   => empty
+		      | SOME t =>
+			text "=" ^/^
+			PPType.ppTyp' (ps, List.length vs', m) t
 		    )
-		) ^/^ doc
+		))
+	    end
 	  | ModItem(p,j) =>
-		abox(
-		    hbox(
-			text(if isArrow j then "functor"
-					  else "structure") ^/^
-			    ppLab(Path.toLab p) ^/^
+	    let
+		val (j',po)   = if not(isSing j) then (j,NONE) else
+				let
+				    val (p,j') = asMod(asSing j)
+				in
+				    (j', SOME p)
+				end
+	    in
+		LabelSet.deleteAll ls;
+		doc ^/^
+		fbox(nest(
+		    text(if isArrow j' then "functor " else "structure ") ^^
+		    ppLab(Path.toLab p) ^/^
 (*DEBUG
-			    PPPath.ppPath' ps p ^/^
+		    PPPath.ppPath' ps p ^/^
 *)
-			text ":"
-		    ) ^^
-		    nest(break ^^
-			(if isSing j then
-			     let
-				 val (p',j') = asMod(asSing j)
-			     in
-				 abox(ppInf'(p::ps,j')) ^/^
-				 hbox(text "=" ^/^ PPPath.ppPath' ps p')
-			     end
-			 else
-			     abox(ppInf'(p::ps,j))
-			)
+		    text ":" ^/^
+		    ppInf'(p::ps, rootPrec, j') ^/^
+		    (case po
+		     of NONE   => empty
+		      | SOME p =>
+			text "=" ^/^
+			PPPath.ppPath' ps p
 		    )
-		) ^/^ doc
+		))
+	    end
 	  | InfItem(p,k) =>
-	    if isSingKind k then
-		abox(
-		    hbox(
-			text "signature" ^/^
-			ppLab(Path.toLab p) ^/^
+	    let
+		val (bds,k')  = unarrowKind k
+		val (bds',jo) = if not(isSingKind k') then (bds,NONE) else
+				let
+				    val j = asSingKind k'
+				    val j = if not(isAbbrev j) then j else
+					    let val (j1,j2) = asAbbrev j in
+						if isCon j1 andalso
+						   Path.equal(asCon j1, p)
+						then j2
+						else j
+					    end
+				in
+				    if Inf.isAbbrev j then (bds, SOME j) else
+				    let
+					val (bds2,j') = unlambda j
+				    in
+					(bds@bds2, SOME j')
+				    end
+				end
+	    in
+		LabelSet.deleteAll ls;
+		doc ^/^
+		fbox(nest(
+		    text "signature " ^^
+		    ppLab(Path.toLab p) ^/^
 (*DEBUG
-			PPPath.ppPath' ps p ^/^
+		    PPPath.ppPath' ps p ^/^
 *)
-			text "="
-		    ) ^^
-		    nest(break ^^
-			let
-			    val j  = asSingKind k
-			    val j' = if not(isAbbrev j) then j else
-				     let val (j1,j2) = asAbbrev j in
-					 if isCon j1 andalso
-					    Path.equal(asCon j1, p)
-					 then j2
-					 else j
-				     end
-			in
-			    abox(ppInf'(ps, j'))
-			end
+		    abox(
+			List.foldr (ppBind ps) empty bds'
+		    ) ^/^
+		    (case jo
+		     of NONE   => empty
+		      | SOME j =>
+			text "=" ^/^
+			ppInf'(ps, rootPrec, j)
 		    )
-		) ^/^ doc
-	    else
-		abox(
-		    hbox(
-			text "signature" ^/^
-			ppLab(Path.toLab p) ^/^
-(*DEBUG
-			PPPath.ppPath' ps p ^/^
-*)
-			text ":"
-		    ) ^^
-		    nest(break ^^
-			abox(ppKind'(ps,k))
-		    )
-		) ^/^ doc
+		))
+	    end
 	  | HiddenItem item' =>
 		doc
 (*DEBUG
-		text "? " ^^ ppItem ps (item', doc)
+		text "? " ^^ ppItem (ps,ls) (item', doc)
 *)
 
 
-    (* Kinds *)
+  (* Kinds *)
 
-    and ppKind(ps,k) = fbox(below(ppKind'(ps,k)))
-
-    and ppKind'(ps,k) =
+    fun ppKind          k  = below(ppKind'([], rootPrec, k))
+    and ppKind'(ps,prec,k) =
 	case inspectKind k
-	 of GroundKind => text "#"
-	  | DepKind(p,j,k') =>
-		fbox(below(
-		    abox(
-			fbox(
-			    text "PI" ^/^
-			    text "(" ^^
-			    below(break ^^
-				PPPath.ppPath p ^/^
-				text ":" ^^
-				nest(break ^^
-				    ppInf'(p::ps,j)
-				)
-			    ) ^/^
-			    text ")" ^/^
-			    text "."
-			) ^^
-			nest(break ^^
-			    ppKind'(ps,k)
-			)
-		    )
-		))
-	  | SingKind j =>
-		abox(
-		    fbox(
-			text "<" ^^
-			below(break ^^
-			    ppInf'(ps,j)
-			) ^/^
-			text ">"
-		    )
+	 of GroundKind =>
+		text "#"
+	  | DepKind _ =>
+	    let
+		val (binds,k') = unbindKind k
+	    in
+		parenPrec prec (bindPrec,
+		    abox(below(
+			List.foldr (ppBind ps) empty binds ^/^
+			ppKind'(ps, bindPrec+1, k')
+		    ))
 		)
+	    end
+	  | SingKind j =>
+		text "<" ^^
+		ppInf'(ps, rootPrec, j) ^^
+		text ">"
 end
