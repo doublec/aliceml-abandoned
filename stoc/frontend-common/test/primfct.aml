@@ -12,7 +12,7 @@ struct
     __primitive functor UnpackVal : fct(val x : val_package type t) -> (val x : t) = "UnpackVal"
     __primitive functor Pack :      fct(signature S structure X : S) -> (val x : package) = "Pack"
     __primitive functor Unpack :    fct(val x : package signature S) -> S = "Unpack"
-    __primitive functor ByNeed :    fct(signature S functor F : fct(_:any) -> S) -> S = "ByNeed"
+    __primitive functor ByNeed :    fct(signature S functor F : () -> S) -> S = "ByNeed"
 
     (* Pack some core values *)
 
