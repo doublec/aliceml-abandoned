@@ -60,6 +60,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    fun adjoin (pos, mapping) =
 		case lookup' (pos, mapping) of
 		    SOME (O.IdRef id | O.LastIdRef id) => (O.IdDef id, mapping)
+		  | SOME (O.Lit _ | O.Prim _) =>
+			raise Crash.Crash "MkFlatteningPhase.adjoin"
 		  | NONE =>
 			let
 			    val id = O.freshId Source.nowhere
@@ -70,6 +72,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	fun idRefStamp (O.IdRef (O.Id (_, stamp, _))) = stamp
 	  | idRefStamp (O.LastIdRef (O.Id (_, stamp, _))) = stamp
+	  | idRefStamp (O.Lit _ | O.Prim _) =
+	    raise Crash.Crash "MkFlatteningPhase.idRefStamp"
 
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, Id (_, stamp1, _)) =>
@@ -245,12 +249,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 				      O.TupArgs #[], elseStms)], errStms)]
 
 	fun raisePrim (region, name) =
-	    let
-		val id = O.freshId region
-	    in
-		[O.ValDec (region, O.IdDef id, O.PrimExp (region, name)),
-		 O.RaiseStm (region, O.IdRef id)]
-	    end
+	    [O.RaiseStm (region, O.Prim name)]
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -403,9 +402,10 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		(O.PrimAppExp (#region info, "Future.await", #[idRef]), stms)
 	    end
 	and translateExp (LitExp (info, lit), f, cont) =
-	    f (O.LitExp (#region info, translateLit lit))::translateCont cont
+	    f (O.VarExp (#region info, O.Lit (translateLit lit)))::
+	    translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
-	    f (O.PrimExp (#region info, name))::translateCont cont
+	    f (O.VarExp (#region info, O.Prim name))::translateCont cont
 	  | translateExp (NewExp info, f, cont) =
 	    f (O.NewExp (#region info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =

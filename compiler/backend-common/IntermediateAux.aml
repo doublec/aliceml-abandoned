@@ -298,6 +298,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun usedVarsIdRef ((O.IdRef id | O.LastIdRef id), set, used) =
 	    usedVarsId (id, set, used)
+	  | usedVarsIdRef ((O.Lit _ | O.Prim _), _, _) = ()
 
 	fun usedVarsArgs (O.OneArg idRef, set, used) =
 	    usedVarsIdRef (idRef, set, used)
@@ -357,9 +358,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsBody (valOf bodyOpt, set, used, shared)
 	  | usedVarsStm (O.ExportStm (_, exp), set, used, shared) =
 	    usedVarsExp (exp, set, used, shared)
-	and usedVarsExp (O.LitExp (_, _), _, _, _) = ()
-	  | usedVarsExp (O.PrimExp (_, _), _, _, _) = ()
-	  | usedVarsExp (O.NewExp _, _, _, _) = ()
+	and usedVarsExp (O.NewExp _, _, _, _) = ()
 	  | usedVarsExp (O.VarExp (_, idRef), set, used, _) =
 	    usedVarsIdRef (idRef, set, used)
 	  | usedVarsExp (O.TagExp (_, _, _, args), set, used, _) =

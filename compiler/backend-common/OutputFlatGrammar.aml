@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -32,6 +32,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | IN
 	  | EX
 	  | NL
+	  | LIT of lit
 	  | ID of id
 	  | IDREF of idRef
 	  | IDDEF of idDef
@@ -62,10 +63,21 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 			while !n >= 4 do (append "\t"; n := !n - 4);
 			while !n > 0 do (append "  "; n := !n - 1)
 		    end
+		  | format' (LIT (WordLit w)) =
+		    (append "0w"; append (LargeWord.toString w))
+		  | format' (LIT (IntLit i)) = append (LargeInt.toString i)
+		  | format' (LIT (CharLit c)) =
+		    (append "#\""; append (WideChar.toString c); append "\"")
+		  | format' (LIT (StringLit s)) =
+		    (append "\""; append (String.toString s); append "\"")
+		  | format' (LIT (RealLit r)) = append (LargeReal.toString r)
 		  | format' (ID id) = append (idToString id)
 		  | format' (IDREF (IdRef id)) = append (idToString id)
 		  | format' (IDREF (LastIdRef id)) =
 		    (append (idToString id); append "[last]")
+		  | format' (IDREF (Lit lit)) = format' (LIT lit)
+		  | format' (IDREF (Prim name)) =
+		    (append "prim \""; append name; append "\"")
 		  | format' (IDDEF (IdDef id)) = append (idToString id)
 		  | format' (IDDEF Wildcard) = append "_"
 		  | format' (CO s) = (append "   (* "; append s; append " *)")
@@ -91,14 +103,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | insert (x, nil) = [x]
 
 	val sort = StampSet.fold insert nil
-
-	fun formatLit (WordLit w) = SEQ #[S "0w", S (LargeWord.toString w)]
-	  | formatLit (IntLit i) = S (LargeInt.toString i)
-	  | formatLit (CharLit c) =
-	    SEQ #[S "#\"", S (WideChar.toString c), S "\""]
-	  | formatLit (StringLit s) =
-	    SEQ #[S "\"", S (String.toString s), S "\""]
-	  | formatLit (RealLit r) = S (LargeReal.toString r)
 
 	fun formatArgs formatX (OneArg x) = formatX x
 	  | formatArgs formatX (TupArgs xs) =
@@ -163,7 +167,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "export ", IN, formatExp exp, EX]
 	and formatTests (LitTests litBodyVector, shared) =
 	    SEQ (Vector.map (fn (lit, body) =>
-			     SEQ #[formatLit lit, S " =>", IN, NL,
+			     SEQ #[LIT lit, S " =>", IN, NL,
 				   formatBody (body, shared), EX, NL])
 		 litBodyVector)
 	  | formatTests (TagTests tagBodyVector, shared) =
@@ -188,9 +192,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				   S "]", S " =>", IN, NL,
 				   formatBody (body, shared), EX, NL])
 		 idDefsBodyVector)
-	and formatExp (LitExp (_, lit)) = formatLit lit
-	  | formatExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
-	  | formatExp (NewExp (_, _)) = S "new"
+	and formatExp (NewExp (_, _)) = S "new"
 	  | formatExp (VarExp (_, idRef)) = IDREF idRef
 	  | formatExp (TagExp (_, label, n, args)) =
 	    SEQ #[S "(tag ", S (Label.toString label), S "/", I n, S ") ",

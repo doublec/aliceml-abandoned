@@ -38,9 +38,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	structure IdSet = IntermediateAux.IdSet
 
-	fun sideEffecting (LitExp (_, _)) = false
-	  | sideEffecting (PrimExp (_, _)) = false
-	  | sideEffecting (NewExp (_, _)) = false
+	fun sideEffecting (NewExp (_, _)) = false
 	  | sideEffecting (VarExp (_, _)) = false
 	  | sideEffecting (TagExp (_, _, _, _)) = false
 	  | sideEffecting (RefExp (_, _)) = false
@@ -169,6 +167,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	fun laIdRef ((IdRef id | LastIdRef id), use, dontKill) =
 	    if laId (id, use, dontKill) then LastIdRef id else IdRef id
+	  | laIdRef (idRef as (Lit _ | Prim _), _, _) = idRef
 
 	fun laIdRefs (idRefs, use, dontKill) =
 	    let
@@ -178,14 +177,16 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		Vector.app (fn (IdRef id | LastIdRef id) =>
 			       if IdSet.member (ids, id) then
 				   IdSet.insert (nonlinear, id)
-			       else IdSet.insert (ids, id)) idRefs;
+			       else IdSet.insert (ids, id)
+			     | (Lit _ | Prim _) => ()) idRefs;
 		(Vector.fromList (IdSet.fold (fn (id, rest) =>
 						 if laId (id, use, dontKill)
 						 then id::rest else rest)
 					     nil nonlinear),
 		 Vector.map (fn idRef as (IdRef id | LastIdRef id) =>
 				if IdSet.member (nonlinear, id) then IdRef id
-				else laIdRef (idRef, use, dontKill)) idRefs)
+				else laIdRef (idRef, use, dontKill)
+			      | idRef as (Lit _ | Prim _) => idRef) idRefs)
 	    end
 
 	fun laLabelIdRefVec (labelIdRefVec, use, dontKill) =
@@ -441,9 +442,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		VecTests tests
 	    end
-	and laExp (exp as LitExp (_, _), _, _) = (#[], exp)
-	  | laExp (exp as PrimExp (_, _), _, _) = (#[], exp)
-	  | laExp (exp as NewExp (_, _), _, _) = (#[], exp)
+	and laExp (exp as NewExp (_, _), _, _) = (#[], exp)
 	  | laExp (VarExp (info, idRef), use, dontKill) =
 	    (#[], VarExp (info, laIdRef (idRef, use, dontKill)))
 	  | laExp (TagExp (info, label, i, idRefArgs), use, dontKill) =

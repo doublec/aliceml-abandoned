@@ -154,6 +154,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genLit (StringLit s) = emit (Ldstr s)
 	  | genLit (RealLit r) = (emit (LdcR8 r); emit (Box System.Double))
 
+	fun emitIdRef (idRef as (IdRef _ | LastIdRef _)) =
+	    CodeStore.emitIdRef idRef
+	  | emitIdRef (Lit lit) = genLit lit
+	  | emitIdRef (Prim name) =
+	    let
+		val (dottedname, id) = Builtins.lookupField name
+	    in
+		emit (Ldsfld (dottedname, id, ObjectTy))
+	    end
+
 	(*--** remove global state *)
 	val sharedLabels: O.label StampMap.t = StampMap.new ()
 	val handlerCont: (O.label * I.body) option ref = ref NONE
@@ -441,14 +451,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			end
 		    end
 	    end
-	and genExp (LitExp (_, lit)) = genLit lit
-	  | genExp (PrimExp (_, name)) =
-	    let
-		val (dottedname, id) = Builtins.lookupField name
-	    in
-		emit (Ldsfld (dottedname, id, ObjectTy))
-	    end
-	  | genExp (NewExp (_, _)) =
+	and genExp (NewExp (_, _)) =
 	    (emit (Call (false, System.Guid, "NewGuid", #[], System.GuidTy));
 	     emit (Box System.Guid))
 	  | genExp (VarExp (_, idRef)) = emitIdRef idRef
@@ -463,7 +466,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newobj (Alice.ConVal, #[ObjectTy, ObjectTy])))
 	  | genExp (RefExp (_, idRef)) =
 	    (emitIdRef idRef; emit (Newobj (Alice.Cell, #[ObjectTy])))
-	  | genExp (TupExp (info, #[])) = genExp (PrimExp (info, "unit"))
+	  | genExp (TupExp (info, #[])) = emitIdRef (Prim "unit")
 	  | genExp (TupExp (_, idRefs)) =
 	    (emit (LdcI4 (Vector.length idRefs)); emit (Newarr ObjectTy);
 	     Vector.appi (fn (i, idRef) =>
