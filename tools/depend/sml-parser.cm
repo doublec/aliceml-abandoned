@@ -1,8 +1,8 @@
 Group is
 
 	ml-yacc-lib.cm
-	../lib/utility/sources.cm
-	../bootstrap/sources.cm
+	../../lib/utility/sources.cm
+	../../bootstrap/sources.cm
 
 	LEXER_ERROR-sig.aml
 	MkLexerError.aml

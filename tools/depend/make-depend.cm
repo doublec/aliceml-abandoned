@@ -1,6 +1,6 @@
 Group is
 
-	../lib/system/sources.cm
+	../../lib/system/sources.cm
 	sml-parser.cm
 
 	ANALYZER-sig.aml
