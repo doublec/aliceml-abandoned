@@ -33,7 +33,7 @@ signature LR_PARSER_ENG =
 				     ('_b * '_c * '_c) *
 				     ((LrTable.state *('_b * '_c * '_c)) list),
 		     void : '_b,
-		     error: '_c -> '_b 
+		     error: '_c * '_c -> '_b 
 		     } -> '_b
     end
 
@@ -113,7 +113,7 @@ structure LrParserEng : LR_PARSER_ENG =
 		    in parseStep(next,(goto(state,nonterm),value)::stack)
 		    end
                | ERROR => let val (_,leftPos,rightPos) = value
-		          in error leftPos 
+		          in error (leftPos, rightPos)
 			  end
   	       | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
 			   in topvalue
