@@ -1,0 +1,38 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GtkCoreTypes from "GtkCoreTypes"
+
+local
+    structure T = GtkCoreTypes
+in
+    signature GTK_CORE_COMPONENT =
+	sig
+	    structure GtkCoreOz :
+		sig
+		    val pointerToObject : T.object -> int
+		    val objectToPointer : int -> T.object
+		    val removeObject : int -> unit
+		    val vaArgListToOzList : T.va_arg list -> 'a list
+		    val signalConnect : T.object * string * (T.object -> unit) -> int
+		    val signalDisconnect : T.object * int -> unit
+		    val signalHandlerBlock : T.object * int -> unit
+		    val signalHandlerUnblock : T.object * int -> unit
+		    val signalEmit : T.object * string -> unit
+		    val allocateGdkColor : int * int * int -> T.object
+		    val freeGdkColor : T.object -> unit
+		    val getGdkEvent : T.object -> T.event
+		    val exit : unit -> unit
+		end
+	end
+end

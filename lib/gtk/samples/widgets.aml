@@ -1,181 +1,167 @@
-import structure OS from "x-alice:/lib/system/OS"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure GTK from "x-alice:/lib/gtk/GTK"
+import structure Inspector  from "x-alice:/lib/tools/Inspector"
+import structure GtkCore    from "x-alice:/lib/gtk/Gtk"
+import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure GtkBuilder from "GtkBuilder"
 
 local
     open GtkBuilder
-
-    fun DummyHandler () = Inspector.inspect "DummyHandler was called"
-    val start1 = Button("Start 1", [Handler("clicked", DummyHandler)])
-    val start2 = Button("Start 2 Button", [Handler("clicked", DummyHandler)])
-    val end1   = Button("End 1", [Handler("clicked", DummyHandler)])
-    val end2   = Button("End 2 Button", [Handler("clicked", DummyHandler)])
-
-    val entries = [BoxStart(false, false, 0, start1), BoxStart(false, false, 0, start2),
-		   BoxEnd(false, false, 0, end1), BoxEnd(false, false, 0, end2)]
-    val child   = VBox {homogeneous=false, spacing=0, entries=entries}
-    fun DestroyHandler () = Inspector.inspect "Destroy was called!"
-    val widget  = Toplevel {title="Vertical Box", border=10,
-			  handler=[Handler("destroy", DestroyHandler)], inner=child}
 in
-    val _ = MakeWidget widget
-end
+    local
+	fun DummyHandler _ = Inspector.inspect "DummyHandler was called"
+	val start1 = Button("Start 1", [Handler("clicked", DummyHandler)])
+	val start2 = Button("Start 2 Button", [Handler("clicked", DummyHandler)])
+	val end1   = Button("End 1", [Handler("clicked", DummyHandler)])
+	val end2   = Button("End 2 Button", [Handler("clicked", DummyHandler)])
 
-local
-    open GtkBuilder
+	val entries = [BoxStart(false, false, 0, start1), BoxStart(false, false, 0, start2),
+		       BoxEnd(false, false, 0, end1), BoxEnd(false, false, 0, end2)]
+	val child   = VBox {homogeneous=false, spacing=0, entries=entries}
+	fun DestroyHandler () = Inspector.inspect "Destroy was called!"
+	val widget  = Toplevel {title="Vertical Box", border=10,
+				handler=[Handler("destroy", DestroyHandler)], inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 
-    fun MakeHandler s = fn () => Inspector.inspect s
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-    val leftup    = Button("Left Up", [Handler("clicked", MakeHandler "Left Up")])
-    val rightup   = Button("Right Up", [Handler("clicked", MakeHandler "Right Up")])
-    val leftdown  = Button("Left Down", [Handler("clicked", MakeHandler "Left Down")])
-    val rightdown = Button("Right Down", [Handler("clicked", MakeHandler "Right Down")])
+	val leftup    = Button("Left Up", [Handler("clicked", MakeHandler "Left Up")])
+	val rightup   = Button("Right Up", [Handler("clicked", MakeHandler "Right Up")])
+	val leftdown  = Button("Left Down", [Handler("clicked", MakeHandler "Left Down")])
+	val rightdown = Button("Right Down", [Handler("clicked", MakeHandler "Right Down")])
 
-    val entries = [TableSimple {x=0, y=0, item=leftup},
-		   TableSimple {x=1, y=0, item=rightup},
-		   TableSimple {x=0, y=1, item=leftdown},
-		   TableSimple {x=1, y=1, item=rightdown}]
-    val child  = Table {rows=2, columns=2, homogeneous=true, entries=entries}
-    val widget = Toplevel {title="Table Demo", border=10,
-			   handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			   inner=child}
-in
-    val _ = MakeWidget widget
-end
+	val entries = [TableSimple {x=0, y=0, item=leftup},
+		       TableSimple {x=1, y=0, item=rightup},
+		       TableSimple {x=0, y=1, item=leftdown},
+		       TableSimple {x=1, y=1, item=rightdown}]
+	val child  = Table {rows=2, columns=2, homogeneous=true, entries=entries}
+	val widget = Toplevel {title="Table Demo", border=10,
+			       handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+			       inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 
-local
-    open GtkBuilder
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-    fun MakeHandler s = fn () => Inspector.inspect s
+	val entries = [BoxSimple(CheckButton ("Red", [Handler("clicked", MakeHandler "red")])),
+		       BoxSimple(CheckButton ("Yellow", [Handler("clicked", MakeHandler "yellow")])),
+		       BoxSimple(CheckButton ("Green", [Handler("clicked", MakeHandler "red")]))]
+	val box     = VBox {homogeneous=false, spacing=0, entries=entries}
+	val child   = Frame {title="Traffic Lights", ftype=ShadowEtchedIn, inner=box}
+	val widget  = Toplevel {title="Frame Demo", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
 
-    val entries = [BoxSimple(CheckButton ("Red", [Handler("clicked", MakeHandler "red")])),
-		   BoxSimple(CheckButton ("Yellow", [Handler("clicked", MakeHandler "yellow")])),
-		   BoxSimple(CheckButton ("Green", [Handler("clicked", MakeHandler "red")]))]
-    val box     = VBox {homogeneous=false, spacing=0, entries=entries}
-    val child   = Frame {title="Traffic Lights", ftype=ShadowEtchedIn, inner=box}
-    val widget  = Toplevel {title="Frame Demo", border=10,
-			   handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 
-in
-    val _ = MakeWidget widget
-end
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-local
-    open GtkBuilder
+	val left    = Button("Left", nil)
+	val right   = Button("Right", nil)
+	val child   = HPane {left=left, right=right}
+	val widget  = Toplevel {title="Horizontal Pane", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
 
-    fun MakeHandler s = fn () => Inspector.inspect s
+    in
+	val _ = MakeWidget widget
+    end
 
-    val left    = Button("Left", nil)
-    val right   = Button("Right", nil)
-    val child   = HPane {left=left, right=right}
-    val widget  = Toplevel {title="Horizontal Pane", border=10,
-			    handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-in
-    val _ = MakeWidget widget
-end
+	val entries = [{label="First", note=Button("First Page", nil)},
+		       {label="Second", note=Button("Second Page", nil)},
+		       {label="Third", note=Button("Third Page", nil)},
+		       {label="Fourth", note=Button("Fourth Page", nil)}]
 
-local
-    open GtkBuilder
+	val child   = Notebook(true, entries)
+	val widget  = Toplevel {title="NotebookEntry", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 
-    fun MakeHandler s = fn () => Inspector.inspect s
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-    val entries = [{label="First", note=Button("First Page", nil)},
-		   {label="Second", note=Button("Second Page", nil)},
-		   {label="Third", note=Button("Third Page", nil)},
-		   {label="Fourth", note=Button("Fourth Page", nil)}]
+	val entries = [Button("Ok", nil),
+		       Button("Refresh", nil),
+		       Button("Clear", nil),
+		       Button("Cancel", nil)]
 
-    val child   = Notebook(true, entries)
-    val widget  = Toplevel {title="NotebookEntry", border=10,
-			    handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
-in
-    val _ = MakeWidget widget
-end
+	val child   = HButtonBox(DefaultStyle, entries)
+	val widget  = Toplevel {title="HButtonBox", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 
-local
-    open GtkBuilder
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-    fun MakeHandler s = fn () => Inspector.inspect s
+	val list1 = [MenuItem("first", [MenuHandler(MakeHandler "files/first clicked")]),
+		     MenuItem("second", nil)]
 
-    val entries = [Button("Ok", nil),
-		   Button("Refresh", nil),
-		   Button("Clear", nil),
-		   Button("Cancel", nil)]
+	val list22 = [MenuItem("I am a submenu", nil)]
 
-    val child   = HButtonBox(DefaultStyle, entries)
-    val widget  = Toplevel {title="HButtonBox", border=10,
-			    handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
-in
-    val _ = MakeWidget widget
-end
+	val list2 = [SubMenu("first 2", list22),
+		     MenuItem("second 2", nil)]
 
-local
-    open GtkBuilder
+	val child   = MenuBar([{label="Files", submenu=list1},
+			       {label="Tools", submenu=list2}])
+	val widget  = Toplevel {title="Menu Bar", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 
-    fun MakeHandler s = fn () => Inspector.inspect s
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-    val list1 = [MenuItem("first", [MenuHandler(MakeHandler "files/first clicked")]),
-		 MenuItem("second", nil)]
+	val w = Promise.promise ()
 
-    val list22 = [MenuItem("I am a submenu", nil)]
+	fun updateDate cal =
+	    let
+		val (year, month, day) = Gtk.calendarGetDate cal
+		val date               = ((Int.toString (month + 1)) ^ "/" ^
+					  (Int.toString day) ^ "/" ^ (Int.toString year))
+	    in
+		Gtk.windowSetTitle(Promise.future w, "Calendar: " ^ date)
+	    end
 
-    val list2 = [SubMenu("first 2", list22),
-		 MenuItem("second 2", nil)]
+	val child   = Calendar([FullHandler("month-changed", updateDate),
+				FullHandler("day-selected", updateDate),
+				FullHandler("day-selected-double-click", updateDate),
+				FullHandler("prev-month", updateDate),
+				FullHandler("next-month", updateDate),
+				FullHandler("prev-year", updateDate),
+				FullHandler("next-year", updateDate)])
 
-    val child   = MenuBar([{label="Files", submenu=list1},
-			   {label="Tools", submenu=list2}])
-    val widget  = Toplevel {title="Menu Bar", border=10,
-			    handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
-in
-    val _ = MakeWidget widget
-end
+	val widget  = Toplevel {title="Calendar Test", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
+    in
+	val _ = Promise.fulfill(w, MakeWidget widget)
+    end
 
-local
-    open GtkBuilder
+    local
+	fun MakeHandler s = fn _ => Inspector.inspect s
 
-    fun MakeHandler s = fn () => Inspector.inspect s
-
-    val w = Promise.promise ()
-
-    fun updateDate cal =
-	let
-	    val (year, month, day) = GTK.calendarGetDate cal
-	    val date               = ((Int.toString (month + 1)) ^ "/" ^
-				      (Int.toString day) ^ "/" ^ (Int.toString year))
-	in
-	    GTK.windowSetTitle(Promise.future w, "Calendar: " ^ date)
-	end
-
-    val child   = Calendar([FullHandler("month-changed", updateDate),
-			    FullHandler("day-selected", updateDate),
-			    FullHandler("day-selected-double-click", updateDate),
-			    FullHandler("prev-month", updateDate),
-			    FullHandler("next-month", updateDate),
-			    FullHandler("prev-year", updateDate),
-			    FullHandler("next-year", updateDate)])
-
-    val widget  = Toplevel {title="Calendar Test", border=10,
-			    handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
-in
-    val _ = Promise.fulfill(w, MakeWidget widget)
-end
-
-local
-    open GtkBuilder
-
-    fun MakeHandler s = fn () => Inspector.inspect s
-
-    val child   = Text {xdim=50.0, ydim=50.0, text=nil}
-    val widget  = Toplevel {title="TextWidget Test", border=10,
-			    handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
-			    inner=child}
-in
-    val _ = MakeWidget widget
+	val child   = Text {xdim=50.0, ydim=50.0, text=nil}
+	val widget  = Toplevel {title="TextWidget Test", border=10,
+				handler=[Handler("destroy", MakeHandler "Toplevel::destroy")],
+				inner=child}
+    in
+	val _ = MakeWidget widget
+    end
 end

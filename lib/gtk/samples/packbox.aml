@@ -15,7 +15,7 @@ import structure OS from "x-alice:/lib/system/OS"
 import structure GTK from "x-alice:/lib/gtk/GTK"
 
 local
-    fun deleteEvent () = GTK.exit ()
+    fun deleteEvent _ = GTK.exit ()
     
     fun makeBox(Homogeneous, Spacing, Expand, Fill, Padding) =
 	let

@@ -34,32 +34,47 @@ CPPFLAGS := $(shell gtk-config --cflags gtk) -I$(SRCDIR)/gtk-canvas
 
 OZC = ozc
 OZCOPTS = -z9
-STOC = stoc
-STOCOPTS =
+OZTOOL = oztool
+OZTOOLOPTS =
 
-OZSOURCES = GTKCore.oz GTK.oz GDK.oz Canvas.oz
+STOC = stoc
+STOCOPTS = --no-dump-phases
+
+OZSOURCES = GtkCoreOz.oz Gtk.oz Gdk.oz Canvas.oz
 COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
+UNTYPEDCOMPONENTS = $(OZSOURCES:%.oz=Untyped%.ozf)
+
+ALICETYPESOURCES = GtkCoreTypes.aml
+ALICETYPECOMPONENTS = $(ALICETYPESOURCES:%.aml=%.ozf)
+
+ALICESOURCES = GtkCore.aml
+ALICECOMPONENTS = $(ALICESOURCES:%.aml=%.ozf)
 
 INSTALLDIRS = $(PREFIX)/lib/gtk
-INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/gtk/%)
+INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/gtk/%) \
+               $(ALICETYPECOMPONENTS:%=$(PREFIX)/lib/gtk/%) \
+               $(ALICECOMPONENTS:%=$(PREFIX)/lib/gtk/%) \
+               $(NATIVECOMPONENTS:%=$(PREFIX)/lib/gtk/%)
 
 CXXFLAGS = $(CPPFLAGS)
 
-NATIVESOURCES = GtkCanvas.c
-NATIVEOBJS = GtkCanvas.o
-NATIVEFILES = gtkcanvas.so-$(OZPLATFORM)
+NATIVESOURCES = GtkSignal.c GtkCanvas.c
+NATIVEOBJS = $(NATIVESOURCES:%.c=%.o)
+NATIVECOMPONENTS = $(NATIVESOURCES:%.c=%.so-$(OZPLATFORM))
+
+NATIVECANVAS = $(SRCDIR)/build/lib/libgtk-canvas.a
+
 NATIVEFLAGS = $(SRCDIR)/build/lib/libgtk-canvas.a \
               $(SRCDIR)/build/lib/libart_lgpl.a \
-              $(SRCDIR)/gtk-canvas/build/lib/libgdk_imlib.a \
               -lg -lgdk -lgtk
 
-.PHONY: all depend install clean veryclean distclean native
+.PHONY: all depend install clean veryclean distclean
 
 ##
 ## Building
 ##
 
-all: $(COMPONENTS) native
+all: $(ALICETYPECOMPONENTS) $(COMPONENTS) $(ALICECOMPONENTS) $(NATIVECANVAS) $(NATIVECOMPONENTS) 
 
 depend:
 	touch Makefile.depend
@@ -80,15 +95,15 @@ collect.$(SMLPLATFORM): collect.sml make-collect.sml
 	echo 'use "make-collect.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-GTKWrapper.oz: collect.$(SMLPLATFORM) header/gtkheader.c
+GtkWrapper.oz: collect.$(SMLPLATFORM) header/gtkheader.c
 	sml @SMLload=collect header/gtkheader.c
 
-GTKExport.oz: GTKWrapper.oz ;
-GTK.asig: GTKExport.oz ;
-GDKWrapper.oz: GTK.asig ;
-GDKExport.oz: GDKWrapper.oz ;
-GDK.asig: GDKExport.oz ;
-CanvasWrapper.oz: GDK.asig ;
+GtkExport.oz: GtkWrapper.oz ;
+Gtk.asig: GtkExport.oz ;
+GdkWrapper.oz: Gtk.asig ;
+GdkExport.oz: GdkWrapper.oz ;
+Gdk.asig: GdkExport.oz ;
+CanvasWrapper.oz: Gdk.asig ;
 CanvasExport.oz: CanvasWrapper.oz ;
 Canvas.asig: CanvasExport.oz ;
 
@@ -98,29 +113,30 @@ Untyped%.ozf: %.oz
 %.ozf: Untyped%.ozf %.asig
 	$(STOC) $(STOCOPTS) --replacesign $< $*.asig $@
 
-UntypedGTK.ozf: GTKWrapper.oz GTKExport.oz
-GTK.ozf: GTKCore.ozf
-UntypedGDK.ozf: GDKWrapper.oz GDKExport.oz
-GDK.ozf: GTKCore.ozf
+$(ALICETYPECOMPONENTS): %.ozf: %.aml
+	$(STOC) $(STOCOPTS) -c $< -o $@
+
+$(ALICECOMPONENTS): %.ozf: %.aml
+	$(STOC) $(STOCOPTS) -c $< -o $@
+
+$(NATIVEOBJS):%.o: %.c
+	$(OZTOOL) c++ $(CXXFLAGS) -c $< -o $@
+
+%.so-$(OZPLATFORM): %.o
+	oztool ld -o $@ $< $(NATIVEFLAGS)
+
+UntypedGtk.ozf: GtkWrapper.oz GtkExport.oz
+Gtk.ozf: GtkCore.ozf
+UntypedGdk.ozf: GdkWrapper.oz GdkExport.oz
+Gdk.ozf: GtkCore.ozf
 UntypedCanvas.ozf: CanvasWrapper.oz CanvasExport.oz
-Canvas.ozf: GTKCore.ozf
+Canvas.ozf: GtkCore.ozf
 
-native:
-	(cd gtk-canvas/imlib && ./configure --prefix=$(BUILDDIR)/build) || exit 1
-	(cd gtk-canvas/imlib && $(MAKE) all install) || exit 1
-	(cd gtk-canvas && ./configure --prefix=$(BUILDDIR)/build) || exit 1
+$(NATIVECANVAS): gtk-canvas/config.log
 	(cd gtk-canvas && $(MAKE) all install) || exit 1
-	oztool c++ $(CXXFLAGS) -c GtkCanvas.c -o GtkCanvas.o || exit 1
-	oztool ld -o gtkcanvas.so-$(OZPLATFORM) GtkCanvas.o $(NATIVEFLAGS)
 
-natshort:
-	oztool c++ $(CXXFLAGS) -c GtkCanvas.c -o GtkCanvas.o || exit 1
-	oztool ld -o gtkcanvas.so-$(OZPLATFORM) GtkCanvas.o $(NATIVEFLAGS)
-	install -c -m 555 $(NATIVEFILES) $(PREFIX)/lib/gtk
-
-mytest:
-	g++ $(CPPFLAGS) -c mytest.c -o mytest.o
-	g++ $(CPPFLAGS) -o mytest mytest.o -lg -lgdk -lgtk -lgtk-canvas -lart_lgpl
+gtk-canvas/config.log:
+	(cd gtk-canvas && ./configure --prefix=$(BUILDDIR)/build) || exit 1
 
 -include Makefile.depend
 
@@ -129,13 +145,16 @@ mytest:
 ##
 
 install: $(INSTALLDIRS) $(INSTALLFILES)
-	install -c -m 555 $(NATIVEFILES) $(PREFIX)/lib/gtk
 
 $(INSTALLDIRS):
 	mkdir -p $@
 
+$(PREFIX)/lib/gtk/%.so-$(OZPLATFORM): %.so-$(OZPLATFORM)
+	install -c -m 555 $< $@
+
 $(PREFIX)/lib/gtk/%: %
 	install -c -m 444 $< $@
+
 
 ##
 ## Cleaning Up
@@ -143,17 +162,16 @@ $(PREFIX)/lib/gtk/%: %
 
 clean:
 	-rm -f header/gtkraw.c header/gtkheader.c
-	-rm -f GTKWrapper.oz GTKExport.oz GTK.asig
-	-rm -f GDKWrapper.oz GDKExport.oz GDK.asig
+	-rm -f GtkWrapper.oz GtkExport.oz Gtk.asig
+	-rm -f GdkWrapper.oz GdkExport.oz Gdk.asig
 	-rm -f CanvasWrapper.oz CanvasExport.oz Canvas.asig
-	-rm -f $(COMPONENTS)
-	-rm -f $(NATIVESOURCES) $(NATIVEOBJS) $(NATIVEFILES)
+	-rm -f $(UNTYPEDCOMPONENTS) $(ALICETYPECOMPONENTS) $(ALICECOMPONENTS) $(COMPONENTS)
+	-rm -f GtkCanvas.c $(NATIVEOBJS) $(NATIVECOMPONENTS)
 	-rm -rf build
 
 veryclean: clean
 	-rm -f header/filter.$(SMLPLATFORM) collect.$(SMLPLATFORM)
 
 distclean: veryclean
-	(cd gtk-canvas/imlib && $(MAKE) distclean) || exit 1
 	(cd gtk-canvas && $(MAKE) distclean) || exit 1
 	-rm -f Makefile.depend

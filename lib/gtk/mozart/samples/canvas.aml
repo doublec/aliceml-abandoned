@@ -1,36 +1,97 @@
 import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure GTK       from "x-alice:/lib/gtk/GTK"
-import structure GDK       from "x-alice:/lib/gtk/GDK"
+import structure GtkCore   from "x-alice:/lib/gtk/GtkCore"
+import structure Gtk       from "x-alice:/lib/gtk/Gtk"
+import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure Canvas    from "x-alice:/lib/gtk/Canvas"
 
 local
+    open GtkCore
     open Canvas
+	
+    fun DeleteEvent _ = () (* Inspector.inspect "Delete Event occurred" *)
+    fun Destroy _ = () (* Inspector.inspect "Destroy Event occurred" *)
+    val Window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+    val DestroyId = Gtk.signalConnect(Window, "destroy", Destroy)
 
-    fun DeleteEvent () = () (* Inspector.inspect "Delete Event occurred" *)
-    fun Destroy () = () (* Inspector.inspect "Destroy Event occurred" *)
-    val Window = GTK.windowNew GTK.WINDOW_TOPLEVEL
-    val DestroyId = GTK.signalConnect(Window, "destroy", Destroy)
-
-    val map = GDK.colormapGetSystem ()
-    val black = GDK.allocateGDKColor(0,0,0);
-    val _ = GDK.colormapAllocColor(map, black, false, true);
-    val _ = GTK.canvasInit ()
+    val map   = Gdk.colormapGetSystem ()
+    val black = Gdk.allocateGdkColor(0,0,0);
+    val white = Gdk.allocateGdkColor(65535,65535,65535);
+    val _     = Gdk.colormapAllocColor(map, black, false, true);
+    val _     = Gdk.colormapAllocColor(map, white, false, true);
     val MyCanvas = Canvas.new ()
     val root = Canvas.root(MyCanvas)
-
+(*
     val targs = [va_string "text", va_string "Dies ist ein Test",
 		 va_string "x", va_float 100.0, va_string "y", va_float 100.0,
 		 va_string "font",
 		 va_string "-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1",
 		 va_string "fill_color_gdk", va_object black]
     val titem = Canvas.itemNew(root, Canvas.textGetType(), targs)
+*)
+    val rargs = [va_string "x1", va_float 10.0,
+		 va_string "y1", va_float 20.0,
+		 va_string "x2", va_float 380.0,
+		 va_string "y2", va_float 380.0,
+		 va_string "fill_color_gdk", va_object white,
+		 va_string "outline_color_gdk", va_object black]
+    val ritem = Canvas.itemNew(root, Canvas.rectGetType (), rargs)
+
+    fun show s = Inspector.inspect s
+
+    fun canvasEvent event =
+	(case Gdk.getGdkEvent event of
+	     GDK_EXPOSE _          => show "Got Expose Event"
+	   | GDK_MOTION_NOTIFY _   => show "Got Motion Event"
+	   | GDK_BUTTON_PRESS _    => show "Got ButtonPress Event"
+	   | GDK_2BUTTON_PRESS _   => show "Got Button2Press Event"
+	   | GDK_3BUTTON_PRESS _   => show "Got Button3Press Event"
+	   | GDK_BUTTON_RELEASE _  => show "Got ButtonRelease Event"
+	   | GDK_KEY_PRESS _       => show "Got KeyPress Event"
+	   | GDK_KEY_RELEASE _     => show "Got KeyRelease Event"
+	   | GDK_ENTER_NOTIFY _    => show "Got Enter Event"
+	   | GDK_LEAVE_NOTIFY _    => show "Got Leave Event"
+	   | GDK_FOCUS_CHANGE _    => show "Got Focus Event"
+	   | GDK_CONFIGURE _       => show "Got Conofigure Event"
+	   | GDK_NO_EXPOSE _       => show "Got NoExpose Event"
+	   | GDK_NOTHING           => show "Got Nothing Event"
+	   | GDK_DELETE            => show "Got Delete Event"
+	   | GDK_DESTROY           => show "Got Destroy Event"
+	   | GDK_MAP               => show "Got Map Event"
+	   | GDK_UNMAP             => show "Got Unmap Event"
+	   | GDK_PROPERTY_NOTIFY   => show "Got Property Event"
+	   | GDK_SELECTION_CLEAR   => show "Got SelecitonClear Event"
+	   | GDK_SELECTION_REQUEST => show "Got SelectionRequest Event"
+	   | GDK_SELECTION_NOTIFY  => show "Got SelectionNotify Event"
+	   | GDK_PROXIMITY_IN      => show "Got ProximityIn Event"
+	   | GDK_PROXIMITY_OUT     => show "Got ProximityOut Event"
+	   | GDK_DRAG_ENTER        => show "Got DragEnter Event"
+	   | GDK_DRAG_LEAVE        => show "Got DragLeave Event"
+	   | GDK_DRAG_MOTION       => show "Got DrawMotion Event"
+	   | GDK_DRAG_STATUS       => show "Got DragStatus Event"
+	   | GDK_DROP_START        => show "Got DropStart Event"
+	   | GDK_DROP_FINISHED     => show "Got DropFinished Event"
+	   | GDK_CLIENT_EVENT      => show "Got Client Event"
+	   | UNSUPPORTED           => show "Got UNSUPPORTED Event"
+	   | _                     => show "Got Strange Event")
+	     
+    val _ = Gtk.signalConnect(ritem, "event", canvasEvent)
+	
+    val points = Canvas.pointsNew 3
+    val _ = foldl (fn ((x, y), i) =>
+		   (Canvas.pointsPut(points, i, x);
+		    Canvas.pointsPut(points, (i + 1), y);
+		    (i + 2))) 0 [(20, 20), (380, 200), (20, 380)] 
+    val pargs = [va_string "points", va_object points,
+		 va_string "fill_color_gdk", va_object black,
+		 va_string "width_pixels", va_int 2]
+    val pitem = Canvas.itemNew(root, Canvas.lineGetType (), pargs)
+    val _ = Canvas.pointsFree points
 in
-    val _ = (GTK.containerSetBorderWidth(Window, 10);
-	     GTK.widgetSetUsize(MyCanvas, 400, 400);
+    val _ = (Gtk.containerSetBorderWidth(Window, 10);
+	     Gtk.widgetSetUsize(MyCanvas, 400, 400);
 	     Canvas.setScrollRegion(MyCanvas, 0.0, 0.0, 400.0, 400.0);
-	     GTK.containerAdd(Window, MyCanvas);
-	     GTK.widgetShowAll(Window);
+	     Gtk.containerAdd(Window, MyCanvas);
+	     Gtk.widgetShowAll(Window);
 	     Canvas.updateNow MyCanvas;
 	     print "Done")
 end
-
