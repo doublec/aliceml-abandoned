@@ -28,11 +28,10 @@ define
    INITIAL_SIGNAL_SOURCES_SIZE = 8
 
    class Thread
-      attr Args: unit TaskStack: unit Res: unit Suspended: unit State: unit
-      meth init(args: A stack: T result: R <= _)
+      attr Args: unit TaskStack: unit Suspended: unit State: unit
+      meth init(args: A stack: T)
 	 Args <- A
 	 TaskStack <- T
-	 Res <- R
 	 Suspended <- false
 	 State <- runnable
       end
@@ -46,9 +45,7 @@ define
 	 Args <- A
 	 TaskStack <- T
       end
-      meth bindResult(X)
-	 %--** is the result ever needed anymore?
-	 @Res = X
+      meth setTerminated()
 	 State <- terminated
       end
       meth setSuspend(B)
@@ -202,9 +199,7 @@ define
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.run Args TaskStack})
 	 [] nil then
-	    {@CurrentThread bindResult(case Args of arg(X) then X
-				       [] args(...) then {Adjoin Args tuple}
-				       end)}
+	    {@CurrentThread setTerminated()}
 	 end
       end
       meth Handle(Debug Exn TaskStack)
