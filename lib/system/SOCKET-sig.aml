@@ -22,7 +22,7 @@ signature SOCKET =
 	type port = int
 
 	val server: port option * (socket * host * port -> unit) ->
-	    socket * host * port
+	    socket * port
 	val client: host * port -> socket
 
 	val input1: socket -> char option
@@ -30,7 +30,6 @@ signature SOCKET =
 	val inputLine: socket -> vector
 	val output: socket * vector -> unit
 	val output1: socket * char -> unit
-	val flushOut: socket -> unit
 
 	val close: socket -> unit
     end
