@@ -264,8 +264,7 @@ struct
 				 val (p',j') = asSing j
 			     in
 				 abox(ppInf'(p::ps,j')) ^/^
-				 text "=" ^/^
-				 PPPath.ppPath' ps p'
+				 abox(text "=" ^/^ PPPath.ppPath' ps p')
 			     end
 			 else
 			     abox(ppInf'(p::ps,j))
