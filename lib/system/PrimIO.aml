@@ -25,14 +25,15 @@ functor PrimIO(structure V: MONO_VECTOR
     PRIM_IO
 	where type elem = A.elem
 	  and type vector = A.Vector.vector
-	  and type array = A.array =
+	  and type array = A.array
+	  and type pos = pos =
     struct
 	type elem = A.elem
 	type vector = A.Vector.vector
 	type array = A.array
 
-	type pos = (pos,int) alt
-	val compare = Alt.compare (compare, Int.compare)
+	type pos = pos
+	val compare = compare
 
 	datatype reader = RD of
 	    {name: string,
@@ -125,11 +126,10 @@ functor PrimIO(structure V: MONO_VECTOR
 		    block = SOME (check (fn () => ignore (Future.await v))),
 		    canInput = SOME (check (fn () => not (Future.isFuture v))),
 		    avail = check (fn () => NONE),
-		    getPos = SOME (fn () => SND (!pos)),
-		    setPos = SOME (check (fn SND p => pos := p
-					   | FST _ => raise General.Domain)),
-		    endPos = SOME (check (fn () => SND (V.length v))),
-		    verifyPos = SOME (check (fn () => SND (!pos))),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
 		    close = fn () => closed := true,
 		    ioDesc = NONE}
 	    end
@@ -163,12 +163,10 @@ functor PrimIO(structure V: MONO_VECTOR
 		    block = SOME (check ()),
 		    canInput = SOME (check true),
 		    avail = check (SOME 0),
-		    getPos = SOME (fn () => SND 0),
-		    setPos = SOME (fn x =>
-				   check (fn SND 0 => ()
-					   | _ => raise General.Domain) () x),
-		    endPos = SOME (check (SND 0)),
-		    verifyPos = SOME (check (SND 0)),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
 		    close = fn () => closed := true,
 		    ioDesc = NONE}
 	    end
@@ -185,7 +183,6 @@ functor PrimIO(structure V: MONO_VECTOR
 			     raise IO.ClosedStream)
 			else (Promise.fulfill (p, false); f x)
 		    end
-		fun getPos () = SND 0
 	    in
 		WR {name = "null",
 		    chunkSize = 1,
@@ -201,11 +198,10 @@ functor PrimIO(structure V: MONO_VECTOR
 				 check (SOME o len) (A.length buf, i, sz)),
 		    block = SOME (check (fn () => ())),
 		    canOutput = SOME (check (fn () => true)),
-		    getPos = SOME getPos,
-		    setPos = SOME (check (fn SND 0 => ()
-					   | _ => raise General.Domain)),
-		    endPos = SOME (check getPos),
-		    verifyPos = SOME (check getPos),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
 		    close = fn () => closed := true,
 		    ioDesc = NONE}
 	    end
