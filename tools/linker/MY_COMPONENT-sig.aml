@@ -29,5 +29,9 @@ signature MY_COMPONENT =
 	val body: t -> ((Label.t * str) vector -> str)
 	val sign: t -> sign
 
+	val new: {imports: (Label.t * string * sign) vector,
+		  body: (Label.t * str) vector -> str,
+		  sign: sign} -> t
+
 	val stripImportSigns: t -> t
     end

@@ -69,6 +69,8 @@ struct
     fun sign (UNEVALUATED {sign, ...}) = sign
       | sign (EVALUATED (sign, _)) = sign
 
+    fun new {imports, body, sign} = UNEVALUATED {imports, body, sign}
+
     fun stripImportSigns (UNEVALUATED {imports, body, sign}) =
 	let
 	    val imports' =
