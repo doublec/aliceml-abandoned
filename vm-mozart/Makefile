@@ -1,5 +1,7 @@
 STOC = ../../stoc/backend-mozart/stoc-mozart --image=../../stoc/top/stoc-mozart
 MERGE = ./merge.sh
+OZHOME = /usr/local/oz
+OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
 
 LIB_DIR = ../../lib/bootstrap
 STOC_DIR = ../../stoc
@@ -222,7 +224,7 @@ COMPONENTS = \
 all: stoc-mozart
 
 stoc-mozart: $(COMPONENTS:%=%.ozf)
-	ozl $(OZLFLAGS) -x Main.ozf -o $@
+	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
 
 Base.aus: $(BASE_FILES)
 	$(MERGE) $(BASE_FILES) > $@
