@@ -1179,6 +1179,7 @@ val exnMessage :	exn -> string
 val ! :			'a ref -> 'a
 val op := :		'a ref * 'a -> unit
 val op :=: :		'a ref * 'a ref -> unit			(**)
+val op flip :		('a * 'b -> 'c) -> 'b * 'a -> 'c
 val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
 val before :		'a * unit -> 'a
 val ignore :		'a -> unit
