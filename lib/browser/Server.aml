@@ -13,14 +13,10 @@
  *
  *)
 
-import structure Print from "x-alice:/lib/system/Print"
 import signature SERVER from "SERVER-sig"
 
 structure Server :> SERVER =
 struct
-    fun error e = (print "Server: got exception: ";
-		   Print.printVal e; ())
-
     fun newServer () =
 	let
 	    val tail   = Promise.promise ()
@@ -28,7 +24,7 @@ struct
 		
 	    fun process s = (case s of
 				 nil   => ()
-			       | p::pr => ((p () handle e => error e);
+			       | p::pr => (p ();
 					   process pr))
 	    fun send p =
 		let
