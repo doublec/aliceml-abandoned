@@ -1,5 +1,14 @@
 (* ML-Yacc Parser Generator (c) 1989, 1991 Andrew W. Appel, David R. Tarditi *)
 
+import signature TABLE          from "UTILS-sig"
+import signature LR_TABLE       
+       signature TOKEN          
+       signature PARSER_DATA    from "x-alice:/lib/ml-yacc/base-sig"
+
+
+signature PARSER_DATA   = PARSER_DATA
+signature TOKEN         = TOKEN
+
 signature HEADER =
   sig
     type pos = int
@@ -133,7 +142,7 @@ signature CORE =
     sig
 	structure Grammar : GRAMMAR
 	structure IntGrammar : INTGRAMMAR
-	sharing Grammar = IntGrammar.Grammar
+	(* sharing Grammar = IntGrammar.Grammar *)
 
 	datatype item = ITEM of
 			{ rule : IntGrammar.rule,
@@ -179,8 +188,8 @@ signature CORE_UTILS =
 	structure IntGrammar : INTGRAMMAR
 	structure Core : CORE
 
-	sharing Grammar = IntGrammar.Grammar = Core.Grammar
-	sharing IntGrammar = Core.IntGrammar
+	(* sharing Grammar = IntGrammar.Grammar = Core.Grammar *)
+	(* sharing IntGrammar = Core.IntGrammar *)
 
 (* mkFuncs: create functions for the set of productions derived from a
    nonterminal, the cores that result from shift/gotos from a core,
@@ -206,8 +215,8 @@ signature LRGRAPH =
 	structure IntGrammar : INTGRAMMAR
 	structure Core : CORE
 
-	sharing Grammar = IntGrammar.Grammar = Core.Grammar
-	sharing IntGrammar = Core.IntGrammar
+	(* sharing Grammar = IntGrammar.Grammar = Core.Grammar *)
+	(* sharing IntGrammar = Core.IntGrammar *)
 
 	type graph
 	val edges : Core.core * graph -> {edge:Grammar.symbol,to:Core.core} list
@@ -231,7 +240,7 @@ signature LOOK =
     sig
  	structure Grammar : GRAMMAR
 	structure IntGrammar : INTGRAMMAR
-	sharing Grammar = IntGrammar.Grammar
+	(* sharing Grammar = IntGrammar.Grammar *)
 
 	val union : Grammar.term list * Grammar.term list -> Grammar.term list
 	val make_set : Grammar.term list -> Grammar.term list
@@ -251,10 +260,12 @@ signature LALR_GRAPH =
 	structure IntGrammar : INTGRAMMAR
 	structure Core : CORE
 	structure Graph : LRGRAPH
-
+    
+    (*
 	sharing Grammar = IntGrammar.Grammar = Core.Grammar = Graph.Grammar
 	sharing IntGrammar = Core.IntGrammar = Graph.IntGrammar
 	sharing Core = Graph.Core
+    *)
 
 	datatype lcore = LCORE of (Core.item * Grammar.term list) list * int
 	val addLookahead : {graph : Graph.graph,
@@ -343,10 +354,13 @@ signature MAKE_LR_TABLE =
 	structure Grammar : GRAMMAR
 	structure Errs : LR_ERRS
 	structure LrTable : LR_TABLE
+
+    (*
 	sharing Errs.LrTable = LrTable
 
 	sharing type LrTable.term = Grammar.term
 	sharing type LrTable.nonterm = Grammar.nonterm
+    *)
 
 	(* boolean value determines whether default reductions will be used.
 	   If it is true, reductions will be used. *)
@@ -373,3 +387,6 @@ signature SHRINK_LR_TABLE =
 	           ((LrTable.term,LrTable.action) LrTable.pairlist *
 		    LrTable.action) list) * int
     end
+
+
+

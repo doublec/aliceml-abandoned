@@ -1,11 +1,18 @@
 (* build internal grammar for ML-Yacc *)
 
+import structure Grammar    
+       structure IntGrammar     from "Grammar"
+import structure AbsSyn         from "AbsSyn"
+import structure ErrorMsg       from "ErrorMsg"
+import structure NormalForm     from "NormalForm"
+import structure MkRedBlackMap  from "x-alice:/lib/data/MkRedBlackMap"
+
+
 structure Translate =
 struct
     structure G = Grammar
     structure A = AbsSyn 
     structure N = NormalForm
-    open Array
 
     val DEBUG = false
 (*    val error = fn s => print ("Error: "^s^"\n")   *)
@@ -69,11 +76,11 @@ struct
 
 
     structure StringMap =
-	RedBlackMapFn (type ord_key = string val compare = String.compare)
+	MkRedBlackMap (type t = string val compare = String.compare)
 
     fun removeDouble map ((x as (s, _, _)) :: xs) ys =
-	if StringMap.inDomain (map, s) then removeDouble map xs ys
-	else removeDouble (StringMap.insert (map, s, ())) xs (x :: ys)
+	    if StringMap.member (map, s) then removeDouble map xs ys
+	    else removeDouble (StringMap.insert (map, s, ())) xs (x :: ys)
       | removeDouble _ _ ys = rev ys
 
     fun enumDict i ((s, ty, _) :: xs) ys =
@@ -191,14 +198,14 @@ struct
 
     (* from ML-Yacc, deal with associativities *)
     val termPrec = fn (numTerms,termToString,stringToTerm,parsetree) =>
-	let val precData = array(numTerms, NONE : int option)
+	let val precData = Array.array(numTerms, NONE : int option)
 	    val addPrec = fn termPrec => fn term as (G.T i) =>
-		case sub(precData,i)
+		case Array.sub(precData,i)
 		   of SOME _ => raise ErrorMsg.Error
 		      (* already dealt with in AbsSyn
 		       error ("multiple precedences specified for terminal " ^
 				(termToString term)) *)
-		 | NONE => update(precData,i,termPrec)
+		 | NONE => Array.update(precData,i,termPrec)
 	    val termPrec = 
 		fn ((A.AssoclDec slist), i) => List.map (fn s => (s,i)) slist
 		 | ((A.AssocrDec slist), i) => List.map (fn s => (s,i+2)) slist
@@ -217,7 +224,7 @@ struct
 	in fn (G.T i) =>
 	    if  DEBUG andalso (i < 0 orelse i >= numTerms) then
 		NONE
-	    else sub(precData,i)
+	    else Array.sub(precData,i)
 	end
 
     (* from ML-Yacc: deal with rule precedences *)

@@ -1,5 +1,7 @@
 (* abstract syntax for parse tree of jacke input *)
 (* and semantical analysis                       *)
+import structure ErrorMsg   from "ErrorMsg"
+
 
 structure AbsSyn =
 struct

@@ -1,5 +1,18 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
+import signature INTGRAMMAR
+       signature LR_ERRS
+       signature MAKE_LR_TABLE      from "Sigs"
+import signature LR_TABLE           from "x-alice:/lib/ml-yacc/base-sig"
+import structure mkCore             from "Core"
+import structure mkCoreUtils        from "CoreUtils"
+import structure mkGraph            from "Graph"
+import structure mkLalr             from "Lalr"
+import structure mkLook             from "Look"
+import structure ListOrdSet         from "Utils"
+import structure IntGrammar         from "Grammar"
+import structure LrTable            from "x-alice:/lib/ml-yacc/lrtable"
+
 functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
 		     structure LrTable : LR_TABLE
 		     sharing type LrTable.term = IntGrammar.Grammar.term
@@ -7,7 +20,6 @@ functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
 		    ) : MAKE_LR_TABLE = 
    struct 
         open Array List
-	infix 9 sub
 	structure Core = mkCore(structure IntGrammar = IntGrammar)
 	structure CoreUtils = mkCoreUtils(structure IntGrammar = IntGrammar
 				  	  structure Core = Core)
@@ -181,7 +193,7 @@ is true.
 	  let val precData = array(length rules,NONE : int option)
 	  in app (fn RULE {rulenum=r,precedence=p,...} => update(precData,r,p))
 	     rules;
-	     fn i => precData sub i
+	     fn i => Array.sub (precData, i)
 	  end
 
 	fun mergeShifts(state,shifts,nil) = (shifts,nil)
@@ -346,7 +358,7 @@ is true.
 				  ) actions;
 		      fun scan (i,r) =
 			 if i >= 0 then
-			      scan(i-1, if ruleReduced sub i then r
+			      scan(i-1, if Array.sub (ruleReduced, i) then r
 					else NOT_REDUCED i :: r)
 			else r
 		  in scan(Array.length ruleReduced-1,nil)
@@ -371,7 +383,7 @@ is true.
 			     numRules=length rules,numStates=length actions,
 			     initialState=STATE 0},
 		  let val errArray = Array.fromList errs
-		  in fn (STATE state) => errArray sub state
+		  in fn (STATE state) => Array.sub (errArray, state)
 		  end,
 
 		  fn print =>

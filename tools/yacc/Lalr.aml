@@ -1,5 +1,15 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
+import signature INTGRAMMAR
+       signature CORE
+       signature LOOK
+       signature LALR_GRAPH         
+       signature LRGRAPH            from "Sigs"
+
+import structure ListOrdSet         
+       structure RbOrdSet           from "Utils"
+
+
 functor mkLalr ( structure IntGrammar : INTGRAMMAR
 		structure Core : CORE
 		structure Graph : LRGRAPH
@@ -9,7 +19,6 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 			Look.IntGrammar = IntGrammar) : LALR_GRAPH =
     struct
 	open Array List
-	infix 9 sub
 	open IntGrammar.Grammar IntGrammar Core Graph Look
 	structure Graph = Graph
 	structure Core = Core
@@ -132,7 +141,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 				update(positions,num,rule_pos rule))
 			    end
 		   in app check_rule rules;
-		    fn RULE{num,...} => (positions sub num)
+		    fn RULE{num,...} => (Array.sub (positions, num))
 		   end
 
 (* rest_is_null: true for items of the form A -> x .B y, where y is nullable *)
@@ -173,7 +182,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 		let val states = Array.fromList new_nodes
 		    val dummy = ref nil
 		in fn (state,item) =>
-		    let val TMPCORE (l,_) = states sub state
+		    let val TMPCORE (l,_) = Array.sub (states, state)
 		    in case ItemList.find((item,dummy),l)
 				   of SOME (_,look_ref) => look_ref
 				    | NONE => (print "find failed: state ";
@@ -247,7 +256,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 		       fun f n = if n=nonterms then ()
 				 else (update(data,n,nonterms_w_null (NT n));
 				       f (n+1))
-		   in (f 0; fn (NT nt) => data sub nt)
+		   in (f 0; fn (NT nt) => Array.sub (data, nt))
 		   end
 
 (* look_info: for some nonterminal n the set of nonterms A added
@@ -351,7 +360,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 			  if i=nonterms then ()
 			  else (update(data,i,do_nonterm (NT i)); f (i+1))
 			val _ = f 0
-		    in fn (NT i) => data sub i
+		    in fn (NT i) => Array.sub (data, i)
 		    end
 
 (* add_nonterm_lookahead: Add lookahead to all completion items for rules added
@@ -436,8 +445,8 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 					 then f lookahead (t,false)
 					 else f lookahead(t,done)
 			    end
-		       fun g ((from,to)::rest,done) =
-			let val new_done = f (!from) (to,done)
+		       fun g ((frm,to)::rest,done) =
+			let val new_done = f (!frm) (to,done)
 			in g (rest,new_done)
 			end
 			 | g (nil,done) = done

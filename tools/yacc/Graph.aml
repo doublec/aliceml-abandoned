@@ -1,5 +1,12 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
+import signature INTGRAMMAR
+       signature CORE
+       signature LRGRAPH
+       signature CORE_UTILS         from "Sigs"
+import structure RbOrdSet           from "Utils"
+
+
 functor mkGraph(structure IntGrammar : INTGRAMMAR
 		structure Core : CORE
 		structure CoreUtils : CORE_UTILS
@@ -8,7 +15,6 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
 		) : LRGRAPH =
 	struct
 	        open Array List
-		infix 9 sub
 		structure Core = Core
 		structure Grammar = IntGrammar.Grammar
 		structure IntGrammar = IntGrammar
@@ -26,7 +32,7 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
 
 		type graph = {edges: {edge:symbol,to:core} list array,
 			      nodes: core list,nodeArray : core array}
-		val edges = fn (CORE (_,i),{edges,...}:graph) => edges sub i
+		val edges = fn (CORE (_,i),{edges,...}:graph) => Array.sub (edges, i)
 		val nodes = fn ({nodes,...} : graph) => nodes
 		val shift = fn ({edges,nodes,...} : graph) => fn a as (i,sym) =>
 			let fun find nil = raise (Shift a)
@@ -34,11 +40,11 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
 					if gtSymbol(sym,edge) then find r
 					else if eqSymbol(edge,sym) then state
 					else raise (Shift a)
-			in find (edges sub i)
+			in find (Array.sub (edges, i) )
 			end
 
 		val core = fn ({nodeArray,...} : graph) =>
-				 fn i => nodeArray sub i
+				 fn i => Array.sub (nodeArray, i)
 
 		val mkGraph = fn (g as (GRAMMAR {start,...})) =>
 		   let val {shifts,produces,rules,epsProds} =

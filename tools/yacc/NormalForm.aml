@@ -1,5 +1,7 @@
 (* datatype and translation functions for normalization of rules *)
 
+import structure AbsSyn         from "AbsSyn"
+
 structure NormalForm =
 struct
     structure A = AbsSyn

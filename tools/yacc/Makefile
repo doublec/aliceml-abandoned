@@ -1,65 +1,39 @@
-FILES =	jacke.lex.sml \
-	jacke.grm.sml \
-	jacke.grm.sig \
-	ErrorMsg.sml \
-	Set.sml \
-	AbsSyn.sml \
-	NormalForm.sml \
-	Translate.sml \
-	parse.sml \
-	utils.sig \
-	utils.sml \
-	sigs.sml \
-	grammar.sml \
-	core.sml \
-	coreutils.sml \
-	graph.sml \
-	look.sml \
-	lalr.sml \
-	mklrtable.sml \
-	shrink.sml \
-	mkprstruct.sml \
-	verbose.sml \
-	output.sml \
-	sources.cm \
-	Main.sml \
-	MAIN-sig.sml
+FIXPARSER=../../bootstrap/fixparser.awk
 
+AML_FILES = AbsSyn.aml Core.aml CoreUtils.aml ErrorMsg.aml Grammar.aml Graph.aml Lalr.aml Look.aml LrParser.aml Main.aml MAIN-sig.aml MkLrTable.aml MkPrStruct.aml NormalForm.aml Output.aml Parse.aml Set.aml Shrink.aml Sigs.aml Translate.aml Utils.aml UTILS-sig.aml Verbose.aml
 
-ALICELIB=LrTable.aml LrParser.aml
+LINKED_YACC = AliceYacc-Linked.alc
+
+GENERATED_AML_FILES = JackeParser.aml JACKE_PARSER-sig.aml Lexer.aml
+
+ALICELIB=LrParser.aml
 INSTALL_LIB_TO= `alice-config --alicelibdir`/yacc
 INSTALL_BIN_TO= `alice-config --alicebindir`
+INSTALL_TOOL_TO=`alice-config --alicetoolsdir`
 
-.PHONY: all with-smlnj clean distclean aliceyacclib
+.PHONY: $(LINKED_YACC) all clean distclean aliceyacclib
 
-all:	with-smlnj aliceyacclib
-
-LrTable.aml: LrTable.sml
-	cp LrTable.sml LrTable.aml
-
-LrParser.aml: LrParser.sml
-	echo -e 'import signature LR_TABLE structure LrTable from "LrTable"\n' > LrParser.aml
-	cat LrParser.sml >> LrParser.aml
-
+all:	$(LINKED_YACC) aliceyacclib
 
 aliceyacclib: $(ALICELIB:%.aml=%.alc)
 
-depend:
-	alicedep $(SOURCES) > Makefile.depend
+depend: $(GENERATED_AML_FILES)
+	alicedep $(AML_FILES:%.sml=%.aml) $(GENERATED_AML_FILES) > Makefile.depend
 
 
-install: aliceyacclib jacke-image
+install: aliceyacclib $(LINKED_YACC) 
 	# install library
 	install -d $(INSTALL_LIB_TO)
 	install $(ALICELIB:%.aml=%.alc) $(INSTALL_LIB_TO)
+	# install tool
+	install -d $(INSTALL_TOOL_TO)
+	install $(LINKED_YACC) $(INSTALL_TOOL_TO)
 	# install binary
 	install -d $(INSTALL_BIN_TO)
-	install aliceyacc jacke-image* $(INSTALL_BIN_TO)
-	
-with-smlnj: jacke-image
+	install aliceyacc $(INSTALL_BIN_TO)
 
-jacke-image: ${FILES}
-	sml <wrap-smlnj.sml
+$(LINKED_YACC):	$(AML_FILES:%.aml=%.alc) $(GENERATED_AML_FILES:%.aml=%.alc)
+	alicelink -v ./Main --include ./ -o $(LINKED_YACC) 
 
 clean:
 	rm -f *.u[oi]
@@ -72,18 +46,21 @@ distclean:	clean
 	rm -f *.grm.*
 	rm -f *.lex.*
 	rm -rf *-image.*
-
+	rm -f $(GENERATED_AML_FILES)
+	
 %.alc:	%.aml
-	alicec $< -o $@
+	alicec --no-warn-conventions $< -o $@
 
-%.grm.sig: %.grm
-	ml-yacc $<
+JackeParser.aml JACKE_PARSER-sig.aml:	jacke.grm
+	ml-yacc jacke.grm
+	echo -e 'import signature PARSER_DATA from "Sigs"\n' > JACKE_PARSER-sig.aml
+	awk -f $(FIXPARSER) < jacke.grm.sig  >> JACKE_PARSER-sig.aml
+	cat JackeParser.aml.header jacke.grm.sml > JackeParser.aml
 
-%.grm.sml: %.grm
-	ml-yacc $<
-
-%.lex.sml: %.lex
-	ml-lex $<
-
+Lexer.aml: Jacke.lex  
+	ml-lex Jacke.lex
+	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "JACKE_PARSER-sig"\nimport structure ErrorMsg from "ErrorMsg"' > Lexer.aml
+	cat Jacke.lex.sml >> Lexer.aml
+	
 
 -include Makefile.depend

@@ -1,9 +1,14 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
+import signature CORE
+       signature CORE_UTILS             from "Sigs"
+import structure ListOrdSet             from "Utils"
+
+
 functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 	struct
-	        open Array List
-		infix 9 sub
+	    open Array 
+        open List
 		val DEBUG = true
 		structure Core = Core
 		structure IntGrammar = Core.IntGrammar
@@ -21,7 +26,7 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 			 end)
 
 	val mkFuncs = fn (GRAMMAR {rules,terms,nonterms,...}) =>
-	   let val derives=array(nonterms,nil : rule list)
+	   let val derives=Array.array(nonterms,nil : rule list)
 
 (* sort rules by their lhs nonterminal by placing them in an array indexed
    in their lhs nonterminal *)
@@ -30,7 +35,7 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 		 let val f = fn {lhs=lhs as (NT n), rhs, precedence,rulenum} =>
 			let val rule=RULE{lhs=lhs,rhs=rhs,precedence=precedence,
 					  rulenum=rulenum,num=0}
-		        in update(derives,n,rule::(derives sub n))
+		        in Array.update(derives,n,rule::(Array.sub (derives, n)))
 			end
 		  in app f rules
 		  end
@@ -50,7 +55,7 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 			fun g(i,num) =
 		          if i<nonterms then
 			    let val (l,n) =
-				        List.foldr f ([], num) (derives sub i)
+				        List.foldr f ([], num) (Array.sub (derives, i))
 			    in update(derives,i,rev l); g(i+1,n)
 			    end
 			  else ()
@@ -61,7 +66,7 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 
 		 val rules = 
 		     let fun g i =
-			if i < nonterms then (derives sub i) @ (g (i+1))
+			if i < nonterms then (Array.sub (derives,i) ) @ (g (i+1))
 			else nil
 		     in g 0
 		     end
@@ -73,13 +78,13 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 		val produces = fn (NT n) =>
 		  if DEBUG andalso (n<0 orelse n>=nonterms) then
 		     let exception Produces of int in raise (Produces n) end
-		  else derives sub n
+		  else Array.sub (derives, n)
 
 		val memoize = fn f =>
 		   let fun loop i = if i = nonterms then nil
 				  else f (NT i) :: (loop (i+1))
 		       val data = Array.fromList(loop 0)
-		   in fn (NT i) => data sub i
+		   in fn (NT i) => Array.sub (data, i)
 		   end
 
  (* compute nonterminals which must be added to a closure when a given

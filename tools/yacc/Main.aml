@@ -1,3 +1,12 @@
+import signature MAIN       from "MAIN-sig"
+import structure Output     from "Output"
+import structure ErrorMsg   from "ErrorMsg"
+import structure TextIO     from "x-alice:/lib/system/TextIO"
+import structure IO         from "x-alice:/lib/system/IO"
+import structure OS         from "x-alice:/lib/system/OS"
+import structure Print      from "x-alice:/lib/system/Print"
+
+
 structure Main :> MAIN =
     struct
 
@@ -51,13 +60,16 @@ structure Main :> MAIN =
 
 	fun main () =
 	    let
+        (*
 		(* ugly hack to circumvent the problem that "jacke-image"
 		 * is sometimes an element of the CommandLine.arguments()
 		 * (Windows)
 		 *)
 		val args = case CommandLine.arguments() of
 		    ("jacke-image"::xs) => xs
-		  | xs                  => xs
+		  | xs                  => xs 
+          *)
+        val args = CommandLine.arguments () 
 	    in
 		OS.Process.exit(main' args)
 	    end
@@ -70,3 +82,5 @@ structure Main :> MAIN =
 	     | exn => handleEx exn
        
     end
+
+val _ = Main.main ()

@@ -6,15 +6,20 @@
 
 
 (* replaced 'lexer' with 'lexxer' because of problems with hose *)
-
+import structure MkLexer    from "Lexer"
+import structure LrParser   from "x-alice:/lib/ml-yacc/parser2"
+import functor Join         from "x-alice:/lib/ml-yacc/join"
+import functor MkLrVals     from "JackeParser"
+import structure ErrorMsg   from "ErrorMsg"
+import structure AbsSyn     from "AbsSyn"
 
 structure Parse =
 struct 
-  structure jackeLrVals = jackeLrValsFun(structure Token = LrParser.Token)
-  structure Lex = jackeLexFun(structure Tokens = jackeLrVals.Tokens)
-  structure jackeP = Join(structure ParserData = jackeLrVals.ParserData
-			  structure Lex=Lex
-			  structure LrParser = LrParser)
+  structure JackeLrVals = MkLrVals(structure Token = LrParser.Token)
+  structure Lex         = MkLexer(structure Tokens = JackeLrVals.Tokens)
+  structure JackeP      = Join(structure LrParser  = LrParser
+                               structure ParserData= JackeLrVals.ParserData
+                               structure Lex       = Lex)
 
   fun parse filename =
       let val _ = (ErrorMsg.reset(); ErrorMsg.fileName := filename)
@@ -22,7 +27,7 @@ struct
           fun get _ = TextIO.input file
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
           val lexxer = LrParser.Stream.streamify (Lex.makeLexer get)
-          val (absyn, _) = jackeP.parse(30,lexxer,parseerror,())
+          val (absyn, _) = JackeP.parse(30,lexxer,parseerror,())
 	  val _ = AbsSyn.semanticalAnalysis absyn
 	  val absyn = AbsSyn.removePos absyn
        in TextIO.closeIn file;	   
@@ -36,7 +41,7 @@ struct
           fun get _ = TextIO.input file
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
           val lexxer = LrParser.Stream.streamify (Lex.makeLexer get)
-          val (absyn, _) = jackeP.parse(30,lexxer,parseerror,())
+          val (absyn, _) = JackeP.parse(30,lexxer,parseerror,())
        in TextIO.closeIn file;	   
            absyn
       end handle LrParser.ParseError => raise ErrorMsg.Error

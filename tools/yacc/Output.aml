@@ -3,6 +3,16 @@
 
 (* replaced 'lexer' with 'lexxer' because of problems with hose *)
 
+import structure AbsSyn         from "AbsSyn"
+import structure Grammar        from "Grammar"
+import structure TextIO         from "x-alice:/lib/system/TextIO"
+import structure MakeLrTable    from "MkLrTable"
+import structure Translate      from "Translate"
+import structure LrTable        from "x-alice:/lib/ml-yacc/lrtable"
+import structure NormalForm     from "NormalForm"
+import structure Parse          from "Parse"
+import structure PrintStruct    from "MkPrStruct"
+import structure Verbose        from "Verbose"
 
 structure Output =
 struct
@@ -367,7 +377,7 @@ struct
                       then "" 
                       else "import structure LrParserEng\n" ^ 
                            "       structure LrParser from " ^ 
-                           "\"x-alice:/lib/aliceyacc/LrParser\"\n") 
+                           "\"x-alice:/lib/yacc/LrParser\"\n") 
                    ^ List.foldr (fn (x,r) => x ^ " " ^ r) "\n" 
 		         (List.map 
 			  (absSynToString  lrTableString)

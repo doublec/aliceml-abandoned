@@ -4,7 +4,10 @@ open AbsSyn
 
 %%
 
+%header (functor MkLrVals (structure Token:         TOKEN)
+        )
 
+%name Parser
 
 %eop EOF
 
@@ -42,8 +45,6 @@ open AbsSyn
 %eop EOF
 %noshift EOF
 %nodefault
-
-%name jacke
 
 (* precedence annotations *)
 %nonassoc EQ

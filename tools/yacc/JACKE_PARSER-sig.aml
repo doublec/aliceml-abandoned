@@ -1,0 +1,43 @@
+import signature PARSER_DATA from "Sigs"
+
+signature Parser_TOKENS =
+sig
+type ('a,'b) token
+type svalue
+val MLTOK: (string) *  'a * 'a -> (svalue,'a) token
+val MLKEY: (string) *  'a * 'a -> (svalue,'a) token
+val SKIP:  'a * 'a -> (svalue,'a) token
+val PREC:  'a * 'a -> (svalue,'a) token
+val PARSER:  'a * 'a -> (svalue,'a) token
+val RULE:  'a * 'a -> (svalue,'a) token
+val NONASSOC:  'a * 'a -> (svalue,'a) token
+val ASSOCR:  'a * 'a -> (svalue,'a) token
+val ASSOCL:  'a * 'a -> (svalue,'a) token
+val TOKEN:  'a * 'a -> (svalue,'a) token
+val BAR:  'a * 'a -> (svalue,'a) token
+val DRARROW:  'a * 'a -> (svalue,'a) token
+val AS:  'a * 'a -> (svalue,'a) token
+val OF:  'a * 'a -> (svalue,'a) token
+val AND:  'a * 'a -> (svalue,'a) token
+val EQ:  'a * 'a -> (svalue,'a) token
+val RBRACE:  'a * 'a -> (svalue,'a) token
+val LBRACE:  'a * 'a -> (svalue,'a) token
+val RBRACK:  'a * 'a -> (svalue,'a) token
+val LBRACK:  'a * 'a -> (svalue,'a) token
+val RPAR:  'a * 'a -> (svalue,'a) token
+val LPAR:  'a * 'a -> (svalue,'a) token
+val COLON:  'a * 'a -> (svalue,'a) token
+val COMMA:  'a * 'a -> (svalue,'a) token
+val STRING: (string) *  'a * 'a -> (svalue,'a) token
+val REAL: (real) *  'a * 'a -> (svalue,'a) token
+val INT: (int) *  'a * 'a -> (svalue,'a) token
+val ID: (string) *  'a * 'a -> (svalue,'a) token
+val EOF:  'a * 'a -> (svalue,'a) token
+end
+signature Parser_LRVALS=
+sig
+structure ParserData:PARSER_DATA
+structure Tokens : Parser_TOKENS
+sharing type ParserData.Token.token = Tokens.token
+sharing type ParserData.svalue = Tokens.svalue
+end

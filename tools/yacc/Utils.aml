@@ -31,6 +31,12 @@
    union = O(n+m)
 *)
 
+import signature ORDSET         
+       signature TABLE          
+       signature HASH           from "UTILS-sig"
+
+
+
 functor ListOrdSet(B : sig type elem
 		  	val gt : elem * elem -> bool
 			val eq : elem * elem -> bool
@@ -131,15 +137,15 @@ val remove = fn (e,s) =>
  fun card(S) = fold (fn (a,count) => count+1) S 0
 
       local
-	    fun closure'(from, f, result) =
-	      if is_empty from then result
+	    fun closure'(fr, f, result) =
+	      if is_empty fr then result
 	      else
 		let val (more,result) =
 			fold (fn (a,(more',result')) =>
 				let val more = f a
 				    val new = difference(more,result)
 				in (union(more',new),union(result',new))
-				end) from
+				end) fr
 				 (empty,result)
 		in closure'(more,f,result)
 		end
@@ -187,9 +193,11 @@ struct
 
  datatype Color = RED | BLACK
 
- abstype set = EMPTY | TREE of (B.elem * Color * set * set)
- with exception Select_arb
-      val empty = EMPTY
+ datatype set = EMPTY | TREE of (B.elem * Color * set * set)
+ 
+ exception Select_arb
+ 
+ val empty = EMPTY
 
  fun insert(key,t) =
   let fun f EMPTY = TREE(key,RED,EMPTY,EMPTY)
@@ -362,15 +370,15 @@ struct
       fun union(Xs,Ys)= fold insert Ys Xs
 
       local
-	    fun closure'(from, f, result) =
-	      if is_empty from then result
+	    fun closure'(fr, f, result) =
+	      if is_empty fr then result
 	      else
 		let val (more,result) =
 			fold (fn (a,(more',result')) =>
 				let val more = f a
 				    val new = difference(more,result)
 				in (union(more',new),union(result',new))
-				end) from
+				end) fr
 				 (empty,result)
 		in closure'(more,f,result)
 		end
@@ -378,7 +386,6 @@ struct
          fun closure(start, f) = closure'(start, f, start)
       end
    end
-end
 
 (* In utils.sig
 signature TABLE =
@@ -405,9 +412,8 @@ struct
  datatype Color = RED | BLACK
  type key = B.key
 
- abstype 'a table = EMPTY
+ datatype 'a table = EMPTY
 		  | TREE of ((B.key * 'a ) * Color * 'a table * 'a table)
- with
 
  val empty = EMPTY
 
@@ -490,7 +496,6 @@ struct
   fun make_list table = fold (op ::) table nil
 
   end
-end;
 
 (* assumes that a functor Table with signature TABLE from table.sml is
    in the environment *)

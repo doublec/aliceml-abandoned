@@ -1,5 +1,9 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
+import signature CORE           
+       signature INTGRAMMAR     from "Sigs"
+import structure ListOrdSet     from "Utils"
+
 functor mkCore(structure IntGrammar : INTGRAMMAR) : CORE =
 	struct
 		open IntGrammar

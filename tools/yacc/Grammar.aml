@@ -1,5 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
+import signature GRAMMAR            
+       signature INTGRAMMAR         from "Sigs"
+import structure LrTable            from "x-alice:/lib/ml-yacc/lrtable"
+import functor   Table              from "Utils"
+
 structure Grammar : GRAMMAR =
 	struct
 

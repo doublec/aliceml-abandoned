@@ -7,6 +7,8 @@ struct
 
   datatype T = Lf of int | Br of T * int
  
+  fun parseError _ = raise Fail ""
+
   rule exp =
     A as skip               => (Lf (Aright)) 
     | LPAR, exp, RPAR  => (Br (exp,RPARleft))

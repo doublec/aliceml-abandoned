@@ -1,3 +1,6 @@
+import signature LR_TABLE from "x-alice:/lib/ml-yacc/base-sig"
+import structure LrTable from "x-alice:/lib/ml-yacc/lrtable"
+
 (* adapted from ML-Yacc Parser Generator 
    (c) 1989 Andrew W. Appel, David R. Tarditi 
 *)

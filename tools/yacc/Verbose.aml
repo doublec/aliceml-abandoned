@@ -1,6 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 (* replaced functor, Jan, 08/02/2002 *)
 
+import signature VERBOSE        from "Sigs"
+import structure MakeLrTable    from "MkLrTable"
+
+
 (* functor mkVerbose(structure Errs : LR_ERRS) : VERBOSE = *)
 structure Verbose : VERBOSE =
 struct
