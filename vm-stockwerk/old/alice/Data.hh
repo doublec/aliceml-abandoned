@@ -85,6 +85,13 @@ public:
     c->InitArg(VAL_POS, value);
     return c;
   }
+  static Cell *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != NULL);
+    Assert(p->GetLabel() == AliceLabel::Cell);
+    return (Cell *) p;
+  }
 };
 
 class Constructor : private Block {
@@ -100,6 +107,13 @@ public:
     // to be determined
     b->InitArg(1, Store::IntToWord(0));
     return (Constructor *) b;
+  }
+  static Constructor *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != NULL);
+    Assert(p->GetLabel() == AliceLabel::Constructor);
+    return (Constructor *) p;
   }
 };
 
@@ -120,6 +134,13 @@ public:
     b->InitArg(CON_POS, cons);
     return (ConVal *) b;
   }
+  static ConVal *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != NULL);
+    Assert(p->GetLabel() == AliceLabel::ConVal);
+    return (ConVal *) p;
+  }
 };
 
 class Real : private Block {
@@ -137,6 +158,13 @@ public:
     ((double *) (ar + 1))[0] = v;
     return (Real *) b;
   }
+  static Real *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != NULL);
+    Assert(p->GetLabel() == BlockLabel::CHUNK);
+    return (Real *) p;
+  }
 };
 
 class Record : private Block {
@@ -149,6 +177,13 @@ public:
 
   static Record *New(u_int s) {
     return (Record *) Store::AllocBlock(AliceLabel::Record, s);
+  }
+  static Record *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != NULL);
+    Assert(p->GetLabel() == AliceLabel::Record);
+    return (Record *) p;
   }
 };
 
@@ -184,6 +219,13 @@ public:
     memcpy((char *) (ar + 2), str, len);
     return (String *) b;
   }
+  static String *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == BlockLabel::CHUNK);
+    return (String *) p;
+  }
 };
 
 class Builtin : private Block {
@@ -202,6 +244,13 @@ public:
     b->InitArg(NAME_POS, String::New(name)->ToWord());
     return (Builtin *) b;
   }
+  static Builtin *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == AliceLabel::Builtin);
+    return (Builtin *) p;
+  }
 };
 
 class TagVal : private Block {
@@ -215,6 +264,14 @@ public:
   static TagVal *New(int tag, u_int n) {
     return (TagVal *) Store::AllocBlock(AliceLabel::Make(tag), n);
   }
+  static TagVal *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() >= AliceLabel::MIN_LABEL);
+    Assert(p->GetLabel() <= AliceLabel::MAX_LABEL);
+    return (TagVal *) p;
+  }
 };
 
 class Tuple : private Block {
@@ -226,6 +283,13 @@ public:
 
   static Tuple *New(u_int s) {
     return (Tuple *) Store::AllocBlock(AliceLabel::Tuple, s);
+  }
+  static Tuple *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == AliceLabel::Tuple);
+    return (Tuple *) p;
   }
 };
 
@@ -241,19 +305,33 @@ public:
   using Block::GetSize;
   using Block::ToWord;
 
-  word GetValue(int i) { CheckIndex(i); return GetValue(i); }
+  word GetArg(int i) { CheckIndex(i); return Block::GetArg(i); }
 
   static Vector *New(u_int s) {
     return (Vector *) Store::AllocBlock(AliceLabel::Vector, s);
+  }
+  static Vector *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == AliceLabel::Vector);
+    return (Vector *) p;
   }
 };
 
 class Array : public Vector {
 public:
-  void SetValue(int i, word value) { CheckIndex(i); ReplaceArg(i, value); }
+  void SetArg(int i, word value) { CheckIndex(i); ReplaceArg(i, value); }
 
   static Array *New(u_int s) {
     return (Array *) Store::AllocBlock(AliceLabel::Array, s);
+  }
+  static Array *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == AliceLabel::Array);
+    return (Array *) p;
   }
 };
 
@@ -270,6 +348,13 @@ public:
     b->InitArg(LEN_POS, Store::IntToWord(len));
     memcpy((char *) (ar + 2), str, (len << 1));
     return (WideString *) b;
+  }
+  static WideString *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == BlockLabel::CHUNK);
+    return (WideString *) p;
   }
 };
 
