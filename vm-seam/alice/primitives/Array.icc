@@ -12,6 +12,7 @@
 //   $Revision$
 //
 
+#include <cstdio>
 #include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
