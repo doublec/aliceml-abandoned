@@ -166,7 +166,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    end
 
 	fun outputValue (context, Prim name) =
-	    (outputTransform (context, "Alice.primitive");
+	    (outputTransform (context, "Alice.primitive.value");
 	     outputBlock (context, Label.TAG 0, 1);
 	     outputString (context, name); ())
 	  | outputValue (context, Int i) = outputInt (context, i)
@@ -250,7 +250,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputFunction (context, function); outputInstr (context, instr))
 	  | outputInstr (context, AppPrim (name, idRefs, idDefInstrOpt)) =
 	    (outputBlock (context, Label.appPrim, 3);
-	     outputTransform (context, "Alice.primitive");
+	     outputTransform (context, "Alice.primitive.value");
 	     outputBlock (context, Label.TAG 0, 1);
 	     outputString (context, name);
 	     outputVector outputIdRef (context, idRefs);
