@@ -1,0 +1,66 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* This is a hack to make type dictionaries fast... *)
+
+import signature STAMP            from "STAMP-sig"
+import signature SIMPLE_IMP_MAP   from "SIMPLE_IMP_MAP-sig"
+import structure UnsafeDictionary from "UnsafeMkRefMap"
+
+functor MkRefMap(structure Stamp : STAMP
+		 type t  val stamp : t -> Stamp.t) :>
+	SIMPLE_IMP_MAP where type key = t ref =
+struct
+    type key = t ref
+    type 'a map
+    type 'a t = 'a map
+
+    val new       = UnsafeDictionary.new
+    val isEmpty   = UnsafeDictionary.isEmpty
+    val deleteAll = UnsafeDictionary.deleteAll
+
+    fun insert(m,r,x) =
+	let
+	    val stamp = stamp(!r)
+	in
+	    case UnsafeDictionary.lookup(m, stamp)
+	      of NONE    => UnsafeDictionary.insert(m, stamp, ref[(r,x)])
+	       | SOME r' => r' := (r,x)::(!r')
+	end
+
+    fun delete(m,r) =
+	let
+	    val stamp = stamp(!r)
+	in
+	    case UnsafeDictionary.lookup(m, stamp)
+	      of NONE    => ()
+	       | SOME r' =>
+	    case delete'(!r',r,[])
+	      of [] => UnsafeDictionary.delete(m, stamp)
+	       | es => r' := es
+	end
+
+    and delete'([], r, es2) = es2
+      | delete'((e as (r1,_))::es1, r2, es2) =
+	delete'(es1, r2, if r1 = r2 then es2 else e::es2)
+
+    fun lookup(m,r) =
+	case UnsafeDictionary.lookup(m, stamp(!r))
+	  of NONE    => NONE
+	   | SOME r' => lookup'(!r',r)
+
+    and lookup'([], r) = NONE
+      | lookup'((r1,x)::es, r) where (r = r1) = SOME x
+      | lookup'(_::es, r) = lookup'(es, r)
+
+    fun member(m,r) = Option.isSome(lookup(m,r))
+end
