@@ -26,7 +26,13 @@ FILES =	jacke.lex.sml \
 	MAIN-sig.sml
 
 
-.PHONY: with-smlnj clean distclean
+.PHONY: all with-smlnj clean distclean
+
+all:	with-smlnj aliceyacclib
+
+aliceyacclib:
+	(cd bootstrap; make)
+
 
 with-smlnj: jacke-image
 
