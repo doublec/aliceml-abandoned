@@ -12,7 +12,7 @@
  *
  *)
 
-import structure FD from "FD"
+import structure FD       from "FD"
 import structure UnsafeFS from "UnsafeFS"
 
 local

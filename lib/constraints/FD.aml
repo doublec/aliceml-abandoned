@@ -38,6 +38,11 @@ structure FD :> FD =
 	  | FIRSTFAIL
 	  | SPLIT
 
+	datatype assign =
+	    MIN
+	  | MID
+	  | MAX
+
 	(* Introduce flat bindings *)
 	open UnsafeFD
 
