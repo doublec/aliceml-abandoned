@@ -20,21 +20,25 @@
 
 #define DEFINE0(name)					\
   static Interpreter::Result name() {			\
+    Assert(Scheduler::nArgs == 0);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;
 #define DEFINE1(name)					\
   static Interpreter::Result name() {			\
+    Assert(Scheduler::nArgs == 1);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];
 #define DEFINE2(name)					\
   static Interpreter::Result name() {			\
+    Assert(Scheduler::nArgs == 2);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];
 #define DEFINE3(name)					\
   static Interpreter::Result name() {			\
+    Assert(Scheduler::nArgs == 3);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];		\
