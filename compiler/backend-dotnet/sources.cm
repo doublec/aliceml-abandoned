@@ -1,7 +1,7 @@
 Group
 
-    functor MkComPlusTarget
-    functor MkBackendComPlus
+    functor MkDotNetTarget
+    functor MkBackendDotNet
 
 is
 
@@ -23,4 +23,4 @@ is
     CodeStore.aml
     CODE_GEN_PHASE-sig.aml
     CodeGenPhase.aml
-    MkBackendComPlus.aml
+    MkBackendDotNet.aml

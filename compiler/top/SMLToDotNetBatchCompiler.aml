@@ -15,10 +15,10 @@ import
 from "MkBatchCompiler"
 
 import
-    structure SMLToComPlusRecursiveCompiler
-from "SMLToComPlusRecursiveCompiler"
+    structure SMLToDotNetRecursiveCompiler
+from "SMLToDotNetRecursiveCompiler"
 
-structure SMLToComPlusBatchCompiler =
+structure SMLToDotNetBatchCompiler =
     MkBatchCompiler(structure RecursiveCompiler =
-			SMLToComPlusRecursiveCompiler
+			SMLToDotNetRecursiveCompiler
 		    val executableHeader = "")
