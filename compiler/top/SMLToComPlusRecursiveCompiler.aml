@@ -13,5 +13,4 @@
 structure SMLToComPlusMain =
     MakeMain(structure Composer = Composer
 	     structure Compiler = SMLToComPlusCompiler
-	     structure TargetInitialContext = InitialEmptyContext
 	     val executableHeader = "")

@@ -25,14 +25,6 @@ functor MakeCompiler(
 	structure BackendCommon:    PHASE where I = FrontendCommon.O
 	structure BackendSpecific:  PHASE where I = BackendCommon.O
 					  where O = Target
-	structure FrontendSpecificInitialContext: INITIAL_CONTEXT
-					  where type t = FrontendSpecific.C.t
-	structure FrontendCommonInitialContext:   INITIAL_CONTEXT
-					  where type t = FrontendCommon.C.t
-	structure BackendCommonInitialContext:    INITIAL_CONTEXT
-					  where type t = BackendCommon.C.t
-	structure BackendSpecificInitialContext:  INITIAL_CONTEXT
-					  where type t = BackendSpecific.C.t
        ) :> COMPILER where Target = Target
   =
   struct
@@ -46,11 +38,11 @@ functor MakeCompiler(
 	, beSpec : BackendSpecific.C.t
 	}
 
-    val initial =
-	{ feSpec = FrontendSpecificInitialContext.initial()
-	, feComm = FrontendCommonInitialContext.initial()
-	, beComm = BackendCommonInitialContext.initial()
-	, beSpec = BackendSpecificInitialContext.initial()
+    val empty =
+	{ feSpec = FrontendSpecific.C.new()
+	, feComm = FrontendCommon.C.new()
+	, beComm = BackendCommon.C.new()
+	, beSpec = BackendSpecific.C.new()
 	}
 
     fun clone {feSpec,feComm,beComm,beSpec} =

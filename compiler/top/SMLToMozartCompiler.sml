@@ -30,14 +30,5 @@ structure SMLToMozartCompiler =
 		     structure FrontendSpecific = FrontendSML
 		     structure FrontendCommon   = FrontendCommon
 		     structure BackendCommon    = BackendCommon
-		     structure BackendSpecific  = BackendMozart
-
-		     structure FrontendSpecificInitialContext =
-			       FrontendSMLInitialContext
-		     structure FrontendCommonInitialContext =
-			       FrontendCommonInitialContext
-		     structure BackendCommonInitialContext =
-			       InitialEmptyContext
-		     structure BackendSpecificInitialContext =
-			       InitialEmptyContext)
+		     structure BackendSpecific  = BackendMozart)
     end

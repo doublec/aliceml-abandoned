@@ -1,7 +1,6 @@
 Group
 
     structure OzifyFlatGrammar
-    structure MozartTargetInitialContext
     functor MakeMozartTarget
     functor MakeBackendMozart
 

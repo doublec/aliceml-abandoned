@@ -4,4 +4,3 @@ Group is
 	abstraction-phase.cm
 
 	MakeFrontendSML.sml
-	FrontendSMLInitialContext.sml

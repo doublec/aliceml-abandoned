@@ -29,14 +29,5 @@ structure SMLToComPlusCompiler =
 		     structure FrontendSpecific = FrontendSML
 		     structure FrontendCommon   = FrontendCommon
 		     structure BackendCommon    = BackendCommon
-		     structure BackendSpecific  = BackendComPlus
-
-		     structure FrontendSpecificInitialContext =
-			       FrontendSMLInitialContext
-		     structure FrontendCommonInitialContext =
-			       FrontendCommonInitialContext
-		     structure BackendCommonInitialContext =
-			       InitialEmptyContext
-		     structure BackendSpecificInitialContext =
-			       InitialEmptyContext)
+		     structure BackendSpecific  = BackendComPlus)
     end

@@ -3,7 +3,6 @@ Group is
 	../infrastructure/phase.cm
 	../infrastructure/target.cm
 	../infrastructure/switches.cm
-	../infrastructure/initial-context.cm
 
 	COMPILER.sig
 	MakeCompiler.sml

@@ -22,19 +22,14 @@ structure MozartTargetContext: CONTEXT =
     struct
 	type t = MozartEngine.t
 
-	fun clone engine = engine
-    end
-
-structure MozartTargetInitialContext: INITIAL_CONTEXT =
-    struct
-	type t = MozartEngine.t
-
 	val engine: MozartEngine.t option ref = ref NONE
 
-	fun initial () =
+	fun new () =
 	    (if (isSome (!engine)) then ()
 	     else engine := SOME (MozartEngine.start ());
 	     valOf (!engine))
+
+	fun clone engine = engine
     end
 
 functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):

@@ -15,8 +15,6 @@ functor MakeMain(structure Composer: COMPOSER'
 		     where type Sig.t = Signature.t
 		 structure Compiler: COMPILER
 		     where Target.Sig = Signature
-		 structure TargetInitialContext: INITIAL_CONTEXT
-		     where type t = Compiler.Target.C.t
 		 val executableHeader: string): MAIN =
     struct
 	structure Composer = Composer
@@ -69,7 +67,7 @@ functor MakeMain(structure Composer: COMPOSER'
 						   Url.toString url ^ "\n"
 					     | NONE => "\n"))
 		    val (_, target) =
-			Compiler.compile (Compiler.initial, desc,
+			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
 		    val _ = TextIO.print "### done\n"
 		in
@@ -91,11 +89,11 @@ functor MakeMain(structure Composer: COMPOSER'
 	    fun compile' (outFilename, header) (desc, s) =
 		let
 		    val (_, target) =
-			Compiler.compile (Compiler.initial, desc,
+			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
 		in
 		    (*--** header *)
-		    Compiler.Target.save (TargetInitialContext.initial ())
+		    Compiler.Target.save (Compiler.Target.C.new ())
 		    outFilename target;
 		    Compiler.Target.sign target
 		end

@@ -53,8 +53,6 @@ infrastructure/EmptyContext.sml
 infrastructure/SIGNATURE.sig
 infrastructure/COMPOSER.sig
 infrastructure/TARGET.sig
-infrastructure/INITIAL_CONTEXT.sig
-infrastructure/InitialEmptyContext.sml
 common/Stamp.sml
 common/StampSet.sml
 common/StampMap.sml
@@ -100,7 +98,6 @@ frontend-common/MakeElaborationPhase.sml
 frontend-common/TRANSLATION_PHASE.sig
 frontend-common/TranslationPhase.sml
 frontend-common/MakeFrontendCommon.sml
-frontend-common/FrontendCommonInitialContext.sml
 frontend-sml/LAB.sig
 frontend-sml/Lab.sml
 frontend-sml/ID.sig
@@ -138,7 +135,6 @@ frontend-sml/ParsingPhase.sml
 frontend-sml/BIND_ENV0.sig
 frontend-sml/BindEnv0.sml
 frontend-sml/MakeFrontendSML.sml
-frontend-sml/FrontendSMLInitialContext.sml
 backend-common/LABEL_SORT.sig
 backend-common/MakeLabelSort.sml
 backend-common/LabelSort.sml

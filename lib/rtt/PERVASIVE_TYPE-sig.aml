@@ -12,6 +12,7 @@ signature PERVASIVE_TYPE =
     val lab_nil :	lab
     val lab_cons :	lab
 
+    val name_ref :	name
     val name_match :	name
     val name_bind :	name
 
