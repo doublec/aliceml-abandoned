@@ -70,37 +70,46 @@ import structure CoreToplevel : (val use : string -> unit) from "x-alice:/tools/
 
 (* We need to repeat overloading declarations here,
    because mere reliance on reexport-import will default the types! *)
-__overload (int, IntInf.t, word, Word8.t, real) as 'num
-    op ~ : 'num -> 'num = (Int.~, IntInf.~, Word.~, Word8.~, Real.~)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op ~ : 'num -> 'num = (Int.~, IntInf.~, Word.~, Word8.~, Word32.~, Real.~)
 __overload (int, IntInf.t, real) as 'realint
     op abs : 'realint -> 'realint = (Int.abs, IntInf.abs, Real.abs)
-__overload (int, IntInf.t, word, Word8.t, real) as 'num
-    op + : 'num * 'num -> 'num = (Int.+, IntInf.+, Word.+, Word8.+, Real.+)
-__overload (int, IntInf.t, word, Word8.t, real) as 'num
-    op - : 'num * 'num -> 'num = (Int.-, IntInf.-, Word.-, Word8.-, Real.-)
-__overload (int, IntInf.t, word, Word8.t, real) as 'num
-    op * : 'num * 'num -> 'num = (Int.*, IntInf.*, Word.*, Word8.*, Real.*)
-__overload (int, IntInf.t, word, Word8.t) as 'wordint
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op + : 'num * 'num -> 'num =
+    (Int.+, IntInf.+, Word.+, Word8.+, Word32.+, Real.+)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op - : 'num * 'num -> 'num =
+   (Int.-, IntInf.-, Word.-, Word8.-, Word32.-, Real.-)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op * : 'num * 'num -> 'num =
+    (Int.*, IntInf.*, Word.*, Word8.*, Word32.*, Real.* )
+__overload (int, IntInf.t, word, Word8.t, Word32.t) as 'wordint
     op div : 'wordint * 'wordint -> 'wordint =
-    (Int.div, IntInf.div, Word.div, Word8.div)
-__overload (int, IntInf.t, word, Word8.t) as 'wordint
+    (Int.div, IntInf.div, Word.div, Word8.div, Word32.div)
+__overload (int, IntInf.t, word, Word8.t, Word32.t) as 'wordint
     op mod : 'wordint * 'wordint -> 'wordint =
-    (Int.mod, IntInf.mod, Word.mod, Word8.mod)
+    (Int.mod, IntInf.mod, Word.mod, Word8.mod, Word32.mod)
 __overload (real) as 'real
     op / : 'real * 'real -> 'real = (Real./)
 
-__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
     op < : 'numtxt * 'numtxt -> bool =
-    (Int.<, IntInf.<, Word.<, Word8.<, Real.<, Char.<, String.<)
-__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
+    (Int.<, IntInf.<, Word.<, Word8.<, Word32.<, Real.<, Char.<, String.<)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
     op > : 'numtxt * 'numtxt -> bool =
-    (Int.>, IntInf.>, Word.>, Word8.>, Real.>, Char.>, String.>)
-__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
+    (Int.>, IntInf.>, Word.>, Word8.>, Word32.>, Real.>, Char.>, String.>)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
     op <= : 'numtxt * 'numtxt -> bool =
-    (Int.<=, IntInf.<=, Word.<=, Word8.<=, Real.<=, Char.<=, String.<=)
-__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
+    (Int.<=, IntInf.<=, Word.<=, Word8.<=, Word32.<=,
+     Real.<=, Char.<=, String.<=)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
     op >= : 'numtxt * 'numtxt -> bool =
-    (Int.>=, IntInf.>=, Word.>=, Word8.>=, Real.>=, Char.>=, String.>=)
+    (Int.>=, IntInf.>=, Word.>=, Word8.>=, Word32.>=,
+     Real.>=, Char.>=, String.>=)
 
 __overload 'a printVal :  'a -> unit = Print'.printVal'
 __overload 'a printType : 'a -> unit = Print'.printType'
