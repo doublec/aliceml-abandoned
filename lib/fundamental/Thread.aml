@@ -1,0 +1,55 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive      from "Pervasive"
+import type unit and bool and exn from "ToplevelTypes"
+import structure Future           from "Future"
+import structure Promise          from "Promise"
+import signature THREAD           from "THREAD-sig"
+
+
+structure Thread : THREAD =				(**)
+struct
+    type thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
+
+    __primitive exception Terminate			= "Thread.Terminate"
+
+    __primitive val current :	unit -> thread		= "Thread.current"
+    __primitive val state :	thread -> state		= "Thread.state"
+
+    __primitive val yield :	thread -> unit		= "Thread.yield"
+    __primitive val raiseIn :	thread * exn -> unit	= "Thread.raiseIn"
+
+    fun sleep t = Future.await(Future.alarm t)
+
+    fun terminate t = raiseIn (t, Terminate)
+
+    fun spawn f =
+	let
+	    val t = Promise.promise()
+	    val x = Future.concur(fn() => (Promise.fulfill(t, current()); f()))
+	in
+	    (Future.await(Promise.future t), x)
+	end
+
+    fun thread f = #1(spawn f)
+
+    __primitive val suspend :		thread -> unit	= "Thread.suspend"
+    __primitive val resume :		thread -> unit	= "Thread.resume"
+    __primitive val isSuspended :	thread -> bool	= "Thread.isSuspended"
+end
