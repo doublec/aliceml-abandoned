@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2002
+ *   Leif Kornstaedt, 1999-2003
  *   Andreas Rossberg, 1999
  *
  * Last change:
@@ -295,14 +295,10 @@ structure PickleFlatGrammar :> CODE
 			       (outputId, outputUnit', outputUrl, outputUnit'))
 			  (q, imports))
 
-	fun parseUrl NONE = NONE   (*--** use Url.getLocalPath instead *)
+	fun parseUrl NONE = NONE
 	  | parseUrl (SOME url) =
-	    case (Url.getScheme url, Url.getAuthority url) of
-		(NONE, NONE) =>
-		    SOME (Url.toStringRaw url)
-	      | (SOME "file", NONE) =>
-		    SOME (Url.toStringRaw (Url.setScheme (url, NONE)))
-	      | _ => NONE
+	    SOME (Url.toLocalFile url)
+	    handle Url.NotLocal => NONE
 
 	fun toString (desc, tmpOptRef, component) =
 	    let

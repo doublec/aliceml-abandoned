@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,14 +27,10 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 			    where type component = Component.t
 			structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
-	fun parseUrl NONE = NONE   (*--** use OS.Path.fromUrl *)
+	fun parseUrl NONE = NONE
 	  | parseUrl (SOME url) =
-	    case (Url.getScheme url, Url.getAuthority url) of
-		(NONE, NONE) =>
-		    SOME (Url.toStringRaw url)
-	      | (SOME "file", NONE) =>
-		    SOME (Url.toStringRaw (Url.setScheme (url, NONE)))
-	      | _ => NONE
+	    SOME (Url.toLocalFile url)
+	    handle Url.NotLocal => NONE
 
 	fun eval x baseUrl =
 	    let

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -88,18 +88,6 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		Url.resolve base url
 	    end
 
-	fun parseUrl url =
-	    case (Url.getScheme url, Url.getAuthority url) of
-		(NONE, NONE) =>
-		    Url.toStringRaw url
-	      | (SOME "file", NONE) =>
-		    Url.toStringRaw (Url.setScheme (url, NONE))
-	      | (SOME "x-alice", NONE) =>
-		    home () ^
-		    Url.toStringRaw (Url.setScheme (Url.makeRelativePath url,
-						    NONE))
-	      | _ => raise Crash.Crash "MkBatchCompiler.parseUrl"
-
 	fun readFile filename =
 	    let
 		val file   = TextIO.openIn filename handle IO.Io {...} =>
@@ -122,20 +110,24 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		  of NONE => ""
 		   | SOME url =>
 		let
+		    val filename = Url.toLocalFile (Url.fromString url)
 		    val s = String.map (fn #"\n" => #" " | c => c)
-				       (readFile(parseUrl(Url.fromString url)))
+				       (readFile filename)
 		in
 		    implicitImportRef := SOME s;
 		    s
-		end
+		end handle Url.NotLocal =>
+			error ("could not locate implicit import file " ^ url)
 	end
 
 	fun isBaseSig desc =   (*--** only needed for .NET backend *)
 	    case Source.url desc of
 		SOME url =>
-		    parseUrl url =
-		    parseUrl (resolveWrtCwd (Url.fromString (home () ^
-							     "Base.asig")))
+		    ((Url.toLocalFile url =
+		      Url.toLocalFile
+			  (resolveWrtCwd
+			       (Url.fromString (home () ^ "Base.asig"))))
+		     handle Url.NotLocal => false)
 	      | NONE => false
 
 	fun processBasic process (desc, s) =
@@ -156,13 +148,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		val url = resolveWrtCwd (Url.fromString filename)
 	    in
 		processBasic process (Source.urlDesc url,
-				      readFile (parseUrl url))
-	    end
+				      readFile (Url.toLocalFile url))
+	    end handle Url.NotLocal =>
+		    error ("could not locate source file " ^ filename)
 
 	local
 	    fun compileSign' (desc, s) =
 		let
-		    val sigFilename = Url.toStringRaw (valOf (Source.url desc))
+		    val sigFilename = Url.toLocalFile (valOf (Source.url desc))
 		    val _ = trace ("reading signature from " ^ sigFilename)
 		    val s' = implicitImport() ^ "\n" ^ s
 		    val (_, target) =
@@ -286,12 +279,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    SOME sign => sign
 		  | NONE =>
 		    let
-			val inf = valOf (loadSig url')
+			val inf =
+			    (valOf (loadSig url')
+			     before
+			     trace ("loaded signature from " ^
+				    Url.toStringRaw url'))
 			    handle exn as (Component.Failure (_, _) |
 					   Option.Option) =>
 				acquireFromSigFile (url', exn)
-			val _ = trace ("loaded signature from " ^
-				       Url.toStringRaw url')
 			val sign = Inf.asSig inf
 			    handle Inf.Interface =>
 				error ("higher-order content found in " ^
@@ -303,7 +298,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    end
 	and acquireFromSigFile (url, exn) =
 	    let
-		val targetFilename = parseUrl url
+		val targetFilename = Url.toLocalFile url
+		    handle Url.NotLocal =>
+			error ("could not locate component " ^
+			       Url.toStringRaw url)
 		val sigFilename = pathFloor targetFilename ^ ".asig"
 	    in
 		if existsFile sigFilename then
@@ -316,7 +314,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				    "could not locate component "
 			      | Option.Option => "no signature found in "
 			      | _ => "unknown error while accessing ") ^
-			   parseUrl url)
+			   targetFilename)
 	    end
 	and acquireFromSource targetFilename =
 	    case acquireFromSource' (targetFilename, ".aml") of
