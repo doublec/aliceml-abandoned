@@ -3,16 +3,27 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature SOCKET from "SOCKET-sig"
-
-signature SOCKET_COMPONENT =
+signature UNSAFE_SOCKET_COMPONENT =
     sig
-	structure Socket: SOCKET
+	structure UnsafeSocket:
+	    sig
+		val server:
+		    'port option * ('socket * 'host * 'port -> unit) ->
+		    'socket * 'port
+		val client: 'host * 'port -> 'socket
+
+		val input1: 'socket -> char option
+		val inputN: 'socket * int -> 'vector
+		val output: 'socket * 'vector -> unit
+		val output1: 'socket * 'char -> unit
+
+		val close: 'socket -> unit
+	    end
     end

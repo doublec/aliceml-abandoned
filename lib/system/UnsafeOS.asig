@@ -1,0 +1,33 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_OS_COMPONENT =
+    sig
+	structure UnsafeOS:
+	    sig
+		structure FileSys:
+		    sig
+			val getDir: unit -> string
+		    end
+
+		structure Process:
+		    sig
+			val success: 'status
+			val failure: 'status
+
+			val system: string -> 'status
+			val exit: 'status -> 'a
+			val atExn: (exn -> unit) -> unit		(**)
+			val getEnv: string -> string option
+		    end
+	    end
+    end
