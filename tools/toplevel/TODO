@@ -8,8 +8,6 @@ Bugs:
 * cannot make window smaller
 * modified files dialogue is too ugly
 
-* Glade should generate widgetShow calls bottom up
-
 Missing Features:
 
 * live highlighting!
