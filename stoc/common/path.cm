@@ -1,0 +1,27 @@
+Group
+
+	signature NAME
+	structure Name
+	signature LABEL
+	structure Label
+	signature PATH
+	structure Path
+	structure PathSet
+	structure PathMap
+
+	signature PP_PATH
+	structure PPPath
+
+is
+
+	../misc/sources.cm
+	../error/sources.cm
+	name.cm
+
+	PATH.sig
+	Path.sml
+	PathSet.sml
+	PathMap.sml
+
+	PP_PATH.sig
+	PPPath.sml
