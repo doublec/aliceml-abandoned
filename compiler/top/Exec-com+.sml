@@ -12,6 +12,7 @@
 
 SMLofNJ.Internals.GC.messages false;
 CM.make();
+
 local
     fun hdl f x =
 	(f x; OS.Process.success)
@@ -19,21 +20,21 @@ local
 	    (TextIO.output (TextIO.stdErr,
 			    "uncaught exception " ^ exnName e ^ "\n");
 	     OS.Process.failure)
-    fun getArgs () =
-	let
-	    val args = SMLofNJ.getArgs ()
-	in
-	    case SMLofNJ.SysInfo.getOSKind () of
-		SMLofNJ.SysInfo.WIN32 => tl args
-	      | _ => args
-	end
-    fun stoc nil =
-	hdl Main.comifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
-      | stoc [infile] =
-	hdl Main.comifyFileToStdOut infile
+
+    fun defaults () = Main.Switches.printComponentSig := false
+
+    fun stoc nil =   (* for testing bootstrapping *)
+	(defaults ();
+	 hdl Main.flattenString (TextIO.inputAll TextIO.stdIn))
+      | stoc ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
+	(defaults ();
+	 hdl Main.compileForComPlus (infile, outfile))
       | stoc [infile, outfile] =
-	hdl Main.comifyFileToFile (infile, outfile)
+	(defaults ();
+	 hdl Main.compileForComPlus (infile, outfile))
       | stoc _ = OS.Process.failure
+
+    fun main _ = stoc (CommandLine.arguments ())
 in
-    val _ = SMLofNJ.exportFn ("stoc-com+", fn _ => stoc (getArgs ()))
+    val _ = SMLofNJ.exportFn ("stoc-com+", main)
 end;

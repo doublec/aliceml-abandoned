@@ -14,15 +14,6 @@ SMLofNJ.Internals.GC.messages false;
 CM.make();
 
 local
-    fun getArgs () =
-	let
-	    val args = SMLofNJ.getArgs ()
-	in
-	    case SMLofNJ.SysInfo.getOSKind () of
-		SMLofNJ.SysInfo.WIN32 => tl args
-	      | _ => args
-	end
-
     fun hdl f x =
 	(f x; OS.Process.success)
 	handle e =>
@@ -42,6 +33,8 @@ local
 	(defaults ();
 	 hdl Main.compileForMozart (infile, outfile))
       | stoc _ = OS.Process.failure
+
+    fun main _ = stoc (CommandLine.arguments ())
 in
-    val _ = SMLofNJ.exportFn ("stoc-mozart", fn _ => stoc (getArgs ()))
+    val _ = SMLofNJ.exportFn ("stoc-mozart", main)
 end;
