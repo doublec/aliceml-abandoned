@@ -21,6 +21,7 @@ signature MISC =
 
     val Array_all :	('a -> bool) -> 'a array -> bool
     val Array_exists :	('a -> bool) -> 'a array -> bool
+    val Array_find :	('a -> bool) -> 'a array -> 'a option
 
     val Char_toWide :		Char.char -> WideChar.char
     val Char_fromWide :		WideChar.char -> Char.char	(* Chr *)

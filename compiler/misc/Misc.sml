@@ -75,6 +75,14 @@ structure Misc :> MISC =
 				  		  else p(Array.sub(a,i))
 							orelse iter(i+1)
 					  in iter 0 end
+    fun Array_find p a			= let val size   = Array.length a
+					      fun iter i =
+						  if i = size then NONE else
+						  let val x = Array.sub(a,i) in
+						    if p x then SOME x
+						    else iter(i+1)
+						  end
+					  in iter 0 end
 
     val Char_toWide	= WideChar.chr o Char.ord
     val Char_fromWide	= Char.chr o WideChar.ord
