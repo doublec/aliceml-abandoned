@@ -15,9 +15,9 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = java alice generic adt store
+SUBDIRS = generic adt store
 
-SOURCES = Base.cc InitSeam.cc SeamMain.cc AliceMain.cc JavaMain.cc
+SOURCES = Base.cc InitSeam.cc SeamMain.cc
 OBJS = $(SOURCES:%.cc=%.o)
 
 ##
@@ -40,68 +40,15 @@ GENERIC_SOURCES = \
 	Unpickler.cc Pickler.cc Profiler.cc Broker.cc
 GENERIC_OBJS = $(GENERIC_SOURCES:%.cc=generic/%.o)
 SEAM_OBJS = $(STORE_OBJS) $(ADT_OBJS) $(GENERIC_OBJS)
-
-##
-## Enumerate alice.dll files
-##
-ifdef LIGHTNING
-ALICE_LIGHTNING_SOURCES = \
-	NativeConcreteCode.cc NativeCodeInterpreter.cc NativeCodeJitter.cc
-else
-ALICE_LIGHTNING_SOURCES =
-endif
-ALICE_PRIMITIVE_MODULES = \
-	Unqualified Array Byte Char Future General GlobalStamp Hole Int \
-	List Math Option Real Ref Remote String Thread UniqueString Unsafe \
-	Vector Word8 Word8Array Word8Vector Word31
-ALICE_LIB_SYSTEM_MODULES = \
-	Config IODesc OS CommandLine Component Debug Socket Rand Value \
-	Reflect Foreign
-ALICE_LIB_UTILITY_MODULES = ImpMap Cell Addr
-ALICE_LIB_DISTRIBUTION_MODULES = Remote
-ALICE_SOURCES = \
-	Data.cc Guid.cc AbstractCode.cc PrimitiveTable.cc \
-	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
-	AliceLanguageLayer.cc BootLinker.cc \
-	$(ALICE_LIGHTNING_SOURCES) \
-	$(ALICE_PRIMITIVE_MODULES:%=primitives/%.cc) \
-	$(ALICE_LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \
-	$(ALICE_LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
-	$(ALICE_LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc)
-ALICE_OBJS = $(ALICE_SOURCES:%.cc=alice/%.o)
-
-##
-## Enumerate java.dll files
-##
-JAVA_JAVA_LANG_SOURCES = \
-	Class.cc Object.cc String.cc Throwable.cc System.cc ClassLoader.cc \
-	Float.cc Double.cc StrictMath.cc Thread.cc
-JAVA_JAVA_IO_SOURCES = \
-	FileDescriptor.cc FileInputStream.cc FileOutputStream.cc \
-	ObjectStreamClass.cc
-JAVA_JAVA_SECURITY_SOURCES = AccessController.cc
-JAVA_SUN_MISC_SOURCES = Unsafe.cc AtomicLong.cc
-JAVA_SUN_REFLECT_SOURCES = Reflection.cc NativeConstructorAccessorImpl.cc
-JAVA_SOURCES = \
-	Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
-	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
-	Startup.cc JavaLanguageLayer.cc \
-	Dump.cc \
-	$(JAVA_JAVA_LANG_SOURCES:%=java/lang/%) \
-	$(JAVA_JAVA_IO_SOURCES:%=java/io/%) \
-	$(JAVA_JAVA_SECURITY_SOURCES:%=java/security/%) \
-	$(JAVA_SUN_MISC_SOURCES:%=sun/misc/%) \
-	$(JAVA_SUN_REFLECT_SOURCES:%=sun/reflect/%)
-JAVA_OBJS = $(JAVA_SOURCES:%.cc=java/%.o)
 ##
 ## Done
 ##
 
-LIBS = -L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
+LIBS = -L$(ZLIBDIR)/lib $(EXTRA_LIBS) -lz
 
-.PHONY: clean-local veryclean-local distclean-local $(SUBDIRS)
+.PHONY: $(SUBDIRS) clean-local veryclean-local distclean-local install
 
-all: seam.exe alice.dll java.dll
+all: seam.exe
 
 $(SUBDIRS): %:
 	(cd $@ && $(MAKE) all)
@@ -111,14 +58,6 @@ seam.dll: Base.o InitSeam.o store adt generic
 
 seam.exe: SeamMain.o seam.dll
 	$(LD) $(LDFLAGS) -o $@ $< seam.dll
-
-alice.dll: AliceMain.o seam.dll alice
-	$(LD) $(LDFLAGS) $(ALICE_DLL_EXTRA_LDFLAGS) \
-	-shared -o $@ AliceMain.o $(ALICE_OBJS) seam.dll $(LIBS)
-
-java.dll: JavaMain.o seam.dll java
-	$(LD) $(LDFLAGS) $(JAVA_DLL_EXTRA_LDFLAGS) \
-	-shared -o $@ JavaMain.o $(JAVA_OBJS) seam.dll $(LIBS)
 
 clean: clean-local
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
@@ -130,7 +69,7 @@ distclean: distclean-local
 clean-local:
 	rm -f $(OBJS)
 veryclean-local: clean-local
-	rm -f seam.dll alice.dll alice.exe java.dll java.exe
+	rm -f seam.dll
 distclean-local: veryclean-local
 	rm -f Makefile.depend
 
