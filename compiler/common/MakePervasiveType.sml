@@ -2,6 +2,8 @@ functor MakePervasiveType(val labid_false :	string
 			  val labid_true :	string
 			  val labid_nil :	string
 			  val labid_cons :	string
+			  val typid_zero :	string
+			  val typid_succ :	string
 			  val typid_bool :	string
 			  val typid_list :	string
 			  val typid_int :	string
@@ -13,6 +15,7 @@ functor MakePervasiveType(val labid_false :	string
 			  val typid_array :	string
 			  val typid_ref :	string
 			  val typid_exn :	string
+			  val typid_conarrow :	string
 			  val typid_time :	string
 			  val typid_prom :	string
 			  val valid_match :	string
@@ -36,6 +39,8 @@ functor MakePervasiveType(val labid_false :	string
     val lab_cons	= Label.fromString labid_cons
 
     val name_pervasive	= Name.ExId modid_pervasive
+    val name_zero	= Name.ExId typid_zero
+    val name_succ	= Name.ExId typid_succ
     val name_bool	= Name.ExId typid_bool
     val name_list	= Name.ExId typid_list
     val name_int	= Name.ExId typid_int
@@ -47,12 +52,15 @@ functor MakePervasiveType(val labid_false :	string
     val name_array	= Name.ExId typid_array
     val name_ref	= Name.ExId typid_ref
     val name_exn	= Name.ExId typid_exn
+    val name_conarrow	= Name.ExId typid_conarrow
     val name_time	= Name.ExId typid_time
     val name_prom	= Name.ExId typid_prom
 
     val name_match	= Name.ExId valid_match
     val name_bind	= Name.ExId valid_bind
 
+    val path_zero	= Path.pervasive typid_zero
+    val path_succ	= Path.pervasive typid_succ
     val path_bool	= Path.pervasive typid_bool
     val path_list	= Path.pervasive typid_list
     val path_int	= Path.pervasive typid_int
@@ -64,9 +72,12 @@ functor MakePervasiveType(val labid_false :	string
     val path_array	= Path.pervasive typid_array
     val path_ref	= Path.pervasive typid_ref
     val path_exn	= Path.pervasive typid_exn
+    val path_conarrow	= Path.pervasive typid_conarrow
     val path_time	= Path.pervasive typid_time
     val path_prom	= Path.pervasive typid_prom
 
+    val con_zero	= (STAR, CLOSED, path_zero)
+    val con_succ	= (ARROW(STAR,STAR), CLOSED, path_succ)
     val con_bool	= (STAR, CLOSED, path_bool)
     val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
     val con_int		= (STAR, CLOSED, path_int)
@@ -78,22 +89,12 @@ functor MakePervasiveType(val labid_false :	string
     val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
     val con_array	= (ARROW(STAR,STAR), CLOSED, path_array)
     val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
+    val con_conarrow	= (ARROW(STAR,ARROW(STAR,STAR)), CLOSED, path_conarrow)
     val con_time	= (STAR, CLOSED, path_time)
     val con_prom	= (ARROW(STAR,STAR), CLOSED, path_prom)
 
-    val typ_list	= Type.unknown(ARROW(STAR,STAR))
-    val var_list	= Type.var STAR
-    val typ_var		= Type.inVar var_list
-    val typ_cons	= Type.inTuple #[typ_var,Type.inApply(typ_list,typ_var)]
-
-    val row_bool	= Type.extendRow(lab_false, #[],
-			  Type.extendRow(lab_true, #[], Type.emptyRow()))
-    val row_list	= Type.extendRow(lab_cons, #[typ_cons],
-			  Type.extendRow(lab_nil, #[], Type.emptyRow()))
-
-    val typ_unit	= Type.inTuple #[]
-    val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
-					Type.inMu(Type.inSum row_bool))
+    val typ_zero	= Type.inCon con_zero
+    val typ_succ	= Type.inCon con_succ
     val typ_int		= Type.inCon con_int
     val typ_word	= Type.inCon con_word
     val typ_real	= Type.inCon con_real
@@ -103,8 +104,23 @@ functor MakePervasiveType(val labid_false :	string
     val typ_array	= Type.inCon con_array
     val typ_ref		= Type.inCon con_ref
     val typ_exn		= Type.inCon con_exn
+    val typ_conarrow	= Type.inCon con_conarrow
     val typ_prom	= Type.inCon con_prom
     val typ_time	= Type.inCon con_time
+
+    val typ_list	= Type.unknown(ARROW(STAR,STAR))
+    val var_list	= Type.var STAR
+    val typ_var		= Type.inVar var_list
+    val typ_cons	= Type.inTuple #[typ_var,Type.inApply(typ_list,typ_var)]
+
+    val row_bool	= Type.extendRow(lab_false, typ_zero,
+			  Type.extendRow(lab_true, typ_zero, Type.emptyRow()))
+    val row_list	= Type.extendRow(lab_cons, typ_cons,
+			  Type.extendRow(lab_nil, typ_zero, Type.emptyRow()))
+
+    val typ_unit	= Type.inTuple #[]
+    val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
+					Type.inMu(Type.inSum row_bool))
     val _		= Type.fill(typ_list,
 			    Type.inAbbrev(Type.inCon con_list,
 				Type.inMu(Type.inLambda(var_list,
@@ -124,6 +140,9 @@ functor MakePervasiveType(val labid_false :	string
 	else if s = typid_exn    then con_exn
 	else if s = typid_time   then con_time
 	else if s = typid_prom   then con_prom
+	else if s = typid_zero   then con_zero
+	else if s = typid_succ   then con_succ
+	else if s = typid_conarrow then con_conarrow
 	else raise Lookup
 
   end
