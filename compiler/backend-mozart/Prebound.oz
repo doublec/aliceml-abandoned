@@ -440,6 +440,16 @@ prepare
 	 fun {$ V I} V.(I + 1) end
       'Unsafe.cast':
 	 fun {$ X} X end
+      'Unsafe.getPrimitiveByName':
+	 fun {$ Name} BuiltinTable.{VirtualString.toAtom Name} end
+      'Unsafe.makeClosure':
+	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
+      'Unsafe.makeFunction':
+	 fun {$ _} {Exception.raiseError notImplemented} unit end
+      'Unsafe.makeTaggedValue':
+	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
+      'Unsafe.makeTuple':
+	 fun {$ X} {Adjoin X '#'} end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#[]' Xs} end
       'Vector.maxLen': 0x7FFFFFF
