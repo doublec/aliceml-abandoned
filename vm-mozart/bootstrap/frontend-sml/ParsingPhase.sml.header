@@ -52,7 +52,7 @@ from "ParsingError"
 
 import
     structure Lexer
-from "Lexer.lex"
+from "Lexer"
 
 import
     structure CountPosLexer

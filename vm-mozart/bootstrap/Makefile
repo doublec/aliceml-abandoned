@@ -19,6 +19,8 @@ STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
+MLLEX = ml-lex
+MLYACC = ml-yacc
 
 NATIVESOURCES = IO TextIO OS Unix CommandLine Tools Pickle Debug Socket
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
@@ -82,7 +84,7 @@ FRONTENDSMLSOURCES = \
 	BIND_ENV_FROM_SIG.sig BindEnvFromSig.sml SHARING.sig Sharing.sml \
 	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
 	PARSER.sig Parser.sml DerivedForms.sml LEXER_ERROR.sig \
-	LexerError.sml Lexer.lex.sml CountPosLexer.sml PARSING_PHASE.sig \
+	LexerError.sml Lexer.sml CountPosLexer.sml PARSING_PHASE.sig \
 	ParsingPhase.sml MakeFrontendSML.sml
 FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
 
@@ -192,11 +194,22 @@ frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header \
 	LocalBase.import
 	cat LocalBase.import frontend-sml/$*.header $< > $@
 
-frontend-sml/PARSER.sig: ../../stoc/frontend-sml/Parser.grm.sig \
-	frontend-sml/PARSER.sig.header LocalBase.import
+frontend-sml/Lexer.lex: ../../stoc/frontend-sml/Lexer.lex
+	cp $< $@
+
+frontend-sml/Lexer.sml: frontend-sml/Lexer.lex.sml \
+	frontend-sml/Lexer.sml.header LocalBase.import
 	cat LocalBase.import $@.header $< > $@
 
-frontend-sml/Parser.sml: ../../stoc/frontend-sml/Parser.grm.sml \
+frontend-sml/Parser.grm: ../../stoc/frontend-sml/Parser.grm
+	cp $< $@
+
+frontend-sml/PARSER.sig: frontend-sml/Parser.grm.sig \
+	frontend-sml/PARSER.sig.header LocalBase.import fixparser.awk
+	(cat LocalBase.import $@.header && awk -f fixparser.awk < $<) > $@ || \
+	rm $@
+
+frontend-sml/Parser.sml: frontend-sml/Parser.grm.sml \
 	frontend-sml/Parser.sml.header LocalBase.import
 	cat LocalBase.import $@.header $< > $@
 
@@ -209,6 +222,15 @@ top/%: top/%.body LocalBase.import
 
 top/%: ../../stoc/top/% top/%.header LocalBase.import
 	cat LocalBase.import top/$*.header $< > $@
+
+%.lex.sml: %.lex
+	$(MLLEX) $<
+
+%.grm.sml: %.grm
+	$(MLYACC) $<
+
+%.grm.sig: %.grm.sml
+	true
 
 %.ozf: %.sml
 	$(STOC) $(STOC_OPTS) -c $< -o $@
