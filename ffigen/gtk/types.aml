@@ -1,10 +1,26 @@
 structure types : 
 sig
 	type 'a pointer
-	type cfun
+	type c_fun
+	type c_char
+	type c_short
+	type c_int
+	type c_long
+	type c_longlong
+	type c_float
+	type c_double
+	type c_longdouble
 end
 =
 struct
 	type 'a pointer
-	type cfun
+	type c_fun
+	type c_char
+	type c_short
+	type c_int
+	type c_long
+	type c_longlong
+	type c_float
+	type c_double
+	type c_longdouble
 end

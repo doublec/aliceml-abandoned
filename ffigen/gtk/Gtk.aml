@@ -6,6 +6,5 @@ structure Gtk =
 struct
     open gtk
     open Core
-   
     val _ = init()
 end

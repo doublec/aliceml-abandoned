@@ -11,7 +11,7 @@
  *
  *)
 
-import structure C from "C"
+import structure c from "c"
 import structure Gtk from "Gtk" 
 
 let
@@ -23,11 +23,11 @@ let
     val clickedId = Gtk.signalConnect(button, "clicked", hello)
 in
     (* Assign Title to toplevel window *)
-    Gtk.gtkWindowSetTitle (C.cast window, "Hello Demo");
+    Gtk.gtkWindowSetTitle (c.cast window, "Hello Demo");
     (* 10 pts border around the inner items *)
-    Gtk.gtkContainerSetBorderWidth (C.cast window, 20);
+    Gtk.gtkContainerSetBorderWidth (c.cast window, 20);
     (* Add the button widget to toplevel *)
-    Gtk.gtkContainerAdd (C.cast window, button);
+    Gtk.gtkContainerAdd (c.cast window, button);
     (* Make all subwindows of toplevel visible *)
     Gtk.gtkWidgetShowAll window
 end

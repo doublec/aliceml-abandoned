@@ -11,9 +11,9 @@
  *
  *)
 
-(*import structure gtk from "gtk"*)
+import structure gtk from "gtk"
 
-import structure C from "C"
+import structure types from "types"
 import structure NativeCore from "NativeCore"
 
 import signature CORE from "CORE-sig"
@@ -21,59 +21,57 @@ import signature CORE from "CORE-sig"
 
 structure Core :> CORE =
 struct
-    (* object is an abstract type for pointers to Gtk structures *)
-    (*type object = unit gtk.pointer*)
-    eqtype 'a pointer = 'a C.pointer
-
+    type 'a pointer = 'a types.pointer
+    
     (* event represents a GdkEvent *)
-    datatype event =
+    datatype 'a event =
 	EVENT_NOTHING
       | EVENT_DELETE
       | EVENT_DESTROY
       | EVENT_EXPOSE of 
-	{window:unit pointer, send:bool, 
+	{window:'a pointer, send:bool, 
 	 area_x:int, area_y:int, area_height:int, area_width:int,
-	 region:unit pointer, count:int}
+	 region:'a pointer, count:int}
       | EVENT_MOTION_NOTIFY of
-	{window:unit pointer, send:bool, time:int,
+	{window:'a pointer, send:bool, time:int,
 	 x:real, y:real,
 	 state:int, is_hint:int,
-	 device: unit pointer, x_root:real, y_root:real}
+	 device: 'a pointer, x_root:real, y_root:real}
       | EVENT_BUTTON_PRESS of
-	{window:unit pointer, send:bool, time:int,
+	{window:'a pointer, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 device: unit pointer, x_root:real, y_root:real}
+	 device: 'a pointer, x_root:real, y_root:real}
       | EVENT_2BUTTON_PRESS of
-	{window:unit pointer, send:bool, time:int,
+	{window:'a pointer, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 device: unit pointer, x_root:real, y_root:real}
+	 device: 'a pointer, x_root:real, y_root:real}
       | EVENT_3BUTTON_PRESS of
-	{window:unit pointer, send:bool, time:int,
+	{window:'a pointer, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 device: unit pointer, x_root:real, y_root:real}
+	 device: 'a pointer, x_root:real, y_root:real}
       | EVENT_BUTTON_RELEASE of
-	{window:unit pointer, send:bool, time:int,
+	{window:'a pointer, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 device: unit pointer, x_root:real, y_root:real}
+	 device: 'a pointer, x_root:real, y_root:real}
       | EVENT_KEY_PRESS of
-	{window:unit pointer, send:bool, time:int, state:int,
+	{window:'a pointer, send:bool, time:int, state:int,
 	 keyval:int, length:int, string:string, 
 	 hardware_keycode:int, group:int}
       | EVENT_KEY_RELEASE of
-	{window:unit pointer, send:bool, time:int, state:int,
+	{window:'a pointer, send:bool, time:int, state:int,
 	 keyval:int, length:int, string:string, 
 	 hardware_keycode:int, group:int}
       | EVENT_ENTER_NOTIFY of
-	{window:unit pointer, send:bool, subwindow:unit pointer, time:int,
+	{window:'a pointer, send:bool, subwindow:'a pointer, time:int,
 	 x:real, y:real, x_root:real, y_root:real,
 	 mode:int, detail:int, focus:bool, state:int}
       | EVENT_LEAVE_NOTIFY of
-	{window:unit pointer, send:bool, subwindow:unit pointer, time:int,
+	{window:'a pointer, send:bool, subwindow:'a pointer, time:int,
 	 x:real, y:real, x_root:real, y_root:real,
 	 mode:int, detail:int, focus:bool, state:int}
-      | EVENT_FOCUS_CHANGE of {window:unit pointer, send:bool, hasFocus:bool}
+      | EVENT_FOCUS_CHANGE of {window:'a pointer, send:bool, hasFocus:bool}
       | EVENT_CONFIGURE of
-	{window:unit pointer, send:bool, x:int, y:int,
+	{window:'a pointer, send:bool, x:int, y:int,
  	 width:int, height:int}
       | EVENT_MAP
       | EVENT_UNMAP
@@ -91,36 +89,36 @@ struct
       | EVENT_DROP_FINISHED
       | EVENT_CLIENT_EVENT
       | EVENT_VISIBILITY_NOTIFY of
-	{window:unit pointer, send:bool, state:int}
-      | EVENT_NO_EXPOSE of {window:unit pointer, send:bool}
+	{window:'a pointer, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:'a pointer, send:bool}
       | EVENT_SCROLL of
-	{window:unit pointer, send:bool, time:int, x:real, y:real,
-	 state:int, direction:int, device:unit pointer,
+	{window:'a pointer, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:'a pointer,
 	 x_root:real, y_root:real}
       | EVENT_WINDOW_STATE
       | EVENT_SETTING
-      | EVENT_UNSUPPORTED of unit pointer
+      | EVENT_UNSUPPORTED of 'a pointer
 
     (* arg is used for: 
         - arguments coming from the event stream and passed to 
           an alice event callback function
         - arguments passed to a Gtk function that takes a variable number of
 	  arguments *)
-    datatype arg = 
+    datatype 'a arg = 
 	BOOL of bool
       | INT of int
       | REAL of real
       | STRING of string
-      | OBJECT of unit pointer
-      | LIST of unit pointer list
-      | EVENT of event
+      | OBJECT of 'a pointer
+      | LIST of 'a pointer list
+      | EVENT of 'a event
 
     fun isNull x = NativeCore.isNull x
     val NULL = NativeCore.null()      (* represents the C NULL pointer *)
     val TRUE = NativeCore.gtkTrue()   (* the Gtk TRUE value as int *)
     val FALSE = NativeCore.gtkFalse() (* the Gtk FALSE value as int *)
 
-    type 'a callBackFunction = 'a pointer * arg list -> unit
+    type ('a,'b) callBackFunction = 'a pointer * 'b arg list -> unit
 
     (* signal connecting and signal table functions *)
     fun doSignalConnect (obj,signame,callback,after) =
@@ -151,7 +149,7 @@ struct
     in
 	fun listener nil                         = ()
 	  | listener ((connid,obj,args)::stream) =
-	    ( runCallback (connid, obj, args) ; listener stream )
+	    ( runCallback (connid, obj, args); listener stream )
     end
 
     (* finalization handling *)
@@ -224,11 +222,42 @@ struct
     (* init core module *)
     fun init () = if NativeCore.isLoaded() then () else
 	let
-	    val eventStream : (int * unit pointer * arg list) list  = 
-	                                     NativeCore.getEventStream()
+	    val eventStream = NativeCore.getEventStream()
 	in
 	    NativeCore.init ();
 	    spawn (listener eventStream);
 	    spawn (mainLoop initPoll)
 	end
+
+
+
+    (*****************************************************************)
+    (* Gnome Canvas                                                  *)
+
+    (* Create a GnomeCanvasItem *)
+    fun itemCreate (root : 'a pointer, ty, arglist) =
+    let
+	fun flatten nil = nil
+	  | flatten ((a,b)::args) = [STRING a, b]@(flatten args)
+	val item = gtk.cast gtk.myItemNew(gtk.cast root, ty)
+	val _ = case arglist of
+	            nil => ()
+		  | (fst,fstarg)::args => 
+			gtk.gnomeCanvasItemSetValist(item, fst, (fstarg::flatten(args)))
+    in
+	gtk.cast item
+    end
+
+    (* Get a GnomeCanvasPoints* array from a coordinate list *)
+    fun makePoints plist =
+    let
+	val plist = gtk.cast plist
+	val plist' = if (length plist) mod 2 = 0 then plist else plist@[0]
+	val points = gtk.gnomeCanvasPointsNew((length plist') div 2)
+	val _ = foldl (fn (x,i) => 
+		         (gtk.pointsSetCoords(points,i,x) ; i+1 ) )
+		      0 plist'
+    in
+	gtk.cast points
+    end
 end
