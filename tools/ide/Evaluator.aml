@@ -27,12 +27,16 @@ struct
 
     (* Output stream *)
 
-    val logWidth  = Compiler.Switches.Global.errWidth
-    val logStream = Compiler.Switches.Global.errOut
-    val traceStream = Compiler.Switches.Debug.logOut
+    val outWidth  = Compiler.Switches.Global.logWidth
+    val outStream = Compiler.Switches.Global.logOut
+    val errWidth  = Compiler.Switches.Global.errWidth
+    val errStream = Compiler.Switches.Global.errOut
+    val traceStream = Compiler.Switches.Debug.dumpOut
 
-    fun setLogWidth n = logWidth := n
-    fun setLogStream os = TextIO.setOutstream (logStream, os)
+    fun setOutWidth n   = outWidth := n
+    fun setOutStream os = TextIO.setOutstream (outStream, os)
+    fun setErrWidth n   = errWidth := n
+    fun setErrStream os = TextIO.setOutstream (errStream, os)
     fun setTraceStream os = TextIO.setOutstream (traceStream, os)
 
 
@@ -95,7 +99,7 @@ struct
 		if not printSig then SOME context' else
 		case Component.inf (component ())
 		 of NONE =>
-		    (TextIO.output (logStream, "no result signature\n");
+		    (TextIO.output (outStream, "no result signature\n");
 		     SOME context')
 		  | SOME inf =>
 		    interruptable
@@ -105,8 +109,8 @@ struct
 			     val _   = trace "Printing"
 			     val doc = PPComponent.ppComp (str, inf)
 			 in
-			     PrettyPrint.output (logStream, doc, !logWidth);
-			     TextIO.output (logStream, "\n");
+			     PrettyPrint.output (outStream, doc, !outWidth);
+			     TextIO.output (outStream, "\n");
 			     context'
 			 end)
 	     )
@@ -116,16 +120,16 @@ struct
 	end
 	handle Compiler.Error => SOME context
 	     | Compiler.Crash s =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "internal failure at " ^ s ^ "\n");
 		    SOME context)   (*--** is this cool or what? *)
 	     | Component.Failure (url, Component.Eval (Assert (file, line))) =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "assertion failure at " ^
 				   file ^ ":" ^ Int.toString line ^ "\n");
 		    SOME context)
 	     | Component.Failure (url, Component.Eval exn) =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "uncaught exception " ^
 				   General.exnName exn ^
 				   (if String.isSuffix "/" (Url.toString url)
@@ -144,19 +148,19 @@ struct
 					    Url.toString url ^ "\":")
 	       in
 		   PrettyPrint.output
-		   (logStream,
+		   (errStream,
 		    PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
-		    !logWidth);
-		    TextIO.output (logStream, "\n");
+		    !errWidth);
+		    TextIO.output (errStream, "\n");
 		   SOME context
 	       end
 	     | Component.Failure (url, IO.Io _) =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "failure loading \"" ^
 				   Url.toString url ^ "\"\n");
 		    SOME context)
 	     | Component.Failure (url, Component.Internal exn) =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "internal exception " ^
 				   General.exnName exn ^
 				   (if String.isSuffix "/" (Url.toString url)
@@ -165,7 +169,7 @@ struct
 					 Url.toString url ^ "\"\n"));
 		    SOME context)
 	     | Component.Failure (url, exn) =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "unknown failure " ^
 				   General.exnName exn ^
 				   (if String.isSuffix "/" (Url.toString url)
@@ -174,12 +178,12 @@ struct
 					 Url.toString url ^ "\"\n"));
 		    SOME context)
 	     | Assert (file, line) =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "internal assertion failure at " ^
 				   file ^ ":" ^ Int.toString line ^ "\n");
 		    SOME context)   (* Is this really cool? *)
 	     | exn =>
-		   (TextIO.output (logStream,
+		   (TextIO.output (errStream,
 				   "internal exception " ^
 				   General.exnName exn ^ "\n");
 		    SOME context)   (* Is this really cool? *)
@@ -237,7 +241,7 @@ struct
 		(Promise.fulfill (new, rest);
 		 case evalFile (true, context, filename, signal)
 		   of SOME context' => loopUses (context', signal)
-		    | NONE => (TextIO.output (logStream, "interrupted");
+		    | NONE => (TextIO.output (errStream, "interrupted");
 			       useFiles := nil;
 			       context)
 		)
@@ -277,14 +281,14 @@ struct
 	    Compiler.compileFileToFile (infile, outfile)
 	    handle Compiler.Error => ()
 		 | Compiler.Crash s =>
-		       TextIO.output (logStream,
+		       TextIO.output (errStream,
 				      "internal failure at " ^ s ^ "\n")
 		 | Assert (file, line) =>
-		       TextIO.output (logStream,
+		       TextIO.output (errStream,
 				      "internal assertion failure at " ^
 				      file ^ ":" ^ Int.toString line ^ "\n")
 		 | exn =>
-		       TextIO.output (logStream,
+		       TextIO.output (errStream,
 				      "internal exception " ^
 				      General.exnName exn ^ "\n");
 	    Language.implicitImportFile := implicitImportFile;

@@ -24,15 +24,24 @@ structure AliceIde =
 	val progStdErr = TextIO.StreamIO.mkOutstream (writer, IO.NO_BUF)
 	val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)
 
-	val (logText, writer) = TextPrimIO.openVectorListWr ()
-	val compilerLog = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-	val _ = Evaluator.setLogStream compilerLog
+	val (outText, writer) = TextPrimIO.openVectorListWr ()
+	val compilerOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
+	val _ = Evaluator.setOutStream compilerOut
+
+	val (inText, writer) = TextPrimIO.openVectorListWr ()
+	val compilerIn = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
+
+	val (errText, writer) = TextPrimIO.openVectorListWr ()
+	val compilerErr = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
+	val _ = Evaluator.setErrStream compilerErr
 
 	val (traceText, writer) = TextPrimIO.openVectorListWr ()
 	val compilerTrace = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
 	val _ = Evaluator.setTraceStream compilerTrace
 
-	val _ = OutputWriters.makeWriters {logStream = logText,
+	val _ = OutputWriters.makeWriters {inStream = inText,
+					   outStream = outText,
+					   errStream = errText,
 					   traceStream = traceText,
 					   stdOutStream = stdOutText,
 					   stdErrStream = stdErrText}
@@ -54,7 +63,7 @@ structure AliceIde =
 		val text = if String.sub (text, String.size text - 1) = #"\n"
 			   then text else text ^ "\n"
 	    in
-		TextIO.StreamIO.output (compilerLog, text);
+		TextIO.StreamIO.output (compilerIn, text);
 		Evaluator.eval (text, dummySignal)
 	    end
 

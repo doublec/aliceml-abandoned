@@ -3,11 +3,14 @@ import structure AliceIdeGUI from "AliceIdeGUI"
 
 structure OutputWriters =
    struct
-      fun fillBuf buffer text =
-          Gtk.textBufferInsertAtCursor(buffer, text, size text)
+      fun fillBuf buffer head text =
+          (Gtk.textBufferInsertAtCursor(buffer, head, size head);
+	   Gtk.textBufferInsertAtCursor(buffer, text, size text))
 
-      fun makeWriters {logStream,
-                       traceStream,
+      fun makeWriters {inStream,
+                       outStream,
+		       errStream,
+		       traceStream,
                        stdOutStream,
 		       stdErrStream} =
           let
@@ -16,9 +19,11 @@ structure OutputWriters =
           in
               Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
               Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
-              spawn app (fillBuf progBuf) stdOutStream;
-              spawn app (fillBuf progBuf) stdErrStream;
-              spawn app (fillBuf compilerBuf) logStream;
-              spawn app (fillBuf compilerBuf) traceStream
+              spawn app (fillBuf compilerBuf ">> ") inStream;
+              spawn app (fillBuf compilerBuf "<< ") outStream;
+              spawn app (fillBuf compilerBuf "!! ") errStream;
+              spawn app (fillBuf compilerBuf "") traceStream;
+              spawn app (fillBuf progBuf "") stdOutStream;
+              spawn app (fillBuf progBuf "") stdErrStream
           end
    end
