@@ -11,6 +11,7 @@
  *)
 
 import structure Stamp                 from "../common/Stamp"
+import structure StampMap              from "../common/StampMap"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
 
@@ -20,7 +21,7 @@ signature ENVIRONMENT =
 
 	type t
 
-	val new: string -> t
+	val new: string * AbstractCodeGrammar.value StampMap.t -> t
 	val filename: t -> string
 	val startFn: t -> unit
 	val endFn: t -> FlatGrammar.id vector * int
