@@ -117,11 +117,11 @@ structure Simulator :
           print ("random seed: "^(Int.toString(Word.toInt defSeed))^"\n");
           loop rounds
           (fn r => (if showWorlds orelse showAnts orelse drawWorlds then
-                        (print ("\nAfter round "^Int.toString r^"...\n");
-                         if showAnts then printOnlyAnts world else ();
-                         if showWorlds then printWorld world else ();
-                         if drawWorlds then drawWorld world else ())
+                        print ("\nAfter round "^Int.toString r^"...\n")
                     else ();
+                    if showAnts then printOnlyAnts world else ();
+                    if showWorlds then printWorld world else ();
+                    if drawWorlds then drawWorld world else ();
                     if showStatus then
                         if r mod 1000 = 0 
                         then print ("round "^Int.toString r^"\n")

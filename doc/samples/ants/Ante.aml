@@ -119,6 +119,13 @@ struct
     fun times 0 b = nop
       | times n b = b ++ times (n-1) b
 
+    local
+    fun timesi' size 1 f = (f (size-1))
+      | timesi' size n f = (f (size-n) ++ timesi' size (n-1) f)
+    in
+    fun timesi n f = timesi' n n f
+    end
+
     fun repeat n b =
 	loopx (fn break => flip2 n ifnot b ifyes break)
 
