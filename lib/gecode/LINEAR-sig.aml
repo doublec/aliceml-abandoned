@@ -11,7 +11,7 @@
  *)
 
 (*
- * First atttempt for gecode-FD linear wrapper
+ * First attempt for gecode-FD linear wrapper
  *)
 
 import structure FD from "FD"

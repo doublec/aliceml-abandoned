@@ -10,10 +10,9 @@
  *   $Revision$
  *)
 
-import structure Space from "Space"
-
 signature FD =
 sig
+    type space
     type intvar
     type boolvar
 
@@ -22,27 +21,27 @@ sig
     type domain = (int*int) vector
 
     (* Allocation of finite domain variables *)
-    val intvar :  Space.space * domain -> intvar
-    val intvarVec :  Space.space * int * domain -> intvar vector
-    val range :  Space.space * (int * int) -> intvar
-    val rangeVec :  Space.space * int * (int * int) -> intvar vector
+    val intvar :  space * domain -> intvar
+    val intvarVec :  space * int * domain -> intvar vector
+    val range :  space * (int * int) -> intvar
+    val rangeVec :  space * int * (int * int) -> intvar vector
 
     (* Allocation of boolean (0/1) finite domain variables *)
-    val boolvar :  Space.space -> boolvar
-    val boolvarVec :  Space.space * int -> boolvar vector
+    val boolvar :  space -> boolvar
+    val boolvarVec :  space * int -> boolvar vector
 
     (* Constraining an intvar to a boolvar *)
 
-    val intvar2boolvar : Space.space * intvar -> boolvar
+    val intvar2boolvar : space * intvar -> boolvar
 
     (* Value assignment *)
 
     datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
 
-    val assign : Space.space * intvar vector * avalsel -> unit
+    val assign : space * intvar vector * avalsel -> unit
 
     (* Domain constraints *)
-    val dom :  Space.space * intvar * (int * int) vector -> unit
+    val dom :  space * intvar * (int * int) vector -> unit
 
     (* *********** *)
     (* PROPAGATORS *)
@@ -61,84 +60,84 @@ sig
     datatype conlevel = 
 	     BND | DEF | DOM | VAL
 
-    val rel  :  Space.space * intvar * relation * intvar -> unit
-    val relI :  Space.space * intvar * relation * int -> unit
+    val rel  :  space * intvar * relation * intvar -> unit
+    val relI :  space * intvar * relation * int -> unit
 
-    val equal  : Space.space * intvar * intvar * conlevel -> unit
-    val equalV : Space.space * intvar vector * conlevel -> unit
+    val equal  : space * intvar * intvar * conlevel -> unit
+    val equalV : space * intvar vector * conlevel -> unit
 
     (* Distinct constraints *)
-    val distinct : Space.space * intvar vector * conlevel -> unit
-    val distinctOffset : Space.space * (int * intvar) vector *
+    val distinct : space * intvar vector * conlevel -> unit
+    val distinctOffset : space * (int * intvar) vector *
 			 conlevel -> unit
 
     (* Counting constraints *)
-    val countII : Space.space * intvar vector * relation *
+    val countII : space * intvar vector * relation *
 		  int * relation * int -> unit
-    val countVI : Space.space * intvar vector * relation *
+    val countVI : space * intvar vector * relation *
 		 intvar * relation * int -> unit
-    val countIV : Space.space * intvar vector * relation *
+    val countIV : space * intvar vector * relation *
 		  int * relation * intvar -> unit
-    val countVV : Space.space * intvar vector * relation *
+    val countVV : space * intvar vector * relation *
 		 intvar * relation * intvar -> unit
 
     (* Access constraints *)
-    val element : Space.space * intvar vector * intvar *
+    val element : space * intvar vector * intvar *
 		 intvar -> unit
-    val elementI : Space.space * int vector * intvar *
+    val elementI : space * int vector * intvar *
 		  intvar -> unit
-    val lex : Space.space * intvar vector * relation *
+    val lex : space * intvar vector * relation *
 	     intvar vector -> unit
 			       
     (* Boolean constraints *)			     
-    val nega  : Space.space * boolvar * boolvar -> unit
-    val conj  : Space.space * boolvar * boolvar * boolvar -> unit
-    val disj  : Space.space * boolvar * boolvar * boolvar -> unit
-    val impl  : Space.space * boolvar * boolvar * boolvar -> unit
-    val equi  : Space.space * boolvar * boolvar * boolvar -> unit
-    val exor  : Space.space * boolvar * boolvar * boolvar -> unit
-    val conjV : Space.space * boolvar vector * boolvar -> unit
-    val disjV : Space.space * boolvar vector * boolvar -> unit
+    val nega  : space * boolvar * boolvar -> unit
+    val conj  : space * boolvar * boolvar * boolvar -> unit
+    val disj  : space * boolvar * boolvar * boolvar -> unit
+    val impl  : space * boolvar * boolvar * boolvar -> unit
+    val equi  : space * boolvar * boolvar * boolvar -> unit
+    val exor  : space * boolvar * boolvar * boolvar -> unit
+    val conjV : space * boolvar vector * boolvar -> unit
+    val disjV : space * boolvar vector * boolvar -> unit
 
     (* Linear equations *)
-    val linear : Space.space * (int * intvar) vector * relation *
+    val linear : space * (int * intvar) vector * relation *
 		 int * conlevel -> unit
 
     (* Arithmetic constraints *)					
-    val min : Space.space * intvar vector * intvar -> unit
-    val max : Space.space * intvar vector * intvar -> unit
-    val abs : Space.space * intvar * intvar * conlevel -> unit
-    val mult: Space.space * intvar * intvar * intvar -> unit
-    val power: Space.space * intvar * intvar * intvar -> unit
+    val min : space * intvar vector * intvar -> unit
+    val max : space * intvar vector * intvar -> unit
+    val abs : space * intvar * intvar * conlevel -> unit
+    val mult: space * intvar * intvar * intvar -> unit
+    val power: space * intvar * intvar * intvar -> unit
 
     structure Reified :
 	sig
-	    val intvar : Space.space * domain * boolvar -> intvar
-	    val intvarVec : Space.space * int * domain * boolvar ->
+	    val intvar : space * domain * boolvar -> intvar
+	    val intvarVec : space * int * domain * boolvar ->
 			    intvar vector
-	    val dom : Space.space * intvar * (int * int) vector *
+	    val dom : space * intvar * (int * int) vector *
 		      boolvar -> unit
-	    val rel : Space.space * intvar * relation * intvar *
+	    val rel : space * intvar * relation * intvar *
 		      boolvar -> unit
-	    val relI : Space.space * intvar * relation * int *
+	    val relI : space * intvar * relation * int *
 		       boolvar -> unit
-	    val equal : Space.space * intvar * intvar *
+	    val equal : space * intvar * intvar *
 			boolvar * conlevel -> unit
-	    val linear : Space.space * (int * intvar) vector * relation *
+	    val linear : space * (int * intvar) vector * relation *
 			 int * boolvar * conlevel -> unit
 	end
 
     structure Reflect :
 	sig
-	    val min : Space.space * intvar -> int
-	    val max : Space.space * intvar -> int
-	    val value : Space.space * intvar -> int (* NotAssigned *)
-	    val boolVal : Space.space * boolvar -> bool (* NotAssigned *)
+	    val min : space * intvar -> int
+	    val max : space * intvar -> int
+	    val value : space * intvar -> int (* NotAssigned *)
+	    val boolVal : space * boolvar -> bool (* NotAssigned *)
 	    val boolvar2intvar : boolvar -> intvar
-(*	    val mid : Space.space * intvar -> int *)
-(*	    val nextLarger : Space.space * fd * int -> int *)
-(*	    val nextSmaller : Space.space * fd * int -> int *)
-(*	    val size : Space.space * intvar -> int *)
+(*	    val mid : space * intvar -> int *)
+(*	    val nextLarger : space * fd * int -> int *)
+(*	    val nextSmaller : space * fd * int -> int *)
+(*	    val size : space * intvar -> int *)
 (*	    val dom : fd -> domain *)
 (*	    val domList : fd -> int list *)
 (*	    val nbSusps : fd -> int *)
@@ -166,7 +165,7 @@ sig
 	   | B_SPLIT_MIN
 	   | B_VAL
 
-    val branch : Space.space * intvar vector * b_var_sel *
+    val branch : space * intvar vector * b_var_sel *
 		 b_val_sel -> unit
 
 end

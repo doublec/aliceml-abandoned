@@ -10,11 +10,14 @@
  *   $Revision$
  *)
 
+import structure Space        from "Space"
 import signature FD           from "FD-sig"
 import structure UnsafeGecode from "UnsafeGecode"
 
-structure FD :> FD =
+structure FD :> FD where type space = Space.space =
 struct
+    type space = Space.space
+
     datatype relation =
 	     EQ (* Equality         == *)
 	   | NQ (* Disequality      != *)
@@ -65,8 +68,7 @@ struct
    fun boolvar space = UnsafeGecodeFD.boolvar space
    fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
 		 
-   fun intvar2boolvar(space,d) = (dom(space,d,#[(0,1)]);
-				  d)
+   fun intvar2boolvar(space,d) = (dom(space,d,#[(0,1)]); d)
 
    structure Reified =
        struct
@@ -93,7 +95,9 @@ struct
 		   if min<>max(s,v) then raise NotAssigned
 		   else min
 	       end
+
 	   val boolvar2intvar = fn x => x
+
 	   fun boolVal v = value(boolvar2intvar v)=1
        end
 

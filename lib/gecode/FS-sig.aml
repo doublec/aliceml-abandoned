@@ -10,93 +10,92 @@
  *   $Revision$
  *)
 
-import structure Space from "Space"
-
 signature FS =
 sig
+    type space
     type intvar
     type boolvar
     type setvar
 
     (* Allocation of finite set variables *)
-    val setvar :  Space.space  ->  setvar
-    val setvarVec :  Space.space * int ->  setvar vector
+    val setvar :  space  ->  setvar
+    val setvarVec :  space * int ->  setvar vector
 
-    val lowerBound : Space.space * int vector -> setvar
-    val upperBound : Space.space * int vector -> setvar
-    val bounds : Space.space * int vector * int vector -> setvar
+    val lowerBound : space * int vector -> setvar
+    val upperBound : space * int vector -> setvar
+    val bounds : space * int vector * int vector -> setvar
 
     (* Standard Propagators *)
-    val cardRange : Space.space * int * int * setvar -> unit
-    (* val isIn : Space.space * int * setvar -> bool *)
+    val cardRange : space * int * int * setvar -> unit
+    (* val isIn : space * int * setvar -> bool *)
 
-    val superOfInter : Space.space * setvar * setvar * setvar -> unit
-    val subOfUnion : Space.space * setvar * setvar * setvar -> unit
-    val compl : Space.space * setvar * setvar -> unit
-    (* val complIn : Space.space * setvar * setvar * setvar -> unit *)
-    val difference : Space.space * setvar * setvar * setvar -> unit
-    val intersect : Space.space * setvar * setvar * setvar -> unit
-    val intersectN : Space.space * setvar vector * setvar -> unit
-    val union : Space.space * setvar * setvar * setvar -> unit
-    val unionN : Space.space * setvar vector * setvar -> unit
-    val subset : Space.space * setvar * setvar -> unit
-    val noSubset : Space.space * setvar * setvar -> unit
-    val disjoint : Space.space * setvar * setvar -> unit
-(*    val disjointN : Space.space * setvar vector -> unit *)
-    val distinct : Space.space * setvar * setvar -> unit
-    val distinctN : Space.space * setvar vector -> unit
-    val partition : Space.space * setvar * setvar * setvar -> unit
-    val partitionN : Space.space * setvar vector * setvar -> unit
-    val equals : Space.space * setvar * setvar -> unit
-    val convex : Space.space * setvar -> unit
-    val convexHull : Space.space * setvar * setvar -> unit
+    val superOfInter : space * setvar * setvar * setvar -> unit
+    val subOfUnion : space * setvar * setvar * setvar -> unit
+    val compl : space * setvar * setvar -> unit
+    (* val complIn : space * setvar * setvar * setvar -> unit *)
+    val difference : space * setvar * setvar * setvar -> unit
+    val intersect : space * setvar * setvar * setvar -> unit
+    val intersectN : space * setvar vector * setvar -> unit
+    val union : space * setvar * setvar * setvar -> unit
+    val unionN : space * setvar vector * setvar -> unit
+    val subset : space * setvar * setvar -> unit
+    val noSubset : space * setvar * setvar -> unit
+    val disjoint : space * setvar * setvar -> unit
+(*    val disjointN : space * setvar vector -> unit *)
+    val distinct : space * setvar * setvar -> unit
+    val distinctN : space * setvar vector -> unit
+    val partition : space * setvar * setvar * setvar -> unit
+    val partitionN : space * setvar vector * setvar -> unit
+    val equals : space * setvar * setvar -> unit
+    val convex : space * setvar -> unit
+    val convexHull : space * setvar * setvar -> unit
 
     structure Value :
 	sig
-	    val make : Space.space * int vector -> setvar
-	    val empty : Space.space -> setvar
-	    val single : Space.space * int -> setvar
-	    val universal : Space.space -> setvar
-	    val is : Space.space* setvar -> bool
+	    val make : space * int vector -> setvar
+	    val empty : space -> setvar
+	    val single : space * int -> setvar
+	    val universal : space -> setvar
+	    val is : space* setvar -> bool
 	end
 
     structure Int :
         sig
-            val incl : Space.space * intvar * setvar -> unit
-            val excl : Space.space * intvar * setvar -> unit
-            val the : Space.space * intvar * setvar -> unit
-	    val min : Space.space * intvar * setvar -> unit
-	    val max : Space.space * intvar * setvar -> unit
-            val card : Space.space * intvar * setvar -> unit
-	    val match : Space.space * setvar * intvar vector -> unit
+            val incl : space * intvar * setvar -> unit
+            val excl : space * intvar * setvar -> unit
+            val the : space * intvar * setvar -> unit
+	    val min : space * intvar * setvar -> unit
+	    val max : space * intvar * setvar -> unit
+            val card : space * intvar * setvar -> unit
+	    val match : space * setvar * intvar vector -> unit
 (*	    val minN : setvar * intvar vector -> unit *)
 (*	    val maxN : setvar * intvar vector -> unit *)
 	end
 
     structure Reified : sig
-	val isIn : Space.space * int * setvar * boolvar -> unit
-	val areIn : Space.space * (boolvar * int) vector * setvar -> unit
-	val incl : Space.space * intvar * setvar * boolvar -> unit
-	val equal : Space.space * setvar * setvar * boolvar -> unit
-        val subset : Space.space * setvar * setvar * boolvar -> unit
+	val isIn : space * int * setvar * boolvar -> unit
+	val areIn : space * (boolvar * int) vector * setvar -> unit
+	val incl : space * intvar * setvar * boolvar -> unit
+	val equal : space * setvar * setvar * boolvar -> unit
+        val subset : space * setvar * setvar * boolvar -> unit
 (*	val partition : setvar list * int list * setvar * bin list -> unit *)
     end
 
     structure Selection : sig
-	val setvar : Space.space * setvar * setvar vector * intvar -> unit
-	val union : Space.space * setvar * setvar vector * setvar -> unit
-	val inter : Space.space * setvar * setvar vector * setvar -> unit
+	val setvar : space * setvar * setvar vector * intvar -> unit
+	val union : space * setvar * setvar vector * setvar -> unit
+	val inter : space * setvar * setvar vector * setvar -> unit
     end
 	
     structure Reflect : sig
-	val card : Space.space * setvar -> (int * int)
-	val lowerBound : Space.space * setvar -> (int*int) vector
-	val upperBound : Space.space * setvar -> (int*int) vector
-	val unknown : Space.space * setvar -> (int*int) vector
-	val cardOfLowerBound : Space.space * setvar -> int
-	val cardOfUpperBound : Space.space * setvar -> int
-	val cardOfUnknown : Space.space * setvar -> int
-        val print : Space.space * setvar -> unit (* DEBUGGING ONLY! *)
+	val card : space * setvar -> (int * int)
+	val lowerBound : space * setvar -> (int*int) vector
+	val upperBound : space * setvar -> (int*int) vector
+	val unknown : space * setvar -> (int*int) vector
+	val cardOfLowerBound : space * setvar -> int
+	val cardOfUpperBound : space * setvar -> int
+	val cardOfUnknown : space * setvar -> int
+        val print : space * setvar -> unit (* DEBUGGING ONLY! *)
     end
 
     (* Branching strategies *)
@@ -111,7 +110,7 @@ sig
 	     FSB_MAX
 	   | FSB_MIN
 
-    val setvarbranch :  Space.space *  setvar vector * fsb_var_sel *
+    val setvarbranch :  space *  setvar vector * fsb_var_sel *
 			fsb_val_sel -> unit
 				
 end
