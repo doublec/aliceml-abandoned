@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -25,6 +25,6 @@ DEFINE1(UnsafeAddr_addr) {
 word UnsafeAddr() {
   Record *record = Record::New(1);
   INIT_STRUCTURE(record, "UnsafeAddr", "addr",
-		 UnsafeAddr_addr, 1, true);
+		 UnsafeAddr_addr, 1);
   return record->ToWord();
 }
