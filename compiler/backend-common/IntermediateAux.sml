@@ -77,8 +77,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and occursInPat (WildPat _, _) = false
 	  | occursInPat (LitPat (_, _), _) = false
 	  | occursInPat (VarPat (_, _), _) = false
-	  | occursInPat (ConPat (_, _, NONE), _) = false
-	  | occursInPat (ConPat (_, _, SOME pat), id) = occursInPat (pat, id)
+	  | occursInPat (ConPat (_, _, NONE, _), _) = false
+	  | occursInPat (ConPat (_, _, SOME pat, _), id) =
+	    occursInPat (pat, id)
 	  | occursInPat (RefPat (_, pat), id) = occursInPat (pat, id)
 	  | occursInPat (TupPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
@@ -102,8 +103,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
 	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
-	      | patternVariablesOf' (ConPat (_, _, NONE), ids) = ids
-	      | patternVariablesOf' (ConPat (_, _, SOME pat), ids) =
+	      | patternVariablesOf' (ConPat (_, _, NONE, _), ids) = ids
+	      | patternVariablesOf' (ConPat (_, _, SOME pat, _), ids) =
 		patternVariablesOf' (pat, ids)
 	      | patternVariablesOf' (RefPat (_, pat), ids) =
 		patternVariablesOf' (pat, ids)
@@ -201,11 +202,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substPat (pat as WildPat _, _) = pat
 	  | substPat (pat as LitPat (_, _), _) = pat
 	  | substPat (pat as VarPat (_, _), _) = pat
-	  | substPat (ConPat (coord, longid, NONE), subst) =
-	    ConPat (coord, substLongId (longid, subst), NONE)
-	  | substPat (ConPat (coord, longid, SOME pat), subst) =
+	  | substPat (ConPat (coord, longid, NONE, isNAry), subst) =
+	    ConPat (coord, substLongId (longid, subst), NONE, isNAry)
+	  | substPat (ConPat (coord, longid, SOME pat, isNAry), subst) =
 	    ConPat (coord, substLongId (longid, subst),
-		    SOME (substPat (pat, subst)))
+		    SOME (substPat (pat, subst)), isNAry)
 	  | substPat (RefPat (coord, pat), subst) =
 	    RefPat (coord, substPat (pat, subst))
 	  | substPat (TupPat (coord, pats), subst) =
@@ -272,12 +273,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(VarPat (coord, id'), (id, id')::subst)
 	    end
-	  | relax (pat as ConPat (_, _, NONE), subst) = (pat, subst)
-	  | relax (ConPat (coord, longid, SOME pat), subst) =
+	  | relax (pat as ConPat (_, _, NONE, _), subst) = (pat, subst)
+	  | relax (ConPat (coord, longid, SOME pat, isNAry), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(ConPat (coord, longid, SOME pat'), subst')
+		(ConPat (coord, longid, SOME pat', isNAry), subst')
 	    end
 	  | relax (RefPat (coord, pat), subst) =
 	    let

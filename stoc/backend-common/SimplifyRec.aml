@@ -288,9 +288,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun preprocess (I.WildPat coord) = (nil, WildPat coord)
 	  | preprocess (I.LitPat (coord, lit)) = (nil, LitPat (coord, lit))
 	  | preprocess (I.VarPat (coord, id)) = (nil, VarPat (coord, id))
-	  | preprocess (I.ConPat (coord, longid, NONE)) =
+	  | preprocess (I.ConPat (coord, longid, NONE, _)) =
 	    (nil, ConPat (coord, longid, NONE))
-	  | preprocess (I.ConPat (coord, longid, SOME pat)) =
+	  | preprocess (I.ConPat (coord, longid, SOME pat, _)) =
 	    let
 		val (constraints, pat') = preprocess pat
 	    in

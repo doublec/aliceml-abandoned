@@ -54,8 +54,8 @@ structure Debug :> DEBUG =
 	fun patToString (WildPat _) = "_"
 	  | patToString (LitPat (_, lit)) = litToString lit
 	  | patToString (VarPat (_, id)) = idToString id
-	  | patToString (ConPat (_, longid, NONE)) = longidToString longid
-	  | patToString (ConPat (_, longid, SOME pat)) =
+	  | patToString (ConPat (_, longid, NONE, _)) = longidToString longid
+	  | patToString (ConPat (_, longid, SOME pat, _)) =
 	    "(" ^ longidToString longid ^ " " ^ patToString pat ^ ")"
 	  | patToString (RefPat (_, pat)) = "(ref " ^ patToString pat ^ ")"
 	  | patToString (TupPat (_, pats)) =

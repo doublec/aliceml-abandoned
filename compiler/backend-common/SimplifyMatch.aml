@@ -53,7 +53,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (ConPat (_, longid, patOpt), pos, rest, mapping) =
+	  | makeTestSeq (ConPat (_, longid, patOpt, _), pos, rest, mapping) =
 	    (case patOpt of
 		 SOME pat =>
 		     makeTestSeq (pat, ""::pos,
@@ -363,7 +363,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    exception NonArgable
 
 	    fun normalize (_, LitPat (_, _), _) = ONE
-	      | normalize (_, ConPat (_, _, _), _) = ONE
+	      | normalize (_, ConPat (_, _, _, _), _) = ONE
 	      | normalize (_, RefPat (_, _), _) = ONE
 	      | normalize (_, TupPat (_, pats), _) = TUP (List.length pats)
 	      | normalize (_, RowPat (_, patFields, false), _) =
