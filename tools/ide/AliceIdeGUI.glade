@@ -331,7 +331,7 @@
 
 	      <child>
 		<widget class="GtkNotebook" id="notebook1">
-		  <property name="width_request">640</property>
+		  <property name="width_request">750</property>
 		  <property name="height_request">500</property>
 		  <property name="visible">True</property>
 		  <property name="can_focus">True</property>

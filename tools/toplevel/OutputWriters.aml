@@ -3,14 +3,18 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure AliceIdeGUI from "AliceIdeGUI"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Core from "x-alice:/lib/gtk/Core"
-import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
+import structure Config from "Config"
+import structure BufferHighlight from "BufferHighlight"
 
 structure OutputWriters =
    struct
+      open Config
+
+      val highlight = BufferHighlight.highlight
 
       val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
 
-      fun fillBuf view buffer handler tags text =
+      fun fillBuf view buffer handler tags highlight text =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
@@ -22,7 +26,7 @@ structure OutputWriters =
 	      Gtk.textBufferInsert(buffer, iter, text, size text);
               Gtk.textBufferGetIterAtOffset (buffer, start, startOffset);
               app (fn t => Gtk.textBufferApplyTag(buffer, t, start, iter)) tags;
-	      Gtk.textBufferGetIterAtOffset (buffer, start, startOffset) ;
+              highlight (buffer, start, iter);
               Gtk.textBufferPlaceCursor(buffer,iter);
               Gtk.textViewScrollToMark(view,
                                        Gtk.textBufferGetInsert buffer,
@@ -122,6 +126,7 @@ structure OutputWriters =
                     val startiter = Gtk.textIterCopy enditer
                     val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
                     val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                    val _ = highlight(buf, startiter, enditer)
                     val str = Core.utf8ToLatin1 str
                     val _ = eval str
                 in
@@ -130,12 +135,6 @@ structure OutputWriters =
             else ()
           | compilerInsert _ _ = () (* Gtk is crazy *)
 
-      fun makeTags buf =
-          {errorTag = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT textColor),
-           noeditTag = Gtk.textBufferCreateTag(buf, "noedit", "editable", Gtk.BOOL false),
-           logTag = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC)),
-           stdTag = Gtk.textBufferCreateTag(buf, "std", "foreground-gdk", Gtk.OBJECT black)}
-          
       fun makeWriters {inStream,
                        outStream,
 		       errStream,
@@ -148,8 +147,8 @@ structure OutputWriters =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
-              val {errorTag=pErr,logTag=pLog,stdTag=pStd,noeditTag=pNoEd,...} = makeTags progBuf
-              val {errorTag=cErr,logTag=cLog,stdTag=cStd,noeditTag=cNoEd,...} = makeTags compilerBuf
+              val {err=pErr,log=pLog,plain=pStd,noedit=pNoEd,...} = makeTags progBuf
+              val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,...} = makeTags compilerBuf
               val pSig = Gtk.signalConnect(progBuf, "insert-text",
                                            progInInsert (stdInStream, pNoEd))
               val cSig = Gtk.signalConnect(compilerBuf, "insert-text",
@@ -158,12 +157,17 @@ structure OutputWriters =
               Gtk.widgetModifyFont(AliceIdeGUI.compilerout, stdFont);
               Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
               Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cSig [cStd,cNoEd]) inStream;
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cSig [cLog,cNoEd]) outStream;
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cSig [cErr,cNoEd]) errStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf
+                                 cSig [cStd,cNoEd] highlight) inStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf
+                                 cSig [cLog,cNoEd] highlight) outStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf
+                                 cSig [cErr,cNoEd] (const ())) errStream;
               spawn app setStatus traceStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf pSig [pStd,pNoEd]) stdOutStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf pSig [pErr,pNoEd]) stdErrStream;
+              spawn app (fillBuf AliceIdeGUI.progout progBuf
+                                 pSig [pStd,pNoEd] (const ())) stdOutStream;
+              spawn app (fillBuf AliceIdeGUI.progout progBuf
+                                 pSig [pErr,pNoEd] (const ())) stdErrStream;
               spawn app setRowCol rowColStream
           end
    end

@@ -1,27 +1,19 @@
 import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
-import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure FileDialog from "FileDialog"
+import structure Config from "Config"
 
 structure Buffer =
    struct
+      open Config
+
       structure BufferMap = MkHashImpMap(Int)
 
       datatype undo = INSERT of (int * int)
                     | DELETE of (int * string)
                     | WAIT_INSERT of (int * int)
                     | WAIT_DELETE of (int * string)
-
-      type tags = {err : Gtk.object,
-                   std : Gtk.object,
-                   log : Gtk.object,
-                   plain : Gtk.object,
-                   error : Gtk.object,
-                   comment : Gtk.object,
-                   string : Gtk.object,
-                   reserved : Gtk.object}
 
       type buffer = {id: int,
                      file: string option ref,
@@ -33,36 +25,6 @@ structure Buffer =
                      lastSearchPos: int ref}
 
       val bufferMap : buffer BufferMap.map = BufferMap.map()
-
-      val cmap   = Gdk.colormapGetSystem ()
-      val textColor = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
-      val reservedColor = textColor
-      val black = Gdk.colorNew(0, 0, 0)
-      val red = Gdk.colorNew(65535, 0, 0)
-      val commentColor = red
-      val blue = Gdk.colorNew(0, 0, 65535)
-      val stringColor = blue
-      val plainColor = black
-      val white = Gdk.colorNew(65535, 65535, 65535)
-      val _ = Gdk.colormapAllocColor(cmap, black, false, true)
-      val _ = Gdk.colormapAllocColor(cmap, white, false, true)
-      val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
-
-      val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
-              
-      fun makeTags buf =
-          let
-              val error = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT textColor)
-              val string = Gtk.textBufferCreateTag(buf, "string", "foreground-gdk", Gtk.OBJECT stringColor)
-              val comment = Gtk.textBufferCreateTag(buf, "comment", "foreground-gdk", Gtk.OBJECT commentColor)
-              val plain = Gtk.textBufferCreateTag(buf, "plain", "foreground-gdk", Gtk.OBJECT plainColor)
-              val reserved = Gtk.textBufferCreateTag(buf, "reserved", "foreground-gdk", Gtk.OBJECT reservedColor)
-          in
-          {err = Gtk.textBufferCreateTag(buf, "err", "foreground-gdk", Gtk.OBJECT textColor),
-           log = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC)),
-           std = Gtk.textBufferCreateTag(buf, "std", "foreground-gdk", Gtk.OBJECT black),
-           error=error,string=string,comment=comment,plain=plain,reserved=reserved}
-          end
 
       fun shortName s =
           let
@@ -138,6 +100,9 @@ structure Buffer =
       fun undo id =
           let
               val {undo,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              fun checkUnmodified nil =
+                  Gtk.textBufferSetModified(buf, false)
+                | checkUnmodified ur = ()
           in
               case (!undo) of nil => ()
                             | (DELETE(off,txt)::ur) =>
@@ -149,7 +114,8 @@ structure Buffer =
                                                                 off);
                                   undo := WAIT_DELETE(off,txt) :: ur;
                                   Gtk.textBufferInsert(buf, iter, txt,
-                                                       String.size txt)
+                                                       String.size txt);
+                                  checkUnmodified ur
                               end
                             | (INSERT(off1,off2)::ur) =>
                               let
@@ -164,7 +130,8 @@ structure Buffer =
                                                                 off2);
                                   undo := WAIT_INSERT(off1,off2) :: ur;
                                   Gtk.textBufferDelete(buf, startiter,
-                                                       enditer)
+                                                       enditer);
+                                  checkUnmodified ur
                               end
                             | _ => ()
           end

@@ -76,8 +76,6 @@ structure SearchDialog =
                 val txt = Gtk.entryGetText searchString
                 val caseSensitive = Gtk.toggleButtonGetActive checkbutton1
             in
-                print ("find "^txt^" "^
-                       (if caseSensitive then "c" else "")^"\n");
                 Buffer.find id txt caseSensitive
             end
                 

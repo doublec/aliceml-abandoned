@@ -10,7 +10,7 @@ import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
 (*import structure Inspector from "x-alice:/lib/tools/Inspector"*)
-import structure Highlight from "Highlight"
+import structure BufferHighlight from "BufferHighlight"
 
 structure AliceIde =
     struct
@@ -49,24 +49,29 @@ structure AliceIde =
         (* Buffers *)
 
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
-        datatype activeView = COMPILER | STDSTREAMS | BUFFER of Gtk.object
+        datatype active_view = COMPILER | STDSTREAMS | BUFFER of Gtk.object
         val curtextview = ref COMPILER
 
         val numberOfPages = ref 0
-        val currentPage = ref 0
+        val currentPage = ref ~1
 
         val pages = ref nil
         fun removePage i =
             let
                 val (pre,post) = List.split(!pages, i+1)
-                val (pre,[p]) = List.split(pre,i)
+                val (pre,p) = case List.split(pre,i) of
+                                  (pre, [p]) => (pre,p)
+                                | _ => raise Match
+                                             (* to make compiler happy *)
             in
                 (pages := (List.take(pre,i)@post));
                 p
             end
         fun addPage p = pages := (!pages)@[p]
         fun getPage i = List.nth (!pages, i)
-        fun getCurrentPage () = getPage (!currentPage)
+        fun getCurrentPage () =
+            case !currentPage of ~1 => NONE
+                               | i => SOME (getPage i)
 
         (* Evaluation *)
 
@@ -223,15 +228,19 @@ structure AliceIde =
                                  | _ => ()
 
         fun compile () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
             let
-                val file = Buffer.getFileName (getCurrentPage())
+                val file = Buffer.getFileName id
             in
                 case file of
                     NONE => ()
                   | SOME f => Evaluator.compile f
             end
             
-        fun undo() = Buffer.undo (getCurrentPage())
+        fun undo() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => Buffer.undo id
 
         fun getCurBuf () =
             let
@@ -255,32 +264,6 @@ structure AliceIde =
         fun delete() =
             ignore (Gtk.textBufferDeleteSelection(getCurBuf(), true, true))
 
-        fun colorRegion buf (style, r,c,r',c') =
-            let
-                open Highlight
-                val startiter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetStartIter(buf,startiter)
-                val _ = Gtk.textIterSetLine(startiter, r-1)
-                val _ = Gtk.textIterSetLineOffset(startiter, c)
-                val enditer = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetStartIter(buf,enditer)
-                val _ = Gtk.textIterSetLine(enditer, r'-1)
-                val _ = Gtk.textIterSetLineOffset(enditer, c')
-                val tag = case style of
-                              PLAIN => "plain"
-                            | RESERVED => "reserved"
-                            | STRING => "string"
-                            | COMMENT => "comment"
-                            | ERRONEOUS => "error"
-            in
-                Gtk.textBufferApplyTagByName(buf, tag,
-                                             startiter, enditer)
-            end
-
-        fun breakLines str =
-            Substring.fields (fn #"\n" => true | _ => false)
-                             (Substring.full str)
-
         fun syntax() =
             case (!curtextview) of BUFFER view =>
             let
@@ -289,17 +272,15 @@ structure AliceIde =
                 val _ = Gtk.textBufferGetStartIter(buf,startiter)
                 val enditer = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetEndIter(buf,enditer)
-                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
-                val str = Core.utf8ToLatin1 str
-                val lines = breakLines str
-                val regions = Highlight.scan lines
             in
                 Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
-                app (colorRegion buf) regions
+                BufferHighlight.highlight(buf, startiter, enditer)
             end
                                  | _ => ()
 
-        fun search() = SearchDialog.search (getCurrentPage())
+        fun search() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => SearchDialog.search id
 
         fun changeFocus view _ = curtextview := view
         fun markSet (buf,_) =
@@ -312,6 +293,13 @@ structure AliceIde =
                             (1 + Gtk.textIterGetLine iter,
                              Gtk.textIterGetLineOffset iter))
             end
+
+        fun switchPage(cur,view) =
+            (currentPage := cur;
+             case !curtextview of
+                 BUFFER _ => (curtextview := BUFFER view;
+                              Option.app SearchDialog.reconnect (getCurrentPage()))
+               | _ => ())
 
         fun checkNotebookSize() =
             (if Gtk.notebookGetNPages AliceIdeGUI.notebook1 > 0
@@ -358,20 +346,17 @@ structure AliceIde =
                 end
                                   
         fun saveFileAs () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
             case FileDialog.openFile "Save file" of
                 NONE => ()
-              | SOME f => Buffer.saveAs (getCurrentPage(), f)
+              | SOME f => Buffer.saveAs (id, f)
 
-        fun saveFile () = if !currentPage = 0 then ()
-                          else if Buffer.save (getCurrentPage()) then ()
-                          else saveFileAs()
-
-        fun switchPage(cur,view) =
-            (currentPage := cur;
-             case (!curtextview) of
-                 BUFFER _ =>  curtextview := BUFFER view
-               | _ => ();
-             SearchDialog.reconnect (getCurrentPage()))
+        fun saveFile () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+                                     if Buffer.save id then ()
+                                     else saveFileAs()
 
         fun reallyClose p =
             (removePage p;
@@ -396,8 +381,10 @@ structure AliceIde =
               | SOME s => Promise.fulfill(s,Evaluator.STOP)
 
         fun jumpToError (row, col, row', col') _ =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
             let
-                val buf = Buffer.getBuffer (getCurrentPage())
+                val buf = Buffer.getBuffer id
                 val lineCount = Gtk.textBufferGetLineCount buf
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf, startiter)
@@ -413,9 +400,9 @@ structure AliceIde =
                          (Gtk.textIterSetLineOffset(startiter, col);
                           Gtk.textIterSetLineOffset(enditer, col');
                           Buffer.selectRange(buf, startiter, enditer);
-                          Gtk.widgetGrabFocus (Buffer.getView (getCurrentPage())))
-                     else print "past offset")
-                else print "past lines"
+                          Gtk.widgetGrabFocus (Buffer.getView id))
+                     else ())
+                else ()
             end
 
         fun findErrorStart iter tag =
@@ -426,11 +413,14 @@ structure AliceIde =
 
         fun parseErrorCoords s =
             let
-                val (s11::s12::s21::s22::_) =
+                val (s11,s12,s21,s22) =
+                    case
                     String.tokens (fn #":" => true
                                     | #"-" => true
                                     | #"." => true
                                     | _ => false) s
+                    of (s11::s12::s21::s22::_) => (s11,s12,s21,s22)
+                     | _ => raise Match (* make compiler happy *)
                 val s11 = Int.fromString s11
                 val s12 = Int.fromString s12
                 val s21 = Int.fromString s21

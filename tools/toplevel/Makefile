@@ -13,7 +13,9 @@ SOURCES = AliceIdeGUI.aml \
 	Highlight.aml \
 	Buffer.aml \
 	FileDialog.aml \
-	SearchDialog.aml
+	SearchDialog.aml \
+	Config.aml \
+	BufferHighlight.aml
 
 all: AIDE.alc
 
