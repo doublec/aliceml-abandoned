@@ -301,7 +301,7 @@ structure Renderer :> RENDERER =
 	    end
 
 	fun dropPrefix (xs as (k, (id1, _, _, _), i)::xr) =
-	    if k < epsilon then
+	    if k < ~epsilon then
 		case xr of
 		    (_, (id2, _, _, _), Exit)::_ =>
 			if id1 = id2 then xs
