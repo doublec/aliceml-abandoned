@@ -65,6 +65,7 @@ signature INSPECTOR =
 	  | TYPEDINDICATOR    of color
 	  | PROMISE           of color
 	  | PACKAGE           of color
+          | CELL_POLL_INTERVAL of int
 
 	exception ConfigurationError
 
