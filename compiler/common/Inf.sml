@@ -120,9 +120,25 @@ structure InfPrivate =
 *)
 
 
+  (* Reconstruction of map *)
+
+    fun getMap (itemsr, ref(SOME map))	= map
+      | getMap (itemsr, r as ref NONE)	=
+	let
+	    val map = Map.new()
+	in
+	    List.app (reinsertItem map) (!itemsr) ;
+	    r := SOME map ;
+	    map
+	end
+
+    and reinsertItem map item =
+	Map.insertWith (flip op@) (map, (itemSpace item, itemLab item), [item])
+
+
   (* Signature construction *)
 
-    fun empty()			= (ref [], ref(SOME(Map.new())))
+    fun empty()			= (ref [], ref NONE)
 
     fun newItem(s, l)		= Path.fromLab l
     val newVal			= newItem
@@ -139,11 +155,11 @@ structure InfPrivate =
       | hide'(INF(x,k,d))	= INF(hideId x, k, d)
       | hide'(FIX(x,q))		= FIX(hideId x, q)
 
-    fun extend((itemsr,ref mapo), space, p, makeItem') =
+    fun extend(s as (itemsr,_), space, p, makeItem') =
 	let
 	    val l    = Path.toLab p
 	    val item = ref(makeItem'(p,l,0))
-	    val map  = Option.valOf mapo
+	    val map  = getMap s
 	in
 	    itemsr := item :: !itemsr ;
 	    Map.insertWith (fn(items,_) => (List.app hide items ; item::items))
@@ -155,22 +171,6 @@ structure InfPrivate =
     fun extendMod(s,p,j,d)	= extend(s, MOD', p, fn x => MOD(x,j,d))
     fun extendInf(s,p,k,d)	= extend(s, INF', p, fn x => INF(x,k,d))
     fun extendFix(s,p,q)	= extend(s, FIX', p, fn x => FIX(x,q))
-
-
-  (* Reconstruction of map *)
-
-    fun getMap (itemsr, ref(SOME map))	= map
-      | getMap (itemsr, r as ref NONE)	=
-	let
-	    val map = Map.new()
-	in
-	    List.app (reinsertItem map) (!itemsr) ;
-	    r := SOME map ;
-	    map
-	end
-
-    and reinsertItem map item =
-	Map.insertWith (flip op@) (map, (itemSpace item, itemLab item), [item])
 
 
   (* Signature inspection *)
@@ -487,7 +487,7 @@ structure InfPrivate =
 
     and instanceSig(r,z, (ref items,_)) =
 	let
-	    val s as (itemsr, _) = empty()
+	    val itemsr = ref nil
 
 	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
@@ -541,7 +541,7 @@ structure InfPrivate =
 		end
 	in
 	    List.appr instanceItem items ;
-	    s
+	    (itemsr, ref NONE)
 	end
 
     and instancePathDef(rea, NONE  )	= NONE
@@ -642,7 +642,7 @@ structure InfPrivate =
 
     and singletonSig(z, (ref items,_)) =
 	let
-	    val s as (itemsr, _) = empty()
+	    val itemsr = ref nil
 
 	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
@@ -694,7 +694,7 @@ structure InfPrivate =
 		end
 	in
 	    List.appr singletonItem items ;
-	    s
+	    (itemsr, ref NONE)
 	end
 
     and singletonTypDef(z, NONE  )	= NONE
@@ -726,7 +726,7 @@ structure InfPrivate =
 
     and cloneSig (ref items, _)	=
 	let
-	    val s as (itemsr, _) = empty()
+	    val itemsr = ref nil
 
 	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
@@ -747,7 +747,7 @@ structure InfPrivate =
 		    extendSig((FIX', idLab x), ref item')
 	in
 	    List.appr cloneItem items ;
-	    s
+	    (itemsr, ref NONE)
 	end
 
 
