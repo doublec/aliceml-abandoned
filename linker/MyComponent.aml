@@ -11,7 +11,7 @@
  *)
 
 import structure Url             from "../lib/utility/Url"
-import structure Signature       from "../lib/system/Signature"
+import structure Inf             from "../lib/rtt/Inf"
 import structure IO              from "../lib/system/IO"
 import structure OS              from "../lib/system/OS"
 import structure Reflect         from "../lib/system/Reflect"
@@ -21,14 +21,15 @@ import signature MY_COMPONENT    from "MY_COMPONENT-sig"
 
 structure MyComponent :> MY_COMPONENT =
 struct
-    type sign = Signature.t option
-    type str = Reflect.value
+    nonfix mod
+    type inf = Inf.t option
+    type mod = Reflect.value
 
     datatype component =
-	UNEVALUATED of { imports: (string * sign) vector,
-			 body:    str vector -> str,
-			 sign:    sign }
-      | EVALUATED of sign * str
+	UNEVALUATED of { imports: (string * inf) vector,
+			 body:    mod vector -> mod,
+			 inf:     inf }
+      | EVALUATED of { inf: inf, mod: mod }
     type t = component
 
     val localize =
@@ -58,21 +59,21 @@ struct
     val save = UnsafeComponent.save
 
     fun imports (UNEVALUATED {imports, ...}) = imports
-      | imports (EVALUATED (_, _)) = #[]
+      | imports (EVALUATED {...}) = #[]
 
     fun body (UNEVALUATED {body, ...}) = body
-      | body (EVALUATED (_, str)) = fn #[] => str
+      | body (EVALUATED {mod, ...}) = fn #[] => mod
 
-    fun sign (UNEVALUATED {sign, ...}) = sign
-      | sign (EVALUATED (sign, _)) = sign
+    fun inf (UNEVALUATED {inf, ...}) = inf
+      | inf (EVALUATED {inf, ...}) = inf
 
-    fun new {imports, body, sign} = UNEVALUATED {imports, body, sign}
+    fun new {imports, body, inf} = UNEVALUATED {imports, body, inf}
 
-    fun stripImportSigns (UNEVALUATED {imports, body, sign}) =
+    fun stripImportInfs (UNEVALUATED {imports, body, inf}) =
 	let
 	    val imports' = Vector.map (fn (s, _) => (s, NONE)) imports
 	in
-	    UNEVALUATED {imports = imports', body, sign}
+	    UNEVALUATED {imports = imports', body, inf}
 	end
-      | stripImportSigns (component as EVALUATED (_, _)) = component
+      | stripImportInfs (component as EVALUATED _) = component
 end

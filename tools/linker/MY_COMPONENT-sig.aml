@@ -10,27 +10,27 @@
  *   $Revision$
  *)
 
-import structure Url       from "../lib/utility/Url"
-import structure Signature from "../lib/system/Signature"
+import structure Url from "../lib/utility/Url"
+import structure Inf from "../lib/rtt/Inf"
 
 signature MY_COMPONENT =
     sig
 	type component
 	type t = component
 
-	type sign = Signature.t option
-	type str
+	type inf = Inf.t option
+	type mod
 
 	val load: Url.t -> t                      (* Io, Corrupt *)
 	val save: string * t -> unit              (* Io, Sited *)
 
-	val imports: t -> (string * sign) vector
-	val body: t -> (str vector -> str)
-	val sign: t -> sign
+	val imports: t -> (string * inf) vector
+	val body: t -> (mod vector -> mod)
+	val inf: t -> inf
 
-	val new: {imports: (string * sign) vector,
-		  body: str vector -> str,
-		  sign: sign} -> t
+	val new: {imports: (string * inf) vector,
+		  body: mod vector -> mod,
+		  inf: inf} -> t
 
-	val stripImportSigns: t -> t
+	val stripImportInfs: t -> t
     end
