@@ -23,7 +23,7 @@ find_in () {
 
 abs_path () {
     case "$1" in
-	/*)
+	/*|?:*)
 	    echo "$1"
 	    ;;
 	*)
