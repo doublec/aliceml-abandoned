@@ -23,11 +23,13 @@ structure Layout :> LAYOUT =
 struct
 
     (* Auxiliary functions for summations and finding maxima *)
+
     fun maxi select  = fn (triple,m) => Int.max(select(triple),m)
     fun sum select  = fn (triple,s) => select(triple) + s 
 
     (* Identifies the shape of the text representented by a Node tree 
      and sets xdim, ydim and l_xdim via depth-first left-to-right traversal *)
+
     fun layout (Concat(r) as n) = 
 	(let 
 	     val no_kids = Array.length(getKids(n))
@@ -42,15 +44,16 @@ struct
 						 no_kids -2)
 			 val li' = List.take(li,
 					     List.length(li)-1)
-			 val xd = if setsVertical(seclast)
-				      then 
-					  if 
-					      Int.>=((#3(List.nth(li,no_kids -2))),
-						     (#1(List.nth(li,no_kids -2))))
-					      then 
-						  List.foldl (sum(#1)) 0 li
-					  else List.foldl (sum(#1)) 0 li'
-				  else  List.foldl (sum(#1)) 0 li
+			 val xd = 
+			     if setsVertical(seclast)
+				 then 
+				     if 
+					 Int.>=((#3(List.nth(li,no_kids -2))),
+						(#1(List.nth(li,no_kids -2))))
+					 then 
+					     List.foldl (sum(#1)) 0 li
+				     else List.foldl (sum(#1)) 0 li'
+			     else  List.foldl (sum(#1)) 0 li
 			 val lx = List.foldl (sum(#3)) 0 li
 		     in
 			 (xd,lx)
@@ -115,16 +118,21 @@ struct
 					 else String.size(getRep(n)))
 	     in
 		 (if !(getStatus(n)) = DAZZLED
-		      then let val xdim = if isSimple (getContent(n))
-			  orelse !(#counter(r)) = 1 
-					      then cxdim 
-					  else String.size(getRep(n)) + 
-					      cxdim
-			       val ydim =  cydim
-			   in (#width(r) := xdim  
-			       ; #height(r) := ydim
-			       ; getStatus(n) := DIRTY) 
-			   end   
+		      then 
+			  let 
+			      val xdim = 
+				  if (isSimple (getContent(n))  
+				   andalso not(isSumType (getTyp(getDesc(n))) 
+					       handle Match => false) )
+				      orelse !(#counter(r)) = 1 
+				      then cxdim 
+				  else String.size(getRep(n)) + 
+				      cxdim
+			      val ydim =  cydim
+			  in (#width(r) := xdim  
+			      ; #height(r) := ydim
+			      ; getStatus(n) := DIRTY) 
+			  end   
 		  else ()
 		      ; (get_xdim(n),get_ydim(n),l_xdim) )
 	     end 

@@ -140,6 +140,10 @@ struct
 			       in Type.equal(typ,compList)
 			       end 
 
+    (* test for special case sum type *)   
+
+    fun isSumType t = Type.isSum t orelse Type.isMu t
+
     (***********************************************)
 
     (* operations on value *)
@@ -274,10 +278,13 @@ struct
       | get_l_xdim (Concat(r))  =  !(#l_width(r))
       | get_l_xdim (RelNode(r)) = (get_l_xdim(!(#content(r)))) + 
 			          ( case !(#content(r)) of 
-				    Simple _ => 0
+				    Simple _ => if (isSumType(getTyp(#desc(r)))
+						    handle _ => false)
+						    then String.size(#rep(r))
+						else 0
                                   | _ => if !(#counter(r)) = 1
 					     then 0
-					 else String.size(#rep(r)))   
+					 else String.size(#rep(r)) )
       | get_l_xdim node = get_xdim node
 
     (* information about ancestors *)

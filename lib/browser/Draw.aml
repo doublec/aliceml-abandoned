@@ -181,7 +181,10 @@ struct
     (* Draws RelNodes *)
     and drawRelNode (n,x,y,upd) = case n of
 	RelNode(r) 
-	=> if !(#counter(r)) = 1 orelse isSimple(getContent(n))
+	=> if !(#counter(r)) = 1 orelse 
+	      ( isSimple(getContent(n)) andalso 
+	        not(isSumType (getTyp(getDesc(n))) 
+		    handle Match => false) )
 	       then (if upd then (move(n,x,y);()) 
 		     else groupToPosition(n,x,y) 
 			 ;let

@@ -907,6 +907,7 @@ struct
 			     (case node of 
 				  SOME(n) => 
 				      let 
+					  val _ = Inspector.inspect(n)
 				    val ydim =Node.get_ydim(n) 
 				    val group = Node.getGroup(n)
 				    val x2 = Real.fromInt(font_width 
