@@ -1,24 +1,49 @@
 (*
- * Author:
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature SIGNATURE   from "../infrastructure/SIGNATURE-sig"
-import structure GlobalStamp from "../../lib/utility/GlobalStamp"
-import structure Inf         from "../../lib/rtt/Inf"
+import signature SIGNATURE   from "SIGNATURE-sig"
+import structure GlobalStamp from "../utility/GlobalStamp"
+import structure Inf         from "../rtt/Inf"
 
-structure Signature : SIGNATURE =
+structure Signature :> SIGNATURE =
 struct
-    type t = GlobalStamp.t * Inf.t
+    type t = GlobalStamp.t * Inf.sign
 
-    fun matches((g1,j1), (g2,j2)) =
-	g1 = g2 orelse (Inf.match(j1, Inf.instance j2) ; true)
-	handle Inf.Mismatch _ => false
+    fun fromSig s = (GlobalStamp.new (), s)
+
+    fun toSig (_, s) = s
+
+    fun strip ((g,s1), s2) = (g, s2)
+(*--** check that the new signature must be more general:
+	let
+	    val j1 = Inf.inSig s1
+	    val j2 = Inf.instance(Inf.inSig s2)
+	in
+	    Inf.match(j1,j2); (g, s2)
+	end
+*)
+
+    fun matches((g1,s1), (g2,s2)) =
+	g1 = g2 orelse
+	let
+	    val j1 = Inf.inSig s1
+	    val j2 = Inf.instance(Inf.inSig s2)
+	in
+	    (Inf.match(j1,j2); true)
+	    handle Inf.Mismatch _ => false
+	end
+
+    fun match(t1, t2, v) =
+	if matches (t1, t2) then SOME v   (*--** missing: coerce v *)
+	else NONE
 end
