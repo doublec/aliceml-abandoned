@@ -236,7 +236,7 @@ final public class Array implements DMLValue {
     _BUILTIN(ArraY) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Array.array");
-	    DMLValue arg=args[0].request();
+	    _REQUEST(DMLValue arg,args[0]);
 	    int ar=0;
 	    if (arg instanceof Int)
 		ar = ((Int) arg).getInt();
@@ -251,7 +251,7 @@ final public class Array implements DMLValue {
     _BUILTIN(FromList) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.fromList");
-	    DMLValue arg=args[0].request();
+	    _REQUEST(DMLValue arg,args[0]);
 	    return new Array(arg);
 	}
     }
@@ -262,7 +262,7 @@ final public class Array implements DMLValue {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Array.tabulate");
 	    int ar=0;
-	    DMLValue arg=args[0].request();
+	    _REQUEST(DMLValue arg,args[0]);
 	    if (arg instanceof Int)
 		ar = ((Int) arg).getInt();
 	    else
@@ -276,7 +276,7 @@ final public class Array implements DMLValue {
     _BUILTIN(Length) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.length");
-	    DMLValue arg=args[0].request();
+	    _REQUEST(DMLValue arg,args[0]);
 	    if (arg instanceof Array)
 		return new Int(((Array) arg).arr.length);
 	    else

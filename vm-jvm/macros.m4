@@ -226,3 +226,4 @@ define(_FIELD,`final public static DMLValue $2 = new capitalize($2)();
 	static {
 	  Builtin.builtins.put("$1.$2",$2);
 	}')
+define(_REQUEST,`$1 = $2.request()')
