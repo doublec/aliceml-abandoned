@@ -366,3 +366,33 @@ define(UCONS,`    final public static Constructor $1;
 	Builtin.builtins.put("$2",$1);
     }
 ')
+dnl
+dnl Char
+dnl
+define(_COMPARECHAR,`
+    _BUILTIN(capitalize($1)) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"Char.$2");
+	}
+	_SAPPLY2(v) {
+	    try {
+	    _REQUESTDEC(DMLValue v,v1);
+	    _REQUESTDEC(DMLValue w,v2);
+	    char i = ((Char) v).value;
+	    char j = ((Char) w).value;
+	    if (i $2 j) {
+		return Constants.dmltrue;
+	    } else {
+		return Constants.dmlfalse;
+	    }
+	    } catch (ClassCastException c) {
+	    _RAISENAME(General.Match);
+	    }
+	}
+    }
+    /** <code>val $2 : (int * int) -> bool </code>*/
+    final public static DMLValue $1 = new capitalize($1)();
+    static {
+	Builtin.builtins.put("Char.$2",$1);
+    }')

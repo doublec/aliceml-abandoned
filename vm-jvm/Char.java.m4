@@ -79,10 +79,14 @@ final public class Char implements DMLValue {
 
     /** <code>val succ : char -> char </code>*/
     /** <code>val pred : char -> char </code>*/
-    /** <code>val < : (char * char) -> bool </code>*/
-    /** <code>val <= : (char * char) -> bool </code>*/
-    /** <code>val > : (char * char) -> bool </code>*/
-    /** <code>val >= : (char * char) -> bool </code>*/
+    _COMPARECHAR(greater,>);
+    _COMPARECHAR(geq,>=);
+    _COMPARECHAR(less,<);
+    _COMPARECHAR(leq,<=);
+    /* <code>val < : (char * char) -> bool </code>*/
+    /* <code>val <= : (char * char) -> bool </code>*/
+    /* <code>val > : (char * char) -> bool </code>*/
+    /* <code>val >= : (char * char) -> bool </code>*/
     /** <code>val compare : (char * char) -> order </code>*/
     /** <code>val contains : string -> char -> bool </code>*/
     /** <code>val notContains : string -> char -> bool </code>*/
