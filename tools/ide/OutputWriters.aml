@@ -8,28 +8,22 @@ structure OutputWriters =
 
       fun fillBuf view buffer tag text =
           let
-              val cursor = Gtk.textBufferGetInsert buffer
               val iter = Gtk.textIterNew()
-              val _ = Gtk.textBufferGetIterAtMark(buffer,iter,cursor)
+              val _ = Gtk.textBufferGetEndIter(buffer,iter)
 	      val startOffset = Gtk.textIterGetOffset iter
 	      val start = Gtk.textIterCopy iter
           in
 	      Gtk.textBufferInsert(buffer, iter, text, size text);
 	      Gtk.textBufferGetIterAtOffset (buffer, start, startOffset) ;
               Gtk.textBufferApplyTag(buffer,tag,start,iter);
+              Gtk.textBufferMoveMark(buffer,
+                                     Gtk.textBufferGetInsert buffer,
+                                     iter);
               Gtk.textViewScrollToMark(view,
                                        Gtk.textBufferGetInsert buffer,
                                        0.0,false,0.0,0.0)
           end
               
-              
-(*       fun fillBuf view buffer head text = *)
-(*           (Gtk.textBufferInsertAtCursor(buffer, head, size head); *)
-(* 	   Gtk.textBufferInsertAtCursor(buffer, text, size text); *)
-(*            Gtk.textViewScrollToMark(view, *)
-(*                                     Gtk.textBufferGetInsert buffer, *)
-(*                                     0.0,false,0.0,0.0)) *)
-
       val contextId = Gtk.statusbarGetContextId(AliceIdeGUI.statusbar,
                                                 "Alice IDE")
       val _ = Gtk.statusbarPush(AliceIdeGUI.statusbar,contextId,
@@ -45,6 +39,23 @@ structure OutputWriters =
               (Gtk.statusbarPop(AliceIdeGUI.statusbar, contextId);
                Gtk.statusbarPush(AliceIdeGUI.statusbar, contextId, msg);
                ())
+          end
+
+      val rowColId = Gtk.statusbarGetContextId(AliceIdeGUI.statusbar1,
+                                               "rowcol")
+      val _ = Gtk.statusbarPush(AliceIdeGUI.statusbar1,rowColId,
+                                "L 0       C 0");
+
+      fun setRowCol (row, col) =
+          let
+              val r = Int.toString row
+              val c = Int.toString col
+              val msg = "L"^r^"      C"^c
+          in
+              (Gtk.statusbarPop(AliceIdeGUI.statusbar1, rowColId);
+               Gtk.statusbarPush(AliceIdeGUI.statusbar1, rowColId, msg);
+               ())
+              
           end
 
 	val cmap   = Gdk.colormapGetSystem ()
@@ -65,7 +76,8 @@ structure OutputWriters =
 		       errStream,
 		       traceStream,
                        stdOutStream,
-		       stdErrStream} =
+		       stdErrStream,
+                       rowColStream} =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
@@ -79,6 +91,7 @@ structure OutputWriters =
               spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cErr) errStream;
               spawn app setStatus traceStream;
               spawn app (fillBuf AliceIdeGUI.progout progBuf pStd) stdOutStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf pErr) stdErrStream
+              spawn app (fillBuf AliceIdeGUI.progout progBuf pErr) stdErrStream;
+              spawn app setRowCol rowColStream
           end
    end

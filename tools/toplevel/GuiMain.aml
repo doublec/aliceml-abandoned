@@ -5,8 +5,8 @@ import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Key from "x-alice:/lib/gtk/Key"
 import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-import functor MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+import structure Buffer from "Buffer"
+import structure FileDialog from "FileDialog"
 
 structure AliceIde =
     struct
@@ -15,15 +15,15 @@ structure AliceIde =
 	val (stdin, stdInText) = Stream.stream ()
 	val reader = TextPrimIO.openVectorListRd stdInText
 	val progStdIn = TextIO.StreamIO.mkInstream (reader, "")
-	val _ = TextIO.setInstream (TextIO.stdIn, progStdIn)
+(*	val _ = TextIO.setInstream (TextIO.stdIn, progStdIn)*)
 
 	val (stdOutText, writer) = TextPrimIO.openVectorListWr ()
 	val progStdOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-	val _ = TextIO.setOutstream (TextIO.stdOut, progStdOut)
+(*	val _ = TextIO.setOutstream (TextIO.stdOut, progStdOut)*)
 
 	val (stdErrText, writer) = TextPrimIO.openVectorListWr ()
 	val progStdErr = TextIO.StreamIO.mkOutstream (writer, IO.NO_BUF)
-	val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)
+(*	val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)*)
 
 	val (outText, writer) = TextPrimIO.openVectorListWr ()
 	val compilerOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
@@ -40,6 +40,8 @@ structure AliceIde =
 	val compilerTrace = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
 	val _ = Evaluator.setTraceStream compilerTrace
 
+        val (rowCol, rowColStream) = Stream.stream ()
+
         (* Buffers *)
 
         val curtextview = ref AliceIdeGUI.scratchpad
@@ -47,6 +49,19 @@ structure AliceIde =
 
         val numberOfPages = ref 0
         val currentPage = ref 0
+
+        val pages = ref nil
+        fun removePage i =
+            let
+                val (pre,post) = List.split(!pages, i)
+                val (pre,[p]) = List.split(pre,i-1)
+            in
+                (pages := (List.take(pre,i-1)@post));
+                p
+            end
+        fun addPage p = pages := (!pages)@[p]
+        fun getPage i = List.nth (!pages, i-1)
+        fun getCurrentPage () = getPage (!currentPage)
 
         fun eval "" = ()
 	  | eval text =
@@ -73,6 +88,9 @@ structure AliceIde =
                 eval str
             end
 
+        fun addNewlines(n, str) =
+            (String.tabulate(n,fn _ => #"\n")) ^ str
+
         fun feedSelection() =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
@@ -80,9 +98,11 @@ structure AliceIde =
                 val enditer = Gtk.textIterNew()
                 val sel = Gtk.textBufferGetSelectionBounds(buf,
                                                            startiter,enditer)
+                val startline = 1 + Gtk.textIterGetLine startiter
             in
                 if sel
-                then eval (Gtk.textBufferGetText(buf, startiter, enditer, false))
+                then eval (addNewlines(startline,
+                                       Gtk.textBufferGetText(buf, startiter, enditer, false)))
                 else ();
                 Gtk.textIterFree startiter;
                 Gtk.textIterFree enditer
@@ -94,10 +114,12 @@ structure AliceIde =
                 val cursor = Gtk.textBufferGetInsert(buf)
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetIterAtMark(buf,startiter,cursor)
+                val startline = 1 + Gtk.textIterGetLine startiter
                 val enditer = Gtk.textIterCopy(startiter)
                 val _ = Gtk.textIterSetLineOffset(startiter, 0)
                 val _ = Gtk.textIterForwardToLineEnd(enditer)
-                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                val str = addNewlines(startline,
+                                      Gtk.textBufferGetText(buf, startiter, enditer, false))
             in
                 Gtk.textIterFree startiter;
                 Gtk.textIterFree enditer;
@@ -138,14 +160,14 @@ structure AliceIde =
                 else ()
             end
 
-        fun EOLsBeforeNonWS acc iter next =
+        fun eolBeforeNonWS acc iter next =
             let
                 val c = Gtk.textIterGetChar iter
             in
                 if c=0 then acc
                 else if Char.isSpace (chr c) then
                     (next iter;
-                     EOLsBeforeNonWS (acc + (if c = ord #"\n" then 1 else 0)) iter next)
+                     eolBeforeNonWS (acc + (if c = ord #"\n" then 1 else 0)) iter next)
                 else acc
             end
 
@@ -171,7 +193,9 @@ structure AliceIde =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
                 val (startiter, enditer) = paragraphIters(buf)
-                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                val startline = 1 + Gtk.textIterGetLine startiter
+                val str = addNewlines(startline,
+                                      Gtk.textBufferGetText(buf, startiter, enditer, false))
             in
                 Gtk.textIterFree startiter;
                 Gtk.textIterFree enditer;
@@ -182,10 +206,12 @@ structure AliceIde =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
                 val (startiter, enditer) = paragraphIters(buf)
-                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                val startline = 1 + Gtk.textIterGetLine startiter
+                val str = addNewlines(startline,
+                                      Gtk.textBufferGetText(buf, startiter, enditer, false))
                 val _ = Gtk.textBufferPlaceCursor(buf, enditer)
             in
-                case EOLsBeforeNonWS 0 enditer Gtk.textIterForwardChar of
+                case eolBeforeNonWS 0 enditer Gtk.textIterForwardChar of
                     0 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
                   | 2 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
                   | _ => Gtk.textBufferPlaceCursor(buf, enditer);
@@ -223,52 +249,155 @@ structure AliceIde =
                 ignore (Gtk.textBufferDeleteSelection(buf, true, true))
             end
 
+        fun markSet (buf,_) =
+            let
+                val cursor = Gtk.textBufferGetInsert buf
+                val iter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
+            in
+                Stream.send(rowCol,
+                            (1 + Gtk.textIterGetLine iter,
+                             Gtk.textIterGetLineOffset iter))
+            end
+
         fun new() =
             let
-                val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
-                val scrolledwindow2_ya = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
-                val scrolledwindow2 = Gtk.scrolledWindowNew(scrolledwindow2_xa,scrolledwindow2_ya)
-                val _ = Gtk.scrolledWindowSetShadowType(scrolledwindow2,Gtk.SHADOW_NONE)
-                val _ = Gtk.widgetShow scrolledwindow2
-
-                val newSource = Gtk.textViewNew()
-                val _ = Gtk.widgetShow newSource
-                val _ = Gtk.textViewSetEditable(newSource,true)
-                val _ = Gtk.textViewSetJustification(newSource,Gtk.JUSTIFY_LEFT)
-                val _ = Gtk.textViewSetWrapMode(newSource,Gtk.WRAP_NONE)
-                val _ = Gtk.textViewSetCursorVisible(newSource,true)
-                val _ = Gtk.textViewSetPixelsAboveLines(newSource,0)
-                val _ = Gtk.textViewSetPixelsBelowLines(newSource,0)
-                val _ = Gtk.textViewSetPixelsInsideWrap(newSource,0)
-                val _ = Gtk.textViewSetLeftMargin(newSource,0)
-                val _ = Gtk.textViewSetRightMargin(newSource,0)
-                val _ = Gtk.textViewSetIndent(newSource,0)
-                val buf = Gtk.textViewGetBuffer newSource
-                val _ = Gtk.textBufferSetText(buf,"",~1)
-                val _ = Gtk.containerAdd(scrolledwindow2,newSource)
-                val label1 = Gtk.labelNew("New File"^Int.toString (!numberOfPages))
-                val _ = Gtk.widgetShow label1
-                val _ = Gtk.notebookAppendPage(AliceIdeGUI.notebook1,
-                                               scrolledwindow2, label1)
+                val {buf,...} = Buffer.buffer(AliceIdeGUI.notebook1,
+                                           !numberOfPages, NONE)
             in
+                Gtk.signalConnect(buf, "mark-set", markSet);
+                addPage(!numberOfPages);
                 numberOfPages := (!numberOfPages) + 1
             end
 
+        fun openFile () =
+            FileDialog.openFile("Open file",
+                                fn NONE => ()
+                                 | SOME f =>
+                                   let
+                                       val {buf,...} = Buffer.buffer(AliceIdeGUI.notebook1,
+                                                                  !numberOfPages, SOME f)
+                                   in
+                                       Gtk.signalConnect(buf, "mark-set", markSet);
+                                       addPage(!numberOfPages);
+                                       numberOfPages := (!numberOfPages) + 1
+                                   end)
+                                  
+        fun saveFileAs () =
+            FileDialog.openFile("Save file",
+                                fn NONE => ()
+                                 | SOME f =>
+                                   Buffer.saveAs (getCurrentPage(), f))
+
+        fun saveFile () = if !currentPage = 0 then ()
+                          else if Buffer.save (getCurrentPage()) then ()
+                          else saveFileAs()
+
         fun switchPage(cur,view) = (currentPage := cur; curtextview := view)
 
+        fun reallyClose p =
+            (removePage p;
+             Gtk.notebookRemovePage(AliceIdeGUI.notebook1, p);
+             currentPage := Gtk.notebookGetCurrentPage AliceIdeGUI.notebook1)
+
         fun close () = if !currentPage=0 then ()
-                       else (Gtk.notebookRemovePage(AliceIdeGUI.notebook1, !currentPage);
-                             currentPage := Gtk.notebookGetCurrentPage AliceIdeGUI.notebook1)
+                       else (if Buffer.close (getPage(!currentPage)) then
+                                 reallyClose (!currentPage)
+                             else FileDialog.modifiedWarning
+                                      "File modified. Discard changes and close anyway, or cancel?"
+                                      reallyClose (!currentPage))
+
+        fun jumpToError (row, col, row', col') _ =
+            let
+                val buf = Gtk.textViewGetBuffer(!curtextview)
+                val startiter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetStartIter(buf, startiter)
+                val enditer = Gtk.textIterCopy startiter
+            in
+                Gtk.textIterSetLine(startiter, row-1);
+                Gtk.textIterSetLine(enditer, row'-1);
+                Gtk.textIterSetLineOffset(startiter, col);
+                Gtk.textIterSetLineOffset(enditer, col');
+                Gtk.textBufferSelectRange(buf, startiter, enditer);
+                Gtk.widgetGrabFocus (!curtextview)
+            end
+
+        fun findErrorStart iter tag =
+            if Gtk.textIterHasTag(iter, tag) then
+                (Gtk.textIterBackwardChar iter; findErrorStart iter tag)
+            else
+                Gtk.textIterForwardChar iter
+
+        fun parseErrorCoords s =
+            let
+                val (s11::s12::s21::s22::_) =
+                    String.tokens (fn #":" => true
+                                    | #"-" => true
+                                    | #"." => true
+                                    | _ => false) s
+                val s11 = Int.fromString s11
+                val s12 = Int.fromString s12
+                val s21 = Int.fromString s21
+                val s22 = Int.fromString s22
+            in
+                if isNone s11 orelse isNone s12 orelse
+                   isNone s21 orelse isNone s22 then
+                    NONE
+                else
+                    SOME (valOf s11, valOf s12, valOf s21, valOf s22)
+            end handle Match => NONE
+
+        fun populatePopup (view, [Gtk.OBJECT menu]) =
+            let
+                val separator= Gtk.menuItemNew()
+                val showError = Gtk.menuItemNewWithMnemonic("Jump to error location")
+                val buf = Gtk.textViewGetBuffer view
+                val cursor = Gtk.textBufferGetInsert(buf)
+                val iter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
+                val errorTag =
+                    Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
+                                           "error")
+                val onErrorLine = Gtk.textIterHasTag(iter, errorTag)
+            in
+                Gtk.widgetSetSensitive(showError,
+                                       onErrorLine);
+                if onErrorLine then
+                    let
+                        val _ = findErrorStart iter errorTag
+                        val iter2 = Gtk.textIterCopy iter
+                        val _ = Gtk.textIterForwardLine iter2
+                        val str = Gtk.textIterGetText(iter, iter2)
+                        val coords = parseErrorCoords str
+                    in
+                        case coords of NONE => Gtk.widgetSetSensitive(showError,
+                                                                      false)
+
+                                     | SOME coords =>
+                                       (Gtk.signalConnect(showError, "activate", jumpToError coords);
+                                        ())
+                    end
+                else ();
+                Gtk.widgetShow separator;
+                Gtk.widgetShow showError;
+                Gtk.containerAdd(menu, separator);
+                Gtk.containerAdd(menu, showError)
+            end
+          | populatePopup _ = print "Gtk is crazy\n"
+
         fun init () =
             let
                 val buf = Gtk.textViewGetBuffer AliceIdeGUI.scratchpad
             in
+                Gtk.signalConnect(buf, "mark-set", markSet);
+                Gtk.signalConnect(AliceIdeGUI.compilerout, "populate-popup", populatePopup);
 	        OutputWriters.makeWriters {inStream = inText,
 					   outStream = outText,
 					   errStream = errText,
 					   traceStream = traceText,
 					   stdOutStream = stdOutText,
-					   stdErrStream = stdErrText};
+					   stdErrStream = stdErrText,
+                                           rowColStream = rowColStream};
                 Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
                                         AliceIdeGUI.Helpers.accelGroup);
                 Gtk.widgetAddAccelerator(AliceIdeGUI.paragraphnewline, "activate",
@@ -277,4 +406,9 @@ structure AliceIde =
                                          Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED)
             end
 
+        fun quit () = if List.all Buffer.close (!pages) then
+                          OS.Process.exit OS.Process.success
+                      else FileDialog.modifiedWarning
+                               "There are modified files. Discard changes and quit anyway or cancel?"
+                               OS.Process.exit OS.Process.success
     end

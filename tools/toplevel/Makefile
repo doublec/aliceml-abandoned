@@ -6,7 +6,9 @@ SOURCES = AliceIdeGUI.aml \
 	AliceIde.aml \
 	EVALUATOR-sig.aml \
 	Evaluator.aml \
-	Highlight.aml
+	Highlight.aml \
+	Buffer.aml \
+	FileDialog.aml
 
 all: $(SOURCES:%.aml=%.alc)
 

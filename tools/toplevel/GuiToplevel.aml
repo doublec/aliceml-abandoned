@@ -2,7 +2,6 @@ import structure AliceIde from "AliceIde"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure AliceIdeGUI from "AliceIdeGUI"
 import functor AliceIdeGUISignals from "AliceIdeGUISignals"
-import structure OutputWriters from "OutputWriters"
 import structure EventHandler from "EventHandler"
 import structure Evaluator from "Evaluator"
 

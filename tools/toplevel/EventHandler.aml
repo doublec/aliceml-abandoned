@@ -1,18 +1,16 @@
 import signature ALICEIDEGUISIGNALS_SIG from "AliceIdeGUISignals"
 import structure AliceIde from "AliceIde"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure Print from "x-alice:/lib/system/Print"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 structure EventHandler : ALICEIDEGUISIGNALS_SIG =
     struct
         fun on_new1_activate _ = AliceIde.new()
-        val on_open1_activate = const ()
-        val on_save1_activate = const ()
-        val on_save_as1_activate = const ()
+        fun on_open1_activate _ = AliceIde.openFile()
+        fun on_save1_activate _ = AliceIde.saveFile()
+        fun on_save_as1_activate _ = AliceIde.saveFileAs()
         fun on_close1_activate _ = AliceIde.close()
         val on_compilefile_activate = const ()
-        val on_quit1_activate = const ()
+        fun on_quit1_activate _ = AliceIde.quit()
         fun on_cut1_activate _ = AliceIde.cut()
         fun on_copy1_activate _ = AliceIde.copy()
         fun on_paste1_activate _ = AliceIde.paste()
