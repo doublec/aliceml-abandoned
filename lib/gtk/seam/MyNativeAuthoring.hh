@@ -247,6 +247,31 @@
   return Worker::CONTINUE;			\
 }
 
+#define RETURN7(w1, w2, w3, w4, w5, w6, w7) {	\
+  Scheduler::nArgs = 7;				\
+  Scheduler::currentArgs[0] = w1;		\
+  Scheduler::currentArgs[1] = w2;		\
+  Scheduler::currentArgs[2] = w3;		\
+  Scheduler::currentArgs[3] = w4;		\
+  Scheduler::currentArgs[4] = w5;		\
+  Scheduler::currentArgs[5] = w6;		\
+  Scheduler::currentArgs[6] = w7;		\
+  return Worker::CONTINUE;			\
+}
+
+#define RETURN8(w1, w2, w3, w4, w5, w6, w7, w8) {	\
+  Scheduler::nArgs = 8;				\
+  Scheduler::currentArgs[0] = w1;		\
+  Scheduler::currentArgs[1] = w2;		\
+  Scheduler::currentArgs[2] = w3;		\
+  Scheduler::currentArgs[3] = w4;		\
+  Scheduler::currentArgs[4] = w5;		\
+  Scheduler::currentArgs[5] = w6;		\
+  Scheduler::currentArgs[6] = w7;		\
+  Scheduler::currentArgs[7] = w8;		\
+  return Worker::CONTINUE;			\
+}
+
 // General macros that wrap the heterogenous "ToWord" conversion
 #define INT_TO_WORD(i) Store::IntToWord(i)
 #define REAL_TO_WORD(r) Real::New(r)->ToWord()
