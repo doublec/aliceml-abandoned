@@ -71,6 +71,8 @@ sig
     val allWithPoints :     pmap -> participant list
     
     val allNonFinished :    pmap -> participant list
+
+    val allWatching :       pmap -> participant list
 end
 
 

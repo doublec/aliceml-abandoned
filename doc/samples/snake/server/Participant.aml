@@ -85,34 +85,33 @@ struct
     (* [allPlayers ()] returns all snakes which are 
        still playing.
      *)
-    fun allPlayers p   = allParticipants 
+    val allPlayers    = allParticipants 
             (fn p =>
                 isConnected p andalso 
                 (case !(state p) of
                     PLAYING _               => true
-                 |   _                      => false)) p
+                 |   _                      => false))
     
-    fun allHalfFinished p  = allParticipants 
+    val allHalfFinished   = allParticipants 
             (fn p => 
                 isConnected p andalso
                 (case !(state p) of 
                      HALF_FINISHED _        => true
-                 |   _                      => false)) p
+                 |   _                      => false)) 
 
 
-    fun allNonFinished p   = allParticipants 
+    val allNonFinished    = allParticipants 
             (fn p =>
                 (isConnected p andalso 
                 (case !(state p) of
                      PLAYING _              => true
                  |   HALF_FINISHED _        => true
-                 |   _                      => false))) p
+                 |   _                      => false))) 
 
 
-    fun allConnected p = allParticipants isConnected p
+   val allConnected = allParticipants isConnected 
 
-
-    fun allWithPoints p = allParticipants 
+    val allWithPoints  = allParticipants 
             (fn p =>
                 (isConnected p andalso
                 case !(state p) of
@@ -120,7 +119,12 @@ struct
                 |   FINISHED _             => true
                 |   HALF_FINISHED _        => true
                 |   DEAD _                 => true
-                |   _                      => false)) p
+                |   _                      => false)) 
 
- 
+    val allWatching = allParticipants
+            (fn p =>
+                case !(state p) of
+                    FINISHED    (_, ref (SOME _)) => true
+                |   DEAD        (_, ref (SOME _)) => true
+                |   _                             => false)
 end

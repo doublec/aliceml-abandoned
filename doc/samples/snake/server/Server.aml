@@ -137,7 +137,8 @@ struct
                             ...
                         } : Protocol.config) =
         tabulateStream (levelNum, 
-                fn _ => Arena.random { dimensions, players, walls = 4 } handle e => assert false
+                fn _ => Arena.random { dimensions, players, walls = 4 } 
+                    handle e => assert false
             ) 
             
 
@@ -233,6 +234,24 @@ struct
                     raise P.Protocol (procName ^ ": unknown client " ^ 
                             Int.toString id)
             
+            fun computePointsList () =
+                List.map (fn p =>
+                    let val (name, 
+                            color)      = Part.nameNColor p
+                        val info        = Part.playerInfo p
+                        val points      = ! $ #points info
+                        val gamePoints  = ! $ #gamePoints info
+                        val livesLeft   = Option.map (fn lives => 
+                                lives - !(#deathCount info)) (#lives config)
+                    in
+                        ({ name, color, points, gamePoints }, livesLeft)
+                    end) (Part.allWithPoints (! participants) )
+
+
+            fun sendPoints () =
+                invokeSeveral (Part.allConnected $ ! participants , 
+                    #updatePoints, computePointsList ())
+
                 
             fun kill id =
                 let val part        = PMap.lookupExistent (!participants, id)
@@ -257,26 +276,10 @@ struct
                     (case !(Part.state part) of
                         Part.PLAYING _ => kill id
                     |   _              => ());
-                    Part.state part := Part.DISCONNECTED
+                    Part.state part := Part.DISCONNECTED;
+                    sendPoints ()
                 )))
 
-            
-            fun computePointsList () =
-                List.map (fn p =>
-                    let val (name, 
-                            color)      = Part.nameNColor p
-                        val info        = Part.playerInfo p
-                        val points      = ! $ #points info
-                        val gamePoints  = ! $ #gamePoints info
-                        val livesLeft   = Option.map (fn lives => 
-                                lives - !(#deathCount info)) (#lives config)
-                    in
-                        ({ name, color, points, gamePoints }, livesLeft)
-                    end) (Part.allWithPoints (! participants) )
-
-            fun sendPoints () =
-                invokeSeveral (Part.allConnected $ ! participants , 
-                    #updatePoints, computePointsList ())
 
             fun play id = Lock.sync lock (
                 withParticipant false ("play", id, fn (part, (name, color)) =>
@@ -345,10 +348,55 @@ struct
                         *) ()
                 ))
 
+            
+            fun indexOf p v =
+                case Vector.findi (fn (_, x) => p x) v of
+                    SOME (ndx, _) => SOME ndx
+                |   NONE          => NONE
 
+                
+            fun previousSnake (p, id) =
+                let
+                    val parts   = Vector.fromList $ Part.allPlayers p
+                    val ndx     = getOpt (indexOf 
+                                    (fn p => Part.id p = id) parts, 1)
+                in
+                    if Vector.length parts = 0 then NONE
+                    else SOME (Part.id $
+                        Vector.sub (parts, (ndx - 1) mod Vector.length parts))
+                end
+            
+            fun nextSnake (p, id) =
+                let
+                    val parts   = Vector.fromList $ Part.allPlayers p
+                    val ndx     = getOpt (indexOf 
+                                    (fn p => Part.id p = id) parts, 1)
+                 in
+                    if Vector.length parts = 0 then NONE
+                    else SOME (Part.id $ 
+                        Vector.sub (parts, (ndx + 1) mod Vector.length parts))
+                end
+             
             fun changeView id = Lock.sync lock (
                 withParticipant () ("changeView", id, fn (part, hint) => 
-                    not_yet_implemented ("changeView")
+                    let
+                        val participants = !participants
+
+                        val newId = 
+                            case hint of 
+                                Protocol.PREV => 
+                                    previousSnake (participants, id)
+                            |   Protocol.NEXT => 
+                                nextSnake (participants, id)
+                        
+                        val idref =
+                            case ! (Part.state part) of
+                                Part.WATCHING r        => r
+                            |   Part.FINISHED (_, r)   => r
+                            |   _                      => (ref NONE)
+                    in
+                        idref := newId 
+                    end
                 ))
 
 
@@ -459,7 +507,6 @@ struct
                             findEmptySpot (arena, nTriesLeft - 1)
                     end
 
-                            
             fun mayPlaceGoody (arena, g) = 
                 Option.app 
                     (fn (r, c) => Array2.update (arena, r, c, P.GOODY 5)) g
@@ -670,9 +717,7 @@ struct
                         finishLevel levels
                     |   _   => 
                         (* timeout expired ? *)
-                        if (* isSome timeout andalso 
-                                time >= Time.toSeconds (valOf timeout) *)
-                           Time.fromSeconds 0 = timeLeft then
+                        if Time.fromSeconds 0 = timeLeft then
                             (* timeout expired --> finish *)
                             finishLevel levels
                         else
