@@ -94,7 +94,7 @@ PREFIX = /opt/stockhausen-devel
 STOC0 = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../bootstrap/stoc-mozart
 STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
-STOC2 = STOCKHOME=build2/install build2/install/bin/stoc --rtt-level=full
+STOC2 = STOCKHOME=build2/install build2/install/bin/stoc
 
 STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
 STOC_EXTRA_OPTS = --dump-target
@@ -543,7 +543,10 @@ build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
 build3/%.ozf: build3/%.aml
-	$(STOC2) $(STOC_OPTS) -c $< -o $@
+	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+
+build3/stoc/%.ozf: build3/stoc/%.aml
+	$(STOC2) $(STOC_OPTS) --rtt-level=no -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
