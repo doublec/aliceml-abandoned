@@ -3,18 +3,27 @@
 LIGHTNING=1
 SUPPORTDIR="$(pwd)"
 
+case `uname -s` in
+    CYGWIN*)
+	CC="gcc -mno-cygwin"
+	;;
+    *)
+	CC=gcc
+	;;
+esac
+
 ##
 ## Build Support Libraries: Lightning
 ##
 if [ "$LIGHTNING" -ne 0 ]
 then
-    if [ ! -f "$SUPPORTDIR/install/$SUPPORTPLATFORM/include/lightning.h" ]
+    if [ ! -f "$SUPPORTDIR/install/include/lightning.h" ]
     then
-	mkdir -p "$SUPPORTDIR/build/$SUPPORTPLATFORM/lightning" 2>/dev/null
+	mkdir -p "$SUPPORTDIR/build/lightning" 2>/dev/null
 	(
-	    cd "$SUPPORTDIR/build/$SUPPORTPLATFORM/lightning" &&
+	    cd "$SUPPORTDIR/build/lightning" &&
 	    CC=$CC "$SUPPORTDIR/lightning/configure" \
-		--prefix="$SUPPORTDIR/install/$SUPPORTPLATFORM" &&
+		--prefix="$SUPPORTDIR/install" &&
 	    make all install
 	) || exit 1
     fi
@@ -23,11 +32,11 @@ fi
 ##
 ## Build Support Libraries: zlib
 ##
-if [ ! -f "$SUPPORTDIR/install/$SUPPORTPLATFORM/include/zlib.h" ]
+if [ ! -f "$SUPPORTDIR/install/include/zlib.h" ]
 then
     (
 	cd "$SUPPORTDIR/zlib" &&
-	CC=$CC ./configure --prefix="$SUPPORTDIR/install/$SUPPORTPLATFORM" &&
+	CC=$CC ./configure --prefix="$SUPPORTDIR/install" &&
 	make all install distclean
     ) || exit 1
 fi
