@@ -178,26 +178,27 @@ fun getSelectionMenu bar =
 	val menu_heading_items = UnsafeValue.cast 
 		(Gtk.containerChildren(bar)) : Gtk.object list
 	val menu_heading_selection = List.nth(menu_heading_items,1)
+	val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
     in
-	menu_heading_selection
+	(menu_heading_selection,submenu)
     end
 
 (* Switches "selection" menu on/off *)
 fun setSelectionMenuSensitive (bar,sensitive) = 
     let
-	val menu_heading_selection = getSelectionMenu bar
+	val (menu_heading_selection,submenu) = getSelectionMenu bar
 	val selection_menu = hd
 		(UnsafeValue.cast 
 		 (Gtk.containerChildren(menu_heading_selection)) 
 		 : Gtk.object list)    
     in
-	setSensitive(selection_menu,sensitive)
+	(setSensitive(selection_menu,sensitive)
+	 ;setSensitive(submenu,sensitive))
     end
 
 fun setExpandSensitive (bar,sensitive)= 
     let
-	val menu_heading_selection = getSelectionMenu bar
-	val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
+	val (menu_heading_selection,submenu) = getSelectionMenu bar
 	val children = UnsafeValue.cast 
 		(Gtk.containerChildren(submenu)) : Gtk.object list
 	val expand = List.nth(children,0)
@@ -263,6 +264,7 @@ fun scrollY (y,scrolled,vadj) =
 		   reinspecthandler = r, forcehandler = f} = 
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
+	    val force_active = Helper.isByneed n
 	    val width_item_list = [EntryObj(LABEL("-5"),
 					      [Handler("activate",w(~5))],
 						       true),
@@ -362,7 +364,7 @@ fun scrollY (y,scrolled,vadj) =
 					    reinspect_active),
 				  EntryObj(LABEL("force evaluation"),
 					   [Handler("activate",f)],
-					   true)],
+					   force_active)],
 			  sensitive = true}])
 		;()))
 	end
@@ -427,7 +429,8 @@ struct
 					   [("x", Gtk.DOUBLE 0.0), 
 					    ("y", Gtk.DOUBLE 0.0)])
      val canvasroot = lowest_layer
-     val resize = handleResize(scrolled,hadj,vadj,DA.resize)
+     val resize = handleResize(scrolled,hadj,vadj,DA.resize) 
+
      fun show() = if !alive then Gtk.widgetShowAll(window) else ()
     
      fun handleReinspect node = 
@@ -592,6 +595,9 @@ struct
 			scrollY(10.0,scrolled,vadj)
 		  | _ => () )
 
+     fun freezeThaw(x) = (Gtk.layoutFreeze(x)
+			  ; Gtk.layoutThaw(x))
+
      val _ = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
 	      ; Gtk.widgetSetUsize (window, 200, 100) 
 	      ; Gtk.windowSetDefaultSize(window, 500,400)
@@ -599,7 +605,10 @@ struct
 	      ;setSelectionMenuSensitive (bar,false)  
 	      ;Gtk.signalConnect(scrolled,"size_allocate",
 				 handleResize(scrolled,hadj,vadj,DA.resize))
-	      ;Gtk.containerAdd(scrolled,DA.canvas)
+	     (* ;Gtk.signalConnect(scrolled,"event",fn [Gtk.EVENT(event)] => Inspector.inspect(event)) *)
+	      ;Gtk.signalConnect(hadj,"value_changed",fn _ => freezeThaw(DA.canvas))
+	      ;Gtk.signalConnect(vadj,"value_changed",fn _ => freezeThaw(DA.canvas))
+  	      ;Gtk.containerAdd(scrolled,DA.canvas)
 	      ;Gtk.containerAdd(window,createVBox[(bar,0,0,0),
 						  (scrolled,Gtk.EXPAND,Gtk.FILL,0),
 						  (status,0,0,0)])
@@ -609,5 +618,17 @@ struct
 end
 
 end (* MkWindow End *)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
