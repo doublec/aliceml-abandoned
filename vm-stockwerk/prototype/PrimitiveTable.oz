@@ -514,53 +514,52 @@ prepare
       end
    end
 
-   fun {Handle Debug Exn TaskStack}
-      case TaskStack of Frame|Rest then
-	 exception(Frame|Debug Exn Rest)
-      end
-   end
+   PrimitiveInterpreter =
+   primitiveInterpreter(run:
+			   fun {$ Args TaskStack}
+			      case TaskStack of primitive(_ F)|Rest then
+				 case {Procedure.arity F} of 1 then
+				    case {F} of exception(Exn) then
+				       exception(nil Exn Rest)
+				    elseof Res then continue(Res Rest)
+				    end
+				 [] 2 then
+				    case {F {Construct Args}}
+				    of exception(Exn) then
+				       exception(nil Exn Rest)
+				    elseof Res then continue(Res Rest)
+				    end
+				 [] 3 then T = {Deconstruct Args} in
+				    case {F T.1 T.2} of exception(Exn) then
+				       exception(nil Exn Rest)
+				    elseof Res then continue(Res Rest)
+				    end
+				 [] 4 then T = {Deconstruct Args} in
+				    case {F T.1 T.2 T.3}
+				    of exception(Exn) then
+				       exception(nil Exn Rest)
+				    elseof Res then continue(Res Rest)
+				    end
+				 end
+			      end
+			   end
+			handle:
+			   fun {$ Debug Exn TaskStack}
+			      case TaskStack of Frame|Rest then
+				 exception(Frame|Debug Exn Rest)
+			      end
+			   end
+			pushCall:
+			   fun {$ Closure TaskStack}
+			      case Closure of closure(P=primitive(_ _)) then
+				 P|TaskStack
+			      end
+			   end)
 
    Table = {Record.map Primitives
 	    fun {$ X}
 	       if {IsProcedure X} then
-		  primitive(run:
-			       case {Procedure.arity X} of 1 then
-				  fun {$ Args TaskStack}
-				     _ = {Construct Args}
-				     case {X} of exception(Exn) then
-					exception(nil Exn TaskStack.2)
-				     elseof Res then Res
-				     end
-				  end
-			       [] 2 then
-				  fun {$ Args TaskStack}
-				     case {X {Construct Args}}
-				     of exception(Exn) then
-					exception(nil Exn TaskStack.2)
-				     elseof Res then Res
-				     end
-				  end
-			       [] 3 then
-				  fun {$ Args TaskStack}
-				     T = {Deconstruct Args}
-				  in
-				     case {X T.1 T.2} of exception(Exn) then
-					exception(nil Exn TaskStack.2)
-				     elseof Res then Res
-				     end
-				  end
-			       [] 4 then
-				  fun {$ Args TaskStack}
-				     T = {Deconstruct Args}
-				  in
-				     case {X T.1 T.2 T.3}
-				     of exception(Exn) then
-					exception(nil Exn TaskStack.2)
-				     elseof Res then Res
-				     end
-				  end
-			       end
-			    handle: Handle)
+		  closure(primitive(PrimitiveInterpreter X))
 	       else X
 	       end
 	    end}

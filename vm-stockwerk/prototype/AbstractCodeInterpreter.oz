@@ -12,7 +12,7 @@
 
 functor
 export
-   Interpreter
+   interpreter: Me
 define
    NONE = 0
    SOME = 1
@@ -205,8 +205,7 @@ define
 	 case IdDefInstrOpt of !NONE then   % tail call
 	    continue(Args Op|TaskStack)
 	 [] tag(!SOME tuple(IdDef NextInstr)) then NewFrame in
-	    NewFrame = frame(Interpreter tag(!OneArg IdDef)
-			     NextInstr Closure L)
+	    NewFrame = frame(Me tag(!OneArg IdDef) NextInstr Closure L)
 	    continue(Args Op|NewFrame|TaskStack)
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
@@ -233,7 +232,7 @@ define
 	 case IdDefArgsInstrOpt of !NONE then   % tail call
 	    continue(Args Op|TaskStack)
 	 [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
-	    NewFrame = frame(Interpreter IdDefArgs NextInstr Closure L)
+	    NewFrame = frame(Me IdDefArgs NextInstr Closure L)
 	    continue(Args Op|NewFrame|TaskStack)
 	 end
       [] tag(!GetRef Id IdRef NextInstr) then
@@ -353,7 +352,7 @@ define
 	       [] !Wildcard then skip
 	       end
 	    end
-	    {Emulate ThenInstr Closur L TaskStack}
+	    {Emulate ThenInstr Closure L TaskStack}
 	 [] unit then
 	    {Emulate ElseInstr Closure L TaskStack}
 	 end
@@ -400,7 +399,6 @@ define
 	    end
 	 end
 	 {Emulate Instr Closure L Rest}
-      [] nil then terminate
       end
    end
 
@@ -420,6 +418,15 @@ define
       end
    end
 
-   Interpreter = abstractCodeInterpreter(run: Run
-					 handle: Handle)
+   fun {PushCall Closure TaskStack}
+      case Closure of closure(function(_ _ NL IdDefArgs BodyInstr) ...) then
+	 L = {NewArray 0 NL - 1 unit}
+      in
+	 frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
+      end
+   end
+
+   Me = abstractCodeInterpreter(run: Run
+				handle: Handle
+				pushCall: PushCall)
 end

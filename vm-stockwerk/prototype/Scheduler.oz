@@ -15,7 +15,6 @@ import
    System(showError)
    Application(exit)
    Primitives(table)
-   AbstractCodeInterpreter
 export
    Object
 define
@@ -25,13 +24,9 @@ define
 	 QueueHd <- Empty
 	 QueueTl <- Empty
       end
-      meth newThread(Closure ?Res)
-	 case Closure of closure(function(_ NL IdDefArgs BodyInstr) ...) then
-	    %--** parameterize over interpreter
-	    L = {NewArray 0 NL - 1 unit}
-	    TaskStack = [frame(AbstractCodeInterpreter   %--** pushCall
-			       IdDefArgs BodyInstr Closure L)]
-	 in
+      meth newThread(Closure ?Res) TaskStack in
+	 case Closure of closure(Function ...) then
+	    TaskStack = {Function.1.pushCall Closure nil}
 	    Scheduler, Enqueue('thread'(args: args()
 					stack: TaskStack
 					result: Res))
