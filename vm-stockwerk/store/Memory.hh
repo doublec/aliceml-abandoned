@@ -35,7 +35,7 @@ public:
 #endif
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int size) : prev(prv), next(nxt) {
     block = base = (char *) std::malloc(size + STORE_MEM_ALIGN);
-    AssertStore(block != INVALID_POINTER);
+    AssertStore(block != NULL);
     // Ensure Base Ptr Alignment
     base += (STORE_MEM_ALIGN - ((u_int) base & (STORE_MEM_ALIGN - 1)));
     max    = (base + size);
