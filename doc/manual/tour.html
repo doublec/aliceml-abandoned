@@ -391,6 +391,25 @@ spawn consume (produce 5)
 
 <!-- TODO: Reference? -->
 
+<P>Synchronisation on futures can also be done explicitly, by employing the
+library function <A href="library/future.html"><TT>Future.await</TT></A>:</P>
+
+<PRE class=code>
+Future.await (spawn fib 30)
+<I>val it : int = 1346269</I></PRE>
+
+<P>Interestingly, <A href="#laziness">lazy suspensions<A> are nothing but a
+special form of future, called a <EM>lazy future</EM>. Requesting a lazy future
+is triggering the corresponding computation. Consequently,
+<TT>Future.await</TT> can also be used to trigger lazy computations
+explicitly:</P>
+
+<PRE class=code>
+lazy 3+4
+<I>val it : int = lazy</I>
+Future.await it
+<I>val it : int = 7</I></PRE>
+
 
 <?php subsection("concurrency-failure", "Failed futures") ?>
 
@@ -747,8 +766,15 @@ structure Fac : sig val fac : int -> int end = Fac</I></PRE>
 <P>Loading is performed lazily: the interactive toplevel will load the
 signature from the component file, but it will not yet evaluate (execute) the
 component. This is appearent from the fact that the message contained in the
-structure has not been printed in the above example. The component will be
-evaluated when its content is first requested:</P>
+structure has not been printed in the above example. We can also see it when
+accessing a structure field:</P>
+
+<PRE class=code>
+Fac.fac
+<I>val it : int -> int = lazy</I></PRE>
+
+<P>The function is represented by a <A href="#laziness">lazy future</A>. The
+component will be evaluated when its content is first requested:</P>
 
 <PRE class=code>
 Fac.fac 23
@@ -897,37 +923,42 @@ are interchangable: a pickle containing a structure can be imported as a
 component; a component can be loaded as a pickle. The latter will automatically
 evaluate the component.</P>
 
-<P>That close connection allows us to precompute data by writing a component
-that computes it and writes it into an appropriate pickle.</P>
+<P>That close connection allows us to construct precomputed components by
+writing a component that computes it and writes it into an appropriate
+pickle. For example:</P>
 
 <PRE class=code>
-(*
- * Components are pickles and vice versa!
- *
- * Loading a component as a pickle will execute it and return the
- * component's content as a structure.
- * A structure pickle can be used as a component. It is a special case of
- * a component because its content is completely evaluated.
- * Note that unpickling an evaluated component produces new abstract
- * types! (so Url'.Url.t below is incompatible to the lib's Url.t)
- *)
+structure Fac50 = struct val x = Fac.fac 50 end
+<I>structure Fac50 : sig val x : int end</I>
+Pickle.save ("Fac50." ^ Component.extension,
+	     pack (structure Fac50 = Fac50)
+	       :> (structure Fac50 : sig val x : int end))
+<I>val it : unit = ()</I></PRE>
 
-val file = "Url." ^ Pickle.extension
-val comp = "x-alice:/lib/system/" ^ file
+<P>Assume that calculating the factority of 50 is an expensive computation. We
+have now performed it statically and generated a component that exports the
+result as a value. We may import it as usual:</P>
 
-import signature URL from "x-alice:/lib/system/URL-sig"
+<PRE class=code>
+import structure Fac50 from "Fac50"
+<I>### loaded signature from file:/home/rossberg/src/stockhausen/doc/homepage/Fac50
+structure Fac50 : sig val x : int end = Fac50</I>
+Fac50.x
+<I>val it : int = lazy</I>
+Future.await Fac50.x
+<I>val it : int =
+   30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
 
-structure Url' = Pickle.Load(val file = comp
-			     signature S = (structure Url : URL))
+<P>A pickle contains an <EM>evaluated component</EM>. Evaluated components are
+closed, i.e. they never depend on any import:</P>
 
-val _ = print(Url'.Url.toString(Url'.Url.fromString comp) ^ "\n")
+<PRE class=code>
+alicelink -d Fac50
+<I>structure Fac50 : sig val x : int end</I></PRE>
 
-structure _ = Pickle.Save(val file = file
-			  structure X = Url'
-			  signature S = (structure Url : URL))
-
-import "/home/kornstae/stockhausen/doc/samples/Url"
-</PRE>
+<P>The linker shows that there is only an export signature to this component.
+See the <A href="components.html#evaluated">manual pages</A> on components for
+more information on evaluated components.</P>
 
 
 <?php section("distribution", "distribution") ?>
