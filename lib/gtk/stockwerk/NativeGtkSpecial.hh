@@ -210,6 +210,19 @@ DEFINE4(NativeGtk_signalConnect) {
   RETURN(Store::IntToWord(static_cast<int>(ret)));
 } END
 
+DEFINE3(NativeGtk_signalConnectDelete) {
+  DECLARE_UNMANAGED_POINTER(obj,x0);
+  DECLARE_INT(funid,x1);
+
+  GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
+				     GINT_TO_POINTER(funid), NULL);
+  g_closure_set_marshal(closure, generic_marshaller);
+  gulong ret = g_signal_connect_closure(G_OBJECT(obj), "delete-event", 
+					closure, FALSE); 
+
+  RETURN(Store::IntToWord(static_cast<int>(ret)));
+} END
+
 DEFINE2(NativeGtk_signalDisconnect) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
   DECLARE_INT(handler_id,x1);

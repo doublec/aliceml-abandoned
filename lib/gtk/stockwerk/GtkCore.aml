@@ -14,52 +14,79 @@ struct
     type callBackFunction = object * arg list -> unit
 
     local
-	val signalTable = ref nil : 
-	    (int * object * int * callBackFunction) list ref
+	val sigTable = ref nil : 
+  	        (int * object * int * callBackFunction) list ref
 	val lastNumber = ref 0
-	    
-	fun doSignalConnect (obj, signame, callback, after) =
-	    let
-		val connid = NativeGtk.signalConnect(obj,signame,
-						     !lastNumber,after)
-		val newtab = (!lastNumber,obj,connid,callback)::(!signalTable)
-	    in
-		(signalTable := newtab ;
-		 lastNumber := (!lastNumber) + 1 ;
-		 connid)
-	    end
-
     in
-	
-	fun signalConnect (obj, signame, callback) = 
-	    doSignalConnect (obj, signame, callback, false)
-	fun signalConnectAfter(obj, signame, callback) =
-	    doSignalConnect (obj, signame, callback, true)
-	    
-	fun signalDisconnect (obj, connid) =
-	    ( NativeGtk.signalDisconnect(obj,connid) ;
-	      signalTable := List.filter  (fn (_,_,connid',_)=>connid<>connid')
-				          (!signalTable)
-	    )
+	fun addToSignalTable (obj,callback,connectFun) =
+	let
+	    val connid = connectFun (!lastNumber)
+	in
+	    (sigTable:= ((!lastNumber,obj,connid,callback)::(!sigTable));
+	     lastNumber := (!lastNumber) + 1 ;
+	     connid )
+	end
 
-	fun signalDisconnectByFunc (obj, callback) = 
-	    let
-		fun find (_,obj',connid,callback') =
-		    if (obj = obj') andalso (callback = callback')
-			then ( NativeGtk.signalDisconnect(obj,connid) ; false )
-			else true
-	    in
-		signalTable := List.filter find (!signalTable)
-	    end
+	fun removeFromSignalTable (obj,connid) =
+	    sigTable := 
+	      List.filter (fn (_,ob,cid,_) => connid<>cid orelse obj<>ob)
+			  (!sigTable)
 
-	fun listener nil                        = ()
-	  | listener ((funid,obj,args)::stream) =
-	      ( List.app 
-	          (fn (funid',_,_,f)=>if funid=funid' then f(obj,args) else ())
-		  (!signalTable) ;
-	        listener stream
-              )
+	fun findConnID (obj,callback) =
+	    foldl (fn ((_,ob,connid,cb),e) => 
+	     if ob=obj andalso cb=callback then connid else e) (~1) (!sigTable)
+
+	fun runCallback (funid, obj, args) =
+	    List.app 
+	      (fn (funid',_,_,f)=>if funid=funid' then f(obj,args) else ())
+	      (!sigTable)
+
     end
+
+    (* TO-DO: connid in ids (WeakDict) eintragen          *)
+    (*        bei "delete-event" callback in ds eintragen *)
+    fun signalConnect (obj, signame, callback) = 
+	addToSignalTable(obj,callback,
+			 fn n => NativeGtk.signalConnect(obj,signame,n,false))
+    fun signalConnectAfter(obj, signame, callback) =
+	addToSignalTable(obj,callback,
+			 fn n => NativeGtk.signalConnect(obj,signame,n,true))
+    fun signalConnectDelete(obj,callback) =
+	addToSignalTable(obj,callback,
+			 fn n => NativeGtk.signalConnectDelete(obj,n))
+
+    fun signalDisconnect (obj, connid) =
+	( NativeGtk.signalDisconnect(obj,connid) ;
+ 	  removeFromSignalTable(obj,connid) )
+    fun signalDisconnectByFunc (obj, callback) = 
+	signalDisconnect(obj,findConnID(obj,callback))
+
+    local
+	fun isInPointerTable _ = false
+	fun addToPointerTable _ = ()
+
+	fun newObject (p,tinfo) =
+	    let
+		val obj     = (p, tinfo, ref nil, ref nil)
+		fun event _ =
+		    case obj of (p, _, ref ids, ref ds) =>
+			( List.app (fn d  => d(p,nil)) ds ;
+			  List.app (fn id => removeFromSignalTable(p,id)) ids ;
+			  signalDisconnectByFunc(p,event) )
+	    in
+		(if tinfo = 0 then signalConnectDelete (p,event) else 0;
+		 addToPointerTable (p,obj))
+	    end 
+    in
+	fun addObject (p,tinfo) =
+	    (if isInPointerTable p then () else newObject (p,tinfo) ; p)
+    end
+
+
+    fun listener nil                        = ()
+      | listener ((funid,obj,args)::stream) =
+	( runCallback (funid, obj, args) ; listener stream )
+
 
     fun sleep ms = Future.await (Future.alarm (Time.fromMilliseconds ms))
 

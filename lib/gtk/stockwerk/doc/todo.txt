@@ -1,6 +1,23 @@
 
 *** Allgemein/Ideen ***
 
+Garbage Collection:
+fuer alle Objekte gilt:
+- beim Erstellen im WeakDictionary abspeichern (falls nicht schon da?) + ref()
+- falls auf Alice-Seite keine Referenz mehr besteht, wird C-Funktion
+  aufgerufen, die Objekt aus Dictionary entfernt und unref()
+
+fuer GtkObjects gilt:
+- beim Erstellen eigenen destroy-event-handler registrieren (nicht delete)
+  Event-Handler-Funktion enthaelt Pointer, Referenz ist also immer vorhanden
+- soll das Objekt zerstoert werden, wird destroy-event emitted
+- destroy-event-handler loescht daraufhin sich selbst aus der Signaltabelle
+  (keine Referenz mehr), ruft alle user-defined destroy-handler auf und
+  loescht alle Handler, die an das Objekt gebunden sind
+
+
+
+
 * Enums
 - GC (Weak Dictionary)
 * datatypes/Signals bauen
@@ -35,6 +52,9 @@ Ideen fuer GtkTreeTypes:
 
 CLASSES... enthaelt *alle* Klassen
   nur fuer STRUCTUREs, die auch in CLASSES sind, gibt es get/set-Funktionen 
+
+
+aktuelles Stockhausen vom: 17.10.02 12:00
 
 setenv ALICE_TRACE_COMPONENT 1
 setenv ALICE_TRACE_RESOLVER 1
