@@ -28,9 +28,6 @@ fun scan360for cond fail =
     otherwise
         nop
 
-val become_worker =
-    scan360for foodmarker (goto "guard")
-
 fun blocked fail =
     sense ahead friend ifyes fail  ++
     sense leftahead foe ifyes fail ++
@@ -56,6 +53,8 @@ val toplevel =
     is_explorer (goto "explorer") ++
     goto "guard" ++
     proc "explorer" (loop nop) ++
-    proc "guard" (move_to_border ++ loop step)
+    proc "guard" (move_to_border ++ loop step) ++
+    proc "worker" (scan360for foodmarker (goto "guard"))
+    
         
 val ant = toplevel
