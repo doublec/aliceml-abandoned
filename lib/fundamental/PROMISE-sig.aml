@@ -1,0 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import type unit and exn     from "ToplevelTypes"
+
+
+signature PROMISE =					(**)
+sig
+    type 'a promise
+
+    exception Promise
+
+    val promise :	unit -> 'a promise
+    val future :	'a promise -> 'a
+
+    val fulfill :	'a promise * 'a  -> unit	(* Promise, Cyclic *)
+    val fail :		'a promise * exn -> unit	(* Promise *)
+end

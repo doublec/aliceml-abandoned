@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import signature PAIR        from "PAIR-sig"
+
+
+structure Pair : PAIR =							(**)
+struct
+    type ('a,'b) pair	= 'a * 'b
+    type ('a,'b) t	= ('a,'b) pair
+
+    fun fst(x,y)	= x
+    fun snd(x,y)	= y
+
+    fun app (f,g) (x,y)	= (f x ; g y)
+    fun appFst f  (x,y)	= f x
+    fun appSnd f  (x,y)	= f y
+
+    fun map (f,g) (x,y)	= (f x, g y)
+    fun mapFst f  (x,y)	= (f x, y)
+    fun mapSnd f  (x,y)	= (x, f y)
+end
