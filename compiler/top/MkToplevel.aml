@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -33,7 +33,7 @@ struct
     fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
 						OptionParser.helpText)
 
-    val banner     = "Alice 0.9.2+ (Stockhausen Operette 3 Remix 2 Extended)\n"
+    val banner     = "Alice 0.9.3 (Stockhausen Operette 3 Remix 3)\n"
     val prompt     = "- "
     val contPrompt = "  "
 
