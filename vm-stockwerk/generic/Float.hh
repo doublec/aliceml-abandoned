@@ -14,7 +14,7 @@
 #define __GENERIC__FLOAT_HH__
 
 #if defined(INTERFACE)
-#pragma interface "generic/Double.hh"
+#pragma interface "generic/Float.hh"
 #endif
 
 #include <cstring>
@@ -24,7 +24,7 @@ class DllExport Float: private Chunk {
 public:
   using Chunk::ToWord;
 
-  static Float *New(double value) {
+  static Float *New(float value) {
     Chunk *chunk = Store::AllocChunk(sizeof(float));
     char *to = chunk->GetBase(), *from = reinterpret_cast<char *>(&value);
 #if FLOAT_LITTLE_ENDIAN
@@ -50,10 +50,10 @@ public:
     return static_cast<Float *>(chunk);
   }
 
-  double GetValue() {
-    double result;
+  float GetValue() {
+    float result;
     char *to = reinterpret_cast<char *>(&result), *from = GetBase();
-#if DOUBLE_LITTLE_ENDIAN
+#if FLOAT_LITTLE_ENDIAN
     for (u_int i = sizeof(float); i--; *to++ = from[i]);
 #else
     std::memcpy(to, from, sizeof(float));
