@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <zlib.h>
+#include "store/Map.hh"
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
@@ -250,7 +251,7 @@ public:
   static Seen *New() {
     Block *p = Store::AllocBlock(SEEN_LABEL, SIZE);
     p->InitArg(COUNTER_POS, 0);
-    p->InitArg(TABLE_POS, BlockHashTable::New(initialSize)->ToWord());
+    p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
     return static_cast<Seen *>(p);
   }
   static Seen *FromWordDirect(word w) {
@@ -260,16 +261,16 @@ public:
   }
 
   void Add(Block *v) {
-    word counter          = GetArg(COUNTER_POS);
-    BlockHashTable *table = BlockHashTable::FromWordDirect(GetArg(TABLE_POS));
-    table->InsertItem(v->ToWord(), counter);
+    word counter = GetArg(COUNTER_POS);
+    Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
+    map->Put(v->ToWord(), counter);
     ReplaceArg(COUNTER_POS, Store::DirectWordToInt(counter) + 1);
   }
   u_int Find(Block *v) {
-    word vw               = v->ToWord();
-    BlockHashTable *table = BlockHashTable::FromWordDirect(GetArg(TABLE_POS));
-    if (table->IsMember(vw))
-      return Store::DirectWordToInt(table->GetItem(vw));
+    word vw  = v->ToWord();
+    Map *map = Map::FromWordDirect(GetArg(TABLE_POS));
+    if (map->IsMember(vw))
+      return Store::DirectWordToInt(map->Get(vw));
     else
       return NOT_FOUND;
   }
@@ -391,9 +392,10 @@ Worker::Result PicklingWorker::Run() {
   // Handle new Block Value (non-abstract use)
   BlockLabel l = v->GetLabel();
   switch (l) {
-  case WEAK_DICT_LABEL:
-  case HASHTABLE_LABEL:
-  case BLOCKHASHTABLE_LABEL:
+  case WEAK_MAP_LABEL:
+  case MAP_LABEL:
+  case INT_MAP_LABEL:
+  case CHUNK_MAP_LABEL:
   case THREAD_LABEL:
   case TASKSTACK_LABEL:
     Scheduler::currentData      = Pickler::Sited;
