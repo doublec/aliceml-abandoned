@@ -156,8 +156,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	let
 	    val _ = print (Util.separator("Generating "^unsafeName))
 	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
-	    val myItems = Util.filters [isItemOfSpace space, checkItem,
-				        Util.funNot Special.isIgnoredSafe] 
+	    val myItems = Util.filters [isItemOfSpace space, checkItem] 
 		            (myItems'@Special.changedFuns@Special.specialFuns)
 
 	    val s = Util.openFile siginfo

@@ -36,9 +36,12 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	val ignoreItems = 
 	    case space of
 		Util.GTK => ["gtk_init",  
-			     "gtk_init_check", 
+			     "gtk_init_check",
+			     "gtk_main",
 			     "gtk_true",  
 			     "gtk_false", 
+			     "gtk_signal_connect",
+			     "gtk_signal_disconnect",
 			     "gtk_tree_store_new",
 			     "gtk_type_init",
 			     "gtk_signal_compat_matched",
@@ -93,24 +96,6 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		       LIST ("GList", STRING true)])]
 	 | _ => nil
 
-       (* ignoreSafeItems: *)
-       (* do not generate any code in the unsafe component for: *)
-       val ignoreSafeItems =
-	   case space of
-	       Util.GTK => ["gtk_init",
-			    "gtk_get_event_stream",
-			    "gtk_main",
-			    "gtk_signal_connect",
-			    "gtk_signal_disconnect",
-			    "gtk_null",
-			    "gtk_gtk_true",
-			    "gtk_gtk_false",
-			    "gtk_g_object_unref",
-			    "gtk_delete_unref"]
-	     | Util.GDK => ["gdk_init"]
-	     | _ => nil
-
-
        (* isIgnored: true if no binding should be generated for an item *)
        fun isIgnored (FUNC (n,_,_)) = 
 	   (Util.contains n ignoreItems) orelse
@@ -118,12 +103,5 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	 | isIgnored (STRUCT (n, _)) = Util.contains n ignoreItems
 	 | isIgnored (ENUM (n, _)) = Util.contains n ignoreItems
 	 | isIgnored _ = false
-
-       (* isIgnoredSafe: true if no binding in the unsafe component *)
-       (*                should be generated for an item *)
-       fun isIgnoredSafe (FUNC (n,_,_)) = Util.contains n ignoreSafeItems
-	 | isIgnoredSafe (STRUCT (n, _)) = Util.contains n ignoreSafeItems
-	 | isIgnoredSafe (ENUM (n, _)) = Util.contains n ignoreSafeItems
-	 | isIgnoredSafe _              = false
 
     end
