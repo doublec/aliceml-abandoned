@@ -38,7 +38,7 @@ LIB_UTILITY_SRCS = $(LIB_UTILITY_SRCS0:%=lib/utility/Unsafe%.oz)
 	oztool ld -o $@ $<
 
 %.ozf: %.oz
-	ozc -c $< -o $@
+	ozc -c $(OZCFLAGS) $< -o $@
 
 all: \
 	FloatChunk.so-$(PLATFORM) \
