@@ -426,7 +426,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun buildFunArgs (id, matches, errStms) =
 		let
 		    val argsMatchesList =
-			(List.foldl makeArg nil matches)
+			(List.map (fn (args, matches) =>
+				   (args, List.rev matches))
+			 (List.foldl makeArg nil matches))
 			handle NonArgable => [(ONE, matches)]
 		in
 		    List.map (fn (args, matches) =>
