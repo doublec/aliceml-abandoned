@@ -18,6 +18,7 @@ veryclean: clean
 	rm -f libdatalayer.a
 
 distclean: veryclean
+	rm -f Makefile.deps
 
 Makefile.deps: Makefile $(SRCS)
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps

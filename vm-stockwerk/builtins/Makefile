@@ -24,6 +24,7 @@ veryclean: clean
 	rm -f libbuiltins.a
 
 distclean: veryclean
+	rm -f Makefile.deps
 
 Makefile.deps: Makefile $(SRCS)
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps

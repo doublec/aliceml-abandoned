@@ -20,6 +20,7 @@ veryclean: clean
 	rm -f libscheduler.a
 
 distclean: veryclean
+	rm -f Makefile.deps
 
 Makefile.deps: Makefile $(SRCS)
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps

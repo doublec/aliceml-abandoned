@@ -30,6 +30,7 @@ veryclean: clean
 	rm -f test StoreConfig.hh libstore.a
 
 distclean: veryclean
+	rm -f Makefile.deps
 
 Makefile.deps: Makefile StoreConfig.hh $(SRCS)
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps
