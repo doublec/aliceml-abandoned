@@ -23,6 +23,8 @@ struct
     (* Erstellt eine Liste y0,y1,y2,...,yn für einen Funktionsaufruf *)
     fun ParmList n nil = ""
       | ParmList n [VOID] = ""
+      | ParmList n ((ELLIPSES _)::tr) = ParmList n tr
+      | ParmList n (t::(ELLIPSES _)::tr) = ParmList n (t::tr)
       | ParmList n [t'] = cast t' ("y"^(Int.toString n))
       | ParmList n (t'::xr) = (cast t' ("y"^(Int.toString n))) ^ "," ^ (ParmList (n+1) xr)
   
@@ -115,50 +117,24 @@ struct
 	    val types_file = TextIO.openOut ("types.aml")
 	    val _ = TextIO.output(types_file,
 				  "structure types : \n"^
-				  "sig\n\ttype 'a pointer\n\ttype cfun\nend\n=\n"^
-				  "struct\n\ttype 'a pointer\n\ttype cfun\nend\n");
+				  "sig\n\ttype 'a pointer\n\ttype c_fun\n"^
+				  "\ttype c_char\n\ttype c_short\n\ttype c_int\n\ttype c_long\n\ttype c_longlong\n"^
+	                          "\ttype c_float\n\ttype c_double\n\ttype c_longdouble\n"^
+				  "end\n=\n"^
+				  "struct\n\ttype 'a pointer\n\ttype c_fun\n"^
+				  "\ttype c_char\n\ttype c_short\n\ttype c_int\n\ttype c_long\n\ttype c_longlong\n"^
+	                          "\ttype c_float\n\ttype c_double\n\ttype c_longdouble\n"^
+				  "end\n");
 	    val _ = TextIO.closeOut types_file
-
-	    val _ = Container.initialize name
-
-	    (* Alle Basisfunktionen zum Container hinzufügen *)
-
-	    
-	    val _ = addType("pointer",true,"types")
-	    val _ = addType("cfun",false,"types")
-
-	    val _ = addFun("new",[INT SIGNED],POINTER(TYPE_VAR NONE),"malloc(y0);")
-	    val _ = addFun("delete",[POINTER(TYPE_VAR NONE)],VOID,"free(y0);")
-	    val _ = addFun1("pointer",[POINTER(TYPE_VAR(SOME 0))],POINTER(POINTER(TYPE_VAR(SOME 0))),
-			    (getCType(POINTER(POINTER(TYPE_VAR(SOME 0)))))^" r = "^
-			    (cast (POINTER(POINTER(TYPE_VAR(SOME 0)))) ("malloc(sizeof(void*))"))^";\n\t*r = y0;")
-	    val _ = addFun("unref",[POINTER(POINTER(TYPE_VAR(SOME 0)))],POINTER(TYPE_VAR(SOME 0)),"*"^
-			   (cast (POINTER(POINTER(TYPE_VAR(SOME 0)))) "y0")^";");
-	    val _ = addFun("cast",[POINTER(TYPE_VAR(SOME 0))],POINTER(TYPE_VAR(SOME 1)),"y0;")
-	   
-
-	    val _ = register_simple_type (CHAR SIGNED)
-	    val _ = register_simple_type (SHORT SIGNED)
-	    val _ = register_simple_type (LONG SIGNED)
-	    (*val _ = register_simple_type (LONGLONG SIGNED)*)
-	    val _ = register_simple_type (INT SIGNED)
-	    val _ = register_simple_type FLOAT
-	    val _ = register_simple_type DOUBLE
-	    (*val _ = register_simple_type LONGDOUBLE*)
-
-	    val _ = print "(done)\n"
-		
-	    (* Binding speichern *)
-	    val _ = print "Saving Binding ... "
-	    val _ = saveBinding nil [("types","types")] nil
-	    val _ = print "(done)\n"
 	in () end
 
-	
+   	
     (* Erstellt das Binding *)
-
+ 
     fun create header includes =
 	let
+	    fun simpleAddType name = addType(name,false,"")
+
 	    val (name,ext) = Util.split_filename header
 	    val _ = Container.initialize name
 
@@ -174,10 +150,19 @@ struct
 		
 	    val _ = print "Creating Binding ... "
 
-	    val _ = addType("pointer",true,"C")
-	    val _ = addType("cfun",false,"C")
+	    val _ = addType("pointer",true,"types")
+	    val _ = addType("c_fun",false,"types") 
+	    val _ = addType("c_char",false,"types")
+	    val _ = addType("c_short",false,"types")
+	    val _ = addType("c_int",false,"types")
+	    val _ = addType("c_long",false,"types")
+	    val _ = addType("c_longlong",false,"types")
+	    val _ = addType("c_float",false,"types")
+	    val _ = addType("c_double",false,"types")
+	    val _ = addType("c_longdouble",false,"types")	
 
 	    val _ = map addType (Config.getTypeDep())
+	    val _ = map simpleAddType (Config.getDefinedTypes())
 
 	    val _ = map create_binding tree
 	    val _ = map Container.addUserFun (Config.getUserFuns())
@@ -185,7 +170,7 @@ struct
 
 	    (* Binding speichern *)
 	    val _ = print "Saving Binding ... "
-	    val _ = saveBinding includes (("C","C")::(Config.getImports())) []
+	    val _ = saveBinding includes (("types","types")::(Config.getImports())) []
 	    val _ = print "(done)\n"
 	    
 	in () end
