@@ -1,16 +1,57 @@
-structure Composer =	(* dummy *)
-  struct
-    structure Sig =
-      struct
-        type t = Inf.sign
-	fun matches(j1,j2) = false
-      end
+(* Bootstrap Composer *)
 
-    exception Corrupt
+signature SIGNATURE =
+    sig
+	type t
 
-    fun sign url = Inf.empty()
-    fun start url = ()
-  end
+	val matches: t * t -> bool
+    end
+
+signature COMPOSER' =
+    sig
+	structure Sig: SIGNATURE
+
+	exception Corrupt
+
+	val sign:	Url.t -> Sig.t		(* [Corrupt, IO.Io] *)
+	val start:	Url.t -> unit		(* [Corrupt, IO.Io] *)
+
+	val setAcquisitionMethod: (Url.t -> Sig.t) -> unit
+    end
+
+structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
+    struct
+	structure Sig =
+	    struct
+		type t = Inf.sign
+
+		fun matches (j1, j2) = false
+	    end
+
+	exception Corrupt
+
+	val acquire: (Url.t -> Sig.t) ref =
+	    ref (fn _ => raise Crash.Crash "Composer.acquire")
+
+	fun setAcquisitionMethod f = acquire := f
+
+	structure UrlMap = MakeHashImpMap(Url)
+
+	val signTable: Sig.t UrlMap.t = UrlMap.new ()
+
+	fun sign url =
+	    case UrlMap.lookup (signTable, url) of
+		SOME sign => sign
+	      | NONE =>
+		    let
+			val sign = !acquire url
+		    in
+			UrlMap.insertDisjoint (signTable, url, sign);
+			sign
+		    end
+
+	fun start url = ()
+    end
 
 structure AbstractionPhase = MakeAbstractionPhase(Composer)
 structure ElaborationPhase = MakeElaborationPhase(Composer)
@@ -131,4 +172,43 @@ structure Main :> MAIN =
     fun comifyStringToFile(s,n)	= processString (toFile comify n) s
     fun comifyFileToFile(n1,n2)	= processFile (toFile comify n2) n1
 
+    (* Tell the composer how to compile Alice source files *)
+
+    fun compileSign filename =
+	let
+	    val (_, (_, sign)) = translateFile filename
+	in
+	    case Inf.items sign of
+		[item] => Inf.asSig (valOf (#3 (Inf.asInfItem item)))
+	      | _ => raise Crash.Crash "Composer.compileSign"
+	end
+
+    fun parseFileUrl url =
+	(case (Url.getScheme url, Url.getAuthority url) of
+	     ((NONE | SOME "file"), NONE) => ()
+	   | _ => raise Crash.Crash "Main.parseFileUrl";
+	 Url.setScheme (url, NONE);
+	 Url.toString url)
+
+    fun changeExtension (filename, fro, to) =
+	let
+	    val n = String.size filename
+	    val m = String.size fro
+	in
+	    if String.substring (filename, n - m, m) = fro then
+		String.substring (filename, 0, n - m) ^ to
+	    else
+		raise Crash.Crash "Main.changeExtension"
+	end
+
+    val _ =
+	Composer.setAcquisitionMethod
+	(fn url =>
+	 let
+	     val targetFilename = parseFileUrl url
+	     val sourceFilename =
+		 changeExtension (targetFilename, ".ozf", ".sml")
+	 in
+	     compileForMozart (sourceFilename, targetFilename)
+	 end)
   end
