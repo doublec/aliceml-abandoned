@@ -1,17 +1,7 @@
-- make fixpoints explicit
-- reconsider open types: probably as a special builtin type 'a <ext>;
-  change syntax to exttype
+- change syntax to exttype
+- clean up cell maps
+- clear up signature intersection
 - compress: integrate rehash-consing; use compress_state
-- remove indexed labels from signatures by converting hiding to local
-- remove definitionals from signatures by adding singletons
-- remove signature intersection
-- smarter handling of substitutions
-- make tuple special case of products/rows
-- separate suspensions from applications
-- separate types from type constructors
-- separate types from type schemes (interferes with HO quantification needed
-  in intermediate)
 - get rid of 'con somehow
-- make quantifications in interfaces explicit
 - clean up VarDec stuff in elaborator
 - move PP stuff from lib/rtt to compiler/frontend-common
