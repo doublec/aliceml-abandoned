@@ -62,6 +62,8 @@ protected:
   static void InterpretLambda(Block *instr);
   static void InterpretApplication(Block *instr);
   static void InterpretBegin(Block *instr);
+  static void InterpretSetQ(Block *instr);
+  static void InterpretSetCxr(NodeType type, Block *instr);
   static void InterpretTime();
   static void InterpretRemove();
   static char *InterpretOp(Block *p);
