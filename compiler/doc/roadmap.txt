@@ -54,7 +54,7 @@ FlatGrammar
  |	- Reraise detection
  |	- Test parallelization
  |	- Selection evaluation
- |	- Selection lifting (TBD)
+ |	- Selection lifting
  |	- Constant folding (TBD)
  |	- Constant hoisting (TBD)
  |	- Inlining (TBD)
@@ -68,7 +68,7 @@ FlatGrammar'
  V
 FlatGrammar''
  |
- | DeadCodeEliminationPhase (TBD):
+ | DeadCodeEliminationPhase:
  |	- Removal of unreferenced side-effect-free expressions
  |	- Removal of bogus shared statements
  |	- Removal of unused imports
