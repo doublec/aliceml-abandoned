@@ -59,6 +59,7 @@ struct
 	val dumpWidth				= ref 79
 
 	val dumpPhases				= ref false
+        val dumpPhaseTimings                    = ref false
 	val dumpAbstractionResult		= ref false
 	val dumpElaborationResult		= ref false
 	val dumpElaborationSig			= ref false

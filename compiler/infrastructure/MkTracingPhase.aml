@@ -24,18 +24,22 @@ struct
     open Phase
 
     fun translate (desc, context, rep) =
-          if not (!Switches.Debug.dumpPhases) then 
+          if not (!Switches.Debug.dumpPhases) andalso 
+             not (!Switches.Debug.dumpPhaseTimings) then 
             Phase.translate (desc, context, rep) 
           else let 
-              val _     = TextIO.output (Switches.Debug.dumpOut, "-- " ^ name ^ "... ")
+              val _     = TextIO.output (Switches.Debug.dumpOut, "-- " ^ name ^ "...\n")
               val _     = TextIO.flushOut Switches.Debug.dumpOut
               val timer = Timer.startRealTimer ()
               val res   = Phase.translate (desc, context, rep)
               val t     = Timer.checkRealTimer timer
               val secs  = Time.toReal t
           in
-              TextIO.output (Switches.Debug.dumpOut, 
-                    Real.toString secs ^ " secs\n");
+              if (!Switches.Debug.dumpPhaseTimings) then 
+                (TextIO.output (Switches.Debug.dumpOut, "** " ^ name ^ 
+                                " took " ^ Real.toString secs ^ " secs\n");
+                 TextIO.flushOut Switches.Debug.dumpOut)
+              else ();
               res
           end    
 	

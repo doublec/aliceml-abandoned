@@ -70,8 +70,10 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t--dryrun\n\
 	    \\t\tCompile standard input, not writing any output.\n\
 	    \\t--dump-phases\n\
-	    \\t\tTrace the running phases.\n\
-	    \\t--dump-abstraction-result\n\
+            \\t\tTrace the running phases.\n\
+	    \\t--dump-phase-timings\n\
+            \\t\tShow timings for phase execution.\n\
+            \\t--dump-abstraction-result\n\
 	    \\t\tDump abstract representation.\n\
 	    \\t--dump-elaboration-result\n\
 	    \\t\tDump abstract representation after elaboration.\n\
@@ -115,6 +117,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	     ("retain-full-import", Language.retainFullImport),
 	     ("silent-fail", Language.silentFailExp),
 	     ("dump-phases", Debug.dumpPhases),
+             ("dump-phase-timings", Debug.dumpPhaseTimings),
 	     ("dump-abstraction-result", Debug.dumpAbstractionResult),
 	     ("dump-elaboration-result", Debug.dumpElaborationResult),
 	     ("dump-elaboration-sig", Debug.dumpElaborationSig),

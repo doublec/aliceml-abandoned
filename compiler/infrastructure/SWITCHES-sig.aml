@@ -56,6 +56,7 @@ sig
 	val dumpWidth :				int ref
 
 	val dumpPhases :			bool ref
+        val dumpPhaseTimings :                  bool ref
 	val dumpAbstractionResult :		bool ref
 	val dumpElaborationResult :		bool ref
 	val dumpElaborationSig :		bool ref
