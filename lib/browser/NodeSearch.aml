@@ -113,11 +113,12 @@ struct
 					  (curx - Layout.get_l_xdim(a)
 					   , cury - Layout.get_ydim(a) +1)
 						    else 
-					  (curx -  Layout.get_xdim(a)
+					  (curx -  Layout.get_l_xdim(a) (*was xdim *)
 					   ,cury)
-					      | _ => 
-						(curx - Layout.get_xdim(a)
-						 ,cury))
+					| Empty => (curx,cury)
+					| _ => 
+					    (curx - Layout.iterFindLX(a) (* was xdim *) 
+					     ,cury- Layout.get_ydim(a) +1 ))
 						  end))
 			     val found = (Array.foldl hor_funct (x,y)	
 					  (Helper.getKids(node)); NONE)

@@ -1,90 +1,230 @@
-import structure NewNode from "NewNode";
-import structure Layout from "Layout";
-import structure UnsafeInspector from "UnsafeInspector";
-import structure Reflect from "x-alice:/lib/system/Reflect";
-
-(* Tupel mir verschiedenen "einfachen" Werten - zum Testen des Breitenfilters
-   geeignet *)
-
-structure STuple = Reflect.ReflectType 
-    (type t = int * real * string * word * exn * char);
-val s_tuple = STuple.x;
-exception Error;
-
-UnsafeInspector.inspect ((111,5.0,"hi",0w17,Error,#"d"),s_tuple);
-
-(* Record mit Referenz, Vektor und Array - zum Testen des RelModus mit
-   struktureller Gleichheit geeignet *)
-
-structure RVARec = Reflect.ReflectType 
-    (type t = {ref: string ref,vec1: (int * int) vector,
-	       vec2: (int * int) vector, arr: real array});
-val rva_rec = RVARec.x;
-val my_array = let val a = Array.array(2,1.0)
-		   val _ = Array.update(a,0,2.0)
-	       in a end;
-
-UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
-                          vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
-
-(* Datentyp *)
-datatype foo = A 
-             | B of int ref list
-             | C of foo 
-             | D of (string vector vector * int vector vector) list
-
-structure DataType = Reflect.ReflectType (type t = foo);
-val data_type = DataType.x;
-val same = ref 44; (* zum Testen des " Relation Mode - Token Equality" *)
-
-UnsafeInspector.inspect (A,data_type);
-UnsafeInspector.inspect (B [same,same,same],data_type);
-UnsafeInspector.inspect (C (C (B [ref 55,ref 88])),data_type);
-UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]]}                  ],
-			 data_type);
-
-structure Test = Reflect.ReflectType (type t = int vector list);
-UnsafeInspector.inspect([#[1,2],#[1,1]],Test.x);
-
 (*
-structure IntList = Reflect.ReflectType (type t = (int * int) list);
-val int_list = IntList.x;
-val rec l = (3,4)::l;
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
 
-UnsafeInspector.inspect (l,int_list); *)
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Types from "Types"
+import structure Helper from "Helper"
+import structure RelManDictionary from "RelManDictionary"
+import structure MainDictionary from "MainDictionary"
+import structure Dictionaries from "Dictionaries"
+import structure WindowHelper from "WindowHelper"
+import structure Settings from "Settings"
+import structure Services from "Services"
+import signature LAYOUT from "LAYOUT-sig"
 
-(* Futures *)
-structure Fut = Reflect.ReflectType (type t = int vector list);
-val fut = Fut.x;
-val prom1 = Promise.promise();
-val prom2 = Promise.promise();
-val future1 = Promise.future prom1;
-val future2 = Promise.future prom2;
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 
-UnsafeInspector.inspect([future1,future2,future1,future1],fut);
+open Types Helper
 
-Promise.fulfill(prom1,#[1,2]);
+structure Layout :> LAYOUT = 
+struct
 
-Promise.fulfill(prom2,#[2,3,4,5,6]);
+    exception LayoutError
 
-(* Promises *)
-structure Prom = Reflect.ReflectType (type t = char Promise.promise list);
-val promise1 = Promise.promise();
-val promise2 = Promise.promise();
+    fun sum_up (nil,f) = 0
+      | sum_up ([x],f) = f(x)
+      | sum_up (x::xr,f) = f(x) + sum_up(xr,f) 
+			      
+    and max (nil,f) = 0
+      | max ([x],f) = f(x)
+      | max (x::xr,f) = let val m = Int.max(f(x),f(hd(xr)) )
+			in Int.max(m, max(tl(xr),f) )
+			end
 
-UnsafeInspector.inspect ([promise2,promise1,promise2],Prom.x);
+    (* get_xdim *)
+    and get_xdim n = case n of Simple(r) => !(#width(r))
+                             | Concat(r) => !(#width(r))
+                             | Container(r) => !(#width(r))
+                             | RelNode(r) => !(#width(r))
+                             | RelRefNode(r) => !(#width(r))
+			     | Limit(_) => 2
+                             | Empty => 0
 
-Promise.fulfill(promise1,#"o");
+    (* get_ydim *)
+    and get_ydim n = case n of Concat(r) => !(#height(r))
+                             | Container(r) => !(#height(r))
+                             | RelNode(r) => !(#height(r))
+                             | Empty => 0
+                             | _ => 1
 
-Promise.fulfill(promise2,#"n");
+    (* get_l_xdim *)
+    and get_l_xdim n = case n of Container(r) => !(#l_width(r))
+                               | _ => raise LayoutError
 
-(***)
+    (* get_l_xdim_or_xdim *)
+    and get_l_xdim_or_xdim (Container(r)) = !(#l_width(r))
+      | get_l_xdim_or_xdim n = get_xdim n
+	
+    and iterFindLX n = case n of
+        Container _ => get_l_xdim(n)
+      | Concat(r) 
+	=> let
+	       val li = Array.toList(#kids(r))
+	       val li' = List.take(li,List.length(li)-1)
+	       val seclast = List.last(li')
+	       val l_x = if setsVertical seclast 
+			     then iterFindLX (seclast)
+				 + sum_up(#2(List.partition 
+					     (fn i => i = seclast) li),
+					  iterFindLX)
+			 else sum_up(li,iterFindLX)
+	   in
+	       l_x
+	   end
+       | RelNode(r) => (iterFindLX(!(#content(r)))) + 
+				(if isSimple (!(#content(r)))
+				     orelse !(#counter(r)) = 1 
+				     then 0 
+				 else String.size(#rep(r)))
+      | _ => get_xdim(n)
 
-val x = lazy 4711;
+    fun st (a,_,_) = a
+    fun nd (_,b,_) = b
+    fun rd (_,_,c) = c
 
-structure Int = Reflect.ReflectType (type t = int);
+    fun maxi select  = fn (triple,m) => Int.max(select(triple),m)
+    fun sum select  = fn (triple,s) => select(triple) + s 
 
-UnsafeInspector.inspect(x,Int.x);
+    (* layout *)
+
+    and layout (Concat(r) as n) = 
+        let 
+	    val no_kids = Array.length(#kids(r))
+	    val li = List.tabulate(no_kids, 
+				   (fn i => layout(Array.sub(#kids(r),i))))
+	    val (xdim,l_xdim) = case no_kids of
+		0 => (0,0)
+	      | 1 => (#1(hd(li)),#3(hd(li)))
+	      | _ => 
+		    let 
+			val seclast = Array.sub(#kids(r),
+						no_kids -2)
+			val li' = List.take(li,
+					    List.length(li)-1)
+			val xd = if setsVertical(seclast)
+				     then 
+				     if 
+				      Int.>=((#3(List.nth(li,no_kids -2))),
+				        (#1(List.nth(li,no_kids -2))))
+					 then 
+					     List.foldl (sum(st)) 0 li
+				     else List.foldl (sum(st)) 0 li'
+				 else  List.foldl (sum(st)) 0 li
+			val lx = List.foldl (sum(rd)) 0 li
+		    in
+			(xd,lx)
+		    end
+	    val ydim = List.foldl (maxi(nd)) 0 li
+	in
+	    (#width(r) := xdim  
+	     ; #height(r) := ydim
+	     ; if !(#status(r)) = DAZZLED 
+		   then #status(r) := DIRTY
+	       else ()
+		   ; (xdim,ydim,l_xdim))   
+	end 
+      | layout (Container(r) as n) = 
+	if !(#status(r)) = DAZZLED
+	    then
+		let 
+		    val no_kids = Array.length(#kids(r))
+		    val li = List.tabulate(no_kids, 
+			      	   (fn i => layout(Array.sub(#kids(r),i))))
+		    val xdim = if (setsVertical n)
+				   then List.foldl (maxi(st)) 0 li
+			       else List.foldl (sum(st)) 0 li
+		    val ydim = if (setsVertical n)
+				   then List.foldl (sum(nd)) 0 li
+			       else List.foldl (maxi(nd)) 0 li
+		    val l_xdim =  if (setsVertical n) 
+				      then if no_kids = 0
+					       then 0
+					   else #3(List.last(li))
+				  else xdim
+		in (#width(r) := xdim  
+		    ; #height(r) := ydim
+		    ; #l_width(r) := l_xdim
+		    ; #status(r) := DIRTY
+		    ; (xdim,ydim,l_xdim))   
+		end
+	else (get_xdim(n),get_ydim(n),get_l_xdim(n)) 
+      | layout (Simple(r) as n) = 
+	    (if !(#status(r)) = DAZZLED
+		 then #status(r) := DIRTY
+	     else ()
+		 ; (get_xdim(n),get_ydim(n),get_xdim(n)) )
+      | layout (Limit(r) as n) = 
+		 (if !(#status(r)) = DAZZLED
+		      then #status(r) := DIRTY
+		  else ()
+		      ; (get_xdim(n),get_ydim(n),get_xdim(n)) )
+      | layout (RelRefNode(r) as n) = 
+		      (if !(#status(r)) = DAZZLED
+			   then #status(r) := DIRTY
+		       else ()
+			   ; (get_xdim(n),get_ydim(n),get_xdim(n)) ) 
+      | layout (RelNode(r) as n) 
+	    = (let
+		   val (cxdim,cydim,clxdim) = layout(!(#content(r)))
+		   val l_xdim = clxdim +  (if isSimple (!(#content(r)))
+			                orelse !(#counter(r)) = 1 
+						then 0 
+					    else String.size(#rep(r)))
+		in
+		    (if !(#status(r)) = DAZZLED
+			 then let val xdim = if isSimple (!(#content(r)))
+			     orelse !(#counter(r)) = 1 
+						 then cxdim 
+					     else String.size(#rep(r)) + 
+						 cxdim
+				  val ydim =  cydim
+			      in (#width(r) := xdim  
+				  ; #height(r) := ydim
+				  ; #status(r) := DIRTY) 
+			      end   
+		     else ()
+			 ; (get_xdim(n),get_ydim(n),l_xdim) )
+		end) 
+      | layout (Empty) = (0,0,0) 
+    
+   
+   (* calcMaxXDim *) 
+   fun calcMaxXDim (dict,i)  = 
+       if i > MainDictionary.getHighestIndexAssigned(dict) 
+	   then 0
+       else
+	   case MainDictionary.lookup(dict,i) of
+	       NONE => calcMaxXDim(dict,i+1)
+	     | SOME (node,_) => Int.max( get_xdim(node),calcMaxXDim(dict,i+1)) 
+				
+
+    fun setVisible (x,y) = let
+			       val w = Services.fontWidth()
+			       val h = Services.fontHeight()
+			       val rx =  Real.fromInt(w * x)
+			       val ry =  Real.fromInt(h * y)
+			   in
+			       (if Real.> (rx,!(Settings.max_x)) 
+				    then Settings.max_x := rx 
+				else Settings.max_x := 
+				    Real.fromInt(w * 
+				    calcMaxXDim (Dictionaries.dict,0))
+				    ; Settings.max_y 
+				    := Real.+(!Settings.max_y,ry))
+			   end
+
+end
+
+  
