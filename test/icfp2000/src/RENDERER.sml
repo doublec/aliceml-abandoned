@@ -1,10 +1,10 @@
 signature RENDERER =
 sig
     type angle  = real (* radiant *)
-    type point  = Vector.vector
-    type vector = Vector.vector
+    type point  = Vector.t
+    type vector = Vector.t
     type matrix = Vector.matrix
-    type color  = {red : real, green : real, blue : real}
+    type color  = Color.t
 
     datatype plane_face    = PlaneSurface
     datatype sphere_face   = SphereSurface

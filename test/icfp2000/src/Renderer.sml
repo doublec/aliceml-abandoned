@@ -3,9 +3,8 @@ structure Renderer :> RENDERER =
 	type angle  = real (* radiant *)
 	type point  = Vector.t
 	type vector = Vector.t
-	type row    = real * real * real * real
-	type matrix = row * row * row
-	type color  = {red : real, green : real, blue : real}
+	type matrix = Vector.matrix
+	type color  = Color.t
 
 	datatype plane_face    = PlaneSurface
 	datatype sphere_face   = SphereSurface
@@ -199,7 +198,13 @@ structure Renderer :> RENDERER =
 		val dir = Vector.sub (pos, point)
 	    in
 		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
-		else SOME color   (*--** attenuation *)
+		else
+		    let
+			val dist = Vector.length dir
+			val attenuation = 100.0 / (99.0 + dist * dist * dist)
+		    in
+			SOME (Color.scale (attenuation, color))
+		    end
 	    end
 	  | intensity (Spot (color, pos, at, cutoff, exp), scene, point) =
 	    let
