@@ -37,7 +37,9 @@ in
                                  else "")^
 				"Usage: alicedep \
 			        \[--mozart|--seam|--dotnet] \
-				\<file> ...\n");
+				\<file> ...\n\n\
+                                \Report bugs using our online bug-tracking system:\n\
+                                \http://www.ps.uni-sb.de/alice/bugzilla/\n");
 		 if flag then OS.Process.failure
                  else OS.Process.success)
 
