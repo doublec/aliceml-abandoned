@@ -351,8 +351,9 @@ public:
   }
 
   Class *GetClass() {
-    //--** may fail for strings
-    return Class::FromWordDirect(GetArg(CLASS_POS));
+    Class *theClass = Class::FromWord(GetArg(CLASS_POS));
+    Assert(theClass != INVALID_POINTER);
+    return theClass;
   }
   bool IsInstanceOf(Class *aClass) {
     Assert(!aClass->IsInterface());
@@ -586,6 +587,7 @@ protected:
     VALUE_INDEX, // BaseArray(Char)
     OFFSET_INDEX, // int
     COUNT_INDEX, // int
+    HASH_INDEX, // int
     SIZE
   };
 private:
@@ -615,6 +617,7 @@ public:
     object->InitInstanceField(VALUE_INDEX, array->ToWord());
     object->InitInstanceField(OFFSET_INDEX, Store::IntToWord(offset));
     object->InitInstanceField(COUNT_INDEX, Store::IntToWord(length));
+    object->InitInstanceField(HASH_INDEX, Store::IntToWord(0));
     return static_cast<JavaString *>(object);
   }
   static JavaString *New(u_int length) {
