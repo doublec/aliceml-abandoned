@@ -12,13 +12,6 @@ struct
     type arg = GtkTypes.arg
     type callBackFunction = object * arg list -> unit
 
-    type refInfo = (object -> object) * (object -> unit)
-    val GtkWidgetRef = (NativeGtkCore.widgetRef, NativeGtkCore.widgetUnref)
-    val GtkObjectRef = (NativeGtkCore.objectRef, NativeGtkCore.objectUnref)
-    val GObjectRef = (NativeGtkCore.gObjectRef, NativeGtkCore.gObjectUnref)
-    val DeleteRef = (fn p => p, NativeGtkCore.deleteUnref)
-    val NoRef = (fn p => p, fn _ => ())
-
     val printObject = NativeGtkCore.printObject
 
     (* signal table functions *)
@@ -26,9 +19,6 @@ struct
 	let
 	    val connid = NativeGtkCore.signalConnect (obj,signame,after)
 	    val _      = NativeGtkCore.signalMapAdd(connid,callback)
-	    val (_,_,ids) = NativeGtkCore.weakMapCondGet
-		                (obj, (NULL,fn _ => (), ref nil))
-	    val _ = (ids := (connid::(!ids)))
 	in
 	    connid
 	end
@@ -58,7 +48,7 @@ struct
 
     (* finalization handling *)
     local
-	fun addDestroyEvent (obj as (p,_,_)) =
+	fun addDestroyEvent obj =
 	    let
                 (* - Gtk ruft "destroy", damit Anwendung alle (Gtk-)Referenzen
 		     auf Objekt loswird
@@ -74,28 +64,29 @@ struct
 		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
 		fun event _ =
 		    let val x = ref obj
-		    in	List.app NativeGtkCore.signalMapRemove (!(#3(!x)))
+			val ids = nil (* NativeGtkCore.signalMapGetIds *)
+		    in	(!x) ; 
+			List.app NativeGtkCore.signalMapRemove ids
 		    end
 	    in
-		( doSignalConnect(p,"destroy",event,true) ; () )
+		( doSignalConnect(obj,"destroy",event,true) ; () )
 	    end
 
-	fun newObject (p,refInfo,hasSignals) =
+	fun newObject obj =
 	    let
-		val p'  = #1(refInfo) p
-		val obj = (p', #2(refInfo), ref nil)
+		val obj' = NativeGtkCore.refObject obj
 	    in
-		( if hasSignals then addDestroyEvent (obj) else () ;
-  	          NativeGtkCore.weakMapAdd (p',obj) ;
-		  p' )
+		( if NativeGtkCore.hasSignals obj'
+		      then addDestroyEvent obj'
+		      else () ;
+  	          NativeGtkCore.weakMapAdd obj' ;
+		  obj' )
 	    end 
     in
-	fun addObject (p,refInfo,hasSignals) =
-	    if p = NULL orelse NativeGtkCore.weakMapIsMember p 
-		 then p
-	         else newObject (p,refInfo,hasSignals)
-	fun finalizer nil                        = ()
-	  | finalizer ((obj as (p,unref,_))::xs) = ( unref p ; finalizer xs )
+	fun addObject obj =
+	    if obj = NULL orelse NativeGtkCore.weakMapIsMember obj
+		 then obj
+	         else newObject obj
     end
 
     (* main loop *)
@@ -124,12 +115,9 @@ struct
 	let
 	    val eventStream : (int * object * arg list) list = 
 	                                     NativeGtkCore.getEventStream()
-	    val finalStream : (object * (object->unit) * int list ref) list =
-		                             NativeGtkCore.getFinalStream()
 	in
 	    NativeGtkCore.init ();
 	    spawn (listener eventStream);
-	    spawn (finalizer finalStream);
 	    spawn (mainLoop initPoll)
 	end
 end

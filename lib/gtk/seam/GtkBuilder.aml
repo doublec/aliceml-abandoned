@@ -15,6 +15,7 @@ import structure Gtk         from "../Gtk"
 import structure Gdk         from "../Gdk"
 import structure GnomeCanvas from "../GnomeCanvas"
 import signature GtkBuilder  from "GtkBuilder-sig"
+import structure GtkCore from "../GtkCore"
 
 local
     datatype arg   = datatype Gtk.arg
@@ -306,6 +307,8 @@ in
 	      | MakeTextContents (x::xs) = x^"\n"^(MakeTextContents xs)
 	    and MakeTextWidget ({xdim=xdim, ydim=ydim, text=ts}) =
 		let
+		    val l = Gtk.labelNew "abc"
+		    val _ = GtkCore.printObject l
 		    val buf = Gtk.textBufferNew Gtk.NULL
 		    val s = MakeTextContents ts
 		    val _ = Gtk.textBufferSetText(buf, s, size s)

@@ -21,6 +21,15 @@ int main(int argc, char *argv[])
   g_signal_connect (app, "delete_event",
 		    G_CALLBACK (quit_cb), NULL);
 
+  
+  GdkColormap* map = gdk_colormap_get_system();
+  GdkColor* black = new GdkColor;
+  GdkColor* white = new GdkColor;
+  memset(black, 0, sizeof(GdkColor));
+  memset(white, 255, sizeof(GdkColor));
+  gdk_colormap_alloc_color(map, black, false, true);
+  
+  
   GtkWidget *canvas = gnome_canvas_new();
   GnomeCanvasGroup *rootGroup = gnome_canvas_root(GNOME_CANVAS(canvas));
   gnome_canvas_item_new(rootGroup,
@@ -29,9 +38,14 @@ int main(int argc, char *argv[])
 			"y1",(double)10,
 			"x2",(double)(WIDTH-10),
 			"y2",(double)(HEIGHT-10),
-			"fill_color","white",
-			"outline_color","black",
+			"fill_color_gdk",white,
+			"outline_color_gdk", black,
 			NULL);
+  //  memset(black, 100, sizeof(GdkColor));
+  //  memset(white, 100, sizeof(GdkColor));
+  delete black;
+  delete white;
+
 
   gtk_container_add (GTK_CONTAINER (app), canvas);
   gtk_widget_show_all (app);

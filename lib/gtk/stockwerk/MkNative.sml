@@ -39,6 +39,40 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
              outro = []
             } : Util.fileInfo
 
+        local
+	    val classes = ref nil
+	    exception NoUnref
+	    val deleteObjects = nil
+(*		["_GtkTextIter", "_GtkTreeIter",
+				 "_GdkColor", "_GdkPoint", "_GdkRectangle"]*)
+
+	    fun buildClassList' (STRUCT (name,(_,t)::_)) =
+		(case removeTypeRefs t of
+		     STRUCTREF sup => ( classes := ((sup,name)::(!classes)) )
+		   | _             => () 
+		)
+	      | buildClassList' _ = ()
+
+	    fun getParentClass name nil = raise NoUnref
+	      | getParentClass name ((sup, n)::cs) = 
+		if n=name then sup else getParentClass name cs
+
+	    fun getUnrefFun' "_GObject"   = "TYPE_G_OBJECT"
+	      | getUnrefFun' "_GtkObject" = "TYPE_GTK_OBJECT"
+	      | getUnrefFun' "_GtkWidget" = "TYPE_GTK_WIDGET"
+	      | getUnrefFun' name        = 
+		  if Util.contains name deleteObjects
+		      then "TYPE_OWN"
+		      else getUnrefFun' (getParentClass name (!classes))
+	in
+	    fun buildClassList tree = List.app buildClassList' tree
+	    fun getTypeInfo t = 
+		(case removeTypeRefs t of 
+		     STRUCTREF name => getUnrefFun' name
+		   | _              => raise NoUnref)
+		     handle _ => "TYPE_UNKNOWN"
+	end
+	    
         (* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
 	let
@@ -174,13 +208,14 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		fun retConv (NUMERIC(_,false,_)) n="Store::IntToWord("^n^")"
 		  | retConv (NUMERIC(_,true ,_)) n="Real::New("^n^")->ToWord()"
 		  | retConv BOOL       n="BOOL_TO_WORD("^n^")"
-		  | retConv(POINTER _) n="Store::UnmanagedPointerToWord("^n^")"
+		  | retConv(POINTER p) n=
+		         "PointerToObject("^n^","^(getTypeInfo p)^")"
                   | retConv (STRING _) n="String::New(reinterpret_cast<"^
 		                         "const char *>("^n^"))->ToWord()"
 		  | retConv (LIST(tname,STRING _))n=tname^"ToStringList("^n^")"
 		  | retConv (LIST(tname,_))       n=tname^"ToObjectList("^n^")"
 		  | retConv (FUNCTION _) n = 
-			 "Store::UnmanagedPointerToWord((void*)("^n^"))"
+			 "PointerToObject((void*)("^n^"),0)"
 		  | retConv (TYPEREF(_,t)) n = retConv t n
 		  | retConv (ENUMREF _) n    = "Real::New("^n^")->ToWord()"
 		  | retConv _ n = n
@@ -329,6 +364,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
         fun create tree =
 	let
 	    val _ = print (Util.separator("Generating "^nativeName))
+	    val _ = buildClassList tree
 	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
 	    val myItems = Util.filters [isItemOfSpace space, checkItem] 
 			    (myItems'@Special.changedFuns@Special.specialFuns)

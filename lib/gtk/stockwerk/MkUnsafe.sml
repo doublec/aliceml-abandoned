@@ -148,8 +148,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 			let
 			    val (unref, hasSignals) = getUnrefFun t'
 			in
-			    "GtkCore.addObject("^vname^","^unref^","^
-			    (if hasSignals then "true" else "false")^")"
+			    "GtkCore.addObject("^vname^")"
 			end
 	         | _ => vname)
 	in

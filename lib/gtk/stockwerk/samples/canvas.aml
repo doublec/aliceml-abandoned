@@ -16,9 +16,6 @@ import structure Gtk       from "../Gtk"
 import structure GnomeCanvas from "../GnomeCanvas"
 
 local
-(** warum muss erst GdkUnsafe geladen werden? **)
-    val _ = Gdk.colorNew(0,0,0) 
-
     fun Delete _ = OS.Process.exit OS.Process.success
     val Window   = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
     val _        = Gtk.signalConnect (Window, "delete-event", Delete)

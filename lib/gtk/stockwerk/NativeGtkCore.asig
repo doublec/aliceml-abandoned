@@ -13,13 +13,8 @@ sig
 	val gtkTrue : unit -> int
 	val gtkFalse : unit -> int
 	
-	val widgetRef : 'object -> 'object
-	val widgetUnref : 'object -> unit
-	val objectRef : 'object -> 'object
-	val objectUnref : 'object -> unit
-	val gObjectRef : 'object -> 'object
-	val gObjectUnref : 'object -> unit
-	val deleteUnref : 'object -> unit
+	val refObject : 'object -> 'object
+	val hasSignals : 'object -> bool
 
 	val printObject : 'object -> unit
 
@@ -27,10 +22,9 @@ sig
         val signalDisconnect : 'object * int -> unit
 	val getEventStream : unit -> 'stream
 
-	val weakMapAdd : 'object * 'info -> unit
+	val weakMapAdd : 'object -> unit
         val weakMapIsMember : 'object -> bool
-        val weakMapCondGet : 'object * 'info -> 'info
- 	val getFinalStream : unit -> 'stream
+        val weakMapCondGet : 'object * 'object -> 'object
 
 	val signalMapAdd : 'connid * 'callback -> unit
 	val signalMapRemove : 'connid -> unit

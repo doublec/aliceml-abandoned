@@ -1,5 +1,5 @@
 MORE = -I ~/devel/alice/install/include
-CC = gcc `pkg-config --cflags --libs gtk+-2.0 libgnomecanvas-2.0` $(MORE)
+CC = g++ `pkg-config --cflags --libs gtk+-2.0 libgnomecanvas-2.0` $(MORE)
 
 ALICEC = alicec --dump-phases
 ALICEDEP = alicedep

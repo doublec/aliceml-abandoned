@@ -60,6 +60,9 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
 #endif
 */
 
+enum { TYPE_GTK_OBJECT, TYPE_GTK_WIDGET, TYPE_G_OBJECT, 
+       TYPE_OWN, TYPE_UNKNOWN };
+
 /***********************************************************************/
 
 enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
@@ -132,19 +135,19 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
   }                                                         \
   return tail;
 
-word GListToObjectList(GList *list) {
+inline word GListToObjectList(GList *list) {
   __RETURN_LIST_HELP(list, g_list, Store::UnmanagedPointerToWord);
 }
 
-word GSListToObjectList(GSList *list) {
+inline word GSListToObjectList(GSList *list) {
   __RETURN_LIST_HELP(list, g_slist, Store::UnmanagedPointerToWord);
 }
 
-word GListToStringList(GList *list) {
+inline word GListToStringList(GList *list) {
   __RETURN_LIST_HELP(list, g_list, __RETURN_STRING);
 }
 
-word GSListToStringList(GSList *list) {
+inline word GSListToStringList(GSList *list) {
   __RETURN_LIST_HELP(list, g_slist, __RETURN_STRING);
 }
 

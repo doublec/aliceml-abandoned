@@ -218,6 +218,7 @@ local
 	fun showResult s = serve
 	   (fn () => insertLines (List.filter filLine (String.tokens isSep s)))
     end
+
 (*
     local
 	val proc =

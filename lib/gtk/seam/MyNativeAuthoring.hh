@@ -212,10 +212,28 @@
     word x15= Scheduler::currentArgs[15];               \
     word x16= Scheduler::currentArgs[16];               
 
-#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
-  void *pointer = NULL;                                             \
-  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-  else { pointer = Store::WordToUnmanagedPointer(x); }     
+#define DECLARE_UNMANAGED_POINTER(pointer, x)                    \
+  DECLARE_TUPLE(pointer##__tup,x);                               \
+  word pointer##__tmp = pointer##__tup->Sel(0);                  \
+  void *pointer = NULL;                                          \
+  if (Store::WordToTransient(pointer##__tmp) != INVALID_POINTER) \
+        { REQUEST(pointer##__tmp); }                             \
+  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }     
+
+#define DECLARE_UNMANAGED_POINTER_TYPE(pointer, type, x)         \
+  DECLARE_TUPLE(pointer##__tup,x);                               \
+  int type = Store::WordToInt(pointer##__tup->Sel(1));           \
+  word pointer##__tmp = pointer##__tup->Sel(0);                  \
+  void *pointer = NULL;                                          \
+  if (Store::WordToTransient(pointer##__tmp) != INVALID_POINTER) \
+        { REQUEST(pointer##__tmp); }                             \
+  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }     
+
+
+//#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
+//  void *pointer = NULL;                                             \
+//  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
+//  else { pointer = Store::WordToUnmanagedPointer(x); }     
 
 #define DECLARE_CSTRING(str,x)                           \
   DECLARE_STRING(str##__temp,x);                         \
@@ -230,8 +248,8 @@
      F(a##__value,a##__temp->Sub(a##__iter));            \
      a[a##__iter] = a##__value;                          \
   }
-#define DECLARE_ENUM DECLARE_CDOUBLE
 
+#define DECLARE_ENUM DECLARE_CDOUBLE
 
 #define RETURN_TUPLE2(y0,y1)                             \
   Tuple *result = Tuple::New(2);                         \
@@ -272,5 +290,12 @@
   result->Init(4,y4);                                    \
   result->Init(5,y5);                                    \
   RETURN(result->ToWord());
+
+inline word PointerToObject(void *p, int type) {
+  Tuple *t = Tuple::New(2);
+  t->Init(0,Store::UnmanagedPointerToWord(p));
+  t->Init(1,Store::IntToWord(type));
+  return t->ToWord();
+}
 
 #endif

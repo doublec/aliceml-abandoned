@@ -44,8 +44,8 @@ endif
 SML = sml
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
-#INSTALL = install -C -v -m 666
-INSTALL = install -v -m 644
+INSTALL = install -C -v -m 666
+#INSTALL = install -v -m 644
 CLIBS = gtk+-2.0 libgnomecanvas-2.0
 
 #################################################

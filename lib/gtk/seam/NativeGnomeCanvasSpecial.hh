@@ -20,7 +20,7 @@ DEFINE2(NativeGnomeCanvas_itemNew) {
   GnomeCanvasItem *ret = gnome_canvas_item_new(
 		           static_cast<GnomeCanvasGroup*>(parent), 
 			   static_cast<GtkType>(type), NULL);
-  RETURN(Store::UnmanagedPointerToWord(ret));
+  RETURN(PointerToObject(ret,TYPE_GTK_OBJECT));
 } END
 
 #endif

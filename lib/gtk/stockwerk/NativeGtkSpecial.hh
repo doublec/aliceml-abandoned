@@ -22,17 +22,17 @@ void NativeGtkSpecialInit(Record *record) {
 
 DEFINE0(NativeGtk_textIterNew) {
   GtkTextIter *iter = new GtkTextIter;
-  RETURN(Store::UnmanagedPointerToWord(iter));
+  RETURN(PointerToObject(iter,TYPE_OWN));
 } END
 
 DEFINE0(NativeGtk_treeIterNew) {
   GtkTreeIter *iter = new GtkTreeIter;
-  RETURN(Store::UnmanagedPointerToWord(iter));
+  RETURN(PointerToObject(iter,TYPE_OWN));
 } END
 
 DEFINE0(NativeGtk_treeStoreNew) {
   GtkTreeStore *store = gtk_tree_store_new(1, G_TYPE_STRING);
-  RETURN(Store::UnmanagedPointerToWord(store));
+  RETURN(PointerToObject(store,TYPE_G_OBJECT));
 } END
 
 DEFINE3(NativeGtk_treeModelGetStringAt) {

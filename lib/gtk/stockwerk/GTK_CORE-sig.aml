@@ -15,15 +15,8 @@ sig
 
     val signalDisconnect       : object * int -> unit
 
-(**)type refInfo = (object -> object) * (object -> unit)
-(**)val GtkWidgetRef : refInfo
-(**)val GtkObjectRef : refInfo
-(**)val GObjectRef : refInfo
-(**)val DeleteRef : refInfo
-(**)val NoRef : refInfo
-
 (**)val printObject : object -> unit
 
-(**)val addObject : object * refInfo * bool -> object
+(**)val addObject : object -> object
 (**)val init : unit -> unit
 end
