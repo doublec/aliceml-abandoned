@@ -10,30 +10,27 @@
  *   $Revision$
  *)
 
-import structure Assert        from "../utility/Assert"
-import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure Url           from "Url"
-import structure Config        from "Config"
-import structure TextIO        from "TextIO"
-import structure OS            from "OS"
-import structure UrlMap        from "UrlMap"
-import structure HttpClient    from "HttpClient"
-import signature RESOLVER      from "RESOLVER-sig"
-
-(*--** what if a handler returns a relative URL - is this permissible? *)
+import structure Assert       from "../utility/Assert"
+import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure Url          from "Url"
+import structure Config       from "Config"
+import structure TextIO       from "TextIO"
+import structure OS           from "OS"
+import structure UrlMap       from "UrlMap"
+import structure HttpClient   from "HttpClient"
+import signature RESOLVER     from "RESOLVER-sig"
 
 structure Resolver: RESOLVER =
     struct
+	fun expandUrl url =
+	    Url.resolve (Url.fromString (OS.FileSys.getDir () ^ "/")) url
+
 	structure Handler =
 	    struct
 		type handler = string * (Url.t -> Url.t option)
 		type t = handler
 
 		exception Syntax
-
-		fun expandUrl url =
-		    Url.resolve (Url.fromString (OS.FileSys.getDir () ^ "/"))
-				url
 
 		fun baseUrl url =
 		    let
@@ -44,14 +41,14 @@ structure Resolver: RESOLVER =
 			  | _ => Url.setPath (url, path @ [""])
 		    end
 
-		val default = ("default", fn url => SOME (expandUrl url))
+		val default = ("default", SOME)
 
 		fun root base =
 		    let
-			val base = baseUrl base
+			val base = expandUrl (baseUrl base)
 			fun f rel =
 			    if Url.isAbsolutePath rel then NONE
-			    else SOME (expandUrl (Url.resolve base rel))
+			    else SOME (Url.resolve base rel)
 		    in
 			("root " ^ Url.toStringRaw base, f)
 		    end
@@ -77,11 +74,10 @@ structure Resolver: RESOLVER =
 
 		fun cache base =
 		    let
-			val base = baseUrl base
+			val base = expandUrl (baseUrl base)
 			fun f url =
 			    if isSome (Url.getScheme url) then
-				SOME (expandUrl (Url.resolve base
-							     (cacheUrl url)))
+				SOME (Url.resolve base (cacheUrl url))
 			    else NONE
 		    in
 			("cache " ^ Url.toStringRaw base, f)
@@ -331,8 +327,8 @@ structure Resolver: RESOLVER =
 	    end
 	and localize' (handlers, apply, resolver) =
 	    case apply handlers of
-		SOME (url', handlers') =>
-		    (case exists (resolver, url') of
+		SOME (url', handlers') withval url'' = expandUrl url' end =>
+		    (case exists (resolver, url'') of
 			 result as SOME _ => result
 		       | NONE => localize' (handlers', apply, resolver))
 	       | NONE => NONE
