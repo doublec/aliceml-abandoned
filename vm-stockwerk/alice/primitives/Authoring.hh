@@ -26,7 +26,6 @@
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
 #define DECLARE_REAL(real, x) DECLARE_BLOCKTYPE(Real, real, x)
-#define DECLARE_STRING(string, x) DECLARE_BLOCKTYPE(String, string, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
 #define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
 #define DECLARE_TAGVAL(tagVal, x) DECLARE_BLOCKTYPE(TagVal, tagVal, x)
