@@ -15,16 +15,16 @@ libstore.a: StoreConfig.hh $(OBJS)
 	ar rc libstore.a $(OBJS) || exit 1
 	ranlib libstore.a
 
-StoreConfig.hh: StoreConfig
-	./StoreConfig
+StoreConfig.hh: StoreConfig.exe
+	./StoreConfig.exe
 
-StoreConfig: StoreConfig.cc
-	$(CXX) $(CXXFLAGS) -o StoreConfig StoreConfig.cc
+StoreConfig.exe: StoreConfig.o
+	$(CXX) $(CXXFLAGS) -o StoreConfig.exe StoreConfig.o
 
 $(OBJS): StoreConfig.hh
 
 clean:
-	rm -f StoreConfig.o StoreConfig StoreConfig.exe
+	rm -f StoreConfig.o StoreConfig.exe
 	rm -f $(OBJS)
 
 veryclean: clean
@@ -34,6 +34,6 @@ distclean: veryclean
 	rm -f Makefile.deps
 
 Makefile.deps: Makefile StoreConfig.hh $(SRCS)
-	$(MAKEDEPEND) $(SRCS) > Makefile.deps
+	$(MAKEDEPEND) $(SRCS) StoreConfig.cc > Makefile.deps
 
 include Makefile.deps
