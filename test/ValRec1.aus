@@ -1,0 +1,1 @@
+val rec x as (a, b, c as (d, e, f)) = (1, 2, (3, 4, 5))
