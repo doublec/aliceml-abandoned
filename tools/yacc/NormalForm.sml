@@ -59,10 +59,10 @@ struct
       | names _ = []
 
     fun tupling l =
-	let fun seq [] = ""
-	      | seq [n] = n
-	      | seq (n::ns) = n^", "^(seq ns)
-	in "("^(seq l)^")" end
+	let fun seq [] = [A.ATEXP ""]
+	      | seq [n] = [A.ATEXP n]
+	      | seq (n::ns) = A.ATEXP n :: A.ATEXP ", " :: (seq ns)
+	in A.PAREXP (A.EXP (seq l)) end
     
     (* introduce explicit names for toplevel expressions where necessary *)
     (* deal with multiple occurrences: introduce fresh names, 
@@ -139,8 +139,10 @@ struct
       | semAction (A.Prec (A.Transform (bnf,c),s)) = 
 	A.Prec (A.Transform (toSeq bnf,c), s)
       | semAction (A.Prec (bnf,s)) = 
-		A.Prec (A.Transform (toSeq bnf, (NONE, [tupling(names bnf)])),s)
-      | semAction bnf = A.Transform (toSeq bnf, (NONE, [tupling(names bnf)]))
+		A.Prec (A.Transform (toSeq bnf,
+				     (NONE, A.EXP [tupling(names bnf)])),s)
+      | semAction bnf = A.Transform (toSeq bnf,
+				     (NONE, A.EXP [tupling(names bnf)]))
  
     (* normalization *)
     fun norm (A.Prec (bnf,s)) = 
@@ -172,7 +174,7 @@ struct
       | normalizeSubexps ((A.As (s,A.Skip))::xs) =
 	let val (a,rs) =normalizeSubexps xs
 	    val r = newRulename()
-	    val r' = (r,NONE,A.Transform(A.Seq[],(NONE, ["()"])))
+	    val r' = (r,NONE,A.Transform(A.Seq[],(NONE, A.EXP [A.ATEXP "()"])))
 	in
 	    (A.As (s,A.Symbol r)::a, r'::rs)
 	end

@@ -16,12 +16,6 @@ struct
 			  structure Lex=Lex
 			  structure LrParser = LrParser)
 
-  fun invole lexstream =
-      let fun printError (s,i:int,_) = TextIO.output(TextIO.stdOut,
-						       "Error, line "^(Int.toString i) ^", "^s^"\n")
-      in jackeP.parse(0,lexstream,printError,())
-      end
-
   fun parse filename =
       let val _ = (ErrorMsg.reset(); ErrorMsg.fileName := filename)
           val file = TextIO.openIn filename

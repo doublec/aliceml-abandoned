@@ -14,7 +14,7 @@ struct
       | PAs of string * bnfexpWithPos  * pos * pos
       | PSeq of bnfexpWithPos list  * pos * pos
       | PPrec of bnfexpWithPos * string  * pos * pos 
-      | PTransform of bnfexpWithPos * string list * pos * pos
+      | PTransform of bnfexpWithPos * exp * pos * pos
       | PAlt of bnfexpWithPos list * pos * pos
 	
     and parsetreeWithPos =
@@ -24,10 +24,17 @@ struct
       | PNonassocDec of idlist * pos * pos
       | PRuleDec of Prule list * pos * pos
       | PParserDec of (string * string option * string) list * pos * pos
-      | PMLCode of string list * pos * pos
+      | PMLCode of exp * pos * pos
 	
-    withtype 
-	Prule = (string * string option * bnfexpWithPos)
+
+    and exp = EXP of atexp list
+    
+    and atexp =
+	ATEXP of string
+      | PAREXP of exp
+	
+
+    withtype Prule = (string * string option * bnfexpWithPos)
     and idlist = string list
 
     datatype bnfexp =
@@ -36,7 +43,7 @@ struct
       | As of string * bnfexp
       | Seq of bnfexp list
       | Prec of bnfexp * string
-      | Transform of bnfexp * (string option * string list)
+      | Transform of bnfexp * (string option * exp)
       | Alt of bnfexp list
 	
     and parsetree =
@@ -46,7 +53,7 @@ struct
       | NonassocDec of idlist
       | RuleDec of rule list
       | ParserDec of (string * string option * string) list
-      | MLCode of string list
+      | MLCode of exp
 	
     withtype 
 	rule = string * string option * bnfexp
@@ -63,15 +70,19 @@ struct
 	        let val lPos = E.posToString p1 (*Int.toString p1*)
 		    val rPos = E.posToString p2 (*Int.toString p2*)
 		in Transform (rfbnfexp bnf,
-			      (SOME ("(* Position in source: "^lPos^"-"^rPos^" *)"), sl))
+			      (SOME ("(* Position in source: "
+				     ^lPos^"-"^rPos^" *)"), sl))
 		end
 	      | rfbnfexp (PAlt (bnfs,_,_)) = Alt (List.map rfbnfexp bnfs)
+
+
 	    and rfptree (PTokenDec (tl,_,_)) = TokenDec tl
 	      | rfptree (PAssoclDec (il,_,_)) = AssoclDec il
 	      | rfptree (PAssocrDec (il,_,_)) = AssocrDec il
 	      | rfptree (PNonassocDec (il,_,_)) = NonassocDec il
 	      | rfptree (PRuleDec (rl,_,_)) = 
-		let val rl' = List.map (fn (id,opt,bnf) => (id,opt,rfbnfexp bnf)) rl
+		let val rl' =
+		    List.map (fn (id,opt,bnf) => (id,opt,rfbnfexp bnf)) rl
 		in RuleDec rl' end
 	      | rfptree (PParserDec (pl,_,_)) = ParserDec pl
 	      | rfptree (PMLCode (cl,_,_)) = MLCode cl
@@ -194,4 +205,11 @@ struct
 	     checkParsers p;
 	     if !E.anyErrors then raise E.Error else ())
 	end
+
+
+    fun expToString (EXP xs) = String.concat (map atexpToString xs) ^ " "
+
+    and atexpToString (ATEXP s) = " " ^ s
+      | atexpToString (PAREXP exp) = "(" ^ expToString exp ^ ")"
+
 end

@@ -163,7 +163,7 @@ struct
 		    (blank 44)^"val "^s^" = "^s^" ()\n"
 		    ^(mkMatch rhs)
 		val A.Seq rhs = bnf
-		val code = foldr (fn (s,r) => s^" "^r) "" code
+		val code = A.expToString code
 		val rightpos = if List.null rhs then "defPos"
 			       else let val A.As(name,_) = List.last rhs 
 				    in name^"right" end 
@@ -295,10 +295,10 @@ struct
 		    ^"end\n(* --- *)\n\n"
 		else ""
 
-	    val p = (A.MLCode [errorDef, hack]) ::p
+	    val p = (A.MLCode (A.EXP [A.ATEXP errorDef, A.ATEXP hack])) ::p
  
 	    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
-	      | absSynToString _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
+	      | absSynToString _ (A.MLCode l) = A.expToString l
 	      | absSynToString _ (A.ParserDec l) = parserDecToString  l
 	      | absSynToString lrTable (A.RuleDec l) =
 		"\nstructure "^structureName^" =\nstruct\n" 
