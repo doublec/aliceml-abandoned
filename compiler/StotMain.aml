@@ -15,4 +15,8 @@ import structure OS          from "../lib/system/OS"
 import structure CommandLine from "../lib/system/CommandLine"
 import structure SMLToMozartToplevel from "top/SMLToMozartToplevel"
 
-val _ = OS.Process.exit(SMLToMozartToplevel.stot(CommandLine.arguments()))
+val use = SMLToMozartToplevel.use
+val _ =
+    Future.concur(fn _ =>
+		     OS.Process.exit(SMLToMozartToplevel.stot
+					 (CommandLine.arguments())))
