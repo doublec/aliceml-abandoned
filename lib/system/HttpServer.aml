@@ -46,7 +46,7 @@ structure HttpServer :> HTTP_SERVER =
 		 \The requested URL " ^ Url.toString (#uri request) ^
 		 " was not found on this server.<P>\n\
 		 \<HR>\n\
-		 \<ADDRESS>Stockhausen HTTP Server" ^
+		 \<ADDRESS>Alice HTTP Server" ^
 		 (case !myPort of
 		      SOME port => " at port " ^ Int.toString port
 		    | NONE => "") ^ "</ADDRESS>\n\
