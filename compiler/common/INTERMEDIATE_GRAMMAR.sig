@@ -54,13 +54,14 @@ signature INTERMEDIATE =
     (* Patterns (always linear) *)
 
     and pat =
-	  LitPat    of info * lit
+	  WildPat   of info
+	| LitPat    of info * lit
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)	(* distinct *)
 	| AsPat     of info * id * pat
-	| AltPat    of info * pat list
+	| AltPat    of info * pat list		(* all pats bind same ids *)
 	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
 	| WithPat   of info * pat * dec list

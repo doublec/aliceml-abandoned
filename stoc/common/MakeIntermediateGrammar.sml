@@ -57,13 +57,14 @@ functor Intermediate(type info
     (* Patterns (always linear) *)
 
     and pat =
-	  LitPat    of info * lit
+	  WildPat   of info
+	| LitPat    of info * lit
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)	(* distinct *)
 	| AsPat     of info * id * pat
-	| AltPat    of info * pat list
+	| AltPat    of info * pat list		(* all pats bind same ids *)
 	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
 	| WithPat   of info * pat * dec list
@@ -125,7 +126,8 @@ functor Intermediate(type info
     fun info_field(Field(i,_,_))	= i
     fun info_match(Match(i,_,_))	= i
 
-    fun info_pat(LitPat(i,_))		= i
+    fun info_pat(WildPat(i))		= i
+      | info_pat(LitPat(i,_))		= i
       | info_pat(VarPat(i,_))		= i
       | info_pat(ConPat(i,_,_))		= i
       | info_pat(TupPat(i,_))		= i
@@ -323,7 +325,10 @@ functor Intermediate(type info
 					  ; output_exp(q,e) ; r(q)
 					  )
 
-    and output_pat(q, LitPat(i,l))	= ( f(q,"LitPat")
+    and output_pat(q, WildPat(i))	= ( f(q,"WildPat")
+					  ; output_info(q,i) ; r(q)
+					  )
+      | output_pat(q, LitPat(i,l))	= ( f(q,"LitPat")
 					  ; output_info(q,i) ; m(q)
 					  ; output_lit(q,l) ; r(q)
 					  )
