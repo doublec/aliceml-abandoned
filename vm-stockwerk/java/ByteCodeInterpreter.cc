@@ -542,7 +542,7 @@ public:
     fprintf(stderr, "%s\n", s);
   }
 #else
-  static void Print(char *) {}
+  static void Print(const char *) {}
 #endif
 };
 
