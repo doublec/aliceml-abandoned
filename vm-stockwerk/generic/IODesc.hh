@@ -29,7 +29,7 @@ public:
   virtual void Finalize(word value);
 };
 
-class IODesc: private Block {
+class SeamDll IODesc: private Block {
 public:
   enum {
     TYPE_CLOSED		= 0x00,

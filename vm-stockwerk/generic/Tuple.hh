@@ -19,7 +19,7 @@
 
 #include "store/Store.hh"
 
-class DllExport Tuple: private Block {
+class SeamDll Tuple: private Block {
 public:
   using Block::ToWord;
 

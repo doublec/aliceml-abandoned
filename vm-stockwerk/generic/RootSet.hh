@@ -19,7 +19,7 @@
 
 #include "store/Store.hh"
 
-class DllExport RootSet {
+class SeamDll RootSet {
 public:
   static void Init();
   static void Add(word &root);

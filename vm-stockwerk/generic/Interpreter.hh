@@ -29,7 +29,7 @@ class ConcreteCode;
 class String;
 #endif
 
-class DllExport Interpreter:
+class SeamDll Interpreter:
   public ConcreteRepresentationHandler, public Worker {
 public:
   typedef Result (*function)();

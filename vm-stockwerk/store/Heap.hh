@@ -16,7 +16,7 @@
 #pragma interface "store/Heap.hh"
 #endif
 
-class DllExport HeapChunk {
+class SeamDll HeapChunk {
 protected:
   char *top, *max, *block, *base;
   HeapChunk *prev, *next;
@@ -39,7 +39,7 @@ public:
   void SetNext(HeapChunk *p) { next = p; }
 };
 
-class DllExport Heap {
+class SeamDll Heap {
 protected:
   HeapChunk *chain;
   u_int size, limit;

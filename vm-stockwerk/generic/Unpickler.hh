@@ -20,7 +20,7 @@
 #include "generic/Worker.hh"
 #include "generic/String.hh"
 
-class DllExport Unpickler {
+class SeamDll Unpickler {
 public:
   // Exceptions
   static word Corrupt;

@@ -19,7 +19,7 @@
 
 #include "generic/String.hh"
 
-class DllExport UniqueString: private Block {
+class SeamDll UniqueString: private Block {
 protected:
   enum { STRING_POS, HASH_VALUE_POS, SIZE };
 public:

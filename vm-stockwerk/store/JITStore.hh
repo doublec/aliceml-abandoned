@@ -21,7 +21,7 @@
 #include <lightning.h>
 
 // Make sure to have one lightning copy only
-extern jit_state lightning;
+extern SeamDll jit_state lightning;
 #define _jit lightning
 
 // Provide own jump/branch macros

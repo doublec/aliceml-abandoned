@@ -23,7 +23,7 @@
 #define MAX_SIZE(t) \
   (MAX_BIGBLOCKSIZE * sizeof(u_int) / sizeof(t))
 
-class DllExport String: private Chunk {
+class SeamDll String: private Chunk {
 public:
   static const u_int maxSize = MAX_SIZE(char);
 

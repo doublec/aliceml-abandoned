@@ -14,7 +14,7 @@
 #define __GENERIC__SIGNAL_HANDLER_HH__
 
 #if defined(INTERFACE)
-#pragma implementation "generic/SignalHandler.hh"
+#pragma interface "generic/SignalHandler.hh"
 #endif
 
 #include <csignal>
@@ -25,7 +25,7 @@
 
 class Future;
 
-class DllExport SignalHandler {
+class SeamDll SignalHandler {
 public:
   // SignalHandler Static Constructor
   static void Init();

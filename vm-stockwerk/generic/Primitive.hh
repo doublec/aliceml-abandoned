@@ -21,7 +21,7 @@
 
 #include "generic/Interpreter.hh"
 
-class DllExport Primitive {
+class SeamDll Primitive {
 public:
   static word MakeFunction(const char *name, Interpreter::function function,
 			   u_int arity, Transform *abstract);

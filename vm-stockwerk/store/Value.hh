@@ -16,7 +16,7 @@
 #pragma interface "store/Value.hh"
 #endif
 
-class DllExport Block {
+class SeamDll Block {
 public:
   word *GetBase() {
     return (word *) this + 1;
@@ -60,7 +60,7 @@ public:
   }
 };
 
-class DllExport Transient : private Block {
+class SeamDll Transient : private Block {
 protected:
   enum { REF_POS };
 public:
@@ -102,7 +102,7 @@ public:
   }
 };
 
-class DllExport Chunk : private Block {
+class SeamDll Chunk : private Block {
 private:
   enum { BYTESIZE_POS };
 public:
@@ -146,7 +146,7 @@ public:
   }
 };
 
-class DllExport DynamicBlock : protected Block {
+class SeamDll DynamicBlock : protected Block {
 protected:
   enum {ACTIVE_SIZE, BASE_SIZE };
 public:

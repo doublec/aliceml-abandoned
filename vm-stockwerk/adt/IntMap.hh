@@ -18,7 +18,7 @@
 
 #include "store/BaseMap.hh"
 
-class IntKey {
+class SeamDll IntKey {
 public:
   static u_int Hash(word key, u_int size) {
     s_int i = Store::DirectWordToInt(key);
@@ -29,7 +29,7 @@ public:
   }
 };
 
-class DllExport IntMap : public BaseMap<IntKey> {
+class SeamDll IntMap: public BaseMap<IntKey> {
 public:
   static IntMap *New(u_int size) {
     BaseMap<IntKey> *map = BaseMap<IntKey>::New(INT_MAP_LABEL, size);

@@ -20,7 +20,7 @@
 #include "generic/Worker.hh"
 #include "generic/String.hh"
 
-class DllExport Pickler {
+class SeamDll Pickler {
 public:
   // Exceptions
   static word Sited;

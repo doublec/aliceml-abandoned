@@ -18,13 +18,13 @@
 
 #include "store/BaseMap.hh"
 
-class ChunkKey {
+class SeamDll ChunkKey {
 public:
   static u_int Hash(word key, u_int size);
   static bool Equals(word a, word b);
 };
 
-class DllExport ChunkMap : public BaseMap<ChunkKey> {
+class SeamDll ChunkMap: public BaseMap<ChunkKey> {
 public:
   static ChunkMap *New(u_int size) {
     BaseMap<ChunkKey> *map = BaseMap<ChunkKey>::New(CHUNK_MAP_LABEL, size);

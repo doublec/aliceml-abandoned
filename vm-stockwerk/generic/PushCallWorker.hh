@@ -21,7 +21,7 @@
 
 #include "generic/Worker.hh"
 
-class DllExport PushCallWorker: public Worker {
+class SeamDll PushCallWorker: public Worker {
 private:
   // PushCallWorker Constructor
   PushCallWorker(): Worker() {}

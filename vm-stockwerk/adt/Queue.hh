@@ -20,7 +20,7 @@
 #include <cstring>
 #include "store/Store.hh"
 
-class DllExport Queue: private Block {
+class SeamDll Queue: private Block {
 private:
   enum { READ_INDEX_POS, WRITE_INDEX_POS, ARRAY_POS, SIZE };
 

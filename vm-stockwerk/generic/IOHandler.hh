@@ -21,7 +21,7 @@
 
 class Future;
 
-class DllExport IOHandler {
+class SeamDll IOHandler {
 protected:
   static int defaultFD;
 public:

@@ -33,7 +33,7 @@
 //    REF_LABEL         value
 //
 
-class DllExport Future: public Transient {
+class SeamDll Future: public Transient {
 private:
   static const u_int initialWaitQueueSize = 2;
 public:
@@ -65,7 +65,7 @@ public:
   }
 };
 
-class DllExport Hole: public Transient {
+class SeamDll Hole: public Transient {
 public:
   // Future Static Data
   static word cyclicExn;
@@ -114,7 +114,7 @@ public:
   }
 };
 
-class DllExport Byneed: public Transient {
+class SeamDll Byneed: public Transient {
 public:
   // Byneed Constructor
   static Byneed *New(word closure) {

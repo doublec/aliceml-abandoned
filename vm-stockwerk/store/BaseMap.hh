@@ -59,7 +59,7 @@ protected:
   }
   MapNode *FindKey(word key, word nodes, word & prev);
   void RemoveEntry(u_int i, word prev, MapNode *node);
-  void Resize();
+  SeamDll void Resize();
 public:
   void Put(word key, word value);
   void Remove(word key);
