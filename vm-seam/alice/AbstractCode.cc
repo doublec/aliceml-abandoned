@@ -23,9 +23,10 @@
 static const char *opcodes[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
   "DirectAppVar", "EndHandle", "EndTry", "GetRef", "GetTup", "IntTest", "Kill",
-  "LazySel", "PutCon", "PutNew", "PutRef", "PutTag", "PutTup", "PutVar",
-  "PutVec", "Raise", "RealTest", "Reraise", "Return", "Sel", "Shared",
-  "Specialize", "StringTest", "TagTest", "Try", "VecTest"
+  "LazyPolySel", "PutCon", "PutNew", "PutRef", "PutTag", "PutTup",
+  "PutPolyRec", "PutVar", "PutVec", "Raise", "RealTest", "Reraise",
+  "Return", "Sel", "Shared", "Specialize", "StringTest", "TagTest",
+  "Try", "VecTest"
 };
 
 #define OPT(w, X) {				\
@@ -93,6 +94,8 @@ static const char *opcodes[AbstractCode::nInstrs] = {
 #define IDDEFS            VECTOR(pc->Sel(operand++), IdDef)
 #define IDDEFINSTROPT     OPT(pc->Sel(operand++), IdDefInstr)
 #define IDDEFARGSINSTROPT OPT(pc->Sel(operand++), IdDefArgsInstr)
+#define LABEL             Label(pc->Sel(operand++));
+#define LABELS            VECTOR(pc->Sel(operand++), Label)
 #define INTINSTRVEC       VECTOR(pc->Sel(operand++), IntInstr)
 #define REALINSTRVEC      VECTOR(pc->Sel(operand++), RealInstr)
 #define STRINGINSTRVEC    VECTOR(pc->Sel(operand++), StringInstr)
@@ -181,6 +184,10 @@ private:
   void IdDefArgsInstr(word w) {
     TUPLE(w, IdDefArgs, Instr);
   }
+  void Label(word w) {
+    fprintf(file, " %s",
+	    UniqueString::FromWordDirect(w)->ToString()->ExportC());
+  }
   void Template(word w) {
     TagVal *templ = TagVal::FromWordDirect(w);
     fprintf(file, " Template(");
@@ -249,6 +256,8 @@ void Disassembler::Start() {
       ID IDREF LASTINSTR break;
     case AbstractCode::PutTup:
       ID IDREFS LASTINSTR break;
+    case AbstractCode::PutPolyRec:
+      ID LABELS IDREFS LASTINSTR break;
     case AbstractCode::PutVec:
       ID IDREFS LASTINSTR break;
     case AbstractCode::Close:
@@ -267,8 +276,8 @@ void Disassembler::Start() {
       IDDEFS IDREF LASTINSTR break;
     case AbstractCode::Sel:
       ID IDREF INT LASTINSTR break;
-    case AbstractCode::LazySel:
-      ID IDREF INT LASTINSTR break;
+    case AbstractCode::LazyPolySel:
+      ID IDREF LABEL LASTINSTR break;
     case AbstractCode::Raise:
       IDREF break;
     case AbstractCode::Reraise:

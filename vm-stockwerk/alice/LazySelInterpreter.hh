@@ -19,6 +19,7 @@
 
 #include "generic/Interpreter.hh"
 #include "generic/Closure.hh"
+#include "alice/Data.hh"
 
 class LazySelInterpreter : public Interpreter {
 public:
@@ -31,7 +32,8 @@ public:
     self = new LazySelInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, word tuple, int index);
+  static void PushFrame(TaskStack *taskStack,
+			word record, UniqueString *label);
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
   virtual Result Run(TaskStack *taskStack);
@@ -42,7 +44,7 @@ public:
 
 class LazySelClosure : public Closure {
 public:
-  static LazySelClosure *New(word tuple, int index);
+  static LazySelClosure *New(word tuple, UniqueString *label);
 };
 
 #endif

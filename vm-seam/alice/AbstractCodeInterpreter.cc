@@ -390,6 +390,21 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
       break;
+    case AbstractCode::PutPolyRec:
+      // of id * label vector * idRef vector * instr
+      {
+	Vector *labels = Vector::FromWordDirect(pc->Sel(1));
+	Record *record = Record::New(labels);
+	Vector *idRefs = Vector::FromWordDirect(pc->Sel(2));
+	Assert(labels->GetLength() == idRefs->GetLength());
+	for (u_int i = labels->GetLength(); i--; ) {
+	  record->AssertLabel(i, UniqueString::FromWordDirect(labels->Sub(i)));
+	  record->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
+	}
+	localEnv->Add(pc->Sel(0), record->ToWord());
+	pc = TagVal::FromWordDirect(pc->Sel(3));
+      }
+      break;
     case AbstractCode::PutVec: // of id * idRef vector * instr
       {
 	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
@@ -550,16 +565,16 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
       break;
-    case AbstractCode::LazySel: // of id * idRef * int * instr
+    case AbstractCode::LazyPolySel: // of id * idRef * label * instr
       {
-	word wTuple = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
-	int index = Store::DirectWordToInt(pc->Sel(2));
-	Tuple *tuple = Tuple::FromWord(wTuple);
-	if (tuple == INVALID_POINTER) {
-	  Closure *closure = LazySelClosure::New(wTuple, index);
+	word wRecord = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
+	UniqueString *label = UniqueString::FromWordDirect(pc->Sel(2));
+	Record *record = Record::FromWord(wRecord);
+	if (record == INVALID_POINTER) {
+	  Closure *closure = LazySelClosure::New(wRecord, label);
 	  localEnv->Add(pc->Sel(0), Byneed::New(closure->ToWord())->ToWord());
 	} else {
-	  localEnv->Add(pc->Sel(0), tuple->Sel(index));
+	  localEnv->Add(pc->Sel(0), record->PolySel(label));
 	}
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }

@@ -43,9 +43,10 @@ public:
 
   enum instr {
     AppPrim, AppVar, Close, CompactIntTest, CompactTagTest, ConTest,
-    DirectAppVar, EndHandle, EndTry, GetRef, GetTup, IntTest, Kill, LazySel,
-    PutCon, PutNew, PutRef, PutTag, PutTup, PutVar, PutVec, Raise, RealTest,
-    Reraise, Return, Sel, Shared, Specialize, StringTest, TagTest, Try, VecTest
+    DirectAppVar, EndHandle, EndTry, GetRef, GetTup, IntTest, Kill,
+    LazyPolySel, PutCon, PutNew, PutRef, PutTag, PutTup, PutPolyRec,
+    PutVar, PutVec, Raise, RealTest, Reraise, Return, Sel, Shared,
+    Specialize, StringTest, TagTest, Try, VecTest
   };
   static const u_int nInstrs = VecTest + 1;
 
