@@ -19,8 +19,25 @@
 u_int MethodInfo::GetNumberOfArguments() {
   JavaString *descriptor = GetDescriptor();
   u_wchar *p = descriptor->GetBase();
-  //--**
-  return 0;
+  Assert(*p == '(');
+  p++;
+  u_int nArgs = 0;
+  while (*p != ')') {
+    while (*p == '[') p++;
+    switch (*p) {
+    case 'B': case 'C': case 'D': case 'F':
+    case 'I': case 'J': case 'S': case 'Z':
+      p++;
+      break;
+    case 'L':
+      while (*p++ != ';');
+      break;
+    default:
+      Error("invalid method descriptor");
+    }
+    nArgs++;
+  }
+  return nArgs;
 }
 
 bool ClassInfo::Verify() {
