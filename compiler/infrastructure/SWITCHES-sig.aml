@@ -30,10 +30,8 @@ sig
 
     structure Language :
     sig
-	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
-
 	val allowUnclosedComponents :		bool ref
-	val rttLevel :				rtt_level ref
+	val supportRtt :			bool ref
 	val silentFailExp :			bool ref
 	val reexportImport :			bool ref
 	val retainFullImport :			bool ref

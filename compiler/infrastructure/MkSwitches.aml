@@ -32,10 +32,8 @@ struct
 
     structure Language =
     struct
-	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
-
 	val allowUnclosedComponents		= ref false
-	val rttLevel				= ref FULL_RTT
+	val supportRtt				= ref true
 	val silentFailExp			= ref true
 	val reexportImport			= ref false
 	val retainFullImport			= ref false
