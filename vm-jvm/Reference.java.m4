@@ -139,7 +139,7 @@ final public class Reference implements DMLConVal {
 	return ret;
     }
 
-    final private void writeObject(java.io.ObjectOutputStream out)
+    final protected void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	try {
 	    // the client manager is not written to the stream
@@ -168,7 +168,7 @@ final public class Reference implements DMLConVal {
 	}
     }
 
-    final private void readObject(java.io.ObjectInputStream in)
+    final protected void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
 	in.defaultReadObject();
 	cmgr = new ClientManager(this);

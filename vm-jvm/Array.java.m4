@@ -221,7 +221,7 @@ final public class Array implements DMLValue {
 
     /** Arrays können dann nicht serialisiert werden.
      */
-    private Object writeReplace()
+    final protected Object writeReplace()
 	throws java.io.ObjectStreamException {
 	if (ng == null) { // falls zum ersten Mal serialisiert
 	    GName gn = new GName();

@@ -79,7 +79,7 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	    +"Is interrupted: "+this.isInterrupted();
     }
 
-    final private Object writeReplace()
+    final protected Object writeReplace()
 	throws java.io.ObjectStreamException {
 	if (ng == null) { // falls zum ersten Mal serialisiert
 	    GName gn = new GName();

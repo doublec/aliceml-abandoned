@@ -24,7 +24,7 @@ public class UniqueConstructor extends Constructor {
 	GName.gNames.put(name,this);
     }
     /** @see UniqueName */
-    final private void writeObject(java.io.ObjectOutputStream out)
+    final protected void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	out.defaultWriteObject();
     }

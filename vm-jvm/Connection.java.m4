@@ -38,7 +38,7 @@ final public class Connection {
 	}
     }
 
-    final private static void startServer() throws RemoteException {
+    final protected static void startServer() throws RemoteException {
 	Properties prop = System.getProperties();
 	Object o = prop.get("java.security.policy");
 	if (o == null) {

@@ -28,7 +28,7 @@ public class Name implements DMLValue {
      *  neuer GName erzeugt und der Name wird unter dem GName in
      *  der globalen Hashtabelle eingetragen.
      */
-    private void writeObject(java.io.ObjectOutputStream out)
+    protected void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	if (gName==null) {
 	    gName=new GName();
@@ -43,7 +43,7 @@ public class Name implements DMLValue {
      *  eingetragen. Sonst wird das Objekt aus der Hashtabelle
      *  zurückgeliefert.
      */
-    private Object readResolve()
+    protected Object readResolve()
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(gName);
 	if (o == null) {

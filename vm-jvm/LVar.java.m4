@@ -121,13 +121,6 @@ final public class LVar extends UnicastRemoteObject
 	return this.request().apply4(v1,v2,v3,v4);
     }
 
-    /** LVar und Future werden beim pickeln ersetzt, falls sie gebunden sind.
-	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */
-    final private void writeObject(java.io.ObjectOutputStream out)
-	throws java.io.IOException {
-	_RAISE(runtimeError,new STRING ("cannot pickle LVar"));
-    }
-
     /** <code> exception Fulfill </code>*/
     UNAME(Fulfill,LVar.Fullfil);
     UNAME(Rebind,LVar.Rebind);

@@ -290,7 +290,7 @@ final public class Vector implements DMLValue {
 
     _apply_fails ;
 
-    final private Object writeReplace()
+    final protected Object writeReplace()
 	throws java.io.ObjectStreamException {
 	if (ng == null) { // falls zum ersten Mal serialisiert
 	    GName gn = new GName();
