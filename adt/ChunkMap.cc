@@ -23,6 +23,7 @@ template class BaseMap<ChunkKey>;
 // String hashing function is taken from
 // 'Aho, Sethi, Ullman: Compilers..., page 436
 static inline u_int HashString(const char *s, u_int len, u_int size) {
+  Assert(size > 0);
   const char *sm = (s + len);
   unsigned h = 0, g;
   for (const char *p = s; p < sm; p++) {
@@ -32,7 +33,7 @@ static inline u_int HashString(const char *s, u_int len, u_int size) {
       h = h ^ g;
     }
   }
-  return ((size == 0) ? 0 : (h % size));
+  return (h % size);
 }
 
 u_int ChunkKey::Hash(word key, u_int size) {

@@ -100,10 +100,15 @@ void BaseMap<T>::Remove(word key) {
 template <typename T>
 bool BaseMap<T>::IsMember(word key) {
   Assert(PointerOp::Deref(key) == key && !PointerOp::IsTransient(key));
-  u_int hashedKey = T::Hash(key, GetTableSize());
-  word nodes      = GetEntry(hashedKey);
-  word prev       = Store::IntToWord(0);
-  return (FindKey(key, nodes, prev) != NULL);
+  u_int tableSize = GetTableSize();
+  if (tableSize == 0)
+    return false;
+  else {
+    u_int hashedKey = T::Hash(key, tableSize);
+    word nodes      = GetEntry(hashedKey);
+    word prev       = Store::IntToWord(0);
+    return (FindKey(key, nodes, prev) != NULL);
+  }
 }
 
 template <typename T>
@@ -120,11 +125,16 @@ word BaseMap<T>::Get(word key) {
 template <typename T>
 word BaseMap<T>::CondGet(word key, word alternative) {
   Assert(PointerOp::Deref(key) == key && !PointerOp::IsTransient(key));
-  u_int hashedKey = T::Hash(key, GetTableSize());
-  word nodes      = GetEntry(hashedKey);
-  word prev       = Store::IntToWord(0);
-  MapNode *entry  = FindKey(key, nodes, prev);
-  return ((entry == NULL) ? alternative : entry->GetValue());
+  u_int tableSize = GetTableSize();
+  if (tableSize == 0)
+    return alternative;
+  else {
+    u_int hashedKey = T::Hash(key, tableSize);
+    word nodes      = GetEntry(hashedKey);
+    word prev       = Store::IntToWord(0);
+    MapNode *entry  = FindKey(key, nodes, prev);
+    return ((entry == NULL) ? alternative : entry->GetValue());
+  }
 }
 
 template <typename T>

@@ -21,7 +21,8 @@
 class WordKey {
 public:
   static u_int Hash(word key, u_int size) {
-    return ((size == 0) ? 0 : ((u_int) key % size));
+    Assert(size > 0);
+    return ((u_int) key % size);
   }
   static bool Equals(word a, word b) {
     return a == b;
