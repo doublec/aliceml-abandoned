@@ -73,7 +73,7 @@ define
 		vectorGrInd  # [a(vectorGr) a(vectorGrInd) a(vectorGrInd)]
 		listGr       # [a(listGr) a(listGr) a(listGrM)]
 		%% Required by TreeWidget
-		pipetupleGrS # [a(listGr) a(listGr) a(listGrS)]
+		pipeTupleGrS # [a(listGr) a(listGr) a(listGrS)]
 		recordGr     # [a(recordGr) a(tupleGr)  labelTupleGr]
 		recordGrInd  # [a(recordGrInd) a(tupleGr) labelTupleGr]
 
