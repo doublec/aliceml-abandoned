@@ -33,22 +33,40 @@ struct
 		  val _ = Gtk.widgetSetUsize(canvas, Real.trunc x, Real.trunc y );
 		  val _ = GtkCanvas.setScrollRegion 
 		      (canvas,0.0,0.0,x,y)
-		  val _ =  GtkCanvas.itemNew 
+		  in
+	        ()  
+	      end)
+
+    val background =  GtkCanvas.itemNew 
 		      ( GtkCanvas.root(canvas), 
 		       GtkCanvas.RECTANGLE,
 		       [("x1", Gtk.DOUBLE 0.0),
 			("y1", Gtk.DOUBLE 0.0),
-			("x2", Gtk.DOUBLE x),
-			("y2", Gtk.DOUBLE y),
+			("x2", Gtk.DOUBLE A.x),
+			("y2", Gtk.DOUBLE A.y),
 			("fill_color_gdk", 
 		       Gtk.OBJECT(MkColorTable.allocColor(65535,65535,65535))),
 			("outline_color_gdk", 
 			 Gtk.OBJECT (MkColorTable.allocColor(0,0,0)))]) 
-	      in
-		 (* Gtk.containerAdd(AreaArgs.root,canvas) *) ()  
-	      end)
+
     val root = GtkCanvas.root(canvas)
-	
+    
+    fun resize (x,y) = 
+	let
+	    val _ = GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
+	    val _ = GtkCanvas.itemSet(background,
+				      [("x1", Gtk.DOUBLE 0.0),
+				       ("y1", Gtk.DOUBLE 0.0),
+				       ("x2", Gtk.DOUBLE x),
+				       ("y2", Gtk.DOUBLE y),
+				       ("fill_color_gdk", 
+					Gtk.OBJECT(MkColorTable.allocColor(65535,65535,65535))),
+				       ("outline_color_gdk", 
+					Gtk.OBJECT (MkColorTable.allocColor(0,0,0)))])
+	in
+	    ()
+	end
+
 end
 
 

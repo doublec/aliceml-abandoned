@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+import signature SETTINGS from "SETTINGS-sig"
+
+structure Settings :> SETTINGS = 
+struct 
+    val max_width = ref 10
+    val max_depth = ref 5
+end
