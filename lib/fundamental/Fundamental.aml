@@ -50,6 +50,8 @@ import structure UniqueString	from "UniqueString"
 import structure WideUniqueString from "WideUniqueString"
 import signature STRING_CVT	from "STRING_CVT-sig"
 import structure StringCvt	from "StringCvt"
+import signature TEXT		from "TEXT-sig"
+import structure Text		from "Text"
 
 import signature INTEGER	from "INTEGER-sig"
 import structure Int		from "Int"
@@ -74,14 +76,24 @@ import signature VECTOR		from "VECTOR-sig"
 import structure Vector		from "Vector"
 import signature VECTOR_PAIR	from "VECTOR_PAIR-sig"
 import structure VectorPair	from "VectorPair"
+import signature VECTOR_SLICE	from "VECTOR_SLICE-sig"
+import structure VectorSlice	from "VectorSlice"
 import signature MONO_VECTOR	from "MONO_VECTOR-sig"
 import structure CharVector	from "CharVector"
 import structure Word8Vector	from "Word8Vector"
+import signature MONO_VECTOR_SLICE from "MONO_VECTOR_SLICE-sig"
+import structure CharVectorSlice from "CharVectorSlice"
+import structure Word8VectorSlice from "Word8VectorSlice"
 import signature ARRAY		from "ARRAY-sig"
 import structure Array		from "Array"
+import signature ARRAY_SLICE	from "ARRAY_SLICE-sig"
+import structure ArraySlice	from "ArraySlice"
 import signature MONO_ARRAY	from "MONO_ARRAY-sig"
 import structure CharArray      from "CharArray"
 import structure Word8Array	from "Word8Array"
+import signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
+import structure CharArraySlice	from "CharArraySlice"
+import structure Word8ArraySlice from "Word8ArraySlice"
 
 import signature TIME		from "TIME-sig"
 import structure Time		from "Time"
@@ -142,6 +154,8 @@ structure UniqueString	= UniqueString
 structure WideUniqueString = WideUniqueString
 signature STRING_CVT	= STRING_CVT
 structure StringCvt	= StringCvt
+signature TEXT		= TEXT
+structure Text		= Text
 
 signature INTEGER	= INTEGER
 structure Int		= Int
@@ -166,14 +180,24 @@ signature VECTOR	= VECTOR
 structure Vector	= Vector
 signature VECTOR_PAIR	= VECTOR_PAIR
 structure VectorPair	= VectorPair
+signature VECTOR_SLICE	= VECTOR_SLICE
+structure VectorSlice	= VectorSlice
 signature MONO_VECTOR	= MONO_VECTOR
 structure CharVector	= CharVector
 structure Word8Vector	= Word8Vector
+signature MONO_VECTOR_SLICE = MONO_VECTOR_SLICE
+structure CharVectorSlice  = CharVectorSlice
+structure Word8VectorSlice = Word8VectorSlice
 signature ARRAY		= ARRAY
 structure Array		= Array
+signature ARRAY_SLICE	= ARRAY_SLICE
+structure ArraySlice	= ArraySlice
 signature MONO_ARRAY	= MONO_ARRAY
-structure CharArray     = CharArray
+structure CharArray	= CharArray
 structure Word8Array	= Word8Array
+signature MONO_ARRAY_SLICE = MONO_ARRAY_SLICE
+structure CharArraySlice  = CharArraySlice
+structure Word8ArraySlice = Word8ArraySlice
 
 signature TIME		= TIME
 structure Time		= Time

@@ -1,0 +1,67 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                from "Pervasive"
+import type unit and int and list           from "ToplevelTypes"
+import infix 4 = < <= infix 6 + -
+       val op = and op < and op <= and op + from "ToplevelValues"
+import structure List                       from "List"
+import structure General                    from "General"
+import functor MkArray                      from "MkArray"
+import functor MkSlice                      from "MkSlice"
+
+functor MkArraySlice(type 'a array
+		     type 'a vector
+		     type 'a vector_slice
+		     val alength :   'a array -> int
+		     val asub :      'a array * int -> 'a
+		     val aupdate :   'a array * int * 'a -> unit
+		     val aextract :  'a array * int * int -> 'a vector
+		     val vtabulate : int * (int -> 'a) -> 'a vector
+		     val vsllength : 'a vector_slice -> int
+		     val vslsub :    'a vector_slice * int -> 'a) =
+struct
+    structure Slice = MkSlice(type row     = array
+			      type vector  = vector
+			      val rlength  = alength
+			      val rsub     = asub
+			      val rextract = aextract)
+
+    fun update(sl,j,x) =
+	let
+	    val (r,i,n) = Slice.base sl
+	in
+	    if j < 0 orelse n <= j
+	    then raise General.Subscript
+	    else aupdate(r,i+j,x)
+	end
+
+    structure Array = MkArray(type dst_array  = array
+			      type array      = Slice.t
+			      type dst_vector = vector
+			      type vector     = vector_slice
+			      val maxLen      = 0
+			      val length      = Slice.length
+			      val sub         = Slice.sub
+			      val update      = update
+			      val dlength     = alength
+			      val dupdate     = aupdate
+			      val dextract    = aextract
+			      val vlength     = vsllength
+			      val vsub        = vslsub)
+    open Array
+    open Slice
+end

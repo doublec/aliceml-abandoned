@@ -1,0 +1,58 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive      from "Pervasive"
+import type unit and int and list from "ToplevelTypes"
+import functor   MkArraySlice     from "MkArraySlice"
+import signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
+
+functor MkMonoArraySlice(type elem
+			 type vector
+			 type array
+			 type vector_slice
+			 val alength :   array -> int
+			 val asub :      array * int -> elem
+			 val aupdate :   array * int * elem -> unit
+			 val aextract :  array * int * int -> vector
+			 val vtabulate : int * (int -> elem) -> vector
+			 val vsllength : vector_slice -> int
+			 val vslsub :    vector_slice * int -> elem)
+:> MONO_ARRAY_SLICE where type elem         = elem
+		      and type vector       = vector
+		      and type array        = array
+		      and type vector_slice = vector_slice =
+struct
+    __primitive val cast : 'a -> 'b = "Unsafe.cast"
+
+    structure ArraySlice = MkArraySlice(type 'a array        = array
+					type 'a vector       = vector
+					type 'a vector_slice = vector_slice
+					val alength          = cast alength
+					val asub             = cast asub
+					val aupdate          = cast aupdate
+					val aextract         = cast aextract
+					val vtabulate        = cast vtabulate
+					val vsllength        = cast vsllength
+					val vslsub           = cast vslsub)
+    open ArraySlice
+
+    type elem         = elem
+    type vector       = vector
+    type array        = array
+    type vector_slice = vector_slice
+    type slice        = elem slice
+    type t            = slice
+end

@@ -1,0 +1,51 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                           from "Pervasive"
+import type unit and int and vector and array and list from "ToplevelTypes"
+import val op =                                        from "ToplevelValues"
+import structure VectorSlice                           from "VectorSlice"
+import functor   MkArraySlice                          from "MkArraySlice"
+import signature ARRAY_SLICE                           from "ARRAY_SLICE-sig"
+
+structure ArraySlice :> ARRAY_SLICE =
+struct
+    type a = array
+    type v = vector
+
+    structure ArraySlice = MkArraySlice(
+	type array        = array
+	type vector       = vector
+	type vector_slice = VectorSlice.slice
+	__primitive val alength :  'a a -> int		= "Array.length"
+	__primitive val asub :	   'a a * int -> 'a	= "Array.sub"
+	__primitive val aupdate :  'a a * int * 'a -> unit = "Array.update"
+	__primitive val aextract : 'a a * int * int -> 'a v = "Array.extract"
+	__primitive val vtabulate : int * (int->'a) -> 'a v = "Vector.tabulate"
+	val vsllength = VectorSlice.length
+	val vslsub    = VectorSlice.sub
+    )
+    open ArraySlice
+
+    (* TODO: should we use this?
+	__primitive val asub : 'a t * int -> 'a	 = "Unsafe.Array.sub"
+    *)
+
+    type 'a slice	= 'a t
+
+    fun contains sl	= ArraySlice.contains op= sl
+    fun notContains sl	= ArraySlice.notContains op= sl
+end

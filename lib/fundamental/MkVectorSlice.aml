@@ -1,0 +1,52 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive      from "Pervasive"
+import type int and list          from "ToplevelTypes"
+import infix 4 = infix 6 + -
+       val op = and op + and op - from "ToplevelValues"
+import structure List             from "List"
+import functor   MkSlice          from "MkSlice"
+import functor   MkVector         from "MkVector"
+
+functor MkVectorSlice(type 'a vector
+		      val vlength :   'a vector -> int
+		      val vsub :      'a vector * int -> 'a
+		      val vextract :  'a vector * int * int -> 'a vector
+		      val vtabulate : int * (int -> 'a) -> 'a vector
+		      val vconcat :   'a vector list -> 'a vector
+		      val vfromList : 'a list -> 'a vector) =
+struct
+    structure Slice = MkSlice(type row     = vector
+			      type vector  = vector
+			      val rlength  = vlength
+			      val rsub     = vsub
+			      val rextract = vextract)
+
+    fun concat sls = vconcat(List.map Slice.vector sls)	(*INEFFICIENT*)
+
+    structure Vector = MkVector(type dst_vector = vector
+				type vector     = Slice.t
+				val maxLen      = 0
+				val length      = Slice.length
+				val sub         = Slice.sub
+				val toList      = Slice.toList
+				val tabulate    = vtabulate
+				val fromList    = vfromList
+				val concat      = concat)
+    open Vector
+    open Slice
+end
