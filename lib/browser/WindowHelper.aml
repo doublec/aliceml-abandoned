@@ -21,6 +21,7 @@ import structure MkColorTable from "MkColorTable" (* to be verified *)
 import structure Settings from "Settings"
 import signature WINDOW_HELPER from "WINDOW_HELPER-sig"
 
+import structure TextIO from "x-alice:/lib/system/TextIO"
 
 structure WindowHelper :> WINDOW_HELPER =
 struct
@@ -240,7 +241,7 @@ fun setVisible (x,y) = let
 			   val w = fontWidth(!Settings.font)
 			   val h = fontHeight(!Settings.font)
 			   val rx =  Real.fromInt(w * x)
-			   val ry =  Real.fromInt(h * (y+1))
+			   val ry =  Real.fromInt(h * y)
 		       in
 			   (if Real.> (rx,!(Settings.max_x)) 
 				then Settings.max_x := rx 
