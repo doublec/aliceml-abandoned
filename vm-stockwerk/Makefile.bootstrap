@@ -138,7 +138,7 @@ LIBNATIVES =
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
 	Core.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
-	BOOL-sig.aml BYTE-sig.aml \
+	ATOM-sig.aml BOOL-sig.aml BYTE-sig.aml \
 	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
 	LOCK-sig.aml MATH-sig.aml MONO_ARRAY-sig.aml MONO_VECTOR-sig.aml \
@@ -146,10 +146,10 @@ LIBFUNDAMENTALSOURCES0 = \
 	OPTION-sig.aml PACK_REAL-sig.aml PAIR-sig.aml PROMISE-sig.aml \
 	REAL-sig.aml REF-sig.aml STREAM-sig.aml STRING-sig.aml \
 	STRING_CVT-sig.aml SUBSTRING-sig.aml \
-	TEXT-sig.aml THREAD-sig.aml TIME-sig.aml UNIQUE_STRING-sig.aml \
+	TEXT-sig.aml THREAD-sig.aml TIME-sig.aml \
 	VECTOR-sig.aml VECTOR_PAIR-sig.aml VECTOR_SLICE-sig.aml \
 	WORD-sig.aml PACKAGE-sig.aml \
-	Alt.aml Array.aml ArraySlice.aml Bool.aml Byte.aml Char.aml \
+	Alt.aml Array.aml ArraySlice.aml Atom.aml Bool.aml Byte.aml Char.aml \
 	CharArray.aml CharArraySlice.aml CharVector.aml CharVectorSlice.aml \
 	Future.aml General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
 	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \
@@ -159,9 +159,10 @@ LIBFUNDAMENTALSOURCES0 = \
 	MkWord.aml Option.aml Pair.aml \
 	Position.aml Promise.aml Real.aml Ref.aml Stream.aml String.aml \
 	StringCvt.aml Substring.aml \
-	Text.aml Thread.aml Time.aml Toplevel.aml UniqueString.aml \
-	Vector.aml VectorPair.aml VectorSlice.aml WideChar.aml WideString.aml \
-	WideSubstring.aml WideUniqueString.aml \
+	Text.aml Thread.aml Time.aml Toplevel.aml \
+	Vector.aml VectorPair.aml VectorSlice.aml WideAtom.aml WideChar.aml \
+	WideCharArray.aml WideCharArraySlice.aml WideCharVector.aml \
+	WideCharVectorSlice.aml WideString.aml WideSubstring.aml WideText.aml \
 	Word.aml Word8.aml Word8Array.aml Word8ArraySlice.aml \
 	Word8Vector.aml Word8VectorSlice.aml Word31.aml \
 	Package.aml ByNeed.aml
