@@ -25,25 +25,28 @@ final public class ByNeedFuture extends UnicastRemoteObject
      */
     private DMLValue closure = null;
 
-    private LVar ref = null;
+    //    private LVar ref = null;
 
     private int state = 0; // 0 - unbound, 1 ByNeed error, 2 = bound
 
     public ByNeedFuture(DMLValue v) throws RemoteException {
 	closure = v;
-	ref = new LVar();
+	//	ref = new LVar();
     }
 
-    final synchronized public DMLValue getValue() throws RemoteException { // gibt Wert zurück ohne blockieren
-	DMLValue x = ref.getValue();
-	if (x == ref) return this;
-	else return x;
+    final synchronized public DMLValue getValue()
+	throws RemoteException { // gibt Wert zurück ohne blockieren
+	if (state == 0) {
+	    return this;
+	} else {
+	    return closure;
+	}
     }
 
     final synchronized public DMLValue request()
 	throws RemoteException {
 	if (state == 2) {
-	    return ref.request();
+	    return closure;
 	}
 	else if (state == 0) {
 	    DMLValue temp = closure;
@@ -65,9 +68,9 @@ final public class ByNeedFuture extends UnicastRemoteObject
 			v = vv;
 		    }
 		}
-		ref.bind(v);
+		closure = v;
 		state = 2; // now the variable is bound
-		return ref.request();
+		return closure;
 	    } catch (ExceptionWrapper t) {
 		state = 1; // error
 		closure = t.value;
