@@ -48,6 +48,10 @@ structure BackendStockwerk: PHASE =
 	  | argsToVector (TupArgs xs) = xs
 	  | argsToVector (ProdArgs labelXList) = Vector.map #2 labelXList
 
+	fun translateConArgs (conArgs, env) =
+	    Vector.map (fn idDef => translateIdDef (idDef, env))
+	    (argsToVector (valOf conArgs))
+
 	fun isId (O.Local i, id) = i = id
 	  | isId (O.Global _, _) = false
 
@@ -57,47 +61,67 @@ structure BackendStockwerk: PHASE =
 	fun isIdInArgs (O.OneArg idRef, id) = isId (idRef, id)
 	  | isIdInArgs (O.TupArgs idRefs, id) = isIdInVec (idRefs, id)
 
+	fun getLocal (O.Local i) = SOME i
+	  | getLocal (O.Global _) = NONE
+
 	(*
-	 * Function `detup' tries to find out whether a given identifier
-	 * can actually be represented `flattened', i.e., it represents
-	 * a tuple which we can store in deconstructed form (component-wise).
+	 * Function `detup' tries to find out whether the value referenced
+	 * by a given identifier can actually be represented `flat', i.e.,
+	 * by storing tuples in deconstructed form (component-wise).
 	 *
 	 * This is allowed if, in the instruction stream, we can see
-	 * a deconstruction (GetTup) that will happen in any case and
-	 * before any side-effect - else we might corrupt the order
-	 * of side-effects.  Furthermore, it is checked that the
+	 * a deconstruction (GetTup) that will definitely be performed,
+	 * and this before any side-effect - else we might corrupt the
+	 * order of side-effects.  Furthermore, it is checked that the
 	 * (constructed) value is not used again after this point.
 	 *
-	 * (The implementation computes an approximation.)
+	 * The implementation computes an approximation.
 	 *)
-
-	(*--** the corresponding GetTup instruction must be removed *)
 
 	datatype detup_result =
 	    USED
 	  | SIDE_EFFECTING
 	  | UNKNOWN
 	  | KILLED
-	  | DECONSTRUCTED of O.idDef vector
+	  | DECONSTRUCTED of O.idDef vector * O.instr
+
+	fun detup' (DECONSTRUCTED (idDefs, instr), f) =
+	    DECONSTRUCTED (idDefs, f instr)
+	  | detup' (result, _) = result
 
 	fun detup (O.Kill (ids, instr), id) =
 	    if Vector.exists (fn id' => id = id') ids then KILLED
-	    else detup (instr, id)
-	  | detup (O.PutConst (_, _, instr), id) = detup (instr, id)
-	  | detup (O.PutVar (_, idRef, instr), id) =
-	    if isId (idRef, id) then USED else detup (instr, id)
-	  | detup (O.PutNew (_, instr), id) = detup (instr, id)
-	  | detup (O.PutTag (_, _, idRefs, instr), id) =
-	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
+	    else detup' (detup (instr, id), fn instr => O.Kill (ids, instr))
+	  | detup (O.PutConst (id, value, instr), id') =
+	    detup' (detup (instr, id'),
+		    fn instr => O.PutConst (id, value, instr))
+	  | detup (O.PutVar (id, idRef, instr), id') =
+	    if isId (idRef, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutVar (id, idRef, instr))
+	  | detup (O.PutNew (id, instr), id') =
+	    detup' (detup (instr, id'), fn instr => O.PutNew (id, instr))
+	  | detup (O.PutTag (id, tag, idRefs, instr), id') =
+	    if isIdInVec (idRefs, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutTag (id, tag, idRefs, instr))
 	  | detup (O.PutCon (_, _, _, _), _) = SIDE_EFFECTING
-	  | detup (O.PutRef (_, idRef, instr), id) =
-	    if isId (idRef, id) then USED else detup (instr, id)
-	  | detup (O.PutTup (_, idRefs, instr), id) =
-	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
-	  | detup (O.PutVec (_, idRefs, instr), id) =
-	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
-	  | detup (O.PutFun (_, idRefs, _, instr), id) =
-	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
+	  | detup (O.PutRef (id, idRef, instr), id') =
+	    if isId (idRef, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutRef (id, idRef, instr))
+	  | detup (O.PutTup (id, idRefs, instr), id') =
+	    if isIdInVec (idRefs, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutTup (id, idRefs, instr))
+	  | detup (O.PutVec (id, idRefs, instr), id') =
+	    if isIdInVec (idRefs, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutVec (id, idRefs, instr))
+	  | detup (O.PutFun (id, idRefs, function, instr), id') =
+	    if isIdInVec (idRefs, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutFun (id, idRefs, function, instr))
 	  | detup (O.AppPrim (_, _, _, _), _) = SIDE_EFFECTING
 	  | detup (O.AppVar (_, _, _, _), _) = SIDE_EFFECTING
 	  | detup (O.AppConst (_, _, _, _), _) = SIDE_EFFECTING
@@ -105,10 +129,11 @@ structure BackendStockwerk: PHASE =
 	  | detup (O.GetTup (idDefs, idRef, instr), id) =
 	    if isId (idRef, id) then
 		case detup (instr, id) of
-		    DECONSTRUCTED _ => USED
-		  | KILLED => DECONSTRUCTED idDefs
+		    DECONSTRUCTED (_, _) => USED
+		  | KILLED => DECONSTRUCTED (idDefs, instr)
 		  | res as (USED | SIDE_EFFECTING | UNKNOWN) => res
-	    else detup (instr, id)
+	    else detup' (detup (instr, id),
+			 fn instr => O.GetTup (idDefs, idRef, instr))
 	  | detup (O.Raise idRef, id) =
 	    if isId (idRef, id) then USED else KILLED
 	  | detup (O.Try (_, _, _), _) = UNKNOWN
@@ -120,6 +145,7 @@ structure BackendStockwerk: PHASE =
 	  | detup (O.TagTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.ConTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.VecTest (_, _, _), _) = UNKNOWN
+	  | detup (O.Shared (_, _), _) = UNKNOWN
 	  | detup (O.Return idRefArgs, id) =
 	    if isIdInArgs (idRefArgs, id) then USED else KILLED
 
@@ -138,13 +164,11 @@ structure BackendStockwerk: PHASE =
 				StampSet.fold (fn (stamp, rest) =>
 					       lookupStamp (env, stamp)::rest)
 				nil set
-			    val ids =
-				List.mapPartial (fn O.Local i => SOME i
-						  | O.Global _ => NONE) idRefs
+			    val ids = List.mapPartial getLocal idRefs
 			in
 			    O.Kill (Vector.fromList ids, instr)
 			end
-		      | ref _ => instr
+		  | ref _ => instr
 	    end
 	  | translateBody (nil, _) =
 	    raise Crash.Crash "BackendStockwerk.translateBody"
@@ -152,12 +176,35 @@ structure BackendStockwerk: PHASE =
 	    translateExp (exp, declare (env, id), instr, env)
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
 	    translateIgnore (exp, instr, env)
-
-(*--** MISSING
-	  | RecDec of stm_info * (idDef * exp) vector
-	    (* all ids distinct *)
-*)
-
+	  | translateDec (RecDec (_, idDefExpVec), instr, env) =
+	    let
+		val ids =
+		    Vector.foldr (fn ((idDef, _), ids) =>
+				  case idDef of
+				      IdDef id => declare (env, id)::ids
+				    | Wildcard => ids) nil idDefExpVec
+		val bodiesInstr =
+		    Vector.foldr
+		    (fn ((idDef, exp), instr) =>
+		     case idDef of
+			 IdDef id =>
+			     let
+				 val id' = fresh env
+				 val instr' =
+				     O.AppPrim (O.Wildcard, "Hole.fill",
+						#[O.Local id',
+						  lookup (env, id)],
+						SOME instr)
+			     in
+				 translateExp (exp, id', instr', env)
+			     end
+		       | Wildcard => translateIgnore (exp, instr, env))
+		    instr idDefExpVec
+	    in
+		List.foldr (fn (id, instr) =>
+			    O.AppPrim (O.IdDef id, "Hole.hole", #[],
+				       SOME instr)) bodiesInstr ids
+	    end
 	  | translateDec (RefAppDec (_, IdDef id, id'), instr, env) =
 	    O.GetRef (declare (env, id), translateId (id', env), instr)
 	  | translateDec (RefAppDec (_, Wildcard, id), instr, env) =
@@ -175,9 +222,17 @@ structure BackendStockwerk: PHASE =
 	  | translateDec (ProdDec (info, labelIdDefVec, id), instr, env) =
 	    translateDec (TupDec (info, Vector.map #2 labelIdDefVec, id),
 			  instr, env)
-	  | translateDec (_, _, _) =
+	  | translateDec ((RaiseStm (_, _) | ReraiseStm (_, _) |
+			   TryStm (_, _, _, _) | EndTryStm (_, _) |
+			   EndHandleStm (_, _) | TestStm (_, _, _, _) |
+			   SharedStm (_, _, _) | ReturnStm (_, _) |
+			   IndirectStm (_, _) | ExportStm (_, _)), _, _) =
 	    raise Crash.Crash "BackendStockwerk.translateDec"
-	and translateStm (RaiseStm (_, id), env) =
+	and translateStm ((ValDec (_, _, _) | RecDec (_, _) |
+			   RefAppDec (_, _, _) |
+			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
+	    raise Crash.Crash "BackendStockwerk.translateStm"
+	  | translateStm (RaiseStm (_, id), env) =
 	    O.Raise (lookup (env, id))
 	  | translateStm (ReraiseStm (_, id), env) = (*--** do better *)
 	    O.Raise (lookup (env, id))
@@ -189,68 +244,108 @@ structure BackendStockwerk: PHASE =
 	    O.EndTry (translateBody (body, env))
 	  | translateStm (EndHandleStm (_, body), env) =
 	    O.EndHandle (translateBody (body, env))
-
-(*--** MISSING
-	  | TestStm of stm_info * id * tests * body
-*)
-
 	  | translateStm (TestStm (_, id, LitTests #[], elseBody),
 			  env) =
 	    translateBody (elseBody, env)
-	  | translateStm (TestStm (_, id, LitTests litTests, elseBody),
-			  env) =
+	  | translateStm (TestStm (_, id, LitTests litTests, elseBody), env) =
 	    (case Vector.sub (litTests, 0) of
 		 (WordLit _, _) =>
-		     O.IntTest (lookup (env, id),
-				Vector.map (fn (lit, body) =>
-					    case lit of
-						WordLit w =>
-						    (LargeWord.toInt w,
-						     translateBody (body, env))
-					      | _ => raise Match) litTests,
-				translateBody (elseBody, env))
+		     O.IntTest
+		     (lookup (env, id),
+		      Vector.map (fn (lit, body) =>
+				  case lit of WordLit w =>
+				      (LargeWord.toInt w,
+				       translateBody (body, env))
+				    | _ => raise Match) litTests,
+		      translateBody (elseBody, env))
 	       | (IntLit _, _) =>
-		     O.IntTest (lookup (env, id),
-				Vector.map (fn (lit, body) =>
-					    case lit of
-						IntLit i =>
-						    (LargeInt.toInt i,
-						     translateBody (body, env))
-					      | _ => raise Match) litTests,
-				translateBody (elseBody, env))
+		     O.IntTest
+		     (lookup (env, id),
+		      Vector.map (fn (lit, body) =>
+				  case lit of IntLit i =>
+				      (LargeInt.toInt i,
+				       translateBody (body, env))
+				    | _ => raise Match) litTests,
+		      translateBody (elseBody, env))
 	       | (CharLit _, _) =>
-		     O.IntTest (lookup (env, id),
-				Vector.map (fn (lit, body) =>
-					    case lit of
-						CharLit c =>
-						    (WideChar.ord c,
-						     translateBody (body, env))
-					      | _ => raise Match) litTests,
-				translateBody (elseBody, env))
+		     O.IntTest
+		     (lookup (env, id),
+		      Vector.map (fn (lit, body) =>
+				  case lit of CharLit c =>
+				      (WideChar.ord c,
+				       translateBody (body, env))
+				    | _ => raise Match) litTests,
+		      translateBody (elseBody, env))
 	       | (StringLit _, _) =>
-		     O.StringTest (lookup (env, id),
-				   Vector.map (fn (lit, body) =>
-					       case lit of
-						   StringLit s =>
-						       (s, translateBody (body,
-									  env))
-						 | _ => raise Match) litTests,
-				   translateBody (elseBody, env))
+		     O.StringTest
+		     (lookup (env, id),
+		      Vector.map (fn (lit, body) =>
+				  case lit of StringLit s =>
+				      (s, translateBody (body, env))
+				    | _ => raise Match) litTests,
+		      translateBody (elseBody, env))
 	       | (RealLit _, _) =>
-		     O.RealTest (lookup (env, id),
-				 Vector.map (fn (lit, body) =>
-					     case lit of
-						 RealLit r =>
-						     (valOf (Real.fromString r),
-						      translateBody (body,
-								     env))
-					       | _ => raise Match) litTests,
-				 translateBody (elseBody, env)))
-
-(*--** MISSING
-	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
-*)
-
+		     O.RealTest
+		     (lookup (env, id),
+		      Vector.map (fn (lit, body) =>
+				  case lit of RealLit r =>
+				      (valOf (Real.fromString r),
+				       translateBody (body, env))
+				    | _ => raise Match) litTests,
+		      translateBody (elseBody, env)))
+	  | translateStm (TestStm (_, id, TagTests tagTests, elseBody), env) =
+	    let
+		val (naryTests, nullaryTests) =
+		    List.partition (fn (_, _, conArgs, _) => isSome conArgs)
+		    (Vector.toList tagTests)
+	    in
+		O.TagTest (lookup (env, id),
+			   Vector.map (fn (_, tag, _, body) =>
+				       (tag, translateBody (body, env)))
+			   (Vector.fromList nullaryTests),
+			   Vector.map (fn (_, tag, conArgs, body) =>
+				       (tag, translateConArgs (conArgs, env),
+					translateBody (body, env)))
+			   (Vector.fromList naryTests),
+			   translateBody (elseBody, env))
+	    end
+	  | translateStm (TestStm (_, id, ConTests conTests, elseBody), env) =
+	    let
+		val (naryTests, nullaryTests) =
+		    List.partition (fn (_, conArgs, _) => isSome conArgs)
+		    (Vector.toList conTests)
+	    in
+		O.ConTest (lookup (env, id),
+			   Vector.map (fn (con, _, body) =>
+				       (translateCon (con, env),
+					translateBody (body, env)))
+			   (Vector.fromList nullaryTests),
+			   Vector.map (fn (con, conArgs, body) =>
+				       (translateCon (con, env),
+					translateConArgs (conArgs, env),
+					translateBody (body, env)))
+			   (Vector.fromList naryTests),
+			   translateBody (elseBody, env))
+	    end
+	  | translateStm (TestStm (_, id, VecTests vecTests, elseBody), env) =
+	    O.VecTest (lookup (env, id),
+		       Vector.map (fn (idDefs, body) =>
+				   (Vector.map (fn idDef =>
+						translateIdDef (idDef, env))
+				    idDefs,
+				    translateBody (body, env)))
+		       vecTests,
+		       translateBody (elseBody, env))
+	  | translateStm (SharedStm (_, body, stamp), env) =
+	    (case lookupShared (env, stamp) of
+		 SOME instr => instr
+	       | NONE =>
+		     let
+			 val instr =
+			     O.Shared (stamp, translateBody (body, env))
+		     in
+			 declareShared (env, stamp, instr); instr
+		     end)
 	  | translateStm (ReturnStm (_, TupExp (_, ids)), env) =
 	    O.Return (O.TupArgs (translateIds (ids, env)))
 	  | translateStm (ReturnStm (_, ProdExp (_, labelIdVec)), env) =
@@ -262,12 +357,10 @@ structure BackendStockwerk: PHASE =
 	    in
 		translateExp (exp, id, O.Return (O.OneArg (O.Local id)), env)
 	    end
-	  | translateStm (IndirectStm (_, ref (SOME stms)), env) =
-	    translateBody (stms, env)
+	  | translateStm (IndirectStm (_, ref bodyOpt), env) =
+	    translateBody (valOf bodyOpt, env)
 	  | translateStm (ExportStm (info, exp), env) =
 	    translateStm (ReturnStm (info, exp), env)
-	  | translateStm (_, _) =
-	    raise Crash.Crash "BackendStockwerk.translateStm"
 	and translateExp (LitExp (_, lit), id, instr, _) =
 	    O.PutConst (id, translateLit lit, instr)
 	  | translateExp (PrimExp (_, name), id, instr, _) =
@@ -304,12 +397,13 @@ structure BackendStockwerk: PHASE =
 	    O.AppPrim (O.IdDef id, name, translateIds (ids, env), SOME instr)
 	  | translateExp (VarAppExp (_, id, args), id', instr, env) =
 	    let
-		val returnArgs =
+		val (returnArgs, instr) =
 		    case detup (instr, id') of
-			DECONSTRUCTED idDefs => O.TupArgs idDefs
+			DECONSTRUCTED (idDefs, instr) =>
+			    (O.TupArgs idDefs, instr)
 		      | (USED | SIDE_EFFECTING | UNKNOWN) =>
-			    O.OneArg (O.IdDef id')
-		      | KILLED => O.OneArg O.Wildcard
+			    (O.OneArg (O.IdDef id'), instr)
+		      | KILLED => (O.OneArg O.Wildcard, instr)
 	    in
 		O.AppVar (returnArgs, lookup (env, id),
 			  translateArgs translateId (args, env), SOME instr)
@@ -365,5 +459,33 @@ structure BackendStockwerk: PHASE =
 	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)
 
-	fun translate () (desc, component) = O.Int 0 (*--** *)
+	fun translate () (desc, (imports, (body, exportSign))) =
+	    let
+		val imports' =
+		    Vector.map (fn (_, sign, url) =>
+				O.Tuple #[O.Sign sign,
+					  O.String (Url.toString url)]) imports
+		val env = new ()
+		val _ = startFn env
+		val formalId = fresh env
+		val idDefs =
+		    Vector.map (fn (idDef, _, _) =>
+				translateIdDef (idDef, env)) imports
+		val instr = translateBody (body, env)
+		val raiseId = fresh env
+		val (globals, nlocals) = endFn env
+		val _ = Assert.assert (Vector.length globals = 0)
+		val elseInstr =
+		    O.PutConst (raiseId, O.Prim "General.Match",
+				O.Raise (O.Local raiseId))
+		val bodyInstr =
+		    O.VecTest (O.Local formalId, #[(idDefs, instr)], elseInstr)
+		val function =
+		    O.Function (Vector.length globals, nlocals,
+				O.OneArg (O.IdDef formalId), bodyInstr)
+	    in
+		O.Tuple #[O.Vector imports',
+			  O.Closure (#[], function),
+			  O.Sign exportSign]
+	    end
     end

@@ -1,9 +1,11 @@
 Group is
 
+    ../misc/sources.cm
     ../infrastructure/crash.cm
     ../infrastructure/phase.cm
     ../infrastructure/target.cm
     ../common/id-stamp.cm
+    ../common/interface.cm
     ../backend-common/flat-grammar.cm
 
     PICKLE.sig

@@ -20,20 +20,22 @@ structure Environment :> ENVIRONMENT =
 		  scope: scope ref,
 		  localIndex: index ref,
 		  globalIndex: index ref,
-		  globals: globals ref}
+		  globals: globals ref,
+		  shared: Pickle.instr StampMap.t}
 
 	fun new () =
 	    {stack = ref nil, scope = ref (StampMap.new ()),
-	     localIndex = ref 0, globalIndex = ref 0, globals = ref nil}
+	     localIndex = ref 0, globalIndex = ref 0, globals = ref nil,
+	     shared = StampMap.new ()}
 
-	fun startFn {stack, scope, localIndex, globalIndex, globals} =
+	fun startFn {stack, scope, localIndex, globalIndex, globals, shared} =
 	    (stack := (!scope, !localIndex, !globalIndex, !globals)::(!stack);
 	     scope := StampMap.new ();
 	     localIndex := 0;
 	     globalIndex := 0;
 	     globals := nil)
 
-	fun endFn {stack, scope, localIndex, globalIndex, globals} =
+	fun endFn {stack, scope, localIndex, globalIndex, globals, shared} =
 	    case !stack of
 		(scope', localIndex', globalIndex', globals')::rest =>
 		    (Vector.fromList (List.rev (!globals)), !localIndex)
@@ -44,7 +46,7 @@ structure Environment :> ENVIRONMENT =
 			    stack := rest)
 	      | nil => raise Crash.Crash "Environment.endFn"
 
-	fun declare ({stack, scope, localIndex, globalIndex, globals},
+	fun declare ({stack, scope, localIndex, globalIndex, globals, shared},
 		     FlatGrammar.Id (_, stamp, _)) =
 	    let
 		val i = !localIndex
@@ -54,7 +56,7 @@ structure Environment :> ENVIRONMENT =
 		i
 	    end
 
-	fun fresh {stack, scope, localIndex, globalIndex, globals} =
+	fun fresh {stack, scope, localIndex, globalIndex, globals, shared} =
 	    let
 		val i = !localIndex
 	    in
@@ -62,7 +64,7 @@ structure Environment :> ENVIRONMENT =
 		i
 	    end
 
-	fun lookup ({stack, scope, localIndex, globalIndex, globals},
+	fun lookup ({stack, scope, localIndex, globalIndex, globals, shared},
 		    id as FlatGrammar.Id (_, stamp, _)) =
 	    case StampMap.lookup (!scope, stamp) of
 		SOME idRef => idRef
@@ -77,7 +79,15 @@ structure Environment :> ENVIRONMENT =
 			idRef
 		    end
 
-	fun lookupStamp ({stack, scope, localIndex, globalIndex, globals},
-			 stamp) =
+	fun lookupStamp ({stack, scope, localIndex, globalIndex, globals,
+			  shared}, stamp) =
 	    StampMap.lookupExistent (!scope, stamp)
+
+	fun lookupShared ({stack, scope, localIndex, globalIndex, globals,
+			   shared}, stamp) =
+	    StampMap.lookup (shared, stamp)
+
+	fun declareShared ({stack, scope, localIndex, globalIndex, globals,
+			    shared}, stamp, instr) =
+	    StampMap.insertDisjoint (shared, stamp, instr)
     end

@@ -14,15 +14,6 @@ structure Pickle :> PICKLE =
     struct
 	structure C = EmptyContext
 
-	datatype value =
-	    Prim of string
-	  | Int of LargeInt.int
-	  | Word of LargeWord.word
-	  | Char of WideChar.char
-	  | String of WideString.string
-	  | Real of string
-	  | Constructor of Stamp.t
-
 	type id = int
 
 	datatype idDef =
@@ -33,15 +24,24 @@ structure Pickle :> PICKLE =
 	    Local of id
 	  | Global of int
 
-	datatype con =
-	    Con of idRef
-	  | StaticCon of value
-
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
 
-	datatype instr =
+	datatype value =
+	    Prim of string
+	  | Int of LargeInt.int
+	  | Word of LargeWord.word
+	  | Char of WideChar.char
+	  | String of WideString.string
+	  | Real of string
+	  | Constructor of Stamp.t
+	  | Tuple of value vector
+	  | Vector of value vector
+	  | Closure of value vector * function
+	  | Sign of Inf.sign
+	and function = Function of int * int * idDef args * instr
+	and instr =
 	    Kill of id vector * instr
 	  | PutConst of id * value * instr
 	  | PutVar of id * idRef * instr
@@ -69,8 +69,11 @@ structure Pickle :> PICKLE =
 	  | ConTest of idRef * (con * instr) vector
 			     * (con * idDef vector * instr) vector * instr
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
+	  | Shared of Stamp.t * instr
 	  | Return of idRef args
-	and function = Function of int * int * idDef args * instr
+	and con =
+	    Con of idRef
+	  | StaticCon of value
 
 	type t = value
     end
