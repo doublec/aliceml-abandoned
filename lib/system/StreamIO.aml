@@ -255,8 +255,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    (if Vector.length v = 0 then ref (READER (reader, NONE))
 	     else ref (READER (reader, SOME (v, 0))), 0)
 
-	fun getReader (history, _) = getReader' history
-	and getReader' history =
+	fun getReader (history, _) = getReader' (history, [])
+	and getReader' (history, vs) =
 	    let
 		val p = Promise.promise ()
 		val state = Ref.exchange (history, Promise.future p)
@@ -278,10 +278,10 @@ functor StreamIO(structure PrimIO: PRIM_IO
 					 (VectorSlice.slice (v, i, NONE)))
 			in
 			    Promise.fulfill (p, history');
-			    (reader, v)
+			    (reader, Vector.concat (List.rev (v::vs)))
 			end
-		  | BUFFER (_, f') =>
-			(Promise.fulfill (p, state); getReader' f')
+		  | BUFFER (v, f') =>
+			(Promise.fulfill (p, state); getReader' (f', v::vs))
 		  | (TRUNCATED (name, _) | CLOSED_IN name) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "getReader",
