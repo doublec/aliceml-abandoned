@@ -23,10 +23,9 @@
 #include "alice/AbstractCode.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
-#if LIGHTNING
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/NativeConcreteCode.hh"
-#endif
+#include "alice/NativeCodeJitter.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/Authoring.hh"
