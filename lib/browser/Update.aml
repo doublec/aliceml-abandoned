@@ -13,26 +13,19 @@
  *
  *)
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-
-import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
-import structure MkDictionary from "MkDictionary"
-import structure Dictionaries from "Dictionaries"
-
 import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
+import structure Settings from "Settings"
+import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
 import structure Draw from "Draw"
 import structure Server from "Server"
-import structure GtkSupport from "GtkSupport"
-import structure Settings from "Settings"
 
 import signature UPDATE from "UPDATE-sig"
-
-
 
 local
     open Node
@@ -43,19 +36,135 @@ struct
     
     exception UpdateError
       
-(* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
-       - werden beim Starten des Inspectors "gefuellt" *)
+    (* operations that make use of the funcionality of Widget - 
+       are being filled at start of the inspector *) 
+
     val incrActLine = ref (fn _ => ())
     val resize = ref (fn () => ()) 
 
-    val stopflag = ref false;
+    (* flag for stop button *)
+
+    val stopflag = ref false; 
+
+    (* width of the widest tree *)
 
     val screen_max_x = ref 0
-        
-    (* max *)
+
+    (*******************)
+	
+    (* some auxiliary functions *)
+
     fun max (xs,f) = foldl(fn (x,e) => Int.max(f(x),e)) 0 xs
 
-    (* iterMove *)
+    fun calcMaxXDim (dict,i)  = 
+       if i > Dictionaries.Main.getHighestIndexAssigned(dict) 
+	   then 0
+       else 
+	   case Dictionaries.Main.lookup(dict,i) of
+	       NONE => calcMaxXDim(dict,i+1)
+	     | SOME (node,_) => Int.max(get_xdim(node),
+					calcMaxXDim(dict,i+1)) 
+
+    fun  findRelNode(anc,va) = 
+	let val found = ref false
+	    val va_inf = UnsafeValue.cast va : Reflect.module
+	    val g = fn n => findRelNode(n,va)
+	    val f = fn n 
+		    => if isRelNode n 
+		       andalso ( case getDesc(n) of
+				VALUE(r) => va = #value(r)
+			      | I_VALUE(r) => va_inf = #value(r)
+			      | _ => false) 
+			   then ( found := true
+				 ; setDazzled n)
+		       else ()
+	in ( case anc of
+	    Concat(r) => ( f anc
+			  ; if !found then ()
+			    else Array.app f (getKids(anc))
+			  ; if !found then ()
+			    else Array.app g (getKids(anc)) )
+	  | Container(r) => ( f anc
+			     ; if !found then () 
+			       else Array.app f (getKids(anc))
+			     ; if !found then ()
+			       else Array.app g (getKids(anc)) )
+	  | RelNode(r) => (f anc
+                           ; if !found then ()
+			     else g (!(#content(r))) )
+	  | _ => () )
+	end
+
+    (* finds highest depth in a (part of a) tree *)
+
+   fun findHighestDepth n = 
+       case n of
+       Concat(r) => max(Array.toList(#kids(r)),
+			fn no => if no = Empty orelse isDepthLimit no 
+				     then getDepth n
+				 else findHighestDepth no)
+     | Container(r) => max(Array.toList(#kids(r)),
+			   fn no => if no = Empty orelse isDepthLimit no
+					then getDepth n
+				    else findHighestDepth no)
+     | RelNode(r) => findHighestDepth (!(#content(r)))
+     | node => if isDepthLimit node then getDepth(getParent(node))
+	       else getDepth node
+
+   (* finds highest width in a (part of a) tree *)
+
+    fun  findHighestWidth n = if (!(Settings.relmode) 
+				  andalso isListType(getTyp(getDesc(n))) 
+				  handle Match => false)
+				  then Int.max(findHighestListWidth (n,0))
+			      else findHighestWidth'(n,0)
+
+    and findHighestWidth' (n,a) = 
+	case n of
+	Concat(r) => Array.foldl (fn(n,e) => Int.max(findHighestWidth'(n,a),e))
+ 	                          a (getKids(n))
+      | RelNode(r) =>  findHighestWidth(getContent(n))
+      | Container(r) 
+	=> Int.max (Array.foldl 
+			  (fn (n,(elem_e,count)) 
+			   => if (isSimple n andalso  
+				  (String.equal("struct",getRep n) 
+				   orelse String.equal("end",getRep n) ) ) 
+			   orelse isLimit n  
+				  then (elem_e,count) 
+			      else (Int.max(findHighestWidth'(n,a),elem_e),
+				    count+1))
+			  (a,0) 
+			  (getKids(n))) 
+      | _ => a
+
+    and findHighestListWidth (no,a) = 
+	let val n = if isRelNode no 
+			then getContent no
+		    else no
+	in if not(isContainer(n))
+	       then (a,0)
+	   else let val head = Array.sub(getKids(Array.sub(getKids(n),0)),0)
+		    val tail' = Array.sub(getKids(n),1)
+		    val tail = if isRelNode tail' 
+				   then getContent(tail') 
+			       else tail'
+		    val (tailmax,count) = findHighestListWidth (tail,a)
+		in (Int.max(findHighestWidth head,tailmax),count +1)
+		end		 
+	end 
+		   
+    (*******************)
+
+    (* ajustment of the width of the window *)   
+    
+    fun setVisible x = 
+	if x > !screen_max_x 
+	    then screen_max_x := x
+	else screen_max_x := calcMaxXDim (Dictionaries.maindict,0)
+
+    (* displacement of all "successor" trees after every update *)
+
     fun iterMove(dy,i) =
 	if i > Dictionaries.Main.getHighestIndexAssigned(Dictionaries.maindict)
 	    then ()
@@ -63,49 +172,37 @@ struct
 	            NONE => ()
                   | SOME (node,line) 
 			=> ( GtkSupport.moveGroup(getGroup(node),0,dy,
-						  Settings.getFontHeight(),Settings.getFontWidth())
+						  Settings.getFontHeight(),
+						  Settings.getFontWidth())
 			   ; GtkSupport.yPosSepLine(line,getGroup(node),
 						    Settings.getFontHeight()) )
              ; iterMove(dy,i+1) )
 
-    (* calcMaxXDim *) 
-    fun calcMaxXDim (dict,i)  = 
-       if i > Dictionaries.Main.getHighestIndexAssigned(dict) 
-	   then 0
-       else 
-	   case Dictionaries.Main.lookup(dict,i) of
-	       NONE => calcMaxXDim(dict,i+1)
-	     | SOME  (node,_)  => Int.max( get_xdim(node)  ,calcMaxXDim(dict,i+1)) 
-		
-		
-    (* setVisible *) 
-    fun setVisible x = 
-	if x > !screen_max_x 
-	    then screen_max_x := x
-	else screen_max_x := calcMaxXDim (Dictionaries.maindict,0)
+    (***************************************************)
 
-   (* update *)
-    and update (no,va,f,g,root) = 
-	   let val  n = if !(Settings.relmode) 
-	                    andalso isRelNode(getParent(no))
-			    then getParent(no) 
-			else no
-	       val ind = getAncIndex n 
-	       val (anc,ancline) = valOf(Dictionaries.Main.lookup(Dictionaries.maindict,ind)) 
-               (* Urahne *)
-	       val old_ydim = get_ydim(anc)
-	       val (p,index) = if !(Settings.relmode) 
-				   then (getParent(n),getIndex(n)) 
-			       else getNoRelAnc n
-	       val old_settings = (!Settings.max_width,!Settings.max_depth)
-	       val new = 
-		   (if !(Settings.relmode) (* RELATIONSMODUS *)
-			 then ( Dictionaries.RelMan.delete
-			       (Dictionaries.reldict,ind)
-			       ; relnumber := 0 )
-		     else ()  
-		     ; GtkSupport.stopButtonSetActive(true) 
-		     ; case getDesc(n) of
+    (* core function - 
+       is essential for reinspect, foldDepth, foldWith and watcher *)
+
+    fun update (no,va,f,g,root) = 
+	let val  n = if !(Settings.relmode) 
+	             andalso isRelNode(getParent(no))
+			 then getParent(no) 
+		     else no
+	    val ind = getAncIndex n 
+	    val (anc,ancline) = valOf(Dictionaries.Main.lookup
+				      (Dictionaries.maindict,ind)) 
+	    val old_ydim = get_ydim(anc)
+	    val (p,index) = if !(Settings.relmode) 
+				then (getParent(n),getIndex(n)) 
+			    else getNoRelAnc n
+	    val old_settings = (!Settings.max_width,!Settings.max_depth)
+	    val new = ( if !(Settings.relmode) (* RELATIONSMODUS *)
+			    then ( Dictionaries.RelMan.delete
+				  (Dictionaries.reldict,ind)
+				  ; relnumber := 0 )
+			else ()  
+		       ; GtkSupport.stopButtonSetActive(true) 
+		       ; case getDesc(n) of
 			 VALUE(r) => f(NONE,va,#typ(r),p,index,
 				       getDepth(n),root)
 		       | I_VALUE(r) => let val va_inf =   
@@ -114,86 +211,45 @@ struct
 					    getDepth(n),root)
 				       end 
 		       | INTERPUNCT => raise UpdateError )
-	       val _ = TextIO.print("UPDATE: CREATE_GRAPH beendet\n")
-	       val _ = (GtkSupport.stopButtonSetActive(false)
-		      ; if !stopflag 
-			    then (Settings.set_width (#1(old_settings))
-				  ; Settings.set_depth (#2(old_settings))
-				  ; stopflag := false)
-				else () 
-		       ; updateChild(p,index,new))
-	       val _ = TextIO.print("UPDATE: updateChild gemacht\n")
+	       val _ = ( GtkSupport.stopButtonSetActive(false)
+			; if !stopflag 
+			      then (Settings.set_width (#1(old_settings))
+				    ; Settings.set_depth (#2(old_settings))
+				    ; stopflag := false)
+			  else () 
+			; updateChild(p,index,new) )
 	       val node = if getParent(new) = Empty then new else anc
-	       (*
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
 		       else ()
-			   *)
-	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc),
-						      Settings.getFontHeight(),
-						      Settings.getFontWidth())
-	   in ( setDazzled n
-               ; TextIO.print("UPDATE: setDazzled fertig\n")
-	       ; GtkSupport.objectDestroy(getGroup(n))
-               ; TextIO.print("UPDATE: Gruppe zerstoert\n")
-               ; Layout.layout(node)  
-               ; TextIO.print("UPDATE: Layout fertig\n")
-	       ; Dictionaries.Main.update(Dictionaries.maindict,
-					  (ind,(node,ancline)))
-	       ; Draw.draw(node,0,y_pos,true)  
-	       ; let val dy = get_ydim(node) - old_ydim
-		 in ( TextIO.print("\nUPDATE: act_line incremented by "^Int.toString(dy)^"\n")
-		     ; (!incrActLine) dy
-		     ; iterMove (dy,getIndex(anc) + 1) 
-		     ; setVisible(get_xdim(node)) )
-		 end
-	      ; TextIO.print(" Iter move done \n") )
-	   end  
-
-    (* findRelNode *)
-    and findRelNode(anc,va) = 
-	let val found = ref false
-	    val va_inf = UnsafeValue.cast va : Reflect.module
-	    val g = fn n => findRelNode(n,va)
-	    val f = fn n => if isRelNode n 
-		            andalso ( case getDesc(n) of
-				      VALUE(r) => va = #value(r)
-				    | I_VALUE(r) => va_inf = #value(r)
-				    | _ => false) (* vorher: raise UpdateError *)
-				then ( found := true
-				      ; setDazzled n)
-			    else ()
-	in ( case anc of
-	     Concat(r) => ( f anc
-			  ; if !found then ()
-			    else Array.app f (getKids(anc))
-			  ; if !found then ()
-			    else Array.app g (getKids(anc)) )
-	   | Container(r) => ( f anc
-			     ; if !found then () 
-			       else Array.app f (getKids(anc))
-			     ; if !found then ()
-			       else Array.app g (getKids(anc)) )
-	   | RelNode(r) => (f anc
-                           ; if !found then ()
-			     else g (!(#content(r))) )
-	   | _ => () )
-	end
-        
-    (* tell *)
-    and tell (va,i,li,f,g,root) =  
+	       val y_pos = #2(GtkSupport.getPosition(getGroup(anc),
+						     Settings.getFontHeight(),
+						     Settings.getFontWidth()))
+	in ( setDazzled n
+	    ; GtkSupport.objectDestroy(getGroup(n))
+	    ; Layout.layout(node) (* layouting *)
+	    ; Dictionaries.Main.update(Dictionaries.maindict,
+				       (ind,(node,ancline)))
+	    ; Draw.draw(node,0,y_pos,true) (* drawing *)  
+	    ; let val dy = get_ydim(node) - old_ydim
+	      in ( (!incrActLine) dy
+		  ; iterMove (dy,getIndex(anc) + 1) 
+		  ; setVisible(get_xdim(node)) )
+	      end )
+	end  
+    
+    (*  mechanism of update watching for FUTURES *)    
+  
+    fun tell (va,i,li,f,g,root) =  
 	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
-	                           li
-	in ((* Window.stopButtonSetActive(true) *)
-	     List.map (fn n => update(n,va,f,g,root)) new_li 
-	   ; (!resize)() 
-	   ; Dictionaries.Transient.delete(Dictionaries.transdict,i)
-	    (* ; Window.stopButtonSetActive(false) *) )
+	    li
+	in (  List.map (fn n => update(n,va,f,g,root)) new_li 
+	    ; (!resize)() 
+	    ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
 	end   
 
-    (* watcher *)
-    and watcher (future,va,i,f,g,root) = 
+    fun watcher (future,va,i,f,g,root) = 
 	Thread.thread 
 	(fn () 
 	 =>  ( if Future.isLazy  future
@@ -202,20 +258,21 @@ struct
 	     ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
 					(Dictionaries.transdict,i)))
 	       in Server.serve(fn () => tell(va,i,new_l,f,g,root))
-	       end ))
-	
-    (* reinspect *)
-    and reinspect (n,f,g,root) = 
+	       end ) )
+
+    (* REINSPECT *)
+
+    fun  reinspect (n,f,g,root) = 
         let val va = getReflectValue n
-			           : Reflect.value
 	in  Server.serve(fn () => 
 			 ( update(n,va,f,g,root) 
-			 ; (!resize)() ))
+			  ; (!resize)() ))
 	end
-         handle General.Match  => raise UpdateError 
+        handle General.Match  => raise UpdateError 
 	
-    (* foldDepth *)
-    and foldDepth (n,i,f,g,root) = 
+    (* folding of DEPTH *) 
+
+    fun foldDepth (n,i,f,g,root) = 
 	Server.serve
 	(fn () => 
 	 let val _ = TextIO.print("FOLD_DEPTH\n")
@@ -223,8 +280,6 @@ struct
 	 in 
 	     ( setDazzled n
 	      ; let val new_depth = findHighestDepth n + i 
-		    val _ = TextIO.print("\nUPDATE: findHighestDepth liefert "
-					 ^Int.toString(findHighestDepth n)^"\n")
 		    val va = getReflectValue n
 		in ( Settings.set_depth(if new_depth < 0 then 0 else new_depth)
 		    ; update (n,va,f,g,root)
@@ -233,19 +288,12 @@ struct
 	      ; Settings.set_depth(old_depth) )
 	 end)
 
-    (* foldWidth *)
-    and foldWidth (n,i,f,g,root) =
-        ( (* if !(Settings.relmode)
-	       then let val ind = getAncIndex n 
-			val anc = #1(valOf(Dictionaries.Main.lookup(Dictionaries.maindict,ind)))
-		    in (reinspect(anc,f,g,root)
-			;(!resize)())
-		    end
-	   else ()
-	; *) Server.serve
+    (* folding of WIDTH *) 
+
+    fun foldWidth (n,i,f,g,root) =
+        Server.serve
 	(fn () =>
-         ( let val _ = TextIO.print("FOLD_WIDTH\n")
-	       val new_n = if not(getDesc(n) = INTERPUNCT) 
+         ( let val new_n = if not(getDesc(n) = INTERPUNCT) 
 			       then n
 			   else let val cp = getParent(n)
 				in case getDesc(cp) of 
@@ -255,80 +303,17 @@ struct
 	       val old_width = !(Settings.max_width)
 	   in 
 	       ( setDazzled new_n
-		; TextIO.print("FOLD_WIDTH: setDazzled beendet\n")
 		; let val new_width = findHighestWidth new_n + i  
-		      val _ = TextIO.print("FOLD_WIDTH: new_width bestimmt\n")
 		      val va = getReflectValue new_n
-		      val _ = TextIO.print("FOLD_WIDTH: highestWidth ist "^Int.toString(findHighestWidth new_n)^"\n")
-		  in ( Settings.set_width(if new_width < 0 then 0 else new_width)
+		  in ( Settings.set_width(if new_width < 0 then 0 
+					  else new_width)
 		      ; update (new_n,va,f,g,root)
-		      ; if isRelNode new_n then TextIO.print("FW: uebergebe RelNode...\n") else ()
 		      ; (!resize)() )
 		  end
 		; Settings.set_width(old_width) )
-	   end)) )
+	   end ))
 
-    (* findHighestDepth *)
-    and findHighestDepth n = 
-	case n of
-	Concat(r) => max(Array.toList(#kids(r)),
-				fn no => if no = Empty orelse isDepthLimit no 
-					     then getDepth n
-					 else findHighestDepth no)
-      | Container(r) => max(Array.toList(#kids(r)),
-				   fn no => if no = Empty orelse isDepthLimit no
-						then getDepth n
-					    else findHighestDepth no)
-      | RelNode(r) => findHighestDepth (!(#content(r)))
-      | node => if isDepthLimit node then getDepth(getParent(node))
-		else getDepth node
-
-    (* finHighestWidth *)
-    and  findHighestWidth n = (if (!(Settings.relmode) andalso isListType(getTyp(getDesc(n))) handle Match => false)
-				  then Int.max(findHighestListWidth (n,0))
-			      else findHighestWidth'(n,0)) handle exn => (Inspector.inspect exn ; ~1)
-
-    and findHighestWidth' (n,a) = 
-	( case n of
-	  Concat(r) => Array.foldl (fn (n,e) => Int.max(findHighestWidth'(n,a),e)) a (getKids(n))
-	| RelNode(r) =>  findHighestWidth(getContent(n))
-	| Container(r) => Int.max (Array.foldl 
-				   (fn (n,(elem_e,count)) 
-				    => if (isSimple n andalso  
-					   ( String.equal("struct",getRep n) 
-					    orelse String.equal("end",getRep n) ) ) 
-				       orelse isLimit n  
-					   then (elem_e,count) 
-				       else (Int.max(findHighestWidth'(n,a),elem_e),count+1))
-					    (a,0) (getKids(n))) 
-	| _ => a )
-
-    and findHighestListWidth (no,a) = 
-	let val n = if isRelNode no 
-			then (TextIO.print("FHLW: RelNode\n"); getContent no )
-		    else (TextIO.print("FHLW: _keine_ RelNode\n");no)
-	in 
-	    if (* isSimple n orelse isLimit n orelse isRelRefNode n *) not(isContainer(n))
-		then (a,0)
-	    else let val head = Array.sub(getKids(Array.sub(getKids(n),0)),0)
-		     val tail' = Array.sub(getKids(n),1)
-		     val tail = if isRelNode tail' then getContent(tail') 
-				else tail'
-		     val (tailmax,count) = findHighestListWidth (tail,a)
-		 in 
-		     (Int.max(findHighestWidth head,tailmax),count +1)
-		 end		 
-	end 
-    (* getRelNodeList *)
-    and getRelNodeList n = case n of 
-        RelNode(r) => n::getRelNodeList(!(#content(r)))
-      | Concat(r) => Array.foldl (fn (n,l) => l@getRelNodeList(n)) 
-	             [] (getKids(n))
-      | Container(r) => Array.foldl (fn (n,l) => l@getRelNodeList(n)) 
-		        [] (getKids(n))
-      | _ => nil
-   
-end (* struct *)
+end 
 
 end
 
