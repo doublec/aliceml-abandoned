@@ -15,20 +15,21 @@ import structure TextIO             from "../../lib/system/TextIO"
 import structure IO                 from "../../lib/system/IO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
-import structure Signature          from "../../lib/system/Signature"
 import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Component          from "../../lib/system/Component"
 import structure Url                from "../../lib/utility/Url"
+import structure MkHashImpMap       from "../../lib/utility/MkHashImpMap"
+import structure FromEqHashKey      from "../../lib/utility/HASH_KEY-sig"
 import structure Path               from "../../lib/rtt/Path"
 import structure Inf                from "../../lib/rtt/Inf"
 
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
-import structure Error              from "../infrastructure/Error"
 import structure Target             from "../infrastructure/Target"
 import signature COMPILER           from "COMPILER-sig"
-import structure SignTable          from "SignTable"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
+
+type sig_loader = Source.desc * Url.t -> Inf.sign
 
 functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				where type component = Component.t
@@ -44,6 +45,9 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	val extension = extension
 
+	fun error message =
+	    (TextIO.output (TextIO.stdErr, "### error: " ^ message ^ "\n");
+	     raise Error)
 	fun warn message =
 	    TextIO.output (TextIO.stdErr, "### warning: " ^ message ^ "\n")
 
@@ -96,11 +100,9 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	fun readFile filename =
 	    let
 		val file   = TextIO.openIn filename handle IO.Io _ =>
-				Error.error(Source.nowhere,
-					    "could not open " ^ filename)
+				error("could not open " ^ filename)
 		val source = TextIO.inputAll file handle IO.Io _ =>
-				Error.error(Source.nowhere,
-					    "error reading " ^ filename)
+				error("error reading " ^ filename)
 		val _      = TextIO.closeIn file
 	    in
 		source
@@ -164,24 +166,22 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s')
 		    val _ = trace "done"
-		    val sign =
+		    val inf' =
 			case target of
 			    Target.COMPONENT {component, ...} =>
-				valOf (Component.sign (component ()))
-			  | Target.FOREIGN {sign, ...} => sign
+				valOf (Component.inf (component ()))
+			  | Target.FOREIGN {inf, ...} => inf
 		    val inf = (Inf.asSingKind
 			       (#2 (Inf.asInfItem
-				    (List.hd (Inf.items
-					      (Signature.toSig sign)))))
+				    (List.hd (Inf.items (Inf.asSig inf')))))
 			      handle Future.Future e => raise Future.innerExn e)
 			      handle e as ( Inf.Interface | Inf.Kind | Inf.Item
 			             | List.Empty | Option.Option) =>
-				Error.error (Source.nowhere,
-					"signature file " ^ sigFilename ^
+				 error ("signature file " ^ sigFilename ^
 					" does not contain a proper\
 					\ signature declaration")
 		in
-		    Signature.fromSig (Inf.asSig inf)
+		    inf
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -195,15 +195,15 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    val component = component ()
 			in
 			    Component.save (outFilename, component);
-			    valOf (Component.sign component)
+			    valOf (Component.inf component)
 			end
-		  | (_, Target.FOREIGN {save, sign}) =>
+		  | (_, Target.FOREIGN {save, inf}) =>
 			(save outFilename;
-			 sign)
+			 inf)
 
 	    val fileStack: string list ref = ref nil
 	in
-	    fun compileFileToFile (sourceFilename, targetFilename) =
+	    fun compileFileToFile' (sourceFilename, targetFilename) =
 		(trace ("compiling file " ^ sourceFilename);
 		 fileStack := sourceFilename::(!fileStack);
 		 processFile (compile' targetFilename) sourceFilename
@@ -267,35 +267,43 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	 *                  else A without the component extension
 	 *)
 
-	fun loadSign url =
-	    (case Component.sign (ComponentManager.link url) of
-		SOME sign => sign
+	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+
+	val sigTable: Inf.sign UrlMap.t = UrlMap.new ()
+
+	fun loadSig url =
+	    (case Component.inf (ComponentManager.link url) of
+		SOME inf => inf
 	      | NONE => raise Component.Corrupt
 	    )
 	    handle e => raise Future.innerExn e
 
-	fun acquireSign (desc, url) =
+	fun acquireSig (desc, url) =
 	    let
 		val url' =
 		    case Source.url desc of
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
 	    in
-		case SignTable.lookup (urlCeil url') of
+		case UrlMap.lookup (sigTable, urlCeil url') of
 		    SOME sign => sign
 		  | NONE =>
 		    let
-			val sign =
-			    (loadSign url'
+			val inf =
+			    (loadSig url'
 			     before trace ("loaded signature from " ^
 					   Url.toString url'))
 			    handle exn as (IO.Io _ | Component.Corrupt) =>
-				   acquireFromSig (url', exn)
+				   acquireFromSigFile (url', exn)
+			val sign = Inf.asSig inf handle Inf.Interface =>
+					error("higher-order content found in " ^
+					      Url.toString url)
 		    in
-			SignTable.insert (urlCeil url', sign); sign
+			UrlMap.insert (sigTable, urlCeil url', sign);
+			sign
 		    end
 	    end
-	and acquireFromSig (url, exn) =
+	and acquireFromSigFile (url, exn) =
 	    let
 		val targetFilename = parseUrl url
 		val sigFilename = pathFloor targetFilename ^ ".asig"
@@ -305,31 +313,29 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		else if !Switches.Global.recursiveCompilation then
 		    acquireFromSource targetFilename
 		else
-		    Error.error
-			(Source.nowhere,
-			 (case exn of
+		    error ((case exn of
 			      IO.Io _ => "could not locate component "
 			    | Component.Corrupt => "no signature found in "
-			    | _ => "") ^ parseUrl url)
+			    | _ => "unknown error while accessing ") ^
+			   parseUrl url)
 	    end
 	and acquireFromSource targetFilename =
 	    case acquireFromSource' (targetFilename, ".aml") of
-		SOME sign => sign
+		SOME inf => inf
 	      | NONE =>
 	    case acquireFromSource' (targetFilename, ".sml") of
-		SOME sign => sign
+		SOME inf => inf
 	      | NONE =>
 	    case acquireFromSource' (targetFilename, ".sig") of
-		SOME sign => sign
+		SOME inf => inf
 	      | NONE =>
-	    Error.error (Source.nowhere,
-			 "could not locate source for " ^ targetFilename)
+	    error ("could not locate source for " ^ targetFilename)
 	and acquireFromSource' (targetFilename, to) =
 	    let
 		val sourceFilename = pathFloor targetFilename ^ to
 	    in
 		if existsFile sourceFilename then
-		    SOME (compileFileToFile (sourceFilename,
+		    SOME (compileFileToFile' (sourceFilename,
 					     pathCeil targetFilename))
 		else NONE
 	    end
@@ -338,6 +344,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    fun compile' context (desc, s) =
 		Compiler.compile (context, desc, Source.fromString s)
 	in
+	    val compileFileToFile = ignore o compileFileToFile'
+
 	    fun compileFile context sourceFilename =
 		processFile (compile' context) sourceFilename
 
