@@ -114,15 +114,15 @@ MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 
 bootstrap:
-	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
 	make STOC=$(PREFIX)/bin/stoc lib/Base.ozf all
 
 stoc.ozf: top/Main.ozf
-	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
 	$(OZL) -z9 --include=x-alice: -v x-alice:/$< -o $@
 
 stow.ozf: Init.ozf
-	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
 	$(OZL) -z9 --include=x-alice: -v $< -o $@
 
 %.ozf: %.oz

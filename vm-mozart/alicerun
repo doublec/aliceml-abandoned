@@ -1,7 +1,6 @@
 #!/bin/sh
 
-OZVERSION=1.1.1
-OZHOME=/opt/mozart-$OZVERSION
+OZHOME=/opt/mozart-1.1.1
 
 howcalled=$0
 
@@ -15,10 +14,10 @@ PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
 
 if test -z "${OZ_LOAD}"
 then
-  OZ_LOAD=prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
+  OZ_LOAD=cache=$OZHOME/cache/
 fi
 
-OZ_LOAD=prefix=x-alice\\:=$STOCKHOME/:$OZ_LOAD
+OZ_LOAD=prefix=x-alice\\:/=$STOCKHOME/:$OZ_LOAD
 
 export OZHOME PATH OZ_LOAD
 
