@@ -73,8 +73,8 @@
     Denys did not want to participate at first ("Uh, I have these important
     deadlines..."), but then somehow got hooked by the problem - which was
     very good because of his expertise in constraints! :-) For Andreas and Leif
-    the contest days were kind of a crash course into the deeper secrets of
-    using advanced constraint techniques...
+    the contest days were kind of a crash course into the deeper secrets
+    (and abysses!) of using advanced constraint techniques...
   </P>
 
 
@@ -114,7 +114,7 @@
   <P>
     To find such a tree we create a set of constraint variables representing
     the nodes of the tree, their relations, and their annotations and impose
-    appropriate constraints ensuring properties like treeness, consistency of
+    appropriate constraints enforcing properties like treeness, consistency of
     annotations, and correct meaning. In order to reduce the search space to a
     tractable size additional redundant constraints are necessary. They are needed
     to maximize propagation and thus minimize search. The main difficulty is to
@@ -170,7 +170,7 @@
   <UL>
     <LI> <A href="src/">Alice/Oz source of our renderer</A>. </LI>
     <LI> <A href="readme.ps">A description of the constraint formulation</A>
-         (see below). </LI>
+         (see above). </LI>
   </UL>
 
   <P>
