@@ -26,6 +26,8 @@
 		"url"  => "people.php3"),
 	  array("text" => "Papers",
 		"url"  => "papers.php3"),
+	  array("text" => "",
+		"url"  => ""),
 	  array("text" => "Manual",
 		"url"  => "manual/"),
 	  array("text" => "Download",
