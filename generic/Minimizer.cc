@@ -963,10 +963,10 @@ void Partition::Minimize() {
   // has already filled the partition
 
   // Initialize & sort the blocks
-  fprintf(stderr, "Init blocks.\n");
+//   fprintf(stderr, "Init blocks.\n");
   InitBlocks();
 
-  fprintf(stderr, "Init agenda.\n");
+//   fprintf(stderr, "Init agenda.\n");
   Stack *agenda = Stack::New(100);  
   InitAgenda(agenda);
   
@@ -987,9 +987,8 @@ void Partition::Minimize() {
     }
   }
   
-  fprintf(stderr, "Reduce graph.\n");
+//   fprintf(stderr, "Reduce graph.\n");
   ReduceGraph();
-  fprintf(stderr, "Minimizer done.\n");
-  
-  //    p->Status();
+//   fprintf(stderr, "Minimizer done.\n");
+
 }
