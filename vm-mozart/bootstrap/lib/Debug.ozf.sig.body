@@ -13,7 +13,7 @@
  *)
 
 signature DEBUG_COMPONENT =
-    struct
+    sig
 	structure Debug:
 	    sig
 		val show: 'a -> unit
