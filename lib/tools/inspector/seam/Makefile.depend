@@ -114,7 +114,7 @@ gui/MkUpdate.alc: \
 	Prefs.alc \
 	AbsTree.alc \
 	TypeMappers.alc \
-	BasicTypeMappers.alc \
+	ModuleMapper.alc \
 	BuiltinTypeMappers.alc
 
 gui/MkTooltip.alc: \
@@ -149,15 +149,22 @@ BasicTypeMappers.alc: \
 	Prefs.alc \
 	Cache.alc
 
+ModuleMapper.alc: \
+	AbsTree.alc \
+	Common.alc \
+	Prefs.alc
+
 BuiltinTypeMappers.alc: \
 	Common.alc \
 	AbsTree.alc \
 	Prefs.alc \
-	BasicTypeMappers.alc
+	BasicTypeMappers.alc \
+	ModuleMapper.alc
 
 TypeMappers.alc: \
 	Common.alc \
 	BasicTypeMappers.alc \
+	ModuleMapper.alc \
 	BuiltinTypeMappers.alc \
 	AbsTree.alc \
 	Prefs.alc \

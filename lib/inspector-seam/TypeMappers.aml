@@ -8,6 +8,7 @@ import structure Path          from "x-alice:/lib/rtt/Path"
 import structure PathMap       from "x-alice:/lib/rtt/PathMap"
 import structure Common        from "Common"
 import structure Basic         from "BasicTypeMappers"
+import structure ModuleMapper  from "ModuleMapper"
 import structure Builtin       from "BuiltinTypeMappers"
 import structure AbsTree       from "AbsTree"
 import structure Prefs         from "Prefs"
@@ -153,7 +154,7 @@ struct
      | Inf.Lambda _ => Basic.functLambda item
      | Inf.Apply _ => AbsTree.simpleText(item, Prefs.topL, Prefs.defaultStyle)
      | Inf.Sing m => mapModule' (depth, item, #2 (Inf.asMod m), modl)
-     | Inf.Sig sign => Basic.module (depth, item, sign, modl)      
+     | Inf.Sig sign => ModuleMapper.module (depth, item, sign, modl)      
 
   val mapModule = futureMap mapModule'
 

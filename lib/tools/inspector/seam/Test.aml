@@ -235,18 +235,35 @@ val cx = Complex.create (1.0, ~3.14159)
 val _ = Inspector.inspect cx
 
 structure MyS = struct type t1 = int type t2 = int type t3 = int
-		       datatype t4 = Zero | One of int | Two of int * int
+                       exttype t10
+                       exttype 'a t11
+                       constructor Foo : t10
+		       datatype t4 = Zero | One of int | Two of int * t4
+		       datatype 'a t4b = Zerob | Oneb of 'a | Twob of int * 'a t4b
+                       type 'a t5 = 'a * 'a
+                       type ('a, 'b) t6 = 'a * 'b * int
+                       exttype 'a t11
+                       constructor Moo of t4 * 'a t5 * ('a, 'a) t6 : 'a t11
                        exception Foobar
-                       exception Moo of int * int
+                       exception Zoo of int * int
                        val x1 = 10 val x2 = 20 val x3 = 30 val x4 = 40 
                        val x5 = 50 val x6 = 60 val x7 = 70 val x8 = Zero
-                       val x9 = One 90 val x10 = Two (100, 110)
+                       val x9 = One 90 val x10 = Two (100, x9)
                        structure MyInt = Int
                        signature MY_GTK = GTK
                 end
 
 signature MY_S = sig type t1 = int type t2 = t1 type t3
-                     datatype t4 = Zero | One of int | Two of int * int
+                       exttype t10
+                       constructor Foo : t10
+                     datatype t4 = Zero | One of int | Two of int * t4
+		       datatype 'a t4b = Zerob | Oneb of 'a | Twob of int * 'a t4b
+                       type 'a t5 = 'a * 'a
+                       type ('a, 'b) t6 = 'a * 'b * int
+
+                       exttype 'a t11
+                       constructor Moo of t4 * 'a t5 * ('a, 'a) t6 : 'a t11
+
                      val x1 : int val x2 : t2 val x3 : t3 val x4 : int
                      val x5 : t1 val x6 : t2 val x7 : t3 val x8 : t4
                      val x9 : t4 val x10 : t4
@@ -255,7 +272,15 @@ signature MY_S = sig type t1 = int type t2 = t1 type t3
                  end 
 
 signature MY_S2 = sig type t1 = int type t2 = t1 type t3 type t4
-                     exception Foobar exception Moo of int * int
+                       exttype t10
+                       constructor Foo : t10
+                       type 'a t5 = 'a * 'a
+                       type ('a, 'b) t6 = 'a * 'b * int
+		       datatype 'a t4b = Zerob | Oneb of 'a | Twob of int * 'a t4b
+                       exttype 'a t11
+                       constructor Moo of t4 * 'a t5 * ('a, 'a) t6 : 'a t11
+
+                     exception Foobar exception Zoo of int * int
                      val x1 : t1 val x2 : t2 val x3 : t3 val x4 : int
                      val x5 : t1 val x6 : t2 val x7 : t3 val x8 : t4
                      val x9 : t4 val x10 : t4

@@ -171,9 +171,6 @@ struct
   val consStyle = newStyle ("constructor", !fontname, (45000,10000,65535),
 			    false)
 
-  (* Labels in a record. *)
-  val labelStyle = newStyle ("label", !fontname, (0,10000,65535), true)
-
   (* Some built-in types. *)
   val intStyle   = newStyle ("int", !fontname, (0,45000,0), false)
   val realStyle  = newStyle ("real", !fontname, (0,45000,0), false)
@@ -195,8 +192,12 @@ struct
   val structStyle = newStyle ("structure", !fontname, (0,50000,0), false)
   val fixStyle    = newStyle ("fixity", !fontname, (0,50000,25000), false)
   val valStyle    = newStyle ("val", !fontname, (0,50000,25000), false)
-  val labStyle    = newStyle ("label", !fontname, (20000,10000,25000), false)
+  val labStyle    = newStyle ("label", !fontname, (0,10000,65535), true)
   val typStyle    = newStyle ("type", !fontname, (60000,10000,20000), false)
+
+  (* Labels in a record. *)
+  val labelStyle = labStyle
+
 
   (* Limit symbols. *)
   val limitStyle = newStyle ("limit", !fontname, (0,0,0), false)

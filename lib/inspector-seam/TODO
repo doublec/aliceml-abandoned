@@ -1,5 +1,3 @@
-o As soon as PPInf.ppInf' is really available, use it in MkTooltips.aml
-
 o Check that one can inspect an empty module.
 
 o I have not written type-mappers for all builtin types. Some are missing.

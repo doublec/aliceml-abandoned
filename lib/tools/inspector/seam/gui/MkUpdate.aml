@@ -1,14 +1,14 @@
-import structure Gtk         from "x-alice:/lib/gtk/Gtk"
-import structure Reflect     from "x-alice:/lib/system/Reflect" 
-import signature UPDATE      from "UPDATE-sig"
-import signature GR_TREE     from "GR_TREE-sig"
-import structure GrTypes     from "GrTypes"
-import structure Common      from "../Common"
-import structure Prefs       from "../Prefs"
-import structure AbsTree     from "../AbsTree"
-import structure TypeMappers from "../TypeMappers"
-import structure Basic       from "../BasicTypeMappers"
-import structure Builtin     from "../BuiltinTypeMappers"
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure Reflect      from "x-alice:/lib/system/Reflect" 
+import signature UPDATE       from "UPDATE-sig"
+import signature GR_TREE      from "GR_TREE-sig"
+import structure GrTypes      from "GrTypes"
+import structure Common       from "../Common"
+import structure Prefs        from "../Prefs"
+import structure AbsTree      from "../AbsTree"
+import structure TypeMappers  from "../TypeMappers"
+import structure ModuleMapper from "../ModuleMapper"
+import structure Builtin      from "../BuiltinTypeMappers"
 
 functor MkUpdate (GrTree : GR_TREE) :> UPDATE =
 struct
@@ -135,7 +135,7 @@ fun getModuleFromField tree = getModuleFromStruct (#1 (getParent tree))
 (* Expand a declaration in a module. *)
 fun expandDecl (decl, tree) =
     Option.app (fn abstree => updateWith (tree, abstree))
-               (Basic.fromDecl (getModuleFromField tree, decl))
+               (ModuleMapper.fromDecl (getModuleFromField tree, decl))
  
 (* Expands a record or a tuple. *)
 fun abstreeBuilder (depth, TupRec {row, tagged}, desc, start, _) =
@@ -157,8 +157,8 @@ fun abstreeBuilder (depth, TupRec {row, tagged}, desc, start, _) =
   | abstreeBuilder (depth, ModuleLimit (items, length), desc, start, tree) =
     let
       val module = getModuleFromStruct tree
-      fun makeAbs (limit, array) = Basic.makeDecl (module, depth, array, items,
-						   length, limit)
+      fun makeAbs (limit, array) = ModuleMapper.makeDecl (module, depth, array,
+                                                          items, length, limit)
     in
       (makeAbs, length + start)
     end

@@ -19,7 +19,7 @@ GUI = MAIN_WINDOW-sig MkMainWindow MkAboutWindow MkPrefsWindow \
 ## Components in the main directory
 MAIN = QUEUE-sig MkQueue \
        Prefs Common Cache \
-       AbsTree BasicTypeMappers BuiltinTypeMappers TypeMappers \
+       AbsTree BasicTypeMappers ModuleMapper BuiltinTypeMappers TypeMappers \
        MONITORS-sig MkMonitors \
        Print \
        HANDLERS-sig MkHandlers \

@@ -3,6 +3,7 @@ import structure Reflect      from "x-alice:/lib/system/Reflect"
 import structure Type         from "x-alice:/lib/rtt/Type"
 import structure Inf          from "x-alice:/lib/rtt/Inf"
 import structure Label        from "x-alice:/lib/rtt/Label"
+import structure Path         from "x-alice:/lib/rtt/Path"
 import structure Fixity       from "x-alice:/lib/rtt/Fixity"
 import structure Prefs        from "Prefs"
 import structure Common       from "Common"
@@ -19,7 +20,7 @@ struct
   datatype declaration =
 	   FixItem of Label.t * Fixity.t
 	 | ValItem of string * Type.typ * Reflect.value
-	 | TypItem of string * Type.typ
+	 | TypItem of Path.t * Type.kind * string
 	 | ModItem of string * Inf.t * Reflect.module
 	 | SigItem of string * Inf.t
 

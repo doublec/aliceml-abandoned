@@ -6,6 +6,7 @@ import structure Common        from "Common"
 import structure AbsTree       from "AbsTree"
 import structure Prefs         from "Prefs"
 import structure Basic         from "BasicTypeMappers"
+import structure ModuleMapper  from "ModuleMapper"
 
 (* Type mappers for builtin types : ints, strings, chars, ... *)
 
@@ -223,7 +224,7 @@ struct
       val (modl, sign) = Reflect.reflectPackage value
       val item' = AbsTree.Module (sign, modl, AbsTree.Noflag)
       val sign = (assert Inf.isSig sign ; Inf.asSig sign)
-      val tree = Basic.module (depth - 1, item', sign, modl)
+      val tree = ModuleMapper.module (depth - 1, item', sign, modl)
       val kid = Concat {prefix = packPrefix,
                         tree,
                         suffix = packSuffix,

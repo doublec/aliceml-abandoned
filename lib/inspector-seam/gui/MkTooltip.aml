@@ -155,13 +155,13 @@ struct
 
   val pps = PrettyPrint.toString
   fun pptype t = pps (PPType.ppTyp t, 80)
-  fun ppsig  s = pps (PPInf.ppInf s, 120) (* TODO : Use ppInf' instead !!! *)
+  fun ppsig  s = pps (PPInf.ppInf' s, 120)
 
   fun tooltipDecl decl =
       case decl of
 	AbsTree.FixItem _ => "Fixity declaration"
       | AbsTree.ValItem (_, t, _) => pptype t
-      | AbsTree.TypItem (_, t) => pptype t
+      | AbsTree.TypItem (_, _, s) => s
       | AbsTree.ModItem (_, s, _) => ppsig s
       | AbsTree.SigItem (_, s) => ppsig s
 
