@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 final public class Cons implements DMLConVal {
 
     public DMLValue car=null;
@@ -59,5 +61,30 @@ final public class Cons implements DMLConVal {
 	}
     }
 
+    final public void set(DMLValue v0) throws RemoteException {
+	if (v0 instanceof Tuple2) {
+	    Tuple2 t = (Tuple2) v0;
+	    car = t.fst;
+	    cdr = t.snd;
+	} else {
+	    // this should never happen
+	    _RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+	}
+    }
+
+    final public void set(DMLValue v0,DMLValue v1) throws RemoteException {
+	car = v0;
+	cdr = v1;
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2) throws RemoteException {
+	// this should never happen
+	_RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2,DMLValue v3) throws RemoteException {
+	// this should never happen
+	_RAISE(runtimeError,new STRING ("INTERNAL COMPILER ERROR"));
+    }
     _apply_fails ;
 }

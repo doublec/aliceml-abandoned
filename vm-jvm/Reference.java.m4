@@ -190,5 +190,20 @@ final public class Reference implements DMLConVal {
 	cmgr = new ClientManager(this);
     }
 
+    final public void set(DMLValue v0) throws RemoteException {
+	content = v0;
+    }
+
+    final public void set(DMLValue v0,DMLValue v1) throws RemoteException {
+	content = new Tuple2(v0,v1);
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2) throws RemoteException {
+	content = new Tuple3(v0,v1,v2);
+    }
+
+    final public void set(DMLValue v0,DMLValue v1,DMLValue v2,DMLValue v3) throws RemoteException {
+	content = new Tuple4(v0,v1,v2,v3);
+    }
     _apply_fails ;
 }
