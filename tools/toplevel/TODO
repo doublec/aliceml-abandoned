@@ -3,6 +3,9 @@ TODO list for the Alice IDE
 
 Bugs:
 
+* Preferences..., buttons
+* feed inactive for first editor buffer
+* Cut&Paste with other apps
 * Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 
 Missing Features:
