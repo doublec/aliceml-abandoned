@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -242,12 +242,22 @@ structure Resolver: RESOLVER =
 			root argUrl::parse' rest
 		    end
 
-		fun apply handlers url = apply' (handlers, url)
-		and apply' ((name', f)::handlers, url) =
+		fun apply' ((name, f)::handlers, url, trace) =
 		    (case f url of
-			 SOME url' => SOME (url', handlers)
-		       | NONE => apply' (handlers, url))
-		  | apply' (nil, _) = NONE
+			 SOME url' =>
+			     (trace ("...[" ^ Url.toStringRaw url' ^
+				     "] (" ^ name ^ ")\n");
+			      SOME (url', handlers))
+		       | NONE =>
+			     (trace ("...[not applicable] (" ^ name ^ ")\n");
+			      apply' (handlers, url, trace)))
+		  | apply' (nil, _, trace) =
+		    (trace ("...all handlers failed\n"); NONE)
+
+		fun apply url handlers = apply' (handlers, url, ignore)
+
+		fun tracingApply trace url handlers =
+		    apply' (handlers, url, trace)
 	    end
 
 	datatype result =
@@ -312,21 +322,18 @@ structure Resolver: RESOLVER =
 	      | _ => NONE
 
 	fun localize (resolver as {name, handlers, ...}) url =
-	    (trace ("[" ^ name ^ "] localize request: " ^
-		    Url.toStringRaw url ^ "\n");
-	     localize' (resolver, handlers, url))
-	and localize' (resolver as {name, ...}, (name', f)::handlers, url) =
-	    (case f url of
-		 SOME url' =>
-		     (trace ("[" ^ name ^ "] ...[" ^ Url.toStringRaw url' ^
-			     "] (" ^ name' ^ ")\n");
-		      case exists (resolver, url') of
-			  result as SOME _ => result
-			| NONE => localize' (resolver, handlers, url))
-	       | NONE =>
-		     (trace ("[" ^ name ^ "] ...[not applicable] (" ^
-			     name' ^ ")\n");
-		      localize' (resolver, handlers, url)))
-	  | localize' ({name, ...}, nil, _) =
-	    (trace ("[" ^ name ^ "] ...all handlers failed\n"); NONE)
+	    let
+		fun trace' s = trace ("[" ^ name ^ "] " ^ s)
+		val apply = Handler.tracingApply trace' url
+	    in
+		trace' ("localize request: " ^ Url.toStringRaw url ^ "\n");
+		localize' (handlers, apply, resolver)
+	    end
+	and localize' (handlers, apply, resolver) =
+	    case apply handlers of
+		SOME (url', handlers') =>
+		    (case exists (resolver, url') of
+			 result as SOME _ => result
+		       | NONE => localize' (handlers, apply, resolver))
+	       | NONE => NONE
     end
