@@ -40,6 +40,7 @@ structure CodeStore :> CODE_STORE =
 	type savedRegState = scope * index list
 	type instrsState = IL.instr list ref
 
+	(*--** remove global state *)
 	val namespace: dottedname ref = ref nil
 	val classes: (classAttrState * scope * classDeclsState) Map.t ref =
 	    ref (Map.new ())
