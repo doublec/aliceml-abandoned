@@ -19,6 +19,7 @@ import
    System(printInfo)
 export
    'UnsafeIO$': IO
+   StdText
 define
    Io = {NewUniqueName 'IO.Io'}
 
@@ -82,12 +83,12 @@ define
       end
    end
 
-   class StdTextFile from TextFile
+   class StdText
       %% Mozart does not open stdin, stdout, and stderr in text mode:
       %% we have to do the translations ourselves.
       meth inputAll($)
 	 {ByteString.make {TranslateStringFromCRLF
-			   Open.file, read(list: $ size: all)}}
+			   {self read(list: $ size: all)}}}
       end
       meth inputLine($)
 	 case TextFile, getS($) of false then {ByteString.make ""}
@@ -95,13 +96,14 @@ define
 	 end
       end
       meth output(S)
-	 Open.file, write(vs: {TranslateStringToCRLF
-			       {VirtualString.toString S}})
+	 {self write(vs: {TranslateStringToCRLF {VirtualString.toString S}})}
       end
       meth output1(C)
-	 Open.file, write(vs: {TranslateCharToCRLF C})
+	 {self write(vs: {TranslateCharToCRLF C})}
       end
    end
+
+   class StdTextFile from TextFile StdText end
 
    class BinFile from BaseFile
       meth init(name: S flags: F)
