@@ -46,7 +46,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | PutTup of id * idRef vector * instr
 	  | PutPolyRec of id * label vector * idRef vector * instr
 	  | PutVec of id * idRef vector * instr
-	  | Close of id * idRef vector * value * instr
+	  | Close of id * idRef vector * template * instr
 	  | Specialize of id * idRef vector * template * instr
 	  | AppPrim of value * idRef vector * (idDef * instr) option
 	  | AppVar of idRef * idRef args * (idDef args * instr) option
@@ -78,15 +78,12 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | Local of id
 	  | LastUseLocal of id
 	  | Global of int
-	  | Toplevel of int
 	and template =
 	    Template of coord * int * string vector *
 			idDef args * instr * liveness
 	and abstractCode =
-	    Function of coord * int * string vector *
+	    Function of coord * value option vector * string vector *
 			idDef args * instr * liveness
-	  | Specialized of coord * value vector * string vector *
-			   idDef args * instr * liveness
 	withtype value = abstractCode Value.t
 
 	type t = value * (Stamp.t * UniqueString.t) vector
