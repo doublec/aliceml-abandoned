@@ -29,8 +29,8 @@ fun shifted space n i (a,b) =
 			val iInA = FD.boolvar space
 			val ip1InB = FD.boolvar space
 		in
-			FS.Reified.isIn (space,i,a,iInA);
-			FS.Reified.isIn (space,(i+1),b,ip1InB);			
+			FS.Reified.isIn (space,a,i,iInA);
+			FS.Reified.isIn (space,b,(i+1),ip1InB);			
 			FD.rel(space,FD.Reflect.boolvar2intvar iInA, FD.EQ, FD.Reflect.boolvar2intvar ip1InB );
 			shifted space n (i+1) (a,b)
 		end
