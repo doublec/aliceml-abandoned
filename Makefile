@@ -239,6 +239,7 @@ libs-seam:
 	(cd tools/yacc && make all && make install) || exit 1 ;\
 	(cd tools/lex && make depend) || exit 1;\
 	(cd tools/lex && make all && make install) || exit 1 ;\
+	(cd lib/sqlite && make depend) || exit 1 ;\
 	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
 	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
 	(cd tools/ide && make depend) || exit 1 ;\
