@@ -9,7 +9,8 @@ Bugs:
 
 Missing Features:
 
-* bookmarks
+* bookmarks?
+* configure autoindent, tab expansion?
 * propagate output width on init and after resize (requires Pango binding)
 * comment/uncomment region?
 * cumulative undo?

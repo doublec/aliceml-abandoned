@@ -26,7 +26,7 @@ struct
     fun setTraceStream os = TextIO.setOutstream (traceStream, os)
 
     fun prompt () =
-	(TextIO.output (outStream, CoreToplevel.prompt);
+	(TextIO.output (outStream, "> ");
 	 TextIO.flushOut outStream)
 
     fun compile' file =
