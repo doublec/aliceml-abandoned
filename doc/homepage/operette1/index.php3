@@ -74,11 +74,11 @@
 
   <P>
     For discussion on Stockhausen and the language Alice see the
-    increasingly misnamed local newsgroup:
+    local newsgroup:
   </P>
 
   <UL>
-    <LI> <A href="news:ps.amadeus" class="url">ps.amadeus</A> </LI>
+    <LI> <A href="news:ps.alice" class="url">ps.alice</A> </LI>
   </UL>
 
 
