@@ -250,8 +250,34 @@ Worker::Result ResolveInterpreter::Run() {
 	Scheduler::currentData = wClass;
 	return Worker::REQUEST;
       }
+      JavaString *name = frame->GetName();
+      JavaString *descriptor = frame->GetDescriptor();
+      //--** look for field definitions in implemented interfaces
+      ClassInfo *classInfo = theClass->GetClassInfo();
+      Table *fields = classInfo->GetFields();
+      u_int sIndex = 0, iIndex = 0, nFields = fields->GetCount();
+      for (u_int i = 0; i < nFields; i++) {
+	FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
+	if (fieldInfo->IsTheField(name, descriptor)) {
+	  Scheduler::PopFrame();
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	  Scheduler::currentArgs[0] = fieldInfo->IsStatic()?
+	    StaticFieldRef::New(theClass, sIndex)->ToWord():
+	    InstanceFieldRef::New(iIndex)->ToWord();
+	  return Worker::CONTINUE;
+	} else {
+	  if (fieldInfo->IsStatic())
+	    sIndex++;
+	  else
+	    iIndex++;
+	}
+      }
+      word wSuper = classInfo->GetSuper();
+      if (wSuper == Store::IntToWord(0))
+	Error("NoSuchField"); //--** raise
+      frame->SetClass(Class::FromWord(wSuper));
+      return CONTINUE;
     }
-    break; //--**
   case RESOLVE_METHOD:
     {
       word wClass = frame->GetClass();
@@ -271,14 +297,11 @@ Worker::Result ResolveInterpreter::Run() {
 	MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
 	if (methodInfo->IsTheMethod(name, descriptor)) {
 	  u_int nArgs = methodInfo->GetNumberOfArguments();
-	  word result;
-	  if (methodInfo->IsStatic())
-	    result = StaticMethodRef::New(theClass, sIndex, nArgs)->ToWord();
-	  else
-	    result = VirtualMethodRef::New(theClass, vIndex, nArgs)->ToWord();
 	  Scheduler::PopFrame();
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
-	  Scheduler::currentArgs[0] = result;
+	  Scheduler::currentArgs[0] = methodInfo->IsStatic()?
+	    StaticMethodRef::New(theClass, sIndex, nArgs)->ToWord():
+	    VirtualMethodRef::New(theClass, vIndex, nArgs)->ToWord();
 	  return Worker::CONTINUE;
 	} else {
 	  if (methodInfo->IsStatic())
