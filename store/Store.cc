@@ -371,6 +371,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
       word prev  = Store::IntToWord(0);
       while (nodes != Store::IntToWord(0)) {
 	MapNode *node = MapNode::FromWordDirect(nodes);
+	bool deleted = false;
 	// Remove handled marks
 	if (node->IsHandled())
 	  node->MarkNormal();
@@ -381,8 +382,10 @@ void Store::HandleWeakDictionaries(const u_int gen) {
 	  Block *valp = PointerOp::RemoveTag(val);
 	  // Value has been finalized or saved before
 	  if (GCHelper::AlreadyMoved(valp)) {
-	    if (FINALIZE_PERMITTED(valp))
+	    if (FINALIZE_PERMITTED(valp)) {
 	      dict->RemoveEntry(k, prev, node);
+	      deleted = true;
+	    }
 	    else
 	      node->SetValue(PointerOp::EncodeTag(GCHelper::GetForwardPtr(valp),
 						  PointerOp::DecodeTag(val)));
@@ -392,6 +395,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
 	    word fVal = ForwardBlock(val, gen);
 	    if (FINALIZE_PERMITTED(valp)) {
 	      dict->RemoveEntry(k, prev, node);
+	      deleted = true;
 	      finSet = finSet->Add(fVal, gen);
 	      finSet = finSet->Add(handler, gen);
 	    }
@@ -403,7 +407,10 @@ void Store::HandleWeakDictionaries(const u_int gen) {
 	  else
 	    node->SetValue(val);
 	}
-	prev  = nodes;
+	if (deleted)
+	  deleted = false;
+	else
+	  prev = nodes;
 	nodes = node->GetNext();
       }
     }
