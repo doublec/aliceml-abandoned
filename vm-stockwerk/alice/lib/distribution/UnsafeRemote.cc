@@ -63,9 +63,8 @@ DEFINE2(UnsafeRemote_dynamicCall) {
   if (callback == Store::IntToWord(0)) {
     RAISE(PrimitiveTable::Hole_Hole); //--** to be done
   } else {
-    DECLARE_STRING(ticket, x0);
     Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = ticket->ToWord();
+    Scheduler::currentArgs[0] = x0;
     Scheduler::currentArgs[1] = x1;
     return taskStack->PushCall(callback);
   }
