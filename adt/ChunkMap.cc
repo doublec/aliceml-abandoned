@@ -32,7 +32,7 @@ static inline u_int HashString(const char *s, u_int len, u_int size) {
       h = h ^ g;
     }
   }
-  return (h % size);
+  return ((size == 0) ? 0 : (h % size));
 }
 
 u_int ChunkKey::Hash(word key, u_int size) {

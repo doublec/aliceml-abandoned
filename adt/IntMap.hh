@@ -22,7 +22,7 @@ class SeamDll IntKey {
 public:
   static u_int Hash(word key, u_int size) {
     s_int i = Store::DirectWordToInt(key);
-    return (i % size);
+    return ((size == 0) ? 0 : (i % size));
   }
   static bool Equals(word a, word b) {
     return a == b;
