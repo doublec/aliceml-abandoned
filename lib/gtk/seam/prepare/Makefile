@@ -20,7 +20,7 @@ ifndef PC_OPTS
 PC_OPTS = gtk+-2.0 libgnomecanvas-2.0
 endif
 
-GCC = gcc -E -Wall -D__IEEE_BIG_ENDIAN -undef -U__GNUC__  $(EXTRA_CC_OPTS) \
+GCC = gcc -E -Wall -undef -U__GNUC__  $(EXTRA_CC_OPTS) \
           `pkg-config --cflags $(PC_OPTS)`
 ALICEC = alicec --no-warn-conventions
 INSTALL = ../myinstall -v -m 644
