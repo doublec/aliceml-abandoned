@@ -1199,7 +1199,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
-	word value = classObj->GetStaticField(fieldRef->GetIndex()); 
+	Lock *lock = classObj->GetLock();
+	Future *future = lock->AcquireLock();
+	if (future != INVALID_POINTER)
+	  REQUEST(future->ToWord());
+	word value = classObj->GetStaticField(fieldRef->GetIndex());
+	lock->ReleaseLock();
 	frame->Push(value);
 	pc += 3;
       }
