@@ -49,52 +49,57 @@
 //
 class InputStreamBase {
 protected:
-  int hd, tl, rd;
+  int hd, tl, rd, eob;
   u_char *buffer;
 public:
   // InputStreamBase Constructor
-  InputStreamBase() : hd(0), tl(0), rd(0) {
+  InputStreamBase() : hd(0), tl(0), rd(0), eob(0) {
     buffer = INVALID_POINTER;
   }
   // InputStreamBase Functions
-  u_char GetByte(u_int & myEof) {
-    if (rd == hd) {
-      myEof = 1;
+  u_int IsEOB() {
+    if (eob) {
+      eob = 0;
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  }
+  u_char GetByte() {
+    if (rd == tl) {
+      eob = 1;
       return (u_char) 0;
     }
     else {
-      myEof = 0;
-      return buffer[rd++];
+       return buffer[rd++];
     }
   }
-  u_char *GetBytes(u_int n, u_int & myEof) {
+  u_char *GetBytes(u_int n) {
     // This has to be revisited: TOO NAIVE
-    u_char *buffer = (u_char *) malloc(sizeof(u_char) * n);
+    u_char *byteBuffer = (u_char *) malloc(sizeof(u_char) * n);
     u_int i = 0;
-    if (n == 0) {
-      myEof = 0;
-    }
-    else {
+    if (n > 0) {
       while (i < n) {
-	buffer[i++] = GetByte(myEof);
-	if (myEof) {
-	  free(buffer);
+	byteBuffer[i++] = GetByte();
+	if (eob) {
+	  free(byteBuffer);
 	  return INVALID_POINTER;
 	}
       }
     }
-    return buffer;
+    return byteBuffer;
   }
-  u_int GetUInt(u_int & myEof) {
-    return DoGetUInt(0, 1, myEof);
+  u_int GetUInt() {
+    return DoGetUInt(0, 1);
   }
-  u_int DoGetUInt(u_int x, u_int n, u_int & myEof) {
-    u_char b = GetByte(myEof);
-    if (myEof) {
+  u_int DoGetUInt(u_int x, u_int n) {
+    u_char b = GetByte();
+    if (eob) {
       return 0;
     }
     else if (b >= 0x80) {
-      return DoGetUInt((x + (b - 0x80) * n), (n * 0x80), myEof);
+      return DoGetUInt((x + (b - 0x80) * n), (n * 0x80));
     }
     else {
       return (x + b * n);
@@ -136,23 +141,29 @@ public:
 // FileInputStream
 class FileInputStream : public InputStreamBase {
 private:
+  static const u_int BUFFER_SIZE = 8192;
   FILE *file;
+  u_int exception;
 public:
   // FileInputStream Constructor
-  FileInputStream(char *filename, u_int & exception) : InputStreamBase() {
+  FileInputStream(char *filename) : InputStreamBase() {
     file = fopen(filename, "r");
     if (file == INVALID_POINTER) {
       exception = 1;
     }
   }
   // FileInputStream Functions
+  u_int GotException() {
+    return exception;
+  }
   virtual void Close() {
     fclose(file);
   }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
-    buffer = (u_char *) malloc(sizeof(u_char) * 256);
+    buffer = (u_char *) malloc(sizeof(u_char) * BUFFER_SIZE);
     // This is blocking
-    AppendToBuffer(buffer, (u_int) fread(buffer, sizeof(u_char), 256, file));
+    AppendToBuffer(buffer,
+		   (u_int) fread(buffer, sizeof(u_char), BUFFER_SIZE, file));
     taskStack->PopFrame();
     CONTINUE(args);
   }
@@ -477,11 +488,11 @@ word SelFromEnv(word env, int count) {
   return table->GetItem(Store::IntToWord(count));
 }
 
-// myEof requires rereading;
+// End of Buffer requires rereading;
 // therefore we reinstall the old taskstack
 // to be done: more efficient solution
-#define CHECK_EOF()                         \
-  if (myEof) {                              \
+#define CHECK_EOB()                         \
+  if (is->IsEOB()) {                        \
     taskStack->PushFrame(frame->ToWord());  \
     InputInterpreter::PushFrame(taskStack); \
     Scheduler::currentArgs = args;          \
@@ -505,13 +516,12 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
     InputStreamBase *is = pargs->GetStream();
     word env            = pargs->GetEnv();
     int count           = pargs->GetCount();
-    u_int myEof         = 0;
-    u_char tag          = is->GetByte(myEof);
-    CHECK_EOF();
+    u_char tag          = is->GetByte();
+    CHECK_EOB();
     switch ((Tag::PickleTags) tag) {
     case Tag::POSINT:
       {
-	u_int y = is->GetUInt(myEof); CHECK_EOF();
+	u_int y = is->GetUInt(); CHECK_EOB();
 	Set(x, i, Store::IntToWord(y)); // to be checked
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, (i + 1), n);
@@ -520,7 +530,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::NEGINT:
       {
-	u_int y = is->GetUInt(myEof); CHECK_EOF();
+	u_int y = is->GetUInt(); CHECK_EOB();
 	Set(x, i, Store::IntToWord((0 - (int) y))); // to be checked
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, (i + 1), n);
@@ -529,8 +539,8 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::CHUNK:
       {
-	u_int size    = is->GetUInt(myEof); CHECK_EOF();
-	u_char *bytes = is->GetBytes(size, myEof); CHECK_EOF();
+	u_int size    = is->GetUInt(); CHECK_EOB();
+	u_char *bytes = is->GetBytes(size); CHECK_EOB();
 	Chunk *y      = Store::AllocChunk(size);
 	memcpy(y->GetBase(), bytes, size);
 	Set(x, i, y->ToWord());
@@ -542,8 +552,8 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::BLOCK:
       {
-	u_int label = is->GetUInt(myEof); CHECK_EOF();
-	u_int size  = is->GetUInt(myEof); CHECK_EOF();
+	u_int label = is->GetUInt(); CHECK_EOB();
+	u_int size  = is->GetUInt(); CHECK_EOB();
 	word   y    = Store::AllocBlock((BlockLabel) label, size)->ToWord();
 	Set(x, i, y);
 	AddToEnv(env, count, y);
@@ -555,7 +565,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::TUPLE:
       {
-	u_int size = is->GetUInt(myEof); CHECK_EOF();
+	u_int size = is->GetUInt(); CHECK_EOB();
 	word y     = Tuple::New(size)->ToWord(); // to be checked
 	Set(x, i, y);
 	AddToEnv(env, count, y);
@@ -567,7 +577,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::CLOSURE:
       {
-	u_int size = is->GetUInt(myEof); CHECK_EOF();
+	u_int size = is->GetUInt(); CHECK_EOB();
 	word cc    = Store::IntToWord(0); // shall be concrete code
 	word y     = Closure::New(cc, size)->ToWord(); // to be checked
 	Set(x, i, y);
@@ -594,7 +604,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::REF:
       {
-	u_int index = is->GetUInt(myEof); CHECK_EOF();
+	u_int index = is->GetUInt(); CHECK_EOB();
 	Set(x, i, SelFromEnv(env, index));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
@@ -777,12 +787,10 @@ Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
 }
 
 Interpreter::Result Unpickler::Load(char *filename, TaskStack *taskStack) {
-  Tuple *x        = Tuple::New(1);
-  u_int exception = 0;
-  InputStreamBase *is =
-    (InputStreamBase *) new FileInputStream(filename, exception);
+  Tuple *x            = Tuple::New(1);
+  FileInputStream *is = new FileInputStream(filename);
   taskStack->PopFrame();
-  if (exception) {
+  if (is->GotException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
     return Interpreter::RAISE;
@@ -790,7 +798,7 @@ Interpreter::Result Unpickler::Load(char *filename, TaskStack *taskStack) {
   HashTable *env = HashTable::New(HashTable::INT_KEY, INITIAL_TABLE_SIZE);
   PickleLoadInterpreter::PushFrame(taskStack, x);
   UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);
-  CONTINUE(PickleArgs::New(is, env->ToWord(), 0)->ToWord());
+  CONTINUE(PickleArgs::New((InputStreamBase *) is, env->ToWord(), 0)->ToWord());
 }
 
 void Unpickler::Init() {
