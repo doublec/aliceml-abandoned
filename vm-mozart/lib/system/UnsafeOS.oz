@@ -138,7 +138,7 @@ define
 			    end}
 			   unit
 			end
-		     'exit':
+		     'terminate':
 			proc {$ N _}
 			   {Application.exit N}
 			end

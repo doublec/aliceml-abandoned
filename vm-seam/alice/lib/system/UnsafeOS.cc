@@ -319,7 +319,7 @@ DEFINE1(UnsafeOS_Process_system) {
   RETURN_INT(system(command->ExportC()));
 } END
 
-DEFINE1(UnsafeOS_Process_exit) {
+DEFINE1(UnsafeOS_Process_terminate) {
   DECLARE_INT(code, x0);
 #if PROFILE
   Profiler::DumpInfo();
@@ -353,8 +353,8 @@ static word UnsafeOS_Process() {
   record->Init("failure", Store::IntToWord(1));
   INIT_STRUCTURE(record, "UnsafeOS.Process", "system",
 		 UnsafeOS_Process_system, 1, true);
-  INIT_STRUCTURE(record, "UnsafeOS.Process", "exit",
-		 UnsafeOS_Process_exit, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.Process", "terminate",
+		 UnsafeOS_Process_terminate, 1, true);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "atExn",
 		 UnsafeOS_Process_atExn, 1, true);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "getEnv",
