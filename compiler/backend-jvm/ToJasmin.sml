@@ -987,22 +987,22 @@ structure ToJasmin =
 			(case instructions of
 			     nil => ()
 			   | _ =>
-				 LabelMerge.new();
-				 JVMreg.new perslocs;
-				 TextIO.output(io,".method "^
-					       (mAccessToString access)^
-					       methodname^
-					       (descriptor2string methodsig)^"\n");
-				 actmeth := methodname;
-				 instructionsToJasmin
-				 (optimize (instructions, perslocs, parmscount),
-				  true,
-				  staticapply,
-				  io);
-				 TextIO.output(io,".limit locals "^
-					       Int.toString(JVMreg.max perslocs+1+parmscount)
-					       ^"\n");
-				 TextIO.output(io,".end method\n\n"))
+				 (LabelMerge.new();
+				  JVMreg.new perslocs;
+				  TextIO.output(io,".method "^
+						(mAccessToString access)^
+						methodname^
+						(descriptor2string methodsig)^"\n");
+				  actmeth := methodname;
+				  instructionsToJasmin
+				  (optimize (instructions, perslocs, parmscount),
+				   true,
+				   staticapply,
+				   io);
+				  TextIO.output(io,".limit locals "^
+						Int.toString(JVMreg.max perslocs+1+parmscount)
+						^"\n");
+				  TextIO.output(io,".end method\n\n")))
 		    end
 	    in
 		actclass:= name;

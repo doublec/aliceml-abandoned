@@ -1244,7 +1244,7 @@ structure CodeGen =
 		Invokestatic (classNameFromStamp (Lambda.getLambda stamp'),
 				  applyName (true, count), (valList count, [Classsig CVal]))
 		else
-		    Invokevirtual (classNameFromStamp (Lambda.getLambda stamp'),
+		    Invokeinterface (CVal,
 				     applyName (false, count),
 				     (valList count, [Classsig CVal]))
 	and
@@ -1266,8 +1266,8 @@ structure CodeGen =
 	      stampCode stamp' ::
 	      idArgCode
 	      (ida'',
-	       [Invokevirtual
-		(classNameFromStamp (Lambda.getLambda stamp'),
+	       [Invokeinterface
+		(CVal,
 		 applyName (false, 1),
 		 ([Classsig CVal],
 		  [Classsig CVal]))]))]
@@ -1531,8 +1531,8 @@ structure CodeGen =
 				     applyName (true, count),
 				     ([Classsig CVal, Classsig CVal],
 				      [Classsig CVal]))],
-				   [Invokevirtual
-				    (classNameFromId id'',
+				   [Invokeinterface
+				    (CVal,
 				     applyName (false, count),
 				     ([Classsig CVal, Classsig CVal],
 				      [Classsig CVal]))]) ::
