@@ -24,6 +24,9 @@
  * combinator looses optimality.
  *)
 
+import structure TextIO from "../../lib/TextIO"
+
+
 signature PRETTY_PRINT =
 sig
     eqtype doc

@@ -11,6 +11,10 @@
  *)
 
 import
+    structure TextIO
+from "../../lib/TextIO"
+
+import
     structure Url
 from "../misc/Url"
 

@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+import structure TextIO from "../../lib/TextIO"
+
 signature SWITCHES =
 sig
     structure Warn :

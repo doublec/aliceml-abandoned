@@ -12,6 +12,10 @@
  *   $Revision$
  *)
 
+import structure TextIO   from "../../lib/TextIO"
+import signature SWITCHES from "SWITCHES-sig"
+
+
 functor MkSwitches(val logOut : TextIO.outstream) :> SWITCHES =
 struct
     structure Warn =

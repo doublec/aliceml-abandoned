@@ -11,6 +11,8 @@
  *   $Revision$
  *)
 
+import structure TextIO              from "../../lib/TextIO"
+
 import structure InputGrammar        from "../frontend-sml/InputGrammar"
 import structure AbstractGrammar     from "../frontend-common/AbstractGrammar"
 import structure TypedGrammar        from "../frontend-common/TypedGrammar"
