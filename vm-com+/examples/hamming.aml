@@ -30,4 +30,4 @@ fun makeStream () =
 	hamming
     end
 
-val _ = print (Int.toString (List.nth (makeStream (), 100)))
+val _ = print (Int.toString (List.nth (makeStream (), 100)) ^ "\n")
