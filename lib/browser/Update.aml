@@ -42,7 +42,6 @@ struct
     
     exception UpdateError
     
-
     (* momentan in Dictionaries:
     structure MainDictionary = MkDictionary(type t = node * GtkSupport.tag)
     val main_dict = MainDictionary.empty *)
@@ -50,7 +49,7 @@ struct
     (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
        - werden beim Starten des Inspectors "gefuellt" *)
     val incrActLine = ref (fn _ => ())
-    val resize = ref (fn () => ())
+    val resize = ref (fn () => ()) 
         
     (* max *)
     fun max (xs,f) = foldl(fn (x,e) => Int.max(f(x),e)) 0 xs

@@ -1037,7 +1037,9 @@ struct
 	           ; registerColor(LIMIT_COLOR, allocColor (10000,60000,10000))
 	           ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
 	           ; registerColor(REL_COLOR, allocColor (60000,20000,0))
-	           ; registerColor(DEFAULT, allocColor(0,0,0)) )
+	           ; registerColor(DEFAULT, allocColor(0,0,0)) 
+	           
+	           ; Update.incrActLine := (fn dy => incr_act_line dy) )
 
 (**** Ende Initialisierung ****)
 
