@@ -128,7 +128,7 @@
 		handle (Chr | Overflow) =>
 			 Error.error(i, m ^ " escape character too big")
 
-            fun dec s     = base(s, DEC, "ASCII")
+	    fun dec s     = base(s, DEC, "ASCII")
 	    fun unicode s = base(s, HEX, "unicode")
 
 	    fun convert(k,cs) =
@@ -235,7 +235,7 @@
 
   printable  = [^\000-\032"\127\\];
   escape     = "\\a" | "\\b" | "\\t" | "\\n" | "\\v" | "\\f" | "\\r" |
-	       ("\\^"[@-_])  | ("\\"{digit}{3}) | ("\\x"{hexdigit}{2}) |
+	       ("\\^"[@-_])  | ("\\"{digit}{3}) | ("\\u"{hexdigit}{4}) |
 	       "\\\"" | "\\\\";
   gap        = ("\\"{formatting}"\\");
   stringchar = {printable} | " " | {escape};
