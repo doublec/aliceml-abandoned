@@ -91,7 +91,7 @@ in
 	structure Phase2  = Phase3
 	structure Context = Phase1.C
 	val context       = Pair.fst
-	val context1      = id
+	val context1      = General.id
 	val context2      = ignore
     )
 end

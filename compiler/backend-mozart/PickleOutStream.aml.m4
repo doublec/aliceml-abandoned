@@ -102,7 +102,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 		     val newSize = Int.div (Int.* (length (!array), 3), 2)
 		 in
 		     array := Word8Array.array (newSize, 0w0);
-		     copy {src = old, si = 0, len = NONE, dst = !array, di = 0}
+		     copy {src = old, dst = !array, di = 0}
 		 end
 	     else ();
 	     update (!array, !index, b);
@@ -270,6 +270,7 @@ ifelse([[PICKLE_VERSION]],3,[[
 		update (!array, 4, Word8Vector.sub (bytes, 1));
 		update (!array, 5, Word8Vector.sub (bytes, 2));
 		update (!array, 6, Word8Vector.sub (bytes, 3));
-		extract (!array, 0, SOME (!index))
+		Word8ArraySlice.vector
+		(Word8ArraySlice.slice (!array, 0, SOME (!index)))
 	    end
     end

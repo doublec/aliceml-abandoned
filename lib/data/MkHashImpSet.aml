@@ -124,7 +124,7 @@ struct
 				   of (true,  true ) => EQUAL
 				    | (true,  false) => LESS
 				    | (false, true ) => GREATER
-				    | (false, false) => raise Unordered
+				    | (false, false) => raise General.Unordered
 
     fun fromList ks		= let val s = set() in
 				      List.app (fn k => insertDisjoint(s,k)) ks;

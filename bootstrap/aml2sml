@@ -18,6 +18,7 @@ awk '
 BEGIN {
    import=0;
    FS="\n";
+   print "val assert=General.assert;"
 }
 
 {

@@ -17,9 +17,9 @@ CM.make' "main-mozart.cm";
 
 local
     fun main' ("--profile"::args) =
-	(Compiler.Profile.setTimingMode true;
-	 Compiler.Profile.reset ();
-	 main' args before Compiler.Profile.report TextIO.stdOut)
+	((*Compiler.Profile.setTimingMode true;
+	 Compiler.Profile.reset ();*)
+	 main' args (*before Compiler.Profile.report TextIO.stdOut*))
       | main' args = SMLToMozartBatchCompiler.main args
 	handle e =>
 	let

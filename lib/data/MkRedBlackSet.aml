@@ -2,7 +2,7 @@
  * Adapted from smlnj-lib/redblack-set-fn.sml
  *
  * Extensions and interface modifications
- *   Andreas Rossberg, 2003
+ *   Andreas Rossberg, 2003-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -451,10 +451,10 @@ functor MkRedBlackSet (Item : ORDERED) :> SET where type item = Item.t =
 	    fn (SET(_, t)) => test t
 	  end
 
-    fun fromList l = List.foldl (flip insertDisjoint) empty l
+    fun fromList l = List.foldl (General.flip insertDisjoint) empty l
     fun toList s = foldr op:: nil s
 
-    fun fromVector v = Vector.foldl (flip insertDisjoint) empty v
+    fun fromVector v = Vector.foldl (General.flip insertDisjoint) empty v
     fun toVector s = Vector.fromList (toList s)
 
   end

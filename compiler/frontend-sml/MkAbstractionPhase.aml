@@ -114,11 +114,13 @@ import structure Sharing           from "Sharing"
 import structure AbstractionError  from "AbstractionError"
 import signature ABSTRACTION_PHASE from "ABSTRACTION_PHASE-sig"
 
-
-type sig_loader = Source.desc * Url.t -> BindEnvFromSig.sign
+structure SigLoader =
+struct
+    type t = Source.desc * Url.t -> BindEnvFromSig.sign
+end
 
 functor MkAbstractionPhase(
-		val loadSig :        sig_loader
+		val loadSig :        SigLoader.t
 		structure Switches : SWITCHES
 	) :> ABSTRACTION_PHASE =
 struct

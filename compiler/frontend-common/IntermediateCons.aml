@@ -146,7 +146,7 @@ struct
 	    val t1      = typOfExp exp1
 	    val (t2,t3) = Type.asArrow t1
 	in
-	    (*assert (Type.equal(t2, typOfExp exp));*)
+	    assert (Type.equal(t2, typOfExp exp));
 	    AppExp(typInfo(r,t3), exp1, exp)
 	end
 

@@ -1,6 +1,11 @@
 Group is
 
+#if defined(NEW_CM)
+	$/ml-yacc-lib.cm
+#else
 	ml-yacc-lib.cm
+#endif
+
 	../../lib/utility/sources.cm
 	../../bootstrap/sources.cm
 

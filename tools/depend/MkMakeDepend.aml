@@ -58,7 +58,7 @@ struct
 				filenames;
 		       TextIO.print "\n\n"
 		   end
-		   handle Assert _ =>
+		   handle General.Assert _ =>
 			  (TextIO.output (TextIO.stdErr,
 					  "while processing " ^ filename ^
 					  ": assertion failure\n");

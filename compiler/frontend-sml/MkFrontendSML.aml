@@ -23,11 +23,11 @@ import structure PPAbstractGrammar from "../frontend-common/AbstractGrammar"
 import structure BindEnv           from "BindEnv"
 import structure MkParsingPhase    from "MkParsingPhase"
 import structure MkAbstractionPhase
-       type sig_loader             from "MkAbstractionPhase"
+       structure SigLoader         from "MkAbstractionPhase"
 
 
 functor MkFrontendSML (
-    val loadSig :        sig_loader
+    val loadSig :        SigLoader.t
     structure Switches : SWITCHES
 ) : PHASE =
 let
@@ -60,6 +60,6 @@ in
 	structure Context = Phase2'.C
 	val context       = Pair.snd
 	val context1      = ignore
-	val context2      = id
+	val context2      = General.id
     )
 end

@@ -24,8 +24,8 @@ import structure MkBackendMozart     from "../backend-mozart/MkBackendMozart"
 import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
-       type sig_loader
-       type mod_loader               from "MkRecursiveCompiler"
+       structure InfLoader
+       structure ModLoader           from "MkRecursiveCompiler"
 
 structure SMLToMozartRecursiveCompiler =
     let
@@ -33,8 +33,8 @@ structure SMLToMozartRecursiveCompiler =
 
 	val _ = General.Assert	(* dummy to force CM importing ExtendedBasis *)
 
-	val acquireSigRef: sig_loader ref = ref (fn _ => assert false)
-	val acquireModRef: mod_loader ref = ref (fn _ => assert false)
+	val acquireSigRef: InfLoader.t ref = ref (fn _ => assert false)
+	val acquireModRef: ModLoader.t ref = ref (fn _ => assert false)
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)

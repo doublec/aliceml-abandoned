@@ -32,8 +32,8 @@ import structure Dependency         from "Dependency"
 import signature COMPILER           from "COMPILER-sig"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
-type sig_loader = Source.desc * Url.t -> Inf.sign
-type mod_loader = Source.desc * Url.t -> Reflect.module
+structure InfLoader = struct type t = Source.desc * Url.t -> Inf.sign end
+structure ModLoader = struct type t = Source.desc * Url.t -> Reflect.module end
 
 functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    structure Compiler: COMPILER
@@ -120,7 +120,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		in
 		    implicitImportRef := SOME s;
 		    s
-		end handle (Url.NotLocal | Option) =>
+		end handle (Url.NotLocal | Option.Option) =>
 			error ("could not locate implicit import file " ^ url)
 	end
 
@@ -173,7 +173,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 					 (d, OS.Path.base filename))
 	    in
 		processBasic process (Source.urlDesc url, s'')
-	    end handle (Url.NotLocal | Option) =>
+	    end handle (Url.NotLocal | Option.Option) =>
 		    error ("could not locate source file " ^ filename)
 
 	local

@@ -51,7 +51,7 @@ in
 	structure Phase1  = Phase1
 	structure Phase2  = Phase2
 	structure Context = Context
-	val context       = id
+	val context       = General.id
 	val context1      = Pair.fst
 	val context2      = Pair.snd
     )

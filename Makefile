@@ -91,7 +91,10 @@ clean-common:
 
 veryclean: clean
 	(cd bootstrap && make veryclean) || exit 1
-	rm -rf */CM */*/CM */*/*/CM
+	rm -rf */CM */*/CM */*/*/CM */.cm */*/.cm */*/*/.cm
+
+distclean: veryclean
+	rm -rf */NJ */*/NJ */*/*/NJ
 
 distclean: veryclean
 	rm -rf */NJ */*/NJ */*/*/NJ

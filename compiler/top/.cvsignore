@@ -1,5 +1,6 @@
 NJ
 CM
+.cm
 Lexer.lex.*
 Parser.grm.*
 ~*

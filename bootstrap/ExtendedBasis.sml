@@ -2,25 +2,7 @@
  * General
  *****************************************************************************)
 
-signature GENERAL =
-  sig
-    include GENERAL
-
-    exception Unordered
-    exception Assert of string * int
-
-    val :=: :		'a ref * 'a ref -> unit
-    val id :		'a -> 'a
-    val const :		'a -> 'b -> 'a
-    val curry :		('a * 'b -> 'c) -> ('a -> 'b -> 'c)
-    val uncurry :	('a -> 'b -> 'c) -> ('a * 'b -> 'c)
-    val flip :		('a * 'b -> 'c) -> ('b * 'a -> 'c)
-    val inverse :	order -> order
-    val assert :	bool -> 'a
-  end
-
-
-structure General : GENERAL =
+structure General =
   struct
     open General
 
@@ -55,24 +37,7 @@ val assert	= General.assert
  * Ref
  *****************************************************************************)
 
-signature REF =
-  sig
-    datatype ref = datatype ref
-    type  'a t   = 'a ref
-
-    val ! :		'a ref -> 'a
-    val := :		'a ref * 'a -> unit
-    val :=: :		'a ref * 'a ref -> unit
-    val exchange :	'a ref * 'a -> 'a
-
-    val equal :		'a ref * 'a ref -> bool
-    val app :		('a -> unit) -> 'a ref -> unit
-    val map :		('a -> 'b) -> 'a ref -> 'b ref
-    val modify :	('a -> 'a) -> 'a ref -> unit
-  end
-
-
-structure Ref : REF =
+structure Ref =
   struct
     datatype ref = datatype ref
     type  'a t   = 'a ref
@@ -95,17 +60,7 @@ structure Ref : REF =
  * Bool
  *****************************************************************************)
 
-signature BOOL =
-  sig
-    include BOOL
-
-    type t = bool
-    val equal :   bool * bool -> bool
-    val compare : bool * bool -> order
-  end
-
-
-structure Bool : BOOL =
+structure Bool =
   struct
     open Bool
 
@@ -122,23 +77,7 @@ structure Bool : BOOL =
  * Option
  *****************************************************************************)
 
-signature OPTION =
-  sig
-    include OPTION
-
-    type 'a t = 'a option
-
-    val isNone :	'a option -> bool
-
-    val equal :		('a * 'a -> bool) -> 'a option * 'a option -> bool
-    val collate :	('a * 'a -> order) -> 'a option * 'a option -> order
-
-    val app :		('a -> unit) -> 'a option -> unit
-    val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b
-  end
-
-
-structure Option : OPTION =
+structure Option =
   struct
     open Option
 
@@ -169,29 +108,7 @@ structure Option : OPTION =
  * Pair
  *****************************************************************************)
 
-signature PAIR =
-  sig
-    type ('a,'b) pair = 'a * 'b
-    type ('a,'b) t    = ('a,'b) pair
-
-    val fst :		('a,'b) pair -> 'a
-    val snd :		('a,'b) pair -> 'b
-
-    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) pair -> unit
-    val appFst :	('a -> unit) -> ('a,'b) pair -> unit
-    val appSnd :	('b -> unit) -> ('a,'b) pair -> unit
-    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) pair -> ('c,'d) pair
-    val mapFst :	('a -> 'c) -> ('a,'b) pair -> ('c,'b) pair
-    val mapSnd :	('b -> 'c) -> ('a,'b) pair -> ('a,'c) pair
-
-    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
-			    ('a,'b) pair * ('a,'b) pair -> bool
-    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
-			    ('a,'b) pair * ('a,'b) pair -> order
-  end
-
-
-structure Pair : PAIR =
+structure Pair =
   struct
     type ('a,'b) pair	= 'a * 'b
     type ('a,'b) t	= ('a,'b) pair
@@ -222,35 +139,7 @@ structure Pair : PAIR =
  * Alt
  *****************************************************************************)
 
-signature ALT =
-  sig
-    datatype ('a,'b) alt = FST of 'a | SND of 'b
-    type     ('a,'b) t   = ('a,'b) alt
-
-    exception Alt
-
-    val isFst :		('a,'b) alt -> bool
-    val isSnd :		('a,'b) alt -> bool
-    val fst :		('a,'b) alt -> 'a		(* [Alt] *)
-    val snd :		('a,'b) alt -> 'b		(* [Alt] *)
-    val getFst :	('a,'b) alt * 'a -> 'a
-    val getSnd :	('a,'b) alt * 'b -> 'b
-
-    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) alt -> unit
-    val appFst :	('a -> unit) -> ('a,'b) alt -> unit
-    val appSnd :	('b -> unit) -> ('a,'b) alt -> unit
-    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
-    val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
-    val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
-
-    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
-			    ('a,'b) alt * ('a,'b) alt -> bool
-    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
-			    ('a,'b) alt * ('a,'b) alt -> order
-  end
-
-
-structure Alt : ALT =
+structure Alt =
   struct
     datatype ('a,'b) alt = FST of 'a | SND of 'b
     type     ('a,'b) t   = ('a,'b) alt
@@ -304,40 +193,7 @@ structure Alt : ALT =
  * List
  *****************************************************************************)
 
-signature LIST =
-  sig
-    include LIST
-
-    type 'a t = 'a list
-
-    val sub :		'a list * int -> 'a
-
-    val index :		'a list -> (int * 'a) list
-    val appr :		('a -> unit) -> 'a list -> unit
-    val appi :		(int * 'a -> unit) -> 'a list -> unit
-    val appri :		(int * 'a -> unit) -> 'a list -> unit
-    val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list
-    val mapiPartial :	(int * 'a -> 'b option) -> 'a list -> 'b list
-    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val alli :		(int * 'a -> bool) -> 'a list -> bool
-    val existsi :	(int * 'a -> bool) -> 'a list -> bool
-    val findi :		(int * 'a -> bool) -> 'a list -> (int * 'a) option
-    val filteri :	(int * 'a -> bool) -> 'a list -> (int * 'a) list
-    val partitioni :	(int * 'a -> bool) -> 'a list -> (int * 'a) list *
-							 (int * 'a) list
-    val contains :	''a list -> ''a -> bool
-    val notContains :	''a list -> ''a -> bool
-
-    val equal :		('a * 'a -> bool) -> 'a list * 'a list -> bool
-    val collate :	('a * 'a -> order) -> 'a list * 'a list -> order
-
-    val isSorted :	('a * 'a -> order) -> 'a list -> bool
-    val sort :		('a * 'a -> order) -> 'a list -> 'a list
-  end
-
-
-structure List : LIST =
+structure List =
   struct
     open List
 
@@ -457,26 +313,7 @@ structure List : LIST =
  * ListPair
  *****************************************************************************)
 
-signature LIST_PAIR =
-  sig
-    include LIST_PAIR
-
-    val allEq :		('a * 'b -> bool) -> 'a list * 'b list -> bool
-
-    val mapPartial :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
-    val appr :		('a * 'b -> unit) -> 'a list * 'b list -> unit
-    val appi :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
-    val appri :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
-    val mapi :		(int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
-    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c
-						   -> 'a list * 'b list ->'c
-    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c
-						   -> 'a list * 'b list -> 'c
-    val find :		('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) option
-  end
-
-
-structure ListPair : LIST_PAIR =
+structure ListPair =
   struct
     open ListPair
 
@@ -534,8 +371,6 @@ structure ListPair : LIST_PAIR =
  * Char
  *****************************************************************************)
 
-local
-
 structure Char =
   struct
     open Char
@@ -549,39 +384,12 @@ structure Char =
     fun fromWide c	= c
   end
 
-
 structure WideChar = Char
-
-
-in (* local *)
-
-
-signature CHAR =
-  sig
-    include CHAR
-
-    type t = char
-
-    val equal :		char * char -> bool
-    val hash :		char -> int
-
-    val toWide :	char -> WideChar.char
-    val fromWide :	WideChar.char -> char
-  end
-
-
-structure Char     : CHAR = Char
-structure WideChar : CHAR = WideChar
-
-end (* local *)
-
 
 
 (*****************************************************************************
  * String
  *****************************************************************************)
-
-local
 
 structure String =
   struct
@@ -628,53 +436,12 @@ structure String =
 					  andalso isSuffix'(s1,s2,i1-1,i2-1)
   end
 
-
 structure WideString = String
-
-
-in (* local *)
-
-
-signature STRING =
-  sig
-    include STRING (* where structure Char : CHAR *)
-
-    type t = string
-
-    val equal :		string * string -> bool
-    val hash :		string -> int
-
-    val toWide :	string -> WideString.string
-    val fromWide :	WideString.string -> string
-
-    val tabulate :	int * (int -> Char.char) -> string
-    val concatWith :	string -> string list -> string
-    val isSuffix :	string -> string -> bool
-  end
-
-
-structure String     : STRING = String
-structure WideString : STRING = WideString
-
-end (* local *)
 
 
 (*****************************************************************************
  * Substring
  *****************************************************************************)
-
-signature SUBSTRING =
-  sig
-    include SUBSTRING (* where structure String : STRING *)
-
-    type t = substring
-
-    val full :  string -> substring
-    val equal :	substring * substring -> bool
-    val hash :	substring -> int
-
-    val appr :	(Char.char -> unit) -> substring -> unit
-  end
 
 structure Substring =
   struct
@@ -706,18 +473,7 @@ structure CharVectorSlice =
  * Int
  *****************************************************************************)
 
-signature INTEGER =
-  sig
-    include INTEGER
-
-    type t = int
-
-    val equal :	int * int -> bool
-    val hash :	int -> Int.int
-  end
-
-
-structure Int : INTEGER =
+structure Int =
   struct
     open Int
 
@@ -728,7 +484,7 @@ structure Int : INTEGER =
   end
 
 
-structure LargeInt : INTEGER =
+structure LargeInt =
   struct
     open LargeInt
 
@@ -738,8 +494,7 @@ structure LargeInt : INTEGER =
     fun hash i	= toInt(abs i mod valOf maxInt) handle Overflow => 0
   end
 
-
-structure Position : INTEGER =
+structure Position =
   struct
     open Position
 
@@ -755,22 +510,7 @@ structure Position : INTEGER =
  * Word
  *****************************************************************************)
 
-signature WORD =
-  sig
-    include WORD
-
-    type t = word
-
-    val ~ : word -> word
-    val fromLarge : LargeWord.word -> word
-    val toLarge : word -> LargeWord.word
-    val toLargeX : word -> LargeWord.word
-    val equal :	word * word -> bool
-    val hash :	word -> int
-  end
-
-
-structure Word : WORD =
+structure Word =
   struct
     open Word
 
@@ -784,8 +524,7 @@ structure Word : WORD =
     fun hash w	  = abs(toInt w) handle Overflow => 0
   end
 
-
-structure Word8 : WORD =
+structure Word8 =
   struct
     open Word8
 
@@ -799,8 +538,7 @@ structure Word8 : WORD =
     fun hash w	  = abs(toInt w) handle Overflow => 0
   end
 
-
-structure Word32 : WORD =
+structure Word32 =
   struct
     open Word32
 
@@ -814,8 +552,7 @@ structure Word32 : WORD =
     fun hash w	  = abs(toInt w) handle Overflow => 0
   end
 
-
-structure LargeWord : WORD =
+structure LargeWord =
   struct
     open LargeWord
 
@@ -830,23 +567,11 @@ structure LargeWord : WORD =
   end
 
 
-
 (*****************************************************************************
  * Real
  *****************************************************************************)
 
-signature REAL =
-  sig
-    include REAL
-
-    type t = real
-
-    val equal : real * real -> bool
-    val hash :  real -> int
-  end
-
-
-structure Real : REAL =
+structure Real =
   struct
     open Real
 
@@ -856,8 +581,7 @@ structure Real : REAL =
     fun hash x	= raise Fail "Real.hash"
   end
 
-
-structure LargeReal : REAL =
+structure LargeReal =
   struct
     open LargeReal
 
@@ -866,7 +590,6 @@ structure LargeReal : REAL =
     val equal	= op ==
     fun hash x	= raise Fail "Real.hash"
   end
-
 
 
 (*****************************************************************************
@@ -891,10 +614,19 @@ structure Vector =
   struct
     open Vector
 
-    fun appi f v		= Vector.appi f (v,0,NONE)
-    fun mapi f v		= Vector.mapi f (v,0,NONE)
-    fun foldli f b v		= Vector.foldli f b (v,0,NONE)
-    fun foldri f b v		= Vector.foldri f b (v,0,NONE)
+    fun appi  f  vec		= appi'(f, vec, 0)
+    and appi'(f, vec, i)	= if i = length vec then () else
+				  (f(i, sub(vec, i)); appi'(f, vec, i+1))
+
+    fun foldli f init vec	= foldli'(f, init, vec, 0)
+    and foldli'(f, x, vec, i)	= if i = length vec then x else
+				  foldli'(f, f(i, sub(vec, i), x), vec, i+1)
+    fun foldri f init vec	= foldri'(f, init, vec, length vec)
+    and foldri'(f, x, vec, i)	= if i = 0 then x else
+				  foldri'(f, f(i-1, sub(vec, i-1), x), vec, i-1)
+
+    fun mapi f vec		= fromList
+				    (foldri (fn (i, x, l) => f(i, x)::l) [] vec)
 
     type 'a t			= 'a vector
 
@@ -1103,35 +835,7 @@ structure VectorPair : VECTOR_PAIR =
  * VectorSlice
  *****************************************************************************)
 
-signature VECTOR_SLICE =
-sig
-    type 'a slice
-    val length : 'a slice -> int
-    val sub : 'a slice * int -> 'a
-    val full : 'a Vector.vector -> 'a slice
-    val slice : 'a Vector.vector * int * int option -> 'a slice
-    val subslice : 'a slice * int * int option -> 'a slice
-    val base : 'a slice -> 'a Vector.vector * int * int
-    val vector : 'a slice -> 'a Vector.vector
-    val concat : 'a slice list -> 'a Vector.vector
-    val isEmpty : 'a slice -> bool
-    val getItem : 'a slice -> ('a * 'a slice) option
-    val appi : (int * 'a -> unit) -> 'a slice -> unit
-    val app : ('a -> unit) -> 'a slice -> unit
-    val mapi : (int * 'a -> 'b) -> 'a slice -> 'b vector
-    val map : ('a -> 'b) -> 'a slice -> 'b vector
-    val foldli : (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
-    val foldri : (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
-    val foldl : ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
-    val foldr : ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
-    val findi : (int * 'a -> bool) -> 'a slice -> (int * 'a) option
-    val find : ('a -> bool) -> 'a slice -> 'a option
-    val exists : ('a -> bool) -> 'a slice -> bool
-    val all : ('a -> bool) -> 'a slice -> bool
-    val collate : ('a * 'a -> order) -> 'a slice * 'a slice -> order
-end
-
-structure VectorSlice :> VECTOR_SLICE =
+structure VectorSlice =
 struct
     type 'a slice		= 'a Vector.vector * int * int
 
@@ -1202,17 +906,24 @@ structure Array =
     open Array
     val sub' = sub
 
-    fun appi f a	= Array.appi f (a,0,NONE)
-    fun modifyi f a	= Array.modifyi f (a,0,NONE)
-    fun foldli f b a	= Array.foldli f b (a,0,NONE)
-    fun foldri f b a	= Array.foldri f b (a,0,NONE)
+    fun vector a		= Vector.tabulate(length a, fn i => sub(a,i))
 
-    fun vector a	= Vector.tabulate(length a, fn i => sub(a,i))
+    fun copy{src, dst, di}	= if di < 0 orelse length dst < di + length src
+				  then raise Subscript
+				  else copy'(src, dst, di, 0)
+    and copy'(src, dst, di, i)	= if i = length src then () else
+				  ( update(dst, di+i, sub(src, i))
+				  ; copy'(src, dst, di, i+1)
+				  )
 
-    fun copy{src,dst,di} =
-	Array.copy{src=src, si=0, dst=dst, di=di, len=NONE}
-    fun copyVec{src,dst,di} =
-	Array.copyVec{src=src, si=0, dst=dst, di=di, len=NONE}
+    fun copyVec{src, dst, di}	= if di < 0
+				  orelse length dst < di + Vector.length src
+				  then raise Subscript
+				  else copyVec'(src, dst, di, 0)
+    and copyVec'(src,dst,di, i)	= if i = Vector.length src then () else
+				  ( update(dst, di+i, Vector.sub(src, i))
+				  ; copyVec'(src, dst, di, i+1)
+				  )
 
     type 'a t		= 'a array
 
@@ -1334,18 +1045,7 @@ structure Array =
  * Time
  *****************************************************************************)
 
-signature TIME =
-  sig
-    include TIME
-
-    type t = time
-
-    val equal :	time * time -> bool
-    val hash :	time -> int
-  end
-
-
-structure Time : TIME =
+structure Time =
   struct
     open Time
 
@@ -1355,37 +1055,6 @@ structure Time : TIME =
     fun hash t	= LargeInt.hash(toMicroseconds t)
   end
 
-
-
-(*****************************************************************************
- * TextIO
- *****************************************************************************)
-
-structure TextIO =
-  struct
-    open TextIO
-    val inputLine = fn f =>
-	case inputLine f
-	  of "" => NONE
-	   | s  => SOME s
-  end
-
-
-
-(*****************************************************************************
- * OS
- *****************************************************************************)
-
-structure OS =
-  struct
-    open OS
-    structure Path =
-      struct
-	open Path
-	val mkAbsolute = fn{path, relativeTo} => mkAbsolute(path, relativeTo)
-	val mkRelative = fn{path, relativeTo} => mkRelative(path, relativeTo)
-      end
-  end
 
 
 (*****************************************************************************

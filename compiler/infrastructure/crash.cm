@@ -1,4 +1,6 @@
 Group is
 
-    CRASH-sig.aml
-    Crash.aml
+	../../bootstrap/sources.cm
+
+	CRASH-sig.aml
+	Crash.aml

@@ -292,7 +292,7 @@ struct
 	    in
 		replaceTy (tyvarseq',tyseq') ty'
 	    end
-	    handle Option => G.TYCONTy(I, tyseq', longtycon)
+	    handle Option.Option => G.TYCONTy(I, tyseq', longtycon)
 	end
 
       | rewriteTy typbind (G.ARROWTy(I, ty1, ty2)) =

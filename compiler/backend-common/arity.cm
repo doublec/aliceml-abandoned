@@ -4,6 +4,7 @@ Group
 
 is
 
+    ../../bootstrap/sources.cm
     ../../lib/rtt/label.cm
 
     ARITY-sig.aml
