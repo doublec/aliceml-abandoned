@@ -58,8 +58,8 @@ struct
 
     fun save(file, package) =
 	let
-	    structure _ =
-		Save(val file = file signature S = P structure X = (val x = p))
+	    structure _ = Save(val file = file signature S = P
+					       structure X = (val x = package))
 	in
 	    ()
 	end
@@ -76,7 +76,8 @@ struct
     fun save(file, package) =
 	let
 	    structure _ =
-		SaveVal(val file = file signature S = PV structure X = (val x = p))
+		SaveVal(val file = file signature S = PV
+					structure X = (val x = package))
 	in
 	    ()
 	end
