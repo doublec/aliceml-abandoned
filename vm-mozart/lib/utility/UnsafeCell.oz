@@ -120,11 +120,11 @@ define
 		    in
 			if {Dictionary.member M K}
 			then case {Delete {Dictionary.get M K} C $ _}
-			     of unit then {F C}
+			     of unit then {F C _}
 			     [] nil then {IncSize M ~1} {Dictionary.remove M K}
 			     [] Es then {IncSize M ~1} {Dictionary.put M K Es}
 			     end
-			else {F C}
+			else {F C _}
 			end
 			unit
 		    end
