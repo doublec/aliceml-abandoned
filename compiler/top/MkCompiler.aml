@@ -17,12 +17,13 @@
  * Problem is, this requires applicative functors with extended paths.
  *)
 
-import structure Source   from "../infrastructure/Source"
-import structure Error    from "../infrastructure/Error"
-import signature SWITCHES from "../infrastructure/SWITCHES-sig"
-import signature PHASE    from "../infrastructure/PHASE-sig"
-import structure Target   from "../infrastructure/Target"
-import signature COMPILER from "COMPILER-sig"
+import structure Source           from "../infrastructure/Source"
+import structure Error            from "../infrastructure/Error"
+import signature SWITCHES         from "../infrastructure/SWITCHES-sig"
+import signature PHASE            from "../infrastructure/PHASE-sig"
+import structure Target           from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC from "../infrastructure/BACKEND_SPECIFIC-sig"
+import signature COMPILER         from "COMPILER-sig"
 
 
 functor MkCompiler(
