@@ -42,7 +42,7 @@ reference to one of its data structures using <TT>offer</TT>:</P>
 <PRE class=code>
 offer : package -> ticket</PRE>
 
-<P>Offering opens a communications port on the exporting site (or reuses the
+<P>Offering opens a communication port on the exporting site (or reuses the
 existing communications port if it has already been opened).  Currently, Alice
 communications ports take the form of HTTP servers; opening therefore amounts
 to starting a HTTP server on a TCP/IP port and to listening for incoming
@@ -134,7 +134,7 @@ structure ComputeServer : COMPUTE_SERVER =
 struct
     val apply = proxy (fn (f, x) => f x)
 end
-val ticket = offer (pack ComputeServer : COMPUTE_SERVER)
+val ticket = offer (pack ComputeServer :> COMPUTE_SERVER)
 val _ = Pickle.save ("/docroot/computeServer",
 		     pack (val x = ticket) :> (val x : string))</PRE>
 

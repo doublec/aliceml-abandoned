@@ -19,7 +19,7 @@ INSTALLFILES_0 = \
 	inspector-conc-1.jpg inspector-conc-2.jpg inspector-conc-3.jpg \
 	inspector-conc-4.jpg inspector-conc-5.jpg inspector-conc-6.jpg \
 	inspector-fd-1.jpg inspector-fd-2.jpg inspector-fd-3.jpg \
-	inspector-fd-4.jpg inspector-fd-5.jpg
+	inspector-fd-4.jpg inspector-fd-5.jpg inspector-fd-6.jpg explorer.jpg
 INSTALLFILES_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
 	index.html \
