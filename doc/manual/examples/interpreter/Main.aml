@@ -4,7 +4,6 @@
  * 2000/02/12 Andreas Rossberg
  *)
 
-
 import structure Type   from "Type"
 import structure Value  from "Value"
 import structure Lexer  from "Lexer"
@@ -12,9 +11,8 @@ import structure Parser from "Parser"
 import structure Elab   from "Elab"
 import structure Eval   from "Eval"
 
-
 structure Main =
-  struct
+struct
     open TextIO
     open Value
     open Type
@@ -22,9 +20,9 @@ structure Main =
     fun typeToString t				= typeToString' false t
     and typeToString' b Bool			= "bool"
       | typeToString' b Int			= "int"
-      | typeToString' false (Arrow(t1,t2))	= typeToString' true t1 ^ " -> "
+      | typeToString' false (Arrow (t1,t2))	= typeToString' true t1 ^ " -> "
 						  ^ typeToString' false t2
-      | typeToString' true  (Arrow(t1,t2))	= "(" ^ typeToString' true t1
+      | typeToString' true  (Arrow (t1,t2))	= "(" ^ typeToString' true t1
 						  ^ " -> "
 						  ^ typeToString' false t2 ^ ")"
 
@@ -36,14 +34,13 @@ structure Main =
       | valueToString(RecProc _, Arrow _)	= "fn"
       | valueToString _				= "Runtime error"
 
-
     fun fromString s =
 	let
-	    val tree = Parser.parse(Lexer.lex s)
+	    val tree = Parser.parse (Lexer.lex s)
 	    val t    = Elab.elab Type.base tree
 	    val v    = Eval.eval Value.base tree
 	in
-	    print(valueToString(v,t) ^ " : " ^ typeToString t ^ "\n")
+	    print(valueToString (v,t) ^ " : " ^ typeToString t ^ "\n")
 	end
 	handle Lexer.Error  => print "Lexical error\n"
 	     | Parser.Error => print "Syntax error\n"
@@ -60,15 +57,15 @@ structure Main =
 	end
 
 
-    fun interactive() =
+    fun interactive () =
 	case (print "> "; inputLine TextIO.stdIn)
-	  of ""   => ()
-	   | "\n" => interactive()
-	   | s    => (fromString s; interactive())
+	 of ""   => ()
+	  | "\n" => interactive ()
+	  | s    => (fromString s; interactive ())
 
+    fun main []    = interactive ()
+      | main files = List.app (fn f => (print (f ^ "> "); fromFile f)) files
 
-    fun main []    = interactive()
-      | main files = List.app (fn f => (print(f ^ "> "); fromFile f)) files
-
-    val _ = (main(CommandLine.arguments()); OS.Process.exit(OS.Process.success))
-  end
+    val _ = main (CommandLine.arguments ())
+    val _ = OS.Process.exit OS.Process.success
+end
