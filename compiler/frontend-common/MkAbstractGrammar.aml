@@ -280,6 +280,7 @@ struct
       | infoExp(TagExp(i,_,_,_))	= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i,_))		= i
+      | infoExp(StrictExp(i,_))		= i
       | infoExp(TupExp(i,_))		= i
       | infoExp(ProdExp(i,_))		= i
       | infoExp(UpdExp(i,_,_))		= i
@@ -311,6 +312,7 @@ struct
       | infoPat(TagPat(i,_,_,_))	= i
       | infoPat(ConPat(i,_,_))		= i
       | infoPat(RefPat(i,_))		= i
+      | infoPat(StrictPat(i,_))		= i
       | infoPat(TupPat(i,_))		= i
       | infoPat(ProdPat(i,_))		= i
       | infoPat(VecPat(i,_))		= i

@@ -599,7 +599,10 @@ struct
       | unguardedTyVarsPat E (WITHFUNPat(_, pat, fvalbind)) =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsFvalBind E fvalbind
 
-    and unguardedTyVarsTy E (TYVARTy(_, tyvar as TyVar(i,tyvar'))) =
+    and unguardedTyVarsTy E (WILDCARDTy(_)) =
+	    []
+
+      | unguardedTyVarsTy E (TYVARTy(_, tyvar as TyVar(i,tyvar'))) =
 	if Option.isSome(lookupVar(E, tyvar')) then
 	    []
 	else
@@ -1219,7 +1222,8 @@ struct
     (* Extract type variables from a type (as implicitly quantified) *)
 
     and trAllTy E =
-	fn TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
+	fn WILDCARDTy(i) => []
+	 | TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
 	   if Option.isSome(lookupVar(E, tyvar')) then
 		[]
 	   else
