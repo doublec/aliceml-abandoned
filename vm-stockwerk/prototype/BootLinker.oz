@@ -85,9 +85,13 @@ define
       run:
 	 fun {$ _ TaskStack}
 	    case TaskStack of Frame=(loadFrame(_ Key))|Rest then
-	       {Trace '[boot-linker] loading '#Key}
-	       {Pickle.load AliceHome#Key#'.stc'
-		Frame|linkFrame(LinkInterpreter Key)|Rest}
+	       if {Not {Dictionary.member ModuleTable Key}} then
+		  {Trace '[boot-linker] loading '#Key}
+		  {Pickle.load AliceHome#Key#'.stc'
+		   Frame|linkFrame(LinkInterpreter Key)|Rest}
+	       else
+		  continue(args() Rest)
+	       end
 	    end
 	 end
       handle:
