@@ -13,8 +13,8 @@
 structure Skeleton :> SKELETON =
     struct
 	fun module name =
-	    ".module '" ^ name ^ ".dll'\n\
-	    \.assembly '" ^ name ^ "' as \"" ^ name ^ ".dll\"\n\
+	    ".module '" ^ name ^ "'\n\
+	    \.assembly '" ^ name ^ "' as \"" ^ name ^ "\"\n\
 	    \{\n\
 	    \  .hash algorithm 0x0008004\n\
 	    \  .ver 0:0:0:0\n\
