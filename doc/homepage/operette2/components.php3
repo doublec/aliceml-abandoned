@@ -74,7 +74,7 @@
     and evaluated by need by the <I>Komponist</I>, who is part of the runtime
     system.
     A component that is never actually accessed at runtime will not get loaded.
-    URL resolving is handled similar to Mozart.
+    URI resolving is handled similar to Mozart.
   </P>
 
   <P>
@@ -87,10 +87,14 @@
 
   <P>
     Every component is loaded and executed at most once in a single process.
-    If several other components load a component from the same URL, they will
+    If several other components load a component from the same URI, they will
     share a reference to the same instantiation of that component.
   </P>
 
+  <P>
+    Note the close connection of components to the Stockhausen
+    <A href="pickling.php3">pickling mechanism</A>.
+  </P>
 
 
 <?php section("syntax", "syntax") ?>

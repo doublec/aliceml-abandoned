@@ -208,7 +208,7 @@
 	functor Abs(signature S structure X : S) = X :> S
 
 	structure M  = struct type t = int val x = 13 end
-	structure M' = Abs(signature = struct type t val x : t end
+	structure M' = Abs(signature = sig type t val x : t end
 	                   structure = M)
   </PRE>
 
