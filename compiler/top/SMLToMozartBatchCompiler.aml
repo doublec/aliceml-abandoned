@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -22,4 +22,5 @@ structure SMLToMozartBatchCompiler =
     MkBatchCompiler(structure RecursiveCompiler =
 			SMLToMozartRecursiveCompiler
 		    val executableHeader =
-			"#!/bin/sh\nexec alicerun $0 \"$@\"\n")
+			"#!/bin/sh\nexec alicerun $0 \"$@\"\n"
+		    val extension = "ozf")
