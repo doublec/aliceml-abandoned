@@ -251,7 +251,7 @@ void AbstractCodeInterpreter::Init() {
 #endif
 }
 
-Block *
+Transform *
 AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   return static_cast<AliceConcreteCode *>(b)->GetAbstractRepresentation();
 }

@@ -444,14 +444,13 @@ Worker::Result PicklingWorker::Run() {
     {
       ConcreteRepresentation *concrete =
 	static_cast<ConcreteRepresentation *>(v);
-      Block *abstract =
+      Transform *abstract =
 	concrete->GetHandler()->GetAbstractRepresentation(concrete);
       if (abstract == INVALID_POINTER) {
 	Scheduler::currentData      = Pickler::Sited;
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Worker::RAISE;
       } else {
-	Assert(abstract->GetLabel() == TRANSFORM_LABEL);
 	PicklingWorker::PushFrame(abstract->ToWord());
 	CONTINUE();
       }

@@ -23,7 +23,7 @@
 #include "generic/Worker.hh"
 
 class Closure;
-
+class Transform;
 #if PROFILE
 class ConcreteCode;
 class String;
@@ -36,7 +36,7 @@ public:
   // Interpreter Constructor
   Interpreter() {}
   // ConcreteRepresentation Methods
-  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
   virtual void PushCall(Closure *closure) = 0;
   // Runtime compilation
