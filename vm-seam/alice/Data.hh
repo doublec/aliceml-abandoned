@@ -364,7 +364,7 @@ public:
 	return;
       }
       i = (i + 1) % n;
-      Assert(i != index || n == 1);
+      Assert(i != index);
     }
   }
   void AssertLabel(u_int i, UniqueString *label) {
