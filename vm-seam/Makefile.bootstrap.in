@@ -169,6 +169,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	Package.aml
 LIBDATASOURCES0 = \
 	ATOM-sig.aml Atom.aml WideAtom.aml \
+	CHANNEL-sig.aml Channel.aml \
 	STAMP-sig.aml MkStamp.aml GLOBAL_STAMP-sig.aml GlobalStamp.aml \
 	HASHABLE-sig.aml ORDERED-sig.aml \
 	SET-sig.aml MAP-sig.aml MkRedBlackSet.aml MkRedBlackMap.aml \
