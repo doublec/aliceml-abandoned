@@ -37,7 +37,7 @@ struct
 	    fun mainQuit () = (Gtk.widgetDestroy connectToServer;
 			       reset NONE)
 		
-	    fun readUrl ()  = Gtk.entryGetText (clientUrl)
+	    fun readUrl ()  = Gtk.entryGetText clientUrl
 
 	    fun start ticket =
 		(Gtk.widgetDestroy connectToServer;

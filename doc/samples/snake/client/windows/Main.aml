@@ -134,12 +134,13 @@ struct
 			      else ()
 	      | countdown n =
 		let
-		    val _      = ArenaWidget.changeView (arena, (0, 0))
 		    val root   = GtkCanvas.root canvas
 		    val num    = Int.toString n
 		    val font   = "-*-times-bold-*-*-*-120-*-*-*-*-*-*-*"
-		    val x      = 300.0
-		    val y      = 250.0
+		    val  (x1, y1, x2, y2) = 
+			GtkCanvas.getScrollRegion (canvas, 0.0, 0.0, 0.0, 0.0)
+		    val x      = (x1 + x2) / 2.0
+		    val y      = (y1 + y2) / 2.0
 		    val anchor = Gtk.ANCHOR_CENTER
 		    val args   = [("text", GtkCanvas.STRING num),
 				  ("font", GtkCanvas.STRING font),

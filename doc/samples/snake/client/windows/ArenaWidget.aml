@@ -108,7 +108,8 @@ struct
 	
     fun initialize () = 
         let
-            val canvas  = GtkCanvas.new 0
+	    val canvas = GtkCanvas.new 1
+            (* antialiasing mode: val canvas = GtkCanvas.newAa ()*)
         in
             Gtk.layoutFreeze canvas;
 	    {
@@ -439,7 +440,8 @@ struct
 				        Real.round y2)
             else ();
             Gtk.layoutThaw obj;
-            Gtk.layoutFreeze obj
+	    Gtk.layoutFreeze obj
+
 	end
 
 end

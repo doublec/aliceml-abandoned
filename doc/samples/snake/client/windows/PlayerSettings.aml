@@ -78,8 +78,8 @@ struct
 	    fun insertPlayer (name, color) = 
 		let
 		    val font = 
-			Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (65535, 65535, 65535)
 		    val front = colorToGdkColor color
 		in
 		    Gtk.textInsert(playerText, font, front, 
@@ -90,8 +90,8 @@ struct
 	    fun removePlayer (name, color) = 
 		let
 		    val font = 
-			Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (65535, 65535, 65535)
 		    val black = Gdk.allocColor (0 ,0, 0)
 		in
 		    Gtk.textInsert(playerText, font, black, 

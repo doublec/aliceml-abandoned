@@ -64,12 +64,26 @@ struct
 	    fun insert (name, color) = 
 		let
 		    val font = 
-			Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+			Gdk.fontLoad ("-*-times-bold-*-*-*-15-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (65535, 65535, 65535)
 		    val front = colorToGdkColor color
 		in
 		    Gtk.textInsert(playerText, font, front,
 				   white, name ^ "\n", ~1)
+		end
+
+	    fun removePlayer (name, color) =
+		let
+		    val font = 
+			Gdk.fontLoad ("-*-times-bold-*-*-*-15-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (65535, 65535, 65535)
+		    val color = colorToGdkColor color
+		in
+		    Gtk.textInsert(playerText, font, color, 
+				   white, 
+				   name ^
+				   " has disconnected" ^
+				   "\n", ~1)
 		end
 	in
 	    case alternate of
@@ -92,10 +106,10 @@ struct
 
    
 		    (* inserts all connected players into text widget *)
-		    fun playersJoined xs = List.app insert xs
+		    val playersJoined = List.app insert
 
-			(* removes one player from text widget *)
-		    fun playerDisconnected x = () (* TODO: implementation *)
+		    (* removes one player from text widget *)
+		    val playerDisconnected = removePlayer
 
 		    fun gameStarted () = ()
 			(* cause in server mode this signal never appears *)
@@ -148,10 +162,16 @@ struct
 		    Gtk.boxPackStart (buttonHBox, startButton, true, true, 5);
 		    Gtk.boxPackStart (buttonHBox, disconnectButton, 
 				      true, true, 5);
+
 		    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 5);
 		    Gtk.boxPackStart (urlHBox, serverUrl, true, true, 5);
+
+		    Gtk.scrolledWindowAddWithViewport (playerWindow, playerText);
+
 		    Gtk.boxPackStart (dialogVBox, urlHBox, false, false, 0);
 		    Gtk.boxPackStart (dialogVBox, separator2, false, 
+				      false, 5);
+		    Gtk.boxPackStart (dialogVBox, connectedLabel, false, 
 				      false, 5);
 		    Gtk.boxPackStart (dialogVBox, playerWindow, true, 
 				      true, 0);
@@ -161,7 +181,6 @@ struct
 				      false, 5);
 
 		    (* pack everything in container and show it all *)
-		    Gtk.containerAdd (playerWindow, playerText);
 		    Gtk.containerAdd (waiting, dialogVBox);
 		    Gtk.widgetShowAll waiting
 		    
@@ -184,7 +203,7 @@ struct
 		    val _ = joined := (fn xs => List.app insert xs)
 
 		    val _ = disconnected := 
-			(fn x => ()) (* TODO: implementation *)
+			(fn x => removePlayer x)
 
 		    val _ = started := 
 			(fn () => (Gtk.widgetDestroy waiting;
@@ -198,7 +217,6 @@ struct
 
 			
 		in
-		    playersJoined alreadyConn;
 		    Gtk.windowSetModal (waiting,true);
 		    Gtk.windowSetTitle (waiting, "Waiting...");
 		    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
@@ -220,7 +238,10 @@ struct
 		    (* pack everything in small boxes *)
 		    Gtk.boxPackStart (buttonHBox, disconnectButton, 
 				      true, true, 5);
-		    Gtk.boxPackStart (dialogVBox, separator2, false, 
+
+		    Gtk.scrolledWindowAddWithViewport (playerWindow, playerText);
+
+		    Gtk.boxPackStart (dialogVBox, connectedLabel, false,
 				      false, 5);
 		    Gtk.boxPackStart (dialogVBox, playerWindow, true, 
 				      true, 0);
@@ -229,10 +250,11 @@ struct
 		    Gtk.boxPackStart (dialogVBox, buttonHBox, false, 
 				      false, 5);
 		    
-		    (* pack the whole thing in conatainer and start it *)
-		    Gtk.containerAdd (playerWindow, playerText);
+		    (* pack the whole thing in container and start it *)
 		    Gtk.containerAdd (waiting, dialogVBox);
-		    Gtk.widgetShowAll waiting
+		    Gtk.widgetShowAll waiting;
+
+		    playersJoined alreadyConn
 
 		end
 	end
