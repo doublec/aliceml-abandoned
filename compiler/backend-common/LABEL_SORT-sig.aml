@@ -10,13 +10,15 @@
  *   $Revision$
  *)
 
+import
+    structure Label
+from "../../lib/rtt/Label"
+
 signature LABEL_SORT =
     sig
-	type 'a t
-
 	datatype arity =
 	    Tup of int
 	  | Prod
 
-	val sort: 'a t list -> 'a t vector * arity
+	val sort: ('a -> Label.t) -> 'a list -> 'a vector * arity
     end
