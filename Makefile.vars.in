@@ -11,11 +11,7 @@
 ##   $Revision$
 ## 
 
-ifdef WINDOWS
-SUPPORTDIR = $(BUILDTOP)/../alice/support/install/mingw32
-else
-SUPPORTDIR = $(BUILDTOP)/../alice/support/install/linux
-endif
+SUPPORTDIR = @SUPPORTDIR@
 
 DEFINES =
 INCLUDES = -I$(SRCTOP) -I$(BUILDTOP) -I$(SUPPORTDIR)/include

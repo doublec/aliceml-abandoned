@@ -32,11 +32,13 @@ case $(uname) in
 	SEAM_MACHINE_FLAGS=-mno-cygwin
 	SEAM_LDFLAGS=
 	SEAM_LIBS="-lwsock32 -lmsvcrt"
+	SUPPORTDIR=$(pwd)/../alice/support/install/mingw32
 	;;
     *)
 	SEAM_MACHINE_FLAGS=
 	SEAM_LDFLAGS="-Wl,--export-dynamic -Ur"
 	SEAM_LIBS="-lm -ldl"
+	SUPPORTDIR=$(pwd)/../alice/support/install/linux
 	;;
 esac
 AC_SUBST(SEAM_MACHINE_FLAGS)
