@@ -19,6 +19,7 @@
 #pragma interface "emulator/Alice.hh"
 #endif
 
+#include <cstring>
 #include "store/Store.hh"
 
 #define MAX_SIZE(t) \
