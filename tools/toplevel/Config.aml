@@ -85,7 +85,7 @@ structure Config =
       fun makeTags buf =
           let
               val err = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT (!errorColor))
-              val log = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC))
+              val log = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_NORMAL))
               val plain = Gtk.textBufferCreateTag(buf, "plain", "foreground-gdk", Gtk.OBJECT (!plainColor))
 
               val comment = Gtk.textBufferCreateTag(buf, "comment", "foreground-gdk", Gtk.OBJECT (!commentColor))
