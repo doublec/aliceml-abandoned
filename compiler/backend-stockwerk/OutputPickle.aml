@@ -15,7 +15,7 @@ import structure Crash               from "../infrastructure/Crash"
 import structure Stamp               from "../common/Stamp"
 import structure StampMap            from "../common/StampMap"
 import structure PrimPickle          from "PrimPickle"
-import structure Value               from "Value"
+import structure Value               from "ValueCross"
 import structure AbstractCodeGrammar from "AbstractCodeGrammar"
 import signature OUTPUT_PICKLE       from "OUTPUT_PICKLE-sig"
 

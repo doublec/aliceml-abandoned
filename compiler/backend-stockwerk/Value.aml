@@ -10,31 +10,30 @@
  *   $Revision$
  *)
 
-import structure FlatGrammar from "../backend-common/FlatGrammar"
-import signature VALUE       from "VALUE-sig"
+import signature VALUE from "VALUE-sig"
 
-structure Value (*: VALUE*) =
+structure Value =
     struct
-    	datatype 'a t =
-	    Prim of string
-	  | Int of LargeInt.int
-	  | String of String.string
-	  | WideString of WideString.string
-	  | Real of Real.real
-	  | TaggedValue of LargeInt.int * 'a t vector
-	  | Tuple of 'a t vector
-	  | Vector of 'a t vector
-	  | Closure of 'a * 'a t vector
-	  | Sign of FlatGrammar.sign
+	type 'a t
 
-	fun prim name = Prim name
-	fun int i = Int i
-	fun string s = String s
-	fun wideString s = WideString s
-	fun real r = Real r
-	fun taggedValue (i, values) = TaggedValue (i, values)
-	fun tuple values = Tuple values
-	fun vector values = Vector values
-	fun closure (function, values) = Closure (function, values)
-	fun sign sign = Sign sign
+	__primitive val cast: 'b -> 'a t = "Unsafe.cast"
+	__primitive val getPrimitiveByName: string -> 'a t =
+	    "Unsafe.getPrimitiveByName"
+	__primitive val makeTaggedValue: int * 'a t vector -> 'a t =
+	    "Unsafe.makeTaggedValue"
+	__primitive val makeTuple: 'a t vector -> 'a t =
+	    "Unsafe.makeTuple"
+	__primitive val makeClosure: 'a * 'a t vector -> 'a t =
+	    "Unsafe.makeClosure"
+
+	val prim = getPrimitiveByName
+	val int = cast
+	val string = cast
+	val wideString = cast
+	val real = cast
+	val taggedValue = makeTaggedValue
+	val tuple = makeTuple
+	val vector = cast
+	val closure = makeClosure
+	val sign = cast
     end
