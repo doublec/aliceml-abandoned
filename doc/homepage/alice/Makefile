@@ -6,10 +6,11 @@ DIRS = $(PREFIX) \
 	$(PREFIX)/manual/examples/interpreter
 
 INSTALLFILES_0 = \
-	style.css bg.gif musicemb.jpg macros.php3 \
+	style.css bg.gif alice.gif musicemb.jpg macros.php3 \
 	index.php3 people.php3 papers.php3 download.php3
 INSTALLFILES_MANUAL_0 = \
-	bg.gif style.css index.php3 macros.php3 menu.php3 laziness.php3 \
+	bg.gif alice.gif style.css \
+	index.php3 macros.php3 menu.php3 laziness.php3 \
 	futures.php3 threads.php3 components.php3 modules.php3 \
 	packages.php3 pickling.php3 constraints.php3 inspector.php3 gtk.php3 \
 	extensions.php3 incompatibilities.php3 usage.php3 libraries.php3 \
@@ -44,4 +45,12 @@ $(DIRS):
 	mkdir -p $@
 
 $(PREFIX)/%: %
+	install -c -m 444 $< $@
+
+$(PREFIX)/alice.gif: \
+	../../../misc/logo/alice-strikethrough-shadow-blue-254x80.gif
+	install -c -m 444 $< $@
+
+$(PREFIX)/manual/alice.gif: \
+	../../../misc/logo/alice-strikethrough-shadow-blue-190x60.gif
 	install -c -m 444 $< $@
