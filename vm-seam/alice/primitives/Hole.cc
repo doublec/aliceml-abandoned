@@ -37,7 +37,8 @@ DEFINE2(Hole_fill) {
 DEFINE1(Hole_future) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
-    RAISE(PrimitiveTable::Hole_Hole);
+    //RAISE(PrimitiveTable::Hole_Hole);
+    RETURN(x0);
   RETURN(STATIC_CAST(Hole *, transient)->GetFuture()->ToWord());
 } END
 
