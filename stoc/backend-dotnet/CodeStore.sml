@@ -247,8 +247,7 @@ structure CodeStore :> CODE_STORE =
 		 let
 		     val (extends, implements) = Option.valOf classAttr
 		 in
-		     (*--** Map.deleteExistent (!classes, stamp); *)
-		     Class (className stamp, (true, RegularClass),
+		     Class (className stamp, (true, SealedClass),
 			    extends, implements, classDecls)::program
 		 end) [mainMethod] (!classes)
 	    end
