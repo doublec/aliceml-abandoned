@@ -633,6 +633,7 @@ Worker::Result Pickler::Pack(word x) {
 }
 
 Worker::Result Pickler::Save(String *filename, word x) {
+  //--** to be done: if there is an exception, a corrupt file is left behind
   char *szFileName     = filename->ExportC();
   FileOutputStream *os = FileOutputStream::New(szFileName);
   if (os->GetFile() == NULL) {
