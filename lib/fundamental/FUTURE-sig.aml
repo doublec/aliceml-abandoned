@@ -36,6 +36,4 @@ sig
 
     val isFuture :	'a -> bool
     val isFailed :	'a -> bool
-
-    val mkLock :	unit -> ('a -> 'b) -> ('a -> 'b)
 end
