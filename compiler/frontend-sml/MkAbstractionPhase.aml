@@ -214,7 +214,7 @@ struct
     fun funexp(valids, exp) =
 	List.foldr (fn(valid,exp) =>
 	     let val i = Source.over(O.infoId valid, O.infoExp exp) in
-		O.FunExp(i, #[O.Match(i, O.VarPat(O.infoId valid, valid), exp)])
+		O.FunExp(i, #[O.Mat(i, O.VarPat(O.infoId valid, valid), exp)])
 	     end
 	    ) exp valids
 
@@ -702,12 +702,12 @@ struct
 	   end
 	 | HASHAtExp(i, lab) =>
 	   let
-		val id'    = O.Id(i, Stamp.new(), Name.InId)
-		val pat'   = O.VarPat(i, id')
-		val exp'   = O.VarExp(i, O.ShortId(i, id'))
-		val match' = O.Match(i, pat', O.SelExp(i, trLab E lab, exp'))
+		val id'  = O.Id(i, Stamp.new(), Name.InId)
+		val pat' = O.VarPat(i, id')
+		val exp' = O.VarExp(i, O.ShortId(i, id'))
+		val mat' = O.Mat(i, pat', O.SelExp(i, trLab E lab, exp'))
 	   in
-		O.FunExp(i, #[match'])
+		O.FunExp(i, #[mat'])
 	   end
 	 | TUPLEAtExp(i, exps)		=> O.TupExp(i, trExps E exps)
 	 | VECTORAtExp(i, exps)		=> O.VecExp(i, trExps E exps)
@@ -726,23 +726,23 @@ struct
 
     and trExpRowo E exprowo =
 	let
-	    val (i, fields') = trExpRowo' E exprowo
+	    val (i, flds') = trExpRowo' E exprowo
 	in
-	    O.Row(i, Vector.fromList fields', false)
+	    O.Row(i, Vector.fromList flds', false)
 	end
     and trExpRowo' E =
 	fn NONE => (Source.nowhere, [])
 
 	 | SOME(ROWExpRow(i, lab as Lab(i',lab'), exp, exprowo)) =>
 	   let
-		val i1'    = Source.over(i', infoExp exp)
-		val field' = O.Field(i1', trLab E lab, trExp E exp)
-		val _      = insertDisjointFld(E, lab', i')
-			     handle CollisionFld _ =>
+		val i1'  = Source.over(i', infoExp exp)
+		val fld' = O.Fld(i1', trLab E lab, trExp E exp)
+		val _    = insertDisjointFld(E, lab', i')
+			   handle CollisionFld _ =>
 				error(i', E.ExpRowLabDuplicate lab')
-		val (_,fields') = trExpRowo' E exprowo
+		val (_,flds') = trExpRowo' E exprowo
 	   in
-		(i, field'::fields')
+		(i, fld'::flds')
 	   end
 
 
@@ -768,10 +768,10 @@ struct
 
 	 | FNExp(i, match) =>
 	   let
-		val i'       = infoMatch match
-		val matches' = trMatcho E (SOME match)
+		val i'    = infoMatch match
+		val mats' = trMatcho E (SOME match)
 	   in
-		O.FunExp(i, matches')
+		O.FunExp(i, mats')
 	   end
 
 	 | PACKExp(i, longstrid) =>
@@ -862,9 +862,9 @@ struct
 	fn NONE => acc
 	 | SOME(Match(i, mrule, matcho)) =>
 	   let
-		val match' = trMrule E mrule
+		val mat' = trMrule E mrule
 	   in
-		trMatcho' (E, match'::acc) matcho
+		trMatcho' (E, mat'::acc) matcho
 	   end
 
     and trMrule E (Mrule(i, pat, exp)) =
@@ -875,7 +875,7 @@ struct
 		val exp' = trExp E exp
 		val  _   = deleteScope E
 	in
-		O.Match(i, pat', exp')
+		O.Mat(i, pat', exp')
 	end
 
 
@@ -950,9 +950,9 @@ struct
 
     and trPatRowo (E,E') patrowo =
 	let
-	    val (i, fields', dots') = trPatRowo' (E,E') patrowo
+	    val (i, flds', dots') = trPatRowo' (E,E') patrowo
 	in
-	    O.Row(i, Vector.fromList fields', dots')
+	    O.Row(i, Vector.fromList flds', dots')
 	end
     and trPatRowo' (E,E') =
 	fn NONE => (Source.nowhere, [], false)
@@ -961,14 +961,14 @@ struct
 
 	 | SOME(ROWPatRow(i, lab as Lab(i',lab'), pat, patrowo)) =>
 	   let
-		val i1'    = Source.over(i', infoPat pat)
-		val field' = O.Field(i1', trLab E lab, trPat (E,E') pat)
-		val _      = insertDisjointFld(E, lab', i')
-			     handle CollisionFld _ =>
+		val i1'  = Source.over(i', infoPat pat)
+		val fld' = O.Fld(i1', trLab E lab, trPat (E,E') pat)
+		val _    = insertDisjointFld(E, lab', i')
+			   handle CollisionFld _ =>
 				error(i', E.PatRowLabDuplicate lab')
-		val (_,fields',dots') = trPatRowo' (E,E') patrowo
+		val (_,flds',dots') = trPatRowo' (E,E') patrowo
 	   in
-		(i, field'::fields', dots')
+		(i, fld'::flds', dots')
 	   end
 
 
@@ -1166,23 +1166,23 @@ struct
 
     and trTyRowo E tyrowo =
 	let
-	    val (i, fields') = trTyRowo' E tyrowo
+	    val (i, flds') = trTyRowo' E tyrowo
 	in
-	    O.Row(i, Vector.fromList fields', false)
+	    O.Row(i, Vector.fromList flds', false)
 	end
     and trTyRowo' E =
 	fn NONE => (Source.nowhere, [])
 
 	 | SOME(ROWTyRow(i, lab as Lab(i',lab'), ty, tyrowo)) =>
 	   let
-		val i1'    = Source.over(i', infoTy ty)
-		val field' = O.Field(i1', trLab E lab, trTy E ty)
-		val _      = insertDisjointFld(E, lab', i')
-			     handle CollisionFld _ =>
+		val i1'  = Source.over(i', infoTy ty)
+		val fld' = O.Fld(i1', trLab E lab, trTy E ty)
+		val _    = insertDisjointFld(E, lab', i')
+			   handle CollisionFld _ =>
 				error(i', E.TyRowLabDuplicate lab')
-		val (_,fields') = trTyRowo' E tyrowo
+		val (_,flds') = trTyRowo' E tyrowo
 	   in
-		(i, field'::fields')
+		(i, fld'::flds')
 	   end
 
 
@@ -1473,9 +1473,9 @@ struct
 		val  id'            = O.Id(i2', Stamp.new(), Name.InId)
 		val  pat'           = O.VarPat(i2', id')
 		val  exp'           = O.VarExp(i2', O.ShortId(i2', id'))
-		val  match'         = O.Match(i2', pat', O.RefExp(i2', exp'))
+		val  mat'           = O.Mat(i2', pat', O.RefExp(i2', exp'))
 		val  dec2'          = O.ValDec(i, O.VarPat(i2', valid'),
-						  O.FunExp(i, #[match']))
+						  O.FunExp(i, #[mat']))
 		val  E'             = BindEnv.new()
 		val  _              = insertVal(E', vid', (i2', stamp2, R))
 		val  _              = insertTy(E, tycon', (i1', stamp1, E'))
@@ -1512,7 +1512,7 @@ struct
 						   if k = UNARY then exp0M' else
 						   O.StrictExp(i, exp0M'))
 		     in
-			O.FunExp(i, #[O.Match(i, patM', expM')])
+			O.FunExp(i, #[O.Mat(i, patM', expM')])
 		     end
 		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
 		val  _               = insertVal(E, conVId vid', (i',stamp1,V))
@@ -1805,13 +1805,13 @@ struct
 
     and trFmatch_rhs E (Match(i, fmrule, fmatcho)) =
 	   let
-		val (match',arity) = trFmrule_rhs E fmrule
-		val  matches'      = Vector.fromList
-				     (match' :: trFmatcho_rhs (E,arity) fmatcho)
-		val  i'            = O.infoMatch match'
+		val (mat',arity) = trFmrule_rhs E fmrule
+		val  mats'       = Vector.fromList
+				     (mat' :: trFmatcho_rhs (E,arity) fmatcho)
+		val  i'          = O.infoMat mat'
 	   in
 		if arity = 1 then
-		    O.FunExp(i', matches')
+		    O.FunExp(i', mats')
 		else
 		    let
 			val valids'  = Vector.tabulate(arity, fn _ =>inventId i)
@@ -1820,7 +1820,7 @@ struct
 					     O.ShortId(Source.nowhere, valid')))
 					  valids'
 			val tupexp'  = tupexp(i', exps')
-			val caseexp' = O.CaseExp(i', tupexp', matches')
+			val caseexp' = O.CaseExp(i', tupexp', mats')
 		    in
 			funexp(Vector.toList valids', caseexp')
 		    end
@@ -1834,12 +1834,12 @@ struct
 
 	 | SOME(Match(i, fmrule, fmatcho)) =>
 	   let
-		val (match',arity') = trFmrule_rhs E fmrule
+		val (mat',arity') = trFmrule_rhs E fmrule
 	   in
 		if arity <> arity' then
 		    error(infoMrule fmrule, E.FvalBindArityInconsistent)
 		else
-		    trFmatcho_rhs' (E, arity, match'::acc) fmatcho
+		    trFmatcho_rhs' (E, arity, mat'::acc) fmatcho
 	   end
 
     and trFmrule_rhs E (Mrule(i, fpat, exp)) =
@@ -1850,7 +1850,7 @@ struct
 		val  exp'              = trExp E exp
 		val  _                 = deleteScope E
 	   in
-		( O.Match(i, pat', annexp(exp',typs')), arity )
+		( O.Mat(i, pat', annexp(exp',typs')), arity )
 	   end
 
     and trFpat_rhs (E,E') =
@@ -2100,10 +2100,10 @@ struct
 
     and trConBindo (E,E',tycon',varids',typ') conbindo =
 	let
-	    val (fields',decs') =
+	    val (flds',decs') =
 		trConBindo' (E,E',tycon',varids',typ',[],[]) conbindo
 	in
-	    (Vector.rev(Vector.fromList fields'), decs')
+	    (Vector.rev(Vector.fromList flds'), decs')
 	end
 
     and trConBindo'(E,E',tycon',varids',typ',acc1,acc2) =
@@ -2114,7 +2114,7 @@ struct
 		val (valid',stamp) = trVId_bind E vid
 		val (typ1',k)      = trTyo (E,i') tyo
 		val  vallab'       = idToLab valid'
-		val  field'        = O.Field(i, vallab', stricttyp E (typ1',k))
+		val  fld'          = O.Fld(i, vallab', stricttyp E (typ1',k))
 		(* elaborate type again with fresh varids *)
 		val  _             = insertScope E
 		val  varids2'      = renameVarids E varids'
@@ -2135,14 +2135,14 @@ struct
 						   if k = UNARY then exp0M' else
 						   O.StrictExp(i, exp0M'))
 		     in
-			O.FunExp(i, #[O.Match(i, patM', expM')])
+			O.FunExp(i, #[O.Mat(i, patM', expM')])
 		     end
 		val  dec'          = O.ValDec(i, O.VarPat(i', valid'), exp')
 		val  _             = deleteScope E
 	   in
 		insertDisjointVal(E', vid', (i', stamp, T(k,tycon',kty)))
 		handle CollisionVal _ => error(i', E.ConBindDuplicate vid');
-		trConBindo' (E,E', tycon',varids',typ', field'::acc1,
+		trConBindo' (E,E', tycon',varids',typ', fld'::acc1,
 			     vardec(varids2', dec')::acc2) conbindo
 	   end
 
@@ -2178,7 +2178,7 @@ struct
 						   if k = UNARY then exp0M' else
 						   O.StrictExp(i, exp0M'))
 		     in
-			O.FunExp(i, #[O.Match(i, patM', expM')])
+			O.FunExp(i, #[O.Mat(i, patM', expM')])
 		     end
 		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
 	   in
@@ -2462,7 +2462,7 @@ struct
 		val (inf2',F2) = trSigExp E sigexp2
 		val  _         = BindEnv.composeEnvFn(F1,F2)
 	   in
-		( O.CompInf(i, inf1', inf2'), F1 )
+		( O.InterInf(i, inf1', inf2'), F1 )
 	   end
 
 
@@ -2788,10 +2788,10 @@ struct
 
     and trConDesco (E,E',tycon',varids',typ') condesco =
 	let
-	    val (fields',specs') =
+	    val (flds',specs') =
 		trConDesco'(E,E',tycon',varids',typ',[],[]) condesco
 	in
-	    (Vector.rev(Vector.fromList fields'), specs')
+	    (Vector.rev(Vector.fromList flds'), specs')
 	end
 
     and trConDesco'(E,E',tycon',varids',typ',acc1,acc2) =
@@ -2802,7 +2802,7 @@ struct
 		val (valid',stamp) = trVId_bind E vid
 		val  vallab'       = idToLab valid'
 		val (typ1',k)      = trTyo (E,i') tyo
-		val  field'        = O.Field(i, vallab', stricttyp E (typ1',k))
+		val  fld'          = O.Fld(i, vallab', stricttyp E (typ1',k))
 		val  kty           = List.length varids'
 		(* elaborate type again with fresh varids *)
 		val  _             = insertScope E
@@ -2818,7 +2818,7 @@ struct
 	   in
 		insertDisjointVal(E', vid',  (i', stamp, T(k,tycon',kty)))
 		handle CollisionVal _ => error(i', E.ConDescDuplicate vid');
-		trConDesco' (E,E',tycon',varids',typ', field'::acc1,
+		trConDesco' (E,E',tycon',varids',typ', fld'::acc1,
 			     spec'::acc2) condesco
 	   end
 
@@ -3258,10 +3258,10 @@ struct
 
     and trConItemo (E,E',tycon',varids',typ') conitemo =
 	let
-	    val (fields',imps') =
+	    val (flds',imps') =
 		trConItemo' (E,E',tycon',varids',typ',[],[]) conitemo
 	in
-	    (Vector.rev(Vector.fromList fields'), imps')
+	    (Vector.rev(Vector.fromList flds'), imps')
 	end
 
     and trConItemo'(E,E',tycon',varids',typ',acc1,acc2) =
@@ -3272,7 +3272,7 @@ struct
 		val (valid',stamp) = trConVId_bind' E vid
 		val  vallab'       = idToLab valid'
 		val (typ1',k)      = trTyo (E,i') tyo
-		val  field'        = O.Field(i, vallab', stricttyp E (typ1',k))
+		val  fld'          = O.Fld(i, vallab', stricttyp E (typ1',k))
 		val  kty           = List.length varids'
 		(* elaborate type again with fresh varids *)
 		val  _             = insertScope E
@@ -3292,7 +3292,7 @@ struct
 		   | NONE          => error(i', E.ConItemUnbound vid');
 		insertDisjointVal(E, vid',  (i', stamp, T(k,tycon',kty)))
 		handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
-		trConItemo' (E,E',tycon',varids',typ', field'::acc1,
+		trConItemo' (E,E',tycon',varids',typ', fld'::acc1,
 			     imp'::acc2) conitemo
 	   end
 
