@@ -113,9 +113,11 @@ MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
 all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 
-bootstrap:
+boot-%:
 	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
-	make STOC=$(PREFIX)/bin/stoc lib/Base.ozf all
+	$(MAKE) STOC=$(PREFIX)/bin/stoc $*
+
+bootstrap: lib/boot-Base.ozf boot-all
 
 stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
