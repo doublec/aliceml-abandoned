@@ -444,6 +444,7 @@ public:
   void LookUpSwap(int i, int j);
   void Swap(int i, int j);
   int LookUp(int i);
+  void Reset();
   void Sort();
 };
 
@@ -583,6 +584,13 @@ void DynNodeArray::Swap(int i, int j) {
   DynamicArray *na = DynamicArray::FromWordDirect(GetArg(ARRAY_POS));
   DynamicArray *lua = DynamicArray::FromWordDirect(GetArg(LUA_ARRAY_POS));
   swap(na, lua, i, j);
+}
+
+void DynNodeArray::Reset() {
+  DynamicArray *na = DynamicArray::FromWordDirect(GetArg(ARRAY_POS));
+  DynamicArray *lua = DynamicArray::FromWordDirect(GetArg(LUA_ARRAY_POS));
+  na->Clear();
+  lua->Clear();
 }
 
 void DynNodeArray::Sort() {
@@ -995,6 +1003,11 @@ void Partition::ReduceGraph() {
     }
   }
 
+}
+
+void Partition::ResetNodeArray() {
+  DynNodeArray *na = DynNodeArray::FromWordDirect(GetArg(NA_POS));
+  na->Reset();
 }
 
 void Partition::Minimize() {

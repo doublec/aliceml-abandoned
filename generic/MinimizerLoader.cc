@@ -57,16 +57,73 @@ public:
     else
       return NOT_FOUND;
   }
+  void Reset() {
+    Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
+    map->Clear();
+  }
+};
+
+// PLoaderStack
+// used for depth first search
+class PLoaderStack : private Stack {
+private:
+  enum { DATA_POS, EDGE_POS, PARENT_POS, FRAME_SIZE };
+
+  static const u_int initialSize = 128*FRAME_SIZE;
+
+public:
+  using Stack::ToWord;
+  using Stack::IsEmpty;
+
+  static PLoaderStack *New() {
+    Stack *s = Stack::New(initialSize);
+    return STATIC_CAST(PLoaderStack *, s);
+  }
+
+  static PLoaderStack *FromWordDirect(word w) {
+    Stack *s = Stack::FromWordDirect(w);
+    return STATIC_CAST(PLoaderStack *, s);
+  }
+
+  void Push(word data, int edge, int parent) {
+    Stack::AllocArgFrame(FRAME_SIZE);
+    Stack::PutFrameArg(DATA_POS, data);
+    Stack::PutFrameArg(EDGE_POS, Store::IntToWord(edge));
+    Stack::PutFrameArg(PARENT_POS, Store::IntToWord(parent));
+  }
+  word GetData() {
+    return Stack::GetFrameArg(DATA_POS);
+  }
+  int GetEdge() {
+    return Store::WordToInt(Stack::GetFrameArg(EDGE_POS));
+  }
+
+  int GetParent() {
+    return Store::WordToInt(Stack::GetFrameArg(PARENT_POS));
+  }
+  void PopTopFrame() {
+    Stack::ClearArgFrameZero(FRAME_SIZE);
+  }
+  void Reset(word data) {
+    SetTop(0);
+    PLoaderStack::Push(data, -1, -1);
+  }
 };
 
 class PartitionLoaderArgs {
 private:
-  enum { PARTITION_POS, SEEN_POS, SIZE };
+  enum { PARTITION_POS, SEEN_POS, STACK_POS, ROOT_POS, TRANSIENT_FOUND_POS,
+	 SIZE };
 public:
-  static void New(Partition *p, PartitionSeen *seen) {
+  static void New(Partition *p, word root) {
     Scheduler::SetNArgs(SIZE);
     Scheduler::SetCurrentArg(PARTITION_POS, p->ToWord());
-    Scheduler::SetCurrentArg(SEEN_POS, seen->ToWord());
+    Scheduler::SetCurrentArg(SEEN_POS, PartitionSeen::New()->ToWord());
+    PLoaderStack *ps = PLoaderStack::New();
+    ps->Push(root, -1, -1);
+    Scheduler::SetCurrentArg(STACK_POS, ps->ToWord());
+    Scheduler::SetCurrentArg(ROOT_POS, root);
+    Scheduler::SetCurrentArg(TRANSIENT_FOUND_POS, Store::IntToWord(0));
   }
   static Partition *GetPartition() {
     Assert(Scheduler::GetNArgs() == SIZE);
@@ -76,39 +133,22 @@ public:
     Assert(Scheduler::GetNArgs() == SIZE);
     return PartitionSeen::FromWordDirect(Scheduler::GetCurrentArg(SEEN_POS));
   }
-};
-
-
-class PartitionLoaderFrame: private StackFrame {
-private:
-  enum { DATA_POS, EDGE_POS, PARENT_POS, SIZE };
-public:
-
-  static PartitionLoaderFrame *New(Worker *worker, word data, int edge,
-                                   int parent) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(DATA_POS, data);
-    frame->InitArg(EDGE_POS, Store::IntToWord(edge));
-    frame->InitArg(PARENT_POS, Store::IntToWord(parent));
-    return STATIC_CAST(PartitionLoaderFrame *, frame);
+  static PLoaderStack *GetPLoaderStack() {
+    Assert(Scheduler::GetNArgs() == SIZE);
+    return PLoaderStack::FromWordDirect(Scheduler::GetCurrentArg(STACK_POS));
   }
-
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+  static bool GetTransientFound() {
+    return
+      Store::DirectWordToInt(Scheduler::GetCurrentArg(TRANSIENT_FOUND_POS));
   }
-
-  word GetData() {
-    return StackFrame::GetArg(DATA_POS);
+  static void SetTransientFound() {
+    Scheduler::SetCurrentArg(TRANSIENT_FOUND_POS, Store::IntToWord(1));
   }
-
-  int GetEdge() {
-    return Store::WordToInt(GetArg(EDGE_POS));
+  static void Reset() {
+    GetPartitionSeen()->Reset();
+    GetPLoaderStack()->Reset(Scheduler::GetCurrentArg(ROOT_POS));
+    Scheduler::SetCurrentArg(TRANSIENT_FOUND_POS, Store::IntToWord(0));
   }
-
-  int GetParent() {
-    return Store::WordToInt(GetArg(PARENT_POS));
-  }
-
 };
 
 class  PartitionLoaderWorker: public Worker {
@@ -122,7 +162,7 @@ public:
     self = new PartitionLoaderWorker();
   }
   // Frame Handling
-  static void PushFrame(word data, int edge, int parent);
+  static void PushFrame();
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame);
@@ -133,79 +173,80 @@ public:
 
 PartitionLoaderWorker *PartitionLoaderWorker::self;
 
-void PartitionLoaderWorker::PushFrame(word data, int edge, int parent) {
-  PartitionLoaderFrame::New(self, data, edge, parent);
+void PartitionLoaderWorker::PushFrame() {
+  NEW_STACK_FRAME(frame, self, 0);
 }
 
 u_int PartitionLoaderWorker::GetFrameSize(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
-  PartitionLoaderFrame *frame =
-    STATIC_CAST(PartitionLoaderFrame *, sFrame);  
-  return frame->GetSize();
-}
-
-#define MYCONTINUE() {				\
-  if (StatusWord::GetStatus() != 0)		\
-    return Worker::PREEMPT;			\
-  else						\
-    return Worker::CONTINUE;			\
+  return sFrame->GetSize();
 }
 
 Worker::Result PartitionLoaderWorker::Run(StackFrame *sFrame) {
-  PartitionLoaderFrame *frame =
-    STATIC_CAST(PartitionLoaderFrame *, sFrame);
-  word x0 = frame->GetData();
+  Assert(sFrame != INVALID_POINTER);
+  Assert(sFrame->GetWorker() == this);
 
-  if (Store::WordToTransient(x0) != INVALID_POINTER) {
-    // Currently, transients are requested.
-    // This seems natural but should be looked into!
-    Scheduler::SetCurrentData(x0);
-    //    Scheduler::PushFrameNoCheck(frame->ToWord());
-    return Worker::REQUEST;
-  }
-  
-  int i = Store::WordToInt(x0);
-  if (i!=INVALID_INT) {
-    Scheduler::PopFrame(frame->GetSize());
-    MYCONTINUE(); // we don't want to handle ints
-  }
-
+  PLoaderStack *nps = PartitionLoaderArgs::GetPLoaderStack();
   PartitionSeen *seen = PartitionLoaderArgs::GetPartitionSeen();
   Partition *p = PartitionLoaderArgs::GetPartition();
 
-  Block *b = Store::WordToBlock(x0);
+  for (;;) {
+    if (nps->IsEmpty()) {
+      Scheduler::PopFrame(sFrame->GetSize());
+      if (StatusWord::GetStatus() != 0)
+	return Worker::PREEMPT;
+      else
+	return Worker::CONTINUE;
+    }
 
-  int edge = frame->GetEdge();
-  int parent = frame->GetParent();
-  int size;
-  u_int oldIndex = seen->Find(b);
-  if (oldIndex == PartitionSeen::NOT_FOUND) {
-    int nodeIndex = p->InsertNode(x0);
-    seen->Add(b);
-    // parent==-1 means that this is the root node
-    if (parent!=-1) {
-      p->AddParent(nodeIndex, edge, parent);
+    word x0 = nps->GetData();
+
+    if (Store::WordToTransient(x0) != INVALID_POINTER) {
+      PartitionLoaderArgs::SetTransientFound();
+      Scheduler::SetCurrentData(x0);
+      return Worker::REQUEST;
     }
-    switch(b->GetLabel()) {
-    case CHUNK_LABEL:
-      // Chunks look like blocks but don't have children! ;-)
-      break;
-    default:
-      size = b->GetSize();
-      Scheduler::PopFrame(frame->GetSize());
-      for (u_int i = size; i--; ) {
-	PartitionLoaderWorker::PushFrame(b->GetArg(i), i, nodeIndex);
+  
+    int i = Store::WordToInt(x0);
+    if (i!=INVALID_INT) {
+      nps->PopTopFrame();
+      continue; // we don't want to handle ints
+    }
+
+
+    Block *b = Store::WordToBlock(x0);
+
+    int edge = nps->GetEdge();
+    int parent = nps->GetParent();
+    int size;
+    u_int oldIndex = seen->Find(b);
+    if (oldIndex == PartitionSeen::NOT_FOUND) {
+      int nodeIndex = p->InsertNode(x0);
+      seen->Add(b);
+      // parent==-1 means that this is the root node
+      if (parent!=-1) {
+	p->AddParent(nodeIndex, edge, parent);
       }
-      MYCONTINUE();
+      switch(b->GetLabel()) {
+      case CHUNK_LABEL:
+	// Chunks look like blocks but don't have children! ;-)
+	nps->PopTopFrame();
+	break;
+      default:
+	size = b->GetSize();
+	nps->PopTopFrame();
+	for (u_int i = size; i--; ) {
+	  nps->Push(b->GetArg(i), i, nodeIndex);
+	}
+      }
+    } else {
+      // If we've already seen this node, add the predecessor
+      // to its parents list
+      if (parent!=-1)
+	p->AddParent(oldIndex, edge, parent);
+      nps->PopTopFrame();
     }
-  } else {
-    // If we've already seen this node, add the predecessor
-    // to its parents list
-    if (parent!=-1)
-      p->AddParent(oldIndex, edge, parent);
   }
-  Scheduler::PopFrame(frame->GetSize());
-  MYCONTINUE();
 }
 
 const char *PartitionLoaderWorker::Identify() {
@@ -216,13 +257,71 @@ void PartitionLoaderWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "PartitionLoader Task\n");
 }
 
+// PartitionLoaderCheckWorker
+class PartitionLoaderCheckWorker: public Worker {
+private:
+  static PartitionLoaderCheckWorker *self;
+  // PartitionLoaderCheckWorker Constructor
+  PartitionLoaderCheckWorker(): Worker() {}
+public:
+  // PartitionLoaderCheckWorker Static Constructor
+  static void Init() {
+    self = new PartitionLoaderCheckWorker();
+  }
+  // Frame Handling
+  static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  // Execution
+  virtual Result Run(StackFrame *sFrame);
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(StackFrame *sFrame);
+};
+
+//
+// PartitionLoaderCheckWorker Functions
+//
+PartitionLoaderCheckWorker *PartitionLoaderCheckWorker::self;
+
+void PartitionLoaderCheckWorker::PushFrame() {
+  NEW_STACK_FRAME(frame, self, 0);
+}
+
+u_int PartitionLoaderCheckWorker::GetFrameSize(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  return sFrame->GetSize();
+}
+
+Worker::Result PartitionLoaderCheckWorker::Run(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+
+  if (PartitionLoaderArgs::GetTransientFound()) {
+    // Restart if a transient was found
+    PartitionLoaderArgs::Reset();
+    PartitionLoaderWorker::PushFrame();
+    return Worker::CONTINUE;
+  }
+  Scheduler::PopFrame(sFrame->GetSize());
+  return Worker::CONTINUE;
+}
+
+const char *PartitionLoaderCheckWorker::Identify() {
+  return "PartitionLoaderCheckWorker";
+}
+
+void PartitionLoaderCheckWorker::DumpFrame(StackFrame *) {
+  std::fprintf(stderr, "PartitionLoader Check\n");
+}
+
 void PartitionLoader::Init() {
   PartitionLoaderWorker::Init();
+  PartitionLoaderCheckWorker::Init();
 }
 
 Worker::Result PartitionLoader::Load(Partition *p, word x) {
   Scheduler::PopFrame();
-  PartitionLoaderWorker::PushFrame(x, -1, -1);
-  PartitionLoaderArgs::New(p, PartitionSeen::New());
+  //  PartitionLoaderCheckWorker::PushFrame();
+  PartitionLoaderWorker::PushFrame();
+  PartitionLoaderArgs::New(p, x);
   return Worker::CONTINUE;
 }

@@ -119,3 +119,12 @@ word DynamicArray::Sub(u_int index) {
     return a->GetArg(index);
   }
 }
+
+void DynamicArray::Clear() {
+  Block *a = Store::DirectWordToBlock(GetArg(ARRAY_POS));
+  word initElem = GetArg(INIT_ELEM_POS);
+  u_int length = GetLength();    
+  for (int i=length; i--;) {
+    a->ReplaceArg(i, initElem);
+  }
+}

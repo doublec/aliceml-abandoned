@@ -49,6 +49,7 @@ public:
 
   int InsertNode(word node);
   void AddParent(int nodeIndex, int edge, int parent);
+  void ResetNodeArray();
   void Minimize();
 };
 

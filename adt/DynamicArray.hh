@@ -45,7 +45,7 @@ public:
   void Init(u_int index, word value);
   void Update(u_int index, word value);
   word Sub(u_int index);
-
+  void Clear();
 };
 
 #endif
