@@ -48,13 +48,14 @@ functor MkBackendStockwerk(structure ComponentManager: COMPONENT_MANAGER
 				   structure I = CodeGenPhase.I
 				   structure O = Target
 
-				   fun translate context x =
+				   fun translate x =
 				       let
-					   val (value, _) =
-					       CodeGenPhase.translate context x
+					   val (context, (value, _)) =
+					       CodeGenPhase.translate x
 				       in
-					   Target.FOREIGN {save = save value,
-							   inf = inf value}
+					   (context,
+					    Target.FOREIGN {save = save value,
+							    inf = inf value})
 				       end
 			       end
 			   structure Switches = Switches

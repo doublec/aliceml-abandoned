@@ -41,10 +41,10 @@ functor MkBackendStockwerk(structure ComponentManager:
 		structure I = CodeGenPhase.I
 		structure O = Target
 
-		fun translate context x =
+		fun translate x =
 		    let
-			val (value, exportDesc) =
-			    CodeGenPhase.translate context x
+			val (context, (value, exportDesc)) =
+			    CodeGenPhase.translate x
 			val component: Component.t = UnsafeValue.cast value
 			fun eval url =
 			    let
@@ -60,7 +60,8 @@ functor MkBackendStockwerk(structure ComponentManager:
 				str
 			    end
 		    in
-			Target.COMPONENT {component = fn () => component, eval}
+			(context, Target.COMPONENT
+				  {component = fn () => component, eval})
 		    end
 	    end
 	structure TracingPhase =
