@@ -42,7 +42,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | sideEffecting (ProdExp (_, _)) = false
 	  | sideEffecting (PolyProdExp (_, _)) = false
 	  | sideEffecting (VecExp (_, _)) = false
-	  | sideEffecting (FunExp (_, _, _, _, _)) = false
+	  | sideEffecting (FunExp (_, _, _, _, _, _)) = false
 	  | sideEffecting (PrimAppExp (_, "Future.byneed", _)) = false
 	  | sideEffecting (LazyPolySelExp (_, _, _)) = false
 	  | sideEffecting _ = true
@@ -539,7 +539,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    in
 		(lastUses, VecExp (info, idRefs))
 	    end
-	  | laExp (FunExp (info, stamp, flags, idDefArgs, body),
+	  | laExp (FunExp (info, stamp, flags, idDefArgs, outArityOpt, body),
 		   use, dontKill) =
 	    let
 		val (body, use') = laBody (body, StampMap.map (), IdSet.set ())
@@ -547,7 +547,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val lastUses = difference' (use', use, dontKill)
 	    in
 		IdSet.union (use, use');
-		(lastUses, FunExp (info, stamp, flags, idDefArgs, body))
+		(lastUses,
+		 FunExp (info, stamp, flags, idDefArgs, outArityOpt, body))
 	    end
 	  | laExp (PrimAppExp (info, name, idRefs), use, dontKill) =
 	    let

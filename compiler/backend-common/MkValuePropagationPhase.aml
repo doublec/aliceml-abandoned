@@ -66,6 +66,7 @@ structure UnsafeValue :
 	val taggedTuple: Label.t vector * int *
 			 Reflect.value vector -> Reflect.value
 	val inArity: Reflect.value -> int
+	val outArity : Reflect.value -> int
     end = UnsafeValue
 
 (*
@@ -242,7 +243,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	    end
 	  | expToValue (VecExp (_, idRefs)) =
 	    VecVal (Vector.map idRefToValue idRefs)
-	  | expToValue (FunExp (_, stamp, _, args, body)) =
+	  | expToValue (FunExp (_, stamp, _, args, _, body)) =
 	    FunVal (stamp, args, body)
 	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
 	  | expToValue (VarAppExp (_, _, _)) = UnknownVal
@@ -759,6 +760,14 @@ functor MkValuePropagationPhase(val isCross: bool
 		  | n => SOME (Arity.Tuple n)
 	    else NONE
 
+	fun getOutArity (rvalue, eager) =
+	    if isDetermined (rvalue, eager) then
+		case UnsafeValue.outArity rvalue of
+		    ~2 => NONE
+		  | ~1 => SOME Arity.Unary
+		  | n => SOME (Arity.Tuple n)
+	    else NONE
+
 	fun getIdRefs (idRef, prod, env) =
 	    case lookupEnv (env, idRef) of
 		(ProdVal values, _) =>
@@ -1126,16 +1135,72 @@ functor MkValuePropagationPhase(val isCross: bool
 		    end
 	    end
 
-	fun vpBody (ValDec (info, idDef, exp)::stms,
-		    state as {env, isToplevel, lazySels, ...}) =
+	datatype outArityInfo = UNKNOWN
+			      | DISTINCT
+			      | ARGS of Arity.t
+
+	fun vpOutArity (TupExp (_, idRefs), _, outArityInfo) =
+	    vpOutArity' (outArityInfo,
+			 SOME (Arity.Tuple (Vector.length idRefs)))
+	  | vpOutArity (ProdExp (_, labelIdRefs), _, outArityInfo) =
+	    vpOutArity' (outArityInfo,
+			 SOME (Arity.Product (Vector.map #1 labelIdRefs)))
+	  | vpOutArity (VarExp (_, idRef), env, outArityInfo) =
+	    vpOutArity' (outArityInfo, SOME Arity.Unary)
+	  | vpOutArity ((VarAppExp (_, idRef, _) |
+			 DirectAppExp (_, idRef, _)), env, outArityInfo) =
 	    let
-		val (stms', exp) = vpExp (exp, env, isToplevel, lazySels)
+		val outArityOpt =
+		    case lookupEnv (env, idRef) of
+			(ReflectVal (rvalue, eager), _) =>
+			getOutArity (rvalue, eager)
+		      | (_, _) => NONE
+	    in
+		vpOutArity' (outArityInfo, outArityOpt)
+	    end
+	  | vpOutArity (PrimAppExp (_, name, _), env, outArityInfo) =
+	    let
+		val outArity =
+		    if isCross then ~2
+		    else UnsafeValue.outArity (UnsafeValue.prim name)
+	    in
+		vpOutArity' (outArityInfo,
+			     case outArity of
+				 ~2 => NONE
+			       | ~1 => SOME Arity.Unary
+			       | n => SOME (Arity.Tuple n))
+	    end
+	  | vpOutArity (FunAppExp (_, idRef, stamp, _), env,
+			outArityInfo as (_, stamp', funMap)) =
+	    (* self recursion does not invalidate computed arity data *)
+	    if stamp = stamp' then ()
+	    else vpOutArity' (outArityInfo,
+			      case StampMap.lookup (funMap, stamp) of
+				  SOME arityOpt => arityOpt
+				| NONE => NONE)
+	  | vpOutArity (_, _, outArityInfo) =
+	    vpOutArity' (outArityInfo, SOME Arity.Unary)
+	and vpOutArity' ((SOME (r as ref _), _, _), NONE) = r := DISTINCT
+	  | vpOutArity' ((SOME (r as ref UNKNOWN), stamp, _), SOME arity) =
+	    r := ARGS arity
+	  | vpOutArity' ((SOME (r as ref(ARGS arity)), stamp, _), SOME arity') =
+	    if arity <> arity' then r := DISTINCT else ()
+	  | vpOutArity' ((SOME (ref DISTINCT), _, _), _) = ()
+	  | vpOutArity' ((NONE, _, _), _) = ()
+
+	fun vpBody (ValDec (info, idDef, exp)::stms,
+		    state as {env, isToplevel, lazySels,
+			      outArityInfo = (_, _, funMap), ...}) =
+	    let
+		val (stms', exp) =
+		    vpExp (exp, env, isToplevel, lazySels, funMap)
 	    in
 		declare (env, idDef, (expToValue exp, isToplevel));
 		stms' @ ValDec (info, idDef, exp)::vpBody (stms, state)
 	    end
 	  | vpBody (RecDec (info, idDefExpVec)::stms,
-		    state as {env, isToplevel, lazySels, ...}) =
+		    state as {env, isToplevel, lazySels,
+			      outArityInfo = (_, _, funMap), ...}) =
 	    let
 		val _ =
 		    Vector.app
@@ -1147,7 +1212,8 @@ functor MkValuePropagationPhase(val isCross: bool
 			(fn ((idDef, exp), (stms, idDefExpList)) =>
 			    let
 				val (stms', exp) =
-				    vpExp (exp, env, isToplevel, lazySels)
+				    vpExp (exp, env, isToplevel, lazySels,
+					   funMap)
 			    in
 				(stms' @ stms, (idDef, exp)::idDefExpList)
 			    end) (nil, nil) idDefExpVec
@@ -1286,9 +1352,11 @@ functor MkValuePropagationPhase(val isCross: bool
 		      [SharedStm (info, [IndirectStm (info, bodyOptRef)],
 				  stamp)]))
 	  | vpBody ([ReturnStm (info, exp)],
-		    {env, isToplevel, lazySels, ...}) =
+		    {env, isToplevel, lazySels,
+		     outArityInfo = outArityInfo as (_, _, funMap), ...}) =
 	    let
-		val (stms, exp) = vpExp (exp, env, isToplevel, lazySels)
+		val (stms, exp) = vpExp (exp, env, isToplevel, lazySels, funMap)
+		val _ = vpOutArity (exp, env, outArityInfo)
 	    in
 		stms @ [ReturnStm (info, exp)]
 	    end
@@ -1296,14 +1364,15 @@ functor MkValuePropagationPhase(val isCross: bool
 	    vpBody (valOf bodyOpt, state)
 	  | vpBody ([ExportStm (info, exp)],
 		    {env, isToplevel = true,
-		     export = SOME (env', exportDesc), lazySels, ...}) =
+		     export = SOME (env', exportDesc), lazySels,
+		     outArityInfo = (_, _, funMap), ...}) =
 	    (*--** do multiple occurrences of ExportStm work by accident? *)
 	    let
 		val _ =
 		    Vector.app (fn (_, id) =>
 				declareUnknown (env', IdDef id, true))
 		    exportDesc
-		val (stms, exp) = vpExp (exp, env, true, lazySels)
+		val (stms, exp) = vpExp (exp, env, true, lazySels, funMap)
 	    in
 		stms @ [ExportStm (info, exp)]
 	    end
@@ -1334,7 +1403,8 @@ functor MkValuePropagationPhase(val isCross: bool
 	    vpTestStm (valOf bodyOpt, idRef, state)
 	  | vpTestStm (body, _, state) = (NONE, vpBodyScope (body, state))
 	and vpTests (idRef, LitTests litBodyVec, elseBody,
-		     {env, isToplevel, shared, export, lazySels}) =
+		     {env, isToplevel, shared, export, lazySels,
+		      outArityInfo}) =
 	    let
 		fun insertId (env, value) =
 		    case idRef of
@@ -1351,7 +1421,8 @@ functor MkValuePropagationPhase(val isCross: bool
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
-				      lazySels = lazySels}
+				      lazySels = lazySels,
+				      outArityInfo = outArityInfo}
 			 val knownVal = insertId (env, LitVal lit)
 			 val body = vpBody (body, state)
 		     in
@@ -1372,7 +1443,8 @@ functor MkValuePropagationPhase(val isCross: bool
 		 elseBody)
 	    end
 	  | vpTests (idRef, TagTests (labels, tagBodyVec), elseBody,
-		     {env, isToplevel, shared, export, lazySels}) =
+		     {env, isToplevel, shared, export, lazySels,
+		      outArityInfo}) =
 	    let
 		fun insertId (env, value) =
 		    case idRef of
@@ -1391,7 +1463,8 @@ functor MkValuePropagationPhase(val isCross: bool
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
-				      lazySels = lazySels}
+				      lazySels = lazySels,
+				      outArityInfo = outArityInfo}
 			 val value =
 			     TagVal (labels, n, mapArgs idDefToValue args)
 			 val knownVal = insertId (env, value)
@@ -1435,7 +1508,8 @@ functor MkValuePropagationPhase(val isCross: bool
 		 elseBody)
 	    end
 	  | vpTests (idRef, ConTests conBodyVec, elseBody,
-		     {env, isToplevel, shared, export, lazySels}) =
+		     {env, isToplevel, shared, export, lazySels,
+		      outArityInfo}) =
 	    let
 		fun insertId (env, value) =
 		    case idRef of
@@ -1455,7 +1529,8 @@ functor MkValuePropagationPhase(val isCross: bool
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
-				      lazySels = lazySels}
+				      lazySels = lazySels,
+				      outArityInfo = outArityInfo}
 			 val value =
 			     case con of
 				 (IdRef id | LastIdRef id) =>
@@ -1507,7 +1582,8 @@ functor MkValuePropagationPhase(val isCross: bool
 		 elseBody)
 	    end
 	  | vpTests (idRef, VecTests vecBodyVec, elseBody,
-		     {env, isToplevel, shared, export, lazySels}) =
+		     {env, isToplevel, shared, export, lazySels,
+		      outArityInfo}) =
 	    let
 		fun insertId (env, value) =
 		    case idRef of
@@ -1526,7 +1602,8 @@ functor MkValuePropagationPhase(val isCross: bool
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
-				      lazySels = lazySels}
+				      lazySels = lazySels,
+				      outArityInfo = outArityInfo}
 			 val value = VecVal (Vector.map idDefToValue idDefs)
 			 val knownValue = insertId (env, value)
 			 val _ = declareArgs (env, TupArgs idDefs, isToplevel)
@@ -1571,15 +1648,15 @@ functor MkValuePropagationPhase(val isCross: bool
 		   | _::_ => SOME (VecTests (Vector.fromList vecBodyList)),
 		 elseBody)
 	    end
-	and vpExp (exp as NewExp (_, _), _, _, _) = (nil, exp)
-	  | vpExp (exp as VarExp (info, Prim name), _, _, _) =
+	and vpExp (exp as NewExp (_, _), _, _, _, _) = (nil, exp)
+	  | vpExp (exp as VarExp (info, Prim name), _, _, _, _) =
 	    (PrimOps.getArity name
 	     handle PrimOps.UnknownPrim =>
 		 Error.error' (info, "unknown primitive " ^ name);
 	     (nil, exp))
-	  | vpExp (VarExp (info, idRef), env, _, _) =
+	  | vpExp (VarExp (info, idRef), env, _, _, _) =
 	    (nil, varExp (info, idRef, env))
-	  | vpExp (TagExp (info, labels, n, args), env, _, _) =
+	  | vpExp (TagExp (info, labels, n, args), env, _, _, _) =
 	    let
 		val args = derefArgs (args, env)
 	    in
@@ -1589,12 +1666,12 @@ functor MkValuePropagationPhase(val isCross: bool
 		  | NONE =>
 			(nil, TagExp (info, labels, n, args))
 	    end
-	  | vpExp (ConExp (info, idRef, args), env, _, _) =
+	  | vpExp (ConExp (info, idRef, args), env, _, _, _) =
 (*--** construct statically if possible *)
 	    (nil, ConExp (info, deref (idRef, env), derefArgs (args, env)))
-	  | vpExp (RefExp (info, idRef), env, _, _) =
+	  | vpExp (RefExp (info, idRef), env, _, _, _) =
 	    (nil, RefExp (info, deref (idRef, env)))
-	  | vpExp (TupExp (info, idRefs), env, _, _) =
+	  | vpExp (TupExp (info, idRefs), env, _, _, _) =
 	    let
 		val idRefs = Vector.map (fn idRef => deref (idRef, env)) idRefs
 	    in
@@ -1603,7 +1680,7 @@ functor MkValuePropagationPhase(val isCross: bool
 			(nil, VarExp (info, Value (rvalue, eager)))
 		  | NONE => (nil, TupExp (info, idRefs))
 	    end
-	  | vpExp (ProdExp (info, labelIdRefVec), env, _, _) =
+	  | vpExp (ProdExp (info, labelIdRefVec), env, _, _, _) =
 	    let
 		val labelIdRefVec =
 		    Vector.map (fn (label, idRef) =>
@@ -1614,13 +1691,13 @@ functor MkValuePropagationPhase(val isCross: bool
 			(nil, VarExp (info, Value (rvalue, eager)))
 		  | NONE => (nil, ProdExp (info, labelIdRefVec))
 	    end
-	  | vpExp (PolyProdExp (info, labelIdRefVec), env, _, _) =
+	  | vpExp (PolyProdExp (info, labelIdRefVec), env, _, _, _) =
 (*--** construct statically if possible *)
 	    (nil, PolyProdExp (info,
 			       Vector.map (fn (label, idRef) =>
 					      (label, deref (idRef, env)))
 					  labelIdRefVec))
-	  | vpExp (VecExp (info, idRefs), env, _, _) =
+	  | vpExp (VecExp (info, idRefs), env, _, _, _) =
 	    let
 		val idRefs = Vector.map (fn idRef => deref (idRef, env)) idRefs
 	    in
@@ -1629,32 +1706,44 @@ functor MkValuePropagationPhase(val isCross: bool
 			(nil, VarExp (info, Value (rvalue, eager)))
 		  | NONE => (nil, VecExp (info, idRefs))
 	    end
-	  | vpExp (FunExp (info, stamp, flags, args, body),
-		   env, isToplevel, lazySels) =
+	  | vpExp (FunExp (info, stamp, flags, args, outArityOpt, body),
+		   env, isToplevel, lazySels, funMap) =
 	    let
 		val _ = IdMap.insertScope env
 		val _ = declareArgs (env, args, false)
+		(* trust annotation, if exists *)
+		val outArityInfo =
+		    (case outArityOpt of
+			 SOME _ => NONE
+		       | NONE => SOME (ref UNKNOWN), stamp, funMap)
 		val body =
 		    vpBodyShared (body, stamp,
 				  {env = env, isToplevel = false,
-				   export = NONE, lazySels = lazySels})
+				   export = NONE, lazySels = lazySels,
+				   outArityInfo = outArityInfo})
 		val flags =
 		    if isToplevel then
 			if List.exists (fn IsToplevel => true | _ => false)
 				       flags then flags
 			else IsToplevel::flags
 		    else List.filter (fn IsToplevel => false | _ => true) flags
+		val outArityOpt =
+		    case outArityInfo of
+			(SOME (ref (UNKNOWN | DISTINCT)), _, _) => NONE
+		      | (SOME (ref (ARGS arity)), _, _) => SOME arity
+		      | (NONE, _, _) => outArityOpt
 	    in
+		StampMap.insertDisjoint (funMap, stamp, outArityOpt);
 		IdMap.removeScope env;
-		(nil, FunExp (info, stamp, flags, args,
+		(nil, FunExp (info, stamp, flags, args, outArityOpt,
 			      patchArgs (args, lazySels) @
 			      patchBody (body, lazySels, StampMap.map ())))
 	    end
-	  | vpExp (PrimAppExp (info, name, idRefs), env, _, _) =
+	  | vpExp (PrimAppExp (info, name, idRefs), env, _, _, _) =
 	    (nil, vpPrimApp (info, name,
 			     Vector.map (fn idRef => deref (idRef, env))
 					idRefs, env))
-	  | vpExp (VarAppExp (info, idRef, args), env, _, _) =
+	  | vpExp (VarAppExp (info, idRef, args), env, _, _, _) =
 	    let
 		val idRef = deref (idRef, env)
 		val args = derefArgs (args, env)
@@ -1681,14 +1770,14 @@ functor MkValuePropagationPhase(val isCross: bool
 			   | NONE => (nil, VarAppExp (info, idRef, args)))
 		  | (_, _) => (nil, VarAppExp (info, idRef, args))
 	    end
-	  | vpExp (DirectAppExp (info, idRef, args), env, _, _) =
+	  | vpExp (DirectAppExp (info, idRef, args), env, _, _, _) =
 	    let
 		val idRef = deref (idRef, env)
 		val args = derefArgs (args, env)
 	    in
 		(nil, DirectAppExp (info, idRef, args))
 	    end
-	  | vpExp (SelExp (info, prod, label, n, idRef), env, _, _) =
+	  | vpExp (SelExp (info, prod, label, n, idRef), env, _, _, _) =
 	    let
 		val idRef = deref (idRef, env)
 	    in
@@ -1697,7 +1786,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		  | NONE => (nil, SelExp (info, prod, label, n, idRef))
 	    end
 	  | vpExp (LazyPolySelExp (info, label, idRef),
-		   env, isToplevel, lazySels) =
+		   env, isToplevel, lazySels, _) =
 	    let
 		val idRef = deref (idRef, env)
 		val idRefOpt =
@@ -1737,20 +1826,24 @@ functor MkValuePropagationPhase(val isCross: bool
 						       env, isToplevel)))
 		    end
 	    end
-	  | vpExp (FunAppExp (info, idRef, stamp, args), env, _, _) =
+	  | vpExp (FunAppExp (info, idRef, stamp, args), env, _, _, _) =
 	    (nil, FunAppExp (info, idRef, stamp, derefArgs (args, env)))
-	  | vpExp (FailExp info, _, _, _) = (nil, FailExp info)
-	and vpBodyScope (body, {env, isToplevel, shared, export, lazySels}) =
+	  | vpExp (FailExp info, _, _, _, _) = (nil, FailExp info)
+	and vpBodyScope (body, {env, isToplevel, shared, export,
+				lazySels, outArityInfo}) =
 	    vpBody (body, {env = IdMap.cloneTop env, isToplevel = isToplevel,
 			   shared = shared, export = export,
-			   lazySels = lazySels})
-	and vpBodyShared (body, stamp, {env, isToplevel, export, lazySels}) =
+			   lazySels = lazySels,
+			   outArityInfo = outArityInfo})
+	and vpBodyShared (body, stamp,
+			  {env, isToplevel, export, lazySels, outArityInfo}) =
 	    case sortShared (body, stamp) of
 		([stamp']::sorted, shared) =>
 		    (Assert.assert (stamp = stamp');
 		     vpBody (body, {env = env, isToplevel = isToplevel,
 				    shared = shared, export = export,
-				    lazySels = lazySels}) before
+				    lazySels = lazySels,
+				    outArityInfo = outArityInfo}) before
 		     List.app
 		     (fn stamps =>
 		      let
@@ -1770,7 +1863,9 @@ functor MkValuePropagationPhase(val isCross: bool
 						     isToplevel = isToplevel,
 						     shared = shared,
 						     export = export,
-						     lazySels = lazySels}))
+						     lazySels = lazySels,
+						     outArityInfo =
+						     outArityInfo}))
 				  end;
 			  StampMap.removeExistent (shared, stamp)
 		      end) sorted)
@@ -1814,11 +1909,14 @@ functor MkValuePropagationPhase(val isCross: bool
 		val _ = Vector.app (declareImport (desc, env')) imports
 		val _ = IdMap.insertScope env'
 		val lazySels = IdMap.map ()
+		val stamp = Stamp.stamp ()
+		val outArityInfo = (NONE, stamp, StampMap.map ())
 		val body =
-		    vpBodyShared (body, Stamp.stamp (),
+		    vpBodyShared (body, stamp,
 				  {env = env', isToplevel = true,
 				   export = SOME (env, exports),
-				   lazySels = lazySels})
+				   lazySels = lazySels,
+				   outArityInfo = outArityInfo})
 		val body =
 		    IdMap.foldi (fn (id, _, rest) =>
 				    patchIdDef (IdDef id, lazySels) @ rest)

@@ -16,6 +16,7 @@ import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
 import structure Type                 from "../../lib/rtt/Type"
 import structure PervasiveType        from "../../lib/rtt/PervasiveType"
+import structure PathSet              from "../../lib/rtt/PathSet"
 import structure Crash                from "../infrastructure/Crash"
 import structure Source               from "../infrastructure/Source"
 import structure Error                from "../infrastructure/Error"
@@ -89,6 +90,50 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | Share of O.body option ref * continuation
 	  | EndTry of Source.region * continuation
 	  | EndHandle of Source.region * continuation
+
+	(* Helper Functions for Inspecting Types *)
+
+	fun makeArrowType (argTyp, resultTyp) =
+	    case Type.inspect resultTyp of
+		Type.All (var, typ) =>
+		Type.all (var, makeArrowType (argTyp, typ))
+	      | _ => Type.arrow (argTyp, resultTyp)
+
+	fun getResultType typ =
+	    case Type.inspect typ of
+		Type.Arrow (_, typ) => typ
+	      | Type.All (_, typ) => getResultType typ
+	      | _ => raise Crash.Crash "MkFlatteningPhase.getResultType"
+
+	(* The set of pathes of abstract types known not to be product types *)
+	val nonProdTypesSet =
+	    let
+		val set = PathSet.set ()
+	    in
+		Vector.app (fn path => PathSet.insert (set, path))
+			   #[PervasiveType.path_int,
+			     PervasiveType.path_word,
+			     PervasiveType.path_real,
+			     PervasiveType.path_char,
+			     PervasiveType.path_string,
+			     PervasiveType.path_vec,
+			     PervasiveType.path_array,
+			     PervasiveType.path_ref,
+			     PervasiveType.path_exn];
+	        set
+	    end
+
+	fun typToOutArity typ =
+	    case Type.inspect typ of
+		(Type.Prod _ | Type.Apply _ | Type.Unknown _) => NONE
+	      | Type.Con path =>
+		if PathSet.member (nonProdTypesSet, path) then
+		    SOME Arity.Unary
+		else NONE
+	      | (Type.Var _ | Type.Arrow _ | Type.Sum _) => SOME Arity.Unary
+	      | Type.Mu typ => typToOutArity typ
+	      | (Type.All _ | Type.Exist _ | Type.Lambda _) =>
+		raise Crash.Crash "MkFlatteningPhase.typToOutArity"
 
 	(* Matching arity up with args *)
 
@@ -584,10 +629,11 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (mats', errStms)
 		val (body, _) = translateGraph (graph, mapping, #region info)
+		val outArityOpt = typToOutArity (getResultType (#typ info))
 	    in
 		checkReachability consequents;
-		f (O.FunExp (#region info, Stamp.stamp (), nil, args, body))::
-		translateCont cont
+		f (O.FunExp (#region info, Stamp.stamp (), nil, args,
+			     outArityOpt, body))::translateCont cont
 	    end
 	  | translateExp (AppExp (info, exp1, exp2), f, cont) =
 	    let
@@ -709,7 +755,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (region, r)]
 		val funInfo = {region = region,
-			       typ = Type.arrow (Type.tuple #[], typ)}
+			       typ = makeArrowType (Type.tuple #[], typ)}
 		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
 		    FunExp (funInfo, #[Mat ({region = region}, pat, exp)])
@@ -730,7 +776,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (region, r)]
 		val funInfo = {region = region,
-			       typ = Type.arrow (Type.tuple #[], typ)}
+			       typ = makeArrowType (Type.tuple #[], typ)}
 		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
 		    FunExp (funInfo, #[Mat ({region = region}, pat, exp)])

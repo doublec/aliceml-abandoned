@@ -17,6 +17,7 @@ import structure Stamp               from "../common/Stamp"
 import structure StampSet            from "../common/StampSet"
 import signature FLAT_GRAMMAR        from "FLAT_GRAMMAR-sig"
 import structure FlatGrammar         from "FlatGrammar"
+import structure Arity               from "Arity"
 import signature OUTPUT_FLAT_GRAMMAR from "OUTPUT_FLAT_GRAMMAR-sig"
 
 structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
@@ -223,9 +224,20 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					 labelIdVector), S "...}"]
 	  | formatExp (VecExp (_, idRefs)) =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map IDREF idRefs), S "]"]
-	  | formatExp (FunExp (_, _, _, args, body)) =
-	    SEQ #[NL, S "fn ", formatArgs IDDEF args, S " =>",
-		  IN, NL, formatBody (body, StampSet.set ()), EX]
+	  | formatExp (FunExp (_, _, _, args, outArityOpt, body)) =
+	    SEQ #[NL, S "fn ", formatArgs IDDEF args,
+		  case outArityOpt of
+		      SOME Arity.Unary => S " : 1"
+		    | SOME (Arity.Tuple n) => SEQ #[S " : ", S (Int.toString n)]
+		    | SOME (Arity.Product labels) =>
+		      SEQ #[S " : {",
+			    SEP (S ",",
+				 Vector.map (fn label =>
+						S (Label.toString label))
+					    labels),
+			    S "}"]
+		    | NONE => S "",
+		  S " =>", IN, NL, formatBody (body, StampSet.set ()), EX]
 	  | formatExp (PrimAppExp (_, name, idRefs)) =
 	    SEQ #[S "prim \"", S name, S "\" (",
 		  SEP (S ", ", Vector.map IDREF idRefs), S ")"]

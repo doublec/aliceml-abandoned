@@ -386,7 +386,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		       labelIdRefVec
 	  | usedVarsExp (O.VecExp (_, idRefs), set, used, _) =
 	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
-	  | usedVarsExp (O.FunExp (_, _, _, _, body), set, used, shared) =
+	  | usedVarsExp (O.FunExp (_, _, _, _, _, body), set, used, shared) =
 	    usedVarsBody (body, set, used, shared)
 	  | usedVarsExp (O.PrimAppExp (_, _, idRefs), set, used, _) =
 	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
