@@ -27,13 +27,6 @@ sig
 	 gameStarted : unit -> unit
 	 }
 	
-    type gui_wait =
-	{
-	 playersJoin : (string * Color.color) list -> unit,
-	 playerDisconnects : string * Color.color -> unit,
-	 gameStarts : unit -> unit
-	 }
-	
     type gui_game = 
 	{
 	 update       : (Pos.pos * Protocol.field) list -> unit,
@@ -45,10 +38,8 @@ sig
     type model_join = 
 	{
 	 play :  string * Color.color -> 
-	 (model_game * gui_game Promise.promise * 
-	  gui_wait Promise.promise, error) alt,
-	 watch : unit -> (model_game * gui_game Promise.promise * 
-			  gui_wait Promise.promise, error) alt
+	 (model_game * gui_game Promise.promise, error) alt,
+	 watch : unit -> (model_game * gui_game Promise.promise, error) alt
 	 }
 	
     type model_start =
@@ -62,7 +53,7 @@ sig
 	 connect : string -> (model_join * gui_join Promise.promise, error) alt,
 	 
 	 startServer : (string * Color.color) option * Config.config -> 
-	 (model_start * gui_wait Promise.promise, error) alt
+	 (model_start * gui_join Promise.promise, error) alt
 	 (* start a new server and display the snake selection
 	  dialog (in server mode i.e. with the ability to
 	  start a tournament)
