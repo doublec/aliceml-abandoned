@@ -47,23 +47,29 @@ struct
 			   | hash (LIMIT_COLOR) = 10
 			   | hash (BRACK_COLOR) = 11
 			   | hash (REL_COLOR) = 12
-       		    (*     | hash (TRANS_COLOR) = 13   *)
+       		        (* | hash (TRANS_COLOR) = 13 *)
 			   | hash (DEFAULT) = 14
 			     
 		     end)
     
     type ''a map = ''a ColorMap.map
 
+    (* map storing different colors *)
+	
     val colorTable = ColorMap.new()
        
+    (* registration of colors *)
+
     fun registerColor(col_class,gtk_color) = 
 	ColorMap.insert(colorTable,col_class,gtk_color)
 
+    (* searching for colors *)
+	
     fun lookupColor(col_class) = 
 	case ColorMap.lookup(colorTable,col_class)
 	    of SOME x => x
-             | NONE => GtkSupport.allocColor(0,0,0)
+	     | NONE => GtkSupport.allocColor(0,0,0)
 
-end (* structure *)
+end
 
 end

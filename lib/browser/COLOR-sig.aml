@@ -22,9 +22,17 @@ signature COLOR =
 sig 
   
     type ''a map
+
+    (* map storing different colors *)
+	
     val colorTable:  GtkSupport.tag  map
 
+    (* registration of colors *)
+
     val registerColor: Node.color_class * GtkSupport.tag -> unit
+	
+    (* searching for colors *)
+	
     val lookupColor: Node.color_class -> GtkSupport.tag
 
 end
