@@ -29,7 +29,7 @@ struct
 
     exception  MissingColor
     exception DrawError
-    exception NodeFound of node
+    exception NodeFound of int * int * node
     exception Scream
 
     datatype intention = DRAW | SEARCH of int * int
@@ -129,7 +129,7 @@ struct
 				  ^ Bool.toString(in_bounding_box)  ^ "\n")
 	in
 	    if (in_bounding_box  andalso not(interpunct)) orelse toBeDisplayed 
-		then (x + String.length(rep),
+		then (x (* + String.length(rep) *),
 		      y,
 		      SOME(n))
 	    else (x + String.length(rep),
@@ -182,6 +182,17 @@ struct
 		   andalso sx < x + !(#width(r))
 		   andalso sy >= y 
 		   andalso sy < y + !(#height(r))
+	       val _ = TextIO.print("Concat in bounding_box: "
+				    ^ Bool.toString(in_bounding_box)
+				    ^ " beacuse sx ="
+				    ^ Int.toString(sx) 
+				    ^ " and sy ="
+				    ^ Int.toString(sy)
+				    ^ " and x ="
+				    ^ Int.toString(x)
+				    ^ " and y ="
+				     ^ Int.toString(y)
+				    ^ "\n")
 	   in
 	       if !(#status(r)) = DIRTY orelse search 
 		   then if Array.length(#kids(r)) = 0
@@ -196,18 +207,18 @@ struct
 				  => case found of
 				     SOME n => if not(search) 
 						   then draw(a,x,y,intent)
-					       else raise NodeFound(n)
+					       else raise NodeFound(x,y,n)
 				   | NONE => draw(a,x,y,intent))
 			     in
 				 if search andalso not(in_bounding_box) 
-				     then (x+get_xdim(n),y+get_ydim(n),NONE) 
+				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE) 
 				 else
 				 let val (new_x,new_y,new_found) = 
 				     (Array.foldl hor_funct (x,y,NONE) (#kids(r))) 
-				     handle NodeFound n 
+				     handle NodeFound (foundx,foundy,n) 
 				     => let val _ = TextIO.print(
 					       "Concat: found node!" ^ "\n")
-					in (x,y,SOME(n))
+					in (foundx,foundy,SOME(n))
 					end
 				     val nothing_found = case new_found of
 					                 NONE => true
@@ -215,7 +226,7 @@ struct
 				 in if search 
 				     andalso in_bounding_box 
 				     andalso nothing_found
-					then (new_x,new_y,SOME(n))
+					then (x,y,SOME(n))
 				    else (new_x,new_y,new_found)
 				 end
 			     end)
@@ -245,21 +256,26 @@ struct
 					 then #status(r) := Types.CLEAN
 				     else ()
 			     val hor_funct = 
-				 (fn (a,(x,y,found)) 
-				  => case found of
-				     SOME n => if not(search) 
-						   then draw(a,x,y,intent)
-					       else raise NodeFound(n)
-				   | NONE => draw(a,x,y,intent))
-			     val ver_funct = 
-				 (fn (a,(x,y,found)) 
+				 (fn (a,(x,y,_,found)) 
+				  => let
+					 val (new_x,new_y,new_found) 
+					     = case found of
+					     SOME n => if not(search) 
+							   then draw(a,x,y,intent)
+						       else raise NodeFound(x,y,n)
+					   | NONE => draw(a,x,y,intent)
+				     in
+					 (new_x,new_y,0,new_found)
+				     end)
+                             val ver_funct = 
+				 (fn (a,(x,y,_,found)) 
 				  => let
 					 val (x1,y1,found2) = 
 					     draw(a,x,y,intent)
 				     in
 					 case found2 of
-					     SOME n => raise NodeFound(n)
-					   | NONE => (x,y1+1,found2)
+					     SOME n => raise NodeFound(x1,y1,n)
+					   | NONE => (x,y1+1,x1,found2)
 				     end)
 			     val vertical = setsVertical(n)
 			     val funct = if vertical 
@@ -272,26 +288,26 @@ struct
 				 if search andalso not(in_bounding_box) 
 				     then (x+get_xdim(n),y+get_ydim(n),NONE) 
 				 else
-				 let val (new_x',new_y',new_found) = 
-				     (Array.foldl funct (x,y,NONE) (#kids(r))) 
-				     handle NodeFound n 
+				 let val (new_x',new_y',new_x2,new_found) = 
+				     (Array.foldl funct (x,y,0,NONE) (#kids(r))) 
+				     handle NodeFound (foundx,foundy,n) 
 				     => let val _ = TextIO.print(
 					       "Container: found node!" ^ "\n")
-					in (x,y,SOME(n))
+					in (foundx,foundy,foundx,SOME(n))
 					end
 				     val nothing_found = case new_found of
 					                 NONE => true
 						       | SOME _ => false
 				      val new_x = if vertical 
-						      then x + get_xdim(Array.sub(#kids(r),Array.length(#kids(r))-1))
+						      then new_x2
 							  else new_x'
-				      val new_y = if vertical 
+				      val new_y = if vertical andalso nothing_found 
 						      then new_y' -1
 							  else new_y'
 				 in if search 
 				     andalso in_bounding_box 
 				     andalso nothing_found
-					then (new_x,new_y,SOME(n))
+					then (x,y,SOME(n))
 				    else (new_x,new_y,new_found)
 				 end
 			     end)
