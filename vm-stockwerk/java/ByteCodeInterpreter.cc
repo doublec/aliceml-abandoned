@@ -25,6 +25,7 @@
 #include "java/ThrowWorker.hh"
 #include "java/JavaByteCode.hh"
 #include "java/ByteCodeInterpreter.hh"
+#include "java/ClassInfo.hh"
 
 //
 // Interpreter Opcodes
@@ -246,7 +247,7 @@ protected:
     CONT_PC_POS,
     TOP_POS,
     POOL_POS,
-    EXN_TABLE_POS,
+    BYTE_CODE_POS,
     CODE_POS,
     BASE_SIZE
   };
@@ -280,7 +281,14 @@ public:
     return RuntimeConstantPool::FromWordDirect(StackFrame::GetArg(POOL_POS));
   }
   Table *GetExceptionTable() {
-    return Table::FromWordDirect(StackFrame::GetArg(EXN_TABLE_POS));
+    JavaByteCode *byteCode =
+      JavaByteCode::FromWord(StackFrame::GetArg(BYTE_CODE_POS));
+    return byteCode->GetExceptionTable();
+  }
+  MethodInfo *GetMethodInfo() {
+    JavaByteCode *byteCode =
+      JavaByteCode::FromWord(StackFrame::GetArg(BYTE_CODE_POS));
+    return byteCode->GetMethodInfo();
   }
   // Environment Accessors
   word GetEnv(u_int i) {
@@ -304,20 +312,19 @@ public:
   static ByteCodeFrame *New(Interpreter *interpreter,
 			    word pc,
 			    word contPC,
-			    Chunk *code,
-			    word runtimeConstantPool,
-			    Table *exnTable,
-			    u_int nLocals,
-			    u_int maxStack) {
-    u_int frSize = BASE_SIZE + nLocals + maxStack;
+			    JavaByteCode *byteCode,
+			    word runtimeConstantPool) {
+    u_int maxLocals   = byteCode->GetMaxLocals();
+    u_int maxStack    = byteCode->GetMaxStack();
+    u_int frSize      = BASE_SIZE + maxLocals + maxStack;
     StackFrame *frame =
       StackFrame::New(JAVA_BYTE_CODE_FRAME, interpreter, frSize);
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CONT_PC_POS, contPC);
-    frame->InitArg(TOP_POS, Store::IntToWord(BASE_SIZE + nLocals));
-    frame->InitArg(CODE_POS, code->ToWord());
+    frame->InitArg(TOP_POS, Store::IntToWord(BASE_SIZE + maxLocals));
+    frame->InitArg(CODE_POS, byteCode->GetCode()->ToWord());
     frame->InitArg(POOL_POS, runtimeConstantPool);
-    frame->InitArg(EXN_TABLE_POS, exnTable->ToWord());
+    frame->InitArg(BYTE_CODE_POS, byteCode->ToWord());
     return static_cast<ByteCodeFrame *>(frame);
   }
   // ByteCodeFrame Untagging
@@ -401,7 +408,7 @@ const char *UnlockWorker::Identify() {
 }
 
 void UnlockWorker::DumpFrame(word) {
-  std::fprintf(stderr, "UnlockWorker");
+  std::fprintf(stderr, "Unlock");
 }
 
 //
@@ -582,11 +589,8 @@ void ByteCodeInterpreter::PushCall(Closure *closure) {
     ByteCodeFrame::New(ByteCodeInterpreter::self,
 		       Store::IntToWord(-1),
 		       Store::IntToWord(0),
-		       concreteCode->GetCode(),
-		       closure->Sub(0), // RuntimeConstantPool
-		       concreteCode->GetExceptionTable(),
-		       concreteCode->GetMaxLocals(),
-		       concreteCode->GetMaxStack());
+		       concreteCode,
+		       closure->Sub(0)); // RuntimeConstantPool
   Scheduler::PushFrame(frame->ToWord());
 }
 
@@ -2229,7 +2233,10 @@ const char *ByteCodeInterpreter::Identify() {
   return "ByteCodeInterpreter";
 }
 
-void ByteCodeInterpreter::DumpFrame(word) {
-  //--** nicer output
-  std::fprintf(stderr, "Java method\n");
+void ByteCodeInterpreter::DumpFrame(word wFrame) {
+  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
+  MethodInfo *info     = frame->GetMethodInfo();
+  std::fprintf(stderr, "%s%s\n",
+	       info->GetName()->ExportC(),
+	       info->GetDescriptor()->ExportC());
 }
