@@ -48,9 +48,6 @@ sig
   val mapSecond: ('b -> 'c) -> ('a,'b) alternative -> ('a,'c) alternative
   val appFirst: ('a -> unit) -> ('a,'b) alternative -> unit
   val appSecond: ('b -> unit) -> ('a,'b) alternative -> unit
-  val compose: ?
-  val composeFirst:
-  val composeSecond:
 end
 
 structure Dyn:
