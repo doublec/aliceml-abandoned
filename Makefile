@@ -235,7 +235,7 @@ libs-seam:
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
 	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
-	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR))) || exit 1 ;}
+	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR))) || exit 1 ;\
 	(cd tools/ide && make depend) || exit 1 ;\
 	(cd tools/ide && make install) || exit 1
 
