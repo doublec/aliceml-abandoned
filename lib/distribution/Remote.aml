@@ -24,6 +24,18 @@ structure Remote :> REMOTE =
     struct
 	val pickleContentType = "application/x-alice-pickle"
 
+	local
+	    val host = UnsafeRemote.getLocalIP ()
+	    val port = HttpServer.start NONE
+	in
+	    val rootUrl =
+		Url.fromString ("http://" ^ host ^ ":" ^
+				Int.toString port ^ "/")
+	end
+
+	fun register handler =
+	    Url.resolve rootUrl (HttpServer.register handler)
+
 	(*--------------------------------------------------------------
 	 * Proxies and RPC
 	 *)
@@ -56,7 +68,7 @@ structure Remote :> REMOTE =
 
 	fun proxy f =
 	    let
-		val url = HttpServer.register (makeRpcHandler f)
+		val url = register (makeRpcHandler f)
 	    in
 		fn x => UnsafeRemote.dynamicCall (url, x)
 	    end
@@ -82,7 +94,7 @@ structure Remote :> REMOTE =
 	    end
 
 	fun offer value =
-	    Url.toString (HttpServer.register (makeTakeHandler value))
+	    Url.toString (register (makeTakeHandler value))
 
 	fun take ticket =
 	    let
