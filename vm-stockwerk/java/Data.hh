@@ -24,19 +24,27 @@
 typedef unsigned short u_wchar; //--**
 
 class JavaLabel {
+private:
+  static const u_int base = MIN_DATA_LABEL;
 public:
-  static const BlockLabel Array               = MIN_DATA_LABEL;
-  static const BlockLabel JavaArray           = (BlockLabel) (Array + 1);
-  static const BlockLabel Lock                = (BlockLabel) (Array + 2);
-  static const BlockLabel FieldInfo           = (BlockLabel) (Array + 3);
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (Array + 4);
-  static const BlockLabel JavaByteCode        = (BlockLabel) (Array + 5);
-  static const BlockLabel MethodInfo          = (BlockLabel) (Array + 6);
-  static const BlockLabel ClassInfo           = (BlockLabel) (Array + 7);
-  static const BlockLabel Class               = (BlockLabel) (Array + 8);
-  static const BlockLabel Object              = (BlockLabel) (Array + 9);
-  static const BlockLabel ClassLoader         = (BlockLabel) (Array + 10);
-  static const BlockLabel ConstantPool        = (BlockLabel) (Array + 11);
+  static const BlockLabel ClassLoader         = (BlockLabel) (base + 0);
+  // Symbolic class representations
+  static const BlockLabel ConstantPool        = (BlockLabel) (base + 1);
+  static const BlockLabel Array               = (BlockLabel) (base + 2);
+  static const BlockLabel FieldInfo           = (BlockLabel) (base + 3);
+  static const BlockLabel MethodInfo          = (BlockLabel) (base + 4);
+  static const BlockLabel ClassInfo           = (BlockLabel) (base + 5);
+  // Code
+  static const BlockLabel JavaByteCode        = (BlockLabel) (base + 6);
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 7);
+  // Types
+  static const BlockLabel Class               = (BlockLabel) (base + 8);
+  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 9);
+  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 10);
+  // Data layer
+  static const BlockLabel JavaArray           = (BlockLabel) (base + 11);
+  static const BlockLabel Lock                = (BlockLabel) (base + 12);
+  static const BlockLabel Object              = (BlockLabel) (base + 13);
 };
 
 static const word null = Store::IntToWord(0);
@@ -137,6 +145,22 @@ class DllExport Lock: private Block {
   // to be determined
 };
 
+class DllExport Object: private Block {
+protected:
+  enum {
+    CLASS_POS, // Class
+    BASE_SIZE
+    // ... instance fields
+  };
+public:
+  word GetInstanceField(u_int index);
+  Closure *GetVirtualMethod(u_int index);
+};
+
+//
+// Types
+//
+
 class DllExport Class: private Block {
 protected:
   enum {
@@ -153,16 +177,27 @@ public:
   Closure *GetStaticMethod(u_int index);
 };
 
-class DllExport Object: private Block {
+class DllExport ObjectArrayType: private Block {
 protected:
   enum {
+    DIMENSIONS_POS, // int
     CLASS_POS, // Class
-    BASE_SIZE
-    // ... instance fields
+    SIZE
   };
+};
+
+class DllExport BaseType {
 public:
-  word GetInstanceField(u_int index);
-  Closure *GetVirtualMethod(u_int index);
+  enum { Byte, Char, Double, Float, Int, Long, Short, Boolean };
+};
+
+class DllExport BaseArrayType: private Block {
+protected:
+  enum {
+    DIMENSIONS_POS, // int
+    BASE_TYPE_POS, // int(BaseType)
+    SIZE
+  };
 };
 
 //
