@@ -1,6 +1,7 @@
 Group is
 
 	source.cm
+	switches.cm
 
 	ERROR.sig
 	Error.sml
@@ -13,3 +14,4 @@ Group is
 	PHASE.sig
 	PHASE_ERROR.sig
 	ComposePhases.sml
+	MakeDumpingPhase.sml
