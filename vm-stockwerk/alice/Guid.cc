@@ -65,12 +65,17 @@ static int GetTimeStamp() {
 
 #endif
 
+static inline word intToWord(int i) {
+  //--** wild hack!
+  return Store::IntToWord(((i & (1 << 30)) << 1) | (i & 0x7FFFFFFF));
+}
+
 Guid *Guid::New() {
   Tuple *tuple = Tuple::New(4);
-  tuple->Init(0, Store::IntToWord(static_cast<int>(getpid())));
-  tuple->Init(1, Store::IntToWord(static_cast<int>(time(0))));
-  tuple->Init(2, Store::IntToWord(GetTimeStamp()));
-  tuple->Init(3, Store::IntToWord(rand()));
+  tuple->Init(0, intToWord(static_cast<int>(getpid())));
+  tuple->Init(1, intToWord(static_cast<int>(time(0))));
+  tuple->Init(2, intToWord(GetTimeStamp()));
+  tuple->Init(3, intToWord(rand()));
   return static_cast<Guid *>(tuple);
 }
 
