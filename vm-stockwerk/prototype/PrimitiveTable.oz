@@ -624,7 +624,7 @@ define
    end
 
    fun {Deconstruct Args}
-      case Args of arg(X) then X
+      case Args of arg(X) then X   %--** request
       [] args(...) then Args
       end
    end
@@ -691,6 +691,15 @@ define
 	       case {Deref T.2} of Transient=transient(_) then
 		  request(Transient args(T1 Transient T.3) TaskStack)
 	       elseof T2 then {F T1 T2 T.3 TaskStack}
+	       end
+	    end
+	 [] rri_v then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then continue(arg({F T1 T2 T.3}) Rest)
 	       end
 	    end
 	 [] rrr_t then T = {Deconstruct Args} in

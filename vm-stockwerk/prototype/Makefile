@@ -21,7 +21,15 @@ SRCS = \
 	Linker.oz \
 	Main.oz
 
-LIB_SYSTEM_SRCS = UnsafeOS.oz
+LIB_SYSTEM_SRCS0 = \
+	Config IO TextIO OS Unix CommandLine Component Debug \
+	Reflect
+LIB_SYSTEM_SRCS = $(LIB_SYSTEM_SRCS0:%=lib/system/Unsafe%.oz)
+#	Config IO TextIO OS Unix CommandLine Component Debug Socket Rand \
+#	Reflect
+
+LIB_UTILITY_SRCS0 = MkRefMap
+LIB_UTILITY_SRCS = $(LIB_UTILITY_SRCS0:%=lib/utility/Unsafe%.oz)
 
 %.o: %.cc
 	oztool c++ -c $< -o $@
@@ -35,9 +43,11 @@ LIB_SYSTEM_SRCS = UnsafeOS.oz
 all: \
 	FloatChunk.so-$(PLATFORM) \
 	$(SRCS:%.oz=%.ozf) \
-	$(LIB_SYSTEM_SRCS:%.oz=lib/system/%.ozf)
+	$(LIB_SYSTEM_SRCS:%.oz=%.ozf) \
+	$(LIB_UTILITY_SRCS:%.oz=%.ozf)
 
 clean:
 	-rm -f FloatChunk.o FloatChunk.so-$(PLATFORM)
 	-rm -f $(SRCS:%.oz=%.ozf)
-	-rm -f $(LIB_SYSTEM_SRCS:%.oz=lib/system/%.ozf)
+	-rm -f $(LIB_SYSTEM_SRCS:%.oz=%.ozf)
+	-rm -f $(LIB_UTILITY_SRCS:%.oz=%.ozf)
