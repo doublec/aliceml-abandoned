@@ -90,7 +90,7 @@ public:
        be invoked after a successful call to <TT>DoGCWithoutFinalize</TT> and
        prior to any new invocation of <TT>DoGCWithoutFinalize</TT>.
     </P>
-    <P>It is good policy to not mix the <TT>DoGC</TT> and
+    <P>It is good policy not to mix the <TT>DoGC</TT> and
        <TT>DoGCWithoutFinalize/DoFinalize</TT> approach.
        However, it is always safe to call <TT>DoGC</TT>.
     </P>
@@ -118,7 +118,7 @@ public:
   <DT><TT>MakeLabel(l)</TT>
   </DT>
   <DD><P>Converts the integer value <TT>l</TT> into a corresponding block label.
-         This is a convenience function providing runtime assersions in debug
+         This is a convenience function providing runtime assertions in debug
          mode.
       </P>
   </DD>
@@ -226,7 +226,7 @@ public:
   <DD>
     <P>Converts the word denoted by <TT>v</TT> into a unmanaged pointer.
        This function always succeeds. Therefore, only use once you've ruled
-       out all other alternatives.
+       out all other alternatives by successive testing.
     </P>
   </DD>
 </DL>
@@ -350,7 +350,7 @@ public:
   </DD>
   <DT><TT>GetSize()</TT>
   </DT>
-  <DD><P>Returns the number of externally avaialable node fields.
+  <DD><P>Returns the number of externally available node fields.
          In case of a chunk, the size of the chunk in bytes is returned.
       </P>
   </DD>
@@ -495,7 +495,7 @@ public:
   </DD>
   <DT><TT>CondGet(key, alternative)</TT>
   </DT>
-  <DD><P>Returns the value stored under that <TT>key</TT> if it exits,
+  <DD><P>Returns the value stored under that <TT>key</TT> if it exists,
       <TT>alternative</TT> otherwise.</P>
   </DD>
   <DT><TT>GetSize()</TT>
