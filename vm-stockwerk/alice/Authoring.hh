@@ -18,6 +18,8 @@
 #include "alice/Types.hh"
 #include "alice/PrimitiveTable.hh"
 
+#define BOOL_TO_WORD(b) Store::IntToWord((b)? Types::_true: Types::_false)
+
 #define DECLARE_BOOL(b, x)				\
   bool b;						\
   {							\
@@ -56,7 +58,7 @@
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
 #define RETURN_UNIT RETURN0
-#define RETURN_BOOL(b) RETURN_INT((b)? Types::_true: Types::_false);
+#define RETURN_BOOL(b) RETURN(BOOL_TO_WORD(b));
 #define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
 
 #define INIT_STRUCTURE(r, s1, s2, f, i, b)			\
