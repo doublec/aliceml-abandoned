@@ -88,8 +88,8 @@ define
 	 [] Filename#AST then
 	    case {CodeGen.translate Filename AST
 		  {ParsePairList Rest
-		   fun {$ "Id"#S} {Get {String.toInt S}} end
-		   fun {$ "Valref"#S} {String.toInt S} end}}
+		   fun {$ "Id"#S} {String.toInt S} end
+		   fun {$ "Valref"#S} {Get {String.toInt S}} end}}
 	    of F#VS then
 	       {WriteFile VS Filename#'.ozm'}
 	       {System.printInfo 'Valref:'#{Put F}#'\n\n'}
