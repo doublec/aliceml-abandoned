@@ -395,7 +395,12 @@ functor MakeMain(structure Composer: COMPOSER'
 
 	    fun parse' x     = ParsingPhase.translate () x
 	    fun abstract' x  = AbstractionPhase.translate (BindEnv.new()) x
-	    fun elab' x      = ElaborationPhase.translate (Env.new()) x
+	    fun elab' x      = let val comp = ElaborationPhase.translate
+						(Env.new()) x
+				   val i = TypedGrammar.infoComp comp
+			       in  BindEnvFromSig.envFromSig(#region i,#sign i);
+				   comp
+			       end
 	    fun translate' x = TranslationPhase.translate () x
 	    fun flatten' x   = BackendCommon.translate () x
 
