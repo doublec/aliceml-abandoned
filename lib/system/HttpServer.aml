@@ -81,7 +81,7 @@ structure HttpServer :> HTTP_SERVER =
 		 closeIdle (List.tl tokens, socket)
 	     else
 		 (trace "closing idle connection\n";
-		  Socket.close socket)
+		  Socket.close socket))
 
 	fun handleConnection (socket, host, port) =
 	    let
@@ -105,7 +105,9 @@ structure HttpServer :> HTTP_SERVER =
 				body = "Internal server error"}
 		val connectionTokens = parseConnectionHeader request
 	    in
+		sendToken ();
 		Http.writeResponse (socket, response);
+		sendToken ();
 		if List.exists (fn s => s = "close") connectionTokens then
 		    Socket.close socket
 		else handleConnection' (socket, host, port, sendToken)
