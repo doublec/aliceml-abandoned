@@ -18,10 +18,13 @@ export
    '$OS': OS_Module
 define
    OS_Module =
-   'OS'('Process':
+   'OS'('$Process':
 	   'Process'('success': 0
 		     'failure': 1
-		     'exit': Application.exit
+		     'exit':
+			proc {$ N _}
+			   {Application.exit N}
+			end
 		     'getEnv':
 			fun {$ S}
 			   case {OS.getEnv S} of false then 'NONE'
