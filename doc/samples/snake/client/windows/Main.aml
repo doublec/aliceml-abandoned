@@ -102,7 +102,7 @@ struct
 	    val rightHBox      = Gtk.hboxNew (false, 10)
 
 	    (* one of the main procedures. resets the window
-	in START mode and also the sensitivity of the menubar *)
+	       in START mode and also the sensitivity of the menubar *)
 	    fun reset' () =
 		(Gtk.widgetSetSensitive (menuGiveUpItem, false);
 		 Gtk.widgetSetSensitive (menuMenuItem, true);

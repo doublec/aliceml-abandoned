@@ -11,8 +11,6 @@
 
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
-import structure Inspector  from "x-alice:/lib/tools/Inspector"
 
 import structure Color      from "../../common/Color"
 
@@ -26,6 +24,7 @@ import structure Text       from "Text"
 structure PlayerSettings =
 struct
 
+    (* converts a Color.color into a Gdk.color *)
     fun colorToGdkColor c =
 	let
 	    val (r, g, b) = Color.rgb c
@@ -35,16 +34,26 @@ struct
 	end
 
 
+    (* builds the player settings window *)
     fun mkPlayerSettings ({watch, play, disconnect}, guiJoin, 
 			  {reset, gameMode}) =
 	let
 
-	    val playerSettings  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val playerSettings  = Gtk.windowNew 0
+	    (* the adjustments for the playerText *)
    	    val playerAdjust1   = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
 						     1.0, 1.0, 1.0)
    	    val playerAdjust2   = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
 						     1.0, 1.0, 1.0)
   	    val playerText      = Gtk.textNew (playerAdjust1, playerAdjust2)
+	    (* the adjustments for the scrolles window which 
+	       contains playerText *)
+	    val adj1		= Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						     1.0, 1.0, 1.0)
+	    val adj2		= Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						     1.0, 1.0, 1.0)
+	    val playerScrolledWindow = Gtk.scrolledWindowNew (adj1, adj2)
+
  	    val colorCombo      = Gtk.comboNew ()
 	    val settingsVBox 	= Gtk.vboxNew (false, 0)
 	    val nameLabel 	= Gtk.labelNew "Name : "
@@ -58,55 +67,22 @@ struct
 		Gtk.checkButtonNewWithLabel "Spectator Mode"
 	    val separator3	= Gtk.hseparatorNew ()
 	    val connectedLabel 	= Gtk.labelNew "Connected Players : "
-	    val adj1		= Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						     1.0, 1.0, 1.0)
-	    val adj2		= Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						     1.0, 1.0, 1.0)
-	    val playerScrolledWindow = Gtk.scrolledWindowNew (adj1, adj2)
 	    val separator4	= Gtk.hseparatorNew ()
 	    val readyButton    	= Gtk.buttonNewWithLabel "Ready "
 	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
 
+	    (* contains a fututre unless the 'ready' button has been pushed.
+	       after that it is fulfilled with (Gui.game_model, Gui.game_gui *)
+	    val state = Promise.promise ()
+
+	    (* an alterable list which contains all colors that are
+	     still selectabel *)
 	    val allColors = ref (List.map Color.toString Color.all)
 
-	    val alreadyConn = ref nil
-
+	    (* inserts all colors into the color combo *)
 	    fun insertColors colors = 
 		Gtk.comboSetPopdownStrings (colorCombo, colors)
-		
-	    fun insertPlayer (name, color) = 
-		let
-		    val font = 
-			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (65535, 65535, 65535)
-		    val front = colorToGdkColor color
-		in
-		    Gtk.textInsert(playerText, font, front, 
-				   white, name ^ "\n", ~1);
-		    alreadyConn := (name, color) :: !alreadyConn
-		end
-
-	    fun removePlayer (name, color) = 
-		let
-		    val font = 
-			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
-		    val white = Gdk.allocColor (65535, 65535, 65535)
-		    val black = Gdk.allocColor (0 ,0, 0)
-		in
-		    Gtk.textInsert(playerText, font, black, 
-				   white, 
-				   name ^
-				   " has disconnected" ^
-				   "\n", ~1);
-		    alreadyConn := (name, color) :: (!alreadyConn)
-		end
-
-	    val started = 
-		ref (fn () => 
-		     (Gtk.widgetDestroy playerSettings;
-		      reset (SOME ("ERROR", 
-				   "Game already started"))))
 
 	    fun removeColor col =
 		let
@@ -132,36 +108,84 @@ struct
 	    val removeColor = Lock.sync colorlock removeColor
 
 	    val insertColor = Lock.sync colorlock insertColor
+		
+	    (* inserts a player with his color in the playerText widget *)
+	    fun insertPlayer (name, color) = 
+		let
+		    val font = 
+			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (65535, 65535, 65535)
+		    val front = colorToGdkColor color
+		in
+		    Gtk.textInsert(playerText, font, front, 
+				   white, name ^ "\n", ~1)
+		end
 
-	    val joined = ref (fn xs =>
-			      List.app (fn(n, c) => (insertPlayer(n, c);
-						     removeColor c)) xs)
 
-	    val disconnected = ref (fn (n, c) => (removePlayer (n, c);
-	                                          insertColor c)) (* TODO: implementation *)
+	    (* inserts 'name has disconnected' with it's color in playerText *)
+	    fun removePlayer (name, color) = 
+		let
+		    val font = 
+			Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (65535, 65535, 65535)
+		    val black = Gdk.allocColor (0 ,0, 0)
+		in
+		    Gtk.textInsert(playerText, font, black, 
+				   white, 
+				   name ^
+				   " has disconnected" ^
+				   "\n", ~1)
+		end
 
+	    (* if client has pushed the reday-button yet, everything is ok and
+	       the game starts normally. if he has not, it will abort 
+	       by returning to MainWindow and showing an error message *)
+	    fun gameStarted () = 
+		if Future.isFuture (Promise.future state)
+		    then (Gtk.widgetDestroy playerSettings;
+			  reset (SOME ("ERROR", 
+				       "Sorry, game already started")))
+		else let
+			 val (mGame, guiGame) = Promise.future state
+		     in
+			 Gtk.widgetDestroy playerSettings;
+			 gameMode({disconnect}, mGame, guiGame)
+		     end
 
-	    fun playersJoined a = (!joined) a
+	    (* call playersJoined when some players has joined the game *)
+	    fun playersJoined xs = 
+		List.app (fn (n, c) => (insertPlayer(n, c);
+					removeColor c)) xs
 
-	    fun playerDisconnected b = (!disconnected) b
+	    (* call playerDisconnected when one player has disconnected *)
+	    fun playerDisconnected p = 
+		(fn (n, c) => (removePlayer (n, c);
+			       insertColor c)) p
 
-	    fun gameStarted c = (!started) c
-
+	    (* fulfilling the Gui.gui_join *)
 	    val _ = Promise.fulfill (guiJoin, 
 				     {playersJoined,
 				      playerDisconnected,
 				      gameStarted})
 
+	    (* the mainQuit procedure. disconnects the client from the game
+	       and returns to the main window *)
 	    fun mainQuit () = 
 		(disconnect ();
 		 Gtk.widgetDestroy playerSettings;
 		 reset NONE)
 
+
+	    (* called, if the client has changed the nameText widget.
+	       if nameText = "" -> you can't press the ready-button,
+	       else the ready-button is set sensitive *)
 	    fun changedNameText () =
 		if Gtk.entryGetText nameText = ""
 		    then Gtk.widgetSetSensitive (readyButton, false)
 		else Gtk.widgetSetSensitive (readyButton, true)
 
+	    (* handles what happens, if the spectator Button has
+	       been pressed *)
 	    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
 		if Gtk.toggleButtonGetActive spectator
 		    then
@@ -175,6 +199,12 @@ struct
 			 then Gtk.widgetSetSensitive (readyButton, false)
 		     else ())
 
+
+	    (* handles what happens if the ready-button has clicked.
+	     play (name, color) will be called and if it returns
+	     FST game -> fulfilling the state and forbid to press
+	                 the button again
+	     SND errorMsg -> return to main window by showing error message *)
 	    fun okClickedCB spectator = 
 		let
 		    fun return () = 
@@ -182,40 +212,33 @@ struct
 			    then watch ()
 			else
 			    let
-				val name = Gtk.entryGetText nameText
+				val name  = Gtk.entryGetText nameText
 				val color = Color.fromString (
 				    Gtk.entryGetText 
 				    (Gtk.comboGetFieldEntry colorCombo))
 			    in 
-				(*alreadyConn := 
-				(name, color) :: (!alreadyConn);*)
 				play (name, color)
-				
 			    end
 
 		in
-		    if Gtk.entryGetText nameText = ""
-			then Text.mkTextWindow 
-			    ("ERROR!!", "Please enter a name!")
-		    else
-			(Gtk.widgetDestroy playerSettings;
-			 case return () of 
-			     FST (mGame, guiGame) => 
-				 Wait.mkWaitingWindow 
-				 (SND (rev (!alreadyConn), 
-				       {disconnect},
-				       mGame, 
-				       guiGame,
-				       (joined, disconnected, started),
-				       {reset, gameMode}))
-			   | SND     errorMsg     => 
-				 reset (SOME ("ERROR!!", errorMsg)))
+		    case return () of 
+			FST game     => 
+			    (Gtk.widgetSetSensitive (readyButton, false);
+			     Gtk.widgetSetSensitive (nameHBox, false);
+			     Gtk.widgetSetSensitive (colorHBox, false);
+			     Gtk.widgetSetSensitive (spectatorCheckButton, 
+						     false);
+			     Promise.fulfill (state, game))
+		      | SND errorMsg => 
+			    (reset (SOME ("ERROR!!", errorMsg));
+			     Gtk.widgetDestroy playerSettings)
 		end
 
 	in
 
+	    (* inserts all available colors into the color combo *)
 	    insertColors (!allColors);
-	    Gtk.windowSetModal (playerSettings,true);
+	    Gtk.windowSetModal (playerSettings, true);
 	    Gtk.windowSetTitle (playerSettings, "Player Settings");
 	    Gtk.windowSetPosition (playerSettings, Gtk.WIN_POS_CENTER);
 	    
@@ -238,6 +261,7 @@ struct
 			       "clicked",
 			       fn _ => mainQuit ());
 	    
+	    (* setting some useful values *)
 	    Gtk.containerSetBorderWidth (playerSettings, 10);
 	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
 	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo, 
@@ -247,7 +271,9 @@ struct
 					 Gtk.POLICY_NEVER, 
 					 Gtk.POLICY_ALWAYS);
 	    Gtk.entrySetMaxLength (nameText, 11);
+	    Gtk.widgetSetSensitive (readyButton, false);
 
+	    (* packing everything in boxes and later in playerSettings *)
 	    Gtk.boxPackStart (nameHBox, nameLabel, false, false, 0);
 	    Gtk.boxPackStart (nameHBox, nameText, true, false, 0);
 
@@ -272,6 +298,7 @@ struct
 	    
 	    Gtk.containerAdd (playerScrolledWindow, playerText);
 	    Gtk.containerAdd (playerSettings, settingsVBox);
+
 	    Gtk.widgetShowAll playerSettings
 
 	end

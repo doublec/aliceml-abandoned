@@ -10,8 +10,6 @@
 *)
 
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
-import structure Gdk        from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
 
 import structure Color      from "../../common/Color"
 import structure Config     from "../../server/Config"
@@ -271,7 +269,6 @@ struct
 				    Gtk.entryGetText 
 				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
-				alreadyConn := [(*(name, color)*)];
 				startServer 
 				(SOME (name, color),
 				 config)
@@ -281,10 +278,10 @@ struct
 		    Gtk.widgetDestroy serverSettings;
 		    case return of 
 			FST (mStart, guiJoin, serverUrl) => 
-			    Wait.mkWaitingWindow 
-			    (FST (!alreadyConn, mStart, 
-				  guiJoin, serverUrl, 
-				  {reset, gameMode}))
+			           Wait.mkWaitingWindow 
+				       (!alreadyConn, mStart, 
+					guiJoin, serverUrl, 
+					{reset, gameMode})
 		      | SND     errorMsg => 
 			    reset (SOME ("ERROR!!", errorMsg))
 		end
