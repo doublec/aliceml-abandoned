@@ -12,6 +12,8 @@
 
 signature PICKLE =
 sig
+    exception Sited
+
     val extension : string
 
     val save : string * package -> unit				(* Io *)
