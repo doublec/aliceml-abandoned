@@ -364,7 +364,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | normalize (_, ConPat (_, _, _), _) = ONE
 	      | normalize (_, RefPat (_, _), _) = ONE
 	      | normalize (_, TupPat (_, pats), _) = TUP (List.length pats)
-	      | normalize (_, RowPat (_, patFields, true), _) =
+	      | normalize (_, RowPat (_, patFields, false), _) =
 		let
 		    val labs =
 			List.map (fn Field (_, Lab (_, s), _) => s) patFields
@@ -421,7 +421,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    else Crash.crash "SimplifyMatch.process 2";
 		    (O.RecArgs labIdList, graph, mapping, consequents)
 		end
-	      | process (_, _, _, _) = Crash.crash "SimplifyMatch.process"
+	      | process (_, _, _, _) = Crash.crash "SimplifyMatch.process 3"
 	in
 	    fun buildFunArgs (id, matches, errStms) =
 		let
