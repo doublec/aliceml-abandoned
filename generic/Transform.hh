@@ -22,13 +22,7 @@ private:
   static const u_int SIZE         = 2;
 public:
   using Block::ToWord;
-  // Transform Accessors
-  Chunk *GetName() {
-    return Store::WordToChunk(GetArg(NAME_POS));
-  }
-  word GetArgument() {
-    return GetArg(ARGUMENT_POS);
-  }
+
   // Transform Constructor
   static Transform *New(Chunk *name, word argument) {
     Block *p = Store::AllocBlock(TRANSFORM_LABEL, 2);
@@ -46,6 +40,14 @@ public:
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == TRANSFORM_LABEL);
     return static_cast<Transform *>(p);
+  }
+
+  // Transform Accessors
+  Chunk *GetName() {
+    return Store::DirectWordToChunk(GetArg(NAME_POS));
+  }
+  word GetArgument() {
+    return GetArg(ARGUMENT_POS);
   }
 };
 
