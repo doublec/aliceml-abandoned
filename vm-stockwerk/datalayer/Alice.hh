@@ -76,6 +76,12 @@ public:
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::ArrayZero));
     return static_cast<Array *>(b);
   }
+  static Array *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Array) ||
+	   b->GetLabel() == Alice::ToBlockLabel(Alice::ArrayZero));
+    return static_cast<Array *>(b);
+  }
 
   u_int GetLength() {
     return GetLabel() == Alice::ToBlockLabel(Alice::ArrayZero)? 0: GetSize();
@@ -112,6 +118,12 @@ public:
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Cell));
     return static_cast<Cell *>(b);
   }
+  static Cell *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Cell));
+    return static_cast<Cell *>(b);
+  }
+
   void Init(word value) {
     InitArg(VAL_POS, value);
   }
@@ -143,6 +155,11 @@ public:
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
     return static_cast<Constructor *>(b);
   }
+  static Constructor *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
+    return static_cast<Constructor *>(b);
+  }
 };
 
 class ConVal: private Block {
@@ -164,13 +181,19 @@ public:
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
     return static_cast<ConVal *>(b);
   }
+  static ConVal *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::ConVal) ||
+	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
+    return static_cast<ConVal *>(b);
+  }
 
   bool IsConVal() { // as opposed to a Constructor
     return GetLabel() == Alice::ToBlockLabel(Alice::ConVal);
   }
   Constructor *GetConstructor() {
     Assert(GetLabel() == Alice::ToBlockLabel(Alice::ConVal));
-    return Constructor::FromWord(GetArg(1));
+    return Constructor::FromWordDirect(GetArg(1));
   }
   u_int GetWidth() {
     return GetSize() - 1;
@@ -199,6 +222,11 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == CHUNK_LABEL && b->GetSize() == SIZE);
+    return static_cast<Real *>(b);
+  }
+  static Real *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == CHUNK_LABEL && b->GetSize() == SIZE);
     return static_cast<Real *>(b);
   }
 
@@ -238,6 +266,11 @@ public:
     Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK_LABEL);
     return static_cast<String *>(b);
   }
+  static String *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == CHUNK_LABEL);
+    return static_cast<String *>(b);
+  }
 
   char *GetValue() {
     return reinterpret_cast<char *>(GetBase() + 1);
@@ -258,6 +291,12 @@ public:
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER ||
 	   p->GetLabel() >= Alice::ToBlockLabel(Alice::MIN_LABEL) &&
+	   p->GetLabel() <= Alice::ToBlockLabel(Alice::MAX_LABEL));
+    return static_cast<TagVal *>(p);
+  }
+  static TagVal *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() >= Alice::ToBlockLabel(Alice::MIN_LABEL) &&
 	   p->GetLabel() <= Alice::ToBlockLabel(Alice::MAX_LABEL));
     return static_cast<TagVal *>(p);
   }
@@ -289,6 +328,11 @@ public:
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Tuple));
     return static_cast<Tuple *>(b);
   }
+  static Tuple *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Tuple));
+    return static_cast<Tuple *>(b);
+  }
 
   u_int GetWidth() {
     return GetSize();
@@ -312,6 +356,11 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
+    return static_cast<UniqueConstructor *>(b);
+  }
+  static UniqueConstructor *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
     return static_cast<UniqueConstructor *>(b);
   }
 };
@@ -343,12 +392,17 @@ public:
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::GlobalStamp));
     return static_cast<GlobalStamp *>(b);
   }
+  static GlobalStamp *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::GlobalStamp));
+    return static_cast<GlobalStamp *>(b);
+  }
 
   u_int GetHashCode() {
     return Store::DirectWordToInt(GetArg(HASH_CODE_POS));
   }
   String *GetName() {
-    return static_cast<String *>(Store::DirectWordToBlock(GetArg(NAME_POS)));
+    return String::FromWord(GetArg(NAME_POS));
   }
 };
 
@@ -365,6 +419,12 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Vector) ||
+	   b->GetLabel() == Alice::ToBlockLabel(Alice::VectorZero));
+    return static_cast<Vector *>(b);
+  }
+  static Vector *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Vector) ||
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::VectorZero));
     return static_cast<Vector *>(b);
   }
@@ -398,6 +458,11 @@ public:
   static WideString *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK_LABEL);
+    return static_cast<WideString *>(b);
+  }
+  static WideString *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == CHUNK_LABEL);
     return static_cast<WideString *>(b);
   }
 
