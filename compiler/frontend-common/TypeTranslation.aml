@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Name             from "../../lib/rtt/Name"
 import structure Label            from "../../lib/rtt/Label"
 import structure Path             from "../../lib/rtt/Path"
 import structure Type             from "../../lib/rtt/Type"
@@ -40,6 +41,8 @@ struct
     open LabelLib
     open FixityLib
     open DynMatchLib
+
+    val name_dynamic = Name.ExId "_dynamic"
 
     val modlab_rtt = Label.fromString "RTT"
 

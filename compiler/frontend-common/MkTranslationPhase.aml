@@ -1519,11 +1519,12 @@ struct
 
       | trInf'(env, I.ConInf(i, longid)) =
 	(* [longid] =
-	 *   #1(__pervasive.Inf.instance(__pervasive.Path.invent(), [longid]))
+	 *   #1(__pervasive.Inf.instance(__pervasive.Path.fromString "_dynamic",
+	 *				 [longid]))
 	 *)
 	let
 	    val r     = #region i
-	    val exp1' = pathInventExp(env, r)
+	    val exp1' = pathExp(env, r, name_dynamic)
 	    val exp2' = longidExp(trInflongid(env, longid))
 			handle VirtualModule => trVirtInflongid(env, longid)
 	    val exp'  = infExp(env, lab_instance, tupExp(r, #[exp1', exp2']))
@@ -1631,7 +1632,7 @@ struct
 
     and trInfRep'(env, mkKind, pathexp', I.FunInf(i, id, inf1, inf2)) =
 	(* [fun id : inf1 -> inf2]_p =
-	 *   let id1 = __pervasive.Path.invent()
+	 *   let id1 = __pervasive.Path.fromString "id"
 	 *       id$ = [inf1]
 	 *   in __pervasive.Inf.depKind(id1, id$, [inf2]_p)
 	 *)
@@ -1640,7 +1641,7 @@ struct
 		let
 		    val r     = #region i
 		    val r1    = #region(I.infoId id)
-		    val exp1' = pathInventExp(env, r1)
+		    val exp1' = pathExp(env, r1, I.name id)
 		    val id1'  = auxId(typInfo(r1, typ_path env))
 		    val dec1' = auxDec(id1', exp1')
 
@@ -1681,14 +1682,14 @@ struct
 
     and trBindInf(env, lab_binder, i, id, inf1, inf2) =
 	(* [binder id : inf1 -> inf2] =
-	 *   let id0 = __pervasive.Path.invent();
+	 *   let id0 = __pervasive.Path.fromString "id";
 	 *       id$ = [inf1]
 	 *   in __pervasive.Inf.binder(id0, id$, [inf2]) end
 	 *)
 	let
 	    val r     = #region i
 	    val r0    = #region(I.infoId id)
-	    val exp0' = pathInventExp(env, r0)
+	    val exp0' = pathExp(env, r0, I.name id)
 	    val id0'  = auxId(typInfo(r0, typ_path env))
 	    val dec0' = auxDec(id0', exp0')
 

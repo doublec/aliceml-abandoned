@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Name           from "../../lib/rtt/Name"
 import structure Label          from "../../lib/rtt/Label"
 import structure Type           from "../../lib/rtt/Type"
 import structure Inf            from "../../lib/rtt/Inf"
@@ -18,6 +19,8 @@ import structure TranslationEnv from "TranslationEnv"
 signature TYPE_TRANSLATION =
 sig
     (* RTT types *)
+
+    val name_dynamic	: Name.t
 
     val modlab_rtt	: Label.t
 
