@@ -17,7 +17,6 @@
 
 import signature TIME           from "TIME-sig"
 import structure UnsafeTime     from "UnsafeTime"
-import structure TextIO         from "TextIO"
 
 structure Time : TIME =
 struct
