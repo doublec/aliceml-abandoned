@@ -22,6 +22,7 @@ define
    class TextPipe from Open.pipe Open.text
       meth get($)
 	 case TextPipe, getS($) of S=&[|_ then S#'\n'
+	 [] false then false
 	 elseof S then
 	    {System.showError S}
 	    TextPipe, get($)
