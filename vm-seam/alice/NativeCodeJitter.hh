@@ -260,6 +260,9 @@ protected:
 
   // Function compilation
   char *CompileProlog(const char *info);
+  void CompileAbstractCodeStub(word initialNoCCCPC,
+                               u_int nLocals,
+                               TagVal* abstractCode);
   void CompileBranch(TagVal *pc, u_int nLocals = 0);
   void CompileInstr(TagVal *pc);
   Tuple *AllocateRegister(u_int nLocals, Tuple *liveness);

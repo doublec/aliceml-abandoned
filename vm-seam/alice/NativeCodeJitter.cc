@@ -646,6 +646,16 @@ static Worker::Result PushCall(ConcreteCode *concreteCode, Closure *closure) {
   return (StatusWord::GetStatus() ? Worker::PREEMPT : Worker::CONTINUE);
 }
 
+static word CloneClosure(word wClosure, word wConcreteCode) {
+  Closure *c = Closure::FromWord(wClosure);
+  u_int size = c->GetSize();
+  Assert(c != INVALID_POINTER);
+  Closure *c2 = Closure::New(wConcreteCode, size);
+  for (u_int i=size; i--;)
+    c2->Init(i, c->Sub(i));
+  return c2->ToWord();
+}
+
 void NativeCodeJitter::PushCall(CallInfo *info) {
 #if PROFILE
   // to be done: this won't work
@@ -808,6 +818,8 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
       // Invariant: concreteCode (ST_TMP_R1) and closure (ST_TMP_R0)
       JITStore::LoadTmp(ST_TMP_R0, JIT_FP); // Closure
       JITStore::LoadTmp(ST_TMP_R1, JIT_V1); // ConcreteCode
+      JIT_LOG_REG(JIT_FP);
+      JIT_LOG_REG(JIT_V1);
       JITStore::Prepare(2, false);
       JITStore::PushArg(JIT_FP); // Closure
       JITStore::PushArg(JIT_V1); // ConcreteCode
@@ -2886,15 +2898,50 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
                                            initialPC,
                                            initialNoCCCPC)->ToWord();
   } else {
-#if defined(JIT_STORE_DEBUG)    
-    Tuple *coord2 = Tuple::FromWord(abstractCode->Sel(0));
-    String *name  = String::FromWord(coord2->Sel(0));
-    u_int line    = Store::WordToInt(coord2->Sel(1));
-    fprintf(stderr, "Not JITting long function %s:%d\n",
-            name->ExportC(), line);
-#endif
-    return AliceConcreteCode::New(abstractCode);
+    CompileAbstractCodeStub(initialNoCCCPC,
+                            (u_int) currentNLocals,
+                            abstractCode);
+    Chunk *code = CopyCode(codeStart);
+    return NativeConcreteCode::NewInternal(abstractCode, code,
+                                           ImmediateEnv::ExportEnv(),
+                                           Store::IntToWord(currentNLocals),
+                                           initialPC,
+                                           initialNoCCCPC)->ToWord();
   }
+}
+
+void NativeCodeJitter::CompileAbstractCodeStub(word initialNoCCCPC,
+                                               u_int nLocals,
+                                               TagVal* abstractCode) {
+  ImmediateEnv::Init();
+  word wAliceConcreteCode = AliceConcreteCode::New(abstractCode);
+
+  JITStore::FakeProlog();
+  jit_set_ip((jit_insn*)(Store::DirectWordToInt(initialNoCCCPC)
+                         + (char *) codeBuffer) - 2 * sizeof(word));
+
+  Assert(Store::IntToWord(GetRelativePC()) == initialNoCCCPC);
+  
+  u_int aliceConcreteCodeIndex =
+    ImmediateEnv::Register(wAliceConcreteCode);
+
+  NativeCodeFrame_GetClosure(JIT_R0, JIT_V2);
+  ImmediateSel(JIT_V1, JIT_V2, aliceConcreteCodeIndex);
+
+  JITStore::Prepare(2, false);
+  JITStore::PushArg(JIT_V1); // new concreteCode
+  JITStore::PushArg(JIT_R0); // old closure
+  JITStore::Finish((void *) ::CloneClosure);
+  jit_movr_p(JIT_FP, JIT_R0);
+
+  u_int size = NativeCodeFrame_GetFrameSize(nLocals);
+  Scheduler_PopFrame(size);
+  ImmediateSel(JIT_V1, JIT_V2, aliceConcreteCodeIndex);
+  JITStore::Prepare(2, false);
+  JITStore::PushArg(JIT_FP); // Closure
+  JITStore::PushArg(JIT_V1); // ConcreteCode
+  JITStore::Finish((void *) ::PushCall);
+  RETURN();
 }
 
 #if defined(JIT_STORE_DEBUG)
