@@ -344,7 +344,6 @@ struct
     type clone_state   = typ Map.t
 
     fun cloneStart()   = Map.new()
-    fun cloneFinish _  = ()
     fun cloneCont(m,t) =
 	let
 	    (* We want to be able to handle recursive types, so we have to
@@ -393,13 +392,7 @@ struct
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-	      | clone'(HOLE _)		= raise Assert.failure
-	      | clone'(LINK t)		= LINK(clone t)
-					  (* links can appear via dup because
-					   * equals constructs links to vars
-					   * that may remain if a var is
-					   * shared between several quantifiers.
-					   *)
+	      | clone' _		= raise Assert.failure
 
 	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
@@ -756,7 +749,7 @@ struct
      * signature applications and existential types).
      *)
 
-    (*ASSUME that no quantifiers appear under abbreviations
+    (*ASSUME that no quantifiers appear under abbreviations or links
    	(this might break with higher-order polymorphism!) *)
 
     fun instance' t =
