@@ -3,8 +3,6 @@
 *)
 
 (* replaced 'lexer' with 'lexxer' because of problems with hose *)
-
-
 signature TOKEN =
     sig
 	structure LrTable : LR_TABLE

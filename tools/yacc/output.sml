@@ -212,7 +212,7 @@ struct
 	    val print = fn s => str := (!str)^s
 	in (str, print) end
  
-    fun output filename = 
+    fun output (filename, smlMode, outfilename) = 
 	let
 	    val currParser = ref 0
 	    
@@ -363,12 +363,17 @@ struct
 		^ "\nend\nend (* end of structure " ^ structureName ^ " *)\n\n"
 	      | absSynToString _ _ = "" (* do not output assocDecs *)
 
-	    val code = List.foldr (fn (x,r) => x ^ " " ^ r) "\n" 
+	    val code = (if smlMode 
+                      then "" 
+                      else "import structure LrParserEng\n" ^ 
+                           "       structure LrParser from " ^ 
+                           "\"x-alice:/lib/aliceyacc/LrParser\"\n") 
+                   ^ List.foldr (fn (x,r) => x ^ " " ^ r) "\n" 
 		         (List.map 
 			  (absSynToString  lrTableString)
 			  (removeRuleDecs true p))
 
-	    val outfile = TextIO.openOut (filename ^ ".aml")
+	    val outfile = TextIO.openOut (outfilename)
 
 	    val _ = TextIO.output(outfile,code)
 
@@ -411,13 +416,12 @@ struct
 			 printCores=corePrint,
 			 printRule=printRule};
 			TextIO.closeOut f;
-			TextIO.print ("Written output to " ^ filename
-				      ^ ".out\n"
+			TextIO.print ("Written output to " ^ outfilename ^ "\n"
 				      ^ "Written description file " ^ filename
 				      ^ ".desc\n")
 		    end
 	    else
-		TextIO.print ("Written output to " ^ filename ^ ".out\n")
+		TextIO.print ("Written output to " ^ outfilename ^ "\n")
 	end
  (*   handle _ => 
 	TextIO.print ("Some error(s) occurred while processing "^filename^"\n")

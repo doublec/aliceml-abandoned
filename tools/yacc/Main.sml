@@ -1,7 +1,11 @@
 structure Main :> MAIN =
     struct
 
-	val inFile = ref ""
+    val binName     = "aliceyacc"
+
+	val inFile      = ref ""
+    val outFile     = ref ""
+    val smlMode     = ref false
 
 
 	fun printEx s = (TextIO.output (TextIO.stdErr, s);
@@ -11,25 +15,38 @@ structure Main :> MAIN =
 
 	fun handleEx ErrorMsg.Error = printEx ""
 	  | handleEx exn =
-	    printEx ("Jacke: unhandled internal exception: "
+	    printEx (binName ^ ": unhandled internal exception: "
 		     ^ General.exnName exn ^ "\n")
 
 
-	fun usage () = printEx "Usage: jacke infile\n"
+	fun usage () = 
+        printEx ("Usage: " ^ binName ^ "[<option>] infile [-o <output file>]\n" ^
+                 "Options:\n" ^ 
+                 "\t--sml-mode\n" ^
+                 "\t\tDo not emit alice style import declarations.\n\n" ^ 
+                 "Report bugs using our online bug-tracking system:\n" ^
+                 "http://www.ps.uni-sb.de/alice/bugzilla\n")
 
 	    
 	fun start process = (process(); OS.Process.success)
 
 
-	fun jacke () = Output.output (!inFile)
+	fun jacke () = Output.output (!inFile, !smlMode, !outFile)
 
 
-	fun setFile infile = inFile := infile
+	fun setFile infile  = inFile := infile
+    fun setOutFile outF = outFile := outF
 
+    fun outExt () = if !smlMode then ".sml" else ".aml" 
 
-	fun main' [infile]                = (setFile infile;
-					     start jacke)
-	  | main' _                       = usage () 
+	fun main' ("--sml-mode" :: xs)      = (smlMode := true; main' xs)
+      | main' [infile]                  = (setFile infile;
+					                       setOutFile (infile ^ outExt ());
+                                           start jacke)
+      | main' [infile, "-o", outfile]   = (setFile infile;
+                                           setOutFile outfile;
+                                           start jacke)
+	  | main' _                         = usage () 
 
 
 	fun main () =
@@ -45,11 +62,11 @@ structure Main :> MAIN =
 		OS.Process.exit(main' args)
 	    end
 	handle (IO.Io {name,function="openIn",cause}) =>
-	    printEx ("Jacke: input file '" ^ !inFile ^ "' does not exist\n")
+	    printEx (binName ^ ": input file '" ^ !inFile ^ "' does not exist\n")
 	     | (IO.Io {name,function="openOut",cause}) =>
-	    printEx "Jacke: output file not accessible\n"
+	    printEx (binName ^ ": output file not accessible\n")
 	     | (IO.Io {name,function="inputAll",cause}) =>
-	    printEx "Jacke: input file seems to be a directory\n"
+	    printEx (binName ^ ": input file seems to be a directory\n")
 	     | exn => handleEx exn
        
     end
