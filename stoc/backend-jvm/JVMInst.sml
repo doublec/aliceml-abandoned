@@ -78,8 +78,8 @@ structure JVMInst =
 	  | Tableswitch of int * (label list) * label
 	  | Var of int * string * ARG list * label * label
 	and CLASS =
-	    Class of CLASSACCESS list * classname * classname * FIELD list * METHOD list
-	(* klasse, oberklasse *)
+	    Class of CLASSACCESS list * classname * classname * classname list * FIELD list * METHOD list
+	(* class, superclass, implemented interfaces *)
 	and
 	    FIELD =
 	    (* ARG list specifies the type. May be an Array *)

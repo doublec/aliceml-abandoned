@@ -308,13 +308,14 @@ structure ToJasmin =
 		end
 	end
 
-	fun classToJasmin (Class(access,name,super,fields,methods)) =
+	fun classToJasmin (Class(access,name,super,interfaces,fields,methods)) =
 	    let
 		val io = TextIO.openOut (name^".j")
 		fun fieldToJasmin (Field(access,fieldname,arg)) =
 		    TextIO.output(io,".field "^
 				  fAccessToString access
 				  ^" "^fieldname^" "^(desclist2string arg)^"\n")
+		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
 		fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
 					   instructions, catches, staticapply)) =
 		  (* apply hat derzeit oft ein doppeltes Areturn am Ende.
@@ -347,6 +348,7 @@ structure ToJasmin =
 		TextIO.output(io,
 			      ".class "^(cAccessToString access)^name^"\n"^
 			      ".super "^super^"\n");
+		TextIO.output(io,List.foldr interfaceToJasmin "" interfaces);
 		app fieldToJasmin fields;
 		app methodToJasmin methods;
 		TextIO.closeOut io

@@ -8,13 +8,13 @@ structure Abbrev  =
 			     [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
 	val CRef          = ("de/uni_sb/ps/dml/runtime/Constants/reference",
 			      [Classsig "de/uni_sb/ps/dml/runtime/Constructor"])
-	val CBind          = ("de/uni_sb/ps/dml/runtime/General/bind",
+	val CBind          = ("de/uni_sb/ps/dml/runtime/General/Bind",
 			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CCons          = ("de/uni_sb/ps/dml/runtime/List/cons",
 			      [Classsig "de/uni_sb/ps/dml/runtime/Constructor"])
 	val CFalse         = ("de/uni_sb/ps/dml/runtime/Constants/dmlfalse",
 			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
-	val CMatch         = ("de/uni_sb/ps/dml/runtime/Constants/dmlmatch",
+	val CMatch         = ("de/uni_sb/ps/dml/runtime/General/Match",
 			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CNil          = ("de/uni_sb/ps/dml/runtime/List/nil",
 			     [Classsig "de/uni_sb/ps/dml/runtime/Name"])
@@ -62,5 +62,14 @@ structure Abbrev  =
 	val CDMLTuple      = "de/uni_sb/ps/dml/runtime/DMLTuple"
 
 	val CSelString     = "de/uni_sb/ps/dml/runtime/General$SelFunString"
-	val CSelInt     = "de/uni_sb/ps/dml/runtime/General$SelFunInt"
+	val CSelInt        = "de/uni_sb/ps/dml/runtime/General$SelFunInt"
+
+	val ISerializable  = "java/io/Serializable"
+
+	val CClass         = "java.lang.Class"
+
+	val MForName       = (CClass, "forName", ([Classsig CString], [Classsig CClass]))
+
+	val MPickle = ("de/uni_sb/ps/dml/runtime/General$Pickle","apply",
+		   ([Classsig CString, Classsig CVal, Classsig CVal], [Classsig CVal]))
     end

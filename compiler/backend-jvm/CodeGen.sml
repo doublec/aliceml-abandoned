@@ -232,13 +232,6 @@ structure CodeGen =
 				    Invokevirtual (CThread, "start", ([], [Voidsig])),
 				    Return], nil, false)
 		 (* Standardinitialisierung. Die Superklasse wird aufgerufen. *)
-
-		 val clinit = Method([MPublic],"<clinit>",([],[Voidsig]),
-				   Locals 6,
-				     Literals.generate(
-						      RecordLabel.generate()),
-				   nil, false)
-
 		 val init = Method([MPublic],"<init>",([],[Voidsig]),
 				   Locals 1,
 				   [Aload 0,
@@ -248,6 +241,7 @@ structure CodeGen =
 		  und initialisiert, die Funktionsabschluesse werden gebildet. Anschliessend
 		  wird das Ergebnis zusammen mit den Classfiles in ein Pickle geschrieben.
 		  Dies ist der letzte Schritt des Compilierungsvorganges. *)
+		 val literalName = Class.getLiteralName()
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
 				  Locals (Local.max()+1),
 				   iL @
@@ -259,29 +253,14 @@ structure CodeGen =
 							([Classsig "java/lang/Object"],
 							 [Voidsig]))]
 				    else nil) @
-				    [Getstatic CPickle,
-				     New CTuple,
+				    [Ldc (JVMString (name^".pickle")),
+				     New literalName,
 				     Dup,
-				     Iconst 2,
-				     Anewarray CVal,
-				     Dup,
-				     Iconst 0,
-				     New CStr,
-				     Dup,
-				     Ldc (JVMString (name^".pickle")),
-				     Invokespecial (CStr, "<init>",
-						    ([Classsig CString], [Voidsig])),
-				     Aastore,
-				     Dup,
-				     Iconst 1,
+				     Invokespecial (literalName,
+						    "<init>",
+						    ([], [Voidsig])),
 				     Aload (!mainpickle),
-				     Aastore,
-				     Invokespecial (CTuple, "<init>",
-						    ([Arraysig, Classsig CVal],
-						     [Voidsig])),
-				     Invokeinterface (CVal, "apply",
-						      ([Classsig CVal],
-						       [Classsig CVal])),
+				     Invokestatic MPickle,
 				     Pop,
 				     Return],
 				    Catch.top(), false)
@@ -289,12 +268,43 @@ structure CodeGen =
 		 val class = Class([CPublic],
 				   name,
 				   CDMLThread,
-				   Literals.makefields
-				   (RecordLabel.makefields ()),
-				   [main, clinit, init, run])
+				   nil,
+				   nil,
+				   [main, init, run])
+
+		 (* literals can not be stored in the main class because
+		  DMLThreads must not be pickled *)
+		 val clinit = Method([MPublic],
+				     "<clinit>",
+				     ([],[Voidsig]),
+				     Locals 6,
+				     Literals.generate
+				     (RecordLabel.generate()),
+				     nil,
+				     false)
+
+		 (* Standardinitialisierung. Die Superklasse wird aufgerufen. *)
+		 val litinit = Method([MPublic],"<init>",([],[Voidsig]),
+				      Locals 1,
+				      Aload 0::
+				      Invokespecial (CFcnClosure, "<init>", ([], [Voidsig]))::
+				      (Lambda.generatePickleFn
+				       [Return]),
+				      nil,
+				      false)
+
+		 val literale = Class([CPublic],
+				      Class.getLiteralName(),
+				      CFcnClosure,
+				      [ISerializable],
+				      Lambda.makePickleFields
+				      (Literals.makefields
+				       (RecordLabel.makefields ())),
+				      [clinit, litinit])
 	     in
-		 if !ECHO >=2 then print "Erzeuge Hauptklasse..." else ();
+		 if !ECHO >=2 then print "Erzeuge Haupt- und Literalklasse..." else ();
 		 classToJasmin (class);
+		 classToJasmin (literale);
 		 if !ECHO >=2 then print "Okay.\n" else ()
 	     end
 	 )
@@ -305,18 +315,17 @@ structure CodeGen =
 			   ([Classsig CStr], [Classsig CVal]))]
 
 	and builtinStamp stamp' =
-	    if stamp'=stamp_plus then ([Getstatic CPlus],true) else
-		if stamp'=stamp_Match then ([Getstatic CMatch],true) else
-		    if stamp'=stamp_false then ([Getstatic CFalse],true) else
-			if stamp'=stamp_true then ([Getstatic CTrue],true) else
-			    if stamp'=stamp_nil then ([Getstatic CNil],true) else
-				if stamp'=stamp_cons then ([Getstatic CCons],true) else
-				    if stamp'=stamp_ref then ([Getstatic CRef],true) else
-					if stamp'=stamp_Bind then ([Getstatic CBind],true) else
-					    if stamp'=stamp_eq then ([Getstatic CEquals],true) else
-						if stamp'=stamp_assign then ([Getstatic CAssign],true) else
-						    if stamp'=stamp_builtin then ([Getstatic CBuilt],true) else
-							(nil,false)
+	    if stamp'=stamp_Match then ([Getstatic CMatch],true) else
+		if stamp'=stamp_false then ([Getstatic CFalse],true) else
+		    if stamp'=stamp_true then ([Getstatic CTrue],true) else
+			if stamp'=stamp_nil then ([Getstatic CNil],true) else
+			    if stamp'=stamp_cons then ([Getstatic CCons],true) else
+				if stamp'=stamp_ref then ([Getstatic CRef],true) else
+				    if stamp'=stamp_Bind then ([Getstatic CBind],true) else
+					if stamp'=stamp_eq then ([Getstatic CEquals],true) else
+					    if stamp'=stamp_assign then ([Getstatic CAssign],true) else
+						if stamp'=stamp_builtin then ([Getstatic CBuilt],true) else
+						    (nil,false)
 
 	and decListCode decs = List.concat (map decCode decs)
 
@@ -695,13 +704,9 @@ structure CodeGen =
 		    let
 			val loc = Local.assign (id', Local.nextFree())
 			val try   = Label.new()
-			val to = Label.new()
+			val to = Label.pushANewHandle ()
 			val using = Label.new()
-			fun endHandleSearch (EndHandleStm(_,body')) =
-			    Label to::
-			    (List.concat(map decCode body'))
-			  | endHandleSearch sonstwas = decCode sonstwas
-			val b1 = List.concat (map endHandleSearch body')
+			val b1 = List.concat (map decCode body')
 			val b2 = List.concat (map decCode body'')
 			val nocatch = Label.new()
 		    in
@@ -716,7 +721,13 @@ structure CodeGen =
 			 b2 @
 			 [Label nocatch]
 		    end
-	  | decCode (EndHandleStm _) = raise Error "unexpected EndHandleStm"
+	  | decCode (EndHandleStm (_, body')) =
+		    let
+			val lab' = Label.popHandle()
+		    in
+			Label lab'::
+			List.concat (map decCode body')
+		    end
 	  | decCode (EvalStm (_, exp')) =
 		    (expCode exp') @ [Pop]
 	  | decCode (ExportStm (_,Id (_,stamp',_)::_)) = (mainpickle:=Local.get stamp'; nil)
@@ -1201,8 +1212,10 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 				   false)
 
 		(* die ganze Klasse *)
-		val class = Class([CPublic],className,
+		val class = Class([CPublic],
+				  className,
 				  CFcnClosure,
+				  nil,
 				  fieldscode,
 				  (applY::init::
 				   (if Lambda.sapplyPossible () then

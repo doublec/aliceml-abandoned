@@ -1,13 +1,6 @@
 structure Backend=
     struct
-	(* Intermediate Representation: *)
-	open ImperativeGrammar
-	open Prebound
-	open Prebound'
-	open Main
-
-	open JVMInst
-	open Abbrev
+	open Common
 
 	type stamp=IntermediateGrammar.stamp
 
@@ -39,25 +32,6 @@ structure Backend=
 				      structure StampHash=StampHash
 				      val toplevel=toplevel)
 
-	val _ = Compiler.Control.Print.printLength := 10000;
-	val _ = Compiler.Control.Print.printDepth := 10000;
-	val _ = SMLofNJ.Internals.GC.messages false
-
-	(* falls was böses passiert, wird eine Error-exception mit sinnvollem Inhalt 'geraist' *)
-	exception Error of string
-
-	(* xxx For Debugging: *)
-	datatype deb=B of bool
-	  | Is of id list
-	  | Ias of id list array
-	  | IasSS of id list array * int * int
-	  | II of id * id
-	  | Okay
-	  | Dec of stm
-	  | Test of test
-	  | Exp of exp
-	exception Debug of deb
-
 	(* Labelzähler, aNewLabel liefert einen neuen String "label?", ? ist Zahl.
 	 Den ersten Stack brauchen wir, damit für jede Klasse wieder bei label1
 	 begonnen wird. *)
@@ -65,6 +39,7 @@ structure Backend=
 	    struct
 		val labelcount = ref 0
 		val stack : (int list) ref= ref nil
+		val handleStack : (string list) ref = ref nil
 
 		fun new () =
 		    (labelcount := !labelcount + 1;
@@ -78,30 +53,17 @@ structure Backend=
 		    (labelcount := !labelcount + 1;
 		     !labelcount)
 		fun fromNumber i = "label"^Int.toString i
+
+		fun pushANewHandle () =
+		    let
+			val label'=new()
+		    in
+			handleStack := label'::(!handleStack);
+			label'
+		    end
+		fun popHandle () =
+		    hd (!handleStack) before handleStack := tl (!handleStack)
 	    end
-
-	
-	(* Den Feldnamen zu einer Id bestimmen. Die Id kann eine beliebige Variable sein. *)
-	fun fieldNameFromStamp stamp' = "field"^(Stamp.toString stamp')
-	fun fieldNameFromId (Id(_,stamp',_)) = fieldNameFromStamp stamp'
-
-	fun nameFromId (Id (_,stamp',InId)) = "unnamed"^(Stamp.toString stamp')
-	  | nameFromId (Id (_,stamp',ExId name')) = name'^(Stamp.toString stamp')
-
-	(* Den Stamp aus einer Id extrahieren. *)
-	fun stampFromId (Id (_, stamp', _)) = stamp'
-
-	(* Dieser Label steht am Ende der Registerinitialisierung von Methoden. *)
-	val afterInit = "labelAfterInit"
-
-	(* alpha steht am Begin einer Methode *)
-	val alpha = "labelAlpha"
-
-	(* Omega kommt vor dem abschliessenden Areturn *)
-	val omega = "labelOmega"
-
-	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
-	val mainpickle = ref ~1 (* JVM-Register, in dem Struktur steht *)
 
 	(* Verwaltung der lokalen JVM-Register *)
 	structure Local =
@@ -163,20 +125,6 @@ structure Backend=
 		end
 	    end
 
-	(* Name der aktuellen Klasse. Der Stack wird für verschachtelte Funktionen benötigt.
-	 (für jede Funktion wird eine eigene Klasse erzeugt.) *)
-	structure Class =
-	    struct
-		val stack = ref [""]
-		val initial = ref ""
-
-		fun getCurrent () = case !stack of (x::xs) => x | _ => raise Error("Class.getCurrent")
-		fun push name = stack := name::(!stack)
-		fun pop () =  case !stack of (x::xs) => stack := xs | _ => raise Error("Class.pop")
-		fun setInitial name = ((stack := [name]); initial := name)
-		fun getInitial () = (!initial)
-	    end
-
 	(* Zuordnung von Funktionen-Ids auf Freie Variablen
 	 und von beliebigen Ids auf den formalen Parameter der umgebenden Funktion.
 	 Der formale Parameter einer Funktion ist immer eindeutig, während eine Funktion
@@ -225,7 +173,7 @@ structure Backend=
 		fun top () = !liste
 	    end
 
-	
+
 	fun atCodeInt (i:Int32.int) =
 	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.<= (i, Int.toLarge 5)
 		then Iconst (Int.fromLarge i) else
@@ -276,7 +224,7 @@ structure Backend=
 		fun fieldname number = "arity"^Int.toString number
 
 		fun staticfield number =
-		    (Class.getInitial ()^"/"^(fieldname number), [Arraysig, Classsig CLabel])
+		    (Class.getLiteralName()^"/"^(fieldname number), [Arraysig, Classsig CLabel])
 
 		(* Hinzufügen einer Recordarity *)
 		fun insert (strings as (s::rest)) =
@@ -335,7 +283,7 @@ structure Backend=
 		fun makefields () =
 		    StringListHash.fold
 		    (fn (number, fields) =>
-		     Field ([FPublic, FStatic],
+		     Field ([FPublic, FStatic, FFinal],
 			    fieldname number,
 			    [Arraysig, Classsig CLabel])::fields)
 		    nil
@@ -361,7 +309,7 @@ structure Backend=
 		fun fieldname number = "lit"^Int.toString number
 
 		fun staticfield number =
-		    Class.getInitial ()^"/"^(fieldname number)
+		    Class.getLiteralName()^"/"^(fieldname number)
 
 		(* Hinzufügen einer Konstanten *)
 		fun insert lit' =
@@ -401,7 +349,7 @@ structure Backend=
 		fun makefields startwert =
 		    LitHash.foldi
 		    (fn (lit', number, fields) =>
-		     Field ([FPublic, FStatic],
+		     Field ([FPublic, FStatic, FFinal],
 			    fieldname number,
 			    [Classsig (litClass lit')])::fields)
 		    startwert

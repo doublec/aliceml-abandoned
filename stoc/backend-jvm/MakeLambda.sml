@@ -6,6 +6,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 				       val toplevel:IntermediateGrammar.stamp) =
     struct
 	open ImperativeGrammar
+	open Common
+
 	type stamp=IntermediateGrammar.stamp
 
 (*	fun printstack (x::xs) = (print (Int.toString x^", "); printstack xs)
@@ -14,6 +16,9 @@ functor MakeLambda(structure StampSet:IMP_SET
 	val lambdaStack = ref (toplevel::nil)
 	val staticStack = ref (true::nil)
 	val staticPossible:StampSet.t = StampSet.new ()
+
+	(* non top-level functions must be pickled explicitly *)
+	val pickleFn: id StampHash.t=StampHash.new()
 
 	(* Abbildung von Lambda-Argumenten auf ids *)
 	val lambdas:id StampHash.t=StampHash.new ()
@@ -25,8 +30,15 @@ functor MakeLambda(structure StampSet:IMP_SET
 	(* Abbildung von Stamps auf Namen *)
 	val stampName: string StampHash.t=StampHash.new ()
 
-	fun push (Id(_,stamp',_)) =
+	(* Lambda.top () liefert stets die aktuelle Funktion *)
+	fun top () = hd(!lambdaStack)
+
+	fun push (id' as Id(_,stamp',_)) =
 	    ((*printstack (stamp'::(!lambdaStack));*)
+	     if top() = toplevel
+		 then ()
+	     else
+		 StampHash.insert (pickleFn, stamp', id');
 	     lambdaStack := (stamp'::(!lambdaStack));
 	     staticStack := (true::(!staticStack)))
 
@@ -37,9 +49,6 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	fun isStatic stamp' =
 	    StampSet.member (staticPossible,stamp')
-
-	(* Lambda.top () liefert stets die aktuelle Funktion *)
-	fun top () = hd(!lambdaStack)
 
 	fun pushFun ids = lambdaIdsStack:=(ids::(!lambdaIdsStack))
 	fun popFun () = lambdaIdsStack:=tl(!lambdaIdsStack)
@@ -92,4 +101,29 @@ functor MakeLambda(structure StampSet:IMP_SET
 	    case StampHash.lookup (stampName,stamp') of
 		NONE => Stamp.toString stamp'
 	      | SOME name => name^(Stamp.toString stamp')
+
+	fun fieldname stamp'=Class.getLiteralName()^"/f"^(Stamp.toString stamp')
+
+	fun generatePickleFn startwert =
+	    let
+		fun codePickle (stamp',id',acc) =
+		    Aload 0::
+		    Ldc (JVMString (nameFromId id'))::
+		    Invokestatic MForName::
+		    Putfield (fieldname stamp',
+			       [Classsig CClass])::
+		    acc
+	    in
+		StampHash.foldi codePickle startwert pickleFn
+	    end
+
+	fun makePickleFields startwert =
+	    let
+		fun pickleFields (stamp',_, acc) =
+		    Field ([FPublic, FFinal],
+			   fieldname stamp',
+			   [Classsig CClass])::acc
+	    in
+		StampHash.foldi pickleFields startwert pickleFn
+	    end
     end
