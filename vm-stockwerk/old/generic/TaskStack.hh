@@ -27,6 +27,7 @@ public:
   using Stack::IsEmpty;
 
   static TaskStack *New() {
+    //--** push suicide interpreter on the stack
     return static_cast<TaskStack *>(Stack::New(threshold));
   }
   static TaskStack *FromWord(word x) {
