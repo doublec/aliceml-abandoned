@@ -48,7 +48,7 @@
   </P>
 
   <PRE>
-	alic -x Main.aml -o interpr
+	alicec -x Main.aml -o interpr
   </PRE>
 
 
