@@ -6,6 +6,8 @@ Interactive toplevel:
 
 Library:
 
+* Proxy calls are now performed concurrently instead of sequentially.
+* HTTPServer and HTTPClient implement persistent connections.
 * Added Url.toLocalFile.
 * Changed type of Config.homeDir.
 * Added tracingApply to RESOLVER_HANDLER.
@@ -21,6 +23,7 @@ Inspector:
 
 Runtime system:
 
+* Now runs with official Mozart 1.2.5 release.
 * Renamed environment variable STOCKHOME to ALICE_HOME.
 * Added support for ALICE_LOAD_PREFIX and ALICE_LOAD_SUFFIX variables.
 * Support file names containing spaces.
@@ -40,17 +43,13 @@ Dependency Analyzer:
 * Translate backslashes to slashes.
 
 
-HTTP Server and Client:
-
-* Implemented persistent connections.
-
-
-Distribution:
-
-* Proxies are now concurrent instead of sequential.
-
-
 Documentation:
 
 * Added Oz-to-Alice migration page.
 * Updates.
+
+
+Installer:
+
+* Windows installer now creates program group.
+* Windows installer sets necessary environment variables.
