@@ -168,9 +168,10 @@ structure CodeGen =
 	end
 
 	(* Einstiegspunkt *)
-	fun genProgramCode (debug, echo, name, program) =
+	fun genProgramCode (debug, echo, optimize, name, program) =
 	    (DEBUG := debug;
 	     ECHO := echo;
+	     OPTIMIZE := optimize;
 	     Class.setInitial name;
 	     let
 		 (* freie Variablen berechnen. *)
@@ -667,11 +668,11 @@ structure CodeGen =
 		    [Astore 1,
 		     Goto (*afterInit*) alpha]
 		else
-		    (expCode ap) @
+		    expCode ap @
 		    [Areturn]
 	  | decCode (ReturnStm (_, exp')) =
 	(* sonstiges Return *)
-		    (expCode exp')@
+		    expCode exp'@
 		    [Areturn]
 
 	  | decCode (HandleStm(_,body', id',body'')) =
@@ -707,7 +708,8 @@ structure CodeGen =
 			List.concat (map decCode body')
 		    end
 	  | decCode (EvalStm (_, exp')) =
-		    (expCode exp') @ [Pop]
+		    expCode exp'
+		    @ [Pop]
 	  | decCode (ExportStm (_,ids)) =
 		    (* ExportStm of coord * id list *)
 		    (* 1. Label[] laden *)
@@ -753,7 +755,8 @@ structure CodeGen =
 			  Comment "Mainpickle ]"])
 		     end
 
-	  | decCode (IndirectStm (_, ref (SOME body'))) = List.concat (map decCode body')
+	  | decCode (IndirectStm (_, ref (SOME body'))) =
+		     List.concat (map decCode body')
 	  | decCode (IndirectStm (_, ref NONE)) = nil
 	and
 	    idCode (Id(_,stamp',_)) = Comment "Hi87"::stampCode stamp'
@@ -1144,7 +1147,7 @@ structure CodeGen =
 		classToJasmin (class)
 	    end
 and
-    compile prog = genProgramCode (0,0,"Emil", imperatifyString prog)
+    compile prog = genProgramCode (0,0,2,"Emil", imperatifyString prog)
 and
-    compilefile f = genProgramCode (0,0,"Emil", imperatifyFile f)
+    compilefile f = genProgramCode (0,0,2,"Emil", imperatifyFile f)
     end
