@@ -120,7 +120,7 @@
     <LI><TT>fmt</TT></LI>
   </UL>
 
-  <P>Furthermore, the functions <TT>isFinite</TT>, <TT>isNan</TT>,
+  <P>Furthermore, the functions
   <TT>isNormal</TT> and <TT>class</TT> are not implemented accurately.</P>
 
   <DL>

@@ -42,6 +42,7 @@
     <TR> <TD>datatype 'a list = nil | op:: of 'a * 'a list</TD> <TD><A href="list.php3">List.t</A></TD> </TR>
     <TR> <TD>datatype ('a,'b) alt = FST of 'a | SND of 'b</TD> <TD><A href="alt.php3">Alt.t</A></TD> <TD>(*)</TD> </TR>
     <TR> <TD>type ('a,'b) pair = 'a * 'b</TD> <TD><A href="pair.php3">Pair.t</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>type package</TD> <TD><A href="package.php3">Package.t</A></TD> <TD>(*)</TD> </TR>
   </TABLE>
   </TT>
 

@@ -10,8 +10,11 @@
 
   <P>
     The <TT>Thread</TT> structure provides access to first-class threads.
-    A thread encapsulates a concurrent computation.  The <TT>concur</TT>
+    A thread encapsulates a concurrent computation.  The <TT>spawn</TT>
     keyword starts a new thread, as does triggering a by-need future.
+  </P>
+
+  <P>
     A thread is initially created in state <TT>RUNNABLE</TT>.  The
     runnable threads are scheduled in a round-robin fashion.  When a
     computation requests the value of a future, the thread becomes

@@ -100,7 +100,7 @@
       <TT>fail (<I>h</I>, <I>ex</I>)</TT>
     </DT>
     <DD>
-      <P>Synchronizes on the exception <TT><I>ex</I></TT>, fails the
+      <P>Requests the exception <TT><I>ex</I></TT>, fails the
       future associated with the hole <TT><I>h</I></TT> with <TT><I>ex</I></TT>,
       and fills the hole with the same failed future.
       If <TT><I>h</I></TT> is not a hole, <TT>Hole</TT> is raised.

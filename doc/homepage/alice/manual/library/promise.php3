@@ -116,7 +116,7 @@
       <TT>fail (<I>p</I>, <I>ex</I>)</TT>
     </DT>
     <DD>
-      <P>Synchronizes on the exception <TT><I>ex</I></TT> and fails the
+      <P>Requests the exception <TT><I>ex</I></TT> and fails the
       future associated with the promise <TT><I>p</I></TT> with <TT><I>ex</I></TT>.
       If <TT><I>p</I></TT> has already been fulfilled or failed, the exception
       <TT>Promise</TT> is raised. Equivalent to</P>

@@ -26,7 +26,9 @@
   <P>
     See also:
     <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
-    <A href="resolver.php3"><TT>Resolver</TT></A>
+    <A href="resolver.php3"><TT>Resolver</TT></A>,
+    <A href="package.php3"><TT>Package</TT></A>,
+    <A href="pickle.php3"><TT>Pickle</TT></A>
   </P>
 
 <?php section("import", "import") ?>
@@ -168,7 +170,7 @@
     </DT>
     <DD>
       <P>pickles <TT><I>comp</I></TT> and saves it to a new file with
-	name&nbsp;<TT><I>s</I></TT>.  Raises <TT>IO.Io</TT> is pickling
+	name&nbsp;<TT><I>s</I></TT>.  Raises <TT>IO.Io</TT> if pickling
 	or saving fails.</P>
     </DD>
 

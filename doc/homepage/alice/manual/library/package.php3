@@ -28,8 +28,14 @@
     of the module system, in particular nested signatures.
   </P>
 
+  <P>
+    The type <TT>package</TT> is available
+    in the <A href="toplevel.php3">top-level environment</A>.
+  </P>
+
   <P>See also:
     <A href="pickle.php3"><TT>Pickle</TT></A>,
+    <A href="component.php3"><TT>Component</TT></A>,
     <A href="remote.php3"><TT>Remote</TT></A>
   </P>
 
@@ -107,7 +113,7 @@
     </DD>
 
     <DT>
-      <TT>Unpack (val package = <I>package</I>  structure S = <I>S</I>)</TT>
+      <TT>Unpack (val package = <I>package</I>  signature S = <I>S</I>)</TT>
     </DT>
     <DD>
       <P>Tries to unpack the package <TT><I>package</I></TT>. If the signature

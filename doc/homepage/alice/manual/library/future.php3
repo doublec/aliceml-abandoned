@@ -17,8 +17,10 @@
     If the associated computation terminates with an exception, the future is
     <EM>failed</EM>. A failed future carries the corresponding exception and
     reraises it on every attempt to access it.
-    Concurrent computations accessing an undetermined future automatically
-    <EM>synchronize</EM> on its determination or failure.
+    Whenever a future is <EM>requested</EM> by a concurrent computation, i.e.
+    it tries to access its value, that computation automatically
+    synchronizes on the future by blocking on it until it becomes determined
+    or failed.
   </P>
 
   <P>
@@ -40,7 +42,7 @@
       lazy <I>exp</I></PRE>
       <P>which returns immediately with a future of the result of
       <TT><I>exp</I></TT>. Evaluation will be triggered once another thread
-      synchronizes on the future, effectively turning it into a concurrent
+      requests the future, effectively turning it into a concurrent
       future.</P>
     </LI>
 
@@ -64,7 +66,8 @@
 
   <P>See also:
     <A href="promise.php3"><TT>Promise</TT></A>,
-    <A href="thread.php3"><TT>Thread</TT></A>
+    <A href="thread.php3"><TT>Thread</TT></A>,
+    <A href="alt.php3"><TT>Alt</TT></A>
   </P>
 
 <?php section("import", "import") ?>
@@ -87,7 +90,7 @@
 	val alarm :        Time.time -> unit
 
 	val await :        'a -> 'a
-	val awaitOne :     'a * 'b -> 'a
+	val awaitEither :  'a * 'b -> ('a,'b) alt
 
 	val status :       'a -> status
 	val isFuture :     'a -> bool
@@ -138,7 +141,7 @@
     </DT>
     <DD>
       <P>Returns a lazy future of the computation <TT><I>f</I> ()</TT>.
-      As soon as a thread synchronizes on the future, the computation
+      As soon as a thread requests the future, the computation
       is intiated in a new thread. Evaluation proceeds similar
       to <TT>concur</TT>.
       Equivalent to <TT>lazy <I>f</I>()</TT>.</P>
@@ -149,7 +152,7 @@
     </DT>
     <DD>
       <P>Creates a future that is determined to <TT>()</TT> after the time period
-      <TT><I>t</I></TT>. In conjunction with <TT>awaitOne</TT>, this
+      <TT><I>t</I></TT>. In conjunction with <TT>awaitEither</TT>, this
       function can be used to program timeouts.
       Equivalent to <TT>spawn Thread.sleep <I>t</I></TT>.</P>
     </DD>
@@ -158,22 +161,24 @@
       <TT>await <I>v</I></TT>
     </DT>
     <DD>
-      <P>Explicitly synchronizes on the determination of the value
-      <TT><I>v</I></TT>, returning the value. If <TT><I>v</I></TT> is
+      <P>Explicitly request the value
+      <TT><I>v</I></TT>, returning the value. If <TT><I>v</I></TT> is not a
+      future, the function returns immediately.
+      If <TT><I>v</I></TT> is
       failed with exception <TT><I>ex</I></TT>, <TT>await</TT> will reraise
       <TT><I>ex</I></TT>.</P>
     </DD>
 
     <DT>
-      <TT>awaitOne (<I>v1</I>, <I>v2</I>)</TT>
+      <TT>awaitEither (<I>v1</I>, <I>v2</I>)</TT>
     </DT>
     <DD>
       <P>Blocks until at least one of the two arguments is determined or
-      failed. It then returns the first argument. Unlike <TT>await</TT>, this
+      failed. It then returns the respective argument wrapped into an
+      alternative. Unlike <TT>await</TT>, this
       function never raises an exception, even if one of the arguments is failed.
-      Further inspection using
-      <TT>isFuture</TT> or other functions of the same group is required to
-      find out which argument has been determined or failed.</P>
+      Further inspection using <TT>await</TT> or <TT>isFailed</TT> is required
+      to find out whether that argument is failed.</P>
     </DD>
 
     <DT>
@@ -182,6 +187,9 @@
     <DD>
       <P>Returns the current status of the value <TT><I>v</I></TT>, without
       accessing the value.</P>
+      <P><EM>Note:</EM> Use of this reflective function and its respective abbreviations
+      below is discouraged, as it breaks <EM>monotonicity</EM> of futures,
+      and thus referential transparency.</P>
     </DD>
 
     <DT>
@@ -203,8 +211,8 @@
     </DT>
     <DD>
       <P>Returns <TT>true</TT> if <TT><I>v</I></TT> is a lazy future that
-      has not yet been synchronized on, <TT>false</TT> otherwise. Does not
-      synchronize on <TT><I>v</I></TT>.</P>
+      has not yet been requested, <TT>false</TT> otherwise. Does not
+      request <TT><I>v</I></TT> by itself.</P>
     </DD>
   </DL>
 
@@ -252,9 +260,9 @@
 
   <PRE>
 	fun timeout (x : 'a, t : Time.time) : 'a option =
-	    if isDetermined (awaitOne (x, alarm t))
-	    then SOME x
-	    else NONE</PRE>
+	    case awaitEither (x, alarm t)
+	     of FST x => SOME x
+	      | SND _ => NONE</PRE>
 
   <P>
     See also <A href="promise.php3"><TT>Promise</TT></A> for additional
