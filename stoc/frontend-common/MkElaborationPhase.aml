@@ -761,10 +761,10 @@ struct
       | elabTyplongid(E, I.LongId(i, modlongid, typlab)) =
 	let
 	    val (s,modlongid') = elabModlongid_path(E, modlongid)
-	    val (a,typlab')    = elabLab(E, typlab)
-	    val  t             = Inf.lookupTyp(s, a)
+	    val (l,typlab')    = elabLab(E, typlab)
+	    val  t             = Inf.lookupTyp(s, l)
 	    val  k             = Type.kind t
-	    val  p             = Inf.pathTyp(s, a)
+	    val  p             = Inf.pathTyp(s, l)
 	    (*UNFINISHED: sort should be calculated from t *)
 	    val  t'            = Type.inAbbrev(Type.inCon(k, Type.CLOSED, p), t)
 	in
@@ -1045,8 +1045,8 @@ struct
       | elabModlongid(E, I.LongId(i, modlongid, modlab)) =
 	let
 	    val (s,modlongid') = elabModlongid_path(E, modlongid)
-	    val (a,modlab')    = elabLab(E, modlab)
-	    val  j             = Inf.lookupMod(s, a)
+	    val (l,modlab')    = elabLab(E, modlab)
+	    val  j             = Inf.lookupMod(s, l)
 	in
 	    ( j, O.LongId(infInfo(i,j), modlongid', modlab') )
 	end
@@ -1091,11 +1091,11 @@ struct
 
       | elabMod(E, I.SelMod(i, modlab, mod)) =
 	let
-	    val (a,modlab') = elabLab(E, modlab)
+	    val (l,modlab') = elabLab(E, modlab)
 	    val (j1,mod')   = elabMod(E, mod)
 	    val  s          = Inf.asSig j1 handle Inf.Interface =>
 				error(I.infoMod mod, E.SelModInf j1)
-	    val  j          = Inf.lookupMod(s, a)
+	    val  j          = Inf.lookupMod(s, l)
 	in
 	    ( j, O.SelMod(infInfo(i,j), modlab', mod') )
 	end
