@@ -225,14 +225,12 @@ libs-seam:
 	(cd lib/distribution && make TARGET=seam depend) || exit 1 ;\
 	(cd lib/distribution && \
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd lib/tools/toplevel && make depend) || exit 1 ;\
-	(cd lib/tools/toplevel && make all PREFIX=$(PREFIX) install) || exit 1 ;\
-	(cd tools/toplevel && make depend) || exit 1 ;\
-	(cd tools/toplevel && make install) || exit 1 ;\
 	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
 	(cd lib/gtk/seam && make install) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
+	(cd tools/toplevel && make depend) || exit 1 ;\
+	(cd tools/toplevel && make install) || exit 1 ;\
 	(cd lib/gecode && make generate GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
@@ -250,9 +248,7 @@ libs-seam:
 	(cd tools/lex && make all && make install) || exit 1 ;\
 	(cd lib/sqlite && make depend) || exit 1 ;\
 	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
-	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
-	(cd tools/ide && make depend) || exit 1 ;\
-	(cd tools/ide && make install) || exit 1
+	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1
 
 ##
 ## Build Seam
