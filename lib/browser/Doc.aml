@@ -21,7 +21,7 @@ import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
 import structure Node from "Node"
-import structure Settings from "Settings" (* !!! *)
+import structure Settings from "Settings" 
 
 import signature DOC from "DOC-sig"
 
@@ -32,6 +32,9 @@ in
 structure Doc :> DOC =
 struct
 
+    (* datatype representing the hierarchy of a datastructure 
+       without being specific *)
+    
     datatype doc = 
 	
 	SIMPLE of {desc : desc, 
@@ -51,37 +54,32 @@ struct
 	
       | EMBEDDED_INF of Reflect.module * Inf.t  
 
+
+    (* functiontype for functions creating instances of doc *)
+	
     type doc_creator = int * int * Reflect.value * Type.t -> doc  
-
-    (* Map fuer doc-creator-Funktionen *)
-
+	
+	
+    (* map storing doc creator functions *)
+	
     val pathTable = PathMap.new() 
-
-    fun castVector value  = UnsafeValue.cast value : 'a vector
- 
-    fun castArray value  = UnsafeValue.cast value : 'a array 
-
-    fun handlePackages (d,va,t,inner_doc) = 
-	let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
-	       then LIMIT{desc = descr,
-			  sort = DEPTH_LIMIT}
-	   else CONCAT{desc = descr, 
-		       kids = 
-		       #[SIMPLE{desc = INTERPUNCT,
-				rep = "Package{|",
-				color = DEFAULT},
-			 inner_doc,
-			 SIMPLE{desc = INTERPUNCT,
-				rep = "|}",
-				color = DEFAULT}]}
-	end 
-
+	
+	
+    (* registration function for pathTable *)
+	
     fun registerType (path, f) = PathMap.insert (pathTable, path, f) 
 
-    (* doc-creator-Funktionen *)
 
-    (* createInt *)
+    (* auxiliaries for casting values *)
+
+    fun castVector value = UnsafeValue.cast value : 'a vector
+	
+    fun castArray value = UnsafeValue.cast value : 'a array  
+
+
+    (** doc-creator functions **)
+
+    (* creates doc from int *)
 
     fun createInt (m_width,d,va,t) = 
 	let val descr = createValue(va,t)
@@ -93,55 +91,65 @@ struct
 		       color = INT_COLOR}
 	end
     
-    (* createString *)
+
+    (* creates doc from string *)
 
     fun createString (m_width,d,va,t) = 
-    let val descr = createValue(va,t)
+	let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
-	   then LIMIT{desc = descr, 
-		      sort = DEPTH_LIMIT}
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
-			   rep = String.concat["\"",
-					       UnsafeValue.cast va : string,
-					       "\""],
-			   color = STR_COLOR}
-    end
- 
-    (* createChar *)
+		       rep = String.concat["\"",
+					   UnsafeValue.cast va : string,
+					   "\""],
+					   color = STR_COLOR}
+	end
+					   
+					       
+    (* creates doc from character *)
 
     fun createChar (m_width,d,va,t) = 
-	 let val descr = createValue(va,t)
-	 in if d > !(Settings.max_depth)	
-		then LIMIT{desc = descr, 
-			   sort = DEPTH_LIMIT}
-	    else SIMPLE{desc = descr,
-			rep = String.concat["#\"",
-					       Char.toString
-					       (UnsafeValue.cast va : char),
-					       "\""],
-			    color = CHAR_COLOR}
+	    let 
+		val descr = createValue(va,t)
+	    in 
+		if d > !(Settings.max_depth)	
+		    then LIMIT{desc = descr, 
+			       sort = DEPTH_LIMIT}
+		else SIMPLE{desc = descr,
+			    rep = String.concat["#\"",
+				      Char.toString
+				      (UnsafeValue.cast va : char),
+				      "\""],
+				      color = CHAR_COLOR}
 	 end
 
-    (* createWord *)
+
+    (* creates doc from word *)
 
     fun createWord (m_width,d,va,t) = 
-        let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)     
-	       then  LIMIT{desc = descr, 
-			   sort = DEPTH_LIMIT}
-	   else let val int_w = Word.toInt(UnsafeValue.cast va : word)
-		in SIMPLE{desc = descr,
-			  rep = String.concat["0w",
-					      Int.toString(int_w)],
-			  color = WORD_COLOR}
-		end
-	end	  
+      let 
+	  val descr = createValue(va,t)
+      in 
+	if d > !(Settings.max_depth)     
+	     then  LIMIT{desc = descr, 
+			 sort = DEPTH_LIMIT}
+	 else let val int_w = Word.toInt(UnsafeValue.cast va : word)
+	      in SIMPLE{desc = descr,
+			rep = String.concat["0w",
+					    Int.toString(int_w)],
+			color = WORD_COLOR}
+	      end
+      end	  
+					    
 
-    (* createReal *)
+    (* creates doc from real *)
 
     fun createReal (m_width,d,va,t) = 
-        let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
+        let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
@@ -149,11 +157,14 @@ struct
 		       color = REAL_COLOR}
 	end    
 
-    (* createExn *)
+
+    (* creates doc from exn *)
 
     fun createExn (m_width,d,va,t) =
-        let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
+        let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
 	   else let val conname = UnsafeValue.conName(va)
@@ -166,11 +177,14 @@ struct
 		end
 	end     
     
-    (* createRef *)
 
+    (* creates doc from ref *)
+    
     fun createRef (m_width,d,va,t) =
-        let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
+        let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val deref = !(UnsafeValue.cast(va))
@@ -185,11 +199,14 @@ struct
 		end 
 	end
     
-    (* createVector *)
+    
+    (* creates doc tree from vector *)
 
     fun createVector (m_width,d,va,t) = 
-	let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
+	let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val vec = castVector va
@@ -225,12 +242,15 @@ struct
 					  color = BRACK_COLOR}] }
 		end
 	end
-                                               
-    (* createArray *)
+                                      
+         
+    (* creates doc tree from array *)
 
     fun createArray (m_width,d,va,t) = 
-        let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
+        let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val arr = castArray va
@@ -244,7 +264,7 @@ struct
 				     then LIMIT{desc = INTERPUNCT,
 						sort = WIDTH_LIMIT}
 			 else if i = l - 1
-				  then (* mit Trennzeichen *)
+				  then (* with separator *)
 				      CONCAT{desc = INTERPUNCT, 
 					     kids = 
 					     #[SIMPLE{desc = INTERPUNCT,
@@ -255,7 +275,7 @@ struct
 						      color = EQU_COLOR},
 					       EMBEDDED(Array.sub(arr,i),
 							arr_typ)] }
-			      else (* ohne Trennzeichen *)
+			      else (* without separator *)
 				  CONCAT{desc = INTERPUNCT,
 					 kids = 
 					 #[SIMPLE{desc = INTERPUNCT,
@@ -282,11 +302,14 @@ struct
 		end
 	end 
 
-    (* createPromise *)
+
+    (* creates doc tree from promise *)
 
     and createPromise (m_width,d,va,t) = 
-	let val descr = createValue(va,t)
-	in if d > !(Settings.max_depth)
+	let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val prom = UnsafeValue.cast va
@@ -306,19 +329,42 @@ struct
 	end 
 
 
-    (* createPackage *)
+    (* auxiliary function to create a doc tree representing a package *)
+    fun handlePackages (d,va,t,inner_doc) = 
+	let 
+	    val descr = createValue(va,t)
+	in 
+	    if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr,
+			  sort = DEPTH_LIMIT}
+	   else CONCAT{desc = descr, 
+		       kids = 
+		       #[SIMPLE{desc = INTERPUNCT,
+				rep = "Package{|",
+				color = DEFAULT},
+			 inner_doc,
+			 SIMPLE{desc = INTERPUNCT,
+				rep = "|}",
+				color = DEFAULT}]}
+	end 
+
+
+    (* creates a doc tree representing a package *)
 
     fun createPackage (m_width,d,va,t) = 
-	let val (inva,inty) = Reflect.reflectPackage
+	let 
+	    val (inva,inty) = Reflect.reflectPackage
 	                      (UnsafeValue.cast va : Package.package)
 	    val inner_doc = EMBEDDED_INF(inva,inty)
 	in handlePackages (d,va,t,inner_doc)
 	end 
 
-    (* createValPackage *)
+
+    (* creates a doc tree representing a val_package *)
 
     fun createValPackage (m_width,d,va,t) = 
-	let val (inva,inty) = Reflect.reflectValPackage
+	let 
+	    val (inva,inty) = Reflect.reflectValPackage
 	                     (UnsafeValue.cast va: Package.val_package)
 	    val inner_doc = EMBEDDED(inva,inty)
 	in handlePackages (d,va,t,inner_doc) 

@@ -28,7 +28,8 @@ in
 signature DOC =
 sig
 
-     datatype doc = 
+    (* datatype for path types representing the datastructure hierarchy *)
+    datatype doc = 
 	
 	SIMPLE of {desc : desc, 
 		   rep : string, 
@@ -47,37 +48,41 @@ sig
 	
       | EMBEDDED_INF of Reflect.module * Inf.t
 
-     type doc_creator = int * int * Reflect.value * Type.t -> doc  
 
-    (* Map fuer doc-creator-Funktionen *)
+    (* function type for functions creating instances of doc *)  
+	
+    type doc_creator = int * int * Reflect.value * Type.t -> doc  
+	
+
+    (* storage (& registration) for doc creator functions *)
 
      val pathTable: (int * int * Reflect.value * Type.t -> doc) PathMap.map
 
      val registerType : Path.path * doc_creator -> unit
 
-     (* doc-creator-Funktionen *)
+     (* doc creator functions *)
 
-     val createInt     : doc_creator 
+     val createInt        : doc_creator 
 
-     val createString  : doc_creator 
+     val createString     : doc_creator 
 
-     val createChar    : doc_creator 
+     val createChar       : doc_creator 
 
-     val createWord    : doc_creator 
+     val createWord       : doc_creator 
 
-     val createReal    : doc_creator 
+     val createReal       : doc_creator 
 
-     val createExn     : doc_creator 
+     val createExn        : doc_creator 
 
-     val createRef     : doc_creator  
+     val createRef        : doc_creator  
 
-     val createVector  : doc_creator 
+     val createVector     : doc_creator 
 
-     val createArray   : doc_creator 
+     val createArray      : doc_creator 
 
-     val createPromise : doc_creator 
+     val createPromise    : doc_creator 
 
-     val createPackage : doc_creator
+     val createPackage    : doc_creator
 
      val createValPackage : doc_creator
     
