@@ -701,7 +701,7 @@ BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
 	$(ALICEDEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
-	> Makefile.bootstrap.depend
+	| sed 's/\.ozf/.stc/g' > Makefile.bootstrap.depend
 
 -include Makefile.bootstrap.depend
 
