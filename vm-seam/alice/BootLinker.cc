@@ -527,7 +527,6 @@ Worker::Result BootWorker::Run(StackFrame *sFrame) {
   word boot = record->PolySel(UniqueString::New(String::New("boot")));
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = AliceLanguageLayer::rootUrl;
-  // t2;
   return Scheduler::PushCall(boot);
 }
 
