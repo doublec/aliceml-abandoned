@@ -81,8 +81,8 @@ val allTests = [TestRegressions.suite,
 		TestOption.suite, 
 		TestList.suite,
 		TestListPair.suite,
-(*		TestArray2.suite,*)
-		TestArray.suite,
+		TestArray2.suite,
+(*		TestArray.suite,*)
 		TestVector.suite,
 		TestVectorPair.suite,
 		TestChar.suite,

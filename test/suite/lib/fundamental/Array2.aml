@@ -122,6 +122,7 @@ struct
 				in
 				    Array2.sub (a, r, c) = valOf res
 				      handle Subscript => Option.isNone res
+	                              handle Option => false
 				end))
 	end
 

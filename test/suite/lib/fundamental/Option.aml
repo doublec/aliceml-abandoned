@@ -97,12 +97,12 @@ struct
     fun testMapPart () = 
 	let
 	    fun g x = if x >= 10.0 then SOME (Real.round x) else NONE
-	    fun test x = if x = NONE andalso (valOf x) < 10.0 
+	    fun test x = if x = NONE orelse (valOf x) < 10.0 
 			 then NONE 
-			 else SOME (g (valOf x))
+			 else g (valOf x)
 	in
 	    Gen.try 100 (Gen.option Gen.real) 
-	    (Test.test (fn x => Option.map g x = test x))
+	    (Test.test (fn x => Option.mapPartial g x = test x))
 	end
 
     fun testFold () = 

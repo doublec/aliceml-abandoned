@@ -42,7 +42,7 @@ struct
 		    IntInf.toInt (Time.toSeconds t3) = i
 		end
 	in
-	    Gen.try 5 Gen.int (Test.test t)
+	    Gen.try 5 Gen.int (Test.test (fn x => t (Int.abs x))
 	end
 
 

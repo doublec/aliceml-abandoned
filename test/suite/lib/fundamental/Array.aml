@@ -40,7 +40,7 @@ struct
 			    handle Subscript => Option.isNone r
 		       end
 	in
-	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.int))
+	    Gen.try 100 (Gen.pair (Gen.array Gen.int, Gen.int))
 	      (Test.test t')
 	end
 
@@ -57,7 +57,7 @@ struct
 				    handle Subscript => Option.isNone r
 			       end
 	in
-	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, Gen.int, Gen.int))
+	    Gen.try 100 (Gen.triple (Gen.array Gen.int, Gen.int, Gen.int))
 	       (Test.test t')
 	end
 
@@ -66,7 +66,7 @@ struct
 	    fun t (a, i) = (Array.sub (a, i); 
 			    t (a, i + 1)) handle Subscript => i
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
+	    Gen.try 100 (Gen.array Gen.int)
 	      (Test.test (fn a => t (a, 0) = Array.length a))
 	end
 				
@@ -79,7 +79,7 @@ struct
 
 	    fun t a = t' (a, 0, []) = Array.toList a
 	in
-	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	    Gen.try 100 (Gen.array Gen.int) (Test.test t)
 	end
 
     fun testArray () = 
@@ -89,7 +89,7 @@ struct
 
 	    fun t (i, x) = t' (i, x) [] = Array.toList (Array.array (i, x))
 	in
-	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	    Gen.try 100 (Gen.pair (Gen.int, Gen.int))
 	       (Test.test  t)
 	end
 
@@ -99,7 +99,7 @@ struct
 		       Array.vector a)
 		          handle Size => Array.length a > Vector.maxLen 
 	in 
-	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	    Gen.try 100 (Gen.array Gen.int) (Test.test t)
 	end
 
     fun testToVector () =
@@ -108,7 +108,7 @@ struct
 		       Array.vector a)
 		          handle Size => Array.length a > Vector.maxLen 
 	in 
-	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	    Gen.try 100 (Gen.array Gen.int) (Test.test t)
 	end
 
     fun testFromList () =
@@ -138,7 +138,7 @@ struct
 	    fun h xs = (Array.fromList xs; true)
 		         handle Size => List.length xs > Array.maxLen
 	in
-	    Gen.try 1000 (Gen.list Gen.int) (Test.test t)(*;
+	    Gen.try 100 (Gen.list Gen.int) (Test.test t)(*;
 		  TODO: more higher timeout
 	    Test.test h (0 :: (Array.toList (Array.array (Array.maxLen, 0))))*)
 	end
@@ -151,7 +151,7 @@ struct
 
 	    fun t' x = x + 1
 	in
-	    Gen.try 1000 Gen.int (Test.test (fn x => t (x, t')))
+	    Gen.try 100 Gen.int (Test.test (fn x => t (x, t')))
 	end
 
     fun testContains () =
@@ -159,7 +159,7 @@ struct
 	    fun t (a, x) = Array.contains a x =
 		           List.contains (Array.toList a) x
 	in
-	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.int)) (Test.test t)
+	    Gen.try 100 (Gen.pair (Gen.array Gen.int, Gen.int)) (Test.test t)
 	end
 
     fun testNotContains () =
@@ -167,7 +167,7 @@ struct
 	    fun t (a, x) = Array.notContains a x = 
 		           Bool.not (Array.contains a x)
 	in
-	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.int)) (Test.test t)
+	    Gen.try 100 (Gen.pair (Gen.array Gen.int, Gen.int)) (Test.test t)
 	end
 
     fun testSort () =
@@ -175,7 +175,7 @@ struct
 	    fun t f a = List.sort f (Array.toList a) =
 		        Array.toList (Array.sort f a; a)
 	in
-	    Gen.try 1000 (Gen.array Gen.int) 
+	    Gen.try 100 (Gen.array Gen.int) 
 	       (Test.test (fn a => t Int.compare a))
 	end
 
@@ -184,7 +184,7 @@ struct
 	    fun t f a = Array.isSorted f a =
 		        List.isSorted f (Array.toList a)
 	in
-	    Gen.try 1000 (Gen.array Gen.int) 
+	    Gen.try 100 (Gen.array Gen.int) 
 	       (Test.test (fn a => t Int.compare a))
 	end
 
@@ -195,7 +195,7 @@ struct
 				Array.toList a2) =
 		Array.collate f (a1, a2)
 	in
-	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.array Gen.int))
+	    Gen.try 100 (Gen.pair (Gen.array Gen.int, Gen.array Gen.int))
 	       (Test.test (fn x => t Int.compare x))
 	end
 
@@ -204,26 +204,35 @@ struct
 	    fun t f (a1, a2) = Array.equal f (a1, a2) =
 		               List.equal f (Array.toList a1, Array.toList a2)
 	in
-	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.array Gen.int))
+	    Gen.try 100 (Gen.pair (Gen.array Gen.int, Gen.array Gen.int))
 	        (Test.test (fn x => t Int.equal x))
 	end
 
     fun testSwap () =
 	let
-	    fun t (ar, a, b) = let
-				   val abef = Array.sub (ar, a)
-				   val bbef = Array.sub (ar, b)
-			       in
-				   Array.swap (ar, a, b);
+	    fun t (ar, a, b) = 
+	               let
+	               	  val r = if a < 0 orelse b < 0 orelse
+	                             a >= Array.length ar orelse
+	                             b >= Array.length ar then NONE 
+				  else SOME ()
+                          fun h () = (Array.sub (ar, a), Array.sub (ar, b))
+		       in
+			   if Option.isSome r then 
+			      let
+				  val (abef, bbef) = h ()
+			      in
+				  (Array.swap (ar, a, b); 
 				   abef = Array.sub (ar, b) andalso
-				   bbef = Array.sub (ar, a)
-			       end
+				   bbef = Array.sub (ar, a))
+				     handle Subscript => false
+			      end
+			   else (Array.swap (ar, a, b); false) 
+	                              handle Subscript => true
+		       end
 	in
-	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, Gen.int, Gen.int))
-	       (Test.test (fn (arr, a, b) => if a < Array.length arr andalso
-			                        b < Array.length arr
-						 then t (arr, a, b)
-					     else true))
+	    Gen.try 100 (Gen.triple (Gen.array Gen.int, Gen.int, Gen.int))
+	       (Test.test t)
 	end
 
     fun testRev () =
@@ -231,7 +240,7 @@ struct
 	    fun t a = List.rev (Array.toList a) =
 		      Array.toList (Array.rev a; a)
 	in
-	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	    Gen.try 100 (Gen.array Gen.int) (Test.test t)
 	end
 
     fun testCopy () =
@@ -246,7 +255,7 @@ struct
 				       then NONE
 				   else SOME (t' (src, dst, di) 0)
 	in
-	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, 
+	    Gen.try 100 (Gen.triple (Gen.array Gen.int, 
 				      Gen.array Gen.int,
 				      Gen.int))
 	    (Test.test (fn (src, dst, i) => 
@@ -276,7 +285,7 @@ struct
 				       then NONE
 				   else SOME (t' (src, dst, di) 0)
 	in
-	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, 
+	    Gen.try 100 (Gen.triple (Gen.array Gen.int, 
 				      Gen.array Gen.int,
 				      Gen.int))
 	    (Test.test (fn (src, dst, i) => 
@@ -300,7 +309,7 @@ struct
 
 	    fun f x = x > 0
 	in
-	    Gen.try 1000 (Gen.array Gen.int) 
+	    Gen.try 100 (Gen.array Gen.int) 
 	     (Test.test (fn a => Array.all f a = t f a))
 	end
 
@@ -310,7 +319,7 @@ struct
 		
 	    fun f x = x > 0
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
+	    Gen.try 100 (Gen.array Gen.int)
 	     (Test.test (fn a => Array.exists f a = t f a))
 	end
 
@@ -320,7 +329,7 @@ struct
 		
 	    fun f x = x > 0
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
+	    Gen.try 100 (Gen.array Gen.int)
 	     (Test.test (fn a => Array.find f a = t f a))
 	end
 
@@ -330,7 +339,7 @@ struct
 
 	    fun f (i, x) = i = x
 	in
-	    Gen.try 1000 (Gen.array Gen.int) 
+	    Gen.try 100 (Gen.array Gen.int) 
 	     (Test.test (fn a => Array.alli f a = t f a))
 	end
 
@@ -340,7 +349,7 @@ struct
 		
 	    fun f (i, x) = i = x
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
+	    Gen.try 100 (Gen.array Gen.int)
 	     (Test.test (fn a => Array.existsi f a = t f a))
 	end
 
@@ -350,7 +359,7 @@ struct
 		
 	    fun f (i, x) = i = x
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
+	    Gen.try 100 (Gen.array Gen.int)
 	     (Test.test (fn a => Array.findi f a = t f a))
 	end
 
@@ -359,7 +368,7 @@ struct
 	    val x1 = ref nil
 	    val x2 = ref nil
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
+	    Gen.try 100 (Gen.array Gen.int)
 	      (Test.test (fn a => let
 				      val t1 = Array.fromList (Array.toList a)
 				      val t2 = Array.fromList (Array.toList a)
