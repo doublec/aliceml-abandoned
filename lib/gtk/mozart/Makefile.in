@@ -110,7 +110,7 @@ INSTALLFILES = $(COMPONENTS:Linked%=$(PREFIX)/lib/gtk/%)
 #--** why statically include the GtkTypes component into all others??
 Linked%.ozf: %.ozf
 	$(ALICELINK) $(ALICELINK_OPTS) $* \
-	--include Unsafe --include GtkTypes -o $@
+	--include $* --include Unsafe --include GtkTypes -o $@
 
 #---------------------------------------------------------------------
 # Building
