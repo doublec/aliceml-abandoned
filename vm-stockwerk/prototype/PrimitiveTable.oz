@@ -609,6 +609,7 @@ define
 		    end
 		 end#r_t
 	      'Thread.yield':
+		 %--** thread argument
 		 fun {$ TaskStack} preempt(args() TaskStack.2) end#n_t
 	      'Unsafe.Array.sub': Array.get#rr_v
 	      'Unsafe.Array.update':
