@@ -602,15 +602,12 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	Assert(ids->GetLength() == labels->GetLength());
 	if (record == INVALID_POINTER) {
 	  u_int n = ids->GetLength();
-	  LazySelClosure *closure = LazySelClosure::New(wRecord, labels);
-	  word wClosure = closure->ToWord();
-	  Vector *byneeds = Vector::New(n);
 	  for (u_int i = n; i--; ) {
-	    word wByneed = Byneed::New(wClosure)->ToWord();
-	    localEnv->Add(ids->Sub(i), wByneed);
-	    byneeds->Init(i, wByneed);
+	    UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+	    LazySelClosure *closure = LazySelClosure::New(wRecord, label);
+	    Byneed *byneed = Byneed::New(closure->ToWord());
+	    localEnv->Add(ids->Sub(i), byneed->ToWord());
 	  }
-	  closure->InitByneeds(byneeds);
 	} else
 	  for (u_int i = ids->GetLength(); i--; ) {
 	    UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
