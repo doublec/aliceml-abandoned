@@ -121,7 +121,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "tupArgs"); outputList outputX (q, ids); r q)
 	  | outputArgs outputX (q, RecArgs stringIdList) =
 	    (f (q, "recArgs");
-	     outputList (outputPair (outputString, outputX))
+	     outputList (outputPair (outputAtom, outputX))
 	     (q, stringIdList); r q)
 
 	fun outputStm (q, ValDec (coord, id, exp)) =
