@@ -81,13 +81,6 @@ define
    proc {TranslateStm Stm VHd VTl State ReturnReg}
       case Stm of valDec(_ IdDef Exp) then
 	 {TranslateExp Exp {MakeReg IdDef State} VHd VTl State}
-      [] recDec(_ IdDefExpList) then RegExpList in
-	 RegExpList = {Map IdDefExpList
-		       fun {$ IdDef#Exp} {MakeReg IdDef State}#Exp end}
-	 {FoldL RegExpList
-	  proc {$ VHd Reg#Exp VTl}
-	     {TranslateExp Exp Reg VHd VTl State}
-	  end VHd VTl}
       [] refAppDec(Region IdDef Id) then
 	 VHd = vCallBuiltin(_ 'Cell.access'
 			    [{GetReg Id State} {MakeReg IdDef State}]

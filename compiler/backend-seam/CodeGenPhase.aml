@@ -187,11 +187,6 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.translateBody"
 	and doDec (ValDec (_, IdDef id, _), env) = ignore (declare (env, id))
 	  | doDec (ValDec (_, Wildcard, _), _) = ()
-	  | doDec (RecDec (_, idDefExpVec), env) =
-	    Vector.app (fn (idDef, _) =>
-			case idDef of
-			    IdDef id => ignore (declare (env, id))
-			  | Wildcard => ()) idDefExpVec
 	  | doDec (RefAppDec (_, IdDef id, _), env) =
 	    ignore (declare (env, id))
 	  | doDec (RefAppDec (_, Wildcard, _), _) = ()
@@ -212,36 +207,6 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    translateExp (exp, declare (env, id), instr, env)
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
 	    translateIgnore (exp, instr, env)
-	  | translateDec (RecDec (_, idDefExpVec), instr, env) =
-	    let
-		val ids =
-		    Vector.foldr (fn ((idDef, _), ids) =>
-				  case idDef of
-				      IdDef id => declare (env, id)::ids
-				    | Wildcard => ids) nil idDefExpVec
-		val bodiesInstr =
-		    Vector.foldr
-		    (fn ((idDef, exp), instr) =>
-		     case idDef of
-			 IdDef id =>
-			     let
-				 val id' = fresh env
-				 val instr' =
-				     O.AppPrim ("Hole.fill",
-						#[O.Local id',
-						  lookup (env, id)],
-						SOME (O.Wildcard, instr))
-			     in
-				 translateExp (exp, id', instr', env)
-			     end
-		       | Wildcard => translateIgnore (exp, instr, env))
-		    instr idDefExpVec
-	    in
-		List.foldr (fn (id, instr) =>
-			    O.AppPrim ("Hole.hole", #[],
-				       SOME (O.IdDef id, instr)))
-		bodiesInstr ids
-	    end
 	  | translateDec (RefAppDec (_, IdDef id, id'), instr, env) =
 	    O.GetRef (declare (env, id), translateId (id', env), instr)
 	  | translateDec (RefAppDec (_, Wildcard, id), instr, env) =
@@ -265,8 +230,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			   SharedStm (_, _, _) | ReturnStm (_, _) |
 			   IndirectStm (_, _) | ExportStm (_, _)), _, _) =
 	    raise Crash.Crash "CodeGenPhase.translateDec"
-	and translateStm ((ValDec (_, _, _) | RecDec (_, _) |
-			   RefAppDec (_, _, _) |
+	and translateStm ((ValDec (_, _, _) | RefAppDec (_, _, _) |
 			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
 	    raise Crash.Crash "CodeGenPhase.translateStm"
 	  | translateStm (RaiseStm (_, id), env) =

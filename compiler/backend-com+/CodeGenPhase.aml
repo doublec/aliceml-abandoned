@@ -85,11 +85,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun emitRegion (s, region) =
 	    emit (Comment (s ^ " at " ^ Source.regionToString region))
 
-	datatype expMode =
-	    PREPARE
-	  | FILL
-	  | BOTH
-
 	fun emitAwait () =
 	    let
 		val label = newLabel ()
@@ -161,17 +156,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	val sharedLabels: label StampMap.t = StampMap.new ()
 	val handlerCont: (label * body) option ref = ref NONE
 
-	fun genStm (ValDec (_, idDef, exp)) =
-	    (genExp (exp, BOTH); declareLocal idDef)
-	  | genStm (RecDec (_, idDefExpVec)) =
-	    (Vector.app (fn (idDef, exp) =>
-			 (genExp (exp, PREPARE); declareLocal idDef))
-	     idDefExpVec;
-	     Vector.app (fn (idDef, exp) =>
-			 case idDef of
-			     IdDef id =>
-				 (emitId id; genExp (exp, FILL))
-			   | Wildcard => ()) idDefExpVec)
+	fun genStm (ValDec (_, idDef, exp)) = (genExp exp; declareLocal idDef)
 	  | genStm (RefAppDec (_, idDef, id)) =
 	    (emitId id; emitAwait (); emit (Castclass Alice.CellTy);
 	     emit (Ldfld (Alice.Cell, "Value", System.ObjectTy));
@@ -231,9 +216,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     end
 	       | SOME label => emit (Br label))
 	  | genStm (ReturnStm (_, exp)) = (*--** tail calls *)
-	    (genExp (exp, BOTH); emit Ret)
+	    (genExp exp; emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
-	  | genStm (ExportStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
+	  | genStm (ExportStm (_, exp)) = (genExp exp; emit Ret)
 	and genTests (LitTests #[], elseBody) = genBody elseBody
 	  | genTests (LitTests litBodyVec, elseBody) =
 	    (case Vector.sub (litBodyVec, 0) of
@@ -458,14 +443,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			end
 		    end
 	    end
-	and genExp (LitExp (_, lit), PREPARE) = genLit lit
-	  | genExp (PrimExp (_, name), PREPARE) =
+	and genExp (LitExp (_, lit)) = genLit lit
+	  | genExp (PrimExp (_, name)) =
 	    let
 		val (dottedname, id) = Builtins.lookupField name
 	    in
 		emit (Ldsfld (dottedname, id, System.ObjectTy))
 	    end
-	  | genExp (NewExp _, PREPARE) =
+	  | genExp (NewExp _) =
 	    let
 		val index = allocateLocal System.GuidTy
 	    in
@@ -474,38 +459,23 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Stloc index); emit (Ldloca index);
 		emit (Box System.Guid)
 	    end
-	  | genExp (VarExp (_, id), PREPARE) = emitId id
-	  | genExp (TagExp (_, _, n), PREPARE) =
+	  | genExp (VarExp (_, id)) = emitId id
+	  | genExp (TagExp (_, _, n)) =
 	    (emit (LdcI4 n); emitBox (Int32Ty, System.Int32))
-	  | genExp (ConExp (_, Con id), PREPARE) = emitId id
-	  | genExp (ConExp (_, StaticCon _), _) =   (*--** implement *)
+	  | genExp (ConExp (_, Con id)) = emitId id
+	  | genExp (ConExp (_, StaticCon _)) =   (*--** implement *)
 	    raise Crash.Crash "CodeGenPhase.genExp: ConExp/StaticCon"
-	  | genExp (TupExp (info, #[]), PREPARE) =
-	    genExp (PrimExp (info, "unit"), PREPARE)
-	  | genExp (TupExp (_, #[]), FILL) = ()
-	  | genExp (TupExp (info, #[]), BOTH) =
-	    genExp (PrimExp (info, "unit"), BOTH)
-	  | genExp (TupExp (_, ids), PREPARE) =
-	    (emit (LdcI4 (Vector.length ids)); emit (Newarr System.ObjectTy))
-	  | genExp (TupExp (_, ids), FILL) =
-	    let
-		val max = Vector.length ids - 1
-	    in
-		Vector.appi (fn (i, id) =>
-			     (if i = max then () else emit Dup;
-				  emit (LdcI4 i); emitId id; emit StelemRef))
-		(ids, 0, NONE)
-	    end
-	  | genExp (TupExp (_, ids), BOTH) =
+	  | genExp (TupExp (info, #[])) =
+	    genExp (PrimExp (info, "unit"))
+	  | genExp (TupExp (_, ids)) =
 	    (emit (LdcI4 (Vector.length ids)); emit (Newarr System.ObjectTy);
 	     Vector.appi (fn (i, id) =>
 			  (emit Dup; emit (LdcI4 i); emitId id;
 			   emit StelemRef)) (ids, 0, NONE))
-	  | genExp (ProdExp (info, labelIdVec), mode) =
-	    genExp (TupExp (info, Vector.map #2 labelIdVec), mode)
-	  | genExp (VecExp (info, ids), mode) =
-	    genExp (TupExp (info, ids), mode)
-	  | genExp (FunExp (info, stamp, _, args, body), PREPARE) =
+	  | genExp (ProdExp (info, labelIdVec)) =
+	    genExp (TupExp (info, Vector.map #2 labelIdVec))
+	  | genExp (VecExp (info, ids)) = genExp (TupExp (info, ids))
+	  | genExp (FunExp (info, stamp, _, args, body)) =
 	    (emitRegion ("FunExp", #region info);
 	     emit (Newobj (className stamp, nil));
 	     case args of
@@ -536,9 +506,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		  ProdArgs #[_, _, _, _, _, _, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure9, nil)
 	       | _ =>
-		     defineClass (stamp, Alice.Procedure, nil))
-	  | genExp (FunExp (_, stamp, _, args, body), FILL) =
-	    (case args of
+		     defineClass (stamp, Alice.Procedure, nil);
+	     case args of
 		 OneArg idDef =>
 		     (defineMethod (stamp, "Apply", [idDef]);
 		      genBody body; closeMethod ())
@@ -572,9 +541,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     in
 			 defineMethod (stamp, "Apply", [IdDef id]); emitId id;
 			 declareArgs (args, true); genBody body; closeMethod ()
-		     end;
-	     emit Pop)
-	  | genExp (PrimAppExp (_, name, ids), BOTH) =
+		     end)
+	  | genExp (PrimAppExp (_, name, ids)) =
 	    let
 		val dottedname = Builtins.lookupClass name
 	    in
@@ -584,7 +552,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 					   fn _ => System.ObjectTy),
 			    System.ObjectTy))
 	    end
-	  | genExp (VarAppExp (_, id1, OneArg id2), BOTH) =
+	  | genExp (VarAppExp (_, id1, OneArg id2)) =
 	    (emitId id1; emit (Castclass Alice.ProcedureTy);
 	     emitId id2;
 	     emit (Callvirt (Alice.Procedure, "Apply",
@@ -598,62 +566,41 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			     TupArgs (ids as #[_, _, _, _, _, _]) |
 			     TupArgs (ids as #[_, _, _, _, _, _, _]) |
 			     TupArgs (ids as #[_, _, _, _, _, _, _, _]) |
-			     TupArgs (ids as #[_, _, _, _, _, _, _, _, _]))),
-		    BOTH) =
+			     TupArgs (ids as #[_, _, _, _, _, _, _, _, _])))) =
 	    (emitId id; emit (Castclass Alice.ProcedureTy);
 	     Vector.app emitId ids;
 	     emit (Callvirt (Alice.Procedure, "Apply",
 			     List.tabulate (Vector.length ids,
 					    fn _ => System.ObjectTy),
 			     System.ObjectTy)))
-	  | genExp (VarAppExp (info, id, TupArgs ids), BOTH) =
+	  | genExp (VarAppExp (info, id, TupArgs ids)) =
 	    (emitId id; emit (Castclass Alice.ProcedureTy);
-	     genExp (TupExp (info, ids), BOTH);
+	     genExp (TupExp (info, ids));
 	     emit (Callvirt (Alice.Procedure, "Apply",
 			     [System.ObjectTy], System.ObjectTy)))
-	  | genExp (VarAppExp (info, id, ProdArgs labelIdVec), mode) =
-	    genExp (VarAppExp (info, id,
-			       TupArgs (Vector.map #2 labelIdVec)), mode)
-	  | genExp (TagAppExp (_, _, n, _), PREPARE) =
-	    (emit (LdcI4 n); emit (Newobj (Alice.TagVal, [Int32Ty])))
-	  | genExp (TagAppExp (_, _, _, args), FILL) =
-	    (genArgs args;
-	     emit (Stfld (Alice.TagVal, "Value", System.ObjectTy)))
-	  | genExp (TagAppExp (_, _, n, args), BOTH) =
+	  | genExp (VarAppExp (info, id, ProdArgs labelIdVec)) =
+	    genExp (VarAppExp (info, id, TupArgs (Vector.map #2 labelIdVec)))
+	  | genExp (TagAppExp (_, _, n, args)) =
 	    (emit (LdcI4 n); genArgs args;
 	     emit (Newobj (Alice.TagVal, [Int32Ty, System.ObjectTy])))
-	  | genExp (ConAppExp (_, Con id, _), PREPARE) =
-	    (emitId id; emit (Newobj (Alice.ConVal, [System.ObjectTy])))
-	  | genExp (ConAppExp (_, Con _, args), FILL) =
-	    (genArgs args;
-	     emit (Stfld (Alice.ConVal, "Value", System.ObjectTy)))
-	  | genExp (ConAppExp (_, Con id, args), BOTH) =
+	  | genExp (ConAppExp (_, Con id, args)) =
 	    (emitId id; genArgs args;
 	     emit (Newobj (Alice.ConVal, [System.ObjectTy, System.ObjectTy])))
-	  | genExp (ConAppExp (_, StaticCon _, _), _) =   (*--** implement *)
+	  | genExp (ConAppExp (_, StaticCon _, _)) =   (*--** implement *)
 	    raise Crash.Crash "CodeGenPhase.genExp: ConAppExp/StaticCon"
-	  | genExp (RefAppExp (_, _), PREPARE) =
-	    emit (Newobj (Alice.Cell, nil))
-	  | genExp (RefAppExp (_, id), FILL) =
-	    (emitId id; emit (Stfld (Alice.Cell, "Value", System.ObjectTy)))
-	  | genExp (RefAppExp (_, id), BOTH) =
+	  | genExp (RefAppExp (_, id)) =
 	    (emitId id; emit (Newobj (Alice.Cell, [System.ObjectTy])))
-	  | genExp (SelAppExp (_, _, _, n, id), BOTH) =
+	  | genExp (SelAppExp (_, _, _, n, id)) =
 	    (emitId id; emitAwait ();
 	     emit (Castclass (ArrayTy System.ObjectTy));
 	     emit (LdcI4 n); emit LdelemRef)
-	  | genExp (FunAppExp (info, id, _, args), expMode) =
-	    genExp (VarAppExp (info, id, args), expMode)
-	  | genExp (exp, PREPARE) =
-	    raise Crash.Crash "CodeGenPhase.genExp: not admissible"
-	  | genExp (_, FILL) = emit Pop
-	  | genExp (exp, BOTH) =
-	    (genExp (exp, PREPARE); emit Dup; genExp (exp, FILL))
+	  | genExp (FunAppExp (info, id, _, args)) =
+	    genExp (VarAppExp (info, id, args))
 	and genArgs (OneArg id) = emitId id
 	  | genArgs (TupArgs ids) =
-	    genExp (TupExp ({region = Source.nowhere}, ids), BOTH)
+	    genExp (TupExp ({region = Source.nowhere}, ids))
 	  | genArgs (ProdArgs labelIdVec) =
-	    genExp (ProdExp ({region = Source.nowhere}, labelIdVec), BOTH)
+	    genExp (ProdExp ({region = Source.nowhere}, labelIdVec))
 	and genBody (stm::stms) =
 	    (case #liveness (infoStm stm) of
 		 ref (Kill set) => kill set

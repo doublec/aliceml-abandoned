@@ -166,10 +166,6 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	fun outputStm (q, ValDec (info, idDef, exp)) =
 	    (f (q, "valDec"); outputStmInfo (q, info); m q;
 	     outputIdDef (q, idDef); m q; outputExp (q, exp); r q)
-	  | outputStm (q, RecDec (info, idDefExpVec)) =
-	    (f (q, "recDec"); outputStmInfo (q, info); m q;
-	     outputVector (outputPair (outputIdDef, outputExp))
-	     (q, idDefExpVec); r q)
 	  | outputStm (q, RefAppDec (info, idDef, id)) =
 	    (f (q, "refAppDec"); outputStmInfo (q, info); m q;
 	     outputIdDef (q, idDef); m q; outputId (q, id); r q)

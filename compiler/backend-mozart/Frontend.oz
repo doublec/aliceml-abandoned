@@ -57,9 +57,6 @@ define
    fun {ShareStm Stm ShareDict}
       case Stm of valDec(Region IdDef Exp) then
 	 valDec(Region IdDef {ShareExp Exp ShareDict})
-      [] recDec(Region IdDefExpList) then
-	 recDec(Region {Map IdDefExpList
-			fun {$ IdDef#Exp} IdDef#{ShareExp Exp ShareDict} end})
       [] refAppDec(_ _ _) then Stm
       [] tupDec(_ _ _) then Stm
       [] prodDec(_ _ _) then Stm
