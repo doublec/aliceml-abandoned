@@ -468,7 +468,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				    (#region (infoExp exp), pat,
 				     translateExp (exp, return, Goto nil))
 				end) matches
-		val region = #region (infoMatch (Vector.sub (matches, 0)))
+		val region = #1 (Vector.sub (matches', 0))
 		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
