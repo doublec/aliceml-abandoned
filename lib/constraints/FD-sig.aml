@@ -156,6 +156,7 @@ signature FD =
 
 	(* Distribution *)
 	val distribute : dist_mode * fd vector -> unit
+	val choose : dist_mode * fd vector -> fd * domain
 
 	(* Scheduling Stuff *)
 	structure Schedule :

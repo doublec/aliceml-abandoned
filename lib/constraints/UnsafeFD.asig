@@ -118,6 +118,7 @@ signature UNSAFE_FD_COMPONENT =
 		val watch_size : 'a
 
 		val distribute : 'a
+		val choose : 'a
 
 		(* Scheduling *)
 		val schedule_cumulative : 'a

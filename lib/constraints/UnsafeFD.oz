@@ -408,13 +408,6 @@ define
 			    end}
 	 V
       end
-   in
-      fun {ReflectDomainFun X}
-	 {OzDomainToAliceDomain {FD.reflect.dom X}}
-      end
-   end
-
-   local
       fun {AliceDistToOzDist M}
 	 case M
 	 of 'FIRSTFAIL' then ff
@@ -424,9 +417,18 @@ define
 	 end
       end
    in
+      fun {ReflectDomainFun X}
+	 {OzDomainToAliceDomain {FD.reflect.dom X}}
+      end
       fun {DistFun M X}
 	 {FD.distribute {AliceDistToOzDist M} X}
 	 unit
+      end
+      fun {ChooseFun M X}
+	 E Spec
+      in
+	 {FD.choose {AliceDistToOzDist M} X E Spec}
+	 E#{OzDomainToAliceDomain case Spec of _|_ then Spec else [Spec] end}
       end
    end
 
@@ -576,6 +578,7 @@ define
 			 'watch_max'           : FD.watch.max
 			 'watch_size'          : FD.watch.size
 			 'distribute'          : DistFun
+			 'choose'              : ChooseFun
 			 'schedule_cumulative' : CumulativeFun
 			 'schedule_cumulativeEF' : CumulativeEFFun
 			 'schedule_cumulativeTI' : CumulativeTIFun
