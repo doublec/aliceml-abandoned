@@ -52,7 +52,7 @@ Universit\"at des Saarlandes \\
 
 The syntax given here should be read as an abstract syntax. The meaning of most expressions should be straightforward. We briefly explain the non-obvious ones.
 
-A long identifier expression $\longid.\lab$ is equivalent to the expression $(\f{lazy}\; \#\lab(\longid))$, ie. it represents lazy selection. However, long identifiers can appear in patterns.
+A long identifier expression $\longid.\lab$ is equivalent to the expression $(\f{lazy}\; \#\lab(\longid))$, ie. it represents lazy selection. The reason for having long identifiers separate is that they can appear in patterns.
 
 The expression $(\f{new})$ generates a new constructor name for an open datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes.
 
@@ -162,7 +162,7 @@ $\comp$	&$:=$&	$\f{import}\;\imps\;\f{let}\;\decs\;\f{in}\;\flds^\id$
 \end{tabular}
 \end{center}
 
-Note that the symbols $\fld^x$ and $\flds^x$ actually stand for a family of symbols with different instantiations of the symbol $x$ used in their productions.
+Note that $\fld^x$ and $\flds^x$ actually stand for a family of symbols with different instantiations of the symbol $x$ used in their productions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -170,7 +170,7 @@ Note that the symbols $\fld^x$ and $\flds^x$ actually stand for a family of symb
 \label{types}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The following grammar defines the set $\f{T}$ of {\em types}. We currently ignore recursive types.
+The following grammar defines the set $\f{T}$ of {\em types}. We currently ignore recursive types. Existential types are also omitted since we do not require them yet.
 
 \begin{center}
 \begin{tabular}{lcll}
@@ -207,7 +207,7 @@ We assume the following additional equivalence rules:
 a_1:t_1,a_2:t_2,r &=& a_2:t_2,a_1:t_1,r
 \end{eqnarray*}
 
-We write $t_1 \succ t_2$ if $t_1$ matches $t_2$, ie. if $t_2$ is an instantiation of $t_1$.
+We write $t_1 \succ t_2$ if $t_1$ matches $t_2$, ie. if $t_2$ is an instantiation of the possibly quantified type $t_1$. Matching does not imply that $t_1$ is quantifier-free.
 
 Type names $c$ carry an openness flag which is true only for open sum types. First-class constructors for an open sum type $t$ are assigned constructor arrow types $t' \conarrow t$ where $t'$ is the argument type.
 
@@ -221,9 +221,9 @@ An {\em environment} is a finite mapping $E \in \f{Id}\to\f{T}$.
 
 Every expression $\exp$, pattern $\pat$, identifier $\id$, or long identifier $\longid$ is annotated with a type. In the rules' conclusions we denote that annotation by $:t$, respectively. The rules assume well-formedness of annotation types.
 
-Note that the rules enforce that all bound identifiers have to be disjoint, except for disjunctive patterns.
+Note that identifiers themselves are annotated with their full polymorphic type, while identifier expressions and patterns are annotated with the correpsonding instantiation type. Note also that the rules enforce that all bound identifiers have to be disjoint, except for disjunctive patterns.
 
-Any expression that does not contain \f{abs} or \f{unabs} expressions, or \f{prim} is type-safe. Abstraction and co-abstraction are sort of weak casts that only allow constructor names to be replaced by concrete types in one direction. They are used for translated module expressions (abstraction, functor application, and packages). The rules for these expressions just require the existence of an appropriate realisation $\psi$ (a mapping from constructor names to types). Unfortunately, this is undecidable in general since it requires higher-order unification. The current verifier uses an approximation that is correct for first-order cases and accepts any higher-order ones. This can be repaired by annotating the expressions with the actual substitution which is known at translation time.
+Any expression that does not contain \f{abs} or \f{unabs} expressions, or \f{prim} is type-safe. Abstraction and co-abstraction are sort of weak casts that only allow constructor names to be replaced by concrete types in one direction. They are used for translated module expressions (abstraction, functor application, and packages). The rules for these expressions just require the existence of an appropriate realisation $\varphi$ (a mapping from constructor names to types). Unfortunately, this is undecidable in general since it requires higher-order unification. The current verifier uses an approximation that is correct for first-order cases and accepts any higher-order ones. This can be repaired by annotating the expressions with the actual substitution which is known at translation time.
 
 The reason we use casts is that the presence of first-class signatures in Stockhausen requires a more expressive type system --- without first-class signatures modules could be translated to the intermediate language in a sound way, as shown by Russo. However, we would need polymorphic kinds and record kinds to express first-class signatures. For packages we need some sort of cast anyway.
 
@@ -596,7 +596,7 @@ E \vdash \f{let}\;\decs\;\f{in}\;\exp : t \Rightarrow t
 \frac{
 E \vdash \exp \Rightarrow t'
 \qquad
-\exists \psi . \psi(t) = t'
+\exists \varphi . \varphi(t) = t'
 }{
 E \vdash \f{abs}\;\exp : t \Rightarrow t
 }
@@ -606,7 +606,7 @@ E \vdash \f{abs}\;\exp : t \Rightarrow t
 \frac{
 E \vdash \exp \Rightarrow t'
 \qquad
-\exists \psi . \psi(t') = t
+\exists \varphi . \varphi(t') = t
 }{
 E \vdash \f{unabs}\;\exp : t \Rightarrow t
 }
