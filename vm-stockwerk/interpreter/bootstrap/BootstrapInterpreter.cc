@@ -90,8 +90,7 @@ inline void PushState(Interpreter *interpreter,
   PushState(this, taskStack, pc, globalEnv, localEnv);		\
   taskStack->PushFrame(1);					\
   taskStack->PutWord(0, w);					\
-  out = Store::IntToWord(1);					\
-  return REQUEST;						\
+  return Result(Result::REQUEST, 1);				\
 }
 
 //
@@ -99,8 +98,8 @@ inline void PushState(Interpreter *interpreter,
 //
 
 //--** reading operands: FromWord tests for transients, but we don't
-Interpreter::result
-BootstrapInterpreter::Run(TaskStack *taskStack, int nargs, word &out) {
+Interpreter::Result
+BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
   u_int nslots = nargs == -1? 1: nargs;
   Assert(Store::WordToUnmanagedPointer(taskStack->GetWord(nslots + INTERPRETER_POS)) == this);
   TagVal *pc = TagVal::FromWord(taskStack->GetWord(nslots + PC_POS));
@@ -138,8 +137,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs, word &out) {
 	    PushCall(taskStack);
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
-	  out = Store::IntToWord(1);
-	  return CONTINUE;
+	  return Result(Result::CONTINUE, 1);
 	}
 	Assert(tuple->GetWidth() == nargs);
 	for (u_int i = nargs; i--; )
@@ -285,8 +283,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs, word &out) {
 	taskStack->PushFrame(nargs);
 	for (u_int i = nargs; i--; )
 	  taskStack->PutWord(i, localEnv->Lookup(actualIds->Sub(i)));
-	out = Store::IntToWord(nargs);
-	return CONTINUE;
+	return Result(Result::CONTINUE, nargs);
       }
       break;
     case Pickle::AppVar: // of id args * id * id args * instr
@@ -300,12 +297,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs, word &out) {
 	TagVal *actualArgs = TagVal::FromWord(pc->Sel(2));
 	switch (Pickle::GetArgs(actualArgs)) {
 	case Pickle::OneArg:
-	  {
-	    taskStack->PushFrame(1);
-	    taskStack->PutWord(0, localEnv->Lookup(actualArgs->Sel(0)));
-	    out = Store::IntToWord(-1);
-	  }
-	  break;
+	  taskStack->PushFrame(1);
+	  taskStack->PutWord(0, localEnv->Lookup(actualArgs->Sel(0)));
+	  return Result(Result::CONTINUE, -1);
 	case Pickle::TupArgs:
 	  {
 	    Vector *actualIds = Vector::FromWord(actualArgs->Sel(0));
@@ -313,11 +307,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs, word &out) {
 	    taskStack->PushFrame(nargs);
 	    for (u_int i = nargs; i--; )
 	      taskStack->PutWord(i, localEnv->Lookup(actualIds->Sub(i)));
-	    out = Store::IntToWord(nargs);
+	    return Result(Result::CONTINUE, nargs);
 	  }
-	  break;
 	}
-	return CONTINUE;
       }
       break;
     case Pickle::GetTup: // of idDef vector * id * instr
@@ -503,26 +495,23 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs, word &out) {
 	TagVal *returnArgs = TagVal::FromWord(pc->Sel(0));
 	switch (Pickle::GetArgs(returnArgs)) {
 	case Pickle::OneArg:
-	  out = Store::IntToWord(-1);
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, localEnv->Lookup(returnArgs->Sel(0)));
-	  break;
+	  return Result(Result::CONTINUE, -1);
 	case Pickle::TupArgs:
 	  {
 	    Vector *returnIds = Vector::FromWord(returnArgs->Sel(0));
-	    int nargs = returnIds->GetLength();
+	    u_int nargs = returnIds->GetLength();
 	    taskStack->PushFrame(nargs);
 	    for (u_int i = nargs; i--; )
 	      taskStack->PutWord(i, localEnv->Lookup(returnIds->Sub(i)));
-	    out = Store::IntToWord(nargs);
+	    return Result(Result::CONTINUE, nargs);
 	  }
-	  break;
 	}
-	return CONTINUE;
       }
       break;
     }
   }
   PushState(this, taskStack, pc, globalEnv, localEnv);
-  return PREEMPT;
+  return Result(Result::PREEMPT, 0);
 }

@@ -25,7 +25,7 @@ public:
   void PopFrame(TaskStack *taskStack);
 
   // Execution:
-  result Run(TaskStack *taskStack, int nargs, word &out);
+  Result Run(TaskStack *taskStack, int nargs);
 };
 
 #endif __BOOTSTRAP_INTERPRETER_HH__

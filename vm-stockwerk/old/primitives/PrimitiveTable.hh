@@ -21,7 +21,7 @@ class TaskStack;
 class Primitive {
 public:
   //--** can this move to Authoring.hh?
-  typedef Interpreter::result (*builtin)(TaskStack *, word &out);
+  typedef Interpreter::Result (*builtin)(TaskStack *);
 private:
   static void Register(const char *name, word value);
   static void Register(const char *name, builtin value);

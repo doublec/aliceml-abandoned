@@ -25,7 +25,7 @@ public:
   void PopFrame(TaskStack *taskStack); //--** implement
 
   // Execution:
-  result Run(TaskStack *taskStack, int nargs, word &out); //--** implement
+  Result Run(TaskStack *taskStack, int nargs); //--** implement
 };
 
 static PrimitiveInterpreter *primitiveInterpreter = new PrimitiveInterpreter();

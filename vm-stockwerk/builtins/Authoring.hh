@@ -18,18 +18,18 @@
 #include "builtins/GlobalPrimitives.hh"
 
 #define DEFINE0(name)							\
-  static Interpreter::result name(TaskStack *taskStack, word &out) {
+  static Interpreter::Result name(TaskStack *taskStack) {
 #define DEFINE1(name)							\
-  static Interpreter::result name(TaskStack *taskStack, word &out) {	\
+  static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     taskStack->PopFrame(1);
 #define DEFINE2(name)							\
-  static Interpreter::result name(TaskStack *taskStack, word &out) {	\
+  static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     taskStack->PopFrame(2);
 #define DEFINE3(name)							\
-  static Interpreter::result name(TaskStack *taskStack, word &out) {	\
+  static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     word x2 = taskStack->GetWord(2);					\
@@ -67,25 +67,32 @@
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
 #define RAISE(w) {							\
-  out = w; return Interpreter::RAISE;					\
+  taskStack->PushFrame(1);						\
+  taskStack->PutWord(0, w);						\
+  return Interpreter::Result(Interpreter::Result::RAISE);		\
 }
 
 #define RETURN(w) {							\
   taskStack->PushFrame(1);						\
   taskStack->PutWord(0, w);						\
-  out = Store::IntToWord(-1);						\
-  return Interpreter::CONTINUE;						\
+  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
 }
 #define RETURN_UNIT \
-  { out = Store::IntToWord(0); return Interpreter::CONTINUE; }
+  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 #define RETURN_BOOL(b) RETURN_INT(b);
+
+//--** inelegant?
+#define RETURN_FAIL {							\
+  Transient *transient = Store::AllocTransient(CANCELLED);		\
+  transient->InitArg(Store::IntToWord(666));				\
+  RETURN(transient->ToWord());						\
+}
 
 #define REQUEST(w) {							\
   taskStack->PushFrame(1);						\
   taskStack->PutWord(0, w);						\
-  out = Store::IntToWord(1);						\
-  return Interpreter::REQUEST;						\
+  return Interpreter::Result(Interpreter::Result::REQUEST, 1);		\
 }
 
 #endif __BUILTINS__AUTHORING_HH__

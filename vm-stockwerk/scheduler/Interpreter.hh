@@ -19,12 +19,21 @@ class TaskStack;
 
 class Interpreter {
 public:
-  enum result {
-    CONTINUE, // out = nargs; nargs == -1: OneArg / nargs >= 0: TupArgs
-    PREEMPT,  // out = nargs; nargs == -1: OneArg / nargs >= 0: TupArgs
-    RAISE,    // out = exn
-    REQUEST,  // out = #vars (placed on stack)
-    TERMINATE // (out unused)
+  class Result {
+  public:
+    enum Code {
+      CONTINUE, // nargs == -1: OneArg / nargs >= 0: TupArgs
+      PREEMPT,  // nargs == -1: OneArg / nargs >= 0: TupArgs
+      RAISE,    // (nargs unused)
+      REQUEST,  // nargs > 0
+      TERMINATE // (nargs unused)
+    };
+
+    Code code;
+    int nargs;
+
+    Result(Code c): code(c) {}
+    Result(Code c, int n): code(c), nargs(n) {}
   };
 
   // Handling code:
@@ -35,7 +44,7 @@ public:
   virtual void PopFrame(TaskStack *taskStack) = 0;
 
   // Execution:
-  virtual result Run(TaskStack *taskStack, int nargs, word &out) = 0;
+  virtual Result Run(TaskStack *taskStack, int nargs) = 0;
 };
 
 #endif __INTERPRETER_HH__

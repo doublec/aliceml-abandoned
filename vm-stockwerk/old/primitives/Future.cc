@@ -35,8 +35,7 @@ DEFINE2(Future_awaitOne) {
   taskStack->PushFrame(2);
   taskStack->PutWord(0, transient1->ToWord());
   taskStack->PutWord(1, transient2->ToWord());
-  out = Store::IntToWord(2);
-  return Interpreter::REQUEST;
+  return Interpreter::Result(Interpreter::Result::REQUEST, 2);
 } END
 
 DEFINE1(Future_byneed) {

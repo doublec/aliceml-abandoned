@@ -68,7 +68,7 @@ DEFINE1(Thread_state) {
     RETURN(Store::IntToWord(2));
   default:
     Assert(0);
-    break;
+    RETURN_FAIL;
   };
 } END
 
@@ -79,8 +79,7 @@ DEFINE1(Thread_suspend) {
 } END
 
 DEFINE0(Thread_yield) {
-  out = Store::IntToWord(0);
-  return Interpreter::PREEMPT;
+  return Interpreter::Result(Interpreter::Result::PREEMPT, 0);
 } END
 
 void Primitive::RegisterThread() {

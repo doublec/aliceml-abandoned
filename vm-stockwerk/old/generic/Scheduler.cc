@@ -29,44 +29,47 @@ void Scheduler::Run() {
     TaskStack *taskStack = currentThread->GetTaskStack();
     int nargs = taskStack->GetInt(0);
     taskStack->PopFrame(1);
-    Interpreter::result result = Interpreter::CONTINUE;
-    while (result == Interpreter::CONTINUE) {
+    Interpreter::Result result(Interpreter::Result::CONTINUE, nargs);
+    while (result.code == Interpreter::Result::CONTINUE) {
       int offset = nargs == -1? 1: nargs;
       Interpreter *interpreter =
 	static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(offset));
       preempt = false;
       //--** reset time slice?
-      word out;
-      result = interpreter->Run(taskStack, nargs, out);
-      switch (result) {
-      case Interpreter::CONTINUE:
-	nargs = Store::WordToInt(out);
+      result = interpreter->Run(taskStack, nargs);
+      switch (result.code) {
+      case Interpreter::Result::CONTINUE:
+	nargs = result.nargs;
 	break;
-      case Interpreter::PREEMPT:
+      case Interpreter::Result::PREEMPT:
 	taskStack->PushFrame(1);
-	taskStack->PutInt(0, Store::WordToInt(out));
+	taskStack->PutInt(0, result.nargs);
 	threadPool->Enqueue(currentThread);
 	break;
-      case Interpreter::RAISE:
+      case Interpreter::Result::RAISE:
       raise:
-	while (true) {
-	  Assert(!taskStack->IsEmpty());
-	  interpreter =
-	    static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(0));
-	  if (interpreter == NULL) {
-	    // This is a mark that an exception handler follows.
-	    // We require that there always is one that will finally
-	    // handle the exception.
-	    taskStack->PutWord(0, out);
-	    break;
+	{
+	  word exn = taskStack->GetWord(0);
+	  taskStack->PopFrame(1);
+	  while (true) {
+	    Assert(!taskStack->IsEmpty());
+	    interpreter =
+	      static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(0));
+	    if (interpreter == NULL) {
+	      // This is a mark that an exception handler follows.
+	      // We require that there always is one that will finally
+	      // handle the exception.
+	      taskStack->PutWord(0, exn);
+	      break;
+	    }
+	    interpreter->PopFrame(taskStack);
 	  }
-	  interpreter->PopFrame(taskStack);
 	}
 	break;
-      case Interpreter::REQUEST:
+      case Interpreter::Result::REQUEST:
 	{
 	  currentThread->SetState(Thread::BLOCKED);
-	  int nvars = Store::WordToInt(out);
+	  int nvars = result.nargs;
 	  Assert(nvars > 0);
 	  Transient *transient[nvars];
 	  for (int i = nvars; i--; )
@@ -75,7 +78,8 @@ void Scheduler::Run() {
 	  for (int i = nvars; i--; ) {
 	    switch (transient[i]->GetLabel()) {
 	    HOLE:
-	      out = GlobalPrimitives::Hole_Hole;
+	      taskStack->PushFrame(1);
+	      taskStack->PutWord(0, GlobalPrimitives::Hole_Hole);
 	      goto raise;
 	    FUTURE:
 	      taskStack->PushFrame(1);
@@ -84,7 +88,8 @@ void Scheduler::Run() {
 		AddToWaitQueue(currentThread);
 	      break;
 	    CANCELLED:
-	      out = transient[i]->GetArg();
+	      taskStack->PushFrame(1);
+	      taskStack->PutWord(0, transient[i]->GetArg());
 	      goto raise;
 	    BYNEED:
 	      //--** Perform application:
@@ -98,7 +103,7 @@ void Scheduler::Run() {
 	  }
 	}
 	break;
-      case Interpreter::TERMINATE:
+      case Interpreter::Result::TERMINATE:
 	taskStack->Clear(); // now subject to garbage collection
 	currentThread->SetState(Thread::TERMINATED);
 	break;
