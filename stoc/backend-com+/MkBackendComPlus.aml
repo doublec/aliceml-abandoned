@@ -26,7 +26,9 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	fun save () filename component =
 	    let
 		val ilFilename = filename ^ ".il"
-		val ilasm = "ilasm /dll " ^ ilFilename ^ " /out=" ^ filename
+		val ilasm =
+		    "ilasm /dll \"" ^ ilFilename ^
+		    "\" /out=\"" ^ filename ^ "\""
 	    in
 		IL.outputProgram (ilFilename, component);
 		if OS.Process.system ilasm = OS.Process.success then ()
