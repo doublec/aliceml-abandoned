@@ -75,6 +75,16 @@ define
       end
    end
 
+   proc {RaiseAliceException E}
+      {Exception.'raiseError' alice(E)}
+   end
+
+   fun {UnwrapAliceException E}
+      case E of error(alice(InnerE) ...) then InnerE
+      else {Exception.'raise' E} unit
+      end
+   end
+
    proc {TranslateStm Stm VHd VTl State ReturnReg}
       case Stm of valDec(_ IdDef Exp) then
 	 {TranslateExp Exp {MakeReg IdDef State} VHd VTl State}
@@ -111,16 +121,16 @@ define
 		      [onRecord('#' Arity ThenVInstr)]
 		      {TranslateRegion Region State} nil)
       [] handleStm(Region Body1 IdDef Body2 Body3 Stamp) then
-	 %--** change exception representation
-	 Reg1 Reg2 TryVInstr CatchVInstr CatchVInter VInter
+	 Reg1 Reg2 Coord TryVInstr CatchVInstr CatchVInter VInter
       in
 	 {State.cs newReg(?Reg1)}
 	 Reg2 = {MakeReg IdDef State}
-	 VHd = vExHandler(_ TryVInstr Reg1 CatchVInstr
-			  {TranslateRegion Region State} VInter _)
+	 Coord = {TranslateRegion Region State}
+	 VHd = vExHandler(_ TryVInstr Reg1 CatchVInstr Coord VInter _)
 	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
 	 {Dictionary.put State.shareDict Stamp unit}
-	 CatchVInstr = vInlineDot(_ Reg1 1 Reg2 true unit CatchVInter)
+	 CatchVInstr = vCallConstant(_ UnwrapAliceException
+				     [Reg1 Reg2] Coord CatchVInter)
 	 {TranslateBody Body2 ?CatchVInter nil State ReturnReg}
 	 {TranslateBody Body3 ?VInter VTl=nil State ReturnReg}
       [] endHandleStm(Region Stamp) then
@@ -292,11 +302,11 @@ define
 		      {TranslateRegion Region State} VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] raiseStm(Region Id) then
-	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
-			    {TranslateRegion Region State} VTl=nil)
+	 VHd = vCallConstant(_ RaiseAliceException [{GetReg Id State}]
+			     {TranslateRegion Region State} VTl=nil)
       [] reraiseStm(Region Id) then
-	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
-			    {TranslateRegion Region State} VTl=nil)
+	 VHd = vCallConstant(_ RaiseAliceException [{GetReg Id State}]
+			     {TranslateRegion Region State} VTl=nil)
       [] sharedStm(_ Body Stamp) then
 	 if {Dictionary.member State.shareDict Stamp} then
 	    VHd = {Dictionary.get State.shareDict Stamp}
@@ -400,7 +410,7 @@ define
 		{Map LabelIdList
 		 fun {$ Label#Id} Label#value({GetReg Id State}) end}}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
-      [] selExp(_ _ Label) then
+      [] selExp(_ Label _) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Label end Reg VTl)
       [] vecExp(_ nil) then
 	 VHd = vEquateConstant(_ '#[]' Reg VTl)
