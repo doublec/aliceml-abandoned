@@ -47,6 +47,7 @@ public:
     return p->ToWord();
   }
   static inline Block *TupArgs(u_int size) {
+    Assert(size > 0);
     return Store::AllocBlock(TUPARGS_LABEL, size);
   }
   // Calling Convention Conversion
