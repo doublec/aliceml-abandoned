@@ -932,6 +932,8 @@ define
       end
    end
 
+   AlicePrimitive = {ByteString.make 'Alice.primitive'}
+
    Interpreter =
    primitiveInterpreter(run: PrimitiveInterpreterRun
 			handle:
@@ -949,7 +951,7 @@ define
 			abstract:
 			   fun {$ primitive(_ _ _ F)}
 			      %--** how to signal sitedness?
-			      transform('Alice.primitive' {ByteString.make F})
+			      transform(AlicePrimitive {ByteString.make F})
 			   end)
 
    fun {ImportField F X}
