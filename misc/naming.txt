@@ -23,7 +23,8 @@ interpretation as Statically Typed Oz Compiler).
 
 The emulator is the Stockwerker (hard at work), implementing
 the Stockwerk VM (the level below). The emulator can be invoked
-as stow (Eat my code!).
+as stow (Eat my code!). Creating the symphony of a complete
+application is the job of the module/component manager: the Komponist.
 
 The several browsers will be called Hausers:
 * the Inspector:    Data Hauser (for easier house-keeping of your data)
@@ -34,6 +35,8 @@ The other tools:
 * the debugger: Stocker (your program will balk on every breakpoint)
 * the profiler: Stochist (getting pedantic about statistics)
 * yacc and lex: Jacke and Hose (the emperor's new clothes)
+
+And we want a foreign function interface -- the Stock Exchange.
 
 We want the reader to compare this nice, consistent, and
 extensible naming scheme to the other current proposal,
