@@ -12,5 +12,6 @@
 
 signature BUILTINS =
     sig
-	val lookup: string -> IL.dottedname * IL.id
+	val lookupClass: string -> IL.dottedname
+	val lookupField: string -> IL.dottedname * IL.id
     end

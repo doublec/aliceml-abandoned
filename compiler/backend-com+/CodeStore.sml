@@ -44,7 +44,6 @@ structure CodeStore :> CODE_STORE =
 	val env: (class * IL.id * int * regState * instrsState) list ref =
 	    ref nil
 
-	val global = Stamp.new ()
 	val preboundScope =
 	    let
 		open Prebound
@@ -70,7 +69,7 @@ structure CodeStore :> CODE_STORE =
 	fun init dottedname =
 	    (namespace := dottedname;
 	     classes := Map.new ();
-	     env := [(global, "main", 0,
+	     env := [(Stamp.new (), "main", 0,
 		      (ScopedMap.clone preboundScope, ref 0, ref 0, ref nil),
 		      ref nil)])
 

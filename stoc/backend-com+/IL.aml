@@ -107,7 +107,7 @@ structure IL :> IL =
 	  | Div
 	  | DivUn
 	  | Dup
-	  | Isinst of dottedname
+	  | Isinst of ty
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
@@ -451,8 +451,8 @@ structure IL :> IL =
 	  | outputInstr (q, Div) = output (q, "div")
 	  | outputInstr (q, DivUn) = output (q, "div.un")
 	  | outputInstr (q, Dup) = output (q, "dup")
-	  | outputInstr (q, Isinst dottedname) =
-	    (output (q, "isinst "); outputDottedname (q, dottedname))
+	  | outputInstr (q, Isinst ty) =
+	    (output (q, "isinst "); outputTy (q, ty))
 	  | outputInstr (q, Label label) =
 	    (outputLabel (q, label); output1 (q, #":"))
 	  | outputInstr (q, Ldarg i) =

@@ -13,7 +13,7 @@
 (*
  * Optimierungsideen:
  *
- * Voraussetzung: Fuer Pickling/Marshaling muss erkannt werden, welche
+ * Voraussetzung: Fuer Pickling muss erkannt werden, welche
  * Referenzen Code auf andere Closures macht.  Idee: Code wird nicht
  * in assemblierter Form in ein PEFile geschrieben (denn Code kann nicht
  * reflektiert werden), sondern in Zwischendarstellung als StockWert
@@ -90,124 +90,121 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | FILL
 	  | BOTH
 
-	fun getIntBodyList ((LitTest (WordLit w), body)::rest) =
-	    (LargeWord.toInt w, body)::getIntBodyList rest
-	  | getIntBodyList ((LitTest (IntLit i), body)::rest) =
-	    (LargeInt.toInt i, body)::getIntBodyList rest
-	  | getIntBodyList ((LitTest (CharLit c), body)::rest) =
-	    (WideChar.ord c, body)::getIntBodyList rest
-	  | getIntBodyList ((_, _)::_) =
-	    raise Crash.Crash "CodeGenPhase.getIntBodyList"
-	  | getIntBodyList nil = nil
+	fun emitAwait () =
+	    let
+		val label = newLabel ()
+	    in
+		emit Dup; emit (Isinst Alice.FutureTy);
+		emit (B (FALSE, label));
+		emit (Castclass Alice.FutureTy);
+		emit (Callvirt (Alice.Future, "Await", nil, System.ObjectTy));
+		emit (Label label)
+	    end
 
-	structure Sort =
-	    MakeSort(type 'a t = int * 'a
-		     fun compare ((i, _), (j, _)) = Int.compare (i, j))
+	structure IntMap =
+	     MakeHashImpMap(type t = int
+			    val equals = op=
+			    fun hash i = i)
 
-	fun isRange' ((i, _)::rest, j) =
-	    if i = j then isRange' (rest, j + 1) else NONE
-	  | isRange' (nil, i) = SOME (i - 1)
+	fun parseTests ((test, body)::rest, map, min, max, toInt) =
+	    let
+		val i = toInt test
+	    in
+		IntMap.insertWith #1 (map, i, (newLabel (), test, body));
+		parseTests (rest, map, Int.min (min, i), Int.max (max, i),
+			    toInt)
+	    end
+	  | parseTests (nil, _, min, max, _) = (min, max)
 
-	fun isRange ((min, _)::rest) =
-	    (case isRange' (rest, min + 1) of
-		 SOME max => SOME (min, max)
-	       | NONE => NONE)
-	  | isRange nil = raise Crash.Crash "CodeGenPhase.isRange"
-
-
-	fun genTestInt (dottedname, ty, i, elseLabel) =
-	    (emit Dup; emit (Isinst dottedname); emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass (ClassTy dottedname));
-	     emit (Ldfld (dottedname, "Value", ty)); emit (LdcI4 i);
-	     emit (B (NE_UN, elseLabel)); emit Pop)
+	fun declareArgs (OneArg id, _) = declareLocal id
+	  | declareArgs (TupArgs nil, await) =
+	    (if await then emitAwait () else (); emit Pop)
+	  | declareArgs (TupArgs ids, await) =
+	    let
+		val max = List.length ids - 1
+	    in
+		if await then emitAwait () else ();
+		List.appi (fn (i, id) =>
+			   (if i = max then () else emit Dup;
+			    emit (LdcI4 i); emit LdelemRef;
+			    declareLocal id)) ids
+	    end
+	  | declareArgs (RecArgs labelIdList, await) =
+	    declareArgs (TupArgs (List.map #2 labelIdList), await)
 
 	fun genTest (LitTest (WordLit w), elseLabel) =
-	    genTestInt (System.Int32, Int32Ty, LargeWord.toInt w, elseLabel)
+	    (emit (Castclass System.Int32Ty); emit Dup;
+	     emit (Unbox System.Int32); emit (LdcI4 (LargeWord.toInt w));
+	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (IntLit i), elseLabel) =
-	    genTestInt (System.Int32, Int32Ty, LargeInt.toInt i, elseLabel)
+	    (emit (Castclass System.Int32Ty); emit Dup;
+	     emit (Unbox System.Int32); emit (LdcI4 (LargeInt.toInt i));
+	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (CharLit c), elseLabel) =
-	    genTestInt (System.Char, CharTy, Char.ord c, elseLabel)
+	    (emit (Castclass System.CharTy); emit Dup;
+	     emit (Unbox System.Char); emit (LdcI4 (WideChar.ord c));
+	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (StringLit s), elseLabel) =
-	    (emit Dup; emit (Isinst System.String);
-	     emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass System.StringTy);
+	    (emit (Castclass System.StringTy); emit Dup; 
 	     emit (Ldstr s);
 	     emit (Call (false, System.String, "Equals",
 			 [System.StringTy, System.StringTy], BoolTy));
 	     emit (B (FALSE, elseLabel)); emit Pop)
 	  | genTest (LitTest (RealLit s), elseLabel) =
-	    (emit Dup; emit (Isinst System.Double);
-	     emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass System.DoubleTy);
-	     emit (Unbox System.Double);
-	     emit (LdcR8 s); emit (B (NE_UN, elseLabel)); emit Pop)
-	  | genTest (TagTest (_, _), _) =   (*--** not implemented *)
-	    raise Crash.Crash "CodeGenPhase.genTest: TagTest"
-	  | genTest (TagAppTest (_, _, _), _) =   (*--** not implemented *)
-	    raise Crash.Crash "CodeGenPhase.genTest: TagAppTest"
+	    (emit (Castclass System.DoubleTy); emit Dup;
+	     emit (Unbox System.Double); emit (LdcR8 s);
+	     emit (B (NE_UN, elseLabel)); emit Pop)
+	  | genTest (TagTest (_, n), elseLabel) =
+	    (emit Dup; emit (Isinst System.Int32Ty);
+	     emit (B (FALSE, elseLabel)); emit (Castclass System.Int32Ty);
+	     emit Dup; emit (Unbox System.Int32); emit (LdcI4 n);
+	     emit (B (NE_UN, elseLabel)); emit Pop)
+	  | genTest (TagAppTest (_, n, args), elseLabel) =
+	    (emit Dup; emit (Isinst Alice.TagValTy);
+	     emit (B (FALSE, elseLabel)); emit (Castclass Alice.TagValTy);
+	     emit Dup;
+	     emit (Call (true, Alice.TagVal, "GetTag", nil, Int32Ty));
+	     emit (LdcI4 n); emit (B (NE_UN, elseLabel));
+	     emit (Ldfld (Alice.TagVal, "Value", System.ObjectTy));
+	     declareArgs (args, true))
 	  | genTest (ConTest id, elseLabel) =
 	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (ConAppTest (id, args), elseLabel) =
-	    (emit Dup; emit (Isinst Alice.ConVal);
-	     emit (B (FALSE, elseLabel));
-	     emit (Castclass Alice.ConValTy); emit Dup;
+	    (emit Dup; emit (Isinst Alice.ConValTy);
+	     emit (B (FALSE, elseLabel)); emit (Castclass Alice.ConValTy);
+	     emit Dup;
 	     emit (Call (true, Alice.ConVal, "GetId", nil, System.ObjectTy));
 	     emitId id; emit (B (NE_UN, elseLabel));
 	     emit (Ldfld (Alice.ConVal, "Value", System.ObjectTy));
-	     case args of   (*--** support other args *)
-		 OneArg id => declareLocal id
-	       | (TupArgs _ | RecArgs _) =>
-		     raise Crash.Crash "CodeGenPhase.genTest: ConAppTest")
+	     declareArgs (args, true))
 	  | genTest (RefAppTest id, elseLabel) =
-	    (emit Dup; emit (Isinst Alice.Cell);
-	     emit (B (FALSE, elseLabel));
-	     emit (Castclass Alice.CellTy);
+	    (emit (Castclass Alice.CellTy);
 	     emit (Call (true, Alice.Cell, "Access", nil, System.ObjectTy));
 	     declareLocal id)
-	  | genTest (TupTest nil, elseLabel) =
-	    (emit Dup; emit (B (FALSE, elseLabel)); emit Pop)
+	  | genTest (TupTest nil, elseLabel) = emit Pop
 	  | genTest (TupTest ids, elseLabel) =
-	    (emit Dup; emit (Isinst System.Array);
-	     emit (B (FALSE, elseLabel));
-	     emit (Castclass (ArrayTy System.ObjectTy));
-	     List.appi (fn (i, id) =>
-			(emit Dup; emit (LdcI4 i); emit LdelemRef;
-			 declareLocal id)) ids;
-	     emit Pop)
+	    (emit (Castclass (ArrayTy System.ObjectTy));
+	     declareArgs (TupArgs ids, false))
 	  | genTest (RecTest labelIdList, elseLabel) =
 	    genTest (TupTest (List.map #2 labelIdList), elseLabel)
 	  | genTest (LabTest (_, n, id), elseLabel) =
-	    (*--** not implemented *)
-	    raise Crash.Crash "CodeGenPhase.genTest: LabTest"
+	    (emit (Castclass (ArrayTy System.ObjectTy));
+	     emit (LdcI4 n); emit LdelemRef; declareLocal id)
 	  | genTest (VecTest ids, elseLabel) =
-	    let
-		val thenLabel = newLabel ()
-	    in
-		emit Dup; emit (Isinst System.Array);
-		emit (B (FALSE, elseLabel));
-		emit (Castclass (ArrayTy System.ObjectTy)); emit Dup;
-		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
-		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
-		emit (Label thenLabel);
-		List.appi (fn (i, id) =>
-			   (emit Dup; emit (LdcI4 i); emit LdelemRef;
-			    declareLocal id)) ids;
-		emit Pop
-	    end
+	    (emit (Castclass (ArrayTy System.ObjectTy)); emit Dup;
+	     emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
+	     emit (B (NE_UN, elseLabel));
+	     declareArgs (TupArgs ids, false))
 
 	fun genLit (WordLit w) =
-	    (emit (LdcI4 (LargeWord.toInt w));
-	     emit (Box System.Int32))
+	    (emit (LdcI4 (LargeWord.toInt w)); emit (Box System.Int32))
 	  | genLit (IntLit i) =
-	    (emit (LdcI4 (LargeInt.toInt i));
-	     emit (Box System.Int32))
+	    (emit (LdcI4 (LargeInt.toInt i)); emit (Box System.Int32))
 	  | genLit (CharLit c) =
-	    (emit (LdcI4 (Char.ord c));
-	     emit (Box System.Char))
+	    (emit (LdcI4 (Char.ord c)); emit (Box System.Char))
 	  | genLit (StringLit s) = emit (Ldstr s)
 	  | genLit (RealLit s) =
-	    (emit (LdcR8 s);
-	     emit (Box System.Double))
+	    (emit (LdcR8 s); emit (Box System.Double))
 
 	(*--** remove global state *)
 	val sharedLabels: label StampMap.t = StampMap.new ()
@@ -240,7 +237,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    genTestStm (id, testBodyList, fn () => genBody elseBody)
 	  | genStm (RaiseStm (info, id)) =
 	    let
-		val ((line, _), (_, _)) = #region info
+		val ((line, _), _) = #region info
 	    in
 		emitId id; (*--** emit (LdcI4 line); *)
 		emit (Newobj (Alice.Exception,
@@ -261,46 +258,142 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genStm (ReturnStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
 	  | genStm (ExportStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
-	and genTestStm (_, nil, elseBodyFun) = elseBodyFun ()
-	  | genTestStm (id, testBodyList, elseBodyFun) =
-	    (*--** parallelize *)
+	and genTestStm (id, testBodyList, elseBodyFun) =
+	    (emitId id; emitAwait (); genTestStm' (testBodyList, elseBodyFun))
+	and genTestStm' (testBodyList as (LitTest (WordLit _), _)::_::_,
+			 elseBodyFun) =
 	    let
-		val retryLabel = newLabel ()
-		val falseLabel = newLabel ()
+		fun toInt (LitTest (WordLit w)) = LargeWord.toInt w
+		  | toInt _ = raise Crash.Crash "CodeGenTest.genTestStm' 1"
+		fun getInt () = (emit (Castclass System.Int32Ty);
+				 emit (Unbox System.Int32))
+		fun gen (_, body) = genBody body
 	    in
-		emitId id; emit (Label retryLabel);
-		List.app (fn (test, body) =>
-			  let
-			      val elseLabel = newLabel ()
-			      val regState = saveRegState ()
-			  in
-			      genTest (test, elseLabel); genBody body;
-			      emit (Label elseLabel); restoreRegState regState
-			  end) testBodyList;
-		emit Dup; emit (Isinst Alice.Future);
-		emit (B (FALSE, falseLabel));
-		emit (Castclass Alice.FutureTy);
-		emit (Callvirt (Alice.Future, "Await", nil, System.ObjectTy));
-		emit (Br retryLabel); emit (Label falseLabel);
-		emit Pop; elseBodyFun ()
+		genSwitchTestStm (toInt, getInt, gen,
+				  testBodyList, elseBodyFun)
 	    end
+	  | genTestStm' (testBodyList as (LitTest (IntLit _), _)::_::_,
+			 elseBodyFun) =
+	    let
+		fun toInt (LitTest (IntLit i)) = LargeInt.toInt i
+		  | toInt _ = raise Crash.Crash "CodeGenTest.genTestStm' 2"
+		fun getInt () = (emit (Castclass System.Int32Ty);
+				 emit (Unbox System.Int32))
+		fun gen (_, body) = genBody body
+	    in
+		genSwitchTestStm (toInt, getInt, gen,
+				  testBodyList, elseBodyFun)
+	    end
+	  | genTestStm' (testBodyList as (LitTest (CharLit _), _)::_::_,
+			 elseBodyFun) =
+	    let
+		fun toInt (LitTest (CharLit c)) = WideChar.ord c
+		  | toInt _ = raise Crash.Crash "CodeGenTest.genTestStm' 3"
+		fun getInt () = (emit (Castclass System.CharTy);
+				 emit (Unbox System.Char))
+		fun gen (_, body) = genBody body
+	    in
+		genSwitchTestStm (toInt, getInt, gen,
+				  testBodyList, elseBodyFun)
+	    end
+	  | genTestStm' (testBodyList as (TagTest (_, _), _)::_::_,
+			 elseBodyFun) =
+	    genTagTestStm (testBodyList, elseBodyFun)
+	  | genTestStm' (testBodyList as (TagAppTest (_, _, _), _)::_::_,
+			 elseBodyFun) =
+	    genTagTestStm (testBodyList, elseBodyFun)
+	  | genTestStm' (testBodyList, elseBodyFun) =
+	    genSequentialTestStm (testBodyList, elseBodyFun)
+	and genTagTestStm (testBodyList, elseBodyFun) =
+	    let
+		fun toInt (TagTest (_, n)) = n
+		  | toInt (TagAppTest (_, n, _)) = n
+		  | toInt _ = raise Crash.Crash "CodeGenTest.genTagTestStm"
+		fun getInt () =
+		    let
+			val thenLabel = newLabel ()
+			val contLabel = newLabel ()
+		    in
+			emit Dup; emit Dup; emit (Isinst Alice.TagValTy);
+			emit (B (TRUE, thenLabel));
+			emit (Castclass System.Int32Ty);
+			emit (Unbox System.Int32); emit (Br contLabel);
+			emit (Label thenLabel);
+			emit (Castclass Alice.TagValTy);
+			emit (Call (true, Alice.TagVal, "GetTag", nil,
+				    Int32Ty));
+			emit (Label contLabel)
+		    end
+		fun gen (TagAppTest (_, _, args), body) =
+		    (emit (Ldfld (Alice.TagVal, "Value", System.ObjectTy));
+		     declareArgs (args, true); genBody body)
+		  | gen (_, body) = (emit Pop; genBody body)
+	    in
+		genSwitchTestStm (toInt, getInt, gen,
+				  testBodyList, elseBodyFun)
+	    end
+	and genSwitchTestStm (toInt, getInt, gen, testBodyList, elseBodyFun) =
+	    let
+		val map = IntMap.new ()
+		val i = toInt (#1 (List.hd testBodyList))
+		val (min, max) = parseTests (testBodyList, map, i, i, toInt)
+	    in
+		if max - min + 1 <= IntMap.size map * 4 then
+		    let
+			val elseLabel = newLabel ()
+			val labels =
+			    List.tabulate (max - min + 1,
+					   fn i =>
+					   case IntMap.lookup (map, i + min) of
+					       SOME (label, _, _) => label
+					     | NONE => elseLabel)
+		    in
+			getInt ();
+			if min = 0 then () else (emit (LdcI4 min); emit Sub);
+			emit (Switch labels);
+			let
+			    val regState = saveRegState ()
+			in
+			    emit (Label elseLabel); elseBodyFun ();
+			    restoreRegState regState
+			end;
+			IntMap.app (fn (label, test, body) =>
+				    let
+					val regState = saveRegState ()
+				    in
+					emit (Label label); gen (test, body);
+					restoreRegState regState
+				    end) map
+		    end
+		else genSequentialTestStm (testBodyList, elseBodyFun)
+	    end
+	and genSequentialTestStm (testBodyList, elseBodyFun) =
+	    (List.app (fn (test, body) =>
+		       let
+			   val elseLabel = newLabel ()
+			   val regState = saveRegState ()
+		       in
+			   genTest (test, elseLabel); genBody body;
+			   emit (Label elseLabel); restoreRegState regState
+		       end) testBodyList;
+	     emit Pop; elseBodyFun ())
 	and genExp (LitExp (_, lit), PREPARE) = genLit lit
 	  | genExp (PrimExp (_, name), PREPARE) =
 	    let
-		val (class, id) = Builtins.lookup name
+		val (dottedname, id) = Builtins.lookupField name
 	    in
-		emit (Ldsfld ("Alice"::"Prebound"::class, id, System.ObjectTy))
+		emit (Ldsfld (dottedname, id, System.ObjectTy))
 	    end
 	  | genExp (NewExp (_, _), PREPARE) =
 	    emit (Newobj (System.Guid, nil))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
-	  | genExp (TagExp (_, _, n, Nullary), PREPARE) =
+	  | genExp (TagExp (_, _, n, NONE), PREPARE) =
 	    (emit (LdcI4 n); emit (Box System.Int32))
-	  | genExp (TagExp (_, _, n, _), PREPARE) =
+	  | genExp (TagExp (_, _, n, SOME _), PREPARE) =
 	    (emit (LdcI4 n);
 	     emit (Newobj (Alice.TagConstructor, [Int32Ty])))
-	  | genExp (ConExp (_, id, Nullary), PREPARE) = emitId id
-	  | genExp (ConExp (_, id, _), PREPARE) =
+	  | genExp (ConExp (_, id, NONE), PREPARE) = emitId id
+	  | genExp (ConExp (_, id, SOME _), PREPARE) =
 	    (emitId id;
 	     emit (Newobj (Alice.ConConstructor, [System.ObjectTy])))
 	  | genExp (RefExp _, PREPARE) =
@@ -315,9 +408,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		val max = List.length ids - 1
 	    in
 		List.appi (fn (i, id) =>
-			   (if i <> max then emit Dup else ();
-			    emit (LdcI4 i); emitId id; emit StelemRef)) ids;
-		emit Pop
+			   (if i = max then () else emit Dup;
+			    emit (LdcI4 i); emitId id; emit StelemRef)) ids
 	    end
 	  | genExp (TupExp (_, ids), BOTH) =
 	    (emit (LdcI4 (List.length ids)); emit (Newarr System.ObjectTy);
@@ -407,10 +499,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit Pop)
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =
 	    let
-		val (class, id) = Builtins.lookup name
+		val dottedname = Builtins.lookupClass name
 	    in
 		List.app emitId ids;
-		emit (Call (false, "Alice"::class @ [id], "StaticApply",
+		emit (Call (false, dottedname, "StaticApply",
 			    List.map (fn _ => System.ObjectTy) ids,
 			    System.ObjectTy))
 	    end
@@ -468,12 +560,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (RefAppExp (_, id), BOTH) =
 	    (emitId id; emit (Newobj (Alice.Cell, [System.ObjectTy])))
 	  | genExp (SelAppExp (_, _, n, id), BOTH) =
-	    (emit (Castclass (ArrayTy System.ObjectTy));   (*--** futures *)
+	    (emitId id; emitAwait ();
+	     emit (Castclass (ArrayTy System.ObjectTy));
 	     emit (LdcI4 n); emit LdelemRef)
 	  | genExp (FunAppExp (info, id, _, args), expMode) =
 	    genExp (VarAppExp (info, id, args), expMode)
-	  | genExp (AdjExp (_, id1, id2), BOTH) =   (*--** not implemented *)
-	    raise Crash.Crash "CodeGenPhase.genExp: AdjExp"
 	  | genExp (exp, PREPARE) =
 	    raise Crash.Crash "CodeGenPhase.genExp: not admissible"
 	  | genExp (_, FILL) = emit Pop

@@ -54,7 +54,6 @@ structure Builtins :> BUILTINS =
 		Map.insert (map, "String.>", (String, "opgreater"));
 		Map.insert (map, "String.<=", (String, "oplessEq"));
 		Map.insert (map, "String.>=", (String, "opgreaterEq"));
-		Map.insert (map, "String.sub'", (String, "subquote"));
 		Map.insert (map, "Word.fromInt'", (Word, "fromIntQuote"));
 		Map.insert (map, "Word.+", (Word, "opadd"));
 		Map.insert (map, "Word.-", (Word, "opsub"));
@@ -75,4 +74,39 @@ structure Builtins :> BUILTINS =
 		    in
 			(List.rev (List.tl ids), List.hd ids)
 		    end
+
+	fun allTails (ids as _::rest) = ids::allTails rest
+	  | allTails nil = nil
+
+	local
+	    fun sep' (x::xr, s) = s::x::sep' (xr, s)
+	      | sep' (nil, _) = nil
+	in
+	    fun sep (x::xr, s) = String.concat (x::sep' (xr, s))
+	      | sep (nil, _) = ""
+	end
+
+	fun makePath dottedname =
+	    sep (List.map (fn dottedname => sep (List.rev dottedname, "$"))
+		 (List.rev (allTails (List.rev dottedname))), "/")
+
+	fun lookupClass name =
+	    (* Alice.opeq *)
+	    (* Alice.Array/Array$sub *)
+	    (* Alice.Unsafe/Unsafe$Array/Unsafe$Array$sub *)
+	    let
+		val (dottedname, id) = lookup name
+	    in
+		["Alice", makePath (dottedname @ [id])]
+	    end
+
+	fun lookupField name =
+	    (* Alice.Prebound::opeq *)
+	    (* Alice.Prebound/Prebound$Array::sub *)
+	    (* Alice.Prebound/Prebound$Unsafe/Prebound$Unsafe$Array::sub *)
+	    let
+		val (dottedname, id) = lookup name
+	    in
+		(["Alice", makePath ("Prebound"::dottedname)], id)
+	    end
     end
