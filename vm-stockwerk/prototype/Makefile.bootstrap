@@ -52,8 +52,9 @@
 ## The outcome of this pass is a working system with libraries.
 ## The components in the libraries carry export signatures.
 ##
-## build2-all:
+## build2-src:
 ##    A source tree for the libraries is created in subdirectory build2.
+## build2-all:
 ##    Libraries implemented in Alice are compiled using the system
 ##    installed in Pass 1.
 ## build2-install:
@@ -373,6 +374,8 @@ INSTALL1FILES = \
 ## Creating the Source Tree for Build 1
 ##
 
+build1-src: $(BUILD1DIRS) $(BUILD1SOURCES)
+
 $(BUILD1DIRS):
 	mkdir -p $@
 
@@ -471,8 +474,6 @@ build1/%.oz: %.oz
 ## Performing Build 1
 ##
 
-build1-src: $(BUILD1DIRS) $(BUILD1SOURCES)
-
 build1-all: build1-src \
 	$(VMSOURCES:%.oz=build1/%.ozf) build1/FloatChunk.so-$(PLATFORM) \
 	build1/Build1.stc
@@ -536,6 +537,8 @@ INSTALL2FILES = \
 ## Creating the Source Tree for Build 2
 ##
 
+build2-src: build1-install $(BUILD2DIRS) $(BUILD2SOURCES)
+
 $(BUILD2DIRS):
 	mkdir -p $@
 
@@ -565,8 +568,7 @@ $(LIBNATIVES:%.ozf=build2/%.asig): build2/%: build1/%
 ## Performing Build 2
 ##
 
-build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
-	build2/lib/rtt/LinkedRTT.ozf
+build2-all: build2-src build2/lib/rtt/LinkedRTT.ozf
 
 build2/%.ozf: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
