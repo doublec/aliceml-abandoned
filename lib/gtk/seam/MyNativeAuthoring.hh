@@ -23,10 +23,9 @@
 
 // extending the existing DEFINE0..DEFINE5
 #define DEFINE6(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 6);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -34,10 +33,9 @@
     word x4 = Scheduler::currentArgs[4];                \
     word x5 = Scheduler::currentArgs[5];
 #define DEFINE7(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 7);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -46,10 +44,9 @@
     word x5 = Scheduler::currentArgs[5];                \
     word x6 = Scheduler::currentArgs[6];                
 #define DEFINE8(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 8);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -59,10 +56,9 @@
     word x6 = Scheduler::currentArgs[6];                \
     word x7 = Scheduler::currentArgs[7];                
 #define DEFINE9(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 9);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -73,10 +69,9 @@
     word x7 = Scheduler::currentArgs[7];                \
     word x8 = Scheduler::currentArgs[8];                
 #define DEFINE10(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 10);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -88,10 +83,9 @@
     word x8 = Scheduler::currentArgs[8];                \
     word x9 = Scheduler::currentArgs[9];                
 #define DEFINE11(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 11);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -104,10 +98,9 @@
     word x9 = Scheduler::currentArgs[9];                \
     word x10= Scheduler::currentArgs[10];               
 #define DEFINE12(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 12);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -121,10 +114,9 @@
     word x10= Scheduler::currentArgs[10];               \
     word x11= Scheduler::currentArgs[11];               
 #define DEFINE13(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 13);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -139,10 +131,9 @@
     word x11= Scheduler::currentArgs[11];               \
     word x12= Scheduler::currentArgs[12];               
 #define DEFINE14(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 14);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -158,10 +149,9 @@
     word x12= Scheduler::currentArgs[12];               \
     word x13= Scheduler::currentArgs[13];               
 #define DEFINE15(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 15);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -178,10 +168,9 @@
     word x13= Scheduler::currentArgs[13];               \
     word x14= Scheduler::currentArgs[14];               
 #define DEFINE16(name)					\
-  static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 16);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -198,6 +187,8 @@
     word x13= Scheduler::currentArgs[13];               \
     word x14= Scheduler::currentArgs[14];               \
     word x15= Scheduler::currentArgs[15];               
+
+
 
 // macro for "normal" unmanaged C pointers (that are simply used
 // as words in Alice)
