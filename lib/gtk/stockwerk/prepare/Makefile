@@ -1,9 +1,10 @@
 INSTALL = install -C -v -m 666
 
 COMPS = GTK GDK GDK_PIXBUF G
-OPTS = $(COMPS:%=-D%_DISABLE_DEPRECATED) \
-       `pkg-config --cflags gtk+-2.0 libgnomecanvas-2.0`
-GCC = gcc -E -Wall -std=99 -undef -D__GNUC__
+#OPTS = $(COMPS:%=-D%_DISABLE_DEPRECATED)
+OPTS =
+GCC = gcc -E -Wall -std=99 -undef -D__GNUC__ \
+          `pkg-config --cflags gtk+-2.0 libgnomecanvas-2.0`
 ALICEC = alicec --dump-phases
 
 

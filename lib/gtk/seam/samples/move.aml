@@ -33,8 +33,8 @@ local
     val colormap = Gdk.colormapGetSystem ()
     val black    = Gdk.colorNew(0,0,0)
     val white    = Gdk.colorNew(65535,65535,65535)
-    val _        = Gdk.colormapAllocColor(colormap, black, 0, 1)
-    val _        = Gdk.colormapAllocColor(colormap, white, 0, 1)
+    val _        = Gdk.colormapAllocColor(colormap, black, false, true)
+    val _        = Gdk.colormapAllocColor(colormap, white, false, true)
 
     (* Create Text Item *)
     val textItem = MakeCanvasItem
@@ -42,7 +42,7 @@ local
 	 {parent=root, x=10.0, y=10.0,
 	  text="Press Button to move Canvas Item below",
 	  font="-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1",
-	  fill_color=black, anchor=Gtk.ANCHOR_NORTH_WEST})
+	  fill_color=black, anchor=2 (*Gtk.ANCHOR_NORTH_WEST*)})
 
     (* Create Rectangle Item *)
     val rectItem = MakeCanvasItem
@@ -58,17 +58,42 @@ local
 	val pressed = ref false
 	val buttonx = ref (0.0)
 	val buttony = ref (0.0) 
+
+	datatype event =
+	    EVENT_BUTTON_PRESS of   { button:int, x:real, y:real }
+	  | EVENT_BUTTON_RELEASE of { button:int, x:real, y:real }
+	  | EVENT_MOTION_NOTIFY of {x:real, y:real}
+	  | EVENT_UNKNOWN
+
+	fun getEvent ev =
+	    (case Gdk.eventAnyGetFieldType ev of
+		Gdk.BUTTON_PRESS => 
+		    EVENT_BUTTON_PRESS 
+		    { button=(Gdk.eventButtonGetFieldButton ev),
+		      x=(Gdk.eventButtonGetFieldX ev),
+		      y=(Gdk.eventButtonGetFieldY ev) }
+	      | Gdk.BUTTON_RELEASE =>
+		    EVENT_BUTTON_RELEASE
+		    { button=(Gdk.eventButtonGetFieldButton ev),
+		      x=(Gdk.eventButtonGetFieldX ev),
+		      y=(Gdk.eventButtonGetFieldY ev) }
+	      | Gdk.MOTION_NOTIFY =>
+		    EVENT_MOTION_NOTIFY
+		    { x=(Gdk.eventMotionGetFieldX ev),
+		      y=(Gdk.eventMotionGetFieldY ev) }
+	      | _ => EVENT_UNKNOWN )
+
     in
 	fun rectangleHandler(item, event) =
-	    (case event of
-		 Gdk.BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
+	    (case getEvent event of
+		 EVENT_BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
 		     (case button of
 			  1 => (toggleColor(item, white, black);
 				pressed := true; buttonx := x; buttony := y)
 			| _ => ())
-	       | Gdk.BUTTON_RELEASE _                             =>
+	       | EVENT_BUTTON_RELEASE _                             =>
 		     (toggleColor(item, black, white); pressed := false)
-	       | Gdk.MOTION_NOTIFY {x=x, y=y, ...} =>
+	       | EVENT_MOTION_NOTIFY {x=x, y=y, ...} =>
 		     (case !pressed of
 		      true  =>
 			  let
@@ -88,7 +113,7 @@ local
      * All Events are passed via the Event Field of the event.
      *)
     val _ = Gtk.signalConnect(rectItem, "event",
-			      fn [EVENT(event)] =>
+			      fn (_,[Gtk.OBJECT event]) =>
 			      rectangleHandler(rectItem, event))
 
     fun deleteHandler _ = OS.Process.exit OS.Process.success

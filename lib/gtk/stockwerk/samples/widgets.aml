@@ -11,15 +11,15 @@
  *
  *)
 
-import structure Inspector  from "x-alice:/lib/tools/Inspector"
-import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+import structure Gtk        from "../Gtk"
 import structure GtkBuilder from "GtkBuilder"
 
 local
     open GtkBuilder
 in
     local
-	fun DummyHandler _ = Inspector.inspect "DummyHandler was called"
+	fun DummyHandler _ = (*Inspector.inspect*) 
+	                      print "DummyHandler was called"
 	val start1 = Button("Start 1",
 			    [Handler("clicked", DummyHandler)])
 	val start2 = Button("Start 2 Button",
@@ -34,7 +34,7 @@ in
 		       BoxEnd(false, false, 0, end1),
 		       BoxEnd(false, false, 0, end2)]
 	val child   = VBox {homogeneous=false, spacing=0, entries=entries}
-	fun DeleteHandler _ = Inspector.inspect "Delete was called!"
+	fun DeleteHandler _ = (*Inspector.inspect*) print "Delete was called!"
 	val widget  = Toplevel {title="Vertical Box", border=10,
 				handler=[Handler("destroy", DeleteHandler)],
 				inner=child}
@@ -43,7 +43,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
 	val leftup    = Button("Left Up",
 			       [Handler("clicked", MakeHandler "Left Up")])
@@ -70,7 +70,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
 	val entries =
 	    [BoxSimple(CheckButton ("Red",
@@ -94,7 +94,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
 	val left   = Button("Left", nil)
 	val right  = Button("Right", nil)
@@ -110,7 +110,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
 	val entries = [{label="First", note=Button("First Page", nil)},
 		       {label="Second", note=Button("Second Page", nil)},
@@ -128,7 +128,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
 	val entries = [Button("Ok", nil),
 		       Button("Refresh", nil),
@@ -146,7 +146,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 	    
 	val list1 =
 	    [MenuItem("first",
@@ -171,28 +171,30 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
-	val w = Promise.promise ()
+(*	val w = Promise.promise ()*)
+	val w = ref Gtk.NULL
 
 	fun updateDate(cal, _) =
 	    let
-		val (year, month, day) = Gtk.calendarGetDate (cal, 0, 0, 0)
+		val (year, month, day) = Gtk.calendarGetDate cal
 		val date =
 		    ((Int.toString (month + 1)) ^ "/" ^
 		     (Int.toString day) ^ "/" ^ (Int.toString year))
 	    in
-		Gtk.windowSetTitle(Promise.future w, "Calendar: " ^ date)
+(*		Gtk.windowSetTitle(Promise.future w, "Calendar: " ^ date)*)
+		Gtk.windowSetTitle(!w, "Calendar: " ^ date)
 	    end
 
 	val child   =
-	    Calendar([FullHandler("month-changed", updateDate),
-		      FullHandler("day-selected", updateDate),
-		      FullHandler("day-selected-double-click", updateDate),
-		      FullHandler("prev-month", updateDate),
-		      FullHandler("next-month", updateDate),
-		      FullHandler("prev-year", updateDate),
-		      FullHandler("next-year", updateDate)])
+	    Calendar([Handler("month-changed", updateDate),
+		      Handler("day-selected", updateDate),
+		      Handler("day-selected-double-click", updateDate),
+		      Handler("prev-month", updateDate),
+		      Handler("next-month", updateDate),
+		      Handler("prev-year", updateDate),
+		      Handler("next-year", updateDate)])
 	    
 	val widget  =
 	    Toplevel {title="Calendar Test", border=10,
@@ -200,11 +202,12 @@ in
 				       MakeHandler "Toplevel::delete")],
 		      inner=child}
     in
-	val _ = Promise.fulfill(w, MakeWidget widget)
+(*	val _ = Promise.fulfill(w, MakeWidget widget)*)
+	val _ = ( w := MakeWidget widget )
     end
 
     local
-	fun MakeHandler s = fn _ => Inspector.inspect s
+	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
 	val child   = Text {xdim=50.0, ydim=50.0, text=nil}
 	val widget  =

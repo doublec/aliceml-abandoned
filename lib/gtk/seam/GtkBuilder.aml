@@ -336,8 +336,8 @@ in
 		    (Gtk.notebookSetShowTabs(note, showlabel);
 		     MakeNoteEntries(note, entries); note)
 		end
-(*	    and MakeTreeItems(tree, handler, nil)                  = ()
-	      | MakeTreeItems(tree, handler, (TreeItem title)::ir) =
+(*	    and MakeTreeItems(tree, parent, handler, nil)         = ()
+	      | MakeTreeItems(tree, parent, (TreeItem title)::ir) =
 		let
 		    val item = Gtk.treeItemNewWithLabel title
 		in
@@ -414,8 +414,8 @@ in
 		     Gtk.menuItemSetSubmenu(label, menu);
 		     MakeMenuEntries(menu, items);
 		     MakeMenuBarEntries(bar, er))
-		end
-*)	    and MakeMenuBar entries =
+		end*)
+	    and MakeMenuBar entries =
 		let
 		    val bar = Gtk.menuBarNew ()
 		in
@@ -438,8 +438,8 @@ in
 	      | MakeWidget (AccelLabel title)   = Gtk.accelLabelNew(title)
 	      | MakeWidget (Label title)        = Gtk.labelNew(title)
 	      | MakeWidget (Arrow params)       = MakeArrowWidget params
-(*	      | MakeWidget (Entry {max=NONE})   = Gtk.entryNew ()
-	      | MakeWidget (Entry {max=SOME i}) = Gtk.entryNewWithMaxLength(i)*)
+	      | MakeWidget (Entry {max=NONE})   = Gtk.entryNew ()
+	      | MakeWidget (Entry {max=SOME i}) = Gtk.entryNewWithMaxLength(i)
 	      | MakeWidget (Button params)      = MakeButton params
 	      | MakeWidget (CheckButton params) = MakeCheckButton params
 	      | MakeWidget (Canvas params)      = MakeCanvasWidget params

@@ -10,8 +10,8 @@ SRCS = hello.aml          \
        scramble.aml       \
        GtkBuilder-sig.aml \
        GtkBuilder.aml     \
-       move.aml           \
        widgets.aml        \
+       move.aml           \
        TextViewer.aml     \
        AliceTour.aml
 OBJS = $(SRCS:%.aml=%.stc)

@@ -47,6 +47,11 @@ DEFINE0(NativeGtk_gtkFalse) {
   RETURN(Store::IntToWord(FALSE));
 } END
 
+DEFINE0(NativeGtk_treeIterNew) {
+  GtkTreeIter *iter = new GtkTreeIter;
+  RETURN(Store::UnmanagedPointerToWord(iter));
+} END
+
 ////////////////////////////////////////////////////////////////////////
 
 static word tail = 0;

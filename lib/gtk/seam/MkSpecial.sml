@@ -16,7 +16,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		Util.GTK => ["gtk_init",
 			     "gtk_init_check", 
 			     "gtk_true", 
-			     "gtk_false"]
+			     "gtk_false",
+			     "gtk_type_init" (**),
+			     "gtk_signal_compat_matched" (**)]
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
 			     "gdk_pixbuf_new_from_xpm_data"]
@@ -36,7 +38,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		      [POINTER VOID, NUMERIC (false, false, LONG)]),
 		 FUNC("gtk_null", POINTER VOID, nil),
 		 FUNC("gtk_gtk_true", NUMERIC(true, false, INT), nil),
-		 FUNC("gtk_gtk_false", NUMERIC(true, false, INT), nil)]
+		 FUNC("gtk_gtk_false", NUMERIC(true, false, INT), nil),
+		 FUNC("gtk_tree_iter_new", POINTER VOID, nil)]
+
 	 | Util.GDK =>
 	       [FUNC("gdk_init", VOID, nil),
 	        FUNC("gdk_pixbuf_new_from_xpm_data", POINTER VOID,

@@ -4,6 +4,7 @@ structure GtkTypes :> GTK_TYPES =
 struct
     type object
     exception TypeMismatch of string
+
     datatype arg = 
 	BOOL of bool
       | INT of int
