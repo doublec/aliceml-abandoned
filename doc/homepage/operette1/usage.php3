@@ -11,7 +11,7 @@
       pickled component as output.  If <I>&lt;output file&gt;</I> is given,
       use it as the pickle file name, else use the basename of
       <I>&lt;input file&gt;</I> with <TT>.ozf</TT> as extension.</P></DD>
-    <DT><TT>stoc</TT> [<I>&lt;options&gt;</I>] [<TT>-x</TT>]
+    <DT><TT>stoc</TT> [<I>&lt;options&gt;</I>] <TT>-x</TT>
       <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]</DT>
     <DD><P>Compile <I>&lt;input file&gt;</I> as an Alice source and write an
       executable component as output.  If <I>&lt;output file&gt;</I> is given,
@@ -26,10 +26,13 @@
       <P><I>&lt;signature source&gt;</I> must export exactly one signature.
       Its name is irrevelant.</P></DD>
   </DL>
-  <P>Per default, the
-    <A href="/Internal/software/smlnj/doc/basis/pages/top-level-chapter.html"
-    >SML Standard Basis top-level environment</A> is available for compiling
-    source files.</P>
+  <P>If an imported component does not exist, but a source file for it
+    (i.e., a file with same name but ending in <TT>.aml</TT>, <TT>.sml</TT>,
+    or <TT>.sig</TT>) can be located, the compiler first invokes itself
+    recursively to compile the imported component.  Note: file modification
+    times are not checked.</P>
+  <P>Per default, the <A href="libraries.php3#toplevel">SML Standard Basis
+    top-level environment</A> is available for compiling source files.</P>
   <P>The following extra options may be given:</P>
   <DL>
     <DT><TT>--nodefaultimport</TT></DT>
@@ -38,13 +41,13 @@
       top-level environment itself.</DD>
   </DL>
 
-<?php section("engine", "engine") ?>
+<?php section("virtualmachine", "virtual machine") ?>
   <P>Any compiled component can be invoked as an Alice application.  When
     loading a component, its body is executed; the work of an application is
     performed by its body's side-effects.</P>
   <P>An application is executed either by starting an executable component
     produced by <TT>stoc</TT> from the command line or by invoking the
-    Stockhausen Engine directly thus:</P>
+    Stockhausen Virtual Machine directly thus:</P>
   <DL>
     <DT><TT>stow</TT> <I>&lt;application url&gt;</I>
       <I>&lt;args&gt;</I> ...</DT>
@@ -52,6 +55,10 @@
       <I>&lt;application url&gt;</I>, denoting a compiled or executable
       component.
   </DL>
+  <P>(<TT>stow</TT> is short for <I>Stockwerk</I>, the name of the virtual
+    machine.)</P>
+  <P>To terminate an application, the <TT>OS.Process.terminate</TT>
+    function must be invoked.</P>
 
 <?php section("installation", "installation") ?>
   <P>In the lab, Stockhausen Operette 1 is installed in the directory</P>
