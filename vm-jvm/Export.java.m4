@@ -17,6 +17,7 @@ import java.rmi.RemoteException;
 import java.rmi.RMISecurityManager;
 import java.rmi.server.*;
 
-interface Export extends java.rmi.Remote {
+public interface Export extends java.rmi.Remote {
     public DMLValue get(java.lang.String what) throws java.rmi.RemoteException;
+    public byte[] getClass(java.lang.String className) throws java.rmi.RemoteException;
 }

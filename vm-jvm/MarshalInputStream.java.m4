@@ -18,6 +18,10 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.rmi.server.RMIClassLoader;
+import de.uni_sb.ps.dml.runtime.PickleClassLoader;
+import de.uni_sb.ps.dml.runtime.Export;
+
+import java.rmi.Naming;
 
 import sun.security.action.GetBooleanAction;
 
@@ -70,6 +74,7 @@ public class MarshalInputStream extends ObjectInputStream {
 	 */
 	Object annotation = readLocation();
 
+	// System.out.println("Annotation: "+annotation);
 	/*
 	 * Unless we were told to skip this step, first try resolving the
 	 * class using default ObjectInputStream mechanism (using first
@@ -79,12 +84,12 @@ public class MarshalInputStream extends ObjectInputStream {
 	 * stub protocol, because there would never be a non-null class
 	 * loader on the stack in that situation anyway.)
 	 */
-	if (!skipDefaultResolveClass) {
-	    try {
-		return super.resolveClass(classDesc);
-	    } catch (ClassNotFoundException e) {
-	    }
-	}
+//  	if (!skipDefaultResolveClass) {
+//  	    try {
+//  		return super.resolveClass(classDesc);
+//  	    } catch (ClassNotFoundException e) {
+//  	    }
+//  	}
 
 	String className = classDesc.getName();
 
@@ -96,31 +101,34 @@ public class MarshalInputStream extends ObjectInputStream {
 	 * load from a loader using the codebase URL in the annotation.
 	 */
 	try {
-	    if (!useCodebaseOnly &&
-		annotation != null && (annotation instanceof String))
+	    if (annotation != null && (annotation instanceof String))
 	    {
 		String location = (String) annotation;
-			System.out.println("Location: "+location);
-			// hier machen wir eine tolle Analyse des annotation Strings
-			// und laden gegebenenfalls die Klasse selbst via unseren PickleClassLoader
-			// case location of !IP!className =>
-			//   schnapp den byte code von IP mit className;
-			//   lade Klasse mit PickleClassLoader.enter und gib sie zurück
-			if (location.startsWith("!")) {
-			    String ip = location.substring(1);
-			    Export exp = null;
-			    try {
-				exp = (Export) Naming.lookup("//"+ip+"/exporter");
-			    } catch (Exception e) {
-				System.err.println(e);
-				e.printStackTrace();
-				return null;
-			    }
-			    PickleClassLoader.loader.enter(className, exp.getClass(className));
-			    return PickleClassLoader.loader.findClass(className);
-			} else {
-			    return LoaderHandler.loadClass(location, className);
-			}
+		System.out.println("Location: "+location+" ClassName: "+className);
+		// hier machen wir eine tolle Analyse des annotation Strings
+		// und laden gegebenenfalls die Klasse selbst via unseren PickleClassLoader
+		// case location of !IP!className =>
+		//   schnapp den byte code von IP mit className;
+		//   lade Klasse mit PickleClassLoader.enter und gib sie zurück
+		if (location.startsWith("!")) {
+		    String ip = location.substring(1);
+		    Export exp = null;
+		    try {
+			exp = (Export) Naming.lookup("//"+ip+"/exporter");
+		    } catch (Exception e) {
+			System.err.println(e);
+			e.printStackTrace();
+			return null;
+		    }
+		    byte[] b = exp.getClass(className);
+		    // System.out.println("Bytes: "+b);
+		    if (b != null) {
+			PickleClassLoader.loader.enter(className,b);
+		    }
+		    return PickleClassLoader.loader.findClass(className);
+		} else {
+		    return LoaderHandler.loadClass(location, className);
+		}
 	    } else {
 		return LoaderHandler.loadClass(className);
 	    }

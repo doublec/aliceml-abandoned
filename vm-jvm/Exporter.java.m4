@@ -30,4 +30,8 @@ final class Exporter extends java.rmi.server.UnicastRemoteObject implements Expo
     public DMLValue get(java.lang.String what) throws java.rmi.RemoteException {
 	return (DMLValue) hash.get(what);
     }
+
+    public byte[] getClass(java.lang.String className) throws java.rmi.RemoteException {
+	return PickleClassLoader.loader.getBytes(className);
+    }
 }

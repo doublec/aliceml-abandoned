@@ -39,12 +39,12 @@ final public class Connection {
 		java.lang.String home = (java.lang.String) prop.get("user.home");
 		java.lang.String name = (java.lang.String) prop.get("user.name");
 		// System.out.println("setze properties");
-		prop.put("java.rmi.server.codebase",
-			 "http://"+i.getHostName()+"/~"+name+"/codebase/"); // der letzte / ist wichtig
+		// prop.put("java.rmi.server.codebase",
+		// "http://"+i.getHostName()+"/~"+name+"/codebase/"); // der letzte / ist wichtig
 		prop.put("java.security.policy",
 			 "http://"+i.getHostName()+"/~"+name+"/codebase/policy");
 		// System.out.println("schreibe klassen");
-		PickleClassLoader.loader.writeCodebase(home+"/public_html/codebase");
+		// PickleClassLoader.loader.writeCodebase(home+"/public_html/codebase");
 
 		if (System.getSecurityManager() == null) {
 		    System.out.println("starte security manager");

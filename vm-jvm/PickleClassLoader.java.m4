@@ -23,7 +23,7 @@ final public class PickleClassLoader extends ClassLoader {
     static final public PickleClassLoader loader = new PickleClassLoader();
     static java.lang.String path = null;
     static boolean write = false;
-    java.util.Hashtable hash = new java.util.Hashtable();
+    static java.util.Hashtable hash = new java.util.Hashtable();
 
     public Class findClass(java.lang.String name) throws ClassNotFoundException {
 	byte[] b = (byte[]) hash.get(name);
@@ -36,14 +36,14 @@ final public class PickleClassLoader extends ClassLoader {
 	}
     }
 
-    public void enter(java.lang.String cl, byte[] b) throws java.rmi.RemoteException {
+    public static void enter(java.lang.String cl, byte[] b) throws java.rmi.RemoteException {
 	hash.put(cl,b);
 	if (write) {
 	    writeClass(cl,b);
 	}
     }
 
-    public byte[] getBytes(java.lang.String cl) {
+    public static byte[] getBytes(java.lang.String cl) {
 	return (byte[]) hash.get(cl);
     }
 

@@ -86,7 +86,10 @@ rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Exporter_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Port_Stub.class
 
-all:	link $(files) rmi $(M4INCL)
+rmipatch = $(CLASSROOT)java/rmi/server/RMIClassLoader.class \
+	$(CLASSROOT)java/rmi/MarshalInputStream.class
+
+all:	link $(files) rmi $(M4INCL) $(rmipatch)
 
 link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)
@@ -110,3 +113,11 @@ $(files): $(CLASSROOT)$(RUNTIME)%.class : $(SRCDIR)/%.java.m4
 
 $(rmifil): $(CLASSROOT)$(RUNTIME)%_Stub.class : $(CLASSROOT)$(RUNTIME)%.class
 	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(RMIC) $(RMIFLAGS) -d $(CLASSROOT) $(rt)`basename $< .class`
+
+$(CLASSROOT)java/rmi/server/RMIClassLoader.class : $(SRCDIR)/RMIClassLoader.java.m4
+	$(M4) $(M4INCL) $< > `basename $< .m4`
+	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) `basename $< .m4`
+
+$(CLASSROOT)java/rmi/MarshalInputStream.class : $(SRCDIR)/MarshalInputStream.java.m4
+	$(M4) $(M4INCL) $< > `basename $< .m4`
+	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) `basename $< .m4`
