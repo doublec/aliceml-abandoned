@@ -430,7 +430,7 @@ define
 	       {For 1 N 1 proc {$ I} V.I = {F I} end}
 	       V
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Size'}
+	       {RaiseAliceException BuiltinTable.'General.Size'} unit
 	    end
 	 end
       'Word.+': BootWord.'+'
