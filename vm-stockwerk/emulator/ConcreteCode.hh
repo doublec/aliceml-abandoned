@@ -26,9 +26,6 @@ private:
 public:
   using Block::ToWord;
   // ConcreteCode Accessors
-  word GetAbstractCode() {
-    return GetHandler()->GetAbstractRepresentation(this)->ToWord();
-  }
   Interpreter *GetInterpreter() {
     return static_cast<Interpreter *>
       (Store::DirectWordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
