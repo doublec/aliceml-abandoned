@@ -38,7 +38,8 @@
   </P>
 
   <P>See also:
-    <A href="fs.php3"><TT>FS</TT></A>
+    <A href="fs.php3"><TT>FS</TT></A>,
+    <A href="linear.php3"><TT>Linear</TT></A>
   </P>
 
 <?php section("import", "import"); ?>
