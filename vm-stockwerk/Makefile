@@ -5,15 +5,16 @@ include $(TOPDIR)/Makefile.rules
 
 SUBDIRS = store adt scheduler datalayer builtins interpreter
 
+SRCS = Base.cc Main.cc
 OBJS = \
-	Base.o Main.o \
+	$(SRCS:%.cc=%.o) \
 	interpreter/libinterpreter.a \
 	builtins/libbuiltins.a datalayer/libdatalayer.a \
 	scheduler/libscheduler.a adt/libadt.a store/libstore.a
 
 LIBS = #-lmsvcrt
 
-.PHONY: all-subdirs
+.PHONY: all-subdirs depend-local
 
 all: all-subdirs stow.exe
 
@@ -34,3 +35,11 @@ veryclean:
 distclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
 	rm -f $(OBJS) stow.exe
+
+depend: Makefile.deps
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) depend) || exit 1; done
+
+Makefile.deps: Makefile $(SRCS)
+	$(MAKEDEPEND) $(SRCS) > Makefile.deps
+
+include Makefile.deps

@@ -1,7 +1,7 @@
 .PHONY: all clean veryclean distclean
 
 %.o: %.cc
-	$(CXX) -I. -I$(TOPDIR) $(CXXFLAGS) -c $< -o $@
+	$(CXX) -I$(TOPDIR) $(CXXFLAGS) -c $< -o $@
 
 %.s: %.cc
-	$(CXX) -I. -I$(TOPDIR) $(CXXFLAGS) -S $< -o $@
+	$(CXX) -I$(TOPDIR) $(CXXFLAGS) -S $< -o $@
