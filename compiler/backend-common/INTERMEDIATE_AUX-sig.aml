@@ -3,48 +3,22 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    signature IMP_SET
-from "../../lib/utility/IMP_SET-sig"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Type
-from "../../lib/rtt/Type"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    signature INTERMEDIATE_GRAMMAR
-from "../common/INTERMEDIATE_GRAMMAR-sig"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import
-    structure Arity
-from "Arity"
-
-import
-    signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR-sig"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
+import signature IMP_SET              from "../../lib/utility/IMP_SET-sig"
+import structure Label                from "../../lib/rtt/Label"
+import structure Type                 from "../../lib/rtt/Type"
+import structure Stamp                from "../common/Stamp"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
+import structure Arity                from "Arity"
+import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar          from "FlatGrammar"
 
 signature INTERMEDIATE_AUX =
     sig
@@ -69,6 +43,6 @@ signature INTERMEDIATE_AUX =
 	val getUsedVars: O.exp * IdSet.t -> IdSet.t
 
 	val rowLabels: Type.row -> Label.t list
-	val typToArity: Type.t -> Arity.t option
+	val typToArity: Type.t -> Arity.t
 	val labelToIndex: Type.t * Label.t -> O.prod * int
     end
