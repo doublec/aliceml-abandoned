@@ -24,42 +24,49 @@ structure Backend=
 	 record arities. *)
 	structure StringListHash = MakeHashImpMap(StringListHashKey)
 
-	(* Hashtabelle of int. Used for labelfusion. *)
+	(* Hashtable of int. Used for labelfusion. *)
 	structure IntHash = MakeHashImpMap(type t=int fun hash x = x)
 
 	(* Set of int. Also used for labelfusion. *)
 	structure IntSet = MakeHashImpSet(type t=int fun hash x = x)
 
-	(* Hashtabelle of integers. Needed for static generation of
+	(* Hashtable of integers. Needed for static generation of
 	 integer constants. *)
 	structure LitHash = MakeHashImpMap (LitHashKey)
 
-	 (* Sets of Stamps. Used for computation of free variables *)
-	 structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
+	(* Sets of Stamps. Used for computation of free variables *)
+	structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
 
-	 structure Lambda = MakeLambda(structure StampSet=StampSet
-				       structure StampHash=StampHash
-				       val toplevel=toplevel)
+	structure Lambda = MakeLambda(structure StampSet=StampSet
+				      structure StampHash=StampHash
+				      val toplevel=toplevel)
 
-	 (* Structure for managing labels in JVM-methods *)
-	 structure Label =
-	     struct
-		 (* the actual label number *)
-		 val labelcount = ref (0:label)
+	(* Hashtable of (stamp*int) pairs. Used for the optimization of
+	 merging several SML functions in one apply when defined as
+	 fun ... and *)
+	structure StampIntHash = MakeHashImpMap(type t=stamp*int
+						fun hash (stamp', int') =
+						    Stamp.hash stamp' + int')
 
-		 (* Labels are stacked, so each function starts counting at 1. *)
-		 val stack : (int list) ref= ref nil
+	(* Structure for managing labels in JVM-methods *)
+	structure Label =
+	    struct
+		(* the actual label number *)
+		val labelcount = ref (0:label)
 
-		 (* In JVM, handles are stored in an exception table as triples of
-		  program positions (beginTry, endTry, handleRoutine).
-		  During code generation, we know the labels for beginTry and
-		  handleRoutine, but we don't yet know about endTry.
-		  Furthermore, handles may be nested, so we use a stack. *)
-		 val handleStack = ref [(~1, ~1)]
+		(* Labels are stacked, so each function starts counting at 1. *)
+		val stack : (int list) ref= ref nil
 
-		 fun new () =
-		     (labelcount := !labelcount + 1;
-		      !labelcount)
+		(* In JVM, handles are stored in an exception table as triples of
+		 program positions (beginTry, endTry, handleRoutine).
+		 During code generation, we know the labels for beginTry and
+		 handleRoutine, but we don't yet know about endTry.
+		 Furthermore, handles may be nested, so we use a stack. *)
+		val handleStack = ref [(~1, ~1)]
+
+		fun new () =
+		    (labelcount := !labelcount + 1;
+		     !labelcount)
 
 		fun toString lab =
 		    "label"^Int.toString lab
@@ -429,10 +436,20 @@ structure Backend=
 		    lithash
 	    end
 
-	(* print out a list of stamps. Used in verbose mode for debugging. *)
-	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
-	and psl (x::nil) = Stamp.toString x
-	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
-	  | psl nil = ""
+	datatype APPLY =
+	    (* methodname, # of params, isstatic *)
+	    Apply of string * int * bool
+	  (* # of params, isstatic, code class, code position.
+	   No methodname, because it is always "recapply". *)
+	  | RecApply of int * bool * stamp * int
 
+	structure Function =
+	    struct
+	    end
+
+(* print a list of stamps. Used in verbose mode for debugging. *)
+fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
+and psl (x::nil) = Stamp.toString x
+  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
+  | psl nil = ""
     end

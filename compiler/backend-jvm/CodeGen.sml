@@ -87,7 +87,7 @@ structure CodeGen =
 	      | freeVarsExp (SelExp _) = ()
 	      | freeVarsExp (FunExp(_,_, idbodys)) =
 		let
-		    fun freeVarsFun ((OneArg (id' as Id (_,stamp',name)),body')::idbodys') =
+		    fun freeVarsFun ((OneArg (id' as Id (_,stamp',_)),body')::idbodys') =
 			(fV.enter();
 			 Lambda.push id';
 			 Lambda.pushFun illegalId;
@@ -99,10 +99,6 @@ structure CodeGen =
 			 Lambda.popFun ();
 			 Lambda.setId();
 			 Lambda.pop ();
-			 case name of
-			     ExId name' => Lambda.assignName
-				 (stamp',name')
-			   | InId => ();
 			 fV.exit())
 		      | freeVarsFun ((args,body')::idbodys') =
 			(fV.enter();
@@ -414,6 +410,7 @@ structure CodeGen =
 				    funList idexplist
 
 			      (* constructor application *)
+			      (* xxx falsch! Erst leere Dummies bauen *)
 			      | ConAppExp (parms as
 					   (_,id', (TupArgs ids))) =>
 				    (case length ids of
