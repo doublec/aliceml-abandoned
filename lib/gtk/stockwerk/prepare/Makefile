@@ -5,10 +5,8 @@
 # 1. generate a big header file with all GTK+ declarations
 # 2. clean file from things that could confuse the CKit parser
 
-#INSTALL = install -C -v -m 666
-INSTALL = install -v -m 644
-
-COMPS = GTK GDK GDK_PIXBUF G
+INSTALL = ../myinstall -v -m 644
+#COMPS = GTK GDK GDK_PIXBUF G
 #OPTS = $(COMPS:%=-D%_DISABLE_DEPRECATED)
 OPTS =
 GCC = gcc -E -Wall -undef -U__GNUC__ \
