@@ -21,36 +21,10 @@ in
 
 signature DRAW =
     sig
-
-        exception  MissingColor
-	exception DrawError
-
-	val groupToPosition:  node * int * int -> unit
-	
-	val atomDraw   :   node * int * int * bool 
-	    -> int * int 
-
-	val drawLimit   :   node * int * int *  bool 
-	    -> int * int 
-
-	val drawConcat :   
-	    node * int * int  *  bool
-	    -> int * int
-
-	val drawContainer:
-	    node * int * int  *  bool
-	    -> int * int 
-        
-        val drawRelNode : 
-	    node * int * int  *  bool
-	    -> int * int 
-
-	val move': node * int * int -> bool 
-
-	val move: node * int * int -> int * int   
-
-	val draw : node * int * int *  bool 
-	    -> int * int 
+ 
+	(* Draws Node Trees at specified position *)
+	(* boolean indicates drawing as new/updating *)
+	val draw : node * int * int *  bool  -> int * int 
        
     end
 
