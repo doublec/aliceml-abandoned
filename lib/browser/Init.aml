@@ -62,7 +62,7 @@ struct
 		   ; registerColor(LABEL_COLOR, allocColor (0,10000,65535))
 		   ; registerColor(SEP_COLOR, allocColor(0,0,0))
 	           ; registerColor(EQU_COLOR, allocColor(0,0,0))
-	           ; registerColor(LIMIT_COLOR, allocColor (10000,50000,10000))
+	           ; registerColor(LIMIT_COLOR, allocColor (10000,60000,10000))
 	           ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
 	           ; registerColor(REL_COLOR, allocColor (60000,20000,0))
 	           ; registerColor(DEFAULT, allocColor(0,0,0)) 

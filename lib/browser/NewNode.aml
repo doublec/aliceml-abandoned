@@ -728,7 +728,7 @@ struct
 				       setGroup)
 	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
 				       setGroup)
-	       val value =  createGraph (vv,t,conc,3,d)  
+	       val value =  createGraph (vv,t,conc,3,d+1)  
 	   in ( Array.update(getKids(conc),0,s_val)
 	       ; Array.update(getKids(conc),1,lab)
 	       ; Array.update(getKids(conc),2,equ)
@@ -752,7 +752,7 @@ struct
 	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
 				       setGroup)
 	       val vv_inf = UnsafeValue.cast vv : Reflect.module
-	       val value =  createGraphInf (vv_inf,inf,conc,3,d) 
+	       val value =  createGraphInf (vv_inf,inf,conc,3,d+1) 
 	   in ( Array.update(getKids(conc),0,s_struct)
 	       ; Array.update(getKids(conc),1,name)
 	       ; Array.update(getKids(conc),2,equ)
