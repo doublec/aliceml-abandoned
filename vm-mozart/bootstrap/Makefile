@@ -48,7 +48,7 @@ FRONTENDSMLSOURCES = \
 	AbstractionError.sml INFIX.sig Infix.sml BIND_ENV.sig BindEnv.sml \
 	BIND_ENV_FROM_SIG.sig BindEnvFromSig.sml SHARING.sig Sharing.sml \
 	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
-	Parser.grm.sig Parser.grm.sml DerivedForms.sml LEXER_ERROR.sig \
+	PARSER.sig Parser.sml DerivedForms.sml LEXER_ERROR.sig \
 	LexerError.sml Lexer.lex.sml CountPosLexer.sml PARSING_PHASE.sig \
 	ParsingPhase.sml BIND_ENV0.sig BindEnv0.sml MakeFrontendSML.sml
 FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
@@ -103,6 +103,14 @@ frontend-common/%: ../../stoc/frontend-common/% frontend-common/%.header \
 
 frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header Base.import
 	cat Base.import frontend-sml/$*.header $< > $@
+
+frontend-sml/PARSER.sig: ../../stoc/frontend-sml/Parser.grm.sig \
+	frontend-sml/PARSER.sig.header Base.import
+	cat Base.import $@.header $< > $@
+
+frontend-sml/Parser.sml: ../../stoc/frontend-sml/Parser.grm.sml \
+	frontend-sml/Parser.sml.header Base.import
+	cat Base.import $@.header $< > $@
 
 backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 	Base.import
