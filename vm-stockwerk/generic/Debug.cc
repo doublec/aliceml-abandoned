@@ -106,9 +106,9 @@ u_int Debug::maxWidth = 190;
 u_int Debug::maxDepth = 6;
 
 void Debug::Dump(word x) {
-  PerformDump(stderr, x, 2, 0, 0);
+  PerformDump(stderr, x, 0, 2, 0);
 }
 
 void Debug::DumpTo(FILE *file, word x) {
-  PerformDump(file, x, 2, 0, 0);
+  PerformDump(file, x, 0, 2, 0);
 }
