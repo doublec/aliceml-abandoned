@@ -39,7 +39,7 @@ sig
     val start : callbacks -> gui
 
     val playersJoined :       gui * (string * Color.color) list -> unit
-    val playerDisconnected : gui * string * Color.color -> unit
+    val playerDisconnected :  gui * string * Color.color -> unit
     val gameStarted :         gui -> unit
     val levelStart :          gui * Protocol.level_info -> unit    
     val levelTick :           gui * Highscore.points list option * Protocol.diff list * Pos.pos option * Time.time -> unit
