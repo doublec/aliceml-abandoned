@@ -30,6 +30,7 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 					avail, getPos, setPos, endPos,
 					verifyPos, close, ioDesc}) =
 	    let
+		(*--** result of trv/tra can be empty; confused with EOS *)
 		(*--** only translate CR NL to NL *)
 		fun trv v =
 		    String.implode (CharVector.foldr (fn (c, rest) =>
