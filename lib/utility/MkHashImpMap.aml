@@ -62,7 +62,7 @@ struct
 
 
     fun hash(t,k)		= Key.hash k mod Array.length t
-    fun isEntryFor k (k',_)	= Key.equals(k,k')
+    fun isEntryFor k (k',_)	= Key.equal(k,k')
 
     fun member((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
 				    List.exists (isEntryFor k) kas
@@ -82,7 +82,7 @@ struct
     exception Delete'
 
     fun delete'(  [],    k)	= raise Delete'
-      | delete'(ka::kas, k)	= if Key.equals(#1 ka, k)
+      | delete'(ka::kas, k)	= if Key.equal(#1 ka, k)
 				  then kas : (key * 'a) list
 				  else ka :: delete'(kas,k)
 
