@@ -53,7 +53,7 @@ DEFINE1(UnsafeValue_con) {
   DECLARE_CONVAL(conVal, x0);
   Constructor *constructor =
     conVal->IsConVal()? conVal->GetConstructor(): Constructor::FromWord(x0);
-  RETURN2(constructor->ToWord(), Store::IntToWord(0)); //--** typ unimplemented
+  RETURN(constructor->ToWord());
 } END
 
 DEFINE3(UnsafeValue_projConstructed) {
@@ -70,6 +70,11 @@ DEFINE1(UnsafeValue_conName) {
   TagVal *exId = TagVal::New(0, 1); // ExId ...
   exId->Init(0, name->ToWord());
   RETURN(exId->ToWord());
+} END
+
+DEFINE1(UnsafeValue_conType) {
+  DECLARE_CONSTRUCTOR(constructor, x0);
+  RETURN(Store::IntToWord(0)); //--** unimplemented
 } END
 
 word UnsafeValue() {
@@ -96,5 +101,7 @@ word UnsafeValue() {
 		 UnsafeValue_projConstructed, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "conName",
 		 UnsafeValue_conName, 1, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "conType",
+		 UnsafeValue_conType, 1, true);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
