@@ -132,8 +132,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | Default
 	and nodeStatus =
 	    Initial
-	  | Count of int
-	  | Checking
 	  | Raw of testGraph list * testGraph list
 	  | Cooked of (pos * test) list * (pos * test) list
 	  | Optimized of (pos * test) list * (pos * test) list
@@ -214,82 +212,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Elimination of Backtracking, Producing a Test Graph *)
 
-	local
-	    val count = ref 0
-	in
-	    fun gen () =
-		let
-		    val n = !count + 1
-		in
-		    count := n; n
-		end
-	end
-
-	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
-	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
-	  | outputLit (CharLit c) = "char " ^ Char.toCString c
-	  | outputLit (StringLit s) = "string " ^ String.toCString s
-	  | outputLit (RealLit s) = "real " ^ s
-
-	fun outputTest (LitTest lit) = outputLit lit
-	  | outputTest (ConTest (_, _)) = "con"
-	  | outputTest RefTest = "ref"
-	  | outputTest (TupTest i) = "tup " ^ Int.toString i
-	  | outputTest (RecTest _) = "rec"
-	  | outputTest (LabTest _) = "lab"
-	  | outputTest (VecTest _) = "vec"
-	  | outputTest (GuardTest _) = "guard"
-	  | outputTest (DecTest _) = "dec"
-
-	fun outputTestSeqElem (Test (_, test)) = outputTest test
-	  | outputTestSeqElem (Neg testSeq) =
-	    "neg (" ^ outputTestSeq testSeq ^ ")"
-	  | outputTestSeqElem (Alt (testSeq::testSeqr)) =
-	    "alt [" ^ (List.foldl (fn (testSeq, rest) =>
-				   rest ^ ", " ^ outputTestSeq testSeq)
-		       (outputTestSeq testSeq) testSeqr) ^ "]"
-	  | outputTestSeqElem (Alt nil) = ""
-	and outputTestSeq (elem::elemr) =
-	    "[" ^ (List.foldl (fn (elem, rest) =>
-			       rest ^ ", " ^ outputTestSeqElem elem)
-		   (outputTestSeqElem elem) elemr) ^ "]"
-	  | outputTestSeq nil = "[]"
-
-	fun outputPos pos = Debug.posToString pos
-
-	fun output (Node (pos, test, ref thenTree, ref elseTree,
-			  status as ref Initial), n) =
-	    let
-		val m = gen ()
-	    in
-		status := Count m;
-		TextIO.print (Int.toString n ^ " -> " ^ Int.toString m ^ "\n");
-		TextIO.print ("node " ^ Int.toString m ^ ": " ^
-			      outputPos pos ^ "/" ^ outputTest test ^ "\n");
-		output (thenTree, m);
-		output (elseTree, ~m)
-	    end
-	  | output (Node (_, _, _, _, ref (Count m)), n) =
-	    TextIO.print (Int.toString n ^ " -> " ^ Int.toString m ^ "\n")
-	  | output (Node (_, _, _, _, ref _), _) =
-	    Crash.crash "SimplifyMatch.output"
-	  | output (Leaf (_, _), n) =
-	    TextIO.print (Int.toString n ^ " -> leaf\n")
-	  | output (Default, n) =
-	    TextIO.print (Int.toString n ^ " -> default\n")
-
-	fun checkTree (Node (_, _, ref thenTree, ref elseTree,
-			     status as ref (Initial | Count _))) =
-	    (status := Checking;
-	     checkTree thenTree;
-	     checkTree elseTree;
-	     status := Initial)
-	  | checkTree (Node (_, _, _, _, ref Checking)) =
-	    Crash.crash "SimplifyMatch.checkTree: cycle"
-	  | checkTree _ = ()
-
-	fun propagateElses (Node (_, _, thenTreeRef, elseTreeRef,
-				  status as ref Initial),
+	fun propagateElses (Node (_, _, thenTreeRef, elseTreeRef, _),
 			    defaultTree) =
 	    (case !elseTreeRef of
 		 Default => elseTreeRef := defaultTree
@@ -297,8 +220,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	     case !thenTreeRef of
 		 Default => thenTreeRef := defaultTree
 	       | thenTree => propagateElses (thenTree, !elseTreeRef))
-	  | propagateElses (Node (_, _, _, _, ref _), _) =
-	    Crash.crash "SimplifyMatch.propagateElses"
 	  | propagateElses (Leaf (_, _), _) = ()
 	  | propagateElses (Default, _) =
 	    Crash.crash "SimplifyMatch.propagateElses"
@@ -398,7 +319,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun buildGraph (matches, elseExp) =
 	    let
-		val _ = TextIO.print "building graph ...\n"
 		val (graph, consequents) =
 		    List.foldr (fn ((coord, pat, thenExp),
 				    (elseTree, consequents)) =>
@@ -406,10 +326,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				    val pat' = separateAlt pat
 				    val (testSeq, _) =
 					makeTestSeq (pat', nil, nil, nil)
-				    val _ =
-					TextIO.print
-					(outputTestSeq (List.rev testSeq) ^
-					 "\n")
 				    val r = ref NONE
 				    val leaf = Leaf (thenExp, r)
 				in
@@ -423,11 +339,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    Default =>
 			(elseGraph, consequents)
 		  | _ =>
-			(TextIO.print "propagating defaults ...\n";
-			 output (graph, 0);
-			 checkTree graph;
-			 propagateElses (graph, elseGraph);
-			 TextIO.print "optimizing graph ...\n";
+			(propagateElses (graph, elseGraph);
 			 (optimizeGraph graph, consequents))
 	    end
     end
