@@ -15,6 +15,7 @@ import structure Name              from "../../lib/rtt/Name"
 import structure Label             from "../../lib/rtt/Label"
 import structure Stamp             from "../common/Stamp"
 import structure Type              from "../../lib/rtt/Type"
+import structure PervasiveType     from "../../lib/rtt/PervasiveType"
 import structure Inf               from "../../lib/rtt/Inf"
 import structure AbstractGrammar   from "AbstractGrammar"
 
@@ -59,9 +60,9 @@ struct
 	| VecExpMismatch	of typ_mismatch
 	| TagExpLab		of lab
 	| TagExpArgMismatch	of typ_mismatch
-	| TagExpRowMismatch	of typ_mismatch
 	| ConExpConMismatch	of typ_mismatch
 	| ConExpArgMismatch	of typ_mismatch
+	| RollExpMismatch	of typ_mismatch
 	| UpdExpMismatch	of typ_mismatch
 	| SelExpMismatch	of typ_mismatch
 	| AppExpFunMismatch	of typ_mismatch
@@ -85,9 +86,9 @@ struct
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgMismatch	of typ_mismatch
-	| TagPatRowMismatch	of typ_mismatch
 	| ConPatConMismatch	of typ_mismatch
 	| ConPatArgMismatch	of typ_mismatch
+	| RollPatMismatch	of typ_mismatch
 	| VecPatMismatch	of typ_mismatch
 	| AsPatMismatch		of typ_mismatch
 	| AltPatMismatch	of typ_mismatch
@@ -192,6 +193,32 @@ struct
 		    textpar["does","not","unify","with"] ^^ indent td4
 		)
 	end
+
+    fun unstrict1 t =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if Type.equal(t1, PervasiveType.typ_strict)
+	    then t2
+	    else t
+	  | _ => t
+
+    fun unstrict(t1,t2,t3,t4) =
+	(unstrict1 t1, unstrict1 t2, unstrict1 t3, unstrict1 t4)
+
+    fun ppRollTypMismatch(ue as (t1,t2,t3,t4)) =
+	let
+	    val (l,t1',r) = Type.asFieldRow(Type.asSum t1)
+	    val  t2'      = Type.lookupRow(Type.asSum(Type.unroll t2), l)
+	    val  ue'      = unstrict(t1',t2',t3,t4)
+	in
+	    if not(Type.isEmptyRow r) then raise Type.Row else
+	    ppTypMismatch4(textpar["ill-typed","constructor","argument:"],
+			   textpar["does","not","match","argument","type"], ue')
+	end
+	handle (Type.Type | Type.Row) =>
+	    ppTypMismatch4(textpar["ill-typed","recursive","value:"],
+			   textpar["does","not","match","recursive","type"], ue)
+
 
     fun ppInfMismatch(d, im) =
         vbox(
@@ -333,18 +360,16 @@ struct
 	  textpar["does","not","agree","with","previous","element","type"], ue)
       | ppError(TagExpLab l) =
 	  textpar["label",ppLab l,"is","not","contained","in","type"]
-      | ppError(TagExpRowMismatch ue) =
-	ppTypMismatch4(
-	  textpar["constructor","type","and","tag","inconsistent:"],
-	  textpar["does","not","match","argument","type"], ue)
       | ppError(TagExpArgMismatch ue | ConExpArgMismatch ue) =
 	ppTypMismatch4(
 	  textpar["constructor","argument","type","mismatch:"],
-	  textpar["does","not","match","argument","type"], ue)
+	  textpar["does","not","match","argument","type"], unstrict ue)
       | ppError(ConExpConMismatch ue) =
 	ppTypMismatch2(
 	  textpar["applied","value","is","not","a","constructor","function:"],
 	  textpar["does","not","match","function","type"], ue)
+      | ppError(RollExpMismatch ue) =
+	ppRollTypMismatch ue
       | ppError(UpdExpMismatch ue) =
 	ppTypMismatch4(
 	  textpar["mismatch","on","record","update:"],
@@ -429,21 +454,19 @@ struct
 	  textpar["type","mismatch","in","intensional","overloading:"],
 	  textpar["does","not","match","implementation","type"], ue)
       (* Patterns *)
-      | ppError(TagPatRowMismatch ue) =
-	ppTypMismatch4(
-	  textpar["constructor","type","and","tag","inconsistent:"],
-	  textpar["does","not","match","argument","type"], ue)
       | ppError(TagPatLab l) =
 	  textpar["label",ppLab l,"is","not","contained","in","type"]
       | ppError(TagPatArgMismatch ue | ConPatArgMismatch ue) =
 	ppTypMismatch4(
 	  textpar["ill-typed","constructor","argument:"],
-	  textpar["does","not","match","argument","type"], ue)
+	  textpar["does","not","match","argument","type"], unstrict ue)
       | ppError(ConPatConMismatch ue) =
 	ppTypMismatch2(
 	  textpar["applied","identifier","is","not","a","constructor",
 		  "function:"],
 	  textpar["does","not","match","function","type"], ue)
+      | ppError(RollPatMismatch ue) =
+	ppRollTypMismatch ue
       | ppError(VecPatMismatch ue) =
 	ppTypMismatch2(
 	  textpar["inconsistent","types","in","vector","pattern:"],

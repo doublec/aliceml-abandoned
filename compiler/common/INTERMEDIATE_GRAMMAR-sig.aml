@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -63,6 +63,7 @@ sig
 				(* all labels distinct *)
 	| SelExp    of exp_info * lab * exp		(* field selection *)
 	| VecExp    of exp_info * exp vector		(* vector *)
+	| RollExp   of exp_info * exp			(* recursive typing *)
 	| StrictExp of exp_info * exp			(* strict evaluation *)
 	| FunExp    of exp_info * mat vector		(* function / functor *)
 	| AppExp    of exp_info * exp * exp		(* application *)
@@ -97,6 +98,7 @@ sig
 	| ProdPat   of pat_info * pat fld vector	(* record *)
 				(* all labels distinct *)
 	| VecPat    of pat_info * pat vector		(* vector *)
+	| RollPat   of pat_info * pat			(* recursive typing *)
 	| StrictPat of pat_info * pat			(* non-future *)
 	| AsPat     of pat_info * pat * pat		(* conjunction *)
 	| AltPat    of pat_info * pat * pat		(* disjunction *)

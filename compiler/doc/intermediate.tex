@@ -88,13 +88,14 @@ $\longid$	&$:=$&	$\id$			& short identifier \\
 $\exps$	&$:=$&	$\exp_1,\cdots,\exp_n$		& expressions $(n\geq0)$ \\
 $\exp$	&$:=$&	$\lit$				& literal expression \\
 	&&	$\f{prim}\;\x{s}$		& primitive value \\
-	&&	`$\f{new}$'			& immediate value \\
+	&&	`$v$'				& immediate value \\
 	&&	$\f{new}$			& constructor generation \\
 	&&	$\longid$			& variable \\
 	&&	$\#\lab(\exp)$			& product projection \\
 	&&	$`\lab(\exp)$			& sum injection \\
 	&&	$@\longid(\exp)$		& construction \\
 	&&	$\f{ref}\;\exp$			& reference \\
+	&&	$\f{roll}\;\exp$		& recursive typing \\
 	&&	$\f{strict}\;\exp$		& strict evaluation \\
 	&&	$[\exps]$			& vector \\
 	&&	$(\exps)$			& tuple \\
@@ -132,6 +133,7 @@ $\pat$	&$:=$&	$\lit$				& literal pattern \\
 	&&	$`\lab(\pat)$			& sum injection \\
 	&&	$@\longid(\pat)$		& construction \\
 	&&	$\f{ref}\;\pat$			& reference \\
+	&&	$\f{roll}\;\pat$		& recursive typing \\
 	&&	$\f{strict}\;\pat$		& non-future pattern \\
 	&&	$[\pats]$			& vector \\
 	&&	$(\pats)$			& tuple \\
@@ -170,7 +172,7 @@ Note that $\fld^x$ and $\flds^x$ actually stand for a family of symbols with dif
 \label{types}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The following grammar defines the set $\f{T}$ of {\em types}. We currently ignore recursive types. Existential types are also omitted since we do not require them yet.
+The following grammar defines the set $\f{T}$ of {\em types}. We omit existential types since we do not require them yet. Moreover, we omit higher kinds.
 
 \begin{center}
 \begin{tabular}{lcll}
@@ -185,6 +187,7 @@ $t$	&$:=$&	$\alpha$			& type variable \\
 	&&	$t_1 \conarrow t_2$		& constructor arrow \\
 	&&	$\{r\}$				& product \\
 	&&	$[\,r\,]$			& sum \\
+	&&	$\mu \alpha . t$		& recursive \\
 	&&	$\forall \alpha . t$		& universal quantification \\
 %	&&	$\exists \alpha . t$		& existential quantification \\
 %	&&	$\lambda \alpha:k . t$		& function \\
@@ -203,10 +206,12 @@ $r$	&$:=$&	$\epsilon$			& empty row \\
 
 We assume the following additional equivalence rules:
 \begin{eqnarray*}
+\mu \alpha.t &=& \mu \alpha.t[\mu \alpha.t/\alpha] \\
 \forall \alpha_1.t &=& \forall \alpha_2.t[\alpha_2/\alpha_1] \\
 \forall \alpha_1.\forall \alpha_2.t &=& \forall \alpha_2.\forall \alpha_1.t \\
 l_1:t_1,l_2:t_2,r &=& l_2:t_2,l_1:t_1,r
 \end{eqnarray*}
+The first rule is known is {\em Shao's equation} and allows expressing mutually recursive types without requiring a polyadic fixpoint operator. It comes down to a slightly more powerful variation of iso-recursion.
 
 We write $t_1 \succ t_2$ if $t_1$ matches $t_2$, i.e.\ if $t_2$ is an instantiation of the possibly quantified type $t_1$. Matching does not imply that $t_1$ is quantifier-free.
 
@@ -367,6 +372,14 @@ E \vdash \f{prim}\;s : t \Rightarrow t
 
 \begin{equation}
 \frac{
+%t : *
+}{
+E \vdash \mbox{`$v$'} : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
 t = t_0 \conarrow c(t_1)\cdots(t_n)
 \qquad
 \mbox{$c$ extensible}
@@ -432,6 +445,16 @@ E \vdash \exp \Rightarrow t'
 t = \c{ref}(t')
 }{
 E \vdash \f{ref}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t'[t/\alpha]
+\qquad
+t = \mu \alpha.t'
+}{
+E \vdash \f{roll}\;\exp : t \Rightarrow t
 }
 \end{equation}
 
@@ -779,6 +802,16 @@ E \vdash \pat \Rightarrow t',E'
 t = \c{ref}(t')
 }{
 E \vdash \f{ref}\;\pat : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t'[t/\alpha]
+\qquad
+t = \mu \alpha.t'
+}{
+E \vdash \f{roll}\;\pat : t \Rightarrow t
 }
 \end{equation}
 

@@ -221,7 +221,7 @@ end
 		val t  = #typ i
 		val l  = chLab E lab
 		val t1 = chLongid E longid
-		val r  = checked Type.asProd(Type.unroll t1)
+		val r  = checked Type.asProd t1
 			 (i, "LongId sel type", #[LONGID longid, TYPE t1])
 		val t' = checked Type.lookupRow(r,l)
 			 (i, "LongId label", #[LAB l, TYPE t1])
@@ -343,7 +343,7 @@ end
 		val t   = #typ i
 		val l   = chLab E lab
 		val t'  = chExp E exp
-		val r   = checked Type.asSum(Type.unroll t)
+		val r   = checked Type.asSum t
 			  (i, "TagExp type", #[TYPE t])
 		val t1  = checked Type.lookupRow(r,l)
 			  (i, "TagExp label", #[LAB l, TYPE t])
@@ -431,7 +431,7 @@ end
 		val t  = #typ i
 		val l  = chLab E lab
 		val t' = chExp E exp
-		val r  = checked Type.asProd(Type.unroll t')
+		val r  = checked Type.asProd t'
 			 (i, "SelExp type", #[LAB l, TYPE t'])
 		val t1 = checked Type.lookupRow(r,l)
 			 (i, "SelExp label", #[LAB l, TYPE t'])
@@ -456,6 +456,21 @@ end
 		      (i, "VecExp type constructor", #[TYPE t1]);
 		check (Vector.all (fn t' => Type.equal(t',t2)) ts)
 		      (i, "VecExp component type", #[TYPE t2]);
+		t
+	   end
+
+	(* E |- exp => t'    t' = unroll t
+	 * -------------------------------
+	 *     E |- roll exp : t => t
+	 *)
+	 | RollExp(i, exp) =>
+	   let
+		val t  = #typ i
+		val t1 = chExp E exp
+		val t' = Type.unroll t
+	   in
+		check (Type.equal(t',t1))
+		      (i, "RollExp type", #[TYPE_PAIR(t',t1)]);
 		t
 	   end
 
@@ -797,7 +812,7 @@ end
 		val t   = #typ i
 		val l   = chLab E lab
 		val t'  = chPat E pat
-		val r   = checked Type.asSum(Type.unroll t)
+		val r   = checked Type.asSum t
 			  (i, "TagPat type", #[TYPE t])
 		val t1  = checked Type.lookupRow(r,l)
 			  (i, "TagPat label", #[LAB l, TYPE t])
@@ -908,6 +923,21 @@ end
 		      (i, "VecPat type constructor", #[TYPE t1]);
 		check (Vector.all (fn t' => Type.equal(t',t2)) ts)
 		      (i, "VecPat component type", #[TYPE t2]);
+		t
+	   end
+
+	(* E |- pat => t'    t' = unroll t
+	 * -------------------------------
+	 *     E |- roll pat : t => t
+	 *)
+	 | RollPat(i, pat) =>
+	   let
+		val t  = #typ i
+		val t1 = chPat E pat
+		val t' = Type.unroll t
+	   in
+		check (Type.equal(t',t1))
+		      (i, "RollPat type", #[TYPE_PAIR(t',t1)]);
 		t
 	   end
 

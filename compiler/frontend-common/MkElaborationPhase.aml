@@ -155,10 +155,6 @@ struct
     fun conarrowTyp(E,t1,t2) =
 	Type.apply(PervasiveType.typ_conarrow, Type.arrow(t1,t2))
 
-    fun selLab(t,l) =
-	Type.lookupRow(Type.asSum(Type.unroll t), l)
-	handle Type.Row => raise Type.Type
-
   (* Unification of vectors *)
 
     exception MismatchVec of int * Env.typ * Env.typ
@@ -304,29 +300,30 @@ struct
 	    ( t, O.NewExp(typInfo(i,t), typ') )
 	end
 
-      | elabExp(E, I.TagExp(i, vallab, NONE, exp)) =
+      | elabExp(E, I.TagExp(i, vallab, exp)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (t1,exp')   = elabExp(E, exp)
 	    val  r          = Type.extendRow(l, t1, Type.unknownRow())
 	    val  t          = Type.sum r
 	in
-	    ( t, O.TagExp(typInfo(i,t), vallab', NONE, exp') )
+	    ( t, O.TagExp(typInfo(i,t), vallab', exp') )
 	end
-
+(*OBSOLETE
       | elabExp(E, I.TagExp(i, vallab, SOME typ, exp)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (t,typ')    = elabStarTyp(E, true, typ)
 	    val (t1,exp')   = elabExp(E, exp)
-	    val  t2         = selLab(t,l) handle Type.Type =>
+	    val  t2         = Type.lookupRow(Type.asSum t,l)
+			      handle (Type.Type | Type.Row) =>
 				    error(I.infoLab vallab, E.TagExpLab l)
 	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				    error(i, E.TagExpArgMismatch(t1,t2, t3,t4))
 	in
 	    ( t, O.TagExp(typInfo(i,t), vallab', SOME typ', exp') )
 	end
-
+*)
       | elabExp(E, I.ConExp(i, vallongid, exp)) =
 	let
 	    val (t1,vallongid') = elabVallongid(E, vallongid)
@@ -352,6 +349,17 @@ struct
 	    val  t        = refTyp(E, t1)
 	in
 	    ( t, O.RefExp(typInfo(i,t), exp') )
+	end
+
+      | elabExp(E, I.RollExp(i, exp, typ)) =
+	let
+	    val (t1,exp') = elabExp(E, exp)
+	    val (t2,typ') = elabStarTyp(E, true, typ)
+	    val  t2'      = Type.unroll t2
+	    val  _        = Type.unify(t1,t2') handle Type.Mismatch(t3,t4) =>
+				error(i, E.RollExpMismatch(t1, t2', t3, t4))
+	in
+	    ( t2, O.RollExp(typInfo(i,t2), exp', typ') )
 	end
 
       | elabExp(E, I.StrictExp(i, exp)) =
@@ -697,29 +705,30 @@ struct
 	    ( t, O.VarPat(typInfo(i,t), valid') )
 	end
 
-      | elabPat(E, s, I.TagPat(i, vallab, NONE, pat)) =
+      | elabPat(E, s, I.TagPat(i, vallab, pat)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (t1,pat')   = elabPat(E, s, pat)
 	    val  r          = Type.extendRow(l, t1, Type.unknownRow())
 	    val  t          = Type.sum r
 	in
-	    ( t, O.TagPat(typInfo(i,t), vallab', NONE, pat') )
+	    ( t, O.TagPat(typInfo(i,t), vallab', pat') )
 	end
-
+(*OBSOLETE
       | elabPat(E, s, I.TagPat(i, vallab, SOME typ, pat)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (t,typ')    = elabStarTyp(E, true, typ)
 	    val (t1,pat')   = elabPat(E, s, pat)
-	    val  t2         = selLab(t,l) handle Domain =>
+	    val  t2         = Type.lookupRow(Type.asSum t,l)
+			      handle (Type.Type | Type.Row) =>
 				    error(I.infoLab vallab, E.TagPatLab l)
 	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				    error(i, E.TagPatArgMismatch(t1, t2, t3, t4))
 	in
 	    ( t, O.TagPat(typInfo(i,t), vallab', SOME typ', pat') )
 	end
-
+*)
       | elabPat(E, s, I.ConPat(i, vallongid, pat)) =
 	let
 	    val (t1,vallongid') = elabVallongid(E, vallongid)
@@ -745,6 +754,17 @@ struct
 	    val  t        = refTyp(E, t1)
 	in
 	    ( t, O.RefPat(typInfo(i,t), pat') )
+	end
+
+      | elabPat(E, s, I.RollPat(i, pat, typ)) =
+	let
+	    val (t1,pat') = elabPat(E, s, pat)
+	    val (t2,typ') = elabStarTyp(E, true, typ)
+	    val  t2'      = Type.unroll t2
+	    val  _        = Type.unify(t1,t2') handle Type.Mismatch(t3,t4) =>
+				error(i, E.RollPatMismatch(t1, t2', t3, t4))
+	in
+	    ( t2, O.RollPat(typInfo(i,t2), pat', typ') )
 	end
 
       | elabPat(E, s, I.StrictPat(i, pat)) =

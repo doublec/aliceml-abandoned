@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -291,6 +291,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		makeTestSeq (pat, REF stamp::pos,
 			     Test (pos, RefTest stamp)::rest, mapping)
 	    end
+	  | makeTestSeq (RollPat (_, pat), pos, rest, mapping) =
+	    makeTestSeq (pat, pos, rest, mapping)
 	  | makeTestSeq (StrictPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, pos, rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
@@ -875,6 +877,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | deconstructs (TagPat (_, _, _)) = raise NotNAry
 	      | deconstructs (ConPat (_, _, _)) = raise NotNAry
 	      | deconstructs (RefPat (_, _)) = raise NotNAry
+	      | deconstructs (RollPat (_, pat)) = deconstructs pat
 	      | deconstructs (StrictPat (_, pat)) = deconstructs pat
 	      | deconstructs (TupPat (_, _)) = true
 	      | deconstructs (ProdPat (_, _)) = true

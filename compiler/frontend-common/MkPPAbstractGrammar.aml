@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -221,10 +221,8 @@ struct
       | ppExp(NewExp(i, typ))		= exptree "New" i (
 					    ppTyp typ
 					  )
-      | ppExp(TagExp(i, vallab, typo, exp))
-					= exptree "Tag" i (
+      | ppExp(TagExp(i, vallab, exp))	= exptree "Tag" i (
 					    ppVallab vallab ^/^
-					    ppOption ppTyp typo ^/^
 					    ppExp exp
 					  )
       | ppExp(ConExp(i, vallongid,exp))	= exptree "Con" i (
@@ -233,6 +231,10 @@ struct
 					  )
       | ppExp(RefExp(i, exp))		= exptree "Ref" i (
 					    ppExp exp
+					  )
+      | ppExp(RollExp(i, exp, typ))	= exptree "Roll" i (
+					    ppExp exp ^/^
+					    ppTyp typ
 					  )
       | ppExp(StrictExp(i, exp))	= exptree "Strict" i (
 					    ppExp exp
@@ -340,10 +342,8 @@ struct
       | ppPat(VarPat(i, valid))		= pattree "Var" i (
 					    ppValid valid
 					  )
-      | ppPat(TagPat(i, vallab, typo, pat))
-					= pattree "Tag" i (
+      | ppPat(TagPat(i, vallab, pat))	= pattree "Tag" i (
 					    ppVallab vallab ^/^
-					    ppOption ppTyp typo ^/^
 					    ppPat pat
 					  )
       | ppPat(ConPat(i, vallongid,pat))	= pattree "Con" i (
@@ -352,6 +352,10 @@ struct
 					  )
       | ppPat(RefPat(i, pat))		= pattree "Ref" i (
 					    ppPat pat
+					  )
+      | ppPat(RollPat(i, pat, typ))	= pattree "Roll" i (
+					    ppPat pat ^/^
+					    ppTyp typ
 					  )
       | ppPat(StrictPat(i, pat))	= pattree "Strict" i (
 					    ppPat pat

@@ -273,9 +273,10 @@ struct
     and idsPat(env, ( I.JokPat _
 		    | I.LitPat _), ids')	= ()
       | idsPat(env, I.VarPat(_, id), ids')	= idsId'(trValid(env, id), ids')
-      | idsPat(env, ( I.TagPat(_, _, _, pat)
+      | idsPat(env, ( I.TagPat(_, _, pat)
 		    | I.ConPat(_, _, pat)
 		    | I.RefPat(_, pat)
+		    | I.RollPat(_, pat, _)
 		    | I.StrictPat(_, pat)
 		    | I.AltPat(_, pat, _)
 		    | I.NegPat(_, pat)
@@ -359,15 +360,15 @@ struct
 (* may happen with functor derived form...
 (*DEBUG*)handle VirtualModule => (Error.warn'(#region i, "15\n"); raise VirtualModule))
 *))
-      | trExp(env, I.PrimExp(i, s, t)) =
+      | trExp(env, I.PrimExp(i, s, typ)) =
 	(* [prim s : typ] = prim s *)
 	O.PrimExp(i, s)
 
-      | trExp(env, I.NewExp(i, t)) =
+      | trExp(env, I.NewExp(i, typ)) =
 	(* [new : typ] = new *)
 	O.NewExp(i)
 
-      | trExp(env, I.TagExp(i, lab, _, exp)) =
+      | trExp(env, I.TagExp(i, lab, exp)) =
 	(* [`lab exp] = `[lab] [exp] *)
 	O.TagExp(i, trVallab lab, trExp(env, exp))
 
@@ -379,6 +380,10 @@ struct
       | trExp(env, I.RefExp(i, exp)) =
 	(* [ref exp] = ref [exp] *)
 	O.RefExp(i, trExp(env, exp))
+
+      | trExp(env, I.RollExp(i, exp, typ)) =
+	(* [roll exp] = roll [exp] *)
+	O.RollExp(i, trExp(env, exp))
 
       | trExp(env, I.StrictExp(i, exp)) =
 	(* [strict exp] = strict [exp] *)
@@ -561,7 +566,7 @@ struct
 	(* [id] = [id] *)
 	O.VarPat(trValInfo(env,i), trValid(env, id))
  
-      | trPat(env, I.TagPat(i, lab, _, pat)) =
+      | trPat(env, I.TagPat(i, lab, pat)) =
 	(* [`lab pat] = `[lab] [pat] *)
 	O.TagPat(i, trVallab lab, trPat(env, pat))
 
@@ -573,6 +578,10 @@ struct
       | trPat(env, I.RefPat(i, pat)) =
 	(* [ref pat] = ref [pat] *)
 	O.RefPat(i, trPat(env, pat))
+
+      | trPat(env, I.RollPat(i, pat, typ)) =
+	(* [roll pat] = roll [pat] *)
+	O.RollPat(i, trPat(env, pat))
 
       | trPat(env, I.StrictPat(i, pat)) =
 	(* [strict pat] = strict [pat] *)

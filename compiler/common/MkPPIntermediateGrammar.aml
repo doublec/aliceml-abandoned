@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -145,6 +145,9 @@ struct
       | ppExp(RefExp(i, exp))		= exptree "Ref" i (
 					    ppExp exp
 					  )
+      | ppExp(RollExp(i, exp))		= exptree "Roll" i (
+					    ppExp exp
+					  )
       | ppExp(StrictExp(i, exp))	= exptree "Strict" i (
 					    ppExp exp
 					  )
@@ -241,6 +244,9 @@ struct
 					    ppPat pat
 					  )
       | ppPat(RefPat(i, pat))		= pattree "Ref" i (
+					    ppPat pat
+					  )
+      | ppPat(RollPat(i, pat))		= pattree "Roll" i (
 					    ppPat pat
 					  )
       | ppPat(StrictPat(i, pat))	= pattree "Strict" i (

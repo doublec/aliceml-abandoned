@@ -557,6 +557,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			    translateCont cont);
 		 stms2)
 	    end
+	  | translateExp (RollExp (_, exp), f, cont) =
+	    translateExp (exp, f, cont)
 	  | translateExp (StrictExp (info, exp), f, cont) =
 	    let
 		val r = ref NONE

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -41,9 +41,9 @@ sig
 	| VecExpMismatch	of typ_mismatch
 	| TagExpLab		of lab
 	| TagExpArgMismatch	of typ_mismatch
-	| TagExpRowMismatch	of typ_mismatch
 	| ConExpConMismatch	of typ_mismatch
 	| ConExpArgMismatch	of typ_mismatch
+	| RollExpMismatch	of typ_mismatch
 	| UpdExpMismatch	of typ_mismatch
 	| SelExpMismatch	of typ_mismatch
 	| AppExpFunMismatch	of typ_mismatch
@@ -67,9 +67,9 @@ sig
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgMismatch	of typ_mismatch
-	| TagPatRowMismatch	of typ_mismatch
 	| ConPatConMismatch	of typ_mismatch
 	| ConPatArgMismatch	of typ_mismatch
+	| RollPatMismatch	of typ_mismatch
 	| VecPatMismatch	of typ_mismatch
 	| AsPatMismatch		of typ_mismatch
 	| AltPatMismatch	of typ_mismatch

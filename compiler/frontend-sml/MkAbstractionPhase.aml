@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,9 +27,9 @@ and patterns are mapped into the abstract syntax:
 
 Declarations:
 datatype 'a t =			type t = fun 'a -> [A:strict(unit), B:'a, C:strict(int*int)]
-             A			val  A = `A() : t(_)
-           | B of 'a		val  B = fun x -> `B(x) : t(_)
-	   | C of int * int	val  C = fun x -> `C(x) : t(_)
+             A			val  A = roll `A() : t(_)
+           | B of 'a		val  B = fun x -> roll `B(x) : t(_)
+	   | C of int * int	val  C = fun x -> roll `C(x) : t(_)
 exttype 'a u			type u = fun 'a -> ext
 constructor D : 'a u		val 'D = new : conarrow(strict(unit)->u('a))
 				val  D = @'D()
@@ -52,10 +52,10 @@ __primitive
 __reftype 'a r = ref of 'a	val  ref = fun x -> Ref(x)
 
 Expressions:
-A				`A()
-B 0				`B(0)
+A				roll `A()
+B 0				roll `B(0)
 B				B
-C(0,1)				`C(0,1)
+C(0,1)				roll `C(0,1)
 C				C
 D				@'E()
 E 0				@'E(0)
@@ -66,9 +66,9 @@ ref 0				Ref(0)
 ref				ref
 
 Patterns:
-A				`A()
-B 0				`B(0)
-C(0,1)				`C(0,1)
+A				roll `A()
+B 0				roll `B(0)
+C(0,1)				roll `C(0,1)
 D				@'D(_)
 E 0				@'E(0)
 F(0,1)				@'F(0,1)
@@ -499,8 +499,7 @@ struct
 	in
 	    case lookupVal(E', vid')
 	      of NONE => error(infoLong longvid,E.ConTyConShadowed(tycon',vid'))
-	       | SOME _ =>
-		 SOME(jokapptyp(k, O.ConTyp(infoTyCon tycon, typlongid')))
+	       | SOME _ => jokapptyp(k, O.ConTyp(infoTyCon tycon, typlongid'))
 	end
 
 
@@ -731,9 +730,9 @@ struct
 	 | LONGVIDAtExp(i, _, longvid) =>
 	   (case trLongVId E longvid
 	      of (vallongid', T(NULLARY, tycon, kty)) =>
-		  O.TagExp(i, longidToLab vallongid',
-			   trLongVIdTyCon E (longvid, tycon, kty),
-			   O.StrictExp(i, O.TupExp(i, #[])))
+		  O.RollExp(i, O.TagExp(i, longidToLab vallongid',
+					O.StrictExp(i, O.TupExp(i, #[]))),
+			       trLongVIdTyCon E (longvid, tycon, kty))
 	       | (vallongid', C NULLARY) =>
 		  O.ConExp(i, trConLongVId E longvid,
 			   O.StrictExp(i, O.TupExp(i, #[])))
@@ -871,12 +870,15 @@ struct
 		 ( fn(i',exp') => error(i', E.ExpConArgSuperfluous) )
 
 	       | (vallongid', T(NARY,tycon,kty)) =>
-		 ( fn(i',exp') => O.TagExp(i', longidToLab vallongid',
-				   trLongVIdTyCon E (longvid,tycon,kty),
-				   O.StrictExp(i', exp')) )
+		 ( fn(i',exp') => O.RollExp(i',
+					O.TagExp(i', longidToLab vallongid',
+						 O.StrictExp(i', exp')),
+					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', T(UNARY,tycon,kty)) =>
-		 ( fn(i',exp') => O.TagExp(i', longidToLab vallongid',
-				   trLongVIdTyCon E (longvid,tycon,kty), exp') )
+		 ( fn(i',exp') => O.RollExp(i',
+					O.TagExp(i', longidToLab vallongid',
+						 exp'),
+					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', C NARY) =>
 		 ( fn(i',exp') => O.ConExp(i', trConLongVId E longvid,
 					   O.StrictExp(i', exp')) )
@@ -942,9 +944,9 @@ struct
 	 | LONGVIDAtPat(_, _, longvid as SHORTLong(i, vid as VId(i',vid'))) =>
 	   (case lookupIdStatus(E, vid')
 	      of T(NULLARY, tycon, kty) =>
-		 O.TagPat(i, idToLab(#1(trVId E vid)),
-			  trLongVIdTyCon E (longvid,tycon,kty),
-			  O.StrictPat(i, O.TupPat(i,#[])))
+		 O.RollPat(i, O.TagPat(i, idToLab(#1(trVId E vid)),
+				       O.StrictPat(i, O.TupPat(i,#[]))),
+			   trLongVIdTyCon E (longvid,tycon,kty))
 	       | C NULLARY =>
 		 O.ConPat(i, trConLongVId E longvid,
 			  O.StrictPat(i, O.TupPat(i, #[])))
@@ -971,9 +973,9 @@ struct
 	 | LONGVIDAtPat(i, _, longvid) =>
 	   (case trLongVId E longvid
 	      of (vallongid', T(NULLARY, tycon, kty)) =>
-		 O.TagPat(i, longidToLab vallongid',
-			  trLongVIdTyCon E (longvid,tycon,kty),
-			  O.StrictPat(i, O.TupPat(i,#[])))
+		 O.RollPat(i, O.TagPat(i, longidToLab vallongid',
+				       O.StrictPat(i, O.TupPat(i,#[]))),
+			   trLongVIdTyCon E (longvid,tycon,kty))
 	       | (vallongid', C NULLARY) =>
 		 O.ConPat(i, trConLongVId E longvid,
 			  O.StrictPat(i, O.TupPat(i, #[])))
@@ -1109,12 +1111,15 @@ struct
 		 ( fn(i',pat') => error(i', E.PatConArgSuperfluous) )
 
 	       | (vallongid', T(NARY,tycon,kty)) =>
-		 ( fn(i',pat') => O.TagPat(i', longidToLab vallongid',
-				    trLongVIdTyCon E (longvid,tycon,kty),
-				    O.StrictPat(i', pat')) )
+		 ( fn(i',pat') => O.RollPat(i',
+					O.TagPat(i', longidToLab vallongid',
+						 O.StrictPat(i', pat')),
+					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', T(UNARY,tycon,kty)) =>
-		 ( fn(i',pat') => O.TagPat(i', longidToLab vallongid',
-				    trLongVIdTyCon E (longvid,tycon,kty), pat'))
+		 ( fn(i',pat') => O.RollPat(i',
+					O.TagPat(i', longidToLab vallongid',
+						 pat'),
+					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', C NARY) =>
 		 ( fn(i',pat') => O.ConPat(i', trConLongVId E longvid,
 					   O.StrictPat(i', pat')) )
@@ -2227,17 +2232,20 @@ struct
 		val  kty           = List.length varids'
 		val  exp'          =
 		     if k = NULLARY then
-			O.TagExp(i, vallab', SOME typ2',
-				 O.StrictExp(i, O.TupExp(i, #[])))
+			O.RollExp(i, O.TagExp(i, vallab',
+					      O.StrictExp(i, O.TupExp(i, #[]))),
+				     typ2')
 		     else
 		     let
 			val validM'     = O.Id(i, Stamp.stamp(), Name.InId)
 			val vallongidM' = O.ShortId(i, validM')
 			val patM'       = O.VarPat(i, validM')
 			val exp0M'      = O.VarExp(i, vallongidM')
-			val expM'       = O.TagExp(i, vallab', SOME typ2',
-						   if k = UNARY then exp0M' else
-						   O.StrictExp(i, exp0M'))
+			val expM'       = O.RollExp(i, O.TagExp(i, vallab',
+							if k = UNARY then exp0M'
+							else
+							O.StrictExp(i, exp0M')),
+						    typ2')
 		     in
 			O.FunExp(i, #[O.Mat(i, patM', expM')])
 		     end

@@ -68,6 +68,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    ConExp (info, longid, substExp' (exp, subst))
 	  | substExp' (RefExp (info, exp), subst) =
 	    RefExp (info, substExp' (exp, subst))
+	  | substExp' (RollExp (info, exp), subst) =
+	    RollExp (info, substExp' (exp, subst))
 	  | substExp' (StrictExp (info, exp), subst) =
 	    StrictExp (info, substExp' (exp, subst))
 	  | substExp' (TupExp (info, exps), subst) =
@@ -126,6 +128,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    ConPat (info, longid, substPat' (pat, subst))
 	  | substPat' (RefPat (info, pat), subst) =
 	    RefPat (info, substPat' (pat, subst))
+	  | substPat' (RollPat (info, pat), subst) =
+	    RollPat (info, substPat' (pat, subst))
 	  | substPat' (StrictPat (info, pat), subst) =
 	    StrictPat (info, substPat' (pat, subst))
 	  | substPat' (TupPat (info, pats), subst) =
@@ -214,6 +218,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		val (pat', subst') = relax (pat, subst)
 	    in
 		(RefPat (info, pat'), subst')
+	    end
+	  | relax (RollPat (info, pat), subst) =
+	    let
+		val (pat', subst') = relax (pat, subst)
+	    in
+		(RollPat (info, pat'), subst')
 	    end
 	  | relax (StrictPat (info, pat), subst) =
 	    let

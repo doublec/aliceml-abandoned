@@ -332,6 +332,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, RefPat (info, pat'))
 	    end
+	  | preprocess (I.RollPat (_, pat)) = preprocess pat
 	  | preprocess (I.StrictPat (_, pat)) = preprocess pat
 	  | preprocess (I.TupPat (info, pats)) =
 	    let
@@ -347,7 +348,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | preprocess (I.ProdPat (info, patFlds)) =
 	    let
-		val row = Type.asProd (Type.unroll (#typ info))
+		val row = Type.asProd (#typ info)
 		val labelTypList =
 		    if Type.isTupleRow row then
 			Vector.foldri (fn (i, typ, rest) =>

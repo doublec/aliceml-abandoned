@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -116,9 +116,10 @@ struct
 	| VarExp    of exp_info * vallongid	(* variable *)
 	| PrimExp   of exp_info * string * typ	(* builtin values *)
 	| NewExp    of exp_info * typ		(* first-class constructor *)
-	| TagExp    of exp_info * vallab * typ option * exp (* tagged *)
+	| TagExp    of exp_info * vallab * exp	(* tagged *)
 	| ConExp    of exp_info * vallongid * exp (* constructed value *)
 	| RefExp    of exp_info * exp		(* reference *)
+	| RollExp   of exp_info * exp * typ	(* recursive typing *)
 	| StrictExp of exp_info * exp		(* strict evaluation *)
 	| TupExp    of exp_info * exp vector	(* tuple *)
 	| ProdExp   of exp_info * exp row	(* product (record) *)
@@ -155,9 +156,10 @@ struct
 	  JokPat    of pat_info			(* joker (wildcard) *)
 	| LitPat    of pat_info * lit		(* literal *)
 	| VarPat    of pat_info * valid		(* variable *)
-	| TagPat    of pat_info * vallab * typ option * pat (* tagged *)
+	| TagPat    of pat_info * vallab * pat	(* tagged *)
 	| ConPat    of pat_info * vallongid * pat (* constructed value *)
 	| RefPat    of pat_info * pat		(* reference *)
+	| RollPat   of pat_info * pat * typ	(* recursive typing *)
 	| StrictPat of pat_info * pat		(* non-future *)
 	| TupPat    of pat_info * pat vector	(* tuple *)
 	| ProdPat   of pat_info * pat row	(* row (record) *)
@@ -277,9 +279,10 @@ struct
       | infoExp(VarExp(i,_))		= i
       | infoExp(PrimExp(i,_,_))		= i
       | infoExp(NewExp(i,_))		= i
-      | infoExp(TagExp(i,_,_,_))	= i
+      | infoExp(TagExp(i,_,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i,_))		= i
+      | infoExp(RollExp(i,_,_))		= i
       | infoExp(StrictExp(i,_))		= i
       | infoExp(TupExp(i,_))		= i
       | infoExp(ProdExp(i,_))		= i
@@ -311,9 +314,10 @@ struct
     fun infoPat(JokPat(i))		= i
       | infoPat(LitPat(i,_))		= i
       | infoPat(VarPat(i,_))		= i
-      | infoPat(TagPat(i,_,_,_))	= i
+      | infoPat(TagPat(i,_,_))		= i
       | infoPat(ConPat(i,_,_))		= i
       | infoPat(RefPat(i,_))		= i
+      | infoPat(RollPat(i,_,_))		= i
       | infoPat(StrictPat(i,_))		= i
       | infoPat(TupPat(i,_))		= i
       | infoPat(ProdPat(i,_))		= i
@@ -404,12 +408,13 @@ struct
     fun isValue( LitExp _
 	       | VarExp _
 	       | PrimExp _
-	       | StrictExp _
 	       | NewExp _
 	       | FunExp _
 	       | FailExp _ )			= true
-      | isValue( TagExp(_, _, _, exp)
+      | isValue( TagExp(_, _, exp)
 	       | ConExp(_, _, exp)
+	       | RollExp(_, exp, _)
+	       | StrictExp(_, exp)
 	       | SelExp(_, _, exp)
 	       | RaiseExp(_, exp)
 	       | LazyExp(_, exp)
@@ -443,9 +448,10 @@ struct
     and isValuePat( JokPat _
 		  | LitPat _
 		  | VarPat _ )			= true
-      | isValuePat( TagPat(_, _, _, pat)
+      | isValuePat( TagPat(_, _, pat)
 		  | ConPat(_, _, pat)
 		  | RefPat(_, pat)
+		  | RollPat(_, pat, _)
 		  | StrictPat(_, pat)
 		  | NegPat(_, pat)
 		  | AnnPat(_, pat, _) )		= isValuePat pat
