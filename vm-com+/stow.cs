@@ -6,7 +6,7 @@ class Start {
 	Alice.Komponist.global_k = k;
 	
 	if (args.Length < 1) {
-	    Console.WriteLine("usage: start dll progargs");
+	    Console.WriteLine("Usage: stow <application dll> <arguments ...>");
 	}
 	else {
 	    try {
