@@ -182,7 +182,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    "SimplifyRec.derec': not implemented 2"
 		else Error.error (coord, "pattern never matches")
 	    end
-	  | derec' (AsPat (_, id, pat), exp) =
+	  | derec' (pat as AsPat (_, _, _), exp) =
 	    let
 		val (ids, patOpt) = unalias pat
 	    in
@@ -194,7 +194,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			    val (pat'', exp') = patToExp pat'
 			    val (constraints, idsExpList) = derec' (pat'', exp)
 			in
-			    (constraints, (id::ids, exp')::idsExpList)
+			    (constraints, (ids, exp')::idsExpList)
 			end
 	    end
 	  | derec' (pat, _) =
