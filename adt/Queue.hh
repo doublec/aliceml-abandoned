@@ -89,7 +89,7 @@ protected:
     } else { // shorten queue at beginning
       std::memmove(base + readIndex + 1, base + readIndex,
 		   (index - readIndex) * sizeof(word));
-      SetReadIndex(readIndex + 1);
+      SetReadIndex(readIndex + 1 == size? 0: readIndex + 1);
     }
   }
 public:
