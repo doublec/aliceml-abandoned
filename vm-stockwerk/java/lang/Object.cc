@@ -10,7 +10,14 @@
 //   $Revision$
 //
 
+#include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
-void NativeMethodTable::java_lang_Object() {
+DEFINE1(dump) {
+  Debug::Dump(x0);
+  RETURN0;
+} END
+
+void NativeMethodTable::java_lang_Object(JavaString *className) {
+  Register(className, "dump", "()V", dump, 1, true);
 }

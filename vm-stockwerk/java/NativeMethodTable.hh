@@ -19,6 +19,7 @@
 
 #include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
+#include "generic/Interpreter.hh"
 #include "generic/Closure.hh"
 #include "java/Data.hh"
 
@@ -28,9 +29,17 @@ private:
   static word wTable;
 
   static void Register(JavaString *className, JavaString *name,
-		       JavaString *descriptor, Closure *closure);
+		       JavaString *descriptor, Closure *closure,
+		       bool isVirtual);
+  static void Register(JavaString *className, const char *name,
+		       const char *descriptor, Closure *closure,
+		       bool isVirtual);
+  static void Register(JavaString *className, const char *name,
+		       const char *descriptor,
+		       Interpreter::function value, u_int arity,
+		       bool isVirtual);
 
-  static void java_lang_Object();
+  static void java_lang_Object(JavaString *className);
 public:
   static void Init();
 
