@@ -16,3 +16,5 @@
 
 #include "store/WeakMap.hh"
 #include "store/MapNode.hh"
+
+template BaseMap<TokenKey>;
