@@ -28,7 +28,8 @@ struct
 
     fun testSize () =
 	Gen.try 10 (Gen.oneOfFreq allGenStrFreq)
-	   (fn s => assert true)
+	   (Test.test (fn s => assert true))
+
 
     val suite = ("String", [("testSize", testSize)])
 end
