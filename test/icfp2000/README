@@ -13,12 +13,12 @@ System:		SML/NJ
 
 Description:
 
-* We implemented Tier 1 to 3 (Tier 2 is not bug-free however...). 
+* We implemented all tiers (tier 2 is not bug-free however...). 
 * We tried to do a clean (modular & strongly typed) design,
   efficiency was only of secondary concern.
   - The renderer kernel is completely independent of the abstract machine.
-  - Likewise, the Machine completely encapsulates the Renderer.
-  - 
+  - Likewise, the Machine completely encapsulates the renderer.
+
 
 Examples:
 

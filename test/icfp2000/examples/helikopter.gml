@@ -40,7 +40,7 @@ union
 /rotor
 
 rotor			% main rotor
-30.0 rotatey
+75.0 rotatey
 0.0 1.1 0.0 translate
 union
 
@@ -66,8 +66,8 @@ vat			% left vat
 union
 
 -5.0 rotatex
--30.0 rotatey
-0.0 0.0 3.5 translate
+-34.0 rotatey
+0.0 0.0 3.0 translate
 /scene
 
 -0.5 0.0 -1.0 point
