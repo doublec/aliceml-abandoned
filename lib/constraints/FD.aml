@@ -12,7 +12,7 @@
  *)
 
 import structure UnsafeFD from "UnsafeFD"
-import signature FD from "FD-sig"
+import signature FD       from "FD-sig"
 
 structure FD :> FD =
     struct
@@ -73,6 +73,7 @@ structure FD :> FD =
 		val dom = reflect_dom
 		val domList = reflect_domList
 		val nbSusps = reflect_nbSusps
+		val eq = reflect_eq
 	    end
 
 	(* Watching *)
@@ -81,5 +82,27 @@ structure FD :> FD =
 		val min = watch_min
 		val max = watch_max
 		val size = watch_size
+	    end
+
+	(* Schedule *)
+	structure Schedule =
+	    struct
+		type tasks  = (string * string list) vector
+		type starts = (string * fd) vector
+		type specs  = (string * int) vector
+
+		val cumulative  = schedule_cumulative
+		val cumulativeEF = schedule_cumulativeEF
+		val cumulativeTI = schedule_cumulativeTI
+		val cumulativeUp = schedule_cumulativeUp
+		val disjoint = schedule_disjoint
+		val firstsDist = schedule_firstsDist
+		val lastsDist = schedule_lastsDist
+		val firstsLastsDist = schedule_firstsLastsDist
+		val taskIntervalsDistP = schedule_taskIntervalsDistP
+		val taskIntervalsDistO = schedule_taskIntervalsDistO
+		val serializedDisj = schedule_serializedDisj
+		val serialized = schedule_serialized
+		val taskIntervals = schedule_taskIntervals
 	    end
     end

@@ -50,7 +50,7 @@ signature FD =
 	val binVec : int -> bin
 	    
 	(* Assignment *)
-	val assign : assign * fd -> unit
+	val assign : assign * fd vector -> unit
 
 	(* Conversion *)
 	val toInt : fd -> int
@@ -142,6 +142,7 @@ signature FD =
 		val dom : fd -> domain
 		val domList : fd -> int list
 		val nbSusps : fd -> int
+		val eq : fd * fd -> bool (* token eq *)
 	    end
 
 	(* Watching *)
@@ -154,4 +155,26 @@ signature FD =
 
 	(* Distribution *)
 	val distribute : dist_mode * fd vector -> unit
+
+	(* Scheduling Stuff *)
+	structure Schedule :
+	    sig
+		type tasks  = (string * string list) vector
+		type starts = (string * fd) vector
+		type specs  = (string * int) vector
+
+		val cumulative : tasks * starts * specs * specs * specs -> unit
+		val cumulativeEF : tasks * starts * specs * specs * specs -> unit
+		val cumulativeTI : tasks * starts * specs * specs * specs -> unit
+		val cumulativeUp : tasks * starts * specs * specs * specs -> unit
+		val disjoint : fd * int * fd * int -> unit
+		val firstsDist : tasks * starts * specs -> unit
+		val lastsDist : tasks * starts * specs -> unit
+		val firstsLastsDist : tasks * starts * specs -> unit
+		val taskIntervalsDistP : tasks * starts * specs -> unit
+		val taskIntervalsDistO : tasks * starts * specs -> unit
+		val serializedDisj : tasks * starts * specs -> unit
+		val serialized : tasks * starts * specs -> unit
+		val taskIntervals : tasks * starts * specs -> unit
+	    end
     end

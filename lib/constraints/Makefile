@@ -14,7 +14,7 @@
 
 # Configurable directories
 
-PREFIX = /opt/stockhausen-devel
+#PREFIX = /opt/stockhausen-devel
 
 SRCTOP = ../..
 BOOTSTRAPDIR = ../../bootstrap
@@ -27,16 +27,16 @@ VPATH = $(SRCDIR)
 OZC = ozc
 OZCOPTS = -z9
 STOC = alicec
-STOCOPTS = --recursive-compilation --rtt-level=no
+STOCOPTS = --recursive-compilation # --rtt-level=no
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOL = alicelink
 STOLOPTS = -v
 
-ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml SCHEDULE-sig.aml Schedule.aml \
+ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
                SPACE-sig.aml Space.aml \
                SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml
 
-NATIVES = FD FS Schedule Space Explorer
+NATIVES = FD FS Space Explorer
 
 OZSOURCES=$(NATIVES:%=Unsafe%.oz)
 
@@ -98,4 +98,3 @@ veryclean: clean
 
 distclean: veryclean
 	-rm -f Makefile.depend
-
