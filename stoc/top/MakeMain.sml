@@ -32,26 +32,10 @@ functor MakeMain(structure Composer: COMPOSER'
 		source
 	    end
 
-	fun isBaseSource desc =
-	    let
-		val stockhome =
-		    case OS.Process.getEnv "STOCKHOME" of
-			SOME s => s
-		      | NONE => "x-alice:"
-	    in
-		case Source.url desc of
-		    SOME url =>
-			(* Pfusch beseitigt *)
-			url = Url.fromString(stockhome ^ "/Base.aml")
-			orelse url = Url.fromString(stockhome ^ "/Base.dll.sig")
-		  | NONE => false
-	    end
-
 	fun processBasic process (desc, s) =
 	    process
 	    (desc,
-	     if isBaseSource desc then s
-	     else if !Switches.implicitImport then
+	     if !Switches.implicitImport then
 		 case OS.Process.getEnv "STOCKHOME" of
 		     SOME homedir =>
 			 String.map (fn #"\n" => #" " | c => c)
