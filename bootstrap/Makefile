@@ -21,8 +21,8 @@ OZL = ozl
 OZLFLAGS =
 
 FUNCTORS = \
-	Builtins.ozf Prebound.ozf CodeStore.ozf CodeGen.ozf Assembler.ozf \
-	Main.ozf
+	Builtins.ozf Prebound.ozf CodeStore.ozf CodeEmitter.ozf \
+	CodeGen.ozf Assembler.ozf Main.ozf
 
 %.ozf: $(SRCDIR)/stoc/backend-mozart/%.oz
 	$(OZC) $(OZCFLAGS) -c $< -o $@
