@@ -224,9 +224,6 @@ das Baumzeichnen aufstellt: Gleiche Teilb\"aume werden
 gleich dargestellt. 
 
 
-
-
-
 %%% ENTWURF ============================================================
 
 \section{Entwurf}
@@ -235,13 +232,175 @@ gleich dargestellt.
 
 \subsection{Interne Darstellung}
 
+\label{intern}
+
+F\"ur die interne Darstellung von Werten als B\"aume ben\"otigen wir einen 
+Typen. Diesen kann man sich abstrakt als \\[2mm]
+\begin{math}
+doc :=  simple \\  
+\hspace*{8mm} | \quad  doc_{1} \quad \hat{} \quad ... \quad \hat{} 
+                \quad doc_{n} \\         
+\hspace*{8mm} | \quad  
+\# \lbrack doc_{1}, ... , doc_{n}\rbrack 
+\\[2mm]
+\end{math}
+vorstellen. 
+
+\paragraph{}
+
+Dabei repr\"asentieren ``simples'' nur atomare Werte, die als Strings 
+dargestellt werden k\"onnen. Folglich muss es sich in der Baumdarstellung 
+bei ``simples'' stets um Bl\"atter eines Baumes handeln.
+
+\paragraph{}
+
+Zusammengesetzte Werte bestehen im Gegensatz zu atomaren Werten aus einer
+Ineinanderschachtelung von Teilwerten. Zur Darstellung solcher nicht atomaren
+Werte stehen die Konkatenation \^\quad und die Akkumulation 
+\# \lbrack \, \rbrack \quad zur Verf\"ugung.
+W\"ahrend die Konkatenation stets horizontal anordnet (vergleichbar mit der 
+sogenannten ``hbox'' bei manchen Pretty Printern), 
+erfolgt bei der Akkumulation in der Aufbauphase 
+noch keine Entscheidung, ob die Kindknoten eines Knotens horizontal oder 
+vertikal dargestellt werden. Diese Entscheidung wird erst beim Layoutvorgang
+getroffen (n\"ahere Erl\"auterung dazu siehe 4.4).
+
+\paragraph{}
+
+Der Wert \large{(1, 2)} \normalsize wird in die folgende interne 
+baumartige Darstellung transformiert: \\
+
+\begin{center}
+\epsfig{file = ex_tree_bw.ps, width = 13cm}
+\linebreak Abbildung 4.1: Beispiel f\"ur interne Darstellung
+\end{center}
+
+
 \subsection{Typregistrierung}
+
 
 \subsection{Transientenverwaltung}
 
-\subsection{Graphmodus}
+\paragraph{}
 
-\subsection{Filter} 
+Transienten, die in Alice als Byneeds (bei der sogenannten ``Laziness''), 
+Promises oder Futures auftreten k\"onnen und als Platzhalter f\"ur Werte
+dienen, werden in der Browserdarstellung
+als solche gekennzeichnet. Sobald sie an einen Wert gebunden werden, muss
+die Darstellung des Browsers aktualisiert werden. Deshalb wird
+f\"ur jeden Transienten ein W\"achter ben\"otigt, der diesen \"uberwacht.
+Nimmt ein Transient, der in mehreren bereits dargestellten 
+Datenstrukturen bzw. mehrmals in der gleichen Datenstruktur auftritt, 
+einen konkreten Wert an, so l\"ost sein W\"achter einen 
+Aktualisierungsmechanismus aus, der alle seine Auftreten durch diesen 
+Wert ersetzt.Folglich muss jeder W\"achter den Transienten kennen, 
+den er \"uberwacht, und zus\"atzlich alle Knoten, die diesen 
+Transienten repr\"asentieren.Diesen Sachverhalt stellen die 
+Abbildungen 3.1 und 3.2 dar.
+
+\begin{center}
+\epsfig{file = transient1_bw.ps, width = 12cm}
+\linebreak 
+Abbildung 3.1: Transient mit W\"{a}chter
+\end{center}
+
+\begin{center}
+\epsfig{file = transient2_bw.ps, width = 12cm}
+\linebreak 
+Abbildung 3.2: Mehrfachauftreten des Transienten
+\end{center}
+
+\paragraph{}
+
+Wurde der Transient, wie in Abbildung 3.3 dargestellt, schlie\ss lich
+an einen Wert gebunden, hat der W\"achter nach der Ingangsetzung des
+Aktualisierungsmechanismus seine Funktion erf\"ullt und
+wird beendet.
+
+\begin{center}
+\epsfig{file = transient3_bw.ps, width = 12cm}
+\linebreak 
+Abbildung 3.3: Bindung des Transienten
+\end{center}
+
+\paragraph{}
+
+Die oben beschriebene Aktualisierung der Darstellung erfolgt -
+wie alle Darstellungsaktualisierungen - inkrementell. 
+
+%%%%% HIER FEHLT NOCH TEXT!!!
+
+
+\subsection{Graphdarstellung}
+
+\paragraph{}
+
+Der Browser verf\"ugt \"uber den Graphmodus, in dem er token-Gleichheit -
+physikalische Gleichheit von Objekten - innerhalb jeder dargestellten
+Datenstruktur erkennt. Diesen Modus kann der Benutzer beliebig ein- und
+ausschalten. Im Graphmodus ist die interne Darstellung von Werten 
+nicht mehr baumartig \ref{intern}, sondern graphartig aufgebaut.
+Die Graphdarstellung eignet sich besonders zur Verbesserung der
+\"Ubersichtlichkeit bei der Darstellung zyklischer Datenstrukturen. 
+
+\paragraph{}
+
+Betrachten wir den folgenden Datentypen: \newline
+datatype tree = T of tree * tree. \newline
+Die Deklaration \newline
+ val rec t = T(t,t)  \newline
+erzeugt einen unendlichen bin\"aren Baum. 
+Die Baumdarstellung dieses Wertes 
+enth\"alt f\"ur jeden Knoten  
+eine eigene Repr\"asentation des jeweilgen Wertes, 
+ohne die zyklische Struktur des Baumes zu beachten. 
+Dagegen wird bei der Erzeugung der internen graphartigen
+Darstellung der Zyklus erkannt, so dass ein zyklischer endlicher
+Graph, wie in Abbildung 3.4 gezeigt, entsteht. 
+
+\begin{center}
+\epsfig{file = baum_graph.eps, width = 11cm}
+\linebreak 
+Abbildung 3.4: Baumdarstellung vs. Graphdarstellung
+\end{center}
+
+
+\subsection{Filter}
+
+\paragraph{}
+
+Der Browser muss in der Lage sein, den Umfang  der Darstellung zu begrenzen. 
+Dies erlaubt dem Benutzer, die Darstellung auf das Wesentliche 
+einzuschr\"{a}nken. Weiterhin bietet ein Filter die M\"{o}glichkeit, 
+die Darstellung zu gro\ss er oder zyklischer Datenstrukturen 
+gem\"{a}\ss \, einer vom Benutzer gesetzten Grenze zu beschr\"anken. 
+Die Definition von doc wird dazu wie folgt erweitert: \\[2mm]
+\begin{math}
+doc :=  simple \\  
+\hspace*{8mm} | \quad  doc_{1} \quad \hat{} \quad ... \quad \hat{} 
+                \quad  doc_{n} \\         
+\hspace*{8mm} | \quad  
+\# \lbrack doc_{1}, ... , doc_{n}\rbrack \\
+\hspace*{8mm} | \quad limit 
+\\[2mm]
+\end{math}
+Bei der internen Beschreibung, die der Browser f\"ur die 
+Datenstrukturen erzeugt, kann die Tiefe der B\"aume beschr\"ankt werden 
+(sogenanntes Tiefenlimit), sowie auch die jeweilige 
+Anzahl konkatenierter oder akkumulierter Kinder, die ein Knoten haben 
+darf (sogenanntes Breitenlimit). Wird bei der Erzeugung der internen 
+Darstellung das Tiefen- oder Breitenlimit \"uberschritten, so wird an 
+dieser Stelle die Konstruktion abgebrochen, und es wird ein ``limit'' 
+angeh\"angt. Folglich handelt es sich bei ``limits'' in der Baumdarstellung 
+stets um Bl\"atter. Den Abbruch des Aufbaus der internen Darstellung und 
+das Setzen eines ``limits'' an die entsprechende Stelle bezeichnet man 
+als Filtern. 
+
+\paragraph{}
+
+In der Browserdarstellung wird das \"Uberschreiten des
+Tiefen- oder Breitenlimits an der betreffenden Stelle durch einen Pfeil
+gekennzeichnet. 
 
 
 %%% IMPLEMENTIERUNG ====================================================
