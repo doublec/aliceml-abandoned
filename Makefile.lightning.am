@@ -11,4 +11,8 @@ dist_lightning_HEADERS = \
 	funcs.h \
 	fp.h \
 	lightning.h
+
+EXTRA_DIST = i386/asm.h i386/core.h i386/fp.h i386/funcs.h \
+	ppc/asm.h ppc/core.h ppc/fp.h ppc/funcs.h \
+	sparc/asm.h sparc/core.h sparc/fp.h sparc/funcs.h
 endif
