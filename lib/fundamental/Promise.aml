@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -28,7 +28,7 @@ struct
     type 'a promise	= bool ref * 'a
     type 'a t		= 'a promise
 
-    exception Promise	= Hole.Hole
+    exception Promise
 
     fun promise()	= (ref false, Hole.hole())
     fun future(_,h)	= Hole.future h handle Hole.Hole => h
@@ -37,20 +37,18 @@ struct
 	let
 	    val b = Hole.hole()
 	in
-	    if exchange(r,b) then
-	        (Hole.fill(b,true); raise Promise)
-	    else
-	        (Hole.fill(h,x); Hole.fill(b,true))
+	    if exchange(r, Hole.future b)
+	    then (Hole.fill(b,true); raise Promise)
+	    else (Hole.fill(h,x); Hole.fill(b,true))
 	end
 
     fun fail((r,h), e) =
 	let
 	    val b = Hole.hole()
 	in
-	    if exchange(r,b) then
-	        (Hole.fill(b,true); raise Promise)
-	    else
-	        (Hole.fail(h,e); Hole.fill(b,true))
+	    if exchange(r, Hole.future b)
+	    then (Hole.fill(b,true); raise Promise)
+	    else (Hole.fail(h,e); Hole.fill(b,true))
 	end
 end
 *)
@@ -62,7 +60,7 @@ struct
     datatype 'a promise	= Promise__ of bool ref * 'a
     type 'a t		= 'a promise
 
-    exception Promise	= Hole.Hole
+    exception Promise
 
     fun promise()	= Promise__(ref false, Hole.hole())
     fun future(Promise__(_,h))	= Hole.future h handle Hole.Hole => h
@@ -71,19 +69,17 @@ struct
 	let
 	    val b = Hole.hole()
 	in
-	    if exchange(r,b) then
-	        (Hole.fill(b,true); raise Promise)
-	    else
-	        (Hole.fill(h,x); Hole.fill(b,true))
+	    if exchange(r, Hole.future b)
+	    then (Hole.fill(b,true); raise Promise)
+	    else (Hole.fill(h,x); Hole.fill(b,true))
 	end
 
     fun fail(Promise__(r,h), e) =
 	let
 	    val b = Hole.hole()
 	in
-	    if exchange(r,b) then
-	        (Hole.fill(b,true); raise Promise)
-	    else
-	        (Hole.fail(h,e); Hole.fill(b,true))
+	    if exchange(r, Hole.future b)
+	    then (Hole.fill(b,true); raise Promise)
+	    else (Hole.fail(h,e); Hole.fill(b,true))
 	end
 end
