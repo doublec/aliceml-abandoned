@@ -1,8 +1,10 @@
 structure IntermediateInfo =
   struct
     type t = Source.region * Type.t option
-    fun region(r,to) = r
-    fun typ(r,to)    = to
+    exception Info
+    fun region(r, to)  = r
+    fun typ(r, SOME t) = t
+      | typ(r, NONE)   = raise Info
   end
 
 structure IntermediateGrammar =
