@@ -38,6 +38,14 @@ structure Misc :> MISC =
 	    mapi' (xs, 0)
 	end
 
+    fun List_appi f xs =
+	let
+	    fun appi' (x::xr, i) = (f (i, x); appi' (xr, i + 1))
+	      | appi' (nil, _) = ()
+	in
+	    appi' (xs, 0)
+	end
+
 
     fun ListPair_find f (nil,_)		= NONE
       | ListPair_find f (_,nil)		= NONE
