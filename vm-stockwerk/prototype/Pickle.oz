@@ -27,6 +27,7 @@
 
 functor
 import
+   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Open(file)
    System(eq)
    PrimitiveTable(values functions)
@@ -58,6 +59,8 @@ define
    GLOBAL_STAMP = 4
    VECTOR       = 5
    LabelOffset  = 6
+
+   CorruptException = {NewUniqueName 'Component.Corrupt'}
 
    %%-------------------------------------------------------------------
    %% Unpickling
@@ -135,8 +138,12 @@ define
       end
       meth fillBuffer(Args TaskStack $)
 	 %--** blocking
-	 InputStreamBase, appendToBuffer({@File read(list: $)})
-	 continue(Args TaskStack.2)
+	 case {@File read(list: $)} of nil then
+	    exception(nil CorruptException TaskStack.2)
+	 elseof S then
+	    InputStreamBase, appendToBuffer(S)
+	    continue(Args TaskStack.2)
+	 end
       end
       meth close()
 	 {@File close()}
