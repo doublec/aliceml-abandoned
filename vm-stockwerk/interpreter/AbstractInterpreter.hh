@@ -10,16 +10,16 @@
 //   $Revision$
 //
 
-#ifndef __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
-#define __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
+#ifndef __INTERPRETER__ABSTRACT_INTERPRETER_HH__
+#define __INTERPRETER__ABSTRACT_INTERPRETER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "interpreter/bootstrap/BootstrapInterpreter.hh"
+#pragma interface "interpreter/AbstractInterpreter.hh"
 #endif
 
 #include "scheduler/Interpreter.hh"
 
-class BootstrapInterpreter: public Interpreter {
+class AbstractInterpreter: public Interpreter {
 public:
   virtual ConcreteCode *Prepare(word abstractCode);
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
@@ -27,4 +27,4 @@ public:
   virtual Result Run(TaskStack *taskStack, int nargs);
 };
 
-#endif __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
+#endif __INTERPRETER__ABSTRACT_INTERPRETER_HH__

@@ -3,16 +3,19 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = bootstrap
+OBJS = AbstractInterpreter.o
 
-all:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) all) || exit 1; done
+.PHONY: all header clean distclean
+
+all: libinterpreter.a
+
+libinterpreter.a: $(OBJS)
+	ar rc $@ $(OBJS) && ranlib $@
 
 clean:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
+	rm -f $(OBJS)
 
-veryclean:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
+veryclean: clean
+	rm -f libinterpreter.a
 
-distclean:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
+distclean: veryclean

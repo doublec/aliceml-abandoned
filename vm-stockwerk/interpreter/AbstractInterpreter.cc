@@ -11,7 +11,7 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "interpreter/bootstrap/BootstrapInterpreter.hh"
+#pragma implementation "interpreter/AbstractInterpreter.hh"
 #endif
 
 #include "scheduler/Closure.hh"
@@ -19,19 +19,44 @@
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
 #include "interpreter/Pickle.hh"
-#include "interpreter/bootstrap/Environment.hh"
-#include "interpreter/bootstrap/BootstrapInterpreter.hh"
+#include "interpreter/AbstractInterpreter.hh"
 
 //
 // This interpreter's concrete code representation
 //
 
-ConcreteCode *BootstrapInterpreter::Prepare(word abstractCode) {
+ConcreteCode *AbstractInterpreter::Prepare(word abstractCode) {
   Assert(TagVal::FromWord(abstractCode)->GetTag() == Pickle::Function &&
 	 TagVal::FromWord(abstractCode)->GetWidth() == 3);
   //--** block on all transients
   return ConcreteCode::New(abstractCode, this, 0);
 }
+
+//
+// Local environment representation
+//
+
+class Environment: private Array {
+public:
+  using Array::ToWord;
+
+  static Environment *New(u_int size) {
+    return static_cast<Environment *>(Array::New(size));
+  }
+  static Environment *FromWord(word w) {
+    return static_cast<Environment *>(Array::FromWord(w));
+  }
+
+  void Add(word id, word value) {
+    Update(Store::WordToInt(id), value);
+  }
+  word Lookup(word id) {
+    return Sub(Store::WordToInt(id));
+  }
+  void Kill(word id) {
+    Update(Store::WordToInt(id), Store::IntToWord(0));
+  }
+};
 
 //
 // This interpreter uses the following stack frame layout:
@@ -51,7 +76,7 @@ static const u_int CLOSURE_POS = 2;
 static const u_int LOCAL_ENV_POS = 3;
 static const u_int FORMAL_ARGS_POS = 4;
 
-void BootstrapInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
+void AbstractInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   ConcreteCode *concreteCode = closure->GetConcreteCode();
   Assert(concreteCode->GetInterpreter() == this);
   TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
@@ -66,7 +91,7 @@ void BootstrapInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   taskStack->PutWord(FORMAL_ARGS_POS, function->Sel(2));
 }
 
-void BootstrapInterpreter::PopFrame(TaskStack *taskStack) {
+void AbstractInterpreter::PopFrame(TaskStack *taskStack) {
   taskStack->PopFrame(FRAME_SIZE);
 }
 
@@ -104,7 +129,7 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
   case Pickle::Global:
     return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
   default:
-    Error("BootstrapInterpreter::GetIdRef: invalid idRef tag");
+    Error("AbstractInterpreter::GetIdRef: invalid idRef tag");
   }
 }
 
@@ -114,7 +139,7 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
 
 //--** reading operands: FromWord tests for transients, but we don't
 Interpreter::Result
-BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
+AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
   u_int nslots = nargs == -1? 1: nargs;
   Assert(Store::WordToUnmanagedPointer(taskStack->GetWord(nslots + INTERPRETER_POS)) == this);
   TagVal *pc = TagVal::FromWord(taskStack->GetWord(nslots + PC_POS));
@@ -221,7 +246,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	  suspendWord = conBlock->Sel(0);
 	  break;
 	default:
-	  Error("BootstrapInterpreter::Run: invalid con tag");
+	  Error("AbstractInterpreter::Run: invalid con tag");
 	  break;
 	}
 	Constructor *constructor = Constructor::FromWord(suspendWord);

@@ -7,7 +7,7 @@ SUBDIRS = store adt scheduler datalayer builtins interpreter
 
 OBJS = Base.o Main.o
 LIBS = \
-	interpreter/bootstrap/libbootstrapinterpreter.a \
+	interpreter/libinterpreter.a \
 	builtins/libbuiltins.a datalayer/libdatalayer.a \
 	scheduler/libscheduler.a adt/libadt.a store/libstore.a \
 	-lmsvcrt
