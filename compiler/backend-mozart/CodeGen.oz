@@ -82,7 +82,7 @@ define
    end
 
    fun {TranslateTagTests
-	 Region IdRef Labels TagBodyVec ElseVInstr State ReturnReg IsTry}
+	Region IdRef Labels TagBodyVec ElseVInstr State ReturnReg IsTry}
       Matches = {Record.foldR TagBodyVec
 		 fun {$ N#Args#Body In} Label Match ThenVInstr in
 		    Label = Labels.(N + 1)
@@ -363,21 +363,21 @@ define
       end
    end
 
-   fun {VarAppOneArg Region IdRef ArgReg Reg VTl State}
+   fun {VarApp Region IdRef ArgRegs VTl State}
       case {GetArg IdRef State} of value(Reg0) then
-	 vCall(_ Reg0 [ArgReg Reg] {TranslateRegion Region State} VTl)
+	 vCall(_ Reg0 ArgRegs {TranslateRegion Region State} VTl)
       [] constant(X) then
-	 {CallConstant Region X [ArgReg Reg] VTl State}
+	 {CallConstant Region X ArgRegs VTl State}
       end
    end
 
-   fun {TranslateVarAppExp Region IdRef1 Args IsDirect Reg VTl State}
-      case Args of 'OneArg'(IdRef2) then ArgReg VHd VInter1 in
-	 ArgReg = {GetReg IdRef2 VHd VInter1 State}
+   fun {TranslateVarAppExp Region IdRef Args IsDirect Reg VTl State}
+      case Args of 'OneArg'(ArgIdRef) then ArgReg VHd VInter1 in
+	 ArgReg = {GetReg ArgIdRef VHd VInter1 State}
 	 if IsDirect then
-	    VInter1 = {VarAppOneArg Region IdRef1 ArgReg Reg VTl State}
+	    VInter1 = {VarApp Region IdRef [ArgReg Reg] VTl State}
 	 else Reg0 VInter2 in
-	    Reg0 = {GetReg IdRef1 VInter1 VInter2 State}
+	    Reg0 = {GetReg IdRef VInter1 VInter2 State}
 	    VInter2 = vDeconsCall(_ Reg0 ArgReg Reg
 				  {TranslateRegion Region State} VTl)
 	 end
@@ -385,12 +385,12 @@ define
       [] 'TupArgs'('#[]') then ArgReg VHd VInter in
 	 {State.cs newReg(?ArgReg)}
 	 VHd = vEquateConstant(_ unit ArgReg VInter)
-	 VInter = {VarAppOneArg Region IdRef1 ArgReg Reg VTl State}
+	 VInter = {VarApp Region IdRef [ArgReg Reg] VTl State}
 	 VHd
-      [] 'TupArgs'('#[]'(IdRef2)) then ArgReg VHd VInter in
+      [] 'TupArgs'('#[]'(ArgIdRef)) then ArgReg VHd VInter in
 	 {State.cs newReg(?ArgReg)}
-	 VHd = vEquateRecord(_ '#' 1 ArgReg [{GetArg IdRef2 State}] VInter)
-	 VInter = {VarAppOneArg Region IdRef1 ArgReg Reg VTl State}
+	 VHd = vEquateRecord(_ '#' 1 ArgReg [{GetArg ArgIdRef State}] VInter)
+	 VInter = {VarApp Region IdRef [ArgReg Reg] VTl State}
 	 VHd
       [] 'TupArgs'(IdRefs) then ArgRegs VHd VInter1 in
 	 VInter1#ArgRegs = {Record.foldR IdRefs
@@ -399,14 +399,9 @@ define
 			       VTl#(Reg|Rest)
 			    end VHd#[Reg]}
 	 if IsDirect then
-	    case {GetArg IdRef1 State} of value(Reg0) then
-	       VInter1 = vCall(_ Reg0 ArgRegs
-			       {TranslateRegion Region State} VTl)
-	    [] constant(X) then
-	       VInter1 = {CallConstant Region X ArgRegs VTl State}
-	    end
+	    VInter1 = {VarApp Region IdRef ArgRegs VTl State}
 	 else Reg0 VInter2 in
-	    Reg0 = {GetReg IdRef1 VInter1 VInter2 State}
+	    Reg0 = {GetReg IdRef VInter1 VInter2 State}
 	    VInter2 = vConsCall(_ Reg0 ArgRegs
 				{TranslateRegion Region State} VTl)
 	 end
@@ -420,7 +415,7 @@ define
 	 Rec = {List.toRecord '#' Args}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} ArgReg
 			     {Record.toList Rec} VInter)
-	 VInter = {VarAppOneArg Region IdRef1 ArgReg Reg VTl State}
+	 VInter = {VarApp Region IdRef [ArgReg Reg] VTl State}
 	 VHd
       end
    end
@@ -641,10 +636,10 @@ define
 	    VInter = {CallConstant Region Value Regs VTl State}
 	 end
 	 VHd
-      [] 'VarAppExp'(Region IdRef1 Args) then
-	 {TranslateVarAppExp Region IdRef1 Args false Reg VTl State}
-      [] 'DirectAppExp'(Region IdRef1 Args) then
-	 {TranslateVarAppExp Region IdRef1 Args true Reg VTl State}
+      [] 'VarAppExp'(Region IdRef Args) then
+	 {TranslateVarAppExp Region IdRef Args false Reg VTl State}
+      [] 'DirectAppExp'(Region IdRef Args) then
+	 {TranslateVarAppExp Region IdRef Args true Reg VTl State}
       [] 'SelExp'(Region _ Label _ IdRef) then Reg0 VHd VInter in
 	 Reg0 = {GetReg IdRef VHd VInter State}
 	 VInter = vInlineDot(_ Reg0 Label Reg false
