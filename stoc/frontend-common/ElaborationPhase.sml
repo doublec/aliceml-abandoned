@@ -35,19 +35,20 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
   (* Predefined types *)
 
-    fun boolTyp E    = #typ(lookupTyp(E, Prebound.typstamp_bool))
-    fun exnTyp E     = #typ(lookupTyp(E, Prebound.typstamp_exn))
+    fun unitTyp E	= PreboundType.typ_unit
+    fun boolTyp E	= PreboundType.typ_bool
+    fun exnTyp E	= PreboundType.typ_exn
 
     (* UNFINISHED: overloading *)
-    fun wordTyp E    = #typ(lookupTyp(E, Prebound.typstamp_word))
-    fun intTyp E     = #typ(lookupTyp(E, Prebound.typstamp_int))
-    fun charTyp E    = #typ(lookupTyp(E, Prebound.typstamp_char))
-    fun stringTyp E  = #typ(lookupTyp(E, Prebound.typstamp_string))
-    fun realTyp E    = #typ(lookupTyp(E, Prebound.typstamp_real))
+    fun wordTyp E	= PreboundType.typ_word
+    fun intTyp E	= PreboundType.typ_int
+    fun charTyp E	= PreboundType.typ_char
+    fun stringTyp E	= PreboundType.typ_string
+    fun realTyp E	= PreboundType.typ_real
 
-    fun refTyp(E,t)  = Type.inApp(#typ(lookupTyp(E, Prebound.typstamp_ref)), t)
-    fun vecTyp(E,t)  = Type.inApp(#typ(lookupTyp(E, Prebound.typstamp_vec)), t)
-    fun listTyp(E,t) = Type.inApp(#typ(lookupTyp(E, Prebound.typstamp_list)), t)
+    fun refTyp(E,t)	= Type.inApp(PreboundType.typ_ref, t)
+    fun vecTyp(E,t)	= Type.inApp(PreboundType.typ_vec, t)
+    fun listTyp(E,t)	= Type.inApp(PreboundType.typ_list, t)
 
 
   (* Check value restriction *)
@@ -348,7 +349,7 @@ val _=print "\n"
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  tb        = boolTyp E
-	    val  t         = Type.inTuple[]
+	    val  t         = unitTyp E
 	    val  _         = Type.unify(t1,tb) handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
 				      E.WhileExpCondUnify(t1, tb, t3, t4))

@@ -3,9 +3,9 @@ structure Env0 :> ENV0 =
 
     open Env
     open Prebound
+    open PreboundType
 
     datatype id   = datatype AbstractGrammar.id
-    datatype kind = datatype Type.kind
     datatype sort = datatype Type.sort
 
 
@@ -15,28 +15,6 @@ structure Env0 :> ENV0 =
 
 
   (* Type environment *)
-
-    val con_word	= (STAR, CLOSED, typpath_word)
-    val con_int		= (STAR, CLOSED, typpath_int)
-    val con_char	= (STAR, CLOSED, typpath_char)
-    val con_string	= (STAR, CLOSED, typpath_string)
-    val con_real	= (STAR, CLOSED, typpath_real)
-    val con_bool	= (STAR, CLOSED, typpath_bool)
-    val con_exn		= (STAR, CLOSED, typpath_exn)
-    val con_ref		= (ARROW(STAR,STAR), CLOSED, typpath_ref)
-    val con_vec		= (ARROW(STAR,STAR), CLOSED, typpath_vec)
-    val con_list	= (ARROW(STAR,STAR), CLOSED, typpath_list)
-
-    val typ_int		= Type.inCon con_int	(* Always maximise sharing! *)
-    val typ_word	= Type.inCon con_word
-    val typ_char	= Type.inCon con_char
-    val typ_string	= Type.inCon con_string
-    val typ_real	= Type.inCon con_real
-    val typ_bool	= Type.inCon con_bool
-    val typ_exn		= Type.inCon con_exn
-    val typ_ref		= Type.inCon con_ref
-    val typ_vec		= Type.inCon con_vec
-    val typ_list	= Type.inCon con_list
 
     fun insertTyp'(stamp, path, typ, sort, name) =
 	let
@@ -63,7 +41,7 @@ structure Env0 :> ENV0 =
 		       typname_bool)
     val _ = insertTyp'(typstamp_exn,    typpath_exn,    typ_exn,    OPEN,
 		       typname_exn)
-    val _ = insertTyp'(typstamp_ref,   typpath_ref,    typ_ref,     CLOSED,
+    val _ = insertTyp'(typstamp_ref,    typpath_ref,    typ_ref,    CLOSED,
 		       typname_ref)
     val _ = insertTyp'(typstamp_vec,    typpath_vec,    typ_vec,    CLOSED,
 		       typname_vec)

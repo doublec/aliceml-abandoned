@@ -1,3 +1,4 @@
+(*UNFINISHED*)
 (* NOTE: Reduction is still a bit strange for recursive type functions -
 	 we get some non-wellformed lambdas in-between.
 	 Have to look into it later... *)

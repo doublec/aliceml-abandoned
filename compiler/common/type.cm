@@ -11,6 +11,9 @@ Group
 	signature TYPE
 	structure Type
 
+	signature PREBOUND_TYPE
+	structure PreboundType
+
 	signature PP_PATH
 	signature PP_TYPE
 	structure PPPath
@@ -22,8 +25,11 @@ is
 	../error/sources.cm
 	name.cm
 	path.cm
+	prebound.cm
 
 	TYPE.sig
 	Type.sml
+	PREBOUND_TYPE.sig
+	PreboundType.sml
 	PP_TYPE.sig
 	PPType.sml
