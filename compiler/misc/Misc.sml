@@ -5,39 +5,41 @@
 structure Misc :> MISC =
   struct
 
-    fun Option_isNone NONE	= true
-      | Option_isNone  _	= false
+    fun General_swap(r1 as ref x1, r2 as ref x2) =
+	( r1 := x2 ; r2 := x1 )
 
-    fun Option_app f  NONE	= ()
-      | Option_app f (SOME x)	= f x
+    fun Option_isNone NONE		= true
+      | Option_isNone  _		= false
 
-    fun Option_fold f b  NONE	= b
-      | Option_fold f b (SOME a)= f(a,b)
+    fun Option_app f  NONE		= ()
+      | Option_app f (SOME x)		= f x
 
-
-    fun List_appr f  nil	= ()
-      | List_appr f (x::xs)	= ( List_appr f xs ; f x )
-
-    fun ListPair_find f (nil,_)	= NONE
-      | ListPair_find f (_,nil)	= NONE
-      | ListPair_find f (x::xs, y::ys)
-				= if f(x,y) then SOME(x,y)
-					    else ListPair_find f (xs,ys)
+    fun Option_fold f b  NONE		= b
+      | Option_fold f b (SOME a)	= f(a,b)
 
 
-    fun Array_all p a		= let val size   = Array.length a
+    fun List_appr f  nil		= ()
+      | List_appr f (x::xs)		= ( List_appr f xs ; f x )
 
-				      fun iter i = if i = size then true
-				  		   else p(Array.sub(a,i))
+    fun ListPair_find f (nil,_)		= NONE
+      | ListPair_find f (_,nil)		= NONE
+      | ListPair_find f (x::xs, y::ys)	= if f(x,y) then SOME(x,y)
+						    else ListPair_find f (xs,ys)
+
+
+    fun Array_all p a			= let val size   = Array.length a
+					      fun iter i =
+						  if i = size then true
+				  		  else p(Array.sub(a,i))
 							andalso iter(i+1)
-				  in iter 0 end
+					  in iter 0 end
 
-    fun Array_exists p a	= let val size   = Array.length a
-
-				      fun iter i = if i = size then false
-				  		   else p(Array.sub(a,i))
+    fun Array_exists p a		= let val size   = Array.length a
+					      fun iter i =
+						  if i = size then false
+				  		  else p(Array.sub(a,i))
 							orelse iter(i+1)
-				  in iter 0 end
+					  in iter 0 end
 
     val Char_toWide	= WideChar.chr o Char.ord
     val Char_fromWide	= Char.chr o WideChar.ord

@@ -5,6 +5,8 @@
 signature MISC =
   sig
 
+    val General_swap :	'a ref * 'a ref -> unit
+
     val Option_isNone :	'a option -> bool
     val Option_app :	('a -> unit) -> 'a option -> unit
     val Option_fold :	('a * 'b -> 'b) -> 'b -> 'a option -> 'b
