@@ -16,8 +16,8 @@ signature UNSAFE_REMOTE_COMPONENT =
 	    sig
 		val getLocalIP: unit -> string
 
-		val setCallback: (string * 'a -> 'b) -> unit
-		val dynamicCall: string * 'a -> 'b
+		val setCallback: ('ticket * 'a -> 'b) -> unit
+		val dynamicCall: 'ticket * 'a -> 'b
 
 		val packValue: 'a -> string
 		val unpackValue: string -> 'b
