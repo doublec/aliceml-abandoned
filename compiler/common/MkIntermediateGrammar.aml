@@ -22,9 +22,10 @@ functor Intermediate(type info
 
     datatype name   = ExId of string | InId 
 
-    datatype id     = Id     of info * stamp * name
-    datatype longid = Longid of info * id list * id
-    datatype lab    = Lab    of info * string
+    datatype lab    = Lab     of info * string
+    datatype id     = Id      of info * stamp * name
+    datatype longid = ShortId of info * id
+		    | LongId  of info * longid * id
 
     (* Expressions *)
 
@@ -77,9 +78,10 @@ functor Intermediate(type info
 
     (* Projections *)
 
-    fun info_id(Id(i,_,_))		= i
-    fun info_longid(Longid(i,_,_))	= i
     fun info_lab(Lab(i,_))		= i
+    fun info_id(Id(i,_,_))		= i
+    fun info_longid(ShortId(i,_))	= i
+      | info_longid(LongId(i,_,_))	= i
 
     fun info_exp(LitExp(i,_))		= i
       | info_exp(VarExp(i,_))		= i
@@ -178,21 +180,25 @@ functor Intermediate(type info
 					  )
       | output_name(q, InId)		= ( f(q,"InId") ; r(q) )
 
+    fun output_lab(q, Lab(i,s))		= ( f(q,"Lab")
+					  ; output_info(q,i) ; m(q)
+					  ; output_string(q,s) ; r(q)
+					  )
+
     fun output_id(q, Id(i,s,n))		= ( f(q,"Id")
 					  ; output_info(q,i) ; m(q)
 					  ; output_stamp(q,s) ; m(q)
 					  ; output_name(q,n) ; r(q)
 					  )
 
-    fun output_longid(q, Longid(i,xs,x))= ( f(q,"Longid")
+    fun output_longid(q, ShortId(i,x))	= ( f(q,"ShortId")
 					  ; output_info(q,i) ; m(q)
-					  ; output_list output_id (q,xs) ; m(q)
 					  ; output_id(q,x) ; r(q)
 					  )
-
-    fun output_lab(q, Lab(i,s))		= ( f(q,"Lab")
+      | output_longid(q, LongId(i,y,x))	= ( f(q,"LongId")
 					  ; output_info(q,i) ; m(q)
-					  ; output_string(q,s) ; r(q)
+					  ; output_longid(q,y) ; m(q)
+					  ; output_id(q,x) ; r(q)
 					  )
 
     fun output_field output_z (q, Field(i,l,z)) =

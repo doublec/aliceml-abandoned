@@ -20,9 +20,10 @@ signature INTERMEDIATE =
 
     datatype name   = ExId of string | InId 
 
-    datatype id     = Id     of info * stamp * name
-    datatype longid = Longid of info * id list * id
-    datatype lab    = Lab    of info * string
+    datatype lab    = Lab     of info * string
+    datatype id     = Id      of info * stamp * name
+    datatype longid = ShortId of info * id
+		    | LongId  of info * longid * id
 
     (* Expressions *)
 
@@ -75,9 +76,9 @@ signature INTERMEDIATE =
 
     (* Operations *)
 
+    val info_lab:    lab	-> info
     val info_id:     id		-> info
     val info_longid: longid	-> info
-    val info_lab:    lab	-> info
     val info_exp:    exp	-> info
     val info_field:  'a field	-> info
     val info_match:  match	-> info
@@ -85,9 +86,9 @@ signature INTERMEDIATE =
     val info_dec:    dec	-> info
 
     val output_lit:    TextIO.outstream * lit		-> unit
+    val output_lab:    TextIO.outstream * lab		-> unit
     val output_id:     TextIO.outstream * id		-> unit
     val output_longid: TextIO.outstream * longid	-> unit
-    val output_lab:    TextIO.outstream * lab		-> unit
     val output_exp:    TextIO.outstream * exp		-> unit
     val output_field: (TextIO.outstream * 'a -> unit) ->
                        TextIO.outstream * 'a field	-> unit
