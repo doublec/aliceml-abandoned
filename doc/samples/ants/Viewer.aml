@@ -156,7 +156,7 @@ struct
 
             fun drawIRect c =
                 (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawRectangle (pixmap, gc, true, x + 1, y+1, tileSize-2, tileSize-2))
+                 Gdk.drawRectangle (pixmap, gc, true, x + 2, y+2, tileSize-4, tileSize-4))
 
             fun drawBoring c =
                 (* draw a cross *)
@@ -204,7 +204,6 @@ struct
                  drawMarkers (#redMarkers cell, redAntC);
                  drawMarkers (#blackMarkers cell, blackAntC));
                    
-            Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize);
             Gtk.widgetQueueDrawArea (area,x, y, tileSize, tileSize)
         end
 
