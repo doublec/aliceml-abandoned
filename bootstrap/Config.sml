@@ -17,6 +17,8 @@ sig
     datatype platform = WIN32 | UNIX
 
     val platform : platform
+    val vm : string
+
     val homeDir : string option
 end
 
@@ -28,6 +30,8 @@ struct
 	case SMLofNJ.SysInfo.getOSKind () of
 	    SMLofNJ.SysInfo.WIN32 => WIN32
 	  | _ => UNIX
+
+    val vm = "smlnj"
 
     val homeDir = OS.Process.getEnv "STOCKHOME"
 end
