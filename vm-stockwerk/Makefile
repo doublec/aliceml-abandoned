@@ -130,7 +130,7 @@ distclean: distclean-local
 clean-local:
 	rm -f $(OBJS)
 veryclean-local: clean-local
-	rm -f seam.dll alice.dll alice.exe java.dll java.exe
+	rm -f seam.dll alice.dll java.dll
 distclean-local: veryclean-local
 	rm -f Makefile.depend
 
