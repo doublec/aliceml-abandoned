@@ -27,7 +27,7 @@ FILES =	jacke.lex.sml \
 
 
 ALICELIB=LrTable.aml LrParser.aml
-INSTALL_LIB_TO= `alice-config --alicelibdir`/aliceyacc
+INSTALL_LIB_TO= `alice-config --alicelibdir`/yacc
 INSTALL_BIN_TO= `alice-config --alicebindir`
 
 .PHONY: all with-smlnj clean distclean aliceyacclib
