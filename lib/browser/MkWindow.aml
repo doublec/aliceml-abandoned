@@ -298,6 +298,42 @@ fun scrollY (y,scrolled,vadj) =
 					      [Handler("activate",w(10))],
 					      true) 
 				     ]
+		val depth_item_list = [EntryObj(LABEL("-5"),
+					      [Handler("activate",d(~5))],
+						       true),
+				   EntryObj(LABEL("-4"),
+					    [Handler("activate",d(~4))],
+					    true),
+				   EntryObj(LABEL("-3"),
+					      [Handler("activate",d(~3))],
+					         true),
+				     EntryObj(LABEL("-2"),
+					      [Handler("activate",d(~2))],
+					      true),
+				     EntryObj(LABEL("-1"),
+					      [Handler("activate",d(~1))],
+					      true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+1"),
+					      [Handler("activate",d(1))],
+					      true),
+				     EntryObj(LABEL("+2"),
+					      [Handler("activate",d(2))],
+					      true),
+				     EntryObj(LABEL("+3"),
+					      [Handler("activate",d(3))],
+					      true),
+				     EntryObj(LABEL("+4"),
+					      [Handler("activate",d(4))],
+						       true),
+				     EntryObj(LABEL("+5"),
+					      [Handler("activate",d(5))]
+					      ,true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+10"),
+					      [Handler("activate",d(10))],
+					      true) 
+				     ]
 	in
 	case n of
 	Types.RelNode _ => ()
@@ -313,11 +349,8 @@ fun scrollY (y,scrolled,vadj) =
 				    sensitive = true},
 				   MenuObj
 				   {title = "depth",
-				    items = 
-				    [EntryObj(LABEL("+1"),
-					      [Handler("activate",d(1))]
-					      ,true)],
-				    sensitive = true}],
+				    items = depth_item_list,
+			  sensitive = true}],
 			  sensitive = true},
 		  MenuObj{title = "Filter",
 			  items = [],
