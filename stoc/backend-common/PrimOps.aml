@@ -12,6 +12,8 @@
 
 structure PrimOps :> PRIM_OPS =
     struct
+	exception UnknownPrim
+
 	open FlatGrammar
 
 	structure StringMap = MakeHashImpMap(StringHashKey)
@@ -196,5 +198,7 @@ structure PrimOps :> PRIM_OPS =
 		map
 	    end
 
-	fun getArity name = StringMap.lookupExistent (map, name)
+	fun getArity name =
+	    StringMap.lookupExistent (map, name)
+	    handle StringMap.Lookup _ => raise UnknownPrim
     end

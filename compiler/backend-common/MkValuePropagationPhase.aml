@@ -570,7 +570,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpTestStm (body, _, env, isToplevel, shared) =
 	    (nil, vpBodyScope (body, env, isToplevel, shared))
 	and vpExp (exp as LitExp (_, _), _, _, _) = exp
-	  | vpExp (exp as PrimExp (_, _), _, _, _) = exp
+	  | vpExp (exp as PrimExp (info, name), _, _, _) =
+	    (PrimOps.getArity name
+	     handle PrimOps.UnknownPrim =>
+		 Error.error (#region info, "unknown primitive " ^ name);
+	     exp)
 (*--** disabled for now (not all backends support this)
 	  | vpExp (exp as NewExp (_, _), _, false, _) = exp
 	  | vpExp (NewExp (info, conArity), _, true, _) =
@@ -750,16 +754,19 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    in
 		component'
 	    end
-	    handle exn =>
-		(TextIO.print
-		 "\nValuePropagationPhase crashed: \
-		 \debug information follows\n";
-		 debug component;
-		 case exn of
-		     IdMap.Lookup id =>
-			 TextIO.print ("Lookup " ^ idToString id ^ "\n")
-		   | IdMap.Collision id =>
-			 TextIO.print ("Collision " ^ idToString id ^ "\n")
-		   | _ => ();
-		 raise exn)
+	    (*--**DEBUG*)
+	    handle exn as Error.Error (_, _) => raise exn
+		 | exn =>
+		       (TextIO.print
+			"\nValuePropagationPhase crashed: \
+			 \debug information follows\n";
+			debug component;
+			case exn of
+			    IdMap.Lookup id =>
+				TextIO.print ("Lookup " ^ idToString id ^ "\n")
+			  | IdMap.Collision id =>
+				TextIO.print ("Collision " ^
+					      idToString id ^ "\n")
+			  | _ => ();
+			raise exn)
     end
