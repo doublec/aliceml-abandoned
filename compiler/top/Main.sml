@@ -1,8 +1,8 @@
 structure Main :> MAIN =
   struct
 
-    fun failure(Crash.CRASH s)        = TextIO.print(s ^ "\n")
-      | failure(Error.ERROR((l,r),s)) =
+    fun failure(Crash.Crash s)        = TextIO.print(s ^ "\n")
+      | failure(Error.Error((l,r),s)) =
 	TextIO.print(Int.toString l ^ "-" ^ Int.toString r ^ ": " ^ s ^ "\n")
       | failure _ = ()
 
@@ -23,24 +23,20 @@ structure Main :> MAIN =
     val translate  = TranslationPhase.translate o abstract
     val simplify   = MatchCompilationPhase.simplify o translate
 
-    fun ozify name s =
+    fun ozify outstream s =
 	let
-	    val decs = simplify s
-	    val file = TextIO.openOut name
+	    val prog = simplify s
 	in
-	    OzifySimplified.outputList OzifySimplified.outputDec
-				       (file,decs) ;
-	    TextIO.output1 (file,#"\n") ;
-	    TextIO.closeOut file
+	    OzifySimplifiedGrammar.outputProgram(outstream, prog) ;
+	    TextIO.output1(outstream, #"\n")
 	end
 
-    fun ozifyToStream file s =
+    fun ozifyToFile name s =
 	let
-	    val decs = simplify s
+	    val file = TextIO.openOut name
 	in
-	    OzifySimplified.outputList OzifySimplified.outputDec
-				       (file,decs) ;
-	    TextIO.output1 (file,#"\n")
+	    ozify file s handle x => ( TextIO.closeOut file ; raise x ) ;
+	    TextIO.closeOut file
 	end
 
     val parseString		= processString parse
@@ -55,10 +51,13 @@ structure Main :> MAIN =
     val simplifyString		= processString simplify
     val simplifyFile		= processFile simplify
 
-    fun ozifyString(s,f)	= processString (ozify f) s
-    fun ozifyFile(s,f)		= processFile (ozify f) s
+    fun ozifyString(s,os)	= processString (ozify os) s
+    fun ozifyFile(n,os)		= processFile (ozify os) n
 
-    fun ozifyStringToStream(s,f)= processString (ozifyToStream f) s
-    fun ozifyFileToStream(s,f)	= processFile (ozifyToStream f) s
+    val ozifyStringToStdOut	= processString(ozify TextIO.stdOut)
+    val ozifyFileToStdOut	= processFile(ozify TextIO.stdOut)
+
+    fun ozifyStringToFile(s,n)	= processString (ozifyToFile n) s
+    fun ozifyFileToFile(n1,n2)	= processFile (ozifyToFile n2) n1
 
   end

@@ -11,13 +11,13 @@ structure BindEnv0 :> BIND_ENV0 =
 
     (* Infix environment *)
 
-    val _ = insertInf(E0, VId.fromString "::", (i, SOME(Infix.RIGHT, 5)))
-    val _ = insertInf(E0, VId.fromString "=",  (i, SOME(Infix.LEFT,  4)))
-    val _ = insertInf(E0, VId.fromString ":=", (i, SOME(Infix.LEFT,  3)))
+    val _ = insertInf(E0, VId.fromString "::", (i, SOME(BindEnv.RIGHT, 5)))
+    val _ = insertInf(E0, VId.fromString "=",  (i, SOME(BindEnv.LEFT,  4)))
+    val _ = insertInf(E0, VId.fromString ":=", (i, SOME(BindEnv.LEFT,  3)))
 
-    val _ = insertInf(E0, VId.fromString "<",  (i, SOME(Infix.LEFT, 4)))
-    val _ = insertInf(E0, VId.fromString "+",  (i, SOME(Infix.LEFT, 6)))
-    val _ = insertInf(E0, VId.fromString "*",  (i, SOME(Infix.LEFT, 7)))
+    val _ = insertInf(E0, VId.fromString "<",  (i, SOME(BindEnv.LEFT, 4)))
+    val _ = insertInf(E0, VId.fromString "+",  (i, SOME(BindEnv.LEFT, 6)))
+    val _ = insertInf(E0, VId.fromString "*",  (i, SOME(BindEnv.LEFT, 7)))
 
     (* Type environment *)
 
@@ -26,11 +26,11 @@ structure BindEnv0 :> BIND_ENV0 =
     val E_list  = new()
     val E_ref   = new()
 
-    val _ = insertVal(E_bool, VId.fromString "false", (i,P.stamp_false,C false))
-    val _ = insertVal(E_bool, VId.fromString "true",  (i,P.stamp_true, C false))
-    val _ = insertVal(E_list, VId.fromString "nil",   (i,P.stamp_nil,  C false))
-    val _ = insertVal(E_list, VId.fromString "::",    (i,P.stamp_cons, C true))
-    val _ = insertVal(E_ref,  VId.fromString "ref",   (i,P.stamp_ref,  C true))
+    val _ = insertVal(E_bool, VId.fromString "false", (i,P.stamp_false,C 0))
+    val _ = insertVal(E_bool, VId.fromString "true",  (i,P.stamp_true, C 0))
+    val _ = insertVal(E_list, VId.fromString "nil",   (i,P.stamp_nil,  C 0))
+    val _ = insertVal(E_list, VId.fromString "::",    (i,P.stamp_cons, C 1))
+    val _ = insertVal(E_ref,  VId.fromString "ref",   (i,P.stamp_ref,  C 1))
 (*
     val _ = insertTy(E0, TyCon.fromString "unit",   (i, E_empty))
     val _ = insertTy(E0, TyCon.fromString "bool",   (i, E_bool))
@@ -48,8 +48,8 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = union(E0, E_bool)
     val _ = union(E0, E_list)
     val _ = union(E0, E_ref)
-    val _ = insertVal(E0, VId.fromString "Match", (i, P.stamp_Match, C false))
-    val _ = insertVal(E0, VId.fromString "Bind",  (i, P.stamp_Bind,  C false))
+    val _ = insertVal(E0, VId.fromString "Match", (i, P.stamp_Match, C 0))
+    val _ = insertVal(E0, VId.fromString "Bind",  (i, P.stamp_Bind,  C 0))
     val _ = insertVal(E0, VId.fromString "=",     (i, P.stamp_eq,    V))
     val _ = insertVal(E0, VId.fromString ":=",    (i, P.stamp_assign,V))
 

@@ -206,4 +206,7 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	    (f (q, "RecArgs");
 	     outputList (outputPair (outputString, outputX))
 	     (q, stringIdList); r q)
+
+	val outputProgram = outputList outputDec
+
     end

@@ -4,8 +4,17 @@ Group
     signature ABSTRACTION_PHASE
     structure ParsingPhase
     structure AbstractionPhase
+    signature ID
+    structure VId
+    structure TyVar
+    structure TyCon
+    structure StrId
+    structure SigId
+    structure FunId
     signature BIND_ENV
     structure BindEnv
+    signature INPUT_GRAMMAR
+    structure InputGrammar
 
 is
 

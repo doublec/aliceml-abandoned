@@ -14,8 +14,5 @@
 
 signature OZIFY_SIMPLIFIED_GRAMMAR =
     sig
-	val outputList:
-	    (TextIO.outstream * 'a -> unit) ->
-	    TextIO.outstream * 'a list -> unit
-	val outputDec: TextIO.outstream * SimplifiedGrammar.dec -> unit
+	val outputProgram: TextIO.outstream * SimplifiedGrammar.program -> unit
     end

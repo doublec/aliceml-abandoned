@@ -13,10 +13,13 @@ signature MAIN =
     val simplifyString :	string -> SimplifiedGrammar.program
     val simplifyFile :		string -> SimplifiedGrammar.program
 
-    val ozifyString :		string * string -> unit
-    val ozifyFile :		string * string -> unit
+    val ozifyString :		string * TextIO.outstream -> unit
+    val ozifyFile :		string * TextIO.outstream -> unit
 
-    val ozifyStringToStream :	string * TextIO.outstream -> unit
-    val ozifyFileToStream :	string * TextIO.outstream -> unit
+    val ozifyStringToStdOut :	string -> unit
+    val ozifyFileToStdOut :	string -> unit
+
+    val ozifyStringToFile :	string * string -> unit
+    val ozifyFileToFile :	string * string -> unit
 
   end
