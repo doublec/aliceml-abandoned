@@ -129,22 +129,6 @@ struct
 	(Util.makeTuple " * " "unit" (map (convFun o getType) outs))
     end
 
-   
-    local
-	fun getClassList' nil                       cs = rev cs
-	  | getClassList' (STRUCT (name,(_,t)::_)::dr) cs =
-	    (case removeTypeRefs t of
-		 STRUCTREF sup => 
-		     ( 
-		       print (name^" => "^sup^"\n") ;
-		       getClassList' dr (CLASS (sup,name)::cs) )
-	       | _             => getClassList' dr cs)
-	  | getClassList' (_::dr)                   cs = getClassList' dr cs
-    in
-	fun getClassList ds = getClassList' ds nil
-    end
-
-    
     fun isRefOfSpace space (ENUMREF n) =
 	Util.checkPrefix (Util.spaceName space) n
       | isRefOfSpace space (STRUCTREF n) =

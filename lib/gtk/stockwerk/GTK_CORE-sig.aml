@@ -6,6 +6,12 @@ sig
 (**)exception TypeMismatch of string
 (**)type arg = GtkTypes.arg
 
+(**)val GtkWidgetUnref : object -> unit
+(**)val GtkObjectUnref : object -> unit
+(**)val GObjectUnref : object -> unit
+(**)val DeleteUnref : object -> unit
+(**)val NoUnref : object -> unit
+
     val NULL : object
     val TRUE : int
     val FALSE : int
@@ -15,7 +21,6 @@ sig
     val signalConnectAfter : object * string * callBackFunction -> int
 
     val signalDisconnect       : object * int -> unit
-    val signalDisconnectByFunc : object * callBackFunction -> unit
 
 (**)val addObject : object * (object -> unit) * bool -> object
 (**)val init : unit -> unit

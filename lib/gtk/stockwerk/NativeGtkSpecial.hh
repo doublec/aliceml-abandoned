@@ -277,4 +277,16 @@ DEFINE2(NativeGtk_signalDisconnect) {
   RETURN_UNIT;
 } END
 
+DEFINE1(NativeGtk_gObjectUnref) {
+  DECLARE_UNMANAGED_POINTER(obj,x0);
+  g_object_unref(obj);
+  RETURN_UNIT;
+} END
+
+DEFINE1(NativeGtk_deleteUnref) {
+  DECLARE_UNMANAGED_POINTER(obj,x0);
+  delete (int*)obj;
+  RETURN_UNIT; 
+} END
+
 #endif
