@@ -2302,7 +2302,8 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
     Error("NativeCodeJitter::Compile: invalid abstractCode tag");
   };
   // Perform Register Allocation
-  u_int nLocals = Store::DirectWordToInt(abstractCode->Sel(2));
+  Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
+  u_int nLocals = localNames->GetLength();
 #if 1
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(5));
   assignment = RegisterAllocator::Run(nLocals, liveness);

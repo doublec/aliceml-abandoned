@@ -247,11 +247,12 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   case AbstractCode::Specialized:
     {
       abstractCode->AssertWidth(AbstractCode::functionWidth);
-      int nlocals = Store::WordToInt(abstractCode->Sel(2));
+      Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
+      u_int nLocals = localNames->GetLength();
       AbstractCodeFrame *frame =
 	AbstractCodeFrame::New(AbstractCodeInterpreter::self,
 			       abstractCode->Sel(4), closure,
-			       Environment::New(nlocals),
+			       Environment::New(nLocals),
 			       abstractCode->Sel(3));
       Scheduler::PushFrame(frame->ToWord());
     }
