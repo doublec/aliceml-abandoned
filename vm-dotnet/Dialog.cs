@@ -170,12 +170,11 @@ class ReadLine : Alice.Values.Procedure {
 class Execute {
     public static Dialog dlg;
     public static Object Main(Object obj) {
-	Object[] val = new Object[1];
-	
 	dlg = new Dialog(40, 3);
 	new Thread(new ThreadStart(dlg.Run)).Start();
-	
-	val[0] = new ReadLine();
-	return val;
+
+	return new object[1] {
+	    new ReadLine()   // readLine
+	};
     }
 }

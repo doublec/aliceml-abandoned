@@ -153,8 +153,13 @@ public class Execute {
 	object stdIn  = new StreamWrapper("stdin", System.Console.In);
 	object stdOut = new StreamWrapper("stdout", System.Console.Out);
 
-	return new object[2] {
-	    new object[13] {             // TextIO$
+	return new object[3] {
+	    null,                        //--** $TEXT_IO$
+	    new object[17] {             // TextIO$
+		null,                    //--** TextIO$.$elem
+		null,                    //--** TextIO$.$instream
+		null,                    //--** TextIO$.$outstream
+		null,                    //--** TextIO$.$vector
 		new TextIO_closeIn(),    // TextIO$.closeIn
 		new TextIO_closeOut(),   // TextIO$.closeOut
 		new TextIO_flushOut(),   // TextIO$.flushOut

@@ -1490,17 +1490,16 @@ public class Execute {
     public static Object Main(Object obj) {
 	Canvas canvas  = new Canvas();
 	Inspector insp = new Inspector(canvas);
-	Object[] val   = new Object[6];
-	
-	Helper.PrintLn((System.String) "Entered Canvas::Main");
 	new Thread(new ThreadStart(insp.Run)).Start();
-        val[0] = new MakeArrowType();
-	val[1] = new MakeBasicType();
-	val[2] = new MakeListType();
-	val[3] = new MakeRecordType();
-	val[4] = new MakeTupleType();
-	val[5] = new InspectApply();
-	Helper.PrintLn((System.String) "Leaving Canvas::Main");
-	return val;
+
+	return new object[7] {
+	    null,                   //--** $ty
+	    new MakeArrowType(),    // makeArrowType
+	    new MakeBasicType(),    // makeBasicType
+	    new MakeListType(),     // makeListType
+	    new MakeRecordType(),   // makeRecordType
+	    new MakeTupleType(),    // makeTupleType
+	    new InspectApply()      // nativeInspect
+	};
     }
 }
