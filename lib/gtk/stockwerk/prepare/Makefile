@@ -11,7 +11,7 @@
 OPTS =
 
 ifdef WINDOWS
-EXTRA_CC_OPTS = -DGLIB_HAVE_ALLOCA_H
+EXTRA_CC_OPTS = -DGLIB_HAVE_ALLOCA_H -D__IEEE_BIG_ENDIAN
 else
 EXTRA_CC_OPTS =
 endif
@@ -22,7 +22,7 @@ endif
 
 GCC = gcc -E -Wall -undef -U__GNUC__  $(EXTRA_CC_OPTS) \
           `pkg-config --cflags $(PC_OPTS)`
-ALICEC = alicec --dump-phases
+ALICEC = alicec --no-warn-conventions
 INSTALL = ../myinstall -v -m 644
 
 
