@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000-2003
+ *   Andreas Rossberg, 2000-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,11 +31,11 @@ struct
 	in
 	    if not (!switch) then () else
 	    (
-		TextIO.output (Switches.Debug.logOut, "-- " ^ header ^ ":\n");
-		PrettyPrint.output (Switches.Debug.logOut, pp rep',
-				   !Switches.Debug.logWidth);
-		TextIO.output (Switches.Debug.logOut, "\n");
-		TextIO.flushOut Switches.Debug.logOut
+		TextIO.output (Switches.Debug.dumpOut, "-- " ^ header ^ ":\n");
+		PrettyPrint.output (Switches.Debug.dumpOut, pp rep',
+				   !Switches.Debug.dumpWidth);
+		TextIO.output (Switches.Debug.dumpOut, "\n");
+		TextIO.flushOut Switches.Debug.dumpOut
 	    );
 	    result
 	end

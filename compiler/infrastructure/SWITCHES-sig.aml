@@ -20,6 +20,8 @@ sig
     sig
 	val errOut :				TextIO.outstream
 	val errWidth :				int ref
+	val logOut :				TextIO.outstream
+	val logWidth :				int ref
 
 	val minimizeComponent :			bool ref
 	val recursiveCompilation :		bool ref
@@ -50,8 +52,8 @@ sig
 
     structure Debug :
     sig
-	val logOut :				TextIO.outstream
-	val logWidth :				int ref
+	val dumpOut :				TextIO.outstream
+	val dumpWidth :				int ref
 
 	val dumpPhases :			bool ref
 	val dumpAbstractionResult :		bool ref

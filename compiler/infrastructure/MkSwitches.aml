@@ -23,6 +23,8 @@ struct
     struct
 	val errOut				= dupOut TextIO.stdErr
 	val errWidth				= ref 79
+	val logOut				= dupOut TextIO.stdOut
+	val logWidth				= ref 79
 
 	val minimizeComponent			= ref false
 	val recursiveCompilation		= ref false
@@ -53,8 +55,8 @@ struct
 
     structure Debug =
     struct
-	val logOut				= dupOut TextIO.stdOut
-	val logWidth				= ref 79
+	val dumpOut				= dupOut TextIO.stdOut
+	val dumpWidth				= ref 79
 
 	val dumpPhases				= ref false
 	val dumpAbstractionResult		= ref false

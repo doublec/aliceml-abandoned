@@ -63,8 +63,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    TextIO.output (errOut, "### warning: " ^ message ^ "\n")
 
 	fun trace message =
-	    if !Switches.Global.traceComponentAccess then
-		TextIO.print ("### " ^ message ^ "\n")
+	    if !Switches.Global.traceComponentAccess
+	    then TextIO.output (Switches.Global.logOut, "### " ^ message ^ "\n")
 	    else ()
 
 	fun resolveWrtCwd url =

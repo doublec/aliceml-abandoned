@@ -126,9 +126,9 @@ struct
 		     Target.COMPONENT {eval, component, ...} =>
 		     let
 			 val _ = if !Switches.Debug.dumpPhases then
-				     (TextIO.output (Switches.Debug.logOut,
+				     (TextIO.output (Switches.Debug.dumpOut,
 						     "-- Evaluation...\n");
-				      TextIO.flushOut Switches.Debug.logOut)
+				      TextIO.flushOut Switches.Debug.dumpOut)
 				 else ()
 			 val result = if stopped then
 					  SOME (spawn eval (baseUrl ()))
