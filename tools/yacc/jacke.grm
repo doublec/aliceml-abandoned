@@ -25,17 +25,17 @@ fun lookup "bogus" = 10000
 (* others *)
   | DECINTRO of string | MLOP of string | MLKEY of string 
 
-%nonterm  start of A.parsetree list 
-	| jackedec of A.parsetree 
+%nonterm  start of A.parsetreeWithPos list 
+	| jackedec of A.parsetreeWithPos 
 	| tokbinds of (string * string option) list 
 	| tokbind of string * string option 
 	| idlist of string list
-	| rulebinds of A.rule list | rulebind of A.rule 
+	| rulebinds of A.Prule list | rulebind of A.Prule 
 	| parsbinds of (string*string option * string) list 
 	| parsbind of string * string option * string 
-	| bnfexp of A.bnfexp 
+	| bnfexp of A.bnfexpWithPos 
 	| exp of string list | explist of string list
-	| program of A.parsetree list
+	| program of A.parsetreeWithPos list
    
 
 %pos int
@@ -75,16 +75,16 @@ start : program (rev program)
 	| ([])
 
 program : jackedec ([jackedec])
-	| exp ([A.MLCode (exp)])
+	| exp ([A.PMLCode (exp,expleft,expright)])
 	| program jackedec (jackedec::program)
-	| program exp ((A.MLCode (exp))::program)
+	| program exp ((A.PMLCode (exp,expleft,expright))::program)
 
-jackedec : TOKEN tokbinds (A.TokenDec(tokbinds))
-        | ASSOCL idlist (A.AssoclDec(idlist))
-	| ASSOCR idlist (A.AssocrDec(idlist))
-	| NONASSOC idlist (A.NonassocDec(idlist))
-	| RULE rulebinds (A.RuleDec(rev rulebinds))
-	| PARSER parsbinds (A.ParserDec(parsbinds))
+jackedec : TOKEN tokbinds (A.PTokenDec(tokbinds,TOKENleft,tokbindsright))
+        | ASSOCL idlist (A.PAssoclDec(idlist,ASSOCLleft,idlistright))
+	| ASSOCR idlist (A.PAssocrDec(idlist,ASSOCRleft,idlistright))
+	| NONASSOC idlist (A.PNonassocDec(idlist,NONASSOCleft,idlistright))
+	| RULE rulebinds (A.PRuleDec(rev rulebinds,RULEleft,rulebindsright))
+	| PARSER parsbinds (A.PParserDec(parsbinds,PARSERleft,parsbindsright))
  
 tokbinds : tokbind ([tokbind])
 	| tokbind BAR tokbinds (tokbind::tokbinds)
@@ -107,14 +107,14 @@ parsbinds : parsbind ([parsbind])
 parsbind : ID EQ ID ((ID1,NONE,ID2))
 	| ID COLON ID EQ ID ((ID1,SOME ID2,ID3))
 
-bnfexp : SKIP (A.Skip)
-	| ID (A.Symbol(ID))
+bnfexp : SKIP (A.PSkip)
+	| ID (A.PSymbol(ID,IDleft,IDright))
 	| LPAREN bnfexp RPAREN (bnfexp)
-	| ID AS bnfexp (A.As(ID,bnfexp))
-	| bnfexp COMMA bnfexp (A.Seq([bnfexp1,bnfexp2]))
-	| bnfexp PREC ID (A.Prec(bnfexp,ID))
-	| bnfexp MAPSTO LPAREN explist RPAREN (A.Transform(bnfexp,explist))
-	| bnfexp BAR bnfexp (A.Alt([bnfexp1,bnfexp2])) 
+	| ID AS bnfexp (A.PAs(ID,bnfexp,IDleft,bnfexpright))
+	| bnfexp COMMA bnfexp (A.PSeq([bnfexp1,bnfexp2],bnfexp1left,bnfexp2right))
+	| bnfexp PREC ID (A.PPrec(bnfexp,ID,bnfexpleft,IDright))
+	| bnfexp MAPSTO LPAREN explist RPAREN (A.PTransform(bnfexp,explist,bnfexpleft,RPARENright))
+	| bnfexp BAR bnfexp (A.PAlt([bnfexp1,bnfexp2],bnfexp1left,bnfexp2right)) 
 
 explist : ([])
 	| explist exp (explist@exp)
