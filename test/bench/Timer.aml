@@ -1,7 +1,4 @@
 import structure UnsafeTimer from "UnsafeTimer"
 import signature TIMER from "TIMER-sig"
 
-structure Timer :> TIMER =
-struct
-  open UnsafeTimer
-end
+structure Timer = UnsafeTimer :> TIMER
