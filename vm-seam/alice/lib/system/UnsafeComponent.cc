@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
-#include "emulator/RootSet.hh"
-#include "emulator/BootLinker.hh"
-#include "emulator/Unpickler.hh"
-#include "emulator/Pickler.hh"
+#include "generic/RootSet.hh"
+#include "generic/BootLinker.hh"
+#include "generic/Unpickler.hh"
+#include "generic/Pickler.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE0(UnsafeComponent_getInitialTable) {
   static word result = Store::IntToWord(0);
