@@ -182,7 +182,7 @@ define
       'GlobalStamp.fromString':
 	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
       'GlobalStamp.toString':
-	 fun {$ N} {ByteString.make '<N>'} end
+	 fun {$ N} {ByteString.make {Value.toVirtualString N}} end
       'GlobalStamp.compare':
 	 fun {$ N1 N2}
 	    if N1 == N2 then 'EQUAL'
@@ -272,6 +272,7 @@ define
 	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
+      'Int.precision': 'NONE'
       'Int.quot':
 	 fun {$ X1 X2}
 	    try
@@ -288,7 +289,6 @@ define
 	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
-      'Int.precision': 'NONE'
       'Int.toString':
 	 fun {$ I} {ByteString.make {Int.toString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
@@ -331,8 +331,6 @@ define
 	    {FloatToInt {Floor R}}
 	 end
       'Real.fromInt': IntToFloat
-      'Real.negInf': ~1.0 / 0.0
-      'Real.posInf': 1.0 / 0.0
       'Real.precision': 52
       'Real.realCeil': Ceil
       'Real.realFloor': Floor
@@ -463,6 +461,6 @@ define
       'Word.toIntX': BootWord.toIntX
       'Word.toString':
 	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
-      'Word.xorb': BootWord.'xorb'
-      'Word.wordSize': 31)
+      'Word.wordSize': 31
+      'Word.xorb': BootWord.'xorb')
 end
