@@ -51,26 +51,11 @@ static word SysErrConstructor;
 
 #define DECLARE_BUF(DECLARE_X)						 \
   DECLARE_IODESC(ioDesc, x_iodesc);					 \
-  int sz;								 \
+  DECLARE_INT(sz, x_sz);						 \
   u_char *buf;								 \
   {									 \
     DECLARE_X(x, x_buf);						 \
     DECLARE_INT(i, x_i);						 \
-    u_int length = x->GetLength();					 \
-    if (i < 0 || STATIC_CAST(u_int, i) > length)			 \
-      RAISE(PrimitiveTable::General_Subscript);				 \
-    TagVal *tagVal = TagVal::FromWord(x_sz);				 \
-    if (tagVal == INVALID_POINTER) {					 \
-      DECLARE_INT(none, x_sz); Assert(none == Types::NONE); none = none; \
-      sz = length - i;							 \
-    } else {								 \
-      DECLARE_INT(sz0, tagVal->Sel(0));					 \
-      if (sz0 < 0) RAISE(PrimitiveTable::General_Size);			 \
-      if (STATIC_CAST(u_int, i + sz0) > length)				 \
-	RAISE(PrimitiveTable::General_Subscript);			 \
-      sz = sz0;								 \
-    }									 \
-    if (sz == 0) RAISE(PrimitiveTable::General_Domain);			 \
     buf = x->GetValue() + i;						 \
   }
 

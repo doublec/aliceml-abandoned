@@ -17,7 +17,7 @@ signature UNSAFE_IO_DESC_COMPONENT =
 		exception ClosedStream
 
 		(* Common operations supported by all readers/writers *)
-		val hash: 'iodesc -> word
+		val hash: 'iodesc -> int
 		val compare: 'iodesc * 'iodesc -> order
 		val kind: 'iodesc -> 'iodesc_kind
 		val name: 'iodesc -> string
@@ -48,11 +48,11 @@ signature UNSAFE_IO_DESC_COMPONENT =
 		val readVec: 'reader_iodesc * int -> 'vector
 		val readArr:
 		    {iodesc: 'reader_iodesc, buf: 'array,
-		     i: int, sz: int option} -> int
+		     i: int, sz: int} -> int
 		val readVecNB: 'reader_iodesc * int -> 'vector option
 		val readArrNB:
 		    {iodesc: 'reader_iodesc, buf: 'array,
-		     i: int, sz: int option} -> int option
+		     i: int, sz: int} -> int option
 		val canInput: 'reader_iodesc -> bool
 
 		(* Writer operations not supported by all writers *)
@@ -64,16 +64,16 @@ signature UNSAFE_IO_DESC_COMPONENT =
 				       canOutput: bool}
 		val writeVec:
 		    {iodesc: 'writer_iodesc, buf: 'vector,
-		     i: int, sz: int option} -> int
+		     i: int, sz: int} -> int
 		val writeArr:
 		    {iodesc: 'writer_iodesc, buf: 'array,
-		     i: int, sz: int option} -> int
+		     i: int, sz: int} -> int
 		val writeVecNB:
 		    {iodesc: 'writer_iodesc, buf: 'vector,
-		     i: int, sz: int option} -> int option
+		     i: int, sz: int} -> int option
 		val writeArrNB:
 		    {iodesc: 'writer_iodesc, buf: 'array,
-		     i: int, sz: int option} -> int option
+		     i: int, sz: int} -> int option
 		val canOutput: 'writer_iodesc -> bool
 
 		(* Creating tty iodescs *)

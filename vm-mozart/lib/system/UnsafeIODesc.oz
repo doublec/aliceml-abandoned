@@ -13,7 +13,6 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
-   Word(make toInt) at 'x-oz://boot/Word'
    OS(open fileDesc read write lSeek close readSelect writeSelect)
 export
    'UnsafeIODesc$': IODesc
@@ -197,11 +196,8 @@ define
 		      canOutput: false)
 	       end
 	    'writeVec':
-	       fun {$ '#'(iodesc: Desc buf: Buf i: I sz: Sz)} N in
-		  N = case Sz of 'SOME'(N) then N
-		      [] 'NONE' then {ByteString.length Buf} - I
-		      end
-		  {Desc write({ByteString.slice Buf I I + N} $)}
+	       fun {$ '#'(iodesc: Desc buf: Buf i: I sz: Sz)}
+		  {Desc write({ByteString.slice Buf I I + Sz} $)}
 	       end
 	    'writeArr': fun {$ _} raise unimplemented end end %--**
 	    'writeVecNB': fun {$ _} raise unimplemented end end %--**

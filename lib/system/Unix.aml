@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +16,14 @@ import signature UNIX       from "UNIX-sig"
 
 structure Unix :> UNIX =
     struct
-	type proc
+	type ('a,'b) proc
+	type signal
+
+	datatype exit_status =
+	    W_EXITED
+	  | W_EXITSTATUS of Word8.word
+	  | W_SIGNALED of signal
+	  | W_STOPPED of signal
 
 	open UnsafeUnix
     end

@@ -27,7 +27,10 @@ structure TextIO :> TEXT_IO =
 	    StreamIO(structure PrimIO = TextPrimIO
 		     structure Vector = CharVector
 		     structure Array = CharArray
+		     structure VectorSlice = CharVectorSlice
+		     structure ArraySlice = CharArraySlice
 		     val someElem = #"\n")
+
 	structure TextImperativeIO =
 	    ImperativeIO(structure StreamIO = TextStreamIO
 			 structure Vector = CharVector)
@@ -41,15 +44,15 @@ structure TextIO :> TEXT_IO =
 		    let
 			val (s, f') = inputN (f, 1)
 		    in
-			if String.size s = 0 then ("", f')
+			if String.size s = 0 then NONE
 			else
 			    case String.sub (s, 0) of
-				#"\n" => ("\n", f')
+				#"\n" => SOME ("\n", f')
 			      | c =>
 				    let
 					val (cs, f'') = inputLine' f'
 				    in
-					(String.implode (c::cs), f'')
+					SOME (String.implode (c::cs), f'')
 				    end
 		    end
 		and inputLine' f =
@@ -72,12 +75,12 @@ structure TextIO :> TEXT_IO =
 	    end
 
 	structure TextTranslator =
-	    MkTextTranslator(structure PrimIO = TextPrimIO
-			     structure Vector = CharVector
-			     structure Array = CharArray)
+	    MkTextTranslator(structure PrimIO = TextPrimIO)
 
+	(*--** don't use augment, implement them properly *)
 	fun textReader obj = TextTranslator.translateReader (TextPrimIO.RD obj)
-	fun textWriter obj = TextTranslator.translateWriter (TextPrimIO.WR obj)
+	fun textWriter obj = TextTranslator.translateWriter
+				(TextPrimIO.augmentWriter (TextPrimIO.WR obj))
 
 	fun openIn name =
 	    let
@@ -93,9 +96,9 @@ structure TextIO :> TEXT_IO =
 	fun inputLine f =
 	    case input1 f of
 		SOME c =>
-		    if c = #"\n" then "\n"
-		    else String.implode (c::inputLine' f)
-	      | NONE => ""
+		    SOME (if c = #"\n" then "\n"
+			  else String.implode (c::inputLine' f))
+	      | NONE => NONE
 	and inputLine' f =
 	    case input1 f of
 		SOME c =>

@@ -14,9 +14,11 @@ import signature PRIM_IO from "PRIM_IO-sig"
 
 signature TEXT_TRANSLATOR =
     sig
-	structure PrimIO: PRIM_IO where type elem = Char.char
-				    and type vector = CharVector.vector
-				    and type array = CharArray.array
+	structure PrimIO: PRIM_IO where type elem = Char.t
+				    and type vector = CharVector.t
+				    and type vector_slice = CharVectorSlice.t
+				    and type array = CharArray.t
+				    and type array_slice = CharArraySlice.t
 
 	val translateReader: PrimIO.reader -> PrimIO.reader
 	val translateWriter: PrimIO.writer -> PrimIO.writer

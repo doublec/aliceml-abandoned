@@ -29,7 +29,7 @@ signature TEXT_STREAM_IO =
 	val input1: instream -> (elem * instream) option
 	val inputN: instream * int -> vector * instream
 	val inputAll: instream -> vector * instream
-	val inputLine: instream -> vector * instream
+	val inputLine: instream -> (vector * instream) option
 	val canInput: instream * int -> int option
 	val closeIn: instream -> unit
 	val endOfStream: instream -> bool

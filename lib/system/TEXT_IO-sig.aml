@@ -3,18 +3,22 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure TextPrimIO     from "TextPrimIO"
 import signature TEXT_STREAM_IO from "TEXT_STREAM_IO-sig"
 
 signature TEXT_IO =
     sig
 	structure StreamIO: TEXT_STREAM_IO
+			    where type reader = TextPrimIO.reader
+			      and type writer = TextPrimIO.writer
+			      and type pos = TextPrimIO.pos
 
 	type vector = StreamIO.vector
 	type elem = StreamIO.elem
@@ -26,7 +30,7 @@ signature TEXT_IO =
 	val input: instream -> vector
 	val input1: instream -> elem option
 	val inputN: instream * int -> vector
-	val inputLine: instream -> string
+	val inputLine: instream -> string option
 	val inputAll: instream -> vector
 	val canInput: instream * int -> int option
 	val lookahead: instream -> elem option
