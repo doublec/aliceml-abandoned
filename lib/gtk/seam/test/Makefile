@@ -1,4 +1,4 @@
-MORE = -I ~/devel/stockhausen/install/include
+MORE = -I ~/devel/alice/install/include
 CC = gcc `pkg-config --cflags --libs gtk+-2.0 libgnomecanvas-2.0` $(MORE)
 
 ALICEC = alicec --dump-phases
