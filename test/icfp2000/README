@@ -13,7 +13,7 @@ System:		SML/NJ
 
 Description:
 
-* We implemented all tiers (tier 2 is not bug-free however...). 
+* We implemented all tiers . 
 * We tried to do a clean (modular & strongly typed) design,
   efficiency was only of secondary concern.
   - The renderer kernel is completely independent of the abstract machine.
@@ -22,4 +22,4 @@ Description:
 
 Examples:
 
-In examples/helikopter.gml you'll find a neat example. ;-)
+In helikopter.gml you'll find a neat example. ;-)
