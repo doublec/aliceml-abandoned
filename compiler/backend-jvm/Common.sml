@@ -99,11 +99,29 @@ structure Common=
 		(* the actual label number *)
 		val labelcount = ref (0:label)
 
+		val retryStack = ref [(0:label, toplevel)]
+
 		fun new () =
 		    (labelcount := !labelcount + 1;
 		     !labelcount)
 
 		fun toString lab =
 		    "label"^Int.toString lab
+
+		fun popRetry () =
+		    let
+			val ret = case !retryStack of
+			    (l,_)::_ => l
+			  | nil => Crash.crash "Label.popRetry"
+		    in
+			retryStack := tl (!retryStack);
+			ret
+		    end
+
+		fun newRetry (ls as (lab', stamp')) =
+		    case !retryStack of
+			(_,stamp'')::_ => if stamp' = stamp'' then ()
+				       else retryStack := ls :: (!retryStack)
+		      | nil => Crash.crash "Label.newRetry"
 	    end
     end

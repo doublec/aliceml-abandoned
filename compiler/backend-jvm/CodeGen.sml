@@ -402,13 +402,23 @@ structure CodeGen =
 		 (* test whether id' matches with test'.
 		  If so, eval body', if not, eval body'' *)
 	    let
+		val retry = Label.new ()
 		val danach = Label.new ()
 		val elselabel = Label.new ()
 		val wrongclasslabel = Label.new ()
 		val popelselabel = Label.new ()
-		val retry = Label.new ()
 		val stampcode' = idCode (id', curCls)
-		val behind = Label.new ()
+
+		(* only test for transients after the last pattern failed. *)
+		fun nf (SharedStm (_,s,_)::_) = nf s
+		  | nf (TestStm (_, Id (_,nextStamp,_),_,_,_)::_) = nextStamp = stamp'
+		  | nf (IndirectStm (_, ref NONE)::rest) = nf rest
+		  | nf (IndirectStm (_, ref (SOME i))::_) = nf i
+		  | nf _ = false
+
+		val notfinished = nf body''
+
+		val _ = Label.newRetry (retry, stamp')
 
 		fun switchNumber (LitTest (WordLit a)) =
 		    LargeWord.toLargeInt a
@@ -473,15 +483,19 @@ structure CodeGen =
 				    (Label lab ::
 				     Multi (decListCode (body', curFun, curCls)) ::
 				     Multi akku ::
-				     Label behind ::
-				     Instanceof ITransient ::
-				     Ifeq elselabel ::
-				     stampcode' ::
-				     Checkcast ITransient ::
-				     Invokeinterface MRequest ::
-				     Dup ::
-				     storeCode (stamp', curFun, curCls) ::
-				     Goto retry ::
+				     Label wrongclasslabel ::
+				     (if notfinished then
+					  Nop
+				      else
+					  Multi
+					  [Instanceof ITransient,
+					   Ifeq elselabel,
+					   stampcode',
+					   Checkcast ITransient,
+					   Invokeinterface MRequest,
+					   Dup,
+					   storeCode (stamp', curFun, curCls),
+					   Goto (Label.popRetry ())]) ::
 				     Label popelselabel ::
 				     Pop ::
 				     Label elselabel ::
@@ -510,7 +524,7 @@ structure CodeGen =
 			fun litTest (cls, ret) =
 			    Dup ::
 			    Instanceof cls ::
-			    Ifeq behind ::
+			    Ifeq wrongclasslabel ::
 			    Checkcast cls ::
 			    Getfield (cls^"/value", ret) ::
 			    sw
@@ -529,8 +543,6 @@ structure CodeGen =
 		    end
 
 		fun tcode (cls, ret, cmpcode) =
-		    stampcode' ::
-		    Label retry ::
 		    Dup ::
 		    Instanceof cls ::
 		    Ifeq wrongclasslabel ::
@@ -577,15 +589,11 @@ structure CodeGen =
 				     Ifne elselabel]))
 
 		  | testCode (ConTest (id'',NONE)) =
-			 [stampcode',
-			  Label retry,
-			  idCode (id'', curCls),
+			 [idCode (id'', curCls),
 			  Ifacmpne elselabel]
 
 		  | testCode (ConTest (id'' as Id (_, stamp'', _),SOME (Id (_,stamp''',_)))) =
-			 [stampcode',
-			  Label retry,
-			  Dup,
+			 [Dup,
 			  Multi (if stamp'' = stamp_cons then
 				     [Instanceof CCons,
 				      Ifeq wrongclasslabel]
@@ -604,9 +612,7 @@ structure CodeGen =
 			  Astore stamp''']
 
 		  | testCode (RefTest (Id (_,stamp''',_))) =
-			 [stampcode',
-			  Label retry,
-			  Dup,
+			 [Dup,
 			  Instanceof CReference,
 			  Ifeq wrongclasslabel,
 			  Checkcast CReference,
@@ -633,8 +639,6 @@ structure CodeGen =
 			    bindrec(rest,i+1)
 			  | bindrec (nil,_) = nil
 		    in
-			stampcode' ::
-			Label retry ::
 			Dup ::
 			Instanceof CRecord ::
 			Ifeq wrongclasslabel ::
@@ -656,13 +660,9 @@ structure CodeGen =
 		    in
 			if lgt = 0
 			    then
-				[stampcode',
-				 Label retry,
-				 Getstatic BUnit,
+				[Getstatic BUnit,
 				 Ifacmpne elselabel]
 			else
-			    stampcode' ::
-			    Label retry ::
 			    (if lgt >=2 andalso lgt <=4 then
 				 let
 				     val thisTup = cTuple lgt
@@ -696,9 +696,7 @@ structure CodeGen =
 		    end
 
 		  | testCode (LabTest (s', Id (_,stamp'',_))) =
-		    [stampcode',
-		     Label retry,
-		     Dup,
+		    [Dup,
 		     Instanceof ITuple,
 		     Ifeq wrongclasslabel,
 		     Checkcast ITuple,
@@ -713,8 +711,6 @@ structure CodeGen =
 		    let
 			val lgt = length ids
 		    in
-			stampcode' ::
-			Label retry ::
 			Dup ::
 			Instanceof CVector ::
 			Ifeq wrongclasslabel ::
@@ -729,20 +725,25 @@ structure CodeGen =
 		    end
 
 		fun normalTest () =
+		    stampcode' ::
+		    Label retry ::
 		    Multi (testCode test') ::
 		    Multi
 		    (decListCode (body', curFun, curCls)) ::
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label wrongclasslabel ::
-		    Instanceof ITransient ::
-		    Ifeq elselabel ::
-		    stampcode' ::
-		    Checkcast ITransient ::
-		    Invokeinterface MRequest ::
-		    Dup ::
-		    storeCode (stamp', curFun, curCls) ::
-		    Goto retry ::
+		    (if notfinished then Nop
+		     else
+			 Multi
+			 [Instanceof ITransient,
+			  Ifeq elselabel,
+			  stampcode',
+			  Checkcast ITransient,
+			  Invokeinterface MRequest,
+			  Dup,
+			  storeCode (stamp', curFun, curCls),
+			  Goto retry]) ::
 		    Label popelselabel ::
 		    Pop ::
 		    Label elselabel ::
