@@ -30,13 +30,69 @@ datatype MenuLabel = SEP | LABEL of string
 (* Handler carries signal and appropriate handler function *)
 datatype Handler = Handler of string * (Gtk.arg list -> unit)
 
-(* represents one entire submenu *)
-datatype MenuConstructObj = MenuObj of {title: string, items: (MenuLabel * Handler list) list}
+(* represents a hierarchy of menu items *)
+datatype MenuConstructObj = 
+    BarObj of MenuConstructObj list
+  | PopupObj of MenuConstructObj list
+  | MenuObj of {title: string, items: MenuConstructObj list} 
+  | EntryObj of MenuLabel * Handler list 
 
 (* Represents one radio button and associated handlers *)
 datatype RadioButtonObj = RBObj of string * Handler list
 
 val uglyNULL = UnsafeValue.cast () : Gtk.object
+
+
+
+fun createMenu (BarObj(l)) =let
+			        val bar = Gtk.menuBarNew()
+				val create = (fn i => 
+				    Gtk.menuBarAppend(bar,createMenu(i)))  
+			    in 
+				(  (List.app create l) 
+				 ;   bar) 
+			    end  
+ | createMenu (PopupObj(l)) =  
+			    let
+				val menu = Gtk.menuNew()
+				val create = (fn i => 
+				    Gtk.menuAppend (menu,createMenu i))
+			    in
+				(List.app create l
+				 ;Gtk.menuPopup(menu,
+						uglyNULL,
+						uglyNULL,
+						uglyNULL,
+						uglyNULL,
+						3,0)
+			         ;Gtk.widgetShowAll (menu)
+				 ; menu)
+			   end 
+  | createMenu (MenuObj(r)) = 
+	    let
+		val menu_item = Gtk.menuItemNewWithLabel( #title(r))
+		val menu = Gtk.menuNew()
+		val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
+		val create = fn i => 
+		    Gtk.menuAppend(menu,createMenu i)
+	    in
+		(List.app create (#items(r));menu_item)
+	    end
+  | createMenu (EntryObj(label,handlerlist)) =
+	    let
+		val item = case label of
+		    SEP => Gtk.menuItemNew()
+		  | LABEL(label) => Gtk.menuItemNewWithLabel(label)
+		val connect = fn Handler(str,handler) 
+		    => (Gtk.signalConnect (item,str, handler);())
+		val _ = Gtk.widgetSetSensitive(item,0)
+    in
+	(List.app connect handlerlist;item)
+    end
+
+
+
+(*
 
 (* createMenu - creates menubar from a list of submenus *)
 fun createMenu l = let
@@ -77,10 +133,11 @@ and createMenuObjPopup (menu,MenuObj(r)) =
 	val _         = Gtk.menuAppend(menu,menu_item)
 	val menu = Gtk.menuNew()
 	val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
-	val create = fn i => createMenuEntry(menu,i)
+	val create = fn i => createMenuObjPopup(menu,i)
     in
 	List.app create (#items(r))
     end
+  | createMenuObjPopup (menu,(l,h)) = createMenuEntry(menu,(l,h))
 
 fun createPopupMenu l =
     let
@@ -92,7 +149,9 @@ fun createPopupMenu l =
     in
 	menu
     end
-	       
+	
+*)
+       
 fun createCombo strlist = 
     let
 	val combo = Gtk.comboNew()

@@ -63,7 +63,7 @@ import signature SERVICES from "SERVICES-sig"
 						    val rx = Real.fromInt(x * w)
 						    val ry = Real.fromInt(y * h)
 						in
-						    Canvas.itemMove(group,rx,ry)
+						    GtkCanvas.itemMove(group,rx,ry)
 						end
 
 			     

@@ -22,16 +22,15 @@ datatype MenuLabel = SEP | LABEL of string
 
 datatype Handler = Handler of string * (Gtk.arg list -> unit)
 
-datatype MenuConstructObj = MenuObj of {title: string, 
-					items: (MenuLabel * Handler list) list}
+datatype MenuConstructObj = 
+    BarObj of MenuConstructObj list
+  | PopupObj of MenuConstructObj list
+  | MenuObj of {title: string, items: MenuConstructObj list} 
+  | EntryObj of MenuLabel * Handler list 
 
 datatype RadioButtonObj = RBObj of string * Handler list
 
-val createMenu:  MenuConstructObj list -> Gtk.object
-val createMenuObj:  Gtk.object * MenuConstructObj -> unit
-val createMenuEntry:  Gtk.object * (MenuLabel * Handler list) -> unit
-val createMenuObjPopup: Gtk.object * MenuConstructObj -> unit 
-val createPopupMenu : MenuConstructObj list-> Gtk.object
+val createMenu:  MenuConstructObj -> Gtk.object
 val createCombo : string list -> Gtk.object 
 
 val createNotebookPages :  Gtk.object -> string * Gtk.object -> unit
