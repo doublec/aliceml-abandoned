@@ -282,7 +282,7 @@ structure ToJasmin =
 			fun findMax r =
 			    if r+1=Array.length (!jvmto) orelse
 				Array.sub (!jvmto, r) = ~1 then
-				r-1
+				r
 			    else findMax (r+1)
 		    in
 			if !OPTIMIZE >= 1 then
