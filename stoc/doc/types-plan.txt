@@ -1,0 +1,10 @@
+- complete verifier for intermediate language
+- remove indexed labels from signatures by converting hiding to local
+- remove definitionals from signatures by adding singletons
+- remove signature intersection
+- separate suspensions from applications
+- separate types from type constructors
+- separate types from type schemes (interferes with HO quantification needed
+  in intermediate)
+- get rid of 'con somehow
+- make existential quantifications in interfaces explicit?
