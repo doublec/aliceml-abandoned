@@ -13,7 +13,7 @@
 ;;
 ;; TODO:
 ;;
-;; -- Attach a filter to the stotop process to parse error messages.
+;; -- Attach a filter to the stot process to parse error messages.
 ;; -- Implement a compilation-parse-errors-function.
 ;; -- Do not make global key bindings.
 ;;
@@ -43,11 +43,11 @@
 	   :prefix "stockhausen-")))
 
 (eval-and-compile
-  (eval '(defcustom stockhausen-stotop-command "stotop"
+  (eval '(defcustom stockhausen-stot-command "stot"
 	   "*Command used to start the Stockhausen interactive toplevel."
 	   :type 'string
 	   :group 'stockhausen)))
-(put 'stockhausen-stotop-command 'variable-interactive
+(put 'stockhausen-stot-command 'variable-interactive
      "sCommand used to start the Stockhausen interactive toplevel: ")
 
 (eval-and-compile
@@ -59,18 +59,18 @@
      "nPercentage of screen to use for Stockhausen window: ")
 
 (eval-and-compile
-  (defvar stockhausen-stotop-buffer "*Stockhausen Interactive Toplevel*"
+  (defvar stockhausen-stot-buffer "*Stockhausen Interactive Toplevel*"
     "Name of the Stockhausen interactive toplevel buffer."))
 
 ;; Running the Interactive Toplevel
 
-;--** (defun stockhausen-stotop-filter (proc string) ...)
+;--** (defun stockhausen-stot-filter (proc string) ...)
 
 ;--** (defun stockhausen-compilation-parse-errors ...)
 
 (defun stockhausen-show-buffer (buffer)
   (if (and buffer (not (get-buffer-window buffer)))
-      (let ((win (or (get-buffer-window stockhausen-stotop-buffer)
+      (let ((win (or (get-buffer-window stockhausen-stot-buffer)
 		     (split-window (get-largest-window)
 				   (/ (* (window-height (get-largest-window))
 					 (- 100 stockhausen-other-buffer-size))
@@ -83,22 +83,22 @@
 (defun run-stockhausen ()
   "Start the Stockhausen interactive toplevel."
   (interactive)
-  (let ((buffer (get-buffer stockhausen-stotop-buffer)))
+  (let ((buffer (get-buffer stockhausen-stot-buffer)))
     (save-excursion
       (compilation-mode)
 ;--**      (set (make-local-variable 'compilation-parse-errors-function)
 ;--**	   'stockhausen-compilation-parse-errors)
       )
-    (comint-exec buffer stockhausen-stotop-buffer
-		 stockhausen-stotop-command nil nil)
+    (comint-exec buffer stockhausen-stot-buffer
+		 stockhausen-stot-command nil nil)
     (let ((proc (get-buffer-process buffer)))
       (process-kill-without-query proc nil)
-;--**      (set-process-filter proc 'stockhausen-stotop-filter)
+;--**      (set-process-filter proc 'stockhausen-stot-filter)
       )
     (stockhausen-show-buffer buffer)))
 
 (defun stockhausen-evaluate-string (string filename line)
-  (let ((proc (get-buffer-process stockhausen-stotop-buffer)))
+  (let ((proc (get-buffer-process stockhausen-stot-buffer)))
     (if (not proc)
 	(error "Stockhausen is not running."))
     (comint-send-string proc filename)
