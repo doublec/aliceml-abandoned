@@ -817,9 +817,6 @@ struct
 	 *   let (x3,_) = Inf.instance(Path.invent(), x2) in
 	 *   {[x'] = abs (CoerceOpaq (???,x3) x1, x3)}
 	 *)
-	if not(!Switches.Language.supportRtt) then
-	    O.FailExp(trModInfo(E,i))
-	else
 	(*UNFINISHED: abstraction of RTTs*)
 	(let
 	    val  i'      = trModInfo(E,i)
@@ -832,26 +829,39 @@ struct
 	    val (l3,t21) = findFld(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  x3'     = O.Id(typInfo(r, typ_inf E), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Fld(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Fld(i0', O.Lab(i0',l2), idToPat x2')])
-
-	    val  d'      = O.ValDec(nonInfo r,
+	in
+	    if not(!Switches.Language.supportRtt) then
+		let
+		    val  e1' = O.AbsExp(typInfo(r,t21), 
+				O.TupExp(typInfo(r,Type.tuple #[t11,t12]),
+					 #[idToExp x1', idToExp x2']))
+		    val  e'  = O.ProdExp(typInfo(r,t2),
+				#[O.Fld(i0', O.Lab(i0',l3), e1')])
+		in
+		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
+		end
+	    else
+		let
+		    val  x3' = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+		    val  d'  = O.ValDec(nonInfo r,
 				O.TupPat(typInfo(r, Type.tuple #[typ_inf E,
 								 typ_rea E]),
 					 #[idToPat x3',
 					   O.JokPat(typInfo(r, typ_rea E))]),
 				callInf(E, lab_instance,
 				   trTuple(r, #[trPath'(E, r), idToExp x2'])))
-	    val  e1'     = O.AbsExp(typInfo(r,t21), 
+		    val  e1' = O.AbsExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.tuple #[t11,t12]),
 					 #[idToExp x1', idToExp x3']))
-	    val  i2      = typInfo(r,t2)
-	    val  e2'     = O.ProdExp(i2, #[O.Fld(i0', O.Lab(i0',l3), e1')])
-	    val  e'      = O.LetExp(i2, #[d'], e2')
-	in
-	    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
+		    val  i2  = typInfo(r,t2)
+		    val  e2' = O.ProdExp(i2, #[O.Fld(i0', O.Lab(i0',l3), e1')])
+		    val  e'  = O.LetExp(i2, #[d'], e2')
+		in
+		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
+		end
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Pack")
 
@@ -862,9 +872,6 @@ struct
 	 *   Inf.match(x12,x2);
 	 *   CoerceTrans (x12,x2) x11
 	 *)
-	if not(!Switches.Language.supportRtt) then
-	    O.FailExp(trModInfo(E,i))
-	else
 	(*UNFINISHED: stripping*)
 	(let
 	    val  i'      = trModInfo(E,i)
@@ -887,13 +894,24 @@ struct
 	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
 	    val  e1'     = O.UnabsExp(i1', idToExp x1')
 	    val  d'      = O.ValDec(nonInfo r, p1', e1')
-
-	    val  e1'     = callInf(E, lab_match,
-				   trTuple(r, #[idToExp x12', idToExp x2']))
-	    val  e2'     = idToExp x11' (*UNFINISHED*)
-	    val  e'      = O.LetExp(i2', #[d'], O.SeqExp(i2', e1', e2'))
 	in
-	    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
+	    if not(!Switches.Language.supportRtt) then
+		let
+
+		    val  e1' = idToExp x11'
+		    val  e'  = O.LetExp(i2', #[d'], e1')
+		in
+		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
+		end
+	    else
+		let
+		    val  e1'  = callInf(E, lab_match,
+				  trTuple(r, #[idToExp x12', idToExp x2']))
+		    val  e2'  = idToExp x11' (*UNFINISHED*)
+		    val  e'   = O.LetExp(i2', #[d'], O.SeqExp(i2', e1', e2'))
+		in
+		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
+		end
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Unpack")
 
