@@ -3,6 +3,8 @@ TODO list for the Alice IDE
 
 Bugs:
 
+* Line numbers when compiling files are off-by-two
+* Jump-to-error doesn't really work when compiling files
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * cannot make window smaller
@@ -15,4 +17,4 @@ Missing Features:
 * replace
 * incremental search
 * general interactive highlighting
-* auto-indentation, indent/outdent commands
+
