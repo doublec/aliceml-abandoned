@@ -63,6 +63,7 @@ import
     val isSnd
 
     val getOpt
+    val isNone
     val isSome
     val valOf
 
