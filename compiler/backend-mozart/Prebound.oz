@@ -491,8 +491,8 @@ prepare
 	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
       'Unsafe.makeTuple':
 	 fun {$ X} {Adjoin X '#'} end
-      'Unsafe.selTuple':
-	 fun {$ T I} T.(I + 1) end
+      'Unsafe.selRecord':
+	 fun {$ T L} T.L end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#[]' Xs} end
       'Vector.maxLen': 0x7FFFFFF
