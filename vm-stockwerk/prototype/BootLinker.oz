@@ -16,13 +16,12 @@ import
    System(showError)
    URL(resolve toVirtualString toAtom)
    Module(manager)
-   Property(get)
+   Property(get put)
    Pickle(load) at 'Pickle.ozf'
    PrimitiveTable(importOzModule)
    Scheduler(object)
 export
    Link
-   GetInitialTable
 define
    NONE = 0
    %SOME = 1
@@ -45,6 +44,15 @@ define
 
    ModuleTable = {NewDictionary}
 
+   {Property.put 'alice.getInitialTable'
+    fun {$}
+       {List.toTuple vector
+	{Map {Dictionary.entries ModuleTable}
+	 fun {$ Key#(Sign#Module)}
+	    tuple({ByteString.make Key} Sign Module)
+	 end}}
+    end}
+
    local
       ModuleManager = {New Module.manager init}
       AliceHome = {Property.get 'alice.home'}
@@ -57,15 +65,16 @@ define
    end
 
    proc {Link Url ?Module} Key in
-      Key = {URL.toAtom Url}
+      Key = {VirtualString.toAtom Url}
       case {Dictionary.condGet ModuleTable Key unit} of unit then
 	 if {Access Trace} then
 	    {System.showError '[boot-linker] loading '#Url}
 	 end
 	 case {Pickle.load Url#'.stc'} of tag(!EVALUATED Sign X) then
-	    Module = X
 	    ModuleTable.Key := Sign#Module
+	    Module = X
 	 [] tag(!UNEVALUATED BodyClosure Imports Sign) then N Modules in
+	    ModuleTable.Key := Sign#Module
 	    N = {Width Imports}
 	    Modules = {MakeTuple vector N}
 	    for I in 1..N do Url2 in
@@ -74,17 +83,8 @@ define
 	    end
 	    {Scheduler.object newThread(BodyClosure arg(Modules) ?Module)}
 	    {Scheduler.object run()}
-	    ModuleTable.Key := Sign#Module
 	 end
       elseof _#M then Module = M
       end
-   end
-
-   fun {GetInitialTable}
-      {List.toTuple vector
-       {Map {Dictionary.entries ModuleTable}
-	fun {$ Key#(Sign#Module)}
-	   tuple({ByteString.make Key} Sign Module)
-	end}}
    end
 end
