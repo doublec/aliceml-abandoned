@@ -67,7 +67,17 @@ functor MkBackendCommon(structure Switches: SWITCHES) =
 	    ComposePhases(structure Phase1 = BackendCommon
 			  structure Phase2 = Phase2)
 
-	structure Phase3 = MkLivenessAnalysisPhase(Switches)
+	structure Phase3 =
+	    MkTracingPhase(structure Phase = MkLivenessAnalysisPhase(Switches)
+			   structure Switches = Switches
+			   val name = "Liveness Analysis")
+	structure Phase3 =
+	    MkResultDumpingPhase(
+		structure Phase = Phase3
+		structure Switches = Switches
+		val header = "Live Syntax"
+		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
+		val switch = Switches.Debug.dumpLivenessAnalysisResult)
 
 	structure BackendCommon =
 	    ComposePhases(structure Phase1 = BackendCommon

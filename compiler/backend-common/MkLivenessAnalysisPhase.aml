@@ -11,13 +11,9 @@
  *)
 
 import structure Assert                  from "../../lib/utility/Assert"
-import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
+import structure Name                    from "../../lib/rtt/Name"
 import structure Crash                   from "../infrastructure/Crash"
 import signature SWITCHES                from "../infrastructure/SWITCHES-sig"
-import structure MkTracingPhase
-    from "../infrastructure/MkTracingPhase"
-import structure MkResultDumpingPhase
-    from "../infrastructure/MkResultDumpingPhase"
 import structure EmptyContext            from "../infrastructure/EmptyContext"
 import structure Stamp                   from "../common/Stamp"
 import structure StampSet                from "../common/StampSet"
@@ -25,10 +21,10 @@ import structure StampMap                from "../common/StampMap"
 import signature FLAT_GRAMMAR            from "FLAT_GRAMMAR-sig"
 import structure FlatGrammar             from "FlatGrammar"
 import structure IntermediateAux         from "IntermediateAux"
-import structure OutputFlatGrammar       from "OutputFlatGrammar"
 import signature LIVENESS_ANALYSIS_PHASE from "LIVENESS_ANALYSIS_PHASE-sig"
 
-structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
+functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
+    LIVENESS_ANALYSIS_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
@@ -220,6 +216,10 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun lastUse (#[], stms) = stms
 	  | lastUse (ids, stms) = LastUse (bodyInfo stms, ids)::stms
 
+	fun isNamed (IdDef (Id (_, _, Name.ExId _))) = true
+	  | isNamed (IdDef (Id (_, _, Name.InId))) = false
+	  | isNamed Wildcard = false
+
 	fun laBody (LastUse (_, _)::stms, shared, dontKill) =
 	    (*--** add assertion: ids \cap use(stms) = \emptyset *)
 	    laBody (stms, shared, dontKill)
@@ -236,7 +236,16 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 			     lastUse (lastUses, stms), use)
 			end
 		  | Wildcard =>
-			if sideEffecting exp then
+			if !Switches.CodeGen.debugMode andalso isNamed idDef
+			then
+			    let
+				val (lastUses, exp) =
+				    laExp (exp, use, dontKill)
+			    in
+				(ValDec (info, idDef, exp)::
+				 lastUse (lastUses, stms), use)
+			    end
+			else if sideEffecting exp then
 			    let
 				val (lastUses, exp) =
 				    laExp (exp, use, dontKill)
@@ -544,21 +553,4 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		(Vector.fromList imports, body, exports, sign)
 	    end
-    end
-
-functor MkLivenessAnalysisPhase(Switches: SWITCHES) =
-    let
-	structure Phase =
-	    MkTracingPhase(structure Phase = LivenessAnalysisPhase
-			   structure Switches = Switches
-			   val name = "Liveness Analysis")
-	structure Phase =
-	    MkResultDumpingPhase(
-		structure Phase = Phase
-		structure Switches = Switches
-		val header = "Live Syntax"
-		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
-		val switch = Switches.Debug.dumpLivenessAnalysisResult)
-    in
-	Phase
     end
