@@ -1,8 +1,4 @@
 import
-    structure Source
-from "x-alice:/infrastructure/Source.ozf"
-
-import
     structure Crash
 from "x-alice:/infrastructure/Crash.ozf"
 
@@ -19,24 +15,24 @@ import
 from "x-alice:/common/Label.ozf"
 
 import
-    structure Type
-from "x-alice:/common/Type.ozf"
+    structure Path
+from "x-alice:/common/Path.ozf"
 
 import
-    signature INTERMEDIATE_GRAMMAR
-from "x-alice:/common/INTERMEDIATE_GRAMMAR.ozf"
+    structure Type
+from "x-alice:/common/Type.ozf"
 
 import
     structure IntermediateGrammar
 from "x-alice:/common/IntermediateGrammar.ozf"
 
 import
-    structure MakeLabelSort
-from "x-alice:/backend-common/MakeLabelSort.ozf"
+    structure PervasiveType
+from "x-alice:/common/PervasiveType.ozf"
 
 import
-    signature FLAT_GRAMMAR
-from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
+    structure Arity
+from "x-alice:/backend-common/Arity.ozf"
 
 import
     structure FlatGrammar

@@ -1,0 +1,3 @@
+import
+    structure Label
+from "x-alice:/common/Label.ozf"

@@ -27,7 +27,6 @@ import
 from "x-alice:/common/Type.ozf"
 
 import
-    structure IntermediateInfo
     structure IntermediateGrammar
 from "x-alice:/common/IntermediateGrammar.ozf"
 

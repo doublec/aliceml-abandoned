@@ -1,10 +1,30 @@
 import
+    structure PrettyPrint
+from "x-alice:/misc/PrettyPrint.ozf"
+
+import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
     structure ComposePhases
 from "x-alice:/infrastructure/ComposePhases.ozf"
 
 import
+    structure MakeTracingPhase
+from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+
+import
+    structure MakeDumpingPhase
+from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
+
+import
     structure EmptyContext
 from "x-alice:/infrastructure/EmptyContext.ozf"
+
+import
+    structure OutputFlatGrammar
+from "x-alice:/backend-common/OutputFlatGrammar.ozf"
 
 import
     structure FlatteningPhase

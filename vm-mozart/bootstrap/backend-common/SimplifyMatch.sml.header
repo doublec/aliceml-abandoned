@@ -27,8 +27,12 @@ import
 from "x-alice:/common/IntermediateGrammar.ozf"
 
 import
-    structure LabelSort
-from "x-alice:/backend-common/LabelSort.ozf"
+    structure MakeLabelSort
+from "x-alice:/backend-common/MakeLabelSort.ozf"
+
+import
+    structure Arity
+from "x-alice:/backend-common/Arity.ozf"
 
 import
     signature FLAT_GRAMMAR

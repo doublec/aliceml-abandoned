@@ -7,8 +7,8 @@ import
 from "x-alice:/misc/MakeHashImpMap.ozf"
 
 import
-    structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+    structure Arity
+from "x-alice:/backend-common/Arity.ozf"
 
 import
     signature PRIM_OPS

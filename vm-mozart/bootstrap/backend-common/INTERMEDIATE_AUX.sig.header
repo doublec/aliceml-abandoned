@@ -1,6 +1,6 @@
 import
-    structure Source
-from "x-alice:/infrastructure/Source.ozf"
+    structure Stamp
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Label
@@ -17,6 +17,10 @@ from "x-alice:/common/INTERMEDIATE_GRAMMAR.ozf"
 import
     structure IntermediateGrammar
 from "x-alice:/common/IntermediateGrammar.ozf"
+
+import
+    structure Arity
+from "x-alice:/backend-common/Arity.ozf"
 
 import
     signature FLAT_GRAMMAR

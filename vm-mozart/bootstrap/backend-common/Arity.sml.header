@@ -1,0 +1,7 @@
+import
+    structure Label
+from "x-alice:/common/Label.ozf"
+
+import
+    signature ARITY
+from "x-alice:/backend-common/ARITY.ozf"

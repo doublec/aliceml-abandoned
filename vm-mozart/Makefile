@@ -73,8 +73,8 @@ FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
 BACKENDCOMMONSOURCES = \
 	LABEL_SORT.sig MakeLabelSort.sml LabelSort.sml FLAT_GRAMMAR.sig \
 	FlatGrammar.sml OUTPUT_FLAT_GRAMMAR.sig OutputFlatGrammar.sml \
-	INTERMEDIATE_AUX.sig IntermediateAux.sml SIMPLIFY_MATCH.sig \
-	SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
+	ARITY.sig Arity.sml INTERMEDIATE_AUX.sig IntermediateAux.sml \
+	SIMPLIFY_MATCH.sig SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
 	FLATTENING_PHASE.sig FlatteningPhase.sml PRIM_OPS.sig \
 	PrimOps.sml VALUE_PROPAGATION_PHASE.sig ValuePropagationPhase.sml \
 	LIVENESS_ANALYSIS_PHASE.sig LivenessAnalysisPhase.sml CODE.sig \

@@ -56,6 +56,10 @@ import
 from "x-alice:/common/Label.ozf"
 
 import
+    structure Arity
+from "x-alice:/backend-common/Arity.ozf"
+
+import
     structure FlatGrammar
 from "x-alice:/backend-common/FlatGrammar.ozf"
 

@@ -51,6 +51,10 @@ import
 from "x-alice:/backend-common/LabelSort.ozf"
 
 import
+    structure Arity
+from "x-alice:/backend-common/Arity.ozf"
+
+import
     signature FLAT_GRAMMAR
 from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
 
