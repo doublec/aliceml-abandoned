@@ -138,11 +138,13 @@ define
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
-	 [] conTest(Id1 some(Id2)) then NameReg in
+	 [] conTest(Id1 some(Id2)) then NameReg ThenVInstr0 in
 	    NameReg = {GetNameReg Id1 State}
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
 			       [Reg0 NameReg {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl)
+			       ThenVInstr0 ElseVInstr VTl)
+	    ThenVInstr0 = vInlineDot(_ Reg0 1 {GetReg Id2 State} false
+				     unit ThenVInstr)
 	 [] tupTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord('#' {Length Ids} ThenVInstr0)]
