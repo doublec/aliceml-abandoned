@@ -17,7 +17,7 @@ then
   OZ_LOAD=cache=$OZHOME/cache/
 fi
 
-OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:$OZ_LOAD
+OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}':$OZ_LOAD
 
 export STOCKHOME PATH OZ_LOAD
 
