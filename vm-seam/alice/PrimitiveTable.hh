@@ -50,6 +50,7 @@ private:
   static void RegisterThread();
   static void RegisterUniqueString();
   static void RegisterUnsafe();
+  static void RegisterUnsafeMap();
   static void RegisterVector();
   static void RegisterWord8();
   static void RegisterWord8Array();
@@ -66,6 +67,7 @@ public:
   static word General_Subscript;
   static word Hole_Hole;
   static word Thread_Terminated;
+  static word UnsafeMap_IllegalKey;
 
   static ConcreteRepresentationHandler *gmpHandler;
   static FinalizationSet *gmpFinalizationSet;

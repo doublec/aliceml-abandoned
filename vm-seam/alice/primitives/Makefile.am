@@ -23,6 +23,7 @@ libprimitives_a_SOURCES = \
 	Thread.cc \
 	UniqueString.cc \
 	Unsafe.cc \
+	UnsafeMap.cc \
 	Vector.cc \
 	Word8.cc \
 	Word8Array.cc \

@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2004
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_MAP =
+    sig
+	type 'key map
+	exception IllegalKey
+
+	val condGet : 'key map * 'key * 'value -> 'value (* IllegalKey *)
+	val get : 'key map * 'key -> 'value (* IllegalKey *)
+	val isMember : 'key map * 'key -> bool (* IllegalKey *)
+	val new : int -> 'key map
+	val put : 'key map * 'key * 'value -> unit (* IllegalKey *)
+	val remove : 'key map * 'key -> unit (* IllegalKey *)
+	val toList : 'key map -> ('key * 'value) list
+	val toVector : 'key map -> ('key * 'value) vector
+    end

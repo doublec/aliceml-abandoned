@@ -33,6 +33,7 @@ public:
     static word constructor;
     static word uniqueString;
     static word bigInteger;
+    static word unsafeMap;
   };
 
   static word aliceHome;

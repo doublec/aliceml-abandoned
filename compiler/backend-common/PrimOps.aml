@@ -230,6 +230,15 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Unsafe.String.sub", SOME (Tuple 2));
 		ins ("Unsafe.Vector.sub", SOME (Tuple 2));
 		ins ("Unsafe.cast", SOME Unary);
+		ins ("UnsafeMap.IllegalKey", NONE);
+		ins ("UnsafeMap.condGet", SOME (Tuple 3));
+		ins ("UnsafeMap.get", SOME (Tuple 2));
+		ins ("UnsafeMap.isMember", SOME (Tuple 2));
+		ins ("UnsafeMap.new", SOME Unary);
+		ins ("UnsafeMap.put", SOME (Tuple 3));
+		ins ("UnsafeMap.remove", SOME (Tuple 2));
+		ins ("UnsafeMap.toList", SOME Unary);
+		ins ("UnsafeMap.toVector", SOME Unary);
 		ins ("Vector.concat", SOME Unary);
 		ins ("Vector.extract", SOME (Tuple 3));
 		ins ("Vector.fromList", SOME Unary);

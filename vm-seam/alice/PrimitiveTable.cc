@@ -33,6 +33,7 @@ word PrimitiveTable::General_Size;
 word PrimitiveTable::General_Subscript;
 word PrimitiveTable::Hole_Hole;
 word PrimitiveTable::Thread_Terminated;
+word PrimitiveTable::UnsafeMap_IllegalKey;
 
 void PrimitiveTable::Init() {
   // The following values have been derived from the count of
@@ -51,6 +52,7 @@ void PrimitiveTable::Init() {
   RootSet::Add(PrimitiveTable::General_Subscript);
   RootSet::Add(PrimitiveTable::Hole_Hole);
   RootSet::Add(PrimitiveTable::Thread_Terminated);
+  RootSet::Add(PrimitiveTable::UnsafeMap_IllegalKey);
   RegisterUnqualified();
   RegisterArray();
   RegisterByte();
@@ -71,6 +73,7 @@ void PrimitiveTable::Init() {
   RegisterThread();
   RegisterUniqueString();
   RegisterUnsafe();
+  RegisterUnsafeMap();
   RegisterVector();
   RegisterWord8();
   RegisterWord8Array();
