@@ -248,7 +248,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val info = {region = region, typ = PervasiveType.typ_exn}
 	    in
 		simplifyCase (region, exp, matches,
-			      PrimExp (info, "General.Bind"))
+			      PrimExp (info, "General.Bind"), true)
 	    end
 	  | translateDec (RecDec (info, decs), cont) =
 	    let
@@ -647,7 +647,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val info = {region = region, typ = PervasiveType.typ_exn}
 	    in
 		simplifyCase (region, exp, matches',
-			      PrimExp (info, "General.Match"))
+			      PrimExp (info, "General.Match"), true)
 	    end
 	  | translateExp (RaiseExp (info, exp), _, _) =
 	    let
@@ -679,7 +679,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 				(#region (infoExp exp), pat,
 				 translateExp (exp, f', handleCont))) mats
 		val handleBody =
-		    simplifyCase (#region info, exnVarExp, matches', exnVarExp)
+		    simplifyCase (#region info, exnVarExp, matches',
+				  exnVarExp, false)
 	    in
 		[O.TryStm (#region info, tryBody,
 			   O.IdDef (translateId packageId),
@@ -772,7 +773,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		      if isSome bodyOpt then ()
 		      else Error.warn' (region, "unreachable expression"))
 	    consequents
-	and simplifyCase (region, exp, matches, raiseExp) =
+	and simplifyCase (region, exp, matches, raiseExp, check) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (region, r)]
@@ -780,7 +781,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r' = ref NONE
 		val rest' = [O.IndirectStm (region, r')]
 		val (errStms, raiseIdRef) = unfoldTerm (raiseExp, Goto rest')
-		val (graph, consequents) = buildGraph (matches, errStms)
+		val (graph, consequents) = buildGraph (matches, errStms, check)
 		val (body, _) = translateGraph (graph, [(nil, idRef)], region)
 	    in
 		r := SOME body;
