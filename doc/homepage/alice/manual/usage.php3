@@ -84,8 +84,8 @@
     point to the installation directory of the Mozart system and
     the Alice system, respectively.</P>
 
-  <P>Now you have to decide to either use ml mode version 3.3 or ml mode 3.9.5.
-    Both of them have their advantages and disadvantages.
+  <P>Now you have to decide to either use SML mode version 3.3 or SML mode
+    3.9.5. Both of them have their advantages and disadvantages.
     (Note: Within Programming Systems Lab
     the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
 
