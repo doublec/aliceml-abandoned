@@ -22,25 +22,28 @@ System(showError)
 export
    Link
 define
+   EVALUATED   = 0
+   UNEVALUATED = 1
+
    ModuleTable = {NewDictionary}
 
    fun {LinkInterpreterRun _ TaskStack}
-      case TaskStack of linkFrame(_ Url)|Rest then
+      case TaskStack of linkFrame(_ Url)|Rest then Component in
+	 %--** return a failed future on link failure
+	 {System.showError 'loading '#Url}
 	 Component = try {Pickle.load Url}
 		     catch system(os(os ...) ...) then {Pickle.load Url#'.stc'}
 		     end
-	 {System.showError 'loading '#Url}
-	 %--** failed future on link failure
-	 Imports = Component.1
-	 BodyClosure = Component.2
-	 N = {Width Imports}
-	 Modules = {MakeTuple vector N}
-      in
-	 for I in 1..N do Url2 in
-	    Url2 = {URL.toVirtualString {URL.resolve Url Imports.I.2}}
-	    Modules.I = {Link Url2}
+	 case Component of tag(!EVALUATED _ X) then continue(arg(X) Rest)
+	 [] tag(!UNEVALUATED BodyClosure Imports _) then N Modules in
+	    N = {Width Imports}
+	    Modules = {MakeTuple vector N}
+	    for I in 1..N do Url2 in
+	       Url2 = {URL.toVirtualString {URL.resolve Url Imports.I.2}}
+	       Modules.I = {Link Url2}
+	    end
+	    continue(arg(Modules) {BodyClosure.1.1.pushCall BodyClosure Rest})
 	 end
-	 continue(arg(Modules) {BodyClosure.1.1.pushCall BodyClosure Rest})
       end
    end
 
