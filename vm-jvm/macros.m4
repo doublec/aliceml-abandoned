@@ -13,7 +13,7 @@ define(_RAISE,`ExceptionWrapper E = new ExceptionWrapper(Constants.$1.apply($2))
 	       E.printStackTrace();
 	       throw E')
 define(_RAISENAME,`ExceptionWrapper E = new ExceptionWrapper($1);
-		   E.printStackTrace(); 
+		   E.printStackTrace();
 		   throw E')
 dnl
 dnl Hier machen wir die Macros rein, die quasi überall gebraucht werden
@@ -93,7 +93,7 @@ define(_BINOP,`
 	}
     }
     /** val $2 : (number * number) -> number */
-    _FIELD(General,$1);') 
+    _FIELD(General,$1);')
 define(_COMPARE,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
@@ -152,16 +152,14 @@ dnl
 define(_BINOPINT,`
 	_BUILTIN(capitalize($1)) {
 	_APPLY(val) {
+	    try {
 	    _fromTuple(args,val,2,"Int.$2");
 	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
 	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
 	    return new Int(((Int) v).value $2 ((Int) w).value);
+	    } catch (ClassCastException c) {
+	    _error("wrong argument type", val);
+	    }
 	}
     }
     /** <code>val $2 : (int * int) -> int </code>*/
@@ -172,21 +170,19 @@ define(_BINOPINT,`
 define(_COMPAREINT,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
+	    try {
 	    _fromTuple(args,val,2,"Int.$2");
 	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
 	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
 	    int i = ((Int) v).value;
 	    int j = ((Int) w).value;
 	    if (i $2 j) {
 		return Constants.dmltrue;
 	    } else {
 		return Constants.dmlfalse;
+	    }
+	    } catch (ClassCastException c) {
+	    _error("wrong argument type", val);
 	    }
 	}
     }
@@ -240,11 +236,11 @@ define(_REQUEST,`if ($2 instanceof DMLLVar) {
 		    $1 = ((DMLLVar) $2).request();
 		 } else {
 		    $1 = $2;
-                 }')
+		 }')
 define(_REQUESTDEC,`$1 = null;
 		 if ($2 instanceof DMLLVar) {
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = ((DMLLVar) $2).request();
 		 } else {
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
-                 }')
+		 }')
 define(_fromSingle,`')
