@@ -113,15 +113,10 @@ struct
 
   (* Convert annotated spec to spec with where constraints *)
 
-    fun modlongidToMod(ShortId(i, modid)) =
-	    VarMod(i, modid)
-      | modlongidToMod(LongId(i, modlongid, modlab)) =
-	    SelMod(i, modlab, modlongidToMod modlongid)
-
     fun singleton(inf, modlongid) =
 	let
 	    val i   = Source.over(infoInf inf, infoLongid modlongid)
-	    val mod = AnnMod(i, modlongidToMod modlongid, inf)
+	    val mod = AnnMod(i, VarMod(i, modlongid), inf)
 	in
 	    SingInf(i, mod)
 	end
@@ -158,8 +153,9 @@ struct
 	end
       | constrain(inf1, Mod(LongId(i, modlongid', Lab(i1,a))), Mod modlongid) =
 	let
+	    val i2    = infoLongid modlongid
 	    val modid = Id(i1, Stamp.new(), Label.toName a)
-	    val inf   = SingInf(infoLongid modlongid, modlongidToMod modlongid)
+	    val inf   = SingInf(i2, VarMod(i2, modlongid))
 	    val spec  = ModSpec(i1, modid, inf)
 	in
 	    buildSig(inf1, i, modlongid', spec)

@@ -674,7 +674,7 @@ struct
   (* Modules *)
 
     and trMod(I.PrimMod(i,s,j))		= trPrimMod(i,s,j)
-      | trMod(I.VarMod(i,x))		= idToExp(trModid x)
+      | trMod(I.VarMod(i,y))		= O.VarExp(trModInfo i, trModlongid y)
       | trMod(I.StrMod(i,ds))		= let val i'   = trModInfo i
 					      val ds'  = trDecs ds
 					      val ids' = ids ds

@@ -425,8 +425,8 @@ struct
     and modtree head i body		= tree (head ^ "Mod") (ppModInfo i) body
 
     and ppMods mods			= vec(Vector.map ppMod mods)
-    and ppMod(VarMod(i, modid))		= modtree "Var" i (
-					    ppModid modid
+    and ppMod(VarMod(i, modlongid))	= modtree "Var" i (
+					    ppModlongid modlongid
 					  )
       | ppMod(PrimMod(i, s, inf))	= modtree "Prim" i (
 					    ppString s ^/^

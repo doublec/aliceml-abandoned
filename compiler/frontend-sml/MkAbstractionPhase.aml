@@ -162,10 +162,6 @@ struct
     fun longidToLab(O.ShortId(_, id))    = idToLab id
       | longidToLab(O.LongId(_, _, lab)) = lab
 
-    fun modlongidToMod(O.ShortId(i, modid))            = O.VarMod(i, modid)
-      | modlongidToMod(O.LongId(i, modlongid, modlab)) =
-	    O.SelMod(i, modlab, modlongidToMod modlongid)
-
     fun varToTyp varid = O.VarTyp(O.infoId varid, varid)
 
 
@@ -735,7 +731,7 @@ struct
 	 | PACKExp(i, longstrid) =>
 	   let
 		val (modlongid',E') = trLongStrId E longstrid
-		val  mod'           = modlongidToMod modlongid'
+		val  mod'           = O.VarMod(infoLong longstrid, modlongid')
 	   in
 		O.PackExp(i, mod')
 	   end
@@ -1528,17 +1524,17 @@ struct
 
     and trOpenDecStr (E,i,modlongido') (strid', (_,stamp1,F), acc) =
 	let
-	    val name    = StrId.toString strid'
-	    val stamp2  = Stamp.new()
-	    val modid1' = O.Id(i, stamp1, Name.ExId name)
-	    val modid2' = O.Id(i, stamp2, Name.ExId name)
-	    val mod'    = modlongidToMod
-			    (case modlongido'
+	    val name       = StrId.toString strid'
+	    val stamp2     = Stamp.new()
+	    val modid1'    = O.Id(i, stamp1, Name.ExId name)
+	    val modid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val modlongid' = case modlongido'
 			       of NONE            => O.ShortId(i, modid1')
 			        | SOME modlongid' =>
 				   O.LongId(i, modlongid',
-					    O.Lab(i, Label.fromString name)))
-	    val _       = insertStr(E, strid', (i,stamp2,F))
+					    O.Lab(i, Label.fromString name))
+	    val mod'       = O.VarMod(i, modlongid')
+	    val _          = insertStr(E, strid', (i,stamp2,F))
 	in
 	    O.ModDec(i, modid2', mod') :: acc
 	end
@@ -2228,7 +2224,7 @@ struct
 	   let
 		val (modlongid',F) = trLongStrId E longstrid
 	   in
-		( modlongidToMod modlongid', F )
+		( O.VarMod(i, modlongid'), F )
 	   end
 
 	 | LETAtStrExp(i, dec, strexp) =>
@@ -2814,19 +2810,19 @@ struct
 	 | SOME(EQUALStrDesc(_, strid as StrId(i',strid'), sigexpo, longstrid,
 								strdesco)) =>
 	   let
-		val  i              = Source.over(i', infoLong longstrid)
+		val  i2             = infoLong longstrid
+		val  i              = Source.over(i', i2)
 		val (modid',stamp)  = trStrId_bind E strid
 		val (modlongid',F)  = trLongStrId E longstrid
-		val  mod'           = modlongidToMod modlongid'
+		val  mod'           = O.VarMod(i2, modlongid')
 		val  F'             = strengthen(stamp,F)
 		val (mod'',F'')     = case sigexpo
 					of NONE => (mod',F')
 					 | SOME sigexp =>
 					let
 					    val (inf',F'') = trSigExp E sigexp
-					    val i''   = Source.over(
-							infoSigExp sigexp,
-							O.infoLongid modlongid')
+					    val i''   = Source.over
+							 (infoSigExp sigexp, i2)
 					    val mod'' = O.AnnMod(i'', mod',inf')
 					in
 					    (mod'', match(F',F''))

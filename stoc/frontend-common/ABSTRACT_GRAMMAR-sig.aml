@@ -158,7 +158,7 @@ sig
     (* Modules *)
 
     and mod =
-	  VarMod    of mod_info * modid		(* module id *)
+	  VarMod    of mod_info * modlongid	(* module id *)
 	| PrimMod   of mod_info * string * inf	(* builtin modules *)
 	| StrMod    of mod_info * dec vector	(* structure *)
 	| SelMod    of mod_info * modlab * mod	(* selection *)
