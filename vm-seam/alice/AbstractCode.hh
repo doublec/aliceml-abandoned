@@ -43,7 +43,7 @@ public:
 
   enum instr {
     AppPrim, AppVar, Close, CompactIntTest, CompactTagTest, ConTest,
-    DirectAppVar, EndHandle, EndTry, GetRef, GetTup, IntTest, Kill,
+    EndHandle, EndTry, GetRef, GetTup, IntTest, Kill,
     LazyPolySel, PutCon, PutNew, PutPolyRec, PutRef, PutTag, PutTup,
     PutVar, PutVec, Raise, RealTest, Reraise, Return, Sel, Shared,
     Specialize, StringTest, TagTest, Try, VecTest

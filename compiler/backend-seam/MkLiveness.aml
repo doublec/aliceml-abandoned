@@ -26,7 +26,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		EQUAL => Int.compare (id, id')
 	      | order => order
 
-	fun analyze (idDefArgs, instr) =
+	fun analyze (idDefs, instr) =
 	    let
 		val ranges = IntMap.map ()
 		val shared = StampSet.set ()
@@ -104,26 +104,16 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    lIdRefs (idRefs, lIdDef (idDef, lInstr (instr, i) + 1) + 1)
 		  | lInstr (AppPrim (_, idRefs, NONE), i) =
 		    lIdRefs (idRefs, i + 1)
-		  | lInstr (AppVar (idRef, idRefArgs,
+		  | lInstr (AppVar (idRef, idRefs, _,
 				    SOME (idDefArgs, instr)), i) =
 		    (* same as AppPrim *)
 		    let
 			val i = lIdDefArgs (idDefArgs, lInstr (instr, i) + 1)
 		    in
-			lIdRef (idRef, lIdRefArgs (idRefArgs, i + 1))
+			lIdRef (idRef, lIdRefs (idRefs, i + 1))
 		    end
-		  | lInstr (AppVar (idRef, idRefArgs, NONE), i) =
-		    lIdRef (idRef, lIdRefArgs (idRefArgs, i + 1))
-		  | lInstr (DirectAppVar (idRef, idRefArgs,
-					  SOME (idDefArgs, instr)), i) =
-		    (* same as AppPrim *)
-		    let
-			val i = lIdDefArgs (idDefArgs, lInstr (instr, i) + 1)
-		    in
-			lIdRef (idRef, lIdRefArgs (idRefArgs, i + 1))
-		    end
-		  | lInstr (DirectAppVar (idRef, idRefArgs, NONE), i) =
-		    lIdRef (idRef, lIdRefArgs (idRefArgs, i + 1))
+		  | lInstr (AppVar (idRef, idRefs, _, NONE), i) =
+		    lIdRef (idRef, lIdRefs (idRefs, i + 1))
 		  | lInstr (GetRef (id, idRef, instr), i) =
 		    (* two program points: first the selection is done into
 		     * a temporary, then the temporary is moved to id *)
@@ -250,7 +240,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		  | lInstr (Return idRefArgs, i) =
 		    lIdRefArgs (idRefArgs, i + 1)
 
-		val n = lIdDefArgs (idDefArgs, lInstr (instr, 0))
+		val n = lIdDefs (idDefs, lInstr (instr, 0))
 
 		val intervals =
 		    List.sort compareInterval

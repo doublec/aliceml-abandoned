@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2002
+//   Thorsten Brunklaus, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -72,7 +72,7 @@ protected:
   Vector *globalSubst;
   word currentConcreteCode;
   u_int currentNLocals;
-  TagVal *currentArgs;
+  Vector *currentArgs;
   u_int currentStack;
 
   // NativeCodeFrame
@@ -186,6 +186,7 @@ protected:
   // Calling Convention Conversion (Arity Raising)
   void CompileCCC(u_int calleeArity, bool update = false);
   void StoreResults(u_int calleeArity, TagVal *idDefArgs);
+  void StoreResults(u_int calleeArity, Vector *idDefs);
   // NativeCodeJitter Instruction Helpers
   u_int LoadIdRefKill(u_int Dest, word idRef);
   void Await(u_int Ptr, word pc);
@@ -200,8 +201,9 @@ protected:
   u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
   void CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
   void LoadArguments(TagVal *actualArgs);
+  void LoadArguments(Vector *actualIdRefs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);
-  TagVal *Apply(TagVal *pc, word wClosure, bool direct);
+  TagVal *Apply(TagVal *pc, word wClosure);
   void CompileConsequent(word conseq, u_int TagValue);
   void NullaryBranches(u_int Tag, Vector *tests);
   void NonNullaryBranches(u_int Tag, Vector *tests);
@@ -218,7 +220,7 @@ protected:
   TagVal *InstrClose(TagVal *pc);
   TagVal *InstrSpecialize(TagVal *pc);
   TagVal *InstrAppPrim(TagVal *pc);
-  TagVal *InstrAppVar(TagVal *pc, bool direct = false);
+  TagVal *InstrAppVar(TagVal *pc);
   TagVal *InstrGetRef(TagVal *pc);
   TagVal *InstrGetTup(TagVal *pc);
   TagVal *InstrSel(TagVal *pc);

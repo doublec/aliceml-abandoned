@@ -52,8 +52,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | Close of id * idRef vector * template * instr
 	  | Specialize of id * idRef vector * template * instr
 	  | AppPrim of value * idRef vector * (idDef * instr) option
-	  | AppVar of idRef * idRef args * (idDef args * instr) option
-	  | DirectAppVar of idRef * idRef args * (idDef args * instr) option
+	  | AppVar of idRef * idRef vector * bool * (idDef args * instr) option
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Sel of id * idRef * int * instr
@@ -83,10 +82,10 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | Global of int
 	and template =
 	    Template of coord * int * string vector *
-			idDef args * instr * liveness
+			idDef vector * instr * liveness
 	and abstractCode =
 	    Function of coord * value option vector * string vector *
-			idDef args * instr * liveness
+			idDef vector * instr * liveness
 	withtype value = abstractCode Value.t
 
 	type t = value * (Stamp.t * Label.t) vector

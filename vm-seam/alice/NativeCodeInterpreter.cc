@@ -148,15 +148,9 @@ u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
     STATIC_CAST(NativeConcreteCode *, concreteCode);
   Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  TagVal *args = TagVal::FromWordDirect(abstractCode->Sel(3));
-  switch (AbstractCode::GetArgs(args)) {
-  case AbstractCode::OneArg:
-    return Scheduler::ONE_ARG;
-  case AbstractCode::TupArgs:
-    return Vector::FromWordDirect(args->Sel(0))->GetLength();
-  default:
-    Error("invalid args tag");
-  }
+  Vector *args = Vector::FromWordDirect(abstractCode->Sel(3));
+  u_int nArgs = args->GetLength();
+  return ((nArgs == 1) ? Scheduler::ONE_ARG : nArgs);
 }
 
 const char *NativeCodeInterpreter::Identify() {

@@ -18,7 +18,7 @@
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
-  "DirectAppVar", "EndHandle", "EndTry", "GetRef", "GetTup", "IntTest", "Kill",
+  "EndHandle", "EndTry", "GetRef", "GetTup", "IntTest", "Kill",
   "LazyPolySel", "PutCon", "PutNew", "PutPolyRec", "PutRef", "PutTag", "PutTup",
   "PutVar", "PutVec", "Raise", "RealTest", "Reraise",
   "Return", "Sel", "Shared", "Specialize", "StringTest", "TagTest",
@@ -273,8 +273,6 @@ void Disassembler::Start() {
     case AbstractCode::AppPrim:
       VALUE IDREFS IDDEFINSTROPT break;
     case AbstractCode::AppVar:
-      IDREF IDREFARGS IDDEFARGSINSTROPT break;
-    case AbstractCode::DirectAppVar:
       IDREF IDREFARGS IDDEFARGSINSTROPT break;
     case AbstractCode::GetRef:
       ID IDREF LASTINSTR break;

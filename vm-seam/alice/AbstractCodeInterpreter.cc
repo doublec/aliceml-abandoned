@@ -120,8 +120,8 @@ public:
   Environment *GetLocalEnv() {
     return Environment::FromWordDirect(StackFrame::GetArg(LOCAL_ENV_POS));
   }
-  TagVal *GetFormalArgs() {
-    return TagVal::FromWord(StackFrame::GetArg(FORMAL_ARGS_POS));
+  Vector *GetFormalArgs() {
+    return Vector::FromWord(StackFrame::GetArg(FORMAL_ARGS_POS));
   }
   void SetFormalArgs(word formalArgs) {
     StackFrame::ReplaceArg(FORMAL_ARGS_POS, formalArgs);
@@ -143,7 +143,7 @@ public:
 
 // Interpreter Helper
 inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv,
-		      TagVal *formalArgs) {
+		      Vector *formalArgs) {
   AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
 			 globalEnv, localEnv, formalArgs->ToWord());
 }
@@ -219,7 +219,7 @@ AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
 void AbstractCodeInterpreter::PushCall(Closure *closure) {
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
-  // Function of coord * int * int * idDef args * instr * liveness
+  // Function of coord * int * int * idDef vector * instr * liveness
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   switch (AbstractCode::GetAbstractCode(abstractCode)) {
   case AbstractCode::Function:
@@ -267,22 +267,25 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
   TagVal *pc = frame->GetPC();
   Closure *globalEnv = frame->GetClosure();
   Environment *localEnv = frame->GetLocalEnv();
-  TagVal *formalArgs = frame->GetFormalArgs();
+  Vector *formalArgs = frame->GetFormalArgs();
+
   if (formalArgs != INVALID_POINTER) {
     // Calling convention conversion
-    switch (AbstractCode::GetArgs(formalArgs)) {
-    case AbstractCode::OneArg:
+    u_int nArgs = formalArgs->GetLength();
+    switch (nArgs) {
+    case 0:
+      break;
+    case 1:
       {
 	Construct();
-	TagVal *idDef = TagVal::FromWord(formalArgs->Sel(0));
+	TagVal *idDef = TagVal::FromWord(formalArgs->Sub(0));
 	if (idDef != INVALID_POINTER) // IdDef id
 	  localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[0]);
       }
       break;
-    case AbstractCode::TupArgs:
+    default:
       {
-	Vector *formalIdDefs = Vector::FromWordDirect(formalArgs->Sel(0));
-	u_int nArgs = formalIdDefs->GetLength();
+	Vector *formalIdDefs = formalArgs;
 	if (nArgs == 0) {
 	  if (Scheduler::nArgs != 0) {
 	    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
@@ -305,8 +308,6 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	}
       }
       break;
-    default:
-      Error("AbstractCodeInterpreter::Run: invalid formalArgs tag");
     }
   }
   // Execution
@@ -493,7 +494,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
 	  // Save our state for return
 	  Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
-	  TagVal *formalArgs = TagVal::New(AbstractCode::OneArg, 1);
+	  Vector *formalArgs = Vector::New(1);
 	  formalArgs->Init(0, idDefInstr->Sel(0));
 	  PushState(TagVal::FromWordDirect(idDefInstr->Sel(1)),
 		    globalEnv, localEnv, formalArgs);
@@ -509,30 +510,41 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       }
       break;
     case AbstractCode::AppVar:
-    case AbstractCode::DirectAppVar:
-      // of idRef * idRef args * (idDef args * instr) option
+      // of idRef * idRef vector * bool * (idDef args * instr) option
       {
 	Scheduler::PopFrame(frame->GetSize());
-	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
+	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
 	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
 	  // Save our state for return
 	  Tuple *idDefArgsInstr =
 	    Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
+	  TagVal *idDefArgs = TagVal::FromWordDirect(idDefArgsInstr->Sel(0));
+	  Vector *idDefs;
+	  switch (AbstractCode::GetArgs(idDefArgs)) {
+	  case AbstractCode::OneArg:
+	    idDefs = Vector::New(1);
+	    idDefs->Init(0, idDefArgs->Sel(0));
+	    break;
+	  case AbstractCode::TupArgs:
+	    idDefs = Vector::FromWordDirect(idDefArgs->Sel(0));
+	    break;
+	  default:
+	    Error("AbstractCodeInterpreter::Run: invalid formalArgs tag");
+	    break;
+	  }
 	  PushState(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)),
-		    globalEnv, localEnv,
-		    TagVal::FromWordDirect(idDefArgsInstr->Sel(0)));
+		    globalEnv, localEnv, idDefs);
 	}
-	TagVal *actualArgs = TagVal::FromWordDirect(pc->Sel(1));
-	switch (AbstractCode::GetArgs(actualArgs)) {
-	case AbstractCode::OneArg:
+	Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
+	u_int nArgs = actualIdRefs->GetLength();
+	switch (nArgs) {
+	case 1:
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] =
-	    GetIdRefKill(actualArgs->Sel(0), pc, globalEnv, localEnv);
+	    GetIdRefKill(actualIdRefs->Sub(0), pc, globalEnv, localEnv);
 	  break;
-	case AbstractCode::TupArgs:
+	default:
 	  {
-	    Vector *actualIdRefs = Vector::FromWordDirect(actualArgs->Sel(0));
-	    u_int nArgs = actualIdRefs->GetLength();
 	    Scheduler::nArgs = nArgs;
 	    for (u_int i = nArgs; i--; )
 	      Scheduler::currentArgs[i] =
@@ -647,11 +659,9 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Vector *formalIdDefs = Vector::New(2);
 	formalIdDefs->Init(0, pc->Sel(1));
 	formalIdDefs->Init(1, pc->Sel(2));
-	TagVal *formalArgs = TagVal::New(AbstractCode::TupArgs, 1);
-	formalArgs->Init(0, formalIdDefs->ToWord());
 	Tuple *exnData = Tuple::New(2);
 	exnData->Init(0, pc->Sel(3));
-	exnData->Init(1, formalArgs->ToWord());
+	exnData->Init(1, formalIdDefs->ToWord());
 	Scheduler::PushHandler(exnData->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
@@ -954,15 +964,12 @@ u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   AliceConcreteCode *aliceConcreteCode =
     STATIC_CAST(AliceConcreteCode *, concreteCode);
   TagVal *abstractCode = aliceConcreteCode->GetAbstractCode();
-  TagVal *args = TagVal::FromWordDirect(abstractCode->Sel(3));
-  switch (AbstractCode::GetArgs(args)) {
-  case AbstractCode::OneArg:
+  Vector *idDefs = Vector::FromWordDirect(abstractCode->Sel(3));
+  u_int nArgs = idDefs->GetLength();
+  if (nArgs == 1)
     return Scheduler::ONE_ARG;
-  case AbstractCode::TupArgs:
-    return Vector::FromWordDirect(args->Sel(0))->GetLength();
-  default:
-    Error("invalid args tag");
-  }
+  else
+    return nArgs;
 }
 
 const char *AbstractCodeInterpreter::Identify() {

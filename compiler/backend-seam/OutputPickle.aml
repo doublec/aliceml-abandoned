@@ -41,6 +41,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | CLOSURE
 		  | TRANSFORM
 
+		val false_ = 0: LargeInt.int
+		val true_  = 1: LargeInt.int
+
 		val none = 0: LargeInt.int
 		val some = TAG 1
 
@@ -56,33 +59,32 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val compactIntTest = TAG 3
 		val compactTagTest = TAG 4
 		val conTest        = TAG 5
-		val directAppVar   = TAG 6
-		val endHandle      = TAG 7
-		val endTry         = TAG 8
-		val getRef         = TAG 9
-		val getTup         = TAG 10
-		val intTest        = TAG 11
-		val kill           = TAG 12
-		val lazyPolySel    = TAG 13
-		val putCon         = TAG 14
-		val putNew         = TAG 15
-		val putPolyRec     = TAG 16
-		val putRef         = TAG 17
-		val putTag         = TAG 18
-		val putTup         = TAG 19
-		val putVar         = TAG 20
-		val putVec         = TAG 21
-		val raise_         = TAG 22
-		val realTest       = TAG 23
-		val reraise        = TAG 24
-		val return         = TAG 25
-		val sel            = TAG 26
-		val shared         = TAG 27
-		val specialize     = TAG 28
-		val stringTest     = TAG 29
-		val tagTest        = TAG 30
-		val try            = TAG 31
-		val vecTest        = TAG 32
+		val endHandle      = TAG 6
+		val endTry         = TAG 7
+		val getRef         = TAG 8
+		val getTup         = TAG 9
+		val intTest        = TAG 10
+		val kill           = TAG 11
+		val lazyPolySel    = TAG 12
+		val putCon         = TAG 13
+		val putNew         = TAG 14
+		val putPolyRec     = TAG 15
+		val putRef         = TAG 16
+		val putTag         = TAG 17
+		val putTup         = TAG 18
+		val putVar         = TAG 19
+		val putVec         = TAG 20
+		val raise_         = TAG 21
+		val realTest       = TAG 22
+		val reraise        = TAG 23
+		val return         = TAG 24
+		val sel            = TAG 25
+		val shared         = TAG 26
+		val specialize     = TAG 27
+		val stringTest     = TAG 28
+		val tagTest        = TAG 29
+		val try            = TAG 30
+		val vecTest        = TAG 31
 
 		val global       = TAG 0
 		val immediate    = TAG 1
@@ -297,25 +299,17 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputVector outputIdRef (context, idRefs);
 	     outputValue (context, value);
 	     outputBlock (context, Label.appPrim, 3))
-	  | outputInstr (context, AppVar (idRef, inArgs, outArgsInstrOpt)) =
+	  | outputInstr (context, AppVar
+				    (idRef, inArgs, inCCC, outArgsInstrOpt)) =
 	    (outputOption (fn (context, (outArgs, instr)) =>
 			   (outputInstr (context, instr);
 			    outputArgs outputIdDef (context, outArgs);
 			    outputTuple (context, 2)))
 	     (context, outArgsInstrOpt);
-	     outputArgs outputIdRef (context, inArgs);
+	     outputInt (context, if inCCC then Label.true_ else Label.false_);
+	     outputVector outputIdRef (context, inArgs);
 	     outputIdRef (context, idRef);
-	     outputBlock (context, Label.appVar, 3))
-	  | outputInstr (context,
-			 DirectAppVar (idRef, inArgs, outArgsInstrOpt)) =
-	    (outputOption (fn (context, (outArgs, instr)) =>
-			   (outputInstr (context, instr);
-			    outputArgs outputIdDef (context, outArgs);
-			    outputTuple (context, 2)))
-	     (context, outArgsInstrOpt);
-	     outputArgs outputIdRef (context, inArgs);
-	     outputIdRef (context, idRef);
-	     outputBlock (context, Label.directAppVar, 3))
+	     outputBlock (context, Label.appVar, 4))
 	  | outputInstr (context, GetRef (id, idRef, instr)) =
 	    (outputInstr (context, instr);
 	     outputIdRef (context, idRef);
@@ -467,7 +461,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 					       args, body, liveness)) =
 	    (outputLiveness (context, liveness);
 	     outputInstr (context, body);
-	     outputArgs outputIdDef (context, args);
+	     outputVector outputIdDef (context, args);
 	     outputVector outputName (context, localNames);
 	     outputInt (context, LargeInt.fromInt ntoplevels);
 	     outputCoord (context, coord);
@@ -476,7 +470,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 						   args, body, liveness)) =
 	    (outputLiveness (context, liveness);
 	     outputInstr (context, body);
-	     outputArgs outputIdDef (context, args);
+	     outputVector outputIdDef (context, args);
 	     outputVector outputName (context, localNames);
 	     outputVector (outputOption outputValue) (context, globals);
 	     outputCoord (context, coord);
