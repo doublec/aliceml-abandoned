@@ -396,8 +396,8 @@
     </DT>
     <DD>
       <P>The propagator partitions the set value <I>x</I>
-         by selecting elements from the list of set values <I>vs</>.
-         The positive integers in <I>is</Is> denote the cost resp. benefit
+         by selecting elements from the list of set values <I>vs</I>.
+         The positive integers in <I>is</I> denote the cost resp. benefit
          of the corresponding set value in <I>vs</I> if it is selected
          for the partition. Each element of <I>cs</I> is either 0
          or the corresponding integer value in <I>is</I> depending
