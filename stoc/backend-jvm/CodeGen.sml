@@ -221,14 +221,18 @@ structure CodeGen =
 					    stamp'=thisStamp then (Aload stamp', true) else
 					    (Nop,false)
 
+	(* instantiate a class *)
+	fun create (classname, init) =
+	    New classname ::
+	    Dup ::
+	    Invokespecial (classname, "<init>",
+			   ([], [Voidsig])) ::
+	    init
+
 	(* create a new instance or load it from a register *)
 	fun createOrLoad (NONE, classname) =
-	    Multi [New classname,
-		   Dup,
-		   Invokespecial (classname, "<init>",
-				  ([], [Voidsig])),
-		   Dup]
-	      | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
+	    Multi (create (classname, [Dup]))
+	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
 	(* entry point *)
 	fun genComponentCode (debug, verbose, optimize, lines, name, (nil, _, program)) =
@@ -255,11 +259,9 @@ structure CodeGen =
 			 end
 
 		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
-				   [New name,
-				    Dup,
-				    Invokespecial (name, "<init>", ([], [Voidsig])),
-				    Invokevirtual (CThread, "start", ([], [Voidsig])),
-				    Return])
+				   create (name,
+					   [Invokevirtual (CThread, "start", ([], [Voidsig])),
+					    Return]))
 		 (* Default initialisation. *)
 		 val init = Method([MPublic],"<init>",([],[Voidsig]),
 				   [Aload thisStamp,
@@ -329,74 +331,62 @@ structure CodeGen =
 	    (* 1. create a new object for each id and store it into a new register. *)
 	    (* 2. fill the empty FunExp closures *)
 	    let
-		(* 1st step *)
-		local
-		    fun init ((Id (((line,_),_),stamp',_),exp'),akku) =
-			let
-			    fun create (classname, deststamp) =
-				[Line line,
-				 New classname,
-				 Dup,
-				 Invokespecial (classname, "<init>",
-						([],[Voidsig])),
-				 Astore deststamp]
-
-			    val one = case exp' of
-				(* user defined function *)
-				FunExp (((line,_),_),thisFun,_,_) =>
-				    create (classNameFromStamp thisFun, thisFun)
-
-			      (* constructed value *)
-			      | ConAppExp (((line,_),_),id'',idargs) =>
-				    createConVal (SOME stamp', id'', idargs, curFun, curCls)
-
-			      (* record *)
-			      | RecExp (((line,_),_),_) =>
-				    create(CRecord, stamp')
-
-			      | RefAppExp _ =>
-				    create(CReference, stamp')
-
-			      (* tuple *)
-			      | TupExp (((line,_),_), ids) =>
-				    create(cTuple (length ids), stamp')
-
-			      (* vector *)
-			      | VecExp (_, ids) =>
-				    create(CVector, stamp')
-
-			      | exp' =>
-				    [Multi (expCode (exp', curFun, curCls)),
-				     Astore stamp']
-			in
-			    Comment "RecDec:" ::
-			    Multi one ::
+		fun emptyClosure ((Id (_,stamp',_),exp'),akku) =
+		    case exp' of
+			(* user defined function *)
+			FunExp (((line,_),_),thisFun,_,_) =>
+			    create (classNameFromStamp thisFun,
+				    Astore thisFun :: akku)
+		      (* constructed value *)
+		      | ConAppExp (((line,_),_),id'',idargs) =>
+			    Multi (createConVal (SOME stamp', id'', idargs, curFun, curCls)) ::
 			    akku
-			end
-		in
-		    val initcode = List.foldr init nil idexps
-		end
+		      (* record *)
+		      | RecExp (((line,_),_),idargs) =>
+			    newRecord(idargs,
+				      Astore stamp' ::
+				      akku,
+				      curCls)
+		      | RefAppExp _ =>
+			    create (CReference,
+				    Astore stamp' ::
+				    akku)
+		      (* tuple *)
+		      | TupExp (((line,_),_), ids) =>
+			    create (cTuple (length ids),
+				    Astore stamp' ::
+				    akku)
+		      (* vector *)
+		      | VecExp (_, ids) =>
+			    create (CVector,
+				    Astore stamp' ::
+				    akku)
+		      | exp' =>
+			    Multi (expCode (exp', curFun, curCls)) ::
+			    Astore stamp' ::
+			    akku
 
-		(* 2nd step *)
-		local
-		    fun evalexp ((_,exp' as FunExp(_,thisFun, _, lambda)), akku) =
-			Multi (createFun (thisFun, lambda, curFun, curCls, false)) ::
-			akku
-		      | evalexp ((id'', RecExp (_, labid)), akku) =
-			createRecord (SOME id'', labid, akku, curCls)
-		      | evalexp ((id'', TupExp (_, ids)), akku) =
-			createTuple (SOME id'', ids, akku, curCls)
-		      | evalexp ((id'', VecExp (_, ids)), akku) =
-			createVector (SOME id'', ids, akku, curCls)
-		      | evalexp ((id'', RefAppExp (_, ids)), akku) =
-			createRefAppExp (SOME id'', ids, akku, curCls)
-		      | evalexp (_,akku) = akku
-		in
-		    val expcode = List.foldr evalexp nil idexps
-		end
+		fun fillClosure ((_,exp' as FunExp(_,thisFun, _, lambda)), akku) =
+		    Multi (createFun (thisFun, lambda, curFun, curCls, false)) ::
+		    akku
+		  | fillClosure ((id'', RecExp (_, labid)), akku) =
+		    createRecord (SOME id'', labid, akku, curCls)
+		  | fillClosure ((id'', TupExp (_, ids)), akku) =
+		    createTuple (SOME id'', ids, akku, curCls)
+		  | fillClosure ((id'', VecExp (_, ids)), akku) =
+		    createVector (SOME id'', ids, akku, curCls)
+		  | fillClosure ((id'', RefAppExp (_, ids)), akku) =
+		    createRefAppExp (SOME id'', ids, akku, curCls)
+		  | fillClosure (_,akku) = akku
+
 	    in
 		Line line ::
-		initcode @ (Comment "expCode: " :: expcode)
+		(* 1st step *)
+		(List.foldr
+		 emptyClosure
+		 (* 2nd step *)
+		 (List.foldr fillClosure nil idexps)
+		 idexps)
 	    end
 
 	  | decCode (RaiseStm((((line,_),_),_),id'), _, curCls) =
@@ -953,37 +943,32 @@ structure CodeGen =
 	     if idop is SOME id', the record is omitted because createRecord was called
 		 from a RecDec *)
 	    (* labid: (lab * id) list *)
-	    (* 1st load Label[] *)
-	    (* 2nd build Value[] *)
-	    (* 3rd create or load Record *)
-	    (* the Label[] is built statically! *)
+	    (* 1st create or load Record *)
+	    (* 2nd fill in Value[] *)
+	    Comment "[Record " ::
+	    (case idop of
+		 NONE => Multi (newRecord (labid, [Dup], curCls))
+	       | SOME (Id (_,stamp'',_)) => Aload stamp'') ::
+	    ids2array (foldr (fn ((_, id'), akku) => id'::akku) nil labid, curCls,
+		       Putfield (CRecord^"/vals", [Arraysig, Classsig IVal]) ::
+		       Comment "Record ]" ::
+		       init)
+
+	and
+	    newRecord (labids, init, curCls) =
 	    let
-		val arity = length labid
-		(* 1st *)
 		(* reverse list and remove ids *)
 		fun labids2strings ((l, _)::labids',s')=
 		    labids2strings (labids', l::s')
 		  | labids2strings (nil, s') = s'
-
-		(* 2nd *)
-		val record = case idop of
-		    NONE => Multi [New CRecord,
-				   Dup,
-				   Getstatic (RecordLabel.insert
-					      (curCls, labids2strings (labid, nil))),
-				   Invokespecial (CRecord,"<init>",
-						  ([Arraysig, Classsig CString], [Voidsig])),
-				   Dup]
-		  | SOME (Id (_,stamp'',_)) => Aload stamp''
-
-	    (* 3. *)
 	    in
-		Comment "[Record " ::
-		record ::
-		ids2array (foldr (fn ((_, id'), akku) => id'::akku) nil labid, curCls,
-			   Putfield (CRecord^"/vals", [Arraysig, Classsig IVal]) ::
-			   Comment "Record ]" ::
-			   init)
+		New CRecord ::
+		Dup ::
+		Getstatic (RecordLabel.insert
+			   (curCls, labids2strings (labids, nil))) ::
+		Invokespecial (CRecord,"<init>",
+			       ([Arraysig, Classsig CString], [Voidsig])) ::
+		init
 	    end
 
 	and
@@ -1216,7 +1201,7 @@ structure CodeGen =
 	    Line line ::
 	    invokeRecApply (stamp', args, curFun, false, curCls, true)
 
-	  | expCode (NewExp (((line,_),_), hasArgs), _, _) =
+	  | expCode (NewExp (((line,_),_), _, hasArgs), _, _) =
 	    if hasArgs then
 		[Line line,
 		 New CConstructor,
