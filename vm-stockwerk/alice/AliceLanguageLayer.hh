@@ -17,6 +17,8 @@
 #pragma interface "alice/AliceLanguageLayer.hh"
 #endif
 
+#include "store/Store.hh"
+
 class TagVal;
 
 typedef word (*concrete_constructor)(TagVal *);
