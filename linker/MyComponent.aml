@@ -17,13 +17,14 @@ import structure Reflect         from "../lib/system/Reflect"
 import structure Url             from "../lib/system/Url"
 import structure Resolver        from "../lib/system/Resolver"
 import structure UnsafeComponent from "../lib/system/UnsafeComponent"
+import structure Component       from "../lib/system/Component"
 import signature MY_COMPONENT    from "MY_COMPONENT-sig"
 
 structure MyComponent :> MY_COMPONENT =
 struct
     nonfix mod
     type inf = Inf.t option
-    type mod = Reflect.value
+    type mod = Reflect.module
 
     datatype component =
 	UNEVALUATED of { imports: (string * inf) vector,
@@ -32,33 +33,29 @@ struct
       | EVALUATED of { inf: inf, mod: mod }
     type t = component
 
-(*--** adapt to new exceptions *)
-    val localize =
-	let
-	    val handlers =
-		case OS.Process.getEnv "ALICE_LOAD" of
-		    SOME s => Resolver.Handler.parse s
-		  | NONE => [Resolver.Handler.default]
-	    val resolver =
-		Resolver.new {name = "load", handlers, memoize = true}
-	in
-	    Resolver.localize resolver
-	end
-
     fun load url =
 	let
-	    val s = Url.toStringRaw url   (*--** use getLocalPath instead *)
+	    val name = Url.toStringRaw url   (*--** use getLocalPath instead *)
 	in
-	    case localize s of
-		SOME (Resolver.FILE s') => UnsafeComponent.load s'
-	      | SOME (Resolver.STRING s') => UnsafeComponent.unpack_ s'
+	    case Resolver.localize Component.defaultResolver name of
+		SOME (Resolver.FILE name') =>
+		    (SOME (UnsafeComponent.load name')
+		     handle Component.Corrupt =>
+			 (UnsafeComponent.linkNative name'; NONE)
+			 handle cause =>
+			     raise IO.Io {name, function = "load", cause})
+	      | SOME (Resolver.STRING string) =>
+		    (SOME (UnsafeComponent.unpack_ string)
+		     handle cause =>
+			 raise IO.Io {name, function = "load", cause})
 	      | NONE =>
-		    raise IO.Io {name = s,
-				 function = "load",
-				 cause = Option.Option}
+		    raise IO.Io {name, function = "load",
+				 cause = Component.NotFound}
 	end
 
-    val save = UnsafeComponent.save
+    fun save (name, component) =
+	UnsafeComponent.save (name, component)
+	handle cause => raise IO.Io {name, function = "save", cause}
 
     fun imports (UNEVALUATED {imports, ...}) = imports
       | imports (EVALUATED {...}) = #[]
@@ -73,9 +70,9 @@ struct
 
     fun stripImportInfs (UNEVALUATED {imports, body, inf}) =
 	let
-	    val imports' = Vector.map (fn (s, _) => (s, NONE)) imports
+	    val imports = Vector.map (fn (s, _) => (s, NONE)) imports
 	in
-	    UNEVALUATED {imports = imports', body, inf}
+	    UNEVALUATED {imports, body, inf}
 	end
       | stripImportInfs (component as EVALUATED _) = component
 end

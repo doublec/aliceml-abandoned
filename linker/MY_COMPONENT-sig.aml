@@ -21,8 +21,8 @@ signature MY_COMPONENT =
 	type inf = Inf.t option
 	type mod
 
-	val load: Url.t -> t                      (* Io, Corrupt *)
-	val save: string * t -> unit              (* Io, Sited *)
+	val load: Url.t -> t option               (* IO.Io *)
+	val save: string * t -> unit              (* IO.Io *)
 
 	val imports: t -> (string * inf) vector
 	val body: t -> (mod vector -> mod)
