@@ -34,8 +34,8 @@ structure Lock :> LOCK =					(**)
 		val p = Promise.promise ()
 		val u = Ref.exchange (lock, Promise.future p)
 		val _ = Future.await u
-		val res = f x
+		val y = f x handle e => (Promise.fulfill (p, ()); raise e)
 	    in
-		Promise.fulfill (p, ()); res
+		Promise.fulfill (p, ()); y
 	    end
     end
