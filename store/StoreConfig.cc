@@ -180,7 +180,9 @@ int main(int argc, char **argv) {
   // add shadow generation
   std::fprintf(f, "#define STORE_GENERATION_NUM %d\n", (STORE_GENERATION_NUM + 1));
   std::fprintf(f, "#define STORE_GEN_YOUNGEST   %d\n", 0);
-  std::fprintf(f, "#define STORE_GEN_OLDEST     %d\n", (STORE_GENERATION_NUM - 1));
+  if (STORE_GENERATION_NUM > 1) {
+    std::fprintf(f, "#define STORE_GEN_OLDEST     %d\n", (STORE_GENERATION_NUM - 1));
+  }
   std::fprintf(f, "#define STORE_MEM_ALIGN      %d\n", MIN_WIDTH);
   std::fprintf(f, "#define STORE_MEMCHUNK_SIZE  %d\n", STORE_MEMCHUNK_SIZE);
   std::fprintf(f, "#define STORE_INTGENSET_SIZE %d\n", STORE_INITIAL_INTGEN);

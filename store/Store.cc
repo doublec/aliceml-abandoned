@@ -105,8 +105,7 @@ inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
   curChunk->SetPrev(chunk);
   SwitchToChunk(chunk);
 
-  // Generation Zero implies GC
-  needGC = (gen == 0);
+  needGC = (GetMemUsage(roots[gen]) > memMax[gen]);
 }
 
 inline char *Store::GCAlloc(u_int size, u_int header) {
@@ -266,9 +265,9 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
-  totalMem = 0;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-  sum_t = (struct timeval *) malloc(sizeof(struct timeval));
+  totalMem = 0;
+  sum_t    = (struct timeval *) malloc(sizeof(struct timeval));
 #endif
 }
 
@@ -603,8 +602,10 @@ void Store::DoGC(word &root) {
   switch (gen) {
   case STORE_GEN_YOUNGEST:
     DoGC(root, STORE_GEN_YOUNGEST); break;
+#if defined(STORE_GEN_OLDEST)
   case STORE_GEN_OLDEST:
     DoGC(root, STORE_GEN_OLDEST); break;
+#endif
   default:
     DoGC(root, gen); break;
   }
