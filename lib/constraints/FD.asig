@@ -43,7 +43,7 @@ signature FD_COMPONENT =
 
 		(* Conversion *)
 		val toInt : fd -> int
-                val future : fd -> int
+		val future : fd -> int
 		val fromInt : int -> fd
 		val isBin : fd -> bool
 
@@ -70,10 +70,10 @@ signature FD_COMPONENT =
 		val timesD : fd * fd * fd -> unit (* X * Y =: Z *)
 		val divD : fd * int * fd -> unit (* X divD I =: Z *)
 		val modD : fd * int * fd -> unit (* X modD I =: Z *)
-		    
+
 		val min : fd * fd * fd -> unit (* min(X, Y) =: Z *)
 		val max : fd * fd * fd -> unit (* max(X, Y) =: Z *)
-		    
+
 		val equal : fd * fd -> unit (* X =: Y *)
 		val notequal : fd * fd -> unit (* X \=: Y *)
 		val distance : fd * fd * relation * fd -> unit
@@ -101,7 +101,7 @@ signature FD_COMPONENT =
 		val nega : bin * bin -> unit
 		val impl : bin * bin * bin -> unit
 		val equi : bin * bin * bin -> unit
-		    
+
 		(* Reified Constraints *)
 		structure Reified :
 		    sig
