@@ -14,7 +14,7 @@
 #define __GENERIC__CLOSURE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Closure.hh"
+#pragma interface "generic/Closure.hh"
 #endif
 
 #include "store/Store.hh"

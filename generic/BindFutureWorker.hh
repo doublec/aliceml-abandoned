@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__BYNEED_INTERPRETER_HH__
-#define __EMULATOR__BYNEED_INTERPRETER_HH__
+#ifndef __GENERIC__BYNEED_INTERPRETER_HH__
+#define __GENERIC__BYNEED_INTERPRETER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/ByneedInterpreter.hh"
+#pragma interface "generic/ByneedInterpreter.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
 class Transient;
 
