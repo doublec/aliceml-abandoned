@@ -54,8 +54,11 @@ typedef enum {
   NATIVE_CODE_FRAME,
   NATIVE_CODE_HANDLER_FRAME,
   LAZY_COMPILE_FRAME,
+  // Alice Async IO Frames
+  IO_FRAME,
+  DELAY_FRAME,
   // End of Frames
-  MAX_STACK_FRAME = LAZY_COMPILE_FRAME
+  MAX_STACK_FRAME = DELAY_FRAME
 } FrameLabel;
 
 class StackFrame: private Block {
