@@ -144,6 +144,8 @@ structure Resolver: RESOLVER =
 			      match (rest, suffix, env))
 		       | NONE => raise Failure)
 		  | match ([VAR x], cs, env) = StringMap.insert (env, x, cs)
+		  | match ([TEXT cs'], cs, _) =
+		    if cs = cs' then () else raise Failure
 		  | match (_, _, _) = raise Assert.failure
 
 		fun instantiate (p, env) =
