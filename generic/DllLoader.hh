@@ -13,6 +13,8 @@
 #ifndef __GENERIC__DLLLOADER_HH__
 #define __GENERIC__DLLLOADER_HH__
 
+#define HAVE_LOADLIBRARY 0
+
 #if defined(INTERFACE)
 #pragma interface "generic/DllLoader.hh"
 #endif
