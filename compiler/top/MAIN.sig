@@ -7,6 +7,8 @@ signature MAIN =
     val compileSign :		string -> Composer.Sig.t
     val compile :		string * string * string -> Composer.Sig.t
 
+    val stoc :			string list -> OS.Process.status
+
     (*DEBUG*)
     val parseString :		string -> InputGrammar.t
     val parseFile :		string -> InputGrammar.t

@@ -17,7 +17,8 @@ functor MakeMain(structure Composer: COMPOSER'
 		 structure Compiler: COMPILER
 		     where Target.Sig = Signature
 		 structure TargetInitialContext: INITIAL_CONTEXT
-		     where type t = Compiler.Target.C.t): MAIN =
+		     where type t = Compiler.Target.C.t
+		 val executableHeader: string): MAIN =
     struct
 	structure Composer = Composer
 	structure Switches = Compiler.Switches
@@ -50,7 +51,7 @@ functor MakeMain(structure Composer: COMPOSER'
 	    process
 	    (desc,
 	     if isBaseSource desc then s
-	     else if !Switches.defaultImport then
+	     else if !Switches.implicitImport then
 		 case OS.Process.getEnv "STOCKHOME" of
 		     SOME homedir =>
 			 String.map (fn #"\n" => #" " | c => c)
@@ -207,6 +208,92 @@ functor MakeMain(structure Composer: COMPOSER'
 	     end) handle RETURN sign => sign
 
 	val _ = Composer.setAcquisitionMethod acquireSign
+
+	(* Command Line Processing *)
+
+	fun basename filename =
+	    let
+		fun cutPath ((#"/" | #"\\")::rest) = nil
+		  | cutPath (c::rest) = c::cutPath rest
+		  | cutPath nil = nil
+		val cs = cutPath (List.rev (String.explode filename))
+		fun cutExtension (#"."::rest) =
+		    (case rest of
+			 (#"/" | #"\\")::_ => cs
+		       | _::_ => rest
+		       | nil => cs)
+		  | cutExtension ((#"/" | #"\\")::_) = cs
+		  | cutExtension (_::rest) = cutExtension rest
+		  | cutExtension nil = cs
+	    in
+		String.implode (List.rev (case cs of
+					      #"."::_ => cs
+					    | _ => cutExtension cs))
+	    end
+
+	fun stoc_c (infile, outfile) =
+	    (compile (infile, outfile, "");
+	     OS.Process.success)
+
+	fun stoc_x (infile, outfile) =
+	    (compile (infile, outfile, executableHeader);
+	     OS.Process.success
+(*--**UNFINISHED
+	     case SMLofNJ.SysInfo.getOSKind () of
+		 SMLofNJ.SysInfo.WIN32 => OS.Process.success
+	       | _ => OS.Process.system ("chmod +x " ^ outfile)
+*)
+)
+
+	fun usage () =
+	    TextIO.output
+	    (TextIO.stdErr,
+	     "Usage:\n\
+	      \\tstoc [<option> ...] [-c|-x] <input file> \
+	      \[-o <output file>]\n\
+	      \\tstoc --replacesign <input url> <signature file> \
+	      \<output file>\n\
+	      \Options:\n\
+	      \\t--noimplicitimport\n\
+	      \\t\tDo not make the SML Standard Basis available.\n\
+	      \\t--outputassembly\n\
+	      \\t\tWrite an .ozm file with the assembly code.\n")
+
+	fun stoc' ["--replacesign", infile, signfile, outfile] =
+	    (Pickle.replaceSign (Url.fromString infile,
+				 compileSign signfile, outfile);
+	     OS.Process.success)
+	  | stoc' ([infile] | ["-c", infile]) =
+	    stoc_c (infile, basename infile ^ ".ozf")
+	  | stoc' ["-x", infile] =
+	    stoc_x (infile, basename infile)
+	  | stoc' ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
+	    stoc_c (infile, outfile)
+	  | stoc' ["-x", infile, "-o", outfile] =
+	    stoc_x (infile, outfile)
+	  | stoc' _ = (usage (); OS.Process.failure)
+
+	fun options ("--noimplicitimport"::rest) =
+	    (Switches.implicitImport := false; options rest)
+	  | options ("--outputassembly"::rest) =
+	    (Switches.outputAssembly := true; options rest)
+	  | options ("--noprintcomponentsig"::rest) =
+	    (Switches.printComponentSig := false; options rest)
+	  | options rest = rest
+
+	fun defaults () =
+	    (Switches.implicitImport := true;
+	     Switches.outputAssembly := false;
+	     Switches.printComponentSig := true)
+
+	fun stoc arguments =
+	    (defaults (); stoc' (options arguments))
+	    handle Error.Error (_, _) => OS.Process.failure
+		 | e =>   (*--**DEBUG*)
+		       (TextIO.output
+			(TextIO.stdErr,
+			 "uncaught exception " ^ exnName e ^ "\n");
+			OS.Process.failure)
 
 	(*DEBUG*)
 	local

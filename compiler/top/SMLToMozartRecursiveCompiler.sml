@@ -13,4 +13,5 @@
 structure SMLToMozartMain =
     MakeMain(structure Composer = Composer
 	     structure Compiler = SMLToMozartCompiler
-	     structure TargetInitialContext = MozartTargetInitialContext)
+	     structure TargetInitialContext = MozartTargetInitialContext
+	     val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n")
