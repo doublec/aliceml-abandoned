@@ -1,100 +1,18 @@
-Group is
+Group
 
-    smlnj-lib.cm
-    ml-yacc-lib.cm
-    MISC.sig
-    Misc.sml
-    CRASH.sig
-    Crash.sml
+    signature MAIN
+    structure Main
 
-    STAMP.sig
-    Stamp.sml
-    SOURCE.sig
-    Source.sml
-    ERROR.sig
-    Error.sml
+is
 
-    SCON.sig
-    SCon.sml
-    LAB.sig
-    Lab.sml
-    ID.sig
-    Id.sml
-    TYVAR.sig
-    TyVar.sml
+    ../misc/sources.cm
+    ../frontend-sml/sources.cm
+    ../frontend-common/sources.cm
+    ../common/sources.cm
+    ../backend-common/sources.cm
 
-    Ids_Core.sml
-    Ids_Module.sml
-
-    GRAMMAR_CORE.sig
-    GRAMMAR_MODULE.sig
-    GRAMMAR_PROGRAM.sig
-    Grammar_Core.sml
-    Grammar_Module.sml
-    Grammar_Program.sml
-
-    PostParseGrammar_Core.sml
-    PostParseGrammar_Module.sml
-    PostParseGrammar_Program.sml
-
-    DERIVEDFORMS_CORE.sig
-    DERIVEDFORMS_MODULE.sig
-    DERIVEDFORMS_PROGRAM.sig
-    DerivedForms_Core.sml
-    DerivedForms_Module.sml
-    DerivedForms_Program.sml
-
-    Lexer.lex
-    Parser.grm
-
-    PARSE.sig
-    Parse.sml
-
-    HASHTABLE.sig
-    SYMTABLE.sig
-    Hashtable.sml
-    Symtable.sml
-    StringHashKey.sml
-
-    Symtables_Core.sml
-    Symtables_Module.sml
-    BINDENV_CORE.sig
-    BINDENV_MODULE.sig
-    BindEnv_Core.sml
-    BindEnv_Module.sml
-
-    BINDENV0_CORE.sig
-    BINDENV0_MODULE.sig
-    BindEnv0_Core.sml
-    BindEnv0_Module.sml
-
-    INFIX.sig
-    Infix.sml
-
-    INTERMEDIATE.sig
-    Intermediate.sml
-    PostTranslationIntermediate.sml
-
-    TRANSLATE_CORE.sig
-    TRANSLATE_MODULE.sig
-    TRANSLATE_PROGRAM.sig
-    Translate_Core.sml
-    Translate_Module.sml
-    Translate_Program.sml
-
-    SIMPLIFIED.sig
-    Simplified.sml
-    LABELSORT.sig
-    LabelSort.sml
-    DEBUG.sig
-    Debug.sml
-    INTERMEDIATEAUX.sig
-    IntermediateAux.sml
-    SIMPLIFY.sig
-    Simplify.sml
-
-    OZIFYSIMPLIFIED.sig
-    OzifySimplified.sml
+    BIND_ENV0.sig
+    BindEnv0.sml
 
     MAIN.sig
     Main.sml

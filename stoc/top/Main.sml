@@ -18,9 +18,10 @@ structure Main :> MAIN =
 	    processString process source
 	end
 
-    val parse      = Parse.parse
-    val translate  = Translate_Program.translate BindEnv0_Module.E0 o parse
-    val simplify   = (List.map Simplify.simplifyDec) o translate
+    val parse      = ParsingPhase.parse
+    val abstract   = AbstractionPhase.translate BindEnv0.E0 o parse
+    val translate  = TranslationPhase.translate o abstract
+    val simplify   = MatchCompilationPhase.simplify o translate
 
     fun ozify name s =
 	let
@@ -44,6 +45,9 @@ structure Main :> MAIN =
 
     val parseString		= processString parse
     val parseFile		= processFile parse
+
+    val abstractString		= processString abstract
+    val abstractFile		= processFile abstract
 
     val translateString		= processString translate
     val translateFile		= processFile translate

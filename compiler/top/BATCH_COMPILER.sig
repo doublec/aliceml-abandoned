@@ -1,14 +1,17 @@
 signature MAIN =
   sig
 
-    val parseString :		string -> PostParseGrammar_Program.Program
-    val parseFile :		string -> PostParseGrammar_Program.Program
+    val parseString :		string -> InputGrammar.Program
+    val parseFile :		string -> InputGrammar.Program
 
-    val translateString :	string -> PostTranslationIntermediate.dec list
-    val translateFile :		string -> PostTranslationIntermediate.dec list
+    val abstractString :	string -> AbstractGrammar.program
+    val abstractFile :		string -> AbstractGrammar.program
 
-    val simplifyString :	string -> Simplified.dec list
-    val simplifyFile :		string -> Simplified.dec list
+    val translateString :	string -> IntermediateGrammar.program
+    val translateFile :		string -> IntermediateGrammar.program
+
+    val simplifyString :	string -> SimplifiedGrammar.program
+    val simplifyFile :		string -> SimplifiedGrammar.program
 
     val ozifyString :		string * string -> unit
     val ozifyFile :		string * string -> unit
