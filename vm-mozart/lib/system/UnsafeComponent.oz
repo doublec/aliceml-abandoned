@@ -60,8 +60,8 @@ define
    fun {OzToSig Sig}
       case Sig of sig(Sig) andthen {IsDet Sig} andthen Sig == unit then
 	 'NONE'   % produced by the bootstrap compiler
-      [] sig(Sig) then 'SOME'(Sig)   % Stockhausen component
-      else 'NONE'   % non-Stockhausen component
+      [] sig(Sig) then 'SOME'(Sig)   % Alice component
+      else 'NONE'   % non-Alice component
       end
    end
 
