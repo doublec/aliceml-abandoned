@@ -72,8 +72,6 @@
 (*   - The messy `sigexp where type ... and type ...' syntax requires some	*)
 (*     really ugly transformations (in absence of a lookahead of 2), watch out	*)
 (*     for non-terminals of the form xxx__AND_yyybind_opt.			*)
-(*   - Programs consist of only a single topdec, because parsing has to stop	*)
-(*     after seeing the first toplevel semicolon.				*)
 (*   - ML-Yacc does not seem to like comments that stretch over several		*)
 (*     lines... Similarly, comments in semantic actions make it puke...		*)
 (*										*)
@@ -340,6 +338,7 @@
 
 	(* Top nonterminal *)
 	| program			of Program
+	|    program_opt		of Program option
 
 
 %%
@@ -1313,9 +1312,13 @@
   (* Programs *)
 
   program:
-	  topdec SEMICOLON
-	  		( TOPDECProgram(I(topdecleft,SEMICOLONright),
-					topdec, NONE) )
-	| exp SEMICOLON
-	  		( EXPProgram(I(expleft,SEMICOLONright),
-				     exp, NONE) )
+	  topdec SEMICOLON program_opt
+	  		( TOPDECProgram(I(topdecleft,program_optright),
+					topdec, program_opt) )
+	| exp SEMICOLON program_opt
+	  		( EXPProgram(I(expleft,program_optright),
+				     exp, program_opt) )
+
+     program_opt:
+	  program	( SOME program )
+	| (*empty*)	( NONE )
