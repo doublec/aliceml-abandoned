@@ -103,7 +103,7 @@ struct
     and condition () =
             reserved "friendwithfood" >> return I.FriendWithFood
         <|> reserved "friend" >> return I.Friend
-        <|> reserved "foewithfood" >> return I.Foe
+        <|> reserved "foewithfood" >> return I.FoeWithFood
         <|> reserved "food" >> return I.Food
         <|> reserved "rock" >> return I.Rock
         <|> reserved "marker" >> (marker () using I.Marker)
