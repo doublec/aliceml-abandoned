@@ -18,15 +18,15 @@ AC_CANONICAL_HOST
 
 : ${CXXFLAGS=""} dnl we do not want autoconf's default
 
-AC_PROG_SEAMTOOL
+AC_PROG_SEAMTOOL([],
+   [AC_MSG_ERROR([seamtool not found.])])
 AC_PROG_CXX
 AC_LANG(C++)
+AC_PROG_RANLIB
 
 # checks for libraries
 
 AC_SEAM_CHECK_SOCKET_FLAVOR
-
-AC_PROG_RANLIB
 
 # checks for header files
 
@@ -46,21 +46,11 @@ AC_SEAM_CHECK_DECLSPEC
 dnl
 dnl  Test for math library
 dnl
-AC_CACHE_CHECK([whether math library needs to be linked],
-  [alice_cv_need_math_lib],
-  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[int main() {fabs;return 0;}]],[]),
-                  alice_cv_need_math_lib=yes,
-		  alice_cv_need_math_lib=no)])
-
-case "$alice_cv_need_math_lib" in
-    no)
-        ;;
-    yes)
-	AC_CHECK_LIB(m, matherr, [],
-	             AC_MSG_ERROR([could not find shared math library]))
-                     LIBS=${LIBS}${LIBS:+ }-lm
-        ;;
-esac
+AC_CHECK_FUNC(fabs,
+  [],
+  AC_CHECK_LIB(m, fabs,
+    LIBS=${LIBS}${LIBS:+ }-lm,
+    AC_MSG_ERROR([could not find shared math library])))
 
 # checks for system services
 
@@ -81,6 +71,7 @@ esac
 AC_MSG_RESULT(${CACHESEP})
 AC_SUBST(CACHESEP)
 
+AC_SEAM_ARG_ENABLE_CHECKED
 AC_SEAM_ARG_ENABLE_DEBUGGER
 AC_SEAM_ARG_ENABLE_OPTIMIZED
 AC_SEAM_ARG_ENABLE_PROFILER
@@ -96,6 +87,7 @@ AC_CONFIG_FILES([
    alice/primitives/Makefile
    bin/alicerun
    bin/alicetool
+   Makefile.bootstrap
 ])
 
 AC_OUTPUT
