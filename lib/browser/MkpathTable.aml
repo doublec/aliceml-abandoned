@@ -1,0 +1,26 @@
+import structure Types from "type"
+import structure Dictionary from "dict"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+
+open Types
+
+(*** Signatur MKPATH_TABLE ***)
+
+signature MKPATH_TABLE =
+sig
+    val pathTable: (('a * Type.t -> Node * int * int -> Node) * int 
+		    -> 'a * Type.t -> doc) PathMap.map
+end;
+
+(*** Struktur MkpathTable ***)
+
+(* Map, die der die 'create'-Funktionen fuer Pfadtypen gespeichert werden *)
+
+structure MkpathTable :> MKPATH_TABLE =
+struct
+    val pathTable = PathMap.new()
+end

@@ -1,0 +1,51 @@
+import structure Types from "type"
+
+open Types
+
+(*** Signatur DICTIONARY ***)
+
+signature DICTIONARY = 
+sig
+    type dictionary 
+    val empty    : dictionary
+    val copy     : Node array * Node array * int  -> unit 
+    val insert'  : Node * dictionary * int        -> int  
+    val insert   : Node * dictionary              -> int 
+    val delete   : int  * dictionary              -> unit
+    val return   : int  * dictionary              -> Node
+end ; 
+
+(*** Struktur Dictionary ***)
+
+(* Node array zum Abspeichern von bereits erzeugten 'vaterlosen' Knoten *)
+
+structure Dictionary :> DICTIONARY = 
+struct
+    type dictionary = Node array ref
+	
+    val empty = (let val a = Array.array(0,EmptyNode)
+                 in ref a end)
+
+    fun copy (a,b,j) = 
+	if j >= 0 
+        then (Array.update(b,j,Array.sub(a,j));copy(a,b,j-1)) 
+	else ()
+    
+    fun insert' (x,a,i) = (if Array.sub(!a,i) = EmptyNode 
+                           then (Array.update(!a,i,x); i)
+                           else insert' (x,a,i+1))
+                           handle General.Subscript 
+                           => let val b = !a 
+                              in
+                              (a := Array.array(2*i+1,EmptyNode)
+                              ; Array.update(!a,i,x); copy(b,!a,i-1); i)
+                              end 
+
+    fun insert (x,a) = insert'(x,a,0)
+                           
+    fun delete (i,a) = Array.update(!a,i,EmptyNode)   
+      
+    fun return (i,a) = Array.sub(!a,i)
+
+end
+

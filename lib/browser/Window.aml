@@ -1,0 +1,292 @@
+import structure Gdk       from "x-alice:/lib/gtk/Gdk"
+import structure Gtk       from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Types     from "type"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure Layout from "layout";
+import structure Helper    from "helper"
+
+open Types Type Helper PervasiveType Layout
+
+(*** Signatur WINDOW ***)
+signature WINDOW =
+sig
+
+    datatype colorname = BLACK | BLUE | YELLOW | RED | GREEN | WHITE
+                       | DARKGREEN 
+
+    val color: colorname -> Gtk.object 
+
+    val window:  Gtk.object
+
+	(* Window * Window title * x-usize * y-usize *)
+    val windowInit: Gtk.object * string * int * int -> unit
+    val canvas: Gtk.object
+    val canvasInit : Gtk.object * Gtk.object * real * real -> unit
+    val createText:     string * real * real * Gtk.object 
+	-> (string * Gtk.arg) __pervasive.list
+    val createTextItem: (Gtk.object * (string * Gtk.arg) __pervasive.list ) -> Gtk.object
+    val createGroupItem: Gtk.object * real * real ->  Gtk.object
+    val Limit2Canvas: Node * Gtk.object  -> unit
+    val Simple2Canvas: Node * Gtk.object  -> unit
+    val Bracket2Canvas:  Node * Gtk.object  -> unit
+    val Label2Canvas: Node * Gtk.object -> unit
+    val Cont2Canvas: Node * Gtk.object -> unit
+    val Node2Canvas': Node * Gtk.object  -> unit
+    val Node2Canvas: Node * Gtk.object * Gtk.object -> unit
+
+end;
+
+(*** Struktur Window ***)
+structure Window :> WINDOW =
+struct    
+   
+    datatype colorname = BLACK | BLUE | YELLOW | RED | GREEN | WHITE 
+                       | DARKGREEN
+	
+    val map  = Gdk.colormapGetSystem ()
+
+    fun allocColor (r,g,b) = let
+                                    val c =  
+			            Gdk.allocColor (r,g,b)
+				    val _ = 
+			            Gdk.colormapAllocColor (map, c, 0, 1)
+				    in
+					c
+				    end
+
+
+    fun color (name) = case name of 
+	                   WHITE => allocColor(65535,65535,65535)
+			 | BLUE  =>  allocColor (0,0,65535)
+			 | YELLOW=>  allocColor (65535,65535,0)
+                         | RED   =>  allocColor (65535,0,0)
+			 | GREEN =>   allocColor(0,65535,0)
+		         | BLACK =>   allocColor(0,0,0)
+			 | DARKGREEN => allocColor(0,40000,0)      
+
+    val window =  Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+   
+    fun windowInit (win,title,ux,uy) = (Gtk.windowSetTitle (win, title)
+	                          ; Gtk.widgetSetUsize (win, ux, uy)   )
+
+    val canvas = GtkCanvas.new 0
+
+    fun canvasInit (win,canvas,sx,sy) = let
+	                            val _ = GtkCanvas.setScrollRegion 
+	                            (canvas,0.0,0.0,sx,sy)
+				    val _ = GtkCanvas.itemNew 
+					( GtkCanvas.root(canvas), 
+					 GtkCanvas.RECTANGLE,
+					 [("x1", Gtk.DOUBLE 0.0),
+					  ("y1", Gtk.DOUBLE 0.0),
+					  ("x2", Gtk.DOUBLE sx),
+					  ("y2", Gtk.DOUBLE sy),
+					  ("fill_color_gdk", 
+					   Gtk.OBJECT (color(WHITE))),
+					  ("outline_color_gdk", 
+					   Gtk.OBJECT (color(RED)))])
+				     in
+				  	 Gtk.containerAdd(win,canvas) 
+				     end
+
+   fun createText (str,x1,x2,color) = 
+	[("text", Gtk.STRING str),
+	 ("font", Gtk.STRING "8x13"),
+	 ("x", Gtk.DOUBLE(x1)), ("y", Gtk.DOUBLE(x2)),
+	 ("fill_color_gdk", Gtk.OBJECT(color) ),
+	 ("anchor", Gtk.INT(2))]
+
+	fun createTextItem (root,args)= GtkCanvas.itemNew(root, GtkCanvas.TEXT, args) 
+
+        fun createGroupItem (root,x,y) = 
+	                            GtkCanvas.itemNew(root, 
+					       	      GtkCanvas.GROUP,
+						      [("x", Gtk.DOUBLE y), ("y", Gtk.DOUBLE y)]
+						      )
+
+	exception Node2Canvas_unknownNodeType
+	exception neverHappensSimple
+	exception neverHappensLabel
+	exception neverHappensBracket
+	exception neverHappensCont
+	exception neverHappensLimit
+	exception neverHappensSep
+ 
+	    
+	fun array_map' funct a i = 
+	    if i < Array.length(a) 
+		then (funct(Array.sub(a,i));array_map' funct a (i+1)) 
+	    else ()
+
+	fun array_map funct a = array_map' funct a 0
+
+	 
+	fun incActLine node = case node of
+	    LimitNode(r) => Layout.act_line := (!Layout.act_line) + 
+		                               !(#ydim(r)) +1
+	  | SimpleNode(r) => Layout.act_line := (!Layout.act_line) + 
+		                                !(#ydim(r)) +1
+	  | BracketNode(r) => Layout.act_line := (!Layout.act_line) + 
+		                                 !(#ydim(r)) + 1
+	  | LabelNode(r) => Layout.act_line := (!Layout.act_line) + 
+                                               !(#ydim(r)) + 1
+	  | ContNode(r) => Layout.act_line := (!Layout.act_line) +  
+                                              !(#ydim(r)) + 1
+	  | SepNode(r)  => Layout.act_line := (!Layout.act_line) + 
+                                              !(#ydim(r)) + 1
+	  | EmptyNode => ()
+	  | _ => raise Node2Canvas_unknownNodeType
+
+   
+       fun calcX x = (Real.fromInt(x*8 +10) )
+       fun calcY y = (Real.fromInt(y*10 +10) )
+
+       fun Simple2Canvas (node,root) =case node of
+	   SimpleNode(r) =>
+	   let
+		  val x = calcX(! (#xkoord(r)))
+		  val y = calcY(! (#ykoord(r)))
+		  val group = createGroupItem (root,0.0,0.0)
+		  val text = (case Type.inspect(#istype(r)) of
+				  Con(w) => if Path.equal(w,path_string) 
+						then ("\""^(#value(r))^"\"")
+				                else if  Path.equal(w,path_char)
+						    then  ("#\""^(#value(r))^"\"")
+							else (#value(r))
+				   | _    => #value(r)
+							    )
+	   in
+	       (  (createTextItem(group, 
+				  createText(text,
+					     x,
+					     y,
+					     color(DARKGREEN))))
+	        ; #tag(r) := SOME group)     
+	   end
+	 | BracketNode(r) => Bracket2Canvas(node,root)
+	 | _ => raise neverHappensSimple
+       and Limit2Canvas (node,root) = case node of 
+	   LimitNode(r) =>
+	       let
+		   val x =  calcX(! (#xkoord(r)))
+		   val y =  calcY(! (#ykoord(r)))
+		   val group = createGroupItem (root,0.0,0.0)
+	       in
+		   (  (createTextItem(group, 
+				      createText("*",
+						 x,
+						 y,
+						 color(RED))))
+		    
+		    ; #tag(r) := SOME group)      
+	       end
+	 | _ => raise neverHappensLimit
+       and Sep2Canvas (node,root) = case node of
+	   SepNode(r) => (let  
+			      val y =(Real.fromInt((! (#ykoord(r)) +  (!(#ydim(r))-1))*10 +10))
+			      val x = (Real.fromInt(((!(#xkoord(r)) +  (!(#xdim(r))) - 3 ) * 8 +10)))
+			      val group = createGroupItem (root,0.0,0.0)
+			  in
+			      (  (createTextItem(group, 
+						 createText(" ,",
+							    x,
+							    y,
+							    color(BLACK))))
+			       ; Node2Canvas' (!(#content(r)), group) 
+			       ; #tag(r) := SOME group)      
+			  end)	 
+	       | _ => raise neverHappensSep
+       and Label2Canvas (node,root) = case node of 
+	   LabelNode(r) => let
+	                               val x = calcX(! (#xkoord(r)))
+				       val y = calcY(! (#ykoord(r)))
+				       val eq = if Helper.isSumLabel node then "" else " ="
+				       val group = createGroupItem (root,0.0,0.0)
+					   in
+					      (  (createTextItem(group, 
+						    createText((#label(r))^eq,
+							       x,
+							       y,
+							       color(BLACK))))
+
+					       ; Node2Canvas' (!(#content(r)),group ) 
+					       ; #tag(r) := SOME group)    
+				      end
+				  | _ => raise neverHappensLabel
+       and Cont2Canvas (node,root) = case node of
+	   ContNode(r) => let
+	                     val group = createGroupItem (root,0.0,0.0)
+			  in
+			     (array_map (fn n => Node2Canvas'(n,group)) (#nodes(r)) 
+			      ;  #tag(r) := SOME group)
+			  end
+			| _ => raise neverHappensCont       
+       and Bracket2Canvas (node,root) = case node of
+	   BracketNode(r) =>  let 
+                                  val cont = !(#content(r))
+				  val xdim2 = if hasContChild cont
+						  then get_l_xdim(cont) +3
+					      else !(#xdim(r))
+				  val x =(Real.fromInt((! (#xkoord(r)))*8 +10) )
+				  val y = (Real.fromInt((!(#ykoord(r)))* 10 +10))
+				  val x2 =  Real.fromInt((!(#xkoord(r)) +  
+					(xdim2) -1 ) *8 +10)
+				  val y2 =   Real.fromInt((!(#ykoord(r)) + 
+					 !(#ydim(r)) -1 ) *10 +10)
+				  val (left,right) 
+				      = case Type.inspect(#istype(r)) of
+				      Apply (t1,t2) 
+				      => (case Type.inspect(t1) of
+					      Con(path) => if Path.equal(path,PervasiveType.path_vec)
+							       then ("#[","]")
+							   else 
+							       if Path.equal(path,
+						     PervasiveType.path_array)
+								   then ("{","}")
+							       else 
+								   if Path.equal(path,
+						      PervasiveType.path_ref)
+					       then ("ref","")
+					   else ("unknown","")
+					    | _ => ("unknown","") )
+			      	| Prod (row) => if Type.isTupleRow(row) 
+				    then ("(",")") 
+				else ("{","}") 
+				    | _ => ("","")
+				       val group = createGroupItem (root,0.0,0.0)
+					   in
+				   (  (createTextItem(group, 
+						    createText(left,
+							       x,
+							       y,
+							       color(BLUE))))
+				    ; (createTextItem(group, 
+						    createText(right,
+							       x2,
+							       y2,
+							       color(BLUE))))
+				    ; Node2Canvas' (!(#content(r)),group ) 
+					       ; #tag(r) := SOME group)    
+				   end
+				    | _ => raise neverHappensBracket
+       and Node2Canvas' (node,root) = case node of
+		                            LimitNode(r) => Limit2Canvas(node,root)
+					  | SimpleNode(r) => Simple2Canvas(node,root)
+					  | BracketNode(r) => Bracket2Canvas(node,root)
+					  | LabelNode(r) => Label2Canvas(node,root)
+					  | ContNode(r) => Cont2Canvas(node,root)
+					  | SepNode(r)  => Sep2Canvas(node,root)
+					  | EmptyNode => ()
+					  | _ => raise Node2Canvas_unknownNodeType
+	    
+
+       fun Node2Canvas (node,window,canvas) = (Simple2Canvas(node,GtkCanvas.root(canvas));
+					       Gtk.widgetShowAll(window) 
+					       ; incActLine node)
+					   
+
+end;
+    

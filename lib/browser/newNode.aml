@@ -1,0 +1,426 @@
+import structure Types from "type"
+import structure Helper from "helper"
+import structure Dictionary from "dict"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+import structure MkpathTable from "MkpathTable"
+import structure Create_Doc from "create_doc"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Label from "x-alice:/lib/rtt/Label"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+
+open Types 
+open Helper
+open MkpathTable
+
+(*** Signatur NODE ***)
+
+signature NEW_NODE = 
+sig
+
+(* aktueller Wert der maximal dargestellten Breite *)
+    val width: int ref
+
+(* aktueller Wert der maximal dargestellten Tiefe *)
+    val depth: int ref 
+   
+(* Instanz des Dictionary, in dem alle zu inspizierenden Objekte gespeichert 
+    werden *)
+    val dict: Dictionary.dictionary
+    
+(* Hilfsfunktionen zur Erschaffung von neuen Knoten *)
+    val makeSimpleNode: 
+	Reflect.value * Type.t * Node * int * string * int -> Node
+    val makeContNode: Type.t * Node * Node array * int * int * bool ->Node
+    val makeSepNode: Node * Node * int * int -> Node
+    val makeLabelNode: Node * string * Node * int * int -> Node 
+    val makeBracketNode: 
+	Reflect.value * Type.t * Node * Node * int * int -> Node
+    val makeLimitNode: Reflect.value * Type.t * Node * int -> Node
+
+(* Hilfsfunktion zur Behandlung von Pfadtypen (ruft create-doc-Funktionen
+   auf, die wiederum createGraph benutzen) *)
+    val newPath: 'a * Type.t -> Node -> int -> int -> Path.path -> Node
+
+(* Konvertierung von docs in Nodes - Verwendung nur bei "Pfadtypen" *)    
+    val docToNode: doc -> Node -> int -> int -> Node
+
+(* Erzeugung von Knoten vom Typ Node - falls "Pfadtyp", dann Umweg ueber 
+   doc, sonst direkte Umwandlung in Node *)
+    val createGraph: 'a * Type.t -> Node -> int -> int -> Node
+
+(* Hilfsfunktion fuer Prod-Typen *)
+    val contnodes: int -> 'a list ->  (Label.lab * Type.typ) list ->    
+	Label.lab Vector.vector -> int -> Type.row -> Node -> Node Array.array
+
+(* zustaendig fuer Sum-Typen *)
+    val handleSum: 'a * Type.typ -> Node -> int -> int -> Type.row -> Node
+
+(* Erzeugung eines Objekts und Abspeichern im Dictionary *)    
+    val newNode: 'a * Type.t -> Node
+
+end;
+
+(*** Struktur Node ***)
+
+structure NewNode :> NEW_NODE =
+struct
+
+    val width = ref 15 (* kann spaeter veraendert werden *)
+							
+    val depth = ref 5 (* kann spaeter veraendert werden *)
+    
+    val dict = Dictionary.empty
+
+    (* makeSimpleNode *)
+    fun makeSimpleNode (va,t,p,i,v,d) 
+	= SimpleNode {isvalue = va, 
+		      istype = t,
+		      parent = ref p,
+		      index = ref i,
+		      value = v,
+		      depth = ref d,
+		      xdim = ref ~1,
+		      ydim = ref ~1,
+		      xkoord = ref ~1,
+		      ykoord = ref ~1,
+		      dirty = ref true,
+		      tag = ref NONE,
+		      color = 0}
+	
+    (* makeContNode *)
+    and makeContNode (t,p,n,i,d,m) = ContNode {istype = t,
+					       parent = ref p,
+					       nodes = n,
+					       index = ref i,
+					       depth = ref d,
+					       xdim = ref ~1,
+					       ydim = ref ~1, 
+					       l_xdim = ref ~1,
+					       xkoord = ref ~1,
+					       ykoord = ref ~1,
+					       dirty = ref true,
+					       more = ref m,
+					       tag = ref NONE,
+					       color = 0}    
+
+    (* makeSepNode *)
+    and makeSepNode (c,p,i,d) = SepNode {content = ref c,
+					 parent = ref p,
+					 index = ref i,
+					 depth = ref d,
+					 xdim = ref ~1,
+					 ydim = ref ~1,
+					 xkoord = ref ~1,
+					 ykoord = ref ~1,
+					 dirty = ref true,
+					 tag = ref NONE,
+					 color = 0}
+
+    (* makeLabelNode *)
+    and makeLabelNode (c,l,p,i,d) = LabelNode {content = ref c,
+					       label = l,
+					       parent = ref p,
+					       index = ref i,
+					       depth = ref d,
+					       xdim = ref ~1,
+					       ydim = ref ~1,
+					       xkoord = ref ~1,
+					       ykoord = ref ~1,
+					       dirty = ref true,
+					       tag = ref NONE,
+					       color = 0}
+
+    (* makeBracketNode *)
+    and makeBracketNode (va,t,c,p,i,d) 
+	= BracketNode {isvalue = va,
+		       istype = t, 
+		       content = ref c,
+		       parent = ref p,
+		       index = ref i,
+		       depth = ref d,
+		       xdim = ref ~1,
+		       ydim = ref ~1,
+		       xkoord = ref ~1,
+		       ykoord = ref ~1,
+		       dirty = ref true,
+		       tag = ref NONE,
+		       color = 0}
+
+    (* makeLimitNode *)
+    and makeLimitNode (va,t,p,i) = LimitNode {isvalue = va,
+					      istype = t, 
+					      parent = ref p,
+					      index = ref i,
+					      xdim = ref ~1,
+					      ydim = ref ~1,
+					      xkoord = ref ~1,
+					      ykoord = ref ~1,
+					      dirty = ref true,
+					      tag = ref NONE,
+					      color = 0}
+    
+    (* newPath *)
+    fun newPath (v,t) p i d path
+	= case PathMap.lookup(pathTable, path) of
+	  NONE => let val va = UnsafeValue.cast v: Reflect.value
+	          in if d > !depth 
+			 then makeLimitNode(va,t,p,i) 
+		     else makeSimpleNode(va,t,p,i,"_",d)
+		  end   
+        | SOME create 
+          => let val doc = create 
+                            ((fn(v',t') => 
+			     fn(p',i',d') => createGraph (v',t') p' i' d')
+			     ,!width) 
+			    (v,t)
+	     in docToNode doc p i d 
+	     end
+
+    (* docToNode *)
+    and docToNode doc p i d 
+	= case doc of SIMPLE(rr) => let val va = #value(rr)
+					val t  = #typ(rr)
+                                        val v  = #content(rr)
+				   in
+				       if d > !depth 
+					   then makeLimitNode(va,t,p,i) 
+				       else makeSimpleNode(va,t,p,i,v,d)
+				   end
+                    | CONTAINER(rr) 
+                      => let val va = #value(rr)
+                             val t = #typ(rr)
+			     val vec = #kids(rr)
+			     val tt   = #1(unApply(Type.inspect(t)))
+			     val r = ref (Vector.length(vec)-1)  
+			     val na = Array.array(!r+1,EmptyNode)
+			     val limit = lazy makeLimitNode(va,t,p,i)
+                             val brack = makeBracketNode(va,t,EmptyNode,p,i,d)
+			     val cont = makeContNode(t,brack,na,i,d,#more(rr))
+			 in if d > !depth
+				then limit
+			    else
+			     ((if !r >= 0  
+			      then 
+                                 let val vecsub = Vector.sub(vec,!r)
+			             val f = fromInternal(vecsub)
+                                     val rv_node = docToNode vecsub cont 
+					                     (!r) (d+1)
+				     val la = Int.toString(!r)
+				     val la_node = makeLabelNode(EmptyNode,la,
+					                         cont,!r,d) 
+				     val node = f (la_node, !r, d+1)
+                                 in
+				     if Path.equal(getPath(tt),
+						   PervasiveType.path_array) 
+				     then (updNodes(cont,!r,la_node) 
+					       ; setContent(la_node,node)) 
+				     else updNodes(cont,!r,rv_node)
+				 end 
+			      else () ) 
+			     ; r := !r - 1 
+			     ; while !r >= 0 do 
+			    (let val sep = makeSepNode (EmptyNode,cont,!r,d) 
+                                 val vsub = Vector.sub(vec,!r) 
+				 val v_node = docToNode vsub sep (!r) (d+1) 
+                                 val ff = fromInternal vsub 
+                                 val lab = Int.toString(!r) 
+                                 val a_node = makeLabelNode(EmptyNode,lab, 
+				                            sep,!r,d)  
+				 val ffn = ff (a_node,!r, d+1) 
+			     in (if Path.equal(getPath(tt), 
+					       PervasiveType.path_vec)  
+				 then setContent(sep,v_node)  
+				 else (setContent(sep,a_node) 
+                                      ; setContent(a_node,ffn)) 
+                                ; updNodes(cont,!r,sep) ; r := !r - 1) 
+                             end ) ; setContent(brack,cont) ; brack )
+			 end         
+                    | INTERNAL(f) => f (p,i,d)
+
+    (* createGraph *)
+    and createGraph (v,t) p i d 
+        = (case Type.inspect t of
+	   Type.Con path 
+	   => newPath (v,t) p i d path
+         | Type.Arrow _ 
+	   => let val va = UnsafeValue.cast v : Reflect.value
+	      in if d > !depth
+		     then makeLimitNode(va,t,p,i)
+		 else makeSimpleNode(va,t,p,i,"fn",d) 
+	      end
+         | Type.All(var,typ) 
+	   => createGraph (v,typ) p i d  
+	 | Type.Exist(var,typ) 
+	   => createGraph (v,typ) p i d  
+         | Type.Lambda(var,typ) 
+	   => raise Type.Type
+         | Type.Apply(t1,t2)
+           => (case unApply (Type.inspect(t)) of 
+               (Type.Con path, ts) => newPath (v,t) p i d path
+             | _ => raise Type.Type) (* Erweiterung spaeter *)   
+         | Type.Prod(row) => (let
+				  val va = UnsafeValue.cast v : Reflect.value  
+				  val limit = lazy makeLimitNode(va,t,p,i)
+                                  val bracket = makeBracketNode(va,t,EmptyNode,
+								p,i,d)
+				  val labellist = getlabellist row
+				  val lv = labelvector(labellist)
+				  val l = Vector.length(lv)
+				  val r = ref (l-1) 
+                                  val valuelist = iterProj(v,lv)
+				  val cont = makeContNode
+                                                  (t,
+						   bracket, 
+						   Array.array(l,EmptyNode),
+						   i,
+						   d,
+						   false)
+				  val nodes_in_cont =  contnodes d 
+				                                 valuelist
+								 labellist 
+								 lv 
+								 l 
+								 row
+								 cont
+				  val _ = while (!r >= 0) do 
+				      (updNodes(cont,
+						!r,
+						Array.sub(nodes_in_cont,
+							  !r))
+				       ; r := !r - 1)
+				      
+				  val _ = setContent (bracket, cont)
+			      in if d > !depth
+				     then limit
+				 else bracket
+			      end) 
+         | Type.Mu(sum) => createGraph (v,sum) p i d
+         | Type.Sum(row) => handleSum (v,t) p i d row
+         | _ => raise NoNode) (* hier fehlen noch Faelle *)
+
+    (* contnodes *)
+    and contnodes d (* Tiefe des Containers *)
+	          valuelist
+		  (labellist:(Label.lab * Type.typ) list) (* Labelliste *)  
+		  lv (* Labelvector *)
+		  l (* laenge des Labelvectors *)
+                  row
+		  p = (* container, in dem Nodes stecken *)
+	          Array.tabulate ( l, 
+                       (fn i => let 
+				val vue =  List.nth(valuelist,i)
+				val tue =  #2(List.nth(labellist,i))
+				val connode = createGraph (vue,tue)  
+				                          EmptyNode 
+							  i 
+							  (d+1) 
+				val lab =  (#1(List.nth(labellist,i)))
+				val sep =   makeSepNode(EmptyNode,p,i,d) 
+				in  if (i = l-1) (* letztes Kind *)
+				    then if Type.isTupleRow(row)
+                                         then (setParent(connode,p) ; connode)
+					 else let val label (* keine sep *)
+					          = makeLabelNode(connode,
+						         Label.toString(lab),
+								  p,
+								  i, 
+								  d)
+					      in (setParent(connode,label) 
+						  ; label)
+					      end
+				    else if Type.isTupleRow(row)
+				         then (setContent(sep,connode)
+					       ; setParent(connode,sep)
+						  ; sep)
+					 else let val label 
+					         = makeLabelNode(connode,
+						        Label.toString(lab),
+								 sep,
+								 i, 
+								 d)
+					      in (setContent(sep,label)
+						  ; setParent(connode,label)
+						  ; sep)
+					 end
+				end ))
+
+    (* handleSum *)
+    and  handleSum (v,t) p i d  row = 
+	 let val va = UnsafeValue.cast v : Reflect.value
+	     val latylist = getlabellist(row)
+	     val labvec = labelvector(latylist)
+	     val index = UnsafeValue.tag(v,labvec)
+	     val label' = Vector.sub(labvec,index)
+	     val label = Label.toString(label')
+             val limit = lazy makeLimitNode(va,t,p,i) 
+             val bracket =  makeBracketNode(va,t,EmptyNode,p,i,d)
+	     val typ = #2(List.nth(latylist,index))
+	     val intyp = if Type.isApply(typ) 
+		         andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
+					    PervasiveType.path_strict)
+			     then  #2(Type.asApply(typ))
+			 else typ
+	 in (case Type.inspect(intyp) of 
+	     Type.Prod(_) 
+             => let val row' = Type.asProd(intyp)
+		    val constrlatylist = getlabellist row'
+		    val constrlabvec = labelvector(constrlatylist)
+		    val valuelist = iterProjTagged(v,constrlabvec)
+		    val l = List.length(valuelist)
+		    val r = ref (l-1)
+		    val na = Array.array(1,EmptyNode)
+		    val cont = makeContNode (t,bracket,na,i,d,false)
+		    (* spaeter Breitenfilter! *)
+		    val labnode = makeLabelNode(EmptyNode,label,cont,0,d)
+		in (if d > !depth 
+			then limit
+		    else
+		     (if Type.isEmptyRow row'
+			  then ()
+		      else let val inbracket = makeBracketNode(va,intyp,
+							       EmptyNode,
+							       labnode,0,d+1)
+			       val incont = makeContNode(intyp,inbracket,
+						    Array.array(l,EmptyNode),
+							 0,d+1,false)
+			       val inna = contnodes (d+1) valuelist 
+				                    constrlatylist
+						    constrlabvec l row'
+						    incont
+			   in (while !r >= 0 do
+				   ( updNodes(incont,!r,Array.sub(inna,!r))
+				    ; r := !r - 1 )
+				   ; setContent(labnode,inbracket) 
+				   ; setContent(inbracket,incont) )
+			   end
+			; setContent(bracket,cont)
+			   ; updNodes(cont,0,labnode)
+			   ; bracket ) )
+		end
+        | _ => let val na = Array.array(1,EmptyNode)
+		   val cont = makeContNode(t,bracket,na,i,d,false)
+		   (* spaeter Breitenfilter! *)
+		   val labnode = makeLabelNode(EmptyNode,label,cont,0,d)
+		   val inva = UnsafeValue.projTaggedTuple(v,1,0)
+		   val node = createGraph(inva,intyp) labnode 0 (d+1)
+	       in if d > !depth 
+		      then limit
+		  else (setContent(bracket,cont)
+			; updNodes(cont,0,labnode)
+			; setContent(labnode,node) 
+			; bracket )
+	       end )
+	 end
+     
+    (* newNode *)
+    and newNode (v,t) = let val i = Dictionary.insert(EmptyNode,dict)
+                            val node =  createGraph (v,t) EmptyNode i 0
+                        in (Dictionary.insert(node,dict) ; node)
+                        end
+
+end
