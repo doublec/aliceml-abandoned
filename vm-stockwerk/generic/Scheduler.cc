@@ -135,6 +135,7 @@ int Scheduler::Run() {
 	    u_int handler;
 	    word data;
 	    currentThread->GetHandler(handler, data);
+	    Assert(GetCurrentStackTop() >= handler);
 	    StackFrame *handlerFrame = currentTaskStack->GetFrame(handler);
 	    // Unroll stack down to the handler frame
 	    // to be done: make configurable whether to have backtrace or not
