@@ -30,7 +30,7 @@ struct
             foodCs      :   Gtk.object vector
         }
 
-    val tileSize = 6
+    val tileSize = 8
 
     fun size w = (tileSize * 101 , tileSize * 100)
 
