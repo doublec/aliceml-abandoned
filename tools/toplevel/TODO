@@ -17,3 +17,7 @@ Missing Features:
 * redo?
 * incremental search?
 * restart evaluator (with fresh initial environment)
+* restricted search&replace in selected area (like Vi's :%s/foo/bar/g)
+* search & replace with regex (including \N in replacements)
+
+
