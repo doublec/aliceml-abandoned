@@ -32,10 +32,14 @@
     signature FS =
     sig
 	type fs
+
+	(* Implementation dependent fs limits *)
+	val inf : int
+	val sup : int
 	    
 	(* Allocation Function *)
-	val fs : (FD.domain * FD.domain) option -> fs
-	val fsVec : int * FD.domain * FD.domain -> fs vector
+	val fs : (FD.domain * FD.domain) option -> fs (* Domain, Overflow *)
+	val fsVec : int * FD.domain * FD.domain -> fs vector (* Domain, Overflow *)
 
 	(* Standard Propagators *)
 	val compl : fs * fs -> unit
@@ -60,7 +64,7 @@
 	val partition : fs vector * fs -> unit
 
 	(* Values *)
-	val value : FD.domain -> fs
+	val value : FD.domain -> fs (* Domain, Overflow *)
 	val emptyValue : unit -> fs
 	val singletonValue : int -> fs
 	(*	    val upperBound : FD.domain -> fs *)
@@ -110,6 +114,22 @@
     </DT>
     <DD>
       <P>The type of finite set variables.
+    </P></DD>
+
+    <DT>
+      <TT>inf</TT>
+    </DT>
+    <DD>
+      <P>denotes the implementation dependent smallest possible
+         element of a finite set.
+    </P></DD>
+
+    <DT>
+      <TT>sup</TT>
+    </DT>
+    <DD>
+      <P>denotes the implementation dependent largest possible element
+         of a finite set.
     </P></DD>
 
     <DT>
