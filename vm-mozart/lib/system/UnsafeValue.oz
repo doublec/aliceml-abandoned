@@ -18,7 +18,14 @@ import
 export
    'UnsafeValue$': UnsafeValue
 define
-   BuiltinTable = {Property.get 'alice.builtinTable'}
+   fun {WaitProperty P}
+      try
+	 {Property.get P}
+      catch error(...) then
+	 {WaitProperty P}
+      end
+   end
+   BuiltinTable = {WaitProperty 'alice.builtinTable'}
 
    fun {Handle F E X}
       {System.show F}

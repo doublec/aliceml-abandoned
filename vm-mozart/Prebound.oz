@@ -2,13 +2,20 @@
 %%% Author:
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
+%%% Contributor:
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
+%%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999-2002
+%%%   Leif Kornstaedt and Andreas Rossberg, 1999-2004
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
 %%%   $Revision$
 %%%
+
+\ifdef Mozart_1_2
+\define OLD_BYNEED
+\endif
 
 functor
 require
@@ -307,6 +314,7 @@ prepare
       'Future.awaitEither\'':
 	 fun {$ X Y} {WaitOr X Y} {Not {IsDet X}} end
       'Future.byneed':
+\ifdef OLD_BYNEED
 	 fun lazy {$ P}
 	    try
 	       {P unit}
@@ -314,7 +322,19 @@ prepare
 	       {Value.byNeedFail error(InnerE)}
 	    end
 	 end
+\else
+	 fun {$ P}
+	    !!{ByNeed fun {$}
+			 try
+			    {P unit}
+			 catch error(InnerE ...) then
+			    {Value.failed error(InnerE)}
+			 end
+		      end}
+	 end
+\endif
       'Future.concur':
+\ifdef OLD_BYNEED
 	 fun {$ P}
 	    !!thread
 		 try
@@ -324,7 +344,19 @@ prepare
 		 end
 	      end
 	 end
+\else
+	 fun {$ P}
+	    !!thread
+		 try
+		    {P unit}
+		 catch error(InnerE ...) then
+		    {Value.failed error(InnerE)}
+		 end
+	      end
+	 end
+\endif
       'Future.isByneed':
+\ifdef OLD_BYNEED
 	 fun {$ X}
 	    {IsFuture X} andthen
 	    case {Value.toVirtualString X 0 0} of
@@ -332,15 +364,30 @@ prepare
 	    else false
 	    end
 	 end
-      'Future.status':
+\else
 	 fun {$ X}
-	    if {IsFuture X} then
-	       if {Value.isFailed X} then 'FAILED'
-	       else 'FUTURE'
-	       end
-	    else 'DETERMINED'
-	    end
+	    {IsFuture X} andthen {Not {IsNeeded X}}
 	 end
+\endif
+      'Future.status':
+\ifdef OLD_BYNEED
+         fun {$ X}
+            if {IsFuture X} then
+               if {Value.isFailed X} then 'FAILED'
+               else 'FUTURE'
+               end
+            else 'DETERMINED'
+            end
+         end
+\else
+         fun {$ X}
+            case {Value.status X}
+            of future then 'FUTURE'
+            [] failed then 'FAILED'
+            else 'DETERMINED'
+            end
+         end
+\endif
       'General.Assert': {NewUniqueName 'General.Assert'}
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
