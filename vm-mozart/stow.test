@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# A version of stow for use with the non-bootstrapped system.
+
 OZVERSION=1.1.1
 OZHOME=/opt/mozart-$OZVERSION
 

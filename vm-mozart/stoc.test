@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# A version of stoc for use with the non-bootstrapped system.
+
 howcalled=$0
 
 if test -z "${STOCKHOME}"
