@@ -592,7 +592,7 @@ build2/%.ozf: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
-	$(ALICELINK1) $(ALICELINK_OPTS) --include=.. $< -o $@
+	$(ALICELINK1) $(ALICELINK_OPTS) --include build2 build2/lib/rtt/RTT -o $@
 
 $(LIBNATIVES:%.ozf=build2/%.asig): %.asig: %.ozf
 
@@ -739,7 +739,10 @@ build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 	build3/compiler/ToplevelMain -o $@
 
 build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
-	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf
+	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
+	build3/compiler/backend-mozart/CodeGenPhase.ozf \
+	build3/compiler/backend-mozart/CodeGen.ozf \
+	build3/compiler/backend-mozart/Prebound.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
 	--include build3/compiler \
 	build3/compiler/top/SMLToMozartRecursiveCompiler -o $@
