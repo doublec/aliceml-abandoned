@@ -336,10 +336,13 @@ functor MkFlatteningPhase(val loadSign:
 		 let
 		     val (stms1, id1, _) = translateLongid longid1
 		     val (stms2, id2, _) = translateLongid longid2
+		     val id1' = O.freshId {region = #region info}
 		 in
-		     (*--** the following ConTest has `wrong' arity *)
 		     stms1 @ stms2 @
-		     [O.TestStm (stm_info (#region info), id1,
+		     O.ValDec (stm_info (#region info), O.IdDef id1',
+			       O.ConExp ({region = #region info}, O.Con id1,
+					 O.TupArgs #[]))::
+		     [O.TestStm (stm_info (#region info), id1',
 				 O.ConTests #[(O.Con id2, O.TupArgs #[],
 					       rest)], errStms)]
 		 end) rest constraints
