@@ -138,7 +138,7 @@ structure HttpServer :> HTTP_SERVER =
 			serverPort
 		    end
 	    in
-		Ref.exchange (myPort, Promise.future p);
+		Future.await (Ref.exchange (myPort, Promise.future p));
 		start' portOpt
 	    end
 
