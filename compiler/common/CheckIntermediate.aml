@@ -124,10 +124,10 @@ struct
 	let
 	    val A   = Type.paths t1
 	    val rea = PathMap.new()
-	    val _   = PathMap.appi
-			(fn(p,k) => PathMap.insert(rea, p, Type.unknown k)) A
-	    val t1' = Type.realiseF(rea, t1);
+	    val t1' = Type.clone t1
 	in
+	    PathMap.appi (fn(p,k) => PathMap.insert(rea, p, Type.unknown k)) A;
+	    Type.realise(rea, t1');
 	    ( Type.unify(t2,t1') ; true )
 	    handle Type.Unify(t3,t4) => Type.isApply t3 orelse Type.isApply t4
 	end
