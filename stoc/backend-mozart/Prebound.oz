@@ -144,7 +144,11 @@ define
 	    {ByNeed fun {$}
 		       try
 			  {P unit}
-		       catch E=error(E2 ...) then
+		       catch E=error(InnerE=alice(E2 ...) ...) then
+			  {Value.byNeedFail
+			   {AdjoinAt E 1
+			    {AdjoinAt InnerE 1 FutureException(E2)}}}
+		       [] E=error(E2 ...) then
 			  {Value.byNeedFail {AdjoinAt E 1 FutureException(E2)}}
 		       end
 		    end}
