@@ -43,16 +43,17 @@ OBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll) \
 ifdef WINDOWS
 GENERATOR = GtkBinding.x86-win32
 CC_OPTS = -mno-cygwin -mms-bitfields
+SML = cmd /c sml
 else
 GENERATOR = GtkBinding.x86-linux
 CC_OPTS =
+SML = sml
 endif
 
 ifndef PC_OPTS
 PC_OPTS = gtk+-2.0 libgnomecanvas-2.0
 endif
 
-SML = sml
 ALICEC = alicec 
 ALICEC_OPTS = --dump-phases --no-warn-conventions
 ALICETOOL = alicetool
