@@ -102,6 +102,9 @@ import
 
     (*MISSING: use*)
 
+    val byneed
+    val concur
+
     signature GENERAL
     structure General
     signature BOOL
