@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# TODO: This file should eventually be generated from configure
+# with the proper paths substituted.
+
 set -e
 
 cmd="$0"
@@ -39,26 +42,17 @@ if test -z "${ALICE_HOME}"; then
 fi
 ALICE_HOME=$(abs_path "$ALICE_HOME")
 
-if test -z "${SEAM_HOME}"; then
-    SEAM_HOME=$(find_in seam.exe "$PROGRAMFILES/Seam/bin")
-    SEAM_HOME=$(dirname "$SEAM_HOME")
-fi
-SEAM_HOME=$(abs_path "$SEAM_HOME")
-
 case $(uname) in
     CYGWIN*)
 	PATH="$ALICE_HOME:$PATH"
 	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
+	ext=".exe"
 	sep=\;
 	;;
     *)
-	if [ -z "$LD_LIBRARY_PATH" ]
-	then
-	    LD_LIBRARY_PATH="$SEAM_HOME/bin:$ALICE_HOME"
-	else
-	    LD_LIBRARY_PATH="$SEAM_HOME/bin:$ALICE_HOME:$LD_LIBRARY_PATH"
-	fi
+	LD_LIBRARY_PATH="${ALICE_HOME}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
 	export LD_LIBRARY_PATH
+	ext=""
 	sep=:
 	;;
 esac
@@ -78,10 +72,10 @@ export ALICE_HOME ALICE_LOAD
 
 ## To use the GUI debugger on Windows/Cygwin:
 #echo run alice "$@"
-#exec insight "$SEAM_HOME"/bin/seam.exe
+#exec insight seam.exe
 
 ## To use the debugger on Unix:
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
-#exec gdb "$SEAM_HOME"/bin/seam.exe
+#exec gdb seam
 
-exec "$SEAM_HOME"/bin/seam.exe alice "$@"
+exec seam${ext} alice "$@"
