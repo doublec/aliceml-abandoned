@@ -11,9 +11,9 @@
  *)
 
 import structure TextIO   from "../../lib/system/TextIO"
+import structure Timer    from "../../lib/system/Timer"
 import signature PHASE    from "PHASE-sig"
 import signature SWITCHES from "SWITCHES-sig"
-
 
 functor MkTracingPhase (
     structure Phase :    PHASE
@@ -24,9 +24,19 @@ struct
     open Phase
 
     fun translate (desc, context, rep) =
-	( if not (!Switches.Debug.dumpPhases) then () else
-	     (TextIO.output (Switches.Debug.dumpOut, "-- " ^ name ^ "...\n");
-	      TextIO.flushOut Switches.Debug.dumpOut)
-	; Phase.translate (desc, context, rep)
-	)
+          if not (!Switches.Debug.dumpPhases) then 
+            Phase.translate (desc, context, rep) 
+          else let 
+              val _     = TextIO.output (Switches.Debug.dumpOut, "-- " ^ name ^ "... ")
+              val _     = TextIO.flushOut Switches.Debug.dumpOut
+              val timer = Timer.startRealTimer ()
+              val res   = Phase.translate (desc, context, rep)
+              val t     = Timer.checkRealTimer timer
+              val secs  = Time.toReal t
+          in
+              TextIO.output (Switches.Debug.dumpOut, 
+                    Real.toString secs ^ " secs\n");
+              res
+          end    
+	
 end
