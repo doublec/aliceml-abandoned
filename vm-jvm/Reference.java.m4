@@ -2,41 +2,71 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class Reference implements DMLConVal, DMLReference {
 
-    DMLValue content=null;
+    ServerManager mgr = null; // Homesite-Manager
+    DMLValue content = null;
+    ClientManager cmgr = null;
 
     public Reference(DMLValue content) {
-	this.content = content;
+	this.content=content;
+	cmgr = new ClientManager(this);
+	mgr = new ServerManager(cmgr);
     }
 
-    public DMLValue get0() {
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get0();
-	else
-	    throw new ArrayIndexOutOfBoundsException();
+    public DMLValue release() {
+	DMLValue t = content;
+	content = null;
+	return t;
     }
-    public DMLValue get1() {
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get1();
+
+    public DMLValue get0() throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	if (content instanceof Tuple)
+	    return ((Tuple) content).get0();
 	else
-	    throw new ArrayIndexOutOfBoundsException();
+	    throw new ArrayIndexOutOfBoundsException(); 
     }
-    public DMLValue get2() {
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get2();
+
+
+    public DMLValue get1() throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	if (content instanceof Tuple)
+	    return ((Tuple) content).get1();
 	else
-	    throw new ArrayIndexOutOfBoundsException();
+	    throw new ArrayIndexOutOfBoundsException(); 
     }
-    public DMLValue get3() {
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get3();
+
+    public DMLValue get2() throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	if (content instanceof Tuple)
+	    return ((Tuple) content).get2();
 	else
-	    throw new ArrayIndexOutOfBoundsException();
+	    throw new ArrayIndexOutOfBoundsException(); 
     }
-    public DMLValue get4() {
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get4();
+
+    public DMLValue get3() throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	if (content instanceof Tuple)
+	    return ((Tuple) content).get3();
 	else
-	    throw new ArrayIndexOutOfBoundsException();
+	    throw new ArrayIndexOutOfBoundsException(); 
+    }
+
+    public DMLValue get4() throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	if (content instanceof Tuple)
+	    return ((Tuple) content).get4();
+	else
+	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
     /** Gleichheit der  und Inhalte */
@@ -45,19 +75,24 @@ final public class Reference implements DMLConVal, DMLReference {
 	    this.content.equals(((Reference)val).content);
     }
 
-    final public DMLValue getContent() {
+    final public DMLValue getContent() throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
 	return content;
     }
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
-    final public DMLValue assign(DMLValue val) {
-	DMLValue v=this.content;
-	this.content=val;
+    final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	content=val;
 	return DMLConstants.dmlunit;
     }
 
     final public String toString() {
-	return content+" : ref";
+	return (content==null?"remote":content.toString())+" : ref";
     }
 
     final public DMLValue getValue() {
@@ -80,7 +115,19 @@ final public class Reference implements DMLConVal, DMLReference {
 	return DMLConstants.reference;
     }
 
-    final public synchronized DMLValue exchange(DMLValue val) {
-	return null;
+    final public synchronized DMLValue exchange(DMLValue val) throws java.rmi.RemoteException {
+	if (content==null) {
+	    content=mgr.request(cmgr);
+	}
+	DMLValue ret = content;
+	content = val;
+	return ret;
+    }
+
+    private void readObject(java.io.ObjectInputStream in)
+	throws java.io.IOException, ClassNotFoundException {
+	in.defaultReadObject();
+	content=null;
+	cmgr = new ClientManager(this);
     }
 }

@@ -108,7 +108,7 @@ final public class General {
     final public static class Ref extends DMLBuiltin {
 	final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    // --> Tuple?
-	    return new Reference(val);
+	    return new RefContent(val);
 	}
     }
     /** <code>val ref : 'a -> ref 'a</code>*/

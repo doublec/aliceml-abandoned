@@ -3,17 +3,17 @@ package de.uni_sb.ps.dml.runtime;
 public interface DMLConVal extends DMLValue {
 
     /** liefert den Inhalt */
-    public DMLValue getContent();
+    public DMLValue getContent() throws java.rmi.RemoteException;
 
     /** liefert den Constructor */
-    public DMLConstructor getConstructor();
+    public DMLConstructor getConstructor() throws java.rmi.RemoteException;
 
     /** wird nur bei Ref funktionieren */
-    public DMLValue assign(DMLValue val);
+    public DMLValue assign(DMLValue val) throws java.rmi.RemoteException;
 
-    public DMLValue get0();
-    public DMLValue get1();
-    public DMLValue get2();
-    public DMLValue get3();
-    public DMLValue get4();
+    public DMLValue get0() throws java.rmi.RemoteException;
+    public DMLValue get1() throws java.rmi.RemoteException;
+    public DMLValue get2() throws java.rmi.RemoteException;
+    public DMLValue get3() throws java.rmi.RemoteException;
+    public DMLValue get4() throws java.rmi.RemoteException;
 }
