@@ -371,21 +371,28 @@ struct
     (** removes all snakes *)
 
     fun diff (old,new) = (* TODO: schlangen auf old löschen *)
-      let
-	  val (rows, cols) = Array2.dimensions old       (* dimensions *)
-	  fun help (r, c) xs = 
-	      if c = cols
-		  then xs
-	      else 
-		  if r = rows
-		      then help (0, c + 1) xs
-		  else
-		      if Array2.sub (old, rows, cols) = 
-			 Array2.sub (new, rows, cols)
-			  then help (r + 1, c) xs
-		      else help (r+1, c) (((r,c),Array2.sub(new, r, c))::xs)
+        let
+            val _   = assert Array2.dimensions old = Array2.dimensions new
+
+            val (rows, cols) = Array2.dimensions old       
+
+            fun help ((r, c), xs) = 
+                assert 0 <= r andalso r <= rows andalso 
+                    0 <= c andalso c <= cols do
+                if c = cols
+		    then xs
+	        else 
+		    if r = rows
+		        then help ((0, c + 1), xs)
+		    else
+		        if Array2.sub (old, rows, cols) = 
+			        Array2.sub (new, rows, cols)
+			    then help ((r + 1, c), xs)
+		        else 
+                            help ((r + 1, c),
+                                ((r,c), Array2.sub (new, r, c)) :: xs)
       in
-	  help (0,0) nil
+	  help ((0,0), nil)
       end
 
 end

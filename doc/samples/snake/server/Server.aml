@@ -19,9 +19,13 @@ import structure Snake          from "Snake"
 import structure Config         from "Config"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure Highscore      from "../common/Highscore"
+import signature SERVER         from "SERVER-sig"
+import structure Inspector      from "x-alice:/lib/tools/Inspector"
+
+import val dummyClient          from "DummyClient"
 
 
-structure Server =
+structure Server :> SERVER =
 struct
     
     datatype state = 
@@ -57,8 +61,10 @@ struct
     
     (* print a message on stderr *)
     fun log msg =
+        Inspector.inspect msg
+(*
         TextIO.output (TextIO.stdErr, "Server: " ^ msg ^ "\n")
-    
+*)  
 
     fun tabulateStream (n, f) =
         let
@@ -341,10 +347,12 @@ struct
                 let
                     val _       = log ("tick")
                     val players = allPlayers ()
+
                     fun movePlayer p =
                         let val snake   = Part.snake p
                             val info    = Part.playerInfo p
                         in
+                            log ("moving player " ^ Int.toString (Part.id p));
                             Snake.move (snake, !(#nextDir info))
                         end
                         
@@ -356,13 +364,16 @@ struct
                         Arena.placeSnakes (newArena, 
                             List.map Part.snake players);
 
+                    val _   = log ("calculating differences", oldArena, newArena)
                     val changes = Arena.diff (oldArena, newArena)
-
+                    val _   = log ("differences", changes)
                 in
                     (* broadcast differences *)
+                    log "broadcasting differences";
                     invokeSeveral (allConnected (), #update, changes); 
                     
                     (* change state of participants whose snake died to DEAD. *)
+                    log ("registering dead snakes");
                     List.app (fn sn =>
                         let val part        = PMap.lookupExistent 
                                                 (participants, Snake.id sn)        
@@ -426,7 +437,7 @@ struct
                 let
                     val arena       = List.hd levels ++ #1
                     val oldArena    = Arena.emptyCopy arena
-                    
+
                     fun loop (levels, old, new) =
                         let val (levels, old, new) = tick (levels, old, new)
                         in
@@ -440,17 +451,25 @@ struct
                 
             val startGame = Lock.sync lock (fn () => (
                 (* test wether there is any player at all... *)
+                if !state = ST_JOIN then state := ST_GAME
+                else raise P.Protocol "game already started";
+                
                 (* send startTournament signal *)
-
+                invokeSeveral (allConnected (), #tournamentStarted, ());
+                
                 (* start tick signal sender *)
-                    spawn ticker ();    
-                    ()
+                spawn ticker ();    
+                ()
                 ))
 
 
             val connect = Lock.sync lock (fn client_interface =>
                 (* connect is only called by UCs. *)
-                let (* determine id *)
+                let (* are we still in join mode ? *)
+                    val _       =   if !state = ST_JOIN then ()
+                                    else raise P.Protocol "game already running"
+
+                    (* determine id *)
                     val id      = PMap.size participants 
                     val uc      = Part.participant (id, client_interface)
                 in
@@ -496,3 +515,14 @@ struct
         end
         
 end
+
+
+fun test () =
+    let
+        val (ticket, server) = Server.startServer 
+                    (dummyClient, Config.defaultSingle)
+    in
+        valOf (#startGame server) ();
+        (ticket, server)
+    end
+    
