@@ -50,7 +50,7 @@ define
 		%% Logic-, Future- and Constraint-Variables
 		free     # [free free free]
 		future   # [future future future]
-		fdInt    # [fdInt fdInt fdInt]
+		fdInt    # [a(fdInt) fdInt fdInt]
 		fsVal    # [fsVal fdInt fdInt]
 		fsHelper # [fsHelper fdInt fdInt]
 		fsVar    # [fsVar fsVar fdInt]
