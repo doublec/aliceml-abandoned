@@ -53,7 +53,7 @@ struct
 
     fun isReserved ss = SubstringSet.member (reservedWords, ss)
 
-    fun isIdChar c = Char.isAlphaNum c orelse c = #"_"
+    fun isIdChar c = Char.isAlphaNum c orelse c = #"_" orelse c = #"'"
 
     fun merge (style,x1,x2, (style',x1',x2')::rs) where (style = style') =
 	    (style,x1',x2)::rs
