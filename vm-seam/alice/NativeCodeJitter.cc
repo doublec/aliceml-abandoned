@@ -761,11 +761,15 @@ u_int NativeCodeJitter::GetRelativePC() {
   return ((jit_get_ip().ptr - (char *) codeBuffer) + 2 * sizeof(word));
 }
 
+#if defined(JIT_STORE_DEBUG)
+void NativeCodeJitter::PrintPC(const char *) {}
+#else
 void NativeCodeJitter::PrintPC(const char *instr) {
   //fprintf(stderr, "%s at %p\n", instr, (codeBuffer + GetRelativePC() - 8));
   JITStore::LogMesg(instr);
   JITStore::LogReg(JIT_SP);
 }
+#endif
 
 void NativeCodeJitter::SetRelativePC(word pc) {
   jit_movi_p(JIT_R0, pc);
@@ -994,9 +998,7 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
   case CHAR_ORD:
     {
       word instrPC = Store::IntToWord(GetRelativePC());
-      u_int reg = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
-      return reg;
-      Result = reg;
+      Result = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
     }
     break;
   case INT_OPPLUS:
