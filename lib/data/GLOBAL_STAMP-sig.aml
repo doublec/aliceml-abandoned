@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,5 +25,6 @@ sig
     val toString :	stamp  -> string
 
     val equal :		stamp * stamp -> bool
+    val compare :	stamp * stamp -> order
     val hash :		stamp -> int
 end

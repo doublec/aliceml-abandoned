@@ -13,7 +13,7 @@
 import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
 
 
-structure GlobalStamp :> GLOBAL_STAMP (*TODO: where __primitive ... *)  =
+structure GlobalStamp :> GLOBAL_STAMP (*TODO: where __primitive ... *) =
 struct
     eqtype stamp
     type t = stamp
