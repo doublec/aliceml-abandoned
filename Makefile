@@ -178,6 +178,8 @@ libs-seam:
 	(cd lib/distribution && make TARGET=seam depend) || exit 1 ;\
 	(cd lib/distribution && \
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
+	(cd lib/gtk/stockwerk && ./BUILD_ALL) || exit 1 ;\
+	(cd lib/gtk/stockwerk && make install) || exit 1 ;\
 	(cd lib/browser && make depend) || exit 1 ;\
 	(cd lib/browser && make all install) || exit 1
 
