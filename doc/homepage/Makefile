@@ -7,7 +7,7 @@ DIRS = $(PREFIX) \
 
 INSTALLFILES_0 = \
 	bg.gif mozart_cartoon.jpg musicemb.jpg stockhausen.gif \
-	stockhausen.jpg stockhausen.ps
+	stockhausen.jpg stockhausen.ps index.html
 INSTALLFILES_OPERETTE2_0 = \
 	bg.gif style.css index.php3 macros.php3 menu.php3 laziness.php3 \
 	futures.php3 threads.php3 components.php3 modules.php3 \
