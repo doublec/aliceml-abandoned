@@ -23,6 +23,7 @@ signature HASHTABLE =
     val plusDisjoint :	'a hashtable * 'a hashtable -> unit	(* Collision *)
 
     val lookup :	'a hashtable * key -> 'a		(* Lookup *)
+    val isEmpty :	'a hashtable -> bool
 
     val app :		(key * 'a -> unit) -> 'a hashtable -> unit
     val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a hashtable -> 'b

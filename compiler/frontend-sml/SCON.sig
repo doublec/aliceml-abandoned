@@ -9,18 +9,14 @@ signature SCON =
   sig 
 
     datatype SCon =
-	  INTEGER of int
-	| WORD    of word
-	| STRING  of string
-	| CHAR    of char
-	| REAL    of real
+	  INT    of int
+	| WORD   of word
+	| STRING of string
+	| CHAR   of char
+	| REAL   of string
 
-    val fromInt:    int    -> SCon
-    val fromWord:   word   -> SCon
-    val fromString: string -> SCon
-    val fromChar:   char   -> SCon
-    val fromReal:   real   -> SCon
+    type t = SCon
 
-    val toString:   SCon   -> string
+    val toString: SCon -> string
 
   end

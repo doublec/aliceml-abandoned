@@ -9,6 +9,7 @@ signature LAB =
   sig
 
     eqtype Lab
+    type t = Lab
 
     val fromString:	string -> Lab
     val fromInt:	int    -> Lab

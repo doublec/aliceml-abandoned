@@ -117,7 +117,7 @@
 			 handle Overflow =>
 				Error.error(i, "word constant too big")
 
-    fun toReal(s,i) = valOf(scanString Real.scan s)
+    fun toReal(s,i) = s
 
 
     fun toString(s,i) =
@@ -194,11 +194,7 @@
 %%
 
 
-%header	( functor Lexer(structure Tokens: Parser_TOKENS
-			structure Error:  ERROR
-					  where type position = Source.position
-		       )
-	);
+%header	( functor Lexer(structure Tokens: Parser_TOKENS) );
 
 %s COMMENT;
 

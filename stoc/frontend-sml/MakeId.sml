@@ -9,13 +9,14 @@
  *)
 
 
-functor Id(structure Stamp: STAMP) :> ID =
+functor Id(Stamp: STAMP) :> ID =
   struct
 
     type Id = string
+    type t  = Id
 
-    fun invent()     = "_id" ^ Stamp.toString(Stamp.fresh())
-    fun inventAs(id) = "_" ^ id ^ Stamp.toString(Stamp.fresh())
+    fun invent()    = "_id" ^ Stamp.toString(Stamp.new())
+    fun inventAs id = "_" ^ id ^ Stamp.toString(Stamp.new())
 
     fun fromString s = s
     fun toString s   = s

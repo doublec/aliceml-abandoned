@@ -28,6 +28,8 @@ signature SYMTABLE =
 
     val lookup :	'a symtable * key -> 'a			(* Lookup *)
     val lookupScope :	'a symtable * key -> 'a			(* Lookup *)
+    val isEmpty :	'a symtable -> bool
+    val isEmptyScope :	'a symtable -> bool
 
     val app :		(key * 'a -> unit) -> 'a symtable -> unit
     val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a symtable -> 'b

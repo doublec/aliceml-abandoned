@@ -9,19 +9,20 @@ functor Lab() :> LAB =
   struct
 
     type Lab = string
+    type t   = Lab
 
     fun fromString s = s
-    val fromInt      = Int.toString
+    fun fromInt n    = Int.toString n
     fun toString s   = s
 
-    fun compare(lab1, lab2) =
-      case (Int.fromString lab1, Int.fromString lab2)
-	of (SOME i1, SOME i2) => Int.compare(i1, i2)
-	 |     _              => String.compare(lab1, lab2)
+    fun compare(s1,s2) =
+      case (Int.fromString s1, Int.fromString s2)
+	of (SOME n1, SOME n2) => Int.compare(n1,n2)
+	 |     _              => String.compare(s1,s2)
 
-    fun equalsNum(lab, i) =
-      case Int.fromString lab
-	of SOME i' => i = i'
+    fun equalsNum(s,n) =
+      case Int.fromString s
+	of SOME n' => n = n'
 	 | NONE    => false
 
   end

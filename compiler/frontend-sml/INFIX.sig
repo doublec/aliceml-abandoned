@@ -10,31 +10,21 @@ signature INFIX =
 
     (* Import *)
 
-    structure Grammar: GRAMMAR_CORE
-
-    type Exp     = Grammar.Exp
-    type Pat     = Grammar.Pat
-
-    type VId     = BasicObjects_Core.VId
+    structure Grammar: GRAMMAR_CORE (* = PostParseGrammar_Core *)
 
 
-    structure VIdFinMap: ORD_MAP where type Key.ord_key = VId
-
-
-    (* Modifying fixity status *)
+    (* Infix environment *)
 
     datatype Assoc = LEFT | RIGHT
+    type InfStatus = (Assoc * int) option
 
-    type InfStatus = Assoc * int
-    type InfEnv    = InfStatus VIdFinMap.map	(* "J" *)
+    type InfEnv    = (Grammar.Info * InfStatus) VIdSymtable.symtable
 
-    val empty:		InfEnv
-    val assign:		InfEnv * VId list * InfStatus -> InfEnv
-    val cancel:		InfEnv * VId list -> InfEnv
 
     (* Resolving phrases containing infixed identifiers *)
 
-    val exp:	InfEnv -> Exp -> Exp
-    val pat:	InfEnv -> Pat -> Pat
+    val exp :	InfEnv -> Grammar.Exp -> Grammar.Exp
+    val pat :	InfEnv -> Grammar.Pat -> Grammar.Pat
 
   end
+  where Grammar = PostParseGrammar_Core

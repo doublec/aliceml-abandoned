@@ -18,14 +18,14 @@
 (*	  pat   ::= pat when atexp		(L)				*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
-(*        dec      ::= con cconbind						*)
+(*        dec      ::= con dconbind						*)
 (*	  datbind  ::= tyvarseq tycon						*)
-(*	  cconbind ::= <op> vid <of ty> : tyvarseq longtycon <and cconbind>	*)
-(*		   ::= <op> vid = <op> longvid <and cconbind>			*)
-(*        spec     ::= con ccondesc						*)
+(*	  dconbind ::= <op> vid <of ty> : tyvarseq longtycon <and dconbind>	*)
+(*		   ::= <op> vid = <op> longvid <and dconbind>			*)
+(*        spec     ::= con dcondesc						*)
 (*	  datdesc  ::= tyvarseq tycon						*)
-(*	  ccondesc ::= vid <of ty> : tyvarseq longtycon <and ccondesc>		*)
-(*		   ::= vid = longvid <and ccondesc>				*)
+(*	  dcondesc ::= vid <of ty> : tyvarseq longtycon <and dcondesc>		*)
+(*		   ::= vid = longvid <and dcondesc>				*)
 (*   - straightified datatype declarations and specifications:			*)
 (*     (remove: dec ::= datatype tycon = datatype longtycon)			*)
 (*	  datbind  ::= tyvarseq tycon						*)
@@ -35,6 +35,8 @@
 (*	  datdesc  ::= tyvarseq tycon						*)
 (*		       tyvarseq tycon = condesc					*)
 (*		       tyvarseq tycon = datatype tyvarseq longtycon		*)
+(*     (This requires the syntactic restriction that longtycons on the RHS of	*)
+(*     the third form of datdescs must be distinct from all LHSs of a datbind.)	*)
 (*   - straightified type specifications:					*)
 (*	  typdesc ::= tyvarseq tycon						*)
 (*		      tyvarseq tycon = ty					*)
@@ -83,9 +85,9 @@
     open BasicObjects_Core
     open BasicObjects_Module
 
-    open Grammar_Core
-    open Grammar_Module
-    open Grammar_Program
+    open PostParseGrammar_Core
+    open PostParseGrammar_Module
+    open PostParseGrammar_Program
 
     open DerivedForms_Core
     open DerivedForms_Module
@@ -100,28 +102,12 @@
 %%
 
 
-%header	(functor LrVals(structure Token:  TOKEN
-			structure Error:  ERROR
-				  where type position = Source.position
-
-			structure Grammar_Core:    GRAMMAR_CORE
-				  where type Info = Error.position
-			structure Grammar_Module:  GRAMMAR_MODULE
-				  where Core      = Grammar_Core
-				  where type Info = Error.position
-			structure Grammar_Program: GRAMMAR_PROGRAM
-				  where Module    = Grammar_Module
-				  where type Info = Error.position
-
+%header	(functor LrVals(structure Token:                TOKEN
 			structure DerivedForms_Core:    DERIVEDFORMS_CORE
-				  where Grammar = Grammar_Core
 			structure DerivedForms_Module:  DERIVEDFORMS_MODULE
-				  where Grammar = Grammar_Module
 			structure DerivedForms_Program: DERIVEDFORMS_PROGRAM
-				  where Grammar = Grammar_Program
 		       )
 	)
-
 
 %name Parser
 
@@ -149,7 +135,7 @@
 
 	(* Special constants *)
 	| ZERO | DIGIT of int | NUMERIC of int | INT of int | WORD of word
-	| REAL of real | STRING of string | CHAR of char
+	| REAL of string | STRING of string | CHAR of char
 
 	(* Identifiers *)
 	| ALPHA of string | SYMBOL of string | STAR
@@ -251,8 +237,8 @@
 	| conbind			of ConBind
 	|    BAR_conbind_opt		of ConBind option
 	|    OF_ty_opt			of Ty option
-	| cconbind			of CconBind
-	|    AND_cconbind_opt		of CconBind option
+	| dconbind			of DconBind
+	|    AND_dconbind_opt		of DconBind option
 	| exbind			of ExBind
 	|    AND_exbind_opt		of ExBind option
 
@@ -329,8 +315,8 @@
 	|    AND_datdesc_opt		of DatDesc option
 	| condesc			of ConDesc
 	|    BAR_condesc_opt		of ConDesc option
-	| ccondesc			of CconDesc
-	|    AND_ccondesc_opt		of CconDesc option
+	| dcondesc			of DconDesc
+	|    AND_dcondesc_opt		of DconDesc option
 	| exdesc			of ExDesc
 	|    AND_exdesc_opt		of ExDesc option
 	| strdesc			of StrDesc
@@ -362,16 +348,16 @@
   (* Constants *)
 
   scon:
-	  ZERO		( SCon(I(ZEROleft,ZEROright),   SCon.fromInt 0) )
-	| DIGIT		( SCon(I(DIGITleft,DIGITright), SCon.fromInt DIGIT) )
+	  ZERO		( SCon(I(ZEROleft,ZEROright),   SCon.INT 0) )
+	| DIGIT		( SCon(I(DIGITleft,DIGITright), SCon.INT DIGIT) )
 	| NUMERIC	( SCon(I(NUMERICleft,NUMERICright),
-							SCon.fromInt NUMERIC) )
-	| INT		( SCon(I(INTleft,INTright),     SCon.fromInt INT) )
-	| WORD		( SCon(I(WORDleft,WORDright),   SCon.fromWord WORD) )
+							SCon.INT NUMERIC) )
+	| INT		( SCon(I(INTleft,INTright),     SCon.INT INT) )
+	| WORD		( SCon(I(WORDleft,WORDright),   SCon.WORD WORD) )
 	| STRING	( SCon(I(STRINGleft,STRINGright),
-							SCon.fromString STRING) )
-	| CHAR		( SCon(I(CHARleft,CHARright),   SCon.fromChar CHAR) )
-	| REAL		( SCon(I(REALleft,REALright),   SCon.fromReal REAL) )
+							SCon.STRING STRING))
+	| CHAR		( SCon(I(CHARleft,CHARright),   SCon.CHAR CHAR) )
+	| REAL		( SCon(I(REALleft,REALright),   SCon.REAL REAL) )
 
   d:
 	  ZERO		( 0 )
@@ -419,21 +405,21 @@
 
   longvid:
 	  longvid'		( longvid' )
-	| EQUALS		( SHORTLongId(I(EQUALSleft,EQUALSright),
-					      VId(I(EQUALSleft,EQUALSright),
-						  VId.fromString "=")) )
+	| EQUALS		( SHORTLong(I(EQUALSleft,EQUALSright),
+					    VId(I(EQUALSleft,EQUALSright),
+						VId.fromString "=")) )
      longvid':
-	  vid'			( SHORTLongId(I(vid'left,vid'right), vid') )
-	| longstrid DOT vid	( DOTLongId(I(longstridleft,vidright),
-					    longstrid, vid) )
+	  vid'			( SHORTLong(I(vid'left,vid'right), vid') )
+	| longstrid DOT vid	( DOTLong(I(longstridleft,vidright),
+					  longstrid, vid) )
   longtycon:
-	  tycon			( SHORTLongId(I(tyconleft,tyconright), tycon) )
-	| longstrid DOT tycon	( DOTLongId(I(longstridleft,tyconright),
-					    longstrid, tycon) )
+	  tycon			( SHORTLong(I(tyconleft,tyconright), tycon) )
+	| longstrid DOT tycon	( DOTLong(I(longstridleft,tyconright),
+					  longstrid, tycon) )
   longstrid:
-	  strid			( SHORTLongId(I(stridleft,stridright), strid) )
-	| longstrid DOT strid	( DOTLongId(I(longstridleft,stridright),
-					    longstrid, strid) )
+	  strid			( SHORTLong(I(stridleft,stridright), strid) )
+	| longstrid DOT strid	( DOTLong(I(longstridleft,stridright),
+					  longstrid, strid) )
 
 
   OP_opt:
@@ -577,20 +563,21 @@
 	| ABSTYPE datbind WITHTYPE_typbind_opt WITH dec END
 			( ABSTYPEDec(I(ABSTYPEleft,ENDright), datbind,
 				     WITHTYPE_typbind_opt, dec) )
-	| CON cconbind	( CONDec(I(CONleft,cconbindright), cconbind) )
+	| CON dconbind	( CONDec(I(CONleft,dconbindright), dconbind) )
 	| EXCEPTION exbind
 			( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) )
 	| OPEN longstrid_list1
-			( OPENDec(I(OPENleft,longstrid_list1right),
-				  longstrid_list1) )
+			( OPENMULTIDec(I(OPENleft,longstrid_list1right),
+				       longstrid_list1) )
 	| INFIX d_opt vid_list1
-			( INFIXDec(I(INFIXleft,vid_list1right),
-				   d_opt, vid_list1) )
+			( INFIXMULTIDec(I(INFIXleft,vid_list1right),
+					d_opt, vid_list1) )
 	| INFIXR d_opt vid_list1
-			( INFIXRDec(I(INFIXRleft,vid_list1right),
-				    d_opt, vid_list1) )
+			( INFIXRMULTIDec(I(INFIXRleft,vid_list1right),
+					 d_opt, vid_list1) )
 	| NONFIX vid_list1
-			( NONFIXDec(I(NONFIXleft,vid_list1right), vid_list1) )
+			( NONFIXMULTIDec(I(NONFIXleft,vid_list1right),
+					 vid_list1) )
 
      WITHTYPE_typbind_opt:
 	  WITHTYPE typbind	( SOME typbind )
@@ -688,17 +675,17 @@
 	| (*empty*)	( NONE )
 
 
-  cconbind:
-	  OP_opt vid' OF_ty_opt COLON tyvarseq longtycon AND_cconbind_opt
-			( NEWCconBind(I(OP_optleft,AND_cconbind_optright),
+  dconbind:
+	  OP_opt vid' OF_ty_opt COLON tyvarseq longtycon AND_dconbind_opt
+			( NEWDconBind(I(OP_optleft,AND_dconbind_optright),
 				      OP_opt, vid', OF_ty_opt, tyvarseq,
-				      longtycon, AND_cconbind_opt) )
-	| OP_opt vid' EQUALS OP_opt longvid AND_cconbind_opt
-			( EQUALCconBind(I(OP_opt1left,AND_cconbind_optright),
+				      longtycon, AND_dconbind_opt) )
+	| OP_opt vid' EQUALS OP_opt longvid AND_dconbind_opt
+			( EQUALDconBind(I(OP_opt1left,AND_dconbind_optright),
 					OP_opt1, vid', OP_opt2, longvid,
-					AND_cconbind_opt) )
-     AND_cconbind_opt:
-	  AND cconbind	( SOME cconbind )
+					AND_dconbind_opt) )
+     AND_dconbind_opt:
+	  AND dconbind	( SOME dconbind )
 	| (*empty*)	( NONE )
 
 
@@ -796,9 +783,9 @@
   pat:
 	  infpat	( infpat )
 	| pat COLON ty	( TYPEDPat(I(patleft,tyright), pat, ty) )
-	| pat AS pat	( LAYEREDPat(I(pat1left,pat2right), pat1, pat2) )
+	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
 	| pat WHEN atexp
-			( GUARDPat(I(patleft,atexpright), pat, atexp) )
+			( WHENPat(I(patleft,atexpright), pat, atexp) )
 
 
 
@@ -1073,7 +1060,7 @@
 	| DATATYPE datdesc WITHTYPE_typdesc_opt
 			( DATATYPESpec(I(DATATYPEleft,WITHTYPE_typdesc_optright),
 				       datdesc, WITHTYPE_typdesc_opt) )
-	| CON ccondesc	( CONSpec(I(CONleft,ccondescright), ccondesc) )
+	| CON dcondesc	( CONSpec(I(CONleft,dcondescright), dcondesc) )
 	| EXCEPTION exdesc
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
 	| STRUCTURE strdesc
@@ -1084,13 +1071,14 @@
 			( INCLUDEMULTISpec(I(INCLUDEleft,sigid_list2right),
 					   sigid_list2) )
 	| INFIX d_opt vid_list1
-			( INFIXSpec(I(INFIXleft,vid_list1right), d_opt,
-				    vid_list1) )
+			( INFIXMULTISpec(I(INFIXleft,vid_list1right), d_opt,
+					 vid_list1) )
 	| INFIXR d_opt vid_list1
-			( INFIXRSpec(I(INFIXRleft,vid_list1right), d_opt,
-				     vid_list1) )
+			( INFIXRMULTISpec(I(INFIXRleft,vid_list1right), d_opt,
+					  vid_list1) )
 	| NONFIX vid_list1
-			( NONFIXSpec(I(NONFIXleft,vid_list1right), vid_list1) )
+			( NONFIXMULTISpec(I(NONFIXleft,vid_list1right),
+					  vid_list1) )
 
      WITHTYPE_typdesc_opt:
 	  WITHTYPE typdesc	( SOME typdesc )
@@ -1162,16 +1150,16 @@
 	  BAR condesc	( SOME condesc )
 	| (*empty*)	( NONE )
 
-  ccondesc:
-	  vid' OF_ty_opt COLON tyvarseq longtycon AND_ccondesc_opt
-			( NEWCconDesc(I(vid'left,AND_ccondesc_optright),
+  dcondesc:
+	  vid' OF_ty_opt COLON tyvarseq longtycon AND_dcondesc_opt
+			( NEWDconDesc(I(vid'left,AND_dcondesc_optright),
 				      vid', OF_ty_opt, tyvarseq, longtycon,
-				      AND_ccondesc_opt) )
-	| vid' EQUALS longvid AND_ccondesc_opt
-			( EQUALCconDesc(I(vid'left,AND_ccondesc_optright),
-					vid', longvid, AND_ccondesc_opt) )
-     AND_ccondesc_opt:
-	  AND ccondesc	( SOME ccondesc )
+				      AND_dcondesc_opt) )
+	| vid' EQUALS longvid AND_dcondesc_opt
+			( EQUALDconDesc(I(vid'left,AND_dcondesc_optright),
+					vid', longvid, AND_dcondesc_opt) )
+     AND_dcondesc_opt:
+	  AND dcondesc	( SOME dcondesc )
 	| (*empty*)	( NONE )
 
 

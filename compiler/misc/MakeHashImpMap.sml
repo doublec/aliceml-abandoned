@@ -22,6 +22,8 @@ functor Hashtable(Key: HASH_KEY) :> HASHTABLE where type key = Key.t =
 				      t'
 				  end
 
+    fun isEmpty t		= Misc.Array_all List.null t
+
     fun lookup(t,k)		= let val kas = Array.sub(t, hash(t,k)) in
 				      case List.find (isEntryFor k) kas
 					of NONE      => raise Lookup

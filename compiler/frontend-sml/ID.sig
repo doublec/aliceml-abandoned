@@ -13,6 +13,7 @@ signature ID =
   sig
 
     eqtype Id
+    type t = Id
 
     val invent:		unit -> Id
     val inventAs:	Id   -> Id

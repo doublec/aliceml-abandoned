@@ -8,7 +8,7 @@ signature STAMP =
 
     eqtype Stamp
 
-    val fresh:    unit -> Stamp
+    val new:      unit -> Stamp
     val toString: Stamp -> string
 
     val reset:    unit -> unit

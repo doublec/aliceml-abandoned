@@ -5,52 +5,24 @@
  *)
 
 
-functor Infix(structure Error:   ERROR where type position = Source.position
-	      structure Grammar: GRAMMAR_CORE where type Info = Error.position)
-:> INFIX where Grammar = Grammar
-= struct
+structure Infix :> INFIX =
+  struct
 
     (* Import *)
 
-    structure Grammar = Grammar
+    structure Grammar = PostParseGrammar_Core
 
+    open BasicObjects_Core
     open Grammar
-
-    structure VId       = BasicObjects_Core.VId
-    type VId            = VId.Id
-
-    structure VIdFinMap = BinaryMapFn(type ord_key = VId
-				      val  compare = VId.compare)
 
 
     (* Type definitions *)
 
     datatype Assoc = LEFT | RIGHT
 
-    type InfStatus = Assoc * int
+    type InfStatus = (Assoc * int) option
 
-    type InfEnv    = InfStatus VIdFinMap.map	(* "J" *)
-
-
-
-    (* Modifying infix environments *)
-
-    val empty = VIdFinMap.empty
-
-    fun assign(J, vids, infstatus) =
-	let
-	    fun insert(vid, J) = VIdFinMap.insert(J, vid, infstatus)
-	in
-	    List.foldl insert J vids
-	end
-
-    fun cancel(J, vids) =
-	let
-	    fun remove(vid, J) = #1(VIdFinMap.remove(J, vid))
-	in
-	    List.foldl remove J vids
-	end
-
+    type InfEnv    = (Info * InfStatus) VIdSymtable.symtable
 
 
     (* Helper for error messages *)
@@ -63,37 +35,38 @@ functor Infix(structure Error:   ERROR where type position = Source.position
     (* Categorisation of atomic expressions and patterns *)
 
     datatype 'a FixityCategory = NONFIX of 'a
-			       | INFIX  of InfStatus * Grammar.VId
+			       | INFIX  of Assoc * int * Grammar.VId
 
-    fun categoriseVId J (at, vid as VId(I,vid')) =
-	case VIdFinMap.find(J,vid')
-	  of NONE           => NONFIX(at)
-	   | SOME infstatus => INFIX(infstatus, vid)
+    fun categoriseVId (IE: InfEnv) (at, vid as VId(i,vid')) =
+	case VIdSymtable.lookup(IE,vid')
+	  of (_,NONE)             => NONFIX(at)
+	   | (_,SOME(assoc,prec)) => INFIX(assoc, prec, vid)
+        handle VIdSymtable.Lookup => NONFIX(at)
 
-    fun categoriseLongVId J (at, SHORTLongId(I, vid)) =
-	    categoriseVId J (at, vid)
-      | categoriseLongVId J (at, longvid) = NONFIX(at)
+    fun categoriseLongVId IE (at, SHORTLong(i, vid)) =
+	    categoriseVId IE (at, vid)
+      | categoriseLongVId IE (at, longvid) = NONFIX(at)
 
-    fun categoriseAtExp J (atexp as LONGVIDAtExp(I, SANSOp, longvid)) =
-	    categoriseLongVId J (atexp, longvid)
-      | categoriseAtExp J (atexp) = NONFIX(atexp)
+    fun categoriseAtExp IE (atexp as LONGVIDAtExp(i, SANSOp, longvid)) =
+	    categoriseLongVId IE (atexp, longvid)
+      | categoriseAtExp IE (atexp) = NONFIX(atexp)
 
-    fun categoriseAtPat J (atpat as LONGVIDAtPat(I, SANSOp, longvid)) =
-	    categoriseLongVId J (atpat, longvid)
-      | categoriseAtPat J (atpat) = NONFIX(atpat)
+    fun categoriseAtPat IE (atpat as LONGVIDAtPat(i, SANSOp, longvid)) =
+	    categoriseLongVId IE (atpat, longvid)
+      | categoriseAtPat IE (atpat) = NONFIX(atpat)
 
 
 
     (* Converting app expressions and patterns into atomic lists *)
 
-    fun flattenExp'(ATEXPExp(I,atexp))   = atexp :: []
-      | flattenExp'(APPExp(I,exp,atexp)) = atexp :: flattenExp' exp
+    fun flattenExp'(ATEXPExp(i,atexp))   = atexp :: []
+      | flattenExp'(APPExp(i,exp,atexp)) = atexp :: flattenExp' exp
       | flattenExp' _ = Crash.crash "Infix.flattenExp: invalid expression"
 
     fun flattenExp exp = List.rev(flattenExp' exp)
 
-    fun flattenPat'(ATPATPat(I,atpat))   = atpat :: []
-      | flattenPat'(APPPat(I,pat,atpat)) = atpat :: flattenPat' pat
+    fun flattenPat'(ATPATPat(i,atpat))   = atpat :: []
+      | flattenPat'(APPPat(i,pat,atpat)) = atpat :: flattenPat' pat
       | flattenPat' _ = Crash.crash "Infix.flattenPat: invalid pattern"
 
     fun flattenPat pat = List.rev(flattenPat' pat)
@@ -103,7 +76,7 @@ functor Infix(structure Error:   ERROR where type position = Source.position
     (* Resolving infixed expressions and patterns *)
 
     fun parse (ATXx,APPx,TUPLEAtX,LONGVIDAtX, info,info_At,categorise,flatten)
-	      J x =
+	      IE x =
 	let
 	    fun atomic(atx)  = ATXx(info_At atx, atx)
 
@@ -113,9 +86,9 @@ functor Infix(structure Error:   ERROR where type position = Source.position
 
 	    fun infapply(x1,vid,x2) =
 		let
-		    val I_vid   = info_VId vid
-		    val longvid	= SHORTLongId(I_vid, vid)
-		    val exp	= ATXx(I_vid, LONGVIDAtX(I_vid,SANSOp,longvid))
+		    val i_vid   = info_VId vid
+		    val longvid	= SHORTLong(i_vid, vid)
+		    val exp	= ATXx(i_vid, LONGVIDAtX(i_vid,SANSOp,longvid))
 		    val atx	= pair(x1,x2)
 		in
 		    APPx(Source.between(info x1, info x2), x, atx)
@@ -132,12 +105,12 @@ functor Infix(structure Error:   ERROR where type position = Source.position
 		    val result as (x,xs') = inf(p+1,xs)
 		in
 		   case xs'
-		     of INFIX((a,p'),vid)::_ => if p'= p then inftail(a,p,x,xs')
-							 else result
-		      | _                    => result
+		     of INFIX(a,p',vid)::_ => if p'= p then inftail(a,p,x,xs')
+						       else result
+		      | _                  => result
 		end
 
-	      | inf(_, INFIX(_,vid)::_) =
+	      | inf(_, INFIX(_,_,vid)::_) =
 		    errorVId(vid, "Misplaced infix identifier ")
 
 	      | inf(_, []) =
@@ -145,7 +118,7 @@ functor Infix(structure Error:   ERROR where type position = Source.position
 		    Crash.crash "Infix.parse: empty expression"
 
 
-	    and inftail(a, p, x1, xs as INFIX((a',p'), vid)::x::xs') =
+	    and inftail(a, p, x1, xs as INFIX(a',p',vid)::x::xs') =
 		if p' <> p then
 		    (x1, xs)
 		else if a <> a' then
@@ -165,12 +138,12 @@ functor Infix(structure Error:   ERROR where type position = Source.position
 		        (infapply(x1,vid,x2), xs''')
 		    end
 
-	      | inftail(a, p, x1, INFIX(_,vid)::[]) =
+	      | inftail(a, p, x1, INFIX(_,_,vid)::[]) =
 		    errorVId(vid, "misplaced infix identifier ")
 
 	      | inftail(a, p, x1, xs) = (x1, xs)
 	in
-	    #1 (inf(0, List.map (categorise J) (flatten x)))
+	    #1 (inf(0, List.map (categorise IE) (flatten x)))
 	end
 
 
