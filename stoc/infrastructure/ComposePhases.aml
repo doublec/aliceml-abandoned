@@ -12,7 +12,10 @@
  *   $Revision$
  *)
 
-functor ComposePhases(
+import signature CONTEXT from "CONTEXT-sig"
+import signature PHASE   from "PHASE-sig"
+
+functor ComposePhases'(
 	structure Phase1:  PHASE
 	structure Phase2:  PHASE where I = Phase1.O
 	structure Context: CONTEXT
@@ -29,8 +32,8 @@ functor ComposePhases(
 	(desc, Phase1.translate(context1 context) (desc, rep))
   end
 
-functor ComposePhases'(structure Phase1: PHASE
-		       structure Phase2: PHASE where I = Phase1.O): PHASE =
+functor ComposePhases(structure Phase1: PHASE
+		      structure Phase2: PHASE where I = Phase1.O): PHASE =
     let
 	structure C: CONTEXT =
 	    struct
@@ -41,9 +44,9 @@ functor ComposePhases'(structure Phase1: PHASE
 		    (Phase1.C.clone context1, Phase2.C.clone context2)
 	    end
     in
-	ComposePhases(structure Phase1 = Phase1
-		      structure Phase2 = Phase2
-		      structure Context = C
-		      fun context1 (context1, _) = context1
-		      fun context2 (_, context2) = context2)
+	ComposePhases'(structure Phase1 = Phase1
+		       structure Phase2 = Phase2
+		       structure Context = C
+		       fun context1 (context1, _) = context1
+		       fun context2 (_, context2) = context2)
     end
