@@ -3,61 +3,42 @@ import
    BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    NativeGeometry at 'Geometry.so{native}'
 export
-   '$angle': NoType   %--**
-   '$vec': NoType   %--**
-   '$point': NoType   %--**
-   '$mat': NoType   %--**
-
-   Vec
-   GetX
-   GetY
-   GetZ
-   NegVec
-   RezVec
-   AddVec
-   SubVec
-   MulScalVec
-   MulVec
-   MulMatVec
-   MulMatPoint
-   AbsVec
-   NormalizeVec
-   UnitMat
-   TranslationMat
-   ScaleMat
-   UscaleMat
-   RotationXMat
-   RotationYMat
-   RotationZMat
-   MulMat
+   'Geometry$': Geometry
 define
    NoType = {ByNeedFail noTypeInGeometryModule}   %--**
 
-   Vec = NativeGeometry.vector_new
-   fun {GetX V} {NativeGeometry.vector_get V 1} end
-   fun {GetY V} {NativeGeometry.vector_get V 2} end
-   fun {GetZ V} {NativeGeometry.vector_get V 3} end
+   Geometry =
+   'Geometry'(
+      '$angle': NoType
+      '$vec': NoType
+      '$point': NoType
+      '$mat': NoType
 
-   NegVec = NativeGeometry.vector_neg
-   RezVec = NativeGeometry.vector_rez
-   AddVec = NativeGeometry.vector_add
-   SubVec = NativeGeometry.vector_sub
-   MulScalVec = NativeGeometry.vector_scal_mul
-   MulVec = NativeGeometry.vector_dot_prod
-   MulMatVec = NativeGeometry.matrix_vector_mul
-   MulMatPoint = NativeGeometry.matrix_point_mul
-   AbsVec = NativeGeometry.vector_abs
-   NormalizeVec = NativeGeometry.vector_normalize
+      vec: NativeGeometry.vector_new
+      getX: fun {$ V} {NativeGeometry.vector_get V 1} end
+      getY: fun {$ V} {NativeGeometry.vector_get V 2} end
+      getZ: fun {$ V} {NativeGeometry.vector_get V 3} end
 
-   UnitMat = {NativeGeometry.matrix_new
-	      1.0 0.0 0.0 0.0
-	      0.0 1.0 0.0 0.0
-	      0.0 0.0 1.0 0.0}
-   TranslationMat = NativeGeometry.matrix_translation
-   ScaleMat = NativeGeometry.matrix_scale
-   UscaleMat = NativeGeometry.matrix_uscale
-   RotationXMat = NativeGeometry.matrix_rotx
-   RotationYMat = NativeGeometry.matrix_roty
-   RotationZMat = NativeGeometry.matrix_rotz
-   MulMat = NativeGeometry.matrix_mul
+      negVec: NativeGeometry.vector_neg
+      rezVec: NativeGeometry.vector_rez
+      addVec: NativeGeometry.vector_add
+      subVec: NativeGeometry.vector_sub
+      mulScalVec: NativeGeometry.vector_scal_mul
+      mulVec: NativeGeometry.vector_dot_prod
+      mulMatVec: NativeGeometry.matrix_vector_mul
+      mulMatPoint: NativeGeometry.matrix_point_mul
+      absVec: NativeGeometry.vector_abs
+      normalizeVec: NativeGeometry.vector_normalize
+
+      unitMat: {NativeGeometry.matrix_new
+		1.0 0.0 0.0 0.0
+		0.0 1.0 0.0 0.0
+		0.0 0.0 1.0 0.0}
+      translationMat: NativeGeometry.matrix_translation
+      scaleMat: NativeGeometry.matrix_scale
+      uscaleMat: NativeGeometry.matrix_uscale
+      rotationXMat: NativeGeometry.matrix_rotx
+      rotationYMat: NativeGeometry.matrix_roty
+      rotationZMat: NativeGeometry.matrix_rotz
+      mulMat: NativeGeometry.matrix_mul)
 end
