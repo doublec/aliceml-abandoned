@@ -22,6 +22,7 @@
 
 #include "java/Data.hh"
 #include "java/StackFrame.hh"
+#include "java/ThrowWorker.hh"
 #include "java/JavaByteCode.hh"
 #include "java/ByteCodeInterpreter.hh"
 
@@ -1660,7 +1661,6 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Class *classObj  = methodRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
 	Closure *closure = classObj->GetVirtualMethod(methodRef->GetIndex());
-	Assert(closure != INVALID_POINTER);
 	return Scheduler::PushCall(closure->ToWord());
       }
       break;
@@ -1691,7 +1691,6 @@ Worker::Result ByteCodeInterpreter::Run() {
 	for (u_int i = nArgs; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
 	Closure *closure = classObj->GetStaticMethod(methodRef->GetIndex());
-	Assert(closure != INVALID_POINTER);
 	UnlockWorker::PushFrame(lock);
 	return Scheduler::PushCall(closure->ToWord());
       }
@@ -1714,10 +1713,14 @@ Worker::Result ByteCodeInterpreter::Run() {
 	for (u_int i = nArgs + 1; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
 	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
-	Assert(object != INVALID_POINTER);
-	Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
-	Assert(closure != INVALID_POINTER);
-	return Scheduler::PushCall(closure->ToWord());
+	if (object != INVALID_POINTER) {
+	  Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
+	  return Scheduler::PushCall(closure->ToWord());
+	}
+	ThrowWorker::PushFrame(ThrowWorker::NullPointerException,
+			       JavaString::New("invokevirtual"));
+	Scheduler::nArgs = 0;
+	return CONTINUE;
       }
       break;
     case Instr::IOR:
