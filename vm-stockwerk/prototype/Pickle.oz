@@ -54,10 +54,9 @@ define
    %% Block Labels:   %--** Alice-specific
    ARRAY        = 0
    CELL         = 1
-   CONSTRUCTOR  = 2
-   CON_VAL      = 3
-   VECTOR       = 4
-   LabelOffset  = 5
+   CON_VAL      = 2
+   VECTOR       = 3
+   LabelOffset  = 4
 
    IoException = {NewUniqueName 'IO.Io'}
    CorruptException = {NewUniqueName 'Component.Corrupt'}
@@ -289,14 +288,6 @@ define
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 1)|
 			      {PushUnpickleFrame X I + 1 N Rest})
-		  [] !CONSTRUCTOR then Y in
-		     Y = {NewName}
-		     {Set X I Y}
-		     Env.Count := Y
-		     {InputStream commit()}
-		     continue(args(InputStream Env Count + 1)
-			      unpickling(UnpickleInterpreter Y 0 Size)|
-			      {PushUnpickleFrame X I + 1 N Rest})
 		  [] !CON_VAL then Y in
 		     Y = {MakeTuple con Size}
 		     {Set X I Y}
@@ -511,14 +502,6 @@ define
 	       {OutputStream putByte(CHUNK)}
 	       {OutputStream putUInt({ByteString.length X})}
 	       {OutputStream putByteString(X)}
-	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
-	    [] name then
-	       %--** globalize?
-	       {OutputStream putByte(BLOCK)}
-	       {OutputStream putUInt(CONSTRUCTOR)}
-	       {OutputStream putUInt(1)}
-	       {OutputStream putByte(POSINT)}
-	       {OutputStream putUInt(0)}   %--** print name?
 	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
 	    [] atom then
 	       case X of tuple then
