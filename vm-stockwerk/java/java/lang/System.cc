@@ -12,6 +12,8 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#else
+#include <time.h>
 #endif
 
 #include "generic/Worker.hh"
@@ -66,7 +68,11 @@ static Property defaultProperties[] = {
   {"user.dir", "/"}, //--**
   // Extra properties:
   {"file.encoding.pkg", "sun.io"},
+#if defined(__MINGW32__) || defined(_MSC_VER)
   {"file.encoding", "Cp1252"},
+#else
+  {"file.encoding", "ANSI_X3.4-1968"},
+#endif
   {"sun.io.unicode.encoding", "UnicodeLittle"},
   {NULL, NULL}
 };
@@ -207,14 +213,15 @@ DEFINE1(setErr0) {
 
 DEFINE0(currentTimeMillis) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
+  //--** since 1970
   SYSTEMTIME st;
   GetSystemTime(&st);
   FILETIME ft;
   if (SystemTimeToFileTime(&st, &ft) == FALSE)
     Error("SystemTimeToFileTime failed"); //--**
-  RETURN2(JavaLong::New(ft.dwHighDateTime, ft.dwLowDateTime)->ToWord(), null);
+  DRETURN(JavaLong::New(ft.dwHighDateTime, ft.dwLowDateTime)->ToWord());
 #else
-  RETURN_JINT(0); //--**
+  DRETURN(JavaLong::New(time(NULL) * 1000)->ToWord()); //--**
 #endif
 } END
 
