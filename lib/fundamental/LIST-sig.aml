@@ -41,28 +41,35 @@ sig
     val op @ :		'a list * 'a list -> 'a list
     val revAppend :	'a list * 'a list -> 'a list
     val concat :	'a list list -> 'a list
+    val tabulate :	int * (int -> 'a) -> 'a list
 
     val app :		('a -> unit) -> 'a list -> unit
     val appr :		('a -> unit) -> 'a list -> unit			(**)
-    val appi :		(int * 'a -> unit) -> 'a list -> unit		(**)
-    val appri :		(int * 'a -> unit) -> 'a list -> unit		(**)
     val map :		('a -> 'b) -> 'a list -> 'b list
-    val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list		(**)
     val mapPartial :	('a -> 'b option) -> 'a list -> 'b list
-    val filter :	('a -> bool) -> 'a list -> 'a list
-    val partition :	('a -> bool) -> 'a list -> 'a list * 'a list
     val foldl :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
     val foldr :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
-    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
     val all :		('a -> bool) -> 'a list -> bool
     val exists :	('a -> bool) -> 'a list -> bool
     val find :		('a -> bool) -> 'a list -> 'a option
-    val findi :		(int * 'a -> bool) -> 'a list -> (int * 'a) option
+    val filter :	('a -> bool) -> 'a list -> 'a list
+    val partition :	('a -> bool) -> 'a list -> 'a list * 'a list
+
+    val index :		'a list -> (int * 'a) list			(**)
+    val appi :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val appri :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list		(**)
+    val mapiPartial :	(int * 'a -> 'b option) -> 'a list -> 'b list	(**)
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val alli :		(int * 'a -> bool) -> 'a list -> bool		(**)
+    val existsi :	(int * 'a -> bool) -> 'a list -> bool		(**)
+    val findi :		(int * 'a -> bool) -> 'a list -> (int * 'a) option (**)
+    val filteri :	(int * 'a -> bool) -> 'a list -> (int * 'a) list   (**)
+    val partitioni :	(int * 'a -> bool) -> 'a list -> (int * 'a) list *
+							 (int * 'a) list   (**)
     val contains :	''a list -> ''a -> bool				(**)
     val notContains :	''a list -> ''a -> bool				(**)
-
-    val tabulate :	int * (int -> 'a) -> 'a list
 
     val equal :		('a * 'a -> bool) -> 'a list * 'a list -> bool	(**)
     val collate :	('a * 'a -> order) -> 'a list * 'a list -> order
