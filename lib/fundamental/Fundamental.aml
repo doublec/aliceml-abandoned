@@ -84,6 +84,10 @@ import structure Promise	from "Promise"
 import signature THREAD		from "THREAD-sig"
 import structure Thread		from "Thread"
 
+import signature PACKAGE	from "PACKAGE-sig"
+import structure Package	from "Package"
+import functor   ByNeed		from "ByNeed"
+
 
 open Toplevel
 
@@ -154,3 +158,7 @@ structure Promise	= Promise
 
 signature THREAD	= THREAD
 structure Thread	= Thread
+
+signature PACKAGE	= PACKAGE
+structure Package	= Package
+structure ByNeed	= ByNeed
