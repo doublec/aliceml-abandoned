@@ -14,6 +14,7 @@ functor
 import
    Open(file)
    System(printInfo)
+   Word at '../../vm-mozart/Word.so{native}'
 export
    BuiltinTable
    Env
@@ -120,6 +121,17 @@ define
 	    else 0
 	    end
 	 end
+      'Word.fromInt\'': fun {$ N#X} {Word.make N X} end
+      'Word.toInt': Word.toInt
+      'Word.toIntX': Word.toIntX
+      'Word.orb': fun {$ X#Y} {Word.orb X Y} end
+      'Word.xorb': fun {$ X#Y} {Word.xorb X Y} end
+      'Word.andb': fun {$ X#Y} {Word.andb X Y} end
+      'Word.notb': Word.notb
+      'Word.<<': fun {$ X#Y} {Word.'<<' X Y} end
+      'Word.>>': fun {$ X#Y} {Word.'>>' X Y} end
+      'Word.~>>': fun {$ X#Y} {Word.'~>>' X Y} end
+      'Word.toString': fun {$ X} {Value.toVirtualString X 0 0} end
       'Array.array':
 	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
