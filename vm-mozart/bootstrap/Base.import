@@ -8,7 +8,7 @@ import
     infix  6  + - ^
     infixr 5  :: @
     infix  4  = <> > >= < <=
-    infix  3  := o
+    infix  3  := :=: o
     infix  0  before
 
     type unit
@@ -27,6 +27,7 @@ import
     datatype ref
     datatype exn
 
+    exception Alt
     exception Bind
     exception Chr
     exception Div
@@ -45,6 +46,7 @@ import
 
     val !
     val :=
+    val :=:
 
     val o
     val before
@@ -54,6 +56,11 @@ import
     val exnMessage
 
     val not
+
+    val fst
+    val snd
+    val isFst
+    val isSnd
 
     val getOpt
     val isSome
@@ -109,8 +116,14 @@ import
 
     signature GENERAL
     structure General
+    signature REF
+    structure Ref
     signature BOOL
     structure Bool
+    signature PAIR
+    structure Pair
+    signature ALT
+    structure Alt
     signature OPTION
     structure Option
 
@@ -121,8 +134,10 @@ import
 
     signature CHAR
     structure Char
+    structure WideChar
     signature STRING
     structure String
+    structure WideString
     signature SUBSTRING
     signature STRING_CVT
     structure StringCvt
