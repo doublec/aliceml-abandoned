@@ -235,6 +235,34 @@ fun createTable {rows = r, cols = c, entries = l}   =
 	 ; table )
     end
 
+fun createSpinButton {init = i, lower = l, upper = u, inc = ic, dec = d}
+    = let
+	  val a = Gtk.adjustmentNew(Real.fromInt(i), 
+				    Real.fromInt(l),
+				    Real.fromInt(u), 
+				    Real.fromInt(ic), 
+				    0.0, 
+				    0.0)
+      in
+	  Gtk.spinButtonNew(a,Real.fromInt(ic),d)
+      end
+
+fun createVBox l = let
+		       val vbox = Gtk.vboxNew(0,4)
+		       val p = fn i =>  Gtk.boxPackStart(vbox,i,0,1,0)
+		   in
+		       (List.app p l
+			; vbox)
+		   end
+
+fun createFrame (title,obj) = 
+    let 
+	val frame = Gtk.frameNew(title)
+    in
+	(Gtk.containerAdd(frame,obj)
+	 ; frame)
+    end
+
 end
 
  
