@@ -1,0 +1,18 @@
+val i = 5
+val t = Time.zeroTime
+val os = TextIO.stdOut
+exttype et
+constructor C : et
+val c = C
+structure S =
+struct
+  exttype et
+  constructor C : et
+  val c = C
+end
+local
+  exttype ht
+  constructor H : ht
+in
+  val h = H
+end
