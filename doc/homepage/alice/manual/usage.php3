@@ -86,7 +86,7 @@
 
   <P>Now you have to decide to either use SML mode version 3.3 or SML mode
     3.9.5. Both of them have their advantages and disadvantages.
-    (Note: Within Programming Systems Lab
+    (Note to local users: within Programming Systems Lab
     the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
 
   <P>To use SML mode version 3.3, install this
@@ -132,21 +132,22 @@
     or <TT>.sig</TT>) can be located, the compiler first invokes itself
     recursively to compile the imported component.  Note: file modification
     times are not checked.</P>
-  <P>Per default, the <A href="libraries.php3#toplevel">SML Standard Basis
+  <P>Per default, the <A href="libraries.php3#toplevel">Standard ML Basis
     top-level environment</A> is available for compiling source files.</P>
   <P>The following warning options may be given:</P>
   <DL>
     <DT><TT>--(no-)warn-shadowing</TT></DT>
-    <DD><P>Whether to warn about shadowing of identifiers.</P></DD>
+    <DD><P>Whether to warn about shadowing of identifiers. (Off by default,
+    because it gives a lot of spurious warnings.)</P></DD>
   </DL>
   <P>The following debugging options may be given:</P>
   <DL>
     <DT><TT>--version</TT></DT>
     <DD><P>Print compiler version.</P></DD>
     <DT><TT>--(no-)dump-phases</TT></DT>
-    <DD><P>Trace the running phases.</P></DD>
+    <DD><P>Trace compilation phases.</P></DD>
     <DT><TT>--(no-)dump-elaboration-sig</TT></DT>
-    <DD><P>Output of component signatures.</P></DD>
+    <DD><P>Output component's export signature.</P></DD>
   </DL>
 
 <?php section("vm", "vm") ?>
@@ -154,7 +155,7 @@
     loading a component, its body is executed; the work of an application is
     performed by its body's side-effects.</P>
   <P>An application is executed either by starting an executable component
-    produced by <TT>alic</TT> from the command line or by invoking the
+    produced by <TT>alicec</TT> from the command line or by invoking the
     Virtual Machine directly thus:</P>
   <DL>
     <DT><TT>alicerun</TT> <I>&lt;application url&gt;</I>
@@ -183,7 +184,7 @@
 
   <P>The following options are recognized:</P>
   <DL>
-    <DT><TT>--help</TT>, <TT>--usage</TT>, <TT>-h</TT>, <TT>-?</TT></DT>
+    <DT><TT>-?</TT>, <TT>-h</TT>, <TT>--help</TT>, <TT>--usage</TT></DT>
     <DD><P>Print usage information.  Note that, due to the linker
       being based on the Mozart linker, the help message speaks of
       functors instead of components and mentions options not supported
