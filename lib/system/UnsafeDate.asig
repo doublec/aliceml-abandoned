@@ -11,30 +11,30 @@
  *
  *)
 
-signature UNSAFE_DATE_COMPONENT =
-    sig
-	    structure UnsafeDate :
-	    sig
-            local
-            type tm = int (* seconds [0..61] (due to leap seconds) *)
-                    * int (* minutes [0..59] *)
-                    * int (* hours [0..23] *)
-                    * int (* day of month [1..31] *)
-                    * int (* month [0..11] *)
-                    * int (* year [since 1900] *)
-                    * int (* days since sunday [0..6] *)
-                    * int (* days since january 1 [0..365] *)
-                    * int (* daylight saving time:
-                                > 0 : is in effect
-                                = 0 : it's not in effect
-                                < 0 : we have no idea wether it is in effect
-                                      or not *)
-            in
-            val fromTimeLocal : IntInf.t -> tm
-            val fromTimeUniv :  IntInf.t -> tm 
-            val toTime :        tm -> IntInf.t
-            val fmt :           string * tm -> string
-            val toString :      tm -> string
+local
+    type tm = int (* seconds [0..61] (due to leap seconds) *)
+            * int (* minutes [0..59] *)
+            * int (* hours [0..23] *)
+            * int (* day of month [1..31] *)
+            * int (* month [0..11] *)
+            * int (* year [since 1900] *)
+            * int (* days since sunday [0..6] *)
+            * int (* days since january 1 [0..365] *)
+            * int (* daylight saving time:
+                        > 0 : is in effect
+                        = 0 : it's not in effect
+                        < 0 : we have no idea wether it is in effect
+                              or not *)
+in
+    signature UNSAFE_DATE_COMPONENT =
+        sig
+            structure UnsafeDate :
+            sig
+                val fromTimeLocal : IntInf.t -> tm
+                val fromTimeUniv :  IntInf.t -> tm 
+                val toTime :        tm -> IntInf.t
+                val fmt :           string * tm -> string
+                val toString :      tm -> string
             end
-	    end
-    end
+        end
+end
