@@ -289,6 +289,7 @@ DEFINE3(UnsafeSocket_output) {
 DEFINE1(UnsafeSocket_close) {
   DECLARE_INT(sock, x0);
   Interruptible(res, closesocket(sock));
+  IOHandler::Close(sock);
   RETURN_UNIT;
 } END
 
