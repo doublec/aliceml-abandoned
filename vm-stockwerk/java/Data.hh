@@ -427,6 +427,7 @@ public:
 	Future *future = static_cast<Future *>
 	  (Store::DirectWordToTransient(wFuture));
 	future->ScheduleWaitingThreads();
+	future->Become(REF_LABEL, null);
       }
       ReplaceArg(COUNT_POS, 0);
     }
