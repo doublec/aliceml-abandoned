@@ -1,0 +1,28 @@
+### Makefile for Debian distribution
+### Guido Tack, 2005
+
+## copy this file into a directory with all the tar.gz source packages.
+## Then run make to generate the Debian packages.
+
+SEAMVERSION = 1.0.0
+ALICEVERSION = 1.0.1
+GECODEVERSION = 0.9
+
+DPKGOPTIONS =
+
+TARGETS = seam-$(SEAMVERSION) \
+	alice-$(SEAMVERSION) \
+	alice-runtime-$(ALICEVERSION) \
+	gecode-$(GECODEVERSION) \
+	alice-gecode-$(ALICEVERSION) \
+	alice-gtk-$(ALICEVERSION)
+
+all: $(TARGETS)
+
+$(TARGETS): % : %.tar.gz
+	tar xzf $< && \
+	cd $@ && \
+	dpkg-buildpackage -rfakeroot $(DPKGOPTIONS)
+
+clean:
+	rm -rf $(TARGETS)
