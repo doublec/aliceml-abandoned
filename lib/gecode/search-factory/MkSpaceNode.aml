@@ -2,6 +2,7 @@ import structure Debug       from "Debug"
 import signature MKSPACENODE from "MKSPACENODE-sig"
 import signature POLICY      from "MKSPACENODE-sig"
 import structure Space       from "x-alice:/lib/gecode/Space"
+import structure Path        from "Path"
 
 structure MkSpaceNode :> MKSPACENODE = fct (Policy:POLICY) =>
 struct
@@ -64,19 +65,17 @@ struct
     
   (* Tail-recursive getPath *)
   fun getTailPath (Node node, tail) =
-    let val altNum = #altNum node in
+    let
+      val altNum = #altNum node
+      val newtail = case #best node of   (* May trigger computation of lazy *)
+                      NONE   => Path.Branch altNum :: tail
+                    | SOME b => Path.Branch altNum :: Path.Better b :: tail
+    in
       if altNum = 0 then tail
-      else getTailPath (#mom node, altNum :: tail)
+      else getTailPath (#mom node, newtail)
     end
 
   fun getPath node = getTailPath (node, [])
-
-  (* Debug *)
-  fun pathToString node =
-    List.foldl
-    (fn (i,s) => s ^ (Int.toString i) ^ ", ")
-    ""
-    (getPath (Node node))
    
   (* Recomputes the space of this node. *)
   fun recompute node =
@@ -84,19 +83,18 @@ struct
       val mom = #mom node
       val space = getWorkingSpace mom
     in
-      dbPrint(dbRecomp, "Recomputing node at PATH " ^(pathToString node)^ "\n");
+      dbPrint(dbRecomp,
+              "Recomputing node at PATH " ^ 
+              (Path.print (getPath (Node node))) ^ "\n");
       case status mom of
         Space.BRANCH descr =>
           (Space.commit (space, #altNum node, descr) ;
            
            (* Branch and Bound. *)
-           if bab then
-             case #best node of
-               NONE     => ()
-             | SOME sol => bound (space, sol)
-           else () ;
+           (case #best node of
+              NONE     => space
+            | SOME sol => (bound (space, sol) ; space)))
 
-           space)
       | _ => assert false
     end
 
@@ -113,7 +111,7 @@ struct
           (rspace := NONE ;
            if acopy = NONE andalso Policy.copyq (#depth node)
              then (dbPrint (dbClone, "CLONE at path " ^ 
-                            pathToString node ^ "\n") ;
+                            (Path.print (getPath (Node node))) ^ "\n") ;
                    rcopy := SOME (Space.clone s))
              else () ;
            s)
@@ -137,71 +135,59 @@ struct
       Space.clone readOnlySpace
     end
 
-  (* Create a new child, not Branch & Bound mode. *)
-  fun newChildNormal (node, i) =
+  (* Return a pair (bestId, bestSol) that
+   * is computed lazily when bestSol is requested,
+   * so that it uses the up-to-date best solution.  *)
+  fun getIdSol momNode =
     let
-      val spaceRef = ref NONE        
-      val descr =
-        case status node of
-          Space.BRANCH descr => descr
-        | _ => raise Child
-        
-      val status = lazy
-        let val space = updateRef (spaceRef, getWorkingSpace node)
+      val bestIdp = Promise.promise ()
+      val momBestId = getBestId momNode
+      val bestSol = lazy
+        let
+          (* Is there a best solution to apply? *)
+          val currentBestId = !bestId
+          val currentBest = !best (* Harmless race condition *)        
+          val _ = assert currentBestId >= momBestId
         in
-          Space.commit (space, i, descr) ;
-          Space.status space
+          if currentBestId > momBestId
+            then
+              (Promise.fulfill (bestIdp, currentBestId) ;
+               SOME currentBest)
+            else
+              (Promise.fulfill (bestIdp, momBestId) ;
+               NONE)
         end
     in
-      Node {mom    = node ,
-            altNum = i ,
-            space  = spaceRef ,
-            copy   = ref NONE ,
-            status = status,
-            bestId = undefined ,
-            best   = undefined ,
-            depth  = depth node + 1 }
+      (Promise.future bestIdp,
+       bestSol)
     end
 
-  (* Create a new child in Branch and Bound mode *)
-  fun newChildBaB (node, i) =
+  (* Create a new child *)
+  fun newChild (node, i) =
     let
-      val spaceRef = ref NONE
-      val promiseId  = Promise.promise ()
-      val promiseSol = Promise.promise ()
-      val momBestId = getBestId node
+      val spaceRef = ref NONE        
+      val descr = case status node of
+                    Space.BRANCH descr => descr
+                  | _ => raise Child
 
-      val descr =
-        case status node of
-          Space.BRANCH descr => descr
-        | _ => raise Child
-
+      val (bestId, bestSol) = if bab then getIdSol node else (0, NONE)
       val status = lazy
         let
           val space = updateRef (spaceRef, getWorkingSpace node)
-
-          (* Is there a best solution to apply? *)
-          val currentBestId = !bestId
-          val currentBest = !best (* Harmless race condition *)
-
           val _ = Space.commit (space, i, descr)
-          val _ = assert currentBestId >= momBestId
-          val _ = if currentBestId > momBestId
-                    then
-                      (Promise.fulfill (promiseId, currentBestId) ;
-                       Promise.fulfill (promiseSol, SOME currentBest) ;
-                       bound (space, currentBest))
-                    else
-                      (Promise.fulfill (promiseId, momBestId) ;
-                       Promise.fulfill (promiseSol, NONE))
-
+          val _ =
+            (* If a new best solution is present, bound the node. *)
+            case bestSol of  (* May trigger computation of lazy value. *)
+              NONE => ()
+            | SOME best => bound (space, best)
+                
           val status = Space.status space
-
-          (* When a solution is found, BOUND *)
-          val _ = if status = Space.SOLVED andalso bab
-                    then setBest (Policy.getSolution space)
-                    else ()
         in
+          (* When a solution is found, BOUND *)
+          if status = Space.SOLVED andalso bab
+            then setBest (Policy.getSolution space)
+          else () ;
+
           status  
         end
     in
@@ -210,11 +196,9 @@ struct
             space  = spaceRef ,
             copy   = ref NONE ,
             status = status,
-            bestId = Promise.future promiseId ,
-            best   = Promise.future promiseSol ,
+            bestId = bestId ,
+            best   = bestSol ,
             depth  = depth node + 1 }
     end
-
-  val newChild = if bab then newChildBaB else newChildNormal
 
 end

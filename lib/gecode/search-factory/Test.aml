@@ -4,8 +4,9 @@ import structure FD         from "x-alice:/lib/gecode/FD"
 
 (* import structure Explorer   from "x-alice:/tools/Explorer" *)
 
-import structure MkTreeNode from "MkTreeNode"
 import structure TreeNode from "TreeNode"
+import structure MkTreeNode from "MkTreeNode"
+import structure Path from "Path"
 
 open Debug
 
@@ -44,7 +45,7 @@ fun script space =
         val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
         val vsum = fromInt space lsum
       in
-        FD.rel (space, sum, FD.LE, vsum)
+        FD.rel (space, sum, FD.GR, vsum)
       end
       
   in
@@ -95,31 +96,34 @@ val rdist = 3
 
 (* The initial root space. *)
 val root = Space.new () 
-
 val (getSolution, bound, _) = script root
 
 val mask = dbAll
 
-(*
-structure TreeNode = MkTreeNode (val root = root
+(* Branch and Bound *)
+structure TreeNode1 = MkTreeNode (val root = root
                                  fun copyq d = d mod rdist = 0
                                  type sol = int Vector.t
                                  val bound = SOME bound
                                  val getSolution = getSolution
                                  val mask = mask)
-val rootnode = TreeNode.root
-*)
+val rootnode1 = TreeNode1.root
 
-val rootnode = TreeNode.root (root, rdist)
+(* Simple tree *)
+structure TreeNode2 = TreeNode
+val rootnode2 = TreeNode2.root (root, rdist)
+
+(* CHOOSE HERE *)
+val rootnode = rootnode1
+structure TreeNode = TreeNode1
+
 fun printd arg = Debug.dbPrint (mask, dbSearch, arg)
 
-fun print_path node =
-  (List.app
-   (fn i => printd ((Int.toString i) ^ ", "))
-   (TreeNode.getPath node);
-   printd "\n")
-
 val nbsol = ref 0
+
+fun print_path node =
+  (print (Path.print (TreeNode.getPath node)) ;
+   print "\n")
 
 fun search node =
   case TreeNode.status node of

@@ -1,0 +1,26 @@
+(* A path in the search tree. *)
+
+(* In the case of 'best search',
+ * the path may also contain 'better than' constraints,
+ * that is, contraints corresponding to a 'best' message.
+ * This is necessary because choices in the search tree
+ * depend on *ALL* previous constraints, including 'better than' constraints.
+ *) 
+
+structure Path =
+struct
+    datatype 'a item =
+	Branch of int
+      | Better of 'a
+
+    (* A path in the search tree. *)
+    type 'a path = ('a item) list
+    type t = path
+
+    fun print [] = "[]"
+      | print ((Branch n) :: xs) =
+          (Int.toString n ^ "-" ^ print xs)
+      | print ((Better _) :: xs) =
+          ("Better(x)-" ^ print xs)
+
+end

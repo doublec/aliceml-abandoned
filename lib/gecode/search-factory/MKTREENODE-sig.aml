@@ -1,5 +1,6 @@
 import structure Space  from "x-alice:/lib/gecode/Space"
 import signature POLICY from "MKSPACENODE-sig"
+import structure Path  from "Path"
 
 signature POLICY = POLICY
 
@@ -27,7 +28,7 @@ sig
   val status : tree_node -> Space.status
 
   (* Returns the path corresponding to this node. *)
-  val getPath : tree_node -> path
+  val getPath : tree_node -> Policy.sol Path.t
 
   (* Sets the current best solution (used by distributed search) *)
   val setBest : Policy.sol -> unit

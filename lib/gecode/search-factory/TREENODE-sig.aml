@@ -1,4 +1,5 @@
 import structure Space  from "x-alice:/lib/gecode/Space"
+import structure Path  from "Path"
 
 (* Simplified signature, for everyday use. *)
 signature TREENODE =
@@ -24,6 +25,6 @@ sig
   val status : tree_node -> Space.status
 
   (* Returns the path corresponding to this node. *)
-  val getPath : tree_node -> int list
+  val getPath : tree_node -> unit Path.t
 
 end

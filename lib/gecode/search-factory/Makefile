@@ -4,6 +4,7 @@ ALICEDEP = alicedep
 ALICEC_OPTS =
 
 SOURCES = Debug.aml \
+          Path.aml \
           MKSPACENODE-sig.aml MkSpaceNode.aml \
           SPACENODE-sig.aml SpaceNode.aml \
           MKTREENODE-sig.aml MkTreeNode.aml \

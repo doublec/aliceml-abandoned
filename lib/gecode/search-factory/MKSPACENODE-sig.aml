@@ -1,5 +1,6 @@
 import structure Space from "x-alice:/lib/gecode/Space"
 import structure Debug from "Debug"
+import structure Path  from "Path"
 
 (* Recomputation policy. *)
 signature POLICY =
@@ -40,7 +41,7 @@ sig
   val status : space_node -> Space.status
 
   (* Returns the path corresponding to this node. *)
-  val getPath : space_node -> int list
+  val getPath : space_node -> Policy.sol Path.t
 
   (* B&B : Sets the current best solution. *)
   val setBest : Policy.sol -> unit
