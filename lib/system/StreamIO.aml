@@ -50,6 +50,13 @@ functor StreamIO(structure PrimIO: PRIM_IO
 
 	type out_pos = outstream * pos
 
+	fun blocking NONE = raise IO.BlockingNotSupported
+	  | blocking (SOME f) = f
+	fun nonblocking NONE = raise IO.NonblockingNotSupported
+	  | nonblocking (SOME f) = f
+	fun randomAccess NONE = raise IO.RandomAccessNotSupported
+	  | randomAccess (SOME f) = f
+
 	fun input' (f as (history, offset), nMarkRead, function):
 	    vector * int * instream =
 	    let
@@ -64,7 +71,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				case bufOpt of
 				    SOME (v, i) => (v, i)
 				  | NONE =>
-				    (valOf readVec chunkSize
+				    (*--** use avail if chunkSize = 1 *)
+				    (blocking readVec chunkSize
 				     handle cause =>
 					 (Promise.fulfill (p, state);
 					  raise IO.Io {name, function, cause}),
@@ -166,7 +174,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    READER (reader as PrimIO.RD {name, readVecNB, ...},
 			    NONE) =>
-			((case valOf readVecNB n of
+			((case nonblocking readVecNB n of
 			      SOME v =>
 				  (Promise.fulfill
 				       (p, READER (reader, SOME (v, 0)));
@@ -289,7 +297,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			       dst = buf, di = bufLen - free};
 		stillFree := free';
 		if free' = 0 orelse bufferMode = IO.NO_BUF then
-		    (writeBuffer (buf, 0, bufLen, valOf writeArr);
+		    (writeBuffer (buf, 0, bufLen, blocking writeArr);
 		     if written' = vLen then ()
 		     else output' (writer, buf, bufLen, stillFree,
 				   v, vLen, written', bufferMode))
@@ -312,7 +320,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			    stillFree := (if free' = 0 then bufLen else free');
 			    Array.update (buf, bufLen - free, x);
 			    if free' = 0 orelse bufferMode = IO.NO_BUF then
-				writeBuffer (buf, 0, bufLen, valOf writeArr)
+				writeBuffer (buf, 0, bufLen, blocking writeArr)
 				handle cause =>
 				    (Promise.fulfill (p, state);
 				     raise IO.Io {name, function = "output1",
@@ -345,7 +353,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, _) =>
-			(flush (buf, stillFree, valOf writeArr)
+			(flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io {name, function="flushOut", cause});
@@ -362,7 +370,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		    WRITER (PrimIO.WR {name, writeArr, close, ...},
 			    buf, stillFree, _) =>
 			(Promise.fulfill (p, TERMINATED name);
-			 flush (buf, stillFree, valOf writeArr)
+			 flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     (close ()
 			      handle cause =>
@@ -384,7 +392,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, _) =>
 			(if bufferMode = IO.NO_BUF then
-			     flush (buf, stillFree, valOf writeArr)
+			     flush (buf, stillFree, blocking writeArr)
 			     handle cause =>
 				 (Promise.fulfill (p, state);
 				  raise IO.Io {name, function="setBufferMode",
@@ -426,7 +434,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, bufferMode) =>
 			(Promise.fulfill (p, TERMINATED name);
-			 flush (buf, stillFree, valOf writeArr)
+			 flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     raise IO.Io
 				 {name, function = "getWriter", cause};
@@ -445,12 +453,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, getPos, ...},
 			    buf, stillFree, bufferMode) =>
-			(flush (buf, stillFree, valOf writeArr)
+			(flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
 				  {name, function = "getPosOut", cause});
-			 (f, valOf getPos ()) before
+			 (f, randomAccess getPos ()) before
 			 Promise.fulfill (p, state)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
@@ -470,12 +478,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, setPos, ...},
 			    buf, stillFree, bufferMode) =>
-			(flush (buf, stillFree, valOf writeArr)
+			(flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
 				  {name, function = "setPosOut", cause});
-			 valOf setPos pos
+			 randomAccess setPos pos
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
