@@ -35,6 +35,7 @@ import structure TestPair        from "lib/fundamental/Pair"
 import structure TestRef         from "lib/fundamental/Ref"
 import structure TestTime        from "lib/system/Time"
 import structure TestTimer       from "lib/system/Timer"
+import structure TestOSPath      from "lib/system/OS_Path"
 import structure TestCompiler    from "lib/compiler/Compiler"
 import structure TestRegressions from "lib/regression/tests/TestRegressions"
 
@@ -58,6 +59,7 @@ fun randomizeTests () =
 			TestTime.randomize,
 			TestTimer.randomize,
 			TestArray2.randomize,
+			TestOSPath.randomize,
 			TestRef.randomize,
 			TestPair.randomize,
 		        TestRegressions.randomize]
@@ -65,7 +67,7 @@ fun randomizeTests () =
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [(*TestRegressions.suite,*)
+val allTests = [TestRegressions.suite,
 		TestCompiler.suite,
 		TestPair.suite,
 		TestRef.suite,
@@ -81,11 +83,12 @@ val allTests = [(*TestRegressions.suite,*)
 		TestChar.suite,
 		TestString.suite,
 		TestIEEEReal.suite,
-		TestInteger.suite(*,
-		TestIntInf.suite*),
+		TestInteger.suite,
+		TestIntInf.suite,
 		TestByte.suite,
-		TestTimer.suite(*,
-		TestTime.suite*)]
+		TestOSPath.suite,
+		TestTimer.suite,
+		TestTime.suite]
 
 val defaultConfig = {
 	    timeout = Time.fromSeconds (Int.toLarge 20),

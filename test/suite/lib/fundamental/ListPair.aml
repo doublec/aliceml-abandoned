@@ -76,10 +76,10 @@ struct
 		      List.app (f ys) (ListPair.zip x)
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; (!xs = !ys andalso
-					  !xs = List.rev (ListPair.zip x))
-					  before (xs := nil;
-						  ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !xs = List.rev (ListPair.zip x))
+				   before (xs := nil;
+					   ys := nil)))
 	end
 
     fun testAppi () =
@@ -98,10 +98,11 @@ struct
 		       List.appi (f ys o g) (ListPair.zip x))
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; (!xs = !ys andalso
-					  !zs = List.rev ((ListPair.zip x)))
-					  before (xs := nil;
-						  ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !zs = List.rev ((ListPair.zip x)))
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testAppr () =
@@ -118,11 +119,11 @@ struct
 
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; (!xs = !ys andalso
-					  !xs = (List.rev (!zs))) before 
-					 (xs := nil;
-					  ys := nil;
-					  zs := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !xs = (List.rev (!zs))) 
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testAppri () =
@@ -135,16 +136,19 @@ struct
 
 	    fun f x (i, a, b) = x := (a + i, b + i) :: !x
 
-	    fun t x = (ListPair.appi (f zs) x;
+	    fun f' x (i, a, b) = x := (a, b) :: !x
+
+	    fun t x = (ListPair.appi (f' zs) x;
 		       ListPair.appri (f xs) x = 
 		       List.appri (f ys o g) (ListPair.zip x))
 
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; (!xs = !ys andalso
-					  !xs = (List.rev (!zs))) before 
-					 (xs := nil;
-					  ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !xs = (List.rev (!zs)))
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testAppEq () =
@@ -166,10 +170,10 @@ struct
 		
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; (!xs = !ys andalso
-					  !xs = List.rev (ListPair.zip x))
-					  before (xs := nil;
-						  ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !xs = List.rev (ListPair.zip x))
+				   before (xs := nil;
+					   ys := nil)))
 	end
 
     fun testAppiEq () =
@@ -181,6 +185,12 @@ struct
 	    fun g (i, (a, b)) = (i, a, b)
 
 	    fun f x (i, a, b) = x := (a + i, b + i) :: !x
+
+	    fun f' x (i, a, b) = x := (a, b) :: !x
+
+	    fun t' x = (ListPair.appiEq (f' zs) x;
+		        !zs = List.rev (ListPair.zipEq x))
+		          handle UnequalLengths => true
 
 	    fun t x = 
 		let
@@ -194,48 +204,188 @@ struct
 		
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
-							   ys := nil))))
+	       (Test.test (fn x => (t x andalso t' x andalso !xs = !ys) 
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
+	end
+
+    fun testAppriEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    val zs = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = x := (a + i, b + i) :: !x
+
+	    fun f' x (i, a, b) = x := (a, b) :: !x
+
+	    fun t' x = (ListPair.appriEq (f' zs) x;
+		        !zs = ListPair.zipEq x)
+		          handle UnequalLengths => true
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.appriEq (f xs) x)
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.appri (f ys o g) (ListPair.zipEq x))
+			handle UnsequalLengths => NONE
+		in
+		    r = r1
+		end
+		
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x andalso t' x andalso !xs = !ys) 
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testMap () =
 	let
 	    val xs = ref nil
 	    val ys = ref nil
+	    val zs = ref nil
 
 	    fun f x (a, b) = (x := (a, b) :: !x; a + b)
 
-	    fun t x = ListPair.map (f xs) x = 
-		      List.map (f ys) (ListPair.zip x)
+	    fun t x = (ListPair.map (f zs) x;
+		       ListPair.map (f xs) x = 
+		       List.map (f ys) (ListPair.zip x))
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
-							   ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso 
+				    !zs = List.rev (ListPair.zip x))
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
-    fun testMapi () =
+    fun testMapPartial () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = if a = b then SOME (x := (a, b) :: !x; a + b)
+			     else NONE
+
+	    fun t x = (ListPair.mapPartial (f xs) x = 
+		       List.mapPartial (f ys) (ListPair.zip x))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testMapPartialEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = if a = b then SOME (x := (a, b) :: !x; a + b)
+			     else NONE
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.mapPartialEq (f xs) x) 
+			      handle UnequalLengths => NONE
+		    val r1 = SOME (List.mapPartial (f ys) (ListPair.zipEq x))
+			       handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testMapiPartialEq () =
 	let
 	    val xs = ref nil
 	    val ys = ref nil
 
 	    fun g (i, (a, b)) = (i, a, b)
 
-	    fun f x (i, a, b) = (x := (a + i, b + i) :: !x; a + i + b)
+	    fun f x (i, a, b) = if a = b then SOME (x := (a, b) :: !x; a + b)
+			     else NONE
 
-	    fun t x = ListPair.mapi (f xs) x = 
-		      List.mapi (f ys o g) (ListPair.zip x)
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.mapiPartialEq (f xs) x) 
+			      handle UnequalLengths => NONE
+		    val r1 = SOME (List.mapiPartial (f ys o g) 
+						   (ListPair.zipEq x))
+			       handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
-							   ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testMapiPartial () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = if a = b then SOME (x := (a, b) :: !x; a + b)
+				else NONE
+
+	    fun t x = (ListPair.mapiPartial (f xs) x = 
+		       List.mapiPartial (f ys o g) (ListPair.zip x))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testMapi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    val zs = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a + i + b) :: !x; a + i + b)
+
+	    fun f' x (i, a, b) = x := (a, b) :: !x
+
+	    fun t x = (ListPair.mapi (f' zs) x;
+		       ListPair.mapi (f xs) x = 
+		       List.mapi (f ys o g) (ListPair.zip x))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !zs = List.rev (ListPair.zip x))
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testMapEq () =
 	let
 	    val xs = ref nil
 	    val ys = ref nil
+	    val zs = ref nil
 
 	    fun f x (a, b) = (x := (a, b) :: !x; a + b)
+
+	    fun t' x = (ListPair.mapEq (f zs) x;
+			!zs = List.rev (ListPair.zipEq x))
+		          handle UnequalLengths => true
 
 	    fun t x = 
 		let
@@ -249,18 +399,26 @@ struct
 		
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
-							   ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso t' x)
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testMapiEq () =
 	let
 	    val xs = ref nil
 	    val ys = ref nil
+	    val zs = ref nil
 
 	    fun g (i, (a, b)) = (i, a, b)
 
-	    fun f x (i, a, b) = (x := (a + i, b + i) :: !x; a + i + b)
+	    fun f x (i, a, b) = (x := (a + i + b) :: !x; a + i + b)
+
+	    fun f' x (i, a, b) = x := (a, b) :: !x
+
+	    fun t' x = (ListPair.mapiEq (f' zs) x;
+			!zs = List.rev (ListPair.zipEq x))
 
 	    fun t x = 
 		let
@@ -274,8 +432,10 @@ struct
 		
 	in
 	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
-	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
-							   ys := nil))))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso t' x)
+				   before (xs := nil;
+					   ys := nil;
+					   zs := nil)))
 	end
 
     fun testFind () =
@@ -308,8 +468,13 @@ struct
 			      ("app", testApp),
 			      ("appi", testAppi),
 			      ("appiEq", testAppiEq),
+			      ("appriEq", testAppriEq),
 			      ("appEq", testAppEq),
 			      ("map", testMap),
+			      ("mapPartial", testMapPartial),
+			      ("mapPartialEq", testMapPartialEq),
+			      ("mapiPartialEq", testMapiPartialEq),
+			      ("mapPartiali", testMapiPartial),
 			      ("mapi", testMapi),
 			      ("mapiEq", testMapiEq),
 			      ("mapEq", testMapEq),
