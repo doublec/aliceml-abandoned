@@ -293,7 +293,7 @@ struct
 				error(i, E.NewExpTyp t)
 	    val (t1,t2)  = Type.asArrow t3 handle Type.Type =>
 				error(i, E.NewExpTyp t3)
-	    val _        = if Type.equals(t',PervasiveType.typ_conarrow) then ()
+	    val _        = if Type.equal(t',PervasiveType.typ_conarrow) then ()
 			   else
 				error(i, E.NewExpTyp t')
 	    val _        = if Type.isExtKind(Type.kind t2) then () else
