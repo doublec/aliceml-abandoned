@@ -20,9 +20,6 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 
 	fun sign (_, exportSign) = exportSign
 
-	fun apply () component =
-	    raise Crash.Crash "ComPlusTarget.apply: not implemented"
-
 	fun save () filename component =
 	    let
 		val ilFilename = filename ^ ".il"

@@ -43,9 +43,6 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 
 	fun sign (_, (_, (_, exportSign))) = exportSign
 
-	fun apply engine component =
-	    raise Crash.Crash "MozartTarget.apply: not implemented"
-
 	fun save engine filename component = (*
 	    MozartEngine.saveValue engine filename
 	    (MozartEngine.buildFunctor engine component) *) ()

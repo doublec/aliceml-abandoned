@@ -7,6 +7,5 @@ signature TARGET =
 
     val sign: t -> Sig.t
 
-    val apply: C.t -> t -> unit
     val save: C.t -> string -> t -> unit
   end
