@@ -59,7 +59,7 @@
     "STACK", "STACKARRAY", \
     "ROOTSETELEMENT", \
     "UNIQUESTRING", \
-    "THREAD", \
+    "THREAD", "TASKSTACK", \
     "CLOSURE", \
     "TUPLE", \
     "CONCRETE", \
