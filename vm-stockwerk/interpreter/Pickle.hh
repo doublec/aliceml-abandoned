@@ -43,7 +43,8 @@ public:
   enum instr {
     AppConst, AppPrim, AppVar, ConTest, EndHandle, EndTry, GetRef, GetTup,
     IntTest, Kill, PutCon, PutConst, PutFun, PutNew, PutRef, PutTag, PutTup,
-    PutVar, PutVec, Raise, RealTest, Return, StringTest, TagTest, Try, VecTest
+    PutVar, PutVec, Raise, RealTest, Return, Shared, StringTest, TagTest,
+    Try, VecTest
   };
 
   enum function {

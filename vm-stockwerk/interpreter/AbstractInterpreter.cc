@@ -137,7 +137,6 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
 // Execution
 //
 
-//--** reading operands: FromWord tests for transients, but we don't
 Interpreter::Result
 AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
   u_int nslots = nargs == -1? 1: nargs;
@@ -269,10 +268,14 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(1));
 	u_int nargs = idRefs->GetLength();
-	Tuple *tuple = Tuple::New(nargs);
-	for (u_int i = nargs; i--; )
-	  tuple->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
-	localEnv->Add(pc->Sel(0), tuple->ToWord());
+	if (nargs == 0) {
+	  localEnv->Add(pc->Sel(0), Store::IntToWord(0)); // unit
+	} else {
+	  Tuple *tuple = Tuple::New(nargs);
+	  for (u_int i = nargs; i--; )
+	    tuple->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
+	  localEnv->Add(pc->Sel(0), tuple->ToWord());
+	}
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
@@ -371,14 +374,20 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
     case Pickle::GetTup: // of idDef vector * idRef * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
-	Tuple *tuple = Tuple::FromWord(suspendWord);
-	if (tuple == INVALID_POINTER) SUSPEND(suspendWord);
 	Vector *idDefs = Vector::FromWord(pc->Sel(0));
-	Assert(tuple->GetWidth() == idDefs->GetLength());
-	for (u_int i = idDefs->GetLength(); i--; ) {
-	  TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-	  if (idDef != INVALID_POINTER) // IdDef id
-	    localEnv->Add(idDef->Sel(0), tuple->Sel(i));
+	u_int nargs = idDefs->GetLength();
+	if (nargs == 0) {
+	  if (Store::WordToInt(suspendWord) == INVALID_INT)
+	    SUSPEND(suspendWord);
+	} else {
+	  Tuple *tuple = Tuple::FromWord(suspendWord);
+	  if (tuple == INVALID_POINTER) SUSPEND(suspendWord);
+	  Assert(tuple->GetWidth() == idDefs->GetLength());
+	  for (u_int i = nargs; i--; ) {
+	    TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
+	    if (idDef != INVALID_POINTER) // IdDef id
+	      localEnv->Add(idDef->Sel(0), tuple->Sel(i));
+	  }
 	}
 	pc = TagVal::FromWord(pc->Sel(2));
       }
@@ -594,6 +603,11 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	  }
 	}
 	pc = TagVal::FromWord(pc->Sel(2));
+      }
+      break;
+    case Pickle::Shared: // of stamp * instr
+      {
+	pc = TagVal::FromWord(pc->Sel(1));
       }
       break;
     case Pickle::Return: // of idRef args
