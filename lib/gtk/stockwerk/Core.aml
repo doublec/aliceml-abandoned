@@ -164,7 +164,8 @@ struct
         *)
 	fun addDestroyEvent obj =
 	    let
-		fun event _ = List.app NativeCore.signalMapRemove
+		fun event _ = 
+		    List.app NativeCore.signalMapRemove
 		                       (NativeCore.signalMapGetConnIds obj)
 	    in
 		( doSignalConnect(obj,"destroy",event,true) ; () )
@@ -181,8 +182,6 @@ struct
 	    if obj = NULL then obj else
 	    let
 		val obj' = NativeCore.weakMapCondGet(obj,NULL)
-(*!		val _ = print "condget done.\n"
-		val _ = TextIO.flushOut TextIO.stdOut*)
 	    in
 		if obj' = NULL 
 		    then newObject obj 

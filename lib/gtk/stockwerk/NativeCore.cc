@@ -35,11 +35,15 @@ word push_front(word list, word value) {
 
 // convert a pointer to an object, and add it to the weak map if necessary
 inline word PointerToObjectRegister(void *p, int type) {
-  word obj = OBJECT_TO_WORD(p,type);
+  if (!p)
+    return OBJECT_TO_WORD(p);
   WeakMap *wd = WeakMap::FromWord(weakDict);
   word w = Store::UnmanagedPointerToWord(p);
-  if (p && (!wd->IsMember(w)))
-    wd->Put(w,obj);
+  if (wd->IsMember(w))
+    return wd->Get(w);
+  //g_message("ptor adding %p (type %d)", p, type);
+  word obj = OBJECT_TO_WORD(p,type);
+  wd->Put(w,obj);
   return obj;
 }
 
@@ -98,7 +102,6 @@ static inline word ButtonEvent(GdkEvent* event, int label) {
   t->Init(1, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
-  //  g_message("%d", ev->time);
   t->Init(4, INT_TO_WORD(ev->time));
   t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
@@ -132,7 +135,6 @@ static inline word CrossingEvent(GdkEvent* event, int label) {
   t->Init(3, BOOL_TO_WORD(ev->send_event));
   t->Init(4, INT_TO_WORD(ev->state));
   t->Init(5, PointerToObjectRegister(ev->subwindow,TYPE_G_OBJECT));
-  //  g_message("%d", ev->time);
   t->Init(6, INT_TO_WORD(ev->time));
   t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(8, REAL_TO_WORD(ev->x));
@@ -455,6 +457,7 @@ DEFINE0(NativeCore_getEventStream) {
 
 DEFINE3(NativeCore_signalMapAdd) {
   // x0 = connid to add, x1 = callback-fn, x2 = object
+  //g_message("adding signal #%d", Store::WordToInt(x0));
   Map::FromWord(signalMap)->Put(x0,x1);
 
   DECLARE_OBJECT(p,x2);
@@ -467,6 +470,7 @@ DEFINE3(NativeCore_signalMapAdd) {
 
 DEFINE1(NativeCore_signalMapRemove) {
   // x0 = connid to remove 
+  //g_message("removing signal #%d", Store::WordToInt(x0));
   Map::FromWord(signalMap)->Remove(x0);
   RETURN_UNIT;
 } END
@@ -498,22 +502,21 @@ public:
     int type = Store::WordToInt(t->Sel(1));
     __unrefObject(Store::WordToUnmanagedPointer(t->Sel(0)),
                   Store::WordToInt(t->Sel(1)));
-    g_message("finalized %p (type %d)", p, type);
+    //g_message("finalized %p (type %d)", p, type);
   }
 };
 
 DEFINE1(NativeCore_weakMapAdd) {
   // x0 = (pointer, type)
-  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  //g_message("adding Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   WeakMap::FromWord(weakDict)->Put(Tuple::FromWord(x0)->Sel(0),x0);  
-  //!  g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
+  //DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
+  //g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   RETURN_UNIT;
 } END
 
 DEFINE1(NativeCore_weakMapIsMember) {
   // x0 = (pointer, type)
-  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
+  //DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("is member? Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   RETURN(BOOL_TO_WORD
 	 (WeakMap::FromWord(weakDict)->IsMember(Tuple::FromWord(x0)->Sel(0))));
@@ -521,8 +524,6 @@ DEFINE1(NativeCore_weakMapIsMember) {
 
 DEFINE2(NativeCore_weakMapCondGet) {
   // x0 = (pointer, type), x1 = alternative  
-  WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1);
-  //!  g_message("condget");
   RETURN(WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1));
 } END
 
@@ -531,7 +532,6 @@ DEFINE2(NativeCore_weakMapCondGet) {
 
 DEFINE1(NativeCore_unrefObject) {
   DECLARE_OBJECT_WITH_TYPE(p,type,x0);
-  //! g_message("unreffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
   __unrefObject(p,type);  
   RETURN(x0);
 } END

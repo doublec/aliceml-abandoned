@@ -46,7 +46,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
-			     "gdk_pixbuf_new_from_xpm_data"]
+			     "gdk_pixbuf_new_from_xpm_data",
+			     "gdk_pixbuf_composite_color"]
 	      | Util.GNOMECANVAS => ["gnome_canvas_item_new",
 				     "gnome_canvas_join_gdk_to_art",
 				     "gnome_canvas_cap_gdk_to_art"]

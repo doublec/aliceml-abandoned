@@ -15,7 +15,6 @@ import structure Gtk         from "../Gtk"
 import structure Gdk         from "../Gdk"
 import structure GnomeCanvas from "../GnomeCanvas"
 import signature GtkBuilder  from "GtkBuilder-sig"
-import structure GtkCore from "../GtkCore"
 
 local
     datatype arg   = datatype Gtk.arg

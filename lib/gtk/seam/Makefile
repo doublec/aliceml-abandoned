@@ -89,10 +89,10 @@ $(INPUTFILE):
 compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.dll: %.o
-	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(CLIBS)` $< -o $@
+	$(ALICETOOL) -v ld -Wl,-S $< -o $@ `pkg-config --libs $(CLIBS)`
 
 %.o: %.cc
-	$(ALICETOOL) -v cc `pkg-config --cflags $(CLIBS)` -c $< -o $@
+	$(ALICETOOL) -v cc -c $< -o $@ `pkg-config --cflags $(CLIBS)`
 
 %.stc: %.aml
 	$(ALICEC) $< -o $@

@@ -162,10 +162,11 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		end
 
 		val retList = Util.makeTuple ", " "" (map makeOutArg outs)
+		val retList' = if retList = "" then "" else ("("^retList^")")
 	    in
 		val retLine = 
-		    [wrIndent, "RETURN_TUPLE",Int.toString (length outs),
-		               "(",retList,");\n"]
+		    [wrIndent, "RETURN", Int.toString (length outs),
+		               retList', ";\n"]
 	    end
 
             (* end line *)
