@@ -33,7 +33,7 @@ public:
     self = new LazyCompileInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, TagVal *abstractCode);
+  //static void PushFrame(TaskStack *taskStack, TagVal *abstractCode);
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
   virtual Result Run(TaskStack *taskStack);

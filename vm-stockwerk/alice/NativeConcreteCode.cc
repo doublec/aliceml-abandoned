@@ -28,20 +28,21 @@
 // LazyCompile Frame
 class LazyCompileFrame : private StackFrame {
 private:
-  static const u_int ABSTRACT_CODE_POS = 0;
-  static const u_int SIZE              = 1;
+  static const u_int CLOSURE_POS = 0;
+  static const u_int SIZE        = 1;
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
   // LazyCompileFrame Accessors
-  TagVal *GetAbstractCode() {
-    return TagVal::FromWordDirect(StackFrame::GetArg(ABSTRACT_CODE_POS));
+  Closure *GetClosure() {
+    return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
   }
   // LazyCompileFrame Constructor
-  static LazyCompileFrame *New(Interpreter *interpreter, TagVal *abstractCode) {
+  static LazyCompileFrame *New(Interpreter *interpreter,
+			       Closure *closure) {
     StackFrame *frame =
       StackFrame::New(LAZY_COMPILE_FRAME,interpreter, SIZE);
-    frame->InitArg(ABSTRACT_CODE_POS, abstractCode->ToWord());
+    frame->InitArg(CLOSURE_POS, closure->ToWord());
     return static_cast<LazyCompileFrame *>(frame);
   }
   // LazyCompileFrame Untagging
@@ -57,20 +58,17 @@ public:
 //
 LazyCompileInterpreter *LazyCompileInterpreter::self;
 
-void
-LazyCompileInterpreter::PushFrame(TaskStack *taskStack, TagVal *abstractCode) {
-  taskStack->PushFrame(LazyCompileFrame::New(self, abstractCode)->ToWord());
-}
-
 void LazyCompileInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
-  PushFrame(taskStack, TagVal::FromWordDirect(closure->Sub(0)));
+  taskStack->PushFrame(LazyCompileFrame::New(self, closure)->ToWord());
 }
 
 Interpreter::Result LazyCompileInterpreter::Run(TaskStack *taskStack) {
   LazyCompileFrame *frame =
     LazyCompileFrame::FromWordDirect(taskStack->GetFrame());
-  TagVal *abstractCode = frame->GetAbstractCode();
+  Closure *closure     = frame->GetClosure();
+  TagVal *abstractCode = TagVal::FromWordDirect(closure->Sub(0));
   taskStack->PopFrame(); // Discard Frame
+  NativeCodeJitter::currentClosure = closure->Sub(1);
   Scheduler::nArgs          = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = NativeCodeJitter::Compile(abstractCode)->ToWord();
   return Interpreter::CONTINUE;
@@ -95,8 +93,9 @@ public:
 LazyCompileClosure *LazyCompileClosure::New(TagVal *abstractCode) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(LazyCompileInterpreter::self, 0);
-  Closure *closure = Closure::New(concreteCode->ToWord(), 1);
+  Closure *closure = Closure::New(concreteCode->ToWord(), 2);
   closure->Init(0, abstractCode->ToWord());
+  // closure->Init(1, byneed) done in NativeConcreteCode::New
   return static_cast<LazyCompileClosure *>(closure);
 }
 
@@ -127,5 +126,8 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
 
 word NativeConcreteCode::New(TagVal *abstractCode) {
   Closure *closure = LazyCompileClosure::New(abstractCode);
-  return Byneed::New(closure->ToWord())->ToWord();
+  word byneed      = Byneed::New(closure->ToWord())->ToWord();
+  closure->Init(1, byneed);
+  return byneed;
 }
+

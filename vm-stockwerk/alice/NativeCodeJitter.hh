@@ -71,7 +71,7 @@ protected:
   static void RestoreRegister();
   static void PushCall(u_int Closure);
   static void DirectCall(Interpreter *interpreter);
-  static void TailCall(u_int Closure);
+  static void TailCall(u_int Closure, bool isSelf);
   static void BranchToOffset(u_int wOffset);
   static u_int GetRelativePC();
   static void SetRelativePC(word pc);
@@ -84,8 +84,9 @@ protected:
   static void KillVariables(word pc);
   static void BlockOnTransient(u_int Ptr, word pc);
   static void LookupTestTable(u_int Key, u_int table);
-  static void InlineAppInstr(INLINED_PRIMITIVE primitive, TagVal *pc);
-  static void NormalAppInstr(Closure *closure, TagVal *pc);
+  static void InlineAppPrim(INLINED_PRIMITIVE primitive, TagVal *pc);
+  static void NormalAppPrim(Closure *closure, TagVal *pc);
+  static void AppVar(TagVal *pc, bool isSelf);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
   static TagVal *InstrPutVar(TagVal *pc);
@@ -125,6 +126,7 @@ protected:
   static void CompileInstr(TagVal *pc);
   static Tuple *AllocateRegister(u_int nLocals, Tuple *liveness);
 public:
+  static word currentClosure; // Set by LazyCompile::Run 
   // NativeCodeJitter Static Constructor
   static void Init(u_int bufferSize);
   // NativeCodeJitter Methods
