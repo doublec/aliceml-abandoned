@@ -16,6 +16,7 @@
 
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"
+#include "generic/Tuple.hh"
 #include "generic/Unpickler.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/PrimitiveTable.hh"
