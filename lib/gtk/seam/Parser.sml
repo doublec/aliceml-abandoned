@@ -64,7 +64,7 @@ struct
     fun parseDecls decls ttab =
     let
 	(* Utility functions *)
-	fun showWarning s = print ("Parser: "^s^"\n")
+	fun showWarning s = () (*print ("Parser: "^s^"\n")*) (*only for debug*)
         fun toSmallInt (i,s) = (LargeInt.toInt i) handle _ => raise EIgnore s
 	fun parseList f memlist =
 	    foldr (fn (x,l) => ((f x)::l) handle EIgnore s=>(showWarning s; l))
