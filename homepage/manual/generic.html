@@ -1,0 +1,972 @@
+<?php
+  include("../project.html");
+
+  alice_project_header("Generic Services");
+?>
+<P>Some structure is needed here.
+</P>
+
+<?php pslab_header2("Scheduler") ?>
+
+<P>The scheduler controls the execution of concurrent threads.
+</P>
+
+<PRE>
+class Scheduler {
+public:
+  // Scheduler public data
+  static TaskStack *currentTaskStack; // Task stack
+  static word *stackTop;              // Task stack top
+  static word *stackMax;              // Task stack max
+  static u_int nArgs;                 // Number of arguments
+  static word currentArgs[maxArgs];   // Arguments
+  static word currentData;            // Transient or exception
+  static Backtrace *currentBacktrace; // Backtrace
+
+  static void Init();
+  static int Run();
+
+  static Thread *GetCurrentThread();
+  static u_int GetCurrentStackTop();
+
+  static Thread *NewThread(u_int nArgs, word args);
+  static Thread *NewThread(word closure, nArgs, word args);
+  static void ScheduleThread(Thread *thread);
+  static void WakeupThread(Thread *thread);
+  static void SuspendThread(Thread *thread);
+  static void ResumeThread(Thread *thread);
+
+  static void EnlargeTaskStack();
+  static StackFrame *PushFrame(u_int size);
+  static StackFrame *GetFrame();
+  static void PopFrame();
+  static void PopFrame(u_int size);
+
+  static void PushHandler(word data);
+  static void PopHandler();
+
+  static Worker::Result PushCall(word closure);
+};
+</PRE>
+<HR>
+<CENTER>Scheduler Interface</CENTER>
+
+<DL>
+  <DT><TT>Init()</TT>
+  </DT>
+  <DD><P>The static constructor.</P>
+  </DD>
+  <DT><TT>Run()</TT>
+  </DT>
+  <DD><P>This is the main function of the scheduler. It is invoked once
+      the core system has been initialized. It returnes only if the
+      currently running thread asks for system termination
+      via the <TT>EXIT</TT> message.</P>
+  </DD>
+  <DT><TT>GetCurrentThread()</TT>
+  </DT>
+  <DD><P>Returns the pointer of the thread object currently executed.</P>
+  </DD>
+  <DT><TT>GetCurrentStackTop()</TT>
+  </DT>
+  <DD><P>Returns the topmost index of the stack</P>.
+  </DD>
+  <DT><TT>NewThread(nArgs, args)<BR>
+          NewThread(closure, nArgs, args)</TT>
+  </DT>
+  <DD><P>Creates a new runnable thread and enqueues to the main thread
+         queue.
+        The latter variant also pushes a call to the closure <TT>closure</TT>
+         onto the task stack of the freshly created thread.</P>.
+  </DD>
+  <DT><TT>ScheduleThread(thread)</TT>
+  </DT>
+  <DD><P>Schedules the thread denoted by <TT>thread</TT>.</P>
+  </DD>
+  <DT><TT>WakeupThread(thread)</TT>
+  </DT>
+  <DD><P>Wakes up the thread denoted by <TT>thread</TT>.</P>
+  </DD>
+  <DT><TT>SuspendThread(thread)<BR>
+          ResumeThread(thread)</TT>
+  </DT>
+  <DD><P>Suspends/Resumes the thread denoted by <TT>thread</TT>.</P>
+  </DD>
+  <DT><TT>EnlargeTaskStack</TT>
+  </DT>
+  <DD><P>Enlarges the task stack of the currently executed thread by
+         factor 1,5.</P>
+  </DD>
+  <DT><TT>PushFrame(size)</TT>
+  </DT>
+  <DD><P>Creates a stack frame of size <TT>size</TT> on top of the task
+         stack of the currently executed thread.</P>
+  </DD>
+  <DT><TT>GetFrame()</TT>
+  </DT>
+  <DD><P>Returns the topmost stack frame of the task
+         stack of the currently executed thread.</P>
+  </DD>
+  <DT><TT>PopFrame()<BR>
+          PopFrame(size)</TT>
+  </DT>
+  <DD><P>Removes the topmost stack frame of the task
+         stack of the currently executed thread. The first variant
+         automatically computes the size of the stack frame,
+         whereas the latter takes <TT>size</TT> as input.</P>
+  </DD>
+  <DT><TT>PushHandler(data)<BR>
+          PopHandler()</TT>
+  </DT>
+  <DD><P>Pushes an exception handler frame for the topmost stack frame
+         of the currently executed thread. The <TT>data</TT> is stored
+         to be given as argument in case of a handle event.
+         <TT>PopHandler</TT> removes a previously installed exception
+         handler. Both functions operate on the exception handler stack
+         of the thread currently excuted.</P>
+  </DD>
+  <DT><TT>PushCall(closure)</TT>
+  </DT>
+  <DD><P>Pushes a call to the closure <TT>closure</TT> on top of the stack
+         of the currently executed thread. This function takes care of
+         requesting everything that is required in order to complete the
+         call.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Thread") ?>
+
+<P>
+Computation within a thread is orgnazed into tasks pushed on the task stack.
+In addition, each thread provides a exception handler stack allowing for
+constant time handling of exceptions.
+</P>
+
+<PRE>
+class Thread : private Block {
+public:
+  enum priority { HIGH, NORMAL, LOW };
+  enum state {BLOCKED, RUNNABLE, TERMINATED };
+
+  priority GetPriority();
+  state GetState();
+  bool IsSuspended();
+  TaskStack *GetTaskStack();
+  void SetTaskStack(TaskStack *taskStack);
+
+  word GetArgs(u_int & nArgs);
+  void SetArgs(u_int nArgs, word args);
+
+  void SetTerminated();
+  void BlockOn(word future);
+  word GetFuture();
+  void Wakeup();
+
+  StackFrame *PushFrame(u_int size);
+  void PushHandler(word data);
+  void PushHandler(u_int frame, word data);
+  void GetHandler(u_int & frame, word & data);
+  void PopHandler();
+  void Purge();
+
+  using Block::ToWord;
+  static Thread *New(u_int nArgs, word args);
+  static Thread *FromWord(word x);
+  static Thread *FromWordDirect(word x);
+};
+</PRE>
+<HR>
+<CENTER>Idealized Thread Interface</CENTER>
+
+<DL>
+  <DT><TT>GetPriority()</TT>
+  </DT>
+  <DD><P>Returns the pritority of the thread <TT>thread</TT>, which is one of
+      the following:<P>
+      <UL>
+        <LI><TT>HIGH</TT> denotes high pritority.
+        <LI><TT>NORMAL</TT> denotes normal priority.
+        <LI><TT>LOW</TT> denotes low priority.
+      </UL>
+      <P>The current implementation of SEAM only supports
+         normal priority threads.</P>
+  </DD>
+  <DT><TT>GetState()</TT>
+  </DT>
+  <DD><P>Returns the state of the thread <TT>thread</TT>, which is one of
+      the following:<P>
+      <UL>
+        <LI><TT>BLOCKED</TT> denotes that the thread blocks on a transient.
+        <LI><TT>RUNNABLE</TT> denotes that the thread can be executed.
+        <LI><TT>TERMINATED</TT> denotes that the thread has been terminated.
+      </UL>
+      <P></P>
+  </DD>
+  <DT><TT>IsSuspended()</TT>
+  </DT>
+  <DD><P>Returns a boolean value indicating whether the thread is suspended or
+         not.</P>
+  </DD>
+  <DT><TT>GetTaskStack()</TT>
+  </DT>
+  <DD><P>Returns the current task stack of the thread.</P>
+  </DD>
+  <DT><TT>SetTaskStack(taskStack)</TT>
+  </DT>
+  <DD><P>Updates the task stack associated with the thread.</P>
+  </DD>
+  <DT><TT>GetArgs(nArgs)<BR>
+          SetArgs(nArgs, args)</TT>
+  </DT>
+  <DD><P>Returns/Updates the arguments cached in the thread.
+         This is required to allow the seamless continuation
+         of previously interrupted computation.</P>
+  </DD>
+  <DT><TT>SetTerminated()</TT>
+  </DT>
+  <DD><P>Updates the thread state to <TT>TERMINATED</TT>.</P>
+  </DD>
+  <DT><TT>BlockOn(futures)</TT>
+  </DT>
+  <DD><P>Blocks the thread on the future <TT>future</TT>.</P>
+  </DD>
+  <DT><TT>GetFuture()</TT>
+  </DT>
+  <DD><P>Returns the future the thread currently blocks on.</P>
+  </DD>
+  <DT><TT>WakeUp()</TT>
+  </DT>
+  <DD><P>Wakes up a thread by setting its state to <TT>RUNNABLE</TT> again.</P>
+  </DD>
+  <DT><TT>PushFrame(size)</TT>
+  </DT>
+  <DD><P>Pushes a stack frame of size <TT>size</TT> on top of the threads
+         task stack.</P>
+  </DD>
+  <DT><TT>PushHandler(data)<BR>
+          PushHandler(frame, data)</BR>
+          PopHandler()</TT>
+  </DT>
+  <DD><P>Pushes a exception handler frame on the threads exception
+         handler stack, that is referring to the topmost stack frame of
+         the threads task stack. The latter variant installs a handler
+         that refers to the stack frame denoted by <TT>frame</TT>.
+         <TT>data</TT> is stored in the freshly created exception handler frame.
+      <TT>PopHandler</TT> pops the topmost exception handler from the
+      threads exception handler stack. Implementors must take care to
+      always pair calls to <TT>PushHandler</TT> and <TT>PopHandler</TT> or
+      ensure the raising of an exception.</P>
+  </DD>
+  <DT><TT>New(nArgs, args)</TT>
+  </DT>
+  <DD><P>Creates a new thread with <TT>nArgs</TT> cached
+         arguments stored in <TT>args</TT>.</P>
+  </DD>
+  <DT><TT>ToWord()<BR>
+          FromWord(x)</BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Conversion from/to tagged representation.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("TaskStack") ?>
+
+<P>The task stack provides a resizable array of flatly arranged stack frames.</P>
+
+<PRE>
+class TaskStack : private DynamicBlock {
+public:
+  using DynamicBlock::GetSize;
+  using DynamicBlock::GetArg;
+  using DynamicBlock::ReplaceArg;
+
+  static void Init();
+
+  u_int GetTop();
+  void SetTop(u_int top);
+  StackFrame *GetFrame(u_int index);
+
+  static TaskStack *New(u_int size);
+  static TaskStack *New();
+
+  TaskStack *Enlarge();
+  void Purge();
+  void Dump(u_int top);
+
+  using DynamicBlock::ToWord;
+  static TaskStack *FromWordDirect(word x);
+};
+</PRE>
+<HR>
+<CENTER>TaskStack Interface</CENTER>
+
+<DL>
+  <DT><TT>Init()</TT>
+  </DT>
+  <DD><P>Static constructor.</P>
+  </DD>
+  <DT><TT>GetTop()</TT>
+  </DT>
+  <DD><P>Returns the stack size.</P>
+  </DD>
+  <DT><TT>SetTop(top)</TT>
+  </DT>
+  <DD><P>Sets the stack size to <TT>top</TT>.</P>
+  </DD>
+  <DT><TT>GetFrame(index)</TT>
+  </DT>
+  <DD><P>Returns the stack frame located at index <TT>index</TT>.</P>
+  </DD>
+  <DT><TT>New(size)<BR>
+          New()</TT>
+  </DT>
+  <DD><P>Retuns a freshly allocated task stack with initial
+         size <TT>size</TT>. The latter variant uses a
+         implementation dependent default size.</P>
+  </DD>
+  <DT><TT>Enlarge()</TT>
+  </DT>
+  <DD><P>Returns a 1.5 times sized clone of the current task stack.</P>
+  </DD>
+  <DT><TT>Purge()</TT>
+  </DT>
+  <DD><P>Purges the task stack, that is, for every stack frame the <TT>Purge</TT>
+         method of the associated worker is invoked.</P>.
+  </DD>
+  <DT><TT>Dump(top)</TT>
+  </DT>
+  <DD><P>Dumps the content of the stack frame starting
+         from stack top <TT>top</TT>.</P>
+  </DD>
+  <DT><TT>ToWord()<BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Conversion from/to tagged representation.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("StackFrame (Task)") ?>
+
+<P>
+  SEAM stack frames are indices into the task stack array.
+  For convenience, however, they are temporarily
+  translated into object pointers that have limited scope. In particular,
+  these object pointers become invalid if the stack frame they refer to has
+  been popped from the stack. Thus, it is required to read all required stack
+  frame elements from the stack frame prior to popping it from the stack.
+</P>
+
+<PRE>
+class StackFrame {
+public:
+  void New(Worker *worker);
+  u_int GetSize();
+  Worker *GetWorker();
+  word GetArg(u_int pos);
+  void InitArg(u_int pos, s_int value);
+  void InitArg(u_int pos, word value);
+  void ReplaceArg(u_int pos, s_int value);
+  void ReplaceArg(u_int pos, word value);
+  word Clone();
+};
+
+#define NEW_STACK_FRAME(frame, worker, size) ...
+#define NEW_THREAD_STACK_FRAME(frame, thread, worker, size) ...
+</PRE>
+<HR>
+<CENTER>StackFrame Interface</CENTER>
+
+<DL>
+  <DT><TT>NEW_STACK_FRAME(frame, worker, size)<BR>
+  <DT>    NEW_THREAD_STACK_FRAME(frame, thread, worker, size)</TT>
+  </DT>
+  <DD><P>This macro creates a new stack frame on top of the task stack of the
+    current tread and introduces a new variable <TT>frame</TT> of type
+    <TT>StackFrame</TT>. The size of the frame is given by <TT>size</TT> and
+    the worker assigned to the freshly created
+    frame is denoted by <TT>worker</TT>. This macro implicitly invokes
+    the <TT>New</TT> constructor of the <TT>StackFrame</TT> class.
+    </P>
+    <P><TT>NEW_THREAD_STACK_FRAME</TT> behaves like <TT>NEW_STACK_FRAME</TT>
+       except that the task stack of thread <TT>thread</TT> is used.
+    </P>
+  </DD>
+  <DT><TT>GetSize()</TT>
+  </DT>
+  <DD><P>Returns the total size of the stack frame including the one field used
+      for the mandatory worker.</P>
+  </DD>
+  <DT><TT>GetWorker()</TT>
+  </DT>
+  <DD><P>Returns the worker object associated with the stack frame.</P>
+  </DD>
+  <DT><TT>GetArg(pos)</TT>
+  </DT>
+  <DD><P>Returns the value located at <TT>pos</TT> in the stack frame.</P>
+  </DD>
+  <DT><TT>InitArg(pos, value)<BR>
+          ReplaceArg(pos, value)</TT>
+  </DT>
+  <DD><P>Initializes/Overwrites the <TT>pos</TT>-th field of the stack frame
+         with value <TT>value</TT>.</P>
+  </DD>
+  <DT><TT>Clone()</TT>
+  </DT>
+  <DD><P>Returns the a first class clone of the stack frame.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Worker") ?>
+
+<P>Execution in SEAM is modelled through the worker indirection. That is,
+   for the topmost stack frame on the task stack of the currently executed thread
+   the scheduler invokes the <TT>Run</TT> or <TT>Handle</TT> method of the
+   worker object stored in the stack frame. Computation proceeds according
+   to the message returned by the invoked method.
+</P>
+<P>The worker is used for computations that do not involve execution of
+   language specific code as for example the pickler and unpickler.
+</P>
+
+<PRE>
+class Worker {
+public:
+  enum Result { CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE, EXIT };
+  Worker();
+
+  static void Construct();
+  static u_int Deconstruct();
+
+  virtual u_int GetFrameSize(StackFrame *sFrame) = 0;
+  virtual void PurgeFrame(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame) = 0;
+  virtual Result Handle(word data);
+  virtual const char *Identify() = 0;
+  virtual void DumpFrame(StackFrame *sFrame) = 0;
+};
+</PRE>
+<HR>
+<CENTER>Worker Interface</CENTER>
+
+<DL>
+  <DT><TT>Construct</TT>
+  </DT>
+  <DD><P>SEAM supports arity raising by means of runtime calling convention
+         conversion, that is, the explicit construction/deconstruction of
+         arguments. If <TT>Scheduler::nArgs</TT> denotes a value greater than
+         one this function constructs a tuple containing the arguments stored in
+         <TT>Scheduler::currentArgs</TT> and rewrites the argument registers
+         accordingly.</P>
+  </DD>
+  <DT><TT>Deconstruct</TT>
+  </DT>
+  <DD><P>SEAM supports arity raising by means of runtime calling convention
+         conversion, that is, the explicit construction/deconstruction of
+         arguments. This function tries to deconstruct the tuple given as
+         first argument. In case the tuple needs to be requested, the function
+         returns one, with <TT>Scheduler::currentData</TT>
+         set as a side effect. Otherwise, the function returns zero to indicate
+         successful deconstruction.</P>
+  </DD>
+  <DT><TT>GetFrameSize(sFrame)</TT>
+  </DT>
+  <DD><P>This function returns the size of the stack frame denoted by
+         <TT>sFrame</TT>.</P>
+  </DD>
+  <DT><TT>PurgeFrame(sFrame)</TT>
+  </DT>
+  <DD><P>This function implements the purging of the stack frame denoted by
+         <TT>sFrame</TT>. It defaults to the noop function.</P>
+  </DD>
+  <DT><TT>Run(sFrame)</TT>
+  </DT>
+  <DD><P>This function implements the regular execution
+         associated with the stack frame denoted by <TT>sFrame</TT>.
+         After computation succeeded, it indicates on of the following
+         conditions to the scheduler:</P>
+         <UL>
+           <LI><TT>CONTINUE</TT>: Computation proceeds normally.
+           <LI><TT>PREEMPT</TT>: The current threads time slice is spent.
+           <LI><TT>SUSPEND</TT>: The current thread needs to be suspended.
+           <LI><TT>RAISE</TT>: An exception has occured and needs to be raised.
+           <LI><TT>REQUEST</TT>: A transient needs to be requested.
+           <LI><TT>TERMINATE</TT>: The current thread shall  be terminated.
+           <LI><TT>EXIT</TT>: The main loop of the scheduler shall be exited.
+         </UL>
+         <P></P>
+  </DD>
+  <DT><TT>Handle(sFrame)</TT>
+  </DT>
+  <DD><P>This function implements the exception handling
+         associated with the stack frame denoted by <TT>sFrame</TT>.
+         It defaults to the usual reraising function. A handler is free
+         to decide how to proceed computation.
+         See <TT>Run</TT> for possible return values.</P>
+  </DD>
+  <DT><TT>Identify()</TT>
+  </DT>
+  <DD><P>This function returns a c string containing symbolic identification
+         information.</P>
+  </DD>
+  <DT><TT>DumpFrame(sFrame)</TT>
+  </DT>
+  <DD><P>This functions implements the dump function of assiciated with the
+         stack frame. This function will be used by the default exception handler
+         to construct a exception backtrace.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Interpreter") ?>
+
+<P>The interpreter extends the worker interface with language code execution,
+   in particular the creation of a new closure-specific activation record
+   on the task stack and argument passing support.
+</P>
+
+<PRE>
+class Interpreter : public ConcreteRepresentationHandler, public Worker {
+public:
+  Interpreter();
+
+  typedef Result (*function)();
+
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
+  virtual void PushCall(Closure *closure) = 0;
+  virtual u_int GetInArity(ConcreteCode *concreteCode) = 0;
+  virtual u_int GetOutArity(ConcreteCode *concreteCode) = 0;
+  virtual function GetCFunction();
+};
+</PRE>
+<HR>
+<CENTER>Interpreter Interface</CENTER>
+
+<DL>
+  <DT><TT>Interpreter()</TT>
+  </DT>
+  <DD><P>Constructor.</P>
+  </DD>
+  <DT><TT>PushCall(closure)</TT>
+  </DT>
+  <DD><P>Implements the construction of a activation record on the task stack
+         of the currently executed thread for the
+         closure denoted by <TT>closure</TT>.</P>
+  </DD>
+  <DT><TT>GetInArity(closure)</TT>
+  </DT>
+  <DD><P>Returns the number of input arguments of the
+         closure denoted by <TT>closure</TT>. Returns <TT>INVALID_INT</TT>
+         to signal unknown.</P>
+  </DD>
+  <DT><TT>GetOutArity(closure)</TT>
+  </DT>
+  <DD><P>Returns the number of output arguments of the
+         closure denoted by <TT>closure</TT>. Returns <TT>INVALID_INT</TT>
+         to signal unknown.</P>
+  </DD>
+  <DT><TT>GetCFunction()</TT>
+  </DT>
+  <DD><P>Returns the function associated with the interpreter,
+         with <TT>NULL</TT> indicating that there is no such function.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Internal and External Representations") ?>
+
+<P>SEAM supports the notion of concrete, that is internal,
+   and abstract, that is serializable, representation.
+   This is implemented by means of the <TT>ConcreteRepresentation</TT> that
+   is associated with a handler that implements the type specific
+   conversion to the abstract representation, if any.
+</P>
+<P>
+   The abstract representation consists of a pair of a name and a value and
+   is named <TT>Tranform</TT>. The name will be used by the unpickler to
+   apply the appropriate internalization function associated with this name.
+</P>
+
+<PRE>
+class ConcreteRepresentationHandler {
+public:
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *) = 0;
+};
+
+class Transform : private Block {
+public:
+  static Transform *New(Chunk *name, word argument);
+
+  Chunk *GetName();
+  word GetArgument();
+
+  using Block::ToWord;
+  static Transform *FromWord(word x);
+  static Transform *FromWordDirect(word x);
+};
+
+class ConcreteRepresentation : private Block {
+public:
+  static ConcreteRepresentation *New(ConcreteRepresentationHandler *handler, u_int size);
+
+  ConcreteRepresentationHandler *GetHandler();
+  u_int GetSize();
+  void Init(u_int index, word value);
+  void Replace(u_int index, word value);
+  word Get(u_int index);
+
+  using Block::ToWord;
+  static ConcreteRepresentation *FromWord(word x);
+  static ConcreteRepresentation *FromWordDirect(word x);
+};
+</PRE>
+<HR>
+<CENTER>ConcreteRepresenationHandler, Transform and ConcreteRepresentation Interface</CENTER>
+
+<DL>
+  <DT><TT>GetAbstractRepresentation(concreteRepresentation)</TT>
+  </DT>
+  <DD><P>This abstract function modelles the transformation from an concrete
+         representation to an serializable abstract representation.
+         Returning an <TT>INVALID_POINTER</TT> denotes that the object cannot
+         be serialized.</P>
+  </DD>
+  <DT><TT>New(handler, size)</TT>
+  </DT>
+  <DD><P>Returns a freshly allocated concrete representation object that provides
+         <TT>size</TT> data fields and is associated with <TT>handler</TT>.
+         Note that the handler must be a non-null pointer.</P>
+  </DD>
+  <DT><TT>GetHandler()</TT>
+  </DT>
+  <DD><P>Returns the abstract transformation handler associated with the concrete
+         representation.</P>
+  </DD>
+  <DT><TT>GetSize()</TT>
+  </DT>
+  <DD><P>Returns the number of data fields available.</P>
+  </DD>
+  <DT><TT>Init(index, value)<BR>
+          Replace(index, value)<BR>
+          Get(index)</TT>
+  </DT>
+  <DD><P>The usual data field accessors.</P>
+  </DD>
+  <DT><TT>ToWord()<BR>
+          FromWord(x)</BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Conversion from/to tagged representation.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("ConcreteCode") ?>
+
+<P>The concrete code is the generic code container.
+   Its main task is to specify access to the interpreter
+   responsible for executing code.
+   Code is derived from a concrete representation to support
+   the runtime conversion from internal to external representation.
+</P>
+
+<PRE>
+class ConcreteCode : private ConcreteRepresentation {
+public:
+  static ConcreteCode *New(Interpreter *interpreter, u_int size);
+
+  Interpreter *GetInterpreter();
+
+  using ConcreteRepresentation::Init;
+  using ConcreteRepresentation::Get;
+
+  using ConcreteRepresentation::ToWord;
+  static ConcreteCode *FromWord(word x);  
+  static ConcreteCode *FromWordDirect(word x);  
+};
+</PRE>
+<HR>
+<CENTER>ConcreteCode Interface</CENTER>
+
+<DL>
+  <DT><TT>New(interpreter, size)</TT>
+  </DT>
+  <DD><P>Returns a freshly allocated concrete code object of size <TT>size</TT>
+         that is associated with interpreter <TT>interpreter</TT>.</P>
+  </DD>
+  <DT><TT>GetInterpreter()</TT>
+  </DT>
+  <DD><P>Returns the interpreter associated with the concrete code object.</P>
+  </DD>
+  <DT><TT>Init(index, value)<BR>
+          Get(index)</TT>
+  </DT>
+  <DD><P>The usual data field accessors.</P>
+  </DD>
+  <DT><TT>ToWord()<BR>
+          FromWord(x)</BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Conversion from/to tagged representation.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Closure") ?>
+
+<P>The closure allows to associate data with code, a common
+   pattern in functional programming languages.</P>
+
+<PRE>
+class Closure : private Block {
+public:
+  static Closure *New(word concreteCode, u_int size);
+
+  word GetConcreteCode();
+  void SetConcreteCode(word concreteCode);
+
+  u_int GetSize();
+  void Init(u_int index, word value);
+  void Update(u_int index, s_int value);
+  void Update(u_int index, word value);
+  word Sub(u_int index);
+
+  using Block::Toword;
+  static Closure *FromWord(word x);
+  static Closure *FromWordDirect(word x);
+};
+</PRE>
+<HR>
+<CENTER>Closure Interface</CENTER>
+
+<DL>
+  <DT><TT>New(concreteCode, size)</TT>
+  </DT>
+  <DD><P>Returns a freshly allocated closure with <TT>size</TT> data fields
+         that is associated with concrete code <TT>concreteCode</TT>.</P>
+  </DD>
+  <DT><TT>GetConcreteCode()<BR>
+          SetConcreteCode(concreteCode)</TT>
+  </DT>
+  <DD><P>Returns/Updates the concrete code associated with the closure.</P>
+  </DD>
+  <DT><TT>GetSize()</TT>
+  </DT>
+  <DD><P>Returns the number of data fields available.</P>
+  </DD>
+  <DT><TT>Init(index, value)<BR>
+          Update(index, value)<BR>
+          Sub(index)</TT>
+  </DT>
+  <DD><P>The usual data field accessors. The integer variants are present
+         for optimization reasons.</P>.
+  </DD>
+  <DT><TT>ToWord()<BR>
+          FromWord(x)</BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Conversion from/to tagged representation.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("RootSet") ?>
+
+<P>The <TT>RootSet</TT> is a convenience abstraction allowing for
+   static variables to be added to the root set.</P>
+
+<PRE>
+class RootSet {
+public:
+  static void Init();
+  static void Add(word & root);
+  static void Remove(Word & root);
+  static void DoGarbageCollection();
+};
+</PRE>
+<HR>
+<CENTER>RootSet Interface</CENTER>
+
+<DL>
+  <DT><TT>Init()</TT>
+  </DT>
+  <DD><P>Static constructor.</P>
+  </DD>
+  <DT><TT>Add(root)</TT>
+  </DT>
+  <DD><P>Adds <TT>root</TT> to the root set.</P>
+  </DD>
+  <DT><TT>Remove(root)</TT>
+  </DT>
+  <DD><P>Removes <TT>root</TT> from the root set.</P>
+  </DD>
+  <DT><TT>DoGarbageCollection()</TT>
+  </DT>
+  <DD><P>Performs garbage collection with respect to the defined root set.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Broker") ?>
+
+<P>The broker is reponsible for loading different language layers and provides
+   a  method to share arbitrary store
+   values between languages based on string identifiers.
+   It does not, however, provide language-specific value conversion.</P>
+
+<PRE>
+class Broker {
+public:
+  static word BrokerError;
+
+  static void Init();
+  
+  static void Start(String *languageId, int argc, char *argv[]);
+  static Worker::Result Load(String *languageId, String *key = NULL);
+
+  static void Register(String *name, word value);
+  static word Lookup(String *name);
+};
+
+</PRE>
+<HR>
+<CENTER>Broker Interface</CENTER>
+
+<DL>
+  <DT><TT>Init()</TT>
+  </DT>
+  <DD><P>Static constructor.</P>
+  </DD>
+  <DT><TT>Start(languageId, argc, argv)</TT>
+  </DT>
+  <DD><P>This method starts a language layer denoted by <TT>languageId</TT>
+         by invoking the <TT>Start</TT> method of the language layer
+         with the SEAM process arguments passed to it.
+         In case the language layer cannot be started, the SEAM process exits
+         with the error condition given.</P>
+  </DD>
+  <DT><TT>Load(languageId, key)</TT>
+  </DT>
+  <DD><P>This method loads a language layer denoted by <TT>languageId</TT>,
+         with the opional argument key passed to the <TT>Load</TT> function
+         of the language layer.
+         In case of failure, the exception <TT>BrokerError</TT> is raised.</P>
+  </DD>
+  <DT><TT>Register(name, value)</TT>
+  </DT>
+  <DD><P>Enters the value denoted by <TT>value</TT> into the shared values
+         table using key <TT>key</TT>.</P>
+  </DD>
+  <DT><TT>Lookup(name)</TT>
+  </DT>
+  <DD><P>Tries to lookup the value stored under key <TT>key</TT> in the
+         shared values table. In case of failure, a implementation dependent
+         default value is returned.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("The Unpickler") ?>
+
+<P>As noted above, SEAM supports the notion of
+   internal and external representation. Externalized representions
+   that require a different internal representation are stored as transforms,
+   that is, a pair consisting of a name and the external representation of the
+   value.
+   Tthe unpickler now works with respect to a mapping of names
+   to internalization handlers. Each time
+   a transform is encountered, the corresponding name will be used to perform
+   the lookup in the handler map. If an entry exists, the result of the
+   application of the handler to the external representation will be linked
+   into the value graph in place of the transform. Note that internalization
+   handlers must return a concrete representation
+   to allow for appropriate serialization again.
+</P>
+
+<PRE>
+class Unpickler {
+public:
+  static word Corrupt;
+
+  static void Init();
+
+  typedef word (*handler)(word);
+  static void RegisterHandler(String *name, handler handler);
+
+  static Worker::Result Unpack(String *string);
+  static Worker::Result Load(String *filename);
+};
+</PRE>
+<HR>
+<CENTER>Unpickler Interface</CENTER>
+
+<DL>
+  <DT><TT>Corrupt</TT>
+  </DT>
+  <DD><P>The exception that will be raised in case the unpickler encounters
+         an error.</P>
+  </DD>
+  <DT><TT>Init()</TT>
+  </DT>
+  <DD><P>The static constructor.</P>
+  </DD>
+  <DT><TT>RegisterHandler(name, handler)</TT>
+  </DT>
+  <DD><P>Registers the handler <TT>handler</TT> under name <TT>name</TT>.
+         Each time, the pickler encounteres a transform with the same name,
+         it applies the registered handler to the external representation.
+      </P>
+      <P>The current implementation does not support multiple handlers stored
+         under the same name. Instead, the old handler will be overwritten.
+      </P>
+  </DD>
+  <DT><TT>Unpack(string)</TT>
+  </DT>
+  <DD><P>If successful, stores the restored value read from the string into
+         the first argument register of the scheduler.</P>
+  </DD>
+  <DT><TT>Load(filename)</TT>
+  </DT>
+  <DD><P>If successful, stores the restored value read from the
+         file denoted by <TT>filename</TT> into
+         the first argument register of the scheduler.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("The Pickler") ?>
+
+<P>The pickler creates an bytecode program from any pickable store values.
+</P>
+
+<PRE>
+class Pickler {
+public:
+  static word Sited;
+
+  static void Init();
+
+  static Worker::Result Pack(word x);
+  static Worker::Result Save(String *filename, word x);
+};
+</PRE>
+<HR>
+<CENTER>Pickler Interface</CENTER>
+
+<DL>
+  <DT><TT>Sited</TT>
+  </DT>
+  <DD><P>The <TT>Sited</TT> exception is raised by the pickler whenever a
+      non serializable value is encountered. For example, this is the case
+      if the externalization of a concrete represenation returns an
+      <TT>INVALID_POINTER</TT>.
+  </DD>
+  <DT><TT>Init()</TT>
+  </DT>
+  <DD><P>The static constructor.</P>
+  </DD>
+  <DT><TT>Pack(x)</TT>
+  </DT>
+  <DD><P>If successful, the resulting bytecode program created from value
+         <TT>x</TT> is returned as a string in the first argument register.</P>
+  </DD>
+  <DT><TT>Save(filename, x)</TT>
+  </DT>
+  <DD><P>If successful, the resulting bytecode program created from value
+         <TT>x</TT> is stored into the file denoted by <TT>filename</TT>.</P>
+  </DD>
+</DL>
+
+<?php pslab_footer("Webmaster"); ?>

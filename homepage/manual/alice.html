@@ -1,0 +1,744 @@
+<?php
+  include("../project.html");
+
+  alice_project_header("The Alice Language Layer");
+?>
+<P>
+  This chapter explains how to effectively use the services offered by SEAM
+  by means of a real world language layer. The presentation is focused on the
+  design aspects and does not include full code. The full source
+  code can be downloaded as part of the Alice Source tree from
+  <A href="http://www.ps.uni-sb.de/alice/download.html#cvs">here</A>.
+</P>
+<?php pslab_header2("What is Alice?"); ?>
+<P>
+Alice is a functional programming language based on Standard ML,
+extended with support for concurrent, distributed, and constraint programming.
+Alice extends Standard ML with several new features: 
+</P>
+
+<UL>
+<LI><EM>Laziness:</EM> combining strict and transparent
+lazy functional programming 
+<LI><EM>Futures:</EM> "logic variables" and concurrency 
+<LI><EM>Higher-order modules:</EM> a more powerful module language 
+<LI><EM>Components:</EM> platform-independence and type-safe dynamic
+loading of modules 
+<LI><EM>Packages:</EM> integrating static with dynamic
+typing and first class modules 
+<LI><EM>Pickling:</EM> higher-order and platform-independent,
+type-safe persistence 
+<LI><EM>Constraints:</EM>
+solving combinatorical problems using constraints and programmable search 
+</UL>
+
+<P>For more detailed information, see the
+<A href="http://www.ps.uni-sb.de/alice/">Alice Homepage</A>.
+
+<?php pslab_header2("Overview"); ?>
+<P>
+  In order to build the Alice language layer on top of SEAM,
+  several steps are required:
+</P>
+<UL>
+  <LI>The Alice data model (including code!) is modelled on top of the store.
+  <LI>Alice code execution is modelled on top of the generic execution model.
+  <LI>Alice abstract platform services like builtins and the
+      boot linker are modelled on top of SEAM generic services.
+  <LI>Alice pickling is modelled on top of SEAM pickling by
+      providing a set of Alice specific internalization handlers.
+  <LI>The Alice FFI is modelled on top of SEAM's FFI. All we need to do
+      is to define the marshalling of the newly defiend alice types and the
+      native compilation unit interface model (assumed by the boot linker).
+  <LI>The Alice language layer main module needs to be defined.
+</UL>
+<P>Given this, the Alice VM becomes <TT>seam.exe alice.dll args...</TT>.
+</P>
+<?php pslab_header2("Alice Data Model"); ?>
+
+<P>
+  Standard ML runtimes usually are implemented using full type-erasure,
+  that is, nothing of the ML static type information
+  remains visible at runtime level.
+  The same applies to the Alice language layer, conventiently
+  obliviating the need to know about ML types on store data level.
+</P>
+<P>On runtime level, we have to model the following scalar types:</P>
+<UL>
+  <LI>Alice characters: mapped to store integers
+  <LI>Alice integers: mapped to store integers
+  <LI>Alice reals: mapped to store doubles
+  <LI>Alice strings: mapped to store string
+</UL>
+<P>On runtime level, we have to model the following composed types:</P>
+<UL>
+  <LI>Alice cells: built <TT>Cell</TT> datatype on top of store.
+  <LI>Alice arrays: built <TT>Array</TT> datatype on top of store.
+  <LI>Alice Vector: built <TT>Vector</TT> datatype on top of store.
+  <LI>Alice algebraic data types:
+      built <TT>TagVal</TT> and <TT>BigTagVal</TT> datatypes on top of store.
+  <LI>Alice constructed values:
+      built <TT>Constructor</TT> and <TT>ConVal</TT> datatypes on top of store.
+  <LI>Alice function closures: mapped to store closures.
+  <LI>Alice unevaluated components: mapped to store closures.
+  <LI>Alice evaluated compoments: built <TT>Record</TT> type on top of store.
+</UL>
+<PRE>
+// Define labels of Alice data types
+class Alice {
+public:
+  static const BlockLabel Array   = MIN_DATA_LABEL;
+  static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 1);
+  static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 2);
+  static const BlockLabel Record  = (BlockLabel) (MIN_DATA_LABEL + 3);
+  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 4);
+  static const BlockLabel BIG_TAG = (BlockLabel) (MIN_DATA_LABEL + 5);
+  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 6);
+  static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
+  ...
+};
+
+// Define the data types
+class AliceDll Array : private Block { ... };
+class AliceDll Cell : private Block { ... };
+class AliceDll Constructor : private ConcreteRepresentation { ... };
+class AliceDll ConVal : private Block { ... };
+class AliceDll TagBal : private Block { ... };
+class AliceDll BigTagVal : private Block { ...};
+class AliceDll UniqueConstructor : public Constructor { ... };
+class AliceDll Vector : private Block { ... };
+class AliceDll Word8Array : private String { ... };
+class AliceDll Word8Vector : private string { ... };
+class AliceDll Record : private Block { ... };
+class AliceDll BigInt : private Chunk { ... };
+</PRE>
+<HR>
+<CENTER>Complete list of Alice datastructures (found in <TT>Data.hh</TT>)</CENTER>
+
+<P>Alice algebraic datatypes are represented as store blocks that are given
+an appropriate alternative number. By default, the tag field of the store
+is used that severly limits the number of possible alternatives
+(for example 128 on 32-bit implementations).
+To circumvent this an additional implementation is provided that
+uses an extra field to store the
+alternative number.
+Static type information allows for proper disambiguation
+of the implementation used. The types are called <TT>TagTal</TT> and
+<TT>BigTagVal</TT>, respectively.
+</P>
+
+<P>For documentary purposes, the full implementation of the array datatype
+   is shown below:</P>
+<PRE>
+class AliceDll Array : private Block {
+private:
+  enum { LENGTH_POS, BASE_SIZE };
+public:
+  static const u_int maxLen = MAX_BIGBLOCKSIZE - BASE_SIZE;
+
+  using Block::ToWord;
+
+  static Array *New(u_int length) {
+    Block *b = Store::AllocBlock(Alice::Array, BASE_SIZE + length);
+    b->InitArg(LENGTH_POS, length);
+    return STATIC_CAST(Array *, b);
+  }
+  static Array *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Array);
+    return STATIC_CAST(Array *, b);
+  }
+  static Array *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::Array);
+    return STATIC_CAST(Array *, b);
+  }
+
+  u_int GetLength() {
+    return Store::DirectWordToInt(GetArg(LENGTH_POS));
+  }
+  void Init(u_int index, word value) {
+    InitArg(BASE_SIZE + index, value);
+  }
+  void Update(u_int index, word value) {
+    ReplaceArg(BASE_SIZE + index, value);
+  }
+  word Sub(u_int index) {
+    return GetArg(BASE_SIZE + index);
+  }
+};
+</PRE>
+<P>The basic procedure is simple: select a unique label for the data type,
+   derive from the appropriate base class, provide your own constructor and
+   tag conversion and finally provide the requires accessors.
+   In case you need to provide internal and external representation, it
+   is required to derive from the <TT>ConcreteRepresentation</TT> base class.
+   More details will be explained later.
+<P>Remember that each store block is guaranteed only to be at least
+   of the size requested. It might be larger as well. Therefore, it is required
+   (as for example for arrays and vectors) to additionally store
+   the requested size in case this is needed because the
+   default <TT>GetSize()</TT> will return the effective block size.
+   However, for a statically typed language like Alice most datatypes do not
+   need to store their exact size as their size is statically known.
+</P>
+<P>You might have noted the <TT>AliceDll</TT> flag. This is to provide the
+   appropriate DLL import/exports declarations on Windows and defaults to
+   the empty string on Unix-like operating systems.</P>
+
+<?php pslab_header2("Alice Code Execution"); ?>
+
+<P>This section highlights the design ideas of alice code
+and how its execution is implemented on top of SEAM.
+</P>
+
+<?php pslab_header3("Code Design Ideas"); ?>
+
+<P>Alice is a functional language.
+Apart from the goals of genericity and simplicity,
+six central design decisions were made for its code representation:
+</P>
+<UL>
+<LI>Code is data, that is, modelled on top of the SEAM store
+<LI>Recursive function calls are expressed through identifiers
+<LI>Loops are translated into recursive function calls
+<LI>Control-flow is represented explicitly (in particular, control flow joins)
+<LI>Identifier liveness information is exact
+<LI>Minimize the number of different instructions by using primitives instead.
+This decision relies on the fact that static type information
+often allows for easy runtime optimization of these constructs
+as part of the transformation process.
+</UL>
+<P>
+Alice code is represented as a directed acyclic graph that is
+well suited for the needs of runtime transformation, in particular runtime
+compilation to native code.
+The DAG representation is defined to be the external representation of the code.
+The current implementation supports two internal representations of Alice code:
+</P>
+<UL>
+<LI>The abstract code itself which is then interpreted
+(optionally with debug annotations)
+<LI>Runtime-compiled native code.
+</UL>
+<P>In support for efficient runtime compilation, the code representation is
+extended with an annotations field that carries
+statically pre-computed information to speed up runtime processing.
+In particar, this includes approximated identifier liveness information suitable
+as input to linear-scan register allocation.
+</P>
+<P>
+Note that storing code as a DAG in the first place together with
+explicit control flow information removes the need for clumsily
+reconstructing this information from plain byte code at runtime.
+</P>
+<?php pslab_header3("Implementation"); ?>
+<P>Implementing (Alice) code and its execution requires several steps to be done:
+</P>
+<UL>
+<LI>Define the code itself:
+Alice code is defined a regular algebraic datatype in Alice,
+therefore code is of type <TT>TagVal</TT> on runtime level.
+<LI>We need to provide our own <TT>ConcreteCode</TT>
+to use the runtime transformation offered by SEAM pickling.
+<LI>We need to provide our own interpreter together with its own stack frame
+</UL>
+<P>
+Below the code snippets for the interpreted concrete representation are shown:
+</P>
+<PRE>
+class AliceDll AliceConcreteCode : private ConcreteCode {
+private:
+  enum { ABSTRACT_CODE_POS, TRANSFORM_POS, SIZE };
+public:
+  static word New(TagVal *abstractCode);
+
+  TagVal *GetAbstractCode();
+  Transform *GetAbstractRepresentation();
+  void Disassemble(std::FILE *file);
+
+  using Block::ToWord;
+  static AliceConcreteCode *FromWord(word x);
+  static AliceConcreteCode *FromWordDirect(word x);
+};
+
+class AbstractCodeFrame : public StackFrame {
+protected:
+  enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
+public:
+  class Environment : private Array {
+  public:
+    using Array::ToWord;
+    void Add(word id, word value);
+    word Lookup(word id);
+    void Kill(word id, TagVal *pc, Closure *globalEnv);
+    static Environment *New(u_int size);
+    static Environment *FromWordDirect(word x);
+  };
+  // AbstractCodeFrame Accessors
+  u_int GetSize();
+  bool IsHandlerFrame();
+  TagVal *GetPC();
+  void SetPC(TagVal *pc);
+  Closure *GetClosure();
+  Environment *GetLocalEnv();
+  Vector *GetFormalArgs();
+  void SetFormalArgs(word formalArgs);
+  // AbstractCodeFrame Constructor
+  static AbstractCodeFrame *New(Interpreter *interpreter, word pc, Closure *closure, Environment *env, word formalArgs);
+};
+
+class AbstractCodeInterpreter : public Interpreter {
+private:
+  AbstractCodeInterpreter(): Interpreter() {}
+public:
+  static AbstractCodeInterpreter *self;
+  static void Init();
+  // See Interpreter interface for details
+  ...
+  virtual Result Run(StackFrame *sFrame);
+  ...
+};
+</PRE>
+<P>So far, only interfaces have been shown. Now we will show some of the
+method bodies:
+</P>
+<PRE>
+word AliceConcreteCode::New(TagVal *abstractCode) {
+  abstractCode->AssertWidth(AbstractCode::functionWidth);
+  ConcreteCode *concreteCode =
+    ConcreteCode::New(AbstractCodeInterpreter::self, SIZE);
+  Chunk *name =
+    Store::DirectWordToChunk(AliceLanguageLayer::TransformNames::function);
+  Transform *transform = Transform::New(name, abstractCode->ToWord());
+  concreteCode->Init(ABSTRACT_CODE_POS, abstractCode->ToWord());
+  concreteCode->Init(TRANSFORM_POS, transform->ToWord());
+  return concreteCode->ToWord();
+}
+
+static AbstractCodeFrame *New(Interpreter *interpreter, word pc, Closure *closure, Environment *env, word formalArgs) {
+  NEW_STACK_FRAME(frame, interpreter, SIZE);
+  frame->InitArg(PC_POS, pc);
+  frame->InitArg(CLOSURE_POS, closure->ToWord());
+  frame->InitArg(LOCAL_ENV_POS, env->ToWord());
+  frame->InitArg(FORMAL_ARGS_POS, formalArgs);
+  return STATIC_CAST(AbstractCodeFrame *, frame);
+}
+
+// This is shown to give the reader an impression on how computation on SEAM
+// works. It will not be explained in detail.
+Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
+  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  Assert(sFrame->GetWorker() == this);
+  TagVal *pc = frame->GetPC();
+  Closure *globalEnv = frame->GetClosure();
+  AbstractCodeFrame::Environment *localEnv = frame->GetLocalEnv();
+  Vector *formalArgs = frame->GetFormalArgs();
+  ...
+  while (true) {
+  loop:
+    switch (AbstractCode::GetInstr(pc)) {
+    ...
+    case AbstractCode::PutVar: // of id * idRef  * instr
+      {
+	localEnv->Add(pc->Sel(0), GetIdRefKill(pc->Sel(1), pc,
+					       globalEnv, localEnv));
+	pc = TagVal::FromWordDirect(pc->Sel(2));
+      }
+      break;
+    ...
+    case AbstractCode::Raise: // of idRef
+      {
+	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Transient *transient = Store::WordToTransient(requestWord);
+	if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
+	KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
+	Scheduler::currentData = requestWord;
+	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	return Worker::RAISE;
+      }
+      break;
+    ...
+    default:
+      Error("AbstractCodeInterpreter::Run: unknown instr tag");
+    }
+  }
+}
+</PRE>
+<P> In case of the native code, things are analog except for one complication.
+The native concrete code at first consists of a so-called byneed value that
+encapulates the actual runtime compilation. Once the byneed is requested,
+the runtime compilation takes place and finally the byneed is
+bound to the resulting real native concrete code. Remember that reference
+chains of bound transients are eventually cut by SEAM's garbage collector.
+</P>
+<P>The main task of the runtime compiler consists of detecting special
+cases related to function application, in particular the elimination of
+unnecessary invokations of <TT>Scheduler::PushCall</TT>.
+Native functions are invoked directly and important
+primitives are inlined once enough context information is available to the
+runtime compiler.
+</P>
+
+<?php pslab_header2("Alice Pickling"); ?>
+
+<P>Alice pickling is built on top of SEAM pickling by defining the following
+   transforms:
+</P>
+<UL>
+<LI><TT>"Alice.function"</TT>: Defines how Alice functions are represented,
+in particular their code body.
+<LI><TT>"Alice.primitive.function"</TT>: Defines how Alice primitives are
+represented. Primitives are functions implementing native functionality that is
+part of the abstract platform.
+<LI><TT>"Alice.primitive.value"</TT>: Similar to primitive functions, but for
+certain values.
+<LI><TT>"Alice.constructor"</TT>: Used for representing unique constructors.
+</UL>
+<P>Setting up a transform is easy, for example <TT>Alice.function</TT>:
+</P>
+<PRE>
+  ...
+  static word AliceFunctionHandler(word x) {
+    TagVal *abstractCode = TagVal::FromWordDirect(x);
+    return AliceLanguageLayer::concreteCodeConstructor(abstractCode);
+  }
+  ...
+  String *aliceFunction = String::New("Alice.function");
+  TransformNames::function = aliceFunction->ToWord();
+  RootSet::Add(TransformNames::function);
+  Unpickler::RegisterHandler(aliceFunction, AliceFunctionHandler);
+  ...
+</PRE>
+<P>In the example above, the <TT>AliceLanguageLayer::concreteCodeConstructor</TT>
+of course has to do the main work of creating the internal represenation.
+The point here is that registering your own handlers all you need to do
+to "teach" SEAM pickling your language specific representation transformations.
+In the current implementation, the concrete code constructor either points
+to <TT>AliceConcreteCode::New</TT> or <TT>NativeConcreteCode::New</TT>,
+depending on the users selection.
+</P>
+
+<?php pslab_header2("Alice BootLinker"); ?>
+
+<P>
+Alice language components are implemented as a pair consisting of a interface
+(called signature) and a structure implementing this interface.
+The Alice VM now needs a initial way of obtaining Alice components at runtime,
+which is performed by the Alice BootLinker. Its interface is shown below.
+</P>
+<PRE>
+struct AliceDll NativeComponent {
+  const char *name;
+  word (*init)();
+};
+
+class AliceDll Component: private Block {
+private:
+  static const u_int ENTRY_LABEL = MIN_DATA_LABEL;
+  enum { SIGN_POS, STR_POS, SIZE };
+public:
+  word GetSign();
+  word GetStr();
+
+  static Component *New(word sign, word str);
+  static Component *FromWordDirect(word entry);
+  using Block::ToWord;
+};
+
+class AliceDll BootLinker {
+private:
+  static word componentTable;
+  static word keyQueue;
+  static u_int numberOfEntries;
+  static ChunkMap *GetComponentTable();
+public:
+  static void Init(NativeComponent *nativeComponents);
+  static Queue *GetKeyQueue();
+  static u_int GetNumberOfEntries();
+  static void EnterComponent(String *key, word sign, word str);
+  static Component *LookupComponent(String *key);
+  static void Link(String *url);
+  static void Link(Thread *thread, String *url);
+};
+</PRE>
+<DL>
+  <DT><TT>Init(nativeComponents)</TT></DT>
+  <DD>
+    <P>The boot linker is initialized with a set of native components
+       that will be evaluated and entered in the glboal component table.
+    </P>
+  </DD>
+  <DT><TT>EnterComponent(key, sign, str)</TT>
+  <DD>
+    <P>Enters an evaluated component into the global components table.
+       It will be accessible under key <TT>key</TT> and the components
+       signature and structure are denoted by <TT>sign</TT>
+       and <TT>str</TT>, respectively.
+    </P>
+  </DD>
+  <DT><TT>LookupComponent(key)</TT></DT>
+  <DD>
+    <P>Performs a component lookup using key <TT>key</TT>.
+       Indicates failure by returning <TT>INVALID_POINTER</TT>.
+    </P>
+  </DD>
+  <DT><TT>LinkComponent(url)<BR>
+          LinkComponent(thread, url)</TT></DT>
+  <DD>
+    <P>Tries to link the component denoted by url <TT>url</TT>.
+       In case linking succeeds, the resulting component will be entered
+       into the component table.
+       The latter alternative tries to link currently within the thread denoted
+       by <TT>thread</TT>.
+    </P>
+  </DD>
+</DL>
+
+<P>The Alice boot linker is fully implemented on top of SEAM, however,
+a bit lengthy because of a bunch of side conditions to be tested for.
+Since it requires a lot of understanding of the Alice component model, only the
+boot linker interface is shown for explanatory purposes.
+</P>
+
+<?php pslab_header2("Alice FFI"); ?>
+
+<?php pslab_header3("Example"); ?>
+
+<P>The Alice FFI corresponds to the
+<A href="http://www.ps.uni-sb.de/seam/manual/ffi.html">SEAM FFI</A>
+except that Alice defines its own component interface.
+It is best understood by looking first at an
+example, the <TT>AliceTimer</TT> component:
+<PRE>
+#include "Alice.hh"
+
+static double startTime;
+
+DEFINE0(Timer_start) {
+  // Time::GetElapsedMicroseconds is part of the public SEAM interface
+  startTime = Time::GetElapsedMicroseconds();
+  RETURN_UNIT;
+} END
+
+DEFINE0(Timer_check) {
+  double curTime = Time::GetElapsedMicroseconds();
+  double result = (curTime - startTime) / 1000.0;
+  RETURN(Store::IntToWord(static_cast<int>(result)));
+} END
+
+word InitComponent() {
+  Record *record = Record::New(2);
+  INIT_STRUCTURE_N(record, "AliceTimer", "start",
+		   Timer_start, 0, 1);
+  INIT_STRUCTURE_N(record, "AliceTimer", "check",
+		   Timer_check, 0, 1);
+  RETURN_STRUCTURE("AliceTimer$", record);
+}
+</PRE>
+<P>Similar to the SEAM FFI, components need to include <TT>Alice.hh</TT> to
+get started. Defining functions is unchanged except for some more pre-defined
+data types.
+</P>
+</P>Alice component interfaces are records to allow for runtime
+pruning and merging of fields which takes place as part of type coercions.
+You need to allocate a record whith a sufficient number of slots,
+equaling the number of entities you wish to export. No ordering applies
+to the entries since access is performed by name via hashing.
+</P>
+<P>
+Alice native components are compiled using <TT>alicetool</TT> which
+is a wrapper for <TT>seamtool</TT> that takes care of adding the
+appropriate include pathes.
+</P>
+
+<?php pslab_header3("Declaring Arguments"); ?>
+
+<P>Argument declarations are transient-aware, that is, will request their
+arguments in order to obtain the untagged representation.
+</P>
+<DL>
+  <DT><TT>DECLARE_ARRAY(array, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes an alice array,
+       whose value is bound to <TT>array</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_BOOL(boolVal, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a bolean,
+       whose value is bound to <TT>boolVal</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_CELL(cell, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a reference cell,
+       whose value is bound to <TT>cell</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_CONVAL(conVal, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a constructed value,
+       whose value is bound to <TT>conVal</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_REAL(realVal, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a real,
+       whose value is bound to <TT>realVal</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_RECORD(record, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a alice record,
+       whose value is bound to <TT>record</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_TAGVAL(tagVal, var)<BR>
+          DECLARE_BIGTAGVAL(tagVal, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a (big) tag value,
+       whose value is bound to <TT>tagVal</TT>. Note that you need to know
+       what type of tag value is expected as they are not interchangable.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_THREAD(tread, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a SEAM thread,
+       whose value is bound to <TT>thread</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_VECTOR(vector, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a vector,
+       whose value is bound to <TT>vector</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_WORD8VECTOR(vector, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a word 8 vector,
+       whose value is bound to <TT>vector</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_LIST(tagVal, length, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a list of length
+       <TT>length</TT>, whose head is bound to <TT>tagVal</TT>. Does not
+       work for infinite lists.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header3("Returning Values"); ?>
+
+<P>In addition to the standard <TT>RETURN(value)</TT> from SEAM, the following
+conventience macros are defined:
+</P>
+<DL>
+  <DT><TT>RETURN_BOOL(boolVal)</TT></DT>
+  <DD>
+    <P>Returns a boolean value.</P>
+  </DD>
+  <DT><TT>RETURN_REAL(realVal)</TT></DT>
+  <DD>
+    <P>Returns a real value.</P>
+  </DD>
+  <DT><TT>RETURN_UNIT</TT></DT>
+  <DD>
+    <P>Returns unit.</P>
+  </DD>
+</DL>
+
+<?php pslab_header3("Creating the Interface"); ?>
+
+<DL>
+  <DT><TT>INIT_STRUCTURE_N(record, componentName, fieldName, function, inArity, outArity)</TT></DT>
+  <DD>
+    <P>Populates a slot in the record denoted by <TT>record</TT>,
+       with <TT>componentName.fieldName</TT> the resulting path of the
+       entry. <TT>inArity</TT> denotes the number of arguments of the function
+       denoted by <TT>function</TT>, and <TT>outArity</TT> the number of
+       return values.
+    </P>
+  </DD>
+  <DT><TT>INIT_STRUCTURE(record, componentName, fieldName, function, inArity)</TT></DT>
+  <DD>
+    <P>Corresponds to <TT>INIT_STRUCTURE_N(record, componentName, fieldName, function, inArity, 1)</TT>.</P>
+  </DD>
+  <DT><TT>RETURN_STRUCTURE(label, record)</TT></DT>
+  <DD>
+    <P>Returns the structure denoted by <TT>record</TT> under label
+       <TT>label</TT>. Note that it is policy to provide a non-Alice print
+       name, such as <TT>name$</TT>, with <TT>name</TT> the component name.</P>
+  </DD>
+</DL>
+<?php pslab_header2("Alice Primitives"); ?>
+
+<P>Primitives are native functions or values that are part of the abstract
+Alice platform. The differ from regular FFI functions only in that they provide
+an abstract representation. Alice primitives are managed in a global
+PrimitiveTable. This table is used by the corresponding
+<TT>Alice.primitive.function</TT>
+and <TT>Alice.primitive.value</TT> transform to obtain
+the internal representation.
+The code snipped shown below shows how these primitives
+are registered.
+</P>
+
+<PRE>
+class AliceDll PrimitiveTable {
+private:
+  static word valueTable;
+  static word functionTable;
+  static void Register(const char *name, word value);
+  static void Register(const char *name,
+		       Interpreter::function value,
+		       u_int inArity, u_int outArity = 1);
+  ...
+  void RegisterFuture();
+  ...
+  static word LookupValue(Chunk *name);
+  static word LookupFunction(Chunk *name);
+};
+
+void PrimitiveTable::Register(const char *name,
+			      Interpreter::function value,
+			      u_int inArity, u_int outArity) {
+  word transformName = AliceLanguageLayer::TransformNames::primitiveFunction;
+  Transform *abstract =
+    Transform::New(Store::DirectWordToChunk(transformName),
+		   String::New(name)->ToWord());
+  word function =
+    Primitive::MakeFunction(name, value, inArity, outArity, abstract);
+  word closure = Closure::New(function, 0)->ToWord();
+  Register(name, closure);
+  ChunkMap::FromWordDirect(functionTable)->
+    Put(String::New(name)->ToWord(), function);
+}
+
+// Defined in appropriate primitive module (here the Future module)
+DEFINE1(Future_await) {
+  if (Store::WordToTransient(x0) != INVALID_POINTER) {
+    REQUEST(x0);
+  } else {
+    RETURN(x0);
+  }
+} END
+
+void PrimitiveTable::RegisterFuture() {
+...
+  Register("Future.await", Future_await, 1);
+...
+}
+
+// Defined in language layer main file
+static word AlicePrimitiveValueHandler(word x) {
+  return PrimitiveTable::LookupValue(Chunk::FromWordDirect(x));
+}
+
+static word AlicePrimitiveFunctionHandler(word x) {
+  return PrimitiveTable::LookupFunction(Chunk::FromWordDirect(x));
+}
+</PRE>
+
+<?php pslab_footer("Webmaster"); ?>

@@ -1,0 +1,43 @@
+<?php
+  include("project.html");
+
+  alice_project_header("Downloading SEAM");
+?>
+
+<P>
+  Currently only download via anonymous CVS is offered.
+</P>
+
+<H2>Anonymous CVS</H2>
+
+
+<P><B>Warning:</B> It is quite likely that development snapshots might have
+bugs, they might not even build! You are basically on your own.</P>
+
+<H3>CVS information</H3>
+
+<PRE class=code>
+CVSROOT:  :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS
+Module:   seam
+Password: anoncvs</PRE>
+
+
+<H3>Example session</H3>
+
+<P>An example session to check out the whole SEAM source tree
+   might look as follows:</P>
+
+<PRE class=code>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS login
+(Logging in to anoncvs@cvs.ps.uni-sb.de)
+CVS password: anoncvs
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get seam</PRE>
+
+<!--
+<P>From the CVS repository you can also access the released version:</P>
+
+<PRE class=code>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-0-9-3 alice</PRE>
+-->
+
+<?php pslab_footer("Webmaster"); ?>
