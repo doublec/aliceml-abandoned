@@ -498,11 +498,8 @@ structure CodeGen =
 
 	(* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
 	 Funktionsparameters ist. *)
-	fun classNameFromId (Id(_,stamp',ExId name')) = Class.getInitial()^"$class"^name'^(Stamp.toString stamp')
-	  | classNameFromId (Id (_,stamp',InId)) = Class.getInitial()^"$class"^(Stamp.toString stamp')
-
-	fun classNameFromStamp stamp' =
-	    Class.getInitial()^"$class"^(Lambda.getName stamp')
+	fun classNameFromStamp stamp' = Class.getInitial()^"$class"^(Stamp.toString stamp')
+	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
 	(* Einstiegspunkt *)
 	fun genProgramCode (name, program) =
@@ -984,11 +981,9 @@ structure CodeGen =
 		    if stamp'=(stampFromId (Lambda.getId
 					    (Lambda.top())))
 			then (* Zugriff auf die aktuelle
-			      Funktion. Bei dynamischen Methoden
-			      steht diese in Register 0, bei
-			      statischen im Feld
-			      actualClass/instance *)
-			    [Getself (classNameFromId (Lambda.getId (Lambda.top()))^"/instance")]
+			      Funktion. Diese steht in Register 0. *)
+			    (Lambda.noSapply ();
+			     [Aload 0])
 		    else
 			if FreeVars.getFun stamp' = Lambda.top ()
 			    (* Falls stamp' im aktuellen Lambda gebunden
@@ -1166,7 +1161,7 @@ structure CodeGen =
 		     (*                      - freie Variablen aus Register mit putfields versenken *)
 		     (* 2. Klasse erzeugen *)
 		     let
-			 val className = classNameFromId id'
+			 val className = classNameFromStamp stamp'
 			 val freeVarList = FreeVars.getVars id'
 			 (*		val _ = annotateTailExp exp'*)
 			 (* 1. *)
@@ -1453,7 +1448,8 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 
 		(* die ganze Klasse *)
 		val class = Class([CPublic],className,
-				  CFcnClosure,fieldscode,
+				  CFcnClosure,
+				  fieldscode,
 				  (applY::init::
 				   (if Lambda.sapplyPossible () then
 					[sapply]
