@@ -102,10 +102,19 @@ define
    
    class LabelNode from OzLabelNode
       meth layoutX($)
-	 XDim = @xDim
+	 XDim   = @xDim
+	 Value  = @value
+	 String = if {IsAtom Value}     then {Atom.toString Value}
+		  elseif {IsName Value} then
+		     case {System.printName Value}
+		     of '' then {Atom.toString '<N:>'}
+		     [] PN then {VirtualString.toString '<N:'#PN#'>'}
+		     end
+		  else Value
+		  end
       in
 	 if {IsFree XDim}
-	 then XDim = ({VirtualString.length {ConvertAtom {Atom.toString @value} @string}} + 1)
+	 then XDim = ({VirtualString.length {ConvertAtom String @string}} + 1)
 	 end
 	 XDim
       end
