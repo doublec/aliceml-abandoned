@@ -77,20 +77,19 @@ protected:
     Assert(n < GetNumberOfElements());
     Block *array = GetArray();
     u_int size = array->GetSize();
+    word *base = array->GetBase();
     u_int readIndex = GetReadIndex();
     u_int index = readIndex + n;
-    if (index >= size)
+    if (index >= size) { // wrap-around layout: shorten queue at end
       index -= size;
-    word *base = array->GetBase();
-    if (index >= readIndex) { // shorten queue at beginning
+      u_int writeIndex = GetWriteIndex();
+      std::memmove(base + index, base + index + 1,
+		   (writeIndex - index - 1) * sizeof(word));
+      SetWriteIndex(writeIndex - 1);
+    } else { // shorten queue at beginning
       std::memmove(base + readIndex + 1, base + readIndex,
 		   (index - readIndex) * sizeof(word));
       SetReadIndex(readIndex + 1);
-    } else { // shorten queue at end
-      u_int writeIndex = GetWriteIndex();
-      std::memmove(base + index, base + index + 1,
-		   (writeIndex - index) * sizeof(word));
-      SetWriteIndex(writeIndex - 1);
     }
   }
 public:
