@@ -662,7 +662,6 @@ struct
 						     treemode_button,
 						     relmode_button,
 						     tokenmode_button)   ))]),
-		       BObj("apply",[]),
 		       BObj("cancel",
 			    [Handler("clicked",fn _ => 
 				     widgetDestroy(w))])],
@@ -672,7 +671,7 @@ struct
 				   ("Mode Settings",radiobox)  ,
 				    ("Appearance",app_table)   ] 
 
-	    val vbox = createVBoxDefaults[n,bbox]
+	    val vbox = createVBox[(n,false,false,0),(bbox,true,true,1)]
 		in
 		    (windowSetTitle (w, "Preferences")
 		    ;windowSetPolicy(w,0,0,1)

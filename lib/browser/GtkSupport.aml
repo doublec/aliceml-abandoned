@@ -248,7 +248,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    in
 		(Gtk.containerSetBorderWidth(bbox,b)
 		 ;Gtk.buttonBoxSetLayout(bbox,
-					 Gtk.BUTTONBOX_END)
+					 Gtk.BUTTONBOX_SPREAD)
 		 ; List.app (fn b => Gtk.containerAdd(bbox,
 					   (createButton b))) l
 		 ; bbox)
