@@ -1,6 +1,6 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 
-final public class DMLName implements DMLValue {
+public class DMLName implements DMLValue {
 
     String name = null;
     GName gName = null;

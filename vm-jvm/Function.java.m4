@@ -1,4 +1,4 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 
 abstract public class DMLFunction implements DMLValue {
     public DMLFunction() {

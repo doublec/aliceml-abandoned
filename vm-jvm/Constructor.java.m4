@@ -1,4 +1,4 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 
 final public class DMLConstructor implements DMLValue {
 
@@ -34,7 +34,7 @@ final public class DMLConstructor implements DMLValue {
     }
 
     final public DMLValue apply(DMLValue val) {
-	return new DMLConVal(this,val);
+	return new ConVal(this,val);
     }
 
     final public DMLValue getValue() {

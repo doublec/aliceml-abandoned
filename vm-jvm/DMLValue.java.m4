@@ -1,4 +1,4 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 /** Darstellung von Werten in DML. Klassen, die Werte in DML repräsentieren,
     müssen dieses Interface implementieren.
 */

@@ -1,4 +1,4 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 /** Diese Klasse repräsentiert DMLThreads.
  *  Threads sind First-Class; indem das Interface <code>DMLValue</code>
  *  implementiert wird, können sie wie andere Werte in DML verwendet werden.

@@ -1,6 +1,6 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 
-final public class DMLRecord extends DMLTuple {
+final public class DMLRecord extends Tuple {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 

@@ -1,67 +1,19 @@
-package de.uni_sb.ps.DML.DMLRuntime;
+package de.uni_sb.ps.dml.runtime;
 
-final public class DMLConVal implements DMLValue {
+public interface DMLConVal extends DMLValue {
 
-    DMLValue content=null;
+    /** liefert den Inhalt */
+    public DMLValue getContent();
 
-    DMLConstructor constructor=null;
+    /** liefert den Constructor */
+    public DMLConstructor getConstructor();
 
-    public DMLConVal(DMLConstructor constructor, DMLValue content) {
-	super();
-	this.constructor = constructor;
-	this.content = content;
-    }
+    /** wird nur bei Ref funktionieren */
+    public DMLValue assign(DMLValue val);
 
-    /** Gleichheit der  und Inhalte */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLConVal) &&
-	    (this.constructor == ((DMLConVal)val).constructor) &&
-	    this.content.equals(((DMLConVal)val).content);
-    }
-
-    final public DMLValue getContent() {
-	return content;
-    }
-
-    /** setzt Wert auf val und gibt alten Wert zurueck */
-    final public DMLValue assign(DMLValue val) {
-	if (this.constructor == DMLConstants.reference) {
-	    DMLValue v=this.content;
-	    this.content=val;
-	    return DMLConstants.dmlunit;
-	}
-	else
-	    return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
-    }
-
-    final public String toString() {
-	return constructor+"("+content+") : constructed value";
-    }
-
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
-    }
-
-    final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
-    }
-
-    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	if (this.constructor == DMLConstants.reference)
-	    DMLConstants.runtimeError.apply(new DMLString("cannot pickle referencev")).raise();
-	else
-	    out.defaultWriteObject();
-    }
-
-    final public DMLConstructor getConstructor() {
-	return constructor;
-    }
+    public DMLValue get0();
+    public DMLValue get1();
+    public DMLValue get2();
+    public DMLValue get3();
+    public DMLValue get4();
 }
