@@ -62,10 +62,17 @@ public:
     u_int newtop = (top - fsize);
     Block *a     = GetArray();
 
-    Assert(top > fsize);
+    Assert(top >= fsize);
     SetTop(newtop);
     // Needs to move more than one argument
     a->InitArg((newtop - 1), a->GetArg(top - 1));
+  }
+  void ClearArgFrameZero(u_int fsize) {
+    u_int top    = GetTop();
+    u_int newtop = (top - fsize);
+
+    Assert(top >= fsize);
+    SetTop(newtop);
   }
   void AllocFrame(u_int fsize) {
     u_int top  = GetTop();
@@ -136,7 +143,7 @@ public:
     u_int top = GetTop();
     u_int pos = (top - 1 - f);
     
-    Assert(top > f + 1);
+    Assert(top >= (f + 1));
     return GetArray()->GetArg(pos);
   }
   word GetAbsoluteArg(u_int f) {
@@ -147,15 +154,15 @@ public:
     u_int top = GetTop();
     u_int pos = (top - 1 - f);
     
-    Assert(top > f + 1);
-    return GetArray()->ReplaceArg(pos, v);
+    Assert(top >= (f + 1));
+    GetArray()->ReplaceArg(pos, v);
   }
   void PutFrameArg(u_int f, int v) {
     u_int top = GetTop();
     u_int pos = (top - 1 - f);
     
-    Assert(top > f + 1);
-    return GetArray()->InitArg(pos, v);
+    Assert(top >= (f + 1));
+    GetArray()->InitArg(pos, v);
   }
   word Pop() {
     u_int top = (GetTop() - 1);
@@ -165,6 +172,17 @@ public:
     Assert(a->GetLabel() == STACKARRAY_LABEL);
     word value = a->GetArg(top);
 
+    SetTop(top);
+    return value;
+  }
+  word SlowPop() {
+    u_int top = (GetTop() - 1);
+    Block *a  = GetArray();
+
+    // Assert(top >= 0);
+    Assert(a->GetLabel() == STACKARRAY_LABEL);
+    word value = a->GetArg(top);
+    a->InitArg(top, 0);
     SetTop(top);
     return value;
   }
