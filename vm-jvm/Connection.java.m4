@@ -16,8 +16,8 @@ final public class Connection {
     static Exporter exp = null;
     static java.util.Random rand = null;
 
-    final public static class Offer extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
+    _BUILTIN(Offer) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Connection.offer");
 	    java.net.InetAddress i=null;
 	    try {
@@ -55,27 +55,27 @@ final public class Connection {
 	    }
 	    java.lang.String ticket = Long.toString(rand.nextLong());
 	    export.put(ticket,args[0]);
-	    return new de.uni_sb.ps.dml.runtime.String(i.getHostAddress()+"\\"+ticket);
+	    return new STRING (i.getHostAddress()+"\\"+ticket);
 	}
     }
+    /** val offer : value -> ticket */
+    _FIELD(Connection,offer);
 
-    final public static Offer offer = new Offer();
-
-    final public static class Take extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
+    _BUILTIN(Take) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Connection.take");
 	    DMLValue t = args[0].request();
-	    if (!(t instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error(`"argumetn not String"',val);
+	    if (!(t instanceof STRING)) {
+		_error("argument not String",val);
 	    }
-	    java.lang.String ti = ((de.uni_sb.ps.dml.runtime.String) t).getString();
+	    java.lang.String ti = ((STRING) t).getString();
 	    java.lang.String ip = ti.substring(0,ti.indexOf('\\'));
 	    java.lang.String ticket = ti.substring(ti.indexOf('\\')+1);
 	    Exporter exp = null;
 	    try {
 		exp = (Exporter) Naming.lookup("//"+ip+"/exporter");
 	    } catch (java.rmi.NotBoundException n) {
-		return _error(`"ticket not bound"',val);
+		_error("ticket not bound",val);
 	    } catch (java.net.MalformedURLException m) {
 		System.err.println(m);
 		m.printStackTrace();
@@ -84,6 +84,6 @@ final public class Connection {
 	    return (DMLValue) exp.get(ticket);
 	}
     }
-
-    final public static Take take = new Take();
+    /** val take : ticket -> value */
+    _FIELD(Connection,take);
 }

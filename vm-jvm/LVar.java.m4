@@ -74,7 +74,7 @@ public class LVar extends UnicastRemoteObject
 	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */
     final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
-	Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle LVar")).raise();
+	_RAISE(runtimeError,new STRING ("cannot pickle LVar"));
     }
 
     _raise ;

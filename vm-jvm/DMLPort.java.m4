@@ -17,8 +17,6 @@ public interface DMLPort extends Remote, DMLValue {
 
     public DMLValue apply(DMLValue val) throws RemoteException;
 
-    public DMLValue raise() throws RemoteException;
-
     public DMLValue send(DMLValue msg) throws RemoteException;
 
     public DMLValue recieve() throws RemoteException;

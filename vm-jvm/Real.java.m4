@@ -9,7 +9,7 @@ package de.uni_sb.ps.dml.runtime;
 /** Diese Klasse repräsentiert Real.
  *  @see Int
  *  @see SCon
- *  @see de.uni_sb.ps.dml.runtime.String
+ *  @see STRING 
  *  @see DMLValue
  *  @see Word
  */
@@ -56,11 +56,11 @@ final public class Real extends SCon {
 	    _fromTuple(args,val,2,"Real.+");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 1 not Real",val);
+		_error("argument 1 not Real",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 2 not Real",val);
+		_error("argument 2 not Real",val);
 	    }
 	    return new
 		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() +
@@ -75,11 +75,11 @@ final public class Real extends SCon {
 	    _fromTuple(args,val,2,"Real.-");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 1 not Real",val);
+		_error("argument 1 not Real",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 2 not Real",val);
+		_error("argument 2 not Real",val);
 	    }
 	    return new
 		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() -
@@ -95,11 +95,11 @@ final public class Real extends SCon {
 	    _fromTuple(args,val,2,"Real.*");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 1 not Real",val);
+		_error("argument 1 not Real",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 2 not Real",val);
+		_error("argument 2 not Real",val);
 	    }
 	    return new
 		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() *
@@ -114,11 +114,11 @@ final public class Real extends SCon {
 	    _fromTuple(args,val,2,"Real./");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 1 not Real",val);
+		_error("argument 1 not Real",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
-		return _error("argument 2 not Real",val);
+		_error("argument 2 not Real",val);
 	    }
 	    return new
 		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Real) v).getFloat() /
@@ -158,11 +158,11 @@ final public class Real extends SCon {
 	_APPLY(val) { 
 	    _fromTuple(args,val,1,"Real.fromString");
 	    DMLValue r = args[0].request();
-	    if (!(r instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 1 not String",val);
+	    if (!(r instanceof STRING)) {
+		_error("argument 1 not String",val);
 	    }
 	    try {
-		java.lang.String sf = ((de.uni_sb.ps.dml.runtime.String) r).getString();
+		java.lang.String sf = ((STRING) r).getString();
 		float f = Float.parseFloat(sf);
 		return Option.SOME.apply(new de.uni_sb.ps.dml.runtime.Real(f));
 	    } catch (NumberFormatException n) {

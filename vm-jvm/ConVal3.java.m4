@@ -75,13 +75,8 @@ final public class ConValTuple3 implements DMLConVal {
 	}
     }
 
-    final public DMLValue assign(DMLValue val) {
-	try {
-	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot assign "+val+" to "+this)).raise();
-	} catch (java.rmi.RemoteException r) {
-	    System.out.println(r);
-	    return null;
-	}
+    final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
+	_RAISE(runtimeError,new STRING ("cannot assign "+val+" to "+this));
     }
 
     final public java.lang.String toString() {

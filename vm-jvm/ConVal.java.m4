@@ -74,19 +74,15 @@ final public class ConVal implements DMLConVal {
     }
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
-    final public DMLValue assign(DMLValue val) {
+    final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
 	if (this.constructor == Constants.reference) {
 	    DMLValue v=this.content;
 	    this.content=val;
 	    return Constants.dmlunit;
 	}
-	else
-	    try {
-		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot assign "+val+" to "+this)).raise();
-	    } catch (java.rmi.RemoteException r) {
-		System.err.println(r);
-		return null;
-	    }
+	else {
+	    _RAISE(runtimeError,new STRING ("cannot assign "+val+" to "+this));
+	}
     }
 
     final public java.lang.String toString() {
@@ -95,7 +91,7 @@ final public class ConVal implements DMLConVal {
 
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
 	if (this.constructor == Constants.reference)
-	    Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle referencev")).raise();
+	   _RAISE(runtimeError,new STRING ("cannot pickle referencev"));
 	else
 	    out.defaultWriteObject();
     }

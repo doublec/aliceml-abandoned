@@ -23,7 +23,7 @@ public class Future extends LVar {
 
     /** bind ist nicht erlaubt und wirft RuntimeError */
     public DMLValue bind(DMLValue v)  throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot bind future to "+v)).raise();
+	_RAISE(runtimeError,new STRING ("cannot bind future to "+v));
     }
 
     public java.lang.String toString() {

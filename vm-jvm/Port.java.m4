@@ -38,31 +38,18 @@ final public class Port extends UnicastRemoteObject
 	return ret;
     }
 
-    /** Liefert das Array selbst. */
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    /** Liefert das Array selbst. */
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply( new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+val)).raise();
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 
     final public java.lang.String toString() {
 	return first.toString()+": port";
     }
 
-    final public static class NewPort extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,1,"Port.newPort");
+    _BUILTIN(NewPort) {
+	_APPLY(val) {
+	    _fromTuple(_,val,1,"Port.newPort");
 	    try {
 		return new Port();
 	    } catch (RemoteException r) {
@@ -71,14 +58,15 @@ final public class Port extends UnicastRemoteObject
 	    }
 	}
     }
-    final public static NewPort newPort = new NewPort();
+    /** val newPort: _ -> port */
+    _FIELD(Port,newPort);
 
-    final public static class Send extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,2,"Port.send");
+    _BUILTIN(Send) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"Port.send");
 	    DMLValue p = args[0].request();
 	    if (!(p instanceof DMLPort))
-		return error("argument #1 not DMLPort",val);
+		_error("argument 1 not DMLPort",val);
 	    DMLPort port = (DMLPort) p;
 	    try {
 		return port.send(args[1]);
@@ -88,14 +76,15 @@ final public class Port extends UnicastRemoteObject
 	    }
 	}
     }
-    final public static Send send = new Send();
+    /** val send : port * value -> unit */
+    _FIELD(Port,send);
 
-    final public static class Recieve extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,1,"Port.recieve");
+    _BUILTIN(Recieve) {
+    _APPLY(val) {
+	_fromTuple(args,val,1,"Port.recieve");
 	    DMLValue p = args[0].request();
 	    if (!(p instanceof DMLPort))
-		return error("argument #1 not DMLPort",val);
+		_error("argument 1 not DMLPort",val);
 	    DMLPort port = (DMLPort) p;
 	    try {
 		return port.recieve();
@@ -105,37 +94,6 @@ final public class Port extends UnicastRemoteObject
 	    }
 	}
     }
-    final public static Recieve recieve = new Recieve();
-
-    // Hilfsfunktionen
-    final public static DMLValue[] fromTuple
-	(DMLValue v, /** <code>value-Tuple</code>*/
-	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) throws java.rmi.RemoteException {
-	v=v.request();
-	if (v instanceof DMLTuple) {
-	    DMLTuple t=(DMLTuple) v;
-	    if (t.getArity()==ea) {
-		DMLValue[] vals = new DMLValue[ea];
-		for(int i=0; i<ea; i++)
-		    vals[i]=t.getByIndex(i);
-		return vals;
-	    }
-	    else
-		error("wrong number of arguments in "+errMsg, v);
-	}
-	else
-	    error("wrong argument type for "+errMsg,v);
-	return null;
-    }
-
-    final protected static DMLValue error
-	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
-	// sonst: Fehler
-	DMLValue[] err = {
-	    new de.uni_sb.ps.dml.runtime.String(msg),
-	    v};
-	return Constants.
-	    runtimeError.apply(new Tuple(err)).raise();
-    }
+    /** val recieve : port -> value */
+    _FIELD(Port,recieve);
 }

@@ -55,7 +55,7 @@ final public class PickleClassLoader extends ClassLoader {
 	} catch (Exception e) {
 	    System.err.println(e);
 	    e.printStackTrace();
-	    Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("panik")).raise();
+	    _RAISE(runtimeError,new STRING ("panik"));
 	}
     }
 }

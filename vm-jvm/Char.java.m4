@@ -35,7 +35,7 @@ final public class Char extends SCon {
 	    if (ch instanceof Char) {
 		return new Int(((Char) ch).ch);
 	    } else {
-		return _error("argument not char",val);
+		_error("argument not char",val);
 	    }
 	}
     }
@@ -54,7 +54,7 @@ final public class Char extends SCon {
 		    return General.Chr;
 		}
 	    } else {
-		return _error("argument not char",val);
+		_error("argument not char",val);
 	    }
 	}
     }
@@ -86,7 +86,7 @@ final public class Char extends SCon {
 		    Constants.dmltrue :
 			Constants.dmlfalse);
 	    } else {
-		return _error("argument not char",val);
+		_error("argument not char",val);
 	    }
 	}
     }
@@ -111,7 +111,7 @@ final public class Char extends SCon {
 		    return Constants.dmlfalse;
 		}
 	    } else {
-		return _error("argument not char",val);
+		_error("argument not char",val);
 	    }
 	}
     }
@@ -130,7 +130,7 @@ final public class Char extends SCon {
 		    Constants.dmltrue :
 			Constants.dmlfalse);
 	    } else {
-		return _error("argument not char",val);
+		_error("argument not char",val);
 	    }
 	}
     }

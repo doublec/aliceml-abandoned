@@ -21,7 +21,7 @@ final public class List {
 	    else if (l==nil)
 		return Constants.dmltrue;
 	    else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val null : 'a list -> bool</code>*/
@@ -39,7 +39,7 @@ final public class List {
 	    if (l==nil)
 		return new Int(length);
 	    else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val length : 'a list -> int </code>*/
@@ -62,12 +62,12 @@ final public class List {
 			first = fc.cdr.request();
 		    }
 		    else
-			return _error("argument not List",val);
+			_error("argument not List",val);
 		}
 		cons.cdr = args[1];
 		return newList.cdr;
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val @ : ('a list * 'a list) -> 'a list </code>*/
@@ -80,9 +80,9 @@ final public class List {
 	    if (first instanceof Cons)
 		return ((Cons) first).car;
 	    else if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val hd : 'a list -> 'a </code>*/
@@ -95,9 +95,9 @@ final public class List {
 	    if (first instanceof Cons)
 		return ((Cons) first).cdr;
 	    else if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val tl : 'a list -> 'a list</code>*/
@@ -108,7 +108,7 @@ final public class List {
 	    _fromTuple(args,val,1,"List.last");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else if (first instanceof Cons) {
 		DMLValue next = ((Cons) first).cdr.request();
 		while (next!=nil) {
@@ -117,11 +117,11 @@ final public class List {
 			next = ((Cons) next).cdr.request();
 		    }
 		    else
-			return _error("argument not List",val);
+			_error("argument not List",val);
 		}
 		return ((Cons) first).car;
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val last : 'a list -> 'a </code>*/
@@ -138,7 +138,7 @@ final public class List {
 		DMLValue cdr = ((Cons) first).cdr;
 		return Option.SOME.apply(new Tuple2(car,cdr));
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val getItem : 'a list -> ('a * 'a list) option </code>*/
@@ -149,13 +149,13 @@ final public class List {
 	    _fromTuple(args,val,2,"List.nth");
 	    DMLValue n = args[1].request();
 	    if (!(n instanceof Int))
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    int le = ((Int) n).getInt();
 	    if (le<0)
-		return General.Subscript.raise();
+		_RAISENAME(General.Subscript);
 	    DMLValue first = args[0].request();
 	    if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else if (first instanceof Cons) {
 		int i=0;
 		DMLValue next = first;
@@ -166,14 +166,14 @@ final public class List {
 			next = ((Cons) next).cdr.request();
 		    }
 		    else
-			return _error("argument 1 not List",val);
+			_error("argument 1 not List",val);
 		}
 		if (i<le)
-		    return General.Subscript.raise();
+		    _RAISENAME(General.Subscript);
 		else
 		    return ((Cons) first).car;
 	    } else
-		return _error("argument 1 not List",val);
+		_error("argument 1 not List",val);
 	}
     }
     /** <code>val nth : ('a list * int) -> 'a</code>*/
@@ -184,13 +184,13 @@ final public class List {
 	    _fromTuple(args,val,2,"List.take");
 	    DMLValue n = args[1].request();
 	    if (!(n instanceof Int))
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    int le = ((Int) n).getInt();
 	    if (le<0)
-		return General.Subscript.raise();
+		_RAISENAME(General.Subscript);
 	    DMLValue first = args[0].request();
 	    if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else if (first instanceof Cons) {
 		int i=0;
 		Cons newList = new Cons(null,null);
@@ -204,16 +204,16 @@ final public class List {
 			first = fc.cdr.request();
 		    }
 		    else
-			return _error("argument 1 not List",val);
+			_error("argument 1 not List",val);
 		}
 		if (i>le)
-		    return General.Subscript.raise();
+		    _RAISENAME(General.Subscript);
 		else {
 		    cons.cdr=nil;
 		    return newList.cdr;
 		}
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val take : ('a list * int) -> 'a list </code>*/
@@ -224,13 +224,13 @@ final public class List {
 	    _fromTuple(args,val,2,"List.drop");
 	    DMLValue n = args[1].request();
 	    if (!(n instanceof Int))
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    int le = ((Int) n).getInt();
 	    if (le<0)
-		return General.Subscript.raise();
+		_RAISENAME(General.Subscript);
 	    DMLValue first = args[0].request();
 	    if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else if (first instanceof Cons) {
 		int i=0;
 		DMLValue next = ((Cons) first).cdr.request();
@@ -241,14 +241,14 @@ final public class List {
 			next = ((Cons) next).cdr.request();
 		    }
 		    else
-			return _error("argument 1 not List",val);
+			_error("argument 1 not List",val);
 		}
 		if (i<le)
-		    return General.Subscript.raise();
+		    _RAISENAME(General.Subscript);
 		else
 		    return ((Cons) first).cdr;
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val drop : ('a list * int) -> 'a list</code>*/
@@ -259,9 +259,9 @@ final public class List {
 	    _fromTuple(args,val,1,"List.rev");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
-		return Empty.raise();
+		_RAISENAME(Empty);
 	    else if (first instanceof Cons) {
- 		Cons cons = new Cons(((Cons) first).car,nil);
+		Cons cons = new Cons(((Cons) first).car,nil);
 		first = ((Cons) first).cdr.request();
 		while (first!=nil) {
 		    if (first instanceof Cons) {
@@ -270,11 +270,11 @@ final public class List {
 			first = fc.cdr.request();
 		    }
 		    else
-			return _error("argument 1 not List",val);
+			_error("argument 1 not List",val);
 		}
 		return cons;
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val rev : 'a list -> 'a list </code>*/
@@ -303,16 +303,16 @@ final public class List {
 				cons=(Cons) cons.cdr;
 				li = l.cdr.request();
 			    } else
-				return _error("argument not List list",val);
+				_error("argument not List list",val);
 			}
 		    } else
-			return _error("argument not List",val);
+			_error("argument not List",val);
 		    first=((Cons) first).cdr.request();
 		}
 		cons.cdr=nil;
 		return result.cdr;
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val concat : 'a list list -> 'a list </code>*/
@@ -334,11 +334,11 @@ final public class List {
 			first = fc.cdr.request();
 		    }
 		    else
-			return _error("argument not List",val);
+			_error("argument not List",val);
 		}
 		return cons;
 	    } else
-		return _error("argument not List",val);
+		_error("argument not List",val);
 	}
     }
     /** <code>val revAppend : ('a list * 'a list) -> 'a list </code>*/
@@ -363,7 +363,7 @@ final public class List {
 		if (l==nil)
 		    return Constants.dmlunit;
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -397,7 +397,7 @@ final public class List {
 		    return first.cdr;
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -433,7 +433,7 @@ final public class List {
 		    return first.cdr;
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -464,7 +464,7 @@ final public class List {
 		    return Option.NONE;
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -500,7 +500,7 @@ final public class List {
 		    return first.cdr;
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -543,7 +543,7 @@ final public class List {
 		    return new Tuple2(pos.cdr,neg.cdr);
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -583,9 +583,9 @@ final public class List {
 			if (li==nil)
 			    return result;
 			else
-			    return _error("argument not List",val);
+			    _error("argument not List",val);
 		    } else
-			return _error("argument not List",val);
+			_error("argument not List",val);
 		}
 	    }
 	}
@@ -626,7 +626,7 @@ final public class List {
 				li = lc.cdr.request();
 			    }
 			    else
-				return _error("argument 1 not List",val);
+				_error("argument 1 not List",val);
 			}
 			// in cons ist jetzt die umgedrehte Liste
 			DMLValue result=init;
@@ -640,7 +640,7 @@ final public class List {
 			}
 			return result;
 		    } else
-			return _error("argument not List",val);
+			_error("argument not List",val);
 		}
 	    }
 	}
@@ -672,7 +672,7 @@ final public class List {
 		    return Constants.dmlfalse;
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -703,7 +703,7 @@ final public class List {
 		    return Constants.dmltrue;
 		}
 		else
-		    return _error("argument not List",val);
+		    _error("argument not List",val);
 	    }
 	}
     }
@@ -715,10 +715,10 @@ final public class List {
 	    _fromTuple(args,val,2,"List.tabulate");
 	    DMLValue n = args[0].request();
 	    if (!(n instanceof Int))
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    int k = ((Int) n).getInt();
 	    if (k<0)
-		return General.Size.raise();
+		_RAISENAME(General.Size);
 	    DMLValue fun = args[1];
 	    Cons first = new Cons(null,null);
 	    Cons cons = first;

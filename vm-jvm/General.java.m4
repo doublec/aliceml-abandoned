@@ -41,7 +41,7 @@ final public class General {
 		if (cv.getConstructor()==Constants.reference)
 		    return cv.getContent();
 	    }
-	    return _error("wrong argument 1 for deref",val);
+	    _error("wrong argument 1 for deref",val);
 	}
     }
     /** <code>val ! : 'a ref -> 'a</code>*/
@@ -55,7 +55,7 @@ final public class General {
 		return ((DMLConVal) car).assign(args[1]);
 	    }
 	    else
-		return _error("wrong argument 1 for assign",val);
+		_error("wrong argument 1 for assign",val);
 	}
     }
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
@@ -150,10 +150,10 @@ final public class General {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.pickle");
 	    DMLValue fst=args[0].request();
-	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
-		return _error("argument 1 not de.uni_sb.ps.dml.runtime.String",val);
-	    java.lang.String whereto=((de.uni_sb.ps.dml.runtime.String) fst).getString();
-	    DMLValue ex=null;
+	    if (!(fst instanceof STRING))
+		_error("argument 1 not STRING ",val);
+	    java.lang.String whereto=((STRING) fst).getString();
+	    ExceptionWrapper ex=null;
 	    java.io.FileOutputStream outf=null;
 	    PickleOutputStream out=null;
 	    try{
@@ -165,7 +165,7 @@ final public class General {
 	    } catch (Exception e) {
 		System.err.println(e);
 		e.printStackTrace();
-		ex=Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String(e.getMessage()));
+		ex = new ExceptionWrapper(Constants.runtimeError.apply(new STRING (e.getMessage())));
 	    }
 	    finally {
 		try {
@@ -175,7 +175,7 @@ final public class General {
 		    e.printStackTrace();
 		}
 		if (ex != null)
-		    ex.raise();
+		    throw ex;
 	    }
 	    return Constants.dmlunit;
 	}
@@ -186,10 +186,10 @@ final public class General {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.unpickle");
 	    DMLValue fst=args[0].request();
-	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
-		return _error("argument 1 not de.uni_sb.ps.dml.runtime.String",val);
-	    java.lang.String wherefrom=((de.uni_sb.ps.dml.runtime.String) fst).getString();
-	    DMLValue ex=null;
+	    if (!(fst instanceof STRING))
+		_error("argument 1 not STRING ",val);
+	    java.lang.String wherefrom=((STRING) fst).getString();
+	    ExceptionWrapper ex=null;
 	    java.io.FileInputStream inf=null;
 	    PickleInputStream in=null;
 	    DMLValue result = null;
@@ -200,7 +200,7 @@ final public class General {
 	    } catch (Exception e) {
 		System.err.println(e);
 		e.printStackTrace();
-		ex=Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String(e.getMessage()));
+		ex = new ExceptionWrapper(Constants.runtimeError.apply(new STRING (e.getMessage())));
 	    }
 	    finally {
 		try {
@@ -208,7 +208,7 @@ final public class General {
 		} catch (Exception e) {
 		    System.err.println(e);}
 		if (ex != null)
-		    ex.raise();
+		    throw ex;
 	    }
 	    return result;
 	}
@@ -227,7 +227,7 @@ final public class General {
 	    } else if (number instanceof Real) {
 		return new Real(-((Real) number).getFloat());
 	    } else {
-		return _error("argument not Number",val);
+		_error("argument not Number",val);
 	    }
 	}
     }
@@ -274,7 +274,7 @@ final public class General {
 //  	val = val.request();
 //  	if (val == Constants.dmltrue) return Constants.dmlfalse;
 //  	if (val == Constants.dmlfalse) return Constants.dmltrue;
-//  	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("primitive not operation failed\nBAD ARGUMENT: "+val)).raise();
+//  	_RAISE(runtimeError,new STRING ("primitive not operation failed\nBAD ARGUMENT: "+val));
 //      }
 //  }
 
@@ -292,24 +292,24 @@ final public class General {
 //  		  }
 //  		  else {
 //  		      DMLValue[] err = {
-//  			  new de.uni_sb.ps.dml.runtime.String("bad argument #2 for exchange"),
+//  			  new STRING ("bad argument #2 for exchange"),
 //  			  val};
-//  		      return Constants.runtimeError.apply(new Tuple(err)).raise();
+//  		      _RAISE(runtimeError,new Tuple(err));
 //  		  }
 //  	      }
 //  	      else {
 //  		  DMLValue[] err = {
-//  		      new de.uni_sb.ps.dml.runtime.String("wrong number of arguments for exchange"),
+//  		      new STRING ("wrong number of arguments for exchange"),
 //  		      val};
-//  		  return Constants.runtimeError.apply(new Tuple(err)).raise();
+//  		  _RAISE(runtimeError,new Tuple(err));
 //  	      }
 
 //  	  }
 //  	  else {
 //  	      DMLValue[] err = {
-//  		  new de.uni_sb.ps.dml.runtime.String("bad argument for deref"),
+//  		  new STRING ("bad argument for deref"),
 //  		  val};
-//  	      return Constants.runtimeError.apply(new Tuple(err)).raise();
+//  	      _RAISE(runtimeError,new Tuple(err));
 //  	  }
 //        }
 //    }
@@ -356,12 +356,12 @@ final public class General {
 //  		    return Constants.dmlunit;
 //  		}
 //  		else
-//  		    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("bind tried on non-lval "+r.getByIndex(0)+" with "+r.getByIndex(1))).raise();
+//  		    _RAISE(runtimeError,new STRING ("bind tried on non-lval "+r.getByIndex(0)+" with "+r.getByIndex(1)));
 //  	    }
 //  	    else
-//  		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("invalid record length for bind in "+val)).raise();
+//  		_RAISE(runtimeError,new STRING ("invalid record length for bind in "+val));
 //  	}
-//  	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("bind applied to non-record "+val)).raise();
+//  	_RAISE(runtimeError,new STRING ("bind applied to non-record "+val));
 //      }
 //  }
 /*
@@ -378,17 +378,17 @@ final public class General {
 
 //    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 //        val = val.request();
-//        if (val instanceof de.uni_sb.ps.dml.runtime.String) {
-//  	  java.lang.String s=((de.uni_sb.ps.dml.runtime.String) val).getString();
+//        if (val instanceof STRING) {
+//  	  java.lang.String s=((STRING) val).getString();
 //  	  if (s.equalsIgnoreCase("TRUE"))
 //  	      return Constants.dmltrue;
 //  	  else if (s.equalsIgnoreCase("FALSE"))
 //  	      return Constants.dmlfalse;
 //  	  else
-//  	      return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("NoBoolException"+val)).raise();
+//  	      _RAISE(runtimeError,new STRING ("NoBoolException"+val));
 //  	  }
 //        else
-//  	  return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("invalid argument for primitive boolfromstring operation in "+val)).raise();
+//  	  _RAISE(runtimeError,new STRING ("invalid argument for primitive boolfromstring operation in "+val));
 //    }
 //  }
 

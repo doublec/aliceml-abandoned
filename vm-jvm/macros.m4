@@ -2,6 +2,16 @@ dnl Text-Tools
 define(capitalize,`translit(substr($1,0,1),a-z,A-Z)`'substr($1,1)')
 define(STRING,`de.uni_sb.ps.dml.runtime.String')
 dnl
+dnl _error
+dnl
+define(_error,`
+	// MACRO: ERROR($1,$2)
+	_RAISE(runtimeError,new Tuple2(new STRING`'($1),$2))
+	// END MACRO: ERROR($1,$2)
+')
+define(_RAISE,`throw new ExceptionWrapper(Constants.$1.apply($2))')
+define(_RAISENAME,`throw new ExceptionWrapper($1)')
+dnl
 dnl Hier machen wir die Macros rein, die quasi überall gebraucht werden
 dnl
 define(_request_id,`    final public DMLValue request() {
@@ -12,12 +22,9 @@ define(_getValue_id,`    final public DMLValue getValue() {
 	return this;
     }
 ')
-define(_raise,`    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-')
+define(_raise,`')
 define(_apply_fails,`    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new STRING`'("cannot apply "+this+" to "+val)).raise();
+	_RAISE(runtimeError,new STRING`'("cannot apply "+this+" to "+val));
     }
 ')
 dnl
@@ -51,14 +58,6 @@ define(_fromTuple,`
 	}
 ')
 dnl
-dnl _error
-dnl
-define(_error,`
-	// MACRO: ERROR($1,$2)
-	Constants.runtimeError.apply(new Tuple2(new STRING`'($1),$2)).raise()
-	// END MACRO: ERROR($1,$2)
-')
-dnl
 dnl General:
 dnl
 define(_BINOP,`
@@ -71,24 +70,24 @@ define(_BINOP,`
 		if (number2 instanceof Int) {
 		    return new Int(((Int) number1).getInt() $2 ((Int) number2).getInt());
 		} else {
-		    return _error("arguments of different number type",val);
+		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Word) {
 		DMLValue number2 = args[1].request();
 		if (number2 instanceof Word) {
 		    return new Word(((Word) number1).getLong() $2 ((Word) number2).getLong());
 		} else {
-		    return _error("arguments of different number type",val);
+		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Real) {
 		DMLValue number2 = args[1].request();
 		if (number2 instanceof Real) {
 		    return new Real(((Real) number1).getFloat() $2 ((Real) number2).getFloat());
 		} else {
-		    return _error("arguments of different number type",val);
+		    _error("arguments of different number type",val);
 		}
 	    } else {
-		return _error("argument 1 not number type",val);
+		_error("argument 1 not number type",val);
 	    }
 	}
     }
@@ -106,7 +105,7 @@ define(_COMPARE,`
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
-		    return _error("arguments of different number type",val);
+		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Word) {
 		DMLValue number2 = args[1].request();
@@ -115,7 +114,7 @@ define(_COMPARE,`
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
-		    return _error("arguments of different number type",val);
+		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Real) {
 		DMLValue number2 = args[1].request();
@@ -124,7 +123,7 @@ define(_COMPARE,`
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
-		    return _error("arguments of different number type",val);
+		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof STRING`') {
 		DMLValue number2 = args[1].request();
@@ -134,10 +133,10 @@ define(_COMPARE,`
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
-		    return _error("arguments of different type",val);
+		    _error("arguments of different type",val);
 		}
 	    } else {
-		return _error("argument 1 not string or number type",val);
+		_error("argument 1 not string or number type",val);
 	    }
 	}
     }
@@ -152,11 +151,11 @@ define(_BINOPINT,`
 	    _fromTuple(args,val,2,"Int.$2");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    return new Int(((Int) v).getInt() $2 ((Int) w).getInt());
 	}
@@ -169,11 +168,11 @@ define(_COMPAREINT,`
 	    _fromTuple(args,val,2,"Int.$2");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    int j = ((Int) w).getInt();
@@ -195,12 +194,12 @@ define(_COMPARESTRING,`
 	    _fromTuple(args,val,2,"String.$2");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 2 not String",val);
+		_error("argument 2 not String",val);
 	    }
 	    java.lang.String t = ((STRING) v).getString();
 	    if (s.compareTo(t) $2 0) {

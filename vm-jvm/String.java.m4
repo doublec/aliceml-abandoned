@@ -52,7 +52,7 @@ final public class String extends SCon {
             if (v instanceof STRING) {
 		return new Int(((STRING) v).getString().length());
             } else {
-		return _error("argument not String",val);
+		_error("argument not String",val);
             }
         }
     }
@@ -64,12 +64,12 @@ final public class String extends SCon {
 	    _fromTuple(args,val,3,"String.extract");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int from = ((Int) v).getInt();
 	    v= args[2].request();
@@ -82,13 +82,13 @@ final public class String extends SCon {
 			to = ((Int) v).getInt();
 			return new STRING (s.substring(from,to));
 		    } else {
-			return _error("argument 3 not Int option",val);
+			_error("argument 3 not Int option",val);
 		    }
 		} else {
-		    return _error("argument 3 not Int option",val);
+		    _error("argument 3 not Int option",val);
 		}
 	    } else if (v != Option.NONE) {
-		return _error("argument 3 not Int option",val);
+		_error("argument 3 not Int option",val);
 	    } else {
 		return new STRING (s.substring(from,to));
 	    }
@@ -102,17 +102,17 @@ final public class String extends SCon {
 	    _fromTuple(args,val,3,"String.substring");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int from = ((Int) v).getInt();
 	    v= args[2].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 3 not Int",val);
+		_error("argument 3 not Int",val);
 	    }
 	    int to = ((Int) v).getInt();
 	    return new STRING (s.substring(from,to));
@@ -135,16 +135,16 @@ final public class String extends SCon {
 			if (co.car instanceof STRING) {
 			    buff.append(((STRING) co.car).getString());
 			} else {
-			    return _error("argument not String list",val);
+			    _error("argument not String list",val);
 			}
 			list = co.cdr;
 		    } else {
-			return _error("argument not String list",val);
+			_error("argument not String list",val);
 		    }
 		} while (list != List.nil);
 		return new STRING (buff.toString());
 	    } else {
-		return _error("argument not String list",val);
+		_error("argument not String list",val);
 	    }
 	}
     }
@@ -156,11 +156,11 @@ final public class String extends SCon {
 	    _fromTuple(args,val,2,"String.^");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof STRING)) {
-		return _error("argument 2 not String",val);
+		_error("argument 2 not String",val);
 	    }
 	    return new
 		STRING (((STRING) v).getString() +
@@ -175,12 +175,12 @@ final public class String extends SCon {
 	    _fromTuple(args,val,2,"String.isPrefix");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 2 not String",val);
+		_error("argument 2 not String",val);
 	    }
 	    java.lang.String t = ((STRING) v).getString();
 	    if (s.startsWith(t)) {
@@ -198,12 +198,12 @@ final public class String extends SCon {
 	    _fromTuple(args,val,2,"String.compare");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 2 not String",val);
+		_error("argument 2 not String",val);
 	    }
 	    java.lang.String t = ((STRING) v).getString();
 	    int cmp = s.compareTo(t);
@@ -224,12 +224,12 @@ final public class String extends SCon {
 	    _fromTuple(args,val,2,"String.compare'");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof STRING)) {
-		return _error("argument 2 not String",val);
+		_error("argument 2 not String",val);
 	    }
 	    java.lang.String t = ((STRING) v).getString();
 	    int cmp = s.compareTo(t);
@@ -257,7 +257,7 @@ final public class String extends SCon {
 	    if (ch instanceof Char) {
 		return new STRING (java.lang.String.valueOf(((Char) ch).getChar()));
 	    } else {
-		return _error("argument not char",val);
+		_error("argument not char",val);
 	    }
 	}
     }
@@ -273,10 +273,10 @@ final public class String extends SCon {
 		if (idx instanceof Int) {
 		    return new Char(((STRING) s).getString().charAt(((Int) idx).getInt()));
 		} else {
-		    return _error("argument 2 not int",val);
+		    _error("argument 2 not int",val);
 		}
 	    } else {
-		return _error("argument 1 not string",val);
+		_error("argument 1 not string",val);
 	    }
 	}
     }

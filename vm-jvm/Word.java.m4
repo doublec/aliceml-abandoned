@@ -10,7 +10,7 @@ package de.uni_sb.ps.dml.runtime;
  *  @see Int
  *  @see Real
  *  @see SCon
- *  @see de.uni_sb.ps.dml.runtime.String
+ *  @see STRING 
  *  @see DMLValue
  */
 final public class Word extends SCon {

@@ -53,7 +53,7 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,1,"Int.~");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument not Int",val);
+		_error("argument not Int",val);
 	    }
 	    return new
 		Int(-((Int) v).getInt());
@@ -79,11 +79,11 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,2,"Int.compare");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    int j = ((Int) w).getInt();
@@ -104,11 +104,11 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,2,"Int.compare'");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    int j = ((Int) w).getInt();
@@ -134,11 +134,11 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,2,"Int.min");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    int j = ((Int) w).getInt();
@@ -157,11 +157,11 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,2,"Int.max");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    int j = ((Int) w).getInt();
@@ -180,7 +180,7 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,1,"Int.abs");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument not Int",val);
+		_error("argument not Int",val);
 	    }
 	    return new
 		Int(java.lang.Math.abs(((Int) v).getInt()));
@@ -194,7 +194,7 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,1,"Int.sign");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument not Int",val);
+		_error("argument not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    if (i<0) {
@@ -214,11 +214,11 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,2,"Int.sameSign");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
 	    if (!(w instanceof Int)) {
-		return _error("argument 2 not Int",val);
+		_error("argument 2 not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    int j = ((Int) w).getInt();
@@ -239,7 +239,7 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,1,"Int.toString");
 	    DMLValue v = args[0].request();
 	    if (!(v instanceof Int)) {
-		return _error("argument not Int",val);
+		_error("argument not Int",val);
 	    }
 	    int i = ((Int) v).getInt();
 	    return new
@@ -254,7 +254,7 @@ final public class Int extends SCon {
 	    _fromTuple(args,val,1,"Int.fromString");
 	    DMLValue r = args[0].request();
 	    if (!(r instanceof STRING)) {
-		return _error("argument 1 not String",val);
+		_error("argument 1 not String",val);
 	    }
 	    try {
 		java.lang.String sf = ((STRING) r).getString();

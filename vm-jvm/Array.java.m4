@@ -43,7 +43,7 @@ final public class Array implements DMLValue {
     /** das ist tabulate */
     public Array(DMLValue f, int n)  throws java.rmi.RemoteException {
 	if (n<0 || maxLength<n) {
-	    General.Size.raise();
+	    _RAISENAME(General.Size);
 	} else {
 	    arr = new DMLValue[n];
 	    for(int i=0; i<n; i++) {
@@ -54,7 +54,7 @@ final public class Array implements DMLValue {
     /** entspricht <code>array</code>*/
     public Array(int len, DMLValue init) {
 	if (len<0 || maxLength<len) {
-	    General.Size.raise();
+	    _RAISENAME(General.Size);
 	} else {
 	    arr = new DMLValue[len];
 	    for(int i=0; i<len; i++)
@@ -75,7 +75,7 @@ final public class Array implements DMLValue {
 
     final public DMLValue sub(int index) {
 	if (index<0 || arr.length<=index) {
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	} else {
 	    return arr[index];
 	}
@@ -83,7 +83,7 @@ final public class Array implements DMLValue {
 
     final public DMLValue update(int index, DMLValue x) {
 	if (index<0 || arr.length<=index)
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	else {
 	    arr[index] = x;
 	    return Constants.dmlunit;
@@ -99,7 +99,7 @@ final public class Array implements DMLValue {
 
     final public DMLValue appi(int from, int to, DMLValue f)  throws java.rmi.RemoteException {
 	if (to<0 || from<0 || arr.length<to || to<from)
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	else {
 	    for(int i=from; i<to; i++) {
 		f.apply(new Tuple2(new Int(i),arr[i]));
@@ -128,7 +128,7 @@ final public class Array implements DMLValue {
     final public DMLValue foldli(DMLValue f, DMLValue init, int from, int to) throws java.rmi.RemoteException {
 	int length = arr.length;
 	if (to<0 || from<0 || length<to || to<from)
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	else {
 	    DMLValue buff=init;
 	    for(int i=from; i<to; i++) {
@@ -141,7 +141,7 @@ final public class Array implements DMLValue {
     final public DMLValue foldri(DMLValue f, DMLValue init, int from, int to) throws java.rmi.RemoteException {
 	int length = arr.length;
 	if (to<0 || from<0 || length<to || to<from)
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	else {
 	    DMLValue buff = init;
 	    for(int i=to-1; i>=from; i--) {
@@ -161,7 +161,7 @@ final public class Array implements DMLValue {
     final public DMLValue modifyi(DMLValue f, int from, int to) throws java.rmi.RemoteException {
 	int length = arr.length;
 	if (to<0 || from<0 || length<to || to<from)
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	else {
 	    for(int i=from; i<to; i++) {
 		arr[i]=f.apply(new Tuple2(new Int(i), arr[i]));
@@ -177,7 +177,7 @@ final public class Array implements DMLValue {
 	    arr.length<from+len || dlength<dfrom+len)
 	    {
 		// System.err.println("from: "+from+" len: "+len+" dfrom: "+dfrom);
-		return General.Subscript.raise();
+		_RAISENAME(General.Subscript);
 	    }
 	else {
 	    // hier vielleicht System.arrayCopy ?
@@ -193,7 +193,7 @@ final public class Array implements DMLValue {
 
     final public DMLValue extract(int from, int to) {
 	if (to<0 || from<0 || to<from || arr.length<to)
-	    return General.Subscript.raise();
+	    _RAISENAME(General.Subscript);
 	else {
 	    return new Vector(arr,from,to);
 	}
@@ -280,7 +280,7 @@ final public class Array implements DMLValue {
 	    if (arg instanceof Array)
 		return new Int(((Array) arg).arr.length);
 	    else
-		return _error("argument 1 not Int",val);
+		_error("argument 1 not Int",val);
 	}
     }
     /** <code>val length : 'a array -> int </code>*/
@@ -295,10 +295,10 @@ final public class Array implements DMLValue {
 		if (idx instanceof Int)
 		    return ((Array) array).sub(((Int) idx).getInt());
 		else
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 	    }
 	    else
-		return _error("argument 1 not Array",val);
+		_error("argument 1 not Array",val);
 	}
     }
     /** <code>val sub : ('a array * int) -> 'a </code>*/
@@ -314,10 +314,10 @@ final public class Array implements DMLValue {
 		    return ((Array) array).
 			update(((Int) idx).getInt(),args[2]);
 		else
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 	    }
 	    else
-		return _error("argument 1 not Array",val);
+		_error("argument 1 not Array",val);
 	}
     }
     /** <code>val update : ('a array * int * 'a) -> unit </code>*/
@@ -346,13 +346,13 @@ final public class Array implements DMLValue {
 					    ((Int) to).getInt());
 			}
 		    }
-		    return _error("argument 3 not Int option",val);
+		    _error("argument 3 not Int option",val);
 		}
 		else
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 	    }
 	    else
-		return _error("argument 1 not Array",val);
+		_error("argument 1 not Array",val);
 	}
     }
     /** <code>val extract : ('a array * int * int option) -> 'a vector </code>*/
@@ -365,7 +365,7 @@ final public class Array implements DMLValue {
 	    if (array instanceof Array) {
 		DMLValue fr = args[1].request();
 		if (!(fr instanceof Int))
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 		int from = ((Int) fr).getInt();
 		DMLValue len = args[2].request();
 		int le = 0;
@@ -381,20 +381,20 @@ final public class Array implements DMLValue {
 		    }
 		}
 		else
-		    return _error("argument 3 not Int option",val);
+		    _error("argument 3 not Int option",val);
 		DMLValue dest = args[3].request();
 		if (!(dest instanceof Array))
-		    return _error("argument 4 not Array",val);
+		    _error("argument 4 not Array",val);
 		DMLValue di = args[4].request();
 		if (!(di instanceof Int))
-		    return _error("argument 5 not Int",val);
+		    _error("argument 5 not Int",val);
 		return ((Array) array)
 		    .copy(from,
 			  le,
 			  (Array) dest,
 			  ((Int) di).getInt());
 	    } else
-		return _error("argument 1 not Array",val);
+		_error("argument 1 not Array",val);
 	}
     }
     /** <code>val copy : {src : 'a array, si : int, len : int option, dst : 'a array, di : int} -> unit </code>*/
@@ -408,7 +408,7 @@ final public class Array implements DMLValue {
 	    if (vector instanceof Vector) {
 		DMLValue fr = args[1].request();
 		if (!(fr instanceof Int))
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 		int from = ((Int) fr).getInt();
 		DMLValue len = args[2].request();
 		int le = 0;
@@ -424,19 +424,19 @@ final public class Array implements DMLValue {
 		    }
 		}
 		else
-		    return _error("argument 3 not Int option",val);
+		    _error("argument 3 not Int option",val);
 		DMLValue dest = args[3].request();
 		if (!(dest instanceof Array))
-		    return _error("argument 4 not Array",val);
+		    _error("argument 4 not Array",val);
 		DMLValue di = args[4].request();
 		if (!(di instanceof Int))
-		    return _error("argument 5 not Int",val);
+		    _error("argument 5 not Int",val);
 		return ((Vector) vector).copyVec(from,
 						 le,
 						 (Array) dest,
 						 ((Int) di).getInt());
 	    } else
-		return _error("argument 1 not Vector",val);
+		_error("argument 1 not Vector",val);
 	}
     }
     /** <code>val copyVec : {src : 'a vector, si : int, len : int option, dst : 'a array, di : int} -> unit </code>*/
@@ -454,10 +454,10 @@ final public class Array implements DMLValue {
 		_fromTuple(args,val,3,"Array.appi1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof Array))
-		    return _error("argument 1 not Array",val);
+		    _error("argument 1 not Array",val);
 		DMLValue fr = args[1].request();
 		if (!(fr instanceof Int))
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 		int from = ((Int) fr).getInt();
 		DMLValue to = args[2].request();
 		int toint = 0;
@@ -468,11 +468,11 @@ final public class Array implements DMLValue {
 		    if (!(cv.getConstructor()==Option.SOME)) {
 			DMLValue iv= cv.getContent();
 			if (!(iv instanceof Int))
-			    return _error("argument 3 not Int option",val);
+			    _error("argument 3 not Int option",val);
 			toint=((Int) iv).getInt();
 		    }
 		} else
-		    return _error("argument 3 not Int option",val);
+		    _error("argument 3 not Int option",val);
 		return ((Array) array).
 		    appi(from,
 			 toint,
@@ -495,7 +495,7 @@ final public class Array implements DMLValue {
 		_fromTuple(args,val,1,"Array.app1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof Array))
-		    return _error("argument not Array",val);
+		    _error("argument not Array",val);
 		return ((Array) array).app(fun);
 	    }
 	}
@@ -522,10 +522,10 @@ final public class Array implements DMLValue {
 		    _fromTuple(args,val,3,"Array.foldli2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof Array))
-			return _error("argument 1 not Array",val);
+			_error("argument 1 not Array",val);
 		    DMLValue from = args[1].request();
 		    if (!(from instanceof Int))
-			return _error("argument 2 not Int",val);
+			_error("argument 2 not Int",val);
 		    DMLValue to = args[2].request();
 		    int toint = 0;
 		    if (to==Option.NONE)
@@ -535,11 +535,11 @@ final public class Array implements DMLValue {
 			if (!(cv.getConstructor()==Option.SOME)) {
 			    DMLValue iv= cv.getContent();
 			    if (!(iv instanceof Int))
-				return _error("argument 3 not Int option",val);
+				_error("argument 3 not Int option",val);
 			    toint=((Int) iv).getInt();
 			}
 		    } else
-			return _error("argument 3 not Int option",val);
+			_error("argument 3 not Int option",val);
 		    return ((Array) array).
 			foldli(fun,
 			       init,
@@ -571,10 +571,10 @@ final public class Array implements DMLValue {
 		    _fromTuple(args,val,3,"Array.foldri2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof Array))
-			return _error("argument 1 not Array",val);
+			_error("argument 1 not Array",val);
 		    DMLValue from = args[1].request();
 		    if (!(from instanceof Int))
-			return _error("argument 2 not Int",val);
+			_error("argument 2 not Int",val);
 		    DMLValue to = args[2].request();
 		    int toint = 0;
 		    if (to==Option.NONE)
@@ -584,11 +584,11 @@ final public class Array implements DMLValue {
 			if (!(cv.getConstructor()==Option.SOME)) {
 			    DMLValue iv= cv.getContent();
 			    if (!(iv instanceof Int))
-				return _error("argument 3 not Int option",val);
+				_error("argument 3 not Int option",val);
 			    toint=((Int) iv).getInt();
 			}
 		    } else
-			return _error("argument 3 not Int option",val);
+			_error("argument 3 not Int option",val);
 		    return ((Array) array).
 			foldri(fun,
 			       init,
@@ -620,7 +620,7 @@ final public class Array implements DMLValue {
 		    _fromTuple(args,val,1,"Array.foldl2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof Array))
-			return _error("argument not Array",val);
+			_error("argument not Array",val);
 		    return ((Array) array).foldl(fun,init);
 		}
 	    }
@@ -648,7 +648,7 @@ final public class Array implements DMLValue {
 		    _fromTuple(args,val,1,"Array.foldr2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof Array))
-			return _error("argument not Array",val);
+			_error("argument not Array",val);
  		    return ((Array) array).foldr(fun,init);
 		}
 	    }
@@ -669,10 +669,10 @@ final public class Array implements DMLValue {
 		_fromTuple(args,val,3,"Array.modifyi1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof Array))
-		    return _error("argument 1 not Array",val);
+		    _error("argument 1 not Array",val);
 		DMLValue from = args[1].request();
 		if (!(from instanceof Int))
-		    return _error("argument 2 not Int",val);
+		    _error("argument 2 not Int",val);
 		DMLValue to = args[2].request();
 		int toint = 0;
 		if (to==Option.NONE)
@@ -682,11 +682,11 @@ final public class Array implements DMLValue {
 		    if (!(cv.getConstructor()==Option.SOME)) {
 			DMLValue iv= cv.getContent();
 			if (!(iv instanceof Int))
-			    return _error("argument 2 not Int option",val);
+			    _error("argument 2 not Int option",val);
 			toint=((Int) iv).getInt();
 		    }
 		} else
-		    return _error("argument 2 not Int option",val);
+		    _error("argument 2 not Int option",val);
 		return ((Array) array).
 		    modifyi(fun,
 			    ((Int) from).getInt(),
@@ -708,10 +708,12 @@ final public class Array implements DMLValue {
 	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.modify1");
 		DMLValue array = args[0].request();
-		if (!(array instanceof Array))
-		    return _error("argument not Array",val);
-		else
+		if (!(array instanceof Array)) {
+		    _error("argument not Array",val);
+		}
+		else {
 		    return ((Array) array).modify(fun);
+		}
 	    }
 	}
     }

@@ -120,12 +120,11 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		    obj = ((LVar) obj).getValue();
 		return obj;
 	    } else if (obj instanceof Array) {
-		return Constants.
-		    runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle DMLArray")).raise();
+		_RAISE(runtimeError,new STRING ("cannot pickle DMLArray"));
 	    } else if (obj instanceof Thread) {
-		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle Thread")).raise();
+		_RAISE(runtimeError,new STRING ("cannot pickle Thread"));
 	    } else if (obj instanceof Reference) {
-		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle Reference")).raise();
+		_RAISE(runtimeError,new STRING ("cannot pickle Reference"));
 	    } else
 		return obj;
 	} catch (java.rmi.RemoteException r) {

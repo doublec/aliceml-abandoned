@@ -26,5 +26,5 @@ public interface DMLValue extends java.io.Serializable {
 
     /** In DML kann jeder Wert als Exception geworfen werden.
      */
-    public DMLValue raise() throws java.rmi.RemoteException;
+    //    public DMLValue raise() throws java.rmi.RemoteException;
 }
