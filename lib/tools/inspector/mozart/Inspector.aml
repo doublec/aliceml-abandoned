@@ -65,6 +65,7 @@ structure Inspector :> INSPECTOR =
 	  | DEPTH_ARROW       of color
 	  | PARENTHESES       of color
 	  | MISC              of color
+	  | TYPEDINDICATOR    of color
 
 	open UnsafeInspector
     end
