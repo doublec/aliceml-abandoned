@@ -191,7 +191,9 @@ local
 	    sig
 		type module
 		val match :		module * Inf.inf -> Inf.rea
+		val matchWith :		Inf.rea * module * Inf.inf -> unit
 		val strengthen :	module * Inf.inf -> Inf.inf
+		val strengthenWith :	Inf.rea * module * Inf.inf -> Inf.inf
 		val thin :		module * Inf.inf -> module
 		val seal :		module * Inf.inf -> module
 	    end
