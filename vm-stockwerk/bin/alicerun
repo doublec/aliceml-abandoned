@@ -26,7 +26,7 @@ fi
 case $(uname) in
     CYGWIN*)
 	sep=\;
-	STOCKHOME=`cygpath -w "$STOCKHOME"`
+	STOCKHOME=`cygpath -m "$STOCKHOME"`
 	;;
     *)
 	sep=:
@@ -35,9 +35,13 @@ esac
 
 ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc${sep}pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.dll${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
 
-if [ ! -z "$ALICE_EXTRA_LOAD" ]
+if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then
-    ALICE_LOAD=$ALICE_EXTRA_LOAD${SEP}$ALICE_LOAD
+    ALICE_LOAD=$ALICE_LOAD_PREFIX${sep}$ALICE_LOAD
+fi
+if [ ! -z "$ALICE_LOAD_SUFFIX" ]
+then
+    ALICE_LOAD=$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX
 fi
 
 export STOCKHOME ALICE_LOAD
