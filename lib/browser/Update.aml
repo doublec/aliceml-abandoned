@@ -17,8 +17,10 @@ import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
+import structure Doc from "Doc"
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
+
 import structure Settings from "Settings"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
@@ -28,7 +30,7 @@ import structure Server from "Server"
 import signature UPDATE from "UPDATE-sig"
 
 local
-    open Node
+    open Doc Node
 in
 
 structure Update :> UPDATE = 

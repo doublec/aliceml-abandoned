@@ -18,42 +18,22 @@ import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect" 
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
+import structure Doc from "Doc"
 import structure GtkSupport from "GtkSupport"
 
 import signature NODE from "NODE-sig"
+
+local
+    open Doc
+
+in
 
 structure Node :> NODE = 
 struct
  
     datatype value = V of Reflect.value | M of Reflect.module
 
-    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
-	
     datatype status = CLEAN | DIRTY | DAZZLED
-
-    datatype color_class = INT_COLOR 
-                         | REAL_COLOR
-                         | CHAR_COLOR
-                         | STR_COLOR
-                         | WORD_COLOR
-                         | EXN_COLOR
-                         | REF_COLOR
-                         | LABEL_COLOR
-                         | SEP_COLOR
-                         | EQU_COLOR
-                         | LIMIT_COLOR
-                         | BRACK_COLOR
-                         | REL_COLOR
-                         | DEFAULT
-
-    (* datatype for storage of value and type information in nodes *)	
- 
-    datatype desc =
-	INTERPUNCT
-      | VALUE of {value : Reflect.value,
-		  typ : Type.t}
-      | I_VALUE of {value : Reflect.module,
-		    typ : Inf.t} 
 
     (* datatype for internal representation of values *)
 
@@ -159,26 +139,6 @@ struct
     fun asModule(M x) = x
       | asModule _ = raise Match
   
-   (* operations on desc *)
-	
-    fun createValue(va,t) = VALUE{value = va,
-				  typ = t}
-	
-    fun createIValue(va,t) = I_VALUE{value = va,
-				     typ = t}
- 	
-    fun getValue desc = case desc of VALUE(r) => #value(r)
-                                   | _ => raise Match
-	
-    fun getInfValue desc = case desc of I_VALUE(r) => #value(r)
-	                              | _ => raise Match
-
-    fun getTyp desc = case desc of VALUE(r) => #typ(r)
-                                 | _ => raise Match
-
-    fun getInf desc = case desc of I_VALUE(r) => #typ(r)
-                                 | _ => raise Match  
- 
     (********* operationen on node *********)
 
    (*** get-functions ***)
@@ -533,5 +493,7 @@ struct
 					   orelse checkContKids(#kids(rr),0)
 			| _ => checkConcKids (a,i+1) )
 		    | _ => checkConcKids (a,i+1) )
+
+end
 
 end

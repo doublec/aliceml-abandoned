@@ -13,23 +13,75 @@
  *
  *)
 
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+
+import structure Doc from "Doc"
 import structure Widget from "Widget"
 
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
-structure UnsafeInspector :> UNSAFE_INSPECTOR = 
+local 
+    open PervasiveType Doc 
+    
+in
+
+structure UnsafeInspector : UNSAFE_INSPECTOR = 
 struct
-  	       
+
+    (***********************************************)
+
+    datatype limit = datatype Doc.limit
+
+    datatype color_class = datatype Doc.color_class
+
+    datatype desc = datatype Doc.desc
+
+    datatype doc = datatype doc 
+
+    type doc_creator = Doc.doc_creator
+
+    val registerType = registerType
+	       
+    (***********************************************)
+
+    (***  registration of doc creator-functions ***)
+
+    val path_promise = lookupPath(coreSign,
+				  "Promise","promise")   
+	
+    val path_package = lookupPath(packageSign,
+				  "Package","package") 
+	
+    val path_val_package = lookupPath(packageSign,
+				      "Package","val_package") 
+
+    fun init () = ( registerType(path_int, createInt)
+		   ; registerType(path_string, createString)
+		   ; registerType(path_char, createChar)
+		   ; registerType(path_word, createWord)
+		   ; registerType(path_real, createReal)
+		   ; registerType(path_exn, createExn)
+		   ; registerType(path_ref, createRef)
+		   ; registerType(path_vec, createVector)
+		   ; registerType(path_array, createArray)
+		   ; registerType(path_promise, createPromise)
+		   ; registerType(path_package, createPackage)  
+		   ; registerType(path_val_package, createValPackage) ) 
+	     
+    val _ =  init ()
+		    
+    (***********************************************)
+
+    (****** INSPECTION ******)
+
     (* inspection of values *)
 
     fun inspect (v,t) = Widget.inspect(v,t)
     
     (* inspection of modules *)
 
-    and inspectInf (v,t) = Widget.inspectInf(v,t)
+    fun inspectMod (v,t) = Widget.inspectMod(v,t)
 
-   (* initialization *)
-
-    val _  = Widget.init ()
+end
 
 end

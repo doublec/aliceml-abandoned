@@ -12,11 +12,66 @@
  *   $Revision$
  *
  *)
-import structure Inf from "x-alice:/lib/rtt/Inf"
-import structure Type from "x-alice:/lib/rtt/Type"
 
-signature UNSAFE_INSPECTOR = 
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure Type from "x-alice:/lib/rtt/Type" 
+import structure Reflect from "x-alice:/lib/system/Reflect" 
+
+signature UNSAFE_INSPECTOR  = 
 sig
+    
+    (*****************************************)
+
+    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+	
+    datatype color_class = INT_COLOR 
+                         | REAL_COLOR
+                         | CHAR_COLOR
+                         | STR_COLOR
+                         | WORD_COLOR
+                         | EXN_COLOR
+                         | REF_COLOR
+                         | LABEL_COLOR
+                         | SEP_COLOR
+                         | EQU_COLOR
+                         | LIMIT_COLOR
+                         | BRACK_COLOR
+                         | REL_COLOR
+                         | DEFAULT
+
+    datatype desc = 
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.typ}
+      | I_VALUE of {value : Reflect.module,
+		    typ : Inf.t} 
+
+    datatype doc = 
+	SIMPLE of {desc : desc, 
+		   rep : string, 
+		   color : color_class }
+	
+      | CONCAT of {desc : desc, 
+		   kids : doc vector }
+	
+      | CONTAINER of {desc : desc, 
+		      kids : doc vector }
+	
+      | LIMIT of {desc : desc, 
+		  sort : limit }
+	
+      | EMBEDDED of Reflect.value * Type.t
+	
+      | EMBEDDED_INF of Reflect.module * Inf.t
+
+    type doc_creator = int * int * Reflect.value * Type.t -> doc  
+
+    val registerType : Path.path * doc_creator -> unit
+
+    (***********************************************)
+
+    (****** INSPECTION ******)
 
     (* inspection of values *)
 
@@ -24,6 +79,6 @@ sig
 
     (* inspection of modules *) 
 
-    val inspectInf: 'a * Inf.t -> unit
+    val inspectMod: 'a * Inf.t -> unit
 	
-end;
+end
