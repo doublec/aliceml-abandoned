@@ -383,17 +383,31 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		else Unary
 	    else Nullary
 
-	fun find ((label, _)::rest, label', i) =
+	fun getLabels row =
+	    if Type.isEmptyRow row then
+		if Type.isUnknownRow row then
+		    raise Crash.Crash "IntermediateAux.getLabels"
+		else nil
+	    else
+		case Type.headRow row of
+		    (label, _) => label::getLabels (Type.tailRow row)
+
+	structure LabelSort =
+	    MakeLabelSort(type 'a t = Label.t
+			  fun get label = label)
+
+	fun find (label::rest, label', i) =
 	    if label = label' then i else find (rest, label', i + 1)
 	  | find (nil, _, _) = raise Crash.Crash "IntermediateAux.find"
 
 	fun rowToIndex (row, label) =
-	    case parseRow row of
+	    case LabelSort.sort (getLabels row) of
 		(_, LabelSort.Tup _) =>
 		    LargeInt.toInt (valOf (Label.toLargeInt label)) - 1
-	      | (labelTypList, LabelSort.Rec) => find (labelTypList, label, 0)
+	      | (labels, LabelSort.Rec) => find (labels, label, 0)
 
-	fun labelToIndex (typ, label) =
+	fun labelToIndex (typ, label) = 0
+(*--**
 	    if Type.isArrow typ then
 		labelToIndex (#2 (Type.asArrow typ), label)
 	    else if Type.isAll typ then
@@ -413,4 +427,5 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else if Type.isSum typ then
 		rowToIndex (Type.asSum typ, label)
 	    else raise Crash.Crash "IntermediateAux.labelToIndex"
+*)
     end

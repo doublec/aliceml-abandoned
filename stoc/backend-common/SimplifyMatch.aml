@@ -325,10 +325,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | argsEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (TagTest (_, n1), TagTest (_, n2)) = n1 = n2
-	  | testEq (TagAppTest (_, n1, args1, _),
-		    TagAppTest (_, n2, args2, _)) =
-	    n1 = n2 andalso argsEq (args1, args2)
+	  | testEq (TagTest (label1, _), TagTest (label2, _)) = label1 = label2
+	  | testEq (TagAppTest (label1, _, args1, _),
+		    TagAppTest (label2, _, args2, _)) =
+	    label1 = label2 andalso argsEq (args1, args2)
 	  | testEq (ConTest longid1, ConTest longid2) =
 	    longidToSelector longid1 = longidToSelector longid2
 	  | testEq (ConAppTest (longid1, args1, _),

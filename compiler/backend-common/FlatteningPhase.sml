@@ -345,7 +345,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateExp (SelExp (info, Lab (_, label)), f, cont) =
 	    let
-		val n = labelToIndex (#typ info, label)
+		val n = labelToIndex (#1 (Type.asArrow (#typ info)), label)
 	    in
 		f (O.SelExp (id_info info, label, n))::translateCont cont
 	    end
@@ -472,7 +472,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
-		val n = labelToIndex (#typ info', label)
+		val n = labelToIndex (#1 (Type.asArrow (#typ info')), label)
 	    in
 		(r := SOME (f (O.SelAppExp (id_info info, label, n, id2))::
 			    translateCont cont);
