@@ -35,7 +35,7 @@ struct
 	    val n = NewNode.newNode(v,t)
 	in
 	    ( Layout.layout(n)
-	     ;  DrawNodes.draw(n,0,!WindowManager.act_line)
+	     ;  DrawNodes.draw(n,0,!WindowManager.act_line,DrawNodes.DRAW)
 	     ; WindowManager.incr_act_line
 	     (Layout.get_ydim(n) + 1)
 	     ; if Real.>(( Real.fromInt(8 * Layout.get_xdim(n))), 
