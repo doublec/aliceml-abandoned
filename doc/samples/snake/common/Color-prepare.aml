@@ -9,8 +9,9 @@
  *
  *)
 
-import signature COLOR from "COLOR-sig"
-import structure OS    from "x-alice:/lib/system/OS"
+import signature COLOR  from "COLOR-sig"
+import structure OS     from "x-alice:/lib/system/OS"
+import structure Config from "x-alice:/lib/system/Config"
 
 structure Color :> COLOR = 
 struct
@@ -54,9 +55,10 @@ struct
 
 end
 
+val ext = if Config.vm = "seam" then "stc" else "ozf"
 
-val _ = Pickle.save ("Color.ozf", pack (structure Color = Color) 
-		                    :> (structure Color : COLOR))
+val _ = Pickle.save ("Color." ^ ext, pack (structure Color = Color) 
+		                       :> (structure Color : COLOR))
     
 
 val _ = OS.Process.exit OS.Process.success
