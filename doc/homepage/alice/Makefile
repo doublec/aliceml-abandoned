@@ -10,21 +10,21 @@ DIRS = $(PREFIX) \
 
 INSTALLFILES_0 = \
 	style.css bg.gif alice.gif musicemb.jpg macros.php3 project.html \
-	index.html people.html papers.html download.html download-old.html
+	index.html people.html papers.html download.html contact.html download-old.html
 INSTALLFILES_DOWNLOAD_0 = \
 	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
 INSTALLFILES_PAPERS_0 = \
-	intermediate.ps opaque.ps
+	intermediate.ps
 INSTALLFILES_MANUAL_0 = \
 	style.css macros.php3 menu.html bg.gif logo-small.gif logo-large.gif \
 	index.html features.html \
 	language.html futures.html types.html modules.html sugar.html \
-	threads.html components.html distribution.html \
-	packages.html pickling.html constraints.html gtk.html \
+	components.html distribution.html \
+	packages.html pickling.html constraints.html \
 	incompatibilities.html limitations.html \
 	tools.html interactive.html compiler.html machine.html \
 	linker.html depend.html \
-	explorer.html interop.html examples.html tour.html \
+	interop.html examples.html tour.html sitemap.html \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
@@ -52,6 +52,7 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	resolver.html component.html component-manager.html remote.html \
 	HttpClientExample.aml HttpServerExample.aml \
         fd.html fs.html space.html search.html linear.html \
+	gtk.html \
         inspector.html explorer.html
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
