@@ -170,9 +170,11 @@ structure.</P>
   <LI> Primitive operations that need to access a value (e.g. <TT>op+</TT>,
        <TT>op=</TT>, <A href="pickling.html">pickling</A>) are strict
        in their corresponding arguments. </LI>
+  <LI> <A href="packages.html#dynamic">Unpacking</A> is strict in the
+       package's signature and the annotated signature. </LI>
 </UL>
 
-<P>Note that in particular, selecting items from a structure using
+<P>Note however, that selecting items from a structure using
 longids is non-strict.</P>
 
 <P>If a future is requested by a thread, that thread blocks until the future
@@ -194,7 +196,8 @@ in a depth-first left-to-right order. Futures are requested in that order.
 If traversal is terminated early, the remaining futures are not requested.
 Early termination occurs if a future is failed, upon a mismatch (pattern
 matching), if two partial values are not equal (<TT>op=</TT>), or if part
-of a value is sited (pickling).</P>
+of a value is sited (pickling). For unpacking it is unspecified, how much of the
+respective signatures is requested.</P>
 
 <P>The implicit data-flow synchronisation implied by the future semantics
 enables concurrent programming on a high level of abstraction.</P>
@@ -322,7 +325,7 @@ href="components.html">components</A>.</P>
 
 <?php subsection("syntax-derived", "derived forms") ?>
 
-<TABLE class="bnf dyptic">
+<TABLE class="bnf df">
   <TR>
     <TD>
       <BR>
