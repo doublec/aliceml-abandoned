@@ -1,0 +1,256 @@
+import structure UnsafeValue   from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Label         from "x-alice:/lib/rtt/Label"
+import structure Type          from "x-alice:/lib/rtt/Type"
+import structure Inf           from "x-alice:/lib/rtt/Inf"
+import structure Fixity        from "x-alice:/lib/rtt/Fixity"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure AbsTree       from "AbsTree"
+import structure Common        from "Common"
+import structure Prefs         from "Prefs"
+import structure Cache         from "Cache"
+
+(* Type mappers for basic core types : arrows, tuples, records, ... *)
+
+structure Basic =
+struct
+
+  val undefinedKid = Common.undefined "Basic-KID"
+
+  datatype tree = datatype AbsTree.tree
+  datatype row = datatype AbsTree.row
+             
+  (* Mapper for default (unknown) constructors. *)
+  fun abstract item = AbsTree.simpleText (item, Prefs.absL, Prefs.defaultStyle)
+
+  (* Mapper for functions, functors, and other non-displayable things. *)
+  fun arrow item = AbsTree.simpleText (item, Prefs.funL, Prefs.defaultStyle)
+  fun funct item = AbsTree.simpleText (item, Prefs.fctL, Prefs.defaultStyle)
+  fun functLambda item = AbsTree.simpleText (item, Prefs.fctLambdaL,
+                                             Prefs.defaultStyle)
+
+  (* Mapper for products (records, tuples)
+   * tagged is a boolean wich tells if the value is a tagged block. *)
+  fun prod (depth, item, row, value, tagged) =
+    let
+      val row' = Cache.rowToRow row
+      val length = case row' of 
+                     Tuple typVec       => Vector.length typVec
+                   | Record (_, typArr) => Array.length typArr
+      val widthLimit = !Prefs.widthLimit
+      val (limit, width) =
+        if length > widthLimit then (true, widthLimit + 1) else (false, length)
+      val kids = Array.array (width, undefinedKid)
+        
+      val (prefix, suffix) =
+        case row' of
+          Tuple typVec =>
+            (AbsTree.makeTuple (depth - 1, limit, kids,
+                                typVec, value, tagged, 0) ;
+             (AbsTree.openParenthesisL,    (* "(" *)
+              AbsTree.closeParenthesisL))  (* ")" *)
+
+        | Record (labVec, typArr) =>
+            (AbsTree.makeRecord (depth - 1, limit, kids,
+                                 labVec, typArr, value, tagged, 0) ;
+             (AbsTree.openBracketL,        (* "{" *)
+              AbsTree.closeBracketL))      (* "}" *)
+
+      val tree = Container {desc = item, limit, kids}
+    in
+      Concat {prefix, tree, suffix, orient = AbsTree.orientSon}
+    end
+
+  (* Type inspection helper. Directly from PPValue. *)
+  datatype tag_desc = Nullary | Unary of Type.typ | Nary of Type.row
+
+  fun unarg t = case Type.inspect t of
+    Type.Apply(t1,t2) =>
+      if not(Type.equal(t1, PervasiveType.typ_strict)) then Unary t else
+        (case Type.inspect t2 of
+           Type.Prod r => if Type.isEmptyRow r then Nullary else Nary r
+         | _ => assert false)
+  | _ => Unary t      
+      
+  (* Mapper for sum types. *)
+  fun sum (depth, item, row, value) =
+    let
+      val (labVec, typArr) = Cache.rowToVector row
+      val index = UnsafeValue.tag (value, labVec)
+      val label = Label.toString (Vector.sub (labVec, index))
+      val typ   = Array.sub (typArr, index)
+    in
+      case unarg typ of
+        Nullary    => AbsTree.simpleText (item, label, Prefs.consStyle)
+      | Unary typ' =>
+          let
+            val arg   = UnsafeValue.projTaggedTuple (value, 1, 0)
+            val item' = Common.Value (typ', arg)
+            val tree  = AbsTree.mapValue (depth - 1, item', typ', arg)
+          in
+            AbsTree.applicationWithPar (item, label, tree)
+          end
+      | Nary row'  =>
+          let
+            val item' = AbsTree.NestedRow (SOME (Type.prod row'))
+            val tree  = prod (depth - 1, item', row', value, true)
+          in
+            AbsTree.applicationNoPar (item, label, tree)
+          end
+    end
+
+  (* Futures are put in unary containers. *)
+  fun future (item, value) =
+      let 
+	val item' = AbsTree.NestedRow NONE
+	val subtree =
+	    if Future.isLazy value
+	    then AbsTree.simpleText (item', Prefs.lazL, Prefs.lazyStyle)
+	    else AbsTree.simpleText (item', Prefs.futL, Prefs.futureStyle)
+
+	val kids = Array.array (1, subtree)
+      in
+	Container {desc  = item, limit = false, kids}
+      end
+
+  (* Read the exception from a failed future. *)
+  fun failedFuture (item, depth, value) =
+    let
+      (* We read the exception. *)
+      val e = Reflect.reflect(Future.await value) handle e => Reflect.reflect e
+      val typ' = PervasiveType.typ_exn
+      val item' = Common.Value (typ', e)
+      val tree = AbsTree.mapValue (depth - 1, item', typ', e)
+    in
+      AbsTree.failedApplication (item, tree)
+    end
+
+  (* Modules *)
+  val labelStruct = Simple {desc = AbsTree.Struct,
+			    rep = ("struct", Prefs.structStyle) }
+  val labelEnd    = Simple {desc = AbsTree.Struct,
+			    rep = ("end", Prefs.structStyle) }
+  val indentPrefix = [("  ", Prefs.defaultStyle)]
+
+
+  datatype declaration = datatype AbsTree.declaration
+  datatype assoc = datatype Fixity.assoc
+  datatype fix   = datatype Fixity.fix
+  datatype item  = datatype AbsTree.item
+
+  (* Maps a fixity declaration to a prefix. *)
+  val pNonfixL = [("nonfix", Prefs.fixStyle)]
+  val pPrefix = ("prefix ", Prefs.fixStyle)
+  val pPostfix = ("postfix ", Prefs.fixStyle)
+  val pInfix = ("infix ", Prefs.fixStyle)
+  val pInfixr = ("infixr ", Prefs.fixStyle)
+  val pInfixn = ("infixn ", Prefs.fixStyle)
+  fun fixPrefix NONFIX = pNonfixL
+    | fixPrefix(PREFIX n) = pPrefix ::[(Int.toString n, Prefs.fixStyle)]
+    | fixPrefix(POSTFIX n) = pPostfix ::[(Int.toString n, Prefs.fixStyle)]
+    | fixPrefix(INFIX(n, LEFT)) = pInfix ::[(Int.toString n, Prefs.fixStyle)]
+    | fixPrefix(INFIX(n, RIGHT)) = pInfixr::[(Int.toString n, Prefs.fixStyle)]
+    | fixPrefix(INFIX(n,NEITHER)) = pInfixn::[(Int.toString n, Prefs.fixStyle)]
+
+  val pVal = ("val ", Prefs.valStyle)
+  val pValL = [pVal]
+  val pFunL = [("fun ", Prefs.valStyle)]
+
+  (* Maps a declaration to an abstract tree. *)
+  fun mapDecl (depth, Inf.FixItem (l, f)) =
+      let 
+	val label = " " ^ Label.toString l
+	val item = Decl FixItem
+	val tree = AbsTree.simpleText (item, label, Prefs.labStyle)
+	val prefix = fixPrefix f
+      in
+	Concat {prefix, tree, suffix = [], orient = AbsTree.orientSon}
+      end
+
+    | mapDecl (depth, Inf.ValItem (lab, typ)) =
+      let val label = Label.toString lab
+	  val (item, prefix) = if Type.isArrow typ
+			       then (Decl (FunItem typ), pFunL)
+			       else (Decl (ValItem (label, typ)), pValL)
+	  val tree = AbsTree.simpleText (item, label, Prefs.labStyle)
+      in
+	Concat{prefix, tree, suffix = [], orient = AbsTree.orientSon}
+      end
+
+    | mapDecl (depth, Inf.TypItem _) =
+      AbsTree.simpleText (Decl TypItem, "type ... not done", Prefs.labStyle)
+
+    | mapDecl (depth, Inf.ModItem _) =
+      AbsTree.simpleText (Decl ModItem, "structure ... not done", Prefs.labStyle)
+
+    | mapDecl (depth, Inf.InfItem _) =
+      AbsTree.simpleText (Decl SigItem, "signature ... not done", Prefs.labStyle)
+
+    | mapDecl (depth, Inf.HiddenItem _) =
+      AbsTree.simpleText (NestedRow NONE, "hidden ... not done", Prefs.labStyle)
+
+  (* Expands a declaration. *)
+  fun fromDecl decl =
+      case decl of
+	FixItem => assert false
+      | FunItem _ => assert false
+      | ValItem (l, t) => 
+	let
+	  val prefix = pVal :: (l, Prefs.labStyle) :: AbsTree.equalL
+	  val value = Reflect.reflect 0 (* FIX ME !!! *)
+	  val item = Common.Value (t, value)
+	  val tree = AbsTree.mapValue (!Prefs.incrDepth, item, t, value)
+	in
+	  Concat {prefix, tree, suffix = [], orient = AbsTree.orientSonStrict}
+	end
+
+      | TypItem =>
+	AbsTree.simpleText (Decl TypItem, "type ... not still done", Prefs.labStyle)
+      | ModItem =>
+	AbsTree.simpleText (Decl ModItem, "structure ... still not done", Prefs.labStyle)
+      | SigItem =>
+      AbsTree.simpleText (Decl SigItem, "signature ... still not done", Prefs.labStyle)
+
+  fun addDecl (depth, kids, index, size, []) = assert index = ~1
+    | addDecl (depth, kids, index, size, el :: elems) =
+      if index < 0 then () (* Finished. *)
+      else
+	(if index >= size then () (* Out of range: ignore, but continue. *)
+	 else Array.update (kids, index, mapDecl (depth, Inf.inspectItem el)) ;
+	 addDecl (depth, kids, index - 1, size, elems))
+
+  fun makeDecl (depth, kids, items, length, first, limit) =
+      let
+	val width = Array.length kids
+	val size = width - (if limit then 1 else 0)
+      in
+	addDecl (depth, kids, length - 1 - first, size, items) ;
+	if limit
+	then Array.update (kids, size, WidthLimit (AbsTree.ModuleLimit length))
+	else ()
+      end
+
+  fun module (depth, item, sign, module) =
+    let
+      val items = Inf.items sign (* reversed *)
+      val length = List.length items
+      val widthLimit = !Prefs.widthLimit
+      val (limit, width) =
+        if length > widthLimit then (true, widthLimit + 1) else (false, length)
+      val elemKids = Array.array (width, undefinedKid)
+      val elems = Container {desc = AbsTree.Struct, limit, kids = elemKids}
+
+      val kids = Array.array (3, undefinedKid)
+      val body = Concat {prefix = indentPrefix, tree = elems,
+                         suffix = indentPrefix,
+                         orient = AbsTree.orientSonStrict}
+    in
+      Array.update (kids, 0, labelStruct) ;
+      Array.update (kids, 1, body) ;
+      Array.update (kids, 2, labelEnd) ;
+      makeDecl (depth - 1, elemKids, items, length, 0, limit) ;
+      Container {desc = item, limit = false, kids}
+    end
+
+
+end

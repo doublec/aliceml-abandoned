@@ -1,0 +1,310 @@
+import structure UnsafeValue  from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect      from "x-alice:/lib/system/Reflect" 
+import structure Type         from "x-alice:/lib/rtt/Type"
+import structure Inf          from "x-alice:/lib/rtt/Inf"
+import structure Label        from "x-alice:/lib/rtt/Label"
+import structure Prefs        from "Prefs"
+import structure Common       from "Common"
+
+
+structure AbsTree =
+struct
+
+  datatype 'a flag = Noflag | Reference | Future of 'a
+
+  type alice_item = Common.alice_item
+
+  (* Declarations in a module that have their own tree. *)
+  datatype declaration =
+	   FixItem
+	 | ValItem of string * Type.typ
+	 | FunItem of Type.typ
+	 | TypItem
+	 | ModItem
+	 | SigItem
+
+  datatype 'a item = 
+    NestedRow of Type.typ option
+          (* Row of values nested in a single block, such as in C (v1, v2)
+           * Used as a description for corresponding containers. *)
+
+  (* A list tail stands for the end of the list.
+   * It is found as the last element of its parent container. *)
+  | ListTail of Type.typ * Reflect.value list * 'a flag
+  | Value    of Type.typ * Reflect.value * 'a flag
+  | Module   of Inf.t    * Reflect.module * 'a flag
+
+  | Struct   (* Keywords around structures and the whole body, also. *)
+  | Decl of declaration 
+
+  type absitem = unit item
+
+  fun castItem (Common.Value  (t, v)) = Value (t, v, Noflag)
+    | castItem (Common.Module (s, m)) = Module (s, m, Noflag)
+
+  fun downcastItem (Value (t, v, _))  = SOME (Common.Value (t, v))
+    | downcastItem (Module (s, m, _)) = SOME (Common.Module (s, m))
+    | downcastItem (NestedRow _)      = NONE
+    | downcastItem Struct             = NONE
+    | downcastItem (Decl _)           = NONE
+    | downcastItem (ListTail _)       = NONE
+
+  fun getValue (Value (_, v, _)) = v
+    | getValue _ = assert false
+
+  datatype row =
+    Tuple  of Type.typ Vector.t
+  | Record of Type.lab Vector.t * Type.typ Array.t
+
+  (* Describes a width limit. *)
+  datatype limit_description = TupRec of {row    : row,
+					  tagged : bool}
+			     | ListLimit of Type.typ * Reflect.value list
+                             | Array of Type.typ
+                             | Vector of Type.typ
+			     | ModuleLimit of int
+
+  datatype orientation = datatype Prefs.orientation
+
+  (* Labels and punctuation symbols are described by the following. *)
+  type text = string * Prefs.style
+
+  (* Abstract view of the tree structure *)
+  datatype tree = 
+    
+  (* Leaf : represented by a simple colored string. *)    
+    Simple of {desc  : absitem ,
+               rep   : text }
+    
+  (* Concatenation of one tree and punctuation. *)
+  | Concat of {prefix  : text list ,
+               tree    : tree,
+               suffix  : text list,
+	       orient  : orientation ref}
+    
+  (* Branching node. *)
+  | Container of {desc  : absitem, 
+                  limit : bool, (* Tells if there is a width limit. *)
+                  kids  : tree array}
+    
+  (* Folded tree (used for instance for depth limit).
+   * Represented by a down arrow. *)
+  | Fold of alice_item
+
+  (* Width Limit. *)
+  | WidthLimit of limit_description
+
+  (* Raw value that will eventually be mapped to an abstract tree.
+   * Either Fst = Value not mapped yet
+   *        Snd = Value mapped *)
+  | Raw of (alice_item, tree) alt ref
+
+  (* This a trick to have recursive modules. *)
+  val mapValueP = Promise.promise ()
+  val mapValue  = (Promise.future mapValueP
+                   : int * alice_item * Type.typ * Reflect.value -> tree)
+
+  val mapP = Promise.promise ()
+  val map  = (Promise.future mapP : int * alice_item -> tree)
+
+  (* Transparently reads through Raw. *)
+  fun read (depth, Raw r) = (case !r of SND t => t
+				      | FST x => let val t = map (depth, x)
+						 in r := SND t ; t end)
+    | read (depth, u) = u
+
+  (* Tells if the given item contains a container with more than 1 element. *)
+  fun isContainer (depth, item) =
+      case read (depth, item) of
+	Simple _               => false
+      | Concat {tree, ...}     => isContainer (depth, tree)
+      | Container {kids, ...}  =>
+          if Array.length kids > 1 then true 
+	  else isContainer (depth - 1, Array.sub (kids, 0))
+      | (Fold _ | WidthLimit _)  => false
+      | Raw _                  => assert false
+
+  val openParenthesis =  ("(", Prefs.brackStyle)
+  val openParenthesisL = [openParenthesis]
+
+  val spaceParenthesis  = (" (", Prefs.brackStyle)
+  val spaceParenthesisL = [spaceParenthesis]
+
+  val space = (" ", Prefs.brackStyle)
+  val spaceL = [space]
+
+  val closeParenthesis = (")", Prefs.brackStyle)
+  val closeParenthesisL = [closeParenthesis]
+
+  val openBracket = ("{", Prefs.brackStyle)
+  val openBracketL = [openBracket]
+
+  val closeBracket = ("}", Prefs.brackStyle)
+  val closeBracketL = [closeBracket]
+
+  val openSBracket = ("[", Prefs.brackStyle)
+  val openSBracketL = [openSBracket]
+
+  val closeSBracket = ("]", Prefs.brackStyle)
+  val closeSBracketL = [closeSBracket]
+
+  val comma = (", ", Prefs.brackStyle)
+  val commaL = [comma]
+
+  val equal = (" = ", Prefs.brackStyle)
+  val equalL = [equal]
+
+  val orientParent    = ref Parent    (* Never modified. *)
+  val orientSon       = ref Son       (* Never modified. *)
+  val orientSonStrict = ref SonStrict (* Never modified. *)
+
+  val failedParenthesisL = (Prefs.faiL, Prefs.failStyle) ::
+			   spaceParenthesisL
+
+  fun simpleText (item, txt, style) = 
+    Simple {desc  = item ,
+            rep   = (txt, style)}  
+
+  fun makeBox {prefix, tree, suffix, item} =
+      let
+	val kid = Concat {prefix, tree, suffix, orient = orientParent}
+	val kids = Array.array (1, kid)
+      in
+	Container {desc  = item, limit = false, kids}
+      end
+
+  (* A constructor applied to its argument : K (arg) 
+   * K is the label, 'arg' is a tree (it can be a container). *)
+  fun applicationWithPar (item, label, tree) =
+      makeBox {prefix = (label, Prefs.consStyle) ::
+			spaceParenthesisL ,
+	       tree, item,
+	       suffix = closeParenthesisL}
+
+  fun applicationNoPar (item, label, tree) =
+      makeBox {prefix = (label, Prefs.consStyle) :: spaceL,
+	       tree, item,
+	       suffix = []}
+
+  (* A constructor applied to an abstract argument.
+   * Default handling of extensible datatypes. *)
+  fun abstractApplication (item, label) =
+      makeBox {prefix = (label, Prefs.exnStyle) :: spaceParenthesisL,
+               tree = simpleText(NestedRow NONE,Prefs.absL,Prefs.defaultStyle),
+	       item,
+               suffix = closeParenthesisL }
+
+  fun failedApplication (item, tree) =
+      makeBox {prefix = failedParenthesisL ,
+               tree, item,
+               suffix = closeParenthesisL}
+
+
+  (* For efficiency, the code for making tuples, records, ... is 
+   * duplicated. *)
+    
+  (* Fills in the given array (from 0) with the elements of the value-tuple
+   * from the start index to the end of the array. *)
+  fun makeTuple (depth, limit, array, typVec, value, tagged, start) =
+    let
+      val length = Array.length array
+      val last = if limit then length - 2 else length - 1
+      val full = Vector.length typVec
+      fun loop index =
+        if index > last then ()
+        else
+          let
+	    val i' = index + start
+            val subvalue = if tagged
+                           then UnsafeValue.projTaggedTuple (value, full, i')
+                           else UnsafeValue.projTuple (value, full, i')
+            val subtype = Vector.sub (typVec, i')
+            val item = Common.Value (subtype, subvalue)
+            val subtree = mapValue (depth, item, subtype, subvalue)
+            val tree = if index = length - 1 then subtree
+                       else Concat {prefix = [],
+                                    tree   = subtree,
+                                    suffix = commaL,
+				    orient = orientParent}
+          in
+            Array.update (array, index, tree) ;
+            loop (index + 1)
+          end
+    in
+      loop 0 ;
+      if limit
+      then Array.update(array, length - 1,
+			WidthLimit (TupRec {row = Tuple typVec, tagged}))
+      else ()
+    end
+
+  (* Maps a record into the array. *)
+  fun makeRecord (depth, limit, array, labVec, typArr, value, tagged, start) =
+    let
+      val length = Array.length array
+      val last = if limit then length - 2 else length - 1
+      fun loop index =
+        if index > last then ()
+        else
+          let
+	    val i' = index + start
+            val subvalue = if tagged
+                           then UnsafeValue.projTagged (value, labVec, i')
+                           else UnsafeValue.proj (value, labVec, i')
+            val subtype = Array.sub (typArr, i')
+            val label = Vector.sub (labVec, i')
+            val item = Common.Value (subtype, subvalue)
+            val subtree = mapValue (depth, item, subtype, subvalue)
+            val prefix = (Label.toString label, Prefs.labelStyle) :: equalL
+            val suffix = if index = length - 1 then [] else commaL
+            val tree = Concat {prefix,
+                               tree = subtree,
+                               suffix,
+			       orient = Prefs.labelOrient}
+          in
+            Array.update (array, index, tree) ;
+            loop (index + 1)
+          end
+    in
+      loop 0 ;
+      if limit
+      then Array.update (array, length - 1,
+			 WidthLimit (TupRec {row = Record (labVec, typArr),
+					     tagged}))
+      else ()
+    end
+
+  (* Maps a Reflect.value array/vector into the given tree array. *)
+  fun makeVecArray (read, limd) (depth, limit, array, value, start, typ) =
+    let
+      val length = Array.length array
+      val last = if limit then length - 2 else length - 1
+      fun loop index =
+        if index > last then ()
+        else
+          let
+	    val i' = index + start
+            val subvalue = read (value, i')
+            val item = Common.Value (typ, subvalue)
+            val subtree = mapValue (depth, item, typ, subvalue)
+            val tree = if index = length - 1 then subtree
+                       else Concat {prefix = [],
+                                    tree   = subtree,
+                                    suffix = commaL,
+				    orient = orientParent}
+          in
+            Array.update (array, index, tree) ;
+            loop (index + 1)
+          end
+    in
+      loop 0 ;
+      if limit
+      then Array.update (array, length - 1, WidthLimit (limd typ))
+      else ()
+    end
+
+  val makeArray = makeVecArray (Array.sub, Array)
+  val makeVector = makeVecArray (Vector.sub, Vector)
+
+end
+

@@ -1,0 +1,62 @@
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure AbsTree       from "../AbsTree"
+import structure Prefs         from "../Prefs"
+import structure GrTypes       from "GrTypes"
+import signature MONITORS      from "../MONITORS-sig"
+import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
+import signature LAYOUT        from "LAYOUT-sig"
+
+local
+  type group = Gtk.object
+  type canvas_item  = Gtk.object
+  type text = string * Prefs.style
+  type tree = GrTypes.tree
+  type orient = Prefs.orientation ref
+  type suffix = text list * orient * int
+  type desc = AbsTree.item
+  type content = GrTypes.content
+in
+
+signature GR_TREE =
+sig
+  val root : tree
+
+  structure Driver     : CANVAS_DRIVER
+  structure Layout     : LAYOUT
+  structure Monitors   : MONITORS
+
+  val unmapDesc : int ref AbsTree.item -> unit AbsTree.item
+
+  val fromTexts :  group * int * int * text list *
+                   (canvas_item * text) list ->
+                   (canvas_item * text) list * int * int
+
+  val makeSuffix : group * (suffix list) * int * int ->
+                   ((canvas_item * text) list * orient * int) list * int * int
+
+
+  val makeSimple : {group    : group,
+                    delta    : int,
+                    content  : content,
+                    suffixes : suffix list,
+                    desc     : (int ref) desc,
+                    parent   : tree,
+                    index    : int,
+                    depth    : int,
+                    id       : int option}
+   
+                    -> tree * int * int
+
+  val fromAbsTree : {group    : group,
+		     delta    : int, (* See explanation in GrTypes. *)
+		     abstree  : AbsTree.tree,
+		     parent   : tree,
+		     index    : int,
+		     depth    : int,
+		     suffixes : suffix list, (* Ordered. *)
+                     id       : int option} 
+
+		     -> tree * int * int
+
+end
+end

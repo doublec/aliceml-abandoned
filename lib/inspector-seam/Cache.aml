@@ -1,0 +1,58 @@
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure Type    from "x-alice:/lib/rtt/Type"
+import structure AbsTree from "AbsTree"
+import structure Common  from "Common"
+
+structure Cache =
+struct
+
+  datatype row = datatype AbsTree.row
+
+  val undefinedLab = Common.undefined "LAB"
+  val undefinedTyp = Common.undefined "TYP"
+
+  (* The label array is copied into a vector afterwards :(
+   * I think it is still slightly better than Vector.fromList. *)
+  fun rowToArrays (row, index) =
+    if Type.isEmptyRow row then
+      (Array.array (index, undefinedLab),
+       Array.array (index, undefinedTyp))
+    else
+      let
+        val (lab, typ, row') = Type.asFieldRow row
+        val (labArr, typArr) = rowToArrays (row', index + 1)
+      in
+        Array.update (labArr, index, lab) ;
+        Array.update (typArr, index, typ) ;
+        (labArr, typArr)
+      end
+
+  (* This function should be memoized. *)
+  fun rowToRow row = 
+    if Type.isTupleRow row
+      then 
+        let val typVec = Type.asTupleRow row
+        in
+          if Vector.length typVec <> 1 then Tuple typVec
+          else Record (Vector.fromList [#1 (Type.asFieldRow row)],
+                       Array.fromVector typVec)
+        end
+      else
+        let val (labArr, typArr) = rowToArrays (row, 0)
+        in Record (Array.toVector labArr, typArr)
+        end
+
+  (* This function should be memoized. *)
+  fun rowToVector row =
+    let
+      val (labArr, typArr) = rowToArrays (row, 0)
+    in
+      (Array.toVector labArr, typArr)
+    end
+
+  (* Lists are handled specially. We get the corresponding type. *)
+  val typ_list =
+    let structure T = Reflect.ReflectType(type t = unit list)
+    in #1 (Type.asApply T.x) end
+
+end

@@ -1,0 +1,12 @@
+import structure AbsTree from "../AbsTree"
+import structure GrTypes from "GrTypes"
+
+local
+  type abstree = AbsTree.tree
+  type tree    = GrTypes.tree
+in
+signature LAYOUT_LIST =
+sig
+  val replaceListTail : abstree * tree * int * tree -> unit
+end
+end

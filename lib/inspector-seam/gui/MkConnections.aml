@@ -1,0 +1,39 @@
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import signature HANDLERS      from "../HANDLERS-sig"
+import structure MkAboutWindow from "MkAboutWindow"
+import structure MkPrefsWindow from "MkPrefsWindow"
+
+(***********************************************************
+ * Connects the handlers to the corresponding gui widgets. *
+ ***********************************************************)
+functor MkConnections (Handlers:HANDLERS) =
+struct
+
+local
+  structure MainWin = Handlers.MainWindow    
+  fun newAboutWindow _ = let structure _ = MkAboutWindow MainWin in () end
+  fun newPrefsWindow _ = let structure _ = MkPrefsWindow Handlers in () end
+  val connect = Gtk.signalConnect
+in
+
+  val _ =
+    (connect (MainWin.window, "delete-event", Handlers.close) ;
+     connect (MainWin.window, "destroy", Handlers.close) ;
+     connect (MainWin.menuItemClose, "activate", Handlers.close) ;
+     
+     connect (MainWin.menuItemClear, "activate", Handlers.clear) ;
+     connect (MainWin.menuItemExpand, "activate", Handlers.expand) ;
+     connect (MainWin.menuItemFold, "activate", Handlers.fold) ;
+     connect (MainWin.menuItemReinspect, "activate", Handlers.reinspect) ;
+     connect (MainWin.menuItemForceEval, "activate", Handlers.forceEval) ;
+     connect (MainWin.menuItemRemovEntry, "activate", Handlers.removeEntry) ;
+     
+     connect (MainWin.menuItemAbout, "activate", newAboutWindow) ;
+     connect (MainWin.menuItemPreferences, "activate", newPrefsWindow) ;
+
+     connect (MainWin.canvas, "event", Handlers.canvasEvent) ;
+
+     ())
+end
+
+end

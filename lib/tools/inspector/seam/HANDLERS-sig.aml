@@ -1,0 +1,29 @@
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Prefs       from "Prefs"
+import structure Common      from "Common"
+import signature MAIN_WINDOW from "gui/MAIN_WINDOW-sig"
+
+local 
+  (* The usual type of a handler in Gtk. *)
+  type handler = (Gtk.object * Gtk.arg list) -> unit
+in
+
+signature HANDLERS =
+sig
+  
+  structure MainWindow : MAIN_WINDOW  (* The GUI these handlers refer to. *)
+  
+  val close : handler (* Close the main window. *)
+  val clear : handler (* Clear the selection. *)
+  val expand : handler (* Expand the selection. *)
+  val fold : handler (* Fold the selection. *)
+  val reinspect : handler  (* Reinspect the selection. *)
+  val forceEval : handler  (* Forces evaluation of the selection. *)
+  val removeEntry : handler
+  val applyPreferences : Prefs.prefs -> unit 
+  val processInstruction : Common.instruction -> unit
+  val canvasEvent : handler
+
+end
+
+end

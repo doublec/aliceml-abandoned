@@ -1,0 +1,44 @@
+*** Files of the Inspector ***
+
+QUEUE-sig.aml		: Signature of a priority queue
+MkQueue.aml		: Implementation
+
+Prefs.aml		: Preferences of the Inspector.
+AbsTree.aml		: Abstract trees (abstract view of displayed data)
+TypeMappers.aml		: Mappings from types to abstract trees.
+BasicTypeMappers.aml	: Type-mappers for records and tuples
+BuiltinTypeMappers.aml	: Type-mappers for builtin types (int, list, ...)
+Cache.aml		: Given a type, finds its description
+Common.aml		: Instruction of the virtual machine, tool functions
+HANDLERS-sig.aml
+MkHandlers.aml		: Handlers = actions of the graphical interface
+MONITORS-sig.aml
+MkMonitors.aml		: Monitors for futures and references
+Inspector.aml		: Main entry of the Inspector
+Test.aml		: Test the inspector
+
+
+gui/
+ BOARD-sig.aml
+ MkBoard.aml		: The Board is the top-level view of the canvas
+			  'inspect val' adds one entry in the board
+ CANVAS_DRIVER-sig.aml
+ MkCanvasDriver.aml	: Driver for the gnome-canvas
+ GrTypes.aml		: Definition of graphical trees (concrete view)
+ GR_TREE-sig.aml
+ MkGrTree.aml		: Maps abstract trees to graphical trees
+ LAYOUT-sig.aml
+ MkLayout.aml		: Redo the layout of a tree (after an update)
+ LAYOUT_LIST-sig.aml
+ MkLayoutList.aml	: Update the layout of lists after an update
+ MAIN_WINDOW-sig.aml
+ MkMainWindow.aml	: Builds the main GUI-window
+ MkAboutWindow.aml	: Builds the "about" window
+ MkConnections.aml	: Connects widgets to handles
+ MkPrefsWindow.aml	: Builds the preferences window
+ SELECTION-sig.aml
+ MkSelection.aml	: Manages the selections
+ UPDATE-sig.aml
+ MkUpdate.aml		: Dynamic update (futures and user interaction)
+ MkTooltip              : Tooltips
+

@@ -1,0 +1,308 @@
+import structure Common        from "../Common"
+import signature LAYOUT        from "LAYOUT-sig"
+import structure GrTypes       from "GrTypes"
+import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
+import structure Canvas        from "x-alice:/lib/gtk/Canvas"
+
+functor MkLayout (Driver : CANVAS_DRIVER)
+		 (QueuePut : Common.QUEUE_PUT) :> LAYOUT =
+struct
+
+open GrTypes
+
+(* Tells if the given tree contains a container with at least two elements. *)
+fun isContainer (Simple _) = false
+  | isContainer (Prefix {tree, ...}) = isContainer (!tree)
+  | isContainer (Container {kids, ...}) =
+         let val kids = !kids
+         in
+           if Array.length kids > 1 then true 
+           else isContainer (Array.sub (kids, 0))
+         end
+
+fun findContainer (kids, index, size) =
+  if index >= size then NONE
+  else if isContainer (Array.sub (kids, index)) then SOME index
+       else findContainer (kids, index + 1, size)
+
+(* Signals to the given container that one of its child is dirty. *)
+fun propagateDirty (tree, childIndex) =
+  if childIndex < 0
+    then if childIndex = ~1 then () (* It is hidden. *)
+         else QueuePut.put (Common.Layout (~childIndex))
+    else case tree of
+      Container {status, parent, index, ...} =>
+        (case !status of
+           Clean => (status := Dirty ; propagateDirty (!parent, !index))
+         | RedoLayout _ => ()
+         | Dirty => ())
+
+  | _ => assert false
+     
+(* Tells what the mode will be in the future, taking the status into account.*)
+fun getFutureMode (mode, (Clean | Dirty)) = mode
+  | getFutureMode (_, RedoLayout mode) = mode
+
+(* Sets the current/future mode to Vertical i. *)
+fun setModeVertical (mode, status, i) =
+    case !status of
+      (Clean | Dirty) => mode := Vertical i
+    | RedoLayout (Vertical j) => (assert i < j ;
+				  status := RedoLayout (Vertical i))
+    | RedoLayout _ => assert false
+
+fun updateMode (tree, childIndex, isCont) =
+  if childIndex < 0
+    then if childIndex = ~1 then ()
+	 else QueuePut.put (Common.Layout (~childIndex))
+  else
+  case tree of
+    Container {mode, status, parent = ref parent, index, kids, ...} =>
+      let val size = Array.length (!kids)
+      in
+        if size = 1
+          then (* Horizontal or Vertical does not make sense anyway. *)
+            (status := Dirty ;
+             updateMode (parent, !index, isCont))
+        else
+        case getFutureMode (!mode, !status) of
+         (* The parent was horizontal... *)
+         Horizontal =>
+           (* ... and the child becomes a container. *)
+           if isCont then (status := RedoLayout (Vertical childIndex) ;
+                           propagateDirty (parent, !index))
+
+           (* and the child becomes flat. Not possible I think. *)
+           else (Common.warning "MkLayout.updateMode: strange layout\n";
+                 propagateDirty (tree, childIndex))
+
+       | AlwaysVertical => propagateDirty (tree, childIndex)
+
+       (* The parent was vertical... *)
+       | Vertical n =>
+             (* ... and the child becomes a container. *)
+             if isCont then
+               (if n > childIndex
+		  then setModeVertical (mode, status, childIndex)
+                  else () ;
+                propagateDirty (tree, childIndex))
+             
+             (* ... and the child becomes flat. *)
+             else if n = childIndex
+                  then (* This child cannot be used as a reference. 
+                        * find another one. *)
+                    case findContainer (!kids, childIndex + 1, size) of
+                      SOME i => (setModeVertical (mode, status, i) ;
+                                 propagateDirty (tree, childIndex))
+                    | NONE   => (status := RedoLayout Horizontal ;
+                                 propagateDirty (parent, !index))
+                  else propagateDirty (tree, childIndex)                    
+      end
+
+  | _ => assert false
+
+fun replaced (parent, index, isCon, isCon') =
+    if isCon = isCon'
+    then propagateDirty (parent, index) (* The parent's mode is the same. *)
+    else updateMode (parent, index, isCon')
+
+fun shiftPrefix ([], dx) = ()
+  | shiftPrefix ((item, _) :: xs, dx) = (Driver.mvByX (item, dx) ;
+					 shiftPrefix (xs, dx))
+
+fun shiftSuffix (suffix, dx) = List.app (fn (gl, _, _) => shiftPrefix (gl, dx))
+					suffix
+
+fun shiftKids (kids, index, size, dx) =
+  if index >= size then ()
+  else (Driver.mvByX (getGroup (Array.sub (kids, index)), dx) ;
+        shiftKids (kids, index + 1, size, dx))
+
+
+(* Given the old and new deltas, move a group to its new correct position. *)
+fun mvElement (group, newdelta, olddelta, mode) =
+    let val old = !olddelta
+    in
+    if newdelta <> old then
+      (if old > 0 then Driver.mvByX (group, newdelta - old)
+       else case mode of
+	      Horizontal => Driver.mvByX (group, old - newdelta)
+	    | (Vertical _ | AlwaysVertical) => Driver.mvByY (group,
+                                                             old - newdelta) ;
+       olddelta := newdelta)
+    else ()
+    end
+
+(* Move an element from a vertical layout to a horizontal layout. *)
+fun newMvElementH (kid, xpos, xpos0) =
+  let val (group, delta) = getDelta kid 
+  in
+    assert !delta <= 0 ;
+    Driver.mvByXY (group, xpos - xpos0, !delta) ;
+    delta := ~xpos
+  end
+
+(* Move an element from a horizontal layout to a vertical layout. *)
+fun newMvElementV (kid, xpos0, height) =
+  let val (group, delta) = getDelta kid
+  in
+    assert !delta <= 0 ;
+    Driver.mvByXY (group, !delta + xpos0, height) ;
+    delta := ~height
+  end
+
+(* Redo the layout of the given tree. *)
+fun layout' (Container {status, kids, mode, delta, width, height, group, ...},
+	     delta', mode') =
+    let
+      val xpos0 = Int.max (0, !delta)
+      val _ = if xpos0 = 0 andalso delta' <= 0
+                then mvElement (group, delta', delta, mode')
+                else 
+		  if !delta <> delta' andalso !status = Clean
+		  then status := Dirty else ()
+
+      val currentStatus = !status
+    in
+      if currentStatus = Clean then (!width, !height)
+      else
+        (* Update all elements,
+         * and move the following elements accordingly. *)
+        let
+          val xpos  = Int.max (0, delta')
+          val kids = !kids
+          val size = Array.length kids
+          val mode = case currentStatus of
+		       Dirty => !mode
+		     | RedoLayout m => (mode := m ; m)
+		     | Clean => assert false
+
+          val _ = if xpos0 >= 0 andalso xpos <> xpos0 then 
+                     (* This case occurs only when the font has changed,
+                      * or when a prefix is inserted before the container.
+                      * We have to shift all childs in vertical mode.
+                      * In horizontal mode, this will be done automatically. *)
+                     case mode of
+                       Horizontal => delta := delta'
+                     | (Vertical _ | AlwaysVertical) =>
+                                    (shiftKids (kids, 0, size, xpos - xpos0) ;
+                                     delta := delta')
+                  else ()
+		     
+          val (width', height') =
+              case currentStatus of
+                Dirty =>
+                  (case mode of
+                     Horizontal => updHlayout (kids, 0, size, xpos, 0)
+                   | (Vertical _ | AlwaysVertical) => updVlayout (kids, 0,
+                                                                  size, 0, 0))
+
+              | RedoLayout _ =>
+                  (case mode of
+                     Horizontal => newHlayout (kids, 0, size, xpos, 0, xpos)
+                   | (Vertical _ | AlwaysVertical) => newVlayout(kids, 0, size,
+                                                                 0, 0, xpos))
+
+	      | _ => assert false
+
+	  val _ = case mode of
+		    Horizontal => width := width' - xpos
+		  | (Vertical _ | AlwaysVertical) => width := width'
+        in
+          height := height' ;
+          status := Clean ;
+	  (!width, !height)
+        end
+    end
+
+  | layout' (Simple {width, height, suffixWidth, suffix, delta, textItem, ...},
+	     delta', mode') =
+           let
+             val xpos0 = Int.max (0, !delta)
+	     val xpos = Int.max (0, delta')
+             val group = Canvas.canvasItemGetFieldParent textItem
+             val _ = if xpos0 = 0
+                       then (assert delta' <= 0 ;
+                             mvElement (group, delta', delta, mode'))
+                     else (if xpos <> xpos0
+			     then (mvElement (textItem, xpos, delta, mode') ;
+				   shiftSuffix (suffix, xpos - xpos0))
+			     else ())
+           in
+             (width + suffixWidth, height)
+           end
+
+  | layout' (Prefix {tree, group, delta, prefix, prefixWidth,
+                     prefixHeight, ...}, delta', mode') =
+           let
+             val xpos0 = Int.max (0, !delta)
+	     val xpos = Int.max (0, delta')
+             val _ = if xpos0 = 0
+                       then (assert delta' <= 0 ;
+                             mvElement (group, delta', delta, mode'))
+                     else (if xpos <> xpos0
+			     then shiftPrefix (prefix, xpos - xpos0)
+			     else () ;
+                           delta := delta')
+             val (width', height') =
+		 layout' (!tree, xpos + prefixWidth, Horizontal)
+             val width = prefixWidth + width'
+             val height = Int.max (prefixHeight, height')
+           in
+             (width, height)
+           end
+
+(* Update the position of elements in a horizontal container. *)
+and updHlayout (kids, index, size, xpos, height) =
+  if index >= size then (xpos, height)
+  else let
+         val kid = Array.sub (kids, index)
+         val (width', height') = layout' (kid, ~xpos, Horizontal)
+         val height = Int.max (height, height')
+         val xpos  = xpos + width'
+       in
+         updHlayout (kids, index + 1, size, xpos, height)
+       end
+
+(* Update the position of elements in a vertical container. *)
+and updVlayout (kids, index, size, width, height) =
+  if index >= size then (width, height)
+  else let
+         val kid = Array.sub (kids, index)
+         val (width', height') = layout' (kid, ~height, AlwaysVertical)
+         val width  = Int.max (width, width')
+         val height = height + height'
+       in
+         updVlayout (kids, index + 1, size, width, height)
+       end
+
+(* Switch from vertical to horizontal layout. *)
+and newHlayout (kids, index, size, xpos, height, xpos0) =
+    if index >= size then (xpos, height)
+    else let
+           val kid = Array.sub (kids, index)
+           val _ = newMvElementH (kid, xpos, xpos0)
+           val (width', height') = layout' (kid, ~xpos, Horizontal)
+           val height = Int.max (height, height')
+           val xpos  = xpos + width'
+         in
+           newHlayout (kids, index + 1, size, xpos, height, xpos0)
+         end
+
+(* Switch from horizontal to vertical layout. *)
+and newVlayout (kids, index, size, width, height, xpos0) =
+  if index >= size then (width, height)
+  else let
+         val kid = Array.sub (kids, index)
+         val _ = newMvElementV (kid, xpos0, height)
+         val (width', height') = layout' (kid, ~height, AlwaysVertical)
+         val width  = Int.max (width, width')
+         val height = height + height'
+       in
+         newVlayout (kids, index + 1, size, width, height, xpos0)
+       end
+
+(* Check if the layout of the tree must be redone. *)
+fun layout tree = layout' (tree, 0, Horizontal)
+
+end

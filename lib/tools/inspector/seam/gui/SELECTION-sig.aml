@@ -1,0 +1,25 @@
+import structure GrTypes from "GrTypes"
+
+signature SELECTION =
+sig
+
+  val getEntryP : (int -> GrTypes.tree * (int option)) Promise.t
+
+  val modifier     : word ref
+  val isShift      : unit -> bool
+  val isCtrl       : unit -> bool
+
+  val selectAt     : GrTypes.tree * int * int -> bool
+  val selectTree   : GrTypes.tree -> unit
+  val infoAt       : GrTypes.tree * int * int * bool -> unit
+
+  val deselect     : unit -> unit
+  val reselect     : unit -> unit
+  val mapSelection : (GrTypes.tree -> unit) -> unit
+  val doSelect     : int list list -> unit
+  val toEntries    : (int -> unit) -> unit
+  val isEmpty      : unit -> bool
+
+  val findSelectionAt : int * int -> GrTypes.tree option
+end
+

@@ -1,0 +1,215 @@
+import structure Type          from "x-alice:/lib/rtt/Type"
+import structure Atom          from "x-alice:/lib/data/Atom"
+import structure Common        from "Common"
+import structure AbsTree       from "AbsTree"
+import structure Prefs         from "Prefs"
+import structure Basic         from "BasicTypeMappers"
+
+(* Type mappers for builtin types : ints, strings, chars, ... *)
+
+structure Builtin =
+struct
+
+  type aitem = AbsTree.absitem
+  type tree = AbsTree.tree
+  type 'a type_mapper = int * aitem * Type.typ * Type.typ list * 'a -> tree
+
+  datatype tree = datatype AbsTree.tree
+  datatype item = datatype AbsTree.item
+  datatype flag = datatype AbsTree.flag
+
+  (* Generic type_mapper. *)
+  fun generic (toString, style) =
+    ((fn (depth, item, path, targs, value) =>
+                          AbsTree.simpleText (item, toString value, style))
+     : 'a type_mapper)
+    
+  infix ^+ +^
+  fun prefix ^+ map = fn v => prefix ^ (map v)
+  fun map +^ suffix = fn v => (map v) ^ suffix
+
+  (*** INT, INTINF, WORD ***)
+  val int    = generic (Int.toString, Prefs.intStyle)
+  val intInf = generic (IntInf.toString, Prefs.intStyle)
+  val word   = generic ("0wx" ^+ Word.toString, Prefs.wordStyle) 
+  val word8  = generic ("0wx" ^+ Word8.toString, Prefs.wordStyle) 
+  val word32 = generic ("0wx" ^+ Word32.toString, Prefs.wordStyle) 
+
+  (*** REAL ***)
+  val real = generic (Real.toString, Prefs.realStyle)
+
+  (*** CHAR ***)
+  val char = generic ("#\"" ^+ Char.toString +^ "\"", Prefs.charStyle)
+
+  (*** STRING ***)
+  fun string (depth, item, path, targs, value) =
+    let
+      val width = !Prefs.widthLimit
+      val value = String.toString value
+      val label = if String.size value <= width then value ^ "\""
+                  else String.substring (value, 0, width) ^ "\\...\""
+    in
+      AbsTree.simpleText (item, "\"" ^ label, Prefs.strStyle)
+    end
+
+  (*** REFERENCES ***)
+  val refPrefix = [(Prefs.refL, Prefs.refStyle)]
+
+  fun reference (depth, item, path, targs, value) =
+    let
+      val argType = case targs of [t] => t | _ => assert false
+      val x     = !value
+      val item' = Common.Value (argType, x)
+      val tree  = AbsTree.mapValue (depth - 1, item', argType, x)
+      val item  = case item of AbsTree.Value (t,v,_) => Value (t,v, Reference)
+                             | _ => assert false
+    in
+      AbsTree.makeBox {prefix = refPrefix, tree, suffix = [], item}
+    end
+
+  (*** PROMISE ***)
+  val promisePrefix = [("promise ", Prefs.refStyle)]
+
+  fun promise (depth, item, path, targs, value) =
+    let
+      val argType = case targs of [t] => t | _ => assert false
+      val x       = Promise.future value
+      val item'   = Common.Value (argType, x)
+      val tree    = AbsTree.mapValue (depth - 1, item', argType, x)
+    in
+      AbsTree.makeBox {prefix = promisePrefix, tree, suffix = [], item}
+    end
+  
+  (*** LIST ***)
+
+  (* Indicate the status of the list.  *)
+  datatype list_desc = Full | Limited | Undetermined
+  val undefinedListKid = Common.undefined "LIST-KID"
+  val consL = [("::", Prefs.consStyle)]
+
+  fun list' (width, depth, item, path, targs, value) =
+    let
+      val (itemTyp, rval) = case item of Value (t,r,_) => (t,r)
+                                       | _ => assert false
+      val item' = AbsTree.Value (itemTyp, rval, AbsTree.Noflag)
+      val item' = item
+      val depth = depth - 1
+      val argType = case targs of [t] => t | _ => assert false
+
+      (* Returns an array, the status, and a flag "last element". *)
+      fun loop (index, l) =
+        if index >= width
+        then
+	  let
+            val array = Array.array (index + 1, undefinedListKid)
+            val last = WidthLimit (AbsTree.ListLimit (itemTyp, l))
+	  in
+	    Array.update (array, index, last) ;
+	    (array, Limited, false)
+	  end
+        else case Future.status l of
+          Future.FUTURE =>
+          let
+            val array = Array.array (index + 1, undefinedListKid)
+            val desc = AbsTree.ListTail (itemTyp, l, Future ())
+          in
+            Array.update (array, index, Basic.future (desc, l)) ;
+            (array, Undetermined, false)
+          end
+
+        | Future.FAILED =>
+            let
+              val array = Array.array (index + 1, undefinedListKid)
+              val elem = Basic.failedFuture (NestedRow (SOME itemTyp),depth,l)
+            in
+              Array.update (array, index, elem) ;
+              (array, Undetermined, false)
+            end
+
+        | Future.DETERMINED =>
+            (case l of
+               []      => (Array.array (index, undefinedListKid), Full, true)
+             | x :: l' =>
+                 let
+                   val (array, status, last) = loop (index + 1, l')
+                   val item = Common.Value (argType, x)
+                   val subtree = AbsTree.mapValue (depth, item, argType, x)
+                   val tree =
+                     if status = Limited orelse status = Undetermined
+                       then (* We use the :: constructor. *)
+                         Concat {prefix = [],
+                                 tree = subtree,
+                                 suffix = consL,
+				 orient = AbsTree.orientParent}
+                     else
+                       if last then subtree
+                       else (* We use the "," concatenation. *)
+                         Concat {prefix = [],
+                                 tree = subtree,
+                                 suffix = AbsTree.commaL,
+				 orient = AbsTree.orientSonStrict}
+                 in
+                   Array.update (array, index, tree) ;
+                   (array, status, false)
+                 end)
+
+      val (kids, status, empty) = loop (0, value)
+    in
+      case status of
+        Limited      => Container {desc = item', limit = true, kids}
+      | Undetermined => Container {desc = item', limit = false, kids}
+      | Full         =>
+          if empty then AbsTree.simpleText (item', "[]", Prefs.consStyle)
+          else
+               Concat {prefix = AbsTree.openSBracketL,
+                       tree   = Container {desc = item', limit = false, kids},
+                       suffix = AbsTree.closeSBracketL,
+		       orient = AbsTree.orientSon}
+
+    end
+
+  fun list (depth, item, path, targs, value) =
+      list' (!Prefs.widthLimit, depth, item, path, targs, value)  
+
+  (*** ATOMS ***)
+  val atom = generic ("atom{|\"" ^+ Atom.toString +^ "\"|}", Prefs.strStyle)
+
+  (*** TIME ***)
+  fun timeToString t = "time{|" ^
+    (LargeInt.toString (Time.toMicroseconds t)) ^ "us|}"
+  val time = generic (timeToString, Prefs.defaultStyle)
+
+  (*** ARRAY / VECTOR ***)
+  val undefinedKid = Common.undefined "Builtin-KID"
+
+  fun genArray (prefix, suffix, emptyLabel, getLength, make)
+               (depth, item, path, targs, value) =
+    let val length = getLength value
+    in
+      if length > 0 then
+      let
+        val argType = case targs of [t] => t | _ => assert false
+        val widthLimit = !Prefs.widthLimit
+        val (limit, width) =
+          if length > widthLimit
+            then (true, widthLimit + 1) else (false, length)
+        val kids = Array.array (width, undefinedKid)
+        val tree = Container {desc = item, limit, kids}
+      in
+        make (depth - 1, limit, kids, value, 0, argType) ;
+        Concat {prefix, tree, suffix, orient = AbsTree.orientSon}
+      end
+      else AbsTree.simpleText (item, emptyLabel, Prefs.vecStyle)
+    end
+
+  val arrayPrefix = [("array{|", Prefs.vecStyle)]
+  val vectorPrefix = [("#{|", Prefs.vecStyle)]
+  val arraySuffix = [("|}", Prefs.vecStyle)]
+
+  val array = (genArray (arrayPrefix, arraySuffix, "array{||}", Array.length,
+                         AbsTree.makeArray) : _ type_mapper)
+
+  val vector = (genArray (vectorPrefix, arraySuffix, "#{||}", Vector.length,
+                          AbsTree.makeVector) : _ type_mapper)
+
+end

@@ -1,0 +1,203 @@
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+
+structure Prefs =
+struct
+
+  (* When you clic on a text item, which object should it refer to. *)
+  datatype orientation = Parent     (* The parent container. *)
+		       | Son        (* The son, highlighting also the text. *)
+		       | SonStrict  (* Only the son is highlighted. *)
+
+  type style = {name       : string ,
+		colorClass : Gdk.object ref ,
+		font       : string     ref ,
+		usefont    : bool       ref}
+
+  fun copyStyle {name, colorClass, font, usefont} =
+      {name, colorClass = ref (!colorClass), font = ref (!font),
+       usefont = ref (!usefont)}
+
+  fun updateStyle ({name = name1, colorClass = color1,
+		    font = font1, usefont = usefont1},
+		   {name = name2, colorClass = color2,
+		    font = font2, usefont = usefont2},
+		   changed) =
+      let
+	val _ = assert name1 = name2
+	val changed = if !font1 = !font2 then changed
+		      else (font1 := !font2 ; true)
+	val changed = if !usefont1 = !usefont2 then changed
+		      else (usefont1 := !usefont2 ; true)
+	val changed = if !color1 = !color2 then changed
+		      else (color1 := !color2 ; true)
+      in
+	changed
+      end
+      
+
+  (* Preferences. *)
+  type prefs = {widthLimit   : int ,
+                depthLimit   : int ,
+		incrWidth    : int ,
+		incrDepth    : int ,
+                fontname     : string,
+                labelOrient  : orientation,
+                tooltips     : bool,
+                tipDelay     : int,
+                identifiers  : bool,
+		styles       : style list}
+
+  val styles = ref []
+  val widthLimit  = ref 8
+  val depthLimit  = ref 5
+  val incrWidth   = ref 4
+  val incrDepth   = ref 2
+  val fontname    = ref "Sans 12"
+  val labelOrient = ref SonStrict
+  val identifiers = ref true
+
+  (* Period of a mouse-tick for tooltips. *)
+  val mouseTickms  = 200
+  val mouseTick    = Time.fromMilliseconds (LargeInt.fromInt mouseTickms)
+  val tooltipDelay = ref 1 (* In ticks. *)
+  val tooltips     = ref true
+
+  fun getCurrentPrefs () = {widthLimit   = !widthLimit ,
+                            depthLimit   = !depthLimit ,
+			    incrWidth    = !incrWidth ,
+			    incrDepth    = !incrDepth ,
+                            fontname     = !fontname ,
+                            labelOrient  = !labelOrient ,
+                            tipDelay     = !tooltipDelay ,
+                            tooltips     = !tooltips ,
+                            identifiers  = !identifiers ,
+			    styles       = List.map copyStyle (!styles)}
+
+  fun setCurrentPrefs (prefs:prefs) =
+    (widthLimit   := #widthLimit  prefs ;
+     depthLimit   := #depthLimit  prefs ;
+     incrWidth    := #incrWidth   prefs ;
+     incrDepth    := #incrDepth   prefs ;
+     fontname     := #fontname    prefs ;
+     labelOrient  := #labelOrient prefs ;
+     tooltipDelay := #tipDelay    prefs ;
+     tooltips     := #tooltips    prefs ;
+     identifiers  := #identifiers prefs ;
+     ListPair.foldl updateStyle false (!styles, #styles prefs))
+
+(***********************************************************
+ *                  General Settings                       *
+ ***********************************************************)
+
+  val defaultWidth  = 600
+  val defaultHeight = 400
+  val windowTitle   = "Alice New Inspector"
+  val ready         = "Ready"
+  val sepsep        = 4 (* Separation between text and separator, in pixels. *)
+  val margin        = 4 (* Top and left margins *)
+  val rightMargin   = 16
+  val sampleText    = "{Sample}"
+
+  (* Period of the monitoring threads, in milliseconds. *)
+  val monitorPeriod  = Time.fromMilliseconds (LargeInt.fromInt 500)
+
+  val absL = "_val"
+  val funL = "_fn"
+  val lazL = "_lazy"
+  val futL = "_future"
+  val faiL = "_failed"
+  val refL = "ref "
+  val refIdL = "ref"
+
+  val foldL = "?"
+  val cutL = "..."
+
+  val topL = "()"
+  val fctL = "_fct"
+  val fctLambdaL = "_lambdaSig"
+
+(***********************************************************
+ *                       COLORS                            *
+ ***********************************************************)
+
+  val allocColor = lazy
+    let val colorMap = Gdk.colormapGetSystem () (* Gtk color System *)
+    in
+      fn (r ,g ,b ) =>
+        let
+	  val c = Gdk.colorNew (r, g, b)
+	  val r = Gdk.colormapAllocColor (colorMap, c, false, true)
+	in
+	  if not r
+          then print ("*** Inspector warning (Prefs.aml): " ^ 
+                      "color allocation miserably failed.\n")
+          else () ;
+	  c
+	end
+    end
+
+  (* Standard colors. *)
+  val black    = lazy allocColor (0, 0, 0)
+  val white    = lazy allocColor (0xffff, 0xffff, 0xffff)
+  val red      = lazy allocColor (0xffff, 0, 0)
+  val blue     = lazy allocColor (0x0, 0x0, 0xffff)
+
+  val selectColor  = lazy allocColor (62000, 62000, 0)
+  val outlineColor = lazy allocColor (62000, 0, 0)
+  val shadeColor   = lazy allocColor (45000, 45000, 45000)
+
+  fun newStyle (name, font, rgb, editable) =
+    let 
+      val c = lazy allocColor rgb
+      val r = ref c
+      val style = {name, 
+		   colorClass = r ,
+		   font = ref font,
+		   usefont = ref false}
+    in
+      if editable then styles := style :: (!styles) else () ;
+      style
+    end
+
+  (* Styles for displaying values. *)
+
+  val lazyStyle   = newStyle ("lazy", !fontname, (45000,0,0), false)
+  val futureStyle = newStyle ("future", !fontname, (45000,0,0), false)
+  val failStyle   = newStyle ("failed", !fontname, (45000,0,0), false)
+
+  (* Style for datatype constructors. *)
+  val consStyle = newStyle ("constructor", !fontname, (45000,10000,65535),
+			    false)
+
+  (* Labels in a record. *)
+  val labelStyle = newStyle ("label", !fontname, (0,10000,65535), true)
+
+  (* Some built-in types. *)
+  val intStyle   = newStyle ("int", !fontname, (0,45000,0), false)
+  val realStyle  = newStyle ("real", !fontname, (0,45000,0), false)
+  val charStyle  = newStyle ("char", !fontname, (45000,0,50000), false)
+  val strStyle   = newStyle ("string", !fontname, (45000,0,50000), true)
+  val wordStyle  = newStyle ("word", !fontname, (0,43000,0), false)
+  val refStyle   = newStyle ("reference", !fontname, (0,0,0), false)
+  val vecStyle   = newStyle ("vector", !fontname, (55000,25000,0), false)
+
+  (* Exceptions. *)
+  val exnStyle   = newStyle ("exception", !fontname, (60000,40000,0), false)
+
+  (* Separators, i.e. punctuation symbols. *)
+  val sepStyle   = newStyle ("separator", !fontname, (0,0,0), false)
+  val sepColor   = #colorClass sepStyle
+  val brackStyle = newStyle ("brackets", !fontname, (0,5000,47000), false)
+
+  (* Structures *)
+  val structStyle = newStyle ("structure", !fontname, (0,50000,0), false)
+  val fixStyle    = newStyle ("fixity", !fontname, (0,50000,25000), false)
+  val valStyle    = newStyle ("val", !fontname, (0,50000,25000), false)
+  val labStyle    = newStyle ("label", !fontname, (20000,10000,25000), false)
+
+  (* Limit symbols. *)
+  val limitStyle = newStyle ("limit", !fontname, (0,0,0), false)
+
+  val defaultStyle = newStyle ("default", !fontname, (0,0,0), false)
+
+end

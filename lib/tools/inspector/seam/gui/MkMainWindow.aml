@@ -1,0 +1,126 @@
+import structure Gdk         from "x-alice:/lib/gtk/Gdk"
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Canvas      from "x-alice:/lib/gtk/Canvas"
+import structure Prefs       from "../Prefs"
+import signature MAIN_WINDOW from "MAIN_WINDOW-sig"
+
+functor MkMainWindow () :> MAIN_WINDOW =
+struct
+
+  (**************************************************************
+   * Creates a new top-level main window.                       *
+   **************************************************************)
+
+  val null = Gtk.NULL
+
+  (* Create the new window. *)
+  val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+
+  val vbox = Gtk.vboxNew (false, 0) (* main vbox *)
+
+  (* MENUS *)
+  val menubar        = Gtk.menuBarNew ()
+  val menuInspector  = Gtk.menuItemNewWithLabel "Inspector"
+  val menuInspectorM = Gtk.menuNew ()
+  val menuSelection  = Gtk.menuItemNewWithLabel "Selection"
+  val menuSelectionM = Gtk.menuNew ()
+  val menuOptions    = Gtk.menuItemNewWithLabel "Options"
+  val menuOptionsM   = Gtk.menuNew ()
+    
+  (* MENU : INSPECTOR *)
+  val menuItemAbout = Gtk.menuItemNewWithLabel "About..."
+  val menuItemClear = Gtk.menuItemNewWithLabel "Clear"
+  val menuItemSep11 = Gtk.menuItemNew ()
+  val menuItemClose = Gtk.menuItemNewWithLabel "Close"
+    
+  (* MENU : Selection *)
+  val menuItemExpand = Gtk.menuItemNewWithLabel "Expand"
+  val menuItemFold = Gtk.menuItemNewWithLabel "Fold"
+  val menuItemSep21  = Gtk.menuItemNew ()
+  val menuItemReinspect = Gtk.menuItemNewWithLabel "Reinspect"
+  val menuItemForceEval = Gtk.menuItemNewWithLabel "Force Evaluation"
+  val menuItemSep22  = Gtk.menuItemNew ()
+  val menuItemRemovEntry = Gtk.menuItemNewWithLabel "Remove entry"
+
+  val _ = Gtk.widgetSetSensitive(menuSelection, false)
+  val _ = Gtk.widgetSetSensitive(menuItemExpand, false)
+  val _ = Gtk.widgetSetSensitive(menuItemFold, false)
+  val _ = Gtk.widgetSetSensitive(menuItemReinspect, false)
+  val _ = Gtk.widgetSetSensitive(menuItemRemovEntry, false)
+  val _ = Gtk.widgetSetSensitive(menuItemForceEval, false)
+    
+  (* MENU : Options *)
+  val menuItemPreferences = Gtk.menuItemNewWithLabel "Preferences"
+    
+  (* The CANVAS *)
+  val canvas = Canvas.new ()
+  val scrollWindow = Gtk.scrolledWindowNew (null, null)
+  val hadjust = Gtk.scrolledWindowGetHadjustment scrollWindow
+  val vadjust = Gtk.scrolledWindowGetVadjustment scrollWindow
+    
+  (* The status bar *)
+  val status = Gtk.statusbarNew ()
+  val statusContextId = Gtk.statusbarGetContextId (status, "foobar")
+  (* Invariant : there is always exactly one message in the statusbar. *)
+  fun setStatus message =
+    (Gtk.statusbarPop (status, statusContextId) ;
+     Gtk.statusbarPush (status, statusContextId, message) ;
+     ())
+
+  val canvasWidth = Gdk.screenGetWidth (Gtk.widgetGetScreen window)
+    
+  val _ =   
+    (
+     (* Sets the hierarchy and some preferences. *)
+     Gtk.windowSetDefaultSize(window, Prefs.defaultWidth, Prefs.defaultHeight);
+     Gtk.windowSetTitle (window, Prefs.windowTitle);
+     Gtk.containerSetBorderWidth (window, 0);
+     Gtk.containerSetBorderWidth (vbox, 0); 
+     Gtk.containerAdd (window, vbox);
+     
+     (* MENUS *)
+     Gtk.boxPackStart (vbox, menubar, false, true, 0) ;
+     Gtk.menuShellAppend (menubar, menuInspector) ;
+     Gtk.menuItemSetSubmenu (menuInspector, menuInspectorM) ;
+     Gtk.menuShellAppend (menubar, menuSelection) ;
+     Gtk.menuItemSetSubmenu (menuSelection, menuSelectionM) ;
+     Gtk.menuShellAppend (menubar, menuOptions) ;
+     Gtk.menuItemSetSubmenu (menuOptions, menuOptionsM) ;
+     
+     Gtk.menuShellAppend (menuInspectorM, menuItemAbout) ;
+     Gtk.menuShellAppend (menuInspectorM, menuItemClear) ;
+     Gtk.menuShellAppend (menuInspectorM, menuItemSep11) ;
+     Gtk.menuShellAppend (menuInspectorM, menuItemClose) ;
+     
+     Gtk.menuShellAppend (menuSelectionM, menuItemExpand) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemFold) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemSep21) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemReinspect) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemForceEval) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemSep22) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemRemovEntry) ;
+     
+     Gtk.menuShellAppend (menuOptionsM, menuItemPreferences) ;
+     
+     (* CANVAS *)
+     Gtk.containerAdd (scrollWindow, canvas);
+     Gtk.containerAdd (vbox, scrollWindow) ;
+     
+     (* Status bar *)
+     Gtk.boxPackEnd (vbox, status, false, true, 0) ;
+     Gtk.statusbarPush (status, statusContextId, " Starting... ") ;
+
+     (* Increment of scrollbars. *)
+     Gtk.adjustmentSetFieldStepIncrement (hadjust, 40.0) ;
+     Gtk.adjustmentSetFieldStepIncrement (vadjust, 40.0) ;
+     
+     (* SHOW ALL *)
+     Gtk.widgetShowAll window ;
+
+     ())
+
+    (****************** POPUP MENU ********************)
+    fun popup (button, time) =
+       Gtk.menuPopup (menuSelectionM, null, null, null, null, button, 0)
+      
+end

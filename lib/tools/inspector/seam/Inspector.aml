@@ -1,0 +1,61 @@
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Common        from "Common"
+import structure MkMainWindow  from "gui/MkMainWindow"
+import structure MkConnections from "gui/MkConnections"
+import structure MkHandlers    from "MkHandlers"
+import structure Prefs         from "Prefs"
+
+structure Inspector =
+struct
+
+  (* Input queue with instructions to be executed by the current Inspector. *)
+  val queueRef = ref (NONE : Common.Queue.t option)
+
+  (* Get the inspector queue. Creates everything if needed. *)
+  fun init () =
+    let 
+      (* Can be optimized if necessary. *)
+      val p = Promise.promise ()
+      val queueRefOp = Ref.exchange (queueRef, Promise.future p)
+    in
+      case queueRefOp of
+        SOME c => (Promise.fulfill (p, queueRefOp) ; c)
+      | NONE =>
+          let
+            val       queue      = Common.Queue.queue ()
+            structure MainWindow = MkMainWindow ()
+            structure Handlers   = MkHandlers(structure MainWindow = MainWindow
+                                              val       queue      = queue
+                                              val       queueRef   = queueRef)
+            structure _ = MkConnections Handlers
+          in
+            (* Thread processing instructions. *)
+            spawn (Common.Queue.app Handlers.processInstruction queue) ;
+
+            MainWindow.setStatus Prefs.ready ;
+            Promise.fulfill (p, SOME queue) ;
+            queue
+          end
+    end
+
+  (* Inspects some alice item. *)
+  fun inspectItem item =
+    let val queue = init ()
+    in
+      Common.queuePut queue (Common.Inspect item)
+    end
+  
+  (* The magic (w.r.t types) takes place here. *)
+  fun inspectVal ty x = inspectItem (Common.Value (ty, Reflect.reflect x))
+  __overload 'a inspect : 'a -> unit = inspectVal
+
+  functor Inspect (A : (signature S structure X : S)) : any =
+    let
+      structure I = Reflect.ReflectSig A (* Does reflect the signature A.S *)
+      structure M = Reflect.Reflect A    (* Does reflect the structure A.X *)
+      val _ = inspectItem (Common.Module (I.x, M.x))
+    in
+      ()
+    end
+
+end

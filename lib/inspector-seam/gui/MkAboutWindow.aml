@@ -1,0 +1,53 @@
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import signature MAIN_WINDOW from "MAIN_WINDOW-sig"
+
+
+functor MkAboutWindow (MainWindow: MAIN_WINDOW) :> () =
+struct
+
+  (*****************************************************
+   *         Creates a new 'about' window.             *
+   *****************************************************)
+
+local
+  val _ = Gtk.widgetSetSensitive(MainWindow.menuItemAbout, false)
+  val dialog = Gtk.dialogNewWithButtons ("About",
+                                         MainWindow.window,
+                                         Gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         "    Close    ",
+                                         Gtk.INT 0)
+    
+  val vbox = Gtk.dialogGetFieldVbox dialog
+  val label1 = Gtk.labelNew ""
+  val label2 = Gtk.labelNew "by"
+  val label3 = Gtk.labelNew "The ALICE Team"
+  val label4 = Gtk.labelNew ""
+  val text1  =
+    "      <span size=\"large\" foreground=\"blue\">" ^
+    "ALICE Inspector</span>      "
+  val text4 = "     <tt><u>http://www.ps.uni-sb.de/alice/</u></tt>     "
+  fun close _ =
+    (Gtk.widgetDestroy dialog ;
+     Gtk.widgetSetSensitive(MainWindow.menuItemAbout, true))
+
+  val _ =
+    (Gtk.labelSetMarkup (label1, text1) ;
+     Gtk.labelSetMarkup (label4, text4) ;
+     Gtk.labelSetSelectable (label4, true) ;
+     
+     Gtk.boxPackStart (vbox, label1, false, false, 10) ;
+     Gtk.boxPackStart (vbox, label2, false, false, 10) ;
+     Gtk.boxPackStart (vbox, label3, false, false, 10) ;
+     Gtk.boxPackStart (vbox, label4, false, false, 10) ;
+     
+     Gtk.windowSetPolicy (dialog, 0, 0, 1) ;
+     Gtk.widgetShowAll dialog ;
+     
+     Gtk.signalConnect (dialog, "response", close) ;
+     
+     ())
+
+in
+end
+     
+end
