@@ -4,7 +4,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
