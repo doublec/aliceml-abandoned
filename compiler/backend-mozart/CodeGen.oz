@@ -160,7 +160,7 @@ define
 	 {TranslateBody Body1 ?ThenVInstr nil State ReturnReg}
 	 {TranslateBody Body2 ?ElseVInstr nil State ReturnReg}
       [] raiseStm(Coord Id) then
-	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
+	 VHd = vCallBuiltin(_ 'Exception.raise' [{GetReg Id State}]
 			    {TranslateCoord Coord State} VTl)
       [] sharedStm(_ Body I) then
 	 if {Dictionary.member State.shareDict I} then
