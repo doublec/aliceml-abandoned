@@ -56,7 +56,7 @@ private:
     word *oldBase = oldArray->GetBase();
     word *newBase = newArray->GetBase();
     std::memcpy(newBase, oldBase + index, (oldSize - index) * sizeof(word));
-    std::memcpy(newBase + index, oldBase, index * sizeof(word));
+    std::memcpy(newBase + oldSize - index, oldBase, index * sizeof(word));
     SetReadIndex(0);
     SetWriteIndex(oldSize);
     SetArray(newArray);
@@ -206,9 +206,10 @@ public:
     }
     // zero out the unused entries
     if (readIndex < writeIndex) {
-      for (u_int i = 0; i < readIndex; i++)
+      u_int i;
+      for (i = 0; i < readIndex; i++)
 	array->ReplaceArg(i, 0);
-      for (u_int i = writeIndex; i < newSize; i++)
+      for (i = writeIndex; i < newSize; i++)
 	array->ReplaceArg(i, 0);
     } else { // wrap-around layout
       for (u_int i = writeIndex; i < readIndex; i++)
