@@ -48,16 +48,18 @@
 (*	      ::= pat withfun fvalbind where atexp	(derived form)		*)
 (*   - type wildcards:								*)
 (*	  ty ::= _								*)
-(*   - open datatypes (exception declarations become a derived form),		*)
+(*   - extensible datatypes (exception declarations become a derived form),	*)
 (*     constructor synonym specifications:					*)
-(*        dec      ::= constructor dconbind					*)
-(*	  datbind  ::= tyvarseq tycon						*)
-(*	  dconbind ::= <op> vid <of ty> : tyvarseq longtycon <and dconbind>	*)
-(*		   ::= <op> vid = <op> longvid <and dconbind>			*)
-(*        spec     ::= constructor dcondesc					*)
-(*	  datdesc  ::= tyvarseq tycon						*)
-(*	  dcondesc ::= vid <of ty> : tyvarseq longtycon <and dcondesc>		*)
-(*		   ::= vid = longvid <and dcondesc>				*)
+(*        dec      ::= exttype extbind						*)
+(*		   ::= constructor econbind					*)
+(*	  extbind  ::= tyvarseq tycon <and extbind>				*)
+(*	  econbind ::= <op> vid <of ty> : tyvarseq longtycon <and econbind>	*)
+(*		   ::= <op> vid = <op> longvid <and econbind>			*)
+(*        spec     ::= exttype extdesc						*)
+(*                 ::= constructor econdesc					*)
+(*	  extdesc  ::= tyvarseq tycon <and extdesc>				*)
+(*	  econdesc ::= vid <of ty> : tyvarseq longtycon <and econdesc>		*)
+(*		   ::= vid = longvid <and econdesc>				*)
 (*   - abstract type declarations:						*)
 (*	  typbind  ::= tyvarseq tycon						*)
 (*	  dec      ::= eqtype typbind						*)
@@ -79,8 +81,8 @@
 (*	  valdesc  ::= <op> vid : ty <and valdesc>				*)
 (*	  condesc  ::= <op> vid <of ty> <| condesc>				*)
 (*	  exdesc   ::= <op> vid <of ty> <and exdesc>				*)
-(*	  dcondesc ::= <op> vid <of ty> : tyvarseq longtycon <and dcondesc>	*)
-(*		   ::= <op> vid = <op> longvid <and dcondesc>			*)
+(*	  econdesc ::= <op> vid <of ty> : tyvarseq longtycon <and econdesc>	*)
+(*		   ::= <op> vid = <op> longvid <and econdesc>			*)
 (*   - withtype in signatures (derived form):					*)
 (*	  spec ::= datatype datdesc <withtype syndesc>				*)
 (*   - fixity directives in signatures:						*)
@@ -111,8 +113,9 @@
 (*			ann <;> ann						*)
 (*	  imp       ::=	val valitem						*)
 (*			type typitem						*)
-(*			datatype typitem					*)
-(*			constructor dconitem					*)
+(*			datatype datitem					*)
+(*			exttype extitem						*)
+(*			constructor econitem					*)
 (*			structure stritem					*)
 (*			signature sigitem					*)
 (*			infix <d> vid_1 ... vid_n	(n>=1)			*)
@@ -127,8 +130,10 @@
 (*	  datitem   ::=	tycon <and datitem>					*)
 (*			tyvarseq tycon = conitem <and datitem>			*)
 (*	  conitem   ::=	<op> vid <of ty> <| conitem>				*)
-(*	  dconitem  ::=	<op> vid <and dconitem>					*)
-(*			<op> vid <of ty> : tyvarseq longtycon <and dconitem>	*)
+(*	  extitem   ::=	tycon <and extitem>					*)
+(*			tyvarseq tycon <and extitem>				*)
+(*	  econitem  ::=	<op> vid <and econitem>					*)
+(*			<op> vid <of ty> : tyvarseq longtycon <and econitem>	*)
 (*	  stritem   ::=	strid <and stritem>					*)
 (*			strid : sigexp <and stritem>				*)
 (*	  sigitem   ::=	sigid <and sigitem>					*)
@@ -153,6 +158,7 @@
 (*                ::= __primitive type tyvarseq tycon = string			*)
 (*                ::= __primitive eqtype tyvarseq tycon = string		*)
 (*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
+(*                ::= __primitive exttype tyvarseq tycon = string		*)
 (*                ::= __primitive __reftype tyvar tycon = <op> vid of tyvar	*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
 (*	          ::= __primitive exception <op> vid <of ty> = string	(DF)	*)
@@ -241,7 +247,7 @@
 	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
-	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| EXTTYPE | CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| LAZY | SPAWN
 	| ANY | FCT | PACK | UNPACK
 	| IMPORT | FROM
@@ -267,7 +273,7 @@
 	 RAISE REC THEN TYPE VAL WITH WITHTYPE WHILE
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
-	 CONSTRUCTOR NON WITHFUN WITHVAL
+	 EXTTYPE CONSTRUCTOR NON WITHFUN WITHVAL
 	 LAZY SPAWN
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
@@ -279,7 +285,7 @@
 
 %left  SHARING
 %left  SEMICOLON
-%right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CONSTRUCTOR EXCEPTION
+%right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE EXTTYPE CONSTRUCTOR EXCEPTION
        STRUCTURE FUNCTOR SIGNATURE
        IMPORT
        PRIMITIVE EQEQTYPE REFTYPE
@@ -372,8 +378,10 @@
 	| conbind			of ConBind
 	|    BAR_conbind_opt		of ConBind option
 	|    OF_ty_opt			of Ty option
-	| dconbind			of DconBind
-	|    AND_dconbind_opt		of DconBind option
+	| extbind			of ExtBind
+	|    AND_extbind_opt		of ExtBind option
+	| econbind			of EconBind
+	|    AND_econbind_opt		of EconBind option
 	| exbind			of ExBind
 	|    AND_exbind_opt		of ExBind option
 
@@ -465,8 +473,10 @@
 	|    AND_datdesc_opt		of DatDesc option
 	| condesc			of ConDesc
 	|    BAR_condesc_opt		of ConDesc option
-	| dcondesc			of DconDesc
-	|    AND_dcondesc_opt		of DconDesc option
+	| extdesc			of ExtDesc
+	|    AND_extdesc_opt		of ExtDesc option
+	| econdesc			of EconDesc
+	|    AND_econdesc_opt		of EconDesc option
 	| exdesc			of ExDesc
 	|    AND_exdesc_opt		of ExDesc option
 	| strdesc			of StrDesc
@@ -504,8 +514,10 @@
 	|    AND_datitem_opt		of DatItem option
 	| conitem			of ConItem
 	|    BAR_conitem_opt		of ConItem option
-	| dconitem			of DconItem
-	|    AND_dconitem_opt		of DconItem option
+	| extitem			of ExtItem
+	|    AND_extitem_opt		of ExtItem option
+	| econitem			of EconItem
+	|    AND_econitem_opt		of EconItem option
 	| exitem			of ExItem
 	|    AND_exitem_opt		of ExItem option
 	| stritem			of StrItem
@@ -791,9 +803,11 @@
 	| ABSTYPE datbind WITHTYPE_typbind_opt WITH dec END
 			( ABSTYPEDec(I(ABSTYPEleft,ENDright), datbind,
 				     WITHTYPE_typbind_opt, dec) )
-	| CONSTRUCTOR dconbind
-			( CONSTRUCTORDec(I(CONSTRUCTORleft,dconbindright),
-					 dconbind) )
+	| EXTTYPE extbind
+			( EXTTYPEDec(I(EXTTYPEleft,extbindright), extbind) )
+	| CONSTRUCTOR econbind
+			( CONSTRUCTORDec(I(CONSTRUCTORleft,econbindright),
+					 econbind) )
 	| EXCEPTION exbind
 			( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) )
 	| STRUCTURE strbind
@@ -829,9 +843,9 @@
 	| PRIMITIVE EQEQTYPE tyvarseq tycon EQUALS STRING
 			( PRIMITIVEEQEQTYPEDec(I(PRIMITIVEleft,STRINGright),
 					       tyvarseq, tycon, STRING) )
-	| PRIMITIVE DATATYPE tyvarseq tycon EQUALS STRING
-			( PRIMITIVEDATATYPEDec(I(PRIMITIVEleft,STRINGright),
-					       tyvarseq, tycon, STRING) )
+	| PRIMITIVE EXTTYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVEEXTTYPEDec(I(PRIMITIVEleft,STRINGright),
+					      tyvarseq, tycon, STRING) )
 	| PRIMITIVE REFTYPE tyvar tycon EQUALS OP_opt vid OF tyvar
 			( PRIMITIVEREFTYPEDec(I(PRIMITIVEleft,tyvar2right),
 					      tyvar1, tycon, OP_opt, vid,
@@ -931,30 +945,18 @@
 
 
   datbind:
-	  tyvarseq tycon AND_datbind_opt
-			( OPENDatBind(I(tyvarseqleft,AND_datbind_optright),
-				      tyvarseq, tycon, AND_datbind_opt) )
-	| tyvarseq tycon EQUALS conbind AND_datbind_opt
-			( CLOSEDDatBind(I(tyvarseqleft,AND_datbind_optright),
-					tyvarseq, tycon, conbind,
-					AND_datbind_opt))
+	  tyvarseq tycon EQUALS conbind AND_datbind_opt
+			( DatBind(I(tyvarseqleft,AND_datbind_optright),
+				  tyvarseq, tycon, conbind, AND_datbind_opt))
      datbind0:
-	  tycon AND_datbind_opt
-			( OPENDatBind(I(tyconleft,AND_datbind_optright),
-				      Seq(I(defaultPos,defaultPos), []),
-				      tycon, AND_datbind_opt) )
-	| tycon EQUALS conbind AND_datbind_opt
-			( CLOSEDDatBind(I(tyconleft,AND_datbind_optright),
-					Seq(I(defaultPos,defaultPos), []),
-					tycon, conbind, AND_datbind_opt) )
+	  tycon EQUALS conbind AND_datbind_opt
+			( DatBind(I(tyconleft,AND_datbind_optright),
+				  Seq(I(defaultPos,defaultPos), []),
+				  tycon, conbind, AND_datbind_opt) )
      datbind1:
-	  tyvarseq1 tycon AND_datbind_opt
-			( OPENDatBind(I(tyvarseq1left,AND_datbind_optright),
-				      tyvarseq1, tycon, AND_datbind_opt) )
-	| tyvarseq1 tycon EQUALS conbind AND_datbind_opt
-			( CLOSEDDatBind(I(tyvarseq1left,AND_datbind_optright),
-					tyvarseq1, tycon, conbind,
-					AND_datbind_opt) )
+	  tyvarseq1 tycon EQUALS conbind AND_datbind_opt
+			( DatBind(I(tyvarseq1left,AND_datbind_optright),
+				  tyvarseq1, tycon, conbind, AND_datbind_opt) )
      AND_datbind_opt:
 	  AND datbind	( SOME datbind )
 	| (*empty*)	( NONE )
@@ -974,17 +976,26 @@
 	| (*empty*)	( NONE )
 
 
-  dconbind:
-	  OP_opt vid OF_ty_opt COLON tyvarseq longtycon AND_dconbind_opt
-			( NEWDconBind(I(OP_optleft,AND_dconbind_optright),
+  extbind:
+	  tyvarseq tycon AND_extbind_opt
+			( ExtBind(I(tyvarseqleft,AND_extbind_optright),
+				  tyvarseq, tycon, AND_extbind_opt) )
+     AND_extbind_opt:
+	  AND extbind	( SOME extbind )
+	| (*empty*)	( NONE )
+
+
+  econbind:
+	  OP_opt vid OF_ty_opt COLON tyvarseq longtycon AND_econbind_opt
+			( NEWEconBind(I(OP_optleft,AND_econbind_optright),
 				      OP_opt, vid, OF_ty_opt, tyvarseq,
-				      longtycon, AND_dconbind_opt) )
-	| OP_opt vid EQUALS OP_opt longvid AND_dconbind_opt
-			( EQUALDconBind(I(OP_opt1left,AND_dconbind_optright),
+				      longtycon, AND_econbind_opt) )
+	| OP_opt vid EQUALS OP_opt longvid AND_econbind_opt
+			( EQUALEconBind(I(OP_opt1left,AND_econbind_optright),
 					OP_opt1, vid,
-					OP_opt2, longvid, AND_dconbind_opt) )
-     AND_dconbind_opt:
-	  AND dconbind	( SOME dconbind )
+					OP_opt2, longvid, AND_econbind_opt) )
+     AND_econbind_opt:
+	  AND econbind	( SOME econbind )
 	| (*empty*)	( NONE )
 
 
@@ -1778,9 +1789,11 @@
 	| DATATYPE tycon EQUALS DATATYPE longtycon
 			( REPLICATIONSpec(I(DATATYPEleft,longtyconright),
 					  tycon, longtycon) )
-	| CONSTRUCTOR dcondesc
-			( CONSTRUCTORSpec(I(CONSTRUCTORleft,dcondescright),
-					  dcondesc) )
+	| EXTTYPE extdesc
+			( EXTTYPESpec(I(EXTTYPEleft,extdescright), extdesc) )
+	| CONSTRUCTOR econdesc
+			( CONSTRUCTORSpec(I(CONSTRUCTORleft,econdescright),
+					  econdesc) )
 	| EXCEPTION exdesc
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
 	| STRUCTURE strdesc
@@ -1869,29 +1882,18 @@
 	| (*empty*)	( NONE )
 
   datdesc:
-	  tyvarseq tycon AND_datdesc_opt
-			( OPENDatDesc(I(tyvarseqleft,AND_datdesc_optright),
-				      tyvarseq, tycon, AND_datdesc_opt) )
-	| tyvarseq tycon EQUALS condesc AND_datdesc_opt
-			( CLOSEDDatDesc(I(tyvarseqleft,AND_datdesc_optright),
-				     tyvarseq, tycon, condesc, AND_datdesc_opt))
+	  tyvarseq tycon EQUALS condesc AND_datdesc_opt
+			( DatDesc(I(tyvarseqleft,AND_datdesc_optright),
+				  tyvarseq, tycon, condesc, AND_datdesc_opt) )
      datdesc0:
-	  tycon AND_datdesc_opt
-			( OPENDatDesc(I(tyconleft,AND_datdesc_optright),
-				      Seq(I(defaultPos,defaultPos), []),
-				      tycon, AND_datdesc_opt) )
-	| tycon EQUALS condesc AND_datdesc_opt
-	  		( CLOSEDDatDesc(I(tyconleft,AND_datdesc_optright),
-	  				Seq(I(defaultPos,defaultPos), []),
-					tycon, condesc, AND_datdesc_opt) )
+	  tycon EQUALS condesc AND_datdesc_opt
+	  		( DatDesc(I(tyconleft,AND_datdesc_optright),
+	  			  Seq(I(defaultPos,defaultPos), []),
+				  tycon, condesc, AND_datdesc_opt) )
      datdesc1:
-	  tyvarseq1 tycon AND_datdesc_opt
-			( OPENDatDesc(I(tyvarseq1left,AND_datdesc_optright),
-				      tyvarseq1, tycon, AND_datdesc_opt) )
-	| tyvarseq1 tycon EQUALS condesc AND_datdesc_opt
-	  		( CLOSEDDatDesc(I(tyvarseq1left,AND_datdesc_optright),
-	  				tyvarseq1, tycon, condesc,
-					AND_datdesc_opt) )
+	  tyvarseq1 tycon EQUALS condesc AND_datdesc_opt
+	  		( DatDesc(I(tyvarseq1left,AND_datdesc_optright),
+	  			  tyvarseq1, tycon, condesc, AND_datdesc_opt) )
      AND_datdesc_opt:
 	  AND datdesc	( SOME datdesc )
 	| (*empty*)	( NONE )
@@ -1904,17 +1906,25 @@
 	  BAR condesc	( SOME condesc )
 	| (*empty*)	( NONE )
 
-  dcondesc:
-	  OP_opt vid OF_ty_opt COLON tyvarseq longtycon AND_dcondesc_opt
-			( NEWDconDesc(I(OP_optleft,AND_dcondesc_optright),
+  extdesc:
+	  tyvarseq tycon AND_extdesc_opt
+			( ExtDesc(I(tyvarseqleft,AND_extdesc_optright),
+				  tyvarseq, tycon, AND_extdesc_opt) )
+     AND_extdesc_opt:
+	  AND extdesc	( SOME extdesc )
+	| (*empty*)	( NONE )
+
+  econdesc:
+	  OP_opt vid OF_ty_opt COLON tyvarseq longtycon AND_econdesc_opt
+			( NEWEconDesc(I(OP_optleft,AND_econdesc_optright),
 				      OP_opt, vid, OF_ty_opt,
-				      tyvarseq, longtycon, AND_dcondesc_opt) )
-	| OP_opt vid EQUALS OP_opt longvid AND_dcondesc_opt
-			( EQUALDconDesc(I(OP_opt1left,AND_dcondesc_optright),
+				      tyvarseq, longtycon, AND_econdesc_opt) )
+	| OP_opt vid EQUALS OP_opt longvid AND_econdesc_opt
+			( EQUALEconDesc(I(OP_opt1left,AND_econdesc_optright),
 					OP_opt1, vid,
-					OP_opt2, longvid, AND_dcondesc_opt) )
-     AND_dcondesc_opt:
-	  AND dcondesc	( SOME dcondesc )
+					OP_opt2, longvid, AND_econdesc_opt) )
+     AND_econdesc_opt:
+	  AND econdesc	( SOME econdesc )
 	| (*empty*)	( NONE )
 
 
@@ -2295,9 +2305,11 @@
 			( EQEQTYPEImp(I(EQEQTYPEleft,typitemright), typitem) )
 	| DATATYPE datitem
 			( DATATYPEImp(I(DATATYPEleft,datitemright), datitem) )
-	| CONSTRUCTOR dconitem
-			( CONSTRUCTORImp(I(CONSTRUCTORleft,dconitemright),
-					  dconitem) )
+	| EXTTYPE extitem
+			( EXTTYPEImp(I(EXTTYPEleft,extitemright), extitem) )
+	| CONSTRUCTOR econitem
+			( CONSTRUCTORImp(I(CONSTRUCTORleft,econitemright),
+					  econitem) )
 	| EXCEPTION exitem
 			( EXCEPTIONImp(I(EXCEPTIONleft,exitemright), exitem) )
 	| STRUCTURE stritem
@@ -2365,16 +2377,27 @@
 	  BAR conitem	( SOME conitem )
 	| (*empty*)	( NONE )
 
-  dconitem:
-	  OP_opt vid AND_dconitem_opt
-			( PLAINDconItem(I(OP_optleft,AND_dconitem_optright),
-					OP_opt, vid, AND_dconitem_opt) )
-	| OP_opt vid OF_ty_opt COLON tyvarseq longtycon AND_dconitem_opt
-			( DESCDconItem(I(OP_optleft,AND_dconitem_optright),
+  extitem:
+	  tycon AND_extitem_opt
+			( PLAINExtItem(I(tyconleft,AND_extitem_optright),
+				       tycon, AND_extitem_opt) )
+	| tyvarseq1 tycon AND_extitem_opt
+			( DESCExtItem(I(tyvarseq1left,AND_extitem_optright),
+				      tyvarseq1, tycon, AND_extitem_opt) )
+     AND_extitem_opt:
+	  AND extitem	( SOME extitem )
+	| (*empty*)	( NONE )
+
+  econitem:
+	  OP_opt vid AND_econitem_opt
+			( PLAINEconItem(I(OP_optleft,AND_econitem_optright),
+					OP_opt, vid, AND_econitem_opt) )
+	| OP_opt vid OF_ty_opt COLON tyvarseq longtycon AND_econitem_opt
+			( DESCEconItem(I(OP_optleft,AND_econitem_optright),
 				       OP_opt, vid, OF_ty_opt,
-				       tyvarseq, longtycon, AND_dconitem_opt) )
-     AND_dconitem_opt:
-	  AND dconitem	( SOME dconitem )
+				       tyvarseq, longtycon, AND_econitem_opt) )
+     AND_econitem_opt:
+	  AND econitem	( SOME econitem )
 	| (*empty*)	( NONE )
 
 

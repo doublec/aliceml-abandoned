@@ -142,7 +142,12 @@
     </TR>
     <TR>
       <TD></TD> <TD></TD>
-      <TD> <TT>constructor</TT> <I>dconitem</I> </TD>
+      <TD> <TT>exttype</TT> <I>extitem</I> </TD>
+      <TD> </TD>
+    </TR>
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> <TT>constructor</TT> <I>econitem</I> </TD>
       <TD> </TD>
     </TR>
     <TR>
@@ -243,19 +248,34 @@
     </TR>
     <TR></TR>
     <TR>
-      <TD> <I>dconitem</I> </TD>
+      <TD> <I>extitem</I> </TD>
       <TD align="center">::=</TD>
-      <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
-           &lt;<TT>and</TT> <I>dconitem</I>&gt; </TD>
+      <TD> <I>tycon</I> &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
       <TD> </TD>
     </TR>
     <TR>
       <TD></TD> <TD></TD>
-      <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
-	   <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
-           &lt;<TT>and</TT> <I>dconitem</I>&gt; </TD>
+      <TD> <I>tyvarseq</I> <I>tycon</I> 
+           &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
       <TD> </TD>
     </TR>
+    <TR></TR>
+    <TR>
+      <TD> <I>econitem</I> </TD>
+      <TD align="center">::=</TD>
+      <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+           &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+      <TD> </TD>
+    </TR>
+<!--
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+	   <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+           &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+      <TD> </TD>
+    </TR>
+-->
     <TR></TR>
     <TR>
       <TD> <I>exitem</I> </TD>

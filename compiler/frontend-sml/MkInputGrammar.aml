@@ -26,7 +26,7 @@
  *   - withval patterns
  *   - type wildcards
  *   - abstract type declarations
- *   - open datatypes and free construct declarations
+ *   - extensible datatypes and free construct declarations
  *   - package types and expressions
  *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
@@ -164,7 +164,8 @@ struct
 	| TYPEDec         of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
-	| CONSTRUCTORDec  of Info * DconBind
+	| EXTTYPEDec      of Info * ExtBind
+	| CONSTRUCTORDec  of Info * EconBind
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
 	| LOCALDec        of Info * Dec * Dec
@@ -176,7 +177,7 @@ struct
 	| NONFIXDec       of Info * VId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVETYPEDec        of Info * TyVarSeq * TyCon * string
-	| PRIMITIVEDATATYPEDec    of Info * TyVarSeq * TyCon * string
+	| PRIMITIVEEXTTYPEDec     of Info * TyVarSeq * TyCon * string
 	| PRIMITIVEREFTYPEDec     of Info * TyVar * TyCon * Op * VId * TyVar
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
@@ -197,16 +198,18 @@ struct
 	| EQUALTypBind   of Info * TyVarSeq * TyCon * Ty * TypBind option
 
     and DatBind =
-	  CLOSEDDatBind  of Info * TyVarSeq * TyCon * ConBind * DatBind option
-	| OPENDatBind    of Info * TyVarSeq * TyCon * DatBind option
+	  DatBind        of Info * TyVarSeq * TyCon * ConBind * DatBind option
 
     and ConBind =
 	  ConBind        of Info * Op * VId * Ty option * ConBind option
 
-    and DconBind =
-	  NEWDconBind    of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
-							* DconBind option
-	| EQUALDconBind  of Info * Op * VId * Op * LongVId * DconBind option
+    and ExtBind =
+	  ExtBind        of Info * TyVarSeq * TyCon * ExtBind option
+
+    and EconBind =
+	  NEWEconBind    of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
+							* EconBind option
+	| EQUALEconBind  of Info * Op * VId * Op * LongVId * EconBind option
 
     and StrBind =
           StrBind        of Info * StrId * StrExp * StrBind option
@@ -296,7 +299,8 @@ struct
 	| TYPESpec          of Info * TypDesc
 	| DATATYPESpec      of Info * DatDesc
 	| REPLICATIONSpec   of Info * TyCon * LongTyCon
-	| CONSTRUCTORSpec   of Info * DconDesc
+	| EXTTYPESpec       of Info * ExtDesc
+	| CONSTRUCTORSpec   of Info * EconDesc
 	| STRUCTURESpec     of Info * StrDesc
 	| SIGNATURESpec     of Info * SigDesc
 	| INCLUDESpec       of Info * SigExp
@@ -320,16 +324,18 @@ struct
 	| EQUALTypDesc    of Info * TyVarSeq * TyCon * Ty * TypDesc option
 
     and DatDesc =
-	  CLOSEDDatDesc   of Info * TyVarSeq * TyCon * ConDesc * DatDesc option
-	| OPENDatDesc     of Info * TyVarSeq * TyCon * DatDesc option
+	  DatDesc         of Info * TyVarSeq * TyCon * ConDesc * DatDesc option
 
     and ConDesc =
 	  ConDesc         of Info * Op * VId * Ty option * ConDesc option
 
-    and DconDesc =
-	  NEWDconDesc     of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
-			 				      * DconDesc option
-	| EQUALDconDesc   of Info * Op * VId * Op * LongVId * DconDesc option
+    and ExtDesc =
+	  ExtDesc         of Info * TyVarSeq * TyCon * ExtDesc option
+
+    and EconDesc =
+	  NEWEconDesc     of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
+			 				      * EconDesc option
+	| EQUALEconDesc   of Info * Op * VId * Op * LongVId * EconDesc option
 
     and StrDesc =
           NEWStrDesc      of Info * StrId * SigExp * StrDesc option
@@ -346,7 +352,8 @@ struct
 	  VALImp          of Info * ValItem
 	| TYPEImp         of Info * TypItem
 	| DATATYPEImp     of Info * DatItem
-	| CONSTRUCTORImp  of Info * DconItem
+	| EXTTYPEImp      of Info * ExtItem
+	| CONSTRUCTORImp  of Info * EconItem
 	| STRUCTUREImp    of Info * StrItem
 	| SIGNATUREImp    of Info * SigItem
 	| EMPTYImp        of Info
@@ -370,10 +377,14 @@ struct
     and ConItem =
 	  ConItem         of Info * Op * VId * Ty option * ConItem option
 
-    and DconItem =
-	  PLAINDconItem   of Info * Op * VId * DconItem option
-	| DESCDconItem    of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
-			 				      * DconItem option
+    and ExtItem =
+	  PLAINExtItem    of Info * TyCon * ExtItem option
+	| DESCExtItem     of Info * TyVarSeq * TyCon * ExtItem option
+
+    and EconItem =
+	  PLAINEconItem   of Info * Op * VId * EconItem option
+	| DESCEconItem    of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
+			 				      * EconItem option
     and StrItem =
 	  PLAINStrItem    of Info * StrId * StrItem option
         | DESCStrItem     of Info * StrId * SigExp * StrItem option
@@ -456,6 +467,7 @@ struct
       | infoDec(TYPEDec(I,_))				= I
       | infoDec(DATATYPEDec(I,_))			= I
       | infoDec(REPLICATIONDec(I,_,_))			= I
+      | infoDec(EXTTYPEDec(I,_))			= I
       | infoDec(CONSTRUCTORDec(I,_))			= I
       | infoDec(STRUCTUREDec(I,_))			= I
       | infoDec(SIGNATUREDec(I,_))			= I
@@ -468,7 +480,7 @@ struct
       | infoDec(NONFIXDec(I,_))				= I
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
       | infoDec(PRIMITIVETYPEDec(I,_,_,_))		= I
-      | infoDec(PRIMITIVEDATATYPEDec(I,_,_,_))		= I
+      | infoDec(PRIMITIVEEXTTYPEDec(I,_,_,_))		= I
       | infoDec(PRIMITIVEREFTYPEDec(I,_,_,_,_,_))	= I
       | infoDec(PRIMITIVECONSTRUCTORDec(I,_,_,_,_,_,_))	= I
       | infoDec(PRIMITIVESTRUCTUREDec(I,_,_,_))		= I
@@ -482,13 +494,14 @@ struct
     fun infoTypBind(NEWTypBind(I,_,_,_))		= I
       | infoTypBind(EQUALTypBind(I,_,_,_,_))		= I
 
-    fun infoDatBind(CLOSEDDatBind(I,_,_,_,_))		= I
-      | infoDatBind(OPENDatBind(I,_,_,_))		= I
+    fun infoDatBind(DatBind(I,_,_,_,_))			= I
 
     fun infoConBind(ConBind(I,_,_,_,_))			= I
 
-    fun infoDconBind(NEWDconBind(I,_,_,_,_,_,_))	= I
-      | infoDconBind(EQUALDconBind(I,_,_,_,_,_))	= I
+    fun infoExtBind(ExtBind(I,_,_,_))			= I
+
+    fun infoEconBind(NEWEconBind(I,_,_,_,_,_,_))	= I
+      | infoEconBind(EQUALEconBind(I,_,_,_,_,_))	= I
 
     fun infoStrBind(StrBind(I,_,_,_))			= I
 
@@ -555,6 +568,7 @@ struct
       | infoSpec(TYPESpec(I,_))				= I
       | infoSpec(DATATYPESpec(I,_))			= I
       | infoSpec(REPLICATIONSpec(I,_,_))		= I
+      | infoSpec(EXTTYPESpec(I,_))			= I
       | infoSpec(CONSTRUCTORSpec(I,_))			= I
       | infoSpec(STRUCTURESpec(I,_))			= I
       | infoSpec(SIGNATURESpec(I,_))			= I
@@ -576,13 +590,14 @@ struct
     fun infoTypDesc(NEWTypDesc(I,_,_,_))		= I
       | infoTypDesc(EQUALTypDesc(I,_,_,_,_))		= I
 
-    fun infoDatDesc(CLOSEDDatDesc(I,_,_,_,_))		= I
-      | infoDatDesc(OPENDatDesc(I,_,_,_))		= I
+    fun infoDatDesc(DatDesc(I,_,_,_,_))			= I
 
     fun infoConDesc(ConDesc(I,_,_,_,_))			= I
 
-    fun infoDconDesc(NEWDconDesc(I,_,_,_,_,_,_))	= I
-      | infoDconDesc(EQUALDconDesc(I,_,_,_,_,_))	= I
+    fun infoExtDesc(ExtDesc(I,_,_,_))			= I
+
+    fun infoEconDesc(NEWEconDesc(I,_,_,_,_,_,_))	= I
+      | infoEconDesc(EQUALEconDesc(I,_,_,_,_,_))	= I
 
     fun infoStrDesc(NEWStrDesc(I,_,_,_))		= I
       | infoStrDesc(EQUALStrDesc(I,_,_,_,_))		= I
@@ -593,6 +608,7 @@ struct
     fun infoImp(VALImp(I,_))				= I
       | infoImp(TYPEImp(I,_))				= I
       | infoImp(DATATYPEImp(I,_))			= I
+      | infoImp(EXTTYPEImp(I,_))			= I
       | infoImp(CONSTRUCTORImp(I,_))			= I
       | infoImp(STRUCTUREImp(I,_))			= I
       | infoImp(SIGNATUREImp(I,_))			= I
@@ -613,8 +629,11 @@ struct
 
     fun infoConItem(ConItem(I,_,_,_,_))			= I
 
-    fun infoDconItem(PLAINDconItem(I,_,_,_))		= I
-      | infoDconItem(DESCDconItem(I,_,_,_,_,_,_))	= I
+    fun infoExtItem(PLAINExtItem(I,_,_))		= I
+      | infoExtItem(DESCExtItem(I,_,_,_))		= I
+
+    fun infoEconItem(PLAINEconItem(I,_,_,_))		= I
+      | infoEconItem(DESCEconItem(I,_,_,_,_,_,_))	= I
 
     fun infoStrItem(PLAINStrItem(I,_,_))		= I
       | infoStrItem(DESCStrItem(I,_,_,_))		= I
