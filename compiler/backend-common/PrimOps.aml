@@ -194,12 +194,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Unsafe.String.sub", SOME (Tuple 2));
 		ins ("Unsafe.Vector.sub", SOME (Tuple 2));
 		ins ("Unsafe.cast", SOME Unary);
-		ins ("Unsafe.getPrimitiveByName", SOME Unary);
-		ins ("Unsafe.makeClosure", SOME (Tuple 2));
-		ins ("Unsafe.makeConcreteCode", SOME Unary);
-		ins ("Unsafe.makeTaggedValue", SOME (Tuple 2));
-		ins ("Unsafe.makeTuple", SOME Unary);
-		ins ("Unsafe.selRecord", SOME (Tuple 2));
 		ins ("Vector.concat", SOME Unary);
 		ins ("Vector.extract", SOME (Tuple 3));
 		ins ("Vector.fromList", SOME Unary);

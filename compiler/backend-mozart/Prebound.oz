@@ -604,20 +604,7 @@ prepare
       'Unsafe.String.sub': ByteString.get
       'Unsafe.Vector.sub':
 	 fun {$ V I} V.(I + 1) end
-      'Unsafe.cast':
-	 fun {$ X} X end
-      'Unsafe.getPrimitiveByName':
-	 fun {$ Name} BuiltinTable.{VirtualString.toAtom Name} end
-      'Unsafe.makeClosure':
-	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
-      'Unsafe.makeConcreteCode':
-	 fun {$ _} {Exception.raiseError notImplemented} unit end
-      'Unsafe.makeTaggedValue':
-	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
-      'Unsafe.makeTuple':
-	 fun {$ X} {Adjoin X '#'} end
-      'Unsafe.selRecord':
-	 fun {$ T L} T.L end
+      'Unsafe.cast': fun {$ X} X end
       'Vector.concat':
 	 fun {$ Vs} N V in
 	    N = {List.foldR Vs fun {$ V In} {Width V} + In end 0}
