@@ -1,5 +1,3 @@
-import structure NewNode from "NewNode";
-import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
@@ -66,7 +64,6 @@ structure V = Reflect.Reflect(signature S = GDK structure X = Gdk);
 structure T = Reflect.ReflectSig(signature S = GDK);
 
 UnsafeInspector.inspectInf (V.x,T.x);
-
 
 (*****)
 
