@@ -27,6 +27,7 @@ Core language:
 * heavier overloaded literals (allow 4*3.3 and 0wx3f<<6)
 * overloaded vector expressions and patterns (poly vector or mono vectors)
 * make real an eqtype
++ more admissive treatment of ungeneralised type variables
 * polymorphic records
 + abstract type declarations (type t eqtype u)
 + open datatypes, turning exceptions into derived forms
@@ -54,7 +55,7 @@ Module language:
 * signature subtraction
 * parameterized signatures
 
-* higher-order functors (functors in structures and signatures)
++ higher-order functors (functors in structures and signatures)
 * longids as path expressions
 * functor signatures
 + top signatures
