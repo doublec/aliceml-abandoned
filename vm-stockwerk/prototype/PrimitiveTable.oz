@@ -12,13 +12,14 @@
 
 functor
 import
-   BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
+   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
    FloatChunk(toOz fromOz) at 'FloatChunk.so{native}'
    Scheduler(object)
    ByneedInterpreter(interpreter)
    AbstractCodeInterpreter(interpreter)
+   Guid(vm '<' hash)
 require
    Helper(deref: Deref construct: Construct deconstruct: Deconstruct
 	  pushCall: PushCall)
@@ -146,7 +147,9 @@ define
 
    fun {AllEqual X Y I N}
       if I > N then true
-      else {Equals X.I Y.I} andthen {AllEqual X Y I + 1 N}
+      elsecase {Equals X.I Y.I} of Request=request(_) then Request
+      [] true then {AllEqual X Y I + 1 N}
+      [] false then false
       end
    end
 
@@ -167,6 +170,9 @@ define
 	 end
       end
    end
+
+   GlobalStampCount = {NewCell 0}
+   GlobalStampDict = {NewDictionary}
 
    Primitives =
    primitives('=':
@@ -302,21 +308,50 @@ define
 		    elseof S then {ByteString.make S}
 		    end
 		 end#r_v
-	      'GlobalStamp.new': fun {$} {NewName} end#n_v
+	      'GlobalStamp.new':
+		 fun {$} N in
+		    N = {Access GlobalStampCount}
+		    {Assign GlobalStampCount N + 1}
+		    tuple(Guid.vm N)
+		 end#n_v
 	      'GlobalStamp.fromString':
-		 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end#r_v
+		 fun {$ S} Key in
+		    Key = {VirtualString.toAtom S}
+		    case {Dictionary.condGet GlobalStampDict Key unit}
+		    of unit then
+		       {Dictionary.put GlobalStampDict Key S}
+		       S
+		    [] S2 then S2
+		    end
+		 end#r_v
 	      'GlobalStamp.toString':
 		 fun {$ N}
-		    {ByteString.make {Value.toVirtualString N 0 0}}
+		    case N of tuple(_ I) then {ByteString.make I}
+		    else N
+		    end
 		 end#r_v
 	      'GlobalStamp.compare':
 		 fun {$ N1 N2}
-		    if N1 == N2 then EQUAL
-		    elseif {BootName.'<' N1 N2} then LESS
-		    else GREATER
+		    case N1 of tuple(Guid1 I1) then
+		       case N2 of tuple(Guid2 I2) then
+			  if Guid1 == Guid2 then {NumberCompare I1 I2}
+			  elseif {Guid.'<' Guid1 Guid2} then LESS
+			  else GREATER
+			  end
+		       else GREATER
+		       end
+		    elsecase N2 of tuple(_ _) then LESS
+		    else {StringCompare N1 N2}
 		    end
 		 end#rr_v
-	      'GlobalStamp.hash': fun {$ N} {BootName.hash N} end#r_v
+	      'GlobalStamp.hash':
+		 fun {$ N}
+		    case N of tuple(MyGuid I) then {Guid.hash MyGuid} + I
+		    else
+		       {ByteString.get N 0} *
+		       {ByteString.get N {ByteString.length N} - 1}
+		    end
+		 end#r_v
 	      'Hole.Cyclic': value({NewUniqueName 'Future.Cyclic'})
 	      'Hole.Hole': value({NewUniqueName 'Promise.Promise'})
 	      'Hole.fail':
