@@ -128,6 +128,13 @@ define
       end
    end
 
+   fun lazy {LazyPolySel X F}
+      try X.F
+      catch error(InnerE ...) then
+	 {Value.byNeedFail error(InnerE)}
+      end
+   end
+
    fun {CallConstant Region X ArgRegs VTl State}
       if {IsDet X} andthen {CompilerSupport.isBuiltin X} then
 	 vCallBuiltin(_ {System.printName X} ArgRegs
@@ -658,8 +665,8 @@ define
 	 {State.cs newReg(?LabelReg)}
 	 Reg0 = {GetReg IdRef VHd VInter1 State}
 	 VInter1 = vEquateConstant(_ Label LabelReg VInter2)
-	 VInter2 = vCallBuiltin(_ 'Value.byNeedDot' [Reg0 LabelReg Reg]
-				{TranslateRegion Region State} VTl)
+	 VInter2 = {CallConstant Region LazyPolySel [Reg0 LabelReg Reg]
+		    VTl State}
 	 VHd
       [] 'FunAppExp'(Region IdRef1 _ 'OneArg'(IdRef2))
       then Reg1 Reg2 VHd VInter1 VInter2 in
