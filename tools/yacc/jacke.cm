@@ -10,6 +10,7 @@ Set.sml
 AbsSyn.sml
 NormalForm.sml
 Translate.sml
+parse.sml
 
 utils.sig
 utils.sml
@@ -24,7 +25,6 @@ mklrtable.sml
 
 shrink.sml
 mkprstruct.sml
+verbose.sml
 output.sml
-LrParser.sml
-jacke.sml
 
