@@ -1,0 +1,3 @@
+import
+    structure TextIO
+from "lib/TextIO.ozf"

@@ -19,8 +19,13 @@ MISCSOURCES = \
 	PRETTY_PRINT.sig PrettyPrint.sml PP_MISC.sig PPMisc.sml URL.sig Url.sml
 MISCFILES = $(MISCSOURCES:%=misc/%)
 
+TOPSOURCES = \
+	PHASE.sig ComposePhases.sml TARGET.sig EmptyContext.sml ENGINE.sig \
+	MakeEngine.sml SIGNATURE.sig COMPOSER.sig
+TOPFILES = $(TOPSOURCES:%=top/%)
+
 BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
-	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES)
+	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES)
 
 ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
 
@@ -46,6 +51,9 @@ error/%: ../../stoc/error/% error/%.header Base.import
 
 misc/%: ../../stoc/misc/% misc/%.header Base.import
 	cat Base.import misc/$*.header $< > $@
+
+top/%: ../../stoc/top/% top/%.header Base.import
+	cat Base.import top/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC_MOZART) $< $@
