@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Url  from "x-alice:/lib/utility/Url"
+import structure Url  from "../utility/Url"
 import structure Http from "Http"
 
 signature HTTP_SERVER =
@@ -18,6 +18,5 @@ signature HTTP_SERVER =
 	type handler = Http.request -> Http.response
 
 	val start: int option -> int
-	val registerFor: Url.t * handler -> unit
-	val register: handler -> Url.t
+	val register: Url.t * handler -> unit
     end
