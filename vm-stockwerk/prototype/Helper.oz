@@ -37,7 +37,7 @@ define
 	 fun {$ Debug Exn Frame|Rest}
 	    exception(Frame|Debug Exn Rest)
 	 end
-      toString: fun {$ _} 'PushCall' end)
+      toString: fun {$ _} 'Push Call' end)
 
    fun {PushCall Args Closure0 TaskStack}
       case {Deref Closure0} of Transient=transient(_) then
