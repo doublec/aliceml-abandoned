@@ -26,21 +26,16 @@ structure Reflect : REFLECT =
 	val cast = UnsafeValue.cast
 	val realToVector = UnsafeReflect.realToVector
 
-	(* TODO: Q&D, has to correspond to translation and Package module *)
-	type package'
-	datatype package     = Package__ of package'
-	datatype val_package = ValPackage__ of package'
+	(* TODO: Q&D, has to correspond to translation *)
+	datatype package' = Package__ of module * Inf.t
 
 	val lab_x = Label.fromString "x"
 	val lab_t = Label.fromString "$t"
 
-	fun reflectPackage p =
-	    case cast p : package of Package__ p' => cast p' : module * Inf.t
-
+	fun reflectPackage p = case cast p : package' of Package__ mj => mj
 	fun reflectValPackage p =
-	    case cast p : val_package of ValPackage__ p' =>
 	    let
-		val (m,j) = cast p' : module * Inf.t
+		val (m,j) = reflectPackage p
 	    in
 		(UnsafeValue.projPoly(m,lab_x) : value,
 		 UnsafeValue.projPoly(m,lab_t) : Type.t)
