@@ -3,21 +3,23 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SRCS = RootSet.cc Outline.cc Scheduler.cc Unpickler.cc
+SRCS = \
+	RootSet.cc NativeTaskManager.cc InternalTasks.cc \
+	Scheduler.cc Transients.cc Outline.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all header clean distclean
 
-all: libscheduler.a
+all: libgeneric.a
 
-libscheduler.a: $(OBJS)
+libgeneric.a: $(OBJS)
 	ar rc $@ $(OBJS) && ranlib $@
 
 clean:
 	rm -f $(OBJS)
 
 veryclean: clean
-	rm -f libscheduler.a
+	rm -f libgeneric.a
 
 distclean: veryclean
 	rm -f Makefile.deps

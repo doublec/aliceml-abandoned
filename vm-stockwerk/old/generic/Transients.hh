@@ -10,16 +10,16 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__TRANSIENTS_HH__
-#define __SCHEDULER__TRANSIENTS_HH__
+#ifndef __GENERIC__TRANSIENTS_HH__
+#define __GENERIC__TRANSIENTS_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/Transients.hh"
+#pragma interface "generic/Transients.hh"
 #endif
 
 #include "store/Store.hh"
-#include "scheduler/Scheduler.hh"
 #include "adt/Queue.hh"
+#include "generic/Scheduler.hh"
 
 //
 // Transient Representation:
@@ -65,7 +65,11 @@ public:
 
 class Hole: private Transient {
 public:
+  static word holeExn;
+
   using Transient::ToWord;
+
+  static void Init();
 
   static Hole *New() {
     Transient *transient = Store::AllocTransient(HOLE_LABEL);
@@ -98,11 +102,11 @@ class Byneed: private Transient {
 public:
   using Transient::ToWord;
 
-  static Byneed *New(word w) {
+  static Byneed *New(Closure *closure) {
     Transient *transient = Store::AllocTransient(BYNEED_LABEL);
-    transient->InitArg(w);
+    transient->InitArg(closure->ToWord());
     return static_cast<Byneed *>(transient);
   }
 };
 
-#endif __SCHEDULER__TRANSIENTS_HH__
+#endif __GENERIC__TRANSIENTS_HH__

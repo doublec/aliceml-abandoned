@@ -10,16 +10,16 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__TASKSTACK_HH__
-#define __SCHEDULER__TASKSTACK_HH__
+#ifndef __GENERIC__TASKSTACK_HH__
+#define __GENERIC__TASKSTACK_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/TaskStack.hh"
+#pragma interface "generic/TaskStack.hh"
 #endif
 
 #include "adt/Stack.hh"
-#include "scheduler/Closure.hh"
-#include "scheduler/Interpreter.hh"
+#include "generic/Closure.hh"
+#include "generic/TaskManager.hh"
 
 class TaskStack: private Stack {
 private:
@@ -29,8 +29,9 @@ public:
   using Stack::IsEmpty;
 
   static TaskStack *New() {
-    //--** push suicide interpreter on the stack
-    return static_cast<TaskStack *>(Stack::New(threshold));
+    TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(threshold));
+    //--** push suicide task and default exception handler on taskStack
+    return taskStack;
   }
   static TaskStack *FromWord(word x) {
     return static_cast<TaskStack *>(Stack::FromWord(x));
@@ -47,7 +48,7 @@ public:
     ClearFrame(size);
   }
   void PushCall(Closure *closure) {
-    closure->GetConcreteCode()->GetInterpreter()->PushCall(this, closure);
+    closure->GetConcreteCode()->GetTaskManager()->PushCall(this, closure);
   }
   void Clear() {
     ClearFrame(GetStackSize());
@@ -55,7 +56,7 @@ public:
   }
   void Purge() {
     Blank(threshold);
-    //--** should call Interpreter::PurgeFrame on each frame
+    //--** should call TaskManager::PurgeFrame on each frame
   }
 
   // Accessing the current frame:
@@ -79,4 +80,4 @@ public:
   }
 };
 
-#endif __SCHEDULER__TASKSTACK_HH__
+#endif __GENERIC__TASKSTACK_HH__

@@ -10,21 +10,21 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__INTERPRETER_HH__
-#define __SCHEDULER__INTERPRETER_HH__
+#ifndef __GENERIC__TASK_MANAGER_HH__
+#define __GENERIC__TASK_MANAGER_HH__
 
-#include "scheduler/ConcreteCode.hh"
+#include "generic/ConcreteCode.hh"
 
 class TaskStack;
 class Closure;
 
-class Interpreter {
+class TaskManager {
 public:
   class Result {
   public:
     enum Code {
-      CONTINUE, // nargs == -1: OneArg / nargs >= 0: TupArgs
-      PREEMPT,  // nargs == -1: OneArg / nargs >= 0: TupArgs
+      CONTINUE, // nargs == -1: single argument / nargs >= 0: flattened tuple
+      PREEMPT,  // nargs == -1: single argument / nargs >= 0: flattened tuple
       RAISE,    // (nargs unused)
       REQUEST,  // nargs > 0
       TERMINATE // (nargs unused)
@@ -43,11 +43,12 @@ public:
 
   // Handling stack frames:
   virtual void PushCall(TaskStack *taskStack, Closure *closure) = 0;
-  virtual void PopFrame(TaskStack *taskStack) = 0;
+  virtual void PopFrame(TaskStack *taskStack) = 0; //--** remove
   //--** virtual u_int PurgeFrame(TaskStack *taskStack, u_int offset) = 0;
 
   // Execution:
   virtual Result Run(TaskStack *taskStack, int nargs) = 0;
+  //--** virtual Result Handle(TaskStack *taskStack, word exn) = 0;
 };
 
-#endif __SCHEDULER__INTERPRETER_HH__
+#endif __GENERIC__TASK_MANAGER_HH__

@@ -10,57 +10,44 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "generic/RootSet.hh"
+#include "generic/Closure.hh"
+#include "generic/Transients.hh"
+#include "generic/NativeTaskAuthoring.hh"
+#include "generic/InternalTasks.hh"
 
-DEFINE1(Internal_applyUnit) { // NON-ABSTRACT TASK STACK USE
-  DECLARE_CLOSURE(closure, x0);
-  taskStack->PopFrame(1); // pop the Interpreter
-  taskStack->PushCall(closure);
-  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
+DEFINE1(InternalTasks_await) {
+  if (Store::WordToTransient(x0) != INVALID_POINTER) {
+    REQUEST(x0);
+  } else {
+    RETURN(x0);
+  }
 } END
 
-DEFINE1(Internal_bind) {
-  Transient *transient = Store::WordToTransient(taskStack->GetWord(0));
-  taskStack->PopFrame(1);
-  transient->Become(REF_LABEL, x0);
-  RETURN(x0);
-} END
-
-DEFINE1(Internal_byneedHandler) {
-  Constructor *constructor =
-    Constructor::FromWordDirect(GlobalPrimitives::Future_Future);
-  ConVal *exn = ConVal::New(constructor, 1);
-  exn->Init(0, x0);
-  Transient *result = Store::AllocTransient(CANCELLED_LABEL);
-  result->InitArg(exn->ToWord());
-  RETURN(result->ToWord());
-} END
-
-DEFINE1(Internal_defaultHandler) {
+DEFINE1(InternalTasks_defaultHandler) {
   //--** print out information about the unhandled exception
+  x0 = x0; // avoid warning
   TERMINATE;
 } END
 
-DEFINE1(Internal_popHandler) {
-  Assert(taskStack->GetUnmanagedPointer(0) == NULL);
-  taskStack->PopFrame(1);
-  RETURN(x0);
-} END
-
-DEFINE1(Internal_raise) {
+DEFINE1(InternalTasks_raise) {
   RAISE(x0);
 } END
 
-DEFINE1(Internal_terminate) {
+DEFINE1(InternalTasks_terminate) {
+  x0 = x0; // avoid warning
   TERMINATE;
 } END
 
-void Primitive::RegisterInternal() {
-  Register("Internal.applyUnit", Internal_applyUnit, 1);
-  Register("Internal.bind", Internal_bind, 1, 1);
-  Register("Internal.byneedHandler", Internal_byneedHandler, 1);
-  Register("Internal.defaultHandler", Internal_defaultHandler, 1);
-  Register("Internal.popHandler", Internal_popHandler, 1);
-  Register("Internal.raise", Internal_raise, 1);
-  Register("Internal.terminate", Internal_terminate, 1);
+static inline void Set(word &member, NativeTaskManager::function f,
+		       int nargs, u_int nslots) {
+  member = (new NativeTaskManager(f, nargs, nslots))->ToClosure()->ToWord();
+  RootSet::Add(member);
+}
+
+void InternalTasks::Init() {
+  Set(await, InternalTasks_await, -1, 0);
+  Set(defaultHandler, InternalTasks_defaultHandler, -1, 0);
+  Set(raise, InternalTasks_raise, -1, 0);
+  Set(terminate, InternalTasks_terminate, -1, 0);
 }

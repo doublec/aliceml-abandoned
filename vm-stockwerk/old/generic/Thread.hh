@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__THREAD_HH__
-#define __SCHEDULER__THREAD_HH__
+#ifndef __GENERIC__THREAD_HH__
+#define __GENERIC__THREAD_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/Thread.hh"
+#pragma interface "generic/Thread.hh"
 #endif
 
-#include "scheduler/TaskStack.hh"
+#include "generic/TaskStack.hh"
 
 class Thread: private Block {
   friend class Scheduler;
@@ -45,6 +45,9 @@ private:
   void Resume() {
     ReplaceArg(IS_SUSPENDED_POS, false);
   }
+  TaskStack *GetTaskStack() {
+    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
+  }
 public:
   using Block::ToWord;
 
@@ -70,15 +73,15 @@ public:
   priority GetPriority() {
     return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
   }
-  TaskStack *GetTaskStack() {
-    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
-  }
   state GetState() {
     return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
   }
   bool IsSuspended() {
     return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));
   }
+  void Purge() {
+    GetTaskStack()->Purge();
+  }
 };
 
-#endif __SCHEDULER__THREAD_HH__
+#endif __GENERIC__THREAD_HH__

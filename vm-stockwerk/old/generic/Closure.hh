@@ -10,16 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__CLOSURE_HH__
-#define __SCHEDULER__CLOSURE_HH__
+#ifndef __GENERIC__CLOSURE_HH__
+#define __GENERIC__CLOSURE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/Closure.hh"
+#pragma interface "generic/Closure.hh"
 #endif
 
-#include "scheduler/ConcreteCode.hh"
-
-class TaskStack;
+#include "generic/ConcreteCode.hh"
 
 class Closure: private Block {
 private:
@@ -57,4 +55,4 @@ public:
   }
 };
 
-#endif __SCHEDULER__CLOSURE_HH__
+#endif __GENERIC__CLOSURE_HH__

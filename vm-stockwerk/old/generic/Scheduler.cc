@@ -11,13 +11,13 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "scheduler/Scheduler.hh"
+#pragma implementation "generic/Scheduler.hh"
 #endif
 
-#include "scheduler/RootSet.hh"
-#include "scheduler/Transients.hh"
-#include "scheduler/Interpreter.hh"
-#include "builtins/GlobalPrimitives.hh"
+#include "generic/RootSet.hh"
+#include "generic/TaskManager.hh"
+#include "generic/Transients.hh"
+#include "generic/InternalTasks.hh"
 
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
@@ -33,7 +33,7 @@ void Scheduler::Init() {
   RootSet::Add(root);
 }
 
-//--** document representation of inactive threads (invariants)
+//--** document invariants of thread representation
 
 void Scheduler::Run() {
   //--** start timer thread
@@ -46,43 +46,42 @@ void Scheduler::Run() {
     bool nextThread = false;
     while (!nextThread) {
       int offset = nargs == -1? 1: nargs;
-      Interpreter *interpreter =
-	static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(offset));
-      Assert(interpreter != NULL);
+      TaskManager *taskManager =
+	static_cast<TaskManager *>(taskStack->GetUnmanagedPointer(offset));
+      Assert(taskManager != NULL);
       preempt = false;
-      //--** reset time slice?
-      Interpreter::Result result = interpreter->Run(taskStack, nargs);
+      TaskManager::Result result = taskManager->Run(taskStack, nargs);
       switch (result.code) {
-      case Interpreter::Result::CONTINUE:
+      case TaskManager::Result::CONTINUE:
 	nargs = result.nargs;
 	break;
-      case Interpreter::Result::PREEMPT:
+      case TaskManager::Result::PREEMPT:
 	taskStack->PushFrame(1);
 	taskStack->PutInt(0, result.nargs);
 	threadQueue->Enqueue(currentThread);
 	nextThread = true;
 	break;
-      case Interpreter::Result::RAISE:
+      case TaskManager::Result::RAISE:
       raise:
 	{
 	  word exn = taskStack->GetWord(0);
 	  taskStack->PopFrame(1);
 	  while (true) {
 	    Assert(!taskStack->IsEmpty());
-	    interpreter =
-	      static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(0));
-	    if (interpreter == NULL) {
+	    taskManager =
+	      static_cast<TaskManager *>(taskStack->GetUnmanagedPointer(0));
+	    if (taskManager == NULL) {
 	      // This is a mark that an exception handler follows.
 	      // We require that there always is one that will finally
 	      // handle the exception.
 	      taskStack->PutWord(0, exn);
 	      break;
 	    }
-	    interpreter->PopFrame(taskStack);
+	    taskManager->PopFrame(taskStack);
 	  }
 	}
 	break;
-      case Interpreter::Result::REQUEST:
+      case TaskManager::Result::REQUEST:
 	{
 	  int nvars = result.nargs;
 	  Assert(nvars > 0);
@@ -95,7 +94,7 @@ void Scheduler::Run() {
 	    switch (transient->GetLabel()) {
 	    case HOLE_LABEL:
 	      taskStack->PushFrame(1);
-	      taskStack->PutWord(0, GlobalPrimitives::Hole_Hole);
+	      taskStack->PutWord(0, Hole::holeExn);
 	      goto raise;
 	    case FUTURE_LABEL:
 	      taskStack->PushFrame(1);
@@ -110,29 +109,10 @@ void Scheduler::Run() {
 	      taskStack->PutWord(0, transient->GetArg());
 	      goto raise;
 	    case BYNEED_LABEL:
-	      {
-		word closure = transient->GetArg();
-		transient->Become(FUTURE_LABEL, 0); // empty queue
-		// Push a task that binds the transient:
-		word primitive = GlobalPrimitives::Internal_bind;
-		taskStack->PushFrame(1);
-		taskStack->PutWord(0, transient->ToWord());
-		taskStack->PushCall(Closure::FromWordDirect(primitive));
-		// Push the exception handler and the mark:
-		primitive = GlobalPrimitives::Internal_byneedHandler;
-		taskStack->PushCall(Closure::FromWordDirect(primitive));
-		taskStack->PushFrame(1);
-		taskStack->PutUnmanagedPointer(0, NULL);
-		// Push a task that pops the handler after the application:
-		primitive = GlobalPrimitives::Internal_popHandler;
-		taskStack->PushCall(Closure::FromWordDirect(primitive));
-		// Push a task that awaits and applies the closure then run it:
-		primitive = GlobalPrimitives::Internal_applyUnit;
-		taskStack->PushCall(Closure::FromWordDirect(primitive));
-		taskStack->PushFrame(1);
-		taskStack->PutWord(0, closure);
-		nargs = 1;
-	      }
+	      taskStack->
+		PushCall(Closure::FromWordDirect(transient->GetArg()));
+	      transient->Become(FUTURE_LABEL, 0); // `0' means queue empty
+	      nargs = 0;
 	      break;
 	    default:
 	      Error("Scheduler::Run: invalid transient label");
@@ -141,7 +121,7 @@ void Scheduler::Run() {
 	  }
 	}
 	break;
-      case Interpreter::Result::TERMINATE:
+      case TaskManager::Result::TERMINATE:
 	taskStack->Clear(); // now subject to garbage collection
 	currentThread->SetState(Thread::TERMINATED);
 	nextThread = true;

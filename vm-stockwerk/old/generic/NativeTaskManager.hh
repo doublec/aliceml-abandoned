@@ -10,52 +10,31 @@
 //   $Revision$
 //
 
-#ifndef __BUILTINS__PRIMITIVE_HH__
-#define __BUILTINS__PRIMITIVE_HH__
+#ifndef __GENERIC__NATIVE_TASK_MANAGER_HH__
+#define __GENERIC__NATIVE_TASK_MANAGER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "builtins/Primitive.hh"
+#pragma interface "generic/NativeTaskManager.hh"
 #endif
 
-#include "adt/HashTable.hh"
-#include "datalayer/Alice.hh"
-#include "scheduler/Interpreter.hh"
+#include "generic/TaskManager.hh"
 
-class TaskStack;
-
-class Primitive {
-private:
-  static word table;
-
-  typedef Interpreter::Result (*function)(TaskStack *);
-
-  static void Register(const char *name, word value);
-  static void Register(const char *name, function value, u_int arity);
-  static void Register(const char *name, function value, u_int arity,
-		       u_int frameSize);
-  static void RegisterUniqueConstructor(const char *name);
-
-  static void RegisterInternal();
-  static void RegisterUnqualified();
-  static void RegisterArray();
-  static void RegisterChar();
-  static void RegisterFuture();
-  static void RegisterGeneral();
-  static void RegisterGlobalStamp();
-  static void RegisterHole();
-  static void RegisterInt();
-  static void RegisterList();
-  static void RegisterMath();
-  static void RegisterOption();
-  static void RegisterReal();
-  static void RegisterString();
-  static void RegisterThread();
-  static void RegisterUnsafe();
-  static void RegisterVector();
-  static void RegisterWord();
+class NativeTaskManager: public TaskManager {
 public:
-  static void Init();
-  static word Lookup(String *name);
+  typedef Result (*function)(TaskStack *);
+private:
+  function func;
+  int arity;
+  u_int frameSize;
+public:
+  NativeTaskManager(function f, int nargs, u_int nslots):
+    func(f), arity(nargs == 1? -1: nargs), frameSize(nslots + 1) {}
+
+  Closure *ToClosure();
+
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PopFrame(TaskStack *taskStack);
+  virtual Result Run(TaskStack *taskStack, int nargs);
 };
 
-#endif __BUILTINS__PRIMITIVE_HH__
+#endif __GENERIC__NATIVE_TASK_MANAGER_HH__

@@ -11,17 +11,17 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "scheduler/ConcreteCode.hh"
-#pragma implementation "scheduler/Closure.hh"
-#pragma implementation "scheduler/TaskStack.hh"
-#pragma implementation "scheduler/Thread.hh"
-#pragma implementation "scheduler/ThreadQueue.hh"
-#pragma implementation "scheduler/Transients.hh"
+#pragma implementation "generic/ConcreteCode.hh"
+#pragma implementation "generic/Closure.hh"
+#pragma implementation "generic/TaskStack.hh"
+#pragma implementation "generic/Thread.hh"
+#pragma implementation "generic/ThreadQueue.hh"
+#pragma implementation "generic/Tuple.hh"
 #endif
 
-#include "scheduler/ConcreteCode.hh"
-#include "scheduler/Closure.hh"
-#include "scheduler/TaskStack.hh"
-#include "scheduler/Thread.hh"
-#include "scheduler/ThreadQueue.hh"
-#include "scheduler/Transients.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Closure.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Thread.hh"
+#include "generic/ThreadQueue.hh"
+#include "generic/Tuple.hh"

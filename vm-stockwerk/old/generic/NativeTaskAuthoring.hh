@@ -10,26 +10,25 @@
 //   $Revision$
 //
 
-#ifndef __BUILTINS__AUTHORING_HH__
-#define __BUILTINS__AUTHORING_HH__
+#ifndef __GENERIC__NATIVE_TASK_AUTHORING_HH__
+#define __GENERIC__NATIVE_TASK_AUTHORING_HH__
 
-#include "scheduler/TaskStack.hh"
-#include "builtins/Primitive.hh"
-#include "builtins/GlobalPrimitives.hh"
+#include "generic/TaskStack.hh"
+#include "generic/NativeTaskManager.hh"
 
 #define DEFINE0(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {
+  static TaskManager::Result name(TaskStack *taskStack) {
 #define DEFINE1(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
+  static TaskManager::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     taskStack->PopFrame(1);
 #define DEFINE2(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
+  static TaskManager::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     taskStack->PopFrame(2);
 #define DEFINE3(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
+  static TaskManager::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     word x2 = taskStack->GetWord(2);					\
@@ -38,73 +37,49 @@
 
 #define RETURN(w) {							\
   taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
+  return TaskManager::Result(TaskManager::Result::CONTINUE, -1);	\
 }
 #define RETURN_UNIT {							\
   taskStack->PopFrame(1);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);		\
+  return TaskManager::Result(TaskManager::Result::CONTINUE, 0);		\
 }
 #define RETURN_INT(i) {							\
   taskStack->PutInt(0, i);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
+  return TaskManager::Result(TaskManager::Result::CONTINUE, -1);	\
 }
 #define RETURN_BOOL(b) RETURN_INT(b);
 
 #define PREEMPT {							\
   taskStack->PopFrame(1);						\
-  return Interpreter::Result(Interpreter::Result::PREEMPT, 0);		\
+  return TaskManager::Result(TaskManager::Result::PREEMPT, 0);		\
 }
 
 #define RAISE(w) {							\
   taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::RAISE);		\
+  return TaskManager::Result(TaskManager::Result::RAISE);		\
 }
 
 #define REQUEST(w) {							\
   taskStack->PushFrame(1);						\
   taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::REQUEST, 1);		\
+  return TaskManager::Result(TaskManager::Result::REQUEST, 1);		\
 }
 #define REQUEST2(w1, w2) {						\
   taskStack->PushFrame(2);						\
   taskStack->PutWord(0, w1);						\
   taskStack->PutWord(1, w2);						\
-  return Interpreter::Result(Interpreter::Result::REQUEST, 2);		\
+  return TaskManager::Result(TaskManager::Result::REQUEST, 2);		\
 }
 
 #define TERMINATE							\
-  return Interpreter::Result(Interpreter::Result::TERMINATE);
+  return TaskManager::Result(TaskManager::Result::TERMINATE);
 
 #define DECLARE_INT(i, x)						\
   int i = Store::WordToInt(x);						\
   if (i == INVALID_INT) { REQUEST(x); } else {}
-
 #define DECLARE_BLOCKTYPE(t, a, x)					\
   t *a = t::FromWord(x);						\
   if (a == INVALID_POINTER) { REQUEST(x); } else {}
-#define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
-#define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
 #define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
-#define DECLARE_GLOBAL_STAMP(gs, x) DECLARE_BLOCKTYPE(GlobalStamp, gs, x)
-#define DECLARE_REAL(real, x) DECLARE_BLOCKTYPE(Real, real, x)
-#define DECLARE_STRING(string, x) DECLARE_BLOCKTYPE(String, string, x)
-#define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
-#define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
 
-//--** does not work for infinite lists
-#define DECLARE_LIST_ELEMS(tagVal, length, x, cmd)			\
-  u_int length = 0;							\
-  TagVal *tagVal;							\
-  { word list = x;						\
-    while ((tagVal = TagVal::FromWord(list)) != INVALID_POINTER) {	\
-      cmd;								\
-      length++;								\
-      list = tagVal->Sel(1);						\
-    }									\
-    if (Store::WordToInt(list) == INVALID_INT) { REQUEST(list); }	\
-  }
-
-#define DECLARE_LIST(tagVal, length, x)					\
-  DECLARE_LIST_ELEMS(tagVal, length, x, ;)
-
-#endif __BUILTINS__AUTHORING_HH__
+#endif __GENERIC__NATIVE_TASK_AUTHORING_HH__

@@ -11,10 +11,10 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "scheduler/RootSet.hh"
+#pragma implementation "generic/RootSet.hh"
 #endif
 
-#include "scheduler/RootSet.hh"
+#include "generic/RootSet.hh"
 #include "adt/Queue.hh"
 
 class Element: private Block {

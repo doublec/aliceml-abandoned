@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__ROOT_SET_HH__
-#define __SCHEDULER__ROOT_SET_HH__
+#ifndef __GENERIC__ROOT_SET_HH__
+#define __GENERIC__ROOT_SET_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/RootSet.hh"
+#pragma interface "generic/RootSet.hh"
 #endif
 
 #include "store/Store.hh"
@@ -27,4 +27,4 @@ public:
   static void DoGarbageCollection();
 };
 
-#endif __SCHEDULER__ROOT_SET_HH__
+#endif __GENERIC__ROOT_SET_HH__

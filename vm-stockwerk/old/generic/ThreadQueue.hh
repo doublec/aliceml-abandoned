@@ -10,17 +10,15 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__THREADQUEUE_HH__
-#define __SCHEDULER__THREADQUEUE_HH__
+#ifndef __GENERIC__THREADQUEUE_HH__
+#define __GENERIC__THREADQUEUE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/ThreadQueue.hh"
+#pragma interface "generic/ThreadQueue.hh"
 #endif
 
 #include "adt/Queue.hh"
-#include "scheduler/Thread.hh"
-
-//--** thread priorities ignored for now
+#include "generic/Thread.hh"
 
 class ThreadQueue: private Queue {
 private:
@@ -39,6 +37,7 @@ public:
   }
 
   Thread *Dequeue() {
+    //--** should respect thread priorities
     if (IsEmpty())
       return INVALID_POINTER;
     else
@@ -52,8 +51,9 @@ public:
   }
   void PurgeAll() {
     Blank();
-    //--** walk through queue and apply Purge to all elements
+    for (u_int i = GetNumberOfElements(); i--; )
+      Thread::FromWordDirect(GetNthElement(i))->Purge();
   }
 };
 
-#endif __SCHEDULER__THREADQUEUE_HH__
+#endif __GENERIC__THREADQUEUE_HH__

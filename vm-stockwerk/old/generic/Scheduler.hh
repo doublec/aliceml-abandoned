@@ -10,19 +10,15 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__SCHEDULER_HH__
-#define __SCHEDULER__SCHEDULER_HH__
+#ifndef __GENERIC__SCHEDULER_HH__
+#define __GENERIC__SCHEDULER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/Scheduler.hh"
+#pragma interface "generic/Scheduler.hh"
 #endif
 
-#include "scheduler/ThreadQueue.hh"
-#include "scheduler/Thread.hh"
-
-//
-// Scheduler Interface
-//
+#include "generic/ThreadQueue.hh"
+#include "generic/Thread.hh"
 
 class Scheduler {
 private:
@@ -72,4 +68,4 @@ public:
   }
 };
 
-#endif __SCHEDULER__SCHEDULER_HH__
+#endif __GENERIC__SCHEDULER_HH__
