@@ -1479,6 +1479,10 @@
 	  dec1 SEMICOLON program_opt
 	  		( DECProgram(I(dec1left,program_optright),
 				     dec1, program_opt) )
+	| SEMICOLON program_opt
+	  		( DECProgram(I(SEMICOLONleft,program_optright),
+				     EMPTYDec(I(SEMICOLONleft,SEMICOLONleft)),
+				     program_opt) )
 	| exp SEMICOLON program_opt
 	  		( EXPProgram(I(expleft,program_optright),
 				     exp, program_opt) )
