@@ -20,7 +20,7 @@
 #include "generic/Interpreter.hh"
 #include "generic/Primitive.hh"
 
-class PrimitiveTable {
+class DllExport PrimitiveTable {
 private:
   static word valueTable;
   static word functionTable;
