@@ -273,7 +273,7 @@ void Disassembler::Start() {
     case AbstractCode::AppPrim:
       VALUE IDREFS IDDEFINSTROPT break;
     case AbstractCode::AppVar:
-      IDREF IDREFARGS IDDEFARGSINSTROPT break;
+      IDREF IDREFS INT IDDEFARGSINSTROPT break;
     case AbstractCode::GetRef:
       ID IDREF LASTINSTR break;
     case AbstractCode::GetTup:

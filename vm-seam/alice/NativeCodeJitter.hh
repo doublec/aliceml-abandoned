@@ -253,6 +253,8 @@ public:
   NativeCodeJitter();
   ~NativeCodeJitter();
 
+  void Disassemble(Chunk*);
+
   NativeConcreteCode *Compile(LazyCompileClosure *lazyCompileClosure);
 #ifdef INSTRUCTION_COUNTS
   void DumpInstructionCounts();
