@@ -17,6 +17,8 @@ end
 =
 struct
 
+    datatype dir = East | West | NorthEast | NorthWest | SouthEast | SouthWest
+
     datatype viewer = G of {
             window      :   Gtk.object,
             drawingArea :   Gtk.object,
@@ -31,6 +33,7 @@ struct
         }
 
     val tileSize = 8
+    val realTileSize = real tileSize
 
     fun size w = (tileSize * 101 , tileSize * 100)
 
@@ -168,18 +171,56 @@ struct
                 (Gdk.gcSetForeground (gc, c);
                 Gdk.drawRectangle (pixmap, gc, false, x+1, y+1, tileSize-3, tileSize-3))
 
-            fun drawTrail (gc, pixmap, x, y, c) =
-                (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawPoint (pixmap, gc, x+tileSize div 2, y+tileSize div 2))
+            fun forloop (init, endv, f) = if init > endv then () else (f init ; forloop (init+1, endv, f))
 
+            val cos = 0.5
+            val sin = 0.866025403784438597
+            val mcos = ~cos
+            val msin = ~sin
+
+            fun drawTrail direction (gc, pixmap, x, y, c) =
+                let 
+                    val (dx, dy) =
+                    case direction of
+                        West => (~1.0, 0.0)
+                      | East => (1.0, 0.0)
+                      | NorthWest => (mcos, msin)
+                      | NorthEast => (cos, msin)
+                      | SouthWest => (mcos, sin)
+                      | SouthEast => (cos, sin)
+                    val x0 = x+tileSize div 2
+                    val y0 = y+tileSize div 2
+                    val ddx = round (dx * realTileSize * 0.75 )
+                    val ddy = round (dy * realTileSize * 0.75 )
+                 in
+                     Gdk.gcSetForeground (gc, c);
+                      Gdk.drawRectangle (pixmap, gc, false, x0-1, y0-1, 2, 2) ;
+                      Gdk.drawLine (pixmap, gc, x0, y0, x0+ddx, y0+ddy)
+                     
+                 end
+
+            fun getDirection m =
+                let val m1 = Array.sub (m,1)
+                    val m2 = Array.sub (m,2)
+                    val m3 = Array.sub (m,3)
+                in
+                    case (m1, m2, m3) of
+                        (false, false, false) => East
+                      | (true, false, false) => SouthEast
+                      | (false, true, false) => SouthWest
+                      | (false, false, true) => NorthWest
+                      | (true, false, true) => NorthEast
+                      | (true, true, false) => West
+                      | _ => (print "What the hell is this ?"; West)
+                end
 
             fun drawMarkers (gc, pixmap, x, y, m, c) =
                 (if Array.sub (m, 4) (* food marker *) then
                     drawFood (gc, pixmap, x, y, c)
                 else if Array.sub (m, 5) (* boring marker *) then
                     drawBoring (gc, pixmap, x, y, c)
-                else if Array.sub (m, 1) orelse Array.sub (m, 2) then
-                    drawTrail (gc, pixmap, x, y, c) 
+                else if Array.sub (m, 1) orelse Array.sub (m, 2) orelse Array.sub (m,3) then
+                    drawTrail (getDirection m) (gc, pixmap, x, y, c) 
                 else ())
         in
             if #rocky cell then
