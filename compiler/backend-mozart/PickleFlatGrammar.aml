@@ -315,7 +315,7 @@ structure PickleFlatGrammar :> CODE
 			    end
 		val outstream = BinIO.openOut filename'
 	    in
-		StampMap.deleteAll visited;
+		StampMap.removeAll visited;
 		outputPair (outputString, outputComponent)
 			   (q, (sourcename, component));
 		BinIO.output (outstream, closeOut q);
