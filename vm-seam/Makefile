@@ -17,48 +17,128 @@ include $(TOPDIR)/Makefile.rules
 
 # GNU make has no reverse function, but we need these in reversed form, too:
 SUBDIRS = store adt generic alice java
-SUBDIRSR = java alice generic adt store
 
-SRCS = Base.cc InitSeam.cc AliceMain.cc
-OBJS = $(SRCS:%.cc=%.o)
-LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
+SOURCES = Base.cc InitSeam.cc AliceMain.cc JavaMain.cc
+OBJS = $(SOURCES:%.cc=%.o)
 
-LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
-	-L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
+##
+## Enumerate seam.dll files
+##
+ifdef LIGHTNING
+STORE_LIGHTNING_SOURCES = JITStore.cc
+else
+STORE_LIGHTNING_SOURCES =
+endif
+STORE_SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc $(STORE_LIGHTNING_SOURCES)
+STORE_OBJS = $(STORE_SOURCES:%.cc=store/%.o)
+ADT_SOURCES = ChunkMap.cc Outline.cc
+ADT_OBJS = $(ADT_SOURCES:%.cc=adt/%.o)
+GENERIC_SOURCES = \
+	Outline.cc Debug.cc RootSet.cc UniqueString.cc \
+	StackFrame.cc TaskStack.cc IOHandler.cc IODesc.cc SignalHandler.cc \
+	Scheduler.cc Transients.cc Worker.cc Interpreter.cc \
+	Primitive.cc PushCallWorker.cc BindFutureWorker.cc \
+	Unpickler.cc Pickler.cc Profiler.cc
+GENERIC_OBJS = $(GENERIC_SOURCES:%.cc=generic/%.o)
+SEAM_OBJS = $(STORE_OBJS) $(ADT_OBJS) $(GENERIC_OBJS)
 
-.PHONY: all-subdirs depend-local
+##
+## Enumerate alice.dll files
+##
+ifdef LIGHTNING
+ALICE_LIGHTNING_SOURCES = \
+	NativeConcreteCode.cc NativeCodeInterpreter.cc NativeCodeJitter.cc
+else
+ALICE_LIGHTNING_SOURCES =
+endif
+ALICE_PRIMITIVE_MODULES = \
+	Unqualified Array Byte Char Future General GlobalStamp Hole Int \
+	List Math Option Real Ref Remote String Thread UniqueString Unsafe \
+	Vector Word8 Word8Array Word8Vector Word31
+ALICE_LIB_SYSTEM_MODULES = \
+	Config IODesc OS CommandLine Component Debug Socket Rand Value \
+	Reflect Foreign
+ALICE_LIB_UTILITY_MODULES = ImpMap Cell Addr
+ALICE_LIB_DISTRIBUTION_MODULES = Remote
+ALICE_SOURCES = \
+	Data.cc Guid.cc AbstractCode.cc PrimitiveTable.cc \
+	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
+	AliceLanguageLayer.cc BootLinker.cc \
+	$(ALICE_LIGHTNING_SOURCES) \
+	$(ALICE_PRIMITIVE_MODULES:%=primitives/%.cc) \
+	$(ALICE_LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \
+	$(ALICE_LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
+	$(ALICE_LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc)
+ALICE_OBJS = $(ALICE_SOURCES:%.cc=alice/%.o)
 
-all: all-subdirs stow.dll stow.exe java.exe
+##
+## Enumerate java.dll files
+##
+JAVA_JAVA_LANG_SOURCES = \
+	Class.cc Object.cc String.cc Throwable.cc System.cc ClassLoader.cc \
+	Float.cc Double.cc StrictMath.cc Thread.cc
+JAVA_JAVA_IO_SOURCES = \
+	FileDescriptor.cc FileInputStream.cc FileOutputStream.cc \
+	ObjectStreamClass.cc
+JAVA_JAVA_SECURITY_SOURCES = AccessController.cc
+JAVA_SUN_MISC_SOURCES = Unsafe.cc AtomicLong.cc
+JAVA_SUN_REFLECT_SOURCES = Reflection.cc NativeConstructorAccessorImpl.cc
+JAVA_SOURCES = \
+	Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
+	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
+	Startup.cc JavaLanguageLayer.cc \
+	Dump.cc \
+	$(JAVA_JAVA_LANG_SOURCES:%=java/lang/%) \
+	$(JAVA_JAVA_IO_SOURCES:%=java/io/%) \
+	$(JAVA_JAVA_SECURITY_SOURCES:%=java/security/%) \
+	$(JAVA_SUN_MISC_SOURCES:%=sun/misc/%) \
+	$(JAVA_SUN_REFLECT_SOURCES:%=sun/reflect/%)
+JAVA_OBJS = $(JAVA_SOURCES:%.cc=java/%.o)
+##
+## Done
+##
 
-stow.exe: Main.o stow.dll
-	$(LD) $(LDFLAGS) -o $@ Main.o stow.dll
+LIBS = -L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
 
-java.exe: Base.o InitSeam.o JavaMain.o $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ Base.o InitSeam.o JavaMain.o $(LDLIBS)
+.PHONY: all clean veryclean distclean $(SUBDIRS)
 
-stow.dll: $(OBJS) $(LIBS)
-	$(LD) $(LDFLAGS) -shared -o $@ $(OBJS) $(LDLIBS)
+all: alice.exe java.exe
 
-all-subdirs:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) all) || exit 1; done
+$(SUBDIRS): %:
+	(cd $@ && $(MAKE) all)
+
+seam.dll: Base.o InitSeam.o store adt generic
+	$(LD) $(LDFLAGS) -shared -o $@ Base.o InitSeam.o $(SEAM_OBJS) $(LIBS)
+
+alice.dll: alice seam.dll
+	$(LD) $(LDFLAGS) -shared -o $@ $(ALICE_OBJS) seam.dll $(LIBS)
+
+alice.exe: AliceMain.o alice.dll
+	$(LD) $(LDFLAGS) -o $@ $< alice.dll seam.dll
+
+java.dll: java seam.dll
+	$(LD) $(LDFLAGS) -shared -o $@ $(JAVA_OBJS) seam.dll $(LIBS)
+
+java.exe: JavaMain.o java.dll
+	$(LD) $(LDFLAGS) -o $@ $< java.dll seam.dll
 
 clean:
-	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) clean) || exit 1; done
-	rm -f $(OBJS) Main.o stow.def JavaMain.o
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
+	rm -f $(OBJS)
 
 veryclean:
-	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) veryclean) || exit 1; done
-	rm -f $(OBJS) Main.o stow.def JavaMain.o
-	rm -f stow.exe stow.dll java.exe
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
+	rm -f $(OBJS)
+	rm -f seam.dll alice.dll alice.exe java.dll java.exe
 
 distclean:
-	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) Main.o stow.def JavaMain.o
-	rm -f stow.exe stow.dll java.exe
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
+	rm -f $(OBJS)
+	rm -f seam.dll alice.dll alice.exe java.dll java.exe
 	rm -f Makefile.depend
 
-Makefile.depend: Makefile $(SRCS) JavaMain.cc
+Makefile.depend: Makefile $(SOURCES) JavaMain.cc
 	cd store && $(MAKE) StoreConfig.hh || exit 1
-	$(MAKEDEPEND) $(SRCS) JavaMain.cc > Makefile.depend
+	$(MAKEDEPEND) $(SOURCES) JavaMain.cc > Makefile.depend
 
 include Makefile.depend

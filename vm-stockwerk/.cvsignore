@@ -1,4 +1,5 @@
-Makefile.depend stow.dll
+Makefile.depend
+seam.dll alice.dll java.dll
 Rel1.import Rel2.import
 build1 build2 build3
 Makefile.bootstrap.depend
