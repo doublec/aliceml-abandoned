@@ -26,7 +26,7 @@ structure PathPrivate =
     fun invent()		= (GlobalStamp.new(), ref(PLAIN(Name.InId)))
     fun fromLab l		= (GlobalStamp.new(), ref(PLAIN(Label.toName l)))
     fun path pln		= (GlobalStamp.new(), ref(DOT pln))
-    fun global n		= (GlobalStamp.fromString(Name.toString n),
+    fun pervasive n		= (GlobalStamp.fromString(Name.toString n),
 				   ref(PLAIN n))
 
     fun toLab (_, ref(PLAIN n))	= Label.fromName n

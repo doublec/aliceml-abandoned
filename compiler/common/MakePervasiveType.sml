@@ -51,19 +51,19 @@ functor MakePervasiveType(val labid_false :	string
     val name_match	= Name.ExId valid_match
     val name_bind	= Name.ExId valid_bind
 
-    val path_bool	= Path.global name_bool
-    val path_list	= Path.global name_list
-    val path_int	= Path.global name_int
-    val path_word	= Path.global name_word
-    val path_real	= Path.global name_real
-    val path_char	= Path.global name_char
-    val path_string	= Path.global name_string
-    val path_vec	= Path.global name_vec
-    val path_array	= Path.global name_array
-    val path_ref	= Path.global name_ref
-    val path_exn	= Path.global name_exn
-    val path_time	= Path.global name_time
-    val path_prom	= Path.global name_prom
+    val path_bool	= Path.pervasive name_bool
+    val path_list	= Path.pervasive name_list
+    val path_int	= Path.pervasive name_int
+    val path_word	= Path.pervasive name_word
+    val path_real	= Path.pervasive name_real
+    val path_char	= Path.pervasive name_char
+    val path_string	= Path.pervasive name_string
+    val path_vec	= Path.pervasive name_vec
+    val path_array	= Path.pervasive name_array
+    val path_ref	= Path.pervasive name_ref
+    val path_exn	= Path.pervasive name_exn
+    val path_time	= Path.pervasive name_time
+    val path_prom	= Path.pervasive name_prom
 
     val con_bool	= (STAR, CLOSED, path_bool)
     val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
