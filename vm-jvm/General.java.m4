@@ -28,7 +28,7 @@ final public class General {
     /** <code>exception Subscript</code>*/
     final public static DMLName Subscript = new DMLName("General.Subscript");
 
-    final protected static class Deref extends DMLBuiltin {
+    final public static class Deref extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    DMLValue[] args = fromTuple(val,1,"deref");
 	    DMLValue arg = args[0].request();
@@ -43,7 +43,7 @@ final public class General {
     /** <code>val ! : 'a ref -> 'a</code>*/
     final public static Deref deref  = new Deref();
 
-    final protected static class Assign extends DMLBuiltin {
+    final public static class Assign extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    DMLValue[] args = fromTuple(val,2,"assign");
 	    DMLValue car=args[0].request();
@@ -57,9 +57,9 @@ final public class General {
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
     final public static Assign assign = new Assign();
 
-    final protected static class Compose extends DMLBuiltin {
-	final protected class Composer extends DMLBuiltin {
-	    protected DMLValue f,g;
+    final public static class Compose extends DMLBuiltin {
+	final public class Composer extends DMLBuiltin {
+	    public DMLValue f,g;
 	    public Composer(DMLValue f, DMLValue g) {
 		this.f=f;
 		this.g=g;
@@ -78,7 +78,7 @@ final public class General {
     /** <code>val o : (('b -> 'c) * ('a -> 'b)) -> 'a -> 'c </code>*/
     final public static Compose o = new Compose();
 
-    final protected static class Before extends DMLBuiltin {
+    final public static class Before extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    DMLValue[] args  = fromTuple(val,2,"before");
 	    return args[0];
@@ -88,7 +88,7 @@ final public class General {
     // wirft einfach das zweite Argument weg
     final public static Before before = new Before();
 
-    final protected static class Ignore extends DMLBuiltin {
+    final public static class Ignore extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    return DMLConstants.dmlunit;
 	}
@@ -96,7 +96,7 @@ final public class General {
     /** <code>val ignore : 'a -> unit </code>*/
     final public static Ignore ignore = new Ignore();
 
-    final protected static class LVar extends DMLBuiltin {
+    final public static class LVar extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    return new DMLLVar();
 	}
@@ -105,7 +105,7 @@ final public class General {
     final public static LVar lvar = new LVar();
 
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
-    final protected static class Ref extends DMLBuiltin {
+    final public static class Ref extends DMLBuiltin {
 	final synchronized public DMLValue apply(DMLValue val) {
 	    // --> Tuple?
 	    return new Reference(val);
@@ -114,7 +114,7 @@ final public class General {
     /** <code>val ref : 'a -> ref 'a</code>*/
     final public static Ref ref = new Ref();
 
-    final protected static class Spawn extends DMLBuiltin {
+    final public static class Spawn extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    DMLValue[] args=fromTuple(val,1,"spawn");
 	    DMLThread t=new DMLThread(args[0]);
@@ -128,7 +128,7 @@ final public class General {
      */
     final public static Spawn spawn = new Spawn();
 
-    final protected static class Equals extends DMLBuiltin {
+    final public static class Equals extends DMLBuiltin {
 	final public DMLValue apply(DMLValue val) {
 	    DMLValue[] args=fromTuple(val,2,"equals");
 	    DMLValue car=args[0].request();
@@ -146,7 +146,7 @@ final public class General {
     // val exnMessage : exn -> string
 
     // Hilfsfunktionen
-    final protected static DMLValue[] fromTuple
+    final public static DMLValue[] fromTuple
 	(DMLValue v, // Value-Tuple
 	 int ea,     // erwartete Anzahl Argumente
 	 java.lang.String errMsg) {
@@ -167,7 +167,7 @@ final public class General {
 	return null;
     }
 
-    final protected static DMLValue error
+    final public static DMLValue error
 	(java.lang.String msg, DMLValue v) {
 	// sonst: Fehler
 	DMLValue[] err = {
