@@ -6,6 +6,7 @@ Group
 is
 
     ../infrastructure/phase.cm
+
     flat-grammar.cm
     output-flat-grammar.cm
     flattening-phase.cm
