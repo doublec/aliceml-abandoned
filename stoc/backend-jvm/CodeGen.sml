@@ -842,9 +842,6 @@ structure CodeGen =
 		    stampcode' ::
 		    Label retry ::
 		    Multi (checkForConsTest test') ::
-(*		    Multi (testCode test') ::
-		    Multi
-		    (decListCode (body', curFun, curCls)) ::*)
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label wrongclasslabel ::
@@ -887,7 +884,7 @@ structure CodeGen =
 		 Goto schonda]
 
 	  | decCode (ReturnStm ((((line,_),_),_),AppExp(_,Id (_,stamp',_),arg')), curFun, curCls) =
-		(* tailcall applikation *)
+		(* tailcall application *)
 		[Line line,
 		 Multi (invokeRecApply (stamp', arg', curFun, true, curCls, false)),
 		 Areturn]
