@@ -17,7 +17,8 @@ import signature PRIM_IO from "PRIM_IO-sig"
 
 functor PrimIO(structure V: MONO_VECTOR
 	       structure A: MONO_ARRAY
-		   where type Vector.vector = V.vector and type elem = V.elem
+		   where type Vector.vector = V.vector
+		     and type Vector.elem = V.elem
 	       val someElem: A.elem
 	       type pos
 	       val compare: pos * pos -> order) :>
