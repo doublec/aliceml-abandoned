@@ -40,7 +40,7 @@
 // Number of Memory Generations
 // (must fit in HEADER_GEN_GCMARK_WIDTH starting at 1; zero is reserved)
 // to be done
-#define STORE_GENERATION_NUM     1 // ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)
+#define STORE_GENERATION_NUM     ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)
 // Initial Intgen-Pointer-Set Size
 #define STORE_INITIAL_INTGEN     4
 // Initial Weak-Dictionary-Set Size
