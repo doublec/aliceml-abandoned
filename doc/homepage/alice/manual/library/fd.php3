@@ -582,8 +582,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        |x - y| rel z
-      </PRE>
+        |x - y| rel z</PRE>
      <P>May cut holes into domains.
      <P>This propagator is equivalent to
         <TT>sumAC(#[(1, x), (~1, y)], rel, z)</TT> but is more efficient.
@@ -635,8 +634,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        ((x + i1 <= y) and (c = 0)) or ((y + i2 <= x) and (c = 1))
-      </PRE>
+        ((x + i1 <= y) and (c = 0)) or ((y + i2 <= x) and (c = 1))</PRE>
       <P>May cut holes into the domains.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
@@ -675,8 +673,8 @@
       <tt>distinct2 <I>v</I></TT>
     </DT>
     <DD>
-      <P>For operational semantics,
-         <A HERF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
+      <P>For operational semantics, see
+         <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
     </DD>
 
     <DT>
@@ -731,7 +729,7 @@
       <P><I>z</I> is the conjunction of <I>x</I> and <I>y</I>.
 
       <P>For operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node23.html#label202"></A>.
+         <A HREF="http://www.mozart-oz.org/documentation/system/node23.html#label202">here</A>.
     </DD>
 
     <DT>
