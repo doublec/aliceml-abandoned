@@ -30,7 +30,7 @@ sig
     datatype state =
 	CONNECTED
       | PLAYING  of player_info * Snake.snake
-      | FINISHED of player_info * id ref
+      | FINISHED of player_info * id ref * bool
       | DEAD     of player_info * id ref
       | WATCHING of id ref
       | DISCONNECTED    (* TODO: Do we need it? *)

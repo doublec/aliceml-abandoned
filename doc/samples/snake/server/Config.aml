@@ -25,7 +25,7 @@ struct
 	 dimensions     = (50,50),
 	 goodie         = 5,
 	 lives          = NONE,
-	 maxPlayer      = 1,
+	 maxPlayers     = 1,
 	 goodieFrequency = 1,
 	 levels         = NONE
 	 }
@@ -37,7 +37,7 @@ struct
 	 dimensions     = (50,50),
 	 goodie         = 5,
 	 lives          = SOME 5,
-	 maxPlayer      = 16,
+	 maxPlayers     = 16,
 	 goodieFrequency = 3,
 	 levels         = SOME 6
 	 }

@@ -21,6 +21,7 @@ struct
     datatype snake = SN of {
         direction : Protocol.direction ref,
         belly :     int ref,
+        id :        int,
         color :     Color.color,
         body :      Pos.pos list ref
     }
@@ -28,14 +29,17 @@ struct
     type t = snake
     
     
-    fun snake (c, pos, d) = SN { 
+    fun snake (id, c, pos, d) = SN { 
             direction   = ref d, 
             belly       = ref 0, 
             color       = c,
+            id          = id,
             body        = ref [pos]
         }
 
     fun color (SN { color = c, ... }) = c
+    
+    fun id    (SN { id = id, ... }) = id
 
     fun belly (SN { belly = ref b, ... })   = b
 
@@ -45,8 +49,8 @@ struct
 
     fun move (SN {  direction = direction as ref old_dir, 
                     belly,
-                    color,
-                    body = body_ref as ref body
+                    body = body_ref as ref body,
+                    ...
                  }, new_dir) =
         let 
             (* determine new head position:

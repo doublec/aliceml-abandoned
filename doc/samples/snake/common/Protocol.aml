@@ -34,7 +34,7 @@ struct
         lives :        int option, 
         (* the amount of lives a client has in the tournament *)
 	 
-        maxPlayer :    int, 
+        maxPlayers :    int, 
 	(* how many clients can actively participate in the tournament *)
 	 
         goodieFrequency : int, (* how often goodies appear *)
@@ -115,10 +115,10 @@ struct
 
         (* PLAY MODE *)
         update :            (Pos.pos * field) list -> unit,
-        tick :              Time.time -> unit,
+        tick :              Time.time option -> unit,
         (** [tick t] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left
-	    until level ends *)
+	    until level ends, NONE if time is not limited *)
 
         levelFinished :     unit -> unit,
 	(** levelFinished is called when a level is finished *)
