@@ -24,9 +24,10 @@ PLATFORM = x86-linux
 SML = sml
 CPP = cpp -undef -D__GNUC__
 CPPFLAGS := $(shell gtk-config --cflags gtk) -I/home/asimon/bin/include
+#--** should be: CPPFLAGS := $(shell gtk-config --cflags gtk)
 
 OZC = ozc
-OZCOPTS =
+OZCOPTS = -z9
 STOC = stoc
 STOCOPTS =
 
@@ -49,8 +50,6 @@ depend:
 
 header/gtkraw.c: header/gtk.c
 	$(CPP) $(CPPFLAGS) $< $@
-
-#	gcc $(CPPFLAGS) -E $< -o $@
 
 header/gtkheader.c: header/gtkraw.c header/filter.$(PLATFORM)
 	sml @SMLload=header/filter $< $@
