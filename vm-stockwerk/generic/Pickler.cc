@@ -369,6 +369,13 @@ Interpreter::Result PicklingInterpreter::Run() {
   // Handle new Block Value (non-abstract use)
   BlockLabel l = v->GetLabel();
   switch (l) {
+  case HASHTABLE_LABEL:
+  case BLOCKHASHTABLE_LABEL:
+  case THREAD_LABEL:
+  case TASKSTACK_LABEL:
+    Scheduler::currentData      = Pickler::Sited;
+    Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+    return Interpreter::RAISE;
   case CHUNK_LABEL:
     {
       Chunk *c = static_cast<Chunk *>(v);
