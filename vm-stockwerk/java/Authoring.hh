@@ -18,13 +18,21 @@
 #include "java/ThrowWorker.hh"
 #include "java/NativeMethodTable.hh"
 
-#define BOOL_TO_WORD(b) Store::IntToWord((b)? 1: 0)
+#define BOOL_TO_WORD(b) JavaInt::ToWord((b)? 1: 0)
 
-#define DECLARE_BOOL(b, x)					\
-  bool b;							\
-  {								\
-    s_int i = Store::WordToInt(x);				\
-    if (i == INVALID_INT) { REQUEST(x); } else b = i != 0;	\
+#define DECLARE_JINT(i, x)				\
+  s_int32 i;						\
+  {							\
+    Transient *transient = Store::WordToTransient(x);	\
+    if (transient != INVALID_POINTER) { REQUEST(x); }	\
+    i = JavaInt::FromWord(x);				\
+  }
+#define DECLARE_BOOL(b, x)				\
+  bool b;						\
+  {							\
+    Transient *transient = Store::WordToTransient(x);	\
+    if (transient != INVALID_POINTER) { REQUEST(x); }	\
+    b = JavaInt::FromWord(x) != 0;			\
   }
 
 #define DECLARE_BLOCKTYPE_OR_NULL(t, a, x)		\
@@ -43,13 +51,13 @@
   DECLARE_BLOCKTYPE_OR_NULL(ClassLoader, classLoader, x)
 
 #define RETURN_VOID RETURN0
+#define RETURN_JINT(i) RETURN(JavaInt::ToWord(i))
+#define DRETURN(x) RETURN2(x, null)
 
 #define THROW(Class, message) {						\
   Scheduler::PushFrameNoCheck(prim_self);				\
   ThrowWorker::PushFrame(ThrowWorker::Class, JavaString::New(message));	\
   RETURN_VOID;								\
 }
-
-#define DRETURN(x) RETURN2(x, null)
 
 #endif
