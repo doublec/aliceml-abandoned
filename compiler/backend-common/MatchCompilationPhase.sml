@@ -483,14 +483,18 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      (infoExp exp, pat,
 			       translateExp (exp, return, Goto nil))) matches
 		val errStms = [O.RaiseStm (coord, id_Match)]
+		val argsBodyList =
+		    List.map (fn (args, graph, mapping, consequents) =>
+			      let
+				  val stms = translateGraph (graph, mapping)
+			      in
+				  checkReachability consequents;
+				  (args, stms)
+			      end) (buildFunArgs (id, matches', errStms))
 	    in
-		List.map (fn (args, graph, mapping, consequents) =>
-			  let
-			      val stms = translateGraph (graph, mapping)
-			  in
-			      checkReachability consequents;
-			      (args, stms)
-			  end) (buildFunArgs (id, matches', errStms))
+		case argsBodyList of
+		    (O.OneArg _, _)::_ => argsBodyList
+		  | _ => (O.OneArg id, errStms)::argsBodyList
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =
