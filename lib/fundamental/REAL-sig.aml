@@ -63,6 +63,7 @@ sig
     val op > :		real * real -> bool
     val op <= :		real * real -> bool
     val op >= :		real * real -> bool
+    val equal :		real * real -> bool				(**)
     val compare :	real * real -> order
     val compareReal :	real * real -> IEEEReal.real_order
 
