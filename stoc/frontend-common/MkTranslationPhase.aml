@@ -166,6 +166,7 @@ struct
     val typ_kindkind		= Type.inTuple #[typ_kind, typ_kind]
     val typ_kindToVar		= Type.inArrow(typ_kind, typ_var)
     val typ_infinf		= Type.inTuple #[typ_inf, typ_inf]
+    val typ_pathinf		= Type.inTuple #[typ_path, typ_inf]
     val typ_pathinfinf		= Type.inTuple #[typ_path, typ_inf, typ_inf]
     val typ_infpathinf		= Type.inTuple #[typ_inf, typ_path, typ_inf]
     val typ_infunit		= Type.inTuple #[typ_inf, typ_unit]
@@ -825,7 +826,9 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	(* Pack : (interface I; module X : I) -> (x : package) *)
 	(* = fn {[X]=x1,[I]=x2} ->
 	 *   let val x3 = #1(x2())
-	 *   in {[x'] = cast (CoerceOpaq (?,x3) x1, x3)} end *)
+	 *   in Inf.strengthen(Path.invent(), x3);
+	 *      {[x'] = cast (CoerceOpaq (?,x3) x1, x3)}
+	 *   end *)
 	(*UNFINISHED*)
 	(let
 	    val  i'     = trModInfo i
@@ -847,12 +850,16 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 				   O.SelExp(typInfo(r,typ_inf), a1',
 					    O.AppExp(typInfo(r,t3),
 						     idToExp x2', trUnit r)))
+	    val  e0'    = unitInfOp(lab_strengthen,
+				    O.TupExp(typInfo(r,typ_pathinf),
+					     #[pathOp(lab_invent, trUnit r),
+					       idToExp x3']))
 	    val  e1'    = O.CastExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
 					 #[idToExp x1', idToExp x3']))
 	    val  i2     = typInfo(r,t2)
 	    val  e2'    = O.ProdExp(i2, #[O.Field(i0', O.Lab(i0',l3), e1')])
-	    val  e'     = O.LetExp(i2, #[d'], e2')
+	    val  e'     = O.LetExp(i2, #[d'], O.SeqExp(i2, #[e0',e2']))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end

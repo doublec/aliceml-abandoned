@@ -1,3 +1,5 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 structure TestPrimitiveFunctors =
 struct
     type val_package
@@ -105,11 +107,23 @@ struct
 	    in true end
 	    handle Mismatch _ => false
 
-	val _ = print(case (b, tryUnpack())
+	val b' = tryUnpack()
+	val _ = print(case (b, b')
 			of (true,  true)  => "OK, succeeded.\n"
 			 | (false, false) => "OK, failed.\n"
 			 | (true,  false) => "OOPS, failed erroneously!\n"
 			 | (false, true)  => "OOPS, succeeded erroneously!\n")
+	val _ = if b = b' then () else
+		let
+		    structure _ = Inspector.InspectValSig(type t = package
+							  val x = x
+							  signature S = S)
+		in
+		    Inspector.inspect{exn =
+			let structure _ = Unpack(val x = x signature S = S)
+			in raise Empty end
+			handle e as Mismatch _ => e}
+		end
     end
 
     structure Y000 = TryUnpack(val b = true  val x = P00.x signature S = S0)
@@ -177,22 +191,36 @@ struct
 
     (* The following Yxxx should fail, but don't in Operette 2 *)
 
+    (* Does not work yet... *)
+
     structure X000 = Unpack(val x = P00.x signature S = S0)
     structure X200 = Unpack(val x = P20.x signature S = S0)
     structure X600 = Unpack(val x = P60.x signature S = S0)
-    signature S4 = S0 where type t = X000.t (* should be <> int *)
-    signature S5 = S0 where type t = X200.t (* should be <> int *)
-    signature S6 = S0 where type t = X600.t (* should be <> int *)
+    signature S4 = S0 where type t = X000.t (* should be <> X0.t = int *)
+    signature S5 = S0 where type t = X200.t (* should be <> X2.t *)
+    signature S6 = S0 where type t = X600.t (* should be <> X6.t *)
 (*
-    structure Y104 = TryUnpack(val b = true val x = P10.x signature S = S4)
-    structure Y105 = TryUnpack(val b = true val x = P10.x signature S = S5)
-    structure Y106 = TryUnpack(val b = true val x = P10.x signature S = S6)
-    structure Y204 = TryUnpack(val b = true val x = P20.x signature S = S4)
-    structure Y205 = TryUnpack(val b = true val x = P20.x signature S = S5)
-    structure Y206 = TryUnpack(val b = true val x = P20.x signature S = S6)
-    structure Y604 = TryUnpack(val b = true val x = P60.x signature S = S4)
-    structure Y605 = TryUnpack(val b = true val x = P60.x signature S = S5)
-    structure Y606 = TryUnpack(val b = true val x = P60.x signature S = S6)
+    structure Y004 = TryUnpack(val b = true  val x = P00.x signature S = S4)
+    structure Y005 = TryUnpack(val b = false val x = P00.x signature S = S5)
+    structure Y006 = TryUnpack(val b = false val x = P00.x signature S = S6)
+    structure Y104 = TryUnpack(val b = true  val x = P10.x signature S = S4)(**)
+    structure Y105 = TryUnpack(val b = false val x = P10.x signature S = S5)
+    structure Y106 = TryUnpack(val b = false val x = P10.x signature S = S6)
+    structure Y204 = TryUnpack(val b = false val x = P20.x signature S = S4)
+    structure Y205 = TryUnpack(val b = true  val x = P20.x signature S = S5)
+    structure Y206 = TryUnpack(val b = false val x = P20.x signature S = S6)
+    structure Y304 = TryUnpack(val b = true  val x = P30.x signature S = S4)(**)
+    structure Y305 = TryUnpack(val b = false val x = P30.x signature S = S5)
+    structure Y306 = TryUnpack(val b = false val x = P30.x signature S = S6)
+    structure Y404 = TryUnpack(val b = true  val x = P40.x signature S = S4)(**)
+    structure Y405 = TryUnpack(val b = false val x = P40.x signature S = S5)
+    structure Y406 = TryUnpack(val b = false val x = P40.x signature S = S6)
+    structure Y504 = TryUnpack(val b = false val x = P50.x signature S = S4)
+    structure Y505 = TryUnpack(val b = true  val x = P50.x signature S = S5)(**)
+    structure Y506 = TryUnpack(val b = false val x = P50.x signature S = S6)
+    structure Y604 = TryUnpack(val b = false val x = P60.x signature S = S4)
+    structure Y605 = TryUnpack(val b = false val x = P60.x signature S = S5)
+    structure Y606 = TryUnpack(val b = true  val x = P60.x signature S = S6)
 *)
     val _ = TextIO.print "Finished. (Press Return) "
     val _ = TextIO.inputLine(TextIO.stdIn)

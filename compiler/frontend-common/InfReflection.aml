@@ -137,6 +137,8 @@ struct
     val _		= Inf.kind : inf -> kind		(* verify *)
     val lab_instance	= Label.fromString "instance"
     val _		= Inf.instance : inf -> inf		(* verify *)
+    val lab_strengthen	= Label.fromString "strengthen"
+    val _		= Inf.strengthen : path * inf -> unit	(* verify *)
     val lab_match	= Label.fromString "match"
     val _		= Inf.match : inf * inf -> rea		(* verify *)
     val lab_intersect	= Label.fromString "intersect"
