@@ -168,6 +168,5 @@ libs-seam:
 build-seam:
 	(cd vm-seam && \
 	 make -f Makefile.cvs && \
-	 ./configure --prefix=$(PREFIX) \
-	  	     --with-lightning="$(PWD)/../../seam-support/install" && \
+	 ./configure --prefix=$(PREFIX) && \
 	 make install) || exit 1
