@@ -285,9 +285,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (coord, r)]
-		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
+		val (stms2, args) = unfoldArgs (exp2, rest)
 	    in
-		(r := SOME (f (O.ConAppExp (coord, id_ref, O.OneArg id2))::
+		(r := SOME (f (O.ConAppExp (coord, id_ref, args))::
 			    translateCont cont);
 		 stms2)
 	    end
