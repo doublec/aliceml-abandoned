@@ -155,16 +155,20 @@ final public class General {
 	    try{
 		outf=new java.io.FileOutputStream(whereto);
 		out=new PickleOutputStream(outf);
-		out.flush();
 		out.writeObject(args[1]);
+		out.flush();
 	    } catch (Exception e) {
+		System.err.println(e);
+		e.printStackTrace();
 		ex=Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String(e.getMessage()));
 	    }
 	    finally {
 		try {
 		    outf.close();
 		} catch (Exception e) {
-		System.err.println(e);}
+		    System.err.println(e);
+		    e.printStackTrace();
+		}
 		if (ex != null)
 		    ex.raise();
 	    }
