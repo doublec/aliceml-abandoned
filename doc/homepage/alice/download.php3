@@ -63,7 +63,8 @@
 
   <P>
     <B>Disclaimer:</B> This is a prototype version. It may be <I>buggy</I>,
-    <I>incomplete</I>, <I>slow</I> and rough to use. We do not promise anything!
+    <I>incomplete</I>, <I>slow</I> and <I>rough</I> to use. We do not promise
+    anything!
     Still, we highly welcome any feedback. Please send comments or questions to
     <A href="mailto:stockhausen@.ps.uni-sb.de">stockhausen@ps.uni-sb.de</A>.
     If you discover bugs, we appreciate reports to the
