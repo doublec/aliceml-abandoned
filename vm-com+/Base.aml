@@ -1588,35 +1588,39 @@ structure Vector : VECTOR =
     __primitive val length :	'a vector -> int	= "Vector.length"
     __primitive val sub :	'a vector * int -> 'a	= "Vector.sub"
 
-    fun toList v				= toList'(v, length v-1, [])
-    and toList'(v, ~1, xs)			= xs
-      | toList'(v, i, xs)			= toList'(v, i-1, sub(v,i)::xs)
+    fun toList v		= toList'(v, length v - 1, [])
+    and toList'(v, ~1, xs)	= xs
+      | toList'(v, i, xs)	= toList'(v, i-1, sub(v,i)::xs)
 
-    fun sliceLength(v,i,_) where (i > length v)	= raise General.Subscript
-      | sliceLength(v,i,NONE)			= length v - i
+    fun sliceLength(v,i,_) where (i > length v)
+				= raise General.Subscript
+      | sliceLength(v,i,NONE)	= length v - i
       | sliceLength(v,i,SOME n) where (n < 0 orelse i+n > length v)
-						= raise General.Subscript
-      | sliceLength(v,i,SOME n)			= n
+				= raise General.Subscript
+      | sliceLength(v,i,SOME n)	= n
 
-    fun tabulate(n,f)	= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
-    fun extract(v,i,no)	= tabulate(sliceLength(v,i,no), fn k => sub(v,i+k))
-    fun concat vs	= fromList(List.concat(List.map toList vs))
+    fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
+    fun extract(v,i,no)		= tabulate(sliceLength(v,i,no),
+					   fn k => sub(v,i+k))
+    fun concat vs		= fromList(List.concat(List.map toList vs))
 
-    fun map f v		= tabulate(length v, fn i => f(sub(v,i)))
-    fun mapi f (v,i,no)	= tabulate(sliceLength(v,i,no),
-				   fn k => f(i+k, sub(v,i+k)))
+    fun map f v			= tabulate(length v, fn i => f(sub(v,i)))
+    fun mapi f (v,i,no)		= tabulate(sliceLength(v,i,no),
+					   fn k => f(i+k, sub(v,i+k)))
 
-    fun app  f v			= app'(f,v,0)
-    and app'(f,v,i) where (i=length v)	= ()
-      | app'(f,v,i)			= (f(sub(v,i)) ; app'(f,v,i+1))
+    fun app  f v		= app'(f,v,0)
+    and app'(f,v,i) where (i = length v)
+				= ()
+      | app'(f,v,i)		= (f(sub(v,i)) ; app'(f,v,i+1))
 
-    fun foldl f x v			= foldl'(f,x,v,0)
-    and foldl'(f,x,v,i) where (i=length v) = x
-      | foldl'(f,x,v,i)			= foldl'(f, f(sub(v,i),x), v, i+1)
+    fun foldl  f x v		= foldl'(f,x,v,0)
+    and foldl'(f,x,v,i) where (i = length v)
+				= x
+      | foldl'(f,x,v,i)		= foldl'(f, f(sub(v,i),x), v, i+1)
 
-    fun foldr f x v			= foldr'(f, x, v, length v - 1)
-    and foldr'(f,x,v,~1)		= x
-      | foldr'(f,x,v,i)			= foldr'(f, f(sub(v,i),x), v, i-1)
+    fun foldr  f x v		= foldr'(f, x, v, length v - 1)
+    and foldr'(f,x,v,~1)	= x
+      | foldr'(f,x,v,i)		= foldr'(f, f(sub(v,i),x), v, i-1)
 
     fun appi f (v,i,no)		= appi'(f, v, i, sliceLength(v,i,no))
     and appi'(f,v,i,0)		= ()
@@ -1627,7 +1631,8 @@ structure Vector : VECTOR =
       | foldli'(f,x,v,i,n)	= foldli'(f, f(i, sub(v,i), x), v, i+1, n-1)
 
     fun foldri f x (v,i,no)	= foldri'(f, x, v, i-1 + sliceLength(v,i,no), i)
-    and foldri'(f,x,v,i,j) where (i<j) = x
+    and foldri'(f,x,v,i,j) where (i < j)
+				= x
       | foldri'(f,x,v,i,j)	= foldri'(f, f(i, sub(v,i),x), v, i-1, j)
   end
 
@@ -1651,29 +1656,23 @@ signature ARRAY =
     val length :	'a array -> int
     val sub :		'a array * int -> 'a
     val update :	'a array * int * 'a -> unit
-(*MISSING
     val extract :	'a array * int * int option -> 'a vector
-*)
     val copy :		{di:int, dst:'a array, len:int option,
 			 si:int, src:'a array} -> unit
-(*MISSING
     val copyVec :	{di:int, dst:'a array, len:int option,
 			 si:int, src:'a vector} -> unit
-*)
 
     val app :		('a -> unit) -> 'a array -> unit
-    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
-(*MISSING
-    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
     val modify :	('a -> 'a) -> 'a array -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
     val appi :		(int * 'a -> unit)
 					-> 'a array * int * int option -> unit
+    val modifyi :	(int * 'a -> 'a) -> 'a array * int * int option -> unit
     val foldli :	(int * 'a * 'b -> 'b) -> 'b
 					-> 'a array * int * int option -> 'b
     val foldri :	(int * 'a * 'b -> 'b) -> 'b
 					-> 'a array * int * int option -> 'b
-    val modifyi :	(int * 'a -> 'a) -> 'a array * int * int option -> unit
-*)
   end
 
 
@@ -1690,28 +1689,83 @@ structure Array : ARRAY =
     __primitive val sub :	'a array * int -> 'a	= "Array.sub"
     __primitive val update :	'a array * int * 'a -> unit = "Array.update"
 
-    fun tabulate(n,f) = fromList(List.tabulate(n,f))
+    fun toList a		= toList'(a, length a - 1, [])
+    and toList'(a, ~1, xs)	= xs
+      | toList'(a, i, xs)	= toList'(a, i-1, sub(a,i)::xs)
+
+    fun sliceLength(a,i,_) where (i > length a)
+				= raise General.Subscript
+      | sliceLength(a,i,NONE)	= length a - i
+      | sliceLength(a,i,SOME n) where (n < 0 orelse i+n > length a)
+				= raise General.Subscript
+      | sliceLength(a,i,SOME n)	= n
+
+    fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
+    fun extract(a,i,no)		= Vector.tabulate(sliceLength(a,i,no),
+						  fn k => sub(a,i+k))
 
     fun copy {src,si,len,dst,di} =
 	let
 	    val d = di - si
 	    val n = case len of NONE    => length src
 			      | SOME n' => si+n'
-	    fun copy' i where (i=n)	= ()
+	    fun copy' i where (i = n)	= ()
 	      | copy' i			= ( update(dst, i+d, sub(src,i))
 					  ; copy'(i+1) )
 	in
 	    copy' si
 	end
 
-    fun app  f a                      = app'(f,a,length a, 0)
-    and app'(f,a,n,i) where (i=n)     = ()
-      | app'(f,a,n,i)                 = (f(sub(a,i)) ; app'(f,a,n,i+1))
+    fun copyVec {src,si,len,dst,di} =
+	let
+	    val d = di - si
+	    val n = case len of NONE    => Vector.length src
+			      | SOME n' => si+n'
+	    fun copy' i where (i = n)	= ()
+	      | copy' i			= ( update(dst, i+d, Vector.sub(src,i))
+					  ; copy'(i+1) )
+	in
+	    copy' si
+	end
 
-    fun foldl  f x a                  = foldl'(f, x, a, length a, 0)
-    and foldl'(f,x,a,n,i) where (i=n) = x
-      | foldl'(f,x,a,n,i)             = foldl'(f, f(sub(a,i), x), a, n, i+1)
+    fun app  f a		= app'(f,a,0)
+    and app'(f,a,i) where (i = length a)
+				= ()
+      | app'(f,a,i)		= (f(sub(a,i)) ; app'(f,a,i+1))
+
+    fun modify  f a		= modify'(f,a,0)
+    and modify'(f,a,i) where (i = length a)
+				= ()
+      | modify'(f,a,i)		= (update(a, i, f(sub(a,i))) ; modify'(f,a,i+1))
+
+    fun foldl  f x a		= foldl'(f,x,a,0)
+    and foldl'(f,x,a,i) where (i = length a)
+				= x
+      | foldl'(f,x,a,i)		= foldl'(f, f(sub(a,i),x), a, i+1)
+
+    fun foldr  f x a		= foldr'(f, x, a, length a - 1)
+    and foldr'(f,x,a,~1)	= x
+      | foldr'(f,x,a,i)		= foldr'(f, f(sub(a,i),x), a, i-1)
+
+    fun appi f (a,i,no)		= appi'(f, a, i, sliceLength(a,i,no))
+    and appi'(f,a,i,0)		= ()
+      | appi'(f,a,i,n)		= (f(i, sub(a,i)) ; appi'(f,a,i+1,n-1))
+
+    fun modifyi f (a,i,no)	= modifyi'(f, a, i, sliceLength(a,i,no))
+    and modifyi'(f,a,i,0)	= ()
+      | modifyi'(f,a,i,n)	= (update(a, i, f(i, sub(a,i))) ;
+				   modifyi'(f,a,i+1,n-1))
+
+    fun foldli f x (a,i,no)	= foldli'(f, x, a, i, sliceLength(a,i,no))
+    and foldli'(f,x,a,i,0)	= x
+      | foldli'(f,x,a,i,n)	= foldli'(f, f(i, sub(a,i), x), a, i+1, n-1)
+
+    fun foldri f x (a,i,no)	= foldri'(f, x, a, i-1 + sliceLength(a,i,no), i)
+    and foldri'(f,x,a,i,j) where (i < j)
+				= x
+      | foldri'(f,x,a,i,j)	= foldri'(f, f(i, sub(a,i),x), a, i-1, j)
   end
+
 
 
 
