@@ -3,6 +3,10 @@ import
 from "x-alice:/infrastructure/Source.ozf"
 
 import
+    structure Label
+from "x-alice:/common/Label.ozf"
+
+import
     structure Type
 from "x-alice:/common/Type.ozf"
 

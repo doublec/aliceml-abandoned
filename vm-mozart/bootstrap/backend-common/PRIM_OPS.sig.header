@@ -1,0 +1,3 @@
+import
+    structure FlatGrammar
+from "x-alice:/backend-common/FlatGrammar.ozf"

@@ -1,7 +1,19 @@
 import
-    signature PHASE
-from "x-alice:/infrastructure/PHASE.ozf"
+    structure ComposePhases
+from "x-alice:/infrastructure/ComposePhases.ozf"
+
+import
+    structure EmptyContext
+from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     structure FlatteningPhase
 from "x-alice:/backend-common/FlatteningPhase.ozf"
+
+import
+    structure ValuePropagationPhase
+from "x-alice:/backend-common/ValuePropagationPhase.ozf"
+
+import
+    structure LivenessAnalysisPhase
+from "x-alice:/backend-common/LivenessAnalysisPhase.ozf"

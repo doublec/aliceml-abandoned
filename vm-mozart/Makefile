@@ -22,7 +22,8 @@ MISCSOURCES = \
 	SCOPED_IMP_MAP.sig MakeScopedImpMap.sml MakeHashScopedImpMap.sml \
 	STAMP.sig MakeStamp.sml GLOBAL_STAMP.sig GlobalStamp.sml \
 	PRETTY_PRINT.sig PrettyPrint.sml PP_MISC.sig PPMisc.sml \
-	URL.sig Url.sml
+	URL.sig Url.sml SORT.sig MakeSort.sml DEPTH_FIRST_SEARCH.sig \
+	MakeDepthFirstSearch.sml
 MISCFILES = $(MISCSOURCES:%=misc/%)
 
 INFRASTRUCTURESOURCES = \
@@ -69,9 +70,10 @@ BACKENDCOMMONSOURCES = \
 	FlatGrammar.sml OUTPUT_FLAT_GRAMMAR.sig OutputFlatGrammar.sml \
 	INTERMEDIATE_AUX.sig IntermediateAux.sml SIMPLIFY_MATCH.sig \
 	SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
-	FLATTENING_PHASE.sig FlatteningPhase.sml LIVENESS_ANALYSIS_PHASE.sig \
-	LivenessAnalysisPhase.sml CODE.sig ENGINE.sig MakeEngine.sml \
-	BackendCommon.sml
+	FLATTENING_PHASE.sig FlatteningPhase.sml PRIM_OPS.sig \
+	PrimOps.sml VALUE_PROPAGATION_PHASE.sig ValuePropagationPhase.sml \
+	LIVENESS_ANALYSIS_PHASE.sig LivenessAnalysisPhase.sml CODE.sig \
+	ENGINE.sig MakeEngine.sml BackendCommon.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
 BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MozartGenerationPhase.sml

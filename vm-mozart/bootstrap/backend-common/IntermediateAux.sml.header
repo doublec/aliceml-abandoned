@@ -15,6 +15,10 @@ import
 from "x-alice:/common/Name.ozf"
 
 import
+    structure Label
+from "x-alice:/common/Label.ozf"
+
+import
     structure Type
 from "x-alice:/common/Type.ozf"
 
@@ -27,8 +31,8 @@ import
 from "x-alice:/common/IntermediateGrammar.ozf"
 
 import
-    structure LabelSort
-from "x-alice:/backend-common/LabelSort.ozf"
+    structure MakeLabelSort
+from "x-alice:/backend-common/MakeLabelSort.ozf"
 
 import
     signature FLAT_GRAMMAR

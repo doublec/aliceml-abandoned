@@ -3,6 +3,10 @@ import
 from "x-alice:/infrastructure/Crash.ozf"
 
 import
+    structure MakeSort
+from "x-alice:/misc/MakeSort.ozf"
+
+import
     structure Label
 from "x-alice:/common/Label.ozf"
 
