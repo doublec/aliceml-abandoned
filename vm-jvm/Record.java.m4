@@ -6,7 +6,7 @@ final public class DMLRecord implements DMLValue {
 
     public DMLRecord (DMLLabel[] ls, DMLValue[] vals) {
 	this.vals=vals;
-	arity=new DMLRecordArity(ls);
+	arity=new DMLRecordArity(ls, vals);
 	if (! arityHash.contains(arity))
 	    arityHash.put(arity,arity);
 	else

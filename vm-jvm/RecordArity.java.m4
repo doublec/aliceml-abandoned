@@ -5,35 +5,31 @@ final public class DMLRecordArity implements java.io.Serializable {
 
     java.util.Hashtable hashtable=null;
 
-    public DMLRecordArity(DMLLabel[] ls) {
+    public DMLRecordArity(DMLLabel[] labels, DMLValue[] vals) {
 	super();
 	int i=0;
-	labels=ls;
 	hashtable=new java.util.Hashtable();
 
+	qsort(labels,vals, 0,labels.length-1);
 	for(i=0; i<labels.length; i++) {
-	    Object o = labels[i].getName();
-	    if (o instanceof String)
-		hashtable.put(((String) o), new Integer(i));
-	    else
-		hashtable.put(((Integer) o), new Integer(i));
+	    hashtable.put(labels[i], new Integer(i));
 	}
-	qsort(labels,0,labels.length-1);
     }
 
     /** sortiert die Labels der Arity */
-    private static void qsort(DMLLabel[] lab, int p, int r) {
+    private static void qsort(DMLLabel[] lab, DMLValue[] vals, int p, int r) {
 	int q=0;
 	if (p < r) {
-	    q=partition(lab,p,r);
-	    qsort(lab,p,q);
-	    qsort(lab,q+1,r);
+	    q=partition(lab, vals,p,r);
+	    qsort(lab,vals, p,q);
+	    qsort(lab,vals, q+1,r);
 	}
     }
 
-    private static int partition(DMLLabel[] lab, int p, int r) {
+    private static int partition(DMLLabel[] lab, DMLValue[] vals,int p, int r) {
 	DMLLabel x = lab[p];
 	DMLLabel dummy = null;
+	DMLValue dumval = null;
 	int i = p-1;
 	int j = r+1;
 	while (true) {
@@ -43,6 +39,9 @@ final public class DMLRecordArity implements java.io.Serializable {
 		dummy = lab[i];
 		lab[i]=lab[j];
 		lab[j]=dummy;
+		dumval=vals[i];
+		vals[i]=vals[j];
+		vals[j]=dumval;
 	    }
 	    else
 		return j;
