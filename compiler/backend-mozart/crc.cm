@@ -3,6 +3,7 @@ Group
     structure Crc
 
 is
+    ../../bootstrap/sources.cm
 
     CRC-sig.aml
     Crc.aml

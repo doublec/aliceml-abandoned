@@ -128,9 +128,9 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 
 	fun marshalNumber (q, i) =
 	    if i >= 0wx80 then
-		(outputByte (q, Word8.fromLargeWord (i mod 0wx80 + 0wx80));
+		(outputByte (q, Word8.fromLarge (i mod 0wx80 + 0wx80));
 		 marshalNumber (q, i div 0wx80))
-	    else outputByte (q, Word8.fromLargeWord i)
+	    else outputByte (q, Word8.fromLarge i)
 
 	fun outputShared (q, label) =
 	    (dec1 q; outputByte (q, REF); marshalNumber (q, label))
@@ -156,7 +156,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 	fun outputLargeReal (q, r) =
 	    let
 		val vec = Reflect.realToVector r
-		fun f i = Word8.toLargeWord (Word8Vector.sub (vec, i))
+		fun f i = Word8.toLarge (Word8Vector.sub (vec, i))
 		val i1 = f 7 + (f 6 << 0w8) + (f 5 << 0w16) + (f 4 << 0w24)
 		val i2 = f 3 + (f 2 << 0w8) + (f 1 << 0w16) + (f 0 << 0w24)
 	    in

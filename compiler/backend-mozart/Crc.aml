@@ -41,7 +41,7 @@ structure Crc :> CRC =
 
 	fun update (c, n) =
 	    let
-		val n' = fromLargeWord (Word8.toLargeWord n)
+		val n' = fromLarge (Word8.toLarge n)
 	    in
 		xorb (Array.sub (table, toInt (andb (xorb (c, n'), 0wxFF))),
 		      c >> 0w8)
@@ -50,5 +50,5 @@ structure Crc :> CRC =
 	fun toBytes c =
 	    Word8Vector.fromList [toByte (c, 0w0), toByte (c, 0w8),
 				  toByte (c, 0w16), toByte (c, 0w24)]
-	and toByte (c, n) = Word8.fromLargeWord (toLargeWord (c >> n))
+	and toByte (c, n) = Word8.fromLarge (toLarge (c >> n))
     end
