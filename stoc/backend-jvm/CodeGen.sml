@@ -1359,7 +1359,7 @@ structure CodeGen =
 					Invokeinterface (ITuple, "get",
 							 ([Classsig CString], [Classsig IVal]))]
 				 | SOME i =>
-				       [atCodeInt i,
+				       [atCodeInt (i-1),
 					Invokeinterface (ITuple, "get",
 							 ([Intsig], [Classsig IVal]))])
 			  end
