@@ -635,9 +635,11 @@ structure CodeGen =
 		(testCode test') @
 		List.concat (map decCode body') @
 		[Goto danach,
+		 Comment "TestStm: Label elselabel",
 		 Label elselabel] @
 		List.concat (map decCode body'') @
-		[Label danach]
+		[Comment "TestStm: Label danach",
+		 Label danach]
 	    end
 
 	  | decCode (SharedStm(_,body',da as ref schonda)) =
@@ -646,7 +648,8 @@ structure CodeGen =
 		    let
 			val _ = da := Label.newNumber ()
 		    in
-			(Label (Label.fromNumber (!da)))::
+			Comment "SharedStm" ::
+			Label (Label.fromNumber (!da))::
 			(List.concat (map decCode body'))
 		    end
 	    else
@@ -677,20 +680,24 @@ structure CodeGen =
 			val nocatch = Label.new()
 		    in
 			Catch.add (Catch (CExWrap, try, to, using));
-			 (Label try)::
-			 b1 @
-			 [Goto nocatch] @
-			 [Label using,
-			  Invokevirtual (CExWrap,"getValue",
-					 ([],[Classsig CVal])),
-			  Astore loc] @
-			 b2 @
-			 [Label nocatch]
+			Comment "HandleStm: Label try" ::
+			Label try::
+			b1 @
+			[Goto nocatch] @
+			[Comment "HandleStm: Label using",
+			 Label using,
+			 Invokevirtual (CExWrap,"getValue",
+					([],[Classsig CVal])),
+			 Astore loc] @
+			b2 @
+			[Comment "HandleStm: Label nocatch",
+			 Label nocatch]
 		    end
 	  | decCode (EndHandleStm (_, body')) =
 		    let
 			val lab' = Label.popHandle()
 		    in
+			Comment ("EndHandleStm: Label "^lab') ::
 			Label lab'::
 			List.concat (map decCode body')
 		    end
@@ -1062,6 +1069,7 @@ structure CodeGen =
 			 Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
 			 Ldc (JVMString (nameFromId (Lambda.getOuterFun ())))::
 			 Invokevirtual ("java/io/PrintStream","println",([Classsig CObj],[Voidsig]))::
+			 Comment "expCodeClass: Label nodebug" ::
 			 Label nodebug::
 			 (List.concat (map decCode body')))
 		    end
