@@ -39,7 +39,7 @@ all: $(FILES) LinkedInspector.stc
 depend:
 	$(ALICEDEP) $(SOURCES) > Makefile.depend
 
-LinkedInspector.stc:
+LinkedInspector.stc: $(FILES)
 	$(ALICELINK) $(ALICELINK_OPTS) --include . ./Inspector -o $@
 
 %.stc: %.aml
