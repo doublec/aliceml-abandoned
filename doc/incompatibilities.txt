@@ -1,8 +1,6 @@
-Almost all Stockhausen extensions to SML'97 are conservative. There remain some
-minor syntactic incompatibilies to SML'97 however. All of them are quite
-pathological, caught on compile time, and can easily be fixed in an SML
-compatible way.
-
+Most Stockhausen extensions to SML'97 are conservative. There are some
+incompatibilies to SML'97 however. Most of them are quite pathological, caught
+on compile time, and can easily be fixed in an SML compatible way.
 
 
 ADDITIONAL RESERVED WORDS
@@ -10,7 +8,8 @@ ADDITIONAL RESERVED WORDS
 The following are reserved words in Stockhausen and may not be used as
 identifiers:
 
-	con    non    when    withfun    withval
+	any     constructor   fct     from       import     non
+	pack    unpack        when    withfun    withval
 
 
 
@@ -31,7 +30,7 @@ Example:
 
 	open S
 
-	val l = ++([1],[2])		(* Error in Stockhausen *)
+	val l = ++([1],[2])		(* error: misplaced infix *)
 
 Fixes:
 (1) Use appropriate signature constraints (always a good idea anyway):
@@ -74,3 +73,171 @@ does not allow it either). In Stockhausen it produces a type clash
 
 Fix:
     Rename your function, this is perverse anyway.
+
+
+
+SYNTACTIC CONSTRUCTOR ARITY
+
+For interoperability reasons, Stockhausen currently has the concept of syntactic
+arity for constructors. For example, in
+
+	type     t = int * real
+	datatype t = A of int * real | B of {a:bool, b:string} | C of t
+
+constructor A and B both have arity 2, while C has arity 1. Usually, syntactic
+arity can be ignored. However, signature matching is restricted to disallow
+changing the syntactic arity of constructors.
+
+Example:
+    The following program will not elaborate in the current version of
+    Stockhausen:
+
+	signature S1 =
+	  sig
+	    datatype t = C of int * real
+	  end
+
+	structure M1 :> S1 =	(* error: mismatch *)
+	  sig
+	    type     u = int * real
+	    datatype t = C of u
+	  end
+
+    Neither will:
+
+	type u = int * real
+
+	signature S2 =
+	  sig
+	    datatype t = C of u
+	  end
+
+	structure M2 :> S2 =	(* error: mismatch *)
+	  sig
+	    datatype t = C of int * real
+	  end
+
+Fix:
+    In most cases, modules can be rewritten by either expanding type
+    synonyms or by introducing auxiliary type synonyms:
+
+	structure M1 :> S1 =
+	  sig
+	    type     u = int * real
+	    datatype t = C of int * real
+	  end
+
+	structure M2 :> S2 =
+	  sig
+	    type     u = int * real
+	    datatype t = C of u
+	  end
+
+    Transformations can get tedious in the case of higher-order functors,
+    however.
+
+Note that the syntactic arity is calculated after elimination of derived forms.
+Therefore C has arity 3 in the following example:
+
+	datatype t = C of u
+	withtype u = int * int * string
+
+
+
+NAMESPACES OF STRUCTURE AND FUNCTOR IDENTIFIERS
+
+Stockhausen provides higher-order functors. To integrate them smoothly into
+the language it was necessary to give up the separation between namespaces
+for structures and those for functors - both are modules.
+
+This may break programs that declare structures and functors with identical
+names.
+
+Example:
+    The following program will not compile:
+
+	functor Table() = struct (* ... *) end
+
+	structure Table  = Table()
+	structure Table' = Table()	(* error: Table is not a functor *)
+
+Fix:
+    Rename your functors or structures appropriately. It is a good idea to
+    stick to naming conventions that denote functors with names like MakeTable.
+
+
+
+INCLUDE
+
+Because of syntactic ambiguity with uses of higher-order modules, Stockhausen
+does not support the multiple include derived form.
+
+Example:
+
+	signature S =
+	  sig
+	    include A B		(* error: A is not a functor *)
+	  end
+
+Fix:
+    Split it into several include specifications:
+
+	signature S =
+	  sig
+	    include A
+	    include B
+	  end
+
+
+
+STRUCTURAL DATATYPES AND SHARING
+
+In Stockhausen, datatypes are not generative, but are just structural types
+similar to records. This has an impact on the use of sharing constraints, which
+require flexible (ie. generative) type constructors.
+
+Stockhausen relaxes the rules for sharing constraints and allows sharing of
+type constructors as long as one of the following conditions holds:
+(1) both are identical type synonyms, or
+(2) the type constructor introduced later (lexically) is abstract.
+This makes sharing between datatypes possible in most cases. There are
+exceptions, however.
+
+Example:
+    Exceptions are signatures like:
+
+	signature A =
+	  sig
+	    type t
+	  end
+
+	signature B =
+	  sig
+	    datatype t = C
+	  end
+
+	signature S =
+	  sig
+	    structure A : A
+	    structure B : B
+	    sharing type A.t = B.t	(* error: types incompatible *)
+	  end
+
+    Signature S will not elaborate because type B.t is specified after
+    A.t and is neither abstract nor identical to A.t (which is abstract).
+
+Fixes:
+(1) Signature S can be made valid by reordering structure specifications:
+
+	signature S =
+	  sig
+	    structure B : B
+	    structure A : A
+	    sharing type A.t = B.t
+	  end
+
+    Suitable reordering is not always possible, however.
+
+(2) In general, we consider sharing constraints an obsolete feature of SML.
+    Use where constraints instead (Stockhausen as well as SML/NJ support
+    where constraints for whole structures).
