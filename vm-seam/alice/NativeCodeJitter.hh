@@ -258,6 +258,9 @@ protected:
   TagVal *InstrShared(TagVal *pc);
   TagVal *InstrReturn(TagVal *pc);
 
+  // Overflow check for multiplication
+  static bool CheckProduct(s_int i, s_int j);
+
   // Function compilation
   char *CompileProlog(const char *info);
   void CompileAbstractCodeStub(word initialNoCCCPC,

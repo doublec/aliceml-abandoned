@@ -1101,7 +1101,22 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
       jit_movr_p(JIT_FP, x1);
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      jit_addr_p(JIT_FP, JIT_FP, x2);
+
+      jit_insn *overflow = jit_boaddr_i(jit_forward(), JIT_FP, x2);
+      jit_insn *nooverflow = jit_jmpi(jit_forward());
+
+      jit_patch(overflow);
+      jit_movi_p(JIT_R0, PrimitiveTable::General_Overflow);
+      Scheduler_SetCurrentData(JIT_R0);
+      JITStore::Prepare(1);
+      JITStore::PushArg(JIT_V2); // Frame ptr
+      JITStore::Finish((void *) Outline::Backtrace::New);
+      Scheduler_SetCurrentBacktrace(JIT_R0);
+      SaveRegister();
+      jit_movi_ui(JIT_R0, Worker::RAISE);
+      RETURN();
+
+      jit_patch(nooverflow);
       jit_subi_p(JIT_FP, JIT_FP, 1);
       Result = JIT_FP;
     }
@@ -1113,7 +1128,22 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
       jit_movr_p(JIT_FP, x1);
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      jit_subr_p(JIT_FP, JIT_FP, x2);
+
+      jit_insn *overflow = jit_bosubr_i(jit_forward(), JIT_FP, x2);
+      jit_insn *nooverflow = jit_jmpi(jit_forward());
+
+      jit_patch(overflow);
+      jit_movi_p(JIT_R0, PrimitiveTable::General_Overflow);
+      Scheduler_SetCurrentData(JIT_R0);
+      JITStore::Prepare(1);
+      JITStore::PushArg(JIT_V2); // Frame ptr
+      JITStore::Finish((void *) Outline::Backtrace::New);
+      Scheduler_SetCurrentBacktrace(JIT_R0);
+      SaveRegister();
+      jit_movi_ui(JIT_R0, Worker::RAISE);
+      RETURN();
+
+      jit_patch(nooverflow);
       jit_addi_p(JIT_FP, JIT_FP, 1);
       Result = JIT_FP;
     }
@@ -1125,15 +1155,32 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
       jit_movr_p(JIT_FP, x1);
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      jit_movr_p(JIT_R0, JIT_FP);
       if (x2 != JIT_V1) {
 	jit_movr_p(JIT_V1, x2);
       }
-      JITStore::DirectWordToInt(JIT_R0, JIT_R0);
+      JITStore::DirectWordToInt(JIT_FP, JIT_FP);
       JITStore::DirectWordToInt(JIT_V1, JIT_V1);
-      jit_mulr_i(JIT_R0, JIT_R0, JIT_V1);
-      JITStore::IntToWord(JIT_R0, JIT_R0);
-      Result = JIT_R0;
+
+      JITStore::Prepare(2);
+      JITStore::PushArg(JIT_FP);
+      JITStore::PushArg(JIT_V1);
+      JITStore::Finish((void *) CheckProduct);
+      jit_insn *no_overflow = jit_beqi_ui(jit_forward(), JIT_RET, 0);
+
+      jit_movi_p(JIT_R0, PrimitiveTable::General_Overflow);
+      Scheduler_SetCurrentData(JIT_R0);
+      JITStore::Prepare(1);
+      JITStore::PushArg(JIT_V2); // Frame ptr
+      JITStore::Finish((void *) Outline::Backtrace::New);
+      Scheduler_SetCurrentBacktrace(JIT_R0);
+      SaveRegister();
+      jit_movi_ui(JIT_R0, Worker::RAISE);
+      RETURN();
+      
+      jit_patch(no_overflow);
+      jit_mulr_i(JIT_FP, JIT_FP, JIT_V1);
+      JITStore::IntToWord(JIT_FP, JIT_FP);
+      Result = JIT_FP;
     }
     break;
   case INT_OPLESS:
@@ -2629,6 +2676,21 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   jit_movi_ui(JIT_R0, Worker::CONTINUE);
   RETURN();
   return INVALID_POINTER;
+}
+
+bool NativeCodeJitter::CheckProduct(s_int i, s_int j) {
+  if (j == 0)
+    return false;
+  else if (j > 0)
+    if (i > 0)
+      return i > MAX_VALID_INT / j;
+    else // i < 0
+      return -i > -MIN_VALID_INT / j;
+  else // j < 0
+    if (i > 0)
+      return i > -MIN_VALID_INT / -j;
+    else // i < 0
+      return -i > MAX_VALID_INT / -j;
 }
 
 char *NativeCodeJitter::CompileProlog(const char *info) {
