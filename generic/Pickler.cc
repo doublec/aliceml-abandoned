@@ -101,10 +101,10 @@ public:
 
 class StringOutputStream : public OutputStream {
 private:
-  static const u_int POS_POS  = 0;
-  static const u_int SIZE_POS = 1;
-  static const u_int STR_POS  = 2;
-  static const u_int SIZE     = 3;
+  static const u_int POS_POS    = 0;
+  static const u_int SIZE_POS   = 1;
+  static const u_int STRING_POS = 2;
+  static const u_int SIZE       = 3;
 
   static const u_int INITIAL_SIZE = 256;
   void Enlarge();
@@ -122,11 +122,11 @@ public:
   void SetSize(u_int size) {
     InitArg(SIZE_POS, size);
   }
-  Chunk *GetStr() {
-    return Store::DirectWordToChunk(GetArg(STR_POS));
+  String *GetString() {
+    return String::FromWordDirect(GetArg(STRING_POS));
   }
-  void SetStr(Chunk *s) {
-    ReplaceArg(STR_POS, s->ToWord());
+  void SetString(String *string) {
+    ReplaceArg(STRING_POS, string->ToWord());
   }
   // StringOutputStream Methods
   void PutByte(u_char byte);
@@ -189,16 +189,16 @@ word FileOutputStream::Close() {
 
 // StringOutputStream Methods
 void StringOutputStream::Enlarge() {
-  u_int size = (GetSize() * 3) >> 1;
-  Chunk *c   = Store::AllocChunk(size);
-  Chunk *str = GetStr();
-  std::memcpy(c->GetBase(), str->GetBase(), GetPos());
-  SetSize(size);
-  SetStr(c);
+  u_int newSize     = (GetSize() * 3) >> 1;
+  String *newString = String::New(newSize);
+  String *oldString = GetString();
+  std::memcpy(newString->GetValue(), oldString->GetValue(), GetPos());
+  SetSize(newSize);
+  SetString(newString);
 }
 
 void StringOutputStream::PutByte(u_char byte) {
-  u_char *c  = (u_char *) GetStr()->GetBase();
+  u_char *c  = GetString()->GetValue();
   u_int pos  = GetPos();
   u_int size = GetSize();
   c[pos++] = byte;
@@ -214,13 +214,12 @@ void StringOutputStream::PutBytes(Chunk *c) {
   while (pos + cSize >= GetSize()) {
     Enlarge();
   }
-  char *str = GetStr()->GetBase();
-  std::memcpy(str + pos, c->GetBase(), cSize);
+  std::memcpy(GetString()->GetValue() + pos, c->GetBase(), cSize);
   SetPos(pos + cSize);
 }
 
 word StringOutputStream::Close() {
-  Block *str = (Block *) GetStr();
+  Block *str = static_cast<Block *>(GetString());
   HeaderOp::EncodeSize(str, GetPos());
   return str->ToWord();
 }
@@ -230,7 +229,7 @@ StringOutputStream *StringOutputStream::New() {
     (StringOutputStream *) OutputStream::New(STRING_OUTPUT_STREAM, SIZE);
   stream->SetPos(0);
   stream->SetSize(INITIAL_SIZE);
-  stream->SetStr(Store::AllocChunk(INITIAL_SIZE));
+  stream->SetString(String::New(INITIAL_SIZE));
   return stream;
 }
 
@@ -623,16 +622,6 @@ void PickleSaveInterpreter::DumpFrame(word) {
 //
 word Pickler::Sited;
 
-// String Handling: to be done
-static char *ExportCString(Chunk *s) {
-  u_int sLen = s->GetSize();
-  Chunk *e   = Store::AllocChunk(sLen + 1);
-  char *eb   = e->GetBase();
-  memcpy(eb, s->GetBase(), sLen);
-  eb[sLen] = '\0';
-  return eb;
-}
-
 Interpreter::Result Pickler::Pack(word x, TaskStack *taskStack) {
   StringOutputStream *os = StringOutputStream::New();
   taskStack->PopFrame();
@@ -643,8 +632,8 @@ Interpreter::Result Pickler::Pack(word x, TaskStack *taskStack) {
 }
 
 Interpreter::Result
-Pickler::Save(Chunk *filename, word x, TaskStack *taskStack) {
-  char *szFileName     = ExportCString(filename);
+Pickler::Save(String *filename, word x, TaskStack *taskStack) {
+  char *szFileName     = filename->ExportC();
   FileOutputStream *os = FileOutputStream::New(szFileName);
   if (os->GetException()) {
     delete os;
