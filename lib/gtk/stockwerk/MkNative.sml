@@ -276,7 +276,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		    [wrIndent, "INIT_STRUCTURE(record, \"",nativeName,
 		     "\", \"", wname, if io then "'" else "", "\", ", 
 		     nativeName, "_", wname, if io then "_" else "", ", ",
-		     Int.toString(numIns(arglist,io)), ", true);\n"]
+		     Int.toString(numIns(arglist,io)), ");\n"]
 	    end
 	in
 	    fun makeStructureEntry (FUNC(funName,ret,arglist)) =

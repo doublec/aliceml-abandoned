@@ -15,7 +15,7 @@ DEFINE1(NativeGtk_TypeMismatch) {
 void NativeGtkSpecialInit(Record *record) {
   record->Init("'TypeMismatch", TypeMismatchConstructor);
   INIT_STRUCTURE(record, "NativeGtk", "TypeMismatch",
-		 NativeGtk_TypeMismatch, 1, true);
+		 NativeGtk_TypeMismatch, 1);
 }
 
 DEFINE0(NativeGtk_textIterNew) {

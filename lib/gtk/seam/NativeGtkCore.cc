@@ -509,37 +509,37 @@ DEFINE2(NativeGtkCore_signalDisconnect) {
 word InitComponent() {
   Record *record = CreateRecord(16);
   INIT_STRUCTURE(record, "NativeGtkCore", "init", 
-		 NativeGtkCore_init, 0, true);
+		 NativeGtkCore_init, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "eventsPending", 
-		 NativeGtkCore_eventsPending, 0, true);
+		 NativeGtkCore_eventsPending, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "mainIteration", 
-		 NativeGtkCore_mainIteration, 0, true);
+		 NativeGtkCore_mainIteration, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "null", 
-		 NativeGtkCore_null, 0, true);
+		 NativeGtkCore_null, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "gtkTrue", 
-		 NativeGtkCore_gtkTrue, 0, true);
+		 NativeGtkCore_gtkTrue, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "gtkFalse", 
-		 NativeGtkCore_gtkFalse, 0, true);
+		 NativeGtkCore_gtkFalse, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "objectRef", 
-		 NativeGtkCore_objectRef, 1, true);
+		 NativeGtkCore_objectRef, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "objectUnref", 
-		 NativeGtkCore_objectUnref, 1, true);
+		 NativeGtkCore_objectUnref, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "widgetRef", 
-		 NativeGtkCore_widgetRef, 1, true);
+		 NativeGtkCore_widgetRef, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "widgetUnref", 
-		 NativeGtkCore_widgetUnref, 1, true);
+		 NativeGtkCore_widgetUnref, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "gObjectRef", 
-		 NativeGtkCore_gObjectRef, 1, true);
+		 NativeGtkCore_gObjectRef, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "gObjectUnref", 
-		 NativeGtkCore_gObjectUnref, 1, true);
+		 NativeGtkCore_gObjectUnref, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "deleteUnref", 
-		 NativeGtkCore_deleteUnref, 1, true);
+		 NativeGtkCore_deleteUnref, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "getEventStream", 
-		 NativeGtkCore_getEventStream, 0, true);
+		 NativeGtkCore_getEventStream, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "signalConnect", 
-		 NativeGtkCore_signalConnect, 3, true);
+		 NativeGtkCore_signalConnect, 3);
   INIT_STRUCTURE(record, "NativeGtkCore", "signalDisconnect", 
-		 NativeGtkCore_signalDisconnect, 3, true);
+		 NativeGtkCore_signalDisconnect, 3);
 
   RETURN_STRUCTURE("NativeGtkCore$", record);
 }
