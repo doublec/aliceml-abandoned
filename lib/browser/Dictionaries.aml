@@ -15,6 +15,7 @@
 
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
+import structure ReinspectedRelDict from "ReinspectedRelDict"
 import structure TransientDictionary from "TransientDictionary"
 import signature DICTIONARIES from "DICTIONARIES-sig"
 
@@ -23,6 +24,7 @@ struct
     
     val dict = MainDictionary.empty
     val reldict = RelManDictionary.empty
+    val ri_reldict = ReinspectedRelDict.empty
     val transdict = TransientDictionary.empty
 	
 end
