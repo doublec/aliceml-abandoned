@@ -35,7 +35,7 @@ define(_fromTuple,`
 	if ($2 instanceof DMLTuple) {
 	  DMLTuple t = (DMLTuple) $2;
 	  if (t.getArity()==$3) {
-	    $1 = new DMLArray[$3];
+	    $1 = new DMLValue[$3];
 	    for(int i=0; i<$3; i++)
 		$1[i]=t.getByIndex(i);
 	  } else {
