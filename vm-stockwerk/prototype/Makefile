@@ -13,6 +13,7 @@
 PLATFORM = $(shell oztool platform)
 
 SRCS = \
+	Guid.oz \
 	Debug.oz \
 	Helper.oz \
 	PrimitiveTable.oz \
@@ -54,6 +55,7 @@ clean:
 	-rm -f $(LIB_SYSTEM_SRCS:%.oz=%.ozf)
 	-rm -f $(LIB_UTILITY_SRCS:%.oz=%.ozf)
 
+Debug.ozf: Helper.ozf
 PrimitiveTable.ozf: Helper.ozf
 ByneedInterpreter.ozf: Helper.ozf
 Scheduler.ozf: Helper.ozf
