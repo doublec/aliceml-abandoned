@@ -4,6 +4,7 @@ set -e
 
 AUTOMAKE="yes"
 LIGHTNING=1
+BUILD_GMP=0
 SUPPORTDIR="$(pwd)"
 : ${prefix="$SUPPORTDIR/install"}
 
@@ -91,10 +92,38 @@ fi
 if [ ! -f "$prefix/include/zlib.h" ]
 then
     (
+	echo "### Building zlib" >&2
 	cd "$SUPPORTDIR/zlib" &&
+	echo "### - reconfiguring the source" >&2 &&
 	CC="$CC" ./configure --prefix="$prefix" &&
+	echo "### - building and installing" >&2 &&
 	make all install distclean
     ) || exit 1
+fi
+
+##
+## Build Support Libraries: gmp
+##
+# gmp version to use
+gmpversion=4.1.3
+
+if [ "$BUILD_GMP" -ne 0 ]
+then
+if [ ! -f "$prefix/include/gmp.h" ]
+then
+    (
+	echo "### Building gmp" >&2
+        cd "$SUPPORTDIR/gmp" &&
+	echo "### - extracting the source" >&2 &&
+	tar xzf gmp-${gmpversion}.tar.gz &&
+	echo "### - reconfiguring the source" >&2 &&
+	mkdir -p "${SUPPORTDIR}/build/gmp" 2>/dev/null &&
+	cd "${SUPPORTDIR}/build/gmp" &&
+	"${SUPPORTDIR}/gmp/gmp-${gmpversion}/configure" CC="$CC" --prefix="$prefix" &&
+	echo "### - building and installing" >&2 &&
+	make all install
+    ) || exit 1
+fi
 fi
 
 ##
