@@ -4,14 +4,126 @@
 
 <?php section("overview", "overview") ?>
 
+<P>Alice supports distributed programming in the form of a number of
+processes communicating using <A href="pickling.html">picklable</A> Alice
+data structures.  In the context of distribution, we speak of <EM>sites</EM>
+instead of processes.  Sites can open a <EM>communication port</EM> to make
+data available to other sites, which serves as an endpoint to establish
+connections.  There are three ways in which sites can establish
+connections:</P>
+<UL>
+  <LI><P>A site can explicitly make a data structure available by
+    <EM>offering</EM> it as a package.  This operation returns a string,
+    called a <A href="#tickets"><EM>ticket</EM></A>, describing the reference
+    to the package via the site's communication port.  Sites that know
+    the ticket can convert the reference to a package via the <EM>take</EM>
+    operation.</P>
+  <LI><P>A site can create a <A href="#proxies"><EM>proxy</EM></A> to
+    a function.  A proxy is a picklable reference to a function.  If some
+    site unpickles a proxy, it obtains just the distributed reference,
+    not a clone of the function itself.  Applying a proxy results in the
+    function being applied on the site on which the proxy was created,
+    while arguments and results are passed as pickles over the communications
+    port.</P>
+  <LI><P>A site can <A href="#remote">explicitly create</A> another site on
+    a specified host, executing a specified computation.  Both sites connect
+    by opening communication ports.</P>
+</UL>
+<P>The operations mentioned in the following are part of the
+<A href="library/remote.html"><TT>Remote</TT></A> structure.</P>
 
 
 <?php section("tickets", "tickets") ?>
 
+<P>The first mechanism in which sites establish connections is the
+offer-and-take mechanism.  A site can explicitly create a distributed
+reference to one of its data structures using <TT>offer</TT>:</P>
+
+<PRE class=code>
+offer : package -> ticket</PRE>
+
+<P>Offering opens a communications port on the exporting site (or reuses the
+existing communications port if it has already been opened).  Currently, Alice
+communications ports take the form of HTTP servers; opening therefore amounts
+to starting a HTTP server on a TCP/IP port and to listening for incoming
+connections.  <TT>offer</TT> clones the data structure pickling it into a
+string, and registers the pickle as a document in the HTTP server under a
+generated URI.  (If the data structure is not picklable, <TT>offer</TT>
+raises an exception.)</P>
+
+<P><TT>offer</TT> returns a <EM>ticket</EM>, which is a string denoting a
+reference to the exported data structure usable from other sites.  The string
+identifies the protocol, the communications port, and the data structure on
+the site, in the form of a URL.  For example:</P>
+
+<PRE class=code>
+- val ticket = offer p;
+<I>val ticket : string = "http://kitten.ps.uni-sb.de:1234/export/1"</I></PRE>
+
+<P>This ticket can be transferred to other sites, say by email or voice
+conversation.  It could also be stored (for instance, as a pickle) in the
+web server's document root, to make it possible to be accessed under a
+well-known URL.  Other sites (or the same site) can then obtain the actual
+package denoted by the ticket using <TT>take</TT>:</P>
+
+<PRE class=code>
+take : ticket -> package</PRE>
+
+<P><TT>take</TT> establishes a connection to the communication port given
+in the ticket and retrieves, using the HTTP GET method, and unpickles the
+exported package.  For instance:</P>
+
+<PRE class=code>
+- val package = take ticket;
+<I>val package : package</I></PRE>
 
 
 <?php section("proxies", "proxies") ?>
 
+<P>In what has been presented so far, pickles as transferred between sites
+could only contain data that was cloned.  Proxies extend this mechanism to
+also allow for function references instead of the functions themselves.</P>
+
+<P>A proxy can be created from any function using the <TT>proxy</TT>
+operation:</P>
+
+<PRE class=code>
+proxy : ('a -> 'b) -> ('a -> 'b)</PRE>
+
+<P>Say that a site&nbsp;A evaluates</P>
+
+<PRE class=code>
+val f' = proxy f</PRE>
+
+<P>then <TT>f'</TT> is a <EM>proxy for</EM> <TT>f</TT>, and we call A the
+<EM>home site</EM> of&nbsp;<TT>f'</TT>.  An application <TT>f x</TT> proceeds
+as follows.  A clone <TT>x'</TT> of&nbsp;<TT>x</TT> is created using pickling,
+<TT>f</TT>&nbsp;is applied to&nbsp;<TT>x'</TT>, returning&nbsp;<TT>y</TT> (or
+raising an exception&nbsp;<TT>e</TT>).  <TT>y</TT>&nbsp;(resp.&nbsp;<TT>e</TT>)
+is cloned to yield <TT>y'</TT> (resp.&nbsp;<TT>e'</TT>), which is returned
+(resp. raised) as result of the application <TT>f x</TT>.</P>
+
+<P>A proxy is always picklable, independently of whether the function it
+proxies is picklable or not.  If <TT>f'</TT> is transferred to another
+site&nbsp;B and applied there, instead of the function&nbsp;<TT>f</TT> only
+the proxy&nbsp;<TT>f'</TT> is transferred, which contains a distributed
+reference to&nbsp;<TT>f</TT>.  An application of&nbsp;<TT>f'</TT> causes
+the cloned argument to be transferred to <TT>f</TT>'s home site&nbsp;A,
+where <TT>f</TT> is applied and the result (or exception) cloned and
+transferred back to&nbsp;B.</P>
+
+
+<?php section("remote", "remote execution") ?>
+
+<!--**
+Execute : fct (val host : string
+	       signature RESULT
+	       functor Start (ComponentManager : COMPONENT_MANAGER) : RESULT) -> RESULT
+
+Execute (val host = "amy"
+	 signature RESULT
+	 functor Start (ComponentManager : COMPONENT_MANAGER) : RESULT) : RESULT
+-->
 
 
 <?php footing() ?>
