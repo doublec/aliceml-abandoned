@@ -26,34 +26,36 @@ in
 
 signature UPDATE = 
     sig
-           
+          
         (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
            - werden beim Starten des Inspectors "gefuellt" *)
 	val incrActLine: (int -> unit) ref
 	val resize:      (unit -> unit) ref
 
 	val iterMove: int * int -> unit
-	val setVisible: int * int -> unit
 
         (* constraint watcher *) 
         val watcher: 
 	    'a  * Reflect.value * 
-	    (Reflect.value * Type.t  * node * int * int * GtkSupport.tag -> node) * 
+	    (int option * Reflect.value * Type.t  * node * int * int * GtkSupport.tag -> node) * 
 	    (Reflect.module * Inf.t  * node * int * int * GtkSupport.tag -> node) *
 	    GtkSupport.tag -> Thread.thread
 
 	val reinspect:
-	    node * (Reflect.value * Type.t * node * int * int * GtkSupport.tag -> node) * 
+	    node * 
+	    (int option * Reflect.value * Type.t * node * int * int * GtkSupport.tag -> node) * 
 	    (Reflect.module* Inf.t * node * int * int * GtkSupport.tag -> node) *
 	    GtkSupport.tag -> unit
 
 	val foldDepth: 
-	    node * int * (Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
+	    node * int * 
+	    (int option * Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
 	    (Reflect.module * Inf.t * node * int * int * GtkSupport.tag -> node) *
 	    GtkSupport.tag -> unit
 
 	val foldWidth: 
-	    node * int * (Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
+	    node * int * 
+	    (int option * Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
 	    (Reflect.module * Inf.t * node * int * int * GtkSupport.tag -> node) *
 	    GtkSupport.tag -> unit
 
