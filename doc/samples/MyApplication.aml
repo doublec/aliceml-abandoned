@@ -1,0 +1,4 @@
+import structure MyComponent from "MyComponent"
+
+val _ = TextIO.print (Int.toString (MyComponent.fak 7) ^ "\n")
+val _ = OS.Process.exit OS.Process.success
