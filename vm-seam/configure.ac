@@ -35,6 +35,12 @@ AC_SEAM_WITH_LIGHTNING
 
 # checks for types
 
+case $host_os in
+    darwin*)
+       DEFS="${DEFS}${DEFS:+ }-D_BSD_SOCKLEN_T_"
+       ;;
+esac
+
 # checks for structures
 
 # checks for compiler characteristics
