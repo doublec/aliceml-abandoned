@@ -18,8 +18,56 @@
 
 local
 
-structure Pervasive =							(**)
+structure __pervasive =
   struct
+    __primitive type zero		= "zero"
+    __primitive type 'a succ		= "succ"
+    __primitive type ('a,'b) conarrow	= "conarrow"
+
+    structure Label =
+    struct
+	fun fromString x = fromString x
+    end
+
+    structure Path =
+    struct
+	fun fromLab x = fromLab x
+	fun pervasive x = pervasive x
+    end
+
+    structure Type =
+    struct
+	fun var x = var x
+	fun inVar x = inVar x
+	fun inCon x = inCon x
+	fun inApply x = inApply x
+	fun inLambda x = inLambda x
+	fun inArrow x = inArrow x
+	fun inTuple x = inTuple x
+	fun inProd x = inProd x
+	fun inSum x = inSum x
+	fun inAll x = inCon x
+	fun inExist x = inExist x
+	fun unknown x = unknown x
+	fun fill x = fill x
+	fun unknownRow x = unknownRow x
+	fun emptyRow x = emptyRow x
+	fun extendRow x = extendRow x
+    end
+
+    structure Inf =
+    struct
+    end
+  end
+
+
+structure __pervasive =
+  struct
+    open __pervasive
+
+    __primitive datatype exn = "exn"
+    datatype 'a list = nil | op:: of 'a * 'a list
+
     structure Int	= struct __primitive eqtype int		= "int"     end
     structure LargeInt	= struct               type int		= Int.int   end
     structure Word	= struct __primitive eqtype word	= "word"    end
@@ -62,16 +110,16 @@ infix  0  before
 (* Pervasives *)
 
 type    unit		= {}
-type    int		= Pervasive.Int.int
-type    word		= Pervasive.Word.word
-type    real		= Pervasive.Real.real
-type    char		= Pervasive.Char.char
-type    string		= Pervasive.String.string
-type 'a vector		= 'a Pervasive.Vector.vector
-type 'a array		= 'a Pervasive.Array.array
+type    int		= __pervasive.Int.int
+type    word		= __pervasive.Word.word
+type    real		= __pervasive.Real.real
+type    char		= __pervasive.Char.char
+type    string		= __pervasive.String.string
+type 'a vector		= 'a __pervasive.Vector.vector
+type 'a array		= 'a __pervasive.Array.array
 
-datatype exn		= datatype Pervasive.General.exn
-datatype ref		= datatype Pervasive.Ref.ref
+datatype exn		= datatype __pervasive.General.exn
+datatype ref		= datatype __pervasive.Ref.ref
 
 datatype bool		= false | true
 datatype order		= LESS | EQUAL | GREATER
@@ -130,8 +178,9 @@ signature GENERAL =
 
     val ! :		'a ref -> 'a
     val op := :		'a ref * 'a -> unit
-    val op :=: :	'a ref * 'a ref -> unit		(**)
+    val op :=: :	'a ref * 'a ref -> unit			(**)
 
+    val flip :		('a * 'b -> 'c) -> ('b * 'a -> 'c)	(**)
     val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
     val before :	'a * unit -> 'a
     val ignore :	'a -> unit
@@ -280,7 +329,7 @@ structure Option : OPTION
 
 signature LIST =
   sig
-    datatype 'a list = :: of 'a * 'a list | nil
+    datatype 'a list = nil | op:: of 'a * 'a list
     type     'a t    = 'a list						(**)
 
     exception Empty
@@ -298,7 +347,7 @@ signature LIST =
     val drop :		'a list * int -> 'a list
 
     val rev :		'a list -> 'a list
-    val @ :		'a list * 'a list -> 'a list
+    val op @ :		'a list * 'a list -> 'a list
     val append :	'a list * 'a list -> 'a list			(**)
     val revAppend :	'a list * 'a list -> 'a list
     val concat :	'a list list -> 'a list
@@ -407,8 +456,8 @@ signature CHAR =
     val isCntrl :	char -> bool
     val isAscii :	char -> bool
 
-    val toWide :	char -> char		(**)
-    val fromWide :	char -> char		(**)
+    val toWide :	char -> __pervasive.WideChar.char		(**)
+    val fromWide :	__pervasive.WideChar.char -> char		(**)
 
     val toString :	char -> string
     val toCString :	char -> string
@@ -449,7 +498,7 @@ signature STRING =
     val substring :	string * int * int -> string
     val extract :	string * int * int option -> string
 
-    val ^ :		string * string -> string
+    val op ^ :		string * string -> string
     val append :	string * string -> string			(**)
     val concat :	string list -> string
     val implode :	Char.char list -> string
@@ -473,8 +522,8 @@ signature STRING =
     val isPrefix :	string -> string -> bool
     val isSuffix :	string -> string -> bool			(**)
 
-    val toWide :	string -> string				(**)
-    val fromWide :	string -> string				(**)
+    val toWide :	string -> __pervasive.WideString.string		(**)
+    val fromWide :	__pervasive.WideString.string -> string		(**)
 
     val toString :	string -> string
     val toCString :	string -> string
@@ -598,12 +647,12 @@ signature INTEGER =
 
     val minInt :	int option
     val maxInt :	int option
-    val precision :	int option
+    val precision :	__pervasive.Int.int option
 
-    val toInt :		int -> int
-    val fromInt :	int -> int
-    val toLarge :	int -> int
-    val fromLarge :	int -> int
+    val toInt :		int -> __pervasive.Int.int
+    val fromInt :	__pervasive.Int.int -> int
+    val toLarge :	int -> __pervasive.LargeInt.int
+    val fromLarge :	__pervasive.LargeInt.int -> int
 
     val ~ :		int -> int
     val op + :		int * int -> int
@@ -623,7 +672,7 @@ signature INTEGER =
     val abs :		int -> int
     val min :		int * int -> int
     val max :		int * int -> int
-    val sign :		int -> int
+    val sign :		int -> __pervasive.Int.int
     val sameSign :	int * int -> bool
 
     val toString :	int -> string
@@ -653,17 +702,17 @@ signature WORD =
 
     val wordSize :	int
 
-    val toLargeWord :	word -> word
+    val toLargeWord :	word -> __pervasive.LargeWord.word
 (*MISSING
-    val toLargeWordX :	word -> word
+    val toLargeWordX :	word -> __pervasive.LargeWord.word
 *)
-    val fromLargeWord :	word -> word
-    val toLargeInt :	word -> LargeInt.int
-    val toLargeIntX :	word -> LargeInt.int
-    val fromLargeInt :	LargeInt.int -> word
-    val toInt :		word -> Int.int
-    val toIntX :	word -> Int.int
-    val fromInt :	Int.int -> word
+    val fromLargeWord :	__pervasive.LargeWord.word -> word
+    val toLargeInt :	word -> __pervasive.LargeInt.int
+    val toLargeIntX :	word -> __pervasive.LargeInt.int
+    val fromLargeInt :	__pervasive.LargeInt.int -> word
+    val toInt :		word -> __pervasive.Int.int
+    val toIntX :	word -> __pervasive.Int.int
+    val fromInt :	__pervasive.Int.int -> word
 
     val notb :		word -> word
     val orb :		word * word -> word
@@ -798,10 +847,10 @@ signature REAL =
     val maxFinite :	real
     val minPos :	real
     val minNormalPos :	real
+*)
 
     val posInf :	real
     val negInf :	real
-*)
 
     val ~ :		real -> real
     val op + :		real * real -> real
@@ -861,11 +910,13 @@ signature REAL =
 *)
 
     val toInt :		IEEEReal.rounding_mode -> real -> int
-    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
+    val toLargeInt :	IEEEReal.rounding_mode ->
+			    real -> __pervasive.LargeInt.int
     val fromInt :	int -> real
-    val fromLargeInt :	LargeInt.int -> real
-    val toLarge :	real -> real
-    val fromLarge :	IEEEReal.rounding_mode -> real -> real
+    val fromLargeInt :	__pervasive.LargeInt.int -> real
+    val toLarge :	real -> __pervasive.LargeReal.real
+    val fromLarge :	IEEEReal.rounding_mode ->
+			    __pervasive.LargeReal.real -> real
 (*MISSING
     val toDecimal :	real -> IEEEReal.decimal_approx
     val fromDecimal :	IEEEReal.decimal_approx -> real
