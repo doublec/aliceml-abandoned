@@ -160,9 +160,9 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		if k = 0 then (nil, f')
 		else
 		    let
-			val (vs, f'') = inputAll' f
+			val (vs, f'') = inputAll' f'
 		    in
-			(Vector.extract (v, offset, NONE)::vs, f'')
+			(Vector.extract (v, offset, SOME k)::vs, f'')
 		    end
 	    end
 
