@@ -1,5 +1,0 @@
-(* record patterns with dots *)
-
-fun f {c = _, d = _, ...} = 100
-  | f {e = _, f = _, ...} = 200
-  | f {c = _, g = _, ...} = 300

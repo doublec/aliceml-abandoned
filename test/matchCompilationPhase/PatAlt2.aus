@@ -1,4 +1,0 @@
-val f = fn a =>
-    case a of
-	(((1, _) | (_, 1)), true) => 1
-      | ((_, _), false) => 2
