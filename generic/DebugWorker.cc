@@ -35,7 +35,7 @@ public:
 
   // DebugFrame Accessors
   word GetEvent() {
-    return (StackFrame::GetArg(EVENT_POS));
+    return StackFrame::GetArg(EVENT_POS);
   }
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
@@ -53,12 +53,17 @@ void DebugWorker::PushFrame(word event) {
   DebugFrame::New(self, event);
 }
 
+u_int DebugWorker::GetFrameSize(StackFrame *sFrame) {
+  DebugFrame *debugFrame = static_cast<DebugFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return debugFrame->GetSize();
+}
+
 Worker::Result DebugWorker::Run(StackFrame *) {
   Error("DebugWorker::Run: tried to run debug frame");
 }
 
 Worker::Result DebugWorker::Handle(word) {
-  Scheduler::GetFrame();
   return Worker::RAISE;
 }
 
@@ -70,11 +75,9 @@ void DebugWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Debuggger\n");
 }
 
-word DebugWorker::GetEvent(StackFrame* frame) {
-  return (static_cast<DebugFrame *>(frame))->GetEvent();
-}
-
-u_int DebugWorker::GetFrameSize(StackFrame *s) {
-  return s->GetSize();
+word DebugWorker::GetEvent(StackFrame *sFrame) {
+  DebugFrame *debugFrame = static_cast<DebugFrame *>(sFrame);
+  Assert(debugFrame->GetWorker() == this);
+  return debugFrame->GetEvent();
 }
 #endif
