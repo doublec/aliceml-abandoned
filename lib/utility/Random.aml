@@ -21,9 +21,10 @@ struct
     val (min,max)  = Rand.randLimits()
     val  range     = max - min
 
-    fun int limit  = Rand.rand() mod limit
-    fun real limit = Real./(Real.*(Real.fromInt(Rand.rand()-min), limit),
-			    Real.fromInt range)
+    fun int limit  = if limit = 0 then 0 else (Rand.rand() mod limit)
+	
+    fun real limit = if limit = 0.0 then 0.0 else Real.*(Real./(Real.fromInt (Rand.rand () - min), limit), Real.fromInt range) 
+
     val largeInt   = int
     val largeReal  = real
 end
