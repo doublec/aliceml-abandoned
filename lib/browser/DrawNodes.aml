@@ -399,6 +399,8 @@ struct
      and move (n,x,y) = 
 	let
 	    val _ = TextIO.print("Moving!\n")
+	    val _ = Inspector.inspect ("Treating node:")
+	    val _ = Inspector.inspect(n)
 	    val group = getGroup(n)
 	    val w = WindowHelper.fontWidth(!Settings.font)
 	    val h = WindowHelper.fontHeight(!Settings.font)

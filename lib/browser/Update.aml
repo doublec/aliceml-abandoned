@@ -95,7 +95,6 @@ struct
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
-               val _ = Inspector.inspect anc
 	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
 	       val y_pos = Layout.sum_up(li,fn n 
 					 => if n = Empty then 0
@@ -109,7 +108,6 @@ struct
 	   in ( Gtk.objectDestroy(getGroup(n)) 
 	       ; updateChild(getParent(n),getIndex(n),new) 
 	       ; Layout.layout(node)
-	       ; Inspector.inspect node
 	       ; MainDictionary.update(Dictionaries.dict, (ind,node))  
                ; DrawNodes.draw(node,0,y_pos,DrawNodes.DRAW) 
 	       ; TextIO.print ("UPDATE: drawing with y = "
