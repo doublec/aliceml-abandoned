@@ -14,6 +14,14 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
+class XMLRepHandler : public ConcreteRepresentationHandler {
+  Transform *XMLRepHandler::GetAbstractRepresentation(ConcreteRepresentation *) {
+    return INVALID_POINTER;
+  }
+};
+
+static XMLRepHandler *xmlRepHandler;
+
 class XMLFinalizationSet: public FinalizationSet {
 public:
   virtual void Finalize(word value);
@@ -24,8 +32,8 @@ static XMLFinalizationSet *xmlFinalizationSet;
 static int xmlTypeMapping[22];
 
 void XMLFinalizationSet::Finalize(word value) {
-  Tuple *b = Tuple::FromWordDirect(value);
-  word docptr = b->Sel(0);
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+  word docptr = cr->Get(0);
   xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(docptr);
   xmlFreeDoc(doc);
 }
@@ -35,6 +43,12 @@ void XMLFinalizationSet::Finalize(word value) {
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
   else { pointer = Store::WordToUnmanagedPointer(x); }     
 
+xmlDocPtr extract_docptr(word c) {
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(c);
+  return (xmlDocPtr)Store::WordToUnmanagedPointer(cr->Get(0));
+}
+  
+
 DEFINE1(xml_parse) {
   DECLARE_STRING(filename, x0);
   xmlDocPtr doc;
@@ -42,11 +56,11 @@ DEFINE1(xml_parse) {
   doc = xmlParseFile(filename->ExportC());
   cur = xmlDocGetRootElement((xmlDocPtr) doc);
 
-  Tuple *b = Tuple::New(1);
-  b->Init(0, Store::UnmanagedPointerToWord(doc));
-  xmlFinalizationSet->Register(b->ToWord());
+  ConcreteRepresentation *cr = ConcreteRepresentation::New(xmlRepHandler,1);
+  cr->Init(0, Store::UnmanagedPointerToWord(doc));
+  xmlFinalizationSet->Register(cr->ToWord());
   Tuple *t = Tuple::New(2);
-  t->Init(0, b->ToWord());
+  t->Init(0, cr->ToWord());
   t->Init(1, Store::UnmanagedPointerToWord(cur));
 
   RETURN(t->ToWord());
@@ -54,7 +68,7 @@ DEFINE1(xml_parse) {
 
 DEFINE1(xml_isNull) {
   DECLARE_TUPLE(t, x0);
-  xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(t->Sel(0));
+  xmlDocPtr doc = extract_docptr(t->Sel(0));
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
   RETURN_BOOL(node==NULL || doc==NULL);
 } END
@@ -121,7 +135,7 @@ DEFINE1(xml_name) {
 
 DEFINE2(xml_nodeListGetString) {
   DECLARE_TUPLE(t, x0);
-  xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(t->Sel(0));
+  xmlDocPtr doc = extract_docptr(t->Sel(0));
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
 
   DECLARE_INT(inLine, x1);
@@ -196,6 +210,7 @@ DEFINE2(xml_getProp) {
 word InitComponent() {
   Record *record = Record::New(11);
   xmlFinalizationSet = new XMLFinalizationSet();
+  xmlRepHandler = new XMLRepHandler();
 
   xmlTypeMapping[1] = 10;
   xmlTypeMapping[2] = 1;
