@@ -13,6 +13,10 @@
 //
 
 #include "emulator/Authoring.hh"
+#include "emulator/Transform.hh"
+#include "emulator/ConcreteCode.hh"
+#include "emulator/Tuple.hh"
+#include "emulator/AbstractCodeInterpreter.hh"
 
 DEFINE2(Unsafe_Array_sub) {
   DECLARE_ARRAY(array, x0);
@@ -43,10 +47,55 @@ DEFINE1(Unsafe_cast) {
   RETURN(x0);
 } END
 
+DEFINE1(Unsafe_getPrimitiveByName) {
+  DECLARE_STRING(name, x0);
+  RETURN(PrimitiveTable::LookupValue(reinterpret_cast<Chunk *>(name)));
+} END
+
+DEFINE2(Unsafe_makeClosure) {
+  word function = x0;
+  DECLARE_VECTOR(vector, x1);
+  //--** sharing of names
+  Chunk *name = reinterpret_cast<Chunk *>(String::New("Alice.function"));
+  Transform *transform = Transform::New(name, function);
+  ConcreteCode *concreteCode =
+    ConcreteCode::New(AbstractCodeInterpreter::self, 2);
+  concreteCode->Init(0, function);
+  concreteCode->Init(1, transform->ToWord());
+  u_int nglobals = vector->GetLength();
+  Closure *closure = Closure::New(concreteCode->ToWord(), nglobals);
+  for (u_int i = nglobals; i--; )
+    closure->Init(i, vector->Sub(i));
+  RETURN(closure->ToWord());
+} END
+
+DEFINE2(Unsafe_makeTaggedValue) {
+  DECLARE_INT(tag, x0);
+  DECLARE_VECTOR(vector, x1);
+  u_int size = vector->GetLength();
+  TagVal *tagVal = TagVal::New(tag, size);
+  for (u_int i = size; i--; )
+    tagVal->Init(i, vector->Sub(i));
+  RETURN(tagVal->ToWord());
+} END
+
+DEFINE1(Unsafe_makeTuple) {
+  DECLARE_VECTOR(vector, x0);
+  u_int size = vector->GetLength();
+  Tuple *tuple = Tuple::New(size);
+  for (u_int i = size; i--; )
+    tuple->Init(i, vector->Sub(i));
+  RETURN(tuple->ToWord());
+} END
+
 void PrimitiveTable::RegisterUnsafe() {
   Register("Unsafe.Array.sub", Unsafe_Array_sub, 2);
   Register("Unsafe.Array.update", Unsafe_Array_update, 3);
   Register("Unsafe.String.sub", Unsafe_String_sub, 2);
   Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
   Register("Unsafe.cast", Unsafe_cast, 1);
+  Register("Unsafe.getPrimitiveByName", Unsafe_getPrimitiveByName, 1);
+  Register("Unsafe.makeClosure", Unsafe_makeClosure, 2);
+  Register("Unsafe.makeTaggedValue", Unsafe_makeTaggedValue, 2);
+  Register("Unsafe.makeTuple", Unsafe_makeTuple, 2);
 }
