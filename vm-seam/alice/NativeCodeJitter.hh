@@ -52,6 +52,7 @@ typedef struct {
   u_int pc;
   u_int closure;
   u_int nLocals;
+  u_int outArity;
 } CallInfo;
 
 #define ALICE_REGISTER_NB 3
@@ -72,6 +73,7 @@ protected:
   Vector *globalSubst;
   word currentConcreteCode;
   u_int currentNLocals;
+  u_int currentOutArity;
   Vector *currentArgs;
   u_int currentStack;
 
@@ -198,7 +200,8 @@ protected:
   void CheckPreemptImmediate(u_int pc);
   void LookupTestTable(u_int Key, u_int table, bool isInt = true);
   u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
-  word CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
+  word CompileContinuation(TagVal *idDefArgsInstrOpt,
+			   u_int outArity, u_int nLocals = 0);
   void LoadArguments(Vector *actualIdRefs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);
   TagVal *Apply(TagVal *pc, word wClosure);
