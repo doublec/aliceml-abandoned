@@ -102,7 +102,6 @@ sig
 		    depth : int,
 		    counter : int ref, 
 		    rep : string, 
-		    relman : (value * int ref * int) list ref, 
 		    width : int ref,
 		    height : int ref,
 		    color : color_class, 
@@ -212,7 +211,7 @@ sig
 
     val createRelNode : 
 	desc * node * node * int * int * int ref * string * 
-	(value * int ref * int) list * GtkSupport.tag -> node
+	GtkSupport.tag -> node
    
     val createRelRefNode : 
 	desc * node * int * int * string * GtkSupport.tag 

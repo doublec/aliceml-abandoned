@@ -78,7 +78,7 @@ struct
      fun createTree (opt,va,t,p,i,d,root) =
 	 if !relmode (* RELATION MODE *)
 	     andalso not(isAtomType(t)) 
-	     (* atomar values are always represented as in tree mode *)
+	     (* atomic values are always represented as in tree mode *)
              andalso ( not(isListType t andalso null(castList(va))) )
              (* empty list mustn't be inserted in relation manager *)
 	     then 
@@ -109,7 +109,7 @@ struct
 		 val str = "Ref"^Int.toString(number)
 		 val node = if !count = 1 
 				then createRelNode (desc,Empty,p,i,d,count,
-						    str^" as ",relman,root)
+						    str^" as ",root)
 			    else createRelRefNode(desc,p,i,d,str,root) 
 	     in ( if !count = 1 
 		      then let val c = createUsualTree (opt,va,t,
@@ -642,7 +642,7 @@ struct
 		      val node = if !count = 1 
 				     then createRelNode (desc,Empty,p,i,d,
 							 count,str^" as ",
-							 relman,root)
+							 root)
 				 else createRelRefNode(desc,p,i,d,str,root) 
 		  in ( if !count = 1 
 			   then let val c = createUsualTreeInf (va,t,node,0,d,

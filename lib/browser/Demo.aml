@@ -146,3 +146,30 @@ structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);
 structure T = Reflect.ReflectSig(signature S = GTK);
 
 UnsafeInspector.inspectInf (V.x,T.x);
+
+
+(****************************************************)
+
+(*** :-) ***)
+
+structure Str = Reflect.ReflectType(type t = string);
+val str = Str.x;
+
+UnsafeInspector.inspect("Ein Browser für Alice",str);
+
+structure LL =  Reflect.ReflectType(type t = string list list);
+val ll = LL.x;
+
+val li1 = ["FoPra-Vortrag von"];
+val li2 = ["Bernadette Blum"];
+val li3 = ["und","Marvin Schiller"];
+val li = [li1,li2,li3];
+
+UnsafeInspector.inspect(li,ll);
+
+datatype foo = April
+
+structure TT = Reflect.ReflectType(type t = int * foo * int);
+val tt = TT.x;
+
+UnsafeInspector.inspect((3,April,2003),tt);
