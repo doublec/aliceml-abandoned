@@ -150,14 +150,13 @@ DEFINE2(Vector_sub) {
 } END
 
 DEFINE2(Vector_tabulate) {
-  //--** should only request closure if vector not empty
   DECLARE_INT(length, x0);
-  DECLARE_CLOSURE(closure, x1);
   if (length == 0) {
     RETURN(Vector::New(0)->ToWord());
   } else if ((length < 0) || ((u_int) length > Vector::maxLen)) {
     RAISE(PrimitiveTable::General_Size);
   } else {
+    DECLARE_CLOSURE(closure, x1);
     word wClosure = closure->ToWord();
     Vector *vector = Vector::New(length);
     VectorTabulateInterpreter::PushFrame(vector, wClosure, 0, length);
