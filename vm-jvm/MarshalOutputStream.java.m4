@@ -3,9 +3,11 @@ package sun.rmi.server;
 import java.io.*;
 import java.rmi.Remote;
 import sun.rmi.transport.Utils;
+import java.util.Hashtable;
 
 import de.uni_sb.ps.dml.runtime.PickleClassLoader;
 import de.uni_sb.ps.dml.runtime.Exporter;
+import de.uni_sb.ps.dml.runtime.Connection;
 import java.lang.reflect.*;
 /**
  * A MarshalOutputStream extends ObjectOutputStream to add functions
@@ -30,6 +32,7 @@ public class MarshalOutputStream extends ObjectOutputStream
     final static Class ucn; // class of UniqueConstructor
     final static Class ncn; // class of Name
     final static Class uncn; // class of UniqueName
+    final static Hashtable fieldsWritten = new Hashtable();
     static {
 	Class cl = null;
 	try{
@@ -136,10 +139,11 @@ public class MarshalOutputStream extends ObjectOutputStream
 		!uncn.isAssignableFrom(cl)) // cl is a name group
 	    ) {      // we transfer class code by need, i.e. we annotate the class with the ip of
 	    // the server that knows the byte code. the byte code is stored in the PickleClassLoader
-	    //System.out.println("I RMI serialize: "+cl);
+	    // System.out.println("I RMI serialize: "+cl);
 	    String className = cl.getName();
 	    if (PickleClassLoader.loader.getBytes(className) == null) { // code not yet in loader
 		// enter code into loader
+		// System.out.println("The code for "+ className +" was not in the pickleclassloader.");
 		byte[] bytes = null;
 		ClassLoader loader = cl.getClassLoader();
 		if (loader == null
@@ -187,8 +191,11 @@ public class MarshalOutputStream extends ObjectOutputStream
 		// what should I do about the static fields?
 		// another hashtable with key = className+"field"+i?
 		PickleClassLoader.loader.enter(className,bytes);
+	    }
 
+	    if (fieldsWritten.get(className) == null) {
 		// now make static fields accessable
+		// System.out.println("Writing static fields ...");
 		Field[] fields = cl.getDeclaredFields();
 		int fc = fields.length;
 		for (int i=0; i<fc; i++) {
@@ -205,11 +212,15 @@ public class MarshalOutputStream extends ObjectOutputStream
 			    I.printStackTrace();
 			}
 			Exporter.putField(className+"field"+i,content);
+			// System.out.println("Field "+i+": "+content);
 		    }
 		}
+		// System.out.println("Done.");
+		fieldsWritten.put(className,new Object());
 	    }
 	    // write the host; format: !134.96.186.121
-	    writeLocation(host);
+	    // System.out.println("Now writing location.");
+	    writeLocation(host+":"+Connection.exporterNumber);
 	} else {
 	    // write the specified location (may be null).
 	    writeLocation(java.rmi.server.RMIClassLoader.getClassAnnotation(cl));
@@ -222,6 +233,7 @@ public class MarshalOutputStream extends ObjectOutputStream
      * else than as the next object in the stream, as is done by this class.
      */
     protected void writeLocation(String location) throws IOException {
+	// if (location != null) { System.out.println("Location is "+location);}
 	writeObject(location);
     }
 }
