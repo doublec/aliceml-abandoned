@@ -12,13 +12,9 @@
 //   $Revision$
 //
 
-#if defined(INTERFACE)
-#pragma implementation "emulator/VectorTabulateInterpreter.hh"
-#endif
-
 #include <cstdio>
-#include "emulator/Authoring.hh"
-#include "emulator/Closure.hh"
+#include "generic/Closure.hh"
+#include "alice/primitives/Authoring.hh"
 
 // Vector.tabulate Frame
 class VectorTabulateFrame : private StackFrame {

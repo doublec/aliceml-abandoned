@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,7 +13,7 @@
 //
 
 #include <cstdio>
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 #define DECLARE_WORD(w, x)			\
   DECLARE_INT(w, x);				\
