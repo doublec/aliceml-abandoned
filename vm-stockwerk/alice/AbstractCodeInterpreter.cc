@@ -185,6 +185,8 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
   Assert(concreteCode->GetInterpreter() == this);
   // Function of coord * int * int * idDef args * instr
   TagVal *function = TagVal::FromWord(concreteCode->Get(0));
+  Assert(function->GetTag() == 0);
+  function->AssertWidth(5);
   int nlocals = Store::WordToInt(function->Sel(2));
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(this,
