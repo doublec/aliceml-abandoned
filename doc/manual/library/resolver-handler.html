@@ -125,6 +125,18 @@
     </DD>
 
     <DT>
+      <TT><A name="custom">custom</A> (<I>s</I>, <I>f</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a handler that causes an attempt to locate the resource using
+	the custom function&nbsp;<TT><I>f</I></TT>.  <TT><I>s</I></TT>&nbsp;is
+	a name for the handler for use in trace messages.  The handler is
+	applicable if <TT><I>f</I></TT> returns <TT>SOME _</TT>.  It is not
+	applicable if <TT><I>f</I></TT> returns <TT>NONE</TT> or raises an
+	exception.</P>
+    </DD>
+
+    <DT>
       <TT><A name="parse">parse</A> <I>s</I></TT>
     </DT>
     <DD>
