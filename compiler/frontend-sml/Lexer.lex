@@ -10,9 +10,6 @@
  *   $Revision$
  *)
 
-(* Current Gert hack: "Byneed" and "Concur" keywords
- * as substitute for "lazy" and "spawn" *)
-
 (*
  * Standard ML lexical analysis
  *
@@ -350,9 +347,6 @@
   <INITIAL>"withfun"	=> ( token(WITHFUN,   yypos, yytext) );
   <INITIAL>"withtype"	=> ( token(WITHTYPE,  yypos, yytext) );
   <INITIAL>"withval"	=> ( token(WITHVAL,   yypos, yytext) );
-
-  <INITIAL>"Byneed"	=> ( token(LAZY,      yypos, yytext) );
-  <INITIAL>"Concur"	=> ( token(SPAWN,     yypos, yytext) );
 
   <INITIAL>"0"		=> ( token  (ZERO,              yypos, yytext) );
   <INITIAL>[1-9]	=> ( tokenOf(DIGIT,   toDigit,  yypos, yytext) );
