@@ -22,7 +22,7 @@ local
 
 in
 
-    structure MainDictionary = MkDictionary(type t = node val def = Empty)
+    structure MainDictionary = MkDictionary(type t = node)
 
 end
 

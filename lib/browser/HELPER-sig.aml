@@ -53,6 +53,8 @@ sig
     val getAncIndex : node -> int
     val getDesc : node -> desc
     val getValue : desc -> Reflect.value
+    val getDepth : node -> int
+    val getGroup : node -> Gtk.object
 
     val checkContKids : node array * int -> bool
     val checkConcKids : node array * int -> bool

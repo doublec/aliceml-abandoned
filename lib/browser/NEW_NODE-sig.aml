@@ -74,7 +74,7 @@ sig
 	-> node
     
     val createConcat: 
-	desc * node * int * node array * int * int * (node -> Gtk.object) 
+	desc * node * int * int * node array * int * int * (node -> Gtk.object)
 	-> node
 	
     val createContainer: 

@@ -112,6 +112,17 @@ struct
     fun getValue desc = case desc of INTERPUNCT => raise Match
                                    | VALUE(r) => #value(r)
 
+    fun getDepth n = case n of Limit(r) => #depth(r)
+                             | Concat(r) => #depth(r)
+                             | _ => raise Match
+
+    fun getGroup n =  case n of Concat(r) => #group(r)
+                              | Container(r) => #group(r)
+                              | Simple(r) => #group(r) 
+                              | Limit(r) => #group(r)
+                              | RelNode(r) => #group(r)
+                              | RelRefNode(r) => #group(r)
+                              | _ => raise Match
 	                  			 
     fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false

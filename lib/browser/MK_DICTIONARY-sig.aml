@@ -18,7 +18,6 @@ sig
     type elemtype
     type dictionary
 
-    val default : elemtype
     val empty    : dictionary
 
     val insert     : dictionary * (int * elemtype) -> unit

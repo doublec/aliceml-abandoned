@@ -22,6 +22,6 @@ local
 
 in
 
-    structure RelManDictionary = MkDictionary(type t = node list val def = nil)
+    structure RelManDictionary = MkDictionary(type t = node list)
 
 end

@@ -209,7 +209,8 @@ struct
 			  ; copyArray(nodearray,na)
 			  ; cont )
 		       end
-	      else let val concat = createConcat(desc,p,i,Array.array(3,Empty),
+	      else let val concat = createConcat(desc,p,i,d,
+						 Array.array(3,Empty),
 						 ~1,~1,setGroup) 
 		       val lbra = createSimple (INTERPUNCT,concat,0,
 						"[",BRACK_COLOR,setGroup)
@@ -237,7 +238,7 @@ struct
 	let val rl = ref 0
 	    val na = Array.array(length,Empty)
 	in ( while !rl < length do
-            (let val concat = createConcat(INTERPUNCT,p,!rl,
+            (let val concat = createConcat(INTERPUNCT,p,!rl,d,
 					   Array.array(2,Empty),
                                            ~1,~1,setGroup) 
                  val inva = UnsafeValue.cast(List.nth(list,!rl))
@@ -257,7 +258,7 @@ struct
     and treatProd (va,t,p,i,d,row) = 
 	let
 	      val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
-					     p,i,Array.array(3,Empty)
+					     p,i,d,Array.array(3,Empty)
 					     ,~1,~1,setGroup)
 	      val (lbra,rbra) = if Type.isTupleRow(row) 
 				    then ("(",")")
@@ -282,7 +283,7 @@ struct
     and treatSum (va,t,p,i,d,row) = 
         let
 	    val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
-					   p,i,Array.array(4,Empty),
+					   p,i,d,Array.array(4,Empty),
 			                   ~1,~1,setGroup)
 	    val lt_list   = row2list(row)
 	    val l_vector  = labelvector(lt_list)
@@ -376,7 +377,7 @@ struct
 	let 
 	    val last = if i = l-1 then true else false
 	    val c_length = if last then 3 else 4
-	    val concat = createConcat (INTERPUNCT,p,i,
+	    val concat = createConcat (INTERPUNCT,p,i,d,
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
 	    val l_node = createSimple (INTERPUNCT,concat,0,label,
@@ -401,7 +402,7 @@ struct
 	let 
 	    val last = if i = l-1 then true else false
 	    val c_length = if last then 1 else 2
-	    val concat = createConcat (INTERPUNCT,p,i,
+	    val concat = createConcat (INTERPUNCT,p,i,d,
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
 	    val sep_node = createSimple (INTERPUNCT,concat,1,", ",
@@ -470,7 +471,7 @@ struct
 	      end  
         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
-                            val concat = createConcat(#desc(r),p,i,na,~1,~1,
+                            val concat = createConcat(#desc(r),p,i,d,na,~1,~1,
 						      setGroup)
                             val rl = ref 0
 			in (while !rl <= (Vector.length(#kids(r)) - 1) do
@@ -512,14 +513,15 @@ struct
 						      group = f(p)}
  
     (* createConcat *)
-    and createConcat (desc,p,i,na,w,h,f) =  Concat {desc = desc,
-						    parent = p,
-						    index  = i,
-						    kids = na, 
-						    width  = ref w,
-						    height = ref h,
-						    status = ref DAZZLED,
-						    group = f(p)}
+    and createConcat (desc,p,i,d,na,w,h,f) =  Concat {desc = desc,
+						      parent = p,
+						      index  = i,
+						      depth = d,
+						      kids = na, 
+						      width  = ref w,
+						      height = ref h,
+						      status = ref DAZZLED,
+						      group = f(p)}
 
     (* createContainer *)
     and createContainer (desc,p,i,na,w,h,l_w,f) =  
@@ -576,7 +578,7 @@ struct
     and createTransient (va,t,p,i,d,tt) = 
 	let val desc = createValue(va,t,NO_ACTIONS)
             val indesc = createValue(va,tt,NO_ACTIONS)
-	    val concat = createConcat(desc,p,i,Array.array(3,Empty),~1,~1,
+	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),~1,~1,
 				      setGroup)
 	    val first = createSimple(INTERPUNCT,concat,0,"promise {|",
 				     DEFAULT,setGroup)
@@ -596,17 +598,17 @@ struct
 	    ; Array.update(getKids(concat),2,last)
 	    ; case TransientDictionary.iterLookup 
 	               (transdict,
-			fn li 
+			fn (_,li) 
 			=> List.exists(fn n 
 				       => UnsafeValue.same
 				       (getValue(getDesc(n)),va)) 
 			               li
 		        handle General.Match => false) of
-	      SOME (li,i)  
+	      SOME ((vv,li),i)  
 	      => TransientDictionary.update(transdict, 
-					 (i,List.append(li,[concat]))) 
+					 (i,(vv,List.append(li,[concat])))) 
             | NONE 
-	      => (TransientDictionary.insertI(transdict,[concat]) ; () ) 
+	      => (TransientDictionary.insertI(transdict,(va,[concat])) ; () ) 
 	    ; concat)
 	end 
     

@@ -25,12 +25,9 @@ struct
 
     exception LayoutError
 
-    fun sum_up (li,f,g) = if List.length(li) = 0
+    fun sum_up (li,f) = if List.length(li) = 0
 			      then 0
-			  else ( if setsVertical(hd(li)) 
-				     then g(hd(li))
-				 else f(hd(li)) )
-			      + sum_up(tl(li),f,g) 
+			  else f(hd(li)) + sum_up(tl(li),f) 
 			      
     and max (li,f) = case List.length(li) of
 	             0 => 0
@@ -67,7 +64,6 @@ struct
 		then let val li = Array.toList(#kids(r))
 			 val f = fn n => #1(layout n)
                          val g = fn n => #2(layout n)
-                         val h = fn n => #3(layout n)
 			 val xdim = 
 			     if List.null li 
 				 then 0
@@ -79,10 +75,10 @@ struct
                                              val klist = Array.toList(kids)
 					 in if Int.< (f (List.last(klist)),
 						      max (klist,f) )
-						then sum_up(li',f,f) 
-					    else sum_up (li,f,f)	 
+						then sum_up(li',f) 
+					    else sum_up (li,f)	 
 					 end
-				else sum_up (li,f,f)
+				else sum_up (li,f)
 			     end
 			 val ydim = max (li,g)
 		     in (#width(r) := xdim  
@@ -98,9 +94,9 @@ struct
 			val g = fn n => #2(layout n) 
 			val xdim = if (setsVertical n) 
 					then max (li,f) 
-				   else sum_up (li,f,f)
+				   else sum_up (li,f)
 			val ydim = if setsVertical n 
-				       then sum_up (li,g,g)
+				       then sum_up (li,g)
 				   else max (li,g)
 			val l_xdim = if List.null(li)
 					  then 0

@@ -16,15 +16,13 @@
 import signature MK_DICTIONARY from "MK_DICTIONARY-sig"
 
 (* functor MkDictionary *)
-functor MkDictionary (type t val def: t) : MK_DICTIONARY=
+functor MkDictionary (type t) : MK_DICTIONARY=
 struct
     type elemtype = t
 	
     type dictionary = ((int * elemtype) list Array.array ref) 
 	* int ref     (* counts no of elements *)
 	* int ref     (* next index to be assigned *)
-	
-    val default = def
 	    
     val empty = let
 		    val a = ref(Array.array(5,[]))
@@ -71,11 +69,12 @@ struct
     fun iterLookup' ((a,fill_count,next_i) as dict,i,f) = 
 	if i >=  !next_i
 	    then NONE
-	else let val content = case lookup (dict,i) of
-	                       NONE => default
-                             | SOME x => x
-	     in if f content
-		    then SOME (content,i)
+	else let val found = lookup (dict,i)
+		 val fulfilled = case found of
+	                       NONE => false
+                             | SOME x => f x
+	     in if fulfilled
+		    then SOME (valOf(found),i)
 		else iterLookup'(dict,i+1,f) 
 	     end
 

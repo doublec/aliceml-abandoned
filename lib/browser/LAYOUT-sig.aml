@@ -23,7 +23,7 @@ in
 	    
 	    exception LayoutError
 	    
-	    val sum_up : node list * (node -> int) * (node -> int) -> int
+	    val sum_up : node list * (node -> int) -> int
 	    val max : node list * (node -> int) -> int
 		
 	    val get_xdim : node -> int
