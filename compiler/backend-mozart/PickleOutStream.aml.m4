@@ -15,7 +15,7 @@
  * pickle ::= sysletheader sysletheader sysletheader crc version term eof
  * sysletheader ::= 0x02
  * crc ::= <byte>*4 // LSB first; computed over the rest of the pickle
- * version ::= string // "3#3"
+ * version ::= string // "3#2"
  * string ::= number <byte>*number
  * number ::=
  *    <byte with bit 7 set>* <byte with bit 7 reset>
@@ -59,7 +59,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 
 	infix << ~>>
 
-	val versionString = "3#3"
+	val versionString = "3#2"
 
 	val SYSLETHEADER  = 0wx02: Word8.word
 
