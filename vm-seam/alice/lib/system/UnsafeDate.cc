@@ -115,29 +115,15 @@ DEFINE2(UnsafeDate_fmt) {
 } END
 
 
-DEFINE1(UnsafeDate_toString) {
-    DECLARE_TUPLE(t, x0);
-    struct tm tm;
-    to_tm (t, &tm);
-    const char *res = asctime(&tm);
-    if (res != NULL) {
-        RETURN(String::New (res)->ToWord ());
-    } else {
-        RAISE_DATE;
-    }
-} END
-
-
 AliceDll word UnsafeDate() {
   exceptionDate = UniqueConstructor::New ("Date", "Date.Date")->ToWord ();
   RootSet::Add (exceptionDate);
-  Record *record = Record::New(7);
+  Record *record = Record::New(6);
   record->Init ("'Date", exceptionDate);
   record->Init ("Date", exceptionDate);
   INIT_STRUCTURE(record, "UnsafeDate", "fromTimeLocal", UnsafeDate_fromTimeLocal, 1);
   INIT_STRUCTURE(record, "UnsafeDate", "fromTimeUniv",  UnsafeDate_fromTimeUniv,  1);
   INIT_STRUCTURE(record, "UnsafeDate", "toTime",        UnsafeDate_toTime, 1);
   INIT_STRUCTURE(record, "UnsafeDate", "fmt",           UnsafeDate_fmt, 2);
-  INIT_STRUCTURE(record, "UnsafeDate", "toString",      UnsafeDate_toString, 1);
   RETURN_STRUCTURE("UnsafeDate$", record);
 }

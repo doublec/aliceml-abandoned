@@ -34,7 +34,6 @@ in
                 val fromTimeUniv :  IntInf.t -> tm 
                 val toTime :        tm -> IntInf.t
                 val fmt :           string * tm -> string
-                val toString :      tm -> string
             end
         end
 end

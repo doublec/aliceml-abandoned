@@ -373,7 +373,7 @@ struct
 
     fun fmt fs d = UnsafeDate.fmt (fs, toTm d)
 
-    val toString = UnsafeDate.toString o toTm
+    val toString = fmt "%a %b %d %H:%M:%S %Y"
 
 
     (* comparison does not take into account the offset
