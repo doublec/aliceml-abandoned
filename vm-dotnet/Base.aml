@@ -839,6 +839,9 @@ structure Int =
       val op div	= op div
       val op mod	= op mod
 
+      __primitive val quot : int * int -> int = "Int.quot"
+      __primitive val rem :  int * int -> int = "Int.rem"
+
       val op <		= op <
       val op >		= op >
       val op <=		= op <=
@@ -951,10 +954,8 @@ signature INTEGER =
     val op * :		int * int -> int
     val op div :	int * int -> int
     val op mod :	int * int -> int
-(*MISSING
     val op quot :	int * int -> int
     val op rem :	int * int -> int
-*)
 
     val op < :		int * int -> bool
     val op > :		int * int -> bool
