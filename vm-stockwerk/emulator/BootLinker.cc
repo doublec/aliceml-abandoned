@@ -24,6 +24,7 @@
 #include "emulator/Scheduler.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/Alice.hh"
+#include "emulator/Properties.hh"
 
 // Very convienent Macro
 #define CONTINUE(args)           \
@@ -453,16 +454,14 @@ word BootLinker::componentTable;
 word BootLinker::keyQueue;
 u_int BootLinker::numberOfEntries;
 u_int BootLinker::traceFlag;
-char *BootLinker::aliceHome;
 
-void BootLinker::Init(char *home, prim_table *builtins) {
+void BootLinker::Init(prim_table *builtins) {
   componentTable = HashTable::New(HashTable::BLOCK_KEY,
 				  INITIAL_TABLE_SIZE)->ToWord();
   RootSet::Add(componentTable);
   keyQueue = Queue::New(135)->ToWord(); // to be done
   RootSet::Add(keyQueue);
   numberOfEntries = 0;
-  aliceHome = home;
   // Initialize Interpreters
   ApplyInterpreter::Init();
   EnterInterpreter::Init();
@@ -507,16 +506,16 @@ Component *BootLinker::LookupComponent(Chunk *key) {
 }
 
 Chunk *BootLinker::MakeFileName(Chunk *key) {
-  // Hack to ensure 0x00 terminated strings
-  u_int hSize  = strlen(aliceHome);
-  u_int kSize  = key->GetSize();
-  Chunk *path  = Store::AllocChunk(hSize + kSize + 5);
-  char *base   = path->GetBase();
-  strcpy(base, aliceHome);
-  strncpy(base + hSize, key->GetBase(), kSize);
-  base[hSize + kSize] = (char) 0x00;
-  strcat(base, ".stc");
-  base[hSize + kSize + 4] = (char) 0x00;
+  // Hack to ensure NUL-terminated strings
+  Chunk *aliceHome = Store::DirectWordToChunk(Properties::aliceHome);
+  u_int hSize      = aliceHome->GetSize();
+  u_int kSize      = key->GetSize();
+  Chunk *path      = Store::AllocChunk(hSize + kSize + 5);
+  char *base       = path->GetBase();
+  memcpy(base, aliceHome->GetBase(), hSize);
+  memcpy(base + hSize, key->GetBase(), kSize);
+  memcpy(base + hSize + kSize, ".stc", 4);
+  base[hSize + kSize + 4] = '\0';
   return path;
 }
 

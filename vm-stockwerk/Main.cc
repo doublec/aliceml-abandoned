@@ -13,7 +13,6 @@
 //
 
 #include <cstdio>
-#include <cstdlib>
 #include "emulator/RootSet.hh"
 #include "emulator/Transients.hh"
 #include "emulator/TaskStack.hh"
@@ -21,7 +20,7 @@
 #include "emulator/PrimitiveTable.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/BootLinker.hh"
-//#include "emulator/Alice.hh"
+#include "emulator/Properties.hh"
 
 // Make Interpreter visible
 #include "emulator/PushCallInterpreter.hh"
@@ -66,6 +65,7 @@ int main(int argc, char *argv[]) {
   Store::InitStore(memLimits, 75, 20);
   // Setup Datastructures
   RootSet::Init();
+  Properties::Init();
   Hole::Init();
   Future::Init();
   TaskStack::Init();
@@ -78,13 +78,7 @@ int main(int argc, char *argv[]) {
   VectorTabulateInterpreter::Init();
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
-  char *aliceHome = getenv("STOCKHOME");
-  if (aliceHome == NULL) {
-    Error("could not determine installation directory\n");
-  }
-  char *aliceHomeSl = (char *) malloc(sizeof(char) * (strlen(aliceHome) + 2));  
-  sprintf(aliceHomeSl, "%s/", aliceHome);
-  BootLinker::Init(aliceHomeSl, builtins);
+  BootLinker::Init(builtins);
   BootLinker::SetTraceMode(1);
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
