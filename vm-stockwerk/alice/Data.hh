@@ -88,7 +88,7 @@ public:
 };
 
 class Cell: private Block {
-private:
+protected:
   static const u_int VAL_POS = 0;
   static const u_int SIZE = 1;
 public:
@@ -162,7 +162,7 @@ public:
 };
 
 class ConVal: private Block {
-private:
+protected:
   static const u_int CON_POS = 0;
   static const u_int BASE_SIZE = 1;
 public:
@@ -279,7 +279,7 @@ public:
 };
 
 class Vector: private Block {
-private:
+protected:
   static const u_int LENGTH_POS = 0;
   static const u_int BASE_SIZE = 1;
 public:
@@ -320,7 +320,7 @@ public:
 };
 
 class Record: private Block {
-private:
+protected:
   static const u_int WIDTH_POS = 0;
   static const u_int BASE_SIZE = 1;
 public:
