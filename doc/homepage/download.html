@@ -13,6 +13,42 @@ officially released.</P>
 <P>All packages include the full <A href="manual/">manual</A> web pages.</P>
 
 
+<?php subsection("requirements", "System recommendations") ?>
+
+<P>
+  The current version of the Alice system is somewhat resource-hungry. We hence
+  recommend a system with at least 700 MHz and 256 MB Ram. The installation
+  requires approximately 30 MB of Harddisk space (including Mozart).
+</P>
+
+
+<?php subsection("windows", "Windows") ?>
+
+<UL>
+  <LI><A href="download/mozart-1.2.5-20021218.exe"
+    ><TT>mozart-1.2.5-20021218.exe</TT></A></LI>
+  <LI><A href="download/alice-0.9-20021220.exe"
+    ><TT>alice-0.9-20021220.exe</TT></A></LI>
+</UL>
+
+<P>
+  If you use non-standard installation paths for either package, you have to
+  set the following environment variables appropriately (depending on your
+  shell - the following example uses <TT>CMD.EXE</TT> or <TT>COMMAND.COM</TT>
+  syntax):
+</P>
+
+<PRE class=code>
+set OZHOME=&lt;your mozart installation directory&gt;
+set STOCKHOME=&lt;your alice installation directory&gt;</PRE>
+
+<P>
+  If you have trouble installing Mozart, please consult the respective
+  <A href="http://www.mozart-oz.org/download/ftp.cgi?action=windows">
+  installation notes for Windows</A>.
+</P>
+
+
 <?php subsection("linux", "Linux") ?>
 
 <P>Red Hat 7.2:</P>
@@ -54,33 +90,6 @@ officially released.</P>
 PATH=&lt;mozart-directory&gt;/bin:&lt;alice-directory&gt;/bin:$PATH</PRE>
 
 
-<?php subsection("windows", "Windows") ?>
-
-<UL>
-  <LI><A href="download/mozart-1.2.5-20021218.exe"
-    ><TT>mozart-1.2.5-20021218.exe</TT></A></LI>
-  <LI><A href="download/alice-0.9-20021220.exe"
-    ><TT>alice-0.9-20021220.exe</TT></A></LI>
-</UL>
-
-<P>
-  If you use non-standard installation paths for either package, you have to
-  set the following environment variables appropriately (depending on your
-  shell - the following example uses <TT>CMD.EXE</TT> or <TT>COMMAND.COM</TT>
-  syntax):
-</P>
-
-<PRE class=code>
-set OZHOME=&lt;your mozart installation directory&gt;
-set ALICE_HOME=&lt;your alice installation directory&gt;</PRE>
-
-<P>
-  If you have trouble installing Mozart, please consult the respective
-  <A href="http://www.mozart-oz.org/download/ftp.cgi?action=windows">
-  installation notes for Windows</A>.
-</P>
-
-
 <?php subsection("license", "License") ?>
 
 <P>The Alice system is free software. See the <A
@@ -95,7 +104,7 @@ href="download/COPYING">license</A> for details.</P>
   </P>
   <P>
     First make sure that the environment variables
-    <TT>OZHOME</TT> and <TT>ALICE_HOME</TT>
+    <TT>OZHOME</TT> and <TT>STOCKHOME</TT>
     point to the installation directory of the Mozart system and
     the Alice system, respectively.
   </P>
