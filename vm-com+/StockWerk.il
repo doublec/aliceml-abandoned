@@ -755,7 +755,7 @@
       tail. call instance class System.Object StockWerk.RecordArity::GetRealObject()
       ret
     }
-    .method public int32 Select(class System.String) {
+    .method public int32 GetIndex(class System.String) {
       .locals(class System.String[], int32, int32)
       ldarg.0
       ldfld class System.String[] StockWerk.RecordArity::Labels
@@ -848,6 +848,18 @@
       ret
     }
     .method virtual public class StockWerk.StockWert Select(class System.String) {
+      ldarg.0
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::CondSelect(class System.String)
+      dup
+      brnull.s raise
+      ret
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
       ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
@@ -1467,7 +1479,7 @@
       ldc.i4.0
       ret
     }
-    .method virtual public class StockWerk.StockWert Select(class System.String) {
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
       ldarg.1
       ldstr "1"
       call bool System.String::Equals(class System.String, class System.String)
@@ -1479,14 +1491,13 @@
       ldarg.1
       ldstr "2"
       call bool System.String::Equals(class System.String, class System.String)
-      bne.un.s raise
+      bne.un.s notFound
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
       ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+    notFound:
+      ldnull
+      ret
     }
     .method virtual public class System.String ToString() {
       ldstr "("
@@ -1556,7 +1567,7 @@
       ldc.i4.0
       ret
     }
-    .method virtual public class StockWerk.StockWert Select(class System.String) {
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
       ldarg.1
       ldstr "1"
       call bool System.String::Equals(class System.String, class System.String)
@@ -1576,14 +1587,13 @@
       ldarg.1
       ldstr "3"
       call bool System.String::Equals(class System.String, class System.String)
-      bne.un.s raise
+      bne.un.s notFound
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value3
       ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+    notFound:
+      ldnull
+      ret
     }
     .method virtual public class System.String ToString() {
       ldstr "("
@@ -1665,7 +1675,7 @@
       ldc.i4.0
       ret
     }
-    .method virtual public class StockWerk.StockWert Select(class System.String) {
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
       ldarg.1
       ldstr "1"
       call bool System.String::Equals(class System.String, class System.String)
@@ -1693,14 +1703,13 @@
       ldarg.1
       ldstr "4"
       call bool System.String::Equals(class System.String, class System.String)
-      bne.un.s raise
+      bne.un.s notFound
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Tuple4::Value4
       ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+    notFound:
+      ldnull
+      ret
     }
     .method virtual public class System.String ToString() {
       ldstr "("
@@ -1793,11 +1802,24 @@
       ldc.i4.1
       ret
     }
-    .method virtual public class StockWerk.StockWert Select(class System.String) {
-      //--** convert string to int and find whether it's within bounds
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
+      .locals(int32)
+      .try {
+	call int32 class System.Int32::Parse(class System.String)
+	stloc.0
+	ldarg.0
+	ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
+	ldloc.0
+	ldelem.ref
+	leave.s found
+      } catch System.FormatException {
+	ldnull
+	leave.s notFound
+      }
+    notFound:
+      ldnull
+    found:
+      ret
     }
     .method virtual public class System.String ToString() synchronized {
       .locals(class StockWerk.StockWert[], int32, int32)
@@ -1905,22 +1927,21 @@
       ldc.i4.1
       ret
     }
-    .method virtual public class StockWerk.StockWert Select(class System.String) {
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
       ldarg.0
       ldfld class StockWerk.StockWert[] StockWerk.Record::Values
       ldarg.0
       ldfld class StockWerk.RecordArity StockWerk.Record::Arity
       ldarg.1
-      call instance int32 StockWerk.RecordArity::Select(class System.String)
+      call instance int32 StockWerk.RecordArity::GetIndex(class System.String)
       dup
       ldc.i4.M1
-      beq.s raise
+      beq.s notFound
       ldelem.ref
       ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+    notFound:
+      ldnull
+      ret
     }
   }
 
@@ -1934,11 +1955,11 @@
       /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
-    .method virtual public class StockWerk.StockWert Select(class System.String) {
+    .method virtual public class StockWerk.StockWert CondSelect(class System.String) {
       ldarg.0
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ldarg.1
-      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Select(class System.String)
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::CondSelect(class System.String)
       ret
     }
     .method virtual public class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
@@ -2329,7 +2350,7 @@
       ldarg.1
       ldarg.0
       ldfld class System.String StockWerk.Selector::Label
-      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Select(class System.String)
+      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::CondSelect(class System.String)
       ret
     }
     .method virtual public bool Equals(class System.Object) {
