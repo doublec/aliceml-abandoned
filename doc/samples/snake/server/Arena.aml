@@ -14,6 +14,7 @@ import structure Protocol from "../common/Protocol"
 import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
 import structure Random   from "x-alice:/lib/utility/Random"
+import "x-alice:/lib/tools/Inspector"
 
 structure Arena :> ARENA =
 struct
@@ -30,127 +31,136 @@ struct
 	 walls: int
 	 (* MAGIC NUMBERs ... *)
 	 }
-(*    
+
     fun random {dimensions : int * int, players,walls} =
 	let
-	    val (maxR,maxC) = dimensions
-	    val arena = Array2.array(maxR,maxC,P.EMPTY)
+	    val (rows,cols) = dimensions
+	    val arena = Array2.array(rows,cols,P.EMPTY)
 	    (* initialising an empty arena with dimensions [dimensions] *)
 
 	    fun setLimit () = (* set a wall round the level *)
 		let
 		    fun horizontal r = 
-			if r = maxR
-			    then (Array2.update(arena,maxR-1,0,P.WALL);
-				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
+			if r = rows
+			    then (Array2.update(arena,rows-1,0,P.WALL);
+				  Array2.update(arena,rows-1,cols-1,P.WALL))
 			else (Array2.update(arena,r,0,P.WALL);
-			      Array2.update(arena,r,maxC-1,P.WALL);
+			      Array2.update(arena,r,cols-1,P.WALL);
 			      horizontal(r + 1))
 		    fun vertical c = 
-			if c = maxC 
-			    then (Array2.update(arena,0,maxC-1,P.WALL);
-				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
+			if c = cols 
+			    then (Array2.update(arena,0,cols-1,P.WALL);
+				  Array2.update(arena,rows-1,cols-1,P.WALL))
 			else (Array2.update(arena,0,c,P.WALL);
-			      Array2.update(arena,maxR-1,c,P.WALL);
+			      Array2.update(arena,rows-1,c,P.WALL);
 			      vertical(c + 1))
 		in
 		    (horizontal (0); vertical (0))
 		end
 
-	    fun setWall   _   _ 0 = ()
-	      | setWall (r,c) d n = 
-		case d of
-		    P.UP    => (Array2.update(arena,r,c,P.WALL);
-				wall (Pos.above(r,c)) d (n-1))
-		  | P.DOWN  => (Array2.update(arena,r,c,P.WALL);
-				wall (Pos.below(r,c)) d (n-1))
-		  | P.LEFT  => (Array2.update(arena,r,c,P.WALL);
-				wall (Pos.left(r,c)) d (n-1))
-		  | P.RIGHT => (Array2.update(arena,r,c,P.WALL);
-				wall (Pos.right(r,c)) d (n-1))
-	    (* [wall (rs,cs) d s] sets a wall in direction [d]
-	       with length [s] and startposition [rs,cs] *)
+	    val _ = setLimit ()
 
-	    fun chooseWall () =
+	    fun setWall   _   0 _ _ xs = xs
+	      | setWall (0,_) _ _ _ xs = xs
+	      | setWall (_,0) _ _ _ xs = xs
+	      | setWall (r,c) n d v xs = if r >= (rows-1) orelse c >= (cols-1) then xs else
+		case d of
+	        P.UP     => ((Array2.update(arena,r,c,v);
+			     setWall (r-1,c) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
+	      | P.DOWN   => ((Array2.update(arena,r,c,v);
+			     setWall (r+1,c) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
+	      | P.LEFT   => ((Array2.update(arena,r,c,v);
+			     setWall (r,c-1) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
+	      | P.RIGHT  => ((Array2.update(arena,r,c,v);
+			     setWall (r,c+1) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
+
+	    fun child 0 _ _   _     _   = ()
+	      | child _ _ _   _    nil  = ()
+	      | child n c 4 dlist slist =
 		let
-		    val l_horizont = Random.int (maxC div 2) - 2
-		    val l_vertical = Random.int (maxR div 2) - 2
-		    fun wall 0 = setWall (10,10) P.UP l_vertical
-		      | wall 1 = setWall (10,10) P.DOWN l_vertical
-		      | wall 2 = setWall (10,10) P.LEFT l_horizont
-		      | wall 3 = setWall (10,10) P.RIGHT l_horizont
+		    val d = List.nth(dlist,Random.int (List.length dlist))
+		    val start = List.nth(slist,Random.int(List.length dlist)) (* letzten beiden net !! *)
+		    val l = Random.int ((rows + cols) div 10)
+		    val news = setWall start l d P.EMPTY nil
+		    val newd = if d = P.LEFT orelse d = P.RIGHT
+				   then [P.UP,P.DOWN]
+			       else [P.LEFT,P.RIGHT]
 		in
-		    wall (Random.int 4)
+		    child (n-1) (c+1) 1 newd news
+		end
+	      | child n c v dlist slist =
+		let
+		    val d = List.nth(dlist,Random.int (List.length dlist))
+		    val start = List.nth(slist,Random.int(List.length dlist)) (* letzten beiden net !! *)
+		    val l = Random.int ((rows + cols) div 10)
+		    val e = case Random.int 2 of 
+			      0 => P.WALL
+			    | 1 => P.EMPTY
+			    | _ => assert false
+		    val news = setWall start l d e nil
+		    val _ = Inspector.inspect news
+		    val newd = if d = P.LEFT orelse d = P.RIGHT
+				   then [P.UP,P.DOWN]
+			       else [P.LEFT,P.RIGHT]
+		in
+		    if e = P.EMPTY
+			then child (n-1) (c+1) 1 newd news
+		    else child (n-1) (c+1) (v+1) newd news
 		end
 
-	    fun setWalls n = if n = 0
-				 then ()
-			     else (chooseWall ();
-				   setWalls (n-1))
+	    (** [child n c v dlist slist] builds a child-wall. n ist zahl der noch
+	        zu machenden kinder
+	        c ist die zahl der schon gemachten kinder
+		v ist die zahl der bisher visible kinder
+		dlist ist die liste der richtungen für child
+		slist ist die liste der startpunkte für child *)
 
-	    fun startPointTest startlist = true (* TODO: implementation *)
+	    fun parent () =
+		let
+		    val d = case Random.int 4 of
+			0 => P.UP
+		      | 1 => P.DOWN
+		      | 2 => P.LEFT
+		      | 3 => P.RIGHT
+		      | _ => assert false
+		   
+		    val newd = if d = P.LEFT orelse d = P.RIGHT
+				   then [P.UP,P.DOWN]
+			       else [P.LEFT,P.RIGHT]
+
+		    val news = setWall ((rows div 4) + Random.int (rows div 2) ,(cols div 4) + Random.int (cols div 2)) 
+			               (Random.int ((rows+cols) div 10)) 
+				       d 
+				       P.WALL 
+				       nil
+		in
+		    child walls 1 1 newd news
+		end
+
+ 	    fun startPointTest(r,c,d)  = Array2.sub(arena,r,c) = P.EMPTY 
+	    (* TODO: implementation *)
 
 	    fun startpoints 0 xs = xs
 	      | startpoints p xs = 
 		let
-		    val (rs,cs) = (Random.int maxR,Random.int maxC)
-		    val d = case Random.int 4 of
-			         0 => P.UP
-			       | 1 => P.DOWN
-			       | 2 => P.LEFT
-			       | _ => P.RIGHT
+		    val (r,c) = (Random.int rows,Random.int cols)
+		    val d = 
+			case Random.int 4 of
+			    0 => P.UP
+			  | 1 => P.DOWN
+			  | 2 => P.LEFT
+			  | 3 => P.RIGHT
+			  | _ => assert false
 		in
-		    if startPointTest(rs,cs,d)
-			then startpoints (p-1) ((rs,cs,d)::xs)
+		    if startPointTest(r,c,d)
+			then startpoints (p-1) (((r,c),d)::xs)
 		    else startpoints p xs
 		end
 
-	    fun correctionTest a = true (* TODO: implementation *)
-		
 	in
-	    (setLimit ();
-	     setWalls (Random.int walls);
-	     if correctionTest arena
-		 then (arena,startpoints players nil)
-	     else random {dimensions,players})
+	     parent ();
+	     (arena,startpoints players nil)
 	end
-*)
-
-    fun random {dimensions : int * int,players,walls} = 
-	let
-	    val (maxR,maxC) = dimensions
-	    val arena = Array2.array(maxR,maxC,P.EMPTY)
-	    (* initialising an empty arena with dimensions [dimensions] *)
-
-	    fun setLimit () = (* set a wall round the level *)
-		let
-		    fun horizontal r = 
-			if r = maxR
-			    then (Array2.update(arena,maxR-1,0,P.WALL);
-				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
-			else (Array2.update(arena,r,0,P.WALL);
-			      Array2.update(arena,r,maxC-1,P.WALL);
-			      horizontal(r + 1))
-		    fun vertical c = 
-			if c = maxC 
-			    then (Array2.update(arena,0,maxC-1,P.WALL);
-				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
-			else (Array2.update(arena,0,c,P.WALL);
-			      Array2.update(arena,maxR-1,c,P.WALL);
-			      vertical(c + 1))
-		in
-		    (horizontal (0); vertical (0))
-		end
-
-	    val startpointlist = nil
-
-	in
-	    setLimit ();
-	    (arena,startpointlist)
-	end
-
-
-
 
     fun placeSnakes (a,snakes) =
 	let
