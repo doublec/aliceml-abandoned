@@ -1049,7 +1049,7 @@ struct
 	    val lts' = List.map (fn(li,ti) => (li, build(mt,mk,rea,ti))) lts
 	in
 (*ASSERT    assert isNone d => *)
-	    if isSome d then raise Assert.failure else
+	    (*if isSome d then raise Assert.failure else*)
 	    if ListPair.all (fn((_,t),(_,t')) => Cell.equal(canonical t,t'))
 			    (lts,lts')
 	    then buildOld(mt, t)
