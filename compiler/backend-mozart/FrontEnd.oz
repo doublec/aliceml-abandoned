@@ -51,6 +51,7 @@ define
 			   'HandleExp': handleExp
 			   'LetExp': letExp
 			   'Match': match
+			   'WildPat': wildPat
 			   'LitPat': litPat
 			   'VarPat': varPat
 			   'ConPat': conPat

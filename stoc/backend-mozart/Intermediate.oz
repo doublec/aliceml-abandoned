@@ -37,7 +37,8 @@
 %% <field exp> ::= field(<info> <lab> <exp>)
 %% <match> ::= match(<info> <pat> <exp>)
 %%
-%% <pat> ::= litPat(<info> <lit>)
+%% <pat> ::= wildPat(<info>)
+%%        |  litPat(<info> <lit>)
 %%        |  varPat(<info> <id>)
 %%        |  conPat(<info> <long id> <optional pat>)
 %%        |  tupPat(<info> [<pat>])
@@ -102,6 +103,7 @@ define
       [] raiseExp(I _) then I
       [] handleExp(I _ _ _) then I
       [] letExp(I _ _) then I
+      [] wildPat(I) then I
       [] litPat(I _) then I
       [] varPat(I _) then I
       [] conPat(I _ _) then I
