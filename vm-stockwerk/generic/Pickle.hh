@@ -19,9 +19,10 @@
 #pragma interface "generic/Pickle.hh"
 #endif
 
-// pickle    ::= int | chunk | block | tuple | closure | transform
+// pickle    ::= int | chunk | unique | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>
 // chunk     ::= CHUNK size <byte>*size
+// unique    ::= UNIQUE (chunk|reference)
 // size      ::= <uint>
 // block     ::= BLOCK label size field*size
 // tuple     ::= TUPLE size field*size
@@ -38,6 +39,7 @@ public:
     POSINT,
     NEGINT,
     CHUNK,
+    UNIQUE,
     BLOCK,
     TUPLE,
     CLOSURE,
