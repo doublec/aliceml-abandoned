@@ -13,10 +13,14 @@
 ##   $Revision$
 ## 
 
-TOPDIR = ..
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-include $(TOPDIR)/Makefile.vars
-include $(TOPDIR)/Makefile.rules
+BUILDTOP = ..
+SRCTOP = $(srcdir)/..
+
+include $(BUILDTOP)/Makefile.vars
+include $(SRCTOP)/Makefile.rules
 
 LIGHTNING_SOURCES0 = JITStore.cc
 
@@ -46,7 +50,10 @@ veryclean: clean
 distclean: veryclean
 	rm -f StoreConfig.hh Makefile.depend
 
+Makefile: Makefile.in config.status
+	./config.status
+
 Makefile.depend: Makefile $(SOURCES) StoreConfig.hh
-	$(MAKEDEPEND) $(SOURCES) StoreConfig.cc > $@
+	$(MAKEDEPEND) $(SOURCES:%=$(srcdir)/%) $(srcdir)/StoreConfig.cc > $@
 
 include Makefile.depend

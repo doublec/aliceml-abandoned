@@ -12,10 +12,14 @@
 ##   $Revision$
 ## 
 
-TOPDIR = ..
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-include $(TOPDIR)/Makefile.vars
-include $(TOPDIR)/Makefile.rules
+BUILDTOP = ..
+SRCTOP = $(srcdir)/..
+
+include $(BUILDTOP)/Makefile.vars
+include $(SRCTOP)/Makefile.rules
 
 SOURCES = \
 	Outline.cc Debug.cc RootSet.cc UniqueString.cc \
@@ -35,7 +39,10 @@ veryclean: clean
 distclean: veryclean
 	rm -f Makefile.depend
 
+Makefile: Makefile.in config.status
+	./config.status
+
 Makefile.depend: Makefile $(SOURCES)
-	$(MAKEDEPEND) $(SOURCES) > $@
+	$(MAKEDEPEND) $(SOURCES:%=$(srcdir)/%) > $@
 
 include Makefile.depend

@@ -14,22 +14,30 @@
 ifdef WINDOWS
 EXTRA_MACHINE_FLAGS = -mno-cygwin
 EXTRA_LIBS = -lwsock32 -lmsvcrt
-ZLIBDIR = $(TOPDIR)/../alice/support/install/mingw32
+SUPPORTDIR = $(BUILDTOP)/../alice/support/install/mingw32
 ALICE_DLL_EXTRA_LDFLAGS = --image-base=1010000
 JAVA_DLL_EXTRA_LDFLAGS = --image-base=1020000
 else
 EXTRA_MACHINE_FLAGS = 
 EXTRA_LIBS = -lm -ldl
 EXTRA_LDFLAGS = -Wl,--export-dynamic -Ur
-ZLIBDIR = $(TOPDIR)/../alice/support/install/linux
+SUPPORTDIR = $(BUILDTOP)/../alice/support/install/linux
 endif
 
+DEFINES =
+INCLUDES = -I$(SRCTOP) -I$(BUILDTOP) -I$(SUPPORTDIR)/include
+
 ifeq ($(PROFILE), 1)
-DEFINES = -DPROFILE=1
+DEFINES += -DPROFILE=1
 else
-DEFINES = -DPROFILE=0
+DEFINES += -DPROFILE=0
 endif
-INCLUDES = -I$(TOPDIR) -I$(ZLIBDIR)/include
+
+ifeq ($(LIGHTNING), 1)
+DEFINES += -DLIGHTNING=1
+else
+DEFINES += -DLIGHTNING=0
+endif
 
 MACHINE_FLAGS = -mcpu=pentium $(EXTRA_MACHINE_FLAGS)
 

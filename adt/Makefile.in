@@ -11,13 +11,17 @@
 ##   $Revision$
 ## 
 
-TOPDIR = ..
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-include $(TOPDIR)/Makefile.vars
-include $(TOPDIR)/Makefile.rules
+BUILDTOP = ..
+SRCTOP = $(srcdir)/..
 
-SRCS = ChunkMap.cc Outline.cc
-OBJS = $(SRCS:%.cc=%.o)
+include $(BUILDTOP)/Makefile.vars
+include $(SRCTOP)/Makefile.rules
+
+SOURCES = ChunkMap.cc Outline.cc
+OBJS = $(SOURCES:%.cc=%.o)
 
 all: $(OBJS)
 
@@ -29,7 +33,10 @@ veryclean: clean
 distclean: veryclean
 	rm -f Makefile.depend
 
+Makefile: Makefile.in config.status
+	./config.status
+
 Makefile.depend: Makefile $(SRCS)
-	$(MAKEDEPEND) $(SRCS) > $@
+	$(MAKEDEPEND) $(SOURCES:%=$(srcdir)/%) > $@
 
 include Makefile.depend
