@@ -12,13 +12,7 @@
  *   $Revision$
  *)
 
-(* How to start the system: C-u M-x run-sml RET stot RET --rtt-level=full *)
-
 TextIO.print "hello, world\n";
-
-import "x-alice:/lib/tools/Inspector"
-
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 val inspect = Inspector.inspect
 
@@ -27,22 +21,59 @@ inspect ({hello = "hello, world"}, 3 + 8);
 val rec infiniteList = 1::infiniteList;
 inspect infiniteList;
 
+open Time;
+
+inspect (alarm (Time.fromMilliseconds 2000));
+
 
 (***********************************************************************
- * Futures and Concurrency
+ * Laziness
  **********************************************************************)
 
-(*TODO*)
-
 open Future
-open Promise
+
+fun fib () =
+    let
+	fun gen (a, b) = byneed (fn () => a::gen (b, a + b))
+    in
+	gen (1, 1)
+    end
+
+val fibs = fib ()
+
+Inspector.inspect fibs;
+
+val _ = List.take (fibs, 5)
+
+val f: int = byneed (fn () => raise (TextIO.print "hello, world\n"; Match));
+
+Future.await f handle e => (Inspector.inspect e; 1);
+
+
+val hole: int = Hole.hole ()
+
+Inspector.inspect hole;
+
+val future = Hole.future (hole)
+
+Inspector.inspect future;
+
+Hole.fill (hole, 17);
 
 
 (***********************************************************************
  * Components
  **********************************************************************)
 
-(*TODO*)
+(* stoc -c MY_COMPONENT-sig.aml *)
+(* stoc -c MyComponent.aml *)
+
+import "/home/kornstae/stockhausen/doc/samples/MyComponent"
+
+import structure MyComponent
+from "/home/kornstae/stockhausen/doc/samples/MyComponent"
+
+Inspector.inspect (MyComponent.fak 7);
 
 
 (***********************************************************************
@@ -50,109 +81,51 @@ open Promise
  **********************************************************************)
 
 (*
- * Part 1:
  * Packing and unpacking of a simple value.
- * Suspensions are kept inside the package.
  *)
 
-val  susp  = byneed(fn() => print "Welcome to the world of packages!\n")
-val  value = {a = 0, b = "Knob the dopp.", c = susp, d = [4, 0, 2, 42]}
-type ty    = {a : int, b : string, c : unit, d : int list}
+structure PackVal   = Package.PackVal
+structure UnpackVal = Package.UnpackVal
 
-structure P = Package.PackVal(val x = value type t = ty)
+val  value = { a = 0,     b = "hello",   c = [4, 0, 2, 42] }
+type ty    = { a : int,   b : string,    c : int list      }
 
-inspect P.package;
+structure P = PackVal(val x = value type t = ty)
 
-structure X = Package.UnpackVal(val package = P.package type t = ty)
+Inspector.inspect P.package;
+
+structure X = UnpackVal(val package = P.package type t = ty)
 val value' = X.x
 
-val _ = print(if #b value' = #b value then "Yeah!\n" else raise Fail "Ouch!")
+Inspector.inspect value';
 
-val _ = #c value' = ()
-
-
-(*
- * Part 2:
- * Packing and unpacking of a function.
- *)
-
-fun fib 0 = 0
-|   fib 1 = 1
-|   fib n = fib(n-1) + fib(n-2)
-
-structure P = Package.PackVal(val x = fib type t = int->int)
-structure X = Package.UnpackVal(val package = P.package type t = int->int)
-
-val _ = print("fib 10 = " ^ Int.toString(X.x 10) ^ "\n")
+structure X = UnpackVal(val package = P.package type t = int)
+val value' = X.x
 
 
 (*
- * Part 3:
- * Packing and unpacking of a polymorphic function.
- * We have to resort to modules to do that.
- * Type can be specified less general at unpacking
- * (ie. usual enrichment rules apply).
+ * Packing and unpacking of a polymorphic function (via modules).
+ * Type can be more specific at unpacking.
  *)
 
-structure P         = Package.Pack(structure X = (val f = length)
-				   signature S = (val f : 'a list -> int))
-structure Length    = Package.Unpack(val package = P.package
-				     signature S = (val f: 'a list -> int))
-structure IntLength = Package.Unpack(val package = P.package
-				      signature S = (val f: int list -> int))
+structure P          = Package.Pack(structure X = (val f = length)
+				    signature S = (val f : 'a list -> int))
+
+structure Length     = Package.Unpack(val package = P.package
+				      signature S = (val f: 'a list -> int))
+structure IntLength  = Package.Unpack(val package = P.package
+				       signature S = (val f: int list -> int))
 structure RealLength = Package.Unpack(val package = P.package
 				      signature S = (val f: real list -> int))
 
-structure _ = Package.Unpack(val package = P.package
-			     signature S = (val f: real option -> int))
+structure _ =
+    Package.Unpack(val package = P.package
+		   signature S = (val f: real option -> int))   (* Mismatch *)
 
-val _  = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
-val _  = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
-val _  = print("length [1,2,1] = " ^ Int.toString(RealLength.f [1,2,1]) ^ "\n")
+val _ = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
+val _ = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
 
-
-(*
- * Part 4:
- * Packing and unpacking of an abstract type.
- * The unpacked type is compatible with the original one.
- *)
-
-signature NUM =
-    sig
-	type t
-	fun fromInt : int -> t
-	fun toInt : t -> int
-	fun add : t * t -> t
-    end
-
-structure Num :> NUM =
-    struct
-	type t = int
-	fun toInt n   = n
-	fun fromInt n = n
-	val add       = op+
-    end
-
-structure P    = Package.Pack(structure X = Num
-			      signature S = NUM where type t = Num.t)
-structure Num' = Package.Unpack(val package = P.package
-				signature S = NUM where type t = Num.t)
-structure Num'' = Package.Unpack(val package = P.package
-				 signature S = NUM)
-structure P'   = Package.Pack(structure X = Num''
-			      signature S = NUM where type t = Num''.t)
-structure _ = Package.Unpack(val package = P'.package
-			     signature S = NUM where type t = Num.t)
-
-Num'.add(Num'.fromInt 1, Num.fromInt 2);
-
-Num''.add(Num''.fromInt 1, Num.fromInt 2); (* error *)
-
-val n1 = Num.fromInt 2
-val n2 = Num'.fromInt 53
-val n3 = Num.add(n1,n2)
-val _  = print("2 + 53 = " ^ Int.toString(Num'.toInt n3) ^ "\n")
-
+val _ = print("length [1,2,1] = " ^ Int.toString(RealLength.f [1,2,1]) ^ "\n")
 
 (*
  * Packing a datatype.
@@ -178,45 +151,7 @@ datatype t = A | B of int
 structure S' = Package.Unpack(val package = P.package
 			      signature S = sig val x: t end)
 
-inspect S'.x;
-
-(*
- * Part 5:
- * Packing of functors.
- *)
-
-functor Hello(val who : string) =
-    struct
-	val _ = print("Hello " ^ who ^ "!\n")
-    end
-
-signature HELLO = fct(val who : string) -> any
-
-structure P      = Package.Pack(structure X = Hello signature S = HELLO)
-structure Hello' = Package.Unpack(val package = P.package
-				  signature S = HELLO)
-
-structure _      = Hello(val who = "World")
-
-
-(*
- * Part 6:
- * Packing of signatures.
- * Signatures are first-class and can be packed.
- * We can unpack packages with statically unknown signatures.
- *)
-
-signature T      = fct(_ : any) -> sig    type t       end
-structure X :> T = fct(_ : any) => struct type t = int end
-
-structure PM     = Package.Pack(structure X = X signature S = T)
-structure PS     = Package.Pack(structure X = (signature U = T)
-				signature S = (signature U))
-
-structure Sig = Package.Unpack(val package = PS.package
-			       signature S = (signature U))
-structure Mod = Package.Unpack(val package = PM.package
-			       signature S = Sig.U)
+Inspector.inspect S'.x;
 
 
 (***********************************************************************
@@ -224,61 +159,6 @@ structure Mod = Package.Unpack(val package = PM.package
  **********************************************************************)
 
 (*
- * Part 1:
- * Pickling and unpickling of a simple value.
- * Pickling suspends on futures.
- *)
-
-val  susp  = byneed(fn() => print "Welcome to the world of pickling!\n")
-val  value = {a = 0, b = "Knob the dopp.", c = susp, d = [4, 0, 2, 42]}
-type ty    = {a : int, b : string, c : unit, d : int list}
-
-val file = "value." ^ Pickle.extension
-structure _ = Pickle.SaveVal(val file = file val x = value type t = ty)
-structure X = Pickle.LoadVal(val file = file type t = ty)
-
-val _ = print(if #b X.x = #b value then "Yezz!\n" else raise Fail "Ouch!")
-
-
-(*
- * Part 2:
- * Pickling and unpickling of a function.
- *)
-
-fun fib 0 = 0
-|   fib 1 = 1
-|   fib n = fib(n-1) + fib(n-2)
-
-val file = "fib." ^ Pickle.extension
-structure _ = Pickle.SaveVal(val file = file val x = fib type t = int->int)
-structure X = Pickle.LoadVal(val file = file type t = int->int)
-
-val _ = print("fib 10 = " ^ Int.toString(X.x 10) ^ "\n")
-
-
-(*
- * Part 3:
- * Pickling and unpickling of a polymorphic function.
- * We have to resort to modules to do that.
- * Type can be specified less general at loading
- * (ie. usual enrichment rules apply).
- *)
-
-val file = "Polymorphic." ^ Pickle.extension
-structure _         = Pickle.Save(val file = file
-				  structure X = (val f = length)
-				  signature S = (val f : 'a list -> int))
-structure Length    = Pickle.Load(val file = file
-				  signature S = (val f : 'a list -> int))
-structure IntLength = Pickle.Load(val file = file
-				  signature S = (val f : int list -> int))
-
-val _  = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
-val _  = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
-
-
-(*
- * Part 4:
  * Pickling and unpickling of an abstract type.
  * The unpickled type is compatible with the original one.
  *)
@@ -300,20 +180,20 @@ structure Num :> NUM =
     end
 
 val file = "Num." ^ Pickle.extension
-structure  _   = Pickle.Save(val file = file
-			     structure X = Num
-			     signature S = NUM where type t = Num.t)
+structure  _ = Pickle.Save(val file = file
+			   structure X = Num
+			   signature S = NUM where type t = Num.t)
+
 structure Num' = Pickle.Load(val file = file
 			     signature S = NUM where type t = Num.t)
+structure Num'' = Pickle.Load(val file = file
+			      signature S = NUM)
 
-val n1 = Num.fromInt 2
-val n2 = Num'.fromInt 53
-val n3 = Num.add(n1,n2)
-val _  = print("2 + 53 = " ^ Int.toString(Num'.toInt n3) ^ "\n")
+Num'.add(Num'.fromInt 1, Num.fromInt 2);
 
+Num''.add(Num''.fromInt 1, Num.fromInt 2); (* error *)
 
 (*
- * Part 5:
  * Pickling of functors.
  *)
 
@@ -336,7 +216,6 @@ val       _        = print(Hello.s)
 
 
 (*
- * Part 6:
  * Pickling of signatures.
  * Signatures are first-class and can be pickled.
  * We can load pickles with statically unknown signatures.
@@ -360,8 +239,8 @@ structure Mod = Pickle.Load(val file = modfile
 			    signature S = Sig.U)
 
 (*
- * Part 7:
  * Components are pickles and vice versa!
+ *
  * Loading a component as a pickle will execute it and return the
  * component's content as a structure.
  * A structure pickle can be used as a component. It is a special case of
@@ -384,26 +263,37 @@ structure _ = Pickle.Save(val file = file
 			  structure X = Url'
 			  signature S = (structure Url : URL))
 
+import "/home/kornstae/stockhausen/doc/samples/Url"
+
 
 (***********************************************************************
  * Constraints
  **********************************************************************)
 
 import structure FD       from "x-alice:/lib/constraints/FD"
-(*import structure Space    from "x-alice:/lib/constraints/Space"*)
-import structure Search   from "x-alice:/lib/constraints/Search"
-import structure Explorer from "x-alice:/lib/constraints/Explorer"
 
 val x = FD.range (1, 5)
 val y = FD.range (1, 5)
 
-inspect (x, y);
+Inspector.inspect (x, y);
 
 FD.less (x, y);
 
 FD.notequal (x, FD.fromInt 3);
 
-FD.equal (x, FD.fromInt 1);
+FD.equal (x, FD.fromInt 4);
+
+
+(***********************************************************************
+ * Constraint Solving
+ **********************************************************************)
+
+import structure Search   from "x-alice:/lib/constraints/Search"
+import structure Explorer from "x-alice:/lib/constraints/Explorer"
+
+(*
+ * Send + More = Money
+ *)
 
 fun money() =
     let
@@ -427,9 +317,11 @@ fun money() =
 	{S, E, N, D, M, O, R, Y}
     end
 
-(* Inspect the solution *)
-(*val _ = Inspector.inspect(Search.searchAll money)*)
 val _ = Explorer.exploreAll money
+
+(*
+ * Aligning for a Photo
+ *)
 
 structure Photo =
     struct
@@ -482,15 +374,8 @@ structure Photo =
 		({alice, bert, chris, deb, evan}, ful, sat)
 	    end
 
-	fun pruner((_, _, a), (_, _, b)) = FD.lessEq(a, b);
-
-	(* Explore the Solution(s) *)
-	val _ = Explorer.exploreBest(photo, pruner)
+	fun pruner((_, _, a), (_, _, b)) = FD.lessEq(a, b)
     end
 
-
-(***********************************************************************
- * Interoperability with Oz
- **********************************************************************)
-
-(*TODO*)
+(* Explore the Solution(s) *)
+val _ = Explorer.exploreBest(Photo.photo, Photo.pruner)
