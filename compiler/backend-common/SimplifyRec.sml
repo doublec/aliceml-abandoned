@@ -69,11 +69,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val id = freshId (id_info info)
 	    in
-		(VarPat (info, id), VarExp (info, ShortId (id_info info, id)))
+		(VarPat (info, id),
+		 VarExp (info, ShortId (longid_info info, id)))
 	    end
 	  | patToExp (pat as LitPat (info, lit)) = (pat, LitExp (info, lit))
 	  | patToExp (pat as VarPat (info, id)) =
-	    (pat, VarExp (info, ShortId (id_info info, id)))
+	    (pat, VarExp (info, ShortId (longid_info info, id)))
 	  | patToExp (pat as TagPat (info, lab, NONE, _)) =
 	    (pat, TagExp (info, lab, false))
 	  | patToExp (TagPat (info, lab, SOME pat, isNAry)) =
@@ -134,7 +135,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		(VecPat (info, pats'), VecExp (info, exps'))
 	    end
 	  | patToExp (pat as AsPat (info, id, _)) =
-	    (pat, VarExp (info, ShortId (id_info info, id)))
+	    (pat, VarExp (info, ShortId (longid_info info, id)))
 
 	fun derec' (JokPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (info, lit1), LitExp (_, lit2)) =

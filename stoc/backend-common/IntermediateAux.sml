@@ -16,6 +16,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	open I
 
 	fun id_info {region, typ = _} = {region = region}
+	fun longid_info {region, typ} = {region = region, typ = SOME typ}
 
 	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
@@ -255,10 +256,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		    List.map
 		    (fn (id, id', info) =>
 		     let
-			 val info' = id_info info
-			 val exp = VarExp (info, ShortId (info', id'))
+			 val exp =
+			     VarExp (info, ShortId (longid_info info, id'))
 		     in
-			 ValDec (info', VarPat (info, id), exp)
+			 ValDec (id_info info, VarPat (info, id), exp)
 		     end) subst
 	    in
 		case decs of

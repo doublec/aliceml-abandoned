@@ -132,17 +132,19 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	(* Translation *)
 
-	fun translateLongid (ShortId (_, id)) = (nil, id)
-	  | translateLongid (LongId (info, longid, Lab (_, label))) =
+	fun translateLongid (ShortId (info, id)) = (nil, id, valOf (#typ info))
+	  | translateLongid (LongId ({region, typ = typOpt}, longid,
+				     Lab (_, label))) =
 	    let
-		val (stms, id) = translateLongid longid
+		val (stms, id, typ) = translateLongid longid
+		val info = {region = region}
 		val id' = Id (info, Stamp.new (), Name.InId)
-		val n = ~1   (*--** compute *)
+		val n = labelToIndex (typ, label)
 		val stm =
-		    O.ValDec (stm_info (#region info), id',
+		    O.ValDec (stm_info region, id',
 			      O.SelAppExp (info, label, n, id))
 	    in
-		(stms @ [stm], id')
+		(stms @ [stm], id', valOf typOpt)
 	    end
 
 	fun decsToIdExpList (O.ValDec (_, id, exp')::rest, region) =
@@ -214,8 +216,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		List.foldr
 		(fn ((longid1, longid2), rest) =>
 		 let
-		     val (stms1, id1) = translateLongid longid1
-		     val (stms2, id2) = translateLongid longid2
+		     val (stms1, id1, _) = translateLongid longid1
+		     val (stms2, id2, _) = translateLongid longid2
 		 in
 		     (*--** the following ConTest has wrong arity *)
 		     stms1 @ stms2 @
@@ -225,7 +227,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
 	    let
-		val (stms, id) = translateLongid longid
+		val (stms, id, _) = translateLongid longid
 	    in
 		(stms @ translateCont cont, id)
 	    end
@@ -285,7 +287,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
-		val (stms, id) = translateLongid longid
+		val (stms, id, _) = translateLongid longid
 	    in
 		stms @ f (O.VarExp (id_info info, id))::translateCont cont
 	    end
@@ -295,7 +297,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    translateCont cont
 	  | translateExp (ConExp (info, longid, isNAry), f, cont) =
 	    let
-		val (stms, id) = translateLongid longid
+		val (stms, id, _) = translateLongid longid
 	    in
 		stms @ f (O.ConExp (id_info info, id,
 				    makeConArity (#typ info, isNAry)))::
@@ -441,7 +443,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, args) = unfoldArgs (exp2, rest, isNAry)
-		val (stms1, id1) = translateLongid longid
+		val (stms1, id1, _) = translateLongid longid
 		val (idTestOpt, exp') =
 		    conAppExp (id_info info, id1, args,
 			       makeConArity (#typ info', isNAry))
@@ -576,8 +578,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (HandleExp (info, exp, matches), f, cont) =
 	    let
 		val info' = infoExp exp
-		val info'' = id_info info'
-		val id' = freshId info''
+		val id' = freshId (id_info info')
 		val stamp = Stamp.new ()
 		val cont' =
 		    Goto [O.EndHandleStm (stm_info (#region info), stamp)]
@@ -587,7 +588,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    {region = #region info, typ = PreboundType.typ_exn}
 		val catchId = freshId (id_info catchInfo)
 		val catchVarExp =
-		    VarExp (catchInfo, ShortId (id_info catchInfo, catchId))
+		    VarExp (catchInfo,
+			    ShortId (longid_info catchInfo, catchId))
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
 			      (#region (infoExp exp), pat,
@@ -597,7 +599,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    simplifyCase (#region info, catchVarExp, matches',
 				  catchId, true)
 		val contBody =
-		    translateExp (VarExp (info', ShortId (info'', id')),
+		    translateExp (VarExp (info',
+					  ShortId (longid_info info', id')),
 				  f, cont)
 	    in
 		[O.HandleStm (stm_info (#region info), tryBody,
@@ -789,13 +792,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateTest (ConTest longid, _, mapping) =
 	    let
-		val (stms, id) = translateLongid longid
+		val (stms, id, _) = translateLongid longid
 	    in
 		(stms, O.ConTest id, nil, mapping)
 	    end
 	  | translateTest (ConAppTest (longid, args, conArity), pos, mapping) =
 	    let
-		val (stms, id) = translateLongid longid
+		val (stms, id, _) = translateLongid longid
 		val (idArgs, mapping') =
 		    translateTypArgs (args, longidToSelector longid::pos,
 				      mapping)
