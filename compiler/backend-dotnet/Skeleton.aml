@@ -3,12 +3,24 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import
+    structure TextIO
+from "../../lib/system/TextIO"
+
+import
+    structure OS
+from "../../lib/system/OS"
+
+import
+    signature SKELETON
+from "SKELETON-sig"
 
 structure Skeleton :> SKELETON =
     struct

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -60,6 +60,58 @@
  * Entsprechend dominierte Hilfsprozeduren sollen mit dem Flag AuxiliaryOf
  * annotiert werden.
  *)
+
+import
+    structure MkHashImpMap
+from "../../lib/utility/MkHashImpMap"
+
+import
+    structure Url
+from "../../lib/utility/Url"
+
+import
+    structure StampMap
+from "../common/StampMap"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    structure IL
+from "IL"
+
+import
+    structure System
+from "System"
+
+import
+    structure Alice
+from "Alice"
+
+import
+    structure Builtins
+from "Builtins"
+
+import
+    structure CodeStore
+from "CodeStore"
+
+import
+    signature CODE_GEN_PHASE
+from "CODE_GEN_PHASE-sig"
 
 structure CodeGenPhase :> CODE_GEN_PHASE =
     struct

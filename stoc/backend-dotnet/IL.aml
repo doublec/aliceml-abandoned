@@ -3,12 +3,32 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import
+    structure TextIO
+from "../../lib/system/TextIO"
+
+import
+    structure MkHashImpMap
+from "../../lib/utility/MkHashImpMap"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    signature IL
+from "IL-sig"
 
 structure IL :> IL =
     struct

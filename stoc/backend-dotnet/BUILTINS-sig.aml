@@ -3,12 +3,16 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import
+    structure IL
+from "IL"
 
 signature BUILTINS =
     sig
