@@ -438,7 +438,7 @@ structure CodeEmitter :> CODE_EMITTER =
 	in
 	    output(doc, "val _ = Gtk.widgetAddAccelerator("^id^",\""^
 		   signal^"\",Helpers.accelGroup,Key.keyvalToInt "^key^
-		   ",Gdk.IntToGdkModifierType ("^mods^"),Gtk.ACCEL_VISIBLE)\n")
+		   ","^mods^",Gtk.GtkAccelFlagsToInt Gtk.ACCEL_VISIBLE)\n")
 	end
     fun processAccelerators(doc, class, id, accels) =
 	app (fn a => processAccelerator(doc, class, id, a)) accels
