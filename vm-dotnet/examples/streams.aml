@@ -1,6 +1,11 @@
 import structure TextIO from "x-alice:TextIO.dll"
 import structure Tools  from "x-alice:Tools.dll"
+import val readLine     from "x-alice:Dialog.dll"
 
+import
+ val IntFromString
+ val StringTokens
+from "x-alice:Helper.dll"
 
 open TextIO
 open Promise
@@ -38,7 +43,26 @@ and map' f (x::xs, p)		= map' f (xs, continue (f x) p)
   | map' f ( nil,  p)		= finish p
 
 
-fun main() =
+fun loop(p1, p2) =
+    case (readLine ())
+      of ""   => ()
+       | "\n" => loop(p1,p2)
+       | s    =>
+    case StringTokens(s, " ")
+      of nil     => loop(p1,p2)
+       | [s1,s2] =>
+    case (Int.fromString s1, Int.fromString s2)
+       of (SOME k, SOME n) =>
+	 let
+	     val p' = promise()
+	 in
+	     if k = 1 then
+		(fulfill(p1, n :: future p') ; loop(p',p2))
+	     else
+		(fulfill(p2, n :: future p') ; loop(p1,p'))
+	 end
+       | _ => loop(p1,p2)
+and main() =
     let
 	val p1		= promise()
 	val p2		= promise()
@@ -52,41 +76,17 @@ fun main() =
 
 	open Tools
 	val ty		= RecordTy #[("A",	ListTy IntTy),
-				     ("B",	ListTy IntTy),
 				     ("AplusB",	ListTy IntTy),
-				     ("AzipB",	ListTy IntTy),
 				     ("AtoChar",ListTy CharTy),
+				     ("AzipB",	ListTy IntTy),
+				     ("B",	ListTy IntTy),
 				     ("Bdiv10",	ListTy RealTy)
 				    ]
     in
-	Tools.inspect({A, B, AplusB, AzipB, AtoChar, Bdiv10}, ty) ;
+	Tools.inspect({A, B, AplusB, AtoChar, AzipB, Bdiv10}, ty) ;
 	loop(p1,p2)
     end
 
-and loop pp = 
-    ( print "Enter \"k n\" to put number n on stream k (k=1,2)\n"
-    ; loop' pp
-    )
-
-and loop'(p1,p2) =
-    case (print "> "; inputLine stdIn)
-      of ""   => ()
-       | "\n" => loop'(p1,p2)
-       | s    =>
-    case String.tokens Char.isSpace s
-      of non [_,_] => loop(p1,p2)
-       | [s1,s2]   =>
-    case (Int.fromString s1, Int.fromString s2)
-      of non (SOME(1|2), SOME _) => loop(p1,p2)
-       | (SOME k, SOME n)        =>
-	 let
-	     val p' = promise()
-	 in
-	     if k = 1 then
-		(fulfill(p1, n :: future p') ; loop'(p',p2))
-	     else
-		(fulfill(p2, n :: future p') ; loop'(p1,p'))
-	 end
-
-
 val _ = main()
+
+
