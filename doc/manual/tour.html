@@ -226,12 +226,12 @@ evaluation of the list, up to that element.</P>
 <P>We can define a lazy variant of the <TT>map</TT> function:</P>
 
 <PRE class=code>
-fun mapy f xs = lazy (case xs of nil    => nil
-                               | x::xs' => f x :: mapy f xs')
-<I>val mapy : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
+fun mapz f xs = lazy (case xs of nil    => nil
+                               | x::xs' => f x :: mapz f xs')
+<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
 
 <P>Note that the <TT>case</TT> expression must be nested inside the
-<TT>lazy</TT> expression - otherwise applying <TT>mapy</TT> would trigger
+<TT>lazy</TT> expression - otherwise applying <TT>mapz</TT> would trigger
 evaluation of the head of the list, to perform the necessary pattern matching.
 Function declarations support syntactic sugar that allows expressing the same
 definition more elegantly:</P>
@@ -241,8 +241,8 @@ fun lazy mapz f nil     = nil
   |      mapz f (x::xs) = f x :: mapz f xs
 <I>val mapz : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
 
-<P>This derived form is defined such that both definitions of <TT>mapy</TT> are
-equivalent. Let us apply <TT>mapy</TT> to the stream of natural numbers
+<P>This derived form is defined such that both definitions of <TT>mapz</TT> are
+equivalent. Let us apply <TT>mapz</TT> to the stream of natural numbers
 to calculate their factorities lazily:</P>
 
 <PRE class=code>
@@ -300,27 +300,110 @@ val it : int = 14</I></PRE>
 
 <?php section("concurrency", "concurrency") ?>
 
+<P>Alice extends SML with support for concurrency. Concurrency is light-weight:
+the system can handle tens or hundreds of thousands of concurrent threads.
+Concurrent programming in Alice is uniformly based on the model of
+<EM>futures</EM>.</P>
+
+<P>A concurrent thread can be initiated by means of the <TT>spawn</TT>
+expression:</P>
+
+<PRE class=code>
+spawn 45*68
+<I>val it : int = future</I></PRE>
+
+<P>In this example the value 45*68 is computed in a new thread. The result of
+the <TT>spawn</TT> expression is a <EM>future</EM>, a place-holder for the
+result of the concurrent computation. Once the result becomes available, the
+future will be globally replaced by the result. We say that threads are
+functional, in the sense that they have a result. That semantics becomes more
+obvious if we look at a thread that does not terminate immediately. For that
+purpose, let us define the naive version of the Fibonacci function, which has
+exponential complexity:</P>
+
 <PRE class=code>
 fun fib (0 | 1) = 1
   | fib n       = fib (n-1) + fib (n-2)
-</PRE>
+<I>val fib : int -> int = fn</I></PRE>
+
+<P>On an ordinary desktop PC, computing <TT>fib 35</TT> will take quite some
+time. We perform that computation concurrently:</P>
 
 <PRE class=code>
-spawn fib 30
-</PRE>
+val n = spawn fib 35
+<I>val n : int = future</I></PRE>
+
+<P>We get back a future, that we can look at using the Inspector:</P>
 
 <PRE class=code>
-inspect (List.tabulate (30, fn i => spawn fib i))
-</PRE>
+inspect n
+<I>val it : unit = ()</I></PRE>
 
+<P align=center><IMG src="inspector-conc-1.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>At first, the Inspector will display the value as a future, as shown above.
+Once the computation of the result finishes and the thread terminates, that
+future gets replaced by the thread's result. The Inspector will update its
+display accordingly:</P>
+
+<P align=center><IMG src="inspector-conc-2.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>The situation becomes more interesting if we start several threads at
+once:</P>
 
 <PRE class=code>
-inspect f;
-</PRE>
+inspect (List.tabulate (10, fn i => spawn fib (i+25)))
+<I>val it : unit = ()</I></PRE>
+
+<P>The individual entries from the small table we build are calculated
+concurrently and become available individually. At some point in time the
+Inspector window might display the following:</P>
+
+<P align=center><IMG src="inspector-conc-3.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>Futures can be passed around like ordinary values. Once an operation
+actually <EM>requests</EM> the value the future stands for, the corresponding
+thread will block until the future vanishes. This is known as <EM>data-flow
+synchronisation</EM> and is a powerful mechanism for high-level concurrent
+programming. As a trivial example, consider the following pair of concurrent
+producer and consumer that are connected through a message stream:</P>
 
 <PRE class=code>
-Future.await f handle e => (Inspector.inspect e; 1);
-</PRE>
+fun produce 0 = []
+  | produce n = spawn (Thread.sleep (Time.fromSeconds 2); n :: produce (n-1))
+<I>val produce : int -> int list = fn</I>
+fun consume (n::ns) = (print (Int.toString n ^ "\n"); consume ns)
+  | consume   nil   = ()
+<I>val consume : int list -> 'a = fn</I>
+spawn consume (produce 5)
+<I>val it : unit = future
+5
+4
+3
+2
+1</I></PRE>
+
+<!-- TODO: Reference? -->
+
+<P>What happens if a concurrent computation fails, e.g. by raising an exception?
+In that case the future will be <EM>failed</EM>. A failed future carries an
+exception indicating the cause of the failure. A failed future does not cause
+failure of a client by itself. Only when a client actually requests the failed
+future, the failure exception will be re-raised at the point of request:</P>
+
+<PRE class=code>
+spawn (raise Domain)
+<I>val it : 'a = future</I>
+[it]
+<I>val it : 'a list = [raise]</I>
+hd it + 1
+<I>uncaught exception Domain</I></PRE>
+
+<P>In the second output, the interpreter uses the keyword <TT>raise</TT> to
+indicate a failed future.</P>
+
+<P>See the <A href="futures.html">manual page</A> on futures for a detailed
+discussion of concurrency, futures, and failure.</P>
 
 
 
@@ -377,111 +460,81 @@ Port.send (p, 7);
 </PRE>
 
 
-<PRE class=code>
-inspect (Future.concur (fn () => Future.alarm (Time.fromMilliseconds 6000)));
-</PRE>
-
-
-<?php section("components", "components") ?>
-
-<PRE class=code>
-alicec MY_COMPONENT-sig.aml
-alicec MyComponent.aml</PRE>
-
-<PRE class=code>
-import "/home/kornstae/stockhausen/doc/samples/MyComponent"
-</PRE>
-
-<PRE class=code>
-import structure MyComponent from "/home/kornstae/stockhausen/doc/samples/MyComponent"
-</PRE>
-
-<PRE class=code>
-Inspector.inspect (MyComponent.fak 7);
-</PRE>
-
-
 <?php section("packages", "packages") ?>
 
-<PRE class=code>
-(*
- * Packing and unpacking of a simple value.
- *)
+<P>Its powerful static type system is one of the major pros of ML. However,
+there are programming tasks where it is not possible to perform all typing
+statically. For example, consider exchange of data structures between separate
+processes. To accompony such tasks of <EM>open programming</EM>, Alice
+complements its static type system with a controlled form of dynamic
+typing.</P>
 
-structure PackVal   = Package.PackVal
-structure UnpackVal = Package.UnpackVal
-
-val  value = { a = 0,     b = "hello",   c = [4, 0, 2, 42] }
-type ty    = { a : int,   b : string,    c : int list      }
-
-structure P = PackVal(val x = value type t = ty)
-
-Inspector.inspect P.package;
-
-structure X = UnpackVal(val package = P.package type t = ty)
-val value' = X.x
-
-Inspector.inspect value';
-
-structure X = UnpackVal(val package = P.package type t = int)
-val value' = X.x
-</PRE>
-
+<P>Alice provides the type <TT>package</TT> of dynamically typed values. A
+<EM>package</EM> essentially is a pair of a (higher-order) module and its
+signature. Packages are created using the <TT>pack</TT> expression:</P>
 
 <PRE class=code>
-(*
- * Packing and unpacking of a polymorphic function (via modules).
- * Type can be more specific at unpacking.
- *)
+val p = pack Word8 :> WORD
+<I>val p : package = package{|...|}</I></PRE>
 
-structure P          = Package.Pack(structure X = (val f = length)
-				    signature S = (val f : 'a list -> int))
+<P>This example injects the module <TT>Word8</TT> into a package. The signature
+constraint (the part following the <TT>:></TT>) is part of the pack expression.
+It specifies the package's signature. The packaged module must of course match
+that signature statically.<P>
 
-structure Length     = Package.Unpack(val package = P.package
-				      signature S = (val f: 'a list -> int))
-structure IntLength  = Package.Unpack(val package = P.package
-				       signature S = (val f: int list -> int))
-structure RealLength = Package.Unpack(val package = P.package
-				      signature S = (val f: real list -> int))
+<!--
+<P>Using the Inspector, we can look inside the package:</P>
+-->
 
-structure _ =
-    Package.Unpack(val package = P.package
-		   signature S = (val f: real option -> int))   (* Mismatch *)
-
-val _ = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
-val _ = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
-
-val _ = print("length [1,2,1] = " ^ Int.toString(RealLength.f [1,2,1]) ^ "\n")
-</PRE>
-
+<P>The package <TT>p</TT> may be passed to some client, which may unpack it as
+follows:</P>
 
 <PRE class=code>
-(*
- * Packing a datatype.
- *)
+structure Word' = unpack p : WORD
+<I>structure Word' : WORD</I></PRE>
 
-signature I =
-sig
-    datatype t = A | B of int
-    val x: t
-end
+<P>The <TT>unpack</TT> expression also requires a signature being specified.
+Unpacking involves a dynamic type check: to evaluate the expression, the
+package signature is matched against the specified target signature. If
+matching succeeds, the packaged module is returned. Otherwise, an exception is
+raised:</P>
 
-structure Y =
-struct
-    datatype t = A | B of int
-    val x = B 5
-end
+<PRE class=code>
+structure List' = unpack p : LIST
+<I>uncaught exception Mismatch</I></PRE>
 
-structure P = Package.Pack(structure X = Y
-			   signature S = I)
+<P>If unpacking succeeds, the client may use the <TT>Word'</TT> structure as
+usual. The static signature of <TT>Word'</TT> is determined by the target
+signature specified with <TT>unpack</TT>.</P>
 
-datatype t = A | B of int
+<P>Since modules can contain arbitrary values, any value can be wrapped up as
+packages. In particular, values can be given polymorphic type in packages:</P>
 
-structure Z = Package.Unpack(val package = P.package
-			     signature S = sig val x: t end)
+<PRE class=code>
+val p = pack (val x = length) :> (val x : 'a list -> int)
+<I>val p : package = package{|...|}</I></PRE>
 
-Inspector.inspect Z.x;
-</PRE>
+<P class=note>This example uses some <A href="modules.html#sugar">syntactic
+sugar</A> of Alice ML, which allows replacing <TT>struct</TT>...<TT>end</TT>
+and <TT>sig</TT>...<TT>end</TT> by <TT>(</TT>...<TT>)</TT>.</P>
+
+<P>Unpacking may specify a more restrictive target signature:</P>
+
+<PRE class=code>
+structure IntLength = unpack p : (val x : int list -> int)
+<I>structure IntLength : sig val x : int list -> int end</I>
+structure RealLength = unpack p : (val x : real list -> int)
+<I>structure RealLength : sig val x : real list -> int end</I></PRE>
+
+<P>The whole range of SML signature matching rules applies, so a package may
+have more components than required by the target signature, may have more
+general value types, or more specific type components, etc. Using packages
+hence is quite robust with respect to extensions.</P>
+
+<P>See the respective <A href="packages.html">manual page</A> for a more
+detailed look at the semantics of packages. Packages are the basis of several
+other features of Alice, in particular <A href="#pickling">pickling</A> and <A
+href="#distribution">distribution</A>.</P>
 
 
 <?php section("pickling", "pickling") ?>
@@ -572,6 +625,25 @@ structure Mod = Pickle.Load(val file = modfile
 			    signature S = Sig.U)
 </PRE>
 
+
+<?php section("components", "components") ?>
+
+<PRE class=code>
+alicec MY_COMPONENT-sig.aml
+alicec MyComponent.aml</PRE>
+
+<PRE class=code>
+import "/home/kornstae/stockhausen/doc/samples/MyComponent"
+</PRE>
+
+<PRE class=code>
+import structure MyComponent from "/home/kornstae/stockhausen/doc/samples/MyComponent"
+</PRE>
+
+<PRE class=code>
+Inspector.inspect (MyComponent.fak 7);
+</PRE>
+
 <PRE class=code>
 (*
  * Components are pickles and vice versa!
@@ -603,6 +675,7 @@ import "/home/kornstae/stockhausen/doc/samples/Url"
 
 
 <?php section("distribution", "distribution") ?>
+
 
 
 <?php section("constraints", "constraints") ?>
@@ -784,11 +857,25 @@ Explorer.exploreAll money
 
 <P align=center><IMG src="explorer.jpg" border=0 alt="Alice Explorer"></P>
 
-<P>Clicking on the only solution node in the tree (the green one) will open an
-Inspector window displaying the variable assignment of the solution.</P>
+<P>Clicking on the only solution node in the tree (the green diamond) will open
+an Inspector window displaying the variable assignment of the solution.</P>
 
 
 <?php section("interop", "interoperability") ?>
+
+<P>The Alice compiler generates Oz pickled functors (<TT>.ozf</TT> files). The
+Alice virtual machine is essentially a slightly beefed-up version of the Mozart
+VM. As such, it can also run ordinary Oz applications.</P>
+
+<P>More importantly, it is easily possible to create mixed Alice/Oz
+applications. Oz code can import Alice functors as if they were Oz functors.
+Alice can import Oz functors, if given an additional signature description file,
+which specifies the types of the entities imported.</P>
+
+<P>The possibility to mix Alice and Oz provides a smooth migration path for Oz
+projects that want to use Alice. It also allows escaping the statically typed
+world of ML for arbitrary subsystems, where that may be desirable. See the <A
+href="interop.html">manual page</A> on interoperability for more detail.</P>
 
 
 <?php footing() ?>
