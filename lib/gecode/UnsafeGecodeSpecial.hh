@@ -146,15 +146,13 @@ const BvarSel int2bvarsel[] =
     BVAR_MAX_MAX, BVAR_MAX_MIN,
     BVAR_MIN_MAX, BVAR_MIN_MIN,
     BVAR_NONE, BVAR_SIZE_MAX,
-    BVAR_SIZE_MIN, BVAR_WIDTH_MAX,
-    BVAR_WIDTH_MIN
+    BVAR_SIZE_MIN
   };
 
 const BvalSel int2bvalsel[] =
   {
     BVAL_MAX, BVAL_MED, BVAL_MIN,
-    BVAL_SPLIT_MAX, BVAL_SPLIT_MIN,
-    BVAL_VAL
+    BVAL_SPLIT_MAX, BVAL_SPLIT_MIN
   };
 
 const reltype int2reltype[] =

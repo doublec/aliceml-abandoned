@@ -50,6 +50,7 @@ structure Generator =
       let val n = Int.toString n in
           TextIO.output(f, "  DECLARE_INT(i"^n^", x"^n^");\n")
       end
+  
 
   fun outputDescription(n, f) =
       let val n = Int.toString n in
@@ -177,6 +178,11 @@ structure Generator =
 
   fun toUpper s = String.implode (map Char.toUpper (String.explode s))
 
+(*All non-method functions in the gecode API explicitly take a space pointer. 
+  It is not listed in the dsc file.
+  The only exception is the invocation of the fail() method of the parent Space, 
+  luckily the only void/void function, see hack below. 
+*)
   fun outputCall(f, class, fname, inargs, outarg) =                
       let
           val args = putCommas (List.mapi getVarName inargs)
@@ -187,12 +193,13 @@ structure Generator =
            case (class,outarg) of
              (NONE, Void) =>
              TextIO.output(f, 
-                           "  "^fname^"("^args^");\n"^
+             				(*Hack for fail() here*)
+                           "  "^fname^"("^(if args="" then "" else "s, ")^args^");\n"^
                            "  RETURN_UNIT;\n")
            | (NONE, (Int|UInt)) =>
-             TextIO.output(f, "  RETURN_INT("^fname^"("^args^"));\n")
+             TextIO.output(f, "  RETURN_INT("^fname^"(s,"^args^"));\n")
            | (NONE, Bool) =>
-             TextIO.output(f, "  RETURN_BOOL("^fname^"("^args^"));\n")
+             TextIO.output(f, "  RETURN_BOOL("^fname^"(s,"^args^"));\n")
            | (SOME "Space", Var v) =>
              let val typ = case v of IntVar => "intvar"
                                    | BoolVar => "boolvar"

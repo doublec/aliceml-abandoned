@@ -20,7 +20,7 @@ int GecodeSpace::new_intvar(DomSpec& ds) {
     EnlargeIntVarArray();
   }
   
-  IntVarArray tmp(1, ds);
+  IntVarArray tmp(this,1, ds);
   is[noOfIntVars] = tmp[0];
 
   noOfIntVars++;
@@ -34,7 +34,7 @@ int GecodeSpace::new_boolvar(void) {
     EnlargeIntVarArray();
   }
 
-  BoolVarArray tmp(1);
+  BoolVarArray tmp(this,1);
 
   is[noOfIntVars] = static_cast<IntVar>(tmp[0]);
 
@@ -46,7 +46,7 @@ int GecodeSpace::new_boolvar(void) {
 void GecodeSpace::EnlargeIntVarArray(void) {
   if (!enter()) return;
 
-  IntVarArray na(intArraySize*2, 0,0);
+  IntVarArray na(this,intArraySize*2, 0,0);
   for (int i=noOfIntVars; i--;)
     na[i] = is[i];
 
@@ -73,7 +73,7 @@ int GecodeSpace::new_setvar(void) {
 void GecodeSpace::EnlargeSetVarArray(void) {
   if (!enter()) return;
 
-  SetVarArray na(fsArraySize*2);
+  SetVarArray na(this, fsArraySize*2);
   for (int i=noOfSetVars; i--;)
     na[i] = fss[i];
 

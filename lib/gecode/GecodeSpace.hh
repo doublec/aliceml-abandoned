@@ -54,22 +54,22 @@ public:
   void EnlargeSetVarArray(void);
 
 public:
-  GecodeSpace() : is(3, 0,0), noOfIntVars(0),
+  GecodeSpace() : is(this, 3, 0,0), noOfIntVars(0),
 		  intArraySize(3),
-		  fss(3), noOfSetVars(0), fsArraySize(3)
+		  fss(this,3), noOfSetVars(0), fsArraySize(3)
   {}
 
   explicit
   GecodeSpace(GecodeSpace& s) : Space(s), 
-				is(s.is.copy()),
+				is(s.is.copy(this)),
                                 noOfIntVars(s.noOfIntVars),
                                 intArraySize(s.intArraySize),
- 				fss(s.fss.copy()),
+ 				fss(s.fss.copy(this)),
  				noOfSetVars(s.noOfSetVars),
  				fsArraySize(s.fsArraySize)
   {}
 
-  virtual Space* copy(Space* home) {
+  virtual Space* copy() {
     return new GecodeSpace(*this);
   }
 

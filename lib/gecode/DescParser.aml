@@ -36,7 +36,7 @@ struct
     | parseArg "conlevel" = ConLevel
     | parseArg "const BoolVarArgs&" = Var (List BoolVar)
     | parseArg "const SetVarArgs&" = Var (List SetVar)
-    | parseArg "BranchDesc*" = Description
+    | parseArg "BranchingDesc*" = Description
     | parseArg "int" = Int
     | parseArg "unsigned int" = UInt
     | parseArg "void" = Void
