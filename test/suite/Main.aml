@@ -13,6 +13,8 @@
 import structure Report       from "src/Report"
 import structure Test         from "src/Test"
 
+import structure Time         from "x-alice:/lib/system/Time"
+
 import structure TestBool     from "lib/fundamental/Bool"
 import structure TestString   from "lib/fundamental/String"
 import structure TestGeneral  from "lib/fundamental/General"
@@ -21,6 +23,7 @@ import structure TestAlt      from "lib/fundamental/Alt"
 import structure TestIEEEReal from "lib/fundamental/IEEEReal"
 import structure TestChar     from "lib/fundamental/Char"
 import structure TestInteger  from "lib/fundamental/Integer"
+import structure TestTime     from "lib/system/Time"
 import structure TestCompiler from "lib/compiler/Compiler"
 
 val allTests = [TestBool.suite, TestOption.suite, 
@@ -29,7 +32,8 @@ val allTests = [TestBool.suite, TestOption.suite,
 		TestAlt.suite,
 		TestIEEEReal.suite,
 		TestInteger.suite,
-		TestChar.suite
+		TestChar.suite,
+		TestTime.suite
 		(*TestCompiler.suite*)]
 
 
@@ -44,7 +48,18 @@ fun start cfg =
 fun main () = 
     case CommandLine.arguments () of
 	 []                           => start Test.defaultConfig
-       | [timeout, sep, showMissing]  => start Test.defaultConfig
+       | [timeout, sep, showMissing]  => 
+	 let
+	     val t = Time.fromString timeout
+	     val b1 = Bool.fromString sep
+	     val b2 = Bool.fromString showMissing
+	 in 
+	     case t of
+		 NONE    => start Test.defaultConfig
+	       | SOME t1 => (start {timeout = t1,
+				   separate = valOf b1,
+				   showMissing = valOf b2}) handle _ => start Test.defaultConfig
+	 end
        | _ => ()
 
 
