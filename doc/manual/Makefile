@@ -35,9 +35,15 @@ INSTALLFILES_0 = \
 	tools.html interactive.html compiler.html machine.html \
 	linker.html depend.html \
 	$(INTEROP) migration.html tour.html sitemap.html \
-	mozart_cartoon.jpg inspector-1.jpg inspector-2.jpg inspector-3.jpg \
-	inspector-conc-1.jpg inspector-conc-2.jpg inspector-conc-3.jpg \
-	inspector-conc-4.jpg inspector-conc-5.jpg inspector-conc-6.jpg \
+	mozart_cartoon.jpg \
+	inspector-intro-1.png inspector-intro-2.png inspector-intro-3.png \
+	inspector-intro-4.png \
+	inspector-lazy-1.png \
+	inspector-conc-1.png inspector-conc-2.png inspector-conc-3.png \
+	inspector-conc-4.png \
+	inspector-prom-1.png inspector-prom-2.png inspector-prom-3.png \
+	inspector-prom-4.png \
+	inspector-pack-1.png inspector-pack-2.png \
 	inspector-fd-1.jpg inspector-fd-2.jpg inspector-fd-3.jpg \
 	inspector-fd-4.jpg inspector-fd-5.jpg inspector-fd-6.jpg explorer.jpg
 INSTALLFILES_LIBRARY_0 = \

@@ -23,8 +23,10 @@ and its features:</P>
   <LI><A href="#distribution">Distribution</A>: remote processes and proxies</LI>
   <LI><A href="#constraints">Constraints</A>: concurrent constraint programming
   and programmable search</LI>
+  <?php if ($platform != "seam") { ?>
   <LI><A href="#interop">Interoperability</A>: working hand in hand with Oz
   programs</LI>
+  <?php } ?>
 </UL>
 
 
@@ -85,7 +87,7 @@ simple calculation:</P>
 
 <PRE class=code>
 - 4+5;
-<I>val it : int = 9</I></PRE>
+<I><SMALL>val it : int = 9</SMALL></I></PRE>
 
 <P>The expression is evaluated and the result <TT>9</TT> printed along with
 its inferred type <TT>int</TT>. Anonymous expressions get the name <TT>it</TT>,
@@ -93,26 +95,26 @@ so that you can refer to them in consecutive inputs:</P>
 
 <PRE class=code>
 - 2*it;
-<I>val it : int = 18</I></PRE>
+<I><SMALL>val it : int = 18</SMALL></I></PRE>
 
 <P>We can also try the one-line Hello World program:</P>
 
 <PRE class=code>
 - print "Hello world!\n";
-<I>Hello world!
-val it : unit = ()</I></PRE>
+<I><SMALL>Hello world!
+val it : unit = ()</SMALL></I></PRE>
 
 <DIV class=note>
 <P><I>Note:</I> In the rest of this tour we will present
 program fragments in their pure form, without showing the interactive prompt or
 the semicolon terminating the interactive input. For example, the last
 interaction will be displayed simply as</P>
+</DIV>
 
 <PRE class=code>
 print "Hello world!\n"
-<I>Hello world!
-val it : unit = ()</I></PRE>
-</DIV>
+<I><SMALL>Hello world!
+val it : unit = ()</SMALL></I></PRE>
 
 <P>Entering a function declaration is more interesting. For example,
 the factorial function:<P>
@@ -120,21 +122,37 @@ the factorial function:<P>
 <PRE class=code>
 fun fac 0 = 1
   | fac n = n * fac (n-1)
-<I>val fac : int -> int = _fn</I></PRE>
+<I><SMALL>val fac : int -> int = _fn</SMALL></I></PRE>
 
 <P>This time, the result has a more complex type: it is a function from
 integers to integers. We can apply that function:</P>
 
 <PRE class=code>
 fac 12
-<I>val it : int = 479001600</I></PRE>
+<I><SMALL>val it : int = 479001600</SMALL></I></PRE>
+
+<P>If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C (Ctrl-Break on Windows). For example:<P>
+
+<PRE class=code>
+fun loop () = loop ()
+<I><SMALL>val loop : unit -> '1 = _fn</SMALL></I>
+loop ()
+&lt;Ctrl-C&gt;
+<I><SMALL>interrupted</SMALL></I></PRE>
+
+<P>Unlike with other ML systems, you can also put a computation into background instead of interrupting it, by pressing Ctrl-Z (Ctrl-D on Windows):</P>
+
+<PRE class=code>
+loop ()
+&lt;Ctrl-Z&gt;
+<I><SMALL>val it : '1 = _future</SMALL></I></PRE>
+
+<P>This feature is useful if you still want to use the result of the computation later on but do not want to wait for it now. The result of a background computation is represented by futures, see the <A href="#concurrency">discussion of concurrency</A> below.</P>
+
+<P>The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows), or by calling <TT>exit()</TT>.</P>
 
 <DIV class=note>
-<P><I>Note:</I> If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C (Ctrl-Break on Windows). You can also put it into background with Ctrl-Z (Ctrl-D on Windows). The result of a background computation will be represented by futures, see <A href="#concurrency">discussion of concurrency</A> below. The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows), or by calling <TT>exit()</TT>.
-</P>
-<P>
-Depending on the shell used, Ctrl sequences may not work as expected under Windows.
-</P>
+<P><I>Note:</I> Under Windows, depending on the shell used, Ctrl characters may not work as expected. On Linux, certain command line editing tools like <TT>rlwrap</TT> might interfer with some of the Ctrl characters as well.</P>
 </DIV>
 
 <?php subsection("interactive-inspector", "The Inspector") ?>
@@ -146,12 +164,12 @@ structures interactively:</P>
 
 <PRE class=code>
 inspect (List.tabulate (10, fn i => (i, i*i, i*i*i)))
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P>An Inspector window will pop up displaying the table of square and cubic
 numbers:</P>
 
-<P align=center><IMG src="inspector-1.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-intro-1.png" border=0 alt="Alice Inspector"></P>
 
 <P>When you inspect additional values, they will be displayed in the same
 Inspector window. The inspector can be used to browse arbitrary data
@@ -159,26 +177,30 @@ structures:</P>
 
 <PRE class=code>
 val r = ref 56
-<I>val r : int ref = ref 56</I>
+<I><SMALL>val r : int ref = ref 56</SMALL></I>
 inspect (3 + 8, SOME 3.141592, {hello = "hello, world"}, r, [true, 4 < 3])
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
-<P align=center><IMG src="inspector-2.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-intro-2.png" border=0 alt="Alice Inspector"></P>
 
 <P class=note><EM>Note:</EM> If the size of the inspected data structure
 exceeds certain configurable limits, parts of the output will be hidden. Those
-parts are represented by arrows, which can be interactively unfolded if
+parts are represented by <?php if ($platform != "seam") { ?>arrows,<?php } else { ?>dots,<?php } ?> which can be interactively unfolded if
 desired.</P>
 
+<?php if ($platform == "seam") { ?>
+<P>Note the index put after the <TT>ref</TT> constructor in the Inspector window. All displayed references and futures are decorated by such an index to indicate which of them are identical.</P>
+<?php } ?>
+
 <P>The Inspector concurrently watches the data structures it shows. If they
-change, it will notice it and update its display. For example, if you re-assign
+change, it will automatically update its display. For example, if you re-assign
 a reference the Inspector window will be updated automatically:</P>
 
 <PRE class=code>
 r := 33033
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
-<P align=center><IMG src="inspector-3.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-intro-3.png" border=0 alt="Alice Inspector"></P>
 
 <!--
 <PRE class=code>
@@ -193,6 +215,14 @@ inspect (Future.alarm (Time.fromMilliseconds (Int.toLarge 2000)))
 <I>val it : unit = ()</I></PRE>
 -->
 
+<?php if ($platform == "seam") { ?>
+<P>You can select any part of a displayed value by clicking on it. If you hover over the selection with the mouse the inspector will show the value's type as a tool tip.
+
+<P align=center><IMG src="inspector-intro-4.png" border=0 alt="Alice Inspector"></P>
+<?php } ?>
+
+<P>You can clear the Inspector window by choosing <I>Clear</I> from the <I>Inspector</I> menu.</P>
+
 
 <?php section("laziness", "laziness") ?>
 
@@ -202,7 +232,7 @@ preceeding it with the <TT>lazy</TT> keyword:</P>
 
 <PRE class=code>
 val x = lazy 4+5
-<I>val x : int = _lazy</I></PRE>
+<I><SMALL>val x : int = _lazy</SMALL></I></PRE>
 
 <P>Lazy suspensions are represented by the <TT>_lazy</TT> notation in the
 interactive toplevel's output, as shown above. The value of <TT>x</TT> will not
@@ -210,16 +240,16 @@ be computed before it is actually required. For example,</P>
 
 <PRE class=code>
 (x,x)
-<I>val it : int * int = (_lazy, _lazy)</I>
+<I><SMALL>val it : int * int = (_lazy, _lazy)</SMALL></I>
 x
-<I>val it : int = _lazy</I>
+<I><SMALL>val it : int = _lazy</SMALL></I>
 x > 10
-<I>val it : bool = false</I>
+<I><SMALL>val it : bool = false</SMALL></I>
 x
-<I>val it : int = 9</I></PRE>
+<I><SMALL>val it : int = 9</SMALL></I></PRE>
 
 <P>Tupling is parametric in its components and does not trigger <TT>x</TT>. The
-comparison operator <TT>></TT> is strict in its arguments, however, and hence
+comparison operator <TT>></TT> is <I>strict</I> in its arguments, however, and hence
 forces evaluation of <TT>x</TT>. Likewise, pattern matching, arithmetic
 operations, comparison (<TT>op=</TT>) or similar operations can force a
 value.</P>
@@ -229,13 +259,13 @@ streams of numbers:</P>
 
 <PRE class=code>
 fun enum n = lazy n :: enum (n+1)
-<I>val enum : int -> int list = _fn</I>
+<I><SMALL>val enum : int -> int list = _fn</SMALL></I>
 val ns = enum 0
-<I>val ns : int list = _lazy</I>
+<I><SMALL>val ns : int list = _lazy</SMALL></I>
 List.nth (ns,5)
-<I>val it : int = 5</I>
+<I><SMALL>val it : int = 5</SMALL></I>
 ns
-<I>val it : int list = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: _lazy</I></PRE>
+<I><SMALL>val it : int list = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: _lazy</SMALL></I></PRE>
 
 <P>In this example, requesting the 5th element of the list forced partial
 evaluation of the list, up to that element.</P>
@@ -245,7 +275,7 @@ evaluation of the list, up to that element.</P>
 <PRE class=code>
 fun mapz f xs = lazy (case xs of nil    => nil
                                | x::xs' => f x :: mapz f xs')
-<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = _fn</I></PRE>
+<I><SMALL>val mapz : ('a -> 'b) -> 'a list -> 'b list = _fn</SMALL></I></PRE>
 
 <P>Note that the <TT>case</TT> expression must be nested inside the
 <TT>lazy</TT> expression - otherwise applying <TT>mapz</TT> would trigger
@@ -255,8 +285,8 @@ definition more elegantly:</P>
 
 <PRE class=code>
 fun lazy mapz f nil     = nil
-  |      mapz f (x::xs) = f x :: mapz f xs
-<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = _fn</I></PRE>
+       | mapz f (x::xs) = f x :: mapz f xs
+<I><SMALL>val mapz : ('a -> 'b) -> 'a list -> 'b list = _fn</SMALL></I></PRE>
 
 <P>This derived form is defined such that both definitions of <TT>mapz</TT> are
 equivalent. Let us apply <TT>mapz</TT> to the stream of natural numbers
@@ -264,44 +294,44 @@ to calculate their factorials lazily:</P>
 
 <PRE class=code>
 val facs = mapz fac (enum 0)
-<I>val facs : int list = _lazy</I>
+<I><SMALL>val facs : int list = _lazy</SMALL></I>
 List.take (facs,7)
-<I>val it : int list = [1, 1, 2, 6, 24, 120, 720]</I>
+<I><SMALL>val it : int list = [1, 1, 2, 6, 24, 120, 720]</SMALL></I>
 facs
-<I>val it : int list = 1 :: 1 :: 2 :: 6 :: 24 :: 120 :: 720 :: _lazy</I></PRE>
+<I><SMALL>val it : int list = 1 :: 1 :: 2 :: 6 :: 24 :: 120 :: 720 :: _lazy</SMALL></I></PRE>
 
-<DIV class=note>
-<P><EM>Note:</EM> The Inspector observes when lazy suspensions are triggered. If
+<P>The Inspector observes when lazy suspensions are triggered. If
 you evaluate</P>
 
 <PRE class=code>
 inspect facs
-<I>val it : unit = ()</I>
-List.nth (facs,12)
-<I>val it : int = 479001600</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I>
+List.nth (facs,10)
+<I><SMALL>val it : int = 3628800</SMALL></I></PRE>
 
 <P>it will automatically update its window to reflect the substitution of the
-lazy tail of <TT>facs</TT> by a (partial) list.</P>
-</DIV>
+lazy tail of <TT>facs</TT> by a (partial) list.<!-- The Inspector also allows you to investigate the type of the lazy suspensions.--></P>
+
+<P align=center><IMG src="inspector-lazy-1.png" border=0 alt="Alice Inspector"></P>
 
 <P>Here is a lazy version of the <TT>zip</TT> function:</P>
 
 <PRE class=code>
 fun lazy zipz (x::xs, y::ys) = (x,y) :: zipz (xs,ys)
-  |      zipz       _        = nil
-<I>val zipz : 'a list * 'b list -> ('a * 'b) list = _fn</I></PRE>
+       | zipz       _        = nil
+<I><SMALL>val zipz : 'a list * 'b list -> ('a * 'b) list = _fn</SMALL></I></PRE>
 
 <P>It is possible to calculate the stream of Fibonacci numbers using
 <TT>mapz</TT> and <TT>zipz</TT>:</P>
 
 <PRE class=code>
 val rec fibs = 1 :: 1 :: (lazy mapz op+ (zipz (fibs, tl fibs)))
-<I>val it : int list = 1 :: 1 :: _lazy</I>
+<I><SMALL>val it : int list = 1 :: 1 :: _lazy</SMALL></I>
 List.nth (fibs, 10)
-<I>val it : int = 89</I>
+<I><SMALL>val it : int = 89</SMALL></I>
 fibs
-<I>val it : int list =
-   1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: _lazy</I></PRE>
+<I><SMALL>val it : int list =
+   1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: _lazy</SMALL></I></PRE>
 
 <P>For more practical applications of laziness, see the standard literature
 on lazy functional programming. Last but not least, note that Alice ML allows
@@ -309,10 +339,12 @@ laziness to be combined freely with side effects:</P>
 
 <PRE class=code>
 val n = lazy (print "Huhu!\n"; 13)
-<I>val n : int = _lazy</I>
+<I><SMALL>val n : int = _lazy</SMALL></I>
 n+1
-<I>Huhu!
-val it : int = 14</I></PRE>
+<I><SMALL>Huhu!
+val it : int = 14</SMALL></I></PRE>
+
+<P>Take care with side effects when you do lazy programming!</P>
 
 
 <?php section("concurrency", "concurrency") ?>
@@ -327,7 +359,7 @@ expression:</P>
 
 <PRE class=code>
 spawn 45*68
-<I>val it : int = _future</I></PRE>
+<I><SMALL>val it : int = _future</SMALL></I></PRE>
 
 <P>In this example the value 45*68 is computed in a new thread. The result of
 the <TT>spawn</TT> expression is a <EM>future</EM>, a place-holder for the
@@ -337,11 +369,11 @@ future will be globally replaced by the result. We say that threads are
 
 <DIV class=note>
 <P><I>Note:</I> If you do not happen to have an ancient machine then you most likely will not have seen
-the output above, but the result of the computation, because it performed faster
+the output above. Instead you have already seen the actual result of the computation, because it performed faster
 than the interactive toplevel was able to print it.</P>
 </DIV>
 
-<P>That semantics
+<P>The semantics of futures
 becomes more obvious if we look at a thread that does not terminate
 immediately. For that purpose, let us define the naive version of the Fibonacci
 function, which has exponential complexity:</P>
@@ -349,90 +381,95 @@ function, which has exponential complexity:</P>
 <PRE class=code>
 fun fib (0 | 1) = 1
   | fib n       = fib (n-1) + fib (n-2)
-<I>val fib : int -> int = _fn</I></PRE>
+<I><SMALL>val fib : int -> int = _fn</SMALL></I></PRE>
 
 <P>On an ordinary desktop PC, computing <TT>fib 35</TT> will take quite some
 time. We perform that computation concurrently:</P>
 
 <PRE class=code>
 val n = spawn fib 35
-<I>val n : int = _future</I></PRE>
+<I><SMALL>val n : int = _future</SMALL></I></PRE>
 
 <P>We get back a future, that we can look at using the Inspector:</P>
 
 <PRE class=code>
 inspect n
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
-<P align=center><IMG src="inspector-conc-1.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-conc-1.png" border=0 alt="Alice Inspector"></P>
 
-<P>At first, the Inspector will display the value as a future, as shown above.
-Once the computation of the result finishes and the thread terminates, that
+<P>At first, the Inspector will display the value as a future, as shown above. <?php if ($platform == "seam") { ?>
+You can investigate the type of the value the future is holding place for by using the tool tip feature:</P>
+
+<P align=center><IMG src="inspector-conc-2.png" border=0 alt="Alice Inspector"></P>
+
+<P><?php } ?>
+Once the computation of the result finishes and the thread terminates, the
 future gets replaced by the thread's result. The Inspector will update its
 display accordingly:</P>
 
-<P align=center><IMG src="inspector-conc-2.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-conc-3.png" border=0 alt="Alice Inspector"></P>
 
 <P>The situation becomes more interesting if we start several threads at
 once:</P>
 
 <PRE class=code>
 inspect (List.tabulate (10, fn i => spawn fib (i+25)))
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P>The individual entries from the small table we build are calculated
 concurrently and become available individually. At some point in time the
 Inspector window might display the following:</P>
 
-<P align=center><IMG src="inspector-conc-3.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-conc-4.png" border=0 alt="Alice Inspector"></P>
 
 
 <?php subsection("concurrency-sync", "Data-flow synchronization") ?>
 
-<P>Futures can be passed around like ordinary values. Once an operation
+<P>Futures can be passed around as values. Once an operation
 actually <EM>requests</EM> the value the future stands for, the corresponding
-thread will block until the future vanishes. This is known as <EM>data-flow
+thread will block until the future has been determined. This is known as <EM>data-flow
 synchronisation</EM> and is a powerful mechanism for high-level concurrent
 programming. As a trivial example, consider the following pair of concurrent
 producer and consumer that are connected through a message stream:</P>
 
 <PRE class=code>
 val delay = Time.fromSeconds (Int.toLarge 2)
-<I>val delay : Time.time = time{|2000000us|}</I>
+<I><SMALL>val delay : Time.time = time{|2000000us|}</SMALL></I>
 fun produce 0 = []
   | produce n = spawn (Thread.sleep delay; n :: produce (n-1))
-<I>val produce : int -> int list = _fn</I>
+<I><SMALL>val produce : int -> int list = _fn</SMALL></I>
 fun consume (n::ns) = (print (Int.toString n ^ "\n"); consume ns)
   | consume   nil   = ()
-<I>val consume : int list -> 'a = _fn</I>
+<I><SMALL>val consume : int list -> 'a = _fn</SMALL></I>
 spawn consume (produce 5)
-<I>val it : unit = _future
+<I><SMALL>val it : unit = _future
 5
 4
 3
 2
-1</I></PRE>
+1</SMALL></I></PRE>
 
 <!-- TODO: Reference? -->
 
 <P>Synchronisation on futures can also be done explicitly, by employing the
-library function <A href="library/future.html"><TT>Future.await</TT></A>:</P>
+library function <A href="library/future.html"><TT>await</TT></A>:</P>
 
 <PRE class=code>
-Future.await (spawn fib 30)
-<I>val it : int = 1346269</I></PRE>
+await (spawn fib 30)
+<I><SMALL>val it : int = 1346269</SMALL></I></PRE>
 
 <P>Interestingly, <A href="#laziness">lazy suspensions</A> are nothing but a
 special form of future, called a <EM>lazy future</EM>. Requesting a lazy future
 is triggering the corresponding computation. Consequently,
-<TT>Future.await</TT> can also be used to trigger lazy computations
+<TT>await</TT> can also be used to trigger lazy computations
 explicitly:</P>
 
 <PRE class=code>
 lazy 3+4
-<I>val it : int = _lazy</I>
-Future.await it
-<I>val it : int = 7</I></PRE>
+<I><SMALL>val it : int = _lazy</SMALL></I>
+await it
+<I><SMALL>val it : int = 7</SMALL></I></PRE>
 
 
 <?php subsection("concurrency-failure", "Failed futures") ?>
@@ -445,14 +482,14 @@ future, the failure exception will be re-raised at the point of request:</P>
 
 <PRE class=code>
 spawn (raise Domain)
-<I>val it : 'a = _future</I>
-[it]
-<I>val it : 'a list = [_failed{|Domain|}]</I>
-hd it + 1
-<I>uncaught exception Domain</I></PRE>
+<I><SMALL>val it : 'a = _future</SMALL></I>
+[1, it, 3]
+<I><SMALL>val it : int list = [1, _failed{|Domain|}, 3]</SMALL></I>
+10 * List.nth (it, 1)
+<I><SMALL>uncaught exception Domain</SMALL></I></PRE>
 
 <P>In the second output, the interactive toplevel uses the notation
-<TT>_failed{|exn|}</TT> to indicate a future with exception <TT>exn</TT>.</P>
+<TT>_failed{|exn|}</TT> to indicate a future failed with exception <TT>exn</TT>.</P>
 
 <P>See the <A href="futures.html">manual page</A> on futures for a detailed
 discussion of concurrency, futures, and failure.</P>
@@ -466,9 +503,9 @@ for references:</P>
 
 <PRE class=code>
 val r = ref 10
-<I>val r : int ref = ref 10</I>
+<I><SMALL>val r : int ref = ref 10</SMALL></I>
 Ref.exchange (r, 20)
-<I>val it : int = 10</I></PRE>
+<I><SMALL>val it : int = 10</SMALL></I></PRE>
 
 <P>The value of the reference is extracted and replaced in one atomic
 operation. See <A href="#promises-concurrent">below</A> for an example relying
@@ -490,18 +527,23 @@ Alice offers <EM>promises</EM>.</P>
 
 <PRE class=code>
 open Promise
-<I>val ...
-val ...
-...</I>
+<I><SMALL>val fail : 'a promise * exn -> unit = _fn
+val future : 'a promise -> 'a = _fn
+val fulfill : 'a promise * 'a -> unit = _fn
+val promise : unit -> 'a promise = _fn
+val Promise : exn = Promise
+exception Promise
+type t = t
+type promise = promise</SMALL></I>
 val p : int promise = promise ()
-<I>val p : int Promise.promise = promise{|_future|}</I></PRE>
+<I><SMALL>val p : int Promise.promise = promise{|_future|}</SMALL></I></PRE>
 
 <P>an associated future is created along with it. This future can be obtained as
 follows:</P>
 
 <PRE class=code>
 val x = future p
-<I>val x : int = _future</I></PRE>
+<I><SMALL>val x : int = _future</SMALL></I></PRE>
 
 <P>Such a <EM>promised future</EM> behaves like a concurrent future, in
 particular by allowing dataflow synchronisation. But unlike a concurrent or
@@ -510,24 +552,24 @@ explicitly through the corresponding promise:</P>
 
 <PRE class=code>
 fulfill (p, 19)
-<I>val it : unit = ()</I>
+<I><SMALL>val it : unit = ()</SMALL></I>
 p
-<I>val it : int Promise.promise = promise{|19|}</I>
+<I><SMALL>val it : int Promise.promise = promise{|19|}</SMALL></I>
 x
-<I>val it : int = 19</I></PRE>
+<I><SMALL>val it : int = 19</SMALL></I></PRE>
 
 <P>Intuitively, by creating a future this way, you create a place-holder for a
 value that you "promise" to deliver at some later point in time. At that
-point, you "fulfill" your promise. You can also break your promise, by failing
+point, you "fulfill" your promise. <!--You can also break your promise, by failing
 the future:</P>
 
 <PRE class=code>
 val p : int promise = promise ()
-<I>val p : int Promise.promise = promise{|_future|}</I>
+<I><SMALL>val p : int Promise.promise = promise{|_future|}</SMALL></I>
 fail (p, Domain)
-<I>val it : unit = ()</I>
+<I><SMALL>val it : unit = ()</SMALL></I>
 p
-<I>val it : int Promise.promise = promise{|_failed{|Domain|}|}</I></PRE>
+<I><SMALL>val it : int Promise.promise = promise{|_failed{|Domain|}|}</SMALL></I></PRE>
 
 <P>The future will be failed with the exception you pass to the <TT>fail</TT>
 function. Any subsequent attempt to request the future will cause raise of that
@@ -535,9 +577,9 @@ exception, just as a failed concurrent future:<P>
 
 <PRE class=code>
 1 + future p
-<I>uncaught exception Domain</I></PRE>
+<I><SMALL>uncaught exception Domain</SMALL></I></PRE>
 
-<P>A promise may only be fulfilled or failed once. Hence, a different view on
+<P>-->A promise may only be fulfilled <!--or failed--> once. Hence, a different view on
 promises is that of a single assignment reference, yielding the following
 correspondences:</P>
 
@@ -574,7 +616,7 @@ let
 in
     iter (l1, p); future p
 end
-<I>val append : 'a list * 'a list -> 'a list = _fn</I></PRE>
+<I><SMALL>val append : 'a list * 'a list -> 'a list = _fn</SMALL></I></PRE>
 
 <!--
 <P class=note><EM>Note:</EM> When entering this example interactively you have
@@ -583,7 +625,7 @@ Otherwise, unlike other SML interpreters, the interactive top-level of Alice
 will assume it to terminate your input.</P>
 -->
 
-<P>The basic idea of this formulation of append is to cons the head of the left
+<P>This formulation is somehwat reminiscent of the definition of append in logic programming. Its basic idea is to cons the head of the left
 operand to a future in each iteration. That future gets replaced by the actual
 tail in the next iteration, with the tail again containing a future as its
 respective tail. When we reach the end of the list, the last future gets
@@ -591,15 +633,14 @@ replaced by the right operand.</P>
 
 <P>In a similar vein, arbitrary data structures can be generated in a top-down
 manner by creating promised futures as place holders for parts of it and
-construct them afterwards. This is reminiscent of techniques from logic
-programming.</P>
+construct them afterwards.</P>
 
 
 <?php subsection("promises-concurrent", "Concurrent data structures") ?>
 
-<P>Still, the primary purpose of promises is to provide a simple primitive that
-enables high-level concurrent programming. We only give an idea of that here,
-by showing how they can encode another well-known concurrency idiom easily:
+<P>The primary purpose of promises is to provide a simple primitive that
+enables the implementation of high-level concurrency abstractions. We only give an idea of that here,
+by showing how promises can encode another well-known concurrency idiom easily:
 <EM>channels</EM>.</P>
 
 <P>A channel (sometimes also called a <EM>port</EM>) is a simple imperative
@@ -620,13 +661,13 @@ end
 <P>An arbitrary number of messages may be sent to a channel using <TT>put</TT>.
 The <TT>get</TT> operation takes the oldest message out of the channel. It
 suspends if none is available. A more advanced design might distinguish between
-read and write view of a channel, but we chose to ignore that here for the sake
+read and write view of a channel, but we ignore that here for the sake
 of simplicity.</P>
 
 <P>A straight-forward implementation uses promises and references:</P>
 
 <PRE class=code>
-structure Chan :> CHAN =
+structure Chan : CHAN =
 struct
     open Promise
 
@@ -682,27 +723,29 @@ queue. That ensures thread-safety.<P>
 
 <PRE class=code>
 val ch : int Chan.chan = Chan.chan ()
-<I>val ch : int Chan.chan = _val</I>
+<I><SMALL>val ch : int Chan.chan = (ref (promise{|_future|}), ref (_future))</SMALL></I>
 inspect ch
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
+<!--
 <P class=note><I>Note:</I> The interactive top-level prints the channel value
 as <TT>_val</TT>, indicating an abstract type that cannot be shown. The
 Inspector allows looking at values of abstract type, however.</P>
+-->
 
-<P align=center><IMG src="inspector-conc-4.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-prom-1.png" border=0 alt="Alice Inspector"></P>
 
 <PRE class=code>
 Chan.put (ch, 17); Chan.put (ch, 6)
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
-<P align=center><IMG src="inspector-conc-5.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-prom-2.png" border=0 alt="Alice Inspector"></P>
 
 <PRE class=code>
 (Chan.get ch, Chan.get ch)
-<I>val it : int * int = (17, 6)</I></PRE>
+<I><SMALL>val it : int * int = (17, 6)</SMALL></I></PRE>
 
-<P align=center><IMG src="inspector-conc-4.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-prom-3.png" border=0 alt="Alice Inspector"></P>
 
 <P>Tuples are always evaluated from left to right, so we will deterministically
 get the pair <TT>(17,6)</TT> in the last example. To witness non-determinism
@@ -712,20 +755,20 @@ thread scheduling:</P>
 
 <PRE class=code>
 fun client _ = spawn (fib 20; Chan.get ch)
-<I>val client : 'a -> int = _fn</I>
+<I><SMALL>val client : 'a -> int = _fn</SMALL></I>
 inspect (List.tabulate (5, client))
-<I>val it : unit = ()</I>
+<I><SMALL>val it : unit = ()</SMALL></I>
 Chan.put (ch, 1); Chan.put (ch, 2); Chan.put (ch, 3)
-<I>val it : unit = ()</I></PRE>
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
-<P align=center><IMG src="inspector-conc-6.jpg" border=0 alt="Alice Inspector"></P>
+<P align=center><IMG src="inspector-prom-4.png" border=0 alt="Alice Inspector"></P>
 
 <P>The order in which the threads will read from the channel is
 non-deterministic, but no value will ever get lost or read twice.</P>
 
 <?php subsection("promises-examples", "More examples") ?>
 
-<P>There is a small interactive demo demonstrating dataflow synchronisation
+<P>There is a tiny interactive demo demonstrating dataflow synchronisation
 using streams:</P>
 
 <UL>
@@ -745,7 +788,7 @@ alicerun streams</PRE>
 
 <?php section("packages", "packages") ?>
 
-<P>Its powerful static type system is one of the major pros of ML. However,
+<P>One of the major pros of ML is its powerful static type system. However,
 there are programming tasks where it is not possible to perform all typing
 statically. For example, consider exchange of data structures between separate
 processes. To accompony such tasks of <EM>open programming</EM>, Alice
@@ -758,23 +801,33 @@ signature. Packages are created using the <TT>pack</TT> expression:</P>
 
 <PRE class=code>
 val p = pack Word8 : WORD
-<I>val p : package = package{|...|}</I></PRE>
+<I><SMALL>val p : package = package{|...|}</SMALL></I></PRE>
 
 <P>This example injects the module <TT>Word8</TT> into a package. The signature
 constraint (the part following the colon) is part of the pack expression.
 It specifies the package's signature. The packaged module must of course match
 that signature statically.<P>
 
-<!--
+<?php if ($platform == "seam") { ?>
 <P>Using the Inspector, we can look inside the package:</P>
--->
+
+<PRE class=code>
+inspect p
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
+
+<P align=center><IMG src="inspector-pack-1.png" border=0 alt="Alice Inspector"></P>
+
+<P>We can even investigate its signature:</P>
+
+<P align=center><IMG src="inspector-pack-2.png" border=0 alt="Alice Inspector"></P>
+<?php } ?>
 
 <P>The package <TT>p</TT> may be passed to some client, which may unpack it as
 follows:</P>
 
 <PRE class=code>
 structure Word' = unpack p : WORD
-<I>structure Word' : WORD</I></PRE>
+<I><SMALL>structure Word' : WORD</SMALL></I></PRE>
 
 <P>The <TT>unpack</TT> expression also requires a signature being specified.
 Unpacking involves a dynamic type check: to evaluate the expression, the
@@ -784,7 +837,7 @@ raised:</P>
 
 <PRE class=code>
 structure List' = unpack p : LIST
-<I>uncaught exception Mismatch</I></PRE>
+<I><SMALL>uncaught exception Mismatch</SMALL></I></PRE>
 
 <P>If unpacking succeeds, the client may use the <TT>Word'</TT> structure as
 usual. The static signature of <TT>Word'</TT> is determined by the target
@@ -795,9 +848,9 @@ packages. In particular, values can be given polymorphic type in packages:</P>
 
 <PRE class=code>
 val p = pack (val x = length) : (val x : 'a list -> int)
-<I>val p : package = package{|...|}</I></PRE>
+<I><SMALL>val p : package = package{|...|}</SMALL></I></PRE>
 
-<P class=note>This example uses some <A href="modules.html#sugar">syntactic
+<P class=note><I>Note:</I> This example uses some <A href="modules.html#sugar">syntactic
 sugar</A> of Alice ML, which allows replacing <TT>struct</TT>...<TT>end</TT>
 and <TT>sig</TT>...<TT>end</TT> by <TT>(</TT>...<TT>)</TT>.</P>
 
@@ -805,9 +858,9 @@ and <TT>sig</TT>...<TT>end</TT> by <TT>(</TT>...<TT>)</TT>.</P>
 
 <PRE class=code>
 structure IntLength = unpack p : (val x : int list -> int)
-<I>structure IntLength : sig val x : int list -> int end</I>
+<I><SMALL>structure IntLength : sig val x : int list -> int end</SMALL></I>
 structure RealLength = unpack p : (val x : real list -> int)
-<I>structure RealLength : sig val x : real list -> int end</I></PRE>
+<I><SMALL>structure RealLength : sig val x : real list -> int end</SMALL></I></PRE>
 
 <P>The whole range of SML signature matching rules applies, so a package may
 have more components than required by the target signature, may have more
@@ -828,15 +881,7 @@ Consequently, it should be possible to export and import data from processes.
 Export of language data structures is often known as <EM>serialization</EM>, or
 <EM>pickling</EM>.<P>
 
-<P>Alice provides high-level support for pickling. Arbitrary data structures may
-be pickled. Pickles are platform-independent and are hence suitable for exchange
-across heterogenous networks, especially the Internet.</P>
-
-<P>Since Alice ML is a functional language with first-class functions, pickling
-is not restricted to conventional data but naturally includes the ability to
-pickle functions. Like with other data, pickles containing functions are
-platform-independent. This enables processes to exchange arbitrary procedures,
-i.e. code.</P>
+<P>Alice provides high-level support for pickling, that is, arbitrary data can be pickled, including code and entire modules. Pickles are platform-independent and are hence suitable for exchange across heterogenous networks, especially the Internet. By pickling first-class functions, Alice processes can exchange behaviour.</P>
 
 <P>The pickling library is based on <A href="#packages">packages</A>.
 Consequently, the entities of import/export are modules. This implies that even
@@ -851,13 +896,13 @@ sig
     fun toInt   : t -> int
     fun add     : t * t -> t
 end
-<I>signature NUM =
+<I><SMALL>signature NUM =
    sig
       type t
       val fromInt : int -> t
       val toInt : t -> int
       val add : t * t -> t
-   end</I>
+   end</SMALL></I>
 structure Num :> NUM =
 struct
     type t = int
@@ -865,77 +910,81 @@ struct
     fun fromInt n = n
     val add       = op+
 end
-<I>structure Num : NUM</I></PRE>
+<I><SMALL>structure Num : NUM</SMALL></I></PRE>
 
 <DIV class=note>
-<P><I>Note:</I> For values of abstract type the toplevel prints placeholders
+<P><I>Note:</I> For values of abstract type the toplevel prints place-holders
 only. However, the function <A href="library/print.html"><TT>Print.register</TT></A> can be used to install a user-defined printer for abstract types, e.g.
 <PRE class=code>
 Print.register (Int.toString o Num.toInt)</PRE>
 enables the toplevel to print values of type <TT>Num.t</TT> in integer
 representation.
+<?php if ($platform == "seam") { ?>
+Likewise, printers can be installed for the Inspector, using the function
+<A href="library/inspector.html"><TT>Inspector.register</TT></A>.
+<?php } ?>
 </DIV>
 
 <P>A package can be formed from this structure and be written to a file:</P>
 
 <PRE class=code>
-Pickle.save ("Num." ^ Pickle.extension, pack Num : NUM)
-<I>val it : unit = ()</I></PRE>
+Pickle.save ("Num.alc", pack Num : NUM)
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P>To recover the structure in another (or the same) process, one simply
 executes the inverse operation:</P>
 
 <PRE class=code>
-structure Num' = unpack Pickle.load ("Num." ^ Pickle.extension) : NUM
-<I>structure Num' : NUM</I>
+structure Num' = unpack Pickle.load "Num.alc" : NUM
+<I><SMALL>structure Num' : NUM</SMALL></I>
 Num'.toInt (Num'.add (Num'.fromInt 4, Num'.fromInt 5))
-<I>val it : int = 9</I></PRE>
+<I><SMALL>val it : int = 9</SMALL></I></PRE>
 
 <P>Note that the type <TT>Num'.t</TT> is incompatible with the original type
 <TT>Num.t</TT>:</P>
 
 <PRE class=code>
 Num'.add (Num.fromInt 4, Num.fromInt 5)
-<I>0.0-0.39: argument type mismatch:
+<I><SMALL>0.0-0.39: argument type mismatch:
    Num.t * Num.t
 does not match argument type
    Num'.t * Num'.t
 because type
    Num.t
 does not unify with
-   Num'.t</I></PRE>
+   Num'.t</SMALL></I></PRE>
 
-<P>The reason is that the signature at the <TT>unpack</TT> operation does not specify the necessary type equivalence - the types are statically incompatible, although they are known to be the same dynamically. The usual means of expressing type sharing can be used if that is not desired:</P>
+<P>The reason is that the signature annotation for <TT>unpack</TT> does not specify the necessary type equivalence - the types are statically incompatible, although <I>we</I> know they are the same dynamically. The usual means of expressing type sharing can be used to induce that knowledge statically:</P>
 
 <PRE class=code>
-structure Num' = unpack Pickle.load ("Num." ^ Pickle.extension) : NUM where type t = Num.t
-<I>structure Num' : 
+structure Num' = unpack Pickle.load "Num.alc" : NUM where type t = Num.t
+<I><SMALL>structure Num' : 
    sig
       type t = Num.t
       val fromInt : int -> Num.t
       val toInt : Num.t -> int
       val add : Num.t * Num.t -> Num.t
-   end</I></PRE>
+   end</SMALL></I></PRE>
 
 <P>The result signature already indicates the type sharing, making legal</P>
 
 <PRE class=code>
 Num'.add (Num.fromInt 4, Num.fromInt 5)
-<I>val it : Num'.t = _val</I></PRE>
+<I><SMALL>val it : Num'.t = _val</SMALL></I></PRE>
 
 <P>Note however, that the type <TT>Num'.t</TT> is still abstract and
 incompatible to <TT>int</TT>:</P>
 
 <PRE class=code>
 Num'.add (4, 5)
-<I>v1.0-1.15: argument type mismatch:
+<I><SMALL>v1.0-1.15: argument type mismatch:
    int * int
 does not match argument type
    Num'.t * Num'.t
 because type
    int
 does not unify with
-   Num'.t</I></PRE>
+   Num'.t</SMALL></I></PRE>
 
 <!--
 <?php subsection("pickling-functors", "Pickling functors") ?>
@@ -985,22 +1034,20 @@ on the semantics of pickling.</P>
 <?php section("components", "components") ?>
 
 <P>Alice introduces the notion of <EM>component</EM> as the unit of
-compilation, as well as deployment. Superficially, a component contains a
-module that imports modules from other components to perform its job. An
-application will consist of a set of components with one designated "main"
-component.</P>
+compilation as well as deployment. Superficially, a component contains a
+module expression that, when evaluated, potentially imports modules from other components. An
+application will consist of a set of components with one designated "main" or "root" component.</P>
 
 <P>Consider the following trivial component:</P>
 
 <PRE class=code>
 (* Fac.aml *)
-
 structure Fac =
 struct
     val _ = print "Evaluating component Fac...\n"
 
-    fun fac 0 = 1
-      | fac n = n * fac (n-1)
+    fun fac 0 = Int.toLarge 1
+      | fac n = Int.toLarge n * fac (n-1)
 end</PRE>
 
 <P>We can compile it invoking the Alice <A href="compiler.html">batch
@@ -1014,8 +1061,8 @@ compiled component can be imported interactively:</P>
 
 <PRE class=code>
 import "Fac"
-<I>### loaded signature from file:/home/user/Fac
-structure Fac : sig val fac : int -> int end = Fac</I></PRE>
+<I><SMALL>### loaded signature from file:/home/user/Fac
+structure Fac : sig val fac : int -> IntInf.int end = Fac</SMALL></I></PRE>
 
 <P>Loading is performed lazily: the interactive toplevel will load the
 signature from the component file, but it will not yet evaluate (execute) the
@@ -1025,24 +1072,24 @@ accessing a structure field:</P>
 
 <PRE class=code>
 Fac.fac
-<I>val it : int -> int = _lazy</I></PRE>
+<I><SMALL>val it : int -> IntInf.int = _lazy</SMALL></I></PRE>
 
 <P>The function is represented by a <A href="#laziness">lazy future</A>. The
 component will be evaluated when its content is first requested:</P>
 
 <PRE class=code>
-Fac.fac 11
-<I>Evaluating component Fac...
-val it : int = 39916800</I>
-Fac.fac 10
-<I>val it : int = 3628800</I></PRE>
+Fac.fac 23
+<I><SMALL>Evaluating component Fac...
+val it : IntInf.int = 25852016738884976640000</SMALL></I>
+Fac.fac 46
+<I><SMALL>val it : IntInf.int =
+   5502622159812088949850305428800254892961651752960000000000</SMALL></I></PRE>
 
 <P>Let us write a little application using the <TT>Fac</TT> component. We simply
 implement an appropriate main component:</P>
 
 <PRE class=code>
 (* Main.aml *)
-
 import structure Fac from "Fac"
 
 structure Main =
@@ -1052,18 +1099,17 @@ struct
 	    val _ = TextIO.print "Input number: "
 	    val n = valOf (Int.fromString (valOf (TextIO.inputLine TextIO.stdIn)))
 	in
-	    TextIO.print (Int.toString (Fac.fac n) ^ "\n"); 
+	    TextIO.print (IntInf.toString (Fac.fac n) ^ "\n"); 
 	    OS.Process.success
 	end
-	handle _ => (TextIO.print "error\n"; OS.Process.failure)
+	handle Option => (TextIO.print "error\n"; OS.Process.failure)
 
     val _ = OS.Process.exit (main ())
 end</PRE>
 
 <P>This component imports the structure from the previous component by using an
 <EM>import announcement</EM>. Every component can be headed by an arbitrary
-number of such import announcements. The <TT>Main</TT> component is compiled as
-before:</P>
+number of such import announcements. The <TT>Main</TT> component is compiled in the usual way:</P>
 
 <PRE class=code>
 alicec Main.aml</PRE>
@@ -1076,17 +1122,17 @@ machine</A>:</P>
 
 <PRE class=code>
 alicerun Main
-<I>Input number: </I>8
-<I>Evaluating component Fac...
-40320</I></PRE>
+<I><SMALL>Input number: </SMALL></I>34
+<I><SMALL>Evaluating component Fac...
+295232799039604140847618609643520000000</SMALL></I></PRE>
 
 <P>You can again observe that imports are performed lazily. If the <TT>Fac</TT>
 component is never accessed, it will not be loaded at all:</P>
 
 <PRE class=code>
 alicerun Main
-<I>Input number: </I>gnalp
-<I>error</I></PRE>
+<I><SMALL>Input number: </SMALL></I>gnalp
+<I><SMALL>error</SMALL></I></PRE>
 
 
 <?php subsection("components-typechecking", "Link-time type checking") ?>
@@ -1096,7 +1142,7 @@ can inspect them using the Alice <A href="linker.html">linker</A>:</P>
 
 <PRE class=code>
 alicelink -d Main
-<I>import
+<I><SMALL>import
    structure TextIO :
       sig
          type instream
@@ -1118,14 +1164,14 @@ import
       end
 from "x-alice:/lib/system/OS"
 import structure Fac : sig val fac : int -> int end from "Fac"
-structure Main : sig val main : unit -> OS.Process.status end</I></PRE>
+structure Main : sig val main : unit -> OS.Process.status end</SMALL></I></PRE>
 
 <P>The output first lists all imports required by the component (which includes
 necessary parts of the <A href="library/index.html">library</A>) and then the
 signature of its own export - in this case the last line. Note that import
 locations are actually denoted by URLs. In this tutorial we will only make use
 of file URLs, but components can actually be imported from arbitrary
-locations via HTTP or FTP protocol.</P>
+locations in the Internet via HTTP addresses.</P>
 
 <P>Before a component is evaluated at runtime, its export signature is matched
 against the import signature of the component that imports and requests it. If
@@ -1135,7 +1181,6 @@ component in an incompatible way without adapting <TT>Main</TT>:
 
 <PRE class=code>
 (* Fac.aml modified *)
-
 structure Fac =
 struct
     val _ = print "Evaluating component Fac...\n"
@@ -1150,9 +1195,9 @@ will cause a runtime failure:</P>
 <PRE class=code>
 alicec Fac.aml
 alicerun Main
-<I>Input number: </I>20
-<I>Evaluating component Fac...</I>
-<I>error</I></PRE>
+<I><SMALL>Input number: </SMALL></I>20
+<I><SMALL>Evaluating component Fac...</SMALL></I>
+<I><SMALL>error</SMALL></I></PRE>
 
 <P>An application that strives to be robust against such failures should handle
 the corresponding exceptions. See the <A href="components.html">manual
@@ -1162,21 +1207,21 @@ pages</A> on components for more details.</P>
 the application using the <A href="linker.html">static linker</A>:</P>
 
 <PRE class=code>
-alicelink --include ./ ./Main -o LinkedMain.acl
-<I>alicelink: signature of component
+alicelink ./Main --include ./ -o LinkedMain.acl
+<I><SMALL>alicelink: signature of component
 ./Fac
 does not match import requirement of component
 ./Main
-Try recompiling the latter.</I></PRE>
+Try recompiling the latter.</SMALL></I></PRE>
 
-<P>Oops! The linker verifies that all import/export signatures are compatible. Of course, this is not the case since we intentionally made <TT>Fac</TT> incompatible. Recompiling <TT>Main</TT>, as the linker suggests, will not help either in this case.</P>
+<P>Oops! The linker verifies whether all import/export signatures are compatible. Of course, this is not the case since we intentionally made <TT>Fac</TT> incompatible. Recompiling <TT>Main</TT>, as the linker suggests, will not help either in this case.</P>
 
 <P>But if we revert <TT>Fac</TT> to its original form and recompile it, the
 linker will happily accept it:</P>
 
 <PRE class=code>
 alicec Fac.aml
-alicelink --include ./ ./Main -o LinkedMain.acl</PRE>
+alicelink ./Main --include ./ -o LinkedMain.acl</PRE>
 
 <P>The linker builds a new component that bundles all components that are directly or
 indirectly imported by the <EM>root component</EM> given on the command line
@@ -1187,21 +1232,22 @@ specified. See the <A href="linker.html">manual page</A> for details.</P>
 <?php subsection("components-pickles", "Relation to pickling") ?>
 
 <P>There is a close connection between components and pickles. Actually, they
-are interchangable: a pickle containing a structure can be imported as a
-component; a component can be loaded as a pickle. The latter will automatically
-evaluate the component.</P>
+are interchangable: a pickle <EMPH>is</EMPH> a component! It can be imported
+using import announcements. On the flipside, any component can be loaded as
+a pickle. Doing so will evaluate the component.</P>
 
-<P>That close connection allows us to construct precomputed components by
+<P>As a consequence, Alice enables the <EMPH>dynamic creation</EMPH> of components. That is, components can be created by a running Alice program.
+For example, this feature allows us to construct precomputed components by
 writing a component that computes it and writes it into an appropriate
-pickle. For example:</P>
+pickle:</P>
 
 <PRE class=code>
 structure Fac50 = struct val x = Fac.fac 50 end
-<I>structure Fac50 : sig val x : int end</I>
-Pickle.save ("Fac50." ^ Component.extension,
+<I><SMALL>structure Fac50 : sig val x : IntInf.int end</SMALL></I>
+Pickle.save ("Fac50.alc",
 	     pack (structure Fac50 = Fac50)
-	        : (structure Fac50 : sig val x : int end))
-<I>val it : unit = ()</I></PRE>
+	        : (structure Fac50 : sig val x : IntInf.int end))
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P>Assume that calculating the factorial of 50 is an expensive computation. We
 have now performed it statically and generated a component that exports the
@@ -1209,20 +1255,20 @@ result as a value. We may import it as usual:</P>
 
 <PRE class=code>
 import structure Fac50 from "Fac50"
-<I>### loaded signature from file:/home/rossberg/Fac50
-structure Fac50 : sig val x : int end = Fac50</I>
+<I><SMALL>### loaded signature from file:/home/rossberg/Fac50
+structure Fac50 : sig val x : IntInf.int end = Fac50</SMALL></I>
 Fac50.x
-<I>val it : int = _lazy</I>
-Future.await Fac50.x
-<I>val it : int =
-   30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
+<I><SMALL>val it : IntInf.int = _lazy</SMALL></I>
+await Fac50.x
+<I><SMALL>val it : IntInf.int =
+   30414093201713378043612608166064768844377641568960512000000000000</SMALL></I></PRE>
 
-<P>A pickle contains an <EM>evaluated component</EM>. Evaluated components are
+<P>A pickle is an <EM>evaluated component</EM>. Evaluated components are
 closed, i.e. they never depend on any import:</P>
 
 <PRE class=code>
 alicelink -d Fac50
-<I>structure Fac50 : sig val x : int end</I></PRE>
+<I><SMALL>structure Fac50 : sig val x : int end</SMALL></I></PRE>
 
 <P>The linker shows that there is only an export signature to this component.
 See the <A href="components.html#evaluated">manual pages</A> on components for
@@ -1270,23 +1316,23 @@ section:</P>
 
 <PRE class=code>
 val t = Remote.offer (pack Num : NUM)
-<I>### loaded signature from x-alice:/lib/distribution/Remote
-val t : ticket = "http://134.96.18\..."</I></PRE>
+<I><SMALL>### loaded signature from x-alice:/lib/distribution/Remote
+val t : ticket = "x-alice://134.96.186.172:46849/ticket/0"</SMALL></I></PRE>
 
 <P>Offering a package opens a communication port and returns an URI for that
 port. The URI is called a <EM>ticket</EM>. A ticket can be transferred to other
-sites, say by email or through some web document or root site. Other sites can
+sites, say by email or through some web document. Other sites can
 then obtain the available package using the ticket. Of course, the exporting
 site may also obtain it itself (which we will do in this interactive example for
 the sake of simplicity):</P>
 
 <PRE class=code>
 val p = Remote.take t
-<I>val p : Package.package = package{|...|}</I>
+<I><SMALL>val p : Package.package = package{|...|}</SMALL></I>
 structure Num' = unpack p : NUM
-<I>structure Num' : NUM</I>
+<I><SMALL>structure Num' : NUM</SMALL></I>
 Num'.toInt (Num'.fromInt 444)
-<I>val it : int = 444</I></PRE>
+<I><SMALL>val it : int = 444</SMALL></I></PRE>
 
 <P>In general, <TT>take</TT> establishes a connection to the communication port
 denoted by the ticket, and retrieves the offered package. Transfer of the
@@ -1299,30 +1345,33 @@ embedded functions.</P>
 <P>Tickets are intended merely as a means to establish an initial connection
 between sites. All subsequent communication should be dealt with by the
 functions in the offered package. Alice provides a very simple feature to
-enable this idiom: <EM>proxies</EM>. A proxy is a mobile reference to a
-stationary function, that can be used in place of the function it
+enable this idiom: <EM>proxies</EM>. A proxy is basically an RPC stub, a mobile reference to a
+stationary function that can be used in place of the function it
 references.</P>
 
-<P>The library function <TT>proxy:</TT> <TT>('a->'b)</TT> <TT>-></TT>
-<TT>('a->'b)</TT> creates a proxy for an arbitrary function:<P>
+<P>The library function</P>
+
+<PRE class=code>
+Remote.proxy : ('a -> 'b) -> ('a -> 'b)</PRE>
+
+<P>creates a proxy for an arbitrary function:<P>
 
 <PRE class=code>
 fun fib (0 | 1) = 1
   | fib n       = fib (n-1) + fib (n-2)
-<I>val fib : int -> int = _fn</I>
+<I><SMALL>val fib : int -> int = _fn</SMALL></I>
 val fib' = Remote.proxy fib
-<I>val fib' : int -> int = _fn</I></PRE>
+<I><SMALL>val fib' : int -> int = _fn</SMALL></I></PRE>
 
 <P>The resulting function has the same type as the function it references. When
-it is applied, all arguments are forwarded to the original function, and the
-result is transferred back:</P>
+it is applied, all arguments are forwarded to the original function, and the result is transferred back:</P>
 
 <PRE class=code>
 fib' 20
-<I>val it : int = 10946</I></PRE>
+<I><SMALL>val it : int = 10946</SMALL></I></PRE>
 
-<P>However, pickling a proxy does only pickle the respective reference and not
-the referenced function itself. When the proxy is transferred to a different
+<P>Pickling a proxy does only pickle the respective reference and <EMPH>not</EMPH>
+the referenced function. When the proxy is transferred to a different
 site - e.g. by offering it as part of a package - and then applied at that
 site, all arguments will be automatically transferred to the site hosting the
 referenced function, the result will be computed there, and finally transferred
@@ -1345,46 +1394,53 @@ end</PRE>
 the result of applying the function to the argument.</P>
 
 <P>Such a server is easily set up by packaging the straight-forward
-implementation of this signature and offering it to other processes. Note the
-use of a proxy:</P>
+implementation of this signature and offering it to other processes. A slight complication is that, due to ML's value restriction on polymorphic typing, we cannot use the <TT>proxy</TT> function to create a polymorphic proxy. Instead, we use the polymorphic functor</P>
 
 <PRE class=code>
-structure ComputeServer : COMPUTE_SERVER =
-struct
-    val compute = Remote.proxy (fn (f,x) => f x)
-end
-<I>structure ComputeServer : sig val compute : ('a -> 'b) * 'a -> 'b end</I>
+Remote.Proxy (signature S structure X : S) : S</PRE>
+
+<P>that allows wrapping all functions in a structure into proxies in one go:</P>
+
+<PRE class=code>
+structure ComputeServer =
+    Remote.Proxy (signature S = COMPUTE_SERVER
+                  structure X = (fun compute (f,x) = f x))
+<I><SMALL>structure ComputeServer : COMPUTE_SERVER</SMALL></I>
 val ticket = Remote.offer (pack ComputeServer : COMPUTE_SERVER)
-<I>val ticket : ticket = "http://134.96.18\..."</I></PRE>
+<I><SMALL>val ticket : ticket = "x-alice://134.96.186.172:46849/ticket/1"</SMALL></I></PRE>
 
 <P>Assume that the local HTTP server's domain is <TT>www.mydomain.net</TT> and
 the root of its document tree is in directory <TT>/www</TT> of the local file
 system. The server may store the ticket as a WWW document:</P>
 
 <PRE class=code>
-Pickle.save ("/www/computeserver.ticket", pack (val x = ticket) : (val x : string))
-<I>val it : unit = ()</I></PRE>
+Pickle.save ("/www/computeserver.ticket",
+             pack (val x = ticket) : (val x : string))
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
 <P>A client can retrieve the (dynamically created) ticket from the (statically
 known) ticket URL:</P>
 
 <PRE class=code>
-structure Ticket = unpack Pickle.load "http://www.mydomain.net/computeserver.ticket" : (val x : string)
-<I>structure Ticket : sig val x : string end</I></PRE>
+structure Ticket = unpack Pickle.load "http://www.mydomain.net/computeserver.ticket"
+                        : (val x : string)
+<I><SMALL>structure Ticket : sig val x : string end</SMALL></I></PRE>
 
-<P>It can then establish a connection by taking the offered package and
+<P>Note that we could perfectly well have exchanged the ticket in text form using ordinary file I/O, but pickling made it slightly more convenient.</P>
+
+<P>The client can now establish a connection by taking the offered package and
 unpacking it under the agreed-upon signature:</P>
 
 <PRE class=code>
-structure Server = unpack (Remote.take Ticket.x) : COMPUTE_SERVER
-<I>structure Server : COMPUTE_SERVER</I></PRE>
+structure Server = unpack Remote.take Ticket.x : COMPUTE_SERVER
+<I><SMALL>structure Server : COMPUTE_SERVER</SMALL></I></PRE>
 
 <P>Using the <TT>Server</TT> stub the client can shift its comutational load to
 the compute server:<P>
 
 <PRE class=code>
 Server.compute (fib, 30)
-<I>val it : int = 1346269</I></PRE>
+<I><SMALL>val it : IntInf.int = 1346269</SMALL></I></PRE>
 
 <P>The application transfers the function <TT>fib</TT>, as well as the argument
 <TT>30</TT>, to the server, which evaluates it. When it is done, it returns the
@@ -1404,8 +1460,8 @@ However, a synchronous call can trivially be transformed into an asynchronous
 one using <A href="#concurrency">functional threads</A>!</P>
 
 <PRE class=code>
-spawn Server.compute (fib, 30)
-<I>val it : int = _future</I></PRE>
+spawn Server.compute (fib, 40)
+<I><SMALL>val it : int = _future</SMALL></I></PRE>
 
 <P>Functional threads and futures hence are a high-level mechanism to improve
 <EM>lag latency</EM> in distributed applications - a client can proceed
@@ -1610,7 +1666,8 @@ diamond) will open an Inspector window displaying the variable assignments of
 the solution. Chosing an inner node will display the information available at
 the respective point of the search tree.</P>
 
-<!--
+<?php if ($platform != "seam") { ?>
+
 <?php section("interop", "interoperability") ?>
 
 <P>The Alice compiler generates Oz pickled functors (<TT>.ozf</TT> files). The
@@ -1626,6 +1683,7 @@ which specifies the types of the entities imported.</P>
 projects that want to use Alice. It also allows escaping the statically typed
 world of ML for arbitrary subsystems, where that may be desirable. See the <A
 href="interop.html">manual page</A> on interoperability for more detail.</P>
--->
+
+<?php } ?>
 
 <?php footing() ?>
