@@ -145,11 +145,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 
 	fun outputTest (q, LitTest lit) =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
-	  | outputTest (q, TagTest label) =
-	    (f (q, "tagTest"); outputLabel (q, label); r q)
-	  | outputTest (q, TagAppTest (label, args)) =
+	  | outputTest (q, TagTest (label, n)) =
+	    (f (q, "tagTest"); outputLabel (q, label); m q;
+	     outputInt (q, n); r q)
+	  | outputTest (q, TagAppTest (label, n, args)) =
 	    (f (q, "tagAppTest"); outputLabel (q, label); m q;
-	     outputArgs outputId (q, args); r q)
+	     outputInt (q, n); m q; outputArgs outputId (q, args); r q)
 	  | outputTest (q, ConTest id) =
 	    (f (q, "conTest"); outputId (q, id); r q)
 	  | outputTest (q, ConAppTest (id, args)) =
@@ -163,9 +164,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "recTest");
 	     outputList (outputPair (outputLabel, outputId)) (q, labelIdList);
 	     r q)
-	  | outputTest (q, LabTest (label, id)) =
-	    (f (q, "labTest"); outputLabel (q, label); m q; outputId (q, id);
-	     r q)
+	  | outputTest (q, LabTest (label, n, id)) =
+	    (f (q, "labTest"); outputLabel (q, label); m q;
+	     outputInt (q, n); m q; outputId (q, id); r q)
 	  | outputTest (q, VecTest ids) =
 	    (f (q, "vecTest"); outputList outputId (q, ids); r q)
 
@@ -231,9 +232,10 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, VarExp (info, id)) =
 	    (f (q, "varExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, TagExp (info, label, conArity)) =
+	  | outputExp (q, TagExp (info, label, n, conArity)) =
 	    (f (q, "tagExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputConArity (q, conArity); r q)
+	     outputLabel (q, label); m q; outputInt (q, n); m q;
+	     outputConArity (q, conArity); r q)
 	  | outputExp (q, ConExp (info, id, conArity)) =
 	    (f (q, "conExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputConArity (q, conArity); r q)
@@ -252,9 +254,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, VecExp (info, ids)) =
 	    (f (q, "vecExp"); outputExpInfo (q, info); m q;
 	     outputList outputId (q, ids); r q)
-	  | outputExp (q, SelExp (info, label)) =
+	  | outputExp (q, SelExp (info, label, n)) =
 	    (f (q, "selExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); r q)
+	     outputLabel (q, label); m q; outputInt (q, n); r q)
 	  | outputExp (q, FunExp (info, stamp, flags, args, body)) =
 	    (f (q, "funExp"); outputExpInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
@@ -266,9 +268,10 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, VarAppExp (info, id, args)) =
 	    (f (q, "varAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
-	  | outputExp (q, TagAppExp (info, label, args)) =
+	  | outputExp (q, TagAppExp (info, label, n, args)) =
 	    (f (q, "tagAppExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputArgs outputId (q, args); r q)
+	     outputLabel (q, label); m q; outputInt (q, n); m q;
+	     outputArgs outputId (q, args); r q)
 	  | outputExp (q, ConAppExp (info, id, args)) =
 	    (f (q, "conAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
@@ -278,9 +281,10 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, SelAppExp (info, label, id)) =
+	  | outputExp (q, SelAppExp (info, label, n, id)) =
 	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputId (q, id); r q)
+	     outputLabel (q, label); m q; outputInt (q, n); m q;
+	     outputId (q, id); r q)
 	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
 	    (f (q, "funAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputStamp (q, stamp); m q;
