@@ -2140,7 +2140,21 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LOOKUPSWITCH:
       {
-	Error("not implemented");
+	s_int basePC = pc;
+	pc = pc + 4 - (pc & 3);
+	s_int defaultOffset = GET_WIDE_INDEX();
+	pc += 4;
+	s_int nPairs = GET_WIDE_INDEX();
+	s_int key = JavaInt::FromWord(frame->Pop());
+	for (u_int i = nPairs; i--;) {
+	  s_int match = GET_WIDE_INDEX();
+	  pc += 4;
+	  s_int offset = GET_WIDE_INDEX(); 
+	  pc += 4;
+	  if (key == match)
+	    pc = basePC + offset;
+	}
+	pc = basePC + defaultOffset;
       }
       break;
     case Instr::LOR:
