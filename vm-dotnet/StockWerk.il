@@ -465,7 +465,7 @@
   .class abstract public StockWert extends System.Object implements System.Serialization.ISerializable {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void System.Object::.ctor()
+      /*tail.*/ call instance void System.Object::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -611,12 +611,9 @@
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
-//--** this is very strange indeed:
-ldstr "" call void System.Console::Write(class System.String)
       ldarg.0
       ldnull
       stfld class System.Object StockWerk.Global::Guid
-ldstr "" call void System.Console::Write(class System.String)
       ret
     }
     .method public static void Enter(class System.Object, class StockWerk.StockWert) {
@@ -917,7 +914,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public Name extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Global::.ctor()
+      /*tail.*/ call instance void StockWerk.Global::.ctor()
       ret
     }
     .method virtual public class System.String ToString() {
@@ -958,7 +955,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public Constructor extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Global::.ctor()
+      /*tail.*/ call instance void StockWerk.Global::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -1062,7 +1059,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed public RefConstructor extends StockWerk.StockWert {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -1095,7 +1092,7 @@ ldstr "" call void System.Console::Write(class System.String)
     .field private class StockWerk.StockWert Value
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method synchronized public class StockWerk.StockWert Access() {
@@ -1142,7 +1139,7 @@ ldstr "" call void System.Console::Write(class System.String)
     .field public class StockWerk.StockWert Value2
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
@@ -1225,7 +1222,7 @@ ldstr "" call void System.Console::Write(class System.String)
     .field public class StockWerk.StockWert Value3
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
@@ -1569,7 +1566,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public abstract Transient extends StockWerk.StockWert implements System.Serialization.IObjectReference {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      /*tail.*/ call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Select(class System.String) {
@@ -1992,7 +1989,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public abstract Procedure extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Global::.ctor()
+      /*tail.*/ call instance void StockWerk.Global::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply0() {
@@ -2033,7 +2030,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public abstract Procedure0 extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2062,7 +2059,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public abstract Procedure2 extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2099,7 +2096,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class public abstract Procedure3 extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2252,7 +2249,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed show extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2266,7 +2263,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed eq extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2285,7 +2282,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed ne extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2304,7 +2301,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Application$exit extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2335,7 +2332,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Array$array extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2367,7 +2364,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Array$length extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
@@ -2399,7 +2396,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Array$sub extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2445,7 +2442,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Array$update extends StockWerk.Procedure3 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure3::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2493,7 +2490,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Char$chr extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2524,7 +2521,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Char$ord extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2555,7 +2552,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed General$assign extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2587,7 +2584,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed General$exchange extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2618,7 +2615,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Int$less extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2668,7 +2665,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Int$minus extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2715,7 +2712,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Int$plus extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2762,7 +2759,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Int$toString extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2792,7 +2789,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Pickle$load extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2834,7 +2831,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Pickle$save extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2876,7 +2873,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed String$conc extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2925,7 +2922,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed String$str extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2957,7 +2954,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed TextIO$print extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -2989,7 +2986,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Thread$current extends StockWerk.Procedure0 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure0::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure0::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply0() {
@@ -3001,7 +2998,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Thread$sleep extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3032,7 +3029,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Thread$spawn extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3050,7 +3047,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Transient$await extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3063,7 +3060,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Transient$byNeed extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3076,7 +3073,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Transient$fulfill extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -3091,7 +3088,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Transient$future extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3104,7 +3101,7 @@ ldstr "" call void System.Console::Write(class System.String)
   .class sealed Transient$promise extends StockWerk.Procedure0 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure0::.ctor()
+      /*tail.*/ call instance void StockWerk.Procedure0::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply0() {
