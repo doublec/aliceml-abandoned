@@ -314,13 +314,15 @@ structure ToJasmin =
 					  need, max);
 					  recurse (is, !stackneed,!stackmax))
 			      | Label l' =>
-				    case is of
+				    (case is of
 					Goto l''::rest =>
 					    (if !DEBUG >= 2
 						 then TextIO.output
 						     (ziel, "\t; "^l'^": Goto "^l'')
 					     else ();
-					     recurse (is, need, max))
+						 recurse (is, need, max))
+				      | _ => (TextIO.output (ziel, instructionToJasmin (i,staticapply)^"\n");
+					      recurse (is, need, max)))
 			      | _ =>
 				    let
 					val ins = instructionToJasmin (i, staticapply)
