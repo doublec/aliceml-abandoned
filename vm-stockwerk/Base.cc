@@ -13,6 +13,7 @@
 //
 
 #include <cstdio>
+#include "Base.hh"
 
 void AssertOutline(const char *file, int line, const char *message) {
   std::fprintf(stderr, "%s:%d assertion '%s' failed\n", file, line, message);
