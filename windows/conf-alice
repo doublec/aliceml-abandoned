@@ -1,0 +1,6 @@
+#!/bin/sh
+
+/home/pslab/Projects/Alice/Sources/vm-seam/configure \
+  --prefix=/home/pslab/Projects/Alice-Distribution \
+  --with-warnings=yes \
+  --with-gmp=/home/pslab/Projects/SEAM-Support/install

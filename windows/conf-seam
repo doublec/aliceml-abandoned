@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# --with-warnings=(no|yes|pedantic). pedantic also enables -Wall -W
+
+/home/pslab/Projects/SEAM/Sources/configure \
+  CXX='g++ -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
+  CXXFLAGS='-mcpu=pentium3 -march=pentium3' \
+  CC='gcc -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
+  CFLAGS='-mcpu=pentium3 -march=pentium3' \
+  --prefix=/home/pslab/Projects/Alice-Distribution \
+  --with-warnings=yes \
+  --with-zlib=/home/pslab/Projects/SEAM-Support/install
