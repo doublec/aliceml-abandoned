@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <zlib.h>
 #include "adt/Stack.hh"
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
@@ -384,10 +384,10 @@ public:
 static inline
 word ApplyTransform(String *name, word argument) {
   Assert(name != INVALID_POINTER);
-  HashTable *table = HashTable::FromWordDirect(handlerTable);
-  if (table->IsMember(name->ToWord())) {
+  ChunkMap *map = ChunkMap::FromWordDirect(handlerTable);
+  if (map->IsMember(name->ToWord())) {
     Unpickler::handler handler = (Unpickler::handler)
-      Store::DirectWordToUnmanagedPointer(table->GetItem(name->ToWord()));
+      Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
     return handler(argument);
   } else {
     Error("ApplyTransform: unknown transform");
@@ -887,8 +887,7 @@ void Unpickler::Init() {
   UnpickleWorker::Init();
   PickleUnpackWorker::Init();
   PickleLoadWorker::Init();
-  handlerTable =
-    HashTable::New(HashTable::BLOCK_KEY, initialHandlerTableSize)->ToWord();
+  handlerTable = ChunkMap::New(initialHandlerTableSize)->ToWord();
   RootSet::Add(handlerTable);
 }
 
@@ -899,5 +898,5 @@ void Unpickler::InitExceptions() {
 
 void Unpickler::RegisterHandler(String *name, handler handler) {
   word x = Store::UnmanagedPointerToWord((void *) handler);
-  HashTable::FromWordDirect(handlerTable)->InsertItem(name->ToWord(), x);
+  ChunkMap::FromWordDirect(handlerTable)->Put(name->ToWord(), x);
 }
