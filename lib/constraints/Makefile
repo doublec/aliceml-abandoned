@@ -21,7 +21,8 @@ BOOTSTRAPDIR = ../../bootstrap
 
 # No configuration needed from here
 
-VPATH = $(SRCTOP)
+SRCDIR = $(SRCTOP)/lib/constraints
+VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS =
@@ -65,10 +66,10 @@ Untyped%.ozf: %.oz
 ## Installation
 ##
 
+install: $(INSTALLDIRS) $(INSTALLFILES)
+
 $(INSTALLDIRS):
 	mkdir -p $@
-
-install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(PREFIX)/lib/constraints/%.ozf: %.ozf
 	install -c -m 444 $< $@
