@@ -76,7 +76,8 @@ struct
 	    case Future.awaitEither (result, Promise.future p) of
 		FST (TERM x) => SOME x (* raises if f raised exn *)
 	      | SND Signal.SIGSTOP where stoppable => SOME (spawn unTERM result)
-	      | SND Signal.SIGINT => (Thread.terminate thread; NONE)
+	      | SND Signal.SIGINT =>
+		(Thread.terminate thread handle Thread.Terminated => (); NONE)
 	      | SND _ => run ((thread, result), stoppable)
 	end
 
