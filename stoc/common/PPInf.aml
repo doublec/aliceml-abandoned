@@ -189,6 +189,23 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		))
 	    ) ^/^ doc
 
+      | ppItem'(FIX((p,l,0), f), doc) =
+	    hbox(
+		let open Fixity in
+		    (case f
+		      of NONFIX    => text "nonfix"
+		       | PREFIX n  => text "prefix" ^/^ text(Int.toString n)
+		       | POSTFIX n => text "postfix" ^/^ text(Int.toString n)
+		       | INFIX(n,LEFT) => text "infix" ^/^ text(Int.toString n)
+		       | INFIX(n,RIGHT) =>
+				text "infixr" ^/^ text(Int.toString n)
+		       | INFIX(n,NEITHER) =>
+				text "infixn" ^/^ text(Int.toString n)
+		    ) ^/^
+		    ppLab l ^/^
+		end ^^
+	    ) ^/^ doc
+
       | ppItem'(_, doc) = doc		(* hidden item *)
 
 
