@@ -301,9 +301,8 @@ struct
 
     structure InfHash = MkHashImpMap(open Inf val equals = Inf.same)
 
-    val infHash     = InfHash.new() : Type.t InfHash.map
-    val infInstHash = InfHash.new() : Type.t InfHash.map
-		(*UNFINISHED: remove this global variables! *)
+    val infHash = InfHash.new() : Type.t InfHash.map
+		(*UNFINISHED: remove this global variable! *)
 
     fun ikindToKind k =
 	if Inf.isGround k then
@@ -387,84 +386,11 @@ struct
 	else if Inf.isInfItem item then
 	    let
 		val (a,k,d) = Inf.asInfItem item
-		val  t      = case d of SOME j => infToInstTyp j
+		val  t      = case d of SOME j => infToTyp j
 				      | NONE =>
 					(* new abstract type *)
 					Type.inCon(ikindToKind k, Type.CLOSED,
 						   Path.fromLab a)
-	    in
-		Type.extendRow(trInfLabel a, typ_infinst t, r)
-	    end
-	else (* fixity *)
-	    r
-
-    and infToInstTyp j =
-	case InfHash.lookup(infInstHash, j) of
-	  SOME t => t
-	| NONE   =>
-	    let
-		val t = infToInstTyp' j
-	    in
-		InfHash.insertDisjoint(infInstHash, j, t);
-		t
-	    end
-
-    and infToInstTyp' j =
-	if Inf.isTop j then
-	    typ_top
-	else if Inf.isCon j then
-	    let
-		val (k,p) = Inf.asCon j
-	    in
-		Type.inCon(Type.STAR, Type.CLOSED, p)
-	    end
-	else if Inf.isSig j then
-	    let
-		val s     = Inf.asSig j
-		val items = Inf.items s
-	    in
-		Type.inProd(List.foldr itemToInstRow (Type.emptyRow()) items)
-	    end
-	else if Inf.isArrow j then
-	    let
-		val (p,j1,j2) = Inf.asArrow j
-	    in
-		infToInstTyp j2
-	    end
-	else if Inf.isLambda j then
-	    (*UNFINISHED*)
-	    typ_unit
-	else if Inf.isApply j then
-	    (*UNFINISHED*)
-	    typ_unit
-	else
-	    raise Crash.Crash "TranslationPhase.infToInstTyp: unknown inf"
-
-    and itemToInstRow(item,r) =
-	if Inf.isValItem item then
-	    (*UNFINISHED: get rid of this, but how?*)
-	    let
-		val (a,t,d) = Inf.asValItem item
-	    in
-		Type.extendRow(trValLabel a, t, r)
-	    end
-	else if Inf.isTypItem item then
-	    let
-		val (a,k,d) = Inf.asTypItem item
-	    in
-		Type.extendRow(trTypLabel a, typ_typ, r)
-	    end
-	else if Inf.isModItem item then
-	    let
-		val (a,j,d) = Inf.asModItem item
-	    in
-		Type.extendRow(trModLabel a, infToTyp j, r)
-	    end
-	else if Inf.isInfItem item then
-	    let
-		val (a,k,d) = Inf.asInfItem item
-		val  t      = case d of SOME j => infToInstTyp j
-				      | NONE   => typ_unit
 	    in
 		Type.extendRow(trInfLabel a, typ_infinst t, r)
 	    end
@@ -499,7 +425,7 @@ struct
     fun trVarInfo {region,var}		= {region=region, typ=typ_var}
     fun trModInfo {region,inf}		= {region=region, typ=infToTyp inf}
     fun trInfInfo {region,inf}		= {region=region,
-					   typ=typ_infinst(infToInstTyp inf)}
+					   typ=typ_infinst(infToTyp inf)}
 
     fun trVallab(I.Lab(i,a))		= O.Lab(i, trValLabel  a)
     fun trTyplab(I.Lab(i,a))		= O.Lab(i, trTypLabel a)
@@ -1022,7 +948,8 @@ val _ = TextIO.inputLine(TextIO.stdIn)
      *	   struct [x1 . item1 :> x2 . item2]* end
      *	[x1 : fct(x11:j11)->j12 :> x2 = fct(x21:j21)->j22] =
      *	   fct(y:j21) => let z = x1([y : j21 :> _ = j11])
-     *                   in [z : j12 :> x2 = j22] end
+     *                       x3 = x2 y
+     *                   in [z : j12 :> x3 = j22] end
      *	[x1 : j1 :> x2 = j2] = x1
      *
      *	[x1 . val y:t1 :> x2 . val y:t2] = val y = lazy x1.y
@@ -1050,7 +977,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    if Inf.isTop j1 then
 		NONE
 	    else
-		SOME(trUnit r)
+		SOME(O.FailExp(typInfo(r,typ_top)))
 	else if Inf.isCon j2 andalso Inf.isCon j1 then
 	    if not isOpaque then
 		(* Note: If we match transparently and have to constructors
@@ -1089,33 +1016,45 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		val i' = nonInfo r
 		val i1 = typInfo(r, t21)
 		val i2 = typInfo(r, t12)
+		val i3 = typInfo(r, t22)
 		val y' = O.Id(i1, Stamp.new(), Name.InId)
 		val z' = O.Id(i2, Stamp.new(), Name.InId)
 		val y  = O.ShortId(i1, y')
 		val z  = O.ShortId(i2, z')
+		val x3'= O.Id(i3, Stamp.new(), Name.InId)
+		val x3 = O.ShortId(i3, x3')
 	    in
 		case (upInf(false, false, y,j21,y(*unsued*),j11, r,t21,t11),
-		      upInf(isOpaque, isntIdentity, z,j12,x2,j22, r,t12,t22))
+		      upInf(isOpaque, isntIdentity, z,j12,x3,j22, r,t12,t22))
 		  of (SOME exp1, SOME exp2) =>
 		     let
-			val x1exp  = O.VarExp(typInfo(r,t1), x1)
-			val ypat   = O.VarPat(typInfo(r,t21), y')
-			val zpat   = O.VarPat(typInfo(r,t12), z')
-			val appexp = O.AppExp(typInfo(r,t12), x1exp, exp1)
-			val dec    = O.ValDec(i', zpat, appexp)
-			val letexp = O.LetExp(typInfo(r,t22), #[dec], exp2)
+			val x1exp   = O.VarExp(typInfo(r,t1), x1)
+			val x2exp   = O.VarExp(typInfo(r,t2), x2)
+			val yexp    = O.VarExp(typInfo(r,t21), y)
+			val ypat    = O.VarPat(typInfo(r,t21), y')
+			val zpat    = O.VarPat(typInfo(r,t12), z')
+			val x3pat   = O.VarPat(typInfo(r,t22), x3')
+			val appexp1 = O.AppExp(typInfo(r,t12), x1exp, exp1)
+			val appexp2 = O.AppExp(typInfo(r,t22), x2exp, yexp)
+			val dec1    = O.ValDec(i', zpat, appexp1)
+			val dec2    = O.ValDec(i', x3pat, appexp2)
+			val letexp  = O.LetExp(typInfo(r,t22),#[dec1,dec2],exp2)
 		     in
 			SOME(O.FunExp(typInfo(r,t2),#[O.Match(i',ypat,letexp)]))
 		     end
 		   | (NONE, SOME exp2) =>
 		     let
-			val x1exp  = O.VarExp(typInfo(r,t1), x1)
-			val yexp   = O.VarExp(typInfo(r,t21), y)
-			val ypat   = O.VarPat(typInfo(r,t21), y')
-			val zpat   = O.VarPat(typInfo(r,t12), z')
-			val appexp = O.AppExp(typInfo(r,t12), x1exp, yexp)
-			val dec    = O.ValDec(i', zpat, appexp)
-			val letexp = O.LetExp(typInfo(r,t22), #[dec], exp2)
+			val x1exp   = O.VarExp(typInfo(r,t1), x1)
+			val x2exp   = O.VarExp(typInfo(r,t2), x2)
+			val yexp    = O.VarExp(typInfo(r,t21), y)
+			val ypat    = O.VarPat(typInfo(r,t21), y')
+			val zpat    = O.VarPat(typInfo(r,t12), z')
+			val x3pat   = O.VarPat(typInfo(r,t22), x3')
+			val appexp1 = O.AppExp(typInfo(r,t12), x1exp, yexp)
+			val appexp2 = O.AppExp(typInfo(r,t22), x2exp, yexp)
+			val dec1    = O.ValDec(i', zpat, appexp1)
+			val dec2    = O.ValDec(i', x3pat, appexp2)
+			val letexp  = O.LetExp(typInfo(r,t22),#[dec1,dec2],exp2)
 		     in
 			SOME(O.FunExp(typInfo(r,t2),#[O.Match(i',ypat,letexp)]))
 		     end
@@ -1235,8 +1174,8 @@ print"\n";
 			(x1, isntIdentity)
 		    else
 			(x2, isntIdentity orelse Option.isNone d)
-		val t1  = infToInstTyp(Inf.lookupInf(s1,a))
-		val t2  = case d of SOME j => infToInstTyp j
+		val t1  = infToTyp(Inf.lookupInf(s1,a))
+		val t2  = case d of SOME j => infToTyp j
 				  | NONE =>
 					(* new abstract type *)
 					Type.inCon(ikindToKind k, Type.CLOSED,
@@ -1432,7 +1371,7 @@ print"\n";
 	    let
 		val i   = I.infoInf j
 		val r   = #region i
-		val t2  = infToInstTyp(#inf i)
+		val t2  = infToTyp(#inf i)
 		val e1' = O.FailExp(typInfo(r, typ_inf))
 		val e2' = O.FailExp(typInfo(r, t2))
 	    in
@@ -1442,24 +1381,25 @@ print"\n";
 	    trInf' j
 
     and trInf'(I.TopInf(i)) =
-	(* [any] = (Inf.inTop(), ()) *)
+	(* [any] = (Inf.inTop(), fail) *)
 	let
 	    val r   = #region i
-	    val e2' = trUnit r
-	    val e1' = infOp(lab_inTop, e2')
+	    val e1' = infOp(lab_inTop, trUnit r)
+	    val e2' = O.FailExp(typInfo(r, typ_top))
 	in
-	    O.TupExp(typInfo(r,typ_infunit), #[e1',e2'])
+	    O.TupExp(typInfo(r, Type.inTuple #[typ_inf,typ_top]), #[e1',e2'])
 	end
 
       | trInf'(I.PrimInf(i,s)) =
-	(* [prim s] = (Inf.inCon(PervasiveInf.lookup s), ()) *)
+	(* [prim s] = (Inf.inCon(PervasiveInf.lookup s), fail) *)
 	let
 	    val r   = #region i
+	    val t   = infToTyp(#inf i)
 	    val e1' = infOp(lab_inCon,
 			    pervInfOp(lab_lookup, trString(#region i, s)))
-	    val e2' = trUnit r
+	    val e2' = O.FailExp(typInfo(r,t))
 	in
-	    O.TupExp(typInfo(r,typ_infunit), #[e1',e2'])
+	    O.TupExp(typInfo(r, Type.inTuple #[typ_inf,t]), #[e1',e2'])
 	end
 
       | trInf'(I.ConInf(i,y)) =
@@ -1472,7 +1412,7 @@ print"\n";
 	    val e2' = trUnit r
 	    val i'  = typInfo(r, #2(Type.asArrow' t1))
 	in
-	    O.LazyExp(i', O.AppExp(i', e1', e2'))
+	    O.LazyExp(i', O.AppExp(i',e1',e2'))
 	end
 
       | trInf'(I.SigInf(i,ss)) =
@@ -1489,7 +1429,7 @@ print"\n";
 
 	    val e1' = infOp(lab_inSig, idToExp s')
 	    val fs' = trSpecsInst ss
-	    val t2  = infToInstTyp(#inf i)
+	    val t2  = infToTyp(#inf i)
 	    val e2' = O.ProdExp(typInfo(r,t2), fs')
 	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t2])
 	    val e'  = O.TupExp(i', #[e1',e2'])
@@ -1524,7 +1464,6 @@ print"\n";
 	(* [j1 where j2] = let val x = Inf.intersect(#1[j1], #1[j2])
 	 *                 in (x, lazy {....}) end
 	 *)
-	(*UNFINISHED *)
 	let
 	    val r   = #region i
 	    val x'  = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
@@ -1539,7 +1478,7 @@ print"\n";
 	    val d'  = O.ValDec(nonInfo r, idToPat x', e')
 
 	    val j   = #inf i
-	    val t   = infToInstTyp j
+	    val t   = infToTyp j
 	    val s'  = O.LazyExp(typInfo(r,t), rebuildInfInst(r,xx',j))
 	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t])
 	in
@@ -1550,7 +1489,7 @@ print"\n";
 	(* [fct(x:j1) -> j2] = let val  x0     = Path.invent()
 	 *                         val (x1,x$) = [j1]
 	 *                         val (x2,x3) = [j2]
-	 *                     in (Inf.inArrow(x0,x1,x2), x3) end
+	 *                     in (Inf.inArrow(x0,x1,x2), fail) end
 	 *)
 	trBindInf lab_inArrow (i,x,j1,j2)
 
@@ -1576,7 +1515,7 @@ print"\n";
 	    let
 		val i = I.infoInf j
 	    in
-		O.FailExp(typInfo(#region i, typ_infinst(infToInstTyp(#inf i))))
+		O.FailExp(typInfo(#region i, typ_infinst(infToTyp(#inf i))))
 	    end
 	else
 	    (* [j]_p = fn _ => [j]_id,id,p *)
@@ -1635,10 +1574,11 @@ print"\n";
 	 *)
 	let
 	    val r   = #region i
+	    val t   = infToTyp(#inf i)
 	    val e1' = mkKind(ikindOp(lab_inGround, trUnit r))
 	    val e3' = infOp(lab_inCon,
 			    O.TupExp(typInfo(r, typ_icon), #[e1',p']))
-	    val e4' = mkStr(trUnit r)
+	    val e4' = mkStr(O.FailExp(typInfo(r,t)))
 	    val i'  = typInfo(r, Type.inTuple #[typ_con, #typ(O.infoExp e4')])
 	in
 	    SOME(O.TupExp(i', #[e3',e4']))
@@ -1650,7 +1590,7 @@ print"\n";
 	(* [fct(x:j1) -> j2] = let val  x0     = Path.invent()
 	 *                         val (x1,x$) = [j1]
 	 *                         val (x2,x3) = [j2]
-	 *                     in (Inf.a(x0,x1,x2), x3) end
+	 *                     in (Inf.a(x0,x1,x2), fn _ => x3) end
 	 *)
 	let
 	    val r   = #region i
@@ -1681,10 +1621,12 @@ print"\n";
 						O.VarPat(i3',x3')])
 	    val d2' = O.ValDec(i', p2', e2')
 
-	    val e1' = infOp(a, O.TupExp(typInfo(r,typ_pathinfinf),
+	    val e3' = infOp(a, O.TupExp(typInfo(r,typ_pathinfinf),
 				#[idToExp x0', idToExp x1', idToExp x2']))
-	    val e2' = idToExp x3'
-	    val e'  = O.TupExp(typInfo(r,Type.inTuple #[typ_inf,t2]),#[e1',e2'])
+	    val t4  = Type.inArrow(t1,t2)
+	    val p4' = O.JokPat(typInfo(r,t1))
+	    val e4' = O.FunExp(typInfo(r,t4), #[O.Match(i', p4', idToExp x3')])
+	    val e'  = O.TupExp(typInfo(r,Type.inTuple #[typ_inf,t4]),#[e3',e4'])
 	in
 	    O.LetExp(O.infoExp e', #[d0',d1',d2'], e')
 	end
@@ -1697,38 +1639,45 @@ print"\n";
 
     and rebuildInfInst(r,x',j) =
 	if Inf.isSig j then
-	    (* [sig items end] --> let val x1 = Inf.asSig x in [items] end *)
+	    (* [sig items end]_x -->
+	     *     let val x1 = Inf.asSig x in [items]_x1 end
+	     *)
 	    let
 		val s   = Inf.asSig j
 
 		val x1' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
-		val e'  = sigOp(lab_asSig, x')
-		val d'  = O.ValDec(nonInfo r, idToPat x1', e')
+		val e1' = sigOp(lab_asSig, x')
+		val d'  = O.ValDec(nonInfo r, idToPat x1', e1')
 
-		val e'  = O.ProdExp(typInfo(r, infToInstTyp j),
+		val e'  = O.ProdExp(typInfo(r, infToTyp j),
 				    rebuildSigInst(r, idToExp x1', s))
 	    in
 		O.LetExp(O.infoExp e', #[d'], e')
 	    end
 	else if Inf.isArrow j then
-	    (* [fct(x:j1) -> j2] --> let val x2 = #3(Inf.asArrow j)
-	     *                       in [j2] end
+	    (* [fct(_:j1) -> j2]_x -->
+	     *     let val (_,_,x1) = Inf.asArrow x in fn _ => [j2]_x1 end
 	     *)
 	    let
-		val (_,_,j2) = Inf.asArrow j
+		val (p,j1,j2) = Inf.asArrow j
 
-		val x2' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
-		val e'  = O.SelExp(typInfo(r,typ_inf),
-				   O.Lab(nonInfo r, Label.fromInt 3),
-				   pathinfinfInfOp(lab_asArrow, x'))
-		val d'  = O.ValDec(nonInfo r, idToPat x2', e')
+		val x1' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
+		val e1' = pathinfinfInfOp(lab_asArrow, x')
+		val p'  = O.TupPat(typInfo(r,typ_pathinfinf),
+				   #[O.JokPat(typInfo(r,typ_path)),
+				     O.JokPat(typInfo(r,typ_inf)), idToPat x1'])
+		val d'  = O.ValDec(nonInfo r, p', e1')
 
-		val e'  = rebuildInfInst(r, idToExp x2', j2)
+		val e2' = rebuildInfInst(r, idToExp x1', j2)
+		val t1  = infToTyp j1
+		val t2  = #typ(O.infoExp e2')
+		val e'  = O.FunExp(typInfo(r, Type.inArrow(t1,t2)),
+			   #[O.Match(nonInfo r, O.JokPat(typInfo(r,t1)), e2')])
 	    in
 		O.LetExp(O.infoExp e', #[d'], e')
 	    end
 	else
-	    trUnit r
+	    O.FailExp(typInfo(r, infToTyp j))
 
     and rebuildSigInst(r,x',s) =
 	Vector.fromList(List.foldl (rebuildItemInst(r,x')) [] (Inf.items s))
@@ -1762,7 +1711,7 @@ print"\n";
 	    let
 		val (a,j1,_) = Inf.asModItem item
 		val  l'  = O.Lab(nonInfo r, trModLabel a)
-		val  t1  = infToInstTyp j1
+		val  t1  = infToTyp j1
 		val  x1' = O.Id(typInfo(r,t1), Stamp.new(), Name.InId)
 
 		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
@@ -1793,18 +1742,16 @@ print"\n";
 		val  e3' = infOp(lab_instance, e2')
 		val  d'  = O.ValDec(nonInfo r, idToPat x1', e3')
 
-		val  e4' = case d
-			     of SOME j =>
-				O.TupExp(typInfo(r,typ_infinst(infToInstTyp j)),
-					 #[xx', rebuildInfInst(r,xx',j)])
-			      | NONE =>
-				O.TupExp(typInfo(r,typ_infunit),
-					 #[xx', trUnit r])
+		val  j   = case d of SOME j => j
+				   | NONE   => Inf.inCon(k, Path.fromLab a)
+		val  e4' = rebuildInfInst(r,xx',j)
 		val  i   = O.infoExp e4'
+		val  e5' = O.TupExp(typInfo(r, Type.inTuple #[typ_inf,#typ i]),
+				    #[xx', e4'])
 		val  t   = #typ i
-		val  e5' = O.LetExp(i, #[d'], e4')
+		val  e6' = O.LetExp(i, #[d'], e4')
 
-		val  m'  = O.Match(nonInfo r,O.JokPat(typInfo(r,typ_unit)), e5')
+		val  m'  = O.Match(nonInfo r,O.JokPat(typInfo(r,typ_unit)), e6')
 		val  e'  = O.FunExp(typInfo(r, Type.inArrow(typ_unit,t)), #[m'])
 	    in
 		O.Field(nonInfo r, l', e') :: fs'
