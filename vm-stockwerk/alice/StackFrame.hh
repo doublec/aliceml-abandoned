@@ -34,17 +34,23 @@ static const FrameLabel CELLMAP_ITERATOR_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 7);
 static const FrameLabel CELLMAP_FIND_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 8);
+static const FrameLabel IMPMAP_INSERT_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 9);
+static const FrameLabel IMPMAP_ITERATOR_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 10);
+static const FrameLabel IMPMAP_FIND_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 11);
 
 // AliceNativeCode Frames
 static const FrameLabel NATIVE_CODE_FRAME =
-  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 9);
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 12);
 static const FrameLabel NATIVE_CODE_HANDLER_FRAME =
-  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 10);
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 13);
 static const FrameLabel LAZY_COMPILE_FRAME =
-  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 11);
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 14);
 
 // Alice Async IO Frames
 static const FrameLabel FD_INPUT_FRAME =
-  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 12);
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 15);
 
 #endif
