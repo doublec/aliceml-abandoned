@@ -48,7 +48,7 @@ INSTALLFILES_LIBRARY_0 = \
 	os-path.html os-process.html \
 	package.html pair.html pickle.html prim-io.html print.html \
 	promise.html \
-	real.html ref.html \
+	real.html ref.html ref-map.html \
 	set.html stack.html stamp.html stream-io.html string.html \
 	string-cvt.html substring.html \
 	text.html text-io.html text-stream-io.html time.html toplevel.html \
