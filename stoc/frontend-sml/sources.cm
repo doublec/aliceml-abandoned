@@ -1,71 +1,7 @@
 Group is
 
-	(* Utilities *)
-
-	ml-yacc-lib.cm
-	../misc/sources.cm
-	../infrastructure/sources.cm
-
-	(* SML syntax *)
-
-	SCON.sig
-	SCon.sml
-	LAB.sig
-	Lab.sml
-	ID.sig
-	MakeId.sml
-
-	Ids.sml
-
-	INPUT_GRAMMAR.sig
-	MakeInputGrammar.sml
-	InputGrammar.sml
-
-	(* Parsing *)
-
-	LEXER_ERROR.sig
-	LexerError.sml
-	PARSING_ERROR.sig
-	ParsingError.sml
-
-	Lexer.lex
-	CountPosLexer.sml
-	Parser.grm
-
-	DERIVED_FORMS.sig
-	DerivedForms.sml
-
-	PARSING_PHASE.sig
-	ParsingPhase.sml
-
-
-	(* Abstract syntax *)
-
-	(*../frontend-common/abstract-grammar.cm*)
-	../frontend-common/sources.cm
-	../common/name.cm
-	../common/prebound.cm
-
-	(* Translation into abstract syntax (binding analysis) *)
-
-	BIND_ENV.sig
-	BindEnv.sml
-	BIND_ENV0.sig
-	BindEnv0.sml
-	BIND_ENV_FROM_SIG.sig
-	BindEnvFromSig.sml
-
-	ABSTRACTION_ERROR.sig
-	AbstractionError.sml
-
-	INFIX.sig
-	Infix.sml
-	SHARING.sig
-	Sharing.sml
-
-	ABSTRACTION_PHASE.sig
-	MakeAbstractionPhase.sml
+	parsing-phase.cm
+	abstraction-phase.cm
 
 	MakeFrontendSML.sml
 	FrontendSMLInitialContext.sml
-

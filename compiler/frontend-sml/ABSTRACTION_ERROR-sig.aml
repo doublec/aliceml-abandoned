@@ -10,8 +10,11 @@ signature ABSTRACTION_ERROR =
     type id	= AbstractGrammar.id
 
     datatype error =
+	(* Infix *)
+	  InfixMisplaced	of VId
+	| AssocConflict		of VId * VId
 	(* Identifiers *)
-	  VIdUnbound		of VId
+	| VIdUnbound		of VId
 	| TyConUnbound		of TyCon
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId

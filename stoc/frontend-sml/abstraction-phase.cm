@@ -1,0 +1,28 @@
+Group is
+
+	../misc/sources.cm
+	../infrastructure/sources.cm
+
+	input-grammar.cm
+	../frontend-common/abstract-grammar.cm
+	../common/name.cm
+	../common/prebound.cm
+	../common/interface.cm
+
+	BIND_ENV.sig
+	BindEnv.sml
+	BIND_ENV0.sig
+	BindEnv0.sml
+	BIND_ENV_FROM_SIG.sig
+	BindEnvFromSig.sml
+
+	ABSTRACTION_ERROR.sig
+	AbstractionError.sml
+
+	INFIX.sig
+	Infix.sml
+	SHARING.sig
+	Sharing.sml
+
+	ABSTRACTION_PHASE.sig
+	MakeAbstractionPhase.sml

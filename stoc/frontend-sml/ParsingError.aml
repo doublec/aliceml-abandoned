@@ -27,9 +27,6 @@ structure ParsingError :> PARSING_ERROR =
 	(* Derived forms *)
 	| WithtypeInvalid
 	| WithtypeArityMismatch
-	(* Infix *)
-	| InfixMisplaced	of VId
-	| AssocConflict		of VId * VId
 
 
     type warning = unit		(* yet empty *)
@@ -38,7 +35,6 @@ structure ParsingError :> PARSING_ERROR =
   (* Pretty printing *)
 
     fun ppQuoted s	= "`" ^ s ^ "'"
-    fun ppVId vid	= ppQuoted(VId.toString vid)
 
     fun ppError(UnclosedComment) =
 	  textpar["unclosed","comment"]
@@ -67,12 +63,6 @@ structure ParsingError :> PARSING_ERROR =
 	  textpar["invalid","type","binding","inside","withtype"]
       | ppError(WithtypeArityMismatch) =
 	  textpar["type","has","wrong","arity"]
-      (* Infix *)
-      | ppError(InfixMisplaced vid) =
-	  textpar["misplaced","infix","identifier",ppVId vid]
-      | ppError(AssocConflict(vid1,vid2)) =
-	  textpar["conflicting","infix","associativity","between","operators",
-		  ppVId vid1,"and",ppVId vid2]
 
 
     fun ppWarning w = empty

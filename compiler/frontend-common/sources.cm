@@ -1,25 +1,8 @@
 Group is
 
-	../misc/sources.cm
-	../infrastructure/sources.cm
-	../common/sources.cm
-	abstract-grammar.cm
-
-	StringMap.sml
-	ENV.sig
-	Env.sml
-
-	ENV0.sig
-	Env0.sml
-
-	TypedGrammar.sml
-	ELABORATION_ERROR.sig
-	ElaborationError.sml
-	ELABORATION_PHASE.sig
-	MakeElaborationPhase.sml
-
-	TRANSLATION_PHASE.sig
-	TranslationPhase.sml
+	../infrastructure/phase.cm
+	elaboration-phase.cm
+	translation-phase.cm
 
 	MakeFrontendCommon.sml
 	FrontendCommonInitialContext.sml

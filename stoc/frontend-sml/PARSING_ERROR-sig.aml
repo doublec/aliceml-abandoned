@@ -18,9 +18,6 @@ signature PARSING_ERROR =
 	(* Derived forms *)
 	| WithtypeInvalid
 	| WithtypeArityMismatch
-	(* Infix *)
-	| InfixMisplaced	of VId
-	| AssocConflict		of VId * VId
 
     type warning	(* yet empty *)
 

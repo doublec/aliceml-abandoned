@@ -4,7 +4,8 @@ Group is
 	../common/id-stamp.cm
 	../common/name.cm
 	../common/fixity.cm
+	../common/type.cm
+	../common/interface.cm
+	abstract-grammar.cm
 
-	ABSTRACT_GRAMMAR.sig
-	MakeAbstractGrammar.sml
-	AbstractGrammar.sml
+	TypedGrammar.sml

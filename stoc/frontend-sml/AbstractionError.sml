@@ -19,8 +19,11 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     type id	= AbstractGrammar.id
 
     datatype error =
+	(* Infix *)
+	  InfixMisplaced	of VId
+	| AssocConflict		of VId * VId
 	(* Identifiers *)
-	  VIdUnbound		of VId
+	| VIdUnbound		of VId
 	| TyConUnbound		of TyCon
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId
@@ -128,7 +131,13 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun ppUnboundImport((ppId,class), id) =
 	  textpar(class @ [ppId id,"is","not","exported","by","component"])
 
-    fun ppError(VIdUnbound vid) =
+    fun ppError(InfixMisplaced vid) =
+	  textpar["misplaced","infix","identifier",ppVId vid]
+      | ppError(AssocConflict(vid1,vid2)) =
+	  textpar["conflicting","infix","associativity","between","operators",
+		  ppVId vid1,"and",ppVId vid2]
+      (* Unbound identifiers *)
+      | ppError(VIdUnbound vid) =
 	  ppUnbound(classVId, vid)
       | ppError(TyConUnbound tycon) =
 	  ppUnbound(classTyCon, tycon)

@@ -1,0 +1,16 @@
+Group is
+
+	../infrastructure/source.cm
+
+	SCON.sig
+	SCon.sml
+	LAB.sig
+	Lab.sml
+	ID.sig
+	MakeId.sml
+
+	Ids.sml
+
+	INPUT_GRAMMAR.sig
+	MakeInputGrammar.sml
+	InputGrammar.sml

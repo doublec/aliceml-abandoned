@@ -11,7 +11,7 @@ structure Infix :> INFIX =
   (* Import *)
 
     structure Grammar = InputGrammar
-    structure E       = ParsingError
+    structure E       = AbstractionError
 
     open Grammar
 

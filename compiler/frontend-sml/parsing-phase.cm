@@ -1,0 +1,22 @@
+Group is
+
+	ml-yacc-lib.cm
+	../misc/sources.cm
+	../infrastructure/sources.cm
+
+	input-grammar.cm
+
+	LEXER_ERROR.sig
+	LexerError.sml
+	PARSING_ERROR.sig
+	ParsingError.sml
+
+	Lexer.lex
+	CountPosLexer.sml
+	Parser.grm
+
+	DERIVED_FORMS.sig
+	DerivedForms.sml
+
+	PARSING_PHASE.sig
+	ParsingPhase.sml

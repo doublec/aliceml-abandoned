@@ -1,20 +1,7 @@
-Group
+Group is
 
-	signature STAMP
-	structure Stamp
-	signature NAME
-	structure Name
-	signature FIXITY
-	structure Fixity
-	signature ABSTRACT_GRAMMAR
-	functor MakeAbstractGrammar
-	structure AbstractGrammar
-
-is
-
-	../misc/sources.cm
 	../infrastructure/source.cm
-	../common/prebound.cm
+	../common/id-stamp.cm
 	../common/name.cm
 	../common/fixity.cm
 
