@@ -45,12 +45,12 @@ public:
     Block *p = Store::AllocBlock(MIN_DATA_LABEL, SIZE);
     p->InitArg(MAP_POS, map->ToWord());
     p->InitArg(NEXT_POS, next);
-    return static_cast<ListNode *>(p);
+    return STATIC_CAST(ListNode *, p);
   }
   static ListNode *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == MIN_DATA_LABEL);
-    return static_cast<ListNode *>(p);
+    return STATIC_CAST(ListNode *, p);
   }
 };
 
@@ -98,7 +98,7 @@ void Map::RehashAll(const u_int gen) {
       map = INVALID_POINTER;
     // Do rehash only if map is alive
     if (map != INVALID_POINTER) {
-      Map *newMap = static_cast<Map *>(map);
+      Map *newMap = STATIC_CAST(Map *, map);
       newMap->Rehash();
       ListNode *node =
 	(ListNode *) Store::Alloc(gen, MIN_DATA_LABEL, ListNode::GetSize());
@@ -114,7 +114,7 @@ void Map::Init() {
 }
 
 Map *Map::New(u_int size) {
-  Map *map = static_cast<Map *>(BaseMap<WordKey>::New(MAP_LABEL, size));
+  Map *map = STATIC_CAST(Map *, BaseMap<WordKey>::New(MAP_LABEL, size));
   mapLs = ListNode::New(map, mapLs)->ToWord();
   return map;
 }

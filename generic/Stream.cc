@@ -23,7 +23,7 @@ void Stream::SendEvent(word event) {
   Future *future = Future::New();
   EntryList *entry = EntryList::New(event, future->ToWord());
   Future *old = 
-    static_cast<Future *>(Store::DirectWordToTransient(GetArg(STREAM_POS)));
+    STATIC_CAST(Future *, Store::DirectWordToTransient(GetArg(STREAM_POS)));
   
   old->ScheduleWaitingThreads();
   old->Become(REF_LABEL, entry->ToWord());

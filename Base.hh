@@ -78,4 +78,7 @@ SeamDll void ErrorOutline(const char *file, int line, const char *message);
   ErrorOutline(__FILE__, __LINE__, message); exit(1);	\
 }
 
+// Use this macro to circumvent gcc 3.3.1 static_cast bug
+#define STATIC_CAST(t, e) ((t) (e))
+
 #endif

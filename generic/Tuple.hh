@@ -25,18 +25,18 @@ public:
 
   // Tuple Constructor
   static Tuple *New(u_int n) {
-    return static_cast<Tuple *>(Store::AllocBlock(TUPLE_LABEL, n));
+    return STATIC_CAST(Tuple *, Store::AllocBlock(TUPLE_LABEL, n));
   }
   // Tuple Untagging
   static Tuple *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == TUPLE_LABEL);
-    return static_cast<Tuple *>(b);
+    return STATIC_CAST(Tuple *, b);
   }
   static Tuple *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == TUPLE_LABEL);
-    return static_cast<Tuple *>(b);
+    return STATIC_CAST(Tuple *, b);
   }
 
   // Tuple Accessors

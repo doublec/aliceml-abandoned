@@ -24,13 +24,13 @@ protected:
   enum { COUNTER_POS, PERCENT_POS, TABLE_POS, RESERVED_POS, SIZE };
 
   u_int GetCounter() {
-    return static_cast<u_int>(Store::DirectWordToInt(GetArg(COUNTER_POS)));
+    return STATIC_CAST(u_int, Store::DirectWordToInt(GetArg(COUNTER_POS)));
   }
   void SetCounter(u_int counter) {
     ReplaceArg(COUNTER_POS, counter);
   }
   u_int GetPercent() {
-    return static_cast<u_int>(Store::DirectWordToInt(GetArg(PERCENT_POS)));
+    return STATIC_CAST(u_int, Store::DirectWordToInt(GetArg(PERCENT_POS)));
   }
   void SetPercent(u_int percent) {
     ReplaceArg(PERCENT_POS, percent);
@@ -42,8 +42,7 @@ protected:
     ReplaceArg(TABLE_POS, t);
   }
   u_int GetTableSize() {
-    return static_cast<u_int>(Store::DirectWordToBlock(GetArg(TABLE_POS))
-			      ->GetSize());
+    return STATIC_CAST(u_int, Store::DirectWordToBlock(GetArg(TABLE_POS))->GetSize());
   }
   word GetEntry(u_int i) {
     Assert(i < GetTableSize());

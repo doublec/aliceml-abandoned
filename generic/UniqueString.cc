@@ -37,6 +37,6 @@ UniqueString *UniqueString::New(String *string) {
     b->InitArg(STRING_POS, key);
     b->InitArg(HASH_VALUE_POS, Store::IntToWord(string->Hash()));
     map->Put(key, b->ToWord());
-    return static_cast<UniqueString *>(b);
+    return STATIC_CAST(UniqueString *, b);
   }
 }

@@ -32,7 +32,7 @@ public:
     CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE, EXIT
   };
   // Worker Constructor
-  Worker() {}
+  Worker() SeamMemberDll;
   // Calling Convention Conversion
   static SeamMemberDll void Construct();
   //   Deconstruct returns 1 iff argument needs to be requested,

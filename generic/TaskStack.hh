@@ -56,7 +56,7 @@ public:
   }
   static TaskStack *FromWordDirect(word x) {
     DynamicBlock *b = DynamicBlock::FromWordDirect(x);
-    return static_cast<TaskStack *>(b);
+    return STATIC_CAST(TaskStack *, b);
   }
 
   TaskStack *Enlarge();

@@ -63,7 +63,7 @@ public:
   }
   static u_int GetCurrentStackTop() {
     word *base = (word *) currentTaskStack->GetFrameBase();
-    return static_cast<u_int>(stackTop - base);
+    return STATIC_CAST(u_int, stackTop - base);
   }
 
   // Scheduler Thread Functions

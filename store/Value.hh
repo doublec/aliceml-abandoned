@@ -191,12 +191,12 @@ public:
   static DynamicBlock *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     AssertStore((p == INVALID_POINTER) || (p->GetLabel() == DYNAMIC_LABEL));
-    return static_cast<DynamicBlock *>(p);
+    return STATIC_CAST(DynamicBlock *, p);
   }
   static DynamicBlock *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     AssertStore(p->GetLabel() == DYNAMIC_LABEL);
-    return static_cast<DynamicBlock *>(p);
+    return STATIC_CAST(DynamicBlock *, p);
   }
 };
 

@@ -47,13 +47,13 @@ class OutputStream: private Block {
 public:
   static OutputStream *New(OUT_STREAM_TYPE type, u_int size) {
     Block *p = Store::AllocBlock((BlockLabel) type, size);
-    return static_cast<OutputStream *>(p);
+    return STATIC_CAST(OutputStream *, p);
   }
   static OutputStream *FromWordDirect(word stream) {
     Block *p = Store::DirectWordToBlock(stream);
     Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM ||
 	   p->GetLabel() == (BlockLabel) STRING_OUTPUT_STREAM);
-    return static_cast<OutputStream *>(p);
+    return STATIC_CAST(OutputStream *, p);
   }
 
   using Block::InitArg;
@@ -62,7 +62,7 @@ public:
   using Block::ToWord;
 
   OUT_STREAM_TYPE GetType() {
-    return static_cast<OUT_STREAM_TYPE>(static_cast<u_int>(this->GetLabel()));
+    return STATIC_CAST(OUT_STREAM_TYPE, STATIC_CAST(u_int, this->GetLabel()));
   }
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
@@ -92,17 +92,16 @@ public:
     outputStream->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
     outputStream->InitArg(FINALIZATION_KEY_POS,
 			  finalizationSet->Register(outputStream->ToWord()));
-    return static_cast<FileOutputStream *>(outputStream);
+    return STATIC_CAST(FileOutputStream *, outputStream);
   }
   static FileOutputStream *FromWordDirect(word stream) {
     ::Block *p = Store::DirectWordToBlock(stream);
     Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM);
-    return static_cast<FileOutputStream *>(p);
+    return STATIC_CAST(FileOutputStream *, p);
   }
 
   gzFile GetFile() {
-    return static_cast<gzFile>
-      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+    return STATIC_CAST(gzFile, Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
 
   void PutByte(u_char byte);
@@ -138,8 +137,7 @@ private:
   void Enlarge();
 public:
   static StringOutputStream *New() {
-    StringOutputStream *stream = static_cast<StringOutputStream *>
-      (OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
+    StringOutputStream *stream = STATIC_CAST(StringOutputStream *, OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
     stream->SetPos(0);
     stream->SetSize(INITIAL_SIZE);
     stream->SetString(String::New(INITIAL_SIZE));
@@ -164,27 +162,27 @@ void OutputStream::PutUInt(u_int i) {
 void OutputStream::PutByte(u_char byte) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
-    static_cast<FileOutputStream *>(this)->PutByte(byte); break;
+    STATIC_CAST(FileOutputStream *, this)->PutByte(byte); break;
   case STRING_OUTPUT_STREAM:
-    static_cast<StringOutputStream *>(this)->PutByte(byte); break;
+    STATIC_CAST(StringOutputStream *, this)->PutByte(byte); break;
   }
 }
 
 void OutputStream::PutBytes(Chunk *c) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
-    static_cast<FileOutputStream *>(this)->PutBytes(c); break;
+    STATIC_CAST(FileOutputStream *, this)->PutBytes(c); break;
   case STRING_OUTPUT_STREAM:
-    static_cast<StringOutputStream *>(this)->PutBytes(c); break;
+    STATIC_CAST(StringOutputStream *, this)->PutBytes(c); break;
   }
 }
 
 void OutputStream::PutBytes(u_char *buf, u_int size) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
-    static_cast<FileOutputStream *>(this)->PutBytes(buf, size); break;
+    STATIC_CAST(FileOutputStream *, this)->PutBytes(buf, size); break;
   case STRING_OUTPUT_STREAM:
-    static_cast<StringOutputStream *>(this)->PutBytes(buf, size); break;
+    STATIC_CAST(StringOutputStream *, this)->PutBytes(buf, size); break;
   }
 }
 
@@ -293,13 +291,13 @@ public:
     b->InitArg(SIZE_POS, Store::IntToWord(initialSize));
     b->InitArg(LOC_COUNT_POS, Store::IntToWord(0));
     b->InitArg(LOC_SIZE_POS, Store::IntToWord(locInitialSize*2));
-    return static_cast<OutputBuffer *>(b);
+    return STATIC_CAST(OutputBuffer *, b);
   }
 
   static OutputBuffer *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == OBUF_LABEL);
-    return static_cast<OutputBuffer *>(b);
+    return STATIC_CAST(OutputBuffer *, b);
   }
 
   void Reset();
@@ -490,20 +488,20 @@ private:
   enum { TABLE_POS, SIZE };
   static const u_int initialSize = 256; //--** to be checked
 public:
-  static const u_int NOT_WRITTEN = static_cast<u_int>(-1);
-  static const u_int NOT_FOUND = static_cast<u_int>(-2);
+  static const u_int NOT_WRITTEN = STATIC_CAST(u_int, -1);
+  static const u_int NOT_FOUND = STATIC_CAST(u_int, -2);
 
   using Block::ToWord;
 
   static Seen *New() {
     Block *p = Store::AllocBlock(SEEN_LABEL, SIZE);
     p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
-    return static_cast<Seen *>(p);
+    return STATIC_CAST(Seen *, p);
   }
   static Seen *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == SEEN_LABEL);
-    return static_cast<Seen *>(b);
+    return STATIC_CAST(Seen *, b);
   }
 
   void Reset() {
@@ -567,12 +565,12 @@ public:
 
   static PickleStack *New() {
     Stack *s = Stack::New(initialSize);
-    return static_cast<PickleStack *>(s);
+    return STATIC_CAST(PickleStack *, s);
   }
 
   static PickleStack *FromWordDirect(word w) {
     Stack *s = Stack::FromWordDirect(w);
-    return static_cast<PickleStack *>(s);
+    return STATIC_CAST(PickleStack *, s);
   }
 
   void Push(word data);
@@ -725,6 +723,7 @@ u_int PickleWorker::GetFrameSize(StackFrame *sFrame) {
 }
 
 Worker::Result PickleWorker::Run(StackFrame *sFrame) {
+  Assert(sFrame != INVALID_POINTER);
   Assert(sFrame->GetWorker() == this);
 
   PickleStack *nps = PickleArgs::GetPickleStack();
@@ -945,7 +944,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
       return Worker::RAISE;
     case CHUNK_LABEL:
       {
-	Chunk *c = static_cast<Chunk *>(v);
+	Chunk *c = STATIC_CAST(Chunk *, v);
 	outputBuffer->PutByte(Pickle::CHUNK);
 	outputBuffer->PutUInt(c->GetSize());
 	outputBuffer->PutBytes(c);
@@ -963,7 +962,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	nps->SetBack();
 
 	seen->Add(v, Seen::NOT_WRITTEN);
-	UniqueString *s = static_cast<UniqueString *>(v);
+	UniqueString *s = STATIC_CAST(UniqueString *, v);
 
 	nps->Push(s->ToString()->ToWord());
 	continue;
@@ -975,7 +974,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 
 	seen->Add(v, Seen::NOT_WRITTEN);
 	ConcreteRepresentation *concrete =
-	  static_cast<ConcreteRepresentation *>(v);
+	  STATIC_CAST(ConcreteRepresentation *, v);
 	Transform *abstract =
 	  concrete->GetHandler()->GetAbstractRepresentation(concrete);
 	Block *ablock = Store::DirectWordToBlock(abstract->ToWord());
@@ -1031,7 +1030,7 @@ public:
   // PickleSaveFrame Constructor
   static PickleSaveFrame *New(Worker *worker) {
     NEW_STACK_FRAME(frame, worker, SIZE);
-    return static_cast<PickleSaveFrame *>(frame);
+    return STATIC_CAST(PickleSaveFrame *, frame);
   }
   // PickleSaveFrame Accessors
   u_int GetSize() {
@@ -1115,13 +1114,13 @@ void PickleSaveWorker::WriteToStream(OutputBuffer *obf,
 }
 
 u_int PickleSaveWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleSaveFrame *frame = static_cast<PickleSaveFrame *>(sFrame);
+  PickleSaveFrame *frame = STATIC_CAST(PickleSaveFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
-  PickleSaveFrame *frame = static_cast<PickleSaveFrame *>(sFrame);
+  PickleSaveFrame *frame = STATIC_CAST(PickleSaveFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
 
   if (PickleArgs::GetTransientFound()) {
@@ -1141,7 +1140,7 @@ Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
     PickleSaveWorker::WriteToStream(obf, os);
     
     FileOutputStream *outputStream =
-      static_cast<FileOutputStream *>(os);
+      STATIC_CAST(FileOutputStream *, os);
     
     outputStream->Close();
     Scheduler::nArgs = 0;
@@ -1167,7 +1166,7 @@ public:
   // PicklePackFrame Constructor
   static PicklePackFrame *New(Worker *worker) {
     NEW_STACK_FRAME(frame, worker, SIZE);
-    return static_cast<PicklePackFrame *>(frame);
+    return STATIC_CAST(PicklePackFrame *, frame);
   }
   // PicklePackFrame Accessors
   u_int GetSize() {
@@ -1206,13 +1205,13 @@ void PicklePackWorker::PushFrame() {
 }
 
 u_int PicklePackWorker::GetFrameSize(StackFrame *sFrame) {
-  PicklePackFrame *frame = static_cast<PicklePackFrame *>(sFrame);
+  PicklePackFrame *frame = STATIC_CAST(PicklePackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
-  PicklePackFrame *frame = static_cast<PicklePackFrame *>(sFrame);
+  PicklePackFrame *frame = STATIC_CAST(PicklePackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopFrame(frame->GetSize());
 
@@ -1222,7 +1221,7 @@ Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
   PickleSaveWorker::WriteToStream(obf, os);
 
   StringOutputStream *outputStream =
-    static_cast<StringOutputStream *>(os);
+    STATIC_CAST(StringOutputStream *, os);
   
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = outputStream->Close();

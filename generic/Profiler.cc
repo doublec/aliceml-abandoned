@@ -65,13 +65,13 @@ public:
     entry->Init(NB_CLOSURES_POS, Store::IntToWord(0));
     entry->Init(NB_RUNS_POS, Store::IntToWord(0));
     entry->Init(TIME_POS, Store::IntToWord(0));
-    return static_cast<ProfileEntry *>(entry);
+    return STATIC_CAST(ProfileEntry *, entry);
   }
   // ProfileEntry untagging
   static ProfileEntry *FromWordDirect(word x) {
     Tuple *entry = Tuple::FromWordDirect(x);
     entry->AssertWidth(SIZE);
-    return static_cast<ProfileEntry *>(entry);
+    return STATIC_CAST(ProfileEntry *, entry);
   }
 };
 
@@ -199,7 +199,7 @@ void Profiler::AddHeap() {
   ProfileEntry *entry = ProfileEntry::FromWordDirect(sampleEntry);
   entry->AddHeap(heapTotal - heapUsage);
   entry->IncRuns();
-  entry->IncTime(static_cast<u_int>(curTime - sampleTime));
+  entry->IncTime(STATIC_CAST(u_int, curTime - sampleTime));
 }
 
 void Profiler::IncCalls(StackFrame *frame) {
@@ -230,7 +230,7 @@ static void PrintInfo(word /*key*/, word value) {
     if (*t == ',') *t = ';';
   std::fprintf(logFile, "%d, %d, %d, %d, %d, %.2f, %s\n",
 	       runs, calls, runTime, closures, heap,
-	       runs? static_cast<float>(heap) / runs: 0.0,
+	       runs? STATIC_CAST(float, heap) / runs: 0.0,
 	       s);
 }
 
@@ -241,9 +241,9 @@ void Profiler::DumpInfo() {
     Error("Profiler:DumpInfo: unable to open log file");
   t->Apply((item_apply) PrintInfo);
   std::fprintf(logFile, "0, 0, 0, 0, 0, 0.00, total %d, acc %d, gc %d\n",
-	       static_cast<u_int>(endTime - startTime),
+	       STATIC_CAST(u_int, endTime - startTime),
 	       totalLogTime,
-	       static_cast<u_int>(Scheduler::gcTime));
+	       STATIC_CAST(u_int, Scheduler::gcTime));
   std::fclose(logFile);
 }
 

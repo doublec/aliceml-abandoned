@@ -34,7 +34,7 @@ public:
   using Queue::GetNthElement;
 
   static Backtrace *New() {
-    return static_cast<Backtrace *>(Queue::New(initialBacktraceSize));
+    return STATIC_CAST(Backtrace *, Queue::New(initialBacktraceSize));
   }
   static Backtrace *New(word frame) {
     Backtrace *backtrace = New();
@@ -42,7 +42,7 @@ public:
     return backtrace;
   }
   static Backtrace *FromWordDirect(word x) {
-    return static_cast<Backtrace *>(Queue::FromWordDirect(x));
+    return STATIC_CAST(Backtrace *, Queue::FromWordDirect(x));
   }
 
   void Dump() {

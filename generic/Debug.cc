@@ -76,7 +76,7 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   if (depth > Debug::maxDepth) {
     std::fprintf(file, "%*c...\n", level, ' ');
   }
-  else if (x == static_cast<word>(NULL)) {
+  else if (x == STATIC_CAST(word, NULL)) {
     std::fprintf(file, "%*cNULL POINTER[%d]\n", level, ' ', index);
   }
   else if (PointerOp::IsInt(x)) {

@@ -68,13 +68,13 @@ public:
     p->InitArg(KEY_POS, key);
     p->InitArg(VALUE_POS, value);
     p->InitArg(NEXT_POS, next);
-    return static_cast<MapNode *>(p);
+    return STATIC_CAST(MapNode *, p);
   }
   static MapNode *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert((p->GetLabel() == HASHNODE_LABEL) ||
 	   (p->GetLabel() == HANDLEDHASHNODE_LABEL));
-    return static_cast<MapNode *>(p);
+    return STATIC_CAST(MapNode *, p);
   }
 };
 

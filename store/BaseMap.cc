@@ -144,11 +144,11 @@ template <typename T>
 BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
   Block *map    = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
-  u_int percent = static_cast<u_int>(size * MAP_FILL_RATIO);
+  u_int percent = STATIC_CAST(u_int, size * MAP_FILL_RATIO);
   map->InitArg(COUNTER_POS, 0);
   map->InitArg(PERCENT_POS, percent);
   map->InitArg(TABLE_POS, arr->ToWord());
   for (u_int i = size; i--;)
     arr->InitArg(i, 0);
-  return static_cast<BaseMap<T> *>(map);
+  return STATIC_CAST(BaseMap<T> *, map);
 }

@@ -110,7 +110,7 @@ TaskStack *TaskStack::New(u_int size) {
   // Create Empty Task
   b->InitArg(0, emptyTask);
   Store::AddToIntgenSet((Block *) b);
-  return static_cast<TaskStack *>(b);
+  return STATIC_CAST(TaskStack *, b);
 }
 
 TaskStack *TaskStack::Enlarge() {

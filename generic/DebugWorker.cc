@@ -30,7 +30,7 @@ public:
   static DebugFrame *New(Worker *worker, word event) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(EVENT_POS, event);
-    return static_cast<DebugFrame *>(frame);
+    return STATIC_CAST(DebugFrame *, frame);
   }
 
   // DebugFrame Accessors
@@ -54,7 +54,7 @@ void DebugWorker::PushFrame(word event) {
 }
 
 u_int DebugWorker::GetFrameSize(StackFrame *sFrame) {
-  DebugFrame *debugFrame = static_cast<DebugFrame *>(sFrame);
+  DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return debugFrame->GetSize();
 }
@@ -76,7 +76,7 @@ void DebugWorker::DumpFrame(StackFrame *) {
 }
 
 word DebugWorker::GetEvent(StackFrame *sFrame) {
-  DebugFrame *debugFrame = static_cast<DebugFrame *>(sFrame);
+  DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
   Assert(debugFrame->GetWorker() == this);
   return debugFrame->GetEvent();
 }

@@ -117,7 +117,7 @@ public:
 };
 
 DWORD __stdcall IOForwarder::ReaderThread(void *p) {
-  InOut *io = static_cast<InOut *>(p);
+  InOut *io = STATIC_CAST(InOut *, p);
   SOCKET out = io->socket;
   HANDLE in = io->handle;
   delete io;
@@ -157,7 +157,7 @@ DWORD __stdcall IOForwarder::ReaderThread(void *p) {
 }
 
 DWORD __stdcall IOForwarder::WriterThread(void *p) {
-  InOut *io = static_cast<InOut *>(p);
+  InOut *io = STATIC_CAST(InOut *, p);
   SOCKET in = io->socket;
   HANDLE out = io->handle;
   delete io;
@@ -216,7 +216,7 @@ IODesc *IODesc::NewClosed(String *name) {
   Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_CLOSED);
   p->InitArg(NAME_POS, name->ToWord());
-  return static_cast<IODesc *>(p);
+  return STATIC_CAST(IODesc *, p);
 }
 
 IODesc *IODesc::NewFromFD(u_int dir, String *name, int fd) {
@@ -225,7 +225,7 @@ IODesc *IODesc::NewFromFD(u_int dir, String *name, int fd) {
   p->InitArg(NAME_POS, name->ToWord());
   p->InitArg(FD_POS, fd);
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
-  return static_cast<IODesc *>(p);
+  return STATIC_CAST(IODesc *, p);
 }
 
 #if USE_WINSOCK
@@ -237,7 +237,7 @@ IODesc *IODesc::NewFromHandle(u_int dir, String *name, HANDLE handle) {
   ((HANDLE *) c->GetBase())[0] = handle;
   p->InitArg(HANDLE_POS, c->ToWord());
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
-  return static_cast<IODesc *>(p);
+  return STATIC_CAST(IODesc *, p);
 }
 
 IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
@@ -268,7 +268,7 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
   ((HANDLE *) c->GetBase())[0] = handle;
   p->InitArg(HANDLE_POS, c->ToWord());
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
-  return static_cast<IODesc *>(p);
+  return STATIC_CAST(IODesc *, p);
 }
 #endif
 
@@ -448,7 +448,7 @@ IODesc::result IODesc::GetPos(u_int &out) {
 #else
   case TYPE_FD:
     out = lseek(GetFD(), 0, SEEK_CUR);
-    return out == static_cast<u_int>(static_cast<off_t>(-1))?
+    return out == STATIC_CAST(u_int, STATIC_CAST(off_t, -1))?
       result_system_error: result_ok;
 #endif
   default:
@@ -475,7 +475,7 @@ IODesc::result IODesc::SetPos(u_int pos) {
 #else
   case TYPE_FD:
     pos = lseek(GetFD(), pos, SEEK_SET);
-    return pos == static_cast<u_int>(static_cast<off_t>(-1))?
+    return pos == STATIC_CAST(u_int, STATIC_CAST(off_t, -1))?
       result_system_error: result_ok;
 #endif
   default:
@@ -526,14 +526,14 @@ IODesc::result IODesc::GetNumberOfAvailableBytes(int &out) {
   case TYPE_FORWARDED:
     {
       unsigned long arg;
-      out = ioctlsocket(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(arg);
+      out = ioctlsocket(GetFD(), FIONREAD, &arg)? -1: STATIC_CAST(int, arg);
       return result_ok;
     }
 #else
   case TYPE_FD:
     {
       unsigned long arg;
-      out = ioctl(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(arg);
+      out = ioctl(GetFD(), FIONREAD, &arg)? -1: STATIC_CAST(int, arg);
       return result_ok;
     }
 #endif

@@ -49,7 +49,7 @@ public:
   }
   Worker *GetWorker() {
     word wWorker = ((word *) this)[WORKER_POS];
-    return static_cast<Worker *>(Store::WordToUnmanagedPointer(wWorker));
+    return STATIC_CAST(Worker *, Store::WordToUnmanagedPointer(wWorker));
   }
   word GetArg(u_int pos) {
     return UnsafeGetArg(BASE_SIZE + pos);

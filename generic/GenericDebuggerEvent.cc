@@ -22,12 +22,12 @@ GenericEventAccessor *GenericEventAccessor::self;
 GenericDebuggerEvent *GenericDebuggerEvent::FromWord(word w) {
   Block *b = Store::WordToBlock(w);
   Assert(b == INVALID_POINTER || b->GetLabel() == (BlockLabel) GENERIC_EVENT_LABEL);
-  return static_cast<GenericDebuggerEvent *>(b);
+  return STATIC_CAST(GenericDebuggerEvent *, b);
 }
 
 GenericDebuggerEvent *GenericDebuggerEvent::FromWordDirect(word w) {
   Block *b = Store::DirectWordToBlock(w);
   Assert(b->GetLabel() == (BlockLabel) GENERIC_EVENT_LABEL);
-  return static_cast<GenericDebuggerEvent *>(b);
+  return STATIC_CAST(GenericDebuggerEvent *, b);
 }
 #endif

@@ -28,12 +28,12 @@ public:
   static PushCallFrame *New(Worker *worker, word closure) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(CLOSURE_POS, closure);
-    return static_cast<PushCallFrame *>(frame);
+    return STATIC_CAST(PushCallFrame *, frame);
   }
   static PushCallFrame *New(Thread *thread, Worker *worker, word closure) {
     NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(CLOSURE_POS, closure);
-    return static_cast<PushCallFrame *>(frame);
+    return STATIC_CAST(PushCallFrame *, frame);
   }
   // PushCallFrame Accessors
   u_int GetSize() {
@@ -58,13 +58,13 @@ void PushCallWorker::PushFrame(Thread *thread, word closure) {
 }
 
 u_int PushCallWorker::GetFrameSize(StackFrame *sFrame) {
-  PushCallFrame *frame = static_cast<PushCallFrame *>(sFrame);
+  PushCallFrame *frame = STATIC_CAST(PushCallFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result PushCallWorker::Run(StackFrame *sFrame) {
-  PushCallFrame *frame = static_cast<PushCallFrame *>(sFrame);
+  PushCallFrame *frame = STATIC_CAST(PushCallFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   word wClosure = frame->GetClosure();
   Scheduler::PopFrame(frame->GetSize());

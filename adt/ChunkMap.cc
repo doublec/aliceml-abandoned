@@ -37,7 +37,7 @@ static inline u_int HashString(const char *s, u_int len, u_int size) {
 
 u_int ChunkKey::Hash(word key, u_int size) {
   Chunk *chunk = Store::DirectWordToChunk(key);
-  return HashString(static_cast<const char *>(chunk->GetBase()),
+  return HashString(STATIC_CAST(const char *, chunk->GetBase()),
 		    chunk->GetSize(), size);
 }
 

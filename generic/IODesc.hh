@@ -84,12 +84,12 @@ public:
   static IODesc *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || p->GetLabel() == IODESC_LABEL);
-    return static_cast<IODesc *>(p);
+    return STATIC_CAST(IODesc *, p);
   }
   static IODesc *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == IODESC_LABEL);
-    return static_cast<IODesc *>(p);
+    return STATIC_CAST(IODesc *, p);
   }
 
   u_int GetType() {

@@ -25,6 +25,10 @@
 #include "generic/String.hh"
 #endif
 
+Worker::Worker() {
+  return;
+}
+
 // Calling Convention Conversion
 void Worker::Construct() {
   u_int nArgs = Scheduler::nArgs;

@@ -101,17 +101,17 @@ public:
     b->InitArg(READ_INDEX_POS, 0);
     b->InitArg(WRITE_INDEX_POS, 0);
     b->InitArg(ARRAY_POS, array->ToWord());
-    return static_cast<Queue *>(b);
+    return STATIC_CAST(Queue *, b);
   }
   static Queue *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == QUEUE_LABEL);
-    return static_cast<Queue *>(b);
+    return STATIC_CAST(Queue *, b);
   }
   static Queue *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == QUEUE_LABEL);
-    return static_cast<Queue *>(b);
+    return STATIC_CAST(Queue *, b);
   }
 
   void Enqueue(word w) {

@@ -39,25 +39,25 @@ protected:
   friend class Store;
 
   word GetHandler() {
-    return static_cast<Block *>(this)->GetArg(RESERVED_POS);
+    return STATIC_CAST(Block *, this)->GetArg(RESERVED_POS);
   }
 public:
   static WeakMap *New(u_int size, Finalization *handler) {
     BaseMap<TokenKey> *map = BaseMap<TokenKey>::New(WEAK_MAP_LABEL, size);
-    static_cast<Block *>(map)
+    STATIC_CAST(Block *, map)
       ->InitArg(RESERVED_POS, Store::UnmanagedPointerToWord(handler));
-    Store::RegisterWeakDict(static_cast<WeakMap *>(map));
-    return static_cast<WeakMap *>(map);
+    Store::RegisterWeakDict(STATIC_CAST(WeakMap *, map));
+    return STATIC_CAST(WeakMap *, map);
   }
   static WeakMap *FromWord(word x) {
     Block *map = Store::WordToBlock(x);
     Assert(map == INVALID_POINTER || map->GetLabel() == WEAK_MAP_LABEL);
-    return static_cast<WeakMap *>(map);
+    return STATIC_CAST(WeakMap *, map);
   }
   static WeakMap *FromWordDirect(word x) {
     Block *map = Store::DirectWordToBlock(x);
     Assert(map->GetLabel() == WEAK_MAP_LABEL);
-    return static_cast<WeakMap *>(map);
+    return STATIC_CAST(WeakMap *, map);
   }
 };
 

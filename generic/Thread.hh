@@ -78,28 +78,27 @@ public:
 #if DEBUGGER
     b->InitArg(DEBUG_MODE_POS, NONE);
 #endif
-    return static_cast<Thread *>(b);
+    return STATIC_CAST(Thread *, b);
   }
   // Thread Untagging
   static Thread *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == THREAD_LABEL);
-    return static_cast<Thread *>(b);
+    return STATIC_CAST(Thread *, b);
   }
   static Thread *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == THREAD_LABEL);
-    return static_cast<Thread *>(b);
+    return STATIC_CAST(Thread *, b);
   }
 
   // Thread Accessors
   priority GetPriority() {
-    return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
+    return STATIC_CAST(priority, Store::DirectWordToInt(GetArg(PRIORITY_POS)));
   }
 #if DEBUGGER
   debugMode GetDebugMode() {
-    return static_cast<debugMode>
-      (Store::DirectWordToInt(GetArg(DEBUG_MODE_POS)));
+    return STATIC_CAST(debugMode, Store::DirectWordToInt(GetArg(DEBUG_MODE_POS)));
   }
 
   void SetDebugMode(debugMode mode) {
@@ -107,7 +106,7 @@ public:
   }
 #endif
   state GetState() {
-    return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
+    return STATIC_CAST(state, Store::DirectWordToInt(GetArg(STATE_POS)));
   }
   bool IsSuspended() {
     return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));

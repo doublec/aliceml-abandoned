@@ -172,7 +172,7 @@ int Scheduler::Run() {
 	      {
 		FlushThread();
 		currentThread->Purge();
-		Future *future = static_cast<Future *>(transient);
+		Future *future = STATIC_CAST(Future *, transient);
 		future->AddToWaitQueue(currentThread);
 		currentThread->BlockOn(transient->ToWord());
 		nextThread = true;
@@ -190,7 +190,7 @@ int Scheduler::Run() {
 		transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 		FlushThread();
 		currentThread->Purge();
-		Future *future = static_cast<Future *>(transient);
+		Future *future = STATIC_CAST(Future *, transient);
 		future->AddToWaitQueue(currentThread);
 		currentThread->BlockOn(transient->ToWord());
 		nextThread = true;

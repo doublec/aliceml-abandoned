@@ -28,22 +28,19 @@ public:
 
   // ConcreteCode Constructor
   static ConcreteCode *New(Interpreter *interpreter, u_int size) {
-    return static_cast<ConcreteCode *>
-      (ConcreteRepresentation::New(interpreter, size));
+    return STATIC_CAST(ConcreteCode *, ConcreteRepresentation::New(interpreter, size));
   }
   // ConcreteCode Untagging
   static ConcreteCode *FromWord(word x) {
-    return static_cast<ConcreteCode *>
-      (ConcreteRepresentation::FromWord(x));
+    return STATIC_CAST(ConcreteCode *, ConcreteRepresentation::FromWord(x));
   }
   static ConcreteCode *FromWordDirect(word x) {
-    return static_cast<ConcreteCode *>
-      (ConcreteRepresentation::FromWordDirect(x));
+    return STATIC_CAST(ConcreteCode *, ConcreteRepresentation::FromWordDirect(x));
   }
 
   // ConcreteCode Accessors
   Interpreter *GetInterpreter() {
-    return static_cast<Interpreter *>(GetHandler());
+    return STATIC_CAST(Interpreter *, GetHandler());
   }
 };
 

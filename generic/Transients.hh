@@ -41,7 +41,7 @@ public:
   static Future *New() {
     Transient *transient = Store::AllocTransient(FUTURE_LABEL);
     transient->InitArg(0); // empty wait queue
-    return static_cast<Future *>(transient);
+    return STATIC_CAST(Future *, transient);
   }
 
   // Future Functions
@@ -78,12 +78,12 @@ public:
   static Hole *New() {
     Transient *transient = Store::AllocTransient(HOLE_LABEL);
     transient->InitArg(0); // no associated future
-    return static_cast<Hole *>(transient);
+    return STATIC_CAST(Hole *, transient);
   }
 
   // Hole Functions
   Future *GetFuture() {
-    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
+    Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
     if (future == INVALID_POINTER) {
       future = Future::New();
       ReplaceArg(future->ToWord());
@@ -94,7 +94,7 @@ public:
     Transient *t = Store::WordToTransient(w);
     if (t == this) // cyclic bind
       return false;
-    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
+    Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
     if (future != INVALID_POINTER) { // eliminate associated future
       if (t == future) // cyclic bind
 	return false;
@@ -105,7 +105,7 @@ public:
     return true;
   }
   void Fail(word exn) {
-    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
+    Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
     if (future != INVALID_POINTER) { // eliminate associated future
       future->ScheduleWaitingThreads();
       future->Become(CANCELLED_LABEL, exn);
@@ -120,7 +120,7 @@ public:
   static Byneed *New(word closure) {
     Transient *transient = Store::AllocTransient(BYNEED_LABEL);
     transient->InitArg(closure);
-    return static_cast<Byneed *>(transient);
+    return STATIC_CAST(Byneed *, transient);
   }
 
   // Byneed Accessors

@@ -46,7 +46,7 @@ public:
 			      Worker *worker, Transient *future) {
     NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(FUTURE_POS, future->ToWord());
-    return static_cast<BindFutureFrame *>(frame);
+    return STATIC_CAST(BindFutureFrame *, frame);
   }
   // BindFutureFrame Accessors
   u_int GetSize() {
@@ -57,7 +57,7 @@ public:
       Store::WordToTransient(StackFrame::GetArg(FUTURE_POS));
     Assert(transient != INVALID_POINTER &&
 	   transient->GetLabel() == FUTURE_LABEL);
-    return static_cast<Future *>(transient);
+    return STATIC_CAST(Future *, transient);
   }
 };
 
@@ -72,17 +72,17 @@ void BindFutureWorker::PushFrame(Thread *thread, Transient *future) {
 }
 
 static inline bool IsCyclic(word x, Future *future) {
-  return static_cast<Future *>(Store::WordToTransient(x)) == future;
+  return STATIC_CAST(Future *, Store::WordToTransient(x)) == future;
 }
 
 u_int BindFutureWorker::GetFrameSize(StackFrame *sFrame) {
-  BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
+  BindFutureFrame *frame = STATIC_CAST(BindFutureFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
-  BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
+  BindFutureFrame *frame = STATIC_CAST(BindFutureFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopHandler();
   Future *future = frame->GetFuture();
@@ -112,7 +112,7 @@ Worker::Result BindFutureWorker::Handle(word) {
   }
 #endif
   StackFrame *sFrame = Scheduler::GetFrame();
-  BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
+  BindFutureFrame *frame = STATIC_CAST(BindFutureFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Future *future = frame->GetFuture();
   Scheduler::PopFrame(frame->GetSize());

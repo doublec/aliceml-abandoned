@@ -134,14 +134,13 @@ public:
     Assert(p != INVALID_POINTER);
     Assert(p->GetLabel() == (BlockLabel) FILE_INPUT_STREAM ||
 	   p->GetLabel() == (BlockLabel) STRING_INPUT_STREAM);
-    return static_cast<InputStream *>(p);
+    return STATIC_CAST(InputStream *, p);
   }
 
   // InputStream Methods
   gzFile GetFile() {
     Assert(GetLabel() == (BlockLabel) FILE_INPUT_STREAM);
-    return static_cast<gzFile>
-      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+    return STATIC_CAST(gzFile, Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
   bool IsEOB() {
     return Store::DirectWordToInt(Block::GetArg(EOB_POS));
@@ -396,14 +395,14 @@ public:
     frame->InitArg(FUTURE_POS, future->ToWord());
     frame->InitArg(NAME_POS, name->ToWord());
     frame->InitArg(ARG_POS, arg);
-    return static_cast<TransformFrame *>(frame);
+    return STATIC_CAST(TransformFrame *, frame);
   }
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
   }
   Future *GetFuture() {
     return
-      static_cast<Future *>(Store::DirectWordToTransient(GetArg(FUTURE_POS)));
+      STATIC_CAST(Future *, Store::DirectWordToTransient(GetArg(FUTURE_POS)));
   }
   String *GetName() {
     return String::FromWordDirect(GetArg(NAME_POS));
@@ -439,7 +438,7 @@ void TransformWorker::PushFrame(Future *future,
 }
 
 u_int TransformWorker::GetFrameSize(StackFrame *sFrame) {
-  TransformFrame *frame = static_cast<TransformFrame *>(sFrame);
+  TransformFrame *frame = STATIC_CAST(TransformFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
@@ -455,7 +454,7 @@ void TransformWorker::DumpFrame(StackFrame *) {
 Worker::Result TransformWorker::Run(StackFrame *sFrame) {
 
   fprintf(stderr, "running transformworker\n");
-  TransformFrame *frame = static_cast<TransformFrame *>(sFrame);
+  TransformFrame *frame = STATIC_CAST(TransformFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
 
   Future *f = frame->GetFuture();
@@ -474,7 +473,7 @@ Worker::Result TransformWorker::Run(StackFrame *sFrame) {
     Error("TransformWorker: unknown transform");
 //     Scheduler::currentData = Unpickler::Corrupt;
 //     Scheduler::currentBacktrace =
-//       Backtrace::New(static_cast<StackFrame *>(frame)->Clone());
+//       Backtrace::New(STATIC_CAST(StackFrame *, frame)->Clone());
 //     Scheduler::PopFrame();
 //     return Worker::RAISE;
   }
@@ -521,7 +520,7 @@ public:
   // PickleUnpackFrame Constructor
   static PickleUnpackFrame *New(Worker *worker) {
     NEW_STACK_FRAME(frame, worker, SIZE);
-    return static_cast<PickleUnpackFrame *>(frame);
+    return STATIC_CAST(PickleUnpackFrame *, frame);
   }
   // PickleUnpackFrame Accessors
   u_int GetSize() {
@@ -560,13 +559,13 @@ void PickleUnpackWorker::PushFrame() {
 }
 
 u_int PickleUnpackWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleUnpackFrame *frame = static_cast<PickleUnpackFrame *>(sFrame);
+  PickleUnpackFrame *frame = STATIC_CAST(PickleUnpackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result PickleUnpackWorker::Run(StackFrame *sFrame) {
-  PickleUnpackFrame *frame = static_cast<PickleUnpackFrame *>(sFrame);
+  PickleUnpackFrame *frame = STATIC_CAST(PickleUnpackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopFrame(frame->GetSize());
   word result = UnpickleArgs::GetResult();
@@ -592,7 +591,7 @@ public:
   // PickleLoadFrame Constructor
   static PickleLoadFrame *New(Worker *worker) {
     NEW_STACK_FRAME(frame, worker, SIZE);
-    return static_cast<PickleLoadFrame *>(frame);
+    return STATIC_CAST(PickleLoadFrame *, frame);
   }
   // PickleLoadFrame Accessors
   u_int GetSize() {
@@ -631,13 +630,13 @@ void PickleLoadWorker::PushFrame() {
 }
 
 u_int PickleLoadWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleLoadFrame *frame = static_cast<PickleLoadFrame *>(sFrame);
+  PickleLoadFrame *frame = STATIC_CAST(PickleLoadFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result PickleLoadWorker::Run(StackFrame *sFrame) {
-  PickleLoadFrame *frame = static_cast<PickleLoadFrame *>(sFrame);
+  PickleLoadFrame *frame = STATIC_CAST(PickleLoadFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopFrame(frame->GetSize());
   InputStream *is = UnpickleArgs::GetInputStream();
@@ -675,7 +674,7 @@ public:
     for (u_int i=locals+2; i--;) {
       frame->InitArg(SIZE+i, Store::IntToWord(0));
     }
-    return static_cast<UnpickleFrame *>(frame);
+    return STATIC_CAST(UnpickleFrame *, frame);
   }
 
   u_int GetSize() {
@@ -853,8 +852,7 @@ public:
       *newBlock = b->ToWord();
       return false;
     } else {
-      Future *f = static_cast<Future *>
-	(Store::DirectWordToTransient(future));
+      Future *f = STATIC_CAST(Future *,	Store::DirectWordToTransient(future));
 
       word argument  = frame->Pop();
       String *name   = String::FromWordDirect(frame->Pop());
@@ -905,14 +903,14 @@ void UnpickleWorker::PushFrame(int stackSize, int localsSize) {
 
 
 u_int UnpickleWorker::GetFrameSize(StackFrame *sFrame) {
-  UnpickleFrame *frame = static_cast<UnpickleFrame *>(sFrame);
+  UnpickleFrame *frame = STATIC_CAST(UnpickleFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 // Core Unpickling Function
 Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
-  UnpickleFrame *frame = static_cast<UnpickleFrame *>(sFrame);
+  UnpickleFrame *frame = STATIC_CAST(UnpickleFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
 
   InputStream *is = UnpickleArgs::GetInputStream();
@@ -923,7 +921,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
     word newBlock;
     bool mustContinue = false;
     u_char tag = is->GetByte(); NCHECK_EOB();
-    switch (static_cast<Pickle::Tag>(tag)) {
+    switch (STATIC_CAST(Pickle::Tag, tag)) {
     case Pickle::INIT:
       {
 	NCORRUPT();
@@ -997,7 +995,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	is->Commit();
 
 	mustContinue =
-	  StoreAbstraction::AllocBlock(static_cast<BlockLabel>(label),
+	  StoreAbstraction::AllocBlock(STATIC_CAST(BlockLabel, label),
 				       size, frame, &newBlock);
 	frame->Push(newBlock);
       }
@@ -1041,7 +1039,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	is->Commit();
 
 	word block =
-	  StoreAbstraction::AnnounceBlock(static_cast<BlockLabel>(label),
+	  StoreAbstraction::AnnounceBlock(STATIC_CAST(BlockLabel, label),
 					  size);
 	frame->PushStore(addr, block);
       }
@@ -1176,7 +1174,7 @@ Worker::Result PickleCheckWorker::Run(StackFrame *sFrame) {
   u_int stackSize = 0;
   u_int localsSize = 0;
 
-  if (static_cast<Pickle::Tag>(tag) == Pickle::INIT) {
+  if (STATIC_CAST(Pickle::Tag, tag) == Pickle::INIT) {
     is->Commit();
     stackSize = is->GetUInt(); PCHECK_EOB();
     is->Commit();

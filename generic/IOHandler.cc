@@ -46,12 +46,12 @@ namespace {
       Block *block = Store::AllocBlock(ENTRY_LABEL, SIZE);
       block->InitArg(FD_POS, fd);
       block->InitArg(FUTURE_POS, future->ToWord());
-      return static_cast<Entry *>(block);
+      return STATIC_CAST(Entry *, block);
     }
     static Entry *FromWordDirect(word w) {
       Block *block = Store::DirectWordToBlock(w);
       Assert(block->GetLabel() == ENTRY_LABEL);
-      return static_cast<Entry *>(block);
+      return STATIC_CAST(Entry *, block);
     }
 
     int GetFD() {
@@ -61,7 +61,7 @@ namespace {
       Transient *transient = Store::WordToTransient(GetArg(FUTURE_POS));
       Assert(transient != INVALID_POINTER &&
 	     transient->GetLabel() == FUTURE_LABEL);
-      return static_cast<Future *>(transient);
+      return STATIC_CAST(Future *, transient);
     }
   };
 
@@ -73,10 +73,10 @@ namespace {
     using Queue::Blank;
 
     static Set *New() {
-      return static_cast<Set *>(Queue::New(initialQueueSize));
+      return STATIC_CAST(Set *, Queue::New(initialQueueSize));
     }
     static Set *FromWordDirect(word w) {
-      return static_cast<Set *>(Queue::FromWordDirect(w));
+      return STATIC_CAST(Set *, Queue::FromWordDirect(w));
     }
 
     void Add(Entry *entry) {

@@ -28,14 +28,14 @@ public:
 
   // ThreadQueue Constructor
   static ThreadQueue *New() {
-    return static_cast<ThreadQueue *>(Queue::New(threshold));
+    return STATIC_CAST(ThreadQueue *, Queue::New(threshold));
   }
   // ThreadQueue Untagging
   static ThreadQueue *FromWord(word x) {
-    return static_cast<ThreadQueue *>(Queue::FromWord(x));
+    return STATIC_CAST(ThreadQueue *, Queue::FromWord(x));
   }
   static ThreadQueue *FromWordDirect(word x) {
-    return static_cast<ThreadQueue *>(Queue::FromWordDirect(x));
+    return STATIC_CAST(ThreadQueue *, Queue::FromWordDirect(x));
   }
 
   // ThreadQueue Functions

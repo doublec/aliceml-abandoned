@@ -42,12 +42,12 @@ public:
   static Map *FromWord(word x) {
     Block *map = Store::WordToBlock(x);
     Assert(map == INVALID_POINTER || map->GetLabel() == MAP_LABEL);
-    return static_cast<Map *>(map);
+    return STATIC_CAST(Map *, map);
   }
   static Map *FromWordDirect(word x) {
     Block *map = Store::DirectWordToBlock(x);
     Assert(map->GetLabel() == MAP_LABEL);
-    return static_cast<Map *>(map);
+    return STATIC_CAST(Map *, map);
   }
 };
 

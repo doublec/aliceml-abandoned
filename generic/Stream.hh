@@ -33,19 +33,19 @@ public:
     Block *b = Store::AllocBlock(ENTRY_LIST_LABEL, SIZE);
     b->InitArg(ENTRY_POS, entry);
     b->InitArg(TAIL_POS,  tail);
-    return static_cast<EntryList *>(b);
+    return STATIC_CAST(EntryList *, b);
   }
 
   // StreamEntry Untagging
   static EntryList *FromWord(word w) {
     Block *b = Store::WordToBlock(w);
     Assert(b == INVALID_POINTER || b->GetLabel() == ENTRY_LIST_LABEL);
-    return static_cast<EntryList *>(b);
+    return STATIC_CAST(EntryList *, b);
   }
   static EntryList *FromWordDirect(word w) {
     Block *b = Store::WordToBlock(w);
     Assert(b->GetLabel() == ENTRY_LIST_LABEL);
-    return static_cast<EntryList *>(b);
+    return STATIC_CAST(EntryList *, b);
   }
 
   // StreamEntry Accessors
@@ -71,19 +71,19 @@ public:
   static Stream *New() {
     Block *b = Store::AllocBlock(STREAM_LABEL, SIZE);
     b->InitArg(STREAM_POS, Future::New()->ToWord());
-    return static_cast<Stream *>(b);
+    return STATIC_CAST(Stream *, b);
   }
 
   // Stream Untagging
   static Stream *FromWord(word w) {
     Block *b = Store::WordToBlock(w);
     Assert(b == INVALID_POINTER || b->GetLabel() == STREAM_LABEL);
-    return static_cast<Stream *>(b);
+    return STATIC_CAST(Stream *, b);
   }
   static Stream *FromWordDirect(word w) {
     Block *b = Store::WordToBlock(w);
     Assert(b->GetLabel() == STREAM_LABEL);
-    return static_cast<Stream *>(b);
+    return STATIC_CAST(Stream *, b);
   }
 
   // Stream Accessors
