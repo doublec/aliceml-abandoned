@@ -1,0 +1,231 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                              from "Pervasive"
+import type int and real and string
+       datatype bool and order and option                 from "ToplevelTypes"
+import infix 4 = <> > < >= <= infix 6 + - infix 7 * / div mod
+       val op = and op <> and op div and op mod           from "ToplevelValues"
+import structure IEEEReal                                 from "IEEEReal"
+import structure Bool                                     from "Bool"
+import structure Int                                      from "Int"
+import structure Char                                     from "Char"
+import structure StringCvt                                from "StringCvt"
+import signature REAL                                     from "REAL-sig"
+
+
+structure Real : REAL =
+struct
+    type real = real
+    type t    = real							(**)
+
+    infix 4  == != ?=
+
+    __primitive val ~ :		real -> real		= "Real.~"
+    __primitive val op + :	real * real -> real	= "Real.+"
+    __primitive val op - :	real * real -> real	= "Real.-"
+    __primitive val op * :	real * real -> real	= "Real.*"
+    __primitive val op / :	real * real -> real	= "Real./"
+    __primitive val rem :	real * real -> real	= "Real.rem"
+
+    __primitive val op < :	real * real -> bool	= "Real.<"
+    __primitive val op > :	real * real -> bool	= "Real.>"
+    __primitive val op <= :	real * real -> bool	= "Real.<="
+    __primitive val op >= :	real * real -> bool	= "Real.>="
+    __primitive val compare :	real * real -> order	= "Real.compare"
+
+    val posInf = 1.0 / 0.0
+    val negInf = ~1.0 / 0.0
+
+    fun compareReal(x,y) =
+	(case compare(x,y)
+	   of LESS			=> IEEEReal.LESS
+	    | GREATER			=> IEEEReal.GREATER
+	    | EQUAL			=> IEEEReal.EQUAL
+	) handle IEEEReal.Unordered	=> IEEEReal.UNORDERED
+
+    fun *+(x,y,z)			= x*y + z
+    fun *-(x,y,z)			= x*y - z
+
+    fun abs x where (x < 0.0)		= ~x
+      | abs x				= x
+
+    fun min(x,y)			= if x < y then x else y
+    fun max(x,y)			= if x > y then x else y
+
+    fun sign x where (x > 0.0)		= 1
+      | sign x where (x < 0.0)		= ~1
+      | sign x				= 0
+
+    fun signBit x			= Int.<(sign x, 0) orelse x = ~0.0
+    fun sameSign(x,y)			= signBit x = signBit y
+
+    fun copySign(x,y) where (sameSign(x,y))	= x
+      | copySign(x,y)				= ~x
+
+    fun x == y				= x = y orelse
+					  sign x = 0 andalso sign y = 0
+    fun x != y				= Bool.not(x == y)
+    fun x ?= y				= x == y
+
+    __primitive val ceil :	real -> int	= "Real.ceil"
+    __primitive val floor :	real -> int	= "Real.floor"
+    __primitive val trunc :	real -> int	= "Real.trunc"
+    __primitive val round :	real -> int	= "Real.round"
+    __primitive val realCeil :	real -> real	= "Real.realCeil"
+    __primitive val realFloor :	real -> real	= "Real.realFloor"
+    __primitive val realTrunc :	real -> real	= "Real.realTrunc"
+    __primitive val realRound :	real -> real	= "Real.realRound"	(**)
+
+    __primitive val fromInt :	int -> real	= "Real.fromInt"
+
+    fun toInt IEEEReal.TO_POSINF		= ceil
+      | toInt IEEEReal.TO_NEGINF		= floor
+      | toInt IEEEReal.TO_ZERO			= trunc
+      | toInt IEEEReal.TO_NEAREST		= round
+
+    val toLargeInt				= toInt
+    val fromLargeInt				= fromInt
+
+    fun toLarge x				= x
+    fun fromLarge mode x			= x
+
+
+    fun scan getc source =
+	let
+	    fun decval c = Int.- (Char.ord c, 48)
+	    fun pow10 0 = 1.0
+	      | pow10 n =
+		if n mod 2 = 0 then
+		    let val x = pow10 (n div 2) in x * x end
+		else 10.0 * pow10 (Int.- (n, 1))
+	    fun pointsym src =
+		case getc src of
+		    NONE           => (false, src)
+		  | SOME (c, rest) => if c = #"." then (true, rest)
+				      else (false, src)
+	    fun esym src =
+		case getc src of
+		    NONE           => (false, src)
+		  | SOME (c, rest) =>
+			if c = #"e" orelse c = #"E"  then
+			    (true, rest)
+			else (false, src)
+	    fun scandigs (first, next, final, source) =
+		let fun digs (state, src) =
+		    case getc src of
+			NONE          => (SOME (final state), src)
+		      | SOME(c, rest) =>
+			    if Char.isDigit c then
+				digs (next(state, decval c), rest)
+			    else
+				(SOME (final state), src)
+		in
+		    case getc source of
+			NONE          => (NONE, source)
+		      | SOME(c, rest) =>
+			    if Char.isDigit c then
+				digs (first (decval c), rest)
+			    else (NONE, source)
+		end
+
+	    fun ident x = x
+	    fun getint source =
+		scandigs (fromInt,
+			  fn (res, cval) => 10.0 * res + fromInt cval,
+			  ident, source)
+	    fun getfrac source =
+		scandigs (fn cval => (1, fromInt cval),
+			  fn ((decs, frac), cval) =>
+			  (Int.+(decs,1), 10.0*frac+fromInt cval),
+			  fn (decs, frac) => frac / pow10 decs, source)
+	    fun getexp source =
+		scandigs (ident, fn (res, cval) => Int.+(Int.*(10,res),cval),
+			  ident, source)
+
+	    fun sign src =
+		case getc src of
+		    SOME(#"+", rest) => (true,  rest)
+		  | SOME(#"-", rest) => (false, rest)
+		  | SOME(#"~", rest) => (false, rest)
+		  | _                => (true,  src )
+
+	    val src = StringCvt.dropl Char.isSpace getc source
+	    val (manpos, src1) = sign src
+	    val (intg,   src2) = getint src1
+	    val (decpt,  src3) = pointsym src2
+	    val (frac,   src4) = getfrac src3
+
+	    fun mkres (v, rest) =
+		SOME(if manpos then v else ~v, rest)
+
+	    fun expopt (manval, src) =
+		let val (esym,   src1) = esym src
+		    val (exppos, src2) = sign src1
+		    val (expv,   rest) = getexp src2
+		in
+		    case (esym, expv) of
+			(_,     NONE)     => mkres (manval, src)
+		      | (true,  SOME exp) =>
+			    if exppos then mkres (manval * pow10 exp, rest)
+			    else mkres (manval / pow10 exp, rest)
+		      | _                 => NONE
+		end
+	in
+	    case (intg,     decpt, frac) of
+		(NONE,      true,  SOME fval) => expopt (fval, src4)
+	      | (SOME ival, false, SOME _   ) => NONE
+	      | (SOME ival, true,  NONE     ) => mkres (ival, src2)
+	      | (SOME ival, false, NONE     ) => expopt (ival, src2)
+	      | (SOME ival, _    , SOME fval) => expopt (ival+fval, src4)
+	      | _                             => NONE
+	end
+
+    __primitive val toString: real -> string = "Real.toString"
+
+    val fromString = StringCvt.scanString scan
+
+    structure Math =
+    struct
+	type real = real
+
+	__primitive val e :	real			= "Math.e"
+	__primitive val pi :	real			= "Math.pi"
+
+	__primitive val sqrt :	real -> real		= "Math.sqrt"
+	__primitive val exp :	real -> real		= "Math.exp"
+	__primitive val pow :	real * real -> real	= "Math.pow"
+	__primitive val ln :	real -> real		= "Math.ln"
+
+	val ln10	= ln 10.0
+	fun log10 x	= ln x / ln10
+
+	__primitive val sin :	real -> real		= "Math.sin"
+	__primitive val cos :	real -> real		= "Math.cos"
+	__primitive val tan :	real -> real		= "Math.tan"
+	__primitive val asin :	real -> real		= "Math.asin"
+	__primitive val acos :	real -> real		= "Math.acos"
+	__primitive val atan :	real -> real		= "Math.atan"
+	__primitive val atan2 :	real * real -> real	= "Math.atan2"
+	__primitive val sinh :	real -> real		= "Math.sinh"
+	__primitive val cosh :	real -> real		= "Math.cosh"
+	__primitive val tanh :	real -> real		= "Math.tanh"
+	__primitive val asinh :	real -> real		= "Math.asinh"	(**)
+	__primitive val acosh :	real -> real		= "Math.acosh"	(**)
+	__primitive val atanh :	real -> real		= "Math.atanh"	(**)
+    end
+end

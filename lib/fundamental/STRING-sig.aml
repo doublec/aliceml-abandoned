@@ -1,0 +1,72 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                           from "Pervasive"
+import type int and bool and order and option and list from "ToplevelTypes"
+import signature CHAR                                  from "CHAR-sig"
+
+
+signature STRING =
+sig
+    type string
+    type t = string							(**)
+
+    structure Char :	CHAR
+
+    val maxSize :	int
+    val maxLen :	int						(**)
+
+    val size :		string -> int
+    val length :	string -> int					(**)
+    val str :		Char.char -> string
+    val sub :		string * int -> Char.char
+    val substring :	string * int * int -> string
+    val extract :	string * int * int option -> string
+
+    val op ^ :		string * string -> string
+    val append :	string * string -> string			(**)
+    val concat :	string list -> string
+    val implode :	Char.char list -> string
+    val explode :	string -> Char.char list
+    val fromList :	Char.char list -> string			(**)
+    val toList :	string -> Char.char list			(**)
+    val tabulate :	int * (int -> Char.char) -> string		(**)
+
+    val map :		(Char.char -> Char.char) -> string -> string
+    val translate :	(Char.char -> string) -> string -> string
+    val fields :	(Char.char -> bool) -> string -> string list
+    val tokens :	(Char.char -> bool) -> string -> string list
+
+    val op < :		string * string -> bool
+    val op > :		string * string -> bool
+    val op <= :		string * string -> bool
+    val op >= :		string * string -> bool
+    val compare :	string * string -> order
+    val collate :	(Char.char * Char.char -> order) -> string * string
+							 -> order
+    val isPrefix :	string -> string -> bool
+    val isSuffix :	string -> string -> bool			(**)
+
+    val toWide :	string -> __pervasive.WideString.string		(**)
+    val fromWide :	__pervasive.WideString.string -> string		(**)
+
+    val toString :	string -> string
+    val toCString :	string -> string
+(*TODO
+    val fromString :	string -> string option
+    val fromCString :	string -> string option
+*)
+end

@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                 from "Pervasive"
+import datatype ref                          from "ToplevelTypes"
+import infix 3 := val ! and op := and op :=: from "ToplevelValues"
+import signature REF                         from "REF-sig"
+
+
+structure Ref : REF =							(**)
+  struct
+    datatype ref			= datatype ref
+    type  'a t				= 'a ref
+
+    val new				= ref
+    val !				= !
+    val op :=				= op :=
+    val op :=:				= op :=:
+
+    fun exchange(r as ref x1, x2)	= (r := x2 ; x1)
+    fun map f (r as ref x)		= ref(f x)
+  end

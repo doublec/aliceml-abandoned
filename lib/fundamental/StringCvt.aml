@@ -1,0 +1,52 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive    from "Pervasive"
+import type int datatype option              from "ToplevelTypes"
+import infix 4 = infix 6 + val op = and op + from "ToplevelValues"
+import structure Char                        from "Char"
+import structure String                      from "String"
+import signature STRING_CVT                  from "STRING_CVT-sig"
+
+
+structure StringCvt :> STRING_CVT =
+struct
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
+
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs             = int
+
+    fun dropl  p f s  = dropl'(p,f,s)
+    and dropl'(p,f,s) =
+	case f s of SOME(c,s') where (p c) => dropl'(p,f,s')
+		  | _                      => s
+
+    fun skipWS f = dropl Char.isSpace f
+
+    fun scanString scan s =
+	let
+	    val n = String.size s
+	    fun get i where (i = n) = NONE
+	      | get i               = SOME(String.sub(s,i), i+1)
+	in
+	    case scan get 0 of NONE      => NONE
+			     | SOME(x,_) => SOME x
+	end
+end

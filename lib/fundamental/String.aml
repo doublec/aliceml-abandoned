@@ -1,0 +1,118 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                       from "Pervasive"
+import type char and string and int
+       datatype bool and order and option and list from "ToplevelTypes"
+import infix 4 = <> infixr 5 :: infix 6 + - ^
+       val op = and op <> and op + and op -        from "ToplevelValues"
+import structure Char                              from "Char"
+import structure Bool                              from "Bool"
+import structure List                              from "List"
+import signature STRING                            from "STRING-sig"
+
+
+structure String : STRING =
+struct
+    type string	= string
+    type t	= string						(**)
+
+    structure Char = Char
+
+    __primitive val maxSize : int = "String.maxSize"
+
+    __primitive val size : string -> int        = "String.size"
+    __primitive val str :  char -> string       = "String.str"
+    __primitive val sub :  string * int -> char = "String.sub"
+    __primitive val sub' : string * int -> char = "Unsafe.String.sub"
+    __primitive val substring : string * int * int -> string
+						= "String.substring"
+    fun extract(s, i, NONE)   = substring(s, i, size s - i)
+      | extract(s, i, SOME j) = substring(s, i, j)
+
+    __primitive val op ^ :    string * string -> string = "String.^"
+    __primitive val implode : char list -> string       = "String.implode"
+    __primitive val explode : string -> char list       = "String.explode"
+
+    val maxLen		= maxSize					(**)
+    val length		= size						(**)
+    val append		= op ^						(**)
+    val fromList	= implode					(**)
+    val toList		= explode					(**)
+    fun tabulate(n,f)	= implode(List.tabulate(n,f)) (*INEFFICIENT*)	(**)
+
+    fun concat ss	= List.foldr op^ "" ss			(*INEFFICIENT*)
+
+    fun map f s		= implode(List.map f (explode s))	(*INEFFICIENT*)
+    fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
+
+    __primitive val op < :	string * string -> bool  = "String.<"
+    __primitive val op > :	string * string -> bool  = "String.>"
+    __primitive val op <= :	string * string -> bool  = "String.<="
+    __primitive val op >= :	string * string -> bool  = "String.>="
+    __primitive val compare :	string * string -> order = "String.compare"
+
+    fun collate  cmp (s1,s2)	= collate'(cmp,s1,s2,0)
+    and collate'(cmp,s1,s2,i) where (i = size s1)
+				= if size s1 = size s2 then EQUAL
+						       else LESS
+      | collate'(cmp,s1,s2,i) where (i = size s2)
+				= GREATER
+      | collate'(cmp,s1,s2,i)	= case cmp(sub'(s1,i), sub'(s2,i))
+				    of EQUAL => collate'(cmp,s1,s2,i+1)
+				     | other => other
+
+    fun isPrefix s1 s2		= isPrefix'(s1,s2,0)
+    and isPrefix'(s1,s2,i)	= i = size s1 orelse
+				  i <> size s2 andalso
+				  sub'(s1,i) = sub'(s2,i)
+				  andalso isPrefix'(s1,s2,i+1)
+
+    fun isSuffix s1 s2		= isSuffix'(s1,s2,size s1-1,size s2-1)
+    and isSuffix'(s1,s2,i1,i2)	= i1 = ~1 orelse		(**)
+				  i2 <> ~1 andalso
+				  sub'(s1,i1) = sub'(s2,i1)
+				  andalso isSuffix'(s1,s2,i1-1,i2-1)
+
+    fun fields  f  s		= fields'(f, explode s, nil)
+    and fields'(f, nil, ss)	= List.rev ss
+      | fields'(f, cs,  ss)	= let val (cs1,cs2) = field'(f,cs,nil) in
+				      fields'(f, cs2, implode(cs1)::ss)
+				  end
+    and field'(f,  nil,  cs')	= (List.rev cs', nil)
+      | field'(f, c::cs, cs') where (f c)
+      				= (List.rev cs', c::cs)
+      | field'(f, c::cs, cs')	= field'(f, cs, c::cs')
+
+    fun tokens  f   s		= tokens'(f, explode s, nil)
+    and tokens'(f,  nil,  ss)	= List.rev ss
+      | tokens'(f, c::cs, ss) where (f c)
+      				= tokens'(f,cs,ss)
+      | tokens'(f, c::cs, ss)	= let val (cs1,cs2) = token'(f,cs,nil) in
+				      tokens'(f, cs2, implode(c::cs1)::ss)
+				  end
+    and token'(f,  nil,  cs')	= (List.rev cs', nil)
+      | token'(f, c::cs, cs') where (f c)
+      				= (List.rev cs', c::cs)
+      | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
+
+
+    fun toWide s		= s					(**)
+    fun fromWide s		= s						(**)
+
+    fun toString s		= translate Char.toString s
+    fun toCString s		= translate Char.toCString s
+end

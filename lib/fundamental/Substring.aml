@@ -1,0 +1,26 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                           from "Pervasive"
+import type int and bool and order and option and list from "ToplevelTypes"
+import signature SUBSTRING                             from "SUBSTRING-sig"
+
+
+(*TODO
+structure Substring :> SUBSTRING =
+struct
+end
+*)

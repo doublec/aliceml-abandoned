@@ -1,0 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive  from "Pervasive"
+import type unit datatype ref from "ToplevelTypes"
+
+
+signature REF =								(**)
+sig
+    datatype ref = datatype ref
+    type  'a t   = 'a ref
+
+    val new :		'a -> 'a ref
+    val ! :		'a ref -> 'a
+    val := :		'a ref * 'a -> unit
+    val :=: :		'a ref * 'a ref -> unit
+    val exchange :	'a ref * 'a -> 'a
+    val map :		('a -> 'a) -> 'a ref -> 'a ref
+end
