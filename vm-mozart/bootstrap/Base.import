@@ -75,8 +75,7 @@ exception Size
 exception Span
 exception Subscript
 
-(*--** datatype order = datatype General.order *)
-datatype order = LESS | EQUAL | GREATER
+datatype order = datatype General.order
 
 val ! : 'a ref -> 'a
 val op:= : 'a ref * 'a -> unit
@@ -103,8 +102,7 @@ structure Option:
 	    ('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
     end
 
-(*--** datatype option = datatype Option.option *)
-datatype 'a option = NONE | SOME of 'a
+datatype option = datatype Option.option
 
 val getOpt: 'a option * 'a -> 'a
 val isSome: 'a option -> bool
