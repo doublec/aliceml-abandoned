@@ -14,12 +14,12 @@ and its features:</P>
   <LI><A href="#laziness">Laziness</A>: transparent lazy evaluation</LI>
   <LI><A href="#concurrency">Concurrency</A>: threads and data-flow
   synchronistation</LI>
-  <LI><A href="#promises">Promises</A>: </LI>
+  <LI><A href="#promises">Promises</A>: handled futures</LI>
   <LI><A href="#packages">Packages</A>: dynamic typing and first-class modules</LI>
   <LI><A href="#pickling">Pickling</A>: platform independent persistence</LI>
   <LI><A href="#components">Components</A>: platform independence and
   lazy dynamic linking</LI>
-  <LI><A href="#distribution">Distribution</A>: </LI>
+  <LI><A href="#distribution">Distribution</A>: remote processes and proxies</LI>
   <LI><A href="#constraints">Constraints</A>: concurrent constraint programming
   and programmable search</LI>
   <LI><A href="#interop">Interoperability</A>: working hand in hand with Oz
@@ -322,10 +322,10 @@ spawn 45*68
 the <TT>spawn</TT> expression is a <EM>future</EM>, a place-holder for the
 result of the concurrent computation. Once the result becomes available, the
 future will be globally replaced by the result. We say that threads are
-functional, in the sense that they have a result. That semantics becomes more
-obvious if we look at a thread that does not terminate immediately. For that
-purpose, let us define the naive version of the Fibonacci function, which has
-exponential complexity:</P>
+<EM>functional</EM>, in the sense that they have a result. That semantics
+becomes more obvious if we look at a thread that does not terminate
+immediately. For that purpose, let us define the naive version of the Fibonacci
+function, which has exponential complexity:</P>
 
 <PRE class=code>
 fun fib (0 | 1) = 1
@@ -437,49 +437,210 @@ hd it + 1
 discussion of concurrency, futures, and failure.</P>
 
 
+<?php subsection("concurrency-atomic", "Atomicity") ?>
+
+<P>Dealing with state correctly in a concurrent environment requires the
+availability of atomic operations. Alice provides an atomic exchange operation
+for references:</P>
+
+<PRE class=code>
+val r = ref 10
+<I>val r : int ref = ref 10</I>
+Ref.exchange (r, 20)
+<I>val it : int = 10</I></PRE>
+
+<P>The value of the reference is extracted and replaced in one atomic
+operation. See <A href="#promises-concurrent">below</A> for an example relying
+on this function.</P>
+
+<P class=note><EM>Note:</EM> Due to limitations of the Mozart virtual machine,
+Alice does not yet provide an atomic exchange operation for arrays.</P>
+
 
 <?php section("promises", "promises") ?>
 
-<!-- TODO -->
+<P>Functional threads and lazy evaluation offer convenient means to create
+futures "on the fly". Often the direct coupling between a future and the
+computation delivering its result is too inflexible, however. For such cases,
+Alice offers <EM>promises</EM>.</P>
 
-<P>To be done...</P>
+<P>A promise is an explicit handle for a future. When a promise is created,</P>
 
 <PRE class=code>
-signature PORT =
-sig
-    type 'a port
+open Promise
+<I>val ...
+val ...
+...</I>
+val p : int promise = promise ()
+<I>val p : int Promise.promise = promise{|future|}</I></PRE>
 
-    val new :   unit -> 'a port * 'a list
-    val send :  'a port * 'a -> unit
-    val close : 'a port -> unit
+<P>an associated future is created along with it. This future can be obtained as
+follows:</P>
+
+<PRE class=code>
+val x = future p
+<I>val x : int = future</I></PRE>
+
+<P>Such a <EM>promised future</EM> behaves like a concurrent future, in
+particular by allowing dataflow synchronisation. But unlike a concurrent or
+lazy future it does not vanish automatically, but has to be eliminated
+explicitly through the corresponding promise:</P>
+
+<PRE class=code>
+fulfill (p, 19)
+<I>val it : unit = ()</I>
+p
+<I>val it : int Promise.promise = promise{|19|}</I>
+x
+<I>val it : int = 19</I></PRE>
+
+<P>Intuitively, by creating a future this way, you create a place-holder for a
+value that you "promise" to deliver at some later point in time. At that
+point, you "fulfill" your promise. You can also break your promise, by failing
+the future:</P>
+
+<PRE class=code>
+val p : int promise = promise ()
+<I>val p : int Promise.promise = promise{|future|}</I>
+fail (p, Domain)
+<I>val it : unit = ()</I>
+p
+<I>val it : int Promise.promise = promise{|raise|}</I></PRE>
+
+<P>The future will be failed with the exception you pass to the <TT>fail</TT>
+function. Any subsequent attempt to request the future will cause raise of that
+exception, just as a failed concurrent future:<P>
+
+<PRE class=code>
+1 + future p
+<I>uncaught exception Domain</I></PRE>
+
+<P>A promise may only be fulfilled or failed once. Hence, a different view on
+promises is that of a single assignment reference, yielding the following
+correspondences:</P>
+
+<PRE class=code>
+type 'a promise                         type 'a ref
+promise : unit -> 'a promise            ref : 'a -> 'a ref
+future  : 'a promise -> 'a              !   : 'a ref -> 'a
+fulfill : 'a promise * 'a -> unit       :=  : 'a ref * 'a -> unit</PRE>
+
+<P>The important point is that a promise is not initialized (hence the
+difference in the constructor types), and dereferencing it prior to assignment
+delivers a place holder for its potential content.</P>
+
+
+<?php subsection("promises-topdown", "Top-down construction of data structures") ?>
+
+<P>Usage of promises is not necessarily related to concurrent programming. One
+application is the top-down construction of data structures, as opposed to the
+bottom-up construction usually required in functional programming. As a simple
+example of that we show how promises can be utilised to program a
+tail-recursive version of the list append function:</P>
+
+<PRE class=code>
+fun append (l1,l2) =
+let
+    fun iter (nil,   p) = fulfill (p, l2)
+      | iter (x::xs, p) =
+	let
+	    val p' = promise ()
+	in
+            fulfill (p, x::future p'); iter (xs, p')
+	end
+    val p = promise ()
+in
+    iter (l1, p); future p
+end
+<I>val append : 'a list * 'a list -> 'a list = fn</I></PRE>
+
+<!--
+<P class=note><EM>Note:</EM> When entering this example interactively you have
+to put some white space after the semicolon in the <TT>let</TT> body.
+Otherwise, unlike other SML interpreters, the interactive top-level of Alice
+will assume it to terminate your input.</P>
+-->
+
+<P>The basic idea of this formulation of append is to cons the head of the left
+operand to a future in each iteration. That future gets replaced by the actual
+tail in the next iteration, with the tail again containing a future as its
+respective tail. When we reach the end of the list, the last future gets
+replaced by the right operand.</P>
+
+<P>In a similar vein, arbitrary data structures can be generated in a top-down
+manner by creating promised futures as place holders for parts of it and
+construct them afterwards. This is reminiscent of techniques from logic
+programming.</P>
+
+
+<?php subsection("promises-concurrent", "Concurrent data structures") ?>
+
+<P>Still, the primary purpose of promises is to provide a simple primitive that
+enables high-level programming of concurrency. We only give an idea of that
+here, by showing how they can encode another well-known concurrency idiom
+easily: <EM>channels</EM>.</P>
+
+<P>A channel (sometimes also called a <EM>port</EM>) is a simple imperative
+message queue that allows asynchronous communication between processes. As an
+abstract data type it can be described by the following signature:</P>
+
+<PRE class=code>
+signature CHAN =
+sig
+    type 'a chan
+
+    val chan : unit -> 'a chan
+    val put :  'a chan * 'a -> unit
+    val get :  'a chan -> 'a
 end
 </PRE>
 
+<P>Arbitrarily many messages may be send to a channel using <TT>put</TT>. The
+<TT>get</TT> operation takes the oldest message out of the queue. It suspends if
+none is available. A straight-forward implementation uses promises and
+references:</P>
+
 <PRE class=code>
-structure Port :> PORT =
+structure Chan :> CHAN =
 struct
     open Promise
 
-    type 'a port = 'a list promise ref
+    type 'a chan = 'a list promise ref * 'a list ref
 
-    fun new () =
+    fun chan () =
 	let
 	    val p = promise ()
 	in
-	    (ref p, future p)
+	    (ref p, ref (future p))
 	end
 
-    fun send (r, x) =
+    fun put ((putr,getr), x) =
 	let
 	    val p' = promise ()
-	    val p = Ref.exchange (r, p')
+	    val p  = Ref.exchange (putr, p')
 	in
 	    fulfill (p, x::future p')
 	end
 
-    fun close r = fulfill (!r, nil)
+    fun get (putr, getr) =
+	let
+            val p' = promise ()
+	    val xs = Ref.exchange (getr, future p')
+        in
+            fulfill (p', tl xs); hd xs
+        end
 end
 </PRE>
+
+<P>The implementation is a variation of a difference list: the first reference
+stores the tail of the queue ("write position"), while the second represents
+the head ("read position"). Modification of either position is performed by an
+atomic exchange operation on the respective reference. That ensures that all
+operations are properly sequentialized.</P>
+
+<!--TODO-->
+<P>More explanation...</P>
+
 
 <PRE class=code>
 val (p: int Port.port, xs) = Port.new ()
@@ -969,7 +1130,8 @@ more information on evaluated components.</P>
 
 <!-- TODO -->
 
-<P>To be done...</P>
+<P>To be done...
+See the respective <A href="distribution.html">manual page</A> for now.</P>
 
 
 
