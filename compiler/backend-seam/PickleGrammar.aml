@@ -3,24 +3,16 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure Stamp
-from "../infrastructure/Stamp"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    signature PICKLE_GRAMMAR
-from "PICKLE_GRAMMAR-sig"
+import structure Stamp          from "../infrastructure/Stamp"
+import structure FlatGrammar    from "../backend-common/FlatGrammar"
+import signature PICKLE_GRAMMAR from "PICKLE_GRAMMAR-sig"
 
 structure PickleGrammar :> PICKLE_GRAMMAR =
     struct
@@ -40,6 +32,8 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
 
+	type coord = string * int * int
+
 	datatype value =
 	    Prim of string
 	  | Int of LargeInt.int
@@ -51,7 +45,7 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 	  | Vector of value vector
 	  | Closure of function * value vector
 	  | Sign of sign
-	and function = Function of int * int * idDef args * instr
+	and function = Function of coord * int * int * idDef args * instr
 	and instr =
 	    Kill of id vector * instr
 	  | PutConst of id * value * instr

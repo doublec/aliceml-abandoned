@@ -3,36 +3,19 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Stamp
-from "../infrastructure/Stamp"
-
-import
-    structure StampMap
-from "../common/StampMap"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    structure PickleGrammar
-from "PickleGrammar"
-
-import
-    signature ENVIRONMENT
-from "ENVIRONMENT-sig"
+import structure Crash         from "../infrastructure/Crash"
+import structure Stamp         from "../infrastructure/Stamp"
+import structure StampMap      from "../common/StampMap"
+import structure FlatGrammar   from "../backend-common/FlatGrammar"
+import structure PickleGrammar from "PickleGrammar"
+import signature ENVIRONMENT   from "ENVIRONMENT-sig"
 
 structure Environment :> ENVIRONMENT =
     struct
@@ -40,26 +23,31 @@ structure Environment :> ENVIRONMENT =
 	type globals = FlatGrammar.id list
 	type index = int
 
-	type t = {stack: (scope * index * index * globals) list ref,
+	type t = {filename: string,
+		  stack: (scope * index * index * globals) list ref,
 		  scope: scope ref,
 		  localIndex: index ref,
 		  globalIndex: index ref,
 		  globals: globals ref,
 		  shared: PickleGrammar.instr StampMap.t}
 
-	fun new () =
-	    {stack = ref nil, scope = ref (StampMap.new ()),
+	fun new filename =
+	    {filename = filename,
+	     stack = ref nil, scope = ref (StampMap.new ()),
 	     localIndex = ref 0, globalIndex = ref 0, globals = ref nil,
 	     shared = StampMap.new ()}
 
-	fun startFn {stack, scope, localIndex, globalIndex, globals, shared} =
+	fun filename ({filename, ...}: t) = filename
+
+	fun startFn ({stack, scope, localIndex, globalIndex, globals,
+		      ...}: t) =
 	    (stack := (!scope, !localIndex, !globalIndex, !globals)::(!stack);
 	     scope := StampMap.new ();
 	     localIndex := 0;
 	     globalIndex := 0;
 	     globals := nil)
 
-	fun endFn {stack, scope, localIndex, globalIndex, globals, shared} =
+	fun endFn ({stack, scope, localIndex, globalIndex, globals, ...}: t) =
 	    case !stack of
 		(scope', localIndex', globalIndex', globals')::rest =>
 		    (Vector.fromList (List.rev (!globals)), !localIndex)
@@ -70,7 +58,7 @@ structure Environment :> ENVIRONMENT =
 			    stack := rest)
 	      | nil => raise Crash.Crash "Environment.endFn"
 
-	fun declare ({stack, scope, localIndex, globalIndex, globals, shared},
+	fun declare ({scope, localIndex, ...}: t,
 		     FlatGrammar.Id (_, stamp, _)) =
 	    case StampMap.lookup (!scope, stamp) of
 		SOME (PickleGrammar.Local i) => i
@@ -86,7 +74,7 @@ structure Environment :> ENVIRONMENT =
 			    i
 			end
 
-	fun fresh {stack, scope, localIndex, globalIndex, globals, shared} =
+	fun fresh ({localIndex, ...}: t) =
 	    let
 		val i = !localIndex
 	    in
@@ -94,7 +82,7 @@ structure Environment :> ENVIRONMENT =
 		i
 	    end
 
-	fun lookup ({stack, scope, localIndex, globalIndex, globals, shared},
+	fun lookup ({scope, globalIndex, globals, ...}: t,
 		    id as FlatGrammar.Id (_, stamp, _)) =
 	    case StampMap.lookup (!scope, stamp) of
 		SOME idRef => idRef
@@ -109,15 +97,12 @@ structure Environment :> ENVIRONMENT =
 			idRef
 		    end
 
-	fun lookupStamp ({stack, scope, localIndex, globalIndex, globals,
-			  shared}, stamp) =
+	fun lookupStamp ({scope, shared, ...}: t, stamp) =
 	    StampMap.lookup (!scope, stamp)
 
-	fun lookupShared ({stack, scope, localIndex, globalIndex, globals,
-			   shared}, stamp) =
+	fun lookupShared ({shared, ...}: t, stamp) =
 	    StampMap.lookup (shared, stamp)
 
-	fun declareShared ({stack, scope, localIndex, globalIndex, globals,
-			    shared}, stamp, instr) =
+	fun declareShared ({shared, ...}: t, stamp, instr) =
 	    StampMap.insertDisjoint (shared, stamp, instr)
     end

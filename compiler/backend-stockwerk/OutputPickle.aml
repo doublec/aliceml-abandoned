@@ -138,6 +138,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.tupArgs, 1);
 	     outputVector outputArg (context, xs))
 
+	fun outputCoord (context, (string, line, column)) =
+	    (outputTuple (context, 3); outputString (context, string);
+	     outputInt (context, LargeInt.fromInt line);
+	     outputInt (context, LargeInt.fromInt column))
+
 	val filler8 = Char.chr 1
 	val filler16 = WideChar.chr 1
 
@@ -200,9 +205,10 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     Vector.app (fn value => outputValue (context, value)) values)
 	  | outputValue (context, Sign sign) = outputInt (context, 0) (*--** *)
 	and outputFunction (context,
-			    Function (nglobals, nlocals, args, body)) =
+			    Function (coord, nglobals, nlocals, args, body)) =
 	    (outputTransform (context, "Alice.function");
-	     outputBlock (context, Label.function, 4);
+	     outputBlock (context, Label.function, 5);
+	     outputCoord (context, coord);
 	     outputInt (context, LargeInt.fromInt nglobals);
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);

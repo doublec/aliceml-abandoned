@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,6 +14,7 @@ import structure Assert         from "../../lib/utility/Assert"
 import structure Url            from "../../lib/utility/Url"
 import structure Crash          from "../infrastructure/Crash"
 import structure EmptyContext   from "../infrastructure/EmptyContext"
+import structure Source         from "../infrastructure/Source"
 import structure StampSet       from "../common/StampSet"
 import structure FlatGrammar    from "../backend-common/FlatGrammar"
 import signature PickleGrammar  from "PickleGrammar"
@@ -393,14 +394,16 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			  id, instr, env)
 	  | translateExp (VecExp (_, ids), id, instr, env) =
 	    O.PutVec (id, translateIds (ids, env), instr)
-	  | translateExp (FunExp (_, _, _, args, body), id, instr, env) =
+	  | translateExp (FunExp (info, _, _, args, body), id, instr, env) =
 	    let
 		val _ = startFn env
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
 		val (globals, nlocals) = endFn env
+		val ((i, j), _) = #region info
 		val function =
-		    O.Function (Vector.length globals, nlocals,
+		    O.Function ((filename env, i, j),
+				Vector.length globals, nlocals,
 				args', bodyInstr)
 	    in
 		O.PutFun (id, translateIds (globals, env), function, instr)
@@ -487,11 +490,15 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 
 	fun translate () (desc, (imports, body, _, sign)) =
 	    let
+		val filename =
+		    case Source.url desc of
+			SOME url => Url.toString url
+		      | NONE => ""
 		val imports' =
 		    Vector.map (fn (_, sign, url) =>
 				O.Tuple #[O.Sign sign,
 					  O.String (Url.toString url)]) imports
-		val env = new ()
+		val env = new filename
 		val _ = startFn env
 		val formalId = fresh env
 		val idDefs =
@@ -507,7 +514,8 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		val bodyInstr =
 		    O.VecTest (O.Local formalId, #[(idDefs, instr)], elseInstr)
 		val function =
-		    O.Function (Vector.length globals, nlocals,
+		    O.Function ((filename, 0, 0),
+				Vector.length globals, nlocals,
 				O.OneArg (O.IdDef formalId), bodyInstr)
 	    in
 		O.Tuple #[O.Vector imports',
