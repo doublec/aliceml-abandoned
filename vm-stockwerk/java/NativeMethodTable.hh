@@ -39,6 +39,7 @@ private:
 		       Interpreter::function value, u_int arity,
 		       bool isVirtual);
 
+  static void java_lang_Class(JavaString *className);
   static void java_lang_Object(JavaString *className);
   static void java_lang_Float(JavaString *className);
   static void java_lang_Double(JavaString *className);

@@ -13,6 +13,10 @@
 #include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
+DEFINE0(registerNatives) {
+  RETURN0;
+} END
+
 DEFINE1(dump_I) {
   DECLARE_INT(i, x0);
   std::printf("%d\n", i);
@@ -31,6 +35,7 @@ DEFINE1(dump_String) {
 } END
 
 void NativeMethodTable::java_lang_Object(JavaString *className) {
+  Register(className, "registerNatives", "()V", registerNatives, 0, false);
   Register(className, "dump", "(I)V", dump_I, 1, false);
   Register(className, "dump", "(Ljava/lang/Object;)V", dump_Object, 1, false);
   Register(className, "dump", "(Ljava/lang/String;)V", dump_String, 1, false);
