@@ -69,7 +69,6 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    FileInputStream fin = new FileInputStream(filename);
 	    java.util.zip.GZIPInputStream zip = new java.util.zip.GZIPInputStream(fin);
 	    PickleInputStream in = new PickleInputStream(zip);
-	    in.readObject(); // read the literals class
 	    DMLValue r = (DMLValue) in.readObject();
 	    fin.close(); in.close(); zip.close();
 	    if (showpickle) {

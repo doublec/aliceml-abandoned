@@ -256,11 +256,10 @@ final public class General {
 		_RAISENAME(General.Match);
 	    }
 	    java.lang.String whereto=((STRING) fst).value;
-	    return apply(whereto,null,v2);
+	    return apply(whereto,v2);
 	}
 
 	final public static DMLValue apply(java.lang.String name,
-					   DMLValue val1,
 					   DMLValue val2)
 	    throws java.rmi.RemoteException {
 	    java.util.zip.GZIPOutputStream zip = null;
@@ -271,7 +270,6 @@ final public class General {
 		outf=new java.io.FileOutputStream(name);
 		zip = new java.util.zip.GZIPOutputStream(outf);
 		out=new PickleOutputStream(zip);
-		out.writeObject(val1);
 		out.writeObject(val2);
 		outf.flush();
 		out.flush();
@@ -314,7 +312,6 @@ final public class General {
 		inf = new java.io.FileInputStream(wherefrom);
 		zip = new java.util.zip.GZIPInputStream(inf);
 		in=new PickleInputStream(zip);
-		in.readObject();
 		result=(DMLValue) in.readObject();
 	    } catch (Exception e) {
 		System.err.println(e);
