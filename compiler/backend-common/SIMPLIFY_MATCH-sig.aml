@@ -12,6 +12,7 @@
 
 import structure Label                from "../../lib/rtt/Label"
 import structure Type                 from "../../lib/rtt/Type"
+import signature MAP                  from "../../lib/data/MAP-sig"
 import structure Source               from "../infrastructure/Source"
 import structure Stamp                from "../common/Stamp"
 import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
@@ -28,31 +29,37 @@ signature SIMPLIFY_MATCH =
 	datatype selector =
 	    LABEL of Label.t
 	  | LONGID of Stamp.t * Label.t list
+	  | REF of Stamp.t
 	type pos = selector list
 
 	datatype test =
 	    LitTest of I.lit
 	  | TagTest of Label.t vector * int * unit O.args * Arity.t
 	  | ConTest of I.longid * unit O.args * Arity.t
-	  | RefTest
+	  | RefTest of Stamp.t
 	  | TupTest of int
 	  | ProdTest of Label.t vector
 	    (* sorted, all labels distinct, no tuple *)
 	  | VecTest of int
-	  | GuardTest of mapping * I.exp
-	  | DecTest of mapping * I.dec vector
+	  | GuardTest of Stamp.t * mapping * I.exp
+	  | DecTest of Stamp.t * mapping * I.dec vector
 	withtype mapping = (pos * I.id) list
 
 	val longidToSelector: I.longid -> selector
+
+	structure PosMap: MAP where type key = pos
+	type testMap = test list PosMap.t
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
 	  | Leaf of O.body * O.body option ref
 	  | Default
+	  | Unreachable of testGraph
 	and nodeStatus =
 	    Initial
 	  | Raw of testGraph list * testGraph list
-	  | Cooked of (pos * test) list * (pos * test) list
+	  | Cooked of {thenTrue: testMap, thenFalse: testMap,
+		       elseTrue: testMap, elseFalse: testMap}
 	  | Translated of O.body
 
 	type consequent = Source.region * O.body option ref

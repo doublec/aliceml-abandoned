@@ -1,19 +1,23 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
 import structure Type                 from "../../lib/rtt/Type"
+import functor MkRedBlackMap          from "../../lib/data/MkRedBlackMap"
 import structure Crash                from "../infrastructure/Crash"
 import structure Source               from "../infrastructure/Source"
+import structure Error                from "../infrastructure/Error"
 import structure Stamp                from "../common/Stamp"
 import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
 import structure IntermediateGrammar  from "../common/IntermediateGrammar"
@@ -36,20 +40,85 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	datatype selector =
 	    LABEL of Label.t
 	  | LONGID of Stamp.t * Label.t list
+	  | REF of Stamp.t
 	type pos = selector list
 
 	datatype test =
 	    LitTest of lit
 	  | TagTest of Label.t vector * int * unit O.args * Arity.t
 	  | ConTest of I.longid * unit O.args * Arity.t
-	  | RefTest
+	  | RefTest of Stamp.t
 	  | TupTest of int
 	  | ProdTest of Label.t vector
 	    (* sorted, all labels distinct, no tuple *)
 	  | VecTest of int
-	  | GuardTest of mapping * I.exp
-	  | DecTest of mapping * I.dec vector
+	  | GuardTest of Stamp.t * mapping * I.exp
+	  | DecTest of Stamp.t * mapping * I.dec vector
 	withtype mapping = (pos * I.id) list
+
+	fun compareLit (IntLit n1, IntLit n2) =
+	    LargeInt.compare (n1, n2)
+	  | compareLit (WordLit w1, WordLit w2) =
+	    LargeWord.compare (w1, w2)
+	  | compareLit (RealLit r1, RealLit r2) =
+	    LargeReal.compare (r1, r2)
+	  | compareLit (CharLit c1, CharLit c2) =
+	    WideChar.compare (c1, c2)
+	  | compareLit (StringLit s1, StringLit s2) =
+	    WideString.compare (s1, s2)
+	  | compareLit (_, _) = raise Domain
+
+	fun compareArgs (O.OneArg _, O.OneArg _) = EQUAL
+	  | compareArgs (O.TupArgs _, O.TupArgs _) = EQUAL
+	  | compareArgs (O.ProdArgs _, O.ProdArgs _) = EQUAL
+	  | compareArgs (O.OneArg _, _) = LESS
+	  | compareArgs (_, O.OneArg _) = GREATER
+	  | compareArgs (O.ProdArgs _, _) = GREATER
+	  | compareArgs (_, O.ProdArgs _) = LESS
+
+	fun compareLongid (ShortId (_, _), LongId (_, _, _)) = LESS
+	  | compareLongid (LongId (_, _, _), ShortId (_, _)) = GREATER
+	  | compareLongid (ShortId (_, Id (_, stamp1, _)),
+			   ShortId (_, Id (_, stamp2, _))) =
+	    Stamp.compare (stamp1, stamp2)
+	  | compareLongid (LongId (_, longid1, Lab (_, label1)),
+			   LongId (_, longid2, Lab (_, label2))) =
+	    case Label.compare (label1, label2) of
+		EQUAL => compareLongid (longid1, longid2)
+	      | order => order
+
+	fun compareTest (LitTest lit1, LitTest lit2) = compareLit (lit1, lit2)
+	  | compareTest (TagTest (_, n1, args1, _),
+			 TagTest (_, n2, args2, _)) =
+	    (case Int.compare (n1, n2) of
+		 EQUAL => compareArgs (args1, args2)
+	       | order => order)
+	  | compareTest (ConTest (longid1, args1, _),
+			 ConTest (longid2, args2, _)) =
+	    (case compareLongid (longid1, longid2) of
+		 EQUAL => compareArgs (args1, args2)
+	       | order => order)
+	  | compareTest (RefTest stamp1, RefTest stamp2) =
+	    Stamp.compare (stamp1, stamp2)
+	  | compareTest (TupTest _ , TupTest _) = EQUAL
+	  | compareTest (ProdTest _ , ProdTest _) = EQUAL
+	  | compareTest (VecTest n1 , VecTest n2) = Int.compare (n1, n2)
+	  | compareTest (GuardTest (stamp1, _, _), GuardTest (stamp2, _, _)) =
+	    Stamp.compare (stamp1, stamp2)
+	  | compareTest (DecTest (stamp1, _, _), DecTest (stamp2, _, _)) =
+	    Stamp.compare (stamp1, stamp2)
+	  | compareTest (DecTest (_, _, _), _) = GREATER  (* put decs to end *)
+	  | compareTest (GuardTest (_, _, _), _) = GREATER (* and guards 2nd *)
+	  | compareTest (_, _) = LESS                (* and rest before that *)
+
+	fun testEq (test1, test2) = compareTest (test1, test2) = EQUAL
+
+	fun testDisjoint (LitTest lit1, LitTest lit2) =
+	    not (O.litEq (lit1, lit2))
+	  | testDisjoint (VecTest n1, VecTest n2) = n1 <> n2
+	  | testDisjoint (TagTest (l1, _, _, _), TagTest (l2, _, _, _)) =
+	    l1 <> l2
+	  | testDisjoint (_, _) = false
 
 	(* Test Sequences *)
 
@@ -58,6 +127,81 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | Neg of testSeq
 	  | Alt of testSeq * testSeq
 	withtype testSeq = testSeqElem list
+
+	(* Test Maps *)
+
+	fun compareSelector (LABEL label1, LABEL label2) =
+	    Label.compare (label1, label2)
+	  | compareSelector (LONGID (stamp1, labels1),
+			     LONGID (stamp2, labels2)) =
+	    (case Stamp.compare (stamp1, stamp2) of
+		 EQUAL => List.collate Label.compare (labels1, labels2)
+	       | order => order)
+	  | compareSelector (REF stamp1, REF stamp2) =
+	    Stamp.compare (stamp1, stamp2)
+	  | compareSelector (LABEL _, _) = LESS
+	  | compareSelector (_, LABEL _) = GREATER
+	  | compareSelector (REF _, _) = GREATER
+	  | compareSelector (_, REF _) = LESS
+
+        val comparePos = List.collate compareSelector
+
+	structure PosMap = MkRedBlackMap (type t = pos
+					  val compare = comparePos)
+
+	fun testSetMember (test, nil) = false
+	  | testSetMember (test, test'::tests) =
+	    case compareTest (test, test') of
+		EQUAL => true
+	      | LESS => false
+	      | GREATER => testSetMember (test, tests)
+
+	fun testMapMember (pos, test, testMap) =
+	    case PosMap.lookup (testMap, pos) of
+		NONE => false
+	      | SOME tests => testSetMember (test, tests)
+
+	fun testSetMerge (tests, nil) = tests
+	  | testSetMerge (nil, tests) = tests
+	  | testSetMerge (tests1 as test1::tests1',
+			  tests2 as test2::tests2') =
+	    case compareTest (test1, test2) of
+		LESS => test1::testSetMerge (tests1', tests2)
+	      | EQUAL => testSetMerge (tests1', tests2)
+	      | GREATER => test2::testSetMerge (tests1, tests2')
+
+	fun testMapInsert (testMap, pos, test) =
+	    PosMap.insertWith testSetMerge (testMap, pos, [test])
+
+	fun testSetIntersect (test::tests1, tests2) =
+	    if testSetMember (test, tests2) then
+		test::testSetIntersect (tests1, tests2)
+	    else testSetIntersect (tests1, tests2)
+	  | testSetIntersect (nil, _) = nil
+
+	fun testMapIntersect (testMap1, testMap2) =
+	    PosMap.intersectWith testSetIntersect (testMap1, testMap2)
+
+	val entailed = testMapMember
+	fun disentailed (pos, test, testMap) =
+	    case PosMap.lookup (testMap, pos) of
+		NONE => false
+	      | SOME tests =>
+		List.exists (fn test' => testDisjoint (test, test')) tests
+
+	fun allTests (0, (nil | DecTest _::_)) = true
+	  | allTests (n, (LitTest _ | TagTest _)::tests) =
+	    allTests (n - 1, tests)
+	  | allTests (_, _) = false
+
+	fun total (testMap, pos) =
+	    case PosMap.lookupExistent (testMap, pos) of
+		(RefTest _ | TupTest _ | ProdTest _ | DecTest _)::_ => true
+	      | LitTest (CharLit _)::tests =>
+		    allTests (255, tests)
+	      | TagTest (labels, _, _, _)::tests =>
+		    allTests (Vector.length labels - 1, tests)
+	      | _ => false
 
 	(* Test Sequence Construction *)
 
@@ -133,8 +277,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		 mapping) posPatVector
 	    end
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
-	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
-			 Test (pos, RefTest)::rest, mapping)
+	    let
+		val stamp = Stamp.stamp ()
+	    in
+		makeTestSeq (pat, REF stamp::pos,
+			     Test (pos, RefTest stamp)::rest, mapping)
+	    end
 	  | makeTestSeq (StrictPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, pos, rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
@@ -183,39 +331,45 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    end
 	  | makeTestSeq (GuardPat (_, pat, exp), pos, rest, mapping) =
 	    let
+		val stamp = Stamp.stamp ()
 		val (rest', mapping') = makeTestSeq (pat, pos, rest, mapping)
 	    in
-		(Test (pos, GuardTest (mapping', exp))::rest', mapping')
+		(Test (pos, GuardTest (stamp, mapping', exp))::rest', mapping')
 	    end
 	  | makeTestSeq (WithPat (_, pat, decs), pos, rest, mapping) =
 	    let
+		val stamp = Stamp.stamp ()
 		val (rest', mapping') = makeTestSeq (pat, pos, rest, mapping)
 	    in
-		(Test (pos, DecTest (mapping', decs))::rest', mapping')
+		(Test (pos, DecTest (stamp, mapping', decs))::rest', mapping')
 	    end
 
 	(* Test Graphs *)
+
+	type testMap = test list PosMap.t
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
 	  | Leaf of O.body * O.body option ref
 	  | Default
+	  | Unreachable of testGraph
 	and nodeStatus =
 	    Initial
 	  | Raw of testGraph list * testGraph list
 	    (* list of all nodes that reference this node as `then',
 	     * list of all nodes that reference this node as `else' *)
-	  | Cooked of (pos * test) list * (pos * test) list
-	    (* set of true tests for this node's `then',
-	     * set of false tests for this node's `else' *)
+	  | Cooked of {thenTrue: testMap, thenFalse: testMap,
+		       elseTrue: testMap, elseFalse: testMap}
 	  | Translated of O.body
 
 	(* Debugging *)
 
 	fun posToString' (LABEL l::rest) =
 	    Label.toString l ^ "." ^ posToString' rest
-	  | posToString' (LONGID _::rest) =
+	  | posToString' (LONGID longid::rest) =
 	    "<longid>." ^ posToString' rest
+	  | posToString' (REF stamp::rest) =
+	    "ref[" ^ Stamp.toString stamp ^ "]." ^ posToString' rest
 	  | posToString' nil = "<e>"
 
 	fun posToString pos = posToString' (List.rev pos)
@@ -243,18 +397,25 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testToString (ConTest (_, O.TupArgs xs, _)) =
 	    "con tup " ^ Int.toString (Vector.length xs)
 	  | testToString (ConTest (_, O.ProdArgs _, _)) = "con prod"
-	  | testToString RefTest = "ref"
+	  | testToString (RefTest stamp) = "ref[" ^ Stamp.toString stamp ^ "]"
 	  | testToString (TupTest n) = "tup " ^ Int.toString n
 	  | testToString (ProdTest labelTyplist) = "prod"
 	  | testToString (VecTest n) = "vec " ^ Int.toString n
-	  | testToString (GuardTest (_, _)) = "guard"
-	  | testToString (DecTest (_, decs)) =
-	    "dec " ^ Int.toString (Vector.length decs)
+	  | testToString (GuardTest (stamp, _, _)) =
+	    "guard[" ^ Stamp.toString stamp ^ "]"
+	  | testToString (DecTest (stamp, _, decs)) =
+	    "dec[" ^ Stamp.toString stamp ^ "] " ^
+	    Int.toString (Vector.length decs)
 
-	fun posTestListToString ((pos, test)::rest) =
-	    posToString pos ^ ": " ^ testToString test ^
-	    (if List.null rest then "" else ", " ^ posTestListToString rest)
-	  | posTestListToString nil = ""
+	fun testsToString tests =
+	    String.concatWith ", " (List.map testToString tests)
+
+	fun posTestMapToString map =
+	    String.concatWith "; "
+	    (PosMap.foldi (fn (pos, tests, strings) =>
+			   (posToString pos ^ ": " ^ testsToString tests)
+			   ::strings)
+			  nil map)
 
 	fun graphToString (Node (pos, test, ref thenGraph, ref elseGraph,
 				 ref status), level) =
@@ -262,21 +423,28 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    posToString pos ^ ": " ^
 	    testToString test ^ "\n" ^
 	    (case status of
-		 Cooked (posTestList, _) =>
-		     indent (level + 1) ^ "[" ^
-		     posTestListToString posTestList ^ "]\n"
+		 Cooked {thenTrue, thenFalse, ...} =>
+		     indent (level + 1) ^ "T[" ^
+		     posTestMapToString thenTrue ^ "]\n" ^
+		     indent (level + 1) ^ "F[" ^
+		     posTestMapToString thenFalse ^ "]\n"
 	       | _ => "") ^
 	    graphToString (thenGraph, level + 1) ^
 	    (case status of
-		 Cooked (_, posTestList) =>
-		     indent (level + 1) ^ "[" ^
-		     posTestListToString posTestList ^ "]\n"
+		 Cooked {elseTrue, elseFalse, ...} =>
+		     indent (level + 1) ^ "T[" ^
+		     posTestMapToString elseTrue ^ "]\n" ^
+		     indent (level + 1) ^ "F[" ^
+		     posTestMapToString elseFalse ^ "]\n"
 	       | _ => "") ^
 	    graphToString (elseGraph, level + 1)
 	  | graphToString (Leaf (body, _), level) =
 	    indent level ^ "leaf " ^
 	    (Source.regionToString (O.infoStm (List.hd body))) ^ "\n"
 	  | graphToString (Default, level) = indent level ^ "default\n"
+	  | graphToString (Unreachable graph, level) =
+	    indent level ^ "unreachable\n" ^
+	    graphToString (graph, level + 1)
 
 	fun mappingToString' ((pos, _)::mapping) =
 	    " " ^ posToString pos ^ mappingToString' mapping
@@ -302,33 +470,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Construction of Backtracking Test Trees *)
 
-	fun argsEq (O.OneArg _, O.OneArg _) = true
-	  | argsEq (O.TupArgs _, O.TupArgs _) = true
-	  | argsEq (O.ProdArgs _, O.ProdArgs _) = true
-	  | argsEq (_, _) = false
-
-	fun testEq (LitTest lit1, LitTest lit2) = O.litEq (lit1, lit2)
-	  | testEq (TagTest (_, n1, args1, _), TagTest (_, n2, args2, _)) =
-	    n1 = n2 andalso argsEq (args1, args2)
-	  | testEq (ConTest (longid1, args1, _), ConTest (longid2, args2, _)) =
-	    longidToSelector longid1 = longidToSelector longid2 andalso
-	    argsEq (args1, args2)
-	  | testEq (TupTest _, TupTest _) = true
-	  | testEq (ProdTest _, ProdTest _) = true
-	  | testEq (VecTest n1, VecTest n2) = n1 = n2
-	  | testEq (_, _) = false
-
-	fun areParallelTests (LitTest lit1, LitTest lit2) =
-	    not (O.litEq (lit1, lit2))
-	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
-	  | areParallelTests (_, _) = false
-
 	local
 	    fun findTest (Node (pos', test', thenTreeRef, elseTreeRef, _),
 			  pos, test) =
 		if pos = pos' then
 		    if testEq (test, test') then SOME thenTreeRef
-		    else if areParallelTests (test, test') then
+		    else if testDisjoint (test, test') then
 			findTest (!elseTreeRef, pos, test)
 		    else NONE
 		else NONE
@@ -358,8 +505,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | mergeIntoTree (Alt (testSeq1, testSeq2)::testSeqRest, thenTree,
 			       elseTree) =
 		(*--** this may create duplicate code in some cases. *)
-		(* This could be removed by reconstructing the whole graph *)
-		(* using hash-consing. *)
+		(*AR: I believe this is no longer the case since we stamp *)
+		(*    ref, guard and dec tests now. *)
 		mergeIntoTree (testSeq1 @ testSeqRest, thenTree,
 			       mergeIntoTree (testSeq2 @ testSeqRest, thenTree,
 					      elseTree))
@@ -377,7 +524,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		 Default => thenTreeRef := defaultTree
 	       | thenTree => propagateElses (thenTree, !elseTreeRef))
 	  | propagateElses (Leaf (_, _), _) = ()
-	  | propagateElses (Default, _) =
+	  | propagateElses ((Default | Unreachable _), _) =
 	    raise Crash.Crash "SimplifyMatch.propagateElses"
 
 	(* Optimization of the Test Graph *)
@@ -387,14 +534,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	 * the list of all the nodes that reach n through a `false' edge.
 	 *
 	 * In a second step (`Cooked' annotations), compute for each edge
-	 * (i.e., reference to a graph) the set of pairs (pos * test) that
+	 * (i.e., reference to a graph) the maps (pos -> test) of tests that
 	 * are true resp. false upon taking this edge.  Use this information
 	 * to shorten paths.  This is essential to maximize parallelization
 	 * of tests at the same position in ValuePropagationPhase.
-	 *
-	 * Note: Only the `true' sets for each `then' edge and the `false'
-	 * sets for each `else' edge need to be stored for subsequent
-	 * computations.
 	 *)
 
 	local
@@ -415,67 +558,226 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			       union (prevFalseOpt, falseGraphs))
 	      | computeRaw (_, _, _) = ()
 
-	    fun testSetMember (pos, test, (pos', test')::testSetRest) =
-		pos = pos' andalso testEq (test, test')
-		orelse testSetMember (pos, test, testSetRest)
-	      | testSetMember (_, _, nil) = false
-
-	    fun testSetIntersect ((pos, test)::testSetRest, testSet') =
-		if testSetMember (pos, test, testSet') then
-		    (pos, test)::testSetIntersect (testSetRest, testSet')
-		else testSetIntersect (testSetRest, testSet')
-	      | testSetIntersect (nil, _) = nil
-
-	    fun disentailed (pos, test, (pos', test')::rest) =
-		pos = pos' andalso areParallelTests (test, test')
-		orelse disentailed (pos, test, rest)
-	      | disentailed (_, _, nil) = false
-
-	    fun optimizeNode (graphRef as ref (Node (pos, test, ref thenGraph,
-						     ref elseGraph, _)),
-			      trueSet, falseSet) =
-		(if testSetMember (pos, test, trueSet) then
-		     (graphRef := thenGraph;
-		      optimizeNode (graphRef, trueSet, falseSet))
-		 else if testSetMember (pos, test, falseSet)
-		     orelse disentailed (pos, test, trueSet) then
-		     (graphRef := elseGraph;
-		      optimizeNode (graphRef, trueSet, falseSet))
-		 else ())
-	      | optimizeNode (ref _, _, _) = ()
+	    fun optimizeNode (graph as Node (pos, test, ref thenGraph,
+					     ref elseGraph, _),
+			      trueMap, falseMap) =
+		if entailed (pos, test, trueMap) then
+		    optimizeNode (thenGraph, trueMap, falseMap)
+		else if entailed (pos, test, falseMap) orelse
+		        disentailed (pos, test, trueMap) then
+		    optimizeNode (elseGraph, trueMap, falseMap)
+		else graph
+	      | optimizeNode (graph, _, _) = graph
 
 	    fun getSets (Node (pos, test, thenGraphRef, elseGraphRef,
 			       status as ref (Raw (thenPreds, elsePreds)))) =
 		let
-		    val trueSet2 = intersect (#1, thenPreds)
-			(* set of `true' tests for `else' edge *)
-		    val falseSet1 = intersect (#2, elsePreds)
-			(* set of `false' tests for `then' edge *)
-		    val trueSet1 = (pos, test)::trueSet2
-			(* set of `true' tests for `then' edge *)
-		    val falseSet2 = (pos, test)::falseSet1
-			(* set of `false' tests for `else' edge *)
-		    val sets = (trueSet1, falseSet2)
+		    val thenTrueIn = intersect (#thenTrue, thenPreds)
+		    val thenFalseIn = intersect (#thenFalse, thenPreds)
+		    val elseTrueIn = intersect (#elseTrue, elsePreds)
+		    val elseFalseIn = intersect (#elseFalse, elsePreds)
+		    val elseTrue = testMapIntersect (thenTrueIn, elseTrueIn)
+		    val thenTrue = testMapInsert (elseTrue, pos, test)
+		    val thenFalse = testMapIntersect (thenFalseIn, elseFalseIn)
+		    val elseFalse = testMapInsert (thenFalse, pos, test)
+		    val sets = {thenTrue = thenTrue, thenFalse = thenFalse,
+				elseTrue = elseTrue, elseFalse = elseFalse}
 		in
 		    status := Cooked sets;
 		    getSets (!thenGraphRef); getSets (!elseGraphRef);
-		    optimizeNode (thenGraphRef, trueSet1, falseSet1);
-		    optimizeNode (elseGraphRef, trueSet2, falseSet2);
+		    thenGraphRef := optimizeNode (!thenGraphRef,
+						  thenTrue, thenFalse);
+		    elseGraphRef := optimizeNode (!elseGraphRef,
+						  elseTrue, elseFalse);
+		    if total (elseFalse, pos) then
+			elseGraphRef := Unreachable (!elseGraphRef)
+		    else ();
 		    SOME sets
 		end
 	      | getSets (Node (_, _, _, _, ref (Cooked sets))) = SOME sets
 	      | getSets (Leaf (_, _)) = NONE
 	      | getSets _ = raise Crash.Crash "SimplifyMatch.getSets"
 	    and intersect (sel, graph::graphs) =
-		List.foldr (fn (graph, testSet) =>
-			    testSetIntersect (sel (valOf (getSets graph)),
-					      testSet))
+		List.foldr (fn (graph, testMap) =>
+			    testMapIntersect (sel (valOf (getSets graph)),
+					      testMap))
 		(sel (valOf (getSets graph))) graphs
-	      | intersect (_, nil) = nil
+	      | intersect (_, nil) = PosMap.empty
 	in
 	    fun optimizeGraph graph =
 		(computeRaw (graph, NONE, NONE); getSets graph; graph)
 	end
+
+	(* Check for exhaustiveness *)
+
+        (*--** sample generation should go somewhere else *)
+
+	fun findSmallest (n, (TagTest (_, n', _, _) | VecTest n')::tests) =
+	    if n < n' then n else findSmallest (n' + 1, tests)
+	  | findSmallest (n, _) = n
+
+	fun findSmallestInt (n, LitTest (IntLit n')::tests) =
+	    if n < n' then n else findSmallestInt (n' + 1, tests)
+	  | findSmallestInt (n, _) = n
+	fun findSmallestWord (w, LitTest (WordLit w')::tests) =
+	    if w < w' then w else findSmallestWord (w' + 0w1, tests)
+	  | findSmallestWord (w, _) = w
+	fun findSmallestReal (x, LitTest (RealLit x')::tests) =
+	    if x < x' then x else findSmallestReal (x' + 1.0, tests)
+	  | findSmallestReal (x, _) = x
+	fun findSmallestChar (c, LitTest (CharLit c')::tests) =
+	    if c < c' then c
+	    else findSmallestChar (Char.chr (Char.ord c' + 1), tests)
+	  | findSmallestChar (c, _) = c
+	fun findSmallestString (s, LitTest (StringLit s')::tests) =
+	    if s < s' then s
+	    else findSmallestString (s ^ ".", tests)
+	  | findSmallestString (s, _) = s
+
+	fun falseSample (pos, falseMap) =
+	    case PosMap.lookup (falseMap, pos) of
+		NONE => "_"
+	      | SOME tests =>
+	    case List.hd tests of
+		LitTest (IntLit _) =>
+		LargeInt.toString (findSmallestInt (0, tests))
+	      | LitTest (WordLit _) =>
+		"0w" ^ LargeWord.toString (findSmallestWord (0w0, tests))
+	      | LitTest (RealLit _) =>
+		LargeReal.toString (findSmallestReal (0.0, tests))
+	      | LitTest (CharLit _) =>
+		"#\"" ^ WideChar.toString (findSmallestChar (#"\000", tests)) ^
+		"\""
+	      | LitTest (StringLit _) =>
+		"\"" ^ WideString.toString (findSmallestString ("", tests)) ^
+		"\""
+	      | TagTest (labels, _, _, _) =>
+		let
+		    val n = findSmallest (0, tests)
+		in
+		    Label.toString (Vector.sub (labels, n))
+		end
+	      | ConTest (_, _, _) => "_"
+	      | RefTest _ => "ref _"
+	      | VecTest _ =>
+		let
+		    val n = findSmallest (0, tests)
+		in
+		    "#[" ^
+		    String.concatWith ", " (List.tabulate (n, fn _ => "_")) ^
+		    "]"
+		end
+	      | GuardTest (_, _, _) => "_"
+	      | _ => raise Crash.Crash "SimplifyMatch.falseSample"
+
+	fun litSample (IntLit n) = LargeInt.toString n
+	  | litSample (WordLit w) = "0wx" ^ LargeWord.toString w
+	  | litSample (RealLit r) = LargeReal.toString r
+	  | litSample (CharLit c) = "#\"" ^ Char.toString c ^ "\""
+	  | litSample (StringLit s) = "\"" ^ String.toString s ^ "\""
+
+	fun longidSample (ShortId (_, Id (_, _, name))) = Name.toString name
+	  | longidSample (LongId (_, longid, Lab (_, label))) =
+	    longidSample longid ^ "." ^ Label.toString label
+
+	fun sample (pos, trueMap, falseMap) =
+	    case PosMap.lookup (trueMap, pos) of
+		NONE => falseSample (pos, falseMap)
+	      | SOME tests =>
+	    case List.hd tests of
+		LitTest lit => litSample lit
+	      | TagTest (labels, n, _, arity) =>
+		let
+		    val label = Vector.sub (labels, n)
+		in
+		    Label.toString label ^
+		    argSample (LABEL label::pos, arity, trueMap, falseMap)
+		end
+	      | ConTest (longid, _, arity) =>
+		longidSample longid ^
+		argSample (longidToSelector longid::pos, arity,
+			   trueMap, falseMap)
+	      | RefTest _ => "ref _"
+	      | TupTest n => tupSample (pos, n, trueMap, falseMap)
+	      | ProdTest labels => prodSample (pos, labels, trueMap, falseMap)
+	      | VecTest n =>
+		let
+		    val samples =
+			List.tabulate (n, fn i =>
+					  sample (LABEL (Label.fromInt (i+1))
+						  ::pos, trueMap, falseMap))
+		in
+		    "#[" ^ String.concatWith ", " samples ^ "]"
+		end
+	      | GuardTest (_, _, _) => "_"
+	      | DecTest (_, _, _) => "_"
+	and argSample (pos, Arity.Unary, trueMap, falseMap) =
+	    let
+		val sample = sample (pos, trueMap, falseMap)
+	    in
+		case String.sub (sample, 0) of
+		    (#"(" | #"{") => sample
+		  | _ => "(" ^ sample ^ ")"
+	    end
+	  | argSample (pos, Arity.Tuple 0, trueMap, falseMap) = ""
+	  | argSample (pos, Arity.Tuple n, trueMap, falseMap) =
+	    tupSample (pos, n, trueMap, falseMap)
+	  | argSample (pos, Arity.Product labels, trueMap, falseMap) =
+	    prodSample (pos, labels, trueMap, falseMap)
+	and tupSample (pos, 0, trueMap, falseMap) = "()"
+	  | tupSample (pos, 1, trueMap, falseMap) =
+	    "{1 = " ^
+	    sample (LABEL (Label.fromInt 1)::pos, trueMap, falseMap) ^
+	    "}"
+	  | tupSample (pos, n, trueMap, falseMap) =
+	    let
+		val samples =
+		    List.tabulate (n, fn i =>
+				      sample (LABEL (Label.fromInt (i+1))::pos,
+					      trueMap, falseMap))
+	    in
+		"(" ^ String.concatWith ", " samples ^ ")"
+	    end
+	and prodSample (pos, labels, trueMap, falseMap) =
+	    let
+		val fields =
+		    List.tabulate (Vector.length labels,
+				   fn i =>
+				   let
+					val label = Vector.sub (labels, i)
+				   in
+					Label.toString label ^ " = " ^
+					sample (LABEL label::pos,
+						trueMap, falseMap)
+				   end)
+	    in
+		"{" ^ String.concatWith ", " fields ^ "}"
+	    end
+
+	exception NonExhaustive of testMap * testMap
+
+	fun check (trueMap, falseMap, conts,
+		   Node (pos, test, thenGraphRef, elseGraphRef, _)) =
+	    let
+		val trueMap' = testMapInsert (trueMap, pos, test)
+		val falseMap' = testMapInsert (falseMap, pos, test)
+	    in
+		check (trueMap', falseMap, !elseGraphRef::conts, !thenGraphRef);
+		if total (falseMap', pos) then () else
+		    check (trueMap, falseMap', conts, !elseGraphRef)
+	    end
+	  | check (trueMap, falseMap, conts, Leaf (_, _)) = ()
+	  | check (trueMap, falseMap, conts, Default) =
+	    (case conts of
+		 nil => raise NonExhaustive (trueMap, falseMap)
+	       | graph::conts' => check (trueMap, falseMap, conts', graph))
+	  | check (trueMap, falseMap, conts, Unreachable _) =
+	    raise Crash.Crash "SimplifyMatch.checkExhaustiveness"
+
+	fun checkExhaustiveness graph =
+	    check (PosMap.empty, PosMap.empty, nil, graph)
+
+	(* Main graph creation *)
 
 	type consequent = Source.region * O.body option ref
 	type mapping' = (pos * O.idRef) list
@@ -497,13 +799,28 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				       (region, r)::consequents)
 				  end) (Default, nil) matches
 		val elseGraph = Leaf (elseBody, ref NONE)
+		val region = if Vector.length matches > 0 then
+				 #1 (Vector.sub (matches, 0))
+			     else O.infoStm (List.hd elseBody)
 	    in
 		case graph of
 		    Default =>
-			(elseGraph, consequents)
+			(Error.warn' (region, "match is void");
+			 (elseGraph, consequents))
 		  | _ =>
-			(propagateElses (graph, elseGraph);
-			 (optimizeGraph graph, consequents))
+			let
+			    val _ = checkExhaustiveness graph
+			    handle NonExhaustive (trueMap, falseMap) =>
+				Error.warn' (region,
+					     "match is not exhaustive, \
+					     \because e.g.\n    " ^
+					     sample (nil, trueMap, falseMap) ^
+					     "\nis not covered")
+			    val _ = propagateElses (graph, elseGraph)
+			    val graph' = optimizeGraph graph
+			in
+			    (graph', consequents)
+			end
 	    end
 
 	(*

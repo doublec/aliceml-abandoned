@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Assert               from "../../lib/utility/Assert"
 import structure GlobalStamp          from "../../lib/data/GlobalStamp"
 import structure Url                  from "../../lib/system/Url"
 import structure Name                 from "../../lib/rtt/Name"
@@ -790,7 +789,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		stms
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
-				  status as ref (Cooked (_, _))),
+				  status as ref (Cooked {...})),
 			    mapping, region) =
 	    let
 		val (body, mapping') =
@@ -811,12 +810,14 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    end
 	  | translateGraph (Leaf (_, ref (SOME stms)), mapping, _) =
 	    (stms, mapping)
+	  | translateGraph (Unreachable graph, mapping, region) =
+	    translateGraph (graph, mapping, region)
 	  | translateGraph (_, _, _) =
 	    raise Crash.Crash "MkFlatteningPhase.translateGraph"
-	and translateNode (pos, RefTest, thenGraph, _, mapping, region) =
+	and translateNode (pos, RefTest stamp, thenGraph, _, mapping, region) =
 	    let
 		val (idDef, mapping') =
-		    adjoin (LABEL (Label.fromString "ref")::pos, mapping)
+		    adjoin (REF stamp::pos, mapping)
 		val idRef = lookup (pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
@@ -844,7 +845,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		(O.ProdDec (region, labelIdDefList, idRef)::thenBody,
 		 mapping'')
 	    end
-	  | translateNode (_, GuardTest (mapping0, exp),
+	  | translateNode (_, GuardTest (_, mapping0, exp),
 			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val info = infoExp exp
@@ -863,7 +864,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		r := SOME stms1; (stms, mapping'')
 	    end
-	  | translateNode (_, DecTest (mapping0, decs),
+	  | translateNode (_, DecTest (_, mapping0, decs),
 			   thenGraph, _, mapping, region) =
 	    let
 		val (thenBody, mapping') =

@@ -4,6 +4,10 @@ Language:
 * Implemented a simple form of intensional polymorphism that enables
   generic library functions like printVal or inspect.
 
+Compiler:
+
+* Check exhaustiveness of patterns, giving samples of uncovered cases.
+
 Library:
 
 * Sync'ed with latest updates to Basis spec
