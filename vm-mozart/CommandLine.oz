@@ -24,6 +24,6 @@ define
 		    end
 		 'arguments':
 		    fun {$ unit}
-		       {Application.getArgs plain}
+		       {Map {Application.getArgs plain} ByteString.make}
 		    end)
 end
