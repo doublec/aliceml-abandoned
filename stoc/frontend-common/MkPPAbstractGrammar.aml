@@ -7,6 +7,7 @@ functor MakePPAbstractGrammar(
 	val ppInflabInfo :    AbstractGrammar.inflab_info -> PrettyPrint.doc
 	val ppValidInfo :     AbstractGrammar.valid_info  -> PrettyPrint.doc
 	val ppTypidInfo :     AbstractGrammar.typid_info  -> PrettyPrint.doc
+	val ppVaridInfo :     AbstractGrammar.varid_info  -> PrettyPrint.doc
 	val ppModidInfo :     AbstractGrammar.modid_info  -> PrettyPrint.doc
 	val ppInfidInfo :     AbstractGrammar.infid_info  -> PrettyPrint.doc
 	val ppVallongidInfo : AbstractGrammar.vallongid_info -> PrettyPrint.doc
@@ -145,6 +146,7 @@ struct
     val ppInflab	= ppLab ppInflabInfo
     val ppValid		= ppId ppValidInfo
     val ppTypid		= ppId ppTypidInfo
+    val ppVarid		= ppId ppVaridInfo
     val ppModid		= ppId ppModidInfo
     val ppInfid		= ppId ppInfidInfo
     val ppVallongid	= ppLongid(ppVallongidInfo, ppValidInfo, ppVallabInfo)
@@ -342,8 +344,8 @@ struct
     and typtree head i body		= tree (head ^ "Typ") (ppTypInfo i) body
 
     and ppTyps typs			= vec(Vector.map ppTyp typs)
-    and ppTyp(VarTyp(i, typid))		= typtree "Var" i (
-					    ppTypid typid
+    and ppTyp(VarTyp(i, varid))		= typtree "Var" i (
+					    ppVarid varid
 					  )
       | ppTyp(PrimTyp(i, s))		= typtree "Prim" i (
 					    ppString s
@@ -351,8 +353,8 @@ struct
       | ppTyp(ConTyp(i, typlongid))	= typtree "Con" i (
 					    ppTyplongid typlongid
 					  )
-      | ppTyp(FunTyp(i, typid, typ))	= typtree "Fun" i (
-					    ppTypid typid ^/^
+      | ppTyp(FunTyp(i, varid, typ))	= typtree "Fun" i (
+					    ppVarid varid ^/^
 					    ppTyp typ
 					  )
       | ppTyp(AppTyp(i, typ1, typ2))	= typtree "App" i (
@@ -375,12 +377,12 @@ struct
 					    ppTyp typ1 ^/^
 					    ppTyp typ2
 					  )
-      | ppTyp(AllTyp(i, typid, typ))	= typtree "All" i (
-					    ppTypid typid ^/^
+      | ppTyp(AllTyp(i, varid, typ))	= typtree "All" i (
+					    ppVarid varid ^/^
 					    ppTyp typ
 					  )
-      | ppTyp(ExTyp(i, typid, typ))	= typtree "Ex" i (
-					    ppTypid typid ^/^
+      | ppTyp(ExTyp(i, varid, typ))	= typtree "Ex" i (
+					    ppVarid varid ^/^
 					    ppTyp typ
 					  )
       | ppTyp(PackTyp(i, inf))		= typtree "Pack" i (
@@ -507,8 +509,8 @@ struct
 					    ppVallab vallab ^/^
 					    ppFix fix
 					  )
-      | ppDec(VarDec(i, typid, dec))	= dectree "Var" i (
-					    ppTypid typid ^/^
+      | ppDec(VarDec(i, varid, dec))	= dectree "Var" i (
+					    ppVarid varid ^/^
 					    ppDec dec
 					  )
       | ppDec(RecDec(i, decs))		= dectree "Rec" i (

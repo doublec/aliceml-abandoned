@@ -10,6 +10,7 @@ signature ABSTRACT_GRAMMAR =
     type inflab_info
     type valid_info
     type typid_info
+    type varid_info
     type modid_info
     type infid_info
     type vallongid_info
@@ -55,6 +56,7 @@ signature ABSTRACT_GRAMMAR =
     and      inflab		= inflab_info lab
     and      valid		= valid_info id
     and      typid		= typid_info id
+    and      varid		= varid_info id
     and      modid		= modid_info id
     and      infid		= infid_info id
     and      vallongid		= (vallongid_info,valid_info,vallab_info) longid
@@ -119,18 +121,18 @@ signature ABSTRACT_GRAMMAR =
     (* Types *)
 
     and typ =
-	  VarTyp    of typ_info * typid		(* variable *)
+	  VarTyp    of typ_info * varid		(* variable *)
 	| PrimTyp   of typ_info * string	(* builtin type *)
 	| ConTyp    of typ_info * typlongid	(* constructor *)
-	| FunTyp    of typ_info * typid * typ	(* type function *)
+	| FunTyp    of typ_info * varid * typ	(* type function *)
 	| AppTyp    of typ_info * typ * typ	(* constructor application *)
 	| RefTyp    of typ_info * typ		(* reference type *)
 	| TupTyp    of typ_info * typ vector	(* tuple (cartesian) type *)
 	| ProdTyp   of typ_info * typ row	(* product (record) type *)
 	| SumTyp    of typ_info * typ row	(* sum type (datatype) *)
 	| ArrTyp    of typ_info * typ * typ	(* arrow (function) type *)
-	| AllTyp    of typ_info * typid * typ	(* universal quantification *)
-	| ExTyp     of typ_info * typid * typ	(* existential quantification *)
+	| AllTyp    of typ_info * varid * typ	(* universal quantification *)
+	| ExTyp     of typ_info * varid * typ	(* existential quantification *)
 	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
 	| AbsTyp    of typ_info * bool		(* abstract type (extensible?)*)
@@ -172,7 +174,7 @@ signature ABSTRACT_GRAMMAR =
 	| ModDec    of dec_info * modid * mod	(* module *)
 	| InfDec    of dec_info * infid * inf	(* interface *)
 	| FixDec    of dec_info * vallab * fix	(* fixity *)
-	| VarDec    of dec_info * typid * dec	(* scoped type variable *)
+	| VarDec    of dec_info * varid * dec	(* scoped type variable *)
 	| RecDec    of dec_info * dec vector	(* recursive declarations *)
 	| LocalDec  of dec_info * dec vector	(* local declarations *)
 

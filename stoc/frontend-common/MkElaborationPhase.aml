@@ -702,22 +702,26 @@ struct
 
   (* Type identifiers *)
 
-    and elabVarid_bind'(E, I.Id(i, stamp, name)) =
-	    O.Id(nonInfo(i), stamp, name)
+    and elabVarid_bind'(E, k, I.Id(i, stamp, name)) =
+	let
+	    val a = Type.var k
+	in
+	    O.Id(varInfo(i,a), stamp, name)
+	end
 
     and elabVarid_bind(E, k, varid as I.Id(i, stamp, name)) =
 	let
 	    val a = Type.var k
 	    val _ = insertVar(E, stamp, {id=varid, var=a})
 	in
-	    ( a, O.Id(nonInfo(i), stamp, name) )
+	    ( a, O.Id(varInfo(i,a), stamp, name) )
 	end
 
     and elabVarid(E, I.Id(i, stamp, name)) =
 	let
 	    val a = #var(lookupVar(E, stamp))
 	in
-	    ( a, O.Id(nonInfo(i), stamp, name) )
+	    ( a, O.Id(varInfo(i,a), stamp, name) )
 	end
 
 
@@ -727,21 +731,21 @@ struct
 	    val t' = Type.inAbbrev(Type.inCon(Type.kind t, Type.CLOSED, p), t)
 	    val _  = insertTyp(E, stamp, {id=typid, path=p, typ=t'})
 	in
-	    O.Id(nonInfo(i), stamp, name)
+	    O.Id(typInfo(i,t'), stamp, name)
 	end
 
     and elabTypid(E, I.Id(i, stamp, name)) =
 	let
 	    val {typ=t, path=p, ...} = lookupTyp(E, stamp)
 	in
-	    ( t, p, O.Id(nonInfo(i), stamp, name) )
+	    ( t, p, O.Id(typInfo(i,t), stamp, name) )
 	end
 
     and elabTyplongid(E, I.ShortId(i, typid)) =
 	let
 	    val (t,_,typid') = elabTypid(E, typid)
 	in
-	    ( t, O.ShortId(nonInfo(i), typid') )
+	    ( t, O.ShortId(typInfo(i,t), typid') )
 	end
 
       | elabTyplongid(E, I.LongId(i, modlongid, typlab)) =
@@ -754,7 +758,7 @@ struct
 	    (*UNFINISHED: sort should be calculated from t *)
 	    val  t'            = Type.inAbbrev(Type.inCon(k, Type.CLOSED, p), t)
 	in
-	    ( t', O.LongId(nonInfo(i), modlongid', typlab') )
+	    ( t', O.LongId(typInfo(i,t), modlongid', typlab') )
 	end
 
 
@@ -765,7 +769,7 @@ struct
      * ASSUMPTION: type lambdas are first order.
      *)
 
-    and elabTypKind(E, I.FunTyp(i, typid, typ)) =
+    and elabTypKind(E, I.FunTyp(i, varid, typ)) =
 	let
 	    val k = elabTypKind(E, typ)
 	in
@@ -787,9 +791,9 @@ struct
 	    k
 	end
 
-      | elabTypKind(E, I.VarTyp(i, typid)) =
+      | elabTypKind(E, I.VarTyp(i, varid)) =
 	let
-	    val (a,_) = elabVarid(E, typid)
+	    val (a,_) = elabVarid(E, varid)
 	in
 	    Type.kindVar a
 	end
@@ -809,12 +813,12 @@ struct
 
   (* Types *)
 
-    and elabTyp(E, I.VarTyp(i, typid)) =
+    and elabTyp(E, I.VarTyp(i, varid)) =
 	let
-	    val (a,typid') = elabVarid(E, typid)
+	    val (a,varid') = elabVarid(E, varid)
 	    val  t         = Type.inVar a
 	in
-	    ( t, O.VarTyp(typInfo(i,t), typid') )
+	    ( t, O.VarTyp(typInfo(i,t), varid') )
 	end
 
       | elabTyp(E, I.PrimTyp(i, s))=
@@ -833,13 +837,13 @@ struct
 	    ( t, O.ConTyp(typInfo(i,t), typlongid') )
 	end
 
-      | elabTyp(E, I.FunTyp(i, typid, typ)) =
+      | elabTyp(E, I.FunTyp(i, varid, typ)) =
 	let
-	    val (a,typid') = elabVarid_bind(E, Type.STAR, typid)
+	    val (a,varid') = elabVarid_bind(E, Type.STAR, varid)
 	    val (t1,typ')  = elabTyp(E, typ)
 	    val  t         = Type.inLambda(a,t1)
 	in
-	    ( t, O.FunTyp(typInfo(i,t), typid', typ') )
+	    ( t, O.FunTyp(typInfo(i,t), varid', typ') )
 	end
 
       | elabTyp(E, I.AppTyp(i, typ1, typ2)) =
@@ -902,22 +906,22 @@ struct
 	    ( t, O.ArrTyp(typInfo(i,t), typ1', typ2') )
 	end
 
-      | elabTyp(E, I.AllTyp(i, typid, typ)) =
+      | elabTyp(E, I.AllTyp(i, varid, typ)) =
 	let
-	    val (a,typid') = elabVarid_bind(E, Type.STAR, typid)
+	    val (a,varid') = elabVarid_bind(E, Type.STAR, varid)
 	    val (t1,typ')  = elabStarTyp(E, typ)
 	    val  t         = Type.inAll(a,t1)
 	in
-	    ( t, O.AllTyp(typInfo(i,t), typid', typ') )
+	    ( t, O.AllTyp(typInfo(i,t), varid', typ') )
 	end
 
-      | elabTyp(E, I.ExTyp(i, typid, typ)) =
+      | elabTyp(E, I.ExTyp(i, varid, typ)) =
 	let
-	    val (a,typid') = elabVarid_bind(E, Type.STAR, typid)
+	    val (a,varid') = elabVarid_bind(E, Type.STAR, varid)
 	    val (t1,typ')  = elabStarTyp(E, typ)
 	    val  t         = Type.inExist(a,t1)
 	in
-	    ( t, O.ExTyp(typInfo(i,t), typid', typ') )
+	    ( t, O.ExTyp(typInfo(i,t), varid', typ') )
 	end
 
       | elabTyp(E, I.PackTyp(i, inf)) =
@@ -959,10 +963,10 @@ struct
 
   (* Type representations (RHSs of type bindings) *)
 
-    and elabTypRep(E, p, mkKind, I.FunTyp(i, typid, typ)) =
+    and elabTypRep(E, p, mkKind, I.FunTyp(i, varid, typ)) =
 	let
 	    val  k               = Type.STAR
-	    val (a,typid')       = elabVarid_bind(E, k, typid)
+	    val (a,varid')       = elabVarid_bind(E, k, varid)
 	    val (t1,gen,typ',p') = elabTypRep(E, p,
 				      fn k' => mkKind(Type.ARROW(k,k')), typ)
             val  t               = if gen then t1 else Type.inLambda(a,t1)
@@ -971,7 +975,7 @@ struct
 				    * and do not need to insert lambdas.
 				    *)
 	in
-	    ( t, gen, O.FunTyp(typInfo(i,t), typid', typ'), p' )
+	    ( t, gen, O.FunTyp(typInfo(i,t), varid', typ'), p' )
 	end
 
       | elabTypRep(E, p, mkKind, I.AbsTyp(i, isExtensible)) =
@@ -1191,21 +1195,21 @@ struct
 	    val j' = Inf.inAbbrev(Inf.inCon(Inf.kind j, p), j)
 	    val _  = insertInf(E, stamp, {id=infid, path=p, inf=j'})
 	in
-	    O.Id(nonInfo(i), stamp, name)
+	    O.Id(infInfo(i,j), stamp, name)
 	end
 
     and elabInfid(E, I.Id(i, stamp, name)) =
 	let
 	    val j = #inf(lookupInf(E, stamp))
 	in
-	    ( j, O.Id(nonInfo(i), stamp, name) )
+	    ( j, O.Id(infInfo(i,j), stamp, name) )
 	end
 
     and elabInflongid(E, I.ShortId(i, infid)) =
 	let
 	    val (j,infid') = elabInfid(E, infid)
 	in
-	    ( j, O.ShortId(nonInfo(i), infid') )
+	    ( j, O.ShortId(infInfo(i,j), infid') )
 	end
 
       | elabInflongid(E, I.LongId(i, modlongid, inflab)) =
@@ -1214,7 +1218,7 @@ struct
 	    val (a,inflab')    = elabLab(E, inflab)
 	    val  j             = Inf.lookupInf(s, a)
 	in
-	    ( j, O.LongId(nonInfo(i), modlongid', inflab') )
+	    ( j, O.LongId(infInfo(i,j), modlongid', inflab') )
 	end
 
 
@@ -1386,11 +1390,11 @@ struct
 
   (* Declarations *)
 
-    and elabDec(E, s, vars, I.ValDec(i, pat, exp)) =
+    and elabDec(E, s, varids, I.ValDec(i, pat, exp)) =
 	let
 	    val  _        = insertScope E
 	    val  _        = Type.enterLevel()
-	    val  _        = enterVars(E, vars)
+	    val  _        = enterVarids(E, varids)
 	    val  _        = insertScope E
 	    val (t2,exp') = elabExp(E, exp)
 	    val  _        = deleteScope E
@@ -1406,7 +1410,7 @@ struct
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
 
-      | elabDec(E, s, vars, I.TypDec(i, typid, typ)) =
+      | elabDec(E, s, varids, I.TypDec(i, typid, typ)) =
 	let
 	    val  p              = Inf.newTyp(s, Label.fromName(I.name typid))
 	    val (t,gen,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
@@ -1416,7 +1420,7 @@ struct
 	    O.TypDec(nonInfo(i), typid', typ')
 	end
 
-      | elabDec(E, s, vars, I.ModDec(i, modid, mod)) =
+      | elabDec(E, s, varids, I.ModDec(i, modid, mod)) =
 	let
 	    val  p       = Inf.newMod(s, Label.fromName(I.name modid))
 	    val (j,mod') = elabMod(E, mod)
@@ -1430,7 +1434,7 @@ struct
 	    O.ModDec(nonInfo(i), modid', mod')
 	end
 
-      | elabDec(E, s, vars, I.InfDec(i, infid, inf)) =
+      | elabDec(E, s, varids, I.InfDec(i, infid, inf)) =
 	let
 	    val  p         = Inf.newInf(s, Label.fromName(I.name infid))
 	    val (j,_,inf') = elabInfRep(E, p, fn k'=>k', inf)
@@ -1441,7 +1445,7 @@ struct
 	    O.InfDec(nonInfo(i), infid', inf')
 	end
 
-      | elabDec(E, s, vars, I.FixDec(i, vallab, fix)) =
+      | elabDec(E, s, varids, I.FixDec(i, vallab, fix)) =
 	let
 	    val (a,vallab') = elabLab(E, vallab)
 	    val  p          = Inf.newFix(s, a)
@@ -1451,19 +1455,19 @@ struct
 	    O.FixDec(nonInfo(i), vallab', fix')
 	end
 
-      | elabDec(E, s, vars, I.VarDec(i, typid, dec)) =
+      | elabDec(E, s, varids, I.VarDec(i, varid, dec)) =
 	let
-	    val typid'  = elabVarid_bind'(E, typid)
-	    val dec'    = elabDec(E, s, typid::vars, dec)
+	    val varid'  = elabVarid_bind'(E, Type.STAR, varid)
+	    val dec'    = elabDec(E, s, varid::varids, dec)
 	in
-	    O.VarDec(nonInfo(i), typid', dec')
+	    O.VarDec(nonInfo(i), varid', dec')
 	end
 
-      | elabDec(E, s, vars, I.RecDec(i, decs)) =
+      | elabDec(E, s, varids, I.RecDec(i, decs)) =
 	let
 	    val _      = insertScope E
 	    val _      = Type.enterLevel()
-	    val _      = enterVars(E, vars)
+	    val _      = enterVarids(E, varids)
 	    val tpats' = elabLHSRecDecs(E, s, decs)
 	    val decs'  = elabRHSRecDecs(E, s, ref tpats', decs)
 	    val _      = Type.exitLevel()
@@ -1477,7 +1481,7 @@ struct
 	    O.RecDec(nonInfo(i), decs')
 	end
 
-      | elabDec(E, s, vars, I.LocalDec(i, decs)) =
+      | elabDec(E, s, varids, I.LocalDec(i, decs)) =
 	let
 	    val s'    = Inf.empty()
 	    val decs' = elabDecs(E, s', decs)
@@ -1490,10 +1494,10 @@ struct
 	end
 
 
-    and enterVars(E, vars) =
-	List.app (fn typid as I.Id(_, stamp, name) =>
+    and enterVarids(E, varids) =
+	List.app (fn varid as I.Id(_, stamp, name) =>
 		  (*UNFINISHED: use punning: *)
-		  insertVar(E, stamp, {id=typid, var=Type.var(Type.STAR)})) vars
+		insertVar(E, stamp, {id=varid, var=Type.var(Type.STAR)})) varids
 
     and generaliseVal (E, s, poo, isPoly) (x, {id=valid, path=p, typ=t}) =
 	let
@@ -1509,9 +1513,9 @@ struct
 	end
 
 
-      and elabDecs(E, s, decs)        = elabDecs'(E, s, [], decs)
-      and elabDecs'(E, s, vars, decs) =
-	    Vector.map (fn dec => elabDec(E, s, vars, dec)) decs
+      and elabDecs(E, s, decs)          = elabDecs'(E, s, [], decs)
+      and elabDecs'(E, s, varids, decs) =
+	    Vector.map (fn dec => elabDec(E, s, varids, dec)) decs
 
 
   (* Recursive declarations *)

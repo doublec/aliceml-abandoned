@@ -21,13 +21,14 @@ structure TypedInfo =
     type modlab_info	= { region: Source.region }
     type inflab_info	= { region: Source.region }
     type valid_info	= { region: Source.region, typ: Type.t }
-    type typid_info	= { region: Source.region }
-    type modid_info	= { region: Source.region, inf: Inf.t }
-    type infid_info	= { region: Source.region }
+    type typid_info	= { region: Source.region, typ: Type.t }
+    type varid_info	= { region: Source.region, var: Type.var }
+    type modid_info	= { region: Source.region, inf: Inf.t  }
+    type infid_info	= { region: Source.region, inf: Inf.t  }
     type vallongid_info	= { region: Source.region, typ: Type.t }
-    type typlongid_info	= { region: Source.region }
-    type modlongid_info	= { region: Source.region, inf: Inf.t }
-    type inflongid_info	= { region: Source.region }
+    type typlongid_info	= { region: Source.region, typ: Type.t }
+    type modlongid_info	= { region: Source.region, inf: Inf.t  }
+    type inflongid_info	= { region: Source.region, inf: Inf.t  }
     type exp_info	= { region: Source.region, typ: Type.t }
     type pat_info	= { region: Source.region, typ: Type.t }
     type 'a row_info	= { region: Source.region }
@@ -45,6 +46,7 @@ structure TypedInfo =
     fun nonInfo r	= { region = r }
     fun fixInfo(r,f)	= { region = r, fix = f }
     fun typInfo(r,t)	= { region = r, typ = t }
+    fun varInfo(r,a)	= { region = r, var = a }
     fun infInfo(r,j)	= { region = r, inf = j }
     fun sigInfo(r,s)	= { region = r, sign = s }
   end
