@@ -1,3 +1,7 @@
+(*
+ * Lazy streams demo.
+ *)
+
 import structure TextIO from "x-alice:TextIO.dll"
 import structure Tools  from "x-alice:Tools.dll"
 import val readLine     from "x-alice:Dialog.dll"

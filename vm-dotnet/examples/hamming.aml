@@ -1,37 +1,10 @@
-__prebound Prebound
+(*
+ * Computation of hamming numbers using lazy streams.
+ *)
 
-infix  7  * / div mod
-infix  6  + - ^
-infixr 5  :: @
-infix  4  = <> > >= < <=
-infix  3  := o
-infix  0  before
+import val print from "x-alice:TextIO.dll"
 
-type     int    = Prebound.int
-type     string = Prebound.string
-type     bool   = Prebound.bool
-datatype list   = datatype Prebound.list
-datatype ref    = datatype Prebound.ref
-type     exn    = Prebound.exn
-
-type unit = {}
-
-__primitive val op=  : ''a * ''a -> bool = "="
-
-__primitive val op- : int * int -> int = "Int.-"
-__primitive val op* : int * int -> int = "Int.*"
-__primitive val op< : int * int -> bool = "Int.<"
-
-__primitive val hole: unit -> 'a = "Hole.hole"
-__primitive val future: 'a -> 'a = "Hole.future"
-__primitive val fill: 'a * 'a -> unit = "Hole.fill"
-__primitive val byneed: (unit -> 'a) -> 'a = "Future.byneed"
-
-__primitive val intToString: int -> string = "Int.toString"
-__primitive val print: string -> unit = "TextIO.print"
-
-fun nth (x::_, 0) = x
-  | nth (_::xr, i) = nth (xr, i - 1)
+open Hole
 
 fun map (f, xs) =
     byneed (fn () =>
@@ -57,4 +30,4 @@ fun makeStream () =
 	hamming
     end
 
-val _ = print (intToString (nth (makeStream (), 100)))
+val _ = print (Int.toString (List.nth (makeStream (), 100)))

@@ -1,3 +1,0 @@
-import val x from "export.ozf"
-
-val y = (x, 7)

@@ -1,0 +1,138 @@
+(*
+ * Programming samples showing how to implement concurrent
+ * data structures with futures.
+ *
+ * Note: Not a runnable demo but a library,
+ * so does nothing when invoked!
+ *)
+
+open Future
+open Promise
+open Cell
+
+
+(* Lazy Stream of Natural Numbers *)
+
+fun gen n = byneed (fn()=> n::gen(n+1))
+
+val stream : int list = gen 0
+
+
+(* next : 'a list promise * 'a -> 'a list promise  *)
+
+fun next (p : 'a list promise, x : 'a) : 'a list promise =
+    let
+        val p' = promise ()
+    in
+        fulfill (p, x::future p') ;
+        p'
+    end
+
+
+(* run :  ('a * 'b promise -> unit) -> 'a -> 'b  *)
+
+fun run (f : 'a * 'b promise -> unit) (x : 'a) : 'b =
+    let
+        val p = promise ()
+    in
+        concur (fn()=> f(x,p)) ;
+        future p
+    end
+
+
+(* plus : int list * int list -> int list  *)
+
+fun plus a = run plus' a
+
+and plus'((x::xr, y::yr), p) = plus'((xr, yr), next(p, x+y))
+  | plus'(      _       , p) = fulfill(p, nil)
+
+
+(* merge : 'a list * 'a list -> 'a list *)
+
+fun merge a = run merge' a
+
+and merge' ((xs,ys), p) =
+    if isFuture (awaitOne (xs,ys)) then merge'' (ys, xs, p)
+    else merge'' (xs, ys, p)
+
+and merge''(x::xr, ys, p) = merge'((ys,xr), next(p,x))
+  | merge''(nil  , ys, p) = fulfill(p,ys)
+
+
+(* Time out *)
+
+fun timeout (x : 'a, t : Time.time) : 'a option =
+    if isFuture (awaitOne (x, alarm t)) then NONE
+    else SOME x
+
+
+(* Mailboxes *)
+
+fun mailbox () : ('a -> unit) * 'a list =
+    let
+        val p = promise ()
+        val c = cell p
+        fun put x =
+            let
+                val p' = promise ()
+            in
+                fulfill(exchange(c,p'), x::future p')
+            end
+    in
+        (put, future p)
+    end
+
+
+(* Stream Merge *)
+
+fun merge (xs : 'a list, ys : 'a list) : 'a list =
+    let
+        val (put, zs) = mailbox()
+
+        fun feed nil     = ()
+          | feed (u::ur) = (put u ; feed ur)
+    in
+        concur (fn () => feed xs) ;
+        concur (fn () => feed ys) ;
+        zs
+    end
+
+
+(* Time out *)
+
+fun timeout (x : 'a, t : Time.time) : 'a option =
+    let
+        val p = promise ()
+    in
+        concur (fn () => (await (alarm t) ; fulfill (p, NONE))) ;
+        concur (fn () => (await x ; fulfill (p, SOME x))) ;
+        await (future p)
+    end
+
+
+(* Dispenser *)
+
+fun dispenser (xs : 'a list) : unit -> 'a =
+    let
+        val c = cell xs
+    in
+        fn  () => let
+                      val p = promise ()
+                  in
+                      case exchange(c, future p) of
+                          y::yr => (fulfill(p,yr) ; y)
+                        | nil   => raise Empty
+                  end
+    end
+
+
+(* Channels *)
+
+fun channel () : ('a -> unit) * (unit -> 'a) =
+    let
+        val (put, xs) = mailbox()
+        val get       = dispenser xs
+    in
+        (put, get)
+    end

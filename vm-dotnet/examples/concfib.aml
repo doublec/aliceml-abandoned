@@ -1,3 +1,8 @@
+(*
+ * A concurrent fibonacci creating a new thread
+ * for every recursive invocation.
+ *)
+
 import structure TextIO from "x-alice:TextIO.dll"
 
 fun fib 0 = 1
