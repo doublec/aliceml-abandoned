@@ -34,8 +34,11 @@ typedef enum {
   UNPICKLE_FRAME              = (TRANSFORM_FRAME + 1),
   PICKLE_UNPACK_FRAME         = (UNPICKLE_FRAME + 1),
   PICKLE_LOAD_FRAME           = (PICKLE_UNPACK_FRAME + 1),
+  PICKLING_FRAME              = (PICKLE_LOAD_FRAME + 1),
+  PICKLE_PACK_FRAME           = (PICKLING_FRAME + 1),
+  PICKLE_SAVE_FRAME           = (PICKLE_PACK_FRAME + 1),
   // BootLinker Frames
-  APPLY_FRAME                 = (PICKLE_LOAD_FRAME + 1),
+  APPLY_FRAME                 = (PICKLE_SAVE_FRAME + 1),
   ENTER_FRAME                 = (APPLY_FRAME + 1),
   LINK_FRAME                  = (ENTER_FRAME + 1),
   LOAD_FRAME                  = (LINK_FRAME + 1),

@@ -20,6 +20,7 @@
 #include "emulator/Primitive.hh"
 #include "emulator/PrimitiveTable.hh"
 #include "emulator/Unpickler.hh"
+#include "emulator/Pickler.hh"
 #include "emulator/BootLinker.hh"
 #include "emulator/Properties.hh"
 #include "emulator/Alice.hh"
@@ -89,6 +90,7 @@ int main(int argc, char *argv[]) {
   ByneedInterpreter::Init();
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
+  Pickler::Init();
   BootLinker::Init(nativeComponents);
   // Parse command line
   if (argc < 2) {

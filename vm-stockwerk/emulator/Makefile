@@ -30,6 +30,7 @@ INTERPRETERSRCS = Interpreter.cc \
                   ByneedInterpreter.cc \
                   AbstractCodeInterpreter.cc \
                   Unpickler.cc \
+                  Pickler.cc \
                   BootLinker.cc
 
 PRIMITIVES = \

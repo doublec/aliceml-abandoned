@@ -14,8 +14,7 @@
 #include "emulator/RootSet.hh"
 #include "emulator/BootLinker.hh"
 #include "emulator/Unpickler.hh"
-
-static word SitedConstructor;
+#include "emulator/Pickler.hh"
 
 DEFINE0(UnsafeComponent_getInitialTable) {
   static word result = Store::IntToWord(0);
@@ -47,19 +46,15 @@ DEFINE1(UnsafeComponent_load) {
 
 DEFINE2(UnsafeComponent_save) {
   DECLARE_STRING(s, x0);
-  Error("UnsafeComponent.save not implemented"); //--** to be done
+  return Pickler::Save(static_cast<Chunk *>(s), x1, taskStack);
 } END
 
 word UnsafeComponent(void) {
-  SitedConstructor =
-    UniqueConstructor::New(String::New("Component.Sited"))->ToWord();
-  RootSet::Add(SitedConstructor);
-
   Tuple *t = Tuple::New(8);
   t->Init(0, Unpickler::Corrupt);
-  t->Init(1, SitedConstructor);
+  t->Init(1, Pickler::Sited);
   t->Init(2, Unpickler::Corrupt);
-  t->Init(3, SitedConstructor);
+  t->Init(3, Pickler::Sited);
   t->Init(4, String::New("stc")->ToWord());
   t->Init(5, Primitive::MakeClosure("UnsafeComponent.getInitialTable",
 				    UnsafeComponent_getInitialTable, 0, true));
