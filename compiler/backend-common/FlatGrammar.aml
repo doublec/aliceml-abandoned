@@ -124,7 +124,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	      sign: sign}
 	type t = component
 
-	fun freshId info = Id (info, Stamp.new (), Name.InId)
+	fun freshId info = Id (info, Stamp.stamp (), Name.InId)
 
 	fun infoStm (LastUse (info, _)) = info
 	  | infoStm (ValDec (info, _, _)) = info
