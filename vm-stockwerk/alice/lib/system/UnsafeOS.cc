@@ -20,12 +20,10 @@
 #include <windows.h>
 #endif
 
-#include "emulator/Authoring.hh"
-#include "emulator/RootSet.hh"
-#include "emulator/Closure.hh"
-#include "emulator/Properties.hh"
-
-// to be done: respect windows/unix differences
+#include "generic/RootSet.hh"
+#include "generic/Closure.hh"
+#include "generic/Properties.hh"
+#include "alice/primitives/Authoring.hh"
 
 // String Handling
 static char *ExportCString(String *s) {
@@ -49,7 +47,10 @@ static word SysErrConstructor;
     RAISE(conVal->ToWord());						\
   }
 
-// FileSys Functor
+//
+// UnsafeOS.FileSys Structure
+//
+
 DEFINE1(FileSys_chDir) {
   DECLARE_STRING(name, x0);
   int res = chdir(ExportCString(name));
@@ -171,7 +172,10 @@ static word FileSys(void) {
   return t->ToWord();
 }
 
-// Process Functor
+//
+// UnsafeOS.Process Structure
+//
+
 DEFINE1(Process_system) {
   DECLARE_STRING(s, x0);
   RETURN_INT(system(ExportCString(s)));
@@ -217,7 +221,9 @@ static word Process(void) {
   return t->ToWord();
 }
 
-// UnsafeOS Functor
+//
+// UnsafeOS Structure
+//
 
 DEFINE2(UnsafeOS_SysErr) {
   Constructor *ccVal = Constructor::FromWord(SysErrConstructor);

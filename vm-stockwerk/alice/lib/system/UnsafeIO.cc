@@ -7,6 +7,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -15,8 +16,8 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include "emulator/Authoring.hh"
-#include "emulator/RootSet.hh"
+#include "generic/RootSet.hh"
+#include "alice/primitives/Authoring.hh"
 
 static word IoConstructor;
 
