@@ -60,20 +60,22 @@ t_label BlockLabel::REF       = 0;
 t_label BlockLabel::CANCELLED = 0;
 t_label BlockLabel::BYNEED    = 0;
 
-unsigned int HeaderDef::GC_SHIFT    = 0;
-unsigned int HeaderDef::TAG_SHIFT   = 0;
-unsigned int HeaderDef::SIZE_SHIFT  = 0;
-unsigned int HeaderDef::GEN_SHIFT   = 0;
+unsigned int HeaderDef::GC_SHIFT     = 0;
+unsigned int HeaderDef::TAG_SHIFT    = 0;
+unsigned int HeaderDef::SIZE_SHIFT   = 0;
+unsigned int HeaderDef::MAXOLD_SHIFT = 0;
+unsigned int HeaderDef::GEN_SHIFT    = 0;
 
 unsigned int HeaderDef::MAX_TAGSIZE = 0;
 unsigned int HeaderDef::MAX_HBSIZE  = 0;
 
 unsigned int *HeaderDef::GEN_LIMIT  = NULL;
 
-unsigned int HeaderDef::GC_MASK   = 0;
-unsigned int HeaderDef::TAG_MASK  = 0;
-unsigned int HeaderDef::SIZE_MASK = 0;
-unsigned int HeaderDef::GEN_MASK  = 0;
+unsigned int HeaderDef::GC_MASK     = 0;
+unsigned int HeaderDef::TAG_MASK    = 0;
+unsigned int HeaderDef::SIZE_MASK   = 0;
+unsigned int HeaderDef::MAXOLD_MASK = 0;
+unsigned int HeaderDef::GEN_MASK    = 0;
 //
 // Method Implementations
 //
@@ -90,20 +92,22 @@ void BlockLabel::CreateLabel(unsigned int size) {
 }
 
 void HeaderDef::CreateHeader(int width, int tag, int size, int generations) {
-  Assert((tag + size + generations) <= width);
+  Assert((tag + size + generations * 2) <= width);
 
-  GC_SHIFT    = 0;
-  TAG_SHIFT   = 1;
-  SIZE_SHIFT  = (TAG_SHIFT + tag);
-  GEN_SHIFT   = (SIZE_SHIFT + size);
-  MAX_TAGSIZE = ((1 << tag) - 1);
-  MAX_HBSIZE  = ((1 << size) - 1);
+  GC_SHIFT     = 0;
+  TAG_SHIFT    = 1;
+  SIZE_SHIFT   = (TAG_SHIFT + tag);
+  MAXOLD_SHIFT = (SIZE_SHIFT + size);
+  GEN_SHIFT    = (MAXOLD_SHIFT + generations);
+  MAX_TAGSIZE  = ((1 << tag) - 1);
+  MAX_HBSIZE   = ((1 << size) - 1);
 
-  GEN_LIMIT   = CreateGenerationLimits(GEN_SHIFT, ((1 << generations) - 1));
+  GEN_LIMIT    = CreateGenerationLimits(GEN_SHIFT, ((1 << generations) - 1));
   
   GC_MASK     = ComputeMask(width, 0, 1);
   TAG_MASK    = ComputeMask(width, TAG_SHIFT, tag);
   SIZE_MASK   = ComputeMask(width, SIZE_SHIFT, size);
+  MAXOLD_MASK = ComputeMask(width, MAXOLD_SHIFT, generations);
   GEN_MASK    = ComputeMask(width, GEN_SHIFT, generations);
 
   BlockLabel::CreateLabel(MAX_TAGSIZE);

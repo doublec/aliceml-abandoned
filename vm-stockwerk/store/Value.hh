@@ -21,6 +21,8 @@
 #include "headerop.hh"
 #include "pointerop.hh"
 
+#define MAX(a, b) (((a) < (b)) ? (b) : (a))
+
 class Block {
 protected:
   word ar[2];
@@ -47,9 +49,21 @@ public:
   void ReplaceArg(u_int f, word v) {
     Assert(f > INVALID_FIELD);
     Assert(f <= GetSize());
-    if (!PointerOp::IsInt(v) &&
-	(HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v)) < HeaderOp::DecodeGeneration(this))) {
-      Store::AddToIntgenSet(ToWord()); // Attention: static binding
+    if (!PointerOp::IsInt(v)) {
+      u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
+      u_int mygen  = HeaderOp::DecodeGeneration(this);
+
+      if (valgen < mygen) {
+	u_int myold = HeaderOp::DecodeMaxOld(this);
+
+	if (myold == mygen) {
+	  HeaderOp::EncodeMaxOld(this, valgen);
+	  Store::AddToIntgenSet(ToWord()); // Attention: static binding
+	}
+	else {
+	  HeaderOp::EncodeMaxOld(this, MAX(myold, valgen));
+	}
+      }
     }
     ar[f] = v;
   }
@@ -87,11 +101,23 @@ public:
   using Block::GetArg;
   using Block::InitArg;
   void ReplaceArg(u_int f, word v) {
-    Assert(f >INVALID_FIELD);
+    Assert(f > INVALID_FIELD);
     Assert(f <= GetSize());
-    if (!PointerOp::IsInt(v) &&
-	(HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v)) < HeaderOp::DecodeGeneration(this))) {
-      Store::AddToIntgenSet(ToWord()); // Attention: static binding
+    if (!PointerOp::IsInt(v)) {
+      u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
+      u_int mygen  = HeaderOp::DecodeGeneration(this);
+
+      if (valgen < mygen) {
+	u_int myold = HeaderOp::DecodeMaxOld(this);
+
+	if (myold == mygen) {
+	  HeaderOp::EncodeMaxOld(this, valgen);
+	  Store::AddToIntgenSet(ToWord()); // Attention: static binding
+	}
+	else {
+	  HeaderOp::EncodeMaxOld(this, MAX(myold, valgen));
+	}
+      }
     }
     ar[f] = v;
   }
@@ -131,11 +157,11 @@ public:
     std::memset(ar + 2, 1,(size - 2) * sizeof(word));
   }
   Stack *AllocArgFrame(u_int fsize) {
-    int top   = Store::WordToInt(GetArg(1));
+    u_int top = (u_int) Store::WordToInt(GetArg(1));
     u_int max = Block::GetSize();
 
     InitArg(1, Store::IntToWord(top + fsize));
-    if ((top + fsize)  > (int) max) {
+    if ((top + fsize)  > max) {
       return Stack::Enlarge();
     }
     else {
@@ -150,10 +176,10 @@ public:
     InitArg((newtop - 1), GetArg(top - 1));
   }
   Stack *AllocFrame(u_int fsize) {
-    int top   = Store::WordToInt(GetArg(1));
+    u_int top = (u_int) Store::WordToInt(GetArg(1));
     u_int max = Block::GetSize();
 
-    if ((top + fsize)  > (int) max) {
+    if ((top + fsize)  > max) {
       return Stack::Enlarge();
     }
     else {
@@ -183,18 +209,18 @@ public:
     InitArg((u_int) top, v);
   }
   Stack *SlowPush(word v) {
-    int top   = Store::WordToInt(GetArg(1));
+    u_int top = (u_int) Store::WordToInt(GetArg(1));
     u_int max = Block::GetSize();
     
-    InitArg(1, Store::IntToWord(top + 1));
+    InitArg(1, Store::IntToWord((int) (top + 1)));
     if (top <= max) {
-      ReplaceArg((u_int) top, v);
+      ReplaceArg(top, v);
       return this;
     }
     else {
       Stack *s = Stack::Enlarge();
 
-      s->ReplaceArg((u_int) top, v);
+      s->ReplaceArg(top, v);
       return s;
     }
   }

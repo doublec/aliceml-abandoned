@@ -1,5 +1,5 @@
 CC     = g++
-CFLAGS = -DDEBUG_CHECK -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
+CFLAGS = -DDEBUG_CHECK -Wall -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
 
 SRCS = headerdef.cc store.cc
 

@@ -30,7 +30,6 @@ public:
   u_int GetSize()              { return pos; }
   word GetArg(u_int f)         { Assert(f < size); return (word) mem[f]; }
   void SetArg(u_int f, word p) { Assert(f < size); mem[f] = (u_int) p; }
-  void Clear()                 { pos = 0; }
   void Pop()                   { Assert(pos > 0); pos--; }
   void Push(word v) {
     if (pos >= size) {

@@ -62,18 +62,16 @@ u_int Store::needGC        = 0;
 //
 Block *Store::Alloc(MemChain *chain, u_int size) {
   MemChunk *list;
-  char *tmp;
-  int gen;
 
   Assert(size > 0);
-  size = size << 2;
+  size <<= 2;
 
   Assert(chain != NULL);
   list = chain->anchor;
 
   if (!(list->FitsInChunk(size))) {
     u_int alloc_size = MEMCHUNK_SIZE;
-    MemChunk *anchor = chain->anchor;
+    MemChunk *anchor = list;
 
     if (alloc_size < size) {
       div_t d    = std::div(size, MEMCHUNK_SIZE);
@@ -127,6 +125,15 @@ void Store::Shrink(MemChain *chain, int threshold) {
   chain->anchor = anchor;
 }
 
+static inline void AdjustMaxOld(Block *p, u_int gen) {
+  u_int mygen = GCHelper::DecodeGen(p);
+  u_int myold = HeaderOp::DecodeMaxOld(p);
+
+  if (mygen == myold) {
+    HeaderOp::EncodeMaxOld(p, gen);
+  }
+}
+
 Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     u_int s = HeaderOp::BlankDecodeSize(p);
 
@@ -139,6 +146,7 @@ Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     realnp = (Block *) ((char *) newp + 4);
     
     std::memcpy(newp, p, (s + 2) << 2);
+    AdjustMaxOld(realnp, dst->gen);
     GCHelper::EncodeGen(realnp, dst->gen);
     return realnp;
   }
@@ -146,6 +154,7 @@ Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     Block *newp = Store::Alloc(dst, (s + 1));
     
     std::memcpy(newp, p, (s + 1) << 2);
+    AdjustMaxOld(newp, dst->gen);
     GCHelper::EncodeGen(newp, dst->gen);
     return newp;
   }
@@ -198,7 +207,6 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
 }
 
 void Store::InitStore(StoreConfig *cfg) {
-  static unsigned int lim[] = { 0x0FFFFFFF, 0x4FFFFFFF, 0x8FFFFFFF };
   config = cfg;
   roots  = (MemChain **) std::malloc(sizeof(MemChain) * cfg->max_gen);
 
@@ -226,6 +234,23 @@ void Store::CloseStore() {
     ClearList(chain->anchor);
     std::free(chain);
   }
+}
+
+static inline DataSet *CleanUpSet(DataSet *set) {
+  DataSet *ns = new DataSet();
+  u_int size  = set->GetSize();
+
+  for (u_int i = 0; i < size; i++) {
+    word rv = set->GetArg(i);
+
+    if (!PointerOp::IsInt(rv)) {
+      ns->Push(set->GetArg(i));
+    }
+  }
+
+  delete set;
+
+  return ns;
 }
 
 void Store::DoGC(DataSet *root_set, u_int gen) {
@@ -262,28 +287,43 @@ void Store::DoGC(DataSet *root_set, u_int gen) {
   // Handle InterGenerational Pointers
   rs_size = intgen_set->GetSize();
   for (u_int i = 0; i < rs_size; i++) {
-    Block *curp   = PointerOp::RemoveTag(PointerOp::Deref(intgen_set->GetArg(i)));
-    u_int cursize = curp->GetSize();
-    
-    for (u_int k = 1; k <= cursize; k++) {
-      word fp    = PointerOp::Deref(curp->GetArg(k));
-      Block *fsp = PointerOp::RemoveTag(fp);
-      
-      if (!PointerOp::IsInt(fp) && (HeaderOp::GetHeader(fsp) <= match_gen)) {
-	if (GCHelper::AlreadyMoved(fsp)) {
-	  curp->InitArg(k, GCHelper::GetForwardPtr(fsp));
-	}
-	else {
-	  Block *newfsp = CopyBlockToDst(fsp, dst);
-	  word newfp    = PointerOp::EncodeTag(newfsp, PointerOp::DecodeTag(fp));
+    word dp = PointerOp::Deref(intgen_set->GetArg(i));
 
-	  GCHelper::MarkMoved(fsp, newfp);
-	  curp->InitArg(k, newfp);
+    if (!PointerOp::IsInt(dp)) {
+      Block *curp   = PointerOp::RemoveTag(dp);
+      u_int cursize = curp->GetSize();
+
+      for (u_int k = 1; k <= cursize; k++) {
+	word fp    = PointerOp::Deref(curp->GetArg(k));
+	Block *fsp = PointerOp::RemoveTag(fp);
+	
+	if (!PointerOp::IsInt(fp) && (HeaderOp::GetHeader(fsp) <= match_gen)) {
+	  if (GCHelper::AlreadyMoved(fsp)) {
+	    curp->InitArg(k, GCHelper::GetForwardPtr(fsp));
+	  }
+	  else {
+	    Block *newfsp = CopyBlockToDst(fsp, dst);
+	    word newfp    = PointerOp::EncodeTag(newfsp, PointerOp::DecodeTag(fp));
+	    
+	    GCHelper::MarkMoved(fsp, newfp);
+	    curp->InitArg(k, newfp);
+	  }
 	}
+      }
+
+      // Adjust blocks maxold entry and remove obsolete entry from intgen_set
+      if (dst->gen < GCHelper::DecodeGen(curp)) {
+	HeaderOp::EncodeMaxOld(curp, MAX(dst->gen, HeaderOp::DecodeMaxOld(curp)));
+      }
+      else {
+	HeaderOp::EncodeMaxOld(curp, dst->gen);
+	intgen_set->SetArg(i, Store::IntToWord(0));
       }
     }
   }
-  intgen_set->Clear();
+  // really cleanup the set
+  intgen_set = CleanUpSet(intgen_set);
+
   // Scan chunks (Tuple::intgen_set amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
 

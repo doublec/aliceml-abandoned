@@ -74,7 +74,7 @@ public:
   static void InitStore(StoreConfig *cfg);
   static void CloseStore();
   // Type Access Functions
-  static t_label MakeLabel(int l) {
+  static t_label MakeLabel(u_int l) {
     Assert(l>= BlockLabel::MIN_LSIZE); Assert(l <= BlockLabel::MAX_LSIZE); return (t_label) l;
   }
   // Allocation Functions
