@@ -299,8 +299,81 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
 #endif
 } END
 
+DEFINE0(UnsafeOS_FileSys_getHomeDir) {
+  String *buffer = String::FromWordDirect(wBufferString);
+  u_int size = buffer->GetSize();
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  ITEMIDLIST* pidl;
+  HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_MYDOCUMENTS, &pidl );
+  if (hRes==NOERROR) {
+    SHGetPathFromIDList( pidl, (CHAR *) buffer->GetValue());
+  } else {
+    RAISE_SYS_ERR();
+  }
+
+  IMalloc* palloc; 
+  hRes = SHGetMalloc(&palloc); 
+  palloc->Free( (void*)pidl ); 
+  palloc->Release();
+  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+#else
+  char *envVal = std::getenv("HOME");
+
+  if (envVal==NULL) {
+  retry:
+    if (getcwd((char *) buffer->GetValue(), size) == NULL) {
+      if (errno != ERANGE) RAISE_SYS_ERR();
+      size = size * 3 / 2;
+      buffer = String::New(size);
+      wBufferString = buffer->ToWord();
+      goto retry;
+    }
+    RETURN(String::New((char *) buffer->GetValue())->ToWord());
+  }
+  RETURN(String::New(envVal)->ToWord());
+#endif
+} END
+
+DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
+  String *buffer = String::FromWordDirect(wBufferString);
+  u_int size = buffer->GetSize();
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  ITEMIDLIST* pidl;
+  HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_APPDATA, &pidl );
+  if (hRes==NOERROR) {
+    SHGetPathFromIDList( pidl, (CHAR *) buffer->GetValue());
+  } else {
+    RAISE_SYS_ERR();
+  }
+
+  IMalloc* palloc; 
+  hRes = SHGetMalloc(&palloc); 
+  palloc->Free( (void*)pidl ); 
+  palloc->Release();
+  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+#else
+  char *envVal = std::getenv("HOME");
+
+  if (envVal==NULL) {
+  retry:
+    if (getcwd((char *) buffer->GetValue(), size) == NULL) {
+      if (errno != ERANGE) RAISE_SYS_ERR();
+      size = size * 3 / 2;
+      buffer = String::New(size);
+      wBufferString = buffer->ToWord();
+      goto retry;
+    }
+    strcat((char *) buffer->GetValue(), "/.alice");
+    RETURN(String::New((char *) buffer->GetValue())->ToWord());
+  }
+  strcpy((char *) buffer->GetValue(), envVal);
+  strcat((char *) buffer->GetValue(), "/.alice");
+  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+#endif
+} END
+
 static word UnsafeOS_FileSys() {
-  Record *record = Record::New(15);
+  Record *record = Record::New(17);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "chDir",
 		 UnsafeOS_FileSys_chDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getDir",
@@ -331,6 +404,10 @@ static word UnsafeOS_FileSys() {
 		 UnsafeOS_FileSys_rewindDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS_FileSys", "closeDir",
 		 UnsafeOS_FileSys_closeDir, 1);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getHomeDir",
+		 UnsafeOS_FileSys_getHomeDir, 0);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getApplicationConfigDir",
+		 UnsafeOS_FileSys_getApplicationConfigDir, 0);
   return record->ToWord();
 }
 

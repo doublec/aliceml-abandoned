@@ -34,6 +34,9 @@ signature UNSAFE_OS_COMPONENT =
 			val modTime: string -> Time.time	(* OS.SysErr *)
 			val remove: string -> unit		(* OS.SysErr *)
 			val tmpName: unit -> string		(* OS.SysErr *)
+			val getHomeDir : unit -> string         (* OS.SysErr *)
+			val getApplicationConfigDir :
+			                 unit -> string         (* OS.SysErr *)
 		    end
 
 		structure Process:
