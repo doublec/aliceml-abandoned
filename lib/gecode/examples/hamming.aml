@@ -38,13 +38,14 @@ fun hamming bits dist num =
                            val d1c = FD.range (space,(0,dist))
                            val d2c = FD.range (space,(0,dist))
                        in
+                       
                       	   FS.difference(space,d1,x,y);
-
                        	   FS.difference(space,d2,y,x);
-
-                       	   FS.Int.card(space,d1c,d1);
-                     	   FS.Int.card(space,d2c,d2);
+                       
+                       	   FS.Int.card(space,d1,d1c);
+                     	   FS.Int.card(space,d2,d2c);
                        	   post(space, FD(d1c) `+ FD(d2c)`>= `dist, FD.DEF );
+                       	   
                        	   ()
                        end) root;
         (* distribution *)
@@ -52,9 +53,9 @@ fun hamming bits dist num =
         (Vector.fromList root,space)
      end
 
-
 val (root,space) = hamming 7 2 8
 val (SOME sol) = Search.searchOne space
 val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
 val _ = Print.printVal s
+val _ = print "\n"
 val _ = OS.Process.exit OS.Process.success

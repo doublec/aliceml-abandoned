@@ -71,7 +71,7 @@ sig
             val the : space * intvar * setvar -> unit
 	    val min : space * intvar * setvar -> unit
 	    val max : space * intvar * setvar -> unit
-            val card : space * intvar * setvar -> unit
+            val card : space *  setvar * intvar -> unit
 	    val match : space * setvar * intvar vector -> unit
 (*	    val minN : setvar * intvar vector -> unit *)
 (*	    val maxN : setvar * intvar vector -> unit *)
