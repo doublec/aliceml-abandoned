@@ -10,8 +10,7 @@
  *   $Revision$
  *)
 
-import structure Stamp         from "Stamp"
-import structure FromEqHashKey from "../../lib/utility/HASH_KEY-sig"
-import structure MkHashImpSet  from "../../lib/utility/MkHashImpSet"
+import structure Stamp        from "Stamp"
+import structure MkHashImpSet from "../../lib/utility/MkHashImpSet"
 
-structure StampSet = MkHashImpSet(FromEqHashKey(Stamp))
+structure StampSet = MkHashImpSet(Stamp)
