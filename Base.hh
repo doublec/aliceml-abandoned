@@ -23,6 +23,12 @@
 
 #include <cstdlib>
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define DllExport __declspec(dllexport)
+#else
+#define DllExport
+#endif
+
 void AssertOutline(const char *file, int line, const char *message);
 #define AssertBase(cond, message) \
   if (!(cond)) { AssertOutline(__FILE__, __LINE__, message); exit(0); } else {}
