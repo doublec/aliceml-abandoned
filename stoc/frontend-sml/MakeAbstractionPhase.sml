@@ -1038,7 +1038,7 @@ functor MakeAbstractionPhase(
 	 | PRIMITIVECONSTRUCTORDec
 		(i, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon, s) =>
 	   let
-		val  id1'        = inventId i
+		val  id1'        = trVId_bind' E vid
 		val (id2',stamp) = trVId_bind E vid
 		val  _           = insertScope E
 		val (ids',typ')  = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
