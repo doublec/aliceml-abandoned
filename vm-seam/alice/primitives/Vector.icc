@@ -28,28 +28,30 @@ public:
   using StackFrame::ToWord;
   // VectorTabulateFrame Accessors
   Vector *GetVector() {
-    return Vector::FromWord(StackFrame::GetArg(VECTOR_POS));
+    return Vector::FromWord(GetArg(VECTOR_POS));
   }
   word GetClosure() {
-    return StackFrame::GetArg(CLOSURE_POS);
+    return GetArg(CLOSURE_POS);
   }
   int GetIndex() {
-    return Store::WordToInt(StackFrame::GetArg(INDEX_POS));
+    return Store::WordToInt(GetArg(INDEX_POS));
+  }
+  void UpdateIndex(int i) {
+    ReplaceArg(INDEX_POS, i);
   }
   int GetNumElems() {
-    return Store::WordToInt(StackFrame::GetArg(NUMELEM_POS));
+    return Store::WordToInt(GetArg(NUMELEM_POS));
   }
   // VectorTabulateFrame Constructor
   static VectorTabulateFrame *New(Interpreter *interpreter,
-				  Vector *vector,
-				  word closure,
+				  Vector *vector, word closure,
 				  int index, int numelems) {
     StackFrame *frame =
       StackFrame::New(VECTOR_TABULATE_FRAME, interpreter, SIZE);
     frame->InitArg(VECTOR_POS, vector->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(INDEX_POS, Store::IntToWord(index));
-    frame->InitArg(NUMELEM_POS, Store::IntToWord(numelems));
+    frame->InitArg(INDEX_POS, index);
+    frame->InitArg(NUMELEM_POS, numelems);
     return static_cast<VectorTabulateFrame *>(frame);
   }
   // VectorTabulateFrame Untagging
@@ -104,16 +106,13 @@ VectorTabulateInterpreter::Run(TaskStack *taskStack) {
   int n          = frame->GetNumElems();
   Construct();
   vector->LateInit(i, Scheduler::currentArgs[0]);
-  taskStack->PopFrame(); // Discard Frame
   if (++i == n) {
+    taskStack->PopFrame();
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = vector->ToWord();
     return Interpreter::CONTINUE;
-  }
-  else {
-    VectorTabulateFrame *newFrame =
-      VectorTabulateFrame::New(this, vector, closure, i, n);
-    taskStack->PushFrame(newFrame->ToWord());
+  } else {
+    frame->UpdateIndex(i);
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = Store::IntToWord(i);
     return taskStack->PushCall(closure);
