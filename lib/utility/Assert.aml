@@ -9,6 +9,17 @@
    failures can then be written as
 	assert false
    (very similar to O'Caml).
+
+   Another design would be to have a derived form
+	assert exp of pat => exp
+   which is a derived form for
+	case exp of pat => exp | _ => raise Assert(_)
+   and an additional derived form
+	assert exp => exp
+   which expands to
+	assert exp of true => exp
+   (very much like if expands to case). But how could definite failure fit
+   into this?
 *)
 
 structure Assert =
