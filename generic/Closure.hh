@@ -21,8 +21,7 @@
 
 class Closure: private Block {
 protected:
-  static const u_int CONCRETE_CODE_POS = 0;
-  static const u_int BASE_SIZE         = 1;
+  enum { CONCRETE_CODE_POS, BASE_SIZE };
 public:
   using Block::ToWord;
 
