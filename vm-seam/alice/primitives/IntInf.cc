@@ -292,7 +292,7 @@ DEFINE2(IntInf_ ## op) {                                \
   }                                                     \
 } END
 MKOP2(opsub, sub, add, -);
-MKOP2(opadd, add, sub, -);
+MKOP2(opadd, add, sub, +);
 #undef MKOP2
 
 // Overflow test, copied from Int.cc
