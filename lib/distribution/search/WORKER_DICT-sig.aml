@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Packer from "x-alice:/lib/distribution/Packer"
+
+signature WORKER_DICT =
+    sig
+	type dict
+
+	val new : unit -> dict
+	val put : dict * int * Packer.package -> unit
+	val get : dict * int -> Packer.package
+	val keys : dict -> int list
+    end

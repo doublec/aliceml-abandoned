@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Space from "x-alice:/lib/constraints/Space"
+import structure Trace from "Trace"
+
+signature TRACE_SPACE =
+    sig
+	type sol
+	type internal_sol
+
+	type trace = sol Trace.trace
+	type tracespace
+
+	val tracespace : (unit -> internal_sol) *
+	    (internal_sol * internal_sol -> unit) option -> tracespace
+
+	val ask : tracespace -> Space.status
+	val constrain : tracespace * sol -> unit
+	val clone : tracespace -> tracespace
+	val merge : tracespace -> sol
+	val commit : tracespace * Space.choice -> unit
+	val externalize : tracespace -> trace list
+	val internalize : tracespace * trace list -> unit
+    end

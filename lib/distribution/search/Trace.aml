@@ -1,0 +1,8 @@
+import structure Space from "x-alice:/lib/constraints/Space"
+
+structure Trace =
+    struct
+	datatype 'a trace =
+	    Commit    of Space.choice
+	  | Constrain of 'a
+    end
