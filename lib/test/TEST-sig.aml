@@ -40,17 +40,4 @@ sig
      * In particular failure of a testcase doesn't prevent execution of the following
      * testcases of the suite!
      *)
-
-    (********************** Basic asserts **********************)
-    val assert: bool -> unit
-    (* [assert (e)] fails unless [e = true] *)
-
-    val assertExnWith: (exn -> bool) -> (unit -> 'a) -> unit	
-    (* [assertExnWith exnp f] fails unless [f ()] raises an exception [e] 
-     * with [exnp e = true].
-     *)
-
-    val assertExn: exn -> (unit -> 'a) -> unit
 end
-
-

@@ -398,7 +398,7 @@ struct
 
 	fun member(m,q)		= Option.isSome(lookup(m,q))
 	fun remove(m,q)		= removeWith ignore (m,q)
-	fun removeExistent(m,q)	= removeWith(fn q' => if Addr.addr q<>Addr.addr q' then raise Assert ("",0,0) else raise Unknown q) (m,q)
+	fun removeExistent(m,q)	= removeWith(fn q' => if Addr.addr q<>Addr.addr q' then assert false else raise Unknown q) (m,q)
 	fun insertWith f	= raise Crunk "insertWith (unsupported)"
 
 	fun insert((m',m), q as (c,_,_), x) =

@@ -18,7 +18,7 @@ structure UnsafeComponent :> UNSAFE_COMPONENT =
 	    (TextIO.output (TextIO.stdErr,
 			    "UnsafeComponent." ^ f ^
 			    "unavailable in bootstrap compiler");
-	     raise Assert.failure)
+	     assert false)
 
 	fun load _ = unavailable "load"
 	fun replaceSign (_, _) = unavailable "replaceSign"

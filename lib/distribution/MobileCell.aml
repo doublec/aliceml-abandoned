@@ -136,7 +136,7 @@ structure MobileCell :> MOBILE_CELL =
 					     (managerTable, stamp) of
 					SOME returnState' =>
 					    cast returnState' ()
-				      | NONE => raise Assert ("",0,0)
+				      | NONE => assert false
 		    in
 			GlobalTable.insert
 			    (managerTable, stamp, cast returnState);
@@ -166,7 +166,7 @@ structure MobileCell :> MOBILE_CELL =
 				    case GlobalTable.remove
 					     (stateTable, stamp) of
 					SOME value => cast value
-				      | NONE => raise Assert ("",0,0)
+				      | NONE => assert false
 				val returnState = Remote.proxy1 returnState
 			    in
 				cast getState (valueNeeded, returnState)

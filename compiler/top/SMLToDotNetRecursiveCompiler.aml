@@ -30,10 +30,8 @@ structure SMLToDotNetRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val acquireSigRef: sig_loader ref =
-	    ref (fn _ => raise Assert ("",0,0))
-	val acquireModRef: mod_loader ref =
-	    ref (fn _ => raise Assert ("",0,0))
+	val acquireSigRef: sig_loader ref = ref (fn _ => assert false)
+	val acquireModRef: mod_loader ref = ref (fn _ => assert false)
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)

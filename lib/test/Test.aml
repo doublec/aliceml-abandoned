@@ -67,15 +67,4 @@ struct
 	in
 	    { res where failures = List.rev (#failures res) }
 	end
-
-    (********************** Basic asserts **********************)
-
-    fun assert expr = if expr then () else raise Assert ("", 0, 0)
-
-    fun assertExnWith exnp f = if (f (); false) handle e => exnp e then () else raise Assert ("", 0, 0) 
-
-    fun assertExn eWanted = assertExnWith (fn e => e = eWanted) 
-
 end
-
-

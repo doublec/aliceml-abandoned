@@ -112,7 +112,7 @@
 				  end
 			      else if Char.isSpace c then
 				   gap(k+1, cs)
-			      else raise Assert ("", 0) 
+			      else assert false
 
 	    and gap(k, cs) =
 		    if String.sub(s,k) = #"\\" then
