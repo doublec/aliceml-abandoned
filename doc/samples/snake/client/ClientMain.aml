@@ -6,40 +6,38 @@ import structure Config     from "../server/Config"
 
 fun main () =
     let
-        (* create gui *)
-        val gui = Gui.gui ()
-    
+        (* gui callbacks *)
+        val gui_promise = Promise.promise ()    
+        val gui         = Promise.future gui_promise
+        val gui_join_p  = Promise.promise ()
+        val gui_join    = Promise.future gui_join_p
+ 
         (* called when user wants to quit *)
         fun quit () = OS.Process.exit OS.Process.success
 
         (* called when user wants to connect to some existing server *) 
-        fun connect ticket = SOME "connect not yet implemented"
+        fun connect ticket = SND "connect not yet implemented"
 
         (* called when user wants to create own server *)
-        fun startServer () = 
+        fun startServer config = 
             let
-                (* TODO: ask user: kind of game, size of levels, ... *)
-                val config  = Config.defaultSingle
-
                 (* both creation of client and creation of server
                    depends on each other, but Client.startClient
                    is required to not use server before it has
                    returned, i.e only in threads it spawns or closures
-                   it returns
+                   it returns, likewise with gui_join
                  *)
-                val server  = Promise.promise ()
-                val client  = Client.startClient (Promise.future server)
+                val server                  = Promise.promise ()
+                val (client, model_join)    = Client.startClient (gui_join, 
+                                                Promise.future server)
             in
                 (* TODO: error handling *)
                 Promise.fulfill (server, Server.startServer (config, client));
-                (* creation was successful return no error *)
-                NONE
+                (* creation was successful return model and gui promise *)
+                FST (model_join, gui_join_p)
             end
-                
-            SOME "startServer not yet implemented"
     in
-        (* display initial GUI and wait for callback *)
-        Gui.displayInitUI (gui, { quit, connect, startServer })
+        Gui.execute ({ connect, startServer }, gui_promise)
     end
 
 (* start it *)

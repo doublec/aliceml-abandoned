@@ -6,8 +6,8 @@ struct
     (* [startClient (gui, server)] starts the core client given a server,
        which can be a future
      *)
-    fun startClient (gui, server : Protocol.server_interface) : 
-            Protocol.client_interface =
+    fun startClient (gui_join, server : Protocol.server_interface) : 
+            Protocol.client_interface * Gui.model_join =
         let
             fun playersJoined players = ()
 
@@ -35,10 +35,20 @@ struct
 
             fun updatePoints points = ()
         
+
+            (* ------------ gui callbacks --------- *)
+            (* user turns snake, gives up...        *)
+            
+            fun play (name, color) =
+                SND "not yet implemented"
+
+            fun watch () =
+                SND "not yet implemented"
+
             val lock = Lock.lock ()
         in
             (* return locked but not yet proxied client interface! *)
-            {
+            ({
                playersJoined        = Lock.sync lock playersJoined,
                tournamentStarted    = Lock.sync lock tournamentStarted,
                levelStarted         = Lock.sync lock levelStarted,
@@ -52,7 +62,10 @@ struct
                levelFinished        = Lock.sync lock levelFinished,
                tournamentFinished   = Lock.sync lock tournamentFinished,
                updatePoints         = Lock.sync lock updatePoints
-            }
+            },
+            {   play                = play,
+                watch               = watch
+            })
         end
        
 end
