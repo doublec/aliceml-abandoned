@@ -6,6 +6,7 @@
   <P>The interface to the Alice system features:</P>
   <UL>
     <LI><A href="#interactive">the interactive toplevel</A>
+    <LI><A href="#emacs">the interactive toplevel used within emacs</A>
     <LI><A href="#compiler">the batch compiler</A>
     <LI><A href="#vm">the virtual machine</A>
     <LI><A href="#linker">the static linker</A>
@@ -72,6 +73,38 @@
   <P>This form will import all entities contained in the corresponding
   component.</P>
 
+
+<?php section("emacs", "emacs") ?>
+  <P>Using Alice with Emacs can be done in two steps:</P>
+  <UL>
+    <LI>Setting up the environment
+    <LI>Setting up the emacs ml mode
+  </UL>
+  <P>First make sure that the environment variables <TT>OZHOME</TT> and <TT>STOCKHOME</TT>
+    point to the installation directory of the mozart system and alice system, respectively.</P>
+
+  <P>Now you have to decide to either use ml mode version 3.3 or ml mode 3.9.3.
+    Both of them have their advantages and disatvantages.
+    (Note: Within PSL the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
+
+  <P>To use ml mode version 3.3, install this
+    <A HREF="sml-mode-3.3.tgz">archive</A>
+     either to your global <TT>site-lisp</TT> or to your local <TT>elisp</TT> directory.
+     Depending on your selection, add the following
+     lines to your <TT>.emacs</TT> file:</P>
+  <PRE>
+       ;; Necessary only if not already in load-path
+       (setq (cons "/this/is/the/mode/directory" load-path))
+       ;; Enable sml mode
+       (require 'sml-site)
+       ;; Enable fontification
+       (require 'sml-font)
+  </PRE>
+  <P>To use ml mode version 3.9.3, follow the installation instructions given in
+    <TT>INSTALL</TT>. Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
+    Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT> and adjust the
+    settings <TT>sml-program-name</TT> to <TT>alice</TT> and <TT>sml-default-arg</TT> to
+    <TT>--rtt-level=full</TT>, respectively.</P>
 
 <?php section("compiler", "compiler") ?>
   <P>The stand-alone Alice compiler can be invoked in one of the following
