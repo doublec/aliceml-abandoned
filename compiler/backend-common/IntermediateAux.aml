@@ -517,5 +517,5 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    Vector.tabulate (n, fn i => Label.fromInt (i + 1))
 	  | prodToLabels (O.Product labels) = labels
 
-	fun reset () = Type.Map.deleteAll typToArityMap
+	fun reset () = Type.Map.removeAll typToArityMap
     end
