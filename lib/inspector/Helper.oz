@@ -436,10 +436,10 @@ define
 	       dirty <- false
 	       {Visual printXY(X Y @string @tag reclabel)}
 	       {Visual printXY((X + SDim + 1) Y '=' @secTag record)}
-	    else {Visual doublePlace(X Y SDim @tag @secTag)}
+	    else {Visual doublePlace(X Y (SDim + 1) @tag @secTag)}
 	    end
 	    if {{Node getParent($)} getHorzMode($)}
-	    then {Node draw((X + SDim + 1) Y)}
+	    then {Node draw((X + SDim + 3) Y)}
 	    else {Node draw((X + 3) (Y + 1))}
 	    end
 	 end

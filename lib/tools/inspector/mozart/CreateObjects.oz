@@ -111,8 +111,8 @@ define
       in
 	 @maxWidth   = 1
 	 @type       = cell
-	 @label      = {New Helper.ozAtom create('ref ' self 0 Visual internal)}
-	 @brace      = {New Helper.empty create(self)}
+	 @label      = {New Helper.label create('ref' '(' self Visual)}
+	 @brace      = {New Helper.ozAtom create(')' self 0 Visual tuple)}
 	 @savedValue = Value
 	 value <- ref({Access Value})
 	 %% Was ContainerCreateObject before
@@ -138,8 +138,8 @@ define
       in
 	 @maxWidth = 1
 	 @type     = cell
-	 @label    = {New Helper.ozAtom create('ref ' self 0 Visual internal)}
-	 @brace    = {New Helper.empty create(self)}
+	 @label    = {New Helper.label create('ref' '(' self Visual)}
+	 @brace    = {New Helper.ozAtom create(')' self 0 Visual tuple)}
 	 %% Was ContainerCreateObject before
 	 CellGrCreateObject, adjustWidth({Visual getWidth($)} 1)
       end
