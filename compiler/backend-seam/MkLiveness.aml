@@ -41,6 +41,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 			     IntMap.insert (ranges, id,
 					    (if i < min then i else min,
 					     if i > max then i else max)); i)
+		fun lIds (ids, i) = Vector.foldl lId i ids
 
 		fun lIdDef (IdDef id, i) = lId (id, i)
 		  | lIdDef (Wildcard, i) = i
@@ -106,8 +107,8 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    lIdDefs (idDefs, lIdRef (idRef, lInstr (instr, i) + 1))
 		  | lInstr (Sel (id, idRef, _, instr), i) =
 		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
-		  | lInstr (LazyPolySel (id, idRef, _, instr), i) =
-		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (LazyPolySel (ids, idRef, _, instr), i) =
+		    lIds (ids, lIdRef (idRef, lInstr (instr, i) + 1))
 		  | lInstr (Raise idRef, i) = lIdRef (idRef, i) + 1
 		  | lInstr (Reraise idRef, i) = lIdRef (idRef, i) + 1
 		  | lInstr (Try (tryInstr, idDef1, idDef2, handleInstr), i) =
