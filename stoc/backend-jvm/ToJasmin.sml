@@ -32,7 +32,52 @@ structure ToJasmin =
 	datatype branchinst = Lab of string | Jump of jump | Non
 	datatype registerOps = Load of (int * INSTRUCTION) | Store
 
-	val labelMerge: branchinst StringHash.t ref = ref (StringHash.new())
+	structure LabelMerge =
+	    struct
+		(* maps labels to a branch or return instruction *)
+		val labelMerge: branchinst StringHash.t ref = ref (StringHash.new())
+
+		(* set of reachable labels *)
+		val reachable = ref (StringSet.new())
+
+		fun new () =
+		    (labelMerge := StringHash.new();
+		     reachable := StringSet.new())
+
+		fun merge (l', l'') =
+		    StringHash.insert (!labelMerge, l', l'')
+
+		fun setReachable l' =
+		    StringSet.insert (!reachable, l')
+
+		fun isReachable l' =
+		    let val result =
+			isSome (StringHash.lookup (!labelMerge, l'))
+			orelse StringSet.member (!reachable, l')
+		    in
+			if !ECHO >= 2 then
+			    print ("Label "^l'^" is "^
+				   (if result then "" else "not ")^
+					"reachable.\n")
+			else ();
+			result
+		    end
+
+		fun directJump lab' =
+		    case StringHash.lookup (!labelMerge, lab') of
+			NONE => "goto "^lab'
+		      | SOME (Lab lab'') => directJump lab''
+		      | SOME (Jump Ret) => "return"
+		      | SOME (Jump ARet) => "areturn"
+		      | SOME (Jump IRet) => "ireturn"
+		      | SOME _ => raise Match
+
+		fun condJump lab' =
+		    case StringHash.lookup (!labelMerge, lab') of
+			SOME (Lab lab'') => condJump lab''
+		      | _ => lab'
+
+	    end
 
 	structure JVMreg =
 	    struct
@@ -202,68 +247,48 @@ structure ToJasmin =
 				  Array.sub(!defines, reg)+1)
 	    end
 
-	fun directJump lab' =
-	    case StringHash.lookup (!labelMerge, lab') of
-		NONE => "goto "^lab'
-	      | SOME (Lab lab'') => directJump lab''
-	      | SOME (Jump Ret) => "return"
-	      | SOME (Jump ARet) => "areturn"
-	      | SOME (Jump IRet) => "ireturn"
-	      | SOME _ => raise Match
-
-	fun condJump lab' =
-	    case StringHash.lookup (!labelMerge, lab') of
-	      SOME (Lab lab'') => condJump lab''
-	      | _ => lab'
-
 	fun optimize (insts, registers) =
 	    let
-		fun enter (last, Comment _::rest) =
-		    enter (last, rest)
-		  | enter (Lab lab', Label lab''::rest) =
+		fun deadCode (last, (c as Comment _)::rest) =
+		    c :: deadCode (last, rest)
+		  | deadCode (Lab lab',Label lab''::rest) =
 		    let
 			val l'' = Lab lab''
 		    in
-			StringHash.insert (!labelMerge, lab', l'');
-			enter (l'', rest)
+			LabelMerge.merge(lab', l'');
+			deadCode (l'', rest)
 		    end
-		  | enter (Lab lab', Goto lab''::rest) =
-		    (StringHash.insert (!labelMerge, lab', Lab lab'');
-		     enter (Non, rest))
-		  | enter (Lab lab', Areturn::rest) =
-		    (StringHash.insert (!labelMerge, lab', Jump ARet);
-		     enter (Non, rest))
-		  | enter (Lab lab', Return::rest) =
-		    (StringHash.insert (!labelMerge, lab', Jump Ret);
-		     enter (Non, rest))
-		  | enter (Lab lab', Ireturn::rest) =
-		    (StringHash.insert (!labelMerge, lab', Jump IRet);
-		     enter (Non, rest))
-		  | enter (_, Label lab'::rest) =
-		    enter (Lab lab', rest)
-		  | enter (_, _::rest) =
-		    enter (Non, rest)
-		  | enter (_, nil) = ()
-
-		fun deadCode (last, (c as Comment _)::rest) =
-		    c :: deadCode (last, rest)
-		  | deadCode (Lab lab',Label l'::rest) =
-		    deadCode (Lab l', rest)
-		  | deadCode (Lab _, Goto lab''::rest) =
-		    Goto lab'' :: deadCode (Jump Got, rest)
+		  | deadCode (Lab lab', Goto lab''::rest) =
+		    (LabelMerge.merge (lab', Lab lab'');
+		     Goto lab'' ::
+		     deadCode (Jump Got, rest))
 		  | deadCode (Lab lab', Areturn::rest) =
-		    Label lab' :: Areturn :: deadCode (Jump ARet, rest)
+		    (LabelMerge.merge (lab', Jump ARet);
+		     Label lab' ::
+		     Areturn ::
+		     deadCode (Jump ARet, rest))
 		  | deadCode (Lab lab', Return::rest) =
-		    Label lab' :: Return :: deadCode (Jump Ret, rest)
+		    (LabelMerge.merge (lab', Jump Ret);
+		     Label lab' ::
+		     Return ::
+		     deadCode (Jump Ret, rest))
 		  | deadCode (Lab lab', Ireturn::rest) =
-		    Label lab' :: Ireturn :: deadCode (Jump IRet, rest)
+		    (LabelMerge.merge (lab', Jump IRet);
+		     Label lab' ::
+		     Ireturn ::
+		     deadCode (Jump IRet, rest))
 		  | deadCode (Lab l', rest) =
 		    Label l' :: deadCode (Non, rest)
+		    (* In codegeneration we ensure that backward jumps
+		     only occur to labels that can be reached from before.
+		     Therefore, if we both don't know a label while parsing
+		     top-down and cannot reach it because it is placed after
+		     an unconditional jump, we can dump it *)
 		  | deadCode (i as Jump _, Label lab''::rest) =
 		    deadCode
-		    (if isSome (StringHash.lookup(!labelMerge,lab''))
-			 then i
-		     else Lab lab'',
+		    (if LabelMerge.isReachable lab''
+			 then Lab lab''
+		     else i,
 			 rest)
 		  | deadCode (i as Jump _, _::rest) =
 			 deadCode (i, rest)
@@ -277,8 +302,24 @@ structure ToJasmin =
 			 Return :: deadCode (Jump Ret, rest)
 		  | deadCode (Non, Ireturn::rest) =
 			 Ireturn :: deadCode (Jump IRet, rest)
+		  | deadCode (Non, Athrow::rest) =
+			 Athrow :: deadCode (Jump Got, rest)
 		  | deadCode (Non, c::rest) =
-			 c :: deadCode (Non, rest)
+			 ((case c of
+			       Ifacmpeq l' => LabelMerge.setReachable l'
+			     | Ifacmpne l' => LabelMerge.setReachable l'
+			     | Ifeq l' => LabelMerge.setReachable l'
+			     | Ificmpeq l' => LabelMerge.setReachable l'
+			     | Ificmplt l' => LabelMerge.setReachable l'
+			     | Ificmpne l' => LabelMerge.setReachable l'
+			     | Ifne l' => LabelMerge.setReachable l'
+			     | Ifnull l' => LabelMerge.setReachable l'
+			     | Tableswitch (_, ls, l) =>
+				   List.app
+				   LabelMerge.setReachable
+				   (l::ls)
+			     | _ => ());
+			   c :: deadCode (Non, rest))
 		  | deadCode (last, nil) = nil
 
 		fun prepareLifeness (Astore r::insts, pos) =
@@ -401,8 +442,7 @@ structure ToJasmin =
 			lifeness (d', 0);
 			JVMreg.assignAll();
 			if !OPTIMIZE >= 2 then
-			    (labelMerge := StringHash.new();
-			     enter (Non, d');
+			    (LabelMerge.new();
 			     deadCode (Non, d'))
 			else d'
 		    end
@@ -541,7 +581,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
 	      | instructionToJasmin (Catch(cn,from,to,use),_) =
-		    ".catch "^cn^" from "^(condJump from)^" to "^(condJump to)^" using "^(condJump use)
+		    ".catch "^cn^" from "^(LabelMerge.condJump from)^" to "^(LabelMerge.condJump to)^" using "^(LabelMerge.condJump use)
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -559,18 +599,18 @@ structure ToJasmin =
 				 (desclist2string arg)
 	      | instructionToJasmin (Getstatic(fieldn, arg),_) = "getstatic "^fieldn^" "^
 				     (desclist2string arg)
-	      | instructionToJasmin (Goto l,isstatic) = directJump l
+	      | instructionToJasmin (Goto l,isstatic) = LabelMerge.directJump l
 	      | instructionToJasmin (Iconst i,_) =
 				     if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
 	      | instructionToJasmin (Iadd,_) = "iadd"
-	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^(condJump l)
-	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^(condJump l)
-	      | instructionToJasmin (Ifeq l,_) = "ifeq "^(condJump l)
-	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(condJump l)
-	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(condJump l)
-	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(condJump l)
-	      | instructionToJasmin (Ifne l,_) = "ifne "^(condJump l)
-	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(condJump l)
+	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ifeq l,_) = "ifeq "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ifne l,_) = "ifne "^(LabelMerge.condJump l)
+	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(LabelMerge.condJump l)
 	      | instructionToJasmin (Ifstatic _,_) = raise Error ""
 	      | instructionToJasmin (Iload j,s) =
 					 let
@@ -619,12 +659,12 @@ structure ToJasmin =
 	      | instructionToJasmin (Swap,_) = "swap"
 	      | instructionToJasmin (Tableswitch(low,labellist, label),_) =
 			     let
-				 fun flatten (lab::labl) = ("\t"^(condJump lab)^"\n")^(flatten labl)
+				 fun flatten (lab::labl) = ("\t"^(LabelMerge.condJump lab)^"\n")^(flatten labl)
 				   | flatten nil = ""
 			     in
 				   "tableswitch "^(Int.toString low)^"\n"^
 				   (flatten labellist)^
-				   "default: "^(condJump label)
+				   "default: "^(LabelMerge.condJump label)
 			     end
 	      | instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
 			     if (!DEBUG >= 1) then
@@ -632,7 +672,7 @@ structure ToJasmin =
 				 (Int.toString
 				  (if isStatic then number'-1 else number'))
 				 ^" is "^name'^" "^(desclist2string descriptor')^
-				 " from "^(condJump from')^" to "^(condJump to')
+				 " from "^(LabelMerge.condJump from')^" to "^(LabelMerge.condJump to')
 			     else ""
 
 	in
