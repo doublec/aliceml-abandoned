@@ -114,7 +114,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
       | trExp(I.RowExp(i,r))		= O.RowExp(i, trExpRow r)
       | trExp(I.SelExp(i,a))		= O.SelExp(i, trLab a)
-      | trExp(I.VecExp(i,es))		= O.TupExp(i, trExps es)
+      | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
       | trExp(I.FunExp(i,x,e))		= O.FunExp(i, trId x, trExp e)
       | trExp(I.AppExp(i,e1,e2))	= O.AppExp(i, trExp e1, trExp e2)
       | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(i, trExp e2, trExp e2)
@@ -150,7 +150,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
       | trPat(I.RowPat(i,r))		= let val (fs',b') = trPatRow r in
 					      O.RowPat(i, fs', b')
 					  end
-      | trPat(I.VecPat(i,ps))		= O.TupPat(i, trPats ps)
+      | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
       | trPat(I.AltPat(i,ps))		= O.AltPat(i, trPats ps)
       | trPat(I.NegPat(i,p))		= O.NegPat(i, trPat p)
