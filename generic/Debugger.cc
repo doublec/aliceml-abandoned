@@ -32,16 +32,15 @@ void Debugger::GenerateMissingEvents() {
   TaskStack *taskStack = Scheduler::currentTaskStack;
   word *base = (word *) taskStack->GetFrame(0);
   word *top = base + Scheduler::GetCurrentStackTop() - 1;
-  // 
-//   while (top >= base) {
-//     StackFrame *frame = (StackFrame *) top;
-//     Worker *worker = frame->GetWorker();
-//     top -= worker->GetFrameSize(frame);
-//     if (worker == DebugWorker::self) {
-//       word event = DebugWorker::GetEvent(frame);
-//       Debugger::SendEvent(event);
-//     }
-//   }
+  while (top >= base) {
+    StackFrame *frame = (StackFrame *) top;
+    Worker *worker = frame->GetWorker();
+    top -= worker->GetFrameSize(frame);
+    if (worker == DebugWorker::self) {
+      word event = DebugWorker::GetEvent(frame);
+      Debugger::SendEvent(event);
+    }
+  }
 }
 
 static bool Exists(word wThread, word list) {
