@@ -19,7 +19,7 @@ import
    System(printError)
    Resolve(trace)
    Error(registerFormatter exceptionToMessage)
-   SignatureComponent('Signature$': Signature) at 'lib/system/Signature'
+   InfComponent('Inf$': Inf) at 'lib/rtt/Inf'
    BootComponent('boot': Boot) at 'lib/system/Boot'
 define
    proc {Usage N}
@@ -41,8 +41,8 @@ define
       [] sig(_#unit)#_ then ok
       [] _#sig(_#unit) then ok
       [] sig(S1)#sig(S2) then
-	 if {Signature.matches S1 S2} then ok
-	 else no('signature mismatch')
+	 try {Inf.match S1 S2} ok
+	 catch _ then no('signature mismatch')
 	 end
       else ok
       end
