@@ -21,8 +21,13 @@ sig
 	val gObjectUnref : 'object -> unit
 	val deleteUnref : 'object -> unit
 
-	val getEventStream : unit -> 'object
         val signalConnect : 'object * string * bool -> int
         val signalDisconnect : 'object * int -> unit
+	val getEventStream : unit -> 'stream
+
+	val weakMapAdd : 'object * 'info -> unit
+        val weakMapIsMember : 'object -> bool
+        val weakMapCondGet : 'object * 'info -> 'info
+ 	val getFinalStream : unit -> 'stream
     end
 end
