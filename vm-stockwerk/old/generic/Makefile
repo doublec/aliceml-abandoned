@@ -3,7 +3,8 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-OBJS = Outline.o Scheduler.o
+SRCS = Outline.cc Scheduler.cc
+OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all header clean distclean
 
@@ -19,3 +20,8 @@ veryclean: clean
 	rm -f libscheduler.a
 
 distclean: veryclean
+
+Makefile.deps: Makefile $(SRCS)
+	$(MAKEDEPEND) $(SRCS) > Makefile.deps
+
+include Makefile.deps

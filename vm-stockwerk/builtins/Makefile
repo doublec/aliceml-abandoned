@@ -3,10 +3,12 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-OBJS = \
-	GlobalPrimitives.o Primitive.o Internal.o Unqualified.o \
-	Array.o Char.o Future.o General.o GlobalStamp.o Hole.o Int.o List.o \
-	Math.o Option.o Real.o String.o Thread.o Unsafe.o Vector.o Word.o
+SRCS = \
+	GlobalPrimitives.cc Primitive.cc Internal.cc Unqualified.cc \
+	Array.cc Char.cc Future.cc General.cc GlobalStamp.cc Hole.cc Int.cc \
+	List.cc Math.cc Option.cc Real.cc String.cc Thread.cc Unsafe.cc \
+	Vector.cc Word.cc
+OBJS = $(SRCS:%.cc=%.o)
 
 #--** CommandLine, OS, TextIO do not belong here
 
@@ -22,3 +24,8 @@ veryclean: clean
 	rm -f libbuiltins.a
 
 distclean: veryclean
+
+Makefile.deps: Makefile $(SRCS)
+	$(MAKEDEPEND) $(SRCS) > Makefile.deps
+
+include Makefile.deps
