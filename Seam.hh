@@ -68,10 +68,10 @@ SeamDll void InitSeam();
 // via GetProcAddress/dlsym.  We cannot use the SeamDll macro
 // because it would expand to __declspec(dllexport) here.
 #if defined(__MINGW32__) || defined(_MSC_VER)
-extern "C" __declspec(dllexport) void Start(int argc, char *argv[]);
+extern "C" __declspec(dllexport) void Start(int argc, const char *argv[]);
 extern "C" __declspec(dllexport) Worker::Result Load(String *name);
 #else
-extern "C" void Start(int argc, char *argv[]);
+extern "C" void Start(int argc, const char *argv[]);
 extern "C" Worker::Result Load(String *name);
 #endif
 
