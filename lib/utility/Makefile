@@ -16,7 +16,7 @@ STOC		= stoc --implicit-import-file ../fundamental/Fundamental.import
 STOC_OPTS	= 
 
 SIGS		= ASSERT STAMP GLOBAL_STAMP URL \
-		  HASH_KEY IMP_SET IMP_MAP SCOPED_IMP_SET SCOPED_IMP_SET
+		  HASH_KEY IMP_SET IMP_MAP SCOPED_IMP_SET SCOPED_IMP_MAP
 STRUCTS		= Assert MkStamp GlobalStamp Url LargeIntHashKey StringHashKey \
 		  MkHashImpSet MkHashImpMap MkScopedImpSet MkScopedImpMap
 
