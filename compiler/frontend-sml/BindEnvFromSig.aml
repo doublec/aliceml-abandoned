@@ -168,12 +168,12 @@ struct
 	    fun loop r =
 		if Type.isEmptyRow r then () else
 		let
-		    val (l,t')  = Type.headRow r
+		    val (l,t')  = Type.hdRow r
 		    val  is     = T(arityFromTyp t', tycon, k)
 		    val  t''    = Type.instance(Inf.lookupVal(s,l))
 		    val (t1,t2) = if Type.isArrow t''
 				  then Type.asArrow t''
-				  else (Type.inTuple #[], t'')
+				  else (Type.tuple #[], t'')
 		    val (t3,ts) = unapp t2
 		    val  vid    = VId.fromString(Label.toString l)
 		in
@@ -181,7 +181,7 @@ struct
 		    Type.unify(t0, t3);
 		    Type.unify(t1, unstrict t');
 		    insertVal(E', vid, (I, Stamp.new(), is));
-		    loop(Type.tailRow r)
+		    loop(Type.tlRow r)
 		end
 	in
 	    ( loop r ; E' )
@@ -191,13 +191,13 @@ struct
 
     fun explodePath p =
 	if Path.isDot p then
-	    let val (p',l,n) = Path.asDot p
+	    let val (p',l) = Path.asDot p
 	    in explodePath'(p', [], sigidFromLabel l) end
 	else
 	    (p, [], sigidFromLabel(Path.toLab p))
     and explodePath'(p, strids, sigid) =
 	if Path.isDot p then
-	    let val (p',l,n) = Path.asDot p
+	    let val (p',l) = Path.asDot p
 	    in explodePath'(p', stridFromLabel l :: strids, sigid) end
 	else
 	    (p, strids, sigid)
@@ -209,11 +209,11 @@ struct
 
     fun envfnFromInf(I,j) = envfnFromInf'(I, PathMap.new(), j)
     and envfnFromInf'(I,pm,j) =
-	if Inf.isTop j then
+	if Inf.isTop' j then
 	    EMPTY
-	else if Inf.isCon j then
+	else if Inf.isAbs' j then
 	    let
-		val (k,p)             = Inf.asCon j
+		val  p                = Inf.asAbs' j
 		val (p',strids,sigid) = explodePath p
 		val  z                = case PathMap.lookup(pm,p')
 					  of SOME z => z
@@ -221,29 +221,35 @@ struct
 	    in
 		ABSTR(z,strids,sigid,[])
 	    end
-	else if Inf.isSig j then
-	    PLAIN(envFromSig'(I, pm, Stamp.new(), Inf.asSig j))
-	else if Inf.isArrow j then
+	else if Inf.isSig' j then
+	    PLAIN(envFromSig'(I, pm, Stamp.new(), Inf.asSig' j))
+	else if Inf.isArrow' j then
 	    let
-		val (p,j1,j2) = Inf.asArrow j
+		val (p,j1,j2) = Inf.asArrow' j
 		val  z        = Stamp.new()
+		val  zo       = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
 		PARAM(z, envfnFromInf'(I,pm,j2))
+		before
+		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
 	    end
 	else if Inf.isLambda j then
 	    let
 		val (p,j1,j2) = Inf.asLambda j
 		val  z        = Stamp.new()
+		val  zo       = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
 		PARAM(z, envfnFromInf'(I,pm,j2))
+		before
+		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
 	    end
 	else if Inf.isApply j then
 	    let
-		val (j1,_,j2) = Inf.asApply j
-		val  F1       = envfnFromInf'(I,pm,j1)
-		val  F2       = envfnFromInf'(I,pm,j2)
+		val (j1,(_,j2)) = Inf.asApply j
+		val  F1         = envfnFromInf'(I,pm,j1)
+		val  F2         = envfnFromInf'(I,pm,j2)
 	    in
 		apply(F1,F2)
 	    end
@@ -279,7 +285,7 @@ struct
 				val (t11',t12') = Type.asArrow t2
 				val (t11, t12)  = if Type.isArrow t
 						  then Type.asArrow t
-						  else (Type.inTuple #[], t)
+						  else (Type.tuple #[], t)
 			    in
 				(* t1 = conarrow *)
 				Type.unify(t11, unstrict t11');
@@ -303,31 +309,33 @@ struct
 	    end
 	else if Inf.isTypItem item then
 	    let
-		val (l,k,d) = Inf.asTypItem item
-		val  x      = Stamp.new()
-		val  E'     = case d
-				of NONE   => new()
-				 | SOME t => envFromTyp(I,E,s,t,
-					     TyCon.fromString(Label.toString l))
+		val (p,k) = Inf.asTypItem item
+		val  l    = Path.toLab p
+		val  x    = Stamp.new()
+		val  E'   = if not(Type.isSingKind k)
+			    then new()
+			    else envFromTyp(I,E,s, Type.asSingKind k,
+					    TyCon.fromString(Label.toString l))
 	    in
 		insertDisjointTy(E, tyconFromLabel l, (I,x,E'));
 		appiVals (fn(vid,x) => insertVal(E, vid, x)) E'
 	    end
 	else if Inf.isModItem item then
 	    let
-		val (l,j,_) = Inf.asModItem item
-		val  F      = envfnFromInf'(I,pm,j)
-		val  x      = case F of PLAIN E' => Option.valOf(lookupSelf E')
-				      | _        => Stamp.new()
+		val (p,j) = Inf.asModItem item
+		val  l    = Path.toLab p
+		val  F    = envfnFromInf'(I,pm,j)
+		val  x    = case F of PLAIN E' => Option.valOf(lookupSelf E')
+				    | _        => Stamp.new()
 	    in
 		insertDisjointStr(E, stridFromLabel l, (I,x,F))
 	    end
 	else if Inf.isInfItem item then
 	    let
-		val (l,k,jo) = Inf.asInfItem item
-		val  p       = Inf.pathInf(s,l)
-		val  F       = envfnFromInf'(I, pm, Inf.lookupInf(s,l))
-		val  x       = Stamp.new()
+		val (p,k) = Inf.asInfItem item
+		val  l    = Path.toLab p
+		val  F    = envfnFromInf'(I, pm, Inf.lookupInf'(s,l))
+		val  x    = Stamp.new()
 	    in
 		PathMap.insert(pm,p,z);
 		insertDisjointSig(E, sigidFromLabel l, (I,x,F))
