@@ -258,18 +258,23 @@ protected:
 public:
 
   void InsertItem(word key, word value) {
+    Assert((PointerOp::Deref(key) == key) && (!PointerOp::IsTransient(key)));
     WeakDictionary::InsertItem(key, value);
   }
   void DeleteItem(word key) {
+    Assert((PointerOp::Deref(key) == key) && (!PointerOp::IsTransient(key)));
     WeakDictionary::DeleteItem(key);
   }
   bool IsMember(word key) {
+    Assert((PointerOp::Deref(key) == key) && (!PointerOp::IsTransient(key)));
     return WeakDictionary::IsMember(key);
   }
   word GetItem(word key) {
+    Assert((PointerOp::Deref(key) == key) && (!PointerOp::IsTransient(key)));
     return WeakDictionary::GetItem(key); // must be member
   }
   word CondGetItem(word key, word alternative) {
+    Assert((PointerOp::Deref(key) == key) && (!PointerOp::IsTransient(key)));
     return WeakDictionary::CondGetItem(key, alternative);
   }
 
