@@ -14,6 +14,7 @@
  *)
 
 import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Label from "x-alice:/lib/rtt/Label"
 import structure Path from "x-alice:/lib/rtt/Path"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
@@ -165,10 +166,13 @@ struct
 			   else createSimple (INTERPUNCT,conc,1,d,", ",
 					      SEP_COLOR,setGroup)
 		 val node = let val vv = UnsafeValue.cast va
+			        val label = itemToLabel(List.nth(ilist,!l))
+				val in_vv = UnsafeValue.projPoly(vv,label)
 			    in 
-		            if last 
-				then Empty (* createItemNode !!!*)
-			    else Empty (* createItemNode !!!*)
+				if last 
+				    then Empty (* createItemNode !!!*)
+				else Empty (* createItemNode !!!*)
+			    end
 	     in if last 
 		    then Array.update(getKids(p),!l,node)
 		else ( Array.update(getKids(conc),0,node)
@@ -180,9 +184,18 @@ struct
     
    (* itemToLabel *)
    and itemToLabel i = case Inf.inspectItem i of
-       FixItem(l,i) => l
-     | ValItem(l,t) => l
-     | TypItem(path,tk) => Path.toLab(path)
+       Inf.FixItem(l,i) => l
+     | Inf.ValItem(l,t) => l
+     | Inf.TypItem(path,tk) => let val str = Label.toString(Path.toLab(path))
+			       in Label.fromString("$"^str)
+			       end
+     | Inf.ModItem(path,i) => let val str = Label.toString(Path.toLab(path))
+			      in Label.fromString(str^"$")
+			      end
+     | Inf.InfItem(path,k) => let val str = Label.toString(Path.toLab(path))
+			      in Label.fromString("$"^str^"$")
+			      end   
+     | Inf.HiddenItem(i) => itemToLabel i
 						    
 end (* struct *)
 
