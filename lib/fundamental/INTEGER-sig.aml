@@ -47,7 +47,9 @@ sig
     val op > :		int * int -> bool
     val op <= :		int * int -> bool
     val op >= :		int * int -> bool
+    val equal :		int * int -> bool				(**)
     val compare :	int * int -> order
+    val hash :		int -> int					(**)
 
     val abs :		int -> int
     val min :		int * int -> int
