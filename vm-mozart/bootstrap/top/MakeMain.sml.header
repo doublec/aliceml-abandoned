@@ -39,6 +39,10 @@ import
 from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"
 
 import
+    structure Path
+from "x-alice:/common/Path.ozf"
+
+import
     structure Inf
 from "x-alice:/common/Inf.ozf"
 

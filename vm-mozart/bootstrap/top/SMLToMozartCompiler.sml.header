@@ -3,6 +3,10 @@ import
 from "x-alice:/infrastructure/MakeSwitches.ozf"
 
 import
+    structure InitialEmptyContext
+from "x-alice:/infrastructure/InitialEmptyContext.ozf"
+
+import
     structure MakeFrontendCommon
 from "x-alice:/frontend-common/MakeFrontendCommon.ozf"
 

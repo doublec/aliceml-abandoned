@@ -13,28 +13,12 @@
  *)
 
 import
-    structure TextIO
-from "x-alice:/lib/TextIO.ozf"
-
-import
     structure OS
 from "x-alice:/lib/OS.ozf"
 
 import
     structure CommandLine
 from "x-alice:/lib/CommandLine.ozf"
-
-import
-    structure Pickle
-from "x-alice:/lib/Pickle.ozf"
-
-import
-    structure Url
-from "x-alice:/misc/Url.ozf"
-
-import
-    structure Error
-from "x-alice:/infrastructure/Error.ozf"
 
 import
     structure InitialEmptyContext
@@ -52,85 +36,10 @@ import
     structure MakeMain
 from "x-alice:/top/MakeMain.ozf"
 
-structure Main =
+structure SMLToMozartMain =
     MakeMain(structure Composer = Composer
 	     structure Compiler = SMLToMozartCompiler
-	     structure TargetInitialContext = InitialEmptyContext)
+	     structure TargetInitialContext = InitialEmptyContext
+	     val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n")
 
-local
-    fun basename filename =
-	let
-	    fun cutPath ((#"/" | #"\\")::rest) = nil
-	      | cutPath (c::rest) = c::cutPath rest
-	      | cutPath nil = nil
-	    val cs = cutPath (List.rev (String.explode filename))
-	    fun cutExtension (#"."::rest) =
-		(case rest of
-		     (#"/" | #"\\")::_ => cs
-		   | _::_ => rest
-		   | nil => cs)
-	      | cutExtension ((#"/" | #"\\")::_) = cs
-	      | cutExtension (_::rest) = cutExtension rest
-	      | cutExtension nil = cs
-	in
-	    String.implode (List.rev (case cs of
-					  #"."::_ => cs
-					| _ => cutExtension cs))
-	end
-
-    val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n"
-
-    fun stoc_c (infile, outfile) =
-	(Main.compile (infile, outfile, "");
-	 OS.Process.success)
-
-    fun stoc_x (infile, outfile) =
-	(Main.compile (infile, outfile, executableHeader);
-	 OS.Process.system ("chmod +x " ^ outfile))
-
-    fun usage () =
-	TextIO.output (TextIO.stdErr,
-		       "Usage:\n\
-		       \\tstoc [<option> ...] [-c|-x] <input file> \
-		       \[-o <output file>]\n\
-		       \\tstoc --replacesign <input url> <signature file> \
-		       \<output file>\n\
-		       \Options:\n\
-		       \\t--nodefaultimport\n\
-		       \\t\tDo not make the SML Standard Basis available.\n\
-		       \\t--outputassembly\n\
-		       \\t\tWrite an .ozm file with the assembly code.\n")
-
-    fun stoc' ["--replacesign", infile, signfile, outfile] =
-	(Pickle.replaceSign (Url.fromString infile,
-			     Main.compileSign signfile, outfile);
-	 OS.Process.success)
-      | stoc' ([infile] | ["-c", infile]) =
-	stoc_c (infile, basename infile ^ ".ozf")
-      | stoc' ["-x", infile] =
-	stoc_x (infile, basename infile)
-      | stoc' ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
-	stoc_c (infile, outfile)
-      | stoc' ["-x", infile, "-o", outfile] =
-	stoc_x (infile, outfile)
-      | stoc' _ = (usage (); OS.Process.failure)
-
-    fun options ("--nodefaultimport"::rest) =
-	(Main.Switches.defaultImport := false; options rest)
-      | options ("--outputassembly"::rest) =
-	(Main.Switches.outputAssembly := true; options rest)
-      | options ("--noprintcomponentsig"::rest) =
-	(Main.Switches.printComponentSig := false; options rest)
-      | options rest = rest
-
-    fun defaults () =
-	(Main.Switches.defaultImport := true;
-	 Main.Switches.outputAssembly := false;
-	 Main.Switches.printComponentSig := true)
-
-    fun stoc () =
-	(defaults (); stoc' (options (CommandLine.arguments ())))
-	handle Error.Error (_, _) => OS.Process.failure
-in
-    val _ = OS.Process.exit (stoc ())
-end
+val _ = OS.Process.exit (SMLToMozartMain.stoc (CommandLine.arguments ()))

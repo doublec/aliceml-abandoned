@@ -2,6 +2,7 @@ PREFIX = /opt/stockhausen-devel
 
 STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/stoc-mozart
+STOC_OPTS = --noprintcomponentsig --noimplicitimport
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
@@ -106,9 +107,7 @@ all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 
 bootstrap:
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
-	make \
-	STOC='$(PREFIX)/bin/stoc --noprintcomponentsig --nodefaultimport' \
-	lib/Base.ozf all
+	make STOC=$(PREFIX)/bin/stoc lib/Base.ozf all
 
 stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
@@ -172,10 +171,10 @@ top/%: ../../stoc/top/% top/%.header Base.import
 	cat Base.import top/$*.header $< > $@
 
 %.ozf: %.sml
-	$(STOC) -c $< -o $@
+	$(STOC) $(STOC_OPTS) -c $< -o $@
 
 %.ozf: %.sig
-	$(STOC) -c $< -o $@
+	$(STOC) $(STOC_OPTS) -c $< -o $@
 
 install: all $(INSTALLDIRS) $(INSTALLFILES)
 
