@@ -10,7 +10,7 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 	if (fcn==null)
 	    try{
 		fcn=Class.forName("de.uni_sb.ps.dml.runtime.DMLFuntion");
-		System.err.println("Class zum Vergleichen: "+fcn):
+		System.err.println("Class zum Vergleichen: "+fcn);
 	    } catch (ClassNotFoundException e) {
 		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as DMLObjectOutputStream.");
 		e.printStackTrace();
