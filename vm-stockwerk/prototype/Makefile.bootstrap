@@ -107,16 +107,16 @@ VPATH = $(SRCTOP)
 
 ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-stockwerk
 ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
-ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec --stockwerk
+ALICEC2 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
 
 ALICEC_OPTS = \
 	--check-intermediate --dump-phases --retain-full-import \
 	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
-ALICEC_EXTRA_OPTS = --dump-target
+ALICEC_EXTRA_OPTS = 
 
 #ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
-ALICELINK2 = STOCKHOME=build2/install build2/install/bin/alicelink
+ALICELINK2 = STOCKHOME=build1/install build1/install/bin/alicelink
 
 ALICELINK_OPTS = -v
 
@@ -337,7 +337,7 @@ SOURCEDIRS = \
 .PHONY: build2-all build2-install
 .PHONY: build3-all build3-install
 
-all: build1-install
+all: build3-all
 
 # Build anything using the compiler generated in pass 1
 alicec1-%: build1-install
@@ -544,9 +544,9 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/compiler
 INSTALL2TOPFILES = \
 	$(VMSOURCES:%.oz=%.ozf) FloatChunk.so-$(PLATFORM) alicec.import
-INSTALL2BINFILES = alicerun alicec aliceserv alicelink
+INSTALL2BINFILES = alicerun alicec alicelink
 INSTALL2LIBFILES = rtt/RTT.stc
-INSTALL2COMPILERFILES = CompilerMain.stc CompileServerMain.stc
+INSTALL2COMPILERFILES = 
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -571,10 +571,6 @@ build2/%.aml: build1/%.aml
 build2/%.asig: build1/%.asig
 	cp $< $@
 
-#build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf \
-#	build2/compiler/LinkedCompileServerMain.ozf: build2/%: build1/%
-#	cp $< $@
-
 build2/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
@@ -594,7 +590,7 @@ build2/%.stc: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
 build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
-	$(ALICELINK1) $(ALICELINK_OPTS) --include=.. $< -o $@
+	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT --exclude build2/lib/utility/Unsafe --include build2 --rewrite build2/lib/=../ -o $@
 
 $(LIBNATIVES:%.ozf=build2/%.asig): %.asig: %.ozf
 
@@ -607,8 +603,11 @@ build2-install: build2-all $(INSTALL2DIRS) $(INSTALL2FILES)
 $(INSTALL2DIRS):
 	mkdir -p $@
 
-build2/install/VMMain.ozf: build1/install/VMMain.ozf
+build2/install/%.ozf: build1/install/%.ozf
 	install -c -m 444 $< $@
+
+build2/install/%.so-$(PLATFORM): build1/install/%.so-$(PLATFORM)
+	install -c -m 555 $< $@
 
 build2/install/%.import: build2/%.import
 	install -c -m 444 $< $@
@@ -617,14 +616,6 @@ $(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
 	install -c -m 555 $< $@
 
 $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
-	install -c -m 444 $< $@
-
-build2/install/compiler/CompilerMain.ozf: \
-	build1/install/compiler/CompilerMain.ozf
-	install -c -m 444 $< $@
-
-build2/install/compiler/CompileServerMain.ozf: \
-	build1/install/compiler/CompileServerMain.ozf
 	install -c -m 444 $< $@
 
 ########################################################################
@@ -642,13 +633,12 @@ INSTALL3DIRS = build3/install build3/install/bin \
 INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
 INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
-	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
+	$(filter %.stc, $(LIBSOURCES0:%.aml=%.stc)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/Fundamental.ozf
-INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.ozf
+INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
-	SMLToMozartRecursiveCompiler.ozf \
-	SMLToDotNetRecursiveCompiler.ozf
+	SMLToStockwerkRecursiveCompiler.stc
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -673,15 +663,12 @@ $(BUILD3SOURCES): build3/%: build1/%
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
-	build3/lib/fundamental/LinkedFundamental.ozf \
-	build3/compiler/LinkedCompilerMain.ozf \
-	build3/compiler/LinkedCompileServerMain.ozf \
-	build3/compiler/LinkedToplevelMain.ozf \
-	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
-	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf \
-	build3/LinkedVMMain.ozf
+	build3/lib/fundamental/LinkedFundamental.stc \
+	build3/lib/system/Boot.stc \
+	build3/compiler/LinkedCompilerMain.stc \
+	build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc
 
-build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
+build3/lib/fundamental/RTT.stc: build2/lib/rtt/LinkedRTT.stc
 	cp $< $@
 
 build3/%.ozf: build3/%.oz
@@ -698,45 +685,29 @@ build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 	compiler/top/Toplevel.import
 	cat $^ > $@
 
-build3/%.ozf: build3/%.aml
+build3/%.stc: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
 
-BUILD3 := $(shell pwd)/build3
-TOP3 = $(BUILD3)/compiler/top
+build3/lib/fundamental/LinkedFundamental.stc: \
+	build3/lib/fundamental/Fundamental.stc
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	--exclude build3/lib/utility/Unsafe \
+	--include build3 \
+	build3/lib/fundamental/Fundamental -o $@
 
-build3/lib/fundamental/LinkedFundamental.ozf: \
-	build3/lib/fundamental/Fundamental.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) $< -o $@
+build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--include build3/compiler \
+	build3/compiler/CompilerMain -o $@
 
-build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
-	build3/lib/system/Signature.ozf build3/lib/system/Boot.ozf
-	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. $< -o $@
-
-build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
-	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
-	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
-
-build3/compiler/LinkedCompileServerMain.ozf: build3/compiler/CompileServerMain.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
-	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
-	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
-
-build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
-	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
-	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
-
-build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
-	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
-	$(COMPILERBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
-	--include=$(BUILD3)/compiler $< -o $@
-
-build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
-	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
-	--include=$(BUILD3)/compiler $< -o $@
+build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc: \
+	build3/compiler/top/SMLToStockwerkRecursiveCompiler.stc
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	--include build3/compiler \
+	build3/compiler/top/SMLToStockwerkRecursiveCompiler -o $@
 
 ##
 ## Installing Build 3
