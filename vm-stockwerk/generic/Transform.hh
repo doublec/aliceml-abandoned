@@ -15,6 +15,8 @@
 #ifndef __EMULATOR_TRANSFORM_HH__
 #define __EMULATOR_TRANSFORM_HH__
 
+#include "store/Store.hh"
+
 class Transform : private Block {
 private:
   static const u_int NAME_POS     = 0;
