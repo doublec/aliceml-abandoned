@@ -13,7 +13,7 @@
  *
  *)
 
-import structure FD from "x-alice:/lib/constraints/FD"
+import structure FD from "FD"
 
 signature CONSTR =
     sig
