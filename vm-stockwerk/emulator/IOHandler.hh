@@ -24,6 +24,7 @@ public:
   static void Init();
   static void Poll();
   static void Block();
+  static void Purge();
 
   // These return INVALID_POINTER if the fd is already readable/writable:
   static Future *CheckReadable(int fd);
