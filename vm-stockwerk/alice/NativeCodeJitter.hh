@@ -75,8 +75,7 @@ protected:
   static void GlobalEnvSel(u_int Dest, u_int Ptr, word pos);
   static void ImmediateSel(u_int Dest, u_int Ptr, u_int pos);
   static TagVal *LookupSubst(u_int index);
-  static void LazySelClosureNew(u_int Record, Vector *labels);
-  static void LazySelClosureInitByneeds(u_int Closure, u_int Byneeds);
+  static void LazySelClosureNew(u_int Record, UniqueString *label);
   // StackFrame Accessors
   static void Prepare();
   static void Finish();

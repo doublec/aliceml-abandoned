@@ -136,7 +136,7 @@ namespace Generic {
     static void New(u_int This, u_int size) {
       JITStore::AllocBlock(This, CLOSURE_LABEL, BASE_SIZE + size);
     }
-    static void InitCC(u_int This, u_int Value) {
+    static void InitConcreteCode(u_int This, u_int Value) {
       JITStore::InitArg(This, CONCRETE_CODE_POS, Value);
     }
     static void Sel(u_int This, u_int Dest, u_int pos) {
