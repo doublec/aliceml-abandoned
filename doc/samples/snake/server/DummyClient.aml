@@ -1,27 +1,44 @@
 import structure Protocol  from "../common/Protocol"
+import structure Color     from "../common/Color"
+import structure Pos       from "../common/Pos"
 import val log'            from "../common/Log"
-
+import structure Highscore from "../common/Highscore"
 
 local
-    fun mkInspector t fname a = log' t ("Client", (fname, a))
+    open Protocol
+
+    fun log'' t (f, v) = log' t ("Client", (f, v))
        
-    __overload 'a mkInspector: string -> 'a -> unit = mkInspector
+    __overload 'a log: string * 'a -> unit = log''
 
 in
     val dummyClient = {
-        playersJoined       = mkInspector "playersJoined",
-        tournamentStarted   = mkInspector "tournamentStarted",
-        levelStarted        = mkInspector "levelStarted",
-        playerDisconnected  = mkInspector "playerDisconnected",
-        abort               = mkInspector "abort",
-        update              = mkInspector "update",
-        tick                = mkInspector "tick",
-        levelFinished       = mkInspector "levelFinished",
-        tournamentFinished  = mkInspector "tournamentFinished",
-        updatePoints        = mkInspector "updatePoints",
-	playersDied         = mkInspector "playersDied",
-        playersFinished     = mkInspector "playersFinished",
-	countdown           = mkInspector "countdown"
+        playersJoined       = fn (v: (string * Color.color) list) => 
+            log ("playersJoined", v),
+        tournamentStarted   = fn (v: unit) => 
+            log ("tournamentStarted", v),
+        levelStarted        = fn (v: unit) => 
+            log ("levelStarted", v),
+        playerDisconnected  = fn (v: string * Color.color) => 
+            log ("playerDisconnected", v),
+        abort               = fn (v: unit) => 
+            log ("abort", v),
+        update              = fn (v: (Pos.pos * field) list) => 
+            log ("update", v),
+        tick                = fn (v: Time.time option) => 
+            log ("tick", v),
+        levelFinished       = fn (v: unit) => 
+            log ("levelFinished", v),
+        tournamentFinished  = fn (v: Highscore.highscore) => 
+            log ("tournamentFinished", v),
+        updatePoints        = fn (v: Highscore.points list) => 
+            log ("updatePoints", v),
+	playersDied         = fn (v: (string * Color.color) list) => 
+            log ("playersDied", v),
+        playersFinished     = fn (v: (string * Color.color) list) => 
+            log ("playersFinished", v),
+	countdown           = fn (v: int) => 
+            log ("countdown", v)
     } : Protocol.client_interface
 
 end

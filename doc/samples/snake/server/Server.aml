@@ -154,18 +154,26 @@ struct
                 let
                     (* we use this promise as a lock *)
                     val p       = Promise.promise () 
+                    val id      = Part.id part
+                    val _       = 
+                        log ("Server", ("invoke: aquiring lock on", id))
                     val state   = Ref.exchange (Part.state part, 
                                                     Promise.future p)
                     val client  = Part.client_interface part
                 in
                     ((case state of
-                        Part.DISCONNECTED   => ()
+                        Part.DISCONNECTED   => 
+                            log ("Server", ("invoke: disconnected", id))
                     |   _                   => 
-                        f client a);
+                        (log ("Server", ("invoke: calling", id));
+                         f client a;
+                         log ("Server", ("invoke: called", id))));
                     (* call was successful. state hasn't changed.
                        must fulfill the promise anyway to release
                        the lock. *)
-                    Promise.fulfill (p, state))
+                    log ("Server", ("releasing lock on", id));
+                    Promise.fulfill (p, state));
+                    log ("Server", ("lock released on", id))
                 handle e => (
                     (* call failed! *)
                     log ("Server", "RPC failed: " ^ exnName e);
@@ -365,7 +373,7 @@ struct
                     invokeSeveral (allConnected (), #update, changes); 
                     
                     (* change state of participants whose snake died to DEAD. *)
-                    log ("Server", "registering dead snakes");
+                    log ("Server", "check for dead snakes");
                     List.app (fn sn =>
                         let val part        = PMap.lookupExistent 
                                                 (participants, Snake.id sn)        
@@ -378,6 +386,7 @@ struct
                     
                     (* change state of participants whose snake 
                        finished to FINISHED *)
+                    log ("Server", "check for finished snakes");
                     List.app (fn sn =>
                         let val id          = Snake.id sn
                             val part        = PMap.lookupExistent 
@@ -397,6 +406,7 @@ struct
                     (* change state of participants whose snake 
                        are completely finished from FINISHED 
                        (_, ownId, false) to (_, otherId, true) *)
+                    log ("Server", "check for completely finished snakes");
                     List.app (fn sn =>
                         let val id          = Snake.id sn
                             val part        = PMap.lookupExistent 
@@ -413,15 +423,18 @@ struct
                         end) halfFinishedSnakes;
                         
                     (* send tick signal *)
+                    log ("Server", "send tick signal");
                     invokeSeveral (allConnected (), #tick, NONE);
   
                     (* test wether there are any living snakes left *)
                     case allPlayers () of
-                        []  =>  
-                        finishLevel (levels, newArena, oldArena)
-                    |   _   => 
+                        []  => (
+                        log ("Server", "no more players left");
+                        finishLevel (levels, newArena, oldArena))
+                    |   _   => ( 
                         (* swap old & new arena *)
-                        (levels, newArena, oldArena)
+                        log ("Server", "players left --> play next round");
+                        (levels, newArena, oldArena))
                 end)
 
 
@@ -512,7 +525,8 @@ end
 fun test () =
     let
         val (ticket, server) = Server.startServer 
-                    (dummyClient, Config.defaultSingle)
+                    (dummyClient, 
+                { Config.defaultSingle where tick = Time.fromSeconds 3 } )
     in
         valOf (#startGame server) ();
         (ticket, server)
