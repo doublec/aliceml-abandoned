@@ -11,17 +11,17 @@
  *)
 
 structure MozartEngine =
-    MakeEngine(fun cmd () =
-		   ("/bin/sh",
-		    [(*--**"/opt/mozart-1.1.1/bin/ozd", "-p",*)
-		     case OS.Process.getEnv "STOC_MOZART" of
-			 SOME s => s
-		       | NONE => "stoc-mozart.exe"])
-	       structure Code = PickleFlatGrammar)
+    MkEngine(fun cmd () =
+		 ("/bin/sh",
+		  [(*--**"/opt/mozart-1.1.1/bin/ozd", "-p",*)
+		   case OS.Process.getEnv "STOC_MOZART" of
+		       SOME s => s
+		     | NONE => "stoc-mozart.exe"])
+	     structure Code = PickleFlatGrammar)
 
-functor MakeMozartTarget(structure Switches: SWITCHES
-			 structure Sig: SIGNATURE
-			     where type t = FlatGrammar.sign): TARGET =
+functor MkMozartTarget(structure Switches: SWITCHES
+		       structure Sig: SIGNATURE
+			   where type t = FlatGrammar.sign): TARGET =
     struct
 	structure C = MozartEngine.C
 	structure Sig = Sig
@@ -39,18 +39,18 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	    (MozartEngine.link context code, exportDesc)
     end
 
-functor MakeBackendMozart(structure Switches: SWITCHES
-			  structure MozartTarget: TARGET
-			      where type t = Source.desc * string option ref *
-					     FlatGrammar.t): PHASE =
-    MakeTracingPhase(structure Phase =
-			 struct
-			     structure C = EmptyContext
-			     structure I = FlatGrammar
-			     structure O = MozartTarget
+functor MkBackendMozart(structure Switches: SWITCHES
+			structure MozartTarget: TARGET
+			    where type t = Source.desc * string option ref *
+					   FlatGrammar.t): PHASE =
+    MkTracingPhase(structure Phase =
+		       struct
+			   structure C = EmptyContext
+			   structure I = FlatGrammar
+			   structure O = MozartTarget
 
-			     fun translate () (desc, component) =
-				 (desc, ref NONE, component)
-			 end
+			   fun translate () (desc, component) =
+			       (desc, ref NONE, component)
+		       end
 		     structure Switches = Switches
 		     val name = "Assembling")
