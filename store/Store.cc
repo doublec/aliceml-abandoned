@@ -337,37 +337,9 @@ void Store::HandleWeakDictionaries(const u_int gen) {
       }
     }
   }
-  // Phase Two: Check for integer or forwarded entries
-  // in all dictionaries and handle them
-  for (u_int i = size; i--;) {
-    WeakMap *dict = WeakMap::FromWordDirect(db_set->GetArg(i));
-    Block *table  = dict->GetTable();
-    for (u_int k = table->GetSize(); k--;) {
-      word nodes = table->GetArg(k);
-      while (nodes != Store::IntToWord(0)) {
-	MapNode *node = MapNode::FromWordDirect(nodes);
-	word val       = PointerOp::Deref(node->GetValue());
-	// Store Integers and mark node as handled
-	if (PointerOp::IsInt(val)) {
-	  node->SetValue(val);
-	  node->MarkHandled();
-	}
-	// Store Forward ptr and mark node as handled; otherwise leave untouched
-	else {
-	  Block *valp = PointerOp::RemoveTag(val);
-	  if (GCHelper::AlreadyMoved(valp)) {
-	    node->SetValue(PointerOp::EncodeTag(GCHelper::GetForwardPtr(valp),
-						PointerOp::DecodeTag(val)));
-	    node->MarkHandled();
-	  }
-	}
-	nodes = node->GetNext();
-      }
-    }
-  }
-  // Phase Three: Forward Dictionary Contents and record Finalize Candiates
+  // Phase Two: Forward Dictionary Contents and record Finalize Candiates
   HeapChunk *chunk = roots[gen].GetChain();
-  char *scan      = chunk->GetTop();
+  char *scan       = chunk->GetTop();
   for (u_int i = size; i--;) {
     WeakMap *dict = WeakMap::FromWordDirect(db_set->GetArg(i));
     word handler  = dict->GetHandler();
@@ -377,24 +349,20 @@ void Store::HandleWeakDictionaries(const u_int gen) {
       word prev  = Store::IntToWord(0);
       while (nodes != Store::IntToWord(0)) {
 	MapNode *node = MapNode::FromWordDirect(nodes);
-	bool deleted = false;
-	// Remove handled marks
-	if (node->IsHandled())
-	  node->MarkNormal();
-	// This node possibly contains finalisation data
-	// invariant: it is a block
-	else {
-	  word val    = PointerOp::Deref(node->GetValue());
+	bool deleted  = false;
+	word val      = PointerOp::Deref(node->GetValue());
+	// Immediately finalize integer values
+	if (PointerOp::IsInt(val)) {
+	  dict->RemoveEntry(k, prev, node);
+	  deleted = true;
+	  finSet = finSet->Add(val, gen);
+	  finSet = finSet->Add(handler, gen);
+	} else {
 	  Block *valp = PointerOp::RemoveTag(val);
-	  // Value has been finalized or saved before
+	  // Value has been reached; keep it
 	  if (GCHelper::AlreadyMoved(valp)) {
-	    if (FINALIZE_PERMITTED(valp)) {
-	      dict->RemoveEntry(k, prev, node);
-	      deleted = true;
-	    }
-	    else
-	      node->SetValue(PointerOp::EncodeTag(GCHelper::GetForwardPtr(valp),
-						  PointerOp::DecodeTag(val)));
+	    node->SetValue(PointerOp::EncodeTag(GCHelper::GetForwardPtr(valp),
+						PointerOp::DecodeTag(val)));
 	  }
 	  // Value might be finalized
 	  else if (HeaderOp::DecodeGeneration(valp) < gen) {

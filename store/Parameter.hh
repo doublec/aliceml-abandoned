@@ -54,7 +54,7 @@
   static const char *helper_arr[] = \
   { "GENSET", \
     "INT_MAP", "CHUNK_MAP", "MAP", \
-    "HASHNODEARRAY", "HASHNODE", "HANDLEDHASHNODE", \
+    "HASHNODEARRAY", "HASHNODE", \
     "QUEUE", \
     "STACK", \
     "ROOTSETELEMENT", \

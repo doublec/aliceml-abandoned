@@ -21,19 +21,9 @@
 class MapNode : private Block {
 protected:
   enum { KEY_POS, VALUE_POS, NEXT_POS, SIZE };
-
-  void SetLabel(BlockLabel l) {
-    HeaderOp::EncodeLabel(reinterpret_cast<Transient *>(this), l);
-  }
-  BlockLabel GetLabel() {
-    return HeaderOp::DecodeLabel(this);
-  }
 public:
   using Block::ToWord;
 
-  bool IsHandled() {
-    return (GetLabel() == HANDLEDHASHNODE_LABEL);
-  }
   word GetKey() {
     return GetArg(KEY_POS);
   }
@@ -56,12 +46,6 @@ public:
     ReplaceArg(KEY_POS, key);
     ReplaceArg(VALUE_POS, value);
   }
-  void MarkHandled() {
-    SetLabel(HANDLEDHASHNODE_LABEL);
-  }
-  void MarkNormal() {
-    SetLabel(HASHNODE_LABEL);
-  }
 
   static MapNode *New(word key, word value, word next) {
     Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
@@ -72,8 +56,7 @@ public:
   }
   static MapNode *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
-    Assert((p->GetLabel() == HASHNODE_LABEL) ||
-	   (p->GetLabel() == HANDLEDHASHNODE_LABEL));
+    Assert(p->GetLabel() == HASHNODE_LABEL);
     return STATIC_CAST(MapNode *, p);
   }
 };
