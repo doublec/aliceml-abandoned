@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,6 +23,7 @@ import infix 4 = <> < > infixr 5 :: infix 6 + -
        val op = and op <> and op < and op >
        val op + and op -                        from "ToplevelValues"
 import structure General                        from "General"
+import structure Bool                           from "Bool"
 import structure List                           from "List"
 import signature VECTOR                         from "VECTOR-sig"
 
@@ -114,6 +114,11 @@ struct
     fun exists  f v		= exists'(f,v,0)			(**)
     and exists'(f,v,i) 		= i <> length v andalso
 				  (f(sub'(v,i)) orelse exists'(f,v,i+1))
+
+    fun contains v x		= contains'(v,x,0)			(**)
+    and contains'(v,x,i)	= i <> length v andalso
+				  (x = sub'(v,i) orelse contains'(v,x,i+1))
+    fun notContains v x		= Bool.not(contains'(v,x,0))		(**)
 
     fun find  f v					= find'(f,v,0)	(**)
     and find'(f,v,i) where (i = length v)		= NONE
