@@ -28,7 +28,7 @@
   <P>See also:
     <A href="fd.php3"><TT>FD</TT></A>,
     <A href="linear.php3"><TT>Linear</TT></A>,
-    <A href="fs.php3"><TT>FD</TT></A>,
+    <A href="fs.php3"><TT>FS</TT></A>,
     <A href="space.php3"><TT>Space</TT></A>,
     <A href="search.php3"><TT>Search</TT></A>
   </P>
