@@ -84,12 +84,6 @@ final public class Reference implements DMLConVal, DMLReference {
 	return content;
     }
 
-    /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Reference) &&
-	    this.content.equals(((Reference)val).content);
-    }
-
     /** setzt Wert auf val und gibt alten Wert zurueck */
     final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
 	if (content==null) {
