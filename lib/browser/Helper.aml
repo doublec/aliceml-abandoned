@@ -74,5 +74,9 @@ struct
 	else ()
 
     fun array_map (funct,a) = array_map' (funct,a,0)
+
+    fun getKids n = case n of Concat(r) => #kids(r)
+                            | Container(r) => #kids(r)
+                            | _ => (Array.array(0,Empty))
     
 end;

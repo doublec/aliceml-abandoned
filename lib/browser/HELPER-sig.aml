@@ -43,4 +43,7 @@ sig
     val array_map' : ('a -> 'b) * 'a Array.array * int -> unit
     val array_map : ('a -> 'b) * 'a Array.array -> unit
 
+    (* Zugriff auf Node-Felder *)
+    val getKids : node -> node Array.array
+
 end;
