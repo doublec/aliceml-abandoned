@@ -351,12 +351,21 @@ public:
     b->InitArg(SIZE_POS, size);
     return static_cast<ConstantPool *>(b);
   }
+  static ConstantPool *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::ConstantPool);
+    return static_cast<ConstantPool *>(b);
+  }
+
+  u_int GetCount() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  }
   void Init(u_int offset, word constant) {
-    Assert(offset >= 1 && offset <= Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(offset >= 1 && offset <= GetCount());
     InitArg(offset - 1 + BASE_SIZE, constant);
   }
   word Get(u_int offset) {
-    Assert(offset >= 1 && offset <= Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(offset >= 1 && offset <= GetCount());
     return GetArg(offset - 1 + BASE_SIZE);
   }
 

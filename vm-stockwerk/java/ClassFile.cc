@@ -30,10 +30,15 @@ enum CONSTANT_tag {
   CONSTANT_Utf8               = 1
 };
 
+//
+// Symbolic Constant Pool Entries
+//
+
 class ConstantPoolEntry: private Block {
 public:
   using Block::ToWord;
   using Block::InitArg;
+  using Block::GetArg;
 
   static ConstantPoolEntry *New(CONSTANT_tag tag, u_int size) {
     return static_cast<ConstantPoolEntry *>
@@ -135,11 +140,6 @@ ConstantPool *ClassFile::ParseConstantPool(u_int &offset) {
   ConstantPool *constantPool = ConstantPool::New(constantPoolCount - 1);
   for (u_int i = 1; i < constantPoolCount; i++)
     constantPool->Init(i, ParseConstantPoolEntry(offset)->ToWord());
-  for (u_int j = 1; j < constantPoolCount; j++) {
-    ConstantPoolEntry *entry =
-      ConstantPoolEntry::FromWordDirect(constantPool->Get(j));
-    constantPool->Init(j, entry->Fixup(constantPool));
-  }
   return constantPool;
 }
 
@@ -223,6 +223,14 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   }
 }
 
+void ClassFile::FixupConstantPool(ConstantPool *constantPool) {
+  for (u_int j = 1; j < constantPool->GetCount(); j++) {
+    ConstantPoolEntry *entry =
+      ConstantPoolEntry::FromWordDirect(constantPool->Get(j));
+    constantPool->Init(j, entry->Fixup(constantPool));
+  }
+}
+
 Array *ClassFile::ParseInterfaces(u_int &offset, ConstantPool *constantPool) {
   u_int interfacesCount = GetU2(offset);
   Array *interfaces = Array::New(interfacesCount);
@@ -281,12 +289,22 @@ ClassInfo *ClassFile::Parse() {
   if (!ParseVersion(offset)) return INVALID_POINTER;
   ConstantPool *constantPool = ParseConstantPool(offset);
   u_int accessFlags = GetU2(offset);
-  u_int thisClassIndex = GetU2(offset);
+  JavaString *name;
+  {
+    ConstantPoolEntry *thisClassEntry =
+      ConstantPoolEntry::FromWordDirect(constantPool->Get(GetU2(offset)));
+    Assert(thisClassEntry->GetTag() == CONSTANT_Class);
+    u_int nameIndex = Store::DirectWordToInt(thisClassEntry->GetArg(0));
+    ConstantPoolEntry *nameEntry =
+      ConstantPoolEntry::FromWordDirect(constantPool->Get(nameIndex));
+    Assert(nameEntry->GetTag() == CONSTANT_Utf8);
+    name = JavaString::FromWordDirect(nameEntry->GetArg(0));
+  }
   ClassInfo *super = constantPool->GetClassInfo(GetU2(offset));
   Array *interfaces = ParseInterfaces(offset, constantPool);
   Array *fields = ParseFields(offset, constantPool);
   Array *methods = ParseMethods(offset, constantPool);
   SkipAttributes(offset); //--** need to parse some of them
-  return ClassInfo::New(accessFlags, 0, //--** name
+  return ClassInfo::New(accessFlags, name,
 			super, interfaces, fields, methods, constantPool);
 }
