@@ -3,9 +3,6 @@ import
    FD
    FS
    Search
-   Inspector
-   Explorer
-   System
    Select at 'x-ozlib://duchier/cp/Select.ozf'
 export
    'Smurf$': SmurfModule
@@ -372,18 +369,4 @@ define
    end
 
    SmurfModule = 'Smurf'(smurf: Smurf)
-
-   SampleProperty = '#'(b: true em: false i: false s: false tt: false
-			u: 0 size: ~1 color: 'UNKNOWN')
-   SampleMeaning = [[{ByteString.make 'c'}]#false#SampleProperty
-		    [{ByteString.make 'b'}]#false#SampleProperty
-		    [{ByteString.make 'a'}]#false#SampleProperty]
-
-   proc {SmurfTest Meaning NumberOfElements}
-      {Explorer.best {Script Meaning NumberOfElements} Order}
-   end
-
-   {SmurfTest SampleMeaning 5}
-
-   {Inspector.inspect {Smurf SampleMeaning 5}}
 end
