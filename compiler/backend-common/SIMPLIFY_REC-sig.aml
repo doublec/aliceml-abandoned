@@ -3,20 +3,15 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    signature INTERMEDIATE_GRAMMAR
-from "../common/INTERMEDIATE_GRAMMAR-sig"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
 
 signature SIMPLIFY_REC =
     sig
