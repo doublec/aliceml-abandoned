@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -41,10 +41,10 @@ public:
     return GetSize();
   }
   void Init(u_int index, word value) {
-    InitArg(index + 1, value);
+    InitArg(index, value);
   }
   word Sel(u_int index) {
-    return GetArg(index + 1);
+    return GetArg(index);
   }
 };
 

@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -30,11 +30,11 @@ public:
     BLOCKED, RUNNABLE, TERMINATED
   };
 private:
+  static const u_int PRIORITY_POS = 0;
+  static const u_int TASK_STACK_POS = 1;
+  static const u_int STATE_POS = 2;
+  static const u_int IS_SUSPENDED_POS = 3;
   static const u_int SIZE = 4;
-  static const u_int PRIORITY_POS = 1;
-  static const u_int TASK_STACK_POS = 2;
-  static const u_int STATE_POS = 3;
-  static const u_int IS_SUSPENDED_POS = 4;
 
   void SetState(state s) {
     ReplaceArg(STATE_POS, s);

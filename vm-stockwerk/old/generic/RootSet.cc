@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -19,9 +19,9 @@
 
 class Element: private Block {
 private:
+  static const u_int POINTER_POS = 0;
+  static const u_int VALUE_POS = 1;
   static const u_int SIZE = 2;
-  static const u_int POINTER_POS = 1;
-  static const u_int VALUE_POS = 2;
 public:
   using Block::ToWord;
 

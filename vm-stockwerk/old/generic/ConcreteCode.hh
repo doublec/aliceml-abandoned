@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -21,14 +21,15 @@
 
 class ConcreteCode: private Block {
 private:
-  static const u_int SIZE = 2;
-  // static const u_int HANDLER_POS = 1;
-  static const u_int TASK_MANAGER_POS = 2;
+  // static const u_int HANDLER_POS = 0;
+  static const u_int TASK_MANAGER_POS = 1;
+  static const u_int BASE_SIZE = 2;
 public:
   using Block::ToWord;
 
   static ConcreteCode *New(TaskManager *taskManager, u_int size) {
-    Block *b = Store::AllocBlockWithHandler(SIZE + size, taskManager->handler);
+    Block *b =
+      Store::AllocBlockWithHandler(BASE_SIZE + size, taskManager->handler);
     b->InitArg(TASK_MANAGER_POS, Store::UnmanagedPointerToWord(taskManager));
     return static_cast<ConcreteCode *>(b);
   }
@@ -51,10 +52,10 @@ public:
       (Store::DirectWordToUnmanagedPointer(GetArg(TASK_MANAGER_POS)));
   }
   void Init(u_int index, word value) {
-    InitArg(SIZE + index + 1, value);
+    InitArg(BASE_SIZE + index, value);
   }
   word Get(u_int index) {
-    return GetArg(SIZE + index + 1);
+    return GetArg(BASE_SIZE + index);
   }
 };
 

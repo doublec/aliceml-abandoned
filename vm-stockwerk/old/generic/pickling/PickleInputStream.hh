@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -24,8 +24,8 @@
 
 class PickleInputStream: public Block {
 private:
-  static const u_int SIZE = 2;
-  static const u_int FILE_POS = 2;
+  static const u_int FILE_POS = 0;
+  static const u_int SIZE = 1;
 
   static Handler *handler;
 public:

@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -22,10 +22,10 @@
 
 class Queue: private Block {
 private:
+  static const u_int WRITE_INDEX_POS = 0;
+  static const u_int READ_INDEX_POS = 1;
+  static const u_int ARRAY_POS = 2;
   static const u_int SIZE = 3;
-  static const u_int WRITE_INDEX_POS = 1;
-  static const u_int READ_INDEX_POS = 2;
-  static const u_int ARRAY_POS = 3;
 
   u_int GetWriteIndex() {
     return Store::DirectWordToInt(GetArg(WRITE_INDEX_POS));
@@ -55,8 +55,8 @@ private:
     Assert(index == GetWriteIndex());
     word *oldBase = oldArray->GetBase();
     word *newBase = newArray->GetBase();
-    std::memcpy(newBase, oldBase + index, oldSize - index);
-    std::memcpy(newBase + index, oldBase, index);
+    std::memcpy(newBase, oldBase + index, (oldSize - index) * sizeof(word));
+    std::memcpy(newBase + index, oldBase, index * sizeof(word));
     SetWriteIndex(index);
     SetReadIndex(0);
     SetArray(newArray);
@@ -74,7 +74,7 @@ protected:
     u_int index = GetReadIndex() + n;
     if (index >= size)
       index -= size;
-    return array->GetArg(index + 1);
+    return array->GetArg(index);
   }
 public:
   using Block::ToWord;
@@ -101,7 +101,7 @@ public:
   void Enqueue(word w) {
     Block *array = GetArray();
     u_int writeIndex = GetWriteIndex();
-    array->ReplaceArg(writeIndex + 1, w);
+    array->ReplaceArg(writeIndex, w);
     u_int size = array->GetSize();
     if (++writeIndex == size)
       writeIndex = 0;
@@ -116,8 +116,7 @@ public:
     u_int readIndex = GetReadIndex();
     Block *array = GetArray();
     Assert(readIndex != GetWriteIndex());
-    readIndex++;
-    word result = array->GetArg(readIndex);
+    word result = array->GetArg(readIndex++);
     SetReadIndex(readIndex == array->GetSize()? 0: readIndex);
     return result;
   }
@@ -130,25 +129,29 @@ public:
     u_int scanIndex = readIndex;
     if (readIndex > writeIndex) { // queue has a wrap-around layout
       u_int length = array->GetSize();
-      while (++scanIndex <= length)
+      while (scanIndex < length) {
 	if (array->GetArg(scanIndex) == w) { // shorten queue at beginning
 	  u_int *base = reinterpret_cast<u_int *>(array->GetBase()); //--**
-	  u_int offset = scanIndex - 1;
-	  std::memmove(base + offset + 1, base + offset, offset - readIndex);
+	  std::memmove(base + readIndex + 1, base + readIndex,
+		       (scanIndex - readIndex) * sizeof(word));
 	  SetReadIndex(readIndex + 1);
 	  return;
 	}
+	scanIndex++;
+      }
       // not found: scan first half of queue
       scanIndex = 0;
     }
-    while (++scanIndex < writeIndex)
+    while (scanIndex < writeIndex) {
       if (array->GetArg(scanIndex) == w) { // shorten queue at end
 	u_int *base = reinterpret_cast<u_int *>(array->GetBase()); //--**
-	u_int offset = scanIndex - 1;
-	std::memmove(base + offset, base + offset + 1, writeIndex - offset);
+	std::memmove(base + scanIndex, base + scanIndex + 1,
+		     (writeIndex - scanIndex) * sizeof(word));
 	SetWriteIndex(writeIndex - 1);
 	return;
       }
+      scanIndex++;
+    }
   }
 
   void Blank() {
@@ -159,32 +162,38 @@ public:
     u_int nentries = writeIndex + oldSize - readIndex;
     if (nentries > oldSize)
       nentries -= oldSize;
-    u_int newSize = (nentries * 3 / 2 + 1 + oldSize) / 2;
+    u_int newSize = ((nentries * 3 / 2 + 1) + oldSize) / 2;
     Assert(newSize != 0 && newSize > nentries);
-    if (newSize >= oldSize) {
+    if (newSize >= oldSize) { // do not make it bigger
       newSize = oldSize;
     } else {
+      // move data in the part of the array that is preserved
       word *base = array->GetBase();
       if (readIndex < writeIndex) {
-	u_int length = writeIndex - readIndex;
-	std::memmove(base, base + readIndex, length);
-	SetWriteIndex(length);
-	SetReadIndex(0);
-      } else {
+	if (writeIndex >= newSize) {
+	  u_int length = writeIndex - readIndex;
+	  std::memmove(base, base + readIndex, length * sizeof(word));
+	  SetWriteIndex(length);
+	  SetReadIndex(0);
+	}
+      } else { // wrap-around layout
 	u_int length = oldSize - readIndex;
 	u_int newReadIndex = newSize - length;
-	std::memmove(base + newReadIndex, base + readIndex, length);
+	std::memmove(base + newReadIndex, base + readIndex,
+		     length * sizeof(word));
 	SetReadIndex(newReadIndex);
       }
+      // reflect our new size in the header
       HeaderOp::EncodeSize(array, newSize);
     }
+    // zero out the unused entries
     if (readIndex < writeIndex) {
-      for (u_int i = writeIndex + 1; i <= newSize; i++)
+      for (u_int i = 0; i < readIndex; i++)
 	array->ReplaceArg(i, 0);
-      for (u_int i = 1; i <= readIndex; i++)
+      for (u_int i = writeIndex; i < newSize; i++)
 	array->ReplaceArg(i, 0);
-    } else {
-      for (u_int i = writeIndex + 1; i <= readIndex; i++)
+    } else { // wrap-around layout
+      for (u_int i = writeIndex; i < readIndex; i++)
 	array->ReplaceArg(i, 0);
     }
   }

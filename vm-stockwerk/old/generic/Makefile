@@ -16,9 +16,11 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
+#PICKLING_SRCS = Transformer.cc PickleInputStream.cc
 SRCS = \
 	RootSet.cc Finalization.cc TaskStack.cc NativeTaskManager.cc \
-	InternalTasks.cc Scheduler.cc Transients.cc Outline.cc
+	InternalTasks.cc Scheduler.cc Transients.cc Outline.cc \
+	$(PICKLING_SRCS:%=pickling/%)
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all header clean distclean

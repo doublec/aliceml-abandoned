@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -21,12 +21,13 @@
 
 class Closure: private Block {
 private:
-  static const u_int CONCRETE_CODE_POS = 1;
+  static const u_int CONCRETE_CODE_POS = 0;
+  static const u_int BASE_SIZE = 1;
 public:
   using Block::ToWord;
 
   static Closure *New(ConcreteCode *concreteCode, u_int size) {
-    Block *b = Store::AllocBlock(CLOSURE_LABEL, 1 + size);
+    Block *b = Store::AllocBlock(CLOSURE_LABEL, BASE_SIZE + size);
     b->InitArg(CONCRETE_CODE_POS, concreteCode->ToWord());
     return static_cast<Closure *>(b);
   }
@@ -45,13 +46,13 @@ public:
     return ConcreteCode::FromWordDirect(GetArg(CONCRETE_CODE_POS));
   }
   u_int GetSize() {
-    return Block::GetSize() - 1;
+    return Block::GetSize() - BASE_SIZE;
   }
   void Init(u_int index, word value) {
-    InitArg(index + 2, value);
+    InitArg(index + BASE_SIZE, value);
   }
   word Sub(u_int index) {
-    return GetArg(index + 2);
+    return GetArg(index + BASE_SIZE);
   }
 };
 
