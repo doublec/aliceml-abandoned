@@ -296,6 +296,9 @@ structure CodeGen =
 	     end
 	 )
 
+	and valList 0 = nil
+		  | valList n = Classsig CVal :: valList (n-1)
+
 	and builtinStamp stamp' =
 	    if stamp'=stamp_Match then (Getstatic CMatch,true) else
 		if stamp'=stamp_false then (Getstatic CFalse,true) else
@@ -304,10 +307,7 @@ structure CodeGen =
 			    if stamp'=stamp_cons then (Getstatic CCons,true) else
 				if stamp'=stamp_ref then (Getstatic CRef,true) else
 				    if stamp'=stamp_Bind then (Getstatic CBind,true) else
-					(*if stamp'=stamp_eq then (Getstatic CEquals,true) else
-					    if stamp'=stamp_assign then (Getstatic CAssign,true) else
-						if stamp'=stamp_builtin then (Getstatic CBuilt,true) else*)
-						    (Nop,false)
+					(Nop,false)
 
 	and dcl (d, akku) = Multi (decCode d) :: akku
 
@@ -1246,7 +1246,25 @@ structure CodeGen =
 	    createRecord (stringids, init)
 
 	and
-	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
+	    invoke (isstatic, stamp', count) =
+	    let
+		val name = "apply"^(if count=1 then "" else Int.toString count)
+	    in
+		if isstatic then
+		    Invokestatic (classNameFromStamp (Lambda.getLambda stamp'),
+				  "s"^name, (valList count, [Classsig CVal]))
+		else
+		    Invokevirtual (classNameFromStamp (Lambda.getLambda stamp'),
+				   name, (valList count, [Classsig CVal]))
+	    end
+
+	and
+	    loadIds nil = nil
+	  | loadIds (id'::rest) =
+	    idCode id' :: loadIds rest
+
+	and
+	    normalAppExp (AppExp(_,id' as Id(_,stamp',_), ida'')) =
 	    [Ifstatic
 	     (stamp',
 	      idArgCode
@@ -1263,6 +1281,24 @@ structure CodeGen =
 		(CVal, "apply",
 		 ([Classsig CVal],
 		  [Classsig CVal]))]))]
+
+	and
+	    expCode (a as AppExp(_,id' as Id(_,stamp',_), TupArgs ids)) =
+	    let
+		val l = length ids
+	    in
+		if l <> 1 andalso l <=4 then
+		    [Ifstatic
+		     (stamp',
+		      [Multi (loadIds ids),
+		       invoke (true, stamp', l)],
+		      [stampCode stamp',
+		       Multi (loadIds ids),
+		       invoke (false, stamp', l)])]
+		    else normalAppExp a
+	    end
+	  | expCode (a as AppExp _) =
+	    normalAppExp a
 
 	  | expCode (PrimAppExp (_, name, ids)) =
 		(case name of
@@ -1586,9 +1622,6 @@ structure CodeGen =
 		     normalReturn
 		     [Label omega,
 		      Areturn])
-
-		fun valList 0 = nil
-		  | valList n = Classsig CVal :: valList (n-1)
 
 		fun makeApplyMethod (modifiers, name, vals, insts, handles) =
 		    Method (MPublic :: modifiers,
