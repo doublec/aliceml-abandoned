@@ -8,8 +8,12 @@
 #   Leif Kornstaedt, 2003
 #   Marco Kuhlmann, 2003
 # 
-# $Id$
+# Last Change:
+#   $Date$
+#   $Revision$
 # 
+
+set -e
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -17,7 +21,7 @@ includedir=@includedir@
 pkgincludedir=@includedir@/@PACKAGE@
 libdir=@libdir@
 
-DEFAULT_INCLUDES="-I. -I${pkgincludedir}"
+DEFAULT_INCLUDES="${DEFAULT_INCLUDES}${DEFAULT_INCLUDES:+ }-I. -I${pkgincludedir}"
 
 usage () {
     echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
@@ -49,7 +53,7 @@ cmd () {
 
 if [ $# -lt 1 ]; then
     usage
-    exit 1 # TODO: Is this the right exit code?
+    exit 2
 fi
 
 verbose=0
@@ -74,18 +78,18 @@ shift
 
 case "$mode" in
     makedepend)
-	cmd @CXX@ -M @DEFS@ ${DEFAULT_INCLUDES} @INCLUDES@ @CPPFLAGS@ "$@"
+	cmd @CXX@ -M ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ "$@"
 	;;
     compile)
-	cmd @CXX@ @DEFS@ ${DEFAULT_INCLUDES} @INCLUDES@ @CPPFLAGS@ @CXXFLAGS@ "$@"
+	cmd @CXX@ ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ "$@"
 	;;
     link)
-	cmd @CXX@ @CXXFLAGS@ @LDFLAGS@ "$@" -shared -L${libdir} -lseam
+	cmd @CXX@ @SEAMTOOL_LDFLAGS@ "$@" -shared -L${libdir} -lseam
 	;;
     *)
 	echo "$0: unknown mode `$mode'" >&2
 	echo "Try `$0 --help' for more information." >&2
-	exit 1
+	exit 2
 	;;
 esac
 

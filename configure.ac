@@ -54,7 +54,7 @@ dnl
 #   The default for ACTION-IF-TRUE, if not given, is to append FLAG to
 #   `CXXFLAGS'.
 AC_DEFUN([SEAM_CHECK_CXXFLAG],
-  [AC_MSG_CHECKING(whether $CXX accepts $1)
+  [AC_MSG_CHECKING(whether $CXX accepts [$1])
    seam_save_CXXFLAGS="$CXXFLAGS"
    CXXFLAGS="$CXXFLAGS $1"
    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([],[]),
@@ -80,7 +80,7 @@ AC_DEFUN([SEAM_CHECK_CXXFLAGS],
 #   The default for ACTION-IF-TRUE, if not given, is to append FLAG to
 #   `LDFLAGS'.
 AC_DEFUN([SEAM_CHECK_LDFLAG],
-  [AC_MSG_CHECKING(whether linker accepts $1)
+  [AC_MSG_CHECKING(whether linker accepts [$1])
    seam_save_LDFLAGS="$LDFLAGS"
    LDFLAGS="$LDFLAGS $1"
    AC_LINK_IFELSE(AC_LANG_PROGRAM([],[]),
@@ -94,6 +94,21 @@ AC_DEFUN([SEAM_CHECK_LDFLAG],
 dnl  Test for some flags we always want:
 SEAM_CHECK_CXXFLAGS([-pipe])
 SEAM_CHECK_LDFLAG([[-Wl,--export-dynamic]])
+
+AC_SUBST(SEAMTOOL_CXXFLAGS)
+AC_SUBST(SEAMTOOL_LDFLAGS)
+
+AC_DEFUN([SEAM_ADD_TO_SEAMTOOL_CXXFLAGS],
+   [SEAMTOOL_CXXFLAGS="${SEAMTOOL_CXXFLAGS}${SEAMTOOL_CXXFLAGS:+ }$1"])
+
+AC_DEFUN([SEAM_ADD_TO_SEAMTOOL_LDFLAGS],
+   [SEAMTOOL_LDFLAGS="${SEAMTOOL_LDFLAGS}${SEAMTOOL_LDFLAGS:+ }$1"])
+
+AC_DEFUN([SEAM_CHECK_CXXFLAG_SEAMTOOL],
+   [SEAM_CHECK_CXXFLAG($1, SEAM_ADD_TO_SEAMTOOL_CXXFLAGS([[$1]]), [])])
+
+AC_DEFUN([SEAM_CHECK_LDFLAG_SEAMTOOL],
+   [SEAM_CHECK_LDFLAG($1, SEAM_ADD_TO_SEAMTOOL_LDFLAGS([[$1]]), [])])
 
 dnl
 dnl  Test for Unix Sockets vs. WinSock
@@ -331,11 +346,16 @@ case "$seam_enable_checked" in
     no)
 	;;
     yes)
-	SEAM_CHECK_CXXFLAGS([-fno-inline-functions -fimplement-inlines])
-	SEAM_CHECK_CXXFLAG([-ggdb], , SEAM_CHECK_CXXFLAG([-g]))
+	SEAM_CHECK_CXXFLAG_SEAMTOOL([-fno-inline-functions])
+	SEAM_CHECK_CXXFLAG_SEAMTOOL([-fimplement-inlines])
+	SEAM_CHECK_CXXFLAG_SEAMTOOL([-ggdb], [],
+	   SEAM_CHECK_CXXFLAG_SEAMTOOL([-g]))
 	AC_DEFINE(INTERFACE)
+	SEAM_ADD_TO_SEAMTOOL_CXXFLAGS([-DINTERFACE])
 	AC_DEFINE(DEBUG_CHECK)
+	SEAM_ADD_TO_SEAMTOOL_CXXFLAGS([-DDEBUG_CHECK])
 	AC_DEFINE(STORE_DEBUG)
+	SEAM_ADD_TO_SEAMTOOL_CXXFLAGS([-DSTORE_DEBUG])
 	;;
 esac
 
@@ -367,7 +387,7 @@ case "$seam_enable_optimized" in
 			     -finline-limit=2500 -fno-implement-inlines \
 			     -fno-keep-static-consts -fno-implicit-templates \
 			     -fno-implicit-inline-templates])
-	SEAM_CHECK_LDFLAG([[-Wl,-S]])
+	SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
 	;;
 esac
 
@@ -411,6 +431,7 @@ case "$seam_enable_profiler" in
 	;;
     yes)
 	AC_DEFINE(PROFILE, 1)
+	SEAM_ADD_TO_SEAMTOOL_CXXFLAGS([-DPROFILE])
 	;;
 esac
 
