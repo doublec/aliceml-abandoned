@@ -21,6 +21,9 @@ export
 define
    IOComponent = tuple(IO)
 
+   FALSE = 0
+   TRUE  = 1
+
    Io = {NewUniqueName 'IO.Io'}
 
    class BaseFile from Open.file Open.text
@@ -90,7 +93,9 @@ define
       I_openIn:
 	 fun {$ B S TaskStack}
 	    try
-	       continue(arg({New if B then TextFile else BinFile end
+	       continue(arg({New case B of !TRUE then TextFile
+				 [] !FALSE then BinFile
+				 end
 			     init(name: S flags: [read])}) TaskStack.2)
 	    catch system(E=os(os ...) ...) then
 	       exception(nil con(Io
@@ -134,7 +139,9 @@ define
       I_openOut:
 	 fun {$ B S TaskStack}
 	    try
-	       continue(arg({New if B then TextFile else BinFile end
+	       continue(arg({New case B of !TRUE then TextFile
+				 [] !FALSE then BinFile
+				 end
 			     init(name: S flags: [write create truncate])})
 			TaskStack.2)
 	    catch system(E=os(os ...) ...) then
@@ -148,7 +155,9 @@ define
       I_openAppend:
 	 fun {$ B S TaskStack}
 	    try
-	       continue(arg({New if B then TextFile else BinFile end
+	       continue(arg({New case B of !TRUE then TextFile
+				 [] !FALSE then BinFile
+				 end
 			     init(name: S flags: [write create append])})
 			TaskStack.2)
 	    catch system(E=os(os ...) ...) then
@@ -184,7 +193,7 @@ define
 				 cause: E)   %--** cause not of type exn
 			 TaskStack.2)
 	    end
-	 end
+	 end#rr_t
       I_flushOut:
 	 fun {$ F}
 	    %{F flush()}   %--** not supported for files?
