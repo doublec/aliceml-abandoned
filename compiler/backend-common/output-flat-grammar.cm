@@ -4,8 +4,9 @@ group
 
 is
 
-    ../../lib/utility/sources.cm
     ../../lib/rtt/name.cm
+    ../../lib/system/sources.cm
+    ../../lib/utility/sources.cm
     ../common/id-stamp.cm
 
     flat-grammar.cm
