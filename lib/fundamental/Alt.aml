@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -53,6 +53,8 @@ struct
       | mapFst f (SND x)	= SND x
     fun mapSnd f (FST x)	= FST x
       | mapSnd f (SND x)	= SND(f x)
+    fun mapBoth f (FST x)	= FST(f x)
+      | mapBoth f (SND x)	= SND(f x)
 
     fun equal (equalX,equalY) =
 	fn (FST x1, FST x2)	=> equalX(x1,x2)

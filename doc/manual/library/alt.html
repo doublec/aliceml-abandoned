@@ -53,6 +53,7 @@
 	val map :     ('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
 	val mapFst :  ('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
 	val mapSnd :  ('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+	val mapBoth : ('a -> 'b) -> ('a,'a) alt -> ('b,'b) alt
 
 	val equal :   ('a * 'a -> bool) * ('b * 'b -> bool) -> ('a,'b) alt * ('a,'b) alt -> bool
 	val collate : ('a * 'a -> order) * ('b * 'b -> order) -> ('a,'b) alt * ('a,'b) alt -> order
@@ -132,16 +133,18 @@
       <TT>map (<I>f</I>,<I>g</I>) <I>alt</I></TT> <BR>
       <TT>mapFst <I>f</I> <I>alt</I></TT> <BR>
       <TT>mapSnd <I>g</I> <I>alt</I></TT>
+      <TT>mapBoth <I>f</I> <I>alt</I></TT>
     </DT>
     <DD>
       <P>The function <TT>map</TT> produces an alternative by mapping the
       functions <TT><I>f</I></TT> or <TT><I>g</I></TT> on the constituent
       value of <TT><I>alt</I></TT>.
-      For the functions <TT>mapFst</TT> and <TT>mapSnd</TT> the following
-      equivalences hold:</P>
+      For the functions <TT>mapFst</TT>, <TT>mapSnd</TT> and <TT>mapBoth</TT>
+      the following equivalences hold:</P>
       <PRE>
-	mapFst f alt = map (f, id) alt
-	mapSnd g alt = map (id, g) alt</PRE>
+	mapFst f alt  = map (f, id) alt
+	mapSnd g alt  = map (id, g) alt
+	mapBoth f alt = map (f, f) alt</PRE>
       <P>where <TT>id</TT> is the identity function.</P>
     </DD>
 

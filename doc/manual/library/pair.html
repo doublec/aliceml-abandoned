@@ -44,6 +44,7 @@
 	val map :     ('a -> 'c) * ('b -> 'd) -> ('a,'b) pair -> ('c,'d) pair
 	val mapFst :  ('a -> 'c) -> ('a,'b) pair -> ('c,'b) pair
 	val mapSnd :  ('b -> 'c) -> ('a,'b) pair -> ('a,'c) pair
+	val mapSnd :  ('a -> 'b) -> ('a,'a) pair -> ('b,'b) pair
 
 	val equal :   ('a * 'a -> bool) * ('b * 'b -> bool) -> ('a,'b) pair * ('a,'b) pair -> bool
 	val collate : ('a * 'a -> order) * ('b * 'b -> order) -> ('a,'b) pair * ('a,'b) pair -> order
@@ -93,11 +94,12 @@
       <P>The function <TT>map</TT> produces a pair by mapping the functions
       <TT><I>f</I></TT> and <TT><I>g</I></TT> on both components of
       <TT><I>p</I></TT>.
-      For the functions <TT>mapFst</TT> and <TT>mapSnd</TT> the following
-      equivalences hold:</P>
+      For the functions <TT>mapFst</TT>, <TT>mapSnd</TT> and <TT>mapBoth</TT>
+      the following equivalences hold:</P>
       <PRE>
-	mapFst f p = map (f, id) p
-	mapSnd g p = map (id, g) p</PRE>
+	mapFst f p  = map (f, id) p
+	mapSnd g p  = map (id, g) p
+	mapBoth f p = map (f, f) p</PRE>
       <P>where <TT>id</TT> is the identity function.</P>
     </DD>
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,6 +38,7 @@ sig
     val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
     val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
     val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+    val mapBoth :	('a -> 'b) -> ('a,'a) alt -> ('b,'b) alt
 
     val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
 			    ('a,'b) alt * ('a,'b) alt -> bool

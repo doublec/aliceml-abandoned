@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -34,6 +34,7 @@ struct
     fun map (f,g) (x,y)	= (f x, g y)
     fun mapFst f  (x,y)	= (f x, y)
     fun mapSnd f  (x,y)	= (x, f y)
+    fun mapBoth f (x,y) = (f x, f y)
 
     fun equal (equalX,equalY) ((x1,y1), (x2,y2)) =
 	equalX(x1,x2) andalso equalY(y1,y2)
