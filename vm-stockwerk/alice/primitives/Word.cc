@@ -18,7 +18,7 @@
 #define DECLARE_WORD(w, x)			\
   DECLARE_INT(w, x);				\
   w &= static_cast<u_int>(-1) >> 1;
-#define RETURN_WORD(w) RETURN_INT(static_cast<s_int>(w + w) / 2)
+#define RETURN_WORD(w) RETURN_INT(static_cast<s_int>((w) + (w)) / 2)
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
