@@ -19,6 +19,9 @@
   <accept>sizeof#x#</accept>
   <accept>cast#x#</accept>
 
+  <accept>c_##</accept>
+  <accept>va_list</accept>
+
   <accept>GType</accept>
 
   <accept>gint</accept>
@@ -30,7 +33,6 @@
   <accept>gchar</accept>
   <accept>gpointer</accept>
 
-  <rename><from>_GdkColor#x#</from><to>GdkColor#x#</to></rename>
   <accept>Gdk##</accept>
   <accept>GDK##</accept>
   <accept>gdk_##</accept>
@@ -143,5 +145,214 @@
   <toword>STRING_TO_WORD</toword>
   <fromword>DECLARE_CSTRING</fromword>
 </type>
+
+<define_type>
+  <name>va_list</name>
+</define_type>
+
+<type>
+  <ctype>va_list</ctype>
+  <alicetype>'v</alicetype>
+  <toword>NOT_SUPPORTED</toword>
+  <fromword>DECLARE_VALIST</fromword>
+</type>
+
+<!-- Eigene Funktionen -->
+
+<fun>
+   <name>cast</name>
+   <type>'a -> 'b</type>
+   <export>INIT_STRUCTURE(record, "gtk", "cast", cast, 1);</export>
+   <body>
+       DEFINE1(cast) {
+         RETURN(x0);
+       } END
+   </body>
+</fun>
+
+<fun>
+   <name>pixbufNewFromXpmData</name>
+   <type>string array -> GdkPixbuf pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "pixbufNewFromXpmData", pixbufNewFromXpmData, 1);</export>
+   <body>
+       DEFINE1(pixbufNewFromXpmData) {
+         DECLARE_CARRAY(in0,x0,gchar*,DECLARE_CSTRING);
+	 GdkPixbuf* ret = gdk_pixbuf_new_from_xpm_data((const gchar**)(in0));
+	 RETURN(UNMANAGED_POINTER_TO_WORD(ret));
+       } END
+   </body>
+</fun>
+
+<fun>
+   <name>colorNew</name>
+   <type>int * int * int -> GdkColor pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "colorNew", colorNew, 3);</export>
+   <body>
+      DEFINE3(colorNew) {
+        DECLARE_INT(red,x0);
+	DECLARE_INT(green,x1);
+	DECLARE_INT(blue,x2);
+	GdkColor *col = new GdkColor;
+	col->red = (guint16)(red);
+	col->green = (guint16)(green);
+	col->blue = (guint16)(blue);
+	RETURN(UNMANAGED_POINTER_TO_WORD(col));
+      } END
+   </body>
+</fun>
+
+<fun>
+   <name>pointNew</name>
+   <type>int * int -> GdkPoint pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "pointNew", pointNew, 2);</export>
+   <body>
+     DEFINE2(pointNew) {
+       DECLARE_INT(x,x0);
+       DECLARE_INT(y,x1);
+       GdkPoint *p = new GdkPoint;
+       p->x = x;
+       p->y = y;
+       RETURN(OBJECT_TO_WORD(p,TYPE_OWN));
+     } END
+   </body>
+</fun>
+
+<fun>
+   <name>rectangleNew</name>
+   <type>int * int * int * int -> GdkRectangle pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "rectangleNew", rectangleNew, 4);</export>
+   <body>
+    DEFINE4(rectangleNew) {
+      DECLARE_INT(x,x0);
+      DECLARE_INT(y,x1);
+      DECLARE_INT(width,x2);
+      DECLARE_INT(height,x3);
+      GdkRectangle *rect = new GdkRectangle;
+      rect->x = x;
+      rect->y = y;
+      rect->width = width;
+      rect->height = height;
+      RETURN(UNMANAGED_POINTER_TO_WORD(rect));
+    } END
+   </body>
+</fun>
+
+<fun>
+   <name>pointsSetCoords</name>
+   <type>GnomeCanvasPoints pointer * int * int -> unit</type>
+   <export>INIT_STRUCTURE(record, "gtk", "pointsSetCoords", pointsSetCoords, 3);</export>
+   <body>
+    DEFINE3(pointsSetCoords) {
+      DECLARE_UNMANAGED_POINTER(points,x0);
+      DECLARE_INT(num,x1);
+      DECLARE_INT(value,x2);
+      ((GnomeCanvasPoints*)(points))->coords[num] = value;
+      RETURN_UNIT;
+    } END
+   </body>
+</fun>
+
+<fun>
+   <name>myItemNew</name>
+   <type>GnomeCanvasGroup pointer * int -> GnomeCanvasItem pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "myItemNew", myItemNew, 2);</export>
+   <body>
+    DEFINE2(myItemNew) {
+      DECLARE_UNMANAGED_POINTER(parent,x0);
+      DECLARE_INT(type,x1);
+      GnomeCanvasItem *ret = gnome_canvas_item_new(
+	           (GnomeCanvasGroup*)(parent), 
+		   (GtkType)(type), NULL);
+      RETURN(UNMANAGED_POINTER_TO_WORD(ret));
+    } END
+   </body>
+</fun>
+
+
+<fun>
+   <name>textIterNew</name>
+   <type>unit -> GtkTextIter pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "textIterNew", textIterNew, 0);</export>
+   <body>
+    DEFINE0(textIterNew) {
+      GtkTextIter *iter = new GtkTextIter;
+      RETURN(UNMANAGED_POINTER_TO_WORD(iter));
+    } END
+   </body>
+</fun>
+
+
+<fun>
+   <name>treeIterNew</name>
+   <type>unit -> GtkTreeIter pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "treeIterNew", treeIterNew, 0);</export>
+   <body>
+    DEFINE0(treeIterNew) {
+      GtkTreeIter *iter = new GtkTreeIter;
+      RETURN(UNMANAGED_POINTER_TO_WORD(iter));
+    } END
+   </body>
+</fun>
+
+<fun>
+   <name>treeStoreNew</name>
+   <type>unit -> GtkTreeStore pointer</type>
+   <export>INIT_STRUCTURE(record, "gtk", "treeStoreNew", treeStoreNew, 0);</export>
+   <body>
+    DEFINE0(treeStoreNew) {
+      GtkTreeStore *store = gtk_tree_store_new(1, G_TYPE_STRING);
+      RETURN(UNMANAGED_POINTER_TO_WORD(store));
+    } END
+   </body>
+</fun>
+
+<fun>
+   <name>treeModelGetStringAt</name>
+   <type>GtkTreeModel pointer * GtkTreePath pointer * int  -> string</type>
+   <export>INIT_STRUCTURE(record, "gtk", "treeModelGetStringAt", treeModelGetStringAt, 3);</export>
+   <body>
+    DEFINE3(treeModelGetStringAt) {
+      DECLARE_OBJECT(mod, x0);
+      DECLARE_OBJECT(path, x1);
+      DECLARE_INT(col, x2);
+      GtkTreeModel *model = (GtkTreeModel*)(mod);
+      gchar *result = "";
+      GValue *val;
+      GtkTreeIter *iter;
+      if (gtk_tree_model_get_iter(model, iter, (GtkTreePath*)(path))) {
+        gtk_tree_model_get_value(model, iter, col, val);
+        if (G_VALUE_TYPE(val) == G_TYPE_STRING)
+          result = g_value_dup_string(val);
+      }
+      RETURN(STRING_TO_WORD(result));
+    } END
+   </body>
+</fun>
+
+<fun>
+   <name>treeViewGetSelectedString</name>
+   <type>GtkTreeView pointer -> string</type>
+   <export>INIT_STRUCTURE(record, "gtk", "treeViewGetSelectedString", treeViewGetSelectedString, 1);</export>
+   <body>
+    DEFINE1(treeViewGetSelectedString) {
+     DECLARE_OBJECT(t, x0);
+     GtkTreeView *tree = (GtkTreeView*)(t);
+     GtkTreeIter iter;
+     GValue val;
+     memset(&val, 0, sizeof(GValue));
+     char *result = "";
+     if (tree && gtk_tree_selection_get_selected(gtk_tree_view_get_selection(tree),NULL, &iter)) {
+         gtk_tree_model_get_value(gtk_tree_view_get_model(tree), &iter, 0, &val);
+         if (G_VALUE_TYPE(&val) == G_TYPE_STRING)
+            result = g_value_dup_string(&val);
+         g_value_unset(&val);
+     }
+     RETURN(STRING_TO_WORD(result));
+   } END
+   </body>
+</fun>
+
+
+
 
 </xml>

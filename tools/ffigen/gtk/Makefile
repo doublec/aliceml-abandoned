@@ -1,7 +1,7 @@
 ###
 # Makefile for Sample-Binding
 
-BINDINGS = C gtk gdk
+BINDINGS = gtk
 
 ASIG_FILES =  $(BINDINGS:%=%.asig)
 SIG_FILES =  $(BINDINGS:%=%-sig.aml)
@@ -27,20 +27,25 @@ all: stc obj dll hello.stc scramble.stc
 ################### SOURCE CODE GENERATION #####################
 
 generate:
-	sml @SMLload=$(GENERATOR) --create_basic
+	sml @SMLload=$(GENERATOR) --create-types
+	sml @SMLload=$(GENERATOR) -c c-config.xml -h c.h  
 	sml @SMLload=$(GENERATOR) -c gtk-config.xml -h gtk.h -i glib.h -i GtkAuthoring.hh 
+
 
 ######################### COMPILE ##############################
 
-stc: types.stc $(BINDINGS:%=%-sig.stc) CORE-sig.stc Core.stc Gtk.stc
+stc: types.stc $(BINDINGS:%=%-sig.stc) c-sig.stc CORE-sig.stc Core.stc Gtk.stc
 obj: $(BINDINGS:%=%-binding.o)
-dll: $(BINDINGS:%=%.dll) NativeCore.dll
+dll: $(BINDINGS:%=%.dll) c.dll NativeCore.dll
 
 %.stc: %.aml
 	alicec $<
 
 %.o: %.cc
 	$(ALICETOOL) -v cc -c $< -o $@
+
+c.dll: c-binding.o c.o
+	$(ALICETOOL) -v ld -Wl,-S c-binding.o c.o -o $@ `pkg-config --libs $(CLIBS)`
 
 %.dll: %-binding.o 
 	$(ALICETOOL) -v ld -Wl,-S $< -o $@ `pkg-config --libs $(CLIBS)`

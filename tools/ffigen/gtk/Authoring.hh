@@ -284,6 +284,4 @@
 #define INIT_STRUCTURE_INT(r,entry,v) r->Init(entry,INT_TO_WORD(v))
 
 
-
-
 #endif
