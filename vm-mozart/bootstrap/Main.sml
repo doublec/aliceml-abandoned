@@ -13,12 +13,4 @@ fun elab x     = (ElaborationPhase.elab (Env.copy Env0.E0) o abstract) x
 val translate  = TranslationPhase.translate o abstract
 val imperatify = MatchCompilationPhase.translate o translate
 
-fun ozify outstream s =
-    let
-	val component = imperatify s
-    in
-	OzifyImperativeGrammar.outputComponent (outstream, component);
-	TextIO.output1 (outstream, #"\n")
-    end
-
-val ozifyFileToStdOut = processFile (ozify TextIO.stdOut)
+val imperatifyFile = processFile imperatify

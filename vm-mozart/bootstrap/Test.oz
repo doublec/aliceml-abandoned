@@ -1,9 +1,11 @@
 functor
 import
    Application(getCmdArgs exit)
-   System(printError)
+   System(printError show)
    Property(get)
-   Main(ozifyFileToStdOut) at 'Main.ozf'
+   Base('$Option') at 'Base.ozf'
+   BackendCommon('$ImperativeGrammar') at 'BackendCommon.ozf'
+   Main(imperatifyFile) at 'Main.ozf'
 prepare
    Spec = record('in'(single char: &i type: atom optional: false))
 define
@@ -19,6 +21,206 @@ define
       {Application.exit 2}
    end
 
-   {Main.ozifyFileToStdOut Args.'in' _}
+   NONE = Base.'$Option'.'NONE'
+   SOME = Base.'$Option'.'SOME'
+   WordLit = BackendCommon.'$ImperativeGrammar'.'WordLit'
+   IntLit = BackendCommon.'$ImperativeGrammar'.'IntLit'
+   CharLit = BackendCommon.'$ImperativeGrammar'.'CharLit'
+   StringLit = BackendCommon.'$ImperativeGrammar'.'StringLit'
+   RealLit = BackendCommon.'$ImperativeGrammar'.'RealLit'
+   ExId = BackendCommon.'$ImperativeGrammar'.'ExId'
+   InId = BackendCommon.'$ImperativeGrammar'.'InId'
+   Id = BackendCommon.'$ImperativeGrammar'.'Id'
+   LitTest = BackendCommon.'$ImperativeGrammar'.'LitTest'
+   ConTest = BackendCommon.'$ImperativeGrammar'.'ConTest'
+   RefTest = BackendCommon.'$ImperativeGrammar'.'RefTest'
+   TupTest = BackendCommon.'$ImperativeGrammar'.'TupTest'
+   RecTest = BackendCommon.'$ImperativeGrammar'.'RecTest'
+   LabTest = BackendCommon.'$ImperativeGrammar'.'LabTest'
+   VecTest = BackendCommon.'$ImperativeGrammar'.'VecTest'
+   PrintName = BackendCommon.'$ImperativeGrammar'.'PrintName'
+   AuxiliaryOf = BackendCommon.'$ImperativeGrammar'.'AuxiliaryOf'
+   OneArg = BackendCommon.'$ImperativeGrammar'.'OneArg'
+   TupArgs = BackendCommon.'$ImperativeGrammar'.'TupArgs'
+   RecArgs = BackendCommon.'$ImperativeGrammar'.'RecArgs'
+   ValDec = BackendCommon.'$ImperativeGrammar'.'ValDec'
+   RecDec = BackendCommon.'$ImperativeGrammar'.'RecDec'
+   EvalStm = BackendCommon.'$ImperativeGrammar'.'EvalStm'
+   RaiseStm = BackendCommon.'$ImperativeGrammar'.'RaiseStm'
+   HandleStm = BackendCommon.'$ImperativeGrammar'.'HandleStm'
+   EndHandleStm = BackendCommon.'$ImperativeGrammar'.'EndHandleStm'
+   TestStm = BackendCommon.'$ImperativeGrammar'.'TestStm'
+   SharedStm = BackendCommon.'$ImperativeGrammar'.'SharedStm'
+   ReturnStm = BackendCommon.'$ImperativeGrammar'.'ReturnStm'
+   IndirectStm = BackendCommon.'$ImperativeGrammar'.'IndirectStm'
+   ExportStm = BackendCommon.'$ImperativeGrammar'.'ExportStm'
+   LitExp = BackendCommon.'$ImperativeGrammar'.'LitExp'
+   PrimExp = BackendCommon.'$ImperativeGrammar'.'PrimExp'
+   NewExp = BackendCommon.'$ImperativeGrammar'.'NewExp'
+   VarExp = BackendCommon.'$ImperativeGrammar'.'VarExp'
+   ConExp = BackendCommon.'$ImperativeGrammar'.'ConExp'
+   RefExp = BackendCommon.'$ImperativeGrammar'.'RefExp'
+   TupExp = BackendCommon.'$ImperativeGrammar'.'TupExp'
+   RecExp = BackendCommon.'$ImperativeGrammar'.'RecExp'
+   SelExp = BackendCommon.'$ImperativeGrammar'.'SelExp'
+   VecExp = BackendCommon.'$ImperativeGrammar'.'VecExp'
+   FunExp = BackendCommon.'$ImperativeGrammar'.'FunExp'
+   AppExp = BackendCommon.'$ImperativeGrammar'.'AppExp'
+   SelAppExp = BackendCommon.'$ImperativeGrammar'.'SelAppExp'
+   ConAppExp = BackendCommon.'$ImperativeGrammar'.'ConAppExp'
+   RefAppExp = BackendCommon.'$ImperativeGrammar'.'RefAppExp'
+   PrimAppExp = BackendCommon.'$ImperativeGrammar'.'PrimAppExp'
+   AdjExp = BackendCommon.'$ImperativeGrammar'.'AdjExp'
+
+   fun {TrOption Opt Tr}
+      case Opt of !NONE then none
+      [] SOME(X) then SOME({Tr X})
+      end
+   end
+
+   fun {TrList Xs Tr}
+      case Xs of '::'(X#Xr) then {Tr X}|{TrList Xr Tr}
+      [] nil then nil
+      end
+   end
+
+   fun {TrAtom S}
+      {String.toAtom {ByteString.toString S}}
+   end
+
+   fun {TrCoord Coord}
+      Coord
+   end
+
+   fun {TrLit Lit}
+      case Lit of WordLit(W) then wordLit(W)
+      [] IntLit(I) then intLit(I)
+      [] CharLit(C) then charLit(C)
+      [] StringLit(S) then stringLit({ByteString.toString S})
+      [] RealLit(S) then realLit({String.toFloat {ByteString.toString S}})
+      end
+   end
+
+   fun {TrName Name}
+      case Name of ExId(S) then exId({TrAtom S})
+      [] !InId then inId
+      end
+   end
+
+   fun {TrId Id(Coord#Stamp#Name)}
+      id({TrCoord Coord} Stamp {TrName Name})
+   end
+
+   fun {TrLab S} S2 in
+      S2 = {ByteString.toString S}
+      if {String.isInt S2} then {String.toInt S2}
+      else {String.toAtom S2}
+      end
+   end
+
+   fun {TrTest Test}
+      case Test of LitTest(Lit) then litTest({TrLit Lit})
+      [] ConTest(Id#IdOpt) then conTest({TrId Id} {TrOption IdOpt TrId})
+      [] RefTest(Id) then refTest({TrId Id})
+      [] TupTest(Ids) then tupTest({TrList Ids TrId})
+      [] RecTest(LabIdList) then
+	 recTest({TrList LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+      [] LabTest(Lab#Id) then labTest({TrLab Lab} {TrId Id})
+      [] VecTest(Ids) then vecTest({TrList Ids TrId})
+      end
+   end
+
+   fun {TrFunFlag FunFlag}
+      case FunFlag of PrintName(String) then printName({TrAtom String})
+      [] AuxiliaryOf(Stamp) then auxiliaryOf(Stamp)
+      end
+   end
+
+   fun {TrArgs Args}
+      case Args of OneArg(Id) then oneArg({TrId Id})
+      [] TupArgs(Ids) then tupArgs({TrList Ids TrId})
+      [] RecArgs(LabIdList) then
+	 recArgs({TrList LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+      end
+   end
+
+   fun {TrInfo Coord#_}
+      {TrCoord Coord}
+   end
+
+   fun {TrStm Stm}
+      case Stm of ValDec(Info#Id#Exp#IsToplevel) then
+	 valDec({TrInfo Info} {TrId Id} {TrExp Exp} IsToplevel)
+      [] RecDec(Info#IdExpList#IsToplevel) then
+	 recDec({TrInfo Info}
+		{TrList IdExpList fun {$ Id#Exp} {TrId Id}#{TrExp Exp} end}
+		IsToplevel)
+      [] EvalStm(Info#Exp) then evalStm({TrInfo Info} {TrExp Exp})
+      [] RaiseStm(Info#Id) then raiseStm({TrInfo Info} {TrId Id})
+      [] HandleStm(Info#Body1#Id#Body2#Body3#Shared) then
+	 {Assign Shared true}
+	 handleStm({TrInfo Info} {TrBody Body1} {TrId Id}
+		   {TrBody Body2} {TrBody Body3} Shared)
+      [] EndHandleStm(Info#Shared) then endHandleStm({TrInfo Info} Shared)
+      [] TestStm(Info#Id#Test#Body1#Body2) then
+	 testStm({TrInfo Info} {TrId Id} {TrTest Test}
+		 {TrBody Body1} {TrBody Body2})
+      [] SharedStm(Info#Body#Shared) then
+	 if {IsInt {Access Shared}} then
+	    {Assign Shared shared({TrInfo Info} {TrBody Body} {Access Shared})}
+	 end
+	 {Access Shared}
+      [] ReturnStm(Info#Exp) then returnStm({TrInfo Info} {TrExp Exp})
+      [] IndirectStm(_#BodyOptRef) then
+	 case {Access BodyOptRef} of SOME(Body) then {TrBody Body} end
+      [] ExportStm(Info#Ids) then exportStm({TrInfo Info} {TrList Ids TrId})
+      end
+   end
+
+   fun {TrExp Exp}
+      case Exp of LitExp(Coord#Lit) then litExp({TrCoord Coord} {TrLit Lit})
+      [] PrimExp(Coord#String) then primExp({TrCoord Coord} {TrAtom String})
+      [] NewExp(Coord#HasArgs) then newExp({TrCoord Coord} HasArgs)
+      [] VarExp(Coord#Id) then varExp({TrCoord Coord} {TrId Id})
+      [] ConExp(Coord#Id#HasArgs) then
+	 conExp({TrCoord Coord} {TrId Id} HasArgs)
+      [] RefExp(Coord) then refExp({TrCoord Coord})
+      [] TupExp(Coord#Ids) then tupExp({TrCoord Coord} {TrList Ids TrId})
+      [] RecExp(Coord#LabIdList) then
+	 recExp({TrCoord Coord}
+		{TrList LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+      [] SelExp(Coord#Lab) then selExp({TrCoord Coord} {TrLab Lab})
+      [] VecExp(Coord#Ids) then vecExp({TrCoord Coord} {TrList Ids TrId})
+      [] FunExp(Coord#Stamp#Flags#ArgsBodyList) then
+	 funExp({TrCoord Coord} Stamp {TrList Flags TrFunFlag}
+		{TrList ArgsBodyList
+		 fun {$ Args#Body} {TrArgs Args}#{TrBody Body} end})
+      [] AppExp(Coord#Id#Args) then
+	 appExp({TrCoord Coord} {TrId Id} {TrArgs Args})
+      [] SelAppExp(Coord#Lab#Id) then
+	 selAppExp({TrCoord Coord} {TrLab Lab} {TrId Id})
+      [] ConAppExp(Coord#Id#Args) then
+	 conAppExp({TrCoord Coord} {TrId Id} {TrArgs Args})
+      [] RefAppExp(Coord#Args) then refAppExp({TrCoord Coord} {TrArgs Args})
+      [] PrimAppExp(Coord#String#Ids) then
+	 primAppExp({TrCoord Coord} {TrAtom String} {TrList Ids TrId})
+      [] AdjExp(Coord#Id1#Id2) then
+	 adjExp({TrCoord Coord} {TrId Id1} {TrId Id2})
+      end
+   end
+
+   fun {TrBody Stms}
+      {TrList Stms TrStm}
+   end
+
+   fun {TrComponent IdStringList#Ids#Body}
+      {TrList IdStringList fun {$ Id#String} {TrId Id}#{TrAtom String} end}#
+      {TrList Ids TrId}#{TrBody Body}
+   end
+
+   Component = {Main.imperatifyFile Args.'in'}
+
+   {System.show {TrComponent Component}}
+
    {Application.exit 0}
 end
