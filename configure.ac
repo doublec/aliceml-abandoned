@@ -70,7 +70,7 @@ AC_SEAM_CHECK_LDFLAG([-Wl,--export-dynamic])
 
 AC_CHECK_DECL(VirtualAlloc,
    [AC_DEFINE(HAVE_VIRTUALALLOC, 1)],
-   [AC_DEFINE(HAVE_VIRTUALALLOC, 0)]
+   [AC_DEFINE(HAVE_VIRTUALALLOC, 0)],
    [[#include <windows.h>]])
 
 # checks for system services
