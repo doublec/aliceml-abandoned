@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure UnsafeIODesc from "UnsafeIODesc"
+import structure IODesc       from "IODesc"
 import structure IO           from "IO"
 import structure TextPrimIO   from "TextPrimIO"
 import structure StreamIO     from "StreamIO"
@@ -31,117 +31,11 @@ structure TextIO :> TEXT_IO =
 			 structure Vector = CharVector)
 	open TextImperativeIO
 
-	fun mkReader iodesc =
-	    let
-		val cap = UnsafeIODesc.capabilities iodesc
-		val rcap = UnsafeIODesc.readerCapabilities iodesc
-	    in
-		TextPrimIO.RD
-		    {name = UnsafeIODesc.name iodesc,
-		     chunkSize = UnsafeIODesc.chunkSize iodesc,
-		     readVec =
-			 if #readVec rcap then
-			     SOME (fn n => UnsafeIODesc.readVec (iodesc, n))
-			 else NONE,
-		     readArr =
-			 if #readArr rcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.readArr
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     readVecNB =
-			 if #readVecNB rcap then
-			     SOME (fn n => UnsafeIODesc.readVecNB (iodesc, n))
-			 else NONE,
-		     readArrNB =
-			 if #readArrNB rcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.readArrNB
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     block =
-			 if #block cap then
-			     SOME (fn () => UnsafeIODesc.block iodesc)
-			 else NONE,
-		     canInput =
-			 if #canInput rcap then
-			     SOME (fn () => UnsafeIODesc.canInput iodesc)
-			 else NONE,
-		     avail = fn () => UnsafeIODesc.avail iodesc,
-		     getPos = NONE, (*--** *)
-		     setPos =
-			 if #setPos cap then
-			     SOME (fn pos => UnsafeIODesc.setPos (iodesc, pos))
-			 else NONE,
-		     endPos =
-			 if #endPos cap then
-			     SOME (fn () => UnsafeIODesc.endPos iodesc)
-			 else NONE,
-		     verifyPos =
-			 if #verifyPos cap then
-			     SOME (fn () => UnsafeIODesc.verifyPos iodesc)
-			 else NONE,
-		     close = fn () => UnsafeIODesc.close iodesc,
-		     ioDesc = SOME iodesc}
-	    end
-
-	fun mkWriter iodesc =
-	    let
-		val cap = UnsafeIODesc.capabilities iodesc
-		val wcap = UnsafeIODesc.writerCapabilities iodesc
-	    in
-		TextPrimIO.WR
-		    {name = UnsafeIODesc.name iodesc,
-		     chunkSize = UnsafeIODesc.chunkSize iodesc,
-		     writeVec =
-			 if #writeVec wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeVec
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     writeArr =
-			 if #writeArr wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeArr
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     writeVecNB =
-			 if #writeVecNB wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeVecNB
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     writeArrNB =
-			 if #writeArrNB wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeArrNB
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     block =
-			 if #block cap then
-			     SOME (fn () => UnsafeIODesc.block iodesc)
-			 else NONE,
-		     canOutput =
-			 if #canOutput wcap then
-			     SOME (fn () => UnsafeIODesc.canOutput iodesc)
-			 else NONE,
-		     getPos = NONE, (*--** *)
-		     setPos =
-			 if #setPos cap then
-			     SOME (fn pos => UnsafeIODesc.setPos (iodesc, pos))
-			 else NONE,
-		     endPos =
-			 if #endPos cap then
-			     SOME (fn () => UnsafeIODesc.endPos iodesc)
-			 else NONE,
-		     verifyPos =
-			 if #verifyPos cap then
-			     SOME (fn () => UnsafeIODesc.verifyPos iodesc)
-			 else NONE,
-		     close = fn () => UnsafeIODesc.close iodesc,
-		     ioDesc = SOME iodesc}
-	    end
-
 	fun openIn name =
 	    let
-		val iodesc = UnsafeIODesc.openIn name
+		val reader = TextPrimIO.RD (IODesc.openIn name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openIn", name}
-		val reader = mkReader iodesc
 		val v = CharVector.fromList nil
 	    in
 		TextImperativeIO.mkInstream
@@ -172,10 +66,9 @@ structure TextIO :> TEXT_IO =
 
 	fun openOut name =
 	    let
-		val iodesc = UnsafeIODesc.openOut name
+		val writer = TextPrimIO.WR (IODesc.openOut name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openOut", name}
-		val writer = mkWriter iodesc
 	    in
 		TextImperativeIO.mkOutstream
 		    (TextStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
@@ -183,10 +76,9 @@ structure TextIO :> TEXT_IO =
 
 	fun openAppend name =
 	    let
-		val iodesc = UnsafeIODesc.openAppend name
+		val writer = TextPrimIO.WR (IODesc.openAppend name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openAppend", name}
-		val writer = mkWriter iodesc
 	    in
 		TextImperativeIO.mkOutstream
 		    (TextStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
@@ -195,29 +87,19 @@ structure TextIO :> TEXT_IO =
 	fun outputSubstr (f, s) = output (f, Substring.string s)
 
 	val stdIn =
-	    let
-		val reader = mkReader (UnsafeIODesc.stdIn)
-		val v = CharVector.fromList nil
-	    in
-		TextImperativeIO.mkInstream
-		    (TextStreamIO.mkInstream (reader, v))
-	    end
+	    TextImperativeIO.mkInstream
+		(TextStreamIO.mkInstream (TextPrimIO.RD IODesc.stdIn,
+					  CharVector.fromList nil))
 
 	val stdOut =
-	    let
-		val writer = mkWriter (UnsafeIODesc.stdOut)
-	    in
-		TextImperativeIO.mkOutstream
-		    (TextStreamIO.mkOutstream (writer, IO.LINE_BUF))
-	    end
+	    TextImperativeIO.mkOutstream
+		(TextStreamIO.mkOutstream (TextPrimIO.WR IODesc.stdOut,
+					   IO.LINE_BUF))
 
 	val stdErr =
-	    let
-		val writer = mkWriter (UnsafeIODesc.stdErr)
-	    in
-		TextImperativeIO.mkOutstream
-		    (TextStreamIO.mkOutstream (writer, IO.NO_BUF))
-	    end
+	    TextImperativeIO.mkOutstream
+		(TextStreamIO.mkOutstream (TextPrimIO.WR IODesc.stdErr,
+					   IO.NO_BUF))
 
 	fun print s = (output (stdOut, s); flushOut stdOut)
 

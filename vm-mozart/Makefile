@@ -130,12 +130,12 @@ MLYACC = ml-yacc
 VMSOURCES = VMMain.oz
 
 LIBSYSTEMNATIVES0 = \
-	Config OS Unix CommandLine Component Debug Socket Rand Reflect
+	Config IODesc OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES = \
 	$(LIBSYSTEMNATIVES0:%=lib/system/Unsafe%.ozf) \
-	lib/system/UnsafeValue.ozf lib/system/UnsafeIODesc.ozf \
+	lib/system/UnsafeValue.ozf \
 	$(LIBUTILITYNATIVES0:%=lib/utility/Unsafe%.ozf)
 
 LIBFUNDAMENTALSOURCES0 = \
@@ -160,14 +160,13 @@ LIBFUNDAMENTALSOURCES0 = \
 	Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
-	UnsafeIODesc.asig \
 	CONFIG-sig.aml IO-sig.aml IO.aml PRIM_IO-sig.aml PrimIO.aml \
 	BinPrimIO.aml TextPrimIO.aml STREAM_IO-sig.aml StreamIO.aml \
 	IMPERATIVE_IO-sig.aml ImperativeIO.aml BIN_IO-sig.aml BinIO.aml \
-	TEXT_IO-sig.aml TextIO.aml OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml \
-	OS_IO-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
-	COMPONENT-sig.aml DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml \
-	REFLECT-sig.aml \
+	TEXT_IO-sig.aml TextIO.aml IO_DESC-sig.aml OS_FILE_SYS-sig.aml \
+	OS_PROCESS-sig.aml OS_IO-sig.aml OS-sig.aml UNIX-sig.aml \
+	COMMAND_LINE-sig.aml COMPONENT-sig.aml DEBUG-sig.aml \
+	SOCKET-sig.aml RAND-sig.aml REFLECT-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
 	PICKLE-sig.aml Pickle.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \
