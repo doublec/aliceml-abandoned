@@ -17,3 +17,11 @@
 #include "java/NativeMethodTable.hh"
 
 word NativeMethodTable::wTable;
+
+void NativeMethodTable::Register(JavaString *className, JavaString *name,
+				 JavaString *descriptor, Closure *closure) {
+  HashTable *table = HashTable::FromWordDirect(wTable);
+  word key = MakeKey(className, name, descriptor);
+  Assert(!table->IsMember(key));
+  table->InsertItem(key, closure->ToWord());
+}

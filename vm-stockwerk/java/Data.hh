@@ -378,6 +378,16 @@ public:
 		otherLength * sizeof(u_wchar));
     return resultString;
   }
+  JavaString *Concat(const char *s) {
+    u_int length = GetLength();
+    u_int otherLength = std::strlen(s);
+    JavaString *resultString = JavaString::New(length + otherLength);
+    u_wchar *p = resultString->GetBase();
+    std::memcpy(p, GetBase(), length * sizeof(u_wchar));
+    p += length;
+    for (u_int i = 0; i < otherLength; i++) p[i] = static_cast<u_char>(s[i]);
+    return resultString;
+  }
   JavaString *Intern() {
     return this; //--**
   }

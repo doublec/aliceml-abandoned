@@ -27,6 +27,11 @@ private:
   static const u_int initialSize = 19;
   static word wTable;
 
+  static word MakeKey(JavaString *className, JavaString *name,
+		      JavaString *descriptor) {
+    return className->Concat("#")->Concat(name)->Concat(descriptor)->ToWord();
+  }
+
   void java_lang_Object();
 public:
   static void Init() {
@@ -37,10 +42,12 @@ public:
   static Closure *Lookup(JavaString *className, JavaString *name,
 			 JavaString *descriptor) {
     HashTable *table = HashTable::FromWordDirect(wTable);
-    word key = className->Concat(name)->Concat(descriptor)->ToWord();
+    word key = MakeKey(className, name, descriptor);
     if (!table->IsMember(key)) return INVALID_POINTER;
     return Closure::FromWordDirect(table->GetItem(key));
   }
+  static void Register(JavaString *className, JavaString *name,
+		       JavaString *descriptor, Closure *closure);
 };
 
 #endif
