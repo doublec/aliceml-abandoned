@@ -23,6 +23,7 @@
 #include "emulator/TaskStack.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/Closure.hh"
+#include "emulator/Transform.hh"
 #include "emulator/ConcreteCode.hh"
 #include "emulator/Tuple.hh"
 #include "emulator/Transients.hh"
@@ -366,8 +367,10 @@ word ApplyTransform(Chunk *f, word x) {
   } else if ((len == sizeof("Alice.function") - 1) &&
 	     !strncmp(fs, "Alice.function", len)) {
     ConcreteCode *concreteCode =
-      ConcreteCode::New(AbstractCodeInterpreter::self, 1);
+      ConcreteCode::New(AbstractCodeInterpreter::self, 2);
+    Transform *transform = Transform::New(f, x); // to be done: share f
     concreteCode->Init(0, x);
+    concreteCode->Init(1, transform->ToWord());
     return concreteCode->ToWord();
   }
   Assert(0);
