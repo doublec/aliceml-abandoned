@@ -15,6 +15,7 @@
 //#include <cmath> // does not work under Cygwin: linking fails for isnan, isinf!
 #include <math.h>
 #include <cstdio>
+#include <cctype>
 #include "alice/Authoring.hh"
 
 //using namespace std;
@@ -169,6 +170,12 @@ DEFINE1(Real_toString) {
       break;
     case '.':
       hasDecimalPoint = true;
+      break;
+    case 'A': // INF and NAN must be lower-case
+    case 'F':
+    case 'I':
+    case 'N':
+      buf[i - 1] = std::tolower(buf[i - 1]);
     }
   if (!hasDecimalPoint &&
       !/*std::*/isnan(value) &&
