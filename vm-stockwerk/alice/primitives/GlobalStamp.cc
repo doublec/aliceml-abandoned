@@ -128,8 +128,8 @@ DEFINE1(GlobalStamp_toString) {
 
 void PrimitiveTable::RegisterGlobalStamp() {
   Register("GlobalStamp.compare", GlobalStamp_compare, 2);
-  Register("GlobalStamp.fromString", GlobalStamp_fromString, -1);
-  Register("GlobalStamp.hash", GlobalStamp_hash, -1);
+  Register("GlobalStamp.fromString", GlobalStamp_fromString, 1);
+  Register("GlobalStamp.hash", GlobalStamp_hash, 1);
   Register("GlobalStamp.new", GlobalStamp_new, 0);
-  Register("GlobalStamp.toString", GlobalStamp_toString, -1);
+  Register("GlobalStamp.toString", GlobalStamp_toString, 1);
 }

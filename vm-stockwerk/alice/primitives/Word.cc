@@ -131,11 +131,11 @@ void PrimitiveTable::RegisterWord() {
   Register("Word.fromWord'", Word_fromWordQuote, 2);
   Register("Word.fromWordX'", Word_fromWordXQuote, 2);
   Register("Word.mod", Word_mod, 2);
-  Register("Word.notb", Word_notb, -1);
+  Register("Word.notb", Word_notb, 1);
   Register("Word.orb", Word_orb, 2);
-  Register("Word.toInt", Word_toInt, -1);
-  Register("Word.toIntX", Word_toIntX, -1);
-  Register("Word.toString", Word_toString, -1);
+  Register("Word.toInt", Word_toInt, 1);
+  Register("Word.toIntX", Word_toIntX, 1);
+  Register("Word.toString", Word_toString, 1);
   Register("Word.wordSize", Store::IntToWord(31));
   Register("Word.xorb", Word_xorb, 2);
 }

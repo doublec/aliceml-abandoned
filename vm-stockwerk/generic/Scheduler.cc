@@ -71,6 +71,7 @@ void Scheduler::Run() {
       preempt = false;
       Interpreter *interpreter = taskStack->GetInterpreter();
       //      fprintf(stderr, "Executing frame %s\n", interpreter->Identify());
+      Assert(currentThread->GetArgs() != (word) 0);
       Interpreter::Result result =
 	interpreter->Run(currentThread->GetArgs(), taskStack);
     interpretResult:
@@ -134,13 +135,12 @@ void Scheduler::Run() {
 	break;
       }
     }
-    if (Store::NeedGC()) {
-      //--** add threads waiting for I/O as well as properties
-      threadQueue->PurgeAll();
-      root = threadQueue->ToWord();
-      RootSet::DoGarbageCollection();
-      threadQueue = ThreadQueue::FromWordDirect(root);
-    }
+//      if (Store::NeedGC()) {
+//        //--** add threads waiting for I/O as well as properties
+//        root = threadQueue->ToWord();
+//        RootSet::DoGarbageCollection();
+//        threadQueue = ThreadQueue::FromWordDirect(root);
+//      }
   }
   //--* select(...)
 }

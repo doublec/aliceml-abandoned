@@ -61,8 +61,8 @@ DEFINE3(Array_update) {
 
 void PrimitiveTable::RegisterArray() {
   Register("Array.array", Array_array, 2);
-  Register("Array.fromList", Array_fromList, -1);
-  Register("Array.length", Array_length, -1);
+  Register("Array.fromList", Array_fromList, 1);
+  Register("Array.length", Array_length, 1);
   Register("Array.maxLen", Store::IntToWord(Array::maxLen));
   Register("Array.sub", Array_sub, 2);
   Register("Array.update", Array_update, 3);

@@ -25,8 +25,10 @@ word Interpreter::Construct(word args) {
   Block *p = Store::WordToBlock(args);
   switch (p->GetLabel()) {
   case EMPTYARG_LABEL:
+    Assert(p->GetArg(0) != (word) 0);
     return p->GetArg(0);
   case ONEARG_LABEL:
+    Assert(p->GetArg(0) != (word) 0);
     return p->GetArg(0);
   case TUPARGS_LABEL:
     {

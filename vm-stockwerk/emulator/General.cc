@@ -29,5 +29,5 @@ void PrimitiveTable::RegisterGeneral() {
   RegisterUniqueConstructor("General.Size");
   RegisterUniqueConstructor("General.Span");
   RegisterUniqueConstructor("General.Subscript");
-  Register("General.exnName", General_exnName, -1);
+  Register("General.exnName", General_exnName, 1);
 }

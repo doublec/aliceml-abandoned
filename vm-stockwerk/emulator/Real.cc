@@ -121,7 +121,7 @@ DEFINE1(Real_toString) {
 REAL_TO_INT(Real_trunc, Trunc)
 
 void PrimitiveTable::RegisterReal() {
-  Register("Real.~", Real_opnegate, -1);
+  Register("Real.~", Real_opnegate, 1);
   Register("Real.+", Real_opadd, 2);
   Register("Real.-", Real_opsub, 2);
   Register("Real.*", Real_opmul, 2);
@@ -130,17 +130,17 @@ void PrimitiveTable::RegisterReal() {
   Register("Real.>", Real_opgreater, 2);
   Register("Real.<=", Real_oplessEq, 2);
   Register("Real.>=", Real_opgreaterEq, 2);
-  Register("Real.ceil", Real_ceil, -1);
+  Register("Real.ceil", Real_ceil, 1);
   Register("Real.compare", Real_compare, 2);
-  Register("Real.floor", Real_floor, -1);
-  Register("Real.fromInt", Real_fromInt, -1);
+  Register("Real.floor", Real_floor, 1);
+  Register("Real.fromInt", Real_fromInt, 1);
   Register("Real.precision", Store::IntToWord(52));
-  Register("Real.realCeil", Real_realCeil, -1);
-  Register("Real.realFloor", Real_realFloor, -1);
-  Register("Real.realRound", Real_realRound, -1);
-  Register("Real.realTrunc", Real_realTrunc, -1);
+  Register("Real.realCeil", Real_realCeil, 1);
+  Register("Real.realFloor", Real_realFloor, 1);
+  Register("Real.realRound", Real_realRound, 1);
+  Register("Real.realTrunc", Real_realTrunc, 1);
   Register("Real.rem", Real_rem, 2);
-  Register("Real.round", Real_round, -1);
-  Register("Real.toString", Real_toString, -1);
-  Register("Real.trunc", Real_trunc, -1);
+  Register("Real.round", Real_round, 1);
+  Register("Real.toString", Real_toString, 1);
+  Register("Real.trunc", Real_trunc, 1);
 }

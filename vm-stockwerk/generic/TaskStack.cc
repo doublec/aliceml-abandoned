@@ -24,6 +24,88 @@
 #include "emulator/Scheduler.hh"
 #include "emulator/ConcreteCode.hh"
 
+typedef union {
+  Transient *pt;
+  Chunk *pc;
+  Block *pb;
+  int pi;
+} word_data;
+
+static const char *TransLabel(BlockLabel l) {
+  switch (l) {
+  case HOLE_LABEL:
+    return "HOLE";
+  case FUTURE_LABEL:
+    return "FUTURE";
+  case REF_LABEL:
+    return "REF";
+  case CANCELLED_LABEL:
+    return "CANCELLED";
+  case BYNEED_LABEL:
+    return "BYNEED";
+  case HASHTABLE_LABEL:
+    return "HASHTABBLE";
+  case QUEUE_LABEL:
+    return "QUEUE";
+  case STACK_LABEL:
+    return "STACK";
+  case THREAD_LABEL:
+    return "THREAD";
+  case TUPLE_LABEL:
+    return "TUPLE";
+  case EMPTYARG_LABEL:
+    return "EMPTYARG";
+  case ONEARG_LABEL:
+    return "ONEARG_LABEL";
+  case TUPARGS_LABEL:
+    return "TUPARGS_LABEL";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+static void Print(Chunk *c) {
+  fprintf(stderr, "'%.*s'\n", (int) c->GetSize(), c->GetBase());
+}
+
+static void PerformDump(word x, u_int index, u_int level) {
+  word_data w;
+  if ((w.pt = Store::WordToTransient(x)) != INVALID_POINTER) {
+    fprintf(stderr, "%*c(%d):TRANSIENT(%s)\n", level, ' ',
+	    index, TransLabel(w.pb->GetLabel()));
+    level += 2;
+    PerformDump(w.pb->GetArg(0), 0, level);
+    level -= 2;
+    fprintf(stderr, "%*cENDTRANSIENT\n", level , ' ');
+  }
+  else if ((w.pc = Store::WordToChunk(x)) != INVALID_POINTER) {
+    fprintf(stderr, "%*c(%d):CHUNK(%d)=", level, ' ',
+	    index, w.pc->GetSize());
+    Print(w.pc);
+  }
+  else if ((w.pb = Store::WordToBlock(x)) != INVALID_POINTER) {
+    u_int size = w.pb->GetSize();
+    fprintf(stderr, "%*c(%d):BLOCK(%s=%d, %d)\n", level, ' ',
+	    index, TransLabel(w.pb->GetLabel()),
+	    w.pb->GetLabel(), size);
+    level += 2;
+    for (u_int i = 0; i < size; i++) {
+      PerformDump(w.pb->GetArg(i), i, level);
+    }
+    level -= 2;
+    fprintf(stderr, "%*cENDBLOCK\n", level , ' ');
+  }
+  // Assume Int
+  else {
+    w.pi = Store::WordToInt(x);
+    fprintf(stderr, "%*c(%d):INT=%d\n", level, ' ', index, w.pi);
+  }
+}
+
+void TaskStack::Dump(word x) {
+  PerformDump(x, 0, 0);
+}
+
 // Empty Interpreter
 class EmptyTaskInterpreter : public Interpreter {
 public:
@@ -37,9 +119,10 @@ public:
   virtual const char *ToString(word, TaskStack *);
 };
 
-Interpreter::Result EmptyTaskInterpreter::Handle(word, word, TaskStack *) {
+Interpreter::Result EmptyTaskInterpreter::Handle(word exn, word, TaskStack *) {
   //--** output information about the unhandled exception
-  fprintf(stderr, "uncaught exception\n");
+  fprintf(stderr, "uncaught exception:\n");
+  TaskStack::Dump(exn);
   return Interpreter::TERMINATE;
 }
 

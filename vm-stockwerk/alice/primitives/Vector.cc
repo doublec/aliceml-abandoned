@@ -102,8 +102,7 @@ VectorTabulateInterpreter::Run(word args, TaskStack *taskStack) {
       VectorTabulateFrame::New(this, vector, fun, (i + 1), n);
     taskStack->PushFrame(newFrame->ToWord());
     Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(i));
-    taskStack->PushCall(fun);
-    return Interpreter::CONTINUE;
+    return taskStack->PushCall(fun);
   }
 }
 
@@ -155,15 +154,15 @@ DEFINE2(Vector_tabulate) {
     word cl = closure->ToWord();
     Vector *vector = Vector::New(length);
     VectorTabulateInterpreter::PushFrame(taskStack, vector, cl, 1, length);
-    taskStack->PushCall(cl);
-    RETURN_INT(0);
+    Scheduler::currentArgs = Store::IntToWord(0);
+    return taskStack->PushCall(cl);
   }
 } END
 
 void PrimitiveTable::RegisterVector() {
-  Register("Vector.fromList", Vector_fromList, -1);
+  Register("Vector.fromList", Vector_fromList, 1);
   Register("Vector.maxLen", Store::IntToWord(Vector::maxLen));
-  Register("Vector.length", Vector_length, -1);
+  Register("Vector.length", Vector_length, 1);
   Register("Vector.sub", Vector_sub, 2);
   Register("Vector.tabulate", Vector_tabulate, 2);
 }

@@ -54,10 +54,10 @@ DEFINE1(Future_isFuture) {
 
 void PrimitiveTable::RegisterFuture() {
   RegisterUniqueConstructor("Future.Future");
-  Register("Future.alarm'", Future_alarmQuote, -1);
-  Register("Future.await", ::Future_await, -1);
-  Register("Future.byneed", Future_byneed, -1);
-  Register("Future.concur", Future_concur, -1);
-  Register("Future.isFailed", Future_isFailed, -1);
-  Register("Future.isFuture", Future_isFuture, -1);
+  Register("Future.alarm'", Future_alarmQuote, 1);
+  Register("Future.await", ::Future_await, 1);
+  Register("Future.byneed", Future_byneed, 1);
+  Register("Future.concur", Future_concur, 1);
+  Register("Future.isFailed", Future_isFailed, 1);
+  Register("Future.isFuture", Future_isFuture, 1);
 }

@@ -63,8 +63,8 @@ void PrimitiveTable::RegisterHole() {
   RegisterUniqueConstructor("Hole.Hole");
   Register("Hole.fail", Hole_fail, 2);
   Register("Hole.fill", Hole_fill, 2);
-  Register("Hole.future", Hole_future, -1);
+  Register("Hole.future", Hole_future, 1);
   Register("Hole.hole", Hole_hole, 0);
-  Register("Hole.isFailed", Hole_isFailed, -1);
-  Register("Hole.isHole", Hole_isHole, -1);
+  Register("Hole.isFailed", Hole_isFailed, 1);
+  Register("Hole.isHole", Hole_isHole, 1);
 }

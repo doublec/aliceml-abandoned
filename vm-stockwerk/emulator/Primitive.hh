@@ -24,7 +24,7 @@
 class Primitive {
 public:
   // Primitive C Type
-  typedef Interpreter::Result (*function)(Block *, TaskStack *);
+  typedef Interpreter::Result (*function)(word, TaskStack *);
   // Primitive Function
   static word MakeFunction(function value, u_int arity);
 };

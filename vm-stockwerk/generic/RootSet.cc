@@ -20,8 +20,8 @@
 class Element: private Block {
 private:
   static const u_int POINTER_POS = 0;
-  static const u_int VALUE_POS = 1;
-  static const u_int SIZE = 2;
+  static const u_int VALUE_POS   = 1;
+  static const u_int SIZE        = 2;
 public:
   using Block::ToWord;
 
@@ -41,7 +41,7 @@ public:
       (Store::DirectWordToUnmanagedPointer(GetArg(POINTER_POS)));
   }
   void PreGC() {
-    InitArg(VALUE_POS, *GetPointer());
+    ReplaceArg(VALUE_POS, *GetPointer());
   }
   void PostGC() {
     *GetPointer() = GetArg(VALUE_POS);
@@ -66,13 +66,14 @@ public:
     Enqueue(Element::New(&root)->ToWord());
   }
   void Remove(word &root) {
-    for (u_int i = GetNumberOfElements(); i--; ) {
-      Element *element = Element::FromWordDirect(GetNthElement(i));
-      if (element->GetPointer() == &root) {
-	Queue::Remove(element->ToWord());
-	break;
-      }
-    }
+//      for (u_int i = GetNumberOfElements(); i--; ) {
+//        Element *element = Element::FromWordDirect(GetNthElement(i));
+//        if (element->GetPointer() == &root) {
+//  	Queue::Remove(element->ToWord());
+//  	break;
+//        }
+//      }
+    // to be done
   }
   void PreGC() {
     for (u_int i = GetNumberOfElements(); i--; )

@@ -119,5 +119,5 @@ LazySelectionClosure *LazySelectionClosure::New(word tuple, int index) {
   Closure *closure = Closure::New(concreteCode->ToWord(), 2);
   closure->Init(0, tuple);
   closure->Init(1, Store::IntToWord(index));
-  return (LazySelectionClosure *) concreteCode;
+  return (LazySelectionClosure *) closure;
 }

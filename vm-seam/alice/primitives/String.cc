@@ -136,11 +136,11 @@ void PrimitiveTable::RegisterString() {
   Register("String.<=", String_oplessEq, 2);
   Register("String.>=", String_opgreaterEq, 2);
   Register("String.compare", String_compare, 2);
-  Register("String.explode", String_explode, -1);
-  Register("String.implode", String_implode, -1);
+  Register("String.explode", String_explode, 1);
+  Register("String.implode", String_implode, 1);
   Register("String.maxSize", Store::IntToWord(String::maxSize));
-  Register("String.size", String_size, -1);
-  Register("String.sub", String_sub, -1);
+  Register("String.size", String_size, 1);
+  Register("String.sub", String_sub, 1);
   Register("String.substring", String_substring, 3);
-  Register("String.str", String_str, -1);
+  Register("String.str", String_str, 1);
 }

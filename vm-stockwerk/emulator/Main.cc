@@ -75,15 +75,21 @@ int main(int argc, char *argv[]) {
     // to be done: Argument transfer to app
     Chunk *rootUrl  = NewChunk(argv[1]); BootLinker::Print(rootUrl);
     Chunk *bootUrl  = NewChunk("lib/system/Boot"); BootLinker::Print(bootUrl);
-    word module     = BootLinker::Link(bootUrl);
+    word urlWord    = rootUrl->ToWord();
+    RootSet::Add(urlWord);
+    word module = BootLinker::Link(bootUrl); // might yield GC
+    RootSet::Remove(urlWord);
     exit(0);
-    Tuple *tuple    = Tuple::FromWord(module);
-    tuple->AssertWidth(1);
-    Scheduler::NewThread(tuple->Sel(0), // Module Closure
-			 Interpreter::OneArg(rootUrl->ToWord()),
-			 TaskStack::New());
-    // Restart Scheduler to execute module
-    Scheduler::Run();
-    exit(0);
+    if (module != Store::IntToWord(0)) {
+      Tuple *tuple    = Tuple::FromWord(module);
+      tuple->AssertWidth(1);
+      Scheduler::NewThread(tuple->Sel(0), // Module Closure
+			   Interpreter::OneArg(urlWord),
+			   TaskStack::New());
+      // Restart Scheduler to execute module
+      Scheduler::Run();
+      exit(0);
+    }
+    exit(1);
   }
 }

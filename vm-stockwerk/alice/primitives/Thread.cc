@@ -71,10 +71,10 @@ void PrimitiveTable::RegisterThread() {
   RegisterUniqueConstructor("Thread.Terminate");
   RegisterUniqueConstructor("Thread.Terminated");
   Register("Thread.current", Thread_current, 0);
-  Register("Thread.isSuspended", Thread_isSuspended, -1);
+  Register("Thread.isSuspended", Thread_isSuspended, 1);
   Register("Thread.raiseIn", Thread_raiseIn, 2);
-  Register("Thread.resume", Thread_resume, -1);
-  Register("Thread.state", Thread_state, -1);
-  Register("Thread.suspend", Thread_suspend, -1);
+  Register("Thread.resume", Thread_resume, 1);
+  Register("Thread.state", Thread_state, 1);
+  Register("Thread.suspend", Thread_suspend, 1);
   Register("Thread.yield", Thread_yield, 0);
 }

@@ -59,24 +59,39 @@ public:
   }
 };
 
+static u_int ParentDir(char *s, u_int offset) {
+  while (offset && (s[--offset] != '/'));
+  return offset;
+}
+
 // Internal Resolve
 static Chunk *ResolveUrl(Chunk *base, Chunk *rel) {
+  u_int bSize  = base->GetSize();
   u_int rSize  = rel->GetSize();
-  char *bptr   = base->GetBase();
-  char *bmax   = strrchr(bptr, '/');
-  if (bmax == NULL) {
+  u_int offset = bSize;
+  char *bPtr   = base->GetBase();
+  char *rPtr   = rel->GetBase();
+  while (true) {
+    offset = ParentDir(bPtr, offset);
+    if ((rSize < 3) || memcmp(rPtr, "../", 3)) {
+      break;
+    }
+    else {
+      rPtr += 3;
+      rSize -= 3;
+    }
+  }
+  if (offset == 0) {
     Chunk *path = Store::AllocChunk(rSize);
-    char *pptr  = path->GetBase();
-    memcpy(pptr, rel->GetBase(), rSize);
+    memcpy(path->GetBase(), rPtr, rSize);
     return path;
   }
   else {
-    u_int n     = (bmax - bptr);
-    Chunk *path = Store::AllocChunk(n + 1 + rSize);
-    char *pptr  = path->GetBase();
-    memcpy(pptr, bptr, n);
-    pptr[n] = '/';
-    memcpy(pptr + n + 1, rel->GetBase(), rSize);
+    Chunk *path = Store::AllocChunk(offset + 1 + rSize);
+    char *pPtr  = path->GetBase();
+    memcpy(pPtr, bPtr, offset);
+    pPtr[offset] = '/';
+    memcpy(pPtr + offset + 1, rPtr, rSize);
     return path;
   }
 }
@@ -312,8 +327,8 @@ Interpreter::Result ApplyInterpreter::Run(word args, TaskStack *taskStack) {
 			    GetItem(key2->ToWord()));
     modules->Init(i, entry->GetModule());
   }
-  //--** taskStack->PushCall(bodyclosure);
-  CONTINUE(Interpreter::OneArg(modules->ToWord()));
+  Scheduler::currentArgs = Interpreter::OneArg(modules->ToWord());
+  return taskStack->PushCall(bodyclosure);
 }
 
 const char *ApplyInterpreter::Identify() {
@@ -466,7 +481,6 @@ void BootLinker::Init(char *home, prim_table *builtins) {
   LoadInterpreter::Init();
   // Import builtin native Modules
   while (builtins->name != NULL) {
-    fprintf(stderr, "BootLinker::Init: found builtins\n");
     GetModuleTable()->
       InsertItem(String::New(builtins->name)->ToWord(), builtins->module);
     builtins++;
@@ -502,7 +516,16 @@ word BootLinker::Link(Chunk *url) {
   TaskStack *taskStack = TaskStack::New();
   LoadInterpreter::PushFrame(taskStack, url);
   Scheduler::NewThread(Store::IntToWord(0), Interpreter::EmptyArg(), taskStack);
+  word urlWord = url->ToWord();
+  RootSet::Add(urlWord);
   Scheduler::Run();
-  word entry = GetModuleTable()->GetItem(url->ToWord());
-  return ModuleEntry::FromWord(entry)->GetModule();
+  RootSet::Remove(urlWord);
+  HashTable *table = GetModuleTable();
+  if (table->IsMember(urlWord)) {
+    word entry = GetModuleTable()->GetItem(urlWord);
+    return ModuleEntry::FromWord(entry)->GetModule();
+  }
+  else {
+    return Store::IntToWord(0);
+  }
 }

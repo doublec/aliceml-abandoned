@@ -123,7 +123,7 @@ DEFINE1(Int_toString) {
 } END
 
 void PrimitiveTable::RegisterInt() {
-  Register("Int.~", Int_opnegate, -1);
+  Register("Int.~", Int_opnegate, 1);
   Register("Int.+", Int_opadd, 2);
   Register("Int.-", Int_opsub, 2);
   Register("Int.*", Int_opmul, 2);
@@ -131,7 +131,7 @@ void PrimitiveTable::RegisterInt() {
   Register("Int.>", Int_opgreater, 2);
   Register("Int.<=", Int_oplessEq, 2);
   Register("Int.>=", Int_opgreaterEq, 2);
-  Register("Int.abs", Int_abs, -1);
+  Register("Int.abs", Int_abs, 1);
   Register("Int.compare", Int_compare, 2);
   Register("Int.div", Int_div, 2);
   Register("Int.maxInt", Store::IntToWord(0x3FFFFFFF));
@@ -140,5 +140,5 @@ void PrimitiveTable::RegisterInt() {
   Register("Int.precision", Store::IntToWord(31));
   Register("Int.quot", Int_quot, 2);
   Register("Int.rem", Int_rem, 2);
-  Register("Int.toString", Int_toString, -1);
+  Register("Int.toString", Int_toString, 1);
 }
