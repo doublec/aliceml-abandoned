@@ -11,9 +11,10 @@
  *)
 
 (*
- * pickle    ::= int | chunk | block | tuple | closure | transform
+ * pickle    ::= int | chunk | unique | block | tuple | closure | transform
  * int       ::= POSINT <uint> | NEGINT <uint>
  * chunk     ::= CHUNK size <byte>*size
+ * unique    ::= UNIQUE (chunk|reference)
  * size      ::= <uint>
  * block     ::= BLOCK label size field*size
  * tuple     ::= TUPLE size field*size
@@ -36,11 +37,13 @@ signature PRIM_PICKLE =
 	val openOut: string -> outstream
 	val outputInt: outstream * LargeInt.int -> unit
 	val outputChunk: outstream * Word8.word vector -> id
+	val outputUnique: outstream -> id
 	val outputBlock: outstream * label * size -> id
 	val outputTuple: outstream * size -> id
 	val outputClosure: outstream * size -> id
 	val outputReference: outstream * id -> unit
 	val outputString: outstream * string -> id
+	val outputUniqueString: outstream * UniqueString.t -> id
 	val outputTransform: outstream * string -> id
 	val closeOut: outstream -> unit
     end
