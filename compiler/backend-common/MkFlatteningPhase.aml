@@ -462,7 +462,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	and checkReachability consequents =
 	    List.app (fn (coord, ref bodyOpt) =>
 		      if isSome bodyOpt then ()
-		      else Error.error (coord, "unreachable expression"))
+		      else Error.warn (coord, "unreachable expression"))
 	    consequents
 	and simplifyCase (coord, exp, matches, raiseId) =
 	    let
