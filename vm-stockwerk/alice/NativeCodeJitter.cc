@@ -1125,30 +1125,9 @@ void NativeCodeJitter::NormalAppPrim(Closure *closure, TagVal *pc) {
   ConcreteCode *concreteCode =
     ConcreteCode::FromWord(closure->GetConcreteCode());
   Interpreter *interpreter = concreteCode->GetInterpreter();
-  u_int arity              = interpreter->GetArity();
-  word instrPC             = Store::IntToWord(GetRelativePC());
-  if (arity != nArgs) {
-    switch (arity) {
-    case 0:
-      Assert(nArgs == 1);
-      // Request unit to be done
-      break;
-    case 1:
-      Prepare();
-      JITStore::Call(0, (void *) Worker::Construct);
-      Finish();
-      break;
-    default:
-      Prepare();
-      JITStore::Call(0, (void *) Worker::Deconstruct);
-      Finish();
-      jit_insn *no_request = jit_beqi_ui(jit_forward(), JIT_R0, 0);
-      SetRelativePC(instrPC);
-      jit_movi_ui(JIT_RET, Worker::REQUEST);
-      RETURN();
-      jit_patch(no_request);
-    }
-  }
+  u_int arity              = interpreter->GetInArity(concreteCode);
+  Assert(arity == Scheduler::ONE_ARG && nArgs == 1 ||
+	 arity != Scheduler::ONE_ARG && nArgs == arity); arity = arity;
   DirectCall(interpreter);
 #endif
 }
@@ -1225,13 +1204,13 @@ void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
     else {
       ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
       if (concreteCode != INVALID_POINTER) {
+	//--** use Interpreter::GetInArity to avoid CCC
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 	if (interpreter == NativeCodeInterpreter::self) {
 	  info.mode =NATIVE_CALL;
 	  NativeConcreteCode *nativeCode =
 	    static_cast<NativeConcreteCode *>(concreteCode);
-	  Transform *transform =
-	    static_cast<Transform *>(nativeCode->GetAbstractRepresentation());
+	  Transform *transform = nativeCode->GetAbstractRepresentation();
 	  TagVal *abstractCode =
 	    TagVal::FromWordDirect(transform->GetArgument());
 	  TagVal *calleeArgs = TagVal::FromWord(abstractCode->Sel(3));
@@ -1240,14 +1219,14 @@ void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
 	  }
 	}
 	else if (interpreter->GetCFunction() != NULL) {
-	  u_int arity = interpreter->GetArity();
+	  u_int arity = interpreter->GetInArity(concreteCode);
 	  switch (AbstractCode::GetArgs(actualArgs)) {
 	  case AbstractCode::OneArg:
-	    if (arity != 1)
+	    if (arity != Scheduler::ONE_ARG)
 	      CompileCCC(actualArgs);
 	    break;
 	  case AbstractCode::TupArgs:
-	    if (arity <= 1)
+	    if (arity == Scheduler::ONE_ARG)
 	      CompileCCC(actualArgs);
 	    break;
 	  }
