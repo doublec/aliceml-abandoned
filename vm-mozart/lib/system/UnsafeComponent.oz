@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000-2001
+%%%   Leif Kornstaedt, 2000-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -158,7 +158,7 @@ define
 	       'Corrupt': CorruptException
 	       '\'Corrupt': CorruptException
 	       'extension': Extension
-	       'getInitialTable': fun {$ unit} nil end   %--**
+	       'getInitialTable': fun {$ unit} '#[]' end   %--**
 	       'save':
 		  fun {$ Filename Component}
 		     {Trace 'component' 'save '#Filename}

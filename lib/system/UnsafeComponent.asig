@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,7 +23,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val extension: string
 
-		val getInitialTable: unit -> (string * 'sign * 'str) list
+		val getInitialTable: unit -> (string * 'sign * 'str) vector
 
 		val save: string * 'component -> unit   (* IO.Io, Sited *)
 		val load: string -> 'component          (* IO.Io, Corrupt *)
