@@ -10,33 +10,14 @@
  *   $Revision$
  *)
 
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    structure StampMap
-from "../common/StampMap"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    signature DEAD_CODE_ELIMINATION_PHASE
-from "DEAD_CODE_ELIMINATION_PHASE-sig"
+import structure Crash        from "../infrastructure/Crash"
+import structure Source       from "../infrastructure/Source"
+import structure EmptyContext from "../infrastructure/EmptyContext"
+import structure StampSet     from "../common/StampSet"
+import structure StampMap     from "../common/StampMap"
+import structure FlatGrammar  from "FlatGrammar"
+import signature DEAD_CODE_ELIMINATION_PHASE
+    from "DEAD_CODE_ELIMINATION_PHASE-sig"
 
 structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
     struct
@@ -78,19 +59,16 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 				  (label, killIdDef (idDef, set)))
 		      labelIdDefVec)
 
-	fun killConArgs (SOME args, set) = SOME (killArgs (args, set))
-	  | killConArgs (NONE, _) = NONE
-
 	fun deadExp (LitExp (_, _)) = NONE
 	  | deadExp (PrimExp (_, _)) = NONE
 	  | deadExp (NewExp (_, _)) = NONE
 	  | deadExp (VarExp (_, _)) = NONE
-	  | deadExp (TagExp (_, _, _)) = NONE
+	  | deadExp (TagExp (_, _, _, _)) = NONE
+	  | deadExp (RefExp (_, _)) = NONE
 	  | deadExp (TupExp (_, _)) = NONE
 	  | deadExp (ProdExp (_, _)) = NONE
 	  | deadExp (VecExp (_, _)) = NONE
 	  | deadExp (FunExp (_, _, _, _, _)) = NONE
-	  | deadExp (RefAppExp (_, _)) = NONE
 	  | deadExp (LazySelAppExp (_, _, _, _, _)) = NONE
 	  | deadExp exp = SOME exp
 
@@ -107,11 +85,11 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 				 ValDec (info, Wildcard, exp)::rest
 			   | NONE => elim (info, rest))
 	    end
-	  | liveBody (RefAppDec (info, idDef, id)::rest, shared) =
+	  | liveBody (RefDec (info, idDef, id)::rest, shared) =
 	    let
 		val rest = liveBody (rest, shared)
 	    in
-		RefAppDec (info, killIdDef (idDef, killSet rest), id)::rest
+		RefDec (info, killIdDef (idDef, killSet rest), id)::rest
 	    end
 	  | liveBody (TupDec (info, idDefs, id)::rest, shared) =
 	    let
@@ -160,25 +138,23 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 				       (lit, liveBody (body, shared))) tests)
 		      | TagTests tests =>
 			    TagTests (Vector.map
-				      (fn (label, tag, conArgs, body) =>
+				      (fn (label, tag, args, body) =>
 				       let
 					   val body = liveBody (body, shared)
 					   val set = killSet body
-					   val conArgs =
-					       killConArgs (conArgs, set)
+					   val args = killArgs (args, set)
 				       in
-					   (label, tag, conArgs, body)
+					   (label, tag, args, body)
 				       end) tests)
 		      | ConTests tests =>
 			    ConTests (Vector.map
-				      (fn (con, conArgs, body) =>
+				      (fn (con, args, body) =>
 				       let
 					   val body = liveBody (body, shared)
 					   val set = killSet body
-					   val conArgs =
-					       killConArgs (conArgs, set)
+					   val args = killArgs (args, set)
 				       in
-					   (con, conArgs, body)
+					   (con, args, body)
 				       end) tests)
 		      | VecTests tests =>
 			    VecTests (Vector.map
