@@ -63,7 +63,7 @@ struct
     fun isSuffix s1 s2		= isSuffix'(s1,s2,size s1-1,size s2-1)
     and isSuffix'(s1,s2,i1,i2)	= i1 = ~1 orelse
 				  i2 <> ~1 andalso
-				  sub'(s1,i1) = sub'(s2,i1)
+				  sub'(s1,i1) = sub'(s2,i2)
 				  andalso isSuffix'(s1,s2,i1-1,i2-1)
 
     fun isSubstring s1 s2	= isSubstring'(s1,s2,0)
