@@ -587,18 +587,15 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental.ozf
 	$(STOL2) $(STOL_OPTS) $< -o $@
 
-build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
-	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler $< -o $@
 
-build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf \
-	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler $< -o $@
 
-build3/stoc/LinkedStotEmacsMain.ozf: build3/stoc/StotEmacsMain.ozf \
-	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+build3/stoc/LinkedStotEmacsMain.ozf: build3/stoc/StotEmacsMain.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler $< -o $@
 
@@ -606,7 +603,8 @@ build3/stoc/top/LinkedComposer.ozf: build3/stoc/top/Composer.ozf
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ $< -o $@
 
 build3/stoc/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
-	build3/stoc/top/SMLToMozartRecursiveCompiler.ozf
+	build3/stoc/top/SMLToMozartRecursiveCompiler.ozf \
+	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
 	--exclude=$(BUILD3)/lib,$(BUILD3)/stoc/top/Composer $< -o $@
 
