@@ -291,7 +291,9 @@ struct
                     (* inform the snakes *)
 
                     (* broadcast changes *)
-                    
+                   
+                    (* test wether there are any living snakes left *)
+
                     (* swap old & new arena *)
                     (newArena, oldArena)
                 end)
