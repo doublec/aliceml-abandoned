@@ -173,8 +173,23 @@ structure TestSuite :
         	      false)
 		else true
 
-
-
+	
+		fun vSelectSomething1 something (result, v, selector) =
+		let
+			val l=Vector.toList v
+			val l2 = List.filteri (
+				fn (i,_)=>IntInf.andb(
+					IntInf.<<(IntInf.fromInt 1, Word.fromInt i),selector
+					) > IntInf.fromInt 0
+				) l
+			val l3 = List.map Pair.snd l2
+			val v2 = Vector.fromList l3
+		in
+			something(v2,result)
+		end
+	
+		val vSelectUnion1 = vSelectSomething1 vUnionN1
+		val vSelectInter1 = vSelectSomething1 vInterN1
 
 
         (*
