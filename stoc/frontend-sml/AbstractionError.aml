@@ -65,6 +65,12 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| SpecSigIdDuplicate	of SigId
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
+	(* Imports and items *)
+	| ImpVIdDuplicate	of VId
+	| ImpTyConDuplicate	of TyCon
+	| ImpStrIdDuplicate	of StrId
+	| ImpSigIdDuplicate	of SigId
+	| ConItemDuplicate	of VId
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id
@@ -201,6 +207,17 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(DconDescNonCon) =
 	  par["non-constructor","on","constructor","description",
 	      "right","hand","side"]
+      (* Imports and items *)
+      | ppError(ImpVIdDuplicate vid) =
+	  par(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
+      | ppError(ImpTyConDuplicate tycon) =
+	  par(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","import"])
+      | ppError(ImpStrIdDuplicate strid) =
+	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","import"])
+      | ppError(ImpSigIdDuplicate sigid) =
+	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","import"])
+      | ppError(ConItemDuplicate vid) =
+	  par["duplicate","constructor",ppVId vid,"in","datatype"]
       (* Sharing translation *)
       | ppError(SharingExternalTy x) =
 	  par(#2 classTyCon @ [ppId x,"is","external","to","signature"])

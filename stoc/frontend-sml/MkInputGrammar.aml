@@ -315,10 +315,49 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
           NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
 	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
 							* SigDesc option
+    (* Imports *)
+
+    and Imp =
+	  VALImp          of Info * ValItem
+	| TYPEImp         of Info * TypItem
+	| DATATYPEImp     of Info * DatItem
+	| CONSTRUCTORImp  of Info * DconItem
+	| STRUCTUREImp    of Info * StrItem
+	| SIGNATUREImp    of Info * SigItem
+	| EMPTYImp        of Info
+	| SEQImp          of Info * Imp * Imp
+
+    and ValItem =
+	  PLAINValItem    of Info * Op * VId * ValItem option
+	| DESCValItem     of Info * Op * VId * Ty * ValItem option
+
+    and TypItem =
+	  PLAINTypItem    of Info * TyCon * TypItem option
+	| DESCTypItem     of Info * TyVarSeq * TyCon * TypItem option
+
+    and DatItem =
+	  PLAINDatItem    of Info * TyCon * DatItem option
+	| DESCDatItem     of Info * TyVarSeq * TyCon * ConItem * DatItem option
+
+    and ConItem =
+	  ConItem         of Info * Op * VId * Ty option * ConItem option
+
+    and DconItem =
+	  PLAINDconItem   of Info * Op * VId * DconItem option
+	| DESCDconItem    of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
+			 				      * DconItem option
+    and StrItem =
+	  PLAINStrItem    of Info * StrId * StrItem option
+        | DESCStrItem     of Info * StrId * SigExp * StrItem option
+
+    and SigItem =
+	  PLAINSigItem    of Info * SigId * SigItem option
+        | DESCSigItem     of Info * SigId * StrPat list * SigItem option
+
     (* Announcements *)
 
     and Ann =
-	  IMPORTAnn   of Info * Spec * string
+	  IMPORTAnn   of Info * Imp * string
 	| PREBOUNDAnn of Info * StrId
 	| EMPTYAnn    of Info
 	| SEQAnn      of Info * Ann * Ann
@@ -524,6 +563,35 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoSigDesc(NEWSigDesc(I,_,_,_))		= I
       | infoSigDesc(EQUALSigDesc(I,_,_,_,_))		= I
+
+    fun infoImp(VALImp(I,_))				= I
+      | infoImp(TYPEImp(I,_))				= I
+      | infoImp(DATATYPEImp(I,_))			= I
+      | infoImp(CONSTRUCTORImp(I,_))			= I
+      | infoImp(STRUCTUREImp(I,_))			= I
+      | infoImp(SIGNATUREImp(I,_))			= I
+      | infoImp(EMPTYImp(I))				= I
+      | infoImp(SEQImp(I,_,_))				= I
+
+    fun infoValItem(PLAINValItem(I,_,_,_))		= I
+      | infoValItem(DESCValItem(I,_,_,_,_))		= I
+
+    fun infoTypItem(PLAINTypItem(I,_,_))		= I
+      | infoTypItem(DESCTypItem(I,_,_,_))		= I
+
+    fun infoDatItem(PLAINDatItem(I,_,_))		= I
+      | infoDatItem(DESCDatItem(I,_,_,_,_))		= I
+
+    fun infoConItem(ConItem(I,_,_,_,_))			= I
+
+    fun infoDconItem(PLAINDconItem(I,_,_,_))		= I
+      | infoDconItem(DESCDconItem(I,_,_,_,_,_,_))	= I
+
+    fun infoStrItem(PLAINStrItem(I,_,_))		= I
+      | infoStrItem(DESCStrItem(I,_,_,_))		= I
+
+    fun infoSigItem(PLAINSigItem(I,_,_))		= I
+      | infoSigItem(DESCSigItem(I,_,_,_))		= I
 
     fun infoAnn(IMPORTAnn(I,_,_))			= I
       | infoAnn(PREBOUNDAnn(I,_))			= I

@@ -17,6 +17,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     type var    = Type.var
     type kind   = Type.kind
     type inf	= Inf.t
+    type fix    = Fixity.t
     type id     = AbstractGrammar.id
     type longid = AbstractGrammar.longid
 
@@ -69,6 +70,19 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| GroundInfKind		of Inf.kind
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
+	(* Imports *)
+	| ValItemUnknown	of lab
+	| ConItemUnknown	of lab
+	| TypItemUnknown	of lab
+	| ModItemUnknown	of lab
+	| InfItemUnknown	of lab
+	| FixItemUnknown	of lab
+	| ValItemMismatch	of lab * typ * typ
+	| ConItemMismatch	of lab * typ * typ
+	| TypItemMismatch	of lab * kind * kind
+	| ModItemMismatch	of lab * inf_mismatch
+	| InfItemMismatch	of lab * inf_mismatch
+	| FixItemMismatch	of lab * fix * fix
 	(* Components *)
 	| CompUnclosed		of lab * int * typ
 
@@ -340,6 +354,47 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["inconsistency","at","signature","specialization:"], im)
       | ppError(SingInfPath) =
 	  par["module","expression","is","not","a","path"]
+      (* Imports *)
+      | ppError(ValItemUnknown l) =
+	  par["value",ppLab l,"is","not","exported","by","component"]
+      | ppError(ConItemUnknown l) =
+	  par["constructor",ppLab l,"is","not","exported","by","component"]
+      | ppError(TypItemUnknown l) =
+	  par["type",ppLab l,"is","not","exported","by","component"]
+      | ppError(ModItemUnknown l) =
+	  par["module",ppLab l,"is","not","exported","by","component"]
+      | ppError(InfItemUnknown l) =
+	  par["signature",ppLab l,"is","not","exported","by","component"]
+      | ppError(FixItemUnknown l) =
+	  par["fixity","status","for",ppLab l,"is","not","exported","by",
+	      "component"]
+      | ppError(ValItemMismatch(l,t1,t2)) =
+	vbox(
+	    par["type","annotation","of","value",ppLab l] ^^
+	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
+	    par["does","not","match","component","export","type"] ^^
+	    nest(break ^^ below(PPType.ppTyp t2))
+	)
+      | ppError(ConItemMismatch(l,t1,t2)) =
+	vbox(
+	    par["type","of","constructor",ppLab l] ^^
+	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
+	    par["does","not","match","component","export","type"] ^^
+	    nest(break ^^ below(PPType.ppTyp t2))
+	)
+      | ppError(TypItemMismatch(l,k1,k2)) =
+	  par["type",ppLab l,"exported","by","component",
+	      "has","incompatible","arity"]
+      | ppError(ModItemMismatch(l,im)) =
+	ppMismatch(
+	  par["module",ppLab l,"exported","by","component","does","not","match",
+	      "signature,","because"], im)
+      | ppError(InfItemMismatch(l,im)) =
+	ppMismatch(
+	  par["signature",ppLab l,"exported","by","component","is",
+	      "incompatible,","because"], im)
+      | ppError(FixItemMismatch(l,f1,f2)) =
+	  par["fixity","status","for",ppLab l,"does","not","match","export"]
       (* Components *)
       | ppError(CompUnclosed lnt) =
 	ppUnclosed(

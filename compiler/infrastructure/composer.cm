@@ -1,0 +1,9 @@
+Group
+
+	signature COMPOSER
+
+is
+
+	../misc/sources.cm
+
+	COMPOSER.sig

@@ -315,10 +315,50 @@ signature INPUT_GRAMMAR =
           NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
 	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
 							* SigDesc option
+
+    (* Imports *)
+
+    and Imp =
+	  VALImp          of Info * ValItem
+	| TYPEImp         of Info * TypItem
+	| DATATYPEImp     of Info * DatItem
+	| CONSTRUCTORImp  of Info * DconItem
+	| STRUCTUREImp    of Info * StrItem
+	| SIGNATUREImp    of Info * SigItem
+	| EMPTYImp        of Info
+	| SEQImp          of Info * Imp * Imp
+
+    and ValItem =
+	  PLAINValItem    of Info * Op * VId * ValItem option
+	| DESCValItem     of Info * Op * VId * Ty * ValItem option
+
+    and TypItem =
+	  PLAINTypItem    of Info * TyCon * TypItem option
+	| DESCTypItem     of Info * TyVarSeq * TyCon * TypItem option
+
+    and DatItem =
+	  PLAINDatItem    of Info * TyCon * DatItem option
+	| DESCDatItem     of Info * TyVarSeq * TyCon * ConItem * DatItem option
+
+    and ConItem =
+	  ConItem         of Info * Op * VId * Ty option * ConItem option
+
+    and DconItem =
+	  PLAINDconItem   of Info * Op * VId * DconItem option
+	| DESCDconItem    of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
+			 				      * DconItem option
+    and StrItem =
+	  PLAINStrItem    of Info * StrId * StrItem option
+        | DESCStrItem     of Info * StrId * SigExp * StrItem option
+
+    and SigItem =
+	  PLAINSigItem    of Info * SigId * SigItem option
+        | DESCSigItem     of Info * SigId * StrPat list * SigItem option
+
     (* Announcements *)
 
     and Ann =
-	  IMPORTAnn   of Info * Spec * string
+	  IMPORTAnn   of Info * Imp * string
 	| PREBOUNDAnn of Info * StrId
 	| EMPTYAnn    of Info
 	| SEQAnn      of Info * Ann * Ann
@@ -382,6 +422,14 @@ signature INPUT_GRAMMAR =
     val infoDconDesc :	DconDesc	-> Info
     val infoStrDesc :	StrDesc		-> Info
     val infoSigDesc :	SigDesc		-> Info
+    val infoImp :	Imp		-> Info
+    val infoValItem :	ValItem		-> Info
+    val infoTypItem :	TypItem		-> Info
+    val infoDatItem :	DatItem		-> Info
+    val infoConItem :	ConItem		-> Info
+    val infoDconItem :	DconItem	-> Info
+    val infoStrItem :	StrItem		-> Info
+    val infoSigItem :	SigItem		-> Info
     val infoAnn :	Ann		-> Info
     val infoProgram :	Program		-> Info
     val infoComponent :	Component	-> Info

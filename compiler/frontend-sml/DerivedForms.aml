@@ -118,6 +118,12 @@ structure DerivedForms :> DERIVED_FORMS =
     type DatDesc   = Grammar.DatDesc
     type ExDesc    = Grammar.DconDesc
     type FunDesc   = Grammar.StrDesc
+    type Imp       = Grammar.Imp
+    type ValItem   = Grammar.ValItem
+    type TypItem   = Grammar.TypItem
+    type DatItem   = Grammar.DatItem
+    type ExItem    = Grammar.DconItem
+    type FunItem   = Grammar.StrItem
     type Program   = Grammar.Program
 
 
@@ -708,6 +714,31 @@ structure DerivedForms :> DERIVED_FORMS =
 			   STRUCTURERea(I', longstrid1, NONE, longstrid2, NONE))
 	end
 
+
+
+    (* Imports *)
+
+    val FUNImp       = G.VALImp
+    val EXCEPTIONImp = G.CONSTRUCTORImp
+    val FUNCTORImp   = G.STRUCTUREImp
+    val PLAINExItem  = G.PLAINDconItem
+    val PLAINFunItem = G.PLAINStrItem
+
+    fun DESCExItem(I, op_opt, vid, ty, dconitem_opt) =
+	    G.DESCDconItem(I, op_opt, vid, SOME ty, G.Seq(I,[]),
+			      longtycon_EXN(I), dconitem_opt)
+
+    fun DESCFunItem(I, strid, strpats, sigexp, funitem_opt) =
+	let
+	    val I' = G.infoSigExp sigexp
+
+	    fun buildSigExp       []         = sigexp
+	      | buildSigExp(strpat::strpats) =
+		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+			      strpat, buildSigExp strpats)
+	in
+	    G.DESCStrItem(I, strid, buildSigExp strpats, funitem_opt)
+	end
 
 
     (* Programs *)

@@ -1,4 +1,5 @@
-functor MakeAbstractGrammar(type lab_info
+functor MakeAbstractGrammar(type fix_info
+			    type lab_info
 			    type id_info
 			    type longid_info
 			    type exp_info
@@ -12,6 +13,7 @@ functor MakeAbstractGrammar(type lab_info
 			    type inf_info
 			    type dec_info
 			    type spec_info
+			    type imp_info
 			    type ann_info
 			    type comp_info
 			    val labToIdInfo: lab_info -> id_info
@@ -21,6 +23,7 @@ functor MakeAbstractGrammar(type lab_info
 
     (* Generic *)
 
+    type fix_info	= fix_info
     type lab_info	= lab_info
     type id_info	= id_info
     type longid_info	= longid_info
@@ -35,10 +38,9 @@ functor MakeAbstractGrammar(type lab_info
     type inf_info	= inf_info
     type dec_info	= dec_info
     type spec_info	= spec_info
+    type imp_info	= imp_info
     type ann_info	= ann_info
     type comp_info	= comp_info
-
-    type fix		= Fixity.t
 
     (* Literals *)
 
@@ -48,6 +50,10 @@ functor MakeAbstractGrammar(type lab_info
 	| CharLit   of WideChar.char		(* character *)
 	| StringLit of WideString.string	(* string *)
 	| RealLit   of LargeReal.real		(* floating point *)
+
+    (* Fixity *)
+
+    datatype fix = Fix of fix_info * Fixity.t
 
     (* Identifiers *)
 
@@ -160,7 +166,7 @@ functor MakeAbstractGrammar(type lab_info
 
     and dec =
 	  ValDec    of dec_info * pat * exp	(* values *)
-	| ConDec    of dec_info * con * typ	(* constructor *)
+	| ConDec    of dec_info * id * typ	(* constructor *)
 	| TypDec    of dec_info * id * typ	(* type *)
 	| DatDec    of dec_info * id * typ	(* data type *)
 	| ModDec    of dec_info * id * mod	(* module *)
@@ -174,20 +180,34 @@ functor MakeAbstractGrammar(type lab_info
 
     and spec =
 	  ValSpec   of spec_info * id * typ	(* value *)
-	| ConSpec   of spec_info * con * typ	(* constructor *)
+	| ConSpec   of spec_info * id * typ	(* constructor *)
 	| TypSpec   of spec_info * id * typ	(* type *)
 	| DatSpec   of spec_info * id * typ	(* data type *)
 	| ModSpec   of spec_info * id * inf	(* module *)
 	| InfSpec   of spec_info * id * inf	(* interface *)
 	| FixSpec   of spec_info * id * fix	(* fixity *)
-	| VarSpec   of spec_info * id * spec	(* scoped type variable *)
 	| RecSpec   of spec_info * spec list	(* recursive specifications *)
-	| LocalSpec of spec_info * spec list	(* local specifications *)
 	| ExtSpec   of spec_info * inf		(* extension (include) *)
+
+    (* Import *)
+
+    and imp =
+	  ValImp of imp_info * id * (typ_info,typ) desc	(* value *)
+	| ConImp of imp_info * id * (typ_info,typ) desc	(* constructor *)
+	| TypImp of imp_info * id * (typ_info,typ) desc (* type *)
+	| DatImp of imp_info * id * (typ_info,typ) desc (* data type *)
+	| ModImp of imp_info * id * (inf_info,inf) desc (* module *)
+	| InfImp of imp_info * id * (inf_info,inf) desc (* interface *)
+	| FixImp of imp_info * id * (fix_info,fix) desc (* fixity *)
+	| RecImp of imp_info * imp list			(* recursive items *)
+
+    and ('info,'a) desc =
+	  NoDesc   of 'info
+	| SomeDesc of 'info * 'a
 
     (* Components *)
 
-    and ann  = ImpAnn of ann_info * spec list * Url.t
+    and ann  = ImpAnn of ann_info * imp list * Url.t
 
     and comp = Comp of comp_info * ann list * dec list
 
@@ -311,12 +331,22 @@ functor MakeAbstractGrammar(type lab_info
       | infoSpec(ModSpec(i,_,_))	= i
       | infoSpec(InfSpec(i,_,_))	= i
       | infoSpec(FixSpec(i,_,_))	= i
-      | infoSpec(VarSpec(i,_,_))	= i
       | infoSpec(RecSpec(i,_))		= i
-      | infoSpec(LocalSpec(i,_))	= i
       | infoSpec(ExtSpec(i,_))		= i
 
+    fun infoImp(ValImp(i,_,_))		= i
+      | infoImp(ConImp(i,_,_))		= i
+      | infoImp(TypImp(i,_,_))		= i
+      | infoImp(DatImp(i,_,_))		= i
+      | infoImp(ModImp(i,_,_))		= i
+      | infoImp(InfImp(i,_,_))		= i
+      | infoImp(FixImp(i,_,_))		= i
+      | infoImp(RecImp(i,_))		= i
+
     fun infoAnn(ImpAnn(i,_,_))		= i
+
+    fun infoDesc(NoDesc(i))		= i
+      | infoDesc(SomeDesc(i,_))		= i
 
     fun infoComp(Comp(i,_,_))		= i
 

@@ -52,7 +52,6 @@ structure Sharing :> SHARING =
 	  Plain     of spec
 	| Annotated of spec * longid
 	| Recursive of Source.region * annotated_spec list
-	| Local     of Source.region * annotated_spec list
 	(* UNFINISHED: what about ExtSpec? *)
 
 
@@ -69,10 +68,6 @@ structure Sharing :> SHARING =
       | annotate(RecSpec(i, specs), longids) =
 	let val (specs',longids') = annotateList(specs, longids) in
 	    ( Recursive(i, specs'), longids' )
-	end
-      | annotate(LocalSpec(i, specs), longids) =
-	let val (specs',longids') = annotateList(specs, longids) in
-	    ( Local(i, specs'), longids' )
 	end
       | annotate(spec, longids) =
 	    ( Plain(spec), longids )
@@ -151,13 +146,6 @@ structure Sharing :> SHARING =
 	    | (specs, SOME longid) =>
 		RecSpec(i,specs) :: mapWhere''(class, specs', longid)
 	)
-      | mapWhere(class, Local(i, specs'')::specs') =
-	(case mapWhere'(class, specs'')
-	   of (specs, NONE) =>
-		LocalSpec(i,specs) :: mapWhere(class, specs')
-	    | (specs, SOME longid) => 
-		LocalSpec(i,specs) :: mapWhere''(class, specs', longid)
-	)
 
     (* find 1st annotation in nested lists *)
     and mapWhere'(class, []) = raise Crash.Crash "Sharing.mapWhere'"
@@ -172,13 +160,6 @@ structure Sharing :> SHARING =
 	    | (specs, some as SOME longid) =>
 		( RecSpec(i,specs) :: mapWhere''(class, specs', longid), some )
 	)
-      | mapWhere'(class, Local(i, specs'')::specs') =
-	(case mapWhere'(class, specs'')
-	   of (specs, NONE) =>
-		cons1st(LocalSpec(i,specs), mapWhere'(class, specs'))
-	    | (specs, some as SOME longid) =>
-		( LocalSpec(i,specs) :: mapWhere''(class, specs',longid), some )
-	)
 
     (* transform remaining annotations *)
     and mapWhere''(class, [], longid) = []
@@ -189,9 +170,6 @@ structure Sharing :> SHARING =
 		:: mapWhere''(class, specs', longid)
       | mapWhere''(class, Recursive(i, specs'')::specs', longid) =
 	    RecSpec(i, mapWhere''(class, specs'',longid))
-		:: mapWhere''(class, specs',longid)
-      | mapWhere''(class, Local(i, specs'')::specs', longid) =
-	    LocalSpec(i, mapWhere''(class, specs'',longid))
 		:: mapWhere''(class, specs',longid)
 
 

@@ -103,8 +103,14 @@ signature DERIVED_FORMS =
     type TypDesc   = Grammar.TypDesc
     type DatDesc   = Grammar.DatDesc
     type ExDesc    = Grammar.DconDesc
+    type Imp       = Grammar.Imp
+    type ValItem   = Grammar.ValItem
+    type TypItem   = Grammar.TypItem
+    type DatItem   = Grammar.DatItem
+    type ExItem    = Grammar.DconItem
     type FunBind
     type FunDesc
+    type FunItem
     type Rea
     type Program   = Grammar.Program
 
@@ -221,6 +227,19 @@ signature DERIVED_FORMS =
 							   * Rea option   -> Rea
     val SIGNATURERea:     Info * LongSigId * StrPat list * AppSigExp
 							 * Rea option     -> Rea
+
+    (* Imports *)
+
+    val FUNImp:           Info * ValItem                           -> Imp
+    val EXCEPTIONImp:     Info * ExItem                            -> Imp
+    val FUNCTORImp:       Info * FunItem                           -> Imp
+
+    val PLAINExItem:      Info * Op * VId * ExItem option          -> ExItem
+    val DESCExItem:       Info * Op * VId * Ty * ExItem option     -> ExItem
+
+    val PLAINFunItem:     Info * StrId * FunItem option            -> FunItem
+    val DESCFunItem:      Info * StrId * StrPat list * SigExp * FunItem option
+								   -> FunItem
 
     (* Programs *)
 

@@ -54,6 +54,12 @@ signature ABSTRACTION_ERROR =
 	| SpecSigIdDuplicate	of SigId
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
+	(* Imports and items *)
+	| ImpVIdDuplicate	of VId
+	| ImpTyConDuplicate	of TyCon
+	| ImpStrIdDuplicate	of StrId
+	| ImpSigIdDuplicate	of SigId
+	| ConItemDuplicate	of VId
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id

@@ -6,6 +6,7 @@ signature ELABORATION_ERROR =
     type var    = Type.var
     type kind   = Type.kind
     type inf	= Inf.t
+    type fix    = Fixity.t
     type id     = AbstractGrammar.id
     type longid = AbstractGrammar.longid
 
@@ -58,6 +59,19 @@ signature ELABORATION_ERROR =
 	| GroundInfKind		of Inf.kind
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
+	(* Imports *)
+	| ValItemUnknown	of lab
+	| ConItemUnknown	of lab
+	| TypItemUnknown	of lab
+	| ModItemUnknown	of lab
+	| InfItemUnknown	of lab
+	| FixItemUnknown	of lab
+	| ValItemMismatch	of lab * typ * typ
+	| ConItemMismatch	of lab * typ * typ
+	| TypItemMismatch	of lab * kind * kind
+	| ModItemMismatch	of lab * inf_mismatch
+	| InfItemMismatch	of lab * inf_mismatch
+	| FixItemMismatch	of lab * fix * fix
 	(* Components *)
 	| CompUnclosed		of lab * int * typ
 

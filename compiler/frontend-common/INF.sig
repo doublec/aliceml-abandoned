@@ -120,18 +120,22 @@ signature INF =
 
   (* Signature lookup *)
 
-    val lookupVal :	sign * lab -> typ
-    val lookupTyp :	sign * lab -> typ
-    val lookupMod :	sign * lab -> inf
-    val lookupInf :	sign * lab -> inf
+    exception Lookup
 
-    val lookupVal' :	sign * lab * int -> typ
-    val lookupTyp' :	sign * lab * int -> typ
-    val lookupMod' :	sign * lab * int -> inf
-    val lookupInf' :	sign * lab * int -> inf
+    val lookupVal :	sign * lab -> typ		(* Lookup *)
+    val lookupTyp :	sign * lab -> typ		(* Lookup *)
+    val lookupMod :	sign * lab -> inf		(* Lookup *)
+    val lookupInf :	sign * lab -> inf		(* Lookup *)
+    val lookupFix :	sign * lab -> fix		(* Lookup *)
 
-    val lookupValPath :	sign * lab -> path
-    val lookupModPath :	sign * lab -> path
+    val lookupVal' :	sign * lab * int -> typ		(* Lookup *)
+    val lookupTyp' :	sign * lab * int -> typ		(* Lookup *)
+    val lookupMod' :	sign * lab * int -> inf		(* Lookup *)
+    val lookupInf' :	sign * lab * int -> inf		(* Lookup *)
+    val lookupFix' :	sign * lab * int -> fix		(* Lookup *)
+
+    val lookupValPath :	sign * lab -> path		(* Lookup *)
+    val lookupModPath :	sign * lab -> path		(* Lookup *)
 
   (* Closure check *)
 
@@ -167,5 +171,6 @@ signature INF =
 
     val match :		inf * inf -> rea		(* Mismatch *)
     val intersect :	inf * inf -> inf		(* Mismatch *)
+    val equaliseKind :	kind * kind -> unit		(* Mismatch *)
 
   end

@@ -1,5 +1,6 @@
 structure TypedInfo =
   struct
+    type fix_info	= { region: Source.region, fix: Fixity.t }
     type lab_info	= { region: Source.region }
     type id_info	= { region: Source.region }
     type longid_info	= { region: Source.region }
@@ -14,6 +15,7 @@ structure TypedInfo =
     type inf_info	= { region: Source.region, inf: Inf.t }
     type dec_info	= { region: Source.region }
     type spec_info	= { region: Source.region }
+    type imp_info	= { region: Source.region }
     type ann_info	= { region: Source.region }
     type comp_info	= { region: Source.region }
 
@@ -21,6 +23,7 @@ structure TypedInfo =
     fun idToLabInfo i	= i
 
     fun nonInfo r	= { region = r }
+    fun fixInfo(r,f)	= { region = r, fix = f }
     fun typInfo(r,t)	= { region = r, typ = t }
     fun infInfo(r,j)	= { region = r, inf = j }
   end

@@ -206,27 +206,34 @@ structure InfPrivate =
       | selectInf(INF(x, k, NONE))	= ref(CON(k, idPath x))	(* inCon *)
       | selectInf _			= raise Crash.Crash "Inf.selectInf"
 
+    fun selectFix(FIX(x, f))		= f
+      | selectFix _			= raise Crash.Crash "Inf.selectFix"
+
+
+    exception Lookup
 
     fun lookup space ((_,m), l) =
 	case Map.lookup(m, (space,l))
 	  of SOME(item::items) => !item
-	   | _                 => raise Crash.Crash "Inf.lookup"
+	   | _                 => raise Lookup
 
     fun lookup' space ((_,m), l, n) =
 	case Map.lookup(m, (space,l))
 	  of SOME(item::items) =>
 		!(Option.valOf(List.find (fn item => itemIndex item = n) items))
-	   | _ => raise Crash.Crash "Inf.lookup'"
+	   | _ => raise Lookup
 
     fun lookupVal args	= (selectVal' o lookup VAL') args
     fun lookupTyp args	= (selectTyp  o lookup TYP') args
     fun lookupMod args	= (selectMod' o lookup MOD') args
     fun lookupInf args	= (selectInf  o lookup INF') args
+    fun lookupFix args	= (selectFix  o lookup FIX') args
 
     fun lookupVal' args	= (selectVal' o lookup' VAL') args
     fun lookupTyp' args	= (selectTyp  o lookup' TYP') args
     fun lookupMod' args	= (selectMod' o lookup' MOD') args
     fun lookupInf' args	= (selectInf  o lookup' INF') args
+    fun lookupFix' args	= (selectFix  o lookup' FIX') args
 
     fun lookupValPath args = (selectVal o lookup VAL') args
     fun lookupModPath args = (selectMod o lookup MOD') args
