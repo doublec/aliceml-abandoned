@@ -73,6 +73,7 @@ signature INSPECTOR_COMPONENT =
 
 		functor InspectType(type t): any
 		functor InspectSig(signature S): any
+		functor InspectValSig(type t val x: t signature S): any
 		functor Inspect(signature S structure X: S): any
 	    end
 

@@ -514,6 +514,12 @@ define
 		      {X.'$S$' unit}}
 		     unit
 		  end
+	       'InspectValSig$':
+		  fun {$ X}
+		     {Inspector.inspect
+		      '#'('val':X.x 'sig':{X.'$S$' unit})}
+		     unit
+		  end
 	       'Inspect$':
 		  fun {$ X}
 		     {Inspector.inspect X.'X$'}
