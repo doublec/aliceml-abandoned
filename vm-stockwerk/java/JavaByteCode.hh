@@ -56,6 +56,24 @@ public:
     entry->InitArg(CATCH_TYPE_POS, catchType);
     return entry;
   }
+  static ExceptionTableEntry *FromWordDirect(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::ExceptionTableEntry);
+    return static_cast<ExceptionTableEntry *>(b);
+  }
+
+  u_int GetStartPC() {
+    return Store::DirectWordToInt(GetArg(START_PC_POS));
+  }
+  u_int GetEndPC() {
+    return Store::DirectWordToInt(GetArg(END_PC_POS));
+  }
+  u_int GetHandlerPC() {
+    return Store::DirectWordToInt(GetArg(HANDLER_PC_POS));
+  }
+  word GetCatchType() {
+    return GetArg(CATCH_TYPE_POS);
+  }
 };
 
 class DllExport JavaByteCode: private ConcreteCode {
