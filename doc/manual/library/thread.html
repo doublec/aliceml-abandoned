@@ -158,7 +158,9 @@
     <DD>
       <P>causes the calling thread to stop executing and not be rescheduled
 	for the time specified by&nbsp;<TT><I>t</I></TT>.  If <TT><I>t</I
-	></TT> is zero or negative, immediately returns.</P>
+	></TT> is zero or negative, immediately returns. Raises
+	<TT>Overflow</TT> if <TT><I>t</I></TT> is larger than the longest
+	possible time period that can be handled by the system.</P>
     </DD>
 
     <DT>

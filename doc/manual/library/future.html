@@ -153,7 +153,9 @@
     <DD>
       <P>Creates a future that is determined to <TT>()</TT> after the time period
       <TT><I>t</I></TT>. In conjunction with <TT>awaitEither</TT>, this
-      function can be used to program timeouts.
+      function can be used to program timeouts. Raises <TT>Overflow</TT> if
+      <TT><I>t</I></TT> is larger than the longest possible time period that can
+      be handled by the system.
       Equivalent to <TT>spawn Thread.sleep <I>t</I></TT>.</P>
     </DD>
 
