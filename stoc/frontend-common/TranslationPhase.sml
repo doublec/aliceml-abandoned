@@ -282,6 +282,12 @@ UNFINISHED: obsolete after bootstrapping:
       | trSpec y (I.LocalSpec(i,ss),ds')= ds'
       | trSpec y (I.ExtSpec(i,j),  ds')	= Crash.crash "Translation: ExtSpec"
 
+    (*--** WORKAROUND - Leif *)
+    and trEqCon(I.Con(i,x as I.Id(_,_,I.ExId s),ts), y', ds') =
+	O.ValDec(i, O.VarPat(i,trId x), O.AppExp(i,O.SelExp(i,O.Lab(i,s)),
+						 O.VarExp(i,y'))):: ds'
+    (*--** END OF WORKAROUND *)
+
     and trCons'(cs, y, ds')		=
 	List.foldr (fn(c,ds') => trEqCon(c,y,ds')) ds' cs
 
