@@ -63,7 +63,7 @@ public:
     FILE, DIR, SYMLINK, TTY, PIPE, SOCKET, DEVICE, CLOSED, UNKNOWN
   };
   enum result {
-    result_ok, result_closed, result_request, 
+    result_ok, result_closed, result_request,
     result_system_error, result_socket_error, result_would_block
   };
 
