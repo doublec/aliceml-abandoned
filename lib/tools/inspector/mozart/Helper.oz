@@ -150,6 +150,23 @@ define
 	 (X + XDim)
       end
    end
+
+   class LabelTypeNode from LabelNode
+      meth drawX(X Y $)
+	 Visual  = @visual
+	 XDim    = @xDim
+	 StringX = (XDim - 1)
+      in
+	 if @dirty
+	 then
+	    dirty <- false
+	    {Visual printXY(X Y @string @tag typeindicator)}
+	    {Visual printXY((X + StringX) Y @limStr @secTag tuple)}
+	 else {Visual doublePlace(X Y StringX @tag @secTag)}
+	 end
+	 (X + XDim)
+      end
+   end
    
    class MarkerNode from OzLabelNode
       meth layoutX($)
@@ -533,6 +550,7 @@ define
 		   atom        : AtomNode
 		   ozAtom      : OzAtomNode
 		   label       : LabelNode
+		   labelType   : LabelTypeNode
 		   labelRecord : LabelRecordNode
 		   marker      : MarkerNode
 		   separator   : SeparatorNode
