@@ -159,7 +159,7 @@ struct
 			       ; relnumber := 0 )
 		     else ()  
 		   ; case getDesc(n) of
-			 VALUE(r) => f(NONE va,#typ(r),p,index,
+			 VALUE(r) => f(NONE,va,#typ(r),p,index,
 				       getDepth(n),root)
 		       | I_VALUE(r) => let val va_inf =   
 			     UnsafeValue.cast va : Reflect.module
