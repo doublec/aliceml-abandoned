@@ -28,8 +28,8 @@
 	infix 7 `*
 	infix 6 `+ `-
 	infix 5 `#
-	infix 4 `= `<> `> `>= `< `<=
-	infix 3 `<->
+	infix 4 `= `&lt;&gt; `> `>= `&lt; `&lt;=
+	infix 3 `&lt;->
 
 	datatype domain_element =
 	    `` of int
@@ -45,13 +45,13 @@
 	  | `* of term * term
 
 	datatype rel =
-	    `<   of term * term
-	  | `<=  of term * term
+	    `&lt;   of term * term
+	  | `&lt;=  of term * term
 	  | `=   of term * term
-	  | `<>  of term * term
+	  | `&lt;&gt;  of term * term
 	  | `>=  of term * term
 	  | `>   of term * term
-	  | `<-> of rel * term
+	  | `&lt;-> of rel * term
 
 	val var : domain option -> term
 	val bin : unit -> term
@@ -105,31 +105,31 @@
 
     <DT>
       <TT>datatype rel =<BR>
-	  &nbsp;&nbsp;&nbsp;&nbsp;`<&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `<=&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;&nbsp;&nbsp;`&lt;&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&lt;=&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `=&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `<>&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&lt;&gt;&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `>=&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `>&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `<-> of rel * term</TT>
+	  &nbsp;&nbsp;| `&lt;-> of rel * term</TT>
     </DT>
     <DD>
       <P>This datatype is used to post linear equations.
       </P>
       <UL>
-        <LI><TT>`<(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT>`&lt;(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> is less than <I>y</I>.
-        <LI><TT>`<=(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT>`&lt;=(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> is less than or equal to <I>y</I>.
         <LI><TT>`=(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> equals <I>y</I>.
-        <LI><TT>`<>(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT>`&lt;&gt;(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> is not equal to <I>y</I>.
         <LI><TT>`>=(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> is greater than or equal to <I>y</I>.
         <LI><TT>`>(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> is greater than <I>y</I>.
-        <LI><TT>`<->(<I>e</I>,<I>c</I>)</TT> reifies
+        <LI><TT>`&lt;->(<I>e</I>,<I>c</I>)</TT> reifies
             the equation <I>e</I> into <I>c</I>.
       </UL>
       <P></P>

@@ -128,8 +128,8 @@
 	val equal : fd * fd -> unit (* X =: Y *)
 	val notequal : fd * fd -> unit (* X \=: Y *)
 	val distance : fd * fd * relation * fd -> unit
-	val less : fd * fd -> unit (* X <: Y *)
-	val lessEq : fd * fd -> unit (* X <=: Y *)
+	val less : fd * fd -> unit (* X &lt;: Y *)
+	val lessEq : fd * fd -> unit (* X &lt;=: Y *)
 	val greater : fd * fd -> unit (* X >: Y *)
 	val greaterEq : fd * fd -> unit (* X >=: Y *)
 	val disjoint : fd * int * fd * int -> unit
@@ -503,7 +503,7 @@
          if there is no value between the lower and upper bound of
          the domain of the other variable, such that the constraint holds.
          Additionally, if <TT>x = z</TT>, the propagator is replaced by
-         <TT>x < i</TT>.  If the current upper bound of <I>x</I>
+         <TT>x &lt; i</TT>.  If the current upper bound of <I>x</I>
          is less than <I>i</I>, the propagator is replaced by <TT>x=z</TT>. 
     </P></DD>
 
@@ -627,7 +627,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        x + i1 <= y or y + i2 <= x</PRE>
+        x + i1 &lt;= y or y + i2 &lt;= x</PRE>
       <P>May cut holes into the domains.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
@@ -639,7 +639,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        ((x + i1 <= y) and (c = 0)) or ((y + i2 <= x) and (c = 1))</PRE>
+        ((x + i1 &lt;= y) and (c = 0)) or ((y + i2 &lt;= x) and (c = 1))</PRE>
       <P>May cut holes into the domains.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
@@ -910,20 +910,21 @@
       <UL>
         <LI><TT>NAIVE</TT> considers only non-determined elements of <I>v</I>.
             Chooses the leftmost variable <I>x</I> in <I>v</I> and creates
-            a choice point for <TT>x = l</TT> and <TT>x <> l</TT> where <I>l</I>
-            is the lower bound of <I>x</I>.
+            a choice point for <TT>x = l</TT> and <TT>x &lt;&gt; l</TT> where
+	    <I>l</I> is the lower bound of <I>x</I>.
         <LI><TT>FIRSTFAIL</TT> considers only non-determined
             elements of <I>v</I>.
             Chooses the leftmost variable <I>x</I> in <I>v</I>,
             whose domain is minimal and creates
             a choice point for <TT>x = l</TT> and
-            <TT>x <> l</TT> where <I>l</I> is the lower bound of <I>x</I>.
+            <TT>x &lt;&gt; l</TT> where <I>l</I> is the lower bound
+	    of <I>x</I>.
         <LI><TT>SPLIT</TT> considers only non-determined
             elements of <I>v</I>.
             Chooses the leftmost variable <I>x</I> in <I>v</I>,
             whose domain is minimal and creates
             a choice point for <TT>x = m</TT> and
-            <TT>x <> m</TT> where <I>m</I>
+            <TT>x &lt;&gt; m</TT> where <I>m</I>
             is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
         <LI><TT>NBSUSPS</TT> selects the variable with the largest number
             of suspensions. If several variables suspend on the maximal

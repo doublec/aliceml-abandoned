@@ -401,7 +401,7 @@ library function <A href="library/future.html"><TT>Future.await</TT></A>:</P>
 Future.await (spawn fib 30)
 <I>val it : int = 1346269</I></PRE>
 
-<P>Interestingly, <A href="#laziness">lazy suspensions<A> are nothing but a
+<P>Interestingly, <A href="#laziness">lazy suspensions</A> are nothing but a
 special form of future, called a <EM>lazy future</EM>. Requesting a lazy future
 is triggering the corresponding computation. Consequently,
 <TT>Future.await</TT> can also be used to trigger lazy computations
@@ -673,7 +673,6 @@ Inspector allows looking at values of abstract type, however.</P>
 <PRE class=code>
 Chan.put (ch, 17); Chan.put (ch, 6)
 <I>val it : unit = ()</I></PRE>
-</PRE>
 
 <P align=center><IMG src="inspector-conc-5.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -695,7 +694,7 @@ fun client _ = spawn (fib 20; Chan.get ch)
 inspect (List.tabulate (5, client))
 <I>val it : unit = ()</I>
 Chan.put (ch, 1); Chan.put (ch, 2); Chan.put (ch, 3)
-<I>val it : unit = ()</I></I></PRE>
+<I>val it : unit = ()</I></PRE>
 
 <P align=center><IMG src="inspector-conc-6.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -1475,7 +1474,7 @@ post (z `< x)
 <P align=center><IMG src="inspector-fd-3.jpg" border=0 alt="Alice Inspector"></P>
 
 <PRE class=code>
-post (y `< `7)
+post (y `&lt; `7)
 <I>val it : unit = ()</I></PRE>
 
 <P align=center><IMG src="inspector-fd-4.jpg" border=0 alt="Alice Inspector"></P>
@@ -1485,7 +1484,7 @@ variable is determined if its domain is reduced to a singleton set. A solution
 is found when all variables are determined.</P>
 
 <PRE class=code>
-post (z `<> `1)
+post (z `&lt;&gt; `1)
 <I>val it : unit = ()</I></PRE>
 
 <P align=center><IMG src="inspector-fd-5.jpg" border=0 alt="Alice Inspector"></P>
@@ -1523,8 +1522,8 @@ let
     val v as #[S,E,N,D,M,O,R,Y] = vec (8, [0`#9])
 in
     distinct v; 
-    post (S `<> `0); 
-    post (M `<> `0); 
+    post (S `&lt;&gt; `0); 
+    post (M `&lt;&gt; `0); 
     post (`1000`*S `+ `100`*E `+ `10`*N `+ D `+
 	  `1000`*M `+ `100`*O `+ `10`*R `+ E `=
           `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y ); 

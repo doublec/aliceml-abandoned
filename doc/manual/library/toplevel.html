@@ -75,7 +75,7 @@
   <TT>
   <TABLE>
     <TR> <TD>val = : ''a * ''a -> ''a</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
-    <TR> <TD>val <> : ''a * ''a -> ''a</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
+    <TR> <TD>val &lt;&gt; : ''a * ''a -> ''a</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
     <TR> <TD>val real : int -> real</TD> <TD><A href="real.html">Real.fromInt</A></TD> </TR>
     <TR> <TD>val ceil : real -> int</TD> <TD><A href="real.html">Real.ceil</A></TD> </TR>
     <TR> <TD>val floor : real -> int</TD> <TD><A href="real.html">Real.floor</A></TD> </TR>
@@ -147,9 +147,9 @@
     <TR> <TD>val div : <I>wordint</I> * <I>wordint</I> -> <I>wordint</I></TD> </TR>
     <TR> <TD>val mod : <I>wordint</I> * <I>wordint</I> -> <I>wordint</I></TD> </TR>
     <TR> <TD>val / : <I>real</I> * <I>real</I> -> <I>real</I></TD> </TR>
-    <TR> <TD>val < : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
+    <TR> <TD>val &lt; : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
     <TR> <TD>val > : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
-    <TR> <TD>val <= : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
+    <TR> <TD>val &lt;= : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
     <TR> <TD>val >= : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
   </TABLE>
   </TT>
@@ -174,7 +174,7 @@
     infix  7  * / div mod
     infix  6  + - ^
     infixr 5  :: @
-    infix  4  = <> > >= < <=
+    infix  4  = &lt;&gt; > >= &lt; &lt;=
     infix  3  := :=: o
     infix  0  before
   </PRE>
