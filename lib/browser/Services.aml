@@ -22,10 +22,15 @@ import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure WindowHelper from "WindowHelper"
 import structure MkColorTable from "MkColorTable" 
 import structure MainDictionary from "MainDictionary"
+import structure ColorMap from "ColorMap"
+import structure Types from "Types"
 import signature SERVICES from "SERVICES-sig"
+
 
        structure Services :> SERVICES =
 	   struct
+
+	       exception MissingColor
 	       type tag = Gtk.object
 	       type color = Gtk.object
 		  
@@ -50,10 +55,22 @@ import signature SERVICES from "SERVICES-sig"
 				      ("fill_color_gdk", Gtk.OBJECT(c) ),
 				      ("anchor", Gtk.INT(2))]) 
 		   
-		   
+		
+fun print00 (str,group,c,fontname) = 
+    GtkCanvas.itemNew(group, 
+		      GtkCanvas.TEXT, 
+		      [("text", Gtk.STRING str),
+		       ("font", Gtk.STRING fontname),
+		       ("fill_color_gdk", 
+			Gtk.OBJECT(valOf(
+			ColorMap.lookup(MkColorTable.colorTable,c))) ),
+		       ("anchor", Gtk.INT(2))]) 
+
+   
 	 fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
 
-	 fun positionGroup (group,x,y) = 
+	 fun positionGroup (group,x,y) = if x=0.0 andalso y=0.0 then ()
+	     else 
 	     (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
 	      ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
 					      
@@ -69,20 +86,21 @@ import signature SERVICES from "SERVICES-sig"
 	       		    positionGroup(group,rx,ry)
 	   end *)
 		   
-	  fun moveGroup (group,x,y) = 
-	      let
-		  val w = fontWidth()
-		  val h = fontHeight()
-		  val rx = Real.fromInt(x * w)
-		  val ry = Real.fromInt(y * h)
-		  val _ = () (* TextIO.print("ITEM MOVE BY " 
-					     ^ Real.toString(rx)
-					     ^ "/" 
-					     ^ Real.toString(ry)
-					     ^ "\n") *)
-	      in
-		  GtkCanvas.itemMove(group,rx,ry)
-	      end
+	  fun moveGroup (group,x,y) = if x=0 andalso y=0 then ()
+	      else
+		  let
+		      val w = fontWidth()
+		      val h = fontHeight()
+		      val rx = Real.fromInt(x * w)
+		      val ry = Real.fromInt(y * h)
+		      val _ = () (* TextIO.print("ITEM MOVE BY " 
+				  ^ Real.toString(rx)
+				  ^ "/" 
+				  ^ Real.toString(ry)
+				  ^ "\n") *)
+		  in
+		      GtkCanvas.itemMove(group,rx,ry)
+		  end
 	  
 			     
 	   fun getCoordinates group = 
@@ -233,32 +251,43 @@ import signature SERVICES from "SERVICES-sig"
 	       ((x2 * v) div 8 + v_off)::translate(xr,h,v,h_off,v_off)
 	     | translate _ = raise Match
 
-	   fun createArrow(group,points,color) =  
-	       GtkCanvas.itemNew(group,
-			       GtkCanvas.POLYGON,
-			        [("points", 
-			 Gdk.POINTS points),
-				 ("fill_color_gdk",
-		  Gtk.OBJECT(color)),
-				 ("outline_color_gdk",
+	   fun createArrow(group,points) = 
+	       let
+		   val color = case ColorMap.lookup(MkColorTable.colorTable,
+						    Types.LIMIT_COLOR) of 
+		       SOME x => x
+		     | NONE   => raise MissingColor
+	       in
+		   GtkCanvas.itemNew(group,
+				     GtkCanvas.POLYGON,
+				     [("points", 
+				       Gdk.POINTS points),
+				      ("fill_color_gdk",
+				       Gtk.OBJECT(color)),
+				      ("outline_color_gdk",
 		      Gdk.OBJECT(MkColorTable.allocColor(0,0,0))),
-				 ("width_pixels", Gdk.INT 1)])
+				      ("width_pixels", Gdk.INT 1)])
+	       end
 
 	       
-	   fun createArrowRight(group,h,v,h_off,v_off,color) = let
+	   fun createArrowRight(group) = let
+			   val w = (fontWidth() * 3) div 2
+	                   val h = fontHeight()  
 			   val points = [4,0, 4,2, 0,2, 0,6, 4,6, 4,8, 8,4]
-			   val points' = translate(points,h,v,h_off,v_off)
+			   val points' = translate(points,w,h,0,0)
 			   val group' = newTag(group,0.5,0.5)
 	      in
-		 createArrow(group',points',color)
+		 createArrow(group',points')
 	      end
 
-	   fun createArrowDown(group,h,v,h_off,v_off,color) = let
+	   fun createArrowDown(group) = let
+			   val w = (fontWidth() * 3) div 2
+	                   val h = fontHeight() 
 			   val points = [2,0, 2,4, 0,4, 4,8, 8,4, 6,4, 6,0]
-			   val points' = translate(points,h,v,h_off,v_off)
+			   val points' = translate(points,w,h,0,0)
 			   val group' = newTag(group,0.5,0.5)
 	      in
-		 createArrow(group',points',color)
+		 createArrow(group',points')
 	      end
 	     
 

@@ -189,7 +189,7 @@ fun isByneed n = let
 		       | Types.I_VALUE(r) => UnsafeValue.cast (#value(r)) 
 		       | Types.INTERPUNCT => raise Match
 		 in
-		     (Future.isLazy(future)) handle Match => false
+		     (Future.isLazy(future)) handle _ => false
 		 end
 
 

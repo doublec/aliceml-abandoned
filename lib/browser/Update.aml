@@ -129,7 +129,7 @@ struct
 		 else ()
                ; Layout.layout(node)
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
-	       ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
+	       ; DrawNodes.draw(node,0,y_pos,true) 
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
 		 in ( WindowManager.incr_act_line dy
 		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
@@ -255,7 +255,7 @@ struct
 	in ( Gtk.objectDestroy(getGroup(n))
 	    ; Layout.layout(node)
 	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
-	    ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
+	    ; DrawNodes.draw(node,0,y_pos,true) 
 	    ; let val dy =  Layout.get_ydim(node) - old_ydim
 	      in ( WindowManager.incr_act_line dy
 		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,

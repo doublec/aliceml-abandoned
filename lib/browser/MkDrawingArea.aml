@@ -26,8 +26,6 @@ struct
 
     type tag = Gtk.object
     val canvas =  GtkCanvas.new 0
-
-    val _ = Gtk.signalConnect(canvas,"event",fn [Gtk.EVENT(event)] => Inspector.inspect(event))
 	
     val _ =  (Gtk.widgetSetUsize(canvas, Real.trunc xsize, Real.trunc ysize ) 
 	      ;GtkCanvas.setScrollRegion (canvas,0.0,0.0,xsize,ysize))

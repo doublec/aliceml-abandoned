@@ -15,6 +15,7 @@
 
 import structure MainDictionary from "MainDictionary"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Types from "Types"
 
 signature SERVICES =  
     sig
@@ -26,6 +27,7 @@ signature SERVICES =
 	val newTag        : tag * real * real -> tag
 	val move          : tag * real * real -> unit   
 	val printXY       : string * tag * real * real * color * string -> tag
+	val print00       : string * tag * Types.color_class * string -> tag
 	val positionGroup : tag * real * real -> unit
 	val moveGroup     : tag * int * int  -> unit
 	val getCoordinates: tag  -> int * int * int * int 
@@ -35,7 +37,7 @@ signature SERVICES =
 	val resizeSepLines: MainDictionary.dictionary * real -> unit
 	val yPosSepLine   : tag * tag -> unit
 	val yPosSepRel    : tag * int -> unit  
-	val createArrowRight: tag * int * int * int * int * color-> tag
-	val createArrowDown: tag * int * int * int * int * color -> tag
+	val createArrowRight: tag  -> tag
+	val createArrowDown: tag  -> tag
 	    
     end 

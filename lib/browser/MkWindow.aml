@@ -605,7 +605,6 @@ struct
 	      ;setSelectionMenuSensitive (bar,false)  
 	      ;Gtk.signalConnect(scrolled,"size_allocate",
 				 handleResize(scrolled,hadj,vadj,DA.resize))
-	     (* ;Gtk.signalConnect(scrolled,"event",fn [Gtk.EVENT(event)] => Inspector.inspect(event)) *)
 	      ;Gtk.signalConnect(hadj,"value_changed",fn _ => freezeThaw(DA.canvas))
 	      ;Gtk.signalConnect(vadj,"value_changed",fn _ => freezeThaw(DA.canvas))
   	      ;Gtk.containerAdd(scrolled,DA.canvas)

@@ -34,7 +34,7 @@ struct
 	    ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,
 			       !WindowManager.act_line
-			       ,DrawNodes.groupToPosition)
+			       ,false)
 	     ; WindowManager.incr_act_line
 	     (Layout.get_ydim(n) + 1)
 	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
@@ -47,7 +47,7 @@ struct
 	let val n = NewNode.newNodeInf(v,t)
 	in  ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,!WindowManager.act_line
-			       , DrawNodes.groupToPosition)
+			       , false)
 	     ; WindowManager.incr_act_line
 	     (Layout.get_ydim(n) + 1)
 	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
