@@ -248,15 +248,17 @@ import signature SERVICES from "SERVICES-sig"
 	   fun createArrowRight(group,h,v,h_off,v_off,color) = let
 			   val points = [4,0, 4,2, 0,2, 0,6, 4,6, 4,8, 8,4]
 			   val points' = translate(points,h,v,h_off,v_off)
+			   val group' = newTag(group,0.5,0.5)
 	      in
-		 createArrow(group,points',color)
+		 createArrow(group',points',color)
 	      end
 
 	   fun createArrowDown(group,h,v,h_off,v_off,color) = let
 			   val points = [2,0, 2,4, 0,4, 4,8, 8,4, 6,4, 6,0]
 			   val points' = translate(points,h,v,h_off,v_off)
+			   val group' = newTag(group,0.5,0.5)
 	      in
-		 createArrow(group,points',color)
+		 createArrow(group',points',color)
 	      end
 	     
 

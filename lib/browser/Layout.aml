@@ -47,7 +47,7 @@ struct
                              | Container(r) => !(#width(r))
                              | RelNode(r) => !(#width(r))
                              | RelRefNode(r) => !(#width(r))
-			     | Limit(_) => 1
+			     | Limit(_) => 2
                              | Empty => 0
 
     (* get_ydim *)

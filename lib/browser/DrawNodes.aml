@@ -64,19 +64,25 @@ struct
 					     LIMIT_COLOR) of 
 		SOME x => x
 	      | NONE   => raise MissingColor
-	    val limitsig = if getSort(node) = Types.DEPTH_LIMIT
-			       then "*" 
-			   else "@"
+	    val w = (Services.fontWidth() * 3) div 2
+	    val h = Services.fontHeight()  
 	in
-	    (Services.printXY (limitsig,
-			       getGroup(node),
-			       0.0,
-			       0.0,
-			       color,
-			       !Settings.fontname)
+	    (if getSort(node) = Types.DEPTH_LIMIT
+	       then Services.createArrowDown(getGroup(node),
+					     w,
+					     h,
+					     0,
+					     0,
+					     color)
+	    else  Services.createArrowRight(getGroup(node),
+					     w,
+					     h,
+					     0,
+					     0,
+					     color)
 	     ;getStatus(node) := Types.CLEAN 
 	     ;f(node,x,y)
-	     ;(x+1,y))
+	     ;(x+2,y))
 	end
     
     and concatHorFunct f  =  (fn (a,(x,y))  => draw(a,x,y,f)) 
@@ -188,7 +194,7 @@ struct
 		      end
 
     and move(n,x,y) = (move'(n,x,y)
-		      ;(x+get_l_xdim_or_xdim(n),
+		      ;(x+ Layout.iterFindLX(n),
 			y+get_ydim(n)-1)) (* maybe get_l_xdim 
 					   is 
 					   not sufficient ! *)
