@@ -12,7 +12,7 @@
  *
  *)
 
-import structure FD from "x-alice:/lib/constraints/FD.ozf"
+import structure FD from "FD"
 
 local
     open FD

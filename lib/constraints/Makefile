@@ -1,53 +1,85 @@
-## -*- Makefile -*-
+###
+### Authors:
+###   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+### 
+### Copyright:
+###   Thorsten Brunklaus, 2000
+###   Leif Kornstaedt, 2001
+### 
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+### 
+
+# Configurable directories
+
+PREFIX = /opt/stockhausen-devel
+
+SRCTOP = ../..
+BOOTSTRAPDIR = ../../bootstrap
+
+# No configuration needed from here
+
+VPATH = $(SRCTOP)
+
+OZC = ozc
+OZCOPTS =
+STOC = stoc
+STOCOPTS = --no-dump-elaboration-sig
+STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
+
+OZSOURCES = FD.oz FS.oz Space.oz Explorer.oz
+ALICESOURCES = SEARCH-sig.aml Search.aml
+
+COMPONENTS = \
+	$(OZSOURCES:%.oz=%.ozf) \
+	$(ALICESOURCES:%.aml=%.ozf)
+
+INSTALLDIRS = $(PREFIX)/lib/constraints
+INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/constraints/%)
+
+.PHONY: all depend install clean veryclean distclean
+
 ##
-## Author:
-##   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-## 
-## Copyright:
-##   Thorsten Brunklaus, 2000
-## 
-## Last change:
-##   $Date$ by $Author$
-##   $Revision$
-## 
+## Building
+##
 
-OZC      = ozc
-OZFLAGS  = -z9
-SMLC     = stoc
-SMLFLAGS =
+all: $(COMPONENTS)
 
-OZSRCS   = FD.oz    \
-           FS.oz    \
-           Space.oz \
-           Explorer.oz \
-           Inspector.oz
+depend:
+	$(STODEP) $(ALICESOURCES) > Makefile.depend
 
-OZOBJS   = FD.ozf    \
-           FS.ozf    \
-           Space.ozf \
-           Explorer.ozf \
-           Inspector.ozf
+Untyped%.ozf: %.oz
+	$(OZC) $(OZCOPTS) -c $< -o $@
 
-SOURCES  = FD.ozf.sig       \
-           FS.ozf.sig       \
-           Space.ozf.sig    \
-           Explorer.ozf.sig \
-           Inspector.ozf.sig \
-           Search.sml       \
-           SEARCH.sig
+%.ozf: Untyped%.ozf %.asig
+	$(STOC) $(STOCOPTS) --replacesign $^ $@
 
-PREFIX=/opt/stockhausen-devel0
+%.ozf: %.aml
+	$(STOC) $(STOCOPTS) -c $< -o $@
 
-all: $(OZOBJS) $(SMLOBJS)
+-include Makefile.depend
 
-%.ozf : %.oz
-	$(OZC) $(OZFLAGS) -c $< -o $@
+##
+## Installation
+##
+
+$(INSTALLDIRS):
+	mkdir -p $@
+
+install: $(INSTALLDIRS) $(INSTALLFILES)
+
+$(PREFIX)/lib/constraints/%.ozf: %.ozf
+	install -c -m 444 $< $@
+
+##
+## Cleaning Up
+##
 
 clean:
-	rm -f $(OZOBJS) $(SMLOBJS) *.ozm *.ozp
+	-rm -f $(OZSOURCES:%.oz=Untyped%.ozf) $(COMPONENTS) *.ozm *.ozp
 
-install: all
-	(cd $(PREFIX)/lib && rm -rf constraints) || exit 1
-	mkdir $(PREFIX)/lib/constraints
-	cp $(OZOBJS) $(PREFIX)/lib/constraints
-	cp $(SOURCES) $(PREFIX)/lib/constraints
+veryclean: clean
+
+distclean: veryclean
