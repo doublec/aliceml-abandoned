@@ -14,6 +14,11 @@ typedef int (*FuncType) (float x);
 int main(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
 
+  /*  GtkWidget *t = gtk_table_new(2,2,FALSE);
+  GtkWidget *b = gtk_button_new_with_label("a");
+  gtk_table_attach_defaults(GTK_TABLE(t),b,0,1,0,1);
+  g_message("x");*/
+
   GtkWidget *w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   if (g_type_is_a(G_OBJECT_TYPE(w), 0) == FALSE)
     printf("!!\n");

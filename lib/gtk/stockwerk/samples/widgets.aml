@@ -11,6 +11,10 @@
  *
  *)
 
+
+(* As soon as inspector tool runs on SEAM, 
+   one could replace all "print" function calls by "Inspector.inspect". *)
+
 import structure Gtk        from "../Gtk"
 import structure GtkBuilder from "GtkBuilder"
 
@@ -18,8 +22,7 @@ local
     open GtkBuilder
 in
     local
-	fun DummyHandler _ = (*Inspector.inspect*) 
-	                      print "DummyHandler was called"
+	fun DummyHandler _ = print "DummyHandler was called"
 	val start1 = Button("Start 1",
 			    [Handler("clicked", DummyHandler)])
 	val start2 = Button("Start 2 Button",
@@ -34,7 +37,7 @@ in
 		       BoxEnd(false, false, 0, end1),
 		       BoxEnd(false, false, 0, end2)]
 	val child   = VBox {homogeneous=false, spacing=0, entries=entries}
-	fun DeleteHandler _ = (*Inspector.inspect*) print "Delete was called!"
+	fun DeleteHandler _ = print "Delete was called!"
 	val widget  = Toplevel {title="Vertical Box", border=10,
 				handler=[Handler("destroy", DeleteHandler)],
 				inner=child}
@@ -42,8 +45,9 @@ in
 	val _ = MakeWidget widget
     end
 
+
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val leftup    = Button("Left Up",
 			       [Handler("clicked", MakeHandler "Left Up")])
@@ -69,8 +73,9 @@ in
 	val _ = MakeWidget widget
     end
 
+
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val entries =
 	    [BoxSimple(CheckButton ("Red",
@@ -94,7 +99,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val left   = Button("Left", nil)
 	val right  = Button("Right", nil)
@@ -110,7 +115,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val entries = [{label="First", note=Button("First Page", nil)},
 		       {label="Second", note=Button("Second Page", nil)},
@@ -128,7 +133,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val entries = [Button("Ok", nil),
 		       Button("Refresh", nil),
@@ -146,7 +151,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 	    
 	val list1 =
 	    [MenuItem("first",
@@ -171,7 +176,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val w = Promise.promise ()  
 
@@ -204,7 +209,7 @@ in
     end
 
     local
-	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
+	fun MakeHandler s = fn _ => print s
 
 	val child   = Text {xdim=50.0, ydim=50.0, text=nil}
 	val widget  =
@@ -215,4 +220,5 @@ in
     in
 	val _ = MakeWidget widget
     end
+
 end
