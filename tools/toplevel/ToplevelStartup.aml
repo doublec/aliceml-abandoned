@@ -68,6 +68,8 @@ import structure Inspector from "x-alice:/lib/tools/Inspector"
 *)
 import structure CoreToplevel : (val use : string -> unit) from "x-alice:/tools/CoreToplevel"
 
+import val it : unit -> unit from "x-alice:/tools/ToplevelIt"
+
 (* We need to repeat overloading declarations here,
    because mere reliance on reexport-import will default the types! *)
 __overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num

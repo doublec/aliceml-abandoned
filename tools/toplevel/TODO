@@ -3,6 +3,8 @@ TODO list for the Alice IDE
 
 Bugs:
 
+* Indent-selection inserts whitespace at beginning of line, not before first
+  character
 * The output writers should be a little more robust against exceptions in
   e.g. the highlighting module - at the moment, an exception there just kills
   the output
@@ -13,6 +15,7 @@ Bugs:
 
 Missing Features:
 
+* bookmarks
 * propagate output width on init and after resize (requires Pango binding)
 * comment/uncomment region?
 * cumulative undo?

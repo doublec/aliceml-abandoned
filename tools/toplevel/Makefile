@@ -24,7 +24,8 @@ SOURCES = \
 	Preferences.aml
 
 all:	Main.alc \
-	LinkedTextToplevel.alc LinkedGuiToplevel.alc LinkedCoreToplevel.alc
+	LinkedTextToplevel.alc LinkedGuiToplevel.alc LinkedCoreToplevel.alc \
+	ToplevelIt.alc
 
 LinkedCoreToplevel.alc: CoreToplevel.alc
 	alicelink -z --include ./ ./$< -o $@
@@ -34,6 +35,9 @@ LinkedTextToplevel.alc: TextToplevel.alc
 
 LinkedGuiToplevel.alc: GuiToplevel.alc
 	alicelink -z --exclude ./CoreToplevel --include ./ ./$< -o $@
+
+ToplevelIt.alc:
+	(cd easteregg && make install)
 
 %.alc: %.aml
 	alicec $< -o $@
@@ -45,6 +49,7 @@ install: all
 	install LinkedGuiToplevel.alc $(INSTALLTO)/GuiToplevel.alc
 	install LinkedCoreToplevel.alc $(INSTALLTO)/CoreToplevel.alc
 	install ToplevelStartup.aml $(INSTALLTO)/ToplevelStartup.aml
+	install ToplevelIt.alc $(INSTALLTO)/ToplevelIt.alc
 	install alice $(INSTALLBINTO)/alice
 
 clean:
