@@ -85,6 +85,8 @@ structure Abbrev  =
 
 	val CClass         = "java/lang/Class"
 
+	val CReference     = "de/uni_sb/ps/dml/runtime/Reference"
+
 	val MForName       = (CClass, "forName", ([Classsig CString], [Classsig CClass]))
 
 	val MPickle = ("de/uni_sb/ps/dml/runtime/General$Pickle","apply",

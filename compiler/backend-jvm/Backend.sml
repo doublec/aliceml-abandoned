@@ -122,7 +122,7 @@ structure Backend=
 			    ((lc,regs)::rest) => (stack := rest;
 						  localscount := lc;
 						  register := regs)
-			  | nil => raise Error("empty locals stack")
+			  | nil => Crash.crash "empty locals stack"
 
 		    (* return the number of the highest register in use *)
 		    fun max () = !localscount

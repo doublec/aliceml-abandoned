@@ -21,9 +21,6 @@ structure Common=
 	open JVMInst
 	open Abbrev
 
-	(* falls was böses passiert, wird eine Error-exception mit sinnvollem Inhalt 'geraist' *)
-	exception Error of string
-
 	exception Mitch
 
 	(* xxx For Debugging: *)
@@ -45,9 +42,9 @@ structure Common=
 		val stack = ref [""]
 		val initial = ref ""
 
-		fun getCurrent () = case !stack of (x::xs) => x | _ => raise Error("Class.getCurrent")
+		fun getCurrent () = case !stack of (x::xs) => x | _ => Crash.crash "Class.getCurrent"
 		fun push name = stack := name::(!stack)
-		fun pop () =  case !stack of (x::xs) => stack := xs | _ => raise Error("Class.pop")
+		fun pop () =  case !stack of (x::xs) => stack := xs | _ => Crash.crash "Class.pop"
 		fun setInitial name = ((stack := [name]); initial := name)
 		fun getInitial () = (!initial)
 		fun getLiteralName() = getInitial()^"classLiberal"

@@ -82,6 +82,8 @@ structure CodeGen =
 	      | freeVarsExp (ConAppExp (_, id', idargs)) =
 		(fV.insert id';
 		 argApp (fV.insert,idargs))
+	      | freeVarsExp (RefAppExp (_, idargs)) =
+		argApp (fV.insert, idargs)
 	      | freeVarsExp (TupExp (_,ids)) = app fV.insert ids
 	      | freeVarsExp (RecExp (_,labids)) = app (fn (lab, id') => fV.insert id') labids
 	      | freeVarsExp (SelExp _) = ()
@@ -121,6 +123,7 @@ structure CodeGen =
 		(fV.insert id';
 		 argApp (fV.insert, idargs'))
 	      | freeVarsExp (ConExp(_, id', _)) = fV.insert id'
+	      | freeVarsExp (RefExp _) = ()
 	      | freeVarsExp (SelAppExp(_,_,id')) = fV.insert id'
 	      | freeVarsExp (PrimExp (_, name)) = ()
 	      | freeVarsExp e = raise Debug (Exp e)
@@ -175,7 +178,7 @@ structure CodeGen =
 		app (fn (_,id') => fV.delete id') labids
 	      | freeVarsTest (TupTest labs) = app fV.delete labs
 	      | freeVarsTest (LabTest(_,id')) = fV.delete id'
-	      | freeVarsTest (VecTest _) = raise Error "Was'n VecTest?" (* xxx *)
+	      | freeVarsTest (VecTest _) = raise Crash.crash "Was'n VecTest?" (* xxx *)
 
 	    and freeVarsDecs (decs) =
 		app freeVarsDec (List.rev decs)
@@ -380,8 +383,7 @@ structure CodeGen =
 				    Astore loc ::
 				    nil
 				end
-			      | funList _ = raise
-				Error "Frontend Error: OneArg expected."
+			      | funList _ = Crash.crash "OneArg expected."
 
 			    fun specTups (id' :: rest) =
 				idCode id' ::
@@ -490,8 +492,7 @@ structure CodeGen =
 							    ([],[Voidsig])) ::
 					     Astore loc ::
 					     nil)
-			      | _ => raise Error
-					 "Intermediate Error: illegal expression in RecDec"
+			      | _ => raise Crash.crash "illegal expression in RecDec"
 			in
 			    Multi one ::
 			    akku
@@ -743,9 +744,25 @@ structure CodeGen =
 					 ([], [Classsig CConstructor])) ::
 			idCode id'' ::
 			Ifacmpne elselabel ::
-			idCode id' ::
+			stampcode' ::
 			Checkcast CConVal ::
 			Invokeinterface (CConVal, "getContent",
+					 ([],[Classsig CVal])) ::
+			Astore loc ::
+			nil
+		    end
+
+		  | testCode (RefTest id''') =
+		    let
+			val loc = Register.assign(id''',Register.new())
+			val _ = FreeVars.setFun (id''', Lambda.top())
+		    in
+			stampcode' ::
+			Dup ::
+			Instanceof CReference ::
+			Ifeq ilselabel ::
+			Checkcast CReference ::
+			Invokevirtual (CReference, "getContent",
 					 ([],[Classsig CVal])) ::
 			Astore loc ::
 			nil
@@ -1380,7 +1397,7 @@ structure CodeGen =
 	  | expCode (VarExp(_,id')) =
 		     [idCode id']
 
-	  | expCode (AdjExp _) = raise Error "seltsame operation adjexp"
+	  | expCode (AdjExp _) = Crash.crash "seltsame operation adjexp"
 
 	  | expCode (SelExp(_,lab')) =
 		     (case LargeInt.fromString lab' of
@@ -1400,6 +1417,9 @@ structure CodeGen =
 	  | expCode (ConExp (_, id', _)) =
 			  [idCode id']
 
+	  | expCode (RefExp _) =
+			  [Getstatic CRef]
+
 	  | expCode (ConAppExp (_, id', idargs)) =
 			  idCode id' ::
 			  idArgCode
@@ -1407,6 +1427,13 @@ structure CodeGen =
 			   [Invokeinterface (CVal, applyName (false,1),
 					    ([Classsig CVal],
 					     [Classsig CVal]))])
+	  | expCode (RefAppExp (_, idargs)) =
+			  New CReference ::
+			  Dup ::
+			  idArgCode
+			  (idargs,
+			   [Invokespecial (CReference, "<init>",
+					   ([Classsig CVal], [Voidsig]))])
 
 	  | expCode (SelAppExp (_, label', id')) =
 			  let
@@ -1683,7 +1710,7 @@ structure CodeGen =
 		classToJasmin (class)
 	    end
 	  | expCodeClass _ =
-	    raise Error "Error in intermediate: FunExp should begin with OneArg."
+	    Crash.crash "FunExp should begin with OneArg."
 	and
 	    compile prog = genProgramCode (0,0,2,"Emil", imperatifyString prog)
 	and

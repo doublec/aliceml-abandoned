@@ -15,7 +15,6 @@ structure ToJasmin =
 	open Backend
 	open JVMInst
 
-	exception Error of string
 	datatype deb = SIs of string*INSTRUCTION list
 	exception Debug of deb
 
@@ -794,7 +793,7 @@ structure ToJasmin =
 			else if i=1 then
 			    "fconst_1"
 			     else "fconst_2"
-	      | instructionToJasmin (Get _, _) = raise Error ""
+	      | instructionToJasmin (Get _, _) = Crash.crash "instructionToJasmin: Unresolved Get"
 	      | instructionToJasmin (Getfield(fieldn, arg),_) = "getfield "^fieldn^" "^
 				 (desclist2string arg)
 	      | instructionToJasmin (Getstatic(fieldn, arg),_) = "getstatic "^fieldn^" "^
@@ -811,7 +810,8 @@ structure ToJasmin =
 	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(LabelMerge.condJump l)
 	      | instructionToJasmin (Ifne l,_) = "ifne "^(LabelMerge.condJump l)
 	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ifstatic _,_) = raise Error ""
+	      | instructionToJasmin (Ifstatic _,_) =
+					 Crash.crash "IntructionToJasmin: unresolved Ifstatic"
 	      | instructionToJasmin (Iload j,s) =
 					 let
 					     val i = if s then JVMreg.get j-1 else JVMreg.get j
@@ -858,7 +858,7 @@ structure ToJasmin =
 				 flatten (switchlist, labellist)^
 				 "default: "^LabelMerge.condJump default
 			     end
-	      | instructionToJasmin (Multi _,_) = raise Error ""
+	      | instructionToJasmin (Multi _,_) = Crash.crash "instructionToJasmin: unresolved Multi"
 	      | instructionToJasmin (New cn,_) = "new "^cn
 	      | instructionToJasmin (Nop, _) = "nop"
 	      | instructionToJasmin (Pop,_) = "pop"
