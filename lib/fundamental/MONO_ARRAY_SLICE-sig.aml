@@ -16,7 +16,8 @@
  *)
 
 import structure __pervasive                   from "Pervasive"
-import type unit and int and vector and array
+import __primitive
+       type unit and int and vector and array
        type bool and order and option and list from "ToplevelTypes"
 
 signature MONO_ARRAY_SLICE =
