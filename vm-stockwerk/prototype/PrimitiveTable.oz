@@ -617,6 +617,10 @@ define
 	      'Unsafe.String.sub': ByteString.get#rr_v
 	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end#rr_v
 	      'Unsafe.cast': fun {$ X} X end#i_v
+	      'Stockwerk.realToVector':
+		 fun {$ S}
+		    {List.toTuple vector {ByteString.toString S}}
+		 end#r_v
 	      'Vector.fromList':
 		 fun {$ Xs TaskStack}
 		    case {RequestList Xs 0} of request(Transient) then
