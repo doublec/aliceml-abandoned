@@ -1570,10 +1570,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  i          = Source.over(i', infoLong longtycon)
 		val (id',stamp) = trVId_bind E vid
 		val  _          = insertScope E
+		val (ids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  typs'      = trTyo E tyo
 		val  con'       = O.Con(i', id', typs')
-		val  ids'       = trTyVarSeq E tyvarseq
-		val  typ'       = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  dec'       = O.ConDec(i, con', typ')
 		val  _          = deleteScope E
 		val  k          = List.length typs'
@@ -1617,7 +1616,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val  ids'  = trTyVarSeq E tyvarseq
 	    val  typs' = List.map (fn id' => O.VarTyp(O.infoId id', id')) ids'
 	in
-	    apptyp(typs', typ')
+	    ( ids', apptyp(typs', typ') )
 	end
 
 
@@ -2063,10 +2062,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',stamp) = trVId_bind E vid
 		val  hasArg     = not(Misc.Option_isNone tyo)
 		val  _          = insertScope E
+		val (ids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  typs'      = trTyo E tyo
 		val  con'       = O.Con(i', id', typs')
-		val  ids'       = trTyVarSeq E tyvarseq
-		val  typ'       = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  _          = deleteScope E
 		val  k          = List.length typs'
 		val  spec'      = O.ConSpec(i', con', typ')
