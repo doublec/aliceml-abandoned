@@ -40,16 +40,14 @@ structure IL :> IL =
 	  | FamilyAndAssembly
 	  | Family
 	  | FamilyOrAssembly
-	datatype methOverriding =
-	    Abstract
-	  | Final
-	  | Normal
-	datatype methCallConv =
+	datatype methKind =
 	    Static
 	  | Instance
+	  | Abstract
 	  | Virtual
+	  | Final
 
-	type methAttr = memberVisibility * methOverriding * methCallConv
+	type methAttr = memberVisibility * methKind
 
 	(* Field Attributes *)
 
@@ -129,6 +127,7 @@ structure IL :> IL =
 	  | Pop
 	  | Rem
 	  | RemUn
+	  | Ret
 	  | Rethrow
 	  | Shl
 	  | Shr
@@ -157,12 +156,13 @@ structure IL :> IL =
 	    Field of id * fieldAttr * ty
 	  | Method of id * methAttr * ty list * ty * locals * instr list
 
+	type isEntrypoint = bool
+
 	datatype decl =
 	    Class of
 	    dottedname * classAttr * extends * implements * classDecl list
 	  | GlobalMethod of
-	    id * methAttr * ty list * ty * locals * instr list *
-	    bool   (* is entry point *)
+	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
 
 	type program = decl list
 
@@ -197,18 +197,15 @@ structure IL :> IL =
 	  | outputMemberVisibility (q, FamilyOrAssembly) =
 	    output (q, "famorassem ")
 
-	fun outputMethOverriding (q, Abstract) = output (q, "abstract ")
-	  | outputMethOverriding (q, Final) = output (q, "final ")
-	  | outputMethOverriding (q, Normal) = ()
+	fun outputMethKind (q, Static) = output (q, "static ")
+	  | outputMethKind (q, Instance) = ()
+	  | outputMethKind (q, Abstract) = output (q, "abstract virtual ")
+	  | outputMethKind (q, Virtual) = output (q, "virtual ")
+	  | outputMethKind (q, Final) = output (q, "final virtual ")
 
-	fun outputMethCallConv (q, Static) = output (q, "static ")
-	  | outputMethCallConv (q, Instance) = output (q, "instance ")
-	  | outputMethCallConv (q, Virtual) = output (q, "virtual ")
-
-	fun outputMethAttr (q, (vis, over, conv)) =
+	fun outputMethAttr (q, (vis, kind)) =
 	    (outputMemberVisibility (q, vis);
-	     outputMethOverriding (q, over);
-	     outputMethCallConv (q, conv))
+	     outputMethKind (q, kind))
 
 	fun outputFieldAttr (q, (vis, static, initonly)) =
 	    (outputMemberVisibility (q, vis);
@@ -337,7 +334,7 @@ structure IL :> IL =
 	    (output (q, "newarr "); outputTy (q, ty))
 	  | outputInstr (q, Newobj (dottedname, tys)) =
 	    (output (q, "newobj instance void ");
-	     output1 (q, #" "); outputDottedname (q, dottedname);
+	     outputDottedname (q, dottedname);
 	     output (q, "::.ctor("); outputTys (q, tys); output1 (q, #")"))
 	  | outputInstr (q, Mul) = output (q, "mul")
 	  | outputInstr (q, Neg) = output (q, "neg")
@@ -346,6 +343,7 @@ structure IL :> IL =
 	  | outputInstr (q, Pop) = output (q, "pop")
 	  | outputInstr (q, Rem) = output (q, "rem")
 	  | outputInstr (q, RemUn) = output (q, "rem.un")
+	  | outputInstr (q, Ret) = output (q, "ret")
 	  | outputInstr (q, Rethrow) = output (q, "rethrow")
 	  | outputInstr (q, Shl) = output (q, "shl")
 	  | outputInstr (q, Shr) = output (q, "shr")
@@ -376,7 +374,7 @@ structure IL :> IL =
 	  | outputInstr (q, Switch labels) =
 	    (output (q, "switch("); outputLabels (q, labels);
 	     output1 (q, #")"))
-	  | outputInstr (q, Tail) = output (q, "tail")
+	  | outputInstr (q, Tail) = output (q, "tail.")
 	  | outputInstr (q, Throw) = output (q, "throw")
 	  | outputInstr (q, Try (label1, label2, dottedname, label3, label4)) =
 	    (output (q, ".try "); outputLabel (q, label1);
@@ -387,7 +385,8 @@ structure IL :> IL =
 	  | outputInstr (q, Xor) = output (q, "xor")
 
 	fun outputInstrs (q, instr::instrr) =
-	    (outputInstr (q, instr); output1 (q, #"\n"); outputInstrs (q, instrr))
+	    (output (q, "  "); outputInstr (q, instr); output1 (q, #"\n");
+	     outputInstrs (q, instrr))
 	  | outputInstrs (_, nil) = ()
 
 	local
@@ -459,16 +458,18 @@ structure IL :> IL =
 		    nil => ()
 		  | _::_ => output (q, "}\n")
 	    end
-	  | outputDecl (q, GlobalMethod (id, attr, tys, ty, locals, instrs,
-					 entrypoint)) =
-	    (output (q, ".method "); outputMethAttr (q, attr);
+	  | outputDecl (q, GlobalMethod (id, isPublic, tys, ty, isEntrypoint,
+					 locals, instrs)) =
+	    (output (q, ".method ");
+	     output (q, if isPublic then "public " else "private ");
 	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
-	     if entrypoint then output (q, ".entrypoint\n") else ();
+	     if isEntrypoint then output (q, ".entrypoint\n") else ();
 	     outputLocals (q, locals); outputInstrs (q, instrs);
 	     output (q, "}\n"))
 
-	fun outputProgram (q, decl::declr) =
+	fun outputProgram (q, [decl]) = outputDecl (q, decl)
+	  | outputProgram (q, decl::declr) =
 	    (outputDecl (q, decl); output1 (q, #"\n");
 	     outputProgram (q, declr))
 	  | outputProgram (_, nil) = ()

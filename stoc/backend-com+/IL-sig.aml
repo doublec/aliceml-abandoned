@@ -40,16 +40,14 @@ signature IL =
 	  | FamilyAndAssembly
 	  | Family
 	  | FamilyOrAssembly
-	datatype methOverriding =
-	    Abstract
-	  | Final
-	  | Normal
-	datatype methCallConv =
+	datatype methKind =
 	    Static
 	  | Instance
+	  | Abstract
 	  | Virtual
+	  | Final
 
-	type methAttr = memberVisibility * methOverriding * methCallConv
+	type methAttr = memberVisibility * methKind
 
 	(* Field Attributes *)
 
@@ -129,6 +127,7 @@ signature IL =
 	  | Pop
 	  | Rem
 	  | RemUn
+	  | Ret
 	  | Rethrow
 	  | Shl
 	  | Shr
@@ -157,12 +156,13 @@ signature IL =
 	    Field of id * fieldAttr * ty
 	  | Method of id * methAttr * ty list * ty * locals * instr list
 
+	type isEntrypoint = bool
+
 	datatype decl =
 	    Class of
 	    dottedname * classAttr * extends * implements * classDecl list
 	  | GlobalMethod of
-	    id * methAttr * ty list * ty * locals * instr list *
-	    bool   (* is entry point *)
+	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
 
 	type program = decl list
 
