@@ -14,7 +14,9 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 			      where type Composer.Sig.t = Signature.t
 			  val executableHeader: string): BATCH_COMPILER =
     struct
-	val version = "Build " ^ Date.toString(Date.fromTimeLocal(Time.now()))
+	val version = "Build " ^
+			(*TODO Date.toString(Date.fromTimeLocal(Time.now()))*)
+			"2001/??/??"
 
 	fun basename filename =
 	    let
