@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "scheduler/TaskStack.hh"
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
 

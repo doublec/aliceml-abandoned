@@ -13,7 +13,6 @@
 #ifndef __BUILTINS__PRIMITIVE_HH__
 #define __BUILTINS__PRIMITIVE_HH__
 
-#include "scheduler/Interpreter.hh"
 #include "datalayer/alicedata.hh"
 
 class TaskStack;
