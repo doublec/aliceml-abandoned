@@ -28,10 +28,10 @@ struct
 
     val error = E.error
 
-  (* Under construction... *)
+  (* UNFINISHED... *)
 
-    fun unfinished i funname casename =
-	Error.warn(i, "Elab." ^ funname ^ ": " ^ casename ^ " not checked yet")
+    fun unfinished r funname casename =
+	Error.warn(r, "Elab." ^ funname ^ ": " ^ casename ^ " not checked yet")
 
 
   (* Predefined types *)
@@ -945,19 +945,12 @@ struct
 
   (* Type representations (RHSs of type bindings) *)
 
-    and elabTypRep(E, p, buildKind, I.ConTyp(i, typlongid)) =
-	let
-	    val (t,typlongid') = elabTyplongid(E, typlongid)
-	in
-	    ( t, false, O.ConTyp(typInfo(i,t), typlongid'), p )
-	end
-
-      | elabTypRep(E, p, buildKind, I.FunTyp(i, typid, typ)) =
+    and elabTypRep(E, p, mkKind, I.FunTyp(i, typid, typ)) =
 	let
 	    val  k               = Type.STAR
 	    val (a,typid')       = elabVarid_bind(E, k, typid)
 	    val (t1,gen,typ',p') = elabTypRep(E, p,
-				      fn k' => Type.ARROW(k, buildKind k'), typ)
+				      fn k' => mkKind(Type.ARROW(k,k')), typ)
             val  t               = if gen then t1 else Type.inLambda(a,t1)
 				   (* If the type is generative then we
 				    * get a constructor with appropriate kind
@@ -967,12 +960,12 @@ struct
 	    ( t, gen, O.FunTyp(typInfo(i,t), typid', typ'), p' )
 	end
 
-      | elabTypRep(E, p, buildKind, I.AbsTyp(i,so))=
+      | elabTypRep(E, p, mkKind, I.AbsTyp(i,so))=
 	let
 	    val (t,p') =
 		case so
 		  of NONE =>
-			( Type.inCon(buildKind Type.STAR, Type.CLOSED, p), p )
+			( Type.inCon(mkKind Type.STAR, Type.CLOSED, p), p )
 		   | SOME s =>
 			let val con = PervasiveType.lookup s in
 			    ( Type.inCon con, #3 con )
@@ -982,12 +975,12 @@ struct
 	    ( t, true, O.AbsTyp(typInfo(i,t), so), p' )
 	end
 
-      | elabTypRep(E, p, buildKind, I.ExtTyp(i,so))=
+      | elabTypRep(E, p, mkKind, I.ExtTyp(i,so))=
 	let
 	    val (t,p') =
 		case so
 		  of NONE =>
-			( Type.inCon(buildKind Type.STAR, Type.OPEN, p), p )
+			( Type.inCon(mkKind Type.STAR, Type.OPEN, p), p )
 		   | SOME s =>
 			let val con = PervasiveType.lookup s in
 			    ( Type.inCon con, #3 con )
@@ -997,7 +990,7 @@ struct
 	    ( t, true, O.ExtTyp(typInfo(i,t), so), p' )
 	end
 
-      | elabTypRep(E, p, buildKind, typ) =
+      | elabTypRep(E, p, mkKind, typ) =
 	let
 	    val (t,typ') = elabTyp(E, typ)
 	in
@@ -1357,7 +1350,7 @@ struct
 
   (* Interfaces representations (RHSs of bindings) *)
 
-    and elabInfRep(E, p', buildKind, I.FunInf(i, modid, inf1, inf2)) =
+    and elabInfRep(E, p', mkKind, I.FunInf(i, modid, inf1, inf2)) =
 	let
 	    val  _             = insertScope E
 	    val (j1,inf1')     = elabGroundInf(E, inf1)
@@ -1366,7 +1359,7 @@ struct
 	    val  _             = Inf.strengthen(p, j1')
 	    val  modid'        = elabModid_bind(E, p, j1', modid)
 	    val (j2,gen,inf2') = elabInfRep(E, p',
-				     fn k => Inf.inDependent(p,j1,buildKind k),
+				     fn k => mkKind(Inf.inDependent(p,j1,k)),
 				     inf2)
 	    val  _             = deleteScope E
 	    val  j             = Inf.inLambda(p, j1, j2)
@@ -1374,17 +1367,17 @@ struct
 	    ( j, gen, O.FunInf(infInfo(i,j), modid', inf1', inf2') )
 	end
 
-      | elabInfRep(E, p, buildKind, I.AbsInf(i,so)) =
+      | elabInfRep(E, p, mkKind, I.AbsInf(i,so)) =
 	let
 	    (*UNFINISHED: pervasive interfaces *)
 	    val j = case so
-		      of NONE => Inf.inCon(buildKind(Inf.inGround()), p)
+		      of NONE => Inf.inCon(mkKind(Inf.inGround()), p)
 		       | SOME s => error(i, E.PervasiveInfUnknown s)
 	in
 	    ( j, true, O.AbsInf(infInfo(i,j), so) )
 	end
 
-      | elabInfRep(E, p, buildKind, inf) =
+      | elabInfRep(E, p, mkKind, inf) =
 	let
 	    val (j,inf') = elabInf(E, inf)
 	in
