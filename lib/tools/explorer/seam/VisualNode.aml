@@ -111,13 +111,13 @@ structure VisualNode =
       else
 	  Vector.app unhideAll (!children)
 
-  fun hideFailed (v as Types.N({hidden=hidden,status=status,
+  fun hideFailed (v as Types.N({hidden=hidden,status=status,openChildren=openChildren,
                                 hasSolBelow=hasSolBelow,...},_,children)) =
       if (!hidden) then ()
       else
 	  case (!status) of
 	      Types.CHOICE _ =>
-	      if (!hasSolBelow) then
+	      if (!hasSolBelow) orelse (!openChildren)>0 then
 		  Vector.app hideFailed (!children)
 	      else
 		  (GtkNode.undrawSubtree v;

@@ -129,6 +129,8 @@ structure MainWindow :> MAINWINDOW =
               val on_all_solutions_activate =
                   EventHandler.exploreAllHandler
                       (createMainWindow, setStatusMsg, serve, state)
+	      val on_one_step_activate = EventHandler.exploreStepHandler
+                      (createMainWindow, setStatusMsg, serve, state)
               val on_view_activate =
                   EventHandler.viewOptionsHandler (w, serve, state)
               val on_debug_activate = EventHandler.debugHandler (serve, state)
@@ -140,6 +142,10 @@ structure MainWindow :> MAINWINDOW =
                       (serve, state, ExplorerGUI.scale)
               fun on_cancel_search_activate _ =
                   Types.setCancelSearch state
+	      val on_go_to_child_activate = EventHandler.goToChild (serve,state)
+	      val on_go_to_parent_activate = EventHandler.goToParent (serve,state)
+	      val on_go_to_left_sibling_activate = EventHandler.goToLeft (serve,state)
+	      val on_go_to_right_sibling_activate = EventHandler.goToRight (serve,state)
             end
           
           structure S = ExplorerGUISignals(structure S = Signals)

@@ -64,6 +64,13 @@ structure ExplorerSearch =
        Option.app MenuManager.updateMenus (Types.getCurrentNode state);
        refresh (serve, state))
 
+  fun stepFrom (serve, state : Types.explorer_state option ref,
+                  refresh, node) =
+      (Search.step (node, state)
+       handle ExplorerNode.SearchDone => ();
+       Option.app MenuManager.updateMenus (Types.getCurrentNode state);
+       refresh (serve, state))
+
   fun search (serve, state : Types.explorer_state option ref,
               refresh, setStatusMsg, breakAfter, root) =
       case !state of
@@ -97,6 +104,26 @@ structure ExplorerSearch =
               ()
           end
         | _ => ()
+
+  fun searchStep (serve, state : Types.explorer_state option ref,
+		  refresh, setStatusMsg, root) =
+      case !state of
+          SOME {refreshAfter=ref refreshAfter,
+                tree={tree=ref tree,...},...} =>
+          let
+              val fromNode = Option.getOpt(root, tree)
+              
+          in
+              Types.resetCancelSearch state;
+              setStatusMsg(state, "Searching...", true);
+              MenuManager.startSearch();
+              stepFrom (serve, state, refresh, fromNode);
+              MenuManager.finishSearch();
+              setStatusMsg(state, "", false);
+              ()
+          end
+        | _ => ()
+
 
   fun searchBest _ = ()
 

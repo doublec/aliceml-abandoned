@@ -116,6 +116,52 @@
 		      <accelerator key="f" modifiers="0" signal="activate"/>
 		    </widget>
 		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="separator2">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="go_to_child">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Go to child</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_go_to_child_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
+		      <accelerator key="Down" modifiers="0" signal="activate"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="go_to_parent">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Go to parent</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_go_to_parent_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
+		      <accelerator key="Up" modifiers="0" signal="activate"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="go_to_left_sibling">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Go to left sibling</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_go_to_left_sibling_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
+		      <accelerator key="Left" modifiers="0" signal="activate"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="go_to_right_sibling">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Go to right sibling</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_go_to_right_sibling_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
+		      <accelerator key="Right" modifiers="0" signal="activate"/>
+		    </widget>
+		  </child>
 		</widget>
 	      </child>
 	    </widget>
@@ -136,7 +182,7 @@
 		      <property name="label" translatable="yes">Next solution</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_next_solution_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
-		      <accelerator key="s" modifiers="0" signal="activate"/>
+		      <accelerator key="n" modifiers="0" signal="activate"/>
 		    </widget>
 		  </child>
 
@@ -146,7 +192,7 @@
 		      <property name="label" translatable="yes">Next n solutions</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_next_n_solutions_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
-		      <accelerator key="n" modifiers="0" signal="activate"/>
+		      <accelerator key="n" modifiers="GDK_SHIFT_MASK" signal="activate"/>
 		    </widget>
 		  </child>
 
@@ -157,6 +203,16 @@
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_all_solutions_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
 		      <accelerator key="a" modifiers="0" signal="activate"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="one_step">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">One step</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_one_step_activate" last_modification_time="Wed, 16 Mar 2005 12:00:51 GMT"/>
+		      <accelerator key="s" modifiers="0" signal="activate"/>
 		    </widget>
 		  </child>
 		</widget>

@@ -28,6 +28,8 @@ fun queens n cl space =
 	v
     end
 
+;Explorer.init (queens 8 FD.DEF);
+
 fun money cl space = 
     let
 	open FD

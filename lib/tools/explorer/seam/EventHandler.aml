@@ -257,6 +257,16 @@ structure EventHandler =
                          setStatusMsg, breakAfter, SOME cn)
                   | _ => ())
                                                 
+  fun exploreStepHandler (cmw, setStatusMsg, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=ref (SOME cn),...},
+                          ...} =>
+                    ExplorerSearch.searchStep
+                        (serve, state, refreshAfterSearch (cn, cmw),
+                         setStatusMsg, SOME cn)
+                  | _ => ())
+
   fun resetHandler (cmw, resetCanvas, serve, state) _ =
       serve (fn () =>
                 case !state of
@@ -306,4 +316,88 @@ structure EventHandler =
 
   fun saveHandler (serve, state : Types.explorer_state option ref) _ =
       serve (fn () => SaveWindow.newSaveWindow(serve, state))
+
+  fun goToChild (serve,state) _ = 
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    if TreeNode.noOfChildren cn>0 then
+			let
+			    val n = ExplorerNode.getChild cn 0
+			    val (x,y) = TreeNode.getCenter n
+			in
+			    case ExplorerNode.curNodeStatus n of
+				Types.FAILED => ()
+			      | _ => 
+				    (currentNode := SOME n;
+				     GtkNode.drawShadow (valOf (!state), x, y, n);
+				     MenuManager.updateMenus n)
+			end
+		    else ()
+                  | _ => ())
+
+  fun goToParent (serve,state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    (case ExplorerNode.getParent cn of
+			 NONE => ()
+		       | SOME n =>
+			let
+			    val (x,y) = TreeNode.getCenter n
+			in
+			    currentNode := SOME n;
+			    GtkNode.drawShadow (valOf (!state), x, y, n);
+			    MenuManager.updateMenus n
+			end)
+                  | _ => ())
+
+  fun goToRight (serve,state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    (case ExplorerNode.getParent cn of
+			 NONE => ()
+		       | SOME n =>
+			     if TreeNode.noOfChildren n>ExplorerNode.getAlternative cn+1 then
+				 let
+				     val n = ExplorerNode.getChild n (ExplorerNode.getAlternative cn+1)
+				     val (x,y) = TreeNode.getCenter n
+				 in
+				     case ExplorerNode.curNodeStatus n of
+					 Types.FAILED => ()
+				       | _ => 
+					     (currentNode := SOME n;
+					      GtkNode.drawShadow (valOf (!state), x, y, n);
+					      MenuManager.updateMenus n)
+				 end
+			     else ())
+                  | _ => ())
+
+  fun goToLeft (serve,state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    (case ExplorerNode.getParent cn of
+			 NONE => ()
+		       | SOME n =>
+			     if ExplorerNode.getAlternative cn>0 then
+				 let
+				     val n = ExplorerNode.getChild n (ExplorerNode.getAlternative cn-1)
+				     val (x,y) = TreeNode.getCenter n
+				 in
+				     case ExplorerNode.curNodeStatus n of
+					 Types.FAILED => ()
+				       | _ => 
+					     (currentNode := SOME n;
+					      GtkNode.drawShadow (valOf (!state), x, y, n);
+					      MenuManager.updateMenus n)
+				 end
+			     else ())
+                  | _ => ())
+
 end

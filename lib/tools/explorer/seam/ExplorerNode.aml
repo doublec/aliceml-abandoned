@@ -150,6 +150,8 @@ struct
                       | _ => Vector.length (!ch)
 
     fun getChild (node as N(_,_,ch)) n = Vector.sub(!ch, n)
+    fun getParent (N(_,p,_)) = !p
+    fun getAlternative (N({alternative,...},_,_)) = alternative
 
     fun getLeftChild (node as N(_,_,ch)) =
         case !ch of #[c,_] => c

@@ -30,10 +30,12 @@ structure MenuManager =
        if ExplorerNode.isUnknown n then
             (Gtk.widgetSetSensitive(ExplorerGUI.hidenodes, false);
              Gtk.widgetSetSensitive(ExplorerGUI.unhide_all, false);
+             Gtk.widgetSetSensitive(ExplorerGUI.one_step, true);
              Gtk.widgetSetSensitive(ExplorerGUI.hide_failed, false))
        else
             (Gtk.widgetSetSensitive(ExplorerGUI.hidenodes, true);
              Gtk.widgetSetSensitive(ExplorerGUI.unhide_all, true);
+             Gtk.widgetSetSensitive(ExplorerGUI.one_step, false);
              Gtk.widgetSetSensitive(ExplorerGUI.hide_failed, true))
            )
 
