@@ -43,8 +43,9 @@ struct
     fun uncurry j =
 	if isApply j then
 	    let
-		val (j1,(p,_)) = asApply j
-		val (j',ps)    = uncurry j1
+		val (j1,m)  = asApply j
+		val (p,_)   = asMod m
+		val (j',ps) = uncurry j1
 	    in
 		(j',ps@[p])
 	    end
@@ -84,7 +85,7 @@ struct
 *)
 	else if isSing j then
 	    let
-		val (p,j') = asSing j
+		val (p,j') = asMod(asSing j)
 	    in
 		abox(
 		    fbox(
@@ -102,8 +103,8 @@ struct
 	    end
 	else if isTop j then
 	    text "any"
-	else if isAbs j then
-	    PPPath.ppPath' ps (asAbs j)
+	else if isCon j then
+	    PPPath.ppPath' ps (asCon j)
 	else if isSig j then
 	    ppSig'(ps, asSig j)
 	else if isArrow j then
@@ -112,6 +113,16 @@ struct
 	    in
 		fbox(below(ppBinder("fct",ps,p,j1,j2)))
 	    end
+	else if isExist j then
+(*DEBUG*)
+	    ppInf'(ps, #3(asExist j))
+(*
+	    let
+		val (p,j1,j2) = asExist j
+	    in
+		fbox(below(ppBinder("ex",ps,p,j1,j2)))
+	    end
+*)
 	else if isLambda j then
 	    let
 		val (p,j1,j2) = asLambda j
@@ -205,10 +216,9 @@ struct
 		    abox(
 			hbox(
 			    text "type" ^/^
-(*DEBUG*)
 			    ppLab(Path.toLab p) ^/^
-(*
-			    PPPath.ppPath p ^/^
+(*DEBUG
+			    PPPath.ppPath' ps p ^/^
 *)
 			    text "="
 			) ^^
@@ -217,8 +227,8 @@ struct
 				val t  = Type.asSingKind k
 				val t' = if not(Type.isAbbrev t) then t else
 					 let val (t1,t2) = Type.asAbbrev t in
-					     if Type.isAbs t1 andalso
-					        Path.equal(Type.asAbs t1, p)
+					     if Type.isCon t1 andalso
+					        Path.equal(Type.asCon t1, p)
 					     then t2
 					     else t
 					 end
@@ -231,10 +241,9 @@ struct
 		    abox(
 			hbox(
 			    text "type" ^/^
-(*DEBUG*)
 			    ppLab(Path.toLab p) ^/^
-(*
-			    PPPath.ppPath p ^/^
+(*DEBUG
+			    PPPath.ppPath' ps p ^/^
 *)
 			    text ":"
 			) ^^
@@ -251,17 +260,16 @@ struct
 		    hbox(
 			text(if isArrow j then "functor"
 					  else "structure") ^/^
-(*DEBUG*)
 			    ppLab(Path.toLab p) ^/^
-(*
-			    PPPath.ppPath p ^/^
+(*DEBUG
+			    PPPath.ppPath' ps p ^/^
 *)
 			text ":"
 		    ) ^^
 		    nest(break ^^
 			(if isSing j then
 			     let
-				 val (p',j') = asSing j
+				 val (p',j') = asMod(asSing j)
 			     in
 				 abox(ppInf'(p::ps,j')) ^/^
 				 abox(text "=" ^/^ PPPath.ppPath' ps p')
@@ -280,10 +288,9 @@ struct
 		    abox(
 			hbox(
 			    text "signature" ^/^
-(*DEBUG*)
 			    ppLab(Path.toLab p) ^/^
-(*
-			    PPPath.ppPath p ^/^
+(*DEBUG
+			    PPPath.ppPath' ps p ^/^
 *)
 			    text "="
 			) ^^
@@ -292,8 +299,8 @@ struct
 				val j  = asSingKind k
 				val j' = if not(isAbbrev j) then j else
 					 let val (j1,j2) = asAbbrev j in
-					     if isAbs j1 andalso
-					        Path.equal(asAbs j1, p)
+					     if isCon j1 andalso
+					        Path.equal(asCon j1, p)
 					     then j2
 					     else j
 					 end
@@ -306,10 +313,9 @@ struct
 		    abox(
 			hbox(
 			    text "signature" ^/^
-(*DEBUG*)
 			    ppLab(Path.toLab p) ^/^
-(*
-			    PPPath.ppPath p ^/^
+(*DEBUG
+			    PPPath.ppPath' ps p ^/^
 *)
 			    text ":"
 			) ^^
@@ -318,9 +324,11 @@ struct
 			)
 		    ) ^/^ doc
 	    end
-	else
-	    raise Assert.failure
-
+	else (* hidden *)
+	    empty
+(*DEBUG
+	    ^^ text "? " ^^ ppItem ps (asHiddenItem item, doc)
+*)
 
     (* Kinds *)
 
@@ -366,5 +374,4 @@ struct
 	    end
 	else
 	    raise Assert.failure
-
 end
