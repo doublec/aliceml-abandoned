@@ -109,6 +109,71 @@ infix  0  before
 
 (* Pervasives *)
 
+structure __pervasive :
+  sig
+    __primitive type zero		= "zero"
+    __primitive type 'a succ		= "succ"
+    __primitive type ('a,'b) conarrow	= "conarrow"
+
+    structure Label :
+    sig
+	val fromString : 'a -> 'a
+    end
+
+    structure Path :
+    sig
+	val fromLab : 'a -> 'a
+	val pervasive : 'a -> 'a
+    end
+
+    structure Type :
+    sig
+	val var : 'a -> 'a
+	val inVar : 'a -> 'a
+	val inCon : 'a -> 'a
+	val inApply : 'a -> 'a
+	val inLambda : 'a -> 'a
+	val inArrow : 'a -> 'a
+	val inTuple : 'a -> 'a
+	val inProd : 'a -> 'a
+	val inSum : 'a -> 'a
+	val inAll : 'a -> 'a
+	val inExist : 'a -> 'a
+	val unknown : 'a -> 'a
+	val fill : 'a -> 'a
+	val unknownRow : 'a -> 'a
+	val emptyRow : 'a -> 'a
+	val extendRow : 'a -> 'a
+    end
+
+    structure Inf :
+    sig
+    end
+
+    __primitive datatype exn = "exn"
+    datatype 'a list = nil | op:: of 'a * 'a list
+
+    structure Int	: sig __primitive eqtype int	= "int"     end
+    structure LargeInt	: sig               type int	= Int.int   end
+    structure Word	: sig __primitive eqtype word	= "word"    end
+    structure LargeWord	: sig               type word	= Word.word end
+    structure Real	: sig __primitive eqtype real	= "real"    end
+    structure LargeReal	: sig               type real	= Real.real end
+    structure Char	: sig __primitive eqtype char	= "char"    end
+    structure WideChar	: sig               type char	= Char.char end
+    structure String	: sig __primitive eqtype string	= "string"  end
+    structure WideString: sig               type string	= String.string end
+    structure Vector	: sig __primitive eqtype 'a vector	= "vector"  end
+    structure Array	: sig __primitive __eqeqtype 'a array	= "array"   end
+    structure Ref	: sig __primitive __reftype 'a ref	= ref of 'a end
+    structure General	: sig __primitive datatype exn		= "exn"     end
+(*
+    structure Time	: sig __primitive eqtype time	= "time"    end
+    structure Promise	: sig __primitive type 'a promise	= "promise" end
+*)
+  end
+
+
 type    unit		= {}
 type    int		= __pervasive.Int.int
 type    word		= __pervasive.Word.word
