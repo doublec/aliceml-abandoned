@@ -58,6 +58,8 @@ public:
 
 class Array: private Block {
 public:
+  static const u_int maxLen = 0x0FFFFFFF; //--** is this correct?
+
   using Block::ToWord;
 
   static Array *New(u_int length) {
@@ -211,6 +213,8 @@ class String: private Block {
 private:
   static const u_int LEN_POS = 1;
 public:
+  static const u_int maxSize = 0x3FFFFFFF; //--** is this correct?
+
   using Block::ToWord;
 
   static String *New(u_int len) {
@@ -301,6 +305,8 @@ public:
 
 class Vector: private Block {
 public:
+  static const u_int maxLen = 0x0FFFFFFF; //--** is this correct?
+
   using Block::ToWord;
 
   static Vector *New(u_int length) {
