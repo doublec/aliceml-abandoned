@@ -194,6 +194,21 @@ structure OutputWriters =
                 lastChar' iter
             end
 
+	fun feedCurrentInput () =
+	    let
+		val buf = Gtk.textViewGetBuffer Gui.compilerout
+                val enditer = Gtk.textIterNew()
+		val _ = Gtk.textBufferGetEndIter(buf, enditer)
+		val off = Gtk.textIterGetOffset enditer
+	    in
+		Gtk.textBufferPlaceCursor(buf, enditer);
+		if lastChar(buf, off) = SOME (ord #";") then
+		    Gtk.textBufferInsertInteractive(buf,enditer,"\n",~1,true)
+		else
+		    Gtk.textBufferInsertInteractive(buf,enditer,";\n",~1,true);
+		()
+	    end
+
         fun compilerInsert (eval, noedit, bold)
 		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
 	    let
