@@ -52,7 +52,7 @@ then
     ALICE_LOAD=$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX
 fi
 
-: ${OZ_LOAD:=cache=~/.oz/cache${sep}cache=$OZHOME/cache}
+: ${OZ_LOAD:=cache=~/.oz/cache${sep}cache=/usr/lib/mozart/cache${sep}cache=/usr/share/mozart/cache${sep}cache=$OZHOME/cache}
 
 OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'.ozf${sep}$OZ_LOAD
 
