@@ -56,14 +56,18 @@ structure Main :> MAIN =
 
     fun debug outstream s =
 	let
-	    val s' = OutputImperativeGrammar.outputComponent (imperatify s)
+	    val x = imperatify s
+	    val _ = LivenessAnalysisPhase.annotate x
+	    val s' = OutputImperativeGrammar.outputComponent x
 	in
 	    TextIO.output (outstream, s')
 	end
 
     fun debug' outstream s =
 	let
-	    val s' = OutputImperativeGrammar.outputComponent (imperatify' s)
+	    val x = imperatify' s
+	    val _ = LivenessAnalysisPhase.annotate x
+	    val s' = OutputImperativeGrammar.outputComponent x
 	in
 	    TextIO.output (outstream, s')
 	end
