@@ -12,6 +12,7 @@
  *   $Revision$
  *
  *)
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 import structure Types from "Types"
 import structure TextIO from "x-alice:/lib/system/TextIO"
@@ -274,6 +275,44 @@ struct
 			    DA.resize(h,v,scrolled,valueh,valuev  )  
 			 end)
 
+    (* fun scrollX x = let
+			  val valueh = Gtk.adjustmentGetFieldValue(hadj)
+			  val upperh = Gtk.adjustmentGetFieldUpper(hadj)
+			  val  adj1 = Gtk.adjustmentNew(Real.+(valueh,x),
+							0.0,upperh ,
+							20.0,50.0,upperh )
+		      in
+			 ( Gtk.widgetSetScrollAdjustments(scrolled,adj1, 
+			 Gtk.scrolledWindowGetVadjustment(scrolled))
+			  ;())
+		      end *)
+
+     fun scrollX x = let
+			 val valueh = Gtk.adjustmentGetFieldValue(hadj)
+			      in
+			 ( Gtk.adjustmentSetValue(hadj,Real.+(valueh,x))
+			  ;())
+		     end
+
+     fun scrollY y = let
+			 val valuev = Gtk.adjustmentGetFieldValue(vadj)
+		     in
+			 ( Gtk.adjustmentSetValue(vadj,Real.+(valuev,y))
+			  ;())
+		     end 
+
+    (* fun scrollY y = let
+			  val valuev = Gtk.adjustmentGetFieldValue(vadj)
+			  val upperv = Gtk.adjustmentGetFieldUpper(vadj)
+			  val  adj = Gtk.adjustmentNew(Real.+(valuev,50.0),
+							0.0,upperv ,
+							20.0,50.0,upperv )
+		      in
+			 ( Gtk.widgetSetScrollAdjustments(scrolled, 
+			 Gtk.scrolledWindowGetHadjustment(scrolled),adj)
+			  ;())
+		      end *)
+
     val _ = Gtk.signalConnect(scrolled,"size_allocate",handleResize)
     val vbox = createVBox[(bar,0,0,0),
 			  (scrolled,Gtk.EXPAND,Gtk.FILL,0),
@@ -389,7 +428,11 @@ struct
 							 handleReinspect(n))]})
 				   ; ())
 		   | NONE => ())
-		    end
+		    end 
+	| Gdk.GDK_KEY_PRESS({keyval = 65361,...}) =>(TextIO.print("moving left");  scrollX(~10.0)) 
+	| Gdk.GDK_KEY_PRESS({keyval = 65363,...}) =>( TextIO.print("moving right") ; scrollX(10.0) )
+	| Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => scrollY(~10.0)    
+	| Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => scrollY(10.0)
         | _ => ()
      end)
     
