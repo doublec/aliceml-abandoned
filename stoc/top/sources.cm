@@ -13,6 +13,7 @@ is
     ../backend-mozart/sources.cm
     ../backend-com+/sources.cm
     phase.cm
+    engine.cm
 
     MAIN.sig
     Main.sml

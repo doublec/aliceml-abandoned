@@ -1,0 +1,10 @@
+Group
+
+    signature CODE
+    signature ENGINE
+    functor MakeEngine
+
+is
+
+    ENGINE.sig
+    MakeEngine.sml
