@@ -21,9 +21,10 @@ public class UniqueConstructor extends Constructor {
 
     public UniqueConstructor(java.lang.String name) {
 	this.name = name;
-	GName.gNames.put(name,this);
+	if (GName.gNames.get(name)==null) {
+		GName.gNames.put(name,this);
+	}
     }
-
     /** @see UniqueName */
     final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
@@ -36,7 +37,13 @@ public class UniqueConstructor extends Constructor {
      */
     final private Object readResolve()
 	throws java.io.ObjectStreamException {
-	return GName.gNames.get(name);
+	Object o = GName.gNames.get(name);
+	if (o==null) {
+	GName.gNames.put(name,this);
+	return this;
+	} else {
+	return o;
+	}
     }
 
     final public java.lang.String toString() {

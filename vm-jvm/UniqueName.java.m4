@@ -22,7 +22,9 @@ public class UniqueName extends Name {
 
     public UniqueName(java.lang.String name) {
 	this.name = name;
-	GName.gNames.put(name,this);
+	if (GName.gNames.get(name)==null) {
+		GName.gNames.put(name,this);
+	}
     }
 
     public java.lang.String toString() {
@@ -40,8 +42,14 @@ public class UniqueName extends Name {
     /** Beim Einlesen wird der UniqueName durch den der lokalen Maschine
      *  ersetzt.
      */
-    private Object readResolve()
+    final private Object readResolve()
 	throws java.io.ObjectStreamException {
-	return GName.gNames.get(name);
+	Object o = GName.gNames.get(name);
+	if (o==null) {
+	GName.gNames.put(name,this);
+	return this;
+	} else {
+	return o;
+	}
     }
 }
