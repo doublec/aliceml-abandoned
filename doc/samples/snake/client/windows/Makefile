@@ -1,5 +1,5 @@
-SOURCES =  ConnectionWindow.aml MainWindow.aml PlayerSettingsWindow.aml \
-QuestionWindow.aml ServerSettingsWindow.aml TextWindow.aml WaitWindow.aml \
+SOURCES =  Connection.aml Main.aml PlayerSettings.aml \
+Question.aml ServerSettings.aml Text.aml Wait.aml \
 ARENAWIDGET-sig.aml ArenaWidget.aml
 
 ROOT = Main
