@@ -16,11 +16,16 @@ import structure Type        from "../rtt/Type"
 
 signature PP_VALUE =
 sig
-    type doc   = PrettyPrint.doc
-    type path  = Path.t
-    type typ   = Type.t
+    type doc    = PrettyPrint.doc
+    type path   = Path.t
+    type typ    = Type.t
+    type format = {depth : int, width : int, prec : int}
+
+    val defaultDepth :	int ref
+    val defaultWidth :	int ref
 
     val ppVal :		typ -> 'value -> doc
-    val registerTyp :	path * (typ -> 'value -> doc option) -> unit
+    val ppVal' :	typ -> format -> 'value -> doc
+    val registerTyp :	path * (typ -> format -> 'value -> doc option) -> unit
     val unregisterTyp :	path -> unit
 end
