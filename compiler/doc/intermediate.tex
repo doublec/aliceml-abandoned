@@ -1,0 +1,944 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[twoside]{article}
+\usepackage{times,alltt,url,a4}
+
+\setlength{\parskip}{1.5ex}
+\setlength{\parindent}{0mm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\conarrow}{\hookrightarrow}
+
+\newcommand{\x}[1]{\mathit{#1}}
+\newcommand{\f}[1]{\mbox{#1}}
+\renewcommand{\c}[1]{c_{\f{\scriptsize #1}}}
+
+\newcommand{\lab}{\x{lab}}
+\newcommand{\id}{\x{id}}
+\newcommand{\longid}{\x{longid}}
+\newcommand{\lit}{\x{lit}}
+\renewcommand{\exp}{\x{exp}}
+\newcommand{\exps}{\x{exps}}
+\newcommand{\fld}{\x{fld}}
+\newcommand{\flds}{\x{flds}}
+\newcommand{\mat}{\x{mat}}
+\newcommand{\mats}{\x{mats}}
+\newcommand{\pat}{\x{pat}}
+\newcommand{\pats}{\x{pats}}
+\newcommand{\dec}{\x{dec}}
+\newcommand{\decs}{\x{decs}}
+\newcommand{\imp}{\x{imp}}
+\newcommand{\imps}{\x{imps}}
+\newcommand{\comp}{\x{comp}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{The Stockhausen Intermediate Language}
+\author{Andreas Rossberg \\
+Programming System Lab \\
+Universit\"at des Saarlandes \\
+\url{rossberg@ps.uni-sb.de}}
+\date{\today}
+
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Syntax}
+\label{syntax}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The syntax given here should be read as an abstract syntax. The meaning of most expressions should be straightforward. We briefly explain the non-obvious ones.
+
+A long identifier expression $\longid.\lab$ is equivalent to the expression $(\f{lazy}\; \#\lab(\longid))$, ie. it represents lazy selection. However, long identifiers can appear in patterns.
+
+The expression $(\f{new})$ generates a new constructor name for an open datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes.
+
+The expression $(\f{prim}\;s)$ is needed for binding primitive (builtin) values, which are named by a string.
+
+The $(\f{fail})$ expression marks an unused value. Forcing it always is an error. It is used to represent the unused argument of nullary constructors (which the backend can optimize away) and during bootstrapping as a placeholder for runtime types.
+
+The \f{abs} and \f{unabs} expressions are needed for typing purposes only and are described in section \ref{typing}.
+
+\begin{center}
+\begin{tabular}{lcll}
+$\x{n}$	&$\in$&	\f{N}				& integer constants \\
+$\x{w}$	&$\in$&	\f{W}				& word constants \\
+$\x{c}$	&$\in$&	\f{C}				& character constants \\
+$\x{s}$	&$\in$&	\f{S}				& string constants \\
+$\x{p}$	&$\in$&	\f{P}				& float constants \\
+$\id$	&$\in$&	\f{Id}				& identifiers \\
+$\lab$	&$\in$&	$\f{Lab}=\f{Id}\uplus\f{N}_+$	& labels \\
+\ \\
+
+$\lit$	&$:=$&	$n$				& integer literal \\
+	&&	$\x{w}$				& word \\
+	&&	$\x{c}$				& character \\
+	&&	$\x{s}$				& string \\
+	&&	$\x{p}$				& float \\
+\ \\
+
+$\longid$	&$:=$&	$\id$			& short identifier \\
+	&&	$\longid.\lab$			& long \\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{lcll}
+
+$\exps$	&$:=$&	$\exp_1,\cdots,\exp_n$		& expressions $(n\geq0)$ \\
+$\exp$	&$:=$&	$\lit$				& literal expression \\
+	&&	$\f{prim}\;\x{s}$		& primitive value \\
+	&&	$\f{new}$			& constructor generation \\
+	&&	$\longid$			& variable \\
+	&&	$\#\lab(\exp)$			& product projection \\
+	&&	$`\lab(\exp)$			& sum injection \\
+	&&	$@\longid(\exp)$		& construction \\
+	&&	$\f{ref}(\exp)$			& reference \\
+	&&	$[\exps]$			& vector \\
+	&&	$(\exps)$			& tuple \\
+	&&	$\{\flds^\exp\}$		& labelled product \\
+	&&	$\f{fun}\;\mats$		& function \\
+	&&	$\exp_1(\exp_2)$		& application \\
+	&&	$\exp_1\;\f{and}\;\exp_2$	& conjunction \\
+	&&	$\exp_1\;\f{or}\;\exp_2$	& disjunction \\
+	&&	$\f{if}\;\exp_1\;\f{then}\;\exp_2\;\f{else}\;\exp_3$
+						& conditional \\
+	&&	$\exp_1;\exp_2$			& sequencing \\
+	&&	$\f{case}\;\exp\;\f{of}\;\mats$ & case switch \\
+	&&	$\f{raise}\;\exp$		& exception raising \\
+	&&	$\f{try}\;\exp\;\f{handle}\;\mats$ & exception handling \\
+	&&	$\f{fail}$			& lazy failure \\
+	&&	$\f{lazy}\;\exp$		& lazy evaluation \\
+	&&	$\f{spawn}\;\exp$		& concurrent evaluation \\
+	&&	$\f{let}\;\decs\;\f{in}\;\exp$	& local declarations \\
+	&&	$\f{abs}\;\exp$			& abstraction \\
+	&&	$\f{unabs}\;\exp$		& coabstraction \\
+\ \\
+
+$\flds^x$&$:=$&	$\fld^x_1,\cdots,\fld^x_n$	& row $(n\geq0)$ \\
+$\fld^x$ &$:=$& $\lab = x$			& field \\
+\ \\
+
+$\mats$	&$:=$&	$\mat_1\;|\cdots|\;\mat_n$	& matches $(n\geq1)$ \\
+$\mat$	&$:=$&	$\pat\to\exp$			& match \\
+\ \\
+
+$\pats$	&$:=$&	$\pat_1,\cdots,\pat_n$		& patterns $(n\geq0)$ \\
+$\pat$	&$:=$&	$\lit$				& literal pattern \\
+	&&	$\f{\_}$			& joker \\
+	&&	$\id$				& variable \\
+	&&	$`\lab(\pat)$			& sum injection \\
+	&&	$@\longid(\pat)$		& construction \\
+	&&	$\f{ref}(\pat)$			& reference \\
+	&&	$[\pats]$			& vector \\
+	&&	$(\pats)$			& tuple \\
+	&&	$\{\flds^\pat,\_\}$		& labelled product \\
+	&&	$\pat_1\;\f{as}\;\pat_2$	& conjunctive \\
+	&&	$\pat_1\;|\;\pat_2$		& disjunctive \\
+	&&	$\f{non}\;\pat$			& negative \\
+	&&	$\pat\;\f{where}\;\exp$		& guarded \\
+	&&	$\pat\;\f{with}\;\decs$		& local declarations \\
+\ \\
+
+$\decs$	&$:=$&	$\dec_1;\cdots;\dec_n$		& declarations $(n\geq0)$ \\
+$\dec$	&$:=$&	$\pat = \exp$			& value declaration \\
+	&&	$\f{rec}\;\decs$		& recursive declarations \\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{lcll}
+
+$\imps$	&$:=$&	$\imp_1;\cdots;\imp_n$		& imports $(n\geq0)$ \\
+$\imp$	&$:=$&	$\id\;\f{from}\;s$		& import \\
+\ \\
+
+$\comp$	&$:=$&	$\f{import}\;\imps\;\f{let}\;\decs\;\f{in}\;\flds^\id$
+						& component
+
+\end{tabular}
+\end{center}
+
+Note that the symbols $\fld^x$ and $\flds^x$ actually stand for a family of symbols with different instantiations of the symbol $x$ used in their productions.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Types}
+\label{types}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following grammar defines the set $\f{T}$ of {\em types}. We currently ignore recursive types.
+
+\begin{center}
+\begin{tabular}{lcll}
+$\alpha$&$\in$&	\f{V}				& variables \\
+$a$	&$\in$&	\f{A}				& labels \\
+$c$	&$\in$&	\f{C}				& type names \\
+\ \\
+
+$t$	&$:=$&	$\alpha$			& type variable \\
+	&&	$c$				& type name \\
+	&&	$t_1 \to t_2$			& arrow \\
+	&&	$t_1 \conarrow t_2$		& constructor arrow \\
+	&&	$\{r\}$				& product \\
+	&&	$[\,r\,]$			& sum \\
+	&&	$\forall \alpha . t$		& universal quantification \\
+%	&&	$\exists \alpha . t$		& existential quantification \\
+%	&&	$\lambda \alpha:k . t$		& function \\
+%	&&	$t_1(t_2)$			& application \\
+\ \\
+
+$r$	&$:=$&	$\epsilon$			& empty row \\
+	&&	$a:t,r$				& field \\
+%\ \\
+%
+%$k$	&$:=$&	$*$				& ground type \\
+%	&&	$k_1 \to k_2$			& constructor \\
+\end{tabular}
+\end{center}
+
+We assume the following additional equivalence rules:
+\begin{eqnarray*}
+\forall \alpha_1.t &=& \forall \alpha_2.t[\alpha_2/\alpha_1] \\
+\forall \alpha_1.\forall \alpha_2.t &=& \forall \alpha_2.\forall \alpha_1.t \\
+a_1:t_1,a_2:t_2,r &=& a_2:t_2,a_1:t_1,r
+\end{eqnarray*}
+
+We write $t_1 \succ t_2$ if $t_1$ matches $t_2$, ie. if $t_2$ is an instantiation of $t_1$.
+
+Type names $c$ carry an openness flag which is true only for open sum types. First-class constructors for an open sum type $t$ are assigned constructor arrow types $t' \conarrow t$ where $t'$ is the argument type.
+
+An {\em environment} is a finite mapping $E \in \f{Id}\to\f{T}$.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Typing Rules}
+\label{typing}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Every expression $\exp$, pattern $\pat$, identifier $\id$, or long identifier $\longid$ is annotated with a type. In the rules' conclusions we denote that annotation by $:t$, respectively. The rules assume well-formedness of annotation types.
+
+Note that the rules enforce that all bound identifiers have to be disjoint, except for disjunctive patterns.
+
+Any expression that does not contain \f{abs} or \f{unabs} expressions, or \f{prim} is type-safe. Abstraction and co-abstraction are sort of weak casts that only allow constructor names to be replaced by concrete types in one direction. They are used for translated module expressions (abstraction, functor application, and packages). The rules for these expressions just require the existence of an appropriate realisation $\psi$ (a mapping from constructor names to types). Unfortunately, this is undecidable in general since it requires higher-order unification. The current verifier uses an approximation that is correct for first-order cases and accepts any higher-order ones. This can be repaired by annotating the expressions with the actual substitution which is known at translation time.
+
+The reason we use casts is that the presence of first-class signatures in Stockhausen requires a more expressive type system --- without first-class signatures modules could be translated to the intermediate language in a sound way, as shown by Russo. However, we would need polymorphic kinds and record kinds to express first-class signatures. For packages we need some sort of cast anyway.
+
+
+\subsubsection*{Literals \hfill
+\fbox{$\vdash \lit \Rightarrow t$}
+}
+
+\begin{equation}
+\frac{}{
+\vdash n \Rightarrow \c{int}
+}
+\end{equation}
+
+\begin{equation}
+\frac{}{
+\vdash w \Rightarrow \c{word}
+}
+\end{equation}
+
+\begin{equation}
+\frac{}{
+\vdash c \Rightarrow \c{char}
+}
+\end{equation}
+
+\begin{equation}
+\frac{}{
+\vdash s \Rightarrow \c{string}
+}
+\end{equation}
+
+\begin{equation}
+\frac{}{
+\vdash p \Rightarrow \c{float}
+}
+\end{equation}
+
+
+
+\subsubsection*{Labels \hfill
+\fbox{$\vdash \lab \Rightarrow a$}
+}
+
+\begin{equation}
+\frac{
+[\![\lab]\!] = a
+}{
+\vdash \lab \Rightarrow a
+}
+\end{equation}
+
+
+
+\subsubsection*{Binding Identifiers \hfill
+\fbox{$\vdash \id \Rightarrow t,E$}
+}
+
+\begin{equation}
+\frac{}{
+\vdash \id : t \Rightarrow t,\{\id \mapsto t\}
+}
+\end{equation}
+
+
+
+\subsubsection*{Identifiers \hfill
+\fbox{$E \vdash \id \Rightarrow t$}
+}
+
+\begin{equation}
+\frac{
+E(\id) = t
+}{
+E \vdash \id : t \Rightarrow t
+}
+\end{equation}
+
+
+
+\subsubsection*{Long Identifiers \hfill
+\fbox{$E \vdash \longid \Rightarrow t$}
+}
+
+\begin{equation}
+\frac{
+E \vdash \id \Rightarrow t
+}{
+E \vdash \id : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \lab \Rightarrow a
+\qquad
+E \vdash \longid \Rightarrow \{a:t,r\}
+}{
+E \vdash \longid.\lab : t \Rightarrow t
+}
+\end{equation}
+
+
+
+\subsubsection*{Expression Sequences \hfill
+\fbox{$E \vdash \exps \Rightarrow t_1,\cdots,t_n$}
+}
+
+\begin{equation}
+\frac{
+E \vdash \exp_i \Rightarrow t_i
+}{
+E \vdash \exp_1,\cdots,\exp_n \Rightarrow t_1,\cdots,t_n
+}
+\end{equation}
+
+
+
+\subsubsection*{Expressions \hfill
+\fbox{$E \vdash \exp \Rightarrow t$}
+}
+
+\begin{equation}
+\frac{
+\vdash \lit \Rightarrow t
+}{
+E \vdash \lit : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+%t : *
+}{
+E \vdash \f{prim}\;s : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+t \succ t_0 \conarrow c(t_1)\cdots(t_n)
+\qquad
+\mbox{$c$ open}
+}{
+E \vdash \f{new} : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \longid \Rightarrow t'
+\qquad
+t' \succ t
+}{
+E \vdash \longid : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+\vdash \lab \Rightarrow a
+\qquad
+E \vdash \exp \Rightarrow \{a:t,r\}
+}{
+E \vdash \#\lab(\exp) : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+\vdash \lab \Rightarrow a
+\qquad
+E \vdash \exp \Rightarrow t'
+\qquad
+t = \{a:t',r\}
+}{
+E \vdash `\lab(\exp) : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+\begin{array}{@{}c@{}}
+E \vdash \longid \Rightarrow t_1
+\qquad
+E \vdash \exp \Rightarrow t_2
+\\
+t_1 \succ t_2 \conarrow t
+\qquad
+t = c(t_1')\cdots(t_n')
+\qquad
+\mbox{$c$ open}
+\end{array}
+}{
+E \vdash @\longid(\exp) : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t'
+\qquad
+t = \c{ref}(t')
+}{
+E \vdash \f{ref}(\exp) : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exps \Rightarrow t',\cdots,t'
+\qquad
+t = \c{vec}(t')
+}{
+E \vdash [\exps] : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exps \Rightarrow t_1,\cdots,t_n
+\qquad
+t = \{1:t_1,\cdots,n:t_n,\epsilon\}
+}{
+E \vdash (\exps) : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \flds^\exp \Rightarrow r
+\qquad
+t = \{r\}
+}{
+E \vdash \{\flds^\exp\} : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \mats \Rightarrow t_1,t_2
+\qquad
+t = t_1 \to t_2
+}{
+E \vdash \f{fun}\;\mats : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp_1 \Rightarrow t' \to t
+\qquad
+E \vdash \exp_2 \Rightarrow t'
+}{
+E \vdash \exp_1(\exp_2) : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp_1 \Rightarrow \c{bool}
+\qquad
+E \vdash \exp_2 \Rightarrow \c{bool}
+\qquad
+t = \c{bool}
+}{
+E \vdash \exp_1\;\f{and}\;\exp_2 : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp_1 \Rightarrow \c{bool}
+\qquad
+E \vdash \exp_2 \Rightarrow \c{bool}
+\qquad
+t = \c{bool}
+}{
+E \vdash \exp_1\;\f{or}\;\exp_2 : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp_1 \Rightarrow \c{bool}
+\qquad
+E \vdash \exp_2 \Rightarrow t
+\qquad
+E \vdash \exp_3 \Rightarrow t
+}{
+E \vdash \f{if}\;\exp_1\;\f{then}\;\exp_2\;\f{else}\;\exp_3 : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp_1 \Rightarrow t'
+\qquad
+E \vdash \exp_2 \Rightarrow t
+}{
+E \vdash \exp_1;\exp_2 : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t'
+\qquad
+E \vdash \mats \Rightarrow t',t
+}{
+E \vdash \f{case}\;\exp\;\f{of}\;\mats : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow \c{exn}
+%\qquad
+%t : *
+}{
+E \vdash \f{raise}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t
+\qquad
+E \vdash \mats \Rightarrow \c{exn},t
+}{
+E \vdash \f{try}\;\exp\;\f{handle}\;\mats : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+%t : *
+}{
+E \vdash \f{fail} : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t
+}{
+E \vdash \f{lazy}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t
+}{
+E \vdash \f{spawn}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \decs \Rightarrow E'
+\qquad
+E \uplus E' \vdash \exp \Rightarrow t
+}{
+E \vdash \f{let}\;\decs\;\f{in}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t'
+\qquad
+\exists \psi . \psi(t) = t'
+}{
+E \vdash \f{abs}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t'
+\qquad
+\exists \psi . \psi(t') = t
+}{
+E \vdash \f{unabs}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+
+
+\subsubsection*{Field Sequences \hfill
+\fbox{$E \vdash \flds^x \Rightarrow r\langle,E'\rangle$}
+}
+
+\begin{equation}
+\frac{
+\begin{array}{@{}c@{}}
+E \vdash \fld^x_i \Rightarrow a_i,t_i\langle,E_i\rangle
+\qquad
+\mbox{$a_i$ disjoint}
+\\
+r = a_1:t_1,\cdots,a_n:t_n,\epsilon
+\qquad
+\langle E' = \biguplus E_i \rangle
+\end{array}
+}{
+E \vdash \fld^x_1,\cdots,\fld^x_n \Rightarrow r\langle,E'\rangle
+}
+\end{equation}
+
+
+\subsubsection*{Fields \hfill
+\fbox{$E \vdash \fld^x \Rightarrow a,t\langle,E'\rangle$}
+}
+
+\begin{equation}
+\frac{
+\vdash \lab \Rightarrow a
+\qquad
+E \vdash x \Rightarrow t\langle,E'\rangle
+}{
+E \vdash \lab = x \Rightarrow a,t\langle,E'\rangle
+}
+\end{equation}
+
+
+
+\subsubsection*{Match Sequences \hfill
+\fbox{$E \vdash \mats \Rightarrow t_1,t_2$}
+}
+
+\begin{equation}
+\frac{
+E \vdash \mat_i \Rightarrow t_1,t_2
+}{
+E \vdash \mat_1\;|\cdots|\;\mat_n \Rightarrow t_1,t_2
+}
+\end{equation}
+
+
+
+\subsubsection*{Matches \hfill
+\fbox{$E \vdash \mat \Rightarrow t_1,t_2$}
+}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t_1,E'
+\qquad
+E \uplus E' \vdash \exp \Rightarrow t_2
+}{
+E \vdash \pat\to\exp \Rightarrow t_1,t_2
+}
+\end{equation}
+
+
+
+\subsubsection*{Pattern Sequences \hfill
+\fbox{$E \vdash \pats \Rightarrow t_1,\cdots,t_n,E'$}
+}
+
+\begin{equation}
+\frac{
+E \vdash \pat_i \Rightarrow t_i,E_i
+\qquad
+E' = \biguplus E_i
+}{
+E \vdash \pat_1,\cdots,\pat_n \Rightarrow t_1,\cdots,t_n,E'
+}
+\end{equation}
+
+
+
+\subsubsection*{Patterns \hfill
+\fbox{$E \vdash \pat \Rightarrow t,E'$}
+}
+
+\begin{equation}
+\frac{
+\vdash \lit \Rightarrow t
+}{
+E \vdash \lit : t \Rightarrow t,\{\}
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+%t : *
+}{
+E \vdash \f{\_} : t \Rightarrow t,\{\}
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+\vdash \id \Rightarrow t',E'
+\qquad
+t' \succ t
+}{
+E \vdash \id : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+\vdash \lab \Rightarrow a
+\qquad
+E \vdash \pat \Rightarrow t',E'
+\qquad
+t = \{a:t',r\}
+}{
+E \vdash `\lab(\pat) : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+\begin{array}{@{}c@{}}
+E \vdash \longid \Rightarrow t_1
+\qquad
+E \vdash \pat \Rightarrow t_2,E'
+\\
+t_1 \succ t_2 \conarrow t
+\qquad
+t = c(t_1')\cdots(t_n')
+\qquad
+\mbox{$c$ open}
+\end{array}
+}{
+E \vdash @\longid(\pat) : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t',E'
+\qquad
+t = \c{ref}(t')
+}{
+E \vdash \f{ref}(\pat) : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pats \Rightarrow t',\cdots,t',E'
+\qquad
+t = \c{vec}(t')
+}{
+E \vdash [\pats] : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pats \Rightarrow t_1,\cdots,t_n,E'
+\qquad
+t = \{1:t_1,\cdots,n:t_n,\epsilon\}
+}{
+E \vdash (\pats) : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \flds^\pat \Rightarrow r,E'
+\qquad
+t = \{\cdots,r\}
+}{
+E \vdash \{\flds^\pat,\_\} : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat_1 \Rightarrow t,E_1
+\qquad
+E \vdash \pat_2 \Rightarrow t,E_2
+\qquad
+E' = E_1 \uplus E_2
+}{
+E \vdash \pat_1\;\f{as}\;\pat_2 : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat_1 \Rightarrow t,E'
+\qquad
+E \vdash \pat_2 \Rightarrow t,E'
+}{
+E \vdash \pat_1\;|\;\pat_2 : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t,E'
+}{
+E \vdash \f{non}\;\pat : t \Rightarrow t,\{\}
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t,E'
+\qquad
+E \uplus E' \vdash \exp \Rightarrow \c{bool}
+}{
+E \vdash \pat\;\f{where}\;\exp : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t,E_1
+\qquad
+E \uplus E_1 \vdash \decs \Rightarrow E_2
+\qquad
+E' = E_1 \uplus E_2
+}{
+E \vdash \pat\;\f{with}\;\decs : t \Rightarrow t,E'
+}
+\end{equation}
+
+
+
+\subsubsection*{Declaration Sequences \hfill
+\fbox{$E \vdash \decs \Rightarrow E'$}
+}
+
+\begin{equation}
+\frac{
+E \uplus E_1\uplus\cdots\uplus E_{i-1} \vdash \dec_i \Rightarrow E_i
+\qquad
+E' = \biguplus E_i
+}{
+E \vdash \dec_1;\cdots;\dec_n \Rightarrow E'
+}
+\end{equation}
+
+
+
+\subsubsection*{Declarations \hfill
+\fbox{$E \vdash \dec \Rightarrow E'$}
+}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t,E'
+\qquad
+E \vdash \exp \Rightarrow t
+}{
+E \vdash \f{val}\;\pat=\exp \Rightarrow E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \uplus E' \vdash \decs \Rightarrow E'
+}{
+E \vdash \f{rec}\;\decs \Rightarrow E'
+}
+\end{equation}
+
+
+
+\subsubsection*{Import Sequences \hfill
+\fbox{$\vdash \imps \Rightarrow E$}
+}
+
+\begin{equation}
+\frac{
+\vdash \imp_i \Rightarrow E_i
+\qquad
+E = \biguplus E_i
+}{
+\vdash \imp_1;\cdots;\imp_n \Rightarrow E
+}
+\end{equation}
+
+
+
+\subsubsection*{Imports \hfill
+\fbox{$\vdash \imp \Rightarrow E$}
+}
+
+\begin{equation}
+\frac{
+\vdash \id \Rightarrow t,E
+}{
+\vdash \id\;\f{from}\;s \Rightarrow E
+}
+\end{equation}
+
+
+
+\subsubsection*{Components \hfill
+\fbox{$\vdash \comp$}
+}
+
+\begin{equation}
+\frac{
+\vdash \imps \Rightarrow E_1
+\qquad
+E_1 \vdash \decs \Rightarrow E_2
+\qquad
+E_1 \uplus E_2 \vdash \flds^\id \Rightarrow r
+}{
+\vdash \f{import}\;\imps\;\f{let}\;\decs\;\f{in}\;\flds^\id
+}
+\end{equation}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
