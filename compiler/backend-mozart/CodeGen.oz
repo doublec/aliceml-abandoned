@@ -146,7 +146,7 @@ define
    fun lazy {LazyPolySel X F}
       try X.F
       catch error(InnerE ...) then
-	 {Value.failed error(InnerE)}
+	 {Value.byNeedFail error(InnerE)}
       end
    end
 \else
