@@ -1,0 +1,17 @@
+How to build a debian package for Alice/Mozart
+----------------------------------------------
+
+Variables:
+   PREFIX       where you install Alice
+   ALICESRC     the root directory of the Alice source tree
+
+1. Do a bootstrap of Alice/Mozart (the usual way) and install it
+   in $(PREFIX)/alice. Install the man pages using the toplevel
+   Makefile with target doc-man.
+2. All the files should now be in the directory $(PREFIX)/alice.
+   cp -a $(ALICESRC)/misc/debian to $(PREFIX)/alice
+3. Adapt ChangeLog, debian/changelog, rules (package_version)
+   and maybe AUTHORS, NEWS etc.
+4. make -f Makefile.cvs
+4. cd to $(PREFIX)/alice and run dpkg-buildpackage -rfakeroot
+   This will generate the packages in $(PREFIX)

@@ -1,0 +1,14 @@
+# -*- makefile -*-
+
+# The cvs target creates the autoconf/automake files that are necessary for
+# the build but should better not be put under CVS control.
+# 
+# This is a temporary hack.
+
+cvs:
+	aclocal
+	automake --add-missing
+	autoconf
+
+.PHONY: cvs
+        

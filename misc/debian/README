@@ -1,0 +1,21 @@
+The Alice Programming System
+
+Alice is a functional programming language based on Standard ML,
+extended with support for concurrent, distributed, and constraint
+programming.
+
+The Alice Programming System (APS) includes an interpreter-like
+interactive toplevel, a batch compiler, a static linker, the
+Inspector (a tool for dynamically inspecting Alice data
+structures), the Explorer (a tool for interactively investigating
+search problems), a binding for the Gnome toolkit GUI library,
+and a comprehensive library.  The current release of the APS is
+based on the Mozart virtual machine, which faciliates
+interoperation between Alice and Oz (http://www.mozart-oz.org/).
+
+The Alice Programming System is distributed under the terms and
+conditions of the Alice License, a slight modification of the BSD
+license.  See the file COPYING for details.
+
+For more information on Alice and the Alice Programming System,
+visit the webpage at http://www.ps.uni-sb.de/alice.

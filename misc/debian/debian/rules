@@ -22,7 +22,7 @@ endif
 # generic Debian directories
 
 package_name = alice-mozart
-package_version = 0.9.2
+package_version = 0.9.3
 
 DEB_BASE_DIR = $(PWD)
 DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian
@@ -78,7 +78,6 @@ binary-indep: build install
 	dh_testroot
 	dh_install --sourcedir=$(DEB_SOURCE_DIR)
 	dh_installdocs $(DEB_SOURCE_DIR)/README
-	dh_undocumented alice.1 alicec.1 alicedep.1 alicelink.1 aliceserv.1
 	dh_installchangelogs
 	dh_strip
 	dh_compress --exclude=*.ozf
