@@ -68,7 +68,7 @@ structure Debug : DEBUG =
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "SMLToMozartMain.f")
+	    ref (fn _ => raise Crash.Crash "Debug.f")
 
 	structure MozartTarget =
 	    MkMozartTarget(structure Switches = Switches
@@ -101,8 +101,11 @@ structure Debug : DEBUG =
 				structure Compiler = Compiler
 				val extension = "ozf")
 
+	val _ = f := RecursiveCompiler.acquireSign
+
 	(* Debugging functions *)
 
+	val _ = Switches.Language.implicitImport := false
 (*	val _ = Switches.Language.rttLevel := Switches.Language.FULL_RTT
 *)
 
