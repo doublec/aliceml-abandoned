@@ -37,7 +37,7 @@ GENERIC_SOURCES = \
 	StackFrame.cc TaskStack.cc IOHandler.cc IODesc.cc SignalHandler.cc \
 	Scheduler.cc Transients.cc Worker.cc Interpreter.cc \
 	Primitive.cc PushCallWorker.cc BindFutureWorker.cc \
-	Unpickler.cc Pickler.cc Profiler.cc
+	Unpickler.cc Pickler.cc Profiler.cc Broker.cc
 GENERIC_OBJS = $(GENERIC_SOURCES:%.cc=generic/%.o)
 SEAM_OBJS = $(STORE_OBJS) $(ADT_OBJS) $(GENERIC_OBJS)
 

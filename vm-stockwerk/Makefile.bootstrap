@@ -371,7 +371,7 @@ GENERICINCLUDES0 = \
 	TaskStack.hh IOHandler.hh IODesc.hh SignalHandler.hh \
 	Scheduler.hh Transients.hh Worker.hh Interpreter.hh Primitive.hh \
 	PushCallWorker.hh BindFutureWorker.hh Unpickler.hh Pickler.hh \
-	Profiler.hh Authoring.hh JitterGenericData.hh
+	Profiler.hh Broker.hh Authoring.hh JitterGenericData.hh
 ALICEINCLUDES0 = \
 	Base.hh Guid.hh Data.hh Types.hh AbstractCode.hh \
 	AbstractCodeInterpreter.hh AliceConcreteCode.hh \

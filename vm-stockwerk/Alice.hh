@@ -32,9 +32,10 @@
 #include "alice/Authoring.hh"
 #include "alice/BootLinker.hh"
 
+// These must be extern "C" because the symbols are accessed
+// via GetProcAddress/dlsym.  We cannot use the AliceDll macro
+// because it would expand to __declspec(dllexport) here.
 #if defined(__MINGW32__) || defined(_MSC_VER)
-// This cannot use the AliceDll macro
-// (AliceDll would expand to __declspec(dllimport) here)
 extern "C" __declspec(dllexport) word InitComponent();
 #else
 extern "C" word InitComponent();
