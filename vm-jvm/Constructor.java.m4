@@ -22,7 +22,7 @@ public class Constructor implements DMLValue {
     }
 
     final public java.lang.String toString() {
-	return this.name+" : constructor";
+	return this.name;
     }
 
     final public DMLValue apply(DMLValue val) {

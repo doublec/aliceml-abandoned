@@ -86,7 +86,7 @@ final public class ConVal implements DMLConVal {
     }
 
     final public java.lang.String toString() {
-	return constructor+"("+content+") : constructed value";
+	return constructor+"("+content+")";
     }
 
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
