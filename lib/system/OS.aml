@@ -14,12 +14,13 @@
 import structure UnsafeOS from "UnsafeOS"
 import signature OS       from "OS-sig"
 
-structure OS : OS =
+structure OS :> OS =
     struct
 	type syserror = int
 	exception SysErr = UnsafeOS.SysErr
 
-	fun errorMsg  _ = ""
+	val errorMsg = UnsafeOS.errorMsg
+
 	fun errorName _ = ""
 	fun syserror  _ = NONE
 
