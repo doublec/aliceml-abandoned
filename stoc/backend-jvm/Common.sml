@@ -45,9 +45,6 @@ structure Common=
 	(* Den Stamp aus einer Id extrahieren. *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
 
-	(* alpha steht am Begin einer Methode *)
-	val alpha = 0:label
-
 	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
 	val mainpickle = ref (Stamp.new ()) (* stamp for main structure *)
 
@@ -62,7 +59,7 @@ structure Common=
 
 	val dummyCoord:ImperativeGrammar.coord = Source.nowhere
 	val dummyPos:Source.position = Source.nowhere
-	val dummyInfo:ImperativeGrammar.info = (dummyCoord, ref NONE)
+	val dummyInfo:ImperativeGrammar.info = (dummyPos, ref Unknown)
 
 	(* Functionclosures are represented by Stamps.
 	  This is the toplevel environment: *)

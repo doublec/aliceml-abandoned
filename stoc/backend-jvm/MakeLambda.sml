@@ -123,7 +123,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	fun getDestClass ((_,FunExp (_,thisFun,_,_))::_) = thisFun
 	  | getDestClass (_::rest) = getDestClass rest
-	  | getDestClass nil = Crash.crash "RecDec ohne FunExp"
+	  | getDestClass nil = illegalStamp
 
 	fun argSize (OneArg _) = 1
 	  | argSize (RecArgs _) = 1

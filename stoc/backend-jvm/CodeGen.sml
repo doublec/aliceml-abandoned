@@ -39,6 +39,7 @@ structure CodeGen =
 	    fun freeVarsExp (LitExp _, _, _) = ()
 	      | freeVarsExp (VarExp (_, id'), free, curFun) =
 		markfree(free, id', curFun, "VarExp")
+	      | freeVarsExp (NewExp _, _, _) = ()
 	      | freeVarsExp (ConAppExp (_, id', idargs), free, curFun) =
 		(markfree (free, id', curFun, "ConAppExp");
 		 argApp (markfree, idargs, free, curFun, "ConAppExp2"))
@@ -114,8 +115,6 @@ structure CodeGen =
 		  (fn (id', exp') => (freeVarsExp (exp', free, curFun);
 				      markbound (free, id', curFun, "RecDec")))
 		  idsexps)
-	      | freeVarsDec (ConDec(_,id',_, _), free, curFun) =
-		 markbound (free, id', curFun, "ConDec")
 	      | freeVarsDec (EvalStm(_, exp'), free, curFun) =
 		 freeVarsExp (exp', free, curFun)
 	      | freeVarsDec (ReturnStm(_,exp'), free, curFun) =
@@ -145,7 +144,7 @@ structure CodeGen =
 	end
 
 	(* entry point *)
-	fun genProgramCode (debug, verbose, optimize, name, program) =
+	fun genComponentCode (debug, verbose, optimize, name, (nil, _, program)) =
 	    (DEBUG := debug;
 	     VERBOSE := verbose;
 	     OPTIMIZE := optimize;
@@ -247,6 +246,7 @@ structure CodeGen =
 	     end;
 	     if (!VERBOSE >= 1) then Lambda.showRecApplies ()
 	     else ())
+	  | genComponentCode _ = Crash.crash "cannot translate Components"
 
 	and valList 0 = nil
 		  | valList n = Classsig CVal :: valList (n-1)
@@ -346,6 +346,10 @@ structure CodeGen =
 					Astore thisFun ::
 					nil
 				    end
+			      | n as NewExp _ =>
+				    Multi (expCode (n, illegalStamp, illegalStamp)) ::
+				    Astore stamp' ::
+				    nil
 
 			      (* constructor application *)
 			      (* xxx falsch! Erst leere Dummies bauen *)
@@ -419,21 +423,6 @@ structure CodeGen =
 	    in
 		initcode @ (Comment "expCode: " :: expcode)
 	    end
-
-	  | decCode (ConDec (_, Id(_, stamp', _), hasArgs,_), curFun, curCls) =
-	    (* ConDec of coord * id * bool *)
-	    if hasArgs then
-		[New CConstructor,
-		 Dup,
-		 Invokespecial (CConstructor, "<init>",
-				([],[Voidsig])),
-		 Astore stamp']
-	    else
-		[New CName,
-		 Dup,
-		 Invokespecial (CName, "<init>",
-				([],[Voidsig])),
-		 Astore stamp']
 
 	  | decCode (RaiseStm(_,id'), _, curCls) =
 		 [New CExWrap,
@@ -1160,7 +1149,17 @@ structure CodeGen =
 	    expCode (AppExp(_,Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
 	    invokeRecApply (stamp', args, curFun, false, curCls)
-
+	  | expCode (NewExp (_, hasArgs), _, _) =
+	    if hasArgs then
+		[New CConstructor,
+		 Dup,
+		 Invokespecial (CConstructor, "<init>",
+				([],[Voidsig]))]
+	    else
+		[New CName,
+		 Dup,
+		 Invokespecial (CName, "<init>",
+				([],[Voidsig]))]
 	  | expCode (PrimAppExp (_, name, ids), _, curCls) =
 		(case name of
 		     "print" => [Getstatic COut,
@@ -1274,7 +1273,8 @@ structure CodeGen =
 					      ([Intsig],[Voidsig]))])
 
 	  | expCode (ConExp (_, id', _), _, curCls) =
-			  [idCode (id', curCls)]
+			  [Comment "ConExp",
+			   idCode (id', curCls)]
 
 	  | expCode (RefExp _,_,_) =
 			  [Getstatic CRef]
@@ -1548,7 +1548,7 @@ structure CodeGen =
 	    end
 
 	and
-	    compile prog = genProgramCode (0,0,2,"Emil", imperatifyString prog)
+	    compile prog = genComponentCode (0,0,2,"Emil", imperatifyString prog)
 	and
-	    compileFile (f, optimize) = genProgramCode (0,0,optimize,"Emil", imperatifyFile f)
+	    compileFile (f, optimize) = genComponentCode (0,0,optimize,"Emil", imperatifyFile f)
     end

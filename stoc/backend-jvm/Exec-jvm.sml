@@ -18,7 +18,7 @@ fun dmlc (_, debug::verbose::optimize::x) =
 	val v=valOf (Int.fromString (String.substring(verbose, 2,1)))
 	fun dc (fi::rest) =
 	    (if v >= 1 then print ("Compiling "^fi^"...\n") else ();
-	    (CodeGen.genProgramCode
+	    (CodeGen.genComponentCode
 	     (valOf (Int.fromString (String.substring(debug, 2,1))),
 	      v,
 	      valOf (Int.fromString (String.substring(optimize, 2,1))),
