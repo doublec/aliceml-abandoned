@@ -27,10 +27,10 @@ struct
     exception Date
 
     datatype weekday = 
-        Fri | Mon | Sat | Sun | Thu | Tue | Wed
+        Sun | Mon | Tue | Wed | Thu | Fri | Sat
 
     datatype month = 
-        Apr | Aug | Dec| Feb |Jan | Jul | Jun | Mar | May | Nov | Oct | Sep 
+        Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec 
 
     datatype date = DATE of {
                  day : int,
@@ -44,7 +44,7 @@ struct
                  yday : int,
                  year : int
                  }
-    type t = date
+    type t = date (**)
 
     fun year (DATE{year, ...}) = year
 	fun month (DATE{month, ...}) = month
@@ -59,12 +59,97 @@ struct
 
     fun localOffset () = raise Fail "not yet implemented"
 
-    val fromTimeLocal   = UnsafeDate.fromTimeLocal o Time.toSeconds
-    val fromTimeUniv    = UnsafeDate.fromTimeUniv o Time.toSeconds
+    fun weekDayToInt w =
+        case w of
+           Sun => 0
+         | Mon => 1
+         | Tue => 2
+         | Wed => 3
+         | Thu => 4
+         | Fri => 5
+         | Sat => 6
+
+   
+    fun weekDayFromInt w =
+        case w of
+           0 => Sun
+         | 1 => Mon
+         | 2 => Tue
+         | 3 => Wed
+         | 4 => Thu
+         | 5 => Fri
+         | 6 => Sat
+         | _ => raise Date
+   
+    fun monthFromInt m =
+        case m of
+           0 => Jan
+         | 1 => Feb
+         | 2 => Mar
+         | 3 => Apr
+         | 4 => May
+         | 5 => Jun
+         | 6 => Jul
+         | 7 => Aug
+         | 8 => Sep
+         | 9 => Oct
+         | 10 => Nov
+         | 11 => Dec
+         | _  => raise Date
+
+    fun monthToInt m =
+        case m of
+           Jan => 0
+         | Feb => 1
+         | Mar => 2
+         | Apr => 3
+         | May => 4
+         | Jun => 5
+         | Jul => 6
+         | Aug => 7
+         | Sep => 8
+         | Oct => 9
+         | Nov => 10
+         | Dec => 11
+
     
-    val toTime = Time.fromSeconds o UnsafeDate.toTime 
+    fun dstToInt NONE       = ~1
+      | dstToInt (SOME b)   = if b then 1 else 0
 
-    fun fmt fs d = UnsafeDate.fmt (fs, d)
+    fun dstFromInt i =
+        if i < 0 then NONE
+        else if i = 0 then SOME false
+        else SOME true
 
-    val toString = UnsafeDate.toString
+
+    fun toTm d =
+        ( second d
+        , minute d
+        , hour d
+        , day d
+        , monthToInt (month d)
+        , year d - 1900
+        , weekDayToInt (weekDay d)
+        , yearDay d
+        , dstToInt (isDst d) 
+        )
+
+    fun fromTm (second, minute, hour, day, month, year, wday, yday, dst) =
+        DATE { day, month = monthFromInt month, year = year + 1900 
+             , hour, minute, second
+             , wday = weekDayFromInt wday
+             , yday 
+             , isDst = dstFromInt dst
+             , offset = NONE
+             }
+
+    val fromTimeLocal   = fromTm o UnsafeDate.fromTimeLocal o Time.toSeconds
+    val fromTimeUniv    = fromTm o UnsafeDate.fromTimeUniv o Time.toSeconds
+    
+    val toTime   = Time.fromSeconds o UnsafeDate.toTime o toTm
+
+    fun fmt fs d = UnsafeDate.fmt (fs, toTm d)
+
+    val toString = UnsafeDate.toString o toTm
+
 end

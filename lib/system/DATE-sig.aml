@@ -16,28 +16,18 @@
  *)
 signature DATE =
 sig
-    datatype weekday = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+    datatype weekday = 
+        Sun | Mon | Tue | Wed | Thu | Fri | Sat
 
-    datatype month
-      = Jan
-      | Feb
-      | Mar
-      | Apr
-      | May
-      | Jun
-      | Jul
-      | Aug
-      | Sep
-      | Oct
-      | Nov
-      | Dec
+    datatype month = 
+        Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec 
 
     type date
 
     type t = date       (**)
 
     exception Date
-
+    
     (*
     val date : {
                    year : int,
@@ -73,8 +63,6 @@ sig
     (*
     val compare : date * date -> order
 
-    val fmt      : string -> date -> string
-    val toString : date -> string
     val scan       : (char, 'a) StringCvt.reader
                        -> (date, 'a) StringCvt.reader
     val fromString : string -> date option
