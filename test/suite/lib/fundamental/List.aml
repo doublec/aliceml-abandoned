@@ -586,7 +586,7 @@ struct
 	      | t f b (x::xs) = t f (f (x, b)) xs
 
 	in
-	    Test.test (fn xs => (List.foldl (fn (a, b) => a :: b) nil xs =
+	    Test.test (fn xs => (List.foldl List.:: nil xs =
 				 List.rev xs)) test1;
 	    Gen.try 100 (Gen.list Gen.int) 
 	        (Test.test (fn xs =>      t     List.:: nil xs = 
@@ -601,7 +601,7 @@ struct
 	      | t f b (x::xs) = t f (f (x, b)) xs
 
 	in
-	    Test.test (fn xs => (List.foldr (fn (a, b) => a :: b) nil xs =
+	    Test.test (fn xs => (List.foldr List.:: nil xs =
 				 xs)) test1;
 	    Gen.try 100 (Gen.list Gen.int) 
 	        (Test.test (fn xs =>      t     List.:: nil (List.rev xs) = 
