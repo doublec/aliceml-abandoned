@@ -75,3 +75,35 @@ import structure Inspector val inspect from "x-alice:/lib/tools/Inspector"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 
 import "x-alice:/compiler/ToplevelMain"
+
+(* We need to repeat overloading declarations here,
+   because mere reliance on reexport-import will default the types! *)
+__overload (int, word, Word8.t, real) as 'num
+    op ~ : 'num -> 'num = (Int.~, Word.~, Word8.~, Real.~)
+__overload (int, real) as 'realint
+    op abs : 'realint -> 'realint = (Int.abs, Real.abs)
+__overload (int, word, Word8.t, real) as 'num
+    op + : 'num * 'num -> 'num = (Int.+, Word.+, Word8.+, Real.+)
+__overload (int, word, Word8.t, real) as 'num
+    op - : 'num * 'num -> 'num = (Int.-, Word.-, Word8.-, Real.-)
+__overload (int, word, Word8.t, real) as 'num
+    op * : 'num * 'num -> 'num = (Int.*, Word.*, Word8.*, Real.*)
+__overload (int, word, Word8.t) as 'wordint
+    op div : 'wordint * 'wordint -> 'wordint = (Int.div, Word.div, Word8.div)
+__overload (int, word, Word8.t) as 'wordint
+    op mod : 'wordint * 'wordint -> 'wordint = (Int.mod, Word.mod, Word8.mod)
+__overload (real) as 'real
+    op / : 'real * 'real -> 'real = (Real./)
+
+__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    op < : 'numtxt * 'numtxt -> bool =
+    (Int.<, Word.<, Word8.<, Real.<, Char.<, String.<)
+__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    op > : 'numtxt * 'numtxt -> bool =
+    (Int.>, Word.>, Word8.>, Real.>, Char.>, String.>)
+__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    op <= : 'numtxt * 'numtxt -> bool =
+    (Int.<=, Word.<=, Word8.<=, Real.<=, Char.<=, String.<=)
+__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    op >= : 'numtxt * 'numtxt -> bool =
+    (Int.>=, Word.>=, Word8.>=, Real.>=, Char.>=, String.>=)
