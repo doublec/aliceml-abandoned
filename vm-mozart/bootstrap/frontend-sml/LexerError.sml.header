@@ -1,7 +1,7 @@
 import
     signature Parser_TOKENS
-from "x-alice:/frontend-sml/PARSER.ozf"
+from "PARSER.ozf"
 
 import
     signature LEXER_ERROR
-from "x-alice:/frontend-sml/LEXER_ERROR.ozf"
+from "LEXER_ERROR.ozf"

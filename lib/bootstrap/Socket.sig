@@ -1,5 +1,3 @@
-(* -*- sml -*- *)
-
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>

@@ -1,7 +1,7 @@
 import
     structure MakeHashImpMap
-from "x-alice:/misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "Path.ozf"

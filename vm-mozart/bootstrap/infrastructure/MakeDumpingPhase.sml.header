@@ -1,4 +1,4 @@
-import signature PHASE from "x-alice:/infrastructure/PHASE.ozf"
-import signature SWITCHES from "x-alice:/infrastructure/SWITCHES.ozf"
-import structure PrettyPrint from "x-alice:/misc/PrettyPrint.ozf"
-import structure TextIO from "x-alice:/lib/TextIO.ozf"
+import signature PHASE from "PHASE.ozf"
+import signature SWITCHES from "SWITCHES.ozf"
+import structure PrettyPrint from "../misc/PrettyPrint.ozf"
+import structure TextIO from "../lib/TextIO.ozf"

@@ -1,19 +1,19 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure GlobalStamp
-from "x-alice:/misc/GlobalStamp.ozf"
+from "../misc/GlobalStamp.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "Label.ozf"
 
 import
     structure Name
-from "x-alice:/common/Name.ozf"
+from "Name.ozf"
 
 import
     signature PATH
-from "x-alice:/common/PATH.ozf"
+from "PATH.ozf"

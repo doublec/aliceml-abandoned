@@ -11,14 +11,47 @@
  *   $Revision$
  *)
 
-functor MakeBatchCompiler(structure Composer: COMPOSER'
+functor MakeBatchCompiler(structure Composer: COMPOSER
 			      where type Sig.t = Signature.t
 			  structure Compiler: COMPILER
 			      where Target.Sig = Signature
-			  val executableHeader: string): MAIN =
+			  val extension: string
+			  val executableHeader: string): BATCH_COMPILER =
     struct
 	structure Composer = Composer
 	structure Switches = Compiler.Switches
+
+	fun warn message =
+	    TextIO.output (TextIO.stdErr, "### warning: " ^ message ^ "\n")
+
+	local
+	    val homeref: string option ref = ref NONE
+	in
+	    fun stockhome () =
+		case !homeref of
+		    NONE =>
+			let
+			    val home =
+				case OS.Process.getEnv "STOCKHOME" of
+				    SOME s => s ^ "/"
+				  | NONE => (warn "STOCKHOME not set"; "")
+			in
+			    homeref := SOME home; home
+			end
+		  | SOME home => home
+	end
+
+	fun parseUrl url =
+	    case (Url.getScheme url, Url.getAuthority url) of
+		(NONE, NONE) =>
+		    Url.toString url
+	      | (SOME "file", NONE) =>
+		    Url.toString (Url.setScheme (url, NONE))
+	      | (SOME "x-alice", NONE) =>
+		    stockhome () ^
+		    Url.toString (Url.setScheme (Url.makeRelativePath url,
+						 NONE))
+	      | _ => raise Crash.Crash "MakeBatchCompiler.parseUrl"
 
 	fun readFile filename =
 	    let
@@ -36,26 +69,30 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 		 case OS.Process.getEnv "STOCKHOME" of
 		     SOME homedir =>
 			 if Source.url desc =
-			     SOME (Url.fromString (homedir ^ "/Base.dll.sig"))
+			     SOME (Url.fromString (homedir ^ "/lib/Base." ^
+						   extension ^ ".sig"))
 			 then s
 			 else
 			     String.map (fn #"\n" => #" " | c => c)
 			     (readFile (homedir ^ "/Default.import")) ^
 			     "\n" ^ s
-		   | NONE =>
-			 (TextIO.print
-			  "### warning: Default.import not found\n"; s)
+		   | NONE => (warn "Default.import not found"; s)
 	     else s)
-	    handle exn as Crash.Crash message =>
-		(TextIO.output(TextIO.stdErr, "CRASH: " ^ message ^ "\n");
-		 raise exn)
 
 	fun processString process source =
 	    processBasic process (Source.stringDesc, source)
 
 	fun processFile process filename =
-	    processBasic process (Source.urlDesc (Url.fromString filename),
-				  readFile filename)
+	    let
+		val url = Url.fromString filename
+		val base =
+		    Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+				   SOME "file")
+		val url = Url.resolve base url
+	    in
+		processBasic process (Source.urlDesc url,
+				      readFile (parseUrl url))
+	    end
 
 	local
 	    fun compileSign' (desc, s) =
@@ -73,12 +110,12 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 		in
 		    case Inf.items (Compiler.Target.sign target) of
 			[item] =>
-			let
-			    val inf = (valOf (#3 (Inf.asInfItem item)))
-			in
-			    Inf.strengthen(Path.invent(), inf);
-			    Inf.asSig inf
-			end
+			    let
+				val inf = valOf (#3 (Inf.asInfItem item))
+			    in
+				Inf.strengthen (Path.invent(), inf);
+				Inf.asSig inf
+			    end
 		      | _ => raise Crash.Crash "MakeBatchCompiler.compileSign"
 		end
 	in
@@ -115,30 +152,15 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 			   | ref _ => ()))
 	end
 
-	(* Tell the composer how to compile Alice source files *)
-
-	fun parseUrl url =
-	    case (Url.getScheme url, Url.getAuthority url) of
-		(NONE, NONE) =>
-		    Url.toString (Url.setScheme (url, NONE))
-	      | (SOME "file", NONE) =>
-		    Url.toString (Url.setScheme (url, NONE))
-	      | (SOME "x-alice", NONE) =>
-(*--**UNFINISHED: This line is necessary for the COM+ backend
-		    (case OS.Process.getEnv "STOCKHOME" of
-			 SOME s => s ^ "/"
-		       | NONE => "") ^
-*)
-		    Url.toString (Url.setScheme (Url.makeRelativePath url,
-						 NONE))
-	      | _ => raise Crash.Crash "MakeBatchCompiler.parseUrl"
+	(* Define signature acquisition via recursive compiler invocation *)
 
 	fun existsFile filename =
 	    (TextIO.closeIn (TextIO.openIn filename); true)
 	    handle IO.Io _ => false
 
-	fun changeExtension (filename, fro, to) =
+	fun changeExtension (filename, to) =
 	    let
+		val fro = "." ^ extension
 		val n = String.size filename
 		val m = String.size fro
 	    in
@@ -154,48 +176,50 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 		else NONE
 	    end
 
-	exception RETURN of Composer.Sig.t
-
-	fun acquireSign url =
-	    (case Pickle.loadSign url of
-		 SOME sign =>
-		     (TextIO.print ("### loaded signature from " ^
-				    Url.toString url ^ "\n");
-		      raise RETURN sign)
-	       | NONE => ();
-	     let
-		 val targetFilename = parseUrl url
-		 val sigFilename = targetFilename ^ ".sig"
-	     in
-		 if existsFile sigFilename then
-		     raise RETURN (compileSign sigFilename)
-		 else ();
-		 case changeExtension (targetFilename, ".dll", ".aml") of
-		     SOME sourceFilename =>
-			 raise RETURN (compile
-				       (sourceFilename, targetFilename, ""))
-		   | NONE => ();
-		 case changeExtension (targetFilename, ".ozf", ".aml") of
-		     SOME sourceFilename =>
-			 raise RETURN (compile
-				       (sourceFilename, targetFilename, ""))
-		   | NONE => ();
-		 case changeExtension (targetFilename, ".ozf", ".sml") of
-		     SOME sourceFilename =>
-			 raise RETURN (compile
-				       (sourceFilename, targetFilename, ""))
-		   | NONE => ();
-		 case changeExtension (targetFilename, ".ozf", ".sig") of
-		     SOME sourceFilename =>
-			 raise RETURN (compile
-				       (sourceFilename, targetFilename, ""))
-		   | NONE => ();
-		 TextIO.print ("### warning: could not locate source for " ^
-			       targetFilename ^ "\n");
-		 Inf.empty ()
-	     end) handle RETURN sign => sign
-
-	val _ = Composer.setAcquisitionMethod acquireSign
+	(*--** try appending the extension *)
+	fun acquireSign (desc, url) =
+	    let
+		val url =
+		    case Source.url desc of
+			SOME base => Url.resolve base url
+		      | NONE => url
+	    in
+		case Composer.sign url of
+		    SOME sign => sign
+		  | NONE =>
+			let
+			    val sign = acquireSign' (desc, url)
+			in
+			    Composer.enterSign (url, sign); sign
+			end
+	    end
+	and acquireSign' (desc, url) =
+	    let
+		val targetFilename = parseUrl url
+		val sigFilename = targetFilename ^ ".sig"
+	    in
+		case Pickle.loadSign url of
+		    SOME sign =>
+			(TextIO.print ("### loaded signature from " ^
+				       Url.toString url ^ "\n");
+			 sign)
+		  | NONE =>
+		if existsFile sigFilename then compileSign sigFilename else
+		case changeExtension (targetFilename, ".aml") of
+		    SOME sourceFilename =>
+			compile (sourceFilename, targetFilename, "")
+		   | NONE =>
+		case changeExtension (targetFilename, ".sml") of
+		    SOME sourceFilename =>
+			compile (sourceFilename, targetFilename, "")
+		  | NONE =>
+		case changeExtension (targetFilename, ".sig") of
+		    SOME sourceFilename =>
+			compile (sourceFilename, targetFilename, "")
+		  | NONE =>
+		Error.error (Source.nowhere,
+			     "could not locate source for " ^ targetFilename)
+	     end
 
 	(* Command Line Processing *)
 
@@ -340,11 +364,16 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 	fun stoc arguments =
 	    (defaults (); stoc' (options arguments))
 	    handle Error.Error (_, _) => OS.Process.failure
-		 | e =>   (*--**DEBUG*)
-		       (TextIO.output
-			(TextIO.stdErr,
-			 "uncaught exception " ^ exnName e ^ "\n");
+		 | Crash.Crash message =>
+		       (TextIO.output (TextIO.stdErr,
+				       "CRASH: " ^ message ^ "\n");
 			OS.Process.failure)
+		 | e =>   (*--**DEBUG*)
+		       (TextIO.output (TextIO.stdErr,
+				       "uncaught exception " ^
+				       exnName e ^ "\n");
+			OS.Process.failure)
+
 
 	(*DEBUG*)
 	local
@@ -356,7 +385,8 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 		  )
 	    structure AbstractionPhase =
 		  MakeTracingPhase(
-			structure Phase    = MakeAbstractionPhase(Composer)
+			structure Phase    =
+			    MakeAbstractionPhase(val loadSign = acquireSign)
 			structure Switches = Switches
 			val name = "Abstraction"
 		  )
@@ -370,7 +400,8 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 		  )
 	    structure ElaborationPhase =
 		  MakeTracingPhase(
-			structure Phase    = MakeElaborationPhase(Composer)
+			structure Phase    =
+			    MakeElaborationPhase(val loadSign = acquireSign)
 			structure Switches = Switches
 			val name = "Elaboration"
 		  )
@@ -398,6 +429,20 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 		  )
 	    structure BackendCommon = MakeBackendCommon(Switches)
 
+	    fun processString' process source =
+		processString process source
+		handle e as Crash.Crash message =>
+		    (TextIO.output (TextIO.stdErr,
+				    "CRASH: " ^ message ^ "\n");
+		     raise e)
+
+	    fun processFile' process source =
+		processFile process source
+		handle e as Crash.Crash message =>
+		    (TextIO.output (TextIO.stdErr,
+				    "CRASH: " ^ message ^ "\n");
+		     raise e)
+
 	    fun parse' x     = ParsingPhase.translate () x
 	    fun abstract' x  = AbstractionPhase.translate (BindEnv.new()) x
 	    fun elab' x      = let val comp = ElaborationPhase.translate
@@ -419,19 +464,19 @@ functor MakeBatchCompiler(structure Composer: COMPOSER'
 	    val translate     = translate' oo elab
 	    val flatten       = flatten' oo translate
 	in
-	    val parseString	= processString parse
-	    val parseFile	= processFile parse
+	    val parseString	= processString' parse
+	    val parseFile	= processFile' parse
 
-	    val abstractString	= processString abstract
-	    val abstractFile	= processFile abstract
+	    val abstractString	= processString' abstract
+	    val abstractFile	= processFile' abstract
 
-	    val elabString	= processString elab
-	    val elabFile	= processFile elab
+	    val elabString	= processString' elab
+	    val elabFile	= processFile' elab
 
-	    val translateString	= processString translate
-	    val translateFile	= processFile translate
+	    val translateString	= processString' translate
+	    val translateFile	= processFile' translate
 
-	    val flattenString	= processString flatten
-	    val flattenFile	= processFile flatten
+	    val flattenString	= processString' flatten
+	    val flattenFile	= processFile' flatten
 	end
     end

@@ -14,28 +14,14 @@
 
 import
     structure OS
-from "x-alice:/lib/OS.ozf"
+from "../lib/OS.ozf"
 
 import
     structure CommandLine
-from "x-alice:/lib/CommandLine.ozf"
+from "../lib/CommandLine.ozf"
 
 import
-    structure Composer
-from "x-alice:/top/Composer.ozf"
-
-import
-    structure SMLToMozartCompiler
-from "x-alice:/top/SMLToMozartCompiler.ozf"
-
-import
-    structure MakeBatchCompiler
-from "x-alice:/top/MakeBatchCompiler.ozf"
-
-structure SMLToMozartMain =
-    MakeBatchCompiler(structure Composer = Composer
-		      structure Compiler = SMLToMozartCompiler
-		      val executableHeader =
-			  "#!/bin/sh\nexec stow $0 \"$@\"\n")
+    structure SMLToMozartMain
+from "SMLToMozartMain.ozf"
 
 val _ = OS.Process.exit (SMLToMozartMain.stoc (CommandLine.arguments ()))

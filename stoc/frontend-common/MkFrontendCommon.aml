@@ -1,11 +1,12 @@
 functor MakeFrontendCommon(
-		structure Composer: COMPOSER where type Sig.t = Inf.sign
+		val loadSign: Source.desc * Url.t -> Inf.sign
 		structure Switches: SWITCHES
 	) : PHASE =
     let
 	structure Phase1 =
 		  MakeTracingPhase(
-			structure Phase    = MakeElaborationPhase(Composer)
+			structure Phase    =
+			    MakeElaborationPhase(val loadSign = loadSign)
 			structure Switches = Switches
 			val name = "Elaboration"
 		  )

@@ -1,7 +1,7 @@
 import
     signature SIGNATURE
-from "x-alice:/infrastructure/SIGNATURE.ozf"
+from "SIGNATURE.ozf"
 
 import
     structure Url
-from "x-alice:/misc/Url.ozf"
+from "../misc/Url.ozf"

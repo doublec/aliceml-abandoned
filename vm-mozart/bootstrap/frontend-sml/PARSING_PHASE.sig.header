@@ -1,23 +1,23 @@
 import
     signature SOURCE
-from "x-alice:/infrastructure/SOURCE.ozf"
+from "../infrastructure/SOURCE.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext.ozf"
 
 import
     signature INPUT_GRAMMAR
-from "x-alice:/frontend-sml/INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR.ozf"
 
 import
     structure InputGrammar
-from "x-alice:/frontend-sml/InputGrammar.ozf"
+from "InputGrammar.ozf"

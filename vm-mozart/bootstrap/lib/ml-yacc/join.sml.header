@@ -5,4 +5,4 @@ import
     signature PARSER
     signature ARG_LEXER
     signature ARG_PARSER
-from "x-alice:/lib/ml-yacc/base.ozf"
+from "base.ozf"

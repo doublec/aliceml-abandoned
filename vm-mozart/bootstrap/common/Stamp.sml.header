@@ -1,3 +1,3 @@
 import
     structure MakeStamp
-from "x-alice:/misc/MakeStamp.ozf"
+from "../misc/MakeStamp.ozf"

@@ -1,31 +1,31 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure VId
-from "x-alice:/frontend-sml/Ids.ozf"
+from "Ids.ozf"
 
 import
     signature INPUT_GRAMMAR
-from "x-alice:/frontend-sml/INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR.ozf"
 
 import
     structure InputGrammar
-from "x-alice:/frontend-sml/InputGrammar.ozf"
+from "InputGrammar.ozf"
 
 import
     structure ParsingError
-from "x-alice:/frontend-sml/ParsingError.ozf"
+from "ParsingError.ozf"
 
 import
     structure AbstractionError
-from "x-alice:/frontend-sml/AbstractionError.ozf"
+from "AbstractionError.ozf"
 
 import
     signature INFIX
-from "x-alice:/frontend-sml/INFIX.ozf"
+from "INFIX.ozf"

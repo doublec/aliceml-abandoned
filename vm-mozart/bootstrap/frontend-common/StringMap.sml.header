@@ -1,7 +1,7 @@
 import
     functor MakeHashImpMap
-from "x-alice:/misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap.ozf"
 
 import
     structure StringHashKey
-from "x-alice:/misc/StringHashKey.ozf"
+from "../misc/StringHashKey.ozf"

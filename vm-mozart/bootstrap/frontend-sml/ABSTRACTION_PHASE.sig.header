@@ -1,27 +1,27 @@
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT.ozf"
 
 import
     signature ABSTRACT_GRAMMAR
-from "x-alice:/frontend-common/ABSTRACT_GRAMMAR.ozf"
+from "../frontend-common/ABSTRACT_GRAMMAR.ozf"
 
 import
     structure AbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar.ozf"
 
 import
     signature INPUT_GRAMMAR
-from "x-alice:/frontend-sml/INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR.ozf"
 
 import
     structure InputGrammar
-from "x-alice:/frontend-sml/InputGrammar.ozf"
+from "InputGrammar.ozf"
 
 import
     structure BindEnv
-from "x-alice:/frontend-sml/BindEnv.ozf"
+from "BindEnv.ozf"

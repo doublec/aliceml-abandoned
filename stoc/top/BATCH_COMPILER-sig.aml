@@ -11,14 +11,13 @@
  *   $Revision$
  *)
 
-signature MAIN =
+signature BATCH_COMPILER =
   sig
 
-    structure Composer: COMPOSER'
+    structure Composer: COMPOSER
     structure Switches: SWITCHES
 
-    val compileSign :		string -> Composer.Sig.t
-    val compile :		string * string * string -> Composer.Sig.t
+    val acquireSign :		Source.desc * Url.t -> Composer.Sig.t
 
     val stoc :			string list -> OS.Process.status
 

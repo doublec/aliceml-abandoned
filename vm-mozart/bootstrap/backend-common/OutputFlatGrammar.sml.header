@@ -1,31 +1,31 @@
 import
     structure Url
-from "x-alice:/misc/Url.ozf"
+from "../misc/Url.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure StampSet
-from "x-alice:/common/StampSet.ozf"
+from "../common/StampSet.ozf"
 
 import
     structure Name
-from "x-alice:/common/Name.ozf"
+from "../common/Name.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     signature FLAT_GRAMMAR
-from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
+from "FLAT_GRAMMAR.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"
 
 import
     signature OUTPUT_FLAT_GRAMMAR
-from "x-alice:/backend-common/OUTPUT_FLAT_GRAMMAR.ozf"
+from "OUTPUT_FLAT_GRAMMAR.ozf"

@@ -1,26 +1,26 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure StringHashKey
-from "x-alice:/misc/StringHashKey.ozf"
+from "../misc/StringHashKey.ozf"
 
 import
     structure MakeHashScopedImpMap
-from "x-alice:/misc/MakeHashScopedImpMap.ozf"
+from "../misc/MakeHashScopedImpMap.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure Lab
-from "x-alice:/frontend-sml/Lab.ozf"
+from "Lab.ozf"
 
 import
     structure VId
@@ -28,12 +28,12 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "x-alice:/frontend-sml/Ids.ozf"
+from "Ids.ozf"
 
 import
     structure Infix
-from "x-alice:/frontend-sml/Infix.ozf"
+from "Infix.ozf"
 
 import
     signature BIND_ENV
-from "x-alice:/frontend-sml/BIND_ENV.ozf"
+from "BIND_ENV.ozf"

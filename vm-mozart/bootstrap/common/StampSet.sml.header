@@ -1,11 +1,11 @@
 import
     structure FromEqHashKey
-from "x-alice:/misc/HASH_KEY.ozf"
+from "../misc/HASH_KEY.ozf"
 
 import
     structure MakeHashImpSet
-from "x-alice:/misc/MakeHashImpSet.ozf"
+from "../misc/MakeHashImpSet.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "Stamp.ozf"

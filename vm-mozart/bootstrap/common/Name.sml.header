@@ -1,7 +1,7 @@
 import
     structure StringHashKey
-from "x-alice:/misc/StringHashKey.ozf"
+from "../misc/StringHashKey.ozf"
 
 import
     signature NAME
-from "x-alice:/common/NAME.ozf"
+from "NAME.ozf"

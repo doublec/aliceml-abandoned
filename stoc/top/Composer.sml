@@ -10,31 +10,22 @@
  *   $Revision$
  *)
 
-structure Composer: COMPOSER' =
+structure Composer: COMPOSER =
     struct
 	structure Sig = Signature
 
 	exception Corrupt
-
-	val acquire: (Url.t -> Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "Composer.acquire")
-
-	fun setAcquisitionMethod f = acquire := f
+	exception Conflict
 
 	structure UrlMap = MakeHashImpMap(FromEqHashKey(Url))
 
 	val signTable: Sig.t UrlMap.t = UrlMap.new ()
 
-	fun sign url =
-	    case UrlMap.lookup (signTable, url) of
-		SOME sign => sign
-	      | NONE =>
-		    let
-			val sign = !acquire url
-		    in
-			UrlMap.insertDisjoint (signTable, url, sign);
-			sign
-		    end
+	fun sign url = UrlMap.lookup (signTable, url)
+
+	fun enterSign (url, sign) =
+	    UrlMap.insertDisjoint (signTable, url, sign)
+	    handle UrlMap.Collision _ => raise Conflict
 
 	fun start url = ()
     end

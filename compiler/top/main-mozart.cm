@@ -3,5 +3,4 @@ Group is
     make-batch-compiler.cm
 
     ../backend-mozart/sources.cm
-    SMLToMozartCompiler.sml
     SMLToMozartMain.sml

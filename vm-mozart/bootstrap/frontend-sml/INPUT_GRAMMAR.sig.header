@@ -1,6 +1,6 @@
 import
     structure Lab
-from "x-alice:/frontend-sml/Lab.ozf"
+from "Lab.ozf"
 
 import
     structure VId
@@ -8,8 +8,8 @@ import
     structure TyVar
     structure SigId
     structure StrId
-from "x-alice:/frontend-sml/Ids.ozf"
+from "Ids.ozf"
 
 import
     structure SCon
-from "x-alice:/frontend-sml/SCon.ozf"
+from "SCon.ozf"

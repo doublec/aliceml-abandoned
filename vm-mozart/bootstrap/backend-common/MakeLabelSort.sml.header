@@ -1,15 +1,15 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure MakeSort
-from "x-alice:/misc/MakeSort.ozf"
+from "../misc/MakeSort.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     signature LABEL_SORT
-from "x-alice:/backend-common/LABEL_SORT.ozf"
+from "LABEL_SORT.ozf"

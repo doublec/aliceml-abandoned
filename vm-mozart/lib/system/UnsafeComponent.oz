@@ -13,7 +13,7 @@
 functor
 import
    Pickle(load saveWithCells)
-   UrlComponent('Url$': Url) at 'x-alice:/misc/Url.ozf'
+   UrlComponent('Url$': Url) at '../misc/Url.ozf'
 export
    'Pickle$': Pickle_Module
 define

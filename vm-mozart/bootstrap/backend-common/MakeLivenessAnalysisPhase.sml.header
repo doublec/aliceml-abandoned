@@ -1,47 +1,47 @@
 import
     structure PrettyPrint
-from "x-alice:/misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint.ozf"
 
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES.ozf"
 
 import
     structure ComposePhases
-from "x-alice:/infrastructure/ComposePhases.ozf"
+from "../infrastructure/ComposePhases.ozf"
 
 import
     structure MakeTracingPhase
-from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase.ozf"
 
 import
     structure MakeDumpingPhase
-from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
+from "../infrastructure/MakeDumpingPhase.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext.ozf"
 
 import
     structure StampSet
-from "x-alice:/common/StampSet.ozf"
+from "../common/StampSet.ozf"
 
 import
     signature FLAT_GRAMMAR
-from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
+from "FLAT_GRAMMAR.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"
 
 import
     structure OutputFlatGrammar
-from "x-alice:/backend-common/OutputFlatGrammar.ozf"
+from "OutputFlatGrammar.ozf"
 
 import
     signature LIVENESS_ANALYSIS_PHASE
-from "x-alice:/backend-common/LIVENESS_ANALYSIS_PHASE.ozf"
+from "LIVENESS_ANALYSIS_PHASE.ozf"

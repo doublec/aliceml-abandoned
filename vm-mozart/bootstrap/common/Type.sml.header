@@ -1,27 +1,27 @@
 import
     val print
-from "x-alice:/lib/TextIO.ozf"
+from "../lib/TextIO.ozf"
 
 import
     structure Assert
-from "x-alice:/misc/Assert.ozf"
+from "../misc/Assert.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "Label.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "Path.ozf"
 
 import
     structure PathSet
-from "x-alice:/common/PathSet.ozf"
+from "PathSet.ozf"
 
 import
     structure PathMap
-from "x-alice:/common/PathMap.ozf"
+from "PathMap.ozf"
 
 import
     signature TYPE
-from "x-alice:/common/TYPE.ozf"
+from "TYPE.ozf"

@@ -1,11 +1,11 @@
 import
     structure TextIO
-from "x-alice:/lib/TextIO.ozf"
+from "../lib/TextIO.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "Source.ozf"
 
 import
     signature ERROR
-from "x-alice:/infrastructure/ERROR.ozf"
+from "ERROR.ozf"

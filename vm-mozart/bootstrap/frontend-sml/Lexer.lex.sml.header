@@ -1,19 +1,19 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     signature Parser_TOKENS
-from "x-alice:/frontend-sml/PARSER.ozf"
+from "PARSER.ozf"
 
 import
     structure ParsingError
-from "x-alice:/frontend-sml/ParsingError.ozf"
+from "ParsingError.ozf"
 
 import
     signature LEXER_ERROR
-from "x-alice:/frontend-sml/LEXER_ERROR.ozf"
+from "LEXER_ERROR.ozf"
 
 import
     structure LexerError
-from "x-alice:/frontend-sml/LexerError.ozf"
+from "LexerError.ozf"

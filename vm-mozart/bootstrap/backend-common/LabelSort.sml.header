@@ -1,7 +1,7 @@
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure MakeLabelSort
-from "x-alice:/backend-common/MakeLabelSort.ozf"
+from "MakeLabelSort.ozf"

@@ -1,27 +1,27 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext.ozf"
 
 import
     structure StampSet
-from "x-alice:/common/StampSet.ozf"
+from "../common/StampSet.ozf"
 
 import
     structure StampMap
-from "x-alice:/common/StampMap.ozf"
+from "../common/StampMap.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"
 
 import
     signature DEAD_CODE_ELIMINATION_PHASE
-from "x-alice:/backend-common/DEAD_CODE_ELIMINATION_PHASE.ozf"
+from "DEAD_CODE_ELIMINATION_PHASE.ozf"

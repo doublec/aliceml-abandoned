@@ -77,8 +77,6 @@ signature ABSTRACTION_ERROR =
 	| SigItemUnbound	of SigId
 	| ConItemNonCon		of VId
 	| DconItemNonCon	of VId
-	(* Components *)
-	| CompCorrupt		of Url.t
 	(* Sharing translation *)
 	| SharingExternalTy	of typid
 	| SharingExternalSig	of infid

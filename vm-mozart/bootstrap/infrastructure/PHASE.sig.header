@@ -1,15 +1,15 @@
 import
     structure Error
-from "x-alice:/infrastructure/Error.ozf"
+from "Error.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "Source.ozf"
 
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "CONTEXT.ozf"
 
 import
     signature REPRESENTATION
-from "x-alice:/infrastructure/REPRESENTATION.ozf"
+from "REPRESENTATION.ozf"

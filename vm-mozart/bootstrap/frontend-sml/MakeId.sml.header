@@ -1,11 +1,11 @@
 import
     signature STAMP
-from "x-alice:/misc/STAMP.ozf"
+from "../misc/STAMP.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     signature ID
-from "x-alice:/frontend-sml/ID.ozf"
+from "ID.ozf"

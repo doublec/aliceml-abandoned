@@ -1,15 +1,15 @@
 import
     structure Assert
-from "x-alice:/misc/Assert.ozf"
+from "Assert.ozf"
 
 import
     signature HASH_KEY
-from "x-alice:/misc/HASH_KEY.ozf"
+from "HASH_KEY.ozf"
 
 import
     signature IMP_MAP
-from "x-alice:/misc/IMP_MAP.ozf"
+from "IMP_MAP.ozf"
 
 import
     signature DEPTH_FIRST_SEARCH
-from "x-alice:/misc/DEPTH_FIRST_SEARCH.ozf"
+from "DEPTH_FIRST_SEARCH.ozf"

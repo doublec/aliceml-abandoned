@@ -1,27 +1,27 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure AbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar.ozf"
 
 import
     structure AbstractionError
-from "x-alice:/frontend-sml/AbstractionError.ozf"
+from "AbstractionError.ozf"
 
 import
     signature SHARING
-from "x-alice:/frontend-sml/SHARING.ozf"
+from "SHARING.ozf"

@@ -1,2 +1,2 @@
-import structure IntermediateGrammar from
-"x-alice:/common/IntermediateGrammar.ozf"
+import structure IntermediateGrammar
+from "IntermediateGrammar.ozf"

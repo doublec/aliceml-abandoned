@@ -1,51 +1,55 @@
 import
-    signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+    structure Url
+from "../misc/Url.ozf"
 
 import
-    signature COMPOSER
-from "x-alice:/infrastructure/COMPOSER.ozf"
+    structure Source
+from "../infrastructure/Source.ozf"
+
+import
+    signature SWITCHES
+from "../infrastructure/SWITCHES.ozf"
 
 import
     signature PHASE
-from "x-alice:/infrastructure/PHASE.ozf"
+from "../infrastructure/PHASE.ozf"
 
 import
     functor ComposePhases
-from "x-alice:/infrastructure/ComposePhases.ozf"
+from "../infrastructure/ComposePhases.ozf"
 
 import
     functor MakeTracingPhase
-from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase.ozf"
 
 import
     functor MakeDumpingPhase
-from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
+from "../infrastructure/MakeDumpingPhase.ozf"
 
 import
     structure TypedGrammar
-from "x-alice:/frontend-common/TypedGrammar.ozf"
+from "TypedGrammar.ozf"
 
 import
     structure Inf
-from "x-alice:/common/Inf.ozf"
+from "../common/Inf.ozf"
 
 import
     structure PPInf
-from "x-alice:/common/PPInf.ozf"
+from "../common/PPInf.ozf"
 
 import
     structure PPIntermediateGrammar
-from "x-alice:/common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar.ozf"
 
 import
     structure MakeElaborationPhase
-from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
+from "MakeElaborationPhase.ozf"
 
 import
     structure MakeTranslationPhase
-from "x-alice:/frontend-common/MakeTranslationPhase.ozf"
+from "MakeTranslationPhase.ozf"
 
 import
     structure Env
-from "x-alice:/frontend-common/Env.ozf"
+from "Env.ozf"

@@ -1,15 +1,15 @@
 import
     functor MakeAbstractGrammar
-from "x-alice:/frontend-common/MakeAbstractGrammar.ozf"
+from "MakeAbstractGrammar.ozf"
 
 import
     functor MakePPAbstractGrammar
-from "x-alice:/frontend-common/MakePPAbstractGrammar.ozf"
+from "MakePPAbstractGrammar.ozf"
 
 import
     structure PrettyPrint
-from "x-alice:/misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"

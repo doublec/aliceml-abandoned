@@ -1,18 +1,18 @@
 import
     signature TOKEN
-from "x-alice:/lib/ml-yacc/base.ozf"
+from "../lib/ml-yacc/base.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure SCon
-from "x-alice:/frontend-sml/SCon.ozf"
+from "SCon.ozf"
 
 import
     structure Lab
-from "x-alice:/frontend-sml/Lab.ozf"
+from "Lab.ozf"
 
 import
     structure VId
@@ -20,16 +20,16 @@ import
     structure TyVar
     structure SigId
     structure StrId
-from "x-alice:/frontend-sml/Ids.ozf"
+from "Ids.ozf"
 
 import
     structure InputGrammar
-from "x-alice:/frontend-sml/InputGrammar.ozf"
+from "InputGrammar.ozf"
 
 import
     signature DERIVED_FORMS
-from "x-alice:/frontend-sml/DERIVED_FORMS.ozf"
+from "DERIVED_FORMS.ozf"
 
 import
     signature Parser_TOKENS
-from "x-alice:/frontend-sml/PARSER.ozf"
+from "PARSER.ozf"

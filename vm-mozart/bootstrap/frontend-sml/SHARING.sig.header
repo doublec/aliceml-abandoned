@@ -1,3 +1,3 @@
 import
     structure AbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar.ozf"

@@ -1,7 +1,7 @@
 import
     signature INTERMEDIATE_GRAMMAR
-from "x-alice:/common/INTERMEDIATE_GRAMMAR.ozf"
+from "../common/INTERMEDIATE_GRAMMAR.ozf"
 
 import
     structure IntermediateGrammar
-from "x-alice:/common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar.ozf"

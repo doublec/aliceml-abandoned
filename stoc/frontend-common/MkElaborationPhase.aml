@@ -10,7 +10,7 @@
  * table.
  *)
 
-functor MakeElaborationPhase(Composer: COMPOSER where type Sig.t = Inf.sign)
+functor MakeElaborationPhase(val loadSign: Source.desc * Url.t -> Inf.sign)
     :> ELABORATION_PHASE =
 struct
 
@@ -1723,16 +1723,16 @@ struct
 
   (* Announcements *)
 
-    fun elabAnn(E, I.ImpAnn(i, imps, url)) =
+    fun elabAnn(E, desc, I.ImpAnn(i, imps, url)) =
 	let
-	    val s     = Composer.sign url
-			(*UNFINISHED: Handling of IO failure? *)
+	    val s     = loadSign(desc,url)
 	    val imps' = elabImps(E, s, imps)
 	in
 	    O.ImpAnn(sigInfo(i,s), imps', url)
 	end
 
-    and elabAnns(E, anns) = Vector.map (fn ann => elabAnn(E, ann)) anns
+    and elabAnns(E, desc, anns) =
+	Vector.map (fn ann => elabAnn(E, desc, ann)) anns
 
 
   (* Imports *)
@@ -1747,7 +1747,7 @@ struct
 				of I.NoDesc(i') =>
 				   (t1, O.NoDesc(typInfo(i',t1)))
 				 | I.SomeDesc(i',typ) =>
-				   let				
+				   let
 				      val (t2,typ')  = elabStarTyp(E, typ)
 				   in
 				      if Type.matches(t2,t1) then
@@ -1770,7 +1770,7 @@ struct
 	    val (t2,desc') = case desc
 			       of I.NoDesc(i') =>
 				      (t1, O.NoDesc(typInfo(i', t1)))
-			        | I.SomeDesc(i',typ) =>
+				| I.SomeDesc(i',typ) =>
 				  let
 				      val (t2,_,typ',_) =
 						elabTypRep(E, p, fn k'=>k', typ)
@@ -1935,9 +1935,9 @@ struct
 
   (* Components *)
 
-    fun elabComp(E, I.Comp(i, anns, decs)) =
+    fun elabComp(E, desc, I.Comp(i, anns, decs)) =
 	let
-	    val anns' = elabAnns(E, anns)
+	    val anns' = elabAnns(E, desc, anns)
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
@@ -1953,7 +1953,7 @@ struct
     fun translate E (desc, component) =
 	let
 	    val _         = insertScope E
-	    val impsdecs' = elabComp(E, component)
+	    val impsdecs' = elabComp(E, desc, component)
 	    val _         = mergeScope E
 	in
 	    impsdecs'

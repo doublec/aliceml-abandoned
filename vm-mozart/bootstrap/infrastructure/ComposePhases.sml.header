@@ -1,7 +1,7 @@
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "CONTEXT.ozf"
 
 import
     signature PHASE
-from "x-alice:/infrastructure/PHASE.ozf"
+from "PHASE.ozf"

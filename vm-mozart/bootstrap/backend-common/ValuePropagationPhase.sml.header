@@ -1,80 +1,80 @@
 import
     structure Assert
-from "x-alice:/misc/Assert.ozf"
+from "../misc/Assert.ozf"
 
 import
     signature HASH_KEY
     structure FromEqHashKey
-from "x-alice:/misc/HASH_KEY.ozf"
+from "../misc/HASH_KEY.ozf"
 
 import
     signature IMP_MAP
-from "x-alice:/misc/IMP_MAP.ozf"
+from "../misc/IMP_MAP.ozf"
 
 import
     structure MakeHashImpMap
-from "x-alice:/misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap.ozf"
 
 import
     structure MakeDepthFirstSearch
-from "x-alice:/misc/MakeDepthFirstSearch.ozf"
+from "../misc/MakeDepthFirstSearch.ozf"
 
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure Error
-from "x-alice:/infrastructure/Error.ozf"
+from "../infrastructure/Error.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure StampSet
-from "x-alice:/common/StampSet.ozf"
+from "../common/StampSet.ozf"
 
 import
     structure StampMap
-from "x-alice:/common/StampMap.ozf"
+from "../common/StampMap.ozf"
 
 import   (*--**DEBUG*)
     structure Name
-from "x-alice:/common/Name.ozf"
+from "../common/Name.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure Arity
-from "x-alice:/backend-common/Arity.ozf"
+from "Arity.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"
 
 import
     structure OutputFlatGrammar
-from "x-alice:/backend-common/OutputFlatGrammar.ozf"
+from "OutputFlatGrammar.ozf"
 
 import
     structure PrimOps
-from "x-alice:/backend-common/PrimOps.ozf"
+from "PrimOps.ozf"
 
 import
     signature VALUE_PROPAGATION_PHASE
-from "x-alice:/backend-common/VALUE_PROPAGATION_PHASE.ozf"
+from "VALUE_PROPAGATION_PHASE.ozf"
 
 import   (*--**DEBUG*)
     structure TextIO
-from "x-alice:/lib/TextIO.ozf"
+from "../lib/TextIO.ozf"

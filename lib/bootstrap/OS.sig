@@ -12,6 +12,11 @@
 
 signature OS_COMPONENT =
     sig
+	signature OS_FILE_SYS =
+	    sig
+		val getDir: unit -> string
+	    end
+
 	signature OS_PROCESS =
 	    sig
 		eqtype status
@@ -25,6 +30,7 @@ signature OS_COMPONENT =
 
 	signature OS =
 	    sig
+		structure FileSys: OS_FILE_SYS
 		structure Process: OS_PROCESS
 	    end
 

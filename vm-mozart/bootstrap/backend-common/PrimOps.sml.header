@@ -1,15 +1,15 @@
 import
     structure StringHashKey
-from "x-alice:/misc/StringHashKey.ozf"
+from "../misc/StringHashKey.ozf"
 
 import
     structure MakeHashImpMap
-from "x-alice:/misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap.ozf"
 
 import
     structure Arity
-from "x-alice:/backend-common/Arity.ozf"
+from "Arity.ozf"
 
 import
     signature PRIM_OPS
-from "x-alice:/backend-common/PRIM_OPS.ozf"
+from "PRIM_OPS.ozf"

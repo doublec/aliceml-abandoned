@@ -1,7 +1,7 @@
 import
     structure PrettyPrint
-from "x-alice:/misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "Path.ozf"

@@ -1,43 +1,43 @@
 import
     structure PrettyPrint
-from "x-alice:/misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint.ozf"
 
 import
     signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES.ozf"
 
 import
     structure ComposePhases
-from "x-alice:/infrastructure/ComposePhases.ozf"
+from "../infrastructure/ComposePhases.ozf"
 
 import
     structure MakeTracingPhase
-from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase.ozf"
 
 import
     structure MakeDumpingPhase
-from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
+from "../infrastructure/MakeDumpingPhase.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext.ozf"
 
 import
     structure OutputFlatGrammar
-from "x-alice:/backend-common/OutputFlatGrammar.ozf"
+from "OutputFlatGrammar.ozf"
 
 import
     structure FlatteningPhase
-from "x-alice:/backend-common/FlatteningPhase.ozf"
+from "FlatteningPhase.ozf"
 
 import
     structure ValuePropagationPhase
-from "x-alice:/backend-common/ValuePropagationPhase.ozf"
+from "ValuePropagationPhase.ozf"
 
 import
     structure MakeLivenessAnalysisPhase
-from "x-alice:/backend-common/MakeLivenessAnalysisPhase.ozf"
+from "MakeLivenessAnalysisPhase.ozf"
 
 import
     structure DeadCodeEliminationPhase
-from "x-alice:/backend-common/DeadCodeEliminationPhase.ozf"
+from "DeadCodeEliminationPhase.ozf"

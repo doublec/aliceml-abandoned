@@ -1,3 +1,3 @@
 import
     signature SCON
-from "x-alice:/frontend-sml/SCON.ozf"
+from "SCON.ozf"

@@ -1,63 +1,63 @@
 import
     structure LrParser
-from "x-alice:/lib/ml-yacc/parser2.ozf"
+from "../lib/ml-yacc/parser2.ozf"
 
 import
     structure Join
-from "x-alice:/lib/ml-yacc/join.ozf"
+from "../lib/ml-yacc/join.ozf"
 
 import
     signature SOURCE
-from "x-alice:/infrastructure/SOURCE.ozf"
+from "../infrastructure/SOURCE.ozf"
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT.ozf"
 
 import
     signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES.ozf"
 
 import
     structure EmptyContext
-from "x-alice:/infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext.ozf"
 
 import
     signature INPUT_GRAMMAR
-from "x-alice:/frontend-sml/INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR.ozf"
 
 import
     structure InputGrammar
-from "x-alice:/frontend-sml/InputGrammar.ozf"
+from "InputGrammar.ozf"
 
 import
     structure DerivedForms
-from "x-alice:/frontend-sml/DerivedForms.ozf"
+from "DerivedForms.ozf"
 
 import
     structure LrVals
-from "x-alice:/frontend-sml/Parser.ozf"
+from "Parser.ozf"
 
 import
     structure LexerError
-from "x-alice:/frontend-sml/LexerError.ozf"
+from "LexerError.ozf"
 
 import
     structure ParsingError
-from "x-alice:/frontend-sml/ParsingError.ozf"
+from "ParsingError.ozf"
 
 import
     structure Lexer
-from "x-alice:/frontend-sml/Lexer.lex.ozf"
+from "Lexer.lex.ozf"
 
 import
     structure CountPosLexer
-from "x-alice:/frontend-sml/CountPosLexer.ozf"
+from "CountPosLexer.ozf"
 
 import
     signature PARSING_PHASE
-from "x-alice:/frontend-sml/PARSING_PHASE.ozf"
+from "PARSING_PHASE.ozf"

@@ -3,5 +3,4 @@ Group is
     make-batch-compiler.cm
 
     ../backend-com+/sources.cm
-    SMLToComPlusCompiler.sml
     SMLToComPlusMain.sml

@@ -1,23 +1,23 @@
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT.ozf"
 
 import
     structure Env
-from "x-alice:/frontend-common/Env.ozf"
+from "Env.ozf"
 
 import
     signature ABSTRACT_GRAMMAR
-from "x-alice:/frontend-common/ABSTRACT_GRAMMAR.ozf"
+from "ABSTRACT_GRAMMAR.ozf"
 
 import
     structure AbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "AbstractGrammar.ozf"
 
 import
     structure TypedGrammar
-from "x-alice:/frontend-common/TypedGrammar.ozf"
+from "TypedGrammar.ozf"

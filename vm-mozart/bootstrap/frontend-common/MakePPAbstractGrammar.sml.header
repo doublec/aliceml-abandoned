@@ -1,13 +1,13 @@
 import signature ABSTRACT_GRAMMAR
-from "x-alice:/frontend-common/ABSTRACT_GRAMMAR.ozf"
+from "ABSTRACT_GRAMMAR.ozf"
 import signature PP_ABSTRACT_GRAMMAR
-from "x-alice:/frontend-common/PP_ABSTRACT_GRAMMAR.ozf"
+from "PP_ABSTRACT_GRAMMAR.ozf"
 
-import structure Stamp  from "x-alice:/common/Stamp.ozf"
-import structure Name   from "x-alice:/common/Name.ozf"
-import structure Label  from "x-alice:/common/Label.ozf"
-import structure Fixity from "x-alice:/common/Fixity.ozf"
+import structure Stamp  from "../common/Stamp.ozf"
+import structure Name   from "../common/Name.ozf"
+import structure Label  from "../common/Label.ozf"
+import structure Fixity from "../common/Fixity.ozf"
 
-import structure PrettyPrint from "x-alice:/misc/PrettyPrint.ozf"
-import structure PPMisc      from "x-alice:/misc/PPMisc.ozf"
-import structure Url         from "x-alice:/misc/Url.ozf"
+import structure PrettyPrint from "../misc/PrettyPrint.ozf"
+import structure PPMisc      from "../misc/PPMisc.ozf"
+import structure Url         from "../misc/Url.ozf"

@@ -1,19 +1,19 @@
 import
     structure Name
-from "x-alice:/common/Name.ozf"
+from "Name.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "Label.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "Path.ozf"
 
 import
     structure Type
-from "x-alice:/common/Type.ozf"
+from "Type.ozf"
 
 import
     signature LABEL_REFLECTION
-from "x-alice:/common/LABEL_REFLECTION.ozf"
+from "LABEL_REFLECTION.ozf"

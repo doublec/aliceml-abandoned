@@ -1,35 +1,35 @@
 import
     structure Assert
-from "x-alice:/misc/Assert.ozf"
+from "../misc/Assert.ozf"
 
 import
     structure MakeHashImpMap
-from "x-alice:/misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap.ozf"
 
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "Label.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "Path.ozf"
 
 import
     structure PathMap
-from "x-alice:/common/PathMap.ozf"
+from "PathMap.ozf"
 
 import
     structure Type
-from "x-alice:/common/Type.ozf"
+from "Type.ozf"
 
 import
     structure Fixity
-from "x-alice:/common/Fixity.ozf"
+from "Fixity.ozf"
 
 import
     signature INF
-from "x-alice:/common/INF.ozf"
+from "INF.ozf"

@@ -1,55 +1,55 @@
 import
     structure Error
-from "x-alice:/infrastructure/Error.ozf"
+from "../infrastructure/Error.ozf"
 
 import
     structure Fixity
-from "x-alice:/common/Fixity.ozf"
+from "../common/Fixity.ozf"
 
 import
     structure Name
-from "x-alice:/common/Name.ozf"
+from "../common/Name.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure Type
-from "x-alice:/common/Type.ozf"
+from "../common/Type.ozf"
 
 import
     structure Inf
-from "x-alice:/common/Inf.ozf"
+from "../common/Inf.ozf"
 
 import
     structure AbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "AbstractGrammar.ozf"
 
 import
     structure PrettyPrint
-from "x-alice:/misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint.ozf"
 
 import
     structure PPMisc
-from "x-alice:/misc/PPMisc.ozf"
+from "../misc/PPMisc.ozf"
 
 import
     structure PPPath
-from "x-alice:/common/PPPath.ozf"
+from "../common/PPPath.ozf"
 
 import
     structure PPType
-from "x-alice:/common/PPType.ozf"
+from "../common/PPType.ozf"
 
 import
     structure PPInf
-from "x-alice:/common/PPInf.ozf"
+from "../common/PPInf.ozf"
 
 import
     signature ELABORATION_ERROR
-from "x-alice:/frontend-common/ELABORATION_ERROR.ozf"
+from "ELABORATION_ERROR.ozf"

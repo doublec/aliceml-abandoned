@@ -1,18 +1,18 @@
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure Url
-from "x-alice:/misc/Url.ozf"
+from "../misc/Url.ozf"
 
 import
     structure AbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar.ozf"
 
 import
     structure Lab
-from "x-alice:/frontend-sml/Lab.ozf"
+from "Lab.ozf"
 
 import
     structure VId
@@ -20,4 +20,4 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "x-alice:/frontend-sml/Ids.ozf"
+from "Ids.ozf"

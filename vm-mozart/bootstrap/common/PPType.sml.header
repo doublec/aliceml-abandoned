@@ -1,36 +1,36 @@
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure PrettyPrint
-from "x-alice:/misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint.ozf"
 
 import
     structure PPMisc
-from "x-alice:/misc/PPMisc.ozf"
+from "../misc/PPMisc.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "Label.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "Path.ozf"
 
 import
     structure PPPath
-from "x-alice:/common/PPPath.ozf"
+from "PPPath.ozf"
 
 import
     structure Type
     structure TypePrivate
-from "x-alice:/common/Type.ozf"
+from "Type.ozf"
 
 import
     signature PP_TYPE
-from "x-alice:/common/PP_TYPE.ozf"
+from "PP_TYPE.ozf"
 
 import
     structure PervasiveType
-from "x-alice:/common/PervasiveType.ozf"
+from "PervasiveType.ozf"

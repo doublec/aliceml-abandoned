@@ -90,7 +90,8 @@ BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml
 BACKENDMOZARTFILES = $(BACKENDMOZARTSOURCES:%=backend-mozart/%)
 
 TOPSOURCES = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
-	MAIN.sig MakeBatchCompiler.sml Main.sml SMLToMozartCompiler.sml
+	BATCH_COMPILER.sig MakeBatchCompiler.sml SMLToMozartMain.sml \
+	Main.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 ALLFILES = \
@@ -116,18 +117,15 @@ all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 first: $(ALLFILES)
 
 boot-%:
-	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
 	$(MAKE) STOC=$(PREFIX)/bin/stoc $*
 
 bootstrap: lib/boot-Base.ozf boot-all
 
 stoc.ozf: top/Main.ozf
-	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
-	$(OZL) -z9 --include=x-alice: -v x-alice:/$< -o $@
+	$(OZL) -z9 --include=..,../../.. -v $< -o $@
 
 stow.ozf: Init.ozf
-	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
-	$(OZL) -z9 --include=x-alice: -v $< -o $@
+	$(OZL) -z9 --include=.. -v $< -o $@
 
 %.ozf: %.oz
 	$(OZC) -c $< -o $@
@@ -138,49 +136,54 @@ lib/Base.sml: ../../lib/bootstrap/Bootstrap.aus
 $(NATIVEFILES): lib/%: ../%
 	cp $< $@
 
-%: %.body Base.import
-	cat Base.import $< > $@
+%: %.body LocalBase.import
+	cat LocalBase.import $< > $@
 
-lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header Base.import
-	cat Base.import lib/ml-yacc/$*.header $< > $@
+lib/%.ozf.sig: ../../lib/bootstrap/%.sig LocalBase.import
+	(cat LocalBase.import; sed 's|x-alice:/|'`pwd`'/|g' < $<) > $@
 
-misc/%: misc/%.body Base.import
-	cat Base.import $< > $@
+lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header \
+	LocalBase.import
+	cat LocalBase.import lib/ml-yacc/$*.header $< > $@
 
-misc/%: ../../stoc/misc/% misc/%.header Base.import
-	cat Base.import misc/$*.header $< > $@
+misc/%: misc/%.body LocalBase.import
+	cat LocalBase.import $< > $@
+
+misc/%: ../../stoc/misc/% misc/%.header LocalBase.import
+	cat LocalBase.import misc/$*.header $< > $@
 
 infrastructure/%: ../../stoc/infrastructure/% infrastructure/%.header \
-	Base.import
-	cat Base.import infrastructure/$*.header $< > $@
+	LocalBase.import
+	cat LocalBase.import infrastructure/$*.header $< > $@
 
-common/%: ../../stoc/common/% common/%.header Base.import
-	cat Base.import common/$*.header $< > $@
+common/%: ../../stoc/common/% common/%.header LocalBase.import
+	cat LocalBase.import common/$*.header $< > $@
 
 frontend-common/%: ../../stoc/frontend-common/% frontend-common/%.header \
-	Base.import
-	cat Base.import frontend-common/$*.header $< > $@
+	LocalBase.import
+	cat LocalBase.import frontend-common/$*.header $< > $@
 
-frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header Base.import
-	cat Base.import frontend-sml/$*.header $< > $@
+frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header \
+	LocalBase.import
+	cat LocalBase.import frontend-sml/$*.header $< > $@
 
 frontend-sml/PARSER.sig: ../../stoc/frontend-sml/Parser.grm.sig \
-	frontend-sml/PARSER.sig.header Base.import
-	cat Base.import $@.header $< > $@
+	frontend-sml/PARSER.sig.header LocalBase.import
+	cat LocalBase.import $@.header $< > $@
 
 frontend-sml/Parser.sml: ../../stoc/frontend-sml/Parser.grm.sml \
-	frontend-sml/Parser.sml.header Base.import
-	cat Base.import $@.header $< > $@
+	frontend-sml/Parser.sml.header LocalBase.import
+	cat LocalBase.import $@.header $< > $@
 
 backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
-	Base.import
-	cat Base.import backend-common/$*.header $< > $@
+	LocalBase.import
+	cat LocalBase.import backend-common/$*.header $< > $@
 
-top/%: top/%.body Base.import
-	cat Base.import $< > $@
+top/%: top/%.body LocalBase.import
+	cat LocalBase.import $< > $@
 
-top/%: ../../stoc/top/% top/%.header Base.import
-	cat Base.import top/$*.header $< > $@
+top/%: ../../stoc/top/% top/%.header LocalBase.import
+	cat LocalBase.import top/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC) $(STOC_OPTS) -c $< -o $@
@@ -196,6 +199,9 @@ $(INSTALLDIRS):
 $(INSTALLFILES0:%=$(PREFIX)/%): $(PREFIX)/%: %
 	install -c -m 444 $< $@
 
+LocalBase.import: Base.import
+	sed 's|x-alice:/|'`pwd`'/|g' < $< > $@
+
 Default.import: Base.import Other.import
 	cat Base.import Other.import > $@
 
@@ -209,7 +215,7 @@ $(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
 	$(PREFIX)/bin/stoc $(STOC_OPTS) --replacesign $< $<.sig $@
 
 clean:
-	-rm -f $(ALLFILES)
+	-rm -f $(ALLFILES) LocalBase.import
 	-rm -f *.ozf */*.ozf */*/*.ozf
 	-rm -f *.ozm */*.ozm */*/*.ozm
 	-rm -f *.ozp */*.ozp */*/*.ozp

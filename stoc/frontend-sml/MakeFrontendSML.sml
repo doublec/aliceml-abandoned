@@ -1,5 +1,5 @@
 functor MakeFrontendSML(
-		structure Composer: COMPOSER where type Sig.t = Inf.sign
+		val loadSign: Source.desc * Url.t -> Inf.sign
 		structure Switches: SWITCHES
 	) : PHASE =
     let
@@ -11,7 +11,8 @@ functor MakeFrontendSML(
 		  )
 	structure Phase2 =
 		  MakeTracingPhase(
-			structure Phase    = MakeAbstractionPhase(Composer)
+			structure Phase    =
+			    MakeAbstractionPhase(val loadSign = loadSign)
 			structure Switches = Switches
 			val name = "Abstraction"
 		  )

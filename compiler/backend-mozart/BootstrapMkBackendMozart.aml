@@ -49,6 +49,17 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	    (MozartEngine.buildFunctor engine component)
     end
 
+fun parseDesc desc =
+    case Source.url desc of
+	SOME url =>
+	    (case (Url.getScheme url, Url.getAuthority url) of
+		 (NONE, NONE) =>
+		     Url.toString url
+	       | (SOME "file", NONE) =>
+		     Url.toString (Url.setScheme (url, NONE))
+	       | _ => raise Crash.Crash "MakeBackendMozart.parseUrl")
+      | NONE => OS.FileSys.tmpName ()
+
 functor MakeBackendMozart(structure Switches: SWITCHES
 			  structure MozartTarget: TARGET
 			      where type t = string * FlatGrammar.t): PHASE =
@@ -59,9 +70,7 @@ functor MakeBackendMozart(structure Switches: SWITCHES
 			     structure O = MozartTarget
 
 			     fun translate () (desc, component) =
-				 (case Source.url desc of
-				      SOME url => Url.toString url
-				    | NONE => "", component)
+				 (parseDesc desc, component)
 			 end
 		     structure Switches = Switches
 		     val name = "Assembling")

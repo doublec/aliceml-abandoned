@@ -1,11 +1,11 @@
 import
     signature HASH_KEY
-from "x-alice:/misc/HASH_KEY.ozf"
+from "HASH_KEY.ozf"
 
 import
     structure MakeScopedImpMap
-from "x-alice:/misc/MakeScopedImpMap.ozf"
+from "MakeScopedImpMap.ozf"
 
 import
     structure MakeHashImpMap
-from "x-alice:/misc/MakeHashImpMap.ozf"
+from "MakeHashImpMap.ozf"

@@ -14,15 +14,15 @@
 
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure Inf
-from "x-alice:/common/Inf.ozf"
+from "../common/Inf.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "../backend-common/FlatGrammar.ozf"
 
 signature CODE_GEN_PHASE_COMPONENT =
     sig

@@ -1,7 +1,7 @@
 import
     signature FLAT_GRAMMAR
-from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
+from "FLAT_GRAMMAR.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"

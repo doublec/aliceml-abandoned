@@ -1,51 +1,51 @@
 import
     functor MakeHashImpSet
-from "x-alice:/misc/MakeHashImpSet.ozf"
+from "../misc/MakeHashImpSet.ozf"
 
 import
     structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+from "../infrastructure/Crash.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure StampSet
-from "x-alice:/common/StampSet.ozf"
+from "../common/StampSet.ozf"
 
 import
     structure Name
-from "x-alice:/common/Name.ozf"
+from "../common/Name.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure Path
-from "x-alice:/common/Path.ozf"
+from "../common/Path.ozf"
 
 import
     structure Type
-from "x-alice:/common/Type.ozf"
+from "../common/Type.ozf"
 
 import
     structure IntermediateGrammar
-from "x-alice:/common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar.ozf"
 
 import
     structure PervasiveType
-from "x-alice:/common/PervasiveType.ozf"
+from "../common/PervasiveType.ozf"
 
 import
     structure Arity
-from "x-alice:/backend-common/Arity.ozf"
+from "Arity.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"
 
 import
     signature INTERMEDIATE_AUX
-from "x-alice:/backend-common/INTERMEDIATE_AUX.ozf"
+from "INTERMEDIATE_AUX.ozf"

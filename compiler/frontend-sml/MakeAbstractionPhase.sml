@@ -74,7 +74,7 @@ of type identifiers.
 
 
 functor MakeAbstractionPhase(
-		Composer: COMPOSER where type Sig.t = Inf.sign
+		val loadSign: Source.desc * Url.t -> Inf.sign
 	) :> ABSTRACTION_PHASE =
   struct
 
@@ -3174,15 +3174,12 @@ functor MakeAbstractionPhase(
 
   (* Announcements *)
 
-    and trAnn  E ann  = Vector.rev(Vector.fromList(trAnn' (E,[]) ann))
-    and trAnn'(E,acc) =
+    and trAnn (E,desc) ann = Vector.rev(Vector.fromList(trAnn' (E,desc,[]) ann))
+    and trAnn'(E,desc,acc) =
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
-		val s     = Composer.sign url
-			    handle Composer.Corrupt =>
-				error(i, E.CompCorrupt url)
-				(*UNFINISHED: handle IO errors *)
+		val s     = loadSign(desc,url)
 		val E'    = BindEnvFromSig.envFromSig(i, s)
 		val _     = insertScope E
 		val imps' = trImp (E,E') imp
@@ -3195,7 +3192,7 @@ functor MakeAbstractionPhase(
 		acc
 
 	 | SEQAnn(i, ann1, ann2) =>
-		trAnn' (E, trAnn' (E,acc) ann1) ann2
+		trAnn' (E, desc, trAnn' (E,desc,acc) ann1) ann2
 
 
   (* Programs and components *)
@@ -3214,15 +3211,15 @@ functor MakeAbstractionPhase(
 	   end
 
 
-    fun trComponent E (Component(i, ann, programo)) =
+    fun trComponent (E,desc) (Component(i, ann, programo)) =
 	let
-	    val anns' = trAnn E ann
+	    val anns' = trAnn (E,desc) ann
 	    val decs' = trProgramo E programo
 	in
 	    O.Comp(i, anns', decs')
 	end
 
 
-    fun translate E (desc, component) = trComponent E component
+    fun translate E (desc, component) = trComponent (E,desc) component
 
   end

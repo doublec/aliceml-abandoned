@@ -1,35 +1,35 @@
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure Type
-from "x-alice:/common/Type.ozf"
+from "../common/Type.ozf"
 
 import
     signature INTERMEDIATE_GRAMMAR
-from "x-alice:/common/INTERMEDIATE_GRAMMAR.ozf"
+from "../common/INTERMEDIATE_GRAMMAR.ozf"
 
 import
     structure IntermediateGrammar
-from "x-alice:/common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar.ozf"
 
 import
     structure Arity
-from "x-alice:/backend-common/Arity.ozf"
+from "Arity.ozf"
 
 import
     signature FLAT_GRAMMAR
-from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
+from "FLAT_GRAMMAR.ozf"
 
 import
     structure FlatGrammar
-from "x-alice:/backend-common/FlatGrammar.ozf"
+from "FlatGrammar.ozf"

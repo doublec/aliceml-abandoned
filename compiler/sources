@@ -187,8 +187,7 @@ top/Composer.sml
 top/COMPILER.sig
 top/MakeCompiler.sml
 top/Pickle.sml
-top/MAIN.sig
+top/BATCH_COMPILER.sig
 top/MakeBatchCompiler.sml
-top/SMLToMozartCompiler.sml
 top/SMLToMozartMain.sml
 top/Main.sml

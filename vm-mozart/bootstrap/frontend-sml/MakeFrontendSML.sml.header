@@ -1,43 +1,47 @@
 import
+    structure Url
+from "../misc/Url.ozf"
+
+import
+    structure Source
+from "../infrastructure/Source.ozf"
+
+import
     signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES.ozf"
 
 import
     signature PHASE
-from "x-alice:/infrastructure/PHASE.ozf"
+from "../infrastructure/PHASE.ozf"
 
 import
     structure ComposePhases
-from "x-alice:/infrastructure/ComposePhases.ozf"
+from "../infrastructure/ComposePhases.ozf"
 
 import
     structure MakeTracingPhase
-from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase.ozf"
 
 import
     structure MakeDumpingPhase
-from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
-
-import
-    signature COMPOSER
-from "x-alice:/infrastructure/COMPOSER.ozf"
+from "../infrastructure/MakeDumpingPhase.ozf"
 
 import
     structure Inf
-from "x-alice:/common/Inf.ozf"
-
-import
-    structure MakeParsingPhase
-from "x-alice:/frontend-sml/ParsingPhase.ozf"
-
-import
-    structure MakeAbstractionPhase
-from "x-alice:/frontend-sml/MakeAbstractionPhase.ozf"
-
-import
-    structure BindEnv
-from "x-alice:/frontend-sml/BindEnv.ozf"
+from "../common/Inf.ozf"
 
 import
     structure PPAbstractGrammar
-from "x-alice:/frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar.ozf"
+
+import
+    structure MakeParsingPhase
+from "ParsingPhase.ozf"
+
+import
+    structure MakeAbstractionPhase
+from "MakeAbstractionPhase.ozf"
+
+import
+    structure BindEnv
+from "BindEnv.ozf"

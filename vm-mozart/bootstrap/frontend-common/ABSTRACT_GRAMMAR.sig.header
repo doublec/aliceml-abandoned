@@ -1,19 +1,19 @@
 import
     structure Url
-from "x-alice:/misc/Url.ozf"
+from "../misc/Url.ozf"
 
 import
     structure Fixity
-from "x-alice:/common/Fixity.ozf"
+from "../common/Fixity.ozf"
 
 import
     structure Name
-from "x-alice:/common/Name.ozf"
+from "../common/Name.ozf"
 
 import
     structure Label
-from "x-alice:/common/Label.ozf"
+from "../common/Label.ozf"
 
 import
     structure Stamp
-from "x-alice:/common/Stamp.ozf"
+from "../common/Stamp.ozf"

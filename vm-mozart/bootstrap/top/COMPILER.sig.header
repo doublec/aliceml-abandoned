@@ -1,11 +1,11 @@
 import
     structure Source
-from "x-alice:/infrastructure/Source.ozf"
+from "../infrastructure/Source.ozf"
 
 import
     signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES.ozf"
 
 import
     signature TARGET
-from "x-alice:/infrastructure/TARGET.ozf"
+from "../infrastructure/TARGET.ozf"

@@ -1,7 +1,7 @@
 import
     signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
+from "CONTEXT.ozf"
 
 import
     signature SIGNATURE
-from "x-alice:/infrastructure/SIGNATURE.ozf"
+from "SIGNATURE.ozf"
