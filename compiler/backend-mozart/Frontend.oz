@@ -124,9 +124,9 @@ define
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
       case {StockhausenToImperative File Image} of false then unit
-      elseof VS then Imports Exports Body in
-	 Imports#Exports#Body = {VirtualStringToValue VS}
-	 Imports#Exports#{ShareBody Body {NewDictionary}}
+      elseof VS then Imports Body in
+	 Imports#Body = {VirtualStringToValue VS}
+	 Imports#{ShareBody Body {NewDictionary}}
       end
    end
 end
