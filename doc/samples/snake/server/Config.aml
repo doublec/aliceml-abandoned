@@ -1,0 +1,64 @@
+(* Alice Snake 2.0 - Config
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature CONFIG from "CONFIG-sig"
+
+
+structure Config :> CONFIG =
+struct
+
+    type config = {
+	 timeout : Time.time,   (* after how many seconds a game has to end *)
+	 dimensions : int * int, 
+		   (* the dimensions of the arenas created in the tounament *)
+	 goodie : int, (* the average amount of appearing goodies *)
+	 lives : int, (* the amount of lives a client has  in the tournament *)
+	 maxPlayer : int, 
+	      (* how many clients can actively participate in the tournament *)
+	 goodieFrequency : int (* how often goodies appear *)
+}
+
+    val defaultSingle = 
+	{
+	 timeout = Time.fromSeconds 100,
+	 dimensions = (50,50),
+	 goodie = 5,
+	 lives = ~1,
+	 maxPlayer = 1,
+	 goodieFrequency = 1
+	 }
+
+    val defaultMulti = 
+	{
+	 timeout = Time.fromSeconds 100,
+	 dimensions = (50,50),
+	 goodie = 5,
+	 lives = 5,
+	 maxPlayer = 16,
+	 goodieFrequency = 3
+	 }
+
+    val path = OS.Path.currentArc^"/config/config.cs"
+
+    fun load () = 
+	let
+	    structure C = 
+		unpack (Pickle.load path handle _ => 
+			(pack (val c = defaultMulti) :> (val c : config))) 
+		     : (val c : config)
+	in
+	    C.c
+	end
+
+    fun  save cfg = Pickle.save (path,pack (val c = cfg) :> (val c : config)) 
+
+
+end
