@@ -82,4 +82,35 @@
     conventions of Unix-style operating systems.
   </P>
 
+  <P>
+    For the following function, semantics differs slightly from the official specification:
+  </P>
+
+  <DL>
+    <DT>
+      <TT>mkRelative {path = <I>path</I>, relativeTo = <I>rel</I>}</TT>
+    </DT>
+    <DD>
+      <P>Does not raise <TT>Path</TT> if both arguments are relative paths on
+      the same volume. Instead, resolution is performed as for absolut paths.
+      Here are some examples:</P>
+      <TT>
+      <TABLE>
+        <TR>
+	  <TH><I>path</I>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TH>
+	  <TH><I>relativeTo</I>&nbsp;&nbsp;</TH>
+	  <TH>mkRelative{<I>path</I>, <I>relativeTo</I>}</TH>
+	</TR>
+	<TR><TD>"a"</TD><TD>""</TD><TD>"a"</TD></TR>
+	<TR><TD>"a"</TD><TD>"."</TD><TD>"a"</TD></TR>
+	<TR><TD>"a"</TD><TD>"a"</TD><TD>"."</TD></TR>
+	<TR><TD>"a"</TD><TD>"c/d"</TD><TD>"../../a"</TD></TR>
+	<TR><TD>"a"</TD><TD>"./a"</TD><TD>"."</TD></TR>
+	<TR><TD>"a/"</TD><TD>""</TD><TD>"a/"</TD></TR>
+	<TR><TD>"a/b/c"</TD><TD>"a"</TD><TD>"b/c"</TD></TR>
+      </TABLE>
+      </TT>
+    </DD>
+  </DL>
+
 <?php footing() ?>
