@@ -239,7 +239,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and unguardedTyVarsMrule E (Mrule(_, pat, exp)) =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsExp E exp
 
-    and unguardedTyVarsDec E (CONDec(_, dconbind)) =
+    and unguardedTyVarsDec E (CONSTRUCTORDec(_, dconbind)) =
 	    unguardedTyVarsDconBind E dconbind
 
       | unguardedTyVarsDec E (STRUCTUREDec(_, strbind)) =
@@ -869,7 +869,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		foldiVals (trOpenDecVal (E,i,longido')) [] E'
 	   end
 
-	 | CONDec(i, dconbind) =>
+	 | CONSTRUCTORDec(i, dconbind) =>
 	   let
 		val E'    = Env.new()
 		val decs' = trDconBindo (E,E') (SOME dconbind)
@@ -1625,7 +1625,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		foldiVals (trOpenSpecVal (E,i,longido')) [] E'
 	   end
 
-	 | CONSpec(i, dcondesc) =>
+	 | CONSTRUCTORSpec(i, dcondesc) =>
 		trDconDesco E (SOME dcondesc)
 
 	 | STRUCTURESpec(i, strdesc) =>

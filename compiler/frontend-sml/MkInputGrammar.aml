@@ -121,7 +121,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| TYPEDec        of Info * TypBind
 	| DATATYPEDec    of Info * DatBind
 	| REPLICATIONDec of Info * TyCon * LongTyCon
-	| CONDec         of Info * DconBind
+	| CONSTRUCTORDec of Info * DconBind
 	| STRUCTUREDec   of Info * StrBind
 	| SIGNATUREDec   of Info * SigBind
 	| FUNCTORDec     of Info * FunBind
@@ -231,7 +231,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| EQTYPESpec      of Info * TypDesc
 	| DATATYPESpec    of Info * DatDesc
 	| REPLICATIONSpec of Info * TyCon * LongTyCon
-	| CONSpec         of Info * DconDesc
+	| CONSTRUCTORSpec of Info * DconDesc
 	| STRUCTURESpec   of Info * StrDesc
 	| SIGNATURESpec   of Info * SigDesc
 	| FUNCTORSpec     of Info * FunDesc
@@ -334,7 +334,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(TYPEDec(I,_))				= I
       | infoDec(DATATYPEDec(I,_))			= I
       | infoDec(REPLICATIONDec(I,_,_))			= I
-      | infoDec(CONDec(I,_))				= I
+      | infoDec(CONSTRUCTORDec(I,_))			= I
       | infoDec(STRUCTUREDec(I,_))			= I
       | infoDec(SIGNATUREDec(I,_))			= I
       | infoDec(FUNCTORDec(I,_))			= I
@@ -414,7 +414,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(EQTYPESpec(I,_))			= I
       | infoSpec(DATATYPESpec(I,_))			= I
       | infoSpec(REPLICATIONSpec(I,_,_))		= I
-      | infoSpec(CONSpec(I,_))				= I
+      | infoSpec(CONSTRUCTORSpec(I,_))			= I
       | infoSpec(STRUCTURESpec(I,_))			= I
       | infoSpec(SIGNATURESpec(I,_))			= I
       | infoSpec(FUNCTORSpec(I,_))			= I

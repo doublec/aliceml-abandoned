@@ -121,7 +121,7 @@ signature INPUT_GRAMMAR =
 	| TYPEDec        of Info * TypBind
 	| DATATYPEDec    of Info * DatBind
 	| REPLICATIONDec of Info * TyCon * LongTyCon
-	| CONDec         of Info * DconBind
+	| CONSTRUCTORDec of Info * DconBind
 	| STRUCTUREDec   of Info * StrBind
 	| SIGNATUREDec   of Info * SigBind
 	| FUNCTORDec     of Info * FunBind
@@ -231,7 +231,7 @@ signature INPUT_GRAMMAR =
 	| EQTYPESpec      of Info * TypDesc
 	| DATATYPESpec    of Info * DatDesc
 	| REPLICATIONSpec of Info * TyCon * LongTyCon
-	| CONSpec         of Info * DconDesc
+	| CONSTRUCTORSpec of Info * DconDesc
 	| STRUCTURESpec   of Info * StrDesc
 	| SIGNATURESpec   of Info * SigDesc
 	| FUNCTORSpec     of Info * FunDesc

@@ -8,7 +8,7 @@
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.
  *   - exception declarations have been made a derived form:
- *	exception exbind          ==>  con exbind'
+ *	exception exbind          ==>  constructor exbind'
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
  *   - abstype has been made a derived form:
  *	abstype datbind <withtype tybind> with dec end
@@ -367,7 +367,7 @@ structure DerivedForms :> DERIVED_FORMS =
     (* Declarations *)
 
     val FUNDec       = G.FUNDec
-    val EXCEPTIONDec = G.CONDec
+    val EXCEPTIONDec = G.CONSTRUCTORDec
     val FvalBind     = G.FvalBind
     val EQUALExBind  = G.EQUALDconBind
     val Fmatch       = G.Match
@@ -497,7 +497,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
     val FUNSpec       = G.VALSpec
     val SHARINGSpec   = G.SHARINGSpec
-    val EXCEPTIONSpec = G.CONSpec
+    val EXCEPTIONSpec = G.CONSTRUCTORSpec
     val EQUALExDesc   = G.EQUALDconDesc
 
     fun DATATYPESpec(I, datdesc, NONE)         = G.DATATYPESpec(I, datdesc)

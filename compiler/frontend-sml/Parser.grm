@@ -25,11 +25,11 @@
 (*	      ::= pat withfun fvalbind end	(derived form)			*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
-(*        dec      ::= con dconbind						*)
+(*        dec      ::= constructor dconbind						*)
 (*	  datbind  ::= tyvarseq tycon						*)
 (*	  dconbind ::= <op> vid <of ty> : tyvarseq longtycon <and dconbind>	*)
 (*		   ::= <op> vid = <op> longvid <and dconbind>			*)
-(*        spec     ::= con dcondesc						*)
+(*        spec     ::= constructor dcondesc						*)
 (*	  datdesc  ::= tyvarseq tycon						*)
 (*	  dcondesc ::= vid <of ty> : tyvarseq longtycon <and dcondesc>		*)
 (*		   ::= vid = longvid <and dcondesc>				*)
@@ -146,7 +146,7 @@
 	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
-	| CON | NON | WHEN | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| CONSTRUCTOR | NON | WHEN | WITHFUN | WITHVAL | DOT | HASHBRACK
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
@@ -167,7 +167,7 @@
 	 RAISE REC THEN TYPE VAL WITH WITHTYPE WHILE
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
-	 CON NON WHEN
+	 CONSTRUCTOR NON WHEN
 
 %eop     EOF
 %noshift EOF
@@ -175,7 +175,7 @@
 
 %left  SHARING
 %left  SEMICOLON
-%right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CON EXCEPTION
+%right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CONSTRUCTOR EXCEPTION
        STRUCTURE SIGNATURE FUNCTOR
 %right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
 %right AND
@@ -617,7 +617,9 @@
 	| ABSTYPE datbind WITHTYPE_typbind_opt WITH dec END
 			( ABSTYPEDec(I(ABSTYPEleft,ENDright), datbind,
 				     WITHTYPE_typbind_opt, dec) )
-	| CON dconbind	( CONDec(I(CONleft,dconbindright), dconbind) )
+	| CONSTRUCTOR dconbind
+			( CONSTRUCTORDec(I(CONSTRUCTORleft,dconbindright),
+					 dconbind) )
 	| EXCEPTION exbind
 			( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) )
 	| STRUCTURE strbind
@@ -1214,7 +1216,9 @@
 	| DATATYPE tycon EQUALS DATATYPE longtycon
 			( REPLICATIONSpec(I(DATATYPEleft,longtyconright),
 					  tycon, longtycon) )
-	| CON dcondesc	( CONSpec(I(CONleft,dcondescright), dcondesc) )
+	| CONSTRUCTOR dcondesc
+			( CONSTRUCTORSpec(I(CONSTRUCTORleft,dcondescright),
+					  dcondesc) )
 	| EXCEPTION exdesc
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
 	| STRUCTURE strdesc
