@@ -460,38 +460,36 @@ struct
 		  
      fun stopButtonSetActive b =  
 	 (stopButtonActive := b
-	  ;GtkSupport.setSensitive(stopButton,b ))
+	  ;GtkSupport.setSensitive(stopButton,b )
+	  ; TextIO.print("Stop Button now active: "^Bool.toString(b) ^ "\n")  )
 
+     fun setStopButtonOnOff(f,n) = (Server.serve(fn() => stopButtonSetActive(true))
+				    ;f n
+				    ; Server.serve(fn() => stopButtonSetActive(false)))
+	 
      fun handleReinspect node = 
-	 fn _ => (stopButtonSetActive(true)
-		  ;(selectHandler("reinspect")) (node,0)
-	          ; stopButtonSetActive(false))
+	 fn _ => setStopButtonOnOff((selectHandler("reinspect")),(node,0))
 
-     fun handleReinspectSelection _ =(stopButtonSetActive(true)
-       ;(selectHandler("reinspect")) (getSelectionNode(),0)
-       ; stopButtonSetActive(false))
+     fun handleReinspectSelection _ = setStopButtonOnOff(
+       selectHandler("reinspect"), (getSelectionNode(),0))
+    
   
-     fun handleShrinkSelection _  = (stopButtonSetActive(true)
-         ;(selectHandler("shrink")) (getSelectionNode(),0)
-	 ; stopButtonSetActive(false))		     
+     fun handleShrinkSelection _  = setStopButtonOnOff(
+       selectHandler("shrink"), (getSelectionNode(),0))	     
 
-     fun handleExpandSelection _  = (stopButtonSetActive(true)
-         ;(selectHandler("expand")) (getSelectionNode(),0)
-	 ; stopButtonSetActive(false))			     
+     fun handleExpandSelection _  = 	setStopButtonOnOff(
+       selectHandler("expand"), (getSelectionNode(),0))		     
 
      fun handleWidth node = 
-	 fn i => fn _ => (stopButtonSetActive(true)
-			  ;(selectHandler("width")) (node,i)
-			   ; stopButtonSetActive(false))	
+	 fn i => fn _ => setStopButtonOnOff(
+			  selectHandler("width"),(node,i))
 
      fun handleDepth node =
-	 fn i => fn _ => (stopButtonSetActive(true)
-			  ;(selectHandler("depth")) (node,i)
-			   ; stopButtonSetActive(false))	
+	 fn i => fn _ => setStopButtonOnOff(
+			  selectHandler("depth"),(node,i))
 
-     fun handleForce node _ = (stopButtonSetActive(true)
-	 ;(selectHandler("force evaluation")) (getSelectionNode(),0)
-	 ; stopButtonSetActive(false))	       
+     fun handleForce node _ = setStopButtonOnOff
+	 (selectHandler("force evaluation"), (getSelectionNode(),0))
 
 	 (* Menu-Bar *)
      val bar = GtkSupport.createMenu
