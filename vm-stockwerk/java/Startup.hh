@@ -17,6 +17,6 @@
 #pragma interface "java/Startup.hh"
 #endif
 
-void Startup();
+DllExport void Startup();
 
 #endif
