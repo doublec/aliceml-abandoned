@@ -81,6 +81,7 @@ static int Compare(word x0, word x1) {
 DEFINE2(opeq) {
   int result = Compare(x0, x1);
   if (result == -1) {
+    taskStack->PushFrame(prim_self);
     return Interpreter::REQUEST;
   }
   else {
@@ -91,6 +92,7 @@ DEFINE2(opeq) {
 DEFINE2(opnoteq) {
   int result = Compare(x0, x1);
   if (result == -1) {
+    taskStack->PushFrame(prim_self);
     return Interpreter::REQUEST;
   }
   else {
