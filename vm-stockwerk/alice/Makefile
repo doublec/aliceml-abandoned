@@ -60,7 +60,8 @@ UNSAFESSRCS = UnsafeMkRefMap.cc \
               UnsafeComponent.cc \
               UnsafeOS.cc \
               UnsafeConfig.cc \
-              UnsafeDebug.cc
+              UnsafeDebug.cc \
+              UnsafeCommandLine.cc
 
 SRCS = $(GENERICSRCS) \
        $(PRIMITIVESSRCS) \

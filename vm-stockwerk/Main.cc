@@ -37,6 +37,7 @@ extern word UnsafeComponent(void);
 extern word UnsafeOS(void);
 extern word UnsafeConfig(void);
 extern word UnsafeDebug(void);
+extern word UnsafeCommandLine(void);
 
 static prim_table builtins[] =
 { { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap},
@@ -46,6 +47,7 @@ static prim_table builtins[] =
   { "lib/system/UnsafeOS", UnsafeOS},
   { "lib/system/UnsafeConfig", UnsafeConfig},
   { "lib/system/UnsafeDebug", UnsafeDebug},
+  { "lib/system/UnsafeCommandLine", UnsafeCommandLine},
   {NULL, NULL} };
 
 static inline
