@@ -1,4 +1,4 @@
-(*
+ (*
  * A stateful scoped map (a stateful stack of stateful maps).
  *)
 
