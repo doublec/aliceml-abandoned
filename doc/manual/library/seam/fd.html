@@ -81,7 +81,8 @@ sig
     (* Constraining an intvar to a boolvar *)
 
     val intvar2boolvar : space * intvar -> boolvar
-
+    val boolvar2intvar : space * boolvar -> intlvar
+    
     (* Value assignment *)
 
     datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
@@ -218,7 +219,6 @@ sig
 	   | B_MIN
 	   | B_SPLIT_MAX
 	   | B_SPLIT_MIN
-	   | B_VAL
 
     val branch : space * intvar vector * b_var_sel *
 		 b_val_sel -> unit
@@ -342,6 +342,13 @@ end</PRE>
     <DD>
       <P> Constrains <I>x</I> to the (0,1) range, 
       and returns a boolvar tied to it with the obvious mapping 0:false, 1:true.
+    </P></DD>
+
+    <DT>
+      <TT>boolvar2intvar (<I>s, b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns an intvar in the 0-1 range tied to <I>b</I> with the mapping 0:false, 1:true.
     </P></DD>
 
     <DT>
@@ -667,14 +674,6 @@ end</PRE>
     </P></DD>
 
     <DT>
-      <TT>Reflect.boolvar2intvar (<I>s, b</I>)</TT>
-    </DT>
-    <DD>
-      <P> Returns an intvar in the 0-1 range tied to <I>b</I> with the mapping 0:false, 1:true.
-       Should not be in the reflect package. (TODO)
-    </P></DD>
-
-    <DT>
       <TT>Reflect.size (<I>s, x</I>)</TT>
     </DT>
     <DD>
@@ -727,8 +726,7 @@ end</PRE>
       <TT>B_MIN</TT> : Pick the smallest possible value of the variable.<BR>
       <TT>B_MED</TT> : Pick the median of all possible values of the variable.<BR>      
       <TT>B_SPLIT_MIN</TT> : Pick the lower half of the domain.<BR>              
-      <TT>B_SPLIT_MAX</TT> : Pick the upper half of the domain.<BR>
-      <TT>B_VAL</TT> : There's no such thing. TODO.                    
+      <TT>B_SPLIT_MAX</TT> : Pick the upper half of the domain.<BR>                    
     </P></DD>
 
     <DT>
