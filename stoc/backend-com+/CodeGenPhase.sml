@@ -145,9 +145,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Ldfld (StockWerk.Real, "Value", Float32Ty));
 	     emit (LdcR4 s); emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (ConTest (id, NONE), elseLabel) =
-	    (emit Dup; emit (Isinst StockWerk.Name);
-	     emit (B (FALSE, elseLabel)); emit Dup;
-	     emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
+	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (ConTest (id1, SOME id2), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.ConVal);
 	     emit (B (FALSE, elseLabel));
