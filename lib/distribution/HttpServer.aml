@@ -164,8 +164,8 @@ structure HttpServer :> HTTP_SERVER =
 			fun server (socket, host, port) =
 			    handleConnection (socket, host, port)
 			    handle Closed => ()
-			val (_, serverHost, serverPort) =
-			    Socket.server (portOpt, server)
+			val (_, serverPort) = Socket.server (portOpt, server)
+			val serverHost = "amy"   (*--** *)
 			val url =
 			    Url.fromString ("http://" ^ serverHost ^ ":" ^
 					    Int.toString serverPort ^ "/")
