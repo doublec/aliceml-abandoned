@@ -14,6 +14,7 @@ import structure TextIO             from "../../lib/system/TextIO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
 import structure Url                from "../../lib/system/Url"
+import structure Component          from "../../lib/system/Component"
 import structure MkOptionParser     from "MkOptionParser"
 import signature BATCH_COMPILER     from "BATCH_COMPILER-sig"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
@@ -72,6 +73,9 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 		(RecursiveCompiler.Context.empty, s);
 		OS.Process.success
 	    end
+	  | main' ["--print-component-extension"] =
+	    (TextIO.print (Component.extension ^ "\n");
+	     OS.Process.success)
 	  | main' ([infile] | ["-c", infile]) =
 	    main_c (infile, basename infile ^ "." ^ extension)
 	  | main' ["-x", infile] =
