@@ -14,56 +14,88 @@ states:
 
 *)
 
-(* Trail going away from home: tm1, tm2, tm1+tm2, tm1, tm2, tm1+tm2, ... *)
-val trailmarker1 = 1
-val trailmarker2 = 2
-
-val foodmarker = 3
-
 
 fun myMark 1 = mark trailmarker1
   | myMark 2 = mark trailmarker2
   | myMark 3 = mark trailmarker1 ++ mark trailmarker2
+  | myMark 4 = mark trailmarker1 (* overwrap *)
+
+fun ifTrailAhead ifyes success =
+    sense ahead (marker trailmarker1) ifyes success ++
+    sense ahead (marker trailmarker2) ifyes success
+  | ifTrailAhead ifnot _ = raise Empty
+
+
+
+
+val undo_this_trail =
+    sync_towards_hill (unmark trailmarker1 ++
+                       unmark trailmarker2) (goto "run_and_mark")
+                      nop otherwise lost
+
+fun myMove ifyes success =
+    loopx (fn break =>
+    sense ahead (marker trailmarker1) ifyes undo_this_trail ++
+    sense ahead (marker trailmarker2) ifyes undo_this_trail ++
+    sense leftahead (marker trailmarker1) ifyes undo_this_trail ++
+    sense rightahead (marker trailmarker2) ifyes undo_this_trail ++
+    sense rightahead (marker trailmarker1) ifyes undo_this_trail ++
+    sense leftahead (marker trailmarker2) ifyes undo_this_trail ++
+    move2 ifyes success ifnot break)
+  | myMove ifnot failure =
+    loopx (fn break =>
+    sense ahead (marker trailmarker1) ifyes undo_this_trail ++
+    sense ahead (marker trailmarker2) ifyes undo_this_trail ++
+    sense leftahead (marker trailmarker1) ifyes undo_this_trail ++
+    sense rightahead (marker trailmarker2) ifyes undo_this_trail ++
+    sense rightahead (marker trailmarker1) ifyes undo_this_trail ++
+    sense leftahead (marker trailmarker2) ifyes undo_this_trail ++
+    move2 ifnot failure ifyes break)
 
 val fail_this_trail =
     turn right ++
-    loop (fn break =>
-      (*mark boringmarker ++
-      move ifyes break*) nop
-    ) (*++
-    times 3 (turn left)*)
-
-fun break f =
-    let
-        val l = freshlabel()
-    in
-        f (goto l) ++ label l
-    end
-
+    loopx (fn break =>
+      mark boringmarker ++
+      move ifyes break
+    ) ++
+    times 3 (turn left)
 
 fun walk_around () =
-    loop (fn break =>
+    flip 5 ifyes undo_this_trail ++    
+    loopx (fn break =>
       times 2 (
         turn left ++
-        move ifyes break
+        myMove ifyes break
       ) ++
       times 3 (turn right) ++
-      move ifyes break ++
+      myMove ifyes break ++
       turn right ++
-      move ifyes break ++
+      myMove ifyes break ++
       fail_this_trail
     )
 
 fun run_and_mark collect_food =
-    loop (fn _ =>
+    flip 3 ifyes (turn left ++ turn left) ++
+    flip 2 ifyes (turn right ++ turn right) ++
+    loop (
       timesi 3 (fn i =>
         myMark (i+1) ++
-        turnto food ifyes collect_food ++
-        move ifnot (walk_around ())
+        turnto food ifyes (
+          loopx (fn break =>
+            myMove ifyes break
+          ) ++ myMark (i+2) ++ collect_food) ++
+        flip 250 ifyes undo_this_trail ++
+        myMove ifnot (walk_around ())
       )
     )
 
-fun collect_food () = fail
+val trailaction = mark foodmarker
+val homeaction = goto "run_and_mark"
+
+fun collect_food () =
+    pick ifnot todo ++
+    mark foodmarker ++
+    sync_towards_hill trailaction homeaction nop otherwise lost
 
 val ant =
     proc "run_and_mark" (
