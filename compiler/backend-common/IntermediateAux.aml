@@ -295,26 +295,31 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	fun usedVarsId (id, set, used) =
 	    if IdSet.member (set, id) then IdSet.insert (used, id) else ()
 
-	fun usedVarsArgs (O.OneArg id, set, used) =
+	fun usedVarsIdRef ((O.IdRef id | O.LastIdRef id), set, used) =
 	    usedVarsId (id, set, used)
-	  | usedVarsArgs (O.TupArgs ids, set, used) =
-	    Vector.app (fn id => usedVarsId (id, set, used)) ids
-	  | usedVarsArgs (O.ProdArgs labelIdVec, set, used) =
-	    Vector.app (fn (_, id) => usedVarsId (id, set, used))
-	    labelIdVec
 
-	fun usedVarsStm (O.ValDec (_, _, exp), set, used, shared) =
+	fun usedVarsArgs (O.OneArg idRef, set, used) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsArgs (O.TupArgs idRefs, set, used) =
+	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
+	  | usedVarsArgs (O.ProdArgs labelIdRefVec, set, used) =
+	    Vector.app (fn (_, idRef) => usedVarsIdRef (idRef, set, used))
+		       labelIdRefVec
+
+	fun usedVarsStm (O.LastUse (_, ids), set, used, _) =
+	    Vector.app (fn id => usedVarsId (id, set, used)) ids
+	  | usedVarsStm (O.ValDec (_, _, exp), set, used, shared) =
 	    usedVarsExp (exp, set, used, shared)
-	  | usedVarsStm (O.RefDec (_, _, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsStm (O.TupDec (_, _, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsStm (O.ProdDec (_, _, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsStm (O.RaiseStm (_, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsStm (O.ReraiseStm (_, id), set, used, _) =
-	    usedVarsId (id, set, used)
+	  | usedVarsStm (O.RefDec (_, _, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsStm (O.TupDec (_, _, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsStm (O.ProdDec (_, _, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsStm (O.RaiseStm (_, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsStm (O.ReraiseStm (_, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
 	  | usedVarsStm (O.TryStm (_, tryBody, _, _, handleBody),
 			 set, used, shared) =
 	    (usedVarsBody (tryBody, set, used, shared);
@@ -323,8 +328,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsBody (body, set, used, shared)
 	  | usedVarsStm (O.EndHandleStm (_, body), set, used, shared) =
 	    usedVarsBody (body, set, used, shared)
-	  | usedVarsStm (O.TestStm (_, id, tests, body), set, used, shared) =
-	    (usedVarsId (id, set, used);
+	  | usedVarsStm (O.TestStm (_, idRef, tests, body),
+			 set, used, shared) =
+	    (usedVarsIdRef (idRef, set, used);
 	     case tests of
 		 O.LitTests vec =>
 		     Vector.app (fn (_, body) =>
@@ -353,32 +359,33 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and usedVarsExp (O.LitExp (_, _), _, _, _) = ()
 	  | usedVarsExp (O.PrimExp (_, _), _, _, _) = ()
 	  | usedVarsExp (O.NewExp _, _, _, _) = ()
-	  | usedVarsExp (O.VarExp (_, id), set, used, _) =
-	    usedVarsId (id, set, used)
+	  | usedVarsExp (O.VarExp (_, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
 	  | usedVarsExp (O.TagExp (_, _, _, args), set, used, _) =
 	    usedVarsArgs (args, set, used)
-	  | usedVarsExp (O.ConExp (_, id, args), set, used, _) =
-	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
-	  | usedVarsExp (O.RefExp (_, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsExp (O.TupExp (_, ids), set, used, _) =
-	    Vector.app (fn id => usedVarsId (id, set, used)) ids
-	  | usedVarsExp (O.ProdExp (_, labelIdVec), set, used, _) =
-	    Vector.app (fn (_, id) => usedVarsId (id, set, used)) labelIdVec
-	  | usedVarsExp (O.VecExp (_, ids), set, used, _) =
-	    Vector.app (fn id => usedVarsId (id, set, used)) ids
+	  | usedVarsExp (O.ConExp (_, idRef, args), set, used, _) =
+	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.RefExp (_, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsExp (O.TupExp (_, idRefs), set, used, _) =
+	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
+	  | usedVarsExp (O.ProdExp (_, labelIdRefVec), set, used, _) =
+	    Vector.app (fn (_, idRef) => usedVarsIdRef (idRef, set, used))
+		       labelIdRefVec
+	  | usedVarsExp (O.VecExp (_, idRefs), set, used, _) =
+	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
 	  | usedVarsExp (O.FunExp (_, _, _, _, body), set, used, shared) =
 	    usedVarsBody (body, set, used, shared)
-	  | usedVarsExp (O.PrimAppExp (_, _, ids), set, used, _) =
-	    Vector.app (fn id => usedVarsId (id, set, used)) ids
-	  | usedVarsExp (O.VarAppExp (_, id, args), set, used, _) =
-	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
-	  | usedVarsExp (O.SelAppExp (_, _, _, _, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsExp (O.LazySelAppExp (_, _, _, _, id), set, used, _) =
-	    usedVarsId (id, set, used)
-	  | usedVarsExp (O.FunAppExp (_, id, _, args), set, used, _) =
-	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.PrimAppExp (_, _, idRefs), set, used, _) =
+	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
+	  | usedVarsExp (O.VarAppExp (_, idRef, args), set, used, _) =
+	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.SelAppExp (_, _, _, _, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsExp (O.LazySelAppExp (_, _, _, _, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsExp (O.FunAppExp (_, idRef, _, args), set, used, _) =
+	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
 	  | usedVarsExp (O.FailExp _, _, _, _) = ()
 	and usedVarsBody (stm::stms, set, used, shared) =
 	    (usedVarsStm (stm, set, used, shared);

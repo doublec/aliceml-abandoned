@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Signature           from "../../lib/system/Signature"
 import structure Url                 from "../../lib/utility/Url"
 import structure Name                from "../../lib/rtt/Name"
 import structure Label               from "../../lib/rtt/Label"
@@ -19,21 +20,15 @@ import structure Source              from "../infrastructure/Source"
 import structure Stamp               from "../common/Stamp"
 import structure StampSet            from "../common/StampSet"
 import structure IntermediateGrammar from "../common/IntermediateGrammar"
-import structure Signature           from "../../lib/system/Signature"
 import signature FLAT_GRAMMAR        from "FLAT_GRAMMAR-sig"
 
 structure FlatGrammar :> FLAT_GRAMMAR =
     struct
 	(* Annotations *)
 
-	datatype livenessInfo =
-	    Unknown
-	  | Use of StampSet.t   (* internal *)
-	  | Kill of StampSet.t
-
-	type id_info = {region: Source.region}
-	type stm_info = {region: Source.region, liveness: livenessInfo ref}
-	type exp_info = {region: Source.region}
+	type id_info = Source.region
+	type stm_info = Source.region
+	type exp_info = Source.region
 
 	(* Statements and Expressions *)
 
@@ -48,6 +43,10 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	datatype idDef =
 	    IdDef of id
 	  | Wildcard
+
+	datatype idRef =
+	    IdRef of id
+	  | LastIdRef of id
 
 	datatype funFlag =
 	    PrintName of string
@@ -66,21 +65,22 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 
 	datatype stm =
 	  (* the following may never be last *)
-	    ValDec of stm_info * idDef * exp
-	  | RefDec of stm_info * idDef * id
-	  | TupDec of stm_info * idDef vector * id
-	  | ProdDec of stm_info * (label * idDef) vector * id
+	    LastUse of stm_info * id vector
+	  | ValDec of stm_info * idDef * exp
+	  | RefDec of stm_info * idDef * idRef
+	  | TupDec of stm_info * idDef vector * idRef
+	  | ProdDec of stm_info * (label * idDef) vector * idRef
 	    (* sorted, all labels distinct, no tuple *)
 	  (* the following must always be last *)
-	  | RaiseStm of stm_info * id
-	  | ReraiseStm of stm_info * id
+	  | RaiseStm of stm_info * idRef
+	  | ReraiseStm of stm_info * idRef
 	  | TryStm of stm_info * body * idDef * idDef * body
 	  | EndTryStm of stm_info * body
 	  | EndHandleStm of stm_info * body
 	    (* all bodies of EndTryStm/EndHandleStm corresponding to an
 	     * exception handler are identical (and - if necessary - are
 	     * marked by a SharedStm node) *)
-	  | TestStm of stm_info * id * tests * body
+	  | TestStm of stm_info * idRef * tests * body
 	  | SharedStm of stm_info * body * stamp
 	  | ReturnStm of stm_info * exp
 	  | IndirectStm of stm_info * body option ref
@@ -88,37 +88,38 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	and tests =
 	    LitTests of (lit * body) vector
 	  | TagTests of (label * int * idDef args * body) vector
-	  | ConTests of (id * idDef args * body) vector
+	  | ConTests of (idRef * idDef args * body) vector
 	  | VecTests of (idDef vector * body) vector
 	and exp =
 	    LitExp of exp_info * lit
 	  | PrimExp of exp_info * string
 	  | NewExp of exp_info * Name.t
-	  | VarExp of exp_info * id
-	  | TagExp of exp_info * label * int * id args
-	  | ConExp of exp_info * id * id args
-	  | RefExp of exp_info * id
-	  | TupExp of exp_info * id vector
-	  | ProdExp of exp_info * (label * id) vector
+	  | VarExp of exp_info * idRef
+	  | TagExp of exp_info * label * int * idRef args
+	  | ConExp of exp_info * idRef * idRef args
+	  | RefExp of exp_info * idRef
+	  | TupExp of exp_info * idRef vector
+	  | ProdExp of exp_info * (label * idRef) vector
 	    (* sorted, all labels distinct, no tuple *)
-	  | VecExp of exp_info * id vector
+	  | VecExp of exp_info * idRef vector
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
-	  | PrimAppExp of exp_info * string * id vector   (* arity is exact *)
-	  | VarAppExp of exp_info * id * id args
-	  | SelAppExp of exp_info * prod * label * int * id
-	  | LazySelAppExp of exp_info * prod * label * int * id
-	  | FunAppExp of exp_info * id * stamp * id args   (* arity is exact *)
+	  | PrimAppExp of exp_info * string * idRef vector       (* exact *)
+	  | VarAppExp of exp_info * idRef * idRef args
+	  | SelAppExp of exp_info * prod * label * int * idRef
+	  | LazySelAppExp of exp_info * prod * label * int * idRef
+	  | FunAppExp of exp_info * idRef * stamp * idRef args   (* exact *)
 	  | FailExp of exp_info
 	withtype body = stm list
 
 	type sign = Signature.t
 	type component =
-	     (idDef * sign * Url.t) vector * body * (label * id) vector * sign
+	     (id * sign * Url.t) vector * body * (label * id) vector * sign
 	type t = component
 
 	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
-	fun infoStm (ValDec (info, _, _)) = info
+	fun infoStm (LastUse (info, _)) = info
+	  | infoStm (ValDec (info, _, _)) = info
 	  | infoStm (RefDec (info, _, _)) = info
 	  | infoStm (TupDec (info, _, _)) = info
 	  | infoStm (ProdDec (info, _, _)) = info
