@@ -61,7 +61,7 @@ void ByneedInterpreter::PushFrame(Thread *thread, Transient *future) {
   thread->PushFrame(ByneedFrame::New(self, future)->ToWord());
 }
 
-static inline int IsCyclic(word x, Future *future) {
+static inline bool IsCyclic(word x, Future *future) {
   return static_cast<Future *>(Store::WordToTransient(x)) == future;
 }
 
