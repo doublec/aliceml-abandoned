@@ -1547,25 +1547,35 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::MULTIANEWARRAY:
       {
-	unsigned char b1     = code[++pc];
-	unsigned char b2     = code[++pc];
-	unsigned char nbDims = code[++pc];
-	u_int index          = ((b1 << 8) | b2);
-	u_int length         = 0;
-	for (u_int i = nbDims; i--;) {
-	  u_int curDim = Store::DirectWordToInt(frame->Pop());
-	  if (curDim != 0)
-	    length *= curDim;
+	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
+	Type *type = Type::FromWord(wType);
+	if (type == INVALID_POINTER)
+	  REQUEST(wType);
+	u_int nDims = (u_int) code[pc + 3];
+	for (u_int i = nDims; i >= 1; i--) {
+	  int count = JavaInt::FromWord(frame->Pop());
+	  if (count < 0) {
+	    // to be done: raise NegativeArraySizeException
+	    Error("NegativeArraySizeException");
+	  }
+	  Type *arrayType = static_cast<Type *>(ArrayType::New(type->ToWord()));
+	  ObjectArray *arr = ObjectArray::New(arrayType, count);
+	  if (arr == INVALID_POINTER)
+	    arr = arr;
+	  else {
+	  }
 	}
-	Type *type = INVALID_POINTER; // to be done
-	ObjectArray *arr = ObjectArray::New(type, length);
-	frame->Push(arr->ToWord());
+	frame->Push(type->ToWord());
+	pc += 4;
       }
       break;
     case Instr::NEW:
       {
-	Type *type = Type::FromWord(GET_POOL_VALUE(GET_POOL_INDEX()));
-	switch (static_cast<Block *>(type)->GetLabel()) {
+	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
+	Type *type = Type::FromWord(wType);
+	if (type == INVALID_POINTER)
+	  REQUEST(wType);
+	switch (type->GetLabel()) {
 	case JavaLabel::Class:
 	  {
 	    Class *classObj = static_cast<Class *>(type);
@@ -1584,8 +1594,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	default:
 	  Error("unknown type");
 	}
+	pc += 3;
       }
-      pc += 3;
       break;
     case Instr::NEWARRAY:
       {
@@ -1597,11 +1607,22 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::NOP:
+      {
+	pc += 1;
+      }
       break;
     case Instr::POP:
-    case Instr::POP2:
       {
 	frame->Pop();
+	pc += 1;
+      }
+      break;
+    case Instr::POP2:
+      {
+	// Always match from 1
+	frame->Pop();
+	frame->Pop();
+	pc += 1;
       }
       break;
     case Instr::PUTFIELD:
@@ -1613,6 +1634,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	word value = frame->Pop();
 	Object *object = Object::FromWord(frame->Pop());
 	object->PutInstanceField(fieldRef->GetIndex(), value);
+	pc += 3;
       }
       break;
     case Instr::PUTSTATIC:
@@ -1623,13 +1645,14 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
 	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
+	pc += 3;
       }
       break;
     case Instr::RET:
       {
-	unsigned char index = code[++pc];
 	Error("not implemented");
       }
+      break;
     case Instr::RETURN:
       {
 	Scheduler::nArgs = 0;
@@ -1639,10 +1662,9 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::SIPUSH:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	int value        = ((b1 << 8) | b2);
-	frame->Push(Store::IntToWord(value));
+	short value = GET_POOL_INDEX();
+	frame->Push(JavaInt::ToWord(value));
+	pc += 3;
       }
     case Instr::SWAP:
       {
@@ -1650,6 +1672,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	word v2 = frame->Pop();
 	frame->Push(v1);
 	frame->Push(v2);
+	pc += 1;
       }
       break;
     case Instr::TABLESWITCH:
