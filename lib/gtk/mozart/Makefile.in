@@ -155,7 +155,7 @@ wrapper: $(WRPOBJS) $(COMPONENTS)
 install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(PREFIX)/lib/gtk/%: Linked%
 	install -c -m 444 $< $@
