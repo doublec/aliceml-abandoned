@@ -3,9 +3,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,28 +15,28 @@
 
 (* This file is prepended to every compiled input. *)
 
-import "x-alice:/lib/system/IO-sig"
-import "x-alice:/lib/system/IO"
-import "x-alice:/lib/system/PRIM_IO-sig"
-import "x-alice:/lib/system/PrimIO"
-import "x-alice:/lib/system/BinPrimIO"
-import "x-alice:/lib/system/TextPrimIO"
-import "x-alice:/lib/system/STREAM_IO-sig"
-import "x-alice:/lib/system/StreamIO"
-import "x-alice:/lib/system/IMPERATIVE_IO-sig"
-import "x-alice:/lib/system/ImperativeIO"
-import "x-alice:/lib/system/BIN_IO-sig"
-import "x-alice:/lib/system/BinIO"
-import "x-alice:/lib/system/TEXT_IO-sig"
-import "x-alice:/lib/system/TextIO"
-import "x-alice:/lib/system/OS-sig"
-import "x-alice:/lib/system/OS_FILE_SYS-sig"
-import "x-alice:/lib/system/OS_PROCESS-sig"
-import "x-alice:/lib/system/OS"
-import "x-alice:/lib/system/UNIX-sig"
-import "x-alice:/lib/system/Unix"
-import "x-alice:/lib/system/COMMAND_LINE-sig"
-import "x-alice:/lib/system/CommandLine"
+import signature IO               from "x-alice:/lib/system/IO-sig"
+import structure IO               from "x-alice:/lib/system/IO"
+import signature PRIM_IO          from "x-alice:/lib/system/PRIM_IO-sig"
+import structure PrimIO           from "x-alice:/lib/system/PrimIO"
+import structure BinPrimIO        from "x-alice:/lib/system/BinPrimIO"
+import structure TextPrimIO       from "x-alice:/lib/system/TextPrimIO"
+import signature STREAM_IO        from "x-alice:/lib/system/STREAM_IO-sig"
+import structure StreamIO         from "x-alice:/lib/system/StreamIO"
+import signature IMPERATIVE_IO    from "x-alice:/lib/system/IMPERATIVE_IO-sig"
+import structure ImperativeIO     from "x-alice:/lib/system/ImperativeIO"
+import signature BIN_IO           from "x-alice:/lib/system/BIN_IO-sig"
+import structure BinIO            from "x-alice:/lib/system/BinIO"
+import signature TEXT_IO          from "x-alice:/lib/system/TEXT_IO-sig"
+import structure TextIO val print from "x-alice:/lib/system/TextIO"
+import signature OS               from "x-alice:/lib/system/OS-sig"
+import signature OS_FILE_SYS      from "x-alice:/lib/system/OS_FILE_SYS-sig"
+import signature OS_PROCESS       from "x-alice:/lib/system/OS_PROCESS-sig"
+import structure OS               from "x-alice:/lib/system/OS"
+import signature UNIX             from "x-alice:/lib/system/UNIX-sig"
+import structure Unix             from "x-alice:/lib/system/Unix"
+import signature COMMAND_LINE     from "x-alice:/lib/system/COMMAND_LINE-sig"
+import structure CommandLine      from "x-alice:/lib/system/CommandLine"
 
-import "x-alice:/lib/system/PICKLE-sig"
-import "x-alice:/lib/system/Pickle"
+import signature PICKLE           from "x-alice:/lib/system/PICKLE-sig"
+import structure Pickle           from "x-alice:/lib/system/Pickle"
