@@ -32,14 +32,6 @@ href="#environment-variables">below</A> for notes on how it is
 interpreted. <I>&lt;output file&gt;</I> may only be omitted if
 <I>&lt;input file&gt;</I> represents a local file.</P>
 
-<P>If <I>&lt;input file&gt;</I> has the file extension <TT>.sml</TT> or
-<TT>.sig</TT>, then the compiler looks for a file with the same name but the
-extension <TT>.import</TT>. If found, the contents of that file is prepended to
-the actual input file. That feature allows putting import announcements into
-separate files and hence easier source exchange between Alice and other
-Standard ML systems, which employ different approaches for separate
-compilation.</P>
-
 <!--
 <P>In the second form, <I>&lt;input file&gt;</I> is compiled as an Alice source
 and an executable component is written as output.  If <I>&lt;output
@@ -79,7 +71,102 @@ See the <A href="interop.html">interop section</A> for details.</P>
   <DT><TT>--(no-)warn-shadowing</TT></DT>
   <DD><P>Warn about shadowing of identifiers (off by default,
   gives a lot of spurious warnings).</P></DD>
+  <DT><TT>--dependency-file &lt;dependency file&gt;</TT></DT>
+  <DD><P>Use dependency file to automatically derive import announcements.</P></DD>
 </DL>
+
+
+<?php section("interop", "import management") ?>
+
+<P>The Alice employs a compilation model that is quite different from other
+Standard ML systems. In particular, Alice ML requires putting explicit <A
+href="components.html#source">import announcements</A> into source files to
+enable separate compilation.</P>
+
+<P>In order to allow for easier migration or sharing of SML source code with
+other SML systems, the Alice compiler supports two methods for inserting import
+announcements automatically:</P>
+
+<UL>
+<LI><P>If the <I>input file</I> has the file extension <TT>.sml</TT> or
+<TT>.sig</TT>, then the compiler looks for a file with the same name but the
+extension <TT>.import</TT>. If found, the contents of that file is prepended to
+the actual input file.</P>
+
+<LI><P>The <TT>--dependency-file</TT> option allows specifying a file listing
+the dependencies between ML source files. The format of a dependency file is as
+follows:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>dep-file</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> {<I>dep-line</I>}* </TD>
+  </TR><TR>
+    <TD> <I>depend-line</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>file-name</I> <TT>:</TT> {<I>file-name</I>}* </TD>
+  </TR>
+</TABLE>
+
+<P>The format resembles (a subset of) makefile syntax:</P>
+
+<UL>
+<LI>File names are arbitrary sequences of non-whitespace characters, excluding "#". They
+are separated by white space. White space between the first file name and the
+colon is optional (this implies that the first file name after the colon cannot
+be ":" if the white space is omitted).
+<LI> A backslash at the end of a line escapes the subsequent newline, allowing
+the content of the first line to be continued on the next one.
+<LI> "#" starts a comment, stretching until the end of the line. Comments are
+ignored completely (including contained backslashes).
+</UL>
+
+<P>Each line is headed by the file name denoting a source file, the
+<I>target</I>. After the colon follows a list of files the target
+depends on, its <I>prerequisites</I>. When a source file is compiled with a
+dependency file that contains its name as a target, then the source file is
+modified by prepending an import announcement for each prerequisite of the
+target. Extensions of target file names are ignored, a target is assumed to
+denote the current source file if its base name is the same. Likewise,
+prerequisites are stripped of their extension. That allows using makefile
+dependencies directly as dependency files.</P>
+
+<P>Consider the following dependency file:</P>
+
+<PRE class=code>
+# project.depend
+A.ozf: B.ozf C.ozf D.ozf
+B.ozf:
+C.ozf: D.ozf</PRE>
+
+<P>By invoking</P>
+
+<PRE class=code>
+alicec --dependency-file project.depend A.sml</PRE>
+
+<P><TT>A.sml</TT> will be compiled as if it contained the following import
+announcements:</P>
+
+<PRE class=code>
+import "B"
+import "C"
+import "D"</PRE>
+
+<P>If a target is contained multiple times in a dependency file the
+corresponding prerequisites are accumulated. The compiler may be invoked with
+multiple dependency files, with the effect of invoking it with the
+concatenation of those files.</P>
+
+</UL>
+
+<P>The first of these options essentially requires creating a separate import
+file for each individual SML file. The second option allows gathering all the
+necessary information into a single dependency file.</P>
+
+<P>Please note that these methods are provided solely for better compatibility
+with other SML systems. Using them for native Alice components is strongly
+discouraged.</P>
 
 
 <?php section("environment-variables", "environment variables") ?>

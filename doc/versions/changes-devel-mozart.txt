@@ -19,6 +19,7 @@ Compiler:
 
 * New naming convention warning.
 * Automatic .import file prepending for .sml sources.
+* Automatic import generation from dependency files (option --dependency-file).
 * Fixed translation of "fun spawn ..." derived form.
 
 
