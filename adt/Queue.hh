@@ -113,6 +113,7 @@ public:
     return GetWriteIndex() == GetReadIndex();
   }
   word Dequeue() { // precondition: queue must not be empty
+    Assert(!IsEmpty());
     u_int readIndex = GetReadIndex();
     Block *array = GetArray();
     Assert(readIndex != GetWriteIndex());
