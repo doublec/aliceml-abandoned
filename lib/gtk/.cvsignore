@@ -1,9 +1,9 @@
-CM
-Makefile.depend
-collect.x86-linux
-GtkCanvas.c
-GtkWrapper.oz GtkExport.oz Gtk.asig
-GdkWrapper.oz GdkExport.oz Gdk.asig
-CanvasWrapper.oz CanvasExport.oz Canvas.asig
-*.so-*
+config.cache
+config.log
+config.status
+configure
+Makefile
+gtkraw.c gtkheader.c
+UnsafeGDK.oz UnsafeGTK.oz UnsafeGTKCANVAS.oz
+UnsafeGDK.asig UnsafeGTK.asig UnsafeGTKCANVAS.asig
 *.ozf
