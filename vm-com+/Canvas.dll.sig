@@ -1,7 +1,7 @@
 signature Canvas =
   sig
     type ty
-    val inspect : 'a * ty -> unit
+    val nativeInspect : 'a * ty -> unit
     val makeArrowType : ty * ty -> ty
     val makeBasicType : string -> ty
     val makeListType : ty -> ty
