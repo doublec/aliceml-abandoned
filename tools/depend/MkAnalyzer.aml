@@ -6,7 +6,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,6 @@
 
 import structure IO       from "../lib/system/IO"
 import structure TextIO   from "../lib/system/TextIO"
-import structure Config   from "../lib/system/Config"
 import structure Url      from "../lib/system/Url"
 import signature PARSER   from "PARSER-sig"
 import signature ANALYZER from "ANALYZER-sig"
@@ -27,38 +26,13 @@ functor MkAnalyzer(structure Parser: PARSER
 	fun warn message =
 	    TextIO.output (TextIO.stdErr, "warning: " ^ message ^ "\n")
 
-	local
-	    val homeref: string option ref = ref NONE
-	in
-	    fun home () =
-		case !homeref of
-		    NONE =>
-			let
-			    val home =
-				case Config.homeDir of
-				    SOME s => s ^ "/"
-				  | NONE =>
-					(warn ("could not determine " ^
-					       "installation directory");
-					 "")
-			in
-			    homeref := SOME home; home
-			end
-		  | SOME home => home
-	end
-
 	fun parseUrl url =
-	    case (Url.getScheme url, Url.getAuthority url) of
-		(NONE, NONE) =>
-		    SOME(Url.toString url)
-	      | (SOME "file", NONE) =>
-		    SOME(Url.toString (Url.setScheme (url, NONE)))
-	      | (SOME "x-alice", NONE) => NONE
-	      | _ =>
-		    (TextIO.output(TextIO.stdErr,
-				   "warning: ignoring URI " ^
-				   Url.toString url ^ "\n");
-		     NONE)
+	    SOME (Url.toLocalFile url)
+	    handle Url.NotLocal =>
+		(TextIO.output(TextIO.stdErr,
+			       "warning: ignoring URI " ^
+			       Url.toStringRaw url ^ "\n");
+		 NONE)
 
 	fun pathFloor filename =
 	    let
