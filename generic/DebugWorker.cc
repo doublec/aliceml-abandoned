@@ -21,28 +21,6 @@
 #include "generic/RootSet.hh"
 #include "generic/DebugWorker.hh"
 
-// DebugFrame
-class DebugFrame: private StackFrame {
-private:
-  enum { EVENT_POS, SIZE };
-public:
-  // DebugFrame Constructor
-  static DebugFrame *New(Worker *worker, word event) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(EVENT_POS, event);
-    return STATIC_CAST(DebugFrame *, frame);
-  }
-
-  // DebugFrame Accessors
-  word GetEvent() {
-    return StackFrame::GetArg(EVENT_POS);
-  }
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-};
-
-
 //
 // Debug Interpreter Functions
 //

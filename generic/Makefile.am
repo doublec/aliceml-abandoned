@@ -43,6 +43,7 @@ dist_genericinclude_HEADERS = \
 	DebuggerEvent.hh \
 	Debugger.hh \
 	Debug.hh \
+	DebugFrame.hh \
 	DebugWorker.hh \
 	DllLoader.hh \
 	Double.hh \
