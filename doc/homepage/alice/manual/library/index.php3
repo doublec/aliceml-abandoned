@@ -33,7 +33,7 @@ scheme. The library is organized hierarchically as follows:</P>
 	- Gtk+ GUI toolkit </LI>
 </UL>
 
-<P>The Standard ML <A href="#toplevel.php3">top-level environment</A> is
+<P>The Standard ML <A href="#toplevel">top-level environment</A> is
 available as usual.</P>
 
 
@@ -58,7 +58,7 @@ Signatures only need to be imported if used explicitly.</P>
 
 <?php subsection("import-interactive", "Interactive top-level") ?>
 
-<P>The <A href="usage.php#interactive">interactive toplevel</A> system imports
+<P>The <A href="../interactive.php3">interactive toplevel</A> system imports
 the <EM>complete</EM> library, except <TT>/lib/gtk/</TT>, implicitly. Loading of
 the respective components is performed lazily.</P>
 

@@ -72,7 +72,7 @@ on the SML/NJ site.</P>
 <?php section("interactive", "interactive toplevel") ?>
 
 <P>Alice ML is an extension of Standard ML, and the Alice
-<A href="usage.php3#interactive">interactive toplevel</A>
+<A href="interactive.php3">interactive toplevel</A>
 functions very similar to the interactive prompts known from other SML
 systems where you can type in expressions and declarations to evaluate them.
 Input is terminated with a semicolon. For example, you might simply perform a

@@ -29,7 +29,7 @@
     import signature INSPECTOR from "x-alice:/lib/tools/INSECTOR-sig"</PRE>
 
   <P>
-    In the <A href="../usage.php3#interactive">interactive toplevel</A> the
+    In the <A href="../interactive.php3">interactive toplevel</A> the
     inspector is available without further import announcements. The function
     <TT>inspect</TT> is available unqualified.
   </P>

@@ -38,11 +38,11 @@
   </P>
 
   <UL>
-    <LI> <A href="manual/usage.php3#interactive"><I>Interactive system</I></A>:
+    <LI> <A href="manual/interactive.php3"><I>Interactive system</I></A>:
 	 an interpreter-like interactive toplevel
-    <LI> <A href="manual/usage.php3#compiler"><I>Batch compiler</I></A>:
+    <LI> <A href="manual/compiler.php3"><I>Batch compiler</I></A>:
 	 separate compilation
-    <LI> <A href="manual/usage.php3#linker"><I>Static linker</I></A>:
+    <LI> <A href="manual/linker.php3"><I>Static linker</I></A>:
 	 type-safe bundling of components
     <LI> <A href="manual/inspector.php3"><I>Inspector</I></A>:
 	 a tool for interactively inspecting data structures

@@ -31,7 +31,7 @@
 	  array("text" => "Manual",
 		"url"  => "manual/"),
 	  array("text" => "Download",
-		"url"  => "download.php3"),
+		"url"  => "download-old.php3"),
 	  array("text" => "Bugs",
 		"url"  => "bugzilla/"));
 ?>

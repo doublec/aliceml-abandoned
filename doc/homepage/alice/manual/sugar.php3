@@ -301,7 +301,7 @@ evaluates to <A href="futures.php3">futures</A> that cannot be eliminated:</P>
 val (x,y) = (y,x)</PRE>
 
 <P>Note that the same data structures are constructable by explicit use of <A
-href="futures.php#promises">promises</A>.</P>
+href="futures.php3#promises">promises</A>.</P>
 
 
 <?php subsection("rec-expression", "Recursive expressions") ?>

@@ -130,7 +130,7 @@
   </TT>
 
   <P>
-    The <TT>use</TT> function is only available in the <A href="../usage.php3#interactive">interactive toplevel</A>.
+    The <TT>use</TT> function is only available in the <A href="../interactive.php3">interactive toplevel</A>.
   </P>
 
   <P>
