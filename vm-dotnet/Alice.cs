@@ -2434,6 +2434,7 @@ namespace Alice {
 	public static Object Array_array    = new Array_array();
 	public static Object Array_fromList = new Array_fromList();
 	public static Object Array_length   = new Array_length();
+	public static Object Array_maxLen   = Int32.MaxValue;
 	public static Object Array_sub      = new Array_sub();
 	public static Object Array_update   = new Array_update();
 
