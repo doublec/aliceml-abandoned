@@ -11,7 +11,8 @@ echo >$AMLFILE
 echo >>$AMLFILE 'import "Ante"'
 echo >>$AMLFILE 'import "Instructions"'
 echo >>$AMLFILE 'open Ante'
-cat $INFILE >>$AMLFILE
+cat >>$AMLFILE lib.ante
+cat >>$AMLFILE $INFILE
 echo >>$AMLFILE ';Instructions.output ignore (TextIO.stdOut, compile ant);'
 echo >>$AMLFILE 'OS.Process.exit OS.Process.success : unit;'
 
