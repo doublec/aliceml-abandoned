@@ -27,16 +27,17 @@ import structure TestIntInf   from "lib/fundamental/IntInf"
 import structure TestTime     from "lib/system/Time"
 import structure TestCompiler from "lib/compiler/Compiler"
 
-val allTests = [TestBool.suite, TestOption.suite, 
-		TestGeneral.suite,
-		TestString.suite,
+val allTests = [TestCompiler.suite,
 		TestAlt.suite,
+		TestBool.suite,
+		TestChar.suite,
+		TestGeneral.suite,
+		TestOption.suite, 
+		TestString.suite,
 		TestIEEEReal.suite,
-		TestInteger.suite,
-		(*TestIntInf.suite,*)
-		TestChar.suite(*,
-		TestTime.suite
-		TestCompiler.suite*)]
+		TestInteger.suite
+		(*TestIntInf.suite,
+		TestTime.suite*)]
 
 val beg = ref (Time.now ())
 
@@ -48,7 +49,7 @@ fun displayNeededTime () =
 	TextIO.output (TextIO.stdOut, "\nneeded " ^ Time.toString result ^ " seconds")
     end
 
-fun usage () = print "nenene\n"
+fun usage () = print "usage: alicerun Main [timeout, seperate, showMissing]\n"
 
 fun runTests conf = 
     Report.runAll TextIO.stdOut conf allTests

@@ -19,9 +19,18 @@ import structure Test      from "../../src/Test"
 
 structure TestInteger :> TESTSUITE = (* the integer test suite *)
 struct
+    
+    fun testPrecision () =
+	Test.test (fn _ => valOf Int.precision = 31) ()
 
     fun testMinInt () = 
-	Test.test (fn _ => valOf Int.minInt = ~1073741824) ()
+	let
+	    (* TODO: FIXME *)
+	    val n = valOf Int.precision
+	    val min = Real.round (Math.pow (2.0, Real.fromInt (n - 1)))
+	in
+	    Test.test (fn _ => valOf Int.minInt = min) ()
+	end
 
     fun testMaxInt () = 
 	Test.test (fn _ => valOf Int.maxInt = 1073741823) ()
@@ -49,10 +58,40 @@ struct
 		     (fn x => if x < 0 then abs x = ~ x else abs x = x))
 
     fun testArithmetic () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun tS (x1, x2) = x1 div x2 = 0
+	    fun tE (x1, x2) = (x1 div x2 = 1 orelse x1 div x2 = ~1)
+		               andalso (x1 mod x2 = 0)
+	    fun tG x = (Bool.not (tS x)) andalso (Bool.not (tE x))
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt) + 1)
+	    fun t' (x1, x2) = 
+		((tS (x1, x2)) = (x1 < x2)) andalso
+		((tG (x1, x2)) = (x1 > x2)) andalso
+		((tE (x1, x2)) = (x1 = x2))
+	    fun t i = if i <= 0 then ()
+		      else (Test.test t' (getInt (), getInt ());
+			    t ( i - 1))
+	in
+	    t 1000
+	end
 
     fun testCompare () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t' (x1, x2) = if x1 < x2 then LESS
+			      else if x1 > x2 then GREATER
+				   else EQUAL
+	    fun t'' (x1, x2) = Int.compare (x1, x2) = t' (x1, x2)
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt) + 1)
+	    fun t (x1, x2) i = 
+		if i <= 0 then ()
+		else (Test.test (fn x => t'' x) (x1, x2);
+		      t (getInt (), getInt ()) (i - 1))
+	in 
+	    t (getInt (), getInt ()) 1000;
+	    Test.test t'' (valOf Int.maxInt, valOf Int.minInt);
+	    Test.test t'' (valOf Int.maxInt, valOf Int.maxInt);
+	    Test.test t'' (0, 0)
+	end
 
     fun testMod () = 
 	let
@@ -142,11 +181,26 @@ struct
 			     else Bool.not (Int.equal (x1, x2))
 	in
 	    Gen.try 10000 Gen.int 
-	     (Test.test (fn x => Int.equal(x, x) andalso t (getInt (), getInt ())))
+	     (Test.test (fn x => Int.equal(x, x) andalso 
+			         t (getInt (), getInt ())))
 	end
 
-    fun testRem () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testRem () =
+		let
+	    (* very ugly... TODO: some more faster way *)
+	    fun t (x, y, r, i) = if i > Int.abs(x) then false
+				 else if x = y * i + r then true 
+				     else t (x, y, r, i + 1)
+	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1)) div 1000
+	    fun h' () = let val a = getInt ()
+			    val b = getInt ()
+			in
+			    (a, b, Int.rem(a, b), ~ (Int.abs a))
+			end
+	    fun h i = if i <= 0 then () else (Test.test t (h' ()); h (i - 1))
+	in
+	    h 5
+	end
 
     fun testToFromInt () = 
 	let
@@ -155,7 +209,7 @@ struct
 	    Gen.try 100000 Gen.int (Test.test t)
 	end
 
-    fun testDiv () = 
+    fun testDiv () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFmt () = 
