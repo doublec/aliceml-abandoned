@@ -15,6 +15,8 @@
 #ifndef __GENERIC__CONCRETE_REPRESENTATION_HANDLER_HH__
 #define __GENERIC__CONCRETE_REPRESENTATION_HANDLER_HH__
 
+#include "Base.hh"
+
 class Block;
 
 class DllExport ConcreteRepresentationHandler {
