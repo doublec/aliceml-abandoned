@@ -18,7 +18,7 @@ structure Main : any =
 struct
     fun usage fail =
 	TextIO.output (if fail then TextIO.stdErr else TextIO.stdOut,
-		       "Usage: alice [options]\n\
+		       "Usage: alice [options] [<input file> ...]\n\
 		       \\n\
 		       \Options:\n\
 		       \\t--gui, -g\n\
