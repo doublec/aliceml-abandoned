@@ -12,8 +12,7 @@
  *
  *)
 
-import structure FD       from "FD"
-import structure UnsafeFS from "UnsafeFS"
+import structure FD from "FD"
 
 local
     open FD
@@ -52,9 +51,10 @@ in
 	    val value : domain -> fs
 	    val emptyValue : unit -> fs
 	    val singletonValue : int -> fs
-	    val universalValue : unit -> fs
+(*	    val upperBound : domain -> fs
+*)	    val universalValue : unit -> fs
 	    val isValue : fs -> bool
-		
+
 	    (* Integer FS *)
 	    structure Int :
 		sig
