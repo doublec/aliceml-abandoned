@@ -22,7 +22,7 @@ typedef union {
   Transient *pt;
   Chunk *pc;
   Block *pb;
-  int pi;
+  s_int pi;
 } word_data;
 
 static const char *TransLabel(BlockLabel l) {
