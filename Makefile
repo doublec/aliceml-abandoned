@@ -75,7 +75,7 @@ clean-mozart: clean-common
 	(cd lib/distribution && make distclean) || exit 1
 	(cd lib/gtk && ([ -f Makefile ] && make distclean || exit 0)) || exit 1
 
-clean-seam: clean-common
+	clean-seam: clean-common
 	rm -f bootstrap/alicec-seam.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
 	(cd vm-seam && make clean WINDOWS=$(WINDOWS)) || exit
 	(cd vm-seam && make -f Makefile.bootstrap distclean) || exit 1
@@ -160,6 +160,7 @@ libs-seam:
 ##
 build-seam:
 	(cd vm-seam && \
+	 make -f Makefile.cvs && \
 	 ./configure --prefix=$(PREFIX) \
-	  	     --with-lightning="$(pwd)/../../seam-support/install" && \
+	  	     --with-lightning="$(PWD)/../../seam-support/install" && \
 	 make install) || exit 1
