@@ -21,13 +21,6 @@ import structure Print     from "x-alice:/lib/system/Print"
     fun testVerify s v f =
 	let
 	    fun dfe (s,d) =
-	    (
-(*
-		print "depth " ;
-		Print.printVal d ;
-	    print "\n";
-*)
-	    (
 		 case Space.status s of
 		    Space.FAILED => (f (); Space.discard s)
 		  | Space.SOLVED => (
@@ -42,7 +35,6 @@ import structure Print     from "x-alice:/lib/system/Print"
 			(dfe (s,d+1));
 			(dfe (c,d+1))
 		    end
-		 ))
 	in
 	    dfe ((Space.clone s),0)
 	end
@@ -67,8 +59,6 @@ import structure Print     from "x-alice:/lib/system/Print"
 	
 	fun fakeVerify _ = true
 	
-	
-	fun doUnion (a,b) = IntInf.orb (a,b)	
 
 	fun range2II (i1,i2) = 
 	let
@@ -78,29 +68,22 @@ import structure Print     from "x-alice:/lib/system/Print"
 	in
 		IntInf.<<(ones, Word.fromInt i1)
 	end
-
-	fun dom2II nil = IntInf.fromInt 0
-	| dom2II (h::t) = IntInf.orb ((range2II h),(dom2II t))
 	
 	(*Eta forewa! :-) *)
 	val vdom2II = Vector.foldl ( fn (r,a)=> IntInf.orb ((range2II r),a) ) (IntInf.fromInt 0)
-	
-	fun vUnion (root as #[a,b,c]) space =
+
+	fun vTern v1 root space =
 	let
-		val ad = vdom2II ( FS.Reflect.lowerBound (space,a) )
-		val bd = vdom2II ( FS.Reflect.lowerBound(space,b) )
-		val cd = vdom2II ( FS.Reflect.lowerBound(space,c) )
-		val a2d = doUnion(bd,cd)
+		val root2 : (IntInf.int vector)= Vector.map 
+				(  fn v => vdom2II ( FS.Reflect.lowerBound (space,v) )  )
+				root
 	in
-		if ad=a2d then true else 
-			(Print.printVal([ad,bd,cd,a2d]); print"\n"; 
-			 Print.printVal(FS.Reflect.lowerBound (space,a)); print"\n"; 
-			 Print.printVal(FS.Reflect.lowerBound (space,b)); print"\n"; 
-			 Print.printVal(FS.Reflect.lowerBound (space,c)); print"\n"; 			 			 
-			 false
-			)
-(*		ad = a2d *)
+		v1 root2
 	end
+
+fun vUnion1 (root2 as #[a,b,c]) = (IntInf.orb(b,c) = a)
+	
+	val vUnion = vTern vUnion1
 	
 	val (root, space)= unionTest ()
 	val _ = testVerifySimple space (vUnion root)
