@@ -20,6 +20,7 @@
 #include "emulator/AbstractCodeInterpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Backtrace.hh"
 #include "emulator/Closure.hh"
 #include "emulator/ConcreteCode.hh"
 #include "emulator/Alice.hh"
@@ -486,14 +487,20 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Pickle::Raise: // of idRef
       {
-	Scheduler::currentData = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Scheduler::currentData      = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Interpreter::RAISE;
       }
       break;
     case Pickle::Reraise: // of idRef
       {
-	//--** separate the exception from the exception package
-	Scheduler::currentData = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Tuple *package =
+	  Tuple::FromWord(GetIdRef(pc->Sel(0), globalEnv, localEnv));
+	Assert(package != INVALID_POINTER);
+	package->AssertWidth(2);
+	Scheduler::currentData      = package->Sel(0);
+	Scheduler::currentBacktrace =
+	  Backtrace::FromWordDirect(package->Sel(1));
 	return Interpreter::RAISE;
       }
     case Pickle::Try: // of instr * idDef * idDef * instr
@@ -740,17 +747,21 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 }
 
 Interpreter::Result
-AbstractCodeInterpreter::Handle(word exn, word /*debug*/,
+AbstractCodeInterpreter::Handle(word exn, Backtrace *trace,
 				TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWord(taskStack->GetFrame());
   if (frame->IsHandlerFrame()) {
+    Tuple *package = Tuple::New(2);
+    package->Init(0, exn);
+    package->Init(1, trace->ToWord());
     Block *args = Interpreter::TupArgs(2);
-    args->InitArg(0, exn);
-    args->InitArg(1, exn); //--** support debug
+    args->InitArg(0, package->ToWord());
+    args->InitArg(1, exn);
     return Run(args->ToWord(), taskStack);
   } else {
     taskStack->PopFrame();
+    trace->Enqueue(frame->ToWord());
     Scheduler::currentData = exn;
     return Interpreter::RAISE;
   }

@@ -17,6 +17,7 @@
 #include "emulator/TaskStack.hh"
 #include "emulator/Interpreter.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Backtrace.hh"
 
 #define DEFINE0(name)						\
   static Interpreter::Result name(word, TaskStack *taskStack) {	\
@@ -70,6 +71,7 @@
 #define RAISE(w) {							\
   Scheduler::currentData = w;                                           \
   taskStack->PushFrame(prim_self);                                      \
+  Scheduler::currentBacktrace = Backtrace::New(prim_self);              \
   return Interpreter::RAISE;		                                \
 }
 

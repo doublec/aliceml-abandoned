@@ -18,6 +18,7 @@
 #include "emulator/ByneedInterpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Backtrace.hh"
 #include "emulator/Transients.hh"
 
 static inline int IsCyclic(word args, Transient *future) {
@@ -67,8 +68,8 @@ void ByneedInterpreter::PushFrame(TaskStack *taskStack, Transient *future) {
 }
 
 Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
-  Transient *future =
-    ByneedFrame::FromWord(taskStack->GetFrame())->GetTransient();
+  ByneedFrame *frame = ByneedFrame::FromWord(taskStack->GetFrame());
+  Transient *future  = frame->GetTransient();
   Assert(future != INVALID_POINTER);
   taskStack->PopFrame();
   args = Interpreter::Construct(args); // Argument Conversion
@@ -76,6 +77,7 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   if (IsCyclic(args, future)) {
     future->Become(CANCELLED_LABEL, Future::cyclicExn);
     Scheduler::currentData = Future::cyclicExn;
+    Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
     return Interpreter::RAISE;
   }
   // Bind succeeded
@@ -87,7 +89,7 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   }
 }
 
-Interpreter::Result ByneedInterpreter::Handle(word exn, word /*debug*/,
+Interpreter::Result ByneedInterpreter::Handle(word exn, Backtrace *,
 					      TaskStack *taskStack) {
   Transient *future =
     ByneedFrame::FromWord(taskStack->GetFrame())->GetTransient();

@@ -36,7 +36,7 @@ public:
   virtual void PurgeFrame(TaskStack *taskStack);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
-  virtual Result Handle(word exn, word debug, TaskStack *taskStack);
+  virtual Result Handle(word exn, Backtrace *trace, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);

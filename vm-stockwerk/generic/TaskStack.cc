@@ -22,6 +22,7 @@
 #include "emulator/Interpreter.hh"
 #include "emulator/PushCallInterpreter.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Backtrace.hh"
 #include "emulator/ConcreteCode.hh"
 
 typedef union {
@@ -128,16 +129,18 @@ public:
   EmptyTaskInterpreter() : Interpreter() {}
   // Execution
   virtual Result Run(word, TaskStack *);
-  virtual Result Handle(word, word, TaskStack *);
+  virtual Result Handle(word, Backtrace *, TaskStack *);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
 
-Interpreter::Result EmptyTaskInterpreter::Handle(word exn, word, TaskStack *) {
-  //--** output information about the unhandled exception
+Interpreter::Result
+EmptyTaskInterpreter::Handle(word exn, Backtrace *trace, TaskStack *) {
   fprintf(stderr, "uncaught exception:\n");
   TaskStack::Dump(exn);
+  fprintf(stderr, "backtrace:\n");
+  trace->Dump();
   return Interpreter::TERMINATE;
 }
 

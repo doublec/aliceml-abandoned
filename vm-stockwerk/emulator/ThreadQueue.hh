@@ -22,7 +22,7 @@
 
 class ThreadQueue : private Queue {
 private:
-  static const int threshold = 8;
+  static const int threshold = 256; // former 8
 public:
   using Queue::ToWord;
   // ThreadQueue Functions

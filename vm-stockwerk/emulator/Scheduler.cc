@@ -29,6 +29,7 @@ bool Scheduler::preempt;
 
 word Scheduler::currentArgs;
 word Scheduler::currentData;
+Backtrace *Scheduler::currentBacktrace;
 word Scheduler::vmGUID;
 
 void Scheduler::Timer() {
@@ -39,23 +40,6 @@ void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
   RootSet::Add(root);
   vmGUID = Tuple::New(4)->ToWord(); // Hack alert: to be done
-}
-
-static const char *ResultToString(Interpreter::Result result) {
-  switch (result) {
-  case Interpreter::CONTINUE:
-    return "CONTINUE";
-  case Interpreter::PREEMPT:
-    return "PREEMPT";
-  case Interpreter::RAISE:
-    return "RAISE";
-  case Interpreter::REQUEST:
-    return "REQUEST";
-  case Interpreter::TERMINATE:
-    return "TERMINATE";
-  default:
-    return "<unknown>";
-  }
 }
 
 void Scheduler::Run() {
@@ -90,8 +74,7 @@ void Scheduler::Run() {
 	raise:
 	  currentThread->SetArgs(Interpreter::EmptyArg());
 	  interpreter = taskStack->GetInterpreter();
-	  result      = interpreter->Handle(currentData, Store::IntToWord(0),
-					    taskStack);
+	  result = interpreter->Handle(currentData, currentBacktrace,taskStack);
 	  goto interpretResult;
 	}
       case Interpreter::REQUEST:

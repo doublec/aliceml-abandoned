@@ -75,8 +75,7 @@ void PrimitiveTable::Register(const char *name, word value) {
 }
 
 void PrimitiveTable::Register(const char *name,
-			      Primitive::function value, u_int arity,
-			      u_int frameSize) {
+			      Primitive::function value, u_int arity) {
   word function = Primitive::MakeFunction(name, value, arity);
   word closure  = Closure::New(function, 0)->ToWord();
   Register(name, closure);
@@ -84,16 +83,9 @@ void PrimitiveTable::Register(const char *name,
     InsertItem(String::New(name)->ToWord(), function);
 }
 
-void PrimitiveTable::Register(const char *name,
-			      Primitive::function value, u_int arity) {
-  Register(name, value, arity, 0);
-}
-
 void PrimitiveTable::RegisterUniqueConstructor(const char *name) {
   Register(name, UniqueConstructor::New(String::New(name))->ToWord());
 }
-
-
 
 word PrimitiveTable::Lookup(word table, Chunk *name) {
   Assert(name != INVALID_POINTER);
