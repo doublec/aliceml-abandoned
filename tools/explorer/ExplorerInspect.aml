@@ -77,12 +77,12 @@ structure ExplorerInspect =
 	    Inspector.CONCAT{desc = descr,
 		   kids = #[Inspector.SIMPLE{desc =
                                    Inspector.INTERPUNCT,
-				   rep = "<intvar> : {",
+				   rep = "intvar{|",
 				   color = Inspector.BRACK_COLOR},
 			    cont,
 			    Inspector.SIMPLE{desc =
                                    Inspector.INTERPUNCT,
-				   rep = "}",
+				   rep = "|}",
 				   color = Inspector.BRACK_COLOR}] }
         end
 
@@ -133,12 +133,12 @@ structure ExplorerInspect =
 	    Inspector.CONCAT{desc = descr,
 		   kids = #[Inspector.SIMPLE{desc =
                                    Inspector.INTERPUNCT,
-				   rep = "<setvar> : {",
+				   rep = "setvar{|",
 				   color = Inspector.BRACK_COLOR},
 			    cont,
 			    Inspector.SIMPLE{desc =
                                    Inspector.INTERPUNCT,
-				   rep = "}",
+				   rep = "|}",
 				   color = Inspector.BRACK_COLOR}] }
         end
      
