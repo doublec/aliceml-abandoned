@@ -486,9 +486,7 @@ signature CHAR =
     val isCntrl :	char -> bool
     val isAscii :	char -> bool
 
-(*MISSING
     val toString :	char -> string
-*)
     val toCString :	char -> string
 (*MISSING
     val fromString :	string -> char option
@@ -515,9 +513,11 @@ structure Char : CHAR =
     fun succ c where (c = maxChar)	= raise General.Chr
       | succ c				= chr(ord c + 1)
 
-    __primitive val Int_compare : int * int -> order   = "Int.compare"
-    __primitive val String_size : string -> int        = "String.size"
-    __primitive val String_sub :  string * int -> char = "String.sub"
+    __primitive val Int_compare : int * int -> order     = "Int.compare"
+    __primitive val String_size : string -> int          = "String.size"
+    __primitive val String_sub :  string * int -> char   = "String.sub"
+    __primitive val String_str :  char -> string         = "String.str"
+    __primitive val String_implode : char list -> string = "String.implode"
 
     fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
 
@@ -550,7 +550,48 @@ structure Char : CHAR =
 
     fun isAscii c = chr 0 <= c andalso c <= chr 127
 
-    __primitive val toCString :  char -> string = "Char.toCString"
+    fun toString #"\\" = "\\\\"
+      | toString #"\"" = "\\\""
+      | toString c where (isPrint c) = String_str c
+      | toString #"\a" = "\\a"
+      | toString #"\b" = "\\b"
+      | toString #"\t" = "\\t"
+      | toString #"\n" = "\\n"
+      | toString #"\v" = "\\v"
+      | toString #"\f" = "\\f"
+      | toString #"\r" = "\\r"
+      | toString c where (c < #" ") =
+	String_implode [#"\\", chr (ord c + ord #"@")]
+      | toString c =   (*UNFINISHED: does not work properly for WideChar *)
+	let
+	    val n = ord c
+	    val zero = ord #"0"
+	in
+	    String_implode [#"\\", chr (n div 100 + zero),
+			    chr ((n div 10) mod 10 + zero),
+			    chr (n mod 10 + zero)]
+	end
+
+    fun toCString #"\\" = "\\\\"
+      | toCString #"\"" = "\\\""
+      | toCString #"?" = "\\?"
+      | toCString #"'" = "\\'"
+      | toCString c where (isPrint c) = String_str c
+      | toCString #"\a" = "\\a"
+      | toCString #"\b" = "\\b"
+      | toCString #"\t" = "\\t"
+      | toCString #"\n" = "\\n"
+      | toCString #"\v" = "\\v"
+      | toCString #"\f" = "\\f"
+      | toCString #"\r" = "\\r"
+      | toCString c =   (*UNFINISHED: does not work properly for WideChar *)
+	let
+	    val n = ord c
+	    val zero = ord #"0"
+	in
+	    String_implode [#"\\", chr (n div 64 + zero),
+			    chr ((n div 8) mod 8 + zero), chr (n mod 8 + zero)]
+	end
   end
 
 
@@ -592,9 +633,7 @@ signature STRING =
 							 -> order
     val isPrefix :	string -> string -> bool
 
-(*MISSING
     val toString :	string -> string
-*)
     val toCString :	string -> string
 (*MISSING
     val fromString :	string -> string option
@@ -621,10 +660,10 @@ structure String : STRING =
       | extract(s, i, SOME j) = substring(s, i, j)
 
     __primitive val op^ :     string * string -> string = "String.^"
+    __primitive val implode : char list -> string       = "String.implode"
     __primitive val explode : string -> char list       = "String.explode"
 
     fun concat ss     = List.foldr op^ "" ss		(*INEFFICIENT*)
-    fun implode cs    = concat(List.map str cs)		(*INEFFICIENT*)
 
     fun map f s       = implode(List.map f (explode s))	(*INEFFICIENT*)
     fun translate f s = concat(List.map f (explode s))	(*INEFFICIENT*)
@@ -685,8 +724,9 @@ structure String : STRING =
       | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
 
 
-    fun toCString s =
-	List.foldr (fn(c,cs) => Char.toCString c ^ cs) "" (explode s)
+    fun toString s = translate Char.toString s
+
+    fun toCString s = translate Char.toCString s
   end
 
 
