@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__PUSH_CALL_INTERPRETER_HH__
-#define __EMULATOR__PUSH_CALL_INTERPRETER_HH__
+#ifndef __GENERIC__PUSH_CALL_INTERPRETER_HH__
+#define __GENERIC__PUSH_CALL_INTERPRETER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/PushCallInterpreter.hh"
+#pragma interface "generic/PushCallInterpreter.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
 class PushCallInterpreter : public Interpreter {
 private:
