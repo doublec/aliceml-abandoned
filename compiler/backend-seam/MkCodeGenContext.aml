@@ -17,6 +17,6 @@ functor MkCodeGenContext(type value): CONTEXT =
     struct
 	type t = value StampMap.t
 
-	val new = StampMap.new
+	val new = StampMap.map
 	val clone = StampMap.clone
     end

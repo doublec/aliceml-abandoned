@@ -197,7 +197,7 @@ structure IL :> IL =
 
 	val size = ref 0
 	val maxSize = ref 0
-	val map: int Map.t = Map.new ()
+	val map: int Map.t = Map.map ()
 	val returnSize = ref 0
 
 	fun comment s =

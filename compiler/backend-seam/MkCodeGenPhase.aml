@@ -11,8 +11,8 @@
  *)
 
 import structure Assert                from "../../lib/utility/Assert"
-import structure MkHashImpSet          from "../../lib/utility/MkHashImpSet"
-import structure MkHashImpMap          from "../../lib/utility/MkHashImpMap"
+import structure MkHashImpSet          from "../../lib/data/MkHashImpSet"
+import structure MkHashImpMap          from "../../lib/data/MkHashImpMap"
 import structure Url                   from "../../lib/system/Url"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Label                 from "../../lib/rtt/Label"
@@ -315,13 +315,13 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateDec (RecDec (_, #[]), instr, _) = instr
 	  | translateDec (RecDec (_, idDefExpVec), instr, env) =
 	    let
-		val unallocated = IdSet'.new ()
+		val unallocated = IdSet'.set ()
 	    in
 		Vector.app (fn (IdDef id, _) =>
 			       IdSet'.insertDisjoint (unallocated, id)
 			     | (Wildcard, _) => ()) idDefExpVec;
 		recToHoles (Vector.toList idDefExpVec, env, unallocated,
-			    IdSet'.new (), instr)
+			    IdSet'.set (), instr)
 	    end
 	  | translateDec (RefDec (_, IdDef id, idRef), instr, env) =
 	    O.GetRef (declare (env, id), translateIdRef (idRef, env), instr)
@@ -544,7 +544,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val bodyInstr = translateBody (body, env)
 		val liveness = Liveness.analyze (args', bodyInstr)
 		val (globalIds, localNames) = endFn env
-		val kills = IdSet.new ()
+		val kills = IdSet.set ()
 		val instr =
 		    case instr of
 			O.Kill (ids, instr) =>
@@ -643,7 +643,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	and translateIntTest (idRef, litTests, elseBody, env) =
 	    let
 		val idRef = translateIdRef (idRef, env)
-		val map = LargeIntMap.new ()
+		val map = LargeIntMap.map ()
 		val tests =
 		    Vector.map (fn (lit, body) =>
 				   (litToInt lit, translateBody (body, env)))
@@ -686,7 +686,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 				   (tag, translateConArgs (args, env),
 				    translateBody (body, env)))
 			       (Vector.fromList naryTests)
-		val map = IntMap.new ()
+		val map = IntMap.map ()
 		val (i, _, _) = Vector.sub (tagTests, 0)
 		val (min, max) =
 		    Vector.foldl (fn ((i, instr), (min, max)) =>

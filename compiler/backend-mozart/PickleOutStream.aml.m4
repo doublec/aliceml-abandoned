@@ -243,7 +243,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 		     label = ref 0w0,
 		     crc = ref Crc.initial,
 		     count = ref 1,
-		     atoms = StringMap.new ()}
+		     atoms = StringMap.map ()}
 	    in
 		outputByte' (q, SYSLETHEADER); outputByte' (q, SYSLETHEADER);
 		outputByte' (q, SYSLETHEADER); outputByte' (q, 0w0);

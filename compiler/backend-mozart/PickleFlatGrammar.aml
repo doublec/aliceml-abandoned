@@ -41,7 +41,7 @@ structure PickleFlatGrammar :> CODE
 	fun outputUrl (q, url) = outputString (q, Url.toStringRaw url)
 
 	(*--** remove global state *)
-	val visited: label StampMap.t = StampMap.new ()
+	val visited: label StampMap.t = StampMap.map ()
 
 	fun outputOption _ (q, NONE) = ignore (outputAtom (q, "NONE"))
 	  | outputOption outputX (q, SOME x) =
