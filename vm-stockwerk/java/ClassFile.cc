@@ -108,7 +108,7 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPoolS,
   case CONSTANT_Class:
     {
       u_int nameIndex = Store::DirectWordToInt(GetArg(0));
-      return classLoader->ResolveClass(constantPoolS->GetUtf8(nameIndex));
+      return classLoader->ResolveType(constantPoolS->GetUtf8(nameIndex));
     }
   case CONSTANT_Fieldref:
     {

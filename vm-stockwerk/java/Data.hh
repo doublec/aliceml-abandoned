@@ -74,28 +74,43 @@ public:
 class DllExport ObjectArrayType: private Type {
 protected:
   enum {
-    DIMENSIONS_POS, // int
     CLASS_POS, // Class
+    DIMENSIONS_POS, // int
     SIZE
   };
 public:
   using Block::ToWord;
+
+  static ObjectArrayType *New(word classType, u_int dimensions) {
+    Block *b = Store::AllocBlock(JavaLabel::ObjectArrayType, SIZE);
+    b->InitArg(CLASS_POS, classType);
+    b->InitArg(DIMENSIONS_POS, dimensions);
+    return static_cast<ObjectArrayType *>(b);
+  }
 };
 
 class DllExport BaseType {
 public:
-  enum { Byte, Char, Double, Float, Int, Long, Short, Boolean };
+  enum type { Byte, Char, Double, Float, Int, Long, Short, Boolean };
 };
 
 class DllExport BaseArrayType: private Type {
 protected:
   enum {
-    DIMENSIONS_POS, // int
     BASE_TYPE_POS, // int(BaseType)
+    DIMENSIONS_POS, // int
     SIZE
   };
 public:
   using Block::ToWord;
+
+  static BaseArrayType *New(BaseType::type baseType, u_int dimensions) {
+    Assert(dimensions > 0);
+    Block *b = Store::AllocBlock(JavaLabel::BaseArrayType, SIZE);
+    b->InitArg(BASE_TYPE_POS, baseType);
+    b->InitArg(DIMENSIONS_POS, dimensions);
+    return static_cast<BaseArrayType *>(b);
+  }
 };
 
 //

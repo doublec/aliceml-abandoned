@@ -19,17 +19,20 @@
 
 #include "java/Data.hh"
 
+class ClassTable;
+
 class DllExport ClassLoader: private Block {
 protected:
   enum { CLASS_TABLE_POS, SIZE };
 private:
-  static const u_int initialTableSize = 19; //--** to be determined
+  ClassTable *GetClassTable();
+  word ResolveClass(JavaString *name);
 public:
   using Block::ToWord;
 
   static ClassLoader *New();
 
-  word ResolveClass(JavaString *name); // Class or Future
+  word ResolveType(JavaString *name); // Type or Future
   word ResolveFieldRef(JavaString *className, JavaString *name,
 		       JavaString *descriptor); // FieldRef or Future
   word ResolveMethodRef(JavaString *className, JavaString *name,
