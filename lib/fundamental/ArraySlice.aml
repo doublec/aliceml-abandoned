@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,10 +16,10 @@
 
 import structure __pervasive                           from "Pervasive"
 import __primitive
-       type unit and int and vector and array and list from "ToplevelTypes"
+       type unit and int and vector and array          from "ToplevelTypes"
 import __primitive val op =                            from "ToplevelValues"
 import __primitive structure VectorSlice               from "VectorSlice"
-import functor   MkArraySlice                          from "MkArraySlice"
+import functor MkArraySlice                            from "MkArraySlice"
 import __primitive signature ARRAY_SLICE               from "ARRAY_SLICE-sig"
 
 structure ArraySlice :> ARRAY_SLICE =

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 1999-2002
+ *   Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,7 +16,7 @@
 
 import structure __pervasive                  from "Pervasive"
 import __primitive
-       type unit and int and list
+       type unit and int
        datatype order                         from "ToplevelTypes"
 import __primitive
        infix 4 = <> < > <= >=

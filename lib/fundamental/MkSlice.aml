@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,12 +19,11 @@ import __primitive
        type int
        datatype bool and order and option and list from "ToplevelTypes"
 import __primitive
-       infix 4 = <> < <= infixr 5 :: infix 6 + -
-       val op = and op <> and op < and op <=
+       infix 4 = < <= infixr 5 :: infix 6 + -
+       val op = and op < and op <=
        val op + and op -                           from "ToplevelValues"
 import __primitive structure General               from "General"
 import __primitive structure Int                   from "Int"
-import __primitive functor   MkRow                 from "MkRow"
 
 functor MkSlice(type 'a row
 		type 'a vector

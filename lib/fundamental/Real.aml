@@ -20,8 +20,8 @@ import __primitive
        type int and real and string
        datatype bool and order and option                 from "ToplevelTypes"
 import __primitive
-       infix 4 = <> > < >= <= infix 6 + - infix 7 * / div mod
-       val op = and op <> and op div and op mod           from "ToplevelValues"
+       infix 4 = <> > < >= <= infix 6 + - infix 7 * /
+       val op = and op <>                                 from "ToplevelValues"
 import __primitive structure IEEEReal                     from "IEEEReal"
 import __primitive structure General                      from "General"
 import __primitive structure Bool                         from "Bool"

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2003
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,7 +18,6 @@ import structure __pervasive                  from "Pervasive"
 import __primitive type string                from "ToplevelTypes"
 import __primitive infix 6 + val op +         from "ToplevelValues"
 import __primitive structure Word8            from "Word8"
-import __primitive structure Int              from "Int"
 import __primitive structure Char             from "Char"
 import __primitive structure CharVectorSlice  from "CharVectorSlice"
 import __primitive structure Word8Vector      from "Word8Vector"

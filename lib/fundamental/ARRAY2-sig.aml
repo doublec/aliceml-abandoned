@@ -16,8 +16,7 @@
 import structure __pervasive from "Pervasive"
 import __primitive
       type unit and int and vector and bool
-      and option and order and list
-      and array from "ToplevelTypes"
+      and option and list from "ToplevelTypes"
 
 
 signature ARRAY2 =

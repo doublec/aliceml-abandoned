@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,7 +17,6 @@
 import structure __pervasive                   from "Pervasive"
 import __primitive type unit and int
        type bool and option and order and list from "ToplevelTypes"
-import __primitive signature MONO_VECTOR       from "MONO_VECTOR-sig"
 
 signature MONO_ARRAY =
 sig

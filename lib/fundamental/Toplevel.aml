@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,7 +27,6 @@ import __primitive infix  0 before
        infixr 5 :: @
        infix  6 + - ^
        infix  7 * / div mod
-       val ! and op := and op :=:
        val op = and op <>
        val op < and op > and op <= and op >=
        val ~ and abs and op + and op -
@@ -42,7 +41,6 @@ import __primitive structure Char                          from "Char"
 import __primitive structure String                        from "String"
 import __primitive structure Substring                     from "Substring"
 import __primitive structure Vector                        from "Vector"
-import __primitive structure Future                        from "Future"
 
 
 structure Toplevel =						(**)

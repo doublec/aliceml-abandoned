@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,7 @@
  *)
 
 import structure __pervasive                  from "Pervasive"
-import __primitive type unit and int and list from "ToplevelTypes"
+import __primitive type unit and int          from "ToplevelTypes"
 import functor   MkArraySlice                 from "MkArraySlice"
 import __primitive signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
 

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,8 +18,7 @@
 import structure __pervasive                   from "Pervasive"
 import __primitive
        type unit and int
-       type bool and option and order and list
-       type array                              from "ToplevelTypes"
+       type bool and option and order and list from "ToplevelTypes"
 
 signature ARRAY =
 sig

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,10 +20,9 @@ import __primitive
        type char and string and int
        datatype bool and order and option and list      from "ToplevelTypes"
 import __primitive
-       infix 4 = < > <= >= infixr 5 :: infix 6 + - infix 7 * div mod
-       val op = and op < and op <= and op > and op >=
-       val op + and op - and op * and op div and op mod
-       val abs                                          from "ToplevelValues"
+       infix 4 = < <= >= infixr 5 :: infix 6 + - infix 7 * div mod
+       val op = and op < and op <= and op >=
+       val op + and op - and op * and op div and op mod from "ToplevelValues"
 import __primitive structure General                    from "General"
 import __primitive structure Bool                       from "Bool"
 import __primitive structure StringCvt                  from "StringCvt"

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2003
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,15 +14,15 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                            from "Pervasive"
+import structure __pervasive                  from "Pervasive"
 import __primitive
-       type unit and int and char and string and option from "ToplevelTypes"
-import __primitive structure Word8                      from "Word8"
-import __primitive structure Word8Vector                from "Word8Vector"
-import __primitive structure Word8Array                 from "Word8Array"
-import __primitive structure Word8VectorSlice           from "Word8VectorSlice"
-import __primitive structure Word8ArraySlice            from "Word8ArraySlice"
-import __primitive structure Substring                  from "Substring"
+       type unit and int and char and string  from "ToplevelTypes"
+import __primitive structure Word8            from "Word8"
+import __primitive structure Word8Vector      from "Word8Vector"
+import __primitive structure Word8Array       from "Word8Array"
+import __primitive structure Word8VectorSlice from "Word8VectorSlice"
+import __primitive structure Word8ArraySlice  from "Word8ArraySlice"
+import __primitive structure Substring        from "Substring"
 
 signature BYTE =
 sig

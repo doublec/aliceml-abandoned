@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 1999-2002
+ *   Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,9 +16,6 @@
 
 import structure __pervasive         from "Pervasive"
 import __primitive type int and list from "ToplevelTypes"
-import __primitive
-       infix 4 = infix 6 + -
-       val op = and op + and op -    from "ToplevelValues"
 import __primitive structure List    from "List"
 import functor MkSlice               from "MkSlice"
 import __primitive functor MkVector  from "MkVector"

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,7 +13,7 @@
 
 import structure __pervasive
        structure Int and LargeWord and Word from "Pervasive"
-import __primitive type int and bool        from "ToplevelTypes"
+import __primitive type bool                from "ToplevelTypes"
 import functor MkWord                       from "MkWord"
 
 structure Word31 = MkWord(

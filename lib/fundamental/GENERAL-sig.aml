@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                      from "Pervasive"
-import __primitive type unit type string type int type ref from "ToplevelTypes"
+import structure __pervasive                     from "Pervasive"
+import __primitive type string type int type ref from "ToplevelTypes"
 
 signature GENERAL =
 sig

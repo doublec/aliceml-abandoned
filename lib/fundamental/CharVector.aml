@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,7 +13,6 @@
 
 import structure __pervasive                             from "Pervasive"
 import __primitive type string and char and int and list from "ToplevelTypes"
-import __primitive structure Char                        from "Char"
 import functor MkMonoVector                              from "MkMonoVector"
 
 structure CharVector = MkMonoVector(

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,8 +17,7 @@
 import structure __pervasive                         from "Pervasive"
 import __primitive datatype bool and option and list from "ToplevelTypes"
 import __primitive
-       infixr 5 :: @ infix 6 + - val op + and op -   from "ToplevelValues"
-import __primitive structure List                    from "List"
+       infixr 5 :: @ infix 6 + - val op +            from "ToplevelValues"
 import __primitive signature LIST_PAIR               from "LIST_PAIR-sig"
 
 structure ListPair : LIST_PAIR =

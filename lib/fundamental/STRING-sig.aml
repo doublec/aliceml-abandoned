@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,7 +17,7 @@
 
 import structure __pervasive and WideString from "Pervasive"
 import __primitive
-       type int and bool and char 
+       type int and bool
        type order and option and list       from "ToplevelTypes"
 import __primitive structure StringCvt      from "StringCvt"
 

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,13 +18,11 @@
 import structure __pervasive and Word and LargeWord   from "Pervasive"
 import __primitive type int and string
        datatype bool and order and option and list    from "ToplevelTypes"
-import __primitive infix 4 = <> < > <=
+import __primitive infix 4 = < >
        infixr 5 :: infix 6 + - infix 7 * div mod
-       val op = and op <> and op < and op <=
-       and op + and op - and abs                      from "ToplevelValues"
+       val op = and abs                               from "ToplevelValues"
 import __primitive structure General                  from "General"
 import __primitive structure Option                   from "Option"
-import __primitive structure LargeInt                 from "LargeInt"
 import __primitive structure Char                     from "Char"
 import __primitive structure String                   from "String"
 import __primitive structure StringCvt                from "StringCvt"

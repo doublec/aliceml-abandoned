@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,7 +16,7 @@
 
 import structure __pervasive                       from "Pervasive"
 import __primitive
-       type int and char and string
+       type char and string
        datatype bool and order and option and list from "ToplevelTypes"
 import __primitive
        infix 6 + - infix 4 = <> < > infixr 5 ::

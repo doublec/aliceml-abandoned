@@ -24,14 +24,13 @@
 
 import structure __pervasive from "Pervasive"
 import __primitive 
-       type unit and int and vector and array
+       type int
        datatype	option and list and bool 
 				     from "ToplevelTypes"
 import __primitive
-       infix 4 = <> < > >= <= infixr 5 :: @ infix 6 + - infix 7 *
+       infix 4 = <> > >= <= infixr 5 :: @ infix 6 + - infix 7 *
        infix 3 := 
-       val op = and op <> and op < and op >= and op <=
-       and op > and op :=
+       val op = and op >= and op <= and op >
        val op + and op - val op *                  from "ToplevelValues"
 import __primitive structure General               from "General"
 import __primitive structure Bool                  from "Bool"
