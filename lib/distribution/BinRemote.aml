@@ -93,13 +93,11 @@ structure Remote :> REMOTE =
 	    end
 
 	functor Offer(signature S structure X: S) =
-	    (val ticket =
-		 let
-		     structure P =
-			 Package.Pack(signature S = S structure X = X)
-		 in
-		     offer P.package
-		 end)
+	    let
+		structure P = Package.Pack(signature S = S structure X = X)
+	    in
+		(val ticket = offer P.package)
+	    end
 
 	functor Take(val ticket: string signature S) =
 	    Package.Unpack(val package = take ticket
