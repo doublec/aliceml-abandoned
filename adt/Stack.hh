@@ -38,7 +38,7 @@ protected:
     Block *oa = GetArray();
     Block *na = Store::AllocBlock(STACKARRAY_LABEL, newsize);
 
-    std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(word));
+    std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(u_int));
     ReplaceArg(ARR_POS, na->ToWord());
   }
 public:
@@ -64,7 +64,7 @@ public:
 
     Assert(top > fsize);
     SetTop(newtop);
-    // Need to move more than one argument
+    // Needs to move more than one argument
     a->InitArg((newtop - 1), a->GetArg(top - 1));
   }
   void AllocFrame(u_int fsize) {
@@ -158,8 +158,8 @@ public:
     return GetArray()->InitArg(pos, v);
   }
   word Pop() {
-    u_int top  = (GetTop() - 1);
-    Block *a   = GetArray();
+    u_int top = (GetTop() - 1);
+    Block *a  = GetArray();
 
     // Assert(top >= 0);
     Assert(a->GetLabel() == STACKARRAY_LABEL);
