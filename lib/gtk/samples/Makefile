@@ -2,7 +2,7 @@ BOOTSTRAPDIR= ../../../bootstrap
 
 STOC     = alicec
 STOCOPTS =
-STODEP   = sml @SMLload=$(BOOTSTRAPDIR)/stodep
+STODEP   = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
 SRCS = hello.aml          \
        packbox.aml        \

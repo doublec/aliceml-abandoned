@@ -203,7 +203,7 @@ local
     end
 
     local
-	val shell = GtkCore.openShell("stot", "")
+	val shell = GtkCore.openShell("alice", "")
 
 	fun printResult shell =
 	    (case GtkCore.getShell shell of
