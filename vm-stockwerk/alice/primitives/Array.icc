@@ -78,4 +78,12 @@ void PrimitiveTable::XCONCAT(Register,XArray)() {
   Register(XSTRINGIFY(XArray)".maxLen", Store::IntToWord(Array::maxLen));
   Register(XSTRINGIFY(XArray)".sub", Array_sub, 2);
   Register(XSTRINGIFY(XArray)".update", Array_update, 3);
+#if defined(YArray)
+  Register(XSTRINGIFY(YArray)".array", Array_array, 2);
+  Register(XSTRINGIFY(YArray)".fromList", Array_fromList, 1);
+  Register(XSTRINGIFY(YArray)".length", Array_length, 1);
+  Register(XSTRINGIFY(YArray)".maxLen", Store::IntToWord(Array::maxLen));
+  Register(XSTRINGIFY(YArray)".sub", Array_sub, 2);
+  Register(XSTRINGIFY(YArray)".update", Array_update, 3);
+#endif
 }
