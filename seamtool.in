@@ -4,7 +4,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 
 if [ $# -lt 1 ]; then
-    echo "usage: $0 [--verbose|-v] (c++|ld) <option> ..." >&2
+    echo "usage: $0 [--verbose|-v] (makedepend|c++|ld) <option> ..." >&2
     exit 2
 fi
 
@@ -25,9 +25,16 @@ cmd() {
 }
 
 case "$mode" in
+    makedepend)
+	cxxflags="@SEAM_MACHINE_FLAGS@"
+	cmd @CXX@ -M $cxxflags \
+	    -DLIGHTNING=@HAVE_LIGHTNING@ -DPROFILE=@PROFILE@ \
+	    -I@includedir@/seam @LIGHTNINGINCLUDES@ "$@"
+	;;
     c++)
 	cxxflags="@SEAM_MACHINE_FLAGS@"
-	cmd @CXX@ $cxxflags -DLIGHTNING=@HAVE_LIGHTNING@ \
+	cmd @CXX@ $cxxflags \
+	    -DLIGHTNING=@HAVE_LIGHTNING@ -DPROFILE=@PROFILE@ \
 	    -I@includedir@/seam @LIGHTNINGINCLUDES@ "$@"
 	;;
     ld)
