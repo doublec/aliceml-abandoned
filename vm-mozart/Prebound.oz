@@ -177,7 +177,10 @@ prepare
 	      end
 	 end
       'Future.isFailed': Value.isFailed
-      'Future.isFuture': IsFuture   %--** wrong for failed futures
+      'Future.isFuture':
+	 fun {$ X}
+	    {IsFuture X} andthen {Not {Value.isFailed X}}
+	 end
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
