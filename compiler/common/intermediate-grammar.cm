@@ -9,8 +9,8 @@ Group
 
 is
 	../../lib/utility/sources.cm
-	../lib/rtt/type.cm
-	../lib/rtt/interface.cm
+	../../lib/rtt/type.cm
+	../../lib/rtt/interface.cm
 	../infrastructure/source.cm
 	../infrastructure/pp-misc.cm
 	id-stamp.cm
