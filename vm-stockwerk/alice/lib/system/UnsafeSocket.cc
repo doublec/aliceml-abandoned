@@ -10,7 +10,6 @@
 //   $Revision$
 //
 
-#include <cstdio>
 #include <unistd.h>
 #include <sys/types.h>
 
@@ -250,7 +249,6 @@ DEFINE3(UnsafeSocket_output) {
   DECLARE_STRING(string, x1);
   DECLARE_INT(offset, x2);
 
-  std::fprintf(stderr, "output: %d of %d\n", offset, string->GetSize());
   Assert(offset >= 0 && static_cast<u_int>(offset) < string->GetSize());
   u_char *buffer = string->GetValue() + offset;
   u_int count = string->GetSize() - offset;
