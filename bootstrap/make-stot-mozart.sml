@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "main-mozart.cm";
+CM.make' "../stoc/top/main-mozart.cm";
 
 local
     fun getArgs () =
@@ -25,5 +25,5 @@ local
 
     fun main _ = OS.Process.exit (SMLToMozartEmacsToplevel.stot (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("../stot-mozart", main)
+    val _ = SMLofNJ.exportFn ("stot-mozart", main)
 end;

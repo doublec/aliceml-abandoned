@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "main-com+.cm";
+CM.make' "../stoc/top/main-com+.cm";
 
 local
     fun getArgs () =
@@ -25,5 +25,5 @@ local
 
     fun main _ = OS.Process.exit (SMLToComPlusBatchCompiler.stoc (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("../stoc-com+", main)
+    val _ = SMLofNJ.exportFn ("stoc-com+", main)
 end;

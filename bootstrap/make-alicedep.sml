@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "make-depend.cm";
+CM.make' "../stoc/top/make-depend.cm";
 
 local
     fun getArgs () =
@@ -25,5 +25,5 @@ local
 
     fun main _ = OS.Process.exit (stodep (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("../stodep", main)
+    val _ = SMLofNJ.exportFn ("stodep", main)
 end;
