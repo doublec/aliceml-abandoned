@@ -32,7 +32,6 @@ private:
   static word root;
   static ThreadQueue *threadQueue;
   static Thread *currentThread;
-  static void Timer();
 
   static void SwitchToThread();
   static void FlushThread();
