@@ -13,7 +13,7 @@
 functor
 import
    Open(file)
-   System(show)
+   System(printInfo)
 export
    BuiltinTable
    Env
@@ -161,7 +161,7 @@ define
       'TextIO.closeOut':
 	 fun {$ F} {F close()} '#' end
       'TextIO.print':
-	 fun {$ X} {System.show X} '#' end)
+	 fun {$ X} {System.printInfo X} '#' end)
 
    Match = {NewName}
    Bind = {NewName}
