@@ -239,11 +239,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.putFun, 4); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
 	     outputFunction (context, function); outputInstr (context, instr))
-	  | outputInstr (context, AppPrim (name, idRefs, idDefInstrOpt)) =
+	  | outputInstr (context, AppPrim (value, idRefs, idDefInstrOpt)) =
 	    (outputBlock (context, Label.appPrim, 3);
-	     outputTransform (context, "Alice.primitive.value");
-	     outputBlock (context, Label.TAG 0, 1);
-	     outputString (context, name);
+	     outputValue (context, value);
 	     outputVector outputIdRef (context, idRefs);
 	     outputOption (fn (context, (idDef, instr)) =>
 			   (outputTuple (context, 2);
