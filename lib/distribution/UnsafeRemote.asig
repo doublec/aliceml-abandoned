@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_REMOTE_COMPONENT =
+    sig
+	structure UnsafeRemote:
+	    sig
+		exception Ticket
+
+		val proxy: ('a -> 'b) -> ('a -> 'b)
+		val offer: 'a -> string
+		val take: string -> 'a                (* Ticket *)
+	    end
+    end
