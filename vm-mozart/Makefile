@@ -135,7 +135,7 @@ LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES = \
 	$(LIBSYSTEMNATIVES0:%=lib/system/Unsafe%.ozf) \
-	lib/system/UnsafeValue.ozf \
+	lib/system/UnsafeValue.ozf lib/system/UnsafeIODesc.ozf \
 	$(LIBUTILITYNATIVES0:%=lib/utility/Unsafe%.ozf)
 
 LIBFUNDAMENTALSOURCES0 = \
@@ -159,6 +159,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	Word8Vector.aml Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
+	UnsafeIODesc.asig \
 	CONFIG-sig.aml IO-sig.aml PRIM_IO-sig.aml PrimIO.aml \
 	STREAM_IO-sig.aml StreamIO.aml IMPERATIVE_IO-sig.aml \
 	ImperativeIO.aml BIN_IO-sig.aml BinIO.aml TEXT_IO-sig.aml TextIO.aml \
