@@ -513,7 +513,8 @@ struct
 
 	    val exp2' = trInf(env, inf)
 	    val exp3' = O.SealExp(typInfo(r1, typ_module env), idExp id1')
-	    val exp4' = pervasiveAppExp(env, r, modlab_dynmatch, lab_strengthen,
+	    val exp4' = if not(!Switches.Language.supportRtt) then exp2' else
+			pervasiveAppExp(env, r, modlab_dynmatch, lab_strengthen,
 					tupExp(r, #[exp3', exp2']))
 	    val exp5' = lazyExp exp4'
 
