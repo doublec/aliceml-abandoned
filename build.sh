@@ -143,6 +143,9 @@ then
         cd "$SUPPORTDIR/sqlite" &&
 	echo "### - extracting the source" >&2 &&
 	tar xzf sqlite-${sqliteversion}.tar.gz &&
+	(cd sqlite-${sqliteversion} &&
+	 echo "### - applying patches" >&2 &&
+	 patch -p1 < ../sqlite-${sqliteversion}.patch) &&
 	echo "### - reconfiguring the source" >&2 &&
 	mkdir -p "${SUPPORTDIR}/build/sqlite" 2>/dev/null &&
 	cd "${SUPPORTDIR}/build/sqlite" &&
