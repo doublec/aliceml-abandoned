@@ -45,7 +45,7 @@ structure ToJasmin =
 	  | mAccessToString (MAbstract::rest)      =  "abstract "^mAccessToString rest
 	  | mAccessToString nil = ""
 
-	fun descriptor2string (arglist, arg) =
+	fun descriptor2string (arglist, ret) =
 	    let
 		fun desclist2string ((Classsig dl)::dls) = "L"^dl^";"^(desclist2string dls)
 		  | desclist2string (Intsig::dls) = "I"^(desclist2string dls)
@@ -55,7 +55,7 @@ structure ToJasmin =
 		  | desclist2string (Arraysig::dls) = "["^(desclist2string dls)
 		  | desclist2string nil = ""
 	    in
-		"("^(desclist2string arglist)^")"^(desclist2string [arg])
+		"("^(desclist2string arglist)^")"^(desclist2string ret)
 	    end
 
 	fun siglength (Arraysig::rest) = siglength rest
