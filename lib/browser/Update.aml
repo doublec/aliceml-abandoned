@@ -23,6 +23,7 @@ import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure ReinspectedRelDict from "ReinspectedRelDict"
 import structure TransientDictionary from "TransientDictionary"
+import structure RelManDictionary from "RelManDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
 import structure Window from "Window"
@@ -87,7 +88,9 @@ struct
 	    
     (* iterMove *)	    
     fun iterMove (dict,dy,i,highest_i)
-	= if i > highest_i 
+	= (TextIO.print("ITER_MOVE: started with i = "^Int.toString(i)^"\n") 
+	  ; 
+	  if i > highest_i 
 	      then () 
 	  else
 	      case MainDictionary.lookup(dict,i) of
@@ -95,7 +98,7 @@ struct
             | SOME (node,line) 
 	      => ( GtkSupport.moveGroup(getGroup(node),0,dy)
 		 ;  GtkSupport.yPosSepLine(line,getGroup(node)) 
-		  ; iterMove (dict,dy,i+1,highest_i) )
+		  ; iterMove (dict,dy,i+1,highest_i) )   )
 		  
     (* update *)
     and update (no,va,f,g) = 
@@ -127,20 +130,22 @@ struct
 	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
 	   in ( setDazzled n
 	       ; Gtk.objectDestroy(getGroup(n))
-	       ; if !(Settings.relmode) 
-		     then let val rn_list = getRelNodeList node
-			  in List.app (fn n 
-				      => let val ri_rel = 
-				             case ReinspectedRelDict.lookup 
-						 (Dictionaries.ri_reldict,ind)
-					     of SOME x => x 
-					      | NONE => []
-					 in  ReinspectedRelDict.update
-					     (Dictionaries.ri_reldict,
-					      (ind, [n]@ri_rel))
-					 end) rn_list
-			  end  
-		 else () 
+	       ; if !(Settings.relmode)
+		     then ( RelManDictionary.delete(Dictionaries.reldict,ind)
+			   ; Settings.relnumber := 0 )
+		   (*  then let val rn_list = getRelNodeList node
+			  in List.app 
+			      (fn n => let val ri_rel = 
+			                   case ReinspectedRelDict.lookup 
+					       (Dictionaries.ri_reldict,ind)
+					       of SOME x => x 
+					        | NONE => []
+				       in  ReinspectedRelDict.update
+					   (Dictionaries.ri_reldict,
+					    (ind, [n]@ri_rel))
+				       end) rn_list
+			  end  *)
+		 else ()  
                ; Layout.layout(node) 
 	       ; TextIO.print(" Layout done \n") 
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
@@ -224,7 +229,10 @@ struct
         let val va = getReflectValue n
 			           : Reflect.value
 	in  Server.serve(fn () => 
-			 (update(n,va,f,g) ; !Window.resize()) )
+			 (update(n,va,f,g) 
+			  ; TextIO.print("REINSPECT: starte jetzt Window.resize()\n")
+			  ; !Window.resize()
+			  ; TextIO.print("REINSPECT: Window.resize() done :-)\n") ) )
 	end
         handle General.Match => raise UpdateError
 	

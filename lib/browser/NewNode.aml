@@ -115,16 +115,22 @@ struct
 					 of NONE => createRelRefNode (desc,p,i,
 								      d,str,m,
 								      setGroup)
-				          | SOME no => if getDesc(no) = desc
-							   then no
-						       else createRelRefNode
-							   (desc,p,i,d,str,m,
-							    setGroup)
+				          | SOME no 
+					    => if getDesc(no) = desc
+					           andalso getParent(no) = p
+						   andalso getIndex(no) = i
+						   then createRelNode
+						        (desc,getContent(n),p,
+							 i,d,rep,relman,
+							 setGroup)
+					       else createRelRefNode
+						   (desc,p,i,d,str,m,
+						    setGroup)
 				     end
 			     val actrelman = case 
 				 RelManDictionary.lookup(reldict,ind) 
 				 of SOME x => x
-			       | NONE => []
+			          | NONE => []
 			     val part = List.partition(fn x => x = n) actrelman
 			     val restlist = #2(part)
 			 in (RelManDictionary.update(reldict,
