@@ -267,7 +267,11 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    end
 
 	(* createSpinButton *)
-	fun createSpinButton {init = i, lower = l, upper = u, inc = ic, dec = d}
+	fun createSpinButton {init = i, 
+			      lower = l, 
+			      upper = u, 
+			      inc = ic, 
+			      dec = d}
 	    = let
 		  val a = Gtk.adjustmentNew(Real.fromInt(i), 
 					    Real.fromInt(l),
@@ -372,7 +376,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 		 ; Gtk.scrolledWindowSetPolicy(scrolled,
 					       Gtk.POLICY_AUTOMATIC,
 					       Gtk.POLICY_AUTOMATIC)
-		 ;Gtk.widgetSetUsize(textwindow,200,200)
+		 ;Gtk.widgetSetUsize(textwindow,300,200)
 		 ;Gtk.windowSetTitle(textwindow,
 				    "Alice Browser - Type Information")
 		 ; signalConnect (textwindow, "delete-event", 

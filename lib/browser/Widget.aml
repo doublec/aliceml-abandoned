@@ -285,6 +285,10 @@ struct
 	NONE => Node.Empty
       | SOME(n,_,_) => n  
 
+    fun deselect (bar) = (setSelectionMenuSensitive(bar,false)
+		       ; destroySelectionMarkings()
+		       ; selection := NONE)  
+
     (* cleans out all dictionaries *)
     fun emptyAllDictionaries() = 
 	(Dictionaries.Main.dumpAll(Dictionaries.maindict)
@@ -376,12 +380,11 @@ struct
 		
      fun update_reinspect n = 
 	 Server.serve (fn()
-		       =>( Update.reinspect(n,
+		       =>  Update.reinspect(n,
 					    CreateTree.createTree,
 					    CreateTree.createTreeInf,
-					    !canvasroot)
-			  ; destroySelectionMarkings()
-			  ; selection :=NONE) )
+					    !canvasroot))
+	
 	 
      (* handles reinspect request *)
      fun handleReinspect node = 
@@ -408,9 +411,8 @@ struct
 						   !canvasroot)
 			 end
 	      in
-		  ( update_shrink (getSelectionNode())
-		   ; destroySelectionMarkings()
-		   ; selection := NONE )
+		   (update_shrink (getSelectionNode())
+		    ; selection:=NONE)
 	      end)
 
      (* handles expand request *)
@@ -424,8 +426,7 @@ struct
 						     !canvasroot)
 			 in
 			     (update_expand (getSelectionNode())
-			      ; destroySelectionMarkings()
-			      ; selection := NONE)
+			      ; selection :=NONE)
 			 end)
 
      (* folds width *)
@@ -468,13 +469,6 @@ struct
 		 in Future.await(b_future) 
 		 end
 	 else ()
-
-     fun handleForce node _ = case (!selection) of 
-	 SOME (n,re,re') =>(Server.serve 
-			    (fn () => (forceTree (getSelectionNode())
-			     ;destroySelectionMarkings()
-			     ; ())))
-       | NONE => ()
 	
      (***       Node Tree Deletion Mechanism     ***)
 
@@ -697,7 +691,7 @@ struct
 
 	
 	 (* Menu-Bar *)
-     val bar = GtkSupport.createMenu
+     val rec bar = GtkSupport.createMenu
 	 (BarObj[MenuObj
 		 {title = "Inspector",
 		  items = [EntryObj
@@ -779,10 +773,14 @@ struct
 	(* creates popup when a node is clicked on *)
 	fun makePopup n = 
 	    let 
-		val w = handleWidth(n)
-		val d = handleDepth(n)
-		val r = handleReinspect(n)
-		val f = handleForce(n)
+		val w = (deselect(bar)
+			 ;handleWidth(n))
+		val d = ( deselect(bar)
+			 ; handleDepth(n))
+		val r = ( deselect(bar)
+			 ;handleReinspect(n))
+		fun f _ = ( forceTree(n)
+		            ;deselect(bar))
 		val width_active =not(case n of 
 				  Limit(r) => 
 					  getSort(n) = Node.DEPTH_LIMIT
