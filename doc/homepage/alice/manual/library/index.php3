@@ -73,6 +73,16 @@
     <TR> <TD><A href="remote.php3"><TT>REMOTE</TT></A></TD> </TR>
   </TABLE>
 
+  <P><TT>lib/constraints/</TT>:</P>
+
+  <TABLE>
+    <TR> <TD><A href="fd.php3"><TT>FD</TT></A></TD> </TR>
+    <TR> <TD><A href="linear.php3"><TT>LINEAR</TT></A></TD> </TR>
+    <TR> <TD><A href="fs.php3"><TT>FS</TT></A></TD> </TR>
+    <TR> <TD><A href="space.php3"><TT>SPACE</TT></A></TD> </TR>
+    <TR> <TD><A href="search.php3"><TT>SEARCH</TT></A></TD> </TR>
+  </TABLE>
+
 <?php section("structures", "structures") ?>
 
   <P><TT>lib/fundamental</TT>:</P>
@@ -141,6 +151,17 @@
   <TABLE>
     <TR> <TD><A href="remote.php3"><TT>Remote</TT></A></TD> </TR>
   </TABLE>
+
+  <P><TT>lib/constraints/</TT>:</P>
+
+  <TABLE>
+    <TR> <TD><A href="fd.php3"><TT>FD</TT></A></TD> </TR>
+    <TR> <TD><A href="linear.php3"><TT>Linear</TT></A></TD> </TR>
+    <TR> <TD><A href="fs.php3"><TT>FS</TT></A></TD> </TR>
+    <TR> <TD><A href="space.php3"><TT>Space</TT></A></TD> </TR>
+    <TR> <TD><A href="search.php3"><TT>Search</TT></A></TD> </TR>
+  </TABLE>
+
 
 <?php section("functors", "functors") ?>
 
