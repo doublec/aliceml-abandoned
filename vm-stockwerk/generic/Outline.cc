@@ -18,6 +18,7 @@
 #pragma implementation "generic/Thread.hh"
 #pragma implementation "generic/ThreadQueue.hh"
 #pragma implementation "generic/Tuple.hh"
+#pragma implementation "generic/String.hh"
 #pragma implementation "generic/StackFrame.hh"
 #pragma implementation "generic/Transform.hh"
 #endif
@@ -29,5 +30,6 @@
 #include "generic/Thread.hh"
 #include "generic/ThreadQueue.hh"
 #include "generic/Tuple.hh"
+#include "generic/String.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Transform.hh"
