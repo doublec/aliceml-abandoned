@@ -1,0 +1,13 @@
+URL = http://www.ps.uni-sb.de/~tack/download
+
+REVISION = 1
+PACKAGES = gecode-0.9 seam-1.0.0 alice-1.0.1 \
+	alice-gecode-1.0.1 alice-gtk-1.0.1 \
+	alice-runtime-1.0.1
+
+all: $(PACKAGES:%=%.tar.gz)
+
+$(PACKAGES:%=%.tar.gz): %:
+	curl $(URL)/$@ -o $@
+	tar -f $@ -z -x '*/debian/*.spec' -O > $(@:%.tar.gz=%)-$(REVISION).spec
+	./build-rpm $@ $(@:%.tar.gz=%)-$(REVISION).spec
