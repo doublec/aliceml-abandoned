@@ -14,6 +14,8 @@
 #pragma implementation "java/ThrowWorker.hh"
 #endif
 
+#include <cstdio>
+
 #include "generic/RootSet.hh"
 #include "generic/Backtrace.hh"
 #include "java/ThrowWorker.hh"

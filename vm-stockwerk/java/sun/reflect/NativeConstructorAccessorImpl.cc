@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#include <cstdio>
+
 #include "generic/RootSet.hh"
 #include "java/StackFrame.hh"
 #include "java/ClassInfo.hh"
