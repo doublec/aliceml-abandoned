@@ -47,9 +47,9 @@ dnl Check system type
 UNAME=`uname`
 if test $UNAME = "Linux"
   then
-	smlexesuffix=".x86-linux"
+	platform="x86-linux"
   else
-	smlexesuffix=".sparc-solaris"
+	platform="sparc-solaris"
 fi
 
 dnl Checks for libraries.
@@ -62,8 +62,8 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 dnl Checks for library functions.
 
 AC_SUBST(mlj)
-AC_SUBST(smlexesuffix)
+AC_SUBST(platform)
 AC_SUBST(m4)
 AC_SUBST(javac)
 AC_SUBST(smlcm)
-AC_OUTPUT(../../benchmarks/Makefile Makefile tools/Makefile test/Makefile)
+AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/tools/Makefile java/src/test/Makefile Compiler/Makefile Compiler/Backend/Makefile)
