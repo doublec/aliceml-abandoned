@@ -12,4 +12,13 @@
   </P>
 
 
+<?php section("local", "local installation") ?>
+
+  <P>
+    A development version of Alice is installed in the
+    <A href="/">Programming System Lab</A> and can be readily used on the
+    local systems.
+  </P>
+
+
 <?php footing() ?>
