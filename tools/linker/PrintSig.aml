@@ -32,6 +32,8 @@ structure PrintSig : PRINT_SIG =
 struct
     nonfix mod
 
+    val pervasiveUrl = "x-alice:/lib/fundamental/Pervasive"
+
 (*obsolete
     val preboundPaths =
 	let
@@ -88,6 +90,7 @@ struct
 	    open PrettyPrint infixr ^^ ^/^
 	in
 	    Vector.app (fn (url, infOpt) =>
+			if url = pervasiveUrl then () else
 			let
 			    val doc = abox(
 					  nest 3 (
