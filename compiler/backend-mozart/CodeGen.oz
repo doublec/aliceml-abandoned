@@ -54,16 +54,6 @@ define
       {Dictionary.get State.regDict Stamp}
    end
 
-   fun {GetStaticCon Stamp State} Dict in
-      Dict = State.shareDict
-      if {Dictionary.member Dict Stamp} then
-	 {Dictionary.get Dict Stamp}
-      else N = {NewName} in
-	 {Dictionary.put Dict Stamp N}
-	 N
-      end
-   end
-
    fun {TranslateRegion (I#J)#(_#_) State}
       pos(State.filename I J)
    end
@@ -228,21 +218,8 @@ define
 		ElseVInstr State ReturnReg IsTry}
 	 ElseVInstr = {TranslateBody ElseBody State ReturnReg IsTry}
       [] ['TestStm'(Region Id 'ConTests'(ConBodyVec) ElseBody)]
-      then StaticConBodyList ConBodyList ElseVInstr0 ElseVInstr in
-	 {List.partition {Record.toList ConBodyVec}
-	  fun {$ Con#_#_}
-	     case Con of 'StaticCon'(_) then true else false end
-	  end ?StaticConBodyList ?ConBodyList}
-	 case StaticConBodyList of nil then VHd = ElseVInstr0
-	 else
-	    {TranslateTagTests Region Id
-	     {List.toTuple '#[]'
-	      {Map StaticConBodyList
-	       fun {$ 'StaticCon'(Stamp)#Args#Body}
-		  {GetStaticCon Stamp State}#unit#Args#Body
-	       end}} VHd ElseVInstr0 State ReturnReg IsTry}
-	 end
-	 {List.foldL ConBodyList
+      then ElseVInstr in
+	 {Record.foldL ConBodyVec
 	  proc {$ VHd Con#Args#Body ElseVInstr} Reg ThenVInstr in
 	     Reg = {GetReg Id State}
 	     case Con#Args of 'Con'(Id)#'TupArgs'('#[]') then
@@ -270,7 +247,7 @@ define
 		end
 	     end
 	     ThenVInstr = {TranslateBody Body State ReturnReg IsTry}
-	  end ElseVInstr0 ElseVInstr}
+	  end VHd ElseVInstr}
 	 ElseVInstr = {TranslateBody ElseBody State ReturnReg IsTry}
       [] ['TestStm'(Region Id 'VecTests'(VecBodyVec) ElseBody)]
       then Matches ElseVInstr in
@@ -391,7 +368,7 @@ define
 	     VHd = vInlineDot(_ Reg I {GetReg Id State} true Coord VTl)
 	  end VInter2 VTl}
 	 vEquateConstant(_ {Width Ids} WidthReg VInter1)
-      [] 'ConExp'(Region 'Con'(Id) 'ProdArgs'(LabelIdVec)) then
+      [] 'ConExp'(Region Id 'ProdArgs'(LabelIdVec)) then
 	 Coord ArityReg VInter1 VInter2
       in
 	 Coord = {TranslateRegion Region State}
@@ -405,9 +382,6 @@ define
 	 vEquateConstant(_ {Record.foldR LabelIdVec
 			    fun {$ Label#_ In} Label|In end nil}
 			 ArityReg VInter1)
-      [] 'ConExp'(Region 'StaticCon'(Stamp) Args) then
-	 {TranslateExp
-	  'TagExp'(Region {GetStaticCon Stamp State} unit Args) Reg VTl State}
       [] 'RefExp'(Region Id) then
 	 vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
 		      {TranslateRegion Region State} VTl)
