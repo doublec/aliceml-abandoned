@@ -27,7 +27,11 @@ scheme. The library is organized hierarchically as follows:</P>
 	- I/O and other system related functionality </LI>
   <LI><A href="#distribution"><TT>"x-alice:/lib/distribution/"</TT></A>
 	- distributed programming </LI>
-  <LI><A href="#constraints"><TT>"x-alice:/lib/constraints/"</TT></A>
+<?php if ($platform == "seam") { ?>
+  <LI><A href="#gecode"><TT>"x-alice:/lib/constraints/"</TT></A>
+<?php } else { ?>
+  <LI><A href="#constraints"><TT>"x-alice:/lib/gecode/"</TT></A>
+<?php } ?>
 	- constraint programming </LI>
   <LI><A href="#tools"><TT>"x-alice:/lib/tools/"</TT></A>
 	- interactive tools </LI>
@@ -354,11 +358,11 @@ types, exceptions and values that are available unqualified.</P>
   </TABLE>
 
 
-<?php section("constraints", "constraints library") ?>
-
 <?php if ($platform == "seam") { ?>
 
-<?php subsection("constraints-sigs", "Signatures") ?>
+<?php section("gecode", "gecode library") ?>
+
+<?php subsection("gecode-sigs", "Signatures") ?>
 
   <TABLE class=tt>
     <TR> <TD><A href="fd.html">FD</A></TD> </TR>
@@ -368,17 +372,27 @@ types, exceptions and values that are available unqualified.</P>
     <TR> <TD><A href="space.html">SPACE</A></TD> </TR>
   </TABLE>
 
-<?php subsection("constraints-structs", "Structures") ?>
+<?php subsection("gecode-structs", "Structures") ?>
 
   <TABLE class=tt>
     <TR> <TD><A href="fd.html">FD</A></TD> </TR>
+    <TR> <TD><A href="fd.html">FD.Reflect</A></TD> </TR>
+    <TR> <TD><A href="fd.html">FD.Reified</A></TD> </TR>
     <TR> <TD><A href="fs.html">FS</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Reflect</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Reified</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Value</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Int</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Selection</A></TD> </TR>
     <TR> <TD><A href="linear.html">Linear</A></TD> </TR>
     <TR> <TD><A href="search.html">Search</A></TD> </TR>
+    <TR> <TD><A href="search.html">Search.Recompute</A></TD> </TR>
     <TR> <TD><A href="space.html">Space</A></TD> </TR>
   </TABLE>
 
 <?php } else { ?>
+
+<?php section("constraints", "constraints library") ?>
 
 <?php subsection("constraints-sigs", "Signatures") ?>
 
