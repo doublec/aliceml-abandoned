@@ -27,6 +27,7 @@ signature GUISIGNALS_SIG =
     val on_delete1_activate : Gtk.callback_function
     val on_find_activate : Gtk.callback_function
     val on_find_and_replace_activate : Gtk.callback_function
+    val on_go_to_line_activate : Gtk.callback_function
     val on_jump_to_last_error_activate : Gtk.callback_function
     val on_syntax_colouring_activate : Gtk.callback_function
     val on_back_in_history_activate : Gtk.callback_function
@@ -57,6 +58,7 @@ functor GuiSignals(structure S : GUISIGNALS_SIG) =
     val delete1_on_delete1_activate = Gtk.signalConnect(Gui.delete1, "activate",S.on_delete1_activate)
     val find_on_find_activate = Gtk.signalConnect(Gui.find, "activate",S.on_find_activate)
     val find_and_replace_on_find_and_replace_activate = Gtk.signalConnect(Gui.find_and_replace, "activate",S.on_find_and_replace_activate)
+    val go_to_line_on_go_to_line_activate = Gtk.signalConnect(Gui.go_to_line, "activate",S.on_go_to_line_activate)
     val jump_to_last_error_on_jump_to_last_error_activate = Gtk.signalConnect(Gui.jump_to_last_error, "activate",S.on_jump_to_last_error_activate)
     val syntax_colouring_on_syntax_colouring_activate = Gtk.signalConnect(Gui.syntax_colouring, "activate",S.on_syntax_colouring_activate)
     val back_in_history_on_back_in_history_activate = Gtk.signalConnect(Gui.back_in_history, "activate",S.on_back_in_history_activate)

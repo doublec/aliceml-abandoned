@@ -109,4 +109,39 @@ structure SearchDialog =
                | SOME s => Gtk.entrySetText(searchString, s);
              Gtk.widgetShowAll searchDialog;
              Gtk.widgetMap searchDialog)
+
+	fun gotoLine id =
+            let
+                val dia = Gtk.dialogNew()
+                val ok = Gtk.dialogAddButton(dia, "Ok",0)
+                val vbox = Gtk.dialogGetFieldVbox dia
+
+		val _ = Gtk.dialogSetHasSeparator(dia,false)
+		val hbox1 = Gtk.hboxNew(false,0)
+		val label1 = Gtk.labelNew("Go to: ")
+		val entry1 = Gtk.entryNew()
+		val _ = Gtk.entrySetActivatesDefault(entry1, true)
+		val _ = Gtk.boxPackStart(hbox1,label1,false,false,0)
+		val _ = Gtk.boxPackStart(hbox1,entry1,true,true,0)
+                val _ = Gtk.containerAdd(vbox, hbox1)
+            in
+                Gtk.windowSetTitle(dia, "Go to line");
+		Gtk.dialogSetDefaultResponse(dia, 0);
+                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
+                Gtk.widgetShowAll dia;
+                if Gtk.dialogRun dia = 0 then
+		    (case Int.fromString (Gtk.entryGetText entry1) of
+			 NONE => ()
+		       | SOME line =>
+			     let
+				 val buf = Buffer.getBuffer id
+				 val iter = Gtk.textIterNew()
+				 val _ = Gtk.textBufferGetIterAtLine(buf,iter,line-1)
+			     in
+				 Gtk.textBufferPlaceCursor(buf, iter)
+			     end)
+                else ();
+                Gtk.widgetDestroy dia
+            end
     end

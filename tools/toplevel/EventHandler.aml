@@ -43,5 +43,6 @@ structure EventHandler : GUISIGNALS_SIG =
         fun on_about1_activate _ = AboutDialog.openDialog()
         fun on_notebook1_switch_page (notebook,_) = GuiMain.switchPage notebook
 	fun on_forward_in_history_activate _ = ()               
-	fun on_back_in_history_activate _ = ()               
+	fun on_back_in_history_activate _ = ()
+	fun on_go_to_line_activate _ = GuiMain.gotoLine()
     end
