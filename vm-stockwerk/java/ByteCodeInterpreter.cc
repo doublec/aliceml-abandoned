@@ -645,7 +645,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LALOAD:
     case Instr::SALOAD:
       {
-	JavaDebug::Print("(C|D||F|I|L|S)ALOAD");
+	JavaDebug::Print("(C|D|F|I|L|S)ALOAD");
 	u_int index      = JavaInt::FromWord(frame->Pop());
 	BaseArray *array = BaseArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
@@ -673,6 +673,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (index < array->GetLength()) {
 	    Object *object = Object::FromWord(value);
 	    Type *type     = array->GetType();
+	    //--** need component type
 	    if ((type->GetLabel() == JavaLabel::Class) &&
 		((object == INVALID_POINTER) ||
 		 object->IsInstanceOf(static_cast<Class *>(type))))
@@ -1583,7 +1584,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("IINC");
 	u_int index = GET_BYTE_INDEX();
 	int v       = JavaInt::FromWord(frame->GetEnv(index));
-	v += static_cast<int>(code[pc + 2]);
+	v += static_cast<int>(static_cast<signed char>(code[pc + 2]));
 	frame->SetEnv(index, JavaInt::ToWord(v));
 	pc += 3;
       }
@@ -1765,16 +1766,16 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("ISHL");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
-	frame->Push(JavaInt::ToWord(v1 << v2));
+	frame->Push(JavaInt::ToWord(v1 << (v2 % 32)));
 	pc += 1;
       }
       break;
     case Instr::ISHR:
       {
-	JavaDebug::Print("IHSR");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
-	frame->Push(JavaInt::ToWord(v1 >> v2));
+	JavaDebug::Print("ISHR");
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	u_int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v2 / (1 << (v1 % 32))));
 	pc += 1;
       }
       break;
@@ -1789,7 +1790,11 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IUSHR:
       {
-	Error("not implemented");
+	JavaDebug::Print("IUSHR");
+	u_int v2 = JavaInt::FromWord(frame->Pop());
+	u_int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v2 / (1 << (v1 % 32))));
+	pc += 1;
       }
       break;
     case Instr::IXOR:
