@@ -14,7 +14,7 @@
 
 DEFINE1(UniqueString_hash) {
   DECLARE_UNIQUE_STRING(uniqueString, x0);
-  RETURN_INT(uniqueString->ToString()->Hash());
+  RETURN_INT(uniqueString->Hash());
 } END
 
 DEFINE1(UniqueString_string) {
