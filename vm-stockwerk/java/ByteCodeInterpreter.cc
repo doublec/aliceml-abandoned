@@ -1809,10 +1809,17 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::LDC_W:
+      {
+	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX()); 
+	frame->Push(value);
+	pc += 3;
+      }
+      break;
     case Instr::LDC2_W:
       {
 	Error("not implemented");
       }
+      break;
     case Instr::LDIV:
       {
 	Error("not implemented");
