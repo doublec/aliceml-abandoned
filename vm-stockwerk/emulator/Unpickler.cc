@@ -93,19 +93,20 @@ public:
     return bytes;
   }
   u_int GetUInt() {
-    return DoGetUInt(0, 1);
-  }
-  u_int DoGetUInt(u_int x, u_int n) {
-    u_char b = GetByte();
-    if (eob) {
-      return 0;
-    }
-    else if (b >= 0x80) {
-      return DoGetUInt((x + (b - 0x80) * n), (n * 0x80));
-    }
-    else {
-      return (x + b * n);
-    }
+    int shift = 0;
+    int freeBits = sizeof(u_int) * 8 - 1; //--** use store constant
+    u_int value = 0;
+    u_char b;
+    do {
+      b = GetByte(); if (eob) return 0;
+      u_char c = b & 0x7F;
+      if (c >= (u_char) (1 << freeBits))
+	Error("Unpickler: integer out of range"); //--** raise exception
+      value |= c << shift;
+      shift += 7;
+      freeBits -= 7;
+    } while (b & 0x80);
+    return value;
   }
   void Commit() {
     hd = rd;
@@ -588,7 +589,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
     case Tag::TUPLE:
       {
 	u_int size = is->GetUInt(); CHECK_EOB();
-	word y     = Tuple::New(size)->ToWord(); // to be checked
+	word y     = Tuple::New(size)->ToWord();
 	Set(x, i, y);
 	AddToEnv(env, count, y);
 	is->Commit();
@@ -601,7 +602,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       {
 	u_int size = is->GetUInt(); CHECK_EOB();
 	word cc    = Store::IntToWord(0); // shall be concrete code
-	word y     = Closure::New(cc, size)->ToWord(); // to be checked
+	word y     = Closure::New(cc, size - 1)->ToWord();
 	Set(x, i, y);
 	AddToEnv(env, count, y);
 	is->Commit();
