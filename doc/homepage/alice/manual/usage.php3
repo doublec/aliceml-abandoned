@@ -126,14 +126,6 @@
       executable component as output.  If <I>&lt;output file&gt;</I> is given,
       use it as the executable file name, else use the basename of
       <I>&lt;input file&gt;</I> without extension.</P></DD>
-    <DT><TT>alicec --replacesign</TT> <I>&lt;input url&gt;</I>
-      <I>&lt;signature source&gt;</I> <I>&lt;output file&gt;</I></DT>
-    <DD><P>Compile the <I>&lt;signature source&gt;</I>.  Save a compiled
-      component to <I>&lt;output file&gt;</I> that contains the component from
-      <I>&lt;input url&gt;</I> with the newly compiled signature as export
-      signature.</P>
-      <P><I>&lt;signature source&gt;</I> must export exactly one signature.
-      Its name is irrevelant.</P></DD>
   </DL>
   <P>If an imported component does not exist, but a source file for it
     (i.e., a file with same name but ending in <TT>.aml</TT>, <TT>.sml</TT>,
