@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #define GetLastSocketError() errno
 #define GetLastError() errno
 #define Interruptible(res, call)			\
@@ -35,15 +36,16 @@
 #define closesocket(s) close(s)
 #endif
 
-#include "generic/String.hh"
+#include "generic/Transients.hh"
 #include "generic/IOHandler.hh"
 #include "generic/IODesc.hh"
+#include "generic/Scheduler.hh"
 
 //
 // Windows: Forwarding between file handles and sockets
 //
 #if defined(__MINGW32__) || defined(_MSC_VER)
-class IOSupport {
+class IOForwarder {
 private:
   class InOut {
   public:
@@ -56,59 +58,45 @@ private:
   static DWORD __stdcall ReaderThread(void *p);
   static DWORD __stdcall WriterThread(void *p);
 public:
-  static int SocketPair(int, int type, int, int *sb) {
-    int res = -1;
-    SOCKET insock, outsock, newsock;
+  static int SocketPair(int type, int *sv) {
+    int newsock = socket(AF_INET, type, 0);
+    if (newsock < 0) return -1;
+    // bind the socket to any unused port
     struct sockaddr_in sock_in;
-    int len = sizeof (sock_in);
-
-    newsock = socket(AF_INET, type, 0);
-    if (newsock == INVALID_SOCKET) {
-      goto done;
-    }
-
-    /* bind the socket to any unused port */
     sock_in.sin_family = AF_INET;
     sock_in.sin_port = 0;
     sock_in.sin_addr.s_addr = INADDR_ANY;
-    if (bind(newsock, (struct sockaddr *) &sock_in, sizeof (sock_in)) < 0) {
-      goto done;
-    }
-
+    if (bind(newsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0)
+      return -1;
+    int len = sizeof(sock_in);
     if (getsockname(newsock, (struct sockaddr *) &sock_in, &len) < 0) {
       closesocket(newsock);
-      goto done;
+      return -1;
     }
     listen(newsock, 2);
-
-    /* create a connecting socket */
-    outsock = socket(AF_INET, type, 0);
-    if (outsock == INVALID_SOCKET) {
+    // create a connecting socket
+    int outsock = socket(AF_INET, type, 0);
+    if (outsock < 0) {
       closesocket(newsock);
-      goto done;
+      return  -1;
     }
     sock_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-    /* Do a connect and accept the connection */
-    if (connect(outsock, (struct sockaddr *) &sock_in, sizeof (sock_in)) < 0) {
+    // Do a connect and accept the connection
+    if (connect(outsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0) {
       closesocket(newsock);
       closesocket(outsock);
-      goto done;
+      return -1;
     }
-    insock = accept(newsock, (struct sockaddr *) &sock_in, &len);
-    if (insock == INVALID_SOCKET) {
+    int insock = accept(newsock, (struct sockaddr *) &sock_in, &len);
+    if (insock < 0) {
       closesocket(newsock);
       closesocket(outsock);
-      goto done;
+      return -1;
     }
-
     closesocket(newsock);
-    res = 0;
-
-    sb[0] = insock;
-    sb[1] = outsock;
-  done:
-    return res;
+    sv[0] = insock;
+    sv[1] = outsock;
+    return 0;
   }
   static void CreateReader(SOCKET s, HANDLE h) {
     DWORD threadId;
@@ -124,7 +112,7 @@ public:
   }
 };
 
-DWORD __stdcall IOSupport::ReaderThread(void *p) {
+DWORD __stdcall IOForwarder::ReaderThread(void *p) {
   InOut *io = (InOut*) p;
   SOCKET out = io->fd1;
   HANDLE in = io->fd2;
@@ -164,7 +152,7 @@ DWORD __stdcall IOSupport::ReaderThread(void *p) {
   return 0;
 }
 
-DWORD __stdcall IOSupport::WriterThread(void *p) {
+DWORD __stdcall IOForwarder::WriterThread(void *p) {
   InOut *io = (InOut*) p;
   SOCKET in = io->fd1;
   HANDLE out = io->fd2;
@@ -243,22 +231,24 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
   int fd;
   // Forward from the handle to a socket, so that we can use select():
   int sv[2];
-  if (IOSupport::SocketPair(PF_UNIX, SOCK_STREAM, 0, sv) == -1)
-    Error("socket pair failed");
+  if (IOForwarder::SocketPair(SOCK_STREAM, sv) == -1)
+    Error("socketpair failed");
   switch (dir) {
   case DIR_READER:
-    IOSupport::CreateReader(sv[0], handle);
+    IOForwarder::CreateReader(sv[0], handle);
     fd = sv[1];
     break;
   case DIR_WRITER:
-    IOSupport::CreateWriter(sv[1], handle);
+    IOForwarder::CreateWriter(sv[1], handle);
     fd = sv[0];
     break;
   default:
     Error("invalid direction");
   }
+  unsigned long arg = true;
+  ioctlsocket(fd, FIONBIO, &arg);
   Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
-  p->InitArg(FLAGS_POS, TYPE_FORWARDED|dir);
+  p->InitArg(FLAGS_POS, TYPE_FORWARDED | dir);
   p->InitArg(NAME_POS, name->ToWord());
   p->InitArg(FD_POS, fd);
   p->InitArg(HANDLE_POS, Store::UnmanagedPointerToWord(handle));
@@ -268,9 +258,9 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
 #endif
 
 IODesc::kind IODesc::GetKind() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
   switch (GetType()) {
   case TYPE_CLOSED: return CLOSED;
+#if defined(__MINGW32__) || defined(_MSC_VER)
   case TYPE_FD: return SOCKET;
   case TYPE_HANDLE:
     switch (GetFileType(GetHandle())) {
@@ -282,23 +272,46 @@ IODesc::kind IODesc::GetKind() {
       return UNKNOWN;
     }
   case TYPE_FORWARDED: return PIPE;
-  default:
-    Error("unknown type");
-  }
 #else
-  if (GetType() == TYPE_CLOSED) return CLOSED;
-  struct stat info;
-  Interruptible(res, fstat(GetFD(), &info));
-  if (res) return UNKNOWN;
-  if (S_ISREG(info.st_mode)) return FILE;
-  else if (S_ISDIR(info.st_mode)) return DIR;
-  else if (S_ISCHR(info.st_mode)) return TTY; //--** is this correct?
-  else if (S_ISBLK(info.st_mode)) return DEVICE;
-  else if (S_ISFIFO(info.st_mode)) return PIPE;
-  else if (S_ISLNK(info.st_mode)) return SYMLINK;
-  else if (S_ISSOCK(info.st_mode)) return SOCKET;
-  else return UNKNOWN;
+  case TYPE_FD:
+    {
+      struct stat info;
+      Interruptible(res, fstat(GetFD(), &info));
+      if (res) return UNKNOWN;
+      if (S_ISREG(info.st_mode)) return FILE;
+      else if (S_ISDIR(info.st_mode)) return DIR;
+      else if (S_ISCHR(info.st_mode)) return TTY;
+      else if (S_ISBLK(info.st_mode)) return DEVICE;
+      else if (S_ISFIFO(info.st_mode)) return PIPE;
+      else if (S_ISLNK(info.st_mode)) return SYMLINK;
+      else if (S_ISSOCK(info.st_mode)) return SOCKET;
+      else return UNKNOWN;
+    }
 #endif
+  default:
+    Error("invalid type");
+  }
+}
+
+u_int IODesc::GetChunkSize() {
+  switch (GetKind()) {
+  case FILE:
+  case DIR:
+  case SYMLINK:
+  case DEVICE:
+    //--** use GetDiskFreeSpace/ioctl to determine cluster size?
+    return 512;
+  case TTY:
+  case PIPE:
+  case SOCKET:
+    return 1;
+  case CLOSED:
+    return 2;
+  case UNKNOWN:
+    return 1;
+  default:
+    Error("invalid kind");
+  }
 }
 
 void IODesc::Close() {
@@ -319,6 +332,412 @@ void IODesc::Close() {
 #endif
   }
   InitArg(FLAGS_POS, (flags & ~TYPE_MASK) | TYPE_CLOSED);
+}
+
+bool IODesc::SupportsDoBlock() {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return false;
+  case TYPE_FD:
+    return true;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    return false;
+  case TYPE_FORWARDED:
+    return true;
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::DoBlock() {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    Error("DoBlock not supported for files");
+  case TYPE_FORWARDED:
+#endif
+  case TYPE_FD:
+    {
+      Future *future = GetDir() == DIR_READER?
+	IOHandler::WaitReadable(GetFD()):
+	IOHandler::WaitWritable(GetFD());
+      Scheduler::nArgs = 0;
+      if (future == INVALID_POINTER)
+	return result_ok;
+      else {
+	Scheduler::currentData = future->ToWord();
+	return result_request;
+      }
+    }
+  default:
+    Error("invalid type");
+  }
+}
+
+bool IODesc::IsFile() {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return false;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    return true;
+  case TYPE_FORWARDED:
+  case TYPE_FD:
+    return false;
+#else
+  case TYPE_FD:
+    {
+      struct stat info;
+      Interruptible(res, fstat(GetFD(), &info));
+      if (res) return result_system_error;
+      return S_ISREG(info.st_mode);
+    }
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+bool IODesc::SupportsGetPos() {
+  return IsFile();
+}
+
+IODesc::result IODesc::GetPos(u_int &out) {
+  //--** should support 64-bit positions
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    out = SetFilePointer(GetHandle(), 0, NULL, FILE_CURRENT);
+    return out == INVALID_SET_FILE_POINTER? result_system_error: result_ok;
+  case TYPE_FORWARDED:
+  case TYPE_FD:
+    Error("GetPos not supported for sockets or pipes");
+#else
+  case TYPE_FD:
+    out = lseek(GetFD(), 0, SEEK_CUR);
+    return out == static_cast<u_int>(static_cast<off_t>(-1))?
+      result_system_error: result_ok;
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+bool IODesc::SupportsSetPos() {
+  return IsFile();
+}
+
+IODesc::result IODesc::SetPos(u_int pos) {
+  //--** should support 64-bit positions
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    pos = SetFilePointer(GetHandle(), pos, NULL, FILE_BEGIN);
+    return pos == INVALID_SET_FILE_POINTER? result_system_error: result_ok;
+  case TYPE_FORWARDED:
+  case TYPE_FD:
+    Error("SetPos not supported for sockets or pipes");
+#else
+  case TYPE_FD:
+    pos = lseek(GetFD(), pos, SEEK_SET);
+    return pos == static_cast<u_int>(static_cast<off_t>(-1))?
+      result_system_error: result_ok;
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+bool IODesc::SupportsEndPos() {
+  return IsFile();
+}
+
+IODesc::result IODesc::EndPos(u_int &out) {
+  //--** should support 64-bit positions
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    out = GetFileSize(GetHandle(), NULL);
+    return out == INVALID_FILE_SIZE? result_system_error: result_ok;
+  case TYPE_FORWARDED:
+  case TYPE_FD:
+    Error("EndPos not supported for sockets or pipes");
+#else
+  case TYPE_FD:
+    {
+      struct stat info;
+      Interruptible(res, fstat(GetFD(), &info));
+      if (res) return result_system_error;
+      out = info.st_size;
+      return result_ok;
+    }
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::GetNumberOfAvailableBytes(int &out) {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    out = -1;
+    return result_ok;
+  case TYPE_FD:
+  case TYPE_FORWARDED:
+    {
+      unsigned long arg;
+      out = ioctlsocket(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(out);
+      return result_ok;
+    }
+#else
+  case TYPE_FD:
+    {
+      unsigned long arg;
+      out = ioctl(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(out);
+      return result_ok;
+    }
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::Read(const char *buf, int n, int &out) {
+  Assert(n > 0);
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_FD:
+  case TYPE_FORWARDED:
+    {
+      int sock = GetFD();
+    retry:
+      out = recv(sock, const_cast<char *>(buf), n, 0);
+      if (out == SOCKET_ERROR)
+	if (WSAGetLastError() == WSAEWOULDBLOCK) {
+	  Future *future = IOHandler::WaitReadable(sock);
+	  if (future != INVALID_POINTER) {
+	    Scheduler::currentData = future->ToWord();
+	    return result_request;
+	  } else
+	    goto retry;
+	} else return result_socket_error;
+      return result_ok;
+    }
+  case TYPE_HANDLE:
+    {
+      DWORD nRead;
+      if (ReadFile(GetHandle(), const_cast<char *>(buf) , n, &nRead, NULL)) 
+	return result_system_error;
+      out = nRead;
+      return result_ok;
+    }
+#else
+  case TYPE_FD:
+    {
+      int fd = GetFD();
+    retry:
+      Interruptible(res, read(fd, const_cast<char *>(buf), n));
+      out = res;
+      if (res == -1)
+	if (errno == EWOULDBLOCK) {
+	  Future *future = IOHandler::WaitReadable(fd);
+	  if (future != INVALID_POINTER) {
+	    Scheduler::currentData = future->ToWord();
+	    return result_request;
+	  } else
+	    goto retry;
+	} else return result_system_error;
+      return result_ok;
+    }
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::Write(const char *buf, int n, int &out) {
+  Assert(n > 0);
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_FD:
+  case TYPE_FORWARDED:
+    {
+      int sock = GetFD();
+    retry:
+      out = send(sock, buf, n, 0);
+      if (out == SOCKET_ERROR)
+	if (WSAGetLastError() == WSAEWOULDBLOCK) {
+	  Future *future = IOHandler::WaitWritable(sock);
+	  if (future != INVALID_POINTER) {
+	    Scheduler::currentData = future->ToWord();
+	    return result_request;
+	  } else
+	    goto retry;
+	} else return result_socket_error;
+      return result_ok;
+    }
+  case TYPE_HANDLE:
+    {
+      DWORD nWritten;
+      if (WriteFile(GetHandle(), buf, n, &nWritten, NULL)) 
+	return result_system_error;
+      out = nWritten;
+      return result_ok;
+    }
+#else
+  case TYPE_FD:
+    {
+      int fd = GetFD();
+    retry:
+      Interruptible(res, write(fd, buf, n));
+      out = res;
+      if (res == -1)
+	if (errno == EWOULDBLOCK) {
+	  Future *future = IOHandler::WaitWritable(fd);
+	  if (future != INVALID_POINTER) {
+	    Scheduler::currentData = future->ToWord();
+	    return result_request;
+	  } else
+	    goto retry;
+	} else return result_system_error;
+      return result_ok;
+    }
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+bool IODesc::SupportsNonblocking() {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return false;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    return false;
+  case TYPE_FD:
+  case TYPE_FORWARDED:
+    return true;
+#else
+  case TYPE_FD:
+    {
+      int flags = fcntl(GetFD(), F_GETFL, 0);
+      if (flags == -1)
+	return false;
+      else
+	return (flags & O_NONBLOCK) != 0;
+    }
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::CanInput(bool &out) {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    out = true;
+    return result_ok;
+  case TYPE_FORWARDED:
+#endif
+  case TYPE_FD:
+    out = IOHandler::IsReadable(GetFD());
+    return result_ok;
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::CanOutput(bool &out) {
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_HANDLE:
+    out = true;
+    return result_ok;
+  case TYPE_FORWARDED:
+#endif
+  case TYPE_FD:
+    out = IOHandler::IsWritable(GetFD());
+    return result_ok;
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::ReadNonblocking(const char *buf, int n, int &out) {
+  Assert(n > 0);
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_FD:
+  case TYPE_FORWARDED:
+    out = recv(GetFD(), const_cast<char *>(buf), n, 0);
+    return out == SOCKET_ERROR?
+      (WSAGetLastError() == WSAEWOULDBLOCK?
+       result_would_block: result_socket_error): result_ok;
+  case TYPE_HANDLE:
+    Error("non-blocking reads not supported for files");
+#else
+  case TYPE_FD:
+    Interruptible(res, read(GetFD(), const_cast<char *>(buf), n));
+    out = res;
+    return res == -1?
+      (errno == EWOULDBLOCK?
+       result_would_block: result_system_error): result_ok;
+#endif
+  default:
+    Error("invalid type");
+  }
+}
+
+IODesc::result IODesc::WriteNonblocking(const char *buf, int n, int &out) {
+  Assert(n > 0);
+  switch (GetType()) {
+  case TYPE_CLOSED:
+    return result_closed;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  case TYPE_FD:
+  case TYPE_FORWARDED:
+    out = send(GetFD(), const_cast<char *>(buf), n, 0);
+    return out == SOCKET_ERROR?
+      (WSAGetLastError() == WSAEWOULDBLOCK?
+       result_would_block: result_socket_error): result_ok;
+  case TYPE_HANDLE:
+    Error("non-blocking writes not supported for files");
+#else
+  case TYPE_FD:
+    Interruptible(res, write(GetFD(), const_cast<char *>(buf), n));
+    out = res;
+    return res == -1?
+      (errno == EWOULDBLOCK?
+       result_would_block: result_system_error): result_ok;
+#endif
+  default:
+    Error("invalid type");
+  }
 }
 
 //

@@ -31,16 +31,18 @@ public:
 
 class IODesc: private Block {
 public:
-  static const u_int TYPE_CLOSED	= 0x00;
-  static const u_int TYPE_FD		= 0x01;
+  enum {
+    TYPE_CLOSED		= 0x00,
+    TYPE_FD		= 0x01,
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  static const u_int TYPE_HANDLE	= 0x02;
-  static const u_int TYPE_FORWARDED	= 0x03;
+    TYPE_HANDLE		= 0x02,
+    TYPE_FORWARDED	= 0x03,
 #endif
-  static const u_int TYPE_MASK		= 0x03;
-  static const u_int DIR_READER		= 0x00;
-  static const u_int DIR_WRITER		= 0x04;
-  static const u_int DIR_MASK		= 0x04;
+    TYPE_MASK		= 0x03,
+    DIR_READER		= 0x00,
+    DIR_WRITER		= 0x04,
+    DIR_MASK		= 0x04
+  };
 private:
   static IODescFinalizationSet *finalizationSet;
 
@@ -55,9 +57,14 @@ private:
   u_int GetFlags() {
     return Store::DirectWordToInt(GetArg(FLAGS_POS));
   }
+  bool IsFile();
 public:
   enum kind {
     FILE, DIR, SYMLINK, TTY, PIPE, SOCKET, DEVICE, CLOSED, UNKNOWN
+  };
+  enum result {
+    result_ok, result_closed, result_request, 
+    result_system_error, result_socket_error, result_would_block
   };
 
   using Block::ToWord;
@@ -88,6 +95,9 @@ public:
   u_int GetType() {
     return GetFlags() & TYPE_MASK;
   }
+  u_int GetDir() {
+    return GetFlags() & DIR_MASK;
+  }
   int GetFD() {
 #if defined(__MINGW32__) || defined(_MSC_VER)
     Assert(GetType() == TYPE_FD || GetType() == TYPE_FORWARDED);
@@ -109,8 +119,25 @@ public:
   String *GetName() {
     return String::FromWordDirect(GetArg(NAME_POS));
   }
-
+  u_int GetChunkSize();
   void Close();
+
+  bool SupportsDoBlock();
+  result DoBlock();
+  bool SupportsGetPos();
+  result GetPos(u_int &out);
+  bool SupportsSetPos();
+  result SetPos(u_int pos);
+  bool SupportsEndPos();
+  result EndPos(u_int &out);
+  result GetNumberOfAvailableBytes(int &out);
+  result Read(const char *buf, int n, int &out);
+  result Write(const char *buf, int n, int &out);
+  bool SupportsNonblocking();
+  result CanInput(bool &out);
+  result CanOutput(bool &out);
+  result ReadNonblocking(const char *buf, int n, int &out);
+  result WriteNonblocking(const char *buf, int n, int &out);
 };
 
 #endif
