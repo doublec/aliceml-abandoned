@@ -24,7 +24,7 @@ define
    % type 'a cell = stamp * 'a ref
 
    Cell = 'Cell'(
-      'cell':      fun sited {$ X} {NewStamp}#{NewCell X} end
+      'cell':      fun {$ X} {NewStamp}#{NewCell X} end
       'content' :  fun {$ C} {Access C.2} end
       'replace' :  fun {$ C X} {Assign C.2 X} unit end
       'Map$' :     Map
