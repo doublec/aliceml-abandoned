@@ -1,0 +1,28 @@
+(* Alice Snake 2.0 - PlayerSettingsWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk    from "GtkSupport"
+
+import structure Config from "../../common/Config"
+import structure Color  from "../../common/Color"
+
+
+signature ENTERNAME =
+sig
+    
+    type ready_cb  = (string * Color.color) option * Config.config -> 
+	                                                       string option
+
+    type cancel_cb = unit -> unit
+
+    val mkEnterName : Gtk.object * ready_cb * cancel_cb -> unit
+
+end

@@ -9,26 +9,18 @@
 *
 *)
 
-import structure Gtk    from "GtkSupport"
-import structure Gdk    from "GtkSupport"
+import signature ENTERNAME from "ENTERNAME-sig"
 
-import structure Config from "../../common/Config"
-import structure Color  from "../../common/Color"
+import structure Gtk       from "GtkSupport"
+import structure Gdk       from "GtkSupport"
 
-import structure Text  from "Text"
+import structure Config    from "../../common/Config"
+import structure Color     from "../../common/Color"
+
+import structure Text      from "Text"
 
 
-structure EnterName :> 
-sig
-    
-    type ready_cb  = (string * Color.color) option * Config.config -> 
-	                                                       string option
-
-    type cancel_cb = unit -> unit
-
-    val mkEnterName : Gtk.object * ready_cb * cancel_cb -> unit
-
-end =
+structure EnterName :> ENTERNAME =
 struct
 
     type ready_cb = (string * Color.color) option * Config.config ->

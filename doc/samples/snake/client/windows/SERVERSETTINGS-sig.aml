@@ -1,0 +1,33 @@
+(* Alice Snake 2.0 - ServerSettingsWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk        from "GtkSupport"
+
+import structure Color      from "../../common/Color"
+import structure Config     from "../../common/Config"
+
+
+signature SERVERSETTINGS =
+sig
+
+    type server_settings_widget
+
+    type ready_cb = (string * Color.color) option * Config.config -> 
+	                                                          string option
+
+    type cancel_cb = unit -> unit
+
+    val mkServerSettingsWindow : Gtk.object * ready_cb * cancel_cb -> 
+	                                                 server_settings_widget
+
+    val alreadyConn : server_settings_widget -> (string * Color.color) list
+
+end

@@ -9,36 +9,16 @@
 *
 *)
 
-import structure Gtk   from "GtkSupport"
-import structure Gdk   from "GtkSupport"
+import signature PLAYERSETTINGS from "PLAYERSETTINGS-sig"
 
-import structure Color from "../../common/Color"
-import structure Text  from "Text"
+import structure Gtk            from "GtkSupport"
+import structure Gdk            from "GtkSupport"
+
+import structure Color          from "../../common/Color"
+import structure Text           from "Text"
 
 
-structure PlayerSettings :>
-sig 
-
-    type player_settings_widget
-
-    type state
-
-    type cancel_cb = unit -> unit 
-
-    type ready_cb  = (string * Color.color) option -> string option
-
-    val mkPlayerSettings   : Gtk.object * cancel_cb * 
-                                             ready_cb -> player_settings_widget
-
-    val playersJoined      : player_settings_widget * 
-	                                  (string * Color.color) list -> unit
-
-    val playerDisconnected : player_settings_widget * 
-                                           string * Color.color -> unit
-
-    val gameStarted        : player_settings_widget -> unit
-
-end =
+structure PlayerSettings :> PLAYERSETTINGS =
 struct
 
     type cancel_cb = unit -> unit

@@ -9,24 +9,15 @@
 *
 *)
 
-import structure Gtk            from "GtkSupport"
+import signature CONNECTION from "CONNECTION-sig"
 
-import structure Text           from "Text"
+import structure Gtk        from "GtkSupport"
+
+import structure Text       from "Text"
 
 
 
-structure Connection :> 
-sig 
-    type connection_widget
-    
-    type connect_cb = string -> string option
-
-    type cancel_cb = unit -> unit
-
-    val mkConnectionWindow : Gtk.object * connect_cb * cancel_cb -> 
-                                                              connection_widget
-
-end = 
+structure Connection :> CONNECTION =
 struct
 
     type connection_widget = Gtk.object

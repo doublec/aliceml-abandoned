@@ -9,33 +9,17 @@
 *
 *)
 
-import structure Gtk        from "GtkSupport"
-import structure Gdk        from "GtkSupport"
+import signature WAIT   from "WAIT-sig"
 
-import structure Color      from "../../common/Color"
+import structure Gtk    from "GtkSupport"
+import structure Gdk    from "GtkSupport"
 
-import structure Text      from "Text"
+import structure Color  from "../../common/Color"
+
+import structure Text   from "Text"
 
 
-structure Wait :> 
-sig
-
-    type wait_widget
-
-    type ready_cb = unit -> string option
-
-    type cancel_cb = unit -> unit
-
-    val mkWaitWindow       : Gtk.object * (string * Color.color) list * ready_cb * cancel_cb * string -> 
-	                                                            wait_widget
-
-    val playersJoined      : wait_widget * (string * Color.color) list -> unit
-
-    val playerDisconnected : wait_widget * string * Color.color -> unit
-
-    val gameStarted        : wait_widget -> unit
-
-end =
+structure Wait :> WAIT =
 struct
 
     type ready_cb = unit -> string option

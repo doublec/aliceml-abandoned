@@ -9,31 +9,18 @@
 *
 *)
 
-import structure Gtk        from "GtkSupport"
+import signature SERVERSETTINGS from "SERVERSETTINGS"
 
-import structure Color      from "../../common/Color"
-import structure Config     from "../../common/Config"
+import structure Gtk            from "GtkSupport"
 
-import structure Text       from "Text"
+import structure Color          from "../../common/Color"
+import structure Config         from "../../common/Config"
+
+import structure Text           from "Text"
 
 
 
-structure ServerSettings :> 
-sig
-
-    type server_settings_widget
-
-    type ready_cb = (string * Color.color) option * Config.config -> 
-	                                                          string option
-
-    type cancel_cb = unit -> unit
-
-    val mkServerSettingsWindow : Gtk.object * ready_cb * cancel_cb -> 
-	                                                 server_settings_widget
-
-    val alreadyConn : server_settings_widget -> (string * Color.color) list
-
-end =
+structure ServerSettings :> SERVERSETTINGS =
 struct
 
     type ready_cb = (string * Color.color) option * Config.config ->

@@ -9,10 +9,12 @@
 *
 *)
 
-import structure Gtk       from "GtkSupport"
+import signature TEXT from "TEXT-sig"
+
+import structure Gtk  from "GtkSupport"
 
 
-structure Text =
+structure Text :> TEXT =
 struct
 
     type text_widget = Gtk.object

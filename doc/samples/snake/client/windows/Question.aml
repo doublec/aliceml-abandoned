@@ -9,12 +9,17 @@
 *
 *)
 
-import structure Gtk       from "GtkSupport"
+import signature QUESTION from "QUESTION-sig"
+
+import structure Gtk      from "GtkSupport"
 
 
-structure Question =
+structure Question :> QUESTION =
 struct
 
+    type answers = {yes    : unit -> unit,
+		    no     : unit -> unit,
+		    cancel : unit -> unit }
 
     fun mkQuestionBox (parent, title, quest, {yes, no, cancel}) =
 	let
