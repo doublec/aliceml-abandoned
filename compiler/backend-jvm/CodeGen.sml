@@ -55,154 +55,152 @@ structure CodeGen =
 	and destClassDecs decs =
 	    app destClassDec decs
 
-	local
-	    (* apply f to all stamps of an arg. *)
-	    fun argApp (f, OneArg id', free, curFun, dbg) =
-		f (free, id', curFun, dbg)
-	      | argApp (f, TupArgs ids, free, curFun, dbg) =
-		app (fn id' => f (free, id', curFun, dbg)) ids
-	      | argApp (f, RecArgs labids, free, curFun, dbg) =
-		app (fn (_, id') => f (free, id', curFun, dbg)) labids
+	(* apply f to all stamps of an arg. *)
+	fun argApp (f, OneArg id', free, curFun, dbg) =
+	    f (free, id', curFun, dbg)
+	  | argApp (f, TupArgs ids, free, curFun, dbg) =
+	    app (fn id' => f (free, id', curFun, dbg)) ids
+	  | argApp (f, RecArgs labids, free, curFun, dbg) =
+	    app (fn (_, id') => f (free, id', curFun, dbg)) labids
 
-	    (* mark a variable as free *)
-	    fun markfree (free, id' as Id (_,stamp', _), curFun, dbg) =
-		(StampSet.insert (free, stamp');
-		 if !VERBOSE >= 2 then
-		     print ("markfree ("^dbg^"): "^Stamp.toString stamp'^"\n")
-		 else ())
+	(* mark a variable as free *)
+	fun markfree (free, id' as Id (_,stamp', _), curFun, dbg) =
+	    (StampSet.insert (free, stamp');
+	     if !VERBOSE >= 2 then
+		 print ("markfree ("^dbg^"): "^Stamp.toString stamp'^"\n")
+	     else ())
 
-	    (* mark a variable as bound *)
-	    fun markbound (free, id' as Id (_,stamp', _), curFun, dbg) =
-		(StampSet.delete (free, stamp');
-		 if !VERBOSE >= 2 then
-		     print ("markbound: "^dbg)
-		 else ();
-		 FreeVars.setFun (id', curFun))
-	in
-	    (* compute free variables of expressions *)
-	    fun freeVarsExp (LitExp _, _, _) = ()
-	      | freeVarsExp (VarExp (_, id'), free, curFun) =
-		markfree(free, id', curFun, "VarExp")
-	      | freeVarsExp (NewExp _, _, _) = ()
-	      | freeVarsExp (ConAppExp (_, id', idargs), free, curFun) =
-		(markfree (free, id', curFun, "ConAppExp");
-		 argApp (markfree, idargs, free, curFun, "ConAppExp2"))
-	      | freeVarsExp (RefAppExp (_, idargs), free, curFun) =
-		argApp (markfree, idargs, free, curFun, "RefAppExp")
-	      | freeVarsExp (TupExp (_,ids), free, curFun) =
-		app (fn id' => markfree (free, id', curFun, "TupExp")) ids
-	      | freeVarsExp (RecExp (_,labids), free, curFun) =
-		app
-		(fn (lab, id') => markfree (free, id', curFun, "RecExp"))
-		labids
-	      | freeVarsExp (SelExp _, _, _) = ()
-	      | freeVarsExp (AdjExp(_,id',id''), free, curFun) =
-		(markfree (free, id', curFun, "AdjExp");
-		 markfree (free, id'', curFun, "AdjExp2"))
-	      | freeVarsExp (AppExp(_,Id (_, stamp',_), idargs'), free, curFun) =
-		(markfree (free, Lambda.getId
-			   (Lambda.getClassStamp
-			    (Lambda.getLambda stamp',
-			     Lambda.argSize idargs')),
-			   curFun, "AppExp");
-		 argApp (markfree, idargs', free, curFun, "AppExp2"))
-	      | freeVarsExp (ConExp(_, id', _), free, curFun) =
-		markfree (free, id', curFun, "ConExp")
-	      | freeVarsExp (RefExp _, _, _) = ()
-	      | freeVarsExp (SelAppExp(_,_,id'), free, curFun) =
-		markfree (free, id', curFun, "SelAppExp")
-	      | freeVarsExp (PrimExp (_, name), _, _) = ()
-	      | freeVarsExp (FunExp (_, thisFun, _, idbodies), free, curFun) =
-		let
-		    fun freeVarsFun (args,body') =
-			let
-			    val newfree = StampSet.new ()
-			    val destClass = Lambda.getClassStamp
-				(thisFun, Lambda.argSize args)
-			in
-			    freeVarsDecs (body', newfree, destClass);
-			    argApp (markbound, args, newfree, destClass, "freeVarsFun");
-			    print ("Fun "^Stamp.toString thisFun^", Class "^Stamp.toString
-				   destClass^". Adding FreeVars ");
-			    StampSet.app (fn x => print (Stamp.toString x^" ")) newfree;
-			    print ".\n";
-			    FreeVars.addVars (destClass, newfree);
-			    StampSet.app
-			    (fn x => StampSet.insert (free,x))
-			    newfree
-			end
-		in
-		    app freeVarsFun idbodies;
-		    print "FunExp: ";
-		    FreeVars.setFun (Id (dummyCoord, thisFun, InId), curFun)
-		end
-	      | freeVarsExp (PrimAppExp (_, _, ids), free, curFun) =
-		List.app
-		(fn id' => markfree (free, id', curFun, "PrimAppExp"))
-		ids
-	      | freeVarsExp (VecExp (_, ids), free, curFun) =
-		List.app
-		(fn id' => markfree (free, id', curFun, "VecExp"))
-		ids
+	(* mark a variable as bound *)
+	fun markbound (free, id' as Id (_,stamp', _), curFun, dbg) =
+	    (StampSet.delete (free, stamp');
+	     if !VERBOSE >= 2 then
+		 print ("markbound: "^dbg)
+	     else ();
+	     FreeVars.setFun (id', curFun))
 
-	    and
-		isParmStamp stamp' =
-		stamp' = parm1Stamp orelse stamp' = parm2Stamp orelse stamp' = parm3Stamp
-		orelse stamp' = parm4Stamp orelse stamp' = thisStamp
+	(* compute free variables of expressions *)
+	fun freeVarsExp (LitExp _, _, _) = ()
+	  | freeVarsExp (VarExp (_, id'), free, curFun) =
+	    markfree(free, id', curFun, "VarExp")
+	  | freeVarsExp (NewExp _, _, _) = ()
+	  | freeVarsExp (ConAppExp (_, id', idargs), free, curFun) =
+	    (markfree (free, id', curFun, "ConAppExp");
+	     argApp (markfree, idargs, free, curFun, "ConAppExp2"))
+	  | freeVarsExp (RefAppExp (_, idargs), free, curFun) =
+	    argApp (markfree, idargs, free, curFun, "RefAppExp")
+	  | freeVarsExp (TupExp (_,ids), free, curFun) =
+	    app (fn id' => markfree (free, id', curFun, "TupExp")) ids
+	  | freeVarsExp (RecExp (_,labids), free, curFun) =
+	    app
+	    (fn (lab, id') => markfree (free, id', curFun, "RecExp"))
+	    labids
+	  | freeVarsExp (SelExp _, _, _) = ()
+	  | freeVarsExp (AdjExp(_,id',id''), free, curFun) =
+	    (markfree (free, id', curFun, "AdjExp");
+	     markfree (free, id'', curFun, "AdjExp2"))
+	  | freeVarsExp (AppExp(_,Id (_, stamp',_), idargs'), free, curFun) =
+	    (markfree (free, Lambda.getId
+		       (Lambda.getClassStamp
+			(Lambda.getLambda stamp',
+			 Lambda.argSize idargs')),
+		       curFun, "AppExp");
+	     argApp (markfree, idargs', free, curFun, "AppExp2"))
+	  | freeVarsExp (ConExp(_, id', _), free, curFun) =
+	    markfree (free, id', curFun, "ConExp")
+	  | freeVarsExp (RefExp _, _, _) = ()
+	  | freeVarsExp (SelAppExp(_,_,id'), free, curFun) =
+	    markfree (free, id', curFun, "SelAppExp")
+	  | freeVarsExp (PrimExp (_, name), _, _) = ()
+	  | freeVarsExp (FunExp (_, thisFun, _, idbodies), free, curFun) =
+	    let
+		fun freeVarsFun (args,body') =
+		    let
+			val newfree = StampSet.new ()
+			val destClass = Lambda.getClassStamp
+			    (thisFun, Lambda.argSize args)
+		    in
+			freeVarsDecs (body', newfree, destClass);
+			argApp (markbound, args, newfree, destClass, "freeVarsFun");
+			print ("Fun "^Stamp.toString thisFun^", Class "^Stamp.toString
+			       destClass^". Adding FreeVars ");
+			StampSet.app (fn x => print (Stamp.toString x^" ")) newfree;
+			print ".\n";
+			FreeVars.addVars (destClass, newfree);
+			StampSet.app
+			(fn x => StampSet.insert (free,x))
+			newfree
+		    end
+	    in
+		app freeVarsFun idbodies;
+		print "FunExp: ";
+		FreeVars.setFun (Id (dummyCoord, thisFun, InId), curFun)
+	    end
+	  | freeVarsExp (PrimAppExp (_, _, ids), free, curFun) =
+	    List.app
+	    (fn id' => markfree (free, id', curFun, "PrimAppExp"))
+	    ids
+	  | freeVarsExp (VecExp (_, ids), free, curFun) =
+	    List.app
+	    (fn id' => markfree (free, id', curFun, "VecExp"))
+	    ids
 
-	    and freeVarsDec (RaiseStm(_,id'), free, curFun) =
-		markfree (free, id', curFun, "RaiseStm")
-	      | freeVarsDec (HandleStm(_,body',id',body'', body''', _), free, curFun) =
-		(freeVarsDecs (body''', free, curFun);
-		 freeVarsDecs (body'', free, curFun);
-		 freeVarsDecs (body', free, curFun);
-		 markbound (free, id', curFun, "HandleStm"))
-	      | freeVarsDec (EndHandleStm _, _, _) = ()
-	      | freeVarsDec (TestStm(_,id',test',body',body''), free, curFun) =
-		(freeVarsDecs (body'', free, curFun);
-		 freeVarsDecs (body', free, curFun);
-		 freeVarsTest (test', free, curFun);
-		 markfree (free, id', curFun, "TestStm"))
-	      | freeVarsDec (SharedStm(_,body',raf as ref ~1), free, curFun) =
-		 (raf := 0;
-		  freeVarsDecs (body', free, curFun))
-	      | freeVarsDec (SharedStm _, _, _) = ()
-	      | freeVarsDec (ValDec(_, id', exp', _), free, curFun) =
-		 (freeVarsExp (exp', free, curFun);
-		  markbound (free, id', curFun, "ValDec"))
-	      | freeVarsDec (RecDec(_,idsexps, _), free, curFun) =
-		 (app
-		  (fn (id', exp') => (freeVarsExp (exp', free, curFun);
-				      markbound (free, id', curFun, "RecDec")))
-		  idsexps)
-	      | freeVarsDec (EvalStm(_, exp'), free, curFun) =
-		 freeVarsExp (exp', free, curFun)
-	      | freeVarsDec (ReturnStm(_,exp'), free, curFun) =
-		 freeVarsExp (exp', free, curFun)
-	      | freeVarsDec (ExportStm _, _, _) = ()
-	      | freeVarsDec (IndirectStm (_, ref (SOME body')), free, curFun) =
-		 freeVarsDecs (body', free, curFun)
-	      | freeVarsDec (IndirectStm (_, ref NONE), _, _) = ()
-	    and
-		freeVarsTest (LitTest _, _, _) = ()
-	      | freeVarsTest (ConTest(id',NONE), free, curFun) =
-		markfree (free, id', curFun, "ConTest none")
-	      | freeVarsTest (ConTest(id',SOME id''), free, curFun) =
-		(markfree (free, id', curFun, "ConTest some");
-		 markbound (free, id'', curFun, "ConTest some2"))
-	      | freeVarsTest (RefTest id'', free, curFun) =
-		markbound (free, id'', curFun, "RefTest")
-	      | freeVarsTest (RecTest labids, free, curFun) =
-		app (fn (_,id') => markbound (free, id', curFun, "RecTest")) labids
-	      | freeVarsTest (TupTest labs, free, curFun) =
-		app (fn id' => markbound (free, id', curFun, "TupTest")) labs
-	      | freeVarsTest (LabTest(_,id'), free, curFun) = markbound (free, id', curFun, "LabTest")
-	      | freeVarsTest (VecTest labs, free, curFun) =
-		app (fn id' => markbound (free, id', curFun, "VecTest")) labs
+	and
+	    isParmStamp stamp' =
+	    stamp' = parm1Stamp orelse stamp' = parm2Stamp orelse stamp' = parm3Stamp
+	    orelse stamp' = parm4Stamp orelse stamp' = thisStamp
 
-	    and freeVarsDecs (decs, free, curFun) =
-		app (fn dec' => freeVarsDec (dec', free, curFun)) (List.rev decs)
-	end
+	and freeVarsDec (RaiseStm(_,id'), free, curFun) =
+	    markfree (free, id', curFun, "RaiseStm")
+	  | freeVarsDec (HandleStm(_,body',id',body'', body''', _), free, curFun) =
+	    (freeVarsDecs (body''', free, curFun);
+	     freeVarsDecs (body'', free, curFun);
+	     freeVarsDecs (body', free, curFun);
+	     markbound (free, id', curFun, "HandleStm"))
+	  | freeVarsDec (EndHandleStm _, _, _) = ()
+	  | freeVarsDec (TestStm(_,id',test',body',body''), free, curFun) =
+	    (freeVarsDecs (body'', free, curFun);
+	     freeVarsDecs (body', free, curFun);
+	     freeVarsTest (test', free, curFun);
+	     markfree (free, id', curFun, "TestStm"))
+	  | freeVarsDec (SharedStm(_,body',raf as ref ~1), free, curFun) =
+	    (raf := 0;
+	     freeVarsDecs (body', free, curFun))
+	  | freeVarsDec (SharedStm _, _, _) = ()
+	  | freeVarsDec (ValDec(_, id', exp', _), free, curFun) =
+	    (freeVarsExp (exp', free, curFun);
+	     markbound (free, id', curFun, "ValDec"))
+	  | freeVarsDec (RecDec(_,idsexps, _), free, curFun) =
+	    (app
+	     (fn (id', exp') => (freeVarsExp (exp', free, curFun);
+				 markbound (free, id', curFun, "RecDec")))
+	     idsexps)
+	  | freeVarsDec (EvalStm(_, exp'), free, curFun) =
+	    freeVarsExp (exp', free, curFun)
+	  | freeVarsDec (ReturnStm(_,exp'), free, curFun) =
+	    freeVarsExp (exp', free, curFun)
+	  | freeVarsDec (ExportStm _, _, _) = ()
+	  | freeVarsDec (IndirectStm (_, ref (SOME body')), free, curFun) =
+	    freeVarsDecs (body', free, curFun)
+	  | freeVarsDec (IndirectStm (_, ref NONE), _, _) = ()
+	and
+	    freeVarsTest (LitTest _, _, _) = ()
+	  | freeVarsTest (ConTest(id',NONE), free, curFun) =
+	    markfree (free, id', curFun, "ConTest none")
+	  | freeVarsTest (ConTest(id',SOME id''), free, curFun) =
+	    (markfree (free, id', curFun, "ConTest some");
+	     markbound (free, id'', curFun, "ConTest some2"))
+	  | freeVarsTest (RefTest id'', free, curFun) =
+	    markbound (free, id'', curFun, "RefTest")
+	  | freeVarsTest (RecTest labids, free, curFun) =
+	    app (fn (_,id') => markbound (free, id', curFun, "RecTest")) labids
+	  | freeVarsTest (TupTest labs, free, curFun) =
+	    app (fn id' => markbound (free, id', curFun, "TupTest")) labs
+	  | freeVarsTest (LabTest(_,id'), free, curFun) = markbound (free, id', curFun, "LabTest")
+	  | freeVarsTest (VecTest labs, free, curFun) =
+	    app (fn id' => markbound (free, id', curFun, "VecTest")) labs
+
+	and freeVarsDecs (decs, free, curFun) =
+	    app (fn dec' => freeVarsDec (dec', free, curFun)) (List.rev decs)
 
 	(* check whether a stamp belongs to a builtin function and load this function, if true *)
 	fun builtinStamp stamp' =
@@ -235,74 +233,94 @@ structure CodeGen =
 	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
 	(* entry point *)
-	fun genComponentCode (debug, verbose, optimize, lines, name, (nil, _, program)) =
-	    (DEBUG := debug;
-	     VERBOSE := verbose;
-	     OPTIMIZE := optimize;
-	     LINES := lines;
-	     Class.setInitial name;
-	     if !VERBOSE >=2 then
-		 (print ("thisStamp: "^Stamp.toString thisStamp^"\n");
-		  print ("parm1Stamp: "^Stamp.toString parm1Stamp^"\n");
-		  print ("parm2Stamp: "^Stamp.toString parm2Stamp^"\n");
-		  print ("parm3Stamp: "^Stamp.toString parm3Stamp^"\n");
-		  print ("parm4Stamp: "^Stamp.toString parm4Stamp^"\n");
-		  print ("parm5Stamp: "^Stamp.toString parm5Stamp^"\n"))
-		 else ();
-	     let
-		 (* compute free variables and destination classes. *)
-		 val _ = let
-			     val free = StampSet.new ()
-			 in
-			     destClassDecs program;
-			     app (fn dec' => freeVarsDec (dec', free, toplevel)) program
-			 end
+	fun genComponentCode (debug, verbose, optimize, lines, name, (components, _, program)) =
+	    let
+		fun loadComponents ((Id (_, stamp', _), name')::rest, akku) =
+		    loadComponents
+		    (rest,
+		     Getstatic BImport ::
+		     New CStr ::
+		     Dup ::
+		     Ldc (JVMString name') ::
+		     Invokespecial (CStr, "<init>", ([Classsig CString], [Voidsig])) ::
+		     Invokeinterface MApply ::
+		     Astore stamp' ::
+		     akku)
+		  | loadComponents (nil, akku) = akku
+	    in
+		DEBUG := debug;
+		VERBOSE := verbose;
+		OPTIMIZE := optimize;
+		LINES := lines;
+		Class.setInitial name;
+		if !VERBOSE >=2 then
+		    (print ("thisStamp: "^Stamp.toString thisStamp^"\n");
+		     print ("parm1Stamp: "^Stamp.toString parm1Stamp^"\n");
+		     print ("parm2Stamp: "^Stamp.toString parm2Stamp^"\n");
+		     print ("parm3Stamp: "^Stamp.toString parm3Stamp^"\n");
+		     print ("parm4Stamp: "^Stamp.toString parm4Stamp^"\n");
+		     print ("parm5Stamp: "^Stamp.toString parm5Stamp^"\n"))
+		else ();
+		    let
+			(* compute free variables and destination classes. *)
+			val _ = let
+				    val free = StampSet.new ()
+				in
+				    destClassDecs program;
+				    app (fn dec' => freeVarsDec (dec', free, toplevel))
+				    program;
+				    app (fn (id',_) =>
+					 markfree (free,id', toplevel, "genComponentCode"))
+				    components
+				end
 
-		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
-				   create (name,
-					   [Invokevirtual (CThread, "start", ([], [Voidsig])),
-					    Return]))
-		 (* Default initialisation. *)
-		 val init = Method([MPublic],"<init>",([],[Voidsig]),
-				   [Aload thisStamp,
-				    Invokespecial (CThread, "<init>", ([], [Voidsig])),
-				    Return])
-		 (* Toplevel environment is built in the run method.
-		  All Objects are instantiated and initialized, function closures are built.
-		  The result as well as the generated class files is stored into one single
-		  pickle file. This is the last step of the compilation process. *)
-		 val decs = decListCode (program, toplevel, toplevel)
+			val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
+					  create (name,
+						  [Invokevirtual (CThread, "start", ([], [Voidsig])),
+						   Return]))
+			(* Default initialisation. *)
+			val init = Method([MPublic],"<init>",([],[Voidsig]),
+					  [Aload thisStamp,
+					   Invokespecial (CThread, "<init>", ([], [Voidsig])),
+					   Return])
+			(* Toplevel environment is built in the run method.
+			 All Objects are instantiated and initialized, function closures are built.
+			 The result as well as the generated class files is stored into one single
+			 pickle file. This is the last step of the compilation process. *)
+			val decs = decListCode (program, toplevel, toplevel)
 
-		 val run = Method([MPublic], "run", ([], [Voidsig]),
-				  ([Multi (Lambda.generatePickleFn
-					   (Literals.generate,
-					    toplevel,
-					    RecordLabel.generate ())),
-				    Multi decs,
-				    Return]))
+			val run = Method([MPublic], "run", ([], [Voidsig]),
+					 (loadComponents
+					  (components,
+					   [Multi (Lambda.generatePickleFn
+						   (Literals.generate,
+						    toplevel,
+						    RecordLabel.generate ())),
+					    Multi decs,
+					    Return])))
 
-		 val clinit = Method([MPublic],
-				     "<clinit>",
-				     ([],[Voidsig]),
-				     [Return])
+			val clinit = Method([MPublic],
+					    "<clinit>",
+					    ([],[Voidsig]),
+					    [Return])
 
-		 (* The main class *)
-		 val class = Class([CPublic],
-				   name,
-				   CThread,
-				   nil,
-				   Literals.makefields
-				   (toplevel, RecordLabel.makefields
-				    (toplevel, nil)),
-				   [clinit, main, init, run])
-	     in
-		 if !VERBOSE >=2 then print "Generating main class..." else ();
-		 classToJasmin (class);
-		 if !VERBOSE >=2 then print "Okay.\n" else ()
-	     end;
-	     if (!VERBOSE >= 1) then Lambda.showRecApplies ()
-	     else ())
-	  | genComponentCode _ = Crash.crash "cannot translate Components"
+			(* The main class *)
+			val class = Class([CPublic],
+					  name,
+					  CThread,
+					  nil,
+					  Literals.makefields
+					  (toplevel, RecordLabel.makefields
+					   (toplevel, nil)),
+					  [clinit, main, init, run])
+		    in
+			if !VERBOSE >=2 then print "Generating main class..." else ();
+			    classToJasmin (class);
+			    if !VERBOSE >=2 then print "Okay.\n" else ()
+		    end;
+		    if (!VERBOSE >= 1) then Lambda.showRecApplies ()
+		    else ()
+	    end
 
 	and decListCode (dec::rest, curFun, curCls) =
 	    Multi (decCode (dec, curFun, curCls)) ::

@@ -86,4 +86,5 @@ structure Abbrev  =
 	val BCons          = ("de/uni_sb/ps/dml/runtime/List/cons", [Classsig CConstructor])
 	val BRef           = ("de/uni_sb/ps/dml/runtime/Constants/reference", [Classsig CConstructor])
 	val BBind          = ("de/uni_sb/ps/dml/runtime/General/Bind", [Classsig CName])
+	val BImport      = ("de/uni_sb/ps/dml/runtime/General/unpickle", [Classsig IVal])
     end
