@@ -223,7 +223,7 @@ UNFINISHED: obsolete after bootstrapping:
 					      O.ConExp(i, trLongid y, k>1)
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
-      | trExp(I.ProdExp(i,r))		= O.RowExp(i, trExpRow r)
+      | trExp(I.ProdExp(i,r))		= O.ProdExp(i, trExpRow r)
       | trExp(I.SelExp(i,a))		= O.SelExp(i, trLab a)
       | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
       | trExp(I.FunExp(i,ms))		= O.FunExp(i, trMatchs ms)
@@ -254,7 +254,7 @@ UNFINISHED: obsolete after bootstrapping:
     and trMatch(I.Match(i,p,e))		= O.Match(i, trPat p, trExp e)
     and trMatchs ms			= List.map trMatch ms
 
-    and trPat(I.JokPat(i))		= O.WildPat(i)
+    and trPat(I.JokPat(i))		= O.JokPat(i)
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
       | trPat(I.TagPat(i,a,k))		= O.TagPat(i, trLab a, k>1)
@@ -264,7 +264,7 @@ UNFINISHED: obsolete after bootstrapping:
 					      O.ConPat(i, trLongid y, k>1)
       | trPat(I.RefPat(i))		= O.RefPat(i)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
-      | trPat(I.ProdPat(i,r))		= O.RowPat(i, trPatRow r)
+      | trPat(I.ProdPat(i,r))		= O.ProdPat(i, trPatRow r)
       | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AppPat(i,p1,p2))	= O.AppPat(i, trPat p1, trPat p2)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
@@ -292,7 +292,7 @@ UNFINISHED: obsolete after bootstrapping:
 					      val ids' = ids ds
 					      val fs'  = List.map idToField ids'
 					      val ds'  = trDecs ds in
-					      O.LetExp(i',ds', O.RowExp(i',fs'))
+					      O.LetExp(i',ds',O.ProdExp(i',fs'))
 					  end
       | trMod(I.SelMod(i,m,a))		= let val i' = trInfo i
 					      val r  = #region i'
@@ -410,7 +410,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val  fs'        = List.map idToField ids'
 	    val  t          = Type.inProd(idsToRow ids')
 	    val  i'         = typInfo(#region i,t)
-	    val  exp'       = O.LetExp(i', ds', O.RowExp(i', fs'))
+	    val  exp'       = O.LetExp(i', ds', O.ProdExp(i', fs'))
 	in
 	    ( xsus', (exp', #sign i) )
 	end
