@@ -36,10 +36,17 @@ endif
 ifndef ALICELINK
   ALICELINK := alicelink
 endif
+export ALICELINK
 
 ifndef ALICEDEP
   ALICEDEP := alicedep
 endif
+export ALICEDEP
+
+ifndef M4
+  M4 := m4
+endif
+export M4
 
 .PHONY: .DELETE_ON_ERROR all components library depend clean
 .DELETE_ON_ERROR:
@@ -76,6 +83,9 @@ library: components
 
 %.$(EXT) : %.aml
 	$(ALICEC) $< -o $@
+
+%.aml :	%.aml.m4
+	$(M4) $< > $@
 
 clean: 
 	rm -f $(COMPONENTS) $(PREPARES) $(ROOT) Makefile.depend

@@ -102,10 +102,12 @@ struct
         |   _                     => assert false
 
     
-    fun finish (p:pstate) =
+    fun finish (p:pstate, timeNeeded) =
         case ! (#state p) of    
             GATE_ENTERED (info, snake) =>
-            (#points info := !(#points info) + !(#gamePoints info);
+            (#points info := !(#points info) + !(#gamePoints info) + 
+                    Real.toInt IEEEReal.TO_NEAREST (timeNeeded * 400.0);   
+             (* export constant to config record *)
              #gamePoints info := 0;
              #state p := FINISHED (info, ref NONE) )
         |   _   => assert false

@@ -41,10 +41,10 @@ und die bisherigen Punkte des aktuellen Levels aller Clients angezeigt.
 Während jedem Level kann jeder spielende Client (SC) nach folgender Formel
 Punkte erlangen:
 
-P: Platz (als wievielter man ins Tor gelaufen (erster = 0) ist (in diesem Level))
 G: Punkte durch Goodies (Ein standard Goodie enthält 5 Punkte)
 F: Faktor (default: F = 20)
 
+((100 - % vergangene Zeit) * F + G)
 ((Anzahl der SCs) - P) * F + G
 
 Sollte man gar nicht ins Tor laufen erhält man 0 Punkte.

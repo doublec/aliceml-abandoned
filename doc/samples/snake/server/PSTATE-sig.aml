@@ -26,7 +26,7 @@ sig
     val play :              pstate * int * string * Color.color -> unit
     val watch :             pstate -> unit
     val enterGate :         pstate -> unit
-    val finish :            pstate -> unit
+    val finish :            pstate * real -> unit
     val adjustPoints :      pstate -> unit
     val die :               pstate * int option -> unit
     val startLevel :        pstate * int * Pos.pos * Protocol.direction -> unit

@@ -371,7 +371,11 @@ struct
                     (* amount of time left. *)
                     val timeLeft    = Time.fromSeconds (Int.max (0, 
                             Time.toSeconds (Time.- (timeout, time))))
-                
+                    
+                    (* percentage of time expired *)
+                    val expiredTime = Real.fromInt (Time.toMilliseconds time) / 
+                                     Real.fromInt (Time.toMilliseconds timeout)
+
                     (* traverse event map :
                         - remove disconnected clients
                         - forall other clients process 
@@ -447,7 +451,7 @@ struct
                             val PDESC pd    = DynArray.sub (partDescs, id)
                             val state       = #state pd
                         in
-                            PState.finish state;
+                            PState.finish (state, 1.0 - expiredTime);
                             pointsChanged := true
                         end) finished;
 
