@@ -1224,7 +1224,7 @@ void Unpickler::Init() {
   InputStream::Init();
   handlerTable = ChunkMap::New(initialHandlerTableSize)->ToWord();
   RootSet::Add(handlerTable);
-  Corrupt = UniqueString::New(String::New("Component.Corrupt"))->ToWord();
+  Corrupt = UniqueString::New(String::New("@Pickle.Corrupt"))->ToWord();
   RootSet::Add(Corrupt);
 }
 

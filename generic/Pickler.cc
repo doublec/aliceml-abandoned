@@ -1275,6 +1275,6 @@ void Pickler::Init() {
   PickleWorker::Init();
   PickleSaveWorker::Init();
   PicklePackWorker::Init();
-  Sited = UniqueString::New(String::New("Component.Sited"))->ToWord();
+  Sited = UniqueString::New(String::New("@Pickle.Sited"))->ToWord();
   RootSet::Add(Sited);
 }
