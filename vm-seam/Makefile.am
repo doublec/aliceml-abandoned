@@ -19,6 +19,7 @@ bin_SCRIPTS = \
 	bin/alicec \
 	bin/alicedep \
 	bin/alicelink \
+	bin/aliceremote \
 	bin/alicerun \
 	bin/alicetool \
 	bin/alice-config

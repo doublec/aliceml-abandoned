@@ -14,6 +14,7 @@
  *   $Revision$
  *)
 
+import structure Component from "x-alice:/lib/system/Component"
 import signature COMPONENT_MANAGER
     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 import structure Url               from "x-alice:/lib/system/Url"
@@ -358,50 +359,46 @@ struct
 			      cause = Pickle.Corrupt})
         end
 
-    functor Offer(signature S structure X: S) =
-        let
-            structure P = Package.Pack(signature S = S structure X = X)
-        in
-            (val ticket = offer P.package)
-        end
+    functor Offer (signature S structure X: S) =
+        (val ticket = offer (pack X : S))
 
-    functor Take(val ticket: string signature S) =
-        Package.Unpack(val package = take ticket
-                       signature S = S)
+    functor Take (val ticket: string signature S) = unpack take ticket : S
 
     (*--------------------------------------------------------------
      * Remote Execution
      *)
 
-    functor Execute(val host: string
-                    signature RESULT
-                    functor Start(ComponentManager:
-                                  COMPONENT_MANAGER): RESULT) =
-        let
+    fun execute (host, component) =
+	let
             val p = Promise.promise ()
-            structure T =
-                Offer(signature S =
-                          (signature RESULT
-                           functor Start(ComponentManager:
-                                         COMPONENT_MANAGER): RESULT
-                           val return: Package.t -> unit)
-                      structure X =
-                          (signature RESULT = RESULT
-                           structure Start = Start
-                           val return =
-                               proxy (fn package =>
-                                         Promise.fulfill (p, package))))
-            val _ = (*--**DEBUG*)
+            val ticket =
+                offer (pack (val component = component
+			     val return = proxy (fn package => 
+						 Promise.fulfill (p, package)))
+			  : (val component : Component.t
+			     val return : package -> unit))
+(*DEBUG
+            val _ =
                 TextIO.print ("ssh " ^ host ^ " alicerun " ^
                               "x-alice:/lib/distribution/RemoteServer " ^
                               T.ticket ^ "\n")
+*)
             val _ =
                 Unix.execute ("ssh",
-                              [host, "alicerun",
+                              [host, "aliceremote",
                                "x-alice:/lib/distribution/RemoteServer",
-                               T.ticket])
+                               ticket])
+	in
+	    Future.await (Promise.future p)
+	end
+
+    functor Execute (val host: string
+                     signature S
+                     functor F: COMPONENT_MANAGER -> S) =
+        let
+	    structure C = Component.Create (signature S = S structure F = F)
+	    val package = execute (host, C.component)
         in
-            Package.Unpack(val package = Promise.future p
-                           signature S = RESULT)
-        end
+	    unpack package : S
+	end
 end

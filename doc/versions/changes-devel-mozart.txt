@@ -67,7 +67,9 @@ Library:
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.
-* Remote: added functor Proxy to conveniently wrap a whole module into proxies.
+* Remote:
+  - Added functor Proxy to conveniently wrap a whole module into proxies.
+  - Added function execute, made the Execute functor a trivial wrapper.
 * Gtk library: simplified structure, all types are now defined in GtkTypes.
 
 

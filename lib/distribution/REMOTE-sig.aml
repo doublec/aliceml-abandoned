@@ -12,6 +12,7 @@
  *   $Revision$
  *)
 
+import structure Component from "x-alice:/lib/system/Component"
 import signature COMPONENT_MANAGER
     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 
@@ -27,18 +28,15 @@ signature REMOTE =
 
 	(*--** once-only offer and proxy are missing *)
 	val proxy: ('a -> 'b) -> 'a -> 'b
-	val offer: Package.package -> ticket              (* Pickle.Sited *)
+	val offer: Package.package -> ticket              (* Sited *)
 	val take: ticket -> Package.package               (* Ticket *)
+	val execute: string * Component.t -> package
 
 	functor Proxy(signature S structure X: S): S
-
-	functor Offer(signature S structure X: S):
-		(val ticket: ticket)                      (* Pickle.Sited *)
-
+	functor Offer(signature S structure X: S): (val ticket: ticket)
+							  (* Sited *)
 	functor Take(val ticket: ticket signature S): S   (* Ticket *)
-
 	functor Execute(val host: string
-			signature RESULT
-			functor Start(ComponentManager:
-				      COMPONENT_MANAGER): RESULT): RESULT
+			signature S
+			functor F: COMPONENT_MANAGER -> S): S
     end

@@ -1,0 +1,32 @@
+import structure Url       from "x-alice:/lib/system/Url"
+import structure Remote    from "x-alice:/lib/distribution/Remote"
+import signature TEXT_IO   from "x-alice:/lib/system/TEXT_IO-sig"
+import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+
+structure Main =
+struct
+   val (hostname, filename) =
+	case CommandLine.arguments ()
+	 of [s1, s2] => (s1, s2)
+	  | _ => (TextIO.output (TextIO.stdErr, "usage: fetch <host> <file>\n");
+		  OS.Process.exit OS.Process.failure)
+
+   functor Comp (CM : COMPONENT_MANAGER) =
+   let
+      structure TextIOComp =
+	 CM.Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+		  signature S = (structure TextIO : TEXT_IO))
+      open TextIOComp
+
+      val file = TextIO.openIn filename
+   in
+      (val content = TextIO.inputAll file before TextIO.closeIn file)
+   end
+
+   structure Result = Remote.Execute (val host = hostname
+				      signature S = (val content : string)
+				      structure F = Comp)
+
+   val _ = TextIO.print Result.content
+   val _ = OS.Process.exit OS.Process.success
+end

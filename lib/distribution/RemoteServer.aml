@@ -1,37 +1,31 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature COMPONENT_MANAGER
-			     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
-import structure ComponentManager
-			     from "x-alice:/lib/system/ComponentManager"
-import structure OS          from "x-alice:/lib/system/OS"
-import structure CommandLine from "x-alice:/lib/system/CommandLine"
-import structure Remote      from "Remote"
+import structure Url              from "x-alice:/lib/system/Url"
+import structure Component        from "x-alice:/lib/system/Component"
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+import structure OS               from "x-alice:/lib/system/OS"
+import structure CommandLine      from "x-alice:/lib/system/CommandLine"
+import structure Remote           from "Remote"
 
 fun main [ticket] =
     let
 	structure Query =
-	    Remote.Take(val ticket = ticket
-			signature S =
-			    (signature RESULT
-			     functor Start(ComponentManager:
-					   COMPONENT_MANAGER): RESULT
-			     val return: Package.t -> unit))
-	structure P =
-	    Package.Pack(signature S = Query.RESULT
-			 structure X = Query.Start(ComponentManager))
+	    unpack Remote.take ticket : (val component : Component.t
+					 val return : package -> unit)
     in
-	Query.return P.package
+	Query.return (ComponentManager.eval (Url.fromString "", Query.component));
+	OS.Process.exit OS.Process.success
     end
   | main _ = OS.Process.exit OS.Process.failure
 

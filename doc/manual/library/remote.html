@@ -55,14 +55,14 @@
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
 	val <A href="#offer">offer</A> : <A href="package.html#package">package</A> -> ticket
 	val <A href="#take">take</A> : ticket -> <A href="package.html#package">package</A>
+	val <A href="#execute">execute</A> : string * <A href="component.html#t">Component.t</A> -> <A href="package.html#package">package</A>
 
 	functor <A href="#Proxy-fn">Proxy</A> (signature S  structure X : S) : S
 	functor <A href="#Offer-fn">Offer</A> (signature S  structure X : S) : (val ticket : ticket)
 	functor <A href="#Take-fn">Take</A> (val ticket : ticket  signature S) : S
-
 	functor <A href="#Execute">Execute</A> (val host : string
-			 signature RESULT
-			 functor Start (ComponentManager : <A href="component-manager.html">COMPONENT_MANAGER</A>) : RESULT) : RESULT
+			 signature S
+			 functor F <A href="component-manager.html">COMPONENT_MANAGER</A> -> S) : S
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -264,17 +264,86 @@
     </DD>
 
     <DT>
-      <TT><A name="Execute">Execute</A> (val host = <I>host</I>
-	signature RESULT = <I>S</I>
-	functor Start = <I>F</I>)</TT>
+      <TT><A name="execute">execute</A> (<I>host</I>, <I>component</I>)</TT>
     </DT>
     <DD>
-      <P>creates a new site on <TT><I>host</I></TT> using <TT>ssh</TT>,
-	transfers a clone of <TT><I>Start</I></TT> to the new site, on which
-	it is applied to the local component manager.  A clone of the resulting
-	structure is transferred back to the caller of <TT>Execute</TT> and
-	returned as the resulting structure.</P>
+      <P>creates a new site on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>,
+	transfers a clone of <TT><I>component</I></TT> to the new site, on which
+	it is evaluated using the local component manager.  A clone of the
+	component's export module is transferred back to the caller as a
+	package.</P>
+	<P>Note that the <TT>ssh</TT> command must be available on the local
+	site, you must be able to login on the remote site via SSH without
+	entering a password (e.g. by using an SSH daemon),
+	and the Alice System's <TT>bin</TT> directory must be in <TT>PATH</TT>
+	on the remote site. On Linux, the latter can optionally be achieved by
+	setting <TT>ALICE_REMOTE_PATH=<I>&lt;alice-bin-dir&gt;</I></TT> into
+	your <TT>~/.ssh/environment</TT> file, if enabled. If that is not
+	possible, you can fall back to having a script named
+	<TT>aliceremote</TT> in your remote home directory, which
+	sets paths appropriately and forwards its arguments to the
+	<TT><A href="../machine.html">alicerun</A></TT> command of the Alice
+	System.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Execute">Execute</A> (val host = <I>host</I>
+	signature S = <I>S</I>
+	functor F = <I>F</I>)</TT>
+    </DT>
+    <DD>
+      <P>constructs a component with export signature <TT><I>S</I></TT> from
+ 	 <TT><I>F</I></TT> and transfers a clone of it to a newly created site
+	 on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>, on which it is evaluated
+	using the local component manager.  A clone of the resulting
+	structure is transferred back to the caller of and
+	returned as the resulting structure.
+	Equivalent to</P>
+        <PRE>
+	let
+	    structure C = Component.Create (signature S = S structure F = F)
+	in
+	    unpack (execute (host, C.component)) : S
+	end</PRE>
     </DD>
   </DL>
+
+<?php section("example", "example") ?>
+
+<P>Here is an example of a simplistic program that creates a component to read the content of a file on a remote site. Note how the mobile component refers to dynamically acquired data, namely the respective file name:</P>
+
+<PRE>
+import structure Url       from "x-alice:/lib/system/Url"
+import structure Remote    from "x-alice:/lib/distribution/Remote"
+import signature TEXT_IO   from "x-alice:/lib/system/TEXT_IO-sig"
+import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+
+structure Main =
+struct
+   val (hostname, filename) =
+	case CommandLine.arguments ()
+	 of [s1, s2] => (s1, s2)
+	  | _ => (TextIO.output (TextIO.stdErr, "usage: fetch <host> <file>\n");
+		  OS.Process.exit OS.Process.failure)
+
+   functor Comp (CM : COMPONENT_MANAGER) =
+   let
+      structure TextIOComp =
+	 CM.Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+		  signature S = (structure TextIO : TEXT_IO))
+      open TextIOComp
+
+      val file = TextIO.openIn filename
+   in
+      (val content = TextIO.inputAll file before TextIO.closeIn file)
+   end
+
+   structure Result = Remote.Execute (val host = hostname
+				      signature S = (val content : string)
+				      structure F = Comp)
+
+   val _ = TextIO.print Result.content
+   val _ = OS.Process.exit OS.Process.success
+end</PRE>
 
 <?php footing() ?>
