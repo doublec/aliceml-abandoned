@@ -20,6 +20,8 @@
 
 #include <cstdio>
 #include "store/Store.hh"
+
+#define SEAM_LIGHTNING
 #include <lightning.h>
 
 // Make sure to have one lightning copy only
