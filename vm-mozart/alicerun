@@ -3,7 +3,8 @@
 set -e
 
 find_in () {
-    local search_for=$1 found_in=""
+    search_for=$1
+    found_in=""
     shift
     for d in $@; do
 	if test -f $d/${search_for} -o -h $d/${search_for}; then

@@ -3,7 +3,8 @@
 set -e
 
 find_in () {
-    local search_for=$1 found_in=""
+    search_for=$1
+    found_in=""
     shift
     for d in $@; do
 	if test -f $d/${search_for} -o -h $d/${search_for}; then
@@ -41,7 +42,7 @@ fi
 
 export STOCKHOME ALICE_LOAD
 
-#(echo "break Base.cc:22"; echo tty /dev/pts/3; echo run "$@"; cat) |
-#exec gdb -nw "$STOCKHOME"/stow.exe
+#(echo "break Base.cc:22"; echo "break main"; echo run "$@"; cat) |
+#exec gdb "$STOCKHOME"/stow.exe
 
 exec "$STOCKHOME"/stow.exe "$@"
