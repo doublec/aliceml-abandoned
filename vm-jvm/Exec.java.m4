@@ -22,6 +22,8 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
     DMLValue arglist = null;
     boolean showpickle = false;
     boolean showtime = false;
+    boolean traceInstructions = false;
+    boolean traceMethods = false;
 
     public Exec(java.lang.String[] arg) {
 	super(null);
@@ -34,6 +36,12 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    }
 	    if (ark.indexOf('t') > -1) {
 		showtime = true;
+	    }
+	    if (ark.indexOf('i') > -1) {
+		traceInstructions = true;
+	    }
+	    if (ark.indexOf('m') > -1) {
+		traceMethods = true;
 	    }
 	    argc++;
 	    if (argc < arglength) {
@@ -77,6 +85,12 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    if (showtime) {
 		time = System.currentTimeMillis();
 	    }
+	    if (traceInstructions) {
+		Runtime.getRuntime().traceInstructions(true);
+	    }
+	    if (traceMethods) {
+		Runtime.getRuntime().traceMethodCalls(true);
+	    }
 	    if (r instanceof Record) {
 		fcn = ((Record) r).get("main");
 	    }
@@ -107,6 +121,6 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
     }
 
     private static void usage() {
-	System.out.println("Exec usage:\n java Exec [ts] <filename> [runtimeargs]\n\tt : show execution time\n\ts : show content of pickle\n\tfilename : we try filename and filename.pickle");
+	System.out.println("Exec usage:\n java Exec [-mits] <filename> [runtimeargs]\n\tm : trace method calls\n\ti : trace instructions\n\tt : show execution time\n\ts : show content of pickle\n\tfilename : we try filename and filename.pickle");
     }
 }
