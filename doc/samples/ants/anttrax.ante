@@ -78,11 +78,38 @@ fun turnTo 0 n = (#1 (cycleTurns n turns))()
 (* if we are not, set a mark looking opposite to our direction *)
 
 in
+fun scan360for cond fail =
+    let
+        val tl1 = turn left
+        val tr1 = turn right
+        val tr2 = turn right
+        val tr3 = turn right
+        val tr4 = turn right
+        val tr5 = turn right
+        val tr6 = turn right
+        val tr7 = turn right
+    in
+    try (fn exit =>
+        sense leftahead cond ifyes (tl1 ++ exit) ++
+        sense ahead cond ifyes exit ++
+        sense rightahead cond ifyes (tr1 ++ exit) ++
+        tr2 ++
+        sense rightahead cond ifyes (tr3 ++ exit) ++
+        tr4 ++
+        sense rightahead cond ifyes (tr5 ++ exit) ++
+        tr6 ++
+        sense rightahead cond ifyes (tr7 ++ exit) ++
+        fail) 
+    otherwise
+        nop
+    end
+
 fun direct() =
     sense2 here (marker validmarker) ifyes (
       switch (List.tabulate(6,turnHome))
     ) ifnot (
-      switch (List.tabulate(6,markWithState))
+      switch (List.tabulate(6,markWithState)) ++
+      scan360for (marker validmarker) nop
     )
 
 fun markTrail() =
@@ -123,7 +150,7 @@ in
 	letlabel (fn tryagain =>
 	    label tryagain ++
 	    domove otherwise (
-		turn_left ++
+		flip 6 ifyes turn_left ++
 		goto tryagain
 	    )
 	) ++
@@ -140,9 +167,12 @@ end
 (*     ) *)
 
 
-fun deliver_food explorer =
+fun deliver_food worker =
     gohome (mark foodmarker)
-           (drop ++ explorer)
+           (sense ahead home ifyes (domove otherwise nop) ++
+            sense ahead home ifyes (domove otherwise nop) ++
+            sense ahead home ifyes (domove otherwise nop) ++
+            drop ++ worker)
 
 (* Pioneer, build straight streets *)
 (* should only be some ants on the edge of the hill *)
@@ -187,21 +217,66 @@ fun turnToFree () =
     
 
 (* Explorer, run around wildly and seek food *)
-fun explorer (probTurn) collector =
+fun explorer (probTurn) collector worker =
         loop (markTrail() ++
+              sense here home ifnot (
+              myturnto (turn left) (turn left)
+                       (turn right) (turn right) food ifyes collector
+              ) ++
+              flip probTurn ifyes (turn left) ++
+              flip 20 ifyes worker ++
+              domove otherwise (turnToFree())
+              )
+
+fun unroll_trail worker =
+    gohome (unmark foodmarker)
+           worker
+
+fun follow_food_marks worker =
+    loop (
+      direct() ++
+      turn right ++ turn right ++ turn right ++
+      myturnto (turn left) (turn left)
+               (turn right) (turn right) food ifyes worker ++
+      myturnto (turn left) (turn left)
+               (turn right) (turn right) (marker foodmarker) ifnot
+               (
+                 turn right ++ turn right ++ turn right ++
+                 myturnto (turn left) (turn left)
+                          (turn right) (turn right) food ifyes worker ++
+                 myturnto (turn left) (turn left)
+                          (turn right) (turn right) (marker foodmarker)
+                          ifnot (unroll_trail worker)
+               ) ++
+      domove otherwise (turn left ++
+                        domove otherwise
+                        (flip 4 ifyes (turn right ++ turn right))
+                        ++ worker)
+    )
+
+fun worker (probTurn) follow_food_marks collector =
+        loop (markTrail() ++
+              sense here home ifnot (
               myturnto (turn left) (turn left)
                        (turn right) (turn right) food ifyes collector ++
+              myturnto (turn left) (turn left)
+                       (turn right) (turn right) (marker foodmarker) ifyes
+                       follow_food_marks
+              ) ++
               flip probTurn ifyes (turn left) ++             
               domove otherwise (turnToFree())
               )
 
 (* Collector, follow streets with food marker and bring food home *)
-fun collector explorer =
-    domove otherwise explorer ++
-    pick ifnot explorer ++
-    deliver_food explorer
+fun collector worker =
+    domove otherwise worker ++
+    pick ifnot worker ++
+    deliver_food worker
 
 val ant =
     proc "pioneer" (pioneer (goto "explorer")) ++
-    proc "explorer" (explorer 15 (goto "collector")) ++
-    proc "collector" (collector (goto "explorer"))
+    proc "explorer" (explorer 10 (goto "collector") (goto "worker") ) ++
+    proc "worker" (worker 10 (goto "follow_food_marks")
+                  (goto "collector")) ++
+    proc "follow_food_marks" (follow_food_marks (goto "worker")) ++
+    proc "collector" (collector (goto "worker"))
