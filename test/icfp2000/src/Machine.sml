@@ -133,12 +133,14 @@ struct
       | cubeFace (Renderer.CubeTop)    (u,_,v) = (4,u,v)
       | cubeFace (Renderer.CubeBottom) (u,_,v) = (5,u,v)
 
+    fun halfp1 x = (x + 1.0)/2.0
+
     fun cylinderFace (Renderer.CylinderSide)   (x,y,z) = (0,x,x) (*UNFINISHED*)
-      | cylinderFace (Renderer.CylinderTop)    (u,_,v) = (1,u,v)
-      | cylinderFace (Renderer.CylinderBottom) (u,_,v) = (2,u,v)
+      | cylinderFace (Renderer.CylinderTop)    (x,_,z) = (1, halfp1 x, halfp1 z)
+      | cylinderFace (Renderer.CylinderBottom) (x,_,z) = (2, halfp1 x, halfp1 z)
 
     fun coneFace (Renderer.ConeSide) (x,y,z) = (0,x,x) (*UNFINISHED*)
-      | coneFace (Renderer.ConeBase) (u,_,v) = (1,u,v)
+      | coneFace (Renderer.ConeBase) (x,_,z) = (1, halfp1 x, halfp1 z)
 
 
   (* Programs *)
@@ -197,12 +199,12 @@ struct
 
     fun typeError() = raise Error "stack underflow or type error"
 
-    (* This has to be polymorphic, thus here... -- I WANT POLYREC!! *)
+
+    (* This has to be polymorphic, thus here... -- I WANT POLYREC in SML!! *)
     val evalFwd =
 	ref(NONE : (env * value list * token list -> value list) option)
     fun evalPrimObj(ClosureV(env, code) :: stack, RenderObj, face) =
 	let
-	    (* UNFINISHED: do optimizations *)
 	    fun surface(i,u,v) =
 		case valOf(!evalFwd)(env, [RealV v, RealV u, IntV i], code) of
 		  [RealV n, RealV ks, RealV kd, PointV rgb] =>
@@ -212,8 +214,22 @@ struct
 			, phong    = n
 			}
 		| _ => typeError()
+
+	    val f = case code of
+		      (* constant function *)
+		      [Binder _, Binder _, Binder _,
+		       Real r, Real g, Real b, Operator Point,
+		       Real kd, Real ks, Real n] =>
+			  (fn _ => fn _ =>
+				{ color    = Color.color(r,g,b)
+				, diffuse  = kd
+				, specular = ks
+				, phong    = n
+				}
+			  )
+		    | _ => fn x => surface o face x
 	in
-	    ObjectV(RenderObj(fn x => surface o face x)) :: stack
+	    ObjectV(RenderObj f) :: stack
 	end
       | evalPrimObj _ = typeError()
 

@@ -25,7 +25,7 @@ signature GEOMETRY =
     end
 
 
-structure Geometry :> GEOMETRY =
+structure Geometry : GEOMETRY =
     struct
 	open Real
 	open Math

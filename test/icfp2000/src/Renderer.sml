@@ -52,7 +52,7 @@ structure Renderer :> RENDERER =
 	  | preprocess (Difference (o1, o2), o2w, w2o) =
 	    Difference' (preprocess (o1, o2w, w2o), preprocess (o2, o2w, w2o))
 	  | preprocess (Transform (o2w', w2o', obj), o2w, w2o) =
-	    preprocess (obj, mulMat (o2w', o2w), mulMat (w2o, w2o'))
+	    preprocess (obj, mulMat (o2w, o2w'), mulMat (w2o', w2o))
 
 	datatype intersection = Entry | Exit
 	datatype which = A | B
