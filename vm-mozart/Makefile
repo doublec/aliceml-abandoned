@@ -443,8 +443,8 @@ build2/%.aml: build1/%.aml
 build2/stow.ozf build2/stoc.ozf: build2/%: build1/%
 	cp $< $@
 
-build2/Default.import: lib/fundamental/Fundamental.import Other.import
-	cat $< Other.import > $@
+build2/Default.import: lib/fundamental/Fundamental.import lib/Other.import
+	cat $^ > $@
 
 $(NATIVECOMPONENTS:%=build2/lib/system/%.asig): build2/%: build1/%
 	cp $< $@
@@ -569,8 +569,8 @@ build3/stoc.ozf: $(BUILD3OZLINPUTS)
 build3/stot.ozf: $(BUILD3OZLINPUTS)
 	$(OZL) --include=.. build3/stoc/top/StotMain.ozf -o $@
 
-build3/Default.import: lib/fundamental/Fundamental.import Other.import
-	cat $< Other.import > $@
+build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
+	cat $^ > $@
 
 ##
 ## Installing Build 3

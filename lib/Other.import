@@ -1,5 +1,17 @@
 (* -*- sml -*- *)
 
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (* This file is prepended to every file compiled by stoc. *)
 
 import
@@ -14,10 +26,11 @@ import
 from "x-alice:/lib/system/TextIO"
 
 import
+    signature OS_FILE_SYS
     signature OS_PROCESS
     signature OS
     structure OS
-from "x-alice:/lib/ststem/OS"
+from "x-alice:/lib/system/OS"
 
 import
     signature UNIX

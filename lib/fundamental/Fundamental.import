@@ -1,3 +1,5 @@
+(* -*- sml -*- *)
+
 (*
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
@@ -11,6 +13,7 @@
  *)
 
 (*
+ *  This file is prepended to every file compiled by stoc.
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
