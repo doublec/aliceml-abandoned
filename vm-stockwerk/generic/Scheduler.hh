@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -16,12 +16,12 @@
 #define __GENERIC__SCHEDULER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Scheduler.hh"
+#pragma interface "generic/Scheduler.hh"
 #endif
 
-#include "emulator/Thread.hh"
-#include "emulator/ThreadQueue.hh"
-#include "emulator/PushCallInterpreter.hh"
+#include "generic/Thread.hh"
+#include "generic/ThreadQueue.hh"
+#include "generic/PushCallInterpreter.hh"
 
 class Backtrace;
 
