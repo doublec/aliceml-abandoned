@@ -4,7 +4,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
+ *   Andreas Rossberg, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,15 +14,18 @@
 
 signature OS_PROCESS =
 sig
-    eqtype status
+    type status
 
     val success :	status
     val failure :	status
+    val isSuccess :	status -> bool
 
     val system :	string -> status
-(*  val terminate :	status -> 'a TODO*)
+    val atExit :	(unit -> unit) -> unit
     val exit :		status -> 'a
-(*  val atExit :	(unit -> unit) -> unit TODO*)
-    val atExn :		(exn -> unit) -> unit			(**)
+    val terminate :	status -> 'a
     val getEnv :	string -> string option
+    val sleep :		Time.time -> unit
+
+    val atExn :		(exn -> unit) -> unit			(**)
 end

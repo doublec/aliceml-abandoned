@@ -39,9 +39,9 @@ signature UNSAFE_OS_COMPONENT =
 			val failure: 'status
 
 			val system: string -> 'status
-			val exit: 'status -> 'a
-			val atExn: (exn -> unit) -> unit		(**)
+			val terminate: 'status -> 'a
 			val getEnv: string -> string option
+			val atExn: (exn -> unit) -> unit
 		    end
 	    end
     end
