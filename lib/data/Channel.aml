@@ -113,12 +113,14 @@ struct
 		 fulfill (p', future p))
 	end
 
-    fun close (chan: 'a channel) =
+    fun close chan =
+      if isClosed chan then ()
+      else
 	let val p = promise ()
-	    val p' = Ref.exchange (#last chan, p)
+            val p' = Ref.exchange (#last chan, p)
 	in
-	    fulfill (#closed chan, ()) ;
-	    fulfill (p', nil)
+          fulfill (#closed chan, ()) ;
+          fulfill (p', nil)
 	end
 
     fun peek (chan: 'a channel) =
