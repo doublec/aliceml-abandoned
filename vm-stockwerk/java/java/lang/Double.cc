@@ -13,7 +13,7 @@
 #include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
-DEFINE2(toLongBits) {
+DEFINE2(doubleToLongBits) {
   DECLARE_DOUBLE(theDouble, x0); x1 = x1;
   RETURN2(JavaLong::New(theDouble->GetNetworkRepresentation())->ToWord(),
 	  null);
@@ -27,6 +27,6 @@ DEFINE2(longBitsToDouble) {
 } END
 
 void NativeMethodTable::java_lang_Double(JavaString *className) {
-  Register(className, "toLongBits", "(D)J", toLongBits, 2, false);
+  Register(className, "doubleToLongBits", "(D)J", doubleToLongBits, 2, false);
   Register(className, "longBitsToDouble", "(J)D", longBitsToDouble, 2, false);
 }
