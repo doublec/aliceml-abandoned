@@ -224,15 +224,18 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	  | translateExp (SeqExp (_, exps), f, cont) =
 	    let
 		val isLast = ref true
-		fun translate exp =
+		fun translate (exp, stms) =
 		    if !isLast then
-			(isLast := false; translateExp (exp, f, cont))
+			(case stms of
+			     nil => ()
+			   | _ => Crash.crash "ImperativePhase.translateExp";
+			 isLast := false; translateExp (exp, f, cont))
 		    else
 			translateExp (exp, (fn exp' =>
 					    O.EvalStm (coordOf exp, exp')),
-				      Goto nil)
+				      Goto stms)
 	    in
-		List.foldr (fn (exp, stms) => translate exp @ stms) nil exps
+		List.foldr (fn (exp, stms) => translate (exp, stms)) nil exps
 	    end
 	  | translateExp (TestExp (coord, longid, test, exp1, exp2), f, cont) =
 	    let
