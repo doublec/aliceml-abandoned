@@ -295,11 +295,14 @@ public:
     b->InitArg(LOC_SIZE_POS, Store::IntToWord(locInitialSize*2));
     return static_cast<OutputBuffer *>(b);
   }
+
   static OutputBuffer *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == OBUF_LABEL);
     return static_cast<OutputBuffer *>(b);
   }
+
+  void Reset();
 
   u_int GetSize();
 
@@ -315,6 +318,15 @@ public:
 
 };
 
+
+void OutputBuffer::Reset() {
+  Block *locBuf = Store::DirectWordToBlock(GetArg(LOCALS_POS));
+  locBuf->ReplaceArg(0,Store::IntToWord(0));
+  locBuf->ReplaceArg(1,Store::IntToWord(0));
+  
+  ReplaceArg(POS_POS, Store::IntToWord(0));
+  ReplaceArg(LOC_COUNT_POS, Store::IntToWord(0));
+}
 
 void OutputBuffer::Swap(Block *b, int i, int j) {
   word v = b->GetArg(i*2);
@@ -494,6 +506,11 @@ public:
     return static_cast<Seen *>(b);
   }
 
+  void Reset() {
+    Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
+    map->Clear();
+  }
+
   void Add(Block *v, int index) {
     Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
     Block *b = Store::AllocBlock(MIN_DATA_LABEL, 2);
@@ -533,58 +550,11 @@ public:
     Block *b = Store::DirectWordToBlock(map->Get(vw));
     return Store::DirectWordToInt(b->GetArg(1));
   }
+
 };
 
-// PickleArgs
-class PickleArgs {
-private:
-  enum { STREAM_POS, BUFFER_POS, SEEN_POS,
-	 CUR_STACK_POS, MAX_STACK_POS, SIZE };
-public:
-  static void New(OutputStream *stream, OutputBuffer *buffer,
-		  Seen *seen) {
-    Scheduler::nArgs = SIZE;
-    Scheduler::currentArgs[STREAM_POS] = stream->ToWord();
-    Scheduler::currentArgs[BUFFER_POS] = buffer->ToWord();
-    Scheduler::currentArgs[SEEN_POS] = seen->ToWord();
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(0);
-    Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(0);
-  }
-  static OutputStream *GetOutputStream() {
-    Assert(Scheduler::nArgs == SIZE);
-    return OutputStream::FromWordDirect(Scheduler::currentArgs[STREAM_POS]);
-  }
-  static OutputBuffer *GetOutputBuffer() {
-    Assert(Scheduler::nArgs == SIZE);
-    return OutputBuffer::FromWordDirect(Scheduler::currentArgs[BUFFER_POS]);
-  }
-  static Seen *GetSeen() {
-    Assert(Scheduler::nArgs == SIZE);
-    return Seen::FromWordDirect(Scheduler::currentArgs[SEEN_POS]);
-  }
-  static u_int GetMaxStackHeight() {
-    return Store::DirectWordToInt(Scheduler::currentArgs[MAX_STACK_POS]);
-  }
-  static u_int GetCurStackHeight() {
-    return Store::DirectWordToInt(Scheduler::currentArgs[CUR_STACK_POS]);
-  }
-  static void SimulatePush() {
-    // Unpickler stack height simulation - push operation
-    u_int cur = GetCurStackHeight() + 1;
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(cur);
-    if (cur > GetMaxStackHeight()) {
-      Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(cur);
-    }
-  }
-  static void SimulatePop(u_int i) {
-    // Unpickler stack height simulation - pop operation
-    u_int cur = GetCurStackHeight();
-    Assert(cur>0);
-    cur -= i;
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(cur);
-  }
-};
-
+// PickleStack
+// used for depth first search
 class PickleStack : private Stack {
 private:
   enum { DATA_POS, BACK_POS, FRAME_SIZE };
@@ -605,14 +575,13 @@ public:
     return static_cast<PickleStack *>(s);
   }
 
-
   void Push(word data);
   word GetData();
   void SetBack();
   bool GetBack();
   void PopTopFrame();
+  void Reset(word data);
 };
-
 
 void PickleStack::Push(word data) {
   Stack::AllocArgFrame(FRAME_SIZE);
@@ -636,26 +605,86 @@ void PickleStack::PopTopFrame() {
   Stack::ClearArgFrameZero(FRAME_SIZE);
 }
 
-// PickleWorker Frame
-class PickleFrame: private StackFrame {
+void PickleStack::Reset(word data) {
+  SetTop(0);
+  PickleStack::Push(data);
+}
+
+// PickleArgs
+class PickleArgs {
 private:
-  enum { STACK_POS, SIZE };
+  enum { STREAM_POS, BUFFER_POS, SEEN_POS,
+	 STACK_POS, ROOT_POS,
+	 CUR_STACK_POS, MAX_STACK_POS, 
+	 TRANSIENT_FOUND_POS, SIZE };
 public:
-  using StackFrame::Clone;
-  // PickleFrame Constructor
-  static PickleFrame *New(Worker *worker,
-			     PickleStack *pstack) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(STACK_POS, pstack->ToWord());
-    return static_cast<PickleFrame *>(frame);
+  static void New(OutputStream *stream, word root) {
+    Scheduler::nArgs = SIZE;
+    Scheduler::currentArgs[STREAM_POS] = stream->ToWord();
+    Scheduler::currentArgs[BUFFER_POS] = OutputBuffer::New()->ToWord();
+    Scheduler::currentArgs[SEEN_POS] = Seen::New()->ToWord();
+
+    PickleStack *ps = PickleStack::New();
+    ps->Push(root);
+
+    Scheduler::currentArgs[STACK_POS] = ps->ToWord();
+    Scheduler::currentArgs[ROOT_POS] = root;
+    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(0);
+    Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(0);
+    Scheduler::currentArgs[TRANSIENT_FOUND_POS] = Store::IntToWord(0);
   }
-  // PickleFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+  static OutputStream *GetOutputStream() {
+    Assert(Scheduler::nArgs == SIZE);
+    return OutputStream::FromWordDirect(Scheduler::currentArgs[STREAM_POS]);
   }
-  PickleStack *GetStack() {
-    return PickleStack::FromWordDirect(StackFrame::GetArg(STACK_POS));
+  static OutputBuffer *GetOutputBuffer() {
+    Assert(Scheduler::nArgs == SIZE);
+    return OutputBuffer::FromWordDirect(Scheduler::currentArgs[BUFFER_POS]);
   }
+  static Seen *GetSeen() {
+    Assert(Scheduler::nArgs == SIZE);
+    return Seen::FromWordDirect(Scheduler::currentArgs[SEEN_POS]);
+  }
+  static PickleStack *GetPickleStack() {
+    Assert(Scheduler::nArgs == SIZE);
+    return PickleStack::FromWordDirect(Scheduler::currentArgs[STACK_POS]);
+  }
+  static u_int GetMaxStackHeight() {
+    return Store::DirectWordToInt(Scheduler::currentArgs[MAX_STACK_POS]);
+  }
+  static u_int GetCurStackHeight() {
+    return Store::DirectWordToInt(Scheduler::currentArgs[CUR_STACK_POS]);
+  }
+  static void SimulatePush() {
+    // Unpickler stack height simulation - push operation
+    u_int cur = GetCurStackHeight() + 1;
+    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(cur);
+    if (cur > GetMaxStackHeight()) {
+      Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(cur);
+    }
+  }
+  static void SimulatePop(u_int i) {
+    // Unpickler stack height simulation - pop operation
+    u_int cur = GetCurStackHeight();
+    Assert(cur>0);
+    cur -= i;
+    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(cur);
+  }
+  static bool GetTransientFound() {
+    return Store::DirectWordToInt(Scheduler::currentArgs[TRANSIENT_FOUND_POS])==1;
+  }
+  static void SetTransientFound() {
+    Scheduler::currentArgs[TRANSIENT_FOUND_POS] = Store::IntToWord(1);
+  }
+  static void Reset() {
+    GetOutputBuffer()->Reset();
+    GetSeen()->Reset();
+    GetPickleStack()->Reset(Scheduler::currentArgs[ROOT_POS]);
+    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(0);
+    Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(0);
+    Scheduler::currentArgs[TRANSIENT_FOUND_POS] = Store::IntToWord(0);
+  }
+
 };
 
 
@@ -671,7 +700,7 @@ public:
     self = new PickleWorker();
   }
   // Frame Handling
-  static void PushFrame(word data);
+  static void PushFrame();
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame);
@@ -686,43 +715,29 @@ public:
 //
 PickleWorker *PickleWorker::self;
 
-void PickleWorker::PushFrame(word data) {
-  PickleStack *nps = PickleStack::New();
-  nps->Push(data);
-  PickleFrame::New(self, nps);
-}
-
-#define NCONTINUE() {				\
-  if (StatusWord::GetStatus() != 0)		\
-    return Worker::PREEMPT;			\
-  else						\
-    return Worker::CONTINUE;			\
+void PickleWorker::PushFrame() {
+  NEW_STACK_FRAME(frame, self, 0);
 }
 
 u_int PickleWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleFrame *frame = static_cast<PickleFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  return sFrame->GetSize();
 }
 
 Worker::Result PickleWorker::Run(StackFrame *sFrame) {
-  PickleFrame *frame = static_cast<PickleFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
 
-  PickleStack *nps = frame->GetStack();
+  PickleStack *nps = PickleArgs::GetPickleStack();
   OutputBuffer *outputBuffer = PickleArgs::GetOutputBuffer();
   Seen *seen = PickleArgs::GetSeen();
     
   for(;;) {
-    if (StatusWord::GetStatus() != 0) {
-      //      Scheduler::PushFrame(frame->ToWord());
-      return Worker::PREEMPT;
-    }
-  
-
     if (nps->IsEmpty()) {
-      Scheduler::PopFrame(frame->GetSize());
-      NCONTINUE();
+      Scheduler::PopFrame(sFrame->GetSize());
+      if (StatusWord::GetStatus() != 0)
+	return Worker::PREEMPT;
+      else
+	return Worker::CONTINUE;
     }
   
     word x0 = nps->GetData();
@@ -798,6 +813,11 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
     }
 
     if (Store::WordToTransient(x0) != INVALID_POINTER) {
+      // Signal that we have found a transient
+      // -> we have to pickle again to enforce a
+      //    consistent state
+      PickleArgs::SetTransientFound();
+
       Scheduler::currentData = x0;
       return Worker::REQUEST;
     }
@@ -839,9 +859,6 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	  case CONCRETE_LABEL:
 	    {
 	      outputBuffer->PutByte(Pickle::aTRANSFORM);
-	      // 	      outputBuffer->PutByte(Pickle::aBLOCK);
-	      // 	      outputBuffer->PutUInt((u_int) TRANSFORM_LABEL);
-	      // 	      outputBuffer->PutUInt(2);
 	      u_int ann = outputBuffer->PutLocal(0);
 	      // reference doesn't matter
 	      // but ref=0 keeps SaveWorker from placing a STORE instruction
@@ -919,8 +936,12 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
     case THREAD_LABEL:
     case TASKSTACK_LABEL:
     case IODESC_LABEL:
+      // Not 100% correct:
+      // If a transient gets bound and replaces the
+      // sited value by something we can pickle,
+      // we shouldn't reject that!
       Scheduler::currentData      = Pickler::Sited;
-      Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+      Scheduler::currentBacktrace = Backtrace::New(sFrame->Clone());
       return Worker::RAISE;
     case CHUNK_LABEL:
       {
@@ -960,7 +981,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	Block *ablock = Store::DirectWordToBlock(abstract->ToWord());
 	if (abstract == INVALID_POINTER) {
 	  Scheduler::currentData      = Pickler::Sited;
-	  Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	  Scheduler::currentBacktrace = Backtrace::New(sFrame->Clone());
 	  return Worker::RAISE;
 	} else {
 	  seen->Add(ablock, Seen::NOT_WRITTEN);
@@ -975,7 +996,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
       {
 	// must not occur anywhere but under a CONCRETE which is handled above
 	Scheduler::currentData      = Pickler::Sited;
-	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	Scheduler::currentBacktrace = Backtrace::New(sFrame->Clone());
 	return Worker::RAISE;
       
       }
@@ -1102,19 +1123,32 @@ u_int PickleSaveWorker::GetFrameSize(StackFrame *sFrame) {
 Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
   PickleSaveFrame *frame = static_cast<PickleSaveFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  Scheduler::PopFrame(frame->GetSize());
 
-  OutputBuffer *obf = PickleArgs::GetOutputBuffer();
+  if (PickleArgs::GetTransientFound()) {
+    // If a transient was found during pickling,
+    // we have to restart because binding the transient
+    // may have modified parts of the graph that had
+    // already been pickled, thus leaving the pickle in an
+    // inconsistent state
 
-  OutputStream *os = PickleArgs::GetOutputStream();
-  PickleSaveWorker::WriteToStream(obf, os);
+    PickleArgs::Reset();
+    PickleWorker::PushFrame();
+    return Worker::CONTINUE;
+  } else {
+    OutputBuffer *obf = PickleArgs::GetOutputBuffer();
+    
+    OutputStream *os = PickleArgs::GetOutputStream();
+    PickleSaveWorker::WriteToStream(obf, os);
+    
+    FileOutputStream *outputStream =
+      static_cast<FileOutputStream *>(os);
+    
+    outputStream->Close();
+    Scheduler::nArgs = 0;
+    Scheduler::PopFrame(frame->GetSize());
+    return Worker::CONTINUE;
+  }
 
-  FileOutputStream *outputStream =
-    static_cast<FileOutputStream *>(os);
-  
-  outputStream->Close();
-  Scheduler::nArgs = 0;
-  return Worker::CONTINUE;
 }
 
 const char *PickleSaveWorker::Identify() {
@@ -1213,8 +1247,8 @@ Worker::Result Pickler::Pack(word x) {
   StringOutputStream *os = StringOutputStream::New();
   Scheduler::PopFrame();
   PicklePackWorker::PushFrame();
-  PickleWorker::PushFrame(x);
-  PickleArgs::New(os, OutputBuffer::New(), Seen::New());
+  PickleWorker::PushFrame();
+  PickleArgs::New(os, x);
   return Worker::CONTINUE;
 }
 
@@ -1231,8 +1265,8 @@ Worker::Result Pickler::Save(String *filename, word x) {
   } else {
     Scheduler::PopFrame();
     PickleSaveWorker::PushFrame();
-    PickleWorker::PushFrame(x);
-    PickleArgs::New(os, OutputBuffer::New(), Seen::New());
+    PickleWorker::PushFrame();
+    PickleArgs::New(os, x);
     return Worker::CONTINUE;
   }
 }
