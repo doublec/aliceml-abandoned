@@ -18,6 +18,7 @@ import structure Config        from "Config"
 import structure TextIO        from "TextIO"
 import structure IO            from "IO"
 import structure OS            from "OS"
+import structure HttpClient    from "HttpClient"
 import signature RESOLVER      from "RESOLVER-sig"
 
 structure Resolver: RESOLVER =
@@ -247,6 +248,10 @@ structure Resolver: RESOLVER =
 	type resolver = string * Handler.t list
 	type t = resolver
 
+	datatype result =
+	    FILE of string
+	  | STRING of string
+
 	fun new (name, handlers) = (name, handlers)
 
 	fun existsFile (name, url) =
@@ -255,15 +260,22 @@ structure Resolver: RESOLVER =
 	    in
 		TextIO.closeIn (TextIO.openIn s);
 		trace ("[" ^ name ^ "] ...localize succeeded\n");
-		SOME s
+		SOME (FILE s)
 	    end handle IO.Io _ => NONE
 
 	fun exists (name, url) =
-	    (*--** we need something more general (also interpret scheme) *)
 	    case Url.getScheme url of
-		SOME "x-oz" =>
-		    SOME (Url.toStringRaw url)   (*--** hack for Mozart VM *)
+		SOME "x-oz" =>   (*--** hack for Mozart VM *)
+		    SOME (FILE (Url.toStringRaw url))
 	      | SOME "file" => existsFile (name, Url.setScheme (url, NONE))
+	      | SOME "http" =>
+		    (let
+			 val response = HttpClient.get url
+		     in
+			 if #statusCode response = 200 then
+			     SOME (STRING (#body response))
+			 else NONE
+		     end handle _ => NONE)
 	      | _ => existsFile (name, url)
 
 	fun localize (name, handlers) s =
@@ -275,7 +287,7 @@ structure Resolver: RESOLVER =
 		     (trace ("[" ^ name ^ "] ...[" ^ Url.toStringRaw url ^
 			     "] (" ^ name' ^ ")\n");
 		      case exists (name, url) of
-			  SOME s' => SOME s'
+			  SOME localFile => SOME localFile
 			| NONE => localize' (name, handlers, s))
 	       | NONE =>
 		     (trace ("[" ^ name ^ "] ...[not applicable] (" ^
