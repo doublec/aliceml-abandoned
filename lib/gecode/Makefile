@@ -14,6 +14,7 @@
 # Makefile for alice xml binding
 
 INSTALLTO=`alice-config --alicelibdir`/gecode
+GECODEDIR="/usr"
 
 NATIVES = UnsafeGecode
 
@@ -22,28 +23,29 @@ SOURCES = \
 	GecodeSpace.cc
 
 TARGETS = \
-	SPACE-sig.stc \
-	Space.stc \
-	FD-sig.stc \
-	FD.stc \
-	FS-sig.stc \
-	FS.stc \
-	SEARCH-sig.stc \
-	Search.stc \
-	LINEAR-sig.stc \
-	Linear.stc \
-	CONSTRAINTS-sig.stc \
-	Constraints.stc \
-	DescParser.stc \
-	Generator.stc \
-	GeneratorMain.stc \
+	SPACE-sig.alc \
+	Space.alc \
+	FD-sig.alc \
+	FD.alc \
+	FS-sig.alc \
+	FS.alc \
+	SEARCH-sig.alc \
+	Search.alc \
+	LINEAR-sig.alc \
+	Linear.alc \
+	CONSTRAINTS-sig.alc \
+	Constraints.alc \
+	DescParser.alc \
+	Generator.alc \
+	GeneratorMain.alc \
 
 MAKEDEPEND = alicetool makedepend
 
 GECODEOBJ = -lgecodeset -lgecodeint -lgecodekernel
 
-CPPFLAGS = -I../../../gecode-install/include/gecode
-LDFLAGS = -L../../../gecode-install/lib/gecode
+CPPFLAGS = -I$(GECODEDIR)/include/gecode
+LDFLAGS = -L$(GECODEDIR)/lib/gecode
+
 #MY_CXXFLAGS=-O2 -DNDEBUG -pipe -DHAVE_CONFIG_H
 MY_CXXFLAGS=-ggdb -pipe -DHAVE_CONFIG_H
 
@@ -53,11 +55,11 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 
 UnsafeGecode.dll: $(SOURCES:%.cc=%.o)
 
-GeneratorMain.stc: Generator.stc
+GeneratorMain.alc: Generator.alc
 
-Generator.stc: DescParser.stc
+Generator.alc: DescParser.alc
 
-UnsafeGecode.cc: UnsafeGecode.dsc GeneratorMain.stc
+UnsafeGecode.cc: UnsafeGecode.dsc GeneratorMain.alc
 	alicerun GeneratorMain
 
 UnsafeGecode.asig: UnsafeGecode.cc
@@ -70,7 +72,7 @@ UnsafeGecode.asig: UnsafeGecode.cc
 	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) \
 	$(GECODEOBJ) $(EXTRA_LIBS) -o $@
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 clean:
@@ -91,7 +93,7 @@ depend: UnsafeGecode.cc
 	$(CPPFLAGS) >> Makefile.depend
 
 install: all
-	install -d $(INSTALLTO)
-	install $(NATIVES:%=%.dll) $(TARGETS) $(INSTALLTO)
+	mkdir -p -m 775 $(INSTALLTO)
+	install -c -m444 $(NATIVES:%=%.dll) $(TARGETS) $(INSTALLTO)
 
 -include Makefile.depend
