@@ -65,8 +65,21 @@ fun okHandler(w,
 	      depth_s,
 	      treemode_button,
 	      relmode_button, 
-	      tokenmode_button) = (fn _ => 
-	       		   (Settings.max_width := 
+	      tokenmode_button,
+	      fontpicker) = (fn _ => 
+	       		   (let
+				val fontname = Gtk.fontSelectionGetFontName
+				    (fontpicker)
+			    in
+				(Settings.fontname := fontname
+				;Gdk.fontLoad(fontname)
+				;Settings.fontHeight :=
+				 (Gdk.fontGetFieldAscent(!Settings.font)+
+			   Gdk.fontGetFieldDescent(!Settings.font) )
+				;Settings.fontWidth:=
+				 (Gdk.stringWidth(!Settings.font,"W")))
+			    end
+			    ;Settings.max_width := 
 			    Gtk.spinButtonGetValueAsInt(width_s) 
 			    ;Settings.max_depth := 
 			    Gtk.spinButtonGetValueAsInt(depth_s)
@@ -125,6 +138,9 @@ fun Preferences _ = serve' (fn () =>
 	    val radiobox = createVBoxDefaults[treemode_button,
 					      relmode_button,
 					      tokenmode_button]
+
+	    val fontpicker = Gtk.fontSelectionNew()
+
 	    (* Buttonbox *)
 
 	    val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -135,16 +151,17 @@ fun Preferences _ = serve' (fn () =>
 						     depth_s,
 						     treemode_button,
 						     relmode_button,
-						     tokenmode_button)   ))]),
+						     tokenmode_button,
+						     fontpicker)   ))]),
 		       BObj("apply",[]),
 		       BObj("cancel",
 			    [Handler("clicked",fn _ => 
 				     Gtk.widgetDestroy(w))])],
 				       borderwidth = 20}
-		
-		
+
 	    val n = createNotebook[("Width & Depth Limit Settings",frame),
-				   ("Mode Settings",radiobox)] 
+				   ("Mode Settings",radiobox),
+				   ("Look & Feel",fontpicker)] 
 
 	    val vbox = createVBoxDefaults[n,bbox]
 		in
