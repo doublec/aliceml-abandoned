@@ -387,6 +387,7 @@ Interpreter::Result PicklingInterpreter::Run() {
   // Handle new Block Value (non-abstract use)
   BlockLabel l = v->GetLabel();
   switch (l) {
+  case WEAK_DICT_LABEL:
   case HASHTABLE_LABEL:
   case BLOCKHASHTABLE_LABEL:
   case THREAD_LABEL:
