@@ -10,8 +10,17 @@ MLYACCFILES = $(MLYACCSOURCES:%=lib/ml-yacc/%)
 ERRORSOURCES = SOURCE.sig Source.sml CRASH.sig Crash.sml ERROR.sig Error.sml
 ERRORFILES = $(ERRORSOURCES:%=error/%)
 
+MISCSOURCES = \
+	Assert.sml HASH_KEY.sig StringHashKey.sml Wide.sml MISC.sig Misc.sml \
+	IMP_SET.sig MakeHashImpSet.sml IMP_MAP.sig MakeHashImpMap.sml \
+	SCOPED_IMP_SET.sig MakeScopedImpSet.sml MakeHashScopedImpSet.sml \
+	SCOPED_IMP_MAP.sig MakeScopedImpMap.sml MakeHashScopedImpMap.sml \
+	STAMP.sig MakeStamp.sml GLOBAL_STAMP.sig GlobalStamp.sml \
+	PRETTY_PRINT.sig PrettyPrint.sml PP_MISC.sig PPMisc.sml URL.sig Url.sml
+MISCFILES = $(MISCSOURCES:%=misc/%)
+
 BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
-	$(MLYACCFILES) $(ERRORFILES)
+	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES)
 
 ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
 
@@ -34,6 +43,9 @@ lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header Base.import
 
 error/%: ../../stoc/error/% error/%.header Base.import
 	cat Base.import error/$*.header $< > $@
+
+misc/%: ../../stoc/misc/% misc/%.header Base.import
+	cat Base.import misc/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC_MOZART) $< $@

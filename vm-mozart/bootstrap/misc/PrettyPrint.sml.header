@@ -1,0 +1,7 @@
+import
+    structure TextIO
+from "lib/TextIO.ozf"
+
+import
+    signature PRETTY_PRINT
+from "misc/PRETTY_PRINT.ozf"
