@@ -896,9 +896,9 @@ struct
 
     fun extendHidden(s as (itemsr,_,_), item) = itemsr := HIDDEN item :: !itemsr
 
-    fun extendHiddenTyp(s,p,k) = (Path.hide p; extendHidden(s, TYP(p,k)))
-    fun extendHiddenMod(s,p,j) = (Path.hide p; extendHidden(s, MOD(p,j)))
-    fun extendHiddenInf(s,p,k) = (Path.hide p; extendHidden(s, INF(p,k)))
+    fun extendHiddenTyp(s,p,k) = ((*Path.hide p;*) extendHidden(s, TYP(p,k)))
+    fun extendHiddenMod(s,p,j) = ((*Path.hide p;*) extendHidden(s, MOD(p,j)))
+    fun extendHiddenInf(s,p,k) = ((*Path.hide p;*) extendHidden(s, INF(p,k)))
 
 
   (* Signature inspection *)

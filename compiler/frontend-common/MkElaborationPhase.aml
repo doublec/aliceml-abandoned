@@ -1754,6 +1754,7 @@ TextIO.print "\n";
 	let
 	    val abbrev = case typ of I.ConTyp(_,I.ShortId(_,typid')) =>
 				     I.name typid' <> I.name typid
+				   | I.PrimTyp _ => false
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
@@ -1785,6 +1786,7 @@ prInf "j'" j';
 	let
 	    val abbrev = case inf of I.ConInf(_,I.ShortId(_,infid')) =>
 				     I.name infid' <> I.name infid
+				   | I.PrimInf _ => false
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
