@@ -1265,6 +1265,64 @@ val _ = checkMuFwd := checkMu
     val realiseKindCont = trace realiseKindCont "realiseKindCont"
 
 
+  (* Constraints *)
+
+    exception Constraint
+
+    fun equalPath p1 p2      = Path.equal(p1,p2)
+    fun memberPath(p,ps)     = List.exists (equalPath p) ps
+    fun removePath(p,nil)    = nil
+      | removePath(p,p'::ps) = if Path.equal(p,p') then ps
+			       else p'::removePath(p,ps)
+
+    fun conjunctConstraint(Unconstrained, c) = c
+      | conjunctConstraint(c, Unconstrained) = c
+      | conjunctConstraint(Intensional, c)   = c
+      | conjunctConstraint(c, Intensional)   = c
+      | conjunctConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
+	let
+	    val ps = List.filter (fn p1 => memberPath(p1, p2::ps2)) (p1::ps1)
+	in
+	    if Path.equal(p1,p2) then Extensional(p1, removePath(p1,ps)) else
+	    case (memberPath(p1,ps), memberPath(p2,ps))
+	     of (true, false) => Extensional(p1, removePath(p1,ps))
+	      | (false, true) => Extensional(p2, removePath(p2,ps))
+	      | _             => raise Constraint
+	end
+
+    (* Intensional is equivalent to Unconstrained except wrt equal *)
+    fun subsumesConstraint(_, (Unconstrained | Intensional)) = true
+      | subsumesConstraint((Unconstrained | Intensional), Extensional _) = false
+      | subsumesConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
+	Path.equal(p1,p2) andalso List.all (fn p => memberPath(p,ps2)) ps1
+
+    fun equalConstraint(Unconstrained, Unconstrained) = true
+      | equalConstraint(Intensional, Intensional) = true
+      | equalConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
+	Path.equal(p1,p2) andalso ListPair.allEq Path.equal (ps1,ps2)
+      | equalConstraint _ = false
+
+    fun meetsConstraint'(t, Unconstrained)    = true
+      | meetsConstraint'(t, c as Intensional) =
+	(case asType' t
+	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
+	  |  _                             => false
+	)
+      | meetsConstraint'(t, c as Extensional(p,ps)) =
+	(case asType' t
+	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
+	  | CON(p',_) => Path.equal(p',p) orelse memberPath(p',ps)
+	  | _ => false
+	)
+
+    fun meetsConstraint(t,c,Flex)  = meetsConstraint'(t,c)
+      | meetsConstraint(t,c,Rigid) =
+	(case asType' t
+	 of (HOLE(_,_,c',Rigid) | VAR(_,_,c')) => equalConstraint(c',c)
+	  | _ => false
+	)
+
+
   (* Instantiation *)
 
     (* Instantiate universally quantified types, skolemise
@@ -1317,6 +1375,7 @@ val _ = checkMuFwd := checkMu
 	    val  m    = Map.map()
 	in
 	    matchKind(kind t2, kind a) handle KindMismatch _ => raise Kind;
+	    if meetsConstraint'(t2, constraintVar a) then () else raise Type;
 	    Map.insert(m, canonical a, t2);
 	    subst(m,t)
 	end
@@ -1359,11 +1418,12 @@ val _ = checkMuFwd := checkMu
 
     and close1(t, f) =
 	case content t
-	 of HOLE(k,n,c,_) =>
+	 of HOLE(k,n,c,r) =>
 	    if n <= !level then f else
 	    (case c
 	     of Unconstrained    => (fn t2 => f(all'(t,t2)))
-	      | Intensional      => raise Close t
+	      | Intensional      => (replace(t, HOLE(k,n,Unconstrained,r));
+				     fn t2 => f(all'(t,t2)))
 	      | Extensional(p,_) => (replace(t, CON(p,k)); f)
 	    )
 	   | (PROD r | SUM r) => if isClosedRow r then f else raise Close t
@@ -1415,62 +1475,6 @@ val _ = checkMuFwd := checkMu
     val liftAndCheck = trace liftAndCheck "liftAndCheck"
     val lift'        = trace lift' "lift'"
     val lift         = trace lift "lift"
-
-
-  (* Constraints *)
-
-    exception Constraint
-
-    fun equalPath p1 p2      = Path.equal(p1,p2)
-    fun memberPath(p,ps)     = List.exists (equalPath p) ps
-    fun removePath(p,nil)    = nil
-      | removePath(p,p'::ps) = if Path.equal(p,p') then ps
-			       else p'::removePath(p,ps)
-
-    fun conjunctConstraint(Unconstrained, c) = c
-      | conjunctConstraint(c, Unconstrained) = c
-      | conjunctConstraint(Intensional, c)   = c
-      | conjunctConstraint(c, Intensional)   = c
-      | conjunctConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
-	let
-	    val ps = List.filter (fn p1 => memberPath(p1, p2::ps2)) (p1::ps1)
-	in
-	    if Path.equal(p1,p2) then Extensional(p1, removePath(p1,ps)) else
-	    case (memberPath(p1,ps), memberPath(p2,ps))
-	     of (true, false) => Extensional(p1, removePath(p1,ps))
-	      | (false, true) => Extensional(p2, removePath(p2,ps))
-	      | _             => raise Constraint
-	end
-
-    fun subsumesConstraint(_, Unconstrained) = true
-      | subsumesConstraint(Unconstrained, Intensional) = false
-      | subsumesConstraint(_, Intensional) = true
-      | subsumesConstraint((Unconstrained | Intensional), Extensional _) = false
-      | subsumesConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
-	Path.equal(p1,p2) andalso List.all (fn p => memberPath(p,ps2)) ps1
-
-    fun equalsConstraint(c1,c2) =
-	subsumesConstraint(c1,c2) andalso subsumesConstraint(c2,c1)
-
-    fun meetsConstraint'(t, Unconstrained)    = true
-      | meetsConstraint'(t, c as Intensional) =
-	(case asType' t
-	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
-	  |  _                             => false
-	)
-      | meetsConstraint'(t, c as Extensional(p,ps)) =
-	(case asType' t
-	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
-	  | CON(p',_) => Path.equal(p',p) orelse memberPath(p',ps)
-	  | _ => false
-	)
-
-    fun meetsConstraint(t,c,Flex)  = meetsConstraint'(t,c)
-      | meetsConstraint(t,c,Rigid) =
-	(case asType' t
-	 of (HOLE(_,_,c',Rigid) | VAR(_,_,c')) => equalsConstraint(c',c)
-	  | _ => false
-	)
 
 
   (* Unification/matching algorithm *)
@@ -1796,6 +1800,8 @@ handle e =>
 	if Cell.equal(a1,a2) then 0 else
 	(equalKindCont'(i,ms,rea, kind a1, kind a2)
 	 handle KindMismatch mo => raise Mismatch(Option.getOpt(mo, (a1,a2)));
+	 if equalConstraint(constraintVar a1, constraintVar a2) then () else
+	     raise Mismatch(a1,a2);
 	 case lookup(1,ms,a1)
 	  of SOME(a3,k) => Int.max(k+1, unifyBoundVar(i,m,ms,rea,canonical a3,a2))
 	   | NONE       => (Map.insert(m,a1,a2); 1)
