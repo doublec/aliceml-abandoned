@@ -10,49 +10,17 @@
  *   $Revision$
  *)
 
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Name
-from "../../lib/rtt/Name"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Type
-from "../../lib/rtt/Type"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import
-    structure Signature
-from "../top/Signature"
-
-import
-    signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR-sig"
+import structure Url                 from "../../lib/utility/Url"
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
+import structure Type                from "../../lib/rtt/Type"
+import structure Crash               from "../infrastructure/Crash"
+import structure Source              from "../infrastructure/Source"
+import structure Stamp               from "../common/Stamp"
+import structure StampSet            from "../common/StampSet"
+import structure IntermediateGrammar from "../common/IntermediateGrammar"
+import structure Signature           from "../../lib/system/Signature"
+import signature FLAT_GRAMMAR        from "FLAT_GRAMMAR-sig"
 
 structure FlatGrammar :> FLAT_GRAMMAR =
     struct

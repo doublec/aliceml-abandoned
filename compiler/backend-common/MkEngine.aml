@@ -16,6 +16,7 @@
  * link_command ::=
  *     "Command:link\n"
  *     "Code:" <string> "\n"
+ *     [ "DumpTarget:" <string> "\n" ]
  *     ( "Id:" <stamp> "\n"
  *       "Valref:" <int> "\n" )*
  *     "\n"
@@ -33,17 +34,6 @@
  * save_result ::=
  *     ( "Debug:" <string> "\n" )*
  *     ( "Error:" <string> "\n" )?
- *     "\n"
- *
- * apply_command ::=
- *     "Command:apply\n"
- *     "Valref:" <int> "\n"
- *     ( "Label:" <string> "\n" )*
- *     "\n"
- * apply_result ::=
- *     ( "Debug:" <string> "\n" )*
- *     ( "Error:" <string> "\n"
- *     | ( "Valref:" <int> "\n" )* )
  *     "\n"
  *)
 
@@ -100,15 +90,9 @@ functor MkEngine(val cmd: unit -> string * string list
 
 	structure C: CONTEXT =
 	    struct
-		type t = Unix.proc * valref IdMap.t
+		type t = Unix.proc option ref * valref IdMap.t
 
-		val engine: Unix.proc option ref = ref NONE
-
-		fun new () =
-		    (case !engine of
-			 NONE => engine := SOME (Unix.execute (cmd ()))
-		       | SOME _ => ();
-		     (valOf (!engine), IdMap.new ()))
+		fun new () = (ref NONE, IdMap.new ())
 
 		fun clone (proc, map) = (proc, IdMap.clone map)
 	    end
@@ -120,12 +104,21 @@ functor MkEngine(val cmd: unit -> string * string list
 
 	exception Format of string
 
+	fun start (ref (SOME proc)) = proc
+	  | start (r as ref NONE) =
+	    let
+		val proc = Unix.execute (cmd ())
+	    in
+		r := SOME proc; proc
+	    end
+
 	fun instream proc = #1 (Unix.streamsOf proc)
 	fun outstream proc = #2 (Unix.streamsOf proc)
 
 	datatype arg =
 	    COMMAND of string
 	  | CODE of code
+	  | DUMPTARGET of string option
 	  | ID of FlatGrammar.id
 	  | VALREF of valref
 	  | STRING of string
@@ -174,6 +167,11 @@ functor MkEngine(val cmd: unit -> string * string list
 				  (TextIO.output (q, "Code:");
 				   TextIO.output (q, Code.toString code);
 				   TextIO.output1 (q, #"\n"))
+			    | DUMPTARGET NONE => ()
+			    | DUMPTARGET (SOME s) =>
+				  (TextIO.output (q, "DumpTarget:");
+				   TextIO.output (q, s);
+				   TextIO.output1 (q, #"\n"))
 			    | ID (FlatGrammar.Id (_, stamp, _)) =>
 				  (TextIO.output (q, "Id:");
 				   TextIO.output (q, Stamp.toString stamp);
@@ -200,12 +198,14 @@ functor MkEngine(val cmd: unit -> string * string list
 			    | _ => ()) args
 	    end
 
-	fun link (proc, map) code =
+	fun link (procOptRef, map) (code, stringOpt) =
 	    let
+		val proc = start procOptRef
 		val result =
 		    sendCommand (proc,
 				 COMMAND "link"::
 				 CODE code::
+				 DUMPTARGET stringOpt::
 				 IdMap.foldi (fn (id, valref, rest) =>
 					      ID id::VALREF valref::rest)
 				 nil map)
@@ -216,8 +216,9 @@ functor MkEngine(val cmd: unit -> string * string list
 		  | _ => raise Format "link: could not parse result"
 	    end
 
-	fun save (proc, _) (valref, filename) =
+	fun save (procOptRef, _) (valref, filename) =
 	    let
+		val proc = start procOptRef
 		val result =
 		    sendCommand (proc,
 				 [COMMAND "save",
@@ -228,29 +229,5 @@ functor MkEngine(val cmd: unit -> string * string list
 		    nil => ()
 		  | [("Error", s)] => raise Format ("save (engine): " ^ s)
 		  | _ => raise Format "save: could not parse result"
-	    end
-
-	fun extendEnv (("Valref", valref)::args, (_, id)::exportDesc, map) =
-	    (IdMap.insert (map, id, valOf (Int.fromString valref));
-	     extendEnv (args, exportDesc, map))
-	  | extendEnv (("Error", s)::_, _, _) =
-	    raise Format ("apply (engine): " ^ s)
-	  | extendEnv ((_, _)::_, _, _) =
-	    raise Format "apply: could not parse result"
-	  | extendEnv (nil, nil, _) = ()
-	  | extendEnv (_, _, _) =
-	    raise Format "apply: wrong number of results"
-
-	fun apply (proc, map) (valref, exportDesc) =
-	    let
-		val result =
-		    sendCommand (proc,
-				 COMMAND "apply"::
-				 VALREF valref::
-				 Vector.foldr (fn ((label, _), rest) =>
-					       LABEL label::rest)
-				 nil exportDesc)
-	    in
-		extendEnv (result, Vector.toList exportDesc, map)
 	    end
     end

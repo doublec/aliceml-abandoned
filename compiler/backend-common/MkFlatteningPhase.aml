@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Signature            from "../../lib/system/Signature"
 import structure Assert               from "../../lib/utility/Assert"
 import structure GlobalStamp          from "../../lib/utility/GlobalStamp"
 import structure Url                  from "../../lib/utility/Url"
@@ -17,7 +18,6 @@ import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
 import structure Type                 from "../../lib/rtt/Type"
 import structure PervasiveType        from "../../lib/rtt/PervasiveType"
-import structure Inf                  from "../../lib/rtt/Inf"
 import structure Crash                from "../infrastructure/Crash"
 import structure Source               from "../infrastructure/Source"
 import structure Error                from "../infrastructure/Error"
@@ -995,8 +995,8 @@ functor MkFlatteningPhase(val loadSign:
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
 				(O.IdDef (translateId id),
-				 (#1(loadSign (desc, url)), 
-				  Inf.inSig sign), url)) imports  (*--** *)
+				 Signature.strip (loadSign (desc, url), sign),
+				 url)) imports
 		val labelIdList =
 		    Vector.foldr (fn (Field (_, Lab (_, label), id), rest) =>
 				  (label, translateId id)::rest) nil idFields
@@ -1012,7 +1012,6 @@ functor MkFlatteningPhase(val loadSign:
 		    Goto [O.ExportStm (stm_info Source.nowhere, exportExp)]
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
-		(imports', body', exports', (GlobalStamp.new (),
-					     Inf.inSig sign)) (*--** *)
+		(imports', body', exports', Signature.fromSig sign)
 	    end
     end
