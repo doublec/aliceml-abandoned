@@ -56,6 +56,6 @@ public class Execute {
 
 	res[0] = OS;                               // $OS
 
-	return OS;
+	return res;
     }
 }
