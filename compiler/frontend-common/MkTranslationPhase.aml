@@ -159,7 +159,7 @@ struct
      * A faithful translation of this type would be something like
      *   Fun k -> fun x:{I:*} -> fun x':{I:k} -> something
      * where Fun denotes big lambda and {I:..} is a record kind.
-     * We don't try this but use AbsExp as an (unsound) approximation.
+     * We don't try this but use SealExp as an (unsound) approximation.
      *)
 
     fun ikindToKind k = Type.starKind()
@@ -179,13 +179,13 @@ struct
 	if Inf.isTop' j then
 	    (* [any] = top *)
 	    typ_unit
-	else if Inf.isAbs' j then
+	else if Inf.isCon' j then
 	    (* [p] = p *)
 	    let
-		val p = Inf.asAbs' j
+		val p = Inf.asCon' j
 		val k = Inf.kind j
 	    in
-		Type.abs(ikindToKind k, p)
+		Type.con(p, ikindToKind k)
 	    end
 	else if Inf.isSig' j then
 	    (* [sig items end] = {[items]} *)
@@ -252,7 +252,7 @@ struct
 	    in
 		Type.extendRow(trInfLabel(Path.toLab p), t, r)
 	    end
-	else (* fixity *)
+	else (* fixity or hidden *)
 	    r
 
 
@@ -661,7 +661,23 @@ struct
 	end
 
       | trMod(E, I.AppMod(i,m1,m2)) =
-	(* [m1 m2] = unabs (x (abs [m2 : j11])) *)
+	(* [m1 m2] = unseal (x (seal [m2 : j11])) *)
+(* Does not work, because of implicit quantifier removal through subtyping...
+   (typechecking of intermediate would fail)
+	let
+	    val i1        = I.infoMod m1
+	    val i2        = I.infoMod m2
+	    val t1        = infToTyp(E, #inf i1)
+	    val (t11,t12) = Type.asArrow t1
+
+	    val e1'       = trMod(E,m1)
+	    val e2'       = trMod(E,m2)
+	    val e3'       = O.SealExp(typInfo(#region i2,t11), e2')
+	    val e'        = O.AppExp(typInfo(#region i,t12), e1', e3')
+	in
+	    O.UnsealExp(trModInfo(E,i), e')
+	end
+*)
 	let
 	    val i1        = I.infoMod m1
 	    val i2        = I.infoMod m2
@@ -671,24 +687,23 @@ struct
 	    val t1        = infToTyp(E,j1)
 	    val e1'       = trMod(E,m1)
 
-	    val (_,j11,_) = Inf.asArrow' j1
 	    val (t11,t12) = Type.asArrow t1
-	    val j11'      = #1(Inf.match(j2,j11))
-(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r2,"match4\n");raise e)
-	    val e2'       = trTransCoerceMod(E, r2, m2, j11')
+	    val j2'       = Inf.narrow(j2, #2(Inf.asArrow' j1))
+(*DEBUG*)handle e => (Error.warn(#region i, "4\n"); raise e)
+	    val e2'       = trTransCoerceMod(E, r2, m2, j2')
 
-	    val e3'       = O.AbsExp(typInfo(r2,t11), e2')
+	    val e3'       = O.SealExp(typInfo(r2,t11), e2')
 	    val e'        = O.AppExp(typInfo(#region i,t12), e1', e3')
 	in
-	    O.UnabsExp(trModInfo(E,i), e')
+	    O.UnsealExp(trModInfo(E,i), e')
 	end
 
       | trMod(E, I.AnnMod(i,m,j)) =
 	(* [m : j] = let x1 = [m] in [x1 : j1 :> x2 = j2] *)
 	trTransCoerceMod(E,#region i,m,#inf i)
 
-      | trMod(E, I.AbsMod(i,m,j)) =
-	(* [m :> j] = let x1 = [m]; x2 = [j] in abs [x1 : j1 :> x2 = j2] *)
+      | trMod(E, I.SealMod(i,m,j)) =
+	(* [m :> j] = let x1 = [m]; x2 = [j] in seal [x1 : j1 :> x2 = j2] *)
 	trOpaqCoerceMod(E,i,m,j)
 
       | trMod(E, I.LetMod(i,ds,m)) =
@@ -815,9 +830,9 @@ struct
 	(* [prim "Pack" : (interface I; module X : I) -> (x : package)]
 	 * = fun {[X]=x1,[I]=x2} ->
 	 *   let (x3,_) = Inf.instance(Path.invent(), x2) in
-	 *   {[x'] = abs (CoerceOpaq (???,x3) x1, x3)}
+	 *   {[x'] = seal (CoerceOpaq (???,x3) x1, x3)}
 	 *)
-	(*UNFINISHED: abstraction of RTTs*)
+	(*UNFINISHED: sealing of RTTs*)
 	(let
 	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
@@ -835,7 +850,7 @@ struct
 	in
 	    if not(!Switches.Language.supportRtt) then
 		let
-		    val  e1' = O.AbsExp(typInfo(r,t21), 
+		    val  e1' = O.SealExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.tuple #[t11,t12]),
 					 #[idToExp x1', idToExp x2']))
 		    val  e'  = O.ProdExp(typInfo(r,t2),
@@ -853,7 +868,7 @@ struct
 					   O.JokPat(typInfo(r, typ_rea E))]),
 				callInf(E, lab_instance,
 				   trTuple(r, #[trPath'(E, r), idToExp x2'])))
-		    val  e1' = O.AbsExp(typInfo(r,t21), 
+		    val  e1' = O.SealExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.tuple #[t11,t12]),
 					 #[idToExp x1', idToExp x3']))
 		    val  i2  = typInfo(r,t2)
@@ -868,11 +883,10 @@ struct
       | trMod(E, I.PrimMod(i,"Unpack",j)) =
 	(* [prim "Unpack" : (x : package; interface I) -> I]
 	 * = fn {[x]=x1,[S]=x2} ->
-	 *   let (x11,x12) = unabs x1 in
+	 *   let (x11,x12) = unseal x1 in
 	 *   Inf.match(x12,x2);
-	 *   CoerceTrans (x12,x2) x11
+	 *   x11
 	 *)
-	(*UNFINISHED: stripping*)
 	(let
 	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
@@ -892,7 +906,7 @@ struct
 	    val  x11'    = O.Id(i2', Stamp.new(), Name.InId)
 	    val  x12'    = O.Id(typInfo(r, typ_inf E), Stamp.new(), Name.InId)
 	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
-	    val  e1'     = O.UnabsExp(i1', idToExp x1')
+	    val  e1'     = O.UnsealExp(i1', idToExp x1')
 	    val  d'      = O.ValDec(nonInfo r, p1', e1')
 	in
 	    if not(!Switches.Language.supportRtt) then
@@ -907,7 +921,7 @@ struct
 		let
 		    val  e1'  = callInf(E, lab_match,
 				  trTuple(r, #[idToExp x12', idToExp x2']))
-		    val  e2'  = idToExp x11' (*UNFINISHED*)
+		    val  e2'  = idToExp x11'
 		    val  e'   = O.LetExp(i2', #[d'], O.SeqExp(i2', e1', e2'))
 		in
 		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
@@ -942,9 +956,9 @@ struct
      *	[x1 : sig item1* end :> x2 = sig item2* end] =
      *	   let x2' = Inf.asSig x2 in struct [x1 . item1 :> x2' . item2]* end
      *	[x1 : fct(x11:j11)->j12 :> x2 = fct(x21:j21)->j22] =
-     *	   fct(y:j21) => let z = x1([y : j21 :> _ = j11])
+     *	   fct(y:j21) => let z = x1(seal [y : j21 :> _ = j11])
      *                       x3 = x2 y
-     *                   in abs [z : j12 :> x3 = j22]
+     *                   in unseal [z : j12 :> x3 = j22]
      *  [x1 : (x1':j1) :> x2 = j2] = [x1 : j1 :> x2 = j2]
      *  [x1 : j1 :> x2 = (x2':j2)] = [x1 : j1 :> x2 = j2]
      *
@@ -994,16 +1008,16 @@ struct
     and trOpaqCoerceMod(E,i,m,j) =
 	(* [m :> j] = let val x1 = [m]
 	 *                val x2 = lazy [j]
-	 *            in abs [x1 : j1 :> x2 = j2]
+	 *            in seal [x1 : j1 :> x2 = j2]
 	 *)
 	if not(!Switches.Language.supportRtt) then
 	    let
 		val j1  = #inf(I.infoMod m)
 		val j2  = #inf i
-		val j2' = #1(Inf.match(j1,j2))
+		val j2' = Inf.narrow(j1,j2)
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(#region i,"match5\n");raise e)
 	    in
-		O.AbsExp(trModInfo(E,i), trTransCoerceMod(E, #region i, m, j2'))
+		O.SealExp(trModInfo(E,i), trTransCoerceMod(E, #region i, m,j2'))
 	    end
 	else let
 	    val r   = #region i
@@ -1021,17 +1035,17 @@ struct
 	    val x2' = O.Id(i2, Stamp.new(), Name.InId)
 	    val x2  = O.ShortId(i2, x2')
 	    val j2  = #inf i
-	    val j2' = #1(Inf.match(j1,j2))
+	    val j2' = Inf.narrow(j1,j2)
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match1\n");raise e)
 	in
 	    case coerceMod(E, r, x1,j1,SOME x2,j2,j2', false)
-	      of NONE    => O.AbsExp(i', e1')
+	      of NONE    => O.SealExp(i', e1')
 	       | SOME e' =>
 		 let
 		     val d1' = O.ValDec(i0, O.VarPat(i1,x1'), e1')
 		     val d2' = O.ValDec(i0, O.VarPat(i2,x2'), trLazy e2')
 		 in
-		     O.LetExp(i', #[d1',d2'], O.AbsExp(i', e'))
+		     O.LetExp(i', #[d1',d2'], O.SealExp(i', e'))
 		 end
 	end
 
@@ -1049,7 +1063,7 @@ struct
 		NONE
 	    else
 		SOME(trUnit r)
-	else if Inf.isAbs' j2 then
+	else if Inf.isCon' j2 then
 	    if Option.isNone x2o then
 	    (* [x1 : p1 :> _ = p2] = () *)
 		(*UNFINISHED: this should not be...*)
@@ -1062,13 +1076,13 @@ struct
 		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
 		 * So we cannot put in an assertion here!
 		(*ASSERT assert Path.equal(#2 j1, #2 j2) => *)
-		if not(Path.equal(#2(Inf.asAbs' j1), #2(Inf.asAbs' j2')))
+		if not(Path.equal(#2(Inf.asCon' j1), #2(Inf.asCon' j2')))
 		then raise Assert.failure else
 		 *)
 		NONE
 	    else
 	    (* [x1 : j1 :> x2 = p] = ???? *)
-	    (*UNFINISHED: do runtime abstraction (__perv.Coerce.Opaque?) *)
+	    (*UNFINISHED: do runtime sealing (__perv.Coerce.Opaque?) *)
 		NONE
 	else if Inf.isSig' j2 andalso Inf.isSig' j1 then
 	    (* [x1 : sig item1* end :> x2 = sig item2* end] =
@@ -1085,7 +1099,7 @@ struct
 		val x3' = O.Id(i3, Stamp.new(), Name.InId)
 		val x3o = Option.map (fn _ => O.ShortId(i3, x3')) x2o
 		val (isntIdentity',flds,row) =
-		    coerceStr(E, r, x1,s1, x3o,Inf.items s2,s2',
+		    coerceStr(E, r, x1,s1, x3o, List.rev(Inf.items s2), s2',
 			      isntIdentity, [], Type.unknownRow())
 	    in
 		if isntIdentity'
@@ -1109,25 +1123,27 @@ struct
 	    end
 	else if Inf.isArrow' j2 andalso Inf.isArrow' j1 then
 	    (* [x1 : fct(x11:j11)->j12 :> x2 = fct(x21:j21)->j22] =
-	     *     fct(x3:j21) => let x4 = (abs x1)(abs [x3 : j21 :> _ = j11])
-	     *                        x5 = Inf.realise(
-	     *                                [rea x3 : j22] (*UNFINISHED*),
-	     *			              j22)
-	     *                    in unabs [x4 : j12 :> x5 = j22]
+	     *     fct(x3:j21) =>
+	     *        let x4 = (unseal x1)(seal [x3 : j21 :> _ = j11])
+	     *            x5 = Inf.realise([rea x3 : j22] (*UNFINISHED*), j22)
+	     *        in unseal [x4 : j12 :> x5 = j22]
 	     * [x1 : fct(x11:j11)->j12 :> _ = fct(x21:j21)->j22] =
-	     *     fct(x3:j21) => let x4 = x1(abs [x3 : j21 :> _ = j11])
-	     *                    in unabs [x4 : j12 :> _ = j22]
+	     *     fct(x3:j21) =>
+	     *        let x4 = (unseal x1)(seal [x3 : j21 :> _ = j11])
+	     *        in unseal [x4 : j12 :> _ = j22]
 	     *)
 	    let
-		val (p1,j11,j12) = Inf.asArrow' j1
-		val (p2,j21,j22) = Inf.asArrow' j2
+		val (p1,j11,j12)  = Inf.asArrow' j1
+		val (p2,j21,j22)  = Inf.asArrow' j2
 		val (_,j21',j22') = Inf.asArrow' j2'
 
-		val (j11',rea)   = Inf.match(j21',j11)
+		val  rea          = Inf.match(j21',j11)
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match2\n");raise e)
-		val  _           = PathMap.insert(#mod_rea rea, p1, (p2,j11'))
-		val  j12'        = Inf.realise(rea, j12)
-		val (j22',_)     = Inf.match(j12',j22')
+		val  j11'         = Inf.narrow(j21',j11)
+		val  _            = PathMap.insert(#mod_rea rea, p1,
+						   Inf.mod(p2,j11'))
+		val  j12'         = Inf.realise(rea, j12)
+		val  j22'         = Inf.narrow(j12',j22')
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match3\n");raise e)
 
 		val i11 = typInfo(r, infToTyp(E,j11'))
@@ -1145,15 +1161,31 @@ struct
 		val x3  = O.ShortId(i21, x3')
 		val x4  = O.ShortId(i12, x4')
 		val x5o = Option.map (fn _ => O.ShortId(i5, x5')) x2o
+		val isntIdentity' = isntIdentity orelse not(Inf.isEmptyRea rea)
 	    in
 		case (coerceMod(E, r, x3,j21', NONE,j11,j11', false),
 		      coerceMod(E, r, x4,j12', x5o,j22',j22', isntIdentity))
-		  of (e1o, SOME e2) =>
+		 of (NONE, NONE) =>
+		     (* Optimized: unseal x1 *)
+			if isntIdentity orelse not(Inf.isEmptyRea rea)
+			then SOME(O.UnsealExp(i2, longidToExp x1))
+			else NONE
+		  | (SOME e1, NONE) =>
+		     (* Optimized:
+		      * unseal (unseal x1)(seal [x3 : j21 :> _ = j11]) *)
 		     let
-			val e3 = case e1o of SOME e1 => O.AbsExp(i11, e1)
-					   | NONE => O.AbsExp(i11, idToExp x3')
-			val e4 = O.AppExp(i12, O.AbsExp(i1, longidToExp x1), e3)
-			val e6 = O.UnabsExp(i22, e2)
+			val e3 = O.SealExp(i11, e1)
+			val e4 = O.AppExp(i12,O.UnsealExp(i1,longidToExp x1),e3)
+			val e  = O.UnsealExp(i22, e4)
+		     in
+			SOME(O.FunExp(i2, #[O.Mat(i', idToPat x3', e)]))
+		     end
+		  | (e1o, SOME e2) =>
+		    let
+			val e3 = case e1o of SOME e1 => O.SealExp(i11, e1)
+					   | NONE => O.SealExp(i11, idToExp x3')
+			val e4 = O.AppExp(i12,O.UnsealExp(i1,longidToExp x1),e3)
+			val e6 = O.UnsealExp(i22, e2)
 			val d1 = O.ValDec(i', idToPat x4', e4)
 			val ds = case x2o of NONE => #[d1] | SOME x2 =>
 				 let
@@ -1169,22 +1201,9 @@ struct
 				     #[d1,d2]
 				 end
 			val e  = O.LetExp(O.infoExp e6, ds, e6)
-		     in
+		    in
 			SOME(O.FunExp(i2, #[O.Mat(i', idToPat x3', e)]))
-		     end
-		   | (SOME e1, NONE) =>
-		     (* Optimized:
-		      * abs unabs (abs x1)(abs [x3 : j21 :> _ = j11]) *)
-		     let
-			val e3 = O.AbsExp(i11, e1)
-			val e4 = O.AppExp(i12, O.AbsExp(i1, longidToExp x1), e3)
-			val e  = O.UnabsExp(i22, e4)
-		     in
-			SOME(O.FunExp(i2, #[O.Mat(i', idToPat x3', e)]))
-		     end
-		   | (NONE, NONE) =>
-			(* This could be NONE when rea = 0, I think... *)
-			SOME(O.AbsExp(i2, longidToExp x1))
+		    end
 	    end
 	else
 	    raise Assert.failure
@@ -1456,12 +1475,12 @@ struct
     and trTypRep'(E, p', I.FunTyp(i,x,t)) = trTypRep'(E, p', t)
 
       | trTypRep'(E, p', I.AbsTyp(i, isExtensible)) =
-	(* [abstract]_p = Type.abs(<<kind>>, p) *)
+	(* [abstract]_p = Type.con(p, <<kind>>) *)
 	let
 	    val r   = #region i
 	    val e1' = trKind(E, r, Type.kind(#typ i))
 	in
-	    SOME(callTyp(E, lab_abs, trTuple(r, #[e1',p'])))
+	    SOME(callTyp(E, lab_con, trTuple(r, #[p',e1'])))
 	end
 
       | trTypRep'(E, p', t) = NONE
@@ -1558,26 +1577,24 @@ struct
 	trBindInf(E, lab_lambda, i,x,j1,j2)
 
       | trInf'(E, I.AppInf(i,j,m)) =
-	(* [j m]_E = Inf.apply([j],[m],???) *)
-	(*UNFINISHED*)
+	(* [j m]_E = Inf.apply([j],[m]) *)
 	let
 	    val r   = #region i
 	    val e1' = trInf'(E,j)
-	    val e2' = trMod(E,m)
-	    val e3' = callInf(E, lab_top, trUnit r)	(* UNFINISHED! *)
+	    val e2' = trInfMod(E,m)
 	in
-	    callInf(E, lab_apply, trTuple(r, #[e1',e2',e3']))
+	    callInf(E, lab_apply, trTuple(r, #[e1',e2']))
 	end
 
       | trInf'(E, I.InterInf(i,j1,j2)) =
-	(* [j1 where j2]_E = Inf.intersect([j1]_E, [j2]_E)
+	(* [j1 where j2]_E = Inf.infimum([j1]_E, [j2]_E)
 	 *)
 	let
 	    val r   = #region i
 	    val e1' = trInf'(E,j1)
 	    val e2' = trInf'(E,j2)
 	in
-	    callInf(E, lab_intersect, trTuple(r, #[e1',e2']))
+	    callInf(E, lab_infimum, trTuple(r, #[e1',e2']))
 	end
 
       | trInf'(E, I.ArrInf(i,x,j1,j2)) =
@@ -1597,29 +1614,17 @@ struct
 	    O.LetExp(typInfo(#region i,t), trDecs(E,ds), e')
 	end
 
-      | trInf'(E, I.SingInf(i, (I.AnnMod(_,_,j) | I.AbsMod(_,_,j)))) =
+      | trInf'(E, I.SingInf(i, (I.AnnMod(_,_,j) | I.SealMod(_,_,j)))) =
 	(*UNFINISHED, quick hack to make it possible to bootstrap with RTTs *)
 	(* [sing (m : j)]_E = [j]_E *)
 	trInf'(E, j)
 
       | trInf'(E, I.SingInf(i,m)) =
-	(* [sing m] = Inf.sing ???? *)
-	(*UNFINISHED*)
-	(*DEBUG*)
+	(* [sing m] = Inf.sing [m] *)
 	let
-	    val s = case m of I.VarMod _    => "VarMod"
-			    | I.PrimMod _   => "PrimMod"
-			    | I.StrMod _    => "StrMod"
-			    | I.SelMod _    => "SelMod"
-			    | I.FunMod _    => "FunMod"
-			    | I.AppMod _    => "AppMod"
-			    | I.AnnMod _    => "AnnMod"
-			    | I.AbsMod _    => "AbsMod"
-			    | I.LetMod _    => "LetMod"
-			    | I.UnpackMod _ => "UnpackMod"
+	    val e' = trInfMod(E,m)
 	in
-	    unfinished (#region i) "trInf"
-				   ("runtime singleton interfaces (" ^ s ^ ")")
+	    callInf(E, lab_sing, e')
 	end
 
       | trInf'(E, I.AbsInf(i)) =
@@ -1674,12 +1679,12 @@ struct
 	end
 
       | trInfRep'(E, mkKind, p', I.AbsInf(i)) =
-	(* [abstract]_E,MkKind,p = Inf.abs(MkKind<Inf.groundKind()>, p)
+	(* [abstract]_E,MkKind,p = Inf.con(p, MkKind<Inf.groundKind()>)
 	 *)
 	let
 	    val r   = #region i
 	    val e1' = mkKind(callInf(E, lab_groundKind, trUnit r))
-	    val e'  = callInf(E, lab_abs, trTuple(r, #[e1',p']))
+	    val e'  = callInf(E, lab_con, trTuple(r, #[p',e1']))
 	in
 	    SOME e'
 	end
@@ -1718,6 +1723,25 @@ struct
 	    O.LetExp(O.infoExp e', #[d0',d1',d2'], e')
 	end
 
+    and trInfMod(E, m) =
+	(*UNFINISHED*)
+	(*DEBUG*)
+	let
+	    val r = #region(I.infoMod m)
+	    val s = case m of I.VarMod _    => "VarMod"
+			    | I.PrimMod _   => "PrimMod"
+			    | I.StrMod _    => "StrMod"
+			    | I.SelMod _    => "SelMod"
+			    | I.FunMod _    => "FunMod"
+			    | I.AppMod _    => "AppMod"
+			    | I.AnnMod _    => "AnnMod"
+			    | I.SealMod _   => "SealMod"
+			    | I.LetMod _    => "LetMod"
+			    | I.UnpackMod _ => "UnpackMod"
+	in
+	    unfinished r "trInfMod" ("runtime singleton interfaces (" ^ s ^ ")")
+	end
+
 
   (* Declarations *)
 
@@ -1746,7 +1770,7 @@ struct
 	end
 
       | trDec E (I.ModDec(i,x,m), ds') =
-	(* [module x = m] = val x$ = abs [m] *)
+	(* [module x = m] = val x$ = seal [m] *)
 (	let
 	    val  _      = updatePervasive(E,x)
 	    val  i1     = I.infoId x
@@ -1756,7 +1780,7 @@ struct
 			      (trVirtModlongid(E,y), trVirtModid(E,x))
 			      before TranslationEnv.insertMod(E, I.stamp x)
 			  | _ => raise VirtualModule
-	    val d' = O.ValDec(i, idToPat x', O.AbsExp(O.infoId x', e'))
+	    val d' = O.ValDec(i, idToPat x', O.SealExp(O.infoId x', e'))
 	in
 	    updatePervasive'(E,x);
 	    d' :: ds'
