@@ -61,7 +61,9 @@ depend:
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
 Linked%.ozf: %.ozf
-	$(STOL) $(STOLOPTS) $< --norelative --include=`pwd`/$< --include=`pwd`/Unsafe$* -o $@
+	$(STOL) $(STOLOPTS) $< --norelative \
+	--rewrite=`pwd`/= \
+	--include=`pwd`/$< --include=`pwd`/Unsafe$* -o $@
 
 %.ozf: %.aml
 	$(STOC) $(STOCOPTS) -c $< -o $@
