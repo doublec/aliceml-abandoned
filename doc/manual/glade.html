@@ -1,0 +1,125 @@
+<?php include("macros.php3"); ?>
+<?php heading("GUI generator", "gui\ngenerator") ?>
+
+<?php section("overview", "overview") ?>
+
+<P>The GUI generator takes XML files produced by the Glade 2 user
+interface builder and generates Alice source code that implements the
+same user interface.</P>
+
+
+<?php section("synopsis", "synopsis") ?>
+
+<DL>
+  <DT><TT>aliceglade</TT> <I>&lt;file&gt;</I></DT>
+</DL>
+
+
+<?php section("description", "description") ?>
+
+<P>
+Glade-2 is a graphical user interface builder for Gtk. It can be
+downloaded from <A HREF="glade.gnome.org">the glade homepage</A>,
+which also contains links to pre-packaged Windows and Linux binaries.
+</P>
+
+<P>
+Given a file <TT>Gui.glade</TT>, <TT>aliceglade</TT> produces two
+files, <TT>Gui.aml</TT> and <TT>GuiSignals.aml</TT>. The former
+implements the static GUI (all the widgets), the latter is a functor
+that is used to connect your application's signal handlers to their
+corresponding widgets.
+</P>
+
+<P>
+Let's take a very basic example. If you create a window called
+<TT>mainWindow</TT> with just one button called <TT>button1</TT> and
+add a signal handler for the <TT>clicked</TT> signal, the XML produced
+by glade will look like this:
+</P>
+
+<PRE>
+&lt;?xml version="1.0" standalone="no"?&gt; &lt;!--*- mode: xml -*--&gt;
+&lt;!DOCTYPE glade-interface SYSTEM "http://glade.gnome.org/glade-2.0.dtd"&gt;
+
+&lt;glade-interface&gt;
+
+&lt;widget class="GtkWindow" id="mainWindow"&gt;
+  &lt;property name="visible"&gt;True&lt;/property&gt;
+  &lt;property name="title" translatable="yes"&gt;Hello World&lt;/property&gt;
+  &lt;property name="type"&gt;GTK_WINDOW_TOPLEVEL&lt;/property&gt;
+  &lt;property name="window_position"&gt;GTK_WIN_POS_NONE&lt;/property&gt;
+  &lt;property name="modal"&gt;False&lt;/property&gt;
+  &lt;property name="resizable"&gt;True&lt;/property&gt;
+  &lt;property name="destroy_with_parent"&gt;False&lt;/property&gt;
+
+  &lt;child&gt;
+    &lt;widget class="GtkButton" id="button1"&gt;
+      &lt;property name="visible"&gt;True&lt;/property&gt;
+      &lt;property name="can_focus"&gt;True&lt;/property&gt;
+      &lt;property name="label" translatable="yes"&gt;Hello&lt;/property&gt;
+      &lt;property name="use_underline"&gt;True&lt;/property&gt;
+      &lt;property name="relief"&gt;GTK_RELIEF_NORMAL&lt;/property&gt;
+      &lt;signal name="clicked" handler="on_button1_clicked" last_modification_time="Tue, 22 Mar 2005 10:43:26 GMT"/&gt;
+    &lt;/widget&gt;
+  &lt;/child&gt;
+&lt;/widget&gt;
+
+&lt;/glade-interface&gt;
+</PRE>
+
+<P>
+The generated Alice code would be
+</P>
+
+<PRE>
+structure Helloworld =
+  struct
+    structure Helpers = struct
+      val accelGroup = Gtk.accelGroupNew()
+      val tooltips = Gtk.tooltipsNew()
+      fun containerAddList(cont, children) = 
+        List.app (fn c => Gtk.containerAdd(cont,c)) children
+    end
+
+    val mainWindow = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
+    val _ = Gtk.windowSetTitle(mainWindow,"Hello World")
+    val _ = Gtk.windowAddAccelGroup(mainWindow,Helpers.accelGroup)
+    val button1 = Gtk.buttonNewWithMnemonic("Hello")
+    val _ = Gtk.containerAdd(mainWindow,button1)
+  end
+</PRE>
+
+<P>
+As you can see, the names you assigned to your widgets in glade are
+reused. To actually display the window, just call
+<TT>Gtk.widgetShowAll Helloworld.mainWindow</TT> from your
+application.
+</P>
+
+<P>The signal handlers are connected using the generated file
+<TT>HelloworldSignals.aml</TT>:</P>
+
+<PRE>
+signature HELLOWORLDSIGNALS_SIG =
+  sig
+    val on_button1_clicked : Gtk.callback_function
+  end
+
+functor HelloworldSignals(structure S : HELLOWORLDSIGNALS_SIG) =
+  struct
+    val button1_on_button1_clicked = Gtk.signalConnect(Helloworld.button1, "clicked",S.on_button1_clicked)
+  end
+</PRE>
+
+<P>In your application, you just have to implement the
+<TT>HELLOWORLDSIGNALS_SIG</TT> signature and apply the
+<TT>HelloworldSignals</TT> functor, which will then connect your signal
+callbacks to their widgets.
+
+<P>For a realistic example, you can take a look at the source code of
+the Alice Explorer or the GUI of the interactive toplevel - large
+parts of these applications were designed using glade.
+</P>
+
+<?php footing() ?>

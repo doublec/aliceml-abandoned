@@ -33,7 +33,7 @@ INSTALLFILES_0 = \
 	components.html distribution.html \
 	packages.html pickling.html constraints.html \
 	incompatibilities.html limitations.html \
-	tools.html interactive.html compiler.html machine.html \
+	tools.html interactive.html compiler.html machine.html glade.html \
 	linker.html depend.html \
 	$(INTEROP) tour.html sitemap.html \
 	mozart_cartoon.jpg \
@@ -77,7 +77,7 @@ INSTALLFILES_LIBRARY_0 = \
 	toplevel.html \
 	unix.html \
 	vector.html vector-pair.html vector-slice.html \
-	word.html \
+	word.html xml.html \
 	thread.html url.html config.html socket.html http.html \
 	http-client.html http-server.html resolver-handler.html \
 	resolver.html component.html component-manager.html remote.html \

@@ -461,6 +461,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Name" value="WORD">
 			<param name="Local" value="library/word.html">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="XML">
+			<param name="Local" value="library/xml.html">
+			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Tools">
@@ -487,6 +491,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Dependency Analyzer">
 			<param name="Local" value="depend.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="GUI generator">
+			<param name="Local" value="glade.html">
 			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
