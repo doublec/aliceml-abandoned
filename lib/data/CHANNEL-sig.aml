@@ -14,9 +14,8 @@ signature CHANNEL =
 
 	exception Empty
 
-	(* 'channel' and 'new' are synonyms, they return a new channel. *)
+	(* 'channel' returns a new channel. *)
 	val channel : unit -> 'a channel
-	val new     : unit -> 'a channel
 
 	(* Puts a value at the end of the channel. *)
         val put     : 'a channel * 'a -> unit

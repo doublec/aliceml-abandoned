@@ -52,8 +52,6 @@ struct
 	     closed = promise () }
 	end
 
-    val new = channel
-
     (* Atomically update a reference r with f (!r) *)
     fun updateRef (r, f) =
       let

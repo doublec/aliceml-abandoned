@@ -35,25 +35,26 @@
     signature CHANNEL =
     sig
 	type 'a channel
-        type t = channel
+        type 'a t = 'a channel
 
 	exception Empty
 
-	val channel : unit -> 'a channel
-	val new     : unit -> 'a channel
-        val put     : 'a channel * 'a -> unit
-	val push    : 'a channel * 'a -> unit
-        val get     : 'a channel -> 'a
-	val pop     : 'a channel -> 'a
-        val peek    : 'a channel -> 'a
-	val clone   : 'a channel -> 'a channel
-        val isEmpty : 'a channel -> bool
-	val close   : 'a channel -> unit
-	val isClosed : 'a channel -> bool
+	val channel :    unit -> 'a channel
+        val put :        'a channel * 'a -> unit
+	val push :       'a channel * 'a -> unit
+        val get :        'a channel -> 'a
+	val pop :        'a channel -> 'a
+        val peek :       'a channel -> 'a
+	val clone :      'a channel -> 'a channel
+        val isEmpty :    'a channel -> bool
+	val close :      'a channel -> unit
+	val isClosed :   'a channel -> bool
 	val waitClosed : 'a channel -> unit
-        val purge   : 'a channel -> unit
-	val app     : ('a -> unit) -> 'a channel -> unit
-	val toList : 'a channel -> 'a list
+        val purge :      'a channel -> unit
+	val app :        ('a -> unit) -> 'a channel -> unit
+	val appNB :      ('a -> unit) -> 'a channel -> unit
+	val toList :     'a channel -> 'a list
+	val toListNB :   'a channel -> 'a list
     end
   </PRE>
 
@@ -77,8 +78,7 @@
     </DD>
 
     <DT>
-	<TT>channel ()</TT></BR>
-        <TT>new     ()</TT>
+	<TT>channel ()</TT>
     </DT>
     <DD>
       <P>Creates a new channel that is initially empty.</P>
@@ -209,7 +209,7 @@
     functor NewSequence () =
     struct
 	(* A new channel for jobs that must be run sequentially. *)
-	val jobs      = Channel.new ()
+	val jobs = Channel.channel ()
 	    
 	(* f () will be evaluated sequentially *)
 	fun add f = Channel.put (jobs, f)
