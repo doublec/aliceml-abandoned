@@ -228,7 +228,7 @@ steps 3 and 4):
    Alice codebase, one as the SML/NJ source.  This is the
    case for some sources formerly residing in stoc/misc and
    stoc/common.  These sources should now be handled using
-   aml2sml.
+   aml2sml. Need to update import URI accordingly.
 
    Move misc/BootstrapGlobalStamp to bootstrap.
 
