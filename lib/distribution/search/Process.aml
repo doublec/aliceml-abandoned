@@ -23,7 +23,7 @@ structure Process :> PROCESS =
 		val remoteImport = ["import structure Remote from ",
 				    "\"x-alice:/lib/distribution/Remote.ozf\""]
 		val scriptImport = ["import structure RemoteWorker from ",
-				    "\x-alice:/lib/distribution/search/RemoteWorker\""]
+				    "\"x-alice:/lib/distribution/search/RemoteWorker\""]
 	    in
 		(send(site, String.concat remoteImport);
 		 send(site, String.concat scriptImport))
