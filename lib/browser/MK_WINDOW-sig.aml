@@ -20,5 +20,6 @@ sig
     val window: tag
     val canvas: tag
     val canvasroot: tag
+    val show : unit -> unit
     val alive: bool ref
 end
