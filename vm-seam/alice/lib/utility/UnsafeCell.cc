@@ -13,6 +13,7 @@
 #include <cstdio>
 #include "store/WeakDictionary.hh"
 #include "generic/Tuple.hh"
+#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
