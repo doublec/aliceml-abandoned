@@ -1,117 +1,87 @@
 import signature GTK_TYPES from "GTK_TYPES-sig"
+import structure GdkEnums from "GdkEnums"
 
 structure GtkTypes :> GTK_TYPES =
 struct
     type object
     exception TypeMismatch of string
 
-(*
-	    datatype inputSource =
-		GDK_SOURCE_MOUSE
-	      | GDK_SOURCE_PEN
-	      | GDK_SOURCE_ERASER
-	      | GDK_SOURCE_CURSOR
-	      | GDK_SOURCE_ALICEDUMMY
-
-    datatype scrollDirection =
-	GDK_SCROLL_UP
-      | GDK_SCROLL_DOWN
-      | GDK_SCROLL_LEFT
-      | GDK_SCROLL_RIGHT
-
-    datatype crossingMode =
-	GDK_CROSSING_NORMAL
-      | GDK_CROSSING_GRAB
-      | GDK_CROSSING_UNGRAB
-             | GDK_CROSSING_ALICEDUMMY
-
-    datatype notifyType =
-	GDK_NOTIFY_ANCESTOR
-      | GDK_NOTIFY_VIRTUAL
-      | GDK_NOTIFY_INFERIOR
-      | GDK_NOTIFY_NONLINEAR
-      | GDK_NOTIFY_NONLINEAR_VIRTUAL
-      | GDK_NOTIFY_UNKNOWN
-	      | GDK_NOTIFY_ALICEDUMMY
-
-    datatype visibilityState =
-	GDK_VISIBILITY_UNOBSCURED
-      | GDK_VISIBILITY_PARTIAL
-      | GDK_VISIBILITY_FULLY_OBSCURED
-              | GDK_VISIBILITY_ALICEDUMMY
-
     datatype event =
-	GDK_EXPOSE of {window:object, send:bool, area:object, count:int}
-      | GDK_MOTION_NOTIFY of
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
 	{window:object, send:bool, time:int,
 	 x:real, y:real,
 	 state:int, is_hint:int,
-	 devece: object, x_root:real, y_root:real}
-      | GDK_BUTTON_PRESS of
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
 	{window:object, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 devece: object, x_root:real, y_root:real}
-      | GDK_2BUTTON_PRESS of
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
 	{window:object, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 devece: object, x_root:real, y_root:real}
-      | GDK_3BUTTON_PRESS of
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
 	{window:object, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 devece: object, x_root:real, y_root:real}
-      | GDK_BUTTON_RELEASE of
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
 	{window:object, send:bool, time:int,
 	 x:real, y:real, state:int, button:int,
-	 devece: object, x_root:real, y_root:real}
-      | GDK_KEY_PRESS of
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
 	{window:object, send:bool, time:int, state:int,
 	 keyval:int, length:int, string:string, 
 	 hardware_keycode:int, group:int}
-      | GDK_KEY_RELEASE of
+      | EVENT_KEY_RELEASE of
 	{window:object, send:bool, time:int, state:int,
 	 keyval:int, length:int, string:string, 
 	 hardware_keycode:int, group:int}
-      | GDK_ENTER_NOTIFY of
+      | EVENT_ENTER_NOTIFY of
 	{window:object, send:bool, subwindow:object, time:int,
 	 x:real, y:real, x_root:real, y_root:real,
-	 mode:crossingMode, detail:notifyType,
+	 mode:GdkEnums.GdkCrossingMode, detail:GdkEnums.GdkNotifyType,
 	 focus:bool, state:int}
-      | GDK_LEAVE_NOTIFY of
+      | EVENT_LEAVE_NOTIFY of
 	{window:object, send:bool, subwindow:object, time:int,
 	 x:real, y:real, x_root:real, y_root:real,
-	 mode:crossingMode, detail:notifyType,
+	 mode:GdkEnums.GdkCrossingMode, detail:GdkEnums.GdkNotifyType,
 	 focus:bool, state:int}
-      | GDK_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
-      | GDK_CONFIGURE of
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
 	{window:object, send:bool, x:int, y:int,
  	 width:int, height:int}
-      | GDK_VISIBILITY_NOTIFY of
-	{window:object, send:bool, state:visibilityState}
-      | GDK_NO_EXPOSE of {window:object, send:bool}
-      | GDK_SCROLL of
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:GdkEnums.GdkVisibilityState}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
 	{window:object, send:bool, time:int, x:real, y:real,
-	 state:int, direction:scrollDirection, device:object,
+	 state:int, direction:GdkEnums.GdkScrollDirection, device:object,
 	 x_root:real, y_root:real}
-
-      | GDK_PROPERTY_NOTIFY
-      | GDK_SELECTION_CLEAR
-      | GDK_SELECTION_REQUEST
-      | GDK_SELECTION_NOTIFY
-      | GDK_DRAG_ENTER
-      | GDK_DRAG_LEAVE
-      | GDK_DRAG_MOTION
-      | GDK_DRAG_STATUS
-      | GDK_DROP_START
-      | GDK_DROP_FINISHED
-      | GDK_PROXIMITY_IN
-      | GDK_PROXIMITY_OUT
-      | GDK_CLIENT_EVENT
-      | GDK_WINDOW_STATE
-      | GDK_SETTING
-      | UNSUPPORTED
-*)
-
-    datatype event = UNSUPPORTED of object
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
 
     datatype arg = 
 	BOOL of bool

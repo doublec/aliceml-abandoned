@@ -8,7 +8,6 @@ sig
     exception TypeMismatch of string
 
 <<< "GTK_TYPES-sig.aml" >>>
-
 <<< "GTK_CORE-sig.aml" >>>
 <<< "GTK_ENUMS-sig.aml" >>>
 <<< "GTK_UNSAFE-sig.aml" >>>
