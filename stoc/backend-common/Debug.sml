@@ -28,7 +28,10 @@ structure Debug :> DEBUG =
 
 	fun labToString (Lab (_, s)) = s
 
-	fun idToString (Id (_, stamp, _)) = "id" ^ Stamp.toString stamp
+	fun idToString (Id (_, stamp, InId)) =
+	    "$" ^ Stamp.toString stamp
+	  | idToString (Id (_, stamp, ExId s)) =
+	    s ^ "$" ^ Stamp.toString stamp
 
 	fun longidToString (LongId (_, longid, lab)) =
 	    longidToString longid ^ "." ^ labToString lab
