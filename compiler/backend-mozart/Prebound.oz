@@ -577,7 +577,7 @@ prepare
 	 fun {$ T E}
 	    {Wait E}
 	    try {Thread.injectException T error(alice(E) debug: unit)}
-	    catch kernel(deadThread _) then
+	    catch error(kernel(deadThread _) ...) then
 	       {Exception.raiseError alice(BuiltinTable.'Thread.Terminated')}
 	    end
 	    unit
@@ -585,7 +585,7 @@ prepare
       'Thread.resume':
 	 fun {$ T}
 	    try {Thread.resume T}
-	    catch kernel(deadThread _) then skip
+	    catch error(kernel(deadThread _) ...) then skip
 	    end
 	    unit
 	 end
@@ -599,12 +599,17 @@ prepare
       'Thread.suspend':
 	 fun {$ T}
 	    try {Thread.suspend T}
-	    catch kernel(deadThread _) then skip
+	    catch error(kernel(deadThread _) ...) then skip
 	    end
 	    unit
 	 end
       'Thread.yield':
-	 fun {$ T} {Thread.preempt T} unit end
+	 fun {$ T}
+	    try {Thread.preempt T}
+	    catch error(kernel(deadThread _) ...) then skip
+	    end
+	    unit
+	 end
       'UniqueString.hash':
 	 fun {$ A} {StringHash {ByteString.make A}} end
       'UniqueString.string':
