@@ -43,6 +43,8 @@ import functor MkResultDumpingPhase from
 
 signature DEBUG =
     sig
+	structure Switches:	SWITCHES
+
 	val parseString:	string -> InputGrammar.t
 	val parseFile:		string -> InputGrammar.t
 
@@ -101,7 +103,7 @@ structure Debug : DEBUG =
 
 	(* Debugging functions *)
 
-(*	val _ = Switches.Bootstrap.rttLevel := Switches.Bootstrap.FULL_RTT
+(*	val _ = Switches.Language.rttLevel := Switches.Language.FULL_RTT
 *)
 
 	structure ParsingPhase =
