@@ -55,13 +55,9 @@ signature FLAT_GRAMMAR =
 	datatype test =
 	    LitTest of lit
 	  | TagTest of label
-	  | TagAppTest of label * id args * conArity
-	    (* args may only be TupArgs if conArity is Tuple;
-	     * args may only be RecArgs if conArity is Record *)
+	  | TagAppTest of label * id args
 	  | ConTest of id
-	  | ConAppTest of id * id args * conArity
-	    (* args may only be TupArgs if conArity is Tuple;
-	     * args may only be RecArgs if conArity is Record *)
+	  | ConAppTest of id * id args
 	  | RefAppTest of id
 	  | TupTest of id list
 	  | RecTest of (label * id) list
@@ -101,15 +97,9 @@ signature FLAT_GRAMMAR =
 	  | FunExp of exp_info * stamp * funFlag list * id args * body
 	  | PrimAppExp of exp_info * string * id list
 	  | VarAppExp of exp_info * id * id args
-	  | TagAppExp of exp_info * label * id args * conArity
-	    (* args may only be TupArgs if conArity is Tuple;
-	     * args may only be RecArgs if conArity is Record *)
-	  | ConAppExp of exp_info * id * id args * conArity
-	    (* args may only be TupArgs if conArity is Tuple;
-	     * args may only be RecArgs if conArity is Record *)
-	  | StaticConAppExp of exp_info * stamp * id args * conArity
-	    (* args may only be TupArgs if conArity is Tuple;
-	     * args may only be RecArgs if conArity is Record *)
+	  | TagAppExp of exp_info * label * id args
+	  | ConAppExp of exp_info * id * id args
+	  | StaticConAppExp of exp_info * stamp * id args
 	  | RefAppExp of exp_info * id
 	  | SelAppExp of exp_info * label * id
 	  | FunAppExp of exp_info * id * stamp * id args
