@@ -15,7 +15,6 @@
 #ifndef __BASE_HH__
 #define __BASE_HH__
 
-// Eclispe test
 #if defined(INTERFACE)
 #pragma interface "Base.hh"
 #endif
