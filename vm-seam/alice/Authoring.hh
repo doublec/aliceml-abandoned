@@ -33,6 +33,8 @@
 #define DECLARE_REAL(real, x) DECLARE_DOUBLE(real, x)
 #define DECLARE_RECORD(record, x) DECLARE_BLOCKTYPE(Record, record, x)
 #define DECLARE_TAGVAL(tagVal, x) DECLARE_BLOCKTYPE(TagVal, tagVal, x)
+#define DECLARE_BIGTAGVAL(bigTagVal, x) \
+  DECLARE_BLOCKTYPE(BigTagVal, bigTagVal, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
 #define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
 #define DECLARE_WORD8VECTOR(vector, x) \
