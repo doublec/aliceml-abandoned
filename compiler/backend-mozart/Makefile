@@ -6,10 +6,10 @@ FUNCTORS = Frontend.ozf Builtins.ozf Prebound.ozf \
 .oz.ozf:
 	ozc $(OZCFLAGS) -c $< -o $@
 
-all: stoc-mozart
+all: stoc-mozart.exe
 
-stoc-mozart: $(FUNCTORS)
-	ozl $(OZLFLAGS) -x Main.ozf -o stoc-mozart
+stoc-mozart.exe: $(FUNCTORS)
+	ozl $(OZLFLAGS) -x Main.ozf -o stoc-mozart.exe
 
 CodeStore.ozf: CodeEmitter.oz
 
@@ -17,6 +17,6 @@ clean:
 	-rm -f *.ozf
 
 veryclean: clean
-	-rm -f stoc-mozart
+	-rm -f stoc-mozart.exe
 
 .PHONY: all clean
