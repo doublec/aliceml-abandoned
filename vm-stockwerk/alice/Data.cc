@@ -16,7 +16,7 @@
 #pragma implementation "alice/Data.hh"
 #endif
 
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/Transform.hh"
@@ -53,7 +53,7 @@ ConcreteRepresentationHandler *Constructor::handler;
 void Constructor::Init() {
   handler = new ConstructorHandler();
   constructorTable =
-    HashTable::New(HashTable::BLOCK_KEY, initialTableSize)->ToWord();
+    ChunkMap::New(initialTableSize)->ToWord();
   RootSet::Add(constructorTable);
 }
 
@@ -68,15 +68,15 @@ static Transform *MakeConstructorTransform(String *name, word key) {
 
 Constructor *Constructor::New(String *name, Block *guid) {
   Assert(guid != INVALID_POINTER);
-  HashTable *hashTable = HashTable::FromWordDirect(constructorTable);
+  ChunkMap *hashTable = ChunkMap::FromWordDirect(constructorTable);
   word key = guid->ToWord();
   if (hashTable->IsMember(key)) {
-    return Constructor::FromWordDirect(hashTable->GetItem(key));
+    return Constructor::FromWordDirect(hashTable->Get(key));
   } else {
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
     b->Init(NAME_POS, name->ToWord());
     b->Init(TRANSFORM_POS, MakeConstructorTransform(name, key)->ToWord());
-    hashTable->InsertItem(key, b->ToWord());
+    hashTable->Put(key, b->ToWord());
     return static_cast<Constructor *>(b);
   }
 }
