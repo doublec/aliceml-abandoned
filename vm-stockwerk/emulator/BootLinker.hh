@@ -23,7 +23,7 @@ class String;
 
 typedef struct {
   char *name;
-  word module;
+  word (*module)(void);
 } prim_table;
 
 class BootLinker {

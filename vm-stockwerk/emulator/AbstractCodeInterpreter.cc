@@ -244,9 +244,8 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	// Scheduler::currentData has been set by Interpreter::Deconstruct
 	return Interpreter::REQUEST;
       }
-      u_int nargs = p->GetSize(); //--** not exact
-      // Internal Assertion
-      formalArgs->AssertWidth(nargs);
+      u_int nargs = formalIdDefs->GetLength();
+      Assert(nargs == 0 || p->GetSize() == nargs); // to be done
       for (u_int i = nargs; i--; ) {
 	TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
 	if (idDef != INVALID_POINTER) // IdDef id

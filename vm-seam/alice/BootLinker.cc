@@ -481,8 +481,10 @@ void BootLinker::Init(char *home, prim_table *builtins) {
   LoadInterpreter::Init();
   // Import builtin native Modules
   while (builtins->name != NULL) {
+    word (*f)(void) = builtins->module;
     GetModuleTable()->
-      InsertItem(String::New(builtins->name)->ToWord(), builtins->module);
+      InsertItem(String::New(builtins->name)->ToWord(),
+		 ModuleEntry::New(Store::IntToWord(0), f())->ToWord()); // NONE
     builtins++;
   }
 }

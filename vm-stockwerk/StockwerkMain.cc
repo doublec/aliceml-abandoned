@@ -29,8 +29,11 @@
 #include "emulator/VectorTabulateInterpreter.hh"
 #include "emulator/AbstractCodeInterpreter.hh"
 
+extern word UnsafeMkRefMap(void);
+
 static prim_table builtins[] =
-{ {NULL, Store::IntToWord(0)} };
+{ { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap}, 
+  {NULL, NULL} };
 
 static inline
 Chunk *NewChunk(const char *s) {
