@@ -38,18 +38,9 @@ sig
     val isApply: Type.desc -> bool	
     val unApply: Type.desc -> Type.desc * Type.t list 
 
-    val itemToLabel: Inf.item -> Label.lab
-(*
-    val queryDepth: 
-	Reflect.value * Type.t * node * int * int * Type.row * 
-        (Reflect.value * Type.t * node * int * int * Type.row * GtkSupport.tag 
-	 -> node) * GtkSupport.tag -> node
+    val isAtomType: Type.t -> bool
 
-    val queryDepthL: 
-	Reflect.value * Type.t * node * int * int * 'a list_desc * 
-	(Reflect.value * Type.t * node * int * int * 'a list_desc * GtkSupport.tag 
-	 -> node) * GtkSupport.tag -> node
-*)
+    val itemToLabel: Inf.item -> Label.lab
 
   (* Behandlung von Listen *)
 	
@@ -66,9 +57,11 @@ sig
     val copyArray: 'a Array.array * 'a Array.array  -> unit
 
     (* Hilfsfunktion fuer Strings *)
+(*
     val iterTake : string -> string   
+*)
 
-    val appi_break: (int * 'a -> 'b) * int * 'a list -> unit	
+    val appi_break: (int * 'a -> 'b) * int * 'a list -> unit 	
 
 end
 

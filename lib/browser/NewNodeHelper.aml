@@ -15,6 +15,7 @@
 
 import structure Inf from "x-alice:/lib/rtt/Inf"
 import structure Type from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Label from "x-alice:/lib/rtt/Label"
 import structure Path from "x-alice:/lib/rtt/Path"
 import structure Reflect from "x-alice:/lib/system/Reflect"
@@ -45,6 +46,17 @@ struct
 
     fun unApply sth = unApply' (sth,nil)
 
+    fun isAtomType t = Type.isCon t andalso
+	               (let val path = Type.asCon t
+			in 
+			   Path.equal(path,PervasiveType.path_int) orelse
+			   Path.equal(path,PervasiveType.path_word) orelse
+                           Path.equal(path,PervasiveType.path_real) orelse
+                           Path.equal(path,PervasiveType.path_char) orelse
+                           Path.equal(path,PervasiveType.path_string) orelse
+			   Path.equal(path,PervasiveType.path_exn)
+		       end)
+			    
     (* itemToLabel *)
 
     fun itemToLabel i = case Inf.inspectItem i of
@@ -61,24 +73,6 @@ struct
 			       end   
       | Inf.HiddenItem(i) => itemToLabel i
 
-    (* Tiefenfilter *)
-(*
-    (* queryDepth *)
-
-    fun queryDepth (va,t,p,i,d,row,f,root) = 
-	if d > !max_depth 
-	    then createLimit (createValue(va,t),DEPTH_LIMIT,
-			      p,i,d,root)
-	else f (va,t,p,i,d,row,root)
-
-    (* queryDepthL *)
-
-    fun queryDepthL (va,t,p,i,d,ld,f,root) = 
-	if d > !max_depth 
-	    then createLimit (createValue(va,t),DEPTH_LIMIT,
-			      p,i,d,root)
-	else f (va,t,p,i,d,ld,root)
-*)
     (* zur Behandlung von Listen *)
 	
      val compList = 
@@ -127,7 +121,7 @@ struct
 				  else copyArray'(a,b,0)
 
     (* Operationen auf Strings *)
-	
+(*	
     fun iterTake' (str,i,a) = 
 	if i >= (String.size(str)) 
 	    then a
@@ -139,6 +133,7 @@ struct
 	    end  
 
     fun iterTake str = iterTake'(str,0,"")
+*)
 
     (* berechnet f(0,x_{0}), f(1,x_{1}), ......, f(br,x_{br}) *)
     (* wird benutzt von setItems *)

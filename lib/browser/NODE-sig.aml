@@ -21,7 +21,9 @@ import structure GtkSupport from "GtkSupport"
 
 signature NODE = 
 sig
-       
+    
+    datatype value = V of Reflect.value | M of Reflect.module
+    
     datatype desc = 
 	INTERPUNCT
       | VALUE of {value : Reflect.value,
@@ -96,7 +98,7 @@ sig
 		    depth : int,
 		    counter : int ref, 
 		    rep : string, 
-		    relman : node list ref, 
+		    relman : (value * int ref * int) list ref, 
 		    width : int ref,
 		    height : int ref,
 		    color : color_class, 
@@ -108,7 +110,6 @@ sig
 		       index : int,
 		       depth : int,
 		       rep : string, 
-		       relnode : node, 
 		       width : int ref, 
 		       color : color_class, 
 		       status : status ref,  
@@ -117,6 +118,13 @@ sig
       | Empty
 
     val relnumber: int ref
+    (* Operationen auf value *)
+
+    val isValue: value -> bool
+    val isModule: value -> bool
+
+    val asValue: value -> Reflect.value
+    val asModule: value -> Reflect.module
 
     (* Operationen auf desc *)
 
@@ -196,11 +204,11 @@ sig
 	-> node
 
     val createRelNode : 
-	desc * node * node * int * int * string * node list * GtkSupport.tag 
-	-> node
+	desc * node * node * int * int * int ref * string * 
+	(value * int ref * int) list * GtkSupport.tag -> node
    
     val createRelRefNode : 
-	desc * node * int * int * string * node * GtkSupport.tag 
+	desc * node * int * int * string * GtkSupport.tag 
 	-> node
 
     (* Hilfsfunktion zur Bestimmung, ob eine node eine byneed-Future

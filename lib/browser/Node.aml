@@ -25,6 +25,8 @@ import signature NODE from "NODE-sig"
 structure Node :> NODE = 
 struct
  
+    datatype value = V of Reflect.value | M of Reflect.module
+
     datatype desc =
 	INTERPUNCT
       | VALUE of {value : Reflect.value,
@@ -99,7 +101,7 @@ struct
 		    depth : int,
 		    counter : int ref, 
 		    rep : string, 
-		    relman : node list ref, 
+		    relman : (value * int ref * int) list ref, 
 		    width : int ref,
 		    height : int ref,
 		    color : color_class, 
@@ -111,7 +113,6 @@ struct
 		       index : int, 
 		       depth : int,
 		       rep : string, 
-		       relnode : node, 
 		       width : int ref, 
 		       color : color_class, 
 		       status : status ref,  
@@ -120,6 +121,20 @@ struct
       | Empty 
 
     val relnumber = ref 0
+
+(* Operationen auf value *)
+
+    fun isValue (V _) = true
+      | isValue (M _) = false
+
+    fun isModule (M _) = true
+      | isModule (V _) = false
+
+    fun asValue(V x) = x
+      | asValue _ = raise Match
+
+    fun asModule(M x) = x
+      | asModule _ = raise Match
 
    (* Operationen auf desc *)
 
@@ -409,13 +424,13 @@ struct
 
     (* createRelNode *)
 
-    fun createRelNode (desc,c,p,i,d,str,rman,root) = 
+    fun createRelNode (desc,c,p,i,d,count,str,rman,root) = 
 	let val node = RelNode {desc = desc, 
 				content = ref c,
 				parent = p,  
 				index = i, 
 				depth = d,
-				counter = ref 1, 
+				counter = count, 
 				rep = str, 
 				relman = ref rman, 
 				width = ref ~1,
@@ -429,13 +444,12 @@ struct
 
     (* createRelRefNode *)
 
-    fun createRelRefNode (desc,p,i,d,str,rnode,root) = 
+    fun createRelRefNode (desc,p,i,d,str,root) = 
 	RelRefNode {desc = desc, 
  		    parent = p, 
 		    index = i, 
 		    depth = d,
 		    rep = str, 
-		    relnode = rnode,
 		    width = ref(String.size(str)), 
 		    color = REL_COLOR, 
 		    status = ref DAZZLED,  
