@@ -204,6 +204,7 @@ public:
 };
 
 class DllExport Real: private Chunk {
+  //--** to be done: always represent in big-endian format
 public:
   using Chunk::ToWord;
 
