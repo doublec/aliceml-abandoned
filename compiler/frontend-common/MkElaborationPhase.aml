@@ -2124,13 +2124,13 @@ prInf "j'" j';
 
     fun elabAnn(E, desc, I.ImpAnn(i, imps, url, b)) =
 	let
-	    val hasAllDescs = Vector.all I.hasDesc imps
-	    val s           = Future.byneed(fn() => loadSig(desc, url))
-	    val s'          = Inf.emptySig()
-	    val imps'       = elabImps(E, s, s', hasAllDescs, imps)
-	    val s''         = if hasAllDescs then s'
-			      else if !Switches.Language.retainFullImport then s
-			      else Future.byneed(fn() => Inf.narrowSigExt(s,s'))
+	    val isExplicit = Vector.all I.hasDesc imps
+	    val s          = Future.byneed(fn() => loadSig(desc, url))
+	    val s'         = Inf.emptySig()
+	    val imps'      = elabImps(E, s, s', isExplicit, imps)
+	    val s''        = if isExplicit then s'
+			     else if !Switches.Language.retainFullImport then s
+			     else Future.byneed(fn() => Inf.narrowSigExt(s,s'))
 (*DEBUG*) handle e => raise e
 	in
 	    O.ImpAnn(sigInfo(i,s''), imps', url, b)
@@ -2142,10 +2142,10 @@ prInf "j'" j';
 
   (* Imports *)
 
-    and elabImps(E, s, s', hasAllDescs, imps) =
-	Vector.map (fn imp => elabImp(E, s, s', hasAllDescs, imp)) imps
+    and elabImps(E, s, s', isExplicit, imps) =
+	Vector.map (fn imp => elabImp(E, s, s', isExplicit, imp)) imps
 
-    and elabImp(E, s, s', hasAllDescs, I.FixImp(i, vallab, desc)) =
+    and elabImp(E, s, s', isExplicit, I.FixImp(i, vallab, desc)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
 	    val f1          = Future.byneed(fn() =>
@@ -2158,7 +2158,7 @@ prInf "j'" j';
 		    let
 			val (f2,fix') = elabFix(E, fix)
 		    in
-			if hasAllDescs orelse f1 = f2
+			if isExplicit orelse f1 = f2
 			then O.SomeDesc(fixInfo(i',f2), fix')
 			else error(i, E.ImpMismatch(Inf.MismatchFix(l,f1,f2)))
 		    end
@@ -2167,7 +2167,7 @@ prInf "j'" j';
 	    O.FixImp(nonInfo(i), vallab', desc')
 	end
 
-      | elabImp(E, s, s', hasAllDescs, I.ValImp(i, valid, desc)) =
+      | elabImp(E, s, s', isExplicit, I.ValImp(i, valid, desc)) =
 	let
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
 	    val  l             = Label.fromName(O.name valid')
@@ -2181,7 +2181,7 @@ prInf "j'" j';
 		    let
 			val (t2,typ') = elabStarTyp(E, false, typ)
 		    in
-			if hasAllDescs then () else
+			if isExplicit then () else
 			(Type.enterLevel();
 			 Type.match(t1,t2) handle Type.Mismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchVal(l,t1,t2,m)));
@@ -2195,7 +2195,7 @@ prInf "j'" j';
 	    O.ValImp(nonInfo(i), valid', desc')
 	end
 
-      | elabImp(E, s, s', hasAllDescs, I.TypImp(i, typid, desc)) =
+      | elabImp(E, s, s', isExplicit, I.TypImp(i, typid, desc)) =
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
@@ -2211,7 +2211,7 @@ prInf "j'" j';
 			val (t2,_,typ') = elabTypRep(E, p, General.id, typ)
 			val  k2         = Type.kind t2
 		    in
-			if hasAllDescs then () else
+			if isExplicit then () else
 			(Type.enterLevel();
 			 Type.matchKind(k1,k2) handle Type.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
@@ -2224,7 +2224,7 @@ prInf "j'" j';
 	    O.TypImp(nonInfo(i), typid', desc')
 	end
 
-      | elabImp(E, s, s', hasAllDescs, I.ModImp(i, modid, desc)) =
+      | elabImp(E, s, s', isExplicit, I.ModImp(i, modid, desc)) =
 	let
 	    val l  = Label.fromName(I.name modid)
 	    val p  = elabNewPath(NONE, I.name modid)
@@ -2241,7 +2241,7 @@ prInf "j'" j';
 			(j1, jm1, O.NoDesc(infInfo(i', jm1)))
 		    end
 		  | I.SomeDesc(i',inf) =>
-		    if hasAllDescs then
+		    if isExplicit then
 			let
 			    val (j2,inf') = elabGroundInf(E, SOME p, inf)
 			in
@@ -2265,7 +2265,7 @@ prInf "j'" j';
 	    O.ModImp(nonInfo(i), modid', desc')
 	end
 
-      | elabImp(E, s, s', hasAllDescs, I.InfImp(i, infid, desc)) =
+      | elabImp(E, s, s', isExplicit, I.InfImp(i, infid, desc)) =
 	let
 	    val l  = Label.fromName(I.name infid)
 	    val p  = elabNewPath(NONE, I.name infid)
@@ -2281,7 +2281,7 @@ prInf "j'" j';
 			val (j2,_,inf') = elabInfRep(E, p, General.id, inf)
 			val  k2         = Inf.kind j2
 		    in
-			if hasAllDescs then () else
+			if isExplicit then () else
 			(Type.enterLevel();
 			 Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchInf(l,m)));
@@ -2294,10 +2294,10 @@ prInf "j'" j';
 	    O.InfImp(nonInfo(i), infid', desc')
 	end
 
-      | elabImp(E, s, s', hasAllDescs, I.RecImp(i, imps)) =
+      | elabImp(E, s, s', isExplicit, I.RecImp(i, imps)) =
 	let
-	    val _     = elabLHSRecImps(E, s, hasAllDescs, imps)
-	    val imps' = elabRHSRecImps(E, s, s', hasAllDescs, imps)
+	    val _     = elabLHSRecImps(E, s, isExplicit, imps)
+	    val imps' = elabRHSRecImps(E, s, s', isExplicit, imps)
 	    (* ASSUME that only TypImp is under RecImp *)
 	in
 	    O.RecImp(nonInfo(i), imps')
@@ -2306,10 +2306,10 @@ prInf "j'" j';
 
   (* Recursive specifications *)
 
-    and elabLHSRecImps(E, s, hasAllDescs, imps) =
-	    Vector.app (fn imp => elabLHSRecImp(E,s,hasAllDescs,imp)) imps
+    and elabLHSRecImps(E, s, isExplicit, imps) =
+	    Vector.app (fn imp => elabLHSRecImp(E,s,isExplicit,imp)) imps
 
-    and elabLHSRecImp(E, s, hasAllDescs, I.TypImp(i, typid, desc)) =
+    and elabLHSRecImp(E, s, isExplicit, I.TypImp(i, typid, desc)) =
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
@@ -2324,7 +2324,7 @@ prInf "j'" j';
 		    let
 			val k2 = elabTypKind(E, typ)
 		    in
-			if hasAllDescs then () else
+			if isExplicit then () else
 			(Type.enterLevel();
 			 Type.matchKind(k1,k2) handle Type.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
@@ -2335,23 +2335,23 @@ prInf "j'" j';
 	    ()
 	end
 
-      | elabLHSRecImp(E, s, hasAllDescs, I.RecImp(i, imps)) =
-	    elabLHSRecImps(E, s, hasAllDescs, imps)
+      | elabLHSRecImp(E, s, isExplicit, I.RecImp(i, imps)) =
+	    elabLHSRecImps(E, s, isExplicit, imps)
 
-      | elabLHSRecImp(E, s, hasAllDescs, _) = ()
+      | elabLHSRecImp(E, s, isExplicit, _) = ()
 
 
-    and elabRHSRecImps(E, s, s', hasAllDescs, imps) =
-	    Vector.map (fn imp => elabRHSRecImp(E, s, s', hasAllDescs, imp)) imps
+    and elabRHSRecImps(E, s, s', isExplicit, imps) =
+	    Vector.map (fn imp => elabRHSRecImp(E, s, s', isExplicit, imp)) imps
 
-    and elabRHSRecImp(E, s, s', hasAllDescs, I.RecImp(i, imps)) =
+    and elabRHSRecImp(E, s, s', isExplicit, I.RecImp(i, imps)) =
 	let
-	    val imps' = elabRHSRecImps(E, s, s', hasAllDescs, imps)
+	    val imps' = elabRHSRecImps(E, s, s', isExplicit, imps)
 	in
 	    O.RecImp(nonInfo(i), imps')
 	end
 
-      | elabRHSRecImp(E, s, s', hasAllDescs, I.TypImp(i, typid, desc)) =
+      | elabRHSRecImp(E, s, s', isExplicit, I.TypImp(i, typid, desc)) =
 	let
 	    (*UNFINISHED *)
 	    val (t1,p,typid') = elabTypid(E, typid)
@@ -2372,8 +2372,8 @@ prInf "j'" j';
 	    O.TypImp(nonInfo(i), typid', desc')
 	end
 
-      | elabRHSRecImp(E, s, s', hasAllDescs, imp) =
-	    elabImp(E, s, s', hasAllDescs, imp)
+      | elabRHSRecImp(E, s, s', isExplicit, imp) =
+	    elabImp(E, s, s', isExplicit, imp)
 
 
   (* Components *)

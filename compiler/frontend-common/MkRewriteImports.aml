@@ -66,7 +66,7 @@ struct
 	  (List.mapPartial (fn ann' => stripAnn(E, ann')) (Vector.toList anns'))
 
     and stripAnn(E, ann as O.ImpAnn({region,sign}, imps', url, b)) =
-	if Vector.all O.hasDesc imps' then SOME ann else
+	if Vector.all O.hasDesc imps' then (* explicit import *) SOME ann else
 	let
 	    val UE     = UseEnv.env()
 	    val imps'' = stripImps(E, UE, imps')
@@ -301,7 +301,7 @@ struct
 	end
     and closeAnns'(desc, []) = ([], Inf.rea(), Inf.boundPaths(Inf.top()))
       | closeAnns'(desc, O.ImpAnn(i, imps, url, false)::ranns) =
-	if Vector.all O.hasDesc imps then
+	if Vector.all O.hasDesc imps then (* explicit import *) 
 	let
 	    val (ranns',rea,b) = closeAnns'(desc, ranns)
 (*DEBUG
