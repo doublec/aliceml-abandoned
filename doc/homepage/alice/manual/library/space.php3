@@ -177,7 +177,7 @@
     </DT>
     <DD>
       <P>blocks until <I>s</I> becomes stable and then commits
-         to alternatives of the selected choice of <I>s<I>.
+         to alternatives of the selected choice of <I>s</I>.
       </P>
       <P>if <I>c</I> is <TT>RANGE(l, h)</TT>, then all but
          the <TT>l,l+1,...,h</TT> alternatives of the selected choice of
