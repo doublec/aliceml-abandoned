@@ -12,7 +12,6 @@
 
 import structure Atom                  from "../../lib/data/Atom"
 import structure MkHashImpSet          from "../../lib/data/MkHashImpSet"
-import structure MkHashImpMap          from "../../lib/data/MkHashImpMap"
 import structure Url                   from "../../lib/system/Url"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Label                 from "../../lib/rtt/Label"
