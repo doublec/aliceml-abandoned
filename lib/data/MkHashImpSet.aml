@@ -117,6 +117,7 @@ struct
     fun difference(s1,s2)	= app (fn k => remove(s1,k)) s2
     fun intersect(s1,s2)	= filter (fn k => member(s2,k)) s1
 
+    fun disjoint(s1,s2)		= all (fn k => not(member(s2,k))) s1
     fun subset(s1,s2)		= all (fn k => member(s2,k)) s1
     fun equal(s1,s2)		= size s1 = size s2  andalso subset(s1,s2)
     fun compare(s1,s2)		= case (subset(s1,s2), subset(s2,s1))

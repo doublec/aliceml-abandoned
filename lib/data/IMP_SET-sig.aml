@@ -50,6 +50,7 @@ sig
 
     val equal :		set * set -> bool
     val subset :	set * set -> bool
+    val disjoint :	set * set -> bool
     val compare :	set * set -> order
 
     val app :		(item -> unit) -> set -> unit

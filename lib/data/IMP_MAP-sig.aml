@@ -41,6 +41,12 @@ sig
     val unionWith :	('a * 'a -> 'a) -> 'a map * 'a map -> unit
     val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
+    val intersect :	'a map * 'a map -> unit
+    val intersectWith :	('a * 'a -> 'a) -> 'a map * 'a map -> unit
+    val intersectWithi:	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
+
+    val difference :	'a map * 'a map -> unit
+
     val size :		'a map -> int
     val isEmpty :	'a map -> bool
 
@@ -52,6 +58,7 @@ sig
 
     val equal :		('a * 'a -> bool) -> 'a map * 'a map -> bool
     val submap :	('a * 'a -> bool) -> 'a map * 'a map -> bool
+    val disjoint :	'a map * 'a map -> bool
 
     val app :		('a -> unit) -> 'a map -> unit
     val modify :	('a -> 'a) -> 'a map -> unit

@@ -304,6 +304,21 @@ functor MkRedBlackMap (Key : ORDERED) :> MAP where type key = Key.t =
 	    fn (MAP(_, m1), MAP(_, m2)) => cmp (start m1, start m2)
 	  end
 
+(* Return true if and only if map domains are disjoint *)
+    local
+	  fun disj (t1, t2) = (case (next t1, next t2)
+		 of ((T(_, _, xk, x, _), r1), (T(_, _, yk, y, _), r2)) => (
+		      case Key.compare(xk, yk)
+		       of LESS => disj (r1, t2)
+			| EQUAL => false
+			| GREATER => disj (t1, r2)
+		      (* end case *))
+		  | _ => true
+		(* end case *))
+    in
+	 fun disjoint (MAP(_, m1), MAP(_, m2)) = disj (start m1, start m2)
+    end
+
 (*
   (* given an ordering on the map's range, return an ordering
    * on the map.
@@ -406,7 +421,7 @@ functor MkRedBlackMap (Key : ORDERED) :> MAP where type key = Key.t =
     fun union (m1, m2) = unionWith #2 (m1, m2)
     fun unionDisjoint (m1, m2) = unionWithi (fn (k, _, _) => raise Collision k) (m1, m2)
 
-(*
+
   (* return a map whose domain is the intersection of the domains of the
    * two input maps, using the supplied function to define the range.
    *)
@@ -440,7 +455,26 @@ functor MkRedBlackMap (Key : ORDERED) :> MAP where type key = Key.t =
 	  in
 	    wrap intersect
 	  end
-*)
+
+    fun intersect (m1, m2) = intersectWith #2 (m1, m2)
+
+  (* return the map difference *)
+    local
+	  fun diff (t1, t2, n, result) = (case (next t1, next t2)
+		 of ((E, _), _) => (n, result)
+		  | (t1, (E, _)) => ins(t1, n, result)
+		  | ((T(_, _, xk, x, _), r1), (T(_, _, yk, y, _), r2)) => (
+		      case Key.compare(xk, yk)
+		       of LESS => diff (r1, t2, n+1, addItem(xk, x, result))
+			| EQUAL => diff (r1, r2, n, result)
+			| GREATER => diff (t1, r2, n, result)
+		      (* end case *))
+		(* end case *))
+    in
+	fun difference (m1, m2) = wrap diff (m1, m2)
+    end
+
+
     end (* local *)
 
     fun app f = let

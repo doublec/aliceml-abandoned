@@ -68,5 +68,6 @@ struct
 
     fun equal (s1,s2)		= Set.equal (!s1,!s2)
     fun subset (s1,s2)		= Set.subset (!s1,!s2)
+    fun disjoint (s1,s2)	= Set.disjoint (!s1,!s2)
     fun compare (s1,s2)		= Set.compare (!s1,!s2)
 end

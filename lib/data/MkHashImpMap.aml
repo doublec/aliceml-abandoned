@@ -149,6 +149,25 @@ struct
     fun unionWith f		= union'(insertWith f)
     fun unionWithi f		= union'(insertWithi f)
 
+    fun difference (m1,m2)	= appi (fn(k,_) => remove(m1,k)) m2
+
+    fun intersect' insert (m1,m2)
+				= let
+				      val (rs,is) =
+					  foldi (fn(k,_,(rs,is)) =>
+						 case lookup(m2,k)
+						  of NONE   => (k::rs, is)
+						   | SOME a => (rs, (k,a)::is)
+						) ([],[]) m1
+				  in
+				      List.app (fn k => remove(m1,k)) rs;
+				      List.app (fn(k,a) => insert(m1,k,a)) is
+				  end
+    fun intersect x		= intersect' insert x
+    fun intersectWith f		= intersect'(insertWith f)
+    fun intersectWithi f	= intersect'(insertWithi f)
+
+    fun disjoint (m1,m2)	= alli (fn(k,_) => not(member(m2,k))) m1
     fun submap eq (m1,m2)	= alli (fn(k,a) => case lookup(m2,k)
 						    of NONE => false
 						     | SOME a' => eq(a,a')) m1

@@ -55,6 +55,14 @@ struct
     fun unionWithi f (m1,m2)	= update (m1, fn m1' =>
 						 Map.unionWithi f (m1',!m2))
 
+    fun intersect (m1,m2)	= update (m1, fn m1' => Map.intersect (m1',!m2))
+    fun intersectWith f (m1,m2)	= update (m1, fn m1' =>
+						 Map.intersectWith f (m1',!m2))
+    fun intersectWithi f(m1,m2)	= update (m1, fn m1' =>
+						 Map.intersectWithi f (m1',!m2))
+
+    fun difference (m1,m2)	= update (m1, fn m1' => Map.difference(m1',!m2))
+
     fun lookup (m,x)		= Map.lookup (!m,x)
     fun lookupExistent (m,x)	= Map.lookupExistent (!m,x)
     fun member (m,x)		= Map.member (!m,x)
@@ -81,4 +89,5 @@ struct
 
     fun equal f (m1,m2)		= Map.equal f (!m1,!m2)
     fun submap f (m1,m2)	= Map.submap f (!m1,!m2)
+    fun disjoint (m1,m2)	= Map.disjoint (!m1,!m2)
 end

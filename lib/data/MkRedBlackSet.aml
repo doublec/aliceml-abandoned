@@ -272,6 +272,21 @@ functor MkRedBlackSet (Item : ORDERED) :> SET where type item = Item.t =
 	    cmp (start s1, start s2)
 	  end
 
+  (* Return true if and only if the two sets are disjoint *)
+    fun disjoint (SET(_, s1), SET(_, s2)) = let
+	  fun disjoint (t1, t2) = (case (next t1, next t2)
+		 of ((T(_, _, x, _), r1), (T(_, _, y, _), r2)) => (
+		      case Item.compare(x, y)
+		       of LESS => disjoint (r1, t2)
+			| EQUAL => false
+			| GREATER => disjoint (t1, r2)
+		      (* end case *))
+		  | _ => true
+		(* end case *))
+	  in
+	    disjoint (start s1, start s2)
+	  end
+
   (* support for constructing red-black trees in linear time from increasing
    * ordered sequences (based on a description by R. Hinze).  Note that the
    * elements in the digits are ordered with the largest on the left, whereas
