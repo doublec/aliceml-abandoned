@@ -8,7 +8,7 @@ Group is
 	MkStamp.aml
 
 	GLOBAL_STAMP-sig.aml
-	../../bootstrap/GlobalStamp.aml
+	../../bootstrap/GlobalStamp.sml
 
 	LIST_SORT-sig.aml
 	MkListSort.aml
