@@ -152,11 +152,12 @@ void IOHandler::Block() {
   int max = maxRead > maxWrite? maxRead: maxWrite;
   struct timeval *ptimeout = NULL;
   // Timer Events and signals must be fulfilled; therefore wait on stdin
-  // to be done: better solution?
-  if (!FD_ISSET(defaultFD, &readFDs)) {
-    FD_SET(defaultFD, &readFDs);
-    max = max > defaultFD ? max : defaultFD;
-  }
+  //--** to be done: better solution?
+  if (defaultFD != -1)
+    if (!FD_ISSET(defaultFD, &readFDs)) {
+      FD_SET(defaultFD, &readFDs);
+      max = max > defaultFD? max: defaultFD;
+    }
 #if defined(__MINGW32__) || defined(_MSC_VER)
   // Windows sockets no longer support WSACancelBlockingCall
   // Pending Events therefore require polling after some time

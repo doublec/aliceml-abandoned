@@ -115,5 +115,6 @@
   DECLARE_BLOCKTYPE(UniqueString, uniqueString, x)
 #define DECLARE_HASH_TABLE(hashtable, x) \
   DECLARE_BLOCKTYPE(HashTable, hashtable, x)
+#define DECLARE_IODESC(ioDesc, x) DECLARE_BLOCKTYPE(IODesc, ioDesc, x)
 
 #endif
