@@ -11,6 +11,8 @@
 %%%
 
 functor
+import
+   BootName(newNamed: NewNamedName) at 'x-oz://boot/Name'
 export
    interpreter: Me
 require
@@ -157,8 +159,10 @@ define
 		 [] tag(!Global I) then Closure.(I + 2)
 		 end
 	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!PutNew Id NextInstr) then
-	 L.Id := {NewName}
+      [] tag(!PutNew Id S NextInstr) then
+	 L.Id := case {VirtualString.toAtom S} of '' then {NewName}
+		 elseof A then {NewNamedName A}
+		 end
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutTag Id I IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
