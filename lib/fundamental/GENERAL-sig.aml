@@ -46,6 +46,10 @@ sig
     val op := :		'a ref * 'a -> unit
     val op :=: :	'a ref * 'a ref -> unit			(**)
 
+    val id :		'a -> 'a				(**)
+    val const :		'a -> 'b -> 'a				(**)
+    val curry :		('a * 'b -> 'c) -> ('a -> 'b -> 'c)	(**)
+    val uncurry :	('a -> 'b -> 'c) -> ('a * 'b -> 'c)	(**)
     val flip :		('a * 'b -> 'c) -> ('b * 'a -> 'c)	(**)
     val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
     val before :	'a * unit -> 'a

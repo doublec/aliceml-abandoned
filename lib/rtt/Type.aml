@@ -1306,7 +1306,7 @@ val _ = checkMuFwd := checkMu
     fun close ts =
 	let
 	    val generalise =
-		foldl close1 (fn t => t) (tuple'(Vector.fromList ts))
+		foldl close1 General.id (tuple'(Vector.fromList ts))
 		(* TODO: This should better use foldlNoAbbrev, but then
 		 * we had to lift holes in abbreviations somehow. *)
 	in

@@ -51,6 +51,10 @@ struct
     val op :=					= op :=
     val op :=:					= op :=:
 
+    fun id x					= x
+    fun const x y				= x
+    fun curry f x y				= f(x,y)
+    fun uncurry f (x,y)				= f x y
     fun flip f (a,b)				= f(b,a)
     fun (f o g) a				= f(g a)
     fun a before b				= a
