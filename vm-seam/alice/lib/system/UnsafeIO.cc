@@ -361,7 +361,7 @@ public:
   // FdInputFrame Untagging
   static FdInputFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == FD_INPUT_FRAME && p->GetSize() == SIZE);
+    Assert(p->GetLabel() == FD_INPUT_FRAME);
     return static_cast<FdInputFrame *>(p);
   }
 
