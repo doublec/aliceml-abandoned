@@ -1,16 +1,18 @@
 dnl
 dnl Author:
 dnl   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 dnl
 dnl Copyright:
 dnl   Leif Kornstaedt, 2003
+dnl   Marco Kuhlmann, 2003
 dnl
 
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-AC_INIT(Seam, 1.0, stockhausen@ps.uni-sb.de, seam)
+AC_INIT(SEAM, 0.1, seam@ps.uni-sb.de, seam)
 AC_CONFIG_SRCDIR(Seam.hh)
-AC_CONFIG_SUBDIRS([store adt generic])
+AM_INIT_AUTOMAKE
 
 dnl
 dnl  Test for Programs
@@ -98,7 +100,7 @@ dnl  Test for Unix Sockets vs. WinSock
 dnl
 AC_CACHE_CHECK([for Unix select vs. WinSock], [seam_cv_socket_flavor],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <sys/select.h>]],
-				  [[select(0, NULL, NULL, NULL, NULL);]]),
+				  [[select(0, 0, 0, 0, 0);]]),
 		  [seam_cv_socket_flavor=unix],
 		  [seam_save_LIBS="$LIBS"
 		   LIBS="-lwsock32 $LIBS"
@@ -139,10 +141,10 @@ dnl
 AC_CACHE_CHECK([which memory allocation mechanism to use],
 	       [seam_cv_alloc_flavor],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
-				  [[VirtualAlloc(NULL, 0, 0, 0);]]),
+				  [[VirtualAlloc(0, 0, 0, 0);]]),
 		  [seam_cv_alloc_flavor=virtualalloc],
 		  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <sys/mman.h>]],
-		     [[mmap(NULL, 16,
+		     [[mmap(0, 16,
 			    PROT_READ | PROT_WRITE,
 			    MAP_PRIVATE | MAP_ANONYMOUS,
 			    -1, (off_t) 0) == MAP_FAILED;]]),
@@ -168,7 +170,7 @@ dnl  Test for Signal and Friends
 dnl
 AC_CACHE_CHECK([for signal], [seam_cv_have_signal],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <signal.h>]],
-				  [[signal(SIGALRM, NULL);]]),
+				  [[signal(SIGALRM, 0);]]),
 		  [seam_cv_have_signal=yes],
 		  [seam_cv_have_signal=no])])
 
@@ -198,7 +200,7 @@ esac
 
 AC_CACHE_CHECK([for SetConsoleCtrlHandler], [seam_cv_have_consolectrl],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
-				  [[SetConsoleCtrlHandler(NULL, TRUE);]]),
+				  [[SetConsoleCtrlHandler(0, TRUE);]]),
 		  [seam_cv_have_consolectrl=yes],
 		  [seam_cv_have_consolectrl=no])])
 
@@ -210,6 +212,20 @@ case "$seam_cv_have_consolectrl" in
 	AC_DEFINE(HAVE_CONSOLECTRL, 1)
 	;;
 esac
+
+dnl
+dnl  Support for libtool
+dnl  
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_LIBTOOL
+
+case "$host" in
+  *-*-cygwin*)
+    EXTRA_LDFLAGS="${EXTRA_LDFLAGS}${EXTRA_LDFLAGS:+ }-no-undefined"
+    ;;
+esac
+
+AC_SUBST(EXTRA_LDFLAGS)
 
 dnl
 dnl  Test for dlopen
@@ -401,5 +417,5 @@ esac
 dnl
 dnl  Output Files
 dnl
-AC_CONFIG_FILES([Makefile Makefile.vars seamtool])
+AC_CONFIG_FILES([Makefile store/Makefile seamtool])
 AC_OUTPUT
