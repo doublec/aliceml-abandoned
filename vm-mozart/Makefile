@@ -111,7 +111,7 @@ ALICELINK_OPTS = -v
 
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
-OZC = ozc
+OZC = $OZHOME/bin/ozc
 MLLEX = ml-lex
 MLYACC = ml-yacc
 
