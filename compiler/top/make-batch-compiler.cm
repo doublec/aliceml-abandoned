@@ -1,5 +1,6 @@
 Group is
 
+    ../../bootstrap/component.cm
     make-option-parser.cm
     make-recursive-compiler.cm
 
