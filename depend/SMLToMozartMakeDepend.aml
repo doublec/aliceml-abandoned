@@ -42,7 +42,7 @@ struct
 					| _ => cutExtension cs))
 	end
 
-    fun stodep arguments =
+    fun depend arguments =
 	(List.app (fn filename =>
 		   let
 		       val filenames = Analyzer.analyzeFile filename
