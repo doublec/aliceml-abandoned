@@ -39,7 +39,6 @@ import
 from "../common/StampSet"
 
 import
-    structure IntermediateInfo
     structure IntermediateGrammar
 from "../common/IntermediateGrammar"
 
@@ -112,7 +111,7 @@ signature FLAT_GRAMMAR =
 	     * exception handler are identical (and - if necessary - are
 	     * marked by a SharedStm node) *)
 	  | TestStm of stm_info * id * tests * body
-	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
+	  | SharedStm of stm_info * body * stamp
 	  | ReturnStm of stm_info * exp
 	  | IndirectStm of stm_info * body option ref
 	  | ExportStm of stm_info * exp
@@ -133,14 +132,14 @@ signature FLAT_GRAMMAR =
 	    (* sorted, all labels distinct, no tuple *)
 	  | VecExp of exp_info * id vector
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
-	  | PrimAppExp of exp_info * string * id vector
+	  | PrimAppExp of exp_info * string * id vector   (* arity is exact *)
 	  | VarAppExp of exp_info * id * id args
 	  | TagAppExp of exp_info * label * int * id args
 	  | ConAppExp of exp_info * con * id args
 	  | RefAppExp of exp_info * id
 	  | SelAppExp of exp_info * prod * label * int * id
 	  | LazySelAppExp of exp_info * prod * label * int * id
-	  | FunAppExp of exp_info * id * stamp * id args
+	  | FunAppExp of exp_info * id * stamp * id args   (* arity is exact *)
 	  | FailExp of exp_info
 	withtype body = stm list
 
