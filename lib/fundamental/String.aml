@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,6 +23,7 @@ import infix 4 = <> infixr 5 :: infix 6 + - ^
 import structure Char                              from "Char"
 import structure Bool                              from "Bool"
 import structure List                              from "List"
+import structure StringCvt                         from "StringCvt"
 import signature STRING                            from "STRING-sig"
 
 
@@ -121,4 +121,43 @@ struct
 
     fun toString s		= translate Char.toString s
     fun toCString s		= translate Char.toCString s
+
+
+    (* Scanning *)
+
+    fun scan getc src		= scan' getc src [] false
+    and scan' getc src cs b	= case Char.scan getc src
+				    of SOME(c, src') =>
+				       scan' getc src' (c::cs) true
+				     | NONE => scanTrGap getc src cs b
+    and scanTrGap getc src cs b	= case getc src
+				    of SOME(#"\\", src') =>
+				       (case scanGap getc src'
+					  of SOME src'' =>
+						scanTrGap getc src'' cs true
+					   | NONE => scan'' src cs b
+				       )
+				     | SOME _ => scan'' src cs b
+				     | NONE   => scan'' src cs true
+    and scanGap getc src	= case getc src
+				    of NONE              => NONE
+				     | SOME(#"\\", src') => SOME src'
+				     | SOME(c, src') =>
+				       if Char.isSpace c
+				       then scanGap getc src'
+				       else NONE
+    and scan'' src cs true	= SOME(implode(List.rev cs), src)
+      | scan'' src cs false	= NONE
+
+    fun scanC getc src		= scanC' getc src [] false
+    and scanC' getc src cs b	= case Char.scanC getc src
+				    of SOME(c, src') =>
+				       scanC' getc src' (c::cs) true
+				     | NONE =>
+				  case getc src
+				    of SOME _ => scan'' src cs b
+				     | NONE   => scan'' src cs true
+
+    val fromString		= StringCvt.scanString scan
+    val fromCString		= StringCvt.scanString scanC
 end

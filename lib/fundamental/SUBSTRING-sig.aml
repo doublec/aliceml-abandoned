@@ -59,12 +59,16 @@ sig
     val dropr :		(String.Char.char -> bool) -> substring -> substring
     val takel :		(String.Char.char -> bool) -> substring -> substring
     val taker :		(String.Char.char -> bool) -> substring -> substring
+(*
     val position :	String.string -> substring -> substring * substring
     val span :		substring * substring -> substring
+*)
     val translate :	(String.Char.char -> String.string) -> substring
 							   -> String.string
+(*
     val tokens :	(String.Char.char -> bool) -> substring -> substring list
     val fields :	(String.Char.char -> bool) -> substring -> substring list
+*)
 
     val app :		(String.Char.char -> unit) -> substring -> unit
     val foldl :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
