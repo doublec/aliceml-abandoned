@@ -28,7 +28,7 @@ structure Infix :> INFIX =
     (* Helper for error messages *)
 
     val error				= Error.error
-    fun errorVId(VId(I,vid), s)		= error(I, s ^ VId.toString vid)
+    fun errorVId(s, VId(I,vid))		= error(I, s ^ VId.toString vid)
 
 
 
@@ -88,7 +88,7 @@ structure Infix :> INFIX =
 		let
 		    val i_vid   = info_VId vid
 		    val longvid	= SHORTLong(i_vid, vid)
-		    val exp	= ATXx(i_vid, LONGVIDAtX(i_vid,SANSOp,longvid))
+		    val x	= ATXx(i_vid, LONGVIDAtX(i_vid,WITHOp,longvid))
 		    val atx	= pair(x1,x2)
 		in
 		    APPx(Source.between(info x1, info x2), x, atx)
@@ -100,9 +100,9 @@ structure Infix :> INFIX =
 
 	    fun inf(10, NONFIX(atx)::xs) = app(atomic(atx), xs)
 
-	      | inf(p, xs as NONFIX(atx)::_) =
+	      | inf(p, xs as NONFIX(_)::_) =
 		let
-		    val result as (x,xs') = inf(p+1,xs)
+		   val result as (x,xs') = inf(p+1,xs)
 		in
 		   case xs'
 		     of INFIX(a,p',vid)::_ => if p'= p then inftail(a,p,x,xs')
@@ -110,8 +110,8 @@ structure Infix :> INFIX =
 		      | _                  => result
 		end
 
-	      | inf(_, INFIX(_,_,vid)::_) =
-		    errorVId(vid, "Misplaced infix identifier ")
+	      | inf(p, INFIX(_,_,vid)::_) =
+		    errorVId("misplaced infix identifier ", vid)
 
 	      | inf(_, []) =
 		    (* Missing operands are caught in inftail! *)
@@ -119,11 +119,11 @@ structure Infix :> INFIX =
 
 
 	    and inftail(a, p, x1, xs as INFIX(a',p',vid)::x::xs') =
-		if p' <> p then
+		if p <> p' then
 		    (x1, xs)
 		else if a <> a' then
-		    errorVId(vid, "Conflicting infix associativity at infix \
-				  \identifier ")
+		    errorVId("conflicting infix associativity at infix \
+			     \identifier ", vid)
 		else if a = LEFT then
 		    let
 			val (x2, xs'') = inf(p+1, x::xs')
@@ -135,11 +135,11 @@ structure Infix :> INFIX =
 			val (x2, xs'')  = inf(p+1,x::xs')
 			val (x2',xs''') = inftail(a,p,x2,xs'')
 		    in
-		        (infapply(x1,vid,x2), xs''')
+		        (infapply(x1,vid,x2'), xs''')
 		    end
 
 	      | inftail(a, p, x1, INFIX(_,_,vid)::[]) =
-		    errorVId(vid, "misplaced infix identifier ")
+		    errorVId("misplaced infix identifier ", vid)
 
 	      | inftail(a, p, x1, xs) = (x1, xs)
 	in
