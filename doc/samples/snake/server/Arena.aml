@@ -11,7 +11,6 @@
 
 import signature ARENA    from "ARENA-sig"
 import structure Protocol from "../common/Protocol"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
 import structure Random   from "x-alice:/lib/utility/Random"
@@ -74,7 +73,6 @@ struct
 	      | P.RIGHT  => ((Array2.update(arena,r,c,v);
 			     setWall (r,c+1) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
 
-	    fun setWall a b c d e = (Inspector.inspect(a,b,c,d,e);setWall a b c d e)
 
 	    fun child 0 _ _   _     _   = ()
 	      | child _ _ _   _    nil  = ()
@@ -137,7 +135,6 @@ struct
 				       d 
 				       P.WALL 
 				       nil
-		    val _ = Inspector.inspect(news,d,len)
 		in
 		    child walls 1 1 newd news
 		end

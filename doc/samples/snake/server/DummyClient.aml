@@ -15,7 +15,10 @@ in
         tick                = mkInspector "tick",
         levelFinished       = mkInspector "levelFinished",
         tournamentFinished  = mkInspector "tournamentFinished",
-        updatePoints        = mkInspector "updatePoints"
+        updatePoints        = mkInspector "updatePoints",
+	playersDied         = mkInspector "playersDied",
+        playersFinished     = mkInspector "playersFinished",
+	countdown           = mkInspector "countdown"
     } : Protocol.client_interface
 
 end
