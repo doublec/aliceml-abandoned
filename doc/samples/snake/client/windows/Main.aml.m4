@@ -9,6 +9,8 @@
 *
 *)
 
+changequote([[,]])
+
 import structure Gtk            from "GtkSupport"
 import structure Gdk            from "GtkSupport"
 import structure Canvas         from "GtkSupport"
@@ -169,14 +171,9 @@ struct
 				let 
 				    val (width, height) = 
 					Gtk.windowGetSize mainWindow
-				    val (w, h) = 
-					Canvas.windowToWorld
-					(canvas, real width, real height)
-				    val w = Real.toInt IEEEReal.TO_NEAREST w
-				    val h = Real.toInt IEEEReal.TO_NEAREST h
 				    val d = 
 					ArenaWidget.startCountDown 
-					(arena, w div 2, h div 2)
+					(arena, width div 2, height div 2)
                                 in
                                     displayCountDown := SOME d;
                                     d
@@ -206,7 +203,7 @@ struct
 					     gamePoints,
                                              lives = SOME lives}, str) =
 				(str ^ name ^ ":  " 
-				 ^ (Int.toString points) ^ "  /  " 
+				 ^ (Int.toString points) ^ "  +  " 
 				 ^ (Int.toString gamePoints)
 				 ^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
 			    fun toString () = List.foldl toString' "" plist
@@ -304,13 +301,20 @@ struct
 			    |   _         => ()
 		  else ()
 
+	    ifdef([[GTK2]],[[
 	    (* catches the canvas events *)
 	    fun canvasEvent [Gtk.EVENT event] = 
 		(case event of
 		     Gdk.EVENT_KEY_PRESS {keyval, ...}	=> key keyval
 		   |            _                  	=> ())
 	      |  canvasEvent       x            = ()
-
+	    ]],[[
+	    fun canvasEvent [Gtk.EVENT event] = 
+		(case event of
+		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
+		   |            _                  	=> ())
+	      |  canvasEvent       x            = ()
+            ]])
 	in
 
 	    mode := START;
@@ -335,7 +339,11 @@ struct
 
 	    (* just signalconnecting *)
 	    Gtk.signalConnect (mainWindow, "event",
+			       ifdef([[GTK2]],[[
 			       fn (_,x) => canvasEvent x);
+                               ]],[[
+                               canvasEvent);
+                               ]])
 	    Gtk.signalConnect (mainWindow, "delete-event", 
 			       fn _ => mainQuit ());
 	    Gtk.signalConnect (menuMenuSingle, "activate", 

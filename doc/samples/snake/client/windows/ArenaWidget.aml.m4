@@ -9,11 +9,12 @@
 *
 *)
 
+changequote([[,]])
+
 import structure Gtk           from "GtkSupport"
 import structure Gdk           from "GtkSupport"
 import structure Canvas        from "GtkSupport"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
-import structure Config        from "x-alice:/lib/system/Config"
 
 import signature ARENAWIDGET   from "ARENAWIDGET-sig"
 import structure Protocol      from "../../common/Protocol"
@@ -127,7 +128,7 @@ struct
 
     fun initialize () = 
         let
-	    val canvas = Canvas.new ()
+	    val canvas = Canvas.new 0
 
         in
 	    {
@@ -225,7 +226,7 @@ struct
 	let
 	    val body = Canvas.createGroup (canvas, real x, real y)
 
-	    val ground = Canvas.createEllipse (canvas, 0.0, 0.0, 
+	    val ground = Canvas.createEllipse (body, 0.0, 0.0, 
 					       real cellSize,
 					       real cellSize,
 					       snakecol, snakecol)
@@ -387,13 +388,19 @@ struct
     fun update (a as {canvas, state = ref arena, itemCache}, difflist, pos) =
 	let
             val root = Canvas.root canvas
+	(*    val (x1, y1, x2, y2) = Canvas.getScrollRegion (0, 0, 0, 0)
+
+	    val _ = if Config.platform = WIN32
+			then Canvas.setScrollRegion (x1, y1, x2, y2)
+		    else ()*)
+	(* TODO: wie war das vorher? *)
 	in
-	    Gtk.layoutFreeze canvas;
+	    Canvas.freeze canvas;
 	    List.app (insert (itemCache, arena, root)) difflist;
             (case pos of
                 NONE    => ()
             |   SOME p  => changeView (a, p));
-	    Gtk.layoutThaw canvas;
+	    Canvas.thaw canvas;
 	    Canvas.updateNow canvas
 	end 
 
@@ -416,11 +423,15 @@ struct
                 let
                     val root    = Canvas.root obj
                     val num     = Int.toString n
+		    ifdef([[GTK2]],[[
 	            val font   = "Sans 30"
-                    val (x, y) = Canvas.getScrollOffsets obj
+		    ]],[[
+		    val font   = "-*-times-bold-*-*-*-30-*-*-*-*-*-*-*"
+		    ]])
+                    val (x, y) = Canvas.getScrollOffsets (obj, 0, 0)
                     val x      = Real.fromInt (x + w)
                     val y      = Real.fromInt (y + h)
-                    val anchor = Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_CENTER
+                    val anchor = Gtk.ANCHOR_CENTER
                         
                     val numObj  = Canvas.createText (root, num, font, x, y, 
 						     color,anchor)

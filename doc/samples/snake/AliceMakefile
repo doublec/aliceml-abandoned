@@ -10,7 +10,7 @@ endif
 export ROOT
 
 ifndef EXT
-  EXT := ozf
+  EXT := stc
 endif
 export EXT
 
@@ -72,7 +72,7 @@ clean:
 
 depend, Makefile.depend: $(FILTERED_SOURCES)
 	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
-	
+
 -include Makefile.depend
 
 components: Makefile.depend $(COMPONENTS)
@@ -82,7 +82,7 @@ components: Makefile.depend $(COMPONENTS)
 library: components
 	$(ALICELINK) --include ./ ./$(ROOT) -o $(LINKED)
 
-%.$(EXT) : %-prepare.ozf
+%.$(EXT) : %-prepare.$(EXT)
 	$(ALICERUN) $<
 
 %.$(EXT) : %.aml

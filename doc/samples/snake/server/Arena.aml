@@ -5,8 +5,6 @@ import structure Protocol               from "../common/Protocol"
 import structure Pos                    from "../common/Pos"
 import structure Color                  from "../common/Color"
 import structure Random                 from "x-alice:/lib/utility/Random"
-import structure Inspector              from "x-alice:/lib/tools/Inspector"
-import structure Print                  from "x-alice:/lib/system/Print"
 
 structure Arena :> ARENA =
 struct
