@@ -91,9 +91,9 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	(* feststellen, ob eine Applikation selbstrekursiv ist. xxx *)
 	fun isSelfCall stamp' =
-	    case StampHash.lookup(lambdas, top()) of
-		NONE => false
-	      | SOME (Id (_,stamp'',_)) => stamp'=stamp''
+	    (case StampHash.lookup(lambdas, top()) of
+		 NONE => false
+	       | SOME (Id (_,stamp'',_)) => stamp'=stamp'')
 
 	fun getLambda stamp' =
 	    case StampHash.lookup(ids, stamp') of

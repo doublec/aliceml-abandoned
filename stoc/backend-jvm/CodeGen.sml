@@ -1632,19 +1632,36 @@ structure CodeGen =
 		      Areturn])
 
 		fun makeApplyMethod (modifiers, name, vals, insts, handles) =
-		    Method (MPublic :: modifiers,
-			    name,
-			    (valList vals, [Classsig CVal]),
-			    Locals (Register.max() +vals),
-			    (case insts of
-				 nil =>
-				     Multi
-				     (normalAppExp
-				      (AppExp (dummyPos, thisId,
-					       TupArgs (Vector.sub(parmIds,vals))))) ::
-				     normalReturn [Areturn]
-			       | _ => insts),
-				 handles)
+		    let
+			val ta = TupArgs (Vector.sub (parmIds, vals))
+			val stamp' = stampFromId id'
+		    in
+			Method (MPublic :: modifiers,
+				name,
+				(valList vals, [Classsig CVal]),
+				Locals (Register.max() +vals),
+				(case insts of
+				     nil =>
+					 Multi
+					 (if Lambda.sapplyPossible() then
+					      idArgCode
+					      (ta,
+					       [Invokestatic (classNameFromStamp stamp',
+							      "sapply",
+							      ([Classsig CVal],
+							       [Classsig CVal]))])
+					  else
+					      stampCode thisStamp ::
+					      idArgCode
+					      (ta,
+					       [Invokeinterface
+						(CVal, "apply",
+						 ([Classsig CVal],
+						  [Classsig CVal]))])) ::
+					      normalReturn [Areturn]
+				   | _ => insts),
+				     handles)
+		    end
 
 		fun parmLoad (0, akku) = akku
 		  | parmLoad (n, akku) = parmLoad (n-1, Aload n :: akku)
