@@ -22,7 +22,9 @@
 
 void JavaLanguageLayer::Init() {
   ClassLoader::Init();
+  PrimitiveType::Init();
   Class::Init();
+  ClassObject::Init();
   JavaString::Init();
   ThrowWorker::Init();
   NativeMethodTable::Init();
