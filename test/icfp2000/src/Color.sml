@@ -36,6 +36,6 @@ structure Color :> COLOR =
 	and clamp' x = if x < 0.0 then 0.0 else if x > 1.0 then 1.0 else x
 
 	fun nclamp {red, green, blue} =
-	    {red = clamp' red, green = clamp' green, blue = clamp' blue}
+	    {red = nclamp' red, green = nclamp' green, blue = nclamp' blue}
 	and nclamp' x = if x < 0.0 then 0.0 else x
     end
