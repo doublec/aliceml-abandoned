@@ -1,7 +1,0 @@
-import
-    functor MakeHashImpMap
-from "../misc/MakeHashImpMap"
-
-import
-    structure StringHashKey
-from "../misc/StringHashKey"

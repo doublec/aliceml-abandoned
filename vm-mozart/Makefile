@@ -24,7 +24,7 @@
 ## veryclean:
 ##    Identical to clean.
 ## distclean:
-##    Identical to veryclean.
+##    Additionally removes the generated Makefile.depend.
 ##
 ## Pass 1
 ## ------
@@ -106,93 +106,97 @@ MLYACC = ml-yacc
 ##
 
 NATIVECOMPONENTS = IO TextIO OS Unix CommandLine Tools Pickle Debug Socket
-LIBSOURCES0 = Base.sml $(NATIVECOMPONENTS:%=%.ozf.sig)
-MLYACCSOURCES0 = base.sig join.sml lrtable.sml stream.sml parser2.sml
+LIBSOURCES0 = Base.aml $(NATIVECOMPONENTS:%=%.ozf.sig)
+MLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 LIBSOURCES = $(LIBSOURCES0:%=lib/%) $(MLYACCSOURCES0:%=lib/ml-yacc/%)
 
 STOCMISCSOURCES0 = \
-	Assert.sml HASH_KEY.sig StringHashKey.sml LargeIntHashKey.sml \
-	IMP_SET.sig MakeHashImpSet.sml IMP_MAP.sig MakeHashImpMap.sml \
-	SCOPED_IMP_SET.sig MakeScopedImpSet.sml MakeHashScopedImpSet.sml \
-	SCOPED_IMP_MAP.sig MakeScopedImpMap.sml MakeHashScopedImpMap.sml \
-	STAMP.sig MakeStamp.sml GLOBAL_STAMP.sig GlobalStamp.sml \
-	PRETTY_PRINT.sig PrettyPrint.sml PP_MISC.sig PPMisc.sml \
-	URL.sig Url.sml SORT.sig MakeSort.sml DEPTH_FIRST_SEARCH.sig \
-	MakeDepthFirstSearch.sml
+	ASSERT-sig.aml Assert.aml HASH_KEY-sig.aml StringHashKey.aml \
+	LargeIntHashKey.aml IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml \
+	MkHashImpMap.aml SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml \
+	MkHashScopedImpSet.aml SCOPED_IMP_MAP-sig.aml MkScopedImpMap.aml \
+	MkHashScopedImpMap.aml StringMap.aml STAMP-sig.aml MkStamp.aml \
+	GLOBAL_STAMP-sig.aml GlobalStamp.aml PRETTY_PRINT-sig.aml \
+	PrettyPrint.aml PP_MISC-sig.aml PPMisc.aml URL-sig.aml Url.aml \
+	LIST_SORT-sig.aml MkListSort.aml DEPTH_FIRST_SEARCH-sig.aml \
+	MkDepthFirstSearch.aml
 STOCMISCSOURCES = $(STOCMISCSOURCES0:%=stoc/misc/%)
 
 STOCINFRASTRUCTURESOURCES0 = \
-	CRASH.sig Crash.sml SOURCE.sig Source.sml ERROR.sig Error.sml \
-	SWITCHES.sig MakeSwitches.sml CONTEXT.sig REPRESENTATION.sig \
-	PHASE.sig PHASE_ERROR.sig ComposePhases.sml MakeTracingPhase.sml \
-	MakeResultDumpingPhase.sml MakeContextDumpingPhase.sml \
-	EmptyContext.sml SIGNATURE.sig COMPOSER.sig TARGET.sig
+	CRASH-sig.aml Crash.aml SOURCE-sig.aml Source.aml ERROR-sig.aml \
+	Error.aml SWITCHES-sig.aml MkSwitches.aml CONTEXT-sig.aml \
+	REPRESENTATION-sig.aml PHASE-sig.aml PHASE_ERROR-sig.aml \
+	ComposePhases.aml MkTracingPhase.aml MkResultDumpingPhase.aml \
+	MkContextDumpingPhase.aml EmptyContext.aml SIGNATURE-sig.aml \
+	COMPOSER-sig.aml TARGET-sig.aml
 STOCINFRASTRUCTURESOURCES = \
 	$(STOCINFRASTRUCTURESOURCES0:%=stoc/infrastructure/%)
 
 STOCCOMMONSOURCES0 = \
-	Stamp.sml StampSet.sml StampMap.sml NAME.sig Name.sml LABEL.sig \
-	Label.sml PATH.sig Path.sml PathSet.sml PathMap.sml TYPE.sig Type.sml \
-	PP_PATH.sig PPPath.sml PP_TYPE.sig PPType.sml FIXITY.sig Fixity.sml \
-	INF.sig Inf.sml PP_INF.sig PPInf.sml INTERMEDIATE_GRAMMAR.sig \
-	MakeIntermediateGrammar.sml PP_INTERMEDIATE_GRAMMAR.sig \
-	MakePPIntermediateGrammar.sml IntermediateGrammar.sml \
-	CHECK_INTERMEDIATE.sig CheckIntermediate.sml \
-	PERVASIVE_TYPE.sig MakePervasiveType.sml PervasiveType.sml \
-	LABEL_REFLECTION.sig LabelReflection.sml \
-	PATH_REFLECTION.sig PathReflection.sml \
-	TYPE_REFLECTION.sig TypeReflection.sml \
-	PERVASIVE_TYPE_REFLECTION.sig PervasiveTypeReflection.sml \
-	FIXITY_REFLECTION.sig FixityReflection.sml \
-	INF_REFLECTION.sig InfReflection.sml
+	Stamp.aml StampSet.aml StampMap.aml NAME-sig.aml Name.aml \
+	LABEL-sig.aml Label.aml PATH-sig.aml Path.aml PathSet.aml PathMap.aml \
+	TYPE-sig.aml Type.aml PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml \
+	PPType.aml FIXITY-sig.aml Fixity.aml INF-sig.aml Inf.aml \
+	PP_INF-sig.aml PPInf.aml INTERMEDIATE_GRAMMAR-sig.aml \
+	MkIntermediateGrammar.aml PP_INTERMEDIATE_GRAMMAR-sig.aml \
+	MkPPIntermediateGrammar.aml IntermediateGrammar.aml \
+	CHECK_INTERMEDIATE-sig.aml CheckIntermediate.aml \
+	PERVASIVE_TYPE-sig.aml MkPervasiveType.aml PervasiveType.aml \
+	LABEL_REFLECTION-sig.aml LabelReflection.aml \
+	PATH_REFLECTION-sig.aml PathReflection.aml \
+	TYPE_REFLECTION-sig.aml TypeReflection.aml \
+	PERVASIVE_TYPE_REFLECTION-sig.aml PervasiveTypeReflection.aml \
+	FIXITY_REFLECTION-sig.aml FixityReflection.aml \
+	INF_REFLECTION-sig.aml InfReflection.aml
 STOCCOMMONSOURCES = $(STOCCOMMONSOURCES0:%=stoc/common/%)
 
 STOCFRONTENDCOMMONSOURCES0 = \
-	StringMap.sml ABSTRACT_GRAMMAR.sig MakeAbstractGrammar.sml \
-	PP_ABSTRACT_GRAMMAR.sig MakePPAbstractGrammar.sml \
-	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml \
-	ELABORATION_ERROR.sig ElaborationError.sml ELABORATION_PHASE.sig \
-	MakeElaborationPhase.sml TRANSLATION_PHASE.sig \
-	MakeTranslationPhase.sml MakeFrontendCommon.sml
+	ABSTRACT_GRAMMAR-sig.aml MkAbstractGrammar.aml \
+	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
+	AbstractGrammar.aml TypedGrammar.aml ENV-sig.aml Env.aml \
+	ELABORATION_ERROR-sig.aml ElaborationError.aml \
+	ELABORATION_PHASE-sig.aml MkElaborationPhase.aml \
+	TRANSLATION_PHASE-sig.aml MkTranslationPhase.aml MkFrontendCommon.aml
 STOCFRONTENDCOMMONSOURCES = \
 	$(STOCFRONTENDCOMMONSOURCES0:%=stoc/frontend-common/%)
 
 STOCFRONTENDSMLSOURCES0 = \
-	LAB.sig Lab.sml ID.sig MakeId.sml Ids.sml SCON.sig SCon.sml \
-	INPUT_GRAMMAR.sig MakeInputGrammar.sml InputGrammar.sml \
-	PARSING_ERROR.sig ParsingError.sml ABSTRACTION_ERROR.sig \
-	AbstractionError.sml INFIX.sig Infix.sml BIND_ENV.sig BindEnv.sml \
-	BIND_ENV_FROM_SIG.sig BindEnvFromSig.sml SHARING.sig Sharing.sml \
-	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
-	PARSER.sig Parser.sml DerivedForms.sml LEXER_ERROR.sig \
-	LexerError.sml Lexer.sml CountPosLexer.sml PARSING_PHASE.sig \
-	ParsingPhase.sml MakeFrontendSML.sml
+	LAB-sig.aml Lab.aml ID-sig.aml MkId.aml Ids.aml SCON-sig.aml SCon.aml \
+	INPUT_GRAMMAR-sig.aml MkInputGrammar.aml InputGrammar.aml \
+	PARSING_ERROR-sig.aml ParsingError.aml ABSTRACTION_ERROR-sig.aml \
+	AbstractionError.aml INFIX-sig.aml Infix.aml BIND_ENV-sig.aml \
+	BindEnv.aml BIND_ENV_FROM_SIG-sig.aml BindEnvFromSig.aml \
+	SHARING-sig.aml Sharing.aml ABSTRACTION_PHASE-sig.aml \
+	MkAbstractionPhase.aml DERIVED_FORMS-sig.aml PARSER-sig.aml \
+	Parser.aml DerivedForms.aml LEXER_ERROR-sig.aml MkLexerError.aml \
+	Lexer.aml MkCountPosLexer.aml PARSING_PHASE-sig.aml \
+	MkParsingPhase.aml MkFrontendSML.aml
 STOCFRONTENDSMLSOURCES = $(STOCFRONTENDSMLSOURCES0:%=stoc/frontend-sml/%)
 
 STOCBACKENDCOMMONSOURCES0 = \
-	LABEL_SORT.sig MakeLabelSort.sml LabelSort.sml FLAT_GRAMMAR.sig \
-	FlatGrammar.sml OUTPUT_FLAT_GRAMMAR.sig OutputFlatGrammar.sml \
-	ARITY.sig Arity.sml INTERMEDIATE_AUX.sig IntermediateAux.sml \
-	SIMPLIFY_MATCH.sig SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
-	FLATTENING_PHASE.sig FlatteningPhase.sml PRIM_OPS.sig \
-	PrimOps.sml VALUE_PROPAGATION_PHASE.sig ValuePropagationPhase.sml \
-	LIVENESS_ANALYSIS_PHASE.sig MakeLivenessAnalysisPhase.sml \
-	DEAD_CODE_ELIMINATION_PHASE.sig DeadCodeEliminationPhase.sml \
-	MakeBackendCommon.sml
+	LABEL_SORT-sig.aml MkLabelSort.aml LabelSort.aml FLAT_GRAMMAR-sig.aml \
+	FlatGrammar.aml OUTPUT_FLAT_GRAMMAR-sig.aml OutputFlatGrammar.aml \
+	ARITY-sig.aml Arity.aml INTERMEDIATE_AUX-sig.aml IntermediateAux.aml \
+	SIMPLIFY_MATCH-sig.aml SimplifyMatch.aml SIMPLIFY_REC-sig.aml \
+	SimplifyRec.aml FLATTENING_PHASE-sig.aml FlatteningPhase.aml \
+	PRIM_OPS-sig.aml PrimOps.aml VALUE_PROPAGATION_PHASE-sig.aml \
+	ValuePropagationPhase.aml LIVENESS_ANALYSIS_PHASE-sig.aml \
+	MkLivenessAnalysisPhase.aml DEAD_CODE_ELIMINATION_PHASE-sig.aml \
+	DeadCodeEliminationPhase.aml MkBackendCommon.aml
 STOCBACKENDCOMMONSOURCES = $(STOCBACKENDCOMMONSOURCES0:%=stoc/backend-common/%)
 
 STOCBACKENDMOZARTSOURCES0 = \
 	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
-	Assembler.oz CodeGenPhase.oz CodeGenPhase.ozf.sig MakeBackendMozart.sml
+	Assembler.oz CodeGenPhase.oz CodeGenPhase.ozf.sig MkBackendMozart.aml
 STOCBACKENDMOZARTSOURCES = $(STOCBACKENDMOZARTSOURCES0:%=stoc/backend-mozart/%)
 
-STOCTOPSOURCES0 = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
-	RECURSIVE_COMPILER.sig MakeRecursiveCompiler.sml \
-	SMLToMozartRecursiveCompiler.sml \
-	BATCH_COMPILER.sig MakeBatchCompiler.sml \
-	SMLToMozartBatchCompiler.sml StocMain.sml \
-	INTERACTIVE_TOPLEVEL.sig MakeEmacsToplevel.sml \
-	SMLToMozartEmacsToplevel.sml StotMain.sml
+STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
+	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
+	SMLToMozartRecursiveCompiler.aml \
+	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
+	SMLToMozartBatchCompiler.aml StocMain.aml \
+	INTERACTIVE_TOPLEVEL-sig.aml MkEmacsToplevel.aml \
+	SMLToMozartEmacsToplevel.aml StotMain.aml
 STOCTOPSOURCES = $(STOCTOPSOURCES0:%=stoc/top/%)
 
 STOCSOURCES = \
@@ -257,75 +261,72 @@ Rel1Base.import: Base.import
 Rel2Base.import: Base.import
 	sed 's|x-alice:/|../../|g' < $< > $@
 
-build1/lib/Base.sml: ../../lib/bootstrap/Bootstrap.aus
+build1/lib/Base.aml: ../../lib/bootstrap/Bootstrap.aus
 	cp $< $@
 
 build1/lib/%: ../%
 	cp $< $@
 
 build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1Base.import
-	(cat Rel1Base.import && sed 's|x-alice:/||g' < $<) > $@
+	cat Rel1Base.import $< > $@
 
-build1/lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header \
-	Rel2Base.import
-	cat Rel2Base.import lib/ml-yacc/$*.header $< > $@
-
-build1/stoc/misc/%: misc/%.body Rel2Base.import
+build1/lib/ml-yacc/%.aml: ../../lib/bootstrap/ml-yacc/%.aml Rel2Base.import
 	cat Rel2Base.import $< > $@
 
-build1/stoc/misc/%: ../../stoc/misc/% misc/%.header Rel2Base.import
-	cat Rel2Base.import misc/$*.header $< > $@
+build1/stoc/misc/%.aml: ../../stoc/misc/%.aml Rel2Base.import
+	cat Rel2Base.import $< > $@
 
-build1/stoc/infrastructure/%: ../../stoc/infrastructure/% \
-	infrastructure/%.header Rel2Base.import
-	cat Rel2Base.import infrastructure/$*.header $< > $@
-
-build1/stoc/common/%: ../../stoc/common/% common/%.header Rel2Base.import
-	cat Rel2Base.import common/$*.header $< > $@
-
-build1/stoc/frontend-common/%: ../../stoc/frontend-common/% \
-	frontend-common/%.header Rel2Base.import
-	cat Rel2Base.import frontend-common/$*.header $< > $@
-
-build1/stoc/frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header \
+build1/stoc/infrastructure/%.aml: ../../stoc/infrastructure/%.aml \
 	Rel2Base.import
-	cat Rel2Base.import frontend-sml/$*.header $< > $@
+	cat Rel2Base.import $< > $@
+
+build1/stoc/common/%.aml: ../../stoc/common/%.aml Rel2Base.import
+	cat Rel2Base.import $< > $@
+
+build1/stoc/frontend-common/%.aml: ../../stoc/frontend-common/%.aml \
+	Rel2Base.import
+	cat Rel2Base.import $< > $@
+
+build1/stoc/frontend-sml/%.aml: ../../stoc/frontend-sml/%.aml Rel2Base.import
+	cat Rel2Base.import $< > $@
 
 build1/stoc/frontend-sml/Lexer.lex: ../../stoc/frontend-sml/Lexer.lex
 	cp $< $@
 
-build1/stoc/frontend-sml/Lexer.sml: build1/stoc/frontend-sml/Lexer.lex.sml \
-	frontend-sml/Lexer.sml.header Rel2Base.import
-	cat Rel2Base.import frontend-sml/Lexer.sml.header $< > $@
+build1/stoc/frontend-sml/Lexer.aml: build1/stoc/frontend-sml/Lexer.lex.sml \
+	frontend-sml/Lexer.aml.header Rel2Base.import
+	cat Rel2Base.import frontend-sml/Lexer.aml.header $< > $@
 
 build1/stoc/frontend-sml/Parser.grm: ../../stoc/frontend-sml/Parser.grm
 	cp $< $@
 
-build1/stoc/frontend-sml/PARSER.sig: build1/stoc/frontend-sml/Parser.grm.sig \
-	frontend-sml/PARSER.sig.header Rel2Base.import fixparser.awk
-	(cat Rel2Base.import frontend-sml/PARSER.sig.header && \
+build1/stoc/frontend-sml/PARSER-sig.aml: \
+	build1/stoc/frontend-sml/Parser.grm.sig \
+	frontend-sml/PARSER-sig.aml.header Rel2Base.import fixparser.awk
+	(cat Rel2Base.import frontend-sml/PARSER-sig.aml.header && \
 	 awk -f fixparser.awk < $<) > $@ || rm $@
 
-build1/stoc/frontend-sml/Parser.sml: build1/stoc/frontend-sml/Parser.grm.sml \
-	frontend-sml/Parser.sml.header Rel2Base.import
-	cat Rel2Base.import frontend-sml/Parser.sml.header $< > $@
+build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
+	frontend-sml/Parser.aml.header Rel2Base.import
+	cat Rel2Base.import frontend-sml/Parser.aml.header $< > $@
 
-build1/stoc/backend-common/%: ../../stoc/backend-common/% \
-	backend-common/%.header Rel2Base.import
-	cat Rel2Base.import backend-common/$*.header $< > $@
+build1/stoc/backend-common/%.aml: ../../stoc/backend-common/%.aml \
+	Rel2Base.import
+	cat Rel2Base.import $< > $@
 
-build1/stoc/backend-mozart/%: backend-mozart/%.body Rel2Base.import
+build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1Base.import
+	cat Rel1Base.import $< > $@
+
+build1/stoc/backend-mozart/%.aml: ../../stoc/backend-mozart/%.aml \
+	Rel2Base.import
 	cat Rel2Base.import $< > $@
 
 build1/stoc/backend-mozart/%.ozf.sig: ../../stoc/backend-mozart/%.ozf.sig \
 	Rel2Base.import
 	cat Rel2Base.import $< > $@
 
-build1/stoc/top/%: top/%.body Rel2Base.import
+build1/stoc/top/%.aml: ../../stoc/top/%.aml Rel2Base.import
 	cat Rel2Base.import $< > $@
-
-build1/stoc/top/%: ../../stoc/top/% top/%.header Rel2Base.import
-	cat Rel2Base.import top/$*.header $< > $@
 
 build1/%.oz: ../../%.oz
 	cp $< $@
@@ -342,10 +343,7 @@ build1-all: $(BUILD1DIRS) build1/stow.ozf build1/stoc.ozf
 build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
 
-build1/%.ozf: build1/%.sig
-	$(STOC0) $(STOC_OPTS) -c $< -o $@
-
-build1/%.ozf: build1/%.sml
+build1/%.ozf: build1/%.aml
 	$(STOC0) $(STOC_OPTS) -c $< -o $@
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
@@ -402,7 +400,7 @@ INSTALL2FILES = \
 $(BUILD2DIRS):
 	mkdir -p $@
 
-build2/lib/Base.sml: build1/lib/Base.sml
+build2/lib/Base.aml: build1/lib/Base.aml
 	cp $< $@
 
 build2/Default.import: Base.import Other.import
@@ -415,17 +413,16 @@ $(NATIVECOMPONENTS:%=build2/lib/%.ozf.sig): build2/%: build1/%
 ## Performing Build 2
 ##
 
-build2-all: build1-all $(BUILD2DIRS)
+build2-all: build1-install $(BUILD2DIRS)
 
-build2/%.ozf: build2/%.sig
-	$(STOC1) $(STOC_OPTS) -c $< -o $@
-
-build2/%.ozf: build2/%.sml
+build2/%.ozf: build2/%.aml
 	$(STOC1) $(STOC_OPTS) -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build2/lib/%.ozf): build2/%.ozf: \
 	build1/%.ozf build2/%.ozf.sig
 	$(STOC1) $(STOC_OPTS) --replacesign $< $@.sig $@
+
+build2/lib/Unix.ozf: build2/lib/TextIO.ozf
 
 ##
 ## Installing Build 2
@@ -485,28 +482,28 @@ $(BUILD3SOURCES): build3/%: build1/%
 ##
 
 BUILD3OZSOURCES = $(filter %.oz, $(BUILD3SOURCES))
-BUILD3SIGSOURCES = $(filter %.sig, $(filter-out %.ozf.sig, $(BUILD3SOURCES)))
-BUILD3SMLSOURCES = $(filter %.sml, $(BUILD3SOURCES))
+BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 BUILD3OZLINPUTS = \
 	$(NATIVECOMPONENTS:%=build3/lib/%.ozf) \
 	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
 	  $(BUILD3OZSOURCES:%.oz=%.ozf)) \
-	$(BUILD3SIGSOURCES:%.sig=%.ozf) \
-	$(BUILD3SMLSOURCES:%.sml=%.ozf)
+	$(BUILD3ALICESOURCES:%.aml=%.ozf)
 
-build3-all: build2-all $(BUILD3DIRS) \
+build3-all: build2-install $(BUILD3DIRS) \
 	build3/stow.ozf build3/stoc.ozf build3/stot.ozf
 
-build3/%.ozf: build3/%.sig
-	$(STOC2) $(STOC_OPTS) -c $< -o $@
+build3/%.ozf: build3/%.oz
+	$(OZC) -c $< -o $@
 
-build3/%.ozf: build3/%.sml
+build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build3/lib/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.ozf.sig build3/lib/Base.ozf
 	$(STOC2) $(STOC_OPTS) --replacesign $< $@.sig $@
+
+build3/lib/Unix.ozf: build3/lib/TextIO.ozf
 
 build3/stow.ozf: $(BUILD3OZLINPUTS)
 	$(OZL) --include=.. build3/Init.ozf -o $@
@@ -545,8 +542,6 @@ $(INSTALL3LIBFILES:%=build3/install/lib/%): build3/install/%: build3/%
 ##
 ## Automatic Dependency Management
 ##
-
-BUILD3ALICESOURCES = $(BUILD3SIGSOURCES) $(BUILD3SMLSOURCES)
 
 depend: $(BUILD1DIRS) $(BUILD3DIRS) $(BUILD3SOURCES) $(BUILD3ALICESOURCES)
 	$(STODEP) $(BUILD3ALICESOURCES) > Makefile.depend
@@ -588,3 +583,4 @@ clean:
 veryclean: clean
 
 distclean: veryclean
+	-rm -f Makefile.depend

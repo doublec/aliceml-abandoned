@@ -1,7 +1,0 @@
-import
-    structure MakeHashImpMap
-from "../misc/MakeHashImpMap"
-
-import
-    structure Path
-from "Path"

@@ -1,7 +1,0 @@
-import
-    structure PrettyPrint
-from "../misc/PrettyPrint"
-
-import
-    structure Type
-from "Type"

@@ -1,7 +1,0 @@
-import
-    structure Name
-from "Name"
-
-import
-    structure Label
-from "Label"

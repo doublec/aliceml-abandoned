@@ -1,7 +1,0 @@
-import
-    structure Label
-from "../common/Label"
-
-import
-    signature ARITY
-from "ARITY"

@@ -1,7 +1,0 @@
-import structure Fixity from "Fixity"
-import structure Name   from "Name"
-import structure Label  from "Label"
-import structure Type   from "Type"
-import structure PervasiveType from "PervasiveType"
-
-import signature FIXITY_REFLECTION from "FIXITY_REFLECTION"

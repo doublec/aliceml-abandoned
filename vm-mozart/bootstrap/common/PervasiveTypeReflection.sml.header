@@ -1,8 +1,0 @@
-import structure Name  from "Name"
-import structure Label from "Label"
-import structure Type  from "Type"
-
-import structure PervasiveType from "PervasiveType"
-
-import signature PERVASIVE_TYPE_REFLECTION
-from "PERVASIVE_TYPE_REFLECTION"

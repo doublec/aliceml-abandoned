@@ -1,7 +1,0 @@
-import
-    structure Label
-from "../common/Label"
-
-import
-    structure MakeLabelSort
-from "MakeLabelSort"

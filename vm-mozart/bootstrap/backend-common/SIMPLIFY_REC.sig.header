@@ -1,7 +1,0 @@
-import
-    signature INTERMEDIATE_GRAMMAR
-from "../common/INTERMEDIATE_GRAMMAR"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
