@@ -206,14 +206,13 @@ public:
 
 class Real: private Block {
 private:
-  static const u_int SIZE = 2;
+  static const u_int SIZE = WORDS_NEEDED(1, double);
 public:
   using Block::ToWord;
 
-  //--** alignment?
   static Real *New(double v) {
     Block *b = Store::AllocChunk(SIZE);
-    reinterpret_cast<double *>(b->GetBase())[0] = v;
+    memcpy(b->GetBase(), &v, sizeof(double));
     return static_cast<Real *>(b);
   }
   static Real *FromWord(word x) {
@@ -229,7 +228,9 @@ public:
   }
 
   double GetValue() {
-    return reinterpret_cast<double *>(GetBase())[0];
+    double result;
+    memcpy(GetBase(), &result, sizeof(double));
+    return result;
   }
 };
 
