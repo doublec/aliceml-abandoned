@@ -123,7 +123,8 @@ struct
 					MainDictionary.getHighestIndexAssigned
 					    (Dictionaries.dict))
 				;  WindowHelper.setVisible(Layout.get_xdim(anc),dy)
-				;  TextIO.print (" dy is " ^Int.toString(dy) ^ "\n"))
+				;  TextIO.print (" dy is " ^Int.toString(dy) ^ "\n")
+				; !WindowManager.resize())
 			    end)
 		      end )
 	    val mapped_li = List.map update new_li 
