@@ -1,6 +1,9 @@
 
 *** Allgemein/Ideen ***
 
+setenv ALICE_TRACE_COMPONENT 1
+setenv ALICE_TRACE_RESOLVER 1
+
 * stockwerk-gtk-binding in den CVS main trunk
 - stockhausen neu bauen -> Problem!!
 * datatype arg auch in GtkUnsafe verfuegbar machen
