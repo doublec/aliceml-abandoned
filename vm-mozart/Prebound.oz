@@ -12,9 +12,7 @@
 
 functor
 import
-   Open(file)
    System(show printInfo)
-   Word at '../../vm-mozart/Word.so{native}'
 export
    BuiltinTable
    Env
@@ -46,12 +44,6 @@ define
 	 else &\\|{ToOct C div 64}|{ToOct C div 8}|{ToOct C}|Rest
 	 end
       elseof S then {Append S Rest}
-      end
-   end
-
-   fun {TextIOInputAll F}
-      case {F getS($)} of false then ""
-      [] S then S#'\n'#{TextIOInputAll F}
       end
    end
 
@@ -137,18 +129,6 @@ define
 		'::'('#'(C Cr))
 	     end nil}
 	 end
-      'Word.fromInt\'': fun {$ N#X} {Word.make N X} end
-      'Word.toInt': Word.toInt
-      'Word.toIntX': Word.toIntX
-      'Word.orb': fun {$ X#Y} {Word.orb X Y} end
-      'Word.xorb': fun {$ X#Y} {Word.xorb X Y} end
-      'Word.andb': fun {$ X#Y} {Word.andb X Y} end
-      'Word.notb': Word.notb
-      'Word.<<': fun {$ X#Y} {Word.'<<' X Y} end
-      'Word.>>': fun {$ X#Y} {Word.'>>' X Y} end
-      'Word.~>>': fun {$ X#Y} {Word.'~>>' X Y} end
-      'Word.toString':
-	 fun {$ X} {ByteString.make {Value.toVirtualString X 0 0}} end
       'Array.array':
 	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
@@ -168,33 +148,7 @@ define
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
       'Vector.sub':
-	 fun {$ V I} V.(I + 1) end
-      'TextIO.stdIn':
-	 {New Open.file init(name: stdin flags: [read])}
-      'TextIO.openIn':
-	 fun {$ S}
-	    {New Open.file init(name: S flags: [read])}
-	 end
-      'TextIO.inputAll':
-	 fun {$ F} {ByteString.make {TextIOInputAll F}} end
-      'TextIO.closeIn':
-	 fun {$ F} {F close()} '#' end
-      'TextIO.stdOut':
-	 {New Open.file init(name: stdout flags: [write])}
-      'TextIO.stdErr':
-	 {New Open.file init(name: stderr flags: [write])}
-      'TextIO.openOut':
-	 fun {$ S}
-	    {New Open.file init(name: S flags: [write create truncate])}
-	 end
-      'TextIO.output':
-	 fun {$ F#S} {F write(vs: S)} '#' end
-      'TextIO.output1':
-	 fun {$ F#C} {F write(vs: [C])} '#' end
-      'TextIO.closeOut':
-	 fun {$ F} {F close()} '#' end
-      'TextIO.print':
-	 fun {$ X} {System.printInfo X} '#' end)
+	 fun {$ V#I} V.(I + 1) end)
 
    Match = {NewName}
    Bind = {NewName}
