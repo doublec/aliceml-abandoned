@@ -47,6 +47,9 @@ private:
   static const u_int INTERPRETER_POS = 0;
 public:
   using Block::ToWord;
+  FrameLabel GetLabel() {
+    return static_cast<FrameLabel>(static_cast<int>(Block::GetLabel()));
+  }
   // StackFrame Accessors
   word GetArg(u_int pos) {
     return Block::GetArg(pos + 1);
@@ -58,36 +61,28 @@ public:
     Block::ReplaceArg(pos + 1, value);
   }
   Interpreter *GetInterpreter() {
-    return (Interpreter *)
-      Store::WordToUnmanagedPointer(Block::GetArg(INTERPRETER_POS));
+    return static_cast<Interpreter *>
+      (Store::WordToUnmanagedPointer(Block::GetArg(INTERPRETER_POS)));
   }
   // StackFrame Constructors
   static StackFrame *New(FrameLabel l, Interpreter *interpreter) {
     Block *p = Store::AllocBlock((BlockLabel) l, 1);
     Assert(p != INVALID_POINTER);
     p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
-    return (StackFrame *) p;
+    return static_cast<StackFrame *>(p);
   }
   static StackFrame *New(FrameLabel l, Interpreter *interpreter, u_int size) {
     Block *p = Store::AllocBlock((BlockLabel) l, size + 1);
     Assert(p != INVALID_POINTER);
     p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
-    return (StackFrame *) p;
+    return static_cast<StackFrame *>(p);
   }
   // StackFrame Untagging
-  static StackFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   ((p->GetLabel() >= (BlockLabel) MIN_STACK_FRAME) &&
-	    (p->GetLabel() <= (BlockLabel) MAX_STACK_FRAME)));
-    return (StackFrame *) p;
-  }
   static StackFrame *FromWordDirect(word frame) {
     Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   ((p->GetLabel() >= (BlockLabel) MIN_STACK_FRAME) &&
-	    (p->GetLabel() <= (BlockLabel) MAX_STACK_FRAME)));
-    return (StackFrame *) p;
+    Assert(p->GetLabel() >= (BlockLabel) MIN_STACK_FRAME &&
+	   p->GetLabel() <= (BlockLabel) MAX_STACK_FRAME);
+    return static_cast<StackFrame *>(p);
   }
 };
 

@@ -118,7 +118,8 @@ void TaskStack::DumpTaskStack() {
   u_int size = GetStackSize();
   for (u_int i = size; i--;) {
     word frame = GetAbsoluteArg(i);
-    Interpreter *interpreter = StackFrame::FromWord(frame)->GetInterpreter();
+    Interpreter *interpreter =
+      StackFrame::FromWordDirect(frame)->GetInterpreter();
     interpreter->DumpFrame(frame);
   }
 }

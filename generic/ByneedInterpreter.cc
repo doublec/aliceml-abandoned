@@ -41,20 +41,13 @@ public:
   static ByneedFrame *New(Interpreter *interpreter, Transient *future) {
     StackFrame *frame = StackFrame::New(BYNEED_FRAME, interpreter, SIZE);
     frame->ReplaceArg(FUTURE_POS, future->ToWord());
-    return (ByneedFrame *) frame;
+    return static_cast<ByneedFrame *>(frame);
   }
   // ByneedFrame Untagging
-  static ByneedFrame *FromWord(word frame) {
-    Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) BYNEED_FRAME);
-    return (ByneedFrame *) p;
-  }
   static ByneedFrame *FromWordDirect(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) BYNEED_FRAME);
-    return (ByneedFrame *) p;
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == BYNEED_FRAME);
+    return static_cast<ByneedFrame *>(p);
   }
 };
 
@@ -68,7 +61,7 @@ void ByneedInterpreter::PushFrame(TaskStack *taskStack, Transient *future) {
 }
 
 Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
-  ByneedFrame *frame = ByneedFrame::FromWord(taskStack->GetFrame());
+  ByneedFrame *frame = ByneedFrame::FromWordDirect(taskStack->GetFrame());
   Transient *future  = frame->GetTransient();
   Assert(future != INVALID_POINTER);
   taskStack->PopFrame();
@@ -82,7 +75,7 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   }
   // Bind succeeded
   else {
-    ((Future *) future)->ScheduleWaitingThreads();
+    static_cast<Future *>(future)->ScheduleWaitingThreads();
     future->Become(REF_LABEL, args);
     Scheduler::currentArgs = Interpreter::OneArg(future->ToWord());
     return Interpreter::CONTINUE;
@@ -92,10 +85,10 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
 Interpreter::Result ByneedInterpreter::Handle(word exn, Backtrace *,
 					      TaskStack *taskStack) {
   Transient *future =
-    ByneedFrame::FromWord(taskStack->GetFrame())->GetTransient();
-  Assert(future != INVALID_POINTER);
+    ByneedFrame::FromWordDirect(taskStack->GetFrame())->GetTransient();
   taskStack->PopFrame();
-  ((Future *) future)->ScheduleWaitingThreads();
+  static_cast<Future *>(future)->ScheduleWaitingThreads();
+  Assert(future->GetLabel() == FUTURE_LABEL);
   future->Become(CANCELLED_LABEL, exn);
   Scheduler::currentData = future->ToWord();
   Scheduler::currentArgs = Interpreter::OneArg(Scheduler::currentData);

@@ -90,7 +90,7 @@ void Scheduler::Run() {
 	      currentThread->SetArgs(currentArgs);
 	      Future *future = static_cast<Future *>(transient);
 	      future->AddToWaitQueue(currentThread);
-	      currentThread->Block(transient->ToWord());
+	      currentThread->BlockOn(transient->ToWord());
 	      nextThread = true;
 	    }
 	    break;
@@ -109,7 +109,7 @@ void Scheduler::Run() {
 	      currentThread->SetArgs(currentArgs);
 	      Future *future = static_cast<Future *>(transient);
 	      future->AddToWaitQueue(currentThread);
-	      currentThread->Block(transient->ToWord());
+	      currentThread->BlockOn(transient->ToWord());
 	      nextThread = true;
 	    }
 	    break;
