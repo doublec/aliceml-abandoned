@@ -27,7 +27,7 @@ struct
 	    fn () => (r:=(!r+1); "__jackeGeneratedId"^Int.toString(!r-1))
 	end
 
-    val newName = mkNewNamefunction 1777
+    val newName = mkNewNamefunction 0
 
     fun normalizeBnf (A.Skip) = (A.Skip,[])
       | normalizeBnf (A.Symbol s) = (A.As(s,A.Symbol s),[])

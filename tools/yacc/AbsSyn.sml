@@ -28,8 +28,8 @@ struct
 
 
     (* check that
-     0. at most one of nonassoc, assocr, assocl per token (* still missing *)
-     1. only one token declaration in program
+     0. each token occurs at most once in all the nonassoc, assocr, assocl decls (* still missing *)
+     1. only one token declaration in program  (too strict ?)
      2. only one rule declaration per rule name  (too strict ?) *)
 
     fun checkAdmissibility p = 
