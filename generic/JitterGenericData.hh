@@ -68,13 +68,13 @@ namespace Generic {
       jit_stxi_p(pos * sizeof(word), Ptr, Value);
     }
     static void GetZeroArg(u_int Dest) {
-      Sel(&::Scheduler::currentArgs, Dest);
+      Sel(&::Scheduler::currentArgs[0], Dest);
     }
     static void GetOneArg(u_int Dest) {
-      Sel(((char *) &::Scheduler::currentArgs + sizeof(word)), Dest);
+      Sel(&::Scheduler::currentArgs[1], Dest);
     }
     static void PutZeroArg(u_int Value) {
-      Put(&::Scheduler::currentArgs, Value);
+      Put(&::Scheduler::currentArgs[0], Value);
     }
     static void GetCurrentData(u_int Dest) {
       Sel(&::Scheduler::currentData, Dest);
