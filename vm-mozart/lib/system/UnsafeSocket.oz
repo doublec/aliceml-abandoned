@@ -21,57 +21,23 @@ export
 define
    IoException = {NewUniqueName 'IO.Io'}
 
-   class TextSocket from Open.socket Open.text end
-
-   ConvertLine ConvertAll
-   case {Property.get 'platform.os'} of win32 then
-      fun {ConvertLine S}
-	 case S of [&\r] then nil
-	 [] C|Cr then C|{ConvertLine Cr}
-	 [] nil then nil
-	 end
-      end
-      fun {ConvertAll S}
-	 case S of &\r|&\n|Rest then &\n|{ConvertAll Rest}
-	 [] C|Cr then C|{ConvertAll Cr}
-	 [] nil then nil
-	 end
-      end
-   else
-      fun {ConvertLine S} S end
-      fun {ConvertAll S} S end
-   end
-
    Socket = 'Socket'(server:
-			fun {$ PortOpt F} Socket Port in
-			   Socket = {New TextSocket init()}
-			   case PortOpt of 'NONE' then
-			      {Socket bind(port: ?Port)}
-			   [] 'SOME'(TakePort) then
-			      {Socket bind(takePort: TakePort port: ?Port)}
-			   end
+			fun {$ TakePort} Socket Port in
+			   Socket = {New Open.socket init()}
+			   {Socket bind(takePort: TakePort port: ?Port)}
 			   {Socket listen()}
-			   thread Accept in
-			      proc {Accept} NewSocket Host Port in
-				 {System.show waiting}
-				 {Socket accept(acceptClass: TextSocket
-						accepted: ?NewSocket
-						host: ?Host port: ?Port)}
-				 {System.show found}
-				 case {Procedure.arity F} of 2 then
-				    _ = {F '#'(NewSocket Host Port)}
-				 [] 4 then
-				    _ = {F NewSocket Host Port}
-				 end
-				 {Accept}
-			      end
-			      {Accept}
-			   end
 			   Socket#Port
+			end
+		     accept:
+			fun {$ Socket} NewSocket Host Port in
+			   {Socket accept(acceptClass: Open.socket
+					  accepted: ?NewSocket
+					  host: ?Host port: ?Port)}
+			   NewSocket#Host#Port
 			end
 		     client:
 			fun {$ Host Port} Socket in
-			   Socket = {New TextSocket init()}
+			   Socket = {New Open.socket init()}
 			   {Socket connect(host: Host port: Port)}
 			   Socket
 			end
@@ -84,29 +50,9 @@ define
 			end
 		     inputN:
 			fun {$ Socket N} Cs in
+			   %--** must only return less than N chars at EOF
 			   {Socket read(list: ?Cs size: N)}
 			   {ByteString.make Cs}
-			end
-		     inputLine:
-			fun {$ Socket}
-			   case {Socket getS($)}
-			   of false then {ByteString.make ""}
-			   elseof S then {ByteString.make {ConvertLine S}#'\n'}
-			   end
-			end
-		     output:
-			fun {$ Socket S}
-			   try
-			      {Socket write(vs: S)}
-			   catch E then
-			      {Exception.raiseError
-			       alice(IoException(name:
-						    {ByteString.make 'socket'}
-						 function:
-						    {ByteString.make 'output'}
-						 cause: E))} %--** not type exn
-			   end
-			   unit
 			end
 		     output1:
 			fun {$ Socket C}
@@ -122,9 +68,18 @@ define
 			   end
 			   unit
 			end
-		     flushOut:
-			fun {$ Socket}
-			   {Socket flush()}
+		     output:
+			fun {$ Socket S}
+			   try
+			      {Socket write(vs: S)}
+			   catch E then
+			      {Exception.raiseError
+			       alice(IoException(name:
+						    {ByteString.make 'socket'}
+						 function:
+						    {ByteString.make 'output'}
+						 cause: E))} %--** not type exn
+			   end
 			   unit
 			end
 		     close:

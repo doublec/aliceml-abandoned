@@ -17,7 +17,6 @@
 #include <arpa/inet.h>
 
 #include "emulator/Authoring.hh"
-#include "emulator/IOHandler.hh"
 
 static char *ExportCString(String *s) {
   u_int sLen = s->GetSize();
@@ -28,9 +27,17 @@ static char *ExportCString(String *s) {
   return reinterpret_cast<char *>(eb);
 }
 
-DEFINE2(UnsafeSocket_server) {
+static int setNonBlocking(int sock, bool flag) {
+  unsigned long arg = flag;
+#ifdef _MSV_VER
+  return ioctlsocket(sock, FIONBIO, &arg);
+#else
+  return ioctl(sock, FIONBIO, &arg);
+#endif
+}
+
+DEFINE1(UnsafeSocket_server) {
   DECLARE_INT(port, x0);
-  DECLARE_INT(backLog, x1);
 
   int sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
@@ -39,27 +46,35 @@ DEFINE2(UnsafeSocket_server) {
 
   // bind a name to the socket:
   sockaddr_in addr;
+  u_int addrLen = sizeof(addr);
   std::memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
   addr.sin_port = htons(port);
-  if (bind(sock, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
+  if (bind(sock, reinterpret_cast<sockaddr *>(&addr), addrLen) < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
 
   // listen for connections:
+  static const u_int backLog = 5;
   int ret = listen(sock, backLog);
   Assert(ret == 0); ret = ret;
 
-  RETURN_INT(sock);
+  if (getsockname(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen) < 0) {
+    RAISE(Store::IntToWord(0)); //--** IO.Io
+  }
+  Tuple *tuple = Tuple::New(2);
+  tuple->Init(0, Store::IntToWord(sock));
+  tuple->Init(1, Store::IntToWord(ntohs(addr.sin_port)));
+  RETURN(tuple->ToWord());
 } END
 
 DEFINE1(UnsafeSocket_accept) {
   DECLARE_INT(sock, x0);
 
   sockaddr_in addr;
-  u_int addrlen = sizeof(addr);
-  int client = accept(sock, reinterpret_cast<sockaddr *>(&addr), &addrlen);
+  u_int addrLen = sizeof(addr);
+  int client = accept(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen);
   if (client < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
@@ -71,7 +86,7 @@ DEFINE1(UnsafeSocket_accept) {
   } else {
     hostent *entry =
       gethostbyaddr(reinterpret_cast<char *>(&addr.sin_addr),
-		    addrlen, AF_INET);
+		    addrLen, AF_INET);
     if (entry)
       host = entry->h_name;
   }
@@ -148,6 +163,16 @@ DEFINE2(UnsafeSocket_inputN) {
   RETURN(buffer->ToWord());
 } END
 
+DEFINE2(UnsafeSocket_output1) {
+  DECLARE_INT(sock, x0);
+  DECLARE_INT(i, x1);
+  u_char c = i;
+  if (send(sock, &c, 1, 0) < 0) {
+    RAISE(Store::IntToWord(0)); //--** IO.Io
+  }
+  RETURN_UNIT;
+} END
+
 DEFINE2(UnsafeSocket_output) {
   DECLARE_INT(sock, x0);
   DECLARE_STRING(string, x1);
@@ -161,16 +186,6 @@ DEFINE2(UnsafeSocket_output) {
     }
     count -= n;
     buffer += n;
-  }
-  RETURN_UNIT;
-} END
-
-DEFINE2(UnsafeSocket_output1) {
-  DECLARE_INT(sock, x0);
-  DECLARE_INT(i, x1);
-  u_char c = i;
-  if (send(sock, &c, 1, 0) < 0) {
-    RAISE(Store::IntToWord(0)); //--** IO.Io
   }
   RETURN_UNIT;
 } END
@@ -204,6 +219,6 @@ word UnsafeSocket() {
   t->Init(6, Primitive::MakeClosure("UnsafeSocket_output1",
 				    UnsafeSocket_output1, 2, true));
   t->Init(7, Primitive::MakeClosure("UnsafeSocket_server",
-				    UnsafeSocket_server, 2, true));
+				    UnsafeSocket_server, 1, true));
   RETURN_STRUCTURE(t);
 }

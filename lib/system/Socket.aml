@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,5 +23,42 @@ structure Socket :> SOCKET =
 	type host = string
 	type port = int
 
-	open UnsafeSocket
+	fun server (portOpt, acceptFun) =
+	    let
+		val serverPort = Option.getOpt (portOpt, 0)
+		val (serverSocket, serverPort) = UnsafeSocket.server serverPort
+		fun acceptLoop () =
+		    let
+			val (clientSocket, clientHost, clientPort) =
+			    UnsafeSocket.accept serverSocket
+		    in
+			acceptFun (clientSocket, clientHost, clientPort);
+			acceptLoop ()
+		    end
+	    in
+		spawn acceptLoop ();
+		(serverSocket, serverPort)
+	    end
+
+	val client = UnsafeSocket.client
+
+	val input1 = UnsafeSocket.input1
+	val inputN = UnsafeSocket.inputN
+
+	fun inputLine socket =
+	    case UnsafeSocket.input1 socket of
+		SOME c => String.implode (c::inputLine' socket)
+	      | NONE => ""
+	and inputLine' socket =
+	    case UnsafeSocket.input1 socket of
+		SOME #"\n" => [#"\n"]
+	      | SOME c => c::inputLine' socket
+	      | NONE => [#"\n"]
+
+	val output = UnsafeSocket.output
+	val output1 = UnsafeSocket.output1
+
+	fun flushOut _ = ()
+
+	val close = UnsafeSocket.close
     end
