@@ -10,6 +10,68 @@
  *   $Revision$
  *)
 
+signature SCOPED_IMP_MAP =
+    sig
+	type key
+	type 'a map
+	type 'a t = 'a map
+
+	exception Collision of key
+	exception Lookup of key
+
+	val new: unit -> 'a map
+	val cloneTop: 'a map -> 'a map
+	val insertScope: 'a map -> unit
+	val deleteScope: 'a map -> unit
+	val insert: 'a map * key * 'a -> unit
+	val insertDisjoint: 'a map * key * 'a -> unit   (* Collision *)
+	val lookup: 'a map * key -> 'a option
+	val lookupExistent: 'a map * key -> 'a   (* Lookup *)
+	val appiScope: (key * 'a -> unit) -> 'a map -> unit
+    end
+
+functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
+    SCOPED_IMP_MAP where type key = ImpMap.key =
+    struct
+	type key = ImpMap.key
+	type 'a map = 'a ImpMap.t list ref
+	type 'a t = 'a map
+
+	exception Collision = ImpMap.Collision
+	exception Lookup = ImpMap.Lookup
+
+	fun new () = ref [ImpMap.new ()]
+	fun cloneTop (ref maps) =
+	    ref (ImpMap.clone (List.hd maps)::List.tl maps)
+
+	fun insertScope r = r := ImpMap.new ()::(!r)
+	fun deleteScope r = r := List.tl (!r)
+
+	fun insert (ref maps, key, entry) =
+	    ImpMap.insert (List.hd maps, key, entry)
+	fun insertDisjoint (ref maps, key, entry) =
+	    ImpMap.insertDisjoint (List.hd maps, key, entry)
+
+	fun lookup' (nil, _) = NONE
+	  | lookup' ([map], key) = ImpMap.lookup (map, key)
+	  | lookup' (map::rest, key) =
+	    case ImpMap.lookup (map, key) of
+		NONE => lookup' (rest, key)
+	      | res as SOME _ => res
+
+	fun lookup (ref maps, key) = lookup' (maps, key)
+
+	fun lookupExistent (ref maps, key) =
+	    case lookup' (maps, key) of
+		SOME entry => entry
+	      | NONE => raise Lookup key
+
+	fun appiScope f (ref maps) = ImpMap.appi f (List.hd maps)
+    end
+
+functor MakeHashScopedImpMap(Key: HASH_KEY) =
+	MakeScopedImpMap(MakeHashImpMap(Key))
+
 structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
     struct
 	structure C = EmptyContext
@@ -117,17 +179,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | valueMin (_, _) = UNKNOWN
 
 	fun unionEnv (env', env) =
-	    IdMap.appi (fn (id, entry as (value, isToplevel)) =>
-			case IdMap.lookup (env', id) of
-			    SOME (value', isToplevel') =>
-				let
-				    val entry' =
-					(valueMin (value, value'), isToplevel)
-				in
-				    Assert.assert (isToplevel = isToplevel');
-				    IdMap.insert (env', id, entry')
-				end
-			  | NONE => IdMap.insertDisjoint (env', id, entry)) env
+	    IdMap.appiScope
+	    (fn (id, entry as (value, isToplevel)) =>
+	     case IdMap.lookup (env', id) of
+		 SOME (value', isToplevel') =>
+		     let
+			 val entry' = (valueMin (value, value'), isToplevel)
+		     in
+			 Assert.assert (isToplevel = isToplevel');
+			 IdMap.insert (env', id, entry')
+		     end
+	       | NONE => IdMap.insertDisjoint (env', id, entry)) env
 
 	fun getTerm (info, id, env) =
 	    case IdMap.lookupExistent (env, id) of
@@ -398,12 +460,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		   env, isToplevel, shared) =
 	    let
 		val bodyOptRef = ref (SOME body3)
-		val entry = SHARED_ANN (bodyOptRef, IdMap.clone env)
+		val entry = SHARED_ANN (bodyOptRef, IdMap.cloneTop env)
 		val _ = StampMap.insertDisjoint (shared, stamp, entry)
-		val body1 = vpBody (body1, env, isToplevel, shared)
+		val body1 = vpBodyScope (body1, env, isToplevel, shared)
 		val _ = IdMap.insertDisjoint (env, id, (HANDLE, isToplevel))
 		val body2 = vpBody (body2, env, isToplevel, shared)
-		val _ = IdMap.deleteExistent (env, id)
 		val info' = {region = #region info, liveness = ref Unknown}
 		val body3 = [IndirectStm (info', bodyOptRef)]
 	    in
@@ -429,7 +490,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	       | SHARED =>
 		     let
 			 val bodyOptRef = ref (SOME body)
-			 val entry = SHARED_ANN (bodyOptRef, IdMap.clone env)
+			 val entry =
+			     SHARED_ANN (bodyOptRef, IdMap.cloneTop env)
 			 val info' = {region = #region info,
 				      liveness = ref Unknown}
 		     in
@@ -461,11 +523,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		    let
 			val (testBodyList, elseBody) =
 			    vpTestStm (elseBody, id', env, isToplevel, shared)
-			val _ = IdMap.insertScope env
+			val env = IdMap.cloneTop env
 			val testRes = vpTest (test, id, env, isToplevel)
 			val _ = declareTest (id, testRes, env, isToplevel)
 			val body = vpBody (body, env, isToplevel, shared)
-			val _ = IdMap.deleteScope env
 		    in
 			case testRes of
 			    ALWAYS_FALSE =>   (*--** warn? *)
@@ -587,9 +648,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    vpBody (stms, env, isToplevel, shared)
 	  | vpBody (nil, _, _, _) = nil
 	and vpBodyScope (body, env, isToplevel, shared) =
-	    (IdMap.insertScope env;
-	     vpBody (body, env, isToplevel, shared) before
-	     IdMap.deleteScope env)
+	    vpBody (body, IdMap.cloneTop env, isToplevel, shared)
 	and vpBodyShared (body, stamp, env, isToplevel) =
 	    (case sortShared (body, stamp) of
 		 ([stamp']::sorted, shared) =>
@@ -649,6 +708,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    TextIO.print
 	    ("\n" ^ OutputFlatGrammar.outputComponent component ^ "\n")
 
+	fun idToString (Id (_, stamp, Name.InId)) =
+	    "$" ^ Stamp.toString stamp
+	  | idToString (Id (_, stamp, Name.ExId s)) =
+	    s ^ "$" ^ Stamp.toString stamp
+
 	fun translate () (_, component as (imports, (body, sign))) =
 	    let
 		val env = newEnv ()
@@ -666,5 +730,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 "\nValuePropagationPhase crashed: \
 		 \debug information follows\n";
 		 debug component;
+		 case exn of
+		     IdMap.Lookup id =>
+			 TextIO.print ("Lookup " ^ idToString id ^ "\n")
+		   | IdMap.Collision id =>
+			 TextIO.print ("Collision " ^ idToString id ^ "\n")
+		   | _ => ();
 		 raise exn)
     end
