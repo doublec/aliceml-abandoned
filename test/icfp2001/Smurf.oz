@@ -10,7 +10,7 @@ import
    Inspector
    Explorer
 \endif
-   Select at 'x-ozlib://duchier/cp/Select.ozf'
+   Select
    TagComponent('Tag$': Tag) at 'Tag.ozf'
 export
    'Smurf$': SmurfModule
