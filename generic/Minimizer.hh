@@ -23,7 +23,7 @@
 
 class PBlock;
 
-class Partition : private Block {
+class SeamDll Partition : private Block {
 private:
   static const BlockLabel PARTITION_LABEL = MIN_DATA_LABEL;
   enum {NA_POS, BA_POS, TO_DO_POS,
@@ -52,7 +52,7 @@ public:
   void Minimize();
 };
 
-class PartitionLoader {
+class SeamDll PartitionLoader {
 public:
 
   // Static Constructor
