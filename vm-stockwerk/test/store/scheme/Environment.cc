@@ -93,6 +93,11 @@ void Environment::SearchId(u_int name, VarType *type, u_int *id) {
   }
   else {
     std::fprintf(stderr, "line %d: unbound variable `%s'\n", Parser::line, AtomToString(name));
-    std::exit(0);
+    if (Parser::interactive) {
+      longjmp(Parser::buf, 0);
+    }
+    else {
+      std::exit(0);
+    }
   }
 }

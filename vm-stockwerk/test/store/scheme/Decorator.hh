@@ -24,6 +24,8 @@ protected:
   static void DecorateLet(Block *instr);
   static void DecorateApplication(Block *instr);
   static void DecorateBegin(Block *instr);
+  static void DecorateSetQ(Block *instr);
+  static void DecorateSetCxr(Block *instr);
 public:
   static void Decorate(word tree);
 };
