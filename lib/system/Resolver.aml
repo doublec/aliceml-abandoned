@@ -1,0 +1,277 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Assert        from "../utility/Assert"
+import structure StringHashKey from "../utility/StringHashKey"
+import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure Url           from "../utility/Url"
+import structure Config        from "Config"
+import structure TextIO        from "TextIO"
+import structure IO            from "IO"
+import structure OS            from "OS"
+import signature RESOLVER      from "RESOLVER-sig"
+
+structure Resolver: RESOLVER =
+    struct
+	val traceFlag = ref (isSome (OS.Process.getEnv "ALICE_TRACE_RESOLVER"))
+
+	fun trace s =
+	    if !traceFlag then TextIO.output (TextIO.stdErr, s)
+	    else ()
+
+	structure Handler =
+	    struct
+		type handler = string * (string -> Url.t option)
+		type t = handler
+
+		exception Syntax
+
+		fun expandUrl url =
+		    Url.resolve (Url.fromString (OS.FileSys.getDir ())) url
+
+		fun baseUrl url =
+		    let
+			val path = Url.getPath url
+		    in
+			case List.rev path of
+			    ""::_ => url
+			  | _ => Url.setPath (url, path @ [""])
+		    end
+
+		val default =
+		    ("default", fn s => SOME (expandUrl (Url.fromString s)))
+
+		fun root s =
+		    let
+			val base = baseUrl (Url.fromString s)
+			fun f s =
+			    let
+				val rel = Url.fromString s
+			    in
+				if Url.isAbsolutePath rel then NONE
+				else SOME (expandUrl (Url.resolve base rel))
+			    end
+		    in
+			("root " ^ s, f)
+		    end
+
+		fun cacheUrl url =
+		    let
+			val path = Url.getPath url
+			val path =
+			    case Url.getDevice url of
+				SOME c => String.str c::path
+			      | NONE => path
+			val path =
+			    case Url.getAuthority url of
+				SOME authority => authority::path
+			      | NONE => path
+			val path =
+			    case Url.getScheme url of
+				SOME scheme => scheme::path
+			      | NONE => path
+		    in
+			Url.setPath (Url.empty, path)
+		    end
+
+		fun cache s =
+		    let
+			val base = baseUrl (Url.fromString s)
+			fun f s =
+			    let
+				val url = Url.fromString s
+			    in
+				if isSome (Url.getScheme url) then
+				    SOME (expandUrl (Url.resolve
+							 base (cacheUrl url)))
+				else NONE
+			    end
+		    in
+			("cache " ^ s, f)
+		    end
+
+		fun dropPrefix (x::xr, y::yr) =
+		    if x = y then dropPrefix (xr, yr) else NONE
+		  | dropPrefix (nil, ys) = SOME ys
+		  | dropPrefix (_, _) = NONE
+
+		fun position sep cs =
+		    case dropPrefix (sep, cs) of
+			SOME cr => SOME (nil, cr)
+		      | NONE =>
+			    case cs of
+				c::cr =>
+				    (case position sep cr of
+					 SOME (prefix, suffix) =>
+					     SOME (c::prefix, suffix)
+				       | NONE => NONE)
+
+		datatype elem = TEXT of char list | VAR of string
+
+		fun parse cs =
+		    case position [#"?", #"{"] cs of
+			SOME (prefix, suffix) => TEXT prefix::parse' suffix
+		      | NONE =>
+			    case cs of
+				_::_ => [TEXT cs]
+			      | nil => nil
+		and parse' cs =
+		    case position [#"}"] cs of
+			SOME (prefix, suffix) =>
+			    VAR (String.implode prefix)::parse suffix
+		      | NONE => raise Syntax
+
+		exception Failure
+
+		structure StringMap = MkHashImpMap(StringHashKey)
+
+		fun match (TEXT cs'::rest, cs, env) =
+		    (case dropPrefix (cs', cs) of
+			 SOME cr => match (rest, cr, env)
+		       | NONE => raise Failure)
+		  | match (VAR x::TEXT cs'::rest, cs, env) =
+		    (case position cs' cs of
+			 SOME (prefix, suffix) =>
+			     (StringMap.insert (env, x, prefix);
+			      match (rest, suffix, env))
+		       | NONE => raise Failure)
+		  | match ([VAR x], cs, env) = StringMap.insert (env, x, cs)
+		  | match (_, _, _) = raise Assert.failure
+
+		fun instantiate (p, env) =
+		    String.implode (List.concat (instantiate' (p, env)))
+		and instantiate' (TEXT cs::rest, env) =
+		    cs::instantiate' (rest, env)
+		  | instantiate' (VAR x::rest, env) =
+		    StringMap.lookupExistent (env, x)::instantiate' (rest, env)
+		  | instantiate' (nil, _) = nil
+
+		fun pattern' (p1, p2) s =
+		    let
+			val env = StringMap.new ()
+		    in
+			(match (p1, String.explode s, env);
+			 SOME (Url.fromString (instantiate (p2, env))))
+			handle Failure => NONE
+		    end
+
+		fun prefix (s1, s2) =
+		    let
+			val p1 = [TEXT (String.explode s1), VAR "x"]
+			val p2 = [TEXT (String.explode s2), VAR "x"]
+		    in
+			("prefix " ^ s1 ^ " -> " ^ s2, pattern' (p1, p2))
+		    end
+
+		fun pattern (s1, s2) =
+		    let
+			val p1 = parse (String.explode s1)
+			val p2 = parse (String.explode s2)
+		    in
+			("pattern " ^ s1 ^ " -> " ^ s2, pattern' (p1, p2))
+		    end
+
+		val sep = Config.pathSeparator
+
+		fun isEsc c =
+		    case Config.pathEscape of
+			SOME c' => c = c'
+		      | NONE => false
+
+		fun token (c1::(cs as c2::cr), sep, prefix) =
+		    if isEsc c1 then token (cr, sep, c2::prefix)
+		    else if c1 = sep then
+			(String.implode (List.rev prefix), cs, true)
+		    else token (cs, sep, c1::prefix)
+		  | token ([c], sep, prefix) =
+		    if isEsc c then raise Syntax
+		    else if c = sep then
+			(String.implode (List.rev prefix), nil, true)
+		    else (String.implode (List.rev (c::prefix)), nil, false)
+		  | token (nil, _, prefix) =
+		    (String.implode (List.rev prefix), nil, false)
+
+		fun parse s = parse' (String.explode s)
+		and parse' nil = [default]
+		  | parse' [#"="] = nil
+		  | parse' (#"r":: #"o":: #"o":: #"t":: #"="::cs) =
+		    let
+			val (arg, rest, _) = token (cs, sep, nil)
+		    in
+			root arg::parse' rest
+		    end
+		  | parse' (#"c":: #"a":: #"c":: #"h":: #"e":: #"="::cs) =
+		    let
+			val (arg, rest, _) = token (cs, sep, nil)
+		    in
+			cache arg::parse' rest
+		    end
+		  | parse' (#"p":: #"r":: #"e":: #"f":: #"i":: #"x"::
+			    #"="::cs) =
+		    (case token (cs, #"=", nil) of
+			 (arg1, inter, true) =>
+			     let
+				 val (arg2, rest, _) = token (cs, sep, nil)
+			     in
+				 prefix (arg1, arg2)::parse' rest
+			     end
+		       | (_, _, false) => raise Syntax)
+		  | parse' (#"p":: #"a":: #"t":: #"t":: #"e":: #"r":: #"n"::
+			    #"="::cs) =
+		    (case token (cs, #"=", nil) of
+			 (arg1, inter, true) =>
+			     let
+				 val (arg2, rest, _) = token (cs, sep, nil)
+			     in
+				 pattern (arg1, arg2)::parse' rest
+			     end
+		       | (_, _, false) => raise Syntax)
+		  | parse' cs =
+		    let
+			val (arg, rest, _) = token (cs, sep, nil)
+		    in
+			root arg::parse' rest
+		    end
+	    end
+
+	type resolver = string * Handler.t list
+	type t = resolver
+
+	fun new (name, handlers) = (name, handlers)
+
+	fun exists filename =
+	    (TextIO.closeIn (TextIO.openIn filename); true)
+	    handle IO.Io _ => false
+
+	fun localize ((name, handlers), s) =
+	    (trace ("[" ^ name ^ "] localize request: " ^ s ^ "\n");
+	     localize' (name, handlers, s))
+	and localize' (name, (name', f)::handlers, s) =
+	    (case f s of
+		 SOME url =>
+		     let
+			 val s' = Url.toString url
+		     in
+			 trace ("[" ^ name ^ "] ...[" ^ s' ^ "] (" ^
+				name' ^ ")\n");
+			 if exists s' then
+			     (trace ("[" ^ name ^ "] ...load succeeded\n");
+			      SOME s')
+			 else localize' (name, handlers, s)
+		     end
+	       | NONE =>
+		     (trace ("[" ^ name ^ "] ...[not applicable] (" ^
+			     name' ^ ")\n");
+		      localize' (name, handlers, s)))
+	  | localize' (name, nil, _) =
+	    (trace ("[" ^ name ^ "] ...all handlers failed\n"); NONE)
+    end
