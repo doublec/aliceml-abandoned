@@ -84,10 +84,20 @@ local
 		    val _ = TextIO.print "### Runtime interface matching:\n"
 		    val _ = prInf "j1" j1
 		    val _ = prInf "j2" j2
-		    val (j,rea) = Inf.match(j1,j2)
-		    val _ = prInf "j2'" j
 		in
-		    (j,rea)
+		   (Inf.match(j1,j2) before TextIO.print "-> OK\n") handle e =>
+		       (TextIO.print("-> " ^ General.exnName e ^ "\n"; raise e)
+		end
+
+	    fun narrow(j1,j2) =
+		let
+		    val _ = TextIO.print "### Runtime interface narrowing:\n"
+		    val _ = prInf "j1" j1
+		    val _ = prInf "j2" j2
+		    val j = Inf.narrow(j1,j2)
+		    val _ = prInf "j" j
+		in
+		    j
 		end
 	end
     end
