@@ -87,15 +87,13 @@ import structure Type         from "Type"
 import structure Fixity       from "Fixity"
 import signature INF          from "INF-sig"
 
-(*DEBUG*)
+(*DEBUG
+import structure Addr         from "../utility/Addr"
 import structure TextIO       from "../system/TextIO"
 import structure PrettyPrint  from "../utility/PrettyPrint"
 import structure PPPath       from "PPPath"
 import structure PPType       from "PPType"
-(**)
-
-(*DEBUG*)
-structure TextIO = struct val stdOut = TextIO.stdOut fun print s = () end
+*)
 
 structure Inf :> INF =
 struct
@@ -121,7 +119,7 @@ struct
     datatype inf' =
 	  TOP					(* top *)
 	| ABS    of kind * path			(* interface constructor *)
-	| SIG    of GlobalStamp.t * sign	(* signature *)
+	| SIG    of sign			(* signature *)
 	| THAT   of mod				(* singleton *)
 	| FUN    of path * inf * inf		(* arrow (functor) *)
 	| LAMBDA of path * inf * inf		(* abstraction (dep. function)*)
@@ -144,7 +142,8 @@ struct
     and      inf  = inf' cell			(* [jota,j] *)
     and      kind = kind' cell			(* [kappa,k] *)
     and      sign = item list ref *		(* [sigma,s] *)
-		    item Tab.t option ref
+		    item Tab.t option ref *
+		    GlobalStamp.t
 			(* The list of items in a sig is in reverse order! *)
 
     type t = inf
@@ -175,6 +174,12 @@ struct
 	PathMap.isEmpty inf_rea
 
     val dummyRea = newRea()
+
+    fun cloneRea {typ_rea, mod_rea, inf_rea} : rea =
+	{ typ_rea = PathMap.clone typ_rea
+	, mod_rea = PathMap.clone mod_rea
+	, inf_rea = PathMap.clone inf_rea
+	}
 
     fun unionRea({typ_rea, mod_rea, inf_rea}, rea : rea) =
 	(PathMap.unionDisjoint(typ_rea, #typ_rea rea);
@@ -212,24 +217,25 @@ struct
      * the old forward reference trick.
      *)
 
-    val apply'Fwd 	= ref NONE : (inf * mod -> inf) option ref
-    val matchFwd 	= ref NONE : (inf * inf -> inf * rea) option ref
-    val matchKindFwd 	= ref NONE : (kind * kind -> unit) option ref
-    val realiseFwd	= ref NONE : (rea * inf -> inf) option ref
-    val realiseKindFwd	= ref NONE : (rea * kind -> kind) option ref
+    fun dummy _		= raise Assert.failure
+    val apply'Fwd 	= ref dummy : (inf * mod -> inf) ref
+    val matchFwd 	= ref dummy : (inf * inf -> inf * rea) ref
+    val matchKindFwd 	= ref dummy : (kind * kind -> unit) ref
+    val realiseFwd	= ref dummy : (rea * inf -> inf) ref
+    val realiseKindFwd	= ref dummy : (rea * kind -> kind) ref
 
-    fun apply'(j,m)	   = Option.valOf(!apply'Fwd) (j,m)
-    fun match(j1,j2)	   = Option.valOf(!matchFwd) (j1,j2)
-    fun matchKind(k1,k2)   = Option.valOf(!matchKindFwd) (k1,k2)
-    fun realise(rea,j)	   = Option.valOf(!realiseFwd) (rea,j)
-    fun realiseKind(rea,k) = Option.valOf(!realiseKindFwd) (rea,k)
+    fun apply'(j,m)	   = !apply'Fwd(j,m)
+    fun match(j1,j2)	   = !matchFwd(j1,j2)
+    fun matchKind(k1,k2)   = !matchKindFwd(k1,k2)
+    fun realise(rea,j)	   = !realiseFwd(rea,j)
+    fun realiseKind(rea,k) = !realiseKindFwd(rea,k)
 
 
   (* Debugging aids *)
 
     val newKind = new
 
-    (*DEBUG: The following allows tracing of all interface nodes.*)
+    (*DEBUG: The following allows tracing of all interface nodes.
 
     fun pth p = (Label.toString(Path.toLab p) handle Domain => "_") ^
 		"$" ^ Int.toString(Path.hash p)
@@ -239,7 +245,7 @@ struct
     val rec inf'ToString =
 	fn TOP		=> "TOP"
 	 | ABS(_,p)	=> "ABS(" ^ pth p ^ ")"
-	 | SIG(_,s)	=> "SIG(" ^ sigToString s ^ ")"
+	 | SIG s	=> "SIG(" ^ sigToString s ^ ")"
 	 | THAT(p,j)	=> "THAT(" ^ pth p ^ "," ^ inf j ^ ")"
 	 | FUN(p,j1,j2)	=> "FUN(" ^ pth p ^ "," ^ inf j1 ^ "," ^ inf j2 ^ ")"
 	 | LAMBDA(p,j1,j2)
@@ -250,7 +256,7 @@ struct
 
     and inf = fn j => id j (*DEBUG ^ "=" ^ inf'ToString(content j)*)
 
-    and sigToString = fn(ref itemsr,_) =>
+    and sigToString = fn(ref itemsr,_,_) =>
 	String.separate ";" (List.rev (List.map itemToString itemsr))
 
     and itemToString =
@@ -292,7 +298,7 @@ struct
 	    k
 	end
 
-    (**)
+    *)
 
 
   (* Kinds *)
@@ -375,7 +381,7 @@ struct
     fun isApply j	= case asInf j of APPLY _  => true | _ => false
 
     fun asAbs j		= case asInf j of ABS(k,p) => p | _ => raise Interface
-    fun asSig j		= case asInf j of SIG(_,s) => s | _ => raise Interface
+    fun asSig j		= case asInf j of SIG s    => s | _ => raise Interface
     fun asSing j	= case asInf j of THAT m   => m | _ => raise Interface
     fun asArrow j	= case asInf j of FUN x    => x | _ => raise Interface
     fun asLambda j	= case asInf j of LAMBDA x => x | _ => raise Interface
@@ -393,7 +399,7 @@ struct
     fun isArrow' j	= case asInf' j of FUN _    => true | _ => false
 
     fun asAbs' j	= case asInf' j of ABS(k,p) => p | _ => raise Interface
-    fun asSig' j	= case asInf' j of SIG(_,s) => s | _ => raise Interface
+    fun asSig' j	= case asInf' j of SIG s    => s | _ => raise Interface
     fun asArrow' j	= case asInf' j of FUN x    => x | _ => raise Interface
 
 
@@ -401,7 +407,7 @@ struct
 
     val top'		= let val j = new TOP in fn() => j end
     fun abs'(k,p)	= new(ABS(k,p))
-    fun sign' s		= new(SIG(GlobalStamp.new(), s))
+    fun sign' s		= new(SIG s)
     fun arrow'(p,j1,j2)	= new(FUN(p,j1,j2))
 
     fun abbrev'(j1,j2)	= new(ABBREV(reduceAbbrevL j1, reduceAbbrevR j2))
@@ -500,8 +506,10 @@ struct
       | itemPath(INF(p,_))	= p
       | itemPath _		= raise Assert.failure
 
-    fun tab (itemsr, ref(SOME tab)) = tab
-      | tab (itemsr, r as ref NONE) =
+    fun stamp (_,_,z)		= z
+
+    fun tab((itemsr, ref(SOME tab), _) : sign) = tab
+      | tab((itemsr, r as ref NONE, _) : sign) =
 	let
 	    val tab = Tab.new()
 	in
@@ -514,8 +522,9 @@ struct
 
   (* Signature construction *)
 
-    fun newSig itemsr	= (ref itemsr, ref NONE)
+    fun newSig itemsr	= (ref itemsr, ref NONE, GlobalStamp.new())
     fun emptySig()	= newSig []
+    fun emptySig' s	= (ref [], ref NONE, stamp s)	(* TODO: Hack! *)
 
     fun hide(FIX(l,q))	= ()
       | hide(VAL(l,t))	= ()
@@ -523,7 +532,7 @@ struct
       | hide(MOD(p,j))	= Path.hide p
       | hide(INF(p,k))	= Path.hide p
 
-    fun extend(s as (itemsr,_), dom, item) =
+    fun extend(s as (itemsr,_,_), dom, item) =
 	(Tab.insertWithi (extendClash itemsr) (tab s, dom, item);
 	 itemsr := item :: !itemsr)
     and extendClash itemsr (dom,item',item) =
@@ -544,7 +553,7 @@ struct
 
     exception Item
 
-    fun items(ref items, _)	= items
+    fun items(ref items, _, _)	= items
 
     fun isFixItem(FIX _)	= true
       | isFixItem _		= false
@@ -626,7 +635,7 @@ struct
 	case content j
 	  of TOP		=> ()
 	   | ABS(k,_)		=> compressKind k
-	   | SIG(_,s)		=> compressSig s
+	   | SIG s		=> compressSig s
 	   | THAT(_,j)		=> compress j
 	   | ( FUN(_,j1,j2)
 	     | LAMBDA(_,j1,j2)
@@ -639,7 +648,7 @@ struct
 	   | SING j		=> compress j
 	   | DEP(_,j,k)		=> (compress j ; compressKind k)
 
-    and compressSig(itemsr,tab)	= (List.app compressItem (!itemsr); tab := NONE)
+    and compressSig(isr,tab,_)	= (List.app compressItem (!isr); tab := NONE)
 
     and compressItem(MOD(_,j))	= compress j
       | compressItem(INF(_,k))	= compressKind k
@@ -650,7 +659,7 @@ struct
 
     exception Unclosed of lab * typ
 
-    fun close (ref items, _)	= List.app closeItem items
+    fun close s			= List.app closeItem (items s)
     and closeItem(FIX _)	= ()
       | closeItem(VAL(l,t))	= if Type.isClosed t then ()
 				  else raise Unclosed(l,t)
@@ -662,7 +671,7 @@ struct
     and closeInf j =
 	case content j
 	  of (TOP | ABS _)	=> ()
-	   | SIG(_,s)		=> close s
+	   | SIG s		=> close s
 	   | THAT(_,j1)		=> closeInf j1
 	   | ( FUN(_,j1,j2)
 	     | LAMBDA(_,j1,j2)
@@ -673,9 +682,6 @@ struct
   (* Cloning for substitution. *)
 
     fun build(mj,mk,mt, rea : rea, j) =
-(*DEBUG*)(TextIO.print "build...  = ";
-TextIO.print(inf j ^ "\n");
-(let val j' = (
 	case Map.lookup(mj,j)
 	  of SOME j'		=> j'
 	   | NONE		=>
@@ -693,14 +699,13 @@ TextIO.print(inf j ^ "\n");
 					     else buildNew(mj,j,abs'(k',p))
 					 end
 				   )
-	   | SIG(_,s)		=> buildSig(mj,mk,mt, rea, j, sign',s)
+	   | SIG s		=> buildSig(mj,mk,mt, rea, j, sign',s)
 	   | THAT m		=> buildSing(mj,mk,mt, rea, j, sing',m)
 	   | FUN(p,j1,j2)	=> buildBind(mj,mk,mt, rea, j, arrow',p,j1,j2)
 	   | LAMBDA(p,j1,j2)	=> buildBind(mj,mk,mt, rea, j, lambda',p,j1,j2)
 	   | APPLY(j1,m)	=> buildApply(mj,mk,mt, rea, j, apply',j1,m)
 	   | ABBREV(j1,j2)	=> buildPair(mj,mk,mt, rea, j, abbrev',j1,j2)
-) in j' before TextIO.print ("build out = " ^inf j'^ "\n") end) handle e => (TextIO.print "build ouch\n";raise e)
-)
+
     and buildOld(mj,j)    = (Map.insert(mj,j,j); j)
     and buildNew(mj,j,j') = (Map.insert(mj,j,j'); j')
 
@@ -760,7 +765,7 @@ TextIO.print(inf j ^ "\n");
 	    else buildNew(mj, j, toInf m')
 	end
 
-    and buildSig(mj,mk,mt, rea, j, toInf, (ref items, _)) =
+    and buildSig(mj,mk,mt, rea, j, toInf, s) =
 	let
 	    val change       = ref false
 	    fun newItem item = (change := true; item)
@@ -825,10 +830,10 @@ TextIO.print(inf j ^ "\n");
 			 else newItem(INF(p,k'))
 		end
 
-	    val items' = List.map buildItem items
+	    val items' = List.map buildItem (items s)
 	in
 	    if !change
-	    then buildNew(mj, j, toInf(ref items', ref NONE))
+	    then buildNew(mj, j, toInf(newSig items'))
 	    else buildOld(mj, j)
 	end
 
@@ -890,7 +895,7 @@ TextIO.print(inf j ^ "\n");
 	case content j
 	  of TOP	=> j
 	   | ABS _	=> j
-	   | SIG(_,s)	=> instanceSig(rea,p,j,s)
+	   | SIG s	=> instanceSig(rea,p,j,s)
 	   | THAT _	=> j
 	   | FUN _	=> j
 	   | LAMBDA _	=> j
@@ -916,13 +921,13 @@ TextIO.print(inf j ^ "\n");
 		in
 		    if Type.isSingKind k then ()
 		    else (PathMap.insert(#typ_rea rea, p, Type.abs(k,p'));
-(*DEBUG*)
+(*DEBUG
 TextIO.print "instance: ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
 TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
-(**)());
+*)());
 		    change := true;
 		    TYP(p',k)
 		end
@@ -933,13 +938,13 @@ TextIO.print "\n";
 		in
 		    if isSing j then ()
 		    else (PathMap.insert(#mod_rea rea, p, (p',j'));
-(*DEBUG*)
+(*DEBUG
 TextIO.print "instance: ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
 TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
-(**)());
+*)());
 		    change := true;
 		    MOD(p',j')
 		end
@@ -967,7 +972,7 @@ TextIO.print "\n";
 	case content j
 	  of TOP		=> j
 	   | ABS(k,p)		=> top'()
-	   | SIG(g,s)		=> let val s' = minimiseSig(u,s) in
+	   | SIG s		=> let val s' = minimiseSig(u,s) in
 				       if s = s' then j
 				       else if List.null(items s') then top'()
 				       else sign' s'
@@ -990,7 +995,7 @@ TextIO.print "\n";
 				       else abbrev'(j1,j2')
 				   end
 
-    and minimiseSig(u, s as (ref items, _)) =
+    and minimiseSig(u, s) =
 	let
 	    val change = ref false
 
@@ -1027,10 +1032,10 @@ TextIO.print "\n";
 		else
 		    (change := true; NONE)
 
-	    val items' = List.mapPartial minimiseItem items
+	    val items' = List.mapPartial minimiseItem (items s)
 	in
 	    if !change
-	    then (ref items', ref NONE)
+	    then newSig items'
 	    else s
 	end
 
@@ -1038,7 +1043,7 @@ TextIO.print "\n";
 	case content j
 	  of TOP		=> ()
 	   | ABS(k,p)		=> (minimiseKind(u,k); PathSet.insert(u,p))
-	   | SIG(g,s)		=> minimiseSig'(u,s)
+	   | SIG s		=> minimiseSig'(u,s)
 	   | THAT m		=> minimiseMod(u,m)
 	   | ( FUN(p,j1,j2)
 	     | LAMBDA(p,j1,j2))	=> (minimise'(u,j2); minimise'(u,j1))
@@ -1046,7 +1051,7 @@ TextIO.print "\n";
 	   | APPLY(j,m)		=> (minimise'(u,j); minimiseMod(u,m))
 	   | ABBREV(j1,j2)	=> (minimise(u,j2); minimise'(u,j1))
 
-    and minimiseSig'(u, (ref items, _)) =
+    and minimiseSig'(u, s) =
 	let
 	    fun minimiseItem(FIX _) = ()
 	      | minimiseItem(VAL(l,t)) =
@@ -1062,7 +1067,7 @@ TextIO.print "\n";
 		if not(PathSet.member(u,p)) then () else
 		    minimiseKind(u,k)
 	in
-	    List.app minimiseItem items
+	    List.app minimiseItem (items s)
 	end
 
     and minimiseMod(u, (p,j))	= (PathSet.insert(u,p); minimise'(u,j))
@@ -1081,19 +1086,13 @@ TextIO.print "\n";
 
     fun matchRea(s1,s2) =
 	let
-(*DEBUG*)val _ = TextIO.print"matchRea...\n"
 	    val rea = newRea()
 	in
-	    matchRea'(rea,s1,s2);
+	    if stamp s1 = stamp s2 then () else matchRea'(rea,s1,s2);
 	    rea
-before TextIO.print"matchRea out\n"
 	end
-handle e=>( TextIO.print"matchRea ouch\n";raise e)
 
-(*DEBUG
     and matchRea'(rea,s1,s2) = List.appr (matchReaItem(rea, tab s1)) (items s2)
-*)
-and matchRea'(rea,s1,s2) = (TextIO.print"matchRea'...\n";List.appr (matchReaItem(rea, tab s1)) (items s2)before TextIO.print"matchRea' out\n")handle e=>(TextIO.print"matchRea' ouch\n";raise e)
 
     and matchReaItem (rea,tab1) item2 =
 	let
@@ -1104,13 +1103,13 @@ and matchRea'(rea,s1,s2) = (TextIO.print"matchRea'...\n";List.appr (matchReaItem
 		 if Type.isSingKind k2 then () else
 		 let val k1 = selectTyp(strong(Tab.lookupExistent(tab1,dom)))
 		 in
-(*DEBUG*)
+(*DEBUG
 TextIO.print "matchRea: ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
 TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(Type.asSingKind k1), 80);
 TextIO.print "\n";
-(**)
+*)
 		     if Type.matchesKind(k1,k2)
 		     then PathMap.insert(#typ_rea rea, p2, Type.asSingKind k1)
 		     else raise Mismatch(MismatchTyp(l,k1,k2))
@@ -1119,16 +1118,14 @@ TextIO.print "\n";
 		 let val j1  = selectMod(strong(Tab.lookupExistent(tab1,dom)))
 		     val j2' = realise(rea, j2)
 		 in
-(*DEBUG*)
+(*DEBUG
 TextIO.print "matchRea: ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
 TextIO.print " -> ";
-(*
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath(#1(asSing j1)), 80);
-*)
 TextIO.print(inf'ToString(content j1));
 TextIO.print "\n";
-(**)
+*)
 		     PathMap.insert(#mod_rea rea, p2, asSing j1);
 		     if not(isSig' j2') then () else
 		     if not(isSig' j1)
@@ -1140,13 +1137,13 @@ TextIO.print "\n";
 		 if isSingKind k2 then () else
 		 let val k1 = selectInf(strong(Tab.lookupExistent(tab1,dom)))
 		 in
-(*DEBUG*)
+(*DEBUG
 TextIO.print "matchRea: ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
 TextIO.print " -> ";
 TextIO.print(inf(asSingKind k1));
 TextIO.print "\n";
-(**)
+*)
 		     matchKind(k1,k2) handle Mismatch m =>
 			raise Mismatch(MismatchInf(l,m));
 		     PathMap.insert(#inf_rea rea, p2, asSingKind k1)
@@ -1158,19 +1155,14 @@ TextIO.print "\n";
 
     (* actual matching *)
 
-(*DEBUG
     fun match(j1,j2) = match'(false,j1,j2)
-*)fun match(j1,j2) = (TextIO.print "match...\n";match'(false,j1,j2)before TextIO.print"match out\n")handle e=>(TextIO.print"match ouch\n";raise e)
     and match'(isNested,j1,j2) =
-(TextIO.print("j1 = " ^ inf j1 ^ "\n");
-TextIO.print("j2 = " ^ inf j2 ^ "\n");
 	if Cell.equals(j1,j2) then (j2, newRea()) else
 	case (content j1, content j2)
 	  of (_, TOP) =>
 		(j2, newRea())
 	   | (THAT m1, THAT m2) =>
 		let
-(*DEBUG*) val _ = TextIO.print "THAT-THAT\n"
 		    val (m,rea) = matchMod(isNested,m1,m2)
 		in
 		    if Cell.equals(#2 m2, #2 m)
@@ -1179,7 +1171,6 @@ TextIO.print("j2 = " ^ inf j2 ^ "\n");
 		end
 	   | (THAT(p1,j1'), _) =>
 		let
-(*DEBUG*) val _ = TextIO.print "THAT-_\n"
 		    val (j,rea) = match'(isNested,j1',j2)
 		in
 		    (sing'(p1,#1(instance(p1,j))), rea)
@@ -1188,11 +1179,9 @@ TextIO.print("j2 = " ^ inf j2 ^ "\n");
 		if Path.equals(p1,p2)
 		then (j2, newRea())
 		else raise Mismatch(Incompatible(j1,j2))
-	   | (SIG(z1,s1), SIG(z2,s2)) =>
-		if z1 = z2 then (j2, newRea()) else
+	   | (SIG s1, SIG s2) =>
 		if isNested then (matchSig(s1,s2,j2), dummyRea) else
 		let
-(*DEBUG*) val _ = TextIO.print "SIG-SIG\n"
 		    val rea  = matchRea(s1,s2)
 		    val j2'  = realise(rea,j2)
 		    val j2'' = matchSig(s1, asSig j2', j2')
@@ -1209,7 +1198,7 @@ TextIO.print("j2 = " ^ inf j2 ^ "\n");
 					raise Mismatch(MismatchRan m)
 		in
 		    (j2, newRea())
-		    (* For applicative functors this would be
+		    (* For applicative functors this would be???
 		    if Cell.equals(j22,j22')
 		    then (j2, rea2)
 		    else (arrow'(p2,j21,j22'), rea2)
@@ -1241,9 +1230,8 @@ TextIO.print("j2 = " ^ inf j2 ^ "\n");
 	   | (_, ABBREV(_,j2)) => match'(isNested,j1,j2)
 
 	   | _ => raise Mismatch(Incompatible(j1,j2))
-)
+
     and matchMod(isNested, (p1,j1), (p2,j2)) =
-(*DEBUG*) (TextIO.print "matchMod...\n";(
 	if not(Path.equals(p1,p2))
 	then raise Mismatch(IncompatibleMod(p1,p2)) else
 	let
@@ -1251,16 +1239,14 @@ TextIO.print("j2 = " ^ inf j2 ^ "\n");
 	in
 	    ((p2,j2'), rea)
 	end
-)before TextIO.print "matchMod out\n")handle e => (TextIO.print "matchMod ouch\n";raise e)
 
     and matchSig(s1,s2,j2) =
-(*DEBUG*) (TextIO.print "matchSig...\n";
-TextIO.print("s1 = " ^ sigToString s1 ^ "\n");
-TextIO.print("s2 = " ^ sigToString s2 ^ "\n");
+	if stamp s1 = stamp s2 then j2 else
 	let
 	    val change = ref false
+	    val tab1   = tab s1
 
-	    fun matchItem tab1 item2 =
+	    fun matchItem item2 =
 		let
 		    val dom as (_,l) = itemDom item2
 		    val item1        = strong(Tab.lookupExistent(tab1,dom))
@@ -1302,16 +1288,14 @@ TextIO.print("s2 = " ^ sigToString s2 ^ "\n");
 		     | Tab.Lookup(MOD',l) => raise Mismatch(MissingMod l)
 		     | Tab.Lookup(INF',l) => raise Mismatch(MissingInf l)
 
-	     val items2' = List.mapr (matchItem(tab s1)) (items s2)
+	     val items2' = List.mapr matchItem (items s2)
 	in
 	    if !change
-	    then sign'(ref items2', ref NONE)
+	    then sign'(newSig items2')
 	    else j2
 	end
-before TextIO.print "matchSig out\n")handle e => (TextIO.print "matchSig ouch\n";raise e)
 
     and matchKind(k1,k2) =
-(*DEBUG*) (TextIO.print "matchKind...\n";(
 	if Cell.equals(k1,k2) then () else
 	case (content k1, content k2)
 	  of (GROUND, GROUND) => ()
@@ -1327,9 +1311,9 @@ before TextIO.print "matchSig out\n")handle e => (TextIO.print "matchSig ouch\n"
 					raise Mismatch(MismatchRan m)
 		end
 	   | _ => raise Mismatch(IncompatibleKind(k1,k2))
-)before TextIO.print "matchKind out\n")handle e => (TextIO.print "matchKind ouch\n";raise e)
 
     and equal(j1,j2) = ignore(match(j1,j2); match(j2,j1))
+
 
 
   (* Intersection *)
@@ -1371,10 +1355,9 @@ before TextIO.print "matchSig out\n")handle e => (TextIO.print "matchSig ouch\n"
 		if Path.equals(p1,p2)
 		then j2
 		else raise Mismatch(Incompatible(j1,j2))
-	   | (SIG(z1,s1), SIG(z2,s2)) =>
+	   | (SIG s1, SIG s2) =>
 		(* s1 /\ s2 = ... *)
 		(*TODO: currently unidirectional only *)
-		if z1 = z2 then j2 else
 		if isNested then j1 else
 		let
 		    val rea  = matchRea(s2,s1)
@@ -1646,9 +1629,9 @@ OLD-------------------*)
 
   (* Tie forwarding knots *)
 
-    val _ = apply'Fwd      := SOME apply'
-    val _ = matchFwd       := SOME match
-    val _ = matchKindFwd   := SOME matchKind
-    val _ = realiseFwd     := SOME realise
-    val _ = realiseKindFwd := SOME realiseKind
+    val _ = apply'Fwd      := apply'
+    val _ = matchFwd       := match
+    val _ = matchKindFwd   := matchKind
+    val _ = realiseFwd     := realise
+    val _ = realiseKindFwd := realiseKind
 end
