@@ -28,13 +28,13 @@ TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 all: simulator compiler
 
-anton: anton.stc all
-	$(ALICERUN) anton
-
 simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 %.stc: %.aml
 	$(ALICEC) $<
+
+%.ant: %.ante
+	compile $<
 
 parsec/Makefile.depend:
 	(cd parsec && $(MAKE) depend)
