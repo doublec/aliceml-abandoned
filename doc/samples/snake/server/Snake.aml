@@ -11,7 +11,7 @@
 import signature SNAKE      from "SNAKE-sig"
 import structure Protocol   from "../common/Protocol"
 import structure Pos        from "../common/Pos"
-
+import structure Color      from "../common/Color"
 
 structure Snake :> SNAKE =
 struct
@@ -21,17 +21,21 @@ struct
     datatype snake = SN of {
         direction : Protocol.direction ref,
         belly :     int ref,
+        color :     Color.color,
         body :      Pos.pos list ref
     }
 
     type t = snake
     
     
-    fun snake (pos, d) = SN { 
+    fun snake (c, pos, d) = SN { 
             direction   = ref d, 
             belly       = ref 0, 
+            color       = c,
             body        = ref [pos]
         }
+
+    fun color (SN { color = c, ... }) = c
 
     fun belly (SN { belly = ref b, ... })   = b
 
@@ -41,6 +45,7 @@ struct
 
     fun move (SN {  direction = direction as ref old_dir, 
                     belly,
+                    color,
                     body = body_ref as ref body
                  }, new_dir) =
         let 

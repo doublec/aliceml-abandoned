@@ -10,13 +10,15 @@
  *)
 import structure Pos        from "../common/Pos"
 import structure Protocol   from "../common/Protocol"
+import structure Color      from "../common/Color"
+
 
 signature SNAKE =
 sig
     type snake
     type t = snake
 
-    val snake :     Pos.pos * Protocol.direction -> snake
+    val snake :     Color.color * Pos.pos * Protocol.direction -> snake
     (** [snake (p, d)] returns a snake of length 1 (just the head) 
         at position [p] with an empty belly looking into direction [d]. *)
 
@@ -27,6 +29,8 @@ sig
         PRE: c >= 0
         POST: belly s = old (belly s) + c
       *)
+    
+    val color :     snake -> Color.color
 
     val direction : snake -> Protocol.direction
     

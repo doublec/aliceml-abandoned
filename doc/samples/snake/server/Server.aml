@@ -1,7 +1,22 @@
+(* Alice Snake 2.0 - Server
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
 import structure Protocol       from "../common/Protocol"
 import structure Participant    from "Participant"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure MkHashImpMap   from "x-alice:/lib/data/MkHashImpMap"
+import structure Arena          from "Arena"
+import structure Pos            from "../common/Pos"
+import structure Snake          from "Snake"
+
 
 structure Server =
 struct
@@ -35,9 +50,9 @@ struct
 
     structure PMap      = MkHashImpMap (Int)
 
-    val participants    = PMap.map ()
+    val participants    = PMap.map () : Participant.participant PMap.map
+
     val state           = ref ST_JOIN
-    
     val pc_id           = 0
     
     (* print a message on stderr *)
@@ -48,6 +63,34 @@ struct
         let
             structure Part  = Participant
             structure P     = Protocol
+            
+            val levels          = (ref [] : (Arena.arena * 
+                                            (Pos.pos * P.direction) list ref) list ref)
+            
+            fun currentArena () = 
+                assert not (null (!levels)) do #1 (hd (!levels))
+            
+
+            fun nextStartPos () =
+                let
+                    val gates   = assert not (null (!levels)) do 
+                                    #2 (hd (!levels))
+                in
+                    case !gates of
+                        []      => NONE
+                    |   g :: gs => (gates := gs; SOME g)
+                end
+           
+
+            (* [allParticpants p] return all participants which 
+               satisfy the predicate p.  
+             *)
+            fun allParticipants p = List.map #2 (List.filter p 
+                                    (PMap.toList participants))
+            
+            fun allPlayers ()   = allParticipants 
+                    (fn (_, (_, ref (Part.PLAYING _))) => true
+                    |   (_, _)                    => false)
 
             val lock        = Lock.lock ()
             
@@ -65,7 +108,6 @@ struct
                 let
                     (* we use this promise as a lock *)
                     val p       = Promise.promise () 
-                    
                     val state   = Ref.exchange (state_ref, Promise.future p)
                 in
                     ((case state of
@@ -89,47 +131,159 @@ struct
              *)
             fun invokeSeveral (clients, f, a) = 
                 List.app (fn c => spawn (invoke (c, f, a))) clients 
-                
+               
+
+            (* [withParticipand (procName, id, f) returns a function which 
+               when invoked applies the participant with id [id]
+               on f unless that participant is disconnected.
+             *)
+            fun withParticipant default (procName, id, f) a =
+                let val p as (_, ref st) = 
+                            PMap.lookupExistent (participants, id)
+                in
+                    case st of 
+                        Part.DISCONNECTED   => default
+                    |   _                   => f (p, a)
+                end handle PMap.Unknown id =>
+                    raise P.Protocol (procName ^ ": unknown client " ^ 
+                            Int.toString id)
             
-            fun disconnect id = Lock.sync lock (fn () => 
-                ()
-                handle PMap.Unknown id => 
-                    raise P.Protocol ("disconnect: unknown client " ^ 
-                            Int.toString id))
+            fun disconnect id = Lock.sync lock (
+                withParticipant () ("disconnect", id, fn (part, ()) => 
+                    ()
+                ))
 
-            fun play id = Lock.sync lock (fn (name, color) => 
-                ()
-                handle PMap.Unknown id =>
-                    raise P.Protocol ("play: unknown client " ^ 
-                            Int.toString id))
+
+            fun play id = Lock.sync lock (
+                withParticipant false ("play", id, fn (part, (name, color)) =>
+                    case ! (#2 part) of
+                        (non Part.CONNECTED)    =>
+                        raise P.Protocol "Server: invalid call to play"
+
+                    |   Part.CONNECTED  =>
+                        case nextStartPos () of
+                            SOME (pos, dir) =>
+                            let
+                                val playerState = {
+                                        points      = ref 0,
+                                        gamePoints  = ref 0,
+                                        name        = name,
+                                        color       = color,
+                                        deathCount  = ref 0,
+                                        nextDir     = ref dir
+                                    }
+                                val snake   = Snake.snake (color, pos, dir)
+                                val players = allParticipants 
+                                        (fn (_, (_,ref s)) => 
+                                            case s of 
+                                                Part.PLAYING _  => true
+                                            |   _               => false)
+
+                                fun getNameColor (_,ref (Part.PLAYING 
+                                            ({ name, color, ...}, _))) = 
+                                        (name, color)
+                                |   getNameColor (_,_) = assert false
+
+                            in
+                                (#2 part) := Part.PLAYING (playerState, snake);
+                                (* inform the other PLAYERs *)
+                                invokeSeveral (players, #playersJoined, 
+                                                [(name, color)]);
+                                (* inform the NEW player of the other 
+                                   already connected players *)
+                                spawn (invoke (part, #playersJoined, 
+                                        List.map getNameColor players));
+                                true
+                            end
+                        |   NONE => false   
+                            (* no unused gates left :-( *)
+                ))
                 
-            fun watch id = Lock.sync lock (fn () => 
-                ()
-                handle PMap.Unknown id =>
-                    raise P.Protocol ("watch: unknown client " ^ 
-                            Int.toString id))
+                
+            fun watch id = Lock.sync lock (
+                withParticipant () ("watch", id, fn (part, ()) => 
+                    case ! (#2 part) of
+                        (non Part.CONNECTED)    =>
+                        raise P.Protocol "Server: invalid call to watch"
 
-            fun turn id = Lock.sync lock (fn dir => 
-                ()
-                handle PMap.Unknown id =>
-                    raise P.Protocol ("turn: unknown client " ^
-                            Int.toString id))
+                    |   Part.CONNECTED  =>
+                        let
+                            val players = allParticipants 
+                                        (fn (_, (_,ref s)) => 
+                                            case s of 
+                                                Part.PLAYING _  => true
+                                            |   _               => false)
 
-            fun changeView id = Lock.sync lock (fn hint => 
-                ()
-                handle PMap.Unknown id =>
-                    raise P.Protocol ("changeView: unknown client " ^
-                            Int.toString id))
+                            fun getNameColor (_,ref (Part.PLAYING 
+                                        ({ name, color, ...}, _))) = 
+                                    (name, color)
+                            |   getNameColor (_,_) = assert false
+                        in
+                            (#2 part) := Part.WATCHING (ref ~1);
+                            (* inform the NEW player of the other 
+                               already connected players *)
+                            spawn (invoke (part, #playersJoined, 
+                                    List.map getNameColor players));
+                            ()
+                        end
+                ))
 
-            fun giveUp id = Lock.sync lock (fn () => 
-                ()
-                handle PMap.Unknown id =>
-                    raise P.Protocol ("changeView: unknown client " ^
-                            Int.toString id))
+
+            fun turn id = Lock.sync lock (
+                withParticipant () ("turn", id, fn (part, dir) => 
+                    case ! (#2 part) of
+                        (non (Part.PLAYING _))  =>
+                        raise P.Protocol "Server: invalid call to turn"
+
+                    |   Part.PLAYING (state, _) =>
+                        (#nextDir state) := dir
+                ))
+
+
+            fun changeView id = Lock.sync lock (
+                withParticipant () ("changeView", id, fn (part, hint) => 
+                    ()
+                ))
+
+
+            fun giveUp id = Lock.sync lock (
+                withParticipant () ("giveUp", id, fn (part, ()) => 
+                    ()
+                ))
+
 
             val startGame = Lock.sync lock (fn () =>
-                ()
+                    () 
                 )
+
+           
+            val tick    = Lock.sync lock (fn (oldArena, newArena) =>
+                let
+                    val players = allPlayers ()
+                    fun movePlayer p =
+                        let val snake   = Part.snake p
+                            val info    = Part.playerInfo p
+                        in
+                            Snake.move (snake, !(#nextDir info))
+                        end
+                        
+                    (* move all still playing snakes *)
+                    val _ = List.app movePlayer players;
+                    
+                    (* place them on the newArena *)
+                    val (deadSnakes, finishedSnakes) =
+                        Arena.placeSnakes (newArena, 
+                            List.map Part.snake players);
+
+                    val changes = Arena.diff (oldArena, newArena)
+                in
+                    (* TODO: broadcast everything *)
+                    
+                    
+                    (* swap old & new arena *)
+                    (newArena, oldArena)
+                end)
+                
 
             val connect = Lock.sync lock (fn client_interface =>
                 (* connect is only called by UCs. *)

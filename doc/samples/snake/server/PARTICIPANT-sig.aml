@@ -15,7 +15,6 @@ import structure Snake    from "Snake"
 
 signature PARTICIPANT =
 sig
-
     type id = int
 
     type player_info = {
@@ -36,9 +35,12 @@ sig
       | WATCHING of id ref
       | DISCONNECTED    (* TODO: Do we need it? *)
 
-
+    
     type participant = (Protocol.client_interface * state ref)
 
+
+    val playerInfo :    participant -> player_info
+    val snake :         participant -> Snake.snake
 end
 
 

@@ -28,4 +28,15 @@ struct
 
 
     type participant = (Protocol.client_interface * state ref)
+
+
+    fun playerInfo (_, ref (PLAYING (st, _)))   = st
+    |   playerInfo (_, ref (FINISHED (st, _)))  = st
+    |   playerInfo (_, ref (DEAD (st, _)))      = st
+    |   playerInfo _                            = assert false
+
+
+    fun snake (_, ref (PLAYING (_, sn)))        = sn
+    |   snake _                                 = assert false
+
 end
