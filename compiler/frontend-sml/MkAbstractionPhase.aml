@@ -3049,12 +3049,19 @@ struct
 
 
     and trOpenImp (E,i) (E',acc) =
-	(foldiSigs(trOpenImpSig(E,i))
-	(foldiTys (trOpenImpTy (E,i))
-	(foldiVals(trOpenImpVal(E,i))
-	(foldiInfs(trOpenImpInf(E,i))
-	(foldiStrs(trOpenImpStr(E,i)) acc E') E') E') E') E')
-	(* Structures have to go first so that __pervasive is the 1st import! *)
+	let
+	    (* __pervasive has to go first! *)
+	    val acc' = case lookupStr(E',strid_pervasive)
+			 of NONE     => acc
+			  | SOME str =>
+			        trOpenImpStr (E,i) (strid_pervasive,str,acc)
+	in
+	    (foldiSigs(trOpenImpSig(E,i))
+	    (foldiStrs(trOpenImpStr'(E,i))
+	    (foldiTys (trOpenImpTy (E,i))
+	    (foldiVals(trOpenImpVal(E,i))
+	    (foldiInfs(trOpenImpInf(E,i)) acc' E') E') E') E') E')
+	end
 
     and trOpenImpInf (E,i) (vid', (_,inf), acc) =
 	let
@@ -3103,6 +3110,11 @@ struct
 	in
 	    O.ModImp(i, modid', O.NoDesc(i)) :: acc
 	end
+
+    and trOpenImpStr' (E,i) (strid', str, acc) =
+	if strid' = strid_pervasive
+	then acc
+	else trOpenImpStr (E,i) (strid', str, acc)
 
     and trOpenImpSig (E,i) (sigid', (_,_,F), acc) =
 	let
