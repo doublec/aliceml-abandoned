@@ -199,10 +199,19 @@ struct
 
     fun testFromString () = 
 	let
-	    fun t s = StringCvt.scanString (Word.scan StringCvt.HEX) s
+	    fun t s = SOME (StringCvt.scanString (Word.scan StringCvt.HEX) s)
+		          handle Overflow => NONE
 	in 
 	    Gen.try 1000 Gen.string
-	       (Test.test (fn s => Word.fromString s = t s))
+	       (Test.test (fn s => 
+			      let
+				  val r = t s
+			      in 
+				  if Option.isSome r
+				  then Word.fromString s = (valOf r)
+				  else (Word.fromString s; false)
+	                                   handle Overflow => true
+			      end))
 	end
 
     val suite = ("Word", [("wordSize", testWordSize),
