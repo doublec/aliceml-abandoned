@@ -15,6 +15,7 @@
 
 #define STOCKWERK_FOREIGN
 
+#include "generic/SignalHandler.hh"
 #include "store/Store.hh"
 #include "store/Map.hh"
 #include "store/WeakMap.hh"
@@ -44,7 +45,6 @@
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
 #include "generic/IODesc.hh"
-#include "generic/SignalHandler.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Transients.hh"
 #include "generic/Worker.hh"

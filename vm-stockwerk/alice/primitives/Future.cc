@@ -10,12 +10,12 @@
 //   $Revision$
 //
 
+#include "generic/SignalHandler.hh"
 #include "generic/Transients.hh"
 #include "generic/Closure.hh"
 #include "generic/BindFutureWorker.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/Scheduler.hh"
-#include "generic/SignalHandler.hh"
 #include "alice/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {

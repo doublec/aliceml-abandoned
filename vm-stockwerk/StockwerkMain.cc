@@ -12,20 +12,20 @@
 //   $Revision$
 //
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
 #endif
 
+#include "generic/SignalHandler.hh"
 #include "generic/RootSet.hh"
 #include "generic/UniqueString.hh"
 #include "generic/Transients.hh"
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
 #include "generic/IODesc.hh"
-#include "generic/SignalHandler.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Primitive.hh"
 #include "generic/Unpickler.hh"
@@ -38,6 +38,12 @@
 #include "generic/Profiler.hh"
 #endif
 #include "alice/AliceLanguageLayer.hh"
+
+#if !(defined(__MINGW32__) || defined(_MSC_VER))
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#endif
 
 extern word UnsafeConfig();
 extern word UnsafeIODesc();

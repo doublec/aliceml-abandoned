@@ -17,7 +17,7 @@
 #pragma implementation "generic/SignalHandler.hh"
 #endif
 
-#include <signal.h>
+#include <csignal>
 #include "store/Store.hh"
 
 //--** avoid magic constant:

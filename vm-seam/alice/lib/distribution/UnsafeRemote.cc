@@ -10,14 +10,16 @@
 //   $Revision$
 //
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <cstring>
 #include <cstdlib>
-#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
 #else
 #include <netdb.h>
 #include <sys/utsname.h>
 #include <arpa/inet.h>
+#include <cstring>
+#include <cstdlib>
 #endif
 
 #include "generic/RootSet.hh"

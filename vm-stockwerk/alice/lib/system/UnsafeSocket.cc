@@ -10,20 +10,24 @@
 //   $Revision$
 //
 
-#include "Base.hh"
-#include <cstring>
-#include <unistd.h>
-#include <sys/types.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#include <cstring>
 #include <winsock.h>
 #else
 #include <errno.h>
+
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <cstring>
 #endif
+
+#include "Base.hh"
+
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "generic/IOHandler.hh"
 #include "generic/Transients.hh"
