@@ -33,6 +33,11 @@ local
 	    case e of
 		Crash.Crash message =>
 		    TextIO.output (TextIO.stdErr, "CRASH: " ^ message ^ "\n")
+	      | IO.Io {name, function, cause} =>
+		    TextIO.output (TextIO.stdErr,
+				   "Io {name = " ^ name ^
+				   ", function = " ^ function ^
+				   ", cause = " ^ exnName cause ^ "}\n")
 	      | _ => ();
 	    TextIO.output (TextIO.stdErr, "uncaught exception " ^
 					  exnName e ^ ":\n" ^ trace);
