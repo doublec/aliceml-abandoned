@@ -22,8 +22,11 @@ signature ABSTRACTION_ERROR =
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
 	(* Expressions *)
+	| ExpConArgSuperfluous
 	| ExpRowLabDuplicate	of Lab
 	(* Patterns *)
+	| PatConArgMissing
+	| PatConArgSuperfluous
 	| PatVIdDuplicate	of VId
 	| WithPatVIdDuplicate	of VId
 	| PatLongVIdVar

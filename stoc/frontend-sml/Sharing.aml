@@ -75,7 +75,9 @@ structure Sharing :> SHARING =
 	    | NONE                    => ( Plain(spec), clongids )
 	)
       | annotate(RecSpec(i, specs), clongids) =
-	let val (specs',clongids') = annotateList(specs, clongids) in
+	let
+	    val (specs',clongids') = annotateList(Vector.toList specs, clongids)
+	in
 	    ( Recursive(i, specs'), clongids' )
 	end
       | annotate(spec, clongids) =
@@ -93,7 +95,7 @@ structure Sharing :> SHARING =
     fun modlongidToMod(ShortId(i, modid)) =
 	    VarMod(i, modid)
       | modlongidToMod(LongId(i, modlongid, modlab)) =
-	    SelMod(i, modlongidToMod modlongid, modlab)
+	    SelMod(i, modlab, modlongidToMod modlongid)
 
     fun singleton(inf, modlongid) =
 	let
@@ -106,7 +108,7 @@ structure Sharing :> SHARING =
 
     fun buildSig(inf1, i, modlongid, spec) =
 	let
-	    val inf2  = buildSig'(modlongid, SigInf(infoSpec spec, [spec]))
+	    val inf2  = buildSig'(modlongid, SigInf(infoSpec spec, #[spec]))
 	in
 	    CompInf(Source.over(infoInf inf1, i), inf1, inf2)
 	end
@@ -114,7 +116,7 @@ structure Sharing :> SHARING =
     and buildSig'(ShortId(i, modid), inf) =
 	    inf
       | buildSig'(LongId(_, modlongid, Lab(i,a)), inf) =
-	    SigInf(i, [ModSpec(i, Id(i, Stamp.new(), Label.toName a), inf)])
+	    SigInf(i, #[ModSpec(i, Id(i, Stamp.new(), Label.toName a), inf)])
 
 
     fun constrain(inf1, Typ(LongId(i, modlongid', Lab(i1,a))), Typ typlongid) =
@@ -169,9 +171,9 @@ structure Sharing :> SHARING =
       | mapWhere(Recursive(i, specs'')::specs') =
 	(case mapWhere' specs''
 	   of (specs, NONE) =>
-		RecSpec(i,specs) :: mapWhere specs'
+		RecSpec(i, Vector.fromList specs) :: mapWhere specs'
 	    | (specs, SOME clongid) =>
-		RecSpec(i,specs) :: mapWhere''(specs', clongid)
+		RecSpec(i, Vector.fromList specs) :: mapWhere''(specs', clongid)
 	)
 
     (* find 1st annotation in nested lists *)
@@ -183,9 +185,10 @@ structure Sharing :> SHARING =
       | mapWhere'(Recursive(i, specs'')::specs') =
 	(case mapWhere' specs''
 	   of (specs, NONE) =>
-		cons1st(RecSpec(i,specs), mapWhere' specs')
+		cons1st(RecSpec(i, Vector.fromList specs), mapWhere' specs')
 	    | (specs, some as SOME clongid) =>
-		( RecSpec(i,specs) :: mapWhere''(specs', clongid), some )
+		( RecSpec(i, Vector.fromList specs)
+		      :: mapWhere''(specs', clongid), some )
 	)
 
     (* transform remaining annotations *)
@@ -195,7 +198,7 @@ structure Sharing :> SHARING =
       | mapWhere''(Annotated(spec, clongid')::specs', clongid) =
 	    withWhere(spec, clongid', clongid) :: mapWhere''(specs', clongid)
       | mapWhere''(Recursive(i, specs'')::specs', clongid) =
-	    RecSpec(i, mapWhere''(specs'', clongid))
+	    RecSpec(i, Vector.fromList(mapWhere''(specs'', clongid)))
 		:: mapWhere''(specs', clongid)
 
 

@@ -1,3 +1,77 @@
+(*
+On Constructors:
+
+The abstract language only provides unary contructors. Nullary constructors
+are mapped into constructors of the special type zero. (We don't use unit,
+because for imports we need to be able to recognise nullary constructors
+from there type. This is not possible with unit since the user can legaly
+declare unary constructors of argument type unit.)
+
+Moreover, the abstract grammar has no constructor declarations. Instead,
+it provides first-class constructors. We have to map this as well. First-class
+constructors use the special type conarrow, which also encodes the constructors
+syntactic arity, through the types succ and zero.
+
+The following table shows how constructor related declarations, expressions,
+and patterns are mapped into the abstract syntax (not showing type
+declarations in the abstract grammar):
+
+Declarations:
+datatype t = A			val 'A = lab A : conarrow (zero -> t) zero
+				val  A = 'A(fail)
+           | B of int		val 'B = lab B : conarrow (int -> t) (succ zero)
+				val  B = fun x -> 'B(x)
+constructor C : u		val 'C = new : conarrow (zero -> u) zero
+				val  C = 'C(fail)
+constructor D of int : u	val 'D = new : conarrow (int -> u) (succ zero)
+				val  D = fun x -> 'D(x)
+datatype t = datatype M.t	val 'A = M.'A  val A = M.A
+				val 'B = M.'B  val B = M.B
+constructor E = C		val 'E = 'C  val E = C
+__primitive
+constructor F : u = "s"		val 'F = prim "s": conarrow (int -> u) zero
+				val  F = 'F(fail)
+__primitive
+constructor G of int : u = "s"	val 'G = prim "s": conarrow(int -> u)(succ zero)
+				val  G = fun x -> 'G(x)
+__primitive
+__reftype 'a r = ref of 'a	val  ref = fun x -> Ref(x)
+
+Expressions:
+A				A
+B				B
+B 0				'B(0)
+C				C
+D				D
+D 0				'D(0)
+ref				ref
+ref 0				Ref(0)
+
+Patterns:
+A				'A(_)
+B 0				'B(0)
+C				'C(_)
+D 0				'D(0)
+ref 0				'Ref(0)
+
+Treatment of datatypes is still unsatisfactory for 3 reasons:
+
+- ConExp's are hijacked to represent certain cases of tagged exps as well
+  (where an implicit type annotation is required).
+- We had to introduce LabExp's
+  (just to provide these implicit annotations in a very indirect way).
+- Useless declarations and structure fields are generated for all datatype
+  constructors, which are just FailExp's.
+
+But still I see no better way. Ideally we should just abstract all appearances
+of datatype constructors into TagExp's/TagPat's plus suitable type annotations
+via AnnExp's/AnnPat's, but the corresponding type terms cannot be build solely
+by syntactic transformations, since there is the problem of scoping and hiding
+of type identifiers.
+
+*)
+
+
 functor MakeAbstractionPhase(
 		Composer: COMPOSER where type Sig.t = Inf.sign
 	) :> ABSTRACTION_PHASE =
@@ -23,51 +97,88 @@ functor MakeAbstractionPhase(
 
   (* Miscellanous helpers *)
 
+    fun conName s  = "'" ^ s
+    fun conVId vid = VId.fromString(conName(VId.toString vid))
+
     fun inventId i = O.Id(i, Stamp.new(), Name.InId)
 
     fun modlongidToMod(O.ShortId(i, modid))            = O.VarMod(i, modid)
       | modlongidToMod(O.LongId(i, modlongid, modlab)) =
-	    O.SelMod(i, modlongidToMod modlongid, modlab)
-
-    fun tupexp(i, [exp]) = exp
-      | tupexp(i,  exps) = O.TupExp(i, exps)
-
-    fun tuppat(i, [pat]) = pat
-      | tuppat(i,  pats) = O.TupPat(i, pats)
-
-    fun annexp(exp,    []    ) = exp
-      | annexp(exp, typ::typs) = annexp(O.AnnExp(O.infoTyp typ, exp, typ), typs)
-
+	    O.SelMod(i, modlab, modlongidToMod modlongid)
 
     fun varToTyp typid = O.VarTyp(O.infoId typid, typid)
 
-    fun alltyp(typids,typ) =
+
+    val lab_zero	= Label.fromString "zero"	(*UGLY*)
+    val lab_succ	= Label.fromString "succ"
+    val lab_conarrow	= Label.fromString "conarrow"
+    val strid_pervasive	= StrId.fromString
+				(Name.toString(PervasiveType.name_pervasive))
+
+    fun contyp E (i, lab) =
+	case lookupStr(E, strid_pervasive)
+	  of NONE            => error(i, E.StrIdUnbound strid_pervasive)
+	   | SOME(_,stamp,_) =>
+		O.ConTyp(i,
+		  O.LongId(i,
+		     O.ShortId(i, O.Id(i, stamp, PervasiveType.name_pervasive)),
+		     O.Lab(i, lab)))
+
+    fun aritytyp E (i, 0) = contyp E (i, lab_zero)
+      | aritytyp E (i, k) = O.AppTyp(i, contyp E (i, lab_succ),
+					aritytyp E (i,k-1))
+
+    fun conarrowtyp E (i, argtyp, typ, k) =
+	O.AppTyp(i,
+	    O.AppTyp(i,
+		contyp E (i, lab_conarrow),
+		O.ArrTyp(i, argtyp, typ)),
+		aritytyp E (i, k))
+
+
+    fun tupexp(i, #[exp]) = exp
+      | tupexp(i,   exps) = O.TupExp(i, exps)
+
+    fun tuppat(i, #[pat]) = pat
+      | tuppat(i,   pats) = O.TupPat(i, pats)
+
+    fun annexp(exp, typs) =
+	List.foldl (fn(typ,exp) => O.AnnExp(O.infoTyp typ, exp, typ)) exp typs
+
+    fun funexp(valids, exp) =
+	List.foldr (fn(valid,exp) =>
+	     let val i = Source.over(O.infoId valid, O.infoExp exp) in
+		O.FunExp(i, #[O.Match(i, O.VarPat(O.infoId valid, valid), exp)])
+	     end
+	    ) exp valids
+
+    fun alltyp(typids, typ) =
 	List.foldr (fn(typid,typ) =>
 		O.AllTyp(O.infoTyp typ, typid, typ)
 	    ) typ typids
 
-    fun funtyp(typids,typ) =
+    fun funtyp(typids, typ) =
 	List.foldr (fn(typid,typ) =>
 		O.FunTyp(O.infoTyp typ, typid, typ)
 	    ) typ typids
 
-    fun apptyp(typs,typ) =
+    fun apptyp(typs, typ) =
 	List.foldl (fn(typ1,typ2) =>
 	      O.AppTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ2, typ1)
 	    ) typ typs
 
-    fun arrtyp(typs,typ) =
+    fun arrtyp(typs, typ) =
 	List.foldr (fn(typ1,typ2) =>
 	      O.ArrTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
 	    ) typ typs
 
-    fun funinf(modid_infs,inf) =
+    fun funinf(modid_infs, inf) =
 	List.foldr (fn((modid,inf1),inf2) =>
 	      O.FunInf(Source.over(O.infoId modid, O.infoInf inf2),
 		       modid, inf1, inf2)
 	    ) inf modid_infs
 
-    fun vardec(typids,dec) =
+    fun vardec(typids, dec) =
 	List.foldr (fn(typid,dec) =>
 		O.VarDec(O.infoId typid, typid, dec)
 	    ) dec typids
@@ -82,14 +193,11 @@ functor MakeAbstractionPhase(
 
   (* Syntactic arity of constructors *)
 
-    fun conArity []			= 0
-      | conArity typs'			= typArity(List.hd typs')
-
-    and typArity(O.TupTyp(_,typs'))	= Int.max(1, List.length typs')
+    fun typArity(O.TupTyp(_,typs'))	= Int.max(1, Vector.length typs')
       | typArity(O.ProdTyp(_,row'))	= Int.max(1, rowArity row')
       | typArity _			= 1
 
-    and rowArity(O.Row(_,fields',_))	= List.length fields'
+    and rowArity(O.Row(_,fields',_))	= Vector.length fields'
 
 
 
@@ -161,10 +269,17 @@ functor MakeAbstractionPhase(
 
     fun trVId_bind' E (VId(i, vid')) =
 	let
-	    val name  = VId.toString vid'
+	    val name = VId.toString vid'
+	in
+	    O.Lab(i, Label.fromString name)
+	end
+
+    fun trConVId_bind' E (VId(i, vid')) =
+	let
+	    val name  = conName(VId.toString vid')
 	    val stamp = Stamp.new()
 	in
-	    O.Id(i, stamp, Name.ExId name)
+	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
 
 
@@ -225,6 +340,21 @@ functor MakeAbstractionPhase(
     fun trLongStrId E = trLongId trStrId E
     fun trLongSigId E = trLongId trSigId E
 
+    fun trConLongVId E longvid =
+	case #1(trLongVId E longvid)
+	  of O.LongId(i1, modid', O.Lab(i2, lab')) =>
+		O.LongId(i1, modid',
+		    O.Lab(i2, Label.fromString(conName(Label.toString lab'))))
+
+	   | O.ShortId(i1, O.Id(i2, stamp, name)) =>
+	     let
+		val name' = conName(Name.toString name)
+	     in
+		case lookupVal(E, VId.fromString name')
+		  of NONE => raise Crash.Crash "AbstractionPhase.trConLongVId"
+		   | SOME(i, stamp', is) =>
+			O.ShortId(i1, O.Id(i2, stamp', Name.ExId name'))
+	     end
 
 
   (* Calculate sets of unguarded explicit type variables [Section 4.6] *)
@@ -446,17 +576,7 @@ functor MakeAbstractionPhase(
 
     and trAtExp E =
 	fn SCONAtExp(i, scon)		=> O.LitExp(i, trSCon E scon)
-	 | LONGVIDAtExp(i, _, longvid)	=>
-	   (case trLongVId E longvid
-	      of (vallongid', V) =>
-		 O.VarExp(i, vallongid')
-
-	       | (vallongid', C k) =>
-		 O.ConExp(i, vallongid', k)
-
-	       | (vallongid', R) =>
-		 O.RefExp(i)
-	   )
+	 | LONGVIDAtExp(i, _, longvid)	=> O.VarExp(i, #1(trLongVId E longvid))
 	 | RECORDAtExp(i, exprowo) =>
 	   let
 		val  _   = insertScope E
@@ -472,9 +592,17 @@ functor MakeAbstractionPhase(
 		val row' = trExpRowo E (SOME exprow)
 		val  _   = deleteScope E
 	   in
-		O.CompExp(i, exp', O.ProdExp(infoExpRow exprow, row'))
+		O.UpdExp(i, exp', row')
 	   end
-	 | HASHAtExp(i, lab)		=> O.SelExp(i, trLab E lab)
+	 | HASHAtExp(i, lab) =>
+	   let
+		val id'    = O.Id(i, Stamp.new(), Name.InId)
+		val pat'   = O.VarPat(i, id')
+		val exp'   = O.VarExp(i, O.ShortId(i, id'))
+		val match' = O.Match(i, pat', O.SelExp(i, trLab E lab, exp'))
+	   in
+		O.FunExp(i, #[match'])
+	   end
 	 | TUPLEAtExp(i, exps)		=> O.TupExp(i, trExps E exps)
 	 | VECTORAtExp(i, exps)		=> O.VecExp(i, trExps E exps)
 	 | SEQAtExp(i, exps)		=> O.SeqExp(i, trExps E exps)
@@ -490,20 +618,29 @@ functor MakeAbstractionPhase(
 	 | PARAtExp(i, exp)		=> trExp E exp
 
 
-    and trExpRowo E =
-	fn NONE => O.Row(Source.nowhere, [], false)
+    and trExpRowo E exprowo =
+	let
+	    val (i, fields') = trExpRowo' E exprowo
+	in
+	    O.Row(i, Vector.fromList fields', false)
+	end
+    and trExpRowo' E =
+	fn NONE => (Source.nowhere, [])
 
 	 | SOME(ROWExpRow(i, lab as Lab(i',lab'), exp, exprowo)) =>
 	   let
 		val i1'    = Source.over(i', infoExp exp)
-		val field' = O.Field(i1', trLab E lab, [trExp E exp])
+		val field' = O.Field(i1', trLab E lab, trExp E exp)
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
 				error(i', E.ExpRowLabDuplicate lab')
-		val O.Row(_,fields',_) = trExpRowo E exprowo
+		val (_,fields') = trExpRowo' E exprowo
 	   in
-		O.Row(i, field'::fields', false)
+		(i, field'::fields')
 	   end
 
+
+
+    and trExps E exps = Vector.fromList(List.map (trExp E) exps)
 
     and trExp E =
 	fn exp as (ATEXPExp _|APPExp _)	=> trAppExp E (Infix.exp (infEnv E) exp)
@@ -541,17 +678,60 @@ functor MakeAbstractionPhase(
 
 
     and trAppExp E =
-	fn APPExp(i, exp, atexp) => O.AppExp(i, trAppExp E exp, trAtExp E atexp)
+	fn APPExp(i, exp, atexp) => (trAppliedAppExp E exp) (i, trAtExp E atexp)
 	 | ATEXPExp(i, atexp)    => trAtExp E atexp
 	 | exp                   => trExp E exp
 
-    and trExps E = List.map(trExp E)
+    and trAppliedAppExp E =
+	fn APPExp(i, exp, atexp) =>
+	   let
+		val exp1' = (trAppliedAppExp E exp) (i, trAtExp E atexp)
+	   in
+		fn(i',exp2') => O.AppExp(i', exp1', exp2')
+	   end
+	 | ATEXPExp(i, atexp) =>
+	        trAppliedAtExp E atexp
+	 | exp =>
+	   let
+	        val exp1' = trExp E exp
+	   in
+		fn(i',exp2') => O.AppExp(i', exp1', exp2')
+	   end
 
+    and trAppliedAtExp E =
+	fn LONGVIDAtExp(i, _, longvid)	=>
+	   (case trLongVId E longvid
+	      of (vallongid', V) =>
+		 ( fn(i',exp') => O.AppExp(i', O.VarExp(i, vallongid'), exp') )
+
+	       | (vallongid', C 0) =>
+		 ( fn(i',exp') => error(i', E.ExpConArgSuperfluous) )
+
+	       | (vallongid', C k) =>
+		 ( fn(i',exp') => O.ConExp(i', trConLongVId E longvid, exp') )
+
+	       | (vallongid', R) =>
+		 ( fn(i',exp') => O.RefExp(i', exp') )
+	   )
+	 | HASHAtExp(i, lab) =>
+	   let
+		val lab' = trLab E lab
+	   in
+		fn(i',exp') => O.SelExp(i', lab', exp')
+	   end
+	 | PARAtExp(i, exp) =>
+		 trAppliedAppExp E exp
+	 | atexp =>
+	   let
+		val exp1' = trAtExp E atexp
+	   in
+		fn(i',exp2') => O.AppExp(i', exp1', exp2')
+	   end
 
 
   (* Matches and patterns *)
 
-    and trMatcho  E matcho = List.rev(trMatcho' (E,[]) matcho)
+    and trMatcho  E matcho = Vector.rev(Vector.fromList(trMatcho'(E,[]) matcho))
     and trMatcho'(E,acc) =
 	fn NONE => acc
 	 | SOME(Match(i, mrule, matcho)) =>
@@ -578,9 +758,9 @@ functor MakeAbstractionPhase(
 	 | SCONAtPat(i, scon)	=> O.LitPat(i, trSCon E scon)
 	 | LONGVIDAtPat(_, _, longvid as SHORTLong(i, vid as VId(i',vid'))) =>
 	   (case lookupIdStatus(E, vid')
-	      of C k => O.ConPat(i, #1(trLongVId E longvid), k)
-	       | R   => O.RefPat(i)
-	       | V   =>
+	      of  C 0      => O.ConPat(i, trConLongVId E longvid, O.JokPat(i))
+	       | (C _ | R) => error(i, E.PatConArgMissing)
+	       |  V        =>
 		 let
 		    (* If inside an alternative pattern then E' contains
 		     * an upper scope where the variable is already bound.
@@ -602,9 +782,10 @@ functor MakeAbstractionPhase(
 	   )
 	 | LONGVIDAtPat(i, _, longvid) =>
 	   (case trLongVId E longvid
-	      of (vallongid', C k) => O.ConPat(i, vallongid', k)
-	       | (vallongid', R)   => O.RefPat(i)
+	      of (vallongid', C 0) => O.ConPat(i, trConLongVId E longvid,
+						  O.JokPat(i))
 	       | (vallongid', V)   => error(i, E.PatLongVIdVar)
+	       | (vallongid', _)   => error(i, E.PatConArgMissing)
 	   )
 	 | RECORDAtPat(i, patrowo) =>
 	   let
@@ -625,31 +806,37 @@ functor MakeAbstractionPhase(
 		val  _    = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
-		O.AltPat(i, pat'::pats')
+		O.AltPat(i, Vector.fromList(pat'::pats'))
 	   end
 
 	 | PARAtPat(i, pat) => trPat (E,E') pat
 
 
-    and trPatRowo (E,E') =
-	fn NONE => O.Row(Source.nowhere, [], false)
+    and trPatRowo (E,E') patrowo =
+	let
+	    val (i, fields', dots') = trPatRowo' (E,E') patrowo
+	in
+	    O.Row(i, Vector.fromList fields', dots')
+	end
+    and trPatRowo' (E,E') =
+	fn NONE => (Source.nowhere, [], false)
 
-	 | SOME(WILDCARDPatRow(i)) => O.Row(i, [], true)
+	 | SOME(WILDCARDPatRow(i)) => (i, [], true)
 
 	 | SOME(ROWPatRow(i, lab as Lab(i',lab'), pat, patrowo)) =>
 	   let
 		val i1'    = Source.over(i', infoPat pat)
-		val field' = O.Field(i1', trLab E lab, [trPat (E,E') pat])
+		val field' = O.Field(i1', trLab E lab, trPat (E,E') pat)
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
 				error(i', E.PatRowLabDuplicate lab')
-		val O.Row(_,fields',dots') = trPatRowo (E,E') patrowo
+		val (_,fields',dots') = trPatRowo' (E,E') patrowo
 	   in
-		O.Row(i, field'::fields', dots')
+		(i, field'::fields', dots')
 	   end
 
 
     and trPat (E,E') =
-	fn pat as (ATPATPat _|APPPat _) =>
+	fn pat as (ATPATPat _ | APPPat _) =>
 		trAppPat (E,E') (Infix.pat (infEnv E) pat)
 
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
@@ -681,7 +868,7 @@ functor MakeAbstractionPhase(
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
-		O.WithPat(i, pat', decs')
+		O.WithPat(i, pat', Vector.fromList decs')
 	   end
 
 	 | WITHFUNPat(i, pat, fvalbind) =>
@@ -693,7 +880,7 @@ functor MakeAbstractionPhase(
 		val valids' = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _      = inheritScope(E, cloneScope E')
 		val exps'   = trFvalBindo_rhs E (SOME fvalbind)
-		val decs'   = ListPair.map
+		val decs'   = VectorPair.map
 				(fn(valid',exp') =>
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId valid', valid'),
@@ -706,30 +893,44 @@ functor MakeAbstractionPhase(
 		val  _      = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
-		O.WithPat(i, pat', [O.RecDec(infoFvalBind fvalbind, decs')])
+		O.WithPat(i, pat', #[O.RecDec(infoFvalBind fvalbind, decs')])
 	   end
 
     and trAppPat (E,E') =
-	fn APPPat(i, pat, atpat) =>
-	   let
-		val pat1' = trAppPat (E,E') pat
-		val pat2' = trAtPat (E,E') atpat
-	   in
-		case pat1'
-		  of ( O.ConPat _ | O.RefPat _ | O.AppPat _ ) =>
-			O.AppPat(i, pat1', pat2')
+	fn APPPat(i, pat, atpat) => (trAppliedAppPat (E,E') pat)
+				    (i, trAtPat (E,E') atpat)
+	 | ATPATPat(i, atpat)    => trAtPat (E,E') atpat
+	 | pat                   => trPat (E,E') pat
 
-		   | _ => error(i, E.AppPatNonCon)
-	   end
+    and trAppliedAppPat (E,E') =
+	fn ATPATPat(i, atpat) => trAppliedAtPat (E,E') atpat
+	 | pat                => error(I.infoPat pat, E.AppPatNonCon)
 
-	 | ATPATPat(i, atpat) => trAtPat (E,E') atpat
+    and trAppliedAtPat (E,E') =
+	fn LONGVIDAtPat(i, _, longvid) =>
+	   (case trLongVId E longvid
+	      of (vallongid', V) => error(i, E.AppPatNonCon)
 
-	 | pat => trPat (E,E') pat
+	       | (vallongid', C 0) =>
+		 ( fn(i',pat') => error(i', E.PatConArgSuperfluous) )
+
+	       | (vallongid', C k) =>
+		 ( fn(i',pat') => O.ConPat(i', trConLongVId E longvid, pat') )
+
+	       | (vallongid', R) =>
+		 ( fn(i',pat') => O.RefPat(i', pat') )
+	   )
+	 | PARAtPat(i, pat) =>
+		trAppliedAppPat (E,E') pat
+	 | atpat =>
+		error(I.infoAtPat atpat, E.AppPatNonCon)
 
 
-    and trPats (E,E') = List.map(trPat (E,E'))
+    and trPats (E,E') pats =
+	    Vector.map (trPat(E,E')) (Vector.fromList pats)
 
-    and trAltPats (E,E') = List.map(trAltPat (E,E'))
+    and trAltPats (E,E') =
+	    List.map(trAltPat(E,E'))
 
     and trAltPat (E,E') pat =
 	let
@@ -791,27 +992,32 @@ functor MakeAbstractionPhase(
 
 	 | PARTy(i, ty) => trTy E ty
 
-    and trTys E = List.map (trTy E)
+    and trTys E tys = Vector.map (trTy E) (Vector.fromList tys)
 
 
-    and trTyRowo E =
-	fn NONE => O.Row(Source.nowhere, [], false)
+    and trTyRowo E tyrowo =
+	let
+	    val (i, fields') = trTyRowo' E tyrowo
+	in
+	    O.Row(i, Vector.fromList fields', false)
+	end
+    and trTyRowo' E =
+	fn NONE => (Source.nowhere, [])
 
 	 | SOME(ROWTyRow(i, lab as Lab(i',lab'), ty, tyrowo)) =>
 	   let
 		val i1'    = Source.over(i', infoTy ty)
-		val field' = O.Field(i1', trLab E lab, [trTy E ty])
+		val field' = O.Field(i1', trLab E lab, trTy E ty)
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
 				error(i', E.TyRowLabDuplicate lab')
-		val O.Row(_,fields',_) = trTyRowo E tyrowo
+		val (_,fields') = trTyRowo' E tyrowo
 	   in
-		O.Row(i, field'::fields', false)
+		(i, field'::fields')
 	   end
 
 
 
     and trTySeq E (Seq(i, tys)) = List.map (trTy E) tys
-
 
     and trTyVarSeq E (Seq(i, tyvars)) = List.map (trSeqTyVar E) tyvars
 
@@ -874,7 +1080,7 @@ functor MakeAbstractionPhase(
 
   (* Declarations *)
 
-    and trDec  E dec  = List.rev(trDec' (E,[]) dec)
+    and trDec  E dec  = Vector.rev(Vector.fromList(trDec' (E,[]) dec))
     and trDec'(E,acc) =
 	fn VALDec(i, tyvarseq, valbind) =>
 	   let
@@ -904,7 +1110,7 @@ functor MakeAbstractionPhase(
 			       unguardedTyVarsFvalBind E fvalbind
 		val exps'    = trFvalBindo_rhs E (SOME fvalbind)
 		val  _       = deleteScope E
-		val decs'    = ListPair.map
+		val decs'    = VectorPair.map
 				(fn(valid',exp') =>
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId valid', valid'),
@@ -1009,33 +1215,33 @@ functor MakeAbstractionPhase(
 
 	 | INFIXDec(i, n, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.INFIX(n, Fixity.LEFT)
-		val fix'   = O.Fix(i, fix)
-		val dec'   = O.FixDec(i, valid', fix')
-		val _      = insertInf(E, vid', (i', SOME(LEFT, n)))
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.INFIX(n, Fixity.LEFT)
+		val fix'    = O.Fix(i, fix)
+		val dec'    = O.FixDec(i, vallab', fix')
+		val _       = insertInf(E, vid', (i', SOME(LEFT, n)))
 	   in
 		dec' :: acc
 	   end
 
 	 | INFIXRDec(i, n, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.INFIX(n, Fixity.RIGHT)
-		val fix'   = O.Fix(i, fix)
-		val dec'   = O.FixDec(i, valid', fix')
-		val _      = insertInf(E, vid', (i', SOME(RIGHT, n)))
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.INFIX(n, Fixity.RIGHT)
+		val fix'    = O.Fix(i, fix)
+		val dec'    = O.FixDec(i, vallab', fix')
+		val _       = insertInf(E, vid', (i', SOME(RIGHT, n)))
 	   in
 		dec' :: acc
 	   end
 
 	 | NONFIXDec(i, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.NONFIX
-		val fix'   = O.Fix(i, fix)
-		val dec'   = O.FixDec(i, valid', fix')
-		val _      = insertInf(E, vid', (i', NONE))
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.NONFIX
+		val fix'    = O.Fix(i, fix)
+		val dec'    = O.FixDec(i, vallab', fix')
+		val _       = insertInf(E, vid', (i', NONE))
 	   in
 		dec' :: acc
 	   end
@@ -1093,8 +1299,12 @@ functor MakeAbstractionPhase(
 		val  typ'           = O.RefTyp(i1', varToTyp vartypid')
 		val  dec1'          = O.TypDec(i, typid',
 						  O.FunTyp(i, vartypid', typ'))
+		val  id'            = O.Id(i2', Stamp.new(), Name.InId)
+		val  pat'           = O.VarPat(i2', id')
+		val  exp'           = O.VarExp(i2', O.ShortId(i2', id'))
+		val  match'         = O.Match(i2', pat', O.RefExp(i2', exp'))
 		val  dec2'          = O.ValDec(i, O.VarPat(i2', valid'),
-						  O.RefExp(i2'))
+						  O.FunExp(i, #[match']))
 		val  E'             = BindEnv.new()
 		val  _              = insertVal(E', vid', (i2', stamp2, R))
 		val  _              = insertTy(E, tycon', (i1', stamp1, E'))
@@ -1106,20 +1316,34 @@ functor MakeAbstractionPhase(
 	 | PRIMITIVECONSTRUCTORDec
 		(i, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon, s) =>
 	   let
-		val  valid1'        = trVId_bind' E vid
-		val (valid2',stamp) = trVId_bind E vid
-		val  _              = insertScope E
-		val (typids',typ')  = trTyVarSeqLongTyCon E (tyvarseq,longtycon)
-		val  typs'          = trTyo E tyo
-		val  _              = deleteScope E
-		val  typ1'          = arrtyp(typs',typ')
-		val  pat1'          = O.VarPat(i', valid1')
-		val  exp1'          = O.PrimExp(i, s, typ1')
-		val  dec1'          = O.ValDec(i, pat1', exp1')
-		val  typ2'          = O.SingTyp(i, O.ShortId(i',valid1'))
-		val  k              = conArity typs'
-		val  dec2'          = O.ConDec(i, valid2', typ2', k)
-		val  _              = insertVal(E, vid', (i', stamp, C k))
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  vallongid1'     = O.ShortId(i, valid1')
+		val  _               = insertScope E
+		val (typids',typ12') = trTyVarSeqLongTyCon E
+						(tyvarseq,longtycon)
+		val (typ11',k)       = trTyo E tyo
+		val  _               = deleteScope E
+		val  typ1'           = conarrowtyp E (O.infoTyp typ12',
+						      typ11', typ12', k)
+		val  exp1'           = O.PrimExp(i, s, typ1')
+		val  dec1'           = O.ValDec(i, O.VarPat(i', valid1'), exp1')
+		val  exp2'           =
+		     if k = 0 then
+			O.ConExp(i, vallongid1', O.FailExp(i))
+		     else
+		     let
+			val  validM'     = O.Id(i, Stamp.new(), Name.InId)
+			val  vallongidM' = O.ShortId(i, validM')
+			val  patM'       = O.VarPat(i, validM')
+			val  expM'       = O.ConExp(i, vallongid1',
+						    O.VarExp(i, vallongidM'))
+		     in
+			O.FunExp(i, #[O.Match(i, patM', expM')])
+		     end
+		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
+		val  _               = insertVal(E, conVId vid', (i',stamp1,V))
+		val  _               = insertVal(E, vid', (i', stamp2, C k))
 	   in
 		dec2' :: vardec(typids', dec1') :: acc
 	   end
@@ -1148,7 +1372,6 @@ functor MakeAbstractionPhase(
 		dec' :: acc
 	   end
 
-
     and trOpenDecVal (E,i,modlongido') (vid', (_,stamp1,is), acc) =
 	let
 	    val name       = VId.toString vid'
@@ -1164,11 +1387,7 @@ functor MakeAbstractionPhase(
 	    val exp'       = O.VarExp(i, vallongid')
 	    val _          = insertVal(E, vid', (i,stamp2,is))
 	in
-	    (case is
-	       of V   => O.ValDec(i, O.VarPat(i,valid2'),O.VarExp(i,vallongid'))
-		| C k => O.ConDec(i, valid2', O.SingTyp(i, vallongid'), k)
-		| R   => O.ConDec(i, valid2', O.SingTyp(i, vallongid'), 1)
-	    ) :: acc
+	    O.ValDec(i, pat', exp') :: acc
 	end
 
     and trOpenDecTy (E,i,modlongid') (tycon', (_,stamp1,E'), acc) =
@@ -1229,10 +1448,10 @@ functor MakeAbstractionPhase(
 
 	| SOME(RECValBind(i, valbind)) =>
 	   let
-		val pats' = trRecValBindo_lhs' (E,E',[]) (SOME valbind)
+		val pats' = trRecValBindo_lhs (E,E') (SOME valbind)
 		val  _    = union(E,E')
-		val exps' = trRecValBindo_rhs' (E,[]) (SOME valbind)
-		val decs' = ListPair.map
+		val exps' = trRecValBindo_rhs E (SOME valbind)
+		val decs' = VectorPair.map
 				(fn(pat',exp') =>
 				 O.ValDec(Source.over(O.infoPat pat',
 						      O.infoExp exp'),
@@ -1242,6 +1461,9 @@ functor MakeAbstractionPhase(
 		O.RecDec(i, decs') :: acc
 	   end
 
+
+    and trRecValBindo_lhs (E,E') valbindo =
+	    Vector.rev(Vector.fromList(trRecValBindo_lhs' (E,E',[]) valbindo))
 
     and trRecValBindo_lhs' (E,E',acc) =
 	fn NONE => acc
@@ -1256,6 +1478,9 @@ functor MakeAbstractionPhase(
 	 | SOME(RECValBind(i, valbind)) =>
 		trRecValBindo_lhs' (E,E',acc) (SOME valbind)
 
+
+    and trRecValBindo_rhs E valbindo =
+	    Vector.rev(Vector.fromList(trRecValBindo_rhs' (E,[]) valbindo))
 
     and trRecValBindo_rhs' (E,acc) =
 	fn NONE => acc
@@ -1276,7 +1501,7 @@ functor MakeAbstractionPhase(
   (* Function bindings *)
 
     and trFvalBindo_lhs (E,E') fvalbindo =
-	    List.rev(trFvalBindo_lhs' (E,E',[]) fvalbindo)
+	    Vector.rev(Vector.fromList(trFvalBindo_lhs' (E,E',[]) fvalbindo))
 
     and trFvalBindo_lhs'(E,E',acc) =
 	fn NONE => acc
@@ -1359,7 +1584,7 @@ functor MakeAbstractionPhase(
 
 
     and trFvalBindo_rhs E fvalbindo =
-	    List.rev(trFvalBindo_rhs' (E,[]) fvalbindo)
+	    Vector.rev(Vector.fromList(trFvalBindo_rhs' (E,[]) fvalbindo))
 
     and trFvalBindo_rhs'(E,acc) =
 	fn NONE => acc
@@ -1373,31 +1598,23 @@ functor MakeAbstractionPhase(
     and trFmatch_rhs E (Match(i, fmrule, fmatcho)) =
 	   let
 		val (match',arity) = trFmrule_rhs E fmrule
-		val  matches'      = match' :: trFmatcho_rhs (E,arity) fmatcho
+		val  matches'      = Vector.fromList
+				     (match' :: trFmatcho_rhs (E,arity) fmatcho)
 		val  i'            = O.infoMatch match'
 	   in
 		if arity = 1 then
 		    O.FunExp(i', matches')
 		else
 		    let
-			val valids'  = List.tabulate(arity, fn _ => inventId i)
-			val exps'    = List.map(fn valid' =>
+			val valids'  = Vector.tabulate(arity, fn _ =>inventId i)
+			val exps'    = Vector.map(fn valid' =>
 					  O.VarExp(Source.nowhere,
 					     O.ShortId(Source.nowhere, valid')))
 					  valids'
 			val tupexp'  = tupexp(i', exps')
 			val caseexp' = O.CaseExp(i', tupexp', matches')
-
-			fun funexp    []            = caseexp'
-			  | funexp(valid'::valids') =
-			    let
-				val pat'   = O.VarPat(i, valid')
-				val match' = O.Match(i, pat', funexp valids')
-			    in
-				O.FunExp(i', [match'])
-			    end
 		    in
-			funexp valids'
+			funexp(Vector.toList valids', caseexp')
 		    end
 	   end
 
@@ -1459,7 +1676,7 @@ functor MakeAbstractionPhase(
 		val (pat',arity,typs') = trFpat_rhs (E,E') pat
 		val  _   = inheritScope(E, cloneScope E')
 		val  _   = insertScope E'
-		val decs'= trValBindo (E,E') (SOME valbind)
+		val decs'= Vector.fromList(trValBindo (E,E') (SOME valbind))
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.WithPatVIdDuplicate)
@@ -1478,7 +1695,7 @@ functor MakeAbstractionPhase(
 		val valids' = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _      = inheritScope(E, cloneScope E')
 		val exps'   = trFvalBindo_rhs E (SOME fvalbind)
-		val decs'   = ListPair.map
+		val decs'   = VectorPair.map
 				(fn(valid',exp') =>
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId valid', valid'),
@@ -1491,7 +1708,7 @@ functor MakeAbstractionPhase(
 		val  _      = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
-		( O.WithPat(i, pat', [O.RecDec(infoFvalBind fvalbind, decs')]),
+		( O.WithPat(i, pat', #[O.RecDec(infoFvalBind fvalbind, decs')]),
 		  arity, typs' )
 	   end
 
@@ -1499,14 +1716,14 @@ functor MakeAbstractionPhase(
 		error(i, E.FvalBindPatInvalid)
 
     and trFappPat_rhs (E,E') =
-	fn fpat as APPPat _ =>
+	fn fpat as APPPat _	=>
 	   let
-		val pats' = trAppliedFappPat_rhs (E,E') fpat
+		val pats' = Vector.fromList(trAppliedFappPat_rhs (E,E') fpat)
 	   in
-		( tuppat(infoPat fpat, pats'), List.length pats', [] )
+		( tuppat(infoPat fpat, pats'), Vector.length pats', [] )
 	   end
-	 | ATPATPat(i, atpat)		=> trFatPat_rhs (E,E') atpat
-	 | fpat				=> trFpat_rhs (E,E') fpat
+	 | ATPATPat(i, atpat)	=> trFatPat_rhs (E,E') atpat
+	 | fpat			=> trFpat_rhs (E,E') fpat
 
     and trFatPat_rhs (E,E') =
 	fn ALTAtPat(i, fpats) =>
@@ -1523,16 +1740,18 @@ functor MakeAbstractionPhase(
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		case List.find (fn(_,arity',_) => arity<>arity') pat'aritytyps's
-		  of NONE => ( O.AltPat(i, pat'::pats'), arity, typs' @ typs'' )
+		  of NONE =>
+			( O.AltPat(i, Vector.fromList(pat'::pats')),
+			  arity, typs' @ typs'' )
 		   | SOME(pat',_,_) =>
 			error(O.infoPat pat', E.FvalBindArityInconsistent)
 	   end
-
 	 | PARAtPat(i, fpat)	=> trFpat_rhs (E,E') fpat
 	 | LONGVIDAtPat(i,_,_)	=> error(i, E.FvalBindArityZero)
 	 | fatpat		=> error(infoAtPat fatpat, E.FvalBindPatInvalid)
 
-    and trAltFpats_rhs (E,E') = List.map(trAltFpat_rhs (E,E'))
+    and trAltFpats_rhs (E,E') =
+	    List.map(trAltFpat_rhs (E,E'))
 
     and trAltFpat_rhs (E,E') fpat =
 	let
@@ -1631,7 +1850,7 @@ functor MakeAbstractionPhase(
 	let
 	    val (tdecs',cdecs') = trDatBindo_rhs' (E,E',[],[]) datbindo
 	in
-	    (List.rev tdecs', cdecs')
+	    (Vector.rev(Vector.fromList tdecs'), cdecs')
 	end
 
     and trDatBindo_rhs'(E,E',acc1,acc2) =
@@ -1678,7 +1897,7 @@ functor MakeAbstractionPhase(
 	let
 	    val (fields',decs') = trConBindo' (E,E',typids',typ',[],[]) conbindo
 	in
-	    (List.rev fields', decs')
+	    (Vector.rev(Vector.fromList fields'), decs')
 	end
 
     and trConBindo'(E,E',typids',typ',acc1,acc2) =
@@ -1686,19 +1905,37 @@ functor MakeAbstractionPhase(
 
 	 | SOME(ConBind(i, _, vid as VId(i',vid'), tyo, conbindo)) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
-		val  typs'         = trTyo E tyo
-		val  vallab'       = O.Lab(i', Label.fromName(O.name valid'))
-		val  field'        = O.Field(i, vallab', typs')
-		val  k             = conArity typs'
-		val  dec'          = O.ConDec(i, valid',
-					 alltyp(typids', arrtyp(typs',typ')), k)
-		val  _             = insertDisjointVal(E', vid', (i',stamp,C k))
-				     handle CollisionVal _ =>
-					error(i', E.ConBindDuplicate vid')
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  vallongid1'     = O.ShortId(i, valid1')
+		val (typ11',k)       = trTyo E tyo
+		val  vallab'         = O.Lab(i', Label.fromName(O.name valid2'))
+		val  field'          = O.Field(i, vallab', typ11')
+		val  typ1'           = conarrowtyp E (O.infoTyp typ',
+						      typ11', typ', k)
+		val  exp1'           = O.LabExp(i, vallab', typ1')
+		val  dec1'           = O.ValDec(i, O.VarPat(i', valid1'), exp1')
+		val  exp2'           =
+		     if k = 0 then
+			O.ConExp(i, vallongid1', O.FailExp(i))
+		     else
+		     let
+			val  validM'     = O.Id(i, Stamp.new(), Name.InId)
+			val  vallongidM' = O.ShortId(i, validM')
+			val  patM'       = O.VarPat(i, validM')
+			val  expM'       = O.ConExp(i, vallongid1',
+						    O.VarExp(i, vallongidM'))
+		     in
+			O.FunExp(i, #[O.Match(i, patM', expM')])
+		     end
+		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
 	   in
-		trConBindo' (E,E',typids',typ', field'::acc1, dec'::acc2)
-			    conbindo
+		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.ConBindDuplicate vid');
+		trConBindo' (E,E',typids',typ', field'::acc1,
+			     dec2' :: vardec(typids', dec1') :: acc2) conbindo
+	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
     and trDconBindo' (E,E',acc) =
@@ -1707,45 +1944,85 @@ functor MakeAbstractionPhase(
 	 | SOME(NEWDconBind(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
 								 dconbindo)) =>
 	   let
-		val  i             = Source.over(i', infoLong longtycon)
-		val (valid',stamp) = trVId_bind E vid
-		val  _             = insertScope E
-		val (typids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
-		val  typs'         = trTyo E tyo
-		val  k             = conArity typs'
-		val  dec'          = O.ConDec(i, valid',
-					 alltyp(typids', arrtyp(typs',typ')), k)
-		val  _             = deleteScope E
-		val  _             = insertDisjointVal(E', vid', (i',stamp,C k))
-				     handle CollisionVal _ =>
-					error(i', E.DconBindDuplicate vid')
+		val  i               = Source.over(i', infoLong longtycon)
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  vallongid1'     = O.ShortId(i, valid1')
+		val  _               = insertScope E
+		val (typids',typ12') = trTyVarSeqLongTyCon E
+						(tyvarseq, longtycon)
+		val (typ11',k)       = trTyo E tyo
+		val  _               = deleteScope E
+		val  typ1'           = conarrowtyp E (O.infoTyp typ12',
+						      typ11', typ12', k)
+		val  exp1'           = O.NewExp(i, typ1')
+		val  dec1'           = O.ValDec(i, O.VarPat(i', valid1'), exp1')
+		val  exp2'           =
+		     if k = 0 then
+			O.ConExp(i, vallongid1', O.FailExp(i))
+		     else
+		     let
+			val  validM'     = O.Id(i, Stamp.new(), Name.InId)
+			val  vallongidM' = O.ShortId(i, validM')
+			val  patM'       = O.VarPat(i, validM')
+			val  expM'       = O.ConExp(i, vallongid1',
+						    O.VarExp(i, vallongidM'))
+		     in
+			O.FunExp(i, #[O.Match(i, patM', expM')])
+		     end
+		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
 	   in
-		trDconBindo' (E,E', dec'::acc) dconbindo
+		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.DconBindDuplicate vid');
+		trDconBindo' (E,E',
+			      dec2' :: vardec(typids', dec1') :: acc) dconbindo
 	   end
 
 	 | SOME(EQUALDconBind(_, _, vid as VId(i',vid'), _,
 							longvid, dconbindo)) =>
 	   let
-		val  i              = Source.over(i', infoLong longvid)
-		val (valid',stamp)  = trVId_bind E vid
-		val (vallongid',is) = trLongVId E longvid
-		val  k              = case is
-					of C k => k
-					 | R   => 1
-					 | V   => error(i, E.DconBindNonCon)
-		val  typ'           = O.SingTyp(O.infoLongid vallongid',
-						vallongid')
-		val  dec'           = O.ConDec(i, valid', typ', k)
-		val  _              = insertDisjointVal(E', vid', (i',stamp,is))
-				      handle CollisionVal _ =>
-					error(i', E.DconBindDuplicate vid')
+		val  i               = Source.over(i', infoLong longvid)
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  vallongid1'     = trConLongVId E longvid
+		val (vallongid2',is) = trLongVId E longvid
+		val  i1              = infoLong longvid
+		val  exp1'           = O.VarExp(i1, vallongid1')
+		val  dec1'           = O.ValDec(i, O.VarPat(i', valid1'), exp1')
+		val  exp2'           = O.VarExp(i1, vallongid2')
+		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
 	   in
-		trDconBindo' (E,E', dec'::acc) dconbindo
+		case is
+		  of C _ =>
+		      ( ( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+			; insertDisjointVal(E', vid', (i', stamp2, is))
+			) handle CollisionVal _ =>
+				error(i', E.DconBindDuplicate vid')
+		      ; trDconBindo' (E,E', dec2'::dec1'::acc) dconbindo
+		      )
+		   | R =>
+		      ( insertDisjointVal(E', vid', (i', stamp2, is))
+			handle CollisionVal _ =>
+				error(i', E.DconBindDuplicate vid')
+		      ; trDconBindo' (E,E', dec2'::acc) dconbindo
+		      )
+		   | V => error(i, E.DconBindNonCon)
 	   end
 
 
-    and trTyo E  NONE     = []
-      | trTyo E (SOME ty) = [trTy E ty]
+    and trTyo E (SOME typ) =
+	let
+	    val typ' = trTy E typ
+	in
+	    ( typ', typArity typ' )
+	end
+      | trTyo E  NONE      =
+	let
+	    val typ' = contyp E (Source.nowhere, lab_zero)
+	in
+	    ( typ', 0 )
+	end
 
 
     and trTyVarSeqLongTyCon E (tyvarseq, longtycon) =
@@ -1960,7 +2237,7 @@ functor MakeAbstractionPhase(
 	   end
 
 
-    and trSpec  E spec = List.rev(trSpec' (E,[]) spec)
+    and trSpec  E spec = Vector.rev(Vector.fromList(trSpec' (E,[]) spec))
     and trSpec'(E,acc) =
 	fn VALSpec(i, valdesc) =>
 		trValDesco' (E,acc) (SOME valdesc)
@@ -2025,7 +2302,7 @@ functor MakeAbstractionPhase(
 
 	 | SHARINGTYPESpec(i, spec, longtycons) =>
 	   let
-		val specs'      = trSpec E spec
+		val specs'      = trSpec' (E,[]) spec
 		val typlongids' = List.map (#1 o trLongTyCon E) longtycons
 		val rspecs'     = List.rev(Sharing.shareTyp(specs',typlongids'))
 	   in
@@ -2034,7 +2311,7 @@ functor MakeAbstractionPhase(
 
 	 | SHARINGSIGNATURESpec(i, spec, longsigids) =>
 	   let
-		val specs'      = trSpec E spec
+		val specs'      = trSpec' (E,[]) spec
 		val inflongids' = List.map (#1 o trLongSigId E) longsigids
 		val rspecs'     = List.rev(Sharing.shareSig(specs',inflongids'))
 	   in
@@ -2043,7 +2320,7 @@ functor MakeAbstractionPhase(
 
 	 | SHARINGSpec(i, spec, longstrids) =>
 	   let
-		val specs'      = trSpec E spec
+		val specs'      = trSpec' (E,[]) spec
 		val modlongids' = List.map (#1 o trLongStrId E) longstrids
 		val rspecs'     = List.rev(Sharing.shareStr(specs',modlongids'))
 	   in
@@ -2052,12 +2329,12 @@ functor MakeAbstractionPhase(
 
 	 | INFIXSpec(i, n, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.INFIX(n, Fixity.LEFT)
-		val fix'   = O.Fix(i, fix)
-		val spec'  = O.FixSpec(i, valid', fix')
-		val _      = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
-			     handle CollisionInf vid' =>
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.INFIX(n, Fixity.LEFT)
+		val fix'    = O.Fix(i, fix)
+		val spec'   = O.FixSpec(i, vallab', fix')
+		val _       = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
 		spec' :: acc
@@ -2065,12 +2342,12 @@ functor MakeAbstractionPhase(
 
 	 | INFIXRSpec(i, n, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.INFIX(n, Fixity.RIGHT)
-		val fix'   = O.Fix(i, fix)
-		val spec'  = O.FixSpec(i, valid', fix')
-		val _      = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
-			     handle CollisionInf vid' =>
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.INFIX(n, Fixity.RIGHT)
+		val fix'    = O.Fix(i, fix)
+		val spec'   = O.FixSpec(i, vallab', fix')
+		val _       = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
 		spec' :: acc
@@ -2078,12 +2355,12 @@ functor MakeAbstractionPhase(
 
 	 | NONFIXSpec(i, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.NONFIX
-		val fix'   = O.Fix(i, fix)
-		val spec'  = O.FixSpec(i, valid', fix')
-		val _      = insertDisjointInf(E, vid', (i', NONE))
-			     handle CollisionInf vid' =>
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.NONFIX
+		val fix'    = O.Fix(i, fix)
+		val spec'   = O.FixSpec(i, vallab', fix')
+		val _       = insertDisjointInf(E, vid', (i', NONE))
+			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
 		spec' :: acc
@@ -2132,11 +2409,7 @@ functor MakeAbstractionPhase(
 			     handle CollisionVal _ =>
 				error(i, E.SpecVIdDuplicate vid')
 	in
-	    (case is
-	       of V   => O.ValSpec(i, valid2', typ')
-	        | C k => O.ConSpec(i, valid2', typ', k)
-	        | R   => O.ConSpec(i, valid2', typ', 1)
-	    ) :: acc
+	    O.ValSpec(i, valid2', typ') :: acc
 	end
 
 
@@ -2238,7 +2511,7 @@ functor MakeAbstractionPhase(
 	let
 	    val (tspecs',cspecs') = trDatDesco_rhs' (E,[],[]) datdesco
 	in
-	    (List.rev tspecs', cspecs')
+	    (Vector.rev(Vector.fromList tspecs'), cspecs')
 	end
 
     and trDatDesco_rhs' (E,acc1,acc2) =
@@ -2286,7 +2559,7 @@ functor MakeAbstractionPhase(
 	let
 	    val (fields',specs') = trConDesco'(E,E',typids',typ',[],[]) condesco
 	in
-	    (List.rev fields', specs')
+	    (Vector.rev(Vector.fromList fields'), specs')
 	end
 
     and trConDesco'(E,E',typids',typ',acc1,acc2) =
@@ -2294,19 +2567,27 @@ functor MakeAbstractionPhase(
 
 	 | SOME(ConDesc(i, _, vid as VId(i',vid'), tyo, condesco)) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
-		val  typs'         = trTyo E tyo
-		val  vallab'       = O.Lab(i', Label.fromName(O.name valid'))
-		val  field'        = O.Field(i, vallab', typs')
-		val  k             = conArity typs'
-		val  spec'         = O.ConSpec(i, valid',
-					 alltyp(typids', arrtyp(typs',typ')), k)
-		val  _             = insertDisjointVal(E', vid', (i',stamp,C k))
-				     handle CollisionVal _ =>
-					error(i', E.ConDescDuplicate vid')
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val (typ11',k)       = trTyo E tyo
+		val  vallab'         = O.Lab(i', Label.fromName(O.name valid2'))
+		val  field'          = O.Field(i, vallab', typ11')
+		val  typ1'           = alltyp(typids',
+					      conarrowtyp E
+						(O.infoTyp typ', typ11',typ',k))
+		val  spec1'          = O.ValSpec(i, valid1', typ1')
+		val  typ2'           = alltyp(typids',
+					      if k = 0 then typ' else
+					      O.ArrTyp(O.infoTyp typ',
+						       typ11', typ'))
+		val  spec2'          = O.ValSpec(i, valid2', typ2')
 	   in
-		trConDesco' (E,E',typids',typ', field'::acc1, spec'::acc2)
-			    condesco
+		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.ConDescDuplicate vid');
+		trConDesco' (E,E',typids',typ', field'::acc1,
+			     spec2'::spec1'::acc2) condesco
+	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 
@@ -2316,40 +2597,54 @@ functor MakeAbstractionPhase(
 	 | SOME(NEWDconDesc(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
 								 dcondesco)) =>
 	   let
-		val  i             = Source.over(i', infoLong longtycon)
-		val (valid',stamp) = trVId_bind E vid
-		val  _             = insertScope E
-		val (typids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
-		val  typs'         = trTyo E tyo
-		val  _             = deleteScope E
-		val  k             = conArity typs'
-		val  spec'         = O.ConSpec(i', valid',
-					 alltyp(typids', arrtyp(typs',typ')), k)
-		val  _             = insertDisjointVal(E, vid', (i',stamp, C k))
-				     handle CollisionVal _ =>
-					error(i', E.SpecVIdDuplicate vid')
+		val  i               = Source.over(i', infoLong longtycon)
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  _               = insertScope E
+		val (typids',typ12') = trTyVarSeqLongTyCon E
+						(tyvarseq, longtycon)
+		val (typ11',k)       = trTyo E tyo
+		val  _               = deleteScope E
+		val  typ1'           = alltyp(typids',
+					      conarrowtyp E (O.infoTyp typ12',
+							     typ11', typ12',k))
+		val  spec1'          = O.ValSpec(i, valid1', typ1')
+		val  typ2'           = alltyp(typids',
+					      if k = 0 then typ12' else
+					      O.ArrTyp(O.infoTyp typ12',
+						       typ11', typ12'))
+		val  spec2'          = O.ValSpec(i, valid2', typ2')
 	   in
-		trDconDesco' (E, spec'::acc) dcondesco
+		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E, vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.SpecVIdDuplicate vid');
+		trDconDesco' (E, spec2'::spec1'::acc) dcondesco
+	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 	 | SOME(EQUALDconDesc(_, _, vid as VId(i',vid'), _, longvid,
 								dcondesco)) =>
 	   let
-		val  i              = Source.over(i', infoLong longvid)
-		val (valid',stamp)  = trVId_bind E vid
-		val (vallongid',is) = trLongVId E longvid
-		val  k              = case is
-					of C k => k
-					 | R   => 1
-					 | V   => error(i, E.DconDescNonCon)
-		val  typ'           = O.SingTyp(O.infoLongid vallongid',
-						vallongid')
-		val  spec'          = O.ConSpec(i', valid', typ', k)
-		val  _              = insertDisjointVal(E, vid', (i',stamp, is))
-				      handle CollisionVal _ =>
-					error(i', E.SpecVIdDuplicate vid')
+		val  i               = Source.over(i', infoLong longvid)
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  vallongid1'     = trConLongVId E longvid
+		val (vallongid2',is) = trLongVId E longvid
+		val  typ1'           = O.SingTyp(O.infoLongid vallongid1',
+						vallongid1')
+		val  spec1'          = O.ValSpec(i, valid1', typ1')
+		val  typ2'           = O.SingTyp(O.infoLongid vallongid2',
+						vallongid2')
+		val  spec2'          = O.ValSpec(i, valid2', typ2')
+		val  k               = case is
+					 of C k   => k
+					  | (V|R) => error(i, E.DconDescNonCon)
 	   in
-		trDconDesco' (E, spec'::acc) dcondesco
+		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E, vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.SpecVIdDuplicate vid');
+		trDconDesco' (E, spec2'::spec1'::acc) dcondesco
+	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 
@@ -2441,7 +2736,7 @@ functor MakeAbstractionPhase(
 
   (* Imports *)
 
-    and trImp (E,E') imp = List.rev(trImp' (E,E',[]) imp)
+    and trImp (E,E') imp = Vector.rev(Vector.fromList(trImp' (E,E',[]) imp))
     and trImp'(E,E',acc) =
 	fn VALImp(i, valitem) =>
 		trValItemo' (E,E',acc) (SOME valitem)
@@ -2474,12 +2769,12 @@ functor MakeAbstractionPhase(
 
 	 | INFIXImp(i, n, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.INFIX(n, Fixity.LEFT)
-		val fix'   = O.Fix(i, fix)
-		val imp'   = O.FixImp(i, valid', O.SomeDesc(i,fix'))
-		val _      = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
-			     handle CollisionInf vid' =>
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.INFIX(n, Fixity.LEFT)
+		val fix'    = O.Fix(i, fix)
+		val imp'    = O.FixImp(i, vallab', O.SomeDesc(i,fix'))
+		val _       = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+			      handle CollisionInf vid' =>
 				error(i', E.ImpFixDuplicate vid')
 	   in
 		imp' :: acc
@@ -2487,12 +2782,12 @@ functor MakeAbstractionPhase(
 
 	 | INFIXRImp(i, n, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.INFIX(n, Fixity.RIGHT)
-		val fix'   = O.Fix(i, fix)
-		val imp'   = O.FixImp(i, valid', O.SomeDesc(i,fix'))
-		val _      = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
-			     handle CollisionInf vid' =>
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.INFIX(n, Fixity.RIGHT)
+		val fix'    = O.Fix(i, fix)
+		val imp'    = O.FixImp(i, vallab', O.SomeDesc(i,fix'))
+		val _       = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+			      handle CollisionInf vid' =>
 				error(i', E.ImpFixDuplicate vid')
 	   in
 		imp' :: acc
@@ -2500,12 +2795,12 @@ functor MakeAbstractionPhase(
 
 	 | NONFIXImp(i, vid as VId(i',vid')) =>
 	   let
-		val valid' = trVId_bind' E vid
-		val fix    = Fixity.NONFIX
-		val fix'   = O.Fix(i, fix)
-		val imp'   = O.FixImp(i, valid', O.SomeDesc(i,fix'))
-		val _      = insertDisjointInf(E, vid', (i', NONE))
-			     handle CollisionInf vid' =>
+		val vallab' = trVId_bind' E vid
+		val fix     = Fixity.NONFIX
+		val fix'    = O.Fix(i, fix)
+		val imp'    = O.FixImp(i, vallab', O.SomeDesc(i,fix'))
+		val _       = insertDisjointInf(E, vid', (i', NONE))
+			      handle CollisionInf vid' =>
 				error(i', E.ImpFixDuplicate vid')
 	   in
 		imp' :: acc
@@ -2521,11 +2816,7 @@ functor MakeAbstractionPhase(
 			 handle CollisionVal _ =>
 				error(i, E.ImpVIdDuplicate vid')
 	in
-	    (case is
-	       of V   => O.ValImp(i, valid', O.NoDesc(i))
-	        | C k => O.ConImp(i, valid', O.NoDesc(i), k)
-	        | R   => O.ConImp(i, valid', O.NoDesc(i), 1)
-	    ) :: acc
+	    O.ValImp(i, valid', O.NoDesc(i)) :: acc
 	end
 
 
@@ -2626,7 +2917,7 @@ functor MakeAbstractionPhase(
 	let
 	    val (timps',cimps') = trDatItemo_rhs' (E,E',[],[]) datitemo
 	in
-	    (List.rev timps', cimps')
+	    (Vector.rev(Vector.fromList timps'), cimps')
 	end
 
     and trDatItemo_rhs' (E,E',acc1, acc2) =
@@ -2677,7 +2968,7 @@ functor MakeAbstractionPhase(
 	let
 	    val (fields',imps') = trConItemo' (E,E',typids',typ',[],[]) conitemo
 	in
-	    (List.rev fields', imps')
+	    (Vector.rev(Vector.fromList fields'), imps')
 	end
 
     and trConItemo'(E,E',typids',typ',acc1,acc2) =
@@ -2685,26 +2976,31 @@ functor MakeAbstractionPhase(
 
 	 | SOME(ConItem(i, _, vid as VId(i',vid'), tyo, conitemo)) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
-		val  typs'         = trTyo E tyo
-		val  vallab'       = O.Lab(i', Label.fromName(O.name valid'))
-		val  field'        = O.Field(i, vallab', typs')
-		val  k             = conArity typs'
-		val  desc'         = O.SomeDesc(i', alltyp(typids',
-							   arrtyp(typs',typ')))
-		val  imp'          = O.ConImp(i, valid', desc', k)
-		val  _             = case lookupVal(E', vid')
-				       of SOME(_,_,(C _ | R)) => ()
-					| SOME(_,_,V) =>
-					  error(i', E.ConItemNonCon vid')
-					| NONE =>
-					  error(i', E.ConItemUnbound vid')
-		val  _             = insertDisjointVal(E', vid', (i',stamp,C k))
-				     handle CollisionVal _ =>
-					error(i', E.ConItemDuplicate vid')
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val (typ11',k)       = trTyo E tyo
+		val  vallab'         = O.Lab(i', Label.fromName(O.name valid2'))
+		val  field'          = O.Field(i, vallab', typ11')
+		val  typ1'           = alltyp(typids',
+					      conarrowtyp E
+						(O.infoTyp typ', typ11',typ',k))
+		val  imp1'           = O.ValImp(i, valid1', O.SomeDesc(i,typ1'))
+		val  typ2'           = alltyp(typids',
+					      if k = 0 then typ' else
+					      O.ArrTyp(O.infoTyp typ',
+						       typ11', typ'))
+		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
 	   in
-		trConItemo' (E,E',typids',typ', field'::acc1, imp'::acc2)
-			    conitemo
+		case lookupVal(E', vid')
+		  of SOME(_,_, C _)  => ()
+		   | SOME(_,_,(V|R)) => error(i', E.ConItemNonCon vid')
+		   | NONE            => error(i', E.ConItemUnbound vid');
+		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
+		trConItemo' (E,E',typids',typ', field'::acc1,
+			     imp2'::imp1'::acc2) conitemo
+	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 
@@ -2713,46 +3009,54 @@ functor MakeAbstractionPhase(
 
 	 | SOME(PLAINDconItem(_, _, vid as VId(i',vid'), dconitemo)) =>
 	   let
-		val (valid',stamp) = trVId_bind E vid
-		val  k             = case lookupVal(E', vid')
-				       of SOME(_,_,C k) => k
-					| SOME(_,_,R)   => 1
-					| SOME(_,_,V)   =>
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  imp1'           = O.ValImp(i', valid1', O.NoDesc(i'))
+		val  imp2'           = O.ValImp(i', valid2', O.NoDesc(i'))
+		val  k               = case lookupVal(E', vid')
+				       of SOME(_,_,C k)   => k
+					| SOME(_,_,(V|R)) =>
 					  error(i', E.DconItemNonCon vid')
 					| NONE =>
 					  error(i', E.DconItemUnbound vid')
-		val  imp'          = O.ConImp(i', valid', O.NoDesc(i'), k)
-		val  _             = insertDisjointVal(E, vid', (i',stamp, C k))
-				     handle CollisionVal _ =>
-					error(i', E.ImpVIdDuplicate vid')
 	   in
-		trDconItemo' (E,E', imp'::acc) dconitemo
+		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
+		trDconItemo' (E,E', imp2'::imp1'::acc) dconitemo
 	   end
 
 	 | SOME(DESCDconItem(_, _, vid as VId(i',vid'), tyo, tyvarseq,longtycon,
 								 dconitemo)) =>
 	   let
-		val  i             = Source.over(i', infoLong longtycon)
-		val (valid',stamp) = trVId_bind E vid
-		val  _             = insertScope E
-		val (typids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
-		val  typs'         = trTyo E tyo
-		val  _             = deleteScope E
-		val  k             = conArity typs'
-		val  desc'         = O.SomeDesc(i, alltyp(typids',
-							  arrtyp(typs',typ')))
-		val  imp'          = O.ConImp(i', valid', desc', k)
-		val  _             = case lookupVal(E', vid')
-				       of SOME(_,_,(C _ | R)) => ()
-					| SOME(_,_,V) =>
+		val  i               = Source.over(i', infoLong longtycon)
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  _               = insertScope E
+		val (typids',typ12') = trTyVarSeqLongTyCon E
+						(tyvarseq, longtycon)
+		val (typ11',k)       = trTyo E tyo
+		val  _               = deleteScope E
+		val  typ1'           = alltyp(typids',
+					      conarrowtyp E (O.infoTyp typ12',
+							     typ11', typ12',k))
+		val  imp1'           = O.ValImp(i, valid1', O.SomeDesc(i,typ1'))
+		val  typ2'           = alltyp(typids',
+					      if k = 0 then typ12' else
+					      O.ArrTyp(O.infoTyp typ12',
+						       typ11', typ12'))
+		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
+		val  k               = case lookupVal(E', vid')
+				       of SOME(_,_,C k)   => k
+					| SOME(_,_,(V|R)) =>
 					  error(i', E.DconItemNonCon vid')
 					| NONE =>
 					  error(i', E.DconItemUnbound vid')
-		val  _          = insertDisjointVal(E, vid', (i', stamp, C k))
-				  handle CollisionVal _ =>
-					error(i', E.ImpVIdDuplicate vid')
 	   in
-		trDconItemo' (E,E', imp'::acc) dconitemo
+		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
+		trDconItemo' (E,E', imp2'::imp1'::acc) dconitemo
 	   end
 
 
@@ -2833,7 +3137,7 @@ functor MakeAbstractionPhase(
 
   (* Announcements *)
 
-    and trAnn  E ann  = List.rev(trAnn' (E,[]) ann)
+    and trAnn  E ann  = Vector.rev(Vector.fromList(trAnn' (E,[]) ann))
     and trAnn'(E,acc) =
 	fn IMPORTAnn(i, imp, s) =>
 	   let
@@ -2859,7 +3163,9 @@ functor MakeAbstractionPhase(
 
   (* Programs and components *)
 
-    fun trProgramo  E programo = List.rev(trProgramo' (E,[]) programo)
+    fun trProgramo  E programo =
+	    Vector.rev(Vector.fromList(trProgramo' (E,[]) programo))
+
     and trProgramo'(E,acc) =
 	fn NONE => acc
 

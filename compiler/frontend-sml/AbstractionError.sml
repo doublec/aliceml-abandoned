@@ -31,8 +31,11 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
 	(* Expressions *)
+	| ExpConArgSuperfluous
 	| ExpRowLabDuplicate	of Lab
 	(* Patterns *)
+	| PatConArgMissing
+	| PatConArgSuperfluous
 	| PatVIdDuplicate	of VId
 	| WithPatVIdDuplicate	of VId
 	| PatLongVIdVar
@@ -149,9 +152,15 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
       (* Expressions *)
+      | ppError(ExpConArgSuperfluous) =
+	  textpar["superfluous","constructor","argument"]
       | ppError(ExpRowLabDuplicate lab) =
 	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       (* Patterns *)
+      | ppError(PatConArgMissing) =
+	  textpar["missing","constructor","argument","in","pattern"]
+      | ppError(PatConArgSuperfluous) =
+	  textpar["superfluous","constructor","argument","in","pattern"]
       | ppError(PatVIdDuplicate vid) =
 	  textpar["duplicate","variable",ppVId vid,"in","pattern",
 		  "or","binding","group"]

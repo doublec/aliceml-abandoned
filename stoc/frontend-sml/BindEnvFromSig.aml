@@ -21,18 +21,36 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
       | infFromFix(Fixity.INFIX(n,a))	= SOME(assocFromAssoc a, n)
 
 
-    fun idStatusFromSort(Inf.VALUE,         t) = V
-      | idStatusFromSort(Inf.CONSTRUCTOR k, t) = idStatusFromArity(k,t)
-    and idStatusFromArity(k, t) =
-	(* Check whether constructor is of type ref, otherwise use k *)
-	if      Type.isAll t   then idStatusFromArity(k, #2(Type.asAll t))
-	else if Type.isArrow t then idStatusFromArity(k, #2(Type.asArrow t))
-	else if Type.isApply t then idStatusFromArity(k, #1(Type.asApply t))
-	else if Type.isCon t
-	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
+    fun idStatusFromTyp t =
+	if Type.isAll t then idStatusFromTyp(#2(Type.asAll t)) else
+	let
+	    val (t', t2)  = Type.asApply t
+	    val (t'',t1)  = Type.asApply t'
+	    val (t11,t12) = Type.asArrow t1
+	in
+(*ASSERT    assert Type.isCon t'' andalso
+	       Path.equals(#3(Type.asCon t''), PervasiveType.path_conarrow) =>*)
+	    if not(Type.isCon t'' andalso
+	       Path.equals(#3(Type.asCon t''), PervasiveType.path_conarrow))
+	    then raise Assert.failure else
+	    idStatusFromTyp'(t12, t2)
+	end
+	handle Type.Type =>
+	    raise Crash.Crash "BindEnvFromSig: strange constructor field"
+
+    and idStatusFromTyp'(t1,t2) =
+	if      Type.isApply' t1 then idStatusFromTyp'(#1(Type.asApply' t1), t2)
+	else if Type.isCon' t1
+	andalso Path.equals(#3(Type.asCon' t1), PervasiveType.path_ref) then
 	    R
 	else
-	    C k
+	    C(arityFromNatTyp t2)
+
+    and arityFromNatTyp t =
+	if Type.isApply t then
+	    1 + arityFromNatTyp(#1(Type.asApply t))
+	else 0
+
 
     fun envFromTyp(I,s,t) =
 	if      Type.isSum t    then envFromRow(I, s, Type.asSum t)
@@ -64,16 +82,15 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		let
 		    val (a,ts) = Type.headRow r
 		    val  x     = Stamp.new()
-		    val  vid   = VId.fromString(Label.toString a)
-		    val  is    = case Inf.lookupValSort(s,a)
-				   of Inf.VALUE         => raise Inf.Lookup
-				    | Inf.CONSTRUCTOR k => C k
-					(* UNFINISHED: check that the
-					 * constructor actually constructs
-					 * the type in question. *)
-					(* UNFINISHED: what if the
-					 * constructors are actually hidden
-					 * by following members??? *)
+		    val  name  = Label.toString a
+		    val  vid   = VId.fromString name
+		    val  a'    = Label.fromString("'" ^ name)
+		    val  is    = idStatusFromTyp(Inf.lookupVal(s,a'))
+		    (* UNFINISHED: check that the constructor actually
+		     * constructs the type in question.
+		     * What if the constructors are actually hidden
+		     * by following members???
+		     *)
 		in
 		    insertVal(E, vid, (I,x,is)) ;
 		    loop(Type.tailRow r)
@@ -117,21 +134,34 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    end
 	else if Inf.isValItem item then
 	    let
-		val (l,t,w,_) = Inf.asValItem item
-		val  vid      = VId.fromString(Label.toString l)
-		val  x        = Stamp.new()
-		val  is       = idStatusFromSort(w,t)
+		val (l,t,d) = Inf.asValItem item
+		val  name   = Label.toString l
+		val  vid    = VId.fromString name
+		val  x      = Stamp.new()
 	    in
-		insertVal(E, vid, (I,x,is))
+		if String.sub(name,0) = #"'" then
+		    insertVal(E, vid, (I,x,V))
+		else
+		let
+		    (* UNFINISHED: again we have a hiding problem here:
+		     * What if the item is not actually connected to the
+		     * constructor field of the same name, because it hides it?
+		     *)
+		    val l' = Label.fromString("'" ^ name)
+		    val is = idStatusFromTyp(Inf.lookupVal(s,l'))
+			     handle Inf.Lookup => V
+		in
+		    insertVal(E, vid, (I,x,is))
+		end
 	    end
 	else if Inf.isTypItem item then
 	    let
-		val (l,k,w,d) = Inf.asTypItem item
-		val  tycon    = TyCon.fromString(Label.toString l)
-		val  x        = Stamp.new()
-		val  E'       = case d
-				  of NONE   => new()
-				   | SOME t => envFromTyp(I, s, t)
+		val (l,k,d) = Inf.asTypItem item
+		val  tycon  = TyCon.fromString(Label.toString l)
+		val  x      = Stamp.new()
+		val  E'     = case d
+				of NONE   => new()
+				 | SOME t => envFromTyp(I, s, t)
 	    in
 		insertTy(E, tycon, (I,x,E'))
 	    end
