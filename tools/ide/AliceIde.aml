@@ -48,8 +48,9 @@ structure AliceIde =
 
         (* Buffers *)
 
-        val curtextview = ref Gtk.NULL
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
+        datatype activeView = COMPILER | STDSTREAMS | BUFFER of Gtk.object
+        val curtextview = ref COMPILER
 
         val numberOfPages = ref 0
         val currentPage = ref 0
@@ -71,8 +72,8 @@ structure AliceIde =
 
         val evalSignal = ref NONE
 
-        fun eval "" = ()
-	  | eval text =
+        fun eval echo "" = ()
+	  | eval echo text =
             case (!evalSignal) of NONE =>
 	    let
                 val signalP = Promise.promise()
@@ -86,7 +87,8 @@ structure AliceIde =
                     else String.extract(str, i, NONE)
 	    in
                 evalSignal := SOME signalP;
-		TextIO.StreamIO.output (compilerIn, find(0,text));
+		if echo then TextIO.StreamIO.output (compilerIn, find(0,text))
+                else ();
 		spawn (Evaluator.eval (text, signal);
                        evalSignal := NONE)
 	    end
@@ -94,8 +96,9 @@ structure AliceIde =
                                   FileDialog.message "Still evaluating."
 
         fun feedFile() =
+            case (!curtextview) of BUFFER view =>
             let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val buf = Gtk.textViewGetBuffer view
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf,startiter)
                 val enditer = Gtk.textIterNew()
@@ -103,15 +106,17 @@ structure AliceIde =
                 val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
                 val str = Core.utf8ToLatin1 str
             in
-                eval str
+                eval true str
             end
+                                 | _ => ()
 
         fun addNewlines(n, str) =
             (String.tabulate(n,fn _ => #"\n")) ^ str
 
         fun feedSelection() =
+            case (!curtextview) of BUFFER view =>
             let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val buf = Gtk.textViewGetBuffer view
                 val startiter = Gtk.textIterNew()
                 val enditer = Gtk.textIterNew()
                 val sel = Gtk.textBufferGetSelectionBounds(buf,
@@ -119,15 +124,17 @@ structure AliceIde =
                 val startline = 1 + Gtk.textIterGetLine startiter
             in
                 if sel
-                then eval (addNewlines(startline,
+                then eval true (addNewlines(startline,
                                        Core.utf8ToLatin1
                                            (Gtk.textBufferGetText(buf, startiter, enditer, false))))
                 else ()
             end
-                
+                                 | _ => ()
+    
         fun feedLine() =
+            case (!curtextview) of BUFFER view =>
             let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val buf = Gtk.textViewGetBuffer view
                 val startiter = Buffer.getCursorIter buf
                 val startline = 1 + Gtk.textIterGetLine startiter
                 val enditer = Gtk.textIterCopy(startiter)
@@ -137,9 +144,9 @@ structure AliceIde =
                                       Core.utf8ToLatin1
                                           (Gtk.textBufferGetText(buf, startiter, enditer, false)))
             in
-                eval str
+                eval true str
             end
-
+                                 | _ => ()
 
         fun findNextEOL iter next =
             if next iter then
@@ -202,47 +209,51 @@ structure AliceIde =
             end
 
         fun feedParagraph() =
+            case (!curtextview) of BUFFER view =>
             let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val buf = Gtk.textViewGetBuffer view
                 val (startiter, enditer) = paragraphIters(buf)
                 val startline = 1 + Gtk.textIterGetLine startiter
                 val str = addNewlines(startline,
                                       Core.utf8ToLatin1
                                           (Gtk.textBufferGetText(buf, startiter, enditer, false)))
             in
-                eval (str^"\n")
+                eval true (str^"\n")
+            end
+                                 | _ => ()
+
+        fun compile () =
+            let
+                val file = Buffer.getFileName (getCurrentPage())
+            in
+                case file of
+                    NONE => ()
+                  | SOME f => Evaluator.compile f
             end
             
         fun undo() = Buffer.undo (getCurrentPage())
 
-        fun copy() =
+        fun getCurBuf () =
             let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val view = case (!curtextview) of
+                               BUFFER view => view
+                             | COMPILER => AliceIdeGUI.compilerout
+                             | STDSTREAMS => AliceIdeGUI.progout
             in
-                Gtk.textBufferCopyClipboard(buf, clipboard)
+                Gtk.textViewGetBuffer view
             end
+                                             
+        fun copy() = Gtk.textBufferCopyClipboard(getCurBuf(), clipboard)
 
         fun paste() =
-            let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
-            in
-                Gtk.textBufferPasteClipboard(buf, clipboard,
-                                             Gtk.NULL, true)
-            end
+            Gtk.textBufferPasteClipboard(getCurBuf(), clipboard,
+                                         Gtk.NULL, true)
 
         fun cut() =
-            let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
-            in
-                Gtk.textBufferCutClipboard(buf, clipboard, true)
-            end
+            Gtk.textBufferCutClipboard(getCurBuf(), clipboard, true)
 
         fun delete() =
-            let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
-            in
-                ignore (Gtk.textBufferDeleteSelection(buf, true, true))
-            end
+            ignore (Gtk.textBufferDeleteSelection(getCurBuf(), true, true))
 
         fun colorRegion buf (style, r,c,r',c') =
             let
@@ -271,8 +282,9 @@ structure AliceIde =
                              (Substring.full str)
 
         fun syntax() =
+            case (!curtextview) of BUFFER view =>
             let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val buf = Gtk.textViewGetBuffer view
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf,startiter)
                 val enditer = Gtk.textIterNew()
@@ -285,9 +297,11 @@ structure AliceIde =
                 Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
                 app (colorRegion buf) regions
             end
+                                 | _ => ()
 
         fun search() = SearchDialog.search (getCurrentPage())
 
+        fun changeFocus view _ = curtextview := view
         fun markSet (buf,_) =
             let
                 val cursor = Gtk.textBufferGetInsert buf
@@ -299,6 +313,12 @@ structure AliceIde =
                              Gtk.textIterGetLineOffset iter))
             end
 
+        fun checkNotebookSize() =
+            (if Gtk.notebookGetNPages AliceIdeGUI.notebook1 > 0
+             then Gtk.panedSetPosition(AliceIdeGUI.vpaned1,500)
+             else (Gtk.panedSetPosition(AliceIdeGUI.vpaned1,1);
+                   Gtk.widgetGrabFocus AliceIdeGUI.compilerout))
+
         fun new' file =
             let
                 val {buf,view,...} = Buffer.buffer {notebook=AliceIdeGUI.notebook1,
@@ -306,12 +326,14 @@ structure AliceIde =
                                                     file=file,
                                                     loadFile=false}
             in
-                curtextview := view;
-                Gtk.widgetGrabFocus (!curtextview);
+                curtextview := BUFFER view;
+                Gtk.widgetGrabFocus (view);
                 Gtk.signalConnect(buf, "mark-set", markSet);
+                Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
                 markSet (buf, nil);
                 addPage(!numberOfPages);
-                numberOfPages := (!numberOfPages) + 1
+                numberOfPages := (!numberOfPages) + 1;
+                checkNotebookSize()
             end
         fun new() = new' NONE
 
@@ -325,12 +347,14 @@ structure AliceIde =
                                                         file=SOME f,
                                                         loadFile=true}
                 in
-                    curtextview := view;
-                    Gtk.widgetGrabFocus (!curtextview);
+                    curtextview := BUFFER view;
+                    Gtk.widgetGrabFocus (view);
                     Gtk.signalConnect(buf, "mark-set", markSet);
+                    Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
                     markSet (buf, nil);
                     addPage(!numberOfPages);
-                    numberOfPages := (!numberOfPages) + 1
+                    numberOfPages := (!numberOfPages) + 1;
+                    checkNotebookSize()
                 end
                                   
         fun saveFileAs () =
@@ -343,7 +367,10 @@ structure AliceIde =
                           else saveFileAs()
 
         fun switchPage(cur,view) =
-            (currentPage := cur; curtextview := view;
+            (currentPage := cur;
+             case (!curtextview) of
+                 BUFFER _ =>  curtextview := BUFFER view
+               | _ => ();
              SearchDialog.reconnect (getCurrentPage()))
 
         fun reallyClose p =
@@ -351,12 +378,13 @@ structure AliceIde =
              Gtk.notebookRemovePage(AliceIdeGUI.notebook1, p);
              currentPage := Gtk.notebookGetCurrentPage AliceIdeGUI.notebook1)
 
-        fun close () = if !currentPage=0 then ()
-                       else (if Buffer.close (getPage(!currentPage)) then
-                                 reallyClose (!currentPage)
-                             else FileDialog.modifiedWarning
-                                      "File modified. Discard changes and close anyway, or cancel?"
-                                      reallyClose (!currentPage))
+        fun close () = 
+            (if Buffer.close (getPage(!currentPage)) then
+                 reallyClose (!currentPage)
+             else FileDialog.modifiedWarning
+                      "File modified. Discard changes and close anyway, or cancel?"
+                      reallyClose (!currentPage);
+             checkNotebookSize())
 
         fun breakEval() =
             case (!evalSignal) of
@@ -369,7 +397,7 @@ structure AliceIde =
 
         fun jumpToError (row, col, row', col') _ =
             let
-                val buf = Gtk.textViewGetBuffer(!curtextview)
+                val buf = Buffer.getBuffer (getCurrentPage())
                 val lineCount = Gtk.textBufferGetLineCount buf
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf, startiter)
@@ -385,7 +413,7 @@ structure AliceIde =
                          (Gtk.textIterSetLineOffset(startiter, col);
                           Gtk.textIterSetLineOffset(enditer, col');
                           Buffer.selectRange(buf, startiter, enditer);
-                          Gtk.widgetGrabFocus (!curtextview))
+                          Gtk.widgetGrabFocus (Buffer.getView (getCurrentPage())))
                      else print "past offset")
                 else print "past lines"
             end
@@ -455,6 +483,10 @@ structure AliceIde =
 
         fun init () =
             (Gtk.signalConnect(AliceIdeGUI.compilerout, "populate-popup", populatePopup);
+             Gtk.signalConnect(AliceIdeGUI.compilerout, "focus-in-event",
+                               changeFocus COMPILER);
+             Gtk.signalConnect(AliceIdeGUI.progout, "focus-in-event",
+                               changeFocus STDSTREAMS);
 	     OutputWriters.makeWriters {inStream = inText,
 					outStream = outText,
 					errStream = errText,
@@ -463,7 +495,7 @@ structure AliceIde =
 					stdErrStream = stdErrText,
                                         stdInStream = stdin,
                                         rowColStream = rowColStream,
-                                        eval=eval};
+                                        eval=eval false};
              Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
                                      AliceIdeGUI.Helpers.accelGroup);
              Gtk.widgetAddAccelerator(AliceIdeGUI.undo, "activate",
@@ -473,10 +505,9 @@ structure AliceIde =
              Gtk.widgetAddAccelerator(AliceIdeGUI.feedparagraph, "activate",
                                       AliceIdeGUI.Helpers.accelGroup,
                                       Key.keyvalToInt Key.K_Return,
-                                      Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED))
-
-        fun createScratchpad() = new' (SOME "Scratchpad")
-                                  
+                                      Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED);
+             Gtk.widgetGrabFocus (AliceIdeGUI.compilerout)
+             )                      
 
         fun quit () = if List.all Buffer.close (!pages) then
                           OS.Process.exit OS.Process.success

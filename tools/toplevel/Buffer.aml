@@ -47,6 +47,8 @@ structure Buffer =
       val _ = Gdk.colormapAllocColor(cmap, black, false, true)
       val _ = Gdk.colormapAllocColor(cmap, white, false, true)
       val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
+
+      val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
               
       fun makeTags buf =
           let
@@ -120,6 +122,19 @@ structure Buffer =
           end
         | insertText _ _ = print "Gtk is crazy: insert"
 
+      fun getSelection id =
+          let
+              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val startiter = Gtk.textIterNew()
+              val enditer = Gtk.textIterNew()
+          in
+              Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+              if Gtk.textIterEqual(startiter, enditer) then NONE
+              else SOME (Gtk.textBufferGetText(buf,
+                                               startiter,enditer,
+                                               false))
+          end
+
       fun undo id =
           let
               val {undo,buf,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -154,6 +169,15 @@ structure Buffer =
                             | _ => ()
           end
 
+      fun getFileName id =
+          !(#file (BufferMap.lookupExistent(bufferMap, id)))
+
+      fun getBuffer id =
+          #buf (BufferMap.lookupExistent(bufferMap, id))
+
+      fun getView id =
+          #view (BufferMap.lookupExistent(bufferMap, id))
+
       fun buffer {notebook,id,file,loadFile} =
           let
               val fileName = Option.getOpt(file, "New file "^Int.toString id)
@@ -182,6 +206,7 @@ structure Buffer =
 	      val _ = Gtk.notebookAppendPage(notebook, scrolledwindow2, label1)
               val page = Gtk.notebookPageNum(notebook, scrolledwindow2)
               val _ = Gtk.notebookSetCurrentPage(notebook, page)
+              val _ = Gtk.widgetModifyFont(newSource, stdFont)
 
               val ret = {id=id,file=ref file,
                          fileLabel=label1,
@@ -201,9 +226,12 @@ structure Buffer =
                                val fileD = TextIO.openIn f
                                val text = TextIO.inputAll fileD
                                val text = Core.latin1ToUtf8 text
+                               val iter = Gtk.textIterNew()
                            in
                                Gtk.textBufferSetText(buf, text, ~1);
-                               Gtk.textBufferSetModified(buf, false)
+                               Gtk.textBufferSetModified(buf, false);
+                               Gtk.textBufferGetStartIter(buf, iter);
+                               Gtk.textBufferPlaceCursor(buf, iter)
                            end handle Io => FileDialog.message "IO error. Could not open file."
               else ();
               BufferMap.insertDisjoint(bufferMap, id, ret);

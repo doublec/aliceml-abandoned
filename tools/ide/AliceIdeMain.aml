@@ -12,5 +12,4 @@ structure Main =
     val _ = Gtk.widgetShowAll AliceIdeGUI.mainwidget
     val _ = AliceIde.init ()
     val _ = Evaluator.init ()
-    val _ = AliceIde.createScratchpad ()
   end

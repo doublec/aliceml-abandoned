@@ -90,6 +90,9 @@ structure SearchDialog =
 
         fun search id =
             (reconnect id;
+             case Buffer.getSelection id of
+                 NONE => ()
+               | SOME s => Gtk.entrySetText(searchString, s);
              Gtk.widgetShowAll searchDialog;
              Gtk.widgetMap searchDialog)
     end
