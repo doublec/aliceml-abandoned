@@ -285,7 +285,7 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateCont (EndHandle (region, cont)) =
 	    [O.EndHandleStm (stm_info region, translateCont cont)]
 	and translateDec (ValDec (info, VarPat (_, id as Id (_, _, name)),
-				  NewExp (info', isNAry)), cont) =
+				  NewExp info'), cont) =
 	    O.ValDec (stm_info (#region info),
 		      O.IdDef (translateId id),
 		      O.NewExp (id_info info', name))::translateCont cont
@@ -368,7 +368,7 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		(stms, id')
 	    end
-	and unfoldArgs (TupExp (_, exps), rest, true) =
+	and unfoldArgs (TupExp (_, exps), rest) =
 	    let
 		val (stms, ids) =
 		    Vector.foldr (fn (exp, (stms, ids)) =>
@@ -381,7 +381,7 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		(stms, O.TupArgs (Vector.fromList ids))
 	    end
-	  | unfoldArgs (ProdExp (_, expFields), rest, true) =
+	  | unfoldArgs (ProdExp (_, expFields), rest) =
 	    let
 		val (stms, labelIdList) =
 		    Vector.foldr (fn (Field (_, Lab (_, label), exp),
@@ -399,17 +399,23 @@ functor MkFlatteningPhase(val loadSign:
 		  | (labelIdVec, LabelSort.Prod) =>
 			(stms, O.ProdArgs labelIdVec)
 	    end
-	  | unfoldArgs (exp, rest, _) =
+	  | unfoldArgs (exp, rest) =
 	    let
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 	    in
 		(stms, O.OneArg id)
 	    end
+	and unfoldStrict (info, exp, cont) =
+	    let
+		val (stms, id) = unfoldTerm (exp, cont)
+	    in
+		(O.PrimAppExp (id_info info, "Future.await", #[id]), stms)
+	    end
 	and translateExp (LitExp (info, lit), f, cont) =
 	    f (O.LitExp (id_info info, translateLit lit))::translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.PrimExp (id_info info, name))::translateCont cont
-	  | translateExp (NewExp (info, isNAry), f, cont) =
+	  | translateExp (NewExp info, f, cont) =
 	    f (O.NewExp (id_info info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
@@ -417,50 +423,117 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		stms @ f (O.VarExp (id_info info, id))::translateCont cont
 	    end
-	  | translateExp (TagExp (info, Lab (_, label), exp, isNAry),
+	  | translateExp (TagExp (info, Lab (_, label), StrictExp (info', exp)),
 			  f, cont) =
 	    let
-		val conArity = makeConArity (#typ (infoExp exp), isNAry)
+		val conArity = typToArity (#typ (infoExp exp))
 	    in
-		if isSome conArity then
-		    let
-			val r = ref NONE
-			val rest = [O.IndirectStm (stm_info (#region info), r)]
-			val (stms, args) = unfoldArgs (exp, rest, isNAry)
-			val (_, n) = labelToIndex (#typ info, label)
-			val (stms', exp') =
-			    tagAppExp (info, label, n, args, conArity)
-		    in
-			r := SOME (stms' @ f exp'::translateCont cont); stms
-		    end
-		else
-		    f (O.TagExp (id_info info, label,
-				 #2 (labelToIndex (#typ info, label))))::
-		    translateCont cont
-	    end
-	  | translateExp (ConExp (info, longid, exp, isNAry), f, cont) =
-	    let
-		val conArity = makeConArity (#typ (infoExp exp), isNAry)
-	    in
-		if isSome conArity then
-		    let
-			val r = ref NONE
-			val rest = [O.IndirectStm (stm_info (#region info), r)]
-			val (stms2, args) = unfoldArgs (exp, rest, isNAry)
-			val (stms1, id1, _) = translateLongid longid
-			val (stms', exp') =
-			    conAppExp (info, O.Con id1, args, conArity)
-		    in
-			r := SOME (stms' @ f exp'::translateCont cont);
-			stms1 @ stms2
-		    end
-		else
-		    let
-			val (stms, id, _) = translateLongid longid
-		    in
-			stms @ f (O.ConExp (id_info info, O.Con id))::
+		case conArity of
+		    SOME Arity.Unary =>
+			let
+			    val r = ref NONE
+			    val rest =
+			        [O.IndirectStm (stm_info (#region info), r)]
+			    val (exp', stms) =
+				unfoldStrict (info', exp, Goto rest)
+			    val id = O.freshId (id_info info)
+			    val stm =
+			        O.ValDec (stm_info (#region info),
+					  O.IdDef id, exp')
+			    val (_, n) = labelToIndex (#typ info, label)
+			    val exp'' =
+			        O.TagAppExp (id_info info, label, n,
+					     O.OneArg id)
+			in
+			    r := SOME (stm::f exp''::translateCont cont);
+			    stms
+			end
+		  | SOME arity =>
+			let
+			    val r = ref NONE
+			    val rest =
+				[O.IndirectStm (stm_info (#region info), r)]
+			    val (stms, args) = unfoldArgs (exp, rest)
+			    val (_, n) = labelToIndex (#typ info, label)
+			    val (stms', exp') =
+				tagAppExp (info, label, n, args, conArity)
+			in
+			    r := SOME (stms' @ f exp'::translateCont cont);
+			    stms
+			end
+		  | NONE =>
+			f (O.TagExp (id_info info, label,
+				     #2 (labelToIndex (#typ info, label))))::
 			translateCont cont
-		    end
+	    end
+	  | translateExp (TagExp (info, Lab (_, label), exp), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val (_, n) = labelToIndex (#typ info, label)
+		val exp' = O.TagAppExp (id_info info, label, n, O.OneArg id)
+	    in
+		r := SOME (f exp'::translateCont cont);
+		stms
+	    end
+	  | translateExp (ConExp (info, longid, StrictExp (info', exp)),
+			  f, cont) =
+	    let
+		val conArity = typToArity (#typ (infoExp exp))
+	    in
+		case conArity of
+		    SOME Arity.Unary =>
+			let
+			    val r = ref NONE
+			    val rest =
+			        [O.IndirectStm (stm_info (#region info), r)]
+			    val (exp', stms2) =
+				unfoldStrict (info', exp, Goto rest)
+			    val argId = O.freshId (id_info info)
+			    val stm =
+			        O.ValDec (stm_info (#region info),
+					  O.IdDef argId, exp')
+			    val (stms1, conId, _) = translateLongid longid
+			    val exp'' =
+			        O.ConAppExp (id_info info, O.Con conId,
+					     O.OneArg argId)
+			in
+			    r := SOME (stm::f exp''::translateCont cont);
+			    stms1 @ stms2
+			end
+		  | SOME arity =>
+			let
+			    val r = ref NONE
+			    val rest =
+				[O.IndirectStm (stm_info (#region info), r)]
+			    val (stms2, args) = unfoldArgs (exp, rest)
+			    val (stms1, id1, _) = translateLongid longid
+			    val (stms', exp') =
+				conAppExp (info, O.Con id1, args, conArity)
+			in
+			    r := SOME (stms' @ f exp'::translateCont cont);
+			    stms1 @ stms2
+			end
+		  | NONE =>
+			let
+			    val (stms, id, _) = translateLongid longid
+			in
+			    stms @ f (O.ConExp (id_info info, O.Con id))::
+			    translateCont cont
+			end
+	    end
+	  | translateExp (ConExp (info, longid, exp), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val (stms2, argId) = unfoldTerm (exp, Goto rest)
+		val (stms1, conId, _) = translateLongid longid
+		val exp' =
+		    O.ConAppExp (id_info info, O.Con conId, O.OneArg argId)
+	    in
+		r := SOME (f exp'::translateCont cont);
+		stms1 @ stms2
 	    end
 	  | translateExp (RefExp (info, exp), f, cont) =
 	    let
@@ -471,6 +544,16 @@ functor MkFlatteningPhase(val loadSign:
 		(r := SOME (f (O.RefAppExp (id_info info, id))::
 			    translateCont cont);
 		 stms2)
+	    end
+	  | translateExp (StrictExp (info, exp), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+	    in
+		(r := SOME (f (O.PrimAppExp (id_info info, "Future.await",
+					     #[id]))::translateCont cont);
+		 stms)
 	    end
 	  | translateExp (TupExp (info, exps), f, cont) =
 	    let
@@ -565,7 +648,7 @@ functor MkFlatteningPhase(val loadSign:
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms2, args) = unfoldArgs (exp2, rest, true)
+		val (stms2, args) = unfoldArgs (exp2, rest)
 		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
 		r := SOME (f (O.VarAppExp (id_info info, id1, args))::
@@ -574,21 +657,27 @@ functor MkFlatteningPhase(val loadSign:
 	    end
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
 	    let
+		val region = #region info
+		val argTyp = Type.inTuple #[]
+		val strictTyp = Type.inApply (PervasiveType.typ_strict, argTyp)
 		val exp3 =
 		    TagExp (info, Lab (id_info info, PervasiveType.lab_false),
-			    FailExp {region = #region info,
-				     typ = PervasiveType.typ_zero},
-			    false)
+			    StrictExp ({region = region, typ = strictTyp},
+				       TupExp ({region = region, typ = argTyp},
+					       #[])))
 	    in
 		translateExp (IfExp (info, exp1, exp2, exp3), f, cont)
 	    end
 	  | translateExp (OrExp (info, exp1, exp2), f, cont) =
 	    let
+		val region = #region info
+		val argTyp = Type.inTuple #[]
+		val strictTyp = Type.inApply (PervasiveType.typ_strict, argTyp)
 		val exp3 =
 		    TagExp (info, Lab (id_info info, PervasiveType.lab_true),
-			    FailExp {region = #region info,
-				     typ = PervasiveType.typ_zero},
-			    false)
+			    StrictExp ({region = region, typ = strictTyp},
+				       TupExp ({region = region, typ = argTyp},
+					       #[])))
 	    in
 		translateExp (IfExp (info, exp1, exp3, exp2), f, cont)
 	    end

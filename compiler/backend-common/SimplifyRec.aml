@@ -74,8 +74,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    JokPat of pat_info
 	  | LitPat of pat_info * lit
 	  | VarPat of pat_info * id
-	  | TagPat of pat_info * lab * pat * bool
-	  | ConPat of pat_info * longid * pat * bool
+	  | TagPat of pat_info * lab * pat
+	  | ConPat of pat_info * longid * pat
 	  | RefPat of pat_info * pat
 	  | TupPat of pat_info * pat vector
 	  | ProdPat of pat_info * pat field vector
@@ -85,8 +85,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun infoPat (JokPat info) = info
 	  | infoPat (LitPat (info, _)) = info
 	  | infoPat (VarPat (info, _)) = info
-	  | infoPat (TagPat (info, _, _, _)) = info
-	  | infoPat (ConPat (info, _, _, _)) = info
+	  | infoPat (TagPat (info, _, _)) = info
+	  | infoPat (ConPat (info, _, _)) = info
 	  | infoPat (RefPat (info, _)) = info
 	  | infoPat (TupPat (info, _)) = info
 	  | infoPat (ProdPat (info, _)) = info
@@ -123,19 +123,19 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (pat as LitPat (info, lit)) = (pat, LitExp (info, lit))
 	  | patToExp (pat as VarPat (info, id)) =
 	    (pat, VarExp (info, ShortId (info, id)))
-	  | patToExp (TagPat (info, lab, pat, isNAry)) =
+	  | patToExp (TagPat (info, lab, pat)) =
 	    let
 		val (pat', exp') = patToExp pat
 	    in
-		(TagPat (info, lab, pat', isNAry),
-		 TagExp (info, lab, exp', isNAry))
+		(TagPat (info, lab, pat'),
+		 TagExp (info, lab, exp'))
 	    end
-	  | patToExp (ConPat (info, longid, pat, isNAry)) =
+	  | patToExp (ConPat (info, longid, pat)) =
 	    let
 		val (pat', exp') = patToExp pat
 	    in
-		(ConPat (info, longid, pat', isNAry),
-		 ConExp (info, longid, exp', isNAry))
+		(ConPat (info, longid, pat'),
+		 ConExp (info, longid, exp'))
 	    end
 	  | patToExp (RefPat (info, pat)) =
 	    let
@@ -183,16 +183,16 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    if O.litEq (lit1, lit2) then (nil, nil)
 	    else Error.error (#region info, "pattern never matches")
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
-	  | derec' (TagPat (info, Lab (_, label1), pat, _),
-		    TagExp (_, Lab (_, label2), exp, true)) =
+	  | derec' (TagPat (info, Lab (_, label1), pat),
+		    TagExp (_, Lab (_, label2), exp)) =
 	    let
 		val (constraints, idsExpList) = derec' (pat, exp)
 	    in
 		if label1 = label2 then (constraints, idsExpList)
 		else Error.error (#region info, "pattern never matches")
 	    end
-	  | derec' (ConPat (_, longid1, pat, _),
-		    ConExp (_, longid2, exp, true)) =
+	  | derec' (ConPat (_, longid1, pat),
+		    ConExp (_, longid2, exp)) =
 	    let
 		val (constraints, idsExpList) = derec' (pat, exp)
 	    in
@@ -266,22 +266,22 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    else Error.error (#region info, "pattern never matches")
 	  | unify (VarPat (info, id), pat2) = (nil, AsPat (info, id, pat2))
 	  | unify (pat1, VarPat (info, id)) = (nil, AsPat (info, id, pat1))
-	  | unify (TagPat (info, lab as Lab (_, label), pat1, isNAry),
-		   TagPat (_, Lab (_, label'), pat2, _)) =
+	  | unify (TagPat (info, lab as Lab (_, label), pat1),
+		   TagPat (_, Lab (_, label'), pat2)) =
 	    let
 		val (constraints, pat) = unify (pat1, pat2)
 	    in
 		if label = label' then
-		    (constraints, TagPat (info, lab, pat, isNAry))
+		    (constraints, TagPat (info, lab, pat))
 		else Error.error (#region info, "pattern never matches")
 	    end
-	  | unify (ConPat (info, longid, pat1, isNAry),
-		   ConPat (_, longid', pat2, _)) =
+	  | unify (ConPat (info, longid, pat1),
+		   ConPat (_, longid', pat2)) =
 	    let
 		val (constraints, pat) = unify (pat1, pat2)
 	    in
 		((longid, longid')::constraints,
-		 ConPat (info, longid, pat, isNAry))
+		 ConPat (info, longid, pat))
 	    end
 	  | unify (RefPat (info, pat1), RefPat (_, pat2)) =
 	    let
@@ -353,17 +353,17 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun preprocess (I.JokPat info) = (nil, JokPat info)
 	  | preprocess (I.LitPat (info, lit)) = (nil, LitPat (info, lit))
 	  | preprocess (I.VarPat (info, id)) = (nil, VarPat (info, id))
-	  | preprocess (I.TagPat (info, label, pat, isNAry)) =
+	  | preprocess (I.TagPat (info, label, pat)) =
 	    let
 		val (constraints, pat') = preprocess pat
 	    in
-		(constraints, TagPat (info, label, pat', isNAry))
+		(constraints, TagPat (info, label, pat'))
 	    end
-	  | preprocess (I.ConPat (info, longid, pat, isNAry)) =
+	  | preprocess (I.ConPat (info, longid, pat)) =
 	    let
 		val (constraints, pat') = preprocess pat
 	    in
-		(constraints, ConPat (info, longid, pat', isNAry))
+		(constraints, ConPat (info, longid, pat'))
 	    end
 	  | preprocess (I.RefPat (info, pat)) =
 	    let
@@ -371,6 +371,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, RefPat (info, pat'))
 	    end
+	  | preprocess (I.StrictPat (_, pat)) = preprocess pat
 	  | preprocess (I.TupPat (info, pats)) =
 	    let
 		val (constraints, pats) =

@@ -156,35 +156,41 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 					labels))))
 	  | makeAppConArgs (pat, _, pos) = (#[(pos, pat)], SOME (O.OneArg ()))
 
+	fun patToConArity (StrictPat (_, pat)) =
+	    (typToArity (#typ (infoPat pat)), pat)
+	  | patToConArity pat = (SOME Arity.Unary, pat)
+
 	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (TagPat (info, Lab (_, label), pat, isNAry),
+	  | makeTestSeq (TagPat (info, Lab (_, label), pat),
 			 pos, rest, mapping) =
 	    let
 		val (_, n) = labelToIndex (#typ info, label)
-		val conArity = makeConArity (#typ (infoPat pat), isNAry)
+		val (conArity, pat') = patToConArity pat
 		val (posPatVector, conArgs) =
-		    if isSome conArity then
-			makeAppConArgs (pat, isNAry, LABEL label::pos)
-		    else (#[], NONE)
+		    case conArity of
+			NONE => (#[], NONE)
+		      | SOME arity =>
+			    makeAppConArgs (pat', arity <> Arity.Unary,
+					    LABEL label::pos)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))
 		(Test (pos, TagTest (label, n, conArgs, conArity))::rest,
 		 mapping) posPatVector
 	    end
-	  | makeTestSeq (ConPat (info, longid, pat, isNAry),
-			 pos, rest, mapping) =
+	  | makeTestSeq (ConPat (info, longid, pat), pos, rest, mapping) =
 	    let
-		val conArity = makeConArity (#typ (infoPat pat), isNAry)
+		val (conArity, pat') = patToConArity pat
 		val (posPatVector, conArgs) =
-		    if isSome conArity then
-			makeAppConArgs (pat, isNAry,
-					longidToSelector longid::pos)
-		    else (#[], NONE)
+		    case conArity of
+			NONE => (#[], NONE)
+		      | SOME arity =>
+			    makeAppConArgs (pat', arity <> Arity.Unary,
+					    longidToSelector longid::pos)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))
@@ -194,6 +200,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
 			 Test (pos, RefTest)::rest, mapping)
+	  | makeTestSeq (StrictPat (_, pat), pos, rest, mapping) =
+	    makeTestSeq (pat, pos, rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    Vector.foldli
 	    (fn (i, pat, (rest, mapping)) =>
@@ -589,9 +597,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun deconstructs (JokPat _) = false
 	      | deconstructs (LitPat _) = raise NotNAry
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
-	      | deconstructs (TagPat (_, _, _, _)) = raise NotNAry
-	      | deconstructs (ConPat (_, _, _, _)) = raise NotNAry
+	      | deconstructs (TagPat (_, _, _)) = raise NotNAry
+	      | deconstructs (ConPat (_, _, _)) = raise NotNAry
 	      | deconstructs (RefPat (_, _)) = raise NotNAry
+	      | deconstructs (StrictPat (_, pat)) = deconstructs pat
 	      | deconstructs (TupPat (_, _)) = true
 	      | deconstructs (ProdPat (_, _)) = true
 	      | deconstructs (VecPat (_, _)) = raise NotNAry
@@ -656,7 +665,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		let
 		    val info = infoPat (#2 (Vector.sub (matches, 0)))
 		    val arity =
-			if checkMatches matches then typToArity (#typ info)
+			if checkMatches matches then
+			    case typToArity (#typ info) of
+				SOME arity => arity
+			      | NONE => Arity.Unary (*--** *)
 			else Arity.Unary
 		    val (graph, consequents) = buildGraph (matches, errStms)
 		in

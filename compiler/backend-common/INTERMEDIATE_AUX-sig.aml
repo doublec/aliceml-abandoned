@@ -69,7 +69,6 @@ signature INTERMEDIATE_AUX =
 	val getUsedVars: O.exp * IdSet.t -> IdSet.t
 
 	val rowLabels: Type.row -> Label.t list
-	val typToArity: Type.t -> Arity.t
-	val makeConArity: Type.t * bool -> Arity.t option
+	val typToArity: Type.t -> Arity.t option
 	val labelToIndex: Type.t * Label.t -> O.prod * int
     end

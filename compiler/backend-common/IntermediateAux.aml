@@ -94,14 +94,17 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    RecDec (info, Vector.map (fn dec => substDec' (dec, subst)) decs)
 	and substExp' (exp as LitExp (_, _), _) = exp
 	  | substExp' (exp as PrimExp (_, _), _) = exp
-	  | substExp' (exp as NewExp (_, _), _) = exp
+	  | substExp' (exp as NewExp _, _) = exp
 	  | substExp' (VarExp (info, longid), subst) =
 	    VarExp (info, substLongId (longid, subst))
-	  | substExp' (TagExp (info, lab, exp, isNAry), subst) =
-	    TagExp (info, lab, substExp' (exp, subst), isNAry)
-	  | substExp' (ConExp (info, longid, exp, isNAry), subst) =
-	    ConExp (info, longid, substExp' (exp, subst), isNAry)
-	  | substExp' (exp as RefExp _, _) = exp
+	  | substExp' (TagExp (info, lab, exp), subst) =
+	    TagExp (info, lab, substExp' (exp, subst))
+	  | substExp' (ConExp (info, longid, exp), subst) =
+	    ConExp (info, longid, substExp' (exp, subst))
+	  | substExp' (RefExp (info, exp), subst) =
+	    RefExp (info, substExp' (exp, subst))
+	  | substExp' (StrictExp (info, exp), subst) =
+	    StrictExp (info, substExp' (exp, subst))
 	  | substExp' (TupExp (info, exps), subst) =
 	    TupExp (info, Vector.map (fn exp => substExp' (exp, subst)) exps)
 	  | substExp' (ProdExp (info, expFields), subst) =
@@ -152,12 +155,14 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substPat' (pat as JokPat _, _) = pat
 	  | substPat' (pat as LitPat (_, _), _) = pat
 	  | substPat' (pat as VarPat (_, _), _) = pat
-	  | substPat' (TagPat (info, lab, pat, isNAry), subst) =
-	    TagPat (info, lab, substPat' (pat, subst), isNAry)
-	  | substPat' (ConPat (info, longid, pat, isNAry), subst) =
-	    ConPat (info, longid, substPat' (pat, subst), isNAry)
+	  | substPat' (TagPat (info, lab, pat), subst) =
+	    TagPat (info, lab, substPat' (pat, subst))
+	  | substPat' (ConPat (info, longid, pat), subst) =
+	    ConPat (info, longid, substPat' (pat, subst))
 	  | substPat' (RefPat (info, pat), subst) =
 	    RefPat (info, substPat' (pat, subst))
+	  | substPat' (StrictPat (info, pat), subst) =
+	    StrictPat (info, substPat' (pat, subst))
 	  | substPat' (TupPat (info, pats), subst) =
 	    TupPat (info, Vector.map (fn pat => substPat' (pat, subst)) pats)
 	  | substPat' (ProdPat (info, patFields), subst) =
@@ -225,23 +230,29 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(VarPat (info, id'), (id, id', info)::subst)
 	    end
-	  | relax (TagPat (info, lab, pat, isNAry), subst) =
+	  | relax (TagPat (info, lab, pat), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(TagPat (info, lab, pat', isNAry), subst')
+		(TagPat (info, lab, pat'), subst')
 	    end
-	  | relax (ConPat (info, longid, pat, isNAry), subst) =
+	  | relax (ConPat (info, longid, pat), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(ConPat (info, longid, pat', isNAry), subst')
+		(ConPat (info, longid, pat'), subst')
 	    end
 	  | relax (RefPat (info, pat), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
 		(RefPat (info, pat'), subst')
+	    end
+	  | relax (StrictPat (info, pat), subst) =
+	    let
+		val (pat', subst') = relax (pat, subst)
+	    in
+		(StrictPat (info, pat'), subst')
 	    end
 	  | relax (TupPat (info, pats), subst) =
 	    let
@@ -379,7 +390,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsExp (exp, set, used, shared)
 	and usedVarsExp (O.LitExp (_, _), _, _, _) = ()
 	  | usedVarsExp (O.PrimExp (_, _), _, _, _) = ()
-	  | usedVarsExp (O.NewExp (_, _), _, _, _) = ()
+	  | usedVarsExp (O.NewExp _, _, _, _) = ()
 	  | usedVarsExp (O.VarExp (_, id), set, used, _) =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.TagExp (_, _, _), _, _, _) = ()
@@ -454,18 +465,14 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else if Type.isMu typ then
 		typToArity (Type.asMu typ)
 	    else if Type.isTuple typ then
-		Arity.Tuple (Vector.length (Type.asTuple typ))
+		case Vector.length (Type.asTuple typ) of
+		    0 => NONE (*--** Arity.Nullary *)
+		  | n => SOME (Arity.Tuple n)
 	    else if Type.isProd typ then
-		rowToArity (Type.asProd typ)
+		SOME (rowToArity (Type.asProd typ))
 	    else if Type.isSum typ then
-		rowToArity (Type.asSum typ)
-	    else Arity.Unary
-
-	fun isZeroTyp typ = Type.equals (typ, PervasiveType.typ_zero)
-
-	fun makeConArity (typ, isNAry) =
-	    if isZeroTyp typ then NONE
-	    else SOME (if isNAry then typToArity typ else Arity.Unary)
+		SOME (rowToArity (Type.asSum typ))
+	    else SOME (Arity.Unary)
 
 	fun find (labels, label', i, n) =
 	    if i = n then NONE
@@ -489,8 +496,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    find (labels, label, 0, Vector.length labels)
 
 	fun labelToIndex (typ, label) =
-	    case findLabel (typToArity typ, label) of
-		SOME (prod, index) => (prod, index)
-	      | NONE => raise Crash.Crash ("IntermediateAux.labelToIndex " ^
-					   Label.toString label)
+	    Option.valOf (findLabel (Option.valOf (typToArity typ), label))
+	    handle Option.Option =>
+		raise Crash.Crash ("IntermediateAux.labelToIndex " ^
+				   Label.toString label)
     end
