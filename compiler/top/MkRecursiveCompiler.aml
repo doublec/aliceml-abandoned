@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -52,10 +53,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    else ()
 
 	local
-	    val homeref: string option ref = ref NONE
+	    val homeRef: string option ref = ref NONE
 	in
 	    fun home () =
-		case !homeref of
+		case !homeRef of
 		    NONE =>
 			let
 			    val home =
@@ -66,7 +67,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 					       "installation directory");
 					 "")
 			in
-			    homeref := SOME home; home
+			    homeRef := SOME home; home
 			end
 		  | SOME home => home
 	end
@@ -94,18 +95,35 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	fun readFile filename =
 	    let
-		val file   = TextIO.openIn filename
-		    handle IO.Io _ =>
-			   Error.error (Source.nowhere,
-					"could not open " ^ filename)
-		val source = TextIO.inputAll file
-		    handle IO.Io _ =>
-			   Error.error (Source.nowhere,
-					"error reading " ^ filename)
+		val file   = TextIO.openIn filename handle IO.Io _ =>
+				Error.error(Source.nowhere,
+					    "could not open " ^ filename)
+		val source = TextIO.inputAll file handle IO.Io _ =>
+				Error.error(Source.nowhere,
+					    "error reading " ^ filename)
 		val _      = TextIO.closeIn file
 	    in
 		source
 	    end
+
+	local
+	    val implicitImportRef = ref NONE	(* poor man's laziness *)
+	in
+	    fun implicitImport() =
+		case !implicitImportRef
+		  of SOME s => s
+		   | NONE =>
+		case !Switches.Language.implicitImportFile
+		  of NONE => ""
+		   | SOME url =>
+		let
+		    val s = String.map (fn #"\n" => #" " | c => c)
+				       (readFile(parseUrl(Url.fromString url)))
+		in
+		    implicitImportRef := SOME s;
+		    s
+		end
+	end
 
 	fun isBaseSig desc =   (*--** only needed for .NET backend *)
 	    case Source.url desc of
@@ -116,19 +134,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	      | NONE => false
 
 	fun processBasic process (desc, s) =
-	    process
-	    (desc,
-	     if not(!Switches.Language.implicitImport)
-	     orelse isBaseSig desc then "\n" ^ s
-	     else
-		 let
-		     val name = Option.getOpt
-				(!Switches.Language.implicitImportFile,
-				 home () ^ "Default.import")
-		 in
-		     String.map (fn #"\n" => #" " | c => c) (readFile name)
-		     ^ "\n" ^ s
-		 end)
+	    let
+	        val prefix = if not(!Switches.Language.implicitImport)
+			     orelse isBaseSig desc
+			     then ""
+			     else implicitImport()
+	    in
+		process(desc, prefix ^ "\n" ^ s)
+	    end
 
 	fun processString process source =
 	    processBasic process (Source.stringDesc, source)
@@ -144,28 +157,30 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	local
 	    fun compileSign' (desc, s) =
 		let
-		    val _ =
-			trace ("reading signature from " ^
-			       Url.toString (valOf (Source.url desc)))
+		    val sigFilename = Url.toString (valOf (Source.url desc))
+		    val _ = trace ("reading signature from " ^ sigFilename)
+		    val s' = implicitImport() ^ "\n" ^ s
 		    val (_, target) =
 			Compiler.compile (Compiler.empty, desc,
-					  Source.fromString s)
+					  Source.fromString s')
 		    val _ = trace "done"
 		    val sign =
 			case target of
 			    Target.COMPONENT {component, ...} =>
 				valOf (Component.sign (component ()))
 			  | Target.FOREIGN {sign, ...} => sign
+		    val inf = (valOf (#3 (Inf.asInfItem (List.hd (Inf.items
+						(Signature.toSig sign)))))
+			      handle Future.Future e => raise Future.innerExn e)
+			      handle e as ( Inf.Interface | List.Empty
+			             | Inf.Item | Option.Option) =>
+				Error.error (Source.nowhere,
+					"signature file " ^ sigFilename ^
+					" does not contain a proper\
+					\ signature declaration")
 		in
-		    case Inf.items (Signature.toSig sign) of
-			[item] =>
-			    let
-				val inf = valOf (#3 (Inf.asInfItem item))
-			    in
-				Inf.strengthen (Path.invent(), inf);
-				Signature.fromSig (Inf.asSig inf)
-			    end
-		      | _ => raise Crash.Crash "MkBatchCompiler.compileSign"
+		    Inf.strengthen (Path.invent(), inf);
+		    Signature.fromSig (Inf.asSig inf)
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -252,9 +267,11 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	 *)
 
 	fun loadSign url =
-	    case Component.sign (ComponentManager.link url) of
+	    (case Component.sign (ComponentManager.link url) of
 		SOME sign => sign
 	      | NONE => raise Component.Corrupt
+	    )
+	    handle e => raise Future.innerExn e
 
 	fun acquireSign (desc, url) =
 	    let
@@ -282,9 +299,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		val targetFilename = parseUrl url
 		val sigFilename = pathFloor targetFilename ^ ".asig"
 	    in
-		if existsFile sigFilename then compileSign sigFilename
-		else if !Switches.Global.recursiveCompilation
-		then acquireFromSource (url, targetFilename)
+		if existsFile sigFilename then
+		    compileSign sigFilename
+		else if !Switches.Global.recursiveCompilation then
+		    acquireFromSource (url, targetFilename)
 		else
 		    Error.error
 			(Source.nowhere,

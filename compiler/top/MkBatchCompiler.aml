@@ -80,7 +80,9 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    main_x (infile, outfile)
 	  | main' _ = (usage (); OS.Process.failure)
 
-	fun defaults () = () (* override defaults from MkSwitches here *)
+	fun defaults () = (* override defaults from MkSwitches here *)
+	    RecursiveCompiler.Switches.Language.implicitImportFile :=
+		SOME "x-alice:/alicec.import"
 
 	fun main arguments =
 	    (defaults (); main' (OptionParser.parse arguments))

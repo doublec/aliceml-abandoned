@@ -116,11 +116,16 @@ struct
 	    OS.Process.success
 	end
 
+    fun defaults () = (* override defaults from MkSwitches here *)
+	RecursiveCompiler.Switches.Language.implicitImportFile :=
+	    SOME "x-alice:/alice.import"
+
     fun main arguments =
 	let
 	    val _ = TextIO.print banner
 	    open RecursiveCompiler.Switches
 	in
+	    defaults ();
 	    Debug.dumpElaborationSig := true;
 	    Debug.dumpPhases := false;
 	    Language.allowUnclosedComponents := true;

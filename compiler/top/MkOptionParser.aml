@@ -36,9 +36,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tWhether to reduce import signatures to the entities used.\n\
 	    \\t--(no-)reexport-import\n\
 	    \\t\tMake imported entities part of the component.\n\
-	    \\t--(no-)implicit-import\n\
-	    \\t\tWhether the SML Standard Basis is made available.\n\
-	    \\t--implicit-import-file <import file>\n\
+	    \\t--implicit-import-file <import file>|-\n\
 	    \\t\tSpecify file containing implicit import annotations.\n\
 	    \\t--rtt-level=no\n\
 	    \\t\tDo not generate code for runtime types.\n\
@@ -91,7 +89,6 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	     ("warn-unused-import", Warn.unusedImport),
 	     ("reexport-import", Language.reexportImport),
 	     ("retain-full-import", Language.retainFullImport),
-	     ("implicit-import", Language.implicitImport),
 	     ("silent-fail", Language.silentFailExp),
 	     ("dump-phases", Debug.dumpPhases),
 	     ("dump-abstraction-result", Debug.dumpAbstractionResult),
@@ -134,7 +131,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    (Language.rttLevel := Language.FULL_RTT;
 	     parse rest)
 	  | parse ("--implicit-import-file"::file::rest) =
-	    (Language.implicitImportFile := SOME file;
+	    (Language.implicitImportFile :=
+		(if file = "-" then NONE else SOME file);
 	     parse rest)
 	  | parse (s::rest) =
 	    if checkBooleanSwitches (s, booleanSwitches) then parse rest
