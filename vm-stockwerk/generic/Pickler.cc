@@ -364,7 +364,7 @@ Interpreter::Result PicklingInterpreter::Run() {
   }
   OutputStream *outputStream = PickleArgs::GetOutputStream();
   // Check for integer
-  int i;
+  s_int i;
   if ((i = Store::WordToInt(x0)) != INVALID_INT) {
     if (i >= 0) {
       outputStream->PutByte(Pickle::POSINT);
