@@ -20,8 +20,7 @@ struct
 	    val header = "P6\n# Helikopter\n" ^
 			 Int.toString width ^" "^ Int.toString height ^ " 255\n"
 	in
-	    BinIO.output(file, Word8Vector.tabulate(String.size header,
-		fn i => Word8.fromInt(Char.ord(String.sub(header, i)))));
+	    BinIO.output(file, Byte.stringToBytes header);
 	    file
 	end
 
