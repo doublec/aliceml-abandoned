@@ -15,8 +15,8 @@ if [ $# -lt 1 ]; then
     exit 2
 fi
 
-if test -z "${STOCKHOME}"; then
-  STOCKHOME=$(dirname $(dirname $0))
+if test -z "${ALICE_HOME}"; then
+  ALICE_HOME=$(dirname $(dirname $0))
 fi
 
 case `uname -s` in
@@ -51,7 +51,7 @@ case "$mode" in
 	else
 	    cflags=-fPIC
 	fi
-	cmd gcc $cflags -DLIGHTNING=$LIGHTNING -I$STOCKHOME/include "$@"
+	cmd gcc $cflags -DLIGHTNING=$LIGHTNING -I$ALICE_HOME/include "$@"
 	;;
     c++)
 	if [ "$platform" = windows ]; then
@@ -59,7 +59,7 @@ case "$mode" in
 	else
 	    cflags=-fPIC
 	fi
-	cmd g++ $cflags -DLIGHTNING=$LIGHTNING -I$STOCKHOME/include "$@"
+	cmd g++ $cflags -DLIGHTNING=$LIGHTNING -I$ALICE_HOME/include "$@"
 	;;
     ld)
 	outputfile=""
@@ -89,7 +89,7 @@ case "$mode" in
 	done
 	if [ "$platform" = windows ]; then
 	    ldflags="-mno-cygwin $ldflags"
-	    libs="$libs $STOCKHOME/stow.dll"
+	    libs="$libs $ALICE_HOME/stow.dll"
 	fi
 	cmd g++ -shared $ldflags -o $outputfile $fileargs $libs
 	;;
