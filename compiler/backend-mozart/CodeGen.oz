@@ -565,7 +565,7 @@ define
       {F close()}
    end
 
-   fun {Translate Filename#Import#Body AssemblyFilename}
+   fun {Translate Filename Import#Body AssemblyFilename}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in

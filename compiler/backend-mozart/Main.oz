@@ -86,8 +86,8 @@ define
       case {ReadCommand File} of 'buildFunctor'#[Code] then
 	 case {Frontend.translateVirtualString Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
-	 [] AST=Filename#_#_ then Id in
-	    Id = {Put {CodeGen.translate AST Filename#'.ozm'}}
+	 [] Filename#Import#Body then Id in
+	    Id = {Put {CodeGen.translate Filename Import#Body Filename#'.ozm'}}
 	    {System.printInfo 'Result: '#Id#'\n\n'}
 	 end
       [] 'saveValue'#[OutFilename Id] then
