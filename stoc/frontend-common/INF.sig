@@ -122,6 +122,8 @@ signature INF =
 	| MismatchTyp of lab * tkind * tkind
 	| MismatchMod of lab * mismatch
 	| MismatchInf of lab * mismatch
+	| MismatchValSort of lab * val_sort * val_sort
+	| MismatchTypSort of lab * typ_sort * typ_sort
 	| Incompatible    of inf * inf
 	| IncompatibleArg of path * path
 

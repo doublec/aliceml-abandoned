@@ -219,39 +219,47 @@ structure InfPrivate =
 
   (* Realisation *)
 
-    (* Applied realisations have to be fully expanded! *)
+    (* Applied realisations have to be complete:
+     *
+     *   Whenever there is a p in Dom(#mod_rea rea), then rea must also
+     *   contain substitutions for all subitems of module p.
+     *
+     * This way we avoid substitutions inside paths (which would require
+     * passing around a suitable environment), because if there is a
+     * substitution for a subpath then there also is a substitution for
+     * the complete path.
+     *
+     * Realisations need not be fully expanded (would be nice to have this
+     * property because it would make substitution more efficient, but
+     * full expansion is difficult to achieve for the intersect function).
+     *)
 
-    and realise (rea : rea, j as ref j') = j := realise'(rea, j')
+    and realise (rea: rea, j as ref j')	= j := realise'(rea, j')
 
     and realise'(rea, LINK j)		= realise'(rea, !j)
       | realise'(rea, ANY)		= ANY
       | realise'(rea, CON c)		= realiseCon(rea, c)
-      | realise'(rea, j' as SIG s)	= ( realiseSig(rea, s) ; j' )
+      | realise'(rea, j' as SIG s)	= ( realiseSig(rea, s)
+					  ; j'
+					  )
       | realise'(rea, j' as ( ARR(_,j1,j2) | LAM(_,j1,j2) )) =
-	    ( realise(rea, j1) ; realise(rea, j2) ; j' )
-      | realise'(rea, APP(j1,p,j2)) =
-	let
-	    val p' = case PathMap.lookup(#mod_rea rea, p)
-		       of SOME p' => p'
-			| NONE    => p
-	in
-	    realise(rea, j1) ;
-	    realise(rea, j2) ;
-	    (* UNFINISHED: do reduction *)
-	    APP(j1, p', j2)
-	end
+					  ( realise(rea, j1)
+					  ; realise(rea, j2)
+					  ; j'
+					  )
+      | realise'(rea, APP(j1,p,j2))	= ( realise(rea, j1)
+					  ; realise(rea, j2)
+					  (* UNFINISHED: do reduction *)
+					  ; APP(j1, realisePath(#mod_rea rea, p), j2)
+					  )
 
-    and realiseKind (rea, ref k')     = realiseKind'(rea, k')
-    and realiseKind'(rea, GROUND)     = ()
-      | realiseKind'(rea, DEP(_,j,k)) = ( realise(rea, j) ; realiseKind(rea, k))
+    and realiseKind (rea, ref k')	= realiseKind'(rea, k')
+    and realiseKind'(rea, GROUND)	= ()
+      | realiseKind'(rea, DEP(_,j,k))	= ( realise(rea, j)
+					  ; realiseKind(rea, k)
+					  )
 
-    and realiseCon(rea, kp as (k,p)) =
-	( case PathMap.lookup(#inf_rea rea, p)
-	    of SOME j => LINK(instance j)
-	     | NONE   => ( realiseKind(rea, k) ; CON kp )
-	)
-
-    and realiseSig(rea, (ref items, _)) =
+    and realiseSig(rea, (ref items, _))	=
 	    List.app (fn item => realiseItem(rea, item)) items
 
     and realiseItem(rea, item as ref(VAL(x, t, w, d))) =
@@ -263,49 +271,60 @@ structure InfPrivate =
       | realiseItem(rea, ref(INF(x, k, d))) =
 	( realiseKind(rea, k) ; realiseInfDef(rea, d) )
 
-    and realiseValDef(rea, d) = realisePathDef(#val_rea rea, d)
-    and realiseModDef(rea, d) = realisePathDef(#mod_rea rea, d)
+    and realiseCon(rea, kp as (k,p)) =
+	case PathMap.lookup(#inf_rea rea, p)
+	  of SOME j => let val j' = instance j in
+			  realise(rea, j') ; LINK j'		(* expand *)
+		       end
+	   | NONE   => ( realiseKind(rea, k) ; CON kp )
 
-    and realisePathDef(rea,      NONE  ) = NONE
-      | realisePathDef(rea, d as SOME p) = case PathMap.lookup(rea, p)
-					     of NONE => d
-					      | some => some
-    and realiseTypDef(rea, NONE  ) = ()
-      | realiseTypDef(rea, SOME t) = realiseTyp(rea, t)
+    and realisePath(rea', p)		= case PathMap.lookup(rea', p)
+					    of NONE    => p
+					     | SOME p' => realisePath(rea', p')
 
-    and realiseInfDef(rea, NONE  ) = ()
-      | realiseInfDef(rea, SOME j) = realise(rea, j)
+    and realisePathDef(rea', NONE  )	= NONE
+      | realisePathDef(rea', SOME p)	= SOME(realisePath(rea', p))
 
-    and realiseTyp(rea, t) = Type.realise(#typ_rea rea, t)
+    and realiseValDef(rea, d)		= realisePathDef(#val_rea rea, d)
+    and realiseModDef(rea, d)		= realisePathDef(#mod_rea rea, d)
+
+    and realiseTypDef(rea, NONE  )	= ()
+      | realiseTypDef(rea, SOME t)	= realiseTyp(rea, t)
+
+    and realiseInfDef(rea, NONE  )	= ()
+      | realiseInfDef(rea, SOME j)	= realise(rea, j)
+
+    and realiseTyp(rea, t)		= Type.realise(#typ_rea rea, t)
 
 
   (* Instantiation *)
 
-    and instance j = instanceInf(PathMap.new(), j)
+    and instance j			= instanceInf(PathMap.new(), j)
 
-    and instanceInf(rea, ref j')	= ref(instanceInf'(rea, j'))
+    and instanceInf (rea, ref j')	= ref(instanceInf'(rea, j'))
     and instanceInf'(rea, LINK j)	= instanceInf'(rea, !j)
       | instanceInf'(rea, ANY)		= ANY
       | instanceInf'(rea, CON c)	= CON(instanceCon(rea, c))
       | instanceInf'(rea, SIG s)	= SIG(instanceSig(rea, s))
-      | instanceInf'(rea, ARR(p,j1,j2)) =
-	    ARR(instancePathBinder(rea, p),
-		instanceInf(rea, j1), instanceInf(rea, j2))
-      | instanceInf'(rea, LAM(p,j1,j2)) =
-	    LAM(instancePathBinder(rea, p),
-		instanceInf(rea, j1), instanceInf(rea, j2) )
-      | instanceInf'(rea, APP(j1,p,j2)) =
-	    APP(instanceInf(rea, j1),
-		instancePath(rea, p), instanceInf(rea, j2) )
+      | instanceInf'(rea, ARR(p,j1,j2))	= ARR(instancePathBinder(rea, p),
+					      instanceInf(rea, j1),
+					      instanceInf(rea, j2))
+      | instanceInf'(rea, LAM(p,j1,j2))	= LAM(instancePathBinder(rea, p),
+					      instanceInf(rea, j1),
+					      instanceInf(rea, j2) )
+      | instanceInf'(rea, APP(j1,p,j2))	= APP(instanceInf(rea, j1),
+					      instancePath(rea, p),
+					      instanceInf(rea, j2) )
 
-    and instanceCon(rea, (k,p))	= (instanceKind(rea, k), instancePath(rea, p))
-    and instancePath(rea, p)	= Path.cloneFree PathMap.lookup (rea, p)
+    and instanceCon(rea, (k,p))		= ( instanceKind(rea, k),
+					    instancePath(rea, p) )
+    and instancePath(rea, p)		= Path.cloneFree PathMap.lookup (rea, p)
 
     and instanceKind (rea, ref k')	= ref(instanceKind'(rea, k'))
     and instanceKind'(rea, GROUND)	= GROUND
-      | instanceKind'(rea, DEP(p,j,k)) =
-	    DEP(instancePathBinder(rea, p),
-		instanceInf(rea, j), instanceKind(rea, k))
+      | instanceKind'(rea, DEP(p,j,k))	= DEP(instancePathBinder(rea, p),
+					      instanceInf(rea, j),
+					      instanceKind(rea, k))
 
     and instancePathBinder(rea, p) =
 	let
@@ -367,23 +386,18 @@ structure InfPrivate =
 	    s
 	end
 
-    and instancePathDef(rea,      NONE  )	= NONE
-      | instancePathDef(rea, d as SOME p)	= case PathMap.lookup(rea, p)
-						    of NONE => d
-						     | d'   => d'
-    and instanceTypDef(rea, NONE  )		= NONE
-      | instanceTypDef(rea, SOME t)		= SOME(instanceTyp(rea, t))
+    and instancePathDef(rea, NONE  )	= NONE
+      | instancePathDef(rea, SOME p)	= SOME(realisePath(rea, p))
 
-    and instanceInfDef(rea, NONE  )		= NONE
-      | instanceInfDef(rea, SOME j)		= SOME(instanceInf(rea, j))
+    and instanceTypDef(rea, NONE  )	= NONE
+      | instanceTypDef(rea, SOME t)	= SOME(instanceTyp(rea, t))
 
-    and instanceTyp(rea, t) =
-	let
-	    val t' = Type.clone t
-	in
-	    Type.realisePath(rea, t') ;
-	    t'
-	end
+    and instanceInfDef(rea, NONE  )	= NONE
+      | instanceInfDef(rea, SOME j)	= SOME(instanceInf(rea, j))
+
+    and instanceTyp(rea, t)		= let val t' = Type.clone t in
+					     Type.realisePath(rea, t') ; t'
+					  end
 
 
   (* Cloning (does not instantiate paths!) *)
@@ -438,6 +452,10 @@ structure InfPrivate =
     fun inArrow pjj	= ref(ARR pjj)
     fun inLambda pjj	= ref(LAM pjj)
     fun inApp jpj	= let val j = ref(APP jpj) in reduce j ; j end
+
+    fun pathToPath  p	= p
+    fun pathToTyp k p	= Type.inCon(k, Type.CLOSED, p)
+    fun pathToInf k p	= inCon(k,p)
 
 
   (* Projections and extractions *)
@@ -509,10 +527,10 @@ structure InfPrivate =
     and strengthenPathDef(p, NONE)	= SOME p
       | strengthenPathDef(p, d)		= d
 
-    and strengthenTypDef(p, k, NONE)	= SOME(Type.inCon(k, Type.CLOSED, p))
+    and strengthenTypDef(p, k, NONE)	= SOME(pathToTyp k p)
       | strengthenTypDef(p, k, d)	= d
 
-    and strengthenInfDef(p, k, NONE)	= SOME(inCon(k, p))
+    and strengthenInfDef(p, k, NONE)	= SOME(pathToInf k p)
       | strengthenInfDef(p, k, d)	= d
 
 
@@ -555,6 +573,8 @@ structure InfPrivate =
 	| MismatchTyp of lab * tkind * tkind
 	| MismatchMod of lab * mismatch
 	| MismatchInf of lab * mismatch
+	| MismatchValSort of lab * val_sort * val_sort
+	| MismatchTypSort of lab * typ_sort * typ_sort
 	| Incompatible    of inf * inf
 	| IncompatibleArg of path * path
 
@@ -582,6 +602,7 @@ structure InfPrivate =
 		    val  dom    = itemDom item2
 		    val  item1  = List.hd(Map.lookupExistent(m1, (dom,l)))
 		in
+		    if p = itemPath item1 then () else
 		    case dom
 		     of VAL' => PathMap.insert(val_rea, p, selectVal(!item1))
 		      | TYP' => PathMap.insert(typ_rea, p, selectTyp(!item1))
@@ -602,7 +623,7 @@ structure InfPrivate =
 		     | Map.Lookup (MOD',l) => raise Mismatch(MissingMod l)
 		     | Map.Lookup (INF',l) => raise Mismatch(MissingInf l)
 
-	    (* Necessary to create fully expanded realisation. *)
+	    (* Necessary to create complete realisation. *)
 	    and matchNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
 		    ignore(pair(m1, items2, []))
 	      | matchNested(ref(ARR _), ref(ARR _)) =
@@ -620,14 +641,16 @@ structure InfPrivate =
     and matchItem(ref item1', item2 as ref item2') =
 	( matchItem'(item1', item2') ; item2 := item1' )
 
-    and matchItem'(VAL(x1,t1,s1,d1), VAL(x2,t2,s2,d2)) =
+    and matchItem'(VAL(x1,t1,w1,d1), VAL(x2,t2,w2,d2)) =
 	let val l = idLab x2 in
 	    matchTyp(l, t1, t2) ;
+	    matchValSort(l, w1, w2) ;
 	    matchValDef(l, d1, d2)
 	end
-      | matchItem'(TYP(x1,k1,s1,d1), TYP(x2,k2,s2,d2)) =
+      | matchItem'(TYP(x1,k1,w1,d1), TYP(x2,k2,w2,d2)) =
 	let val l = idLab x2 in
 	    matchTKind(l, k1, k2) ;
+	    matchTypSort(l, w1, w2) ;
 	    matchTypDef(l, d1, d2)
 	end
       | matchItem'(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
@@ -656,9 +679,18 @@ structure InfPrivate =
 	    raise Mismatch(MismatchMod(l, mismatch))
 
     and matchKind(l,k1,k2) =
+	(*UNFINISHED: match contravariant*)
 	equaliseKind(k1,k2)
 	handle Mismatch mismatch =>
 	    raise Mismatch(MismatchInf(l, mismatch))
+
+    and matchValSort(l,w1,w2) =
+	if w1 = CONSTRUCTOR orelse w2 = VALUE then () else
+	    raise Mismatch(MismatchValSort(l, w1, w2))
+
+    and matchTypSort(l,w1,w2) =
+	if w1 = OPEN orelse w2 = CLOSED then () else
+	    raise Mismatch(MismatchTypSort(l, w1, w2))
 
 
     and match'(rea, _, ref ANY) = ()
@@ -705,104 +737,153 @@ structure InfPrivate =
 	end
 
 
+
   (* Intersection *)
 
     (* UNFINISHED: does ignore dependencies on second argument signature *)
 
-(*(**)
-    fun intersectDef (sel, equals, err) (rea, l, p1, NONE, p2, NONE)   = ()
-      | intersectDef (sel, equals, err) (rea, l, p1, NONE, p2, SOME z) =
-	    PathMap.insert(sel rea, p1, z)
-      | intersectDef (sel, equals, err) (rea, l, p1, SOME z, p2, NONE) =
-	    PathMap.insert(sel rea, p2, z)
-      | intersectDef (sel, equals, err) (rea, l, p1, SOME z1, p2, SOME z2) =
-	    if equals(x1,x2) then () else raise Mismatch(err l)
+    fun intersectDef (equals, err) (l, NONE,    NONE   ) = NONE
+      | intersectDef (equals, err) (l, NONE,    SOME z ) = SOME z
+      | intersectDef (equals, err) (l, SOME z,  NONE   ) = SOME z
+      | intersectDef (equals, err) (l, SOME z1, SOME z2) =
+	    if equals(z1,z2) then SOME z1 else raise Mismatch(err l)
 
-    fun intersectValDef x = intersectDef(#val_rea, op=, ManifestVal) x
-    fun intersectTypDef x = intersectDef(#typ_rea, Type.equals, ManifestTyp) x
-    fun intersectModDef x = intersectDef(#mod_rea, op=, ManifestMod) x
-    fun intersectInfDef x = intersectDef(#inf_rea, equals, ManifestInf) x
+    fun intersectValDef x = intersectDef(op=, ManifestVal) x
+    fun intersectTypDef x = intersectDef(Type.equals, ManifestTyp) x
+    fun intersectModDef x = intersectDef(op=, ManifestMod) x
+    fun intersectInfDef x = intersectDef(equals, ManifestInf) x
 
-    fun intersectSig(rea, s1 as (ref items1, m1), s2 as (ref items2, m2)) =
+    fun intersectSig(rea, s1 as (itemsr1 as ref items1, m1),
+			  s2 as (itemsr2 as ref items2, m2)) =
 	let
-	    fun pair(m1,      [],      pairs) = List.rev pairs
-	      | pair(m1, item2::items, pairs) =
+	    fun pairDef(rea', toZ, b, x1, NONE, x2, SOME z) =
+		    ( if b then PathMap.insert(rea', idPath x1, z) else ()
+		    ; false )
+	      | pairDef(rea', toZ, b, x1, SOME z, x2, NONE) =
+		    ( if b then PathMap.insert(rea', idPath x2, z) else ()
+		    ; true )
+	      | pairDef(rea', toZ, b, x1, SOME z1, x2, SOME z2) =
+		    ( if b then PathMap.insert(rea', idPath x2, z2) else ()
+		    ; true )
+	      | pairDef(rea', toZ, b, x1, NONE, x2, NONE) =
+		    ( if b then PathMap.insert(rea', idPath x2, toZ(idPath x1))
+			   else ()
+		    ; true )
+
+	    fun pair1(b, VAL(x1,t1,w1,d1), VAL(x2,t2,w2,d2)) =
+		    pairDef(#val_rea rea, pathToPath, b, x1, d1, x2, d2)
+	      | pair1(b, TYP(x1,k1,w1,d1), TYP(x2,k2,w2,d2)) =
+		    pairDef(#typ_rea rea, pathToTyp k1, b, x1, d1, x2, d2)
+	      | pair1(b, MOD(x1,j1,d1), MOD(x2,j2,d2)) =
+		  ( pairNested(j1,j2)
+		  ; pairDef(#mod_rea rea, pathToPath, b, x1, d1, x2, d2) )
+	      | pair1(b, INF(x1,k1,d1), INF(x2,k2,d2)) =
+		    pairDef(#inf_rea rea, pathToInf k1, b, x1, d1, x2, d2)
+	      | pair1 _ =
+		    raise Crash.crash "Inf.intersectSig: pairing"
+
+	    and pair(m1, [], pairs, left) = ( List.rev pairs, List.rev left )
+	      | pair(m1, item2::items, pairs, left) =
 		case Map.lookup(m1, (itemDom item2, itemLab item2))
-		  of NONE => ()
-		   | SOME [] => raise Crash.crash "Inf.intersectSig"
+		  of NONE => pair(m1, items, pairs, item2::left)
+		   | SOME [] => raise Crash.crash "Inf.intersectSig: lookup"
 		   | SOME(item1::_) =>
-		     ( pair1(!item1, !item2)
-		     ; pair(m1, items, (item1,item2)::pairs)
-		     )
+		     (* Nested structures are already realised.
+		      * We would loop during realisation if we inserted
+		      * identity realisations. *)
+		     if pair1(itemPath item1 = itemPath item2,
+			      !item1, !item2) then
+			pair(m1, items, (item1,item2)::pairs, left)
+		     else
+			pair(m1, items, (item2,item1)::pairs, left)
 
-	    and pair1(VAL(x1,t1,w1,d1), VAL(x2,t2,w2,d2)) =
-		intersectValDef(rea, idPath x1, d1, idPath x2, d2)
-	      | pair1(TYP(x1,k1,w1,d1), TYP(x2,k2,w2,d2)) =
-		intersectTypDef(rea, idPath x1, d1, idPath x2, d2)
-	      | pair1(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
-		( intersectModDef(rea, idPath x1, d1, idPath x2, d2)
-		; intersectNested(j1,j2) )
-	      | pair1(INF(x1,k1,d1), TYP(x2,k2,d2)) =
-		intersectInfDef(rea, idPath x1, d1, idPath x2, d2)
-
-	    (* Necessary to create fully expanded realisation. *)
-	    and intersectNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
-		    ignore(pair(m1, items2, []))
-	      | intersectNested(ref(ARR _), ref(ARR _)) =
+	    (* Necessary to create complete realisation. *)
+	    and pairNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
+		    ignore(pair(m1, items2, [], []))
+	      | pairNested(ref(ARR _), ref(ARR _)) =
 		(*UNFINISHED: when introducing functor paths*) ()
-	      | intersectNested(ref(LINK j1), j2) = intersectNested(j1, j2)
-	      | intersectNested(j1, ref(LINK j2)) = intersectNested(j1, j2)
-	      | intersectNested _ = ()
+	      | pairNested(ref(LINK j1), j2) = pairNested(j1, j2)
+	      | pairNested(j1, ref(LINK j2)) = pairNested(j1, j2)
+	      | pairNested _ = ()
 
-	    val pairs = pair(m1, items2, [])
+	    val (pairs,left) = pair(m1, items2, [], [])
 	in
 	    realiseSig(rea, s1) ;
 	    realiseSig(rea, s2) ;
-	    List.app intersectItem pairs
+	    List.app (intersectItem rea) pairs ;
+	    itemsr1 := items1 @ left ;
+	    itemsr2 := !itemsr1
 	end
 
-    and intersectItem(ref item1', item2 as ref item2') =
-	( intersectItem'(item1', item2') ; item2 := item1' )
+    and intersectItem rea (item1 as ref item1', ref item2') =
+	    item1 := intersectItem'(rea, item1', item2')
 
-    and intersectItem'(VAL(x1,t1,s1,d1), VAL(x2,t2,s2,d2)) =
-	let val l = idLab x2 in
-	    intersectTyp(l, t1, t2) ;
-	    intersectValDef(l, d1, d2)
+    and intersectItem'(rea, VAL(x1,t1,w1,d1), VAL(x2,t2,w2,d2)) =
+	let
+	    val l = idLab x1
+	    val t = intersectTyp(l, t1, t2)
+	    val w = intersectValSort(l, w1, w2)
+	    val d = intersectValDef(l, d1, d2)
+	in
+	    VAL(x1,t,w,d)
 	end
-      | intersectItem'(TYP(x1,k1,s1,d1), TYP(x2,k2,s2,d2)) =
-	let val l = idLab x2 in
-	    intersectTKind(l, k1, k2) ;
-	    intersectTypDef(l, d1, d2)
+      | intersectItem'(rea, TYP(x1,k1,w1,d1), TYP(x2,k2,w2,d2)) =
+	let
+	    val l = idLab x1
+	    val k = intersectTKind(l, k1, k2)
+	    val w = intersectTypSort(l, w1, w2)
+	    val d = intersectTypDef(l, d1, d2)
+	in
+	    TYP(x1,k,w,d)
 	end
-      | intersectItem'(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
-	let val l = idLab x2 in
-	    intersectInf(l, j1, j2) ;
-	    intersectModDef(l, d1, d2)
+      | intersectItem'(rea, MOD(x1,j1,d1), MOD(x2,j2,d2)) =
+	let
+	    val l = idLab x1
+	    val j = intersectInf(l, j1, j2)
+	    val d = intersectModDef(l, d1, d2)
+	in
+	    MOD(x1,j,d)
 	end
-      | intersectItem'(INF(x1,k1,d1), INF(x2,k2,d2)) =
-	let val l = idLab x2 in
-	    intersectKind(l, k1, k2) ;
-	    intersectInfDef(l, d1, d2)
+      | intersectItem'(rea, INF(x1,k1,d1), INF(x2,k2,d2)) =
+	let
+	    val l = idLab x1
+	    val k = intersectKind(l, k1, k2)
+	    val d = intersectInfDef(l, d1, d2)
+	in
+	    INF(x1,k,d)
 	end
       | intersectItem' _ = raise Crash.crash "Inf.intersectItem"
 
     and intersectTyp(l,t1,t2) =
-	if Type.intersectes(t1,t2) then () else
+	( Type.intersect(t1,t2) ; t1 )
+	handle Type.Intersect =>
 	    raise Mismatch(MismatchVal(l,t1,t2))
 
     and intersectTKind(l,k1,k2) =
-	if k1 = k2 then () else
+	if k1 = k2 then k1 else
 	    raise Mismatch(MismatchTyp(l,k1,k2))
 
     and intersectInf(l,j1,j2) =
 	intersect'(emptyRea(), j1, j2)
-	handle Mismatch Mismatch =>
-	    raise Mismatch(MismatchMod(l, Mismatch))
+	handle Mismatch mismatch =>
+	    raise Mismatch(MismatchMod(l, mismatch))
 
     and intersectKind(l,k1,k2) =
-	equaliseKind(k1,k2)
-	handle Mismatch Mismatch =>
-	    raise Mismatch(MismatchInf(l, Mismatch))
+	( equaliseKind(k1,k2) ; k1 )
+	handle Mismatch mismatch =>
+	    raise Mismatch(MismatchInf(l, mismatch))
+
+    and intersectValSort(l,w1,w2) =
+	if w1 = CONSTRUCTOR orelse w2 = CONSTRUCTOR then
+	    CONSTRUCTOR
+	else
+	    VALUE
+
+    and intersectTypSort(l,w1,w2) =
+	if w1 = OPEN orelse w2 = OPEN then
+	    OPEN
+	else
+	    CLOSED
 
 
     and intersect'(rea, j1, ref ANY) = j1
@@ -813,7 +894,8 @@ structure InfPrivate =
 	else
 	    raise Mismatch(Incompatible(j1,j2))
 
-      | intersect'(rea, ref(SIG s1), ref(SIG s2)) = intersectSig(rea, s1, s2)
+      | intersect'(rea, j1 as ref(SIG s1), ref(SIG s2)) =
+	    ( intersectSig(rea, s1, s2) ; j1 )
 
       | intersect'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
 	(*UNFINISHED*)
@@ -832,19 +914,13 @@ structure InfPrivate =
       | intersect'(rea, j1,j2)            = raise Mismatch(Incompatible(j1,j2))
 
 
-    and equals(j1,j2) = (*UNFINISHED*) true
-
-    and equaliseKind(k1,k2) = (*UNFINISHED*) ()
-*)
-
     fun intersect(j1,j2) =
 	let
 	    val j1' = clone j1
 	    val j2' = clone j2
 	    val rea = emptyRea()
 	in
-(*	    intersect'(rea, j1', j2')
-*)j1'
+	    intersect'(rea, j1', j2')
 	end
 
   end

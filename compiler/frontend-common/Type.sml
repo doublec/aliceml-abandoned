@@ -30,7 +30,11 @@ structure TypePrivate =
 	| APP  of typ * typ	(* application *)
 	| REC  of typ		(* recursive type barrier *)
 
-    and row = NIL | RHO | FLD of lab * typ list * row	(* [rho,r] *)
+    and row =						(* [rho,r] *)
+	  NIL
+	| RHO of int ref
+	| FLD of lab * typ list * row
+	(* NOTE: representation of rows is suboptimal - change it some day *)
 
     withtype typ = typ' ref				(* [tau,t] *)
     and      var = typ' ref				(* [alpha,a] *)
@@ -363,10 +367,10 @@ structure TypePrivate =
 
     exception Row
 
-    fun unknownRow()			= RHO
-    fun emptyRow()			= NIL
+    fun unknownRow()	= RHO(ref(!level))
+    fun emptyRow()	= NIL
 
-    fun extendRow(l,ts, r as (RHO|NIL))	= FLD(l,ts,r)
+    fun extendRow(l,ts, r as (RHO _ | NIL))	= FLD(l,ts,r)
       | extendRow(l1,ts1, r1 as FLD(l2,ts2,r2)) =
 	case Lab.compare(l1,l2)
 	  of EQUAL   => raise Row
@@ -387,8 +391,6 @@ structure TypePrivate =
 
     fun close t =
     	let
-	    val trail = ref []
-
 	    fun close(a as ref(HOLE(k,n)), f) =
 		if n > !level then
 		    ( a := VAR(k,n) ; fn t => f(inAll(a,t)) )
@@ -405,10 +407,17 @@ structure TypePrivate =
 		    fn t => f(inAll(a,t))
 		else f
 
+	      | close(t as ref(ROW r), f) = ( t := ROW(closeRow r) ; f )
+	      | close(t as ref(SUM r), f) = ( t := SUM(closeRow r) ; f )
+
 	      | close(ref(ALL(a,t) | EX(a,t)), f) =
 		( a := MARK(!a) ; f )	(* bit of a hack... *)
 
 	      | close(_, f) = f
+
+	    and closeRow NIL              = NIL
+	      | closeRow(r as RHO(ref n)) = if n > !level then NIL else r
+	      | closeRow(FLD(l,t,r))      = FLD(l, t, closeRow r)
 	in
 	    foldl close (fn t => t) t t
 	end
@@ -424,10 +433,15 @@ structure TypePrivate =
 		    if n > !level then t := HOLE(k,!level) else ()
 	      | lift(t as ref(VAR(k,n))) =
 		    if n > !level then raise Lift t else ()
+	      | lift(ref(ROW r | SUM r)) = liftRow r
 	      | lift t = ()
 	in
 	    app lift t
 	end
+
+    and liftRow(NIL)        = ()
+      | liftRow(RHO n)      = if !n > !level then n := !level else ()
+      | liftRow(FLD(l,t,r)) = liftRow r
 
 
   (* Occur check (not used by unification) *)
@@ -452,7 +466,13 @@ structure TypePrivate =
 	    fun lift(t as ref(t' as HOLE(k,n'))) =
 		    t := MARK(if n' <= n then t' else HOLE(k,n))
 	      | lift(ref(MARK _)) = ()
+	      | lift(t as ref(t' as (ROW r | SUM r))) =
+		    ( liftRow r ; t := MARK t' ; app1'(t', lift) )
 	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift) )
+
+	    and liftRow(NIL)        = ()
+	      | liftRow(RHO n')     = if !n' > n then n' := n else ()
+	      | liftRow(FLD(l,t,r)) = liftRow r
 
 	    fun check(t as ref t') =
 		if t1 = t then
@@ -476,7 +496,7 @@ structure TypePrivate =
 		    val t1 as ref t1' = follow t1
 		    val t2 as ref t2' = follow t2
 
-		    fun recurse f x =
+		    fun recur f x =
 			( t1 := LINK t2
 			; trail := (t1,t1') :: !trail
 			; f x
@@ -501,7 +521,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 ( liftAndCheck(n,t2,t1) ; t2 := LINK t1 )
 
 		       | (REC(t11), REC(t21)) =>
-			 recurse unify (t11,t21)
+			 recur unify (t11,t21)
 
 		       | (REC(t11), _) =>
 			 ( t2 := REC(ref t2') ; unify(t1,t2) )
@@ -510,22 +530,22 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 ( t1 := REC(ref t1') ; unify(t1,t2) )
 
 		       | (ARR(tt1), ARR(tt2)) =>
-			 recurse unifyPair (tt1,tt2)
+			 recur unifyPair (tt1,tt2)
 
 		       | (TUP(ts1), TUP(ts2)) =>
-			 recurse (ListPair.app unify) (ts1,ts2)
+			 recur (ListPair.app unify) (ts1,ts2)
 
 		       | (TUP(ts), ROW(r)) =>
-			 recurse unifyRow (t1, t2, tupToRow ts, r, ROW)
+			 recur unifyRow (t1, t2, tupToRow ts, r, ROW)
 
 		       | (ROW(r), TUP(ts)) =>
-			 recurse unifyRow (t1, t2, r, tupToRow ts, ROW)
+			 recur unifyRow (t1, t2, r, tupToRow ts, ROW)
 
 		       | (ROW(r1), ROW(r2)) =>
-			 recurse unifyRow (t1, t2, r1, r2, ROW)
+			 recur unifyRow (t1, t2, r1, r2, ROW)
 
 		       | (SUM(r1), SUM(r2)) =>
-			 recurse unifyRow (t1, t2, r1, r2, SUM)
+			 recur unifyRow (t1, t2, r1, r2, SUM)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
 			 if p1 = p2 then t1 := LINK t2
@@ -535,7 +555,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 (* Note that we do not allow general lambdas during
 			  * unification, so application is considered to be
 			  * in normal form *)
-			 recurse unifyPair (tt1,tt2)
+			 recur unifyPair (tt1,tt2)
 
 		       | (ALL(a1,t11), ALL(a2,t21)) =>
 			 Crash.crash "Type.unify: universal quantification"
@@ -555,13 +575,14 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and unifyRow(t1, t2, r1, r2, ROWorSUM) =
 		let
 		    fun loop(NIL, false, NIL, false) = NIL
-		      | loop(NIL, false, RHO, _    ) = NIL
-		      | loop(RHO, _,     NIL, false) = NIL
-		      | loop(RHO, _,     RHO, _    ) = RHO
-		      | loop(RHO, _, FLD(l,ts,r), b2) =
-			    FLD(l,ts, loop(RHO, true, r, b2))
-		      | loop(FLD(l,ts,r), b1, RHO, _) =
-			    FLD(l,ts, loop(r, b1, RHO, true))
+		      | loop(NIL, false, RHO _, _  ) = NIL
+		      | loop(RHO _, _,   NIL, false) = NIL
+		      | loop(RHO n1, _,  RHO n2, _ ) =
+			    RHO(ref(Int.min(!n1, !n2)))
+		      | loop(rho as RHO _, _, FLD(l,ts,r), b2) =
+			    FLD(l,ts, loop(rho, true, r, b2))
+		      | loop(FLD(l,ts,r), b1, rho as RHO _, _) =
+			    FLD(l,ts, loop(r, b1, rho, true))
 		      | loop(r1 as FLD(l1,ts1,r1'), b1,
 			     r2 as FLD(l2,ts2,r2'), b2) =
 			(case Lab.compare(l1,l2)
@@ -620,42 +641,42 @@ if kind' t1' <> k2 then raise Assert.failure else
 		    val t1 as ref t1' = follow t1
 		    val t2 as ref t2' = follow t2
 
-		    fun recurse p x =
+		    fun recur p x =
 			( t1 := LINK t2
 			; trail := (t1,t1') :: !trail
 			; p x
 			)
 
-		    fun recurseBinder(a1 as ref a1', a2, t1, t2) =
+		    fun recurBinder(a1 as ref a1', a2, t1, t2) =
 			( a1 := LINK a2
 			; trail := (a1,a1') :: !trail
-			; recurse equals (t1,t2)
+			; recur equals (t1,t2)
 			)
 		in
 		    t1 = t2 orelse
 		    case (t1',t2')
 		      of (REC(t11), REC(t21)) =>
-			 recurse equals (t11,t21)
+			 recur equals (t11,t21)
 
 		       | (REC(t11), _) =>
-			 recurse equals (t11,t2)
+			 recur equals (t11,t2)
 
 		       | (_, REC(t21)) =>
-			 recurse equals (t1,t21)
+			 recur equals (t1,t21)
 
 		       | (ARR(tt1), ARR(tt2)) =>
-			 recurse equalsPair (tt1,tt2)
+			 recur equalsPair (tt1,tt2)
 
 		       | (TUP(ts1), TUP(ts2)) =>
-			 recurse (ListPair.all equals) (ts1,ts2)
+			 recur (ListPair.all equals) (ts1,ts2)
 
 		       | ( (TUP(ts), ROW(r))
 			 | (ROW(r), TUP(ts)) ) =>
-			 recurse equalsRow (r, tupToRow ts)
+			 recur equalsRow (r, tupToRow ts)
 
 		       | ( (ROW(r1), ROW(r2))
 			 | (SUM(r1), SUM(r2)) ) =>
-			 recurse equalsRow (r1,r2)
+			 recur equalsRow (r1,r2)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
 			 p1 = p2
@@ -664,12 +685,12 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 (* Note that we do not allow general lambdas during
 			  * unification, so application is considered to be
 			  * in normal form *)
-			 recurse equalsPair (tt1,tt2)
+			 recur equalsPair (tt1,tt2)
 
 		       | ( (ALL(a1,t11), ALL(a2,t21))
 			 | (EX(a1,t11), EX(a2,t21))
 			 | (LAM(a1,t11), LAM(a2,t21)) ) =>
-			 recurseBinder(a1, a2, t11, t21)
+			 recurBinder(a1, a2, t11, t21)
 
 		       | _ => raise Unify(t1,t2)
 		end
@@ -677,8 +698,8 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and equalsPair((t11,t12), (t21,t22)) =
 		equals(t11,t21) andalso equals (t12,t22)
 
-	    and equalsRow(NIL, NIL) = true
-	      | equalsRow(RHO, RHO) = true
+	    and equalsRow(NIL,   NIL)   = true
+	      | equalsRow(RHO _, RHO _) = true
 	      | equalsRow(FLD(l1,ts1,r1), FLD(l2,ts2,r2)) =
 		l1 = l2 andalso ListPair.all equals (ts1,ts2)
 			andalso equalsRow(r1,r2)
@@ -717,8 +738,11 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    app subst t
 	end
 
-    (* ASSUME that realisations are fully expanded (i.e. we do not need to
-     * realise any type looked up). *)
+    (*
+     * Realisations need not be fully expanded (would be nice to have this
+     * property because it would make substitution more efficient, but
+     * full expansion is difficult to achieve for the intersect function).
+     *)
 
     fun realise(rea, t) =
 	let
@@ -726,7 +750,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 	    fun subst(t1 as ref(CON(k,s,p))) =
 		(case PathMap.lookup(rea, p)
-		   of SOME t2 => t1 := LINK(clone t2)
+		   of SOME t2 => t1 := LINK(clone t2)	(* expand *)
 		    | NONE    => ()
 		)
 	      | subst(t1 as ref(APP _)) = apps := t1::(!apps)
@@ -734,6 +758,14 @@ if kind' t1' <> k2 then raise Assert.failure else
 	in
 	    app subst t ; List.app reduce (!apps)
 	end
+
+
+  (* Intersection *)
+
+    exception Intersect
+
+    fun intersect(t1,t2) = ()
+    (* UNFINISHED *)
 
   end
 

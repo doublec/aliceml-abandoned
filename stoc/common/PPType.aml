@@ -241,12 +241,12 @@ text "@" ^^*)
 
 
 	    and ppRow NIL		= empty
-	      | ppRow RHO		= text "..."
+	      | ppRow(RHO _)		= text "..."
 	      | ppRow(FLD(l,ts,NIL))	= ppField(l,ts)
 	      | ppRow(FLD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppRow r
 
 	    and ppSum NIL		= empty
-	      | ppSum RHO		= text "..."
+	      | ppSum(RHO _)		= text "..."
 	      | ppSum(FLD(l,ts,NIL))	= ppField(l,ts)
 	      | ppSum(FLD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
 

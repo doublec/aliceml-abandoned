@@ -151,6 +151,10 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppMismatch'(Inf.MismatchInf(l,im)) =
 	    ["signature",ppLab l,"is","incompatible,","because","nested"]
 	    @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchValSort(l,w1,w2)) =
+	    ["value",ppLab l,"is","not","a","constructor"]
+      | ppMismatch'(Inf.MismatchTypSort(l,w1,w2)) =
+	    ["type",ppLab l,"is","not","an","open","datatype"]
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
 	    ["signatures","are","incompatible"]
       | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =
