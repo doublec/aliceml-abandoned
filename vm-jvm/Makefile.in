@@ -15,7 +15,10 @@ SRCDIR  = @srcdir@
 
 CLASSROOT  = ../../classes/
 RUNTIME = de/uni_sb/ps/dml/runtime/
+TOOLS   = de/uni_sb/ps/dml/tools/
 rt      = de.uni_sb.ps.dml.runtime.
+
+tools = $(CLASSROOT)$(TOOLS)Exec.class
 
 files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Builtin.class \
@@ -85,7 +88,7 @@ rmifil= $(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 rmipatch = $(CLASSROOT)sun/rmi/server/MarshalOutputStream.class \
 	   $(CLASSROOT)sun/rmi/server/MarshalInputStream.class
 
-all:    link $(files) rmi $(M4INCL) $(rmipatch)
+all:    link $(files) $(tools) rmi $(M4INCL) $(rmipatch)
 
 link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)
@@ -102,11 +105,15 @@ clean:
 	exit 0
 
 distclean: clean
-	rm -r $(CLASSROOT)$(RUNTIME); \
+	rm -r $(CLASSROOT) \
 	rm Makefile ;\
 	exit 0
 
 $(files): $(CLASSROOT)$(RUNTIME)%.class : $(SRCDIR)/%.java.m4
+	$(M4) $(M4INCL) $< > `basename $< .m4`
+	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) `basename $< .m4`
+
+$(tools): $(CLASSROOT)$(TOOLS)%.class : $(SRCDIR)/%.java.m4
 	$(M4) $(M4INCL) $< > `basename $< .m4`
 	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) `basename $< .m4`
 
