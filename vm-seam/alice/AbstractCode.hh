@@ -30,10 +30,6 @@ public:
     IdDef, Wildcard
   };
 
-  enum idRef {
-    Global, Immediate, Local
-  };
-
   enum con {
     Con, StaticCon
   };
@@ -42,20 +38,21 @@ public:
     OneArg, TupArgs
   };
 
-  enum instr {
-    AppConst, AppPrim, AppVar, ConTest, EndHandle, EndTry, GetRef, GetTup,
-    IntTest, Kill, LazySel, PutCon, PutFun, PutNew, PutRef, PutTag, PutTup,
-    PutVar, PutVec, Raise, RealTest, Reraise, Return, Sel, Shared, StringTest,
-    TagTest, Try, VecTest
-  };
-
   enum function {
     Function
   };
 
-  static idRef GetIdRef(TagVal *tagVal) {
-    return static_cast<idRef>(tagVal->GetTag());
-  }
+  enum instr {
+    AppConst, AppPrim, AppVar, CompactIntTest, CompactTagTest, ConTest,
+    EndHandle, EndTry, GetRef, GetTup, IntTest, Kill, LazySel, PutCon, PutFun,
+    PutNew, PutRef, PutTag, PutTup, PutVar, PutVec, Raise, RealTest, Reraise,
+    Return, Sel, Shared, StringTest, TagTest, Try, VecTest
+  };
+
+  enum idRef {
+    Global, Immediate, Local
+  };
+
   static con GetCon(TagVal *tagVal) {
     return static_cast<con>(tagVal->GetTag());
   }
@@ -64,6 +61,9 @@ public:
   }
   static instr GetInstr(TagVal *tagVal) {
     return static_cast<instr>(tagVal->GetTag());
+  }
+  static idRef GetIdRef(TagVal *tagVal) {
+    return static_cast<idRef>(tagVal->GetTag());
   }
 };
 

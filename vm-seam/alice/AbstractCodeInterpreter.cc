@@ -513,6 +513,21 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
+    case AbstractCode::CompactIntTest: // of idRef * int * instrs * instr
+      {
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	int value = Store::WordToInt(suspendWord);
+	if (value == INVALID_INT) SUSPEND(suspendWord);
+	int offset = Store::WordToInt(pc->Sel(1));
+	u_int index = static_cast<u_int>(value - offset);
+	Vector *tests = Vector::FromWord(pc->Sel(2));
+	if (index < tests->GetLength()) {
+	  pc = TagVal::FromWord(tests->Sub(index));
+	  goto loop;
+	}
+	pc = TagVal::FromWord(pc->Sel(3));
+      }
+      break;
     case AbstractCode::RealTest: // of idRef * (real * instr) vector * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
@@ -592,6 +607,41 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  }
 	}
 	pc = TagVal::FromWord(pc->Sel(3));
+      }
+      break;
+    case AbstractCode::CompactTagTest: // of idRef * tagTests * instr
+      {
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	TagVal *tagVal = TagVal::FromWord(suspendWord);
+	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
+	  int tag = Store::WordToInt(suspendWord);
+	  if (tag == INVALID_INT) SUSPEND(suspendWord);
+	  Vector *tests = Vector::FromWord(pc->Sel(1));
+	  if (static_cast<u_int>(tag) < tests->GetLength()) {
+	    Tuple *tuple = Tuple::FromWord(tests->Sub(tag));
+	    Assert(tuple->Sel(0) == Store::IntToWord(0)); // NONE
+	    pc = TagVal::FromWord(tuple->Sel(1));
+	    goto loop;
+	  }
+	} else { // non-nullary constructor
+	  int tag = tagVal->GetTag();
+	  Vector *tests = Vector::FromWord(pc->Sel(1));
+	  if (static_cast<u_int>(tag) < tests->GetLength()) {
+	    Tuple *tuple = Tuple::FromWord(tests->Sub(tag));
+	    TagVal *idDefsOpt = TagVal::FromWord(tuple->Sel(0));
+	    Assert(idDefsOpt != INVALID_POINTER);
+	    Vector *idDefs = Vector::FromWord(idDefsOpt->Sel(0));
+	    tagVal->AssertWidth(idDefs->GetLength());
+	    for (u_int i = idDefs->GetLength(); i--; ) {
+	      TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
+	      if (idDef != INVALID_POINTER) // IdDef id
+		localEnv->Add(idDef->Sel(0), tagVal->Sel(i));
+	    }
+	    pc = TagVal::FromWord(tuple->Sel(1));
+	    goto loop;
+	  }
+	}
+	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
     case AbstractCode::ConTest:

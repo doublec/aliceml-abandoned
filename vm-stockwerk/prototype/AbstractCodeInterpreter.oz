@@ -24,10 +24,6 @@ define
    IdDef    = 0
    Wildcard = 1
 
-   Global    = 0
-   Immediate = 1
-   Local     = 2
-
    OneArg  = 0
    TupArgs = 1
 
@@ -36,33 +32,38 @@ define
    AppConst       = 0
    AppPrim        = 1
    AppVar         = 2
-   ConTest        = 3
-   EndHandle      = 4
-   EndTry         = 5
-   GetRef         = 6
-   GetTup         = 7
-   IntTest        = 8
-   Kill           = 9
-   LazySel        = 10
-   PutCon         = 11
-   PutConst       = 12
-   PutFun         = 13
-   PutNew         = 14
-   PutRef         = 15
-   PutTag         = 16
-   PutTup         = 17
-   PutVar         = 18
-   PutVec         = 19
-   Raise          = 20
-   RealTest       = 21
-   Reraise        = 22
-   Return         = 23
-   Sel            = 24
-   Shared         = 25
-   StringTest     = 26
-   TagTest        = 27
-   Try            = 28
-   VecTest        = 29
+   CompactIntTest = 3
+   CompactTagTest = 4
+   ConTest        = 5
+   EndHandle      = 6
+   EndTry         = 7
+   GetRef         = 8
+   GetTup         = 9
+   IntTest        = 10
+   Kill           = 11
+   LazySel        = 12
+   PutCon         = 13
+   PutFun         = 14
+   PutNew         = 15
+   PutRef         = 16
+   PutTag         = 17
+   PutTup         = 18
+   PutVar         = 19
+   PutVec         = 20
+   Raise          = 21
+   RealTest       = 22
+   Reraise        = 23
+   Return         = 24
+   Sel            = 25
+   Shared         = 26
+   StringTest     = 27
+   TagTest        = 28
+   Try            = 29
+   VecTest        = 30
+
+   Global    = 0
+   Immediate = 1
+   Local     = 2
 
    LazySelInterpreter =
    lazySelInterpreter(
@@ -153,9 +154,6 @@ define
 	 for I in 1..{Width Ids} do
 	    L.(Ids.I) := killed
 	 end
-	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!PutConst Id X NextInstr) then
-	 L.Id := X
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutVar Id IdRef NextInstr) then
 	 L.Id := case IdRef of tag(!Local Id2) then L.Id2
@@ -371,6 +369,22 @@ define
 	    ThenInstr = {LitCase 1 {Width IntInstrVec} I IntInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
+      [] tag(!CompactIntTest IdRef Offset Instrs ElseInstr) then I0 in
+	 I0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global J) then Closure.(J + 2)
+	      [] tag(!Immediate X) then X
+	      end
+	 case {Deref I0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof I then Index in
+	    Index = I - Offset
+	    if Index >= 0 andthen Index < {Width Instrs} then
+	       {Emulate Instrs.(Index + 1) Closure L TaskStack}
+	    else
+	       {Emulate ElseInstr Closure L TaskStack}
+	    end
+	 end
       [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F0 in
 	 F0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
@@ -411,9 +425,8 @@ define
 			    T NullaryCases ElseInstr}
 	       {Emulate ThenInstr Closure L TaskStack}
 	    elsecase {TagCase 1 {Width NAryCases} T.1 NAryCases}
-	    of tuple(_ IdDefs ThenInstr) then N in
-	       N = {Width IdDefs}
-	       for J in 1..N do
+	    of tuple(_ IdDefs ThenInstr) then
+	       for J in 1..{Width IdDefs} do
 		  case IdDefs.J of tag(!IdDef Id) then
 		     L.Id := T.(J + 1)
 		  [] !Wildcard then skip
@@ -422,6 +435,30 @@ define
 	       {Emulate ThenInstr Closure L TaskStack}
 	    [] unit then
 	       {Emulate ElseInstr Closure L TaskStack}
+	    end
+	 end
+      [] tag(!CompactTagTest IdRef Tests ElseInstr) then T0 in
+	 T0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
+	      end
+	 case {Deref T0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof T then Index in
+	    Index = if {IsInt T} then T else T.1 end
+	    if Index >= {Width Tests} then
+	       {Emulate ElseInstr Closure L TaskStack}
+	    elsecase Tests.(Index + 1) of tuple(!NONE ThenInstr) then
+	       {Emulate ThenInstr Closure L TaskStack}
+	    [] tuple(tag(!SOME IdDefs) ThenInstr) then
+	       for J in 1..{Width IdDefs} do
+		  case IdDefs.J of tag(!IdDef Id) then
+		     L.Id := T.(J + 1)
+		  [] !Wildcard then skip
+		  end
+	       end
+	       {Emulate ThenInstr Closure L TaskStack}
 	    end
 	 end
       [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C0 in
