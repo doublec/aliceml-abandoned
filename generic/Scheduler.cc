@@ -136,15 +136,16 @@ int Scheduler::Run() {
 	    u_int handler;
 	    word data;
 	    currentThread->GetHandler(handler, data);
-	    word *handlerTop = (word *) currentTaskStack->GetFrame(0) + handler;
+	    StackFrame *handlerFrame = currentTaskStack->GetFrame(handler);
 	    // Unroll stack down to the handler frame
 	    // to be done: make configurable whether to have backtrace or not
-	    while (stackTop > handlerTop) {
-	      word wFrame = GetFrame()->Clone();
+	    frame = GetFrame();
+	    while (frame > handlerFrame) {
+	      word wFrame = frame->Clone();
 	      currentBacktrace->Enqueue(wFrame);
 	      PopFrame();
+	      frame = GetFrame();
 	    }
-	    frame  = GetFrame();
 	    worker = frame->GetWorker();
 	    result = worker->Handle(data);
 #if PROFILE
@@ -253,4 +254,10 @@ Worker::Result Scheduler::PushCall(word wClosure) {
     currentData = transient->ToWord();
     return Worker::REQUEST;
   }
+}
+
+void DumpCurrentTaskStack() {
+  u_int top =
+    Scheduler::stackTop - (word *) Scheduler::currentTaskStack->GetFrame(0);
+  Scheduler::currentTaskStack->Dump(top);
 }

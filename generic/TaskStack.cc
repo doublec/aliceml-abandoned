@@ -75,7 +75,11 @@ const char *EmptyTaskWorker::Identify() {
 }
 
 void EmptyTaskWorker::DumpFrame(StackFrame *) {
+#if defined(DEBUG)
+  fprintf(stderr, "Empty Task\n");
+#else
   return; // do nothing
+#endif
 }
 
 // TaskStack Implementation
