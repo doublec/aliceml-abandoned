@@ -2,7 +2,7 @@ structure BindEnv :> BIND_ENV =
   struct
 
     type Info  = Source.region
-    type stamp = AbstractGrammar.stamp
+    type stamp = Stamp.t
 
 
     (* The environment's domain *)

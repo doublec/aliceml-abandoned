@@ -97,8 +97,6 @@ structure Sharing :> SHARING =
 	    SingInf(i, mod)
 	end
 
-    fun labToId(Lab(i, s))  = Id(i, Stamp.new(), Name.ExId s)
-
     fun constrain(class, inf1, ShortId _, longid) =
 	    raise Crash.Crash "Sharing.constrain"
       | constrain(class, inf1, LongId(i, longid', lab), longid) =

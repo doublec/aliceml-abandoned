@@ -53,8 +53,8 @@ UNFINISHED: obsolete after bootstrapping:
     fun trLabel l			= Label.fromName(trName(Label.toName l))
     fun trLabel' l			= Label.fromName(trName'(Label.toName l))
 
-    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel (Label.fromString l))
-    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel'(Label.fromString  l))
+    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel  l)
+    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel' l)
 
     fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
     fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)

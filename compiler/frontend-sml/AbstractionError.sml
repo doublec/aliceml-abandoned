@@ -90,9 +90,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun ppStrId strid	= ppQuoted(StrId.toString strid)
     fun ppSigId sigid	= ppQuoted(SigId.toString sigid)
 
-    fun ppLab'(AbstractGrammar.Lab(_,l)) = l
+    fun ppLab'(AbstractGrammar.Lab(_,l)) = Label.toString l
 
-    fun ppId'(AbstractGrammar.Id(_,_,name)) = Name.toString name
+    fun ppId'(AbstractGrammar.Id(_,_,n)) = Name.toString n
     fun ppId x = ppQuoted(ppId' x)
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x

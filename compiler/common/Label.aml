@@ -27,9 +27,9 @@ structure Label :> LABEL =
     (* Ordering and hashing *)
 
     fun compare(NUM n1,   NUM n2)	= Int.compare(n1,n2)
-      | compare(NUM n1,   ALPHA s2)	= String.compare(Int.toString n1, s2)
-      | compare(ALPHA s1, NUM n2)	= String.compare(s1, Int.toString n2)
       | compare(ALPHA s1, ALPHA s2)	= String.compare(s1,s2)
+      | compare(NUM n1,   ALPHA s2)	= LESS
+      | compare(ALPHA s1, NUM n2)	= GREATER
 
     fun hash(NUM n)			= n
       | hash(ALPHA s)			= StringHashKey.hash s

@@ -61,6 +61,7 @@ is
     (* Abstract syntax *)
 
     ../frontend-common/abstract-grammar.cm
+    ../common/name.cm
     ../common/prebound.cm
 
     (* Translation into abstract syntax (binding analysis) *)

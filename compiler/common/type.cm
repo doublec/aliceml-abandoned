@@ -21,8 +21,6 @@ is
 	../misc/sources.cm
 	name.cm
 
-	LABEL.sig
-	Label.sml
 	PATH.sig
 	Path.sml
 	PathSet.sml

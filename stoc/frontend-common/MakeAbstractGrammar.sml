@@ -17,10 +17,8 @@ functor MakeAbstractGrammar(type info) :>
 
     (* Identifiers *)
 
-    type     stamp  = Stamp.t
-    datatype name   = datatype Name.name
-    datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * stamp * name
+    datatype lab    = Lab     of info * Label.t
+    datatype id     = Id      of info * Stamp.t * Name.t
     datatype longid = ShortId of info * id
 		    | LongId  of info * longid * lab
 
@@ -165,9 +163,8 @@ functor MakeAbstractGrammar(type info) :>
     fun lab(Lab(_,a))			= a
 
     fun conToId(Con(_,x,_))		= x
-
-    fun idToLab(Id(i,_,ExId s))		= Lab(i,s)
-      | idToLab(Id(i,_,InId))		= Lab(i,"")
+    fun labToId(Lab(i,l))		= Id(i, Stamp.new(), Label.toName l)
+    fun idToLab(Id(i,_,n))		= Lab(i, Label.fromName n)
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i

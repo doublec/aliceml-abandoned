@@ -29,10 +29,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun stamp_prebound E = #2 (prebound E)
     fun Env_prebound   E = #3 (prebound E)
 
-    fun inventId i = O.Id(i, Stamp.new(), O.InId)
-
-    fun idToLab(O.Id(i, stamp, O.ExId s)) = O.Lab(i, s)
-      | idToLab _ = raise Crash.Crash "idToLab: InId encountered"
+    fun inventId i = O.Id(i, Stamp.new(), Name.InId)
 
     fun longidToMod(O.ShortId(i, id))         = O.VarMod(i, id)
       | longidToMod(O.LongId(i, longid, lab)) =
@@ -92,7 +89,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SCon(i, SCon.STRING s)	=> O.StringLit s
 	 | SCon(i, SCon.REAL x)		=> O.RealLit x
 
-    fun trLab E (Lab(i, lab)) = O.Lab(i, Lab.toString lab)
+    fun trLab E (Lab(i, lab)) = O.Lab(i, Label.fromString(Lab.toString lab))
 
     fun trTyVar E (tyvar as TyVar(i, tyvar')) =
 	let
@@ -101,7 +98,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		  of SOME xx => xx
 		   | NONE    => error(i, E.TyVarUnbound tyvar')
 	in
-	    O.Id(i, stamp, O.ExId(TyVar.toString tyvar'))
+	    O.Id(i, stamp, Name.ExId(TyVar.toString tyvar'))
 	end
 
     fun trId (lookup,infoId,idId,toString,Unbound) E id =
@@ -112,7 +109,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				of SOME xx => xx
 				 | NONE    => error(i, Unbound id')
 	in
-	    ( O.Id(i, stamp, O.ExId(toString id')), x )
+	    ( O.Id(i, stamp, Name.ExId(toString id')), x )
 	end
 
     val trVId   = trId(lookupVal, infoVId, idVId, VId.toString, E.VIdUnbound)
@@ -133,7 +130,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val _     = if not(Option.isSome(lookup(E, id'))) then () else
 			   warn(i, Shadowed id')
 	in
-	    ( O.Id(i, stamp, O.ExId name), stamp )
+	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
 
 
@@ -169,7 +166,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',x)       = trStrId E' strid
 		val  longid'      =
 		     case longido'
-		       of SOME longid' => O.LongId(i, longid', idToLab id')
+		       of SOME longid' => O.LongId(i, longid', O.idToLab id')
 			| NONE         => O.ShortId(i, id')
 
 	   in
@@ -193,7 +190,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',x)       = trId E' id
 	   in
 		case longido'
-		  of SOME longid' => ( O.LongId(i,longid', idToLab id'), x )
+		  of SOME longid' => ( O.LongId(i,longid', O.idToLab id'), x )
 		   | NONE         => ( O.ShortId(i,id'), x )
 	   end
 
@@ -582,7 +579,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			case lookupVal(E', vid')
 			  of NONE            => trVId_bind E vid
 			   | SOME(_,stamp,_) => ( O.Id(i', stamp,
-						      O.ExId(VId.toString vid'))
+						   Name.ExId(VId.toString vid'))
 						, stamp )
 		    val _ = insertVal(E', vid', (i',stamp,V))
 		 in
@@ -1115,10 +1112,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = VId.toString vid'
 	    val stamp2  = Stamp.new()
-	    val id1'    = O.Id(i, stamp1, O.ExId name)
-	    val id2'    = O.Id(i, stamp2, O.ExId name)
+	    val id1'    = O.Id(i, stamp1, Name.ExId name)
+	    val id2'    = O.Id(i, stamp2, Name.ExId name)
 	    val longid' = case longido'
-			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
+			    of SOME longid' => O.LongId(i,longid',O.Lab(i,
+							Label.fromString name))
 			     | NONE         => O.ShortId(i, id1')
 	    val pat'    = O.VarPat(i, id2')
 	    val exp'    = O.VarExp(i, longid')
@@ -1134,8 +1132,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = TyCon.toString tycon'
 	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId name)
-	    val lab'    = O.Lab(i, name)
+	    val id'     = O.Id(i, stamp2, Name.ExId name)
+	    val lab'    = O.Lab(i, Label.fromString name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val typ'    = O.ConTyp(i, longid')
 	    val _       = insertTy(E, tycon', (i,stamp2,E'))
@@ -1147,8 +1145,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = StrId.toString strid'
 	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId name)
-	    val lab'    = O.Lab(i, name)
+	    val id'     = O.Id(i, stamp2, Name.ExId name)
+	    val lab'    = O.Lab(i, Label.fromString name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
 	    val _       = insertStr(E, strid', (i,stamp2,E'))
@@ -1160,8 +1158,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = SigId.toString sigid'
 	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId name)
-	    val lab'    = O.Lab(i, name)
+	    val id'     = O.Id(i, stamp2, Name.ExId name)
+	    val lab'    = O.Lab(i, Label.fromString name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val inf'    = O.ConInf(i, longid')
 	    val _       = insertSig(E, sigid', (i,stamp2,E'))
@@ -1989,10 +1987,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = VId.toString vid'
 	    val stamp2  = Stamp.new()
-	    val id1'    = O.Id(i, stamp1, O.ExId name)
-	    val id2'    = O.Id(i, stamp2, O.ExId name)
+	    val id1'    = O.Id(i, stamp1, Name.ExId name)
+	    val id2'    = O.Id(i, stamp2, Name.ExId name)
 	    val longid' = case longido'
-			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
+			    of SOME longid' => O.LongId(i,longid',O.Lab(i,
+							Label.fromString name))
 			     | NONE         => O.ShortId(i, id1')
 	    val typ'    = O.SingTyp(i, longid')
 	    val _       = insertDisjointVal(E, vid', (i,stamp2,is))

@@ -1,8 +1,8 @@
 signature ENV =
   sig
 
-    type stamp = AbstractGrammar.stamp
     type id    = AbstractGrammar.id
+    type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
     type var   = Type.var

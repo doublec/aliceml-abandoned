@@ -94,7 +94,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
   (* Rows (polymorphic, thus put here) *)
 
-    fun elabLab(E, I.Lab(i, s)) = ( Label.fromString s, O.Lab(nonInfo(i), s) )
+    fun elabLab(E, I.Lab(i, l)) = ( l, O.Lab(nonInfo(i), l) )
 
     fun elabRow(elabX, E, I.Row(i, fields, b)) =
 	let
@@ -188,7 +188,7 @@ val _=print "\n"
 	let
 	    val (s,_) = elabModLongid_path(E, longid)
 	in
-	    Inf.lookupValPath(s, Label.fromString l)
+	    Inf.lookupValPath(s, l)
 	end
 
 
@@ -1169,7 +1169,6 @@ val p = Path.fromLab(Label.fromString "?let")
 	    | SOME(_,j) =>
 	      let
 		  val s = Inf.asSig j
-		  val l = Label.fromString l
 		  val j = Inf.lookupMod(s, l)
 		  val p = Inf.lookupModPath(s, l)
 	      in

@@ -2,6 +2,8 @@ Group
 
 	signature NAME
 	structure Name
+	signature LABEL
+	structure Label
 
 is
 
@@ -9,3 +11,5 @@ is
 
 	NAME.sig
 	Name.sml
+	LABEL.sig
+	Label.sml
