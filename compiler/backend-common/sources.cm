@@ -19,6 +19,3 @@ Group is
 
     IMPERATIVE_PHASE.sig
     ImperativePhase.sml
-
-    PARTIAL_EVALUATION_PHASE.sig
-    PartialEvaluationPhase.sml
