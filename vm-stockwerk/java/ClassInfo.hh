@@ -19,51 +19,9 @@
 #endif
 
 #include "java/Data.hh"
+#include "java/Table.hh"
+#include "java/JavaByteCode.hh"
 #include "java/ClassLoader.hh"
-
-class DllExport Table: private Block {
-protected:
-  enum {
-    SIZE_POS, // int
-    BASE_SIZE
-    // ... elements
-  };
-public:
-  using Block::ToWord;
-
-  static Table *New(u_int length) {
-    Block *b = Store::AllocBlock(JavaLabel::Table, BASE_SIZE + length);
-    b->InitArg(SIZE_POS, Store::IntToWord(length));
-    for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
-    return static_cast<Table *>(b);
-  }
-  static Table *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Table);
-    return static_cast<Table *>(b);
-  }
-  static Table *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::Table);
-    return static_cast<Table *>(b);
-  }
-
-  u_int GetCount() {
-    return Store::DirectWordToInt(GetArg(SIZE_POS));
-  }
-  void Init(u_int index, word value) {
-    Assert(index < GetCount());
-    InitArg(BASE_SIZE + index, value);
-  }
-  void Assign(u_int index, word value) {
-    Assert(index < GetCount());
-    ReplaceArg(BASE_SIZE + index, value);
-  }
-  word Get(u_int index) {
-    Assert(index < GetCount());
-    return GetArg(BASE_SIZE + index);
-  }
-};
 
 class DllExport FieldInfo: private Block {
 public:
@@ -114,64 +72,6 @@ public:
     fieldInfo->InitArg(HAS_CONSTANT_VALUE_POS, true);
     fieldInfo->InitArg(CONSTANT_VALUE_POS, constantValue);
     return fieldInfo;
-  }
-};
-
-class DllExport ExceptionTableEntry: private Block {
-protected:
-  enum {
-    START_PC_POS, // int
-    END_PC_POS, // int
-    HANDLER_PC_POS, // int
-    CATCH_TYPE_POS, // Future(Class) | int(0)
-    SIZE
-  };
-private:
-  static ExceptionTableEntry *NewInternal(u_int startPC, u_int endPC,
-					  u_int handlerPC) {
-    Block *b = Store::AllocBlock(JavaLabel::ExceptionTableEntry, SIZE);
-    b->InitArg(START_PC_POS, startPC);
-    b->InitArg(END_PC_POS, endPC);
-    b->InitArg(HANDLER_PC_POS, handlerPC);
-    return static_cast<ExceptionTableEntry *>(b);
-  }
-public:
-  using Block::ToWord;
-
-  static ExceptionTableEntry *New(u_int startPC, u_int endPC,
-				  u_int handlerPC) {
-    ExceptionTableEntry *entry = NewInternal(startPC, endPC, handlerPC);
-    entry->InitArg(CATCH_TYPE_POS, 0);
-    return entry;
-  }
-  static ExceptionTableEntry *New(u_int startPC, u_int endPC,
-				  u_int handlerPC, word catchType) {
-    ExceptionTableEntry *entry = NewInternal(startPC, endPC, handlerPC);
-    entry->InitArg(CATCH_TYPE_POS, catchType);
-    return entry;
-  }
-};
-
-class DllExport JavaByteCode: private Block {
-protected:
-  enum {
-    MAX_STACK_POS, // int
-    MAX_LOCALS_POS, // int
-    CODE_POS, // Chunk
-    EXCEPTION_TABLE_POS, // Table(ExceptionTableEntry)
-    SIZE
-  };
-public:
-  using Block::ToWord;
-
-  static JavaByteCode *New(u_int maxStack, u_int maxLocals, Chunk *code,
-			   Table *exceptionTable) {
-    Block *b = Store::AllocBlock(JavaLabel::JavaByteCode, SIZE);
-    b->InitArg(MAX_STACK_POS, maxStack);
-    b->InitArg(MAX_LOCALS_POS, maxLocals);
-    b->InitArg(CODE_POS, code->ToWord());
-    b->InitArg(EXCEPTION_TABLE_POS, exceptionTable->ToWord());
-    return static_cast<JavaByteCode *>(b);
   }
 };
 

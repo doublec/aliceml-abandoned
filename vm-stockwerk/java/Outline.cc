@@ -13,7 +13,11 @@
 #if defined(INTERFACE)
 #pragma implementation "java/Data.hh"
 #pragma implementation "java/StackFrame.hh"
+#pragma implementation "java/Table.hh"
+#pragma implementation "java/JavaByteCode.hh"
 #endif
 
 #include "java/Data.hh"
 #include "java/StackFrame.hh"
+#include "java/Table.hh"
+#include "java/JavaByteCode.hh"

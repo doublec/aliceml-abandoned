@@ -35,16 +35,15 @@ public:
   static const BlockLabel MethodInfo          = (BlockLabel) (base + 4);
   static const BlockLabel ClassInfo           = (BlockLabel) (base + 5);
   // Code
-  static const BlockLabel JavaByteCode        = (BlockLabel) (base + 6);
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 7);
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 6);
   // Types
-  static const BlockLabel Class               = (BlockLabel) (base + 8);
-  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 9);
-  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 10);
+  static const BlockLabel Class               = (BlockLabel) (base + 7);
+  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 8);
+  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 9);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 11);
-  static const BlockLabel Object              = (BlockLabel) (base + 12);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 13);
+  static const BlockLabel Lock                = (BlockLabel) (base + 10);
+  static const BlockLabel Object              = (BlockLabel) (base + 11);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 12);
 };
 
 //
