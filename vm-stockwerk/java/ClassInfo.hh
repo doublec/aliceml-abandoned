@@ -87,6 +87,7 @@ public:
   bool IsTheField(JavaString *name, JavaString *descriptor) {
     return name->Equals(GetName()) && descriptor->Equals(GetDescriptor());
   }
+  u_int GetNumberOfRequiredSlots();
   bool HasConstantValue() {
     return Store::DirectWordToInt(GetArg(HAS_CONSTANT_VALUE_POS));
   }

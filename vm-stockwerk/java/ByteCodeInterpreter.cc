@@ -1344,6 +1344,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  Assert(object != INVALID_POINTER);
 	  word value = object->GetInstanceField(fieldRef->GetIndex()); 
 	  frame->Push(value);
+	  if (fieldRef->GetNumberOfRequiredSlots() == 2) {
+	    FILL_SLOT();
+	  } else {
+	    Assert(fieldRef->GetNumberOfRequiredSlots() == 1);
+	  }
 	}
 	else {
 	  RAISE_VM_EXCEPTION(NullPointerException, "GETFIELD");
@@ -1371,6 +1376,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	word value = classObj->GetStaticField(fieldRef->GetIndex());
 	lock->Release();
 	frame->Push(value);
+	if (fieldRef->GetNumberOfRequiredSlots() == 2) {
+	  FILL_SLOT();
+	} else {
+	  Assert(fieldRef->GetNumberOfRequiredSlots() == 1);
+	}
 	pc += 3;
       }
       break;
@@ -2211,6 +2221,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	InstanceFieldRef *fieldRef = InstanceFieldRef::FromWord(wFieldRef);
 	if (fieldRef == INVALID_POINTER)
 	  REQUEST(wFieldRef);
+	if (fieldRef->GetNumberOfRequiredSlots() == 2) {
+	  DROP_SLOT();
+	} else {
+	  Assert(fieldRef->GetNumberOfRequiredSlots() == 1);
+	}
 	word value = frame->Pop();
 	Object *object = Object::FromWord(frame->Pop());
 	Assert(object != INVALID_POINTER);
@@ -2234,6 +2249,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (!classObj->IsInitialized()) {
 	  frame->SetPC(pc);
 	  return classObj->RunInitializer();
+	}
+	if (fieldRef->GetNumberOfRequiredSlots() == 2) {
+	  DROP_SLOT();
+	} else {
+	  Assert(fieldRef->GetNumberOfRequiredSlots() == 1);
 	}
 	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
 	lock->Release();

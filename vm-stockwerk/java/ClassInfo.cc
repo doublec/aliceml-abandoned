@@ -16,6 +16,20 @@
 
 #include "java/ClassInfo.hh"
 
+u_int FieldInfo::GetNumberOfRequiredSlots() {
+  JavaString *descriptor = GetDescriptor();
+  switch (descriptor->CharAt(0)) {
+  case 'B': case 'C': case 'F':
+  case 'I': case 'S': case 'Z':
+  case 'L':
+    return 1;
+  case 'J': case 'D':
+    return 2;
+  default:
+    Error("invalid field descriptor");
+  }
+}
+
 u_int MethodInfo::GetNumberOfArguments() {
   JavaString *descriptor = GetDescriptor();
   Assert(descriptor->CharAt(0) == '(');
