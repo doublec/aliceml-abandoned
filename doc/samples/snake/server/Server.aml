@@ -551,7 +551,7 @@ struct
                             (* send initial diff list *)
                             let
                                 val diffs   = Arena.commit arena
-                                val pts     = NONE
+                                val pts     = SOME (computePoints ())
                                 val time    = #timeout config
                             in
                                 ListPair.app (fn (p as PDESC pd, (pos, _)) =>
