@@ -26,6 +26,9 @@ open Types
 
 structure Helper :> HELPER = 
 struct
+
+    exception copyArray_error
+
     fun createValue(va,t,act) = VALUE{value = va,
 				      typ = t,
 				      actions = act}
@@ -75,12 +78,6 @@ struct
 
     fun array_map (funct,a) = array_map' (funct,a,0)
 
-    fun getKids n = case n of Concat(r) => #kids(r)
-                            | Container(r) => #kids(r)
-                            | _ => (Array.array(0,Empty))
-
-	exception copyArray_error
-
     fun copyArray' (a, b, i) = if i = Array.length(a) 
 				   then ()
 				       else
@@ -90,5 +87,26 @@ struct
     fun copyArray (a,b) = if Array.length(a) > Array.length(b) 
 			      then raise copyArray_error 
 				  else copyArray'(a,b,0)
-    
+
+    fun getKids n = case n of Concat(r) => #kids(r)
+                            | Container(r) => #kids(r)
+			    | _ => (Array.array(0,Empty))
+
+    fun checkVertical (a,i) = if i >=  Array.length(a) 
+				  then false
+			      else case Array.sub(a,i) of
+				  Concat(r) 
+                                  => if checkVertical (#kids(r),0)
+					 then true
+				     else checkVertical (a,i+1)
+                                | Container(r) 
+				  => if setsVertical (Array.sub(a,i))
+					 then true
+				     else checkVertical (a,i+1)
+                                | _ => checkVertical (a,i+1)   
+
+   and setsVertical n = case n of
+       Container(r) => checkVertical (#kids(r),0)
+     | _ => false
+
 end;

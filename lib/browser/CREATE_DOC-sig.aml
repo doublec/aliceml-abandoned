@@ -17,7 +17,6 @@ import structure Type from "x-alice:/lib/rtt/Type"
 import structure Path from "x-alice:/lib/rtt/Path"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
-import structure MkPathTable from "MkPathTable"
 
 open Types
 
@@ -25,8 +24,8 @@ signature CREATE_DOC =
 sig
 
     type doc_creator = int * int * Reflect.value * Type.t -> doc  
-
-    val registerType : 	Path.path * doc_creator -> unit
+ 
+    val registerType : Path.path * doc_creator -> unit
 
     val castVector   :  'b -> 'c vector
     val castArray    :  'b -> 'c array

@@ -25,6 +25,9 @@ open Types
 
 signature HELPER =
 sig
+   
+    exception copyArray_error
+
     val createValue  :  Reflect.value * Type.t * actions -> desc
 
     val createGroupItem: Gtk.object * real * real ->  Gtk.object
@@ -44,12 +47,13 @@ sig
     val array_map : ('a -> 'b) * 'a Array.array -> unit
 
     (* Kopieren von Arrays *)
-	val copyArray': 'a Array.array * 'a Array.array * int -> unit
-	val copyArray: 'a Array.array * 'a Array.array  -> unit	    
+    val copyArray': 'a Array.array * 'a Array.array * int -> unit
+    val copyArray: 'a Array.array * 'a Array.array  -> unit	    
 
     (* Zugriff auf Node-Felder *)
     val getKids : node -> node Array.array
 
-
+    val checkVertical : node array * int -> bool
+    val setsVertical : node -> bool
 
 end;

@@ -20,11 +20,11 @@ import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
 import structure Helper from "Helper"
-import structure MkPathTable from "MkPathTable" 
+import structure MkPathTable from "MkPathTable"
 import structure NewNode from "NewNode"
 import signature CREATE_DOC from "CREATE_DOC-sig"
 
-open Types Helper MkPathTable 
+open Types Helper MkPathTable
 
 structure CreateDoc :> CREATE_DOC = 
 struct
@@ -45,7 +45,7 @@ struct
 			  sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
 		       rep = Int.toString(UnsafeValue.cast va : int), 
-		       color = COLOR}
+		       color = INT_COLOR}
 	end
     
     (* createString *)
@@ -58,7 +58,7 @@ struct
 			   rep = String.concat["\"",
 					       UnsafeValue.cast va : string,
 					       "\""],
-			   color = COLOR}
+			   color = STR_COLOR}
     end
  
     (* createChar *)
@@ -72,7 +72,7 @@ struct
 					       Char.toString
 					       (UnsafeValue.cast va : char),
 					       "\""],
-			    color = COLOR}
+			    color = CHAR_COLOR}
 	 end
 
     (* createWord *)
@@ -85,7 +85,7 @@ struct
 		in SIMPLE{desc = descr,
 			  rep = String.concat["0w",
 					      Int.toString(int_w)],
-			  color = COLOR}
+			  color = WORD_COLOR}
 		end
 	end	  
 
@@ -97,7 +97,7 @@ struct
 			   sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
 		       rep = Real.toString(UnsafeValue.cast va : real), 
-		       color = COLOR}
+		       color = REAL_COLOR}
 	end    
 
     (* createExn *)
@@ -112,7 +112,7 @@ struct
 		in SIMPLE {desc = descr,
 			   rep = String.concat["<exception> : ",
 					       str],
-			   color = COLOR}
+			   color = EXN_COLOR}
 		end
 	end     
     
@@ -127,16 +127,16 @@ struct
                     val ref_typ = #2(Type.asApply t)
                     val conc1 = SIMPLE{desc = INTERPUNCT,
 				       rep = "ref",
-                                       color = COLOR}
+                                       color = REF_COLOR}
                     val conc2 = 
 			CONTAINER{desc = INTERPUNCT,
 				  kids = #[SIMPLE{desc = INTERPUNCT,
 						       rep = "(",
-						       color = COLOR},
+						       color = BRACK_COLOR},
 					   EMBEDDED(ref_value,ref_typ),
 					   SIMPLE{desc = INTERPUNCT,
 						  rep = ")",
-						  color = COLOR}]} 
+						  color = BRACK_COLOR}]} 
                 in CONCAT{desc = descr,
                           kids = #[conc1,conc2]}
 		end 
@@ -168,17 +168,17 @@ struct
 					    (Vector.sub(vec,i),vec_typ),
 						    SIMPLE{desc = INTERPUNCT,
 							   rep = ", ",
-							   color = COLOR}]} )
+							   color = SEP_COLOR}]} )
                     val cont = CONTAINER{desc = INTERPUNCT,
 					 kids = cont_kids}
 		in CONCAT{desc = descr,
 			  kids = #[SIMPLE{desc = INTERPUNCT,
                                           rep = "#[",
-					  color = COLOR},
+					  color = BRACK_COLOR},
 				   cont,
 				   SIMPLE{desc = INTERPUNCT,
 					  rep = "]",
-					  color = COLOR}] }
+					  color = BRACK_COLOR}] }
 		end
 	end
                                                
@@ -203,35 +203,35 @@ struct
 					      kids = 
 					      #[SIMPLE{desc = INTERPUNCT,
 						       rep = Int.toString(i),
-						       color = COLOR},
+						       color = LABEL_COLOR},
 						SIMPLE{desc = INTERPUNCT,
 						       rep = " = ",
-						       color = COLOR},
+						       color = EQU_COLOR},
 						EMBEDDED(Array.sub(arr,i),
 							 arr_typ)] }
 			      else CONCAT{desc = INTERPUNCT,
 					  kids = 
 					  #[SIMPLE{desc = INTERPUNCT,
 						   rep = Int.toString(i),
-						   color = COLOR},
+						   color = LABEL_COLOR},
 					    SIMPLE{desc = INTERPUNCT,
 						   rep = " = ",
-						   color = COLOR},
+						   color = EQU_COLOR},
 					    EMBEDDED
 					    (Array.sub(arr,i),arr_typ),
 					    SIMPLE{desc = INTERPUNCT,
 						   rep = ", ",
-						   color = COLOR}]} )
+						   color = SEP_COLOR}]} )
                     val cont = CONTAINER{desc = INTERPUNCT,
 					 kids = cont_kids}
 		in CONCAT{desc = descr,
 			  kids = #[SIMPLE{desc = INTERPUNCT,
                                           rep = "<array> : {",
-					  color = COLOR},
+					  color = BRACK_COLOR},
 				   cont,
 				   SIMPLE{desc = INTERPUNCT,
 					  rep = "}",
-					  color = COLOR}] }
+					  color = BRACK_COLOR}] }
 		end
 	end 
 
