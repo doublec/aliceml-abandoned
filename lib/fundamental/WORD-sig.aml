@@ -17,9 +17,9 @@
 
 import structure __pervasive
        structure Int and LargeInt and Word and LargeWord from "Pervasive"
-import type int and char and string
+import __primitive type int and char and string
        type bool and order and option                    from "ToplevelTypes"
-import structure StringCvt                               from "StringCvt"
+import __primitive structure StringCvt                   from "StringCvt"
 
 signature WORD =
 sig
