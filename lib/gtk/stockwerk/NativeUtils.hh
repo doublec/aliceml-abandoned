@@ -24,8 +24,7 @@
 #include <gtk/gtk.h>
 #include <libgnomecanvas/libgnomecanvas.h>
 
-enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
-
+enum { gtkBOOL, gtkEVENT, gtkINT, gtkLIST, gtkOBJECT, gtkREAL, gtkSTRING };
 
 /***********************************************************************/
 // MACROS FOR OBJECT HANDLING
@@ -98,15 +97,15 @@ inline void __unrefObject(void *p, int type) {
 }
 
 // Convert a C pointer to an object tuple.
-inline word OBJECT_TO_WORD(void *p, int type) {
-  __refObject(p, type);
+inline word OBJECT_TO_WORD(const void *p, int type) {
+  __refObject(const_cast<void*>(p), type);
   Tuple *t = Tuple::New(2);
-  t->Init(0,Store::UnmanagedPointerToWord(p));
+  t->Init(0,Store::UnmanagedPointerToWord(const_cast<void*>(p)));
   t->Init(1,Store::IntToWord(type));
   return t->ToWord();
 }
 
-inline word OBJECT_TO_WORD(void *p) {
+inline word OBJECT_TO_WORD(const void *p) {
   OBJECT_TO_WORD(p, TYPE_UNKNOWN);
 }
 
@@ -171,15 +170,15 @@ inline word GSLIST_STRING_TO_WORD(GSList *list) {
   TagVal *tv = TagVal::FromWord(tvw);               \
   if (pos < end) {                                  \
     switch (tv->GetTag()) {                         \
-    case BOOL: __PUT_VALUE(bool, DECLARE_BOOL, tv->Sel(0), pos); break;       \
-    case EVENT:  break; \
-    case INT:  __PUT_VALUE(int,  DECLARE_INT, tv->Sel(0), pos);  break;       \
-    case LIST:   break; \
-    case OBJECT: __PUT_VALUE(void*,DECLARE_OBJECT,tv->Sel(0),pos);  break; \
-    case REAL: __PUT_VALUE(double, DECLARE_CDOUBLE, tv->Sel(0), pos); break;  \
-    case STRING: __PUT_VALUE(char*, DECLARE_CSTRING, tv->Sel(0), pos); break; \
-    }                                                                         \
-  }                                                                           \
+    case gtkBOOL: __PUT_VALUE(bool, DECLARE_BOOL, tv->Sel(0), pos); break;   \
+    case gtkEVENT:  break; \
+    case gtkINT:  __PUT_VALUE(int,  DECLARE_INT, tv->Sel(0), pos); break;    \
+    case gtkLIST:   break; \
+    case gtkOBJECT: __PUT_VALUE(void*,DECLARE_OBJECT,tv->Sel(0),pos); break; \
+    case gtkREAL: __PUT_VALUE(double,DECLARE_CDOUBLE,tv->Sel(0),pos); break; \
+    case gtkSTRING: __PUT_VALUE(char*,DECLARE_CSTRING,tv->Sel(0),pos); break;\
+    }                                                                        \
+  }                                                                          \
 }
 
 #define DECLARE_VALIST(l, x)                                \
