@@ -18,7 +18,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     fun appi f (ref t, _)	= Array.app (List.app f) t
     fun foldi f b (ref t, _)	= let fun f'((k,a),b) = f(k,a,b) in
-				      Array.foldl (fn(kas,a) =>
+				      Array.foldl (fn(kas,b) =>
 							List.foldl f' b kas
 						  ) b t
 				  end
