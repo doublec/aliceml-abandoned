@@ -235,6 +235,7 @@ signature LIST =
     val appr :		('a -> unit) -> 'a list -> unit
     val appi :		(int * 'a -> unit) -> 'a list -> unit
     val appri :		(int * 'a -> unit) -> 'a list -> unit
+    val mapr :		('a -> 'b) -> 'a list -> 'b list
     val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list
     val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
     val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
@@ -264,6 +265,10 @@ structure List : LIST =
     fun foldri  f  y xs		= foldri'(f,y,0,xs)
     and foldri'(f, y, i,  nil )	= y
       | foldri'(f, y, i, x::xs)	= f(i, x, foldri'(f, y, i+1, xs))
+
+    fun mapr  f   xs		= mapr'(f,xs)
+    and mapr'(f,  nil )		= nil
+      | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
 
     fun mapi  f xs		= mapi'(f,0,xs)
     and mapi'(f, i,  nil )	= nil
