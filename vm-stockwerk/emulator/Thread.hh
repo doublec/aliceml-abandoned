@@ -73,10 +73,6 @@ public:
   void Purge() {
     GetTaskStack()->Purge();
   }
-  void SetArgsAndTaskStack(word args, word taskstack) {
-    ReplaceArg(ARGS_POS, args);
-    ReplaceArg(TASK_STACK_POS, taskstack);
-  }
   void SetArgs(word args) {
     ReplaceArg(ARGS_POS, args);
   }
@@ -91,7 +87,7 @@ public:
     SetState(RUNNABLE);
   }
   void Unregister() {
-    // to be done
+    Error("Thread::Unregister not implemented"); //--** to be done
   }
   // Thread Constructor
   static Thread *New(word args, TaskStack *taskstack) {
