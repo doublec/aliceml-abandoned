@@ -26,16 +26,16 @@ VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS = -z9
-OZLOPTS = -z9
-STOC = alicec
-STOL = alicelink
-STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOCOPTS = --implicit-import-file ../fundamental/Fundamental.import
+ALICEC = alicec
+ALICEC_OPTS = --implicit-import-file ../fundamental/Fundamental.import
+ALICELINK = alicelink
+ALICELINK_OPTS = -v
+ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 OZSOURCES = \
 	CreateObjects.oz LayoutObjects.oz DrawObjects.oz TreeNodes.oz \
 	Helper.oz UnsafeInspector.oz
 
-OZLINPUTS = $(OZSOURCES:%.oz=%.ozf)
+ALICELINK_INPUTS = $(OZSOURCES:%.oz=%.ozf)
 
 INSTALLDIRS = $(PREFIX)/lib/tools
 INSTALLFILES = $(PREFIX)/lib/tools/Inspector.ozf
@@ -49,15 +49,15 @@ INSTALLFILES = $(PREFIX)/lib/tools/Inspector.ozf
 all: LinkedInspector.ozf
 
 depend:
-	$(STODEP) Inspector.aml INSPECTOR-sig.aml > Makefile.depend
+	$(ALICEDEP) Inspector.aml INSPECTOR-sig.aml > Makefile.depend
 
 %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
+	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 Inspector.ozf: UnsafeInspector.asig Inspector.aml
 
-LinkedInspector.ozf: Inspector.ozf $(OZLINPUTS)
-	$(STOL) -v $(OZLOPTS) $< -o $@
+LinkedInspector.ozf: Inspector.ozf $(ALICELINK_INPUTS)
+	$(ALICELINK) $(ALICELINK_OPTS) ./Inspector --include ./ -o $@
 
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@

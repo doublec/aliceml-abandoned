@@ -26,11 +26,11 @@ VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS = -z9
-STOC = alicec
-STOCOPTS = 
-STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOL = alicelink
-STOLOPTS = -v
+ALICEC = alicec
+ALICECOPTS = 
+ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+ALICELINK = alicelink
+ALICELINK_OPTS = -v
 
 ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
                SPACE-sig.aml Space.aml \
@@ -56,18 +56,17 @@ INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf)
 all: $(COMPONENTS)
 
 depend:
-	$(STODEP) $(ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
 
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
 Linked%.ozf: %.ozf $(OZSOURCES:%.oz=%.ozf)
-	$(STOL) $(STOLOPTS) $< --norelative \
-	--rewrite=`pwd`/= \
-	--include=`pwd`/$< --include=`pwd`/Unsafe$* -o $@
+	$(ALICELINK) $(ALICELINK_OPTS) $* \
+	--exclude $*-sig --include $* --include Unsafe$* -o $@
 
 %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
+	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 -include Makefile.depend
 
