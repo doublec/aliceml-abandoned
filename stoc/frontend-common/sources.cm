@@ -3,9 +3,21 @@ Group
 
 is
 
+	../misc/sources.cm
 	../error/sources.cm
 	../common/sources.cm
 	abstract-grammar.cm
 
 	TRANSLATION_PHASE.sig
 	TranslationPhase.sml
+
+	NAME.sig
+	Name.sml
+	LAB.sig
+	Lab.sml
+	PATH.sig
+	Path.sml
+
+	PathSet.sml
+	TYPE.sig
+	Type.sml

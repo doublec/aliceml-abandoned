@@ -1,0 +1,30 @@
+structure Lab :> LAB =
+  struct
+
+    datatype lab = NUM of int | ALPHA of string		(* [lab,l] *)
+
+    type t   = lab
+
+
+    (* Conversions *)
+
+    fun fromInt n		= NUM n
+    fun fromString s		= case Int.fromString s
+				    of SOME n => NUM n
+				     | NONE   => ALPHA s
+
+    fun toString(NUM n)		= Int.toString n
+      | toString(ALPHA s)	= s
+
+
+    (* Ordering and hashing *)
+
+    fun compare(NUM n1,   NUM n2)	= Int.compare(n1,n2)
+      | compare(NUM n1,   ALPHA s2)	= String.compare(Int.toString n1, s2)
+      | compare(ALPHA s1, NUM n2)	= String.compare(s1, Int.toString n2)
+      | compare(ALPHA s1, ALPHA s2)	= String.compare(s1,s2)
+
+    fun hash(NUM n)			= n
+      | hash(ALPHA s)			= StringHashKey.hash s
+
+  end
