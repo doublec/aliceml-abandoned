@@ -1,0 +1,14 @@
+import structure NativeRegex from "NativeRegex"
+
+signature ALICE_REGEX_SIG =
+    sig
+	type regex_t
+	val regcomp : string -> regex_t option
+	val regexec : regex_t * string -> (int * int) vector option
+    end
+
+structure AliceRegex :> ALICE_REGEX_SIG =
+    struct
+	type regex_t
+	open NativeRegex
+    end

@@ -27,19 +27,44 @@
   else { pointer = Store::WordToUnmanagedPointer(x); }     
 #endif
 
+class RegexRepHandler : public ConcreteRepresentationHandler {
+  Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c);
+};
+
+Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c) {
+  c = c;
+  return INVALID_POINTER;
+}
+
+class RegexFinalizationSet: public FinalizationSet {
+public:
+  virtual void Finalize(word value);
+};
+
+static RegexFinalizationSet *regexFinalizationSet;
+static RegexRepHandler *regexRepHandler;
+
+void RegexFinalizationSet::Finalize(word value) {
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+  regex_t *r = (regex_t *) Store::WordToUnmanagedPointer(cr->Get(0));
+  regfree(r);
+}
+
+
 DEFINE1(regex_regcomp) {
   DECLARE_STRING(pattern, x0);
 
-  std::fprintf(stderr, "regcomp\n");
-
-  regex_t* compiled;
+  regex_t *compiled = (regex_t *) malloc(sizeof(regex_t));
   int result;
 
   result = regcomp(compiled, pattern->ExportC(), 0);
 
   if (result == 0) {
     TagVal* tv = TagVal::New(1,1);
-    tv->Init(0, Store::UnmanagedPointerToWord(compiled));
+    ConcreteRepresentation *cr = ConcreteRepresentation::New(regexRepHandler,1);
+    cr->Init(0, Store::UnmanagedPointerToWord(compiled));
+    regexFinalizationSet->Register(cr->ToWord());
+    tv->Init(0, cr->ToWord());
     RETURN(tv->ToWord()); // SOME regex_t
   } else {
     RETURN(Store::IntToWord(0)); // NONE
@@ -87,14 +112,17 @@ int my_regexec (regex_t* compiled,
     }
   }
 
+  nmatch--;
   matchptr = (regmatch_t*) malloc (sizeof (regmatch_t) * nmatch);
-
   return (regexec (compiled, match_against, nmatch, matchptr, eflags));
 }
 
 DEFINE2(regex_regexec) {
-  DECLARE_UNMANAGED_POINTER(compiled, x0);
+  DECLARE_BLOCKTYPE(ConcreteRepresentation, cr, x0);
+  //  DECLARE_TUPLE(compiled_tup, x0);
   DECLARE_STRING(match_against, x1);
+
+  regex_t *compiled = (regex_t *) Store::WordToUnmanagedPointer(cr->Get(0));
 
   size_t nmatch;
   regmatch_t* matchptr;
@@ -122,7 +150,8 @@ DEFINE2(regex_regexec) {
 word InitComponent() {
   Record *record = Record::New(2);
 
-  std::fprintf(stderr,"init regex\n");
+  regexFinalizationSet = new RegexFinalizationSet();
+  regexRepHandler = new RegexRepHandler();
 
   INIT_STRUCTURE(record, "NativeRegex", "regcomp",
 		 regex_regcomp, 1);
