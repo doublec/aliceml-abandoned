@@ -347,7 +347,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun makeConArity (info, isNAry) =
 	    let
-		val typ = valOf (IntermediateInfo.typ info)
+		val typ = IntermediateInfo.typ info
 	    in
 		if Type.isArrow typ then
 		    if isNAry then
@@ -359,5 +359,5 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			end
 		    else Unary
 		else Nullary
-	    end
+	    end handle IntermediateInfo.Info => Nullary   (*--** NewExp is missing its type *)
     end

@@ -290,7 +290,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | preprocess (I.RowPat (info, patFields)) =
 	    let
-		val row = Type.asRow (valOf (IntermediateInfo.typ info))
+		val row = Type.asRow (IntermediateInfo.typ info)
 		fun convert row =
 		    if Type.isEmptyRow row then
 			if Type.isUnknownRow row then
