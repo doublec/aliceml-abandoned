@@ -23,6 +23,7 @@ import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
+import structure RelManDictionary from "RelManDictionary"
 import structure MkPathTable from "MkPathTable"
 import signature NEW_NODE from "NEW_NODE-sig"
 
@@ -37,21 +38,32 @@ structure NewNode :> NEW_NODE =
 struct
     
     val max_width = ref 15
-    val max_depth = ref 5
+    val max_depth = ref 5 
+    val relmode = ref false
 
     val dict = MainDictionary.empty
-	
+    val reldict = RelManDictionary.empty	
+
     exception createGraph_unknownNode
     
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
                             val i = MainDictionary.insert(Empty,dict)
+			    val _ = RelManDictionary.insert(nil,reldict)
 			    val node =  createGraph (va,t,Empty,i,0)
 			in (MainDictionary.insert(node,dict) ; node)
 			end
-
+  
     (* createGraph *)
     and createGraph (va,t,p,i,d) = 
+	if !relmode 
+	    then let val ind = if p = Empty then i else getAncIndex p
+                     val relman = RelManDictionary.return(ind,reldict)
+		 in Empty end (* !!!!!!! *)
+	else createUsualGraph (va,t,p,i,d)
+
+    (* createUsualGraph *)
+    and createUsualGraph (va,t,p,i,d) = 
 	(case Type.inspect t of
 	   Type.Con path 
 	   => newPath (va,t,p,i,d,path)

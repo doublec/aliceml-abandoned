@@ -48,6 +48,8 @@ struct
       
     fun return (i,a) = Array.sub(!a,i)
 
+    fun update (i,a,x) = Array.update(!a,i,x) 
+
 end
 
 

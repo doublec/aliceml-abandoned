@@ -21,7 +21,7 @@ ALICEDEP = alicedep
 
 SIGS		= TYPES HELPER COLOR MK_COLOR_TABLE MK_DICTIONARY MK_PATH_TABLE NEW_NODE CREATE_DOC LAYOUT UNSAFE_INSPECTOR MK_DRAWING_AREA_ARG MK_DRAWING_AREA MK_WINDOW DRAW_NODES SERVICES WINDOW_MANAGER
 
-STRUCTS		= Types Helper Color ColorMap MkColorTable MkDictionary MainDictionary MkPathTable NewNode CreateDoc Layout UnsafeInspector MkDrawingArea MkWindow DrawNodes Services WindowManager
+STRUCTS		= Types Helper Color ColorMap MkColorTable MkDictionary MainDictionary RelManDictionary MkPathTable NewNode CreateDoc Layout UnsafeInspector MkDrawingArea MkWindow DrawNodes Services WindowManager
 
 SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)

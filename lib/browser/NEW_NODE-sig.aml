@@ -20,6 +20,7 @@ import structure Label from "x-alice:/lib/rtt/Label"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
 import structure MainDictionary from "MainDictionary"
+import structure RelManDictionary from "RelManDictionary"
 
 local
 
@@ -32,12 +33,18 @@ sig
     val max_width: int ref
     
     val max_depth: int ref 
+
+    val relmode: bool ref
 	
     val dict: MainDictionary.dictionary
 
+    val reldict: RelManDictionary.dictionary
+
     val newNode: 'a * Type.t -> node
-    
+
     val createGraph: Reflect.value * Type.t  * node * int * int -> node
+    
+    val createUsualGraph: Reflect.value * Type.t  * node * int * int -> node
 
     val listdescToNode: 
         Reflect.value * Type.t * node * int * int * 'b list_desc  -> node
