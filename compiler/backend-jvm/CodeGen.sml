@@ -198,7 +198,7 @@ structure CodeGen =
 		 (* Alle Deklarationen übersetzen *)
 
 		 (* JVM-Register initialisieren. *)
-		 fun initializeLocals 0 = [Label afterInit]
+		 fun initializeLocals 0 = []
 		   | initializeLocals x = [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
 
 		 (* Verschachtelt endrekursive Funktionsaufrufe werden uebersetzt, indem im
@@ -602,7 +602,7 @@ structure CodeGen =
 			fun generateBody (akku, switchlist, labelList, body',
 					  test', body'') =
 			    let
-				val lab = Label.newSwitch ()
+				val lab = Label.new ()
 				val (switch, inst, number) =
 				    checkForSwitch (test', body'', begin)
 			    in
@@ -649,7 +649,7 @@ structure CodeGen =
 			val gb as (_, _, _, behind) = generateBody (nil, nil, nil, body', test', body'')
 			val sw = makeSwitch gb
 		    in
-			Label (Label.fromNumber begin) ::
+			Label begin ::
 			stampcode' ::
 			(case test' of
 			     LitTest (WordLit startwert) =>
@@ -961,7 +961,7 @@ structure CodeGen =
 
 		  | testCode (test') = raise Debug (Test test')
 
-		val begin = Label.newNumber ()
+		val begin = Label.new ()
 
 		fun normalTest () =
 		    Multi (testCode test') ::
@@ -986,14 +986,14 @@ structure CodeGen =
 	    if schonda <= 0
 		then
 		    let
-			val _ = da := Label.newNumber ()
+			val _ = da := Label.new ()
 		    in
 			Comment "SharedStm" ::
-			Label (Label.fromNumber (!da))::
+			Label (!da)::
 			decListCode body'
 		    end
 	    else
-		 [Goto (Label.fromNumber schonda)]
+		 [Goto schonda]
 
 	  | decCode (ReturnStm (_,ap as AppExp(_,id' as (Id (_,stamp',_)),arg'))) =
 		(* tailcall applikation *)
@@ -1043,7 +1043,7 @@ structure CodeGen =
 		    let
 			val lab' = Label.popHandle()
 		    in
-			Comment ("EndHandleStm: Label "^lab') ::
+			Comment ("EndHandleStm: "^Label.toString lab') ::
 			Label lab'::
 			decListCode body'
 		    end
@@ -1637,8 +1637,7 @@ structure CodeGen =
 		     Multi
 		     (addDebugInfo defaultApply) ::
 		     normalReturn
-		     [Label omega,
-		      Areturn])
+		     [Areturn])
 
 		fun makeApplyMethod (modifiers, name, vals, insts, handles) =
 		    let

@@ -63,14 +63,8 @@ structure Common=
 	(* Den Stamp aus einer Id extrahieren. *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
 
-	(* Dieser Label steht am Ende der Registerinitialisierung von Methoden. *)
-	val afterInit = "labelAfterInit"
-
 	(* alpha steht am Begin einer Methode *)
-	val alpha = "labelAlpha"
-
-	(* Omega kommt vor dem abschliessenden Areturn *)
-	val omega = "labelOmega"
+	val alpha = 0:label
 
 	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
 	val mainpickle = ref ~1 (* JVM-Register, in dem Struktur steht *)

@@ -21,7 +21,7 @@ structure ToJasmin =
 
 	val actclass = ref ""
 	val actmeth = ref ""
-	val lastLabel = ref ""
+	val lastLabel = ref ~1
 
 	fun makeArityString (0,x) = x
 	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
@@ -33,63 +33,63 @@ structure ToJasmin =
 	fun realToString r = if Real.<(r,0.0) then "-"^Real.toString(~r) else Real.toString r
 
 	datatype jump = Got | Ret | IRet | ARet
-	datatype branchinst = Lab of string * bool | Jump of jump | Non
+	datatype branchinst = Lab of label * bool | Jump of jump | Non
 	datatype registerOps = Load of (int * INSTRUCTION) | Store
 
 	structure LabelMerge =
 	    struct
 		(* maps labels to a branch or return instruction *)
-		val labelMerge: branchinst StringHash.t ref = ref (StringHash.new())
+		val labelMerge: branchinst IntHash.t ref = ref (IntHash.new())
 
 		(* set of reachable labels *)
-		val reachable = ref (StringSet.new())
+		val reachable = ref (IntSet.new())
 
 		(* set of used labels. Labels may be used in catch clauses although they
 		 are not reachable, if they are used as the end of a try-catch block.
 		 We differ reachable and used because we don't want to keep dead code after
 		 a "catch", but need the label *)
-		val usedlabel = ref (StringSet.new ())
+		val usedlabel = ref (IntSet.new ())
 
 		(* maps labels to the stack size on enter *)
-		val stackSizeHash: int StringHash.t ref = ref (StringHash.new ())
+		val stackSizeHash: int IntHash.t ref = ref (IntHash.new ())
 
 		fun new () =
-		    (labelMerge := StringHash.new();
-		     reachable := StringSet.new();
-		     stackSizeHash := StringHash.new();
-		     usedlabel := StringSet.new())
+		    (labelMerge := IntHash.new();
+		     reachable := IntSet.new();
+		     stackSizeHash := IntHash.new();
+		     usedlabel := IntSet.new())
 
 	    (* Perform a unconditional jump to a label. If the first
 	     operation there would be some kind of return, do so. *)
 	    fun directJump lab' =
-		case StringHash.lookup(!labelMerge, lab') of
-		    NONE => "goto "^lab'
+		case IntHash.lookup(!labelMerge, lab') of
+		    NONE => "goto "^Label.toString lab'
 		  | SOME (Lab (lab'', _)) => directJump lab''
 		  | SOME (Jump Ret) => "return"
 		  | SOME (Jump ARet) => "areturn"
 		  | SOME (Jump IRet) => "ireturn"
 		  | SOME _ => raise Mitch
 
-	    (* return the real label for this jump *)
+	    (* return the toString of the real label for this jump *)
 	    fun condJump lab' =
-		case StringHash.lookup(!labelMerge, lab') of
+		case IntHash.lookup(!labelMerge, lab') of
 		    SOME (Lab (lab'', _)) => condJump lab''
-		  | _ => lab'
+		  | _ => Label.toString lab'
 
 	    (* For several branches to the same address, stack size has
 	     to be equal in order to make the Java verifier happy *)
 	    fun checkSizeAt (l, size) =
-		case StringHash.lookup(!stackSizeHash, l) of
+		case IntHash.lookup(!stackSizeHash, l) of
 		    SOME s => if s <> size then
 			(print ("Stack verification error: Size = "^
 				Int.toString s^" or "^
 				Int.toString size^
-				" at "^l^" of "^(!actclass)^
+				" at "^Label.toString l^" of "^(!actclass)^
 				"."^(!actmeth)^".\n");
 			 size)
 			      else size
 		  | NONE =>
-				  (StringHash.insert (!stackSizeHash, l, size);
+				  (IntHash.insert (!stackSizeHash, l, size);
 				   size)
 
 	    (* Leave a method (via return or athrow).
@@ -97,7 +97,7 @@ structure ToJasmin =
 	     the size before the next instruction can be performed *)
 	    fun leave (Comment _ :: rest, sizeAfter) = leave (rest, sizeAfter)
 	      | leave (Label l :: _, sizeAfter) =
-		(case StringHash.lookup(!stackSizeHash, l) of
+		(case IntHash.lookup(!stackSizeHash, l) of
 		     SOME sz => sz
 		   | NONE => sizeAfter)
 	      | leave (_, sizeAfter) = sizeAfter
@@ -111,26 +111,26 @@ structure ToJasmin =
 		     then
 			 print ("Stack verification error: Size = "^
 				Int.toString sizeAfter^" leaving "^(!actclass)^
-				"."^(!actmeth)^" after "^(!lastLabel)^".\n")
+				"."^(!actmeth)^" after "^Label.toString (!lastLabel)^".\n")
 		 else ();
 		     leave (rest, sizeAfter))
 
 	    (* merge two labels *)
 	    fun merge (l', l'') =
-		StringHash.insert (!labelMerge, l', l'')
+		IntHash.insert (!labelMerge, l', l'')
 
 	    (* mark a lable as reachable *)
 	    fun setReachable l' =
-		StringSet.insert (!reachable, l')
+		IntSet.insert (!reachable, l')
 
 	    (* check whether a lable is reachable or not *)
 	    fun isReachable l' =
 		let val result =
-		    isSome (StringHash.lookup (!labelMerge, l'))
-		    orelse StringSet.member (!reachable, l')
+		    isSome (IntHash.lookup (!labelMerge, l'))
+		    orelse IntSet.member (!reachable, l')
 		in
 		    if !VERBOSE >= 2 then
-			print ("Label "^l'^" is "^
+			print ("Label "^Label.toString l'^" is "^
 			       (if result then "" else "not ")^
 				    "reachable.\n")
 		    else ();
@@ -140,10 +140,10 @@ structure ToJasmin =
 	    (* check whether a lable is used or not *)
 	    fun isUsed l' =
 		let
-		    val result =StringSet.member (!usedlabel, l')
+		    val result =IntSet.member (!usedlabel, l')
 		in
 		    if !VERBOSE >= 2 then
-			print ("Label "^l'^" is "^
+			print ("Label "^Label.toString l'^" is "^
 			       (if result then "" else "not ")^
 				    "used.\n")
 		    else ();
@@ -151,7 +151,7 @@ structure ToJasmin =
 		end
 
 	    (* mark a lable as used *)
-	    fun setUsed l' = StringSet.insert (!usedlabel, l')
+	    fun setUsed l' = IntSet.insert (!usedlabel, l')
 	    end
 
 	structure JVMreg =
@@ -169,7 +169,7 @@ structure ToJasmin =
 		val jvmto = ref (Array.array (0,0))
 
 		(* maps labels to their position *)
-		val labHash: int StringHash.t ref = ref (StringHash.new())
+		val labHash: int IntHash.t ref = ref (IntHash.new())
 
 		(* maps virtual registers to virtual registers (used for
 		 Aload/Astore register fusion) *)
@@ -188,7 +188,7 @@ structure ToJasmin =
 			to := Array.array(registers, ~1);
 			regmap := Array.array(registers, ~1);
 			jvmto := Array.array(registers, ~1);
-			labHash := StringHash.new();
+			labHash := IntHash.new();
 			fusedwith := Array.array (registers,~1);
 			defines := Array.array(registers,0)
 		    end
@@ -283,13 +283,13 @@ structure ToJasmin =
 		(* We remember the code position of labels. Needed for
 		 lifeness analysis again. *)
 		fun defineLabel (label', pos) =
-		     StringHash.insert (!labHash, label', pos)
+		     IntHash.insert (!labHash, label', pos)
 
 		(* Every jump could effect the life range of each (virtual)
 		 register. We have to check this. *)
 		fun addJump (f', tolabel) =
 		    let
-			val t = StringHash.lookup(!labHash, tolabel)
+			val t = IntHash.lookup(!labHash, tolabel)
 
 		    (* Checks whether we jump from behind last usage into the range of the
 		     virtual register or from inside the range to somewhere before first
@@ -750,8 +750,8 @@ structure ToJasmin =
 		     LabelMerge.setUsed from;
 		     LabelMerge.setUsed to;
 		     LabelMerge.setUsed use;
-		     TextIO.output(out,".catch "^cn^" from "^from^
-				   " to "^to^" using "^use^"\n"))
+		     TextIO.output(out,".catch "^cn^" from "^Label.toString from^
+				   " to "^Label.toString to^" using "^Label.toString use^"\n"))
 	    in
 		app catchToJasmin catches
 	    end
@@ -841,7 +841,7 @@ structure ToJasmin =
 			     "invokestatic "^cn^"/"^mn^(descriptor2string ms)
 	      | instructionToJasmin (Invokevirtual(cn,mn,ms),_) =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
-	      | instructionToJasmin (Label l,_) = l^": "
+	      | instructionToJasmin (Label l,_) = Label.toString l^": "
 	      | instructionToJasmin (Lcmp,_) = "lcmp"
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^String.toCString s^"\""
 	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^realToString r

@@ -15,6 +15,7 @@ structure Backend=
 	open Common
 
 	type stamp=IntermediateGrammar.stamp
+	type label = JVMInst.label
 
 	(* Hashtable of Stamps. *)
 	structure StampHash = MakeHashImpMap(type t=stamp val hash=Stamp.hash)
@@ -23,11 +24,11 @@ structure Backend=
 	 record arities. *)
 	structure StringListHash = MakeHashImpMap(StringListHashKey)
 
-	(* Hashtabelle of strings. Used for labelfusion. *)
-	structure StringHash = MakeHashImpMap(StringHashKey)
+	(* Hashtabelle of int. Used for labelfusion. *)
+	structure IntHash = MakeHashImpMap(type t=int fun hash x = x)
 
-	(* Set of strings. Also used for labelfusion. *)
-	structure StringSet = MakeHashImpSet(StringHashKey)
+	(* Set of int. Also used for labelfusion. *)
+	structure IntSet = MakeHashImpSet(type t=int fun hash x = x)
 
 	(* Hashtabelle of integers. Needed for static generation of
 	 integer constants. *)
@@ -44,9 +45,9 @@ structure Backend=
 	 structure Label =
 	     struct
 		 (* the actual label number *)
-		 val labelcount = ref 0
+		 val labelcount = ref (0:label)
 
-		 (* Labels are stacked, so each functions starts counting at 1. *)
+		 (* Labels are stacked, so each function starts counting at 1. *)
 		 val stack : (int list) ref= ref nil
 
 		 (* In JVM, handles are stored in an exception table as triples of
@@ -54,20 +55,14 @@ structure Backend=
 		  During code generation, we know the labels for beginTry and
 		  handleRoutine, but we don't yet know about endTry.
 		  Furthermore, handles may be nested, so we use a stack. *)
-		 val handleStack = ref [("", "")]
+		 val handleStack = ref [(~1, ~1)]
 
-		 (* xxx store ALL labels in numbers! *)
-		 fun newNumber () =
+		 fun new () =
 		     (labelcount := !labelcount + 1;
 		      !labelcount)
 
-		 (* xxx remove! *)
-		fun new () =
-		    "label"^Int.toString (newNumber ())
-
-		(* xxx remove! *)
-		fun newSwitch () =
-		    "switch"^Int.toString (newNumber ())
+		fun toString lab =
+		    "label"^Int.toString lab
 
 		(* For each method, we start counting at 1. *)
 		fun push () =
@@ -76,9 +71,6 @@ structure Backend=
 
 		fun pop () = (labelcount:=hd(!stack);
 				    stack:=tl(!stack))
-
-		(* xxx remove! *)
-		fun fromNumber i = "label"^Int.toString i
 
 		(* Create a new label and push it on the handleStack *)
 		fun pushANewHandle originLabel =

@@ -12,7 +12,7 @@
 
 structure JVMInst =
     struct
-	type label = string
+	type label = int
 	type classname = string
 	type fieldname = string
 	type methodname = string
@@ -25,10 +25,6 @@ structure JVMInst =
 	  | Floatsig
 	  | Intsig
 	  | Voidsig
-
-	datatype LABEL =
-	    StringLabel of string
-	  | IntLabel of int
 
 	datatype JVMBASETYPE =
 	    JVMInt of LargeInt.int
