@@ -12,4 +12,4 @@
 
 import functor MkHashImpMap  from "../../lib/utility/MkHashImpMap"
 
-structure StringMap = MkHashImpMap(String)
+structure IntMap = MkHashImpMap(Int)
