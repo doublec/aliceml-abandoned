@@ -19,7 +19,8 @@ import
    Resolve(trace)
    ComposerComponent('Composer$': Composer) at 'stoc/top/Composer'
 define
-   Spec = record(mode: start)
+   Spec = record(mode: start
+		 typecheck(rightmost type: bool default: true))
 
    proc {Usage N}
       {System.printError
@@ -73,13 +74,20 @@ define
       end
    end
 
-   ModuleManager = {New Module.manager init(CheckExpImpExtended)}
-   {Property.put 'alice.modulemanager' ModuleManager}
-   {Property.put 'ozl.checkExpImp' CheckExpImpExtended}
-   {Property.put 'ozl.checkImpImp' CheckImpImp}
-
    try
-      case {Application.getArgs Spec}.1 of Name|Rest then
+      Args = {Application.getArgs Spec}
+   in
+      case Args.1 of Name|Rest then
+	 ModuleManager =
+	 if Args.typecheck then
+	    {Property.put 'ozl.checkExpImp' CheckExpImpExtended}
+	    {Property.put 'ozl.checkImpImp' CheckImpImp}
+	    {New Module.manager init(CheckExpImpExtended)}
+	 else
+	    {New Module.manager init()}
+	 end
+      in
+	 {Property.put 'alice.modulemanager' ModuleManager}
 	 {Property.put 'ozd.args' Rest}
 	 {Wait {ModuleManager link(url: Name $)}}
       [] nil then
