@@ -11,9 +11,9 @@
 //
 
 #include "emulator/Authoring.hh"
-#include "emulator/Unpickler.hh"
 #include "emulator/RootSet.hh"
 #include "emulator/BootLinker.hh"
+#include "emulator/Unpickler.hh"
 
 static word SitedConstructor;
 
@@ -36,13 +36,14 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 } END
 
 DEFINE1(UnsafeComponent_load) {
-  // to be done
-  RETURN_UNIT;
+  DECLARE_STRING(s, x0);
+  Chunk *filename = BootLinker::MakeFileName((Chunk *) s);
+  return Unpickler::Load(filename->GetBase(), taskStack);
 } END
 
 DEFINE2(UnsafeComponent_save) {
-  // to be done
-  RETURN_UNIT;
+  DECLARE_STRING(s, x0);
+  Error("UnsafeComponent.load not implemented"); //--** to be done
 } END
 
 word UnsafeComponent(void) {
