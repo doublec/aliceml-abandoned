@@ -335,7 +335,7 @@ DEFINE3(gc_dom) {
   int pairs[noOfPairs][2];
 
   for (int j=noOfPairs; j--;) {
-    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_TUPLE(tmp, v->Sub(j));
     DECLARE_INT(tmp0, tmp->Sel(0));
     DECLARE_INT(tmp1, tmp->Sel(1));
     pairs[j][0] = tmp0;
