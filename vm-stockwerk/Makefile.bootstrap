@@ -379,7 +379,7 @@ GENERICINCLUDES0 = \
 ALICEINCLUDES0 = \
 	Guid.hh Data.hh Types.hh AbstractCode.hh \
 	AbstractCodeInterpreter.hh AliceConcreteCode.hh \
-	NativeCodeInterpreter.hh LivenessInformation.hh \
+	NativeCodeInterpreter.hh \
 	NativeConcreteCode.hh PrimitiveTable.hh AliceLanguageLayer.hh \
 	Authoring.hh
 INCLUDES = \

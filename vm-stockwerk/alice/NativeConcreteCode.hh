@@ -21,7 +21,6 @@
 #include "generic/Tuple.hh"
 #include "alice/Data.hh"
 #include "alice/NativeCodeInterpreter.hh"
-#include "alice/LivenessInformation.hh"
 
 class LazyCompileInterpreter : public Interpreter {
 private:

@@ -16,7 +16,6 @@
 #pragma implementation "generic/JitterGenericData.hh"
 #pragma implementation "alice/JitterAliceData.hh"
 #pragma implementation "alice/JitterImmediateEnv.hh"
-#pragma implementation "alice/LivenessInformation.hh"
 #endif
 
 #include <cstdio>
@@ -36,7 +35,6 @@
 #include "alice/LazySelInterpreter.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/NativeCodeJitter.hh"
-#include "alice/LivenessInformation.hh"
 
 #include "generic/JitterGenericData.hh"
 #include "alice/JitterAliceData.hh"

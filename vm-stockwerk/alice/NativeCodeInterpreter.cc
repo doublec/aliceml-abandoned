@@ -26,7 +26,6 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/NativeCodeJitter.hh"
-#include "alice/LivenessInformation.hh"
 
 //
 // Interpreter StackFrames
