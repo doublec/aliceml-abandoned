@@ -19,13 +19,13 @@ structure TestIntInf :> TESTSUITE = (* the intInf test suite *)
 struct
 
     fun testMinInt () =
-	Test.test (fn _ => LargeInt.minInt = NONE) ()
+	Test.test (fn m => LargeInt.minInt = m) NONE
 
     fun testMaxInt () =
-	Test.test (fn _ => LargeInt.maxInt = NONE) ()
+	Test.test (fn m => LargeInt.maxInt = m) NONE
 
     fun testPrecision () =
-	Test.test (fn _ => LargeInt.precision = NONE) ()
+	Test.test (fn m => LargeInt.precision = m) NONE
 
     fun testToFromInt () = 
 	(Test.test (fn x => LargeInt.toInt (LargeInt.fromInt x) = x) 
@@ -44,6 +44,90 @@ struct
 	    Test.test (fn s => (LargeInt.toInt s; false) handle _ => true) x1;
 	    Test.test (fn s => (LargeInt.toInt s; false) handle _ => true) x2
 	end
+
+    fun testToLarge () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFromLarge () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromLarge () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testDiv () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMod () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testQuot () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testRem () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testEqual () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testCompare () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testHash () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testDivMod () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testQuotRem () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testPow () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testLog2 () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testOrB () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAndB () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testXorB () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFromInt () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testNotB () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testLeftShift () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testRightShift () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAbs () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMin () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMax () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSign () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSameSign () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFromString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testToFromString () =
 	let
@@ -67,5 +151,40 @@ struct
 
     fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    val suite = ("IntInf", [])
+    val suite = ("IntInf", [("minInt", testMinInt),
+			    ("maxInt", testMaxInt),
+			    ("precision", testPrecision),
+			    ("toInt", testToInt),
+			    ("fromInt", testFromInt),
+			    ("toLarge", testToLarge),
+			    ("fromLarge", testFromLarge),
+			    ("toFromLarge", testToFromLarge),
+			    ("arithmetic", testArithmetic),
+			    ("div", testDiv),
+			    ("mod", testMod),
+			    ("quot", testQuot),
+			    ("rem", testRem),
+			    ("equal", testEqual),
+			    ("compare", testCompare),
+			    ("hash", testHash),
+			    ("divMod", testDivMod),
+			    ("quotRem", testQuotRem),
+			    ("pow", testPow),
+			    ("log2", testLog2),
+			    ("orb", testOrB),
+			    ("xorb", testXorB),
+			    ("andb", testAndB),
+			    ("notb", testNotB),
+			    ("<<", testLeftShift),
+			    ("~>>", testRightShift),
+			    ("abs", testAbs),
+			    ("min", testMin),
+			    ("max", testMax),
+			    ("sign", testSign),
+			    ("sameSign", testSameSign),
+			    ("toString", testToString),
+			    ("fromString", testFromString),
+			    ("toFromString", testToFromString),
+			    ("fmt", testFmt),
+			    ("scan", testScan)])
 end

@@ -59,8 +59,10 @@ struct
 
     fun testArithmetic () = 
 	let
-	    fun tS (x1, x2) = x1 div x2 = 0
-	    fun tE (x1, x2) = (x1 div x2 = 1 orelse x1 div x2 = ~1)
+	    fun tS (x1, x2) = if x2 = 0 then x1 < 0
+			      else x1 div x2 = 0
+	    fun tE (x1, 0) = x1 = 0
+	      | tE (x1, x2) = (x1 div x2 = 1 orelse x1 div x2 = ~1)
 		               andalso (x1 mod x2 = 0)
 	    fun tG x = (Bool.not (tS x)) andalso (Bool.not (tE x))
 	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt) + 1)
@@ -68,11 +70,8 @@ struct
 		((tS (x1, x2)) = (x1 < x2)) andalso
 		((tG (x1, x2)) = (x1 > x2)) andalso
 		((tE (x1, x2)) = (x1 = x2))
-	    fun t i = if i <= 0 then ()
-		      else (Test.test t' (getInt (), getInt ());
-			    t ( i - 1))
 	in
-	    t 1000
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int)) (Test.test t')
 	end
 
     fun testCompare () = 
@@ -81,13 +80,8 @@ struct
 			      else if x1 > x2 then GREATER
 				   else EQUAL
 	    fun t'' (x1, x2) = Int.compare (x1, x2) = t' (x1, x2)
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt) + 1)
-	    fun t (x1, x2) i = 
-		if i <= 0 then ()
-		else (Test.test (fn x => t'' x) (x1, x2);
-		      t (getInt (), getInt ()) (i - 1))
 	in 
-	    t (getInt (), getInt ()) 1000;
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int)) (Test.test t'');
 	    Test.test t'' (valOf Int.maxInt, valOf Int.minInt);
 	    Test.test t'' (valOf Int.maxInt, valOf Int.maxInt);
 	    Test.test t'' (0, 0)
@@ -99,15 +93,15 @@ struct
 	    fun t (x, y, r, i) = if i > Int.abs(x) then false
 				 else if x = y * i + r then true 
 				     else t (x, y, r, i + 1)
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1)) div 1000
-	    fun h' () = let val a = getInt ()
-			    val b = getInt ()
-			in
-			    (a, b, a mod b, ~ (Int.abs a))
-			end
-	    fun h i = if i <= 0 then () else (Test.test t (h' ()); h (i - 1))
+	    fun getInt i = (Gen.int i) div 1000
+	    fun h i = let val a = Gen.int i
+			  val b = Gen.int i
+			  val b = if b <> 0 then b else 1
+		      in
+			  t (a, b, a mod b, ~ (Int.abs a))
+		      end
 	in
-	    h 5
+	    Gen.try 5 getInt (Test.test h)
 	end
 
     fun testSign () = 
@@ -137,7 +131,6 @@ struct
 				  else if x1 < 0 andalso x2 < 0 then true
 				      else false
 	    fun t x = Int.sameSign x = t' x
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
 	in
 	    Test.test t (valOf Int.maxInt, valOf Int.maxInt);
 	    Test.test t (valOf Int.minInt, valOf Int.minInt);
@@ -145,7 +138,7 @@ struct
 	    Test.test t (0, valOf Int.maxInt);
 	    Test.test t (valOf Int.minInt, valOf Int.maxInt);
 	    Test.test t (valOf Int.maxInt, valOf Int.minInt);
-	    Gen.try 10000 Gen.int (Test.test (fn x => t (x, getInt ())))
+	    Gen.try 10000 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
 	end
 
     fun testMin () = 
@@ -154,7 +147,6 @@ struct
 			      else if x1 < x2 then x1
 				   else x2
 	    fun t x = Int.min x = t' x
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
 	in
 	    Test.test t (valOf Int.maxInt, valOf Int.maxInt);
 	    Test.test t (valOf Int.minInt, valOf Int.minInt);
@@ -162,7 +154,7 @@ struct
 	    Test.test t (0, valOf Int.maxInt);
 	    Test.test t (valOf Int.minInt, valOf Int.maxInt);
 	    Test.test t (valOf Int.maxInt, valOf Int.minInt);
-	    Gen.try 10000 Gen.int (Test.test (fn x => t (x, getInt ())))
+	    Gen.try 10000 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
 	end
 
     fun testToFromString () = 
@@ -176,30 +168,49 @@ struct
 
     fun testEqual () = 
 	let
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
 	    fun t (x1, x2) = if x1 = x2 then Int.equal (x1, x2) 
 			     else Bool.not (Int.equal (x1, x2))
 	in
 	    Gen.try 10000 Gen.int 
 	     (Test.test (fn x => Int.equal(x, x) andalso 
-			         t (getInt (), getInt ())))
+			         t (Gen.int x, Gen.int x)))
 	end
 
     fun testRem () =
-		let
+	let
 	    (* very ugly... TODO: some more faster way *)
 	    fun t (x, y, r, i) = if i > Int.abs(x) then false
 				 else if x = y * i + r then true 
 				     else t (x, y, r, i + 1)
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1)) div 1000
-	    fun h' () = let val a = getInt ()
-			    val b = getInt ()
-			in
-			    (a, b, Int.rem(a, b), ~ (Int.abs a))
-			end
-	    fun h i = if i <= 0 then () else (Test.test t (h' ()); h (i - 1))
+	    fun getInt i = (Gen.int i) div 1000
+	    fun h i = let val a = Gen.int i
+			  val b = Gen.int i
+			  val b = if b <> 0 then b else 1
+		      in
+			  t (a, b, Int.rem(a, b), ~ (Int.abs a))
+		      end
 	in
-	    h 5
+	    Gen.try 5 getInt (Test.test h)
+	end
+
+    fun testSign () = 
+	let
+	    fun t' x = if x < 0 then ~1
+		      else if x > 0 then 1 else x
+	    fun t x = Int.sign x = t' x
+	in 
+	    Test.test t (valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt);
+	    Gen.try 1000 Gen.int (Test.test t)
+	end
+
+    fun testToFromLarge () = 
+	let
+	    fun t x = x = Int.fromLarge (Int.toLarge x)
+	in 
+	    Test.test t (valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt);
+	    Gen.try 10000 Gen.int (Test.test t)
 	end
 
     fun testToFromInt () = 
@@ -224,7 +235,6 @@ struct
 	    fun t'' (x1, x2) = if Int.max (x1, x2) = x1
 				   then Int.min (x1, x2) = x2
 			       else Int.min (x2, x1) = x1
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt + 1))
 	in
 	    Test.test t (valOf Int.maxInt, valOf Int.maxInt);
 	    Test.test t (valOf Int.minInt, valOf Int.minInt);
@@ -232,8 +242,8 @@ struct
 	    Test.test t (0, valOf Int.maxInt);
 	    Test.test t (valOf Int.minInt, valOf Int.maxInt);
 	    Test.test t (valOf Int.maxInt, valOf Int.minInt);
-	    Gen.try 10000 Gen.int (Test.test (fn x => t (x, getInt ())));
-	    Gen.try 10000 Gen.int (Test.test (fn x => t'' (x, getInt ())))
+	    Gen.try 10000 (Gen.pair (Gen.int, Gen.int)) (Test.test t);
+	    Gen.try 10000 (Gen.pair (Gen.int, Gen.int)) (Test.test t'')
 	end
 
 
