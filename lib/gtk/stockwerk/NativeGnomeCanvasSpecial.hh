@@ -1,5 +1,10 @@
 #ifndef _NATIVE_GNOME_CANVAS_SPECIAL_HH_
-#define _NATIVE_GNOME_CANVAS_SPECIAL_HH_ { 0, NULL }
+#define _NATIVE_GNOME_CANVAS_SPECIAL_HH_
+
+#include "Alice.hh"
+#include "MyNativeAuthoring.hh"
+#include <gtk/gtk.h>
+#include <libgnomecanvas/libgnomecanvas.h>
 
 DEFINE3(NativeGnomeCanvas_pointsSetCoords) {
   DECLARE_UNMANAGED_POINTER(points,x0);

@@ -19,28 +19,13 @@ static void AddObject(GtkObject *object) {
 //  wDict = WeakDictionary::New(100, new GtkFinalize());
 
 
-
-
-typedef struct { 
-  int initCount;   
-  void (*func) (Record *record);
-} includeData;
-
 static word TypeMismatchConstructor;
 
-Record *CreateRecord(includeData data[], int size, int baseCount) {
-  int total = baseCount;
-  for (int i = 0; i < size; i++)
-    total += data[i].initCount;
-  Record *record = Record::New(total);
-
+Record *CreateRecord(int size) {
+  Record *record = Record::New(size);
   TypeMismatchConstructor =
     UniqueConstructor::New(String::New("GtkTypes.TypeMismatch"))->ToWord();
   RootSet::Add(TypeMismatchConstructor);
-  
-  for (int i = 0; i < size; i++)
-    if (data[i].func)
-      (data[i].func)(record);
   return record;
 }
 
