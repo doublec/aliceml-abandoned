@@ -13,11 +13,11 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "adt/HashTable.hh"
+#pragma implementation "adt/IntMap.hh"
 #pragma implementation "adt/Queue.hh"
 #pragma implementation "adt/Stack.hh"
 #endif
 
-#include "adt/HashTable.hh"
+#include "adt/IntMap.hh"
 #include "adt/Queue.hh"
 #include "adt/Stack.hh"
