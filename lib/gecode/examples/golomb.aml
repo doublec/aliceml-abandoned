@@ -1,0 +1,70 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Print     from "x-alice:/lib/system/Print"
+
+fun for' f offset max 0 = (f (offset+max))
+  | for' f offset max n = (f (offset+max-n); for' f offset max (n-1))
+
+fun for f start max = if start>max then ()
+		      else for' f start (max-start) (max-start)
+
+fun golomb n cl space =
+    let
+	open FD
+
+	fun diag(i,j) = (i*(2*n-i-1)) div 2 + j - i - 1
+
+	val nn = n*n
+	val dn = (n*n-n) div 2
+
+	val k = rangeVec(space, n, (0,nn))
+	val d = rangeVec(space, dn,(0,nn))
+
+	fun better(s1, s2) =
+	    relI(s1, Vector.sub(k, n-1), LE,
+		 Reflect.value(s2, Vector.sub(k, n-1)))
+    in
+	relI(space, Vector.sub(k, 0), EQ, 0);
+
+	for (fn i =>
+		for (fn j => 
+			linear(space,
+			       #[(1, Vector.sub(k,j)),
+				 (~1, Vector.sub(k,i)),
+				 (~1, Vector.sub(d, diag(i,j)))],
+			       EQ, 0, DEF))
+		    (i+1) (n-1))
+	    0 (n-2);
+
+	for (fn i =>
+		rel(space,
+		    Vector.sub(k, i+1), GR,
+		    Vector.sub(k, i))) 0 (n-2);
+	distinct(space, d, cl);
+	if n>2 then
+	    rel(space,
+		Vector.sub(d, diag(0,1)), LE,
+		Vector.sub(d, diag(n-2, n-1)))
+	else ();
+	branch(space, k, B_MIN_MIN, B_MIN);
+
+	(k, better)
+    end
+
+val (SOME (sol, k)) = Search.searchBest (golomb 10 FD.BND)
+val s = Vector.map (fn v => FD.Reflect.value(sol,v)) k
+val _ = Print.printVal s
+val _ = print "\n"
+val _ = OS.Process.exit OS.Process.success
