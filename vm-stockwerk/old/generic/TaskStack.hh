@@ -60,7 +60,13 @@ public:
   }
   void Purge() {
     Blank(threshold);
-    //--** should call TaskManager::PurgeFrame on each frame
+    int nargs = GetInt(0);
+    u_int offset = nargs == -1? 1: nargs;
+    do {
+      TaskManager *taskManager =
+	static_cast<TaskManager *>(GetUnmanagedPointer(offset));
+      offset = taskManager->PurgeFrame(this, offset);
+    } while (offset != 0);
   }
 
   // Accessing the current frame:

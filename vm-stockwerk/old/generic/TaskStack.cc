@@ -54,7 +54,7 @@ Closure *EmptyTaskManager::ToClosure() {
 }
 
 u_int EmptyTaskManager::PurgeFrame(TaskStack */*taskStack*/, u_int offset) {
-  return offset + 1; //--** what to return to indicate end?
+  return 0; // meaning: this was the last one
 }
 
 TaskManager::Result EmptyTaskManager::Handle(TaskStack *) {
