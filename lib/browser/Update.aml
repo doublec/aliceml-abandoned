@@ -98,6 +98,8 @@ struct
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
+	       val _ = TextIO.print ("UPDATE: * ancIndex von n ist "^
+				      Int.toString(getIndex(anc))^" *\n")
 	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
 	       val old_ydim = Layout.get_ydim(anc)
 	       val p = if isRelNode(getParent(n))
@@ -112,6 +114,8 @@ struct
 		     | INTERPUNCT => raise UpdateError 
 	       val _ = updateChild(p,getIndex(n),new)
 	       val node = if getParent(new) = Empty then new else anc
+               val _ = TextIO.print("UPDATE: * node hat Index "^
+				    Int.toString(getIndex(node))^" *\n")
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
 		       else ()
@@ -124,7 +128,7 @@ struct
 			       ^Int.toString(y_pos)^"\n")
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
 		 in ( WindowManager.incr_act_line dy
-		     ; iterMove (Dictionaries.dict,dy,getIndex(node) + 1,
+		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
 				 MainDictionary.getHighestIndexAssigned
 				 (Dictionaries.dict))
 		    (* ; TextIO.print("UPDATE: iterMove beendet !! \n") *)
