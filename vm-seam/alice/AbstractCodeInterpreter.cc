@@ -51,9 +51,9 @@ public:
   }
 };
 
-// AbstractCodeInterpreter StackFrame
+// AbstractCodeInterpreter StackFrames
 class AbstractCodeFrame : public StackFrame {
-private:
+protected:
   static const u_int PC_POS          = 0;
   static const u_int CLOSURE_POS     = 1;
   static const u_int LOCAL_ENV_POS   = 2;
@@ -63,6 +63,15 @@ public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
   // AbstractCodeFrame Accessors
+  bool IsHandlerFrame() {
+    if (((Block *) this)->GetLabel() ==
+	(BlockLabel) ABSTRACT_CODE_HANDLER_FRAME)
+      return true;
+    else {
+      Assert(((Block *) this)->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME);
+      return false;
+    }
+  }
   TagVal *GetPC() {
     return TagVal::FromWord(StackFrame::GetArg(PC_POS));
   }
@@ -81,7 +90,8 @@ public:
 				Closure *closure,
 				Environment *env,
 				word args) {
-    StackFrame *frame = StackFrame::New(ABSTRACT_CODE_FRAME, interpreter, SIZE);
+    StackFrame *frame =
+      StackFrame::New(ABSTRACT_CODE_FRAME, interpreter, SIZE);
     frame->ReplaceArg(PC_POS, pc);
     frame->ReplaceArg(CLOSURE_POS, closure->ToWord());
     frame->ReplaceArg(LOCAL_ENV_POS, env->ToWord());
@@ -92,14 +102,47 @@ public:
   static AbstractCodeFrame *FromWord(word frame) {
     Block *p = Store::WordToBlock(frame);
     Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME);
+	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME ||
+	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
     return (AbstractCodeFrame *) p;
   }
   static AbstractCodeFrame *FromWordDirect(word frame) {
     Block *p = Store::DirectWordToBlock(frame);
     Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME);
+	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_FRAME ||
+	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
     return (AbstractCodeFrame *) p;
+  }
+};
+
+class AbstractCodeHandlerFrame : public AbstractCodeFrame {
+public:
+  // AbstractCodeHandlerFrame Constructor
+  static AbstractCodeHandlerFrame *New(Interpreter *interpreter,
+				       word pc,
+				       Closure *closure,
+				       Environment *env,
+				       word args) {
+    StackFrame *frame =
+      StackFrame::New(ABSTRACT_CODE_HANDLER_FRAME, interpreter, SIZE);
+    frame->ReplaceArg(PC_POS, pc);
+    frame->ReplaceArg(CLOSURE_POS, closure->ToWord());
+    frame->ReplaceArg(LOCAL_ENV_POS, env->ToWord());
+    frame->ReplaceArg(FORMAL_ARGS_POS, args);
+    return (AbstractCodeHandlerFrame *) frame;
+  }
+  // AbstractCodeHandlerFrame Untagging
+  static AbstractCodeHandlerFrame *FromWord(word frame) {
+    Block *p = Store::WordToBlock(frame);
+    Assert(p == INVALID_POINTER ||
+	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
+    return (AbstractCodeHandlerFrame *) p;
+  }
+  static AbstractCodeHandlerFrame *FromWordDirect(word frame) {
+    Block *p = Store::DirectWordToBlock(frame);
+    Assert(p == INVALID_POINTER ||
+	   p->GetLabel() == (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
+    return (AbstractCodeHandlerFrame *) p;
   }
 };
 
@@ -442,15 +485,36 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	return Interpreter::RAISE;
       }
       break;
+    case Pickle::Reraise: // of idRef
+      {
+	//--** separate the exception from the exception package
+	Scheduler::currentData = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	return Interpreter::RAISE;
+      }
     case Pickle::Try: // of instr * idDef * idDef * instr
       {
-	// AbstractCodeHandlerInterpreter: to be done
+	// Push a handler stack frame:
+	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
+	Vector *formalIdDefs = Vector::New(2);
+	formalIdDefs->Init(0, pc->Sel(1));
+	formalIdDefs->Init(1, pc->Sel(2));
+	formalArgs->Init(0, formalIdDefs->ToWord());
+	AbstractCodeHandlerFrame *frame =
+	  AbstractCodeHandlerFrame::New(this,
+					pc->Sel(3),
+					globalEnv,
+					localEnv,
+					formalArgs->ToWord());
+	taskStack->PushFrame(frame->ToWord());
 	pc = TagVal::FromWord(pc->Sel(0));
       }
       break;
     case Pickle::EndTry: // of instr
       {
-	// to be done
+	Assert(Store::WordToBlock(taskStack->GetFrame()) != INVALID_POINTER);
+	Assert(Store::WordToBlock(taskStack->GetFrame())->GetLabel() ==
+	       (BlockLabel) ABSTRACT_CODE_HANDLER_FRAME);
+	taskStack->PopFrame();
 	pc = TagVal::FromWord(pc->Sel(0));
       }
       break;
@@ -683,10 +747,17 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 
 Interpreter::Result
 AbstractCodeInterpreter::Handle(word args, TaskStack *taskStack) {
-  // to be done
-  taskStack->PopFrame();
-  Scheduler::currentArgs = args;
-  return Interpreter::RAISE;
+  //--** must be Handle(word debug, word exn, TaskStack *taskStack)
+  AbstractCodeFrame *frame =
+    AbstractCodeFrame::FromWord(taskStack->GetFrame());
+  if (frame->IsHandlerFrame()) {
+    //--** construct args from debug and exn as a tuple
+    return Run(args, taskStack);
+  } else {
+    taskStack->PopFrame();
+    Scheduler::currentArgs = args;
+    return Interpreter::RAISE;
+  }
 }
 
 const char *AbstractCodeInterpreter::Identify() {
