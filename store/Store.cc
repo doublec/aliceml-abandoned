@@ -408,6 +408,10 @@ void Store::HandleWeakDictionaries(const u_int gen) {
 static inline u_int min(u_int a, u_int b) {
   return ((a <= b) ? a : b);
 }
+#undef max
+static inline u_int max(u_int a, u_int b) {
+  return ((a >= b) ? a : b);
+}
 
 inline void Store::GC(word &root, const u_int gen) {
   // Obtain scan start
@@ -476,10 +480,8 @@ void Store::DoGCWithoutFinalize(word &root) {
       // Calc limits for next major GC
       // to be done: find appropriate heuristics
       u_int usage = roots[STORE_GEN_OLDEST + 1].GetSize();
-      if (usage >= 35 * 1024 * 1024)
-	usage -= 35 * 1024 * 1024;
-      u_int wanted = min(roots[STORE_GEN_OLDEST].GetLimit(),
-			 usage * 4 + 35 * 1024 * 1024);
+      u_int wanted = max(usage * 2, 35 * 1024 * 1024);
+
       s_int block_size = STORE_MEMCHUNK_SIZE;
       s_int block_dist = wanted % block_size;
       if (block_dist > 0)
