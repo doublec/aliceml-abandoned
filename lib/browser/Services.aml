@@ -62,9 +62,9 @@ import signature SERVICES from "SERVICES-sig"
 						val (rx1,ry1,rx2,ry2) = 
 					      GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
 						val x1 = (Real.trunc rx1) div w
-						val y1 = (Real.trunc rx1) div h
-						val x2 = (Real.trunc rx1) div w
-						val y2 = (Real.trunc rx1) div h
+						val y1 = (Real.trunc ry1) div h
+						val x2 = (Real.trunc rx2) div w
+						val y2 = (Real.trunc ry2) div h
 					    in
 						(x1,y1,x2,y2)
 					    end
@@ -75,7 +75,7 @@ import signature SERVICES from "SERVICES-sig"
 						val (rx1,ry1,_,_) = 
 					     GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
 						val x1 = (Real.trunc rx1) div w
-						val y1 = (Real.trunc rx1) div h
+						val y1 = (Real.trunc ry1) div h
 					    in
 						(x1,y1)
 					    end
