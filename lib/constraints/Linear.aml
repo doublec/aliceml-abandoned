@@ -14,9 +14,9 @@
  *)
 
 import structure FD     from "FD"
-import signature CONSTR from "CONSTR-sig"
+import signature LINEAR from "LINEAR-sig"
 
-structure Constr =
+structure Linear :> LINEAR =
     struct
 	datatype fdop = PLUS | MINUS | MUL
 
