@@ -27,6 +27,8 @@ signature COMPONENT =
 	exception Eval of exn
 	exception Failure of Url.t * exn
 
+	val extension: string
+
 	val load: Url.t -> component
 	val save: string * component -> unit
 	val inf: component -> Inf.t option

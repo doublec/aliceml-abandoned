@@ -27,6 +27,8 @@ structure Component :> COMPONENT =
 	exception Eval of exn
 	exception Failure of Url.t * exn
 
+	val extension = "ozf"
+
 	fun inf _ = NONE
 	fun load url =
 	    raise IO.Io {name = Url.toStringRaw url,
