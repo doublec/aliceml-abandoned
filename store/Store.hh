@@ -17,9 +17,8 @@ public:
 
 class MemConfig {
 public:
-  u_int max_gen;   // maximum number of generations
-  u_int gc_active; // turn GC on/off
-  virtual int NeedGC(MemChain **roots, u_int reqm, int gen) = 0;
+  u_int max_gen;     // maximum number of generations
+  u_int *gen_limits; // limit for each memory section (in Bytes)
 };
 
 class Store {
@@ -27,35 +26,17 @@ protected:
   static MemConfig *config;
   static MemChain **roots;
   static u_int totalHeapSize;
-  static DataSet *root_set;
   static DataSet *intgen_set;
-  static Block *WithGCAlloc(MemChain *chain, u_int size);
-  static Block *NoGCAlloc(MemChain *chain, u_int size);
+  static u_int needGC;
   static void Shrink(MemChain *chain, int threshold);
   static Block *CopyBlockToDst(Block *p, MemChain *dst);
   static void ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *scan);
-  static void DoGC(u_int gen);
-  static Block *Alloc(MemChain *chain, u_int size) {
-    if (config->gc_active) {
-      return Store::WithGCAlloc(chain, size);
-    }
-    else {
-      return Store::NoGCAlloc(chain, size);
-    }
-  }
-public:
-  static void InitStore(MemConfig *cfg);
-  static void CloseStore();
-  // Type Access Functions
-  static t_label MakeLabel(int l) {
-    Assert(l> TAG0); Assert(l <= MAX_LSIZE); return (t_label) l;
-  }
-  // Allocation Functions
-  static Block *AllocBlock(t_label l, u_int s) {
+  static Block *Alloc(MemChain *chain, u_int size);
+  static Block *InternalAllocBlock(t_label l, u_int s) {
     Assert(s > INVALID_TSIZE);
     if (s < HeaderDef::MAX_HBSIZE) {
       Block *t = Store::Alloc(roots[0], (u_int) s + 1);
-
+      
       HeaderOp::EncodeHeader(t, l, s, 0);
       return t;
     }
@@ -68,11 +49,23 @@ public:
       return (Block *) t;
     }
   }
+public:
+  static void InitStore(MemConfig *cfg);
+  static void CloseStore();
+  // Type Access Functions
+  static t_label MakeLabel(int l) {
+    Assert(l> TAG0); Assert(l <= MAX_LSIZE); return (t_label) l;
+  }
+  // Allocation Functions
+  static Block *AllocBlock(t_label l, u_int s) {
+    Assert(l >= TAG0); Assert(l <= MAX_LSIZE); return InternalAllocBlock(l, s);
+  }
   static Block *AllocChunk(u_int s) {
-    return Store::AllocBlock(CHUNK, s);
+    return Store::InternalAllocBlock(CHUNK, s);
   }
   static Transient *AllocTransient(t_label l) {
-    return (Transient *) Store::AllocBlock(l, 2);
+    Assert((l == PROMISE) || (l == FUTURE) || (l == BYNEED));
+    return (Transient *) Store::InternalAllocBlock(l, 2);
   }
   // Conversion Functions
   static word IntToWord(int v) {
@@ -88,11 +81,12 @@ public:
     return PointerOp::DecodeTransient(PointerOp::Deref(v));
   }
   // GC Related Functions
-  static DataSet *GetRootSet() {
-    return root_set;
-  }
+  static void DoGC(DataSet *root_set, u_int gen);
   static void AddToIntgenSet(word v) {
     intgen_set->Push(v);
+  }
+  static int NeedGC() {
+    return needGC;
   }
 #ifdef DEBUG_CHECK
   static void MemStat();

@@ -37,19 +37,19 @@ MemConfig *Store::config   = INVALID_POINTER;
 MemChain **Store::roots    = INVALID_POINTER;
 u_int Store::totalHeapSize = 0;
 
-DataSet *Store::root_set   = INVALID_POINTER;
 DataSet *Store::intgen_set = INVALID_POINTER;
+u_int Store::needGC        = 0;
 //
 // Method Implementations
 //
-Block *Store::WithGCAlloc(MemChain *chain, u_int size) {
+Block *Store::Alloc(MemChain *chain, u_int size) {
   MemChunk *list;
   char *tmp;
   int gen;
 
   Assert(size > 0);
   size = size << 2;
- redo:
+
   Assert(chain != NULL);
   list = chain->anchor;
 
@@ -62,41 +62,12 @@ Block *Store::WithGCAlloc(MemChain *chain, u_int size) {
       alloc_size = (d.quot + (d.rem ? 1 : 0)) * MEMCHUNK_SIZE;
     }
     
-    if ((gen = config->NeedGC(roots, (chain->total + alloc_size), chain->gen)) >= 0) {
-      DoGC(gen);
-      chain = roots[chain->gen];
-      goto redo;
-    }
+    needGC = (chain->total + alloc_size >= config->gen_limits[chain->gen]);
+
     totalHeapSize += alloc_size;
     chain->total  += alloc_size;
     chain->anchor = list = new MemChunk(NULL, anchor, alloc_size);
     list->InitBlock(alloc_size);
-    anchor->SetPrev(list);
-  }
-  chain->used += size;
-  
-  return (Block *) list->AllocChunkItem(size);
-}
-
-Block *Store::NoGCAlloc(MemChain *chain, u_int size) {
-  MemChunk *list;
-
-  Assert(size > 0);
-  size = size << 2;
-  Assert(chain != NULL);
-  list = chain->anchor;
-
-  if (!(list->FitsInChunk(size))) {
-    u_int alloc_size = MEMCHUNK_SIZE;
-    MemChunk *anchor = chain->anchor;
-
-    if (alloc_size < size) {
-      div_t d    = div(size, MEMCHUNK_SIZE);
-      alloc_size = (d.quot + (d.rem ? 1 : 0)) * MEMCHUNK_SIZE;
-    }
-    totalHeapSize += alloc_size;
-    chain->total  += alloc_size;
-    chain->anchor = list = new MemChunk(NULL, anchor, alloc_size);
     anchor->SetPrev(list);
   }
   chain->used += size;
@@ -223,7 +194,6 @@ void Store::InitStore(MemConfig *cfg) {
     totalHeapSize += chain->total;
   }
   roots[cfg->max_gen - 1]->gen = cfg->max_gen - 2;
-  root_set   = new DataSet();
   intgen_set = new DataSet();
 }
 
@@ -236,7 +206,7 @@ void Store::CloseStore() {
   }
 }
 
-void Store::DoGC(u_int gen) {
+void Store::DoGC(DataSet *root_set, u_int gen) {
   u_int match_gen  = HeaderDef::GEN_LIMIT[gen];
   u_int dst_gen    = (gen + 1);
   MemChain *dst    = roots[dst_gen];
