@@ -46,7 +46,7 @@ define
 	 I_print:
 	    fun {$ X} {System.show X} tuple() end#i_v
 	 I_inspect:
-	    fun {$ X} {Inspector.inspect X} table() end#i_v
+	    fun {$ X} {Inspector.inspect X} tuple() end#i_v
 	 I_Print:
 	    fun {$ X} {System.show X} tuple() end#i_v
 	 I_Inspect:
