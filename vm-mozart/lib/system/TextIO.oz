@@ -46,7 +46,7 @@ define
 	    try
 	       {New TextFile init(name: S flags: [read])}
 	    catch system(E=os(os ...) ...) then
-	       {Exception.'raiseError'
+	       {Exception.raiseError
 		alice(IoException(name: S
 				  function: {ByteString.make 'openIn'}
 				  cause: E))}   %--** cause not of type exn
