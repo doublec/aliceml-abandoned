@@ -239,9 +239,11 @@ public:
 
   s_int64 GetValue() {
     u_char *p = reinterpret_cast<u_char *>(GetBase());
-    s_int64 x = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-    x <<= 32;
-    return (x | (p[4] << 24) | (p[5] << 16) | (p[6] << 8) | p[7]);
+    u_int64 high =
+      static_cast<u_int32>((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
+    u_int64 low =
+      static_cast<u_int32>((p[4] << 24) | (p[5] << 16) | (p[6] << 8) | p[7]);
+    return (high << 32) | low;
   }
   u_char *GetNetworkRepresentation() {
     return reinterpret_cast<u_char *>(GetBase());
