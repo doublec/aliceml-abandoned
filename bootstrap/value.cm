@@ -1,4 +1,5 @@
 Group is
 
+    ../lib/rtt/label.cm
     UNSAFE_VALUE-sig.sml
     UnsafeValue.sml
