@@ -11,6 +11,7 @@
 //
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 
 #if defined(INTERFACE)
 #pragma implementation "store/Store.hh"

@@ -16,7 +16,8 @@
 #pragma interface "store/Store.hh"
 #endif
 
-#include "store/Base.hh"
+#include "Base.hh"
+#include "store/Types.hh"
 #include "store/HeaderOp.hh"
 #include "store/PointerOp.hh"
 #include "store/Handler.hh"
