@@ -183,6 +183,14 @@ public:
       HashNode::FromWord(arr->GetArg(i))->MakeEmpty();
     }
   }
+  bool IsEmpty() {
+    for (u_int i = GetSize(); i--;) {
+      HashNode *node = HashNode::FromWord(GetArg(i));
+      if (!node->IsEmpty())
+	return true;
+    }
+    return false;
+  }
 
   static WeakDictionary *New(u_int size) {
     WeakDictionary *d = WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size);
