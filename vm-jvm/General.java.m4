@@ -230,6 +230,9 @@ final public class General {
 	}
     }
     _FIELD(General,uminus);
+    static {
+	Builtin.builtins.put("~",uminus);
+    }
 
     _BINOP(plus,+);
     _BINOP(minus,-);
@@ -254,7 +257,9 @@ final public class General {
 	}
     }
     _FIELD(General,neq);
-
+    static {
+	Builtin.builtins.put("<>",neq);
+    }
     _BUILTIN(Sel) {
 	_APPLY(val) {
 	    _fromSingle(val,"General.sel");
