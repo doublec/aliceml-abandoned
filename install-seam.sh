@@ -30,18 +30,16 @@ case `uname -s` in
     CYGWIN*)
 	WINDOWS=1
 	SMLPLATFORM=x86-win32
-	SUPPORTPLATFORM=mingw32
 	CC="gcc -mno-cygwin"
 	;;
     *)
 	WINDOWS=0
 	SMLPLATFORM=x86-linux
-	SUPPORTPLATFORM=linux
 	CC=gcc
 	;;
 esac
 
-echo Trying to install Alice-on-Seam to $prefix for platform $SUPPORTPLATFORM...
+echo Trying to install Alice-on-Seam to $prefix...
 
 ##
 ## Build Seam
