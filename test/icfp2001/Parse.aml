@@ -6,7 +6,7 @@ signature PARSE =
 sig
     exception Invalid
 
-    val parse : string -> Meaning.meaning * int		(* Invalid *)
+    val parse : string -> Meaning.meaning * int	(* Invalid *)
 end
 
 structure Parse : PARSE =
@@ -14,6 +14,8 @@ struct
     exception Invalid = Lex.Invalid
 
     type context = Meaning.property
+
+    val splitCost = 500
 
     val initial =
 	{ b	= false
@@ -42,39 +44,36 @@ struct
 	{initial where tt = #tt context, u = #u context, size = #size context,
 		       color = if #u context = 0 then Tag.W else #color context}
 
-    fun text(x, contextUntouched, context, (xs, false, property) :: doc')
-	where (contextUntouched orelse context = property) =
+    fun text(x, context, (xs, false, property) :: doc')
+	where (context = property) =
 	    (x::xs, false, property) :: doc'
-      | text(x, contextUntouched, context, doc) =
+      | text(x, context, doc) =
 	    ([x], false, context) :: doc
 
-    fun space(x, contextUntouched, space_context,
-	      doc as (xs, spacy, property) :: doc')
-	where (contextUntouched orelse space_context = spacify property) =
+    fun space(x, space_context, doc as (xs, spacy, property) :: doc')
+	where (space_context = spacify property) =
 	    if not(#tt space_context) andalso (spacy orelse List.hd xs = " ")
 	    then doc
 	    else (x::xs, spacy, property) :: doc'
-      | space(x, contextUntouched, space_context, doc) =
+      | space(x, space_context, doc) =
 	    ([x], true, space_context) :: doc
 
-    fun parse'( [],   contextUntouched, context, stack, doc, cost) = (doc, cost)
-      | parse'(t::ts, contextUntouched, context, stack, doc, cost) =
+    fun parse'( [],   context, stack, doc, cost) = (doc, cost)
+      | parse'(t::ts, context, stack, doc, cost) =
 	case t of
 	     Lex.TEXT x =>
-		parse'(ts, true, context, stack,
-		       text(x, contextUntouched, context, doc), cost)
+		parse'(ts, context, stack, text(x, context, doc), cost)
 	   | Lex.SPACE x =>
-		parse'(ts, contextUntouched, context, stack,
-		       space(if #tt context then x else " ", contextUntouched,
-			     spacify context, doc), cost)
+		parse'(ts, context, stack, space(if #tt context then x else " ",
+						 spacify context, doc), cost)
 	   | Lex.OPEN t =>
-		parse'(ts, false, modify(context,t),
+		parse'(ts, modify(context,t),
 		       (context,t)::stack, doc, cost + Tag.cost t)
 	   | Lex.CLOSE t =>
 		case stack of [] => raise Invalid | (context',t')::stack' =>
 		if t <> t' then raise Invalid else
-		parse'(ts, false, context', stack', doc, cost)
+		parse'(ts, context', stack', doc, cost)
 
-    fun parse s = parse'(Lex.lex s, true, initial, [], [], 0)
+    fun parse s = parse'(Lex.lex s, initial, [], [], 0)
 		  handle Future.Future(Invalid) => raise Invalid
 end
