@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,7 +39,7 @@ sig
     val endOfStream :	instream -> bool *)
 
     val openOut :	string -> outstream
-(*  val openAppend :	string -> outstream *)
+    val openAppend :	string -> outstream
     val closeOut :	outstream -> unit
     val flushOut :	outstream -> unit
     val output :	outstream * vector -> unit
