@@ -34,6 +34,8 @@ import
 export
    Unpack
    Load
+   Pack
+   Save
    module: PickleComponent
 define
    %% Tags:
@@ -274,6 +276,23 @@ define
 	       {OutputStream putUInt({ByteString.length X})}
 	       {OutputStream putByteString(X)}
 	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
+	    [] name then
+	       %--** globalize
+	       {OutputStream putByte(BLOCK)}
+	       {OutputStream putUInt(CONSTRUCTOR)}
+	       {OutputStream putUInt(1)}
+	       {OutputStream putUInt(0)}   %--** print name?
+	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
+	    [] atom then
+	       case X of tuple then
+		  {OutputStream putByte(TUPLE)}
+		  {OutputStream putUInt(0)}
+	       [] vector then
+		  {OutputStream putByte(BLOCK)}
+		  {OutputStream putUInt(VECTOR)}
+		  {OutputStream putUInt(0)}
+	       end
+	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
 	    [] tuple then
 	       case {Label X} of transient then request(X Args TaskStack)
 	       [] tuple then
@@ -323,11 +342,11 @@ define
 	       [] function then
 		  continue(Args
 			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
-	       [] transform(X Y) then
+	       [] transform then
 		  {OutputStream putByte(TRANSFORM)}
 		  continue(args(Id + 1 OutputStream X#Id|Seen)
-			   pickling(PicklingInterpreter X)|
-			   pickling(PicklingInterpreter Y)|Rest)
+			   pickling(PicklingInterpreter X.1)|
+			   pickling(PicklingInterpreter X.2)|Rest)
 	       end
 	    [] array then
 	       {OutputStream putByte(BLOCK)}
@@ -380,7 +399,7 @@ define
    fun {Pack X TaskStack}
       continue(args(0 {New StringOutputStream init()} nil)
 	       pickling(PicklingInterpreter X)|
-	       picklePack(PicklePackInterpreter)|TaskStack)
+	       picklePack(PicklePackInterpreter)|TaskStack.2)
    end
 
    fun {PickleSaveInterpreterRun args(_ OutputStream _) TaskStack}
@@ -399,10 +418,10 @@ define
 			       end
 			    end)
 
-   fun {Save X Filename TaskStack}
+   fun {Save Filename X TaskStack}
       continue(args(0 {New FileOutputStream init(Filename)} nil)
 	       pickling(PicklingInterpreter X)|
-	       pickleSave(PickleSaveInterpreter)|TaskStack)
+	       pickleSave(PickleSaveInterpreter)|TaskStack.2)
    end
 
    PickleComponent = tuple(Pickle)
@@ -412,5 +431,5 @@ define
 
    Pickle =
    tuple(I_pack: Pack#i_t
-	 I_save: Save#ir_t)
+	 I_save: Save#ri_t)
 end

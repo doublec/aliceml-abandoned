@@ -90,11 +90,14 @@ define
 	 else
 	    try continue(arg({Pickle.load HU}) TaskStack.2)
 	    catch E=system(os(os ...) ...) then
-	       exception(nil con(IoException
-				 I_name: U
-				 I_function: {ByteString.make 'load'}
-				 I_cause: E)   %--** cause not of type exn
-			 TaskStack.2)
+	       try continue(arg({Pickle.load HU#'.'#Extension}) TaskStack.2)
+	       catch system(os(os ...) ...) then
+		  exception(nil con(IoException
+				    I_name: U
+				    I_function: {ByteString.make 'load'}
+				    I_cause: E)   %--** cause not of type exn
+			    TaskStack.2)
+	       end
 	    end
 	 end
       end
@@ -115,16 +118,7 @@ define
 	 I_Corrupt: value(CorruptException)
 	 I_PrimeCorrupt: value(CorruptException)
 	 I_extension: value(Extension)
-	 I_save:
-	    fun {$ Filename Component TaskStack}
-	       {Trace 'component' 'save '#Filename}
-	       try
-		  {Pickle.save Component Filename}
-		  continue(tuple() TaskStack.2)
-	       catch error(dp(generic 'pickle:nogoods' ...) ...)   %--**
-	       then exception(nil SitedException TaskStack.2)
-	       end
-	    end#rr_t
+	 I_save: Pickle.save#ri_t
 	 I_load:
 	    fun {$ URL TaskStack}
 	       {Trace 'component' 'load '#URL}
