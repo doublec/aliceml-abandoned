@@ -292,7 +292,7 @@ structure ToJasmin =
 			      | _ => ((if noStack i
 					   then ()
 				       else
-					   ((*TextIO.output (ziel,"\t\t.line "^line());*)
+					   (TextIO.output (ziel,"\t\t.line "^line());
 					    TextIO.output (ziel,"\t; Stack: "^Int.toString need^
 							   " Max: "^Int.toString max^"\n")));
 					   TextIO.output (ziel,instructionToJasmin (i, staticapply)^"\n");

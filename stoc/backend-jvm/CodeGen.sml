@@ -518,7 +518,7 @@ structure CodeGen =
 				 Invokevirtual (CString,"equals",([Classsig CObj],[Boolsig])),
 				 Ifeq elselabel]
 		    in
-			eq
+			Comment "Hi73"::eq
 		    end
 		  | testCode (ConTest (id'',NONE)) =
 		    Comment "Hi8" ::
@@ -576,22 +576,25 @@ structure CodeGen =
 			    end
 			  | bindit (nil,_) = nil
 		    in
-			New CRecordArity ::
-			Dup ::
-			(atCodeInt (Int.toLarge (length stringid))) ::
-			(Anewarray CLabel) ::
-			(Getstatic (RecordLabel.insert
-				    (stringids2strings (stringid, nil)))) ::
-			(Invokespecial (CRecordArity,"<init>",
+			Comment "Hi11" ::
+			stampCode stamp' @
+			(Instanceof CRecord::
+			 Ifeq elselabel::
+			 New CRecordArity ::
+			 Dup ::
+			 Getstatic (RecordLabel.insert
+				    (stringids2strings (stringid, nil))) ::
+			 Invokespecial (CRecordArity,"<init>",
 					([Arraysig,Classsig CLabel],
-					 [Voidsig]))) ::
-			(Comment "Hi11") ::
-			((stampCode stamp') @
-			 ((Invokevirtual (CRecord,"getArity",
-					  ([],[Classsig CRecordArity]))) ::
-			  (Ifacmpne elselabel) ::
-			  (stampCode stamp'))) @
-			[Invokevirtual (CRecord,"getValues",
+					 [Voidsig])) ::
+			 (stampCode stamp')) @
+			(Checkcast CRecord::
+			 Invokevirtual (CRecord,"getArity",
+					 ([],[Classsig CRecordArity])) ::
+			 Ifacmpne elselabel ::
+			 (stampCode stamp')) @
+			[Checkcast CRecord,
+			 Invokevirtual (CRecord,"getValues",
 					([],[Arraysig, Classsig CVal]))] @
 			(bindit(stringid,0))
 		    end
@@ -622,6 +625,7 @@ structure CodeGen =
 			    end
 			  | bindit (nil,_) = nil
 		    in
+			Comment "Hi 99"::
 			stampCode stamp'@
 			[Checkcast CDMLTuple,
 			 Invokeinterface (CDMLTuple,"getArity",([],[Intsig])),
@@ -730,7 +734,7 @@ structure CodeGen =
 	  | decCode (IndirectStm (_, ref NONE)) = nil
 	  | decCode dings = raise Debug (Dec dings)
 	and
-	    idCode (Id(_,stamp',_)) = stampCode stamp'
+	    idCode (Id(_,stamp',_)) = Comment "Hi87"::stampCode stamp'
 	and
 	    stampCode stamp' =
 	    let
@@ -849,6 +853,7 @@ structure CodeGen =
 					      "sapply",
 					      ([Classsig CVal],
 					       [Classsig CVal]))],
+			       Comment "Hi20"::
 			       stampCode stamp' @
 			       idacode @
 			       [Invokeinterface (CVal, "apply",
@@ -944,6 +949,7 @@ structure CodeGen =
 			 local
 			     fun loadFreeVar stamp'' =
 				 Dup ::
+				 Comment "Hi0408"::
 				 (stampCode stamp'') @
 				 [Putfield (className^"/"^
 					    (fieldNameFromStamp stamp''),

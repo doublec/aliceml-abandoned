@@ -144,9 +144,9 @@ structure Backend=
 
 		(* Umgebende Funktion einer Id setzen oder auslesen *)
 		fun setFun (Id(_,stamp',_), stamp'') =
-		    if (isSome (StampHash.lookup(defFun, stamp')))
+(*		    if (isSome (StampHash.lookup(defFun, stamp')))
 			then print "setFun twice!"
-		    else
+		    else*)
 			 StampHash.insert(defFun, stamp', stamp'')
 		fun getFun stamp' =
 		    case StampHash.lookup (defFun, stamp') of

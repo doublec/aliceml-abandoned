@@ -12,18 +12,19 @@
 
 SMLofNJ.Internals.GC.messages false;
 CM.make();
-open String;
 
 fun dmlc (_, debug::echo::x) =
     let
+	val e=valOf (Int.fromString (String.substring(echo, 2,1)))
 	fun dc (fi::rest) =
+	    (if e >= 1 then print ("Compiling "^fi^"...\n") else ();
 	    (CodeGen.genProgramCode
-	     (valOf (Int.fromString (substring(debug, 2,1))),
-	      valOf (Int.fromString (substring(echo, 2,1))),
-	      if (extract(fi, size fi-4, NONE)=".dml")
-		  then substring(fi, 0, size fi-4)
+	     (valOf (Int.fromString (String.substring(debug, 2,1))),
+	      e,
+	      if (String.extract(fi, size fi-4, NONE)=".dml")
+		  then String.substring(fi, 0, size fi-4)
 	      else fi,
-		  Main.imperatifyFile fi); dc (rest))
+		  Main.imperatifyFile fi); dc (rest)))
 	  | dc nil = 0
     in
 	(dc x) handle _ => 1
