@@ -63,17 +63,19 @@ Library:
 * Hole: future now simply returns argument if not a hole (no exception).
 * Alt: added mapBoth.
 * Pair: added mapBoth.
+* List: fixed evaluation order of filter[i] and partition[i].
 * Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
 * VectorSlice: fixed toVector.
 * ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
 * Char: fixed scan, scanC, fromCString.
 * String: fixed isSubstring, scanC, fromCString.
-* Substring: fixed isSubstring.
+* Substring: fixed isSubstring, tokens.
 * StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
 * Package: deleted separate val_package type.
 * TextIO, StreamIO: fixed buffering of TTY output.
+* TextIO: implemented CR/NL translation properly.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.

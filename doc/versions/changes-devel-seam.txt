@@ -1,21 +1,43 @@
+Runtime System:
+
+* [FIX] Jitter now generates proper overflow checks for inlined integer
+        arithmetics.
+
 Compiler:
 
-* Support for giving multiple source files on command line.
-* Import URLs are now resolved relative to the out-file location when compiling,
-  allowing proper separation of source and build directories.
+* [NEW] Support for giving multiple source files on command line.
+* [NEW] Import URLs are now resolved relative to the out-file location when
+        compiling, allowing proper separation of source and build directories.
+* [NEW] Added option -z (--minimize) for minimizing output components.
+* [FIX] Fixed bogus compilation of word literals (could lead to segfaults).
+
+Linker:
+
+* [NEW] Added option -z (--minimize) for minimizing output components.
 
 Library:
 
-* IntInf: fixed handling of division by 0.
-* Real: fixed exception handling in round, floor, ceil, trunc.
-* Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
-* ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
-* Char: fixed scan, scanC, fromCString.
-* String: fixed scanC, fromCString.
-* Date: added fromISO, toISO, scanISO for locale-independent date formats.
-* TextIO, StreamIO: fixed buffering of TTY output.
-* Minimize: several bugfixes.
-* Inspector: fixed handling of unit type, and mono vectors and arrays.
+* [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
+* [NEW] Store: new low-level interface to runtime heap and garbage collector.
+* [CHG] Minimizer: removed, superseded by Store component.
+* [FIX] IntInf: fixed handling of division by 0.
+* [FIX] Word[N]: fixed mod by 0 and conversion overflow checks.
+* [FIX] Real: fixed comparison, exception handling, handling NaNs and infinity.
+* [FIX] List: fixed evaluation order of filter[i] and partition[i].
+* [FIX] Vector, {Char,Word8}Vector: update raises Subscript for bad indices.
+* [FIX] ArraySlice, {Char,Word8}ArraySlice: fixed copying of overlapping slices.
+* [FIX] Char: fixed numeric escapes and gaps in scan, scanC, fromCString.
+* [FIX] String: fixed numeric escapes and gaps in scanC, fromCString.
+* [FIX] Substring: fixed tokens function.
+* [FIX] TextIO, StreamIO: fixed buffering of TTY output.
+* [FIX] TextIO: implemented CR/NL translation properly.
+* [FIX] Pickle, Component: improved error handling.
+* [CHG] OS.Path: allow mkRelative to take two relative paths.
+* [FIX] OS.Path: fixed border cases in toString, joinDirExt, mkAbsolute,
+        mkRelative.
+* [FIX] Inspector: fixed handling of unit type, and mono vectors and arrays.
+* [FIX] Gtk, Inspector: work around behaviour of Windows API refusing to display
+        a window under certain conditions (e.g. in Emacs).
 
 
 Alice 1.0 (Kraftwerk Album 1) - 2004/12/22
@@ -23,7 +45,7 @@ Alice 1.0 (Kraftwerk Album 1) - 2004/12/22
 
 Runtime system:
 
-* Completely new VM called SEAM (Simple Efficient Abstract Machine).
+* Completely new VM called SEAM (Simple Extensible Abstract Machine).
   It uses just-in-time compilation and a 3-generation garbage collector,
   rendering it up to 5 times faster than Alice on Mozart.
 * Completely new, extended constraint library based on GECODE
