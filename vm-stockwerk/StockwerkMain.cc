@@ -39,7 +39,7 @@ extern word UnsafeOS(void);
 extern word UnsafeCommandLine(void);
 extern word UnsafeComponent(void);
 extern word UnsafeDebug(void);
-//extern word UnsafeSocket(void); //--** missing
+extern word UnsafeSocket(void); //--** missing
 extern word UnsafeRand(void); //--** missing
 extern word UnsafeReflect(void);
 extern word UnsafeMkRefMap(void);
@@ -53,7 +53,7 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeCommandLine", UnsafeCommandLine},
   {"lib/system/UnsafeComponent",   UnsafeComponent},
   {"lib/system/UnsafeDebug",       UnsafeDebug},
-//{"lib/system/UnsafeSocket",      UnsafeSocket}, //--** missing
+  {"lib/system/UnsafeSocket",      UnsafeSocket},
   {"lib/system/UnsafeRand",        UnsafeRand},
   {"lib/system/UnsafeReflect",     UnsafeReflect},
   {"lib/utility/UnsafeMkRefMap",   UnsafeMkRefMap},

@@ -44,7 +44,7 @@ PRIMITIVES = \
 	List Math Option Real Ref String Thread Unsafe Vector Word
 PRIMITIVESSRCS = Primitive.cc PrimitiveTable.cc $(PRIMITIVES:%=%.cc)
 
-UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect
+UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect Socket
 UNSAFE_UTILITY = MkRefMap
 UNSAFESSRCS = $(UNSAFE_SYSTEM:%=Unsafe%.cc) $(UNSAFE_UTILITY:%=Unsafe%.cc)
 
