@@ -203,7 +203,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	  suspendWord = conBlock->Sel(0);
 	  break;
 	default:
-	  Error("invalid con tag");
+	  Error("BootstrapInterpreter::Run: invalid con tag");
 	  break;
 	}
 	Constructor *constructor = Constructor::FromWord(suspendWord);
@@ -282,7 +282,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	PushState(taskStack, this, TagVal::FromWord(pc->Sel(3)),
 		  globalEnv, localEnv, formalArgs);
 	// Push a call frame for the primitive:
-	const char *name = String::FromWord(pc->Sel(1))->GetValue();
+	String *name = String::FromWord(pc->Sel(1));
 	taskStack->PushCall(Closure::FromWord(Primitive::Lookup(name)));
 	Vector *actualIds = Vector::FromWord(pc->Sel(2));
 	u_int nargs = actualIds->GetLength();
