@@ -218,7 +218,11 @@ structure Main :> MAIN =
 			    SOME sourceFilename =>
 				compileForMozart (sourceFilename,
 						  targetFilename)
-			  | NONE => Inf.empty ()
+			  | NONE =>
+				(TextIO.print
+				 ("### warning: could not locate source for " ^
+				  targetFilename);
+				 Inf.empty ())
 	end
 
     val _ = Composer.setAcquisitionMethod acquireSign
