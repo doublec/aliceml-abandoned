@@ -44,7 +44,35 @@ DEFINE3(forName0) {
 DEFINE1(isInterface) {
   DECLARE_OBJECT(_this, x0);
   ClassObject *classObject = static_cast<ClassObject *>(_this);
-  RETURN_BOOL(classObject->GetRepresentedClass()->IsInterface());
+  Type *type = classObject->GetRepresentedType();
+  RETURN_BOOL(type->GetLabel() == JavaLabel::Class &&
+	      static_cast<Class *>(type)->IsInterface());
+} END
+
+DEFINE1(isArray) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  Type *type = classObject->GetRepresentedType();
+  if (type->GetLabel() == JavaLabel::ArrayType) {
+    RETURN_BOOL(true);
+  } else {
+    Assert(type->GetLabel() == JavaLabel::Class ||
+	   type->GetLabel() == JavaLabel::PrimitiveType);
+    RETURN_BOOL(false);
+  }
+} END
+
+DEFINE1(isPrimitive) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  Type *type = classObject->GetRepresentedType();
+  if (type->GetLabel() == JavaLabel::PrimitiveType) {
+    RETURN_BOOL(true);
+  } else {
+    Assert(type->GetLabel() == JavaLabel::Class ||
+	   type->GetLabel() == JavaLabel::ArrayType);
+    RETURN_BOOL(false);
+  }
 } END
 
 DEFINE1(getClassLoader0) {
@@ -52,10 +80,45 @@ DEFINE1(getClassLoader0) {
   RETURN(null); //--**
 } END
 
+DEFINE1(getComponentType) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  Type *type = classObject->GetRepresentedType();
+  switch (type->GetLabel()) {
+  case JavaLabel::Class:
+  case JavaLabel::PrimitiveType:
+    RETURN(null);
+  case JavaLabel::ArrayType:
+    RETURN(static_cast<ArrayType *>(type)->GetElementType()->GetClassObject()->
+	   ToWord());
+  default:
+    Error("illegal type");
+  }
+} END
+
 DEFINE1(getPrimitiveClass) {
   DECLARE_JAVA_STRING(name, x0);
-  //--** return class object
-  RETURN(null); //--**
+  if (name->Equals("boolean")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Boolean)->ToWord());
+  } else if (name->Equals("byte")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Byte)->ToWord());
+  } else if (name->Equals("char")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Char)->ToWord());
+  } else if (name->Equals("double")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Double)->ToWord());
+  } else if (name->Equals("float")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Float)->ToWord());
+  } else if (name->Equals("int")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Int)->ToWord());
+  } else if (name->Equals("long")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Long)->ToWord());
+  } else if (name->Equals("short")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Short)->ToWord());
+  } else if (name->Equals("void")) {
+    RETURN(PrimitiveType::GetClassObject(PrimitiveType::Void)->ToWord());
+  } else {
+    Error("unknown primitive class");
+  }
 } END
 
 void NativeMethodTable::java_lang_Class(JavaString *className) {
@@ -66,15 +129,16 @@ void NativeMethodTable::java_lang_Class(JavaString *className) {
   //--** isInstance
   //--** isAssignableFrom
   Register(className, "isInterface", "()Z", isInterface, 1, true);
-  //--** isArray
-  //--** isPrimitive
+  Register(className, "isArray", "()Z", isArray, 1, true);
+  Register(className, "isPrimitive", "()Z", isPrimitive, 1, true);
   //--** getName
   Register(className, "getClassLoader0", "()Ljava/lang/ClassLoader;",
 	   getClassLoader0, 1, true);
   //--** getClassLoader0
   //--** getSuperclass
   //--** getInterfaces
-  //--** getComponentType
+  Register(className, "getComponentType", "()Ljava/lang/Class;",
+	   getComponentType, 1, true);
   //--** getModifiers
   //--** getSigners
   //--** setSigners
