@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /opt/mozart-devel
+OZHOME = /opt/mozart-stable
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
@@ -111,7 +111,7 @@ ALICELINK_OPTS = -v
 
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
-OZC = $OZHOME/bin/ozc
+OZC = $(OZHOME)/bin/ozc
 MLLEX = ml-lex
 MLYACC = ml-yacc
 
