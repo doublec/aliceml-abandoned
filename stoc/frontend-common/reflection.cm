@@ -14,15 +14,15 @@ is
 	type.cm
 	interface.cm
 
-	LABEL_REFLECTION.sig
-	LabelReflection.sml
-	PATH_REFLECTION.sig
-	PathReflection.sml
-	TYPE_REFLECTION.sig
-	TypeReflection.sml
-	PERVASIVE_TYPE_REFLECTION.sig
-	PervasiveTypeReflection.sml
-	FIXITY_REFLECTION.sig
-	FixityReflection.sml
-	INF_REFLECTION.sig
-	InfReflection.sml
+	LABEL_REFLECTION-sig.aml
+	LabelReflection.aml
+	PATH_REFLECTION-sig.aml
+	PathReflection.aml
+	TYPE_REFLECTION-sig.aml
+	TypeReflection.aml
+	PERVASIVE_TYPE_REFLECTION-sig.aml
+	PervasiveTypeReflection.aml
+	FIXITY_REFLECTION-sig.aml
+	FixityReflection.aml
+	INF_REFLECTION-sig.aml
+	InfReflection.aml

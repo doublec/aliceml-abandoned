@@ -7,9 +7,9 @@ Group
 	signature TYPE
 	structure Type
 	signature INTERMEDIATE_GRAMMAR
-	functor MakeIntermediateGrammar
+	functor   MkIntermediateGrammar
 	signature PP_INTERMEDIATE_GRAMMAR
-	functor MakePPIntermediateGrammar
+	functor   MkPPIntermediateGrammar
 	structure IntermediateInfo
 	structure IntermediateGrammar
 	structure PPIntermediateGrammar
@@ -22,9 +22,9 @@ is
 	type.cm
 	interface.cm
 
-	INTERMEDIATE_GRAMMAR.sig
-	MakeIntermediateGrammar.sml
-	PP_INTERMEDIATE_GRAMMAR.sig
-	MakePPIntermediateGrammar.sml
+	INTERMEDIATE_GRAMMAR-sig.aml
+	MkIntermediateGrammar.aml
+	PP_INTERMEDIATE_GRAMMAR-sig.aml
+	MkPPIntermediateGrammar.aml
 
-	IntermediateGrammar.sml
+	IntermediateGrammar.aml

@@ -1,5 +1,23 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name                      from "Name"
+import structure Label                     from "Label"
+import structure Type                      from "Type"
+import structure PervasiveType             from "PervasiveType"
+import signature PERVASIVE_TYPE_REFLECTION from "PERVASIVE_TYPE_REFLECTION-sig"
+
 structure PervasiveTypeReflection :> PERVASIVE_TYPE_REFLECTION =
-  struct
+struct
 
   (* The module *)
 
@@ -16,5 +34,4 @@ structure PervasiveTypeReflection :> PERVASIVE_TYPE_REFLECTION =
     val _		= PervasiveType.typ_ref : typ		(* verify *)
     val lab_lookup	= Label.fromString "lookup"
     val _		= PervasiveType.lookup : string -> con	(* verify *)
-
-  end
+end

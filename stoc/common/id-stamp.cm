@@ -9,6 +9,6 @@ is
 
 	../misc/sources.cm
 
-	Stamp.sml
-	StampSet.sml
-	StampMap.sml
+	Stamp.aml
+	StampSet.aml
+	StampMap.aml

@@ -7,5 +7,5 @@ Group is
 	type.cm
 	id-stamp.cm
 
-	CHECK_INTERMEDIATE.sig
-	CheckIntermediate.sml
+	CHECK_INTERMEDIATE-sig.aml
+	CheckIntermediate.aml

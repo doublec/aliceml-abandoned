@@ -1,4 +1,26 @@
-functor MakePPIntermediateGrammar(
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stamp       from "Stamp"
+import structure Name        from "Name"
+import structure Label       from "Label"
+import structure PrettyPrint from "../misc/PrettyPrint"
+import structure PPMisc      from "../misc/PPMisc"
+
+import signature INTERMEDIATE_GRAMMAR    from "INTERMEDIATE_GRAMMAR-sig"
+import signature PP_INTERMEDIATE_GRAMMAR from "PP_INTERMEDIATE_GRAMMAR-sig"
+
+
+functor MkPPIntermediateGrammar(
 	structure IntermediateGrammar : INTERMEDIATE_GRAMMAR
 	val ppLabInfo :    IntermediateGrammar.lab_info -> PrettyPrint.doc
 	val ppIdInfo :     IntermediateGrammar.id_info -> PrettyPrint.doc
@@ -10,7 +32,7 @@ functor MakePPIntermediateGrammar(
 	val ppMatchInfo :  IntermediateGrammar.match_info -> PrettyPrint.doc
 	val ppDecInfo :    IntermediateGrammar.dec_info -> PrettyPrint.doc
 	val ppSig :        IntermediateGrammar.sign -> PrettyPrint.doc
-    ) :> PP_INTERMEDIATE_GRAMMAR where type comp = IntermediateGrammar.comp =
+    ) : PP_INTERMEDIATE_GRAMMAR =
 struct
 
   (* Import *)

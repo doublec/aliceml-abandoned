@@ -1,1 +1,0 @@
-structure Stamp = MakeStamp()

@@ -1,24 +1,32 @@
 (*
-import structure Stamp	from "Stamp"
-import structure Name	from "Name"
-import structure Label	from "Label"
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
-import structure Url	from "Url"
+import structure Stamp                from "Stamp"
+import structure Name                 from "Name"
+import structure Label                from "Label"
+import structure Url                  from "../misc/Url"
+import signature INTERMEDIATE_GRAMMAR from "INTERMEDIATE_GRAMMAR-sig"
 
-import signature INTERMEDIATE_GRAMMAR	from "INTERMEDIATE_GRAMMAR"
-*)
 
-
-functor MakeIntermediateGrammar(type lab_info
-				type id_info
-				type longid_info
-				type exp_info
-				type pat_info
-				type 'a field_info
-				type match_info
-				type dec_info
-				type sign) : INTERMEDIATE_GRAMMAR =
-  struct
+functor MkIntermediateGrammar(type lab_info
+			      type id_info
+			      type longid_info
+			      type exp_info
+			      type pat_info
+			      type 'a field_info
+			      type match_info
+			      type dec_info
+			      type sign) : INTERMEDIATE_GRAMMAR =
+struct
 
     (* Generic *)
 
@@ -188,4 +196,4 @@ functor MakeIntermediateGrammar(type lab_info
     fun infoDec(ValDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
 
-  end
+end

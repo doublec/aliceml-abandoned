@@ -1,5 +1,27 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name        from "Name"
+import structure Label       from "Label"
+import structure Path
+       structure PathPrivate from "Path"
+
+import structure PrettyPrint from "../misc/PrettyPrint"
+import structure PPMisc      from "../misc/PPMisc"
+import signature PP_PATH     from "PP_PATH-sig"
+
+
 structure PPPath :> PP_PATH =
-  struct
+struct
 
     (* Import *)
 
@@ -20,4 +42,4 @@ structure PPPath :> PP_PATH =
     and ppPath'(PLAIN n)	= ppName n
       | ppPath'(DOT(p,l,i))	= ppPath p ^^ text "." ^^ ppHiddenLab(i, l)
 
-  end
+end

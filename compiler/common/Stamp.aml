@@ -1,1 +1,15 @@
-structure Stamp = MakeStamp()
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import functor MkStamp from "../misc/Stamp"
+
+structure Stamp = MkStamp()

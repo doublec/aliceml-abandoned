@@ -18,10 +18,10 @@ is
 	../infrastructure/crash.cm
 	name.cm
 
-	PATH.sig
-	Path.sml
-	PathSet.sml
-	PathMap.sml
+	PATH-sig.aml
+	Path.aml
+	PathSet.aml
+	PathMap.aml
 
-	PP_PATH.sig
-	PPPath.sml
+	PP_PATH-sig.aml
+	PPPath.aml

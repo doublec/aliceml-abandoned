@@ -9,7 +9,7 @@ is
 
 	../misc/sources.cm
 
-	NAME.sig
-	Name.sml
-	LABEL.sig
-	Label.sml
+	NAME-sig.aml
+	Name.aml
+	LABEL-sig.aml
+	Label.aml

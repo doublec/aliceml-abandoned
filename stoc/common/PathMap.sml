@@ -1,1 +1,0 @@
-structure PathMap = MakeHashImpMap(Path)

@@ -1,4 +1,4 @@
 Group is
 
-	FIXITY.sig
-	Fixity.sml
+	FIXITY-sig.aml
+	Fixity.aml

@@ -6,8 +6,8 @@ Group is
 	type.cm
 	fixity.cm
 
-	INF.sig
-	Inf.sml
+	INF-sig.aml
+	Inf.aml
 
-	PP_INF.sig
-	PPInf.sml
+	PP_INF-sig.aml
+	PPInf.aml

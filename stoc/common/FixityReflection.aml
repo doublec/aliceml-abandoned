@@ -1,5 +1,25 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name              from "Name"
+import structure Label             from "Label"
+import structure Type              from "Type"
+import structure PervasiveType     from "PervasiveType"
+import structure Fixity            from "Fixity"
+import signature FIXITY_REFLECTION from "FIXITY_REFLECTION-sig"
+
+
 structure FixityReflection :> FIXITY_REFLECTION =
-  struct
+struct
 
   (* Types *)
 
@@ -49,4 +69,4 @@ structure FixityReflection :> FIXITY_REFLECTION =
 
     (* Labels are defined above *)
 
-  end
+end

@@ -21,12 +21,12 @@ is
 	name.cm
 	path.cm
 
-	TYPE.sig
-	Type.sml
+	TYPE-sig.aml
+	Type.aml
 
-	PERVASIVE_TYPE.sig
-	MakePervasiveType.sml
-	PervasiveType.sml
+	PERVASIVE_TYPE-sig.aml
+	MkPervasiveType.aml
+	PervasiveType.aml
 
-	PP_TYPE.sig
-	PPType.sml
+	PP_TYPE-sig.aml
+	PPType.aml

@@ -1,6 +1,24 @@
-structure LabelReflection :> LABEL_REFLECTION =
-  struct
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name             from "Name"
+import structure Label            from "Label"
+import structure Path             from "Path"
+import structure Type             from "Type"
+import signature LABEL_REFLECTION from "LABEL_REFLECTION-sig"
+
+
+structure LabelReflection :> LABEL_REFLECTION =
+struct
   (* Types *)
 
     val path_lab	= Path.pervasive "lab"			(*UNFINISHED*)
@@ -20,5 +38,4 @@ structure LabelReflection :> LABEL_REFLECTION =
 
     val lab_fromString	= Label.fromString "fromString"
     val _		= Label.fromString : string -> lab	(* verify *)
-
-  end
+end

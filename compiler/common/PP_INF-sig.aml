@@ -1,11 +1,24 @@
-signature PP_INF =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure PrettyPrint from "../misc/PrettyPrint"
+import structure Inf         from "Inf"
+
+signature PP_INF =
+sig
     type doc  = PrettyPrint.doc
     type inf  = Inf.inf
     type sign = Inf.sign
 
     val ppInf :	inf -> doc
     val ppSig : sign -> doc
-
-  end
+end

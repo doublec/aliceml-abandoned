@@ -1,11 +1,24 @@
-signature PP_TYPE =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure PrettyPrint from "../misc/PrettyPrint"
+import structure Type        from "Type"
+
+signature PP_TYPE =
+sig
     type doc  = PrettyPrint.doc
     type typ  = Type.typ
     type kind = Type.kind
 
     val ppTyp :		typ -> doc
     val ppKind :	kind -> doc
-
-  end
+end

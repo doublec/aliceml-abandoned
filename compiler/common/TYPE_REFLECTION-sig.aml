@@ -1,6 +1,21 @@
-signature TYPE_REFLECTION =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name  from "Name"
+import structure Label from "Label"
+import structure Type  from "Type"
+
+signature TYPE_REFLECTION =
+sig
     val typ_sort :	Type.t
     val typ_kind :	Type.t
     val typ_con :	Type.t
@@ -45,5 +60,4 @@ signature TYPE_REFLECTION =
     val lab_fill :	Label.t
 
     val lab_equals :	Label.t  
-
-  end
+end

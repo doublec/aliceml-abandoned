@@ -1,15 +1,24 @@
 (*
-import structure Stamp	from "Stamp"
-import structure Name	from "Name"
-import structure Label	from "Label"
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
-import structure Url	from "Url"
-*)
+import structure Stamp from "Stamp"
+import structure Name  from "Name"
+import structure Label from "Label"
+import structure Type  from "Type"
+import structure Url   from "../misc/Url"
 
 
 signature INTERMEDIATE_GRAMMAR =
-  sig
-
+sig
     (* Generic *)
 
     type lab_info
@@ -134,5 +143,4 @@ signature INTERMEDIATE_GRAMMAR =
     val infoMatch :	match	-> match_info
     val infoPat :	pat	-> pat_info
     val infoDec :	dec	-> dec_info
-
-  end
+end

@@ -1,5 +1,28 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name           from "Name"
+import structure Label          from "Label"
+import structure Path           from "Path"
+import structure Type           from "Type"
+import structure Fixity         from "Fixity"
+import structure Inf            from "Inf"
+import structure PervasiveType  from "PervasiveType"
+import structure PathReflection from "PathReflection"
+import signature INF_REFLECTION from "INF_REFLECTION-sig"
+
+
 structure InfReflection :> INF_REFLECTION =
-  struct
+struct
 
   (* Types *)
 
@@ -113,4 +136,4 @@ structure InfReflection :> INF_REFLECTION =
     val lab_intersect	= Label.fromString "intersect"
     val _		= Inf.intersect : inf * inf -> inf	(* verify *)
 
-  end
+end

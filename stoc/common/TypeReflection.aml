@@ -1,5 +1,26 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name            from "Name"
+import structure Label           from "Label"
+import structure Path            from "Path"
+import structure Type            from "Type"
+import structure PervasiveType   from "PervasiveType"
+import structure PathReflection  from "PathReflection"
+import signature TYPE_REFLECTION from "TYPE_REFLECTION-sig"
+
+
 structure TypeReflection :> TYPE_REFLECTION =
-  struct
+struct
 
   (* Types *)
 
@@ -108,4 +129,4 @@ structure TypeReflection :> TYPE_REFLECTION =
     val lab_equals	= Label.fromString "equals"
     val _		= Type.equals : typ * typ -> bool	(* verify *)
 
-  end
+end

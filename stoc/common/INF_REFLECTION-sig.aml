@@ -1,6 +1,21 @@
-signature INF_REFLECTION =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name  from "Name"
+import structure Label from "Label"
+import structure Type  from "Type"
+
+signature INF_REFLECTION =
+sig
     val typ_con :		Type.t
     val typ_sign :		Type.t
     val typ_inf :		Type.t
@@ -51,5 +66,4 @@ signature INF_REFLECTION =
     val lab_kind :		Label.t
     val lab_instance :		Label.t
     val lab_intersect :		Label.t
-
-  end
+end

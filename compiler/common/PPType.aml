@@ -1,5 +1,31 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Assert        from "../misc/Assert"
+
+import structure Label         from "Label"
+import structure Path          from "Path"
+import structure Type
+       structure TypePrivate   from "Type"
+import structure PervasiveType from "PervasiveType"
+
+import structure PrettyPrint   from "../misc/PrettyPrint"
+import structure PPMisc        from "../misc/PPMisc"
+import structure PPPath        from "PPPath"
+import signature PP_TYPE       from "PP_TYPE-sig"
+
+
 structure PPType :> PP_TYPE =
-  struct
+struct
 
     (* Import *)
 
@@ -253,10 +279,10 @@ text "(" ^^
 		end
 
 	      | ppTypPrec' p (HOLE _) =
-		    raise Crash.Crash "PPType.ppTyp: bypassed HOLE"
+		    raise Assert.failure
 
 	      | ppTypPrec' p (MU _) =
-		    raise Crash.Crash "PPType.ppTyp: bypassed MU"
+		    raise Assert.failure
 
 
 	    and ppProd NIL		= empty
@@ -305,4 +331,4 @@ text "(" ^^
 	    ppTyp t before List.app op:= (!trail)
 	end
 
-  end
+end

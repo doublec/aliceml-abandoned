@@ -1,4 +1,16 @@
 (*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
 Invariants of type annotations:
 - exp and pat nodes carry their instantiated type.
 - id and longid nodes carry their generalized type.
@@ -8,8 +20,16 @@ Invariants of type annotations:
   quantified).
 *)
 
+import structure Source                from "../infrastructure/Source"
+import structure Type                  from "Type"
+import structure Inf                   from "Inf"
+import functor MkIntermediateGrammar   from "MkIntermediateGrammar"
+import functor MkPPIntermediateGrammar from "MkPPIntermediateGrammar"
+import structure PrettyPrint           from "../misc/PrettyPrint"
+
+
 structure IntermediateInfo =
-  struct
+struct
     type lab_info	= { region: Source.region }
     type id_info	= { region: Source.region, typ: Type.t }
     type longid_info	= { region: Source.region, typ: Type.t }
@@ -18,13 +38,13 @@ structure IntermediateInfo =
     type 'a field_info	= { region: Source.region }
     type match_info	= { region: Source.region }
     type dec_info	= { region: Source.region }
-  end
+end
 
-structure IntermediateGrammar = MakeIntermediateGrammar(
+structure IntermediateGrammar = MkIntermediateGrammar(
 	open IntermediateInfo
 	type sign = Inf.sign)
 
-structure PPIntermediateGrammar = MakePPIntermediateGrammar(
+structure PPIntermediateGrammar = MkPPIntermediateGrammar(
 	structure IntermediateGrammar = IntermediateGrammar
 	fun ppInfo _	= PrettyPrint.empty
 	val ppLabInfo	= ppInfo

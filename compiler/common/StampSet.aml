@@ -1,1 +1,17 @@
-structure StampSet = MakeHashImpSet(FromEqHashKey(Stamp))
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stamp         from "Stamp"
+import structure FromEqHashKey from "../misc/HASH_KEY-sig"
+import structure MkHashImpSet  from "../misc/MkHashImpSet"
+
+structure StampSet = MkHashImpSet(FromEqHashKey(Stamp))

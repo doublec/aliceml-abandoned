@@ -1,6 +1,24 @@
-structure PathReflection :> PATH_REFLECTION =
-  struct
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name            from "Name"
+import structure Label           from "Label"
+import structure Path            from "Path"
+import structure Type            from "Type"
+import signature PATH_REFLECTION from "PATH_REFLECTION-sig"
+
+
+structure PathReflection :> PATH_REFLECTION =
+struct
   (* Types *)
 
     val path_path	= Path.pervasive "path"			(*UNFINISHED*)
@@ -24,5 +42,4 @@ structure PathReflection :> PATH_REFLECTION =
     val _		= Path.pervasive : string -> path	(* verify *)
     val lab_fromLab	= Label.fromString "fromLab"
     val _		= Path.fromLab : Label.t -> path	(* verify *)
-
-  end
+end

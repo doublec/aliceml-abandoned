@@ -1,5 +1,31 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label       from "Label"
+import structure Path        from "Path"
+import structure Type        from "Type"
+import structure Fixity      from "Fixity"
+import structure Inf
+       structure InfPrivate  from "Inf"
+
+import structure PrettyPrint from "../misc/PrettyPrint"
+import structure PPMisc      from "../misc/PPMisc"
+import structure PPPath      from "PPPath"
+import structure PPType      from "PPType"
+import signature PP_INF      from "PP_INF-sig"
+
+
 structure PPInf :> PP_INF =
-  struct
+struct
 
     (* Import *)
 
@@ -268,4 +294,4 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		)
 	    ))
 
-  end
+end
