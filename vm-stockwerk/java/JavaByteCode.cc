@@ -29,3 +29,7 @@ JavaByteCode *JavaByteCode::New(MethodInfo *methodInfo, u_int maxStack,
   concreteCode->Init(EXCEPTION_TABLE_POS, exceptionTable->ToWord());
   return static_cast<JavaByteCode *>(concreteCode);
 }
+
+MethodInfo *JavaByteCode::GetMethodInfo() {
+  return MethodInfo::FromWordDirect(Get(METHOD_INFO_POS));
+}
