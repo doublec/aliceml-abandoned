@@ -59,9 +59,9 @@ veryclean: clean
 	rm -f test StoreConfig.hh libstore.a
 
 distclean: veryclean
-	rm -f Makefile.deps
+	rm -f Makefile.depend
 
-Makefile.deps: Makefile StoreConfig.hh $(SOURCES)
-	$(MAKEDEPEND) $(SOURCES) StoreConfig.cc > Makefile.deps
+Makefile.depend: Makefile StoreConfig.hh $(SOURCES)
+	$(MAKEDEPEND) $(SOURCES) StoreConfig.cc > $@
 
-include Makefile.deps
+include Makefile.depend
