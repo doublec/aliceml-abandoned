@@ -57,17 +57,6 @@ functor MkAnalyzer(structure Parser: PARSER
 						      NONE)))
 	      | _ => NONE
 
-	fun pathCeil filename =
-	    let
-		val fro = "." ^ extension
-		val n = String.size filename
-		val m = String.size fro
-	    in
-		if n > m andalso String.substring (filename, n - m, m) = fro
-		then filename
-		else filename ^ fro
-	    end
-
 	fun pathFloor filename =
 	    let
 		val fro = "." ^ extension
@@ -78,11 +67,6 @@ functor MkAnalyzer(structure Parser: PARSER
 		then String.substring (filename, 0, n - m)
 		else filename
 	    end
-
-	fun urlCeil url =
-	    case List.rev (Url.getPath url) of
-		last::rest => Url.setPath (url, List.rev (pathCeil last::rest))
-	      | nil => url
 
 	fun analyzeImport (desc, url) =
 	    let
