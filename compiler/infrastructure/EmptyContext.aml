@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,7 +14,6 @@ import signature CONTEXT from "CONTEXT-sig"
 
 structure EmptyContext : CONTEXT =
 struct
-    type t	= unit
-    fun new()	= ()
-    fun clone()	= ()
+    type t    = unit
+    val empty = ()
 end

@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2002
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg and Leif Kornstaedt, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,20 +19,18 @@
  *)
 
 import structure Source   from "../infrastructure/Source"
+import signature CONTEXT  from "../infrastructure/CONTEXT-sig"
 import signature SWITCHES from "../infrastructure/SWITCHES-sig"
 import structure Target   from "../infrastructure/Target"
 
 signature COMPILER =
 sig
-    structure Switches: SWITCHES
+    structure Switches : SWITCHES
+    structure Context :  CONTEXT
 
     exception Error
 
-    type context
-
-    val empty:   context
-    val compile: context * Source.desc * Source.t ->
-		 context * Target.t  (* [Error.Error] *)
-
-    val isCrossCompiler: bool
+    val compile : Source.desc * Context.t * Source.t -> Context.t * Target.t
+							    (* [Error] *)
+    val isCrossCompiler : bool
 end

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,31 +15,28 @@ import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 import signature PHASE       from "PHASE-sig"
 import signature SWITCHES    from "SWITCHES-sig"
 
-
-functor MkResultDumpingPhase(
-	structure Phase :    PHASE
-	structure Switches : SWITCHES
-	val header : string
-	val pp :     Phase.O.t -> PrettyPrint.doc
-	val switch : bool ref
-    ) : PHASE =
+functor MkResultDumpingPhase (
+    structure Phase :    PHASE
+    structure Switches : SWITCHES
+    val header : string
+    val pp :     Phase.O.t -> PrettyPrint.doc
+    val switch : bool ref
+) : PHASE =
 struct
     open Phase
 
-    fun translate context desc_rep =
+    fun translate (desc, context, rep) =
 	let
-	    val rep' = Phase.translate context desc_rep
+	    val result as (_, rep') = Phase.translate (desc, context, rep)
 	in
-	    if not(!switch) then () else
+	    if not (!switch) then () else
 	    (
-	        (*TODO: Gert Hack...*)
-		if header = "" then () else
-		    TextIO.output(Switches.Debug.logOut, "-- " ^ header ^ ":\n");
-		PrettyPrint.output(Switches.Debug.logOut, pp rep',
+		TextIO.output (Switches.Debug.logOut, "-- " ^ header ^ ":\n");
+		PrettyPrint.output (Switches.Debug.logOut, pp rep',
 				   !Switches.Debug.logWidth);
-		TextIO.output(Switches.Debug.logOut, "\n");
+		TextIO.output (Switches.Debug.logOut, "\n");
 		TextIO.flushOut Switches.Debug.logOut
 	    );
-	    rep'
+	    result
 	end
 end

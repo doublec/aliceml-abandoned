@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,18 +15,18 @@ import signature PHASE    from "PHASE-sig"
 import signature SWITCHES from "SWITCHES-sig"
 
 
-functor MkTracingPhase(
-	structure Phase :    PHASE
-	structure Switches : SWITCHES
-	val name : string
-    ) : PHASE =
+functor MkTracingPhase (
+    structure Phase :    PHASE
+    structure Switches : SWITCHES
+    val name : string
+) : PHASE =
 struct
     open Phase
 
-    fun translate context desc_rep =
-	( if not(!Switches.Debug.dumpPhases) then () else
-	     (TextIO.output(Switches.Debug.logOut, "-- " ^ name ^ "...\n");
+    fun translate (desc, context, rep) =
+	( if not (!Switches.Debug.dumpPhases) then () else
+	     (TextIO.output (Switches.Debug.logOut, "-- " ^ name ^ "...\n");
 	      TextIO.flushOut Switches.Debug.logOut)
-	; Phase.translate context desc_rep
+	; Phase.translate (desc, context, rep)
 	)
 end

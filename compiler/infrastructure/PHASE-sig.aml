@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,9 +17,9 @@ import signature REPRESENTATION from "REPRESENTATION-sig"
 
 signature PHASE =
 sig
-    structure C: CONTEXT
-    structure I: REPRESENTATION
-    structure O: REPRESENTATION
+    structure C : CONTEXT
+    structure I : REPRESENTATION
+    structure O : REPRESENTATION
 
-    val translate: C.t -> Source.desc * I.t -> O.t   (* [Error.Error] *)
+    val translate : Source.desc * C.t * I.t -> C.t * O.t   (* [Error.Error] *)
 end

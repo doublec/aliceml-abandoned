@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg, 2000-2003
  *   Leif Kornstaedt, 2001
  *
  * Last change:
@@ -17,29 +17,28 @@ import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 import signature PHASE       from "PHASE-sig"
 import signature SWITCHES    from "SWITCHES-sig"
 
-
-functor MkContextDumpingPhase(
-	structure Phase :    PHASE
-	structure Switches : SWITCHES
-	val header : string
-	val pp :     Phase.C.t -> PrettyPrint.doc
-	val switch : bool ref
-    ) : PHASE =
+functor MkContextDumpingPhase (
+    structure Phase :    PHASE
+    structure Switches : SWITCHES
+    val header : string
+    val pp :     Phase.C.t -> PrettyPrint.doc
+    val switch : bool ref
+) : PHASE =
 struct
     open Phase
 
-    fun translate context desc_rep =
+    fun translate (desc, context, rep) =
 	let
-	    val rep' = Phase.translate context desc_rep
+	    val result as (context', _) = Phase.translate (desc, context, rep)
 	in
-	    if not(!switch) then () else
+	    if not (!switch) then () else
 	    (
-		TextIO.output(Switches.Debug.logOut, "-- " ^ header ^ ":\n");
-		PrettyPrint.output(Switches.Debug.logOut, pp context,
+		TextIO.output (Switches.Debug.logOut, "-- " ^ header ^ ":\n");
+		PrettyPrint.output (Switches.Debug.logOut, pp context',
 				   !Switches.Debug.logWidth);
-		TextIO.output(Switches.Debug.logOut, "\n");
+		TextIO.output (Switches.Debug.logOut, "\n");
 		TextIO.flushOut Switches.Debug.logOut
 	    );
-	    rep'
+	    result
 	end
 end
