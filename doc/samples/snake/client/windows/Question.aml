@@ -14,7 +14,7 @@ import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 
 
-structure QuestionWindow =
+structure Question =
 struct
 
 

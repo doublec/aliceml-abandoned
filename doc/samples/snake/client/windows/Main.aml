@@ -23,8 +23,8 @@ import structure Highscore      from "../../common/Highscore"
 import structure ArenaWidget    from "ArenaWidget"
 import structure Connection     from "Connection"
 import structure ServerSettings from "ServerSettings"
-import structure TextWindow     from "TextWindow"
-import structure QuestionWindow from "QuestionWindow"
+import structure Text           from "Text"
+import structure Question       from "Question"
 
 
 import val log                  from "../../common/Log"
@@ -66,7 +66,7 @@ fun highscoreToString score =
 
 
 
-structure MainWindow =
+structure Main =
 struct
 
     (* the modes in which the window can exists *)
@@ -110,7 +110,7 @@ struct
     (* resets window and also shows Text when needed *)
     fun reset NONE = reset' ()
       | reset (SOME (title, msg)) =
-	(TextWindow.mkTextWindow (title, msg); reset' ())
+	(Text.mkTextWindow (title, msg); reset' ())
 
 
     (* initializing the procedures from model_game *)
@@ -205,7 +205,7 @@ struct
 					  reset NONE)
 			    val answer = {cancel, no, yes}
 			in
-			    QuestionWindow.mkQuestionBox 
+			    Question.mkQuestionBox 
 			    ("Sure?", "Do you want to quit?", answer)
 			end
 		     
@@ -242,7 +242,7 @@ struct
 		let
 		    val h = HighscoreIO.load ()
 		in
-		    TextWindow.mkTextWindow ("Highscore", highscoreToString h) 
+		    Text.mkTextWindow ("Highscore", highscoreToString h) 
 		end
 
 	    fun resetHighscore () = HighscoreIO.save Highscore.empty

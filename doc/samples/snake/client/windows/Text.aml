@@ -17,7 +17,7 @@ import structure Protocol  from "../../common/Protocol"
 
 
 
-structure TextWindow =
+structure Text =
 struct
 
 
