@@ -29,9 +29,9 @@ struct
   fun copyq d = d mod rdist = 0
         
   type sol = unit
-  fun readSolution _ = ()
+  fun readSolution _ = assert false
   val bound = NONE
-  fun compare (_, _) = false
+  fun compare (_, _) = assert false
 
   val mask = Debug.dbZero
 

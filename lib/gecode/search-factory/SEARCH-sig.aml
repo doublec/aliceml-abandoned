@@ -4,24 +4,29 @@ signature SEARCH =
 sig
 
   type path
+  exception NotAssigned
     
   (* Optional: sets the top node of the search (root-node by default) *)
   (* Raise Fail if the search has already begun. *)
   val init : path -> unit
 
-  (* Get next solution *)
+  (* Get next solved space *)
   val nextSolved : unit -> Space.space option
 
   (* Indicates if the search is finished. *)
   val isFinished : unit -> bool
 
   (* Get one solution.
-   * The argument is a function reading a solution from a space. *)
+   * The argument is a function reading a solution from a space.
+   * Raises NotAssigned if the variables are not assigned in the solved space;
+   * this means that the problem is under-specified. *)
   val getOneSolution : (Space.space -> 'a) -> 'a option
 
   (* Get all solutions.
    * The argument is a function reading a solution from a space. 
-   * In the case of Branch & Bound, the first solution is the best. *)
+   * In the case of Branch & Bound, the first solution is the best.
+   * Raises NotAssigned if the variables are not assigned in the solved space;
+   * this means that the problem is under-specified. *)
   val getAllSolutions : (Space.space -> 'a) -> 'a list
 
   (* Get the path corresponding to some unexplored node,

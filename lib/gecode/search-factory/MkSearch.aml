@@ -1,4 +1,5 @@
 import structure Space    from "x-alice:/lib/gecode/Space"
+import structure FD       from "x-alice:/lib/gecode/FD"
 import structure Path     from "Path"
 import signature SEARCH   from "SEARCH-sig"
 import signature TREENODE from "TREENODE-sig"
@@ -12,6 +13,7 @@ struct
   fun printPath n = Path.toString (TreeNode.getPath n) ^ "\n"
 
   type path = TreeNode.solution Path.t
+  exception NotAssigned
 
   val started = lazy () (* Tells whether the search has already started. *)
   val finished = ref false (* Tells if the search is finished. *)
@@ -75,16 +77,19 @@ struct
   fun getUnexploredPath () = updateNodes
      (fn l => case l of ([] | [_]) => (l, NONE) | _ => getLast ([], l))
 
-  fun getOneSolution read = Option.map read (nextSolved ())
+  fun wrap read space = read space
+    handle FD.NotAssigned => raise NotAssigned
+  (* FS.NotAssigned does not exist, yet... *)
+
+  fun getOneSolution read = Option.map (wrap read) (nextSolved ())
 
   fun getAll (read, accu) =
     case nextSolved () of
       NONE => accu
     | SOME sp => getAll (read, read sp :: accu)
 
-  fun getAllSolutions read = getAll (read, [])
+  fun getAllSolutions read = getAll (wrap read, [])
     
-
 end
 
 

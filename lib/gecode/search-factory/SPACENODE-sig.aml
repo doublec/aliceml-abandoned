@@ -6,7 +6,6 @@ sig
   (* Totally thread-safe. *)
 
   exception Child
-  exception NotAssigned
 
   type space_node
   type t = space_node
@@ -25,10 +24,7 @@ sig
    * returns a clone of the computation space associated with this node. *)
   val getSpace : space_node -> Space.space
 
-  (* Like Space.status.
-   * In case of Branch & Bound, may raise NotAssigned
-   * if the problem is under-specified, that is,
-   * if the node is solved but not all variables are assigned. *)
+  (* Like Space.status *)
   val status : space_node -> Space.status
 
   (* Returns the path corresponding to this node. *)

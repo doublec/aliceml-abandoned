@@ -12,7 +12,6 @@ struct
 
   type solution = Policy.sol
   exception Child  = SpaceNode.Child
-  exception NotAssigned = SpaceNode.NotAssigned
 
   datatype tree_node = Node of node_rep
   withtype node_rep = {spacenode : SpaceNode.t ,

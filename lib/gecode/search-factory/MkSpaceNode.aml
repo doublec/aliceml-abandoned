@@ -13,7 +13,6 @@ struct
 
   type solution = Policy.sol
   exception Child
-  exception NotAssigned = FD.NotAssigned
 
   datatype space_node = Node of node_rep
   withtype node_rep =
@@ -26,14 +25,19 @@ struct
      best   : Policy.sol option , (* Solution applied to this node. *)
      depth  : int }
 
-  type t = space_node
-
-  fun dbPrint (mask, msg) = Debug.dbPrint (mask, Policy.mask, msg)
-
   val undefined = lazy assert false
 
   val globalBest = ref undefined
   val globalBestId = ref 0  (* ID Number of the current best solution *)
+
+  (* Invariants :
+   *   - A new value put in globalBest is always better than the previous one.
+   *   - globalBestId is increased iff globalBest is updated.
+   *)
+
+  type t = space_node
+
+  fun dbPrint (mask, msg) = Debug.dbPrint (mask, Policy.mask, msg)
 
   val root =
     let 
@@ -60,7 +64,9 @@ struct
     case Policy.bound of
       NONE => (false, undefined)
     | SOME b => (true, b)
-        
+
+  (* Update globalBest and globalBestId if
+   *  'condf currentBest currentId' is true *)
   fun setBestIfCond (sol,condf) =
     let
       val p = Promise.promise ()
@@ -108,7 +114,6 @@ struct
   fun updateCloneRef (r,v) =
     let val clone = Space.clone v
     in r := SOME v ; clone end
-
    
   (* Recomputes the space of this node. *)
   fun recompute node =
@@ -155,7 +160,7 @@ struct
       val wspace = Ref.exchange (rspace, NONE)
     in
       case (!rcopy, wspace) of
-        (SOME s, _     ) => Space.clone s
+        (SOME s, _     ) => (rspace := wspace ; Space.clone s)
       | (NONE  , SOME s) => updateCloneRef (rspace, s)
       | (NONE  , NONE  ) => updateCloneRef (rcopy, recompute node)
     end
@@ -224,7 +229,8 @@ struct
                                                newBestId = bestId
                                                orelse hardCompare(best,space))))
             end
-          else () ;
+            handle FD.NotAssigned => ()
+            else () ;
           status  
         end
     in
