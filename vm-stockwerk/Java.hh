@@ -16,6 +16,8 @@
 #include "Stockwerk.hh"
 #include "java/Data.hh"
 #include "java/StackFrame.hh"
+#include "java/ThrowWorker.hh"
+#include "java/NativeMethodTable.hh"
 #include "java/Table.hh"
 #include "java/JavaByteCode.hh"
 #include "java/ClassInfo.hh"
@@ -23,5 +25,7 @@
 #include "java/ClassLoader.hh"
 #include "java/ByteCodeInterpreter.hh"
 #include "java/JavaLanguageLayer.hh"
+#include "java/Startup.hh"
+#include "java/Authoring.hh"
 
 #endif
