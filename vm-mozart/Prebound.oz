@@ -13,7 +13,7 @@
 functor
 import
    Open(file)
-   System(printInfo)
+   System(show printInfo)
    Word at '../../vm-mozart/Word.so{native}'
 export
    BuiltinTable
@@ -57,6 +57,7 @@ define
 
    BuiltinTable =
    builtinTable(
+      'show': fun {$ X} {System.show X} '#' end
       '~': Number.'~'   %--** overloaded for word
       '+': fun {$ X1#X2} X1 + X2 end   %--** overloaded for word
       '-': fun {$ X1#X2} X1 - X2 end   %--** overloaded for word
