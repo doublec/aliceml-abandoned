@@ -29,7 +29,7 @@ AliceXML.dll: $(SOURCES:%.cc=%.o)
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	alicetool link $(SOURCES:%.cc=%.o) $(EXTRA_LIBS) -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
