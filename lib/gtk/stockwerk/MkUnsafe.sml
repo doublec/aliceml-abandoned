@@ -42,6 +42,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  "import structure GtkEnums from \"GtkEnums\"\n",
 		  "import structure GdkEnums from \"GdkEnums\"\n",
 		  "import structure PangoEnums from \"PangoEnums\"\n",
+          "import structure MiscEnums  from \"MiscEnums\"\n",
 		  "\n",
 		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
@@ -63,6 +64,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
 		 "import structure PangoEnums from \"PangoEnums\"\n",
+         "import structure MiscEnums from \"MiscEnums\"\n",
 		 "import signature ", Util.strUpper(unsafeName), 
 		 " from \"", Util.strUpper(unsafeName), "-sig\"\n\n",
 		 "structure ", unsafeName, " :> ",
@@ -72,6 +74,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 wrIndent, "open GtkEnums\n",
 		 wrIndent, "open GdkEnums\n",
 		 wrIndent, "open PangoEnums\n",
+         wrIndent, "open MiscEnums\n",
 		 "\n"],
 	     outro = 
 		 [Util.indent 1, "end\n\n"]
@@ -158,7 +161,34 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
         fun create tree =
 	let
 	    val _ = print (Util.separator("Generating "^unsafeName))
-	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
+
+        val itemIgnored = Special.isIgnored
+       
+        (* debug code:
+        fun itemIgnored item =
+            let
+                val res = Special.isIgnored item
+                val msg = if res then "ignoring" else "not ignoring"
+            in
+                TypeTree.debugDecl (msg, item);
+                res
+            end
+        *)
+	    val myItems' = List.filter (Util.funNot itemIgnored) tree
+       
+        (* debug code:
+        fun isItemOfSpace space item =
+            let
+                val res = TypeManager.isItemOfSpace space item
+                val msg = if res 
+                            then "not in space " ^ Util.spaceName space 
+                            else "in space " ^ Util.spaceName space
+            in
+                TypeTree.debugDecl (msg, item);
+                res
+            end
+        *)
+            
 	    val myItems = Util.filters [isItemOfSpace space, checkItem] 
 		            (myItems'@Special.changedFuns@Special.specialFuns)
 

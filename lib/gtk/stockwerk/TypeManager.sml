@@ -35,20 +35,32 @@ struct
       | removeTypeRefs (TYPEREF (_,t)) = removeTypeRefs t
       | removeTypeRefs t               = t
 
+    fun checkSpace f n space = Util.checkPrefix (f space) n
+
     (* Checks whether certain references/declarations belong to a namespace *)
-    fun isRefOfSpace space (ENUMREF n) =
-	Util.checkPrefix (Util.spaceName space) n
+    fun isRefOfSpace Util.MISC (ENUMREF n) =
+        not (List.exists (checkSpace Util.spaceName n) Util.stdSpaces) 
+      | isRefOfSpace Util.MISC (STRUCTREF n) =
+        not (List.exists (checkSpace Util.spaceName n) Util.stdSpaces) 
+      | isRefOfSpace space (ENUMREF n) =
+        Util.checkPrefix (Util.spaceName space) n
       | isRefOfSpace space (STRUCTREF n) =
-	Util.checkPrefix (Util.spaceName space) n
+        Util.checkPrefix (Util.spaceName space) n
       | isRefOfSpace space (TYPEREF (_,t)) = isRefOfSpace space t
       | isRefOfSpace _ _ = false
 
-    fun isItemOfSpace space (FUNC (n,_,_)) = 
-	Util.checkPrefix (Util.spaceFuncPrefix(space)) n
+    fun isItemOfSpace Util.MISC (FUNC (n,_,_)) = 
+        not (List.exists (checkSpace Util.spaceFuncPrefix n) Util.stdSpaces)
+      | isItemOfSpace Util.MISC (ENUM (n,_)) =
+        not (List.exists (checkSpace Util.spaceEnumPrefix n) Util.stdSpaces)
+      | isItemOfSpace Util.MISC (STRUCT (n,_)) =
+        not (List.exists (checkSpace Util.spaceStructPrefix n) Util.stdSpaces)
+      | isItemOfSpace space (FUNC (n,_,_)) = 
+        Util.checkPrefix (Util.spaceFuncPrefix(space)) n
       | isItemOfSpace space (ENUM (n,_)) =
-	Util.checkPrefix (Util.spaceEnumPrefix(space)) n
+        Util.checkPrefix (Util.spaceEnumPrefix(space)) n
       | isItemOfSpace space (STRUCT (n,_)) =
-	Util.checkPrefix (Util.spaceStructPrefix(space)) n
+        Util.checkPrefix (Util.spaceStructPrefix(space)) n
       | isItemOfSpace _ _ = false
 
     (* Functions to build a class dependency list. This list is needed *)
@@ -122,7 +134,7 @@ struct
     local
 	fun getEnumSpace name = 
 	    foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
-	          Util.GTK Util.allSpaces
+	          Util.MISC Util.allSpaces
     in
 	fun getAliceType VOID                  = "unit"
 	  | getAliceType (ELLIPSES true)       = "Core.arg"

@@ -24,24 +24,28 @@
 structure Util :> UTIL =
     struct
         (* Namespace and prefix stuff *)
-        datatype spaces = GDK | GTK | GNOMECANVAS | PANGO
-	val allSpaces = [GDK, GTK, GNOMECANVAS, PANGO]
+        datatype spaces = GDK | GTK | GNOMECANVAS | PANGO | MISC
+	val allSpaces = [GDK, GTK, GNOMECANVAS, PANGO, MISC]
+    val stdSpaces = [GDK, GTK, GNOMECANVAS, PANGO]
 
 	fun moduleName GDK         = "Gdk"
 	  | moduleName GTK         = "Gtk"
 	  | moduleName GNOMECANVAS = "Canvas"
 	  | moduleName PANGO       = "Pango"
+      | moduleName MISC        = "Misc"
 
 	fun spaceName GDK         = "Gdk"
 	  | spaceName GTK         = "Gtk"
 	  | spaceName GNOMECANVAS = "GnomeCanvas"
 	  | spaceName PANGO       = "Pango"
+      | spaceName MISC        = "Misc"
 
 	fun spaceFuncPrefix GDK       = "gdk_"
 	  | spaceFuncPrefix GTK       = "gtk_"
 	  | spaceFuncPrefix GNOMECANVAS = "gnome_canvas_"
 	  | spaceFuncPrefix PANGO       = "pango_"
-
+      | spaceFuncPrefix MISC        = ""
+      
 	fun spaceEnumPrefix space = spaceName space
 	fun spaceStructPrefix space = "_"^(spaceName space)
 	   
@@ -114,8 +118,9 @@ structure Util :> UTIL =
 	fun computeEnumName (space, str) =
 	let
 	    val n = cutPrefix(strUpper(spaceEnumPrefix space)^"_",str)
-	in
-	    if Char.isDigit(hd(String.explode n)) then str else n
+        val res = if Char.isDigit(hd(String.explode n)) then str else n
+    in
+        res
 	end
 
 	(* Code generation *)

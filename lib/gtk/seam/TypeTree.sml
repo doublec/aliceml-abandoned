@@ -55,6 +55,25 @@ structure TypeTree =
 
       type tree = decl list
 
+    fun declName (FUNC (n, _, _)) = n
+      | declName (STRUCT (n, _))  = n
+      | declName (UNION (n, _))   = n
+      | declName (ENUM (n, _))    = n
+      | declName (ALIAS (n, _))   = n
+
+        
+    fun debugDecl (prefix, d) =
+        let
+            fun pNl s   = TextIO.output (TextIO.stdErr, s ^ "\n")
+        in
+            case d of
+                FUNC (n, _, _)  => pNl (prefix ^ " function: " ^ n)
+              | STRUCT (n, _)   => pNl (prefix ^ " struct: " ^ n)
+              | UNION  (n, _)   => pNl (prefix ^ " union: " ^n)
+              | ENUM   (n, _)   => pNl (prefix ^ " enum: " ^ n)
+              | ALIAS  (n, _)   => pNl (prefix ^ " typedef: " ^ n)
+        end
+    
 (* Notes:
    - The second component of the NUMERIC constructor (indicating a floating
      point number) is redundant to the num_kind information.

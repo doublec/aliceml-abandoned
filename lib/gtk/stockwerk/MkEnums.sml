@@ -81,34 +81,37 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	(* SIGNATURE AND WRAPPER ENTRIES *)
 	fun processItem (ENUM (name,members)) = 
 	let
+        
 	    val members' = map (fn (name,num) => 
 				(Util.computeEnumName (space,name), 
 				LargeInt.toString num)) 
 		               (List.filter checkEnumMember members)
 	in
-	    if null members 
+	    if null members' 
 		then ( nil, nil )
 		else ( sigEntry (name,members'), wrapperEntry (name,members') )
 	end
 	  | processItem _ = ( nil , nil )
 
         (* main function for creating enums files *)
-        fun create tree =
-	let
-	    val _ = print (Util.separator("Generating "^safeName))
-	    val myItems = Util.filters [Util.funNot Special.isIgnored, 
-					isItemOfSpace space, checkItem] tree
+    fun create tree =
+        let
+            fun testName d = declName d <> ""
+            
+	        val _ = print (Util.separator("Generating "^safeName))
+	        val myItems = Util.filters [Util.funNot Special.isIgnored, 
+                       testName, isItemOfSpace space, checkItem] tree
 
-	    val s = Util.openFile siginfo
-	    val w = Util.openFile wrapperinfo
+	        val s = Util.openFile siginfo
+	        val w = Util.openFile wrapperinfo
 
-	    val psl = Util.outputStrings
-	    fun dpsl (sl, wl) = (psl s sl ; psl w wl )
-	in
-	    ( List.app (dpsl o processItem) myItems ;
-	      Util.closeFile s ;
-	      Util.closeFile w )
-	end
+	        val psl = Util.outputStrings
+	        fun dpsl (sl, wl) = (psl s sl ; psl w wl )
+	    in
+	        ( List.app (dpsl o processItem) myItems ;
+	          Util.closeFile s ;
+	          Util.closeFile w )
+	    end
 
     end
 

@@ -17,6 +17,11 @@
 *)
 
 local
+    structure SMisc = MkSpecial (val space = Util.MISC)
+    structure EMisc = MkEnums(structure TypeManager = TypeManager
+		 	     structure Special = SMisc
+			     val space = Util.MISC)
+
     structure SGDK = MkSpecial (val space = Util.GDK)
     structure NGDK = MkNative(structure TypeManager = TypeManager
 			      structure Special = SGDK
@@ -74,6 +79,7 @@ structure GtkBinding =
 	val tree = Parser.parse file
     in
 	(OS.FileSys.chDir dir ;
+     EMisc.create tree ;
 	 NGTK.create tree ;
 	 FGTK.create tree ;
 	 UGTK.create tree ;
