@@ -49,7 +49,7 @@ local
 		 ("y2", DOUBLE 380.0),
 		 ("fill_color_gdk", OBJECT white),
 		 ("outline_color_gdk", OBJECT black)]
-    val ritem = GtkCanvas.itemNew (root, GtkCanvas.rectGetType (), rargs)
+    val ritem = GtkCanvas.itemNew (root, GtkCanvas.RECTANGLE, rargs)
 
     fun show s = Inspector.inspect s
 
@@ -91,10 +91,10 @@ local
 	     
     val _ = Gtk.signalConnect (ritem, "event", canvasEvent)
 	
-    val pargs = [("points", POINTS([(20, 20), (380, 200), (20, 380)])),
+    val pargs = [("points", POINTS([20, 20, 380, 200, 20, 380])),
 		 ("fill_color_gdk", OBJECT black),
 		 ("width_pixels", INT 2)]
-    val pitem = GtkCanvas.itemNew (root, GtkCanvas.lineGetType (), pargs)
+    val pitem = GtkCanvas.itemNew (root, GtkCanvas.LINE, pargs)
 in
     val _ = (Gtk.containerSetBorderWidth (Window, 10);
 	     Gtk.widgetSetUsize (MyCanvas, 400, 400);

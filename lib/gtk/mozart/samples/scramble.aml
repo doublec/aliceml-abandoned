@@ -151,12 +151,12 @@ local
 
 		     val group =
 			 GtkCanvas.itemNew(parent,
-					   GtkCanvas.groupGetType (),
+					   GtkCanvas.GROUP,
 					   [("x", DOUBLE X1),
 					    ("y", DOUBLE Y1)])
 			 
 		     val box =
-			 GtkCanvas.itemNew(group, GtkCanvas.rectGetType (),
+			 GtkCanvas.itemNew(group, GtkCanvas.RECTANGLE,
 					   [("x1", DOUBLE 0.0),
 					    ("y1", DOUBLE 0.0),
 					    ("x2", DOUBLE (ItR pieceSize)),
@@ -168,7 +168,7 @@ local
 					     ("width_pixels", INT 0)])
 
 		     val text =
-			 GtkCanvas.itemNew(group, GtkCanvas.textGetType (),
+			 GtkCanvas.itemNew(group, GtkCanvas.TEXT,
 					   [("text",
 					     STRING (Int.toString (i + 1))),
 					    ("x", DOUBLE 25.0),
