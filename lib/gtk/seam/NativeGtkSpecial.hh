@@ -201,4 +201,23 @@ DEFINE2(NativeGtk_objectGetDouble) {
   RETURN_REAL(ret);
 } END
 
+static void specialDeleteRangeEvent(GObject *obj,
+                                    GtkTextIter *iter1,
+                                    GtkTextIter *iter2, gpointer) {
+  g_signal_emit_by_name(obj,
+                        "delete-text",
+                        gtk_text_iter_get_offset(iter1),
+                        gtk_text_iter_get_offset(iter2),
+                        gtk_text_iter_get_text(iter1, iter2));
+}
+
+DEFINE1(NativeGtk_textBufferConnectSpecialSignals) {
+  DECLARE_OBJECT(obj, x0);
+
+  g_signal_connect (obj, "delete-range",
+                    (GCallback) specialDeleteRangeEvent,
+                    NULL);
+  RETURN_UNIT;
+} END
+
 #endif

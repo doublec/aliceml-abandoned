@@ -18,6 +18,8 @@
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 
+#include "ExtraMarshaller.hh"
+
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
 #include <windows.h>
 #endif
@@ -569,6 +571,11 @@ static void __die(char *s) {
   exit(0);
 }
 
+static void
+default_delete_text_handler(gint oldOff, gint newOff, gchar* txt) {
+  return;
+}
+
 static void Init() {
   static const u_int INITIAL_MAP_SIZE = 256; // TODO: find appropriate size
   // Init global data
@@ -632,6 +639,28 @@ static void Init() {
   G_SLIST_TYPE = g_type_from_name("GSList");
   GDK_EVENT_TYPE = gdk_event_get_type();
   GTK_OBJECT_TYPE = g_type_from_name("GtkObject");
+
+  // Provide special events
+
+  GClosure *default_closure;
+  GType param_types[3];
+  
+  default_closure = g_cclosure_new(G_CALLBACK(default_delete_text_handler),
+                                   NULL, NULL);
+
+  param_types[0] = G_TYPE_INT;
+  param_types[1] = G_TYPE_INT;
+  param_types[2] = G_TYPE_STRING;
+
+  g_signal_newv("delete-text",
+                GTK_TYPE_TEXT_BUFFER,
+                (GSignalFlags) (G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS),
+                default_closure,
+                NULL, NULL,
+                g_cclosure_user_marshal_VOID__INT_INT_STRING,
+                G_TYPE_NONE,
+                3,
+                param_types);
 }
 
 DEFINE0(NativeCore_handlePendingEvents) {

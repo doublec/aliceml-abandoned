@@ -140,6 +140,8 @@ compilealice: $(ALICEOBJECTS)
 %.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) $< -o $@
 
+ExtraMarshaller.hh:
+	echo "VOID:INT,INT,STRING" | glib-genmarshal --header --body > $@
 
 ### DEPENDENCIES ################################
 

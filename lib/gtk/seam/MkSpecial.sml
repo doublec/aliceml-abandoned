@@ -142,7 +142,10 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		      [POINTER (false, VOID), STRING (true, true)]),
 		 FUNC("gtk_radio_menu_item_new_with_mnemonic",
 		      POINTER (false, STRUCTREF "_GtkRadioMenuItem"),
-		      [POINTER (false, VOID), STRING (true, true)])]
+		      [POINTER (false, VOID), STRING (true, true)]),
+		 FUNC("gtk_text_buffer_connect_special_signals",
+                      VOID,
+		      [POINTER (false, STRUCTREF "_GktTextBuffer")])]
 
 	 | Util.GDK =>
 	       [FUNC("gdk_pixbuf_new_from_xpm_data", POINTER (false, VOID),
