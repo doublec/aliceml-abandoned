@@ -18,6 +18,7 @@
 #endif
 
 #include "emulator/Interpreter.hh"
+#include "emulator/Closure.hh"
 
 class LazySelectionInterpreter : public Interpreter {
 public:
@@ -31,11 +32,17 @@ public:
   }
   // Frame Handling
   static void PushFrame(TaskStack *taskStack, word tuple, int index);
+  virtual void PushCall(TaskStack *taskStack, word closure);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual const char *ToString(word args, TaskStack *taskStack);
+};
+
+class LazySelectionClosure : public Closure {
+public:
+  static LazySelectionClosure *New(word tuple, int index);
 };
 
 #endif

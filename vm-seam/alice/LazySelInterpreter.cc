@@ -17,8 +17,8 @@
 #include <cstdio>
 #include "emulator/LazySelectionInterpreter.hh"
 #include "emulator/TaskStack.hh"
-#include "emulator/Tuple.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/ConcreteCode.hh"
 
 // LazySelection Frame
 class LazySelectionFrame : private StackFrame {
@@ -59,7 +59,7 @@ public:
 };
 
 //
-// LazySelectionInterpreter Functions
+// LazySelectionInterpreter
 //
 LazySelectionInterpreter *LazySelectionInterpreter::self;
 
@@ -67,6 +67,11 @@ void LazySelectionInterpreter::PushFrame(TaskStack *taskStack,
 					 word tuple,
 					 int index) {
   taskStack->PushFrame(LazySelectionFrame::New(self, tuple, index)->ToWord());
+}
+
+void LazySelectionInterpreter::PushCall(TaskStack *taskStack, word closure) {
+  Closure *cl = Closure::FromWord(closure);
+  PushFrame(taskStack, cl->Sub(0), Store::WordToInt(cl->Sub(1)));
 }
 
 Interpreter::Result
@@ -103,4 +108,16 @@ LazySelectionInterpreter::ToString(word args, TaskStack *taskStack) {
   Assert(frame != INVALID_POINTER);
   sprintf(info, "LazySelection . %d", frame->GetIndex());
   return info;
+}
+
+//
+// LazySelectionClosure
+//
+LazySelectionClosure *LazySelectionClosure::New(word tuple, int index) {
+  ConcreteCode *concreteCode =
+    ConcreteCode::New(LazySelectionInterpreter::self, 0);
+  Closure *closure = Closure::New(concreteCode->ToWord(), 2);
+  closure->Init(0, tuple);
+  closure->Init(1, Store::IntToWord(index));
+  return (LazySelectionClosure *) concreteCode;
 }
