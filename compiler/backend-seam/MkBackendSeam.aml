@@ -44,19 +44,10 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 			val (context, (value, exportDesc)) =
 			    CodeGenPhase.translate (desc, env, component)
 			val component: Component.t = UnsafeValue.cast value
-			fun eval baseUrl =
-			    let
-				(* Extend environment first, so that
-				 * background evaluation for toplevel works. *)
-				(*--** Strictly speaking, there is a race
-				 * condition: if eval is immediately bg'ed AND
-				 * subsequent compilation reaches seam backend
-				 * phase BEFORE the Vector.map below has
-				 * completed, then it might encounter unbound
-				 * globalIds. But obviously, that is infinitely
-				 * unlikely to happen. 8-P *)
-				val exports =
-				    Vector.map (fn (stamp, label) =>
+			(* Extend environment first, so that
+			 * background evaluation for toplevel works. *)
+			val exports =
+			    Vector.map (fn (stamp, label) =>
 					let
 					    val p = Promise.promise ()
 					in
@@ -64,6 +55,8 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 							     Promise.future p);
 					    (p, label)
 					end) exportDesc
+			fun eval baseUrl =
+			    let
 				val package =
 				    ComponentManager.eval (baseUrl, component)
 				    handle exn =>
