@@ -60,14 +60,6 @@ static NativeComponent nativeComponents[] = {
   {NULL, NULL}
 };
 
-static inline Chunk *NewChunk(const char *s) {
-  u_int len  = strlen(s);
-  Chunk *p   = Store::AllocChunk(len);
-  char *base = p->GetBase();
-  std::memcpy(base, s, len);
-  return p;
-}
-
 int main(int argc, char *argv[]) {
   // Setup the store
   u_int memLimits[STORE_GENERATION_NUM];
@@ -99,11 +91,11 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
   else {
-    Chunk *rootUrl      = NewChunk(argv[1]);
+    String *rootUrl     = String::New(argv[1]);
     word urlWord        = rootUrl->ToWord();
     argv++; argc--;
     Properties::rootUrl = urlWord;
-    Chunk *bootUrl      = NewChunk("lib/system/Boot"); // to be done
+    String *bootUrl     = String::New("lib/system/Boot"); // to be done
     // Initialize Properties::commandLineArguments:
     word tail = Store::IntToWord(1); // nil
     argv++; argc--;
