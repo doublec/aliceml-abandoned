@@ -27,7 +27,7 @@ define
    end
 
    fun {Print X}
-      {System.printInfo X} '#'
+      {System.printInfo X} unit
    end
 
    TextIO =
@@ -47,7 +47,7 @@ define
 	    end
 	 end
       'closeIn':
-	 fun {$ F} {F close()} '#' end
+	 fun {$ F} {F close()} unit end
       'stdOut':
 	 {New TextFile init(name: stdout flags: [write])}
       'stdErr':
@@ -57,12 +57,12 @@ define
 	    {New TextFile init(name: S flags: [write create truncate])}
 	 end
       'output':
-	 fun {$ F#S} {F write(vs: S)} '#' end
+	 fun {$ F S} {F write(vs: S)} unit end
       'output1':
-	 fun {$ F#C} {F write(vs: [C])} '#' end
+	 fun {$ F C} {F write(vs: [C])} unit end
       'flushOut':
 	 fun {$ F} {F flush()} end   %--** not supported for files?
       'closeOut':
-	 fun {$ F} {F close()} '#' end
+	 fun {$ F} {F close()} unit end
       'print': Print)
 end

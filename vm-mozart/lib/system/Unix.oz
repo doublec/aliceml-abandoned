@@ -27,7 +27,7 @@ define
    Unix =
    'Unix'(
       'execute':
-	 fun {$ Cmd#Args} P in
+	 fun {$ Cmd Args} P in
 	    P = {New TextPipe init(cmd: Cmd args: {ImportList Args})}
 	    P#P
 	 end)

@@ -24,19 +24,19 @@ define
 
    BootWord =
    'BootWord'(
-      'fromInt\'': fun {$ N#X} {NativeWord.make N X} end
+      'fromInt\'': fun {$ N X} {NativeWord.make N X} end
       'toInt': NativeWord.toInt
       'toIntX': NativeWord.toIntX
-      '+': fun {$ X#Y} {NativeWord.'+' X Y} end
-      '-': fun {$ X#Y} {NativeWord.'-' X Y} end
-      '*': fun {$ X#Y} {NativeWord.'*' X Y} end
-      'mod': fun {$ X#Y} {NativeWord.'mod' X Y} end
-      'orb': fun {$ X#Y} {NativeWord.orb X Y} end
-      'xorb': fun {$ X#Y} {NativeWord.xorb X Y} end
-      'andb': fun {$ X#Y} {NativeWord.andb X Y} end
+      '+': fun {$ X Y} {NativeWord.'+' X Y} end
+      '-': fun {$ X Y} {NativeWord.'-' X Y} end
+      '*': fun {$ X Y} {NativeWord.'*' X Y} end
+      'mod': fun {$ X Y} {NativeWord.'mod' X Y} end
+      'orb': fun {$ X Y} {NativeWord.orb X Y} end
+      'xorb': fun {$ X Y} {NativeWord.xorb X Y} end
+      'andb': fun {$ X Y} {NativeWord.andb X Y} end
       'notb': NativeWord.notb
-      '<<': fun {$ X#Y} {NativeWord.'<<' X Y} end
-      '>>': fun {$ X#Y} {NativeWord.'>>' X Y} end
-      '~>>': fun {$ X#Y} {NativeWord.'~>>' X Y} end
+      '<<': fun {$ X Y} {NativeWord.'<<' X Y} end
+      '>>': fun {$ X Y} {NativeWord.'>>' X Y} end
+      '~>>': fun {$ X Y} {NativeWord.'~>>' X Y} end
       'toString': fun {$ X} {ByteString.make {ToHex {NativeWord.toInt X}}} end)
 end
