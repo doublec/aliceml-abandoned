@@ -53,14 +53,18 @@ ImperativeGrammar
  | PartialEvaluationPhase:
  |	- Value propagation
  |	- Constant folding
- |	- Lifeness analysis
  |	- Dead code elimination
  |	- Inlining
  |	- Specialisation
+ V
+ImperativeGrammar'
+ |
+ | LivenessAnalysisPhase (optional):
+ |	- Liveness analysis
  |
  | -------------------------------------
  V
-ImperativeGrammar'
+ImperativeGrammar''
  |
  | -------- backend-stockwerk ----------
  |
