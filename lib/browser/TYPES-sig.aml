@@ -86,11 +86,12 @@ sig
 		 group : Gtk.object}
 
      | RelNode of {desc : desc, 
+                   content : node ref,
 		   parent : node,  
 		   index : int, 
                    counter : int ref, 
 		   rep : string, 
-	           relman : node list, 
+	           relman : node list ref, 
                    width : int ref,
                    height : int ref,
 		   color : color_class, 

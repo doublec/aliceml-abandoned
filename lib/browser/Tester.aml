@@ -1,9 +1,18 @@
 import structure NewNode from "NewNode";
 import structure Layout from "Layout";
+import structure NewNode from "NewNode";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
 UnsafeInspector.init();
+
+(* Testen des Relationsmodus *)
+UnsafeInspector.set_relmode true;
+
+structure EList = Reflect.ReflectType ( type t = (int * int) * (int * int));
+val e_list = EList.x;
+
+UnsafeInspector.inspect (((2,2),(2,2)),e_list);
 
 (* Interger *)
 structure SInt = Reflect.ReflectType ( type t = int);
@@ -34,7 +43,7 @@ UnsafeInspector.inspect (ref #["hallo"],t_ref);
 structure Vec = Reflect.ReflectType ( type t = real vector);
 val t_vec = Vec.x;
 
-UnsafeInspector.inspect (#[1.0,2.0], t_vec);
+UnsafeInspector.inspect (#[1.0,1.0], t_vec);
 
 (* Matrix *)
 structure Mat = Reflect.ReflectType ( type t = real vector vector);
@@ -47,7 +56,7 @@ structure Arr = Reflect.ReflectType ( type t = string array);
 val t_array = Arr.x;
 val my_array = Array.array(2,""); 
 Array.update(my_array,0,"h"); 
-Array.update(my_array,1,"i");
+Array.update(my_array,1,"h");
 
 UnsafeInspector.inspect (my_array, t_array);
 
@@ -56,7 +65,7 @@ structure Rec1 = Reflect.ReflectType
     (type t = {vec1: string vector , vec2: int vector}); 
 val t_rec1 = Rec1.x; 
 
-UnsafeInspector.inspect ({vec1 = #["Marvin","Berni"],vec2 = #[23,21]}, 
+UnsafeInspector.inspect ({vec1 = #["Marvin","Marvin"],vec2 = #[23,23]}, 
 			 t_rec1);
 
 (* Tupel *) 
@@ -76,7 +85,7 @@ structure P = Reflect.ReflectType ( type t = S);
 val t_S = P.x;
 
 UnsafeInspector.inspect (A, t_S);
-UnsafeInspector.inspect (B (4,5), t_S);
+UnsafeInspector.inspect (B (4,4), t_S);
 UnsafeInspector.inspect (C #[5.0,7.0], t_S);
 UnsafeInspector.inspect (D A, t_S);
 UnsafeInspector.inspect (E {bla = "hello", blubb = #"w"}, t_S);

@@ -22,6 +22,8 @@ in
 	sig
 	    
 	    exception LayoutError
+
+            val findAdequ : node -> node
 	    
 	    val sum_up : node list * (node -> int) * (node -> int) -> int
 	    val max : node list * (node -> int) -> int

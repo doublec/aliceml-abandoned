@@ -44,7 +44,7 @@ struct
 
     fun set_depth d = Settings.max_depth := d
 
-    fun set_relmode b = NewNode.relmode := b
+    fun set_relmode b = Settings.relmode := b
 
     fun init () = ( registerType(PervasiveType.path_int, createInt)
 		  ; registerType(PervasiveType.path_string, createString)
@@ -68,7 +68,7 @@ struct
                   ; registerColor(EQU_COLOR, allocColor(0,0,0))
                   ; registerColor(LIMIT_COLOR, allocColor (65535,10000,0))
                   ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
-	          ; registerColor(REL_COLOR, allocColor (0,60000,20000))
+	          ; registerColor(REL_COLOR, allocColor (60000,20000,0))
                   ; registerColor(DEFAULT, allocColor(0,0,0)) )
 	
     val _  = init ()

@@ -53,6 +53,7 @@ sig
     val getParent : node -> node
     val getIndex : node -> int
     val getAncIndex : node -> int
+    val getDesc : node -> desc
 
     val checkContKids : node array * int -> bool
     val checkConcKids : node array * int -> bool
@@ -62,5 +63,14 @@ sig
     val inspectList : int * 'a list  -> 'a list_desc 
     val inspectList' : int * 'a list * 'a list -> 'a list_desc
     val castList : 'a -> 'b list
+
+    (* Relation-Nodes *)
+    val getValue : desc -> Reflect.value
+    val setContent : node * node -> unit
+    val incrCounter : node -> node
+
+    (* Strings *)
+    val iterTake : string -> string
+    val iterTake' : string * int * string -> string
 
 end;

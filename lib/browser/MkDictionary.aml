@@ -48,7 +48,12 @@ struct
       
     fun return (i,a) = Array.sub(!a,i)
 
-    fun update (i,a,x) = Array.update(!a,i,x) 
+    fun update (i,a,x) = Array.update(!a,i,x)
+	handle General.Subscript => let val b = !a
+				    in 
+				    (a := Array.array(2*i+1,default)
+                                    ; Array.update(!a,i,x); copy(b,!a,i-1) )
+				    end
 
 end
 

@@ -1,4 +1,4 @@
-(*(x+get_xdim(node),y+get_ydim(node))
+(*
  * Authors:
  *   Bernadette Blum <blum@ps.uni-sb.de>
  *   Marvin Schiller <schiller@ps.uni-sb.de>
@@ -13,8 +13,11 @@
  *
  *)
 
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
 import structure Helper from "Helper"
+import structure RelManDictionary from "RelManDictionary"
+import structure NewNode from "NewNode"
 import signature LAYOUT from "LAYOUT-sig"
 
 open Types Helper
@@ -23,6 +26,18 @@ structure Layout :> LAYOUT =
 struct
 
     exception LayoutError
+
+    fun findAdequ n = let val ind = getAncIndex n
+			  val relman = RelManDictionary.return(ind,
+							       NewNode.reldict)
+		      in (case List.find (fn x 
+					  => UnsafeValue.same
+					           (getValue(getDesc(x)),
+						    getValue(getDesc(x))) )
+			                  relman of
+			  NONE => Empty 
+                        | SOME x => x)
+		      end 
 
     fun sum_up (li,f,g) = if List.length(li) = 0
 			      then 0
@@ -42,11 +57,14 @@ struct
     and get_xdim n = case n of Simple(r) => !(#width(r))
                              | Concat(r) => !(#width(r))
                              | Container(r) => !(#width(r))
-                             | Limit(_) => 1
+                             | RelNode(r) => !(#width(r))
+                             | RelRefNode(r) => !(#width(r))
+			     | Limit(_) => 1
                              | Empty => 0
 
     and get_ydim n = case n of Concat(r) => !(#height(r))
                              | Container(r) => !(#height(r))
+                             | RelNode(r) => !(#height(r))
                              | Empty => 0
                              | _ => 1
 
@@ -64,6 +82,11 @@ struct
 		then #width(r) := calc_xdim n 
 	    else ()
 	   ; array_map(set_xdim,#kids(r)) )
+      | RelNode(r) 
+        => (if !(#status(r)) = DAZZLED 
+		then #width(r) := calc_xdim n 
+	    else () 
+           ; set_xdim (!(#content(r))) ) 
       | _ => ()
 	    
     and set_ydim n = case n of 
@@ -77,6 +100,11 @@ struct
 		then #height(r) := calc_ydim n 
 	    else ()
 	   ; array_map(set_ydim,#kids(r)) )
+      | RelNode(r) 
+        => (if !(#status(r)) = DAZZLED 
+		then #height(r) := calc_ydim n 
+	    else () 
+           ; set_ydim (!(#content(r))) ) 
       | _ => ()  
 
     and set_l_xdim n = case n of
@@ -96,6 +124,15 @@ struct
 			       then max (li,calc_xdim) 
 			   else sum_up (li,calc_xdim,calc_l_xdim) 
 			end
+      | RelNode(r) => (case findAdequ n of
+		       RelNode(rr) 
+		       =>if !(#counter(rr)) = 1
+			     then String.length(#rep(r)) + 
+				  calc_xdim (!(#content(r)))
+			 else calc_xdim (!(#content(r)))
+                     | _ => calc_xdim (!(#content(r))) )
+
+      | RelRefNode(r) => !(#width(r))
       | Limit(r) => 1
       | Empty => 0
 
@@ -105,6 +142,7 @@ struct
 			    then sum_up (Array.toList(#kids(r)),calc_ydim,
 					 calc_ydim)
 			else max (Array.toList(#kids(r)),calc_ydim)
+      | RelNode(r) => calc_ydim (!(#content(r)))
       | Empty => 0
       | _ => 1
  
@@ -126,6 +164,13 @@ struct
 			     then ()
 			 else #status(r) := DIRTY
 			; array_map(set_dirty,#kids(r)) )
+      | RelNode(r) => (if !(#status(r)) = DIRTY
+			   then ()
+		       else #status(r) := DIRTY
+                      ; set_dirty (!(#content(r))) )
+      | RelRefNode(r) => if !(#status(r)) = DIRTY 
+			     then () 
+			 else #status(r) := DIRTY
       | Limit(r) => if !(#status(r)) = DIRTY 
 			then () 
 		    else #status(r) := DIRTY 

@@ -55,6 +55,8 @@ struct
 			in
 			    createGroupItem(!WindowManager.canvasroot,0.0,0.0)
 			end
+      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
 
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 
@@ -121,7 +123,15 @@ struct
 			else if getParent n = Empty 
 				 then getIndex n
 			     else getAncIndex (getParent(n))
-				 
+
+    fun getDesc n = case n of Simple(r) => #desc(r)
+                            | Concat(r) => #desc(r)
+                            | Container(r) => #desc(r) 
+                            | Limit(r) => #desc(r)
+                            | RelNode(r) => #desc(r)
+                            | RelRefNode(r) => #desc(r)
+                            | Empty => INTERPUNCT
+	                  			 
     fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false
 			      else (case Array.sub(a,i) of
@@ -159,7 +169,28 @@ struct
 	    else inspectList'(n-1, List.tl x, List.hd x :: xs)
 
     fun castList value = UnsafeValue.cast value : 'a list
-		
+
+    fun getValue desc = case desc of INTERPUNCT => raise Match
+	                           | VALUE(r) => #value(r)
+
+    fun setContent (n,c) = case n of RelNode(r) => #content(r) := c
+                                   | _ => ()
+                                        
+    fun incrCounter n = case n of RelNode(r) 
+	                          => (#counter(r) := !(#counter(r)) + 1; n)
+                                | _ => n	
+
+   fun iterTake str = iterTake'(str,0,"")
+ 
+   and iterTake' (str,i,a) = 
+       if i >= (String.length(str)) 
+	   then a
+       else
+	   let val test = String.sub(str,i) 
+	   in if Char.equal(#" ",test)
+		  then a
+	      else iterTake' (str,i+1, String.append(a,Char.toString(test)))
+	   end  
 end
 
 end

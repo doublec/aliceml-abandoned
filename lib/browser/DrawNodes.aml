@@ -31,7 +31,7 @@ struct
     	   
     (* atomDraw *)
     fun atomDraw (node,x,y)  = case node of
-	Types.Simple(r) 
+	Simple(r) 
 	=>   ( let val (rx,ry) =  (Real.fromInt(x* 8 +2),
 				   Real.fromInt(y*13 +2))
 		   val color = case ColorMap.lookup(MkColorTable.colorTable,
@@ -47,7 +47,7 @@ struct
 		   val _ = #status(r) := Types.CLEAN
 	       in (x+String.length(#rep(r)),y)
 	       end )
-      | Types.Limit(r) 
+      | Limit(r) 
 	=> (let val (rx,ry) =  (Real.fromInt(x* 8 +2),
 				Real.fromInt(y*13 +2))
 		val color = case ColorMap.lookup(MkColorTable.colorTable,
@@ -66,6 +66,38 @@ struct
 		val _ = #status(r) := Types.CLEAN     
 	    in (x+1,y)
 	    end )
+      | RelRefNode(r)
+        =>  ( let val (rx,ry) =  (Real.fromInt(x* 8 +2),
+				  Real.fromInt(y*13 +2))
+		   val color = case ColorMap.lookup(MkColorTable.colorTable,
+						    #color(r))
+		       of SOME x => x
+		     | NONE   => raise MissingColor
+		   val _ = Services.printXY (#rep(r),
+					     #group(r),
+					     rx,
+					     ry,
+					     color,
+					     "8x13")
+		   val _ = #status(r) := Types.CLEAN
+	       in (x+String.length(#rep(r)),y)
+	       end )
+      | RelNode(r)
+	=> ( let val (rx,ry) =  (Real.fromInt(x* 8 +2),
+				  Real.fromInt(y*13 +2))
+		   val color = case ColorMap.lookup(MkColorTable.colorTable,
+						    #color(r))
+		       of SOME x => x
+		     | NONE   => raise MissingColor
+		   val _ = Services.printXY (#rep(r),
+					     #group(r),
+					     rx,
+					     ry,
+					     color,
+					     "8x13")
+		   val _ = #status(r) := Types.CLEAN
+	       in (x+String.length(#rep(r)),y)
+	       end )
       | _ => raise DrawError
 							
     (* drawSimple *)
@@ -140,6 +172,30 @@ struct
 	  else 
 	      (x + get_xdim(n), y + get_ydim(n)) 
      | _ => raise DrawError
+
+    (* drawRelNode *)
+    and drawRelNode (n,x,y) = case n of
+	RelNode(r) => if !(#status(r)) = DIRTY
+			  then (case !(#counter(r)) of
+                                1 => draw (!(#content(r)),x,y)
+			      | _ => let val (new_x,new_y) = atomDraw (n,x,y)
+				     in draw (!(#content(r)),new_x,new_y)
+				     end)
+		      else (case findAdequ n of
+                            RelNode(rr) 
+                            => if !(#counter(rr)) = 1
+				   then (x+get_xdim(!(#content(r))),
+					 y+get_ydim(!(#content(r))) )
+			       else (x+get_xdim(n),y+get_ydim(n))
+                          | _ => (x+get_xdim(n),y+get_ydim(n)) )
+      | _ => raise DrawError
+
+    (* drawRelRefNode *)
+    and drawRelRefNode (n,x,y) = case n of
+	RelRefNode(r) => if !(#status(r)) = DIRTY
+			     then atomDraw (n,x,y)
+			 else (x+get_xdim(n),y+get_ydim(n))
+      | _ => raise DrawError
        
     (* draw *)
     and draw (n,x,y) = case n of
@@ -155,6 +211,15 @@ struct
       | Limit(r) => if !(#status(r)) = DIRTY
 			then drawLimit (n,x,y)
 		    else (x+get_xdim(n),y+get_ydim(n))
+      | RelNode(r) => if !(#status(r)) = DIRTY
+			then drawRelNode (n,x,y)
+		      else ( case !(#counter(r)) of
+			     1 => (x+get_xdim(!(#content(r))),
+				   y+get_ydim(!(#content(r))) )
+			   | _ => (x+get_xdim(n),y+get_ydim(n)) )
+      | RelRefNode(r) => if !(#status(r)) = DIRTY
+			     then drawRelRefNode (n,x,y)
+			 else (x+get_xdim(n),y+get_ydim(n))
       | Empty => (x,y)
 
 end

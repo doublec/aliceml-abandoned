@@ -31,6 +31,10 @@ signature DRAW_NODES =
 	val drawConcat :   node * int * int -> int * int
 
 	val drawContainer: node * int * int -> int * int
+        
+        val drawRelNode : node * int * int -> int * int
+
+        val drawRelRefNode : node * int * int -> int * int
 
 	val draw : node * int * int -> int * int
        
