@@ -96,7 +96,7 @@
      lines to your <TT>.emacs</TT> file:</P>
   <PRE>
        ;; Necessary only if not already in load-path
-       (setq (cons "/this/is/the/mode/directory" load-path))
+       (setq load-path (cons "/this/is/the/mode/directory" load-path))
        ;; Enable sml mode
        (require 'sml-site)
        ;; Enable fontification
