@@ -78,5 +78,17 @@ struct
     fun getKids n = case n of Concat(r) => #kids(r)
                             | Container(r) => #kids(r)
                             | _ => (Array.array(0,Empty))
+
+	exception copyArray_error
+
+    fun copyArray' (a, b, i) = if i = Array.length(a) 
+				   then ()
+				       else
+	                       (Array.update(b,i,Array.sub(a,i))
+				; copyArray' (a,b,i+1))
+    
+    fun copyArray (a,b) = if Array.length(a) > Array.length(b) 
+			      then raise copyArray_error 
+				  else copyArray'(a,b,0)
     
 end;
