@@ -497,41 +497,7 @@ struct
     and docToNode (doc,p,i,d,canvas) = 
         (case doc of
          SIMPLE(r) 
-	 => let val color = 
-	            (case #desc(r) of 
-		     INTERPUNCT => (case #rep(r) of ", " => SEP_COLOR
-		                                  | " = " => EQU_COLOR
-		                                  | ("{" | "}" | "(" | ")"
-		                                         | "#[" | "]" )  
-					             => BRACK_COLOR
-						  | _ => LABEL_COLOR)
-		   | VALUE(rr) 
-		     => (case Type.inspect(#typ(rr)) of
-			  Type.Con path
-			  => (if Path.equal(path,PervasiveType.path_int)
-				  then INT_COLOR
-			      else
-			       if Path.equal(path,PervasiveType.path_real)
-				   then REAL_COLOR
-			       else 
-			        if Path.equal(path,PervasiveType.path_char)
-				    then CHAR_COLOR
-				else 
-				 if Path.equal(path,PervasiveType.path_string)
-				     then STR_COLOR
-				 else
-	                          if Path.equal(path,PervasiveType.path_word) 
-				      then WORD_COLOR
-				  else 
-				   if Path.equal(path,PervasiveType.path_exn)
-				       then EXN_COLOR
-				   else 
-				    if Path.equal(path,PervasiveType.path_ref)
-					then REF_COLOR
-				    else DEFAULT)
-			| _ => DEFAULT) ) 
-	    in createSimple (#desc(r),p,i,d,#rep(r),color,canvas) 
-	    end  
+	 => createSimple (#desc(r),p,i,d,#rep(r),#color(r),canvas)  
        | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),Empty)
 			  val concat = createConcat(#desc(r),p,i,d,na,canvas)
 		      in (Vector.appi 

@@ -13,12 +13,10 @@
  *
  *)
 
-import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 import signature GTK_SUPPORT from "GTK_SUPPORT-sig"
  
