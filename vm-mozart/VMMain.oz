@@ -80,8 +80,8 @@ define
 
    ComponentTable = {NewDictionary}
 
-   AliceHome = case {OS.getEnv 'STOCKHOME'} of false then
-		  {System.printError 'alicerun: STOCKHOME not set\n'}
+   AliceHome = case {OS.getEnv 'ALICE_HOME'} of false then
+		  {System.printError 'alicerun: ALICE_HOME not set\n'}
 		  {Application.exit 1}
 	       elseof S then S#'/'
 	       end
