@@ -124,12 +124,13 @@ define
 	 Hd = raiseStm({TrInfo Info} {TrId Id})|Tl
       [] 'ReraiseStm'(Info Id) then
 	 Hd = reraiseStm({TrInfo Info} {TrId Id})|Tl
-      [] 'HandleStm'(Info Body1 IdDef Body2 Body3 Stamp) then
-	 Hd = handleStm({TrInfo Info} {TrBody Body1 $ nil ShareDict}
-			{TrIdDef IdDef} {TrBody Body2 $ nil ShareDict}
-			{TrBody Body3 $ nil ShareDict} Stamp)|Tl
-      [] 'EndHandleStm'(Info Stamp) then
-	 Hd = endHandleStm({TrInfo Info} Stamp)|Tl
+      [] 'TryStm'(Info TryBody IdDef HandleBody) then
+	 Hd = tryStm({TrInfo Info} {TrBody TryBody $ nil ShareDict}
+		     {TrIdDef IdDef} {TrBody HandleBody $ nil ShareDict})|Tl
+      [] 'EndTryStm'(Info Body) then
+	 Hd = endTryStm({TrInfo Info} {TrBody Body})|Tl
+      [] 'EndHandleStm'(Info Body) then
+	 Hd = endTryStm({TrInfo Info} {TrBody Body})|Tl
       [] 'TestStm'(Info Id Tests Body) then
 	 Hd = testStm({TrInfo Info} {TrId Id}
 		      case Tests of 'LitTests'(LitBodyList) then
