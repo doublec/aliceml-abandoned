@@ -23,6 +23,7 @@ DEFINE0(UnsafeTime_now) {
   BigInt *res = BigInt::New((double)tv.tv_sec);
   mpz_mul_ui(res->big(), res->big(), 1000000UL);
   mpz_add_ui(res->big(), res->big(), tv.tv_usec);
+  mpz_div_ui(res->big(), res->big(), 1000UL);
   RETURN_INTINF(res);
 } END
 
