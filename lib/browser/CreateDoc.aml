@@ -126,7 +126,7 @@ struct
                     val ref_value = UnsafeValue.cast deref : Reflect.value
                     val ref_typ = #2(Type.asApply t)
                     val conc1 = SIMPLE{desc = INTERPUNCT,
-				       rep = "ref ",
+				       rep = "ref",
                                        color = COLOR}
                     val conc2 = 
 			CONTAINER{desc = INTERPUNCT,
