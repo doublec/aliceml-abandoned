@@ -187,6 +187,23 @@ define
       end
    end
 
+   proc {TranslateArgs Args Reg VHd VTl State}
+      case Args of oneArg(Id) then
+	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
+      [] tupArgs(nil) then
+	 VHd = vEquateConstant(_ '#' Reg VTl)
+      [] tupArgs(Ids) then
+	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
+			     {Map Ids
+			      fun {$ Id} value({GetReg Id State}) end} VTl)
+      [] recArgs(LabIdList) then Arity in
+	 Arity = {Map LabIdList fun {$ Lab#_} Lab end}
+	 VHd = vEquateRecord(_ '#' Arity Reg
+			     {Map LabIdList
+			      fun {$ _#Id} value({GetReg Id State}) end} VTl)
+      end
+   end
+
    proc {TranslateExp Exp Reg VHd VTl State}
       case Exp of litExp(_ Lit) then
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
@@ -252,29 +269,33 @@ define
 	     endDefinition(VInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	    VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
 	 end
-      [] appExp(Coord Id1 Args) then
-	 case Args of oneArg(Id2) then   %--** support others
-	    VHd = vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
+      [] appExp(Coord Id Args) then ArgReg VInter in
+	 {State.cs newReg(?ArgReg)}
+	 {TranslateArgs Args ArgReg VHd VInter State}
+	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
 			{TranslateCoord Coord} VTl)
-	 end
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
 			  {TranslateCoord Coord} VTl)
-      [] conAppExp(Coord Id1 oneArg(Id2)) then
-	 Pos VInter1 NameReg TmpReg ResReg VInter2 VInter3
+      [] conAppExp(Coord Id Args) then
+	 Pos VInter1 NameReg TmpReg ResReg VInter2 ArgReg VInter3 VInter4
       in
 	 Pos = {TranslateCoord Coord}
 	 VHd = vEquateConstant(_ 1 TmpReg VInter1)
-	 NameReg = {GetReg Id1 State}
+	 NameReg = {GetReg Id State}
 	 {State.cs newReg(?TmpReg)}
 	 {State.cs newReg(?ResReg)}
 	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
 				Pos VInter2)
-	 VInter2 = vInlineDot(_ ResReg 1 {GetReg Id2 State} false Pos VInter3)
-	 VInter3 = vUnify(_ Reg ResReg VTl)
-      [] refAppExp(Coord oneArg(Id)) then
-	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
-			    {TranslateCoord Coord} VTl)
+	 {State.cs newReg(?ArgReg)}
+	 {TranslateArgs Args ArgReg VInter2 VInter3 State}
+	 VInter3 = vInlineDot(_ ResReg 1 ArgReg false Pos VInter4)
+	 VInter4 = vUnify(_ Reg ResReg VTl)
+      [] refAppExp(Coord Args) then ArgReg VInter in
+	 {State.cs newReg(?ArgReg)}
+	 {TranslateArgs Args ArgReg VHd VInter State}
+	 VInter = vCallBuiltin(_ 'Cell.new' [ArgReg Reg]
+			       {TranslateCoord Coord} VTl)
       [] primAppExp(Coord Builtinname Ids) then Value Regs in
 	 Value = Prebound.builtinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
