@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature PRIM_IO from "PRIM_IO-sig"
+
+signature TEXT_TRANSLATOR =
+    sig
+	structure PrimIO: PRIM_IO where type elem = Char.char
+				    and type vector = CharVector.vector
+				    and type array = CharArray.array
+
+	val translateReader: PrimIO.reader -> PrimIO.reader
+	val translateWriter: PrimIO.writer -> PrimIO.writer
+    end
