@@ -27,7 +27,7 @@ define
    NONE = 0
    SOME = 1
 
-   I_SysErrPrime = 1
+   I_PrimeSysErr = 1
    I_FileSys     = 2
    I_Process     = 3
    I_SysErr      = 4
@@ -157,7 +157,7 @@ define
 	       end
 	    end#r_v)
 
-   UnsafeOS = tuple(I_SysErrPrime: SysErr
+   UnsafeOS = tuple(I_PrimeSysErr: SysErr
 		    I_SysErr: fun {$ A B} con(SysErr A B) end#ii_v
 		    I_FileSys: FileSys
 		    I_Process: Process)
