@@ -7,7 +7,7 @@ Group
 
 is
 
-    ../misc/sources.cm
+    ../../lib/utility/sources.cm
     ../infrastructure/crash.cm
     ../infrastructure/source.cm
     ../common/id-stamp.cm

@@ -4,9 +4,9 @@ Group
 
 is
 
+    ../../lib/utility/sources.cm
     ../infrastructure/crash.cm
     ../infrastructure/phase.cm
-    ../misc/sources.cm
     ../common/name.cm
     ../common/id-stamp.cm
 

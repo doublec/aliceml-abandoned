@@ -15,7 +15,7 @@ Group
 
 is
 
-	../misc/sources.cm
+	../../lib/utility/sources.cm
 	../infrastructure/crash.cm
 	../infrastructure/pp-misc.cm
 	id-stamp.cm

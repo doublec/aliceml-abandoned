@@ -7,7 +7,7 @@ Group
 
 is
 
-	../misc/sources.cm
+	../../lib/utility/sources.cm
 
 	NAME-sig.aml
 	Name.aml

@@ -4,7 +4,7 @@ group
 
 is
 
-    ../misc/sources.cm
+    ../../lib/utility/sources.cm
     ../common/id-stamp.cm
     ../common/name.cm
 
