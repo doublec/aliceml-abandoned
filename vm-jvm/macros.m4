@@ -41,14 +41,14 @@ define(_fromTuple,`
 	    for(int i=0; i<$3; i++)
 		$1[i]=t.get(i);
 	  } else {
-	    return Constants.
+	    throw new ExceptionWrapper(Constants.
 		runtimeError.apply(new Tuple2(
-		new STRING`'("wrong number of arguments for" + $4),$2));
+		new STRING`'("wrong number of arguments for" + $4),$2)));
 	  }
 	} else {
-	    return Constants.
+	    throw new ExceptionWrapper(Constants.
 		runtimeError.apply(new Tuple2(
-		new STRING`'("wrong arguments type for" + $4),$2));
+		new STRING`'("wrong arguments type for" + $4),$2)));
 	}
 ')
 dnl
