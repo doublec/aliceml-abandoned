@@ -196,6 +196,7 @@ structure BindEnv :> BIND_ENV =
     fun appiStrs f (ENV E)		= Map.appi (appStr f) E
     fun appiSigs f (ENV E)		= Map.appi (appSig f) E
     fun appiFuns f (ENV E)		= Map.appi (appFun f) E
+    fun appiScopeVals f (ENV E)		= Map.appiScope (appVal f) E
 
     fun foldiInfs f a (ENV E)		= Map.foldi (foldInf f) a E
     fun foldiFlds f a (ENV E)		= Map.foldi (foldFld f) a E
@@ -206,9 +207,6 @@ structure BindEnv :> BIND_ENV =
     fun foldiSigs f a (ENV E)		= Map.foldi (foldSig f) a E
     fun foldiFuns f a (ENV E)		= Map.foldi (foldFun f) a E
 
-
-    fun isEmptyValScope(ENV E)		= Map.isEmptyScope E orelse
-					  foldiVals (fn _ => false) true (ENV E)
 
     fun unionInf(E1,E2)			= appiInfs (fn(id,x) =>
 						     insertInf(E1,id,x)) E2

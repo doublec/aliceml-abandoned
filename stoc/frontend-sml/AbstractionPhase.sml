@@ -690,7 +690,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val E''  = splitScope E'
 	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
 			  error(infoPat pat, "inconsistent pattern alternative")
-	    val _    = Env.appiVals
+	    val _    = Env.appiScopeVals
 			    (fn(vid,_) =>
 				if Option.isSome(lookupVal(E'',vid)) then ()
 				else error(infoPat pat, "inconsistent pattern\

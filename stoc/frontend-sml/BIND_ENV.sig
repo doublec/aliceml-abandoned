@@ -98,6 +98,7 @@ signature BIND_ENV =
     val appiStrs :		(StrId * Str -> unit) -> Env -> unit
     val appiSigs :		(SigId * Sig -> unit) -> Env -> unit
     val appiFuns :		(FunId * Fun -> unit) -> Env -> unit
+    val appiScopeVals :		( VId  * Val -> unit) -> Env -> unit
 
     val foldiInfs :		( VId  * Inf * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiFlds :		( Lab  * Fld * 'a -> 'a) -> 'a -> Env -> 'a
@@ -107,8 +108,6 @@ signature BIND_ENV =
     val foldiStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiFuns :		(FunId * Fun * 'a -> 'a) -> 'a -> Env -> 'a
-
-    val isEmptyValScope :	Env -> bool
 
     val infEnv :		Env -> VId -> InfStatus
 
