@@ -115,7 +115,7 @@ define
 	 HandleVInstr = vCallConstant(_ UnwrapAliceException
 				      [Reg1 Reg2] Coord HandleVInter)
 	 {TranslateBody HandleBody ?HandleVInter nil State ReturnReg}
-      [] endTryStm(Region Body) then
+      [] endTryStm(Region Body) then VInter in
 	 VHd = vPopEx(_ {TranslateRegion Region State} VInter)
 	 {TranslateBody Body VInter VTl State ReturnReg}
       [] endHandleStm(Region Body) then
