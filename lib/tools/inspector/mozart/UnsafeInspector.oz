@@ -27,7 +27,7 @@ define
    %% Change Default Inspector Bindings
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   %% Set appropriate Name
+    %% Set appropriate Name
    {Inspector.configure inspectorLanguage 'Alice'}
 
    %% Set appropriate Map and Color-Change-Settings
@@ -141,6 +141,7 @@ define
       {Inspector.configure widgetNodeSets ((NormalNodes|RelationNodes)#
 					   (NormalIndNodes|RelationIndNodes))}
       {Inspector.configure widgetAtomicTest IsAtomic}
+      {Inspector.configure widgetCellPollInterval 500}
    end
 
    %% GUI Specific (Type->Name) Conversion Table
@@ -386,7 +387,9 @@ define
 	  proc {$ Option}
 	     Type = {Label Option}
 	  in
-	     if {HasFeature Colors Type} then
+	     if Type == 'CELL_POLL_INTERVAL'
+	     then {Inspector.configure widgetCellPollInterval Option.1}
+	     elseif {HasFeature Colors Type} then
 		case {Width Option} of 1 then
 		   {SetColor  Type Option.1}
 		[] 2 then
