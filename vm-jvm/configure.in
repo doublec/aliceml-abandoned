@@ -13,19 +13,19 @@ if test $HASM4 = "no"
   else
 	m4="m4"
 fi
-AC_CHECK_PROG(HASSML,sml-cm,yes,no,$PATH)
-if test $HASSML = "no";
-  then
-	AC_MSG_RESULT("No sml-cm. Cross fingers and hope it works with sml.");
-  else
-	smlcm="sml-cm"
-fi
 AC_CHECK_PROG(HASSML,sml,yes,no,$PATH)
 if test $HASSML = "no";
   then
 	AC_MSG_ERROR("No sml found.");
   else
 	smlcm="sml"
+fi
+AC_CHECK_PROG(HASSML,sml-cm,yes,no,$PATH)
+if test $HASSML = "no";
+  then
+	AC_MSG_RESULT("No sml-cm. Cross fingers and hope it works with sml.");
+  else
+	smlcm="sml-cm"
 fi
 AC_CHECK_PROG(HASJAVA,java,yes,no,$PATH)
 if test $HASJAVA = "no"
@@ -112,6 +112,8 @@ AC_SUBST(patch)
 dmllib="$PWD/Compiler/Backend"
 AC_SUBST(dmllib)
 
-AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile java/src/tools/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/Exec bin/ExecTya bin/ExecSunJit bin/MultiExec)
+AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/Exec bin/ExecTya bin/ExecSunJit bin/MultiExec)
 
-cd bin; chmod +x dmlc Exec ExecTya ExecSunJit MultiExec
+echo "Now making scripts executable..."
+(cd bin; chmod +x dmlc Exec ExecTya ExecSunJit MultiExec)
+echo "Done."
