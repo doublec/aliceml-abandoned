@@ -18,6 +18,10 @@
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+#include <windows.h>
+#endif
+
 static word eventStream;
 static word weakDict;
 static word signalMap;
