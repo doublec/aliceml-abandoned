@@ -367,7 +367,7 @@ define
       {FS.cardRange NumberOfDataItems NumberOfVertices - 1 VPlus}
       {FD.distribute naive [{FS.card VPlus}]}
 
-      {FD.distribute ff
+      {FD.distribute naive
        {Append
 	for I in 1..{Width V} collect: Collect do
 	   if I \= RootI then
@@ -394,27 +394,12 @@ define
    end
 
    local
-      fun {GetLowestElement Scope}
-	 case {FS.reflect.lowerBound Scope} of nil then 0
-	 [] [I#_] then I
-	 [] [I] then I
-	 end
-      end
-
       fun {ToDocSub Daughters V}
-	 %--** do we still need sorting?
-	 {List.foldR {Sort {FS.reflect.lowerBoundList Daughters}
-		      fun {$ I1 I2}
-			 {GetLowestElement V.I1.scope} <
-			 {GetLowestElement V.I2.scope}
-		      end}
+	 {List.foldR {FS.reflect.lowerBoundList Daughters}
 	  fun {$ I In}
-	     case V.I of dataItem(text: Text ...) then
-		'TEXT'(Text)|In
-	     [] element(tag: !Epsilon ...) then In
-	     [] element(tag: Tag daughters: Daughters ...) then
-		'TAGGED'(Tags.Tag.name {ToDocSub Daughters V})|In
-	     end
+	     In %--**
+	     %--** 'TEXT'(Text)|In
+	     %--** 'TAGGED'(Tags.Tag.name {ToDocSub Daughters V})|In
 	  end nil}
       end
    in
