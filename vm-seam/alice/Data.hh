@@ -25,7 +25,7 @@
 
 class Transform;
 
-class Alice {
+class DllExport Alice {
 public:
   static const BlockLabel Array   = MIN_DATA_LABEL;
   static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 1);
@@ -48,7 +48,7 @@ public:
   }
 };
 
-class Array: private Block {
+class DllExport Array: private Block {
 private:
   enum { LENGTH_POS, BASE_SIZE };
 public:
@@ -86,7 +86,7 @@ public:
   }
 };
 
-class Cell: private Block {
+class DllExport Cell: private Block {
 protected:
   enum { VALUE_POS, SIZE };
 public:
@@ -127,7 +127,7 @@ public:
   }
 };
 
-class Constructor: private ConcreteRepresentation {
+class DllExport Constructor: private ConcreteRepresentation {
 private:
   enum { NAME_POS, TRANSFORM_POS, SIZE };
   static ConcreteRepresentationHandler *handler;
@@ -160,7 +160,7 @@ public:
   Transform *GetTransform();
 };
 
-class ConVal: private Block {
+class DllExport ConVal: private Block {
 protected:
   enum { CON_POS, BASE_SIZE };
 public:
@@ -203,7 +203,7 @@ public:
   }
 };
 
-class Real: private Chunk {
+class DllExport Real: private Chunk {
 public:
   using Chunk::ToWord;
 
@@ -230,7 +230,7 @@ public:
   }
 };
 
-class TagVal: private Block {
+class DllExport TagVal: private Block {
 public:
   using Block::ToWord;
 
@@ -262,7 +262,7 @@ public:
   }
 };
 
-class UniqueConstructor: public Constructor {
+class DllExport UniqueConstructor: public Constructor {
 public:
   static UniqueConstructor *New(String *id) {
     return static_cast<UniqueConstructor *>
@@ -276,7 +276,7 @@ public:
   }
 };
 
-class Vector: private Block {
+class DllExport Vector: private Block {
 protected:
   enum { LENGTH_POS, BASE_SIZE };
 public:
@@ -316,7 +316,7 @@ public:
   }
 };
 
-class Record: private Block {
+class DllExport Record: private Block {
 protected:
   enum { WIDTH_POS, BASE_SIZE };
 public:

@@ -19,9 +19,9 @@
 
 class TagVal;
 
-typedef  word (*concrete_constructor)(TagVal *);
+typedef word (*concrete_constructor)(TagVal *);
 
-class AliceLanguageLayer {
+class DllExport AliceLanguageLayer {
 public:
   class TransformNames {
   public:
