@@ -54,11 +54,11 @@ public:
     self = new RaiseInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, word exn) {
-    taskStack->PushFrame(RaiseFrame::New(self, exn)->ToWord());
+  static void PushFrame(Thread *thread, word exn) {
+    thread->PushFrame(RaiseFrame::New(self, exn)->ToWord());
   }
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -69,9 +69,10 @@ public:
 //
 RaiseInterpreter *RaiseInterpreter::self;
 
-Interpreter::Result RaiseInterpreter::Run(TaskStack *taskStack) {
-  RaiseFrame *frame = RaiseFrame::FromWordDirect(taskStack->GetFrame());
+Interpreter::Result RaiseInterpreter::Run() {
+  RaiseFrame *frame = RaiseFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Scheduler::currentData = frame->GetExn();
+  Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
   return Interpreter::RAISE;
 }
 
@@ -103,7 +104,7 @@ DEFINE2(Thread_raiseIn) {
     if (state == Thread::TERMINATED) {
       RAISE(PrimitiveTable::Thread_Terminated);
     } else {
-      RaiseInterpreter::PushFrame(thread->GetTaskStack(), x1);
+      RaiseInterpreter::PushFrame(thread, x1);
       thread->SetArgs(0, Store::IntToWord(0));
       if (state == Thread::BLOCKED) {
 	Future *future = static_cast<Future *>
@@ -138,10 +139,11 @@ DEFINE1(Thread_state) {
 
 DEFINE1(Thread_suspend) {
   DECLARE_THREAD(thread, x0);
-  Scheduler::SuspendThread(thread);
   if (thread == Scheduler::GetCurrentThread()) {
-    PREEMPT;
+    Scheduler::nArgs = 0;
+    SUSPEND;
   } else {
+    Scheduler::SuspendThread(thread);
     RETURN_UNIT;
   }
 } END
