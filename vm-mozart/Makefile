@@ -223,10 +223,16 @@ Default.import: Base.import Other.import
 $(PREFIX)/bin/%: %
 	install -c -m 555 $< $@
 
-$(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
+$(PREFIX)/lib/Base.ozf: lib/NewBase.ozf
+	install -c -m 444 $< $@
+
+lib/NewBase.ozf: lib/Base.sml $(MINIMALINSTALL)
 	$(PREFIX)/bin/stoc $(STOC_OPTS) -c $< -o $@
 
-$(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
+$(PREFIX)/lib/%: lib/New%
+	install -c -m 444 $< $@
+
+lib/New%: lib/% lib/%.sig $(MINIMALINSTALL)
 	$(PREFIX)/bin/stoc $(STOC_OPTS) --replacesign $< $<.sig $@
 
 clean:
