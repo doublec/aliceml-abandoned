@@ -100,7 +100,9 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \Warning options:\n\
 	      \\t--(no-)warn-shadowing\n\
 	      \\t\tWhether to warn about shadowing of identifiers.\n\
-	      \Bootstrap options:\n\
+	      \Language options:\n\
+	      \\t--(no-)reexport-import\n\
+	      \\t\tMake imported entities part of the component.\n\
 	      \\t--(no-)implicit-import\n\
 	      \\t\tWhether the SML Standard Basis is made available.\n\
 	      \\t--implicit-import-file <import file>\n\
@@ -171,7 +173,8 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 
 	val booleanSwitches =
 	    [("warn-shadowing", Warn.shadowing),
-	     ("implicit-import", Bootstrap.implicitImport),
+	     ("reexport-import", Language.reexportImport),
+	     ("implicit-import", Language.implicitImport),
 	     ("dump-phases", Debug.dumpPhases),
 	     ("dump-abstraction-result", Debug.dumpAbstractionResult),
 	     ("dump-elaboration-result", Debug.dumpElaborationResult),
@@ -204,16 +207,16 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    (TextIO.output (TextIO.stdOut, version ^ "\n");
 	     options rest)
 	  | options ("--rtt-level=no"::rest) =
-	    (Bootstrap.rttLevel := Bootstrap.NO_RTT;
+	    (Language.rttLevel := Language.NO_RTT;
 	     options rest)
 	  | options ("--rtt-level=core"::rest) =
-	    (Bootstrap.rttLevel := Bootstrap.CORE_RTT;
+	    (Language.rttLevel := Language.CORE_RTT;
 	     options rest)
 	  | options ("--rtt-level=full"::rest) =
-	    (Bootstrap.rttLevel := Bootstrap.FULL_RTT;
+	    (Language.rttLevel := Language.FULL_RTT;
 	     options rest)
 	  | options ("--implicit-import-file"::file::rest) =
-	    (Bootstrap.implicitImportFile := SOME file;
+	    (Language.implicitImportFile := SOME file;
 	     options rest)
 	  | options (s::rest) =
 	    if checkBooleanSwitches (s, booleanSwitches) then options rest

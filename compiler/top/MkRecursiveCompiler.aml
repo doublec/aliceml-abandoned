@@ -142,12 +142,12 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	fun processBasic process (desc, s) =
 	    process
 	    (desc,
-	     if not(!Switches.Bootstrap.implicitImport)
+	     if not(!Switches.Language.implicitImport)
 	     orelse isBaseSig desc then s
 	     else
 		 let
 		     val name = Option.getOpt
-				(!Switches.Bootstrap.implicitImportFile,
+				(!Switches.Language.implicitImportFile,
 				 stockhome () ^ "Default.import")
 		 in
 		     String.map (fn #"\n" => #" " | c => c) (readFile name)

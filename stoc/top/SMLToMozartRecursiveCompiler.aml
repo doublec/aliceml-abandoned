@@ -70,7 +70,7 @@ structure SMLToMozartRecursiveCompiler =
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "SMLToMozartMain.f")
+	    ref (fn _ => raise Crash.Crash "SMLToMozartRecursiveCompiler.f")
 
 	structure MozartTarget =
 	    MkMozartTarget(structure Switches = Switches

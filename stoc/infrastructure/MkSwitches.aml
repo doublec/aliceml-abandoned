@@ -23,13 +23,14 @@ struct
 	val shadowing				= ref false
     end
 
-    structure Bootstrap =
+    structure Language =
     struct
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
+	val rttLevel				= ref NO_RTT
+	val reexportImport			= ref false
 	val implicitImport			= ref true
 	val implicitImportFile			= ref(NONE : string option)
-	val rttLevel				= ref NO_RTT
     end
 
     structure Debug =

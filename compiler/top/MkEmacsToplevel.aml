@@ -66,11 +66,15 @@ functor MkEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 
 	fun stot nil =
 	    let
+		open RecursiveCompiler.Switches
+		val _ = Debug.dumpElaborationSig := false
+		val _ = Language.reexportImport := true
 		val (compilerContext, targetContext) =
 		    eval ("", RecursiveCompiler.empty,
 			  RecursiveCompiler.Target.C.new ())
 	    in
-		RecursiveCompiler.Switches.Bootstrap.implicitImport := false;
+		Debug.dumpElaborationSig := true;
+		Language.implicitImport := false;
 		loop (compilerContext, targetContext)
 	    end
 	  | stot (_::_) = (usage (); OS.Process.failure)

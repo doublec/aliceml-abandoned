@@ -19,13 +19,14 @@ sig
 	val shadowing :				bool ref
     end
 
-    structure Bootstrap :
+    structure Language :
     sig
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
+	val rttLevel :				rtt_level ref
+	val reexportImport :			bool ref
 	val implicitImport :			bool ref
 	val implicitImportFile :		string option ref
-	val rttLevel :				rtt_level ref
     end
 
     structure Debug :

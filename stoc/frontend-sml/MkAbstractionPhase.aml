@@ -1278,11 +1278,7 @@ struct
 		val (modlongid', E') = trLongStrId E longstrid
 		val   _              = unionInf(E,E')
 	   in
-		(foldiInfs(trOpenDecInf(E,i))
-		(foldiVals(trOpenDecVal(E,i,SOME modlongid'))
-		(foldiTys (trOpenDecTy (E,i,modlongid'))
-		(foldiStrs(trOpenDecStr(E,i,modlongid'))
-		(foldiSigs(trOpenDecSig(E,i,modlongid')) acc E') E') E') E') E')
+		trOpenDec (E,i,SOME modlongid') (E',acc)
 	   end
 
 	 | EMPTYDec(i) =>
@@ -1460,6 +1456,13 @@ struct
 	   end
 
 
+    and trOpenDec (E,i,modlongido') (E',acc) =
+	(foldiInfs(trOpenDecInf(E,i))
+	(foldiVals(trOpenDecVal(E,i,modlongido'))
+	(foldiTys (trOpenDecTy (E,i,modlongido'))
+	(foldiStrs(trOpenDecStr(E,i,modlongido'))
+	(foldiSigs(trOpenDecSig(E,i,modlongido')) acc E') E') E') E') E')
+
     and trOpenDecInf (E,i) (vid', (_,inf), acc) =
 	let
 	    val name    = VId.toString vid'
@@ -1493,42 +1496,55 @@ struct
 	    O.ValDec(i, pat', exp') :: acc
 	end
 
-    and trOpenDecTy (E,i,modlongid') (tycon', (_,stamp1,E'), acc) =
+    and trOpenDecTy (E,i,modlongido') (tycon', (_,stamp1,E'), acc) =
 	let
 	    val name       = TyCon.toString tycon'
 	    val stamp2     = Stamp.new()
-	    val typid'     = O.Id(i, stamp2, Name.ExId name)
-	    val typlab'    = O.Lab(i, Label.fromString name)
-	    val typlongid' = O.LongId(i, modlongid', typlab')
+	    val typid1'    = O.Id(i, stamp1, Name.ExId name)
+	    val typid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val typlongid' = case modlongido'
+			       of NONE            => O.ShortId(i, typid1')
+			        | SOME modlongid' =>
+				   O.LongId(i, modlongid',
+					    O.Lab(i, Label.fromString name))
 	    val typ'       = O.ConTyp(i, typlongid')
 	    val _          = insertTy(E, tycon', (i,stamp2,E'))
 	in
-	    O.TypDec(i, typid', typ') :: acc
+	    O.TypDec(i, typid2', typ') :: acc
 	end
 
-    and trOpenDecStr (E,i,modlongid') (strid', (_,stamp1,E'), acc) =
+    and trOpenDecStr (E,i,modlongido') (strid', (_,stamp1,E'), acc) =
 	let
 	    val name    = StrId.toString strid'
 	    val stamp2  = Stamp.new()
-	    val modid'  = O.Id(i, stamp2, Name.ExId name)
-	    val modlab' = O.Lab(i, Label.fromString name)
-	    val mod'    = modlongidToMod(O.LongId(i, modlongid', modlab'))
+	    val modid1' = O.Id(i, stamp1, Name.ExId name)
+	    val modid2' = O.Id(i, stamp2, Name.ExId name)
+	    val mod'    = modlongidToMod
+			    (case modlongido'
+			       of NONE            => O.ShortId(i, modid1')
+			        | SOME modlongid' =>
+				   O.LongId(i, modlongid',
+					    O.Lab(i, Label.fromString name)))
 	    val _       = insertStr(E, strid', (i,stamp2,E'))
 	in
-	    O.ModDec(i, modid', mod') :: acc
+	    O.ModDec(i, modid2', mod') :: acc
 	end
 
-    and trOpenDecSig (E,i,modlongid') (sigid', (_,stamp1,E'), acc) =
+    and trOpenDecSig (E,i,modlongido') (sigid', (_,stamp1,E'), acc) =
 	let
 	    val name       = SigId.toString sigid'
 	    val stamp2     = Stamp.new()
-	    val infid'     = O.Id(i, stamp2, Name.ExId name)
-	    val inflab'    = O.Lab(i, Label.fromString name)
-	    val inflongid' = O.LongId(i, modlongid', inflab')
+	    val infid1'    = O.Id(i, stamp1, Name.ExId name)
+	    val infid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val inflongid' = case modlongido'
+			       of NONE            => O.ShortId(i, infid1')
+			        | SOME modlongid' =>
+				   O.LongId(i, modlongid',
+					    O.Lab(i, Label.fromString name))
 	    val inf'       = O.ConInf(i, inflongid')
 	    val _          = insertSig(E, sigid', (i,stamp2,E'))
 	in
-	    O.InfDec(i, infid', inf') :: acc
+	    O.InfDec(i, infid2', inf') :: acc
 	end
 
 
@@ -3238,25 +3254,41 @@ struct
 
   (* Announcements *)
 
-    and trAnn (E,desc) ann = Vector.rev(Vector.fromList(trAnn' (E,desc,[]) ann))
-    and trAnn'(E,desc,acc) =
+    and trAnn (E,E',desc) ann =
+	let
+	    val (imps',decs') = trAnn' (E,E',desc,[],[]) ann
+	in
+	    ( Vector.rev(Vector.fromList imps')
+	    , Vector.rev(Vector.fromList decs') )
+	end
+
+    and trAnn'(E,E',desc,acc1,acc2) =
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
 		val s     = loadSign(desc, url)
-		val E'    = BindEnvFromSig.envFromSig(i, s)
+		val E''   = BindEnvFromSig.envFromSig(i, s)
 		val _     = insertScope E
-		val imps' = trImp (E,E') imp
-		val _     = mergeScope E
+		val imps' = trImp (E,E'') imp
+		val E'''  = splitScope E
+		val _     = union(E,E''')
+		val acc2' = if !Switches.Language.reexportImport then
+				trOpenDec (E',i,NONE) (E''',acc2)
+			    else
+				acc2
 	   in
-		O.ImpAnn(i, imps', url) :: acc
+		( O.ImpAnn(i, imps', url) :: acc1, acc2' )
 	   end
 
 	 | EMPTYAnn(i) =>
-		acc
+		(acc1, acc2)
 
 	 | SEQAnn(i, ann1, ann2) =>
-		trAnn' (E, desc, trAnn' (E,desc,acc) ann1) ann2
+	   let
+		val (acc1',acc2') = trAnn' (E,E',desc,acc1,acc2) ann1
+	   in
+		trAnn' (E,E',desc,acc1',acc2') ann2
+	   end
 
 
   (* Programs and components *)
@@ -3277,15 +3309,17 @@ struct
 
     fun trComponent (E,desc) (Component(i, ann, programo)) =
 	let
-	    val  _    = insertScope E
-	    val anns' = trAnn (E,desc) ann
-	    val  _    = insertScope E
-	    val decs' = trProgramo E programo
-	    val  E'   = splitScope E
-	    val  _    = deleteScope E
-	    val  _    = union(E,E')
+	    val  E'            = new()
+	    val  _             = insertScope E
+	    val (anns',decs1') = trAnn (E,E',desc) ann
+	    val  _             = insertScope E
+	    val  _             = union(E,E')
+	    val  decs2'        = trProgramo E programo
+	    val  E''           = splitScope E
+	    val  _             = deleteScope E
+	    val  _             = union(E,E'')
 	in
-	    O.Comp(i, anns', decs')
+	    O.Comp(i, anns', Vector.append(decs1',decs2'))
 	end
 
 
