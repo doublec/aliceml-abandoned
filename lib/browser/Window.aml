@@ -544,7 +544,7 @@ struct
 			      ^ String.extract(PrettyPrint.toString
 					       (PPInf.ppInf(#typ(r)),
 						50),0,SOME(50)))
-		     ;())
+		     ;()) handle _ => ()
 	 end
     
      fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
@@ -586,10 +586,10 @@ struct
 							    x2,
 							    y2')
 				in                                             
-				    (  postT n  
-				    ; GtkCanvas.itemLowerToBottom(re)
-				    ; GtkCanvas.itemLowerToBottom(re') 
-				    ; destroySelectionMarkings() 
+				    (  postT n   
+				  ; GtkCanvas.itemLowerToBottom(re) 
+				 ; GtkCanvas.itemLowerToBottom(re') 
+				    ; destroySelectionMarkings()
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
 				    ; case n of
