@@ -29,7 +29,7 @@ private:
   struct SupportedVersion {
     static const u_int16 majorMin = 45;
     static const u_int16 minorMin = 0;
-    static const u_int16 majorMax = 46;
+    static const u_int16 majorMax = 48;
     static const u_int16 minorMax = 0;
   };
 
