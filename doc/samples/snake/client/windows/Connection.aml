@@ -63,7 +63,7 @@ struct
 	    Gtk.signalConnect (cancelButton, "clicked", 
 			       fn _ => mainQuit connectToServer);
 
-	    Gtk.entrySetText (clientUrl, "http://");
+	    Gtk.entrySetText (clientUrl, "x-alice://");
 	    Gtk.widgetGrabFocus clientUrl;
 	    Gtk.containerSetBorderWidth (connectToServer, 10);
 
