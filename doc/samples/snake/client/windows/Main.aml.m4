@@ -50,10 +50,12 @@ fun highscoreToString score =
 	     ^ (Int.toString player)  ^ "  Level: "
 	     ^ (Int.toString level)   ^ "\n\n" ^ str)
 
-	fun toString () = 
-	    Highscore.foldl toString' "" score
+	fun toString score = 
+	    case Highscore.foldl toString' "" score of
+		""	=> "Highscore is empty."
+	    |	s 	=> s
     in
-	toString ()
+	toString score
     end
 
 (* creates a string from a given time with format: h : m : s *)
