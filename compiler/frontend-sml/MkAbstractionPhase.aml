@@ -1887,7 +1887,7 @@ struct
 			val exp'     = case laz
 					 of SANSLazy  => caseexp'
 					  | WITHLazy  => O.LazyExp(i', caseexp')
-					  | WITHSpawn => O.LazyExp(i', caseexp')
+					  | WITHSpawn => O.SpawnExp(i',caseexp')
 		    in
 			funexp(Vector.toList valids', exp')
 		    end
