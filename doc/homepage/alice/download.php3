@@ -15,8 +15,8 @@
 <?php section("preview", "preview") ?>
 
   <P>
-    <B>For the brave</B>, the current development version is available
-    as a <I>technology preview</I>:
+    <B>For the brave</B>, a snapshot of the current development version is
+    available as a <I>technology preview</I>:
   </P>
 
   <UL>
