@@ -34,7 +34,7 @@ struct
 
     fun length   xs		= length'(xs, 0)
     and length'( nil,  i)	= i
-      | length'(y::ys, i)	= length'(ys, i+1)
+      | length'(x::xs, i)	= length'(xs, i+1)
 
     fun hd(x::xs)		= x
       | hd  _			= raise Empty
