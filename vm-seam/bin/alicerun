@@ -33,7 +33,7 @@ case $(uname) in
 	;;
 esac
 
-ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc${sep}pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.dll${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
+ALICE_LOAD=pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
 
 if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then

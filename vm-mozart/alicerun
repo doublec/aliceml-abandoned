@@ -32,17 +32,17 @@ fi
 case $(uname) in
     CYGWIN*)
 	: ${OZ_LOAD:=prefix=/=c:/cygwin/\;cache=$OZHOME/cache/}
-	SEP=\;
-	ESC=
+	sep=\;
+	esc=
 	;;
     *)
 	: ${OZ_LOAD:=cache=$OZHOME/cache/}
-	SEP=:
-	ESC=\\
+	sep=:
+	esc=\\
 	;;
 esac
 
-ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz${ESC}:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'${SEP}pattern='?{x}'='?{x}'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'
+ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz${esc}:'?{x}'${sep}pattern='?{x}'='?{x}.ozf'${sep}pattern='?{x}'='?{x}'
 
 if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then
