@@ -3,21 +3,21 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#ifndef __GENERIC__NATIVE_TASK_AUTHORING_HH__
-#define __GENERIC__NATIVE_TASK_AUTHORING_HH__
+#ifndef __GENERIC__NATIVE_AUTHORING_HH__
+#define __GENERIC__NATIVE_AUTHORING_HH__
 
 #include "adt/HashTable.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Backtrace.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Interpreter.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Backtrace.hh"
 
 #define DEFINE0(name)						\
   static Interpreter::Result name(TaskStack *taskStack) {	\
