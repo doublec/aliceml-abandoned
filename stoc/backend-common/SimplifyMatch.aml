@@ -205,7 +205,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	       | _ => propagateElses (!thenTreeRef, !elseTreeRef))
 	  | propagateElses (Leaf (_, _, _), _) = ()
 	  | propagateElses (Default, _) =
-	    Crash.crash "MatchCompilationPhase.propagateElses"
+	    Crash.crash "SimplifyMatch.propagateElses"
 
 	(*--** this can be optimized by imposing a total ordering on pos *)
 	fun testSetMember (pos, test, (pos', test')::testSetRest) =
@@ -239,7 +239,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				  trueTests, (pos, test)::falseTests))
 	      | computeTestSets (Leaf (_, _, _), _, _) = ()
 	      | computeTestSets (Default, _, _) =
-		Crash.crash "MatchCompilationPhase.computeTestSets"
+		Crash.crash "SimplifyMatch.computeTestSets"
 	end
 
 	fun disentailed (pos, test, (pos', test')::rest) =
@@ -264,7 +264,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		 optimizeGraph thenGraphRef;
 		 optimizeGraph elseGraphRef)
 	  | optimizeGraph (ref (Leaf (_, _, _))) = ()
-	  | optimizeGraph _ = Crash.crash "MatchCompilationPhase.optimizeGraph"
+	  | optimizeGraph _ = Crash.crash "SimplifyMatch.optimizeGraph"
 
 	fun countShared (Node (_, _, ref thenGraph, ref elseGraph,
 			       _, _, count, _)) =
@@ -278,8 +278,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		else ()
 	    end
 	  | countShared (Leaf (_, count, _)) = count := !count + 1
-	  | countShared Default =
-	    Crash.crash "MatchCompilationPhase.countShared"
+	  | countShared Default = Crash.crash "SimplifyMatch.countShared"
 
 	fun buildGraph (matches, elseExp) =
 	    let
