@@ -275,7 +275,8 @@ struct
 			   ("y", Gtk.DOUBLE 0.0)])
 
 
-    fun makePopup {node = n, widthhandler = w, depthhandler = d, reinspecthandler = r} = 
+    fun makePopup {node = n, widthhandler = w, depthhandler = d, 
+		   reinspecthandler = r} = 
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
 	in

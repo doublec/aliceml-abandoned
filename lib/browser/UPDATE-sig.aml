@@ -13,10 +13,10 @@
  *
  *)
 
+import structure Inf from "x-alice:/lib/rtt/Inf"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
-import structure MainDictionary from "MainDictionary"
 
 local
     open Types
@@ -29,21 +29,26 @@ signature UPDATE =
 
 	val update: 
 	    node * Reflect.value * 
-	    (Reflect.value * Type.t  * node * int * int -> node) -> unit
+	    (Reflect.value * Type.t  * node * int * int -> node) * 
+	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
 
         (* eigentlicher update-Mechanismus *)
 	val tell: Reflect.value * node list * 
-	          (Reflect.value * Type.t  * node * int * int -> node)
+	          (Reflect.value * Type.t  * node * int * int -> node) * 
+		  (Reflect.value * Inf.t  * node * int * int -> node) 
 		  -> unit
 
         (* constraint watcher *) 
         val watcher: 
 	    'a  * Reflect.value * 
-	    (Reflect.value * Type.t  * node * int * int -> node)
+	    (Reflect.value * Type.t  * node * int * int -> node) * 
+	    (Reflect.value * Inf.t  * node * int * int -> node)
 	    -> Thread.thread
 
-	val reinspect: 
-	    node * (Reflect.value * Type.t  * node * int * int -> node) -> unit
+	val reinspect:
+	    node * (Reflect.value * Type.t * node * int * int -> node) * 
+	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
+
 
 end
 

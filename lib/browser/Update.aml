@@ -90,26 +90,24 @@ struct
                  ; iterMove (dict,dy,i+1,highest_i) )
 	
     (* update *)
-    and update (n,va,f) = 
+    and update (n,va,f,g) = 
 	( setDazzled n 
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
-	       (*val y_pos = Layout.sum_up(li,fn n 
-					 => if n = Empty then 0
-					    else Layout.get_ydim(n)+1)*)
 	       val old_ydim = Layout.get_ydim(anc)
-	       val t = getTyp(getDesc(n)) 
-		   handle General.Match => raise UpdateError
-	       val new = f(va,t,getParent(n),getIndex(n),getDepth(n))
+	       val new = case getDesc(n) of
+		         VALUE(r) => f(va,#typ(r),getParent(n),getIndex(n),
+				       getDepth(n))
+		       | I_VALUE(r) => g(va,#typ(r),getParent(n),getIndex(n),
+					 getDepth(n))
+                       | INTERPUNCT => raise UpdateError 
 	       val _ = updateChild(getParent(n),getIndex(n),new)
-              (*  val _ = TextIO.print("UPDATE: updateChild gemacht\n") *)
 	       val node = if getParent(new) = Empty then new else anc 
 	       val (x_pos,y_pos) = Services.getPosition(getGroup(anc))
-              (* val _ = TextIO.print("UPDATE: node zugewiesen\n") *)
 	   in ( (y_pos;Gtk.objectDestroy(getGroup(n))) 
-              (* ; TextIO.print("UPDATE: alte Gruppe zerstoert\n") *)
+               ; TextIO.print("UPDATE: alte Gruppe zerstoert\n") 
 	       ; Layout.layout(node)
                ; TextIO.print ("UPDATE: beginne zu zeichnen...\n")
 	       ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
@@ -128,15 +126,15 @@ struct
 	   end )
 	
     (* tell *)
-    and tell (va,li,f) =  
+    and tell (va,li,f,g) =  
 	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 	                           li
-	in (List.map (fn n => update(n,va,f)) new_li ; ())
+	in (List.map (fn n => update(n,va,f,g)) new_li ; ())
 	end   
 
        (* watcher *)
-	and watcher (future,va,f) = 
+	and watcher (future,va,f,g) = 
 	    Thread.thread 
 	    (fn () 
 	     => ( case TransientDictionary.iterLookup 
@@ -151,15 +149,15 @@ struct
 		  => ( Future.await(future)
 		     ; let val new_l = #2(valOf(TransientDictionary.lookup
 						(Dictionaries.transdict,i)))
-		       in Server.serve(fn () => tell(va,new_l,f))
+		       in Server.serve(fn () => tell(va,new_l,f,g))
 		       end ) ))
 
     (* reinspect *)
-    and reinspect (n,f) = 
+    and reinspect (n,f,g) = 
        (Thread.thread
 	(fn () =>
         (let val va = getValue(getDesc(n))
-	 in Server.serve(fn () => update(n,va,f))
+	 in  Server.serve(fn () => update(n,va,f,g))
 	 end
 	; TextIO.print ("REINSPECT: angeklickter Knoten hat Tiefe "
 			^Int.toString(getDepth(n))
@@ -168,7 +166,8 @@ struct
 			^" !!!\n") )
 	     handle General.Match => raise UpdateError )
       ; () )
- 	    
+
+	
 end
 
 end

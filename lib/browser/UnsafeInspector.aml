@@ -18,7 +18,6 @@ import structure Types from "Types"
 import structure MkColorTable from "MkColorTable"
 import structure CreateDoc from "CreateDoc"
 import structure NewNode from "NewNode"
-import structure NewNodeInf from "NewNodeInf"
 import structure Layout from "Layout"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
@@ -51,7 +50,7 @@ struct
     
     (* inspectInf *)
     and inspectInf (v,t) = 
-	let val n = NewNodeInf.newNodeInf(v,t)
+	let val n = NewNode.newNodeInf(v,t)
 	in  ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,!WindowManager.act_line
 			       , DrawNodes.groupToPosition)

@@ -3,8 +3,9 @@ import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
-
 import structure Inf from "x-alice:/lib/rtt/Inf";
+
+UnsafeInspector.init();
 
 signature SIMPLE = 
 sig

@@ -12,11 +12,12 @@
  *   $Revision$
  *
  *)
+
 import structure TextIO from "x-alice:/lib/system/TextIO"
-import structure Gdk           from "x-alice:/lib/gtk/Gdk"
-import structure Gtk           from "x-alice:/lib/gtk/Gtk"
-import structure GtkCanvas           from "x-alice:/lib/gtk/GtkCanvas"
+
+import structure Fixity from "x-alice:/lib/rtt/Fixity"
 import structure Type from "x-alice:/lib/rtt/Type"
+import structure Inf from "x-alice:/lib/rtt/Inf"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Path from "x-alice:/lib/rtt/Path"
 import structure Name from "x-alice:/lib/rtt/Name"
@@ -32,14 +33,14 @@ import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Update from "Update"
 import structure MkPathTable from "MkPathTable"
+import structure Services from "Services"
 import structure Settings from "Settings"
 import structure WindowManager from "WindowManager"
+import structure NewNodeHelper from "NewNodeHelper"
 import signature NEW_NODE from "NEW_NODE-sig"
 
-import structure Services from "Services" (* to be removed *)
-
 local
-    open Types Helper MkPathTable Settings Dictionaries
+    open Types Helper MkPathTable Settings Dictionaries NewNodeHelper
  
 in	
     
@@ -48,29 +49,6 @@ struct
     
     exception Future
     exception createGraph_unknownNode
-
-    fun createGroupItem (parent,x,y) = 
-	           GtkCanvas.itemNew(parent, 
-				     GtkCanvas.GROUP,
-				     [("x", Gtk.DOUBLE y), 
-				      ("y", Gtk.DOUBLE y)])
-    
-    fun setGroup pnode = case pnode of 
-	Simple(r)    => createGroupItem(#group(r),0.0,0.0) 
-      | Container(r) => createGroupItem(#group(r),0.0,0.0) 
-      | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
-      | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
-      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
-      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
-      | Empty        => let 
-			    val _ = WindowManager.new()
-			    val _ = 
-			      TextIO.print(" Creating Group with Empty Parent")
-			in
-			    createGroupItem(!WindowManager.canvasroot,0.0,0.0)
-			end
-      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
-      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
 
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
@@ -195,7 +173,9 @@ struct
          | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
          | _ => raise  createGraph_unknownNode )
 
-    (* listdescToNode *)
+(* spezielle Behandlung von Listen *)
+
+   (* listdescToNode *)
     and listdescToNode (va,t,p,i,d,ld) = 
        case ld of 
 	Indet(l,f) 
@@ -250,7 +230,6 @@ struct
 		   end
 	   end
     
-    (* ListElemArray *)
     and listElemArray(list,length,listtyp,p,d,b) = 
 	let val rl = ref 0
 	    val na = Array.array(length,Empty)
@@ -269,7 +248,9 @@ struct
 	     end ; rl := !rl + 1)
 	   ; na )
 	end
-                                             
+                   
+(* spezielle Behandlung von Records,Tupeln und Datentypen *)
+                         
     (* treatProd *)
     and treatProd (va,t,p,i,d,row) = 
 	let
@@ -340,7 +321,7 @@ struct
 					  UnsafeValue.projTagged)
 	      | _ => let
 			 val inva = UnsafeValue.projTaggedTuple(va,1,0)
-			 val node = createGraph (inva,intyp,upperConcat,0,d+1) 
+			 val node = createGraph (inva,intyp,upperConcat,2,d+1) 
 		     in 
 			 node 
 		     end
@@ -444,7 +425,9 @@ struct
 		 ; Array.update(concat_kids,1,sep_node)
 		 ;concat)                                       
 	end
- 
+
+(* spezielle Behandlung von Werten, deren Typ ein sog. Pfadtyp ist *) 
+
     (* newPath *)
     and newPath (v,t,p,i,d,path) =
         (case PathMap.lookup(pathTable, path) of
@@ -527,84 +510,8 @@ struct
          | LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
          | EMBEDDED(v,t) => (createGraph(v,t,p,i,d)) )
 
-    (* createSimple *) 
-    and createSimple (desc,p,i,d,str,color,f) = Simple {desc = desc, 
-							parent = p,
-							index = i,
-							depth = d,
-							rep = str,
-							width = 
-							ref(String.length
-							    (str)), 
-							color = color, 
-							status = ref DAZZLED,
-							group = f(p)}
-	
-    (* createConcat *)
-    and createConcat (desc,p,i,d,na,f) =  Concat {desc = desc,
-						      parent = p,
-						      index  = i,
-						      depth = d,
-						      kids = na, 
-						      width  = ref ~1,
-						      height = ref ~1,
-						      status = ref DAZZLED,
-						      group = f(p)}
-
-    (* createContainer *)
-    and createContainer (desc,p,i,d,na,f) =  
-	Container {desc = desc, 
-		   parent = p,
-		   index = i,
-		   depth = d,
-		   kids = na, 
-		   width = ref ~1,
-		   height = ref ~1,
-		   l_width = ref ~1,
-		   status = ref DAZZLED,
-		   group = f(p)}
-
-    (* createLimit *)
-    and createLimit (desc,sort,p,i,d,f) =  Limit  {desc = desc,
-						   sort = sort, 
-						   parent = p,
-						   index  = i,
-						   depth = d,
-						   status = ref DAZZLED,
-						   group = f(p)}
-
-    (* createRelNode *)
-    and createRelNode (desc,c,p,i,d,str,rman,f) = 
-	let val node = RelNode {desc = desc, 
-				content = ref c,
-				parent = p,  
-				index = i, 
-				depth = d,
-				counter = ref 1, 
-				rep = str, 
-				relman = ref rman, 
-				width = ref ~1,
-				height = ref ~1,
-				color = REL_COLOR  , 
-				status = ref DAZZLED, 
-				group = f(p)}
-	    val _ = relnumber := (!relnumber) + 1
-	in node
-	end
-
-    (* createRelRefNode *)
-    and createRelRefNode (desc,p,i,d,str,rnode,f) = 
-	RelRefNode {desc = desc, 
-		    parent = p, 
-		    index = i, 
-		    depth = d,
-		    rep = str, 
-		    relnode = rnode,
-		    width = ref(String.length(str)), 
-		    color = REL_COLOR, 
-		    status = ref DAZZLED,  
-		    group = f(p)}
-
+(* spezielle Behandlung von Promises und Futures *)
+   
     (* createTransient *) 
     and createTransient (va,t,p,i,d,tt) = 
 	let val future = UnsafeValue.cast va
@@ -642,26 +549,234 @@ struct
 					 (i,(vv,List.append(li,[concat]))))  
             | NONE  
 	      => (TransientDictionary.insertI(transdict,(va,[concat]))
-		 ; Update.watcher(future,va,createGraph) ; () )
+		 ; Update.watcher(future,va,createGraph,createGraphInf) ; () )
 	   ; concat)    
 	end  
-    
-    (* queryDepth *)
-    and queryDepth (va,t,p,i,d,row,f) = 
-	if d > !max_depth 
-	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
-			      p,i,d,setGroup)
-	else f (va,t,p,i,d,row)
+  
+(* entsprechende Funktionen zur internen Darstellung von Strukturen und
+   Funktoren - analog zu newNode, createGraph und createUsualGraph (s.o.) *)
 
-    (* queryDepthL *)
-    and queryDepthL (va,t,p,i,d,ld,f) = 
-	if d > !max_depth 
-	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
-			      p,i,d,setGroup)
-	else f (va,t,p,i,d,ld)
-
-    val _ = !WindowManager.register("reinspect",fn n => Update.reinspect(n,createGraph))
+    (* newNodeInf *)
+    and newNodeInf (v,t) = let val va = UnsafeValue.cast v: Reflect.value 
+			       val i = MainDictionary. 
+				   getHighestIndexAssigned(dict) +1 
+			       val _ = RelManDictionary.update(reldict,(i,nil))
+			       val _ = Settings.relnumber := 0 
+			       val node = createGraphInf (va,t,Empty,i,0) 
+			   in (MainDictionary.insertI(dict,(node)) ; node) 
+			   end   
+ 
+    (* createGraphInf *)
+    and createGraphInf (va,t,p,i,d) = 
+	if !(Settings.relmode) 
+	    then let val ind = if p = Empty then i else getAncIndex p
+		     val relman = case RelManDictionary.lookup(reldict,ind)
+			 of SOME x => x
+		          | NONE => []
+		     val str = "Ref"^Int.toString(!(Settings.relnumber))
+		     val f = if !(Settings.tokenmode)
+				 then fn x   
+				     => if getDesc(x) = INTERPUNCT  
+					    then false  
+					else UnsafeValue.same
+					    (getValue(getDesc(x)),va)   
+			     else fn x   
+				 => if getDesc(x) = INTERPUNCT  
+					then false  
+				    else getValue(getDesc(x)) = va 
+		 in 
+		     (case List.find f relman of   
+			  NONE 
+			  => let val desc = createIValue(va,t,NO_ACTIONS)   
+				 val node = createRelNode (desc,Empty,p,i,d,
+							   str^" as ",
+							   relman,setGroup)
+				 val c = createUsualGraphInf (va,t,node,0,d) 
+				 val actrelman = case 
+				     RelManDictionary.lookup(reldict,
+							     ind)
+				     of SOME x => x
+				      | NONE => []
+			     in ( case c of     
+				 Simple(_) => c
+			       | Empty => c    
+			       | _ => ( setContent (node,c)   
+				       ; RelManDictionary.update(reldict,
+								 (ind,
+		       			        List.append([node],actrelman)))
+				       ; node ) )
+			     end     
+			| SOME n => let val rep = ( case n of 
+						   RelNode(rr) => #rep(rr)
+						 | _ => "_")
+					val str = iterTake rep	
+					val m = incrCounter n 
+					val node = 
+					    createRelRefNode (INTERPUNCT,p,i,d,
+							      str,m,setGroup)
+					val actrelman = case 
+					    RelManDictionary.lookup(reldict,
+								    ind)
+					    of SOME x => x
+					     | NONE => []
+					val part = List.partition 
+					                    (fn x => x = n)
+							    actrelman
+					val restlist = #2(part)
+				    in (RelManDictionary.update(reldict,
+								(ind,
+	       					 List.append([m],restlist)))
+					; node)
+				    end)
+		 end
+	else createUsualGraphInf (va,t,p,i,d)
 	    
+    (* createUsualGraphInf *)
+    and createUsualGraphInf (va,t,p,i,d) = 
+	(case Inf.inspect t of 
+	 Inf.Sig(s) => let val ilist = List.rev(Inf.items(s))
+		       in treatSig (va,t,p,i,d,ilist)
+		       end 
+       | Inf.Arrow(path,i1,i2) 
+	 => if d > !max_depth
+		then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+				  p,i,d,setGroup)
+	    else createSimple (createIValue(va,t,NO_ACTIONS),p,i,d,"functor",
+			       DEFAULT,setGroup)
+       | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d)
+       | Inf.Sing(m) => let val ti = #2(Inf.asMod(m))
+			  in createUsualGraphInf (va,ti,p,i,d)
+			  end
+       | _ => if d > !max_depth
+		  then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+				    p,i,d,setGroup)  
+	      else createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,setGroup) )
+
+
+    (* treatSig *)
+    and treatSig (va,t,p,i,d,ilist) = 
+	if d > !max_depth
+	    then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,p,i,d,
+			      setGroup)
+	else let val a_length = 2 + List.length(ilist)
+		 val container = 
+	             createContainer(createIValue(va,t,NO_ACTIONS),p,i,d,
+				     Array.array(a_length,Empty),setGroup)
+		 val s_begin = createSimple(INTERPUNCT,container,0,d,"struct",
+					    DEFAULT,setGroup)
+		 val s_end = createSimple(INTERPUNCT,container,a_length-1,d,
+					  "end",DEFAULT,setGroup)
+	     in ( Array.update(getKids(container),0,s_begin) 
+		 ; Array.update(getKids(container),a_length-1,s_end) 
+                 ; setItems (va,ilist,container,d+1) 
+		 ; container ) 
+	     end   
+
+    (* setItems *)
+    and setItems (va,ilist,p,d) = 
+	let val l = ref 1
+	in while !l <= List.length(ilist) do
+	    (let val node = let val vv = UnsafeValue.cast va
+				val item = (List.nth(ilist,!l-1))
+				val label = itemToLabel(item)
+				val in_vv = UnsafeValue.projPoly(vv,label)
+			    in createItemNode(in_vv,item,p,!l,d) 
+			    end 
+	     in Array.update(getKids(p),!l,node)
+	     end
+           ; l := !l + 1)
+	end
+
+    (* createItemNode *)
+    and createItemNode (vv,item,p,i,d) = 
+	case Inf.inspectItem item of
+	Inf.FixItem(_,_) 
+	=> let val fix = #2(Inf.asFixItem(item))
+	       val str = case fix of
+		         Fixity.NONFIX => "  nonfix" 
+	               | Fixity.PREFIX(i) => "  prefix "^Int.toString(i)
+		       | Fixity.POSTFIX(i) => "  postfix "^Int.toString(i)
+		       | Fixity.INFIX(i,Fixity.LEFT) 
+			 => "  infix "^Int.toString(i) 
+		       | Fixity.INFIX(i,Fixity.RIGHT) 
+			 => "  infixr "^Int.toString(i) 
+		       | Fixity.INFIX(i,Fixity.NEITHER) 
+			 => "  infixn "^Int.toString(i)
+	   in createSimple (INTERPUNCT,p,i,d,str,DEFAULT,setGroup) 
+	   end 
+      | Inf.ValItem(l,t) 
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,Array.array(4,Empty),
+					setGroup)
+	       val s_val = createSimple (INTERPUNCT,conc,0,d,"  val ",DEFAULT,
+					 setGroup)
+	       val lab = createSimple (INTERPUNCT,conc,1,d,
+				       Label.toString(l),LABEL_COLOR,
+				       setGroup)
+	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
+				       setGroup)
+	       val value =  createGraph (vv,t,conc,3,d)  
+	   in ( Array.update(getKids(conc),0,s_val)
+	       ; Array.update(getKids(conc),1,lab)
+	       ; Array.update(getKids(conc),2,equ)
+	       ; Array.update(getKids(conc),3,value)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc )
+	   end
+      | Inf.TypItem(path,_)
+	=> let val label = Path.toLab(path)
+	       val str = "  type "^Label.toString(label)
+	   in createSimple (INTERPUNCT,p,i,d,str,DEFAULT,setGroup)
+	   end  (* Tiefe! *)
+      | Inf.ModItem(path,inf)
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,
+					Array.array(4,Empty),setGroup)
+	       val s_struct = createSimple (INTERPUNCT,conc,1,d,"  structure ",
+					    DEFAULT,setGroup)
+	       val name = createSimple (INTERPUNCT,conc,1,d,
+					Label.toString(Path.toLab(path)),
+					LABEL_COLOR,setGroup)
+	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
+				       setGroup)
+	       val value =  createGraphInf (vv,inf,conc,3,d) 
+	   in ( Array.update(getKids(conc),0,s_struct)
+	       ; Array.update(getKids(conc),1,name)
+	       ; Array.update(getKids(conc),2,equ)
+	       ; Array.update(getKids(conc),3,value)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc )
+	   end
+      | Inf.InfItem(path,_)
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,
+					Array.array(2,Empty),setGroup)
+	       val s_sig = createSimple (INTERPUNCT,conc,0,d,"  signature ",
+					 DEFAULT,setGroup)
+	       val name = createSimple (INTERPUNCT,conc,1,d,
+					Label.toString(Path.toLab(path)),
+					LABEL_COLOR,setGroup)
+	   in ( Array.update(getKids(conc),0,s_sig)
+	       ; Array.update(getKids(conc),1,name)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc)
+	   end
+      | Inf.HiddenItem(item') 
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,
+					Array.array(2,Empty),setGroup)
+	       val ask = createSimple (INTERPUNCT,conc,0,d,"  ? ",
+				       DEFAULT,setGroup) 
+	       val h_item = createItemNode (vv,item',conc,1,d)
+	   in ( Array.update(getKids(conc),0,ask)
+	       ; Array.update(getKids(conc),1,h_item)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc)
+	   end
+
+(* Registrierung der Fkt. zum Reinspizieren von Werten beim WindowManager *)
+   
+    val _ = !WindowManager.register("reinspect",
+				    fn n => Update.reinspect(n,
+							     createGraph,
+							     createGraphInf)) 
+	
 end (* struct end *)
  
 end (* local end *)
