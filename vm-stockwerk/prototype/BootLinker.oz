@@ -112,7 +112,7 @@ define
 		  continue(args()
 			   {Record.foldR Imports
 			    fun {$ Import Rest} Key2 in
-			       Key2 = {URL.toAtom {URL.resolve Key Import.2}}
+			       Key2 = {URL.toAtom {URL.resolve Key Import.1}}
 			       if {Not {Dictionary.member ModuleTable Key2}}
 			       then loadFrame(LoadInterpreter Key2)|Rest
 			       else Rest
@@ -137,7 +137,7 @@ define
 	       Modules = {MakeTuple vector N}
 	    in
 	       for I in 1..N do Key2 in
-		  Key2 = {URL.toAtom {URL.resolve Key Imports.I.2}}
+		  Key2 = {URL.toAtom {URL.resolve Key Imports.I.1}}
 		  Modules.I = ModuleTable.Key2.2
 	       end
 	       {PushCall arg(Modules) BodyClosure Rest}

@@ -17,7 +17,6 @@ import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
 import structure MkListSort         from "../lib/utility/MkListSort"
 import structure Url                from "../lib/utility/Url"
-import structure Label              from "../lib/rtt/Label"
 import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
 
@@ -92,7 +91,7 @@ structure Link :> LINK =
 			    val resolve = Url.resolve url
 			    val importUrls =
 				Vector.map
-				(fn (label, s, sign) =>
+				(fn (s, sign) =>
 				    let
 					val url' = resolve (Url.fromString s)
 				    in
@@ -167,11 +166,10 @@ structure Link :> LINK =
 						   (false, i)))
 				(excludes, 0, NONE)
 		val imports =
-		    Vector.mapi (fn (i, url) =>
-				    (Label.fromInt i,
-				     rewrite (Url.toString url),
-				     UrlMap.lookupExistent (excludeMap, url)))
-				(excludes, 0, NONE)
+		    Vector.map (fn url =>
+				   (rewrite (Url.toString url),
+				    UrlMap.lookupExistent (excludeMap, url)))
+			       excludes
 		val includeTable =
 		    Vector.map
 		    (fn url =>
@@ -181,16 +179,14 @@ structure Link :> LINK =
 				UrlMap.lookupExistent (includeMap, url)
 			    val imports = MyComponent.imports component
 			    val importSpec =
-				Vector.mapi
-				(fn (i, (label, _, _)) =>
-				    let
-					val url = Vector.sub (importUrls, i)
-					val (included, index) =
-					    UrlMap.lookupExistent
-						(urlToIndexMap, url)
-				    in
-					(label, included, index)
-				    end) (imports, 0, NONE)
+				Vector.map (fn urls =>
+					       let
+						   val (included, index) =
+						       UrlMap.lookupExistent
+							   (urlToIndexMap, url)
+					       in
+						   (included, index)
+					       end) importUrls
 			in
 			    (importSpec, MyComponent.body (getComponent url))
 			end) includes
@@ -206,17 +202,10 @@ structure Link :> LINK =
 			    let
 				val actuals =
 				    Vector.map
-				    (fn (label, included, index) =>
-					(label,
-					 if included then
-					     Vector.sub (strs, index)
-					 else
-(*--** this gives a type error:		     #2 (Vector.sub (imports, index))*)
-(*--** as does this:			     case Vector.sub (imports, index)
-					       of {2 = str, ...} => str *)
-					     case Vector.sub (imports, index)
-					       of (_, str) => str
-				    )) importSpec
+				    (fn (included, index) =>
+					Vector.sub (if included then strs
+						    else imports, index))
+				    importSpec
 				val str = lazy body actuals
 			    in
 				Hole.fill (Vector.sub (strs, i), str)

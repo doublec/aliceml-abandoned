@@ -15,8 +15,6 @@ import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Property(get)
    Pickle(load save) at '../../Pickle.ozf'
-require
-   Helper(pushCall: PushCall) at '../../Helper.ozf'
 export
    module: ComponentComponent
 define
@@ -29,11 +27,10 @@ define
    I_PrimeSited      = 2
    I_Corrupt         = 3
    I_Sited           = 4
-   I_apply           = 5
-   I_extension       = 6
-   I_getInitialTable = 7
-   I_load            = 8
-   I_save            = 9
+   I_extension       = 5
+   I_getInitialTable = 6
+   I_load            = 7
+   I_save            = 8
 
    Component =
    tuple(I_Sited: value(SitedException)
@@ -43,10 +40,5 @@ define
 	 I_extension: value({ByteString.make "stc"})
 	 I_getInitialTable: {Property.get 'alice.getInitialTable'}#n_v
 	 I_save: Pickle.save#ri_t
-	 I_load: Pickle.load#r_t
-	 I_apply:
-	    fun {$ Body Imports TaskStack}
-	       {PushCall arg({Record.map Imports fun {$ tuple(_ Str)} Str end})
-		Body TaskStack.2}
-	    end#rr_t)
+	 I_load: Pickle.load#r_t)
 end
