@@ -1092,7 +1092,7 @@ structure CodeGen =
 			 idCode id' ::
 			 Dup ::
 			 Instanceof CDMLTuple ::
-			 Ifneq afterthrow ::
+			 Ifne afterthrow ::
 			 Pop ::
 			 New CExWrap ::
 			 Dup ::

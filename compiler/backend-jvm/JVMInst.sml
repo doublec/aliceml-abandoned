@@ -56,7 +56,6 @@ structure JVMInst =
 	  | Fconst of int
 	  | Get of INSTRUCTION list
 	  | Getfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
-	  | Getself of string
 	  | Getstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Goto of label
 	  | Iadd
@@ -67,7 +66,7 @@ structure JVMInst =
 	  | Ificmpeq of label
 	  | Ificmplt of label
 	  | Ificmpne of label
-	  | Ifneq of label
+	  | Ifne of label
 	  | Ifnull of label
 	  | Ifstatic of (stamp * INSTRUCTION list * INSTRUCTION list)
 	  | Iload of int

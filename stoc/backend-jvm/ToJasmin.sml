@@ -19,8 +19,6 @@ structure ToJasmin =
 	datatype deb = SIs of string*INSTRUCTION list
 	exception Debug of deb
 
-	val actclass= ref ""
-
 	fun makeArityString (0,x) = x
 	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
 
@@ -243,14 +241,6 @@ structure ToJasmin =
 		    enter (Non, rest)
 		  | enter (_, nil) = ()
 
-		fun doubleAssigns (inst::rest) =
-		    ((case inst of
-			Astore reg => JVMreg.countDefine reg
-		      | Istore reg => JVMreg.countDefine reg
-		      | _ => ());
-			  doubleAssigns rest)
-		  | doubleAssigns nil = ()
-
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
 		  | deadCode (Lab lab',Label l'::rest) =
@@ -327,7 +317,7 @@ structure ToJasmin =
 		  | lifeness (Ificmpne label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
 		      lifeness (insts, pos+1))
-		  | lifeness (Ifneq label'::insts, pos) =
+		  | lifeness (Ifne label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
 		      lifeness (insts, pos+1))
 		  | lifeness (Ifnull label'::insts, pos) =
@@ -360,33 +350,41 @@ structure ToJasmin =
 		    ori::inst::fuse(Store, rest)
 		  | fuse (old,nil) = nil
 
-		fun flatten (Nop, akku) =
-		    akku
-		  | flatten (Ifstatic (stamp', then', else'), akku) =
-		    List.foldr
-		    flatten
-		    akku
-		    (if Lambda.isStatic stamp'
+		fun flatten (inst, akku) =
+		    (case inst of
+			 Nop => akku
+		       | Ifstatic (stamp', then', else') =>
+			     List.foldr
+			     flatten
+			     akku
+			     (if Lambda.isStatic stamp'
 				  then then'
 			      else else')
-		  | flatten (Multi insts, akku) =
-			 List.foldr
-			 flatten
-			 akku
-			 insts
-		  | flatten (Get insts, akku) =
-			 List.foldr
-			 flatten
-			 akku
-			 insts
-		  | flatten (inst, akku) =
-			 inst :: akku
+		       | Multi insts =>
+			     List.foldr
+			     flatten
+			     akku
+			     insts
+		       | Get insts =>
+			     List.foldr
+			     flatten
+			     akku
+			     insts
+		       | stor as Astore reg =>
+			     (JVMreg.countDefine reg;
+			      stor::akku)
+		       | stor as Istore reg =>
+			     (JVMreg.countDefine reg;
+			      stor::akku)
+		       | _ =>
+			     inst ::
+			     akku)
+
 		val flattened = foldr flatten nil insts
 	    in
 		if !OPTIMIZE >=1 then
 		    let
-			val d' = (doubleAssigns flattened;
-				  fuse (Store,flattened))
+			val d' = fuse (Store, flattened)
 		    in
 			prepareLifeness (d', 0);
 			lifeness (d', 0);
@@ -465,7 +463,6 @@ structure ToJasmin =
 	  | stackNeedInstruction (Fconst _) = 1
 	  | stackNeedInstruction (Get _) = 0
 	  | stackNeedInstruction (Getfield _) = 0
-	  | stackNeedInstruction (Getself _) = 1
 	  | stackNeedInstruction (Getstatic _) = 1
 	  | stackNeedInstruction (Goto _) = 0
 	  | stackNeedInstruction Iadd = ~1
@@ -476,7 +473,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Ificmpeq _) = ~2
 	  | stackNeedInstruction (Ificmplt _) = ~2
 	  | stackNeedInstruction (Ificmpne _) = ~2
-	  | stackNeedInstruction (Ifneq _) = ~1
+	  | stackNeedInstruction (Ifne _) = ~1
 	  | stackNeedInstruction (Ifnull _) = ~1
 	  | stackNeedInstruction (Ifstatic _) = 0
 	  | stackNeedInstruction (Iload _) = 1
@@ -506,25 +503,6 @@ structure ToJasmin =
 	  | stackNeedInstruction Swap = 0
 	  | stackNeedInstruction (Tableswitch _) = ~1
 	  | stackNeedInstruction (Var _) = 0
-
-	(*fun stackNeed (inst::insts,need,max) =
-				  let
-				      val nd = stackNeedInstruction inst
-				  in
-				      if nd<0 then
-					  stackNeed (insts, nd+need, max)
-				      else stackNeed (insts, nd+need, Int.max(nd+need,max))
-				  end
-	  | stackNeed (nil, need, max) =
-			 (* apply hat derzeit immer ein doppeltes Areturn am Ende.
-			  Wird spaeter wegoptimiert. *)
-				  (if need <> 0 andalso (!actmeth<>"apply") orelse
-				       need <> ~1 andalso (!actmeth="apply") then
-				       print ("\n\nStack Verification Error. Stack="^Int.toString need^
-					      " Max="^Int.toString max^" in "^(!actclass)^"."^
-					      (!actmeth)^".\n")
-				   else ();
-				       max)*)
 
 	local
 	    fun instructionToJasmin (Astore j, s) =
@@ -568,11 +546,6 @@ structure ToJasmin =
 	      | instructionToJasmin (Get _, _) = raise Error ""
 	      | instructionToJasmin (Getfield(fieldn, arg),_) = "getfield "^fieldn^" "^
 				 (desclist2string arg)
-	      | instructionToJasmin (Getself name,s) =
-				 if s then
-				     "getstatic "^name
-				 else
-				     "aload_0"
 	      | instructionToJasmin (Getstatic(fieldn, arg),_) = "getstatic "^fieldn^" "^
 				     (desclist2string arg)
 	      | instructionToJasmin (Goto l,isstatic) = directJump l
@@ -585,7 +558,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(condJump l)
 	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(condJump l)
 	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(condJump l)
-	      | instructionToJasmin (Ifneq l,_) = "ifne "^(condJump l)
+	      | instructionToJasmin (Ifne l,_) = "ifne "^(condJump l)
 	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(condJump l)
 	      | instructionToJasmin (Ifstatic _,_) = raise Error ""
 	      | instructionToJasmin (Iload j,s) =
@@ -652,39 +625,103 @@ structure ToJasmin =
 			     else ""
 
 	in
-	    fun instructionsToJasmin (insts, enterstack, staticapply, ziel) =
+	    fun instructionsToJasmin (insts, enterstack, classname, methname, staticapply, ziel) =
 		let
 		    fun noStack (Comment _) = true
-		      | noStack (Label _) = true
+		      | noStack (Goto _) = true
+		      | noStack Athrow = true
+		      | noStack Return = true
+		      | noStack Areturn = true
+		      | noStack Ireturn = true
 		      | noStack _ = false
+
+		    val stackSizeHash: int StringHash.t = StringHash.new ()
+
+		    val lastLabel = ref ""
+
+		    fun checkSizeAt (l, size) =
+			case StringHash.lookup (stackSizeHash, l) of
+			    SOME s => if s <> size then
+				(print ("Stack verification error: Size = "^
+					Int.toString s^" or "^
+					Int.toString size^
+					" at "^l^" of "^classname^
+					"."^methname^".\n");
+				 size)
+				      else size
+			  | NONE =>
+				(StringHash.insert (stackSizeHash, l, size);
+				 size)
+
 		    fun recurse (i::is, need, max) =
 			let
-			    val nd = stackNeedInstruction i
 			    val ins = instructionToJasmin (i, staticapply)
+
+			    val sizeAfter = need+stackNeedInstruction i
+
+			    fun leave (Comment _ :: rest) = leave rest
+			      | leave (Label l :: _) =
+				(case StringHash.lookup(stackSizeHash, l) of
+					     SOME sz => sz
+					   | NONE => sizeAfter)
+			      | leave _ = sizeAfter
+
+			    fun leaveMethod () =
+				(if sizeAfter <> 0
+				     then
+					 print ("Stack verification error: Size = "^
+						Int.toString need^" leaving "^classname^
+						"."^methname^" after "^(!lastLabel)^".\n")
+				 else ();
+				 leave is)
+
+			    val nextSize = case i of
+				Areturn => leaveMethod ()
+			      (* In JVM, stack doesn't need to be empty on athrow.
+			       Nevertheless, JVM cleans the stack when exceptions
+			       are handled, so we have to ensure an empty stack
+			       when throwing exceptions. *)
+			      | Athrow => leaveMethod ()
+			      | Catch (_, _, _, handler) => checkSizeAt (handler, 0)
+			      | Goto label =>
+				    (checkSizeAt (label, sizeAfter);
+				     leave is)
+			      | Ifacmpeq label => checkSizeAt (label, sizeAfter)
+			      | Ifacmpne label => checkSizeAt (label, sizeAfter)
+			      | Ifeq label => checkSizeAt (label, sizeAfter)
+			      | Ificmpeq label => checkSizeAt (label, sizeAfter)
+			      | Ificmplt label => checkSizeAt (label, sizeAfter)
+			      | Ificmpne label => checkSizeAt (label, sizeAfter)
+			      | Ifne label => checkSizeAt (label, sizeAfter)
+			      | Ifnull label => checkSizeAt (label, sizeAfter)
+			      | Ireturn => leaveMethod ()
+			      | Label label =>
+				    (lastLabel := label;
+				     checkSizeAt (label, sizeAfter))
+			      | Return => leaveMethod ()
+			      | Tableswitch (_, labs, label) =>
+				    foldr
+				    checkSizeAt
+				    sizeAfter
+				    (label::labs)
+			      | _ => sizeAfter
 			in
+			    if ins <> "" then TextIO.output (ziel,ins^"\n") else ();
 			    if noStack i
 				then ()
 			    else
 				(if !DEBUG>=1
 				     then (TextIO.output (ziel,"\t\t.line "^line());
-					   TextIO.output (ziel,"\t; Stack: "^Int.toString need^
+					   TextIO.output (ziel,"\t; Stack: "^Int.toString nextSize^
 							  " Max: "^Int.toString max^"\n"))
 				 else ());
-			     if ins <> "" then TextIO.output (ziel,ins^"\n") else ();
-			     if nd<=0 then
-				 recurse (is, nd+need, max)
-			     else recurse (is, nd+need, (Int.max (nd+need,max)))
+			     recurse (is, nextSize, (Int.max (nextSize,max)))
 			end
 		      | recurse (nil,need,max) =
-			(if need = 0
-			     then ()
-			 else
-			     print ("\n\nStack Verification Error. Stack="^Int.toString max^
-				    " in "^(!actclass)^".\n");
 			 if enterstack then
 			     TextIO.output
 			     (ziel, ".limit stack "^Int.toString max^"\n")
-			 else ())
+			 else ()
 		in
 		    recurse (insts, 0, 0)
 		end
@@ -709,13 +746,20 @@ structure ToJasmin =
 		     instructionsToJasmin
 		     (optimize (instructions, perslocs),
 		      true,
+		      name,
+		      methodname,
 		      staticapply,
 		      io);
 		      TextIO.output(io,".limit locals "^Int.toString(JVMreg.max perslocs+1)^"\n");
-		      instructionsToJasmin(catches,false, staticapply, io);
+		      instructionsToJasmin
+		      (catches,
+		       false,
+		       name,
+		       methodname,
+		       staticapply,
+		       io);
 		      TextIO.output(io,".end method\n"))
 	    in
-		actclass:=name;
 		TextIO.output(io,
 			      ".source "^name^".j\n");
 		TextIO.output(io,
