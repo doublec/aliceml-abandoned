@@ -102,7 +102,7 @@ structure JVMInst =
 	and
 	    METHOD =
 	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * LIMITS *
-	    INSTRUCTION list * INSTRUCTION list * bool
+	    INSTRUCTION list * INSTRUCTION list
 	and
 	    CLASSACCESS =
 	    CPublic | CFinal | CSuper | CAbstract | CInterface

@@ -216,7 +216,7 @@ structure ToJasmin =
 
 		(* The real lifeness analysis. This function is called when we know the
 		 life range of each virtual register *)
-		fun assignAll () =
+		fun assignAll parms =
 		    let
 			fun assign (register) =
 			    let
@@ -245,11 +245,16 @@ structure ToJasmin =
 				    then assign (register+1)
 				else ()
 			    end
+
+			fun parmAssign 0 = ()
+			  | parmAssign p =
+			    (Array.update(!regmap, p, p);
+			     Array.update(!jvmto, p, Array.sub (!to, p));
+			     parmAssign (p-1))
 		    in
 			Array.update(!regmap, 0, 0);
-			Array.update(!regmap, 1, 1);
-			Array.update(!jvmto, 1, Array.sub (!to, 1));
-			assign 2
+			parmAssign parms;
+			assign (parms+1)
 		    end
 
 		(* We remember the code position of labels. Needed for
@@ -321,7 +326,7 @@ structure ToJasmin =
 				  Array.sub(!defines, reg)+1)
 	    end
 
-	fun optimize (insts, registers) =
+	fun optimize (insts, registers, parms) =
 	    let
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
@@ -535,7 +540,7 @@ structure ToJasmin =
 			if !VERBOSE >= 3 then print "doing lifeness... " else ();
 			lifeness (d', 0);
 			if !VERBOSE >= 3 then print "done.\n" else ();
-			JVMreg.assignAll();
+			JVMreg.assignAll parms;
 			if !OPTIMIZE >= 2 then
 			    (LabelMerge.new();
 			     deadCode (Non, d'))
@@ -871,27 +876,39 @@ structure ToJasmin =
 				  fAccessToString access
 				  ^" "^fieldname^" "^(desclist2string arg)^"\n")
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
-		fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
-					   instructions, catches, staticapply)) =
-		    ((*if methodname = "emilclass27" then raise Debug (SIs ("", instructions)) else ();*)
-		     JVMreg.new perslocs;
-		     TextIO.output(io,".method "^
-				   (mAccessToString access)^
-				   methodname^
-				   (descriptor2string methodsig)^"\n");
-		     actmeth := methodname;
-		     instructionsToJasmin
-		      (catches,
-		       false,
-		       staticapply,
-		       io);
-		     instructionsToJasmin
-		     (optimize (instructions, perslocs),
-		      true,
-		      staticapply,
-		      io);
-		      TextIO.output(io,".limit locals "^Int.toString(JVMreg.max perslocs+1)^"\n");
-		      TextIO.output(io,".end method\n"))
+		fun methodToJasmin (Method(access,methodname,
+					   methodsig as (parms,_),Locals perslocs,
+					   instructions, catches)) =
+		    let
+			val staticapply =
+			    List.exists
+			    (fn MStatic => true
+			  | _ => false)
+			    access
+
+			val parmscount = siglength parms
+		    in
+			JVMreg.new perslocs;
+			TextIO.output(io,".method "^
+				      (mAccessToString access)^
+				      methodname^
+				      (descriptor2string methodsig)^"\n");
+			actmeth := methodname;
+			instructionsToJasmin
+			(catches,
+			 false,
+			 staticapply,
+			 io);
+			instructionsToJasmin
+			(optimize (instructions, perslocs, parmscount),
+			 true,
+			 staticapply,
+			 io);
+			TextIO.output(io,".limit locals "^
+				      Int.toString(JVMreg.max perslocs+parmscount)
+				      ^"\n");
+			TextIO.output(io,".end method\n\n")
+		    end
 	    in
 		actclass:= name;
 		TextIO.output(io,

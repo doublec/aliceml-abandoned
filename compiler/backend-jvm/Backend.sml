@@ -16,60 +16,73 @@ structure Backend=
 
 	type stamp=IntermediateGrammar.stamp
 
-	(* Hashtabelle für Stamps. *)
+	(* Hashtable of Stamps. *)
 	structure StampHash = MakeHashImpMap(type t=stamp val hash=Stamp.hash)
 
-	(* Mengen von Stamps. Wird u.a. zur Berechnung der freien
-	 Variablen benutzt. *)
-	structure StampSet = MakeHashScopedImpSet(type t=stamp
-						  val hash=Stamp.hash)
-
-	(* Hashtabelle für Listen von Strings. Wird benötigt bei der
-	 statischen Berechnung der Recordaritäten. *)
+	(* Hashtable of string lists. Needed for static generation of
+	 record arities. *)
 	structure StringListHash = MakeHashImpMap(StringListHashKey)
 
-	(* Hashtabelle für Strings. Wird zum Verschmelzen von Labels benutzt. *)
+	(* Hashtabelle of strings. Used for labelfusion. *)
 	structure StringHash = MakeHashImpMap(StringHashKey)
 
-	(* Set of Strings. Used for Labelfusion. *)
+	(* Set of strings. Also used for labelfusion. *)
 	structure StringSet = MakeHashImpSet(StringHashKey)
 
-	(* Hashtabelle für Integers. Wird benötigt zum statischen
-	 Generieren von Integerkonstanten. *)
+	(* Hashtabelle of integers. Needed for static generation of
+	 integer constants. *)
 	structure LitHash = MakeHashImpMap (LitHashKey)
 
-	structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
+	 (* Sets of Stamps. Used for computation of free variables *)
+	 structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
 
-	val toplevel = Stamp.new()
-	val illegalStamp = Stamp.new()
-	val illegalId = Id ((0,0), illegalStamp, InId)
-	val DEBUG = ref 0
-	val VERBOSE = ref 0
-	val OPTIMIZE = ref 0
+	 (* Functionclosures are represented by Stamps.
+	  This is the toplevel environment: *)
+	 val toplevel = Stamp.new()
 
-	structure Lambda = MakeLambda(structure StampSet=StampSet
-				      structure StampHash=StampHash
-				      val toplevel=toplevel)
+	 (* A dummy stamp/id we sometimes write but should never read *)
+	 val illegalStamp = Stamp.new()
+	 val illegalId = Id ((0,0), illegalStamp, InId)
 
-	(* Labelzähler, aNewLabel liefert einen neuen String "label?", ? ist Zahl.
-	 Den ersten Stack brauchen wir, damit für jede Klasse wieder bei label1
-	 begonnen wird. *)
-	structure Label =
-	    struct
-		val labelcount = ref 0
-		val stack : (int list) ref= ref nil
-		val handleStack : (string list) ref = ref nil
+	 (* compiler options *)
+	 val DEBUG = ref 0
+	 val VERBOSE = ref 0
+	 val OPTIMIZE = ref 0
 
-		fun newNumber () =
-		    (labelcount := !labelcount + 1;
-		     !labelcount)
+	 structure Lambda = MakeLambda(structure StampSet=StampSet
+				       structure StampHash=StampHash
+				       val toplevel=toplevel)
 
+	 (* Structure for managing labels in JVM-methods *)
+	 structure Label =
+	     struct
+		 (* the actual label number *)
+		 val labelcount = ref 0
+
+		 (* Labels are stacked, so each functions starts counting at 1. *)
+		 val stack : (int list) ref= ref nil
+
+		 (* In JVM, handles are stored in an exception table as triples of
+		  program positions (beginTry, endTry, handleRoutine).
+		  During code generation, we know the labels for beginTry and
+		  handleRoutine, but we don't yet know about endTry.
+		  Furthermore, handles may be nested, so we use a stack. *)
+		 val handleStack : (string list) ref = ref nil
+
+		 (* xxx store ALL labels in numbers! *)
+		 fun newNumber () =
+		     (labelcount := !labelcount + 1;
+		      !labelcount)
+
+		 (* xxx remove! *)
 		fun new () =
 		    "label"^Int.toString (newNumber ())
 
+		(* xxx remove! *)
 		fun newSwitch () =
 		    "switch"^Int.toString (newNumber ())
 
+		(* For each method, we start counting at 1. *)
 		fun push () =
 		    (stack := (!labelcount :: (!stack));
 		     labelcount := 0)
@@ -77,8 +90,10 @@ structure Backend=
 		fun pop () = (labelcount:=hd(!stack);
 				    stack:=tl(!stack))
 
+		(* xxx remove! *)
 		fun fromNumber i = "label"^Int.toString i
 
+		(* Create a new label and push it on the handleStack *)
 		fun pushANewHandle () =
 		    let
 			val label'=new()
@@ -87,37 +102,54 @@ structure Backend=
 			label'
 		    end
 
+		(* Pop a handle label and return it *)
 		fun popHandle () =
 		    hd (!handleStack) before handleStack := tl (!handleStack)
 	    end
 
-	(* Verwaltung der lokalen JVM-Register *)
+	(* Administration of JVM registers *)
 	structure Register =
 	    struct
 		local
+		    (* number of the highest register in use. *)
 		    val localscount = ref 1
-		    val stack:(int * int StampHash.t) list ref = ref nil
+
+		    (* map stamps to registers *)
 		    val register: int StampHash.t ref   = ref (StampHash.new ())
+
+		    (* Registers are stacked for each function. *)
+		    val stack:(int * int StampHash.t) list ref = ref nil
+
+		    (* assign stamps to JVM registers where the defining
+		     function closure is stored in *)
 		    val lambda  : int StampHash.t  = StampHash.new ()
+
+		    (* assign stamps to corresponding field names.
+		     This is used for generating debug information in compiled
+		     (Jasmin) code *)
 		    val fields  : string StampHash.t = StampHash.new ()
 		in
-		    (* Nummer des nächsten freien lokalen Registers der aktuellen Methode. *)
-		    fun nextFree () = (localscount := !localscount + 1;
+		    (* return next free register of this method *)
+		    fun new () = (localscount := !localscount + 1;
 				       !localscount)
 
-		    (* Betreten bzw. Verlassen einer (Unter-) Funktion . *)
+		    (* enter a subfunction *)
 		    fun push () = (stack := (!localscount, !register)::(!stack);
 				   localscount := 1;
 				   register := StampHash.new())
+
+		    (* leave a subfunction*)
 		    fun pop () =
 			case !stack of
 			    ((lc,regs)::rest) => (stack := rest;
 						  localscount := lc;
 						  register := regs)
 			  | nil => raise Error("empty locals stack")
+
+		    (* return the number of the highest register in use *)
 		    fun max () = !localscount
 
-		    (* Zuordnung von Ids zu JVM-Registern *)
+		    (* assign ids to JVM registers *)
 		    fun assign (Id(_,stamp',InId), wohin) =
 			(StampHash.insert (!register, stamp', wohin);
 			 wohin)
@@ -126,21 +158,32 @@ structure Backend=
 			 StampHash.insert (fields, stamp', name);
 			 wohin)
 
+		    (* return the JVM register of a stamp. *)
 		    fun get stamp' =
 			case StampHash.lookup (!register, stamp') of
-			    NONE => 1 (* nichtgebundene Stamps sind formale Parameter. *)
+			    NONE => 1 (* unassigned stamps are formal parameters *)
 			  | SOME reg => reg
 
-		    (* Zuordnung von Ids zu JVM-Registern mit definierender Funktion *)
+		    (* assign parameters of special apply methods apply2/3/4
+		     to registers *)
+		    fun assignParms (id'::rest, reg) =
+			(assign (id', reg);
+			 assignParms (rest, reg+1))
+		      | assignParms (nil, reg) = localscount := (reg-1)
+
+		    (* Assign ids to JVM registers where their surrounding
+		     function closure can be found. *)
 		    (* xxx inzwischen überflüssig ? *)
 		    fun assignLambda (Id(_,stamp',_), wohin) =
 			(StampHash.insert(lambda,stamp',wohin);
 			 wohin)
+
 		    fun getLambda stamp' = (* xxx Unterschied zu Lambda.getLambda? *)
 			case StampHash.lookup(lambda,stamp') of
 			    NONE => ~1
 			  | SOME lambda => lambda
 
+		    (* create some debugging informations *)
 		    fun generateVariableTable rest =
 			StampHash.foldi
 			(fn (stamp',register',rest') =>
@@ -154,33 +197,38 @@ structure Backend=
 		end
 	    end
 
-	(* Zuordnung von Funktionen-Ids auf Freie Variablen
-	 und von beliebigen Ids auf den formalen Parameter der umgebenden Funktion.
-	 Der formale Parameter einer Funktion ist immer eindeutig, während eine Funktion
-	 mehrere Bezeichner zugeordnet haben kann. *)
-
+	(* structure for free variabes *)
 	structure FreeVars =
 	    struct
+		(* assign (function) ids to free variable list *)
 		val free:stamp list StampHash.t=StampHash.new ()
+
+		(* Assign ids to formal parameters of defining functions.
+		 Each function has a unique formal parameter (OneArg)
+		 while it can have multiple or no name at all *)
 		val defFun:stamp StampHash.t=StampHash.new ()
 
-		(* Freie Variablen einer Id setzen oder auslesen *)
+		(* assign stamps to free variables *)
 		fun setVars (stamp', freeVarList) =
 		    StampHash.insert (free, stamp', freeVarList)
+
+		(* get free variable list of an id. If not set previously,
+		 raise exception option. *)
 		fun getVars (Id(_,stamp',_)) =
-		    (* Falls undef, exception Option *)
 		    valOf (StampHash.lookup (free, stamp'))
 
-		(* Umgebende Funktion einer Id setzen oder auslesen *)
+		(* assign ids to their  defining function closure. *)
 		fun setFun (Id(_,stamp',_), stamp'') =
-(*		    if (isSome (StampHash.lookup(defFun, stamp')))
-			then print "setFun twice!"
-		    else*)
-			 StampHash.insert(defFun, stamp', stamp'')
+		    StampHash.insert(defFun, stamp', stamp'')
+
+		(* get the defining function closure of a stamp *)
 		fun getFun stamp' =
 		    case StampHash.lookup (defFun, stamp') of
 			NONE => toplevel
 		      | SOME stamp'' => stamp''
+
+		(* print all pairs of stamps and defining function closures.
+		 used in verbose level 2. *)
 		fun printFun () =
 		    StampHash.appi (fn (stamp', stamp'') =>
 				    print ("("^Stamp.toString stamp'^","^
@@ -189,8 +237,11 @@ structure Backend=
 	    end
 
 
-	(* Die innerste Catch-Klausel muß in der Exceptiontable ganz oben stehen.
-	 Die Liste muß also umgedreht werden *)
+	(* Store for the exception table entries. Nested exception handles
+	 are stored in the wrong order (innerst first), so we have to
+	 reverse the list when creating the exception table. *)
+	(* xxx handles need no longer be instructions. *)
+	(* xxx use FIFO representation and don't reverse the list *)
 	structure Catch =
 	    struct
 		val stack=ref (nil:INSTRUCTION list list)
@@ -198,11 +249,17 @@ structure Backend=
 
 		fun add x = liste := x::(!liste)
 		fun push () = (stack := (!liste)::(!stack); liste:=nil)
-		fun pop () = (liste:=hd(!stack); stack:=(tl (!stack)))
+		fun pop () = let
+				 val t = !liste
+			     in
+				 liste:=hd(!stack);
+				 stack:=(tl (!stack));
+				 t
+			     end
 		fun top () = !liste
 	    end
 
-
+	(* load an integer as JVM integer constant. *)
 	fun atCodeInt (i:LargeInt.int) =
 	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.>= (Int.toLarge 5, i)
 		then Iconst (Int.fromLarge i) else
@@ -214,18 +271,11 @@ structure Backend=
 				then Sipush (Int.fromLarge i)
 			    else Ldc (JVMInt i)
 
+	(* load a word as JVM integer constant. *)
 	fun atCodeWord (i:LargeWord.word) =
-	    if LargeWord.>= (i, Word.toLargeWord (Word.fromInt ~1)) andalso
-		LargeWord.>= (Word.toLargeWord (Word.fromInt 5), i)
-		then Iconst (Int.fromLarge (LargeWord.toLargeInt i)) else
-		    if LargeWord.>= (i, Word.toLargeWord(Word.fromInt ~128))
-			andalso LargeWord.>= (Word.toLargeWord(Word.fromInt 127), i)
-			then Bipush (Int.fromLarge (LargeWord.toLargeInt i)) else
-			    if LargeWord.>= (i, Word.toLargeWord(Word.fromInt ~32768))
-				andalso LargeWord.>= (Word.toLargeWord (Word.fromInt 32767), i)
-				then Sipush (Int.fromLarge (LargeWord.toLargeInt i))
-			    else Ldc (JVMWord i)
+	    atCodeInt (LargeWord.toLargeInt i)
 
+	(* load a JVM literal *)
 	fun atCode (CharLit c) = atCodeInt(Int.toLarge (ord c))
 	  | atCode (IntLit i)  = atCodeInt i
 	  | atCode (RealLit r) =
@@ -238,34 +288,37 @@ structure Backend=
 		else Ldc (JVMFloat r)
 	    end
 	  | atCode (StringLit s)= Ldc (JVMString s)
-	  | atCode (WordLit w)  = atCodeInt (LargeWord.toLargeInt w)
+	  | atCode (WordLit w)  = atCodeWord w
 
-	(* Die Aritäten von Records koennen statisch gebaut werden. Zur
-	 Laufzeit genügt es, ein (statisches) Feld der Hauptklasse
-	 auszulesen. *)
+	(* Record arities can be statically built. On run time, a static
+	 field with the arity is loaded *)
 	structure RecordLabel =
 	    struct
-		(* Die Aritäten werden in einer Hashtabelle verwaltet,
-		 um doppeltes Generieren zu vermeiden. *)
+		(* Record arities are stored in a hashtable to avoid
+		 multiple generations. *)
 		val arity: int StringListHash.t = StringListHash.new ()
+
+		(* Number of the actual record arity *)
 		val number = ref 0
 
+		(* create the fieldname of an arity out of its number *)
 		fun fieldname number = "arity"^Int.toString number
 
+		(* get the name of the static JVM field of an arity *)
 		fun staticfield number =
-		    (Class.getLiteralName()^"/"^(fieldname number), [Arraysig, Classsig CLabel])
+		    (Class.getLiteralName()^"/"^(fieldname number),
+		     [Arraysig, Classsig CLabel])
 
-		(* Hinzufügen einer Recordarity *)
+		(* create a new record arity and return its JVM field *)
 		fun insert (strings as (s::_)) =
 		     (case StringListHash.lookup (arity, strings) of
-			 NONE => (
-				  number := ((!number)+1);
+			 NONE => (number := ((!number)+1);
 				  StringListHash.insert (arity, strings, !number);
 				  staticfield (!number))
 		       | SOME number' => staticfield number')
 		  | insert _ = raise Mitch
 
-		(* Generieren aller Recordarities zur Übersetzungszeit *)
+		(* Generate the record arities at compilitaion time. *)
 		fun generate () =
 		    let
 			fun codeall (strs, aritynumber, acc) =
@@ -309,7 +362,7 @@ structure Backend=
 			arity
 		    end
 
-		(* Erzeugen der .field Einträge *)
+		(* Generate field entries for the record arities. *)
 		fun makefields () =
 		    StringListHash.fold
 		    (fn (number, fields) =>
@@ -320,28 +373,27 @@ structure Backend=
 		    arity
 	    end
 
-	(* Literale zu Konstruieren ist aufgrund unserer
-	 Wrapper-Klassen recht teuer. Wir bauen sie daher zur
-	 Compilezeit und schreiben sie in statische Felder. *)
+	(* JVM is statically typed, DML dynamically. Therefore, we have
+	 to use expensive wrapper classes for primitive types.
+	 For performance reasons, we create all literals at compilation
+	 time and store them in static fields. *)
 	structure Literals =
 	    struct
-		(* Die Konstanten werden in einer Hashtabelle
-		 verwaltet, um doppeltes Generieren zu vermeiden. *)
+		(* All literals are stored in a Hashtable to avoid
+		 redundancy. *)
 		val lithash: int LitHash.t = LitHash.new ()
+
+		(* The number of the actual literal *)
 		val number = ref 0
 
-		fun litClass (CharLit _) = CChar
-		  | litClass (IntLit _)    = CInt
-		  | litClass (RealLit _)   = CReal
-		  | litClass (StringLit _) = CStr
-		  | litClass (WordLit _)   = CWord
-
+		(* compute a literal's fieldname of its number *)
 		fun fieldname number = "lit"^Int.toString number
 
+		(* compute the whole static JVM field of a literal *)
 		fun staticfield number =
 		    Class.getLiteralName()^"/"^(fieldname number)
 
-		(* Hinzufügen einer Konstanten *)
+		(* add a literal (if necessary) and return its JVM field *)
 		fun insert lit' =
 		    case LitHash.lookup (lithash, lit') of
 			NONE => (number := ((!number)+1);
@@ -349,8 +401,13 @@ structure Backend=
 				 staticfield (!number))
 		      | SOME number' => staticfield number'
 
-		(* Erzeugen aller Literale zur
-		 Übersetzungszeit *)
+		fun litClass (CharLit _) = CChar
+		  | litClass (IntLit _)    = CInt
+		  | litClass (RealLit _)   = CReal
+		  | litClass (StringLit _) = CStr
+		  | litClass (WordLit _)   = CWord
+
+		(* Generate all literals at compilation time. *)
 		fun generate startwert =
 		     let
 			 fun codelits (lit', constnumber, acc) =
@@ -375,7 +432,7 @@ structure Backend=
 			 LitHash.foldi codelits startwert lithash
 		     end
 
-		(* Erzeugen der .field Einträge *)
+		(* Generate JVM field entries for all literals *)
 		fun makefields startwert =
 		    LitHash.foldi
 		    (fn (lit', number, fields) =>
@@ -386,10 +443,10 @@ structure Backend=
 		    lithash
 	    end
 
-	fun psl (x::nil) = Stamp.toString x
+	(* print out a list of stamps. Used in verbose mode for debugging. *)
+	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
+	and psl (x::nil) = Stamp.toString x
 	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
 	  | psl nil = ""
-
-	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
 
     end

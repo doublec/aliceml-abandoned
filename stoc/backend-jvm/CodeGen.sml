@@ -177,6 +177,7 @@ structure CodeGen =
 		app (fn (_,id') => fV.delete id') labids
 	      | freeVarsTest (TupTest labs) = app fV.delete labs
 	      | freeVarsTest (LabTest(_,id')) = fV.delete id'
+	      | freeVarsTest (VecTest _) = raise Error "Was'n VecTest?" (* xxx *)
 
 	    and freeVarsDecs (decs) =
 		app freeVarsDec (List.rev decs)
@@ -207,19 +208,19 @@ structure CodeGen =
 		  Instanz der eigenen Klasse und startet einen neuen Thread. Die eigentliche
 		  Initialisierungsarbeit geschieht in run. *)
 		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
-				   Locals 1,
+				   Locals 2,
 				   Register.generateVariableTable
 				   [New name,
 				    Dup,
 				    Invokespecial (name, "<init>", ([], [Voidsig])),
 				    Invokevirtual (CThread, "start", ([], [Voidsig])),
-				    Return], nil, false)
+				    Return], nil)
 		 (* Standardinitialisierung. Die Superklasse wird aufgerufen. *)
 		 val init = Method([MPublic],"<init>",([],[Voidsig]),
 				   Locals 1,
 				   [Aload 0,
 				    Invokespecial (CDMLThread, "<init>", ([], [Voidsig])),
-				    Return], nil, false)
+				    Return], nil)
 		 (* Toplevel environment is built in the run method.
 		  All Objects are instantiated and initialized, function closures are built.
 		  The result as well as the generated class files is stored into one single
@@ -249,8 +250,7 @@ structure CodeGen =
 				       Pop ::
 				       Return ::
 				       nil,
-				  Catch.top(),
-				  false)
+				  Catch.top())
 
 		 (* The main class *)
 		 val class = Class([CPublic],
@@ -268,8 +268,7 @@ structure CodeGen =
 				     Locals 6,
 				     Literals.generate
 				     (RecordLabel.generate()),
-				     nil,
-				     false)
+				     nil)
 
 		 (* Default initialization: Invocation of the super class. *)
 		 val litinit = Method([MPublic],"<init>",([],[Voidsig]),
@@ -278,8 +277,7 @@ structure CodeGen =
 				      Invokespecial (CFcnClosure, "<init>", ([], [Voidsig]))::
 				      (Lambda.generatePickleFn
 				       [Return]),
-				      nil,
-				      false)
+				      nil)
 
 		 val literale = Class([CPublic],
 				      Class.getLiteralName(),
@@ -340,7 +338,7 @@ structure CodeGen =
 		val l=Register.get stamp'
 		val loc =
 		    if l = 1
-			then Register.assign(id', Register.nextFree())
+			then Register.assign(id', Register.new())
 		    else l
 	    in
 		(Lambda.pushFun id';
@@ -361,7 +359,7 @@ structure CodeGen =
 		local
 		    fun init ((id',exp'),akku) =
 			let
-			    val loc = Register.assign(id',Register.nextFree())
+			    val loc = Register.assign(id',Register.new())
 			    (* The first entry is always a OneArg.
 			     We use the stamp of this OneArg for identification
 			     of the function. Therefore, we ignore the other
@@ -381,7 +379,8 @@ structure CodeGen =
 				    Astore loc ::
 				    nil
 				end
-			      | funList nil = nil
+			      | funList _ = raise
+				Error "Frontend Error: OneArg expected."
 
 			    fun specTups (id' :: rest) =
 				idCode id' ::
@@ -464,31 +463,33 @@ structure CodeGen =
 
 			      (* tuple *)
 			      | TupExp (_, ids) =>
-				    case length ids of
-					2 => New CTuple2 ::
-					    Dup ::
-					    Invokespecial (CTuple2,"<init>",
-							   ([],[Voidsig])) ::
-					    Astore loc ::
-					    nil
-				      | 3 => New CTuple3 ::
-					    Dup ::
-					    Invokespecial (CTuple3,"<init>",
-							   ([],[Voidsig])) ::
-					    Astore loc ::
-					    nil
-				      | 4 => New CTuple4 ::
-					    Dup ::
-					    Invokespecial (CTuple4,"<init>",
-							   ([],[Voidsig])) ::
-					    Astore loc ::
-					    nil
-				      | _ => New CTuple ::
-					    Dup ::
-					    Invokespecial (CTuple,"<init>",
-							   ([],[Voidsig])) ::
-					    Astore loc ::
-					    nil
+				    (case length ids of
+					 2 => New CTuple2 ::
+					     Dup ::
+					     Invokespecial (CTuple2,"<init>",
+							    ([],[Voidsig])) ::
+					     Astore loc ::
+					     nil
+				       | 3 => New CTuple3 ::
+					     Dup ::
+					     Invokespecial (CTuple3,"<init>",
+							    ([],[Voidsig])) ::
+					     Astore loc ::
+					     nil
+				       | 4 => New CTuple4 ::
+					     Dup ::
+					     Invokespecial (CTuple4,"<init>",
+							    ([],[Voidsig])) ::
+					     Astore loc ::
+					     nil
+				       | _ => New CTuple ::
+					     Dup ::
+					     Invokespecial (CTuple,"<init>",
+							    ([],[Voidsig])) ::
+					     Astore loc ::
+					     nil)
+			      | _ => raise Error
+					 "Intermediate Error: illegal expression in RecDec"
 			in
 			    Multi one ::
 			    akku
@@ -516,7 +517,7 @@ structure CodeGen =
 	  | decCode (ConDec (_, id' as Id(_, stamp', name'), hasArgs,_)) =
 	    (* ConDec of coord * id * bool *)
 	    let
-		val loc = Register.assign(id',Register.nextFree())
+		val loc = Register.assign(id',Register.new())
 	    in
 		if hasArgs then
 		    [New CConstructor,
@@ -665,7 +666,8 @@ structure CodeGen =
 				 stampcode' ::
 				 Checkcast CChar ::
 				 Getfield (CChar^"/value", [Charsig]) ::
-				 sw)
+				 sw
+			   | _ => raise Mitch)
 		    end
 
 		fun testCode (LitTest lit') =
@@ -731,7 +733,7 @@ structure CodeGen =
 
 		  | testCode (ConTest (id'',SOME id''')) =
 		    let
-			val loc = Register.assign(id''',Register.nextFree())
+			val loc = Register.assign(id''',Register.new())
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			stampcode' ::
@@ -760,7 +762,7 @@ structure CodeGen =
 			  | stringids2strings (nil, s') = s'
 			fun bindit ((_,id'')::nil,i) =
 			    let
-				val loc = Register.assign(id'',Register.nextFree())
+				val loc = Register.assign(id'',Register.new())
 				val _ = FreeVars.setFun (id'', Lambda.top())
 			    in
 				atCodeInt i ::
@@ -770,7 +772,7 @@ structure CodeGen =
 			    end
 			  | bindit ((_,id'')::rest,i) =
 			    let
-				val loc = Register.assign(id'',Register.nextFree())
+				val loc = Register.assign(id'',Register.new())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 			    in
 				Dup ::
@@ -806,7 +808,7 @@ structure CodeGen =
 		    let
 			fun bindit (id''::rest,i) =
 			    let
-				val loc = Register.assign(id'',Register.nextFree())
+				val loc = Register.assign(id'',Register.new())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 				val b' = atCodeInt i ::
 				    Aaload ::
@@ -833,11 +835,11 @@ structure CodeGen =
 				 let
 				     val i0 = hd ids
 				     val r0 = Register.assign
-					 (i0, Register.nextFree())
+					 (i0, Register.new())
 				     val _ = FreeVars.setFun (i0, Lambda.top())
 				     val i1 = List.nth (ids, 1)
 				     val r1 = Register.assign
-					 (i1, Register.nextFree())
+					 (i1, Register.new())
 				     val _ = FreeVars.setFun (i1, Lambda.top())
 				 in
 				     (case lgt of
@@ -858,7 +860,7 @@ structure CodeGen =
 					| 3 => let
 						   val i2 = List.nth (ids, 2)
 						   val r2 = Register.assign
-						       (i2, Register.nextFree())
+						       (i2, Register.new())
 						   val _ = FreeVars.setFun (i2, Lambda.top())
 					       in
 						   Instanceof CTuple3 ::
@@ -884,11 +886,11 @@ structure CodeGen =
 				    | 4 => let
 						   val i2 = List.nth (ids, 2)
 						   val r2 = Register.assign
-						       (i2, Register.nextFree())
+						       (i2, Register.new())
 						   val _ = FreeVars.setFun (i2, Lambda.top())
 						   val i3 = List.nth (ids, 3)
 						   val r3 = Register.assign
-						       (i3, Register.nextFree())
+						       (i3, Register.new())
 						   val _ = FreeVars.setFun (i3, Lambda.top())
 					       in
 						   Instanceof CTuple4 ::
@@ -915,7 +917,8 @@ structure CodeGen =
 						    ([], [Classsig CVal])) ::
 						   Astore r3 ::
 						   nil
-					   end)
+					   end
+				    | _ => raise Mitch)
 				 end
 			     else
 				 Instanceof CDMLTuple ::
@@ -1007,7 +1010,7 @@ structure CodeGen =
 
 	  | decCode (HandleStm(_,body', id',body'')) =
 		    let
-			val loc = Register.assign (id', Register.nextFree())
+			val loc = Register.assign (id', Register.new())
 			val try   = Label.new()
 			val to = Label.pushANewHandle ()
 			val using = Label.new()
@@ -1063,7 +1066,7 @@ structure CodeGen =
 			     (load (rs,j+1))
 			   | load (nil,_) = nil
 			 (* 3rd *)
-			 val mp = Register.nextFree()
+			 val mp = Register.new()
 		    in
 			(mainpickle:=mp;
 			 [Comment "[Mainpickle ",
@@ -1275,7 +1278,7 @@ structure CodeGen =
 		      Invokestatic (CBuiltin, "getBuiltin",
 				    ([Classsig CStr], [Classsig CVal]))]
 
-	  | expCode (FunExp(coord',string', (lambda as (OneArg (id' as Id (_,stamp',_)), _))::rest)) =
+	  | expCode (FunExp(_,_, lambda as (OneArg (id' as Id (_,stamp',_)), _):: _)) =
 		     (* FunExp of coord * string * (id args * dec) list *)
 		     (* id is formal parameter *)
 		     (* 1st build closure: - instantiate or load object *)
@@ -1311,12 +1314,7 @@ structure CodeGen =
 				 akku
 			 in
 			     val loadVars =
-				 List.foldr
-				 loadFreeVar
-				 (case
-				      rest of nil => nil
-				    | _ => expCode (FunExp(coord', string', rest)))
-				 freeVarList
+				 List.foldr loadFreeVar nil freeVarList
 			 end
 		     in
 			 Lambda.push id';
@@ -1325,7 +1323,7 @@ structure CodeGen =
 			 Label.push();
 			 Register.push();
 			 Class.push(className);
-			 expCodeClass(lambda);
+			 expCodeClass lambda;
 			 Class.pop();
 			 Register.pop();
 			 Label.pop();
@@ -1397,7 +1395,7 @@ structure CodeGen =
 			      New CExWrap ::
 			      Dup ::
 			      Getstatic (Literals.insert
-					 (StringLit "Typfehler"),
+					 (StringLit "type error"),
 					 [Classsig CStr]) ::
 			      Invokespecial(CExWrap,"<init>",
 					    ([Classsig CVal],[Voidsig])) ::
@@ -1416,104 +1414,268 @@ structure CodeGen =
 			  end
 	  | expCode e = raise Debug (Exp e)
 	and
-    expCodeClass (OneArg id',body') =
+
+	    expCodeClass ((OneArg id',body')::specialApplies) =
 	    let
-		val _ = if !VERBOSE >=1 then print ("create Class "^(Class.getCurrent())^"\n") else ()
+		val _ = if !VERBOSE >=1 then
+		    print ("create Class "^(Class.getCurrent())^"\n")
+			else ()
 		val className = classNameFromId id'
 		val freeVarList = FreeVars.getVars id'
-		(* baut die Felder, d.h. die freien Variablen der Klasse *)
-		local
-		    fun fields (stamp'::stamps) =
-			(Field ([FPublic],fieldNameFromStamp stamp', [Classsig CVal]))::
-			(fields stamps)
-		      | fields nil = nil
-		    fun vars (0, akku) = akku
-		      | vars (n, akku) =
-			vars (n-1,Var (n, "woaswoisi"^(Int.toString n),
-			      [Classsig CVal], alpha, omega)::akku)
-		in
-		    val fieldscode = fields freeVarList
-		    val bd = (*vars
-			(Register.max(), *)
-			 let
-			     val decs = decListCode body'
-			 in
-			     if !DEBUG >=2 then
-				 let
-				     val nodebug=Label.new()
-				 in
-				     Getstatic
-				     (Class.getCurrent()^"/DEBUG",
-				      [Boolsig])::
-				     Ifeq nodebug::
-				     Getstatic
-				     ("java/lang/System/out",
-				      [Classsig "java/io/PrintStream"])::
-				     Ldc (JVMString "Betrete: (")::
+		(* generate fields for the free variables of the function *)
+
+		fun fields (stamp'::stamps) =
+		    (Field ([FPublic],fieldNameFromStamp stamp', [Classsig CVal]))::
+		    (fields stamps)
+		  | fields nil = nil
+
+		val fieldscode = fields freeVarList
+
+		fun createApplies ((t as TupArgs ids, body'')::rest,
+				   parm, a0, a2, a3, a4, ra) =
+		    let
+			val l = length ids
+		    in
+			case l of
+			    0 => (Catch.push ();
+				  createApplies
+				  (rest, parm,
+				   (decListCode body'', Catch.pop ()),
+				   a2, a3, a4, ra))
+			  | 2 => (Catch.push ();
+				  Register.assignParms (ids,1);
+				  createApplies
+				  (rest, parm, a0,
+				   (decListCode body'', Catch.pop ()),
+				   a3, a4, ra))
+			  | 3 => (Catch.push ();
+				  Register.assignParms (ids,1);
+				  createApplies
+				  (rest, parm, a0, a2,
+				   (decListCode body'', Catch.pop ()),
+				   a4, ra))
+			  | 4 => (Catch.push ();
+				  Register.assignParms (ids,1);
+				  createApplies
+				  (rest, parm, a0, a2, a3,
+				   (decListCode body'', Catch.pop ()), ra))
+			  | _ => createApplies
+				(rest, parm, a0, a2, a3, a4,
+				 [TestStm (dummyCoord,
+					   Id (dummyPos, parm, InId),
+					   TupTest ids, body'', ra)])
+		    end
+		  | createApplies ((t as RecArgs labids, body'') :: rest,
+				   parm, a0, a2, a3, a4, ra) =
+		    createApplies (rest, parm, a0, a2, a3, a4,
+				   [TestStm (dummyCoord, Id (dummyPos, parm, InId),
+					     RecTest labids,
+					     body'', ra)])
+		  | createApplies (nil, parm, a0, a2, a3, a4, ra) =
+		    (Catch.push ();
+		     (a0, a2, a3, a4, (decListCode ra, Catch.pop ())))
+		  | createApplies (_, _, _, _, _, _, _) = raise Mitch
+
+		val ((ap0,ex0), (ap2,ex2), (ap3,ex3), (ap4,ex4), (ad, exd)) =
+		    createApplies (List.rev specialApplies, stampFromId id',
+				   (nil,nil), (nil,nil), (nil,nil), (nil,nil), body')
+
+		fun buildSpecialApply (count, spec, id'') =
+		    case spec of
+			nil => Nop
+		      | _ => let
+				 val elselabel = Label.new ()
+				 val tupNo = CTuple^(Int.toString count)
+				 val r = Register.new ()
+				 fun gets (act, to') =
 				     Invokevirtual
-				     ("java/io/PrintStream",
-				      "print",([Classsig CObj],
-					       [Voidsig]))::
-				     Getstatic
-				     ("java/lang/System/out",
-				      [Classsig "java/io/PrintStream"])::
-				     Ldc (JVMString
-					  (nameFromId
-					   (Lambda.getOuterFun ())))::
-				     Invokevirtual
-				     ("java/io/PrintStream",
-				      "println",([Classsig CObj],
-						 [Voidsig]))::
-				     Comment "expCodeClass: Label nodebug" ::
-				     Label nodebug::
-				     decs
-				 end
-			     else decs
-			 end (*)*)
-		end
-		(* Wir bauen jetzt den Rumpf der Abstraktion *)
+				     (tupNo, "get"^Int.toString act,
+				      ([], [Classsig CVal])) ::
+				     (if act = to' then
+					  nil
+				      else
+					  Aload r ::
+					  gets (act+1, to'))
+			     in
+				 Multi
+				 (idCode id'' ::
+				  Instanceof tupNo ::
+				  Ifeq elselabel ::
+				  Ifstatic (stampFromId id'',
+					    [Nop],
+					    [Aload 0]) ::
+				  idCode id'' ::
+				  Checkcast tupNo ::
+				  Dup ::
+				  Astore r ::
+				  Multi (gets (0, count-1)) ::
+				  Ifstatic
+				  (stampFromId id'',
+				   [Invokestatic
+				    (classNameFromId id'',
+				     "sapply"^Int.toString count,
+				     ([Classsig CVal, Classsig CVal],
+				      [Classsig CVal]))],
+				   [Invokevirtual
+				    (classNameFromId id'',
+				     "apply"^Int.toString count,
+				     ([Classsig CVal, Classsig CVal],
+				      [Classsig CVal]))]) ::
+				  normalReturn
+				  [Areturn,
+				   Label elselabel])
+			  end
+
+		val defaultApply =
+		    (case ap0 of
+			 nil => Nop
+		       | _ => let
+				  val elselabel=Label.new()
+			      in
+				  Multi (idCode id' ::
+					 Getstatic CUnit ::
+					 Ifacmpne elselabel ::
+					 Multi ap0 ::
+					 normalReturn
+					 [Areturn,
+					  Label elselabel])
+			      end) ::
+			 buildSpecialApply(2, ap2, id') ::
+			 buildSpecialApply(3, ap3, id') ::
+			 buildSpecialApply(4, ap4, id') ::
+			 ad
+
+		fun addDebugInfo d =
+		    if !DEBUG >=2 then
+			let
+			    val nodebug=Label.new()
+			in
+			    Getstatic
+			    (Class.getCurrent()^"/DEBUG",
+			     [Boolsig]) ::
+			    Ifeq nodebug ::
+			    Getstatic
+			    ("java/lang/System/out",
+			     [Classsig "java/io/PrintStream"]) ::
+			    Ldc (JVMString "Enter: (") ::
+			    Invokevirtual
+			    ("java/io/PrintStream",
+			     "print",([Classsig CObj],
+				      [Voidsig])) ::
+			    Getstatic
+			    ("java/lang/System/out",
+			     [Classsig "java/io/PrintStream"]) ::
+			    Ldc (JVMString
+				 (nameFromId
+				  (Lambda.getOuterFun ()))) ::
+			    Invokevirtual
+			    ("java/io/PrintStream",
+			     "println",([Classsig CObj],
+					[Voidsig])) ::
+			    Comment "expCodeClass: Label nodebug" ::
+			    Label nodebug::
+			    d
+			end
+		    else d
+
+		(* Now generate the code for the main apply function *)
 		val ap =
-		    (Label alpha::
-		     Multi bd ::
+		    (Label alpha ::
+		     Multi
+		     (addDebugInfo defaultApply) ::
 		     normalReturn
 		     [Label omega,
 		      Areturn])
-		val applY = Method ([MPublic],
-				    "apply",
-				    ([Classsig CVal], [Classsig CVal]),
-				    Locals (Register.max()+1),
-				    ap,
-				    Catch.top(), false)
-		val sapply = Method ([MPublic, MStatic],
-				     "sapply",
-				     ([Classsig CVal], [Classsig CVal]),
-				     Locals (Register.max()),
-				     ap,
-				     Catch.top(), true)
-		(* die Standard-Initialisierung *)
+
+		fun valList 0 = nil
+		  | valList n = Classsig CVal :: valList (n-1)
+
+		fun makeApplyMethod (modifiers, name, vals, insts, handles) =
+		    Method (MPublic :: modifiers,
+			    name,
+			    (valList vals, [Classsig CVal]),
+			    Locals (Register.max() +vals),
+			    (case insts of
+				 nil => [New CExWrap,
+					 Dup,
+					 Getstatic CMatch,
+					 Invokespecial(CExWrap,"<init>",
+						       ([Classsig CVal],
+							[Voidsig])),
+					 Athrow]
+			       | _ => insts),
+				 handles)
+
+		fun parmLoad (0, akku) = akku
+		  | parmLoad (n, akku) = parmLoad (n-1, Aload n :: akku)
+
+		fun makeDummyApply number =
+		    let
+			val name = "apply" ^
+			    (case number of
+				 1 => ""
+			       | _ => Int.toString number)
+		    in
+			makeApplyMethod (nil,name,number,
+					 parmLoad
+					 (number,
+					  Invokestatic (className,
+							"s"^name,
+							(valList number,
+							 [Classsig CVal])) ::
+					  normalReturn [Areturn]),
+					 [])
+		    end
+
+		(* normal apply methods *)
+		val (applY, apply0, apply2, apply3, apply4) =
+		    if Lambda.sapplyPossible () then
+			(makeDummyApply 1,
+			 makeDummyApply 0,
+			 makeDummyApply 2,
+			 makeDummyApply 3,
+			 makeDummyApply 4)
+		    else
+			(makeApplyMethod (nil,"apply",1,ap,Catch.top()),
+			 makeApplyMethod (nil,"apply0",0,ap0,ex0),
+			 makeApplyMethod (nil,"apply2",2,ap2,ex2),
+			 makeApplyMethod (nil,"apply3",3,ap3,ex3),
+			 makeApplyMethod (nil,"apply4",4,ap4,ex4))
+
+		(* static apply methods. Generated only if there are
+		 no free variables in the function *)
+		val sapplY = makeApplyMethod ([MStatic],"sapply",1,ap,Catch.top())
+		val sapply0 = makeApplyMethod ([MStatic],"sapply0",0,ap0,ex0)
+		val sapply2 = makeApplyMethod ([MStatic],"sapply2",2,ap2,ex2)
+		val sapply3 = makeApplyMethod ([MStatic],"sapply3",3,ap3,ex3)
+		val sapply4 = makeApplyMethod ([MStatic],"sapply4",4,ap4,ex4)
+
+		(* standard constructor *)
 		val init = Method ([MPublic],"<init>",([], [Voidsig]), Locals 1,
 				   [Aload 0,
 				    Invokespecial (CFcnClosure, "<init>",
 						   ([], [Voidsig])),
 				    Return],
-				   nil,
-				   false)
+				   nil)
 
-		(* die ganze Klasse *)
+		(* the whole class *)
 		val class = Class([CPublic],
 				  className,
 				  CFcnClosure,
 				  nil,
 				  fieldscode,
-				  (applY::init::
+				  (init:: applY:: apply0:: apply2:: apply3:: apply4::
 				   (if Lambda.sapplyPossible () then
-					[sapply]
-				    else nil)))
+					[sapplY, sapply0, sapply2, sapply3,
+					 sapply4]
+				    else [])))
 	    in
 		classToJasmin (class)
 	    end
-and
-    compile prog = genProgramCode (0,0,2,"Emil", imperatifyString prog)
-and
-    compileFile (f, optimize) = genProgramCode (0,0,optimize,"Emil", imperatifyFile f)
+	  | expCodeClass _ =
+	    raise Error "Error in intermediate: FunExp should begin with OneArg."
+	and
+	    compile prog = genProgramCode (0,0,2,"Emil", imperatifyString prog)
+	and
+	    compileFile (f, optimize) = genProgramCode (0,0,optimize,"Emil", imperatifyFile f)
     end
