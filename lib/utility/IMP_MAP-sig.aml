@@ -1,6 +1,17 @@
-signature IMP_MAP =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+signature IMP_MAP =
+sig
     type key
     type 'a map
     type 'a t = 'a map
@@ -40,5 +51,4 @@ signature IMP_MAP =
     val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val find :		('a -> bool) -> 'a map -> 'a option
     val findi :		(key * 'a -> bool) -> 'a map -> (key * 'a) option
-
-  end
+end
