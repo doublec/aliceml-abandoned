@@ -1,6 +1,0 @@
-NJ
-CM
-Lexer.lex.*
-Parser.grm.*
-~*
-[a-z]*.sml

@@ -1,8 +1,0 @@
-Group is
-
-	../infrastructure/phase.cm
-	../infrastructure/target.cm
-	../infrastructure/switches.cm
-
-	COMPILER-sig.aml
-	MkCompiler.aml

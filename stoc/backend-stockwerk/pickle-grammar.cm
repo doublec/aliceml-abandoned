@@ -1,8 +1,0 @@
-Group is
-
-    ../../lib/utility/sources.cm
-    ../common/id-stamp.cm
-    ../backend-common/flat-grammar.cm
-
-    PICKLE_GRAMMAR-sig.aml
-    PickleGrammar.aml

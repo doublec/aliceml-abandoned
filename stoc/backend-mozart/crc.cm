@@ -1,8 +1,0 @@
-Group
-
-    structure Crc
-
-is
-
-    CRC-sig.aml
-    Crc.aml

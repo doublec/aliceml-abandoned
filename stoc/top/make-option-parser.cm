@@ -1,6 +1,0 @@
-Group is
-
-    ../infrastructure/switches.cm
-
-    OPTION_PARSER-sig.aml
-    MkOptionParser.aml

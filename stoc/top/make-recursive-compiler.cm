@@ -1,9 +1,0 @@
-Group is
-
-    ../infrastructure/crash.cm
-    composer.cm
-    compiler.cm
-
-    DummyUnsafePickle.aml
-    RECURSIVE_COMPILER-sig.aml
-    MkRecursiveCompiler.aml
