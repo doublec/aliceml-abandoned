@@ -3,52 +3,23 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure FromEqHashKey
-from "../../lib/utility/HASH_KEY-sig"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure MkHashScopedImpMap
-from "../infrastructure/MkHashScopedImpMap"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    structure StampMap
-from "../common/StampMap"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    structure IL
-from "IL"
-
-import
-    structure System
-from "System"
-
-import
-    signature CODE_STORE
-from "CODE_STORE-sig"
+import structure FromEqHashKey      from "../../lib/utility/HASH_KEY-sig"
+import structure Crash              from "../infrastructure/Crash"
+import structure MkHashScopedImpMap from "../infrastructure/MkHashScopedImpMap"
+import structure Stamp              from "../common/Stamp"
+import structure StampSet           from "../common/StampSet"
+import structure StampMap           from "../common/StampMap"
+import structure FlatGrammar        from "../backend-common/FlatGrammar"
+import structure IL                 from "IL"
+import structure System             from "System"
+import signature CODE_STORE         from "CODE_STORE-sig"
 
 structure CodeStore :> CODE_STORE =
     struct
@@ -58,6 +29,7 @@ structure CodeStore :> CODE_STORE =
 
 	datatype id = datatype FlatGrammar.id
 	datatype idDef = datatype FlatGrammar.idDef
+	datatype idRef = datatype FlatGrammar.idRef
 
 	datatype reg =
 	    SFld of index
@@ -200,6 +172,9 @@ structure CodeStore :> CODE_STORE =
 	    (emit (Comment ("load " ^ Stamp.toString stamp));
 	     emitStamp stamp)
 
+	fun emitIdRef (IdRef id) = emitId id
+	  | emitIdRef (LastIdRef id) = emitId id
+
 	fun allocateLocal ty =
 	    let
 		val (_, _, _, (_, _, ri, tysRef, _), _) = List.hd (!env)
@@ -240,12 +215,12 @@ structure CodeStore :> CODE_STORE =
 	    end
 	  | declareLocal Wildcard = emit Pop
 
-	fun kill set =
+	fun kill ids =
 	    let
 		val (_, _, _, (scope, _, _, _, indicesRef), _) = List.hd (!env)
 	    in
-		StampSet.app
-		(fn stamp =>
+		Vector.app
+		(fn Id (_, stamp, _) =>
 		 case ScopedMap.lookup (scope, stamp) of
 		     SOME (Loc i) =>
 			 (emit (Comment ("kill " ^ Stamp.toString stamp ^
@@ -260,7 +235,7 @@ structure CodeStore :> CODE_STORE =
 		   | (NONE | SOME (Killed _)) =>
 			 (* This can happen at a SharedStm *)
 			 emit (Comment ("kill-none " ^ Stamp.toString stamp)))
-		set
+		ids
 	    end
 
 	fun saveRegState () =
