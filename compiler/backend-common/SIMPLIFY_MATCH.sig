@@ -31,11 +31,15 @@ signature SIMPLIFY_MATCH =
 	type pos = string list
 
 	datatype testGraph =
-	    Node of pos * test * testGraph ref * testGraph ref *
-		    testList ref * testList ref * int ref * O.exp option ref
-	  | Leaf of O.exp * int ref * O.exp option ref
+	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
+	  | Leaf of O.exp * O.exp option ref
 	  | Default
-	withtype testList = (pos * test) list option
+	and nodeStatus =
+	    Initial
+	  | Raw of testGraph list * testGraph list
+	  | Cooked of (pos * test) list * (pos * test) list
+	  | Optimized of (pos * test) list * (pos * test) list
+	  | Simplified of O.exp
 
 	val buildGraph: (I.info * I.pat * O.exp) list * O.exp ->
 	    testGraph * (O.coord * O.exp option ref) list

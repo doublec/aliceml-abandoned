@@ -7,3 +7,6 @@ Group is
 
     IMPERATIVE_GRAMMAR.sig
     ImperativeGrammar.sml
+
+    OUTPUT_IMPERATIVE_GRAMMAR.sig
+    OutputImperativeGrammar.sml

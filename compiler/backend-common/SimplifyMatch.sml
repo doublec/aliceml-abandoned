@@ -18,7 +18,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	open I
 	open IntermediateAux
 
-	(* Pattern Matching Compilation: Tests *)
+	(* Tests *)
 
 	datatype test =
 	    LitTest of lit
@@ -127,11 +127,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	(* Test Graphs *)
 
 	datatype testGraph =
-	    Node of pos * test * testGraph ref * testGraph ref *
-		    testList ref * testList ref * int ref * O.exp option ref
-	  | Leaf of O.exp * int ref * O.exp option ref
+	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
+	  | Leaf of O.exp * O.exp option ref
 	  | Default
-	withtype testList = (pos * test) list option
+	and nodeStatus =
+	    Initial
+	  | Raw of testGraph list * testGraph list
+	  | Cooked of (pos * test) list * (pos * test) list
+	  | Optimized of (pos * test) list * (pos * test) list
+	  | Simplified of O.exp
 
 	(* Construction of Test Trees Needing Backtracking *)
 
@@ -165,8 +169,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	local
 	    fun findTest (tree, pos, test) =
 		case tree of
-		    Node (pos', test', thenTreeRef, ref elseTree,
-			  _, _, count, _) =>
+		    Node (pos', test', thenTreeRef, ref elseTree, _) =>
 			if pos <> pos' then NONE
 			else if testEq (test, test') then SOME thenTreeRef
 			else if areParallelTests (test, test') then
@@ -191,7 +194,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				 mergeIntoTree (testSeqRest, thenTree, Default)
 			 in
 			     Node (pos, test, ref newThenTree, ref elseTree,
-				   ref NONE, ref NONE, ref 0, ref NONE)
+				   ref Initial)
 			 end)
 	      | mergeIntoTree (Neg testSeq::testSeqRest, thenTree, elseTree) =
 		mergeIntoTree (testSeq, elseTree,
@@ -209,90 +212,110 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Elimination of Backtracking, Producing a Test Graph *)
 
-	fun propagateElses (Node (_, _, thenTreeRef, elseTreeRef, _, _, _, _),
+	fun propagateElses (Node (_, _, thenTreeRef, elseTreeRef, _),
 			    defaultTree) =
 	    (case !elseTreeRef of
 		 Default => elseTreeRef := defaultTree
-	       | _ => propagateElses (!elseTreeRef, defaultTree);
+	       | elseTree => propagateElses (elseTree, defaultTree);
 	     case !thenTreeRef of
 		 Default => thenTreeRef := defaultTree
-	       | _ => propagateElses (!thenTreeRef, !elseTreeRef))
-	  | propagateElses (Leaf (_, _, _), _) = ()
+	       | thenTree => propagateElses (thenTree, !elseTreeRef))
+	  | propagateElses (Leaf (_, _), _) = ()
 	  | propagateElses (Default, _) =
 	    Crash.crash "SimplifyMatch.propagateElses"
 
-	(*--** this can be optimized by imposing a total ordering on pos *)
-	fun testSetMember (pos, test, (pos', test')::testSetRest) =
-	    pos = pos' andalso testEq (test, test')
-	    orelse testSetMember (pos, test, testSetRest)
-	  | testSetMember (_, _, nil) = false
+	(* Optimization of the Test Graph *)
 
 	local
+	    fun union (NONE, gs) = gs
+	      | union (SOME g, gr) = g::gr
+
+	    fun computeRaw (graph as Node (_, _, ref thenGraph, ref elseGraph,
+					   status as ref Initial),
+			    prevTrueOpt, prevFalseOpt) =
+		(status := Raw (union (prevTrueOpt, nil),
+				union (prevFalseOpt, nil));
+		 computeRaw (thenGraph, SOME graph, NONE);
+		 computeRaw (elseGraph, NONE, SOME graph))
+	      | computeRaw (Node (_, _, _, _, status as
+				  ref (Raw (trueGraphs, falseGraphs))),
+			    prevTrueOpt, prevFalseOpt) =
+		status := Raw (union (prevTrueOpt, trueGraphs),
+			       union (prevFalseOpt, falseGraphs))
+	      | computeRaw (_, _, _) = ()
+
+	    fun testSetMember (pos, test, (pos', test')::testSetRest) =
+		pos = pos' andalso testEq (test, test')
+		orelse testSetMember (pos, test, testSetRest)
+	      | testSetMember (_, _, nil) = false
+
 	    fun testSetIntersect ((pos, test)::testSetRest, testSet') =
 		if testSetMember (pos, test, testSet') then
 		    (pos, test)::(testSetIntersect (testSetRest, testSet'))
 		else testSetIntersect (testSetRest, testSet')
 	      | testSetIntersect (nil, _) = nil
+
+	    fun getSets (status as ref (Raw (trueGraphs, falseGraphs))) =
+		let
+		    val sets = (makePosTestList (trueGraphs, true),
+				makePosTestList (falseGraphs, false))
+		in
+		    status := Cooked sets; sets
+		end
+	      | getSets (ref (Cooked sets)) = sets
+	      | getSets (ref (Optimized sets)) = sets
+	      | getSets (ref _) = Crash.crash "SimplifyMatch.getSets"
+	    and makePosTestList (graphs, isTrue) =
+		List.foldr
+		(fn (graph, posTestList) =>
+		 case graph of
+		     Node (pos, test, _, _, status) =>
+			 let
+			     val (trueSet, falseSet) = getSets status
+			 in
+			     if isTrue then
+				 testSetIntersect
+				 ((pos, test)::trueSet, falseSet)
+			     else
+				 testSetIntersect
+				 (trueSet, (pos, test)::falseSet)
+			 end
+		   | _ => Crash.crash "SimplifyMatch.cook")
+		nil graphs
+
+	    fun disentailed (pos, test, (pos', test')::rest) =
+		pos = pos' andalso areParallelTests (test, test')
+		orelse disentailed (pos, test, rest)
+	      | disentailed (_, _, nil) = false
+
+	    fun optimize (ref (Node (_, _, _, _, ref (Optimized (_, _))))) = ()
+	      | optimize (graphRef as
+			  ref (Node (pos, test, thenGraphRef, elseGraphRef,
+				     status))) =
+		let
+		    val sets as (trueSet, falseSet) = getSets status
+		in
+		    if testSetMember (pos, test, trueSet) then
+			(graphRef := !thenGraphRef; optimize graphRef)
+		    else if testSetMember (pos, test, falseSet)
+			orelse disentailed (pos, test, trueSet) then
+			(graphRef := !elseGraphRef; optimize graphRef)
+		    else
+			(status := Optimized sets;
+			 optimize thenGraphRef;
+			 optimize elseGraphRef)
+		end
+	      | optimize (ref (Leaf (_, _))) = ()
+	      | optimize (ref _) = Crash.crash "SimplifyMatch.optimize"
 	in
-	    fun computeTestSets (Node (pos, test, ref thenGraph, ref elseGraph,
-				       trueTestsRef, falseTestsRef, _, _),
-				  trueTests, falseTests) =
-		(case !trueTestsRef of
-		     NONE => trueTestsRef := SOME trueTests
-		   | SOME trueTests' =>
-			 trueTestsRef :=
-			 SOME (testSetIntersect (trueTests, trueTests'));
-		 case !falseTestsRef of
-		     NONE => falseTestsRef := SOME falseTests
-		   | SOME falseTests' =>
-			 falseTestsRef :=
-			 SOME (testSetIntersect (falseTests, falseTests'));
-		 computeTestSets (thenGraph,
-				  (pos, test)::trueTests, falseTests);
-		 computeTestSets (elseGraph,
-				  trueTests, (pos, test)::falseTests))
-	      | computeTestSets (Leaf (_, _, _), _, _) = ()
-	      | computeTestSets (Default, _, _) =
-		Crash.crash "SimplifyMatch.computeTestSets"
+	    fun optimizeGraph graph =
+		let
+		    val _ = computeRaw (graph, NONE, NONE)
+		    val graphRef = ref graph
+		in
+		    optimize graphRef; !graphRef
+		end
 	end
-
-	fun disentailed (pos, test, (pos', test')::rest) =
-	    pos = pos' andalso areParallelTests (test, test')
-	    orelse disentailed (pos, test, rest)
-	  | disentailed (_, _, nil) = false
-
-	fun optimizeGraph (graphRef as
-			   ref (Node (pos, test, thenGraphRef, elseGraphRef,
-				      ref (SOME trueTests),
-				      ref (SOME falseTests), count, _))) =
-	    if testSetMember (pos, test, trueTests) then
-		(graphRef := !thenGraphRef;
-		 optimizeGraph graphRef)
-	    else if testSetMember (pos, test, falseTests)
-		orelse disentailed (pos, test, trueTests) then
-		(graphRef := !elseGraphRef;
-		 optimizeGraph graphRef)
-	    else if !count = ~1 then ()
-	    else
-		(count := ~1;
-		 optimizeGraph thenGraphRef;
-		 optimizeGraph elseGraphRef)
-	  | optimizeGraph (ref (Leaf (_, _, _))) = ()
-	  | optimizeGraph _ = Crash.crash "SimplifyMatch.optimizeGraph"
-
-	fun countShared (Node (_, _, ref thenGraph, ref elseGraph,
-			       _, _, count, _)) =
-	    let
-		val n = !count
-	    in
-		count := (if n = ~1 then 1 else n + 1);
-		if n < 1 then
-		    (countShared thenGraph;
-		     countShared elseGraph)
-		else ()
-	    end
-	  | countShared (Leaf (_, count, _)) = count := !count + 1
-	  | countShared Default = Crash.crash "SimplifyMatch.countShared"
 
 	fun buildGraph (matches, elseExp) =
 	    let
@@ -304,25 +327,19 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				    val (testSeq, _) =
 					makeTestSeq (pat', nil, nil, nil)
 				    val r = ref NONE
-				    val leaf = Leaf (thenExp, ref 0, r)
+				    val leaf = Leaf (thenExp, r)
 				in
 				    (mergeIntoTree (List.rev testSeq,
 						    leaf, elseTree),
 				     (coord, r)::consequents)
 				end) (Default, nil) matches
-		val r = ref 0
-		val elseGraph = Leaf (elseExp, r, ref NONE)
+		val elseGraph = Leaf (elseExp, ref NONE)
 	    in
 		case graph of
-		    Default => (r := 1; (elseGraph, consequents))
-		  | _ => (propagateElses (graph, elseGraph);
-			  computeTestSets (graph, nil, nil);
-			  let
-			      val graphRef = ref graph
-			  in
-			      optimizeGraph graphRef;
-			      countShared (!graphRef);
-			      (!graphRef, consequents)
-			  end)
+		    Default =>
+			(elseGraph, consequents)
+		  | _ =>
+			(propagateElses (graph, elseGraph);
+			 (optimizeGraph graph, consequents))
 	    end
     end

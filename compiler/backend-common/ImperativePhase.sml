@@ -303,7 +303,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    let
 		val n = gen ()
 		val _ = r := n
-		val stms = translateExp (exp, f, cont)
+		val stms = share (translateExp (exp, f, cont))
 	    in
 		enterShared (n, stms); stms
 	    end

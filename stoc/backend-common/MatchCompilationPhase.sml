@@ -52,11 +52,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun share exp =
 	    O.SharedExp (O.coordOf exp, exp, ref O.backendInfoDummy)
 
-	fun makeShared (exp, ref 0) =
-	    Crash.crash "MatchCompilationPhase.makeShared"
-	  | makeShared (exp, ref 1) = exp
-	  | makeShared (exp, ref _) = share exp
-
 	fun idToVarExp id =
 	    let
 		val coord = infoId id
@@ -304,25 +299,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    NONE => exp'
 		  | SOME dec' => O.LetExp (coord, [dec'], exp')
 	    end
-	and simplifyGraph (Node (_, _, _, _, _, _, _, ref (SOME exp)), _) = exp
-	  | simplifyGraph (Node (pos, test, ref thenGraph, ref elseGraph, _, _,
-				 count, expOptRef as ref NONE), mapping) =
+	and simplifyGraph (Node (pos, test, ref thenGraph, ref elseGraph,
+				 status as ref (Optimized (_, _))), mapping) =
 	    let
-		val exp = makeShared (simplifyNode (pos, test, thenGraph,
-						    elseGraph, mapping), count)
+		val exp =
+		    share (simplifyNode (pos, test, thenGraph, elseGraph,
+					 mapping))
 	    in
-		expOptRef := SOME exp;
-		exp
+		status := Simplified exp; exp
 	    end
-	  | simplifyGraph (Leaf (_, _, ref (SOME exp)), _) = exp
-	  | simplifyGraph (Leaf (exp, count, expOptRef as ref NONE), _) =
+	  | simplifyGraph (Node (_, _, _, _, ref (Simplified exp)), _) = exp
+	  | simplifyGraph (Leaf (exp, expOptRef as ref NONE), _) =
 	    let
-		val exp' = makeShared (exp, count)
+		val exp' = share exp
 	    in
-		expOptRef := SOME exp';
-		exp'
+		expOptRef := SOME exp'; exp'
 	    end
-	  | simplifyGraph (Default, _) =
+	  | simplifyGraph (Leaf (_, ref (SOME exp)), _) = exp
+	  | simplifyGraph (_, _) =
 	    Crash.crash "MatchCompilationPhase.simplifyGraph"
 	and simplifyNode (pos, GuardTest (mapping0, exp),
 			  thenGraph, elseGraph, mapping) =
