@@ -82,9 +82,9 @@ define
    end
 
    fun {TranslateTagTests
-	 Region IdRef TagBodyVec ElseVInstr State ReturnReg IsTry}
+	 Region IdRef Labels TagBodyVec ElseVInstr State ReturnReg IsTry}
       Matches = {Record.foldR TagBodyVec
-		 fun {$ Labels#N#Args#Body In} Label Match ThenVInstr in
+		 fun {$ N#Args#Body In} Label Match ThenVInstr in
 		    Label = Labels.(N + 1)
 		    Match =
 		    case Args of 'OneArg'(IdDef) then ThenVInstr0 in
@@ -260,9 +260,9 @@ define
 		       onScalar(F ThenVInstr)|In
 		    end nil}
 	 ElseVInstr = {TranslateBody ElseBody State ReturnReg IsTry}
-      [] ['TestStm'(Region IdRef 'TagTests'(TagBodyVec) ElseBody)]
+      [] ['TestStm'(Region IdRef 'TagTests'(Labels TagBodyVec) ElseBody)]
       then ElseVInstr in
-	 VHd = {TranslateTagTests Region IdRef TagBodyVec
+	 VHd = {TranslateTagTests Region IdRef Labels TagBodyVec
 		ElseVInstr State ReturnReg IsTry}
 	 ElseVInstr = {TranslateBody ElseBody State ReturnReg IsTry}
       [] ['TestStm'(Region IdRef 'ConTests'(ConBodyVec) ElseBody)]

@@ -338,8 +338,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		 O.LitTests vec =>
 		     Vector.app (fn (_, body) =>
 				 usedVarsBody (body, set, used, shared)) vec
-	       | O.TagTests vec =>
-		     Vector.app (fn (_, _, _, body) =>
+	       | O.TagTests (_, vec) =>
+		     Vector.app (fn (_, _, body) =>
 				 usedVarsBody (body, set, used, shared)) vec
 	       | O.ConTests vec =>
 		     Vector.app (fn (_, _, body) =>

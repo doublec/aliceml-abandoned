@@ -112,11 +112,11 @@ define
 				       fun {$ Lit#Body}
 					  Lit#{TrBody Body $ nil ShareDict}
 				       end})
-			[] 'TagTests'(TagBodyVec) then
-			   'TagTests'({Record.map TagBodyVec
-				       fun {$ Labels#N#Args#Body}
-					  {Record.map Labels TrLabel}#N#
-					  {TrArgs Args TrIdDef}#
+			[] 'TagTests'(Labels TagBodyVec) then
+			   'TagTests'({Record.map Labels TrLabel}
+				      {Record.map TagBodyVec
+				       fun {$ N#Args#Body}
+					  N#{TrArgs Args TrIdDef}#
 					  {TrBody Body $ nil ShareDict}
 				       end})
 			[] 'ConTests'(ConBodyVec) then

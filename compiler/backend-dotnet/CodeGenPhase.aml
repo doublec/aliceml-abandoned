@@ -322,11 +322,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			 Vector.appi gen litBodyVec;
 			 genBody elseBody
 		     end)
-	  | genTests (TagTests tagBodyVec, elseBody) =
+	  | genTests (TagTests (_, tagBodyVec), elseBody) =
 	    let
-		fun toInt (_, n, TupArgs #[], body) =
+		fun toInt (n, TupArgs #[], body) =
 		    (n, fn () => emit Pop, body)
-		  | toInt (_, n, args, body) =
+		  | toInt (n, args, body) =
 		    (n, fn () => (emit (Castclass Alice.TagValTy);
 				  emit (Ldfld (Alice.TagVal, "Value",
 					       ObjectTy));

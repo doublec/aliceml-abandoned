@@ -104,8 +104,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	and allDefsTests (LitTests tests, set, nested, shared) =
 	    Vector.app (fn (_, body) =>
 			   allDefsBody (body, set, nested, shared)) tests
-	  | allDefsTests (TagTests tests, set, nested, shared) =
-	    Vector.app (fn (_, _, idDefArgs, body) =>
+	  | allDefsTests (TagTests (_, tests), set, nested, shared) =
+	    Vector.app (fn (_, idDefArgs, body) =>
 			   (allDefsArgs (idDefArgs, set);
 			    allDefsBody (body, set, nested, shared))) tests
 	  | allDefsTests (ConTests tests, set, nested, shared) =
@@ -391,26 +391,26 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    in
 		LitTests tests
 	    end
-	  | laTests (TagTests tests, use, shared, dontKill) =
+	  | laTests (TagTests (labels, tests), use, shared, dontKill) =
 	    let
 		val testUseVec =
 		    Vector.map
-			(fn (labels, n, idDefArgs, body) =>
+			(fn (n, idDefArgs, body) =>
 			    let
 				val (body, use') =
 				    laBody (body, shared, dontKill)
 				val idDefArgs = laIdDefArgs (idDefArgs, use')
 			    in
 				IdSet.union (use, use');
-				(labels, n, idDefArgs, body, use')
+				(n, idDefArgs, body, use')
 			    end) tests
 		val tests =
-		    Vector.map (fn (labels, n, idDefArgs, body, use') =>
-				   (labels, n, idDefArgs,
+		    Vector.map (fn (n, idDefArgs, body, use') =>
+				   (n, idDefArgs,
 				    lastUse (difference (use, use'), body)))
 			       testUseVec
 	    in
-		TagTests tests
+		TagTests (labels, tests)
 	    end
 	  | laTests(ConTests tests, use, shared, dontKill) =
 	    let

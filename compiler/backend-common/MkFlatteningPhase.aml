@@ -132,7 +132,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	fun tagTest (labels, n, args, arity, body) =
 	    testArity (args, arity,
 		       fn (args, body) =>
-			  O.TagTests #[(labels, n, args, body)], body)
+			  O.TagTests (labels, #[(n, args, body)]), body)
 
 	fun conTest (idRef, args, arity, body) =
 	    testArity (args, arity,
@@ -244,9 +244,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, idRef, thenStms, elseStms, errStms) =
 	    [O.TestStm (#region info, idRef,
-			O.TagTests #[(boolLabels, 1, O.TupArgs #[], thenStms),
-				     (boolLabels, 0, O.TupArgs #[], elseStms)],
-			errStms)]
+			O.TagTests (boolLabels,
+				    #[(1, O.TupArgs #[], thenStms),
+				      (0, O.TupArgs #[], elseStms)]), errStms)]
 
 	fun raisePrim (region, name) =
 	    [O.RaiseStm (region, O.Prim name)]

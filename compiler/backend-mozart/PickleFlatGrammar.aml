@@ -206,11 +206,11 @@ structure PickleFlatGrammar :> CODE
 	and outputTests (q, LitTests litBodyVec) =
 	    (outputTuple (q, "LitTests", 1);
 	     outputVector (outputPair (outputLit, outputBody)) (q, litBodyVec))
-	  | outputTests (q, TagTests tagBodyVec) =
-	    (outputTuple (q, "TagTests", 1);
-	     outputVector (outputQuadruple (outputVector outputLabel,
-					    outputInt, outputArgs outputIdDef,
-					    outputBody)) (q, tagBodyVec))
+	  | outputTests (q, TagTests (labels, tagBodyVec)) =
+	    (outputTuple (q, "TagTests", 2);
+	     outputVector outputLabel (q, labels);
+	     outputVector (outputTriple (outputInt, outputArgs outputIdDef,
+					 outputBody)) (q, tagBodyVec))
 	  | outputTests (q, ConTests conBodyVec) =
 	    (outputTuple (q, "ConTests", 1);
 	     outputVector (outputTriple (outputIdRef, outputArgs outputIdDef,

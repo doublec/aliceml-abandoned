@@ -171,8 +171,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 			     SEQ #[LIT lit, S " =>", IN, NL,
 				   formatBody (body, shared), EX, NL])
 		 litBodyVector)
-	  | formatTests (TagTests tagBodyVector, shared) =
-	    SEQ (Vector.map (fn (labels, n, args, body) =>
+	  | formatTests (TagTests (labels, tagBodyVector), shared) =
+	    SEQ (Vector.map (fn (n, args, body) =>
 			     SEQ #[S "(tag ",
 				   S (Label.toString (Vector.sub (labels, n))),
 				   S "/", I n, S ") ",

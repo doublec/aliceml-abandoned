@@ -351,8 +351,9 @@ functor MkValuePropagationPhase(val isCross: bool
 		Vector.app (fn (_, body) =>
 			    sortBody (body, pred, edgeMap, shared, path))
 		litBodyVec
-	      | sortTests (TagTests tagBodyVec, pred, edgeMap, shared, path) =
-		Vector.app (fn (_, _, _, body) =>
+	      | sortTests (TagTests (_, tagBodyVec),
+			   pred, edgeMap, shared, path) =
+		Vector.app (fn (_, _, body) =>
 			    sortBody (body, pred, edgeMap, shared, path))
 		tagBodyVec
 	      | sortTests (ConTests conBodyVec, pred, edgeMap, shared, path) =
@@ -471,9 +472,10 @@ functor MkValuePropagationPhase(val isCross: bool
 	    LitTests (Vector.map (fn (lit, body) =>
 				  (lit, patchBody (body, lazySels, shared)))
 		      tests)
-	  | patchTests (TagTests tests, lazySels, shared) =
-	    TagTests (Vector.map (fn (labels, n, args, body) =>
-				  (labels, n, args,
+	  | patchTests (TagTests (labels, tests), lazySels, shared) =
+	    TagTests (labels,
+		      Vector.map (fn (n, args, body) =>
+				  (n, args,
 				   patchArgs (args, lazySels) @
 				   patchBody (body, lazySels, shared))) tests)
 	  | patchTests (ConTests tests, lazySels, shared) =
@@ -1025,8 +1027,10 @@ functor MkValuePropagationPhase(val isCross: bool
 	  | testsAppend (testsOpt, NONE) = testsOpt
 	  | testsAppend (SOME (LitTests xs), SOME (LitTests ys)) =
 	    SOME (LitTests (Vector.concat [xs, ys]))
-	  | testsAppend (SOME (TagTests xs), SOME (TagTests ys)) =
-	    SOME (TagTests (Vector.concat [xs, ys]))
+	  | testsAppend (SOME (TagTests (labels, xs)),
+			 SOME (TagTests (labels', ys))) =
+	    (Assert.assert (labels = labels');
+	     SOME (TagTests (labels, Vector.concat [xs, ys])))
 	  | testsAppend (SOME (ConTests xs), SOME (ConTests ys)) =
 	    SOME (ConTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME (VecTests xs), SOME (VecTests ys)) =
@@ -1035,7 +1039,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	    raise Crash.Crash "MkValuePropagationPhase.testsAppend"
 
 	fun testsNull (SOME (LitTests xs)) = Vector.length xs = 0
-	  | testsNull (SOME (TagTests xs)) = Vector.length xs = 0
+	  | testsNull (SOME (TagTests (_, xs))) = Vector.length xs = 0
 	  | testsNull (SOME (ConTests xs)) = Vector.length xs = 0
 	  | testsNull (SOME (VecTests xs)) = Vector.length xs = 0
 	  | testsNull NONE = true
@@ -1261,7 +1265,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		   | _::_ => SOME (LitTests (Vector.fromList litBodyList)),
 		 elseBody)
 	    end
-	  | vpTests (idRef, TagTests tagBodyVec, elseBody,
+	  | vpTests (idRef, TagTests (labels, tagBodyVec), elseBody,
 		     {env, isToplevel, shared, export, lazySels}) =
 	    let
 		fun insertId (env, value) =
@@ -1276,7 +1280,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		      | Value (rvalue, eager) => ReflectVal (rvalue, eager)
 		val (tagBodyList, elseBody) =
 		    Vector.foldr
-		    (fn ((labels, n, args, body), (tagBodyList, elseBody')) =>
+		    (fn ((n, args, body), (tagBodyList, elseBody')) =>
 		     let
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
@@ -1297,7 +1301,7 @@ functor MkValuePropagationPhase(val isCross: bool
 					 if allArgs (fn IdDef _ => false
 						      | Wildcard => true) args
 					 then (nil, vpBody (body, state))
-					 else ((labels, n, args,
+					 else ((n, args,
 						vpBody (body, state))::
 					       tagBodyList, elseBody)
 				     end
@@ -1311,16 +1315,17 @@ functor MkValuePropagationPhase(val isCross: bool
 					   (nil, vpBody (body, state)))
 				     else (nil, elseBody')
 				 else
-				     ((labels, n, args, vpBody (body, state))::
+				     ((n, args, vpBody (body, state))::
 				      tagBodyList, elseBody')
 			   | _ =>
-				 ((labels, n, args, vpBody (body, state))::
+				 ((n, args, vpBody (body, state))::
 				  tagBodyList, elseBody')
 		     end) (nil, elseBody) tagBodyVec
 	    in
 		(case tagBodyList of
 		     nil => NONE
-		   | _::_ => SOME (TagTests (Vector.fromList tagBodyList)),
+		   | _::_ =>
+			 SOME (TagTests (labels, Vector.fromList tagBodyList)),
 		 elseBody)
 	    end
 	  | vpTests (idRef, ConTests conBodyVec, elseBody,

@@ -90,7 +90,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | ExportStm of stm_info * exp
 	and tests =
 	    LitTests of (lit * body) vector
-	  | TagTests of (label vector * int * idDef args * body) vector
+	  | TagTests of label vector * (int * idDef args * body) vector
 	  | ConTests of (idRef * idDef args * body) vector
 	  | VecTests of (idDef vector * body) vector
 	and exp =
