@@ -3,4 +3,4 @@ Group is
 	parsing-phase.cm
 	abstraction-phase.cm
 
-	MakeFrontendSML.sml
+	MkFrontendSML.aml
