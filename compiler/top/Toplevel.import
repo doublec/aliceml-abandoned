@@ -1,0 +1,18 @@
+(* -*- sml -*- *)
+
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* This file is executed on startup of interactive toplevel. *)
+
+import "x-alice:/lib/tools/Inspector"
+import "x-alice:/compiler/ToplevelMain"
