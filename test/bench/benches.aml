@@ -1,5 +1,10 @@
 import structure OS from "x-alice:/lib/system/OS"
-import structure Timer from "Timer"
+import structure Component from "x-alice:/lib/system/Component"
+import structure Url from "x-alice:/lib/system/Url"
+(* import structure Timer from "Timer" *)
+import structure AliceTimer from "AliceTimer"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect from "x-alice:/lib/system/Reflect"
 
 (* Alice Imports *)
 
@@ -43,9 +48,18 @@ fun dotimes(0,p) = 0
 
 
 fun dobench(proc) = 
-    (Timer.start ();
+    (AliceTimer.start ();
      proc ();
-     Timer.check ())
+     AliceTimer.check ())
+
+(*  fun dobench(proc) =  *)
+(*    let *)
+(*      val startTime = Timer.time () *)
+(*      val _         = proc () *)
+(*      val endTime   = Timer.time () *)
+(*    in *)
+(*      endTime - startTime *)
+(*    end *)
 
 fun dobenchn (0, _) = []
   | dobenchn (n, proc) =
@@ -333,6 +347,62 @@ fun threadcrea 0 = ()
 
 (**************************************************************)
 
+local
+  fun mkList n     = mklist' n nil
+  and mklist' 0 xs = xs
+    | mklist' n xs = mklist' (n - 1) (n::xs)
+
+  val xs = mkList 50000
+in
+  fun pickleList () =
+      let
+	structure S = Pickle.SaveVal(val file = "list.stc"
+				     type t = int list
+				     val x = xs)
+      in
+	()
+      end
+
+  fun unpickleList () =
+    let
+      structure S = Pickle.LoadVal(val file = "list.stc"
+				   type t = int list)
+    in
+      ()
+    end
+end
+
+(**************************************************************)
+
+val ext = Component.extension
+
+local
+   val c = Component.load (Url.fromString
+			     "x-alice:/lib/fundamental/Core")
+   structure RC = Reflect.Reflect(signature S = sig end structure X = ())
+   val inf = Component.inf c
+   val component = Component.create (inf, RC.x)
+in
+  fun pickleTypes () = Component.save("types." ^ ext, component)
+
+  fun unpickleTypes () = Component.load(Url.fromString ("types." ^ ext))
+end
+
+(**************************************************************)
+
+val coreName = "Core." ^ ext
+val newCoreName = "newcore." ^ ext
+
+fun loadComponent () = (Component.load(Url.fromString newCoreName); ())
+
+local
+  val c = Component.load (Url.fromString coreName)
+in
+fun saveComponent () = (Component.save(newCoreName, c); ())
+end
+
+(**************************************************************)
+
 fun getit("fib",n)    = (fn()=>fib(n))
   | getit("concfib",n) = (fn()=>Future.await (concfib n))
   | getit("threadcrea",n) = (fn()=>(threadcrea n; 1))
@@ -350,6 +420,12 @@ fun getit("fib",n)    = (fn()=>fib(n))
   | getit("mandel",n) = (fn()=>(mandelloop(0,0);1))
   | getit("mandeliter",n) = (fn()=>(mandeliter()))
   | getit("deriv",n)  = (fn()=>(goderiv(n);1))
+  | getit("picklelist",n) = (fn () => (pickleList (); 1))
+  | getit("unpicklelist",n) = (fn () => (unpickleList (); 1))
+  | getit("loadcomponent",n) = (fn () => (loadComponent (); 1))
+  | getit("savecomponent",n) = (fn () => (saveComponent (); 1))
+  | getit("savetypes",n) = (fn () => (pickleTypes (); 1))
+  | getit("loadtypes",n) = (fn () => (unpickleTypes (); 1))
   | getit(bench,n)    = (fn()=>(print("unknown\n");1));
 
 fun printBench(name, n, (mean, times)) =
@@ -386,20 +462,26 @@ fun doitall(iter) =
       );
 
 fun benches(iter) =
-    [doit("fib",iter,31),
+    [doit("picklelist",iter, 50000),
+     doit("unpicklelist",iter, 50000),
+     doit("savecomponent",iter, 8),
+     doit("loadcomponent",iter, 8),
+     doit("savetypes",iter, 8),
+     doit("loadtypes",iter, 8)]
+
+(*      [doit("fib",iter,31), *)
 (*     doit("fibf",iter,31), *)
-     doit("concfib",iter,20),
-     doit("threadcrea",iter,100000),
-     doit("tak",iter,8),
+(*       doit("concfib",iter,20), *)
+(*       doit("threadcrea",iter,100000), *)
+(*       doit("tak",iter,8), *)
 (*       doit("cpstak",iter,8), *)
-     doit("nrev",iter,3000),
+(*       doit("nrev",iter,3000), *)
 (*       doit("quick",iter,30), *)
 (*       doit("quickho",iter,30), *)
 (*       doit("quickarray",iter,30), *)
 (*       doit("queens",iter,10), *)
 (*  (*       doit("mandel",iter,4711), *) *)
-     doit("deriv",iter,30)
-     ]
+(*       doit("deriv",iter,30) *)
 
 val _ = benches 8;
 
