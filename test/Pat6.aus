@@ -1,0 +1,9 @@
+local
+    datatype t = A | B | C
+in
+    fun f (x, y) =
+	case (x, y) of
+	    (nil, _) => A
+	  | (_, nil) => B
+	  | (_, _) => C
+end

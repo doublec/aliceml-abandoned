@@ -1,0 +1,13 @@
+let
+    datatype u = A | B | C | D | G of int * int * int | H of int * u
+    datatype t = F of u * u
+in
+    (fn x =>
+     case x of
+	 F (A, B)::_ => 1
+       | F (C, D)::_ => 2
+       | F (G (_, _, _), _)::_ => 3
+       | F (H (_, H (_, _)), _)::_ => 4
+       | _ => 5)
+    F (D, _)
+end

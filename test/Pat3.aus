@@ -1,0 +1,10 @@
+let
+    datatype t = A | B | C
+in
+    (fn x =>
+     case x of
+	 {1 = _, ...} => A
+       | {1 = A, 2 = B} => B
+       | _ => C)
+    (D, _)
+end

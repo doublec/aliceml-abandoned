@@ -1,0 +1,51 @@
+local
+    datatype register =
+	X of int
+      | Y of int
+      | G of int
+    type lbl = int
+    datatype entry =
+	OnScalar of int * lbl
+      | OnRecord of string * int * lbl
+    datatype hashtable =
+	Ht of lbl * entry list
+    datatype instr =
+	Lbl of lbl
+      | Branch of lbl
+      | Move of register * register
+      | CreateVariable of register
+      | PutRecord of string * int * register
+      | ShallowGuard of lbl
+      | ShallowThen
+      | GetNumber of int * register
+      | GetLiteral of string * register
+      | Match of register * hashtable
+in
+    fun peephole (Lbl _::_) = 100
+      | peephole (Move (X _, Y _)::Move (X _, Y _)::_) = 200
+      | peephole (Move (Y _, X _)::Move (Y _, X _)::_) = 300
+      | peephole (Move (X _, Y _)::Move (Y _, X _)::_) = 400
+      | peephole (Move (Y _, X _)::Move (X _, Y _)::_) = 500
+      | peephole (Move (_, _)::_) = 600
+      | peephole (CreateVariable r1::Move (r2, X _)::_ when (r1 = r2)) = 700
+      | peephole (CreateVariable (x1 as X(_))::
+		  Move (x2, _)::_ when (x1 = x2)) = 800
+      | peephole (CreateVariable _::_) = 900
+      | peephole (PutRecord ("|", 2, _)::_) = 1000
+      | peephole (PutRecord (_, _, _)::_) = 1100
+      | peephole (ShallowGuard _::ShallowThen::_) = 1200
+      | peephole (ShallowGuard _::GetNumber (_, _)::
+		  Branch l1::Lbl l2::ShallowThen::_ when (l1 = l2)) = 1300
+      | peephole (ShallowGuard _::GetLiteral (_, _)::
+		  Branch l1::Lbl l2::ShallowThen::_ when (l1 = l2)) = 1400
+      | peephole (ShallowGuard _::_) = 1500
+      | peephole (Match (_, Ht (_, [OnScalar (_, l1)]))::
+		  Lbl l2::_ when (l1 = l2)) = 1600
+      | peephole (Match (_, Ht (_, [OnRecord ("|", 2, l1)]))::
+		  Lbl l2::_ when (l1 = l2)) = 1700
+      | peephole (Match (_, Ht (_, [OnRecord (_, _, l1)]))::
+		  Lbl l2::_ when (l1 = l2)) = 1800
+      | peephole (Match (_, _)::_) = 1900
+      | peephole (_::_) = 2000
+      | peephole (nil) = 2100
+end

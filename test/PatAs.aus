@@ -1,0 +1,10 @@
+(* conjunctive patterns *)
+
+fun g _ = false
+
+fun f1 ((1, 2, _) as (_, 2, 3)) = 100
+
+fun f2 ((1, (x, _) when (g x), _) as (_, (y, _) when (g y), 3)) = 100
+
+fun f3 ({a = (x, _) when (g x), b = 3} as
+	{b = z when (g z), a = (_, y) when (g y)}) = 100

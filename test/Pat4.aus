@@ -1,0 +1,5 @@
+let
+    datatype t = Error of t * t | Url of t * t | Load
+in
+    fn Error {1 = Url (Load, _), ...} => ()
+end

@@ -1,0 +1,10 @@
+let
+    datatype t = F of int * int | A | B | D
+    val a = lvar ()
+in
+    (fn (x, y) =>
+     case x of
+	 F (_, z) when z == y => A
+       | _ => B)
+    (F (D, a), a)
+end
