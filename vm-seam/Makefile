@@ -31,10 +31,10 @@ LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
 all: all-subdirs $(TARGETS)
 
 ifdef WINDOWS
-stow.exe: InitSeam.o stow.dll
+stow.exe: Main.o stow.dll
 	$(LD) $(LDFLAGS) -o $@ Main.o stow.dll
 else
-stow.exe: InitSeam.o $(OBJS) $(LIBS)
+stow.exe: Main.o $(OBJS) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ Main.o $(OBJS) $(LDLIBS)
 endif
 
