@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,12 +16,10 @@ sig
     eqtype file_id
     datatype access_mode = A_READ | A_WRITE | A_EXEC
 
-(*TODO
     val openDir :	string -> dirstream
     val readDir :	dirstream -> string option
     val rewindDir :	dirstream -> unit
     val closeDir :	dirstream -> unit
-*)
 
     val chDir :		string -> unit				(* OS.SysErr *)
     val getDir :	unit -> string				(* OS.SysErr *)
@@ -29,8 +27,9 @@ sig
     val rmDir :		string -> unit				(* OS.SysErr *)
     val isDir :		string -> bool				(* OS.SysErr *)
 
-    val isLink :	string -> bool				(* OS.SysErr *)
+(*  val isLink :	string -> bool				(* OS.SysErr *)
     val readLink :	string -> string			(* OS.SysErr *)
+*)
 (*TODO
     val fullPath :	string -> string
     val realPath :	string -> string *)

@@ -1,9 +1,10 @@
 %%%
 %%% Author:
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000-2001
+%%%   Leif Kornstaedt & Andreas Rossberg, 2000-2003
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -13,7 +14,7 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
-   OzOS(chDir getCWD mkDir stat unlink tmpnam system getEnv)
+   OzOS(getDir chDir getCWD mkDir stat unlink tmpnam system getEnv)
    at 'x-oz://system/OS.ozf'
    Property(get)
    Application(exit)
@@ -22,12 +23,65 @@ export
 define
    SysErr = {NewUniqueName 'OS.SysErr'}
 
+   fun {ReadDir Ss L}
+      case Ss
+      of closed then L = closed
+		     {Exception.raiseError
+		      alice(SysErr('openDir: cannot read directory' 'NONE'))}
+		     unit
+      [] nil then L = nil 'NONE'
+      [] "."|Ss2 then {ReadDir Ss2 L}
+      [] ".."|Ss2 then {ReadDir Ss2 L}
+      [] S|Ss2 then L = Ss2 'SOME'({ByteString.make S})
+      end
+   end
+
    OS =
    'OS'('\'SysErr': SysErr
 	'SysErr': fun {$ A B} SysErr(A B) end
 	'errorMsg': fun {$ X} {ByteString.make 'Unknown error code '#X} end
 	'FileSys$':
-	   'FileSys'('chDir':
+	   'FileSys'('openDir':
+			fun {$ Name}
+			   try
+			      Name#{NewCell {OzOS.getDir Name}}
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('openDir: cannot read directory'
+					    'NONE'))}
+			      unit
+			   end
+			end
+		     'rewindDir':
+			fun {$ Name#C} L in
+			   case {Exchange C $ L}
+			   of closed then
+			      L = closed
+			      {Exception.raiseError
+			       alice(SysErr('rewindDir: directory closed'
+					    'NONE'))}
+			   [] _ then
+			      try
+				 L = {OzOS.getDir Name}
+			      catch system(os(os ...) ...) then
+				L = nil
+				{Exception.raiseError
+				 alice(SysErr('rewindDir: cannot read directory'
+					      'NONE'))}
+			      end
+			   end
+			   unit
+			end
+		     'closeDir':
+			fun {$ _#C}
+			   {Assign C closed}
+			   unit
+			end
+		     'readDir':
+			fun {$ _#C} L in
+			   {ReadDir {Exchange C $ L} L}
+			end
+		     'chDir':
 			fun {$ Name}
 			   try
 			      {OzOS.chDir Name}

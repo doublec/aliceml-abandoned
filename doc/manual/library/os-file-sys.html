@@ -32,21 +32,23 @@
 	eqtype file_id
 	datatype access_mode = A_READ | A_WRITE | A_EXEC
 
-	val chDir :    string -> unit
-	val getDir :   unit -> string
-	val mkDir :    string -> unit
-	val rmDir :    string -> unit
-	val isDir :    string -> bool
+	val openDir :   string -> dirstream
+	val readDir :   dirstream -> string option
+	val rewindDir : dirstream -> unit
+	val closeDir :  dirstream -> unit
 
-	val isLink :   string -> bool
-	val readLink : string -> string
+	val chDir :     string -> unit
+	val getDir :    unit -> string
+	val mkDir :     string -> unit
+	val rmDir :     string -> unit
+	val isDir :     string -> bool
 
-	val fileSize : string -> Position.int
-	val modTime :  string -> Time.time
+	val fileSize :  string -> Position.int
+	val modTime :   string -> Time.time
 
-	val remove :   string -> unit
+	val remove :    string -> unit
 
-	val tmpName :  unit -> string
+	val tmpName :   unit -> string
     end
   </PRE>
 
@@ -62,7 +64,7 @@
   </P>
 
   <UL>
-    <LI><TT>openDir</TT>, <TT>readDir</TT>, <TT>rewindDir</TT>, <TT>closeDir</TT></LI>
+    <LI><TT>isLink</TT>, <TT>readLink</TT></LI>
     <LI><TT>fullPath</TT>, <TT>realPath</TT></LI>
     <LI><TT>access</TT></LI>
     <LI><TT>setTime</TT></LI>
