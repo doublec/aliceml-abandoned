@@ -1,5 +1,5 @@
 #
-# alicedepend.awk does the same as the alicedep tool.
+# alicedepend.awk does more or less the same as "alicedep --stockwerk".
 # Well, a hundred times faster.
 #
 
@@ -9,10 +9,14 @@ function exists(file) {
   return ((getline var < file) > 0);
 }
 
+function dirname(file) {
+  return (gensub(/[^\/]*$/, "", "g", file));
+}
+
 {
   if (match ($0, /^\w*import.*\".*\"\w*$/))
     depends[FILENAME] = depends[FILENAME] " \\\n         " \
-      $2 (exists($2 ".asig") ? ".asig" : ".stc")
+      dirname(FILENAME) $2 (exists($2 ".asig") ? ".asig" : ".stc")
 }
 
 END {

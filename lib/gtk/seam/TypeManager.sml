@@ -201,11 +201,11 @@ struct
     (* arginfo: IN/OUT argument; name of the C variable; type *)
 
     local
-	fun isOutArg (t as (POINTER (NUMERIC _)))      = true
-	  | isOutArg (POINTER (POINTER (STRUCTREF _))) = true
-	  | isOutArg (POINTER (ENUMREF _))             = true
-	  | isOutArg (POINTER (STRING _))              = true
-	  | isOutArg _                                 = false
+	fun isOutArg (POINTER (NUMERIC _)) = true
+	  | isOutArg (POINTER (POINTER _)) = true
+	  | isOutArg (POINTER (ENUMREF _)) = true
+	  | isOutArg (POINTER (STRING _))  = true
+	  | isOutArg _                     = false
     in
 	(* Splits an list of TypeTree.ty's into inArgs and outArgs      *)
 	(* (arginfo lists), where outArgs lose their POINTERs           *)
@@ -294,8 +294,7 @@ struct
       | checkItem _ = true
 
     (* Removes struct/enum members for which no binding can be generated *)
-    fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false
-      | checkStructMember (_,t) =
+    fun checkStructMember (_,t) =
 	(case removeTypeRefs t of
 	     FUNCTION _        => false
 	   | ARRAY _           => false

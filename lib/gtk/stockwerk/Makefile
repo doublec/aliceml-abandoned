@@ -73,8 +73,8 @@ $(GENERATOR):
 	echo 'CM.make(); compile();' | $(SML)
 	if test -e GtkBinding.x86-linux ; then \
 	  mv -f GtkBinding.x86-linux $(GENERATOR) ; fi
-	if test -e GtkBinding.x86-win32.exe ; then \
-	  mv -f GtkBinding.x86-win32.exe $(GENERATOR) ; fi
+	if test -e GtkBinding.x86-win32 ; then \
+	  mv -f GtkBinding.x86-win32 $(GENERATOR) ; fi
 	test -e $(GENERATOR) || exit 1
 
 $(INPUTFILE):
