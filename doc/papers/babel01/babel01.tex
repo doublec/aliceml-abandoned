@@ -66,7 +66,6 @@ problem solving and scheduling, natural language processing (parsing,
 semantics representation, and inference), multi-agent systems, and
 collaborative tools.
 
-%--** andersherum: erst die key features, dann die Schwachpunkte
 However, Oz has the reputation of being an exotic language, preventing
 it from being more widely used.  In part, it owes this reputation to its
 syntax.  To make the achievements of Oz available to a larger community,
@@ -97,8 +96,6 @@ following benefits:
 \noindent In short, the resulting system offers benefits to both the
 existing Oz community and to existing SML programmers.
 
-%--** contributions/case study + lessons learned: positionieren, siehe CfP
-
 This paper is structured as follows: Section~\ref{cast} presents the
 languages Oz and Alice.  Section~\ref{terminology} introduces some
 terminology and motivates our approach to interoperability, before
@@ -106,6 +103,8 @@ Section~\ref{mapping} gives a detailed account of how we put this into
 practice.  The implementation is described in Section~\ref{implementation}.
 We discuss the pros and cons of our approach in Section~\ref{discussion}
 and conclude the paper with an outlook on future work in Section~\ref{outlook}.
+Appendix~\ref{examples} provides example applications of the interoperability
+interface.
 
 
 %=======================================================================
@@ -210,10 +209,8 @@ Core Oz supports the following data types:
   arguments; output arguments are modelled by supplying a logic variable as
   input argument and binding it in the procedure's body.  Procedures are
   first-class data structures.
-%--** lexically scoped
 \item[Cells] are the only stateful entities in Core Oz.  A cell holds a
   reference to an Oz value and supports an atomic exchange operation.
-%--** Constraints
 \end{description}
 
 \noindent While Core Oz is a relational language, meaning that `='
@@ -389,8 +386,8 @@ we integrated extensions inspired by Oz:
 	\quad \kw{from} \char`\"x-alice:/lib/system/TextIO\char`\" \\
 	\kw{import} \kw{structure} OS \\
 	\quad \kw{from} \char`\"x-alice:/lib/system/OS\char`\" \\
-	\kw{val} \_ = TextIO.print (Test.fak 7) \\
-	\kw{val} \_ = OS.Process.exit 0
+	\kw{val} {\ttfamily \char`\_} = TextIO.print (Test.fak 7) \\
+	\kw{val} {\ttfamily \char`\_} = OS.Process.exit 0
       \end{tabular}
     \\ \hline
     \end{tabular}
@@ -435,9 +432,10 @@ Let's consider the advantages and drawbacks of the approaches outlined above.
 \item[Transparent vs.\ non-transparent.]  When interoperating
   non-trans\-pa\-rent\-ly, special language extensions or libraries are
   required for dealing with foreign procedures and data.  Transparent
-  interoperability makes the strong presupposition of a (bijective) mapping
-  which maps the natural way to express something in the guest language to
-  the natural way to express that something in the host language.
+  interoperability makes the strong presupposition of a mapping (ideally
+  bijective, if bidirectional interoperation is intended) which maps the
+  natural way to express something in the guest language to the natural way
+  to express that something in the host language.
 \item[Marshaling vs.\ direct.]  Marshaling-based interoperability allows
   each language to use the most efficient representation for its data and
   procedures, but causes performance loss at the interoperation boundaries
@@ -566,7 +564,9 @@ In terms of representation analysis, arity raising of $n$-ary constructors
 and functions are the only optimizations performed.  Note that in the present
 case, our primary motivation for this is interoperability, not efficiency.
 
-The type language part of the core language is subject to type erasure.
+The type language part of the core language is subject to type erasure,
+meaning that its operational semantics are defined for programs stripped
+of all type annotations~\cite[Section~6.1]{SMLDefinition}.
 
 %-----------------------------------------------------------------------
 \subsection{Module Language}
@@ -578,8 +578,8 @@ represented as two fields:  The constructor's identifier designates the
 constructor function, expecting the constructor's argument and returning
 the constructed value.  This reflects the fact that a constructor used as
 expression is the constructor function. Its identifier prefixed with a
-quote (which is not a valid value identifier) designates the constructor
-itself and is used to translate pattern matching.
+quote (which is not a valid value identifier in Alice) designates the
+constructor itself and is used to translate pattern matching.
 
 Structures reside in their own namespace, which is distinct from the namespace
 for values and constructors.  To avoid capturing, their identifier is prefixed
@@ -622,15 +622,24 @@ verify that their signatures match, as required by the Alice language
 definition.  In all other cases, signatures are ignored.
 
 Under this translation, the example components in Fig. \ref{ozcomponents}
-and~\ref{alicecomponents} become interchangeable.
+and~\ref{alicecomponents} become interchangeable.  Appendix~\ref{examples}
+gives more involved examples of interoperation.
 
 %-----------------------------------------------------------------------
 \subsection{Libraries}
 
-Alice supports a significant portion of the Standard ML Basis Library~%
-\cite{SMLBasis}, making itself largely compatible with SML.  Extensions
+Alice supports the Standard ML Basis Library~\cite{SMLBasis} for
+compatibility with SML.\footnote{Only parts of the library have been
+implemented yet, due to a lack of development resources.}  Extensions
 adhere to the style of the Standard Basis.  This makes them feel more
 natural to SML programmers.
+
+The extensions include in particular libraries for constraint programming,
+providing finite domain constraints, finite set constraints, and
+encapsulated search.  Since these were already available in Oz through
+libraries (Oz' constraint syntax is only syntactic sugar~\cite{OzNotation}),
+it was only a matter of recasting these in a statically typed formulation~%
+\cite{Alice}.
 
 
 %=======================================================================
@@ -647,20 +656,25 @@ The Alice runtime is the Mozart System, with minimal extensions.
 These are now part of the standard Mozart distribution.
 
 {\bfseries Tupling and Detupling.}
-Two instructions have been added to the Mozart Virtual Machine for
-run-time calling convention conversions.  The first applies a procedure
-with $n > 1$ arguments.  A run-time check tests whether the arity of the
-procedure and the call match, in which case the call proceeds normally.
-Else, the procedure must be binary (that is, a unary function):  A tuple
-is constructed from the first $n - 1$ arguments and passed as a single
-argument.  The $n$th argument becomes the second argument and is used
-to return the function's result.
+For efficiency, two instructions have been added to the Mozart Virtual
+Machine for run-time calling convention conversions.  The first applies
+a procedure with $n > 1$ arguments.  A run-time check tests whether
+the arity of the procedure and the call match, in which case the call
+proceeds normally.  Else, the procedure must be binary (that is, a unary
+function):  A tuple is constructed from the first $n - 1$ arguments and
+passed as a single argument.  The $n$th argument becomes the second
+argument and is used to return the function's result.
 
 The second instruction works the other way round:  If a procedure expecting
 more than two arguments is called with only two arguments, the first must
 be a tuple which is deconstructed to obtain the actual $n - 1$ input
 arguments.  The second argument becomes the $n$th argument and is used
 for output.
+
+In principle, calling convention conversions could have been emulated in
+Oz, which supports inspection of a procedure's arity as well as an `apply'
+procedure taking a procedure and a list of arguments.  However, this
+would have been significantly more expensive.
 
 {\bfseries Typed Components.}
 Oz components already carry type fields for the export signature of
@@ -685,7 +699,7 @@ an intermediate representation of the latter as target for the Alice
 compiler.  This intermediate representation basically corresponds to
 alpha-renamed Core Oz programs in which optimizations have been made
 explicit.  This allowed us to directly plug in the existing backend,
-performing liveness analysis, instruction selection, and register
+which performs liveness analysis, instruction selection, and register
 allocation.
 
 Thus, the Alice compiler's frontend is implemented in Alice, while its
@@ -713,9 +727,19 @@ Our approach has some limitations however regarding the use of the guest
 language Alice from the host language Oz:
 \begin{itemize}
 \item Alice uses the type-based mechanism of signature abstraction to
-  implement abstract data types.  However, due to Oz' dynamic typing,
-  Oz programs will be able to break these abstraction barriers:  Alice
-  abstract types are concrete as seen from Oz.
+  implement abstract data types.  Whether some data is an instance of
+  a concrete or an abstract type does not influence its representation.
+  As a consequence, Oz programs, being dynamically typed, will be able
+  to break these abstraction barriers:  Alice abstract types are concrete
+  as seen from Oz.
+
+  Curing this problem is not trivial due to the fundamentally different
+  approach to data abstraction in both languages.  Oz provides a special
+  data type called a {\itshape chunk}:  A chunk is like a record which does
+  not permit first-class inspection of its features.  Thus, data can be
+  made inaccessible by storing it in a chunk under a name hidden by
+  lexical scoping.\footnote{Typically, Oz programs use classes instead,
+  which build on this same mechanism~\cite{ObjectsInOz}.}
 \item The Oz compiler does not implement dynamic calling convention
   conversion, which would actually alter the defined semantics of Oz.
   The consequence is that Oz programs have to use the exact arity chosen
@@ -724,9 +748,16 @@ language Alice from the host language Oz:
   even changing its signature.  Oz programmers can account for this
   situation by performing calling convention conversion at the language
   level, by explicitly testing the procedure's arity.
+
+  A solution to this problem would consist of extending signature coercion
+  by the operational effect of always arity raising the functions contained
+  in the argument structure.  Then, representations would always be
+  predictable at module interfaces.
 \item Alice and Oz currently use different exceptions for signaling
   similar error conditions.  In particular, it is impossible to catch
-  the exceptions raised by Oz primitives in Alice.
+  the exceptions raised by Oz primitives in Alice.  We are thinking about
+  adding an Alice exception constructor for representing reflected Oz
+  exceptions.
 \end{itemize}
 
 \noindent None of these limitations has ever been a serious problem in
@@ -738,9 +769,6 @@ attains that of Oz, but of course cannot compete with high-performance ML
 implementations.  Nevertheless, we believe that in the application domains
 in which Oz is used heavily, Alice has a definite advantage over SML.
 
-
-%--** Summary and Lessons Learned
-%--** (relational and functional are not so different)
 
 %=======================================================================
 \section{Outlook}\label{outlook}
@@ -773,13 +801,90 @@ are now running.
 %=======================================================================
 
 Many thanks go to Ulrike Becker-Kornstaedt, Thorsten Brunklaus, Tobias
-Müller, and Christian Schulte for their comments on a previous version
+M\"{u}ller, and Christian Schulte for their comments on a previous version
 of this paper.  For the numerous discussions regarding the details of
 the translation scheme, thanks go to Andreas Rossberg, implementor of
-the Alice compiler frontend.
+the Alice compiler frontend.  Finally, I'd like to thank the anonymous
+referees for their commments.
 
 
 \bibliographystyle{entcs}
 \bibliography{babel01}
+
+
+\appendix
+%=======================================================================
+\section{Examples}\label{examples}
+%=======================================================================
+
+This section gives example uses of the interoperability interfaces.  These
+are taken from the implementation of parts of the Standard ML Basis Library
+in Oz.
+
+Figure~\ref{tabulate} shows an implementation `Vector.tabulate'.  Alice
+vectors are represented as Oz tuples with the label '\#[]' (just to make
+them distinguishable from Alice tuples).  It implements the Alice function
+by means of an Oz procedure and illustrates that the argument function
+can be called from Oz, and how to raise Alice exceptions.  (The variable
+`GeneralSize' is assumed to be bound to the exception constructor available
+as `General.Size'.)
+
+\begin{figure}
+  \caption{An implementation of `Vector.tabulate' in Oz.}
+  \label{tabulate}
+  \centerline{
+    \begin{tabular}{l} \hline
+      \kw{val} tabulate: int $\times$ (int $\rightarrow$ 'a)
+        $\rightarrow$ 'a vector \\ \hline
+      \kw{proc} \{VectorTabulate N F V\} \\
+      \quad \kw{try} \\
+      \qquad V = \{Tuple.make '\#[]' N\} \\
+      \quad \kw{catch} {\ttfamily \char`\_} \kw{then} \\
+      \qquad \{Exception.raiseError alice(GeneralSize)\} \\
+      \quad \kw{end} \\
+      \quad \{Record.forAllInd V \kw{fun} \{\$ I\} \{F $(\mbox{I} - 1)$\} end\} \\
+      \kw{end} \\ \hline
+    \end{tabular}
+  }
+\end{figure}
+
+Figure~\ref{commandline} implements the `CommandLine' structure.  The shown
+component exports a structure, makes use of the fact that Oz lists are Alice
+lists, and ensures that all strings (which can have various representations
+in Oz) are represented uniformly as byte strings before passing them to Alice.
+
+\begin{figure}
+  \caption{An Oz Implementation of the CommandLine module from the
+    Standard Basis Library.}
+  \label{commandline}
+  \centerline{
+    \begin{tabular}{l} \hline
+      \kw{structure} CommandLine: \\
+      \quad \kw{sig} \\
+      \qquad \kw{val} name: unit $\rightarrow$ string \\
+      \qquad \kw{val} arguments: unit $\rightarrow$ string list \\
+      \quad \kw{end} \\ \hline
+      \kw{functor} \\
+      \kw{import} \\
+      \quad Property(get) \\
+      \quad Application(getArgs) \\
+      \kw{export} \\
+      \quad 'CommandLine\$': CommandLine \\
+      \kw{define} \\
+      \quad CommandLine = \\
+      \quad '\#( \\
+      \qquad 'name': \\
+      \qquad\quad \kw{fun} \{\$ \kw{unit}\} \\
+      \qquad\qquad \{ByteString.make \{Property.get 'root.url'\}\} \\
+      \qquad\quad \kw{end} \\
+      \qquad 'arguments': \\
+      \qquad\quad \kw{fun} \{\$ \kw{unit}\} \\
+      \qquad\qquad \{Map \{Application.getArgs plain\} ByteString.make\} \\
+      \qquad\quad \kw{end} \\
+      \quad ) \\
+      \kw{end} \\ \hline
+    \end{tabular}
+  }
+\end{figure}
 
 \end{document}
