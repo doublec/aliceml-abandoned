@@ -12,7 +12,7 @@
 
 functor
 import
-   OzOS(getCWD system getEnv) at 'x-oz://system/OS.ozf'
+   OzOS(getCWD system getEnv tmpnam) at 'x-oz://system/OS.ozf'
    Property(put)
    Error(printException)
    System(onToplevel)
@@ -25,6 +25,10 @@ define
 	   'FileSys'('getDir':
 			fun {$ unit}
 			   {ByteString.make {OzOS.getCWD}}
+			end
+		     'tmpName':
+			fun {$ unit}
+			   {ByteString.make {OzOS.tmpnam}}
 			end)
 	'Process$':
 	   'Process'('success': 0
