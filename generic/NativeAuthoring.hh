@@ -72,7 +72,6 @@
 #define RETURN(w) RETURN1(w)
 
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
-#define RETURN_BOOL(b) RETURN_INT(!!(b));
 
 #define PREEMPT return Interpreter::PREEMPT;
 #define SUSPEND return Interpreter::SUSPEND;
