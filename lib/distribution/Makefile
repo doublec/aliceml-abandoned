@@ -74,7 +74,11 @@ depend:
 %.$(STC): %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-Linked%Remote.$(STC): %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
+Linked%Remote.stc: %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
+	$(ALICELINK) $(ALICELINK_OPTS) $*Remote \
+	--include $*Remote --include MkRemote -o $@
+
+Linked%Remote.ozf: %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
 	$(ALICELINK) $(ALICELINK_OPTS) $*Remote \
 	--include $*Remote --include UnsafeRemote --include MkRemote -o $@
 
