@@ -1,6 +1,3 @@
-CM
-*.lex.*
-*.grm.*
 ~*
 *.x86-linux
 *.ppm
