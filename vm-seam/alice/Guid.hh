@@ -17,32 +17,25 @@
 #pragma interface "alice/Guid.hh"
 #endif
 
-#include "generic/Tuple.hh"
+#include "generic/String.hh"
 
-class Guid: private Tuple {
-private:
-  static const u_int SIZE = 4;
+class Guid: private String {
 public:
   using Block::ToWord;
+  using String::Hash;
 
   static word vmGuid;
   static void Init();
 
   static Guid *New();
   static Guid *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == TUPLE_LABEL && b->GetSize() == SIZE); //--**
-    return static_cast<Guid *>(b);
+    return static_cast<Guid *>(String::FromWord(x));
   }
   static Guid *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == TUPLE_LABEL && b->GetSize() == SIZE); //--**
-    return static_cast<Guid *>(b);
+    return static_cast<Guid *>(String::FromWordDirect(x));
   }
 
   static int Compare(Guid *guid1, Guid *guid2);
-  u_int Hash();
 };
 
 #endif

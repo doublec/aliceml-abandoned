@@ -65,34 +65,23 @@ static int GetTimeStamp() {
 
 #endif
 
-static inline word intToWord(int i) {
-  //--** wild hack: make signed (n-1)-bit integer
-  return Store::IntToWord((i + i) / 2);
-}
+struct GuidComponents {
+  int pid, time, stamp, rand;
+};
 
 Guid *Guid::New() {
-  Tuple *tuple = Tuple::New(4);
-  tuple->Init(0, intToWord(static_cast<int>(getpid())));
-  tuple->Init(1, intToWord(static_cast<int>(time(0))));
-  tuple->Init(2, intToWord(GetTimeStamp()));
-  tuple->Init(3, intToWord(rand()));
-  return static_cast<Guid *>(tuple);
+  GuidComponents gcs;
+  gcs.pid = static_cast<int>(getpid());
+  gcs.time = static_cast<int>(time(0));
+  gcs.stamp = GetTimeStamp();
+  gcs.rand = rand();
+  return static_cast<Guid *>(String::New((char *) &gcs, sizeof(gcs)));
 }
 
 int Guid::Compare(Guid *guid1, Guid *guid2) {
-  for (int i = 0; i < 4; i++) {
-    int a = Store::DirectWordToInt(guid1->Sel(0));
-    int b = Store::DirectWordToInt(guid2->Sel(0));
-    if (a > b) return 1;
-    else if (a < b) return -1;
-  }
-  return 0;
-}
-
-u_int Guid::Hash() {
-  return
-    Store::DirectWordToInt(Sel(0)) ^
-    Store::DirectWordToInt(Sel(1)) ^
-    Store::DirectWordToInt(Sel(2)) ^
-    Store::DirectWordToInt(Sel(3));
+  u_int size1 = guid1->GetSize();
+  u_int size2 = guid2->GetSize();
+  if (size1 != size2)
+    return size1 < size2? -1: 1;
+  return std::memcmp(guid1->GetValue(), guid2->GetValue(), size1);
 }
