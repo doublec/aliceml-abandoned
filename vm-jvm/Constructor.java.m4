@@ -21,11 +21,6 @@ public class Constructor implements DMLValue {
 	this.gName = null;
     }
 
-    /** Pointergleichheit */
-    final public boolean equals(java.lang.Object val) {
-	return (val == this);
-    }
-
     final public java.lang.String toString() {
 	return this.name+" : constructor";
     }
