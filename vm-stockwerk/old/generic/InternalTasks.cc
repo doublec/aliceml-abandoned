@@ -30,6 +30,8 @@ static inline void Set(word &member, NativeTaskManager::function f,
   RootSet::Add(member);
 }
 
+word InternalTasks::await;
+
 void InternalTasks::Init() {
   Set(await, InternalTasks_await, -1, 0);
 }

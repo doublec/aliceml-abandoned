@@ -20,6 +20,8 @@
 
 static const char *holeExnContents = "Hole.Hole";
 
+word Hole::holeExn;
+
 void Hole::Init() {
   Chunk *chunk = Store::AllocChunk(std::strlen(holeExnContents));
   std::memcpy(chunk->GetBase(), holeExnContents, strlen(holeExnContents));

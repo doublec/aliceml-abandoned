@@ -53,7 +53,11 @@ Closure *EmptyTaskManager::ToClosure() {
   return Closure::New(concreteCode, 0);
 }
 
-u_int EmptyTaskManager::PurgeFrame(TaskStack */*taskStack*/, u_int offset) {
+void EmptyTaskManager::PushCall(TaskStack *, Closure *) {
+  Error("EmptyTaskManager::PushCall: must never be called");
+}
+
+u_int EmptyTaskManager::PurgeFrame(TaskStack *, u_int) {
   return 0; // meaning: this was the last one
 }
 
