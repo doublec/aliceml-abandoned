@@ -120,6 +120,10 @@ define
 			       ThenVInstr0 ElseVInstr VTl)
 	    ThenVInstr0 = vInlineDot(_ Reg0 1 {MakeReg Id2 State} false
 				     unit ThenVInstr)
+	 [] tupTest(nil) then
+	    VHd = vTestConstant(_ Reg0 '#'
+				ThenVInstr ElseVInstr {TranslateCoord Coord}
+				VTl)
 	 [] tupTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord('#' {Length Ids} ThenVInstr0)]
@@ -197,6 +201,8 @@ define
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
+      [] tupExp(_ nil) then
+	 VHd = vEquateConstant(_ '#' Reg VTl)
       [] tupExp(_ Ids) then
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
 			     {Map Ids
