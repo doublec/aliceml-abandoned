@@ -48,11 +48,32 @@ word SysErrConstructor;
 //
 
 DEFINE1(UnsafeOS_FileSys_openDir) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  // dummy
-  RETURN_UNIT;
-#else
   DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char buf[MAX_PATH];
+  std::strcpy(buf, name->ExportC());
+  std::strcat(buf, "/*");
+
+  WIN32_FIND_DATA findData;
+  HANDLE handle = FindFirstFile(buf, &findData);
+  word entry;
+  if (handle == INVALID_HANDLE_VALUE) {
+  {
+    if (GetLastError() != ERROR_NO_MORE_FILES) RAISE_SYS_ERR();
+    entry = Store::IntToWord(0);
+  } else {
+    entry = String::New(findData.cFileName)->ToWord();
+  }
+
+  String *dir = String::New(buf);
+  Cell *handleCell = Cell:New(Store::IntToWord(handle));
+  Cell *entryCell = Cell::New(entry);
+  Tuple *tuple = Tuple::New(3);
+  tuple->Init(0, dir->ToWord());
+  tuple->Init(1, handleCell->ToWord());
+  tuple->Init(2, entryCell->ToWord());
+  RETURN(tuple->ToWord());
+#else
   DIR *d = opendir(name->ExportC());
   if (!d) RAISE_SYS_ERR();
 
@@ -62,8 +83,29 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
 
 DEFINE1(UnsafeOS_FileSys_readDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  // dummy
-  RETURN_INT(0);
+  DECLARE_TUPLE(tuple, x0);
+  HANDLE handle = Store::WordToInt(Cell::FromWord(tuple->GetArg(1))->Access());
+  Cell *entryCell = Cell::FromWord(tuple->GetArg(2));
+  word entry = entryCell->Access();
+  word newEntry;
+
+  if (Store::WordToInt(entry) != INVALID_INT) {
+    RETURN_INT(0);
+  }
+
+  WIN32_FIND_DATA findData;
+  if (FindNextFile(handle, &findData) == FALSE)
+  {
+    if (GetLastError() != ERROR_NO_MORE_FILES) RAISE_SYS_ERR();
+    newEntry = Store::IntToWord(0);
+  } else {
+    newEntry = String::New(findData.cFileName)->ToWord();
+  }
+  entryCell->Assign(newEntry);
+
+  TagVal *some = TagVal::New(1,1);
+  some->Init(0, entry);
+  RETURN(some->ToWord());
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
   
@@ -79,6 +121,28 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
 
 DEFINE1(UnsafeOS_FileSys_rewindDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
+  DECLARE_TUPLE(tuple, x0);
+  String *dir = String::FromWord(tuple->GetArg(0));
+  Cell *handleCell = Cell::FromWord(tuple->GetArg(1));
+  HANDLE handle = Store::WordToInt(handleCell->Access());
+
+  if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
+
+  WIN32_FIND_DATA findData;
+  handle = FindFirstFile(dir->ExportC(), &findData);
+  word entry;
+  if (handle == INVALID_HANDLE_VALUE) {
+  {
+    if (GetLastError() != ERROR_NO_MORE_FILES) RAISE_SYS_ERR();
+    entry = Store::IntToWord(0);
+  } else {
+    entry = String::New(findData.cFileName)->ToWord();
+  }
+
+  Cell *entryCell = Cell::FromWord(tuple->GetArg(2));
+  handleCell->Assign(Store::IntToWord(handle));
+  entryCell->Assign(entry);
+
   RETURN_UNIT;
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
@@ -90,7 +154,10 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
 
 DEFINE1(UnsafeOS_FileSys_closeDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  // dummy
+  DECLARE_TUPLE(tuple, x0);
+  HANDLE handle = Store::WordToInt(Cell::FromWord(tuple->GetArg(1))->Access());
+
+  if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
   RETURN_UNIT;
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
