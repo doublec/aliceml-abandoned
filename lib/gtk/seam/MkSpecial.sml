@@ -102,6 +102,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		 FUNC("gtk_object_set_object", VOID,
 		      [POINTER (false, VOID), STRING(false,false),
 		       POINTER (false, VOID)]),
+		 FUNC("gtk_object_set_bool", VOID,
+		      [POINTER (false, VOID), STRING(false,false),
+		       BOOL]),
                  FUNC("gtk_object_get_double", NUMERIC (true,true, DOUBLE),
                       [POINTER(false,VOID), STRING(false,false)]
                       ),

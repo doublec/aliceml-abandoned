@@ -210,6 +210,15 @@ DEFINE3(NativeGtk_objectSetObject) {
   RETURN_UNIT;
 } END
 
+DEFINE3(NativeGtk_objectSetBool) {
+  DECLARE_OBJECT(obj, x0);
+  DECLARE_STRING(property, x1);
+  DECLARE_BOOL(val, x2);
+
+  g_object_set(obj, property->ExportC(), val, NULL);
+  RETURN_UNIT;
+} END
+
 static void specialDeleteRangeEvent(GObject *obj,
                                     GtkTextIter *iter1,
                                     GtkTextIter *iter2, gpointer) {
