@@ -113,6 +113,8 @@ sig
     val latin1ToUtf8 : string -> string
     val utf8ToLatin1 : string -> string
 
+    val lock : Lock.lock
+
 (**)val printObject : object -> unit
 (**)val forceGC : unit -> unit
 end

@@ -180,18 +180,20 @@ struct
     val printObject = NativeCore.printObject
     val forceGC = NativeCore.forceGC
 
+    val lock = Lock.lock()
+
     (* main loop *)
+    val initPoll = 10
     local
-	fun sleep ms = Thread.sleep (Time.fromMilliseconds (Int.toLarge ms))
-    in
-	val initPoll = 10
 	val maxPoll = 50
 	val pollStep = 5
-
+	fun sleep ms = Thread.sleep (Time.fromMilliseconds (Int.toLarge ms))
+        fun poll sTime = if NativeCore.handlePendingEvents() then initPoll
+                         else Int.min(maxPoll, sTime+pollStep)
+    in
 	fun mainLoop sTime =
 	    (sleep sTime;
-	     mainLoop (if NativeCore.handlePendingEvents() then initPoll
-                       else Int.min(maxPoll, sTime+pollStep)))
+	     mainLoop (Lock.sync lock poll sTime))
     end
 
     (* init core module *)
