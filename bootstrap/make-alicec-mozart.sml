@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,15 +25,18 @@ local
 	end
 
     fun stoc args = SMLToMozartBatchCompiler.stoc args
-		    handle Crash.Crash message =>
-			       (TextIO.output (TextIO.stdErr,
-					       "CRASH: " ^ message ^ "\n");
-				OS.Process.failure)
-			 | e =>   (*--**DEBUG*)
-			       (TextIO.output (TextIO.stdErr,
-					       "uncaught exception " ^
-					       exnName e ^ "\n");
-				OS.Process.failure)
+	handle Crash.Crash message =>
+		(TextIO.output (TextIO.stdErr, "CRASH: " ^ message ^ "\n");
+		 OS.Process.failure)
+	     | e =>
+		let
+		    val hist  = List.rev(SMLofNJ.exnHistory e)
+		    val trace = String.concat(List.map (fn s => s ^ "\n") hist)
+		in
+		    TextIO.output (TextIO.stdErr, "uncaught exception " ^
+						  exnName e ^ ":\n" ^ trace);
+		    OS.Process.failure
+		end
 
     fun main _ = OS.Process.exit (stoc (getArgs ()))
 in
