@@ -9,7 +9,7 @@ NATIVES = NativeXML
 SOURCES = \
 	NativeXML.cc
 
-TARGETS = XML.alc
+TARGETS = XML.alc XML-sig.alc
 
 VERSION = 1.0.1
 DISTFILES = $(SOURCES) Makefile debian
