@@ -11,6 +11,10 @@
  *)
 
 (*
+ * The `Use' set of a statement is the set of stamps that
+ * have already been initialized when the statement is reached
+ * and that are still going to be referenced within or after it.
+ *
  * Dead code elimination for defining occurrences without using occurrences:
  *    stm = ValDec (... stamp ...): stamp \in Kill(Cont(stm))
  *    stm = RecDec (... stamp ...): stamp \in Kill(Cont(stm))   (*--** check *)
@@ -30,143 +34,217 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun lazyValOf (Orig x) = x
 	  | lazyValOf (Copy x) = x
 
-	fun processArgs (OneArg id, set, x) = x (set, id)
-	  | processArgs (TupArgs ids, set, x) =
-	    List.app (fn id => x (set, id)) ids
-	  | processArgs (RecArgs labIdList, set, x) =
-	    List.app (fn (_, id) => x (set, id)) labIdList
+	fun processArgs (OneArg id, lset, x) = x (lset, id)
+	  | processArgs (TupArgs ids, lset, x) =
+	    List.foldl (fn (id, lset) => x (lset, id)) lset ids
+	  | processArgs (RecArgs labIdList, lset, x) =
+	    List.foldl (fn ((_, id), lset) => x (lset, id)) lset labIdList
 
 	(* Compute `Use' Sets *)
 
-	fun del (r as ref (Orig set), Id (_, stamp, _)) =
+	fun del (lset as (Orig set), Id (_, stamp, _)) =
 	    if StampSet.member (set, stamp) then
 		let
 		    val set' = StampSet.copy set
 		in
-		    r := Copy set'; StampSet.delete (set', stamp)
+		    StampSet.delete (set', stamp);
+		    Copy set'
 		end
-	    else ()
-	  | del (ref (Copy set), Id (_, stamp, _)) =
-	    StampSet.delete (set, stamp)
+	    else lset
+	  | del (lset as (Copy set), Id (_, stamp, _)) =
+	    (StampSet.delete (set, stamp); lset)
 
-	fun delList (set, ids) = List.app (fn id => del (set, id)) ids
+	fun delList (lset, ids) =
+	    List.foldl (fn (id, lset) => del (lset, id)) lset ids
 
-	fun ins (r as ref (Orig set), Id (_, stamp, _)) =
-	    if StampSet.member (set, stamp) then ()
+	fun ins (lset as (Orig set), Id (_, stamp, _)) =
+	    if StampSet.member (set, stamp) then lset
 	    else
 		let
 		    val set' = StampSet.copy set
 		in
-		    r := Copy set'; StampSet.insert (set', stamp)
+		    StampSet.insert (set', stamp);
+		    Copy set'
 		end
-	  | ins (ref (Copy set), Id (_, stamp, _)) =
-	    StampSet.insert (set, stamp)
+	  | ins (lset as (Copy set), Id (_, stamp, _)) =
+	    (StampSet.insert (set, stamp); lset)
 
-	fun insList (set, ids) = List.app (fn id => ins (set, id)) ids
+	fun insList (lset, ids) =
+	    List.foldl (fn (id, lset) => ins (lset, id)) lset ids
 
-	fun union (r as ref (Orig set), set') =
+	fun union (Orig set, set') =
 	    let
 		val set'' = StampSet.copy set
 	    in
-		r := Copy set''; StampSet.union (set'', set')
+		StampSet.union (set'', set');
+		Copy set''
 	    end
-	  | union (ref (Copy set), set') = StampSet.union (set, set')
+	  | union (lset as (Copy set), set') =
+	    (StampSet.union (set, set'); lset)
 
-	fun scanTest (LitTest _, _) = ()
-	  | scanTest (ConTest (id, NONE), set) = ins (set, id)
-	  | scanTest (ConTest (id1, SOME id2), set) =
-	    (ins (set, id1); del (set, id2))
-	  | scanTest (RefTest id, set) = del (set, id)
-	  | scanTest (TupTest ids, set) = delList (set, ids)
-	  | scanTest (RecTest labIdList, set) =
-	    List.app (fn (_, id) => del (set, id)) labIdList
-	  | scanTest (LabTest (_, id), set) = del (set, id)
-	  | scanTest (VecTest ids, set) = delList (set, ids)
+	fun scanTest (LitTest _, lset) = lset
+	  | scanTest (ConTest (id, NONE), lset) = ins (lset, id)
+	  | scanTest (ConTest (id1, SOME id2), lset) =
+	    del (ins (lset, id1), id2)
+	  | scanTest (RefTest id, lset) = del (lset, id)
+	  | scanTest (TupTest ids, lset) = delList (lset, ids)
+	  | scanTest (RecTest labIdList, lset) =
+	    List.foldl (fn ((_, id), lset) => del (lset, id)) lset labIdList
+	  | scanTest (LabTest (_, id), lset) = del (lset, id)
+	  | scanTest (VecTest ids, lset) = delList (lset, ids)
 
-	fun delStm (RecDec (_, idExpList, _), set) =
+	fun setInfo ((_, r as ref (Unknown | LoopStart | LoopEnd)), set) =
+	    r := Use set
+	  | setInfo ((_, ref (Use _)), _) = ()
+	  | setInfo ((_, ref (Kill _)), _) =
+	    raise Crash.Crash "LivenessAnalysisPhase.setInfo"
+
+	(* Annotate the `Use' set at each statement *)
+
+	fun scanBody (ValDec (i, id, exp, _)::stms, initial) =
 	    let
+		val lset = scanBody (stms, initial)
+		val set = lazyValOf (scanExp (exp, del (lset, id)))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody (RecDec (i, idExpList, _)::stms, initial) =
+	    let
+		val lset = scanBody (stms, initial)
+		val lset' =
+		    List.foldl (fn ((_, exp), lset) => scanExp (exp, lset))
+		    lset idExpList
+		val set = lazyValOf lset'
+		val _ = setInfo (i, set)
 		val set' = StampSet.copy set
 	    in
 		List.app (fn (Id (_, stamp, _), _) =>
 			  StampSet.delete (set', stamp)) idExpList;
 		Copy set'
 	    end
-	  | delStm (_, set) = Orig set
-
-	fun scanStm (ValDec (_, id, exp, _), set) =
-	    (del (set, id); scanExp (exp, set))
-	  | scanStm (RecDec (_, idExpList, _), set) =
-	    List.app (fn (_, exp) => scanExp (exp, set)) idExpList
-	  | scanStm (EvalStm (_, exp), set) = scanExp (exp, set)
-	  | scanStm (RaiseStm (_, id), set) = ins (set, id)
-	  | scanStm (HandleStm (_, body1, id, body2, body3, _), set) =
+	  | scanBody (EvalStm (i, exp)::stms, initial) =
 	    let
-		val set3 = scanBody (body3, Copy (StampSet.new ()))
-		val set2 = scanBody (body2, set3)
-		val set1 = scanBody (body1, set2)
+		val lset = scanBody (stms, initial)
+		val set = lazyValOf (scanExp (exp, lset))
 	    in
-		union (set, lazyValOf set1); union (set, lazyValOf set2);
-		union (set, lazyValOf set3); del (set, id)
+		setInfo (i, set);
+		Orig set
 	    end
-	  | scanStm (EndHandleStm (_, _), _) = ()
-	  | scanStm (TestStm (_, id, test, body1, body2), set) =
-	    (scanBody' (body1, set); scanTest (test, set);
-	     scanBody' (body2, set); ins (set, id))
-	  | scanStm (SharedStm ((_, r as ref Unknown), body, _), set) =
-	    (r := LoopStart; scanBody' (body, set); r := Unknown)
-	  | scanStm (SharedStm ((_, r as ref LoopStart), body, _), set) =
-	    (r := LoopEnd; scanBody' (body, set))
-	  | scanStm (SharedStm ((_, r as ref LoopEnd), _, _), set) = ()
-	  | scanStm (SharedStm ((_, ref (Use set')), _, _), set) =
-	    union (set, set')
-	  | scanStm (SharedStm ((_, ref (Kill _)), _, _), _) =
-	    raise Crash.Crash "LivenessAnalysisPhase.scanStm"
-	  | scanStm (ReturnStm (_, exp), set) = scanExp (exp, set)
-	  | scanStm (IndirectStm (_, ref bodyOpt), set) =
-	    scanBody' (valOf bodyOpt, set)
-	  | scanStm (ExportStm (_, exp), set) = scanExp (exp, set)
-	and scanExp (LitExp (_, _), _) = ()
-	  | scanExp (PrimExp (_, _), _) = ()
-	  | scanExp (NewExp (_, _, _), _) = ()
-	  | scanExp (VarExp (_, id), set) = ins (set, id)
-	  | scanExp (ConExp (_, id, _), set) = ins (set, id)
-	  | scanExp (RefExp _, _) = ()
-	  | scanExp (TupExp (_, ids), set) = insList (set, ids)
-	  | scanExp (RecExp (_, labIdList), set) =
-	    List.app (fn (_, id) => ins (set, id)) labIdList
-	  | scanExp (SelExp (_, _), _) = ()
-	  | scanExp (VecExp (_, ids), set) = insList (set, ids)
-	  | scanExp (FunExp (_, _, _, argsBodyList), set) =
-	    List.app (fn (args, body) =>
-		      (scanBody' (body, set);
-		       processArgs (args, set, del))) argsBodyList
-	  | scanExp (AppExp (_, id, args), set) =
-	    (ins (set, id); processArgs (args, set, ins))
-	  | scanExp (SelAppExp (_, _, id), set) = ins (set, id)
-	  | scanExp (ConAppExp (_, id, args), set) =
-	    (ins (set, id); processArgs (args, set, ins))
-	  | scanExp (RefAppExp (_, args), set) = processArgs (args, set, ins)
-	  | scanExp (PrimAppExp (_, _, ids), set) = insList (set, ids)
-	  | scanExp (AdjExp (_, id1, id2), set) =
-	    (ins (set, id1); ins (set, id2))
-	and scanBody (stm::stms, initial) =
+	  | scanBody ([RaiseStm (i, Id (_, stamp, _))], _) =
 	    let
-		val setRef = ref (scanBody (stms, initial))
-		val _ = scanStm (stm, setRef)
-		val set = lazyValOf (!setRef)
+		val set = StampSet.new ()
+		val _ = StampSet.insert (set, stamp)
 	    in
-		case infoStm stm of
-		    (_, r as ref (Unknown | LoopEnd)) => r := Use set
-		  | (_, ref (LoopStart | Use _)) => ()
-		  | (_, ref (Kill _)) =>
-			raise Crash.Crash "LivenessAnalysisPhase.scanBody";
-		delStm (stm, set)
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([HandleStm (i, body1, id, body2, body3, _)], initial) =
+	    let
+		val lset3 = scanBody (body3, initial)
+		val lset2 = scanBody (body2, lset3)
+		val lset1 = scanBody (body1, lset2)
+		val set = lazyValOf (del (lset1, id))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([EndHandleStm (i, _)], initial) =
+	    let
+		val set = lazyValOf initial
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([TestStm (i, id, test, body1, body2)], initial) =
+	    let
+		val initial' = Orig (lazyValOf initial)
+		val lset1 = scanTest (test, scanBody (body1, initial'))
+		val lset2 = scanTest (test, scanBody (body2, initial'))
+		val lset1' = union (lset1, lazyValOf (ins (lset2, id)))
+		val set = lazyValOf lset1'
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([SharedStm (i as (_, r as ref Unknown), body, _)],
+		      initial) =
+	    let
+		val _ = r := LoopStart
+		val set = lazyValOf (scanBody (body, initial))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([SharedStm (i as (_, r as ref LoopStart), body, _)],
+		      initial) =
+	    (r := LoopEnd; scanBody (body, initial))
+	  | scanBody ([SharedStm ((_, r as ref LoopEnd), _, _)],
+		      initial) = Copy (StampSet.new ())   (*--** or initial? *)
+	  | scanBody ([SharedStm ((_, ref (Use set')), _, _)], _) = Orig set'
+	  | scanBody ([SharedStm ((_, ref (Kill _)), _, _)], _) =
+	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 1"
+	  | scanBody ([ReturnStm (i, exp)], _) =
+	    let
+		val set = lazyValOf (scanExp (exp, Copy (StampSet.new ())))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([IndirectStm (i, ref bodyOpt)], initial) =
+	    let
+		val set = lazyValOf (scanBody (valOf bodyOpt, initial))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([ExportStm (i, exp)], _) =
+	    let
+		val set = lazyValOf (scanExp (exp, Copy (StampSet.new ())))
+	    in
+		setInfo (i, set);
+		Orig set
 	    end
 	  | scanBody (nil, initial) = initial
-	and scanBody' (body, set) =
-	    union (set, lazyValOf (scanBody (body, Copy (StampSet.new ()))))
+	  | scanBody (_, _) =
+	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 2"
+	and scanExp (LitExp (_, _), lset) = lset
+	  | scanExp (PrimExp (_, _), lset) = lset
+	  | scanExp (NewExp (_, _, _), lset) = lset
+	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
+	  | scanExp (ConExp (_, id, _), lset) = ins (lset, id)
+	  | scanExp (RefExp _, lset) = lset
+	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
+	  | scanExp (RecExp (_, labIdList), lset) =
+	    List.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdList
+	  | scanExp (SelExp (_, _), lset) = lset
+	  | scanExp (VecExp (_, ids), lset) = insList (lset, ids)
+	  | scanExp (FunExp (_, _, _, argsBodyList), lset) =
+	    List.foldl (fn ((args, body), lset) =>
+			let
+			    val set =
+				lazyValOf (scanBody (body,
+						     Copy (StampSet.new ())))
+			    val lset' = union (lset, set)
+			in
+			    processArgs (args, lset', del)
+			end) lset argsBodyList
+	  | scanExp (AppExp (_, id, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
+	  | scanExp (ConAppExp (_, id, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (RefAppExp (_, args), lset) = processArgs (args, lset, ins)
+	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
+	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
 
 	(* Compute `Def' and `Kill' sets *)
+
+	fun processArgs (OneArg id, set, x) = x (set, id)
+	  | processArgs (TupArgs ids, set, x) =
+	    List.app (fn id => x (set, id)) ids
+	  | processArgs (RecArgs labIdList, set, x) =
+	    List.app (fn (_, id) => x (set, id)) labIdList
 
 	fun ins (set, Id (_, stamp, _)) = StampSet.insert (set, stamp)
 
@@ -193,8 +271,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		val set' = StampSet.copy set
 	    in
 		ins (set', id);
-		initBody (body2, set');
 		initBody (body1, StampSet.copy set);
+		initBody (body2, set');
 		initBody (body3, set)
 	    end
 	  | initStm (EndHandleStm (_, _), _) = ()
