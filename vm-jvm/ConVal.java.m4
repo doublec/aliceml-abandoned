@@ -12,6 +12,10 @@ final public class ConVal implements DMLConVal {
 
     Constructor constructor=null;
 
+    public ConVal(Constructor con) {
+	constructor = con;
+    }
+
     public ConVal(Constructor constructor, DMLValue content) {
 	this.constructor = constructor;
 	this.content = content;
@@ -53,6 +57,10 @@ final public class ConVal implements DMLConVal {
 	return (val instanceof ConVal) &&
 	    (this.constructor == ((ConVal)val).constructor) &&
 	    this.content.equals(((ConVal)val).content);
+    }
+
+    final public void setContent(DMLValue eins) {
+	content=eins;
     }
 
     final public DMLValue getContent() {

@@ -15,6 +15,10 @@ final public class ConValTuple4 implements DMLConVal {
 
     private Constructor constructor=null;
 
+    public ConValTuple4(Constructor con) {
+	constructor = con;
+    }
+
     public ConValTuple4(Constructor con,
 			DMLValue eins,
 			DMLValue zwei,
@@ -32,6 +36,16 @@ final public class ConValTuple4 implements DMLConVal {
     final public DMLValue get2() { return thr; }
     final public DMLValue get3() { return fur; }
     final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+
+    final public void setContent(DMLValue eins,
+			DMLValue zwei,
+			DMLValue drei,
+			DMLValue vier) {
+	fst=eins;
+	snd=zwei;
+	thr=drei;
+	fur=vier;
+    }
 
     final public DMLValue getContent() {
 	return new Tuple4(fst,snd,thr,fur);
