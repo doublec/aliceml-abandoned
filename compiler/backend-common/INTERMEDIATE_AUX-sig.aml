@@ -21,8 +21,6 @@ signature INTERMEDIATE_AUX =
 
 	val idEq: I.id * I.id -> bool
 
-	val patternVariablesOf: I.pat -> I.id list
-
 	type subst = (Stamp.t * Stamp.t) list
 
 	val substDec: I.dec * subst -> I.dec

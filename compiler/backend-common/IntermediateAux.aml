@@ -21,41 +21,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
-	local
-	    fun patternVariablesOf' (JokPat _, ids) = ids
-	      | patternVariablesOf' (LitPat (_, _), ids) = ids
-	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
-	      | patternVariablesOf' (TagPat (_, _, pat, _), ids) =
-		patternVariablesOf' (pat, ids)
-	      | patternVariablesOf' (ConPat (_, _, pat, _), ids) =
-		patternVariablesOf' (pat, ids)
-	      | patternVariablesOf' (RefPat _, ids) = ids
-	      | patternVariablesOf' (TupPat (_, pats), ids) =
-		Vector.foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (ProdPat (_, fieldPats), ids) =
-		Vector.foldr (fn (Field (_, _, pat), ids) =>
-			      patternVariablesOf' (pat, ids)) ids fieldPats
-	      | patternVariablesOf' (VecPat (_, pats), ids) =
-		Vector.foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (AsPat (_, pat1, pat2), ids) =
-		patternVariablesOf' (pat1, patternVariablesOf' (pat2, ids))
-	      | patternVariablesOf' (AltPat (_, #[]), ids) = ids
-	      | patternVariablesOf' (AltPat (_, pats), ids) =
-		patternVariablesOf' (Vector.sub (pats, 0), ids)
-	      | patternVariablesOf' (NegPat (_, _), ids) = ids
-	      | patternVariablesOf' (GuardPat (_, pat, _), ids) =
-		patternVariablesOf' (pat, ids)
-	      | patternVariablesOf' (WithPat (_, pat, decs), ids) =
-		patternVariablesOf' (pat,
-				     Vector.foldr declaredVariables ids decs)
-	    and declaredVariables (ValDec (_, pat, _), ids) =
-		patternVariablesOf' (pat, ids)
-	      | declaredVariables (RecDec (_, decs), ids) =
-		Vector.foldr declaredVariables ids decs
-	in
-	    fun patternVariablesOf pat = patternVariablesOf' (pat, nil)
-	end
-
 	type subst = (Stamp.t * Stamp.t) list
 
 	fun lookup ((stamp, stamp')::subst, id0 as Id (info, stamp0, name)) =
