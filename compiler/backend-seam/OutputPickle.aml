@@ -185,8 +185,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 	fun outputValue (context, V.Prim name) =
 	    (outputTransform (context, "Alice.primitive.value");
-	     outputBlock (context, Label.TAG 0, 1);
-	     outputString (context, name); ())
+	     ignore (outputString (context, name)))
 	  | outputValue (context, V.Int i) = outputInt (context, i)
 	  | outputValue (context, V.String s) =
 	    ignore (outputString (context, s))
