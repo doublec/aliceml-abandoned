@@ -22,5 +22,9 @@ look.sml
 lalr.sml
 mklrtable.sml
 
+shrink.sml
+mkprstruct.sml
+output.sml
+
 jacke.sml
 

@@ -4,6 +4,7 @@ structure Translate =
 struct
     structure G = Grammar
     structure A = AbsSyn 
+    structure N = NormalForm
 
     val toNonterm = List.find 
     val toTerm = List.find
@@ -24,22 +25,23 @@ struct
      - start nonterm not in any rhs
      - higher prec means tighter binding 
      *)
-
+    (*
     val eop = "EOP"
     val start = "NewStartSymbol"    
+    *)
 
     fun mkTermDict tl l = 
 	let fun toDict i [] = []
 	      | toDict i (to::toks) = (to,i)::(toDict (i+1) toks)
-	    val t1 = map (fn x => (x,NONE)) tl
-	    val t2 = toDict 0 ((eop,NONE)::t1)
-	    val t3 = List.concat(List.map (fn A.TokenDec t => toDict (List.length t2) t | _ => []) l)
+	    val t1 = toDict 0 (map (fn x => (x,NONE)) tl)
+	    (*    val t2 = toDict 0 ((eop,NONE)::t1) *)
+	    val t3 = List.concat(List.map (fn A.TokenDec t => toDict (List.length t1) t | _ => []) l)
 	in 
-	    t2@t3
+	(* t2@t3 *) t3@t1
 	end
 
     fun mkNontermDict l =
-	let fun toDict i [] = [((start,NONE), i)]
+	let fun toDict i [] = [((N.start,NONE), i)]
 	      | toDict i ((s,ty,_)::ss) = 
 	    let val d = toDict i ss 
 	    in 
@@ -48,7 +50,7 @@ struct
 		else ((s,ty),i)::(toDict (i+1) ss)
 	    end
 	in 
-	    List.concat(List.map (fn A.RuleDec t => toDict 0 t | _ => []) l)
+	    toDict 0 (List.concat(List.map (fn A.RuleDec t =>  t | _ => []) l))
 	end
 
     fun termToString d (G.T n) = 
@@ -74,6 +76,8 @@ struct
     fun symbolToString td ntd (G.TERM t) = termToString td t
       | symbolToString td ntd (G.NONTERM t) = nontermToString ntd t
 
+
+    (* add new dummy tokens and rules, for each parser dec *)
     fun mkParsers l =
 	let val ps = List.concat (List.map (fn (A.ParserDec l) => l 
                                               | _ => []) l)
@@ -81,10 +85,10 @@ struct
 	      | toRule tl ((pname,_,stsym)::l) =
 		let val tok = newTokenname () 
 		    val (tl,rules) = toRule tl l
-		in (tok::tl,(start,NONE,A.Transform
+		in (tok::tl,(N.start,NONE,A.Transform
 			     (A.Seq [A.As(tok,A.Symbol(tok)),
 				     A.As(stsym,A.Symbol(stsym)),
-				     A.As(eop,A.Symbol(eop))],
+				     A.As(N.eop,A.Symbol(N.eop))],
 			      [""]))::rules)
 		end
 	in
@@ -127,8 +131,8 @@ struct
 	    val td = mkTermDict ts x
 	    val ntd = mkNontermDict x
 	    val stringToSymbol = stringToSymbol td ntd
-	    val start = stringToNonterm ntd start
-	    val eop = [stringToTerm td eop]
+	    val start = stringToNonterm ntd N.start
+	    val eop = [stringToTerm td N.eop]
 	    val terms = List.length td
 	    val nonterms = List.length ntd
 	    val noshift = []

@@ -32,7 +32,11 @@ struct
   fun try filename =
       let val p = parse filename
 	  val yaccGrammar = Translate.translate (NormalForm.toNormalForm p)
+	  val (table,_,_,_) = MakeLrTable.mkTable (yaccGrammar,true)
       in
-	  MakeLrTable.mkTable (yaccGrammar,true)
+	  PrintStruct.makeStruct {table=table,
+				  name="t1",
+				  print=print,
+				  verbose=false}
       end
 end
