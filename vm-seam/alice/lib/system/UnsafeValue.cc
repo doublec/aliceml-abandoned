@@ -247,6 +247,33 @@ DEFINE1(UnsafeValue_prod) {
   RETURN(tuple->ToWord());
 } END
 
+DEFINE1(UnsafeValue_prodPoly) {
+  DECLARE_VECTOR(labelValueVec, x0);
+  u_int length = labelValueVec->GetLength();
+  Record *record = Record::New(length);
+  for (u_int i = length; i--; ) {
+    Tuple *labelValuePair = Tuple::FromWord(labelValueVec->Sub(i));
+    if (labelValuePair == INVALID_POINTER) REQUEST(labelValueVec->Sub(i));
+    // TODO: Do we really need to request Label.t and the label string here?
+    TagVal *tagVal = TagVal::FromWord(labelValuePair->Sel(0));
+    if (tagVal == INVALID_POINTER) REQUEST(labelValuePair->Sel(0));
+    switch (tagVal->GetTag()) {
+    case Types::ALPHA:
+      {
+	word wLabel = tagVal->Sel(0);
+	DECLARE_STRING(label, wLabel);
+	record->Init(label->ExportC(), labelValuePair->Sel(1));
+	break;
+      }
+    case Types::NUM:
+      Error("UnsafeValue.prodPoly: numeric labels not supported");
+    default:
+      Error("UnsafeValue.prodPoly: unknown tag");
+    }
+  }
+  RETURN(record->ToWord());
+} END
+
 DEFINE1(UnsafeValue_tuple) {
   DECLARE_VECTOR(values, x0);
   u_int length = values->GetLength();
@@ -356,7 +383,7 @@ DEFINE1(UnsafeValue_outArity) {
 
 AliceDll word UnsafeValue() {
   RequestInterpreter::Init();
-  Record *record = Record::New(21);
+  Record *record = Record::New(22);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
@@ -383,6 +410,8 @@ AliceDll word UnsafeValue() {
 		 UnsafeValue_projPoly, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "prod",
 		 UnsafeValue_prod, 1);
+  INIT_STRUCTURE(record, "UnsafeValue", "prodPoly",
+		 UnsafeValue_prodPoly, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "tuple",
 		 UnsafeValue_tuple, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "tagged",
