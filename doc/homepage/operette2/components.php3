@@ -42,7 +42,7 @@
   </P>
 
   <PRE>
-	import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO"
+	import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO-sig"
 	import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo"
   </PRE>
 
