@@ -360,7 +360,11 @@ struct
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
+(*DEBUG: had an irreproducable error here once, get more info next time
 	      | clone' _		= raise Assert.failure
+*)
+| clone' t' = let exception TypeClone of string * typ'
+in raise TypeClone("Type.clone", t') end
 
 	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
