@@ -35,7 +35,7 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Identifiers *)
 
-    datatype lab    = Lab     of info * Lab.t
+    datatype lab    = Lab     of info * Label.t
     datatype id     = Id      of info * Stamp.t * Name.t
     datatype longid = ShortId of info * id
 		    | LongId  of info * longid * lab
@@ -52,11 +52,11 @@ signature INTERMEDIATE_GRAMMAR =
 	| TupExp    of info * exp list		(* tuple *)
 	| RowExp    of info * exp field list	(* record / module *)
 			(* all labels distinct *)
-	| SelExp    of info * lab		(* field selection *)
+	| SelExp    of info * lab		(* field selector *)
 	| VecExp    of info * exp list		(* vector *)
-	| FunExp    of info * id * exp		(* function *)
+	| FunExp    of info * id * exp		(* function / functor *)
 	| AppExp    of info * exp * exp		(* application *)
-	| AdjExp    of info * exp * exp		(* record adjoin *)
+	| AdjExp    of info * exp * exp		(* record adjunction *)
 	| UpExp     of info * exp		(* up cast *)
 	| AndExp    of info * exp * exp		(* conjunction *)
 	| OrExp     of info * exp * exp		(* disjunction *)
@@ -65,7 +65,7 @@ signature INTERMEDIATE_GRAMMAR =
 	| SeqExp    of info * exp list		(* sequential *)
 	| CaseExp   of info * exp * match list	(* case switch *)
 	| RaiseExp  of info * exp		(* exception raise *)
-	| HandleExp of info * exp * match list	(* exception handling *)
+	| HandleExp of info * exp * match list	(* exception handler *)
 	| LetExp    of info * dec list * exp	(* local binding *)
 
     and 'a field = Field of info * lab * 'a
@@ -78,18 +78,18 @@ signature INTERMEDIATE_GRAMMAR =
 	  WildPat   of info			(* wildcard *)
 	| LitPat    of info * lit		(* literal *)
 	| VarPat    of info * id		(* variable *)
-	| ConPat    of info * longid * pat option (* constructor pattern *)
+	| ConPat    of info * longid * pat option (* constructed *)
 			(* pat present iff longid has arguments *)
-	| RefPat    of info * pat		(* reference pattern *)
+	| RefPat    of info * pat		(* reference *)
 	| TupPat    of info * pat list		(* tuple *)
 	| RowPat    of info * pat field list	(* record *)
 			(* all labels distinct *)
 	| VecPat    of info * pat list		(* vector *)
-	| AsPat     of info * pat * pat		(* pattern conjunction *)
-	| AltPat    of info * pat list		(* pattern disjunction *)
+	| AsPat     of info * pat * pat		(* conjunction *)
+	| AltPat    of info * pat list		(* disjunction *)
 			(* all patterns bind same ids *)
-	| NegPat    of info * pat		(* pattern negation *)
-	| GuardPat  of info * pat * exp		(* guarded pattern *)
+	| NegPat    of info * pat		(* negation *)
+	| GuardPat  of info * pat * exp		(* guard *)
 	| WithPat   of info * pat * dec list	(* local bindings *)
 
     (* Declarations *)
