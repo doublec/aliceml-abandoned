@@ -1,0 +1,68 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                          from "Pervasive"
+import type unit and int and bool and option and list
+       type array                                     from "ToplevelTypes"
+
+
+signature ARRAY =
+sig
+    type 'a array
+    type 'a vector
+    type 'a t = 'a array						(**)
+
+    val maxLen :	int
+
+    val array :		int * 'a -> 'a array
+    val new :		int * 'a -> 'a array				(**)
+    val toList :	'a array -> 'a list				(**)
+    val fromList :	'a list -> 'a array
+    val toVector :	'a array -> 'a vector				(**)
+    val fromVector :	'a vector -> 'a array				(**)
+    val tabulate :	int * (int -> 'a) -> 'a array
+
+    val length :	'a array -> int
+    val sub :		'a array * int -> 'a
+    val update :	'a array * int * 'a -> unit
+    val swap :		'a array * int * int -> unit			(**)
+    val reverse :	'a array -> unit				(**)
+    val extract :	'a array * int * int option -> 'a vector
+    val copy :		{di:int, dst:'a array, len:int option,
+			 si:int, src:'a array} -> unit
+    val copyVec :	{di:int, dst:'a array, len:int option,
+			 si:int, src:'a vector} -> unit
+
+    val app :		('a -> unit) -> 'a array -> unit
+    val appr :		('a -> unit) -> 'a array -> unit		(**)
+    val modify :	('a -> 'a) -> 'a array -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val appi :		(int * 'a -> unit)
+					-> 'a array * int * int option -> unit
+    val appri :		(int * 'a -> unit) -> 'a array * int * int option  (**)
+					   -> unit
+    val modifyi :	(int * 'a -> 'a) -> 'a array * int * int option -> unit
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+
+    val all :		('a -> bool) -> 'a array -> bool		(**)
+    val exists :	('a -> bool) -> 'a array -> bool		(**)
+    val find :		('a -> bool) -> 'a array -> 'a option		(**)
+end
