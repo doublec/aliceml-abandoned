@@ -18,169 +18,198 @@ structure Sharing :> SHARING =
   struct
 
     open AbstractGrammar
-(*
+
     nonfix mod
-
-  (* Class *)
-
-    datatype class = TYP | SIG | STR
 
   (* Error handling *)
 
     structure E = AbstractionError
 
-    fun error(class, LongId(_, modlongid, _)) = error(STR, modlongid)
-      | error(TYP, ShortId(i,typid)) = E.error(i, E.SharingExternalTy typid)
-      | error(SIG, ShortId(i,modid)) = E.error(i, E.SharingExternalSig modid)
-      | error(STR, ShortId(i,infid)) = E.error(i, E.SharingExternalStr infid)
+    fun error Err (ShortId(i,id))         = E.error(i, Err id)
+      | error Err (LongId(_,modlongid,_)) = error E.SharingExternalStr modlongid
+
+
+  (* Classified longids *)
+
+    datatype classified_longid =
+	  Typ of typlongid
+	| Inf of inflongid
+	| Mod of modlongid
+
 
   (* Find ids in a list of longids *)
 
-    fun isRootedAt(ShortId(_, modid),       stamp') = stamp modid = stamp'
-      | isRootedAt(LongId(_, modlongid, _), stamp') =
-        isRootedAt(modlongid, stamp')
+    fun isRootedAt( ( Typ(ShortId(_, Id(_,stamp1,_)))
+		    | Inf(ShortId(_, Id(_,stamp1,_)))
+		    | Mod(ShortId(_, Id(_,stamp1,_))) ), stamp2) =
+	stamp1 = stamp2
+      | isRootedAt( ( Typ(LongId(_, modlongid, _))
+		    | Inf(LongId(_, modlongid, _))
+		    | Mod(LongId(_, modlongid, _)) ), stamp2) =
+        isRootedAt(Mod modlongid, stamp2)
 
-    fun findId(stamp, [], longids') = NONE
-      | findId(stamp, longid::longids, longids') =
-	if isRootedAt(longid, stamp)
-	then SOME(longid, longids' @ longids)
-	else findId(stamp, longids, longid::longids')
+    fun findId(stamp, [], clongids') = NONE
+      | findId(stamp, clongid::clongids, clongids') =
+	if isRootedAt(clongid, stamp)
+	then SOME(clongid, clongids' @ clongids)
+	else findId(stamp, clongids, clongid::clongids')
 
 
   (* Annotated specifications *)
 
     datatype annotated_spec =
 	  Plain     of spec
-	| Annotated of spec * longid
+	| Annotated of spec * classified_longid
 	| Recursive of Source.region * annotated_spec list
 	(* UNFINISHED: what about ExtSpec? *)
 
 
     fun cons1st(x, (xs,y)) = (x::xs, y)
 
-    fun annotate( spec as ( TypSpec(_, id, _)
-			  | ModSpec(_, id, _)
-			  | InfSpec(_, id, _) ), longids) =
-	(case findId(stamp id, longids, [])
-	   of SOME(longid,longids') => ( Annotated(spec,longid), longids' )
-	    | NONE                  => ( Plain(spec), longids )
-	)
-      | annotate(RecSpec(i, specs), longids) =
-	let val (specs',longids') = annotateList(specs, longids) in
-	    ( Recursive(i, specs'), longids' )
-	end
-      | annotate(spec, longids) =
-	    ( Plain(spec), longids )
 
-    and annotateList(    [],      longids) = ([], longids)
-      | annotateList(spec::specs, longids) =
-	let val (spec',longids') = annotate(spec, longids) in
-	    cons1st(spec', annotateList(specs, longids'))
+    fun annotate( spec as ( TypSpec(_, Id(_,stamp,_), _)
+			  | ModSpec(_, Id(_,stamp,_), _)
+			  | InfSpec(_, Id(_,stamp,_), _) ), clongids) =
+	(case findId(stamp, clongids, [])
+	   of SOME(clongid,clongids') => ( Annotated(spec,clongid), clongids' )
+	    | NONE                    => ( Plain(spec), clongids )
+	)
+      | annotate(RecSpec(i, specs), clongids) =
+	let val (specs',clongids') = annotateList(specs, clongids) in
+	    ( Recursive(i, specs'), clongids' )
+	end
+      | annotate(spec, clongids) =
+	    ( Plain(spec), clongids )
+
+    and annotateList(    [],      clongids) = ([], clongids)
+      | annotateList(spec::specs, clongids) =
+	let val (spec',clongids') = annotate(spec, clongids) in
+	    cons1st(spec', annotateList(specs, clongids'))
 	end
 
 
   (* Convert annotated spec to spec with where constraints *)
 
-    fun longidToMod(ShortId(i, id))         = VarMod(i, id)
-      | longidToMod(LongId(i, longid, lab)) = SelMod(i, longidToMod longid, lab)
+    fun modlongidToMod(ShortId(i, modid)) =
+	    VarMod(i, modid)
+      | modlongidToMod(LongId(i, modlongid, modlab)) =
+	    SelMod(i, modlongidToMod modlongid, modlab)
 
-    fun singleton(inf, longid) =
+    fun singleton(inf, modlongid) =
 	let
-	    val i   = Source.over(infoInf inf, infoLongid longid)
-	    val mod = AnnMod(i, longidToMod longid, inf)
+	    val i   = Source.over(infoInf inf, infoLongid modlongid)
+	    val mod = AnnMod(i, modlongidToMod modlongid, inf)
 	in
 	    SingInf(i, mod)
 	end
 
-    fun constrain(class, inf1, ShortId _, longid) =
-	    raise Crash.Crash "Sharing.constrain"
-      | constrain(class, inf1, LongId(i, longid', Lab(i0,a)), longid) =
-	let
-	    fun buildSig(ShortId(i, id), inf) = inf
-	      | buildSig(LongId(_, longid, Lab(i,a)), inf) =
-		    SigInf(i, [ModSpec(i, Id(i, Stamp.new(), Label.toName a),
-					  inf)])
 
-	    val i1    = infoLongid longid
-	    val id0   = Id(i0, Stamp.new(), Label.toName a)
-	    val spec0 = case class
-			  of TYP => TypSpec(i0, id0, ConTyp(i1, longid))
-			   | SIG => InfSpec(i0, id0, ConInf(i1, longid))
-			   | STR => ModSpec(i0, id0,
-					    SingInf(i1, longidToMod longid))
-	    val inf2  = buildSig(longid', SigInf(i0, [spec0]))
+    fun buildSig(inf1, i, modlongid, spec) =
+	let
+	    val inf2  = buildSig'(modlongid, SigInf(infoSpec spec, [spec]))
 	in
 	    CompInf(Source.over(infoInf inf1, i), inf1, inf2)
 	end
 
+    and buildSig'(ShortId(i, modid), inf) =
+	    inf
+      | buildSig'(LongId(_, modlongid, Lab(i,a)), inf) =
+	    SigInf(i, [ModSpec(i, Id(i, Stamp.new(), Label.toName a), inf)])
+
+
+    fun constrain(inf1, Typ(LongId(i, modlongid', Lab(i1,a))), Typ typlongid) =
+	let
+	    val typid = Id(i1, Stamp.new(), Label.toName a)
+	    val typ   = ConTyp(infoLongid typlongid, typlongid)
+	    val spec  = TypSpec(i1, typid, typ)
+	in
+	    buildSig(inf1, i, modlongid', spec)
+	end
+      | constrain(inf1, Inf(LongId(i, modlongid', Lab(i1,a))), Inf inflongid) =
+	let
+	    val infid = Id(i1, Stamp.new(), Label.toName a)
+	    val inf   = ConInf(infoLongid inflongid, inflongid)
+	    val spec  = InfSpec(i1, infid, inf)
+	in
+	    buildSig(inf1, i, modlongid', spec)
+	end
+      | constrain(inf1, Mod(LongId(i, modlongid', Lab(i1,a))), Mod modlongid) =
+	let
+	    val modid = Id(i1, Stamp.new(), Label.toName a)
+	    val inf   = SingInf(infoLongid modlongid, modlongidToMod modlongid)
+	    val spec  = ModSpec(i1, modid, inf)
+	in
+	    buildSig(inf1, i, modlongid', spec)
+	end
+      | constrain(inf1, clongid', clongid) =
+	    raise Crash.Crash "Sharing.constrain"
+
 
     (* UNFINISHED: no error checks for non-qualified types and interfaces *)
 
-    fun withWhere(TYP, TypSpec(i, id, typ), _, longid) =
-	    TypSpec(i, id, ConTyp(infoLongid longid, longid))
-      | withWhere(SIG, InfSpec(i, id, inf), _, longid) =
-	    InfSpec(i, id, ConInf(infoLongid longid, longid))
-      | withWhere(STR, ModSpec(i, id, inf), ShortId _, longid) =
-	    ModSpec(i, id, singleton(inf, longid))
-      | withWhere(class, ModSpec(i, id, inf), longid', longid) =
-	    ModSpec(i, id, constrain(class, inf, longid', longid))
+    fun withWhere(TypSpec(i, typid, typ), _, Typ typlongid) =
+	    TypSpec(i, typid, ConTyp(infoLongid typlongid, typlongid))
+      | withWhere(InfSpec(i, infid, inf), _, Inf inflongid) =
+	    InfSpec(i, infid, ConInf(infoLongid inflongid, inflongid))
+      | withWhere(ModSpec(i, modid, inf), Mod(ShortId _), Mod modlongid) =
+	    ModSpec(i, modid, singleton(inf, modlongid))
+      | withWhere(ModSpec(i, modid, inf), clongid', clongid) =
+	    ModSpec(i, modid, constrain(inf, clongid', clongid))
       | withWhere _ = raise Crash.Crash "Sharing.withWhere"
 
 
   (* Map where constraints over list of annotated specs *)
 
     (* find 1st annotation *)
-    fun mapWhere(class, []) = raise Crash.Crash "Sharing.mapWhere"
-      | mapWhere(class, Plain(spec)::specs') =
-	    spec :: mapWhere(class, specs')
-      | mapWhere(class, Annotated(spec, longid)::specs') =
-	    spec :: mapWhere''(class, specs', longid)
-      | mapWhere(class, Recursive(i, specs'')::specs') =
-	(case mapWhere'(class, specs'')
+    fun mapWhere [] = raise Crash.Crash "Sharing.mapWhere"
+      | mapWhere(Plain(spec)::specs') =
+	    spec :: mapWhere specs'
+      | mapWhere(Annotated(spec, clongid)::specs') =
+	    spec :: mapWhere''(specs', clongid)
+      | mapWhere(Recursive(i, specs'')::specs') =
+	(case mapWhere' specs''
 	   of (specs, NONE) =>
-		RecSpec(i,specs) :: mapWhere(class, specs')
-	    | (specs, SOME longid) =>
-		RecSpec(i,specs) :: mapWhere''(class, specs', longid)
+		RecSpec(i,specs) :: mapWhere specs'
+	    | (specs, SOME clongid) =>
+		RecSpec(i,specs) :: mapWhere''(specs', clongid)
 	)
 
     (* find 1st annotation in nested lists *)
-    and mapWhere'(class, []) = raise Crash.Crash "Sharing.mapWhere'"
-      | mapWhere'(class, Plain(spec)::specs') =
-	    cons1st(spec, mapWhere'(class, specs'))
-      | mapWhere'(class, Annotated(spec, longid)::specs') =
-	    ( spec :: mapWhere''(class, specs', longid), SOME longid )
-      | mapWhere'(class, Recursive(i, specs'')::specs') =
-	(case mapWhere'(class, specs'')
+    and mapWhere' [] = raise Crash.Crash "Sharing.mapWhere'"
+      | mapWhere'(Plain(spec)::specs') =
+	    cons1st(spec, mapWhere' specs')
+      | mapWhere'(Annotated(spec, clongid)::specs') =
+	    ( spec :: mapWhere''(specs', clongid), SOME clongid )
+      | mapWhere'(Recursive(i, specs'')::specs') =
+	(case mapWhere' specs''
 	   of (specs, NONE) =>
-		cons1st(RecSpec(i,specs), mapWhere'(class, specs'))
-	    | (specs, some as SOME longid) =>
-		( RecSpec(i,specs) :: mapWhere''(class, specs', longid), some )
+		cons1st(RecSpec(i,specs), mapWhere' specs')
+	    | (specs, some as SOME clongid) =>
+		( RecSpec(i,specs) :: mapWhere''(specs', clongid), some )
 	)
 
     (* transform remaining annotations *)
-    and mapWhere''(class, [], longid) = []
-      | mapWhere''(class, Plain(spec)::specs', longid) =
-	    spec :: mapWhere''(class, specs', longid)
-      | mapWhere''(class, Annotated(spec, longid')::specs', longid) =
-	    withWhere(class, spec, longid', longid)
-		:: mapWhere''(class, specs', longid)
-      | mapWhere''(class, Recursive(i, specs'')::specs', longid) =
-	    RecSpec(i, mapWhere''(class, specs'',longid))
-		:: mapWhere''(class, specs',longid)
+    and mapWhere''([], clongid) = []
+      | mapWhere''(Plain(spec)::specs', clongid) =
+	    spec :: mapWhere''(specs', clongid)
+      | mapWhere''(Annotated(spec, clongid')::specs', clongid) =
+	    withWhere(spec, clongid', clongid) :: mapWhere''(specs', clongid)
+      | mapWhere''(Recursive(i, specs'')::specs', clongid) =
+	    RecSpec(i, mapWhere''(specs'', clongid))
+		:: mapWhere''(specs', clongid)
 
 
   (* Sharing *)
 
-    fun share class (specs, longids) =
-	case annotateList(specs, longids)
-	  of (specs', longid::_) => error(class, longid)
-	   | (specs',       [] ) => mapWhere(class, specs')
+    fun share(specs, clongids) =
+	case annotateList(specs, clongids)
+	  of (specs',              [] ) => mapWhere specs'
+	   | (specs', Typ typlongid::_) => error E.SharingExternalTy typlongid
+	   | (specs', Inf inflongid::_) => error E.SharingExternalSig inflongid
+	   | (specs', Mod modlongid::_) => error E.SharingExternalStr modlongid
 
-    val shareTyp = share TYP
-    val shareSig = share SIG
-    val shareStr = share STR
-*)
-fun shareTyp(ss,_) = ss
-fun shareSig(ss,_) = ss
-fun shareStr(ss,_) = ss
+    fun shareTyp(specs, typlongids) = share(specs, List.map Typ typlongids)
+    fun shareSig(specs, inflongids) = share(specs, List.map Inf inflongids)
+    fun shareStr(specs, modlongids) = share(specs, List.map Mod modlongids)
+
   end
