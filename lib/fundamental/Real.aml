@@ -163,6 +163,7 @@ struct
 	  of SOME(c, src') =>
 	     if Char.isDigit c
 	     then SOME(scanFractional' getc src 0.0 0.1)
+	     else if c = #"_" then scanFractional getc src'
 	     else NONE
 	   | NONE => NONE
     and scanFractional' getc src r d =
@@ -170,6 +171,7 @@ struct
 	  of SOME(c, src') =>
 	     if Char.isDigit c
 	     then scanFractional' getc src' (r + d * value c) (d/10.0)
+	     else if c = #"_" then scanFractional' getc src' r d
 	     else (r, src)
 	   | NONE => (r, src)
 
@@ -179,6 +181,7 @@ struct
 	   | SOME(c, src') =>
 	     if Char.isDigit c
 	     then SOME(scanMantissa' getc src 0.0)
+	     else if c = #"_" then scanMantissa getc src'
 	     else NONE
 	   | NONE => NONE
     and scanMantissa' getc src r =
@@ -191,6 +194,7 @@ struct
 	   | SOME(c, src') =>
 	     if Char.isDigit c
 	     then scanMantissa' getc src' (10.0*r + value c)
+	     else if c = #"_" then scanMantissa' getc src' r
 	     else (r, src)
 	   | NONE => (r, src)
 
@@ -203,19 +207,23 @@ struct
 	let
 	    val (sign, src') = scanSign getc src
 	in
-	    case getc src'
-	      of SOME(c, _) =>
-		 if Char.isDigit c
-		 then let val (r,src'') = scanExp'' getc src' 0.0
-		      in SOME(sign*r, src'') end
-		 else NONE
-	       | NONE => NONE
+	    scanExp'' getc src' sign
 	end
-    and scanExp'' getc src exp =
+    and scanExp'' getc src sign =
 	case getc src
 	  of SOME(c, src') =>
 	     if Char.isDigit c
-	     then scanExp'' getc src' (10.0*exp + value c)
+	     then let val (r,src'') = scanExp''' getc src 0.0
+		  in SOME(sign*r, src'') end
+	     else if c = #"_" then scanExp'' getc src' sign
+	     else NONE
+	   | NONE => NONE
+    and scanExp''' getc src exp =
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanExp''' getc src' (10.0*exp + value c)
+	     else if c = #"_" then scanExp''' getc src' exp
 	     else (exp, src)
 	   | NONE => (exp, src)
 
