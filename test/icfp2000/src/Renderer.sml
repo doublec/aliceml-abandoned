@@ -11,9 +11,10 @@ structure Renderer :> RENDERER =
 	datatype cylinder_face = CylinderBottom | CylinderTop | CylinderSide
 	datatype cone_face     = ConeBase | ConeSide
 
+	type surface' =
+	    point -> {color: color, diffuse: real, specular: real, phong: real}
 	type 'face surface =
-	    'face -> point ->
-	    {color: color, diffuse: real, specular: real, phong: real}
+	    'face -> surface'
 
 	datatype object =
 	    Plane      of plane_face surface
@@ -32,17 +33,52 @@ structure Renderer :> RENDERER =
 	  | Spot        of color * point * point * angle * real
 
 	datatype object' =
-	    Plane'      of mat * mat * plane_face surface
-	  | Sphere'     of mat * mat * sphere_face surface
+	    Plane'      of mat * vec * surface'
+	  | Sphere'     of mat * point * surface'
+	  | Cylinder'   of mat * mat * surface'
+	  | Cone'       of mat * mat * surface'
 	  | Union'      of object' * object'
 	  | Intersect'  of object' * object'
 	  | Difference' of object' * object'
 
+	exception Error of string
 	exception Crash
 
-	fun preprocess (Plane surface, o2w, w2o) = Plane' (o2w, w2o, surface)
-	  | preprocess (Sphere surface, o2w, w2o) = Sphere' (o2w, w2o, surface)
-	  | preprocess (Cube surface, o2w, w2o) = raise Crash (*TODO*)
+	fun preprocess (Plane surface, o2w, w2o) =
+	    Plane' (w2o, mulMatVec (o2w, (0.0, 1.0, 0.0)),
+		    surface PlaneSurface)
+	  | preprocess (Sphere surface, o2w, w2o) =
+	    Sphere' (w2o, mulMatPoint (o2w, (0.0, 0.0, 0.0)),
+		     surface SphereSurface)
+	  | preprocess (Cube surface, o2w, w2o) =
+	    let
+		fun plane (o2w', w2o', face) =
+		    Plane' (mulMat (w2o', w2o),
+			    mulMatVec (mulMat (o2w, o2w'), (0.0, 1.0, 0.0)),
+			    surface face)
+		val top = plane (translationMat (0.0, 1.0, 0.0),
+				 translationMat (0.0, ~1.0, 0.0), CubeTop)
+		val rotXpi = rotationXMat Math.pi
+		val bottom = plane (rotXpi, rotXpi, CubeBottom)
+		val rotXpi2 = rotationXMat (Math.pi / 2.0)
+		val rotXmpi2 = rotationXMat (~Math.pi / 2.0)
+		val front = plane (rotXmpi2, rotXpi2, CubeFront)
+		val back = plane (mulMat (translationMat (0.0, 0.0, 1.0),
+					  rotXpi2),
+				  mulMat (translationMat (0.0, 0.0, ~1.0),
+					  rotXmpi2), CubeBack)
+		val rotZpi2 = rotationZMat (Math.pi / 2.0)
+		val rotZmpi2 = rotationZMat (~Math.pi / 2.0)
+		val left = plane (rotZpi2, rotZmpi2, CubeLeft)
+		val right = plane (mulMat (translationMat (1.0, 0.0, 0.0),
+					   rotZmpi2),
+				   mulMat (translationMat (~1.0, 0.0, 0.0),
+					   rotZpi2), CubeBack)
+	    in
+		Intersect' (Intersect' (Intersect' (top, bottom),
+					Intersect' (left, right)),
+			    Intersect' (front, back))
+	    end
 	  | preprocess (Cylinder surface, o2w, w2o) = raise Crash (*TODO*)
 	  | preprocess (Cone surface, o2w, w2o) = raise Crash (*TODO*)
 	  | preprocess (Union (o1, o2), o2w, w2o) =
@@ -58,6 +94,15 @@ structure Renderer :> RENDERER =
 	datatype which = A | B
 	datatype wher = Outside | InA | InB | InAB
 
+	fun debug xs = print ("[" ^ debug' xs ^ "]\n")   (*DEBUG*)
+	and debug' ((k, _, Entry)::rest) =
+	    "Entry " ^ Real.toString k ^
+	    (case rest of nil => "" | _::_ => ", " ^ debug' rest)
+	  | debug' ((k, _, Exit)::rest) =
+	    "Exit " ^ Real.toString k ^
+	    (case rest of nil => "" | _::_ => ", " ^ debug' rest)
+	  | debug' nil = ""
+
 	fun merge (xs as (x as (l1, _, _))::xr, ys as (y as (l2, _, _))::yr) =
 	    (case Real.compare (l1, l2) of
 		 LESS => (x, A)::merge (xr, ys)
@@ -66,146 +111,128 @@ structure Renderer :> RENDERER =
 	  | merge (nil, ys) = List.map (fn y => (y, B)) ys
 	  | merge (xs, nil) = List.map (fn x => (x, A)) xs
 
-	fun union ((x as (_, _, Entry), A)::xr, Outside) = x::union (xr, InA)
-	  | union ((x as (_, _, Entry), B)::xr, Outside) = x::union (xr, InB)
-	  | union ((x as (_, _, Exit), A)::xr, InA) = x::union (xr, Outside)
-	  | union ((x as (_, _, Entry), B)::xr, InA) = union (xr, InAB)
-	  | union ((x as (_, _, Entry), A)::xr, InB) = union (xr, InAB)
-	  | union ((x as (_, _, Exit), B)::xr, InB) = x::union (xr, Outside)
-	  | union ((x as (_, _, Exit), A)::xr, InAB) = union (xr, InB)
-	  | union ((x as (_, _, Exit), B)::xr, InAB) = union (xr, InA)
-	  | union (nil, _) = nil
-	  | union (_, _) = raise Crash
+	fun start ((_, _, Exit)::_, (_, _, Exit)::_) = InAB
+	  | start ((_, _, Exit)::_, _) = InA
+	  | start (_, (_, _, Exit)::_) = InB
+	  | start (_, _) = Outside
 
-	fun inter ((x as (_, _, Entry), A)::xr, Outside) = inter (xr, InA)
-	  | inter ((x as (_, _, Entry), B)::xr, Outside) = inter (xr, InB)
-	  | inter ((x as (_, _, Exit), A)::xr, InA) = inter (xr, Outside)
-	  | inter ((x as (_, _, Entry), B)::xr, InA) = x::inter (xr, InAB)
-	  | inter ((x as (_, _, Entry), A)::xr, InB) = x::inter (xr, InAB)
-	  | inter ((x as (_, _, Exit), B)::xr, InB) = inter (xr, Outside)
-	  | inter ((x as (_, _, Exit), A)::xr, InAB) = x::inter (xr, InB)
-	  | inter ((x as (_, _, Exit), B)::xr, InAB) = x::inter (xr, InA)
-	  | inter (nil, _) = nil
-	  | inter (_, _) = raise Crash
+	fun union (nil, ys) = ys
+	  | union (xs, nil) = xs
+	  | union (xs, ys) = union' (merge (xs, ys), start (xs, ys))
+	and union' ((x as (_, _, Entry), A)::xr, Outside) = x::union' (xr, InA)
+	  | union' ((x as (_, _, Entry), B)::xr, Outside) = x::union' (xr, InB)
+	  | union' ((x as (_, _, Exit), A)::xr, InA) = x::union' (xr, Outside)
+	  | union' ((x as (_, _, Entry), B)::xr, InA) = union' (xr, InAB)
+	  | union' ((x as (_, _, Entry), A)::xr, InB) = union' (xr, InAB)
+	  | union' ((x as (_, _, Exit), B)::xr, InB) = x::union' (xr, Outside)
+	  | union' ((x as (_, _, Exit), A)::xr, InAB) = union' (xr, InB)
+	  | union' ((x as (_, _, Exit), B)::xr, InAB) = union' (xr, InA)
+	  | union' (nil, _) = nil
+	  | union' (_, _) = raise Crash
 
-	fun diff ((x as (_, _, Entry), A)::xr, Outside) = x::diff (xr, InA)
-	  | diff ((x as (_, _, Entry), B)::xr, Outside) = diff (xr, InB)
-	  | diff ((x as (_, _, Exit), A)::xr, InA) = x::diff (xr, Outside)
-	  | diff (((l, s, Entry), B)::xr, InA) = (l, s, Exit)::diff (xr, InAB)
-	  | diff ((x as (_, _, Entry), A)::xr, InB) = diff (xr, InAB)
-	  | diff ((x as (_, _, Exit), B)::xr, InB) = diff (xr, Outside)
-	  | diff ((x as (_, _, Exit), A)::xr, InAB) = diff (xr, InB)
-	  | diff (((l, s, Exit), B)::xr, InAB) = (l, s, Entry)::diff (xr, InA)
-	  | diff (nil, _) = nil
-	  | diff (_, _) = raise Crash
+	fun inter (nil, _) = nil
+	  | inter (_, nil) = nil
+	  | inter (xs, ys) = inter' (merge (xs, ys), start (xs, ys))
+	and inter' ((x as (_, _, Entry), A)::xr, Outside) = inter' (xr, InA)
+	  | inter' ((x as (_, _, Entry), B)::xr, Outside) = inter' (xr, InB)
+	  | inter' ((x as (_, _, Exit), A)::xr, InA) = inter' (xr, Outside)
+	  | inter' ((x as (_, _, Entry), B)::xr, InA) = x::inter' (xr, InAB)
+	  | inter' ((x as (_, _, Entry), A)::xr, InB) = x::inter' (xr, InAB)
+	  | inter' ((x as (_, _, Exit), B)::xr, InB) = inter' (xr, Outside)
+	  | inter' ((x as (_, _, Exit), A)::xr, InAB) = x::inter' (xr, InB)
+	  | inter' ((x as (_, _, Exit), B)::xr, InAB) = x::inter' (xr, InA)
+	  | inter' (nil, _) = nil
+	  | inter' (_, _) = raise Crash
 
-	fun intersect (Plane' (o2w, w2o, surface), base, dir) =
+	fun diff (nil, _) = nil
+	  | diff (xs, nil) = xs
+	  | diff (xs, ys) = diff' (merge (xs, ys), start (xs, ys))
+	and diff' ((x as (_, _, Entry), A)::xr, Outside) = x::diff' (xr, InA)
+	  | diff' ((x as (_, _, Entry), B)::xr, Outside) = diff' (xr, InB)
+	  | diff' ((x as (_, _, Exit), A)::xr, InA) = x::diff' (xr, Outside)
+	  | diff' (((l, s, Entry), B)::xr, InA) = (l, s, Exit)::diff' (xr, InAB)
+	  | diff' ((x as (_, _, Entry), A)::xr, InB) = diff' (xr, InAB)
+	  | diff' ((x as (_, _, Exit), B)::xr, InB) = diff' (xr, Outside)
+	  | diff' ((x as (_, _, Exit), A)::xr, InAB) = diff' (xr, InB)
+	  | diff' (((l, s, Exit), B)::xr, InAB) = (l, s, Entry)::diff' (xr, InA)
+	  | diff' (nil, _) = nil
+	  | diff' (_, _) = raise Crash
+
+	fun intersect' (Plane' (w2o, normal, surface), base, dir) =
 	    let
 		val (_, dy, _) = mulMatVec (w2o, dir)
+		val (_, y, _) = mulMatPoint (w2o, base)
 	    in
-		if dy >= 0.0 then nil
+		if Real.== (dy, 0.0) then nil
 		else
 		    let
-			val (_, y, _) = mulMatPoint (w2o, base)
-		    in
-			[(y / ~dy,
-			  (surface PlaneSurface,
-			   fn _ => mulMatVec (o2w, (0.0, 1.0, 0.0))),
-			  Entry)]
-		    end
-	    end
-	  | intersect (Sphere' (o2w, w2o, surface), base, dir) =
-	    let
-		val base' = mulMatPoint (w2o, base)
-		val dir' = mulMatVec (w2o, dir)
-		val mtca = mulVec (dir', base')
-	    in
-		if mtca > 0.0 then nil
-		else
-		    let
-			val d2 = mulVec (base', base') - mtca * mtca
-		    in
-			if d2 > 1.0 then nil
-			else
-			    let
-				val tca = ~mtca
-				val thc = Math.sqrt (1.0 - d2)
-				val x = (surface SphereSurface,
-					 fn v =>
-					 mulMatVec (o2w, subVec (v, base')))
-				val k = absVec dir'
-			    in
-				[((tca - thc) / k, x, Entry),
-				 ((tca + thc) / k, x, Exit)]
-			    end
-		    end
-	    end
-(*
-	  | intersect (Cylinder' (o2w, w2o, surface), base, dir) =
-	    (* Possibilities:
-	     *    2 intersections with bottom (dy = 0)
-	     *    1 intersection with bottom
-	     *         1 intersection with top - order!
-	     *         1 intersection with side - order!
-	     *         0 intersections with top/side (tangential)
-	     *    0 intersections with bottom
-	     *         2 intersections with top (dy = 0)
-	     *         1 intersection with top
-             *              1 intersection with side - order!
-	     *              0 intersections with top/side
-	     *         0 intersection with top
-	     *              (runs along side: cannot happen)
-	     *              2 intersections with side
-	     *              1 intersections with side (tangential)
-	     *              0 intersections with side
-	     *)
-	    let
-		val base' as (x, y, z) = mulMatPoint (w2o, base)
-		val dir' as (dx, dy, dz) = mulMatVec (w2o, dir)
-	    in
-		if Real.= (dy, 0.0) then
-		    if y > 0.0 andalso y < 1.0 then
-		    else if Real.= (y, 0.0) then
-		    else if Real.= (y, 1.0) then
-		    else nil
-		else
-		    let   (* test intersection with bottom *)
 			val k = y / dy
-			val bot_x = x + k * dx
-			val bot_z = z + k * dz
 		    in
-			if bot_x * bot_x + bot_z * bot_z <= 1.0 then
-			    k is intersection; test with top/side
-			else   (* test intersection with top *)
-			    let
-				val k = (1.0 - y) / dy
-				val top_x = x + k * dx
-				val top_z = z + k * dz
-			    in
-				if top_x * top_x + top_z * top_z <= 1.0 then
-				    k is intersection; test with side
-				else   (* test intersection with top *)
-			    end
+			if k > 0.0 then nil
+			else if dy > 0.0 then
+			    [(~k, (surface, fn _ => normal), Exit)]
+			else
+			    [(~k, (surface, fn _ => normal), Entry)]
 		    end
 	    end
-*)
-	  | intersect (Union' (obj1, obj2), base, dir) =
-	    union (merge (intersect (obj1, base, dir),
-			  intersect (obj2, base, dir)), Outside)
-	  | intersect (Intersect' (obj1, obj2), base, dir) =
-	    inter (merge (intersect (obj1, base, dir),
-			  intersect (obj2, base, dir)), Outside)
-	  | intersect (Difference' (obj1, obj2), base, dir) =
-	    diff (merge (intersect (obj1, base, dir),
-			 intersect (obj2, base, dir)), Outside)
+	  | intersect' (Sphere' (w2o, center, surface), base, dir) =
+	    let
+		val x = mulMatPoint (w2o, base)
+		val v = mulMatVec (w2o, dir)
+		val v2 = mulVec (v, v)
+		val a = ~(mulVec (x, v)) / v2
+		val arg = a * a - (mulVec (x, x) - 1.0) / v2
+	    in
+		if arg < 0.0 then nil
+		else
+		    let
+			val b = Math.sqrt arg
+			val k1 = a - b
+			val k2 = a + b
+		    in
+			if k1 > 0.0 andalso k2 > 0.0 then
+			    let
+				val x = (surface, fn v => subVec (v, center))
+			    in
+				[(k1, x, Entry), (k2, x, Exit)]
+			    end
+			else if k2 > 0.0 then
+			    let
+				val x = (surface, fn v => subVec (v, center))
+			    in
+				[(k2, x, Exit)]
+			    end
+			else nil
+		    end
+	    end
+	  | intersect' (Union' (obj1, obj2), base, dir) =
+	    union (intersect' (obj1, base, dir), intersect' (obj2, base, dir))
+	  | intersect' (Intersect' (obj1, obj2), base, dir) =
+	    inter (intersect' (obj1, base, dir), intersect' (obj2, base, dir))
+	  | intersect' (Difference' (obj1, obj2), base, dir) =
+	    diff (intersect' (obj1, base, dir), intersect' (obj2, base, dir))
+
+	fun dropWhile f xs = dropWhile' (xs, f)
+	and dropWhile' (xs as x::xr, f) =
+	    if f x then dropWhile' (xr, f) else xs
+	  | dropWhile' (nil, _) = nil
+
+	fun intersect (scene, base, dir) =
+	    dropWhile (fn (_, _, i) => i = Exit)
+	    (intersect' (scene, base, dir))
 
 	fun isShadowed ((k', _, Entry)::_, k: real) = k' < k
 	  | isShadowed ((_, _, Exit)::_, _) = raise Crash
 	  | isShadowed (nil, _) = false
 
 	fun testLight (Directional (color, dir), scene, point) =
-	    if List.null (intersect (scene, point, dir)) then SOME (color, dir)
-	    else NONE
+	    let
+		val dir' = negVec dir
+	    in
+		if List.null (intersect (scene, point, dir')) then
+		    SOME (color, dir')
+		else NONE
+	    end
 	  | testLight (Point (color, pos), scene, point) =
 	    let
 		val dir = subVec (pos, point)
@@ -247,11 +274,12 @@ structure Renderer :> RENDERER =
 	    if Real.== (k, 0.0) then Color.black
 	    else
 		Color.scale
-		(k, List.foldr (fn (x, sum) => Color.add (sum, f x)) i xs)
+		(k, List.foldr (fn (x, sum) =>
+				Color.add (sum, Color.clamp (f x))) i xs)
 
 	fun trace (base, dir, ambient, lights, scene, depth) =
 	    case intersect (scene, base, dir) of
-		(k, (surface, f), Entry)::_ =>
+		(k, (surface, f), _)::_ =>
 		    let
 			val p =   (* intersection point *)
 			    addVec (base, mulScalVec (k, dir))
@@ -268,19 +296,25 @@ structure Renderer :> RENDERER =
 				lights
 			val diffuseLighting =
 			    colorSum
-			    (fn (i, l) => Color.scale (mulVec (n, l), i))
+			    (fn (i, l) =>
+(*(TextIO.print ("n = " ^ Real.toString (#1 n) ^
+", " ^ Real.toString (#2 n) ^ ", " ^ Real.toString (#3 n) ^ "\n");
+TextIO.print ("l = " ^ Real.toString (#1 l) ^
+", " ^ Real.toString (#2 l) ^ ", " ^ Real.toString (#3 l) ^ "\n");*)
+			     Color.scale (mulVec (n, l), i))
+(*)*)
 			    (kd, ambient) intensityDirList
-			val d = normalizeVec dir
 			val reflected =
-			    if Real.== (ks, 0.0) orelse depth = 0
-			    then Color.black
+			    if Real.== (ks, 0.0) orelse depth = 0 then
+				Color.black
 			    else
 				trace (p,
 				       addVec (dir,
-					       mulScalVec (2.0 *
+					       mulScalVec (~2.0 *
 							   mulVec (n, dir),
 							   n)),
 				       ambient, lights, scene, depth - 1)
+			val d = normalizeVec dir
 			val specularLighting =
 			    colorSum
 			    (fn (i, l) =>
@@ -288,12 +322,16 @@ structure Renderer :> RENDERER =
 					  (0.5 * mulVec (n, subVec (l, d)),
 					   exp), i))
 			    (ks, reflected) intensityDirList
+(*val _ = TextIO.print ("diffuse = " ^ Real.toString (#red diffuseLighting) ^
+", " ^ Real.toString (#green diffuseLighting) ^ ", " ^ Real.toString (#blue diffuseLighting) ^ "\n")
+val _ = TextIO.print ("specular = " ^ Real.toString (#red specularLighting) ^
+", " ^ Real.toString (#green specularLighting) ^ ", " ^ Real.toString (#blue specularLighting) ^ "\n")
+val _ = TextIO.print ("|lights| = " ^ Int.toString (List.length intensityDirList) ^ "\n")*)
 		    in
 			Color.prod (Color.add (diffuseLighting,
 					       specularLighting), c)
 		    end
-	      | (_, _, Exit)::_ => raise Crash
-	      | nil => ambient
+	      | nil => Color.black
 
 	fun mkRender {ambient, lights, scene, vision, width, height, depth} =
 	    let
@@ -302,20 +340,9 @@ structure Renderer :> RENDERER =
 		val delta = w / Real.fromInt width
 		val h = delta * Real.fromInt height
 		val top = (h + delta) / 2.0
-		val left = (w + delta) / 2.0
+		val left = ~(w + delta) / 2.0
 		val base = (0.0, 0.0, ~1.0)
 	    in
-print("ambientR = " ^ Real.toString(#red ambient) ^ "\n");
-print("ambientG = " ^ Real.toString(#green ambient) ^ "\n");
-print("ambientB = " ^ Real.toString(#blue ambient) ^ "\n");
-print("|lights| = " ^ Int.toString(List.length lights) ^ "\n");
-print("vision = " ^ Real.toString vision ^ "\n");
-print("width = " ^ Int.toString width ^ "\n");
-print("height = " ^ Int.toString height ^ "\n");
-print("depth = " ^ Int.toString depth ^ "\n");
-print("delta = " ^ Real.toString delta ^ "\n");
-print("top = " ^ Real.toString top ^ "\n");
-print("left = " ^ Real.toString left ^ "\n");
 		fn (x, y) =>
 		let
 		    val dir = (left + delta * Real.fromInt x,

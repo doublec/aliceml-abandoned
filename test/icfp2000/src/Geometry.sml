@@ -61,7 +61,7 @@ structure Geometry : GEOMETRY =
 
 	fun normalizeVec (x1, x2, x3) =
 	    let
-		val k = sqrt (x1*x1 + x2*x2 + x3*x3)
+		val k = 1.0 / sqrt (x1*x1 + x2*x2 + x3*x3)
 	    in
 		(k*x1, k*x2, k*x3)
 	    end
