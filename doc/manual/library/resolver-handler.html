@@ -10,8 +10,9 @@
   <P>
     This signature represents handlers as used by <A href="resolver.html"
     >resolvers</A> to find resources such as components.  A <EM>handler</EM>
-    is a function that takes a symbolic name for a resource and returns a
-    URL with which to attempt to actually locate the resource.  A handler
+    is a function that takes a uniform resource identifier (URI), which is
+    a symbolic name for a resource, and returns a uniform resource locator
+    (URL) with which to attempt to actually locate the resource.  A handler
     may or may not be <EM>applicable</EM>, which means that it actually
     may or may not return a URL.
   </P>
@@ -38,11 +39,11 @@
 	exception <A href="#Syntax">Syntax</A>
 
 	val <A href="#default">default</A> : handler
-	val <A href="#root">root</A> : string -> handler
-	val <A href="#cache">cache</A> : string -> handler
+	val <A href="#root">root</A> : <A href="url.html#t">Url.t</A> -> handler
+	val <A href="#cache">cache</A> : <A href="url.html#t">Url.t</A> -> handler
 	val <A href="#prefix">prefix</A> : string * string -> handler
 	val <A href="#pattern">pattern</A> : string * string -> handler
-	val <A href="#custom">custom</A> : string * (string -> <A href="url.html#t">Url.t</A> option) -> handler
+	val <A href="#custom">custom</A> : string * (<A href="url.html#t">Url.t</A> -> <A href="url.html#t">Url.t</A> option) -> handler
 
 	val <A href="#parse">parse</A> : string -> handler list
     end</PRE>
@@ -70,31 +71,30 @@
       <TT><A name="default">default</A></TT>
     </DT>
     <DD>
-      <P>is the handler that parses the resource name as a URL and
-	returns that.  It causes an attempt to locate the resource
-	directly under its symbolic name.  Only applicable for resources
-	that represent a URL.</P>
+      <P>is the identify function handler that returns the URI as a URL.
+	It causes an attempt to locate the resource directly under its
+	symbolic name.</P>
     </DD>
 
     <DT>
-      <TT><A name="root">root</A> <I>s</I></TT>
+      <TT><A name="root">root</A> <I>url</I></TT>
     </DT>
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
-	below a specific root path&nbsp;<TT><I>s</I></TT>.  Only applicable
-	for resource names that represent a relative path name.</P>
+	below a specific root <TT><I>url</I></TT>.  Only applicable for
+	resource names that represent a relative path name.</P>
     </DD>
 
     <DT>
-      <TT><A name="cache">cache</A> <I>s</I></TT>
+      <TT><A name="cache">cache</A> <I>url</I></TT>
     </DT>
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
-	within a cache-style path structure.  Only applicable for resource
-	names that represent a URL.  The constructed path is of the form</P>
-      <PRE><I>s</I>/<I>scheme</I>/<I>authority</I>/<I>device</I>/<I>path</I
-      ></PRE>
-      <P>where path components for absent constituents are left out.</P>
+	within a cache-style path structure.  A relative URL of the form</P>
+      <PRE><I>scheme</I>/<I>authority</I>/<I>device</I>/<I>path</I></PRE>
+      <P>is constructed, where path components for absent constituents are
+	left out.  The handler returns the URL obtained by resolving this
+	relative URL with respect to <TT><I>url</I></TT>.</P>
     </DD>
 
     <DT>
@@ -102,9 +102,10 @@
     </DT>
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
-	under prefix replacement.  Only applicable for resource names
-	that start with prefix <TT><I>s1</I></TT>.  The prefix is replaced
-	by <TT><I>s2</I></TT> and the result is parsed as a URL.</P>
+	under prefix replacement.  Only applicable for resource names whose
+	raw string representations start with prefix <TT><I>s1</I></TT>.
+	The prefix is replaced by <TT><I>s2</I></TT> and the result is again
+	parsed as a URL.</P>
     </DD>
 
     <DT>
@@ -115,13 +116,13 @@
 	under pattern replacement.  <TT><I>s1</I></TT> is a pattern that
 	contains variables of the form <TT>?{<I>x</I>}</TT>, where <TT><I
 	>x</I></TT> is a string not containing a right brace character.
-	Only applicable for resource names that match <TT><I>s1</I></TT>.
-	Variables given in the pattern are bound to corresponding substrings
-	of the resource name.  <TT><I>s2</I></TT> is returned, with
-	occurrences of variables replaced by the substrings they are bound
-	to, parsed as a URL.  Raises <TT><A href="#Syntax">Syntax</A></TT>
-	if either <TT><I>s1</I></TT> or <TT><I>s2</I></TT> contain a
-	non-terminated variable.</P>
+	Only applicable for resource names whose raw string representations
+	match <TT><I>s1</I></TT>.  Variables given in the pattern are bound
+	to corresponding substrings of the resource name.  <TT><I>s2</I></TT>
+	is returned, with occurrences of variables replaced by the substrings
+	they are bound to, parsed as a URL.  Raises <TT><A href="#Syntax"
+	>Syntax</A></TT> if either <TT><I>s1</I></TT> or <TT><I>s2</I></TT>
+	contain a variable that is not terminated by a right brace.</P>
     </DD>
 
     <DT>
