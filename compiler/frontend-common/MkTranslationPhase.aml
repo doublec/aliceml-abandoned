@@ -1592,10 +1592,19 @@ struct
 	(*TODO: Don't we have to build an existential here? *)
 	O.LetExp(trInfInfo(env,i), trDecs(env, decs), trInf'(env, inf))
 
-      | trInf'(env, I.SingInf(i, (I.AnnMod(_,_,inf) | I.SealMod(_,_,inf)))) =
-	(* [sing mod : inf] = [inf] *)
-	(*TODO, quick hack to make it possible to bootstrap with RTTs *)
-	trInf'(env, inf)
+      | trInf'(env, I.SingInf(i,(I.AnnMod(_,mod,inf) | I.SealMod(_,mod,inf)))) =
+	(* [sing mod : inf] =
+	 *   __pervasive.Inf.strengthen(seal [mod], [inf])
+	 *)
+	let
+	    val r     = #region i
+	    val r1    = #region(I.infoMod mod)
+	    val exp1' = O.SealExp(typInfo(r1, typ_module env), trMod(env, mod))
+	    val exp2' = trInf'(env, inf)
+	in
+	    rttAppExp(env, r, modlab_dynmatch, lab_strengthen,
+		      tupExp(r, #[exp1', exp2']))
+	end
 
       | trInf'(env, I.SingInf(i, mod)) =
 	(* [sing mod] = __pervasive.Inf.sing [mod] *)
