@@ -1,3 +1,5 @@
 (* Trail going away from home: tm1, tm2, tm1+tm2, tm1, tm2, tm1+tm2, ... *)
 val trailmarker1 = 1
 val trailmarker2 = 2
+
+val foodmarker = 3
