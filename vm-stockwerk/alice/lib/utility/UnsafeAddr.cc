@@ -17,8 +17,8 @@ DEFINE1(UnsafeAddr_addr) {
   if (b != INVALID_POINTER)
     RETURN(Store::UnmanagedPointerToWord(b));
   Transient *t = Store::WordToTransient(x0);
-  if (b != INVALID_POINTER)
-    RETURN(Store::UnmanagedPointerToWord(b));
+  if (t != INVALID_POINTER)
+    RETURN(Store::UnmanagedPointerToWord(t));
   RETURN_INT(Store::WordToInt(x0));
 } END
 
