@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -132,12 +132,12 @@ struct
     and buildSig'(ShortId(i, modid), inf) =
 	    inf
       | buildSig'(LongId(_, modlongid, Lab(i,a)), inf) =
-	    SigInf(i, #[ModSpec(i, Id(i, Stamp.new(), Label.toName a), inf)])
+	    SigInf(i, #[ModSpec(i, Id(i, Stamp.stamp(), Label.toName a), inf)])
 
 
     fun constrain(inf1, Typ(LongId(i, modlongid', Lab(i1,a))), Typ typlongid) =
 	let
-	    val typid = Id(i1, Stamp.new(), Label.toName a)
+	    val typid = Id(i1, Stamp.stamp(), Label.toName a)
 	    val typ   = ConTyp(infoLongid typlongid, typlongid)
 	    val spec  = TypSpec(i1, typid, typ)
 	in
@@ -145,7 +145,7 @@ struct
 	end
       | constrain(inf1, Inf(LongId(i, modlongid', Lab(i1,a))), Inf inflongid) =
 	let
-	    val infid = Id(i1, Stamp.new(), Label.toName a)
+	    val infid = Id(i1, Stamp.stamp(), Label.toName a)
 	    val inf   = ConInf(infoLongid inflongid, inflongid)
 	    val spec  = InfSpec(i1, infid, inf)
 	in
@@ -154,7 +154,7 @@ struct
       | constrain(inf1, Mod(LongId(i, modlongid', Lab(i1,a))), Mod modlongid) =
 	let
 	    val i2    = infoLongid modlongid
-	    val modid = Id(i1, Stamp.new(), Label.toName a)
+	    val modid = Id(i1, Stamp.stamp(), Label.toName a)
 	    val inf   = SingInf(i2, VarMod(i2, modlongid))
 	    val spec  = ModSpec(i1, modid, inf)
 	in

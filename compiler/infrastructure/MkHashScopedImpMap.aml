@@ -3,15 +3,15 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature HASH_KEY     from "../../lib/utility/HASH_KEY-sig"
+import signature HASHABLE     from "../../lib/data/HASHABLE-sig"
+import functor MkHashImpMap   from "../../lib/data/MkHashImpMap"
 import functor MkScopedImpMap from "../../lib/utility/MkScopedImpMap"
-import functor MkHashImpMap   from "../../lib/utility/MkHashImpMap"
 
-functor MkHashScopedImpMap(Key: HASH_KEY) = MkScopedImpMap(MkHashImpMap(Key))
+functor MkHashScopedImpMap(Key: HASHABLE) = MkScopedImpMap(MkHashImpMap(Key))

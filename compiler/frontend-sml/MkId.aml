@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,10 +17,10 @@
  *
  * Note:
  *   This is a generic functor to represent all kinds of identifiers (except
- *   for labels tyvars).
+ *   labels and tyvars).
  *)
 
-import signature STAMP from "../../lib/utility/STAMP-sig"
+import signature STAMP from "../../lib/data/STAMP-sig"
 import signature ID    from "ID-sig"
 
 
@@ -29,8 +29,8 @@ struct
     type Id = string
     type t  = Id
 
-    fun invent()     = "_id" ^ Stamp.toString(Stamp.new())
-    fun inventAs id  = "_" ^ id ^ Stamp.toString(Stamp.new())
+    fun invent()     = "_id" ^ Stamp.toString(Stamp.stamp())
+    fun inventAs id  = "_" ^ id ^ Stamp.toString(Stamp.stamp())
 
     fun fromString s = s
     fun toString s   = s

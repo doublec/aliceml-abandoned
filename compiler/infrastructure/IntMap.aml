@@ -10,6 +10,6 @@
  *   $Revision$
  *)
 
-import functor MkHashImpMap  from "../../lib/utility/MkHashImpMap"
+import functor MkHashImpMap  from "../../lib/data/MkHashImpMap"
 
 structure IntMap = MkHashImpMap(Int)
