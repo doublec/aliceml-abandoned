@@ -1217,11 +1217,13 @@ structure CodeGen =
 		       | _ => (case retty of
 				   IntType => Multi [New CInt,
 						     Dup]
+				 | BoolType => Nop
 				 | UType => Nop) ::
 			     Multi (tyLoadParms (ids, tys)) ::
 			     Multi primcode ::
 			     (case retty of
 				  IntType => [Invokespecial (CInt, "<init>", ([Intsig], [Voidsig]))]
+				| BoolType => nil
 				| UType => nil))
 	    in
 		Comment ("invokeRecApply: "^Stamp.toString fnstamp^":"^Int.toString parms^" in "^Stamp.toString fnstamp) ::

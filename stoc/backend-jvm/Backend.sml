@@ -405,6 +405,7 @@ structure Backend=
 	datatype primtypes =
 	    UType (* unkown type *)
 	  | IntType
+	  | BoolType
 
 	structure PrimCode =
 	    struct
@@ -412,6 +413,19 @@ structure Backend=
 		    (case name of
 			 "Int.+" => ([Iadd], [IntType, IntType], IntType)
 		       | "Int.-" => ([Isub], [IntType, IntType], IntType)
+		       | "Int.<" =>
+			     let
+				 val weida = Label.new ()
+				 val tr = Label.new ()
+			     in
+				 ([Ificmplt tr,
+				   Getstatic BFalse,
+				   Goto weida,
+				   Label tr,
+				   Getstatic BTrue,
+				   Label weida],
+				  [IntType, IntType], BoolType)
+			     end
 		       | _ => (nil, [UType], UType))
 				else (nil, [UType], UType)
 	    end
