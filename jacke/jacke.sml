@@ -25,21 +25,21 @@ struct
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
           val lexer = LrParser.Stream.streamify (Lex.makeLexer get)
           val (absyn, _) = jackeP.parse(30,lexer,parseerror,())
+	  val _ = AbsSyn.semanticalAnalysis absyn
 	  val absyn = AbsSyn.removePos absyn
        in TextIO.closeIn file;	   
            absyn
       end handle LrParser.ParseError => raise ErrorMsg.Error
 
+  (* testing purposes only *)
   fun try filename =
-      let val p = parse filename
-	  val Translate.TRANSLATE{grammar,rules,...} = 
-	      Translate.translate (NormalForm.toNormalForm p)
-	  val (table,_,_,_) = MakeLrTable.mkTable (grammar,true)
-	  val _ = PrintStruct.makeStruct {table=table,
-				  name="t1",
-				  print=print,
-				  verbose=false}
-      in 
-	  rules
-      end
+      let val _ = (ErrorMsg.reset(); ErrorMsg.fileName := filename)
+          val file = TextIO.openIn filename
+          fun get _ = TextIO.input file
+          fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
+          val lexer = LrParser.Stream.streamify (Lex.makeLexer get)
+          val (absyn, _) = jackeP.parse(30,lexer,parseerror,())
+       in TextIO.closeIn file;	   
+           absyn
+      end handle LrParser.ParseError => raise ErrorMsg.Error
 end

@@ -286,8 +286,11 @@ struct
 	in
 	    (TextIO.output(outfile,code);
 	     TextIO.flushOut outfile;
-	     TextIO.closeOut outfile)
-	end
+	     TextIO.closeOut outfile;
+	     TextIO.print ("Written output to "^filename^".out\n"))
+	end 
+    handle _ => 
+	TextIO.print ("Some error(s) occurred while processing "^filename^"\n")
 
 end
 

@@ -7,9 +7,8 @@ struct
     structure N = NormalForm
     open Array
 
-    val DEBUG = true
-    val error = fn s => print ("Error: "^s^"\n")
-    val warning = fn s => print ("Warning: "^s^"\n")
+    val DEBUG = false
+(*    val error = fn s => print ("Error: "^s^"\n")   *)
 
     datatype translate = TRANSLATE of {grammar :G.grammar,
 				       stringToTerm :string -> G.term,
@@ -153,9 +152,10 @@ struct
 	let val precData = array(numTerms, NONE : int option)
 	    val addPrec = fn termPrec => fn term as (G.T i) =>
 		case sub(precData,i)
-		   of SOME _ =>
-		      error ("multiple precedences specified for terminal " ^
-				(termToString term))
+		   of SOME _ => raise ErrorMsg.Error
+		      (* already dealt with in AbsSyn
+		       error ("multiple precedences specified for terminal " ^
+				(termToString term)) *)
 		 | NONE => update(precData,i,termPrec)
 	    val termPrec = 
 		fn ((A.AssoclDec slist), i) => List.map (fn s => (s,i)) slist
