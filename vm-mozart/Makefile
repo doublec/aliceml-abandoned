@@ -107,6 +107,7 @@ FRONTEND_SML_LEXER_FILES = \
 	Error.import \
 	$(STOC_DIR)/frontend-sml/Parser.grm.sig \
 	$(STOC_DIR)/frontend-sml/LEXER_ERROR.sig \
+	$(STOC_DIR)/frontend-sml/LexerError.sml \
 	$(STOC_DIR)/frontend-sml/Lexer.lex.sml \
 	$(STOC_DIR)/frontend-sml/CountPosLexer.sml
 
@@ -114,12 +115,10 @@ FRONTEND_SML_FILES = \
 	Base.import \
 	Word.import \
 	TextIO.import \
-	MLYacc.import \
 	Misc.import \
 	Error.import \
 	Common.import \
 	FrontendCommon.import \
-	FrontendSMLLexer.import \
 	$(STOC_DIR)/frontend-sml/LAB.sig \
 	$(STOC_DIR)/frontend-sml/Lab.sml \
 	$(STOC_DIR)/frontend-sml/ID.sig \
@@ -137,13 +136,22 @@ FRONTEND_SML_FILES = \
 	$(STOC_DIR)/frontend-sml/ABSTRACTION_PHASE.sig \
 	$(STOC_DIR)/frontend-sml/AbstractionPhase.sml \
 	$(STOC_DIR)/frontend-sml/DERIVED_FORMS.sig \
-	$(STOC_DIR)/frontend-sml/LexerError.sml \
-	$(STOC_DIR)/frontend-sml/Parser.grm.sml \
 	$(STOC_DIR)/frontend-sml/DerivedForms.sml \
-	$(STOC_DIR)/frontend-sml/PARSING_PHASE.sig \
-	$(STOC_DIR)/frontend-sml/ParsingPhase.sml \
 	$(STOC_DIR)/frontend-sml/BIND_ENV0.sig \
 	$(STOC_DIR)/frontend-sml/BindEnv0.sml
+
+FRONTEND_SML_PARSER_FILES = \
+	Base.import \
+	Word.import \
+	TextIO.import \
+	MLYacc.import \
+	Misc.import \
+	Error.import \
+	FrontendSMLLexer.import \
+	FrontendSML.import \
+	$(STOC_DIR)/frontend-sml/Parser.grm.sml \
+	$(STOC_DIR)/frontend-sml/PARSING_PHASE.sig \
+	$(STOC_DIR)/frontend-sml/ParsingPhase.sml
 
 BACKEND_COMMON_FILES = \
 	Base.import \
@@ -186,7 +194,7 @@ COMPONENTS = \
 	Base \
 	MLYacc \
 	Misc Error Common \
-	FrontendCommon FrontendSMLLexer FrontendSML \
+	FrontendCommon FrontendSMLLexer FrontendSML FrontendSMLParser \
 	BackendCommon BackendMozart
 
 %.ozf: %.aus
@@ -210,6 +218,8 @@ FrontendSMLLexer.aus: $(FRONTEND_SML_LEXER_FILES)
 	$(MERGE) $(FRONTEND_SML_LEXER_FILES) > $@
 FrontendSML.aus: $(FRONTEND_SML_FILES)
 	$(MERGE) $(FRONTEND_SML_FILES) > $@
+FrontendSMLParser.aus: $(FRONTEND_SML_PARSER_FILES)
+	$(MERGE) $(FRONTEND_SML_PARSER_FILES) > $@
 BackendCommon.aus: $(BACKEND_COMMON_FILES)
 	$(MERGE) $(BACKEND_COMMON_FILES) > $@
 BackendMozart.aus: $(BACKEND_MOZART_FILES)

@@ -1,0 +1,25 @@
+(* -*- sml -*- *)
+
+import
+
+###frontend-sml/LAB.sig
+structure Lab: LAB
+
+###frontend-sml/ID.sig
+structure VId: ID
+structure TyCon: ID
+structure TyVar: ID
+structure StrId: ID
+structure SigId: ID
+structure FunId: ID
+
+###frontend-sml/SCON.sig
+structure SCon: SCON
+
+###frontend-sml/INPUT_GRAMMAR.sig
+structure InputGrammar: INPUT_GRAMMAR
+
+###frontend-sml/DERIVED_FORMS.sig
+structure DerivedForms: DERIVED_FORMS
+
+from "FrontendSML.ozf"
