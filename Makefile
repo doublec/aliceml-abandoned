@@ -64,7 +64,7 @@ install-prelude:
 ## Sync the global installation with local one
 ##
 install-global:
-	make TARGET=$(TARGET) PREFIX=$(GLOBAL_PREFIX)
+	make TARGET=$(DEFAULT_TARGET) PREFIX=$(GLOBAL_PREFIX)
 #	(cd $(PREFIX) && tar -cf - *) | \
 #	(cd $(GLOBAL_PREFIX) && tar -xvf -)
 
