@@ -332,14 +332,14 @@ define(_REQUESTDEC,`$1 = null;
 		 }')
 define(_fromSingle,`')
 define(_BUILTTUP,`
-	final public DMLValue apply0() { return apply(Constants.dmlunit); }
-	final public DMLValue apply2(DMLValue v1, DMLValue v2) {
+	final public DMLValue apply0() throws java.rmi.RemoteException { return apply(Constants.dmlunit); }
+	final public DMLValue apply2(DMLValue v1, DMLValue v2) throws java.rmi.RemoteException {
 	return apply(new Tuple2(v1,v2));
 	}
-	final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3) {
+	final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3) throws java.rmi.RemoteException {
 	return apply(new Tuple3(v1,v2,v3));
 	}
-	final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4) {
+	final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4) throws java.rmi.RemoteException {
 	return apply(new Tuple4(v1,v2,v3,v4));
 	}
 ')
