@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__UNPICKLER_HH__
-#define __EMULATOR__UNPICKLER_HH__
+#ifndef __GENERIC__UNPICKLER_HH__
+#define __GENERIC__UNPICKLER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Unpickler.hh"
+#pragma interface "generic/Unpickler.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
 class Unpickler {
 public:

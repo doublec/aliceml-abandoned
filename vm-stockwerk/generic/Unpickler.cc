@@ -2,8 +2,12 @@
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
+// Contributors:
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+//
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -11,28 +15,28 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Unpickler.hh"
+#pragma implementation "generic/Unpickler.hh"
 #endif
 
 #include <cstdio>
 #include <cstdlib>
 #include "adt/Stack.hh"
-#include "emulator/RootSet.hh"
-#include "emulator/Tuple.hh"
-#include "emulator/ConcreteCode.hh"
-#include "emulator/Closure.hh"
-#include "emulator/Backtrace.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Transients.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Transform.hh"
-#include "emulator/Unpickler.hh"
+#include "generic/RootSet.hh"
+#include "generic/Tuple.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Closure.hh"
+#include "generic/Backtrace.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Transients.hh"
+#include "generic/Interpreter.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Transform.hh"
+#include "generic/Unpickler.hh"
 
 //--** these should be factored out:
-#include "emulator/Alice.hh"
-#include "emulator/PrimitiveTable.hh"
-#include "emulator/AbstractCodeInterpreter.hh"
+#include "alice/Data.hh"
+#include "alice/PrimitiveTable.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 
 // pickle    ::= int | chunk | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>
