@@ -139,6 +139,9 @@ public:
 #if defined(JIT_STORE_DEBUG)
   static void Disassemble(::Chunk *code);
 #endif
+#ifdef INSTRUCTION_COUNTS
+  static void DumpInstructionCounts();
+#endif
 };
 
 #endif

@@ -1898,9 +1898,21 @@ void NativeCodeJitter::CompileBranch(TagVal *pc) {
   livenessTable = cloneTable;
 }
 
+#ifdef INSTRUCTION_COUNTS
+static u_int staticCounts[AbstractCode::nInstrs];
+static u_int dynamicCounts[AbstractCode::nInstrs];
+#endif
+
 void NativeCodeJitter::CompileInstr(TagVal *pc) {
   while (pc != INVALID_POINTER) {
-    switch (AbstractCode::GetInstr(pc)) {
+    AbstractCode::instr opcode = AbstractCode::GetInstr(pc);
+#ifdef INSTRUCTION_COUNTS
+    staticCounts[opcode]++;
+    jit_ldi_ui(JIT_R0, &dynamicCounts[opcode]);
+    jit_addi_ui(JIT_R0, JIT_R0, 1);
+    jit_sti_ui(&dynamicCounts[opcode], JIT_R0);
+#endif
+    switch (opcode) {
     case AbstractCode::Kill:
       pc = InstrKill(pc); break;
     case AbstractCode::PutVar:
@@ -1990,6 +2002,12 @@ static InlineEntry inlines[] = {
 
 // NativeCodeJitter Static Constructor
 void NativeCodeJitter::Init(u_int bufferSize) {
+#ifdef INSTRUCTION_COUNTS
+  for (u_int opcode = AbstractCode::nInstrs; opcode--; ) {
+    staticCounts[opcode] = 0;
+    dynamicCounts[opcode] = 0;
+  }
+#endif
   JITStore::InitLoggging();
   LazyCompileInterpreter::Init();
   codeBufferSize = bufferSize;
@@ -2132,5 +2150,16 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
 void NativeCodeJitter::Disassemble(::Chunk *code) {
   char *base = code->GetBase();
   disassemble(stderr, base, base + code->GetSize());
+}
+#endif
+
+#ifdef INSTRUCTION_COUNTS
+void NativeCodeJitter::DumpInstructionCounts() {
+  std::fprintf(stderr, "JITter instruction counts (static/dynamic)\n");
+  for (u_int opcode = 0; opcode < AbstractCode::nInstrs; opcode++)
+    std::fprintf(stderr, "  %s, %d, %d\n",
+		 AbstractCode::GetOpcodeName
+		   (static_cast<AbstractCode::instr>(opcode)),
+		 staticCounts[opcode], dynamicCounts[opcode]);
 }
 #endif

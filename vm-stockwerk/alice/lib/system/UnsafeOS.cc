@@ -25,6 +25,7 @@
 #include "generic/RootSet.hh"
 #include "generic/Closure.hh"
 #include "generic/Properties.hh"
+#include "alice/NativeCodeJitter.hh"
 #include "alice/primitives/Authoring.hh"
 
 #if PROFILE
@@ -178,6 +179,9 @@ DEFINE1(UnsafeOS_Process_exit) {
   DECLARE_INT(code, x0);
 #if PROFILE
   Profiler::DumpInfo();
+#endif
+#ifdef INSTRUCTION_COUNTS
+  NativeCodeJitter::DumpInstructionCounts();
 #endif
   exit(code);
 } END
