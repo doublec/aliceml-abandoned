@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#include "store/Store.hh"
-
 #if defined(INTERFACE)
 #pragma implementation "store/Memory.hh"
 #endif
+
+#include "store/Store.hh"
 #include "store/Memory.hh"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
