@@ -209,7 +209,14 @@ structure CodeStore :> CODE_STORE =
 			 (emit (Comment ("kill " ^ Stamp.toString stamp));
 			  indicesRef := i::(!indicesRef);
 			  ScopedMap.insert (scope, stamp, Killed i))
-		    | _ => emit (Comment ("nonlocal " ^ Stamp.toString stamp)))
+		   | SOME (Arg _) =>
+			 (* We cannot reuse argument registers *)
+			 emit (Comment ("kill-arg " ^ Stamp.toString stamp))
+		   | SOME (Fld _ | SFld _) =>
+			 raise Crash.Crash "CodeStore.kill"
+		   | (NONE | SOME (Killed _)) =>
+			 (* This can happen at a SharedStm *)
+			 emit (Comment ("kill-none " ^ Stamp.toString stamp)))
 		set
 	    end
 
