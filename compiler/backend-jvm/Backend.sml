@@ -16,6 +16,9 @@ structure Backend=
 	 statischen Berechnung der Recordaritäten. *)
 	structure StringListHash = MakeHashImpMap(StringListHashKey)
 
+	(* Hashtabelle für Strings. Wird zum Verschmelzen von Labels benutzt. *)
+	structure StringHash = MakeHashImpMap(StringHashKey)
+
 	(* Hashtabelle für Integers. Wird benötigt zum statischen
 	 Generieren von Integerkonstanten. *)
 	structure LitHash = MakeHashImpMap (LitHashKey)

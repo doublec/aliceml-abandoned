@@ -313,6 +313,14 @@ structure ToJasmin =
 				      else else',
 					  need, max);
 					  recurse (is, !stackneed,!stackmax))
+			      | Label l' =>
+				    case is of
+					Goto l''::rest =>
+					    (if !DEBUG >= 2
+						 then TextIO.output
+						     (ziel, "\t; "^l'^": Goto "^l'')
+					     else ();
+					     recurse (is, need, max))
 			      | _ =>
 				    let
 					val ins = instructionToJasmin (i, staticapply)
