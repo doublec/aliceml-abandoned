@@ -481,11 +481,11 @@ struct
 	    SOME(ppCustom fm (text "slice", docs'))
 	end
 
-    fun ppUniqueString t fm x =
+    fun ppAtom t fm x =
 	let
-	    val doc' = ppVal' typ_string (elem fm) (UniqueString.string x)
+	    val doc' = ppVal' typ_string (elem fm) (Atom.toString x)
 	in
-	    SOME(ppCustom fm (text "unique", [doc']))
+	    SOME(ppCustom fm (text "atom", [doc']))
 	end
 
     fun ppTime t fm x =
@@ -540,7 +540,7 @@ struct
 
     val path_word8	   = lookupPath(coreSig,"Word8","word")
     val path_promise	   = lookupPath(coreSig,"Promise","promise")
-    val path_unique_string = lookupPath(coreSig,"UniqueString","unique_string")
+    val path_atom          = lookupPath(coreSig,"Atom","atom")
     val path_time	   = lookupPath(coreSig,"Time","time")
     val path_thread	   = lookupPath(coreSig,"Thread","thread")
     val path_lock	   = lookupPath(coreSig,"Lock","lock")
@@ -575,7 +575,7 @@ struct
     val _ = registerTyp(path_array,         ppArray)
     val _ = registerTyp(path_vector_slice,  ppVectorSlice)
     val _ = registerTyp(path_array_slice,   ppArraySlice)
-    val _ = registerTyp(path_unique_string, ppUniqueString)
+    val _ = registerTyp(path_atom,          ppAtom)
     val _ = registerTyp(path_time,          ppTime)
     val _ = registerTyp(path_thread,        ppThread)
     val _ = registerTyp(path_lock,          ppLock)
