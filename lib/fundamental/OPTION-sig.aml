@@ -26,7 +26,7 @@ sig
     exception Option
 
     val equal :		('a * 'a -> bool) -> 'a option * 'a option -> bool (**)
-    val compare :	('a * 'a -> order) -> 'a option * 'a option -> order (**)
+    val collate :	('a * 'a -> order) -> 'a option * 'a option -> order (**)
 
     val getOpt :	'a option * 'a -> 'a
     val isSome :	'a option -> bool

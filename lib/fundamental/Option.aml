@@ -66,8 +66,8 @@ struct
       | equal eq (SOME x, SOME y)	= eq(x,y)
       | equal eq _			= false
 
-    fun compare cmp (NONE,   NONE)	= EQUAL				(**)
-      | compare cmp (NONE,   SOME _)	= LESS
-      | compare cmp (SOME _, NONE)	= GREATER
-      | compare cmp (SOME x, SOME y)	= cmp(x,y)
+    fun collate cmp (NONE,   NONE)	= EQUAL				(**)
+      | collate cmp (NONE,   SOME _)	= LESS
+      | collate cmp (SOME _, NONE)	= GREATER
+      | collate cmp (SOME x, SOME y)	= cmp(x,y)
 end
