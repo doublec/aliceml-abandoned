@@ -14,6 +14,9 @@ else
   PREFIX=$1
 fi
 
+# Copy Base Lib
+(cd vm-mozart/bootstrap && rm -f lib/Base.ozf && make first lib/Base.ozf) || exit 1
+
 # Cleanup/Create Directories
 #rm -rf $PREFIX/bin $PREFIX/lib
 mkdir $PREFIX/bin 2>/dev/null
@@ -26,8 +29,6 @@ install -c -m444 vm-mozart/*.ozf $PREFIX/lib
 install -c -m444 vm-mozart/bootstrap/lib/*.ozf.sig $PREFIX/lib/
 #(cd vm-mozart/bootstrap && make Default.import) || exit 1
 install -c -m444 vm-mozart/bootstrap/Base.import $PREFIX/Default.import
-# Copy Base Lib
-(cd vm-mozart/bootstrap && rm -f lib/Base.ozf && make lib/Base.ozf) || exit 1
 install -c -m444 vm-mozart/bootstrap/lib/Base.ozf $PREFIX/lib
 install -c -m444 vm-com+/Base.dll.sig $PREFIX/lib/Base.ozf.sig
 # Copy Bin Files
