@@ -17,7 +17,5 @@ is
 	prebound.cm
 	intermediate-grammar.cm
 
-	PREBOUND.sig
-	Prebound.sml
 	PREBOUND'.sig
 	Prebound'.sml

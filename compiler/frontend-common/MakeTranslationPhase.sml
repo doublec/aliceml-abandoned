@@ -51,9 +51,9 @@ UNFINISHED: obsolete after bootstrapping:
     fun trLongid'(I.ShortId(i,x))	= O.ShortId(i, trId x)
       | trLongid'(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab a)
 
-    fun trLongid(y as I.LongId(i, I.ShortId(_,x), I.Lab(_,a))) =
-	if x = Prebound.stamp_Prebound then
-	    O.ShortId(i, Prebound.nameToStamp a, O.ExId a)
+    fun trLongid(y as I.LongId(i, I.ShortId(_,I.Id(_,z,I.ExId n)), I.Lab(_,a)))=
+	if z = Prebound.stamp_Prebound then
+	    O.ShortId(i, O.Id(i, Prebound.nameToStamp a, O.ExId n))
 	else trLongid' y
 
       | trLongid y = trLongid' y
