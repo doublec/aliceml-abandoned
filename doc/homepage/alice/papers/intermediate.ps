@@ -10,7 +10,7 @@
 %DVIPSWebPage: (www.radicaleye.com)
 %DVIPSCommandLine: dvips intermediate.dvi -o intermediate.ps
 %DVIPSParameters: dpi=1200, compressed
-%DVIPSSource:  TeX output 2002.08.22:1429
+%DVIPSSource:  TeX output 2002.08.22:1650
 %%BeginProcSet: texc.pro
 %!
 /TeXDict 300 dict def TeXDict begin/N{def}def/B{bind def}N/S{exch}N/X{S
@@ -1372,63 +1372,62 @@ TeXDict begin
 2934 2067 y Fr(Andreas)50 b(Rossber)l(g)2607 2299 y(Uni)-5
 b(v)m(ersit)3351 2298 y(\250)3340 2299 y(at)51 b(des)f(Saarlandes)2401
 2531 y Fq(rossberg@ps.uni-)8 b(sb.de)2999 3027 y Fr(August)48
-b(22,)h(2002)660 3849 y Fp(1)239 b(Syntax)660 4327 y
+b(22,)h(2002)660 3854 y Fp(1)239 b(Syntax)660 4332 y
 Fo(The)46 b(syntax)g(gi)l(v)n(en)f(here)h(should)g(be)g(read)g(as)f(an)
 h(abstract)g(syntax.)64 b(The)46 b(meaning)g(of)h(most)f(e)n(xpres-)660
-4526 y(sions)41 b(should)g(be)g(straightforw)n(ard.)52
+4532 y(sions)41 b(should)g(be)g(straightforw)n(ard.)52
 b(W)-13 b(e)41 b(brie\003y)h(e)n(xplain)f(the)g(non-ob)n(vious)h(ones.)
-660 4833 y(A)31 b(long)h(identi\002er)g(e)n(xpression)f
+660 4838 y(A)31 b(long)h(identi\002er)g(e)n(xpression)f
 Fn(longid)18 b Fm(:)p Fn(lab)42 b Fo(is)32 b(equi)l(v)l(alent)f(to)g
 (the)h(e)n(xpression)e Fl(\()p Fo(lazy)45 b Fl(#)p Fn(lab)12
-b Fl(\()p Fn(longid)17 b Fl(\)\))p Fo(,)660 5032 y(ie.)65
+b Fl(\()p Fn(longid)17 b Fl(\)\))p Fo(,)660 5037 y(ie.)65
 b(it)46 b(represents)f(lazy)h(selection.)64 b(The)47
 b(reason)e(for)i(ha)m(ving)f(long)g(identi\002ers)g(separate)f(is)h
-(that)h(the)n(y)660 5231 y(can)41 b(appear)g(in)h(patterns.)660
-5538 y(The)55 b(e)n(xpression)f Fl(\()p Fo(ne)l(w)71
-b Fn(exp)11 b Fl(\))54 b Fo(generates)h(a)f(ne)l(w)h(constructor)g
-(name)g(for)h(an)f(e)n(xtensible)f(datatype,)660 5737
-y(with)c(an)f(attrib)m(ute)h(e)n(xpression)f(used)g(for)h(runtime)g
-(type)g(information.)76 b(The)50 b(long)g(identi\002er)h(in)e(e)n(x-)
-660 5936 y(pressions)42 b(of)h(the)g(form)h Fl(@)p Fn(longid)18
-b Fl(\()p Fn(exp)10 b Fl(\))43 b Fo(or)g(patterns)f Fl(@)p
-Fn(longid)19 b Fl(\()p Fn(p)-8 b(at)14 b Fl(\))43 b Fo(must)g(denote)f
-(such)h(a)f(genera-)660 6136 y(ti)l(v)n(e)47 b(constructor)-9
-b(.)71 b(On)48 b(the)g(other)g(hand,)h Fl(`)p Fn(lab)11
-b Fl(\()p Fn(exp)f Fl(\))48 b Fo(and)g Fl(`)p Fn(lab)11
-b Fl(\()p Fn(p)-8 b(at)15 b Fl(\))47 b Fo(denote)h(constructed)g(v)l
-(alues)f(of)660 6335 y(closed)39 b(\(structural\))i(datatypes.)50
-b(Strict)40 b(e)n(xpressions)f(force)h(e)l(v)l(aluation)f(of)h(the)g
-(ar)m(gument.)51 b(The)40 b(dual)660 6534 y(strict)c(pattern)h
-(establishes)d(the)j(in)-7 b(v)l(ariant)36 b(that)h(the)f(v)l(alue)f
-(matched)h(has)g(been)g(e)l(v)l(aluated)f(strictly)h(and)660
-6733 y(can)42 b(thus)g(not)g(be)h(a)f(future.)53 b(These)42
-b(constructs)g(are)g(particularly)h(used)e(to)i(encode)f(strictness)f
-(of)i(tags)660 6933 y(and)e(constructor)h(such)f(that)g(the)h(back)n
-(end)f(can)g(unbox)g(them.)660 7239 y(The)j(e)n(xpression)e
-Fl(\()p Fo(prim)51 b Fm(s)p Fl(\))43 b Fo(is)g(needed)g(for)i(binding)f
-(primiti)l(v)n(e)g(\(b)m(uiltin\))g(v)l(alues,)f(which)h(are)f(named)
-660 7438 y(by)56 b(a)f(string.)93 b(The)56 b Fl(\()p
-Fo(f)n(ail)p Fl(\))f Fo(e)n(xpression)f(marks)i(an)f(unused)g(v)l
-(alue.)93 b(F)n(orcing)55 b(it)h(al)n(w)n(ays)f(is)h(an)f(error)-9
-b(.)660 7638 y(It)59 b(is)g(used)f(during)h(bootstrapping)g(as)f(a)h
-(placeholder)f(for)i(runtime)f(types.)102 b(The)59 b(seal)f(and)h
-(unseal)660 7837 y(e)n(xpressions)40 b(are)h(needed)g(for)h(typing)g
-(purposes)f(only)g(and)h(are)f(described)g(in)g(section)g(3.)1898
-8292 y Fn(n)589 b Fk(2)231 b Fo(N)1112 b(inte)n(ger)41
-b(constants)1898 8491 y Fn(w)572 b Fk(2)231 b Fo(W)1075
-b(w)n(ord)42 b(constants)1898 8691 y Fn(c)606 b Fk(2)231
-b Fo(C)1121 b(character)41 b(constants)1898 8890 y Fn(s)614
-b Fk(2)231 b Fo(S)1140 b(string)42 b(constants)1898 9089
-y Fn(p)597 b Fk(2)231 b Fo(P)1140 b(\003oat)42 b(constants)1898
-9289 y Fn(id)546 b Fk(2)231 b Fo(Id)1094 b(identi\002ers)1898
-9488 y Fn(lab)479 b Fk(2)231 b Fo(Lab)46 b Fl(=)h Fo(Id)37
-b Fk(])f Fo(N)3844 9513 y Fj(+)4154 9488 y Fo(labels)1898
-9886 y Fn(lit)502 b Fl(:=)199 b Fm(n)1132 b Fo(inte)n(ger)41
-b(literal)2922 10086 y Fn(w)1122 b Fo(w)n(ord)2922 10285
-y Fn(c)1156 b Fo(character)2922 10484 y Fn(s)1164 b Fo(string)2922
-10683 y Fn(p)1147 b Fo(\003oat)1898 11082 y Fn(longid)218
+(that)h(the)n(y)660 5237 y(can)41 b(appear)g(in)h(patterns.)660
+5543 y(The)53 b(e)n(xpression)f Fl(\()p Fo(ne)l(w)o Fl(\))h
+Fo(generates)f(a)g(ne)l(w)h(constructor)g(name)g(for)g(an)g(e)n
+(xtensible)f(datatype.)85 b(The)660 5742 y(long)60 b(identi\002er)g(in)
+g(e)n(xpressions)e(of)h(the)h(form)g Fl(@)p Fn(longid)18
+b Fl(\()p Fn(exp)11 b Fl(\))59 b Fo(or)h(patterns)f Fl(@)p
+Fn(longid)18 b Fl(\()p Fn(p)-8 b(at)15 b Fl(\))59 b Fo(must)660
+5942 y(denote)52 b(such)g(a)g(generati)l(v)n(e)f(constructor)-9
+b(.)83 b(On)52 b(the)g(other)h(hand,)h Fl(`)p Fn(lab)11
+b Fl(\()p Fn(exp)g Fl(\))51 b Fo(and)h Fl(`)p Fn(lab)12
+b Fl(\()p Fn(p)-8 b(at)14 b Fl(\))52 b Fo(denote)660
+6141 y(constructed)f(v)l(alues)g(of)i(closed)e(\(structural\))i
+(datatypes.)81 b(Strict)53 b(e)n(xpressions)d(force)i(e)l(v)l(aluation)
+g(of)660 6340 y(the)g(ar)m(gument.)81 b(The)52 b(dual)f(strict)h
+(pattern)g(establishes)e(the)h(in)-7 b(v)l(ariant)52
+b(that)g(the)f(v)l(alue)h(matched)f(has)660 6539 y(been)43
+b(e)l(v)l(aluated)g(strictly)h(and)g(can)f(thus)g(not)h(be)g(a)f
+(future.)59 b(These)43 b(constructs)g(are)g(particularly)i(used)660
+6739 y(to)d(encode)e(strictness)h(of)h(tags)f(and)g(constructor)h(such)
+e(that)i(the)f(back)n(end)h(can)f(unbox)g(them.)660 7045
+y(The)j(e)n(xpression)e Fl(\()p Fo(prim)51 b Fm(s)p Fl(\))43
+b Fo(is)g(needed)g(for)i(binding)f(primiti)l(v)n(e)g(\(b)m(uiltin\))g
+(v)l(alues,)f(which)h(are)f(named)660 7244 y(by)k(a)f(string.)67
+b(The)47 b Fl(\()p Fo(f)n(ail)p Fl(\))f Fo(e)n(xpression)g(marks)g(an)g
+(unused)h(v)l(alue.)66 b(F)n(orcing)46 b(it)h(al)n(w)n(ays)g(is)f(an)h
+(error)-9 b(.)67 b(It)660 7444 y(is)41 b(used)g(during)h(bootstrapping)
+g(as)f(a)g(placeholder)g(for)h(runtime)g(types.)660 7750
+y(The)48 b(seal)e(and)h(unseal)g(e)n(xpressions)e(are)i(needed)g(for)h
+(typing)g(purposes)e(only)i(and)f(are)g(described)g(in)660
+7949 y(section)41 b(3.)1898 8375 y Fn(n)589 b Fk(2)231
+b Fo(N)1112 b(inte)n(ger)41 b(constants)1898 8575 y Fn(w)572
+b Fk(2)231 b Fo(W)1075 b(w)n(ord)42 b(constants)1898
+8774 y Fn(c)606 b Fk(2)231 b Fo(C)1121 b(character)41
+b(constants)1898 8973 y Fn(s)614 b Fk(2)231 b Fo(S)1140
+b(string)42 b(constants)1898 9172 y Fn(p)597 b Fk(2)231
+b Fo(P)1140 b(\003oat)42 b(constants)1898 9372 y Fn(id)546
+b Fk(2)231 b Fo(Id)1094 b(identi\002ers)1898 9571 y Fn(lab)479
+b Fk(2)231 b Fo(Lab)46 b Fl(=)h Fo(Id)37 b Fk(])f Fo(N)3844
+9596 y Fj(+)4154 9571 y Fo(labels)1898 9969 y Fn(lit)502
+b Fl(:=)199 b Fm(n)1132 b Fo(inte)n(ger)41 b(literal)2922
+10169 y Fn(w)1122 b Fo(w)n(ord)2922 10368 y Fn(c)1156
+b Fo(character)2922 10567 y Fn(s)1164 b Fo(string)2922
+10766 y Fn(p)1147 b Fo(\003oat)1898 11165 y Fn(longid)218
 b Fl(:=)199 b Fn(id)1096 b Fo(short)41 b(identi\002er)2922
-11281 y Fn(longid)18 b Fm(:)p Fn(lab)533 b Fo(long)3618
+11364 y Fn(longid)18 b Fm(:)p Fn(lab)533 b Fo(long)3618
 11839 y(1)p eop
 %%Page: 2 2
 2 1 bop 1667 754 a Fn(exps)251 b Fl(:=)199 b Fn(exp)2847
@@ -1437,7 +1436,7 @@ Fm(;)h Fn(exp)3539 794 y Fi(n)4643 754 y Fo(e)n(xpressions)40
 b Fl(\()p Fm(n)46 b Fk(\025)g Fl(0\))1667 953 y Fn(exp)319
 b Fl(:=)199 b Fn(lit)1897 b Fo(literal)42 b(e)n(xpression)2598
 1152 y(prim)47 b Fn(s)1617 b Fo(primiti)l(v)n(e)42 b(v)l(alue)2598
-1352 y(ne)l(w)k Fn(exp)1488 b Fo(constructor)42 b(generation)2598
+1352 y(ne)l(w)1772 b(constructor)42 b(generation)2598
 1551 y Fn(longid)1613 b Fo(v)l(ariable)2598 1750 y Fl(#)p
 Fn(lab)12 b Fl(\()p Fn(exp)e Fl(\))1314 b Fo(product)42
 b(projection)2598 1949 y Fl(`)p Fn(lab)12 b Fl(\()p Fn(exp)e
@@ -1690,49 +1689,48 @@ y Fm(;)28 b Fk(\001)g(\001)g(\001)g Fm(;)g Fn(exp)3792
 4624 y Fi(n)3929 4584 y Fk(\))46 b Fm(t)4201 4609 y Fj(1)4275
 4584 y Fm(;)28 b Fk(\001)g(\001)g(\001)g Fm(;)g(t)4705
 4609 y Fi(n)6383 4470 y Fo(\(11\))660 5172 y Fb(Expr)m(essions)p
-5654 5006 1006 7 v 5654 5254 7 248 v 4204 w Fm(E)55 b
+5654 5007 1006 7 v 5654 5254 7 248 v 4204 w Fm(E)55 b
 Fk(`)47 b Fn(exp)56 b Fk(\))47 b Fm(t)p 6653 5254 V 5654
 5261 1006 7 v 3345 5619 a Fk(`)g Fn(lit)62 b Fk(\))46
-b Fm(t)p 3157 5693 1007 7 v 3157 5846 a(E)55 b Fk(`)47
+b Fm(t)p 3157 5694 1007 7 v 3157 5846 a(E)55 b Fk(`)47
 b Fn(lit)62 b Fl(:)46 b Fm(t)g Fk(\))g Fm(t)6383 5732
 y Fo(\(12\))p 3020 6311 1281 7 v 3020 6463 a Fm(E)55
 b Fk(`)47 b Fo(prim)g Fm(s)f Fl(:)g Fm(t)g Fk(\))g Fm(t)6383
-6349 y Fo(\(13\))1748 6909 y Fm(E)55 b Fk(`)47 b Fn(exp)57
-b Fl(:)46 b Fm(t)2521 6848 y Fe(0)2899 6909 y Fm(t)g
-Fl(=)h Fm(t)3241 6934 y Fj(0)3361 6909 y Fm(,)-28 b Fk(!)47
-b Fm(c)p Fl(\()p Fm(t)3789 6934 y Fj(1)3863 6909 y Fl(\))28
-b Fk(\001)g(\001)g(\001)e Fl(\()p Fm(t)4301 6934 y Fi(n)4391
-6909 y Fl(\))332 b Fm(c)41 b Fo(e)n(xtensible)p 1748
-6983 3825 7 v 2955 7135 a Fm(E)55 b Fk(`)47 b Fo(ne)l(w)f
-Fn(exp)56 b Fl(:)47 b Fm(t)f Fk(\))g Fm(t)6383 7021 y
-Fo(\(14\))2730 7580 y Fm(E)55 b Fk(`)47 b Fn(longid)64
-b Fk(\))46 b Fm(t)3824 7520 y Fe(0)4202 7580 y Fm(t)4262
-7520 y Fe(0)4355 7580 y Fk(\037)g Fm(t)p 2730 7654 1861
-7 v 3014 7807 a(E)55 b Fk(`)47 b Fn(longid)64 b Fl(:)46
-b Fm(t)g Fk(\))g Fm(t)6383 7693 y Fo(\(15\))2456 8252
-y Fk(`)g Fn(lab)58 b Fk(\))46 b Fm(l)335 b(E)55 b Fk(`)47
-b Fn(exp)57 b Fk(\))46 b(f)p Fm(l)j Fl(:)d Fm(t;)28 b(r)5
-b Fk(g)p 2456 8326 2409 7 v 2874 8478 a Fm(E)55 b Fk(`)46
-b Fl(#)p Fn(lab)12 b Fl(\()p Fn(exp)e Fl(\))46 b(:)g
-Fm(t)g Fk(\))g Fm(t)6383 8364 y Fo(\(16\))2109 8924 y
-Fk(`)h Fn(lab)57 b Fk(\))46 b Fm(l)335 b(E)56 b Fk(`)46
-b Fn(exp)57 b Fk(\))46 b Fm(t)4007 8863 y Fe(0)4386 8924
-y Fm(t)g Fl(=)g([)p Fm(l)j Fl(:)e Fm(t)4965 8863 y Fe(0)5011
-8924 y Fm(;)28 b(r)5 b Fl(])p 2109 8998 3102 7 v 2920
-9150 a Fm(E)55 b Fk(`)47 b Fl(`)p Fn(lab)11 b Fl(\()p
-Fn(exp)f Fl(\))46 b(:)g Fm(t)g Fk(\))g Fm(t)6383 9036
-y Fo(\(17\))2426 9610 y Fm(E)55 b Fk(`)47 b Fn(longid)64
-b Fk(\))46 b Fm(t)3520 9635 y Fj(1)3927 9610 y Fm(E)55
-b Fk(`)47 b Fn(exp)56 b Fk(\))47 b Fm(t)4820 9635 y Fj(2)1950
-9809 y Fm(t)2010 9834 y Fj(1)2130 9809 y Fk(\037)f Fm(t)2365
-9834 y Fj(2)2486 9809 y Fm(,)-28 b Fk(!)47 b Fm(t)332
-b(t)46 b Fl(=)g Fm(c)p Fl(\()p Fm(t)3587 9749 y Fe(0)3587
-9851 y Fj(1)3661 9809 y Fl(\))28 b Fk(\001)g(\001)g(\001)f
-Fl(\()p Fm(t)4100 9749 y Fe(0)4100 9850 y Fi(n)4190 9809
-y Fl(\))331 b Fm(c)42 b Fo(e)n(xtensible)p 1950 9896
-3421 7 v 2760 10048 a Fm(E)56 b Fk(`)46 b Fl(@)p Fn(longid)18
-b Fl(\()p Fn(exp)11 b Fl(\))45 b(:)i Fm(t)f Fk(\))g Fm(t)6383
-9934 y Fo(\(18\))2661 10493 y Fm(E)55 b Fk(`)47 b Fn(exp)57
+6349 y Fo(\(13\))2324 6908 y Fm(t)g Fl(=)g Fm(t)2665
+6933 y Fj(0)2786 6908 y Fm(,)-28 b Fk(!)46 b Fm(c)p Fl(\()p
+Fm(t)3213 6933 y Fj(1)3287 6908 y Fl(\))28 b Fk(\001)g(\001)g(\001)f
+Fl(\()p Fm(t)3726 6933 y Fi(n)3816 6908 y Fl(\))331 b
+Fm(c)42 b Fo(e)n(xtensible)p 2324 6983 2673 7 v 3103
+7135 a Fm(E)55 b Fk(`)46 b Fo(ne)l(w)g Fl(:)g Fm(t)g
+Fk(\))g Fm(t)6383 7021 y Fo(\(14\))2730 7580 y Fm(E)55
+b Fk(`)47 b Fn(longid)64 b Fk(\))46 b Fm(t)3824 7520
+y Fe(0)4202 7580 y Fm(t)4262 7520 y Fe(0)4355 7580 y
+Fk(\037)g Fm(t)p 2730 7654 1861 7 v 3014 7806 a(E)55
+b Fk(`)47 b Fn(longid)64 b Fl(:)46 b Fm(t)g Fk(\))g Fm(t)6383
+7693 y Fo(\(15\))2456 8252 y Fk(`)g Fn(lab)58 b Fk(\))46
+b Fm(l)335 b(E)55 b Fk(`)47 b Fn(exp)57 b Fk(\))46 b(f)p
+Fm(l)j Fl(:)d Fm(t;)28 b(r)5 b Fk(g)p 2456 8326 2409
+7 v 2874 8478 a Fm(E)55 b Fk(`)46 b Fl(#)p Fn(lab)12
+b Fl(\()p Fn(exp)e Fl(\))46 b(:)g Fm(t)g Fk(\))g Fm(t)6383
+8364 y Fo(\(16\))2109 8924 y Fk(`)h Fn(lab)57 b Fk(\))46
+b Fm(l)335 b(E)56 b Fk(`)46 b Fn(exp)57 b Fk(\))46 b
+Fm(t)4007 8863 y Fe(0)4386 8924 y Fm(t)g Fl(=)g([)p Fm(l)j
+Fl(:)e Fm(t)4965 8863 y Fe(0)5011 8924 y Fm(;)28 b(r)5
+b Fl(])p 2109 8998 3102 7 v 2920 9150 a Fm(E)55 b Fk(`)47
+b Fl(`)p Fn(lab)11 b Fl(\()p Fn(exp)f Fl(\))46 b(:)g
+Fm(t)g Fk(\))g Fm(t)6383 9036 y Fo(\(17\))2426 9610 y
+Fm(E)55 b Fk(`)47 b Fn(longid)64 b Fk(\))46 b Fm(t)3520
+9635 y Fj(1)3927 9610 y Fm(E)55 b Fk(`)47 b Fn(exp)56
+b Fk(\))47 b Fm(t)4820 9635 y Fj(2)1950 9809 y Fm(t)2010
+9834 y Fj(1)2130 9809 y Fk(\037)f Fm(t)2365 9834 y Fj(2)2486
+9809 y Fm(,)-28 b Fk(!)47 b Fm(t)332 b(t)46 b Fl(=)g
+Fm(c)p Fl(\()p Fm(t)3587 9749 y Fe(0)3587 9851 y Fj(1)3661
+9809 y Fl(\))28 b Fk(\001)g(\001)g(\001)f Fl(\()p Fm(t)4100
+9749 y Fe(0)4100 9850 y Fi(n)4190 9809 y Fl(\))331 b
+Fm(c)42 b Fo(e)n(xtensible)p 1950 9896 3421 7 v 2760
+10048 a Fm(E)56 b Fk(`)46 b Fl(@)p Fn(longid)18 b Fl(\()p
+Fn(exp)11 b Fl(\))45 b(:)i Fm(t)f Fk(\))g Fm(t)6383 9934
+y Fo(\(18\))2661 10493 y Fm(E)55 b Fk(`)47 b Fn(exp)57
 b Fk(\))46 b Fm(t)3554 10433 y Fe(0)3933 10493 y Fm(t)g
 Fl(=)g Fm(c)4286 10518 y Ff(ref)4423 10493 y Fl(\()p
 Fm(t)4548 10433 y Fe(0)4594 10493 y Fl(\))p 2661 10568

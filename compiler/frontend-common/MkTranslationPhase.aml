@@ -523,7 +523,7 @@ struct
 (*DEBUG*)handle VirtualModule => (Error.warn(#region i, "15\n"); raise VirtualModule))
 *))
       | trExp(E, I.PrimExp(i,s,t))	= O.PrimExp(i, s)
-      | trExp(E, I.NewExp(i,t))		= O.NewExp(i, trTyp(E,t))
+      | trExp(E, I.NewExp(i,t))		= O.NewExp(i)
       | trExp(E, I.TagExp(i,l,_,e))	= O.TagExp(i, trVallab l, trExp(E,e))
       | trExp(E, I.ConExp(i,y,e))	= (O.ConExp(i, trVallongid(E,y),
 						   trExp(E,e))
