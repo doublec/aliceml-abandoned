@@ -1,0 +1,212 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkListSort            from "../../lib/utility/MkListSort"
+import structure IntMap                from "../infrastructure/IntMap"
+import structure StampSet              from "../common/StampSet"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+import signature LIVENESS              from "LIVENESS-sig"
+
+functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
+    struct
+	structure AbstractCodeGrammar = AbstractCodeGrammar
+
+	open AbstractCodeGrammar
+
+	structure ListSort =
+	    MkListSort(type 'a t = int * int * int
+		       fun compare ((id, min, max), (id', min', max')) =
+			   case Int.compare (min, min') of
+			       EQUAL => Int.compare (id, id')
+			     | order => order)
+
+	fun analyze (idDefArgs, instr) =
+	    let
+		val ranges = IntMap.new ()
+		val shared = StampSet.new ()
+
+		fun lId (id, i) =
+		    (case IntMap.lookup (ranges, id) of
+			 NONE => IntMap.insertDisjoint (ranges, id, (i, i))
+		       | SOME (min, max) =>
+			     IntMap.insert (ranges, id,
+					    (if i < min then i else min,
+					     if i > max then i else max)); i)
+
+		fun lIdDef (IdDef id, i) = lId (id, i)
+		  | lIdDef (Wildcard, i) = i
+		fun lIdDefs (idDefs, i) = Vector.foldl lIdDef i idDefs
+		fun lIdDefArgs (OneArg idDef, i) = lIdDef (idDef, i)
+		  | lIdDefArgs (TupArgs idDefs, i) = lIdDefs (idDefs, i)
+		fun lIdDefsOpt (SOME idDefs, i) = lIdDefs (idDefs, i)
+		  | lIdDefsOpt (NONE, i) = i
+
+		fun lIdRef ((Local id | LastUseLocal id), i) = lId (id, i)
+		  | lIdRef (_, i) = i
+		fun lIdRefs (idRefs, i) = Vector.foldl lIdRef i idRefs
+		fun lIdRefArgs (OneArg idRef, i) = lIdRef (idRef, i)
+		  | lIdRefArgs (TupArgs idRefs, i) = lIdRefs (idRefs, i)
+
+		fun lInstr (Kill (_, instr), i) = lInstr (instr, i) + 1
+		  | lInstr (PutVar (id, idRef, instr), i) =
+		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (PutNew (id, _, instr), i) =
+		    lId (id, lInstr (instr, i) + 1)
+		  | lInstr (PutTag (id, _, idRefs, instr), i) =
+		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
+		  | lInstr (PutCon (id, idRef, idRefs, instr), i) =
+		    lId (id, lIdRef (idRef, lIdRefs (idRefs,
+						     lInstr (instr, i) + 1)))
+		  | lInstr (PutRef (id, idRef, instr), i) =
+		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (PutTup (id, idRefs, instr), i) =
+		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
+		  | lInstr (PutVec (id, idRefs, instr), i) =
+		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
+		  | lInstr (Close (id, idRefs, _, instr), i) =
+		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
+		  | lInstr (Specialize (id, idRefs, _, instr), i) =
+		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
+		  | lInstr (AppPrim (_, idRefs, SOME (idDef, instr)), i) =
+		    lIdRefs (idRefs, lIdDef (idDef, lInstr (instr, i) + 1))
+		  | lInstr (AppPrim (_, idRefs, NONE), i) =
+		    lIdRefs (idRefs, i) + 1
+		  | lInstr (AppVar (idRef, idRefArgs,
+				    SOME (idDefArgs, instr)), i) =
+		    let
+			val i = lIdDefArgs (idDefArgs, lInstr (instr, i) + 1)
+		    in
+			lIdRef (idRef, lIdRefArgs (idRefArgs, i))
+		    end
+		  | lInstr (AppVar (idRef, idRefArgs, NONE), i) =
+		    lIdRef (idRef, lIdRefArgs (idRefArgs, i)) + 1
+		  | lInstr (DirectAppVar (idRef, idRefArgs,
+					  SOME (idDefArgs, instr)), i) =
+		    let
+			val i = lIdDefArgs (idDefArgs, lInstr (instr, i) + 1)
+		    in
+			lIdRef (idRef, lIdRefArgs (idRefArgs, i))
+		    end
+		  | lInstr (DirectAppVar (idRef, idRefArgs, NONE), i) =
+		    lIdRef (idRef, lIdRefArgs (idRefArgs, i)) + 1
+		  | lInstr (GetRef (id, idRef, instr), i) =
+		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (GetTup (idDefs, idRef, instr), i) =
+		    lIdDefs (idDefs, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (Sel (id, idRef, _, instr), i) =
+		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (LazySel (id, idRef, _, instr), i) =
+		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
+		  | lInstr (Raise idRef, i) = lIdRef (idRef, i) + 1
+		  | lInstr (Reraise idRef, i) = lIdRef (idRef, i) + 1
+		  | lInstr (Try (tryInstr, idDef1, idDef2, handleInstr), i) =
+		    let
+			val i = lInstr (handleInstr, i)
+			val i = lIdDef (idDef1, lIdDef (idDef2, i))
+		    in
+			lInstr (tryInstr, i) + 1
+		    end
+		  | lInstr (EndTry instr, i) = lInstr (instr, i) + 1
+		  | lInstr (EndHandle instr, i) = lInstr (instr, i) + 1
+		  | lInstr (IntTest (idRef, tests, elseInstr), i) =
+		    lIdRef (idRef,
+			    Vector.foldr (fn ((_, thenInstr), i) =>
+					     lInstr (thenInstr, i))
+					 (lInstr (elseInstr, i)) tests + 1)
+		  | lInstr (CompactIntTest (idRef, _, tests, elseInstr), i) =
+		    lIdRef (idRef,
+			    Vector.foldr lInstr (lInstr (elseInstr, i))
+					 tests + 1)
+		  | lInstr (RealTest (idRef, tests, elseInstr), i) =
+		    lIdRef (idRef,
+			    Vector.foldr (fn ((_, thenInstr), i) =>
+					     lInstr (thenInstr, i))
+					 (lInstr (elseInstr, i)) tests + 1)
+		  | lInstr (StringTest (idRef, tests, elseInstr), i) =
+		    lIdRef (idRef,
+			    Vector.foldr (fn ((_, thenInstr), i) =>
+					     lInstr (thenInstr, i))
+					 (lInstr (elseInstr, i)) tests + 1)
+		  | lInstr (TagTest (idRef, nullaryTests, naryTests,
+				     elseInstr), i) =
+		    let
+			val i =
+			    Vector.foldr
+				(fn ((_, idDefs, thenInstr), i) =>
+				    lIdDefs (idDefs, lInstr (thenInstr, i)))
+				(lInstr (elseInstr, i)) naryTests
+			val i =
+			    Vector.foldr
+				(fn ((_, thenInstr), i) =>
+				    lInstr (thenInstr, i)) i nullaryTests + 1
+		    in
+			lIdRef (idRef, i)
+		    end
+		  | lInstr (CompactTagTest (idRef, tests, elseInstr), i) =
+		    lIdRef (idRef,
+			    Vector.foldr
+				(fn ((idDefsOpt, thenInstr), i) =>
+				    lIdDefsOpt (idDefsOpt,
+						lInstr (thenInstr, i)))
+				(lInstr (elseInstr, i)) tests + 1)
+		  | lInstr (ConTest (idRef, nullaryTests, naryTests,
+				     elseInstr), i) =
+		    let
+			val i =
+			    Vector.foldr
+				(fn ((idRef, idDefs, thenInstr), i) =>
+				    lIdRef (idRef,
+					    lIdDefs (idDefs,
+						     lInstr (thenInstr, i))))
+				(lInstr (elseInstr, i)) naryTests
+			val i =
+			    Vector.foldr
+				(fn ((idRef, thenInstr), i) =>
+				    lIdRef (idRef, lInstr (thenInstr, i)))
+				i nullaryTests + 1
+		    in
+			lIdRef (idRef, i)
+		    end
+		  | lInstr (VecTest (idRef, tests, elseInstr), i) =
+		    lIdRef (idRef,
+			    Vector.foldr
+				(fn ((idDefs, thenInstr), i) =>
+				    lIdDefs (idDefs, lInstr (thenInstr, i)))
+				(lInstr (elseInstr, i)) tests + 1)
+		  | lInstr (Shared (stamp, instr), i) =
+		    if StampSet.member (shared, stamp) then i
+		    else
+			(StampSet.insert (shared, stamp);
+			 lInstr (instr, i) + 1)
+		  | lInstr (Return idRefArgs, i) =
+		    lIdRefArgs (idRefArgs, i) + 1
+
+		val n = lIdDefArgs (idDefArgs, lInstr (instr, 0))
+
+		val intervals =
+		    ListSort.sort (IntMap.foldi
+				       (fn (id, (min, max), rest) =>
+					   (id, n - max, n - min)::rest)
+				       nil ranges)
+	    in
+(*
+		List.app (fn (id, min, max) =>
+			     (TextIO.print ("id " ^ Int.toString id ^ " -> [" ^
+					    Int.toString min ^ ", " ^
+					    Int.toString max ^ "]\n")))
+			 intervals;
+*)
+		Vector.fromList (List.foldr (fn ((id, min, max), rest) =>
+						id::min::max::rest)
+					    nil intervals)
+	    end
+    end
