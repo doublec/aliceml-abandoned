@@ -8,6 +8,8 @@ GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
 DEBUG = 0
 
+VERSION = 1.0.1
+
 GECODEDIR = /opt/gecode
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
@@ -235,3 +237,22 @@ build-seam:
 	 make -f Makefile.cvs && \
 	 ./configure --prefix=$(PREFIX) $(CONFIGURE_OPTS) && \
 	 make install) || exit 1
+
+##
+## Create a "source" distribution
+## (Alice components are actually distributed in compiled form)
+##
+dist-seam: #install-seam
+	(rm -rf packages && \
+	 mkdir packages && \
+	 (cd vm-seam && make dist && \
+	  mv alice-$(VERSION).tar.gz ../packages/ ) && \
+	 (cd lib/gtk/seam && make dist && \
+	  mv alice-gtk-$(VERSION).tar.gz ../../../packages/ ) && \
+	 (cd lib/gecode && make dist && \
+	  mv alice-gecode-$(VERSION).tar.gz ../../packages/ ) && \
+	 (cp -r misc/debian/* $(PREFIX)/share/alice/ && \
+	  cd $(PREFIX)/share/alice && \
+	  make -f Makefile.cvs && ./configure && \
+	  make dist) && \
+	 mv $(PREFIX)/share/alice/alice-runtime-$(VERSION).tar.gz packages/ )
