@@ -133,7 +133,7 @@ struct
     val typ_labtyprow		= Type.inTuple #[typ_lab, typ_typ, typ_row]
 
     val typ_top			= typ_zero
-    fun typ_infrep t		= Type.inArrow(typ_unit,
+    fun typ_infinst t		= Type.inArrow(typ_unit,
 					       Type.inTuple #[typ_unit, t])
     (*UNFINISHED: this should go *)
     val lab_none		= Label.fromString "NONE"
@@ -205,6 +205,7 @@ struct
     val ikindOp			= yOp(longid_inf,       typ_ikind)
     val unitInfOp		= yOp(longid_inf,       typ_unit)
     val pathInfOp		= yOp(longid_inf,       typ_path)
+    val typInfOp		= yOp(longid_inf,       typ_typ)
     val pervInfOp		= yOp(longid_pervInf,   typ_icon)
 
 
@@ -255,8 +256,8 @@ struct
 
     structure InfHash = MakeHashImpMap(open Inf val equals = Inf.same)
 
-    val infHash    = InfHash.new() : Type.t InfHash.map
-    val infRepHash = InfHash.new() : Type.t InfHash.map
+    val infHash     = InfHash.new() : Type.t InfHash.map
+    val infInstHash = InfHash.new() : Type.t InfHash.map
 		(*UNFINISHED: remove this global variables! *)
 
     fun ikindToKind k =
@@ -341,50 +342,49 @@ struct
 	else if Inf.isInfItem item then
 	    let
 		val (a,k,d) = Inf.asInfItem item
-		val  t      = case d of SOME j => infToRepTyp j
+		val  t      = case d of SOME j => infToInstTyp j
 				      | NONE =>
 					(* new abstract type *)
 					Type.inCon(ikindToKind k, Type.CLOSED,
 						   Path.fromLab a)
 	    in
-		Type.extendRow(trInfLabel a, typ_infrep t, r)
+		Type.extendRow(trInfLabel a, typ_infinst t, r)
 	    end
 	else (* fixity *)
 	    r
 
-    and infToRepTyp j =
-	case InfHash.lookup(infRepHash, j) of
+    and infToInstTyp j =
+	case InfHash.lookup(infInstHash, j) of
 	  SOME t => t
 	| NONE   =>
 	    let
-		val t = infToRepTyp' j
+		val t = infToInstTyp' j
 	    in
-		InfHash.insertDisjoint(infRepHash, j, t);
+		InfHash.insertDisjoint(infInstHash, j, t);
 		t
 	    end
 
-    and infToRepTyp' j =
+    and infToInstTyp' j =
 	if Inf.isTop j then
 	    typ_top
 	else if Inf.isCon j then
 	    let
 		val (k,p) = Inf.asCon j
-		val    p' = Path.fromLab(Path.toLab p)	(* new abstract type *)
 	    in
-		Type.inCon(Type.STAR, Type.CLOSED, p')
+		Type.inCon(Type.STAR, Type.CLOSED, p)
 	    end
 	else if Inf.isSig j then
 	    let
 		val s     = Inf.asSig j
 		val items = Inf.items s
 	    in
-		Type.inProd(List.foldr itemToRepRow (Type.emptyRow()) items)
+		Type.inProd(List.foldr itemToInstRow (Type.emptyRow()) items)
 	    end
 	else if Inf.isArrow j then
 	    let
 		val (p,j1,j2) = Inf.asArrow j
 	    in
-		infToRepTyp j2
+		infToInstTyp j2
 	    end
 	else if Inf.isLambda j then
 	    (*UNFINISHED*)
@@ -393,9 +393,9 @@ struct
 	    (*UNFINISHED*)
 	    typ_unit
 	else
-	    raise Crash.Crash "TranslationPhase.infToRepTyp: unknown inf"
+	    raise Crash.Crash "TranslationPhase.infToInstTyp: unknown inf"
 
-    and itemToRepRow(item,r) =
+    and itemToInstRow(item,r) =
 	if Inf.isValItem item then
 	    (*UNFINISHED: get rid of this, but how?*)
 	    let
@@ -418,13 +418,10 @@ struct
 	else if Inf.isInfItem item then
 	    let
 		val (a,k,d) = Inf.asInfItem item
-		val  t      = case d of SOME j => infToRepTyp j
-				      | NONE =>
-					(* new abstract type *)
-					Type.inCon(ikindToKind k, Type.CLOSED,
-						   Path.fromLab a)
+		val  t      = case d of SOME j => infToInstTyp j
+				      | NONE   => typ_unit
 	    in
-		Type.extendRow(trInfLabel a, typ_infrep t, r)
+		Type.extendRow(trInfLabel a, typ_infinst t, r)
 	    end
 	else (* fixity *)
 	    r
@@ -457,7 +454,7 @@ struct
     fun trVarInfo {region,var}		= {region=region, typ=typ_var}
     fun trModInfo {region,inf}		= {region=region, typ=infToTyp inf}
     fun trInfInfo {region,inf}		= {region=region,
-					   typ=typ_infrep(infToRepTyp inf)}
+					   typ=typ_infinst(infToInstTyp inf)}
 
     fun trVallab(I.Lab(i,a))		= O.Lab(i, trValLabel  a)
     fun trTyplab(I.Lab(i,a))		= O.Lab(i, trTypLabel a)
@@ -764,11 +761,11 @@ struct
      *     interface y = lazy (x2.y)
      *
      * Here in [x1 : j1 :> x2 = j2] the structure is bound to x1 and has
-     * signature j1, while the `pseudo structure' representing the generative
+     * signature j1, while the instance structure representing the generative
      * parts of interface j2 is bound to x2.
      *
      * Note that the contravariant coercion of a functor argument is always
-     * transparent and so no pseudo structure is needed. We can thus pass
+     * transparent and so no instance structure is needed. We can thus pass
      * whatever we want for x2, it remains unused.
      *
      * Moreover, we apply the optimization that - if the transformation is the
@@ -840,7 +837,7 @@ struct
 		   | (NONE, NONE) => NONE
 	    end
 	else (* j1 is sig or arrow, j2 is top *)
-	    SOME(O.TupExp(typInfo(r,typ_unit), #[]))
+	    SOME(trUnit r)
 
     and upItems(isOpaque, false, x1, s1, x2, [], r, fields) = NONE
       | upItems(isOpaque, true,  x1, s1, x2, [], r, fields) =
@@ -935,14 +932,14 @@ struct
 			(x1, isntIdentity)
 		    else
 			(x2, isntIdentity orelse Option.isNone d)
-		val t1  = infToRepTyp(Inf.lookupMod(s1,a))
-		val t2  = case d of SOME j => infToRepTyp j
+		val t1  = infToInstTyp(Inf.lookupMod(s1,a))
+		val t2  = case d of SOME j => infToInstTyp j
 				  | NONE =>
 					(* new abstract type *)
 					Type.inCon(ikindToKind k, Type.CLOSED,
 						   Path.fromLab a)
-		val i1  = typInfo(r, typ_infrep t1)
-		val i2  = typInfo(r, typ_infrep t2)
+		val i1  = typInfo(r, typ_infinst t1)
+		val i2  = typInfo(r, typ_infinst t2)
 		val i'  = nonInfo r
 		val l'  = O.Lab(i', trInfLabel a)
 		val y   = O.LongId(i1, x, l')
@@ -1125,7 +1122,7 @@ struct
 	    let
 		val i   = I.infoInf j
 		val r   = #region i
-		val t2  = infToRepTyp(#inf i)
+		val t2  = infToInstTyp(#inf i)
 		val e1' = O.FailExp(typInfo(r, typ_inf))
 		val e2' = O.FailExp(typInfo(r, t2))
 	    in
@@ -1159,7 +1156,7 @@ struct
 	(* [y] = lazy [y]() *)
 	let
 	    val r   = #region i
-	    val t1  = infToRepTyp(#inf i)
+	    val t1  = infToInstTyp(#inf i)
 	    val e1' = O.VarExp(typInfo(r,t1), trInflongid y)
 	    val e2' = trUnit r
 	    val i'  = typInfo(r, #2(Type.asArrow' t1))
@@ -1180,8 +1177,8 @@ struct
 	    val ss' = trSpecs(idToExp s', ss)
 
 	    val e1' = infOp(lab_inSig, idToExp s')
-	    val fs' = trSpecsRep ss
-	    val t2  = infToRepTyp(#inf i)
+	    val fs' = trSpecsInst ss
+	    val t2  = infToInstTyp(#inf i)
 	    val e2' = O.ProdExp(typInfo(r,t2), fs')
 	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t2])
 	    val e'  = O.TupExp(i', #[e1',e2'])
@@ -1213,14 +1210,29 @@ struct
 	end
 
       | trInf'(I.CompInf(i,j1,j2)) =
-	(* [j1 where j2] = (Inf.intersect([j1],[j2]), ???) *)
+	(* [j1 where j2] = let val x = Inf.intersect(#1[j1], #1[j2])
+	 *                 in (x, lazy {....}) end
+	 *)
 	(*UNFINISHED *)
 	let
-	    val e' = O.TupExp(typInfo(#region i, typ_infinf),
-			      #[trInf j1, trInf j2])
+	    val r   = #region i
+	    val x'  = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
+	    val xx' = idToExp x'
+	    val l'  = O.Lab(nonInfo r, Label.fromInt 1)
+	    val e1' = O.SelExp(typInfo(#region(I.infoInf j1), typ_inf),
+			       l', trInf j1)
+	    val e2' = O.SelExp(typInfo(#region(I.infoInf j2), typ_inf),
+			       l', trInf j2)
+	    val e'  = infOp(lab_intersect,
+			    O.TupExp(typInfo(r,typ_infinf), #[e1',e2']))
+	    val d'  = O.ValDec(nonInfo r, idToPat x', e')
+
+	    val j   = #inf i
+	    val t   = infToInstTyp j
+	    val s'  = O.LazyExp(typInfo(r,t), rebuildInfInst(r,xx',j))
+	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t])
 	in
-	    (*infOp(lab_intersect, e')*)
-	    unfinished (#region i) "trInf" "runtime interface intersection"
+	    O.LetExp(i', #[d'], O.TupExp(i', #[xx',s']))
 	end
 
       | trInf'(I.ArrInf(i,x,j1,j2)) =
@@ -1248,7 +1260,7 @@ struct
 	    let
 		val i = I.infoInf j
 	    in
-		O.FailExp(typInfo(#region i, typ_infrep(infToRepTyp(#inf i))))
+		O.FailExp(typInfo(#region i, typ_infinst(infToInstTyp(#inf i))))
 	    end
 	else
 	    (* [j]_p = fn _ => [j]_id,id,p *)
@@ -1356,6 +1368,127 @@ struct
 	in
 	    O.LetExp(O.infoExp e', #[d0',d1',d2'], e')
 	end
+
+
+    (* This is needed to deal with CompInf only. Ideally we should not need it.
+     * It is inefficient, in particular for nested signatures.
+     * Not sure how we should modify CompInf...
+     *)
+
+    and rebuildInfInst(r,x',j) =
+	if Inf.isSig j then
+	    (* [sig items end] --> let val x1 = Inf.asSig x in [items] end *)
+	    let
+		val s   = Inf.asSig j
+
+		val x1' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
+		val e'  = sigOp(lab_asSig, x')
+		val d'  = O.ValDec(nonInfo r, idToPat x1', e')
+
+		val e'  = O.ProdExp(typInfo(r, infToInstTyp j),
+				    rebuildSigInst(r, idToExp x1', s))
+	    in
+		O.LetExp(O.infoExp e', #[d'], e')
+	    end
+	else if Inf.isArrow j then
+	    (* [fct(x:j1) -> j2] --> let val x2 = #3(Inf.asArrow j)
+	     *                       in [j2] end
+	     *)
+	    let
+		val (_,_,j2) = Inf.asArrow j
+
+		val x2' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
+		val e'  = O.SelExp(typInfo(r,typ_inf),
+				   O.Lab(nonInfo r, Label.fromInt 3),
+				   sigOp(lab_asArrow, x'))
+		val d'  = O.ValDec(nonInfo r, idToPat x2', e')
+
+		val e'  = rebuildInfInst(r, idToExp x2', j2)
+	    in
+		O.LetExp(O.infoExp e', #[d'], e')
+	    end
+	else
+	    trUnit r
+
+    and rebuildSigInst(r,x',s) =
+	Vector.fromList(List.foldl (rebuildItemInst(r,x')) [] (Inf.items s))
+
+    and rebuildItemInst (r,x') (item,fs') =
+	if Inf.isValItem item then
+	    (*UNFINISHED: this should go, but how?*)
+	    (* [val y : t]_x --> y = fail *)
+	    let
+		val (a,t,_) = Inf.asValItem item
+		val  l'     = O.Lab(nonInfo r, trValLabel a)
+		val  e'     = O.FailExp(typInfo(r,t))
+	    in
+		O.Field(nonInfo r, l', e') :: fs'
+	    end
+	else if Inf.isTypItem item then
+	    (* [type y = t]_x --> y = Inf.lookupTyp(x, "y") *)
+	    let
+		val (a,_,_) = Inf.asTypItem item
+		val  l'  = O.Lab(nonInfo r, trTypLabel a)
+		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
+		val  e'  = typInfOp(lab_lookupTyp,
+				    O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
+	    in
+		O.Field(nonInfo r, l', e') :: fs'
+	    end
+	else if Inf.isModItem item then
+	    (* [module y : j]_x --> y = let val x1 = Inf.lookupMod(x, "y")
+	     *                          in [j]_x1 end
+	     *)
+	    let
+		val (a,j1,_) = Inf.asModItem item
+		val  l'  = O.Lab(nonInfo r, trModLabel a)
+		val  t1  = infToInstTyp j1
+		val  x1' = O.Id(typInfo(r,t1), Stamp.new(), Name.InId)
+
+		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
+		val  e2' = infOp(lab_lookupMod,
+				 O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
+		val  d'  = O.ValDec(nonInfo r, idToPat x1', e2')
+
+		val  e3' = rebuildInfInst(r, idToExp x1', j1)
+		val  e'  = O.LetExp(O.infoExp e3', #[d'], e3')
+	    in
+		O.Field(nonInfo r, l', e') :: fs'
+	    end
+	else if Inf.isInfItem item then
+	    (* [interface y = j]_x --> y = fn _ =>
+	     *                             let val x1 = Inf.instance
+	     *                                          (Inf.lookupInf(x, "y"))
+	     *                             in (x1, [j]_x1) end
+	     *)
+	    let
+		val (a,k,d) = Inf.asInfItem item
+		val  l'  = O.Lab(nonInfo r, trInfLabel a)
+		val  x1' = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
+		val  xx' = idToExp x1'
+
+		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
+		val  e2' = typInfOp(lab_lookupInf,
+				    O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
+		val  e3' = infOp(lab_instance, e2')
+		val  d'  = O.ValDec(nonInfo r, idToPat x1', e3')
+
+		val  e4' = case d
+			     of SOME j =>
+				O.TupExp(typInfo(r,typ_infinst(infToInstTyp j)),
+					 #[xx', rebuildInfInst(r,xx',j)])
+			      | NONE =>
+				O.TupExp(typInfo(r,typ_infunit),
+					 #[xx', trUnit r])
+		val  t   = #typ(O.infoExp e4')
+
+		val  m'  = O.Match(nonInfo r,O.JokPat(typInfo(r,typ_unit)), e3')
+		val  e'  = O.FunExp(typInfo(r, Type.inArrow(typ_unit,t)), #[m'])
+	    in
+		O.Field(nonInfo r, l', e') :: fs'
+	    end
+	else (* fixity *)
+	    fs'
 
 
   (* Declarations *)
@@ -1705,13 +1838,13 @@ struct
 	raise Crash.Crash "TranslationPhase.trRHSRecSpec: invalid spec"
 
 
-  (* Signature structures *)
+  (* Signature instance structures *)
 
-    and trSpecsRep ss = Vector.rev(Vector.fromList(trSpecsRep'(ss,[])))
+    and trSpecsInst ss = Vector.rev(Vector.fromList(trSpecsInst'(ss,[])))
 
-    and trSpecsRep'(ss, fs') = Vector.foldl trSpecRep fs' ss
+    and trSpecsInst'(ss, fs') = Vector.foldl trSpecInst fs' ss
 
-    and trSpecRep(I.ValSpec(i,x,t), fs') =
+    and trSpecInst(I.ValSpec(i,x,t), fs') =
 	(*UNFINISHED: get rid of this, but how?*)
 	let
 	    val i' = nonInfo(#region(I.infoId x))
@@ -1721,7 +1854,7 @@ struct
 	    O.Field(i', O.Lab(i',a), O.FailExp(O.infoId x')) :: fs'
 	end
 
-      | trSpecRep(I.TypSpec(i,x,t), fs') =
+      | trSpecInst(I.TypSpec(i,x,t), fs') =
 	let
 	    val i' = nonInfo(#region(I.infoId x))
 	    val x' = trTypid x
@@ -1730,7 +1863,7 @@ struct
 	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
 	end
 
-      | trSpecRep(I.ModSpec(i,x,j), fs') =
+      | trSpecInst(I.ModSpec(i,x,j), fs') =
 	let
 	    val i' = nonInfo(#region(I.infoId x))
 	    val x' = trModid x
@@ -1739,7 +1872,7 @@ struct
 	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
 	end
 
-      | trSpecRep(I.InfSpec(i,x,j), fs') =
+      | trSpecInst(I.InfSpec(i,x,j), fs') =
 	let
 	    val i' = nonInfo(#region(I.infoId x))
 	    val x' = trInfid x
@@ -1748,14 +1881,14 @@ struct
 	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
 	end
 
-      | trSpecRep(I.FixSpec(i,l,q), fs') =
+      | trSpecInst(I.FixSpec(i,l,q), fs') =
 	fs'
 
-      | trSpecRep(I.RecSpec(i,ss), fs') =
-	trSpecsRep'(ss, fs')
+      | trSpecInst(I.RecSpec(i,ss), fs') =
+	trSpecsInst'(ss, fs')
 
-      | trSpecRep(I.ExtSpec(i,j), fs') =
-	unfinished (#region i) "trSpecRep" "signature extension"
+      | trSpecInst(I.ExtSpec(i,j), fs') =
+	unfinished (#region i) "trSpecInst" "signature extension"
 
 
   (* Imports and annotations *)

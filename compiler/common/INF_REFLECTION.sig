@@ -26,12 +26,24 @@ signature INF_REFLECTION =
     val lab_extendInf :		Label.t
     val lab_extendFix :		Label.t
 
+    val lab_lookupVal :		Label.t
+    val lab_lookupTyp :		Label.t
+    val lab_lookupMod :		Label.t
+    val lab_lookupInf :		Label.t
+    val lab_lookupFix :		Label.t
+
     val lab_inTop :		Label.t
     val lab_inCon :		Label.t
     val lab_inSig :		Label.t
     val lab_inArrow :		Label.t
     val lab_inLambda :		Label.t
     val lab_inApply :		Label.t
+
+    val lab_asCon :		Label.t
+    val lab_asSig :		Label.t
+    val lab_asArrow :		Label.t
+    val lab_asLambda :		Label.t
+    val lab_asApply :		Label.t
 
     val lab_inGround :		Label.t
     val lab_inDependent :	Label.t

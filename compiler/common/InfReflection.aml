@@ -66,6 +66,17 @@ structure InfReflection :> INF_REFLECTION =
     val lab_extendFix	= Label.fromString "extendFix"
     val _ = Inf.extendFix : sign * path * fix -> unit               (* verify *)
 
+    val lab_lookupVal	= Label.fromString "lookupVal"	
+    val _ = Inf.lookupVal : sign * lab -> typ			(* verify *)
+    val lab_lookupTyp	= Label.fromString "lookupTyp"
+    val _ = Inf.lookupTyp : sign * lab -> typ			(* verify *)
+    val lab_lookupMod	= Label.fromString "lookupMod"
+    val _ = Inf.lookupMod : sign * lab -> inf			(* verify *)
+    val lab_lookupInf	= Label.fromString "lookupInf"
+    val _ = Inf.lookupInf : sign * lab -> inf			(* verify *)
+    val lab_lookupFix	= Label.fromString "lookupFix"
+    val _ = Inf.lookupFix : sign * lab -> fix			(* verify *)
+
     val lab_inTop	= Label.fromString "inTop"
     val _		= Inf.inTop : unit -> inf		(* verify *)
     val lab_inCon	= Label.fromString "inCon"
@@ -78,6 +89,17 @@ structure InfReflection :> INF_REFLECTION =
     val _		= Inf.inLambda : path * inf * inf -> inf (* verify *)
     val lab_inApply	= Label.fromString "inApply"
     val _		= Inf.inApply : inf * path * inf -> inf	(* verify *)
+
+    val lab_asCon	= Label.fromString "asCon"
+    val _		= Inf.asCon : inf -> con		(* verify *)
+    val lab_asSig	= Label.fromString "asSig"
+    val _		= Inf.asSig : inf -> sign		(* verify *)
+    val lab_asArrow	= Label.fromString "asArrow"
+    val _		= Inf.asArrow : inf -> path * inf * inf	(* verify *)
+    val lab_asLambda	= Label.fromString "asLambda"
+    val _		= Inf.asLambda : inf -> path * inf * inf (* verify *)
+    val lab_asApply	= Label.fromString "asApply"
+    val _		= Inf.asApply : inf -> inf * path * inf	(* verify *)
 
     val lab_inGround	= Label.fromString "inGround"
     val _		= Inf.inGround : unit -> kind		(* verify *)
