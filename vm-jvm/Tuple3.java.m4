@@ -125,4 +125,5 @@ final public class Tuple3 implements DMLTuple {
     }
 
     _apply_fails ;
+    _nomatch;
 }

@@ -96,4 +96,5 @@ public class Tuple implements DMLTuple {
 	return vals;
     }
     _apply_fails ;
+    _nomatch;
 }

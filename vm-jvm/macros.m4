@@ -331,3 +331,15 @@ define(_REQUESTDEC,`$1 = null;
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
 		 }')
 define(_fromSingle,`')
+define(_nomatch,`
+    public final boolean matchInt(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchWord(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchReal(float f)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchChar(char c)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException { return false; }
+')

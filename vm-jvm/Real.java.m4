@@ -216,4 +216,15 @@ final public class Real implements DMLValue {
     /** <code>val fromLarge : IEEEReal.rounding_mode -> LargeReal.real -> real </code>*/
     /** <code>val toDecimal : real -> IEEEReal.decimal_approx </code>*/
     /** <code>val fromDecimal : IEEEReal.decimal_approx -> real </code>*/
+
+    public final boolean matchInt(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchWord(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchReal(float f)
+	throws java.rmi.RemoteException { return (value==f); }
+    public final boolean matchChar(char c)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException { return false; }
 }

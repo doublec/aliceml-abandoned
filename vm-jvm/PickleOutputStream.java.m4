@@ -108,9 +108,10 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 	    byte[] bytes = null;
 	    java.lang.String name = cls.getName();
 	    ClassLoader cl = cls.getClassLoader();
-	    if (cl == PickleClassLoader.loader) {
+	    if (cl == PickleClassLoader.loader ||
+		PickleClassLoader.loader.getBytes(name) != null) {
 		// System.out.println("POS: annotateClass "+cls+" came from a pickle");
-		bytes = ((PickleClassLoader) cl).getBytes(name);
+		bytes = PickleClassLoader.loader.getBytes(name);
 	    } else if (cl == null || cl==ClassLoader.getSystemClassLoader()) {
 		//System.out.println("POS: annotateClass "+cls+" came from somewhere else");
 		java.io.InputStream in = null;

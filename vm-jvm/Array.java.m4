@@ -777,4 +777,5 @@ final public class Array implements DMLValue {
     }
     /** <code>val modify : ('a -> 'a) -> 'a array -> unit</code>*/
     _FIELD(Array,modify);
+    _nomatch;
 }

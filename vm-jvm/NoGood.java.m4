@@ -36,5 +36,6 @@ final public class NoGood implements DMLValue {
     }
 
     _apply_fails ;
+    _nomatch;
 }
 

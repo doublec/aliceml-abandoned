@@ -5,6 +5,8 @@ import java.rmi.Remote;
 import sun.rmi.transport.Utils;
 
 import de.uni_sb.ps.dml.runtime.PickleClassLoader;
+import de.uni_sb.ps.dml.runtime.Exporter;
+import java.lang.reflect.*;
 /**
  * A MarshalOutputStream extends ObjectOutputStream to add functions
  * specific to marshaling of remote object references. If it is
@@ -125,7 +127,7 @@ public class MarshalOutputStream extends ObjectOutputStream
      */
     protected void annotateClass(Class cl) throws IOException {
 	Class superClass = cl.getSuperclass();
-	//	System.out.println("Annotate: "+cl+" extends "+superClass);
+	//      System.out.println("Annotate: "+cl+" extends "+superClass);
 	if (fcn.isAssignableFrom(superClass) // cl instanceof Function
 	    || (ccn.isAssignableFrom(superClass) &&
 		!ucn.isAssignableFrom(superClass) &&
@@ -182,7 +184,29 @@ public class MarshalOutputStream extends ObjectOutputStream
 			}
 		    }
 		}
+		// what should I do about the static fields?
+		// another hashtable with key = className+"field"+i?
 		PickleClassLoader.loader.enter(className,bytes);
+
+		// now make static fields accessable
+		Field[] fields = cl.getDeclaredFields();
+		int fc = fields.length;
+		for (int i=0; i<fc; i++) {
+		    int modifier = fields[i].getModifiers();
+		    if (Modifier.isStatic(modifier)) {
+			Object content = null;
+			try {
+			    content = fields[i].get(null);
+			} catch (IllegalArgumentException I) {
+			    System.err.println(I);
+			    I.printStackTrace();
+			} catch (IllegalAccessException I) {
+			    System.err.println(I);
+			    I.printStackTrace();
+			}
+			Exporter.putField(className+"field"+i,content);
+		    }
+		}
 	    }
 	    // write the host; format: !134.96.186.121
 	    writeLocation(host);

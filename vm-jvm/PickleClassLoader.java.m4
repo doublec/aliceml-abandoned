@@ -24,7 +24,6 @@ final public class PickleClassLoader extends ClassLoader {
     static java.lang.String path = null;
     static boolean write = false;
     static java.util.Hashtable hash = new java.util.Hashtable();
-
     public Class findClass(java.lang.String name) throws ClassNotFoundException {
 	byte[] b = (byte[]) hash.get(name);
 	// System.out.print("Trying to define "+name);

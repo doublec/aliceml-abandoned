@@ -399,4 +399,14 @@ final public class String implements DMLValue {
     /** <code>val tokens : (Char.char -> bool) -> string -> string list </code>*/
     /** <code>val fields : (Char.char -> bool) -> string -> string list </code>*/
     /** <code>val collate : ((Char.char * Char.char) -> order) -> (string * string) -> order </code>*/
+    public final boolean matchInt(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchWord(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchReal(float f)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchChar(char c)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException { return value.equals(s); }
 }

@@ -29,4 +29,15 @@ public interface DMLPort extends Remote, DMLValue {
     public DMLValue send(DMLValue msg) throws RemoteException;
 
     public DMLValue recieve() throws RemoteException;
+
+    public boolean matchInt(int i)
+	throws java.rmi.RemoteException;
+    public boolean matchWord(int i)
+	throws java.rmi.RemoteException;
+    public boolean matchReal(float f)
+	throws java.rmi.RemoteException;
+    public boolean matchChar(char c)
+	throws java.rmi.RemoteException;
+    public boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException;
 }

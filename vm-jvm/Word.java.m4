@@ -276,4 +276,14 @@ final public class Word implements DMLValue {
     _FIELD(Word,toString);
     /** <code>val fromString : string -> word option </code>*/
     /** <code>val scan : StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a -> (word, 'a) option</code>*/
+    public final boolean matchInt(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchWord(int i)
+	throws java.rmi.RemoteException { return (value==i); }
+    public final boolean matchReal(float f)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchChar(char c)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException { return false; }
 }

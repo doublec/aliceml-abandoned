@@ -131,4 +131,16 @@ public class LVar extends UnicastRemoteObject
 
     /** <code> exception Fulfill </code>*/
     final public static Name Fulfill = new UniqueName("LVar.Fullfil");
+
+    public final boolean matchInt(int i)
+	throws java.rmi.RemoteException { return request().matchInt(i); }
+    public final boolean matchWord(int i)
+	throws java.rmi.RemoteException { return request().matchWord(i); }
+    public final boolean matchReal(float f)
+	throws java.rmi.RemoteException { return request().matchReal(f); }
+    public final boolean matchChar(char c)
+	throws java.rmi.RemoteException { return request().matchChar(c); }
+    public final boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException { return request().matchString(s); }
+
 }

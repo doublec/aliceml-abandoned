@@ -287,4 +287,14 @@ final public class Int implements DMLValue {
     /** <code>val precision : Int.int option </code>*/
     /** <code>val minInt : int option </code>*/
     /** <code>val maxInt : int option </code>*/
+    public final boolean matchInt(int i)
+	throws java.rmi.RemoteException { return (value==i); }
+    public final boolean matchWord(int i)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchReal(float f)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchChar(char c)
+	throws java.rmi.RemoteException { return false; }
+    public final boolean matchString(java.lang.String s)
+	throws java.rmi.RemoteException { return false; }
 }

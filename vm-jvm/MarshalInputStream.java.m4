@@ -14,15 +14,14 @@
 
 package sun.rmi.server;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.rmi.server.RMIClassLoader;
-import de.uni_sb.ps.dml.runtime.PickleClassLoader;
 import de.uni_sb.ps.dml.runtime.Export;
-
+import de.uni_sb.ps.dml.runtime.PickleClassLoader;
+import java.io.*;
+import java.lang.reflect.*;
+import java.net.*;
 import java.rmi.Naming;
-
+import java.rmi.server.RMIClassLoader;
+import java.util.*;
 import sun.security.action.GetBooleanAction;
 
 /**
@@ -125,7 +124,26 @@ public class MarshalInputStream extends ObjectInputStream {
 		    if (b != null) {
 			PickleClassLoader.loader.enter(className,b);
 		    }
-		    return PickleClassLoader.loader.findClass(className);
+		    Class cl = PickleClassLoader.loader.findClass(className);
+		    // now read the static fields:
+		    Field[] fields = cl.getDeclaredFields();
+		    int fc = fields.length;
+		    for (int i=0; i<fc; i++) {
+			int modifier = fields[i].getModifiers();
+			if (Modifier.isStatic(modifier)) {
+			    Object content = exp.getField(className+"field"+i);
+			    try {
+				fields[i].set(null,content);
+			    } catch (IllegalArgumentException I) {
+				System.err.println(I);
+				I.printStackTrace();
+			    } catch (IllegalAccessException I) {
+				System.err.println(I);
+				I.printStackTrace();
+			    }
+			}
+		    }
+		    return cl;
 		} else {
 		    return LoaderHandler.loadClass(location, className);
 		}

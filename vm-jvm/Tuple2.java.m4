@@ -117,4 +117,5 @@ final public class Tuple2 implements DMLTuple {
     }
 
     _apply_fails ;
+    _nomatch;
 }

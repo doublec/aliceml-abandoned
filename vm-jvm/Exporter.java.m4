@@ -17,9 +17,11 @@ import java.rmi.RemoteException;
 import java.rmi.RMISecurityManager;
 import java.rmi.server.*;
 
-final class Exporter extends java.rmi.server.UnicastRemoteObject implements Export {
+final public class Exporter extends java.rmi.server.UnicastRemoteObject implements Export {
 
-    java.util.Hashtable hash = null;
+    public static final java.util.Hashtable classfields = new java.util.Hashtable();
+    
+    private java.util.Hashtable hash;
 
     public Exporter() throws java.rmi.RemoteException {}
 
@@ -27,11 +29,25 @@ final class Exporter extends java.rmi.server.UnicastRemoteObject implements Expo
 	hash=h;
     }
 
-    public DMLValue get(java.lang.String what) throws java.rmi.RemoteException {
+    final public DMLValue get(java.lang.String what) throws java.rmi.RemoteException {
 	return (DMLValue) hash.get(what);
     }
 
-    public byte[] getClass(java.lang.String className) throws java.rmi.RemoteException {
+    final public byte[] getClass(java.lang.String className) throws java.rmi.RemoteException {
 	return PickleClassLoader.loader.getBytes(className);
+    }
+
+    // This method returns the static fields of a function class
+    // corresponds to the pickling process of storing static fields
+    final public Object getField(java.lang.String fieldName) throws java.rmi.RemoteException {
+	return classfields.get(fieldName);
+    }
+
+    // This method can only be invoked on the server site; it is not visible
+    // on client sites
+    // Use this method to enter the static fields of a function class
+    final static public Object putField(java.lang.String fieldName,
+					Object content) {
+	return classfields.put(fieldName,content);
     }
 }
