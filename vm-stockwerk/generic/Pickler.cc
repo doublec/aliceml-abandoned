@@ -287,9 +287,11 @@ public:
     Scheduler::currentArgs[SEEN_POS] = seen->ToWord();
   }
   static OutputStream *GetOutputStream() {
+    Assert(Scheduler::nArgs == SIZE);
     return OutputStream::FromWordDirect(Scheduler::currentArgs[STREAM_POS]);
   }
   static Seen *GetSeen() {
+    Assert(Scheduler::nArgs == SIZE);
     return Seen::FromWordDirect(Scheduler::currentArgs[SEEN_POS]);
   }
 };
