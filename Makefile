@@ -88,7 +88,7 @@ man:
 ##
 ## Clean-up
 ##
-clean: clean-mozart
+clean: clean-$(DEFAULT_TARGET)
 
 clean-mozart: clean-common
 	rm -f bootstrap/alicec-mozart.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
