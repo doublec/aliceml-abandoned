@@ -26,6 +26,7 @@ public:
   static word aliceHome;
   static word rootUrl;
   static word commandLineArguments;
+  static word atExn;
   static void Init();
 };
 
