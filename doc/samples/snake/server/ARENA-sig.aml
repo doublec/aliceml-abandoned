@@ -26,7 +26,7 @@ sig
         (* MAGIC NUMBERs ... *)
     }
     
-    val random :    config -> arena * Pos.pos list
+    val random :    config -> arena * (Pos.pos * Protocol.direction) list
 
 
     val placeSnakes : arena * Snake.snake list -> 
