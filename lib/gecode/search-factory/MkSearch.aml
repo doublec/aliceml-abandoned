@@ -6,13 +6,15 @@ import signature PROBLEM     from "PROBLEM-sig"
 import structure Debug       from "Debug"
 import functor   MkTreeNode  from "MkTreeNode"
 
-functor MkSearch (Problem : PROBLEM) 
-  :> SEARCH where type solution = Problem.solution =
+functor MkSearch (Problem : PROBLEM where type space = Space.space) 
+  :> SEARCH where type solution = Problem.solution 
+            where type space    = Space.space =
 struct
 
   open Debug
 
   type solution = Problem.solution
+  type space    = Space.space
 
   structure TreeNode = MkTreeNode Problem
 

@@ -1,4 +1,3 @@
-import structure Space from "x-alice:/lib/gecode/Space"
 import structure Debug from "Debug"
 
 (* Specification of the constraint problem, including recomputation policy,
@@ -6,16 +5,17 @@ import structure Debug from "Debug"
 signature PROBLEM =
 sig
   type solution (* The type of solutions *)
+  type space
 
-  val root : Space.space  (* Root node *)
-  val readSolution : Space.space -> solution
+  val root : space  (* Root node *)
+  val readSolution : space -> solution
 
   (* Recomputation *)
   val copyq : int -> bool (* All spaces s.t. 'copyq depth = true' are cloned *)
 
   (* Branch and bound *)
   val bab : bool (* Indicates if branch and bound is active. *)
-  val bound : Space.space * solution -> unit (* bound the given space *)
+  val bound : space * solution -> unit (* bound the given space *)
   val compare : solution * solution -> bool
          (* compare (x,y) is true iff y is better than x.
           * This function is called only if you use

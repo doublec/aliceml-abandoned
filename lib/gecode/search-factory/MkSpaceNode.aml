@@ -5,7 +5,7 @@ import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FD        from "x-alice:/lib/gecode/FD"
 import structure Path      from "Path"
 
-functor MkSpaceNode (Problem:PROBLEM)
+functor MkSpaceNode (Problem:PROBLEM where type space = Space.space)
   :> SPACENODE where type solution = Problem.solution =
 struct
 

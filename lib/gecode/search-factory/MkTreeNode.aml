@@ -1,8 +1,9 @@
 import signature PROBLEM     from "PROBLEM-sig"
 import signature TREENODE    from "TREENODE-sig"
+import structure Space       from "x-alice:/lib/gecode/Space"
 import functor   MkSpaceNode from "MkSpaceNode"
 
-functor MkTreeNode (Problem:PROBLEM)
+functor MkTreeNode (Problem:PROBLEM where type space = Space.space)
   :> TREENODE where type solution = Problem.solution =
 struct
 

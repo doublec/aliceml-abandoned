@@ -1,10 +1,10 @@
 import structure Path  from "Path"
-import structure Space from "x-alice:/lib/gecode/Space"
 
 signature SEARCH =
 sig
 
   type solution
+  type space
 
   exception NotAssigned
     
@@ -13,7 +13,7 @@ sig
   val init : solution Path.t -> unit
 
   (* Get next solved space *)
-  val nextSolved : unit -> Space.space option
+  val nextSolved : unit -> space option
 
   (* Indicates if the search is finished. *)
   val isFinished : unit -> bool
@@ -42,3 +42,4 @@ sig
   val betterThan : solution -> unit
 
 end
+

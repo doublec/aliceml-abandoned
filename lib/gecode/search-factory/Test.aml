@@ -95,19 +95,22 @@ val (readSolution, bound) = script root
 
 val mask = dbAll
 
-structure Policy =
+structure Problem =
 struct
+  type solution = int Vector.t
+  type space = Space.space
+
   val root = root
+  val readSolution = readSolution
   fun copyq d = d mod rdist = 0
   val bab = true
-  type solution = int Vector.t
   val bound = bound
-  val readSolution = readSolution
+
   fun compare _ = assert false
   val mask = mask
 end
 
-structure Search = MkSearch Policy
+structure Search = MkSearch Problem
 
 val sols = Search.getAllSolutions ()
 
