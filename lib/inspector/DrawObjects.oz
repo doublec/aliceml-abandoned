@@ -66,28 +66,40 @@ define
 	 PollMS      = {@visual get(widgetCellPollInterval $)}
 	 WatchThread = @watchThread
       in
-	 thread
-	    WatchThread = {Thread.this}
-	    {WatchCell self Cell OldValue WidPort PollMS}
+	 if {IsFree WatchThread}
+	 then
+	    thread
+	       WatchThread = {Thread.this}
+	       {WatchCell self Cell OldValue WidPort PollMS}
+	    end
+	    %% Important: Sync on Thread ID
+	    {Wait WatchThread}
 	 end
       end
       meth terminate
 	 WatchThread = @watchThread
       in
-	 case {Thread.state WatchThread}
-	 of terminated then skip
-	 else {Thread.terminate WatchThread}
+	 if {IsFree WatchThread}
+	 then skip
+	 else
+	    watchThread <- _
+	    case {Thread.state WatchThread}
+	    of terminated then skip
+	    else {Thread.terminate WatchThread}
+	    end
 	 end
       end
       meth tell($)
-	 case @dirty
-	 of false then
+	 Dirty = @dirty
+      in
+	 if Dirty
+	 then Dirty
+	 else
 	    Parent = @parent
 	    Index  = @index
 	    RI     = {Parent getRootIndex(Index $)}
 	 in
 	    {Parent replace(Index @savedValue replaceNormal)} RI
-	 else true
 	 end
       end
    end
