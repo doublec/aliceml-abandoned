@@ -1,0 +1,19 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus and Andreas Rossberg, 2004
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature INSPECTOR =
+    sig
+	val inspect : 'a -> unit
+	functor Inspect(signature S structure X : S) : any
+    end
