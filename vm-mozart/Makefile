@@ -519,8 +519,7 @@ INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/RTT.ozf
-INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf \
-	top/SMLToMozartRecursiveCompiler.ozf
+INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
