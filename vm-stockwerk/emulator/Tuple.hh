@@ -23,9 +23,11 @@ class Tuple: private Block {
 public:
   using Block::ToWord;
 
+  // Tuple Constructor
   static Tuple *New(u_int n) {
     return static_cast<Tuple *>(Store::AllocBlock(TUPLE_LABEL, n));
   }
+  // Tuple Untagging
   static Tuple *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == TUPLE_LABEL);
@@ -36,6 +38,8 @@ public:
     Assert(b->GetLabel() == TUPLE_LABEL);
     return static_cast<Tuple *>(b);
   }
+
+  // Tuple Accessors
   void AssertWidth(u_int n) {
     Assert(Store::SizeToBlockSize(n) == GetSize());
   }

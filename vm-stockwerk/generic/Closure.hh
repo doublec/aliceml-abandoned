@@ -19,26 +19,13 @@
 
 #include "store/Store.hh"
 
-class Closure : private Block {
+class Closure: private Block {
 private:
   static const u_int CONCRETE_CODE_POS = 0;
   static const u_int BASE_SIZE         = 1;
 public:
   using Block::ToWord;
 
-  // Closure Accessors
-  word GetConcreteCode() {
-    return GetArg(CONCRETE_CODE_POS);
-  }
-  u_int GetSize() {
-    return Block::GetSize() - BASE_SIZE;
-  }
-  void Init(u_int index, word value) {
-    InitArg(index + BASE_SIZE, value);
-  }
-  word Sub(u_int index) {
-    return GetArg(index + BASE_SIZE);
-  }
   // Closure Constructor
   static Closure *New(word concreteCode, u_int size) {
     Block *b = Store::AllocBlock(CLOSURE_LABEL, BASE_SIZE + size);
@@ -55,6 +42,20 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == CLOSURE_LABEL);
     return static_cast<Closure *>(b);
+  }
+
+  // Closure Accessors
+  word GetConcreteCode() {
+    return GetArg(CONCRETE_CODE_POS);
+  }
+  u_int GetSize() {
+    return Block::GetSize() - BASE_SIZE;
+  }
+  void Init(u_int index, word value) {
+    InitArg(index + BASE_SIZE, value);
+  }
+  word Sub(u_int index) {
+    return GetArg(index + BASE_SIZE);
   }
 };
 

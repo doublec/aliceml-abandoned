@@ -51,7 +51,7 @@ public:
 //--** This should probably implement a real set instead of using Queue.
 class Set: private Queue {
 private:
-  static const u_int initialSize = 8; // to be checked
+  static const u_int initialSize = 8; //--** to be checked
 public:
   using Queue::ToWord;
 

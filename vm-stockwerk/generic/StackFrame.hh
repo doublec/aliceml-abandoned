@@ -13,6 +13,12 @@
 #ifndef __EMULATOR_STACKFRAME_HH__
 #define __EMULATOR_STACKFRAME_HH__
 
+#if defined(INTERFACE)
+#pragma interface "emulator/StackFrame.hh"
+#endif
+
+#include "store/Store.hh"
+
 class Interpreter;
 
 // Known StackFrame Types
@@ -48,44 +54,46 @@ typedef enum {
 class StackFrame : private Block {
 private:
   static const u_int INTERPRETER_POS = 0;
+  static const u_int BASE_SIZE       = 1;
 public:
   using Block::ToWord;
-  FrameLabel GetLabel() {
-    return static_cast<FrameLabel>(static_cast<int>(Block::GetLabel()));
-  }
-  // StackFrame Accessors
-  word GetArg(u_int pos) {
-    return Block::GetArg(pos + 1);
-  }
-  void InitArg(u_int pos, word value) {
-    Block::InitArg(pos + 1, value);
-  }
-  void ReplaceArg(u_int pos, word value) {
-    Block::ReplaceArg(pos + 1, value);
-  }
-  Interpreter *GetInterpreter() {
-    return static_cast<Interpreter *>
-      (Store::WordToUnmanagedPointer(Block::GetArg(INTERPRETER_POS)));
-  }
+
   // StackFrame Constructors
   static StackFrame *New(FrameLabel l, Interpreter *interpreter) {
-    Block *p = Store::AllocBlock((BlockLabel) l, 1);
-    Assert(p != INVALID_POINTER);
+    Block *p = Store::AllocBlock((BlockLabel) l, BASE_SIZE);
     p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
     return static_cast<StackFrame *>(p);
   }
   static StackFrame *New(FrameLabel l, Interpreter *interpreter, u_int size) {
-    Block *p = Store::AllocBlock((BlockLabel) l, size + 1);
-    Assert(p != INVALID_POINTER);
+    Block *p = Store::AllocBlock((BlockLabel) l, BASE_SIZE + size);
     p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
     return static_cast<StackFrame *>(p);
   }
+
   // StackFrame Untagging
   static StackFrame *FromWordDirect(word frame) {
     Block *p = Store::DirectWordToBlock(frame);
     Assert(p->GetLabel() >= (BlockLabel) MIN_STACK_FRAME &&
 	   p->GetLabel() <= (BlockLabel) MAX_STACK_FRAME);
     return static_cast<StackFrame *>(p);
+  }
+
+  // StackFrame Accessors
+  FrameLabel GetLabel() {
+    return static_cast<FrameLabel>(static_cast<int>(Block::GetLabel()));
+  }
+  Interpreter *GetInterpreter() {
+    return static_cast<Interpreter *>
+      (Store::WordToUnmanagedPointer(Block::GetArg(INTERPRETER_POS)));
+  }
+  word GetArg(u_int pos) {
+    return Block::GetArg(BASE_SIZE + pos);
+  }
+  void InitArg(u_int pos, word value) {
+    Block::InitArg(BASE_SIZE + pos, value);
+  }
+  void ReplaceArg(u_int pos, word value) {
+    Block::ReplaceArg(BASE_SIZE + pos, value);
   }
 };
 

@@ -66,12 +66,6 @@ public:
 	AddThread(thread);
     }
   }
-  static void CondEnqueue(Thread *thread) {
-    if ((thread->GetState() == Thread::RUNNABLE) &&
-	(!threadQueue->Member(thread))) {
-      threadQueue->Enqueue(thread);
-    }
-  }
   static void SuspendThread(Thread *thread) {
     thread->Suspend();
     thread->GetTaskStack()->Purge();
