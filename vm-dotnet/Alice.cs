@@ -4,7 +4,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus and Leif Kornstaedt, 2000
+//   Thorsten Brunklaus and Leif Kornstaedt, 2000-2003
 //
 // Last change:
 //   $Date$ by $Author$
