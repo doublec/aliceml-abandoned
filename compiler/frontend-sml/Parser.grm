@@ -94,7 +94,6 @@
 (*	  dec     ::= __prebound strid						*)
 (*	          ::= __primitive val <op> vid : ty = string			*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
-(*	          ::= __primitive exception <op> vid <of ty> = string (DF)	*)
 (*	          ::= __primitive structure strid : sigexp = string		*)
 (*	          ::= __overload <op> vid with tyvar : ty			*)
 (*	          ::= __instance <op> vid with longtycon = longvid		*)
