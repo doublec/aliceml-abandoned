@@ -26,7 +26,7 @@ structure BufferHighlight =
               val _ = Gtk.textIterForwardChars(startiter, x)
               val enditer = Gtk.textIterNew()
               val _ = Gtk.textBufferGetStartIter(buf,enditer)
-              val _ = Gtk.textIterSetLine(enditer, offset)
+              val _ = Gtk.textIterSetOffset(enditer, offset)
               val _ = Gtk.textIterForwardChars(enditer, x')
               val tag = case style of
                             PLAIN => "plain"
@@ -51,6 +51,6 @@ structure BufferHighlight =
                   val str = Core.utf8ToLatin1 str
                   val regions = Highlight.scan str
               in
-                app (colorRegion (buf, offset, removeTags)) regions
+                  app (colorRegion (buf, offset, removeTags)) regions
               end
    end
