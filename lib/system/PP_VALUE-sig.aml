@@ -1,0 +1,26 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure Path        from "../rtt/Path"
+import structure Type        from "../rtt/Type"
+
+signature PP_VALUE =
+sig
+    type doc   = PrettyPrint.doc
+    type path  = Path.t
+    type typ   = Type.t
+
+    val ppVal :		typ -> 'value -> doc
+    val registerTyp :	path * (typ -> 'value -> doc option) -> unit
+    val unregisterTyp :	path -> unit
+end
