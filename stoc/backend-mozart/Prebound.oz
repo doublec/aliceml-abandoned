@@ -67,7 +67,6 @@ define
    BuiltinTable =
    builtinTable(
       '=': Value.'=='
-      ':=': fun {$ X Y} {Assign X Y} unit end
       '<>': Value.'\\='
       'Array.array':
 	 fun {$ N Init} {Array.new 0 N - 1 Init} end
@@ -112,6 +111,7 @@ define
       'Char.toCString':
 	 fun {$ C} {ByteString.make {ToCString C}} end
       'Char.toLower': Char.toLower
+      'General.:=': fun {$ X Y} {Assign X Y} unit end
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}

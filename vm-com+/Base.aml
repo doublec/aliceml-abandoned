@@ -118,7 +118,7 @@ structure General: GENERAL =
 
     fun !(ref v) = v
 
-    __primitive val op:= : 'a ref * 'a -> unit = ":="
+    __primitive val op:= : 'a ref * 'a -> unit = "General.:="
 
     fun (f o g) a  = f(g a)
     fun a before b = a
