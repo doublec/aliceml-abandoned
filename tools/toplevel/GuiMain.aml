@@ -282,10 +282,13 @@ structure GuiMain =
                                    | SOME id => SearchDialog.gotoLine id
 
 	fun bufferMenus activate =
-	    app (fn w => Gtk.widgetSetSensitive(w,activate))
-	    [Gui.save1,Gui.save_as1,Gui.go_to_line,
-	     Gui.undo,Gui.find,Gui.find_and_replace,
-	     Gui.syntax_colouring,Gui.feedregion,Gui.feedfile]
+	    (app (fn w => Gtk.widgetSetSensitive(w,activate))
+	     [Gui.save1,Gui.save_as1,Gui.go_to_line,
+	      Gui.undo,Gui.find,Gui.find_and_replace,
+	      Gui.syntax_colouring,Gui.feedregion,Gui.feedfile,
+	      Gui.indent_region, Gui.outdent_region];
+	     app (fn w => Gtk.widgetSetSensitive(w,not activate))
+	     [Gui.back_in_history,Gui.forward_in_history])
 
         fun changeFocus view _ =
 	    let
@@ -400,17 +403,31 @@ structure GuiMain =
 ;syntax() (* for now *)
                 end
 
-         fun openFile () =
-            case FileDialog.openFile "Open file" of
-                NONE => ()
-              | SOME f => openGivenFile f
-                                 
+	fun openFile () =
+	    let
+		val file =
+		    case getCurrentPage() of
+			NONE => ""
+		      | SOME id =>
+			    OS.Path.getParent
+			    (Option.getOpt(Buffer.getFileName id,""))^"/"
+	    in
+		case FileDialog.openFile("Open file", file) of
+		    NONE => ()
+		  | SOME f => openGivenFile f
+	    end
+       
         fun saveFileAs () =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
-            case FileDialog.openFile "Save file" of
-                NONE => ()
-              | SOME f => Buffer.saveAs (id, f)
+		let
+		    val file =
+			Option.getOpt(Buffer.getFileName id,"")
+		in
+		    case FileDialog.openFile("Save file",file) of
+			NONE => ()
+		      | SOME f => Buffer.saveAs (id, f)
+		end
 
         fun saveFile () =
             case getCurrentPage() of NONE => ()

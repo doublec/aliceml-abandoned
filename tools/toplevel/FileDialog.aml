@@ -17,9 +17,12 @@ import structure Gui from "Gui"
 
 structure FileDialog =
     struct
-        fun openFile msg =
+        fun openFile(msg,fileName) =
             let
 	        val fileSel = Gtk.fileSelectionNew msg
+		val _ = if fileName <> "" then
+		         Gtk.fileSelectionSetFilename(fileSel, fileName)
+			else ()
                 val _ = Gtk.windowSetPosition (fileSel, Gtk.WIN_POS_MOUSE)
                 val _ = Gtk.widgetShowAll fileSel
                 val response = Gtk.dialogRun fileSel

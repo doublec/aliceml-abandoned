@@ -20,5 +20,5 @@ Missing Features:
 * replace
 * cumulative undo?
 * redo?
-* replace
 * incremental search?
+* restart evaluator (with fresh initial environment)
