@@ -46,22 +46,19 @@ public:
     ReplaceArg(VAL_POS, value);
   }
 
-  static HashNode *FromBlock(Block *x) {
-    return (HashNode *) x;
-  }
   static HashNode *New() {
     Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
 
     p->InitArg(KEY_POS, Store::IntToWord(-1));
     p->InitArg(VAL_POS, Store::IntToWord(0));
 
-    return FromBlock(p);
+    return (HashNode *) p;
   }
   static HashNode *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == HASHNODE_LABEL));
-    return FromBlock(p);
+    return (HashNode *) p;
   }
 };
 
