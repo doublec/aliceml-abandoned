@@ -52,6 +52,7 @@ DEFINE2(Thread_raiseIn) {
 } END
 
 DEFINE1(Thread_resume) {
+  //--** add to runnable queue if applicable
   DECLARE_THREAD(thread, x0);
   thread->Resume();
   RETURN_UNIT;
@@ -71,8 +72,9 @@ DEFINE1(Thread_state) {
 } END
 
 DEFINE1(Thread_suspend) {
+  //--** remove from runnable queue if it's in there
   DECLARE_THREAD(thread, x0);
-  thread->Resume();
+  thread->Suspend();
   RETURN_UNIT;
 } END
 
