@@ -195,6 +195,7 @@
 
 	(* Distribution *)
 	val distribute : dist_mode * fd vector -> unit
+	val choose : dist_mode * fd vector -> fd * domain
 
 	(* Scheduling Stuff *)
 	structure Schedule :
@@ -924,9 +925,24 @@
             a choice point for <TT>x = m</TT> and
             <TT>x <> m</TT> where <I>m</I>
             is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
-        <LI><TT>NBSUSPS</TT> to be done
+        <LI><TT>NBSUSPS</TT>Selects the variable with the largest number
+            of suspensions. If several variables suspend on the maximal
+            number of constraints, the leftmost variable
+            whose domain is minimal is selected.
       </UL>
+    </DD>
+
+    <DT>
+      <TT>choose (<I>spec<I>, <I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P>selects a element <I>e</i> from <I>v</I> according to the
+         distribution spec <I>spec</I> and returns a tuple
+         consisting of <I>e</I> and its specification according to <I>spec</I>.
+      <P>
     </DD>
   </DL>
 
 <?php footing() ?>
+
+
