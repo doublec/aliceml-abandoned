@@ -15,7 +15,6 @@
 import structure Url    from "../../lib/system/Url"
 import signature SOURCE from "SOURCE-sig"
 
-
 structure Source :> SOURCE =
 struct
     type source	= string

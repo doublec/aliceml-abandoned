@@ -22,7 +22,7 @@ import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 structure Error :> ERROR =
 struct
     open PrettyPrint
-    infixr ^^
+    infixr ^^ ^/^
 
     (* Import *)
 
@@ -53,14 +53,17 @@ struct
 
     fun print(reg, doc) =
 	output(TextIO.stdErr,
-	       (case !currentUrl of NONE   => empty
-	                          | SOME f => text(urlToString f) ^^ text ":") ^^
-	       text(Source.regionToString reg) ^^ text ": " ^^ doc ^^ break, 78)
+	       fbox(
+		   (case !currentUrl of NONE   => empty
+			| SOME f => text(urlToString f) ^^ text ":") ^^
+		   text(Source.regionToString reg) ^^ text ":" ^^ break
+		) ^^ doc ^^ break, 78)
 
     fun error(reg, message)   = ( print(reg,message) ; raise Error(reg,message) )
     fun warn(b, reg, message) = if not b then () else
-				print(reg, text "warning: " ^^ message)
-				
+				print(reg, fbox(text "warning:" ^^ break) ^^
+					   message)
+
     (*UNFINISHED: provisory*)
     fun error'(reg, s)   = error(reg, text s)
     fun warn'(b, reg, s) = warn(b, reg, text s)
