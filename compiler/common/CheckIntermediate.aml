@@ -29,6 +29,8 @@ import functor   MkHashScopedImpMap  from "../infrastructure/MkHashScopedImpMap"
 import functor   FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
 import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
 
+(*DEBUG*)
+import fun print from "../../lib/system/TextIO"
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =
 struct
@@ -58,8 +60,8 @@ struct
 	ppDebugInfo'("n", text(Int.toString n))
       | ppDebugInfo(ID(z,n)) =
 	ppDebugInfo'("x", text(Name.toString n ^ "[" ^ Stamp.toString z ^ "]"))
-      | ppDebugInfo(LAB a) =
-	ppDebugInfo'("a", text(Label.toString a))
+      | ppDebugInfo(LAB l) =
+	ppDebugInfo'("l", text(Label.toString l))
       | ppDebugInfo(TYPE t) =
 	ppDebugInfo'("t", PPType.ppTyp t)
       | ppDebugInfo(TYPE_PAIR(t1,t2)) =
@@ -72,8 +74,8 @@ struct
 
     and ppLongid(ShortId(_, Id(_,z,n))) =
 	text(Name.toString n ^ "[" ^ Stamp.toString z ^ "]")
-      | ppLongid(LongId(_, y, Lab(_, a))) =
-	ppLongid y ^^ text "." ^^ text(Label.toString a)
+      | ppLongid(LongId(_, y, Lab(_, l))) =
+	ppLongid y ^^ text "." ^^ text(Label.toString l)
 
     fun fail(r,s,d) =
 	(Vector.app (fn d => PrettyPrint.output(TextIO.stdErr,
@@ -97,40 +99,53 @@ struct
 
   (* Helpers *)
 
-    fun isOpenType t =
-	Type.isCon t   andalso #2(Type.asCon t) = Type.OPEN orelse
-	Type.isApply t andalso isOpenType(#1(Type.asApply t))
-
     fun matchesRow(r1,r2) =
 	(*UNFINISHED: allow row variables? *)
 	Type.isEmptyRow r1 orelse
 	not(Type.isEmptyRow r2) andalso
 	let
-	    val (a1,t1) = Type.headRow r1
-	    val (a2,t2) = Type.headRow r2
+	    val (l1,t1) = Type.hdRow r1
+	    val (l2,t2) = Type.hdRow r2
 	in
-	    case Label.compare(a1,a2)
+	    case Label.compare(l1,l2)
 	      of EQUAL   => Type.equals(t1,t2) andalso
-			    matchesRow(Type.tailRow r1, Type.tailRow r2)
+			    matchesRow(Type.tlRow r1, Type.tlRow r2)
 	       | LESS    => false
-	       | GREATER => matchesRow(r1, Type.tailRow r2)
+	       | GREATER => matchesRow(r1, Type.tlRow r2)
 	end
+
+    exception HigherKind
 
     fun abstracts(t1,t2) =
 	(* t1 abstracts t2 <= exists R . Dom R = paths(t1) /\ t2 > R(t1) *)
 	(* Unfortunately, this is undecidable. So we try to be as good as
-	 * possible, but simply accept all cases involving applications. 8-P
+	 * possible, but simply accept all cases involving higher kinds. 8-P
 	 *)
 	let
 	    val A   = Type.paths t1
 	    val rea = PathMap.new()
-	    val t1' = Type.clone t1
+	    val _   = PathMap.appi
+			(fn(p,k) => if Type.isStarKind k
+				    then PathMap.insert(rea, p, Type.unknown k)
+				    else raise HigherKind) A
+	    val t1' = Type.realise(rea, t1)
 	in
-	    PathMap.appi (fn(p,k) => PathMap.insert(rea, p, Type.unknown k)) A;
-	    Type.realise(rea, t1');
-	    ( Type.unify(t2,t1') ; true )
-	    handle Type.Unify(t3,t4) => Type.isApply t3 orelse Type.isApply t4
+	    ( Type.unify(t2,t1') ; true ) handle Type.Unify(t3,t4) => false
+(*DEBUG*)
+orelse
+let fun prTyp name t =
+(print name; print " = ";
+ PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 76 - size name);
+ print "\n")
+in
+prTyp "t2" t2;
+prTyp "t1'" t1';
+prTyp "t3" t3;
+prTyp "t4" t4;
+false
+end
 	end
+	handle HigherKind => true
 
 
   (* Literals *)
@@ -150,10 +165,10 @@ struct
 
   (* Identifiers *)
 
-    fun chLab E (Lab(i, a)) = a
-	(*   lab = a
+    fun chLab E (Lab(i, l)) = l
+	(*   lab = l
 	 * -----------
-	 * |- lab => a
+	 * |- lab => l
 	 *)
 
     fun chId E (Id(i, z, n)) =
@@ -200,46 +215,46 @@ struct
 		t
 	   end
 
-	(* E |- lab => a    E |- longid => {a:t,r}
+	(* E |- lab => l    E |- longid => {l:t,r}
 	 * ---------------------------------------
 	 *       E |- longid.lab : t => t
 	 *)
          | LongId(i, longid, lab) =>
 	   let
 		val t  = #typ i
-		val a  = chLab E lab
+		val l  = chLab E lab
 		val t1 = chLongid E longid
 		val r  = checked Type.asProd' t1
 			 (i, "LongId sel type", #[LONGID longid, TYPE t1])
-		val t' = checked Type.lookupRow(r,a)
-			 (i, "LongId label", #[LAB a, TYPE t1])
+		val t' = checked Type.lookupRow(r,l)
+			 (i, "LongId label", #[LAB l, TYPE t1])
 	   in
 		check (Type.equals(t',t))
-		      (i, "LongId type", #[LAB a, TYPE_PAIR(t',t)]);
+		      (i, "LongId type", #[LAB l, TYPE_PAIR(t',t)]);
 		t
 	   end
 
 
   (* Fields *)
 
-    fun chFields chX E fields =
-	(* |- lab => a    E |- X => t    E |- fields => r    a notin r
-	 * -----------------------------------------------------------
-	 *             E,r |- lab=X,fields => a:t,r
+    fun chFlds chX E flds =
+	(* |- lab => l    E |- X => t    E |- flds => r    l notin r
+	 * ---------------------------------------------------------
+	 *             E,r |- lab=X,flds => l:t,r
 	 *)
-	Vector.foldl (chField chX E) (Type.emptyRow()) fields
+	Vector.foldl (chFld chX E) (Type.emptyRow()) flds
 
-    and chField chX E (Field(i, lab, x), r) =
-	(* |- lab => a    E |- X => t
+    and chFld chX E (Fld(i, lab, x), r) =
+	(* |- lab => l    E |- X => t
 	 * --------------------------
-	 *  E,r |- lab=X => a:t,r
+	 *  E,r |- lab=X => l:t,r
 	 *)
 	let
-	    val a = chLab E lab
+	    val l = chLab E lab
 	    val t = chX E x
 	in
-	    checked' Type.extendRow(a,t,r)
-		     (i, "Field duplicate", #[LAB a, TYPE t])
+	    checked' Type.extendRow(l,t,r)
+		     (i, "Fld duplicate", #[LAB l, TYPE t])
 	end
 
 
@@ -270,13 +285,13 @@ struct
 		val t = #typ i
 		val k = Type.kind t
 	   in
-		check (k = Type.STAR)
+		check (Type.isStarKind k)
 		      (i, "PrimExp kind", #[KIND k, TYPE t]);
 		t
 	   end
 
-	(* t = conarrow (t1->t2)    t2 is open
-	 * -----------------------------------
+	(* t = conarrow (t1->t2)    t2 extensible
+	 * --------------------------------------
 	 *         E |- new : t => t
 	 *)
 	 | NewExp(i) =>
@@ -285,12 +300,12 @@ struct
 		val (t',t3)  = checked Type.asApply t
 			      (i, "NewExp application type", #[TYPE t])
 		val (t1,t2)  = checked Type.asArrow t3
-			      (i, "NewExp type", #[TYPE t])
+			      (i, "NewExp type", #[TYPE t3])
 	   in
 		check (Type.equals(t', PervasiveType.typ_conarrow))
 		      (i, "NewExp conarrow", #[TYPE t']);
-		check (isOpenType t2)
-		      (i, "NewExp type sort", #[TYPE t2]);
+		check (Type.isExtKind(Type.kind t2))
+		      (i, "NewExp kind", #[KIND(Type.kind t2)]);
 		t
 	   end
 
@@ -308,28 +323,28 @@ struct
 		t
 	   end
 
-	(* E |- lab => a    E |- exp => t'    t = {a:t',r}
+	(* E |- lab => l    E |- exp => t'    t = {l:t',r}
 	 * -----------------------------------------------
 	 *           E |- `lab(exp) : t => t
 	 *)
 	 | TagExp(i, lab, exp) =>
 	   let
 		val t   = #typ i
-		val a   = chLab E lab
+		val l   = chLab E lab
 		val t'  = chExp E exp
 		val r   = checked Type.asSum' t
 			  (i, "TagExp type", #[TYPE t])
-		val t1  = checked Type.lookupRow(r,a)
-			  (i, "TagExp label", #[LAB a, TYPE t])
+		val t1  = checked Type.lookupRow(r,l)
+			  (i, "TagExp label", #[LAB l, TYPE t])
 	   in
 		check (Type.equals(t1,t'))
 		      (i, "TagExp argument type", #[TYPE_PAIR(t1,t')]);
 		t
 	   end
 
-	(* E |- longid => t1    E |- exp => t2
-	 * t1 > conarrow (t2->t)    t is open
-	 * -----------------------------------
+	(*  E |- longid => t1    E |- exp => t2
+	 * t1 > conarrow (t2->t)    t extensible
+	 * -------------------------------------
 	 *    E |- longid(exp) : t => t
 	 *)
 	 | ConExp(i, longid, exp) =>
@@ -344,8 +359,8 @@ struct
 	   in
 		check (Type.equals(t4, PervasiveType.typ_conarrow))
 		      (i, "ConExp conarrow", #[TYPE t4]);
-		check (isOpenType t)
-		      (i, "ConExp constructor type sort", #[TYPE t]);
+		check (Type.isExtKind(Type.kind t))
+		      (i, "ConExp constructor kind", #[KIND(Type.kind t)]);
 		checked Type.unify(t2,t2')
 		      (i, "ConExp argument type", #[TYPE_PAIR(t2,t2')]);
 		checked Type.unify(t',t)
@@ -361,7 +376,7 @@ struct
 	   let
 		val t  = #typ i
 		val t' = chExp E exp
-		val t1 = Type.inApply(PervasiveType.typ_ref, t')
+		val t1 = Type.apply(PervasiveType.typ_ref, t')
 	   in
 		check (Type.equals(t1,t))
 		      (i, "RefExp type", #[TYPE_PAIR(t1,t)]);
@@ -377,41 +392,41 @@ struct
 		val t  = #typ i
 		val ts = chExps E exps
 	   in
-		check (Type.equals(Type.inTuple ts, t))
-		      (i, "TupExp type", #[TYPE_PAIR(Type.inTuple ts, t)]);
+		check (Type.equals(Type.tuple ts, t))
+		      (i, "TupExp type", #[TYPE_PAIR(Type.tuple ts, t)]);
 		t
 	   end
 
-	(* E |- fields => r    t = {r}
-	 * ---------------------------
-	 *   E |- {fields} : t => t
+	(* E |- flds => r    t = {r}
+	 * -------------------------
+	 *   E |- {flds} : t => t
 	 *)
-	 | ProdExp(i, fields) =>
+	 | ProdExp(i, flds) =>
 	   let
 		val t = #typ i
-		val r = chFields chExp E fields
+		val r = chFlds chExp E flds
 	   in
-		check (Type.equals(Type.inProd r, t))
-		      (i, "ProdExp type", #[TYPE_PAIR(Type.inProd r, t)]);
+		check (Type.equals(Type.prod r, t))
+		      (i, "ProdExp type", #[TYPE_PAIR(Type.prod r, t)]);
 		t
 	   end
 
-	(* E |- lab => a    E |- exp => {a:t,r}
+	(* E |- lab => l    E |- exp => {l:t,r}
 	 * ------------------------------------
 	 *       E |- #lab(exp) : t => t
 	 *)
 	 | SelExp(i, lab, exp) =>
 	   let
 		val t  = #typ i
-		val a  = chLab E lab
+		val l  = chLab E lab
 		val t' = chExp E exp
 		val r  = checked Type.asProd' t'
-			 (i, "SelExp type", #[LAB a, TYPE t'])
-		val t1 = checked Type.lookupRow(r,a)
-			 (i, "SelExp label", #[LAB a, TYPE t'])
+			 (i, "SelExp type", #[LAB l, TYPE t'])
+		val t1 = checked Type.lookupRow(r,l)
+			 (i, "SelExp label", #[LAB l, TYPE t'])
 	   in
 		check (Type.equals(t1,t))
-		      (i, "SelExp field type", #[LAB a, TYPE_PAIR(t1,t')]);
+		      (i, "SelExp field type", #[LAB l, TYPE_PAIR(t1,t)]);
 		t
 	   end
 
@@ -441,25 +456,25 @@ struct
 	   let
 		val t  = #typ i
 		val t' = chExp E exp
-		val t1 = Type.inApply(PervasiveType.typ_strict, t')
+		val t1 = Type.apply(PervasiveType.typ_strict, t')
 	   in
-		check (not(Type.isVar t' orelse Type.isCon t'))
+		check (not(Type.isVar t' orelse Type.isAbs t'))
 		      (i, "StrictExp arg type", #[TYPE t']);
 		check (Type.equals(t1,t))
 		      (i, "StrictExp type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
 
-	(* E |- match_i => t1,t2    t = t1->t2
-	 * ------------------------------------
-	 * E |- fun match_1|..|match_n : t => t
+	(* E |- mat_i => t1,t2    t = t1->t2
+	 * ---------------------------------
+	 * E |- fun mat_1|..|mat_n : t => t
 	 *)
-	 | FunExp(i, matchs) =>
+	 | FunExp(i, mats) =>
 	   let
 		val  t      = #typ i
 		val (t1,t2) = checked Type.asArrow t
 			      (i, "FunExp type", #[TYPE t])
-		val  tts    = chMatchs E matchs
+		val  tts    = chMats E mats
 	   in
 		check (Vector.all (fn(t1',t2') =>
 			Type.equals(t1',t1) andalso Type.equals(t2',t2)) tts)
@@ -559,19 +574,19 @@ struct
 		t
 	   end
 
-	(*    E |- exp => t'    E |- match_i => t',t
-	 * --------------------------------------------
-	 * E |- case exp of match_1|..|match_n : t => t
+	(*   E |- exp => t'    E |- mat_i => t',t
+	 * ----------------------------------------
+	 * E |- case exp of mat_1|..|mat_n : t => t
 	 *)
-	 | CaseExp(i, exp, matchs) =>
+	 | CaseExp(i, exp, mats) =>
 	   let
 		val t   = #typ i
 		val t'  = chExp E exp
-		val tts = chMatchs E matchs
+		val tts = chMats E mats
 	   in
 		check (Vector.all (fn(t1,t2) =>
 			Type.equals(t1,t') andalso Type.equals(t2,t)) tts)
-		      (i, "CaseExp match types", #[TYPE(Type.inArrow(t',t))]);
+		      (i, "CaseExp match types", #[TYPE(Type.arrow(t',t))]);
 		t
 	   end
 
@@ -587,20 +602,20 @@ struct
 	   in
 		check (Type.equals(t', PervasiveType.typ_exn))
 		      (i, "RaiseExp argument type", #[TYPE t']);
-		check (k = Type.STAR)
+		check (Type.isStarKind k)
 		      (i, "RaiseExp kind", #[KIND k, TYPE t]);
 		t
 	   end
 
-	(*    E |- exp => t    E |- match_i => c_exn,t
-	 * -----------------------------------------------
-	 * E |- try exp handle match_1|..|match_n : t => t
+	(*    E |- exp => t    E |- mat_i => c_exn,t
+	 * -------------------------------------------
+	 * E |- try exp handle mat_1|..|mat_n : t => t
 	 *)
-	 | HandleExp(i, exp, matchs) =>
+	 | HandleExp(i, exp, mats) =>
 	   let
 		val t   = #typ i
 		val t'  = chExp E exp
-		val tts = chMatchs E matchs
+		val tts = chMats E mats
 	   in
 		check (Type.equals(t',t))
 		      (i, "HandleExp type", #[TYPE_PAIR(t',t)]);
@@ -620,7 +635,7 @@ struct
 		val t = #typ i
 		val k = Type.kind t
 	   in
-		check (k = Type.STAR)
+		check (Type.isStarKind k)
 		      (i, "FailExp kind", #[KIND k, TYPE t]);
 		t
 	   end
@@ -699,8 +714,8 @@ struct
 	   end
 
 
-    and chMatchs E matchs = Vector.map (chMatch E) matchs
-    and chMatch E (Match(i, pat, exp)) =
+    and chMats E mats = Vector.map (chMat E) mats
+    and chMat E (Mat(i, pat, exp)) =
 	(* E |- pat => t1,E'    E' |- exp => t2
 	 * ------------------------------------
 	 *      E |- pat -> exp => t1,t2
@@ -728,7 +743,7 @@ struct
 		val t = #typ i
 		val k = Type.kind t
 	   in
-		check (k = Type.STAR)
+		check (Type.isStarKind k)
 		      (i, "JokPat kind", #[KIND k, TYPE t]);
 		t
 	   end
@@ -762,19 +777,19 @@ struct
 		t
 	   end
 
-	(* E |- lab => a    E |- pat => t',E'    t = {a:t',r}
+	(* E |- lab => l    E |- pat => t',E'    t = {l:t',r}
 	 * --------------------------------------------------
 	 *           E |- `lab(pat) : t => t,E'
 	 *)
 	 | TagPat(i, lab, pat) =>
 	   let
 		val t   = #typ i
-		val a   = chLab E lab
+		val l   = chLab E lab
 		val t'  = chPat E pat
 		val r   = checked Type.asSum' t
 			  (i, "TagPat type", #[TYPE t])
-		val t1  = checked Type.lookupRow(r,a)
-			  (i, "TagPat label", #[LAB a, TYPE t])
+		val t1  = checked Type.lookupRow(r,l)
+			  (i, "TagPat label", #[LAB l, TYPE t])
 	   in
 		check (Type.equals(t1,t'))
 		      (i, "TagPat argument type", #[TYPE_PAIR(t1,t')]);
@@ -782,7 +797,7 @@ struct
 	   end
 
 	(* E |- longid => t1    E |- pat => t2,E'
-	 *   t1 > conarrow (t2->t)    t is open
+	 * t1 > conarrow (t2->t)    t extensible
 	 * --------------------------------------
 	 *     E |- longid(pat) : t => t,E'
 	 *)
@@ -798,16 +813,16 @@ struct
 	   in
 		check (Type.equals(t4, PervasiveType.typ_conarrow))
 		      (i, "ConExp conarrow", #[TYPE t4]);
-		check (isOpenType t)
-		      (i, "ConPat constructor type sort", #[TYPE t]);
+		check (Type.isExtKind(Type.kind t))
+		      (i, "ConPat constructor kind", #[KIND(Type.kind t)]);
 		checked Type.unify(t2,t2')
 		      (i, "ConPat argument type", #[TYPE_PAIR(t2,t2')]);
 		checked Type.unify(t',t)
 		      (i, "ConPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
-	(* E |- longid => t''    E |- pat => t',E'    t'' > t'->t    t is open
-	 * -------------------------------------------------------------------
+	(* E |- longid => t''   E |- pat => t',E'    t'' > t'->t    t extensible
+	 * ---------------------------------------------------------------------
 	 *             E |- longid(pat) : t => t,E'
 	 | ConPat(i, longid, pat, isNary) =>
 	   let
@@ -816,10 +831,10 @@ struct
 		val t'' = chLongid E longid
 		(*UNFINISHED: check isNary *)
 	   in
-		check (Type.matches(t'',Type.inArrow(t',t)))
-		      (i, "ConPat type", #[TYPE_PAIR(t'', Type.inArrow(t',t))]);
-		check (isOpenType t)
-		      (i, "ConPat type sort", #[TYPE t]);
+		check (Type.matches(t'',Type.arrow(t',t)))
+		      (i, "ConPat type", #[TYPE_PAIR(t'', Type.arrow(t',t))]);
+		check (Type.isExtKind(Type.kind t))
+		      (i, "ConPat kind", #[KIND(Type.kind t)]);
 		t
 	   end
 	*)
@@ -832,7 +847,7 @@ struct
 	   let
 		val t  = #typ i
 		val t' = chPat E pat
-		val t1 = Type.inApply(PervasiveType.typ_ref, t')
+		val t1 = Type.apply(PervasiveType.typ_ref, t')
 	   in
 		check (Type.equals(t1,t))
 		      (i, "RefPat type", #[TYPE_PAIR(t1,t)]);
@@ -848,24 +863,24 @@ struct
 		val t  = #typ i
 		val ts = chPats E pats
 	   in
-		check (Type.equals(Type.inTuple ts, t))
-		      (i, "TupPat type", #[TYPE_PAIR(Type.inTuple ts, t)]);
+		check (Type.equals(Type.tuple ts, t))
+		      (i, "TupPat type", #[TYPE_PAIR(Type.tuple ts, t)]);
 		t
 	   end
 
-	(* E |- fields => r,E'    t = {r,...}
-	 * ----------------------------------
-	 *     E |- {fields} : t => t,E'
+	(* E |- flds => r,E'    t = {r,...}
+	 * --------------------------------
+	 *     E |- {flds} : t => t,E'
 	 *)
-	 | ProdPat(i, fields) =>
+	 | ProdPat(i, flds) =>
 	   let
 		val t  = #typ i
-		val r  = chFields chPat E fields
+		val r  = chFlds chPat E flds
 		val r' = checked Type.asProd t
 			 (i, "ProdPat type", #[TYPE t]);
 	   in
 		check (matchesRow(r,r'))
-		      (i, "ProdPat row", #[TYPE_PAIR(Type.inProd r, t)]);
+		      (i, "ProdPat row", #[TYPE_PAIR(Type.prod r, t)]);
 		t
 	   end
 
@@ -895,9 +910,9 @@ struct
 	   let
 		val t  = #typ i
 		val t' = chPat E pat
-		val t1 = Type.inApply(PervasiveType.typ_strict, t')
+		val t1 = Type.apply(PervasiveType.typ_strict, t')
 	   in
-		check (not(Type.isVar t' orelse Type.isCon t'))
+		check (not(Type.isVar t' orelse Type.isAbs t'))
 		      (i, "StrictPat arg type", #[TYPE t']);
 		check (Type.equals(t1,t))
 		      (i, "StrictPat type", #[TYPE_PAIR(t1,t)]);
@@ -1049,16 +1064,16 @@ struct
     fun chImps E imps = Vector.app (chImp E) imps
     and chImp E (id, s, url) = ignore(chBindId E id)
 
-    fun check (imps, decs, fields, s) =
-	(* |- imps => E    E |- decs => E'    E' |- fields => r
-	 * ----------------------------------------------------
-	 *      |- import imps let decs in fields : s
+    fun check (imps, decs, flds, s) =
+	(* |- imps => E    E |- decs => E'    E' |- flds => r
+	 * --------------------------------------------------
+	 *      |- import imps let decs in flds : s
 	 *)
 	let
 	    val E = Env.new()
 	in
 	    chImps E imps;
 	    chDecs E decs;
-	    ignore(chFields chId E fields)
+	    ignore(chFlds chId E flds)
 	end
 end
