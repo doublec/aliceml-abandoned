@@ -20,11 +20,14 @@ import structure HttpClient        from "HttpClient"
 import signature REMOTE            from "REMOTE-sig"
 import structure UnsafeRemote      from "UnsafeRemote"
 
+import structure Debug from "x-alice:/lib/system/Debug"
+
 signature REMOTE_PORT =
     sig
 	type ticket = Url.t
 
 	exception Ticket
+	exception Protocol of int * string
 
 	val export: string -> ticket
 	val download: ticket -> string
@@ -38,6 +41,7 @@ structure HttpRemotePort :> REMOTE_PORT =
 	type ticket = Url.t
 
 	exception Ticket
+	exception Protocol of int * string
 
 	val pickleContentType = "application/x-alice-pickle"
 
@@ -49,13 +53,48 @@ structure HttpRemotePort :> REMOTE_PORT =
 	fun register handler =
 	    Url.resolve rootUrl (HttpServer.register handler)
 
+	(* Error Handling *)
+
+	exception Response of Http.response
+
+	val ok                   = 200
+	val badRequest           = 400
+	val methodNotAllowed     = 405
+	val unsupportedMediaType = 415
+
+	fun errorResponse statusCode =
+	    Http.makeResponse
+		{statusCode,
+		 contentType = "text/plain",
+		 body = Http.reasonPhrase statusCode}
+
+	fun checkMethod (request: Http.request, method) =
+	    if #method request <> method then
+		let
+		    val response = errorResponse methodNotAllowed
+		in
+		    Http.StringMap.insert (#headers response, "Allow", method);
+		    raise Response response
+		end
+	    else ()
+
+	fun checkContentType (request: Http.request, contentType) =
+	    case Http.StringMap.lookup (#headers request, "content-type") of
+		SOME s where (s = contentType) => ()
+	      | SOME _ => raise Response (errorResponse unsupportedMediaType)
+	      | NONE => raise Response (errorResponse badRequest)
+
+	(* Provided Functionality *)
+
 	fun export packedValue =
 	    let
-		fun handler (request: Http.request) =
-		    Http.makeResponse
-			{statusCode = 200,
-			 contentType = pickleContentType,
-			 body = packedValue}
+		fun handler request =
+		    (checkMethod (request, "GET");
+		     Http.makeResponse
+			 {statusCode = ok,
+			  contentType = pickleContentType,
+			  body = packedValue})
+		    handle Response response => response
 	    in
 		register handler
 	    end
@@ -71,11 +110,14 @@ structure HttpRemotePort :> REMOTE_PORT =
 
 	fun exportFn f =
 	    let
-		fun handler (request: Http.request) =
-		    Http.makeResponse
-			{statusCode = 200,
-			 contentType = pickleContentType,
-			 body = f (#body request)}
+		fun handler request =
+		    (checkMethod (request, "POST");
+		     checkContentType (request, pickleContentType);
+		     Http.makeResponse
+			 {statusCode = ok,
+			  contentType = pickleContentType,
+			  body = f (#body request)})
+		    handle Response response => response
 	    in
 		register handler
 	    end
@@ -85,13 +127,20 @@ structure HttpRemotePort :> REMOTE_PORT =
 		val response =
 		    HttpClient.post (url, {contentType = pickleContentType,
 					   body = packedValue})
+		    handle HttpClient.Authority => raise Ticket
 	    in
-		#body response
+		(*--** check "content-type" header *)
+		case #statusCode response of
+		    200 => #body response
+		  | statusCode =>
+			raise Protocol (statusCode, #reasonPhrase response)
 	    end
     end
 
 functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
     struct
+	exception Protocol = RemotePort.Protocol
+
 	(*--------------------------------------------------------------
 	 * Proxies and RPC
 	 *)

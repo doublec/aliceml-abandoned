@@ -19,6 +19,7 @@ signature REMOTE =
 	type ticket = string
 
 	exception Ticket
+	exception Protocol of int * string
 
 	val proxy: ('a -> 'b) -> 'a -> 'b
 	val offer: Package.package -> string              (* Pickle.Sited *)
