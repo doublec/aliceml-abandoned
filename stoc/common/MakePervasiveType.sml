@@ -85,7 +85,7 @@ functor MakePervasiveType(val labid_false :	string
     val con_real	= (STAR, CLOSED, path_real)
     val con_char	= (STAR, CLOSED, path_char)
     val con_string	= (STAR, CLOSED, path_string)
-    val con_exn		= (STAR, CLOSED, path_exn)
+    val con_exn		= (STAR, OPEN, path_exn)
     val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
     val con_array	= (ARROW(STAR,STAR), CLOSED, path_array)
     val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
