@@ -12,16 +12,16 @@
 //   $Revision$
 //
 
-#ifndef __INTERPRETER__ABSTRACT_CODE_INTERPRETER_HH__
-#define __INTERPRETER__ABSTRACT_CODE_INTERPRETER_HH__
+#ifndef __ALICE__ABSTRACT_CODE_INTERPRETER_HH__
+#define __ALICE__ABSTRACT_CODE_INTERPRETER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/AbstractCodeInterpreter.hh"
+#pragma interface "alice/AbstractCodeInterpreter.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
-class AbstractCodeInterpreter : public Interpreter {
+class AbstractCodeInterpreter: public Interpreter {
 public:
   // Exported AbstractCodeInterpreter Instance
   static AbstractCodeInterpreter *self;
