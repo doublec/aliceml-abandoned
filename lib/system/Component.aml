@@ -26,7 +26,7 @@ structure Component :> COMPONENT =
 struct
     nonfix mod
     type inf = Inf.t option
-    type mod = Reflect.value
+    type mod = Reflect.module
 
     datatype component =
 	UNEVALUATED of { imports: (string * inf) vector,

@@ -37,9 +37,9 @@ import signature PP_COMPONENT  from "PP_COMPONENT-sig"
 
 structure PPComponent :> PP_COMPONENT =
 struct
-    type doc   = PrettyPrint.doc
-    type value = Reflect.value
-    type inf   = Inf.t
+    type doc    = PrettyPrint.doc
+    type module = Reflect.module
+    type inf    = Inf.t
 
     open PrettyPrint
     open PPMisc
