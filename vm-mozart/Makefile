@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /opt/mozart-devel
+OZHOME = /tmp/install
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
@@ -603,7 +603,7 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/compiler build3/install/compiler/top \
 	build3/install/linker build3/install/depend
 INSTALL3TOPFILES = $(INSTALL1TOPFILES) alicec.import alice.import COPYING
-INSTALL3BINFILES = $(INSTALL1BINFILES) alice
+INSTALL3BINFILES = $(INSTALL1BINFILES) alice alicedep
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) system/UnsafeValue.asig \
