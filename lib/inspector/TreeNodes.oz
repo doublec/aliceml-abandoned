@@ -36,8 +36,8 @@ define
 		procedure  # [a(procedure) a(procedure) base]
 		byteString # [a(byteString) a(byteString) base]
 		word       # [a(word) a(word) base]
-		cell       # [a(cell) labelTuple labelTuple]
-		cellInd    # [a(cell) labelTupleInd labelTupleInd]
+		cell       # [a(cell) labelTuple a(cell)]
+		cellInd    # [a(cell) labelTupleInd a(cellInd)]
 		
 		%% Container Nodes
 		tuple     # [a(tuple) a(tuple) labelTuple]
@@ -64,8 +64,8 @@ define
 
 		%% Atomic Nodes
 		nameGr      # [a(nameGr) a(nameGr) a(nameGr)]
-		cellGr      # [a(cellGr) labelTupleGr labelTupleGr]
-		cellGrInd   # [a(cellGr) labelTupleGrInd labelTupleGrInd]
+		cellGr      # [a(cellGr) labelTupleGr a(cellGr)]
+		cellGrInd   # [a(cellGr) labelTupleGrInd a(cellGrInd)]
 
 		%% Container Nodes
 		tupleGr      # [a(tupleGr) a(tupleGr) labelTupleGr]
