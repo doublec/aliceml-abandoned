@@ -24,13 +24,18 @@ private:
   static const u_int SIZE    = 2;
   static const u_int TOP_POS = 1;
   static const u_int ARR_POS = 2;
-
-  static Stack *FromBlock(Block *x) {
-    return (Stack *) x;
-  }
 protected:
+  int GetTop() {
+    return Store::DirectWordToInt(GetArg(TOP_POS));
+  }
+  void SetTop(int top) {
+    InitArg(TOP_POS, top);
+  }
+  Block *GetArray() {
+    return Store::DirectWordToBlock(GetArg(ARR_POS));
+  }
   void Enlarge(u_int oldsize, u_int newsize) {
-    Block *oa = Store::DirectWordToBlock(GetArg(ARR_POS));
+    Block *oa = GetArray();
     Block *na = Store::AllocBlock(STACKARRAY_LABEL, newsize);
 
     std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(word));
@@ -40,30 +45,30 @@ public:
   using Block::ToWord;
 
   u_int GetStackSize() {
-    return (Store::DirectWordToInt(GetArg(TOP_POS)) - 1);
+    return (GetTop() - 1);
   }
   void AllocArgFrame(u_int fsize) {
-    u_int top  = Store::DirectWordToInt(GetArg(TOP_POS));
-    u_int max  = Store::DirectWordToBlock(GetArg(ARR_POS))->GetSize();
+    u_int top  = GetTop();
+    u_int max  = GetArray()->GetSize();
     u_int size = (top + fsize);
 
-    InitArg(TOP_POS, Store::IntToWord(size));
+    SetTop(size);
     if (size > max) {
       Stack::Enlarge(max, ((size * 3) >> 1));
     }
   }
   void ClearArgFrame(u_int fsize) {
-    u_int top    = Store::DirectWordToInt(GetArg(TOP_POS));
+    u_int top    = GetTop();
     u_int newtop = (top - fsize);
-    Block *a     = Store::DirectWordToBlock(GetArg(ARR_POS));
+    Block *a     = GetArray();
 
     Assert(top > fsize);
-    InitArg(TOP_POS, Store::IntToWord(newtop));
+    SetTop(newtop);
     a->InitArg((newtop - 1), a->GetArg(top - 1));
   }
   void AllocFrame(u_int fsize) {
-    u_int top  = Store::DirectWordToInt(GetArg(TOP_POS));
-    u_int max  = Store::DirectWordToBlock(GetArg(ARR_POS))->GetSize();
+    u_int top  = GetTop();
+    u_int max  = GetArray()->GetSize();
     u_int size = (top + fsize);
 
     if (size > max) {
@@ -71,106 +76,106 @@ public:
     }
   }
   void ClearFrame(u_int fsize) {
-    u_int top    = Store::DirectWordToInt(GetArg(TOP_POS));
+    u_int top    = GetTop();
     u_int newtop = (top - fsize);
 
     Assert(top > fsize);
-    InitArg(TOP_POS, Store::IntToWord(newtop));
+    SetTop(newtop);
   }
   void Push(word v) {
-    u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
+    u_int top = GetTop();
 
-    Assert(top <= Store::DirectWordToBlock(GetArg(ARR_POS))->GetSize());
-    InitArg(TOP_POS, Store::IntToWord((top + 1)));
-    Store::DirectWordToBlock(GetArg(ARR_POS))->ReplaceArg(top, v);
+    Assert(top <= GetArray()->GetSize());
+    SetTop((top + 1));
+    GetArray()->ReplaceArg(top, v);
   }
   void Push(int v) {
-    u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
+    u_int top = GetTop();
 
-    Assert(top <= Store::DirectWordToBlock(GetArg(ARR_POS))->GetSize());
-    InitArg(TOP_POS, Store::IntToWord((top + 1)));
-    Store::DirectWordToBlock(GetArg(ARR_POS))->InitArg(top, Store::IntToWord(v));
+    Assert(top <= GetArray()->GetSize());
+    SetTop((top + 1));
+    GetArray()->InitArg(top, v);
   }
   void SlowPush(word v) {
-    u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
-    Block *a  = Store::DirectWordToBlock(GetArg(ARR_POS));
+    u_int top = GetTop();
+    Block *a  = GetArray();
     u_int max = a->GetSize();
 
     Assert(a->GetLabel() == STACKARRAY_LABEL);
 
-    InitArg(TOP_POS, Store::IntToWord((top + 1)));
+    SetTop((top + 1));
     if (top <= max) {
       a->ReplaceArg(top, v);
     }
     else {
       Stack::Enlarge(max, ((max * 3) >> 1));
-      Store::DirectWordToBlock(GetArg(ARR_POS))->ReplaceArg(top, v);
+      GetArray()->ReplaceArg(top, v);
     }
   }
   void SlowPush(int v) {
-    u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
-    Block *a  = Store::DirectWordToBlock(GetArg(ARR_POS));
+    u_int top = GetTop();
+    Block *a  = GetArray();
     u_int max = a->GetSize();
 
     Assert(a->GetLabel() == STACKARRAY_LABEL);
 
-    InitArg(TOP_POS, Store::IntToWord((top + 1)));
+    SetTop((top + 1));
     if (top <= max) {
-      a->InitArg(top, Store::IntToWord(v));
+      a->InitArg(top, v);
     }
     else {
       Stack::Enlarge(max, ((max * 3) >> 1));
-      Store::DirectWordToBlock(GetArg(ARR_POS))->InitArg(top, Store::IntToWord(v));
+      GetArray()->InitArg(top, v);
     }
   }
   word Top() {
-    return Store::DirectWordToBlock(GetArg(ARR_POS))->
-      GetArg(Store::WordToInt(GetArg(TOP_POS)) - 1);
+    return GetArray()->GetArg(GetTop() - 1);
   }
   word GetFrameArg(u_int f) {
-    u_int top = Store::WordToInt(GetArg(TOP_POS));
+    u_int top = GetTop();
     u_int pos = (top - 1 - f);
     
     Assert(top > f + 1);
-    return Store::DirectWordToBlock(GetArg(ARR_POS))->GetArg(pos);
+    return GetArray()->GetArg(pos);
   }
   void PutFrameArg(u_int f, word v) {
-    u_int top = Store::WordToInt(GetArg(TOP_POS));
+    u_int top = GetTop();
     u_int pos = (top - 1 - f);
     
     Assert(top > f + 1);
-    return Store::DirectWordToBlock(GetArg(ARR_POS))->ReplaceArg(pos, v);
+    return GetArray()->ReplaceArg(pos, v);
   }
   void PutFrameArg(u_int f, int v) {
-    u_int top = Store::WordToInt(GetArg(TOP_POS));
+    u_int top = GetTop();
     u_int pos = (top - 1 - f);
     
     Assert(top > f + 1);
-    return Store::DirectWordToBlock(GetArg(ARR_POS))->InitArg(pos, Store::IntToWord(v));
+    return GetArray()->InitArg(pos, v);
   }
   word Pop() {
-    u_int top  = (Store::WordToInt(GetArg(TOP_POS)) - 1);
-    Block *a   = Store::DirectWordToBlock(GetArg(ARR_POS));
+    u_int top  = (GetTop() - 1);
+    Block *a   = GetArray();
+
     Assert(top >= 1);
     Assert(a->GetLabel() == STACKARRAY_LABEL);
     word value = a->GetArg(top);
 
-    InitArg(TOP_POS, Store::IntToWord(top));
+    SetTop(top);
     return value;
   }
   int IsEmpty() {
-    return (Store::WordToInt(GetArg(TOP_POS)) == 1);
+    return (GetTop() == 1);
   }
   void Blank(u_int threshold) {
-    u_int top    = Store::DirectWordToInt(GetArg(TOP_POS));
-    Block *a     = Store::DirectWordToBlock(GetArg(ARR_POS));
+    u_int top    = GetTop();
+    Block *a     = GetArray();
     u_int max    = a->GetSize();
     u_int newmax = (top + threshold); 
 
     newmax = ((newmax <= max) ? newmax : max);
 
     for (u_int i = top; i <= newmax; i++) {
-      a->InitArg(i, Store::IntToWord(0));
+      a->InitArg(i, 0);
     }
     HeaderOp::EncodeSize(a, newmax);
   }
@@ -178,21 +183,21 @@ public:
     Block *p = Store::AllocBlock(STACK_LABEL, SIZE);
     Block *a = Store::AllocBlock(STACKARRAY_LABEL, s);
     
-    p->InitArg(TOP_POS, Store::IntToWord(1));
+    p->InitArg(TOP_POS, 1);
     p->InitArg(ARR_POS, a->ToWord());
 
-    return FromBlock(p);
+    return (Stack *) p;
   }
   static Stack *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == STACK_LABEL));
-    return FromBlock(p);
+    return (Stack *) p;
   }
   static Stack *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == STACK_LABEL);
-    return FromBlock(p);
+    return (Stack *) p;
   }
 };
 

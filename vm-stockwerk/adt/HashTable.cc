@@ -98,32 +98,30 @@ inline u_int HashTable::FindKey(u_int i) {
   u_int size = GetTableSize();
   u_int key  = (1 + (i % size));
 
-  while (1) {
-    HashNode *entry = GetEntry(key);
+ loop:
+  HashNode *entry = GetEntry(key);
 
-    if ((!entry->IsEmpty()) && ((u_int) Store::WordToInt(entry->GetKey()) != i)) {
-      key = IncKey(key, size);
-    }
-    else {
-      return key;
-    }
+  if ((!entry->IsEmpty()) && ((u_int) entry->GetIntKey() != i)) {
+    key = IncKey(key, size);
+    goto loop;
   }
+
+  return key;
 }
 
 inline u_int HashTable::FindKey(Block *b) {
   u_int size = GetTableSize();
   u_int key  = (1 + HashBlock(b, size));
 
-  while (1) {
-    HashNode *entry = GetEntry(key);
+ loop:
+  HashNode *entry = GetEntry(key);
     
-    if ((!entry->IsEmpty()) && (CompareBlocks(Store::WordToBlock(entry->GetKey()), b) != 0)) {
-      key = IncKey(key, size);
-    }
-    else {
-      return key;
-    }
+  if ((!entry->IsEmpty()) && (CompareBlocks(entry->GetBlockKey(), b) != 0)) {
+    key = IncKey(key, size);
+    goto loop;
   }
+
+  return key;
 }
 
 inline u_int HashTable::FindKey(word key) {
@@ -142,11 +140,11 @@ void HashTable::Resize() {
   u_int oldsize = GetTableSize();
   u_int newsize = NextPrime(oldsize << 1);
   u_int percent = (u_int) (1 + (newsize * FILL_RATIO));
-  Block *oldp   = Store::WordToBlock(GetArg(TABLE_POS));
+  Block *oldp   = GetTable();
   Block *newp   = Store::AllocBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
 
-  InitArg(COUNTER_POS, Store::IntToWord(0));
-  InitArg(PERCENT_POS, Store::IntToWord(percent));
+  SetCounter(0);
+  SetPercent(percent);
   ReplaceArg(TABLE_POS, newp->ToWord());
 
   for (u_int i = 1; i <= newsize; i++) {
