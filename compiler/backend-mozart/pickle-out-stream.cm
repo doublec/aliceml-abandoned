@@ -1,0 +1,11 @@
+Group
+
+    structure PickleOutStream
+
+is
+
+    ../infrastructure/crash.cm
+
+    crc.cm
+    PICKLE_OUT_STREAM.sig
+    PickleOutStream.sml
