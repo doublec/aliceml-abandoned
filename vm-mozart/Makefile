@@ -187,7 +187,7 @@ LIBRTTSOURCES0 = \
 	Type.aml INF-sig.aml Inf.aml PERVASIVE_TYPE-sig.aml \
 	MkPervasiveType.aml PervasiveType.aml PP_MISC-sig.aml PPMisc.aml \
 	PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml \
-	PPInf.aml RTT.aml
+	PPInf.aml
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES0 = \
@@ -569,7 +569,9 @@ build1/install/bin/%: %
 BUILD2DIRS = \
 	build2 build2/lib build2/lib/fundamental build2/lib/system \
 	build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
-BUILD2SOURCES = build2/lib/fundamental/RTT.aml $(LIBSOURCES:%=build2/%)
+BUILD2SOURCES = \
+	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
+	$(LIBSOURCES:%=build2/%)
 
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \

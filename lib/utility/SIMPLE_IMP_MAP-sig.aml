@@ -16,13 +16,24 @@ sig
     type 'a map
     type 'a t = 'a map
 
+    exception Delete    of key
+    exception Collision of key
+    exception Lookup    of key
+
     val new :		unit -> 'a map
+    val clone :		'a map -> 'a map
 
     val insert :	'a map * key * 'a -> unit
+    val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
     val delete :	'a map * key -> unit
+    val deleteExistent:	'a map * key -> unit		(* Delete *)
     val deleteAll :	'a map -> unit
 
+    val union :		'a map * 'a map -> unit
+    val unionDisjoint :	'a map * 'a map -> unit		(* Collision *)
+
     val lookup :	'a map * key -> 'a option
+    val lookupExistent:	'a map * key -> 'a		(* Lookup *)
     val member :	'a map * key -> bool
     val isEmpty :	'a map -> bool
 
