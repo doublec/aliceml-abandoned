@@ -33,13 +33,13 @@ struct
 	    structure X = ComponentManager.Eval (
 		                       val component = comp 
 				       val url = url
-				       signature S = TESTSUITE)
+				       signature S = (structure Gen : GEN))
 	in
 	    true
 	end
 	       
     fun testEval () = 
-	(Test.test (fn _ => (*testEval' ()*) true) ())
+	(Test.test (fn _ => testEval' ()) ())
 
 
     val suite = ("Compiler", [("testEval", testEval)])
