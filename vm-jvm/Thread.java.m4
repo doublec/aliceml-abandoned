@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -20,7 +20,7 @@ package de.uni_sb.ps.dml.runtime;
 
 public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
-    public DMLValue tail=null;
+    public DMLValue tail = null;
 
     protected NoGood ng = null;
     /** Die Funktion (oder etwas, das zu einer Funktion wird),
@@ -33,10 +33,10 @@ public class Thread extends java.lang.Thread implements DMLValue {
     public static int totalNumber=0;
 
     /** Nummer des java.lang.Threads */
-    private int threadNumber=0;
+    private int threadNumber = 0;
 
     public Thread() {
-	fcn=null;
+	fcn = null;
     }
 
     /** Erzeugt einen neuen de.uni_sb.ps.dml.runtime.Thread.
@@ -56,10 +56,10 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	DMLValue t = null;
 	try {
 	    v = fcn.apply0();
-	    while(tail!=null) {
-		t=tail;
-		tail=null;
-		v=t.apply(v);
+	    while(tail != null) {
+		t = tail;
+		tail = null;
+		v = t.apply(v);
 	    }
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);

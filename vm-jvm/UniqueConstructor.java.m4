@@ -36,13 +36,7 @@ public class UniqueConstructor extends Constructor {
      */
     final private Object readResolve()
 	throws java.io.ObjectStreamException {
-	Object o = GName.gNames.get(name);
-	if (o == null) {
-	    GName.gNames.put(name,this);
-	    return this;
-	} else {
-	    return o;
-	}
+	return GName.gNames.get(name);
     }
 
     final public java.lang.String toString() {
