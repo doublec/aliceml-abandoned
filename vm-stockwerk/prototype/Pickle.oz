@@ -103,13 +103,14 @@ define
       end
       meth ParseUInt($) B in
 	 PickleParser, Next(?B)
-	 if B >= 0x80 then PickleParser, ParseUIntSub(B 0x80 $)
+	 if B >= 0x80 then PickleParser, ParseUIntSub(B - 0x80 0x80 $)
 	 else B
 	 end
       end
       meth ParseUIntSub(X N $) B in
 	 PickleParser, Next(?B)
-	 if B >= 0x80 then PickleParser, ParseUIntSub(X + B * N N * 0x80 $)
+	 if B >= 0x80 then
+	    PickleParser, ParseUIntSub(X + (B - 0x80) * N N * 0x80 $)
 	 else X + B * N
 	 end
       end
