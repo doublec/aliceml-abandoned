@@ -721,6 +721,7 @@ structure CodeEmitter :> CODE_EMITTER =
 	let
 	    val h = cvtId h
 	    val id = cvtId id
+            val n = if n="delete_event" then "delete-event" else n
 	in
 	    if stringIsKnown(doc,h) then ()
 	    else

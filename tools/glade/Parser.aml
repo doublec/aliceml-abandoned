@@ -29,13 +29,15 @@ structure Parser :> PARSER =
 
       fun skipTextNodes nil = nil
 	| skipTextNodes (n::nr) =
-	  if (n/>getType) = TEXT_NODE then skipTextNodes nr
+	  if (n/>getType) = TEXT_NODE orelse
+             (n/>getType) = COMMENT_NODE then skipTextNodes nr
 	  else (n::nr)
 
       fun parseRequires(_, nil) = nil
 	| parseRequires(doc, r::rr) =
 	  if (r/>name) = "widget" then (r::rr)
-	  else if (r/>getType) = TEXT_NODE then parseRequires(doc, rr)
+	  else if (r/>getType) = TEXT_NODE orelse
+          (r/>getType) = COMMENT_NODE then parseRequires(doc, rr)
 	  else if (r/>name)= "requires"
 	  then parseRequires(doc, rr)
 	  else raise ParseError ("'requires' required, "^(r/>name)^" found")
@@ -44,14 +46,16 @@ structure Parser :> PARSER =
 				   getOpt(getContent p true, ""))
       fun parseProperties(doc, nil, acc) = (nil, acc)
 	| parseProperties(doc, p::ps, acc) =
-	  if (p/>getType) = TEXT_NODE then parseProperties(doc,ps,acc)
+	  if (p/>getType) = TEXT_NODE orelse
+          (p/>getType) = COMMENT_NODE then parseProperties(doc,ps,acc)
 	  else if (p/>name) = "property" then
 	      parseProperties(doc,ps,parseProperty(doc,p)::acc)
 	  else (p::ps, acc)
 
       fun parseAccessibility(doc, nil, acc) = (nil, acc)
 	| parseAccessibility(doc, p::ps, acc) =
-	  if (p/>getType) = TEXT_NODE then parseAccessibility(doc, ps, acc)
+	  if (p/>getType) = TEXT_NODE orelse
+          (p/>getType) = COMMENT_NODE then parseAccessibility(doc, ps, acc)
 	  else if (p/>name) = "accessibility" then (ps, acc)
 	  else (p::ps,acc)
 
@@ -60,7 +64,8 @@ structure Parser :> PARSER =
 				 getOpt(getProp p "after", "no"))
       fun parseSignals(doc, nil, acc) = (nil, acc)
 	| parseSignals(doc, p::ps, acc) =
-	  if (p/>getType) = TEXT_NODE then parseSignals(doc, ps, acc)
+	  if (p/>getType) = TEXT_NODE orelse
+          (p/>getType) = COMMENT_NODE then parseSignals(doc, ps, acc)
 	  else if (p/>name) = "signal" then
 	      parseSignals(doc,ps,parseSignal(doc,p)::acc)
 	  else (p::ps,acc)
@@ -68,7 +73,8 @@ structure Parser :> PARSER =
       fun parseAccelerator(doc, p) = (valOf (getProp p "key"))
       fun parseAccelerators(doc, nil, acc) = (nil, acc)
 	| parseAccelerators(doc, p::ps, acc) =
-	  if (p/>getType) = TEXT_NODE then parseAccelerators(doc, ps, acc)
+	  if (p/>getType) = TEXT_NODE orelse
+          (p/>getType) = COMMENT_NODE then parseAccelerators(doc, ps, acc)
 	  else if (p/>name) = "accelerator" then
 	      parseAccelerators(doc,ps,parseAccelerator(doc,p)::acc)
 	  else (p::ps,acc)
@@ -94,7 +100,8 @@ structure Parser :> PARSER =
 	  end
       and parseChildren(doc, _, nil) = nil
 	| parseChildren(doc, sigDoc, c::cr) =
-	  if (c/>getType) = TEXT_NODE then parseChildren(doc, sigDoc, cr)
+	  if (c/>getType) = TEXT_NODE orelse
+          (c/>getType) = COMMENT_NODE then parseChildren(doc, sigDoc, cr)
 	  else if (c/>name) = "child" then
 	      let
 		  val wp = skipTextNodes (c/>children)
@@ -126,11 +133,12 @@ structure Parser :> PARSER =
 		      "placeholder" => parseChildren(doc, sigDoc, cr)
 		    | _ => (child, packing)::parseChildren(doc, sigDoc, cr)
 	      end
-	  else raise ParseError "'child' expected"
+	  else raise ParseError ("'child' expected, "^(c/>name)^" found.")
 
       fun parseWidgets(doc, _, nil) = nil
 	| parseWidgets(doc, sigDoc, r::rr) =
-	  if (r/>getType) = TEXT_NODE then parseWidgets(doc, sigDoc, rr)
+	  if (r/>getType) = TEXT_NODE orelse
+          (r/>getType) = COMMENT_NODE then parseWidgets(doc, sigDoc, rr)
 	  else if (r/>name) = "widget" then
 	      parseWidget(doc,sigDoc,r)::parseWidgets(doc,sigDoc,rr)
 	  else raise ParseError ("'widget' required, "^(r/>name)^" found")
