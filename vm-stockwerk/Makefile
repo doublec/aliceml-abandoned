@@ -22,7 +22,8 @@ SRCS = Base.cc StockwerkMain.cc
 OBJS = $(SRCS:%.cc=%.o)
 LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
 
-LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) $(EXTRA_LIBS)
+LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
+	-L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
 
 .PHONY: all-subdirs depend-local
 
