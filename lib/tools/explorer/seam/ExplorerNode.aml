@@ -1,0 +1,141 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space      from "x-alice:/lib/gecode/Space"
+import structure TreeNode   from "TreeNode"
+import structure Types      from "Types"
+import structure VisualNode from "VisualNode"
+import structure GtkNode    from "GtkNode"
+
+structure ExplorerNode =
+struct
+    open TreeNode
+
+    exception SearchDone
+
+    fun createNode mom alternative =
+        N({offset=ref 0,
+	   oldOffset=ref NONE,
+	   groupOffset=ref 0,
+	   status=ref Types.UNKNOWN,
+           openChildren=ref 0,
+	   hidden=ref false,
+	   dirty=ref true,
+	   hasSolBelow=ref false,
+	   vNode=ref NONE,
+	   space=ref NONE,
+	   connection=ref NONE,
+	   alternative=alternative,
+	   shape =ref nil}, ref mom, ref #[])
+
+    fun setMom (N(_,mom,_)) newMom = mom := newMom
+    fun decOpenChildren (N({openChildren=openChildren,space=space,...},
+                           ref mom,_)) =
+        (openChildren := !openChildren - 1;
+         if !openChildren=0 then
+             (Option.app decOpenChildren mom;
+              Option.app (fn _ => Option.app (fn s => (Space.discard s;
+                                                       space := NONE))
+                                             (!space)) mom)
+         else ())
+    fun hasOpenChildren (N({openChildren=openChildren,...},_,_)) =
+        !openChildren>=1
+
+    fun setStatus (node as N({status=status,openChildren=openChildren,...},
+                             ref mom,_)) newStatus = 
+        (case newStatus of
+             (Types.FAILED | Types.SOLVED) => Option.app decOpenChildren mom
+           | _ => ();
+         status := newStatus)
+    fun setChildren (N({openChildren=openChildren,...},_,ch)) newCh =
+        (ch := newCh;
+         openChildren := Vector.length newCh)
+    fun setSpace (N({space=space,...},_,_)) newSpace = space := newSpace
+
+    fun recomputeSpace (N({space=ref (SOME s),...},_,_)) = Space.clone s
+      | recomputeSpace (N({alternative=i,space=space,...},ref (SOME mom),_)) =
+	let
+	    val s = recomputeSpace mom
+	in
+          case Space.status s of
+            Space.BRANCH (_,desc) =>
+              (Space.commit(s, i, desc);
+               Space.status s;
+               space := SOME s;
+               s)
+          | _ => assert false
+	end
+      | recomputeSpace _ = raise Subscript
+
+    fun getSpace (N({space=ref (SOME s),...},_,_)) = s
+      | getSpace n = recomputeSpace n
+
+    fun nodeStatus (state, node as N({status=status,...},_,_)) =
+        case !status of Types.UNKNOWN =>
+                        let
+                            val s = getSpace node
+                        in
+                            case Space.status s of
+                                Space.FAILED => (setStatus node Types.FAILED;
+                                                 Types.addFailed state;
+                                                 Types.FAILED)
+                              | Space.SOLVED => (setStatus node Types.SOLVED;
+                                                 TreeNode.setHasSolBelow node;
+                                                 Types.addSolved state;
+                                                 Types.SOLVED)
+                              | Space.BRANCH(alt,desc) 
+                                => (setStatus node (Types.CHOICE alt);
+                                    Types.addChoice state;
+                                    Types.CHOICE alt)
+                        end
+                      | s => s
+
+    fun isUnknown (node as N({status=status,...},_,_)) =
+        (!status = Types.UNKNOWN)
+    fun isHidden (node as N({hidden=hidden,...},_,_)) = !hidden
+    fun curNodeStatus (N({status=ref status,...},_,_)) = status
+
+    fun noOfChildren (state, node as N({status=status,...},_,ch)) =
+        if (Types.cancelSearch state) then
+           raise SearchDone
+        else
+        case !status of Types.UNKNOWN =>
+                        (VisualNode.undrawAndDirtyUp node;
+                         case nodeStatus (state, node) of
+                             Types.FAILED => 0
+                           | Types.SOLVED => 0
+                           | Types.CHOICE n =>
+                             (setChildren node 
+                                (Vector.tabulate(n,
+                                   fn i => createNode (SOME node) i));
+                              n)
+                           | Types.UNKNOWN => raise Subscript (* can't happen*)
+                                                    )
+                      | _ => Vector.length (!ch)
+
+    fun getChild (node as N(_,_,ch)) n = Vector.sub(!ch, n)
+
+    fun getLeftChild (node as N(_,_,ch)) =
+        case !ch of #[c,_] => c
+                  | _      => raise Empty
+    fun getRightChild (node as N(_,_,ch)) =
+        case !ch of #[_,c] => c
+                  | _      => raise Empty
+
+    fun discardTree' (N({space=space,...},_,ch)) =
+        ((case !space of SOME s => Space.discard s
+                       | _ => ());
+         Vector.app discardTree' (!ch))
+    fun discardTree node =
+        (GtkNode.undrawSubtree node;
+         discardTree' node)
+end

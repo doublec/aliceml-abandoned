@@ -1,0 +1,69 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TreeNode     from "TreeNode"
+import structure Types        from "Types"
+import structure ExplorerNode from "ExplorerNode"
+
+structure Search =
+struct
+    open TreeNode
+
+    fun explore (node, state, callBack) =
+        let
+            fun dfe node =
+                case ExplorerNode.noOfChildren (state, node) of
+                    0 => (case ExplorerNode.nodeStatus (state, node) of
+                              Types.SOLVED => callBack()
+                            | _ => ())
+                  | n => doDfe 0 n node
+            and doDfe m n _ where (m=n) = ()
+              | doDfe m n node =
+                let
+                    val child = (ExplorerNode.getChild node m)
+                in
+                    if ExplorerNode.isUnknown child orelse
+                       ExplorerNode.hasOpenChildren child then
+                        (dfe child; doDfe (m+1) n node)
+                    else doDfe (m+1) n node
+                end
+        in
+            dfe node
+        end
+
+(*
+    fun bab (space, constrain) =
+	let
+	    fun babe fs bs best =
+		case fs of
+		    nil =>
+		    (case bs of nil => best
+			      | b::br => (constrain(b, valOf best);
+					  babe [b] br best))
+		  | f::fr =>
+		    case Space.status f of
+			Space.FAILED => (Space.discard f;
+					 babe fr bs best)
+		      | Space.SOLVED => babe nil (fr@bs) (SOME f)
+		      | Space.BRANCH _ =>
+			let
+			    val c = Space.clone f
+			in
+			    Space.commit(f, 1);
+			    Space.commit(c, 2);
+			    babe (f::c::fr) bs best
+			end
+	in
+	    babe [Space.clone space] nil NONE
+	end
+*)
+end

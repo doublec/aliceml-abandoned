@@ -1,0 +1,188 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Types            from "Types"
+import structure FD               from "x-alice:/lib/gecode/FD"
+import structure FS               from "x-alice:/lib/gecode/FS"
+import structure Space            from "x-alice:/lib/gecode/Space"
+import structure Inspector'       from "x-alice:/lib/tools/Inspector"
+import structure Inspector        from "x-alice:/lib/tools/Inspector"
+
+import structure Type             from "x-alice:/lib/rtt/Type"
+import structure Path             from "x-alice:/lib/rtt/Path"
+import structure Inf              from "x-alice:/lib/rtt/Inf"
+import structure Label            from "x-alice:/lib/rtt/Label"
+import structure Url              from "x-alice:/lib/system/Url"
+import structure Component        from "x-alice:/lib/system/Component"
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+import structure Reflect from "x-alice:/lib/system/Reflect" 
+import structure UnsafeValue      from  "x-alice:/lib/system/UnsafeValue"
+
+structure ExplorerInspect =
+  struct
+
+    val coreSign = Inf.asSig(#2 
+	     (Reflect.reflectPackage(ComponentManager.link 
+	       (Url.fromString "x-alice:/lib/fundamental/Core")))) 
+
+    val fdSig = Inf.asSig(#2
+	     (Reflect.reflectPackage(ComponentManager.link
+	       (Url.fromString "x-alice:/lib/gecode/FD"))))
+
+    val fsSig = Inf.asSig(#2
+	     (Reflect.reflectPackage(ComponentManager.link
+	       (Url.fromString "x-alice:/lib/gecode/FS"))))
+                
+    fun lookupTyp(sign, modLab, typLab) =
+        let
+	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
+	    val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
+        in
+	    if Type.isApply typ then #1(Type.asApply typ) else typ
+        end
+            
+    fun lookupPath(sign, modLab, typLab) =
+        Type.asCon(lookupTyp(sign, modLab, typLab))
+      
+    fun createFD s (m_width,d,va,t) = 
+        let
+            fun addCommas nil = nil
+              | addCommas [x] = [x]
+              | addCommas (x::xr) = x::", "::(addCommas xr)
+
+            fun boundsToString bs =
+                addCommas (Vector.toList (Vector.map (fn(x,y) =>
+                                           if x=y then Int.toString x
+                                           else Int.toString x^".."^
+                                                Int.toString y) bs))
+
+            val descr = Inspector.VALUE{value=va,typ=t}
+            val v = UnsafeValue.cast va : FD.intvar
+            val rep =
+                let
+                    val dom = FD.Reflect.dom(s,v)
+                in
+                    String.concat (boundsToString dom)
+                end
+                    handle Space.InvalidVar => "invalid"
+            val cont =
+            Inspector.CONTAINER{desc = descr,
+               kids= #[Inspector.SIMPLE{desc = descr,
+	                                rep = rep,
+	                                color = Inspector.INT_COLOR}]}
+        in 
+	    Inspector.CONCAT{desc = descr,
+		   kids = #[Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "intvar{|",
+				   color = Inspector.BRACK_COLOR},
+			    cont,
+			    Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "|}",
+				   color = Inspector.BRACK_COLOR}] }
+        end
+
+    fun createBool s (m_width,d,va,t) = 
+        let
+            val descr = Inspector.VALUE{value=va,typ=t}
+            val v = UnsafeValue.cast va : FD.boolvar
+            val rep = (if FD.Reflect.boolVal(s,v) then "true" else "false")
+                handle FD.NotAssigned => "undet"
+                     | Space.InvalidVar => "invalid"
+            val cont =
+            Inspector.CONTAINER{desc = descr,
+               kids= #[Inspector.SIMPLE{desc = descr,
+	                                rep = rep,
+	                                color = Inspector.INT_COLOR}]}
+        in 
+	    Inspector.CONCAT{desc = descr,
+		   kids = #[Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "boolvar{|",
+				   color = Inspector.BRACK_COLOR},
+			    cont,
+			    Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "|}",
+				   color = Inspector.BRACK_COLOR}] }
+        end
+
+    fun createFS s (m_width,d,va,t) =
+        let
+            fun addCommas nil = nil
+              | addCommas [x] = [x]
+              | addCommas (x::xr) = x::", "::(addCommas xr)
+
+            fun boundsToString bs =
+                addCommas (Vector.toList (Vector.map (fn(x,y) =>
+                                           if x=y then Int.toString x
+                                           else Int.toString x^".."^
+                                                Int.toString y) bs))
+                           
+            val descr = Inspector.VALUE{value=va,typ=t}
+            val v = UnsafeValue.cast va : FS.setvar
+            val lb = FS.Reflect.lowerBound(s,v)
+            val lbs = String.concat (boundsToString lb)
+            val ub = FS.Reflect.upperBound(s,v)
+            val ubs = String.concat (boundsToString ub)
+            val rep = 
+                let
+                    val card =
+                        let
+                            val (cmin,cmax) = FS.Reflect.card(s,v)
+                        in
+                            if FS.Value.is(s,v) then
+                                Int.toString cmin
+                            else
+                                Int.toString cmin^"/"^
+                                Int.toString cmax
+                        end
+                in
+                    if FS.Value.is(s,v) then
+                        "<"^lbs^"> ("^card^")"
+                    else
+                        "<"^lbs^"> / <"^ubs^"> ("^card^")"
+                end
+                    handle Space.InvalidVar => "invalid"
+
+            val cont =
+            Inspector.CONTAINER{desc = descr,
+               kids= #[Inspector.SIMPLE{desc = descr,
+	                                rep = rep,
+	                                color = Inspector.INT_COLOR}]}
+        in
+	    Inspector.CONCAT{desc = descr,
+		   kids = #[Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "setvar{|",
+				   color = Inspector.BRACK_COLOR},
+			    cont,
+			    Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "|}",
+				   color = Inspector.BRACK_COLOR}] }
+        end
+     
+    fun inspect t root s =
+        let
+            val fdPath = lookupPath(fdSig, "FD", "intvar")
+            val boolPath = lookupPath(fdSig, "FD", "boolvar")
+            val fsPath = lookupPath(fsSig, "FS", "setvar")
+        in
+            Inspector.registerType(fdPath, createFD s);
+            Inspector.registerType(boolPath, createBool s);
+            Inspector.registerType(fsPath, createFS s);
+            Inspector'.inspect' t root
+        end
+
+  end
