@@ -14,6 +14,11 @@ import structure TextIO from "../../lib/system/TextIO"
 
 signature SWITCHES =
 sig
+    structure Global :
+    sig
+	val recursiveCompilation :		bool ref
+    end
+
     structure Warn :
     sig
 	val shadowing :				bool ref

@@ -29,7 +29,10 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 			"2001/??/??"
 
 	val helpText =
-	    "Warning options:\n\
+	    "Gobal options:\n\
+	    \\t--(no-)recursive-compilation\n\
+	    \\t\tCompile imported components recursively if necessary.\n\
+	    \Warning options:\n\
 	    \\t--(no-)warn-shadowing\n\
 	    \\t\tWhether to warn about shadowing of identifiers.\n\
 	    \Language options:\n\
@@ -84,7 +87,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	open Switches
 
 	val booleanSwitches =
-	    [("warn-shadowing", Warn.shadowing),
+	    [("recursive-compilation", Global.recursiveCompilation),
+	     ("warn-shadowing", Warn.shadowing),
 	     ("reexport-import", Language.reexportImport),
 	     ("implicit-import", Language.implicitImport),
 	     ("silent-fail", Language.silentFailExp),

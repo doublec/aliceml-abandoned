@@ -279,6 +279,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	 * ceil(A)        component known to composer, get signature
 	 * A              pickled component, read signature from pickle
 	 * ceil(A)        pickled component, read signature from pickle
+	 * -- from here on only if Switches.Global.recursiveCompilation
 	 * floor(A).asig  compile as signature for native component
 	 * floor(A).aml   compile as new component, write to ceil(A)
 	 * floor(A).sml   compile as new component, write to ceil(A)
@@ -302,14 +303,26 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		case Composer.sign (urlCeil url) of
 		    SOME sign => sign
 		  | NONE =>
-		case UnsafePickle.loadSign (Url.toString url)
-		     handle IO.Io _ => NONE of
+		(case UnsafePickle.loadSign (Url.toString url) of
 		    (* this also looks for url ^ ext *)
 		    SOME sign =>
 			(trace ("loaded signature from " ^ Url.toString url);
 			 Composer.enterSign (urlCeil url, sign);
 			 sign)
-		  | NONE => acquireFromSource url
+		  | NONE => (* not a Stockhausen component *)
+			if !Switches.Global.recursiveCompilation then
+			    acquireFromSource url
+			else
+			    Error.error (Source.nowhere,
+			        	 "no signature found in " ^
+					 Url.toString url)
+		) handle IO.Io _ =>
+			if !Switches.Global.recursiveCompilation then
+			    acquireFromSource url
+			else
+			    Error.error (Source.nowhere,
+			        	 "could not locate component " ^
+					 Url.toString url)
 	    end
 	and acquireFromSource url =
 	    let

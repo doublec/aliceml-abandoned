@@ -18,6 +18,11 @@ import signature SWITCHES from "SWITCHES-sig"
 
 functor MkSwitches(val logOut : TextIO.outstream) :> SWITCHES =
 struct
+    structure Global =
+    struct
+	val recursiveCompilation		= ref false
+    end
+
     structure Warn =
     struct
 	val shadowing				= ref false

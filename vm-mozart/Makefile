@@ -236,7 +236,6 @@ COMPILERBACKENDCOMMONSOURCES = $(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backen
 COMPILERBACKENDMOZARTSOURCES0 = \
 	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
 	Assembler.oz CodeGenPhase.oz CodeGenPhase.asig MkBackendMozart.aml
-#--** CodeGenPhase.ozf should be built via replacesign
 COMPILERBACKENDMOZARTSOURCES = $(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
 
 COMPILERBACKENDDOTNETSOURCES0 = \
@@ -408,7 +407,8 @@ build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
 
 build1/%.ozf: build1/%.aml
-	$(ALICEC0) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
+	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation --rtt-level=no \
+		-c $< -o $@
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
@@ -618,6 +618,12 @@ TOP3 = $(BUILD3)/compiler/top
 build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) $< -o $@
+
+build3/compiler/backend-mozart/CodeGenPhase.ozf: \
+	build1/compiler/backend-mozart/CodeGenPhase.ozf \
+	build3/compiler/backend-mozart/CodeGenPhase.asig
+	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no --replacesign $< \
+		build3/compiler/backend-mozart/CodeGenPhase.asig $@
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
