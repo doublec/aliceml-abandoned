@@ -55,7 +55,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	       | Config.UNIX => OS.Process.system ("chmod +x " ^ outfile))
 (*--** handle IO.Io {...} => *)
 
-	structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
+	structure OptionParser = MkOptionParser (RecursiveCompiler.Switches)
 
 	fun usage () =
 	    TextIO.output
@@ -68,7 +68,8 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    let
 		val s = TextIO.inputAll TextIO.stdIn
 	    in
-		RecursiveCompiler.compileString RecursiveCompiler.empty s;
+		RecursiveCompiler.compileString
+		(RecursiveCompiler.Context.empty, s);
 		OS.Process.success
 	    end
 	  | main' ([infile] | ["-c", infile]) =
