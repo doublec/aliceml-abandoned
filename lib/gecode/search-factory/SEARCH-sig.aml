@@ -24,7 +24,7 @@ sig
 
   (* Get all solutions.
    * The argument is a function reading a solution from a space. 
-   * In the case of Branch & Bound, the first solution is the best.
+   * In the case of Branch & Bound, the head of the list is the best solution.
    * Raises NotAssigned if the variables are not assigned in the solved space;
    * this means that the problem is under-specified. *)
   val getAllSolutions : (Space.space -> 'a) -> 'a list
@@ -37,4 +37,9 @@ sig
   (* Stop the search. 
    * Thread-safe *)
   val stopSearch : unit -> unit
+
+  (* Constraint the search space using the given solution.
+   * The solution is encapsulated in a path of the form [(~1, SOME sol)] *)
+  val betterThan : path -> unit
+
 end

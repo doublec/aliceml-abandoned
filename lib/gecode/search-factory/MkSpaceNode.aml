@@ -59,11 +59,8 @@ struct
   fun depth     (Node node) = #depth  node
   fun getBestId (Node node) = #bestId node
 
-  (* Branch and Bound: are we in B&B (bab); bound is the bounding function *)
-  val (bab, bound) =
-    case Policy.bound of
-      NONE => (false, undefined)
-    | SOME b => (true, b)
+  val bab = Policy.bab
+  val bound = Policy.bound
 
   (* Update globalBest and globalBestId if
    *  'condf currentBest currentId' is true *)

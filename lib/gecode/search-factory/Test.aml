@@ -2,11 +2,10 @@ import structure Debug      from "Debug"
 import structure Space      from "x-alice:/lib/gecode/Space"
 import structure FD         from "x-alice:/lib/gecode/FD"
 
-(* import structure Explorer   from "x-alice:/tools/Explorer" *)
+import structure Explorer   from "x-alice:/lib/tools/Explorer"
 
-import structure TreeNode   from "TreeNode"
-import structure MkTreeNode from "MkTreeNode"
 import structure MkSearch   from "MkSearch"
+import structure MkSimpleSearch from "MkSearch"
 
 open Debug
 
@@ -35,7 +34,7 @@ fun script space =
     val vars  = FD.rangeVec   (space, size, (0, max))
     val reif  = FD.boolvarVec (space, size)
     val nreif = FD.boolvarVec (space, size) (* not reif *)
-    val reif2 = Vector.map FD.Reflect.boolvar2intvar reif
+    val reif2 = Vector.map FD.boolvar2intvar reif
     val sum   = FD.intvar (space, #[(0, size*max)])
     val kvars = Vector.tabulate
       (size+1, (fn i => if i<size then (1,vars%i) else (~1, sum)))
@@ -66,7 +65,7 @@ fun script space =
      FD.linear (space, kvars, FD.EQ, 0, cn) ;
      
      FD.branch (space, reif2, FD.B_NONE, FD.B_MIN);
-     (readSolution, bound, vars))
+     (readSolution, bound))
   end
 
 fun queens space n cl =
@@ -82,7 +81,7 @@ fun queens space n cl =
 	distinctOffset(space, v2, cl);
 	distinct(space, v, cl);
 	branch(space, v, B_SIZE_MIN, B_MIN);
-	(readSolution, fn (_,_) => (), v)
+	(readSolution, fn (_,_) => ())
     end
 
 fun queensScript space = queens space 6 cn
@@ -96,26 +95,31 @@ val rdist = 3
 
 (* The initial root space. *)
 val root = Space.new () 
-val (readSolution, bound, _) = script root
+val (readSolution, bound) = script root
 
 val mask = dbAll
 
+structure Policy =
+struct
+  val root = root
+  fun copyq d = d mod rdist = 0
+  val bab = true
+  type sol = int Vector.t
+  val bound = bound
+  val readSolution = readSolution
+  fun compare _ = assert false
+  val mask = mask
+end
+
 (* Branch and Bound *)
-structure TreeNode1 = MkTreeNode (val root = root
-                                 fun copyq d = d mod rdist = 0
-                                 type sol = int Vector.t
-                                 val bound = SOME bound
-                                 val readSolution = readSolution
-                                 val compare = lazy (assert false)
-                                 val mask = mask)
+structure Search1 = MkSearch Policy
 
 (* Simple tree *)
-structure TreeNode2 = TreeNode (val root = root val rdist = rdist)
+structure Search2 = MkSimpleSearch (val root = root val rdist = rdist)
 
-(* CHOOSE HERE *)
-structure TreeNode = TreeNode1
+structure Search = Search1
 
-structure Search = MkSearch TreeNode
+val explorer = Explorer.init script
 
 val sols = Search.getAllSolutions readSolution
 

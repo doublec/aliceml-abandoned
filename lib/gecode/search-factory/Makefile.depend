@@ -23,22 +23,18 @@ MkTreeNode.alc: \
 	TREENODE-sig.alc \
 	MkSpaceNode.alc
 
-TreeNode.alc: \
-	TREENODE-sig.alc \
-	Policy.alc \
-	MkTreeNode.alc
-
 SEARCH-sig.alc: \
 
 MkSearch.alc: \
 	Path.alc \
 	SEARCH-sig.alc \
-	TREENODE-sig.alc \
-	Debug.alc
+	Policy.alc \
+	Debug.alc \
+	MkTreeNode.alc \
+	Policy.alc
 
 Test.alc: \
 	Debug.alc \
-	TreeNode.alc \
-	MkTreeNode.alc \
+	MkSearch.alc \
 	MkSearch.alc
 

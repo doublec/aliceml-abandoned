@@ -6,7 +6,7 @@ ALICEC_OPTS =
 SOURCES = Debug.aml \
           Path.aml Policy.aml \
           SPACENODE-sig.aml MkSpaceNode.aml \
-          TREENODE-sig.aml MkTreeNode.aml TreeNode.aml \
+          TREENODE-sig.aml MkTreeNode.aml \
           SEARCH-sig.aml MkSearch.aml \
           Test.aml
 

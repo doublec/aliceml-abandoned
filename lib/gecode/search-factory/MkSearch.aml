@@ -1,15 +1,19 @@
-import structure Space    from "x-alice:/lib/gecode/Space"
-import structure FD       from "x-alice:/lib/gecode/FD"
-import structure Path     from "Path"
-import signature SEARCH   from "SEARCH-sig"
-import signature TREENODE from "TREENODE-sig"
-import structure Debug    from "Debug"
+import structure Space       from "x-alice:/lib/gecode/Space"
+import structure FD          from "x-alice:/lib/gecode/FD"
+import structure Path        from "Path"
+import signature SEARCH      from "SEARCH-sig"
+import signature POLICY      from "Policy"
+import structure Debug       from "Debug"
+import functor   MkTreeNode  from "MkTreeNode"
+import functor   BasicPolicy from "Policy"
 
-functor MkSearch (TreeNode : TREENODE) 
-  :> SEARCH where type path = TreeNode.solution Path.t =
+functor MkSearch (Policy : POLICY) 
+  :> SEARCH where type path = Policy.sol Path.t =
 struct
 
   open Debug
+
+  structure TreeNode = MkTreeNode Policy
 
   fun print msg = dbPrint (dbSearch, TreeNode.mask, msg)
   fun printPath n = Path.toString (TreeNode.getPath n) ^ "\n"
@@ -80,7 +84,7 @@ struct
         NONE   => NONE
       | SOME n =>
           case TreeNode.status n of
-            Space.FAILED => (print ("A failure at path " ^ (printPath n)); NONE)
+            Space.FAILED => (print ("A failure at path " ^ (printPath n));NONE)
           | Space.SOLVED => (print ("A solution at path " ^ (printPath n));
                              SOME (TreeNode.getSpace n))
           | Space.BRANCH desc =>
@@ -121,5 +125,15 @@ struct
     | SOME sp => getAll (read, read sp :: accu)
 
   fun getAllSolutions read = getAll (wrap read, [])
+
+  fun betterThan [(~1, SOME sol)] = TreeNode.addSolution sol
+    | betterThan _ = assert false (* No! Solutions must be encoded as above!*)
     
 end
+
+local
+signature ARG = (val root : Space.space val rdist : int)
+in
+functor MkSimpleSearch (Arg:ARG) = MkSearch (BasicPolicy Arg)
+end
+
