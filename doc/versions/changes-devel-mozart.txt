@@ -1,5 +1,7 @@
 Library:
 
+* Added data structure library under x-alice:/lib/data with functional and
+  imperative sets, maps, stacks, and stamps.
 * Added Array2.
 * Added OS.Path.
 * Defined and fixed behaviour of proxies in the presence of
