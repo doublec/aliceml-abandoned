@@ -137,6 +137,7 @@ struct
        let
 	 (* We do not use x-offset because it is independent from 'moveItem'...
 	  * hence some very curious behaviour. *)
+	 val str = Gtk.latin1ToUtf8 str
 	 val item = Cn.itemCreate (group,
 				   textItemType,
 				   [("text", Gtk.STRING str),
