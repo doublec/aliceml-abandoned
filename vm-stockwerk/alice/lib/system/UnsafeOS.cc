@@ -25,7 +25,9 @@
 #include "generic/RootSet.hh"
 #include "generic/Closure.hh"
 #include "generic/Properties.hh"
+#if LIGHTNING && defined(INSTRUCTION_COUNTS)
 #include "alice/NativeCodeJitter.hh"
+#endif
 #include "alice/primitives/Authoring.hh"
 
 #if PROFILE
@@ -180,7 +182,7 @@ DEFINE1(UnsafeOS_Process_exit) {
 #if PROFILE
   Profiler::DumpInfo();
 #endif
-#ifdef INSTRUCTION_COUNTS
+#if LIGHTNING && defined(INSTRUCTION_COUNTS)
   NativeCodeJitter::DumpInstructionCounts();
 #endif
   exit(code);
