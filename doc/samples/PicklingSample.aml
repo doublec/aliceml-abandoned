@@ -64,8 +64,8 @@ struct
     structure IntLength = Pickle.Load(val file = file
 				      signature S = (val f : int list -> int))
 
-    val _  = print("length [1,2,1] = " ^ Int.toString(Length.x [1,2,1]) ^ "\n")
-    val _  = print("length [3,0] = " ^ Int.toString(LengthInt.x [3,0]) ^ "\n")
+    val _  = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
+    val _  = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
 
 
     (*
@@ -92,7 +92,8 @@ struct
 
     val file = "Num." ^ Pickle.extension
     structure  _   = Pickle.Save(val file = file
-				 structure X = Num signature S = NUM)
+				 structure X = Num
+				 signature S = NUM where type t = Num.t)
     structure Num' = Pickle.Load(val file = file
 				 signature S = NUM where type t = Num.t)
 
