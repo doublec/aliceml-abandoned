@@ -582,6 +582,12 @@ build3/lib/fundamental/%.ozf: build3/lib/fundamental/%.aml
 build3/lib/system/%.ozf: build3/lib/system/%.aml
 	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
 
+build3/lib/utility/URL-sig.ozf: build3/lib/utility/URL-sig.aml
+	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+
+build3/lib/utility/Url.ozf: build3/lib/utility/Url.aml
+	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
