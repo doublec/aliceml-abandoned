@@ -21,7 +21,7 @@
 %%         |  char(<char>)
 %%         |  string(<byteString>)
 %%         |  real(<float>)
-%%         |  fn(<immediate> <fast>)
+%%         |  fn(<immediate> <fast>)   %--** generalize this to inlining
 %%         |  selector(<feature>)
 %%         |  builtin(<atom>)
 %%         |  top
@@ -285,7 +285,10 @@ define
       [] selExp(_ lab(_ Feature)) then
 	 ValRep = unit#selector(Feature)
       [] funExp(_ id(Info Stamp _) Exp) then OldIsToplevel Reg ValRep1 in
-	 %--** generate `fast' function
+	 case Exp of caseExp(_ varExp(_ shortId(_ id(_ !Stamp _))) [_] _) then
+	    skip   %--** generate `fast' function
+	 else skip
+	 end
 	 {Save State}
 	 OldIsToplevel = {IsToplevel State}
 	 {SetToplevel State false}
@@ -311,6 +314,7 @@ define
 		     end
 		  [] builtin(_) then
 		     unit#top   %--** partially evaluate application
+		  %[] fn(...) then   %--** inlining
 		  else unit#top
 		  end
       [] adjExp(_ Exp1 Exp2) then ValRep1 ValRep2 V1 V2 V in
