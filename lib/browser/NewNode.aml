@@ -148,8 +148,11 @@ struct
 	   Type.Con path 
 	   => newPath (va,t,p,i,d,path)
          | Type.Arrow _ 
-	   =>  createSimple (createValue(va,t,NO_ACTIONS)
-			     ,p,i,d,"fn",DEFAULT,setGroup)
+	   => if d > !max_depth
+		  then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+				    p,i,d,setGroup)
+	      else createSimple (createValue(va,t,NO_ACTIONS),p,i,d,"fn",
+				 DEFAULT,setGroup)
          | Type.All(var,typ) 
 	   => createGraph (va,typ,p,i,d)
 	 | Type.Exist(var,typ) 

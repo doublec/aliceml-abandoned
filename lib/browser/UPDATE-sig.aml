@@ -27,13 +27,6 @@ signature UPDATE =
 
         exception UpdateError
 
-	val minCounter: int ref
-
-	val setDazzled: node -> unit
-	val updateChild: node * int * node -> unit
-
-        val iterMove: MainDictionary.dictionary * int * int * int -> unit
-        
 	val update: 
 	    node * Reflect.value * 
 	    (Reflect.value * Type.t  * node * int * int -> node) -> unit

@@ -33,6 +33,9 @@ sig
 		    typ : Inf.t,
 		    actions : actions} 
 
+    val createValue  :  Reflect.value * Type.t * actions -> desc
+    val createIValue :  Reflect.value * Inf.t * actions -> desc
+	
    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 
    datatype status = CLEAN | DIRTY | DAZZLED | DEAD (* bei Futures *)

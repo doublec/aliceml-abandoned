@@ -27,17 +27,22 @@ sig
 
     val registerType : Path.path * doc_creator -> unit
 
-    val castVector   :  'b -> 'c vector
-    val castArray    :  'b -> 'c array
-
     val createInt    :  doc_creator 
+
     val createString :  doc_creator 
+
     val createChar   :  doc_creator 
+
     val createWord   :  doc_creator 
+
     val createReal   :  doc_creator 
+
     val createExn    :  doc_creator 
+
     val createRef    :  doc_creator  
+
     val createVector :  doc_creator 
+
     val createArray  :  doc_creator 
 
 end;    

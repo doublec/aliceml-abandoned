@@ -18,6 +18,7 @@ import structure Types from "Types"
 import structure MkColorTable from "MkColorTable"
 import structure CreateDoc from "CreateDoc"
 import structure NewNode from "NewNode"
+import structure NewNodeInf from "NewNodeInf"
 import structure Layout from "Layout"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
@@ -36,7 +37,7 @@ struct
     fun inspect (v,t) = 
 	let 
 	    val n = NewNode.newNode(v,t)
-	    val w = WindowHelper.fontWidth(!Settings.font)
+	    val w = WindowHelper.fontWidth(!Settings.font) (* !! *)
 	    val h = WindowHelper.fontHeight(!Settings.font)
 	in
 	    ( Layout.layout(n)
@@ -45,14 +46,23 @@ struct
 	     (Layout.get_ydim(n) + 1)
 	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
 	     ; (!WindowManager.resize())
-	     ; (!WindowManager.show) () ) (*
-             ; let val delay =
-	           fn secs => Future.await(Future.alarm(Time.fromReal(secs)))
-	       in (delay(5.0) ; set_depth 0
-		   ; Update.reinspect(n,NewNode.createGraph) ) 
-	       end ) *)
+	     ; (!WindowManager.show) () )
 	end
     
+    (* inspectInf *)
+    and inspectInf (v,t) = 
+	let val n = NewNodeInf.newNodeInf(v,t)
+	    val w = WindowHelper.fontWidth(!Settings.font) (* !! *)
+	    val h = WindowHelper.fontHeight(!Settings.font)
+	in  ( Layout.layout(n)
+	     ;  DrawNodes.draw(n,0,!WindowManager.act_line,DrawNodes.DRAW)
+	     ; WindowManager.incr_act_line
+	     (Layout.get_ydim(n) + 1)
+	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
+	     ; (!WindowManager.resize())
+	     ; (!WindowManager.show) () )
+	end 
+
     and set_width w = Settings.max_width := w
 
     and set_depth d = Settings.max_depth := d

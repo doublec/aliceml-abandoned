@@ -13,7 +13,6 @@
  *
  *)
 
-import structure Inf      from "x-alice:/lib/rtt/Inf"
 import structure Type     from "x-alice:/lib/rtt/Type"
 import structure Reflect  from "x-alice:/lib/system/Reflect" 
 import structure Gtk      from "x-alice:/lib/gtk/Gtk"
@@ -27,9 +26,6 @@ sig
    
     exception copyArray_error
 
-    val createValue  :  Reflect.value * Type.t * actions -> desc
-    val createIValue :  Reflect.value * Inf.t * actions -> desc
-
     (* Hilfsfunktionen zur Typbestimmung *)
     val isApply: Type.desc -> bool	
     val unApply: Type.desc -> Type.desc * Type.t list 
@@ -39,11 +35,9 @@ sig
     val labelvector : (Label.lab * Type.typ) list -> Label.lab Vector.vector
 
     (* map fuer Arrays *)
-    val array_map' : ('a -> 'b) * 'a Array.array * int -> unit
     val array_map : ('a -> 'b) * 'a Array.array -> unit
 
     (* Kopieren von Arrays *)
-    val copyArray': 'a Array.array * 'a Array.array * int -> unit
     val copyArray: 'a Array.array * 'a Array.array  -> unit	    
 
     (* Nodes *)
@@ -58,13 +52,10 @@ sig
     val getGroup : node -> Gtk.object
     val getValueAnc : node -> node
 
-    val checkContKids : node array * int -> bool
-    val checkConcKids : node array * int -> bool
     val setsVertical : node -> bool
 
     (* Behandlung von Listen *)
     val inspectList : int * 'a list  -> 'a list_desc 
-    val inspectList' : int * 'a list * 'a list -> 'a list_desc
     val castList : 'a -> 'b list
 
     (* Relation-Nodes *)
@@ -73,7 +64,6 @@ sig
 
     (* Strings *)
     val iterTake : string -> string
-    val iterTake' : string * int * string -> string
 
     val castPromise : 'a -> 'b Promise.promise 
 

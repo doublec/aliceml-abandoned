@@ -14,11 +14,14 @@
  *)
 
 import structure Type from "x-alice:/lib/rtt/Type"
+import structure Inf from "x-alice:/lib/rtt/Inf"
 
 signature UNSAFE_INSPECTOR = 
 sig
 
     val inspect: 'a * Type.t -> unit
+
+    val inspectInf: 'a * Inf.t -> unit
 	
     val set_width: int -> unit
 

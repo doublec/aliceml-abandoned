@@ -31,14 +31,6 @@ struct
 
     exception copyArray_error
 
-    fun createValue(va,t,act) = VALUE{value = va,
-				      typ = t,
-				      actions = act}
-
-    fun createIValue(va,t,act) = I_VALUE{value = va,
-					 typ = t,
-					 actions = act}
-
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 
 

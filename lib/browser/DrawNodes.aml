@@ -281,22 +281,24 @@ struct
 						      then new_y' -1
 						  else new_y'
 				 in
-				      if search then (* besserer Codeteil *)
+				     if search 
+					 then 
 					 case new_found of 
-					 SOME(node_found) => 
+					 SOME(node_found) 
+					 => 
 					 (case #desc(r) of
-					  INTERPUNCT 
-					  => 
-					  if n = node_found
-					      then  (x,y,
-						     SOME(getParent(n)))
-					  else (new_x,new_y,new_found)
-					| _ => if n = node_found 
-						   then (x,y,SOME n)
-					       else (new_x,new_y,new_found))
-				       | NONE => (new_x,new_y,new_found)
-				      else
-					  (new_x+x,new_y+y,NONE)
+					      INTERPUNCT 
+					      => 
+					      if n = node_found
+						  then  (x,y,
+							 SOME(getParent(n)))
+					      else (new_x,new_y,new_found)
+					    | _ => if n = node_found 
+						       then (x,y,SOME n)
+						   else (new_x,new_y,new_found)
+)				       | NONE => (new_x,new_y,new_found)
+				     else
+					 (new_x+x,new_y+y,NONE)
 				 end
 			 end)
 	       else (x + get_xdim(n), y + get_ydim(n),NONE) 
@@ -310,7 +312,8 @@ struct
 	    in case intent of
 	       DRAW => if !(#status(r)) = DIRTY
 			   then (case !(#counter(r)) of
-				 1 => draw (!(#content(r)),x,y,intent)
+				 1 
+				 => draw (!(#content(r)),x,y,intent)
 			       | _ => let val (new_x,new_y) = atomDraw (n,x,y)
 				      in draw (!(#content(r)),new_x,new_y,
 					       intent)
@@ -321,21 +324,20 @@ struct
 				 y+get_ydim(!(#content(r))),
 				 NONE)
 		       else (x+get_xdim(n),y+get_ydim(n),NONE)
-			 | SEARCH(sx,sy) 
-			   => (case !(#counter(r)) of
-			       1 =>  draw (!(#content(r)),x,y,intent)
-			     | _ => let val label_in_bounding_box = 
-				        sx >= x 
-				       andalso sx < x + String.length(#rep(r)) 
-				       andalso sy = y  
-				    in
-					if label_in_bounding_box 
-					    then (x,y,SOME(n))
-					else draw (!(#content(r)), 
-						   x + String.length(#rep(r))
-						   ,y
-						   ,intent)
-				    end)
+	    | SEARCH(sx,sy) 
+	      => (case !(#counter(r)) of
+	          1 =>  draw (!(#content(r)),x,y,intent)
+		| _ => let val label_in_bounding_box = sx >= x 
+		      andalso sx < x + String.length(#rep(r)) 
+		      andalso sy = y  
+		       in
+			   if label_in_bounding_box 
+			       then (x,y,SOME(n))
+			   else draw (!(#content(r)), 
+				      x + String.length(#rep(r))
+				      ,y
+				      ,intent)
+		       end)
 	    end)
       | _ => raise DrawError
 	
@@ -352,8 +354,7 @@ struct
 	  | SEARCH _ => atomSearch(n,x,y,intent) 
 	  | _ => raise DrawError
 		
-    
-
+    (* move *)
     and move(n,x,y) = let
 			  val group = getGroup(n)
 			  val (old_x,old_y) = Services.getPosition(group,
@@ -406,11 +407,11 @@ struct
 					 y+get_ydim(!(#content(r))),
 					 NONE)
 				 | _ => (x+get_xdim(n),y+get_ydim(n),NONE) ))
-	  | RelRefNode(r) => if  !(#status(r)) = DIRTY  
-					  then drawRelRefNode (n,x,y,intent)
-					  else  move(n,x,y) 
-	  | Empty => (x,y,NONE)
-      )
-
+      | RelRefNode(r) => if  !(#status(r)) = DIRTY  
+			     then drawRelRefNode (n,x,y,intent)
+			 else  move(n,x,y) 
+      | Empty => (x,y,NONE)
+			     )
+      
 end
        

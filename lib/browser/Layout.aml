@@ -30,17 +30,15 @@ struct
 
     exception LayoutError
 
-    fun sum_up (li,f) = if List.length(li) = 0
-			      then 0
-			  else f(hd(li)) + sum_up(tl(li),f) 
+    fun sum_up (nil,f) = 0
+      | sum_up ([x],f) = f(x)
+      | sum_up (x::xr,f) = f(x) + sum_up(xr,f) 
 			      
-    and max (li,f) = case List.length(li) of
-	             0 => 0
-		   | 1 => f(hd(li))     
-		   | _ => let val m = Int.max(f(hd(li)),
-					      f(hd(tl(li))) )
-			  in Int.max(m, max(tl(tl(li)),f) )
-			  end
+    and max (nil,f) = 0
+      | max ([x],f) = f(x)
+      | max (x::xr,f) = let val m = Int.max(f(x),f(hd(xr)) )
+			in Int.max(m, max(tl(xr),f) )
+			end
 
     (* get_xdim *)
     and get_xdim n = case n of Simple(r) => !(#width(r))

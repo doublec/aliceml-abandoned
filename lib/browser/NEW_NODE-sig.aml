@@ -31,8 +31,6 @@ in
 signature NEW_NODE =
 sig
 
-    val createGroupItem: Gtk.object * real * real ->  Gtk.object
-
     val setGroup : node -> Gtk.object
 
     val newNode: 'a * Type.t -> node
@@ -40,35 +38,7 @@ sig
     val createGraph: Reflect.value * Type.t  * node * int * int -> node
     
     val createUsualGraph: Reflect.value * Type.t  * node * int * int -> node
-
-    val listdescToNode: 
-        Reflect.value * Type.t * node * int * int * 'b list_desc  -> node
-
-    val listElemArray:
-	'a list * int * Type.t * node * int * bool -> node array
-       
-    val treatProd:  Reflect.value * Type.t  * node * int * int * Type.row 
-	-> node
-
-    val treatSum:  
-	Reflect.value * Type.t  * node * int * int * Type.row -> node
-    
-    val createContfromRow :  
-	Reflect.value * Type.t  * node * int * int * Type.row 
-	* (Reflect.value * Label.lab Vector.vector * int -> Reflect.value ) 
-        -> node
-
-    val createProdConcat: 
-	string *  Reflect.value * Type.t  * node * int * int * int -> node
-
-    val createProdConcatTuple: 
-	string *  Reflect.value * Type.t  * node * int * int * int -> node
-	
-    val newPath: 
-	Reflect.value * Type.t * node * int * int *  Path.path -> node
-    
-    val docToNode: doc * node * int * int -> node
-
+	  
     val createSimple: 
         desc * node * int * int * string * color_class * (node -> Gtk.object) 
 	-> node
@@ -85,24 +55,14 @@ sig
 	-> node
 
     val createRelNode : 
-	desc * node * node * int * int * string * node list * (node -> Gtk.object) 
-	-> node
+	desc * node * node * int * int * string * node list * 
+	(node -> Gtk.object) -> node
    
     val createRelRefNode : 
 	desc * node * int * int * string * node * (node -> Gtk.object) -> node
 
     val createTransient :
 	Reflect.value * Type.t  * node * int * int * Type.t -> node
-
-    val queryDepth :  
-	Reflect.value * Type.t  * node * int * int * Type.row * 
-	(Reflect.value * Type.t  * node * int * int * Type.row -> node) 
-	-> node
-
-    val queryDepthL :  
-	Reflect.value * Type.t  * node * int * int * 'a list_desc * 
-	(Reflect.value * Type.t  * node * int * int * 'a list_desc -> node) 
-	-> node
 
 end
 
