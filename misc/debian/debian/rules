@@ -22,7 +22,7 @@ endif
 # generic Debian directories
 
 package_name = alice-runtime
-package_version = 1.0.1
+package_version = 1.1
 
 DEB_BASE_DIR = $(PWD)
 DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian
@@ -57,13 +57,16 @@ install-stamp: build-stamp
 	dh_installdirs
 	mkdir $(DEB_INSTALL_DIR) || true
 	$(MAKE) -C $(DEB_BUILD_DIR) $(install_options) \
-		install DESTDIR=$(DEB_INSTALL_DIR)/usr
+		install DESTDIR=$(DEB_INSTALL_DIR)
 	echo > $@
 	mkdir -p $(DEB_INSTALL_DIR)/usr/share/doc/alice || true
-	mkdir -p $(DEB_INSTALL_DIR)/usr/share/applications || true
-	mv $(DEB_INSTALL_DIR)/usr/debian/alice.desktop \
-	   $(DEB_INSTALL_DIR)/usr/share/applications
-	rmdir $(DEB_INSTALL_DIR)/usr/debian
+#	mkdir -p $(DEB_INSTALL_DIR)/usr/share/applications || true
+#	mkdir -p $(DEB_INSTALL_DIR)/usr/share/pixmaps || true
+#	mv $(DEB_INSTALL_DIR)/usr/debian/alice.desktop \
+#	   $(DEB_INSTALL_DIR)/usr/share/applications
+#	mv $(DEB_INSTALL_DIR)/usr/debian/alice.png \
+#	   $(DEB_INSTALL_DIR)/usr/share/pixmaps
+#	rmdir $(DEB_INSTALL_DIR)/usr/debian
 	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
 	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/examples
 	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \

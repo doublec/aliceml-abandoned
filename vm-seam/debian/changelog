@@ -1,6 +1,6 @@
-alice (1.0.1-1) unstable; urgency=low
+alice (1.1-1) unstable; urgency=low
 
-  * Bugfix release. 
+  * New upstream release.
 
  -- Guido Tack <tack@frisch.ps.uni-sb.de>  Wed, 16 Feb 2005 15:27:35 +0100
 

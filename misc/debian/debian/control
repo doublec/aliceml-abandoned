@@ -7,7 +7,7 @@ Standards-Version: 3.6.0
 
 Package: alice-runtime
 Architecture: all
-Depends: alice
+Depends: alice, alice-gtk, alice-gecode, alice-sqlite, alice-xml
 Recommends:
 Suggests:
 Description: The Alice system (Runtime)

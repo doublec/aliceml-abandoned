@@ -1,19 +1,30 @@
 ## Process this file with automake to produce Makefile.in
 
 SUBDIRS = debian
-EXTRA_SUBDIRS = share/alice/compiler share/alice/doc \
-	share/alice/lib share/alice/tools
+EXTRA_DATADIR_SUBDIRS = alice/compiler alice/doc \
+	alice/lib alice/tools
+EXTRA_DATADIR_DIST = \
+	alice/alice.import alice/alicec.import \
+	applications/alice.desktop pixmaps/alice.png
+EXTRA_BINDIR_DIST = \
+	alice alicec alicedep aliceglade \
+	alicelink alicelex aliceremote aliceyacc
 
-EXTRA_DIST = share/alice/alice.import share/alice/alicec.import \
-	bin/alice bin/alicec bin/alicedep bin/aliceglade \
-	bin/alicelink bin/alicelex bin/aliceremote bin/aliceyacc \
-	debian/alice.desktop
 
 dist-hook:
-	$(AMTAR) --exclude '*.dll' -c $(EXTRA_DIST) $(EXTRA_SUBDIRS) | \
-	(cd $(distdir) && $(AMTAR) x)
+	(cd bin && $(AMTAR) --exclude '*.dll' -c \
+	 $(EXTRA_BINDIR_DIST)) | \
+	(cd $(distdir) && mkdir bin && cd bin && $(AMTAR) x)
+	(cd share && $(AMTAR) --exclude '*.dll' -c \
+	 $(EXTRA_DATADIR_DIST) $(EXTRA_DATADIR_SUBDIRS)) | \
+	(cd $(distdir) && mkdir share && cd share && $(AMTAR) x)
 
 install-data-hook:
-	$(mkinstalldirs) $(DESTDIR)
-	(cd $(srcdir) && $(AMTAR) -c $(EXTRA_DIST) $(EXTRA_SUBDIRS)) | \
-	(cd $(DESTDIR) && $(AMTAR) x)
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(mkinstalldirs) $(DESTDIR)$(datadir)
+	(cd $(srcdir)/bin && $(AMTAR) -c $(EXTRA_BINDIR_DIST)) | \
+	(cd $(DESTDIR)/$(bindir) && $(AMTAR) x)
+	(cd $(srcdir)/share && $(AMTAR) -c $(EXTRA_DATADIR_DIST)) | \
+	(cd $(DESTDIR)/$(datadir) && $(AMTAR) x)
+	(cd $(srcdir)/share && $(AMTAR) -c $(EXTRA_DATADIR_SUBDIRS)) | \
+	(cd $(DESTDIR)/$(datadir) && $(AMTAR) x)

@@ -1,5 +1,5 @@
 Name: alice-xml
-Version: 1.0.1
+Version: 1.1
 Release: 1
 Copyright: X11
 Summary: The Alice Programming System, libxml Binding
@@ -26,7 +26,6 @@ Requires: libm.so.6(GLIBC_2.0)
 Requires: libstdc++.so.5
 Requires: libstdc++.so.5(GLIBCPP_3.2)
 Requires: libz.so.1
-Requires: libxml2.so
 
 BuildArchitectures: i386
 BuildRoot: %{_tmppath}/%{name}-%{version}

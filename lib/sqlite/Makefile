@@ -15,7 +15,6 @@
 
 # Change this to reflect your installation directory
 INSTALLDIR = `alice-config --alicelibdir`/sqlite
-SQLITEDIR = /usr
 
 ## No changes needed below this
 
@@ -26,10 +25,10 @@ SOURCES = \
 
 TARGETS = SQLite.alc SQLITE-sig.alc
 
-EXTRA_LIBS = -L$(SQLITEDIR)/lib -lsqlite3
-EXTRA_INCLUDES = -I$(SQLITEDIR)/include
+EXTRA_LIBS = `pkg-config --libs sqlite3`
+EXTRA_INCLUDES = `pkg-config --cflags sqlite3`
 
-VERSION = 1.0.1
+VERSION = 1.1
 DISTFILES = $(SOURCES) Makefile debian
 distdir = alice-sqlite-$(VERSION)
 

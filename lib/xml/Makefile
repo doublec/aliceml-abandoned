@@ -2,8 +2,6 @@
 
 INSTALLDIR = `alice-config --alicelibdir`/xml
 
-LIBXMLDIR = /usr
-
 NATIVES = NativeXML
 
 SOURCES = \
@@ -11,12 +9,12 @@ SOURCES = \
 
 TARGETS = XML.alc XML-sig.alc
 
-VERSION = 1.0.1
+VERSION = 1.1
 DISTFILES = $(SOURCES) Makefile debian
 distdir = alice-xml-$(VERSION)
 
-EXTRA_LIBS = -L$(LIBXMLDIR)/lib -lxml2
-EXTRA_INCLUDES = -I$(LIBXMLDIR)/include/libxml2
+EXTRA_LIBS = `pkg-config --libs libxml-2.0`
+EXTRA_INCLUDES = `pkg-config --cflags libxml-2.0`
 
 all: compiledll compilealice
 compiledll: $(NATIVES:%=%.dll)
