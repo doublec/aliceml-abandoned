@@ -1,7 +1,12 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.4  1999-11-15 12:21:54  rossberg
+ * Revision 1.5  2000-03-30 13:37:26  rossberg
+ *
+ * Switched arguments in Join functors because sharing broke with our move to
+ * structural datatypes. :-(
+ *
+ * Revision 1.4  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
  *
  * Revision 1.3  1999/11/02 16:09:35  rossberg
@@ -30,8 +35,8 @@
    of tokens.
 *)
 
-functor Join(structure Lex : LEXER
-	     structure ParserData: PARSER_DATA
+functor Join(structure ParserData: PARSER_DATA
+	     structure Lex : LEXER
 	     structure LrParser : LR_PARSER
 	     sharing ParserData.LrTable = LrParser.LrTable
 	     sharing ParserData.Token = LrParser.Token
@@ -75,8 +80,8 @@ end
    yielding a value of type unit -> (svalue,pos) token
  *)
 
-functor JoinWithArg(structure Lex : ARG_LEXER
-	     structure ParserData: PARSER_DATA
+functor JoinWithArg(structure ParserData: PARSER_DATA
+	     structure Lex : ARG_LEXER
 	     structure LrParser : LR_PARSER
 	     sharing ParserData.LrTable = LrParser.LrTable
 	     sharing ParserData.Token = LrParser.Token
