@@ -215,7 +215,9 @@ final public class General {
     }
     /** <code>val equals : ('a * 'b) -> bool</code>*/
     _FIELD(General,equals);
-
+    static {
+	Builtin.builtins.put("=",equals);
+    }
     _BUILTIN(Pickle) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
