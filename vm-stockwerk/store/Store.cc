@@ -601,7 +601,9 @@ inline void Store::NextGCLimits() {
   memMax[hdrGen] = wanted;
 }
 
+#if defined(STORE_DEBUG)
 static u_int gcCounter = 0;
+#endif
 
 inline void Store::DoGC(word &root, const u_int gen) {
   dstGen = (gen + 1);
