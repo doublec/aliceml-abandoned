@@ -217,9 +217,12 @@ structure ToJasmin =
 	    fun instructionsToJasmin (i::is, need, max) =
 		let
 		    val nd = stackNeedInstruction i
+		    fun noStack (Comment _) = true
+		      | noStack _ = false
 		in
-		    ("\t\t.line "^line()^"\n")^
-		    ("; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n"^
+		    (if noStack i then "" else
+			 ("\t\t.line "^line()^
+			  "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n")^
 		    (instructionToJasmin i)^"\n"^
 		    (if nd<0 then
 			instructionsToJasmin (is, nd+need, max)

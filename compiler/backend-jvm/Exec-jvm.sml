@@ -16,13 +16,13 @@ open String;
 local
     val rec ds = fn
 	([prog]) =>
-	    (CodeGen.genProgramCode ("Emil", Main.simplifyString prog); 0)
+	    (CodeGen.genProgramCode ("Emil", Main.imperatifyString prog); 0)
     val rec dc = fn
 	(fi::rest) =>
-	    (CodeGen.genProgramCode (if (extract(fi, size fi-4, NONE)=".dml")
+	    (CodeGen.genProgramCode (if (extract(fi, size fi-4, NONE)=".rec")
 					 then substring(fi, 0, size fi-4)
 				     else fi,
-					 Main.simplifyFile fi); dc (rest))
+					 Main.imperatifyFile fi); dc (rest))
       | (nil) => 0
 
     fun dmlc (_, []) =
