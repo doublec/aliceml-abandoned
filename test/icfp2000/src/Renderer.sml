@@ -413,8 +413,10 @@ structure Renderer :> RENDERER =
 				 val h0 =
 				     if Real.== (hlen, 0.0) then n
 				     else mulScalVec (1.0 / hlen, h)
+				 val x = mulVec (n, h0)
 			     in
-				 Color.scale (Math.pow (mulVec (n, h0), exp), i)
+				 if x <= 0.0 then Color.black
+				 else Color.scale (Math.pow (x, exp), i)
 			     end) (ks, reflected) intensityDirList
 		    in
 			Color.prod (Color.add (diffuseLighting,
