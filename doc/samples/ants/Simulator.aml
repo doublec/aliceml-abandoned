@@ -104,7 +104,7 @@ structure Simulator :
       let
           val _ =
             if visualize then
-                let val viewer = Viewer.viewer () 
+                let val viewer = Viewer.viewer (redAnt, blackAnt)
                 in
                     World.setUpdateCellV (Viewer.updateCell viewer)
                 end

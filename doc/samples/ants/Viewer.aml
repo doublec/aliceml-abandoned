@@ -10,7 +10,7 @@ structure Viewer :>
 sig
     type viewer
 
-    val viewer : unit -> viewer 
+    val viewer : string * string -> viewer 
 
     val updateCell : viewer -> World.world * int * int -> unit 
 end
@@ -59,10 +59,11 @@ struct
     
         
 
-    fun viewer () =
+    fun viewer (redName, blackName) =
         let
             val window  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-            val _       = Gtk.windowSetTitle (window, "ANTS")
+            val _       = Gtk.windowSetTitle (window, "ANTS red: " ^ redName ^ 
+                                                        " black: " ^ blackName)
             val box     = Gtk.vboxNew (false, 0)
             val _       = Gtk.containerAdd (window, box)
             val area    = Gtk.drawingAreaNew ()
