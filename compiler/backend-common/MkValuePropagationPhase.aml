@@ -549,9 +549,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    (nil, vpBodyScope (body, env, isToplevel, shared))
 	and vpExp (exp as LitExp (_, _), _, _, _) = exp
 	  | vpExp (exp as PrimExp (_, _), _, _, _) = exp
+(*--** disabled for now (not all backends support this)
 	  | vpExp (exp as NewExp (_, _), _, false, _) = exp
 	  | vpExp (NewExp (info, conArity), _, true, _) =
 	    StaticConExp (info, Stamp.new (), conArity)
+*)
+	  | vpExp (exp as NewExp (_, _), _, _, _) = exp
 	  | vpExp (VarExp (info, id), env, _, _) = getTerm (info, id, env)
 	  | vpExp (exp as TagExp (_, _, _, _), _, _, _) = exp
 	  | vpExp (ConExp (info, id, conArity), env, _, _) =

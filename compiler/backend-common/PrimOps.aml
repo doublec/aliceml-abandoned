@@ -190,6 +190,9 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word.~>>", SOME (TupArity 2));
 		ins ("Word.toString", SOME Unary);
 		ins ("Word.wordSize", NONE);
+(*--**DEBUG*)
+		ins ("OS.Process.exit", SOME Unary);
+		ins ("TextIO.print", SOME Unary);
 		map
 	    end
 
