@@ -50,8 +50,7 @@ public:
 
 class Array: private Block {
 private:
-  static const u_int LENGTH_POS = 0;
-  static const u_int BASE_SIZE = 1;
+  enum { LENGTH_POS, BASE_SIZE };
 public:
   static const u_int maxLen = MAX_BIGBLOCKSIZE - BASE_SIZE;
 
@@ -89,8 +88,7 @@ public:
 
 class Cell: private Block {
 protected:
-  static const u_int VAL_POS = 0;
-  static const u_int SIZE = 1;
+  enum { VAL_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -131,9 +129,7 @@ public:
 
 class Constructor: private ConcreteRepresentation {
 private:
-  static const u_int NAME_POS = 0;
-  static const u_int TRANSFORM_POS = 1;
-  static const u_int SIZE = 2;
+  enum { NAME_POS, TRANSFORM_POS, SIZE };
   static ConcreteRepresentationHandler *handler;
 public:
   using Block::ToWord;
@@ -166,8 +162,7 @@ public:
 
 class ConVal: private Block {
 protected:
-  static const u_int CON_POS = 0;
-  static const u_int BASE_SIZE = 1;
+  enum { CON_POS, BASE_SIZE };
 public:
   using Block::ToWord;
 
@@ -283,8 +278,7 @@ public:
 
 class Vector: private Block {
 protected:
-  static const u_int LENGTH_POS = 0;
-  static const u_int BASE_SIZE = 1;
+  enum { LENGTH_POS, BASE_SIZE };
 public:
   static const u_int maxLen = MAX_BIGBLOCKSIZE - BASE_SIZE;
 
@@ -324,8 +318,7 @@ public:
 
 class Record: private Block {
 protected:
-  static const u_int WIDTH_POS = 0;
-  static const u_int BASE_SIZE = 1;
+  enum { WIDTH_POS, BASE_SIZE };
 public:
   using Block::ToWord;
 
@@ -389,7 +382,7 @@ public:
     }
   }
   static word PolySel(UniqueString *label, Record *record) {
-    Assert(Record::FromWordDirect(record->ToWord()));
+    Assert((Record::FromWordDirect(record->ToWord()), true));
     return record->PolySel(label);
   }
 };
