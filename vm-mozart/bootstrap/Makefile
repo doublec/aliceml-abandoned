@@ -542,11 +542,11 @@ build3/lib/fundamental/RTT.ozf: build2/install/lib/rtt/RTT.ozf
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
+build3/stoc/%.ozf: build3/stoc/%.aml
+	$(STOC2) $(STOC_OPTS) --rtt-level=core -c $< -o $@
+
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
-
-build3/stoc/%.ozf: build3/stoc/%.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=no -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
