@@ -18,7 +18,6 @@
 
 #include <cstdio>
 #include "generic/RootSet.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Closure.hh"
@@ -37,14 +36,14 @@
 static word dead;
 #endif
 
-void Disassemble(Closure *closure) {
+void DisassembleAlice(Closure *closure) {
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
   concreteCode->Disassemble(stdout);
 }
 
 // Local Environment
-class Environment : private Array {
+class Environment: private Array {
 public:
   using Array::ToWord;
   // Environment Accessors
@@ -74,7 +73,7 @@ public:
 };
 
 // AbstractCodeInterpreter StackFrames
-class AbstractCodeFrame : public StackFrame {
+class AbstractCodeFrame: public StackFrame {
 protected:
   static const u_int PC_POS          = 0;
   static const u_int CLOSURE_POS     = 1;
@@ -128,7 +127,7 @@ public:
   }
 };
 
-class AbstractCodeHandlerFrame : public AbstractCodeFrame {
+class AbstractCodeHandlerFrame: public AbstractCodeFrame {
 public:
   // AbstractCodeHandlerFrame Constructor
   static AbstractCodeHandlerFrame *New(Interpreter *interpreter,
@@ -147,25 +146,19 @@ public:
 };
 
 // Interpreter Helper
-inline void PushState(TaskStack *taskStack,
-		      TagVal *pc,
-		      Closure *globalEnv,
-		      Environment *localEnv,
+inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv,
 		      TagVal *formalArgs) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
 			   globalEnv, localEnv, formalArgs->ToWord());
-  taskStack->PushFrame(frame->ToWord());
+  Scheduler::PushFrame(frame->ToWord());
 }
 
-inline void PushState(TaskStack *taskStack,
-		      TagVal *pc,
-		      Closure *globalEnv,
-		      Environment *localEnv) {
+inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
 			   globalEnv, localEnv, Store::IntToWord(0));
-  taskStack->PushFrame(frame->ToWord());
+  Scheduler::PushFrame(frame->ToWord());
 }
 
 inline word GetToplevel(Closure *closure, u_int index) {
@@ -244,8 +237,7 @@ AbstractCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   return concreteCode->GetAbstractRepresentation();
 }
 
-void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
-				       Closure *closure) {
+void AbstractCodeInterpreter::PushCall(Closure *closure) {
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
   // Function of coord * int * int * idDef args * instr * liveness
@@ -257,10 +249,11 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
       abstractCode->AssertWidth(AbstractCode::functionWidth);
       int nlocals = Store::WordToInt(abstractCode->Sel(2));
       AbstractCodeFrame *frame =
-	AbstractCodeFrame::New(this, abstractCode->Sel(4), closure,
+	AbstractCodeFrame::New(AbstractCodeInterpreter::self,
+			       abstractCode->Sel(4), closure,
 			       Environment::New(nlocals),
 			       abstractCode->Sel(3));
-      taskStack->PushFrame(frame->ToWord());
+      Scheduler::PushFrame(frame->ToWord());
     }
     break;
   default:
@@ -268,11 +261,11 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
   }
 }
 
-#define REQUEST(w) {					\
-  PushState(taskStack, pc, globalEnv, localEnv);	\
-  Scheduler::currentData = w;				\
-  Scheduler::nArgs = 0;					\
-  return Interpreter::REQUEST;				\
+#define REQUEST(w) {				\
+  PushState(pc, globalEnv, localEnv);		\
+  Scheduler::currentData = w;			\
+  Scheduler::nArgs = 0;				\
+  return Interpreter::REQUEST;			\
 }
 
 #define CHECK_PREEMPT() {				\
@@ -282,11 +275,11 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
     return Interpreter::CONTINUE;			\
 }
 
-Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result AbstractCodeInterpreter::Run() {
   AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
-  Assert(!frame->IsHandlerFrame());
+    AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Assert(frame->GetInterpreter() == this);
+  Assert(!frame->IsHandlerFrame());
   TagVal *pc = frame->GetPC();
   Closure *globalEnv = frame->GetClosure();
   Environment *localEnv = frame->GetLocalEnv();
@@ -317,6 +310,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	} else {
 	  if (Interpreter::Deconstruct()) {
 	    // Scheduler::currentData has been set by Interpreter::Deconstruct
+	    Scheduler::PushFrameNoCheck(frame->ToWord());
 	    return Interpreter::REQUEST;
 	  }
 	  Assert(Scheduler::nArgs == nArgs);
@@ -332,7 +326,6 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       Error("AbstractCodeInterpreter::Run: invalid formalArgs tag");
     }
   }
-  taskStack->PopFrame(); // Discard Frame
   // Execution
   while (true) {
   loop:
@@ -492,7 +485,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
 	  TagVal *formalArgs = TagVal::New(AbstractCode::OneArg, 1);
 	  formalArgs->Init(0, idDefInstr->Sel(0));
-	  PushState(taskStack, TagVal::FromWordDirect(idDefInstr->Sel(1)),
+	  PushState(TagVal::FromWordDirect(idDefInstr->Sel(1)),
 		    globalEnv, localEnv, formalArgs);
 	}
 	// Push a call frame for the primitive
@@ -502,7 +495,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	for (u_int i = nArgs; i--; )
 	  Scheduler::currentArgs[i] =
 	    GetIdRefKill(actualIdRefs->Sub(i), globalEnv, localEnv);
-	return taskStack->PushCall(pc->Sel(0));
+	return Scheduler::PushCall(pc->Sel(0));
       }
       break;
     case AbstractCode::AppVar:
@@ -514,7 +507,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  // Save our state for return
 	  Tuple *idDefArgsInstr =
 	    Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
-	  PushState(taskStack, TagVal::FromWordDirect(idDefArgsInstr->Sel(1)),
+	  PushState(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)),
 		    globalEnv, localEnv,
 		    TagVal::FromWordDirect(idDefArgsInstr->Sel(0)));
 	}
@@ -539,11 +532,11 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	if (StatusWord::GetStatus(Store::GCStatus() |
 				  Scheduler::PreemptStatus())) {
 	  Interpreter::Result res =
-	    taskStack->PushCall(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
+	    Scheduler::PushCall(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
 	  return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
 	} else {
 	  word closure = GetIdRefKill(pc->Sel(0), globalEnv, localEnv);
-	  return taskStack->PushCall(closure);
+	  return Scheduler::PushCall(closure);
 	}
       }
       break;
@@ -631,20 +624,17 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	TagVal *formalArgs = TagVal::New(AbstractCode::TupArgs, 1);
 	formalArgs->Init(0, formalIdDefs->ToWord());
 	AbstractCodeHandlerFrame *frame =
-	  AbstractCodeHandlerFrame::New(this,
-					pc->Sel(3),
-					globalEnv,
-					localEnv,
+	  AbstractCodeHandlerFrame::New(this, pc->Sel(3), globalEnv, localEnv,
 					formalArgs->ToWord());
-	taskStack->PushFrame(frame->ToWord());
+	Scheduler::PushFrame(frame->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
       break;
     case AbstractCode::EndTry: // of instr
       {
-	Assert(StackFrame::FromWordDirect(taskStack->GetFrame())->GetLabel() ==
+	Assert(StackFrame::FromWordDirect(Scheduler::GetFrame())->GetLabel() ==
 	       ABSTRACT_CODE_HANDLER_FRAME);
-	taskStack->PopFrame();
+	Scheduler::PopFrame();
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
       break;
@@ -916,9 +906,9 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   }
 }
 
-Interpreter::Result AbstractCodeInterpreter::Handle(TaskStack *taskStack) {
+Interpreter::Result AbstractCodeInterpreter::Handle() {
   AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
+    AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   if (frame->IsHandlerFrame()) {
     Tuple *package = Tuple::New(2);
     word exn = Scheduler::currentData;
@@ -927,16 +917,14 @@ Interpreter::Result AbstractCodeInterpreter::Handle(TaskStack *taskStack) {
     Scheduler::nArgs = 2;
     Scheduler::currentArgs[0] = package->ToWord();
     Scheduler::currentArgs[1] = exn;
-    taskStack->PopFrame();
     AbstractCodeFrame *newFrame =
       AbstractCodeFrame::New(self, frame->GetPC()->ToWord(),
 			     frame->GetClosure(), frame->GetLocalEnv(),
 			     frame->GetFormalArgs()->ToWord());
-    taskStack->PushFrame(newFrame->ToWord());
+    Scheduler::PushFrameNoCheck(newFrame->ToWord());
     return Interpreter::CONTINUE;
   } else {
     Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-    taskStack->PopFrame();
     return Interpreter::RAISE;
   }
 }
