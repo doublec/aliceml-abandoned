@@ -19,23 +19,26 @@ BEGIN {
 
 $1 == "#define"	&& $2 ~ /^GDK_/ && $3 ~ /^0x/ { 
 	CON="K" substr ($2, 4) 
-	VAL=$3
-	if (N == 0) {
-	   printf "        " >> F
-	   printf "            " >> F2
-	   printf "            " >> F3
-	} else {
-	   printf "      | " >> F
-	   printf "          | " >> F2
-	   printf "          | " >> F3
-	}
-	print CON >> F
-	print CON "\t => " VAL >> F2
-	print VAL "\t => " CON >> F3
-	N=N + 1
-   }
+	VAL=strtonum($3)
+    if (!defined[VAL]) {
+        defined[VAL] = 1
+        if (N == 0) {
+           printf "        " >> F
+           printf "            " >> F2
+           printf "            " >> F3
+        } else {
+           printf "      | " >> F
+           printf "          | " >> F2
+           printf "          | " >> F3
+        }
+        print CON >> F
+        print CON "\t => " VAL >> F2
+        print VAL "\t => " CON >> F3
+        N=N + 1
+    }
+}
 
 END {
-    print "\nend" >> F3
+    print "\t| _\t => raise Fail \"intToKeyval\"\nend" >> F3
     system ("cat " F2 " " F3 " >> " F "; rm " F2 " " F3)
 }
