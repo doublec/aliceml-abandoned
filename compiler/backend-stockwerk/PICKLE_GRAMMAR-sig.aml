@@ -63,6 +63,8 @@ signature PICKLE_GRAMMAR =
 	  | AppConst of value * idRef args * (idDef args * instr) option
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
+	  | Sel of id * idRef * int * instr
+	  | LazySel of id * idRef * int * instr
 	  | Raise of idRef
 	  | Reraise of idRef
 	  | Try of instr * idDef * idDef * instr

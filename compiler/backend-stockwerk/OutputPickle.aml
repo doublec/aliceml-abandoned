@@ -57,24 +57,26 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val getTup = TAG 7
 		val intTest = TAG 8
 		val kill = TAG 9
-		val putCon = TAG 10
-		val putConst = TAG 11
-		val putFun = TAG 12
-		val putNew = TAG 13
-		val putRef = TAG 14
-		val putTag = TAG 15
-		val putTup = TAG 16
-		val putVar = TAG 17
-		val putVec = TAG 18
-		val raise_ = TAG 19
-		val realTest = TAG 20
-		val reraise = TAG 21
-		val return = TAG 22
-		val shared = TAG 23
-		val stringTest = TAG 24
-		val tagTest = TAG 25
-		val try = TAG 26
-		val vecTest = TAG 27
+		val lazySel = TAG 10
+		val putCon = TAG 11
+		val putConst = TAG 12
+		val putFun = TAG 13
+		val putNew = TAG 14
+		val putRef = TAG 15
+		val putTag = TAG 16
+		val putTup = TAG 17
+		val putVar = TAG 18
+		val putVec = TAG 19
+		val raise_ = TAG 20
+		val realTest = TAG 21
+		val reraise = TAG 22
+		val return = TAG 23
+		val sel = TAG 24
+		val shared = TAG 25
+		val stringTest = TAG 26
+		val tagTest = TAG 27
+		val try = TAG 28
+		val vecTest = TAG 29
 
 		val con = TAG 0
 		val staticCon = TAG 1
@@ -284,6 +286,16 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.getTup, 3);
 	     outputVector outputIdDef (context, idDefs);
 	     outputIdRef (context, idRef); outputInstr (context, instr))
+	  | outputInstr (context, Sel (id, idRef, i, instr)) =
+	    (outputBlock (context, Label.sel, 4);
+	     outputId (context, id); outputIdRef (context, idRef);
+	     outputInt (context, LargeInt.fromInt i);
+	     outputInstr (context, instr))
+	  | outputInstr (context, LazySel (id, idRef, i, instr)) =
+	    (outputBlock (context, Label.lazySel, 4);
+	     outputId (context, id); outputIdRef (context, idRef);
+	     outputInt (context, LargeInt.fromInt i);
+	     outputInstr (context, instr))
 	  | outputInstr (context, Raise idRef) =
 	    (outputBlock (context, Label.raise_, 1);
 	     outputIdRef (context, idRef))

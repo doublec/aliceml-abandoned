@@ -154,6 +154,15 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		  | res as (USED | SIDE_EFFECTING | UNKNOWN) => res
 	    else detup' (detup (instr, id),
 			 fn instr => O.GetTup (idDefs, idRef, instr))
+	  | detup (O.Sel (id, idRef, i, instr), id') =
+	    (*--** unless we annotate the width, we can only return USED *)
+	    if isId (idRef, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.Sel (id, idRef, i, instr))
+	  | detup (O.LazySel (id, idRef, i, instr), id') =
+	    if isId (idRef, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.LazySel (id, idRef, i, instr))
 	  | detup (O.Raise idRef, id) =
 	    if isId (idRef, id) then USED else KILLED
 	  | detup (O.Reraise idRef, id) =
@@ -426,34 +435,10 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    end
 	  | translateExp (RefExp (_, id), id', instr, env) =
 	    O.PutRef (id', lookup (env, id), instr)
-	  | translateExp (SelAppExp (_, prod, _, index, id), id', instr, env) =
-	    let
-		val n =
-		    case prod of
-			Tuple n => n
-		      | Product labels => Vector.length labels
-		fun wild _ = O.Wildcard
-	    in
-		O.GetTup (Vector.fromList
-			  (List.tabulate (index, wild) @
-			   O.IdDef id'::List.tabulate (n - index - 1, wild)),
-			  lookup (env, id), instr)
-	    end
-	  | translateExp (LazySelAppExp (_, prod, _, index, id),
-			  id', instr, env) =
-	    (*--** make it lazy *)
-	    let
-		val n =
-		    case prod of
-			Tuple n => n
-		      | Product labels => Vector.length labels
-		fun wild _ = O.Wildcard
-	    in
-		O.GetTup (Vector.fromList
-			  (List.tabulate (index, wild) @
-			   O.IdDef id'::List.tabulate (n - index - 1, wild)),
-			  lookup (env, id), instr)
-	    end
+	  | translateExp (SelAppExp (_, _, _, i, id), id', instr, env) =
+	    O.Sel (id', lookup (env, id), i, instr)
+	  | translateExp (LazySelAppExp (_, _, _, i, id), id', instr, env) =
+	    O.LazySel (id', lookup (env, id), i, instr)
 	  | translateExp (FunAppExp (info, id, _, args), id', instr, env) =
 	    (*--** translate to AppConst *)
 	    translateExp (VarAppExp (info, id, args), id', instr, env)
@@ -495,9 +480,12 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			SOME url => Url.toString url
 		      | NONE => ""
 		val imports' =
-		    Vector.map (fn (_, sign, url) =>
-				O.Tuple #[O.String (Url.toString url),
-					  O.Sign sign]) imports
+		    Vector.mapi
+		    (fn (i, (_, sign, url)) =>
+		     O.Tuple #[O.TaggedValue (LargeInt.fromInt 1, (* NUM *)
+					      #[O.Int (LargeInt.fromInt i)]),
+			       O.String (Url.toString url),
+			       O.Sign sign]) (imports, 0, NONE)
 		val env = new filename
 		val _ = startFn env
 		val formalId = fresh env
