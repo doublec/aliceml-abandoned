@@ -3,7 +3,7 @@
   .locals(class System.IO.FileStream)
   ldstr "pickle"
   ldc.i4 2   // System.IO.FileMode::Create
-  ldc.i4 2   // System.IO.FileMode::Write
+  ldc.i4 2   // System.IO.FileAccess::Write
   newobj instance void System.IO.FileStream::.ctor(class System.String, int32, int32)
   dup
   stloc.0
