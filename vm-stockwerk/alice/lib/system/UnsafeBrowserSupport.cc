@@ -61,6 +61,7 @@ public:
   }
 
   virtual Result Run();
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
   virtual void DumpFrame(word wFrame);
 
@@ -85,6 +86,10 @@ Worker::Result RequestInterpreter::Run() {
     Scheduler::currentData = frame->GetByneed();
     return Worker::REQUEST;
   }
+}
+
+u_int RequestInterpreter::GetInArity(ConcreteCode *) {
+  return 0;
 }
 
 const char *RequestInterpreter::Identify() {
