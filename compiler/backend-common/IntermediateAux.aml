@@ -110,10 +110,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    SpawnExp (info, substExp' (exp, subst))
 	  | substExp' (LetExp (info, decs, exp), subst) =
 	    LetExp (info, substDecs' (decs, subst), substExp' (exp, subst))
-	  | substExp' (AbsExp (info, exp), subst) =
-	    AbsExp (info, substExp' (exp, subst))
-	  | substExp' (UnabsExp (info, exp), subst) =
-	    UnabsExp (info, substExp' (exp, subst))
+	  | substExp' (SealExp (info, exp), subst) =
+	    SealExp (info, substExp' (exp, subst))
+	  | substExp' (UnsealExp (info, exp), subst) =
+	    UnsealExp (info, substExp' (exp, subst))
 	and substMats' (mats, subst) =
 	    Vector.map (fn Mat (info, pat, exp) =>
 			Mat (info, substPat' (pat, subst),

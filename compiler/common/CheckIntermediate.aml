@@ -78,10 +78,11 @@ struct
 	ppLongid y ^^ text "." ^^ text(Label.toString l)
 
     fun fail(r,s,d) =
-	(Vector.app (fn d => PrettyPrint.output(TextIO.stdErr,
+	(TextIO.output(TextIO.stdErr, "intermediate inconsistency at " ^
+				      Source.regionToString r ^ ": "^ s ^ "\n");
+	 Vector.app (fn d => PrettyPrint.output(TextIO.stdErr,
 						ppDebugInfo d, 78)) d;
-	 raise Crash.Crash("intermediate inconsistency at " ^
-			   Source.regionToString r ^ ": " ^ s))
+	 raise Crash.Crash "intermediate inconsistency")
 
     fun regionOfNonInfo {region}     = region	(* I want poly records :-( *)
     fun regionOfTypInfo {region,typ} = region
@@ -99,6 +100,7 @@ struct
 
   (* Helpers *)
 
+(*DEBUG
     fun matchesRow(r1,r2) =
 	(*UNFINISHED: allow row variables? *)
 	Type.isEmptyRow r1 orelse
@@ -113,11 +115,12 @@ struct
 	       | LESS    => false
 	       | GREATER => matchesRow(r1, Type.tlRow r2)
 	end
+*)
 
     exception HigherKind
 
-    fun abstracts(t1,t2) =
-	(* t1 abstracts t2 <= exists R . Dom R = paths(t1) /\ t2 > R(t1) *)
+    fun seals(t1,t2) =
+	(* t1 seals t2 <= exists R . Dom R = paths(t1) /\ t2 > R(t1) *)
 	(* Unfortunately, this is undecidable. So we try to be as good as
 	 * possible, but simply accept all cases involving higher kinds. 8-P
 	 *)
@@ -130,7 +133,7 @@ struct
 				    else raise HigherKind) A
 	    val t1' = Type.realise(rea, t1)
 	in
-	    ( Type.unify(t2,t1') ; true ) handle Type.Unify(t3,t4) => false
+	    ( Type.unify(t2,t1') ; true ) handle Type.Mismatch(t3,t4) => false
 (*DEBUG*)
 orelse
 let fun prTyp name t =
@@ -200,24 +203,24 @@ end
 	end
 
     fun chLongid E =
-	(*   E |- id => t
-	 * ----------------
-	 * E |- id : t => t
+	(* E |- id => t'    t' > t
+	 * -----------------------
+	 *    E |- id : t => t
 	 *)
 	fn ShortId(i, id) =>
 	   let
 		val t  = #typ i
 		val t' = chId E id
 	   in
-		check (Type.equal(t',t))
+		checked Type.match(t',t)
 		      (i, "ShortId type",
 			  #[ID(stamp id, name id), TYPE_PAIR(t',t)]);
 		t
 	   end
 
-	(* E |- lab => l    E |- longid => {l:t,r}
-	 * ---------------------------------------
-	 *       E |- longid.lab : t => t
+	(* E |- lab => l    E |- longid => {l:t',r}    t' > t
+	 * --------------------------------------------------
+	 *            E |- longid.lab : t => t
 	 *)
          | LongId(i, longid, lab) =>
 	   let
@@ -229,7 +232,7 @@ end
 		val t' = checked Type.lookupRow(r,l)
 			 (i, "LongId label", #[LAB l, TYPE t1])
 	   in
-		check (Type.equal(t',t))
+		checked Type.match(t',t)
 		      (i, "LongId type", #[LAB l, TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -242,7 +245,7 @@ end
 	 * ---------------------------------------------------------
 	 *             E,r |- lab=X,flds => l:t,r
 	 *)
-	Vector.foldl (chFld chX E) (Type.emptyRow()) flds
+	Vector.foldl (chFld chX E) (Type.unknownRow()) flds
 
     and chFld chX E (Fld(i, lab, x), r) =
 	(* |- lab => l    E |- X => t
@@ -318,8 +321,8 @@ end
 		val t  = #typ i
 		val t' = chLongid E longid
 	   in
-		check (Type.matches(t',t))
-		      (i, "VarExp type", #[LONGID longid, TYPE_PAIR(t',t)]);
+		checked Type.match(t',t)
+			(i, "VarExp type", #[LONGID longid, TYPE_PAIR(t',t)]);
 		t
 	   end
 
@@ -397,16 +400,16 @@ end
 		t
 	   end
 
-	(* E |- flds => r    t = {r}
-	 * -------------------------
-	 *   E |- {flds} : t => t
+	(* E |- flds => r    t < {r,...}
+	 * -----------------------------
+	 *     E |- {flds} : t => t
 	 *)
 	 | ProdExp(i, flds) =>
 	   let
 		val t = #typ i
 		val r = chFlds chExp E flds
 	   in
-		check (Type.equal(Type.prod r, t))
+		checked Type.match(Type.prod r, t)
 		      (i, "ProdExp type", #[TYPE_PAIR(Type.prod r, t)]);
 		t
 	   end
@@ -458,7 +461,7 @@ end
 		val t' = chExp E exp
 		val t1 = Type.apply(PervasiveType.typ_strict, t')
 	   in
-		check (not(Type.isVar t' orelse Type.isAbs t'))
+		check (not(Type.isVar t' orelse Type.isCon t'))
 		      (i, "StrictExp arg type", #[TYPE t']);
 		check (Type.equal(t1,t))
 		      (i, "StrictExp type", #[TYPE_PAIR(t1,t)]);
@@ -685,31 +688,31 @@ end
 		t
 	   end
 
-	(* E |- exp => t'    t abstracts t'
-	 * --------------------------------
-	 *      E |- abs exp : t => t
+	(* E |- exp => t'    t seals t'
+	 * ----------------------------
+	 *    E |- seal exp : t => t
 	 *)
-	 | AbsExp(i, exp) =>
+	 | SealExp(i, exp) =>
 	   let
 		val t  = #typ i
 		val t' = chExp E exp
 	   in
-		check (abstracts(t,t'))
-		      (i, "AbsExp type", #[TYPE_PAIR(t',t)]);
+		check (seals(t,t'))
+		      (i, "SealExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
-	(* E |- exp => t'    t' abstracts t
-	 * --------------------------------
-	 *      E |- unabs exp : t => t
+	(* E |- exp => t'    t' seals t
+	 * ----------------------------
+	 *   E |- unseal exp : t => t
 	 *)
-	 | UnabsExp(i, exp) =>
+	 | UnsealExp(i, exp) =>
 	   let
 		val t  = #typ i
 		val t' = chExp E exp
 	   in
-		check (abstracts(t',t))
-		      (i, "UnabsExp type", #[TYPE_PAIR(t',t)]);
+		check (seals(t',t))
+		      (i, "UnsealExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
@@ -771,9 +774,9 @@ end
 		val t  = #typ i
 		val t' = chBindId E id
 	   in
-		check (Type.matches(t',t))
-		      (i, "VarPat type",
-			  #[ID(stamp id, name id), TYPE_PAIR(t',t)]);
+		checked Type.match(t',t)
+			(i, "VarPat type",
+			    #[ID(stamp id, name id), TYPE_PAIR(t',t)]);
 		t
 	   end
 
@@ -831,7 +834,7 @@ end
 		val t'' = chLongid E longid
 		(*UNFINISHED: check isNary *)
 	   in
-		check (Type.matches(t'',Type.arrow(t',t)))
+		checked Type.match(t'',Type.arrow(t',t))
 		      (i, "ConPat type", #[TYPE_PAIR(t'', Type.arrow(t',t))]);
 		check (Type.isExtKind(Type.kind t))
 		      (i, "ConPat kind", #[KIND(Type.kind t)]);
@@ -868,7 +871,7 @@ end
 		t
 	   end
 
-	(* E |- flds => r,E'    t = {r,...}
+	(* E |- flds => r,E'    t < {r,...}
 	 * --------------------------------
 	 *     E |- {flds} : t => t,E'
 	 *)
@@ -876,11 +879,9 @@ end
 	   let
 		val t  = #typ i
 		val r  = chFlds chPat E flds
-		val r' = checked Type.asProd t
-			 (i, "ProdPat type", #[TYPE t]);
 	   in
-		check (matchesRow(r,r'))
-		      (i, "ProdPat row", #[TYPE_PAIR(Type.prod r, t)]);
+		checked Type.match(Type.prod r, t)
+		      (i, "ProdPat type", #[TYPE_PAIR(Type.prod r, t)]);
 		t
 	   end
 
@@ -912,7 +913,7 @@ end
 		val t' = chPat E pat
 		val t1 = Type.apply(PervasiveType.typ_strict, t')
 	   in
-		check (not(Type.isVar t' orelse Type.isAbs t'))
+		check (not(Type.isVar t' orelse Type.isCon t'))
 		      (i, "StrictPat arg type", #[TYPE t']);
 		check (Type.equal(t1,t))
 		      (i, "StrictPat type", #[TYPE_PAIR(t1,t)]);
