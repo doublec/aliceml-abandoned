@@ -27,10 +27,6 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	    IdDef of id
 	  | Wildcard
 
-	datatype idRef =
-	    Local of id
-	  | Global of int
-
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
@@ -41,7 +37,6 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 
 	datatype instr =
 	    Kill of id vector * instr
-	  | PutConst of id * value * instr
 	  | PutVar of id * idRef * instr
 	  | PutNew of id * string * instr
 	  | PutTag of id * int * idRef vector * instr
@@ -74,7 +69,11 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
 	  | Shared of Stamp.t * instr
 	  | Return of idRef args
+	and idRef =
+	    Local of id
+	  | Global of int
+	  | Immediate of value
 	withtype value = instr function Value.t
 
-	type t = value
+	type t = value * Stamp.t vector
     end
