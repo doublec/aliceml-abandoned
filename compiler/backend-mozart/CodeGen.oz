@@ -37,7 +37,7 @@ define
 	fun {$ X} Reg in
 	   {CS newReg(Reg)}
 	   {Dictionary.put RegDict X Reg}
-	   X#Reg
+	   Reg#X
 	end}}
    end
 
@@ -271,6 +271,18 @@ define
       {TranslateBody Program ?VInstr nil
        state(regDict: RegDict shareDict: {NewDictionary} cs: CS) unit}
       {CS endDefinition(VInstr nil nil ?GRegs ?Code ?NLiveRegs)}
-      Prebound#GRegs#Code#NLiveRegs
+      case Code of Code1#Code2 then StartLabel EndLabel in
+	 StartLabel = {NewName}
+	 EndLabel = {NewName}
+	 {Map GRegs fun {$ Reg} Prebound.Reg end}#
+	 (lbl(StartLabel)|
+	  definition(x(0) EndLabel
+		     pid('Toplevel abstraction' 0 pos('' 1 0) [sited]
+			 NLiveRegs)
+		     unit {List.mapInd GRegs fun {$ I _} g(I - 1) end}
+		     Code1)|
+	  endDefinition(StartLabel)|
+	  {Append Code2 [lbl(EndLabel) tailCall(x(0) 0)]})
+      end
    end
 end
