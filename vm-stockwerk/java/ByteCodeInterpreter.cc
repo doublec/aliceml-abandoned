@@ -550,7 +550,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD");
-	frame->Push(frame->GetEnv((u_int) GET_BYTE_INDEX()));
+	word value = frame->GetEnv((u_int) GET_BYTE_INDEX()); 
+	frame->Push(value);
 	pc += 2;
       }
       break;
@@ -561,7 +562,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_0:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD_0");
-	frame->Push(frame->GetEnv(0));
+	word value = frame->GetEnv(0);
+	frame->Push(value);
 	pc += 1;
       }
       break;
@@ -572,7 +574,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_1:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD_1");
-	frame->Push(frame->GetEnv(1));
+	word value = frame->GetEnv(1);
+	frame->Push(value);
 	pc += 1;
       }
       break;
@@ -583,7 +586,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_2:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD_2");
-	frame->Push(frame->GetEnv(2));
+	word value = frame->GetEnv(2);
+	frame->Push(value);
 	pc += 1;
       }
       break;
@@ -594,7 +598,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD_3:
       {
 	JavaDebug::Print("(A|D|F|I|L)LOAD_3");
-	frame->Push(frame->GetEnv(3));
+	word value = frame->GetEnv(3);
+	frame->Push(value);
 	pc += 1;
       }
       break;
@@ -655,7 +660,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE:
       {
 	JavaDebug::Print("(A|D|F|I|L)STORE");
-	frame->SetEnv(GET_BYTE_INDEX(), frame->Pop());
+	word value = frame->Pop();
+	frame->SetEnv(GET_BYTE_INDEX(), value);
 	pc += 2;
       }
       break;
@@ -666,7 +672,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_0:
       {
 	JavaDebug::Print("(A|D|F|I|L)STORE_0");
-	frame->SetEnv(0, frame->Pop());
+	word value = frame->Pop();
+	frame->SetEnv(0, value);
 	pc += 1;
       }
       break;
@@ -677,7 +684,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_1:
       {
 	JavaDebug::Print("(A|D|F|I|L)STORE_1");
-	frame->SetEnv(1, frame->Pop());
+	word value = frame->Pop();
+	frame->SetEnv(1, value);
 	pc += 1;
       }
       break;
@@ -688,7 +696,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_2:
       {
 	JavaDebug::Print("(A|D|F|I|L)STORE_2");
-	frame->SetEnv(2, frame->Pop());
+	word value = frame->Pop();
+	frame->SetEnv(2, value);
 	pc += 1;
       }
       break;
@@ -699,7 +708,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LSTORE_3:
       {
 	JavaDebug::Print("(A|D|F|I|L)STORE_3");
-	frame->SetEnv(3, frame->Pop());
+	word value = frame->Pop();
+	frame->SetEnv(3, value);
 	pc += 1;
       }
       break;
