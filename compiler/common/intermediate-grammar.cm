@@ -6,6 +6,7 @@ Group
 	structure Label
 	signature INTERMEDIATE_GRAMMAR
 	functor MakeIntermediateGrammar
+	structure IntermediateInfo
 	structure IntermediateGrammar
 
 is
