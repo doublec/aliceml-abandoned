@@ -137,6 +137,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substExp' (exp as FailExp _, _) = exp
 	  | substExp' (LazyExp (info, exp), subst) =
 	    LazyExp (info, substExp' (exp, subst))
+	  | substExp' (SpawnExp (info, exp), subst) =
+	    SpawnExp (info, substExp' (exp, subst))
 	  | substExp' (LetExp (info, decs, exp), subst) =
 	    LetExp (info, substDecs' (decs, subst), substExp' (exp, subst))
 	  | substExp' (UpExp (info, exp), subst) =

@@ -522,6 +522,8 @@ struct
       | trExp(I.SeqExp(i,es))		= O.SeqExp(i, trExps es)
       | trExp(I.CaseExp(i,e,ms))	= O.CaseExp(i, trExp e, trMatchs ms)
       | trExp(I.FailExp(i))		= O.FailExp(i)
+      | trExp(I.LazyExp(i,e))		= O.LazyExp(i, trExp e)
+      | trExp(I.SpawnExp(i,e))		= O.SpawnExp(i, trExp e)
       | trExp(I.RaiseExp(i,e))		= O.RaiseExp(i, trExp e)
       | trExp(I.HandleExp(i,e,ms))	= O.HandleExp(i, trExp e, trMatchs ms)
       | trExp(I.AnnExp(i,e,t))		= trExp e

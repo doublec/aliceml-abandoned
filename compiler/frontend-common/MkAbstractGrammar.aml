@@ -134,6 +134,8 @@ struct
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
 	| SeqExp    of exp_info * exp vector	(* sequential expressions *)
 	| CaseExp   of exp_info * exp * match vector (* case *)
+	| LazyExp   of exp_info * exp		(* byneed evaulation *)
+	| SpawnExp  of exp_info * exp		(* concurrent evaulation *)
 	| FailExp   of exp_info			(* failure *)
 	| RaiseExp  of exp_info * exp		(* exception raising *)
 	| HandleExp of exp_info * exp * match vector (* exception handling *)
@@ -290,9 +292,11 @@ struct
       | infoExp(IfExp(i,_,_,_))		= i
       | infoExp(SeqExp(i,_))		= i
       | infoExp(CaseExp(i,_,_))		= i
-      | infoExp(FailExp(i))		= i
+      | infoExp(LazyExp(i,_))		= i
+      | infoExp(SpawnExp(i,_))		= i
       | infoExp(RaiseExp(i,_))		= i
       | infoExp(HandleExp(i,_,_))	= i
+      | infoExp(FailExp(i))		= i
       | infoExp(AnnExp(i,_,_))		= i
       | infoExp(LetExp(i,_,_))		= i
       | infoExp(PackExp(i,_))		= i

@@ -466,6 +466,12 @@ struct
       | unguardedTyVarsExp E (RAISEExp(_, exp)) =
 	    unguardedTyVarsExp E exp
 
+      | unguardedTyVarsExp E (LAZYExp(_, exp)) =
+	    unguardedTyVarsExp E exp
+
+      | unguardedTyVarsExp E (SPAWNExp(_, exp)) =
+	    unguardedTyVarsExp E exp
+
       | unguardedTyVarsExp E (IFExp(_, exp1, exp2, exp3)) =
 	    unguardedTyVarsExp E exp1 @ unguardedTyVarsExp E exp2 @
 	    unguardedTyVarsExp E exp3
@@ -725,6 +731,8 @@ struct
 		O.HandleExp(i, trExp E exp, trMatcho E (SOME match))
 
 	 | RAISEExp(i, exp)		=> O.RaiseExp(i, trExp E exp)
+	 | LAZYExp(i, exp)		=> O.LazyExp(i, trExp E exp)
+	 | SPAWNExp(i, exp)		=> O.SpawnExp(i, trExp E exp)
 	 | IFExp(i, exp1, exp2, exp3)	=>
 		O.IfExp(i, trExp E exp1, trExp E exp2, trExp E exp3)
 

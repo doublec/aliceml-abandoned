@@ -288,6 +288,12 @@ struct
       | ppExp(RaiseExp(i, exp))		= exptree "Raise" i (
 					    ppExp exp
 					  )
+      | ppExp(LazyExp(i, exp))		= exptree "Lazy" i (
+					    ppExp exp
+					  )
+      | ppExp(SpawnExp(i, exp))		= exptree "Spawn" i (
+					    ppExp exp
+					  )
       | ppExp(FailExp(i))		= exptree "Fail" i empty
       | ppExp(AnnExp(i, exp, typ))	= exptree "Ann" i (
 					    ppExp exp ^/^

@@ -15,6 +15,8 @@
  *
  * Extensions and modifications to core language:
  *   - unified dec and topdec (i.e. top declarations can appear in let)
+ *   - lazy expressions
+ *   - spawn expressions
  *   - record update expressions
  *   - vector expressions and patterns
  *   - generalized layered patterns
@@ -137,6 +139,8 @@ struct
 	| ORELSEExp      of Info * Exp * Exp
 	| HANDLEExp      of Info * Exp * Match
 	| RAISEExp       of Info * Exp
+	| LAZYExp        of Info * Exp
+	| SPAWNExp       of Info * Exp
 	| IFExp          of Info * Exp * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
@@ -433,6 +437,8 @@ struct
       | infoExp(ORELSEExp(I,_,_))			= I
       | infoExp(HANDLEExp(I,_,_))			= I
       | infoExp(RAISEExp(I,_))				= I
+      | infoExp(LAZYExp(I,_))				= I
+      | infoExp(SPAWNExp(I,_))				= I
       | infoExp(IFExp(I,_,_,_))				= I
       | infoExp(CASEExp(I,_,_))				= I
       | infoExp(FNExp(I,_))				= I

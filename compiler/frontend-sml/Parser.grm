@@ -24,6 +24,10 @@
 (*	  exprow ::= vid <: ty> <, exprow>					*)
 (*   - recursive expressions (derived form):					*)
 (*	  exp ::= rec pat => exp						*)
+(*   - lazy expressions:							*)
+(*	  exp ::= lazy exp							*)
+(*   - spawn expressions:							*)
+(*	  exp ::= spawn exp							*)
 (*   - more relaxed constructor pattern syntax:					*)
 (*	  pat ::= pat atpat			(R)				*)
 (*   - generalized layered patterns:						*)
@@ -232,6 +236,7 @@
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| LAZY | SPAWN
 	| ANY | FCT | PACK | UNPACK
 	| IMPORT | FROM
 	| PRIMITIVE | EQEQTYPE | REFTYPE | PERVASIVE
@@ -257,6 +262,7 @@
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
 	 CONSTRUCTOR NON WITHFUN WITHVAL
+	 LAZY SPAWN
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
 	 PRIMITIVE EQEQTYPE REFTYPE PERVASIVE
@@ -698,6 +704,8 @@
 	| exp ORELSE exp	( ORELSEExp(I(exp1left,exp2right), exp1, exp2) )
 	| exp HANDLE match	( HANDLEExp(I(expleft,matchright), exp, match) )
 	| RAISE exp		( RAISEExp(I(RAISEleft,expright), exp) )
+	| LAZY exp		( LAZYExp(I(LAZYleft,expright), exp) )
+	| SPAWN exp		( SPAWNExp(I(SPAWNleft,expright), exp) )
 	| IF exp THEN exp ELSE exp
 				( IFExp(I(IFleft,exp3right), exp1, exp2, exp3) )
 	| WHILE exp DO exp	( WHILEExp(I(WHILEleft,exp2right), exp1, exp2) )

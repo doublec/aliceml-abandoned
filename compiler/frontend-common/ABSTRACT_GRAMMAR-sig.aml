@@ -105,6 +105,8 @@ sig
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
 	| SeqExp    of exp_info * exp vector	(* sequential expressions *)
 	| CaseExp   of exp_info * exp * match vector (* case *)
+	| LazyExp   of exp_info * exp		(* byneed evaulation *)
+	| SpawnExp  of exp_info * exp		(* concurrent evaulation *)
 	| HandleExp of exp_info * exp * match vector (* exception handling *)
 	| RaiseExp  of exp_info * exp		(* exception raising *)
 	| FailExp   of exp_info			(* failure *)

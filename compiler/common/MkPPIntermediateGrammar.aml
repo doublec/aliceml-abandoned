@@ -197,6 +197,9 @@ struct
       | ppExp(LazyExp(i, exp))		= exptree "Lazy" i (
 					    ppExp exp
 					  )
+      | ppExp(SpawnExp(i, exp))		= exptree "Spawn" i (
+					    ppExp exp
+					  )
       | ppExp(LetExp(i, decs, exp))	= exptree "Let" i (
 					    ppDecs decs ^/^
 					    ppExp exp

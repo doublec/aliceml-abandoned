@@ -30,5 +30,5 @@ unset STOCKHOME
 (cd lib/inspector && make all PREFIX=$prefix install) || exit 1
 (cd lib/constraints && make depend) || exit 1
 (cd lib/constraints && make all PREFIX=$prefix install) || exit 1
-(cd lib/gtk && make depend) || exit 1
-(cd lib/gtk && make all PREFIX=$prefix install) || exit 1
+#(cd lib/gtk && make depend) || exit 1
+#(cd lib/gtk && make all PREFIX=$prefix install) || exit 1

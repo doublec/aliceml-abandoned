@@ -688,6 +688,25 @@ functor MkFlatteningPhase(val loadSign:
 					     #[id]))::translateCont cont);
 		 stms)
 	    end
+	  | translateExp (SpawnExp (_, exp as VarExp (_, _)), f, cont) =
+	    translateExp (exp, f, cont)
+	  | translateExp (SpawnExp (info, UpExp (_, exp)), f, cont) =
+	    translateExp (SpawnExp (info, exp), f, cont)
+	  | translateExp (SpawnExp (info as {region, typ}, exp), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stm_info region, r)]
+		val funInfo = {region = region,
+			       typ = Type.inArrow (Type.inTuple #[], typ)}
+		val pat = JokPat {region = region, typ = Type.inTuple #[]}
+		val funExp =
+		    FunExp (funInfo, #[Match (id_info info, pat, exp)])
+		val (stms, id) = unfoldTerm (funExp, Goto rest)
+	    in
+		(r := SOME (f (O.PrimAppExp (id_info info, "Future.concur",
+					     #[id]))::translateCont cont);
+		 stms)
+	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
 	    let
 		val stms = translateExp (exp, f, cont)

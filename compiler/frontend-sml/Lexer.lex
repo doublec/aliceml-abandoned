@@ -10,6 +10,9 @@
  *   $Revision$
  *)
 
+(* Current Gert hack: "Byneed" and "Concur" keywords
+ * as substitute for "lazy" and "spawn" *)
+
 (*
  * Standard ML lexical analysis
  *
@@ -24,6 +27,7 @@
  *   - CONSTRUCTOR keyword for constructor declarations
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
+ *   - LAZY and SPAWN keywords for futures
  *   - FCT keyword for functor expressions and signatures
  *   - ANY keyword for top signature
  *   - PACK and UNPACK keyword for first class structures
@@ -318,6 +322,7 @@
   <INITIAL>"include"	=> ( token(INCLUDE,   yypos, yytext) );
   <INITIAL>"infix"	=> ( token(INFIX,     yypos, yytext) );
   <INITIAL>"infixr"	=> ( token(INFIXR,    yypos, yytext) );
+  <INITIAL>"lazy"	=> ( token(LAZY,      yypos, yytext) );
   <INITIAL>"let"	=> ( token(LET,       yypos, yytext) );
   <INITIAL>"local"	=> ( token(LOCAL,     yypos, yytext) );
   <INITIAL>"non"	=> ( token(NON,       yypos, yytext) );
@@ -332,6 +337,7 @@
   <INITIAL>"sharing"	=> ( token(SHARING,   yypos, yytext) );
   <INITIAL>"sig"	=> ( token(SIG,       yypos, yytext) );
   <INITIAL>"signature"	=> ( token(SIGNATURE, yypos, yytext) );
+  <INITIAL>"spawn"	=> ( token(SPAWN,     yypos, yytext) );
   <INITIAL>"struct"	=> ( token(STRUCT,    yypos, yytext) );
   <INITIAL>"structure"	=> ( token(STRUCTURE, yypos, yytext) );
   <INITIAL>"then"	=> ( token(THEN,      yypos, yytext) );
@@ -344,6 +350,9 @@
   <INITIAL>"withfun"	=> ( token(WITHFUN,   yypos, yytext) );
   <INITIAL>"withtype"	=> ( token(WITHTYPE,  yypos, yytext) );
   <INITIAL>"withval"	=> ( token(WITHVAL,   yypos, yytext) );
+
+  <INITIAL>"Byneed"	=> ( token(LAZY,      yypos, yytext) );
+  <INITIAL>"Concur"	=> ( token(SPAWN,     yypos, yytext) );
 
   <INITIAL>"0"		=> ( token  (ZERO,              yypos, yytext) );
   <INITIAL>[1-9]	=> ( tokenOf(DIGIT,   toDigit,  yypos, yytext) );

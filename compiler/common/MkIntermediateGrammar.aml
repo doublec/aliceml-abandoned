@@ -86,6 +86,7 @@ struct
 	| HandleExp of exp_info * exp * match vector	(* exception handler *)
 	| FailExp   of exp_info				(* lazy failure *)
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
+	| SpawnExp  of exp_info * exp			(* concurrent thread *)
 	| LetExp    of exp_info * dec vector * exp	(* local binding *)
 	| UpExp     of exp_info * exp			(* type abstraction *)
 	| CastExp   of exp_info * exp			(* type unsafe *)
@@ -171,6 +172,7 @@ struct
       | infoExp(HandleExp(i,_,_))	= i
       | infoExp(FailExp(i))		= i
       | infoExp(LazyExp(i,_))		= i
+      | infoExp(SpawnExp(i,_))		= i
       | infoExp(LetExp(i,_,_))		= i
       | infoExp(UpExp(i,_))		= i
       | infoExp(CastExp(i,_))		= i

@@ -129,6 +129,8 @@ struct
       | isValue( I.TagExp(_, _, _, exp)
 	       | I.ConExp(_, _, exp)
 	       | I.SelExp(_, _, exp)
+	       | I.LazyExp(_, exp)
+	       | I.SpawnExp(_, exp)
 	       | I.AnnExp(_, exp, _) )		= isValue exp
       | isValue( I.TupExp(_, exps)
 	       | I.VecExp(_, exps) )		= Vector.all isValue exps
@@ -498,6 +500,20 @@ struct
 	    val  t = Type.unknown(Type.STAR)
 	in
 	    ( t, O.FailExp(typInfo(i,t)) )
+	end
+
+      | elabExp(E, I.LazyExp(i, exp)) =
+	let
+	    val (t,exp') = elabExp(E, exp)
+	in
+	    ( t, O.LazyExp(typInfo(i,t), exp') )
+	end
+
+      | elabExp(E, I.SpawnExp(i, exp)) =
+	let
+	    val (t,exp') = elabExp(E, exp)
+	in
+	    ( t, O.SpawnExp(typInfo(i,t), exp') )
 	end
 
       | elabExp(E, I.RaiseExp(i, exp)) =
