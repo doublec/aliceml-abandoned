@@ -499,7 +499,7 @@ structure CodeGen =
 					  r := whichSwitch else ();
 					  ret)
 				 end
-			     else if shared = whichSwitch then
+			     else if shared = whichSwitch orelse whichSwitch=0 then
 				 (false, sh, switchNumber test')
 				  else (print ("Let him who has understanding reckon the number of the Leif, for it is a human's number: Its number is "^Int.toString shared^" and not "^Int.toString whichSwitch^".\n");
 					(false, sh, switchNumber test'))
