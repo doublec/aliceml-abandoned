@@ -32,7 +32,7 @@ signature SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * int * unit O.args * Arity.t
+	  | TagTest of Label.t vector * int * unit O.args * Arity.t
 	  | ConTest of I.longid * unit O.args * Arity.t
 	  | RefTest
 	  | TupTest of int

@@ -40,7 +40,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of lit
-	  | TagTest of Label.t * int * unit O.args * Arity.t
+	  | TagTest of Label.t vector * int * unit O.args * Arity.t
 	  | ConTest of I.longid * unit O.args * Arity.t
 	  | RefTest
 	  | TupTest of int
@@ -111,14 +111,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (TagPat (info, Lab (_, label), pat),
 			 pos, rest, mapping) =
 	    let
-		val (_, n) = labelToIndex (#typ info, label)
+		val (prod, n) = labelToIndex (#typ info, label)
 		val (arity, pat') = patToArity pat
 		val (posPatVector, args) =
 		    makeConArgs (pat', arity, LABEL label::pos)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))
-		(Test (pos, TagTest (label, n, args, arity))::rest,
+		(Test (pos, TagTest (prodToLabels prod, n, args, arity))::rest,
 		 mapping) posPatVector
 	    end
 	  | makeTestSeq (ConPat (info, longid, pat), pos, rest, mapping) =
@@ -230,13 +230,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | litToString (RealLit r) = LargeReal.toString r
 
 	fun testToString (LitTest lit) = "lit " ^ litToString lit
-	  | testToString (TagTest (label, n, O.OneArg _, _)) =
-	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " one"
-	  | testToString (TagTest (label, n, O.TupArgs xs, _)) =
-	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^
-	    " tup " ^ Int.toString (Vector.length xs)
-	  | testToString (TagTest (label, n, O.ProdArgs _, _)) =
-	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " prod"
+	  | testToString (TagTest (labels, n, O.OneArg _, _)) =
+	    "tag " ^ Label.toString (Vector.sub (labels, n)) ^ "/" ^
+	    Int.toString n ^ " one"
+	  | testToString (TagTest (labels, n, O.TupArgs xs, _)) =
+	    "tag " ^ Label.toString (Vector.sub (labels, n)) ^ "/" ^
+	    Int.toString n ^ " tup " ^ Int.toString (Vector.length xs)
+	  | testToString (TagTest (labels, n, O.ProdArgs _, _)) =
+	    "tag " ^ Label.toString (Vector.sub (labels, n)) ^ "/" ^
+	    Int.toString n ^ " prod"
 	  | testToString (ConTest (_, O.OneArg _, _)) = "con"
 	  | testToString (ConTest (_, O.TupArgs xs, _)) =
 	    "con tup " ^ Int.toString (Vector.length xs)
