@@ -12,7 +12,7 @@
 
 local
    [FrontEnd Annotate] = {Module.link ['FrontEnd.ozf' 'Annotate.ozf']}
-   AST = {FrontEnd.parse 'examples/Test1'}
+   AST = {FrontEnd.translate 'examples/Test5'}
 in
    {Browse AST}
    {Annotate.annotate AST}
