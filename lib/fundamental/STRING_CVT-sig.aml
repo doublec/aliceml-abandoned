@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,8 +16,8 @@
  *)
 
 import structure __pervasive                            from "Pervasive"
-import type int and char and string and bool and option from "ToplevelTypes"
-
+import __primitive
+       type int and char and string and bool and option from "ToplevelTypes"
 
 signature STRING_CVT =
 sig

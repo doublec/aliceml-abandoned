@@ -16,9 +16,10 @@
  *)
 
 import structure __pervasive and WideString from "Pervasive"
-import type int and bool and char 
+import __primitive
+       type int and bool and char 
        type order and option and list       from "ToplevelTypes"
-import structure StringCvt                  from "StringCvt"
+import __primitive structure StringCvt      from "StringCvt"
 
 signature STRING =
 sig

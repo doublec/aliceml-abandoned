@@ -15,10 +15,11 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                          from "Pervasive"
-import type unit datatype ref                         from "ToplevelTypes"
-import infix 3 := val ! and op = and op := and op :=: from "ToplevelValues"
-import signature REF                                  from "REF-sig"
+import structure __pervasive               from "Pervasive"
+import __primitive type unit datatype ref  from "ToplevelTypes"
+import __primitive infix 3 :=
+       val ! and op = and op := and op :=: from "ToplevelValues"
+import __primitive signature REF           from "REF-sig"
 
 structure Ref :> REF =							(**)
   struct
