@@ -1,11 +1,23 @@
 (* TODO-frontend.txt *)
 
+Current:
+
+- Look into type annotations
+- Structural datatypes
+- Syntactic constructor arity?
+
 General:
 
 - Check for multiple imports from single (normalised) URL
 - Improve pretty-printing
 - Consistent state cleanup (especially on errors)
 - Copyright notices
+
+Documentation:
+
+- Update compiler roadmap
+- Intermediate language rationale
+- Type language rationale
 
 Missing from Standard Core Language:
 

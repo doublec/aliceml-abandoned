@@ -9,15 +9,16 @@ signature INF =
     type path  = Path.t
     type typ   = Type.t
     type tkind = Type.kind
+    type fix   = Fixity.t
 
-    datatype val_sort = VALUE | CONSTRUCTOR	(* [w] *)
-    datatype typ_sort = datatype Type.sort	(* [w] *)
+    datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
+    datatype typ_sort = datatype Type.sort		(* [w] *)
 
-    type kind					(* [kappa,k] *)
-    type con  = kind * path			(* [chi,c]   *)
-    type sign					(* [sigma,s] *)
+    type kind						(* [kappa,k] *)
+    type con  = kind * path				(* [chi,c]   *)
+    type sign						(* [sigma,s] *)
     type item
-    type inf					(* [jota,j] *)
+    type inf						(* [jota,j] *)
     type t = inf    
 
   (* Realisations *)
@@ -91,11 +92,13 @@ signature INF =
     val newTyp :	sign * lab -> path
     val newMod :	sign * lab -> path
     val newInf :	sign * lab -> path
+    val newFix :	sign * lab -> path
 
     val extendVal :	sign * path *  typ  * val_sort * path option -> unit
     val extendTyp :	sign * path * tkind * typ_sort * typ  option -> unit
     val extendMod :	sign * path *  inf  * path option -> unit
     val extendInf :	sign * path *  kind * inf  option -> unit
+    val extendFix :	sign * path * fix -> unit
 
   (* Signature inspection *)
 
@@ -107,11 +110,13 @@ signature INF =
     val isTypItem :	item -> bool
     val isModItem :	item -> bool
     val isInfItem :	item -> bool
+    val isFixItem :	item -> bool
 
     val asValItem :	item -> lab * typ * val_sort * path option  (* Item *)
     val asTypItem :	item -> lab * tkind * typ_sort * typ option (* Item *)
     val asModItem :	item -> lab * inf * path option		(* Item *)
     val asInfItem :	item -> lab * kind * inf option		(* Item *)
+    val asFixItem :	item -> lab * fix			(* Item *)
 
   (* Signature lookup *)
 
@@ -141,6 +146,7 @@ signature INF =
 	| MissingTyp  of lab
 	| MissingMod  of lab
 	| MissingInf  of lab
+	| MissingFix  of lab
 	| ManifestVal of lab
 	| ManifestTyp of lab
 	| ManifestMod of lab
@@ -149,6 +155,7 @@ signature INF =
 	| MismatchTyp of lab * tkind * tkind
 	| MismatchMod of lab * mismatch
 	| MismatchInf of lab * mismatch
+	| MismatchFix of lab * fix * fix
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
 	| MismatchDom     of mismatch

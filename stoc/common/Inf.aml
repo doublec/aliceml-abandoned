@@ -12,6 +12,7 @@ structure InfPrivate =
     type path	= Path.t
     type typ	= Type.t
     type tkind	= Type.kind
+    type fix    = Fixity.t
 
     datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
     datatype typ_sort = datatype Type.sort		(* [w] *)
@@ -22,7 +23,7 @@ structure InfPrivate =
 
     (* A map for signatures *)
 
-    datatype space = VAL' | TYP' | MOD' | INF'
+    datatype space = VAL' | TYP' | MOD' | INF' | FIX'
 
     structure Map = MakeHashImpMap(struct type t = space * lab
 					  fun hash(_,l) = Label.hash l end)
@@ -42,6 +43,7 @@ structure InfPrivate =
 	| TYP of id * tkind * typ_sort * typ def	(* type *)
 	| MOD of id *  inf  * path def			(* module *)
 	| INF of id *  kind * inf def			(* interface *)
+	| FIX of id *  fix				(* fixity *)
 
     and kind' =						(* [kappa,k] *)
 	  GROUND					(* ordinary interface *)
@@ -83,10 +85,11 @@ structure InfPrivate =
     fun idIndex(p,l,n)		= n
 
     fun itemId(ref item')	= itemId' item'
-    and itemId'(VAL(id,_,_,_))	= id
-      | itemId'(TYP(id,_,_,_))	= id
-      | itemId'(MOD(id,_,_))	= id
-      | itemId'(INF(id,_,_))	= id
+    and itemId'(VAL(x,_,_,_))	= x
+      | itemId'(TYP(x,_,_,_))	= x
+      | itemId'(MOD(x,_,_))	= x
+      | itemId'(INF(x,_,_))	= x
+      | itemId'(FIX(x,_))	= x
 
     fun itemPath  item		= idPath(itemId item)
     fun itemLab   item		= idLab(itemId item)
@@ -97,6 +100,7 @@ structure InfPrivate =
       | itemSpace'(TYP _)	= TYP'
       | itemSpace'(MOD _)	= MOD'
       | itemSpace'(INF _)	= INF'
+      | itemSpace'(FIX _)	= FIX'
 
 
   (* Follow a path of links (performing path compression on the fly) *)
@@ -122,13 +126,15 @@ structure InfPrivate =
     val newTyp			= newItem
     val newMod			= newItem
     val newInf			= newItem
+    val newFix			= newItem
 
     fun hideId (p,l,n)		= (p,l,n+1)
     fun hide item		= item := hide'(!item)
-    and hide'(VAL(id,t,w,d))	= VAL(hideId id, t, w, d)
-      | hide'(TYP(id,k,w,d))	= TYP(hideId id, k, w, d)
-      | hide'(MOD(id,j,d))	= MOD(hideId id, j, d)
-      | hide'(INF(id,k,d))	= INF(hideId id, k, d)
+    and hide'(VAL(x,t,w,d))	= VAL(hideId x, t, w, d)
+      | hide'(TYP(x,k,w,d))	= TYP(hideId x, k, w, d)
+      | hide'(MOD(x,j,d))	= MOD(hideId x, j, d)
+      | hide'(INF(x,k,d))	= INF(hideId x, k, d)
+      | hide'(FIX(x,q))		= FIX(hideId x, q)
 
     fun extend((itemsr,map), space, p, makeItem') =
 	let
@@ -144,6 +150,7 @@ structure InfPrivate =
     fun extendTyp(s,p,k,w,d)	= extend(s, TYP', p, fn x => TYP(x,k,w,d))
     fun extendMod(s,p,j,d)	= extend(s, MOD', p, fn x => MOD(x,j,d))
     fun extendInf(s,p,k,d)	= extend(s, INF', p, fn x => INF(x,k,d))
+    fun extendFix(s,p,q)	= extend(s, FIX', p, fn x => FIX(x,q))
 
 
   (* Signature inspection *)
@@ -160,6 +167,8 @@ structure InfPrivate =
       | isModItem _			= false
     fun isInfItem(ref(INF _))		= true
       | isInfItem _			= false
+    fun isFixItem(ref(FIX _))		= true
+      | isFixItem _			= false
 
     fun asValItem(ref(VAL(x,t,s,d)))	= (idLab x, t, s, d)
       | asValItem _			= raise Item
@@ -169,6 +178,8 @@ structure InfPrivate =
       | asModItem _			= raise Item
     fun asInfItem(ref(INF(x,k,d)))	= (idLab x, k, d)
       | asInfItem _			= raise Item
+    fun asFixItem(ref(FIX(x,q)))	= (idLab x, q)
+      | asFixItem _			= raise Item
 
 
   (* Signature lookup *)
@@ -308,6 +319,7 @@ structure InfPrivate =
 	( realise(rea, j) ; item := MOD(x, j, realiseModDef(rea, d)) )
       | realiseItem(rea, ref(INF(x, k, d))) =
 	( realiseKind(rea, k) ; realiseInfDef(rea, d) )
+      | realiseItem(rea, ref(FIX _)) = ()
 
     and realiseCon(rea, kp as (k,p)) =
 	case PathMap.lookup(#inf_rea rea, p)
@@ -420,6 +432,14 @@ structure InfPrivate =
 		in
 		    extendSig((INF',l), item)
 		end
+
+	      | instanceItem'(FIX((p,l,n), q)) =
+		let
+		    val p'   = instancePath(rea, p)
+		    val item = ref(FIX((p',l,n), q))
+		in
+		    extendSig((FIX',l), item)
+		end
 	in
 	    Misc.List_appr instanceItem items ;
 	    s
@@ -518,6 +538,14 @@ structure InfPrivate =
 		in
 		    extendSig((INF',l), item)
 		end
+
+	      | singletonItem'(FIX((p,l,n), q)) =
+		let
+		    val p'   = singletonPath(rea, p)
+		    val item = ref(FIX((p',l,n), q))
+		in
+		    extendSig((FIX',l), item)
+		end
 	in
 	    Misc.List_appr singletonItem items ;
 	    s
@@ -576,6 +604,8 @@ structure InfPrivate =
 		let val item' = INF(x, cloneKind k, Option.map clone d) in
 		    extendSig((INF', idLab x), ref item')
 		end
+	      | cloneItem'(item' as FIX(x,q)) =
+		    extendSig((FIX', idLab x), ref item')
 	in
 	    Misc.List_appr cloneItem items ;
 	    s
@@ -664,6 +694,13 @@ structure InfPrivate =
 	    INF(x, k, d')
 	end
 
+      | strengthenItem'(p, FIX(x, q)) =
+	let
+	    val _  = strengthenId(p, x)
+	in
+	    FIX(x, q)
+	end
+
     and strengthenId(p, pln)		= Path.strengthen(p, pln)
 
     and strengthenPathDef(p, NONE)	= SOME p
@@ -707,6 +744,7 @@ structure InfPrivate =
 	| MissingTyp  of lab
 	| MissingMod  of lab
 	| MissingInf  of lab
+	| MissingFix  of lab
 	| ManifestVal of lab
 	| ManifestTyp of lab
 	| ManifestMod of lab
@@ -715,6 +753,7 @@ structure InfPrivate =
 	| MismatchTyp of lab * tkind * tkind
 	| MismatchMod of lab * mismatch
 	| MismatchInf of lab * mismatch
+	| MismatchFix of lab * fix * fix
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
 	| MismatchDom     of mismatch
@@ -751,6 +790,7 @@ structure InfPrivate =
 		     of VAL' => PathMap.insert(val_rea, p, selectVal(!item1))
 		      | TYP' => PathMap.insert(typ_rea, p, selectTyp(!item1))
 		      | INF' => PathMap.insert(inf_rea, p, selectInf(!item1))
+		      | FIX' => ()
 		      | MOD' => let val p1 = selectMod(!item1)
 				    val j1 = selectMod'(!item1)
 				    val j2 = selectMod'(!item2)
@@ -766,6 +806,7 @@ structure InfPrivate =
 		     | Map.Lookup (TYP',l) => raise Mismatch(MissingTyp l)
 		     | Map.Lookup (MOD',l) => raise Mismatch(MissingMod l)
 		     | Map.Lookup (INF',l) => raise Mismatch(MissingInf l)
+		     | Map.Lookup (FIX',l) => raise Mismatch(MissingFix l)
 
 	    (* Necessary to create complete realisation. *)
 	    and matchNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
@@ -807,6 +848,10 @@ structure InfPrivate =
 	    matchKind(l, k1, k2) ;
 	    matchInfDef(l, d1, d2)
 	end
+      | matchItem'(FIX(x1,q1), FIX(x2,q2)) =
+	let val l = idLab x2 in
+	    matchFix(l, q1, q2)
+	end
       | matchItem' _ = raise Crash.Crash "Inf.matchItem"
 
     and matchTyp(l,t1,t2) =
@@ -827,6 +872,10 @@ structure InfPrivate =
 	equaliseKind(k1,k2)
 	handle Mismatch mismatch =>
 	    raise Mismatch(MismatchInf(l, mismatch))
+
+    and matchFix(l,q1,q2) =
+	if q1 = q2 then () else
+	    raise Mismatch(MismatchFix(l,q1,q2))
 
     and matchValSort(l,w1,w2) =
 	if w1 = CONSTRUCTOR orelse w2 = VALUE then () else
@@ -926,6 +975,8 @@ structure InfPrivate =
 		    before pairNested(j1,j2)
 	      | pair1(b, INF(x1,k1,d1), INF(x2,k2,d2)) =
 		    pairDef(#inf_rea rea, pathToInf k1, b, x1, d1, x2, d2)
+	      | pair1(b, FIX(x1,q1), FIX(x2,q2)) =
+		    true
 	      | pair1 _ =
 		    raise Crash.Crash "Inf.intersectSig: pairing"
 
@@ -998,6 +1049,13 @@ structure InfPrivate =
 	in
 	    INF(x1,k,d)
 	end
+      | intersectItem'(rea, FIX(x1,q1), FIX(x2,q2)) =
+	let
+	    val l = idLab x1
+	    val q = intersectFix(l, q1, q2)
+	in
+	    FIX(x1,q)
+	end
       | intersectItem' _ = raise Crash.Crash "Inf.intersectItem"
 
     and intersectTyp(l,t1,t2) =
@@ -1018,6 +1076,10 @@ structure InfPrivate =
 	( equaliseKind(k1,k2) ; k1 )
 	handle Mismatch mismatch =>
 	    raise Mismatch(MismatchInf(l, mismatch))
+
+    and intersectFix(l,q1,q2) =
+	if q1 = q2 then q1 else
+	    raise Mismatch(MismatchFix(l,q1,q2))
 
     and intersectValSort(l,w1,w2) =
 	if w1 = CONSTRUCTOR orelse w2 = CONSTRUCTOR then

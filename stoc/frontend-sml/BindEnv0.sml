@@ -2,6 +2,7 @@ structure BindEnv0 :> BIND_ENV0 =
   struct
 
     open BindEnv
+    open Prebound
 
     structure P = Prebound
 
@@ -18,22 +19,22 @@ structure BindEnv0 :> BIND_ENV0 =
     val E_list  = new()
     val E_ref   = new()
 
-    val _ = insertVal(E_bool, VId.fromString "false", (i,P.stamp_false,C 0))
-    val _ = insertVal(E_bool, VId.fromString "true",  (i,P.stamp_true, C 0))
-    val _ = insertVal(E_list, VId.fromString "nil",   (i,P.stamp_nil,  C 0))
-    val _ = insertVal(E_list, VId.fromString "::",    (i,P.stamp_cons, C 1))
-    val _ = insertVal(E_ref,  VId.fromString "ref",   (i,P.stamp_ref,  R))
+    val _ = insertVal(E_bool, VId.fromString "false", (i,valstamp_false,C 0))
+    val _ = insertVal(E_bool, VId.fromString "true",  (i,valstamp_true, C 0))
+    val _ = insertVal(E_list, VId.fromString "nil",   (i,valstamp_nil,  C 0))
+    val _ = insertVal(E_list, VId.fromString "::",    (i,valstamp_cons, C 1))
+    val _ = insertVal(E_ref,  VId.fromString "ref",   (i,valstamp_ref,  R))
 
-    val _ = insertTy(E, TyCon.fromString "bool",   (i, P.stamp_bool,   E_bool))
-    val _ = insertTy(E, TyCon.fromString "int",    (i, P.stamp_int,    E_empty))
-    val _ = insertTy(E, TyCon.fromString "word",   (i, P.stamp_word,   E_empty))
-    val _ = insertTy(E, TyCon.fromString "real",   (i, P.stamp_real,   E_empty))
-    val _ = insertTy(E, TyCon.fromString "char",   (i, P.stamp_char,   E_empty))
-    val _ = insertTy(E, TyCon.fromString "string", (i, P.stamp_string, E_empty))
-    val _ = insertTy(E, TyCon.fromString "vector", (i, P.stamp_vec,    E_empty))
-    val _ = insertTy(E, TyCon.fromString "list",   (i, P.stamp_list,   E_list))
-    val _ = insertTy(E, TyCon.fromString "ref",    (i, P.stamp_tref,   E_ref))
-    val _ = insertTy(E, TyCon.fromString "exn",    (i, P.stamp_exn,    E_empty))
+    val _ = insertTy(E, TyCon.fromString "bool",   (i, typstamp_bool,  E_bool))
+    val _ = insertTy(E, TyCon.fromString "int",    (i, typstamp_int,   E_empty))
+    val _ = insertTy(E, TyCon.fromString "word",   (i, typstamp_word,  E_empty))
+    val _ = insertTy(E, TyCon.fromString "real",   (i, typstamp_real,  E_empty))
+    val _ = insertTy(E, TyCon.fromString "char",   (i, typstamp_char,  E_empty))
+    val _ = insertTy(E, TyCon.fromString "string", (i, typstamp_string,E_empty))
+    val _ = insertTy(E, TyCon.fromString "vector", (i, typstamp_vec,   E_empty))
+    val _ = insertTy(E, TyCon.fromString "list",   (i, typstamp_list,  E_list))
+    val _ = insertTy(E, TyCon.fromString "ref",    (i, typstamp_ref,   E_ref))
+    val _ = insertTy(E, TyCon.fromString "exn",    (i, typstamp_exn,   E_empty))
 
     (* Value environment *)
 
@@ -41,8 +42,8 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = union(E, E_list)
     val _ = union(E, E_ref)
 
-    val _ = insertVal(E, VId.fromString "Match", (i, P.stamp_Match, C 0))
-    val _ = insertVal(E, VId.fromString "Bind",  (i, P.stamp_Bind,  C 0))
+    val _ = insertVal(E, VId.fromString "Match", (i, valstamp_match, C 0))
+    val _ = insertVal(E, VId.fromString "Bind",  (i, valstamp_bind,  C 0))
 
     (* Global *)
 

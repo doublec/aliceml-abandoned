@@ -4,6 +4,8 @@ Group
 	structure Stamp
 	signature NAME
 	structure Name
+	signature FIXITY
+	structure Fixity
 	signature ABSTRACT_GRAMMAR
 	functor MakeAbstractGrammar
 	structure AbstractGrammar
@@ -14,6 +16,9 @@ is
 	../error/sources.cm
 	../common/prebound.cm
 	../common/name.cm
+
+	FIXITY.sig
+	Fixity.sml
 
 	ABSTRACT_GRAMMAR.sig
 	MakeAbstractGrammar.sml

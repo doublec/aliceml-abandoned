@@ -21,13 +21,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	(*--** provide types for the following six ids: *)
 	val id_false = Id ({region = Source.nowhere},
-			   Prebound.stamp_false, Name.ExId "false")
+			   Prebound.valstamp_false, Name.ExId "false")
 	val id_true = Id ({region = Source.nowhere},
-			  Prebound.stamp_true, Name.ExId "true")
+			  Prebound.valstamp_true, Name.ExId "true")
 	val id_Match = Id ({region = Source.nowhere},
-			   Prebound.stamp_Match, Name.ExId "Match")
+			   Prebound.valstamp_match, Name.ExId "Match")
 	val id_Bind = Id ({region = Source.nowhere},
-			  Prebound.stamp_Bind, Name.ExId "Bind")
+			  Prebound.valstamp_bind, Name.ExId "Bind")
 
 	val longid_true = ShortId ({region = Source.nowhere}, id_true)
 	val longid_false = ShortId ({region = Source.nowhere}, id_false)

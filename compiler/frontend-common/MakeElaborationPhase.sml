@@ -34,19 +34,19 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
   (* Predefined types *)
 
-    fun boolTyp E	= #typ(lookupTyp(E, Prebound.stamp_bool))
-    fun exnTyp E	= #typ(lookupTyp(E, Prebound.stamp_exn))
+    fun boolTyp E    = #typ(lookupTyp(E, Prebound.typstamp_bool))
+    fun exnTyp E     = #typ(lookupTyp(E, Prebound.typstamp_exn))
 
     (* UNFINISHED: overloading *)
-    fun wordTyp E	= #typ(lookupTyp(E, Prebound.stamp_word))
-    fun intTyp E	= #typ(lookupTyp(E, Prebound.stamp_int))
-    fun charTyp E	= #typ(lookupTyp(E, Prebound.stamp_char))
-    fun stringTyp E	= #typ(lookupTyp(E, Prebound.stamp_string))
-    fun realTyp E	= #typ(lookupTyp(E, Prebound.stamp_real))
+    fun wordTyp E    = #typ(lookupTyp(E, Prebound.typstamp_word))
+    fun intTyp E     = #typ(lookupTyp(E, Prebound.typstamp_int))
+    fun charTyp E    = #typ(lookupTyp(E, Prebound.typstamp_char))
+    fun stringTyp E  = #typ(lookupTyp(E, Prebound.typstamp_string))
+    fun realTyp E    = #typ(lookupTyp(E, Prebound.typstamp_real))
 
-    fun refTyp(E,t)	= Type.inApp(#typ(lookupTyp(E, Prebound.stamp_tref)), t)
-    fun vecTyp(E,t)	= Type.inApp(#typ(lookupTyp(E, Prebound.stamp_vec)), t)
-    fun listTyp(E,t)	= Type.inApp(#typ(lookupTyp(E, Prebound.stamp_list)), t)
+    fun refTyp(E,t)  = Type.inApp(#typ(lookupTyp(E, Prebound.typstamp_ref)), t)
+    fun vecTyp(E,t)  = Type.inApp(#typ(lookupTyp(E, Prebound.typstamp_vec)), t)
+    fun listTyp(E,t) = Type.inApp(#typ(lookupTyp(E, Prebound.typstamp_list)), t)
 
 
   (* Check value restriction *)
@@ -122,6 +122,9 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
   (* Expressions *)
 
+    fun elabValId_bind'(E, id as I.Id(i, stamp, name)) =
+	    O.Id(nonInfo(i), stamp, name)
+
     fun elabValId_bind(E, s, w, id as I.Id(i, stamp, name)) =
 	let
 (*DEBUG
@@ -143,7 +146,7 @@ print" *)")
 val _=print "\n"
 *)
 	in
-	    ( t', p', O.Id(typInfo(i,t'), stamp, name) )
+	    ( t', p', O.Id(nonInfo(i), stamp, name) )
 	end
 
     fun elabValId(E, id as I.Id(i, stamp, name)) =
@@ -156,14 +159,14 @@ val _=print "\n"
 "*)
 	    val t  = #typ(lookupVal(E, stamp))
 	in
-	    ( t, O.Id(typInfo(i,t), stamp, name) )
+	    ( t, O.Id(nonInfo(i), stamp, name) )
 	end
 
     and elabValLongid(E, I.ShortId(i, id)) =
 	let
 	    val (t,id') = elabValId(E, id)
 	in
-	    ( t, O.ShortId(typInfo(i,t), id') )
+	    ( t, O.ShortId(nonInfo(i), id') )
 	end
 
       | elabValLongid(E, I.LongId(i, longid, lab)) =
@@ -172,7 +175,7 @@ val _=print "\n"
 	    val (l,lab')    = elabLab(E, lab)
 	    val  t          = Inf.lookupVal(s, l)
 	in
-	    ( t, O.LongId(typInfo(i,t), longid', lab') )
+	    ( t, O.LongId(nonInfo(i), longid', lab') )
 	end
 
     and elabValLongid_path(E, I.ShortId(_, I.Id(_, stamp, _))) =
@@ -653,7 +656,7 @@ val _=print "\n"
 	    (*UNFINISHED: use punning: *)
 	    val _ = insertTyp(E, stamp, {id=id, path=p, typ=t, sort=w})
 	in
-	    O.Id(typInfo(i,t), stamp, name)
+	    O.Id(nonInfo(i), stamp, name)
 	end
 
     and elabTypId(E, id as I.Id(i, stamp, name)) =
@@ -666,14 +669,14 @@ val _=print "\n"
 *)
 	    val {typ=t, path=p, ...} = lookupTyp(E, stamp)
 	in
-	    ( t, p, O.Id(typInfo(i,t), stamp, name) )
+	    ( t, p, O.Id(nonInfo(i), stamp, name) )
 	end
 
     and elabTypLongid(E, I.ShortId(i, id)) =
 	let
 	    val (t,_,id') = elabTypId(E, id)
 	in
-	    ( t, O.ShortId(typInfo(i,t), id') )
+	    ( t, O.ShortId(nonInfo(i), id') )
 	end
 
       | elabTypLongid(E, I.LongId(i, longid, lab)) =
@@ -682,7 +685,7 @@ val _=print "\n"
 	    val (l,lab')    = elabLab(E, lab)
 	    val  t          = Inf.lookupTyp(s, l)
 	in
-	    ( t, O.LongId(typInfo(i,t), longid', lab') )
+	    ( t, O.LongId(nonInfo(i), longid', lab') )
 	end
 
 
@@ -806,7 +809,9 @@ val _=print "\n"
 
       | elabTyp(E, I.SumTyp(i, cons)) =
 	let
-	    val (t,cons') = elabCons(E, cons)
+	    (*UNFINISHED: t0 is not quite right*)
+	    val  t0       = Type.unknown(Type.STAR)
+	    val (t,cons') = elabCons(E, t0, cons)
 	in
 	    ( t, O.SumTyp(typInfo(i,t), cons') )
 	end
@@ -853,20 +858,21 @@ val _=print "\n"
 	raise Crash.Crash "Elab.elabTyp: ExtTyp"
 
 
-    and elabCon(E, I.Con(i, id as I.Id(i', stamp, name), typs)) =
+    and elabCon(E, t0, I.Con(i, id, typs)) =
 	let
-	    val  id'       = O.Id(nonInfo(i'), stamp, name)
-	    val  l         = Label.fromName name
+	    val  id'       = elabValId_bind'(E, id)
+	    val  l         = Label.fromName(I.name id)
 	    val (ts,typs') = elabStarTyps(E, typs)
+	    val  t         = List.foldr Type.inArrow t0 ts
 	in
-	    ( l, ts, O.Con(nonInfo(i), id', typs') )
+	    ( l, ts, O.Con(typInfo(i,t), id', typs') )
 	end
 
-    and elabCons(E, cons) =
+    and elabCons(E, t0, cons) =
 	let
 	    fun elabCon1(con, (r,cons')) =
 		let
-		    val (l,ts,con') = elabCon(E, con)
+		    val (l,ts,con') = elabCon(E, t0, con)
 		in
 		    ( Type.extendRow(l,ts,r), con'::cons' )
 		end
@@ -939,7 +945,7 @@ val _=print "\n"
 	    val (t,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
 	    val  _         = Type.unify(t, List.foldr Type.inArrow t0 ts)
 	in
-	    ( l, ts, O.Con(nonInfo(i), id', typs') )
+	    ( l, ts, O.Con(typInfo(i,t), id', typs') )
 	end
 
     and elabConReps(E, s, t0, cons) =
@@ -973,7 +979,7 @@ in ""(*TextIO.inputLine TextIO.stdIn*) end
 	    (*UNFINISHED: use punning: *)
 	    val _ = insertMod(E, stamp, {id=id, path=p, inf=j})
 	in
-	    O.Id(infInfo(i,j), stamp, name)
+	    O.Id(nonInfo(i), stamp, name)
 	end
 
     and elabModId(E, id as I.Id(i, stamp, name)) =
@@ -986,14 +992,14 @@ val _=print "\n"
 *)
 	    val j = #inf(lookupMod(E, stamp))
 	in
-	    ( j, O.Id(infInfo(i,j), stamp, name) )
+	    ( j, O.Id(nonInfo(i), stamp, name) )
 	end
 
     and elabModLongid(E, I.ShortId(i, id)) =
 	let
 	    val (j,id') = elabModId(E, id)
 	in
-	    ( j, O.ShortId(infInfo(i,j), id') )
+	    ( j, O.ShortId(nonInfo(i), id') )
 	end
 
       | elabModLongid(E, I.LongId(i, longid, lab)) =
@@ -1002,7 +1008,7 @@ val _=print "\n"
 	    val (l,lab')    = elabLab(E, lab)
 	    val  j          = Inf.lookupMod(s, l)
 	in
-	    ( j, O.LongId(infInfo(i,j), longid', lab') )
+	    ( j, O.LongId(nonInfo(i), longid', lab') )
 	end
 
     and elabModLongid_path(E, longid) =
@@ -1197,7 +1203,7 @@ val _=print "\n"
 	    (*UNFINISHED: use punning: *)
 	    val _ = insertInf(E, stamp, {id=id, path=p, inf=j})
 	in
-	    O.Id(infInfo(i,j), stamp, name)
+	    O.Id(nonInfo(i), stamp, name)
 	end
 
     and elabInfId(E, id as I.Id(i, stamp, name)) =
@@ -1210,14 +1216,14 @@ val _=print "\n"
 *)
 	    val j = #inf(lookupInf(E, stamp))
 	in
-	    ( j, O.Id(infInfo(i,j), stamp, name) )
+	    ( j, O.Id(nonInfo(i), stamp, name) )
 	end
 
     and elabInfLongid(E, I.ShortId(i, id)) =
 	let
 	    val (j,id') = elabInfId(E, id)
 	in
-	    ( j, O.ShortId(infInfo(i,j), id') )
+	    ( j, O.ShortId(nonInfo(i), id') )
 	end
 
       | elabInfLongid(E, I.LongId(i, longid, lab)) =
@@ -1226,7 +1232,7 @@ val _=print "\n"
 	    val (l,lab')    = elabLab(E, lab)
 	    val  j          = Inf.lookupInf(s, l)
 	in
-	    ( j, O.LongId(infInfo(i,j), longid', lab') )
+	    ( j, O.LongId(nonInfo(i), longid', lab') )
 	end
 
 
@@ -1500,6 +1506,13 @@ val _=print "\n"
 	    O.InfDec(nonInfo(i), id', inf')
 	end
 
+      | elabDec(E, s, vars, I.FixDec(i, id, fix)) =
+	let
+	    val id' = elabValId_bind'(E, id)
+	in
+	    O.FixDec(nonInfo(i), id', fix)
+	end
+
       | elabDec(E, s, vars, I.VarDec(i, id, dec)) =
 	let
 	    val id'  = elabVarId_bind'(E, id)
@@ -1744,6 +1757,13 @@ print "\n\
 					     if gen then NONE else SOME j)
 	in
 	    O.InfSpec(nonInfo(i), id', inf')
+	end
+
+      | elabSpec(E, s, vars, I.FixSpec(i, id, fix)) =
+	let
+	    val id' = elabValId_bind'(E, id)
+	in
+	    O.FixSpec(nonInfo(i), id', fix)
 	end
 
       | elabSpec(E, s, vars, I.VarSpec(i, id, spec)) =

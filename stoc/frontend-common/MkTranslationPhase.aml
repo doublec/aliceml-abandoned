@@ -129,9 +129,9 @@ structure TranslationPhase :> TRANSLATION_PHASE =
       | trLit(I.IntLit n)		= O.IntLit n
       | trLit(I.CharLit c)		= O.CharLit c
       | trLit(I.StringLit s)		= O.StringLit s
-(*      | trLit(I.RealLit x)		= O.RealLit x
+(*    | trLit(I.RealLit x)		= O.RealLit x
 UNFINISHED: obsolete after bootstrapping:
-*)      | trLit(I.RealLit x)		= O.RealLit(LargeReal.toString x)
+*)    | trLit(I.RealLit x)		= O.RealLit(LargeReal.toString x)
 
 
   (* Identifiers *)
@@ -167,6 +167,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsDec xs' (I.ModDec(i,x,m))	= idsId trId' xs' x
 						(infToTyp(#inf(I.infoMod m)))
       | idsDec xs' (I.InfDec(i,x,j))	= ()
+      | idsDec xs' (I.FixDec(i,x,q))	= ()
       | idsDec xs' (I.VarDec(i,x,d))	= idsDec xs' d
       | idsDec xs' (I.RecDec(i,ds))	= idsDecs xs' ds
       | idsDec xs' (I.LocalDec(i,ds))	= ()
@@ -332,6 +333,7 @@ UNFINISHED: obsolete after bootstrapping:
 							trId' x), e') :: ds'
 					  end
       | trDec(I.InfDec(i,x,j), ds')	= ds'
+      | trDec(I.FixDec(i,x,q), ds')	= ds'
       | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
       | trDec(I.RecDec(i,ds), ds')	= O.RecDec(i, trDecs ds) :: ds'
       | trDec(I.LocalDec(i,ds), ds')	= trDecs'(ds, ds')
@@ -411,6 +413,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trSpec y (I.ModSpec(i,x,j),ds')	= idToDec(trId' x, y,
 					     infToTyp(#inf(I.infoInf j))) :: ds'
       | trSpec y (I.InfSpec(i,x,j),ds')	= ds'
+      | trSpec y (I.FixSpec(i,x,q),ds')	= ds'
       | trSpec y (I.VarSpec(i,x,s),ds') = trSpec y (s, ds')
       | trSpec y (I.RecSpec(i,ss), ds')	= trSpecs(ss, y, ds')
       | trSpec y (I.LocalSpec(i,ss),ds')= ds'

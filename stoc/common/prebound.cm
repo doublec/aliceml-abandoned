@@ -1,7 +1,11 @@
 Group
 
+	signature NAME
+	structure Name
 	signature STAMP
 	structure Stamp
+	signature PATH
+	structure Path
 	signature PREBOUND
 	structure Prebound
 
@@ -9,7 +13,10 @@ is
 
 	../misc/sources.cm
 	../error/sources.cm
+	name.cm
 	id-stamp.cm
+	path.cm
 
 	PREBOUND.sig
+	MakePrebound.sml
 	Prebound.sml

@@ -57,8 +57,11 @@
 ../common/MakeIntermediateGrammar.sml
 ../common/IntermediateGrammar.sml
 ../common/PREBOUND.sig
+../common/MakePrebound.sml
 ../common/Prebound.sml
 ../frontend-common/StringMap.sml
+../frontend-common/FIXITY.sig
+../frontend-common/Fixity.sml
 ../frontend-common/INF.sig
 ../frontend-common/Inf.sml
 ../frontend-common/ABSTRACT_GRAMMAR.sig

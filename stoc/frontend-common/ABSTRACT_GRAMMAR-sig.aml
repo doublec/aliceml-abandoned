@@ -20,6 +20,8 @@ signature ABSTRACT_GRAMMAR =
     type comp_info
     type imp_info
 
+    type fix = Fixity.t
+
     (* Literals *)
 
     datatype lit =
@@ -144,6 +146,7 @@ signature ABSTRACT_GRAMMAR =
 	| DatDec    of dec_info * id * typ	(* data type *)
 	| ModDec    of dec_info * id * mod	(* module *)
 	| InfDec    of dec_info * id * inf	(* interface *)
+	| FixDec    of dec_info * id * fix	(* fixity *)
 	| VarDec    of dec_info * id * dec	(* scoped type variable *)
 	| RecDec    of dec_info * dec list	(* recursive declarations *)
 	| LocalDec  of dec_info * dec list	(* local declarations *)
@@ -157,6 +160,7 @@ signature ABSTRACT_GRAMMAR =
 	| DatSpec   of spec_info * id * typ	(* data type *)
 	| ModSpec   of spec_info * id * inf	(* module *)
 	| InfSpec   of spec_info * id * inf	(* interface *)
+	| FixSpec   of spec_info * id * fix	(* fixity *)
 	| VarSpec   of spec_info * id * spec	(* scoped type variable *)
 	| RecSpec   of spec_info * spec list	(* recursive specifications *)
 	| LocalSpec of spec_info * spec list	(* local specifications *)

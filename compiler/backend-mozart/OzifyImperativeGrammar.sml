@@ -46,13 +46,13 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     output1(q, #"'"))
 
 	fun outputStamp (q, stamp) =
-	    if stamp = Prebound.stamp_false then outputAtom (q, "false")
-	    else if stamp = Prebound.stamp_true then outputAtom (q, "true")
-	    else if stamp = Prebound.stamp_nil then outputAtom (q, "nil")
-	    else if stamp = Prebound.stamp_cons then outputAtom (q, "cons")
-	    else if stamp = Prebound.stamp_ref then outputAtom (q, "ref")
-	    else if stamp = Prebound.stamp_Match then outputAtom (q, "Match")
-	    else if stamp = Prebound.stamp_Bind then outputAtom (q, "Bind")
+	    if stamp = Prebound.valstamp_false then outputAtom (q, "false")
+	    else if stamp = Prebound.valstamp_true then outputAtom (q, "true")
+	    else if stamp = Prebound.valstamp_nil then outputAtom (q, "nil")
+	    else if stamp = Prebound.valstamp_cons then outputAtom (q, "cons")
+	    else if stamp = Prebound.valstamp_ref then outputAtom (q, "ref")
+	    else if stamp = Prebound.valstamp_match then outputAtom (q, "Match")
+	    else if stamp = Prebound.valstamp_bind then outputAtom (q, "Bind")
 	    else output (q, Stamp.toString stamp)
 
 	fun outputOption _ (q, NONE) =

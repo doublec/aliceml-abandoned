@@ -142,6 +142,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    ["module",ppLab l,"is","missing"]
       | ppMismatch'(Inf.MissingInf  l) =
 	    ["signature",ppLab l,"is","missing"]
+      | ppMismatch'(Inf.MissingFix  l) =
+	    ["fixity","of",ppLab l,"is","unspecified"]
       | ppMismatch'(Inf.ManifestVal l) =
 	    ["value",ppLab l,"does","not","match","manifest","specification"]
       | ppMismatch'(Inf.ManifestTyp l) =
@@ -171,6 +173,8 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppMismatch'(Inf.MismatchInf(l,im)) =
 	    ["signature",ppLab l,"is","incompatible,","because","nested"]
 	    @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchFix(l,q1,q2)) =
+	    ["fixity","of",ppLab l,"is","different"]
       | ppMismatch'(Inf.MismatchValSort(l,w1,w2)) =
 	    ["value",ppLab l,"is","not","a","constructor"]
       | ppMismatch'(Inf.MismatchTypSort(l,w1,w2)) =

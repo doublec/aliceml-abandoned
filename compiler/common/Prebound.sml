@@ -1,25 +1,19 @@
-structure Prebound :> PREBOUND =
-  struct
+structure Prebound = MakePrebound(val valid_false	= "false"
+				  val valid_true	= "true"
+				  val valid_nil		= "nil"
+				  val valid_cons	= "::"
+				  val valid_ref		= "ref"
+				  val valid_match	= "Match"
+				  val valid_bind	= "Bind"
 
-    type stamp = Stamp.t
-
-    val stamp_false	= Stamp.new()
-    val stamp_true	= Stamp.new()
-    val stamp_nil	= Stamp.new()
-    val stamp_cons	= Stamp.new()
-    val stamp_ref	= Stamp.new()
-    val stamp_Match	= Stamp.new()
-    val stamp_Bind	= Stamp.new()
-
-    val stamp_bool	= Stamp.new()
-    val stamp_int	= Stamp.new()
-    val stamp_word	= Stamp.new()
-    val stamp_real	= Stamp.new()
-    val stamp_string	= Stamp.new()
-    val stamp_char	= Stamp.new()
-    val stamp_list	= Stamp.new()
-    val stamp_vec	= Stamp.new()
-    val stamp_tref	= Stamp.new()
-    val stamp_exn	= Stamp.new()
-
-  end
+				  val typid_bool	= "bool"
+				  val typid_int		= "int"
+				  val typid_word	= "word"
+				  val typid_real	= "real"
+				  val typid_string	= "string"
+				  val typid_char	= "char"
+				  val typid_list	= "list"
+				  val typid_vec		= "vector"
+				  val typid_ref		= "ref"
+				  val typid_exn		= "exn"
+				 )

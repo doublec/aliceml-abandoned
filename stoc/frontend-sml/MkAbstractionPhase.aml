@@ -145,6 +145,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trSigId_bind = trId_bind(lookupSig, infoSigId, idSigId, SigId.toString,
 				 E.SigIdShadowed)
 
+    fun trVId_bind' E (VId(i, vid')) =
+	let
+	    val name  = VId.toString vid'
+	    val stamp = Stamp.new()
+	in
+	    O.Id(i, stamp, Name.ExId name)
+	end
+
 
     (* With polymorphic recursion we could avoid the following code
        duplication... *)
@@ -1077,20 +1085,35 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   (*UNFINISHED*)
 		acc
 
-	 | INFIXDec(i, n, VId(i',vid')) =>
-		( insertInf(E, vid', (i', SOME(LEFT, n)))
-		; acc
-		)
+	 | INFIXDec(i, n, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix' = Fixity.INFIX(n, Fixity.LEFT)
+		val dec' = O.FixDec(i, id', fix')
+		val _    = insertInf(E, vid', (i', SOME(LEFT, n)))
+	   in
+		dec' :: acc
+	   end
 
-	 | INFIXRDec(i, n, VId(i',vid')) =>
-		( insertInf(E, vid', (i', SOME(RIGHT, n)))
-		; acc
-		)
+	 | INFIXRDec(i, n, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix' = Fixity.INFIX(n, Fixity.RIGHT)
+		val dec' = O.FixDec(i, id', fix')
+		val _    = insertInf(E, vid', (i', SOME(RIGHT, n)))
+	   in
+		dec' :: acc
+	   end
 
-	 | NONFIXDec(i, VId(i',vid')) =>
-		( insertInf(E, vid', (i', NONE))
-		; acc
-		)
+	 | NONFIXDec(i, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix' = Fixity.NONFIX
+		val dec' = O.FixDec(i, id', fix')
+		val _    = insertInf(E, vid', (i', NONE))
+	   in
+		dec' :: acc
+	   end
 
 
     and trOpenDecVal (E,i,longido') (vid', (_,stamp1,is), acc) =
@@ -1961,22 +1984,40 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		acc
 
 	 | INFIXSpec(i, n, vid as VId(i',vid')) =>
-		(insertDisjointInf(E, vid', (i', SOME(Infix.LEFT, n)))
-		 handle CollisionInf vid' => error(i', E.SpecFixDuplicate vid')
-		; acc
-		)
+	   let
+		val id'   = trVId_bind' E vid
+		val fix'  = Fixity.INFIX(n, Fixity.LEFT)
+		val spec' = O.FixSpec(i, id', fix')
+		val _     = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+			    handle CollisionInf vid' =>
+				   error(i', E.SpecFixDuplicate vid')
+	   in
+		spec' :: acc
+	   end
 
 	 | INFIXRSpec(i, n, vid as VId(i',vid')) =>
-		(insertDisjointInf(E, vid', (i', SOME(Infix.RIGHT, n)))
-		 handle CollisionInf vid' => error(i', E.SpecFixDuplicate vid')
-		; acc
-		)
+	   let
+		val id'   = trVId_bind' E vid
+		val fix'  = Fixity.INFIX(n, Fixity.RIGHT)
+		val spec' = O.FixSpec(i, id', fix')
+		val _     = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+			    handle CollisionInf vid' =>
+				   error(i', E.SpecFixDuplicate vid')
+	   in
+		spec' :: acc
+	   end
 
 	 | NONFIXSpec(i, vid as VId(i',vid')) =>
-		(insertDisjointInf(E, vid', (i', NONE))
-		 handle CollisionInf vid' => error(i', E.SpecFixDuplicate vid')
-		; acc
-		)
+	   let
+		val id'   = trVId_bind' E vid
+		val fix'  = Fixity.NONFIX
+		val spec' = O.FixSpec(i, id', fix')
+		val _     = insertDisjointInf(E, vid', (i', NONE))
+			    handle CollisionInf vid' =>
+				   error(i', E.SpecFixDuplicate vid')
+	   in
+		spec' :: acc
+	   end
 
 
     and trOpenSpecVal (E,i,longido') (vid', (_,stamp1,is), acc) =

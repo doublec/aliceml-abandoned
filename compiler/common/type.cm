@@ -21,15 +21,9 @@ is
 	../misc/sources.cm
 	../error/sources.cm
 	name.cm
+	path.cm
 
-	PATH.sig
-	Path.sml
-	PathSet.sml
-	PathMap.sml
 	TYPE.sig
 	Type.sml
-
-	PP_PATH.sig
 	PP_TYPE.sig
-	PPPath.sml
 	PPType.sml

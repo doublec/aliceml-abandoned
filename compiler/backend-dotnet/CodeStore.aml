@@ -51,13 +51,13 @@ structure CodeStore :> CODE_STORE =
 		val scope = ScopedMap.new ()
 		val ty = StockWerk.StockWertTy
 	    in
-		ScopedMap.insert (scope, stamp_false, Prebound ("false", ty));
-		ScopedMap.insert (scope, stamp_true, Prebound ("true", ty));
-		ScopedMap.insert (scope, stamp_nil, Prebound ("nil", ty));
-		ScopedMap.insert (scope, stamp_cons, Prebound ("cons", ty));
-		ScopedMap.insert (scope, stamp_ref, Prebound ("ref", ty));
-		ScopedMap.insert (scope, stamp_Match, Prebound ("General$Match", ty));
-		ScopedMap.insert (scope, stamp_Bind, Prebound ("General$Bind", ty));
+		ScopedMap.insert (scope, valstamp_false, Prebound ("false", ty));
+		ScopedMap.insert (scope, valstamp_true, Prebound ("true", ty));
+		ScopedMap.insert (scope, valstamp_nil, Prebound ("nil", ty));
+		ScopedMap.insert (scope, valstamp_cons, Prebound ("cons", ty));
+		ScopedMap.insert (scope, valstamp_ref, Prebound ("ref", ty));
+		ScopedMap.insert (scope, valstamp_match, Prebound ("General$Match", ty));
+		ScopedMap.insert (scope, valstamp_bind, Prebound ("General$Bind", ty));
 		scope
 	    end
 
