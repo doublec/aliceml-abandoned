@@ -48,7 +48,7 @@ in
 
 	val entries = [BoxSimple(CheckButton ("Red", [Handler("clicked", MakeHandler "red")])),
 		       BoxSimple(CheckButton ("Yellow", [Handler("clicked", MakeHandler "yellow")])),
-		       BoxSimple(CheckButton ("Green", [Handler("clicked", MakeHandler "red")]))]
+		       BoxSimple(CheckButton ("Green", [Handler("clicked", MakeHandler "green")]))]
 	val box     = VBox {homogeneous=false, spacing=0, entries=entries}
 	val child   = Frame {title="Traffic Lights", ftype=ShadowEtchedIn, inner=box}
 	val widget  = Toplevel {title="Frame Demo", border=10,
