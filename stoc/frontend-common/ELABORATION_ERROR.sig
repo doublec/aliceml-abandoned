@@ -39,8 +39,10 @@ signature ELABORATION_ERROR =
 	(* Declarations *)
 	| ValDecUnify		of unify_error
 	| TypDecUnify		of unify_error
+	| DatDecUnify		of unify_error
 	(* Specifications *)
 	| TypSpecUnify		of unify_error
+	| DatSpecUnify		of unify_error
 
 
     val error :	Source.position * error -> 'a

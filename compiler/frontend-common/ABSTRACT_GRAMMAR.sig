@@ -142,9 +142,14 @@ signature ABSTRACT_GRAMMAR =
 	| LocalSpec of info * spec list		(* local specifications *)
 	| ExtSpec   of info * inf		(* extension (include) *)
 
-    (* Programs *)
+    (* Components *)
 
-    type program = dec list
+    and comp = Comp of info * imp list * dec list
+
+    and imp  = Imp of info * spec list * string
+
+    type component = comp
+
 
     (* Operations *)
 
@@ -152,6 +157,7 @@ signature ABSTRACT_GRAMMAR =
     val name :		id	-> name
     val lab :		lab	-> string
     val idToLab :	id	-> lab
+    val conToId :	con	-> id
 
     val infoLab :	lab	-> info
     val infoId :	id	-> info
@@ -167,5 +173,7 @@ signature ABSTRACT_GRAMMAR =
     val infoInf :	inf	-> info
     val infoDec :	dec	-> info
     val infoSpec :	spec	-> info
+    val infoComp :	comp	-> info
+    val infoImp :	imp	-> info
 
   end

@@ -18,6 +18,7 @@
  *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
+ *   - components
  *   - unified strdec and topdec
  *   - open datatypes and free constructor specifications via con
  *   - constructor synonym specifications
@@ -296,6 +297,15 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     and Program = Program of Info * Dec * Program option
 
+    (* Components *)
+
+    and Component = Component of Info * Import * Program option
+
+    and Import =
+	  IMPORTImport of Info * Spec * SCon
+	| EMPTYImport  of Info
+	| SEQImport    of Info * Import * Import
+
     (* Sequences *)
 
     and 'a Seq    = Seq of Info * 'a list
@@ -480,6 +490,12 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoFunDesc(FunDesc(I,_,_,_,_,_))		= I
 
     fun infoProgram(Program(I,_,_))			= I
+
+    fun infoComponent(Component(I,_,_))			= I
+
+    fun infoImport(IMPORTImport(I,_,_))			= I
+      | infoImport(EMPTYImport(I))			= I
+      | infoImport(SEQImport(I,_,_))			= I
 
     fun infoSeq(Seq(I,_))				= I
 

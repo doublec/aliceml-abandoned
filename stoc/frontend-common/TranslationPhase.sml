@@ -9,10 +9,16 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     (* Create fields for all structures and values in an environment *)
 
-    fun idToField(id' as O.Id(i,_,O.ExId s)) =
-	    O.Field(i, O.Lab(i,s), O.VarExp(i, O.ShortId(i, id')))
+    fun idToField(x' as O.Id(i,_,O.ExId s)) =
+	    O.Field(i, O.Lab(i,s), O.VarExp(i, O.ShortId(i, x')))
 
       | idToField _ = Crash.crash "TranslationPhase.idToField: internal id"
+
+    fun idToDec(x as I.Id(i, z, I.ExId s), y) =
+	    O.ValDec(i, O.VarPat(i, O.Id(i, z, O.ExId s)),
+			O.AppExp(i, O.SelExp(i, O.Lab(i,s)), O.VarExp(i,y)))
+
+      | idToDec _ = Crash.crash "TranslationPhase.idToDec: internal id"
 
 
     (* Curry-convert expressions *)
@@ -197,8 +203,9 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
       | trDec(I.ConDec(i,c,t), ds')	= (case t
-					   of I.SingTyp(_,y) => trEqCon(c,y,ds')
-					    | _              => trCon(c,ds')
+					   of I.SingTyp(_,y) =>
+						trEqCon(c,trLongid y,ds')
+					    | _ => trCon(c,ds')
 					  )
       | trDec(I.TypDec(i,x,t), ds')	= ds'
       | trDec(I.DatDec(i,x,t), ds')	= trTyp(t, ds')
@@ -214,10 +221,11 @@ UNFINISHED: obsolete after bootstrapping:
     and trDecs ds			= trDecs'(ds, [])
     and trDecs'(ds, ds')		= List.foldr trDec ds' ds
 
-    and trEqCon(I.Con(i,x,ts), y, ds')	= O.ValDec(i, O.VarPat(i,trId x),
-						   O.VarExp(i,trLongid y)):: ds'
-    and trCon(I.Con(i,x,ts), ds')	= O.ConDec(i, trId x,
-						      List.length ts > 0) :: ds'
+    and trEqCon(I.Con(i,x,ts), y', ds')	= O.ValDec(i, O.VarPat(i,trId x),
+						   O.VarExp(i,y')):: ds'
+    and trCon(I.Con(i,x,ts), ds')	= O.ValDec(i, O.VarPat(i,trId x),
+						   O.NewExp(i,
+						      List.length ts > 0)):: ds'
     and trCons(cs, ds')			= List.foldr trCon ds' cs
 
     and trTyp(I.AbsTyp(i), ds')		= ds'
@@ -237,14 +245,69 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trTyps(ts, ds')			= List.foldr trTyp ds' ts
 
-    and trTypRow(I.Row(i,fs,_), ds')	= trTypFields(fs, ds')
+    and trTypRow(I.Row(i,fs,b), ds')	= trTypFields(fs, ds')
     and trTypField(I.Field(i,a,t), ds')	= trTyp(t, ds')
     and trTypFields(fs, ds')		= List.foldr trTypField ds' fs
 
 
-    (* Programs *)
+    (* Components *)
 
-    fun translate program =
-	( trDecs program, idsDecs(program, []) )
+    fun trComp(I.Comp(i,is,ds))		=
+	let
+	    val (xus',ds') = trImps'(is, trDecs ds)
+	in
+	    ( xus', idsDecs(ds,[]), ds' )
+	end
+
+    and trImps'(is, ds')		= List.foldr trImp ([],ds') is
+
+    and trImp(I.Imp(i,ss,u),(xus',ds'))	=
+	let
+	    val x'  = O.Id(i, Stamp.new(), O.InId)
+	    val y'  = O.ShortId(i, x')
+	    val ds' = trSpecs(ss, y', ds')
+	in
+	    ( (x',u)::xus', ds' )
+	end
+
+    and trSpecs(ss, y, ds')		= List.foldr (trSpec y) ds' ss
+
+    and trSpec y (I.ValSpec(i,x,e),ds')	= idToDec(x,y)::ds'
+      | trSpec y (I.ConSpec(i,c,t),ds')	= idToDec(I.conToId c,y)::ds'
+      | trSpec y (I.TypSpec(i,x,t),ds')	= ds'
+      | trSpec y (I.DatSpec(i,x,t),ds')	= trRep(t, y, ds')
+      | trSpec y (I.ModSpec(i,x,m),ds')	= idToDec(x,y)::ds'
+      | trSpec y (I.InfSpec(i,x,j),ds')	= ds'
+      | trSpec y (I.RecSpec(i,ss), ds')	= trSpecs(ss, y, ds')
+      | trSpec y (I.LocalSpec(i,ss),ds')= ds'
+      | trSpec y (I.ExtSpec(i,j),  ds')	= Crash.crash "Translation: ExtSpec"
+
+    and trCons'(cs, y, ds')		=
+	List.foldr (fn(c,ds') => trEqCon(c,y,ds')) ds' cs
+
+    and trRep(I.AbsTyp(i), y, ds')	= ds'
+      | trRep(I.VarTyp(i,x), y, ds')	= ds'
+      | trRep(I.ConTyp(i,y'), y, ds')	= ds'
+      | trRep(I.FunTyp(i,x,t), y, ds')	= trRep(t, y, ds')
+      | trRep(I.AppTyp(i,t1,t2), y,ds')	= trRep(t1, y, trRep(t2, y, ds'))
+      | trRep(I.RefTyp(i,t), y, ds')	= trRep(t, y, ds')
+      | trRep(I.TupTyp(i,ts), y, ds')	= trReps(ts, y, ds')
+      | trRep(I.RowTyp(i,r), y, ds')	= trRepRow(r, y, ds')
+      | trRep(I.ArrTyp(i,t1,t2), y,ds')	= trRep(t1, y, trRep(t2, y, ds'))
+      | trRep(I.SumTyp(i,cs), y, ds')	= trCons'(cs, y, ds')
+      | trRep(I.ExtTyp(i), y, ds')	= ds'
+      | trRep(I.AllTyp(i,x,t), y, ds')	= trRep(t, y, ds')
+      | trRep(I.ExTyp(i,x,t), y, ds')	= trRep(t, y, ds')
+      | trRep(I.SingTyp(i,y'), y, ds')	= ds'
+
+    and trReps(ts, y, ds')		=
+	List.foldr (fn(t,ds') => trRep(t,y,ds')) ds' ts
+
+    and trRepRow(I.Row(i,fs,b), y, ds')	= trRepFields(fs, y, ds')
+    and trRepField y(I.Field(i,a,t),ds')= trRep(t, y, ds')
+    and trRepFields(fs, y, ds')		= List.foldr (trRepField y) ds' fs
+
+
+    val translate = trComp
 
   end

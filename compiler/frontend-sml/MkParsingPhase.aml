@@ -5,9 +5,6 @@ structure ParsingPhase :> PARSING_PHASE =
 
     structure Grammar = InputGrammar
 
-    type source  = Source.source
-    type Program = Grammar.Program
-
 
     (* Build Yacc parser *)
 
@@ -16,9 +13,12 @@ structure ParsingPhase :> PARSING_PHASE =
 
     structure Lexer  = Lexer (structure Tokens = LrVals.Tokens)
 
+    structure Lexer' = CountPosLexer(structure Lexer      = Lexer
+				     structure LexerError = LexerError)
+
     structure Parser = Join  (structure LrParser   = LrParser
 			      structure ParserData = LrVals.ParserData
-			      structure Lex        = Lexer)
+			      structure Lex        = Lexer')
 
 
     (* The actual parsing function *)

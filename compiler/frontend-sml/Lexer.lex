@@ -13,6 +13,7 @@
  *   - WHEN keyword for guarded patterns
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
+ *   - IMPORT and FROM keywords added
  *   - PRIMITIVE, OVERLOAD, INSTANCE, PREBOUND, and EQEQTYPE keywords added
  *
  * Notes:
@@ -32,15 +33,15 @@
 
     open Misc
     open Tokens
+    open LexerError
 
 
     (* Types to match structure LEXER.UserDeclaration *)
 
     type ('a,'b) token = ('a,'b) Tokens.token
-    type pos           = Source.pos
+    type pos           = int
     type svalue        = Tokens.svalue
     type lexresult     = (svalue, pos) token
-
 
 
     (* Handling nested comments *)
@@ -50,9 +51,9 @@
 
     fun eof() =
 	if !nesting = 0 then
-	    Tokens.EOF(0, 0)
+	    Tokens.EOF(nowhere)
 	else
-	    Error.error((0,0), "unclosed comment")
+	    error(nowhere, UnclosedComment)
 
 
 
@@ -78,15 +79,8 @@
 	    TOKEN(toVal(yytext,i), l, r)
 	end
 
-    fun error(yypos, yytext, s) =
-	    Error.error(toLRPos(yypos, yytext), s)
 
-    fun invalid(yypos, yytext) =
-	let
-	    val s = "invalid character `" ^ String.toCString yytext ^ "'"
-	in
-	    error(yypos, yytext, s)
-	end
+    fun error'(yypos, yytext, e) = error(toLRPos(yypos, yytext), e)
 
 
 
@@ -110,8 +104,7 @@
 	   |   _  => toInt'(s, DEC, i)
 
     and toInt'(s,b,i) = Option.valOf(StringCvt.scanString (LargeInt.scan b) s)
-			handle Overflow =>
-			       Error.error(i, "integer constant too big")
+			handle Overflow => error(i, IntTooLarge)
 
     fun toWord(s,i) =
 	case (String.sub(s,1), String.sub(s,2))
@@ -120,12 +113,10 @@
 	   |            _            => toWord'(String.extract(s,2,NONE), DEC,i)
 
     and toWord'(s,b,i) = Option.valOf(StringCvt.scanString (LargeWord.scan b) s)
-			 handle Overflow =>
-				Error.error(i, "word constant too big")
+			 handle Overflow => error(i, WordTooLarge)
 
     fun toReal(s,i)    = Option.valOf(StringCvt.scanString LargeReal.scan s)
-			 handle Overflow =>
-				Error.error(i, "real constant too big")
+			 handle Overflow => error(i, RealTooLarge)
 
 
     fun toString(s,i) =
@@ -133,10 +124,10 @@
             fun base(s,b,m) =
 		WideChar.chr(Option.valOf(StringCvt.scanString (Int.scan b) s))
 		handle (Chr | Overflow) =>
-			 Error.error(i, m ^ " escape character too big")
+			 error(i, EscapeCharTooLarge m)
 
-	    fun dec s     = base(s, DEC, "ASCII")
-	    fun unicode s = base(s, HEX, "unicode")
+	    fun dec s     = base(s, DEC, false)
+	    fun unicode s = base(s, HEX, true)
 
 	    fun convert(k,cs) =
 		case String.sub(s,k)
@@ -191,10 +182,8 @@
 	in
 	    if WideString.size ss' = 1 then
 		WideString.sub(ss', 0)
-	    else if ss' = "" then
-		Error.error(i, "empty character constant")
 	    else
-		Error.error(i, "character constant too long")
+		error(i, CharLengthInvalid ss')
 	end
 
 %%
@@ -293,10 +282,12 @@
   <INITIAL>"eqtype"	=> ( token(EQTYPE,    yypos, yytext) );
   <INITIAL>"exception"	=> ( token(EXCEPTION, yypos, yytext) );
   <INITIAL>"fn"		=> ( token(FN,        yypos, yytext) );
+  <INITIAL>"from"	=> ( token(FROM,      yypos, yytext) );
   <INITIAL>"fun"	=> ( token(FUN,       yypos, yytext) );
   <INITIAL>"functor"	=> ( token(FUNCTOR,   yypos, yytext) );
   <INITIAL>"handle"	=> ( token(HANDLE,    yypos, yytext) );
   <INITIAL>"if"		=> ( token(IF,        yypos, yytext) );
+  <INITIAL>"import"	=> ( token(IMPORT,    yypos, yytext) );
   <INITIAL>"in"		=> ( token(IN,        yypos, yytext) );
   <INITIAL>"include"	=> ( token(INCLUDE,   yypos, yytext) );
   <INITIAL>"infix"	=> ( token(INFIX,     yypos, yytext) );
@@ -350,5 +341,6 @@
   <COMMENT>"\n"		=> ( continue() );
 
 
-  <INITIAL>"\""		=> ( error(yypos, yytext, "invalid string") );
-  <INITIAL>.		=> ( invalid(yypos, yytext) );
+  <INITIAL>"\""		=> ( error'(yypos, yytext, InvalidString) );
+  <INITIAL>.		=> ( error'(yypos, yytext,
+				    InvalidChar(String.sub(yytext,0))) );

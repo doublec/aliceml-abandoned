@@ -62,18 +62,32 @@ structure PPType :> PP_TYPE =
     (* Types *)
 
     (* Precedence:
-     *  0 : sums (con of ty1 | ... | con of tyn)
-     *	1 : function arrow (ty1 -> ty2) and binders
+     *  0 : sums (con of ty1 | ... | con of tyn), kind annotation (ty : kind)
+     *	1 : function arrow (ty1 -> ty2), binders (LAM ty1 . ty2)
      *	2 : tuple (ty1 * ... * tyn)
      *	3 : constructed type (tyseq tycon)
      *)
 
     fun ppType t = fbox(below(ppTypePrec 0 t))
 
-    and (*ppTypePrec p (t as ref(REC t1)) =
-	if occurs(t,t1) then
+    and ppTypePrec p (t as ref(REC t1 | MARK(REC t1))) =
+(*DEBUG*)
+(print("pping " ^ pr(!t) ^ "\n");
+	if true orelse occurs(t,t1) then
 	    let
-		val doc = text "MU" ^/^ ppBinder(t,t1)
+val _=print"recursive\n"
+		val t'  = makeVar t
+		val doc = (case t' of MARK _ => text "!MU" | _ => text "MU") ^/^
+			    abox(
+				hbox(
+				    ppType t ^/^
+				    text "."
+				) ^^
+				below(break ^^
+				    ppTypePrec' 1 t'
+				)
+			    )
+		val _   = t := t'
 	    in
 		if p > 1 then
 		    paren doc
@@ -81,29 +95,21 @@ structure PPType :> PP_TYPE =
 		    fbox(below(nest doc))
 	    end
 	else
-	    ppTypePrec p t1
+(print"not recursive\n";
+	    ( reduce1 t1 ; ppTypePrec p t1 )
+))
 
-      | ppTypePrec p (t as ref(MARK(REC t1))) =
-	if occurs(t,t1) then
-	    let
-		val doc = text "!MU" ^/^ ppBinder(t,t)
-	    in
-		if p > 1 then
-		    paren doc
-		else
-		    fbox(below(nest doc))
-	    end
-	else
-	    ppTypePrec p t1
-
-(*DEBUG
-      | ppTypePrec  p (ref t') = ppTypePrec' p t'
-*)    |*) ppTypePrec  p (t as ref t') =
+(*      | ppTypePrec  p (ref t') = ppTypePrec' p t'
+(*DEBUG*)
+*)    | ppTypePrec  p (t as ref t') =
 let
 val _=print("pping " ^ pr t' ^ "\n")
 in
+
 	if foldl1'(t', fn(t1,b) => b orelse occurs(t,t1), false) then
 	    let
+(*DEBUG*)
+val _=print"RECURSIVE!\n"
 		val a'  = makeVar t
 		val doc = text "MU" ^/^
 			    abox(
@@ -123,14 +129,24 @@ in
 		    fbox(below(nest doc))
 	    end
 	else
+(print"OK\n";
 	    ppTypePrec' p t'
+)
 end
+
 
     and ppTypePrec' p (HOLE(k,n)) =
 	if k = STAR then
 	    text "'_?"
 	else
-	    paren (text "'_?" ^/^ text ":" ^/^ ppKind k)
+	    let
+	        val doc = text "'_?" ^/^ text ":" ^/^ ppKind k
+	    in
+		if p > 0 then
+		    paren doc
+		else
+		    doc
+	    end
 
       | ppTypePrec' p (LINK t) =
 	    ppTypePrec p t
@@ -248,7 +264,7 @@ end
 		hbox(
 		    ppType a ^/^
 (*DEBUG*)
-text"(" ^^ ppTypePrec' 1 a' ^^ text")" ^/^
+text"(" ^^ ppTypePrec' 0 a' ^^ text")" ^/^
 		    text "."
 		) ^^
 		below(break ^^

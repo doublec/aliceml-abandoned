@@ -2238,6 +2238,38 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    fun translate E program = trProgramo E (SOME program)
+
+    (* Components *)
+
+    fun trComponent E (Component(i, import, programo)) =
+	let
+	    val imps' = trImport E import
+	    val decs' = trProgramo E programo
+	in
+	    O.Comp(i, imps', decs')
+	end
+
+
+    and trImport  E import = List.rev(trImport' (E,[]) import)
+    and trImport'(E,acc) =
+	fn IMPORTImport(i, spec, scon) =>
+	   let
+		val specs' = trSpec E spec
+		val lit'   = trSCon E scon
+		val s      = case lit'
+			       of O.StringLit s => s
+			        | _             => error(i, "string required")
+	   in
+		O.Imp(i, specs', s) :: acc
+	   end
+
+	 | EMPTYImport(i) =>
+		acc
+
+	 | SEQImport(i, import1, import2) =>
+		trImport' (E, trImport' (E,acc) import1) import2
+
+
+    val translate = trComponent
 
   end

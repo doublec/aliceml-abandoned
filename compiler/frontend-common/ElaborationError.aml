@@ -39,8 +39,10 @@ structure ElaborationError :> ELABORATION_ERROR =
 	(* Declarations *)
 	| ValDecUnify		of unify_error
 	| TypDecUnify		of unify_error
+	| DatDecUnify		of unify_error
 	(* Specifications *)
 	| TypSpecUnify		of unify_error
+	| DatSpecUnify		of unify_error
 
 
     fun toString(VecExpUnify ue) =
@@ -97,7 +99,11 @@ structure ElaborationError :> ELABORATION_ERROR =
 	"expression type does not match pattern"
       | toString(TypDecUnify ue) =
 	"missing arguments in type expression"
+      | toString(DatDecUnify ue) =
+	"missing arguments in type expression"
       | toString(TypSpecUnify ue) =
+	"missing arguments in type expression"
+      | toString(DatSpecUnify ue) =
 	"missing arguments in type expression"
 
 

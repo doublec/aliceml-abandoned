@@ -653,7 +653,7 @@ val _=print("lookup value " ^ x ^ ": ")
 val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupTyp(E, stamp))), 600)
 ;print "\n")
 handle Lookup _ => ()
-	    val t = Type.instance(#2(lookupTyp(E, stamp)))
+	    val t = #2(lookupTyp(E, stamp))
 		    handle Lookup _ =>
 			let val t = Type.unknown k in
 (*DEBUG*)
@@ -831,8 +831,9 @@ print"not found\n";
 	end
 
 
+  (* Type representations *)
+
     and elabTypRep(E, id', buildKind, I.ConTyp(i, longid)) =
-	(*UNFINISHED: if t is a sum, enter constructors*)
 	let
 	    val (t,longid') = elabTypLongid(E, longid)
 	in
@@ -878,6 +879,31 @@ print"not found\n";
 
       | elabTypRep(E, id', buildKind, typ) =
 	    elabTyp(E, typ)
+
+
+    and elabConRep(E, I.Con(i, id, typs)) =
+	let
+	    val  l         = Lab.fromString(I.lab(I.idToLab id))
+	    val (t,id')    = elabValId(E, id)
+	    val (ts,typs') = elabStarTyps(E, typs)
+	in
+	    ( l, ts, O.Con(nonInfo(i), id', typs') )
+	end
+
+    and elabConReps(E, cons) =
+	let
+	    fun elabCon1(con, (r,cons')) =
+		let
+		    val (l,ts,con') = elabConRep(E, con)
+		in
+		    ( Type.extendRow(l,ts,r), con'::cons' )
+		end
+
+	    val (r,cons') = List.foldr elabCon1 (Type.emptyRow(), []) cons
+	    val  t        = Type.inSum r
+	in
+	    ( t, cons' )
+	end
 
 
   (* Modules *)
@@ -1184,11 +1210,9 @@ print " (not generalised)\n")) (copyScope E) andthen
 
       | elabDec(E, I.TypDec(i, id, typ)) =
 	let
-	    val  _        = Type.enterLevel()
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
-	    val (t2,typ') = elabTypRep(E, id', fn k => k, typ)
-	    val  _        = Type.exitLevel()
+	    val (t2,typ') = elabTyp(E, typ)
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
 				error(I.infoTyp typ,
@@ -1200,6 +1224,42 @@ val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600)
 val _=print "\n"
 	in
 	    O.TypDec(nonInfo(i), id', typ')
+	end
+
+      | elabDec(E, I.DatDec(i, id, typ)) =
+	let
+	    val  _        = Type.enterLevel()
+	    val  k        = elabTypKind(E, typ)
+	    val (t1,id')  = elabTypId(E, k, id)
+	    val (t2,typ') = elabTypRep(E, id', fn k => k, typ)
+	    val  _        = Type.exitLevel()
+(*DEBUG*)
+val _=print"DatDec unification\n"
+val _=print("t1 = ")
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600)
+val _=print "\n"
+val _=print("t2 = ")
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t2, 600)
+val _=print "\n"
+	    val  _        = Type.unify(t1,t2)
+			    handle Type.Unify(t3,t4) =>
+((*DEBUG*)
+print("t3 = ");
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t3, 600);
+print "\n";
+print("t4 = ");
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t4, 600);
+print "\n";
+				error(I.infoTyp typ,
+				      E.DatDecUnify(t1, t2, t3, t4))
+)
+(*DEBUG*)
+val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
+val _= print("datatype " ^ x ^ " = ")
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600)
+val _=print "\n"
+	in
+	    O.DatDec(nonInfo(i), id', typ')
 	end
 
       | elabDec(E, I.ModDec(i, id, mod)) =
@@ -1283,8 +1343,20 @@ print "\n") andthen
 
       | elabLHSRecDec(E, I.TypDec(i, id, typ)) =
 	let
-	    val k = elabTypKind(E, typ)
-	    val _ = elabTypId(E, k, id)
+	    val  k    = elabTypKind(E, typ)
+	    val (t,_) = elabTypId(E, k, id)
+	    val  _    = Type.unify(t, Type.inRec(Type.unknown k))
+			handle Type.Unify _ => Crash.crash "Elab.elabLHSRecDec"
+	in
+	    []
+	end
+
+      | elabLHSRecDec(E, I.DatDec(i, id, typ)) =
+	let
+	    val  k    = elabTypKind(E, typ)
+	    val (t,_) = elabTypId(E, k, id)
+	    val  _    = Type.unify(t, Type.inRec(Type.unknown k))
+			handle Type.Unify _ => Crash.crash "Elab.elabLHSRecDec"
 	in
 	    []
 	end
@@ -1354,11 +1426,25 @@ print "\n") andthen
 	let
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
-	    val (t2,typ') = elabTypRep(E, id', fn k => k, typ)
+	    val (t2,typ') = elabTyp(E, typ)
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
 				error(I.infoTyp typ,
 				      E.TypSpecUnify(t1, t2, t3, t4))
+	in
+	    O.TypSpec(nonInfo(i), id', typ')
+	end
+
+      | elabSpec(E, I.DatSpec(i, id, typ)) =
+	(*UNFINISHED*)
+	let
+	    val  k        = elabTypKind(E, typ)
+	    val (t1,id')  = elabTypId(E, k, id)
+	    val (t2,typ') = elabTypRep(E, id', fn k => k, typ)
+	    val  _        = Type.unify(t1,t2)
+			    handle Type.Unify(t3,t4) =>
+				error(I.infoTyp typ,
+				      E.DatSpecUnify(t1, t2, t3, t4))
 	in
 	    O.TypSpec(nonInfo(i), id', typ')
 	end
@@ -1423,8 +1509,20 @@ print "\n") andthen
 
       | elabLHSRecSpec(E, I.TypSpec(i, id, typ)) =
 	let
-	    val k = elabTypKind(E, typ)
-	    val t = Type.unknown k
+	    val  k    = elabTypKind(E, typ)
+	    val (t,_) = elabTypId(E, k, id)
+	    val  _    = Type.unify(t, Type.inRec(Type.unknown k))
+			handle Type.Unify _ => Crash.crash "Elab.elabLHSRecSpec"
+	in
+	    insertTyp(E, I.stamp id, (id,t))
+	end
+
+      | elabLHSRecSpec(E, I.DatSpec(i, id, typ)) =
+	let
+	    val  k    = elabTypKind(E, typ)
+	    val (t,_) = elabTypId(E, k, id)
+	    val  _    = Type.unify(t, Type.inRec(Type.unknown k))
+			handle Type.Unify _ => Crash.crash "Elab.elabLHSRecSpec"
 	in
 	    insertTyp(E, I.stamp id, (id,t))
 	end
@@ -1452,13 +1550,44 @@ print "\n") andthen
 
   (* Programs *)
 
-    fun elab E program =
+    fun elabProgram E program =
 	let
 	    val _     = insertScope E
 	    val decs' = elabDecs(E,program)
 	    val _     = mergeScope E
 	in
 	    decs'
+	end
+
+
+  (* Components *)
+
+    fun elabComp(E, I.Comp(i, imps, decs)) =
+	let
+	    val imps' = elabImps(E, imps)
+	    val decs' = elabDecs(E, decs)
+	in
+	    O.Comp(nonInfo(i), imps', decs')
+	end
+
+    and elabImp(E, I.Imp(i, specs, s)) =
+	let
+	    val specs' = elabSpecs(E, specs)
+	in
+	    O.Imp(nonInfo(i), specs', s)
+	end
+
+    and elabImps(E, imps) = List.map (fn imp => elabImp(E, imp)) imps
+
+
+
+    fun elab E component =
+	let
+	    val _         = insertScope E
+	    val impsdecs' = elabComp(E,component)
+	    val _         = mergeScope E
+	in
+	    impsdecs'
 	end
 	handle Error.Error x => ( deleteScope E ; raise Error.Error x )
 

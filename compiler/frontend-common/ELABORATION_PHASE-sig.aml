@@ -6,6 +6,6 @@ signature ELABORATION_PHASE =
 
     type env = Env.t
 
-    val elab :	env -> I.program -> O.program
+    val elab :	env -> I.component -> O.component
 
   end

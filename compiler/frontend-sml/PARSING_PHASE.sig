@@ -1,6 +1,6 @@
 signature PARSING_PHASE =
   sig
 
-    val parse: Source.source -> InputGrammar.Program
+    val parse: Source.source -> InputGrammar.Component
 
   end

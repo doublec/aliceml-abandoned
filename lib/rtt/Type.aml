@@ -96,70 +96,6 @@ fun pr(ARR(t1,t2))	= "ARR"
     val kindVar			= kind
 
 
-    (* Reduction to some sort of head normal form *)
-
-    fun reduce1(t as ref(APP(t1,t2))) =	(* beta *)
-	(case !(follow t1)
-	   of LAM(a,t3) =>
-		( a := LINK t2
-		; t := LINK t3
-		; reduce1 t
-		)
-	    | _ => ()
-	)
-      | reduce1(t as ref(LAM(a,t1))) =	(* eta *)
-	(case !(follow t1)
-	   of APP(t2,t3) =>
-		if a = t3 then
-		( t := LINK t2
-		; reduce1 t
-		)
-		else ()
-	    | _ => ()
-	)
-      | reduce1 _ = ()
-
-
-    (* Projections and extractions *)
-
-    exception Type
-
-    fun asType(ref(LINK t | REC t))	= asType t
-      | asType(t as ref(APP _ | LAM _))	= ( reduce1 t ; asType' t )
-      | asType(ref t')			= t'
-
-    and asType'(ref(t' as (APP _ | LAM _))) = t'
-      | asType' t			= asType t
-
-    fun isUnknown t	= case asType t of HOLE _ => true | _ => false
-    fun isArrow t	= case asType t of ARR _ => true | _ => false
-    fun isTuple t	= case asType t of TUP _ => true | _ => false
-    fun isRow t		= case asType t of ROW _ => true | _ => false
-    fun isSum t		= case asType t of SUM _ => true | _ => false
-    fun isVar t		= case asType t of VAR _ => true | _ => false
-    fun isCon t		= case asType t of CON _ => true | _ => false
-    fun isAll t		= case asType t of ALL _ => true | _ => false
-    fun isExist t	= case asType t of EX  _ => true | _ => false
-    fun isLambda t	= case asType t of LAM _ => true | _ => false
-    fun isApp t		= case asType t of APP _ => true | _ => false
-    fun isRec t		= case asType t of REC _ => true | _ => false
-
-    fun asArrow t	= case asType t of ARR tt => tt | _ => raise Type
-    fun asTuple t	= case asType t of TUP ts => ts | _ => raise Type
-    fun asRow t		= case asType t of ROW r  => r  | _ => raise Type
-    fun asSum t		= case asType t of SUM r  => r  | _ => raise Type
-    fun asVar t		= case asType t of VAR _  => t  | _ => raise Type
-    fun asCon t		= case asType t of CON c  => c  | _ => raise Type
-    fun asAll t		= case asType t of ALL at => at | _ => raise Type
-    fun asExist t	= case asType t of EX  at => at | _ => raise Type
-    fun asLambda t	= case asType t of LAM at => at | _ => raise Type
-    fun asApp t		= case asType t of APP tt => tt | _ => raise Type
-    fun asRec t		= case asType t of REC t  => t  | _ => raise Type
-
-    fun pathCon(_,_,p)	= p
-    fun path t		= pathCon(asCon t)
-
-
     (* Traversal *)
 
     fun app1'(( HOLE _
@@ -203,7 +139,8 @@ fun pr(ARR(t1,t2))	= "ARR"
     fun unmark(t as ref(MARK t')) 	= ( t := t' ; app1'(t', unmark) )
 (*DEBUG*)
 before (case t' of MARK _ => Crash.crash "Type.unmark: double mark" | _ =>())
-before print"MARK deleted\n"
+(*before print"MARK deleted\n"
+*)
       | unmark _	            	= ()
 
 
@@ -216,8 +153,9 @@ before print"MARK deleted\n"
 		    val _  = f t
 		    val t' = !t
 		    val _  = t := MARK t'
-(*DEBUG*)
+(*(*DEBUG*)
 before print"MARK set (by app)\n"
+*)
 		in
 		    app1'(t',app)
 		end
@@ -234,8 +172,9 @@ before print"MARK set (by app)\n"
 		    val a' = f(t,a)
 		    val t' = !t
 		    val _  = t := MARK t'
-(*DEBUG*)
+(*(*DEBUG*)
 before print"MARK set (by foldl)\n"
+*)
 		in
 		    foldl1'(t',fold,a')
 		end
@@ -245,24 +184,10 @@ before print"MARK set (by foldl)\n"
 
 
     fun update(t as ref(MARK _), t')	= t := MARK t'
-(*DEBUG*)
+(*(*DEBUG*)
 before print"MARK updated\n"
-      | update(t, t')			= t := t'
-
-
-    (* Extraction of holes and paths *)
-(*
-    fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
-    fun paths t = foldl (fn(t as ref(CON c), a) => pathCon(c)::a | (t,a) => a) t
 *)
-
-    fun paths t =
-    	let
-	    val s = PathSet.new()
-	in
-	    app (fn(ref(CON c)) => PathSet.insert(s, pathCon c) | _ => ()) t ;
-	    s
-	end
+      | update(t, t')			= t := t'
 
 
     (* Cloning under a type realisation *)
@@ -279,8 +204,9 @@ before print"MARK updated\n"
 		let
 		    val _   = trail := (t1,t1') :: !trail
 		    val t2  = ref(MARK t1')
-(*DEBUG*)
+(*(*DEBUG*)
 before print"MARK set (by dup')\n"
+*)
 		    val _   = t1 := LINK t2
 		in
 		    t2
@@ -290,12 +216,14 @@ before print"MARK set (by dup')\n"
 		let
 		    val _   = trail := (t1,t1') :: !trail
 		    val t2  = ref(MARK t1')
-(*DEBUG*)
+(*(*DEBUG*)
 before print"MARK set (by dup)\n"
+*)
 		    val _   = t1 := LINK t2
 		    val t2' = MARK(clone' t1')
-(*DEBUG*)
+(*(*DEBUG*)
 before print"MARK updated (by dup)\n"
+*)
 		    val _   = t2 := t2'
 		in
 		    t2
@@ -339,6 +267,51 @@ before print"MARK updated (by dup)\n"
     fun clone t = realise (PathMap.new()) t
 
 
+    (* Reduction to some sort of head normal form *)
+
+    (*UNFINISHED: how reduce APP(REC(...(REC(LAM _),_)))? *)
+
+    (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
+
+    fun reduce1(t as ref(APP(t1,t2)))	= 
+(print">reduce1 APP\n";
+ reduceApp(t, t1, t2)
+;print"<reduce1\n")
+      | reduce1 _			=
+(print">reduce1\n";
+ ()
+;print"<reduce1\n")
+
+(*    fun reduce1(t as ref(APP(t1,t2))) =
+	(case follow t1
+	   of t3 as ref(LAM _) =>
+		(case !(clone t3) of LAM(a,t4) =>
+		    ( a := LINK t2
+		    ; t := LINK t4
+		    ; reduce1 t
+		    )
+		| _ => Crash.crash "Type.reduce1")
+
+	    | _ => ()
+	)
+      | reduce1 _ = ()
+*)
+    and reduceApp(t, t1 as ref(LAM _), t2) =
+	(case !(clone t1)
+	   of LAM(a,t3) =>
+		( a := LINK t2
+		; t := LINK t3
+		; reduce1 t
+		)
+	    | _ => Crash.crash "Type.reduceApp"
+	)
+      | reduceApp(t, ref(REC t3), t2) =
+	( reduceApp(t, follow t3, t2)
+	; t := REC(ref(!t))
+	)
+      | reduceApp(t, t1, t2) = ()
+
+
     (* Creation and injections *)
 
     fun unknown' k	= HOLE(k, !level)
@@ -359,6 +332,44 @@ before print"MARK updated (by dup)\n"
     fun var k		= ref(VAR(k, !level))
 
 
+    (* Projections and extractions *)
+
+    exception Type
+
+    fun asType(ref(LINK t | REC t))	= asType t
+      | asType(t as ref(APP _))	= ( reduce1 t ; asType' t )
+      | asType(ref t')			= t'
+
+    and asType'(ref(t' as APP _))	= t'
+      | asType' t			= asType t
+
+    fun isUnknown t	= case asType t of HOLE _ => true | _ => false
+    fun isArrow t	= case asType t of ARR _ => true | _ => false
+    fun isTuple t	= case asType t of TUP _ => true | _ => false
+    fun isRow t		= case asType t of ROW _ => true | _ => false
+    fun isSum t		= case asType t of SUM _ => true | _ => false
+    fun isVar t		= case asType t of VAR _ => true | _ => false
+    fun isCon t		= case asType t of CON _ => true | _ => false
+    fun isAll t		= case asType t of ALL _ => true | _ => false
+    fun isExist t	= case asType t of EX  _ => true | _ => false
+    fun isLambda t	= case asType t of LAM _ => true | _ => false
+    fun isApp t		= case asType t of APP _ => true | _ => false
+
+    fun asArrow t	= case asType t of ARR tt => tt | _ => raise Type
+    fun asTuple t	= case asType t of TUP ts => ts | _ => raise Type
+    fun asRow t		= case asType t of ROW r  => r  | _ => raise Type
+    fun asSum t		= case asType t of SUM r  => r  | _ => raise Type
+    fun asVar t		= case asType t of VAR _  => t  | _ => raise Type
+    fun asCon t		= case asType t of CON c  => c  | _ => raise Type
+    fun asAll t		= case asType t of ALL at => at | _ => raise Type
+    fun asExist t	= case asType t of EX  at => at | _ => raise Type
+    fun asLambda t	= case asType t of LAM at => at | _ => raise Type
+    fun asApp t		= case asType t of APP tt => tt | _ => raise Type
+
+    fun pathCon(_,_,p)	= p
+    fun path t		= pathCon(asCon t)
+
+
     (* Instantiation: instantiate universally quantified types, skolemise
      * existentially qualified types. If there is any quantification,
      * then we have to copy the type.
@@ -371,10 +382,9 @@ before print"MARK updated (by dup)\n"
       | instance' t			= t
 
     fun instance(t as ref(ALL _| EX _))	= instance'(clone t)
-      | instance(t as ref(LAM _))	= clone t
       | instance t			= t
 
-(*DEBUG*)
+(*(*DEBUG*)
     fun instance(t as ref(ALL(a,_)| EX(a,_))) =
 (case !a of VAR _ => () | _ => print"quantifier 1 ARGH!\n";
 let val t2 as ref(ALL(a2,_)|EX(a2,_)) = clone t in
@@ -387,7 +397,7 @@ instance' t2 before
 end)
       | instance(t as ref(LAM _))	= clone t
       | instance t			= t
-
+*)
 
     fun skolem'(ref(ALL(a,t)))		= skolem' t
       | skolem'(ref(EX(a,t)))		= ( a := unknown' STAR ; skolem' t )
@@ -454,24 +464,29 @@ end)
 
     fun occurs(t1,t2) =
 	let
-(*DEBUG*)
+(*(*DEBUG*)
 val _=print">occurs\n"
+*)
 	    exception Occurs
 
 	    fun occurs(t2 as ref t2') =
 		if t1 = t2 then
 		    raise Occurs
 		else
+(*(*DEBUG*)
+(print"MARK set (by occurs)\n";
+*)
 		    ( t2 := MARK t2' ; occurs' t2' )
-(*DEBUG*)
-before print"MARK set (by occurs)\n"
+(*)
+*)
 
 	    and occurs'(REC _ | MARK _) = ()
 	      | occurs' t2'             = app1'(t2', occurs)
 	in
 	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
-(*DEBUG*)
+(*(*DEBUG*)
 before print"<occurs\n"
+*)
 	end
 
     fun unify(t1,t2) =
@@ -565,11 +580,14 @@ before print"<occurs\n"
 	       | (APP(tt1), APP(tt2)) =>
 		 recurse unifyPair (tt1,tt2)
 
-	       | (REC(t1), _) =>
-		 unify(t1,t2)
+	       | (REC(t3), REC(t4)) =>
+		 recurse unify (t3,t4)
 
-	       | (_, REC(t2)) =>
-		 unify(t1,t2)
+	       | (REC(t3), _) =>
+		 ( t2 := REC(ref t2') ; unify(t1,t2) )
+
+	       | (_, REC(t3)) =>
+		 ( t1 := REC(ref t1') ; unify(t1,t2) )
 
 	       | _ => raise Unify(t1,t2)
 	end
@@ -591,6 +609,22 @@ before print"<occurs\n"
 	in
 	    loop(0,ts)
 	end
+
+
+    (* Extraction of holes and paths *)
+(*
+    fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
+    fun paths t = foldl (fn(t as ref(CON c), a) => pathCon(c)::a | (t,a) => a) t
+*)
+
+    fun paths t =
+    	let
+	    val s = PathSet.new()
+	in
+	    app (fn(ref(CON c)) => PathSet.insert(s, pathCon c) | _ => ()) t ;
+	    s
+	end
+
 
   end
 

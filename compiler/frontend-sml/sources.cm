@@ -43,7 +43,11 @@ is
 
     (* Parsing *)
 
+    LEXER_ERROR.sig
+    LexerError.sml
+
     Lexer.lex
+    CountPosLexer.sml
     Parser.grm
 
     DERIVED_FORMS.sig

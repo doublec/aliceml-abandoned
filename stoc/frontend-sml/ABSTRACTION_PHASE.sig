@@ -6,6 +6,6 @@ signature ABSTRACTION_PHASE =
 
     type Env = BindEnv.Env
 
-    val translate :	Env -> I.Program -> O.program
+    val translate :	Env -> I.Component -> O.component
 
   end

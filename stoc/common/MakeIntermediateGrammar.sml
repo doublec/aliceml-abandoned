@@ -8,7 +8,7 @@ functor MakeIntermediateGrammar(type info) :>
 
     (* Literals *)
 
-    datatype lit =	(* Add type name annotation later. *)
+    datatype lit =
 	  WordLit   of LargeWord.word
 	| IntLit    of LargeInt.int
 	| CharLit   of WideChar.char
@@ -33,6 +33,7 @@ UNFINISHED: obsolete after bootstrapping:
     datatype exp =
 	  LitExp    of info * lit
 	| PrimExp   of info * string
+	| NewExp    of info * bool (* has args *)
 	| VarExp    of info * longid
 	| ConExp    of info * longid * bool
 	| RefExp    of info
@@ -92,12 +93,11 @@ UNFINISHED: obsolete after bootstrapping:
 			 * (4) if an VarExp on the LHS structurally corresponds
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
-	| ConDec    of info * id * bool (* has args *)
 	| RecDec    of info * dec list
 
-    (* Programs *)
+    (* Components *)
 
-    type program = dec list * id list
+    type component = (id * string) list * id list * dec list
 
 
     (* Projections *)
@@ -109,6 +109,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun infoExp(LitExp(i,_))		= i
       | infoExp(PrimExp(i,_))		= i
+      | infoExp(NewExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i
@@ -147,7 +148,6 @@ UNFINISHED: obsolete after bootstrapping:
       | infoPat(WithPat(i,_,_))		= i
 
     fun infoDec(ValDec(i,_,_))		= i
-      | infoDec(ConDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
 
   end

@@ -4,6 +4,6 @@ signature TRANSLATION_PHASE =
     structure I : ABSTRACT_GRAMMAR     = AbstractGrammar
     structure O : INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-    val translate :	I.program -> O.program
+    val translate :	I.component -> O.component
 
   end

@@ -7,7 +7,7 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Literals *)
 
-    datatype lit =	(* Add type name annotation later. *)
+    datatype lit =
 	  WordLit   of LargeWord.word
 	| IntLit    of LargeInt.int
 	| CharLit   of WideChar.char
@@ -32,6 +32,7 @@ UNFINISHED: obsolete after bootstrapping:
     datatype exp =
 	  LitExp    of info * lit
 	| PrimExp   of info * string
+	| NewExp    of info * bool (* has args *)
 	| VarExp    of info * longid
 	| ConExp    of info * longid * bool
 	| RefExp    of info
@@ -91,12 +92,11 @@ UNFINISHED: obsolete after bootstrapping:
 			 * (4) if an VarExp on the LHS structurally corresponds
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
-	| ConDec    of info * id * bool (* has args *)
 	| RecDec    of info * dec list
 
-    (* Programs *)
+    (* Components *)
 
-    type program = dec list * id list
+    type component = (id * string) list * id list * dec list
 
 
     (* Operations *)

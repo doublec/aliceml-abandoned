@@ -18,6 +18,7 @@
  *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
+ *   - components
  *   - unified strdec and topdec
  *   - open datatypes and free constructor specifications via con
  *   - constructor synonym specifications
@@ -296,6 +297,15 @@ signature INPUT_GRAMMAR =
 
     and Program = Program of Info * Dec * Program option
 
+    (* Components *)
+
+    and Component = Component of Info * Import * Program option
+
+    and Import =
+	  IMPORTImport of Info * Spec * SCon
+	| EMPTYImport  of Info
+	| SEQImport    of Info * Import * Import
+
     (* Sequences *)
 
     and 'a Seq    = Seq of Info * 'a list
@@ -347,6 +357,8 @@ signature INPUT_GRAMMAR =
     val infoSigDesc :	SigDesc		-> Info
     val infoFunDesc :	FunDesc		-> Info
     val infoProgram :	Program		-> Info
+    val infoComponent :	Component	-> Info
+    val infoImport :	Import		-> Info
     val infoSeq :	'a Seq		-> Info
 
     val idLab :		Lab		-> Lab.t

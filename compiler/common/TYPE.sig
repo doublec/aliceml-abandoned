@@ -48,7 +48,6 @@ signature TYPE =
     val isExist :	typ -> bool
     val isLambda :	typ -> bool
     val isApp :		typ -> bool
-    val isRec :		typ -> bool
 
     (* Projections *)
 
@@ -64,7 +63,6 @@ signature TYPE =
     val asExist :	typ -> alpha * typ	(* Type *)
     val asLambda :	typ -> alpha * typ	(* Type *)
     val asApp :		typ -> typ * typ	(* Type *)
-    val asRec :		typ -> typ		(* Type *)
 
     (* Copying and instantiation *)
 

@@ -26,11 +26,11 @@
 (*	      ::= pat withfun fvalbind end	(derived form)			*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
-(*        dec      ::= constructor dconbind						*)
+(*        dec      ::= constructor dconbind					*)
 (*	  datbind  ::= tyvarseq tycon						*)
 (*	  dconbind ::= <op> vid <of ty> : tyvarseq longtycon <and dconbind>	*)
 (*		   ::= <op> vid = <op> longvid <and dconbind>			*)
-(*        spec     ::= constructor dcondesc						*)
+(*        spec     ::= constructor dcondesc					*)
 (*	  datdesc  ::= tyvarseq tycon						*)
 (*	  dcondesc ::= vid <of ty> : tyvarseq longtycon <and dcondesc>		*)
 (*		   ::= vid = longvid <and dcondesc>				*)
@@ -79,6 +79,11 @@
 (*   - sharing and where for signature:						*)
 (*	  spec   ::= spec sharing signature longsigid_1 = ... = longsigid_n	*)
 (*	  sigexp ::= sigexp where signature longsigid_1 = sigexp		*)
+(*   - components:								*)
+(*	  component ::= import <program>					*)
+(*	  import    ::= import spec from string					*)
+(*			<>							*)
+(*			import <;> import					*)
 (*										*)
 (* We did NOT introduce a sharing signature ... and signature ... derived form	*)
 (* similar to types, because we consider that completely broken.		*)
@@ -137,7 +142,7 @@
 
     (* Helper to build position fields *)
 
-    fun I(left, right) = if right = 0 then (left, left) else (left, right)
+    fun I(left, right) = (left, right)
 
 
 %%
@@ -167,6 +172,7 @@
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 	| CONSTRUCTOR | NON | WHEN | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| IMPORT | FROM
 	| PRIMITIVE | OVERLOAD | INSTANCE | PREBOUND | EQEQTYPE
 
 	(* Additional reserved words for the modules language *)
@@ -190,6 +196,7 @@
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
 	 CONSTRUCTOR NON WHEN
+	 IMPORT FROM
 	 PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
 
 %eop     EOF
@@ -200,6 +207,7 @@
 %left  SEMICOLON
 %right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CONSTRUCTOR EXCEPTION
        STRUCTURE SIGNATURE FUNCTOR
+       IMPORT
        PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
 %right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
 %right AND
@@ -220,7 +228,7 @@
 %right ARROW
 
 
-%start program
+%start component
 
 %nonterm
 	(* Constants *)
@@ -265,8 +273,10 @@
 	| mrule				of Mrule
 
 	| dec				of Dec
+	|    dec'			of Dec (* excludes semicolons *)
 	|    dec1			of Dec
-	|    dec1'			of Dec (* excludes local and seq. *)
+	|    dec1'			of Dec (* excludes semicolons *)
+	|    dec1''			of Dec (* excludes local and seq. *)
 	|    WITHTYPE_typbind_opt	of TypBind option
 	|    vid_list1			of VId list
 	|    longstrid_list1		of LongStrId list
@@ -398,8 +408,10 @@
 
 	(* Top nonterminal *)
 	| program			of Program
-	|    program'			of Program
 	|    program_opt		of Program option
+	| component			of Component
+	| import			of Import
+	|    import1			of Import
 
 
 %%
@@ -610,15 +622,23 @@
 	  dec1		( dec1 )
 	| (*empty*)	( EMPTYDec(I(defaultPos,defaultPos)) )
 
+     dec':
+	  dec1'		( dec1' )
+	| dec' dec' %prec SEMICOLON
+			( SEQDec(I(dec'1left,dec'2right), dec'1, dec'2) )
+
      dec1:
 	  dec1'		( dec1' )
-	| LOCAL dec IN dec END
-			( LOCALDec(I(LOCALleft,ENDright), dec1, dec2) )
+	| SEMICOLON	( EMPTYDec(I(SEMICOLONleft,SEMICOLONleft)) )
 	| dec1 dec1 %prec SEMICOLON
 			( SEQDec(I(dec11left,dec12right), dec11, dec12) )
-	| SEMICOLON	( EMPTYDec(I(defaultPos,defaultPos)) )
 
      dec1':
+	  dec1''	( dec1'' )
+	| LOCAL dec IN dec END
+			( LOCALDec(I(LOCALleft,ENDright), dec1, dec2) )
+
+     dec1'':
 	  VAL valbind	( VALDec(I(VALleft,valbindright),
 				 Seq(I(defaultPos,defaultPos), []), valbind) )
 	| VAL tyvarseq1 valbind
@@ -1214,7 +1234,7 @@
 	  spec1'	( spec1' )
 	| spec1 spec1' %prec SEMICOLON
 			( SEQSpec(I(spec1left,spec1'right), spec1, spec1') )
-	| SEMICOLON	( EMPTYSpec(I(defaultPos,defaultPos)) )
+	| SEMICOLON	( EMPTYSpec(I(SEMICOLONleft,SEMICOLONleft)) )
 	| SHARING TYPE longtycon_EQUALS_list2
 			( SHARINGTYPESpec(I(SHARINGleft,
 					    longtycon_EQUALS_list2right),
@@ -1534,20 +1554,36 @@
   (* Programs *)
 
   program:
-	  program'	( program' )
-
-     program':
-	  dec1 SEMICOLON program_opt
-	  		( DECProgram(I(dec1left,program_optright),
-				     dec1, program_opt) )
-	| SEMICOLON program_opt
-	  		( DECProgram(I(SEMICOLONleft,program_optright),
-				     EMPTYDec(I(SEMICOLONleft,SEMICOLONleft)),
-				     program_opt) )
+	  dec'
+	  		( DECProgram(I(dec'left,dec'right),
+				     dec', NONE) )
+	| dec' SEMICOLON program_opt
+	  		( DECProgram(I(dec'left,program_optright),
+				     dec', program_opt) )
 	| exp SEMICOLON program_opt
 	  		( EXPProgram(I(expleft,program_optright),
 				     exp, program_opt) )
 
      program_opt:
-	  program'	( SOME program' )
+	  program	( SOME program )
 	| (*empty*)	( NONE )
+
+
+
+  (* Components *)
+
+  component:
+	  import program_opt	( Component(I(importleft,program_optright),
+					    import, program_opt) )
+
+  import:
+	  import1		( import1 )
+	| (*empty*)		( EMPTYImport(I(defaultPos,defaultPos)) )
+
+     import1:
+	  IMPORT spec FROM scon	( IMPORTImport(I(IMPORTleft,sconright),
+					       spec, scon) )
+	| import1 import1 %prec SEMICOLON
+				( SEQImport(I(import11left,import12right),
+					    import11, import12) )
+	| SEMICOLON		( EMPTYImport(I(SEMICOLONleft,SEMICOLONleft)) )

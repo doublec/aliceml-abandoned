@@ -143,15 +143,22 @@ functor MakeAbstractGrammar(type info) :>
 	| LocalSpec of info * spec list		(* local specifications *)
 	| ExtSpec   of info * inf		(* extension (include) *)
 
-    (* Programs *)
+    (* Components *)
 
-    type program = dec list
+    and comp = Comp of info * imp list * dec list
+
+    and imp  = Imp of info * spec list * string
+
+    type component = comp
+
 
     (* Projections *)
 
     fun stamp(Id(_,x,_))		= x
     fun name(Id(_,_,n))			= n
     fun lab(Lab(_,a))			= a
+
+    fun conToId(Con(_,x,_))		= x
 
     fun idToLab(Id(i,_,ExId n))		= Lab(i,n)
       | idToLab _			= Crash.crash "AbstractGrammar.idToLab"
@@ -257,5 +264,8 @@ functor MakeAbstractGrammar(type info) :>
       | infoSpec(RecSpec(i,_))		= i
       | infoSpec(LocalSpec(i,_))	= i
       | infoSpec(ExtSpec(i,_))		= i
+
+    fun infoComp(Comp(i,_,_))		= i
+    fun infoImp(Imp(i,_,_))		= i
 
   end
