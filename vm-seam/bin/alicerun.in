@@ -80,6 +80,8 @@ export ALICE_HOME ALICE_LOAD
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run "${ALICE_DLL_PATH}"alice "$@"; cat) |
 #exec gdb seam
 
+## Or to use DDD:
+#echo run "${ALICE_DLL_PATH}"alice "$@"
+#exec ddd seam
+
 exec seam "${ALICE_DLL_PATH}"alice "$@"
-
-
