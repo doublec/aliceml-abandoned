@@ -18,9 +18,11 @@
 #endif
 #include "generic/StackFrame.hh"
 
-static const FrameLabel RESOLVE_CLASS_FRAME =
+static const FrameLabel BUILD_CLASS_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 1);
-static const FrameLabel JAVA_BYTE_CODE_FRAME =
+static const FrameLabel RESOLVE_CLASS_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 2);
+static const FrameLabel JAVA_BYTE_CODE_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 3);
 
 #endif

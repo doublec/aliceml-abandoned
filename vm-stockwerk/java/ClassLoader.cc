@@ -52,6 +52,88 @@ public:
 };
 
 //
+// BuildClassWorker
+//
+
+class BuildClassWorker: public Worker {
+public:
+  static BuildClassWorker *self;
+private:
+  BuildClassWorker() {}
+public:
+  static void Init() {
+    self = new BuildClassWorker();
+  }
+
+  static void PushFrame(ClassInfo *classInfo);
+
+  virtual Result Run();
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
+class BuildClassFrame: private StackFrame {
+protected:
+  enum { CLASS_INFO_POS, SIZE };
+public:
+  using Block::ToWord;
+
+  static BuildClassFrame *New(ClassInfo *classInfo) {
+    StackFrame *frame =
+      StackFrame::New(BUILD_CLASS_FRAME, BuildClassWorker::self, SIZE);
+    frame->InitArg(CLASS_INFO_POS, classInfo->ToWord());
+    return static_cast<BuildClassFrame *>(frame);
+  }
+  static BuildClassFrame *FromWordDirect(word x) {
+    StackFrame *frame = StackFrame::FromWordDirect(x);
+    Assert(frame->GetLabel() == BUILD_CLASS_FRAME);
+    return static_cast<BuildClassFrame *>(frame);
+  }
+
+  ClassInfo *GetClassInfo() {
+    return ClassInfo::FromWordDirect(GetArg(CLASS_INFO_POS));
+  }
+};
+
+void BuildClassWorker::PushFrame(ClassInfo *classInfo) {
+  Scheduler::PushFrame(BuildClassFrame::New(classInfo)->ToWord());
+}
+
+Worker::Result BuildClassWorker::Run() {
+  BuildClassFrame *frame =
+    BuildClassFrame::FromWordDirect(Scheduler::GetFrame());
+  ClassInfo *classInfo = frame->GetClassInfo();
+  word wSuper = classInfo->GetSuper();
+  if (Store::WordToTransient(wSuper) != INVALID_POINTER) {
+    Scheduler::currentData = wSuper;
+    return Worker::REQUEST;
+  }
+  Table *interfaces = classInfo->GetInterfaces();
+  for (u_int i = interfaces->GetCount(); i--; ) {
+    word wInterface = interfaces->Get(i);
+    if (Store::WordToTransient(wInterface) != INVALID_POINTER) {
+      Scheduler::currentData = wInterface;
+      return Worker::REQUEST;
+    }
+  }
+  Scheduler::PopFrame();
+  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::currentArgs[0] =
+    classInfo->ToWord(); //--** return the class object
+  return Worker::CONTINUE;
+}
+
+const char *BuildClassWorker::Identify() {
+  return "BuildClassWorker";
+}
+
+void BuildClassWorker::DumpFrame(word frame) {
+  BuildClassFrame *buildClassFrame = BuildClassFrame::FromWordDirect(frame);
+  std::fprintf(stderr, "Build class %s\n",
+	       buildClassFrame->GetClassInfo()->GetName()->ExportC());
+}
+
+//
 // ResolveClassInterpreter
 //
 
@@ -105,9 +187,11 @@ Worker::Result ResolveClassInterpreter::Run() {
   JavaString *name = frame->GetName();
   ClassFile *classFile = ClassFile::NewFromFile(name);
   ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
-  Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] =
-    classInfo->ToWord(); //--** return the class object
+  if (classInfo == INVALID_POINTER)
+    ; //--** raise ClassFormatError
+  if (!classInfo->GetName()->Equals(name))
+    ; //--** raise NoClassDefFoundError
+  BuildClassWorker::PushFrame(classInfo);
   return Worker::CONTINUE;
 }
 
@@ -133,6 +217,7 @@ void ResolveClassInterpreter::DumpFrame(word frame) {
 //
 
 void ClassLoader::Init() {
+  BuildClassWorker::Init();
   ResolveClassInterpreter::Init();
 }
 
@@ -146,14 +231,13 @@ ClassTable *ClassLoader::GetClassTable() {
   return ClassTable::FromWordDirect(GetArg(CLASS_TABLE_POS));
 }
 
-word ClassLoader::ResolveClass(JavaString *name) {
+word ClassLoader::ResolveClassByNeed(JavaString *name) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(ResolveClassInterpreter::self, 2);
   concreteCode->Init(0, ToWord());
   concreteCode->Init(1, name->ToWord());
   Closure *closure = Closure::New(concreteCode->ToWord(), 0);
-  Byneed *byneed = Byneed::New(closure->ToWord());
-  return byneed->ToWord();
+  return Byneed::New(closure->ToWord())->ToWord();
 }
 
 word ClassLoader::ResolveType(JavaString *name) {
@@ -198,7 +282,7 @@ word ClassLoader::ResolveType(JavaString *name) {
 	  u_int i = 0;
 	  while (p[i++] != ';');
 	  n -= i + 1;
-	  word classType = ResolveClass(JavaString::New(p - 1, i + 2));
+	  word classType = ResolveClassByNeed(JavaString::New(p, i));
 	  wClass = ObjectArrayType::New(classType, dimensions)->ToWord();
 	  break;
 	}
@@ -209,7 +293,7 @@ word ClassLoader::ResolveType(JavaString *name) {
       u_int i = 0;
       while (p[i++] != ';');
       n -= i + 1;
-      wClass = ResolveClass(JavaString::New(p - 1, i + 2));
+      wClass = ResolveClassByNeed(JavaString::New(p, i));
     }
     Assert(n == 0);
     classTable->Insert(name, wClass);

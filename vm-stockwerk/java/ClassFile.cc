@@ -290,32 +290,32 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   }
 }
 
-Array *ClassFile::ResolveConstantPool(ConstantPool *constantPoolS,
+Table *ClassFile::ResolveConstantPool(ConstantPool *constantPoolS,
 				      ClassLoader *classLoader) {
   u_int constantPoolCount = constantPoolS->GetSize();
-  Array *constantPoolR = Array::New(constantPoolCount);
+  Table *constantPoolR = Table::New(constantPoolCount);
   for (u_int j = 1; j < constantPoolCount; j++)
     constantPoolR->Init(j - 1, constantPoolS->Get(j)->Resolve(constantPoolS,
 							      classLoader));
   return constantPoolR;
 }
 
-Array *ClassFile::ParseInterfaces(u_int &offset, Array *constantPoolR) {
+Table *ClassFile::ParseInterfaces(u_int &offset, Table *constantPoolR) {
   u_int interfacesCount = GetU2(offset);
-  Array *interfaces = Array::New(interfacesCount);
+  Table *interfaces = Table::New(interfacesCount);
   for (u_int i = 0; i < interfacesCount; i++)
     interfaces->Assign(i, constantPoolR->Get(GetU2(offset)));
   return interfaces;
 }
 
-Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPoolS,
-			      Array *constantPoolR) {
+Table *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPoolS,
+			      Table *constantPoolR) {
   //--** No two fields in one class file may have the same name and descriptor
   //--** All fields of interfaces must have their ACC_PUBLIC, ACC_STATIC, and
   //--** ACC_FINAL flags set and may not have any of the other flags in
   //--** Table 4.4 set
   u_int fieldsCount = GetU2(offset);
-  Array *fields = Array::New(fieldsCount);
+  Table *fields = Table::New(fieldsCount);
   for (u_int i = 0; i < fieldsCount; i++) {
     FieldInfo *fieldInfo =
       ParseFieldInfo(offset, constantPoolS, constantPoolR);
@@ -327,7 +327,7 @@ Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPoolS,
 
 FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
 				     ConstantPool *constantPoolS,
-				     Array *constantPoolR) {
+				     Table *constantPoolR) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & FieldInfo::ACC_PUBLIC) != 0) +
       ((accessFlags & FieldInfo::ACC_PRIVATE) != 0) +
@@ -350,7 +350,7 @@ FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
 
 bool ClassFile::ParseFieldAttributes(u_int &offset,
 				     ConstantPool *constantPoolS,
-				     Array *constantPoolR,
+				     Table *constantPoolR,
 				     word &constantValue) {
   u_int attributesCount = GetU2(offset);
   JavaString *constantValueAttributeName = JavaString::New("ConstantValue");
@@ -369,13 +369,13 @@ bool ClassFile::ParseFieldAttributes(u_int &offset,
   return true;
 }
 
-Array *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPoolS,
-			       Array *constantPoolR) {
+Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPoolS,
+			       Table *constantPoolR) {
   //--** No two methods in one class file may have the same name and descriptor
   //--** All interface methods must have their ACC_ABSTRACT and ACC_PUBLIC
   //--** flags set and may not have any of the other flags in Table 4.5 set 
   u_int methodsCount = GetU2(offset);
-  Array *methods = Array::New(methodsCount);
+  Table *methods = Table::New(methodsCount);
   for (u_int i = 0; i < methodsCount; i++) {
     MethodInfo *methodInfo =
       ParseMethodInfo(offset, constantPoolS, constantPoolR);
@@ -387,7 +387,7 @@ Array *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPoolS,
 
 MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
 				       ConstantPool *constantPoolS,
-				       Array *constantPoolR) {
+				       Table *constantPoolR) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & MethodInfo::ACC_PUBLIC) != 0) +
       ((accessFlags & MethodInfo::ACC_PRIVATE) != 0) +
@@ -419,7 +419,7 @@ MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
 
 bool ClassFile::ParseMethodAttributes(u_int &offset,
 				      ConstantPool *constantPoolS,
-				      Array *constantPoolR,
+				      Table *constantPoolR,
 				      JavaByteCode *&byteCode) {
   //--** implementations must recognize the Exceptions attribute
   u_int attributesCount = GetU2(offset);
@@ -439,7 +439,7 @@ bool ClassFile::ParseMethodAttributes(u_int &offset,
       char *p = code->GetBase();
       for (u_int j = codeLength; j--; ) *p++ = GetU1(offset);
       u_int exceptionTableLength = GetU2(offset);
-      Array *exceptionTable = Array::New(exceptionTableLength);
+      Table *exceptionTable = Table::New(exceptionTableLength);
       for (u_int k = 0; k < exceptionTableLength; k++) {
 	u_int startPC = GetU2(offset);
 	u_int endPC = GetU2(offset);
@@ -486,10 +486,11 @@ ClassFile *ClassFile::NewFromFile(JavaString *filename) {
 ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
   u_int offset = 0;
   if (!ParseMagic(offset)) return INVALID_POINTER;
-  if (!ParseVersion(offset)) return INVALID_POINTER;
+  if (!ParseVersion(offset))
+    return INVALID_POINTER; //--** raise UnsupportedClassVersionError
   ConstantPool *constantPoolS = ParseConstantPool(offset);
   if (constantPoolS == INVALID_POINTER) return INVALID_POINTER;
-  Array *constantPoolR = ResolveConstantPool(constantPoolS, classLoader);
+  Table *constantPoolR = ResolveConstantPool(constantPoolS, classLoader);
   u_int accessFlags = GetU2(offset);
   //--** check accessFlags validity
   JavaString *name;
@@ -502,11 +503,12 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
     Assert(nameEntry->GetTag() == CONSTANT_Utf8);
     name = JavaString::FromWordDirect(nameEntry->GetArg(0));
   }
-  word super = constantPoolR->Get(GetU2(offset));
-  Array *interfaces = ParseInterfaces(offset, constantPoolR);
-  Array *fields = ParseFields(offset, constantPoolS, constantPoolR);
+  u_int superIndex = GetU2(offset);
+  word super = superIndex? constantPoolR->Get(superIndex): Store::IntToWord(0);
+  Table *interfaces = ParseInterfaces(offset, constantPoolR);
+  Table *fields = ParseFields(offset, constantPoolS, constantPoolR);
   if (fields == INVALID_POINTER) return INVALID_POINTER;
-  Array *methods = ParseMethods(offset, constantPoolS, constantPoolR);
+  Table *methods = ParseMethods(offset, constantPoolS, constantPoolR);
   if (methods == INVALID_POINTER) return INVALID_POINTER;
   SkipAttributes(offset);
   return ClassInfo::New(accessFlags, name,

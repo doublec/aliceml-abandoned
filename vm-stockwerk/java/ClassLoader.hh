@@ -26,7 +26,7 @@ protected:
   enum { CLASS_TABLE_POS, SIZE };
 private:
   ClassTable *GetClassTable();
-  word ResolveClass(JavaString *name);
+  word ResolveClassByNeed(JavaString *name);
 public:
   using Block::ToWord;
 

@@ -30,7 +30,7 @@ public:
   static const BlockLabel ClassLoader         = (BlockLabel) (base + 0);
   // Symbolic class representations
   static const BlockLabel ConstantPool        = (BlockLabel) (base + 1);
-  static const BlockLabel Array               = (BlockLabel) (base + 2);
+  static const BlockLabel Table               = (BlockLabel) (base + 2);
   static const BlockLabel FieldInfo           = (BlockLabel) (base + 3);
   static const BlockLabel MethodInfo          = (BlockLabel) (base + 4);
   static const BlockLabel ClassInfo           = (BlockLabel) (base + 5);

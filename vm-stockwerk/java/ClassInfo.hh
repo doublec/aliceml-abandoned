@@ -20,7 +20,7 @@
 
 #include "java/Data.hh"
 
-class DllExport Array: private Block {
+class DllExport Table: private Block {
 protected:
   enum {
     SIZE_POS, // int
@@ -30,33 +30,36 @@ protected:
 public:
   using Block::ToWord;
 
-  static Array *New(u_int length) {
-    Block *b = Store::AllocBlock(JavaLabel::Array, BASE_SIZE + length);
+  static Table *New(u_int length) {
+    Block *b = Store::AllocBlock(JavaLabel::Table, BASE_SIZE + length);
     b->InitArg(SIZE_POS, Store::IntToWord(length));
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
-    return static_cast<Array *>(b);
+    return static_cast<Table *>(b);
   }
-  static Array *FromWord(word x) {
+  static Table *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Array);
-    return static_cast<Array *>(b);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Table);
+    return static_cast<Table *>(b);
   }
-  static Array *FromWordDirect(word x) {
+  static Table *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::Array);
-    return static_cast<Array *>(b);
+    Assert(b->GetLabel() == JavaLabel::Table);
+    return static_cast<Table *>(b);
   }
 
+  u_int GetCount() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  }
   void Init(u_int index, word value) {
-    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(index < GetCount());
     InitArg(BASE_SIZE + index, value);
   }
   void Assign(u_int index, word value) {
-    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(index < GetCount());
     ReplaceArg(BASE_SIZE + index, value);
   }
   word Get(u_int index) {
-    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(index < GetCount());
     return GetArg(BASE_SIZE + index);
   }
 };
@@ -154,14 +157,14 @@ protected:
     MAX_STACK_POS, // int
     MAX_LOCALS_POS, // int
     CODE_POS, // Chunk
-    EXCEPTION_TABLE_POS, // Array(ExceptionTableEntry)
+    EXCEPTION_TABLE_POS, // Table(ExceptionTableEntry)
     SIZE
   };
 public:
   using Block::ToWord;
 
   static JavaByteCode *New(u_int maxStack, u_int maxLocals, Chunk *code,
-			   Array *exceptionTable) {
+			   Table *exceptionTable) {
     Block *b = Store::AllocBlock(JavaLabel::JavaByteCode, SIZE);
     b->InitArg(MAX_STACK_POS, maxStack);
     b->InitArg(MAX_LOCALS_POS, maxLocals);
@@ -237,19 +240,19 @@ protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // JavaString
-    SUPER_POS, // Class
-    INTERFACES_POS, // Array(Class)
-    FIELDS_POS, // Array(FieldInfo)
-    METHODS_POS, // Array(MethodInfo)
-    CONSTANT_POOL_POS, // Array(word)
+    SUPER_POS, // Class | int(0)
+    INTERFACES_POS, // Table(Class)
+    FIELDS_POS, // Table(FieldInfo)
+    METHODS_POS, // Table(MethodInfo)
+    CONSTANT_POOL_POS, // Table(word)
     SIZE
   };
 public:
   using Block::ToWord;
 
   static ClassInfo *New(u_int accessFlags, JavaString *name,
-			word super, Array *interfaces, Array *fields,
-			Array *methods, Array *constantPool) {
+			word super, Table *interfaces, Table *fields,
+			Table *methods, Table *constantPool) {
     Assert(((accessFlags & ACC_INTERFACE) == 0 &&
 	    ((accessFlags & ACC_FINAL) != 0) +
 	    ((accessFlags & ACC_ABSTRACT) != 0) <= 1) ||
@@ -269,6 +272,16 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::ClassInfo);
     return static_cast<ClassInfo *>(b);
+  }
+
+  JavaString *GetName() {
+    return JavaString::FromWordDirect(GetArg(NAME_POS));
+  }
+  word GetSuper() {
+    return GetArg(SUPER_POS);
+  }
+  Table *GetInterfaces() {
+    return Table::FromWordDirect(GetArg(INTERFACES_POS));
   }
 };
 
