@@ -10,8 +10,11 @@
 //   $Revision$
 //
 
+//--** use brinst and brnull instead of brtrue and brfalse
+
 .namespace StockWerk {
   .class sealed public Prebound extends System.Object {
+    .field static public initonly class StockWerk.StockWert Unit
     .field static public initonly class StockWerk.StockWert TypeError
     .field static public initonly class StockWerk.StockWert Promise
     .field static public initonly class StockWerk.StockWert Future
@@ -217,7 +220,7 @@
     .method public class StockWerk.StockWert GetFuture() {
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      brtrue.s raise   //--** brinst.s
+      brtrue.s raise
       ldarg.0
       newobj instance void StockWerk.Future::.ctor(class StockWerk.Promise)
       ret
@@ -231,7 +234,7 @@
       call void System.CriticalSection::Enter(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      brfalse.s return   //--** brnull.s
+      brfalse.s return
       ldarg.0
       call instance void System.Object::Wait()
     return:
@@ -246,7 +249,7 @@
       call void System.CriticalSection::Enter(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      brtrue.s raise   //--** brinst.s
+      brtrue.s raise
       //--** if arg 0 and arg 1 are variants of the same transient, raise Fulfill
       ldarg.0
       ldarg.1
@@ -263,7 +266,7 @@
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
       dup
-      brfalse.s raise   //--** brnull.s
+      brfalse.s raise
       ldarg.1
       tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
       ret
@@ -276,7 +279,7 @@
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
       dup
-      brfalse.s raise   //--** brnull.s
+      brfalse.s raise
       ldarg.1
       tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
       ret
@@ -326,22 +329,98 @@
     }
   }
 
-/*--**
   .class sealed public ByNeed extends StockWerk.Transient {
-    .field private class StockWerk.StockWert Proc
+    .field private int32 State
+    .field private class StockWerk.StockWert Ref
+    // State = 0: delaying - Ref holds pointer to procedure
+    //         1: executing - Ref is undefined
+    //         2: failed - Ref holds pointer to exception
+    //         3: bound - Ref holds pointer to value
     .method public void .ctor(class StockWerk.StockWert) {
       ldarg.0
       call instance void StockWerk.Transient::.ctor()
       ldarg.0
+      ldc.i4 0
+      stfld int32 StockWerk.ByNeed::State
+      ldarg.0
       ldarg.1
-      stfld class StockWerk.StockWert StockWerk.ByNeed::Proc
+      stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      ldarg.0
+      call instance class StockWerk.StockWert StockWerk.ByNeed::Request()
+      ldarg.1
+      tail. call instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      ret
+    }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+      ldarg.0
+      call instance class StockWerk.StockWert StockWerk.ByNeed::Request()
+      ldarg.1
+      tail. call instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
       ret
     }
     .method virtual public class StockWerk.StockWert Request() {
-      //--** apply Proc
+      .locals(class StockWerk.StockWert)
+      ldarg.0
+      call void System.CriticalSection::Enter(class System.Object)
+    retry:
+      ldarg.0
+      ldfld int32 StockWerk.ByNeed::State
+      switch(apply, wait, raise, deref)
+    apply:
+      ldarg.0
+      ldc.i4 1
+      stfld int32 StockWerk.ByNeed::State
+      ldarg.0
+      call void System.CriticalSection::Exit(class System.Object)
+      .try {
+        ldarg.0
+        ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+        ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
+        callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+        stloc.0
+        ldarg.0
+        ldloc.0
+        stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+        ldarg.0
+        ldc.i4 3
+        stfld int32 StockWerk.ByNeed::State
+        ldloc.0
+        ret
+      } catch StockWerk.ExceptionWrapper {
+        ldfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
+        stloc.0
+        ldarg.0
+        ldc.i4 3
+        stfld int32 StockWerk.ByNeed::State
+        ldarg.0
+        ldloc.0
+        stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+        ldloc.0
+        newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+        throw
+      }
+    wait:
+      ldarg.0
+      call instance void System.Object::Wait()
+      br.s retry
+    raise:
+      ldarg.0
+      call void System.CriticalSection::Exit(class System.Object)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    deref:
+      ldarg.0
+      call void System.CriticalSection::Exit(class System.Object)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+      ret
     }
   }
-*/
 
   .class public abstract Procedure extends StockWerk.StockWert {
     .method public void .ctor() {
@@ -411,7 +490,7 @@
       castclass StockWerk.Promise
       ldarg.1
       call instance void StockWerk.Promise::Fulfill(class StockWerk.StockWert)
-      ldnull   //--** unit
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
       ret
     testFuture:
       ldarg.0
@@ -452,6 +531,9 @@
 
 .method public static void DllMain() {
   .entrypoint
+  ldstr "()"
+  newobj instance void StockWerk.NamedName::.ctor(class System.String)
+  stsfld class StockWerk.StockWert StockWerk.Prebound::Unit
   ldstr "TypeError"
   newobj instance void StockWerk.NamedName::.ctor(class System.String)
   stsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
