@@ -101,8 +101,13 @@ struct
     fun mkSphere surface =
 	Renderer.Sphere
 	    (fn Renderer.SphereSurface => fn(x,y,z) =>
-		let val c = 1.0 / sqrt(1.0 - y*y) (* BOMBS for y = +~1 *)
-		in clamped surface (0, uFrom(c*x, c*z), 0.5*(y+1.0)) end
+		let val absy = clamp(abs y) in
+		    if Real.==(absy, 1.0) then
+			surface(0, 0.0, 0.5*(y+1.0))
+		    else
+			let val c = 1.0 / sqrt(1.0 - absy*absy)
+			in clamped surface (0, uFrom(c*x, c*z), 0.5*(y+1.0)) end
+		end
 	    )
 
     fun mkCube surface =
@@ -127,8 +132,10 @@ struct
 
     fun mkCone surface =
 	Renderer.Cone
-	    (fn Renderer.ConeSide =>	(* BOMBS for y = 0 *)
-		    (fn(x,y,z) => clamped surface (0, uFrom(x/y, z/y), y))
+	    (fn Renderer.ConeSide =>
+		    (fn(x,y,z) => if Real.==(y, 0.0)
+				  then surface (0, 0.0, 0.0)
+				  else clamped surface (0, uFrom(x/y, z/y), y))
 	      | Renderer.ConeBase =>
 		    (fn(x,_,z) => clamped surface (1, p1half x, p1half z))
 	    )
