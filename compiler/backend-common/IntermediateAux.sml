@@ -19,8 +19,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun freshIntermediateId info = Id (info, Stamp.new (), Name.InId)
 
-	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
-
 	type subst = (Stamp.t * Stamp.t) list
 
 	fun lookup ((stamp, stamp')::subst, id0 as Id (info, stamp0, name)) =

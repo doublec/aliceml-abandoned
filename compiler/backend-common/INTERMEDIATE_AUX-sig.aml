@@ -19,13 +19,10 @@ signature INTERMEDIATE_AUX =
 
 	val freshIntermediateId: I.id_info -> I.id
 
-	val idEq: I.id * I.id -> bool
-
 	type subst = (Stamp.t * Stamp.t) list
 
 	val substDec: I.dec * subst -> I.dec
 	val substExp: I.exp * subst -> I.exp
-	val substPat: I.pat * subst -> I.pat
 
 	val separateAlt: I.pat -> I.pat
 
