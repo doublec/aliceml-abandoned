@@ -326,26 +326,20 @@ struct
 
 (**************************** Stop Button Mechnism****************************)
 
-     val stopButtonActive = ref false
+     (* val stopButtonActive = ref false *)
 
-     val stopButton = let
-			  val button = menuItemNewWithLabel("stop") 
-		      in
-			  (GtkSupport.setSensitive(button,false) 
-			   ;signalConnect
-			   (button,
-			    "activate",
-			    fn _ => (stopButtonActive := false
-				     ;GtkSupport.setSensitive(button,false)))
-			   ;button)
-		      end
-
-     fun stopButtonIsActive() = !stopButtonActive
+	val _ = signalConnect(stopButton,
+		  "activate",
+		  fn _ => (stopButtonSetActive(false)
+			   ; Settings.set_width 0
+			   ; Settings.set_depth 0)) (* needs to be repaired *)
+	    
+    
+     (* fun stopButtonIsActive() = !stopButtonActive *)
 		  
-     fun stopButtonSetActive b =  
-	 (stopButtonActive := b
-	  ;GtkSupport.setSensitive(stopButton,b )
-	  ; TextIO.print("Stop Button now active: "^Bool.toString(b) ^ "\n")  )
+     (* fun stopButtonSetActive b =  
+	 (GtkSupport.setSensitive(stopButton,b )
+	  ; TextIO.print("Stop Button now active: "^Bool.toString(b) ^ "\n")  ) *)
 
      fun setStopButtonOnOff(f,n) = 
 	 (Server.serve(fn() => stopButtonSetActive(true))
@@ -354,10 +348,11 @@ struct
 	  ; Server.serve(fn() => stopButtonSetActive(false)))
 	 
 
+(* 
      exception stopped
 
      fun testIfStop() = if not(stopButtonIsActive()) then raise stopped
-			else ()
+			else () *)
 
 (**************************** Handler ****************************)
 		    
@@ -1035,12 +1030,18 @@ fun setVisible (x,y) = let
 	    val va = UnsafeValue.cast v: Reflect.value
 	    val i = Dictionaries.Main.
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
-	    val root = (new();stopButtonSetActive(true)
+	    val root = (new()
 			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,[(V va,ref 0,0)]))
 			; relnumber := 0
 			;!canvasroot)
-	    val n = NewNode.newNode(va,t,i,root)	
-            val line = (Layout.layout(n)
+	    val save_settings = (!Settings.max_width,!Settings.max_depth)
+	    val n = (stopButtonSetActive(true)
+		     ;NewNode.newNode(va,t,i,root))
+            val line = (stopButtonSetActive(false)
+			;Settings.set_width(#1(save_settings))
+			;Settings.set_width(#2(save_settings))
+			;Settings.set_depth
+			;Layout.layout(n)
 			;setVisible(get_xdim(n),get_ydim(n)+1)
 			;createSepLine(root,!act_line,canvaswidth(hadj),
 				       Settings.getFontHeight()))
@@ -1052,7 +1053,6 @@ fun setVisible (x,y) = let
 			    ^ "\n")
 	    ; (!resize)()
 	    ; show()
-	    ; stopButtonSetActive(false)
 	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
 	end 
 			   
@@ -1065,8 +1065,13 @@ fun setVisible (x,y) = let
 			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,[(M va,ref 0,0)]))
 			; relnumber := 0
 			;!canvasroot)
-	    val n = NewNode.newNodeInf(va,t,i,root)	
-            val line =( Layout.layout(n)
+	    val save_settings = (!Settings.max_width,!Settings.max_depth)
+	    val n = (stopButtonSetActive(true)
+		     ;NewNode.newNodeInf(va,t,i,root))
+            val line =(stopButtonSetActive(false) 
+		       ;Settings.set_width(#1(save_settings))
+		       ;Settings.set_width(#2(save_settings))
+		       ;Layout.layout(n)
 		       ;setVisible(get_xdim(n),get_ydim(n)+1)
 		       ;createSepLine(root,!act_line,canvaswidth(hadj),
 				      Settings.getFontHeight() ))

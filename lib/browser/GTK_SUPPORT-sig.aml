@@ -113,8 +113,8 @@ signature GTK_SUPPORT =
 	    -> Gtk. object * Gtk.object * Gtk.object
 	val createStatusbar: unit 
 	    -> Gtk.object * (string -> int) * (string -> int)
-
-(*	val changeFontSize: int -> unit *)
+	val stopButton: tag
+	val stopButtonSetActive: bool -> unit
 	
 (* More complex stuff *)
 

@@ -203,16 +203,6 @@ fun createRadioButtons li =
     in
 	(List.foldl create uglyNULL li; box)
     end
-(*
-fun copyArray' (a,b,i) = if i < Array.length(b) 
-			     then
-				 (Array.update(b,i,Array.sub(a,i))
-				  ;copyArray' (a,b,i+1))
-			 else () 
-				     
-fun copyArray(a,b) = if Array.length(a) = Array.length(b) 
-			 then copyArray' (a,b,0)
-		     else () *)
 
 fun connect item = (fn Handler(str,handler) 
 		    => (Gtk.signalConnect (item,str, handler);()))
@@ -325,22 +315,14 @@ fun createStatusbar()  = let
 			     (status,postMessageType,postMessageMode)
 			 end
 
-(* 
-fun changeFontSize i = let
-                           val fontname =  "-*-*-medium-r-normal--" 
-			       ^ Int.toString(i) 
-			       ^ "-*-*-*-m-*-iso8859-1"
-			   val font =  Gdk.fontLoad(fontname)
-		       in
-			   (Settings.fontname := fontname
-			    ; Settings.font := font
-			    ; Settings.fontHeight:=
-			    (Gdk.fontGetFieldAscent(font)+
-			     Gdk.fontGetFieldDescent(font) )
-			    ; Settings.fontWidth :=
-			    (Gdk.stringWidth(font,"W"))
-			    ;Settings.fontSize := i)
-		       end *)
+		     (* Stop Button *)
+                    val stopButton = let 
+					 val button = menuItemNewWithLabel("stop")
+				     in 
+					 (setSensitive(button,false);button)
+				     end
+
+	      fun stopButtonSetActive b = setSensitive(stopButton,b)
 
 (******************** More Complex Stuff **************************)
 
