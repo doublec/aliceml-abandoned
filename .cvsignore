@@ -19,6 +19,7 @@ TODO
 libltdl
 libseam.la
 libtool
+lightning
 seam
 seamtool
 Makefile
