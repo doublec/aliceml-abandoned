@@ -39,6 +39,7 @@ private:
   static void RegisterGeneral();
   static void RegisterGlobalStamp();
   static void RegisterHole();
+  static void RegisterIEEEReal ();
   static void RegisterInt();
   static void RegisterIntInf();
   static void RegisterList();

@@ -112,6 +112,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Hole.hole", SOME (Tuple 0));
 		ins ("Hole.isFailed", SOME Unary);
 		ins ("Hole.isHole", SOME Unary);
+        ins ("IEEEReal.getRoundingMode", NONE);
+        ins ("IEEEReal.setRoundingMode", SOME Unary);
 		ins ("Int.~", SOME Unary);
 		ins ("Int.+", SOME (Tuple 2));
 		ins ("Int.-", SOME (Tuple 2));

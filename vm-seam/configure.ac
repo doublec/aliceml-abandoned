@@ -80,6 +80,11 @@ AC_SEAM_CHECK_DECLSPEC
 # checks for library functions
 
 dnl
+dnl  Test for ISO C 99 rounding functions
+dnl
+AC_CHECK_FUNCS([fegetround fesetround])
+
+dnl
 dnl  Test for math library
 dnl
 AC_CHECK_FUNC(fabs,

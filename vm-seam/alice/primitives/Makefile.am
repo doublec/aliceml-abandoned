@@ -12,6 +12,7 @@ libprimitives_a_SOURCES = \
 	General.cc \
 	GlobalStamp.cc \
 	Hole.cc \
+	IEEEReal.cc \
 	Int.cc \
 	IntInf.cc \
 	List.cc \

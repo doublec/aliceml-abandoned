@@ -62,6 +62,7 @@ void PrimitiveTable::Init() {
   RegisterGeneral();
   RegisterGlobalStamp();
   RegisterHole();
+  RegisterIEEEReal ();
   RegisterInt();
   RegisterIntInf();
   RegisterList();

@@ -505,6 +505,20 @@ prepare
       'Hole.hole':
 	 fun {$ unit} _ end
       'Hole.isHole': IsFree
+      'IEEEReal.getRoundingMode': 
+         fun {$ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented on Mozart: IEEEReal.getRoundingMode"}))}
+            unit
+         end         
+      'IEEEReal.setRoundingMode':
+         fun {$ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented Mozart: IEEEReal.setRoundingMode"}))}
+            unit
+         end         
       'Int.~': Number.'~'
       'Int.+': Number.'+'
       'Int.-': Number.'-'
