@@ -99,9 +99,9 @@
 		      <accelerator key="K" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image25">
+			<widget class="GtkImage" id="image44">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-execute</property>
+			  <property name="stock">gtk-convert</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -149,7 +149,7 @@
 		      <accelerator key="Z" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image26">
+			<widget class="GtkImage" id="image45">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-undo</property>
 			  <property name="icon_size">1</property>
@@ -213,7 +213,7 @@
 		      <accelerator key="greater" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image27">
+			<widget class="GtkImage" id="image46">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-goto-last</property>
 			  <property name="icon_size">1</property>
@@ -235,7 +235,7 @@
 		      <accelerator key="less" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image28">
+			<widget class="GtkImage" id="image47">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-goto-first</property>
 			  <property name="icon_size">1</property>
@@ -297,7 +297,7 @@
 		      <accelerator key="E" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image29">
+			<widget class="GtkImage" id="image48">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-jump-to</property>
 			  <property name="icon_size">1</property>
@@ -318,7 +318,7 @@
 		      <signal name="activate" handler="on_syntax_colouring_activate" last_modification_time="Fri, 04 Mar 2005 15:28:33 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image30">
+			<widget class="GtkImage" id="image49">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-select-color</property>
 			  <property name="icon_size">1</property>
@@ -345,21 +345,45 @@
 		<widget class="GtkMenu" id="feed1_menu">
 
 		  <child>
-		    <widget class="GtkMenuItem" id="feedregion">
+		    <widget class="GtkImageMenuItem" id="feedregion">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">Feed region</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_feedregion_activate" last_modification_time="Mon, 28 Feb 2005 12:58:14 GMT"/>
 		      <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image50">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-execute</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
 		    </widget>
 		  </child>
 
 		  <child>
-		    <widget class="GtkMenuItem" id="feedfile">
+		    <widget class="GtkImageMenuItem" id="feedfile">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">Feed file</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_feedfile_activate" last_modification_time="Mon, 28 Feb 2005 12:58:14 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image51">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-execute</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
 		    </widget>
 		  </child>
 
@@ -370,24 +394,75 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkMenuItem" id="interrupt">
+		    <widget class="GtkImageMenuItem" id="interrupt">
 		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Interrupt current evaluation</property>
 		      <property name="label" translatable="yes">Interrupt</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_interrupt_activate" last_modification_time="Tue, 15 Mar 2005 12:21:19 GMT"/>
 		      <accelerator key="I" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image52">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-stop</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
 		    </widget>
 		  </child>
 
 		  <child>
-		    <widget class="GtkMenuItem" id="background">
+		    <widget class="GtkImageMenuItem" id="background">
 		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Send current evaluation to background, spawning a new thread</property>
 		      <property name="label" translatable="yes">Background</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_background_activate" last_modification_time="Tue, 15 Mar 2005 12:26:10 GMT"/>
 		      <accelerator key="B" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image53">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-goto-bottom</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="separator11">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="reset">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Clear environment</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_reset_activate" last_modification_time="Wed, 16 Mar 2005 13:33:53 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image54">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-clear</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
 		    </widget>
 		  </child>
 
@@ -406,7 +481,7 @@
 		      <accelerator key="Up" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image31">
+			<widget class="GtkImage" id="image55">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-up</property>
 			  <property name="icon_size">1</property>
@@ -428,7 +503,7 @@
 		      <accelerator key="Down" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image32">
+			<widget class="GtkImage" id="image56">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-down</property>
 			  <property name="icon_size">1</property>
