@@ -8,18 +8,24 @@ structure JVMInst =
 	datatype ARG =
 	    Arraysig
 	  | Boolsig
+	  | Charsig
 	  | Classsig of classname
 	  | Floatsig
 	  | Intsig
 	  | Voidsig
+	  | Wordsig
 
 	datatype LABEL =
 	    StringLabel of string
 	  | IntLabel of int
-	datatype JVMBASETYPE = (* fuer ldc, double und long kann dml nicht *)
-	    JVMInt of int
+
+	datatype JVMBASETYPE =
+	    JVMInt of LargeInt.int
 	  | JVMFloat of real
 	  | JVMString of string
+	  | JVMWord of LargeWord.word
+	  | JVMChar of char;
+
 	datatype
 	    INSTRUCTION =
 	    Astore of int
@@ -37,9 +43,9 @@ structure JVMInst =
 	  | Comment of string
 	  | Dup
 	  | Fconst of int
-	  | Getfield of fieldname * classname * int (* int is dimension. 0 if no array *)
+	  | Getfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Getself of string
-	  | Getstatic of fieldname * classname * int (* int is dimension. 0 if no array *)
+	  | Getstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Goto of label
 	  | Iadd
 	  | Iconst of int
@@ -61,11 +67,12 @@ structure JVMInst =
 	  | Ireturn
 	  | Istore of int
 	  | Label of label
+	  | Lcmp
 	  | Ldc of JVMBASETYPE
 	  | New of classname
 	  | Pop
-	  | Putfield of fieldname * classname * int (* int is dimension. 0 if no array *)
-	  | Putstatic of fieldname * classname * int (* int is dimension. 0 if no array *)
+	  | Putfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
+	  | Putstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Return
 	  | Sipush of int
 	  | Swap
@@ -75,15 +82,12 @@ structure JVMInst =
 	(* klasse, oberklasse *)
 	and
 	    FIELD =
-	    Field of FIELDACCESS list * fieldname * FIELDTYPE
+	    (* ARG list specifies the type. May be an Array *)
+	    Field of FIELDACCESS list * fieldname * ARG list
 	and
 	    METHOD =
 	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * LIMITS *
 	    INSTRUCTION list * INSTRUCTION list * bool
-	and
-	    FIELDTYPE =
-	    Classtype of classname * int (* int is dimension. 0, if no array *)
-	  | Sonstwas of int
 	and
 	    CLASSACCESS =
 	    CPublic | CFinal | CSuper | CAbstract | CInterface

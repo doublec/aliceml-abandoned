@@ -47,18 +47,16 @@ structure ToJasmin =
 	  | mAccessToString (MAbstract::rest)      =  "abstract "^mAccessToString rest
 	  | mAccessToString nil = ""
 
+	fun desclist2string ((Classsig dl)::dls) = "L"^dl^";"^(desclist2string dls)
+	  | desclist2string (Intsig::dls) = "I"^(desclist2string dls)
+	  | desclist2string (Boolsig::dls) = "Z"^(desclist2string dls)
+	  | desclist2string (Voidsig::dls) = "V"^(desclist2string dls)
+	  | desclist2string (Floatsig::dls) = "F"^(desclist2string dls)
+	  | desclist2string (Arraysig::dls) = "["^(desclist2string dls)
+	  | desclist2string nil = ""
+
 	fun descriptor2string (arglist, ret) =
-	    let
-		fun desclist2string ((Classsig dl)::dls) = "L"^dl^";"^(desclist2string dls)
-		  | desclist2string (Intsig::dls) = "I"^(desclist2string dls)
-		  | desclist2string (Boolsig::dls) = "Z"^(desclist2string dls)
-		  | desclist2string (Voidsig::dls) = "V"^(desclist2string dls)
-		  | desclist2string (Floatsig::dls) = "F"^(desclist2string dls)
-		  | desclist2string (Arraysig::dls) = "["^(desclist2string dls)
-		  | desclist2string nil = ""
-	    in
-		"("^(desclist2string arglist)^")"^(desclist2string ret)
-	    end
+	    "("^(desclist2string arglist)^")"^(desclist2string ret)
 
 	fun siglength (Arraysig::rest) = siglength rest
 	  | siglength (_::rest) = (1+siglength rest)
@@ -108,6 +106,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Ireturn = ~1
 	  | stackNeedInstruction (Istore _) = ~1
 	  | stackNeedInstruction (Label _) = 0
+	  | stackNeedInstruction Lcmp = ~1
 	  | stackNeedInstruction (Ldc _) = 1 (* wir benutzen kein long und double! *)
 	  | stackNeedInstruction (New _) = 1
 	  | stackNeedInstruction Pop = ~1
@@ -173,15 +172,15 @@ structure ToJasmin =
 		else if i=1 then
 		    "fconst_1"
 		     else "fconst_2"
-	      | instructionToJasmin (Getfield(fieldn, ty,arity),_) = "getfield "^fieldn^" "^
-			 (makeArityString (arity, ""))^"L"^ty^";"
+	      | instructionToJasmin (Getfield(fieldn, arg),_) = "getfield "^fieldn^" "^
+			 (desclist2string arg)
 	      | instructionToJasmin (Getself name,s) =
 			 if s then
 			     "getstatic "^name
 			 else
 			     "aload_0"
-	      | instructionToJasmin (Getstatic(fieldn, ty,arity),_) = "getstatic "^fieldn^" "^
-			     (makeArityString (arity, ""))^"L"^ty^";"
+	      | instructionToJasmin (Getstatic(fieldn, arg),_) = "getstatic "^fieldn^" "^
+			     (desclist2string arg)
 	      | instructionToJasmin (Goto l,_) = "goto "^l
 	      | instructionToJasmin (Iconst i,_) =
 			     if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
@@ -223,15 +222,16 @@ structure ToJasmin =
 	      | instructionToJasmin (Invokevirtual(cn,mn,ms),_) =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
 	      | instructionToJasmin (Label l,_) = l^": "
+	      | instructionToJasmin (Lcmp,_) = "lcmp"
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^s^"\""
 	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^Real.toString r
-	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^intToString i
+	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^Int32.toString i
 	      | instructionToJasmin (New cn,_) = "new "^cn
 	      | instructionToJasmin (Pop,_) = "pop"
-	      | instructionToJasmin (Putfield(cn,f,arity),_) = "putfield "^cn^" "^
-			     (makeArityString (arity, ""))^"L"^f^";"
-	      | instructionToJasmin (Putstatic(cn,f,arity),_) = "putstatic "^cn^" "^
-			     (makeArityString (arity, ""))^"L"^f^";"
+	      | instructionToJasmin (Putfield(cn,arg),_) = "putfield "^cn^" "^
+			     desclist2string arg
+	      | instructionToJasmin (Putstatic(cn,arg),_) = "putstatic "^cn^" "^
+			     desclist2string arg
 	      | instructionToJasmin (Return,_) = "return"
 	      | instructionToJasmin (Sipush i,_) = "sipush "^intToString i
 	      | instructionToJasmin (Swap,_) = "swap"
@@ -264,7 +264,7 @@ structure ToJasmin =
 			      | _ => (if noStack i
 					  then ""
 				      else
-					  ("\t\t.line "^line()^
+					  ((*"\t\t.line "^line()^*)
 					   "\t; Stack: "^Int.toString need^
 					   " Max: "^Int.toString max))
 					      ^"\n"^
@@ -283,17 +283,11 @@ structure ToJasmin =
 	end
 
 	local
-	    fun fieldToJasmin (Field(access,fieldname, Classtype (classtype, arity))) =
+	    fun fieldToJasmin (Field(access,fieldname,arg)) =
 		let
 		    val fcc = fAccessToString access
 		in
-		    ".field "^fcc^" "^fieldname^" "^(makeArityString (arity, ""))^"L"^classtype^";\n"
-		end
-	      | fieldToJasmin (Field(access,fieldname, Sonstwas i)) =
-		let
-		    val fcc = fAccessToString access
-		in
-		    ".field "^fcc^" "^fieldname^" I = 0\n"
+		    ".field "^fcc^" "^fieldname^" "^(desclist2string arg)^"\n"
 		end
 	in
 	    fun fieldsToJasmin (f::fs) = (fieldToJasmin f)^(fieldsToJasmin fs)

@@ -185,11 +185,30 @@ structure CodeGen =
 		fun top () = !liste
 	    end
 
-	fun atCodeInt i =
-	    if i >= ~1 andalso i<=5 then Iconst i else
-		if i >= ~128 andalso i <= 127 then Bipush i else
-		    if i >= ~32768 andalso i <= 32767 then Sipush i
-		    else Ldc (JVMInt i)
+	fun atCodeInt (i:Int32.int) =
+	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.<= (i, Int.toLarge 5)
+		then Iconst (Int.fromLarge i) else
+		    if LargeInt.>= (i, Int.toLarge ~128)
+			andalso LargeInt.<= (i, Int.toLarge 127)
+			then Bipush (Int.fromLarge i) else
+			    if LargeInt.>= (i, Int.toLarge ~32768)
+				andalso LargeInt.<= (i, Int.toLarge 32767)
+				then Sipush (Int.fromLarge i)
+			    else Ldc (JVMInt i)
+
+	fun atCode (CharLit c) = atCodeInt(Int.toLarge (ord c))
+	  | atCode (IntLit i)  = atCodeInt i
+	  | atCode (RealLit r) =
+	    let
+		val r = valOf(Real.fromString r)
+	    in
+		if (Real.sign (r-0.0)=0)
+		    orelse (Real.sign(r-1.0)=0)
+		    orelse (Real.sign (r-2.0)=0) then Fconst (trunc r)
+		else Ldc (JVMFloat r)
+	    end
+	  | atCode (StringLit s)= Ldc (JVMString s)
+	  | atCode (WordLit w)  = atCodeInt (LargeWord.toLargeInt w)
 
 	(* Die Aritäten von Records koennen statisch gebaut werden. Zur
 	 Laufzeit genügt es, ein (statisches) Feld der Hauptklasse
@@ -204,7 +223,7 @@ structure CodeGen =
 		fun fieldname number = "arity"^Int.toString number
 
 		fun staticfield number =
-		    (Class.getInitial ()^"/"^(fieldname number), CLabel, 1)
+		    (Class.getInitial ()^"/"^(fieldname number), [Arraysig, Classsig CLabel])
 
 		(* Hinzufügen einer Recordarity *)
 		fun insert (strings as (s::rest)) =
@@ -233,11 +252,11 @@ structure CodeGen =
 							     ([Classsig CString], [Voidsig])))::
 					     Aastore::
 					     acc)
-					val d = n+1
+					val d = LargeInt.+ (n, Int.toLarge 1)
 				    in
-					if d=size
+					if d=(Int.toLarge size)
 					    then
-						(atCodeInt size::
+						(atCodeInt (Int.toLarge size)::
 						 (Anewarray CLabel)::
 						 c,d)
 					else (c,d)
@@ -265,7 +284,7 @@ structure CodeGen =
 		    (fn (number, fields) =>
 		     Field ([FPublic, FStatic],
 			    fieldname number,
-			    Classtype (CLabel, 1))::fields)
+			    [Arraysig, Classsig CLabel])::fields)
 		    nil
 		    arity
 	    end
@@ -299,26 +318,12 @@ structure CodeGen =
 				 staticfield (!number))
 		      | SOME number' => staticfield number'
 
-		(* Erzeugen aller Integerkonstanten zur
+		(* Erzeugen aller Literale zur
 		 Übersetzungszeit *)
 		fun generate startwert =
 		     let
 			 fun codelits (lit', constnumber, acc) =
 			     let
-				 val jValue = case lit' of
-				     CharLit c => atCodeInt(ord c)
-				   | IntLit i  => atCodeInt (LargeInt.toInt i)
-				   | RealLit r =>
-					 let
-					     val SOME r = Real.fromString r
-					 in
-					     if (Real.sign (r-0.0)=0)
-						 orelse (Real.sign(r-1.0)=0)
-						 orelse (Real.sign (r-2.0)=0) then Fconst (trunc r)
-					     else Ldc (JVMFloat r)
-					 end
-				   | StringLit s => Ldc (JVMString s)
-				   | WordLit w   => atCodeInt (LargeInt.toInt (LargeWord.toLargeInt w))
 				 val jType = case lit' of
 				     CharLit _   => ([Intsig],[Voidsig])
 				   | IntLit _    => ([Intsig],[Voidsig])
@@ -329,9 +334,9 @@ structure CodeGen =
 			     in
 				 (New scon ::
 				  Dup ::
-				  jValue ::
+				  atCode lit' ::
 				  (Invokespecial (scon,"<init>",jType)) ::
-				  (Putstatic ((staticfield constnumber),scon,0)) ::
+				  (Putstatic ((staticfield constnumber),[Classsig scon])) ::
 				  acc)
 
 			     end
@@ -345,7 +350,7 @@ structure CodeGen =
 		    (fn (lit', number, fields) =>
 		     Field ([FPublic, FStatic],
 			    fieldname number,
-			    Classtype (litClass lit', 0))::fields)
+			    [Classsig (litClass lit')])::fields)
 		    startwert
 		    lithash
 	    end
@@ -593,7 +598,7 @@ structure CodeGen =
 	 )
 
 	and getBuiltin builtin' =
-	    [Getstatic (Literals.insert (StringLit builtin'), CStr, 0),
+	    [Getstatic (Literals.insert (StringLit builtin'), [Classsig CStr]),
 	     Invokestatic (CBuiltin, "getBuiltin",
 			   ([Classsig CStr], [Classsig CVal]))]
 
@@ -602,12 +607,12 @@ structure CodeGen =
 		if stamp'=stamp_Match then ([Getstatic CMatch],true) else
 		    if stamp'=stamp_false then ([Getstatic CFalse],true) else
 			if stamp'=stamp_true then ([Getstatic CTrue],true) else
-			    if stamp'=stamp_nil then (getBuiltin "nil",true) else
-				if stamp'=stamp_cons then (getBuiltin "cons",true) else
-				    if stamp'=stamp_ref then (getBuiltin "ref",true) else
-					if stamp'=stamp_Bind then (getBuiltin "Bind",true) else
-					    if stamp'=stamp_eq then (getBuiltin "equals",true) else
-						if stamp'=stamp_assign then (getBuiltin "assign",true) else
+			    if stamp'=stamp_nil then ([Getstatic CNil],true) else
+				if stamp'=stamp_cons then ([Getstatic CCons],true) else
+				    if stamp'=stamp_ref then ([Getstatic CRef],true) else
+					if stamp'=stamp_Bind then ([Getstatic CBind],true) else
+					    if stamp'=stamp_eq then ([Getstatic CEquals],true) else
+						if stamp'=stamp_assign then ([Getstatic CAssign],true) else
 						    (nil,false)
 
 
@@ -755,17 +760,60 @@ structure CodeGen =
 	    let
 		val danach = Label.new ()
 		val elselabel = Label.new ()
-		val zuerst = [] (* (case id' of Id (_,stomp, _) => print ("Stomp"^(Int.toString stomp));[Comment "Hi7", Aload (Local.get id')]) *)
 
 		fun testCode (LitTest lit') =
 		    let
-			val litcode = expCode (LitExp((~1,~1),lit'))
+			val eq = case lit' of
+			    WordLit w' =>
+				stampCode stamp' @
+				[Instanceof CWord,
+				 Ifeq elselabel] @
+				(stampCode stamp') @
+				[Checkcast CWord,
+				 Getfield (CWord^"/value", [Wordsig]),
+				 Ldc (JVMWord w'),
+				 Lcmp,
+				 Ifneq elselabel]
+			  | IntLit i' =>
+				stampCode stamp' @
+				[Instanceof CInt,
+				 Ifeq elselabel] @
+				(stampCode stamp') @
+				[Checkcast CInt,
+				 Getfield (CInt^"/value", [Intsig]),
+				 Ldc (JVMInt i'),
+				 Ificmpne elselabel]
+			  | CharLit c' =>
+				stampCode stamp' @
+				[Instanceof CChar,
+				 Ifeq elselabel] @
+				(stampCode stamp') @
+				[Checkcast CChar,
+				 Getfield (CChar^"/value", [Charsig]),
+				 atCodeInt (Int.toLarge (Char.ord c')),
+				 Ificmpne elselabel]
+			  | StringLit s' =>
+				stampCode stamp' @
+				[Instanceof CStr,
+				 Ifeq elselabel] @
+				(stampCode stamp') @
+				[Checkcast CStr,
+				 Getfield (CStr^"/value", [Classsig CString]),
+				 Ldc (JVMString s'),
+				 Invokevirtual (CString,"equals",([Classsig CString],[Boolsig])),
+				 Ifeq elselabel]
+			  | r as (RealLit r') =>
+				stampCode stamp' @
+				[Instanceof CReal,
+				 Ifeq elselabel] @
+				(stampCode stamp') @
+				[Checkcast CReal,
+				 Getfield (CReal^"/value", [Floatsig]),
+				 atCode r,
+				 Invokevirtual (CString,"equals",([Classsig CString],[Boolsig])),
+				 Ifeq elselabel]
 		    in
-			litcode @
-			(stampCode stamp') @
-			[Invokevirtual (CObj, "equals",
-					([Classsig CObj],[Boolsig])),
-			 Ifeq elselabel]
+			eq
 		    end
 		  | testCode (ConTest (id'',NONE)) =
 		    Comment "Hi8" ::
@@ -822,7 +870,7 @@ structure CodeGen =
 		    in
 			New CRecordArity ::
 			Dup ::
-			(atCodeInt (length stringid)) ::
+			(atCodeInt (Int.toLarge (length stringid))) ::
 			(Anewarray CLabel) ::
 			(Getstatic (RecordLabel.insert
 				    (stringids2strings (stringid, nil)))) ::
@@ -869,7 +917,7 @@ structure CodeGen =
 			stampCode stamp'@
 			[Checkcast CDMLTuple,
 			 Invokeinterface (CDMLTuple,"getArity",([],[Intsig])),
-			 Iconst (length ids),
+			 atCodeInt (Int.toLarge (length ids)),
 			 Ificmpne elselabel] @
 			(stampCode stamp') @
 			[Checkcast CDMLTuple,
@@ -1015,7 +1063,7 @@ structure CodeGen =
 				       "Id (Lambda.top) ="^(Stamp.toString (stampFromId
 									  (Lambda.getId(Lambda.top()))))^"\n"),
 			      Aload 0,
-			      Getfield (Class.getCurrent()^"/"^(fieldNameFromStamp stamp'), CVal,0)])
+			      Getfield (Class.getCurrent()^"/"^(fieldNameFromStamp stamp'), [Classsig CVal])])
 	    end
 	and
 	    idArgCode (OneArg id') = idCode id'
@@ -1028,7 +1076,7 @@ structure CodeGen =
 	    in
 		[New CTuple,
 		 Dup,
-		 Iconst (List.length ids),
+		 atCodeInt (Int.toLarge (List.length ids)),
 		 Anewarray CVal]@
 		(iac (ids, nil))@
 		[Invokespecial (CTuple, "<init>",
@@ -1049,10 +1097,10 @@ structure CodeGen =
 			   (Aastore::
 			    accu2))))
 		  | iac (nil, accu1, accu2) =
-		    (Iconst arity)::
+		    (atCodeInt (Int.toLarge arity))::
 		    (Anewarray CString)::
 		    accu1@
-		    ((Iconst arity)
+		    ((atCodeInt (Int.toLarge arity))
 		     ::(Anewarray CVal)
 		     ::accu2)
 	    in
@@ -1191,7 +1239,7 @@ structure CodeGen =
 					     bstamp @
 					     [Putfield (className^"/"^
 							(fieldNameFromStamp stamp''),
-							CVal, 0)]
+							[Classsig CVal])]
 				     else
 					 if FreeVars.getFun stamp'' = Lambda.top() then
 					     if stamp'' <> stampFromId(Lambda.getId stamp')
@@ -1202,7 +1250,7 @@ structure CodeGen =
 						     [Dup,
 						      Comment ("Hi3: stamp="^Stamp.toString stamp''),
 						      Aload (Local.get stamp''),
-						      Putfield(className^"/"^(fieldNameFromStamp stamp''),CVal, 0),
+						      Putfield(className^"/"^(fieldNameFromStamp stamp''),[Classsig CVal]),
 						      Comment ("load local variable")]
 					     else nil
 					 else
@@ -1212,8 +1260,8 @@ structure CodeGen =
 					       Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
 							Stamp.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
 							Stamp.toString (Lambda.top())),
-					       Getfield(Class.getCurrent()^"/"^(fieldNameFromStamp stamp''),CVal, 0),
-					       Putfield(className^"/"^(fieldNameFromStamp stamp''),CVal, 0)])
+					       Getfield(Class.getCurrent()^"/"^(fieldNameFromStamp stamp''),[Classsig CVal]),
+					       Putfield(className^"/"^(fieldNameFromStamp stamp''),[Classsig CVal])])
 				 end
 			 in
 			     val loadVars = List.concat (map loadFreeVar freeVarList)
@@ -1240,7 +1288,7 @@ structure CodeGen =
 	   decListCode declist @ expCode exp'*)
 
 	  | expCode (RecExp(_, nil)) =
-		     [Getstatic (CConstants^"/dmlunit", CName, 0)]
+		     [Getstatic (CConstants^"/dmlunit", [Classsig CName])]
 
 	  | expCode (RecExp(_,labid)) =
 		     (* RecExp of coord * (lab * id) list *)
@@ -1288,7 +1336,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			      Anewarray CLabel*),
 			  Getstatic (RecordLabel.insert
 				     (labids2strings (labid, nil))),
-			  atCodeInt arity,
+			  atCodeInt (Int.toLarge arity),
 			  Anewarray CVal] @
 			 (load (labid,0)) @
 			 [Invokespecial (CRecord,"<init>",
@@ -1327,7 +1375,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			   | StringLit _ => CStr
 			   | WordLit _   => CInt
 		     in
-			 [Getstatic (Literals.insert lit', scon, 0)]
+			 [Getstatic (Literals.insert lit', [Classsig scon])]
 (*				 [Comment "constant(",
 				  New scon,
 				  Dup,
@@ -1350,7 +1398,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		     in
 			 [New CTuple,
 			  Dup,
-			  Iconst arity,
+			  atCodeInt (Int.toLarge arity),
 			  Anewarray CVal]@
 			 ids (longids, 0)@
 			 [Invokespecial (CTuple, "<init>",
@@ -1364,7 +1412,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	  | expCode (AdjExp _) = raise Error "seltsame operation adjexp"
 
 	  | expCode (SelExp(_,Lab(_,lab'))) =
-		     (case Int.fromString lab' of
+		     (case LargeInt.fromString lab' of
 			 NONE =>
 			     [New CSelString,
 			      Dup,
@@ -1374,7 +1422,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		       | SOME i =>
 			     [New CSelInt,
 			      Dup,
-			      Iconst i,
+			      atCodeInt i,
 			      Invokespecial (CSelInt, "<init>",
 					     ([Intsig],[Voidsig]))])
 
@@ -1389,13 +1437,13 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	  | expCode (SelAppExp (_, Lab (_,label'), id')) =
 		     idCode id' @
 		     ((Checkcast CDMLTuple) ::
-		      (case Int.fromString label' of
+		      (case LargeInt.fromString label' of
 			  NONE =>
 			      [Ldc (JVMString label'),
 			       Invokeinterface (CDMLTuple, "get",
 						([Classsig CString], [Classsig CVal]))]
 			| SOME i =>
-			      [Iconst i,
+			      [atCodeInt i,
 			       Invokeinterface (CDMLTuple, "get",
 						([Intsig], [Classsig CVal]))]))
 
@@ -1409,7 +1457,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		(* baut die Felder, d.h. die freien Variablen der Klasse *)
 		local
 		    fun fields (stamp'::stamps) =
-			(Field ([FPublic],fieldNameFromStamp stamp', Classtype (CVal, 0)))::(fields stamps)
+			(Field ([FPublic],fieldNameFromStamp stamp', [Classsig CVal]))::(fields stamps)
 		      | fields nil = nil
 		in
 		    val fieldscode = fields freeVarList

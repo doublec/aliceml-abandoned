@@ -1,21 +1,29 @@
 structure Abbrev  =
     struct
-	val CBind          = ("de/uni_sb/ps/dml/runtime/Constants/dmlbind",
-			      "de/uni_sb/ps/dml/runtime/Name", 0)
+	open JVMInst
+
+	val CEquals       = ("de/uni_sb/ps/dml/runtime/General/equals",
+			     [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
+	val CAssign       = ("de/uni_sb/ps/dml/runtime/General/assign",
+			     [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
+	val CRef          = ("de/uni_sb/ps/dml/runtime/General/ref",
+			      [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
+	val CBind          = ("de/uni_sb/ps/dml/runtime/General/bind",
+			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CCons          = ("de/uni_sb/ps/dml/runtime/List/cons",
-			      "de/uni_sb/ps/dml/runtime/Constructor", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/Constructor"])
 	val CFalse         = ("de/uni_sb/ps/dml/runtime/Constants/dmlfalse",
-			      "de/uni_sb/ps/dml/runtime/Name", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CMatch         = ("de/uni_sb/ps/dml/runtime/Constants/dmlmatch",
-			      "de/uni_sb/ps/dml/runtime/Name", 0)
-	val CNil          = ("de/uni_sb/ps/dml/runtime/Constants/dmlnil",
-			     "de/uni_sb/ps/dml/runtime/Name", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
+	val CNil          = ("de/uni_sb/ps/dml/runtime/List/nil",
+			     [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CPickle        = ("de/uni_sb/ps/dml/runtime/General/pickle",
-			      "de/uni_sb/ps/dml/runtime/DMLValue", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
 	val CTrue          = ("de/uni_sb/ps/dml/runtime/Constants/dmltrue",
-			      "de/uni_sb/ps/dml/runtime/Name", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CUnit          = ("de/uni_sb/ps/dml/runtime/Constants/dmlunit",
-			      "de/uni_sb/ps/dml/runtime/Name", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CName          = "de/uni_sb/ps/dml/runtime/Name"
 	val CConstants     = "de/uni_sb/ps/dml/runtime/Constants"
 	val CConstructor   = "de/uni_sb/ps/dml/runtime/Constructor"
@@ -24,7 +32,8 @@ structure Abbrev  =
 	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/Function"
 	val CFuture        = "de/uni_sb/ps/dml/runtime/Future"
 	val CInt           = "de/uni_sb/ps/dml/runtime/Int"
-	val CWord           = "de/uni_sb/ps/dml/runtime/Word"
+	val CWord          = "de/uni_sb/ps/dml/runtime/Word"
+	val CChar          = "de/uni_sb/ps/dml/runtime/Char"
 	val CInternalError = "de/uni_sb/ps/dml/runtime/DMLInternalError"
 	val CLabel         = "de/uni_sb/ps/dml/runtime/Label"
 	val CLVal          = "de/uni_sb/ps/dml/runtime/LVar"
@@ -39,13 +48,14 @@ structure Abbrev  =
 	val CVal           = "de/uni_sb/ps/dml/runtime/DMLValue"
 	val CHashtable     = "java/util/Hashtable"
 	val CObj           = "java/lang/Object"
-	val COut           = ("java/lang/System/out","java/io/PrintStream", 0)
+	val COut           = ("java/lang/System/out",
+			      [Classsig "java/io/PrintStream"])
 	val CPrintStream   = "java/io/PrintStream"
 	val CString        = "java/lang/String"
 	val CThread        = "java/lang/Thread"
 	val CVector        = "java/util/Vector"
 	val CPlus          = ("de/uni_sb/ps/dml/runtime/Int/plus",
-			      "de/uni_sb/ps/dml/runtime/DMLValue", 0)
+			      [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
 	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
 	val CDMLTuple      = "de/uni_sb/ps/dml/runtime/DMLTuple"
 
