@@ -444,14 +444,17 @@ struct
 
     (* layout information *)
 
+    fun setsVerticalStruct ns =
+	Array.length ns > 0 andalso
+	case Array.sub(ns,0) of
+	     Simple(rr) => String.equal("struct",#rep(rr))
+	   | _ => false
+
     fun setsVertical  n = 
-	case n of
-	Container(r) 
-        => checkContKids (#kids(r),0)
-	    orelse ( case Array.sub(#kids(r),0) of
-		    Simple(rr) => String.equal("struct",#rep(rr))
-		  | _ => false )
-      | _ => false 
+	case n
+	 of Container(r) => checkContKids (#kids(r),0)
+			    orelse setsVerticalStruct(#kids(r))
+	  | _ => false
 	
     and checkContKids (a,i) = 
 	if i >=  Array.length(a) 
