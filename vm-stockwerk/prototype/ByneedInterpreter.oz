@@ -73,7 +73,12 @@ define
       {Exception.raiseError byneedInterpreterPushCall} unit
    end
 
+   fun {ByneedInterpreterAbstract _}
+      {Exception.raiseError byneedInterpreterAbstract} unit
+   end
+
    Me = byneedInterpreter(run: ByneedInterpreterRun
 			  handle: ByneedInterpreterHandle
-			  pushCall: ByneedInterpreterPushCall)
+			  pushCall: ByneedInterpreterPushCall
+			  abstract: ByneedInterpreterAbstract)
 end

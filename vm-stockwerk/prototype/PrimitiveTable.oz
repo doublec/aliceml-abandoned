@@ -771,7 +771,7 @@ define
 			    pushCall: ThreadRaiseInInterpreterPushCall)
 
    fun {PrimitiveInterpreterRun Args TaskStack}
-      case TaskStack of primitive(_ F Spec)|Rest then
+      case TaskStack of primitive(_ F Spec _)|Rest then
 	 case Spec of n_t then {F TaskStack}
 	 [] n_v then continue(arg({F}) Rest)
 	 [] i_t then {F {Construct Args} TaskStack}
@@ -942,21 +942,26 @@ define
 			   end
 			pushCall:
 			   fun {$ Closure TaskStack}
-			      case Closure of closure(P=primitive(_ _ _)) then
-				 P|TaskStack
+			      case Closure of closure(P=primitive(_ _ _ _))
+			      then P|TaskStack
 			      end
+			   end
+			abstract:
+			   fun {$ primitive(_ _ _ F)}
+			      %--** how to signal sitedness?
+			      transform('Alice.primitive' {ByteString.make F})
 			   end)
 
-   fun {ImportField X}
-      case X of P#Spec then closure(primitive(Interpreter P Spec))
-      [] value(Y) then Y
+   fun {ImportField F X}
+      case X of P#Spec then closure(primitive(Interpreter P Spec F))
+      [] value(Y) then Y   %--** cannot be abstracted again
       [] missing(_) then {Value.byNeedFail X}   %--**
       else {ImportOzModule X}
       end
    end
 
    fun {ImportOzModule Module}
-      {Record.map Module ImportField}
+      {Record.mapInd Module ImportField}
    end
 
    Table = {ImportOzModule Primitives}

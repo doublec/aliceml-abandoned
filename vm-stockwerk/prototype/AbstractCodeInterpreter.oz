@@ -491,7 +491,13 @@ define
       end
    end
 
+   fun {Abstract function(_ F#L#C NG NL IdDefArgs Instr)}
+      transform('Alice.function' tag(0 tuple({ByteString.make F} L C)
+				     NG NL IdDefArgs Instr))
+   end
+
    Me = abstractCodeInterpreter(run: Run
 				handle: Handle
-				pushCall: PushCall)
+				pushCall: PushCall
+				abstract: Abstract)
 end

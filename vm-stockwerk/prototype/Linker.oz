@@ -53,6 +53,10 @@ define
       end
    end
 
+   fun {LinkInterpreterAbstract _}
+      {Exception.raiseError linkInterpreterAbstract} unit
+   end
+
    LinkInterpreter =
    linkInterpreter(run: LinkInterpreterRun
 		   handle:
@@ -61,7 +65,8 @@ define
 			    exception(Frame|Debug Exn Rest)
 			 end
 		      end
-		   pushCall: LinkInterpreterPushCall)
+		   pushCall: LinkInterpreterPushCall
+		   abstract: LinkInterpreterAbstract)
 
    local
       ModuleManager = {New Module.manager init}
