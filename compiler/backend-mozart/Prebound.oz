@@ -176,10 +176,22 @@ prepare
 		 end
 	      end
 	 end
-      'Future.isFailed': Value.isFailed
-      'Future.isFuture':
+      'Future.isByneed':
 	 fun {$ X}
-	    {IsFuture X} andthen {Not {Value.isFailed X}}
+	    {IsFuture X} andthen
+	    case {Value.toVirtualString X 0 0} of
+	       &_|&<|&f|&u|&t|&u|&r|&e|& |&b|&y|&N|&e|&e|&d|_ then true
+	    else false
+	    end
+	 end
+      'Future.status':
+	 fun {$ X}
+	    if {IsFuture X} then
+	       if {Value.isFailed X} then 'FAILED'
+	       else 'FUTURE'
+	       end
+	    else 'DETERMINED'
+	    end
 	 end
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}

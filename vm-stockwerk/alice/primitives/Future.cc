@@ -44,17 +44,26 @@ DEFINE1(Future_concur) {
   RETURN(future->ToWord());
 } END
 
-DEFINE1(Future_isFailed) {
+DEFINE1(Future_isByneed) {
   Transient *transient = Store::WordToTransient(x0);
   RETURN_BOOL(transient != INVALID_POINTER &&
-	      transient->GetLabel() == CANCELLED_LABEL);
+	      transient->GetLabel() == BYNEED_LABEL);
 } END
 
-DEFINE1(Future_isFuture) {
+DEFINE1(Future_status) {
   Transient *transient = Store::WordToTransient(x0);
-  RETURN_BOOL(transient != INVALID_POINTER &&
-	      (transient->GetLabel() == FUTURE_LABEL ||
-	       transient->GetLabel() == BYNEED_LABEL));
+  if (transient == INVALID_POINTER)
+    RETURN_INT(0); // DETERMINED
+  switch (transient->GetLabel()) {
+  case HOLE_LABEL:
+  case FUTURE_LABEL:
+  case BYNEED_LABEL:
+    RETURN_INT(2); // FUTURE
+  case CANCELLED_LABEL:
+    RETURN_INT(1); // FAILED
+  default:
+    Error("invalid transient label");
+  }
 } END
 
 void PrimitiveTable::RegisterFuture() {
@@ -62,6 +71,6 @@ void PrimitiveTable::RegisterFuture() {
   Register("Future.await", Future_await, 1);
   Register("Future.byneed", Future_byneed, 1);
   Register("Future.concur", Future_concur, 1);
-  Register("Future.isFailed", Future_isFailed, 1);
-  Register("Future.isFuture", Future_isFuture, 1);
+  Register("Future.isByneed", Future_isByneed, 1);
+  Register("Future.status", Future_status, 1);
 }
