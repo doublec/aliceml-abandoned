@@ -16,4 +16,6 @@ public interface DMLLVar extends Remote, DMLValue {
     public DMLValue request() throws RemoteException;
 
     public DMLValue apply(DMLValue val) throws RemoteException;
+
+    public DMLValue bind(DMLValue val) throws RemoteException;
 }

@@ -59,6 +59,22 @@ final public class General {
     }
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
     _FIELD(General,assign);
+    static {
+	Builtin.builtins.put(":=",assign);
+    }
+
+    _BUILTIN(Bind) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"General.bind");
+	    if (args[0] instanceof DMLLVar) {
+		return ((DMLLVar) args[0]).bind(args[1]);
+	    } else {
+		_error("wrong argument 1 for bind",val);
+	    }
+	}
+    }
+    /** <code>val bind : (lvar * 'a) -> unit</code>*/
+    _FIELD(General,bind);
 
     _BUILTIN(O) {
 	final public class CO extends Builtin {
@@ -116,6 +132,9 @@ final public class General {
     }
     /** <code>val ref : 'a -> ref 'a</code>*/
     _FIELD(General,ref);
+    static {
+	Builtin.builtins.put("ref",ref);
+    }
 
     _BUILTIN(Spawn) {
 	_APPLY(val) {
@@ -235,10 +254,26 @@ final public class General {
     }
 
     _BINOP(plus,+);
+    static {
+	Builtin.builtins.put("+",plus);
+    }
     _BINOP(minus,-);
+    static {
+	Builtin.builtins.put("-",plus);
+    }
     _BINOP(div,/);
+    static {
+	Builtin.builtins.put("div",div);
+    }
     _BINOP(mod,%);
+    static {
+	Builtin.builtins.put("mod",mod);
+    }
     _BINOP(mult,*);
+    static {
+	Builtin.builtins.put("*",mult);
+    }
+
     _COMPARE(greater,>);
     _COMPARE(geq,>=);
     _COMPARE(less,<);
@@ -317,6 +352,7 @@ final public class General {
     _FIELD(General,print);
     static {
 	Builtin.builtins.put("print",print);
+	Builtin.builtins.put("TextIO.print",print);
     }
     // val exnName : exn -> string 
     // val exnMessage : exn -> string

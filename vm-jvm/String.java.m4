@@ -167,6 +167,9 @@ final public class String implements DMLValue {
     }
     /** <code>val ^ : (string * string) -> string </code>*/
     _FIELD(String,append);
+    static {
+	Builtin.builtins.put("String.^",append);
+    }
 
     _BUILTIN(IsPrefix) {
 	_APPLY(val) {

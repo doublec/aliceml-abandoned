@@ -86,10 +86,7 @@ define(_BINOP,`
 	}
     }
     /** val $2 : (number * number) -> number */
-    _FIELD(General,$1);
-    static {
-	Builtin.builtins.put("$2",$1);
-    }') 
+    _FIELD(General,$1);') 
 define(_COMPARE,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
