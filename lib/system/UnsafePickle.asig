@@ -1,16 +1,18 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-(*--**FIXME
+(*--**FIXME: 'inf should be Inf.sign, 'signature should Signature.t,
+             string should be Url.t
 import
     structure Url
 from "../stoc/misc/Url"
@@ -24,7 +26,12 @@ signature UNSAFE_PICKLE_COMPONENT =
     sig
 	structure UnsafePickle:
 	    sig
-		val loadSign: string -> 'a option
-		val replaceSign: string * 'a * string -> unit
+		exception Corrupt
+
+		val load: string -> 'inf * 'module  (* IO.Io, Corrupt *)
+		val save: string * 'inf * 'module -> unit
+
+		val loadSign: string -> 'signature option   (* IO.Io *)
+		val replaceSign: string * 'signature * string -> unit
 	    end
     end
