@@ -9,6 +9,8 @@ signature MISC =
     val Option_app :	('a -> unit) -> 'a option -> unit
     val Option_fold :	('a * 'b -> 'b) -> 'b -> 'a option -> 'b
 
+    val List_appr :	('a -> unit) -> 'a list -> unit
+
     val ListPair_find :	('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option
 
     val Array_all :	('a -> bool) -> 'a array -> bool

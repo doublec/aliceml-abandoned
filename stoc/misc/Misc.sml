@@ -15,6 +15,9 @@ structure Misc :> MISC =
       | Option_fold f b (SOME a)= f(a,b)
 
 
+    fun List_appr f  nil	= ()
+      | List_appr f (x::xs)	= ( List_appr f xs ; f x )
+
     fun ListPair_find f (nil,_)	= NONE
       | ListPair_find f (_,nil)	= NONE
       | ListPair_find f (x::xs, y::ys)
