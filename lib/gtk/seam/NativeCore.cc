@@ -323,7 +323,7 @@ sendArgsToStream(gint connid, guint n_param_values, const GValue *param_values) 
     word value;
 
     const GValue *val = param_values + i;
-    /*    
+    /*
     GTypeQuery q;
     memset(&q, 0, sizeof(q));
     g_type_query(G_VALUE_TYPE(val), &q);
@@ -384,9 +384,15 @@ sendArgsToStream(gint connid, guint n_param_values, const GValue *param_values) 
     if (!widget) paramlist = push_front(paramlist,value);
   }
   
+  word widgetW;
+  if (GTK_IS_OBJECT(widget))
+    widgetW = OBJECT_TO_WORD(widget, TYPE_GTK_OBJECT);
+  else
+    widgetW = OBJECT_TO_WORD(widget, (G_IS_OBJECT(widget) ? TYPE_G_OBJECT 
+                                                          : TYPE_UNKNOWN));
   Tuple *tup = Tuple::New(3);
   tup->Init(0,INT_TO_WORD(connid));
-  tup->Init(1,OBJECT_TO_WORD(widget,TYPE_GTK_OBJECT));
+  tup->Init(1,widgetW);
   tup->Init(2,paramlist);
   
   put_on_stream(&eventStream, tup->ToWord());
@@ -517,7 +523,7 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
     if (objectMap->IsMember(key)) {
       Tuple *object = Tuple::FromWordDirect(objectMap->Get(key));
       int objectType = Store::DirectWordToInt(object->Sel(1));
-      if ((type != objectType) && (type != TYPE_UNKNOWN)) {
+      if ((type != objectType) && (objectType != TYPE_UNKNOWN)) {
 	fprintf(stderr, "OBJECT_TO_WORD: type warning: old %s != new %s\n",
 		getObjectType(objectType), getObjectType(type));
 	fflush(stderr);
