@@ -130,7 +130,6 @@ functor MakeAbstractGrammar(type info) :>
 	  ValDec    of info * pat * exp		(* values *)
 	| ConDec    of info * con * typ		(* constructor *)
 	| TypDec    of info * id * typ		(* type *)
-	| DatDec    of info * id * typ		(* type + constructors *)
 	| ModDec    of info * id * mod		(* module *)
 	| InfDec    of info * id * inf		(* interface *)
 	| RecDec    of info * dec list		(* recursive declarations *)
@@ -143,7 +142,6 @@ functor MakeAbstractGrammar(type info) :>
 	  ValSpec   of info * id * typ		(* value *)
 	| ConSpec   of info * con * typ		(* constructor *)
 	| TypSpec   of info * id * typ		(* type *)
-	| DatSpec   of info * id * typ		(* type + constructors *)
 	| ModSpec   of info * id * inf		(* module *)
 	| InfSpec   of info * id * inf		(* interface *)
 	| RecSpec   of info * spec list		(* recursive specifications *)
@@ -244,7 +242,6 @@ functor MakeAbstractGrammar(type info) :>
     fun infoDec(ValDec(i,_,_))		= i
       | infoDec(ConDec(i,_,_))		= i
       | infoDec(TypDec(i,_,_))		= i
-      | infoDec(DatDec(i,_,_))		= i
       | infoDec(ModDec(i,_,_))		= i
       | infoDec(InfDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
@@ -254,7 +251,6 @@ functor MakeAbstractGrammar(type info) :>
     fun infoSpec(ValSpec(i,_,_))	= i
       | infoSpec(ConSpec(i,_,_))	= i
       | infoSpec(TypSpec(i,_,_))	= i
-      | infoSpec(DatSpec(i,_,_))	= i
       | infoSpec(ModSpec(i,_,_))	= i
       | infoSpec(InfSpec(i,_,_))	= i
       | infoSpec(RecSpec(i,_))		= i

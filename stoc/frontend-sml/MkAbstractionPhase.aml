@@ -809,13 +809,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | REPLICATIONDec(i, tycon as TyCon(i',tycon'), longtycon) =>
+	   (* BUG: ignores constructors *)
 	   let
 		val (id',stamp)  = trTyCon_bind E tycon
 		val (longid',E') = trLongTyCon E longtycon
 		val _            = insertTy(E, tycon', (i', stamp, E'))
 		val _            = union(E,E')
 	   in
-		[O.DatDec(i, id', O.ConTyp(infoLong longtycon, longid'))]
+		[O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid'))]
 	   end
 
 	 | CONDec(i, dconbind) =>
@@ -1552,6 +1553,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | REPLICATIONSpec(i, tycon as TyCon(i', tycon'), longtycon) =>
+	   (* BUG: ignores constructors *)
 	   let
 		val (id',stamp)  = trTyCon_bind E tycon
 		val (longid',E') = trLongTyCon E longtycon
@@ -1563,7 +1565,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			errorVId'("duplicate value or constructor ", E', vid',
 				 " in signature")
 	   in
-		[O.DatSpec(i, id', O.ConTyp(infoLong longtycon, longid'))]
+		[O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid'))]
 	   end
 
 	 | CONSpec(i, dcondesc) =>

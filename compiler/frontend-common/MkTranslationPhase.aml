@@ -22,7 +22,6 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun idsDec(I.ValDec(i,p,e), xs')	= idsPat(p, xs')
       | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
       | idsDec(I.TypDec(i,x,t), xs')	= idsTyp(t, xs')
-      | idsDec(I.DatDec(i,x,t), xs')	= idsTyp(t, xs')
       | idsDec(I.ModDec(i,x,m), xs')	= x::xs'
       | idsDec(I.InfDec(i,x,j), xs')	= xs'
       | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
@@ -174,8 +173,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
       | trDec(I.ConDec(i,c,t), ds')	= trCon(c, ds')
-      | trDec(I.TypDec(i,x,t), ds')	= ds'
-      | trDec(I.DatDec(i,x,t), ds')	= trTyp(t, ds')
+      | trDec(I.TypDec(i,x,t), ds')	= trTyp(t, ds')
       | trDec(I.ModDec(i,x,m), ds')	= let val x' as O.Id(i',_,_) = trId x in
 					      O.ValDec(i, O.VarPat(i',x'),
 							  trMod m) :: ds'
@@ -221,33 +219,8 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
 
 
-    (* Create alias bindings for all structures and values in an environment *)
-(*
-    fun idToLab(O.Id(i,stamp,ExId x)) = O.Lab(i,x)
-
-    fun shortid        (i,id') = O.ShortId(i,id')
-    fun longid longid' (i,id') = O.LongId(i,longid',idToLab id')
-
-    fun decs(i,E,toLongid) =
-	let
-	    fun f toString (id, (_,stamp,_), ds) =
-		let
-		    val id'     = O.Id(i, stamp, O.ExId(toString id))
-		    val longid' = toLongid(i, id')
-		    val pat'    = O.VarPat(i, id')
-		    val exp'    = O.VarExp(i, longid')
-		in
-		    O.ValDec(i, pat', exp', false) :: ds
-		end
-	in
-	    List.rev (foldStrs (f (toStrName o StrId.toString))
-		     (foldVals (f VId.toString) nil E) E)
-	end
-
-
-
     (* Create fields for all structures and values in an environment *)
-
+(*
     fun fields CE =
 	let
 	    fun f toString (id, (i,stamp,_), fs) =
