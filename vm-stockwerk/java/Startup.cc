@@ -116,6 +116,7 @@ void Startup(int argc, const char *argv[]) {
     RunMainWorker::PushFrame(thread, methodRef);
   }
 #if defined(JAVA_INITIALIZE_SYSTEM_CLASS)
+  //--** move this to JavaMain
   {
     JavaString *className = JavaString::New("java/lang/System");
     word theClass = classLoader->ResolveClass(className);
@@ -125,5 +126,6 @@ void Startup(int argc, const char *argv[]) {
     RunMainWorker::PushFrame(thread, methodRef);
   }
 #endif
+  //--** move this to JavaMain
   ClassLoader::PushPreloadFrame(thread);
 }
