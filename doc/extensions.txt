@@ -22,6 +22,7 @@ Core language:
 * nonlinear patterns? (better not, requires structural equality)
 
 * overloaded literals (allows 4*3.3 and 0wx3f<<6)
+* make real an eqtype
 * allow free type variables in strdecs
 * polymorphic records
 * open datatypes, turning exceptions into derived forms
