@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Process from "OS_Process"
+import structure FileSys from "OS_FileSys"
+import signature OS      from "OS-sig"
+
+structure OS : OS =
+struct
+    structure Process = Process
+    structure FileSys = FileSys
+end

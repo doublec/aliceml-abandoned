@@ -118,7 +118,8 @@ MLYACC = ml-yacc
 ##
 
 NATIVECOMPONENTS = \
-	IO TextIO OS Unix CommandLine Tools UnsafePickle Debug Socket
+	IO TextIO OS_Process OS_FileSys Unix CommandLine \
+	Tools UnsafePickle Debug Socket
 
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
@@ -136,7 +137,8 @@ LIBFUNDAMENTALSOURCES0 = \
 	VectorPair.aml WideChar.aml WideString.aml Word.aml
 LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
 	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
-	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml
+	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml \
+	OS.aml
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \

@@ -1,0 +1,18 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature OS_FILE_SYS from "OS_FILE_SYS-sig"
+
+signature OS_FILE_SYS_COMPONENT =
+sig
+    structure FileSys : OS_FILE_SYS
+end
