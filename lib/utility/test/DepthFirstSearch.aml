@@ -1,7 +1,24 @@
-structure StringMap = MakeHashImpMap(StringHashKey)
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "../../system/TextIO"
+import structure StringHashKey from "../StringHashKey"
+import structure MkHashImpMap from "../MkHashImpMap"
+import structure MkDepthFirstSearch from "../MkDepthFirstSearch"
+
+structure StringMap = MkHashImpMap(StringHashKey)
 structure DepthFirstSearch =
-    MakeDepthFirstSearch(structure Key = StringHashKey
-			 structure Map = StringMap)
+    MkDepthFirstSearch(structure Key = StringHashKey
+		       structure Map = StringMap)
 
 val map: string list StringMap.t = StringMap.new ()
 

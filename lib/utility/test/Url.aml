@@ -16,6 +16,9 @@
  * <fielding@ics.uci.edu> at http://www.ics.uci.edu/~fielding/url/
  *)
 
+import structure TextIO from "../../system/TextIO"
+import structure Url from "../Url"
+
 local
     val tests = [("http://a/b/c/d;p?q",
 		  [("gg:h",		"gg:h"),
