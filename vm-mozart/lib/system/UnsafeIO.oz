@@ -16,5 +16,8 @@ import
 export
    'IO$': IO
 define
-   IO = 'IO'('Io': {NewUniqueName 'IO.Io'})
+   Io = {NewUniqueName 'IO.Io'}
+
+   IO = 'IO'('\'Io': Io
+	     'Io': fun {$ X} Io(X) end)
 end
