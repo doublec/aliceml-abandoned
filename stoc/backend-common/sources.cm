@@ -16,5 +16,10 @@ Group is
     MATCH_COMPILATION_PHASE.sig
     MatchCompilationPhase.sml
 
+    IMPERATIVE_GRAMMAR.sig
+    ImperativeGrammar.sml
+    IMPERATIVE_PHASE.sig
+    ImperativePhase.sml
+
     PARTIAL_EVALUATION_PHASE.sig
     PartialEvaluationPhase.sml

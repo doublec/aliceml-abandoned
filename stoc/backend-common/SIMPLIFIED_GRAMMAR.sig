@@ -74,4 +74,6 @@ signature SIMPLIFIED_GRAMMAR =
 	    (* sorted, all labels distinct, no tuple *)
 
 	type program = dec list
+
+	val coordOf: exp -> coord
     end

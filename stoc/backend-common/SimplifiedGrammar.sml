@@ -74,4 +74,22 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 	    (* sorted, all labels distinct, no tuple *)
 
 	type program = dec list
+
+	fun coordOf (LitExp (coord, _)) = coord
+	  | coordOf (VarExp (coord, _)) = coord
+	  | coordOf (ConExp (coord, _, _)) = coord
+	  | coordOf (TupExp (coord, _)) = coord
+	  | coordOf (RecExp (coord, _)) = coord
+	  | coordOf (SelExp (coord, _, _)) = coord
+	  | coordOf (FunExp (coord, _, _)) = coord
+	  | coordOf (AppExp (coord, _, _, _)) = coord
+	  | coordOf (AdjExp (coord, _, _)) = coord
+	  | coordOf (WhileExp (coord, _, _)) = coord
+	  | coordOf (SeqExp (coord, _)) = coord
+	  | coordOf (TestExp (coord, _, _, _, _)) = coord
+	  | coordOf (RaiseExp (coord, _)) = coord
+	  | coordOf (HandleExp (coord, _, _, _)) = coord
+	  | coordOf (LetExp (coord, _, _)) = coord
+	  | coordOf (SharedExp (coord, _, _)) = coord
+	  | coordOf (DecExp (coord, _)) = coord
     end
