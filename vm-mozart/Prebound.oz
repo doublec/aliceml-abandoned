@@ -205,19 +205,19 @@ define
 	    try
 	       X = {Value.byNeedFail error(alice(FutureException(E)))}
 	    catch _ then
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole' pos('Prebound.oz' 208 15))}
+	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    unit
 	 end
       'Hole.fill':
 	 fun {$ X Y}
 	    if {IsDet X} then   %--** test and bind must be atomic
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole' pos('Prebound.oz' 215 15))}
+	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    try
 	       X = Y
 	    catch _ then
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole' pos('Prebound.oz' 220 15))}
+	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    unit
 	 end
