@@ -27,28 +27,14 @@ struct
     val modlab_type	= modlab "Type"
     structure Type	= Type				(* verify *)
 
-    val typlab_con	= typlab "con"
-    type con		= Type.con			(* verify *)
+    val typlab_kind	= typlab "kind"
+    type kind		= Type.kind			(* verify *)
     val typlab_typ	= typlab "t"
     type typ		= Type.t			(* verify *)
     val typlab_var	= typlab "var"
     type var		= Type.var			(* verify *)
     val typlab_row	= typlab "row"
     type row		= Type.row			(* verify *)
-    val typlab_kind	= typlab "kind"
-    datatype kind	= datatype Type.kind		(* verify *)
-    val typlab_sort	= typlab "sort"
-    datatype sort	= datatype Type.sort		(* verify *)
-
-    val lab_star	= vallab "STAR"
-    val _		= STAR : kind			(* verify *)
-    val lab_arrow	= vallab "ARROW"
-    val _		= ARROW : kind * kind -> kind	(* verify *)
-
-    val lab_open	= vallab "OPEN"
-    val _		= OPEN : sort			(* verify *)
-    val lab_closed	= vallab "CLOSED"
-    val _		= CLOSED : sort			(* verify *)
 
 
   (* Operations *)
@@ -56,33 +42,40 @@ struct
     type lab		= Label.t
     type path		= Path.t
 
+    val lab_starKind	= vallab "starKind"
+    val _		= Type.starKind : unit -> kind		(* verify *)
+    val lab_extKind	= vallab "extKind"
+    val _		= Type.extKind : unit -> kind		(* verify *)
+    val lab_arrowKind	= vallab "arrowKind"
+    val _		= Type.arrowKind : kind * kind -> kind	(* verify *)
+    val lab_singKind	= vallab "singKind"
+    val _		= Type.singKind : typ -> kind		(* verify *)
+
     val lab_unknown	= vallab "unknown"
     val _		= Type.unknown : kind -> typ		(* verify *)
-    val lab_inArrow	= vallab "inArrow"
-    val _		= Type.inArrow : typ * typ -> typ	(* verify *)
-    val lab_inTuple	= vallab "inTuple"
-    val _		= Type.inTuple : typ vector -> typ	(* verify *)
-    val lab_inProd	= vallab "inProd"
-    val _		= Type.inProd : row -> typ		(* verify *)
-    val lab_inSum	= vallab "inSum"
-    val _		= Type.inSum : row -> typ		(* verify *)
-    val lab_inVar	= vallab "inVar"
-    val _		= Type.inVar : var -> typ		(* verify *)
-    val lab_inCon	= vallab "inCon"
-    val _		= Type.inCon : con -> typ		(* verify *)
-    val lab_inAll	= vallab "inAll"
-    val _		= Type.inAll : var * typ -> typ		(* verify *)
-    val lab_inExist	= vallab "inExist"
-    val _		= Type.inExist : var * typ -> typ	(* verify *)
-    val lab_inApply	= vallab "inApply"
-    val _		= Type.inApply : typ * typ -> typ	(* verify *)
-    val lab_inLambda	= vallab "inLambda"
-    val _		= Type.inLambda : var * typ -> typ	(* verify *)
-    val lab_inMu	= vallab "inMu"
-    val _		= Type.inMu : typ -> typ		(* verify *)
-
     val lab_var		= vallab "var"
-    val _		= Type.var : kind -> var		(* verify *)
+    val _		= Type.var : var -> typ			(* verify *)
+    val lab_abs		= vallab "abs"
+    val _		= Type.abs : kind * path -> typ		(* verify *)
+    val lab_arrow	= vallab "arrow"
+    val _		= Type.arrow : typ * typ -> typ		(* verify *)
+    val lab_tuple	= vallab "tuple"
+    val _		= Type.tuple : typ vector -> typ	(* verify *)
+    val lab_prod	= vallab "prod"
+    val _		= Type.prod : row -> typ		(* verify *)
+    val lab_sum		= vallab "sum"
+    val _		= Type.sum : row -> typ			(* verify *)
+    val lab_all		= vallab "all"
+    val _		= Type.all : var * typ -> typ		(* verify *)
+    val lab_exist	= vallab "exist"
+    val _		= Type.exist : var * typ -> typ		(* verify *)
+    val lab_lambda	= vallab "lambda"
+    val _		= Type.lambda : var * typ -> typ	(* verify *)
+    val lab_apply	= vallab "apply"
+    val _		= Type.apply : typ * typ -> typ		(* verify *)
+
+    val lab_newVar	= vallab "newVar"
+    val _		= Type.newVar : kind -> var		(* verify *)
     val lab_kind	= vallab "kind"
     val _		= Type.kind : typ -> kind		(* verify *)
 
@@ -93,8 +86,8 @@ struct
     val lab_extendRow	= vallab "extendRow"
     val _		= Type.extendRow : lab * typ * row -> row (* verify *)
 
-    val lab_fill	= vallab "fill"
-    val _		= Type.fill : typ * typ -> unit		(* verify *)
+    val lab_fix		= vallab "fix"
+    val _		= Type.fix : (typ * typ) vector -> unit	(* verify *)
 
     val lab_equals	= vallab "equals"
     val _		= Type.equals : typ * typ -> bool	(* verify *)
