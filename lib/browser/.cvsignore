@@ -3,3 +3,4 @@ CM
 *.ozf
 *.ozp
 *.ozm
+Makefile.depend
