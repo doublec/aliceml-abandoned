@@ -13,43 +13,43 @@
 
 signature DYNARRAY = 
 sig
-	__eqeqtype 'a array
+    __eqeqtype 'a array
 
-	exception Empty
+    exception Empty
 
-	type t = array
+    type t = array
 
-	val array: int * 'a -> 'a array
+    val array: int * 'a -> 'a array
 
-	val length: 'a array -> int
+    val length: 'a array -> int
 
-	val sub: 'a array * int -> 'a
+    val sub: 'a array * int -> 'a
 
-	val update: 'a array * int * 'a -> unit
+    val update: 'a array * int * 'a -> unit
 
-	val resize: 'a array * int * 'a -> unit
+    val resize: 'a array * int * 'a -> unit
 
-	val vector:      'a array -> 'a vector
-	val fromList:    'a list -> 'a array
-	val toList:      'a array -> 'a list
-	val fromVector:  'a vector -> 'a array
-	val toVector:    'a array -> 'a vector
-	val tabulate:    int * (int -> 'a) -> 'a array
+    val vector:      'a array -> 'a vector
+    val fromList:    'a list -> 'a array
+    val toList:      'a array -> 'a list
+    val fromVector:  'a vector -> 'a array
+    val toVector:    'a array -> 'a vector
+    val tabulate:    int * (int -> 'a) -> 'a array
 
-	val swap:		'a array * int * int -> unit
-	val rev:		'a array -> unit
-	val copy:		{ src: 'a array, dst: 'a array, di: int } -> unit
-	val copyVec:	{ src: 'a vector, dst: 'a array, di: int } -> unit
-	val copyArray:  { src: 'a Array.array, dst: 'a array, di: int } -> unit
+    val swap:		'a array * int * int -> unit
+    val rev:		'a array -> unit
+    val copy:		{ src: 'a array, dst: 'a array, di: int } -> unit
+    val copyVec:	{ src: 'a vector, dst: 'a array, di: int } -> unit
+    val copyArray:  { src: 'a Array.array, dst: 'a array, di: int } -> unit
 
-	val app :         ('a -> unit) -> 'a array -> unit
-	val appr :        ('a -> unit) -> 'a array -> unit
-	val modify :      ('a -> 'a) -> 'a array -> unit 
-	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
-	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
-	val all :         ('a -> bool) -> 'a array -> bool
-	val exists :      ('a -> bool) -> 'a array -> bool
-	val find :        ('a -> bool) -> 'a array -> 'a option
+    val app :         ('a -> unit) -> 'a array -> unit
+    val appr :        ('a -> unit) -> 'a array -> unit
+    val modify :      ('a -> 'a) -> 'a array -> unit 
+    val foldl :       ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldr :       ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val all :         ('a -> bool) -> 'a array -> bool
+    val exists :      ('a -> bool) -> 'a array -> bool
+    val find :        ('a -> bool) -> 'a array -> 'a option
 
     val appi :        (int * 'a -> unit) -> 'a array -> unit
     val appri :       (int * 'a -> unit) -> 'a array -> unit

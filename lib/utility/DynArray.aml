@@ -15,220 +15,221 @@ import signature DYNARRAY from "DYNARRAY-sig"
 
 structure DynArray :> DYNARRAY = 
 struct
-	type 'a array = int ref * 'a Array.array ref
-	type t = array
+    type 'a array = int ref * 'a Array.array ref
+    type t = array
 
-	exception Empty
+    exception Empty
 
-	val minCap = 16
+    val minCap = 16
 
-	val d = lazy (raise Fail "!!")
-	
-	fun dummy () = d (* lazy (raise Fail "!!") *)
-
-
-	fun array (n, v) = (ref n, ref (Array.array (Int.max (n, minCap), v)))
-
-	fun length (ref n, _) = n
-
-	fun checkBounds (i, n) = if i < 0 orelse i >= n then raise Subscript else ()
-
-	fun reallocIfNeeded ((_, ar as ref a), neededCap) =
-		let val dummy = dummy ()
-			val cap = Array.length a 
-			
-			fun realloc n =
-				let val res = Array.array (n, dummy) in
-					Array.copy { di = 0, dst = res, src = a };
-					res
-				end
-		in
-			if cap < neededCap then
-				ar := realloc (Int.max (neededCap, 2*cap)) 
-			else
-				if cap div 4 >= neededCap andalso cap div 4 >= minCap then
-					ar := realloc (cap div 4)
-				else ()
-		end
-	
-	fun doRange (start, n, f) =
-		(* sometimes I would just KILL for a FOR loop *)
-		let fun loop i =
-				if i >= n then ()
-				else (f (start + i); loop (i + 1))
-		in
-			loop 0	
-		end
-	
-	fun doRangeRev (start, n, f) =
-		let fun loop i =
-			if i > n then ()
-			else (f (start + n - i); loop (i + 1)) 
-		in
-			loop 1
-		end
-		
-	
-	fun resize (da as (lenr as ref len, ar), n, v) = 
-		(reallocIfNeeded (da, n);
-		 doRange (len, n - len, fn i => Array.update (!ar, i, v));
-		 lenr := n)  	
-		
-	fun sub ((ref n, ref a), i) = (checkBounds (i, n);
-									  Array.sub (a, i))
-
-	fun update ((ref n, ref a), i, v) =	(checkBounds (i, n);
-											 Array.update (a, i, v))
-	
-	
-	fun addOne (a, v) = resize (a, length a + 1, v)
-
-	fun vector (ref n, ref a) =
-		Vector.tabulate (n, fn i => Array.sub (a, i))
+    val d = lazy (raise Fail "!!")
+    
+    fun dummy () = d (* lazy (raise Fail "!!") *)
 
 
-	fun toList (ref n, ref a) =
-		let fun loop (i, res) =
-				if i < 0 then res
-				else loop (i - 1, Array.sub (a, i) :: res)
-		in
-			loop (n - 1, [])
-		end
+    fun array (n, v) = (ref n, ref (Array.array (Int.max (n, minCap), v)))
 
-	fun fromList l = 
-		let val dummy = dummy ()
-			val res = (ref 0, ref (Array.array (0, dummy )))
-		in
-			List.app (fn v => addOne (res, v)) l;
-			res
-		end
+    fun length (ref n, _) = n
 
-	fun tabulate (n, f) =
-		let val dummy = dummy ()
-			val a = Array.array (n, dummy)
-			val res = (ref 0, ref a)
-		in
-			doRange (0, n, fn i => Array.update (a, i, f (i)));
-			res
-		end
+    fun checkBounds (i, n) = if i < 0 orelse i >= n 
+                                then raise Subscript 
+                                else ()
 
-	fun fromVector v = tabulate (Vector.length v, fn i => Vector.sub (v, i))
+    fun reallocIfNeeded ((_, ar as ref a), neededCap) =
+        let val dummy = dummy ()
+            val cap = Array.length a 
+            
+            fun realloc n =
+                let val res = Array.array (n, dummy) in
+                    Array.copy { di = 0, dst = res, src = a };
+                    res
+                end
+        in
+            if cap < neededCap then
+                ar := realloc (Int.max (neededCap, 2*cap)) 
+            else
+                if cap div 4 >= neededCap andalso cap div 4 >= minCap then
+                    ar := realloc (cap div 4)
+                else ()
+        end
 
-	fun toVector a = Vector.tabulate (length a, fn i => sub (a, i))
+    fun doRange (start, n, f) =
+        (* sometimes I would just KILL for a FOR loop *)
+        let fun loop i =
+                if i >= n then ()
+                else (f (start + i); loop (i + 1))
+        in
+            loop 0	
+        end
+    
+    fun doRangeRev (start, n, f) =
+        let fun loop i =
+                if i > n then ()
+                else (f (start + n - i); loop (i + 1)) 
+        in
+            loop 1
+        end
+            
+    
+    fun resize (da as (lenr as ref len, ar), n, v) = 
+        (reallocIfNeeded (da, n);
+         doRange (len, n - len, fn i => Array.update (!ar, i, v));
+         lenr := n)  	
+            
+    fun sub ((ref n, ref a), i) = (checkBounds (i, n); Array.sub (a, i))
 
-	fun swap ((ref n, ref a), i1, i2) =
-		(checkBounds (i1, n);
-		 checkBounds (i2, n);
-		 Array.swap (a, i1, i2))
+    fun update ((ref n, ref a), i, v) =	
+        (checkBounds (i, n);  
+         Array.update (a, i, v))
+    
+    fun addOne (a, v) = resize (a, length a + 1, v)
 
-	fun rev (ref n, ref a) =
-		let val n2	= n div 2
-			val i	= ref 0
-		in
-			while !i < n2 do Array.swap (a, !i, n - !i - 1)
-		end
-
-	fun appi f (ref n, ref a) = doRange (0, n, fn i => f (i, Array.sub (a, i)))
-
-	fun app f (ref n, ref a)	= doRange (0, n, fn i => f (Array.sub (a, i)))
-
-	fun appri f (ref n, ref a) = doRange (0, n, fn i => f (i, Array.sub (a, i)))
-
-	fun appr f (ref n, ref a) = doRange (0, n, fn i => f (Array.sub (a, i)))
-
-	fun foldl f init (ref n, ref a) = 
-		let val res = ref init in
-			doRange (0, n, fn i => res := f (Array.sub (a, i), !res));
-			!res
-		end
-
-	fun foldr f init (ref n, ref a) = 
-		let val res = ref init in
-			doRangeRev (0, n, fn i => res := f (Array.sub (a, i), !res));
-			!res
-		end
+    fun vector (ref n, ref a) =
+        Vector.tabulate (n, fn i => Array.sub (a, i))
 
 
-	fun foldli f init (ref n, ref a) =
-		let val res = ref init in
-			doRange (0, n, fn i => res := f (i, Array.sub (a, i), !res));
-			!res
-		end
+    fun toList (ref n, ref a) =
+            let fun loop (i, res) =
+                    if i < 0 then res
+                    else loop (i - 1, Array.sub (a, i) :: res)
+            in
+                loop (n - 1, [])
+            end
 
-	fun foldri f init (ref n, ref a) =
-		let val res = ref init in
-			doRangeRev (0, n, fn i => res := f (i, Array.sub (a, i), !res));
-			!res
-		end
+    fun fromList l = 
+            let val dummy = dummy ()
+                val res = (ref 0, ref (Array.array (0, dummy )))
+            in
+                List.app (fn v => addOne (res, v)) l;
+                res
+            end
 
-	fun modify f (ref n, ref a) = 
-		doRange (0, n, fn i => Array.update (a, i, f (Array.sub (a, i))))
+    fun tabulate (n, f) =
+            let val dummy = dummy ()
+                val a = Array.array (n, dummy)
+                val res = (ref 0, ref a)
+            in
+                doRange (0, n, fn i => Array.update (a, i, f (i)));
+                res
+            end
 
-	fun modifyi f (ref n, ref a) =
-		doRange (0, n, fn i => Array.update (a, i, f (i, Array.sub (a, i))))
+    fun fromVector v = tabulate (Vector.length v, fn i => Vector.sub (v, i))
 
-	fun all pred (ref n, ref a) =
-		let fun loop i =
-				if i >= n then true
-				else pred (Array.sub (a, i)) andalso loop (i + 1)
-		in
-			loop 0
-		end
+    fun toVector a = Vector.tabulate (length a, fn i => sub (a, i))
 
-	fun exists pred (ref n, ref a) =
-		let fun loop i =
-			if i >= n then false
-			else pred (Array.sub (a, i)) orelse loop (i + 1)
-		in
-			loop 0
-		end
+    fun swap ((ref n, ref a), i1, i2) =
+            (checkBounds (i1, n);
+             checkBounds (i2, n);
+             Array.swap (a, i1, i2))
 
-	fun alli pred (ref n, ref a) =
-		let fun loop i =
-				if i >= n then true
-				else pred (i, Array.sub (a, i)) andalso loop (i + 1)
-		in
-			loop 0
-		end
+    fun rev (ref n, ref a) =
+        let val n2	= n div 2
+            val i	= ref 0
+        in
+            while !i < n2 do Array.swap (a, !i, n - !i - 1)
+        end
 
-	fun existsi pred (ref n, ref a) =
-		let fun loop i =
-			if i >= n then false
-			else pred (i, Array.sub (a, i)) orelse loop (i + 1)
-		in
-			loop 0
-		end
+    fun appi f (ref n, ref a) = doRange (0, n, fn i => f (i, Array.sub (a, i)))
 
-	fun find pred (ref n, ref a) = 
-		let fun loop i =
-			if i >= n then NONE
-			else 
-				let val v = Array.sub (a, i) in
-					if pred v then SOME v
-					else loop (i + 1)
-				end
-		in
-			loop 0
-		end
+    fun app f (ref n, ref a)	= doRange (0, n, fn i => f (Array.sub (a, i)))
 
-	fun findi pred (ref n, ref a) = 
-		let fun loop i =
-			if i >= n then NONE
-			else 
-				let val v = Array.sub (a, i) in
-					if pred (i, v) then SOME (i, v)
-					else loop (i + 1)
-				end
-		in
-			loop 0
-		end
+    fun appri f (ref n, ref a) = doRange (0, n, fn i => f (i, Array.sub (a, i)))
 
-	fun contains a v = isSome (find (fn v' => v = v') a)
-	
-	fun notContains a v = isNone (find (fn v' => v = v') a)
+    fun appr f (ref n, ref a) = doRange (0, n, fn i => f (Array.sub (a, i)))
 
-	fun equal eq (a1, a2) = length a1 = length a2 andalso
-								alli (fn (i, v1) => v1 = sub (a2, i)) a1
+    fun foldl f init (ref n, ref a) = 
+        let val res = ref init in
+            doRange (0, n, fn i => res := f (Array.sub (a, i), !res));
+            !res
+        end
+
+    fun foldr f init (ref n, ref a) = 
+        let val res = ref init in
+            doRangeRev (0, n, fn i => res := f (Array.sub (a, i), !res));
+            !res
+        end
+
+
+    fun foldli f init (ref n, ref a) =
+        let val res = ref init in
+            doRange (0, n, fn i => res := f (i, Array.sub (a, i), !res));
+            !res
+        end
+
+    fun foldri f init (ref n, ref a) =
+        let val res = ref init in
+            doRangeRev (0, n, fn i => res := f (i, Array.sub (a, i), !res));
+            !res
+        end
+
+    fun modify f (ref n, ref a) = 
+        doRange (0, n, fn i => Array.update (a, i, f (Array.sub (a, i))))
+
+    fun modifyi f (ref n, ref a) =
+        doRange (0, n, fn i => Array.update (a, i, f (i, Array.sub (a, i))))
+
+    fun all pred (ref n, ref a) =
+        let fun loop i =
+                if i >= n then true
+                else pred (Array.sub (a, i)) andalso loop (i + 1)
+        in
+            loop 0
+        end
+
+    fun exists pred (ref n, ref a) =
+        let fun loop i =
+                if i >= n then false
+                else pred (Array.sub (a, i)) orelse loop (i + 1)
+        in
+            loop 0
+        end
+
+    fun alli pred (ref n, ref a) =
+        let fun loop i =
+                if i >= n then true
+                else pred (i, Array.sub (a, i)) andalso loop (i + 1)
+        in
+            loop 0
+        end
+
+    fun existsi pred (ref n, ref a) =
+        let fun loop i =
+                if i >= n then false
+                else pred (i, Array.sub (a, i)) orelse loop (i + 1)
+        in
+            loop 0
+        end
+
+    fun find pred (ref n, ref a) = 
+        let fun loop i =
+                if i >= n then NONE
+                else 
+                    let val v = Array.sub (a, i) in
+                        if pred v then SOME v
+                        else loop (i + 1)
+                    end
+        in
+            loop 0
+        end
+
+    fun findi pred (ref n, ref a) = 
+        let fun loop i =
+                if i >= n then NONE
+                else 
+                    let val v = Array.sub (a, i) in
+                        if pred (i, v) then SOME (i, v)
+                        else loop (i + 1)
+                    end
+        in
+            loop 0
+        end
+
+    fun contains a v = isSome (find (fn v' => v = v') a)
+    
+    fun notContains a v = isNone (find (fn v' => v = v') a)
+
+    fun equal eq (a1, a2) = length a1 = length a2 andalso
+                                alli (fn (i, v1) => v1 = sub (a2, i)) a1
 
 
     fun collate cmp (r1,r2)     = collate'(cmp,r1,r2,0)
@@ -277,34 +278,37 @@ struct
         sort(0, length a)
     end
 
-	fun copy { src, dst, di } =	if di < 0 orelse di + length src > length dst then
-									raise Subscript
-								else
-									copy' (src, dst, di, length src - 1)
-	and copy' (src, dst, di, ~1) =	()
-	  |	copy' (src, dst, di, i)  =	(update (dst, di+i, sub (src, i));
-	  								 copy' (src, dst, di, i - 1));
+    fun copy { src, dst, di } =	
+        if di < 0 orelse di + length src > length dst 
+            then raise Subscript
+            else copy' (src, dst, di, length src - 1)
 
-	
-	fun copyVec { src, dst, di } =	
-		if di < 0 orelse di + Vector.length src > length dst then
-			raise Subscript
-		else
-			copyVec' (src, dst, di, Vector.length src - 1)
-	and copyVec' (src, dst, di, ~1) =	()
-	  |	copyVec' (src, dst, di, i)  =	(update (dst, di+i, Vector.sub (src, i));
-	  								 	copyVec' (src, dst, di, i - 1));
+    and copy' (src, dst, di, ~1) = ()
+      |	copy' (src, dst, di, i)  = 
+        (update (dst, di+i, sub (src, i));
+         copy' (src, dst, di, i - 1));
+
+    
+    fun copyVec { src, dst, di } =	
+        if di < 0 orelse di + Vector.length src > length dst 
+            then raise Subscript
+            else copyVec' (src, dst, di, Vector.length src - 1)
+
+    and copyVec' (src, dst, di, ~1) = ()
+      |	copyVec' (src, dst, di, i)  = 
+        (update (dst, di+i, Vector.sub (src, i));
+         copyVec' (src, dst, di, i - 1));
 
 
-	fun copyArray { src, dst, di } =	
-		if di < 0 orelse di + Array.length src > length dst then
-			raise Subscript
-		else
-			copyAr' (src, dst, di, Array.length src - 1)
-	and copyAr' (src, dst, di, ~1) =	()
-	  |	copyAr' (src, dst, di, i)  =	(update (dst, di+i, Array.sub (src, i));
-	  								 	copyAr' (src, dst, di, i - 1));
+    fun copyArray { src, dst, di } =	
+        if di < 0 orelse di + Array.length src > length dst 
+            then raise Subscript
+            else copyAr' (src, dst, di, Array.length src - 1)
 
+    and copyAr' (src, dst, di, ~1) = ()
+      |	copyAr' (src, dst, di, i)  = 
+        (update (dst, di+i, Array.sub (src, i));
+         copyAr' (src, dst, di, i - 1));
 
 end
 
