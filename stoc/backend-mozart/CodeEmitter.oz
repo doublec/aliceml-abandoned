@@ -76,10 +76,6 @@ local
       end
    end
 
-   fun {GetNonlinearRegs VArgs}
-      {FilterNonlinearRegs {GetRegs VArgs $ nil}}
-   end
-
    local
       proc {Reserve Regs N W K}
 	 if N =< W then Reg in
@@ -534,7 +530,7 @@ in
 	       else skip
 	       end
 	    end
-	 [] vEquateConstant(_ Constant Reg Cont) then
+	 [] vEquateConstant(_ Constant Reg _) then
 	    case Emitter, GetReg(Reg $) of none then
 	       if self.controlFlowInfoSwitch then R in
 		  %% This is needed for 'name generation' step points:
@@ -555,7 +551,7 @@ in
 		  Emitter, Unify(R R2)
 	       end
 	    end
-	 [] vEquateRecord(_ Literal RecordArity Reg VArgs Cont) then Regs in
+	 [] vEquateRecord(_ Literal RecordArity Reg VArgs _) then Regs in
 	    {GetRegs VArgs ?Regs nil}
 	    if {Member Reg Regs} then R in
 	       Emitter, PredictReg(Reg ?R)

@@ -72,8 +72,8 @@ define
       case Lit of wordLit(W) then W
       [] intLit(I) then I
       [] charLit(C) then C
-      [] stringLit(S) then S
-      [] realLit(S) then S   %--**
+      [] stringLit(S) then {ByteString.make S}
+      [] realLit(S) then {String.toFloat S}
       end
    end
 
@@ -133,15 +133,24 @@ define
       [] testStm(Coord Id Test Body1 Body2) then Reg0 ThenVInstr ElseVInstr in
 	 %--** assemble several testStm into a single vMatch
 	 Reg0 = {GetReg Id State}
-	 case Test of litTest(Lit) then
-	    VHd = vTestConstant(_ Reg0 {TranslateLit Lit}   %--** NumOrLit
-				ThenVInstr ElseVInstr {TranslateCoord Coord}
-				VTl)
+	 case Test of litTest(Lit) then Constant in
+	    Constant = {TranslateLit Lit}
+	    if {IsNumber Constant} orelse {IsLiteral Constant} then
+	       VHd = vTestConstant(_ Reg0 {TranslateLit Lit}
+				   ThenVInstr ElseVInstr {TranslateCoord Coord}
+				   VTl)
+	    else TmpReg VInter in
+	       {State.cs newReg(?TmpReg)}
+	       VHd = vEquateConstant(_ Constant TmpReg VInter)
+	       VInter = vTestBuiltin(_ 'Value.\'==\''
+				     [Reg0 TmpReg {State.cs newReg($)}]
+				     ThenVInstr ElseVInstr VTl)
+	    end
 	 [] conTest(Id none) then
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
-	 [] conTest(Id1 some(Id2)) then
+	 [] conTest(_ some(_)) then
 	    VHd = VTl   %--**
 	 [] tupTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
@@ -172,10 +181,10 @@ define
       [] raiseStm(Coord Id) then
 	 VHd = vCallBuiltin(_ 'Exception.raise' [{GetReg Id State}]
 			    {TranslateCoord Coord} VTl)
-      [] sharedStm(Coord Body I) then
+      [] sharedStm(_ Body I) then
 	 if {Dictionary.member State.shareDict I} then
 	    VHd = {Dictionary.get State.shareDict I}
-	 else VBody in
+	 else
 	    {Dictionary.put State.shareDict I VHd}
 	    case {TranslateBody Body $ nil State ReturnReg} of nil then
 	       VHd = nil
@@ -184,7 +193,7 @@ define
 	    end
 	 end
 	 VTl = nil
-      [] returnStm(Coord Exp) then
+      [] returnStm(_ Exp) then
 	 case ReturnReg of unit then
 	    {Exception.raiseError stoc(internal translateStm Stm)}
 	 else
@@ -228,9 +237,9 @@ define
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} {TranslateLab Lab} Reg false
 			  {TranslateCoord Coord} VTl)
-      [] conAppExp(Coord Id1 Id2) then
+      [] conAppExp(_ _ _) then
 	 VHd = VTl   %--**
-      [] directAppExp(Coord Id Args) then
+      [] directAppExp(_ _ _) then
 	 VHd = VTl   %--**
       [] buitinAppExp(Coord Builtinname Ids) then
 	 VHd = vCallBuiltin(_ BuiltinTable.Builtinname
