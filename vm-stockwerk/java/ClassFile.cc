@@ -405,7 +405,8 @@ ClassFile::ParseFieldAttributes(u_int &offset, FieldInfo *fieldInfo,
       Assert(attributeLength == 2);
       if (foundConstantValue) return false;
       foundConstantValue = true;
-      if (!fieldInfo->IsStatic()) return false;
+      //if (!fieldInfo->IsStatic()) return false; //--** too strong
+      //   (example: java/io/Writer#writeBufferSize)
       //--** must be CONSTANT_Integer, CONSTANT_Long, CONSTANT_Float,
       //--** CONSTANT_Double, or CONSTANT_String
       fieldInfo->InitConstantValue(runtimeConstantPool->Get(GetU2(offset)));

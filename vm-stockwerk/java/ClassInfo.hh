@@ -92,7 +92,7 @@ public:
     return Store::DirectWordToInt(GetArg(HAS_CONSTANT_VALUE_POS));
   }
   void InitConstantValue(word constantValue) {
-    Assert(IsStatic());
+    //Assert(IsStatic()); //--** too strong
     Assert(!HasConstantValue());
     InitArg(HAS_CONSTANT_VALUE_POS, true);
     InitArg(CONSTANT_VALUE_POS, constantValue);
