@@ -100,10 +100,14 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
     final public java.lang.String toString() {
-	java.lang.String s = (mgr==null ? "no server-manager, " : "server: "+mgr+", ");
-	s+= (cmgr==null ? "no client-manager, " : "client: "+cmgr+", ");
-	s+=(content==null?"remote":content.toString())+" : ref";
-	return s;
+	if (Function.DEBUG) {
+	    java.lang.String s = (mgr==null ? "no server-manager, " : "server: "+mgr+", ");
+	    s+= (cmgr==null ? "no client-manager, " : "client: "+cmgr+", ");
+	    s+=(content==null?"remote":content.toString())+" : ref";
+	    return s;
+	} else {
+	    return content+" : ref";
+	}
 	//	return (content==null?"remote":content.toString())+" : ref";
     }
 
