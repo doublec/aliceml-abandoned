@@ -1,7 +1,7 @@
 Package: alice-gecode
 Version: 1.0.1
 Revision: 1
-Source: http://www.ps.uni-sb.de/~tack/download/%n-%v.tar.gz
+Source: http://www.ps.uni-sb.de/alice/download/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 HomePage: http://www.ps.uni-sb.de/alice
 License: BSD
