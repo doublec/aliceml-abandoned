@@ -60,12 +60,11 @@ struct
 
     fun varToString(isBound, n) =
 	let
-	    fun rep(0,c) = c
-	      | rep(n,c) = c ^ rep(n-1,c)
-
 	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
+	    val i = n div 26
 	in
-	    (if isBound then "'" else "'_") ^ rep(n div 26, c)
+	    (if isBound then "'" else "'_") ^
+	    (if i = 0 then c else c ^ Int.toString i)
 	end
 
 
@@ -143,8 +142,9 @@ struct
 		    end
 		else if isTuple t then
 		    case asTuple t
-		      of #[] => text "unit"
-		       | ts  => 
+		      of #[]  => text "unit"
+		       | #[t] => brace(ppField(text ":", Label.fromInt 1, t))
+		       | ts   => 
 		    let
 			val doc = ppStarList (ppTypPrec 4) (Vector.toList ts)
 		    in
@@ -153,7 +153,7 @@ struct
 		else if isProd t then
 		    brace(fbox(below(ppRow(",", ":", asProd t))))
 		else if isSum t then
-		    brack(fbox(below(ppRow("|", "of", asSum t))))
+		    brack(fbox(below(ppRow(" |", "of", asSum t))))
 		else if isVar t then
 		    let
 			val k   = kind t
@@ -205,14 +205,18 @@ struct
 			val doc = ppVar true
 		    in
 			Map.insert(m, canonical t, doc);
-			abox(
-			    hbox(
-				text "MU" ^/^
-				doc ^/^
-				text "."
-			    ) ^^
-			    nest(break ^^
-				ppTyp t1
+			parenPrec p (1,
+			    fbox(
+				abox(
+				    hbox(
+					text "MU" ^/^
+					doc ^/^
+					text "."
+				    ) ^^
+				    nest(break ^^
+					ppTyp t1
+				    )
+				)
 			    )
 			)
 		    end
@@ -233,7 +237,7 @@ struct
 		    in
 			if isEmptyRow r' andalso not unknown
 			then doc
-			else doc ^/^ sep ^/^ ppRow'(sep, ann, unknown, r')
+			else doc ^^ sep ^/^ ppRow'(sep, ann, unknown, r')
 		    end
 
 	    and ppField(ann,l,t) =
