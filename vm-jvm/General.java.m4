@@ -10,32 +10,32 @@ import de.uni_sb.ps.dml.runtime.*;
 
 final public class General {
     /** <code>datatype order = LESS | EQUAL | GREATER</code>*/
-    final public static Name LESS = new Name("order.LESS");
-    final public static Name EQUAL = new Name("order.EQUAL");
-    final public static Name GREATER = new Name("order.GREATER");
+    final public static Name LESS = new UniqueName("order.LESS");
+    final public static Name EQUAL = new UniqueName("order.EQUAL");
+    final public static Name GREATER = new UniqueName("order.GREATER");
     /** <code>exception Bind</code>*/
-    final public static Name Bind = new Name("General.Bind");
+    final public static Name Bind = new UniqueName("General.Bind");
     /** <code>exception Chr</code>*/
-    final public static Name Chr = new Name("General.Chr");
+    final public static Name Chr = new UniqueName("General.Chr");
     /** <code>exception Div</code>*/
-    final public static Name Div = new Name("General.Div");
+    final public static Name Div = new UniqueName("General.Div");
     /** <code>exception Domain</code>*/
-    final public static Name Domain = new Name("General.Domain");
+    final public static Name Domain = new UniqueName("General.Domain");
     /** <code>exception Fail of string </code>*/
-    final public static Constructor Fail = new Constructor("General.Fail");
+    final public static Constructor Fail = new UniqueConstructor("General.Fail");
     /** <code>exception Match</code>*/
-    final public static Name Match = new Name("General.Match");
+    final public static Name Match = new UniqueName("General.Match");
     /** <code>exception Overflow</code>*/
-    final public static Name Overflow = new Name("General.Overflow");
+    final public static Name Overflow = new UniqueName("General.Overflow");
     /** <code>exception Size</code>*/
-    final public static Name Size = new Name("General.Size");
+    final public static Name Size = new UniqueName("General.Size");
     /** <code>exception Span</code>*/
-    final public static Name Span = new Name("General.Span");
+    final public static Name Span = new UniqueName("General.Span");
     /** <code>exception Subscript</code>*/
-    final public static Name Subscript = new Name("General.Subscript");
+    final public static Name Subscript = new UniqueName("General.Subscript");
 
-    final public static class Deref extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Deref) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"deref");
 	    DMLValue arg = args[0].request();
 	    if (arg instanceof DMLConVal) {
@@ -43,85 +43,85 @@ final public class General {
 		if (cv.getConstructor()==Constants.reference)
 		    return cv.getContent();
 	    }
-	    return _error(`"wrong argument #1 for deref"',val);
+	    return _error("wrong argument 1 for deref",val);
 	}
     }
     /** <code>val ! : 'a ref -> 'a</code>*/
-    final public static Deref deref  = new Deref();
+    _FIELD(deref);
 
-    final public static class Assign extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Assign) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"assign");
 	    DMLValue car=args[0].request();
 	    if (car instanceof DMLConVal) {
 		return ((DMLConVal) car).assign(args[1]);
 	    }
 	    else
-		return _error(`"wrong argument #1 for assign"',val);
+		return _error("wrong argument 1 for assign",val);
 	}
     }
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
-    final public static Assign assign = new Assign();
+    _FIELD(assign);
 
-    final public static class Compose extends Builtin {
-	final public class Composer extends Builtin {
+    _BUILTIN(O) {
+	final public class CO extends Builtin {
 	    public DMLValue f,g;
-	    public Composer(DMLValue f, DMLValue g) {
+	    public CO(DMLValue f, DMLValue g) {
 		this.f=f;
 		this.g=g;
 	    }
-	    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException{
+	    _APPLY(v) {
 		return f.apply(g.apply(v));
 	    }
 	}
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    _fromTuple(args,val,2,"assign");
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"compose");
 	    DMLValue f = args[0].request();
 	    DMLValue g = args[1].request();
-	    return new Composer(f,g);
+	    return new CO(f,g);
 	}
     }
     /** <code>val o : (('b -> 'c) * ('a -> 'b)) -> 'a -> 'c </code>*/
-    final public static Compose o = new Compose();
+    _FIELD(o);
 
-    final public static class Before extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Before) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"before");
 	    return args[0];
 	}
     }
     /** <code>val before : ('a * unit) -> 'a</code>*/
     // wirft einfach das zweite Argument weg
-    final public static Before before = new Before();
+    _FIELD(before);
 
-    final public static class Ignore extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Ignore) {
+	_APPLY(_) {
 	    return Constants.dmlunit;
 	}
     }
     /** <code>val ignore : 'a -> unit </code>*/
-    final public static Ignore ignore = new Ignore();
+    _FIELD(ignore);
 
-    final public static class LVar extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Lvar) {
+	_APPLY(_) {
 	    return new LVar();
 	}
     }
     /** <code>val lvar : _ -> lvar</code>*/
-    final public static LVar lvar = new LVar();
+    _FIELD(lvar);
 
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
-    final public static class Ref extends Builtin {
-	final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Ref) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"General.ref");
 	    return new Reference(args[0]);
 	}
     }
     /** <code>val ref : 'a -> ref 'a</code>*/
-    final public static Ref ref = new Ref();
+    _FIELD(ref);
 
-    final public static class Spawn extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Spawn) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"spawn");
 	    de.uni_sb.ps.dml.runtime.Thread t=new de.uni_sb.ps.dml.runtime.Thread(args[0]);
 	    t.start();
@@ -132,10 +132,10 @@ final public class General {
      *  spawn startet einen neuen de.uni_sb.ps.dml.runtime.Thread, der das Argument
      *  von <code>apply</code> appliziert.
      */
-    final public static Spawn spawn = new Spawn();
+    _FIELD(spawn);
 
-    final public static class Equals extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Equals) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"equals");
 	    DMLValue car=args[0].request();
 	    DMLValue cdr=args[1].request();
@@ -146,14 +146,14 @@ final public class General {
 	}
     }
     /** <code>val equals : ('a * 'b) -> bool</code>*/
-    final public static Equals equals = new Equals();
+    _FIELD(equals);
 
-    final public static class Pickle extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Pickle) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.pickle");
 	    DMLValue fst=args[0].request();
 	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
-		return _error(`"argument #1 not de.uni_sb.ps.dml.runtime.String"',val);
+		return _error("argument 1 not de.uni_sb.ps.dml.runtime.String",val);
 	    java.lang.String whereto=((de.uni_sb.ps.dml.runtime.String) fst).getString();
 	    DMLValue ex=null;
 	    java.io.FileOutputStream outf=null;
@@ -183,14 +183,14 @@ final public class General {
 	}
     }
 
-    final public static Pickle pickle = new Pickle();
+    _FIELD(pickle);
 
-    final public static class Unpickle extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Unpickle) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.unpickle");
 	    DMLValue fst=args[0].request();
 	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
-		return _error(`"argument #1 not de.uni_sb.ps.dml.runtime.String"',val);
+		return _error("argument 1 not de.uni_sb.ps.dml.runtime.String",val);
 	    java.lang.String wherefrom=((de.uni_sb.ps.dml.runtime.String) fst).getString();
 	    DMLValue ex=null;
 	    java.io.FileInputStream inf=null;
@@ -209,7 +209,7 @@ final public class General {
 		try {
 		    inf.close();
 		} catch (Exception e) {
-		System.err.println(e);}
+		    System.err.println(e);}
 		if (ex != null)
 		    ex.raise();
 	    }
@@ -217,7 +217,7 @@ final public class General {
 	}
     }
 
-    final public static Unpickle unpickle = new Unpickle();
+    _FIELD(unpickle);
 
     // val exnName : exn -> string 
     // val exnMessage : exn -> string

@@ -1,31 +1,32 @@
+dnl Text-Tools
+define(capitalize,`translit(substr($1,0,1),a-z,A-Z)`'substr($1,1)')
+dnl
 dnl Hier machen wir die Macros rein, die quasi überall gebraucht werden
-
+dnl
 define(_request_id,`    final public DMLValue request() {
 	return this;
     }
 ')
-
 define(_getValue_id,`    final public DMLValue getValue() {
 	return this;
     }
 ')
-
 define(_raise,`    final public DMLValue raise() {
 	throw new ExceptionWrapper(this);
     }
 ')
-
 define(_apply_fails,`    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+val)).raise();
     }
 ')
-
+dnl
 dnl für ConValTuple<i>
+dnl
 define(_getConstructor,`    final public Constructor getConstructor() {
 	return constructor;
     }
 ')
-
+dnl
 dnl fromTuple für Builtins
 dnl _fromTuple(DMLArray[] wohin, DMLValue woher, int wieviele, String where)
 define(_fromTuple,`
@@ -50,7 +51,7 @@ define(_fromTuple,`
 	}
 	// END MACRO: FROMTUPLE($1,$2,$3,$4)
 ')
-
+dnl
 dnl _error
 dnl
 define(_error,`
@@ -58,3 +59,14 @@ define(_error,`
 	Constants.runtimeError.apply(new Tuple2(new de.uni_sb.ps.dml.runtime.String($1),$2)).raise()
 	// END MACRO: ERROR($1,$2)
 ')
+dnl
+dnl _BUILTIN(name)
+define(_BUILTIN,`
+	// Builtin $1
+	final public static class $1 extends Builtin')
+dnl _APPLY(val)
+define(_APPLY,`
+	// apply
+	final public DMLValue apply(DMLValue $1) throws java.rmi.RemoteException' )
+dnl FIELD(fieldname)
+define(_FIELD,`final public static capitalize($1) $1 = new capitalize($1)()')
