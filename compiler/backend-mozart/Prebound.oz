@@ -159,8 +159,6 @@ define
 	    false   %--** unimplemented
 	 end
       'Future.isFuture': IsFuture   %--** wrong for failed futures
-      'General.:=':
-	 fun {$ X Y} {Assign X Y} unit end
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
@@ -171,8 +169,6 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
-      'General.exchange':
-	 fun {$ C New} {Exchange C $ New} end
       'General.exnName':
 	 fun {$ N}
 	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
@@ -365,6 +361,10 @@ define
 	 fun {$ R}
 	    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
 	 end
+      'Ref.:=':
+	 fun {$ R X} {Assign R X} unit end
+      'Ref.exchange':
+	 fun {$ R X} {Exchange R $ X} end
       'String.^':
 	 fun {$ S1 S2} {ByteString.append S1 S2} end
       'String.<':

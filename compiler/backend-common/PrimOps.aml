@@ -75,7 +75,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Future.concur", SOME Unary);
 		ins ("Future.isFailed", SOME Unary);
 		ins ("Future.isFuture", SOME Unary);
-		ins ("General.:=", SOME (Tuple 2));
 		ins ("General.Bind", NONE);
 		ins ("General.Chr", NONE);
 		ins ("General.Div", NONE);
@@ -86,7 +85,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("General.Size", NONE);
 		ins ("General.Span", NONE);
 		ins ("General.Subscript", NONE);
-		ins ("General.exchange", SOME (Tuple 2));
 		ins ("General.exnName", SOME Unary);
 		ins ("GlobalStamp.new", SOME (Tuple 0));
 		ins ("GlobalStamp.fromString", SOME Unary);
@@ -162,6 +160,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Real.round", SOME Unary);
 		ins ("Real.toString", SOME Unary);
 		ins ("Real.trunc", SOME Unary);
+		ins ("Ref.:=", SOME (Tuple 2));
+		ins ("Ref.exchange", SOME (Tuple 2));
 		ins ("String.^", SOME (Tuple 2));
 		ins ("String.<", SOME (Tuple 2));
 		ins ("String.>", SOME (Tuple 2));
