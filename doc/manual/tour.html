@@ -11,16 +11,17 @@ and its features:</P>
   <LI><A href="#sml">Standard ML compatibility</A></LI>
   <LI><A href="#interactive">Interactive use</A>: evaluating declarations and
   browsing results</LI>
-  <LI><A href="#laziness">Laziness</A>: transparent lazy evaluation on demand</LI>
+  <LI><A href="#laziness">Laziness</A>: transparent lazy evaluation</LI>
   <LI><A href="#concurrency">Concurrency</A>: threads and data-flow
   synchronistation</LI>
   <LI><A href="#promises">Promises</A>: </LI>
-  <LI><A href="#components">Components</A>: platform independence and
-  lazy dynamic linking</LI>
   <LI><A href="#packages">Packages</A>: dynamic typing and first-class modules</LI>
   <LI><A href="#pickling">Pickling</A>: platform independent persistence</LI>
+  <LI><A href="#components">Components</A>: platform independence and
+  lazy dynamic linking</LI>
   <LI><A href="#distribution">Distribution</A>: </LI>
-  <LI><A href="#constraints">Constraint Programming</A>: </LI>
+  <LI><A href="#constraints">Constraints</A>: concurrent constraint programming
+  and programmable search</LI>
   <LI><A href="#interop">Interoperability</A>: working hand in hand with Oz
   programs</LI>
 </UL>
@@ -437,43 +438,44 @@ discussion of concurrency, futures, and failure.</P>
 
 <?php section("promises", "promises") ?>
 
+<!-- TODO -->
+
+<P>To be done...</P>
 
 <PRE class=code>
-(* Promises and Futures *)
-
-open Promise
-
 signature PORT =
 sig
     type 'a port
 
-    val new: unit -> 'a port * 'a list
-    val send: 'a port * 'a -> unit
-    val close: 'a port -> unit
+    val new :   unit -> 'a port * 'a list
+    val send :  'a port * 'a -> unit
+    val close : 'a port -> unit
 end
 </PRE>
 
 <PRE class=code>
 structure Port :> PORT =
 struct
+    open Promise
+
     type 'a port = 'a list promise ref
 
     fun new () =
 	let
-	    val p = promise()
+	    val p = promise ()
 	in
 	    (ref p, future p)
 	end
 
     fun send (r, x) =
 	let
-	    val p' = promise()
+	    val p' = promise ()
 	    val p = Ref.exchange (r, p')
 	in
-	    fulfill(p, x::future p')
+	    fulfill (p, x::future p')
 	end
 
-    fun close r = fulfill(!r, nil)
+    fun close r = fulfill (!r, nil)
 end
 </PRE>
 
@@ -962,6 +964,10 @@ more information on evaluated components.</P>
 
 
 <?php section("distribution", "distribution") ?>
+
+<!-- TODO -->
+
+<P>To be done...</P>
 
 
 
