@@ -34,7 +34,8 @@ public:
     return (word) ((u_int) p | (u_int) BLKTAG);
   }
   static Block *DecodeBlock(word p) {
-    return (Block *) ((((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) ? p : INVALID_POINTER);
+    return (Block *) ((((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) ?
+		      ((char *) p - (u_int) BLKTAG) : INVALID_POINTER);
   }
   // Transient<->Word Conversion
   static word EncodeTransient(Transient *p) {
