@@ -71,14 +71,19 @@ fun main () =
             end handle Protocol.Protocol msg =>
                 (* highlevel snake game specific logical error *)
                 SND msg
-          (*  |   Remote.Proxy e =>
-                (* lowlevel error.
-                   TODO: differentiate between different kinds *)
-                SND (exnName e)*)
+            |   Remote.Proxy Remote.Ticket =>
+                (* Server has been terminated! *)
+                SND ("Ticket no longer valid.  Server has been terminated.")
+            |   Remote.Proxy _ =>
+                (* lowlevel error. *)
+                SND (exnName e)
             |   IO.Io { name, function, cause } =>
                 (* lowlevel error at Remote.take *)
                 SND ("IO error " ^ name ^ " at " ^ function ^ " cause: " ^
                         exnName cause) 
+            |   Remote.Ticket      =>
+                (* take failed! *)
+                SND ("Invalid ticket!  Make sure that you entered the ticket correctly and that the server is still running.")
             |   Package.Mismatch _ =>
                 (* unpack failed! *)
                 SND ("Ticket invalid!  Most probably from a different alice application.")
