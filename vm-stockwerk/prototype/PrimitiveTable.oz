@@ -264,7 +264,7 @@ define
 		    Transient = transient({NewCell future(nil)})
 		    TaskStack = [byneedFrame(ByneedInterpreter.interpreter
 					     Transient)]
-		    {Scheduler.object newThread(Closure args()
+		    {Scheduler.object newThread(closure: Closure
 						taskStack: TaskStack)}
 		    continue(arg(Transient) TaskStack)
 		 end#r_t
@@ -746,10 +746,8 @@ define
 	    end
 	 end
       handle:
-	 fun {$ Debug Exn TaskStack}
-	    case TaskStack of Frame|Rest then
-	       exception(Frame|Debug Exn Rest)
-	    end
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
 	 end
       toString:
 	 fun {$ vectorTabulate(_ _ _ I N)}
@@ -759,174 +757,168 @@ define
    ThreadRaiseInInterpreter =
    threadRaiseInInterpreter(
       run:
-	 fun {$ _ TaskStack}
-	    case TaskStack of (Frame=raiseIn(_ Exn))|Rest then
-	       exception([Frame] Exn Rest)
-	    end
+	 fun {$ _ (Frame=raiseIn(_ Exn))|Rest}
+	    exception([Frame] Exn Rest)
 	 end
       handle:
-	 fun {$ Debug Exn TaskStack}
-	    case TaskStack of Frame|Rest then
-	       exception(Frame|Debug Exn Rest)
-	    end
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
 	 end
       toString: fun {$ _} 'Raise In' end)
 
-   fun {PrimitiveInterpreterRun Args TaskStack}
-      case TaskStack of primitive(_ F Spec _)|Rest then
-	 case Spec of n_t then {F TaskStack}
-	 [] n_v then continue(arg({F}) Rest)
-	 [] i_t then {F {Construct Args} TaskStack}
-	 [] i_v then continue(arg({F {Construct Args}}) Rest)
-	 [] r_t then X = {Construct Args} in
-	    case {Deref X} of Transient=transient(_) then
-	       request(Transient arg(Transient) TaskStack)
-	    elseof Y then {F Y TaskStack}
+   fun {PrimitiveInterpreterRun Args TaskStack=primitive(_ F Spec _)|Rest}
+      case Spec of n_t then {F TaskStack}
+      [] n_v then continue(arg({F}) Rest)
+      [] i_t then {F {Construct Args} TaskStack}
+      [] i_v then continue(arg({F {Construct Args}}) Rest)
+      [] r_t then X = {Construct Args} in
+	 case {Deref X} of Transient=transient(_) then
+	    request(Transient arg(Transient) TaskStack)
+	 elseof Y then {F Y TaskStack}
+	 end
+      [] r_v then X = {Construct Args} in
+	 case {Deref X} of Transient=transient(_) then
+	    request(Transient arg(Transient) TaskStack)
+	 elseof Y then continue(arg({F Y}) Rest)
+	 end
+      [] r_b then X = {Construct Args} in
+	 case {Deref X} of Transient=transient(_) then
+	    request(Transient arg(Transient) TaskStack)
+	 elseof Y then continue(arg(if {F Y} then 1 else 0 end) Rest)
+	 end
+      [] ii_t then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then {F T.1 T.2 TaskStack}
+	 end
+      [] ii_v then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then continue(arg({F T.1 T.2}) Rest)
+	 end
+      [] ir_t then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.2} of Transient=transient(_) then
+	       request(Transient args(T.1 Transient) TaskStack)
+	    elseof T2 then {F T.1 T2 TaskStack}
 	    end
-	 [] r_v then X = {Construct Args} in
-	    case {Deref X} of Transient=transient(_) then
-	       request(Transient arg(Transient) TaskStack)
-	    elseof Y then continue(arg({F Y}) Rest)
+	 end
+      [] ri_t then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then {F T1 T.2 TaskStack}
 	    end
-	 [] r_b then X = {Construct Args} in
-	    case {Deref X} of Transient=transient(_) then
-	       request(Transient arg(Transient) TaskStack)
-	    elseof Y then continue(arg(if {F Y} then 1 else 0 end) Rest)
+	 end
+      [] ri_v then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then continue(arg({F T1 T.2}) Rest)
 	    end
-	 [] ii_t then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then {F T.1 T.2 TaskStack}
-	    end
-	 [] ii_v then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then continue(arg({F T.1 T.2}) Rest)
-	    end
-	 [] ir_t then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
+	 end
+      [] rr_t then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then
 	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T.1 Transient) TaskStack)
-	       elseof T2 then {F T.1 T2 TaskStack}
+		  request(Transient args(T1 Transient) TaskStack)
+	       elseof T2 then {F T1 T2 TaskStack}
 	       end
 	    end
-	 [] ri_t then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2) TaskStack)
-	       elseof T1 then {F T1 T.2 TaskStack}
+	 end
+      [] rr_v then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient) TaskStack)
+	       elseof T2 then continue(arg({F T1 T2}) Rest)
 	       end
 	    end
-	 [] ri_v then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2) TaskStack)
-	       elseof T1 then continue(arg({F T1 T.2}) Rest)
+	 end
+      [] rr_b then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient) TaskStack)
+	       elseof T2 then
+		  continue(arg(if {F T1 T2} then 1 else 0 end) Rest)
 	       end
 	    end
-	 [] rr_t then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient) TaskStack)
-		  elseof T2 then {F T1 T2 TaskStack}
+	 end
+      [] rri_t then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then {F T1 T2 T.3 TaskStack}
+	       end
+	    end
+	 end
+      [] rri_v then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then continue(arg({F T1 T2 T.3}) Rest)
+	       end
+	    end
+	 end
+      [] rrr_t then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then
+		  case {Deref T.3} of Transient=transient(_) then
+		     request(Transient args(T1 T2 Transient) TaskStack)
+		  elseof T3 then {F T1 T2 T3 TaskStack}
 		  end
 	       end
 	    end
-	 [] rr_v then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient) TaskStack)
-		  elseof T2 then continue(arg({F T1 T2}) Rest)
-		  end
-	       end
-	    end
-	 [] rr_b then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient) TaskStack)
-		  elseof T2 then
-		     continue(arg(if {F T1 T2} then 1 else 0 end) Rest)
-		  end
-	       end
-	    end
-	 [] rri_t then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2 T.3) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient T.3) TaskStack)
-		  elseof T2 then {F T1 T2 T.3 TaskStack}
-		  end
-	       end
-	    end
-	 [] rri_v then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2 T.3) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient T.3) TaskStack)
-		  elseof T2 then continue(arg({F T1 T2 T.3}) Rest)
-		  end
-	       end
-	    end
-	 [] rrr_t then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2 T.3) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient T.3) TaskStack)
-		  elseof T2 then
-		     case {Deref T.3} of Transient=transient(_) then
-			request(Transient args(T1 T2 Transient) TaskStack)
-		     elseof T3 then {F T1 T2 T3 TaskStack}
-		     end
-		  end
-	       end
-	    end
-	 [] rrr_v then
-	    case {Deconstruct Args} of Transient=transient(_) then
-	       request(Transient Args TaskStack)
-	    elseof T then
-	       case {Deref T.1} of Transient=transient(_) then
-		  request(Transient args(Transient T.2 T.3) TaskStack)
-	       elseof T1 then
-		  case {Deref T.2} of Transient=transient(_) then
-		     request(Transient args(T1 Transient T.3) TaskStack)
-		  elseof T2 then
-		     case {Deref T.3} of Transient=transient(_) then
-			request(Transient args(T1 T2 Transient) TaskStack)
-		     elseof T3 then continue(arg({F T1 T2 T3}) Rest)
-		     end
+	 end
+      [] rrr_v then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then
+		  case {Deref T.3} of Transient=transient(_) then
+		     request(Transient args(T1 T2 Transient) TaskStack)
+		  elseof T3 then continue(arg({F T1 T2 T3}) Rest)
 		  end
 	       end
 	    end
@@ -939,16 +931,12 @@ define
    Interpreter =
    primitiveInterpreter(run: PrimitiveInterpreterRun
 			handle:
-			   fun {$ Debug Exn TaskStack}
-			      case TaskStack of Frame|Rest then
-				 exception(Frame|Debug Exn Rest)
-			      end
+			   fun {$ Debug Exn Frame|Rest}
+			      exception(Frame|Debug Exn Rest)
 			   end
 			pushCall:
-			   fun {$ Closure TaskStack}
-			      case Closure of closure(P=primitive(_ _ _ _))
-			      then P|TaskStack
-			      end
+			   fun {$ closure(P) TaskStack}
+			      P|TaskStack
 			   end
 			abstract:
 			   fun {$ primitive(_ _ _ Transform)}
