@@ -403,8 +403,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    end
 
 	fun rowLabels row =
-	    if Type.isEmptyRow row then nil
-	    else (#1 (Type.hdRow row))::rowLabels (Type.tlRow row)
+	    case Type.inspectRow row of
+		(Type.EmptyRow | Type.UnknownRow) => nil
+	      | Type.FieldRow (label, _, row') => label::rowLabels row'
 
 	fun isTuple (label::labels, i) =
 	    if label = Label.fromInt i then isTuple (labels, i + 1)
@@ -416,7 +417,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	val typToArityMap: (Arity.t * int LabelMap.t option) Type.Map.t =
 	    Type.Map.new ()
 
-	fun rowToArity (asX, typ, makeMap) =
+	fun rowToArity (row, typ, makeMap) =
 	    let
 		val typ = Type.canonical typ
 	    in
@@ -424,7 +425,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		    SOME entry => entry
 		  | NONE =>
 			let
-			    val row = asX (Type.fromCanonical typ)
 			    val labels = rowLabels row
 			    val (arity, makeMap) =
 				case isTuple (labels, 1) of
@@ -451,23 +451,22 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    end
 
 	fun typToArity' (typ, makeMap) =
-	    if Type.isAll typ then
-		typToArity' (#2 (Type.asAll typ), makeMap)
-	    else if Type.isExist typ then
-		typToArity' (#2 (Type.asExist typ), makeMap)
-	    else if Type.isLambda typ then
-		typToArity' (#2 (Type.asLambda typ), makeMap)
-	    else if Type.isApply typ then
-		typToArity' (#1 (Type.asApply typ), makeMap)
-	    else if Type.isMu typ then
-		typToArity' (Type.asMu typ, makeMap)
-	    else if Type.isTuple typ then
-		(Arity.Tuple (Vector.length (Type.asTuple typ)), NONE)
-	    else if Type.isProd typ then
-		rowToArity (Type.asProd, typ, makeMap)
-	    else if Type.isSum typ then
-		rowToArity (Type.asSum, typ, makeMap)
-	    else (Arity.Unary, NONE)
+	    case Type.inspect typ of
+		( Type.Var _ | Type.Con _ | Type.Arrow _ ) =>
+		    (Arity.Unary, NONE)
+	      | ( Type.Mu typ' | Type.All (_, typ') | Type.Exist (_, typ')
+		| Type.Lambda (_, typ') | Type.Apply (typ', _) ) =>
+		    typToArity' (typ', makeMap) 
+	      | Type.Prod row =>
+		    if Type.isTupleRow row then
+			(Arity.Tuple (Vector.length (Type.asTupleRow row)),
+			 NONE)
+		    else
+			rowToArity (row, typ, makeMap)
+	      | Type.Sum row =>
+		    rowToArity (row, typ, makeMap)
+	      | Type.Unknown =>
+		    raise Crash.Crash "IntermediateAux.typToArity"
 
 	fun typToArity typ = #1 (typToArity' (typ, false))
 

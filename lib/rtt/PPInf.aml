@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -227,10 +227,11 @@ struct
 				val t  = Type.asSingKind k
 				val t' = if not(Type.isAbbrev t) then t else
 					 let val (t1,t2) = Type.asAbbrev t in
-					     if Type.isCon t1 andalso
-					        Path.equal(Type.asCon t1, p)
-					     then t2
-					     else t
+					     case Type.inspect t1
+					     of Type.Con p1 =>
+					        if Path.equal(p1,p) then t2
+						else t
+					      | _ => t
 					 end
 			    in
 				abox(PPType.ppTyp' ps t')

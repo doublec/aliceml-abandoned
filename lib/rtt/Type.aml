@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -450,16 +450,6 @@ struct
 	   | APPLY(t1,t2)	=> #2(asArrowKind(kind t1))
 	   | _			=> starKind()
 
-    and asArrowKind k =
-	case content k
-	  of (STAR | EXT)	=> raise Kind
-	   | ARROW kk		=> kk
-	   | SING t		=> asArrowKind(kind t)
-    and asSingKind k =
-	case content k
-	  of SING t		=> t
-	   | _			=> raise Kind
-
     and isStarKind k =
 	case content k
 	  of (STAR | EXT)	=> true
@@ -472,13 +462,38 @@ struct
 	   | SING t		=> isExtKind(kind t)
     and isArrowKind k =
 	case content k
-	  of (STAR | EXT)	=> false
-	   | ARROW _		=> true
+	  of ARROW _		=> true
+	   | (STAR | EXT)	=> false
 	   | SING t		=> isArrowKind(kind t)
     and isSingKind k =
 	case content k
 	  of SING _		=> true
-	   | _			=> false
+	   | (STAR|EXT|ARROW _)	=> false
+
+    and asArrowKind k =
+	case content k
+	  of ARROW kk		=> kk
+	   | SING t		=> asArrowKind(kind t)
+	   | (STAR | EXT)	=> raise Kind
+    and asSingKind k =
+	case content k
+	  of SING t		=> t
+	   | (STAR|EXT|ARROW _)	=> raise Kind
+
+
+    datatype kind_desc =
+	  StarKind
+	| ExtKind
+	| ArrowKind of kind * kind
+	| SingKind  of typ
+
+    fun inspectKind k =
+	case content k
+	  of STAR		=> StarKind
+	   | EXT		=> ExtKind
+	   | ARROW kk		=> ArrowKind kk
+	   | SING t		=> SingKind t
+
 
     fun equalKind(k1,k2) =
 	Cell.equal(k1,k2) orelse
@@ -553,9 +568,10 @@ struct
 		reduceEta(a,t1)
 	   (* Not needed, since k is never singleton
 	   | (HOLE(k,_) | VAR(k,_) | CON(_,k)) =>
-		if isSingKind k
-		then reduceEta(a, asSingKind k)
-		else new(LAMBDA(a,t))
+		(case content k
+		 of SING t1 => reduceEta(a,t1)
+		  | _       => new(LAMBDA(a,t))
+		)
 	   *)
 	   | _ =>
 		new(LAMBDA(a,t))
@@ -585,9 +601,10 @@ struct
 		reduceBeta(t1, t12, t2, SOME(Option.getOpt(to,t11)))
 	   (* Not needed, since k is never singleton
 	   | (HOLE(k,_) | VAR(k,_) | CON(_,k)) =>
-		if isSingKind k
-		then reduceBeta(t1, asSingKind k, t2, to)
-		else new(APPLY(t1,t2))
+		(case content k
+		 of SING t3 => reduceBeta(t1,t3,t2,to)
+		  | _       => new(APPLY(t1,t2))
+		)
 	   *)
 	   | _ =>
 		new(APPLY(t1,t2))
@@ -605,11 +622,10 @@ struct
 			      else raise Kind
 			  end
 
-    fun unknown k	= if isSingKind k then asSingKind k else unknown' k
+    fun unknown k	= case content k of SING t => t | _ => unknown' k
     val newVar		= newVar'
-    fun var a		= let val k = kind a in
-			  if isSingKind k then asSingKind k else a end
-    fun con(p,k)	= if isSingKind k then asSingKind k else con'(p,k)
+    fun var a		= case content(kind a) of SING t => t | _ => a
+    fun con(p,k)	= case content k of SING t => t | _ => con'(p,k)
     fun arrow(t1,t2)	= arrow'(canonicalStar t1, canonicalStar t2)
     fun tuple ts	= tuple'(Vector.map canonicalStar ts)
     val prod		= prod'
@@ -674,30 +690,34 @@ struct
 	   | LESS		=> (l,t)::lts
 	   | GREATER		=> (l',t')::extendRow'(l,t,lts')
 
-    fun isEmptyRow r =
-	case r
-	  of INDEXED #[]	=> true
-	   | NAMED([],_)	=> true
-	   | _			=> false
+
+    datatype row_desc =
+	  UnknownRow
+	| EmptyRow
+	| FieldRow of lab * typ * row
+
+    fun inspectRow r =
+	case asNamed r
+	  of ([], SOME _)	=> UnknownRow
+	   | ([], NONE)		=> EmptyRow
+	   | ((l,t)::lts, d)	=> FieldRow(l,t, NAMED(lts,d))
 
     fun isUnknownRow r =
 	case r
-	  of INDEXED _		=> false
-	   | NAMED(_,d)		=> isSome d
+	  of NAMED(_, SOME _)	=> true
+	   | _			=> false
+    fun isEmptyRow r =
+	case r
+	  of ( INDEXED #[]
+	     | NAMED([],_) )	=> true
+	   | _			=> false
+    fun asFieldRow r =
+	case asNamed r
+	  of ([], _)		=> raise Row
+	   | ((l,t)::lts, d)	=> (l,t, NAMED(lts,d))
 
-    fun hdRow r =
-	(case r
-	   of INDEXED ts	=> (Label.fromInt 1, Vector.sub(ts,0))
-	    | NAMED(lts,d)	=> List.hd lts
-	)
-	handle(Subscript|Empty)	=> raise Row
-
-    fun tlRow r =
-	let
-	    val (lts,d) = asNamed r
-	in
-	    NAMED(List.tl lts, d) handle Empty => raise Row
-	end
+    val isTupleRow = isIndexed
+    val asTupleRow = asIndexed
 
     fun lookupRow(r,l) =
 	case r
@@ -753,17 +773,74 @@ struct
     val fix = trace fix "fix"
 
 
-  (* Projections and extractions *)
+  (* Unrolling *)
+
+    fun unroll t =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1))	=> unroll t1
+	   | MU t1			=> unroll t1
+	   | APPLY _			=> unrollApply(t,t,[])
+	   | _				=> t
+    and unrollApply(t0,t,ts) =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1))	=> unrollApply(t0,t1,ts)
+	   | APPLY(t1,t2)		=> unrollApply(t0,t1,t2::ts)
+	   | MU t1			=> let val m = Map.new() in
+					       Map.insertDisjoint(m,t,t);
+					       unrollLambda(t0,m,t1,ts)
+					   end
+	   | _				=> t0
+    and unrollLambda(t0,m,t,ts) =
+	case (content t, ts)
+	  of (_, [])			=> unroll(subst(m,t))
+	   | ((LINK t1|ABBREV(_,t1)),_)	=> unrollLambda(t0,m,t1,ts)
+	   | (LAMBDA(a,t1), t2::ts')	=> (Map.insertDisjoint(m,canonical a,t2);
+					    unrollLambda(t0,m,t1,ts'))
+	   |  _				=> t0
+
+    (*DEBUG*)
+    val unroll = trace unroll "unroll"
+
+
+  (* Inspection *)
+
+    datatype desc =
+	  Unknown
+	| Var	of var
+	| Con	of path
+	| Arrow	of typ * typ
+	| Prod	of row
+	| Sum	of row
+	| Mu	of typ
+	| All	of var * typ
+	| Exist	of var * typ
+	| Lambda of var * typ
+	| Apply	of typ * typ
+
+    fun inspect t =
+	case content t
+	  of (LINK t2 | ABBREV(_,t2))	=> inspect t2
+	   | HOLE _			=> Unknown
+	   | VAR _			=> Var t
+	   | CON(p,_)			=> Con p
+	   | FUN tt			=> Arrow tt
+	   | PROD r			=> Prod r
+	   | SUM r			=> Sum r
+	   | MU t			=> Mu t
+	   | ALL at			=> All at
+	   | EXIST at			=> Exist at
+	   | LAMBDA at			=> Lambda at
+	   | APPLY tt			=> Apply tt
 
     fun isAbbrev t =
 	case content t
-	  of LINK t1			=> isAbbrev t1
-	   | ABBREV _			=> true
+	  of ABBREV _			=> true
+	   | LINK t1			=> isAbbrev t1
 	   | _				=> false
     fun asAbbrev t =
 	case content t
-	  of LINK t1			=> asAbbrev t1
-	   | ABBREV tt			=> tt
+	  of ABBREV tt			=> tt
+	   | LINK t1			=> asAbbrev t1
 	   | _				=> raise Type
 
     fun isUnknown t	= case asType' t of HOLE _   => true | _ => false
@@ -792,65 +869,6 @@ struct
     fun asExist t	= case asType' t of EXIST at  => at | _ => raise Type
     fun asLambda t	= case asType' t of LAMBDA at => at | _ => raise Type
     fun asApply t	= case asType' t of APPLY tt  => tt | _ => raise Type
-
-    (* modulo unrolling *)
-
-    fun isType' t =
-	case content t
-	  of (LINK t1 | ABBREV(_,t1))
-				=> isType' t1
-	   | APPLY _		=> isTypeApply(t,0)
-	   | t'			=> t'
-    and isTypeApply(t, n) =
-	case content t
-	  of (LINK t1 | ABBREV(_,t1))
-				=> isTypeApply(t1,n)
-	   | APPLY(t1,t2)	=> isTypeApply(t1,n+1)
-	   | MU t1		=> isTypeFunc(t1,n)
-	   | _			=> APPLY(t,t)	(*dummy*)
-    and isTypeFunc(t, 0) = content t
-      | isTypeFunc(t, n) =
-	case content t
-	  of (LINK t1 | MU t1)	=> isTypeFunc(t1,n)
-	   | ABBREV(t1,t2)	=> isTypeFunc(t2,n)
-	   | LAMBDA(a,t1)	=> isTypeFunc(t1,n-1)
-	   | _			=> APPLY(t,t)	(*dummy*)
-
-    fun isTuple' t	= case isType' t of PROD r   => isIndexed r | _ => false
-    fun isProd' t	= case isType' t of PROD _   => true | _ => false
-    fun isSum' t	= case isType' t of SUM _    => true | _ => false
-
-    fun asType' t =
-	case content t
-	  of (LINK t1 | ABBREV(_,t1))	=> asType' t1
-	   | MU t1			=> asType' t1
-	   | t' as APPLY _		=> asTypeApply(t',t,[])
-	   | t'				=> t'
-    and asTypeApply(t',t,ts) =
-	case content t
-	  of APPLY(t1,t2)		=> asTypeApply(t',t1,t2::ts)
-	   | (LINK t1 | ABBREV(_,t1))	=> asTypeApply(t',t1,ts)
-	   | MU t1			=> let val m = Map.new() in
-					       Map.insertDisjoint(m,t,t);
-					       asTypeLambda(t',m,t1,ts)
-					   end
-	   | _				=> t'
-    and asTypeLambda(t',m,t,ts) =
-	case (content t, ts)
-	  of (_, [])			=> asType'(subst(m,t))
-	   | (LAMBDA(a,t1), t2::ts')	=> (Map.insertDisjoint(m,canonical a,t2);
-					    asTypeLambda(t',m,t1,ts'))
-	   | ((LINK t1|ABBREV(_,t1)),_)	=> asTypeLambda(t',m,t1,ts)
-	   |  _				=> t'
-
-    (*DEBUG*)
-    val asType'		= trace asType' "asType'"
-
-    fun asTuple' t	= case asType' t of PROD r => (asIndexed r handle Row =>
-								   raise Type)
-							 | _ => raise Type
-    fun asProd' t	= case asType' t of PROD r => r  | _ => raise Type
-    fun asSum' t	= case asType' t of SUM r  => r  | _ => raise Type
 
 
   (* General purpose type graph traversal *)

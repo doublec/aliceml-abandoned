@@ -38,27 +38,27 @@ struct
     (* Helpers *)
 
     fun unarg t =
-	if not(Type.isApply t) then SOME t else
-	let
-	    val (t1,t2) = Type.asApply t
-	in
-	    if not(Type.equal(t1, PervasiveType.typ_strict)) then
-		SOME t
-	    else if Type.isTuple t2
-	    andalso Vector.length(Type.asTuple t2) = 0 then
-		NONE
-	    else
-		SOME t2
-	end
+	case inspect t
+	 of Apply(t1,t2) =>
+	    if not(equal(t1, PervasiveType.typ_strict)) then SOME t else
+	    (case inspect t2
+	     of Prod r =>
+		if isEmptyRow r
+		then NONE
+		else SOME t2
+	      | _ => SOME t2
+	    )
+	  | _ => SOME t
 
     fun uncurry t =
-	if not(isApply t) then (t,[]) else
-	let
-	    val (t1,t2) = asApply t
-	    val (t3,ts) = uncurry t1
-	in
-	    (t3, ts@[t2])
-	end
+	case inspect t
+	 of Apply(t1,t2) =>
+	    let
+		val (t3,ts) = uncurry t1
+	    in
+		(t3, ts@[t2])
+	    end
+	  | _ => (t,[])
 	
     fun parenPrec p (p',doc) =
 	if p > p' then
@@ -69,7 +69,7 @@ struct
 
     (* Simple objects *)
 
-    fun ppLab l		= text(Label.toString l)
+    fun ppLab l = text(Label.toString l)
 
     fun varToString(isBound, n) =
 	let
@@ -95,7 +95,7 @@ struct
 	    (* Clean up map *)
 	    List.app (fn t => Map.deleteExistent(holes, t))
 		(Map.foldi (fn(t,_,ts) => if isUnknown(fromCanonical t)
-	 				  then ts else t::ts) [] holes);
+					  then ts else t::ts) [] holes);
 	    Map.insertDisjoint(holes, canonical t, n);
 	    counter := n;
 	    n
@@ -112,21 +112,13 @@ struct
     fun ppKind k = fbox(below(ppKindPrec 0 k))
 
     and ppKindPrec p k =
-	if isSingKind k then
-	    text "<" ^^ ppTyp(asSingKind k) ^^ text ">"
-	else if isExtKind k then
-	    text "#+"
-	else if isStarKind k then
-	    text "#"
-	else if isArrowKind k then
-	    let
-		val (k1,k2) = asArrowKind k
-		val doc     = ppKindPrec 1 k1 ^/^ text "->" ^/^ ppKindPrec 0 k2
-	    in
-		parenPrec p (0, doc)
-	    end
-	else
-	    raise Assert.failure
+	case inspectKind k
+	 of StarKind		=> text "#"
+	  | ExtKind		=> text "#+"
+	  | ArrowKind(k1,k2)	=> parenPrec p (0, ppKindPrec 1 k1 ^/^ text "->"
+						   ^/^ ppKindPrec 0 k2)
+	  | SingKind t		=> text "<" ^^ ppTyp t ^^ text ">"
+
 
   (* Types *)
 
@@ -159,92 +151,90 @@ struct
 
 	    and ppTypPrec' p t =
 		if isAbbrev t then
+		    let
+			val (t1,t2) = asAbbrev t
+		    in
 (*DEBUG
-		    paren(
+			paren(
 *)
-		    ppTypPrec p (#1(asAbbrev t))
+			ppTypPrec p t1
 (*
-		    ^/^ text "as" ^/^ ppTypPrec p (#2(asAbbrev t)) )
+			^/^ text "as" ^/^ ppTypPrec p t2)
 *)
-		else if isUnknown t then
+		    end
+		else case inspect t
+		 of Unknown =>
 		    let
 			val k   = kind t
 			val doc = text("'" ^ Int.toString(holeIndex t))
 		    in
-			if isStarKind k
-			then doc
-			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+			case inspectKind k
+			 of StarKind => doc
+			  | _ => parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
 		    end
-		else if isVar t then
+		  | Var a =>
 		    let
-			val k   = kind t
+			val k   = kindVar a
 			val doc = ppVar false	(* unbound! *)
 		    in
-			if isStarKind k
-			then doc
-			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+			case inspectKind k
+			 of StarKind => doc
+			  | _ => parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
 		    end
-		else if isCon t then
-		    PPPath.ppPath' ps (asCon t)
-		else if isArrow t then
+		  | Con p =>
+			PPPath.ppPath' ps p
+		  | Arrow(t1,t2) =>
 		    let
-			val (t1,t2) = asArrow t
-			val  doc    = ppTypPrec 3 t1 ^/^ text "->" ^/^
-				      ppTypPrec 2 t2
+			val doc = ppTypPrec 3 t1 ^/^ text "->" ^/^
+				  ppTypPrec 2 t2
 		    in
 			parenPrec p (2, doc)
 		    end
-		else if isTuple t then
-		    case asTuple t
-		      of #[]  => text "unit"
-		       | #[t] => brace(ppField(text ":", Label.fromInt 1, t))
-		       | ts   => 
-		    let
-			val doc = ppStarList (ppTypPrec 4) (Vector.toList ts)
-		    in
-			parenPrec p (3, fbox(below(nest doc)))
-		    end
-		else if isProd t then
-		    brace(fbox(below(ppRow(",", ":", asProd t))))
-		else if isSum t then
-		    brack(fbox(below(ppRow(" |", "of", asSum t))))
-		else if isAll t then
-		    let
-			val (a,t1) = asAll t
+		  | Prod r =>
+		    if isTupleRow r then
+			case asTupleRow r
+			 of #[]  => text "unit"
+			  | #[t] => brace(ppField(text ":", Label.fromInt 1, t))
+			  | ts   =>
+			let
+			   val doc = ppStarList (ppTypPrec 4) (Vector.toList ts)
+			in
+			   parenPrec p (3, fbox(below(nest doc)))
+			end
+		    else
+			brace(fbox(below(ppRow(text ",", text ":", r))))
+		  | Sum r =>
+			brack(fbox(below(ppRow(text " |", text "of", r))))
+		  | All(a,t') =>
 (*DEBUG
-			val doc    = ppBinder("ALL",a,t1)
+		    let
+			val doc = ppBinder("ALL",a,t')
 		    in
 			parenPrec p (1, fbox(below doc))
+		    end
 *)
-		    in
-			Map.insert(m, canonical(var a), ppVar true);
-			ppTyp t1
-(**)
-		    end
-		else if isExist t then
+			(Map.insert(m, canonical(var a), ppVar true);
+			 ppTyp t')
+		  | Exist(a,t') =>
 		    let
-			val (a,t1) = asExist t
-			val doc    = ppBinder("EX",a,t1)
+			val doc = ppBinder("EXIST",a,t')
 		    in
 			parenPrec p (1, fbox(below doc))
 		    end
-		else if isLambda t then
+		  | Lambda(a,t') =>
 		    let
-			val (a,t1) = asLambda t
-			val doc    = ppBinder("FN",a,t1)
+			val doc = ppBinder("FN",a,t')
 		    in
 			parenPrec p (1, fbox(below doc))
 		    end
-		else if isApply t then
+		  | Apply(t1,t2) =>
 		    let
-			val (t1,t2) = asApply t
 			val (t3,ts) = uncurry t
 		    in
 			fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t3))
 		    end
-		else if isMu t then
+		  | Mu t' =>
 		    let
-			val t1  = asMu t
 			val doc = ppVar true
 		    in
 			Map.insert(m, canonical t, doc);
@@ -257,30 +247,25 @@ struct
 					text "."
 				    ) ^^
 				    nest(break ^^
-					ppTyp t1
+					ppTyp t'
 				    )
 				)
 			    )
 			)
 		    end
-		else
-		    raise Assert.failure
 
-	    and ppRow(sep,ann,r) = ppRow'(text sep, text ann, isUnknownRow r, r)
-	    and ppRow'(sep,ann,unknown,r) =
-		if isEmptyRow r then
-		    if unknown
-		    then text "..."
-		    else empty
-		else
+	    and ppRow(sep,ann,r) =
+		case inspectRow r
+		 of UnknownRow		=> text "..."
+		  | EmptyRow		=> empty
+		  | FieldRow(l,t,r')	=>
 		    let
-			val (l,t) = hdRow r
-			val  doc  = ppField(ann,l,t)
-			val  r'   = tlRow r
+			val doc1 = ppField(ann,l,t)
+			val doc2 = ppRow(sep,ann,r')
 		    in
-			if isEmptyRow r' andalso not unknown
-			then doc
-			else doc ^^ sep ^/^ ppRow'(sep, ann, unknown, r')
+			if isEmpty doc2
+			then doc1
+			else doc1 ^^ sep ^/^ doc2
 		    end
 
 	    and ppField(ann,l,t) =
