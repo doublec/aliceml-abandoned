@@ -18,6 +18,10 @@ abstract public class Function implements DMLValue {
 
     _BUILTIN(Debug) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_SAPPLY0 {
+	    DEBUG=true;
+	    return null;
+	}
 	_APPLY(val) {
 	    DEBUG=true;
 	    return null;
