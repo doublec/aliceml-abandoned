@@ -16,6 +16,7 @@
 
 functor
 import
+   Debug(getGlobals) at 'x-oz://boot/Debug'
    System(show)
    Inspector(inspect inspectN configure)
    TreeNodesComponent('nodes' : TreeNodes) at 'TreeNodes'
@@ -193,8 +194,14 @@ define
 
       DefaultActions = ['Reinspect'(reinspect)
 			'Print'(System.show)]
+      FunctionActions = {Append DefaultActions
+			 ['Inspect Closure'(InspectClosure)]}
       FutureActions = {Append DefaultActions
 		       ['Force Evaluation'(Wait)]}
+
+      proc {InspectClosure P}
+	 {Inspector.inspect {Debug.getGlobals P}}
+      end
 
       Colors = colors('NUMBER':           {NewCell Purple}
 		      'FUNCTION':         {NewCell Black}
@@ -227,7 +234,7 @@ define
 		      'VECTOR':            {NewCell DefaultDepths})
 
       Actions = actions('NUMBER':            {NewCell DefaultActions}
-			'FUNCTION':          {NewCell DefaultActions}
+			'FUNCTION':          {NewCell FunctionActions}
 			'STRING':            {NewCell DefaultActions}
 			'HOLE':              {NewCell DefaultActions}
 			'FUTURE':            {NewCell FutureActions}
