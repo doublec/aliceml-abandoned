@@ -42,7 +42,7 @@
       <TR><TH>Alice Type<TH>NGWS Representation
       <TR>
 	<TD>Unit value <TT>()</TT> resp. <TT>{}</TT>
-	<TD><TT>A System.Int32 with value 0</TT>
+	<TD>A <TT>System.Int32</TT> with value <TT>0</TT>
       <TR><TD>Other record<TD><TT>System.Array</TT>
     </TABLE>
   </CENTER>
@@ -68,7 +68,7 @@
       <TR><TH>Alice Type<TH>NGWS Representation
       <TR>
 	<TD>Function taking unit argument
-	<TD>Alice.Values.Procedure0
+	<TD><TT>Alice.Values.Procedure0</TT>
       <TR>
 	<TD>Function taking a record with 2, ..., 9 fields
 	<TD><TT>Alice.Values.Procedure2</TT>, ...,
