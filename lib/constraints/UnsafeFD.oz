@@ -55,6 +55,14 @@ define
       [] 'GREATEREQ' then '>=:'
       end
    end
+
+   fun {AliceAssignToOzAssign A}
+      case A
+      of 'MIN' then min
+      [] 'MID' then mid
+      [] 'MAX' then max
+      end
+   end
    
    %% Interface Functions
    fun {FDFun DO}
@@ -88,6 +96,12 @@ define
       V
    end
 
+   %% Assignment Function
+   fun {AssignFun T X}
+      {FD.assign {AliceAssignToOzAssign T} X}
+      unit
+   end
+   
    %% Conversion Functions
    fun {ToIntFun X}
       {Wait X}
@@ -401,6 +415,7 @@ define
 			 'rangeVec'            : RangeVecFun
 			 'bin'                 : BinFun
 			 'binVec'              : BinVecFun
+			 'assign'              : AssignFun
 			 'toInt'               : ToIntFun
 			 'future'              : ToFutureFun
 			 'fromInt'             : FromIntFun

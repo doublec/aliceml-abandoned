@@ -24,6 +24,9 @@ signature UNSAFE_FD_COMPONENT =
 		val bin : 'a
 		val binVec : 'a
 
+		(* Assignment *)
+		val assign : 'a
+
 		(* Conversion *)
 		val toInt : 'a
 		val future : 'a
