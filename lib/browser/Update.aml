@@ -306,24 +306,17 @@ struct
 	     ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
 	end
 
-    (* UnsafeValue.awaitRequest is broken *)
-    local
-	val delay = Time.fromMilliseconds (LargeInt.fromInt 10)
-    in
-	fun futurePoll future =
-	    if Future.isLazy future then
-		(Future.alarm delay; futurePoll future)
-	    else Future.await future
-    end
-
     fun watcher (future,va,i,f,g,canvas) = 
 	Thread.thread 
 	(fn () 
-	 =>  ( futurePoll future
-	     ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
-					(Dictionaries.transdict,i)))
-	       in Server.serve(fn () => tell(va,i,new_l,f,g,canvas))
-	       end ) )
+	 =>  ( UnsafeValue.awaitRequest future
+	     ; Server.serve(fn () =>
+	       let
+		   val new_l = #3(valOf(Dictionaries.Transient.lookup
+					    (Dictionaries.transdict,i)))
+	       in
+		   tell(va,i,new_l,f,g,canvas)
+	       end)))
 
     (* REINSPECT *)
 
