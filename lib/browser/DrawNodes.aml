@@ -104,20 +104,17 @@ struct
     (* drawConcat *) 
     and drawConcat (n,x,y,upd) = 
 	let 
-	       val (new_x,new_y) = 
-		   (Array.foldl (concatHorFunct upd) (0,0) 
-		    (getKids(n))) 
-	   in 
-	       (if upd then (move'(n,x,y);()) 
-		else groupToPosition(n,x,y)
-		; getStatus(n) := CLEAN
-		(* ; TextIO.print("Draw Concat returns: x=" 
-		 ^ Int.toString(new_x+x)
-		 ^ " y="
-		 ^ Int.toString(new_y+y)
-		 ^ "\n") *)
-		;(new_x+x,new_y+y))
-	   end
+	    val (new_x,new_y) = (if upd 
+				     then (move'(n,x,y);()) 
+				 else groupToPosition(n,x,y)
+				     ; (Array.foldl (concatHorFunct upd) 
+					(0,0) 
+					(getKids(n)))) 
+	(* changed sequence move <-> foldl on 12.March *)
+	in 
+	    (getStatus(n) := CLEAN
+	     ;(new_x+x,new_y+y))
+	end
 
     and containerHorFunct upd =  (fn (a,(x,y,_))  => let
 						       val (new_x,new_y) 
@@ -141,20 +138,18 @@ struct
 			    then (containerVerFunct upd)
 			else (containerHorFunct upd)
 	    val (new_x',new_y',new_x2) = 
-		(Array.foldl funct (0,0,0) 
-		 (getKids(n))) 
+		(if upd 
+		     then (move'(n,x,y);()) 
+		 else groupToPosition(n,x,y)
+		     ;(Array.foldl funct 
+		       (0,0,0) 
+		       (getKids(n)))) 
+	    (* changed sequence move <-> foldl on 12.March *)
 	    val (new_x,new_y) = if vertical 
 				    then (new_x2,new_y' -1)
 				else  (new_x',new_y') 
 	in
 	    (getStatus(n) := CLEAN
-	     ;if upd then (move'(n,x,y);()) 
-	      else groupToPosition(n,x,y)
-	      ; () (*TextIO.print("Draw Container returns: x=" 
-			    ^ Int.toString(new_x+x)
-			    ^ " y="
-			    ^ Int.toString(new_y+y)
-			    ^ "\n") *)
 	     ;(new_x+x,new_y+y))
 	end 
     
@@ -210,50 +205,22 @@ struct
 	     | (RelRefNode _ as n)) ,x,y,upd) = if !(getStatus(n)) = DIRTY  
 						  then atomDraw (n,x,y,upd)
 					      else move(n,x,y)  	
-      | draw (Concat(_) as n,x,y,upd) = ((if (!(getStatus(n))) = DIRTY  
+      | draw (Concat(_) as n,x,y,upd) = (if (!(getStatus(n))) = DIRTY  
 			 then drawConcat (n,x,y,upd)
 			  else move(n,x,y))  
-			      handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
-	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
-		     handle General.Subscript =>
-			 (Inspector.inspect ("General.Subscript");(0,0))
-			 handle Match =>(Inspector.inspect ("Match");(0,0))
-			 handle General.Match =>
-			     (Inspector.inspect ("General.Match");(0,0))
-			     handle _ =>  (Inspector.inspect ("sth. else")
-					   ;(0,0)))
-      | draw (Container(_) as n,x,y,upd) = (((if (!(getStatus(n))) = DIRTY  
+      | draw (Container(_) as n,x,y,upd) = (if (!(getStatus(n))) = DIRTY  
 			    then drawContainer (n,x,y,upd)
 				else move(n,x,y))
-				 handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
-	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
-		     handle General.Subscript =>
-			 (Inspector.inspect ("General.Subscript");(0,0))
-			 handle Match =>(Inspector.inspect ("Match");(0,0))
-			 handle General.Match =>
-			     (Inspector.inspect ("General.Match");(0,0))
-			     handle _ =>  (Inspector.inspect ("sth. else")
-					    ; (0,0))))
       | draw (Limit(_) as n,x,y,upd) = if  (!(getStatus(n))) = DIRTY  
 			then drawLimit (n,x,y,upd)
 			 else move(n,x,y) 
-      | draw (RelNode(r) as n,x,y,upd) = ((if  !(#status(r)) = DIRTY 
+      | draw (RelNode(r) as n,x,y,upd) = (if  !(#status(r)) = DIRTY 
 				 then drawRelNode (n,x,y,upd)
 		      else ( move(n,x,y) 
 				   ;( case !(#counter(r)) of
 				   1 => (x+get_xdim(!(#content(r))),
 					 y+get_ydim(!(#content(r))))				 
 				 | _ => (x+get_xdim(n),y+get_ydim(n)) )))
-
-			     handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
-	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
-		     handle General.Subscript =>
-			 (Inspector.inspect ("General.Subscript");(0,0))
-			 handle Match =>(Inspector.inspect ("Match");(0,0))
-			 handle General.Match =>
-			     (Inspector.inspect ("General.Match");(0,0))
-			     handle _ =>  (Inspector.inspect ("sth. else")
-					  ; (0,0))   )  
       | draw  (Empty,x,y,upd) =  (x,y)
      
 end (* structure *)
