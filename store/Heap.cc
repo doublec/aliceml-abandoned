@@ -20,6 +20,8 @@
 #include "store/Heap.hh"
 #include "store/StatusWord.hh"
 
+#include <cstring>
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 
