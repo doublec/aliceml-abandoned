@@ -14,7 +14,7 @@
     The latter allows for easy constraint construction and
     leaves the decision of choosing the best constraint to the system.
   </P>
-  </P>
+  <P>
     For example, see the the classic <PRE>SEND + MORE = MONEY</PRE> problem below.
     The problem is given as a script (nullary function)
     which then can be passed to the different search engines.
