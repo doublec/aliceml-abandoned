@@ -3677,6 +3677,10 @@ struct
 	end
 
 
-    fun translate E (desc, component) = trComponent (E,desc) component
-
+    fun translate(desc, E, component) =
+	let
+	    val E' = BindEnv.clone E
+	in
+	    (E', trComponent (E',desc) component)
+	end
 end

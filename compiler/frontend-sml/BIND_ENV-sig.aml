@@ -90,7 +90,7 @@ sig
 
     exception Strengthen
 
-    val new :			unit -> Env
+    val empty :			Env
     val env :			unit -> Env
     val instance :		EnvFn -> EnvFn
     val strengthen :		stamp * EnvFn -> EnvFn
