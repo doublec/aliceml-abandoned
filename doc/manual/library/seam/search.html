@@ -79,7 +79,7 @@ sig
     val searchAll : (Space.space -> 'a) -> Space.space list * 'a
 
     val searchBest :
-        (Space.space -> 'a) * (Space.space * Space.space * 'a -> unit) ->
+        (Space.space -> 'a * (Space.space * Space.space -> unit)) ->
         (Space.space * 'a) option
 
     structure Recompute : sig
@@ -115,8 +115,8 @@ end</PRE>
     <DD>
       <P>returns the best solution of <I>script</I> obtained by depth-first
          branch and bound search. If no solution exists, <TT>NONE</TT>
-         is returned. <I>better</I> takes the space of the previous solution
-         and the current space and posts constraints that ensure that the
+         is returned. <I>better</I> takes the current space and the
+         space of the previous solution and posts constraints that ensure that the
          current space has to yield a better solution.
       </P>
     </DD>

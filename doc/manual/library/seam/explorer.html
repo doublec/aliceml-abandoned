@@ -48,6 +48,9 @@
         val init : (Space.space -> 'a) -> explorer
         val exploreOne : (Space.space -> 'a) -> explorer
         val exploreAll : (Space.space -> 'a) -> explorer
+        val exploreBest :
+	  (Space.space -> 'a * (Space.space * Space.space -> unit))
+	  -> explorer
     end</PRE>
 
 <?php section("description", "description"); ?>
@@ -77,6 +80,16 @@
     <DD>
       <P>Opens an explorer window, initialized with the constraint
       problem specified in <I>p</I>, and search for all solutions.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreBest (<I>p, b</I>)</TT>
+    </DT>
+    <DD>
+      <P>Opens an explorer window, initialized with the constraint
+      problem specified in <I>p</I>, and search for the best solution
+      according to the measure <I>b</I>.
       </P>
     </DD>
 
