@@ -8,6 +8,8 @@ import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
 import structure FileDialog from "FileDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
+(*import structure Inspector from "x-alice:/lib/tools/Inspector"*)
+import structure Highlight from "Highlight"
 
 structure AliceIde =
     struct
@@ -63,6 +65,16 @@ structure AliceIde =
         fun addPage p = pages := (!pages)@[p]
         fun getPage i = List.nth (!pages, i-1)
         fun getCurrentPage () = getPage (!currentPage)
+
+        (* Cursor *)
+        fun getCursorIter buf =
+            let
+                val cursor = Gtk.textBufferGetInsert buf
+                val iter = Gtk.textIterNew()
+            in
+                Gtk.textBufferGetIterAtMark(buf, iter, cursor);
+                iter
+            end
 
         (* Evaluation *)
 
@@ -125,9 +137,7 @@ structure AliceIde =
         fun feedLine() =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
-                val cursor = Gtk.textBufferGetInsert(buf)
-                val startiter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetIterAtMark(buf,startiter,cursor)
+                val startiter = getCursorIter buf
                 val startline = 1 + Gtk.textIterGetLine startiter
                 val enditer = Gtk.textIterCopy(startiter)
                 val _ = Gtk.textIterSetLineOffset(startiter, 0)
@@ -186,9 +196,7 @@ structure AliceIde =
 
         fun paragraphIters(buf) =
             let
-                val cursor = Gtk.textBufferGetInsert(buf)
-                val startiter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetIterAtMark(buf,startiter,cursor)
+                val startiter = getCursorIter buf
                 val c = Gtk.textIterGetChar startiter
                 val _ = if c = ord #"\n" orelse c=0 then
                             Gtk.textIterBackwardChar startiter else false
@@ -258,6 +266,49 @@ structure AliceIde =
                 val buf = Gtk.textViewGetBuffer (!curtextview)
             in
                 ignore (Gtk.textBufferDeleteSelection(buf, true, true))
+            end
+
+        fun colorRegion buf (style, r,c,r',c') =
+            let
+                open Highlight
+                val startiter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetStartIter(buf,startiter)
+                val _ = Gtk.textIterSetLine(startiter, r-1)
+                val _ = Gtk.textIterSetLineOffset(startiter, c)
+                val enditer = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetStartIter(buf,enditer)
+                val _ = Gtk.textIterSetLine(enditer, r'-1)
+                val _ = Gtk.textIterSetLineOffset(enditer, c')
+                val tag = case style of
+                              PLAIN => "plain"
+                            | RESERVED => "reserved"
+                            | STRING => "string"
+                            | COMMENT => "comment"
+                            | ERRONEOUS => "error"
+            in
+                Gtk.textBufferApplyTagByName(buf, tag,
+                                             startiter, enditer)
+            end
+
+        fun insertText buf _ = ()
+        fun deleteRange buf _ = ()
+
+        fun breakLines str = map (fn s => s^"\n") (String.fields (fn #"\n" => true | _ => false) str)
+
+        fun syntax() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val startiter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetStartIter(buf,startiter)
+                val enditer = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetEndIter(buf,enditer)
+                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                val str = Core.utf8ToLatin1 str
+                val lines = breakLines str
+                val regions = Highlight.scan lines
+            in
+                Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
+                app (colorRegion buf) regions
             end
 
         fun markSet (buf,_) =
@@ -413,9 +464,12 @@ structure AliceIde =
         fun init () =
             let
                 val buf = Gtk.textViewGetBuffer AliceIdeGUI.scratchpad
+                val tags = Buffer.makeTags buf
             in
                 Gtk.widgetGrabFocus (!curtextview);
                 Gtk.signalConnect(buf, "mark-set", markSet);
+                Gtk.signalConnect(buf, "insert-text", insertText buf);
+                Gtk.signalConnect(buf, "delete-range", deleteRange buf);
                 Gtk.signalConnect(AliceIdeGUI.compilerout, "populate-popup", populatePopup);
 	        OutputWriters.makeWriters {inStream = inText,
 					   outStream = outText,

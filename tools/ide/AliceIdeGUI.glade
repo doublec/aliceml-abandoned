@@ -160,6 +160,15 @@
 		      <signal name="activate" handler="on_delete1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		    </widget>
 		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="syntax_colouring">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Syntax colouring</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_syntax_colouring_activate" last_modification_time="Fri, 04 Mar 2005 15:28:33 GMT"/>
+		    </widget>
+		  </child>
 		</widget>
 	      </child>
 	    </widget>
