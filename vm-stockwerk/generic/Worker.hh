@@ -12,17 +12,17 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__INTERPRETER_HH__
-#define __EMULATOR__INTERPRETER_HH__
+#ifndef __GENERIC__INTERPRETER_HH__
+#define __GENERIC__INTERPRETER_HH__
 
 #include "store/Store.hh"
-#include "emulator/Tuple.hh"
+#include "generic/Tuple.hh"
 
 class TaskStack;
 class Closure;
 class Backtrace;
 
-class Interpreter : public Handler {
+class Interpreter: public Handler {
 public:
   enum Result {
     CONTINUE,
