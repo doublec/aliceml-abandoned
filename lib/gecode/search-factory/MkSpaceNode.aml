@@ -80,11 +80,11 @@ struct
     
   (* Compare the solution in the given SOLVED space
    * with the current best one. *)
-  fun hardCompare space =
+  fun hardCompare (currentBest, space) =
     let val testSpace = Space.clone space 
     in
       assert (Space.status testSpace = Space.SOLVED) ;
-      bound (testSpace, !globalBest) ;
+      bound (testSpace, currentBest) ;
       case Space.status testSpace of
         Space.SOLVED => true (* Better. *)
       | Space.FAILED => false
@@ -104,6 +104,11 @@ struct
     end
 
   fun getPath node = getTailPath (node, [])
+
+  fun updateCloneRef (r,v) =
+    let val clone = Space.clone v
+    in r := SOME v ; clone end
+
    
   (* Recomputes the space of this node. *)
   fun recompute node =
@@ -128,38 +133,31 @@ struct
 
   and getWorkingSpace (Node node) =
     let
-      val rspace = #space node
+      val wspace = Ref.exchange (#space node, NONE)
       val rcopy  = #copy node
     in
-      (*    wspace & copy *)
-      case (!rspace, !rcopy) of 
+      case (wspace, !rcopy) of 
         (NONE  , SOME s) => Space.clone s  (* clone copy   *)
       | (NONE  , NONE  ) => recompute node (* recomputation *)
       | (SOME s, acopy ) =>                (* donate space *)
-          (rspace := NONE ;
-           if acopy = NONE andalso Policy.copyq (#depth node)
-             then (dbPrint (dbClone, "CLONE at path " ^ 
-                            (Path.toString (getPath (Node node))) ^ "\n") ;
-                   rcopy := SOME (Space.clone s))
-             else () ;
-           s)          
+          if acopy = NONE andalso Policy.copyq (#depth node)
+            then (dbPrint (dbClone, "CLONE at path " ^ 
+                           (Path.toString (getPath (Node node))) ^ "\n") ;
+                  updateCloneRef (rcopy, s))
+            else s
     end
-
-  fun updateRef (r,v) = (assert (!r = NONE) ; r:=SOME v ; v)
 
   fun getSpace (Node node) = 
     let
       val _ = #status node (* Avoid recomputation if this node is new *)
-      val rcopy  = #copy node
+      val rcopy = #copy node
       val rspace = #space node
-      val readOnlySpace =
-        (*     copy & wspace *)
-        case (!rcopy, !rspace) of
-          (SOME s, _     ) => s
-        | (NONE  , SOME s) => updateRef (rcopy, Space.clone s)
-        | (NONE  , NONE  ) => updateRef (rcopy, recompute node)
+      val wspace = Ref.exchange (rspace, NONE)
     in
-      Space.clone readOnlySpace
+      case (!rcopy, wspace) of
+        (SOME s, _     ) => Space.clone s
+      | (NONE  , SOME s) => updateCloneRef (rspace, s)
+      | (NONE  , NONE  ) => updateCloneRef (rcopy, recompute node)
     end
 
   (* Return a pair (bestId, bestSol) that
@@ -200,7 +198,7 @@ struct
       val (newBestId, newBestSol) = if bab then getIdSol node else (0, NONE)
       val status = lazy
         let
-          val space = updateRef (spaceRef, getWorkingSpace node)
+          val space = getWorkingSpace node
           val _ = Space.commit (space, i, descr)
           val _ =
             (* If a new best solution is present, bound the node. *)
@@ -210,6 +208,9 @@ struct
                 
           val status = Space.status space
         in
+          assert(!spaceRef = NONE) ;
+          spaceRef := SOME space ;
+
           (* When a solution is found, BOUND *)
           if status = Space.SOLVED andalso bab then
             let
@@ -219,9 +220,9 @@ struct
                * (e.g. because of a call to getPath)
                * Hence, we have to check if this new solution is the best. *)
             in
-              ignore(setBestIfCond
-                     (solution, (fn (_, bestId) =>
-                                 newBestId = bestId orelse hardCompare space)))
+              ignore(setBestIfCond (solution, (fn (best, bestId) =>
+                                               newBestId = bestId
+                                               orelse hardCompare(best,space))))
             end
           else () ;
           status  
