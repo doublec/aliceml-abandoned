@@ -47,7 +47,7 @@ DEFINE1(UnsafeSocket_server) {
 
   // bind a name to the socket:
   sockaddr_in addr;
-  u_int addrLen = sizeof(addr);
+  socklen_t addrLen = sizeof(addr);
   std::memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -74,7 +74,7 @@ DEFINE1(UnsafeSocket_accept) {
   DECLARE_INT(sock, x0);
 
   sockaddr_in addr;
-  u_int addrLen = sizeof(addr);
+  socklen_t addrLen = sizeof(addr);
   int client = accept(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen);
   if (client < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
