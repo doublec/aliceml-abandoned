@@ -80,7 +80,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val test =
 		    case StringLabelSort.sort labs of
 			(_, StringLabelSort.Tup i) => TupTest i
-		      | (labs', StringLabelSort.Rec) => RecTest labs
+		      | (labs', StringLabelSort.Rec) => RecTest labs'
 	    in
 		List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
 			    makeTestSeq (pat, s::pos, rest, mapping))
