@@ -95,9 +95,9 @@ define
 
    fun {TrTest Test}
       case Test of 'LitTest'(Lit) then litTest({TrLit Lit})
-      [] 'TagTest'(Lab) then tagTest({TrLab Lab})
-      [] 'TagAppTest'(Lab Args) then
-	 tagAppTest({TrLab Lab} {TrArgs Args})
+      [] 'TagTest'(Lab N) then tagTest({TrLab Lab} N)
+      [] 'TagAppTest'(Lab N Args) then
+	 tagAppTest({TrLab Lab} N {TrArgs Args})
       [] 'ConTest'(Id) then conTest({TrId Id})
       [] 'ConAppTest'(Id Args) then
 	 conAppTest({TrId Id} {TrArgs Args})
@@ -163,8 +163,8 @@ define
       [] 'NewExp'(Info ConArity) then
 	 newExp({TrInfo Info} {TrConArity ConArity})
       [] 'VarExp'(Info Id) then varExp({TrInfo Info} {TrId Id})
-      [] 'TagExp'(Info Lab ConArity) then
-	 tagExp({TrInfo Info} {TrLab Lab} {TrConArity ConArity})
+      [] 'TagExp'(Info Lab N ConArity) then
+	 tagExp({TrInfo Info} {TrLab Lab} N {TrConArity ConArity})
       [] 'ConExp'(Info Id ConArity) then
 	 conExp({TrInfo Info} {TrId Id} {TrConArity ConArity})
       [] 'RefExp'(Info) then refExp({TrInfo Info})
@@ -172,7 +172,7 @@ define
       [] 'RecExp'(Info LabIdList) then
 	 recExp({TrInfo Info}
 		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
-      [] 'SelExp'(Info Lab) then selExp({TrInfo Info} {TrLab Lab})
+      [] 'SelExp'(Info Lab N) then selExp({TrInfo Info} {TrLab Lab} N)
       [] 'VecExp'(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
       [] 'FunExp'(Info Stamp Flags Args Body) then
 	 funExp({TrInfo Info} Stamp {Map Flags TrFunFlag}
@@ -181,13 +181,13 @@ define
 	 primAppExp({TrInfo Info} {StringToAtom String} {Map Ids TrId})
       [] 'VarAppExp'(Info Id Args) then
 	 varAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
-      [] 'TagAppExp'(Info Lab Args) then
-	 tagAppExp({TrInfo Info} {TrLab Lab} {TrArgs Args})
+      [] 'TagAppExp'(Info Lab N Args) then
+	 tagAppExp({TrInfo Info} {TrLab Lab} N {TrArgs Args})
       [] 'ConAppExp'(Info Id Args) then
 	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
       [] 'RefAppExp'(Info Id) then refAppExp({TrInfo Info} {TrId Id})
-      [] 'SelAppExp'(Info Lab Id) then
-	 selAppExp({TrInfo Info} {TrLab Lab} {TrId Id})
+      [] 'SelAppExp'(Info Lab N Id) then
+	 selAppExp({TrInfo Info} {TrLab Lab} N {TrId Id})
       [] 'FunAppExp'(Info Id Stamp Args) then
 	 funAppExp({TrInfo Info} {TrId Id} Stamp {TrArgs Args})
       [] 'AdjExp'(Info Id1 Id2) then
