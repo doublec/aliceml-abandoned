@@ -91,8 +91,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	  | translateDec (ConDec (coord, id, hasArgs), cont) =
 	    O.ConDec (coord, id, hasArgs, false)::translateCont cont
-	  | translateDec (PrimDec (coord, id, string), cont) =
-	    O.PrimDec (coord, id, string, false)::translateCont cont
 	  | translateDec (RecDec (coord, decs), cont) =
 	    let
 		val (preDecs, constraints, idExpList, subst) =
@@ -166,6 +164,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	and translateExp (LitExp (coord, lit), f, cont) =
 	    f (O.LitExp (coord, lit))::translateCont cont
+	  | translateExp (PrimExp (coord, s), f, cont) =
+	    f (O.PrimExp (coord, s))::translateCont cont
 	  | translateExp (VarExp (coord, longid), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid

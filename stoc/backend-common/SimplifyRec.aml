@@ -387,7 +387,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		(preDecs, constraints @ constraints' @ constraints'',
 		 idExpList @ idExpList', aliases @ aliases')
 	    end
-	  | derec ((dec as (ConDec (_, _, _) | PrimDec (_, _, _)))::decr) =
+	  | derec ((dec as ConDec (_, _, _))::decr) =
 	    let
 		val (preDecs, constraints, idExpList, aliases) = derec decr
 	    in

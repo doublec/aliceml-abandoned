@@ -48,7 +48,6 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 
 	datatype stm =
 	    ValDec of coord * id * exp * isToplevel
-	  | PrimDec of coord * id * string * isToplevel
 	  | RecDec of coord * (id * exp) list * isToplevel
 	    (* all ids distinct *)
 	  | ConDec of coord * id * hasArgs * isToplevel
@@ -64,6 +63,7 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	  | ExportStm of coord * id list
 	and exp =
 	    LitExp of coord * lit
+	  | PrimExp of coord * string
 	  | VarExp of coord * id
 	  | ConExp of coord * id * hasArgs
 	  | TupExp of coord * id list

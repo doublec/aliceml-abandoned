@@ -54,7 +54,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    and declaredVariables (ValDec (_, pat, _), ids) =
 		patternVariablesOf' (pat, ids)
 	      | declaredVariables (ConDec (_, id, _), ids) = id::ids
-	      | declaredVariables (PrimDec (_, id, _), ids) = id::ids
 	      | declaredVariables (RecDec (_, decs), ids) =
 		foldr declaredVariables ids decs
 	in
@@ -78,10 +77,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substDec (ValDec (coord, pat, exp), subst) =
 	    ValDec (coord, substPat (pat, subst), substExp (exp, subst))
 	  | substDec (dec as ConDec (_, _, _), _) = dec
-	  | substDec (dec as PrimDec (_, _, _), subst) = dec
 	  | substDec (RecDec (coord, decs), subst) =
 	    RecDec (coord, List.map (fn dec => substDec (dec, subst)) decs)
 	and substExp (exp as LitExp (_, _), _) = exp
+	  | substExp (exp as PrimExp (_, _), _) = exp
 	  | substExp (VarExp (coord, longid), subst) =
 	    VarExp (coord, substLongId (longid, subst))
 	  | substExp (exp as ConExp (_, _, _), _) = exp

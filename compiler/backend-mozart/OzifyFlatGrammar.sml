@@ -142,10 +142,6 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputExp (q, exp); m q;
 	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, PrimDec (coord, id, string, isToplevel)) =
-	    (f (q, "primDec"); outputCoord (q, coord); m q;
-	     outputId (q, id); m q; outputAtom (q, string); m q;
-	     outputBool (q, isToplevel); r q)
 	  | outputStm (q, RecDec (coord, idExpList, isToplevel)) =
 	    (f (q, "recDec"); outputCoord (q, coord); m q;
 	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
@@ -191,6 +187,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	and outputExp (q, LitExp (coord, lit)) =
 	    (f (q, "litExp"); outputCoord (q, coord); m q;
 	     outputLit (q, lit); r q)
+	  | outputExp (q, PrimExp (coord, string)) =
+	    (f (q, "primExp"); outputCoord (q, coord); m q;
+	     outputAtom (q, string); r q)
 	  | outputExp (q, VarExp (coord, id)) =
 	    (f (q, "varExp"); outputCoord (q, coord); m q;
 	     outputId (q, id); r q)
