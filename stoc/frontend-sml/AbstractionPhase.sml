@@ -20,7 +20,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     (* Error handling *)
 
     val error = Error.error
-    val warn  = Error.error
+    val warn  = Error.warn
 
     fun errorLab  (s1, Lab  (i,x), s2)	= error(i, s1 ^   Lab.toString x ^ s2)
     fun errorVId  (s1, VId  (i,x), s2)	= error(i, s1 ^   VId.toString x ^ s2)
