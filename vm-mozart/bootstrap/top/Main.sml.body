@@ -1,3 +1,5 @@
+(* -*- sml -*- *)
+
 import
     structure TextIO
 from "x-alice:/lib/TextIO.ozf"
@@ -13,6 +15,10 @@ from "x-alice:/lib/OS.ozf"
 import
     structure CommandLine
 from "x-alice:/lib/CommandLine.ozf"
+
+import
+    structure Pickle
+from "x-alice:/lib/Pickle.ozf"
 
 import
     structure Crash
@@ -130,19 +136,28 @@ structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
 structure AbstractionPhase = MakeAbstractionPhase(Composer)
 structure ElaborationPhase = MakeElaborationPhase(Composer)
 
-fun processString process source =
-    process source
-    handle exn as Crash.Crash message =>
-	(TextIO.output(TextIO.stdErr, "CRASH: " ^ message ^ "\n"); raise exn)
-
-fun processFile process name =
+fun readFile filename =
     let
-	val file   = TextIO.openIn name
+	val file   = TextIO.openIn filename
 	val source = TextIO.inputAll file
 	val _      = TextIO.closeIn file
     in
-	processString process source
+	source
     end
+
+fun readBaseImport () =
+    case OS.Process.getEnv "STOCKHOME" of
+	SOME homedir => readFile (homedir ^ "/Base.import")
+      | NONE => (TextIO.print "### warning: could not load Base.import\n"; "")
+
+val baseImport = ref ""
+
+fun processString process source =
+    process (!baseImport ^ source)
+    handle exn as Crash.Crash message =>
+	(TextIO.output(TextIO.stdErr, "CRASH: " ^ message ^ "\n"); raise exn)
+
+fun processFile process filename = processString process (readFile filename)
 
 fun parse' x     = ParsingPhase.translate () x
 fun abstract' x  = AbstractionPhase.translate (BindEnv.clone BindEnv0.E0) x
@@ -219,32 +234,66 @@ fun compileForMozart (sourceFilename, targetFilename) =
 				    resumeFilename ^ "\n"))
 	       | ref _ => ()))
 
-fun acquireSign url =
-    let
-	val targetFilename = parseUrl url
-	val sigFilename = targetFilename ^ ".sig"
-    in
-	if existsFile sigFilename then compileSign sigFilename
-	else
-	    case changeExtension (targetFilename, ".ozf", ".sml") of
-		SOME sourceFilename =>
-		    compileForMozart (sourceFilename, targetFilename)
-	      | NONE =>
-		    case changeExtension (targetFilename, ".ozf", ".sig") of
-			SOME sourceFilename =>
-			    compileForMozart (sourceFilename, targetFilename)
-		      | NONE =>
-			    (TextIO.print
-			     ("### warning: could not locate source for " ^
-			      targetFilename ^ "\n");
-			     Inf.empty ())
-    end
+local
+    exception RETURN of Composer.Sig.t
+in
+    fun acquireSign url =
+	(case Pickle.loadSign url of
+	     SOME sign =>
+		 (TextIO.print ("### loaded signature from " ^
+				Url.toString url ^ "\n");
+		  raise RETURN sign)
+	   | NONE => ();
+	 let
+	     val targetFilename = parseUrl url
+	     val sigFilename = targetFilename ^ ".sig"
+	 in
+	     if existsFile sigFilename then
+		 raise RETURN (compileSign sigFilename)
+	     else ();
+	     case changeExtension (targetFilename, ".ozf", ".sml") of
+		 SOME sourceFilename =>
+		     raise RETURN (compileForMozart
+				  (sourceFilename, targetFilename))
+	       | NONE => ();
+	     case changeExtension (targetFilename, ".ozf", ".sig") of
+		 SOME sourceFilename =>
+		     raise RETURN (compileForMozart
+				  (sourceFilename, targetFilename))
+	       | NONE => ();
+	     TextIO.print ("### warning: could not locate source for " ^
+			   targetFilename ^ "\n");
+	     Inf.empty ()
+	 end) handle RETURN sign => sign
+end
 
 val _ = Composer.setAcquisitionMethod acquireSign
 
 local
-    fun stoc [infile, outfile] =
-	(compileForMozart (infile, outfile); OS.Process.success)
+    fun stoc [infile] =
+	(baseImport := readBaseImport ();
+	 case changeExtension (infile, ".sml", ".ozf") of
+	     SOME outfile =>
+		 (compileForMozart (infile, outfile);
+		  OS.Process.success)
+	   | NONE =>
+		 case changeExtension (infile, ".sig", ".ozf") of
+		     SOME outfile =>
+			 (compileForMozart (infile, outfile);
+			  OS.Process.success)
+		   | NONE => OS.Process.failure)
+      | stoc [infile, outfile] =
+	(baseImport := readBaseImport ();
+	 compileForMozart (infile, outfile);
+	 OS.Process.success)
+      | stoc ["--nobaseimport", infile, outfile] =
+	(baseImport := "";
+	 compileForMozart (infile, outfile);
+	 OS.Process.success)
+      | stoc ["--replacesign", infile, signfile, outfile] =
+	(Pickle.replaceSign (Url.fromString infile,
+			     compileSign signfile, outfile);
+	 OS.Process.success)
       | stoc _ = OS.Process.failure
 in
     val _ = OS.Process.exit (stoc (CommandLine.arguments ()))
