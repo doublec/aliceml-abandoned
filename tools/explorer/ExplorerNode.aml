@@ -89,9 +89,9 @@ struct
                                                  TreeNode.setHasSolBelow node;
                                                  Types.addSolved state;
                                                  Types.SOLVED)
-                              | Space.BRANCH => (setStatus node Types.CHOICE;
-                                                 Types.addChoice state;
-                                                 Types.CHOICE)
+                              | Space.BRANCH _ => (setStatus node Types.CHOICE;
+                                                   Types.addChoice state;
+                                                   Types.CHOICE)
                         end
                       | s => s
 

@@ -55,7 +55,7 @@ struct
 			Space.FAILED => (Space.discard f;
 					 babe fr bs best)
 		      | Space.SOLVED => babe nil (fr@bs) (SOME f)
-		      | Space.BRANCH =>
+		      | Space.BRANCH _ =>
 			let
 			    val c = Space.clone f
 			in
