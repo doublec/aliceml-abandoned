@@ -11,7 +11,7 @@
 //
 
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 #include <cstring>
 #include <winsock.h>
 #else
@@ -31,7 +31,7 @@
 
 #include "alice/Authoring.hh"
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 typedef int socklen_t;
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define EINPROGRESS WSAEINPROGRESS
