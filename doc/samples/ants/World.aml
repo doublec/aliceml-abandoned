@@ -242,6 +242,23 @@ structure World =
 		)
 		
 	
+	fun cellToChar (c:cell) = 	
+	if #rocky(c) then "*"
 
+	else (case (#ant c) of SOME(a) =>
+			(case (#color a, #hasFood a) 
+			 of (Ant.Red, false) => "r"
+			 | (Ant.Red, true) => "R"
+			 | (Ant.Black, false) => "b"
+			 | (Ant.Black, true) => "B"		  
+			)
+		| _ =>
+			if (#food c) >0 then (Int.toString (#food c) )
+			else if (#redHill c) then "-"
+			else if (#blackHill c) then "+"
+			else if orMarks (#redMarkers c) then "."
+			else if orMarks (#blackMarkers c) then ","	
+			else " "
+		)
 
   end
