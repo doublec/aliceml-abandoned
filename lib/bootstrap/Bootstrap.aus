@@ -37,16 +37,18 @@ infix  0  before
 (*
  * CAREFUL! Each pervasive type may only be mentioned in one primitive
  * declaration/specification, otherwise the compiler will crash!
+ * Do only declare __pervasive on toplevel.
  *
  * Also note that __reftype should not declare a constructor named different
  * from the type constructor, otherwise it will not be suitably exported
  * into other components.
  *)
 
-local
-
-structure Pervasive =							(**)
+structure __pervasive =							(**)
   struct
+    __primitive datatype exn = "exn"
+    datatype 'a list = nil | op:: of 'a * 'a list
+
     structure Int	= struct __primitive eqtype int		= "int"     end
     structure LargeInt	= struct               type int		= Int.int   end
     structure Word	= struct __primitive eqtype word	= "word"    end
@@ -66,21 +68,57 @@ structure Pervasive =							(**)
     structure Time	= struct __primitive eqtype time	= "time"    end
     structure Promise	= struct __primitive type 'a promise	= "promise" end
 *)
+
+(*
+    structure Label =
+    struct
+	fun fromString x = fromString x
+    end
+
+    structure Path =
+    struct
+	fun fromLab x = fromLab x
+	fun pervasive x = pervasive x
+    end
+
+    structure Type =
+    struct
+	fun var x = var x
+	fun inVar x = inVar x
+	fun inCon x = inCon x
+	fun inApply x = inApply x
+	fun inLambda x = inLambda x
+	fun inArrow x = inArrow x
+	fun inTuple x = inTuple x
+	fun inProd x = inProd x
+	fun inSum x = inSum x
+	fun inAll x = inCon x
+	fun inExist x = inExist x
+	fun unknown x = unknown x
+	fun fill x = fill x
+	fun unknownRow x = unknownRow x
+	fun emptyRow x = emptyRow x
+	fun extendRow x = extendRow x
+    end
+
+    structure Inf =
+    struct
+    end
+*)
   end
 
-in
 
 type    unit		= {}
-type    int		= Pervasive.Int.int
-type    word		= Pervasive.Word.word
-type    real		= Pervasive.Real.real
-type    char		= Pervasive.Char.char
-type    string		= Pervasive.String.string
-type 'a vector		= 'a Pervasive.Vector.vector
-type 'a array		= 'a Pervasive.Array.array
+type    int		= __pervasive.Int.int
+type    word		= __pervasive.Word.word
+type    real		= __pervasive.Real.real
+type    char		= __pervasive.Char.char
+type    string		= __pervasive.String.string
+type 'a vector		= 'a __pervasive.Vector.vector
+type 'a array		= 'a __pervasive.Array.array
 
-datatype exn		= datatype Pervasive.General.exn
-datatype ref		= datatype Pervasive.Ref.ref
+datatype exn		= datatype __pervasive.General.exn
+datatype ref		= datatype __pervasive.Ref.ref
 
 datatype bool		= false | true
 datatype order		= LESS | EQUAL | GREATER
@@ -781,8 +819,8 @@ signature CHAR =
     val isCntrl :	char -> bool
     val isAscii :	char -> bool
 
-    val toWide :	char -> Pervasive.WideChar.char		(**)
-    val fromWide :	Pervasive.WideChar.char -> char		(**)
+    val toWide :	char -> __pervasive.WideChar.char		(**)
+    val fromWide :	__pervasive.WideChar.char -> char		(**)
 
     val toString :	char -> string
     val toCString :	char -> string
@@ -946,8 +984,8 @@ signature STRING =
     val isPrefix :	string -> string -> bool
     val isSuffix :	string -> string -> bool			(**)
 
-    val toWide :	string -> Pervasive.WideString.string		(**)
-    val fromWide :	Pervasive.WideString.string -> string		(**)
+    val toWide :	string -> __pervasive.WideString.string		(**)
+    val fromWide :	__pervasive.WideString.string -> string		(**)
 
     val toString :	string -> string
     val toCString :	string -> string
@@ -1203,12 +1241,12 @@ signature INTEGER =
 
     val minInt :	int option
     val maxInt :	int option
-    val precision :	Pervasive.Int.int option
+    val precision :	__pervasive.Int.int option
 
-    val toInt :		int -> Pervasive.Int.int
-    val fromInt :	Pervasive.Int.int -> int
-    val toLarge :	int -> Pervasive.LargeInt.int
-    val fromLarge :	Pervasive.LargeInt.int -> int
+    val toInt :		int -> __pervasive.Int.int
+    val fromInt :	__pervasive.Int.int -> int
+    val toLarge :	int -> __pervasive.LargeInt.int
+    val fromLarge :	__pervasive.LargeInt.int -> int
 
     val ~ :		int -> int
     val op + :		int * int -> int
@@ -1228,7 +1266,7 @@ signature INTEGER =
     val abs :		int -> int
     val min :		int * int -> int
     val max :		int * int -> int
-    val sign :		int -> Pervasive.Int.int
+    val sign :		int -> __pervasive.Int.int
     val sameSign :	int * int -> bool
 
     val toString :	int -> string
@@ -1368,17 +1406,17 @@ signature WORD =
 
     val wordSize :	int
 
-    val toLargeWord :	word -> Pervasive.LargeWord.word
+    val toLargeWord :	word -> __pervasive.LargeWord.word
 (*MISSING
-    val toLargeWordX :	word -> Pervasive.LargeWord.word
+    val toLargeWordX :	word -> __pervasive.LargeWord.word
 *)
-    val fromLargeWord :	Pervasive.LargeWord.word -> word
-    val toLargeInt :	word -> Pervasive.LargeInt.int
-    val toLargeIntX :	word -> Pervasive.LargeInt.int
-    val fromLargeInt :	Pervasive.LargeInt.int -> word
-    val toInt :		word -> Pervasive.Int.int
-    val toIntX :	word -> Pervasive.Int.int
-    val fromInt :	Pervasive.Int.int -> word
+    val fromLargeWord :	__pervasive.LargeWord.word -> word
+    val toLargeInt :	word -> __pervasive.LargeInt.int
+    val toLargeIntX :	word -> __pervasive.LargeInt.int
+    val fromLargeInt :	__pervasive.LargeInt.int -> word
+    val toInt :		word -> __pervasive.Int.int
+    val toIntX :	word -> __pervasive.Int.int
+    val fromInt :	__pervasive.Int.int -> word
 
     val notb :		word -> word
     val orb :		word * word -> word
@@ -1720,12 +1758,13 @@ signature REAL =
 *)
 
     val toInt :		IEEEReal.rounding_mode -> real -> int
-    val toLargeInt :	IEEEReal.rounding_mode -> real -> Pervasive.LargeInt.int
+    val toLargeInt :	IEEEReal.rounding_mode ->
+			    real -> __pervasive.LargeInt.int
     val fromInt :	int -> real
-    val fromLargeInt :	Pervasive.LargeInt.int -> real
-    val toLarge :	real -> Pervasive.LargeReal.real
+    val fromLargeInt :	__pervasive.LargeInt.int -> real
+    val toLarge :	real -> __pervasive.LargeReal.real
     val fromLarge :	IEEEReal.rounding_mode ->
-			    Pervasive.LargeReal.real -> real
+			    __pervasive.LargeReal.real -> real
 (*MISSING
     val toDecimal :	real -> IEEEReal.decimal_approx
     val fromDecimal :	IEEEReal.decimal_approx -> real
@@ -2701,5 +2740,3 @@ exception Cyclic	= Future.Cyclic				(**)
 
 val byneed		= Future.byneed				(**)
 val concur		= Future.concur				(**)
-
-end (* local *)
