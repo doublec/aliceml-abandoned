@@ -24,33 +24,35 @@ static const FrameLabel ABSTRACT_CODE_HANDLER_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 2);
 static const FrameLabel LAZY_SELECTION_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 3);
-static const FrameLabel VECTOR_TABULATE_FRAME =
+static const FrameLabel ARRAY_TABULATE_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 4);
-static const FrameLabel RAISE_FRAME =
+static const FrameLabel VECTOR_TABULATE_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 5);
-static const FrameLabel CELLMAP_INSERT_FRAME =
+static const FrameLabel RAISE_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 6);
-static const FrameLabel CELLMAP_ITERATOR_FRAME =
+static const FrameLabel CELLMAP_INSERT_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 7);
-static const FrameLabel CELLMAP_FIND_FRAME =
+static const FrameLabel CELLMAP_ITERATOR_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 8);
-static const FrameLabel IMPMAP_INSERT_FRAME =
+static const FrameLabel CELLMAP_FIND_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 9);
-static const FrameLabel IMPMAP_ITERATOR_FRAME =
+static const FrameLabel IMPMAP_INSERT_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 10);
-static const FrameLabel IMPMAP_FIND_FRAME =
+static const FrameLabel IMPMAP_ITERATOR_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 11);
+static const FrameLabel IMPMAP_FIND_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 12);
 
 // AliceNativeCode Frames
 static const FrameLabel NATIVE_CODE_FRAME =
-  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 12);
-static const FrameLabel NATIVE_CODE_HANDLER_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 13);
-static const FrameLabel LAZY_COMPILE_FRAME =
+static const FrameLabel NATIVE_CODE_HANDLER_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 14);
+static const FrameLabel LAZY_COMPILE_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 15);
 
 // Alice Async IO Frames
 static const FrameLabel FD_INPUT_FRAME =
-  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 15);
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 16);
 
 #endif

@@ -32,6 +32,7 @@ private:
 
   static void RegisterUnqualified();
   static void RegisterArray();
+  static void RegisterByte();
   static void RegisterChar();
   static void RegisterFuture();
   static void RegisterGeneral();
@@ -54,13 +55,13 @@ private:
   static void RegisterWord31();
   static word Lookup(word table, Chunk *name);
 public:
+  static word Future_Cyclic;
   static word General_Chr;
   static word General_Div;
   static word General_Domain;
   static word General_Overflow;
   static word General_Size;
   static word General_Subscript;
-  static word Hole_Cyclic;
   static word Hole_Hole;
   static word Thread_Terminated;
 
