@@ -111,7 +111,7 @@ ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = STOCKHOME=build2/install build2/install/bin/alicelink
 
-ALICELINK_OPTS = -z9 --sequential
+ALICELINK_OPTS = -z9 #--sequential
 
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
@@ -124,7 +124,7 @@ MLYACC = ml-yacc
 ##
 
 LIBSYSTEMNATIVES0 = \
-	Config IO TextIO OS Unix CommandLine Pickle Debug Socket
+	Config IO TextIO OS Unix CommandLine Pickle Debug Socket Rand
 LIBUTILITYNATIVES0 = \
 	MkRefMap
 LIBNATIVES = \
@@ -150,7 +150,7 @@ LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
 	CONFIG-sig.aml IO-sig.aml TEXT_IO-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
-	PICKLE-sig.aml DEBUG-sig.aml SOCKET-sig.aml \
+	PICKLE-sig.aml DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml)
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
@@ -163,6 +163,7 @@ LIBUTILITYSOURCES0 = \
 	MkScopedImpMap.aml LIST_SORT-sig.aml MkListSort.aml \
 	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
 	PRETTY_PRINT-sig.aml PrettyPrint.aml \
+	RANDOM-sig.aml Random.aml STAT-sig.aml Stat.aml \
 	$(LIBUTILITYNATIVES0:%=%.aml)
 LIBRTTSOURCES0 = \
 	NAME-sig.aml Name.aml LABEL-sig.aml Label.aml PATH-sig.aml Path.aml \
