@@ -13,7 +13,9 @@
 #ifndef __ADT__QUEUE_HH__
 #define __ADT__QUEUE_HH__
 
-#pragma interface "scheduler/Queue.hh"
+#if defined(INTERFACE)
+#pragma interface "adt/Queue.hh"
+#endif
 
 #include "store/store.hh"
 
