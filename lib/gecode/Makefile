@@ -41,8 +41,8 @@ GECODEOBJ = -lgecodeset -lgecodeint -lgecodekernel
 
 CPPFLAGS = -I../../../gecode-install/include/gecode
 LDFLAGS = -L../../../gecode-install/lib/gecode
-MY_CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe -DHAVE_CONFIG_H
-#MY_CXXFLAGS=-Dforceinline=inline -pipe -DHAVE_CONFIG_H
+MY_CXXFLAGS=-O2 -DNDEBUG -pipe -DHAVE_CONFIG_H
+#MY_CXXFLAGS=-pipe -DHAVE_CONFIG_H
 
 all: $(NATIVES:%=%.dll) $(TARGETS)
 

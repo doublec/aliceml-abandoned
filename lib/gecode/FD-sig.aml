@@ -19,6 +19,11 @@ sig
     exception NotAssigned
 		       
     type domain = (int*int) vector
+    exception InvalidDomain
+    (* Exception thrown by all domain tells *)
+    (* if something that is no proper domain is used *)
+
+    val domainFromList : int list -> domain
 
     (* Allocation of finite domain variables *)
     val intvar :  space * domain -> intvar

@@ -34,6 +34,10 @@ struct
 	    FSB_MAX
 	  | FSB_MIN
 
+   type domain = (int * int) vector
+
+   exception InvalidDomain = UnsafeGecode.UnsafeGecodeBase.InvalidDomain
+
    structure UnsafeGecodeFS = UnsafeGecode.UnsafeGecodeFS
    open UnsafeGecodeFS
 
@@ -67,7 +71,7 @@ struct
        struct
           fun make(space,v) = bounds(space,v,v)
 	  fun empty space = bounds(space,#[],#[])
-	  fun single(space,i) = make(space,#[i])
+	  fun single(space,i) = make(space,#[(i,i)])
 	  val universal = UnsafeGecodeFS.universal
 	  val is = UnsafeGecodeFS.is
        end

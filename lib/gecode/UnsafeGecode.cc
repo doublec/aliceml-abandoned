@@ -98,6 +98,7 @@ namespace UnsafeGecode {
   static word SitedMarker;
   static word InvalidVarConstructor;
   static word InvalidSpaceConstructor;
+  static word InvalidDomainConstructor;
   static s_int SpaceStamp = 0;
   
   class VectorValIterator {
@@ -122,7 +123,45 @@ namespace UnsafeGecode {
   }
 
   int VectorValIterator::val(void) const {
-    return Store::DirectWordToInt(v->Sub(pos));
+    return Store::WordToInt(v->Sub(pos));
+  }
+
+  class VectorRangeIterator {
+  private:
+    Vector *v;
+    u_int pos;
+    u_int size;
+  public:
+    VectorRangeIterator(Vector *vv) : v(vv), pos(0), size(v->GetLength()) {}
+
+    void operator++(void);
+    bool operator()(void) const;
+    int min(void) const;
+    int max(void) const;
+    unsigned int width(void) const;
+  };
+
+  void VectorRangeIterator::operator++(void) {
+    pos++;
+  }
+  
+  bool VectorRangeIterator::operator()(void) const {
+    return pos<size; 
+  }
+
+  int VectorRangeIterator::min(void) const {
+    Tuple *t = Tuple::FromWord(v->Sub(pos));
+    return Store::WordToInt(t->Sel(0));
+  }
+
+  int VectorRangeIterator::max(void) const {
+    Tuple *t = Tuple::FromWord(v->Sub(pos));
+    return Store::WordToInt(t->Sel(1));
+  }
+
+  unsigned int VectorRangeIterator::width(void) const {
+    Tuple *t = Tuple::FromWord(v->Sub(pos));
+    return Store::WordToInt(t->Sel(1))-Store::WordToInt(t->Sel(0));
   }
 
 const BvarSel int2bvarsel[] =
@@ -1238,13 +1277,20 @@ DEFINE3(gc_fsLowerBound) {
   int setSize = v->GetLength();
 
   // Request all futures so that we can iterate over the vector
-  for (int i=setSize; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+  // Check that the domain really is a domain
+  int lastmax = IntegerSet::SMALLEST_ELEMENT;
+  for (int i=0; i<setSize; i++) {
+    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_INT(tmp0, tmp->Sel(0));
+    DECLARE_INT(tmp1, tmp->Sel(1));
+    if(tmp0>tmp1 || tmp0 <= lastmax) {
+      RAISE(UnsafeGecode::InvalidDomainConstructor);
+    }
+    lastmax = tmp1;
   }
 
-  UnsafeGecode::VectorValIterator is(v);
-  ValuesToRanges<UnsafeGecode::VectorValIterator> is2(is);
-  s->fs_lowerBound(var1, is2);
+  UnsafeGecode::VectorRangeIterator is(v);
+  s->fs_lowerBound(var1, is);
   
   DBGMSG("done");
   RETURN_UNIT;
@@ -1258,16 +1304,25 @@ DEFINE3(gc_fsUpperBound) {
   DECLARE_VAR(var1, stamp, pstamp, x1);
 
   DECLARE_VECTOR(v, x2);
+
   int setSize = v->GetLength();
 
   // Request all futures so that we can iterate over the vector
-  for (int i=setSize; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+  // Check that the domain really is a domain
+  int lastmax = IntegerSet::SMALLEST_ELEMENT;
+  for (int i=0; i<setSize; i++) {
+    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_INT(tmp0, tmp->Sel(0));
+    DECLARE_INT(tmp1, tmp->Sel(1));
+    if(tmp0>tmp1 || tmp0 <= lastmax) {
+      RAISE(UnsafeGecode::InvalidDomainConstructor);
+    }
+    lastmax = tmp1;
   }
 
-  UnsafeGecode::VectorValIterator is(v);
-  ValuesToRanges<UnsafeGecode::VectorValIterator> is2(is);
-  s->fs_upperBound(var1, is2);
+  UnsafeGecode::VectorRangeIterator is(v);
+  //  ValuesToRanges<UnsafeGecode::VectorValIterator> is2(is);
+  s->fs_upperBound(var1, is);
 
   DBGMSG("done");
   RETURN_UNIT;
@@ -1875,7 +1930,7 @@ DEFINE2(gc_fsPrint) {
 } END
 
 static word UnsafeGecodeBase() {
-  Record *record = Record::New(13);
+  Record *record = Record::New(15);
   UnsafeGecode::InvalidSpaceConstructor =
     UniqueConstructor::New("InvalidSpace",
 			   "UnsafeGecode.UnsafeGecodeBase.InvalidSpace")->ToWord();
@@ -1885,11 +1940,21 @@ static word UnsafeGecodeBase() {
     UniqueConstructor::New("InvalidVar",
 			   "UnsafeGecode.UnsafeGecodeBase.InvalidVar")->ToWord();
   RootSet::Add(UnsafeGecode::InvalidVarConstructor);
+  UnsafeGecode::InvalidDomainConstructor =
+    UniqueConstructor::New("InvalidDomain",
+			   "UnsafeGecode.UnsafeGecodeBase.InvalidDomain")->ToWord();
+  RootSet::Add(UnsafeGecode::InvalidDomainConstructor);
+
+
   record->Init("'InvalidSpace", UnsafeGecode::InvalidSpaceConstructor);
   record->Init("InvalidSpace", UnsafeGecode::InvalidSpaceConstructor);
 
   record->Init("'InvalidVar", UnsafeGecode::InvalidVarConstructor);
   record->Init("InvalidVar", UnsafeGecode::InvalidVarConstructor);
+
+  record->Init("'InvalidDomain", UnsafeGecode::InvalidDomainConstructor);
+  record->Init("InvalidDomain", UnsafeGecode::InvalidDomainConstructor);
+
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "makeSpace",
 		 gc_makespace, 0);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "fail",

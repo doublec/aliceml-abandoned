@@ -53,6 +53,7 @@ struct
     exception NotAssigned
               
     type domain = (int * int) vector
+    exception InvalidDomain = UnsafeGecode.UnsafeGecodeBase.InvalidDomain
    
    structure UnsafeGecodeFD = UnsafeGecode.UnsafeGecodeFD
    open UnsafeGecodeFD
@@ -71,6 +72,18 @@ struct
    fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
 		 
    fun intvar2boolvar(space,d) = (dom(space,d,#[(0,1)]); d)
+
+   fun dListFromList' nil _ = nil
+     | dListFromList' ([x]) min = [(min,x)]
+     | dListFromList' (x1::x2::xr) min =
+       if x1<x2-1 then (min, x1)::dListFromList' (x2::xr) x2
+       else dListFromList' (x2::xr) min
+
+   fun dListFromList nil = nil
+     | dListFromList [x] = [(x,x)]
+     | dListFromList (xs as (x::_)) = dListFromList' xs x
+       
+   val domainFromList = Vector.fromList o dListFromList
 
    structure Reified =
        struct

@@ -16,6 +16,7 @@ sig
 	structure UnsafeGecodeBase : sig
 	    exception InvalidSpace
 	    exception InvalidVar
+            exception InvalidDomain
 		      
 	    val makeSpace : unit -> 'space
 				    
@@ -97,8 +98,8 @@ sig
 	structure UnsafeGecodeFS : sig
             val setvar : 'space -> 'setvar
 
-	    val lowerBound : 'space * 'setvar * int vector -> unit
-	    val upperBound : 'space * 'setvar * int vector -> unit
+	    val lowerBound : 'space * 'setvar * (int*int) vector -> unit
+	    val upperBound : 'space * 'setvar * (int*int) vector -> unit
 	    val incl : 'space * 'intvar * 'setvar -> unit
 	    val excl : 'space * 'intvar * 'setvar -> unit
 	    val the : 'space * 'intvar * 'setvar -> unit

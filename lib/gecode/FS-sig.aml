@@ -17,13 +17,18 @@ sig
     type boolvar
     type setvar
 
+    type domain = (int*int) vector
+    exception InvalidDomain
+    (* Exception thrown by all domain tells *)
+    (* if something that is no proper domain is used *)
+
     (* Allocation of finite set variables *)
     val setvar :  space  ->  setvar
     val setvarVec :  space * int ->  setvar vector
 
-    val lowerBound : space * int vector -> setvar
-    val upperBound : space * int vector -> setvar
-    val bounds : space * int vector * int vector -> setvar
+    val lowerBound : space * domain -> setvar
+    val upperBound : space * domain -> setvar
+    val bounds : space * domain * domain -> setvar
 
     (* Standard Propagators *)
     val cardRange : space * int * int * setvar -> unit
@@ -52,7 +57,7 @@ sig
 
     structure Value :
 	sig
-	    val make : space * int vector -> setvar
+	    val make : space * domain -> setvar
 	    val empty : space -> setvar
 	    val single : space * int -> setvar
 	    val universal : space -> setvar
@@ -89,9 +94,9 @@ sig
 	
     structure Reflect : sig
 	val card : space * setvar -> (int * int)
-	val lowerBound : space * setvar -> (int*int) vector
-	val upperBound : space * setvar -> (int*int) vector
-	val unknown : space * setvar -> (int*int) vector
+	val lowerBound : space * setvar -> domain
+	val upperBound : space * setvar -> domain
+	val unknown : space * setvar -> domain
 	val cardOfLowerBound : space * setvar -> int
 	val cardOfUpperBound : space * setvar -> int
 	val cardOfUnknown : space * setvar -> int

@@ -37,19 +37,20 @@ fun shifted space n i (a,b) =
 
 fun szo tags word =
     let
-	    val space = Space.new()
-	    val wordLength = List.length word
-        val root = List.map (List.map (fn c=>(c,
-			FS.upperBound (space,(
-				Vector.fromList (List.rev (List.foldli ( fn (i,c2,l)=>
-					if c=c2 then i::l else l
-				) nil word)))
-    		)        	
+	val space = Space.new()
+	val wordLength = List.length word
+        val root =
+            List.map (List.map
+              (fn c=>(c,
+		 FS.upperBound
+                     (space,
+                      FD.domainFromList (List.rev (List.foldli ( fn (i,c2,l)=>
+	                if c=c2 then i::l else l) nil word)))
         ))) tags
         val pureRoot = List.map (List.map (fn (c,v)=>v)) root
         val flatRoot = List.concat root
         val flatPureRoot = List.concat pureRoot
-        val allTags = FS.upperBound (space,Vector.tabulate (wordLength,(fn i=>i)))
+        val allTags = FS.upperBound (space,#[(0,wordLength-1)])
     in
     	List.app (forNeighbours (shifted space wordLength (0-1))) pureRoot;
     	FS.partitionN (space,Vector.fromList flatPureRoot, allTags); 

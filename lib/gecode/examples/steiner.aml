@@ -30,11 +30,10 @@ fun steiner n =
             val n1 = n+1
             val n1n1 = n1*n1
             val len = (n*(n-1)) div 6
-            val nvec = Vector.tabulate (n, fn i => i+1)
 
 	    val space = Space.new()
             val root = List.tabulate (len,
-                                        fn _ => FS.upperBound(space,nvec))
+                                        fn _ => FS.upperBound(space,#[(1,n)]))
         in
             List.app (fn v => FS.cardRange(space,3,3,v)) root;
             cardProd (fn (x,y) =>
@@ -78,4 +77,5 @@ val (root,space) = steiner 9
 val (SOME sol) = Search.searchOne space
 val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
 val _ = Print.printVal s
+val _ = print "\n"
 val _ = OS.Process.exit OS.Process.success

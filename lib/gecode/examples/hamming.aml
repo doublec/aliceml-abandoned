@@ -27,16 +27,15 @@ fun cardProd f = appTail (fn x => List.app (fn y => f(x,y)))
 
 fun hamming bits dist num =
     let
-	    val space = Space.new()
-        val bitmask = Vector.tabulate (bits, fn i => i)
+	val space = Space.new()
         val root = List.tabulate (num,
-                                    fn _ => FS.upperBound(space,bitmask))
+                                  fn _ => FS.upperBound(space,#[(0,bits-1)]))
     in
         cardProd (fn (x,y) =>
                        let
                            val d1 = FS.setvar space
                            val d2 = FS.setvar space   
-                           val d1c = FD.range (space,(0,dist))                        
+                           val d1c = FD.range (space,(0,dist))
                            val d2c = FD.range (space,(0,dist))
                        in
                       	   FS.difference(space,d1,x,y);
