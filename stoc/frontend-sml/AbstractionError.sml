@@ -168,11 +168,11 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(FvalBindDuplicate vid) =
 	  par["duplicate","function",ppVId vid,"in","binding","group"]
       | ppError(FvalBindArityInconsistent) =
-	  par["inconistent","function","arity","in","function","clause"]
+	  par["inconsistent","function","arity","in","function","clause"]
       | ppError(FvalBindArityZero) =
 	  par["no","arguments","in","function","clause"]
       | ppError(FvalBindNameInconsistent vid) =
-	  par["inconistent","function","name",ppVId vid,
+	  par["inconsistent","function","name",ppVId vid,
 	      "in","function","clause"]
       | ppError(FvalBindNameMissing) =
 	  par["no","function","name","in","function","clause"]
