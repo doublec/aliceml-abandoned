@@ -27,19 +27,24 @@ VPATH = $(SRCDIR)
 OZC = ozc
 OZCOPTS = -z9
 STOC = alicec
-STOCOPTS = --no-dump-elaboration-sig
+STOCOPTS = --recursive-compilation
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+STOL = alicelink
+STOLOPTS = -v
 
-OZSOURCES = UnsafeFD.oz UnsafeFS.oz UnsafeSpace.oz UnsafeExplorer.oz
 ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml SPACE-sig.aml Space.aml \
                SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml
 
+NATIVES = FD FS Space Explorer
+
+OZSOURCES=$(NATIVES:%=Unsafe%.oz)
+
 COMPONENTS = \
-	$(OZSOURCES:%.oz=%.ozf) \
+	$(NATIVES:%=Linked%.ozf) \
 	$(ALICESOURCES:%.aml=%.ozf)
 
 INSTALLDIRS = $(PREFIX)/lib/constraints
-INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/constraints/%)
+INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf)
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -52,11 +57,11 @@ all: $(COMPONENTS)
 depend:
 	$(STODEP) $(ALICESOURCES) > Makefile.depend
 
-Untyped%.ozf: %.oz
+%.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-%.ozf: Untyped%.ozf %.asig
-	$(STOC) $(STOCOPTS) --replacesign $^ $@
+Linked%.ozf: %.ozf
+	$(STOL) $(STOLOPTS) $< --norelative --include=`pwd`/$< --include=`pwd`/Unsafe$* -o $@
 
 %.ozf: %.aml
 	$(STOC) $(STOCOPTS) -c $< -o $@
@@ -72,6 +77,10 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
+$(NATIVES:%=$(PREFIX)/lib/constraints/%.ozf): \
+	$(PREFIX)/lib/constraints/%.ozf: Linked%.ozf
+	install -c -m 444 $< $@
+
 $(PREFIX)/lib/constraints/%.ozf: %.ozf
 	install -c -m 444 $< $@
 
@@ -80,9 +89,10 @@ $(PREFIX)/lib/constraints/%.ozf: %.ozf
 ##
 
 clean:
-	-rm -f $(OZSOURCES:%.oz=Untyped%.ozf) $(COMPONENTS)
+	-rm -f $(NATIVES:%=Unsafe%.ozf) $(COMPONENTS) *.ozm
 
 veryclean: clean
 
 distclean: veryclean
 	-rm -f Makefile.depend
+
