@@ -17,9 +17,11 @@
 void AssertOutline(const char *file, int line, const char *message) {
   std::fprintf(stderr, "%s:%d assertion '%s' failed\n", file, line, message);
   static_cast<char *>(NULL)[0] = 0;
+  std::exit(0);
 }
 
 void ErrorOutline(const char *file, int line, const char *message) {
   std::fprintf(stderr, "%s:%d error '%s'\n", file, line, message);
   static_cast<char *>(NULL)[0] = 0;
+  std::exit(0);
 }

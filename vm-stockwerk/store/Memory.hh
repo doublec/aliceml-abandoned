@@ -34,15 +34,11 @@ public:
   u_int id;
 #endif
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int size) : prev(prv), next(nxt) {
-    block = (char *) std::malloc(size);
-    AssertStore(block != INVALID_POINTER);
+    block  = (char *) std::malloc(size); AssertStore(block != INVALID_POINTER);
     max    = (block + size);
     top    = (sizeof(u_int) - size);
     anchor = 0;
-    for (u_int i = size; i--;) {
-      block[i] = (char) 1;
-    }
-    // std::memset(block, 1, (u_int) size);
+    std::memset(block, 1, (u_int) size);
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
     id = counter++;
 #endif
@@ -57,13 +53,10 @@ public:
     u_int size = (max - block);
 
     top = (sizeof(u_int) - size);
-    for (u_int i = size; i--;) {
-      block[i] = (char) 1;
-    }
-    //std::memset(block, 1, size);
+    std::memset(block, 1, size);
   }
   s_int GetTop()              { return top; }
-  void SetTop(s_int top)      { MemChunk::top = top; } 
+  void SetTop(s_int top)      { MemChunk::top = top; }
   char *GetMax()              { return max; }
   char *GetBottom()           { return block; }
 

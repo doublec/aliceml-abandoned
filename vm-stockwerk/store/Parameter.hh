@@ -50,7 +50,7 @@
 //
 
 // ChunkTop pointer to be stored in register (0 or 1)
-#define STORE_CHUNKTOP_IN_REG    0
+#define STORE_CHUNKTOP_IN_REG    1
 
 //
 // Introduce Helper Block Label (without _LABEL suffix)
