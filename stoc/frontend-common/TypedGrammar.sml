@@ -1,3 +1,18 @@
+(*
+Invariants of the typed grammar:
+- every node is annotated with its type.
+- exp and pat nodes carry their instantiated type.
+- typ nodes carry their type function.
+- mod nodes carry their interface.
+- inf nodes carry their interface function.
+- similarly for id and longid nodes, with the exception that
+  valid and vallongid nodes carry the generalized type.
+  Ie. for every val(long)id embedded into an exp or pat
+  node the type annotating the id must be more general than the
+  type annotating the exp/pat (exp and pat types may still be
+  quantified in the case of higher-order quantification).
+*)
+
 structure TypedInfo =
   struct
     type fix_info	= { region: Source.region, fix: Fixity.t }
@@ -5,11 +20,11 @@ structure TypedInfo =
     type typlab_info	= { region: Source.region }
     type modlab_info	= { region: Source.region }
     type inflab_info	= { region: Source.region }
-    type valid_info	= { region: Source.region }
+    type valid_info	= { region: Source.region, typ: Type.t }
     type typid_info	= { region: Source.region }
-    type modid_info	= { region: Source.region }
+    type modid_info	= { region: Source.region, inf: Inf.t }
     type infid_info	= { region: Source.region }
-    type vallongid_info	= { region: Source.region }
+    type vallongid_info	= { region: Source.region, typ: Type.t }
     type typlongid_info	= { region: Source.region }
     type modlongid_info	= { region: Source.region, inf: Inf.t }
     type inflongid_info	= { region: Source.region }
@@ -19,7 +34,6 @@ structure TypedInfo =
     type 'a field_info	= { region: Source.region }
     type match_info	= { region: Source.region }
     type typ_info	= { region: Source.region, typ: Type.t }
-    type con_info	= { region: Source.region, typ: Type.t }
     type mod_info	= { region: Source.region, inf: Inf.t }
     type inf_info	= { region: Source.region, inf: Inf.t }
     type dec_info	= { region: Source.region }
