@@ -33,6 +33,33 @@ lazy   pack          spawn      unpack   withfun    withval</PRE>
 </UL>
 
 
+<?php section("openmulti", "multiple open") ?>
+
+<P>When <TT>open</TT> is used with multiple arguments this is taken as sugar
+for multiple open declarations. This results in slightly different scoping rules, when nested structures are present.</P>
+
+<?php subsection("openmulti-example", "Example") ?>
+
+<PRE class=code>
+structure A =
+struct
+    structure B = struct val x = 1 end
+end
+structure B = struct val x = "1" end
+
+open A B
+
+val y = x</PRE>
+
+<P>According to Standard ML, <TT>y</TT> should have type <TT>string</TT> because <TT>x</TT> refers to <TT>B.x</TT>. In Alice however, <TT>x</TT> refers to <TT>A.B.x</TT> and hence <TT>y</TT> is assigned type <TT>int</TT>.
+
+<?php subsection("openmulti", "Workaround") ?>
+
+<UL>
+  <LI>Avoid multiple arguments to <TT>open</TT>.</LI>
+</UL>
+
+
 <?php section("openinfix", "open and infix") ?>
 
 <P>Open pulls in <A href="modules.html#fixity">infix status</A>. Opening a
