@@ -1,9 +1,11 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -46,7 +48,13 @@ DEFINE1(UnsafeMkRefMap_deleteAll) {
 DEFINE2(UnsafeMkRefMap_lookup) {
   DECLARE_HASH_TABLE(table, x0);
   DECLARE_INT(key, x1);
-  RETURN(table->GetItem(x1));
+  if (table->IsMember(x1)) {
+    TagVal *some = TagVal::New(1, 1); // SOME ...
+    some->Init(0, table->GetItem(x1));
+    RETURN(some->ToWord());
+  } else {
+    RETURN_INT(0); // NONE
+  }
 } END
 
 DEFINE2(UnsafeMkRefMap_member) {
@@ -57,8 +65,7 @@ DEFINE2(UnsafeMkRefMap_member) {
 
 DEFINE1(UnsafeMkRefMap_isEmpty) {
   DECLARE_HASH_TABLE(table, x0);
-  Error("UnsafeMkRefMap.isEmpty not implemented"); //--** to be done
-  RETURN_BOOL(false);
+  RETURN_BOOL(table->IsEmpty());
 } END
 
 word UnsafeMkRefMap(void) {
