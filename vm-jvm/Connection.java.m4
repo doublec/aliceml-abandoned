@@ -64,7 +64,7 @@ final public class Connection {
 	try {
 	    java.rmi.registry.Registry r = java.rmi.registry.LocateRegistry.getRegistry(1099);
 	    exporterNumber = r.list().length;
-	    System.out.println("ExporterNumber : " +exporterNumber);
+	    // System.out.println("ExporterNumber : " +exporterNumber);
 	} catch (RemoteException _) {
 	    java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
 	    // exporterNumber = 0;
