@@ -21,6 +21,7 @@ in
     structure FS : FS =
 	struct
 	    type fd = fd
+	    type bin = bin
 	    type fs
 
 	    exception Tell = FD.Tell

@@ -37,9 +37,10 @@
     signature FS =
     sig
 	type fd
+	type bin = fd
 	type fs
 
-	exception Tell = FD.Tell
+	exception Tell of {cause : exn}
 
 	(* Implementation dependent fs limits *)
 	val inf : int
@@ -52,9 +53,9 @@
 	(* Standard Propagators *)
 	val compl : fs * fs -> unit
 	val complIn : fs * fs * fs -> unit
-	val incl : FD.fd * fs -> unit
-	val excl : FD.fd * fs -> unit
-	val card : fs * FD.fd -> unit
+	val incl : fd * fs -> unit
+	val excl : fd * fs -> unit
+	val card : fs * fd -> unit
 	val cardRange : int * int * fs -> unit
 	val isIn : int * fs -> bool
 	val isEmpty : fs -> bool
@@ -82,12 +83,12 @@
 	(* Integer FS *)
 	structure Int :
 	    sig
-		val min : fs * FD.fd -> unit
-		val max : fs * FD.fd -> unit
+		val min : fs * fd -> unit
+		val max : fs * fd -> unit
 		val convex : fs -> unit
-		val match : fs * FD.fd vector -> unit
-		val minN : fs * FD.fd vector -> unit
-		val maxN : fs * FD.fd vector -> unit
+		val match : fs * fd vector -> unit
+		val minN : fs * fd vector -> unit
+		val maxN : fs * fd vector -> unit
 	    end
 
 	(* Reified Propagators *)
@@ -95,7 +96,7 @@
 	    sig
 		val isIn : int * fs * bin -> unit
 		val areIn : int list * fs * bin list -> unit
-		val incl : FD.fd * fs * bin -> unit
+		val incl : fd * fs * bin -> unit
 		val equal : fs * fs * bin -> unit
 		val partition : fs list * int list * fs * bin list -> unit
 	    end
@@ -118,10 +119,11 @@
 
   <DL>
     <DT>
-      <TT>type fs</TT>
+      <TT>type fd</TT> <BR>
+      <TT>type bin = fd</TT>
     </DT>
     <DD>
-      <P>The type of finite domain variables.
+      <P>The type of finite domain variables. Usually equal to <TT>FD.fd</TT>.
     </P></DD>
 
     <DT>
@@ -132,11 +134,11 @@
     </P></DD>
 
     <DT>
-      <TT>exception Tell</TT>
+      <TT>exception Tell of {cause : exn}</TT>
     </DT>
     <DD>
       <P>is raised when a propagator is created on toplevel and is inconsistent
-         with other constraints.
+         with other constraints. Usually equal to <TT>FD.Tell</TT>.
     </P></DD>
 
     <DT>
