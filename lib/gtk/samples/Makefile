@@ -1,6 +1,6 @@
 BOOTSTRAPDIR= ../../../bootstrap
 
-STOC     = stoc
+STOC     = alicec
 STOCOPTS =
 STODEP   = sml @SMLload=$(BOOTSTRAPDIR)/stodep
 
