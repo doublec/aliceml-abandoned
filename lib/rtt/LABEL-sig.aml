@@ -1,6 +1,20 @@
-signature LABEL =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name from "Name"
+
+
+signature LABEL =
+sig
     eqtype lab					(* [lab,l] *)
     type t = lab
 
@@ -17,5 +31,4 @@ signature LABEL =
 
     val compare :	lab * lab -> order
     val hash :		lab -> int
-
-  end
+end
