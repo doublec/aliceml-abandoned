@@ -67,6 +67,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun tuppat(i, [pat]) = pat
       | tuppat(i,  pats) = O.TupPat(i, pats)
 
+    fun annexp(exp,    []    ) = exp
+      | annexp(exp, typ::typs) = annexp(O.AnnExp(O.infoTyp typ, exp, typ), typs)
+
 
     fun alltyp(  [],    typ) = typ
       | alltyp(id::ids, typ) = O.AllTyp(O.infoTyp typ, id, alltyp(ids, typ))
@@ -1354,13 +1357,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trFmrule_rhs E (Mrule(i, fpat, exp)) =
 	   let
-		val  E'          = Env.new()
-		val (pat',arity) = trFpat_rhs (E,E') fpat
-		val  _           = inheritScope(E,E')
-		val  exp'        = trExp E exp
-		val  _           = deleteScope E
+		val  E'                = Env.new()
+		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
+		val  _                 = inheritScope(E,E')
+		val  exp'              = trExp E exp
+		val  _                 = deleteScope E
 	   in
-		( O.Match(i, pat', exp'), arity )
+		( O.Match(i, pat', annexp(exp',typs')), arity )
 	   end
 
     and trFpat_rhs (E,E') =
@@ -1369,16 +1372,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | TYPEDPat(i, fpat, ty) =>
 	   let
-		val (pat',arity) = trFpat_rhs (E,E') fpat
-		val  typ'        = trTy E ty
+		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
+		val  typ'              = trTy E ty
 	   in
-		( O.AnnPat(i, pat', typ'), arity )
+		( pat', arity, typ'::typs' )
 	   end
 
 	 | WHENPat(i, fpat, atexp) =>
 	   let
 		val  _   = insertScope E'
-		val (pat',arity) = trFpat_rhs (E,E') fpat
+		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
 		val  _   = inheritScope(E, copyScope E')
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
@@ -1386,7 +1389,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				errorVId'("duplicate variable ", E', vid',
 					  " in pattern or binding group")
 	   in
-		( O.GuardPat(i, pat', exp'), arity )
+		( O.GuardPat(i, pat', exp'), arity, typs' )
 	   end
 
 	 | ( NONPat(i,_) | ASPat(i,_,_)
@@ -1398,7 +1401,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val pats' = trAppliedFappPat_rhs (E,E') fpat
 	   in
-		( tuppat(infoPat fpat, pats'), List.length pats' )
+		( tuppat(infoPat fpat, pats'), List.length pats', [] )
 	   end
 	 | ATPATPat(i, atpat)		=> trFatPat_rhs (E,E') atpat
 	 | fpat				=> trFpat_rhs (E,E') fpat
@@ -1406,20 +1409,23 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trFatPat_rhs (E,E') =
 	fn ALTAtPat(i, fpats) =>
 	   let
-		val  _              = insertScope E'
-		val (pat', arity)   = trFpat_rhs (E,E') (List.hd fpats)
-		val  pat'arities    = trAltFpats_rhs (E,E') (List.tl fpats)
-		val (pats',arities) = ListPair.unzip pat'arities
-		val  _              = mergeDisjointScope E'
-				      handle CollisionVal vid' =>
-				      errorVId'("duplicate variable ", E',vid',
+		val  _                 = insertScope E'
+		val (pat',arity,typs') = trFpat_rhs (E,E') (List.hd fpats)
+		val  pat'aritytyps's   = trAltFpats_rhs (E,E') (List.tl fpats)
+		val (pats',arities,typs'') =
+			 List.foldr (fn((p,a,ts), (pl,al,tl)) =>
+					(p::pl, a::al, ts@tl)
+				    ) ([],[],[]) pat'aritytyps's
+		val  _ = mergeDisjointScope E'
+			 handle CollisionVal vid' =>
+				errorVId'("duplicate variable ", E',vid',
 					  " in pattern or binding group")
 	   in
-		case List.find (fn(_,arity') => arity<>arity') pat'arities
-		  of NONE         => ( O.AltPat(i, pat'::pats'), arity )
-		   | SOME(pat',_) =>
+		case List.find (fn(_,arity',_) => arity<>arity') pat'aritytyps's
+		  of NONE => ( O.AltPat(i, pat'::pats'), arity, typs' @ typs'' )
+		   | SOME(pat',_,_) =>
 			error(O.infoPat pat', "inconsistent number of \
-					       \arguments in function clause")
+					      \arguments in function clause")
 	   end
 
 	 | PARAtPat(i, fpat)	=> trFpat_rhs (E,E') fpat
@@ -1432,7 +1438,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trAltFpat_rhs (E,E') fpat =
 	let
 	    val _    = insertScope E'
-	    val pat'arity = trFpat_rhs (E,E') fpat
+	    val pat'aritytyps' = trFpat_rhs (E,E') fpat
 	    val E''  = splitScope E'
 	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
 			  error(infoPat fpat,"inconsistent pattern alternative")
@@ -1443,7 +1449,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 							 \ alternative")
 			    ) E'
 	in
-	    pat'arity
+	    pat'aritytyps'
 	end
 
 
