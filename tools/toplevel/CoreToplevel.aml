@@ -78,9 +78,17 @@ struct
 
     fun trace s = TextIO.output (traceStream, "-- " ^ s ^ "\n")
 
+    fun call prepare (env, source) =
+	(Compiler.withTraceStream (TextIO.getOutstream traceStream)
+	 (Compiler.withOutStream (TextIO.getOutstream outStream)
+	  (Compiler.withErrStream (TextIO.getOutstream errStream)
+	   (Compiler.withOutWidth (!outWidth)
+	    (Compiler.withErrWidth (!errWidth)
+	     prepare))))) (env, source)
+
     fun eval' prepare (printSig, env, source, signal) =
 	(
-	    (case interruptable (signal, fn _ => prepare (env, source))
+	    (case interruptable (signal, fn _ => call prepare (env, source))
 	     of NONE => (* interrupted *)
 		(TextIO.output (errStream, "Compilation interrupted\n"); NONE)
 	      | SOME (env', eval, inf) => (* completed or stopped *)
