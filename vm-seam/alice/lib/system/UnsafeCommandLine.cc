@@ -22,7 +22,7 @@ DEFINE0(UnsafeCommandLine_arguments) {
   RETURN(AliceLanguageLayer::commandLineArguments);
 } END
 
-word UnsafeCommandLine() {
+AliceDll word UnsafeCommandLine() {
   Record *record = Record::New(2);
   INIT_STRUCTURE(record, "UnsafeCommandLine", "name",
 		 UnsafeCommandLine_name, 0);
