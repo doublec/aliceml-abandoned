@@ -1,9 +1,10 @@
 (*
- * Author:
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,8 +13,16 @@
 
 (* Abstract 1st class representation of signatures *)
 
+import structure Inf     from "../rtt/Inf"
+import structure Reflect from "Reflect"
+
 signature SIGNATURE =
 sig
     type t
+
+    val fromSig: Inf.sign -> t
+    val toSig: t -> Inf.sign
+    val strip: t * Inf.sign -> t
     val matches: t * t -> bool
+    val match: t * t * Reflect.value -> Reflect.value option
 end
