@@ -1,0 +1,7 @@
+import
+    structure Inf
+from "common/Inf.ozf"
+
+import
+    signature SIGNATURE
+from "top/SIGNATURE.ozf"

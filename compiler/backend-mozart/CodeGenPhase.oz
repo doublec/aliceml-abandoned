@@ -1,32 +1,24 @@
+%%%
+%%% Author:
+%%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+%%%
+%%% Copyright:
+%%%   Leif Kornstaedt, 2000
+%%%
+%%% Last change:
+%%%   $Date$ by $Author$
+%%%   $Revision$
+%%%
+
 functor
 import
-   Application(getCmdArgs exit)
-   System(printError show)
-   Property(get)
    Pickle(save)
    NativeWord(toInt) at '../Word.so{native}'
-   Base('$Option') at 'Base.ozf'
-   BackendCommon('$ImperativeGrammar') at 'BackendCommon.ozf'
-   Common('$Prebound': Prebound) at 'Common.ozf'
-   Main(imperatifyFile) at 'Main.ozf'
-   CodeGen(translate) at '../../stoc/backend-mozart/CodeGen.ozf'
-prepare
-   Spec = record('in'(single char: &i type: atom optional: false)
-		 'out'(single char: &o type: string optional: false))
+   PreboundComponent('$Prebound': Prebound) at 'common/Prebound.ozf'
+   CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
+export
+   Translate
 define
-   Args
-
-   try
-      Args = {Application.getCmdArgs Spec}
-   catch error(ap(usage M) ...) then
-      {System.printError
-       'Command line option error: '#M#'\n'#
-       'Usage: '#{Property.get 'application.url'}#' [options]\n'#
-       '--in=<File>         File containing component to translate.\n'#
-       '--out=<File>        Name of pickle to write.\n'}
-      {Application.exit 2}
-   end
-
    NONE = 'NONE'
    SOME = 'SOME'
    WordLit = 'WordLit'
@@ -250,8 +242,9 @@ define
       {TrList Ids TrId}#{TrBody Body}
    end
 
-   Component = {TrComponent {Main.imperatifyFile Args.'in'}}
-   {Pickle.save {CodeGen.translate Args.'in' Component} Args.'out'}
-
-   {Application.exit 0}
+   fun {Translate InFilename Component OutFilename} F in
+      F = {CodeGen.translate InFilename {TrComponent Component}}
+      {Pickle.save F OutFilename}
+      unit
+   end
 end

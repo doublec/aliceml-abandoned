@@ -1,5 +1,8 @@
 STOC_MOZART = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/top/stoc-mozart
+OZHOME = /opt/mozart-1.1.1
+OZC = ozc
+OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
 
 NATIVESOURCES = BootWord IO TextIO OS Unix
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
@@ -21,7 +24,7 @@ MISCFILES = $(MISCSOURCES:%=misc/%)
 
 TOPSOURCES = \
 	PHASE.sig ComposePhases.sml TARGET.sig EmptyContext.sml ENGINE.sig \
-	MakeEngine.sml SIGNATURE.sig COMPOSER.sig
+	MakeEngine.sml SIGNATURE.sig Signature.sml COMPOSER.sig
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 COMMONSOURCES = \
@@ -62,13 +65,21 @@ BACKENDCOMMONSOURCES = \
 	LivenessAnalysisPhase.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
-BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
-	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) $(COMMONFILES) \
-	$(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) $(BACKENDCOMMONFILES)
+ALLFILES = \
+	lib/Base.sml $(NATIVEFILES) $(NATIVESOURCES:%=lib/%.ozf.sig) \
+	lib/Word.sml $(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) \
+	$(COMMONFILES) $(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) \
+	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
-ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
+all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf
 
-all: $(ALLFILES)
+
+stoc-mozart:
+	OZ_LOAD=prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/lib/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/misc/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/error/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/top/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/common/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/frontend-common/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/frontend-sml/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/backend-common/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/backend-mozart/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	$(OZL) -v --exclude=.. --include=.,../../stoc -x top/Main.ozf -o $@
+
+%.ozf: %.oz
+	$(OZC) -c $< -o $@
 
 lib/Base.sml: ../../lib/bootstrap/Bootstrap.aus
 	cp $< $@
@@ -76,7 +87,10 @@ lib/Base.sml: ../../lib/bootstrap/Bootstrap.aus
 $(NATIVEFILES): lib/%: ../%
 	cp $< $@
 
-%.sml: %.body Base.import
+%: %.body Base.import
+	cat Base.import $< > $@
+
+top/Main.sml: top/Main.sml.body Base.import
 	cat Base.import $< > $@
 
 lib/%.ozf.sig: ../%.ozf.sig Base.import
@@ -124,4 +138,4 @@ backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 
 clean:
 	rm -rf $(ALLFILES)
-	rm -rf lib/*.ozf
+	rm -rf */*.ozf */*/*.ozf
