@@ -56,7 +56,9 @@ sig
     val op < :		word * word -> bool
     val op >= :		word * word -> bool
     val op <= :		word * word -> bool
+    val equal :		word * word -> bool				(**)
     val compare :	word * word -> order
+    val hash :		word -> int					(**)
 
     val min :		word * word -> word
     val max :		word * word -> word
