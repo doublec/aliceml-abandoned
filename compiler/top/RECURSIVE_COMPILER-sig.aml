@@ -11,6 +11,7 @@
  *)
 
 import structure Url       from "../../lib/system/Url"
+import structure TextIO    from "../../lib/system/TextIO"
 import structure Reflect   from "../../lib/system/Reflect"
 import structure Inf       from "../../lib/rtt/Inf"
 import structure Source    from "../infrastructure/Source"
@@ -28,6 +29,8 @@ signature RECURSIVE_COMPILER =
 	exception Crash of string
 
 	val extension: string
+
+	val setErrorStream: TextIO.outstream -> unit
 
 	val compileFileToFile: string * string -> unit     (* IO.Io *)
 	val acquireSig: Source.desc * Url.t -> Inf.sign
@@ -49,6 +52,8 @@ signature RECURSIVE_COMPILER' =
 
 	exception Error
 	exception Crash of string
+
+	val setErrorStream: TextIO.outstream -> unit
 
 	val isCrossCompiler: bool
 	val compileFileToFile: string * string -> unit

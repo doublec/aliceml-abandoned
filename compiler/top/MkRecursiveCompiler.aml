@@ -27,6 +27,7 @@ import structure Inf                from "../../lib/rtt/Inf"
 
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
+import structure Error              from "../infrastructure/Error"
 import structure Target             from "../infrastructure/Target"
 import structure Dependency         from "Dependency"
 import signature COMPILER           from "COMPILER-sig"
@@ -53,11 +54,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	val extension = extension
 
+	val errOut = ref TextIO.stdErr
+	fun setErrorStream os = (Error.setOutstream os; errOut := os)
+
 	fun error message =
-	    (TextIO.output (TextIO.stdErr, "### error: " ^ message ^ "\n");
+	    (TextIO.output (!errOut, "### error: " ^ message ^ "\n");
 	     raise Error)
 	fun warn message =
-	    TextIO.output (TextIO.stdErr, "### warning: " ^ message ^ "\n")
+	    TextIO.output (!errOut, "### warning: " ^ message ^ "\n")
 
 	fun trace message =
 	    if !Switches.Global.traceComponentAccess then

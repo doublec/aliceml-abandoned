@@ -13,6 +13,7 @@
 (* Error handling. *)
 
 import structure Url         from "../../lib/system/Url"
+import structure TextIO      from "../../lib/system/TextIO"
 import structure Source      from "Source"
 import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 
@@ -28,6 +29,7 @@ sig
     exception Error of region * doc
 
     val setCurrentUrl :	Url.t option -> unit
+    val setOutstream :	TextIO.outstream -> unit
 
     val error :		region * doc -> 'a
     val warn :		bool * region * doc -> unit

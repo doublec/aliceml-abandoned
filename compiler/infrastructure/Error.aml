@@ -32,6 +32,9 @@ struct
 
     exception Error of region * doc
 
+    val outstream = ref TextIO.stdErr
+    fun setOutstream os = outstream := os
+
     val currentUrl : Url.t option ref = ref NONE
     fun setCurrentUrl uo = currentUrl := uo
 
@@ -52,7 +55,7 @@ struct
 	    Url.toString url
 
     fun print(reg, doc) =
-	output(TextIO.stdErr,
+	output(!outstream,
 	       fbox(
 		   (case !currentUrl of NONE   => empty
 			| SOME f => text(urlToString f) ^^ text ":") ^^
