@@ -19,6 +19,13 @@ struct
       *)
     type pos = int * int
 
+    (* absolute (i.e screen not snake relativ) *)
+    datatype direction =
+        UP
+      | DOWN
+      | LEFT
+      | RIGHT
+
     fun row (r,_) = r
     (** [row = #1] *)
     
@@ -36,6 +43,20 @@ struct
     
     fun right (r,c) = (r,c+1)
     (** [left (r, c) = (r, c + 1)] *)
+
+    fun move (p, d) =
+        case d of
+            UP      => above p
+        |   DOWN    => below p
+        |   LEFT    => left p
+        |   RIGHT   => right p
+
+    fun moveBy ((r,c), d, l) =
+        case d of
+            UP      => (r - l, c)
+        |   DOWN    => (r + l, c)
+        |   LEFT    => (r, c - l)
+        |   RIGHT   => (r, c + l)
 
     fun inside ((r1,c1),(r2,c2)) (r,c) = 
 	if r1 > r2 orelse 

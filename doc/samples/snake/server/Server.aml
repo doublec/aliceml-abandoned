@@ -339,6 +339,7 @@ struct
                 
             val tick    = Lock.sync lock (fn (levels, oldArena, newArena) =>
                 let
+                    val _       = log ("tick")
                     val players = allPlayers ()
                     fun movePlayer p =
                         let val snake   = Part.snake p

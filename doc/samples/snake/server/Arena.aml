@@ -31,121 +31,191 @@ struct
 	 (* MAGIC NUMBERs ... *)
 	 }
 
-    fun random {dimensions : int * int, players,walls} =
+    fun random {dimensions = (rows, cols), players,walls} =
 	let
-	    val (rows,cols) = dimensions
+            fun testUp (arena, (row, col)) =
+                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
+                    case cell of 
+                        Protocol.EMPTY  => true
+                    |   _               => false) { 
+                        base    = arena, 
+                        row     = row - 2, 
+                        col     = col - 2, 
+                        nrows   = SOME 3,
+                        ncols   = SOME 5
+                    }
+
+
+            fun testDown (arena, (row, col)) =
+                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
+                    case cell of 
+                        Protocol.EMPTY  => true
+                    |   _               => false) { 
+                        base    = arena, 
+                        row     = row, 
+                        col     = col - 2, 
+                        nrows   = SOME 3,
+                        ncols   = SOME 5
+                    }
+
+
+            fun testRight (arena, (row, col)) =
+                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
+                    case cell of 
+                        Protocol.EMPTY  => true
+                    |   _               => false) { 
+                        base    = arena, 
+                        row     = row - 2, 
+                        col     = col, 
+                        nrows   = SOME 5,
+                        ncols   = SOME 3
+                    }
+
+
+            fun testLeft (arena, (row, col)) =
+                Array2.alli Array2.RowMajor (fn (r, c, cell) =>
+                    case cell of 
+                        Protocol.EMPTY  => true
+                    |   _               => false) { 
+                        base    = arena, 
+                        row     = row - 2, 
+                        col     = col - 2, 
+                        nrows   = SOME 5,
+                        ncols   = SOME 3
+                    }
+
+            fun test (arena, p, dir) =
+                (case dir of 
+                    Protocol.UP     => testUp (arena, p)
+                |   Protocol.DOWN   => testDown (arena, p)
+                |   Protocol.LEFT   => testLeft (arena, p)
+                |   Protocol.RIGHT  => testRight (arena, p))
+                handle Subscript => false
+
 	    val arena = Array2.array(rows,cols,P.EMPTY)
 	    (* initialising an empty arena with dimensions [dimensions] *)
+            
+            (* [horizontal ((r,c), l)] draws a wall from (r,c) to (r, c+l-1)
+             *)
+            fun horizontal ((r,c), l) =
+                if l <= 0 then ()
+                else (Array2.update (arena, r, c, P.WALL);
+                      horizontal (Pos.right (r,c), l - 1))
 
-	    fun setLimit () = (* set a wall round the level *)
+            (* [vertical ((r,c), l)]
+               draws a wall from (r,c) to (r + l - 1, c)
+             *)
+            fun vertical ( (r, c), l) =
+                if l <= 0 then ()
+                else (Array2.update (arena, r, c, P.WALL);
+                      vertical (Pos.below (r, c), l - 1))
+                
+            (* place the outer borders *)
+            val _   = vertical ((0, 0), rows)
+            val _   = vertical ((0, cols - 1), rows)
+            val _   = horizontal ((0, 0), cols)
+            val _   = horizontal ((rows - 1, 0), cols)
+
+
+            (* place inner walls.
+               do so by selecting figures
+             *)
+            val figures = #[
+                [(4, true, Protocol.UP),    
+                 (4, true, Protocol.RIGHT),        
+                 (4, true, Protocol.UP)],
+                [(4, true, Protocol.UP),
+                 (4, true, Protocol.LEFT),
+                 (4, true, Protocol.UP)],
+                [(3, true, Protocol.UP)],
+                [(3, true, Protocol.RIGHT)],
+                [(3, true, Protocol.LEFT)],
+                [(3, true, Protocol.DOWN)]
+            ]
+            
+            (* [place (f, p)] tries to place figure [f] on the arena [a] at 
+              position [p]. returns SOME newpos if placement was successful, 
+              NONE otherwise.
+            *)
+ 
+            fun place (f, p) =
+                let
+                    exception InvalidPlace
+                    
+                    fun testPart ((length, false, dir), p) = 
+                        let val p' = Pos.moveBy (p, dir, length)
+                        in
+                            if test (arena, p', Protocol.UP) andalso 
+                                test (arena, p', Protocol.DOWN) then
+                                p'
+                            else raise InvalidPlace
+                        end
+                            
+                    |   testPart ((length, true, dir), p)  = 
+                        if length = 0 then p
+                        else 
+                            if test (arena, p, dir) then
+                                testPart ((length - 1, true, dir), 
+                                            Pos.move (p, dir))
+                            else
+                                raise InvalidPlace
+
+                    fun placePart ((l, false, d), p)    = Pos.moveBy (p, d, l)
+                    |   placePart ((l, true, d), p as (r, c))   = 
+                        if l = 0 then p
+                        else (Array2.update (arena, r, c, P.WALL);
+                              placePart ((l - 1, true, d), Pos.move (p, d)))
+                in
+                    ((* test if we can place this figure *)
+                     List.foldl testPart p f;   
+                     (* if so place it and return end point *)
+                     SOME (List.foldl placePart p f)
+                    ) handle InvalidPlace => 
+                     (* otherwise return NONE *)
+                        NONE
+                end 
+
+            fun chooseFigure () = 
+                let
+                    val max = Vector.length figures
+                in
+                    Vector.sub (figures, Random.int max)
+                end
+               
+            exception NoMoreEmptySpots
+
+            val maxNumberOfTries = 5
+            
+            fun findEmptySpot tries =
+                let
+                    val p = (Random.int rows, Random.int cols)
+                in
+                    if test (arena, p, Protocol.UP) andalso
+                            test (arena, p, Protocol.DOWN) then
+                        p
+                    else if tries < maxNumberOfTries then
+                        findEmptySpot (tries + 1)
+                    else
+                        raise NoMoreEmptySpots
+                end
+
+                
+            fun placeWalls (n, p) =
+                if n <= 0 then ()
+                else 
+                    case place (chooseFigure (), p) of
+                        NONE    => placeWalls (n, findEmptySpot 0)
+                    |   SOME p' => placeWalls (n - 1, p')
+                    
+                            
+            val _   = placeWalls (walls, (rows div 2, cols div 2))
+
+            (* place starting points *)
+
+	    fun startpoints (0, xs) = xs
+	      | startpoints (p, xs) = 
 		let
-		    fun horizontal r = 
-			if r = rows
-			    then (Array2.update(arena,rows-1,0,P.WALL);
-				  Array2.update(arena,rows-1,cols-1,P.WALL))
-			else (Array2.update(arena,r,0,P.WALL);
-			      Array2.update(arena,r,cols-1,P.WALL);
-			      horizontal(r + 1))
-		    fun vertical c = 
-			if c = cols 
-			    then (Array2.update(arena,0,cols-1,P.WALL);
-				  Array2.update(arena,rows-1,cols-1,P.WALL))
-			else (Array2.update(arena,0,c,P.WALL);
-			      Array2.update(arena,rows-1,c,P.WALL);
-			      vertical(c + 1))
-		in
-		    (horizontal (0); vertical (0))
-		end
-
-	    val _ = setLimit ()
-
-	    fun setWall   _   0 _ _ xs = xs
-	      | setWall (0,_) _ _ _ xs = xs
-	      | setWall (_,0) _ _ _ xs = xs
-	      | setWall (r,c) n d v xs = if r >= (rows-1) orelse c >= (cols-1) then xs else
-		case d of
-	        P.UP     => ((Array2.update(arena,r,c,v);
-			     setWall (r-1,c) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
-	      | P.DOWN   => ((Array2.update(arena,r,c,v);
-			     setWall (r+1,c) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
-	      | P.LEFT   => ((Array2.update(arena,r,c,v);
-			     setWall (r,c-1) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
-	      | P.RIGHT  => ((Array2.update(arena,r,c,v);
-			     setWall (r,c+1) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
-
-
-	    fun child 0 _ _   _     _   = ()
-	      | child _ _ _   _    nil  = ()
-	      | child n c 4 dlist slist =
-		let
-		    val d = List.nth(dlist,Random.int (List.length dlist))
-		    val start = List.nth(slist,Random.int(List.length dlist)) (* letzten beiden net !! *)
-		    val l = Random.int ((rows + cols) div 10)
-		    val news = setWall start l d P.EMPTY nil
-		    val newd = if d = P.LEFT orelse d = P.RIGHT
-				   then [P.UP,P.DOWN]
-			       else [P.LEFT,P.RIGHT]
-		in
-		    child (n-1) (c+1) 1 newd news
-		end
-	      | child n c v dlist slist =
-		let
-		    val d = List.nth(dlist,Random.int (List.length dlist))
-		    val start = List.nth(slist,Random.int(List.length dlist)) (* letzten beiden net !! *)
-		    val l = Random.int ((rows + cols) div 10)
-		    val e = case Random.int 3 of 
-			      0 => P.WALL
-			    | 1 => P.EMPTY
-			    | 2 => P.WALL
-			    | _ => assert false
-		    val news = setWall start l d e nil
-		    val newd = if d = P.LEFT orelse d = P.RIGHT
-				   then [P.UP,P.DOWN]
-			       else [P.LEFT,P.RIGHT]
-		in
-		    if e = P.EMPTY
-			then child (n-1) (c+1) 1 newd news
-		    else child (n-1) (c+1) (v+1) newd news
-		end
-
-	    (** [child n c v dlist slist] builds a child-wall. n ist zahl der noch
-	        zu machenden kinder
-	        c ist die zahl der schon gemachten kinder
-		v ist die zahl der bisher visible kinder
-		dlist ist die liste der richtungen für child
-		slist ist die liste der startpunkte für child *)
-
-	    fun parent () =
-		let
-		    val d = case Random.int 4 of
-			0 => P.UP
-		      | 1 => P.DOWN
-		      | 2 => P.LEFT
-		      | 3 => P.RIGHT
-		      | _ => assert false
-		   
-		    val newd = if d = P.LEFT orelse d = P.RIGHT
-				   then [P.UP,P.DOWN]
-			       else [P.LEFT,P.RIGHT]
-				   
-		    val len = Random.int ((rows+cols) div 10)
-
-		    val news = setWall ((rows div 4) + Random.int (rows div 2) ,(cols div 4) + Random.int (cols div 2)) 
-			               len
-				       d 
-				       P.WALL 
-				       nil
-		in
-		    child walls 1 1 newd news
-		end
-
- 	    fun startPointTest(r,c,d)  = Array2.sub(arena,r,c) = P.EMPTY 
-	    (* TODO: implementation *)
-
-	    fun startpoints 0 xs = xs
-	      | startpoints p xs = 
-		let
-		    val (r,c) = (Random.int rows,Random.int cols)
+		    val pos = findEmptySpot 20
 		    val d = 
 			case Random.int 4 of
 			    0 => P.UP
@@ -154,15 +224,13 @@ struct
 			  | 3 => P.RIGHT
 			  | _ => assert false
 		in
-		    if startPointTest(r,c,d)
-			then startpoints (p-1) (((r,c),d)::xs)
-		    else startpoints p xs
+                    startpoints (p - 1, (pos, d) :: xs)
 		end
 
 	in
-	     parent ();
-	     (arena,startpoints players nil)
+	     (arena, startpoints (players, nil))
 	end
+
 
     fun placeSnakes (a,snakes) =
 	let
@@ -258,9 +326,9 @@ struct
 	let
 	    fun removeSnake s =
 		let
-		    val positions = (Snake.head s)::(Snake.body s)
+		    val ps = (Snake.head s)::(Snake.body s)
 		in
-		  List.app (fn(r,c) => Array2.update(a,r,c,P.EMPTY)) positions
+		    List.app (fn(r,c) => Array2.update(a,r,c,P.EMPTY)) ps
 		end
 	in
 	    List.app (fn s => removeSnake s) snakes
@@ -288,8 +356,26 @@ struct
 end
 
 
-
-
-
-
+local
+    fun for (low, upp, f) =
+        if low > upp then ()
+        else (f low; for (low + 1, upp, f))
+in
+    fun dump a =
+        let 
+            val (rows, cols)    = Array2.dimensions a 
+        in
+            for (0, rows - 1, fn r => (
+                for (0, cols - 1, fn c => 
+                    TextIO.output1 (TextIO.stdOut, 
+                        case Array2.sub (a, r, c) of
+                            Protocol.EMPTY      => #"."
+                        |   Protocol.WALL       => #"#"
+                        |   Protocol.GOODIE _   => #"C"
+                        |   _                   => #"?")
+                );
+                TextIO.output1 (TextIO.stdOut, #"\n"))
+            )
+        end
+end
 

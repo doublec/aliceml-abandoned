@@ -17,6 +17,14 @@ sig
       *)
     type pos = int * int
 
+    (* absolute (i.e screen not snake relativ) *)
+    datatype direction =
+        UP
+      | DOWN
+      | LEFT
+      | RIGHT
+
+
     val row :       pos -> int
     (** [row = #1] *)
     
@@ -34,6 +42,10 @@ sig
     
     val right :     pos -> pos
     (** [left (r, c) = (r, c + 1)] *)
+
+    val move :      pos * direction -> pos
+    
+    val moveBy :    pos * direction * int -> pos
 
     val inside :    pos * pos -> pos -> bool
     (** [inside (lower, upper) p] returns true iff p is contained inside 
