@@ -19,7 +19,7 @@
 
 #include "generic/String.hh"
 
-class UniqueString: private Block {
+class DllExport UniqueString: private Block {
 protected:
   enum { STRING_POS, HASH_VALUE_POS, SIZE };
 public:

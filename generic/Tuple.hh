@@ -19,7 +19,7 @@
 
 #include "store/Store.hh"
 
-class Tuple: private Block {
+class DllExport Tuple: private Block {
 public:
   using Block::ToWord;
 
