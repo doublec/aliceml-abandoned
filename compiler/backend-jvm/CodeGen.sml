@@ -1231,7 +1231,7 @@ structure CodeGen =
 	    expCode (AppExp(((line,_),_),Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
 	    Line line ::
-	    invokeRecApply (stamp', args, curFun, false, curCls, true)
+	    invokeRecApply (stamp', args, curFun, false, curCls, false)
 
 	  | expCode (NewExp (((line,_),_), _, hasArgs), _, _) =
 	    if hasArgs then
