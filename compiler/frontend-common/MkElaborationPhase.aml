@@ -115,6 +115,27 @@ struct
 	 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 76 - size name);
 	 TextIO.print "\n")
 
+    fun nest 0 = ""
+      | nest n = "  " ^ s(n-1)
+
+    fun prUE UE = prUE' 0 UE
+    and prUE' n UE =
+	(UseEnv.appVals (prVal n) UE;
+	 UseEnv.appTyps (prTyp n) UE;
+	 UseEnv.appInfs (prInf n) UE;
+	 UseEnv.appMods (prMod n) UE)
+    and prUEVal n lab =
+	TextIO.print(nest n ^ "val " ^ Label.toString lab ^ "\n")
+    and prUETyp n lab =
+	TextIO.print(nest n ^ "typ " ^ Label.toString lab ^ "\n")
+    and prUEInf n lab =
+	TextIO.print(nest n ^ "inf " ^ Label.toString lab ^ "\n")
+    and prUEMod n (lab, UseEnv.FULL) =
+	TextIO.print(nest n ^ "mod " ^ Label.toString lab ^ "\n")
+      | prUEMod n (lab, UseEnv.PARTIAL UE) =
+	(TextIO.print(nest n ^ "mod " ^ Label.toString lab ^ ":\n");
+	 prUE' (n+1) UE)
+
     *)
 
   (* Predefined types *)
