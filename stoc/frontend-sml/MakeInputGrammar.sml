@@ -240,9 +240,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and SigExp =
           SIGSigExp       of Info * Spec
         | LONGSIGIDSigExp of Info * LongSigId
-        | WHERETYPESigExp of Info * SigExp * TyVarSeq * LongTyCon * Ty
-	| WHERESIGNATURESigExp of Info * SigExp * LongSigId * SigExp
-	| WHERESigExp     of Info * SigExp * LongStrId * LongStrId
+	| WHERESigExp     of Info * SigExp * SigExp
 
     (* Specifications *)
 
@@ -453,9 +451,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoSigExp(SIGSigExp(I,_))			= I
       | infoSigExp(LONGSIGIDSigExp(I,_))		= I
-      | infoSigExp(WHERETYPESigExp(I,_,_,_,_))		= I
-      | infoSigExp(WHERESIGNATURESigExp(I,_,_,_))	= I
-      | infoSigExp(WHERESigExp(I,_,_,_))		= I
+      | infoSigExp(WHERESigExp(I,_,_))			= I
 
     fun infoSpec(VALSpec(I,_))				= I
       | infoSpec(TYPESpec(I,_))				= I
@@ -520,5 +516,12 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun idStrId(StrId(_,id))				= id
     fun idSigId(SigId(_,id))				= id
     fun idFunId(FunId(_,id))				= id
+
+
+    fun explodeLong(SHORTLong(_,id))		= ([], id)
+      | explodeLong(DOTLong(_,longid,id))	= (explodeLong'(longid,[]), id)
+
+    and explodeLong'(SHORTLong(_,id),      ids)	= id::ids
+      | explodeLong'(DOTLong(_,longid,id), ids)	= explodeLong'(longid, id::ids)
 
   end

@@ -583,14 +583,44 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Signature expressions *)
 
-    val WHERESigExp = G.WHERESigExp
-
     fun PARSigExp(I, sigexp) = sigexp
+
+    fun WHERESTRUCTURESigExp(I, sigexp, longstrid1, longstrid2) =
+	let
+	    val  I' = Source.over(G.infoLong longstrid1, G.infoLong longstrid2)
+	    val (strids',strid') = G.explodeLong longstrid1
+
+	    fun buildStrDesc [] =
+		    G.EQUALStrDesc(I', strid', NONE, longstrid2, NONE)
+	      | buildStrDesc(strid::strids) =
+		    G.NEWStrDesc(I', strid, buildSigExp strids, NONE)
+
+	    and buildSigExp strids =
+		    G.SIGSigExp(I', G.STRUCTURESpec(I', buildStrDesc strids))
+	in
+	    G.WHERESigExp(I, sigexp, buildSigExp strids')
+	end
+
+    fun WHERETYPESigExp'(I, sigexp, tyvarseq, longtycon, ty) =
+	let
+	    val  I'             = Source.over(G.infoSeq tyvarseq, G.infoTy ty)
+	    val (strids',tycon) = G.explodeLong longtycon
+
+	    fun buildSpec [] =
+		  G.TYPESpec(I', G.EQUALTypDesc(I', tyvarseq, tycon, ty, NONE) )
+	      | buildSpec(strid::strids) =
+		  G.STRUCTURESpec(I',
+			G.NEWStrDesc(I', strid, buildSigExp strids, NONE) )
+
+	    and buildSigExp strids = G.SIGSigExp(I', buildSpec strids)
+	in
+	    G.WHERESigExp(I, sigexp, buildSigExp strids')
+	end
 
     fun WHERETYPESigExp(I, sigexp, [])                                = sigexp
       | WHERETYPESigExp(I, sigexp, (I',tyvarseq,longtycon,ty)::reas') =
 	let
-	    val sigexp' = G.WHERETYPESigExp(I', sigexp, tyvarseq, longtycon, ty)
+	    val sigexp' = WHERETYPESigExp'(I', sigexp, tyvarseq, longtycon, ty)
 	in
 	    WHERETYPESigExp(I, sigexp', reas')
 	end
@@ -601,6 +631,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
       | TyReaDesc(I, tyvarseq, longtycon, ty, SOME tyreadesc) =
 	    (I, tyvarseq, longtycon, ty)::tyreadesc
+
 
     (* Programs *)
 

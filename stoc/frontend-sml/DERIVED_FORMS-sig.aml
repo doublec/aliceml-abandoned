@@ -186,7 +186,8 @@ signature DERIVED_FORMS =
 
     val PARSigExp:        Info * SigExp                            -> SigExp
     val WHERETYPESigExp:  Info * SigExp * TyReaDesc                -> SigExp
-    val WHERESigExp:      Info * SigExp * LongStrId * LongStrId    -> SigExp
+    val WHERESTRUCTURESigExp:
+			  Info * SigExp * LongStrId * LongStrId    -> SigExp
 
     val TyReaDesc:        Info * TyVarSeq * LongTyCon * Ty
 			       * TyReaDesc option                  -> TyReaDesc

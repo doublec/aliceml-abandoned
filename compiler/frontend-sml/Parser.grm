@@ -1135,8 +1135,8 @@
 	| LPAR sigexp RPAR
 			( PARSigExp(I(LPARleft,RPARright), sigexp) )
 	| sigexp WHERE longstrid EQUALS longstrid
-			( WHERESigExp(I(sigexpleft,longstrid2right),
-				      sigexp, longstrid1, longstrid2) )
+			( WHERESTRUCTURESigExp(I(sigexpleft,longstrid2right),
+					       sigexp, longstrid1, longstrid2) )
 
   sigbind:
 	  sigid EQUALS sigexp__AND_sigbind_opt

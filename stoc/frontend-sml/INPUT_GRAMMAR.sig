@@ -240,9 +240,7 @@ signature INPUT_GRAMMAR =
     and SigExp =
           SIGSigExp       of Info * Spec
         | LONGSIGIDSigExp of Info * LongSigId
-        | WHERETYPESigExp of Info * SigExp * TyVarSeq * LongTyCon * Ty
-	| WHERESIGNATURESigExp of Info * SigExp * LongSigId * SigExp
-	| WHERESigExp     of Info * SigExp * LongStrId * LongStrId
+	| WHERESigExp     of Info * SigExp * SigExp
 
     (* Specifications *)
 
@@ -376,5 +374,7 @@ signature INPUT_GRAMMAR =
     val idStrId :	StrId		-> StrId.t
     val idSigId :	SigId		-> SigId.t
     val idFunId :	FunId		-> FunId.t
+
+    val explodeLong :	'a Long		-> StrId list * 'a
 
   end

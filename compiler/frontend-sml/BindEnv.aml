@@ -211,8 +211,30 @@ structure BindEnv :> BIND_ENV =
     fun unionInf(E1,E2)			= appiInfs (fn(id,x) =>
 						     insertInf(E1,id,x)) E2
 
-    fun infEnv E vid			= case lookupInf(E, vid)
-					    of NONE        => NONE
-					     | SOME(_,inf) => inf
+    fun unionCompose(ENV E1, ENV E2)		= Map.unionWith compose (E1,E2)
+
+    and compose(INF(I1,fix1),   INF(I2,fix2))	= INF(I1,fix2)
+      | compose(FLD(I1),        FLD(I2))	= FLD(I1)
+      | compose(VAR(I1,z1),     VAR(I2,z2))	= VAR(I1,z1)
+      | compose(VAL(I1,z1,is1), VAL(I2,z2,is2))	= VAL(I1,z1,
+						    composeIdStatus(is1,is2))
+      | compose(TY (I1,z1,E1),  TY (I2,z2,E2))	= ( unionCompose(E1,E2)
+						  ; TY(I1,z1,E1) )
+      | compose(STR(I1,z1,E1),  STR(I2,z2,E2))	= ( unionCompose(E1,E2)
+						  ; STR(I1,z1,E1) )
+      | compose(SIG(I1,z1,E1),  SIG(I2,z2,E2))	= ( unionCompose(E1,E2)
+						  ; SIG(I1,z1,E1) )
+      | compose(FUN(I1,z1,E1),  FUN(I2,z2,E2))	= ( unionCompose(E1,E2)
+						  ; FUN(I1,z1,E1) )
+      | compose _				= raise Crash.Crash
+							"BindEnv.compose"
+    and composeIdStatus(V, is)			= is
+      | composeIdStatus(is, V)			= is
+      | composeIdStatus(is1, is2)		= is2
+
+
+    fun infEnv E vid				= case lookupInf(E, vid)
+						    of NONE        => NONE
+						     | SOME(_,inf) => inf
 
   end

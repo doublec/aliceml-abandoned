@@ -54,6 +54,7 @@ signature BIND_ENV =
 
     val union :			Env * Env -> unit
     val unionDisjoint :		Env * Env -> unit	(* Collision* *)
+    val unionCompose :		Env * Env -> unit
     val unionInf :		Env * Env -> unit
 
     val insertInf :		Env *  VId  * Inf -> unit

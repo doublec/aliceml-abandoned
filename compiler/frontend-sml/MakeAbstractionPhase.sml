@@ -2,7 +2,6 @@
  * To do:
  * - where
  * - sharing
- * - transparent signature constraints
  * - represent fixity declarations in abstract grammar for signature matching
  *)
 
@@ -93,28 +92,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun varspec(ids,spec) =
 	List.foldr (fn(id,spec) => O.VarSpec(O.infoId id, id, spec)) spec ids
 
-(*UNFINISHED: obsolete
-    fun alltyp(  [],    typ) = typ
-      | alltyp(id::ids, typ) = O.AllTyp(O.infoTyp typ, id, alltyp(ids, typ))
-
-    fun funtyp(  [],    typ) = typ
-      | funtyp(id::ids, typ) = O.FunTyp(O.infoTyp typ, id, funtyp(ids, typ))
-
-    fun apptyp(    [],     typ1) = typ1
-      | apptyp(typ2::typs, typ1) =
-	let val i = Source.over(O.infoTyp typ2, O.infoTyp typ1) in
-	    apptyp(typs, O.AppTyp(i, typ1, typ2))
-	end
-
-    fun arrtyp(    [],     typ1) = typ1
-      | arrtyp(typ2::typs, typ1) =
-	let val i = Source.over(O.infoTyp typ2, O.infoTyp typ1) in
-	    O.ArrTyp(i, typ2, arrtyp(typs, typ1))
-	end
-
-    fun vardec(  [],    dec) = dec
-      | vardec(id::ids, dec) = O.VarDec(O.infoId id, id, vardec(ids, dec))
-*)
 
     fun lookupIdStatus(E, vid') =
 	case lookupVal(E, vid')
@@ -1872,17 +1849,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.ConInf(i, longid'), E' )
 	   end
 
-	 | WHERETYPESigExp(i, sigexp, _, _, _) =>
-		(* UNFINISHED *)
-		trSigExp E sigexp
-
-	 | WHERESIGNATURESigExp(i, sigexp, _, _) =>
-		(* UNFINISHED *)
-		trSigExp E sigexp
-
-	 | WHERESigExp(i, sigexp, _, _) =>
-		(* UNFINISHED *)
-		trSigExp E sigexp
+	 | WHERESigExp(i, sigexp1, sigexp2) =>
+	   let
+		val (inf1',E1) = trSigExp E sigexp1
+		val (inf2',E2) = trSigExp E sigexp2
+		val  _         = unionCompose(E1, E2)
+	   in
+		( O.CompInf(i, inf1', inf2'), E1 )
+	   end
 
 
     and trSpec  E spec = List.rev(trSpec' (E,[]) spec)
