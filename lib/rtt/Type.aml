@@ -1176,7 +1176,7 @@ struct
 	   | ABBREV(t1,t2) => instance'(m,t2)
 	   | ALL(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
 			    instance'(m,t))
-	   | EXIST(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
+	   | EXIST(a,t)	=> ((*Map.insert(m, canonical a, newVar'(kind a));*)
 			    instance'(m,t))
 	   | _		=> subst(m, t)
 
@@ -1185,10 +1185,10 @@ struct
 	case content t
 	  of LINK t	=> skolem'(m,t)
 	   | ABBREV(t1,t2) => skolem'(m,t2)
-	   | ALL(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
-			    instance'(m,t))
+	   | ALL(a,t)	=> ((*Map.insert(m, canonical a, newVar'(kind a));*)
+			    skolem'(m,t))
 	   | EXIST(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
-			    instance'(m,t))
+			    skolem'(m,t))
 	   | _		=> subst(m, t)
 
     (*DEBUG*)
@@ -1578,7 +1578,7 @@ struct
 	if unify'(mayBind,ms,t1,t2) = 0
 	then ()
 	else raise Assert.failure
-	  
+
 
   (* Equality, matching, and public interface to unification *)
 
@@ -1588,6 +1588,7 @@ struct
 	(unify'(false, [], t1, t2) ; true) handle Unify _ => false
 
     fun matches(t1,t2) =
+	Cell.equal(t1,t2) orelse
 	let
 	    val t1' = instance t1
 	    val t2' = skolem t2
