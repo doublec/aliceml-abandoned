@@ -165,8 +165,8 @@ final public class PickleOutputStream extends ObjectOutputStream {
 	    }
 	    writeBoolean(true);
 	    if (bytes == null) {
-		System.out.println("CRASH: class annotated was "+cls);
-		System.out.println("Class loaded by "+cl);
+		System.err.println("CRASH: class annotated was "+cls);
+		System.err.println("Class loaded by "+cl);
 	    }
 	    writeInt(bytes.length);
 	    write(bytes,0,bytes.length);

@@ -289,7 +289,7 @@ final public class General {
 		if (ex != null)
 		    throw ex;
 	    }
-	    System.out.println("Pickled "+out.objectcounter+" objects.");
+	    // System.out.println("Pickled "+out.objectcounter+" objects.");
 	    return Constants.dmlunit;
 	}
     }

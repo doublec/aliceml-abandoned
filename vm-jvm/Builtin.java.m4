@@ -38,7 +38,7 @@ abstract public class Builtin implements DMLValue {
 	    int dot = name.indexOf('.');
 	    java.lang.String lib = (dot > 0 ? name.substring(0,dot) : "General");
 	    try {
-		System.err.println("Trying to load library "+lib);
+		// System.err.println("Trying to load library "+lib);
 		if (lib.equals("String")) {
 		    new STRING ("");
 		} else if (lib.equals("Char")) {
