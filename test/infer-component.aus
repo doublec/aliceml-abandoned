@@ -1,105 +1,45 @@
-__prebound Prebound
+import
+    infix  7  * / div mod
+    infix  6  + - ^
+    infixr 5  :: @
+    infix  4  = <> > >= < <=
+    infix  3  := o
+    infix  0  before
 
-infix  7  * / div mod
-infix  6  + - ^
-infixr 5  :: @
-infix  4  = <> > >= < <=
-infix  3  := o
-infix  0  before
+    type unit
+    datatype bool
+    type int
+    type string
+    datatype list
+    datatype ref
 
-type     unit   = {}
-datatype bool   = datatype Prebound.bool
-type     int    = Prebound.int
-type     word   = Prebound.word
-type     real   = Prebound.real
-type     string = Prebound.string
-type     char   = Prebound.char
-datatype list   = datatype Prebound.list
-datatype ref    = datatype Prebound.ref
-type     exn    = Prebound.exn
+    val op=
+    val op<>
 
-exception Match = Prebound.Match
-exception Bind  = Prebound.Bind
+    val op+
+    val op-
+    val op<
 
-__primitive val op=  : ''a * ''a -> bool = "="
-__primitive val op<> : ''a * ''a -> bool = "<>"
-__primitive val op:= : 'a ref * 'a -> unit = ":="
+    val !
+    val op:=
 
-__primitive val op+ : int * int -> int = "+"
-__primitive val op- : int * int -> int = "-"
-__primitive val op< : int * int -> bool = "<"
+    datatype option
 
-structure General =
-    struct
-	type unit = {}
+    structure List
 
-	fun !(ref v) = v
-	val op:=     = op:=
-    end
+    structure ListPair
 
-open General
+    structure String
+    val op^
 
-structure Option =
-    struct
-	datatype 'a option = NONE | SOME of 'a
-    end
+    structure Int
 
-datatype option = datatype Option.option
+    structure Char
+from "x-alice:/lib/Base.ozf"
 
-structure List =
-    struct
-	fun length xs =
-	    let
-		fun length(nil,   n) = n
-		  | length(x::xs, n) = length(xs,n+1)
-	    in
-		length(xs,0)
-	    end
-
-	fun app f   nil   = ()
-	  | app f (x::xs) = (f x ; app f xs)
-
-	fun map f   nil   = nil
-	  | map f (x::xs) = f x :: map f xs
-
-	fun find f   nil   = NONE
-	  | find f (x::xs) = if f x then SOME x else find f xs
-
-	fun foldl f b   nil   = b
-	  | foldl f b (x::xs) = foldl f (f(x,b)) xs
-
-	fun foldr f b   nil   = b
-	  | foldr f b (x::xs) = f(x, foldr f b xs)
-
-	fun exists f   nil   = false
-	  | exists f (x::xs) = f x orelse exists f xs
-    end
-
-structure ListPair =
-    struct
-	fun app f ( nil,    _  ) = ()
-	  | app f (  _,    nil ) = ()
-	  | app f (x::xs, y::ys) = (f(x,y) ; app f (xs,ys))
-    end
-
-structure String =
-    struct
-	__primitive val op^ : string * string -> string = "String.^"
-	__primitive val str : char -> string = "String.str"
-    end
-
-val op^ = String.^
-
-structure Int =
-    struct
-	__primitive val toString : int -> string = "Int.toString"
-    end
-
-structure Char =
-    struct
-	__primitive val ord : char -> int = "Char.ord"
-	__primitive val chr : int -> char = "Char.chr"
-    end
+import
+    structure TextIO
+from "x-alice:/lib/TextIO.ozf"
 
 (*--------------------------------------------------------------------*)
 
@@ -362,7 +302,7 @@ structure Elab :> ELAB =
 
 	fun elab (env, exp) =
 	    SOME (Type.toString (elab' (exp, env)))
-	    handle Type.Unification s => NONE
+	    handle Type.Unification s => (TextIO.print (s ^ "\n"); NONE)
     end
 
 open Expression;
@@ -413,13 +353,7 @@ val env = let
 	      initializeEnv env; env
 	  end
 
-local
-    val r = ref ""
-in
-    fun print (SOME x) = r := !r ^ x ^ "\n"
-
-    fun getOutput () = !r
-end
+fun print (SOME x) = TextIO.print (x ^ "\n")
 
 val _ = print (Elab.elab (env, VarExp "one"))
 
@@ -516,5 +450,3 @@ in
 end
 
 val _ = print (Elab.elab (env, test6))
-
-val res = getOutput ()
