@@ -1073,6 +1073,10 @@ structure ToJasmin =
 				  fAccessToString access
 				  ^" "^fieldname^" "^(desclist2string arg)^"\n")
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
+		fun lmaa (von,bis) = if von >= bis then TextIO.output(io, "goto anfg\n")
+				     else (TextIO.output(io, "aconst_null\nastore "^Int.toString bis^"\n");
+					   lmaa (von, bis-1))
+
 		fun methodToJasmin (Method(access,methodname,
 					   methodsig as (parms,retval), instructions)) =
 		    let
@@ -1092,6 +1096,7 @@ structure ToJasmin =
 						(mAccessToString access)^
 						methodname^
 						(descriptor2string methodsig)^"\n");
+				  if !LMAA then TextIO.output(io,"goto lmaa\nanfg:\n") else ();
 				  actmeth := methodname;
 				  (* xxx Hack to satisfy Byte Code Verifier. *)
 				  if !OPTIMIZE >= 2
@@ -1106,6 +1111,10 @@ structure ToJasmin =
 				   true,
 				   staticapply,
 				   io);
+				  if !LMAA then
+				      (TextIO.output(io,"lmaa:\n");
+				       lmaa (siglength parms, !JVMreg.maxReg))
+				  else ();
 				  TextIO.output(io,".limit locals "^
 						Int.toString(!JVMreg.maxReg + 1)
 						^"\n");
