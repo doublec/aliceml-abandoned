@@ -1,8 +1,8 @@
 signature PACKAGE =
 sig
     type p
-    functor Unpack :    fct(X : (val x : p signature S)) -> X.S
-    functor UnpackVal : fct(X : (val x : p type t)) -> (val x : X.t)
+    functor Unpack(val x : p signature S) : S
+    functor UnpackVal(val x : p type t) : (val x : t)
 end
 
 structure Package :> PACKAGE =
