@@ -1,5 +1,16 @@
-#ifndef __alicedata_hh__
-#define __alicedata_hh__
+//
+// Author:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus, 2000
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+#ifndef __ALICEDATA_HH__
+#define __ALICEDATA_HH__
 
 #if defined(INTERFACE)
 #pragma interface

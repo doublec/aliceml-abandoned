@@ -1,5 +1,16 @@
-#ifndef __commonop_hh__
-#define __commonop_hh__
+//
+// Author:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus, 2000
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+#ifndef __COMMONOP_HH__
+#define __COMMONOP_HH__
 
 #if defined(INTERFACE)
 #pragma interface
