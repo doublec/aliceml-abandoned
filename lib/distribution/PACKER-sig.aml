@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature PACKER =
+    sig
+	type package
+
+	functor Pack(signature S structure X : S) : (val package : package)
+
+	functor Unpack(val package : package signature S) : S
+    end
