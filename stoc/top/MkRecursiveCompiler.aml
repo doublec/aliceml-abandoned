@@ -86,6 +86,10 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	fun warn message =
 	    TextIO.output (TextIO.stdErr, "### warning: " ^ message ^ "\n")
 
+	fun trace message =
+	    (*--** possibility to disable these messages *)
+	    TextIO.print ("### " ^ message ^ "\n")
+
 	local
 	    val homeref: string option ref = ref NONE
 	in
@@ -171,13 +175,12 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	    fun compileSign' (desc, s) =
 		let
 		    val _ =
-			TextIO.print ("### reading signature from " ^
-				      Url.toString (valOf (Source.url desc)) ^
-				      "\n")
+			trace ("reading signature from " ^
+			       Url.toString (valOf (Source.url desc)))
 		    val (_, target) =
 			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
-		    val _ = TextIO.print "### done\n"
+		    val _ = trace "done"
 		    val (stamp, inf) = Target.sign target
 		in
 		    if Inf.isSig inf then
@@ -211,17 +214,15 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	    val fileStack: string list ref = ref nil
 	in
 	    fun compileFileToFile (sourceFilename, targetFilename) =
-		(TextIO.print ("### compiling file " ^ sourceFilename ^ "\n");
+		(trace ("compiling file " ^ sourceFilename);
 		 fileStack := sourceFilename::(!fileStack);
 		 processFile (compile' targetFilename) sourceFilename
-		 before (TextIO.print ("### wrote file " ^
-				       targetFilename ^ "\n");
+		 before (trace ("wrote file " ^ targetFilename);
 			 case fileStack of
 			     ref (_::(rest as resumeFilename::_)) =>
 				 (fileStack := rest;
-				  TextIO.print
-				  ("### resuming compilation of " ^
-				   resumeFilename ^ "\n"))
+				  trace ("resuming compilation of " ^
+					 resumeFilename))
 			   | ref [_] => fileStack := nil
 			   | ref nil => ()))
 	end
@@ -292,8 +293,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		     handle IO.Io _ => NONE of
 		    (* this also looks for url ^ ext *)
 		    SOME sign =>
-			(TextIO.print ("### loaded signature from " ^
-				       Url.toString url ^ "\n");
+			(trace ("loaded signature from " ^ Url.toString url);
 			 Composer.enterSign (urlCeil url, sign);
 			 sign)
 		  | NONE => acquireFromSource url
