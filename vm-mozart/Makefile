@@ -132,7 +132,7 @@ VMSOURCES = VMMain.oz
 LIBSYSTEMNATIVES0 = \
 	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
-	MkRefMap Addr
+	Cell Addr
 LIBNATIVES = \
 	$(LIBSYSTEMNATIVES0:%=lib/system/Unsafe%.ozf) \
 	$(LIBUTILITYNATIVES0:%=lib/utility/Unsafe%.ozf)
@@ -173,10 +173,9 @@ LIBUTILITYSOURCES0 = \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
 	HASH_KEY-sig.aml \
 	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
-	SIMPLE_IMP_MAP-sig.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
 	MkScopedImpMap.aml \
-	CELL-sig.aml Cell.aml \
+	CELL-sig.aml \
 	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
 	PRETTY_PRINT-sig.aml PrettyPrint.aml \
 	RANDOM-sig.aml Random.aml STAT-sig.aml Stat.aml \
