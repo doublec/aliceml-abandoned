@@ -15,7 +15,7 @@
 
 import structure FD from "FD"
 
-signature CONSTR =
+signature LINEAR =
     sig
 	datatype domain_element =
 	    `` of int
