@@ -65,8 +65,8 @@ distclean:
 	rm -f stow.exe stow.dll java.exe
 	rm -f Makefile.depend
 
-Makefile.depend: Makefile $(SRCS)
+Makefile.depend: Makefile $(SRCS) JavaMain.cc
 	cd store && $(MAKE) StoreConfig.hh || exit 1
-	$(MAKEDEPEND) $(SRCS) > Makefile.depend
+	$(MAKEDEPEND) $(SRCS) JavaMain.cc > Makefile.depend
 
 include Makefile.depend
