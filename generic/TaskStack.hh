@@ -34,7 +34,8 @@ public:
   using DynamicBlock::GetArg;
   using DynamicBlock::ReplaceArg;
 
-  static word uncaughtExceptionClosure;
+  static word uncaughtExceptionClosures;
+  static void AddExnClosure(word closure);
 
   static void Init();
 
