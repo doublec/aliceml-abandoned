@@ -53,6 +53,14 @@ fun sum([],res) = res
   | sum(x::xs,res) = sum(xs,res+x);
 
 
+fun min([], res) = res
+  | min(x::xs, res) =
+    let
+	val res' = if x < res then x else res
+    in
+	min(xs, res')
+    end
+
 fun avrg(l, len) = sum(l,0) div len;
 
 fun dobenchavrg(n,proc) =
@@ -62,7 +70,11 @@ fun dobenchavrg(n,proc) =
 	(avrg(aux,n),aux)
     end
 
-
+fun dobenchmin(n, proc) =
+    case dobenchn(n, proc)
+     of rs as (r::rs') => (min(rs', r), rs)
+      | _ => raise Subscript
+ 
 (* dobenchavrg(10,fn()=>app(genlist(1000),[])); *)
 
 (* Benches *)
@@ -78,6 +90,16 @@ fun concfib (0|1) = 1
     let
       val n1 = spawn concfib(n - 1)
       val n2 = spawn concfib(n - 2)
+    in
+      n1 + n2
+    end;
+
+(* This is expected to be slower due to queueing of threads *)
+fun concfib2 (0|1) = 1
+  | concfib2 n =
+    let
+      val n2 = spawn concfib2(n - 2)
+      val n1 = spawn concfib2(n - 1)
     in
       n1 + n2
     end;
@@ -394,6 +416,7 @@ end
 *)
 fun getit("fib",n)    = (fn()=>fib(n))
   | getit("concfib",n) = (fn()=>Future.await (concfib n))
+  | getit("concfib2",n) = (fn()=>Future.await (concfib2 n))
   | getit("threadcrea",n) = (fn()=>(threadcrea n; 1))
   | getit("fibf",n)   = (fn()=>(fibf(real(n));1))
   | getit("tak",n)    = (fn()=>(tak(3*n,2*n,n)))
@@ -417,13 +440,13 @@ fun getit("fib",n)    = (fn()=>fib(n))
   | getit("loadtypes",n) = (fn () => (unpickleTypes (); 1)) *)
   | getit(bench,n)    = (fn()=>(print("unknown\n");1));
 
-fun printBench(name, n, (mean, times)) =
+fun printBench(name, n, (min, times)) =
     (TextIO.print name;
      TextIO.print "(";
      TextIO.print (Int.toString n);
      TextIO.print ") = ";
-     TextIO.print (Int.toString mean);
-     TextIO.print " mean, [";
+     TextIO.print (Int.toString min);
+     TextIO.print " min, [";
      List.app (fn n => (TextIO.print ((Int.toString n) ^ " "))) times;
      TextIO.print "]\n";
      TextIO.flushOut TextIO.stdOut)
@@ -434,7 +457,7 @@ fun doit(bench,iter,n) =
       val proc = getit(bench,n)
     in
       proc ();
-      printBench (bench,n,dobenchavrg(iter, proc))
+      printBench (bench,n,dobenchmin(iter, proc))
     end;
 
 fun doitall(iter) =
@@ -462,6 +485,7 @@ fun benches(iter) =
     [doit("fib",iter,31),
 (*       doit("fibf",iter,31), *)
      doit("concfib",iter,20),
+     doit("concfib2",iter,20),
      doit("threadcrea",iter,100000),
      doit("tak",iter,8),
 (*       doit("cpstak",iter,8), *)
