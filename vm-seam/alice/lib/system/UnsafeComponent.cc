@@ -40,6 +40,7 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 
 DEFINE2(UnsafeComponent_save) {
   DECLARE_STRING(s, x0);
+  taskStack->PushFrame(prim_self);
   return Pickler::Save(static_cast<Chunk *>(s), x1, taskStack);
 } END
 
@@ -50,11 +51,13 @@ DEFINE1(UnsafeComponent_load) {
 } END
 
 DEFINE1(UnsafeComponent_pack_) {
+  taskStack->PushFrame(prim_self);
   return Pickler::Pack(x0, taskStack);
 } END
 
 DEFINE1(UnsafeComponent_unpack_) {
   DECLARE_STRING(s, x0);
+  taskStack->PushFrame(prim_self);
   return Unpickler::Unpack(static_cast<Chunk *>(s), taskStack);
 } END
 
