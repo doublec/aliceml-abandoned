@@ -18,6 +18,7 @@
 #endif
 
 #include "store/store.hh"
+#include <cstring>
 
 #define QueueLabel Store::MakeLabel(0) //--**
 #define QueueArrayLabel Store::MakeLabel(0) //--**
