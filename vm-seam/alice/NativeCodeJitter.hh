@@ -199,7 +199,7 @@ protected:
   void CheckPreemptImmediate(u_int pc);
   void LookupTestTable(u_int Key, u_int table, bool isInt = true);
   u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
-  void CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
+  word CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
   void LoadArguments(TagVal *actualArgs);
   void LoadArguments(Vector *actualIdRefs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);

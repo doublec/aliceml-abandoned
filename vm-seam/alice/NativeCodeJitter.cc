@@ -636,7 +636,7 @@ void NativeCodeJitter::LazySelClosureNew(u_int Record, UniqueString *label) {
 #define RETURN() \
   JIT_LOG_REG(JIT_SP); \
   JIT_LOG_MESG("returning to base\n"); \
-  jit_ret();
+  JITStore::Return();
 
 void NativeCodeJitter::SaveRegister() {
   NativeCodeFrame_ReplaceEnv(JIT_V2, 0, JIT_R1);
@@ -659,11 +659,13 @@ static Worker::Result PushCall(ConcreteCode *concreteCode, Closure *closure) {
 
 void NativeCodeJitter::PushCall(CallInfo *info) {
 #if PROFILE
+  // to be done: this won't work
+  JITStore::Prepare(1, false);
   if (info->mode != NORMAL_CALL) {
     ImmediateSel(JIT_R0, JIT_V2, info->closure);
-    jit_pushr_ui(JIT_R0); // Closure
+    jit_pusharg_ui(JIT_R0); // Closure
   }
-  JITStore::Call(1, (void *) Scheduler::PushCall);
+  JITStore::Finish((void *) Scheduler::PushCall);
   RETURN();
 #else
   switch (info->mode) {
@@ -717,7 +719,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
   case NORMAL_CALL:
     {
       // Invariant: concreteCode and closure are on the stack
-      JITStore::Call(2, (void *) ::PushCall);
+      JITStore::Finish((void *) ::PushCall);
       RETURN();
     }
     break;
@@ -731,20 +733,24 @@ void NativeCodeJitter::DirectCall(Interpreter *interpreter) {
   JIT_LOG_MESG("DirectCall\n");
   JIT_LOG_MESG(interpreter->Identify());
   jit_movi_p(JIT_R0, interpreter);
-  jit_pushr_ui(JIT_R0);
-  JITStore::Call(1, (void *) Primitive::Execute);
+  // "Leaf" position
+  JITStore::Prepare(1, false);
+  jit_pusharg_ui(JIT_R0);
+  JITStore::Finish((void *) Primitive::Execute);
   RETURN();
 }
 
 void NativeCodeJitter::TailCall(CallInfo *info) {
 #if PROFILE
+  // to be done: this won't work
+  JITStore::Prepare(1, false);
   if (info->mode != NORMAL_CALL) {
     ImmediateSel(JIT_R0, JIT_V2, info->closure);
-    jit_pushr_ui(JIT_R0);
+    jit_pusharg_ui(JIT_R0);
   }
   u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
   Scheduler_PopFrame(size);
-  JITStore::Call(1, (void *) ::Scheduler::PushCall);
+  JITStore::Finish((void *) ::Scheduler::PushCall);
   RETURN();
 #else
   switch (info->mode) {
@@ -804,7 +810,8 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
     {
       u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
       Scheduler_PopFrame(size);
-      JITStore::Call(2, (void *) ::PushCall);
+      // Invariant: concreteCode and closure are on the stack
+      JITStore::Finish((void *) ::PushCall);
       RETURN();
     }
     break;
@@ -839,9 +846,8 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
   case Scheduler::ONE_ARG:
     {
       JIT_LOG_MESG("Worker::Construct\n");
-      JITStore::Prepare();
-      JITStore::Call(0, (void *) Worker::Construct);
-      JITStore::Finish();
+      JITStore::Prepare(0);
+      JITStore::Finish((void *) Worker::Construct);
       if (update)
 	initialNoCCCPC = Store::IntToWord(GetRelativePC());
     }
@@ -855,12 +861,11 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
   default:
     {
       JIT_LOG_MESG("Deconstruct results\n");
-      JITStore::Prepare();
-      JITStore::Call(0, (void *) Worker::Deconstruct);
-      JITStore::Finish();
-      JIT_LOG_REG(JIT_RET);
+      JITStore::Prepare(0);
+      JITStore::Finish((void *) Worker::Deconstruct);
+      JIT_LOG_REG(JIT_R0);
       jit_insn *no_request = jit_beqi_ui(jit_forward(), JIT_R0, 0);
-      jit_movi_ui(JIT_RET, Worker::REQUEST);
+      jit_movi_ui(JIT_R0, Worker::REQUEST);
       RETURN();
       jit_patch(no_request);
       if (update)
@@ -1043,7 +1048,7 @@ void NativeCodeJitter::BlockOnTransient(u_int Ptr, word pc) {
   jit_movi_ui(JIT_R0, 0);
   Scheduler_PutNArgs(JIT_R0);
   KillVariables();
-  jit_movi_ui(JIT_RET, Worker::REQUEST);
+  jit_movi_ui(JIT_R0, Worker::REQUEST);
   RETURN();
 }
 
@@ -1163,19 +1168,19 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
   return Result;
 } 
 
-void NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt,
+word NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt,
 					   u_int nLocals) {
   JIT_LOG_MESG("non-tail call\n");
   Tuple *idDefArgsInstr = Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
   jit_insn *docall      = jit_jmpi(jit_forward());
-  word contPC = Store::IntToWord(GetRelativePC());
-  TagVal *idDefArgs = TagVal::FromWordDirect(idDefArgsInstr->Sel(0));
-  u_int calleeArity = GetArity(idDefArgs);
+  word contPC           = Store::IntToWord(GetRelativePC());
+  TagVal *idDefArgs     = TagVal::FromWordDirect(idDefArgsInstr->Sel(0));
+  u_int calleeArity     = GetArity(idDefArgs);
   CompileCCC(calleeArity);
   StoreResults(calleeArity, idDefArgs);
   CompileBranch(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)), nLocals);
   jit_patch(docall);
-  SetRelativePC(contPC);
+  return contPC;
 }
 
 void NativeCodeJitter::LoadArguments(TagVal *actualArgs) {
@@ -1306,6 +1311,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   Closure *closure   = Closure::FromWord(wClosure);
   Vector *actualArgs = Vector::FromWordDirect(pc->Sel(1));
   u_int isDirectIn   = Store::DirectWordToInt(pc->Sel(2));
+  bool request       = true;
   CallInfo info;
   info.mode    = NORMAL_CALL;
   info.pc      = Store::DirectWordToInt(initialPC);
@@ -1320,7 +1326,8 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
       if (SkipCCC(isDirectIn, actualArgs, currentArgs))
 	info.pc = Store::DirectWordToInt(initialNoCCCPC);
       info.nLocals = currentNLocals;
-      goto no_request;
+      request = false;
+      goto check_request;
     } else if (concreteCode != INVALID_POINTER) {
       Interpreter *interpreter = concreteCode->GetInterpreter();
       void *cFunction          = (void *) interpreter->GetCFunction();
@@ -1336,7 +1343,8 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	info.nLocals = nativeCode->GetNLocals();
 	if ((isDirectIn == Types::_true) || (calleeArity == actualArity))
 	  info.pc = nativeCode->GetSkipCCCPC();
-	goto no_request;
+	request = false;
+	goto check_request;
       }
       if (cFunction != NULL) {
 	IntMap *inlineMap = IntMap::FromWordDirect(inlineTable);
@@ -1379,7 +1387,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
 	    Scheduler_PopFrame(size);
 	    jit_movi_ui(JIT_R0, Worker::CONTINUE);
-	    jit_ret();
+	    RETURN();
 	    return INVALID_POINTER;
 	  }
 	} else {
@@ -1391,19 +1399,21 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  u_int i1 = ImmediateEnv::Register(closure->ToWord());
 	  ImmediateSel(JIT_V1, JIT_V2, i1);
 	  if (idDefArgsInstrOpt != INVALID_POINTER) {
-	    CompileContinuation(idDefArgsInstrOpt);
+	    SetRelativePC(CompileContinuation(idDefArgsInstrOpt));
 	    KillVariables();
 	  }
 	  else {
 	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
 	    Scheduler_PopFrame(size);
 	  }
-	  jit_pushr_ui(JIT_V1); // closure
-	  JITStore::Call(1, (void *) Scheduler::PushCall);
+	  // "Leaf" position
+	  JITStore::Prepare(1, false);
+	  jit_pusharg_ui(JIT_V1); // closure
+	  JITStore::Finish((void *) Scheduler::PushCall);
 	  RETURN();
 #else
 	  if (idDefArgsInstrOpt != INVALID_POINTER) {
-	    CompileContinuation(idDefArgsInstrOpt);
+	    SetRelativePC(CompileContinuation(idDefArgsInstrOpt));
 	    KillVariables();
 	    DirectCall(interpreter);
 	  } else {
@@ -1412,7 +1422,9 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
 	    Scheduler_PopAndPushFrame(JIT_V2, size, 1);
 	    StackFrame_PutWorker(JIT_V2, interpreter);
-	    JITStore::Call(0, cFunction);
+	    // "Leaf" position
+	    JITStore::Prepare(0, false);
+	    JITStore::Finish(cFunction);
 	    RETURN();
 	  }
 #endif
@@ -1445,7 +1457,8 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  Closure_GetConcreteCode(JIT_V1, JIT_R0);
 	  Await(JIT_V1, instrPC);
 	  jit_pushr_ui(JIT_V1); // Save derefed ConcreteCode
-	  goto no_request;
+	  request = false;
+	  goto check_request;
 	}
       }
     }
@@ -1470,22 +1483,26 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   JIT_APPLY_COUNT(applyNormal);
  no_normal:
 #endif
-  {
+ check_request:
+  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
+  word contPC;
+  if (idDefArgsInstrOpt != INVALID_POINTER)
+    contPC = CompileContinuation(idDefArgsInstrOpt, info.nLocals);
+  if (request) {
     word instrPC  = Store::IntToWord(GetRelativePC());
     u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
     jit_movr_p(JIT_FP, closure); // Save closure
     Closure_GetConcreteCode(JIT_V1, closure);
     Await(JIT_V1, instrPC);
-    jit_pushr_ui(JIT_FP); // Derefed Closure
-    jit_pushr_ui(JIT_V1); // Derefed ConcreteCode
+    Assert(info.mode == NORMAL_CALL);
+    JITStore::Prepare(2, false);
+    jit_pusharg_ui(JIT_FP); // Derefed Closure
+    jit_pusharg_ui(JIT_V1); // Derefed ConcreteCode
   }
- no_request:
-  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
-  if (idDefArgsInstrOpt != INVALID_POINTER)
-    CompileContinuation(idDefArgsInstrOpt, info.nLocals);
   LoadArguments(actualArgs);
   KillIdRef(pc->Sel(0));
   if (idDefArgsInstrOpt != INVALID_POINTER) {
+    SetRelativePC(contPC); // Store Continuation Address
     KillVariables();
     PushCall(&info);
   }
@@ -1563,12 +1580,10 @@ TagVal *NativeCodeJitter::InstrPutNew(TagVal *pc) {
   u_int i1 = ImmediateEnv::Register(pc->Sel(1));
   ImmediateSel(JIT_R0, JIT_V2, i1);
   // DirectWordToBlock(JIT_R0) does nothing
-  JITStore::Prepare();
-  jit_pushr_ui(JIT_R0);
-  void *ptr = (void *) Outline::Constructor::New;
-  JITStore::Call(1, ptr); // Constructor resides in JIT_RET
-  JITStore::Finish();
-  LocalEnvPut(JIT_V2, pc->Sel(0), JIT_RET);
+  JITStore::Prepare(1);
+  jit_pusharg_ui(JIT_R0);
+  JITStore::Finish((void *) Outline::Constructor::New); // Returns Constructor
+  LocalEnvPut(JIT_V2, pc->Sel(0), JIT_R0);
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
@@ -1712,10 +1727,9 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   ImmediateSel(JIT_R0, JIT_V2, i1);
   Closure_InitConcreteCode(JIT_V1, JIT_R0);
 #if PROFILE
-  JITStore::Prepare();
-  jit_pushr_ui(JIT_R0);
-  JITStore::Call(1, (void *) Profiler::IncClosures);
-  JITStore::Finish();
+  JITStore::Prepare(1);
+  jit_pusharg_ui(JIT_R0);
+  JITStore::Finish((void *) Profiler::IncClosures);
 #endif
   for (u_int i = nGlobals; i--;) {
     u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));
@@ -1775,12 +1789,13 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   jit_movr_p(JIT_R0, JIT_V1); // Move subst vector to R0
   jit_popr_ui(JIT_V1); // Restore abstractCode
   TagVal_Put(JIT_V1, 1, JIT_R0); // Store subst vector
-  JITStore::Prepare();
-  jit_pushr_ui(JIT_V1); // abstractCode
+  jit_pushr_ui(JIT_V1); // Save abstractCode
   Closure_New(JIT_V1, nGlobals);
-  JITStore::Call(1, (void *) AliceLanguageLayer::concreteCodeConstructor);
-  JITStore::Finish();
-  Closure_InitConcreteCode(JIT_V1, JIT_RET);
+  jit_popr_ui(JIT_R0); // Restore abstractCode
+  JITStore::Prepare(1);
+  jit_pusharg_ui(JIT_R0); // abstractCode
+  JITStore::Finish((void *) AliceLanguageLayer::concreteCodeConstructor);
+  Closure_InitConcreteCode(JIT_V1, JIT_R0);
   for (u_int i = nGlobals; i--;) {
     u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));
     Closure_Put(JIT_V1, i, Reg);
@@ -1860,8 +1875,10 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
       u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
       Scheduler_PopFrame(size);
     }
-    jit_pushr_ui(JIT_V1); // Closure
-    JITStore::Call(1, (void *) Scheduler::PushCall);
+    // "Leaf" position
+    JITStore::Prepare(1, false);
+    jit_pusharg_ui(JIT_V1); // Closure
+    JITStore::Finish((void *) Scheduler::PushCall);
     RETURN();
 #else
     if (idDefInstrOpt != INVALID_POINTER) {
@@ -1874,7 +1891,8 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
       u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
       Scheduler_PopAndPushFrame(JIT_V2, size, 1);
       StackFrame_PutWorker(JIT_V2, interpreter);
-      JITStore::Call(0, cFunction);
+      JITStore::Prepare(0, false);
+      JITStore::Finish(cFunction);
       RETURN();
     }
 #endif
@@ -1963,15 +1981,13 @@ TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
   if (WRecord != JIT_V1)
     jit_movr_p(JIT_V1, WRecord);
   for (u_int i = ids->GetLength(); i--; ) {
-    JITStore::Prepare();
+    JITStore::Prepare(2);
     u_int labelIndex = ImmediateEnv::Register(labels->Sub(i));
     ImmediateSel(JIT_R0, JIT_V2, labelIndex);
     // UniqueString::FromWordDirect does nothing
-    jit_pushr_ui(JIT_R0); // label
-    jit_pushr_ui(JIT_V1); // record
-    void *ptr = (void *) Outline::Record::PolySel;
-    JITStore::Call(2, ptr);
-    JITStore::Finish();
+    jit_pusharg_ui(JIT_R0); // label
+    jit_pusharg_ui(JIT_V1); // record
+    JITStore::Finish((void *) Outline::Record::PolySel);
     LocalEnvPut(JIT_V2, ids->Sub(i), JIT_R0);
   }
   jit_patch(skip);
@@ -1985,12 +2001,11 @@ TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
   u_int Reg = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
   Scheduler_SetCurrentData(Reg);
-  JITStore::Prepare();
-  jit_pushr_ui(JIT_V2); // Frame ptr
-  JITStore::Call(1, (void *) Outline::Backtrace::New);
-  JITStore::Finish();
-  Scheduler_SetCurrentBacktrace(JIT_RET);
-  jit_movi_ui(JIT_RET, Worker::RAISE);
+  JITStore::Prepare(1);
+  jit_pusharg_ui(JIT_V2); // Frame ptr
+  JITStore::Finish((void *) Outline::Backtrace::New);
+  Scheduler_SetCurrentBacktrace(JIT_R0);
+  jit_movi_ui(JIT_R0, Worker::RAISE);
   RETURN();
   return INVALID_POINTER;
 }
@@ -2004,7 +2019,7 @@ TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
   Scheduler_SetCurrentData(JIT_R0);
   Tuple_Sel(JIT_R0, Reg, 1);
   Scheduler_SetCurrentBacktrace(JIT_R0);
-  jit_movi_ui(JIT_RET, Worker::RAISE);
+  jit_movi_ui(JIT_R0, Worker::RAISE);
   RETURN();
   return INVALID_POINTER;
 }
@@ -2014,10 +2029,9 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   JIT_PRINT_PC("Try\n");
   u_int handlerPC = ImmediateEnv::Register(Store::IntToWord(0));
   ImmediateSel(JIT_R0, JIT_V2, handlerPC);
-  JITStore::Prepare();
-  jit_pushr_ui(JIT_R0); // Handler PC
-  JITStore::Call(1, (void *) ::Scheduler::PushHandler);
-  JITStore::Finish();
+  JITStore::Prepare(1);
+  jit_pusharg_ui(JIT_R0); // Handler PC
+  JITStore::Finish((void *) ::Scheduler::PushHandler);
   CompileBranch(TagVal::FromWordDirect(pc->Sel(0)));
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
   JIT_LOG_MESG("executing exception handler\n");
@@ -2033,9 +2047,8 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
 // EndTry of instr
 TagVal *NativeCodeJitter::InstrEndTry(TagVal *pc) {
   JIT_PRINT_PC("EndTry\n");
-  JITStore::Prepare();
-  JITStore::Call(0, (void *) ::Scheduler::PopHandler);
-  JITStore::Finish();
+  JITStore::Prepare(0);
+  JITStore::Finish((void *) ::Scheduler::PopHandler);
   return TagVal::FromWordDirect(pc->Sel(0));
 }
 
@@ -2061,15 +2074,14 @@ static void *LookupChunkTable(ChunkMap *map, word key) {
 }
 
 void NativeCodeJitter::LookupTestTable(u_int Key, u_int table, bool isInt) {
-  JITStore::Prepare();
-  jit_pushr_ui(Key); // Key Argument
+  JITStore::Prepare(2);
+  jit_pusharg_ui(Key); // Key Argument
   ImmediateSel(JIT_R0, JIT_V2, table);
-  jit_pushr_ui(JIT_R0); // Table Argument
+  jit_pusharg_ui(JIT_R0); // Table Argument
   if (isInt)
-    JITStore::Call(2, (void *) LookupIntTable);
+    JITStore::Finish((void *) LookupIntTable);
   else
-    JITStore::Call(2, (void *) LookupChunkTable);
-  JITStore::Finish();
+    JITStore::Finish((void *) LookupChunkTable);
 }
 
 // IntTest of idRef * (int * instr) vector * instr
@@ -2083,8 +2095,8 @@ TagVal *NativeCodeJitter::InstrIntTest(TagVal *pc) {
   IntMap *map   = IntMap::New(nTests * 2);
   u_int i1      = ImmediateEnv::Register(map->ToWord());
   LookupTestTable(IntVal, i1);
-  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
-  BranchToOffset(JIT_RET);
+  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+  BranchToOffset(JIT_R0);
   // Create Branches
   for (u_int i = nTests; i--;) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
@@ -2136,8 +2148,8 @@ TagVal *NativeCodeJitter::InstrRealTest(TagVal *pc) {
   ChunkMap *map = ChunkMap::New(nTests * 2);
   u_int i1      = ImmediateEnv::Register(map->ToWord());
   LookupTestTable(RealVal, i1, false);
-  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
-  BranchToOffset(JIT_RET);
+  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+  BranchToOffset(JIT_R0);
   // Create Branches
   for (u_int i = nTests; i--;) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
@@ -2161,8 +2173,8 @@ TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
   ChunkMap *map = ChunkMap::New(nTests * 2);
   u_int i1      = ImmediateEnv::Register(map->ToWord());
   LookupTestTable(StringVal, i1, false);
-  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
-  BranchToOffset(JIT_RET);
+  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+  BranchToOffset(JIT_R0);
   // Create Branches
   for (u_int i = nTests; i--;) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
@@ -2195,8 +2207,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     IntMap *map1 = IntMap::New(nTests1 * 2);
     u_int i1     = ImmediateEnv::Register(map1->ToWord());
     LookupTestTable(tagVal, i1);
-    else_ref1 = jit_beqi_ui(jit_forward(), JIT_RET, 0);
-    BranchToOffset(JIT_RET);
+    else_ref1 = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+    BranchToOffset(JIT_R0);
     // Create Branches
     for (u_int i = nTests1; i--;) {
       Tuple *pair  = Tuple::FromWordDirect(tests1->Sub(i));
@@ -2220,8 +2232,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     IntMap *map2 = IntMap::New(nTests2 * 2);
     u_int i2     = ImmediateEnv::Register(map2->ToWord());
     LookupTestTable(JIT_R0, i2);
-    jit_insn *else_ref2 = jit_beqi_ui(jit_forward(), JIT_RET, 0);
-    BranchToOffset(JIT_RET);
+    jit_insn *else_ref2 = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+    BranchToOffset(JIT_R0);
     // Create Branches
     for (u_int i = nTests2; i--;) {
       Tuple *triple  = Tuple::FromWordDirect(tests2->Sub(i));
@@ -2443,8 +2455,8 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
   u_int i1      = ImmediateEnv::Register(map->ToWord());
   LookupTestTable(JIT_R0, i1);
   jit_popr_ui(JIT_V1); // Restore vector ptr
-  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
-  BranchToOffset(JIT_RET);
+  jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+  BranchToOffset(JIT_R0);
   // Create Branches
   for (u_int i = nTests; i--;) {
     Tuple *pair    = Tuple::FromWordDirect(tests->Sub(i));
