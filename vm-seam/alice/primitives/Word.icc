@@ -155,9 +155,9 @@ DEFINE1(Word_toInt) {
 DEFINE1(Word_toIntX) {
   DECLARE_WORD(i, x0);
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_WORD(i | ~(static_cast<u_int>(-1) >> NONBITS));
+    RETURN_INT(i | ~(static_cast<u_int>(-1) >> NONBITS));
   } else {
-    RETURN_WORD(i);
+    RETURN_INT(i);
   }
 } END
 
