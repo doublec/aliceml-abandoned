@@ -10,20 +10,35 @@
 %%%   $Revision$
 %%%
 
-declare [Frontend CodeGen] = {Module.link ['Frontend.ozf' 'CodeGen.ozf']}
+functor
+import
+   Application(getCmdArgs exit)
+   Pickle(save)
+   System(printError)
+   Property(get)
+   Frontend(translateFile)
+   CodeGen(translate)
+prepare
+   Spec = record('in'(single char: &i type: string optional: false)
+		 'out'(single char: &o type: string optional: false))
+define
+   Args
 
-{Browse {Frontend.translateFile '../../test/bug.aus'}}
+   try
+      Args = {Application.getCmdArgs Spec}
+   catch error(ap(usage M) ...) then
+      {System.printError
+       'Command line option error: '#M#'\n'#
+       'Usage: '#{Property.get 'application.url'}#' [options]\n'#
+       '--in=<File>         File containing component to translate.\n'#
+       '--out=<File>        Name of pickle to write.\n'}
+      {Application.exit 2}
+   end
 
-{Browse {CodeGen.translate {Frontend.translateFile '../../test/bug.aus'}}}
-
-{System.showInfo 'parsing and simplifying ...'}
-case {Frontend.translateFile '../../test/infer.aus'}
-%      '/home/kornstae/stockhausen/lib/bootstrap/Bootstrap.aus'}
-of unit then skip
-elseof AST then F in
-   {System.showInfo 'generating code ...'}
-   F = {CodeGen.translate AST}
-   {System.showInfo 'executing ...'}
-   {Module.apply [F] _}
-   {System.showInfo 'done'}
+   case {Frontend.translateFile Args.'in'} of unit then
+      {Application.exit 1}
+   elseof AST then
+      {Pickle.save {CodeGen.translate AST} Args.'out'}
+      {Application.exit 0}
+   end
 end

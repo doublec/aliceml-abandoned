@@ -13,7 +13,7 @@
 functor
 import
    CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
-   System(printName showInfo)
+   System(printName)
    Narrator('class')
    ErrorListener('class')
    CodeStore('class')
@@ -358,11 +358,10 @@ define
       case Code of Code1#Code2 then StartLabel EndLabel Res in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
-	 {System.showInfo 'assembling ...'}
 	 {{Assembler.assemble
 	   (lbl(StartLabel)|
 	    definition(x(0) EndLabel
-		       pid('Toplevel abstraction' 2 pos('' 1 0) [sited]
+		       pid('Toplevel abstraction' 2 pos('' 1 0) nil
 			   NLiveRegs)
 		       unit {List.mapInd GRegs fun {$ I _} g(I) end}
 		       Code1)|

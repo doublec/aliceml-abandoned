@@ -1,12 +1,15 @@
 .SUFFIXES: .oz .ozf
 
 FUNCTORS = Frontend.ozf Builtins.ozf Prebound.ozf \
-	CodeStore.ozf CodeGen.ozf Assembler.ozf
+	CodeStore.ozf CodeGen.ozf Assembler.ozf Main.ozf
 
 .oz.ozf:
 	ozc $(OZCFLAGS) -c $< -o $@
 
-all: $(FUNCTORS)
+all: stoc-mozart
+
+stoc-mozart: $(FUNCTORS)
+	ozl $(OZLFLAGS) -x Main.ozf -o stoc-mozart
 
 CodeStore.ozf: CodeEmitter.oz
 

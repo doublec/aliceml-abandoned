@@ -14,7 +14,7 @@ functor
 import
    Parser(virtualString) at 'x-oz://boot/Parser'
    Open(text pipe)
-   System(showInfo showError)
+   System(showError)
    Compiler(engine interface)
 export
    TranslateFile
@@ -120,13 +120,9 @@ define
       C = {New Compiler.engine init()}
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
-      case {StockhausenToImperative File} of false then
-	 {System.showInfo 'frontend error'}
-	 unit
+      case {StockhausenToImperative File} of false then unit
       elseof VS then Imports Exports Body in
-	 {System.showInfo 'reading imperative syntax ...'}
 	 Imports#Exports#Body = {VirtualStringToValue VS}
-	 {System.showInfo 'sharing bodies ...'}
 	 Imports#Exports#{ShareBody Body {NewDictionary}}
       end
    end
