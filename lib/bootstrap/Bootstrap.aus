@@ -2558,7 +2558,7 @@ val isFst	= Alt.isFst					(**)
 val isSnd	= Alt.isSnd					(**)
 
 val getOpt	= Option.getOpt
-val isNone	= Option.isNone
+val isNone	= Option.isNone					(**)
 val isSome	= Option.isSome
 val valOf	= Option.valOf
 
