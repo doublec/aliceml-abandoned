@@ -160,7 +160,9 @@ structure EventHandler =
 		  refresh (cmw, serve, state))
 
   fun refreshAfterSearch (node, cmw) (serve, state) =
-      (VisualNode.hideFailed node; refresh (cmw, serve, state))
+      (if getHideFailed state then
+           VisualNode.hideFailed node
+       else (); refresh (cmw, serve, state))
 
   fun exitHandler (resetCanvas, serve, state) _ =
       serve (fn () => destroyMainWindow (resetCanvas, serve, state))

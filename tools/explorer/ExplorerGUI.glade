@@ -53,10 +53,10 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkMenuItem" id="cancel_search">
+		    <widget class="GtkImageMenuItem" id="cancel_search">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Cancel search</property>
-		      <property name="use_underline">True</property>
+		      <property name="label">gtk-cancel</property>
+		      <property name="use_stock">True</property>
 		      <signal name="activate" handler="on_cancel_search_activate" last_modification_time="Wed, 19 May 2004 07:50:56 GMT"/>
 		    </widget>
 		  </child>
@@ -188,14 +188,6 @@
 		    <widget class="GtkMenuItem" id="inspection1">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">Inspection</property>
-		      <property name="use_underline">True</property>
-		    </widget>
-		  </child>
-
-		  <child>
-		    <widget class="GtkMenuItem" id="recomputation1">
-		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Recomputation</property>
 		      <property name="use_underline">True</property>
 		    </widget>
 		  </child>

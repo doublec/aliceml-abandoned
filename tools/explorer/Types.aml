@@ -107,4 +107,12 @@ structure Types =
       cs := false
     | resetCancelSearch _ = ()
 
+  fun getHideFailed (ref (SOME {hideFailed=ref hideFailed,...}:
+                          explorer_state option)) = hideFailed
+    | getHideFailed _ = false
+
+  fun setHideFailed (ref (SOME {hideFailed=hideFailed,...}:
+                          explorer_state option)) hf = hideFailed:=hf
+    | setHideFailed _ _ = ()
+
   end

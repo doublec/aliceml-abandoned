@@ -83,10 +83,8 @@ structure OptionsWindow =
 
                 fun toggledHandler _ =
                     serve (fn () =>
-                              case !state of
-                                  SOME {hideFailed=hf,...} =>
-                                  hf := Gtk.toggleButtonGetActive hideFailed
-                                | _ => ())
+                              Types.setHideFailed state
+                              (Gtk.toggleButtonGetActive hideFailed))
                 val _ = Gtk.signalConnect(hideFailed, "toggled",
                                           toggledHandler)
             in

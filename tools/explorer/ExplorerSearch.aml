@@ -66,6 +66,7 @@ structure ExplorerSearch =
               val fromNode = Option.getOpt(root, tree)
               
           in
+              Types.resetCancelSearch state;
               setStatusMsg(state, "Searching...", true);
               searchFrom (serve, state, callBack, refresh, fromNode);
               setStatusMsg(state, "", false);
