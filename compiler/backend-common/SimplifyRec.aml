@@ -10,6 +10,54 @@
  *   $Revision$
  *)
 
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure Error
+from "../infrastructure/Error"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    structure Type
+from "../common/Type"
+
+import
+    structure PervasiveType
+from "../common/PervasiveType"
+
+import
+    signature INTERMEDIATE_GRAMMAR
+from "../common/INTERMEDIATE_GRAMMAR-sig"
+
+import
+    structure IntermediateGrammar
+from "../common/IntermediateGrammar"
+
+import
+    structure MkLabelSort
+from "MkLabelSort"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    structure IntermediateAux
+from "IntermediateAux"
+
+import
+    signature SIMPLIFY_REC
+from "SIMPLIFY_REC-sig"
+
 structure SimplifyRec :> SIMPLIFY_REC =
     struct
 	structure I = IntermediateGrammar
@@ -46,8 +94,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | infoPat (AsPat (info, _, _)) = info
 
 	structure FieldSort =
-	    MakeLabelSort(type 'a t = 'a field
-			  fun get (Field (_, Lab (_, label), _)) = label)
+	    MkLabelSort(type 'a t = 'a field
+			fun get (Field (_, Lab (_, label), _)) = label)
 
 	fun select (Field (_, Lab (_, s), x)::fieldr, s') =
 	    if s = s' then SOME x else select (fieldr, s')

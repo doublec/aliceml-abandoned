@@ -10,5 +10,5 @@ is
     ../common/id-stamp.cm
     flat-grammar.cm
 
-    DEAD_CODE_ELIMINATION_PHASE.sig
-    DeadCodeEliminationPhase.sml
+    DEAD_CODE_ELIMINATION_PHASE-sig.aml
+    DeadCodeEliminationPhase.aml

@@ -13,5 +13,5 @@ is
     ../common/id-stamp.cm
     ../common/intermediate-grammar.cm
 
-    FLAT_GRAMMAR.sig
-    FlatGrammar.sml
+    FLAT_GRAMMAR-sig.aml
+    FlatGrammar.aml

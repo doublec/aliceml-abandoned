@@ -10,13 +10,29 @@
  *   $Revision$
  *)
 
+import
+    structure StringHashKey
+from "../misc/StringHashKey"
+
+import
+    structure MkHashImpMap
+from "../misc/MkHashImpMap"
+
+import
+    structure Arity
+from "Arity"
+
+import
+    signature PRIM_OPS
+from "PRIM_OPS-sig"
+
 structure PrimOps :> PRIM_OPS =
     struct
 	exception UnknownPrim
 
 	open Arity
 
-	structure StringMap = MakeHashImpMap(StringHashKey)
+	structure StringMap = MkHashImpMap(StringHashKey)
 
 	val map =
 	    let

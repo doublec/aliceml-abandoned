@@ -27,6 +27,91 @@
  * they are shadowed; this would introduce a severe performance bug.
  *)
 
+import
+    structure PrettyPrint
+from "../misc/PrettyPrint"
+
+import
+    structure Assert
+from "../misc/Assert"
+
+import
+    signature HASH_KEY
+    structure FromEqHashKey
+from "../misc/HASH_KEY-sig"
+
+import
+    signature IMP_MAP
+from "../misc/IMP_MAP-sig"
+
+import
+    structure MkHashImpMap
+from "../misc/MkHashImpMap"
+
+import
+    structure MkDepthFirstSearch
+from "../misc/MkDepthFirstSearch"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure Error
+from "../infrastructure/Error"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    structure Stamp
+from "../common/Stamp"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    structure StampMap
+from "../common/StampMap"
+
+import   (*--**DEBUG*)
+    structure Name
+from "../common/Name"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    structure Arity
+from "Arity"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    structure OutputFlatGrammar
+from "OutputFlatGrammar"
+
+import
+    structure PrimOps
+from "PrimOps"
+
+import
+    signature VALUE_PROPAGATION_PHASE
+from "VALUE_PROPAGATION_PHASE-sig"
+
+import   (*--**DEBUG*)
+    structure TextIO
+from "../lib/TextIO"
+
 signature SCOPED_IMP_MAP =
     sig
 	type key
@@ -47,7 +132,7 @@ signature SCOPED_IMP_MAP =
 	val foldi: (key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     end
 
-functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
+functor MkScopedImpMap(ImpMap: IMP_MAP) :>
     SCOPED_IMP_MAP where type key = ImpMap.key =
     struct
 	type key = ImpMap.key
@@ -91,8 +176,8 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
 	  | foldi' (nil, _, z) = z
     end
 
-functor MakeHashScopedImpMap(Key: HASH_KEY) =
-    MakeScopedImpMap(MakeHashImpMap(Key))
+functor MkHashScopedImpMap(Key: HASH_KEY) =
+    MkScopedImpMap(MkHashImpMap(Key))
 
 structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
     struct
@@ -115,10 +200,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | conEq (_, _) = false
 
 	structure IdMap =
-	    MakeHashScopedImpMap(type t = id
-				 val equals = idEq
-				 fun hash (Id (_, stamp, _)) =
-				     Stamp.hash stamp)
+	    MkHashScopedImpMap(type t = id
+			       val equals = idEq
+			       fun hash (Id (_, stamp, _)) =
+				   Stamp.hash stamp)
 
 	(*
 	 * The `value' data type represents the approximation of the value
@@ -292,8 +377,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     StampSet.deleteExistent (path, stamp))
 
 	    structure DepthFirstSearch =
-		MakeDepthFirstSearch(structure Key = FromEqHashKey(Stamp)
-				     structure Map = StampMap)
+		MkDepthFirstSearch(structure Key = FromEqHashKey(Stamp)
+				   structure Map = StampMap)
 	in
 	    fun sortShared (body, stamp) =
 		let

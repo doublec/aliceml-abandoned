@@ -3,7 +3,7 @@ Group
     signature TARGET
     signature CODE
     signature ENGINE
-    functor MakeEngine
+    functor MkEngine
 
 is
 
@@ -12,9 +12,9 @@ is
     ../common/id-stamp.cm
     flat-grammar.cm
 
-    CODE.sig
-    ENGINE.sig
+    CODE-sig.aml
+    ENGINE-sig.aml
 #if (!defined(structure Unix))
     DummyUnix.sml
 #endif
-    MakeEngine.sml
+    MkEngine.aml
