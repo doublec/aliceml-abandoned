@@ -1,12 +1,12 @@
 Stockwerk:
--- Closures need to remember their abstract representation
+-- Rename Pickle.oz to PrimPickle.oz
+-- vielleicht doch noch eine Instruktion Sel zusaetzlich zu GetTup
+
+Extended Basis Library:
 -- Thread.raiseIn can raise an exception (Terminated)
 -- Future.byneed and Future.concur suspend on their argument
--- Rename Pickle.oz to PrimPickle.oz
--- UnsafeComponent.load should be defined in terms of files, not urls
 -- geworfene Exceptions sollen immer evaluiert sein
 -- yield sollte immer auf currentThread operieren
--- vielleicht doch noch eine Instruktion Sel zusaetzlich zu GetTup
 
 Mozart:
 -- Ozcar-Bug: wenn man ein 'unleash' macht und dabei eine
