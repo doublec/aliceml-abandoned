@@ -2,7 +2,7 @@
 *** Allgemein/Ideen ***
 
 * Binding fuer Windows
-- Dokumentation
+* Dokumentation
 * zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
 * nicht beliebig viele set/get-Methode moeglich
 
@@ -14,7 +14,7 @@
 * install -C ?
 * Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
 * Kernroutinen aus NativeGtkSpecial in eigene DLL tun
-X Komponenten auf hinreichende Modularisierung ueberpruefen
+* Komponenten auf hinreichende Modularisierung ueberpruefen
 
 
 Garbage Collection:

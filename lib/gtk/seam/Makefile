@@ -9,17 +9,13 @@ COMPSCAP = GDK GTK GNOME_CANVAS
 ENUMCOMPS = Pango
 ENUMCOMPSCAP = PANGO
 
-# The following native components will be compiled
-# (in addition to the generated ones)
-NATIVECOMPS = Core
-
 # names of generated files
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
 	$(ENUMCOMPSCAP:%=%_ENUMS-sig.aml) $(ENUMCOMPS:%=%Enums.aml)
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
-NATIVES = $(COMPS:%=Native%) $(NATIVECOMPS:%=Native%)
-GENNATIVES = $(COMPS:%=Native%.asig) $(COMPS:%=Native%.cc)
-GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
+NATIVECOMPS = $(COMPS:%=Native%) $(COMPS:%=NativeFields%)
+NATIVES = $(NATIVECOMPS:%=%.asig) $(NATIVECOMPS:%=%.cc)
+GENFILES = $(NATIVES) $(ENUMS) $(UNSAFE)
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 
 # C input file
@@ -33,7 +29,7 @@ LASTGENERATE = lastgenerate
 # names of all files to compile
 CORE = CORE-sig.aml Core.aml
 MAINFILES = $(COMPS:%=%.aml)
-CPPSOURCES = $(NATIVES:%=%.cc)
+CPPSOURCES = $(NATIVECOMPS:%=%.cc) NativeCore.cc
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # names of object files
