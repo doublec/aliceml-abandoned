@@ -1,0 +1,56 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Timer structure", "The <TT>Timer</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature TIMER
+    structure Timer : TIMER
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/timer.html"><TT>Timer</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="time.html"><TT>Time</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature TIMER =
+    sig
+	type cpu_timer
+	type real_timer
+
+	val startRealTimer : unit -> real_timer
+	val checkRealTimer : real_timer -> Time.time
+	val totalRealTimer : unit -> real_timer
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/timer.html"><TT>Timer</TT></A> structure.
+  </P>
+
+  <P>
+    <I>Limitations:</I> The following standard functions are
+    currently missing:
+  </P>
+
+  <UL>
+    <LI><TT>startCPUTimer</TT>, <TT>checkCPUTimes</TT>, <TT>checkCPUTimer</TT>, <TT>checkGCTime</TT>, <TT>totalCPUTimer</TT></LI>
+  </UL>
+
+<?php footing() ?>
