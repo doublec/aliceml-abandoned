@@ -52,7 +52,6 @@ Interactive Toplevel:
 Library:
 
 * Constraint library now based on Gecode, with changed interface.
-* A new binding for Gtk 2.2, with a lot of interface changes.
 * Component:
   - Added fromPackage.
   - Create now takes a functor as argument to support unevaluated components.
@@ -87,14 +86,22 @@ Library:
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
   - Added function execute, made the Execute functor a trivial wrapper.
-* Minimizer: new structure for minimizing the store representation of
+* Minimizer: new structure for minimizing the heap representation of
   Alice values.
+* Gtk binding updgraded to Gtk 2.2, with some interface changes.
 
 Tools:
 
-* Reimplemented inspector, can show type information and inspect modules.
-* Reimplemented explorer, can do auto-zooming and anti-aliasing and has
-  support for visualizing distributed search.
+* Reimplemented inspector:
+  - Type tooltips.
+  - Inspection of modules.
+  - Copy selection to clipboard.
+  - User-defined layout for abstract types.
+  - Many miscellaneous improvements to user interface.
+* Reimplemented explorer:
+  - Auto-zooming.
+  - Anti-aliasing.
+  - Support for visualizing distributed search.
 
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
