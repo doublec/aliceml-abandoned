@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000-2001
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -14,7 +14,7 @@
 #define __GENERIC__TUPLE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Tuple.hh"
+#pragma interface "generic/Tuple.hh"
 #endif
 
 #include "store/Store.hh"
