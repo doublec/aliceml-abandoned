@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Andy Walter <anwalt@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andy Walter, 1999
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 structure JVMInst =
     struct
 	type label = string
