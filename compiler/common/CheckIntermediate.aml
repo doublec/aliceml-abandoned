@@ -12,136 +12,210 @@
 
 import structure Source              from "../infrastructure/Source"
 import structure IntermediateGrammar from "IntermediateGrammar"
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
 import structure Type                from "../../lib/rtt/Type"
 import structure PervasiveType       from "../../lib/rtt/PervasiveType"
+import structure PathMap             from "../../lib/rtt/PathMap"
 import structure Stamp               from "Stamp"
 
-import structure Crash              from "../infrastructure/Crash"
-import functor MkHashScopedImpMap   from "../infrastructure/MkHashScopedImpMap"
-import functor FromEqHashKey        from "../../lib/utility/HASH_KEY-sig"
-import signature CHECK_INTERMEDIATE from "CHECK_INTERMEDIATE-sig"
+import structure PPPath              from "../../lib/rtt/PPPath"
+import structure PPType              from "../../lib/rtt/PPType"
+import structure PrettyPrint         from "../../lib/utility/PrettyPrint"
+import structure TextIO              from "../../lib/system/TextIO"
+
+import structure Crash               from "../infrastructure/Crash"
+import functor   MkHashScopedImpMap  from "../infrastructure/MkHashScopedImpMap"
+import functor   FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
+import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
 
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =
-  struct
-(*
-    structure Env = MakeHashScopedImpMap(FromEqHashKey(Stamp))
+struct
+    structure Env = MkHashScopedImpMap(FromEqHashKey(Stamp))
 
     open IntermediateGrammar
 
 
   (* Signalling errors *)
 
-    fun fail(r,s) =
-	raise Crash.Crash("intermediate inconsistency @ " ^
-			  Source.regionToString r ^ ": " ^ s)
+    open PrettyPrint
+    infixr ^^ ^/^
+
+    datatype debug_info =
+	  INT of int
+	| ID of Stamp.t * Name.t
+	| LAB of Label.t
+	| TYPE of Type.t
+	| TYPE_PAIR of Type.t * Type.t
+	| KIND of Type.kind
+	| LONGID of longid
+
+    fun ppDebugInfo'(s, d) =
+	vbox(abox(hbox(text s ^/^ text "=") ^/^ d) ^^ break)
+
+    fun ppDebugInfo(INT n) =
+	ppDebugInfo'("n", text(Int.toString n))
+      | ppDebugInfo(ID(z,n)) =
+	ppDebugInfo'("x", text(Name.toString n ^ "[" ^ Stamp.toString z ^ "]"))
+      | ppDebugInfo(LAB a) =
+	ppDebugInfo'("a", text(Label.toString a))
+      | ppDebugInfo(TYPE t) =
+	ppDebugInfo'("t", PPType.ppTyp t)
+      | ppDebugInfo(TYPE_PAIR(t1,t2)) =
+	ppDebugInfo'("t1", PPType.ppTyp t1) ^^
+	ppDebugInfo'("t2", PPType.ppTyp t2)
+      | ppDebugInfo(KIND k) =
+	ppDebugInfo'("k", PPType.ppKind k)
+      | ppDebugInfo(LONGID longid) =
+	ppDebugInfo'("y", ppLongid longid)
+
+    and ppLongid(ShortId(_, Id(_,z,n))) =
+	text(Name.toString n ^ "[" ^ Stamp.toString z ^ "]")
+      | ppLongid(LongId(_, y, Lab(_, a))) =
+	ppLongid y ^^ text "." ^^ text(Label.toString a)
+
+    fun fail(r,s,d) =
+	(Vector.app (fn d => PrettyPrint.output(TextIO.stdErr,
+						ppDebugInfo d, 78)) d;
+	 raise Crash.Crash("intermediate inconsistency at " ^
+			   Source.regionToString r ^ ": " ^ s))
 
     fun regionOfNonInfo {region}     = region	(* I want poly records :-( *)
     fun regionOfTypInfo {region,typ} = region
 
-    fun check true  (i,s)  = ()
-      | check false (i,s)  = fail(regionOfTypInfo i, s)
+    fun check true  (i,s,d)  = ()
+      | check false (i,s,d)  = fail(regionOfTypInfo i, s, d)
 
-    fun check' f x (i,s)   = f x handle _ => fail(regionOfTypInfo i, s)
+    fun checked f x (i,s,d)  = f x handle _ => fail(regionOfTypInfo i, s, d)
 
-    fun checkI true  (i,s) = ()
-      | checkI false (i,s) = fail(regionOfNonInfo i, s)
+    fun check' true  (i,s,d) = ()
+      | check' false (i,s,d) = fail(regionOfNonInfo i, s, d)
 
-    fun checkI' f x (i,s)  = f x handle _ => fail(regionOfNonInfo i, s)
+    fun checked' f x (i,s,d) = f x handle _ => fail(regionOfNonInfo i, s, d)
 
 
   (* Helpers *)
 
-    fun resultCon t =
-	if      Type.isArrow' t then resultCon(#2(Type.asArrow' t))
-	else if Type.isApply' t then resultCon'(#1(Type.asApply' t))
-	else if Type.isCon' t   then SOME(Type.asCon' t)
-	else NONE
-    and resultCon' t =
-	if      Type.isApply' t then resultCon'(#1(Type.asApply' t))
-	else if Type.isCon' t   then SOME(Type.asCon' t)
-	else NONE
-
-    fun hasResultType(t,c) =
-	case resultCon t
-	  of NONE    => false
-	   | SOME c' => c = c'
-
     fun isOpenType t =
-	case resultCon t
-	  of NONE   => false
-	   | SOME c => #2 c = Type.OPEN
+	Type.isCon' t   andalso #2(Type.asCon' t) = Type.OPEN orelse
+	Type.isApply' t andalso isOpenType(#1(Type.asApply' t))
 
-    fun asArrows  t = asArrows'([],t)
-    and asArrows'(ts,t) =
-	if Type.isArrow' t then
-	    let
-		val (t1,t2) = Type.asArrow' t
-	    in
-		asArrows'(t1::ts, t2)
-	    end
-	else
-	    (List.rev ts, t)
+    fun matchesRow(r1,r2) =
+	(*UNFINISHED: allow row variables? *)
+	Type.isEmptyRow r1 orelse
+	not(Type.isEmptyRow r2) andalso
+	let
+	    val (a1,t1) = Type.headRow r1
+	    val (a2,t2) = Type.headRow r2
+	in
+	    case Label.compare(a1,a2)
+	      of EQUAL   => Type.equals(t1,t2) andalso
+			    matchesRow(Type.tailRow r1, Type.tailRow r2)
+	       | LESS    => false
+	       | GREATER => matchesRow(r1, Type.tailRow r2)
+	end
 
-    fun unquantify t =
-	if      Type.isAll' t   then unquantify(#2(Type.asAll' t))
-	else if Type.isExist' t then unquantify(#2(Type.asExist' t))
-	else t
-
-
-  (* Type matching in UpExp *)
-
-    fun matches(t1,t2) = true (*UNFINISHED*)
+    fun abstracts(t1,t2) =
+	(* t1 abstracts t2 <= exists R . Dom R = paths(t1) /\ t2 > R(t1) *)
+	(* Unfortunately, this is undecidable. So we try to be as good as
+	 * possible, but simply accept all cases involving applications. 8-P
+	 *)
+	let
+	    val A   = Type.paths t1
+	    val rea = PathMap.new()
+	    val t1' = Type.clone t1
+	in
+	    PathMap.appi (fn(p,k) => PathMap.insert(rea, p, Type.unknown k)) A;
+	    Type.realise(rea, t1');
+	    ( Type.unify(t2,t1') ; true )
+	    handle Type.Unify(t3,t4) => Type.isApply t3 orelse Type.isApply t4
+	end
 
 
   (* Literals *)
 
-    fun chLit(WordLit _)   = PervasiveType.typ_word
-      | chLit(IntLit _)    = PervasiveType.typ_int
-      | chLit(CharLit _)   = PervasiveType.typ_char
-      | chLit(StringLit _) = PervasiveType.typ_string
-      | chLit(RealLit _)   = PervasiveType.typ_real
+    fun chLit E =
+	(* E |- int => c_int *)
+	fn IntLit _	=> PervasiveType.typ_int
+	(* E |- word => c_word *)
+	 | WordLit _	=> PervasiveType.typ_word
+	(* E |- char => c_char *)
+	 | CharLit _	=> PervasiveType.typ_char
+	(* E |- string => c_string *)
+	 | StringLit _	=> PervasiveType.typ_string
+	(* E |- float => c_real *)
+	 | RealLit _	=> PervasiveType.typ_real
 
 
   (* Identifiers *)
 
     fun chLab E (Lab(i, a)) = a
+	(*   lab = a
+	 * -----------
+	 * |- lab => a
+	 *)
 
     fun chId E (Id(i, z, n)) =
+	(* id = z    E(z) = t
+	 * ------------------
+	 *  E |- id : t => t
+	 *)
 	let
-	    val t = check' Env.lookupExistent(E,z) (i,"Id unknown")
+	    val t  = #typ i
+	    val t' = checked Env.lookupExistent(E, z)
+		     (i, "Id unknown", #[ID(z,n), TYPE t])
 	in
-	    check (Type.equals(t, #typ i)) (i,"Id type");
+	    check (Type.equals(t',t))
+		  (i, "Id type", #[ID(z,n), TYPE_PAIR(t',t)]);
 	    t
 	end
 
     fun chBindId E (Id(i, z, n)) =
+	(* id = z    z notin Dom E    E' = E,z:t
+	 * -------------------------------------
+	 *       E |- id : t => t,E'
+	 *)
 	let
 	    val t = #typ i
 	in
-	    check' Env.insertDisjoint(E,z,t) (i,"Id bound twice");
+	    checked Env.insertDisjoint(E, z, t)
+		    (i, "Id bound twice", #[ID(z,n), TYPE t]);
 	    t
 	end
 
     fun chLongid E =
+	(*   E |- id => t
+	 * ----------------
+	 * E |- id : t => t
+	 *)
 	fn ShortId(i, id) =>
 	   let
-		val t = chId E id
+		val t  = #typ i
+		val t' = chId E id
 	   in
-		check (Type.equals(t,#typ i)) (i,"ShortId type");
+		check (Type.equals(t',t))
+		      (i, "ShortId type",
+			  #[ID(stamp id, name id), TYPE_PAIR(t',t)]);
 		t
 	   end
 
+	(* E |- lab => a    E |- longid => {a:t,r}
+	 * ---------------------------------------
+	 *       E |- longid.lab : t => t
+	 *)
          | LongId(i, longid, lab) =>
 	   let
+		val t  = #typ i
 		val a  = chLab E lab
 		val t1 = chLongid E longid
-		val r  = check' Type.asProd' t1       (i,"LongId sel type")
-		val ts = check' Type.lookupRow(r,a)   (i,"LongId label")
-		val _  = check (Vector.length ts = 1) (i,"LongId field type")
-		val t  = Vector.sub(ts,0)
+		val r  = checked Type.asProd' t1
+			 (i, "LongId sel type", #[LONGID longid, TYPE t1])
+		val t' = checked Type.lookupRow(r,a)
+			 (i, "LongId label", #[LAB a, TYPE t1])
 	   in
-		check (Type.equals(t,#typ i)) (i,"LongId type");
+		check (Type.equals(t',t))
+		      (i, "LongId type", #[LAB a, TYPE_PAIR(t',t)]);
 		t
 	   end
 
@@ -149,190 +223,299 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
   (* Fields *)
 
     fun chFields chX E fields =
-	    List.foldl (chField chX E) (Type.emptyRow()) fields
+	(* |- lab => a    E |- X => t    E |- fields => r    a notin r
+	 * -----------------------------------------------------------
+	 *             E,r |- lab=X,fields => a:t,r
+	 *)
+	Vector.foldl (chField chX E) (Type.emptyRow()) fields
 
     and chField chX E (Field(i, lab, x), r) =
+	(* |- lab => a    E |- X => t
+	 * --------------------------
+	 *  E,r |- lab=X => a:t,r
+	 *)
 	let
 	    val a = chLab E lab
 	    val t = chX E x
 	in
-	    checkI' Type.extendRow(a,#[t],r) (i,"Field duplicate")
+	    checked' Type.extendRow(a,t,r)
+		     (i, "Field duplicate", #[LAB a, TYPE t])
 	end
 
 
   (* Expressions *)
 
-    fun chExps E exps = List.map (chExp E) exps
+    fun chExps E exps = Vector.map (chExp E) exps
     and chExp E =
+	(*   E |- lit => t
+	 * -----------------
+	 * E |- lit : t => t
+	 *)
 	fn LitExp(i, lit) =>
 	   let
-		val t = chLit lit
+		val t  = #typ i
+		val t' = chLit E lit
 	   in
-		check (Type.equals(t, #typ i)) (i,"LitExp type");
+		check (Type.equals(t',t))
+		      (i, "LitExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
+	(*          t : *
+	 * -------------------------
+	 * E |- prim string : t => t
+	 *)
 	 | PrimExp(i, string) =>
-		#typ i
-
-	 | NewExp(i, isNary) =>
 	   let
 		val t = #typ i
+		val k = Type.kind t
 	   in
-		check (isOpenType(unquantify t)) (i,"NewExp type sort");
+		check (k = Type.STAR)
+		      (i, "PrimExp kind", #[KIND k, TYPE t]);
 		t
 	   end
 
+	(* t > conarrow (t1->t2) t3    t2 is open
+	 * --------------------------------------
+	 *           E |- new : t => t
+	 *)
+	 | NewExp(i, isNary) =>
+	   let
+		val  t       = #typ i
+		val (t',t3)  = checked Type.asApply(Type.instance t)
+			      (i, "NewExp type 1", #[TYPE t])
+		val (t4,t'') = checked Type.asApply t'
+			      (i, "NewExp type 2", #[TYPE t])
+		val (t1,t2)  = checked Type.asArrow t''
+			      (i, "NewExp type", #[TYPE t])
+		(*UNFINISHED: check isNary *)
+	   in
+		check (isOpenType t2)
+		      (i, "NewExp type sort", #[TYPE t2]);
+		t
+	   end
+
+	(* E |- longid => t'    t' > t
+	 * ---------------------------
+	 *   E |- longid : t => t
+	 *)
 	 | VarExp(i, longid) =>
 	   let
-		val t1 = chLongid E longid
 		val t  = #typ i
+		val t' = chLongid E longid
 	   in
-		check (Type.matches(t1,t)) (i,"VarExp type");
+		check (Type.matches(t',t))
+		      (i, "VarExp type", #[LONGID longid, TYPE_PAIR(t',t)]);
 		t
 	   end
 
-	 | TagExp(i, lab, isNary) =>
+	(* E |- lab => a    E |- exp => t'    t = {a:t',r}
+	 * -----------------------------------------------
+	 *            E |- `lab(exp) : t => t
+	 *)
+	 | TagExp(i, lab, exp, isNary) =>
 	   let
-		val  a       = chLab E lab
+		val t  = #typ i
+		val a  = chLab E lab
+		val t' = chExp E exp
+		val r  = checked Type.asSum' t
+			 (i, "TagExp type", #[TYPE t])
+		val t1 = checked Type.lookupRow(r,a)
+			 (i, "TagExp label", #[LAB a, TYPE t])
+		(*UNFINISHED: check isNary *)
+	   in
+		check (Type.equals(t1,t'))
+		      (i, "TagExp argument type", #[TYPE_PAIR(t1,t')]);
+		t
+	   end
+
+	(*   E |- longid => t1    E |- exp => t2
+	 * t1 > conarrow (t2->t) t3    t is open
+	 * -------------------------------------
+	 *       E |- longid(exp) : t => t
+	 *)
+	 | ConExp(i, longid, exp, isNary) =>
+	   let
 		val  t       = #typ i
-		val (ts2,t2) = asArrows(unquantify t)
-		val  r       = check' Type.asSum' t2      (i,"TagExp type")
-		val  ts1     = check' Type.lookupRow(r,a) (i,"TagExp label")
+		val  t1      = chLongid E longid
+		val  t2      = chExp E exp
+		val (t',t3)  = checked Type.asApply(Type.instance t1)
+			       (i, "ConExp constructor type 1", #[TYPE t1])
+		val (t4,t'') = checked Type.asApply t'
+			       (i, "ConExp constructor type 2", #[TYPE t1])
+		val (t2',t') = checked Type.asArrow t''
+			       (i, "ConExp constructor type", #[TYPE t1])
 		(*UNFINISHED: check isNary *)
 	   in
-		check (Vector.length ts1 = List.length ts2) (i,"TagExp arity");
-		check (VectorPair.all Type.equals (ts1, Vector.fromList ts2))
-						(i,"TagExp argument type");
+		check (isOpenType t)
+		      (i,"ConExp constructor type sort", #[TYPE t]);
+		checked Type.unify(t2,t2')
+		      (i, "ConExp argument type",
+			  #[TYPE_PAIR(t'', Type.inArrow(t2,t2'))]);
+		checked Type.unify(t',t)
+		      (i, "ConExp type",
+			  #[TYPE_PAIR(t'', Type.inArrow(t',t))]);
 		t
 	   end
 
-	 | ConExp(i, longid, isNary) =>
-	   let
-		val t1 = chLongid E longid
-		val t  = #typ i
-		(*UNFINISHED: check isNary *)
-	   in
-		check (Type.matches(t1,t))       (i,"ConExp type");
-		check (isOpenType(unquantify t)) (i,"ConExp type constructor");
-		t
-	   end
-
-	 | RefExp(i) =>
+	(* E |- exp => t'    t = c_ref(t')
+	 * -------------------------------
+	 *    E |- ref(exp) : t => t
+	 *)
+	 | RefExp(i, exp) =>
 	   let
 		val t  = #typ i
-		val t1 = check' (#2 o Type.asArrow' o unquantify) t
-						(i,"RefExp type")
-		val c  = check' Type.asCon' t1  (i,"RefExp type")
+		val t' = chExp E exp
+		val t1 = Type.inApply(PervasiveType.typ_ref, t')
 	   in
-		check (c = con_ref) (i,"RefExp type constructor");
+		check (Type.equals(t1,t))
+		      (i, "RefExp type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
 
+	(* E |- exp_i => t_i    t = (t_1,..,t_n)
+	 * -------------------------------------
+	 *    E |- (exp_1,..,exp_n) : t => t
+	 *)
 	 | TupExp(i, exps) =>
 	   let
-		val t = Type.inTuple(Vector.fromList(chExps E exps))
+		val t  = #typ i
+		val ts = chExps E exps
 	   in
-		check (Type.equals(t, #typ i)) (i,"TupExp type");
+		check (Type.equals(Type.inTuple ts, t))
+		      (i, "TupExp type", #[TYPE_PAIR(Type.inTuple ts, t)]);
 		t
 	   end
 
+	(* E |- fields => r    t = {r}
+	 * ---------------------------
+	 *   E |- {fields} : t => t
+	 *)
 	 | ProdExp(i, fields) =>
 	   let
-		val t = Type.inProd(chFields chExp E fields)
+		val t = #typ i
+		val r = chFields chExp E fields
 	   in
-		check (Type.equals(t, #typ i)) (i,"ProdExp type");
+		check (Type.equals(Type.inProd r, t))
+		      (i, "ProdExp type", #[TYPE_PAIR(Type.inProd r, t)]);
 		t
 	   end
 
-	 | SelExp(i, lab) =>
+	(* E |- lab => a    E |- exp => {a:t,r}
+	 * ------------------------------------
+	 *       E |- #lab(exp) : t => t
+	 *)
+	 | SelExp(i, lab, exp) =>
 	   let
-		val  a      = chLab E lab
-		val  t      = #typ i
-		val (t1,t2) = check' Type.asArrow' t (i,"SelExp type")
-		val  r      = check' Type.asProd' t1 (i,"SelExp type")
-		val  ts     = check' Type.lookupRow(r,a) (i,"SelExp label")
-		val  _      = check (Vector.length ts=1) (i,"SelExp field type")
-		val  t1'    = Vector.sub(ts,0)
+		val t  = #typ i
+		val a  = chLab E lab
+		val t' = chExp E exp
+		val r  = checked Type.asProd' t'
+			 (i, "SelExp type", #[LAB a, TYPE t'])
+		val t1 = checked Type.lookupRow(r,a)
+			 (i, "SelExp label", #[LAB a, TYPE t'])
 	   in
-		check (Type.equals(t1',t1)) (i,"SelExp field type");
+		check (Type.equals(t1,t))
+		      (i, "SelExp field type", #[LAB a, TYPE_PAIR(t1,t')]);
 		t
 	   end
 
+	(* E |- exp_i => t'    t = c_vec(t')
+	 * ---------------------------------
+	 *  E |- #[exp_1,..,exp_n] : t => t
+	 *)
 	 | VecExp(i, exps) =>
 	   let
-		val  ts     = chExps E exps
 		val  t      = #typ i
-		val (t1,t2) = check' Type.asApply' t (i,"VecExp type")
-		val  c      = check' Type.asCon' t1  (i,"VecExp type")
+		val  ts     = chExps E exps
+		val (t1,t2) = checked Type.asApply' t
+			      (i, "VecExp type", #[TYPE t])
 	   in
-		check (c = con_vec) (i,"VecExp type constructor");
-		check (List.all (fn t' => Type.equals(t',t2)) ts)
-				    (i,"VecExp component type");
+		check (Type.equals(t1, PervasiveType.typ_vec))
+		      (i, "VecExp type constructor", #[TYPE t1]);
+		check (Vector.all (fn t' => Type.equals(t',t2)) ts)
+		      (i, "VecExp component type", #[TYPE t2]);
 		t
 	   end
 
+	(* E |- match_i => t1,t2    t = t1->t2
+	 * ------------------------------------
+	 * E |- fun match_1|..|match_n : t => t
+	 *)
 	 | FunExp(i, matchs) =>
 	   let
 		val  t      = #typ i
-		val (t1,t2) = check' Type.asArrow' t (i,"FunExp type")
+		val (t1,t2) = checked Type.asArrow' t
+			      (i, "FunExp type", #[TYPE t])
 		val  tts    = chMatchs E matchs
 	   in
-		check (List.all (fn(t3,t4) =>
-			Type.equals(t3,t1) andalso Type.equals(t4,t2)) tts)
-		      (i,"FunExp match types");
+		check (Vector.all (fn(t1',t2') =>
+			Type.equals(t1',t1) andalso Type.equals(t2',t2)) tts)
+		      (i, "FunExp match types", #[TYPE t]);
 		t
 	   end
 
+	(* E |- exp1 => t'->t    E |- exp2 => t'
+	 * -------------------------------------
+	 *       E |- exp1(exp2) : t => t
+	 *)
 	 | AppExp(i, exp1, exp2) =>
 	   let
-		val  t        = #typ i
-		val  t1       = chExp E exp1
-		val  t2       = chExp E exp2
-		val (t11,t12) = check' Type.asArrow' t1 (i,"AppExp func type")
+		val  t      = #typ i
+		val  t0     = chExp E exp1
+		val  t'     = chExp E exp2
+		val (t1,t2) = checked Type.asArrow' t0
+			      (i, "AppExp function type", #[TYPE t0])
 	   in
-		check (Type.equals(t11,t2)) (i,"AppExp argument type");
-		check (Type.equals(t12, t)) (i,"AppExp result type");
+		check (Type.equals(t1,t'))
+		      (i, "AppExp argument type", #[TYPE_PAIR(t1,t')]);
+		check (Type.equals(t2,t))
+		      (i, "AppExp type", #[TYPE_PAIR(t2,t)]);
 		t
 	   end
 
-	 | AdjExp(i, exp1, exp2) =>
-	   let
-		val t  = #typ i
-		val t1 = chExp E exp1
-		val t2 = chExp E exp2
-	   in
-		check (Type.isProd' t orelse Type.isTuple' t)
-					   (i,"AdjExp type");
-		check (Type.equals(t1, t)) (i,"AdjExp left operand type");
-		check (Type.equals(t2, t)) (i,"AdjExp right operand type");
-		t
-	   end
-
+	(* E |- exp1 => c_bool    E |- exp2 => c_bool    t = c_bool
+	 * --------------------------------------------------------
+	 *                E |- exp1 and exp2 : t => t
+	 *)
 	 | AndExp(i, exp1, exp2) =>
 	   let
 		val t  = #typ i
 		val t1 = chExp E exp1
 		val t2 = chExp E exp2
 	   in
-		check (Type.equals(t, typ_bool)) (i,"AndExp type");
-		check (Type.equals(t1,typ_bool)) (i,"AndExp left operand type");
-		check (Type.equals(t2,typ_bool)) (i,"AndExp right operand type");
+		check (Type.equals(t1, PervasiveType.typ_bool))
+		      (i, "AndExp left operand type", #[TYPE t1]);
+		check (Type.equals(t2, PervasiveType.typ_bool))
+		      (i, "AndExp right operand type", #[TYPE t2]);
+		check (Type.equals(t,  PervasiveType.typ_bool))
+		      (i, "AndExp type", #[TYPE t]);
 		t
 	   end
 
+	(* E |- exp1 => c_bool    E |- exp2 => c_bool    t = c_bool
+	 * --------------------------------------------------------
+	 *                E |- exp1 or exp2 : t => t
+	 *)
 	 | OrExp(i, exp1, exp2) =>
 	   let
 		val t  = #typ i
 		val t1 = chExp E exp1
 		val t2 = chExp E exp2
 	   in
-		check (Type.equals(t, typ_bool)) (i,"OrExp type");
-		check (Type.equals(t1,typ_bool)) (i,"OrExp left operand type");
-		check (Type.equals(t2,typ_bool)) (i,"OrExp right operand type");
+		check (Type.equals(t1, PervasiveType.typ_bool))
+		      (i, "OrExp left operand type", #[TYPE t1]);
+		check (Type.equals(t2, PervasiveType.typ_bool))
+		      (i, "OrExp right operand type", #[TYPE t2]);
+		check (Type.equals(t,  PervasiveType.typ_bool))
+		      (i, "OrExp type", #[TYPE t]);
 		t
 	   end
 
+	(* E |- exp1 => c_bool    E |- exp2 => t    E |- exp3 => t
+	 * -------------------------------------------------------
+	 *        E |- if exp1 then exp2 else exp3 : t => t
+	 *)
 	 | IfExp(i, exp1, exp2, exp3) =>
 	   let
 		val t  = #typ i
@@ -340,98 +523,176 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
 		val t2 = chExp E exp2
 		val t3 = chExp E exp3
 	   in
-		check (Type.equals(t1, typ_bool)) (i,"IfExp condition type");
-		check (Type.equals(t2, t))        (i,"IfExp then branch type");
-		check (Type.equals(t3, t))        (i,"IfExp else branch type");
+		check (Type.equals(t1, PervasiveType.typ_bool))
+		      (i, "IfExp condition type", #[TYPE t1]);
+		check (Type.equals(t2, t))
+		      (i, "IfExp then branch type", #[TYPE_PAIR(t2,t)]);
+		check (Type.equals(t3, t))
+		      (i, "IfExp else branch type", #[TYPE_PAIR(t3,t)]);
 		t
 	   end
 
-	 | WhileExp(i, exp1, exp2) =>
+	(* E |- exp1 => t'    E |- exp2 => t
+	 * ---------------------------------
+	 *     E |- exp1;exp2 : t => t
+	 *)
+	 | SeqExp(i, exp1, exp2) =>
 	   let
 		val t  = #typ i
 		val t1 = chExp E exp1
 		val t2 = chExp E exp2
 	   in
-		check (Type.equals(t1, typ_bool)) (i,"WhileExp condition type");
-		check (Type.equals(t,  typ_unit)) (i,"WhileExp type");
+		check (Type.equals(t2,t))
+		      (i, "SeqExp type", #[TYPE_PAIR(t2,t)]);
 		t
 	   end
 
-	 | SeqExp(i, exps) =>
-	   let
-		val t  = #typ i
-		val ts = chExps E exps
-		val t1 = check' List.last ts (i,"SeqExp empty")
-	   in
-		check (Type.equals(t1, t)) (i,"SeqExp type");
-		t
-	   end
-
+	(*    E |- exp => t'    E |- match_i => t',t
+	 * --------------------------------------------
+	 * E |- case exp of match_1|..|match_n : t => t
+	 *)
 	 | CaseExp(i, exp, matchs) =>
 	   let
 		val t   = #typ i
-		val t1  = chExp E exp
+		val t'  = chExp E exp
 		val tts = chMatchs E matchs
 	   in
-		check (List.all (fn(t2,t3) =>
-			Type.equals(t2,t1) andalso Type.equals(t3,t)) tts)
-		      (i,"CaseExp match types");
+		check (Vector.all (fn(t1,t2) =>
+			Type.equals(t1,t') andalso Type.equals(t2,t)) tts)
+		      (i, "CaseExp match types", #[TYPE(Type.inArrow(t',t))]);
 		t
 	   end
 
+	(* E |- exp => c_exn    t : *
+	 * --------------------------
+	 *  E |- raise exp : t => t
+	 *)
 	 | RaiseExp(i, exp) =>
 	   let
-		val t1 = chExp E exp
+		val t  = #typ i
+		val t' = chExp E exp
+		val k  = Type.kind t
 	   in
-		check (Type.equals(t1, typ_exn)) (i,"RaiseExp argument type");
-		#typ i
+		check (Type.equals(t', PervasiveType.typ_exn))
+		      (i, "RaiseExp argument type", #[TYPE t']);
+		check (k = Type.STAR)
+		      (i, "RaiseExp kind", #[KIND k, TYPE t]);
+		t
 	   end
 
+	(*    E |- exp => t    E |- match_i => c_exn,t
+	 * -----------------------------------------------
+	 * E |- try exp handle match_1|..|match_n : t => t
+	 *)
 	 | HandleExp(i, exp, matchs) =>
 	   let
-		val t   = chExp E exp
+		val t   = #typ i
+		val t'  = chExp E exp
 		val tts = chMatchs E matchs
 	   in
-		check (Type.equals(t, #typ i)) (i,"HandleExp type");
-		check (List.all (fn(t1,t2) =>
-			Type.equals(t1,typ_exn) andalso Type.equals(t2,t)) tts)
-		      (i,"HandleExp match types");
+		check (Type.equals(t',t))
+		      (i, "HandleExp type", #[TYPE_PAIR(t',t)]);
+		check (Vector.all (fn(t1,t2) =>
+			Type.equals(t1, PervasiveType.typ_exn) andalso
+			Type.equals(t2,t)) tts)
+		      (i, "HandleExp match types", #[TYPE t]);
 		t
 	   end
 
+	(*      t : *
+	 * ------------------
+	 * E |- fail : t => t
+	 *)
 	 | FailExp(i) =>
-		#typ i
+	   let
+		val t = #typ i
+		val k = Type.kind t
+	   in
+		check (k = Type.STAR)
+		      (i, "FailExp kind", #[KIND k, TYPE t]);
+		t
+	   end
 
+	(*     E |- exp => t
+	 * ----------------------
+	 * E |- lazy exp : t => t
+	 *)
 	 | LazyExp(i, exp) =>
 	   let
-		val t = chExp E exp
+		val t  = #typ i
+		val t' = chExp E exp
 	   in
-		check (Type.equals(t, #typ i)) (i,"LazyExp type");
+		check (Type.equals(t',t))
+		      (i, "LazyExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
+	(*     E |- exp => t
+	 * -----------------------
+	 * E |- spawn exp : t => t
+	 *)
+	 | SpawnExp(i, exp) =>
+	   let
+		val t  = #typ i
+		val t' = chExp E exp
+	   in
+		check (Type.equals(t',t))
+		      (i, "SpawnExp type", #[TYPE_PAIR(t',t)]);
+		t
+	   end
+
+	(* E |- decs => E'    E' |- exp => t
+	 * ---------------------------------
+	 *   E |- let decs in exp : t => t
+	 *)
 	 | LetExp(i, decs, exp) =>
 	   let
-		val _ = Env.insertScope E
-		val _ = chDecs E decs
-		val t = chExp E exp
-		val _ = Env.deleteScope E
+		val t  = #typ i
+		val _  = Env.insertScope E
+		val _  = chDecs E decs
+		val t' = chExp E exp
+		val _  = Env.deleteScope E
 	   in
-		check (Type.equals(t, #typ i)) (i,"LetExp type");
+		check (Type.equals(t',t))
+		      (i, "LetExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
-	 | UpExp(i, exp) =>
+	(* E |- exp => t'    t abstracts t'
+	 * --------------------------------
+	 *      E |- abs exp : t => t
+	 *)
+	 | AbsExp(i, exp) =>
 	   let
-		val t = chExp E exp
+		val t  = #typ i
+		val t' = chExp E exp
 	   in
-		check (matches(t, #typ i)) (i,"UpExp type");
+		check (abstracts(t,t'))
+		      (i, "AbsExp type", #[TYPE_PAIR(t',t)]);
+		t
+	   end
+
+	(* E |- exp => t'    t' abstracts t
+	 * --------------------------------
+	 *      E |- unabs exp : t => t
+	 *)
+	 | UnabsExp(i, exp) =>
+	   let
+		val t  = #typ i
+		val t' = chExp E exp
+	   in
+		check (abstracts(t',t))
+		      (i, "UnabsExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
 
-    and chMatchs E matchs = List.map (chMatch E) matchs
+    and chMatchs E matchs = Vector.map (chMatch E) matchs
     and chMatch E (Match(i, pat, exp)) =
+	(* E |- pat => t1,E'    E' |- exp => t2
+	 * ------------------------------------
+	 *      E |- pat -> exp => t1,t2
+	 *)
 	let
 	    val _  = Env.insertScope E
 	    val t1 = chPat E pat
@@ -444,185 +705,287 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
 
   (* Patterns *)
 
-    and chPats E pats = List.map (chPat E) pats
+    and chPats E pats = Vector.map (chPat E) pats
     and chPat E =
+	(*       t : *
+	 * -----------------
+	 * E |- _ : t => t,E
+	 *)
 	fn JokPat(i) =>
-		#typ i
+	   let
+		val t = #typ i
+		val k = Type.kind t
+	   in
+		check (k = Type.STAR)
+		      (i, "JokPat kind", #[KIND k, TYPE t]);
+		t
+	   end
 
+	(*   E |- lit => t
+	 * -------------------
+	 * E |- lit : t => t,E
+	 *)
 	 | LitPat(i, lit) =>
 	   let
-		val t = chLit lit
+		val t  = #typ i
+		val t' = chLit E lit
 	   in
-		check (Type.equals(t, #typ i)) (i,"LitPat type");
+		check (Type.equals(t',t))
+		      (i, "LitPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
+	(* E |- id => t',E'    t' > t
+	 * --------------------------
+	 *    E |- id : t => t,E'
+	 *)
 	 | VarPat(i, id) =>
 	   let
-		val t1 = chBindId E id
 		val t  = #typ i
+		val t' = chBindId E id
 	   in
-		check (Type.matches(t1,t)) (i,"VarPat type");
+		check (Type.matches(t',t))
+		      (i, "VarPat type",
+			  #[ID(stamp id, name id), TYPE_PAIR(t',t)]);
 		t
 	   end
 
-	 | TagPat(i, lab, isNary) =>
+	(* E |- lab => a    E |- pat => t',E'    t = {a:t',r}
+	 * --------------------------------------------------
+	 *            E |- `lab(pat) : t => t,E'
+	 *)
+	 | TagPat(i, lab, pat, isNary) =>
 	   let
-		val  a       = chLab E lab
+		val t  = #typ i
+		val a  = chLab E lab
+		val t' = chPat E pat
+		val r  = checked Type.asSum' t
+			 (i, "TagPat type", #[TYPE t])
+		val t1 = checked Type.lookupRow(r,a)
+			 (i, "TagPat label", #[LAB a, TYPE t])
+		(*UNFINISHED: check isNary *)
+	   in
+		check (Type.equals(t1,t'))
+		      (i, "TagPat argument type", #[TYPE_PAIR(t1,t')]);
+		t
+	   end
+
+	(* E |- longid => t1    E |- pat => t2,E'
+	 * t1 > conarrow (t2->t) t3    t is open
+	 * --------------------------------------
+	 *       E |- longid(pat) : t => t,E'
+	 *)
+	 | ConPat(i, longid, pat, isNary) =>
+	   let
 		val  t       = #typ i
-		val (ts2,t2) = asArrows(unquantify t)
-		val  r       = check' Type.asSum' t2      (i,"TagPat type")
-		val  ts1     = check' Type.lookupRow(r,a) (i,"TagPat label")
+		val  t1      = chLongid E longid
+		val  t2      = chPat E pat
+		val (t',t3)  = checked Type.asApply(Type.instance t1)
+			       (i, "ConPat constructor type 1", #[TYPE t1])
+		val (t4,t'') = checked Type.asApply t'
+			       (i, "ConPat constructor type 2", #[TYPE t1])
+		val (t2',t') = checked Type.asArrow t''
+			       (i, "ConPat constructor type", #[TYPE t1])
 		(*UNFINISHED: check isNary *)
 	   in
-		check (Vector.length ts1 = List.length ts2) (i,"TagPat arity");
-		check (VectorPair.all Type.equals (ts1, Vector.fromList ts2))
-						(i,"TagPat argument type");
+		check (isOpenType t)
+		      (i,"ConPat constructor type sort", #[TYPE t]);
+		checked Type.unify(t2,t2')
+		      (i, "ConPat argument type",
+			  #[TYPE_PAIR(t'', Type.inArrow(t2,t2'))]);
+		checked Type.unify(t',t)
+		      (i, "ConPat type",
+			  #[TYPE_PAIR(t'', Type.inArrow(t',t))]);
 		t
 	   end
-
-	 | ConPat(i, longid, isNary) =>
+	(* E |- longid => t''    E |- pat => t',E'    t'' > t'->t    t is open
+	 * -------------------------------------------------------------------
+	 *             E |- longid(pat) : t => t,E'
+	 | ConPat(i, longid, pat, isNary) =>
 	   let
-		val t1 = chLongid E longid
-		val t  = #typ i
+		val t   = #typ i
+		val t'  = chPat E pat
+		val t'' = chLongid E longid
 		(*UNFINISHED: check isNary *)
 	   in
-		check (Type.matches(t1,t)) (i,"ConPat type");
-		check (isOpenType t)       (i,"ConPat type constructor");
+		check (Type.matches(t'',Type.inArrow(t',t)))
+		      (i, "ConPat type", #[TYPE_PAIR(t'', Type.inArrow(t',t))]);
+		check (isOpenType t)
+		      (i, "ConPat type sort", #[TYPE t]);
 		t
 	   end
+	*)
 
-	 | RefPat(i) =>
+	(* E |- pat => t',E'    t = c_ref(t')
+	 * ---------------------------------
+	 *    E |- ref(pat) : t => t,E'
+	 *)
+	 | RefPat(i, pat) =>
 	   let
 		val t  = #typ i
-		val t1 = check' (#2 o Type.asArrow') t (i,"RefPat type")
-		val c  = check' Type.asCon' t1         (i,"RefPat type")
+		val t' = chPat E pat
+		val t1 = Type.inApply(PervasiveType.typ_ref, t')
 	   in
-		check (c = con_ref) (i,"RefPat type constructor");
+		check (Type.equals(t1,t))
+		      (i, "RefPat type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
 
+	(* E |- pat_i => t_i,E_i    t = (t_1,..,t_n)    E' = E,E_1,..,E_n
+	 * --------------------------------------------------------------
+	 *               E |- (pat_1,..,pat_n) : t => t,E'
+	 *)
 	 | TupPat(i, pats) =>
 	   let
-		val t = Type.inTuple(Vector.fromList(chPats E pats))
+		val t  = #typ i
+		val ts = chPats E pats
 	   in
-		check (Type.equals(t, #typ i)) (i,"TupPat type");
+		check (Type.equals(Type.inTuple ts, t))
+		      (i, "TupPat type", #[TYPE_PAIR(Type.inTuple ts, t)]);
 		t
 	   end
 
+	(* E |- fields => r,E'    t = {r,...}
+	 * ----------------------------------
+	 *     E |- {fields} : t => t,E'
+	 *)
 	 | ProdPat(i, fields) =>
 	   let
-		val t = Type.inProd(chFields chPat E fields)
+		val t  = #typ i
+		val r  = chFields chPat E fields
+		val r' = checked Type.asProd t
+			 (i, "ProdPat type", #[TYPE t]);
 	   in
-		check (Type.equals(t, #typ i)) (i,"ProdPat type");
+		check (matchesRow(r,r'))
+		      (i, "ProdPat row", #[TYPE_PAIR(Type.inProd r, t)]);
 		t
 	   end
 
+	(* E |- pat_i => t',E_i    t = c_vec(t')    E' = E,E_1,..,E_n
+	 * ----------------------------------------------------------
+	 *             E |- #[pat_1,..,pat_n] : t => t,E'
+	 *)
 	 | VecPat(i, pats) =>
 	   let
-		val  ts     = chPats E pats
 		val  t      = #typ i
-		val (t1,t2) = check' Type.asApply' t (i,"VecPat type")
-		val  c      = check' Type.asCon' t1  (i,"VecPat type")
+		val  ts     = chPats E pats
+		val (t1,t2) = checked Type.asApply' t
+			      (i, "VecPat type", #[TYPE t])
 	   in
-		check (c = con_vec) (i,"VecPat type constructor");
-		check (List.all (fn t' => Type.equals(t',t2)) ts)
-				    (i,"VecPat component type");
+		check (Type.equals(t1, PervasiveType.typ_vec))
+		      (i, "VecPat type constructor", #[TYPE t1]);
+		check (Vector.all (fn t' => Type.equals(t',t2)) ts)
+		      (i, "VecPat component type", #[TYPE t2]);
 		t
 	   end
 
-	 | AppPat(i, pat1, pat2) =>
-	   let
-		val  t        = #typ i
-		val  t1       = chPat E pat1
-		val  t2       = chPat E pat2
-		val (t11,t12) = check' Type.asArrow' t1 (i,"AppPat func type")
-	   in
-		check (Type.equals(t11,t2)) (i,"AppPat argument type");
-		check (Type.equals(t12, t)) (i,"AppPat result type");
-		t
-	   end
-
+	(* E |- pat1 => t,E1    E |- pat2 => t,E2    E' = E,E1,E2
+	 * ------------------------------------------------------
+	 *             E |- pat1 as pat2 : t => t,E'
+	 *)
 	 | AsPat(i, pat1, pat2) =>
 	   let
 		val t  = #typ i
 		val t1 = chPat E pat1
 		val t2 = chPat E pat2
 	   in
-		check (Type.equals(t1,t)) (i,"AsPat left operand type");
-		check (Type.equals(t2,t)) (i,"AsPat right operand type");
+		check (Type.equals(t1,t))
+		      (i, "AsPat left operand type", #[TYPE_PAIR(t1,t)]);
+		check (Type.equals(t2,t))
+		      (i, "AsPat right operand type", #[TYPE_PAIR(t2,t)]);
 		t
 	   end
 
-	 | AltPat(i, []) =>
-		#typ i
-
-	 | AltPat(i, pat1::pats) =>
+	(* E |- pat1 => t,E'    E |- pat2 => t,E'
+	 * --------------------------------------
+	 *      E |- pat1 | pat2 : t => t,E'
+	 *)
+	 | AltPat(i, pat1, pat2) =>
 	   let
 		val t  = #typ i
 		val _  = Env.insertScope E
 		val t1 = chPat E pat1
 		val E' = Env.splitScope E
-		val _  = chAltPats (E,E',t) pats
-		val _  = chPat E pat1	(* to finally enter bindings *)
+		val _  = Env.insertScope E
+		val t2 = chPat E pat2
 	   in
-		check (Type.equals(t1, t)) (infoPat pat1, "AltPat type");
+		check (Type.equals(t1,t))
+		      (infoPat pat1, "AltPat left type", #[TYPE_PAIR(t1,t)]);
+		check (Type.equals(t2,t))
+		      (infoPat pat1, "AltPat right type", #[TYPE_PAIR(t2,t)]);
+		check (Env.sizeScope E' = Env.sizeScope E)
+		      (i, "AltPat bindings", #[INT(Env.sizeScope E'),
+					       INT(Env.sizeScope E)]);
+		Env.appiScope
+		    (fn(z,t1) =>
+			let val t2 = checked Env.lookupExistent(E,z)
+				     (i, "AltPat bindings", #[ID(z, Name.InId)])
+			in check (Type.equals(t1,t2))
+				 (i, "AltPat binding types",
+				     #[ID(z, Name.InId), TYPE_PAIR(t1,t2)])
+			end
+		    ) E';
+		Env.mergeScope E;
 		t
 	   end
 
+	(*     E |- pat => t,E'
+	 * ------------------------
+	 * E |- non pat : t => t,E
+	 *)
 	 | NegPat(i, pat) =>
 	   let
-		val _ = Env.insertScope E
-		val t = chPat E pat
-		val _ = Env.deleteScope E
+		val t  = #typ i
+		val _  = Env.insertScope E
+		val t' = chPat E pat
+		val _  = Env.deleteScope E
 	   in
-		check (Type.equals(t, #typ i)) (i,"NegPat type");
+		check (Type.equals(t',t))
+		      (i, "NegPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
+	(* E |- pat => t,E'    E' |- exp => c_bool
+	 * ---------------------------------------
+	 *     E |- pat where exp : t => t,E'
+	 *)
 	 | GuardPat(i, pat, exp) =>
 	   let
-		val t  = chPat E pat
+		val t  = #typ i
+		val t' = chPat E pat
 		val t2 = chExp E exp
 	   in
-		check (Type.equals(t2, typ_bool)) (i,"GuardPat condition type");
-		check (Type.equals(t, #typ i))    (i,"GuardPat type");
+		check (Type.equals(t2, PervasiveType.typ_bool))
+		      (i, "GuardPat condition type", #[TYPE t2]);
+		check (Type.equals(t',t))
+		      (i, "GuardPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
+	(* E |- pat => t,E'    E' |- decs => E''
+	 * -------------------------------------
+	 *  E |- pat with decs end : t => t,E''
+	 *)
 	 | WithPat(i, pat, decs) =>
 	   let
-		val t = chPat E pat
+		val t  = #typ i
+		val t' = chPat E pat
 	   in
 		chDecs E decs;
-		check (Type.equals(t, #typ i)) (i,"WithPat type");
+		check (Type.equals(t',t))
+		      (i, "WithPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
-
-    and chAltPats (E,E',t) pats = List.map (chAltPat (E,E',t)) pats
-    and chAltPat  (E,E',t) pat =
-	let
-	    val i   = infoPat pat
-	    val _   = Env.insertScope E
-	    val t'  = chPat E pat
-	    val E'' = Env.splitScope E
-	in
-	    check (Type.equals(t',t)) (i,"AltPat type");
-	    check (Env.sizeScope E' = Env.sizeScope E'') (i,"AltPat bindings");
-	    Env.appiScope
-		(fn(z,t1) =>
-		    let val t2 = check' Env.lookupExistent(E',z)
-						  (i,"AltPat bindings")
-		    in check (Type.equals(t1,t2)) (i,"AltPat binding types") end
-		) E'';
-	    t
-	end
 
 
   (* Declarations *)
 
-    and chDecs E decs = List.app (chDec E) decs
+    and chDecs E decs = Vector.app (chDec E) decs
     and chDec E =
+	(* E |- pat => t,E'    E |- exp => t
+	 * ---------------------------------
+	 *      E |- pat = exp => E'
+	 *)
 	fn ValDec(i, pat, exp) =>
 	   let
 		val t1 = #typ(infoPat pat)
@@ -630,9 +993,14 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
 	   in
 		chExp E exp;
 		chPat E pat;
-		checkI (Type.equals(t1,t2)) (i, "ValDec lhs/rhs type")
+		check' (Type.equals(t1,t2))
+		       (i, "ValDec lhs/rhs type", #[TYPE_PAIR(t1,t2)])
 	   end
 
+	(*      E' |- decs => E'
+	 * -------------------------
+	 * E |- rec decs = exp => E'
+	 *)
          | RecDec(i, decs) =>
 	   let in
 		chRecDecsLHS E decs;
@@ -641,7 +1009,7 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
 		Env.deleteScope E
 	   end
 
-    and chRecDecsLHS E decs = List.app (chRecDecLHS E) decs
+    and chRecDecsLHS E decs = Vector.app (chRecDecLHS E) decs
     and chRecDecLHS E =
 	fn ValDec(i, pat, exp) =>
 		ignore(chPat E pat)
@@ -653,8 +1021,19 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
 
   (* Components *)
 
-    fun check (imps, (exp,sign)) = ignore(chExp (Env.new()) exp)
-	(*UNFINISHED: check import and export*)
-*)
-    fun check _ = ()
-  end
+    fun chImps E imps = Vector.app (chImp E) imps
+    and chImp E (id, s, url) = ignore(chBindId E id)
+
+    fun check (imps, decs, fields, s) =
+	(* |- imps => E    E |- decs => E'    E' |- fields => r
+	 * ----------------------------------------------------
+	 *      |- import imps let decs in fields : s
+	 *)
+	let
+	    val E = Env.new()
+	in
+	    chImps E imps;
+	    chDecs E decs;
+	    ignore(chFields chId E fields)
+	end
+end
