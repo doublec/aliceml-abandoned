@@ -23,7 +23,7 @@
     <LI><A href="#fundamental">the fundamental library</A>
     <LI><A href="#system">the system library</A>
     <LI><A href="#utility">utilities library</A>
-    <LI><A href="#inspector">inspector tool</A>
+    <LI><A href="#tools">tools</A>
     <LI><A href="#gui">graphical user interface library</A>
   </UL>
 
@@ -248,7 +248,7 @@
     </LI>
   </UL>
 
-<?php section("inspector", "inspector") ?>
+<?php section("tools", "tools") ?>
 
   <P>
     The <I>Alice Inspector</I> is a tool that allows to interactively
@@ -259,7 +259,7 @@
   <UL>
     <LI>
       <TT>structure Inspector
-      <BR>from "x-alice:/lib/Inspector"</TT>
+      <BR>from "x-alice:/lib/tools/Inspector"</TT>
     </LI>
   </UL>
 
