@@ -22,7 +22,7 @@ JAVA_IO_SOURCES = \
 	FileDescriptor.cc FileInputStream.cc FileOutputStream.cc \
 	ObjectStreamClass.cc
 JAVA_SECURITY_SOURCES = AccessController.cc
-SUN_MISC_SOURCES = AtomicLong.cc
+SUN_MISC_SOURCES = Unsafe.cc AtomicLong.cc
 SUN_REFLECT_SOURCES = Reflection.cc NativeConstructorAccessorImpl.cc
 SOURCES = \
 	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
