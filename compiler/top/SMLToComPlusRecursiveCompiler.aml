@@ -31,7 +31,7 @@ structure SMLToComPlusMain =
 
 	structure BackendComPlus = MakeBackendComPlus(ComPlusTarget)
 
-	structure SMLToComPlusCompiler =
+	structure Compiler =
 	    MakeCompiler(structure Switches         = Switches
 			 structure Target           = ComPlusTarget
 			 structure FrontendSpecific = FrontendSML
@@ -39,13 +39,16 @@ structure SMLToComPlusMain =
 			 structure BackendCommon    = BackendCommon
 			 structure BackendSpecific  = BackendComPlus)
 
-	structure SMLToComPlusBatchCompiler =
-	    MakeBatchCompiler(structure Composer = Composer
-			      structure Compiler = SMLToComPlusCompiler
-			      val extension = "dll"
+	structure RecursiveCompiler =
+	    MakeRecursiveCompiler(structure Composer = Composer
+				  structure Compiler = Compiler
+				  val extension = "dll")
+
+	structure BatchCompiler =
+	    MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
 			      val executableHeader = "")
 
-	val _ = f := SMLToComPlusBatchCompiler.acquireSign
+	val _ = f := RecursiveCompiler.acquireSign
     in
-	SMLToComPlusBatchCompiler
+	BatchCompiler
     end

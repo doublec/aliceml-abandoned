@@ -1,7 +1,13 @@
-Group is
+Group
+
+    structure SMLToMozartMain
+    structure SMLToComPlusMain
+    structure SMLToStockwerkMain
+    structure Debug
+
+is
 
     main-mozart.cm
     main-com+.cm
     main-stockwerk.cm
-
-    Main.sml
+    debug.cm

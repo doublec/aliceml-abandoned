@@ -36,7 +36,7 @@ structure SMLToMozartMain =
 	    MakeBackendMozart(structure Switches = Switches
 			      structure MozartTarget = MozartTarget)
 
-	structure SMLToMozartCompiler =
+	structure Compiler =
 	    MakeCompiler(structure Switches         = Switches
 			 structure Target           = MozartTarget
 			 structure FrontendSpecific = FrontendSML
@@ -44,14 +44,17 @@ structure SMLToMozartMain =
 			 structure BackendCommon    = BackendCommon
 			 structure BackendSpecific  = BackendMozart)
 
-	structure SMLToMozartBatchCompiler =
-	    MakeBatchCompiler(structure Composer = Composer
-			      structure Compiler = SMLToMozartCompiler
-			      val extension = "ozf"
+	structure RecursiveCompiler =
+	    MakeRecursiveCompiler(structure Composer = Composer
+				  structure Compiler = Compiler
+				  val extension = "ozf")
+
+	structure BatchCompiler =
+	    MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
 			      val executableHeader =
 				  "#!/bin/sh\nexec stow $0 \"$@\"\n")
 
-	val _ = f := SMLToMozartBatchCompiler.acquireSign
+	val _ = f := RecursiveCompiler.acquireSign
     in
-	SMLToMozartBatchCompiler
+	BatchCompiler
     end

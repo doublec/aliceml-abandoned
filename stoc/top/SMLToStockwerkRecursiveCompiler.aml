@@ -33,7 +33,7 @@ structure SMLToStockwerkMain =
 	structure BackendStockwerk =
 	    MakeBackendStockwerk(structure Switches = Switches
 				 structure PickleTarget = PickleTarget)
-	structure SMLToStockwerkCompiler =
+	structure Compiler =
 	    MakeCompiler(structure Switches         = Switches
 			 structure Target           = PickleTarget
 			 structure FrontendSpecific = FrontendSML
@@ -41,14 +41,17 @@ structure SMLToStockwerkMain =
 			 structure BackendCommon    = BackendCommon
 			 structure BackendSpecific  = BackendStockwerk)
 
-	structure SMLToStockwerkBatchCompiler =
-	    MakeBatchCompiler(structure Composer = Composer
-			      structure Compiler = SMLToStockwerkCompiler
-			      val extension = ".stc"
+	structure RecursiveCompiler =
+	    MakeRecursiveCompiler(structure Composer = Composer
+				  structure Compiler = Compiler
+				  val extension = ".stc")
+
+	structure BatchCompiler =
+	    MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
 			      val executableHeader =
 				  "#!/bin/sh\nexec stow $0 \"$@\"\n")
 
-	val _ = f := SMLToStockwerkBatchCompiler.acquireSign
+	val _ = f := RecursiveCompiler.acquireSign
     in
-	SMLToStockwerkBatchCompiler
+	BatchCompiler
     end

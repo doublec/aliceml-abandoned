@@ -13,7 +13,7 @@
 
 (*
  * Scenarios for compiler usage:
- * 1. Batch: always use initial context, discard result
+ * 1. Batch: always use empty context, discard result
  * 2. Interactive: use previous resulting context
  * 3. Debugging: context is provided by some outside magic, discard result
  *)

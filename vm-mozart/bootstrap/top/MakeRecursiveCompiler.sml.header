@@ -3,6 +3,10 @@ import
 from "../lib/TextIO"
 
 import
+    structure IO
+from "../lib/IO"
+
+import
     structure OS
 from "../lib/OS"
 
@@ -19,16 +23,32 @@ import
 from "../infrastructure/Crash"
 
 import
+    structure Source
+from "../infrastructure/Source"
+
+import
     structure Error
 from "../infrastructure/Error"
+
+import
+    signature COMPOSER
+from "../infrastructure/COMPOSER"
+
+import
+    structure Path
+from "../common/Path"
+
+import
+    structure Inf
+from "../common/Inf"
 
 import
     structure Signature
 from "Signature"
 
 import
-    signature BATCH_COMPILER
-from "BATCH_COMPILER"
+    signature COMPILER
+from "COMPILER"
 
 import
     signature RECURSIVE_COMPILER

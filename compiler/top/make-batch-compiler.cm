@@ -1,15 +1,6 @@
 Group is
 
-    ../misc/sources.cm
-    ../infrastructure/sources.cm
-    ../frontend-sml/sources.cm
-    ../frontend-common/sources.cm
-    ../backend-common/sources.cm
-    ../backend-common/output-flat-grammar.cm
+    make-recursive-compiler.cm
 
-    composer.cm
-    compiler.cm
-
-    Pickle.sml
     BATCH_COMPILER.sig
     MakeBatchCompiler.sml

@@ -48,5 +48,9 @@ import
 from "MakeCompiler"
 
 import
+    structure MakeRecursiveCompiler
+from "MakeRecursiveCompiler"
+
+import
     structure MakeBatchCompiler
 from "MakeBatchCompiler"

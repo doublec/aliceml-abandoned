@@ -1,39 +1,3 @@
 import
     structure OS
 from "../lib/OS"
-
-import
-    structure Url
-from "../misc/Url"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    signature SWITCHES
-from "../infrastructure/SWITCHES"
-
-import
-    signature COMPOSER
-from "../infrastructure/COMPOSER"
-
-import   (*--**DEBUG*)
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import   (*--**DEBUG*)
-    structure AbstractGrammar
-from "../frontend-common/AbstractGrammar"
-
-import   (*--**DEBUG*)
-    structure TypedGrammar
-from "../frontend-common/TypedGrammar"
-
-import   (*--**DEBUG*)
-    structure InputGrammar
-from "../frontend-sml/InputGrammar"
-
-import   (*--**DEBUG*)
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
