@@ -8,15 +8,13 @@ struct
     open Array
 
     val DEBUG = true
-    val error = fn s => print s
+    val error = fn s => print ("Error: "^s^"\n")
+    val warning = fn s => print ("Warning: "^s^"\n")
 
     datatype translate = TRANSLATE of {grammar :G.grammar,
 				       stringToTerm :string -> G.term,
 				       stringToNonterm :string -> G.nonterm,
 				       parsers :int,
-				       (*termToString :int -> string,
-				       nontermToString :int -> string,
-				       parserSymbols : ?*)
 				       termlist :(string * string option) list,
 				       rules :A.rule list
 				       }
