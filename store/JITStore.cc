@@ -85,18 +85,20 @@ SeamDll u_int jitDebug = 0;
 
 
 void JITStore::CompileMessage(const char *info) {
+  JITStore::Prepare(1);
   jit_movi_p(JIT_R0, info);
-  jit_pushr_ui(JIT_R0);
-  JITStore::Call(1, (void *) ShowMessage);
+  jit_pusharg_ui(JIT_R0);
+  JITStore::Finish((void *) ShowMessage);
 }
 
 void JITStore::CompileRegister(u_int Reg) {
   static char buffer[256];
   sprintf(buffer, "%s = %%p\n", RegToString(Reg));
-  jit_pushr_ui(Reg);
+  JITStore::Prepare(2);
+  jit_pusharg_ui(Reg);
   jit_movi_p(JIT_R0, strdup(buffer));
-  jit_pushr_ui(JIT_R0);
-  JITStore::Call(2, (void *) ShowRegister);
+  jit_pusharg_ui(JIT_R0);
+  JITStore::Finish((void *) ShowRegister);
 }
 
 void JITStore::LogMesg(const char *info) {
@@ -119,8 +121,9 @@ void JITStore::DumpReg(u_int Value, value_plotter plotter) {
   JIT_BEG_COND();
   JITStore::SaveAllRegs();
   CompileRegister(Value);
-  jit_pushr_ui(Value);
-  Call(1, (void *) plotter);
+  JITStore::Prepare(1);
+  jit_pusharg_ui(Value);
+  JITStore::Finish((void *) plotter);
   JITStore::RestoreAllRegs();
   JIT_END_COND();
 }

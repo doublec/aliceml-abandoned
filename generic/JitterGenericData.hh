@@ -94,10 +94,11 @@ public:
   void Scheduler_PushFrame(u_int Dest, u_int size) {
 #if defined(JIT_ASSERT_INDEX)
     JITStore::SaveAllRegs();
+    JITStore::Prepare(1);
     jit_movi_ui(JIT_R0, size);
-    jit_pushr_ui(JIT_R0);
-    JITStore::Call(1, (void *) Scheduler::PushFrame);
-    jit_sti_p(&JITStore::loadedWord, JIT_RET);
+    jit_pusharg_ui(JIT_R0);
+    JITStore::Finish((void *) Scheduler::PushFrame);
+    jit_sti_p(&JITStore::loadedWord, JIT_R0);
     JITStore::RestoreAllRegs();
     jit_ldi_p(Dest, &JITStore::loadedWord);
 #else
@@ -107,9 +108,8 @@ public:
     jit_addi_p(Dest, Dest, size * sizeof(word));
     jit_ldi_p(JIT_R0, &Scheduler::stackMax);
     jit_insn *succeeded = jit_bltr_p(jit_forward(), Dest, JIT_R0);
-    JITStore::Prepare();
-    JITStore::Call(0, (void *) Scheduler::EnlargeTaskStack);
-    JITStore::Finish();
+    JITStore::Prepare(0);
+    JITStore::Finish((void *) Scheduler::EnlargeTaskStack);
     drop_jit_jmpi(loop);
     jit_patch(succeeded);
     jit_sti_p(&Scheduler::stackTop, Dest);
@@ -118,10 +118,11 @@ public:
   void Scheduler_PushFrameNoCheck(u_int Dest, u_int size) {
 #if defined(JIT_ASSERT_INDEX)
     JITStore::SaveAllRegs();
+    JITStore::Prepare(1);
     jit_movi_ui(JIT_R0, size);
-    jit_pushr_ui(JIT_R0);
-    JITStore::Call(1, (void *) Scheduler::PushFrame);
-    jit_sti_p(&JITStore::loadedWord, JIT_RET);
+    jit_pusharg_ui(JIT_R0);
+    JITStore::Finish((void *) Scheduler::PushFrame);
+    jit_sti_p(&JITStore::loadedWord, JIT_R0);
     JITStore::RestoreAllRegs();
     jit_ldi_p(Dest, &JITStore::loadedWord);
 #else
@@ -134,8 +135,9 @@ public:
   void Scheduler_GetFrame(u_int This) {
 #if defined(JIT_ASSERT_INDEX)
     JITStore::SaveAllRegs();
-    JITStore::Call(0, (void *) Scheduler::GetFrame);
-    jit_sti_p(&JITStore::loadedWord, JIT_RET);
+    JITStore::Prepare(0);
+    JITStore::Finish((void *) Scheduler::GetFrame);
+    jit_sti_p(&JITStore::loadedWord, JIT_R0);
     JITStore::RestoreAllRegs();
     jit_ldi_p(This, &JITStore::loadedWord);
 #else

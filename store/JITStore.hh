@@ -81,25 +81,51 @@ extern "C" {
 typedef void (*value_plotter)(word);
 
 class JITStore : protected LightningState {
-public:
-  // Position independent procedure call
-  // Side-Effect: Scratches JIT_R0
+protected:
+  u_int nbArgs;
+  bool saveCallerSavedRegs;
+
+  // Position independent procedure call and restore caller-saved registers
+  // Side-Effect: Result is returned in JIT_R0
   void Call(u_int nbArgs, void *proc) {
     jit_movi_p(JIT_R0, proc);
-    jit_callr(JIT_R0);
-    // Remove arguments from the stack
     if (nbArgs != 0) {
+      jit_callr(JIT_R0);
+      // Remove arguments from the stack
       jit_addi_ui(JIT_SP, JIT_SP, nbArgs * sizeof(word));
     }
+    else {
+      jit_callr(JIT_R0);
+    }
+    // Move the return value to JIT_R0
+    jit_retval(JIT_R0);
   }
-  // Save/Restore caller-saved registers
-  void Prepare() {
-    jit_pushr_ui(JIT_R1);
-    jit_pushr_ui(JIT_R2);
+public:
+  // Save caller-saved registers and initialize argument bank
+  void Prepare(u_int nbArgs, bool saveCallerSavedRegs = true) {
+    JITStore::saveCallerSavedRegs = saveCallerSavedRegs;
+    if (saveCallerSavedRegs) {
+      jit_pushr_ui(JIT_R1);
+      jit_pushr_ui(JIT_R2);
+    }
+    JITStore::nbArgs = nbArgs;
+    if (nbArgs != 0) {
+      jit_prepare(nbArgs);
+    }
   }
-  void Finish() {
-    jit_popr_ui(JIT_R2);
-    jit_popr_ui(JIT_R1);
+  void Finish(void *proc) {
+    Call(nbArgs, proc);
+    if (saveCallerSavedRegs) {
+      jit_popr_ui(JIT_R2);
+      jit_popr_ui(JIT_R1);
+    }
+  }
+  // Return from subroutine: Result is taken from JIT_R0
+  void Return() {
+    if (JIT_RET != JIT_R0) {
+      jit_movr_p(JIT_RET, JIT_R0);
+    }
+    jit_ret();
   }
   void SaveAllRegs() {
     jit_pushr_ui(JIT_R0);
@@ -142,9 +168,8 @@ protected:
     jit_addi_p(Ptr, Ptr, size);
     jit_ldxi_p(JIT_FP, JIT_R0, sizeof(word));
     jit_insn *succeeded = jit_bltr_p(jit_forward(), Ptr, JIT_FP);
-    Prepare();
-    Call(0, (void *) JITStore::AllocHeapChunk);
-    Finish();
+    Prepare(0);
+    Finish((void *) JITStore::AllocHeapChunk);
     drop_jit_jmpi(loop);
     jit_patch(succeeded);
     jit_str_p(JIT_R0, Ptr);
@@ -262,10 +287,11 @@ public:
   void GetArg(u_int Dest, u_int Ptr, u_int index) {
 #if defined(JIT_ASSERT_INDEX)
     SaveAllRegs();
-    jit_pushr_ui(Ptr);
+    Prepare(2);
+    jit_pusharg_ui(Ptr);
     jit_movi_ui(JIT_R0, index);
-    jit_pushr_ui(JIT_R0);
-    Call(2, (void *) SecureGetArg);
+    jit_pusharg_ui(JIT_R0);
+    Finish((void *) SecureGetArg);
     RestoreAllRegs();
     jit_ldi_p(Dest, &JITStore::loadedWord);
 #else
@@ -275,11 +301,12 @@ public:
   void InitArg(u_int Ptr, u_int index, u_int Value) {
 #if defined(JIT_ASSERT_INDEX)
     SaveAllRegs();
-    jit_pushr_ui(Value);
-    jit_pushr_ui(Ptr);
+    Prepare(3);
+    jit_pusharg_ui(Value);
+    jit_pusharg_ui(Ptr);
     jit_movi_ui(JIT_R0, index);
-    jit_pushr_ui(JIT_R0);
-    Call(3, (void *) SecureInitArg);
+    jit_pusharg_ui(JIT_R0);
+    Finish((void *) SecureInitArg);
     RestoreAllRegs();
 #else
     jit_stxi_p((index + 1) * sizeof(word), Ptr, Value);
@@ -288,24 +315,24 @@ public:
   void ReplaceArg(u_int Ptr, u_int index, u_int Value) {
 #if defined(JIT_ASSERT_INDEX)
     SaveAllRegs();
-    jit_pushr_ui(Value);
-    jit_pushr_ui(Ptr);
+    Prepare(3);
+    jit_pusharg_ui(Value);
+    jit_pusharg_ui(Ptr);
     jit_movi_ui(JIT_R0, index);
-    jit_pushr_ui(JIT_R0);
-    Call(3, (void *) SecureReplaceArg);
+    jit_pusharg_ui(JIT_R0);
+    Finish((void *) SecureReplaceArg);
     RestoreAllRegs();
 #else
     if (STORE_GENERATION_NUM == 2) {
       jit_stxi_p((index + 1) * sizeof(word), Ptr, Value);
     } 
     else {
-      Prepare();
-      jit_pushr_ui(Value);
-      jit_pushr_ui(Ptr);
+      Prepare(3);
+      jit_pusharg_ui(Value);
+      jit_pusharg_ui(Ptr);
       jit_movi_ui(JIT_R0, index);
-      jit_pushr_ui(JIT_R0);
-      Call(3, (void *) Store::JITReplaceArg);
-      Finish();
+      jit_pusharg_ui(JIT_R0);
+      Finish((void *) Store::JITReplaceArg);
     }
 #endif
   }
