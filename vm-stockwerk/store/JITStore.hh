@@ -137,6 +137,7 @@ protected:
     jit_str_p(JIT_R0, Ptr);
     jit_subi_p(Ptr, Ptr, size);
   }
+public:
   // Input: word ptr
   // Output: derefed word ptr
   // Side-Effect: Scratches JIT_R0
@@ -170,7 +171,6 @@ protected:
     else
       Deref(Ptr);
   }
-public:
 #if defined(JIT_STORE_DEBUG)
   // Logging Support
   static void InitLoggging();

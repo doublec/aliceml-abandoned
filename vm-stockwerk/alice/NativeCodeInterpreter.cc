@@ -82,13 +82,11 @@ public:
 //
 // Interpreter Functions
 //
-word NativeCodeInterpreter::returnContinuation;
-word NativeCodeInterpreter::nativeContinuation;
+word NativeCodeInterpreter::continuation[4];
 NativeCodeInterpreter *NativeCodeInterpreter::self;
 
-static inline StackFrame *MakeNativeFrame(word continuation, Closure *closure) {
-  NativeConcreteCode *concreteCode =
-    NativeConcreteCode::FromWord(closure->GetConcreteCode());
+static inline StackFrame *MakeNativeFrame(NativeConcreteCode *concreteCode,
+					  word continuation, Closure *closure) {
   Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
   u_int nLocals        = concreteCode->GetNLocals();
   Chunk *code          = concreteCode->GetNativeCode();
@@ -105,7 +103,9 @@ static inline StackFrame *MakeNativeFrame(word continuation, Closure *closure) {
 
 StackFrame *NativeCodeInterpreter::FastPushCall(word continuation,
 						Closure *closure) {
-  return MakeNativeFrame(continuation, closure);
+  NativeConcreteCode *concreteCode =
+    NativeConcreteCode::FromWordDirect(closure->GetConcreteCode());
+  return MakeNativeFrame(concreteCode, continuation, closure);
 }
 
 Transform *
@@ -120,7 +120,9 @@ u_int NativeCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
 }
 
 void NativeCodeInterpreter::PushCall(Closure *closure) {
-  MakeNativeFrame(returnContinuation, closure);
+  NativeConcreteCode *concreteCode =
+    NativeConcreteCode::FromWord(closure->GetConcreteCode());
+  MakeNativeFrame(concreteCode, Store::IntToWord(0), closure);
 }
 
 Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {

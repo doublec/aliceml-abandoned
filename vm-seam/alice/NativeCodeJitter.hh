@@ -44,6 +44,7 @@ typedef struct {
   CALL_MODE mode;
   u_int pc;
   u_int closure;
+  u_int nLocals;
 } CallInfo;
 
 #define ALICE_REGISTER_NB 3
@@ -102,6 +103,7 @@ protected:
   static u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
   static void CompileContinuation(TagVal *idDefArgsInstrOpt);
   static void LoadArguments(TagVal *actualArgs);
+  static TagVal *CheckBoolTest(word pos, u_int Result, word next);
   static TagVal *Apply(TagVal *pc, Closure *closure, bool direct);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
