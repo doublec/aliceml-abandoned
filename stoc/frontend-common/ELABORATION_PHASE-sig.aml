@@ -1,10 +1,28 @@
-signature ELABORATION_PHASE =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Source           from "../infrastructure/Source"
+import signature CONTEXT          from "../infrastructure/CONTEXT-sig"
+import structure Env              from "Env"
+import signature ABSTRACT_GRAMMAR from "ABSTRACT_GRAMMAR-sig"
+import structure AbstractGrammar  from "AbstractGrammar"
+import structure TypedGrammar     from "TypedGrammar"
+
+
+signature ELABORATION_PHASE =
+sig
     structure C : CONTEXT          = Env
     structure I : ABSTRACT_GRAMMAR = AbstractGrammar
     structure O : ABSTRACT_GRAMMAR = TypedGrammar
 
     val translate : Env.t -> Source.desc * I.comp -> O.comp
-
-  end
+end

@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (* UNFINISHED:
    - packages
    - appropriate treatment of value paths
@@ -10,7 +22,35 @@
  * table.
  *)
 
-functor MakeElaborationPhase(val loadSign: Source.desc * Url.t -> Inf.sign)
+import structure Url               from "../misc/Url"
+import structure Source            from "../infrastructure/Source"
+
+import structure Name              from "../common/Name"
+import structure Label             from "../common/Label"
+import structure Stamp             from "../common/Stamp"
+import structure Path              from "../common/Path"
+import structure PathMap           from "../common/PathMap"
+import structure Type              from "../common/Type"
+import structure Inf               from "../common/Inf"
+import structure PervasiveType     from "../common/PervasiveType"
+import structure Env               from "Env"
+import structure AbstractGrammar   from "AbstractGrammar"
+import structure TypedInfo
+       structure TypedGrammar      from "TypedGrammar"
+
+import structure PrettyPrint       from "../misc/PrettyPrint"	(*DEBUG*)
+import structure PPPath            from "../common/PPPath"	(*DEBUG*)
+import structure PPType            from "../common/PPType"	(*DEBUG*)
+import structure PPInf             from "../common/PPInf"	(*DEBUG*)
+
+import structure Crash             from "../infrastructure/Crash"
+import structure Error             from "../infrastructure/Error"
+import structure ElaborationError  from "ElaborationError"
+import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
+import signature ELABORATION_PHASE from "ELABORATION_PHASE-sig"
+
+
+functor MkElaborationPhase(val loadSign: Source.desc * Url.t -> Inf.sign)
     :> ELABORATION_PHASE =
 struct
 

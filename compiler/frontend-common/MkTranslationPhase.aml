@@ -1,30 +1,48 @@
 (*
-import structure Source			from "Source"
-import structure TypedInfo		from "TypedGrammar"
-import structure TypedGrammar		from "TypedGrammar"
-import structure IntermediateGrammar	from "IntermediateGrammar"
-import structure EmptyContext		from "EmptyContext"
-import structure StringMap		from "StringMap"
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
-import structure Stamp			from "Stamp"
-import structure Name			from "Name"
-import structure Label			from "Label"
-import structure Type			from "Type"
-import structure Inf			from "Inf"
+import structure TypedInfo
+       structure TypedGrammar		from "TypedGrammar"
+import structure IntermediateGrammar	from "../common/IntermediateGrammar"
+import structure EmptyContext		from "../infrastructure/EmptyContext"
 
-import structure PerasiveType		from "PervasiveType"
-import structure LabelReflection	from "LabelReflection"
-import structure PathReflection		from "PathReflection"
-import structure TypeReflection		from "TypeReflection"
-import structure InfReflection		from "InfReflection"
+import structure Stamp			from "../common/Stamp"
+import structure Fixity			from "../common/Fixity"
+import structure Name			from "../common/Name"
+import structure Label			from "../common/Label"
+import structure Path			from "../common/Path"
+import structure Type			from "../common/Type"
+import structure Inf			from "../common/Inf"
+import structure PerasiveType		from "../common/PervasiveType"
 
-import signature SWITCHES		from "SWITCHES"
-import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE"
+import structure FixityReflection	from "../common/FixityReflection"
+import structure LabelReflection	from "../common/LabelReflection"
+import structure PathReflection		from "../common/PathReflection"
+import structure TypeReflection		from "../common/TypeReflection"
+import structure InfReflection		from "../common/InfReflection"
+import structure PerasiveTypeReflection	from "../common/PervasiveTypeReflection"
 
-import structure Crash			from "Crash"
-*)
+import structure Assert                 from "../misc/Assert"
+import structure Crash			from "../infrastructure/Crash"
+import structure Error			from "../infrastructure/Error"
+import structure Source			from "../infrastructure/Source"
+import structure StringMap		from "../misc/StringMap"
+import functor   MkHashImpMap		from "../misc/MkHashImpMap"
+import structure CheckIntermediate      from "../common/CheckIntermediate"
+import signature SWITCHES		from "../infrastructure/SWITCHES-sig"
+import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE-sig"
 
-functor MakeTranslationPhase(Switches: SWITCHES) :> TRANSLATION_PHASE =
+
+functor MkTranslationPhase(Switches: SWITCHES) : TRANSLATION_PHASE =
 struct
 
     structure C = EmptyContext
@@ -266,7 +284,7 @@ struct
 
   (* Transformation of type info *)
 
-    structure InfHash = MakeHashImpMap(open Inf val equals = Inf.same)
+    structure InfHash = MkHashImpMap(open Inf val equals = Inf.same)
 
     val infHash     = InfHash.new() : Type.t InfHash.map
     val infInstHash = InfHash.new() : Type.t InfHash.map

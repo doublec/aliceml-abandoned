@@ -1,32 +1,52 @@
-functor MakeAbstractGrammar(type fix_info
-			    type vallab_info
-			    type typlab_info
-			    type modlab_info
-			    type inflab_info
-			    type valid_info
-			    type typid_info
-			    type varid_info
-			    type modid_info
-			    type infid_info
-			    type vallongid_info
-			    type typlongid_info
-			    type modlongid_info
-			    type inflongid_info
-			    type exp_info
-			    type pat_info
-			    type 'a row_info
-			    type 'a field_info
-			    type match_info
-			    type typ_info
-			    type mod_info
-			    type inf_info
-			    type dec_info
-			    type spec_info
-			    type imp_info
-			    type ann_info
-			    type comp_info
-			   ) : ABSTRACT_GRAMMAR =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url              from "../misc/Url"
+import structure Fixity           from "../common/Fixity"
+import structure Name             from "../common/Name"
+import structure Label            from "../common/Label"
+import structure Stamp            from "../common/Stamp"
+import signature ABSTRACT_GRAMMAR from "ABSTRACT_GRAMMAR-sig"
+
+
+functor MkAbstractGrammar(type fix_info
+			  type vallab_info
+			  type typlab_info
+			  type modlab_info
+			  type inflab_info
+			  type valid_info
+			  type typid_info
+			  type varid_info
+			  type modid_info
+			  type infid_info
+			  type vallongid_info
+			  type typlongid_info
+			  type modlongid_info
+			  type inflongid_info
+			  type exp_info
+			  type pat_info
+			  type 'a row_info
+			  type 'a field_info
+			  type match_info
+			  type typ_info
+			  type mod_info
+			  type inf_info
+			  type dec_info
+			  type spec_info
+			  type imp_info
+			  type ann_info
+			  type comp_info
+			 ) : ABSTRACT_GRAMMAR =
+struct
 
     (* Generic *)
 
@@ -367,4 +387,4 @@ functor MakeAbstractGrammar(type fix_info
 
     fun infoComp(Comp(i,_,_))		= i
 
-  end
+end

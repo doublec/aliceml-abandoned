@@ -1,5 +1,35 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Fixity            from "../common/Fixity"
+import structure Name              from "../common/Name"
+import structure Label             from "../common/Label"
+import structure Stamp             from "../common/Stamp"
+import structure Type              from "../common/Type"
+import structure Inf               from "../common/Inf"
+import structure AbstractGrammar   from "AbstractGrammar"
+
+import structure PrettyPrint       from "../misc/PrettyPrint"
+import structure PPMisc            from "../misc/PPMisc"
+import structure PPPath            from "../common/PPPath"
+import structure PPType            from "../common/PPType"
+import structure PPInf             from "../common/PPInf"
+
+import structure Error             from "../infrastructure/Error"
+import signature ELABORATION_ERROR from "ELABORATION_ERROR-sig"
+
+
 structure ElaborationError :> ELABORATION_ERROR =
-  struct
+struct
 
   (* Pretty printer *)
 
@@ -465,4 +495,4 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun error(region, e)  = Error.error(region, errorToString e)
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
-  end
+end

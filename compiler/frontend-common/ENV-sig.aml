@@ -1,6 +1,24 @@
-signature ENV =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Stamp           from "../common/Stamp"
+import structure Path            from "../common/Path"
+import structure Type            from "../common/Type"
+import structure Inf             from "../common/Inf"
+import structure AbstractGrammar from "AbstractGrammar"
+
+
+signature ENV =
+sig
     type valid = AbstractGrammar.valid
     type typid = AbstractGrammar.typid
     type modid = AbstractGrammar.modid
@@ -56,5 +74,4 @@ signature ENV =
     val foldVars :	(stamp * var_entry * 'a -> 'a) -> 'a -> env -> 'a
     val foldMods :	(stamp * mod_entry * 'a -> 'a) -> 'a -> env -> 'a
     val foldInfs :	(stamp * inf_entry * 'a -> 'a) -> 'a -> env -> 'a
-
-  end
+end

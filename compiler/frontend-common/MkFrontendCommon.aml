@@ -1,23 +1,55 @@
-functor MakeFrontendCommon(
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url                   from "../misc/Url"
+import structure Source                from "../infrastructure/Source"
+
+import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
+import signature PHASE                 from "../infrastructure/PHASE-sig"
+import functor   ComposePhases'        from "../infrastructure/ComposePhases"
+import functor   MkTracingPhase        from "../infrastructure/MkTracingPhase"
+import functor   MkResultDumpingPhase  from
+					"../infrastructure/MkResultDumpingPhase"
+
+import structure Env                   from "Env"
+import structure TypedGrammar          from "TypedGrammar"
+import structure Inf                   from "../common/Inf"
+import structure PPInf                 from "../common/PPInf"
+import structure PPIntermediateGrammar from "../common/IntermediateGrammar"
+
+import functor   MkElaborationPhase    from "MkElaborationPhase"
+import functor   MkTranslationPhase    from "MkTranslationPhase"
+
+
+functor MkFrontendCommon(
 		val loadSign: Source.desc * Url.t -> Inf.sign
 		structure Switches: SWITCHES
 	) : PHASE =
     let
 	structure Phase1 =
-		  MakeTracingPhase(
+		  MkTracingPhase(
 			structure Phase    =
-			    MakeElaborationPhase(val loadSign = loadSign)
+			    MkElaborationPhase(val loadSign = loadSign)
 			structure Switches = Switches
 			val name = "Elaboration"
 		  )
 	structure Phase2 =
-		  MakeTracingPhase(
-			structure Phase    = MakeTranslationPhase(Switches)
+		  MkTracingPhase(
+			structure Phase    = MkTranslationPhase(Switches)
 			structure Switches = Switches
 			val name = "Translation"
 		  )
 	structure Phase1' =
-		  MakeResultDumpingPhase(
+		  MkResultDumpingPhase(
 			structure Phase    = Phase1
 			structure Switches = Switches
 			val header = "Component Signature"
@@ -25,7 +57,7 @@ functor MakeFrontendCommon(
 			val switch = Switches.Debug.dumpElaborationSig
 		  )
 	structure Phase2' =
-		  MakeResultDumpingPhase(
+		  MkResultDumpingPhase(
 			structure Phase    = Phase2
 			structure Switches = Switches
 			val header = "Intermediate Syntax"
@@ -33,7 +65,7 @@ functor MakeFrontendCommon(
 			val switch = Switches.Debug.dumpIntermediate
 		  )
     in
-	ComposePhases(
+	ComposePhases'(
 	    structure Phase1  = Phase1'
 	    structure Phase2  = Phase2'
 	    structure Context = Env
