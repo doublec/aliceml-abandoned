@@ -69,9 +69,10 @@ Worker::Result LazyCompileInterpreter::Run(StackFrame *sFrame) {
   Closure *closure = frame->GetClosure();
   Scheduler::PopFrame(frame->GetSize());
   TagVal *abstractCode = TagVal::FromWordDirect(closure->Sub(0));
-  NativeCodeJitter::currentConcreteCode = closure->Sub(1);
   Scheduler::nArgs          = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] = NativeCodeJitter::Compile(abstractCode)->ToWord();
+  NativeCodeJitter jitter;
+  Scheduler::currentArgs[0] =
+    jitter.Compile(closure->Sub(1), abstractCode)->ToWord();
   return Worker::CONTINUE;
 }
 
@@ -109,6 +110,7 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
 						    Chunk *code,
 						    word immediateEnv,
 						    word nbLocals,
+						    word CCCPC,
 						    word skipCCCPC) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(NativeCodeInterpreter::self, SIZE);
@@ -119,6 +121,7 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
   concreteCode->Init(NATIVE_CODE_POS, code->ToWord());
   concreteCode->Init(IMMEDIATE_ENV_POS, immediateEnv);
   concreteCode->Init(NLOCALS_POS, nbLocals);
+  concreteCode->Init(CCC_PC_POS, CCCPC);
   concreteCode->Init(SKIP_CCC_PC_POS, skipCCCPC);
   return static_cast<NativeConcreteCode *>(concreteCode);
 }

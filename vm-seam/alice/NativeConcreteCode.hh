@@ -43,7 +43,7 @@ class AliceDll NativeConcreteCode : private ConcreteCode {
 protected:
   enum {
     TRANSFORM_POS, NATIVE_CODE_POS, IMMEDIATE_ENV_POS, NLOCALS_POS,
-    SKIP_CCC_PC_POS, SIZE
+    CCC_PC_POS, SKIP_CCC_PC_POS, SIZE
   };
 public:
   using Block::ToWord;
@@ -57,6 +57,9 @@ public:
   }
   u_int GetNLocals() {
     return (u_int) Store::DirectWordToInt(Get(NLOCALS_POS));
+  }
+  u_int GetCCCPC() {
+    return (u_int) Store::DirectWordToInt(Get(CCC_PC_POS));
   }
   u_int GetSkipCCCPC() {
     return (u_int) Store::DirectWordToInt(Get(SKIP_CCC_PC_POS));
@@ -75,6 +78,7 @@ public:
 					 Chunk *code,
 					 word immediateEnv,
 					 word nbLocals,
+					 word CCCPC,
 					 word skipCCCPC);
   // NativeConcreteCode Untagging
   static NativeConcreteCode *FromWord(word code) {

@@ -57,7 +57,7 @@ public:
   }
   // NativeCodeFrame Constructor
   static NativeCodeFrame *New(Interpreter *interpreter,
-			      word pc,
+			      u_int pc,
 			      Chunk *code,
 			      Closure *closure,
 			      Tuple *immediateArgs,
@@ -87,7 +87,7 @@ static inline StackFrame *MakeNativeFrame(NativeConcreteCode *concreteCode,
   Tuple *immediateArgs = concreteCode->GetImmediateArgs();
   NativeCodeFrame *frame =
     NativeCodeFrame::New(NativeCodeInterpreter::self,
-			 NativeCodeJitter::GetInitialPC(),
+			 concreteCode->GetCCCPC(),
 			 code, closure, immediateArgs,
 			 continuation, nLocals);
   for (u_int i = nLocals; i--;)
