@@ -54,6 +54,7 @@ GECODEOBJ = \
 	int/arithmetic/minmax.o \
 	int/arithmetic/mult.o \
 	int/arithmetic/post.o \
+	int/arithmetic/power.o \
 	int/linear/novar.o \
 	int/linear/preprocess.o \
 	int/linear/supportset.o \

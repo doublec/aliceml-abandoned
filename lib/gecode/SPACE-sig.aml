@@ -17,6 +17,9 @@ sig
     (* Exception thrown by all operations on spaces *)
     (* if the space has been discarded *)
     exception InvalidSpace
+
+    (* Exception thrown by all operations on spaces *)
+    (* if variable is used in a space where it is invalid *)
     exception InvalidVar
 
     datatype status = BRANCH | FAILED | SOLVED
@@ -26,4 +29,5 @@ sig
     val clone   : space -> space
     val discard : space -> unit
     val alive   : space -> unit
+    val fail    : space -> unit
 end

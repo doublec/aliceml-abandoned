@@ -17,19 +17,19 @@
 #include "gecode-int.hh"
 #include "gecode-search.hh"
 
-#define makeintvararray(a,vars)               \
-  IntVarArray a(vars.size(), 0,0);                             \
+#define makeintvararray(a,vars)                                 \
+  IntVarArray a(vars.size(), 0,0);                              \
 { int s = vars.size(); for (int i=s; i--;) a[i] = is[vars[i]]; }
 
-#define intvar2boolvar(intvar)                \
+#define intvar2boolvar(intvar)        \
   static_cast<BoolVar>(intvar.core())
 
-#define makeboolvararray(a,vars)               \
-  BoolVarArray a(vars.size());                             \
+#define makeboolvararray(a,vars)           \
+  BoolVarArray a(vars.size());             \
 { int s = vars.size(); for (int i=s; i--;) \
   a[i] = intvar2boolvar(is[vars[i]]); }
 
-class GecodeSpace : public Space {
+class GecodeSpace : private Space {
 protected:
   IntVarArray is;
   IntVarArray tmpVar;
@@ -40,6 +40,12 @@ protected:
 
   
 public:
+  using Space::clone;
+  using Space::status;
+  using Space::commit;
+  using Space::operator new;
+  using Space::operator delete;
+
   GecodeSpace() : tmpVar(1,0,0), is(10, 0,0), noOfIntVars(0),
 		  intArraySize(10)
   {
@@ -58,87 +64,85 @@ public:
     return new GecodeSpace(*this);
   }
 
-  //  int AddIntVariable(int i, int j);
   int AddIntVariable(DomSpec& ds);
-  //  int AddIntVariableR(int i, int j, int boolVar);
   int AddIntVariableR(DomSpec& ds, int boolVar);  
-
   int AddBoolVariable();
-  
-  void TrimVars();
 
   // Inspect variable information
   int vmin(int var);
   int vmax(int var);
 
   // Domain
-  void tdom(int var, DomSpec& ds);
-  void tdom(int var, DomSpec& ds, int boolvar);
-  //  void dom(int var, int min, int max, int boolvar);
+  void dom(int var, DomSpec& ds);
+  void domR(int var, DomSpec& ds, int boolvar);
 
   // Propagators
-  void trel(int, reltype, int);
-  void treli(int, reltype, int);
-  void trelR(int, reltype, int, int);
-  void treliR(int, reltype, int, int);
+  void rel(int, reltype, int);
+  void relI(int, reltype, int);
+  void relR(int, reltype, int, int);
+  void relIR(int, reltype, int, int);
 
-  void teq(int, int, conlevel);
-  void teq(const IntArgs& a, conlevel);
-  void teqR(int, int, int, conlevel);
-  void teqR(const IntArgs& a, int, conlevel);
+  void eq(int, int, conlevel);
+  void eqV(const IntArgs& a, conlevel);
+  void eqR(int, int, int, conlevel);
+  void eqVR(const IntArgs& a, int, conlevel);
 
   // Distinct constraints
-  void tdistinct(const IntArgs& a, conlevel cl);
-  void tdistinct(const IntArgs& offsets, const IntArgs& vars, conlevel cl);
+  void distinct(const IntArgs& a, conlevel cl);
+  void distinctI(const IntArgs& offsets, const IntArgs& vars, conlevel cl);
 
   // Linear equations
-  void tlinear(const IntArgs& coefficients, const IntArgs& vars, reltype rel,
-	       int constant, conlevel cl);
-  void tlinearR(const IntArgs& coefficients, const IntArgs& vars, reltype rel,
-		int constant, int boolVar, conlevel cl);
+  void linear(const IntArgs& coefficients, const IntArgs& vars, reltype rel,
+	      int constant, conlevel cl);
+  void linearR(const IntArgs& coefficients, const IntArgs& vars, reltype rel,
+	       int constant, int boolVar, conlevel cl);
 
 
   // Counting constraints
-  void tcountii(const IntArgs& vars, reltype rel,
+  void countII(const IntArgs& vars, reltype rel,
 	       int i, reltype rel2, int j);
-  void tcountiv(const IntArgs& vars, reltype rel,
+  void countIV(const IntArgs& vars, reltype rel,
 	       int i, reltype rel2, int j);
-  void tcountvi(const IntArgs& vars, reltype rel,
+  void countVI(const IntArgs& vars, reltype rel,
 	       int i, reltype rel2, int j);
-  void tcountvv(const IntArgs& vars, reltype rel,
+  void countVV(const IntArgs& vars, reltype rel,
 	       int i, reltype rel2, int j);
 
   // Access constraints
 
-  void telement(const IntArgs& vars, int i, int j);
-  void telementi(const IntArgs& vars, int i, int j);
-  void tlex(const IntArgs& vars1, reltype rel,
-	    const IntArgs& vars2);
+  void element(const IntArgs& vars, int i, int j);
+  void elementI(const IntArgs& vars, int i, int j);
+  void lex(const IntArgs& vars1, reltype rel,
+	   const IntArgs& vars2);
 
   // Boolean constraints
-  void tbool_not(int, int);
-  void tbool_and(int, int, int);
-  void tbool_or(int, int, int);
-  void tbool_imp(int, int, int);
-  void tbool_eq(int, int, int);
-  void tbool_xor(int, int, int);
+  void bool_not(int, int);
+  void bool_and(int, int, int);
+  void bool_or(int, int, int);
+  void bool_imp(int, int, int);
+  void bool_eq(int, int, int);
+  void bool_xor(int, int, int);
   
-  void tbool_and(const IntArgs& vars, int);
-  void tbool_or(const IntArgs& vars, int);
+  void bool_andV(const IntArgs& vars, int);
+  void bool_orV(const IntArgs& vars, int);
 
   // Arithmetic constraints
 
-  void tmin(const IntArgs& vars, int i);
-  void tmax(const IntArgs& vars, int i);
-  void tabs(int i, int j, conlevel cl);
-  void tmult(int i, int j, int k);
+  void min(const IntArgs& vars, int i);
+  void max(const IntArgs& vars, int i);
+  void abs(int i, int j, conlevel cl);
+  void mult(int i, int j, int k);
+  void power(int i, int j, int k);
 
   // Value assignment
 
-  void tassign(const IntArgs& vars, AvalSel as);
+  void assign(const IntArgs& vars, AvalSel as);
 
   // Branching
-  void tbranch(const IntArgs& vars, BvarSel, BvalSel);
+  void branch(const IntArgs& vars, BvarSel, BvalSel);
+
+  // Faling
+  void fail();
 };
 
 #endif
