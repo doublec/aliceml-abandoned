@@ -12,7 +12,8 @@
 
 functor
 import
-System(showError)
+   OS(getEnv)
+   System(showError)
    URL(resolve toVirtualString toAtom)
    Module(manager)
    Property(get)
@@ -36,6 +37,8 @@ define
 		  fun {$ X} 'lib/utility/Unsafe'#X end}}
    end
 
+   Trace = {NewCell {OS.getEnv 'ALICE_TRACE_BOOT_LINKER'} \= false}
+
    ModuleTable = {NewDictionary}
 
    local
@@ -49,14 +52,13 @@ define
       end
    end
 
-   fun {LinkInterpreterRun _ TaskStack}
-      case TaskStack of linkFrame(_ Url)|Rest then Component in
-	 %--** return a failed future on link failure
-	 {System.showError 'loading '#Url}
-	 Component = try {Pickle.load Url}
-		     catch system(os(os ...) ...) then {Pickle.load Url#'.stc'}
-		     end
-	 case Component of tag(!EVALUATED _ X) then continue(arg(X) Rest)
+   proc {Link Url ?Module} Key in
+      Key = {URL.toAtom Url}
+      case {Dictionary.condGet ModuleTable Key unit} of unit then
+	 if {Access Trace} then
+	    {System.showError '[boot-linker] loading '#Url}
+	 end
+	 case {Pickle.load Url#'.stc'} of tag(!EVALUATED _ X) then Module = X
 	 [] tag(!UNEVALUATED BodyClosure Imports _) then N Modules in
 	    N = {Width Imports}
 	    Modules = {MakeTuple vector N}
@@ -64,42 +66,10 @@ define
 	       Url2 = {URL.toVirtualString {URL.resolve Url Imports.I.1}}
 	       Modules.I = {Link Url2}
 	    end
-	    continue(arg(Modules) {BodyClosure.1.1.pushCall BodyClosure Rest})
+	    {Scheduler.object newThread(BodyClosure arg(Modules) ?Module)}
+	    {Scheduler.object run()}
 	 end
-      end
-   end
-
-   fun {LinkInterpreterPushCall Closure TaskStack}
-      case Closure of closure(link(_) Url) then
-	 linkFrame(LinkInterpreter Url)|TaskStack
-      end
-   end
-
-   fun {LinkInterpreterAbstract _}
-      {Exception.raiseError linkInterpreterAbstract} unit
-   end
-
-   LinkInterpreter =
-   linkInterpreter(run: LinkInterpreterRun
-		   handle:
-		      fun {$ Debug Exn TaskStack}
-			 case TaskStack of Frame|Rest then
-			    exception(Frame|Debug Exn Rest)
-			 end
-		      end
-		   pushCall: LinkInterpreterPushCall
-		   abstract: LinkInterpreterAbstract)
-
-   proc {Link Url ?Module} Key in
-      Key = {URL.toAtom Url}
-      case {Dictionary.condGet ModuleTable Key unit} of unit then
-	 case {Dictionary.condGet ModuleTable {URL.toAtom Url#'.stc'} unit}
-	 of unit then Closure in
-	    Closure = closure(link(LinkInterpreter) Url)
-	    Module = transient({NewCell byneed(Closure)})
-	    ModuleTable.Key := Module
-	 elseof M then Module = M
-	 end
+	 ModuleTable.Key := Module
       elseof M then Module = M
       end
    end
