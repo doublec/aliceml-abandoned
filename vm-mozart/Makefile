@@ -89,18 +89,25 @@
 ## make distclean; make depend; make all; make install
 ##
 
+# Configurable directories
+
+SRCDIR = ../..
+BOOTSTRAPDIR = ../../bootstrap
+OZHOME = /opt/mozart-1.1.1
 PREFIX = /opt/stockhausen-devel
 
-STOC0 = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
-	sml @SMLload=../../bootstrap/stoc-mozart
+# No configuration needed from here
+
+VPATH = $(SRCDIR)
+
+STOC0 = $(BOOTSTRAPDIR)/stoc-mozart
 STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
 STOC2 = STOCKHOME=build2/install build2/install/bin/stoc
 
 STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
 STOC_EXTRA_OPTS = --dump-target
-STODEP = sml @SMLload=../../bootstrap/stodep
+STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
 
-OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl -z9
 MLLEX = ml-lex
@@ -283,47 +290,47 @@ INSTALL1FILES = \
 $(BUILD1DIRS):
 	mkdir -p $@
 
-Rel1.import: ../../lib/fundamental/Fundamental.import
+Rel1.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../|g' < $< > $@
 
-Rel2.import: ../../lib/fundamental/Fundamental.import
+Rel2.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< > $@
 
-build1/lib/fundamental/%.aml: ../../lib/fundamental/%.aml
+build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 	cp $< $@
 
-build1/lib/fundamental/RTT.aml: ../../lib/fundamental/DummyRTT.aml
+build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 	cp $< $@
 
-build1/lib/system/%.oz: ../%.oz
+build1/lib/system/%.oz: vm-mozart/%.oz
 	cp $< $@
 
-build1/lib/system/%.asig: ../../lib/system/%.asig Rel2.import
+build1/lib/system/%.asig: lib/system/%.asig Rel2.import
 	cat Rel2.import $< > $@
 
-build1/lib/%.aml: ../../lib/%.aml Rel2.import
+build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/infrastructure/%.aml: ../../stoc/infrastructure/%.aml Rel2.import
+build1/stoc/infrastructure/%.aml: stoc/infrastructure/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/common/%.aml: ../../stoc/common/%.aml Rel2.import
+build1/stoc/common/%.aml: stoc/common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/frontend-common/%.aml: ../../stoc/frontend-common/%.aml Rel2.import
+build1/stoc/frontend-common/%.aml: stoc/frontend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/frontend-sml/%.aml: ../../stoc/frontend-sml/%.aml Rel2.import
+build1/stoc/frontend-sml/%.aml: stoc/frontend-sml/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/frontend-sml/Lexer.lex: ../../stoc/frontend-sml/Lexer.lex
+build1/stoc/frontend-sml/Lexer.lex: stoc/frontend-sml/Lexer.lex
 	cp $< $@
 
 build1/stoc/frontend-sml/Lexer.aml: build1/stoc/frontend-sml/Lexer.lex.sml \
 	frontend-sml/Lexer.aml.header Rel2.import
 	cat Rel2.import frontend-sml/Lexer.aml.header $< > $@
 
-build1/stoc/frontend-sml/Parser.grm: ../../stoc/frontend-sml/Parser.grm
+build1/stoc/frontend-sml/Parser.grm: stoc/frontend-sml/Parser.grm
 	cp $< $@
 
 build1/stoc/frontend-sml/PARSER-sig.aml: \
@@ -336,20 +343,20 @@ build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
 	Rel2.import frontend-sml/Parser.aml.header
 	cat Rel2.import frontend-sml/Parser.aml.header $< > $@
 
-build1/stoc/backend-common/%.aml: ../../stoc/backend-common/%.aml Rel2.import
+build1/stoc/backend-common/%.aml: stoc/backend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/backend-mozart/%.aml: ../../stoc/backend-mozart/%.aml Rel2.import
+build1/stoc/backend-mozart/%.aml: stoc/backend-mozart/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/backend-mozart/%.asig: ../../stoc/backend-mozart/%.asig \
+build1/stoc/backend-mozart/%.asig: stoc/backend-mozart/%.asig \
 	Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/top/%.aml: ../../stoc/top/%.aml Rel2.import
+build1/stoc/top/%.aml: stoc/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/%.oz: ../../%.oz
+build1/%.oz: %.oz
 	cp $< $@
 
 build1/%: %
@@ -439,8 +446,8 @@ build2/%.aml: build1/%.aml
 build2/stow.ozf build2/stoc.ozf: build2/%: build1/%
 	cp $< $@
 
-build2/Default.import: ../../lib/fundamental/Fundamental.import Other.import
-	cat ../../lib/fundamental/Fundamental.import Other.import > $@
+build2/Default.import: lib/fundamental/Fundamental.import Other.import
+	cat $< Other.import > $@
 
 $(NATIVECOMPONENTS:%=build2/lib/system/%.asig): build2/%: build1/%
 	cp $< $@
@@ -563,8 +570,8 @@ build3/stoc.ozf: $(BUILD3OZLINPUTS)
 build3/stot.ozf: $(BUILD3OZLINPUTS)
 	$(OZL) --include=.. build3/stoc/top/StotMain.ozf -o $@
 
-build3/Default.import: ../../lib/fundamental/Fundamental.import Other.import
-	cat ../../lib/fundamental/Fundamental.import Other.import > $@
+build3/Default.import: lib/fundamental/Fundamental.import Other.import
+	cat $< Other.import > $@
 
 ##
 ## Installing Build 3
