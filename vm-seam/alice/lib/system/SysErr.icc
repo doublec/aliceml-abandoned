@@ -37,7 +37,7 @@ static word MakeSysErr(int errorCode, String *message) {
   TagVal *some = TagVal::New(Types::SOME, 1);
   some->Init(0, Store::IntToWord(errorCode));
   ConVal *sysErr =
-    ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
+    ConVal::New(Store::DirectWordToBlock(SysErrConstructor), 2);
   sysErr->Init(0, message->ToWord());
   sysErr->Init(1, some->ToWord());
   return sysErr->ToWord();
