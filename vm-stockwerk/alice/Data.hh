@@ -20,7 +20,7 @@
 #endif
 
 #include <cstring>
-#include "generic/String.hh"
+#include "generic/UniqueString.hh"
 #include "generic/ConcreteRepresentation.hh"
 
 class Transform;
@@ -276,47 +276,6 @@ public:
   static UniqueConstructor *FromWordDirect(word x) {
     return static_cast<UniqueConstructor *>(Constructor::FromWordDirect(x));
   }
-};
-
-class UniqueString: private ConcreteRepresentation {
-private:
-  static const u_int STRING_POS = 0;
-  static const u_int HASH_VALUE_POS = 1;
-  static const u_int TRANSFORM_POS = 2;
-  static const u_int SIZE = 3;
-  static ConcreteRepresentationHandler *handler;
-public:
-  using Block::ToWord;
-
-  static void Init();
-
-  static UniqueString *New(String *s);
-
-  String *ToString() {
-    return String::FromWordDirect(Get(STRING_POS));
-  }
-  u_int Hash() {
-    return Store::DirectWordToInt(Get(HASH_VALUE_POS));
-  }
-
-  static UniqueString *FromWord(word x) {
-    ConcreteRepresentation *b = ConcreteRepresentation::FromWord(x);
-    Assert(b == INVALID_POINTER || b->GetSize() == SIZE);
-    return static_cast<UniqueString *>(b);
-  }
-  static UniqueString *FromWordDirect(word x) {
-    //--** hack
-    UniqueString *uniqueString = FromWord(x);
-    Assert(uniqueString != INVALID_POINTER);
-    return uniqueString;
-    /*
-    ConcreteRepresentation *b = ConcreteRepresentation::FromWordDirect(x);
-    Assert(b->GetSize() == SIZE);
-    return static_cast<UniqueString *>(b);
-    */
-  }
-
-  Transform *GetTransform();
 };
 
 class Vector: private Block {
