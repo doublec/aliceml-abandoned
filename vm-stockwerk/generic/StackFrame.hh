@@ -23,9 +23,9 @@ class Worker;
 
 // Known StackFrame Types
 enum FrameLabel {
-  MIN_STACK_FRAME             = MIN_DATA_LABEL,
+  MIN_STACK_FRAME = MIN_DATA_LABEL,
   // Primitive Frames
-  PUSHCALL_FRAME              = MIN_STACK_FRAME,
+  PUSHCALL_FRAME = MIN_STACK_FRAME,
   BYNEED_FRAME,
   BOTTOM_FRAME,
   PRIMITIVE_FRAME,
@@ -44,23 +44,8 @@ enum FrameLabel {
   LINK_FRAME,
   LOAD_FRAME,
   BOOT_FRAME,
-  // Alice Frames //--** should be in the Alice Language Layer
-  ABSTRACT_CODE_FRAME,
-  ABSTRACT_CODE_HANDLER_FRAME,
-  LAZY_SELECTION_FRAME,
-  VECTOR_TABULATE_FRAME,
-  RAISE_FRAME,
-  CELLMAP_INSERT_FRAME,
-  CELLMAP_ITERATOR_FRAME,
-  CELLMAP_FIND_FRAME,
-  // AliceNativeCode Frames
-  NATIVE_CODE_FRAME,
-  NATIVE_CODE_HANDLER_FRAME,
-  LAZY_COMPILE_FRAME,
-  // Alice Async IO Frames
-  FD_INPUT_FRAME,
-  // End of Frames
-  MAX_STACK_FRAME = FD_INPUT_FRAME
+  // Lanugage specific Frames
+  MIN_LANGUAGE_LAYER_FRAME = BOOT_FRAME + 1
 };
 
 class DllExport StackFrame: private Block {
