@@ -222,7 +222,7 @@ val workers = List.map (fn host =>
 			    structure Worker =
 				Execute(val host = "fry"
 					signature RESULT = WORKER
-					functor Start = MkWorker)
+					structure Start = MkWorker)
 			in
 			    Worker.executeTask
 			end) hosts
