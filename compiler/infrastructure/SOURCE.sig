@@ -6,14 +6,14 @@
 signature SOURCE =
   sig
 
-    type source   = string
-    type pos      = int * int
-    type position = pos * pos
+    type source = string
+    type pos    = int * int
+    type region = pos * pos
 
-    val nowhere:	position
-    val over:		position * position -> position
-    val between:	position * position -> position
+    val nowhere:	region
+    val over:		region * region -> region
+    val between:	region * region -> region
 
-    val positionToString:	position -> string
+    val regionToString:	region -> string
 
   end

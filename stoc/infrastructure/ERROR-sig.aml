@@ -8,14 +8,14 @@ signature ERROR =
 
     (* Import *)
 
-    type position = Source.position
+    type region = Source.region
 
 
     (* Export *)
 
-    exception Error of position * string
+    exception Error of region * string
 
-    val error :	position * string -> 'a
-    val warn :	position * string -> unit
+    val error :	region * string -> 'a
+    val warn :	region * string -> unit
 
   end

@@ -8,18 +8,18 @@ structure Error :> ERROR =
 
     (* Import *)
 
-    type position = Source.position
+    type region = Source.region
 
 
     (* Export *)
 
-    exception Error of position * string
+    exception Error of region * string
 
-    fun print(pos, s) =
+    fun print(reg, s) =
         TextIO.output(TextIO.stdErr,
-		      Source.positionToString pos ^ ": " ^ s ^ "\n")
+		      Source.regionToString reg ^ ": " ^ s ^ "\n")
 
-    fun error(pos, message) = ( print(pos,message) ; raise Error(pos,message) )
-    fun warn (pos, message) =   print(pos, "warning: " ^ message)
+    fun error(reg, message) = ( print(reg,message) ; raise Error(reg,message) )
+    fun warn (reg, message) =   print(reg, "warning: " ^ message)
 
   end
