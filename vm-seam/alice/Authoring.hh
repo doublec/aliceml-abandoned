@@ -13,9 +13,6 @@
 #ifndef __ALICE__AUTHORING_HH__
 #define __ALICE__AUTHORING_HH__
 
-#include "generic/Transform.hh"
-#include "generic/Closure.hh"
-#include "generic/Authoring.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/PrimitiveTable.hh"
