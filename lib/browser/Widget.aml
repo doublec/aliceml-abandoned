@@ -768,7 +768,7 @@ struct
 	       | I_VALUE(r) => 
 			 (postToWindow 
 			  (PrettyPrint.toString(PPInf.ppInf(#typ(r)),
-			       10000)) ;0))
+			       50)) ;0))
 	 end
    
 	(* creates popup when a node is clicked on *)
@@ -973,6 +973,7 @@ struct
 			  | NONE => (  postType("")
 				     ; setSelectionMenuSensitive(bar,false)
 				     ; destroySelectionMarkings()
+				     ; busyButtonSetActive(false)
 					 ; selection := NONE))
 			 end
 		   | NONE => ()
