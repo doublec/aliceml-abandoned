@@ -24,7 +24,7 @@ import type unit and int and bool and option and list
 
 signature ARRAY =
 sig
-    type 'a array
+    __eqeqtype 'a array
     type 'a vector
     type 'a t = 'a array						(**)
 
