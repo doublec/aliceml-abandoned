@@ -53,7 +53,7 @@ Interpreter::Result EmptyTaskInterpreter::Handle() {
     Debug::Dump(Scheduler::currentData);
     fprintf(stderr, "backtrace:\n");
     Scheduler::currentBacktrace->Dump();
-    exit(1);
+    std::exit(1); //--** should return to StockwerkMain instead
   } else {
     return Scheduler::PushCall(Properties::atExn);
   }
