@@ -21,9 +21,14 @@ signature TYPE_MANAGER =
 
 	val getCFunType :         string * TypeTree.ty * arginfo list * bool 
  	                               -> string
+	val getAliceFunType :     string * TypeTree.ty * arginfo list * bool
+	                               -> (TypeTree.ty -> string) -> string
 
+	val isRefOfSpace :        Util.spaces -> TypeTree.ty -> bool
 	val isItemOfSpace :       Util.spaces -> TypeTree.decl -> bool
 	val checkItem :           TypeTree.decl -> bool
 
+	val getEnumSpace :        string -> Util.spaces
+	
 	val getClassList :        TypeTree.tree -> TypeTree.tree
    end

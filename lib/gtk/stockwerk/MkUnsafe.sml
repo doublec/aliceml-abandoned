@@ -43,20 +43,14 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
         (* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
 	let
-	    val alwithret = if ret=VOID 
-				then arglist else (OUT, "ret", ret)::arglist
-	    val (ins,outs) = splitInOuts (alwithret,doinout)
-	    fun getAliceUnsafeType' (_,_,t) = getAliceUnsafeType t
-	    val aType = 
-		["val ", Util.computeWrapperName(space,funName), 
-		 if doinout then "'" else "", " : ",
-		 (Util.makeTuple " * " "unit" (map getAliceUnsafeType' ins)),
-		 " -> ",
-		 (Util.makeTuple " * " "unit" (map getAliceUnsafeType' outs))]
+	    val wname = Util.computeWrapperName(space,funName)^
+		          (if doinout then "'" else "")
+	    val aType = getAliceFunType (wname,ret,arglist,doinout)
+		           getAliceUnsafeType
 	    val cType = getCFunType (funName,ret,arglist,true)
 	in
 	    [sigIndent, "(* ", cType," *)\n",
-	     sigIndent] @ aType @ ["\n\n"]
+	     sigIndent, aType, "\n\n"]
 	end
 
 	(* WRAPPER CODE GENERATION *)
@@ -77,7 +71,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  | inDeclare (POINTER _)         = "DECLARE_UNMANAGED_POINTER"
 		  | inDeclare (STRING _)          = "DECLARE_CSTRING"
 		  | inDeclare (FUNCTION _)        = "DECLARE_UNMANAGED_POINTER"
-		  | inDeclare (ENUMREF _)         = "DECLARE_INT"
+		  | inDeclare (ENUMREF _)         = "DECLARE_ENUM"
 		  | inDeclare (TYPEREF (_,t))     = inDeclare t
 		  | inDeclare _                   = "DECLARE_UNKNWON";
 		val xcounter = ref 0
@@ -176,8 +170,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  | retConv (FUNCTION _) n = 
 			 "Store::UnmanagedPointerToWord((void*)("^n^"))"
 		  | retConv (TYPEREF(_,t)) n = retConv t n
-		  | retConv (ENUMREF e) n    = 
-		         "Store::IntToWord(static_cast<int>("^n^"))"
+		  | retConv (ENUMREF _) n    = "Real::New("^n^")->ToWord()"
 		  | retConv _ n = n
   
 		fun makeOutArg (_,name,t) = retConv t name

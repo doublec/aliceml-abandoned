@@ -1,9 +1,10 @@
 import structure GtkUtils from "GtkUtils"
+import structure GdkEnums from "GdkEnums"
 
 signature GDK =
 sig
 
-<<< "GDK_CORE-sig.aml" >>>
 <<< "GDK_ENUMS-sig.aml" >>>
+<<< "GDK_CORE-sig.aml" >>>
 
 end

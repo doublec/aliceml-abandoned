@@ -100,7 +100,7 @@ struct
 		raise EUnknown (* shouldn't occur *)
 	      | convType (Ast.StructRef id)  = STRUCTREF (getTypeNameFromID id)
 	      | convType (Ast.UnionRef id)   = UNIONREF  (getTypeNameFromID id)
-	      | convType (Ast.EnumRef id)    = ENUMREF   (getTypeNameFromID id)
+	      | convType (Ast.EnumRef id)    = ENUMREF   (findEnumName id)
 	      | convType (Ast.TypeRef id)    = 
                   if isBool (getTypeNameFromID id) then BOOL else followType id
 	      | convType Error               = raise EUnknown

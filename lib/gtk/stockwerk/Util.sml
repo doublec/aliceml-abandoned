@@ -30,6 +30,8 @@ structure Util :> UTIL =
 	
         datatype spaces = GDK | GTK | GTKCANVAS
 
+	val allSpaces = [GDK, GTK, GTKCANVAS]
+
 	fun spaceName GDK       = "Gdk"
 	  | spaceName GTK       = "Gtk"
 	  | spaceName GTKCANVAS = "GtkCanvas"
@@ -74,6 +76,12 @@ structure Util :> UTIL =
 
 	fun filters fs xs = foldl (fn (f,e) => List.filter f e) xs fs
 	fun funNot f x = not (f x)
+
+	fun removeDuplicates' _ nil     ys = ys
+	  | removeDuplicates' f (x::xr) ys = 
+	      removeDuplicates' f xr (ys@(if List.exists (fn y=>f(x,y)) ys
+	                                      then nil else [x]))
+	fun removeDuplicates f xs = removeDuplicates' f xs nil
 
 	type fileInfo = {name: string, intro: string list, outro: string list}
 	type fileHandle = fileInfo * TextIO.outstream

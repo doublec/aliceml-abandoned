@@ -18,8 +18,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gtk_false"]
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
-			     "gdk_pixbuf_new_from_xpm_data"]
-	      | _         => nil
+			     "gdk_pixbuf_new_from_xpm_data",
+			     "gdk_keymap_get_direction" (**)]
+	      | _        => nil
 
         (* specialFuns: generate asig, but no code for: *)
 	val specialFuns = case space of

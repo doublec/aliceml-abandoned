@@ -1,7 +1,14 @@
 
 *** Allgemein/Ideen ***
 
+- stockwerk-gtk-binding in den CVS main trunk
 - stockhausen neu bauen
+
+* Enums
+- GC (Weak Dictionary)
+- datatypes/Signals bauen
+- Dateien komplett umbenennen, 
+  Problem: UnsafeGtk.cc->NativeGtk.cc ist inkonsequent
 
 - Test-Programm besser
 X Makefile besser: Gtk.aml haengt von GtkCore.aml ab usw.
@@ -105,6 +112,13 @@ X ...und veraenderte Parameterliste als neue gueltige hinbekommen? -> nein.
 
 
 *** SafeGtk ***
+
+- GC: Weak dictionary: Zugriff auf C-dictionary wird moeglich sein
+- immer, wenn eine Funktion ein object rausschmeisst (bzw. object auf stream
+  geschrieben wird) nachsehen, ob object in dictionary. wenn nein:
+  hinzufuegen + gtk-ref aufrufen
+- finalizer thread ruft fuer ankommende objects auf eigenem Strom gtk-unref auf
+
 
 - warum wird callback function erst beim zweiten Event aufgerufen?
 - callback-Funktionen in Hashtable abspeichern

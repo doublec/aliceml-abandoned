@@ -1,12 +1,14 @@
 import structure GtkUtils from "GtkUtils"
+import structure GtkEnums from "GtkEnums"
+import structure GdkEnums from "GdkEnums"
 
 signature GTK =
 sig
 
-<<< "GTK_CORE-sig.aml" >>>
 <<< "GTK_ENUMS-sig.aml" >>>
+<<< "GTK_CORE-sig.aml" >>>
 
-    val NULL : GtkUtils.object
+    val NULL : object
     val TRUE : int
     val FALSE : int
 

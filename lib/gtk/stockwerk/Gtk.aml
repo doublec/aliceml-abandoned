@@ -1,16 +1,16 @@
 
 import structure GtkUtils from "GtkUtils"
 import structure UnsafeGtk from "UnsafeGtk"
-import structure GtkCore from "GtkCore"
 import structure GtkEnums from "GtkEnums"
+import structure GtkCore from "GtkCore"
 import signature GTK from "GTK-sig"
 
 structure Gtk :> GTK =
 struct
     val _ = GtkUtils.init()
 
-    open GtkCore
     open GtkEnums 
+    open GtkCore
 
     type callBackFunction = object * object list -> unit
 
@@ -31,7 +31,7 @@ struct
 	    (int * object * int * callBackFunction) list ref
 	val lastNumber = ref 0
 	    
-	fun sc (obj, signame, callback, after) =
+	fun doSignalConnect (obj, signame, callback, after) =
 	    let
 		val connid = UnsafeGtk.signalConnect(obj,signame,
 						     !lastNumber,after)
@@ -45,9 +45,9 @@ struct
     in
 	
 	fun signalConnect (obj, signame, callback) = 
-	    sc (obj, signame, callback, false)
+	    doSignalConnect (obj, signame, callback, false)
 	fun signalConnectAfter(obj, signame, callback) =
-	    sc (obj, signame, callback, true)
+	    doSignalConnect (obj, signame, callback, true)
 	    
 	fun signalDisconnect (obj, connid) =
 	    ( UnsafeGtk.signalDisconnect(obj,connid) ;
@@ -65,6 +65,8 @@ struct
 		signalTable := List.filter find (!signalTable)
 	    end
 
+(* TO-DO: stream (Future) wird unter C erzeugt; hier keine Referenz verwenden;
+   alle Funktionen hier in eigene Komponente (was jetzt GtkUtils heisst *)
 	fun listener stream =
 	let
 	    val funid = hd (!stream)

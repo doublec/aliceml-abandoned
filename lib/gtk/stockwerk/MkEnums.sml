@@ -37,10 +37,34 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 		 [Util.indent 1, "end\n\n"]
             } : Util.fileInfo
 
+
+	fun sigEntry (name, members) =
+	let
+	    val mt = Util.makeTuple " | " ""
+	    val memnames = map (fn (name,_) => name) members
+	in
+	   [sigIndent,"datatype ",name," = ",mt memnames,"\n",
+	    "(**)",sigIndent,"val ",name,"ToReal : ",name," -> real\n",
+	    "(**)",sigIndent,"val RealTo",name," : real -> ",name,"\n\n"]
+	end
+
+	fun wrapperEntry (name, members) =
+	let
+	    val mt = Util.makeTuple " | " ""
+	    val memnames = map (fn (name,_) => name) members
+	    val e2r = map (fn (name,num) => name^" => "^num^".0") members
+	    val r2e = map (fn (name,num) => num^".0 => "^name)
+		       (Util.removeDuplicates (fn (x,y) => #2x = #2y) members)
+	in
+	   [wrIndent,"datatype ",name," = ",mt memnames,"\n",
+	    wrIndent,"val ",name,"ToReal = fn ",mt e2r,"\n",
+	    wrIndent,"val RealTo",name," = fn ",mt r2e,"\n\n"]
+	end
+
 	(* SIGNATURE AND WRAPPER ENTRIES *)
 	fun processItem (ENUM (name,members)) = 
 	let
-	    val comment = ["\n", sigIndent, "(* ", name, " *)\n"]
+(*	    val comment = ["\n", sigIndent, "(* ", name, " *)\n"]
 	    fun isTooBig n = Int.maxInt <> NONE andalso 
 		             LargeInt.fromInt(valOf(Int.maxInt)) < n
 	    fun sigEntry (mem,num) = 
@@ -49,11 +73,17 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	    fun wrapperEntry (mem, num) = 
 		if isTooBig num then nil else
 		[wrIndent, "val ",Util.computeEnumName (space,mem), " = ", 
-		 LargeInt.toString num, "\n"]
+		 LargeInt.toString num, "\n"]*)
+	    val members' = map (fn (name,num) => 
+				(Util.computeEnumName (space,name), 
+				LargeInt.toString num)) members
 	in
-	    ( List.concat (comment::(map sigEntry members)) , 
+(*	    ( List.concat (comment::(map sigEntry members)) , 
 	      List.concat (map wrapperEntry members) 
-	    )
+	    )*)
+	    if null members 
+		then ( nil, nil )
+		else ( sigEntry (name,members'), wrapperEntry (name,members') )
 	end
 	  | processItem _ = ( nil , nil )
 

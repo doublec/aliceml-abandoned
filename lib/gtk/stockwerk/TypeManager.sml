@@ -67,14 +67,15 @@ struct
       | getAliceType (FUNCTION _)          = "object"
       | getAliceType (STRUCTREF _)         = raise EStruct
       | getAliceType (UNIONREF _)          = raise EUnion
-      | getAliceType (ENUMREF _)           = "int"
+      | getAliceType (ENUMREF name)        = name
       | getAliceType (TYPEREF (_,t))       = getAliceType t
 	 
     fun getAliceUnsafeType t =
-	let
+	let 
 	    val s = getAliceType t
-	in
-	    if Util.checkPrefix "object" s then "'"^s else s
+	in  
+	    if Util.checkPrefix "object" s then "'"^s else 
+	      case removeTypeRefs t of (ENUMREF _) => "real" | _ => s
 	end
       
     local
@@ -115,13 +116,25 @@ struct
     fun getCFunType (funName, ret, arglist, mask) =
     let
 	fun getCType' (IN,_,t) = getCType t
-	  | getCType' (_,_,t)  = getCType (POINTER t)
+	  | getCType' (OUT,_,t)  = getCType (POINTER t)
 	val s = (getCType ret) ^ " " ^ funName ^ "(" ^ 
 	        (Util.makeTuple ", " "void" (map getCType' arglist)) ^ ")"
     in
 	if mask then (Util.replaceChar (#"*","#") s) else s
     end
-		    
+
+    fun getAliceFunType (funName, ret, arglist, doinout) convFun =
+    let
+	val (ins,outs') = splitInOuts (arglist,doinout)
+	val outs = if ret=VOID then outs' else (OUT, "", ret)::outs'
+	fun getType (_,_,t) = t
+    in
+	"val "^funName^" : "^
+	(Util.makeTuple " * " "unit" (map (convFun o getType) ins)) ^ " -> " ^
+	(Util.makeTuple " * " "unit" (map (convFun o getType) outs))
+    end
+
+   
     local
 	fun getClassList' nil                       cs = rev cs
 	  | getClassList' (STRUCT (name,(_,t)::_)::dr) cs =
@@ -136,6 +149,13 @@ struct
 	fun getClassList ds = getClassList' ds nil
     end
 
+    
+    fun isRefOfSpace space (ENUMREF n) =
+	Util.checkPrefix (Util.spaceName space) n
+      | isRefOfSpace space (STRUCTREF n) =
+	Util.checkPrefix (Util.spaceName space) n
+      | isRefOfSpace space (TYPEREF (_,t)) = isRefOfSpace space t
+      | isRefOfSpace _ _ = false
 
     fun isItemOfSpace space (FUNC (n,_,_)) = 
 	Util.checkPrefix (Util.spaceFuncPrefix(space)) n
@@ -156,6 +176,11 @@ struct
          | EArray    => warning "array in arglist or retval" *)
     end		    
       | checkItem _ = true
+
+
+    fun getEnumSpace name = 
+	foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
+	       Util.GTK  Util.allSpaces
 
 end
 

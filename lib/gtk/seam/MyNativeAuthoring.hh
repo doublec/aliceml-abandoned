@@ -228,6 +228,8 @@
      F(a##__value,a##__temp->Sub(a##__iter));            \
      a[a##__iter] = a##__value;                          \
   }
+#define DECLARE_ENUM DECLARE_DOUBLE
+
 
 #define RETURN_TUPLE2(y0,y1)                             \
   Tuple *result = Tuple::New(2);                         \

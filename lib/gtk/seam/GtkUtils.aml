@@ -1,0 +1,11 @@
+import structure UnsafeGtk from "UnsafeGtk"
+import signature GTK_UTILS from "GTK_UTILS-sig"
+
+structure GtkUtils :> GTK_UTILS =
+struct
+    type object
+    exception TypeMismatch of string
+
+    val _ = UnsafeGtk.init ()
+    fun init () = ()
+end

@@ -70,7 +70,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   g_print("event occured: %d\n", funid);
   g_print("event has %d params\n", n_param_values);
 
-  Future *oldfuture = reinterpret_cast<Future*>(Store::WordToTransient(tail));
+  Future *oldfuture = static_cast<Future*>(Store::WordToTransient(tail));
   tail = (Future::New())->ToWord();
   word paramlist = tail;
   word value;

@@ -8,14 +8,13 @@ UNSAFE = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
 
 CORE = $(COMPSCAP:%=%_CORE-sig.aml) $(COMPS:%=%Core.aml)
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml)
-SAFE = $(CORE) $(ENUMS)
+SAFE = $(ENUMS) $(CORE)
 COMMON = GTK_UTILS-sig.aml GtkUtils.aml
 
 MAINSIG = $(COMPSCAP:%=%-sig.aml)
 
 GENFILES = $(UNSAFE) $(SAFE)
-#           UnsafeGdk.cc UnsafeGdk.asig GdkCore.aml GDK_CORE-sig.aml
-GENSIGS = $(MAINSIG)  # GDK-sig.aml
+GENSIGS = $(MAINSIG)
 COMPFILES = $(COMMON) $(SAFE) $(MAINSIG) $(COMPS:%=%.aml)
 OUTDIR = output
 
@@ -25,31 +24,28 @@ INSTALL = install -C -v -m 666
 
 
 
-all: generate compile documentation
+all: generate compile
 
-#################################################3
+#################################################
 
-generate: rungenerator $(MAINSIG) removetemp
+generate: rungenerator $(MAINSIG)
 
-$(COMPSCAP:%=%_CORE-sig.aml): rungenerator ;
-$(COMPSCAP:%=%_ENUMS-sig.aml): rungenerator ;
+gtkclean.c:
+	(cd prepare ; $(MAKE) )
 
 rungenerator: gtkclean.c
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	echo 'CM.make();main "$(OUTDIR)";' | sml
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
+	rm -f $(OUTDIR)/*
+	rmdir $(OUTDIR)
 
-gtkclean.c:
-	(cd prepare ; $(MAKE) )
+$(GENFILES): rungenerator ;
 
 %-sig.aml: %-sig.tml %_CORE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk -v filename=includesig.awk < $< > $@
 
-removetemp:
-	rm -f $(OUTDIR)/*
-	rmdir $(OUTDIR)
-
-#################################################3
+#################################################
 
 
 compile: $(NATIVES:%=%.dll) $(COMPFILES:%.aml=%.stc)
@@ -63,13 +59,13 @@ compile: $(NATIVES:%=%.dll) $(COMPFILES:%.aml=%.stc)
 %.stc: %.aml
 	$(ALICEC) $< -o $@
 
-#################################################3
+#################################################
 
 
-documentation:
+docs:
 	(cd doc; $(MAKE) )
 
-#################################################3
+#################################################
 
 
 clean:

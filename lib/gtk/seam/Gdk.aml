@@ -1,12 +1,12 @@
 
 import structure GtkUtils from "GtkUtils"
-import structure GdkCore from "GdkCore"
 import structure GdkEnums from "GdkEnums"
+import structure GdkCore from "GdkCore"
 import signature GDK from "GDK-sig"
 
 structure Gdk :> GDK =
 struct
     val _ = GtkUtils.init()
-    open GdkCore
     open GdkEnums 
+    open GdkCore
 end

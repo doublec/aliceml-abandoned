@@ -21,6 +21,7 @@ signature UTIL =
 
         (* Namespace and prefix stuff *)
         datatype spaces = GDK | GTK | GTKCANVAS
+	val allSpaces : spaces list
 
 	val spaceName : spaces -> string
 	val spaceFuncPrefix : spaces -> string
@@ -43,6 +44,7 @@ signature UTIL =
         (* Filter stuff *)
 	val filters : ('a -> bool) list -> 'a list -> 'a list
 	val funNot : ('a -> bool) -> 'a -> bool
+	val removeDuplicates : ('a * 'a -> bool) -> 'a list -> 'a list
 
         (* File stuff *)
 	type fileInfo = {name: string, intro: string list, outro: string list}
