@@ -21,7 +21,7 @@ import __primitive structure Hole    from "Hole"
 import __primitive signature PROMISE from "PROMISE-sig"
 
 (* For now we need a hack to make the Inspector properly display promises...
-structure Promise :> (PROMISE (*TODO where __primitive type 'a promise = "promise"*)) =	(**)
+structure Promise :> PROMISE =						(**)
 struct
     open Ref
 
@@ -53,7 +53,7 @@ struct
 end
 *)
 
-structure Promise :> (PROMISE (*TODO where __primitive type 'a promise = "promise"*)) =	(**)
+structure Promise :> PROMISE =						(**)
 struct
     open Ref
 
