@@ -59,6 +59,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    Decs of dec list * continuation
 	  | Goto of O.body
 	  | Share of O.body option ref * continuation
+	  | EndTry of Source.region * continuation
+	  | EndHandle of Source.region * continuation
 
 	(* Matching conArity up with args *)
 
@@ -248,6 +250,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		r := SOME stms; stms
 	    end
 	  | translateCont (Share (ref (SOME stms), _)) = stms
+	  | translateCont (EndTry (region, cont)) =
+	    [O.EndTryStm (stm_info region, translateCont cont)]
+	  | translateCont (EndHandle (region, cont)) =
+	    [O.EndHandleStm (stm_info region, translateCont cont)]
 	and translateDec (ValDec (info, VarPat (_, id), exp), cont) =
 	    let
 		fun declare exp' =
@@ -608,15 +614,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		fun f' exp' =
 		    O.ValDec (stm_info (#region info'),
 			      O.IdDef (translateId id'), exp')
-		val tryCont =
-		    Goto [O.EndTryStm (stm_info (#region info), contBody)]
+		val tryCont = EndTry (#region info, Goto contBody)
 		val tryBody = translateExp (exp, f', tryCont)
 		val exnInfo = {region = #region info,
 			       typ = PervasiveType.typ_exn}
 		val exnId = freshIntermediateId exnInfo
 		val exnVarExp = VarExp (exnInfo, ShortId (exnInfo, exnId))
-		val handleCont =
-		    Goto [O.EndHandleStm (stm_info (#region info), contBody)]
+		val handleCont = EndHandle (#region info, Goto contBody)
 		val matches' =
 		    Vector.map (fn Match (_, pat, exp) =>
 				(#region (infoExp exp), pat,
