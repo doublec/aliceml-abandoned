@@ -41,6 +41,7 @@ template <typename T>
 void BaseMap<T>::Resize() {
   u_int oldsize = GetTableSize();
   u_int newsize =  (3 * oldsize) >> 1;
+  Assert(newsize > oldsize);
   Block *oldp   = GetTable();
   Block *newp   = Store::AllocBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
   // Correct possibly blown up size
@@ -142,7 +143,7 @@ void BaseMap<T>::Apply(item_apply func) {
 
 template <typename T>
 BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
-  size = ((size == 0) ? 1 : size); // Enforce Invariant: size must be >= 1
+  size = ((size < 2) ? 2 : size); // Enforce Invariant: size must be > 1
   Block *map    = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
   u_int percent = STATIC_CAST(u_int, size * MAP_FILL_RATIO);
