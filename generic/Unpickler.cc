@@ -22,9 +22,11 @@
 #include "emulator/TaskStack.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/Closure.hh"
+#include "emulator/ConcreteCode.hh"
 #include "emulator/Tuple.hh"
 #include "emulator/Transients.hh"
 #include "emulator/PrimitiveTable.hh"
+#include "emulator/AbstractCodeInterpreter.hh"
 
 // pickle    ::= int | chunk | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>
@@ -358,11 +360,13 @@ word ApplyTransform(Chunk *f, word x) {
 	   !strncmp(fs, "Alice.primitive.function", len)) {
     Block *xp = Store::WordToBlock(x);
     return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
-  } else if ((len == sizeof("Alice.function") - 1) && 
+  } else if ((len == sizeof("Alice.function") - 1) &&
 	     !strncmp(fs, "Alice.function", len)) {
-    // x->AssertWidth(6);
-    // to be done here
-    return Store::IntToWord(0);
+    ConcreteCode *concreteCode =
+      ConcreteCode::New(AbstractCodeInterpreter::self, 1);
+    Block *xp = Store::WordToBlock(x);
+    concreteCode->Init(0, xp->GetArg(0));
+    return concreteCode->ToWord();
   }
   Assert(0);
   return Store::IntToWord(0);
