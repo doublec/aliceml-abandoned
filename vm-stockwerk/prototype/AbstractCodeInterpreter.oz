@@ -67,6 +67,7 @@ define
 	 case {Access TransientState} of ref(Y) then {Deref Y}
 	 else X
 	 end
+      else X
       end
    end
 
