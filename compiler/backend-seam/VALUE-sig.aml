@@ -25,5 +25,5 @@ signature VALUE =
 	val tuple: 'a t vector -> 'a t
 	val vector: 'a t vector -> 'a t
 	val closure: 'a * 'a t vector -> 'a t
-	val sign: FlatGrammar.sign -> 'a t
+	val sign: FlatGrammar.sign option -> 'a t
     end

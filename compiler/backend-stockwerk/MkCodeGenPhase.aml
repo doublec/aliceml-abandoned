@@ -478,8 +478,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		      | NONE => ""
 		val imports' =
 		    Vector.map (fn (_, sign, url) =>
-				   V.tuple #[V.string (Url.toString url),
-					     V.sign sign]) imports
+				   V.tuple #[V.string (Url.toStringRaw url),
+					     V.sign (SOME sign)]) imports
 		val env = new filename
 		val _ = startFn env
 		val formalId = fresh env
@@ -506,6 +506,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		V.taggedValue (LargeInt.fromInt 1,            (* UNEVALUATED *)
 			       #[V.closure (function, #[]),   (* body *)
 				 V.vector imports',           (* imports *)
-				 V.sign sign])                (* sign *)
+				 V.sign (SOME sign)])         (* sign *)
 	    end
     end

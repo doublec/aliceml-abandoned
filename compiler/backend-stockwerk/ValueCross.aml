@@ -25,7 +25,7 @@ structure Value (*: VALUE*) =
 	  | Tuple of 'a t vector
 	  | Vector of 'a t vector
 	  | Closure of 'a * 'a t vector
-	  | Sign of FlatGrammar.sign
+	  | Sign of FlatGrammar.sign option
 
 	fun prim name = Prim name
 	fun int i = Int i
