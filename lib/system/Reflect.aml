@@ -18,7 +18,7 @@ import structure UnsafeReflect from "UnsafeReflect"
 import structure UnsafeValue   from "UnsafeValue"
 import signature REFLECT       from "REFLECT-sig"
 
-structure Reflect :> REFLECT =
+structure Reflect : REFLECT =
     struct
 	type value
 	type module

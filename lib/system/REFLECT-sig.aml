@@ -27,7 +27,7 @@ sig
     functor Reflect(signature S structure X : S) : (val x : module)
     functor Unreflect(val x : module signature S) : S	(* Unsafe! *)
     functor ReflectSig(signature S) : (val x : Inf.t)
-    functor UnreflectSig(val x : Inf.t) : (signature S)
+    functor UnreflectSig(val x : Inf.t) : (signature S) (* Unsafe! *)
     functor ReflectType(type t) : (val x : Type.t)
-    (*functor UnreflectType(val x : Type.t) : (type t)*)
+    (*functor UnreflectType(val x : Type.t) : (type t) (*Unsafe!*)*)
 end
