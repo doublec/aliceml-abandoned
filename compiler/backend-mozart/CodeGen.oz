@@ -567,9 +567,6 @@ define
       _ = {New ErrorListener.'class' init(NarratorObject)}
       CS = {New CodeStore.'class'
 	    init(proc {$ getSwitch(_ $)} false end Reporter)}
-      {CS startDefinition()}
-      {CS newReg(?ImportReg)}
-      {CS newReg(?ExportReg)}
       State = state(regDict: {NewDictionary} shareDict: {NewDictionary} cs: CS
 		    filename: {VirtualString.toAtom Filename})
       RegToValueMapping = {Dictionary.new}
@@ -578,6 +575,9 @@ define
 	  Reg = {InitReg Stamp State}
 	  {Dictionary.put RegToValueMapping Reg Value}
        end}
+      {CS startDefinition()}
+      {CS newReg(?ImportReg)}
+      {CS newReg(?ExportReg)}
       {Record.foldLInd Import
        proc {$ I VHd IdDef#_#_ VTl}
 	  VHd = vInlineDot(_ ImportReg I {MakeReg IdDef State} false unit VTl)
@@ -594,7 +594,7 @@ define
 		      pid({VirtualString.toAtom 'Component '#Filename} 2
 			  pos({VirtualString.toAtom Filename} 1 0) nil
 			  NLiveRegs)
-		      unit {List.mapInd GRegs fun {$ I _} g(I) end} Code1)|
+		      unit {List.mapInd GRegs fun {$ I _} g(I - 1) end} Code1)|
 	   endDefinition(StartLabel)|
 	   {Append Code2 [lbl(EndLabel) unify(x(0) g({Length GRegs})) return]})
 	  {Append {Map GRegs
