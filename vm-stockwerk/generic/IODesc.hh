@@ -17,6 +17,10 @@
 #pragma interface "generic/IODesc.hh"
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#endif
+
 #include "generic/String.hh"
 #include "generic/FinalizationSet.hh"
 
