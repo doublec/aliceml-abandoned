@@ -1,4 +1,4 @@
-(* src # 0 ../../lib/bootstrap/Bootstrap.aus *)
+(* src # 0 ../lib/bootstrap/Bootstrap.aus *)
 (*
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
@@ -13,781 +13,2610 @@
  *   $Revision$
  *)
 
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+
+(*****************************************************************************
+ * Top-level, part 1
+ *****************************************************************************)
+
 (* Hardwired *)
 
 __prebound Prebound
 
-datatype bool   = datatype Prebound.bool
-type     int    = Prebound.int
-type     word   = Prebound.word
-type     real   = Prebound.real
-type     string = Prebound.string
-type     char   = Prebound.char
-type  'a vector = 'a Prebound.vector
-datatype list   = datatype Prebound.list
-datatype ref    = datatype Prebound.ref
-datatype exn    = datatype Prebound.exn
+type     unit	= {}
+datatype bool	= datatype Prebound.bool
+type     int	= Prebound.int
+type     word	= Prebound.word
+type     real	= Prebound.real
+type     string	= Prebound.string
+type     char	= Prebound.char
+type  'a vector	= 'a Prebound.vector
+datatype list	= datatype Prebound.list
+datatype ref	= datatype Prebound.ref
+datatype exn	= datatype Prebound.exn
 
-exception Match = Prebound.Match
-exception Bind  = Prebound.Bind
+exception Match	= Prebound.Match
+exception Bind	= Prebound.Bind
 
 
-(* Toplevel *)
+(* Fixity *)
 
 infix  7  * / div mod
 infix  6  + - ^
 infixr 5  :: @
 infix  4  = <> > >= < <=
 infix  3  := o
+infix  3  :=:			(**)
 infix  0  before
 
-(*--** __primitive val use : string -> unit = "use" *)
 
-__primitive val op=  : ''a * ''a -> bool = "="
-__primitive val op<> : ''a * ''a -> bool = "<>"
+(* Generic and overloaded Identifiers (but we don't overload them :-P) *)
+
+__primitive val op =  :	''a * ''a -> bool	= "="
+__primitive val op <> :	''a * ''a -> bool	= "<>"
+
+__primitive val ~ :	int -> int		= "Int.~"
+__primitive val op + :	int * int -> int	= "Int.+"
+__primitive val op - :	int * int -> int	= "Int.-"
+__primitive val op * :	int * int -> int	= "Int.*"
+__primitive val op / :	real * real -> real	= "Real./"
+__primitive val op div:	int * int -> int	= "Int.div"
+__primitive val op mod:	int * int -> int	= "Int.mod"
+
+__primitive val abs:	int -> int		= "Int.abs"
+
+__primitive val op < :	int * int -> bool	= "Int.<"
+__primitive val op > :	int * int -> bool	= "Int.>"
+__primitive val op <= :	int * int -> bool	= "Int.<="
+__primitive val op >= :	int * int -> bool	= "Int.>="
 
 
-(* Overloaded Identifiers *)
 
-__primitive val op~ :	int -> int = "~"
+(*****************************************************************************
+ * General
+ *****************************************************************************)
 
-__primitive val op+ :	int * int -> int = "+"
-__primitive val op- :	int * int -> int = "-"
-__primitive val op* :	int * int -> int = "*"
-__primitive val op div:	int * int -> int = "div"
-__primitive val op mod:	int * int -> int = "mod"
+signature GENERAL =
+  sig
+    eqtype unit
+    type exn
 
-__primitive val op< :	int * int -> bool = "<"
-__primitive val op> :	int * int -> bool = ">"
-__primitive val op<= :	int * int -> bool = "<="
-__primitive val op>= :	int * int -> bool = ">="
+    exception Bind
+    exception Chr
+    exception Div
+    exception Domain
+    exception Fail of string
+    exception Match
+    exception Overflow
+    exception Size
+    exception Span
+    exception Subscript
+
+    val exnName :	exn -> string
+    val exnMessage :	exn -> string
+
+    datatype order =	LESS | EQUAL | GREATER
+
+    val ! :		'a ref -> 'a
+    val op := :		'a ref * 'a -> unit
+    val op :=: :	'a ref * 'a ref -> unit		(**)
+
+    val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
+    val before :	'a * unit -> 'a
+    val ignore :	'a -> unit
+  end
 
 
-(* General *)
-
-structure General =
+structure General : GENERAL =
   struct
-
     type unit = {}
     type exn  = exn
 
-    exception Bind = Bind
-    __primitive constructor Chr: exn = "General.Chr"
-    __primitive constructor Div: exn = "General.Div"
-    __primitive constructor Domain: exn = "General.Domain"
-    __primitive constructor Fail of string: exn = "General.Fail"
+    exception Bind  = Bind
     exception Match = Match
-    __primitive constructor Overflow: exn = "General.Overflow"
-    __primitive constructor Size: exn = "General.Size"
-    __primitive constructor Span: exn = "General.Span"
-    __primitive constructor Subscript: exn = "General.Subscript"
+    __primitive constructor Chr : exn		= "General.Chr"
+    __primitive constructor Div : exn		= "General.Div"
+    __primitive constructor Domain : exn	= "General.Domain"
+    __primitive constructor Fail of string: exn	= "General.Fail"
+    __primitive constructor Overflow : exn	= "General.Overflow"
+    __primitive constructor Size : exn		= "General.Size"
+    __primitive constructor Span : exn		= "General.Span"
+    __primitive constructor Subscript : exn	= "General.Subscript"
+
+    __primitive val exnName : exn -> string	= "General.exnName"
+    val exnMessage = exnName
 
     datatype order = LESS | EQUAL | GREATER
 
-    fun !(ref v) = v
+    __primitive val op := : 'a ref * 'a -> unit	= "General.:="
 
-    __primitive val op:= : 'a ref * 'a -> unit = ":="
+    fun !(ref v)	= v
 
-    fun (f o g) a  = f(g a)
-    fun a before b = a
-    fun ignore a   = ()
+    fun (r1 as ref x1) :=: (r2 as ref x2)	= (r1 := x2 ; r2 := x1)	(**)
 
+    fun (f o g) a	= f(g a)
+    fun a before b	= a
+    fun ignore a	= ()
   end
 
-open General
+
+datatype order = datatype General.order
 
 
-(* Option *)
 
-structure Option =
+(*****************************************************************************
+ * Ref
+ *****************************************************************************)
+
+signature REF =								(**)
+  sig
+    datatype ref = datatype ref
+    type  'a t   = 'a ref
+
+    val new :		'a -> 'a ref
+    val ! :		'a ref -> 'a
+    val := :		'a ref * 'a -> unit
+    val :=: :		'a ref * 'a ref -> unit
+    val exchange :	'a ref * 'a -> 'a
+
+    val map: ('a -> 'a) -> 'a ref -> 'a ref
+  end
+
+
+structure Ref : REF =							(**)
   struct
+    datatype ref = datatype ref
+    type  'a t   = 'a ref
 
+    val new				= ref
+    val !				= General.!
+    val op :=				= General.:=
+    val op :=:				= General.:=:
+
+    fun exchange(r as ref x1, x2)	= (r := x2 ; x1)
+
+    fun map f (r as ref x)		= ref(f x)
+  end
+
+
+
+(*****************************************************************************
+ * Bool
+ *****************************************************************************)
+
+signature BOOL =
+  sig
+    datatype bool = false | true
+    type     t    = bool			(**)
+
+    val not :		bool -> bool
+
+    val toString :	bool -> string
+(*MISSING
+    val fromString : 	string -> bool option
+    val scan :		(char,'a) StringCvt.reader -> (bool,'a) StringCvt.reader
+*)
+  end
+
+
+structure Bool : BOOL =
+  struct
+    datatype bool	= datatype bool
+    type     t		= bool			(**)
+
+    fun not true	= false
+      | not false	= true
+
+    fun toString true	= "true"
+      | toString false	= "false"
+  end
+
+
+
+(*****************************************************************************
+ * Pair
+ *****************************************************************************)
+
+signature PAIR =							(**)
+  sig
+    type ('a,'b) pair = 'a * 'b
+    type ('a,'b) t    = ('a,'b) pair
+
+    val fst :		('a,'b) pair -> 'a
+    val snd :		('a,'b) pair -> 'b
+
+    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) pair -> unit
+    val appFst :	('a -> unit) -> ('a,'b) pair -> unit
+    val appSnd :	('b -> unit) -> ('a,'b) pair -> unit
+    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) pair -> ('c,'d) pair
+    val mapFst :	('a -> 'c) -> ('a,'b) pair -> ('c,'b) pair
+    val mapSnd :	('b -> 'c) -> ('a,'b) pair -> ('a,'c) pair
+  end
+
+
+structure Pair : PAIR =							(**)
+  struct
+    type ('a,'b) pair	= 'a * 'b
+    type ('a,'b) t	= ('a,'b) pair
+
+    fun fst(x,y)	= x
+    fun snd(x,y)	= y
+
+    fun app (f,g) (x,y)	= (f x ; g y)
+    fun appFst f  (x,y)	= f x
+    fun appSnd f  (x,y)	= f y
+
+    fun map (f,g) (x,y)	= (f x, g y)
+    fun mapFst f  (x,y)	= (f x, y)
+    fun mapSnd f  (x,y)	= (x, f y)
+  end
+
+
+
+(*****************************************************************************
+ * Alt
+ *****************************************************************************)
+
+signature ALT =								(**)
+  sig
+    datatype ('a,'b) alt = FST of 'a | SND of 'b
+    type     ('a,'b) t   = ('a,'b) alt
+
+    exception Alt
+
+    val isFst :		('a,'b) alt -> bool
+    val isSnd :		('a,'b) alt -> bool
+    val fst :		('a,'b) alt -> 'a		(* [Alt] *)
+    val snd :		('a,'b) alt -> 'b		(* [Alt] *)
+    val getFst :	('a,'b) alt * 'a -> 'a
+    val getSnd :	('a,'b) alt * 'b -> 'b
+
+    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) alt -> unit
+    val appFst :	('a -> unit) -> ('a,'b) alt -> unit
+    val appSnd :	('b -> unit) -> ('a,'b) alt -> unit
+    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
+    val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
+    val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+  end
+
+
+structure Alt : ALT =							(**)
+  struct
+    datatype ('a,'b) alt = FST of 'a | SND of 'b
+    type     ('a,'b) t   = ('a,'b) alt
+
+    exception Alt
+
+    fun isFst(FST _)		= true
+      | isFst(SND _)		= false
+    fun isSnd(FST _)		= false
+      | isSnd(SND _)		= true
+
+    fun fst(FST x)		= x
+      | fst(SND x)		= raise Alt
+    fun snd(FST x)		= raise Alt
+      | snd(SND x)		= x
+
+    fun getFst(FST x, _)	= x
+      | getFst(SND _, x)	= x
+    fun getSnd(FST _, x)	= x
+      | getSnd(SND x, _)	= x
+
+    fun app (f,g) (FST x)	= f x
+      | app (f,g) (SND x)	= g x
+    fun appFst f (FST x)	= f x
+      | appFst f (SND x)	= ()
+    fun appSnd f (FST x)	= ()
+      | appSnd f (SND x)	= f x
+
+    fun map (f,g) (FST x)	= FST(f x)
+      | map (f,g) (SND x)	= SND(g x)
+    fun mapFst f (FST x)	= FST(f x)
+      | mapFst f (SND x)	= SND x
+    fun mapSnd f (FST x)	= FST x
+      | mapSnd f (SND x)	= SND(f x)
+  end
+
+
+
+(*****************************************************************************
+ * Option
+ *****************************************************************************)
+
+signature OPTION =
+  sig
     datatype 'a option = NONE | SOME of 'a
+    type     'a t      = 'a option					(**)
 
-    __primitive constructor Option: exn = "Option.Option"
+    exception Option
 
-    fun getOpt(SOME v, _) = v
-      | getOpt(NONE,   a) = a
+    val getOpt :	'a option * 'a -> 'a
+    val isSome :	'a option -> bool
+    val isNone :	'a option -> bool				(**)
+    val valOf :		'a option -> 'a
+    val filter :	('a -> bool) -> 'a -> 'a option
+    val join :		'a option option -> 'a option
+    val app :		('a -> unit) -> 'a option -> unit		(**)
+    val map :		('a -> 'b) -> 'a option -> 'b option
+    val mapPartial :	('a -> 'b option) -> 'a option -> 'b option
+    val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b	(**)
+    val compose :	('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
+    val composePartial:	('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
+  end
 
-    fun isSome(SOME v) = true
-      | isSome NONE    = false
 
-    fun valOf(SOME v) = v
-      | valOf NONE    = raise Option
+structure Option : OPTION =
+  struct
+    datatype 'a option = NONE | SOME of 'a
+    type     'a t      = 'a option				(**)
 
-    fun filter f a = if f a then SOME a else NONE
+    __primitive constructor Option : exn = "Option.Option"
 
-    fun join NONE    = NONE
-      | join(SOME v) = v
+    fun getOpt(SOME x, _)	= x
+      | getOpt(NONE,   x)	= x
 
-    fun map f  NONE    = NONE
-      | map f (SOME v) = SOME(f v)
+    fun isNone NONE		= true				(**)
+      | isNone(SOME x)		= false
 
-    fun mapPartial f  NONE    = NONE
-      | mapPartial f (SOME v) = f v
+    fun isSome(SOME x)		= true
+      | isSome NONE		= false
 
-    fun compose (f,g) a =
-	case g a
-	  of NONE   => NONE
-	   | SOME v => SOME(f v)
+    fun valOf(SOME x)		= x
+      | valOf NONE		= raise Option
 
-    fun composePartial (f,g) a =
-	case g a
-	  of NONE   => NONE
-	   | SOME v => f v
+    fun filter f x where (f x)	= SOME x
+      | filter f x		= NONE
 
+    fun join NONE		= NONE
+      | join(SOME x)		= x
+
+    fun app f  NONE		= ()				(**)
+      | app f (SOME x)		= f x
+
+    fun map f  NONE		= NONE
+      | map f (SOME x)		= SOME(f x)
+
+    fun mapPartial f  NONE	= NONE
+      | mapPartial f (SOME x)	= f x
+
+    fun fold f b  NONE		= b				(**)
+      | fold f b (SOME a)	= f(a,b)
+
+    fun compose (f,g) x		= case g x of NONE   => NONE
+					    | SOME y => SOME(f y)
+
+    fun composePartial (f,g) x	= case g x of NONE   => NONE
+					    | SOME y => f y
   end
 
 datatype option = datatype Option.option
 
 
-(* Bool *)
 
-structure Bool =
-  struct
+(*****************************************************************************
+ * List
+ *****************************************************************************)
 
-    datatype bool = datatype bool
+signature LIST =
+  sig
+    datatype 'a list = :: of 'a * 'a list | nil
+    type     'a t    = 'a list						(**)
 
-    fun not true  = false
-      | not false = true
+    exception Empty
 
-    fun toString true  = "true"  : string
-      | toString false = "false" : string
+    val null :		'a list -> bool
+    val length :	'a list -> int
 
-  end
+    val hd :		'a list -> 'a
+    val tl :		'a list -> 'a list
+    val last :		'a list -> 'a
+    val getItem :	'a list -> ('a * 'a list) option
+    val nth :		'a list * int -> 'a
+    val sub :		'a list * int -> 'a				(**)
+    val take :		'a list * int -> 'a list
+    val drop :		'a list * int -> 'a list
 
-val not = Bool.not
+    val rev :		'a list -> 'a list
+    val @ :		'a list * 'a list -> 'a list
+    val append :	'a list * 'a list -> 'a list			(**)
+    val revAppend :	'a list * 'a list -> 'a list
+    val concat :	'a list list -> 'a list
 
+    val app :		('a -> unit) -> 'a list -> unit
+    val appr :		('a -> unit) -> 'a list -> unit			(**)
+    val appi :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val appri :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val map :		('a -> 'b) -> 'a list -> 'b list
+    val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list		(**)
+    val mapPartial :	('a -> 'b option) -> 'a list -> 'b list
+    val find :		('a -> bool) -> 'a list -> 'a option
+    val filter :	('a -> bool) -> 'a list -> 'a list
+    val partition :	('a -> bool) -> 'a list -> 'a list * 'a list
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val all :		('a -> bool) -> 'a list -> bool
+    val exists :	('a -> bool) -> 'a list -> bool
 
-(* List *)
-
-structure List =
-  struct
-
-    datatype list = datatype list
-
-    __primitive constructor Empty: exn = "List.Empty"
-
-    fun null [] = true
-      | null _  = false
-
-    fun length xs =
-	let fun length'(nil,   n) = n
-	      | length'(y::ys, n) = length'(ys,n+1)
-	in length'(xs,0) end
-
-    fun   nil   @ ys = ys
-      | (x::xs) @ ys = x :: xs @ ys
-
-    fun hd(x::xs) = x
-      | hd  _     = raise Empty
-
-    fun tl(x::xs) = xs
-      | tl  _     = raise Empty
-
-    fun last(x::nil) = x
-      | last(x::xs)  = last xs
-      | last  nil    = raise Empty
-
-    fun getItem(x::xs) = SOME(x,xs)
-      | getItem  nil   = NONE
-
-    fun nth(l,i) =
-	let fun nth'(x::xs, 0) = x
-	      | nth'(x::xs, j) = nth'(xs, j-1)
-	      | nth'(nil,   j) = raise Subscript
-	in if i >= 0 then nth'(l,i) else raise Subscript end
-
-    fun rev l =
-	let fun rev'( nil,  ys) = ys
-	      | rev'(x::xs, ys) = rev'(xs, x::ys)
-	in rev'(l,nil) end
-
-    fun take(l,i) =
-	let fun take'(x::xs, 0, ys) = rev ys
-	      | take'(x::xs, j, ys) = take'(xs, j-1, x::ys)
-	      | take'(nil,   j, ys) = raise Subscript
-	in if i >= 0 then take'(l,i,nil) else raise Subscript end
-
-    fun drop(l,i) =
-	let fun drop'(xs,    0) = xs
-	      | drop'(x::xs, j) = drop'(xs, j-1)
-	      | drop'(nil,   j) = raise Subscript
-	in if i >= 0 then drop'(l,i) else raise Subscript end
-
-    fun concat  nil   = nil
-      | concat(l::ls) = l @ concat ls
-
-    fun revAppend( nil,  ys) = ys
-      | revAppend(x::xs, ys) = revAppend(xs, x::ys)
-
-    fun app f   nil   = ()
-      | app f (x::xs) = (f x ; app f xs)
-
-    fun map f   nil   = nil
-      | map f (x::xs) = f x :: map f xs
-
-    fun mapPartial f   nil   = nil
-      | mapPartial f (x::xs) =
-	let val yo = f x
-	    val ys = mapPartial f xs
-	in case yo of NONE => ys | SOME y => y::ys end
-
-    fun find f   nil   = NONE
-      | find f (x::xs) = if f x then SOME x else find f xs
-
-    fun filter f   nil   = nil
-      | filter f (x::xs) =
-	let val b  = f x
-	    val ys = filter f xs
-	in if b then x::ys else ys end
-
-    fun partition f l =
-	let fun partition'( nil,  pos, neg) = (rev pos, rev neg)
-	      | partition'(x::xs, pos, neg) =
-		if f x then partition'(xs, x::pos, neg)
-		       else partition'(xs, pos, x::neg)
-	in partition'(l,nil,nil) end
-
-    fun foldl f b   nil   = b
-      | foldl f b (x::xs) = foldl f (f(x,b)) xs
-
-    fun foldr f b   nil   = b
-      | foldr f b (x::xs) = f(x, foldr f b xs)
-
-    fun exists f   nil   = false
-      | exists f (x::xs) = f x orelse exists f xs
-
-    fun all f   nil   = true
-      | all f (x::xs) = f x andalso all f xs
-
-    fun tabulate(n, f) =
-	let fun tabulate'(i,l) = if i = n then rev l
-					  else tabulate'(i+1, f i :: l)
-	in if n >= 0 then tabulate'(0, nil) else raise Size end
-
+    val tabulate :	int * (int -> 'a) -> 'a list
   end
 
 
-(* ListPair *)
-
-structure ListPair =
+structure List : LIST =
   struct
+    datatype list		= datatype list
+    type  'a t			= 'a list				(**)
 
-    fun zip(l1, l2) =
-	let fun zip'( nil,    _,   l) = List.rev l
-	      | zip'(  _,    nil,  l) = List.rev l
-	      | zip'(x::xs, y::ys, l) = zip'(xs, ys, (x,y)::l)
-	in zip'(l1, l2, nil) end
+    __primitive constructor Empty : exn = "List.Empty"
 
-    fun unzip l =
-	let fun unzip'(    nil,   l1, l2) = (List.rev l1, List.rev l2)
-	      | unzip'((x,y)::l', l1, l2) = unzip'(l', x::l1, y::l2)
-	in unzip'(l, nil, nil) end
+    fun null nil		= true
+      | null _			= false
 
-    fun map f ( nil,    _  ) = nil
-      | map f (  _,    nil ) = nil
-      | map f (x::xs, y::ys) = f(x,y) :: map f (xs,ys)
+    fun length   xs		= length'(xs, 0)
+    and length'( nil,  i)	= i
+      | length'(y::ys, i)	= length'(ys, i+1)
 
-    fun app f ( nil,    _  ) = ()
-      | app f (  _,    nil ) = ()
-      | app f (x::xs, y::ys) = (f(x,y) ; app f (xs,ys))
+    fun hd(x::xs)		= x
+      | hd  _			= raise Empty
 
-    fun foldl f c ( nil,    _  ) = c
-      | foldl f c (  _,    nil ) = c
-      | foldl f c (x::xs, y::ys) = f(x, y, foldl f c (xs,ys))
+    fun tl(x::xs)		= xs
+      | tl  _			= raise Empty
 
-    fun foldr f c ( nil,    _  ) = c
-      | foldr f c (  _,    nil ) = c
-      | foldr f c (x::xs, y::ys) = foldr f (f(x,y,c)) (xs,ys)
+    fun last(x::nil)		= x
+      | last(x::xs)		= last xs
+      | last  nil		= raise Empty
 
-    fun exists f ( nil,    _  ) = false
-      | exists f (  _,    nil ) = false
-      | exists f (x::xs, y::ys) = f(x,y) orelse exists f (xs,ys)
+    fun getItem(x::xs)		= SOME(x,xs)
+      | getItem  nil 		= NONE
 
-    fun all f ( nil,    _  ) = true
-      | all f (  _,    nil ) = true
-      | all f (x::xs, y::ys) = f(x,y) andalso all f (xs,ys)
+    fun nth (xs,i) where (i>=0)	= nth'(xs,i)
+      | nth (xs,i)		= raise General.Subscript
+    and nth'(x::xs, 0)		= x
+      | nth'(x::xs, i)		= nth'(xs, i-1)
+      | nth'(nil,   i)		= raise General.Subscript
 
+    val sub			= nth					(**)
+
+    fun rev   xs		= rev'(xs, nil)
+    and rev'( nil,  ys)		= ys
+      | rev'(x::xs, ys)		= rev'(xs, x::ys)
+
+    fun   nil   @ ys		= ys
+      | (x::xs) @ ys		= x :: xs @ ys
+
+    val append			= op @					(**)
+
+    fun revAppend( nil,  ys)	= ys
+      | revAppend(x::xs, ys)	= revAppend(xs, x::ys)
+
+    fun concat   nil		= nil
+      | concat(xs::xss)		= xs @ concat xss
+
+    fun take (xs,i) where (i<0)	= raise General.Subscript
+      | take (xs,i)		= take'(xs,i,nil)
+    and take'(x::xs, 0, ys)	= rev ys
+      | take'(x::xs, i, ys)	= take'(xs, i-1, x::ys)
+      | take'( nil,  i, ys)	= raise General.Subscript
+
+    fun drop (xs,i) where (i<0)	= raise General.Subscript
+      | drop (xs,i)		= drop'(xs,i)
+    and drop'(xs,    0)		= xs
+      | drop'(x::xs, i)		= drop'(xs, i-1)
+      | drop'( nil,  i)		= raise General.Subscript
+
+
+    fun app  f   xs		= app'(f,xs)
+    and app'(f,  nil )		= ()
+      | app'(f, x::xs)		= (f x ; app'(f,xs))
+
+    fun appr  f   xs		= appr'(f,xs)				(**)
+    and appr'(f,  nil )		= ()
+      | appr'(f, x::xs)		= (appr'(f,xs) ; f x)
+
+    fun appi  f xs		= appi'(f,0,xs)				(**)
+    and appi'(f, i,  nil )	= ()
+      | appi'(f, i, x::xs)	= (f(i,x) ; appi'(f, i+1, xs))
+
+    fun appri  f xs		= appri'(f,0,xs)			(**)
+    and appri'(f, i,  nil )	= ()
+      | appri'(f, i, x::xs)	= (appri'(f, i+1, xs) ; f(i,x))
+
+    fun map  f   xs		= map'(f,xs)
+    and map'(f,  nil )		= nil
+      | map'(f, x::xs)		= f x :: map'(f,xs)
+
+    fun mapi  f xs		= mapi'(f,0,xs)				(**)
+    and mapi'(f, i,  nil )	= nil
+      | mapi'(f, i, x::xs)	= f(i,x) :: mapi'(f, i+1, xs)
+
+    fun mapPartial  f   xs	= mapPartial'(f,xs)
+    and mapPartial'(f,  nil )	= nil
+      | mapPartial'(f, x::xs)	= case f x of NONE   => mapPartial'(f,xs)
+					    | SOME y => y :: mapPartial'(f,xs)
+
+    fun find  f   xs			= find'(f,xs)
+    and find'(f,  nil )			= NONE
+      | find'(f, x::xs) where (f x)	= SOME x
+      | find'(f, x::xs)			= find'(f,xs)
+
+    fun filter  f   xs			= filter'(f,xs)
+    and filter'(f,  nil )		= nil
+      | filter'(f, x::xs) where (f x)	= x :: filter'(f,xs)
+      | filter'(f, x::xs)		= filter'(f,xs)
+
+    fun partition  f xs			= partition'(f,xs,nil,nil)
+    and partition'(f,  nil,  ys, zs)	= (rev ys, rev zs)
+      | partition'(f, x::xs, ys, zs)	= if f x then partition'(f,xs,x::ys,zs)
+						 else partition'(f,xs,ys,x::zs)
+
+    fun foldl  f  y   xs		= foldl'(f,y,xs)
+    and foldl'(f, y,  nil )		= y
+      | foldl'(f, y, x::xs)		= foldl'(f, f(x,y), xs)
+
+    fun foldr  f  y   xs		= foldr'(f,y,xs)
+    and foldr'(f, y,  nil )		= y
+      | foldr'(f, y, x::xs)		= f(x, foldr'(f,y,xs))
+
+    fun foldli f y xs			= foldli'(f,y,0,xs)		(**)
+    and foldli'(f, y, i,  nil )		= y
+      | foldli'(f, y, i, x::xs)		= foldli'(f, f(i,x,y), i+1, xs)
+
+    fun foldri  f  y xs			= foldri'(f,y,0,xs)		(**)
+    and foldri'(f, y, i,  nil )		= y
+      | foldri'(f, y, i, x::xs)		= f(i, x, foldri'(f, y, i+1, xs))
+
+    fun all  f   xs			= all'(f,xs)
+    and all'(f,  nil )			= true
+      | all'(f, x::xs)			= f x andalso all'(f,xs)
+
+    fun exists  f   xs			= exists'(f,xs)
+    and exists'(f,  nil )		= false
+      | exists'(f, x::xs)		= f x orelse exists'(f,xs)
+
+    fun tabulate (n,f)      where (n<0)	= raise General.Size
+      | tabulate (n,f)			= tabulate'(n,f,0,nil)
+    and tabulate'(n,f,i,xs) where (i=n)	= rev xs
+      | tabulate'(n,f,i,xs)		= tabulate'(n, f, i+1, f i :: xs)
   end
 
 
-(* Char *)
 
-structure Char =
-    struct
-	type char = char
+(*****************************************************************************
+ * ListPair
+ *****************************************************************************)
 
-	__primitive val <= : char * char -> bool = "Char.<="
+signature LIST_PAIR =
+  sig
+    val zip :		'a list * 'b list -> ('a * 'b) list
+    val unzip :		('a * 'b) list -> 'a list * 'b list
 
-	__primitive val ord : char -> int = "Char.ord"
-	__primitive val chr : int -> char = "Char.chr"
+    val app :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val map :		('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val foldl :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val foldr :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val all :		('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val exists :	('a * 'b -> bool) -> 'a list * 'b list -> bool
 
-	__primitive val isAlphaNum : char -> bool = "Char.isAlphaNum"
-	__primitive val isDigit :    char -> bool = "Char.isDigit"
-	__primitive val isHexDigit : char -> bool = "Char.isHexDigit"
-	__primitive val isSpace :    char -> bool = "Char.isSpace"
-	__primitive val toLower :    char -> char = "Char.toLower"
-
-	__primitive val toCString :  char -> string = "Char.toCString"
-    end
-
-
-(* String *)
-
-structure String =
-    struct
-	type string = string
-
-	__primitive val op^ : string * string -> string = "String.^"
-	__primitive val str : char -> string = "String.str"
-	__primitive val size : string -> int = "String.size"
-	__primitive val substring : string * int * int -> string =
-							"String.substring"
-	__primitive val sub : string * int -> char = "String.sub"
-	__primitive val explode : string -> char list = "String.explode"
-
-	fun extract (s, i, NONE) = substring (s, i, size s - i)
-	  | extract (s, i, SOME j) = substring (s, i, j)
-
-	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
-
-	fun toCString s =
-	    List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
-
-	fun implode l = concat (List.map str l)
-
-	fun map f s = implode (List.map f (explode s))
-
-	__primitive val compare : string * string -> order = "String.compare"
-
-	fun s < t = compare (s, t) = LESS
-
-	local
-	    fun token (c::cr, f) =
-		if f c then
-		    let
-			val (cs, rest) = token (cr, f)
-		    in
-			(c::cs, rest)
-		    end
-		else (nil, cr)
-	      | token (nil, _) = (nil, nil)
-
-	    fun tokens' (c::cr, f) =
-		if f c then tokens' (cr, f)
-		else
-		    let
-			val (cs, rest) = token (cr, f)
-		    in
-			implode (c::cs)::tokens' (rest, f)
-		    end
-	      | tokens' (nil, _) = nil
-	in
-	    fun tokens f s = tokens' (explode s, f)
-	end
-    end
+    (**)
+    val appr :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appi :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appri :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val mapi :		(int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val mapPartial :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list ->'c
+    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list -> 'c
+    val find :		('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) option
+  end
 
 
-(* StringCvt *)
+structure ListPair : LIST_PAIR =
+  struct
+    fun zip (xs1,xs2)			= zip'(xs1,xs2,nil)
+    and zip'( nil,    _,   zs)		= List.rev zs
+      | zip'(  _,    nil,  zs)		= List.rev zs
+      | zip'(x::xs, y::ys, zs)		= zip'(xs, ys, (x,y)::zs)
 
-signature STRING_CVT =
-    sig
-	datatype radix = BIN | OCT | DEC | HEX
+    fun unzip zs			= unzip'(zs,nil,nil)
+    and unzip'(     nil,  xs, ys)	= (List.rev xs, List.rev ys)
+      | unzip'((x,y)::zs, xs, ys)	= unzip'(zs, x::xs, y::ys)
 
-	type ('a, 'b) reader = 'b -> ('a * 'b) option
+    fun map f (xs,ys)			= map'(f,xs,ys)
+    and map'(f,  nil,    _  )		= nil
+      | map'(f,   _,    nil )		= nil
+      | map'(f, x::xs, y::ys)		= f(x,y) :: map'(f,xs,ys)
 
-	type cs
+    fun mapi f (xs,ys)			= mapi'(f,0,xs,ys)		(**)
+    and mapi'(f, i,  nil,    _  )	= nil
+      | mapi'(f, i,   _,    nil )	= nil
+      | mapi'(f, i, x::xs, y::ys)	= f(i,x,y) :: mapi'(f,i+1,xs,ys)
 
-	val dropl: (char -> bool) -> (char, 'a) reader -> 'a -> 'a
+    fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys)
+    and mapPartial'(f,  nil,    _  )	= nil
+      | mapPartial'(f,   _,    nil )	= nil
+      | mapPartial'(f, x::xs, y::ys)	= case f(x,y)
+					    of NONE   => mapPartial'(f,xs,ys)
+					     | SOME z => z::mapPartial'(f,xs,ys)
 
-	val skipWS: (char, 'a) reader -> 'a -> 'a
+    fun app f (xs,ys)			= app'(f,xs,ys)
+    and app'(f,  nil,    _  )		= ()
+      | app'(f,   _,    nil )		= ()
+      | app'(f, x::xs, y::ys)		= (f(x,y) ; app'(f,xs,ys))
 
-	val scanString:
-	    ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
-    end
+    fun appr  f (xs,ys)			= appr'(f,xs,ys)		(**)
+    and appr'(f,  nil,    _  )		= ()
+      | appr'(f,   _,    nil )		= ()
+      | appr'(f, x::xs, y::ys)		= (appr'(f,xs,ys) ; f(x,y))
 
-structure StringCvt :> STRING_CVT =
-    struct
-	datatype radix = BIN | OCT | DEC | HEX
+    fun appi  f (xs,ys)			= appi'(f,0,xs,ys)		(**)
+    and appi'(f, i,  nil,    _  )	= ()
+      | appi'(f, i,   _,    nil )	= ()
+      | appi'(f, i, x::xs, y::ys)	= (f(i,x,y) ; appi'(f,i+1,xs,ys))
 
-	type ('a, 'b) reader = 'b -> ('a * 'b) option
+    fun appri  f (xs,ys)		= appri'(f,0,xs,ys)		(**)
+    and appri'(f, i,  nil,    _  )	= ()
+      | appri'(f, i,   _,    nil )	= ()
+      | appri'(f, i, x::xs, y::ys)	= (appri'(f,i+1,xs,ys) ; f(i,x,y))
 
-	type cs = int
+    fun foldl  f  z (xs,ys)		= foldl'(f,z,xs,ys)
+    and foldl'(f, z,  nil,    _  )	= z
+      | foldl'(f, z,   _,    nil )	= z
+      | foldl'(f, z, x::xs, y::ys)	= foldl'(f, f(x,y,z), xs, ys)
 
-	fun dropl p getc =
-	    let
-		fun h src =
-		    case getc src of
-			NONE => src
-		      | SOME (c, rest) => if p c then h rest else src
-	    in
-		h
-	    end
+    fun foldr  f  z (xs,ys)      	= foldr'(f,z,xs,ys)
+    and foldr'(f, z,  nil,    _  ) 	= z
+      | foldr'(f, z,   _,    nil ) 	= z
+      | foldr'(f, z, x::xs, y::ys) 	= f(x, y, foldr'(f,z,xs,ys))
 
-	fun skipWS getc = dropl Char.isSpace getc
+    fun foldli  f  z (xs,ys)		= foldli'(f,z,0,xs,ys)		(**)
+    and foldli'(f, z, i,  nil,    _  )	= z
+      | foldli'(f, z, i,   _,    nil )	= z
+      | foldli'(f, z, i, x::xs, y::ys)	= foldli'(f, f(i,x,y,z), i+1, xs, ys)
 
-	fun scanString scan s =
-	    let
-		val len = String.size s
-		fun getc i =
-		    if i < len then SOME (String.sub (s, i), i + 1)
-		    else NONE
-	    in
-		case scan getc 0 of
-		    NONE => NONE
-		  | SOME (res, _) => SOME res
-	    end
-    end
+    fun foldri  f  z (xs,ys)      	= foldri'(f,z,0,xs,ys)		(**)
+    and foldri'(f, z, i,  nil,    _  ) 	= z
+      | foldri'(f, z, i,   _,    nil ) 	= z
+      | foldri'(f, z, i, x::xs, y::ys) 	= f(i, x, y, foldri'(f,z,i+1,xs,ys))
+
+    fun all  f (xs,ys)			= all'(f,xs,ys)
+    and all'(f,  nil,    _  )		= true
+      | all'(f,   _,    nil )		= true
+      | all'(f, x::xs, y::ys)		= f(x,y) andalso all'(f,xs,ys)
+
+    fun exists  f (xs,ys)        	= exists'(f,xs,ys)
+    and exists'(f,  nil,    _  ) 	= false
+      | exists'(f,   _,    nil ) 	= false
+      | exists'(f, x::xs, y::ys) 	= f(x,y) orelse exists'(f,xs,ys)
+
+    fun find f (xs,ys)				= find'(f,xs,ys)	(**)
+    and find'(f,  nil,    _  )			= NONE
+      | find'(f,   _,    nil )			= NONE
+      | find'(f, x::xs, y::ys) where (f(x,y))	= SOME(x,y)
+      | find'(f, x::xs, y::ys) 			= find'(f,xs,ys)
+  end
 
 
-(* Int *)
+
+(*****************************************************************************
+ * Char
+ *****************************************************************************)
 
 local
 
-structure Int =
-    struct
-	type int = int
+structure Char =
+  struct
+    type char   = char
+    type string = string
+    type t	= char						(**)
 
-	open StringCvt
+    __primitive val ord : char -> int = "Char.ord"
+    __primitive val chr : int -> char = "Char.chr"
 
-	val op+ = op+
+    val maxOrd  = 255
+    val minChar = chr 0
+    val maxChar = chr maxOrd
 
-	fun decval c = Char.ord c - Char.ord #"0"
-	fun hexval c =
-	    if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
-	    then Char.ord c - Char.ord #"0"
-	    else (Char.ord c - Char.ord #"A" + 10) mod 32
-	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+    fun pred c where (c = minChar)	= raise General.Chr
+      | pred c				= chr(ord c - 1)
+    fun succ c where (c = maxChar)	= raise General.Chr
+      | succ c				= chr(ord c + 1)
 
-	fun isBinDigit #"0" = true
-	  | isBinDigit #"1" = true
-	  | isBinDigit _ = false
+    __primitive val Int_compare : int * int -> order     = "Int.compare"
+    __primitive val String_size : string -> int          = "String.size"
+    __primitive val String_sub :  string * int -> char   = "String.sub"
+    __primitive val String_str :  char -> string         = "String.str"
+    __primitive val String_implode : char list -> string = "String.implode"
 
-	fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
-			   Char.ord c <= Char.ord #"7"
+    fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
 
-	fun scan radix getc source =
-	    let
-		val (isDigit, factor) =
-		    case radix of
-			BIN => (isBinDigit,       2)
-		      | OCT => (isOctDigit,       8)
-		      | DEC => (Char.isDigit,    10)
-		      | HEX => (Char.isHexDigit, 16)
-		fun dig1 sgn NONE = NONE
-		  | dig1 sgn (SOME (c, rest)) =
-		    let
-			fun digr res src =
-			    case getc src of
-				NONE => SOME (sgn * res, src)
-			      | SOME (c', rest') =>
-				    if isDigit c' then
-					digr (factor * res + hexval c') rest'
-				    else
-					SOME (sgn * res, src)
-		    in
-			if isDigit c then digr (hexval c) rest else NONE
-		    end
-		fun getdigs sgn after0 inp =
-		    case dig1 sgn inp of
-			NONE => SOME (0, after0)
-		      | res => res
-		fun hexopt sgn NONE = NONE
-		  | hexopt sgn (SOME (#"0", after0)) =
-		    if radix <> HEX then getdigs sgn after0 (getc after0)
-		    else
-			(case getc after0 of
-			     NONE => SOME(0, after0)
-			   | SOME ((#"x" | #"X"), rest) =>
-				 getdigs sgn after0 (getc rest)
-			   | inp => getdigs sgn after0 inp)
-		  | hexopt sgn inp = dig1 sgn inp
-		fun sign NONE = NONE
-		  | sign (SOME (#"~", rest)) = hexopt ~1 (getc rest)
-		  | sign (SOME (#"-", rest)) = hexopt ~1 (getc rest)
-		  | sign (SOME (#"+", rest)) = hexopt 1 (getc rest)
-		  | sign inp = hexopt  1 inp
-	    in
-		sign (skipWSget getc source)
-	    end
+    fun contains  s c    = contains'(s, c, String_size s)
+    and contains'(s,c,i) =
+	String_sub(s,i) = c orelse i >= 0 andalso contains'(s, c, i-1)
 
-	__primitive val compare: int * int -> order = "Int.compare"
+    fun notContains s c = Bool.not(contains s c)
 
-	__primitive val toString : int -> string = "Int.toString"
 
-	val op>= = op>=
-	val op< = op<
+    __primitive val op < :	char * char -> bool = "Char.<"
+    __primitive val op > :	char * char -> bool = "Char.>"
+    __primitive val op <= :	char * char -> bool = "Char.<="
+    __primitive val op >= :	char * char -> bool = "Char.>="
 
-	val fromString = scanString (scan DEC)   (*--** crashes *)
+    __primitive val toLower :	char -> char = "Char.toLower"
+    __primitive val toUpper :	char -> char = "Char.toUpper"
 
-	fun min (i, j) = if i > j then j else i
-	fun max (i, j) = if i < j then j else i
+    __primitive val isLower :	char -> bool = "Char.isLower"
+    __primitive val isUpper :	char -> bool = "Char.isUpper"
+    __primitive val isAlpha :	char -> bool = "Char.isAlpha"
+    __primitive val isAlphaNum:	char -> bool = "Char.isAlphaNum"
+    __primitive val isDigit :	char -> bool = "Char.isDigit"
+    __primitive val isHexDigit:	char -> bool = "Char.isHexDigit"
+    __primitive val isPunct :	char -> bool = "Char.isPunct"
+    __primitive val isPrint :	char -> bool = "Char.isPrint"
+    __primitive val isGraph :	char -> bool = "Char.isGraph"
+    __primitive val isSpace :	char -> bool = "Char.isSpace"
+    __primitive val isCntrl :	char -> bool = "Char.isCntrl"
 
-	fun fromInt i   = i
-	fun fromLarge i = i
-	fun toLarge i   = i
-    end
+    fun isAscii c = chr 0 <= c andalso c <= chr 127
 
-structure LargeInt = Int
+    fun toWide c	= c						(**)
+    fun fromWide c	= c						(**)
 
-in
+    fun toString #"\\" = "\\\\"
+      | toString #"\"" = "\\\""
+      | toString c where (isPrint c) = String_str c
+      | toString #"\a" = "\\a"
+      | toString #"\b" = "\\b"
+      | toString #"\t" = "\\t"
+      | toString #"\n" = "\\n"
+      | toString #"\v" = "\\v"
+      | toString #"\f" = "\\f"
+      | toString #"\r" = "\\r"
+      | toString c where (c < #" ") =
+	String_implode [#"\\", chr (ord c + ord #"@")]
+      | toString c =   (*UNFINISHED: does not work properly for WideChar *)
+	let
+	    val n = ord c
+	    val zero = ord #"0"
+	in
+	    String_implode [#"\\", chr (n div 100 + zero),
+			    chr ((n div 10) mod 10 + zero),
+			    chr (n mod 10 + zero)]
+	end
 
-signature INTEGER =
-    sig
-	type int
+    fun toCString #"\\" = "\\\\"
+      | toCString #"\"" = "\\\""
+      | toCString #"?" = "\\?"
+      | toCString #"'" = "\\'"
+      | toCString c where (isPrint c) = String_str c
+      | toCString #"\a" = "\\a"
+      | toCString #"\b" = "\\b"
+      | toCString #"\t" = "\\t"
+      | toCString #"\n" = "\\n"
+      | toCString #"\v" = "\\v"
+      | toCString #"\f" = "\\f"
+      | toCString #"\r" = "\\r"
+      | toCString c =   (*UNFINISHED: does not work properly for WideChar *)
+	let
+	    val n = ord c
+	    val zero = ord #"0"
+	in
+	    String_implode [#"\\", chr (n div 64 + zero),
+			    chr ((n div 8) mod 8 + zero), chr (n mod 8 + zero)]
+	end
+  end
 
-	val + : int * int -> int
-	val >= : int * int -> bool
-	val < : int * int -> bool
 
-	val scan:
-	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
-	    (int * 'a) option
+structure WideChar = Char
 
-	val compare: int * int -> order
 
-	val toString: int -> string
+in (* local *)
 
-	val fromString: string -> int option
 
-	val min: int * int -> int
-	val max: int * int -> int
+signature CHAR =
+  sig
+    eqtype char
+    eqtype string
+    type t = char					(**)
 
-	val fromInt: Int.int -> int
-	val fromLarge: LargeInt.int -> int
-	val toLarge: int -> LargeInt.int
-    end
+    val minChar :	char
+    val maxChar :	char
+    val maxOrd :	int
 
-structure Int :> INTEGER where type int = int = Int
-structure LargeInt :> INTEGER where type int = LargeInt.int = LargeInt
+    val chr :		int -> char
+    val ord :		char -> int
+
+    val pred :		char -> char
+    val succ :		char -> char
+
+    val op < :		char * char -> bool
+    val op <= :		char * char -> bool
+    val op > :		char * char -> bool
+    val op >= :		char * char -> bool
+    val compare :	char * char -> order
+
+    val contains :	string -> char -> bool
+    val notContains :	string -> char -> bool
+
+    val toLower :	char -> char
+    val toUpper :	char -> char
+
+    val isLower :	char -> bool
+    val isUpper :	char -> bool
+    val isAlpha :	char -> bool
+    val isAlphaNum :	char -> bool
+    val isDigit :	char -> bool
+    val isHexDigit :	char -> bool
+    val isPunct :	char -> bool
+    val isPrint :	char -> bool
+    val isGraph :	char -> bool
+    val isSpace :	char -> bool
+    val isCntrl :	char -> bool
+    val isAscii :	char -> bool
+
+    val toWide :	char -> WideChar.char		(**)
+    val fromWide :	WideChar.char -> char		(**)
+
+    val toString :	char -> string
+    val toCString :	char -> string
+(*MISSING
+    val fromString :	string -> char option
+    val fromCString :	string -> char option
+    val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
+*)
+  end
+
+
+structure Char     : CHAR = Char
+structure WideChar : CHAR = WideChar
 
 end (* local *)
 
 
-(* Real *)
+
+(*****************************************************************************
+ * String
+ *****************************************************************************)
+
+local
+
+structure String =
+  struct
+    type string	= string
+    type t	= string						(**)
+
+    structure Char = Char
+
+    __primitive val maxSize : int = "String.maxSize"
+
+    __primitive val size : string -> int        = "String.size"
+    __primitive val str :  char -> string       = "String.str"
+    __primitive val sub :  string * int -> char = "String.sub"
+    __primitive val sub' : string * int -> char = "String.sub'"
+    __primitive val substring : string * int * int -> string
+						= "String.substring"
+    fun extract(s, i, NONE)   = substring(s, i, size s - i)
+      | extract(s, i, SOME j) = substring(s, i, j)
+
+    __primitive val op ^ :    string * string -> string = "String.^"
+    __primitive val implode : char list -> string       = "String.implode"
+    __primitive val explode : string -> char list       = "String.explode"
+
+    val maxLen		= maxSize					(**)
+    val length		= size						(**)
+    val append		= op ^						(**)
+    val fromList	= implode					(**)
+    val toList		= explode					(**)
+    fun tabulate(n,f)	= implode(List.tabulate(n,f)) (*INEFFICIENT*)	(**)
+
+    fun concat ss	= List.foldr op^ "" ss			(*INEFFICIENT*)
+
+    fun map f s		= implode(List.map f (explode s))	(*INEFFICIENT*)
+    fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
+
+    __primitive val op < :	string * string -> bool  = "String.<"
+    __primitive val op > :	string * string -> bool  = "String.>"
+    __primitive val op <= :	string * string -> bool  = "String.<="
+    __primitive val op >= :	string * string -> bool  = "String.>="
+    __primitive val compare :	string * string -> order = "String.compare"
+
+    fun collate cmp (s1,s2) =
+	let
+	    val n1 = size s1
+	    val n2 = size s2
+
+	    fun collate' i where (i = n1) = if n1 = n2 then EQUAL else LESS
+	      | collate' i where (i = n2) = GREATER
+	      | collate' i                = case cmp(sub'(s1,i), sub'(s2,i))
+					      of EQUAL => collate'(i+1)
+					       | other => other
+	in
+	    collate' 0
+	end
+
+    fun collate  cmp (s1,s2)		= collate'(cmp,s1,s2,0)
+    and collate'(cmp,s1,s2,i) where (i = size s1)
+					= if size s1 = size s2 then EQUAL
+							       else LESS
+      | collate'(cmp,s1,s2,i) where (i = size s2)
+					= GREATER
+      | collate'(cmp,s1,s2,i)		= case cmp(sub'(s1,i), sub'(s2,i))
+					    of EQUAL => collate'(cmp,s1,s2,i+1)
+					     | other => other
+
+    fun isPrefix s1 s2			= isPrefix'(s1,s2,0)
+    and isPrefix'(s1,s2,i)		= i = size s1 orelse
+					  i <> size s2 andalso
+					  sub'(s1,i) = sub'(s2,i)
+					  andalso isPrefix'(s1,s2,i+1)
+
+    fun isSuffix s1 s2			= isSuffix'(s1,s2,size s1-1,size s2-1)
+    and isSuffix'(s1,s2,i1,i2)		= i1 = ~1 orelse		(**)
+					  i2 <> ~1 andalso
+					  sub'(s1,i1) = sub'(s2,i1)
+					  andalso isSuffix'(s1,s2,i1-1,i2-1)
+
+    fun fields  f  s		= fields'(f, explode s, nil)
+    and fields'(f, nil, ss)	= List.rev ss
+      | fields'(f, cs,  ss)	= let val (cs1,cs2) = field'(f,cs,nil) in
+				      fields'(f, cs2, implode(cs1)::ss)
+				  end
+    and field'(f,  nil,  cs')	= (List.rev cs', nil)
+      | field'(f, c::cs, cs') where (f c)
+      				= (List.rev cs', c::cs)
+      | field'(f, c::cs, cs')	= field'(f, cs, c::cs')
+
+    fun tokens  f   s		= tokens'(f, explode s, nil)
+    and tokens'(f,  nil,  ss)	= List.rev ss
+      | tokens'(f, c::cs, ss) where (f c)
+      				= tokens'(f,cs,ss)
+      | tokens'(f, c::cs, ss)	= let val (cs1,cs2) = token'(f,cs,nil) in
+				      tokens'(f, cs2, implode(c::cs1)::ss)
+				  end
+    and token'(f,  nil,  cs')	= (List.rev cs', nil)
+      | token'(f, c::cs, cs') where (f c)
+      				= (List.rev cs', c::cs)
+      | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
+
+
+    fun toWide s	= s						(**)
+    fun fromWide s	= s						(**)
+
+    fun toString s	= translate Char.toString s
+    fun toCString s	= translate Char.toCString s
+  end
+
+
+structure WideString = String
+
+
+in (* local *)
+
+
+signature STRING =
+  sig
+    type string
+    type t = string							(**)
+
+    structure Char :	CHAR
+
+    val maxSize :	int
+    val maxLen :	int						(**)
+
+    val size :		string -> int
+    val length :	string -> int					(**)
+    val str :		Char.char -> string
+    val sub :		string * int -> Char.char
+    val substring :	string * int * int -> string
+    val extract :	string * int * int option -> string
+
+    val ^ :		string * string -> string
+    val append :	string * string -> string			(**)
+    val concat :	string list -> string
+    val implode :	Char.char list -> string
+    val explode :	string -> Char.char list
+    val fromList :	Char.char list -> string			(**)
+    val toList :	string -> Char.char list			(**)
+    val tabulate :	int * (int -> Char.char) -> string		(**)
+
+    val map :		(Char.char -> Char.char) -> string -> string
+    val translate :	(Char.char -> string) -> string -> string
+    val fields :	(Char.char -> bool) -> string -> string list
+    val tokens :	(Char.char -> bool) -> string -> string list
+
+    val op < :		string * string -> bool
+    val op > :		string * string -> bool
+    val op <= :		string * string -> bool
+    val op >= :		string * string -> bool
+    val compare :	string * string -> order
+    val collate :	(Char.char * Char.char -> order) -> string * string
+							 -> order
+    val isPrefix :	string -> string -> bool
+    val isSuffix :	string -> string -> bool			(**)
+
+    val toWide :	string -> WideString.string			(**)
+    val fromWide :	WideString.string -> string			(**)
+
+    val toString :	string -> string
+    val toCString :	string -> string
+(*MISSING
+    val fromString :	string -> string option
+    val fromCString :	string -> string option
+*)
+  end
+
+
+structure String     : STRING = String
+structure WideString : STRING = WideString
+
+end (* local *)
+
+
+
+(*****************************************************************************
+ * Substring
+ *****************************************************************************)
+
+signature SUBSTRING =
+  sig
+    structure String :	STRING
+
+    type substring
+    type t = substring							(**)
+
+    val base :		substring -> String.string * int * int
+    val string :	substring -> String.string
+    val substring :	String.string * int * int -> substring
+    val extract :	String.string * int * int option -> substring
+
+    val isEmpty :	substring -> bool
+    val size :		substring -> int
+
+    val all :		String.string -> substring
+    val getc :		substring -> (String.Char.char * substring) option
+    val first :		substring -> String.Char.char option
+    val triml :		int -> substring -> substring
+    val trimr :		int -> substring -> substring
+    val sub :		substring * int -> char
+    val slice :		substring * int * int option -> substring
+    val concat :	substring list -> String.string
+    val explode :	substring -> String.Char.char list
+
+    val isPrefix :	String.string -> substring -> bool
+    val compare :	substring * substring -> order
+    val collate :	(String.Char.char * String.Char.char -> order) ->
+					substring * substring -> order
+
+    val splitl :	(String.Char.char -> bool) -> substring
+						   -> substring * substring
+    val splitr :	(String.Char.char -> bool) -> substring
+						   -> substring * substring
+    val splitAt :	substring * int -> substring * substring
+    val dropl :		(String.Char.char -> bool) -> substring -> substring
+    val dropr :		(String.Char.char -> bool) -> substring -> substring
+    val takel :		(String.Char.char -> bool) -> substring -> substring
+    val taker :		(String.Char.char -> bool) -> substring -> substring
+    val position :	String.string -> substring -> substring * substring
+    val span :		substring * substring -> substring
+    val translate :	(String.Char.char -> String.string) -> substring
+							   -> String.string
+    val tokens :	(String.Char.char -> bool) -> substring -> substring list
+    val fields :	(String.Char.char -> bool) -> substring -> substring list
+
+    val app :		(String.Char.char -> unit) -> substring -> unit
+    val foldl :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
+    val foldr :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
+  end
+
+
+(*MISSING
+structure Substring : SUBSTRING =
+  struct
+  end
+*)
+
+
+
+(*****************************************************************************
+ * StringCvt
+ *****************************************************************************)
+
+signature STRING_CVT =
+  sig
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
+
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs
+
+(*MISSING
+    val padLeft :	char -> int -> string -> string
+    val padRight :	char -> int -> string -> string
+    val splitl :	(char -> bool) -> (char,'a) reader ->'a -> (string * 'a)
+    val takel :		(char -> bool) -> (char,'a) reader -> 'a -> string
+*)
+    val dropl :		(char -> bool) -> (char,'a) reader -> 'a -> 'a
+    val skipWS :	(char,'a) reader -> 'a -> 'a
+    val scanString:	((char,cs) reader -> ('a,cs) reader) -> string
+							     -> 'a option
+  end
+
+
+structure StringCvt :> STRING_CVT =
+  struct
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
+
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs             = int
+
+    fun dropl  p f s  = dropl'(p,f,s)
+    and dropl'(p,f,s) =
+	case f s of SOME(c,s') where (p c) => dropl'(p,f,s')
+		  | _                      => s
+
+    fun skipWS f = dropl Char.isSpace f
+
+    fun scanString scan s =
+	let
+	    val n = String.size s
+	    fun get i where (i = n) = NONE
+	      | get i               = SOME(String.sub(s,i), i+1)
+	in
+	    case scan get 0 of NONE      => NONE
+			     | SOME(x,_) => SOME x
+	end
+  end
+
+
+
+(*****************************************************************************
+ * Int
+ *****************************************************************************)
+
+local
+
+structure Int =
+  struct
+    type int = int
+    type t   = int							(**)
+
+    __primitive val minInt :    int option = "Int.minInt"
+    __primitive val maxInt :    int option = "Int.maxInt"
+    __primitive val precision : int option = "Int.precision"
+
+    fun toInt i		= i
+    fun fromInt i	= i
+    fun toLarge i	= i
+    fun fromLarge i	= i
+
+    val ~		= ~
+    val op +		= op +
+    val op -		= op -
+    val op *		= op *
+    val op div		= op div
+    val op mod		= op mod
+
+    val op <		= op <
+    val op >		= op >
+    val op <=		= op <=
+    val op >=		= op >=
+
+    __primitive val quot : int * int -> int = "Int.quot"
+    __primitive val rem :  int * int -> int = "Int.rem"
+
+    __primitive val compare : int * int -> order = "Int.compare"
+
+    val abs			= abs
+
+    fun min(i,j)		= if i < j then i else j
+    fun max(i,j)		= if i > j then i else j
+
+    fun sign i where (i>0)	= 1
+      | sign i where (i<0)	= ~1
+      | sign i			= 0
+
+    fun sameSign(i,j)		= sign i = sign j
+
+
+    open StringCvt
+
+    fun decval c = Char.ord c - Char.ord #"0"
+    fun hexval c =
+	if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
+	then Char.ord c - Char.ord #"0"
+	else (Char.ord c - Char.ord #"A" + 10) mod 32
+
+    fun skipWSget getc src = getc (dropl Char.isSpace getc src)
+
+    fun isBinDigit #"0" = true
+      | isBinDigit #"1" = true
+      | isBinDigit _    = false
+
+    fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
+		       Char.ord c <= Char.ord #"7"
+
+    fun scan radix getc source =
+	let
+	    val (isDigit, factor) =
+		case radix of
+		    BIN => (isBinDigit,       2)
+		  | OCT => (isOctDigit,       8)
+		  | DEC => (Char.isDigit,    10)
+		  | HEX => (Char.isHexDigit, 16)
+	    fun dig1 sgn NONE = NONE
+	      | dig1 sgn (SOME (c, rest)) =
+		let
+		    fun digr res src =
+			case getc src of
+			    NONE => SOME (sgn * res, src)
+			  | SOME (c', rest') =>
+				if isDigit c' then
+				    digr (factor * res + hexval c') rest'
+				else
+				    SOME (sgn * res, src)
+		in
+		    if isDigit c then digr (hexval c) rest else NONE
+		end
+	    fun getdigs sgn after0 inp =
+		case dig1 sgn inp of
+		    NONE => SOME (0, after0)
+		  | res => res
+	    fun hexopt sgn NONE = NONE
+	      | hexopt sgn (SOME (#"0", after0)) =
+		if radix <> HEX then getdigs sgn after0 (getc after0)
+		else
+		    (case getc after0 of
+			 NONE => SOME(0, after0)
+		       | SOME ((#"x" | #"X"), rest) =>
+			     getdigs sgn after0 (getc rest)
+		       | inp => getdigs sgn after0 inp)
+	      | hexopt sgn inp = dig1 sgn inp
+	    fun sign NONE = NONE
+	      | sign (SOME (#"~", rest)) = hexopt ~1 (getc rest)
+	      | sign (SOME (#"-", rest)) = hexopt ~1 (getc rest)
+	      | sign (SOME (#"+", rest)) = hexopt 1 (getc rest)
+	      | sign inp = hexopt  1 inp
+	in
+	    sign (skipWSget getc source)
+	end
+
+    __primitive val toString : int -> string = "Int.toString"
+
+    val fromString = scanString(scan DEC)   (*--** crashes *)
+  end
+
+
+structure LargeInt = Int
+
+
+in (* local *)
+
+
+signature INTEGER =
+  sig
+    eqtype int
+    type t = int							(**)
+
+    val minInt :	int option
+    val maxInt :	int option
+    val precision :	Int.int option
+
+    val toInt :		int -> Int.int
+    val fromInt :	Int.int -> int
+    val toLarge :	int -> LargeInt.int
+    val fromLarge :	LargeInt.int -> int
+
+    val ~ :		int -> int
+    val op + :		int * int -> int
+    val op - :		int * int -> int
+    val op * :		int * int -> int
+    val op div :	int * int -> int
+    val op mod :	int * int -> int
+    val op quot :	int * int -> int
+    val op rem :	int * int -> int
+
+    val op < :		int * int -> bool
+    val op > :		int * int -> bool
+    val op <= :		int * int -> bool
+    val op >= :		int * int -> bool
+    val compare :	int * int -> order
+
+    val abs :		int -> int
+    val min :		int * int -> int
+    val max :		int * int -> int
+    val sign :		int -> Int.int
+    val sameSign :	int * int -> bool
+
+    val toString :	int -> string
+    val fromString:	string -> int option
+(*MISSING
+    val fmt :		StringCvt.radix -> int -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader -> 'a
+					-> (int * 'a) option
+  end
+
+
+structure Int      :> (INTEGER where type int = int)		= Int
+structure LargeInt :> (INTEGER where type int = LargeInt.int)	= LargeInt
+structure Position :   INTEGER					= Int
+
+end (* local *)
+
+
+
+(*****************************************************************************
+ * Word
+ *****************************************************************************)
+
+local
+
+structure Word =
+  struct
+    type word = word
+    type t    = word							(**)
+
+    __primitive val wordSize :		int                  = "Word.wordSize"
+
+    __primitive val toInt :		word -> int          = "Word.toInt"
+    __primitive val toIntX :		word -> int          = "Word.toIntX"
+    __primitive val toLargeInt :	word -> LargeInt.int = "Word.toInt"
+    __primitive val toLargeIntX :	word -> LargeInt.int = "Word.toIntX"
+    __primitive val fromInt' :		int * int -> word    = "Word.fromInt'"
+
+    fun toLargeWord w	= w
+    fun fromLargeWord w	= w
+    fun fromInt x	= fromInt'(wordSize,x)
+    fun fromLargeInt x	= fromInt'(wordSize,x)
+
+
+    __primitive val op + :   word * word -> word = "Word.+"
+    __primitive val op - :   word * word -> word = "Word.-"
+    __primitive val op * :   word * word -> word = "Word.*"
+    __primitive val op div : word * word -> word = "Word.div"
+    __primitive val op mod : word * word -> word = "Word.mod"
+
+    __primitive val notb :   word -> word        = "Word.notb"
+    __primitive val orb :    word * word -> word = "Word.orb"
+    __primitive val xorb :   word * word -> word = "Word.xorb"
+    __primitive val andb :   word * word -> word = "Word.andb"
+    __primitive val op << :  word * word -> word = "Word.<<"
+    __primitive val op >> :  word * word -> word = "Word.>>"
+    __primitive val op ~>> : word * word -> word = "Word.~>>"
+
+    __primitive val toString : word -> string = "Word.toString"
+
+    local
+	open StringCvt
+	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+
+	(* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
+	fun decval c = fromInt (Char.ord c) - fromInt 48;
+	fun hexval c =
+	    if Char.ord #"0" <= Char.ord c
+	    andalso Char.ord c <= Char.ord #"9" then
+		fromInt (Char.ord c) - fromInt 48
+	    else
+		(fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
+    in
+	fun scan radix getc source =
+	    let open StringCvt
+		val source = skipWS getc source
+		val (isDigit, factor) =
+		    case radix of
+			BIN => (fn c => (Char.ord #"0" <= Char.ord c
+				andalso Char.ord c <= Char.ord #"1"),  2)
+		      | OCT => (fn c => (Char.ord #"0" <= Char.ord c
+				andalso Char.ord c <= Char.ord #"7"),  8)
+		      | DEC => (Char.isDigit,                          10)
+		      | HEX => (Char.isHexDigit,                       16)
+		fun dig1 NONE              = NONE
+		  | dig1 (SOME (c1, src1)) =
+		    let fun digr res src =
+			case getc src of
+			    NONE           => SOME (res, src)
+			  | SOME (c, rest) =>
+				if isDigit c then
+				    digr (fromInt factor * res + hexval c)
+				    rest
+				else SOME (res, src)
+		    in
+			if isDigit c1 then digr (hexval c1) src1
+			else NONE
+		    end
+		fun getdigs after0 src =
+		    case dig1 (getc src) of
+			NONE => SOME(fromInt 0, after0)
+		      | res  => res
+		fun hexprefix after0 src =
+		    if radix <> HEX then getdigs after0 src
+		    else
+			case getc src of
+			    SOME(#"x", rest) => getdigs after0 rest
+			  | SOME(#"X", rest) => getdigs after0 rest
+			  | SOME _           => getdigs after0 src
+			  | NONE => SOME(fromInt 0, after0)
+	    in
+		case getc source of
+		    SOME(#"0", after0) =>
+			(case getc after0 of
+			     SOME(#"w", src2) => hexprefix after0 src2
+			   | SOME _           => hexprefix after0 after0
+			   | NONE             => SOME(fromInt 0, after0))
+		  | SOME _ => dig1 (getc source)
+		  | NONE   => NONE
+	    end
+    end
+  end
+
+
+structure LargeWord = Word
+
+
+in (* local *)
+
+
+signature WORD =
+  sig
+    eqtype word
+    type t = word							(**)
+
+    val wordSize :	int
+
+    val toLargeWord :	word -> LargeWord.word
+(*MISSING
+    val toLargeWordX :	word -> LargeWord.word
+*)
+    val fromLargeWord :	LargeWord.word -> word
+    val toLargeInt :	word -> LargeInt.int
+    val toLargeIntX :	word -> LargeInt.int
+    val fromLargeInt :	LargeInt.int -> word
+    val toInt :		word -> Int.int
+    val toIntX :	word -> Int.int
+    val fromInt :	Int.int -> word
+
+    val notb :		word -> word
+    val orb :		word * word -> word
+    val xorb :		word * word -> word
+    val andb :		word * word -> word
+    val << :		word * word -> word
+    val >> :		word * word -> word
+    val ~>> :		word * word -> word
+
+    val + :		word * word -> word
+    val - :		word * word -> word
+    val * :		word * word -> word
+    val div :		word * word -> word
+    val mod :		word * word -> word
+
+(*MISSING
+    val op > :		word * word -> bool
+    val op < :		word * word -> bool
+    val op >= :		word * word -> bool
+    val op <= :		word * word -> bool
+    val compare :	word * word -> order
+
+    val min :		word * word -> word
+    val max :		word * word -> word
+*)
+
+    val toString :	word -> string
+(*MISSING
+    val fromString :	string -> word option
+    val fmt :		StringCvt.radix -> word -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (word,'a) StringCvt.reader
+  end
+
+
+structure Word      :> (WORD where type word = Word.word)	= Word
+structure LargeWord :> (WORD where type word = LargeWord.word)	= LargeWord
+
+end (* local *)
+
+
+
+(*****************************************************************************
+ * IEEEReal
+ *****************************************************************************)
+
+signature IEEE_REAL =
+  sig
+     exception Unordered
+
+     datatype real_order	= LESS | EQUAL | GREATER | UNORDERED
+     datatype nan_mode		= QUIET | SIGNALLING
+     datatype float_class	= NAN of nan_mode
+				| INF
+				| ZERO
+				| NORMAL
+				| SUBNORMAL
+     datatype rounding_mode	= TO_NEAREST
+				| TO_NEGINF
+				| TO_POSINF
+				| TO_ZERO
+
+(*MISSING
+     val setRoundingMode :	rounding_mode -> unit
+     val getRoundingMode :	unit -> rounding_mode
+*)
+
+     type decimal_approx	= { kind : float_class, sign : bool,
+				    digits : int list,  exp : int }
+
+(*MISSING
+     val toString :		decimal_approx -> string
+     val fromString :		string -> decimal_approx option
+*)
+  end
+
+
+structure IEEEReal : IEEE_REAL =
+  struct
+     exception Unordered
+
+     datatype real_order	= LESS | EQUAL | GREATER | UNORDERED
+     datatype nan_mode		= QUIET | SIGNALLING
+     datatype float_class	= NAN of nan_mode
+				| INF
+				| ZERO
+				| NORMAL
+				| SUBNORMAL
+     datatype rounding_mode	= TO_NEAREST
+				| TO_NEGINF
+				| TO_POSINF
+				| TO_ZERO
+
+     type decimal_approx	= { kind : float_class, sign : bool,
+				    digits : int list,  exp : int }
+  end
+
+
+
+(*****************************************************************************
+ * Math
+ *****************************************************************************)
+
+signature MATH =
+  sig
+    eqtype real
+
+    val e :		real
+    val pi :		real
+
+    val sqrt :		real -> real
+    val exp :		real -> real
+    val pow :		real * real -> real
+    val ln :		real -> real
+    val log10 :		real -> real
+
+    val sin :		real -> real
+    val cos :		real -> real
+    val tan :		real -> real
+    val asin :		real -> real
+    val acos :		real -> real
+    val atan :		real -> real
+    val atan2 :		real * real -> real
+    val sinh :		real -> real
+    val cosh :		real -> real
+    val tanh :		real -> real
+    val asinh :		real -> real					(**)
+    val acosh :		real -> real					(**)
+    val atanh :		real -> real					(**)
+  end
+
+
+structure Math : MATH =
+  struct
+    type real = real
+
+    __primitive val e :		real			= "Math.e"
+    __primitive val pi :	real			= "Math.pi"
+
+    __primitive val sqrt :	real -> real		= "Math.sqrt"
+    __primitive val exp :	real -> real		= "Math.exp"
+    __primitive val pow :	real * real -> real	= "Math.pow"
+    __primitive val ln :	real -> real		= "Math.ln"
+
+    val ln10	= ln 10.0
+    fun log10 x	= ln x / ln10
+
+    __primitive val sin :	real -> real		= "Math.sin"
+    __primitive val cos :	real -> real		= "Math.cos"
+    __primitive val tan :	real -> real		= "Math.tan"
+    __primitive val asin :	real -> real		= "Math.asin"
+    __primitive val acos :	real -> real		= "Math.acos"
+    __primitive val atan :	real -> real		= "Math.atan"
+    __primitive val atan2 :	real * real -> real	= "Math.atan2"
+    __primitive val sinh :	real -> real		= "Math.sinh"
+    __primitive val cosh :	real -> real		= "Math.cosh"
+    __primitive val tanh :	real -> real		= "Math.tanh"
+    __primitive val asinh :	real -> real		= "Math.asinh"	(**)
+    __primitive val acosh :	real -> real		= "Math.acosh"	(**)
+    __primitive val atanh :	real -> real		= "Math.atanh"	(**)
+  end
+
+
+
+(*****************************************************************************
+ * Real
+ *****************************************************************************)
+
+local
 
 structure Real =
-    struct
-	type real = real
+  struct
+    type real = real
+    type t    = real							(**)
 
-	fun scan(r: (char,'a) StringCvt.reader) = scan r   (*--** *)
-	fun toString(x: real) = ""   (*--** *)
-	fun fromString(s: string) = NONE (*--** *)
-	fun compare(x: real, y:real) = EQUAL (*--** *)
-	fun trunc(x: real) = 0 (*--** *)
-	fun (x: real) < (y: real) = false (*--** *)
-    end
+    structure Math = Math
+
+    infix 4  == != ?=
+
+    __primitive val ~ :		real -> real		= "Real.~"
+    __primitive val op + :	real * real -> real	= "Real.+"
+    __primitive val op - :	real * real -> real	= "Real.-"
+    __primitive val op * :	real * real -> real	= "Real.*"
+    __primitive val op / :	real * real -> real	= "Real./"
+    __primitive val rem :	real * real -> real	= "Real.rem"
+
+    __primitive val op < :	real * real -> bool	= "Real.<"
+    __primitive val op > :	real * real -> bool	= "Real.>"
+    __primitive val op <= :	real * real -> bool	= "Real.<="
+    __primitive val op >= :	real * real -> bool	= "Real.>="
+    __primitive val compare :	real * real -> order	= "Real.compare"
+
+    fun compareReal(x,y) =
+	(case compare(x,y)
+	   of LESS			=> IEEEReal.LESS
+	    | GREATER			=> IEEEReal.GREATER
+	    | EQUAL			=> IEEEReal.EQUAL
+	) handle IEEEReal.Unordered	=> IEEEReal.UNORDERED
+
+    fun *+(x,y,z)			= x*y + z
+    fun *-(x,y,z)			= x*y - z
+
+    fun abs x where (x < 0.0)		= ~x
+      | abs x				= x
+
+    fun min(x,y)			= if x < y then x else y
+    fun max(x,y)			= if x > y then x else y
+
+    fun sign x where (x > 0.0)		= 1
+      | sign x where (x < 0.0)		= ~1
+      | sign x				= 0
+
+    fun signBit x			= Int.<(sign x, 0) orelse x = ~0.0
+    fun sameSign(x,y)			= signBit x = signBit y
+
+    fun copySign(x,y) where (sameSign(x,y))	= x
+      | copySign(x,y)				= ~x
+
+    fun x == y				= x = y orelse
+					  sign x = 0 andalso sign y = 0
+    fun x != y				= Bool.not(x == y)
+    fun x ?= y				= x == y
+
+    __primitive val ceil :	real -> Int.int	= "Real.ceil"
+    __primitive val floor :	real -> Int.int	= "Real.floor"
+    __primitive val trunc :	real -> Int.int	= "Real.trunc"
+    __primitive val round :	real -> Int.int	= "Real.round"
+    __primitive val realCeil :	real -> real	= "Real.realCeil"
+    __primitive val realFloor :	real -> real	= "Real.realFloor"
+    __primitive val realTrunc :	real -> real	= "Real.realTrunc"
+    __primitive val realRound :	real -> real	= "Real.realRound"	(**)
+
+    __primitive val fromInt :	int -> real	= "Real.fromInt"
+
+    fun toInt IEEEReal.TO_POSINF		= ceil
+      | toInt IEEEReal.TO_NEGINF		= floor
+      | toInt IEEEReal.TO_ZERO			= trunc
+      | toInt IEEEReal.TO_NEAREST		= round
+
+    val toLargeInt				= toInt
+    val fromLargeInt				= fromInt
+
+    fun toLarge x				= x
+    fun fromLarge mode x			= x
+
+
+    fun scan getc source =
+	let
+	    fun decval c = Int.- (Char.ord c, 48)
+	    fun pow10 0 = 1.0
+	      | pow10 n =
+		if n mod 2 = 0 then
+		    let val x = pow10 (n div 2) in x * x end
+		else 10.0 * pow10 (Int.- (n, 1))
+	    fun pointsym src =
+		case getc src of
+		    NONE           => (false, src)
+		  | SOME (c, rest) => if c = #"." then (true, rest)
+				      else (false, src)
+	    fun esym src =
+		case getc src of
+		    NONE           => (false, src)
+		  | SOME (c, rest) =>
+			if c = #"e" orelse c = #"E"  then
+			    (true, rest)
+			else (false, src)
+	    fun scandigs first next final source =
+		let fun digs state src =
+		    case getc src of
+			NONE          => (SOME (final state), src)
+		      | SOME(c, rest) =>
+			    if Char.isDigit c then
+				digs (next(state, decval c)) rest
+			    else
+				(SOME (final state), src)
+		in
+		    case getc source of
+			NONE          => (NONE, source)
+		      | SOME(c, rest) =>
+			    if Char.isDigit c then
+				digs (first (decval c)) rest
+			    else (NONE, source)
+		end
+
+	    fun ident x = x
+	    val getint  =
+		scandigs fromInt
+		(fn (res, cval) => 10.0 * res + fromInt cval) ident
+	    val getfrac =
+		scandigs
+		(fn cval => (1, fromInt cval))
+		(fn ((decs, frac), cval) =>
+		 (Int.+(decs,1), 10.0*frac+fromInt cval))
+		(fn (decs, frac) => frac / pow10 decs)
+	    val getexp =
+		scandigs ident (fn (res, cval) =>
+				Int.+(Int.*(10,res),cval)) ident
+
+	    fun sign src =
+		case getc src of
+		    SOME(#"+", rest) => (true,  rest)
+		  | SOME(#"-", rest) => (false, rest)
+		  | SOME(#"~", rest) => (false, rest)
+		  | _                => (true,  src )
+
+	    val src = StringCvt.dropl Char.isSpace getc source
+	    val (manpos, src1) = sign src
+	    val (intg,   src2) = getint src1
+	    val (decpt,  src3) = pointsym src2
+	    val (frac,   src4) = getfrac src3
+
+	    fun mkres v rest =
+		SOME(if manpos then v else ~v, rest)
+
+	    fun expopt manval src =
+		let val (esym,   src1) = esym src
+		    val (exppos, src2) = sign src1
+		    val (expv,   rest) = getexp src2
+		in
+		    case (esym, expv) of
+			(_,     NONE)     => mkres manval src
+		      | (true,  SOME exp) =>
+			    if exppos then mkres (manval * pow10 exp) rest
+			    else mkres (manval / pow10 exp) rest
+		      | _                 => NONE
+		end
+	in
+	    case (intg,     decpt, frac) of
+		(NONE,      true,  SOME fval) => expopt fval src4
+	      | (SOME ival, false, SOME _   ) => NONE
+	      | (SOME ival, true,  NONE     ) => mkres ival src2
+	      | (SOME ival, false, NONE     ) => expopt ival src2
+	      | (SOME ival, _    , SOME fval) => expopt (ival+fval) src4
+	      | _                             => NONE
+	end
+
+    __primitive val toString: real -> string = "Real.toString"
+
+    val fromString = StringCvt.scanString scan
+  end
+
 
 structure LargeReal = Real
 
 
-(* Array *)
-
-structure Array =
-    struct
-	__eqtype 'a array
-
-	__primitive val array : int * 'a -> 'a array = "Array.array"
-	__primitive val fromList : 'a list -> 'a array = "Array.fromList"
-	__primitive val length : 'a array -> int = "Array.length"
-	__primitive val sub : 'a array * int -> 'a = "Array.sub"
-	__primitive val update : 'a array * int * 'a -> unit = "Array.update"
-
-	fun copy {src, si, len, dst, di} =
-	    let
-		val bound =
-		    case len of
-			NONE => length src
-		      | SOME n => si + n
-		val offset = di - si
-		fun copy' i =
-		    if i < bound then
-			(update (dst, i + offset, sub (src, i));
-			 copy' (i + 1))
-		    else ()
-	    in
-		copy' si
-	    end
-
-	fun foldl f z a =
-	    let
-		val n = length a
-		fun foldl' (i, z') =
-		    if i < n then foldl' (i + 1, f (sub (a, i), z'))
-		    else z'
-	    in
-		foldl' (0, z)
-	    end
-
-	fun app f a =
-	    let
-		val n = length a
-		fun app' i =
-		    if i < n then (f (sub (a, i)); app' (i + 1))
-		    else ()
-	    in
-		app' 0
-	    end
-    end
-
-type array = Array.array
+in (* local *)
 
 
-(* Vector *)
+signature REAL =
+  sig
+    eqtype real
+    type t = real							(**)
 
-structure Vector =
-    struct
-	type 'a vector = 'a vector
+    structure Math :	MATH where type real = real
 
-	__primitive val fromList : 'a list -> 'a vector = "Vector.fromList"
-	__primitive val sub : 'a vector * int -> 'a = "Vector.sub"
+(*MISSING
+    val radix :		int
+    val precision :	int
+    val maxFinite :	real
+    val minPos :	real
+    val minNormalPos :	real
 
-	fun tabulate (n, f) = fromList (List.tabulate (n, f))
-    end
+    val posInf :	real
+    val negInf :	real
+*)
 
-val vector = Vector.fromList
+    val ~ :		real -> real
+    val op + :		real * real -> real
+    val op - :		real * real -> real
+    val op * :		real * real -> real
+    val op / :		real * real -> real
+    val rem :		real * real -> real
+    val *+ :		real * real * real -> real
+    val *- :		real * real * real -> real
+
+    val abs :		real -> real
+    val min :		real * real -> real
+    val max :		real * real -> real
+    val sign :		real -> int
+    val signBit :	real -> bool
+    val sameSign :	real * real -> bool
+    val copySign :	real * real -> real
+
+    val op < :		real * real -> bool
+    val op > :		real * real -> bool
+    val op <= :		real * real -> bool
+    val op >= :		real * real -> bool
+    val compare :	real * real -> order
+    val compareReal :	real * real -> IEEEReal.real_order
+
+    val == :		real * real -> bool
+    val != :		real * real -> bool
+    val ?= :		real * real -> bool
+(*MISSING
+    val unordered :	real * real -> bool
+
+    val isFinite :	real -> bool
+    val isNan :		real -> bool
+    val isNormal :	real -> bool
+    val class :		real -> IEEEReal.float_class
+*)
+
+    val ceil :		real -> Int.int
+    val floor :		real -> Int.int
+    val trunc :		real -> Int.int
+    val round :		real -> Int.int
+    val realFloor :	real -> real
+    val realCeil :	real -> real
+    val realTrunc :	real -> real
+    val realRound :	real -> real					(**)
+
+(*MISSING
+    val nextAfter :	real * real -> real
+    val checkFloat :	real -> real
+*)
+
+(*MISSING
+    val toManExp :	real -> {exp:int, man:real}
+    val fromManExp :	{exp:int, man:real} -> real
+    val split :		real -> {frac:real, whole:real}
+    val realMod :	real -> real
+*)
+
+    val toInt :		IEEEReal.rounding_mode -> real -> int
+    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
+    val fromInt :	int -> real
+    val fromLargeInt :	LargeInt.int -> real
+    val toLarge :	real -> LargeReal.real
+    val fromLarge :	IEEEReal.rounding_mode -> LargeReal.real -> real
+(*MISSING
+    val toDecimal :	real -> IEEEReal.decimal_approx
+    val fromDecimal :	IEEEReal.decimal_approx -> real
+*)
+
+    val toString :	real -> string
+    val fromString :	string -> real option
+(*MISSING
+    val fmt :		StringCvt.realfmt -> real -> string
+*)
+    val scan :		(char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
+  end
 
 
-(* More members exported to toplevel *)
+structure Real      :> (REAL where type real = Real.real)	= Real
+structure LargeReal :> (REAL where type real = LargeReal.real)	= LargeReal
 
-val getOpt = Option.getOpt
-val isSome = Option.isSome
-val valOf = Option.valOf
+end (* local *)
 
-val null = List.null
-val hd = List.hd
-val tl = List.tl
-val length = List.length
-val rev = List.rev
-val op@ = List.@
-val app = List.app
-val map = List.map
-val foldr = List.foldr
-val foldl = List.foldl
 
-val ord = Char.ord
-val chr = Char.chr
 
-val str = String.str
-val size = String.size
-val concat = String.concat
-val explode = String.explode
-val implode = String.implode
-val substring = String.substring
-val op^ = String.^
-(* src # 1 ../../lib/bootstrap/Word.aus *)
+(*****************************************************************************
+ * Vector
+ *****************************************************************************)
+
+signature VECTOR =
+  sig
+    eqtype 'a vector
+    type   'a t = 'a vector						(**)
+
+    val maxLen :	int
+
+    val toList :	'a vector -> 'a list				(**)
+    val fromList :	'a list -> 'a vector
+    val tabulate :	int * (int -> 'a) -> 'a vector
+
+    val length :	'a vector -> int
+    val sub :		'a vector * int -> 'a
+    val replace :	'a vector * int * 'a -> 'a vector		(**)
+    val extract :	'a vector * int * int option -> 'a vector
+    val append :	'a vector * 'a vector -> 'a vector		(**)
+    val concat :	'a vector list -> 'a vector
+    val rev :		'a vector -> 'a vector				(**)
+
+    val app :		('a -> unit) -> 'a vector -> unit
+    val appr :		('a -> unit) -> 'a vector -> unit		(**)
+    val map :		('a -> 'b) -> 'a vector -> 'b vector
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val appi :		(int * 'a -> unit) -> 'a vector * int * int option
+					   -> unit
+    val appri :		(int * 'a -> unit) -> 'a vector * int * int option (**)
+					   -> unit
+    val mapi :		(int * 'a -> 'b) -> 'a vector * int * int option
+					 -> 'b vector
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+
+    val all :		('a -> bool) -> 'a vector -> bool		(**)
+    val exists :	('a -> bool) -> 'a vector -> bool		(**)
+    val find :		('a -> bool) -> 'a vector -> 'a option		(**)
+  end
+
+
+structure Vector : VECTOR =
+  struct
+    type 'a vector = 'a vector
+    type 'a t      = 'a vector						(**)
+
+    __primitive val maxLen :	int			= "Vector.maxLen"
+
+    __primitive val fromList :	'a list -> 'a vector	= "Vector.fromList"
+    __primitive val length :	'a vector -> int	= "Vector.length"
+    __primitive val sub :	'a vector * int -> 'a	= "Vector.sub"
+    __primitive val sub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
+
+    fun toList v		= toList'(v, length v - 1, [])
+    and toList'(v, ~1, xs)	= xs
+      | toList'(v, i, xs)	= toList'(v, i-1, sub'(v,i)::xs)
+
+    fun sliceLength(v,i,NONE) where (i > length v)
+				= raise General.Subscript
+      | sliceLength(v,i,NONE)	= length v - i
+      | sliceLength(v,i,SOME n) where (i+n > length v orelse n < 0)
+				= raise General.Subscript
+      | sliceLength(v,i,SOME n)	= n
+
+    fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
+    fun extract(v,i,no)		= tabulate(sliceLength(v,i,no),
+					   fn k => sub'(v,i+k))
+    fun concat vs		= fromList(List.concat(List.map toList vs))
+    fun append(v1,v2)		= concat[v1,v2]				(**)
+
+    fun rev v			= let val len = length v		(**)
+				      fun f i = sub'(v, len-i-1)
+				  in tabulate(len, f) end
+
+    fun replace(v,i,x)		= let fun f j where (i = j) = x		(**)
+					| f j               = sub(v,j)
+				  in tabulate(length v, f) end
+
+    fun map f v			= tabulate(length v, fn i => f(sub'(v,i)))
+    fun mapi f (v,i,no)		= tabulate(sliceLength(v,i,no),
+					   fn k => f(i+k, sub'(v,i+k)))
+
+    fun app  f v		= app'(f,v,0)
+    and app'(f,v,i) where (i = length v)
+				= ()
+      | app'(f,v,i)		= (f(sub'(v,i)) ; app'(f,v,i+1))
+
+    fun appr  f v		= appr'(f, v, length v - 1)		(**)
+    and appr'(f,v,~1)		= ()
+      | appr'(f,v,i)		= (f(sub'(v,i)) ; appr'(f,v,i-1))
+
+    fun foldl  f x v		= foldl'(f,x,v,0)
+    and foldl'(f,x,v,i) where (i = length v)
+				= x
+      | foldl'(f,x,v,i)		= foldl'(f, f(sub'(v,i),x), v, i+1)
+
+    fun foldr  f x v		= foldr'(f, x, v, length v - 1)
+    and foldr'(f,x,v,~1)	= x
+      | foldr'(f,x,v,i)		= foldr'(f, f(sub'(v,i),x), v, i-1)
+
+    fun appi f (v,i,no)		= appi'(f, v, i, sliceLength(v,i,no))
+    and appi'(f,v,i,0)		= ()
+      | appi'(f,v,i,n)		= (f(i, sub'(v,i)) ; appi'(f,v,i+1,n-1))
+
+    fun appri f (v,i,no)	= appri'(f, v, i, i-1+sliceLength(v,i,no)) (**)
+    and appri'(f,v,i,j)	where (i < j)
+				= ()
+      | appri'(f,v,i,j)		= (f(i, sub'(v,i)) ; appri'(f,v,i-1,j))
+
+    fun foldli f x (v,i,no)	= foldli'(f, x, v, i, sliceLength(v,i,no))
+    and foldli'(f,x,v,i,0)	= x
+      | foldli'(f,x,v,i,n)	= foldli'(f, f(i, sub'(v,i), x), v, i+1, n-1)
+
+    fun foldri f x (v,i,no)	= foldri'(f, x, v, i-1+sliceLength(v,i,no), i)
+    and foldri'(f,x,v,i,j) where (i < j)
+				= x
+      | foldri'(f,x,v,i,j)	= foldri'(f, f(i, sub'(v,i),x), v, i-1, j)
+
+    fun all  f v		= all'(f,v,0)				(**)
+    and all'(f,v,i) 		= i = length v orelse
+				  f(sub'(v,i)) andalso all'(f,v,i+1)
+
+    fun exists  f v		= exists'(f,v,0)			(**)
+    and exists'(f,v,i) 		= i = length v orelse
+				  f(sub'(v,i)) orelse exists'(f,v,i+1)
+
+    fun find  f v					= find'(f,v,0)	(**)
+    and find'(f,v,i) where (i = length v)		= NONE
+      | find'(f,v,i) withval x = sub'(v,i) where (f x)	= SOME x
+      | find'(f,v,i)					= find'(f,v,i+1)
+  end
+
+
+
+(*****************************************************************************
+ * Array
+ *****************************************************************************)
+
+signature ARRAY =
+  sig
+    type 'a array
+    type 'a vector
+    type 'a t = 'a array						(**)
+
+    val maxLen :	int
+
+    val array :		int * 'a -> 'a array
+    val new :		int * 'a -> 'a array				(**)
+    val toList :	'a array -> 'a list				(**)
+    val fromList :	'a list -> 'a array
+    val toVector :	'a array -> 'a vector				(**)
+    val fromVector :	'a vector -> 'a array				(**)
+    val tabulate :	int * (int -> 'a) -> 'a array
+
+    val length :	'a array -> int
+    val sub :		'a array * int -> 'a
+    val update :	'a array * int * 'a -> unit
+    val swap :		'a array * int * int -> unit			(**)
+    val reverse :	'a array -> unit				(**)
+    val extract :	'a array * int * int option -> 'a vector
+    val copy :		{di:int, dst:'a array, len:int option,
+			 si:int, src:'a array} -> unit
+    val copyVec :	{di:int, dst:'a array, len:int option,
+			 si:int, src:'a vector} -> unit
+
+    val app :		('a -> unit) -> 'a array -> unit
+    val appr :		('a -> unit) -> 'a array -> unit		(**)
+    val modify :	('a -> 'a) -> 'a array -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val appi :		(int * 'a -> unit)
+					-> 'a array * int * int option -> unit
+    val appri :		(int * 'a -> unit) -> 'a array * int * int option  (**)
+					   -> unit
+    val modifyi :	(int * 'a -> 'a) -> 'a array * int * int option -> unit
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+
+    val all :		('a -> bool) -> 'a array -> bool		(**)
+    val exists :	('a -> bool) -> 'a array -> bool		(**)
+    val find :		('a -> bool) -> 'a array -> 'a option		(**)
+  end
+
+
+structure Array : ARRAY =
+  struct
+    __eqtype 'a array
+    type     'a vector = 'a vector
+    type     'a t      = 'a array					(**)
+
+    __primitive val maxLen :	int			= "Array.maxLen"
+
+    __primitive val array :	int * 'a -> 'a array	= "Array.array"
+    __primitive val fromList :	'a list -> 'a array	= "Array.fromList"
+    __primitive val length :	'a array -> int		= "Array.length"
+    __primitive val sub :	'a array * int -> 'a	= "Array.sub"
+    __primitive val sub' :	'a array * int -> 'a	= "Unsafe.Array.sub"
+    __primitive val vsub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
+    __primitive val update :	'a array * int * 'a -> unit = "Array.update"
+    __primitive val update' :	'a array * int * 'a -> unit
+							= "Unsafe.Array.update"
+
+    val new			= array					(**)
+
+    fun toList a		= toList'(a, length a - 1, [])		(**)
+    and toList'(a, ~1, xs)	= xs
+      | toList'(a, i, xs)	= toList'(a, i-1, sub'(a,i)::xs)
+
+    fun sliceLength(a,i,NONE) where (i > length a)
+				= raise General.Subscript
+      | sliceLength(a,i,NONE)	= length a - i
+      | sliceLength(a,i,SOME n) where (i+n > length a orelse n < 0)
+				= raise General.Subscript
+      | sliceLength(a,i,SOME n)	= n
+
+    fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
+    fun extract(a,i,no)		= Vector.tabulate(sliceLength(a,i,no),
+						  fn k => sub'(a,i+k))
+
+    fun fromVector v		= tabulate(Vector.length v, fn i => vsub'(v,i))
+    fun toVector a		= Vector.tabulate(length a, fn i => sub'(a,i))
+					(**) (*INEFFICIENT*)
+
+    fun swap(a,i,j)		= let val x = sub(a,i) in		(**)
+				      update(a, i, sub(a,j)) ;
+				      update(a, j, x)
+				  end
+
+    fun reverse a		= let fun reverse'(i,j) =		(**)
+				      if i >= j then () else
+					  (swap(a,i,j) ; reverse'(i+1, j-1))
+				  in reverse'(0, length a - 1) end
+
+    fun copy {src,si,len,dst,di} =
+	let
+	    val d = di - si
+	    val n = case len of NONE    => length src
+			      | SOME n' => si+n'
+	    fun copy' i where (i = n)	= ()
+	      | copy' i			= ( update'(dst, i+d, sub'(src,i))
+					  ; copy'(i+1) )
+	in
+	    copy' si
+	end
+
+    fun copyVec {src,si,len,dst,di} =
+	let
+	    val d = di - si
+	    val n = case len of NONE    => Vector.length src
+			      | SOME n' => si+n'
+	    fun copy' i where (i = n)	= ()
+	      | copy' i			= ( update'(dst, i+d, vsub'(src,i))
+					  ; copy'(i+1) )
+	in
+	    copy' si
+	end
+
+    fun app  f a		= app'(f,a,0)
+    and app'(f,a,i) where (i = length a)
+				= ()
+      | app'(f,a,i)		= (f(sub'(a,i)) ; app'(f,a,i+1))
+
+    fun appr  f v		= appr'(f, v, length v - 1)		(**)
+    and appr'(f,v,~1)		= ()
+      | appr'(f,v,i)		= (f(sub'(v,i)) ; appr'(f,v,i-1))
+
+    fun modify  f a		= modify'(f,a,0)
+    and modify'(f,a,i) where (i = length a)
+				= ()
+      | modify'(f,a,i)		= (update'(a,i,f(sub'(a,i))) ; modify'(f,a,i+1))
+
+    fun foldl  f x a		= foldl'(f,x,a,0)
+    and foldl'(f,x,a,i) where (i = length a)
+				= x
+      | foldl'(f,x,a,i)		= foldl'(f, f(sub'(a,i),x), a, i+1)
+
+    fun foldr  f x a		= foldr'(f, x, a, length a - 1)
+    and foldr'(f,x,a,~1)	= x
+      | foldr'(f,x,a,i)		= foldr'(f, f(sub'(a,i),x), a, i-1)
+
+    fun appi f (a,i,no)		= appi'(f, a, i, sliceLength(a,i,no))
+    and appi'(f,a,i,0)		= ()
+      | appi'(f,a,i,n)		= (f(i, sub'(a,i)) ; appi'(f,a,i+1,n-1))
+
+    fun appri f (v,i,no)	= appri'(f, v, i, i-1+sliceLength(v,i,no)) (**)
+    and appri'(f,v,i,j)	where (i < j)
+				= ()
+      | appri'(f,v,i,j)		= (f(i, sub'(v,i)) ; appri'(f,v,i-1,j))
+
+    fun modifyi f (a,i,no)	= modifyi'(f, a, i, sliceLength(a,i,no))
+    and modifyi'(f,a,i,0)	= ()
+      | modifyi'(f,a,i,n)	= (update'(a, i, f(i, sub'(a,i))) ;
+				   modifyi'(f,a,i+1,n-1))
+
+    fun foldli f x (a,i,no)	= foldli'(f, x, a, i, sliceLength(a,i,no))
+    and foldli'(f,x,a,i,0)	= x
+      | foldli'(f,x,a,i,n)	= foldli'(f, f(i, sub'(a,i), x), a, i+1, n-1)
+
+    fun foldri f x (a,i,no)	= foldri'(f, x, a, i-1 + sliceLength(a,i,no), i)
+    and foldri'(f,x,a,i,j) where (i < j)
+				= x
+      | foldri'(f,x,a,i,j)	= foldri'(f, f(i, sub'(a,i),x), a, i-1, j)
+
+    fun all  f a		= all'(f,a,0)				(**)
+    and all'(f,a,i) 		= i = length a orelse
+				  f(sub'(a,i)) andalso all'(f,a,i+1)
+
+    fun exists  f a		= exists'(f,a,0)			(**)
+    and exists'(f,a,i) 		= i = length a orelse
+				  f(sub'(a,i)) orelse exists'(f,a,i+1)
+
+    fun find  f a					= find'(f,a,0)	(**)
+    and find'(f,a,i) where (i = length a)		= NONE
+      | find'(f,a,i) withval x = sub'(a,i) where (f x)	= SOME x
+      | find'(f,a,i)					= find'(f,a,i+1)
+  end
+
+
+
+
+(*****************************************************************************
+ * Time
+ *****************************************************************************)
+
+signature TIME =
+  sig
+    eqtype time
+    type t = time							(**)
+
+    exception Time
+
+    val zeroTime :		time
+(*MISSING
+    val now :			unit -> time
+*)
+
+    val fromReal :		LargeReal.real -> time
+    val toReal :		time -> LargeReal.real
+    val toSeconds :		time -> LargeInt.int
+    val toMilliseconds :	time -> LargeInt.int
+    val toMicroseconds :	time -> LargeInt.int
+    val fromSeconds :		LargeInt.int -> time
+    val fromMilliseconds :	LargeInt.int -> time
+    val fromMicroseconds :	LargeInt.int -> time
+
+    val op + :			time * time -> time
+    val op - :			time * time -> time
+
+    val op < :			time * time -> bool
+    val op > :			time * time -> bool
+    val op <= :			time * time -> bool
+    val op >= :			time * time -> bool
+    val compare :		time * time -> order
+
+(*MISSING
+    val toString :	time -> string
+    val fromString :	string -> time option
+    val fmt :		int -> time -> string
+    val scan :		(char,'a) StringCvt.reader -> 'a -> (time * 'a) option
+*)
+  end
+
+
+structure Time :> TIME =
+  struct
+    open LargeInt		(* +, -, <, >, <=, >=, compare *)
+
+    type time			= LargeInt.int	(* microseconds *)
+    type t			= time					(**)
+
+    exception Time
+
+    val zeroTime		= 0
+
+    fun fromReal x		= Real.toLargeInt IEEEReal.TO_NEAREST
+						  (Real.*(x,1000000.0))
+    fun toReal t		= Real.fromLargeInt t / 1000000.0
+
+    fun toSeconds t		= t div 1000000
+    fun toMilliseconds t	= t div 1000
+    fun toMicroseconds t	= t
+    fun fromSeconds n		= n * 1000000
+    fun fromMilliseconds n	= n * 1000
+    fun fromMicroseconds n	= n
+  end
+
+
+
+(*****************************************************************************
+ * Cell
+ *****************************************************************************)
+
+signature CELL =
+  sig
+    __eqtype 'a cell
+
+    val cell :		'a -> 'a cell
+    val exchange :	'a cell * 'a -> 'a
+  end
+
+
+structure Cell :> CELL =
+  struct
+    type 'a cell	= 'a ref
+
+    val cell		= ref
+    __primitive val exchange :	'a cell * 'a -> 'a  = "General.exchange"
+  end
+
+
+
+(*****************************************************************************
+ * Hole
+ *****************************************************************************)
+
+signature HOLE =
+  sig
+    exception Hole
+
+    val hole :		unit -> 'a
+    val future :	'a -> 'a
+
+    val fill :		'a * 'a  -> unit	(* Hole *)
+    val fail :		'a * exn -> unit	(* Hole *)
+
+    val isHole :	'a -> bool
+    val isFailed :	'a -> bool
+  end
+
+
+structure Hole : HOLE =
+  struct
+    __primitive constructor Hole : exn			= "Hole.Hole"
+
+    __primitive val hole :	unit -> 'a		= "Hole.hole"
+    __primitive val future :	'a -> 'a		= "Hole.future"
+
+    __primitive val fill :	'a * 'a  -> unit	= "Hole.fill"
+    __primitive val fail :	'a * exn -> unit	= "Hole.fail"
+
+    __primitive val isHole :	'a -> bool		= "Hole.isHole"
+    __primitive val isFailed :	'a -> bool		= "Hole.isFailed"
+  end
+
+
+
+(*****************************************************************************
+ * Future
+ *****************************************************************************)
+
+signature FUTURE =
+  sig
+    exception Future of exn
+
+    val concur :	(unit -> 'a) -> 'a
+    val byneed :	(unit -> 'a) -> 'a
+    val alarm :		Time.time -> unit
+
+    val await :		'a -> 'a
+    val awaitOne :	'a * 'b -> 'a
+
+    val isFuture :	'a -> bool
+    val isFailed :	'a -> bool
+  end
+
+
+structure Future : FUTURE =
+  struct
+    __primitive constructor Future of exn : exn		= "Future.Future"
+
+    __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
+    __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
+    __primitive val alarm :	Time.time -> unit	= "Future.alarm'"
+
+    __primitive val await :	'a -> 'a		= "Future.await"
+    __primitive val awaitOne :	'a * 'b -> 'a		= "Future.awaitOne"
+
+    __primitive val isFuture :	'a -> bool		= "Future.isFuture"
+    __primitive val isFailed :	'a -> bool		= "Future.isFailed"
+  end
+
+
+
+(*****************************************************************************
+ * Promise
+ *****************************************************************************)
+
+signature PROMISE =
+  sig
+    type 'a promise
+
+    exception Promise
+
+    val promise :	unit -> 'a promise
+    val future :	'a promise -> 'a
+
+    val fulfill :	'a promise * 'a  -> unit	(* Promise *)
+    val fail :		'a promise * exn -> unit	(* Promise *)
+  end
+
+
+structure Promise :> PROMISE =
+  struct
+    open Cell
+
+    type 'a promise	= bool cell * 'a
+
+    exception Promise	= Hole.Hole
+
+    fun promise()	= (cell false, Hole.hole())
+    fun future(_,h)	= Hole.future h
+
+    fun fulfill((c,h), x) =
+	let
+	    val b = Hole.hole()
+	in
+	    if exchange(c,b) then
+	        (Hole.fill(b,true); raise Promise)
+	    else
+	        (Hole.fill(h,x); Hole.fill(b,true))
+	end
+
+    fun fail((c,h), e) =
+	let
+	    val b = Hole.hole()
+	in
+	    if exchange(c,b) then
+	        (Hole.fill(b,true); raise Promise)
+	    else
+	        (Hole.fail(h,e); Hole.fill(b,true))
+	end
+  end
+
+
+
+(*****************************************************************************
+ * Thread
+ *****************************************************************************)
+
+signature THREAD =
+  sig
+    type thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
+
+    exception Terminate
+
+    val spawn :		(unit -> 'a) -> thread * 'a
+    val current :	unit -> thread
+    val state :		thread -> state
+
+    val yield :		thread -> unit
+    val sleep :		Time.time -> unit
+
+    val raiseIn :	thread * exn -> unit
+    val terminate :	thread -> unit
+
+    val suspend :	thread -> unit
+    val resume :	thread -> unit
+    val isSuspended :	thread -> bool
+  end
+
+
+structure Thread : THREAD =
+  struct
+    type thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
+
+    __primitive constructor Terminate : exn		= "Thread.Terminate"
+
+    __primitive val current :	unit -> thread		= "Thread.current"
+    __primitive val state :	thread -> state		= "Thread.state"
+
+    __primitive val yield :	thread -> unit		= "Thread.yield"
+    __primitive val raiseIn :	thread * exn -> unit	= "Thread.raiseIn"
+
+    fun sleep t = Future.await(Future.alarm t)
+
+    fun terminate t = raiseIn (t, Terminate)
+
+    fun spawn f =
+	let
+	    val t = Promise.promise()
+	    val x = Future.concur(fn() => (Promise.fulfill(t, current()); f()))
+	in
+	    (Future.await(Promise.future t), x)
+	end
+
+    fun thread f = #1(spawn f)
+
+    __primitive val suspend :		thread -> unit	= "Thread.suspend"
+    __primitive val resume :		thread -> unit	= "Thread.resume"
+    __primitive val isSuspended :	thread -> bool	= "Thread.isSuspended"
+  end
+
+
+
+(*****************************************************************************
+ * Top-level, part 2
+ *****************************************************************************)
+
+type array	= Array.array
+
+exception Alt	= Alt.Alt					(**)
+exception Option = Option.Option
+exception Empty	= List.Empty
+
+open General
+
+val not		= Bool.not
+
+val fst		= Alt.fst					(**)
+val snd		= Alt.snd					(**)
+val isFst	= Alt.isFst					(**)
+val isSnd	= Alt.isSnd					(**)
+
+val getOpt	= Option.getOpt
+val isSome	= Option.isSome
+val valOf	= Option.valOf
+
+val null	= List.null
+val hd		= List.hd
+val tl		= List.tl
+val length	= List.length
+val rev		= List.rev
+val op @	= List.@
+val app		= List.app
+val map		= List.map
+val foldr	= List.foldr
+val foldl	= List.foldl
+
+val ord		= Char.ord
+val chr		= Char.chr
+
+val str		= String.str
+val size	= String.size
+val op ^	= String.^
+val concat	= String.concat
+val explode	= String.explode
+val implode	= String.implode
+val substring	= String.substring
+
+val vector	= Vector.fromList
+
+val real	= Real.fromInt
+val ceil	= Real.ceil
+val floor	= Real.floor
+val trunc	= Real.trunc
+val round	= Real.round
+
+(*MISSING
+__primitive val use : string -> unit = "use"
+*)
+
+val byneed	= Future.byneed
+val concur	= Future.concur
+(* src # 1 ../lib/bootstrap/IO.aus *)
 (*
- * Authors:
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 1999
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 2000
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-structure Word =
+structure IO =
     struct
-	type word = word
-
-	local
-	    __primitive val fromInt' : int * int -> word = "Word.fromInt'"
-	in
-	    fun fromInt x = fromInt' (31, x)
-	    fun fromLargeInt x = fromInt' (31, x)
-	end
-
-	__primitive val toInt : word -> int = "Word.toInt"
-	__primitive val toLargeInt : word -> LargeInt.int = "Word.toInt"
-	__primitive val toIntX : word -> int = "Word.toIntX"
-	__primitive val op+ : word * word -> word = "Word.+"
-	__primitive val op- : word * word -> word = "Word.-"
-	__primitive val op* : word * word -> word = "Word.*"
-	__primitive val op mod : word * word -> word = "Word.mod"
-	__primitive val orb : word * word -> word = "Word.orb"
-	__primitive val xorb : word * word -> word = "Word.xorb"
-	__primitive val andb : word * word -> word = "Word.andb"
-	__primitive val notb : word * word -> word = "Word.notb"
-	__primitive val op<< : word * word -> word = "Word.<<"
-	__primitive val op>> : word * word -> word = "Word.>>"
-	__primitive val op~>> : word * word -> word = "Word.~>>"
-	__primitive val toString : word -> string = "Word.toString"
-
-	val op>= = op>=
-
-	fun fromLargeWord w = w
-	fun toLargeWord w = w
-
-	local
-	    open StringCvt
-	    fun skipWSget getc source = getc (dropl Char.isSpace getc source)
-
-	    (* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
-	    fun decval c = fromInt (Char.ord c) - fromInt 48;
-	    fun hexval c =
-		if Char.ord #"0" <= Char.ord c
-		andalso Char.ord c <= Char.ord #"9" then
-		    fromInt (Char.ord c) - fromInt 48
-		else
-		    (fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
-	in
-	    fun scan radix getc source =
-		let open StringCvt
-		    val source = skipWS getc source
-		    val (isDigit, factor) =
-			case radix of
-			    BIN => (fn c => (Char.ord #"0" <= Char.ord c
-				    andalso Char.ord c <= Char.ord #"1"),  2)
-			  | OCT => (fn c => (Char.ord #"0" <= Char.ord c
-				    andalso Char.ord c <= Char.ord #"7"),  8)
-			  | DEC => (Char.isDigit,                          10)
-			  | HEX => (Char.isHexDigit,                       16)
-		    fun dig1 NONE              = NONE
-		      | dig1 (SOME (c1, src1)) =
-			let fun digr res src =
-			    case getc src of
-				NONE           => SOME (res, src)
-			      | SOME (c, rest) =>
-				    if isDigit c then
-					digr (fromInt factor * res + hexval c)
-					rest
-				    else SOME (res, src)
-			in
-			    if isDigit c1 then digr (hexval c1) src1
-			    else NONE
-			end
-		    fun getdigs after0 src =
-			case dig1 (getc src) of
-			    NONE => SOME(fromInt 0, after0)
-			  | res  => res
-		    fun hexprefix after0 src =
-			if radix <> HEX then getdigs after0 src
-			else
-			    case getc src of
-				SOME(#"x", rest) => getdigs after0 rest
-			      | SOME(#"X", rest) => getdigs after0 rest
-			      | SOME _           => getdigs after0 src
-			      | NONE => SOME(fromInt 0, after0)
-		in
-		    case getc source of
-			SOME(#"0", after0) =>
-			    (case getc after0 of
-				 SOME(#"w", src2) => hexprefix after0 src2
-			       | SOME _           => hexprefix after0 after0
-			       | NONE             => SOME(fromInt 0, after0))
-		      | SOME _ => dig1 (getc source)
-		      | NONE   => NONE
-		end
-	end
+	__primitive constructor Io of
+	    {name: string, function: string, cause: exn}: exn = "IO.Io"
     end
-
-structure LargeWord = Word
-(* src # 2 ../../lib/bootstrap/TextIO.aus *)
+(* src # 2 ../lib/bootstrap/TextIO.aus *)
 (*
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
@@ -825,7 +2654,28 @@ structure TextIO =
     end
 
 val print = TextIO.print
-(* src # 3 ../../lib/bootstrap/Unix.aus *)
+(* src # 3 ../lib/bootstrap/OS.aus *)
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure OS =
+    struct
+	structure Process =
+	    struct
+		__primitive val getEnv: string -> string option =
+		    "OS.Process.getEnv"
+	    end
+    end
+(* src # 4 ../lib/bootstrap/Unix.aus *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -854,14 +2704,13 @@ structure Unix :> UNIX =
 
 	fun streamsOf (ins, outs) = (ins, outs)
     end
-(* src # 4 ../../lib/bootstrap/ml-yacc/base.sig *)
+(* src # 5 ../lib/bootstrap/ml-yacc/base.sig *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.6  2000-04-05 12:42:09  rossberg
+ * Revision 1.7  2000-05-18 14:30:30  rossberg
  *
- * - Improved error messages given on signature mismatch.
- * - Improved handling of abbreviations (and can bootstrap again).
+ * Ups.
  *
  * Revision 1.3  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
@@ -1178,14 +3027,13 @@ signature ARG_PARSER =
 				bool
      end
 
-(* src # 5 ../../lib/bootstrap/ml-yacc/join.sml *)
+(* src # 6 ../lib/bootstrap/ml-yacc/join.sml *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.6  2000-04-05 12:42:09  rossberg
+ * Revision 1.7  2000-05-18 14:30:30  rossberg
  *
- * - Improved error messages given on signature mismatch.
- * - Improved handling of abbreviations (and can bootstrap again).
+ * Ups.
  *
  * Revision 1.5  2000/03/30 13:37:26  rossberg
  *
@@ -1308,14 +3156,18 @@ struct
       )
     val sameToken = Token.sameToken
 end;
-(* src # 6 ../../lib/bootstrap/ml-yacc/lrtable.sml *)
+(* src # 7 ../lib/bootstrap/ml-yacc/lrtable.sml *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.6  2000-04-05 12:42:09  rossberg
+ * Revision 1.7  2000-05-18 14:30:30  rossberg
  *
- * - Improved error messages given on signature mismatch.
- * - Improved handling of abbreviations (and can bootstrap again).
+ * Ups.
+ *
+ * Revision 1.2  2000/04/19 11:34:06  kornstae
+ * Removed `open List' because the front-end seems to goof on it (Andreas?) -
+ *    it produces a SelExp with an empty label.
+ * Was not required anyway.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1331,7 +3183,7 @@ end;
 
 structure LrTable : LR_TABLE = 
     struct
-	open Array List
+	open Array
 	infix 9 sub
 	datatype ('a,'b) pairlist = EMPTY
 				  | PAIR of 'a * 'b * ('a,'b) pairlist
@@ -1387,14 +3239,13 @@ structure LrTable : LR_TABLE =
 	       rules=numRules,
                initialState=initialState} : table)
 end;
-(* src # 7 ../../lib/bootstrap/ml-yacc/stream.sml *)
+(* src # 8 ../lib/bootstrap/ml-yacc/stream.sml *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.6  2000-04-05 12:42:09  rossberg
+ * Revision 1.7  2000-05-18 14:30:30  rossberg
  *
- * - Improved error messages given on signature mismatch.
- * - Improved handling of abbreviations (and can bootstrap again).
+ * Ups.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1428,14 +3279,13 @@ struct
    fun cons(a,s) = ref(EVAL(a,s))
 
 end;
-(* src # 8 ../../lib/bootstrap/ml-yacc/parser2.sml *)
+(* src # 9 ../lib/bootstrap/ml-yacc/parser2.sml *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.6  2000-04-05 12:42:09  rossberg
+ * Revision 1.7  2000-05-18 14:30:30  rossberg
  *
- * - Improved error messages given on signature mismatch.
- * - Improved handling of abbreviations (and can bootstrap again).
+ * Ups.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -2003,129 +3853,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 structure LrParser = ParserGen(structure LrTable=LrTable
 			     structure Stream=Stream);
 *)
-(* src # 9 ../error/SOURCE.sig *)
-(*
- * A source file.
- *)
-
-
-signature SOURCE =
-  sig
-
-    type source
-    type pos	= int * int
-    type region	= pos * pos
-    type t	= source
-
-    val fromString:	string -> source
-    val toString:	source -> string
-
-    val nowhere:	region
-    val over:		region * region -> region
-    val between:	region * region -> region
-
-    val regionToString:	region -> string
-
-  end
-(* src # 10 ../error/Source.sml *)
-(*
- * A source file
- *)
-
-
-structure Source :> SOURCE =
-  struct
-
-    type source	= string
-    type pos	= int * int
-    type region	= pos * pos
-    type t	= source
-
-    val nowhere = ((0,0),(0,0))
-
-    fun fromString s = s
-    fun toString s   = s
-
-    fun over(reg1: region, reg2: region)	= (#1 reg1, #2 reg2)
-    fun between(reg1: region, reg2: region)	= (#2 reg1, #1 reg2)
-
-    fun posToString(lin,col) =
-	Int.toString lin ^ "." ^ Int.toString col
-
-    fun regionToString(region as (pos1,pos2)) =
-	if region = nowhere then
-	    "(unknown position)"
-	else
-	    posToString pos1 ^ "-" ^ posToString pos2
-
-  end
-(* src # 11 ../error/CRASH.sig *)
-(*
- * Handling of internal inconsistencies.
- *)
-
-signature CRASH =
-  sig
-    exception Crash of string
-  end
-(* src # 12 ../error/Crash.sml *)
-(*
- * Handling of internal inconsistencies.
- *)
-
-structure Crash :> CRASH =
-  struct
-    exception Crash of string
-  end
-(* src # 13 ../error/ERROR.sig *)
-(*
- * Error handling.
- *)
-
-
-signature ERROR =
-  sig
-
-    (* Import *)
-
-    type region = Source.region
-
-
-    (* Export *)
-
-    exception Error of region * string
-
-    val error :	region * string -> 'a
-    val warn :	region * string -> unit
-
-  end
-(* src # 14 ../error/Error.sml *)
-(*
- * Error handling.
- *)
-
-
-structure Error :> ERROR =
-  struct
-
-    (* Import *)
-
-    type region = Source.region
-
-
-    (* Export *)
-
-    exception Error of region * string
-
-    fun print(reg, s) =
-        TextIO.output(TextIO.stdErr,
-		      Source.regionToString reg ^ ": " ^ s ^ "\n")
-
-    fun error(reg, message) = ( print(reg,message) ; raise Error(reg,message) )
-    fun warn (reg, message) =   print(reg, "warning: " ^ message)
-
-  end
-(* src # 15 ../misc/Assert.sml *)
+(* src # 10 misc/Assert.sml *)
 (* This is a hack for SML/NJ until we are bootstrapped. Use
 	Assert.assert(exp)
    for assertions and
@@ -2161,20 +3889,36 @@ structure Assert =
       | assert false = raise failure
 
   end
-(* src # 16 ../misc/HASH_KEY.sig *)
+(* src # 11 misc/HASH_KEY.sig *)
 signature HASH_KEY =
   sig
-    eqtype t
-    val hash :  t -> int
+    type t
+    val equals :  t * t -> bool
+    val hash :    t -> int
   end
-(* src # 17 ../misc/StringHashKey.sml *)
+
+signature EQ_HASH_KEY =
+  sig
+    eqtype t
+    val hash :    t -> int
+  end
+
+functor FromEqHashKey(EqHashKey: EQ_HASH_KEY) : HASH_KEY =
+  struct
+    type t	= EqHashKey.t
+    val equals	= op=
+    val hash	= EqHashKey.hash
+  end
+(* src # 12 misc/StringHashKey.sml *)
 structure StringHashKey : HASH_KEY =
   struct
 
-    type t = string
-
     open Word
     infix << >> andb xorb
+
+    type t = string
+
+    val equals = op=
 
     fun hash s =	(* hashpjw [Aho/Sethi/Ullman "Compilers"] *)
 	let
@@ -2194,133 +3938,29 @@ structure StringHashKey : HASH_KEY =
 	end
     
   end
-(* src # 18 ../misc/Wide.sml *)
-(* Fake Wide{Char,String} structures, coz they are missing in SML/NJ *)
-
-structure WideChar   = Char
-structure WideString = String
-(* src # 19 ../misc/MISC.sig *)
-(*
- * Stuff that should be in the standard structures.
- *)
-
-signature MISC =
-  sig
-
-    val General_swap :	'a ref * 'a ref -> unit
-
-    val Option_isNone :	'a option -> bool
-    val Option_app :	('a -> unit) -> 'a option -> unit
-    val Option_fold :	('a * 'b -> 'b) -> 'b -> 'a option -> 'b
-
-    val List_appr :	('a -> unit) -> 'a list -> unit
-    val List_foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val List_foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val List_mapi :	(int * 'a -> 'b) -> 'a list -> 'b list
-    val List_appi :	(int * 'a -> unit) -> 'a list -> unit
-
-    val ListPair_find :	('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option
-
-    val Array_all :	('a -> bool) -> 'a array -> bool
-    val Array_exists :	('a -> bool) -> 'a array -> bool
-
-    val Char_toWide :		Char.char -> WideChar.char
-    val Char_fromWide :		WideChar.char -> Char.char	(* Chr *)
-
-    val String_toWide :		String.string -> WideString.string
-    val String_fromWide :	WideString.string -> String.string (* Chr *)
-
-  end
-(* src # 20 ../misc/Misc.sml *)
-(*
- * Stuff that should be in the standard structures.
- *)
-
-structure Misc :> MISC =
+(* src # 13 misc/LargeIntHashKey.sml *)
+structure LargeIntHashKey : HASH_KEY =
   struct
 
-    fun General_swap(r1 as ref x1, r2 as ref x2) =
-	( r1 := x2 ; r2 := x1 )
+    type t = LargeInt.int
 
-    fun Option_isNone NONE		= true
-      | Option_isNone  _		= false
+    val equals = op=
 
-    fun Option_app f  NONE		= ()
-      | Option_app f (SOME x)		= f x
-
-    fun Option_fold f b  NONE		= b
-      | Option_fold f b (SOME a)	= f(a,b)
-
-
-    fun List_appr f  nil		= ()
-      | List_appr f (x::xs)		= ( List_appr f xs ; f x )
-
-    fun List_foldli f z xs =
+    fun hash n =
 	let
-	    fun foldli' (x::xr, z, i) =
-		foldli' (xr, f (i, x, z), i + 1)
-	      | foldli' (nil, z, _) = z
+	    val n'  = abs n handle Overflow => 0
 	in
-	    foldli' (xs, z, 0)
+	    LargeInt.toInt n' handle Overflow =>
+		LargeInt.toInt(n' mod LargeInt.fromInt(valOf(Int.maxInt)))
+			(* maxInt must exist if we get an overflow *)
 	end
-
-    fun List_foldri f z xs =
-	let
-	    fun foldri' (x::xr, z, i) =
-		f (i, x, foldri' (xr, z, i + 1))
-	      | foldri' (nil, z, _) = z
-	in
-	    foldri' (xs, z, 0)
-	end
-
-    fun List_mapi f xs =
-	let
-	    fun mapi' (x::xr, i) = f (i, x)::mapi' (xr, i + 1)
-	      | mapi' (nil, _) = nil
-	in
-	    mapi' (xs, 0)
-	end
-
-    fun List_appi f xs =
-	let
-	    fun appi' (x::xr, i) = (f (i, x); appi' (xr, i + 1))
-	      | appi' (nil, _) = ()
-	in
-	    appi' (xs, 0)
-	end
-
-
-    fun ListPair_find f (nil,_)		= NONE
-      | ListPair_find f (_,nil)		= NONE
-      | ListPair_find f (x::xs, y::ys)	= if f(x,y) then SOME(x,y)
-						    else ListPair_find f (xs,ys)
-
-
-    fun Array_all p a			= let val size   = Array.length a
-					      fun iter i =
-						  if i = size then true
-				  		  else p(Array.sub(a,i))
-							andalso iter(i+1)
-					  in iter 0 end
-
-    fun Array_exists p a		= let val size   = Array.length a
-					      fun iter i =
-						  if i = size then false
-				  		  else p(Array.sub(a,i))
-							orelse iter(i+1)
-					  in iter 0 end
-
-    val Char_toWide	= WideChar.chr o Char.ord
-    val Char_fromWide	= Char.chr o WideChar.ord
-    val String_toWide	= WideString.implode o List.map Char_toWide o String.explode
-    val String_fromWide	= String.implode o List.map Char_fromWide o WideString.explode
-
+    
   end
-(* src # 21 ../misc/IMP_SET.sig *)
+(* src # 14 misc/IMP_SET.sig *)
 signature IMP_SET =
   sig
 
-    eqtype item
+    type item
     type set
     type t = set
 
@@ -2333,6 +3973,7 @@ signature IMP_SET =
     val delete :	set * item -> unit
     val deleteExistent:	set * item -> unit		(* Delete *)
     val deleteWith :	(item -> unit) -> set * item -> unit
+    val deleteAll :	set -> unit
 
     val insert :	set * item -> unit
     val insertDisjoint:	set * item -> unit		(* Collision *)
@@ -2348,9 +3989,10 @@ signature IMP_SET =
 
     val app :		(item -> unit) -> set -> unit
     val fold :		(item * 'a -> 'a) -> 'a -> set -> 'a
+    val find :		(item -> bool) -> set -> item option
 
   end
-(* src # 22 ../misc/MakeHashImpSet.sml *)
+(* src # 15 misc/MakeHashImpSet.sml *)
 functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
   struct
 
@@ -2365,12 +4007,21 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     val initialSize		= 19
 
     fun new()			= (ref(Array.array(initialSize,[])), ref 0)
+    fun deleteAll (s,k)		= ( s := Array.array(initialSize,[]) ; k := 0 )
 
     fun size(_, ref n)		= n
     fun isEmpty(_, ref n)	= n = 0
 
     fun app f (ref t, _)	= Array.app (List.app f) t
     fun fold f a (ref t, _)	= Array.foldl(fn(ks,a) => List.foldl f a ks) a t
+    fun find p (ref t, _)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case List.find p (Array.sub(t,i))
+					    of NONE => iter(i+1)
+					     | some => some
+				  in iter 0 end
+
 
 
     fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
@@ -2384,15 +4035,15 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     fun hash(t,k)		= Item.hash k mod Array.length t
 
     fun member((ref t,_), k)	= let val ks = Array.sub(t, hash(t,k)) in
-				      List.exists (fn k' => k = k') ks
+				      List.exists (fn k'=> Item.equals(k,k')) ks
 				  end
 
 
     exception Delete'
 
     fun delete'( [],   k')	= raise Delete'
-      | delete'(k::ks, k')	= if k = k' then ks
-					    else k :: delete'(ks,k')
+      | delete'(k::ks, k')	= if Item.equals(k,k') then ks
+						       else k :: delete'(ks,k')
 
     fun deleteWith f (s,k)	= let val (ref t,n) = s
 				      val i   = hash(t,k)
@@ -2425,7 +4076,8 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 				      val i  = hash(t,k)
 				      val ks = Array.sub(t,i)
 				  in
-				      if List.exists (fn k' => k = k') ks
+				      if List.exists
+						(fn k' => Item.equals(k,k')) ks
 				      then f k
 				      else ( Array.update(t, i, k::ks)
 					   ; n := !n+1 )
@@ -2439,11 +4091,11 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     fun unionWith f (s1,s2)	= app (fn k => insertWith f (s1,k)) s2
 
   end
-(* src # 23 ../misc/IMP_MAP.sig *)
+(* src # 16 misc/IMP_MAP.sig *)
 signature IMP_MAP =
   sig
 
-    eqtype key
+    type key
     type 'a map
     type 'a t = 'a map
 
@@ -2457,6 +4109,7 @@ signature IMP_MAP =
     val delete :	'a map * key -> unit
     val deleteExistent:	'a map * key -> unit		(* Delete *)
     val deleteWith :	(key -> unit) -> 'a map * key -> unit
+    val deleteAll :	'a map -> unit
 
     val insert :	'a map * key * 'a -> unit
     val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
@@ -2479,9 +4132,11 @@ signature IMP_MAP =
     val fold :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val appi :		(key * 'a -> unit) -> 'a map -> unit
     val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val find :		('a -> bool) -> 'a map -> 'a option
+    val findi :		(key * 'a -> bool) -> 'a map -> (key * 'a) option
 
   end
-(* src # 24 ../misc/MakeHashImpMap.sml *)
+(* src # 17 misc/MakeHashImpMap.sml *)
 functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
   struct
 
@@ -2497,6 +4152,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     val initialSize		= 19
 
     fun new()			= (ref(Array.array(initialSize,[])), ref 0)
+    fun deleteAll (m,k)		= ( m := Array.array(initialSize,[]) ; k := 0 )
 
     fun size(_, ref n)		= n
     fun isEmpty(_, ref n)	= n = 0
@@ -2507,8 +4163,17 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 							List.foldl f' b kas
 						  ) b t
 				  end
+    fun findi p (ref t, _)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case List.find p (Array.sub(t,i))
+					    of NONE => iter(i+1)
+					     | some => some
+				  in iter 0 end
+
     fun app f			= appi(fn(k,a) => f a)
     fun fold f			= foldi(fn(k,a,b) => f(a,b))
+    fun find p m		= Option.map #2 (findi (fn(k,a) => p a) m)
 
 
     fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
@@ -2520,7 +4185,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
 
     fun hash(t,k)		= Key.hash k mod Array.length t
-    fun isEntryFor k (k',_)	= k = k'
+    fun isEntryFor k (k',_)	= Key.equals(k,k')
 
     fun member((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
 				    List.exists (isEntryFor k) kas
@@ -2540,8 +4205,9 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     exception Delete'
 
     fun delete'(  [],    k)	= raise Delete'
-      | delete'(ka::kas, k)	= if #1 ka = k then kas : (key * 'a) list
-					       else ka :: delete'(kas,k)
+      | delete'(ka::kas, k)	= if Key.equals(#1 ka, k)
+				  then kas : (key * 'a) list
+				  else ka :: delete'(kas,k)
 
     fun deleteWith f (m,k)	= let val (ref t,n) = m
 				      val i    = hash(t,k)
@@ -2554,7 +4220,6 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     fun delete x		= deleteWith ignore x
     fun deleteExistent x	= deleteWith(fn k => raise Delete k) x
-
 
     fun reinsert t (ka as(k,_))	= let val i = hash(t,k) in
 				      Array.update(t, i, ka::Array.sub(t,i))
@@ -2594,7 +4259,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     fun unionWithi f		= union'(insertWithi f)
 
   end
-(* src # 25 ../misc/SCOPED_IMP_SET.sig *)
+(* src # 18 misc/SCOPED_IMP_SET.sig *)
 (*
  * A stateful scoped map (a stateful stack of stateful maps).
  *)
@@ -2617,6 +4282,7 @@ signature SCOPED_IMP_SET =
     val insertScope :		set -> unit
     val inheritScope :		set * set -> unit
     val deleteScope :		set -> unit
+    val deleteAll :		set -> unit
     val splitScope :		set -> set
 
     val mergeScope :		set -> unit
@@ -2650,8 +4316,11 @@ signature SCOPED_IMP_SET =
     val fold :			(item * 'a -> 'a) -> 'a -> set -> 'a
     val foldScope :		(item * 'a -> 'a) -> 'a -> set -> 'a
 
+    val find :			(item -> bool) -> set -> item option
+    val findScope :		(item -> bool) -> set -> item option
+
   end
-(* src # 26 ../misc/MakeScopedImpSet.sml *)
+(* src # 19 misc/MakeScopedImpSet.sml *)
 functor MakeScopedImpSet(ImpSet: IMP_SET) :>
   SCOPED_IMP_SET where type item = ImpSet.item =
   struct
@@ -2671,6 +4340,7 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     fun cloneScope(ref ss)	= ref[ImpSet.clone(List.hd ss)]
     fun insertScope r		= r := ImpSet.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
+    fun deleteAll r		= r := [ImpSet.new()]
     fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
@@ -2703,6 +4373,12 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     fun foldScope f a (ref ss)	= ImpSet.fold f a (List.hd ss)
     fun fold f a (ref ss)	= List.foldr (fn(s,a') => ImpSet.fold f a' s)
 					     a ss
+    fun findScope p (ref ss)	= ImpSet.find p (List.hd ss)
+    fun find p (ref ss)		= let fun iter  []     = NONE
+					| iter(s::ss') = case ImpSet.find p s
+							   of NONE => iter ss'
+							    | some => some
+				  in iter ss end
 
     fun delete(ref ss, i)		= ImpSet.delete(List.hd ss, i)
     fun deleteExistent(ref ss, i)	= ImpSet.deleteExistent(List.hd ss, i)
@@ -2722,10 +4398,10 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     fun unionWith f		= union'(ImpSet.unionWith f)
 
   end
-(* src # 27 ../misc/MakeHashScopedImpSet.sml *)
+(* src # 20 misc/MakeHashScopedImpSet.sml *)
 functor MakeHashScopedImpSet(Item: HASH_KEY) =
 	MakeScopedImpSet(MakeHashImpSet(Item))
-(* src # 28 ../misc/SCOPED_IMP_MAP.sig *)
+(* src # 21 misc/SCOPED_IMP_MAP.sig *)
  (*
  * A stateful scoped map (a stateful stack of stateful maps).
  *)
@@ -2748,6 +4424,7 @@ signature SCOPED_IMP_MAP =
 
     val insertScope :		'a map -> unit
     val deleteScope :		'a map -> unit
+    val deleteAll :		'a map -> unit
     val inheritScope :		'a map * 'a map -> unit
     val splitScope :		'a map -> 'a map
 
@@ -2794,8 +4471,12 @@ signature SCOPED_IMP_MAP =
     val foldi :			(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldiScope :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
 
+    val find :			('a -> bool) -> 'a map -> 'a option
+    val findScope :		('a -> bool) -> 'a map -> 'a option
+    val findi :			(key * 'a -> bool) -> 'a map -> (key *'a) option
+    val findiScope :		(key * 'a -> bool) -> 'a map -> (key *'a) option
   end
-(* src # 29 ../misc/MakeScopedImpMap.sml *)
+(* src # 22 misc/MakeScopedImpMap.sml *)
 functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
   SCOPED_IMP_MAP where type key = ImpMap.key =
   struct
@@ -2814,6 +4495,7 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun cloneScope(ref ms)	= ref[ImpMap.clone(List.hd ms)]
     fun insertScope r		= r := ImpMap.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
+    fun deleteAll r		= r := [ImpMap.new()]
     fun splitScope(r as ref ms)	= ( deleteScope r ; ref[List.hd ms] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
@@ -2856,11 +4538,24 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun foldScope f b (ref ms)	= ImpMap.fold f b (List.hd ms)
     fun fold f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.fold f b' m)
 					     b ms
+    fun findScope p (ref ms)	= ImpMap.find p (List.hd ms)
+    fun find p (ref ms)		= let fun iter  []     = NONE
+					| iter(m::ms') = case ImpMap.find p m
+							   of NONE => iter ms'
+							    | some => some
+				  in iter ms end
+
     fun appiScope f (ref ms)	= ImpMap.appi f (List.hd ms)
     fun appi f (ref ms)		= List.app (ImpMap.appi f) (List.rev ms)
     fun foldiScope f b (ref ms)	= ImpMap.foldi f b (List.hd ms)
     fun foldi f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.foldi f b' m)
 					     b ms
+    fun findiScope p (ref ms)	= ImpMap.findi p (List.hd ms)
+    fun findi p (ref ms)	= let fun iter  []     = NONE
+					| iter(m::ms') = case ImpMap.findi p m
+							   of NONE => iter ms'
+							    | some => some
+				  in iter ms end
 
     fun delete(ref ms, k)		= ImpMap.delete(List.hd ms, k)
     fun deleteExistent(ref ms, k)	= ImpMap.deleteExistent(List.hd ms, k)
@@ -2882,10 +4577,10 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun unionWithi f		= union'(ImpMap.unionWithi f)
 
   end
-(* src # 30 ../misc/MakeHashScopedImpMap.sml *)
+(* src # 23 misc/MakeHashScopedImpMap.sml *)
 functor MakeHashScopedImpMap(Key: HASH_KEY) =
 	MakeScopedImpMap(MakeHashImpMap(Key))
-(* src # 31 ../misc/STAMP.sig *)
+(* src # 24 misc/STAMP.sig *)
 (*
  * Stamp generator.
  *)
@@ -2906,8 +4601,7 @@ signature STAMP =
     val hash :		stamp -> int
 
   end
-(*DEBUG where type stamp = int*)
-(* src # 32 ../misc/MakeStamp.sml *)
+(* src # 25 misc/MakeStamp.sml *)
 (*
  * Stamp generator.
  *)
@@ -2930,7 +4624,58 @@ functor MakeStamp() : (*DEBUG :>*) STAMP =
     fun hash n   = n
 
   end
-(* src # 33 ../misc/PRETTY_PRINT.sig *)
+(* src # 26 misc/GLOBAL_STAMP.sig *)
+(*
+ * Global stamp generator.
+ *)
+
+
+signature GLOBAL_STAMP =
+  sig
+    (*include STAMP*)
+
+    eqtype stamp
+    type t = stamp
+
+    val new :		unit   -> stamp
+    val fromString :	string -> stamp
+    val toString :	stamp  -> string
+
+    val compare :	stamp * stamp -> order
+    val hash :		stamp -> int
+
+  end
+(* src # 27 misc/GlobalStamp.sml *)
+(*
+ * Global stamp generator.
+ *)
+
+
+structure GlobalStamp :> GLOBAL_STAMP  =
+  struct
+
+    datatype stamp		= GEN of int | STR of string
+    type     t			= stamp
+
+    val r			= ref 0
+
+    fun new()			= (r := !r + 1; GEN(!r))
+
+    fun fromString s		= STR s
+
+    fun toString(GEN n)		= Int.toString n
+      | toString(STR s)		= s
+
+    fun compare(GEN n1, GEN n2)	= Int.compare(n1,n2)
+      | compare(STR s1, STR s2)	= String.compare(s1,s2)
+      | compare(GEN n1, STR s2)	= LESS
+      | compare(STR s1, GEN n2)	= GREATER
+
+    fun hash(GEN n)		= n
+      | hash(STR s)		= StringHashKey.hash s
+
+  end
+(* src # 28 misc/PRETTY_PRINT.sig *)
 (*
  * A generic pretty printer.
  *
@@ -2972,7 +4717,7 @@ signature PRETTY_PRINT =
     val output :	TextIO.outstream * doc * int -> unit
 
   end
-(* src # 34 ../misc/PrettyPrint.sml *)
+(* src # 29 misc/PrettyPrint.sml *)
 (*
  * A generic pretty printer.
  *
@@ -3126,7 +4871,7 @@ structure PrettyPrint :> PRETTY_PRINT =
     fun output(os, doc, w) = List.app (outputPrim os) (layout(doc, w))
 
   end
-(* src # 35 ../misc/PP_MISC.sig *)
+(* src # 30 misc/PP_MISC.sig *)
 (*
  * Miscellaneous pretty printing helpers
  *)
@@ -3153,7 +4898,7 @@ signature PP_MISC =
     val indent:		doc -> doc
 
   end
-(* src # 36 ../misc/PPMisc.sml *)
+(* src # 31 misc/PPMisc.sml *)
 (*
  * Miscellaneous pretty printing helpers
  *)
@@ -3198,7 +4943,7 @@ structure PPMisc :> PP_MISC =
     fun ppSeq ppX = ppSeqPrec (fn _ => ppX) 0
 
   end
-(* src # 37 ../misc/URL.sig *)
+(* src # 32 misc/URL.sig *)
 (*
  * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -3254,7 +4999,7 @@ signature URL =
 	val setQuery: url * query -> url           (* Malformed *)
 	val setFragment: url * fragment -> url
     end
-(* src # 38 ../misc/Url.sml *)
+(* src # 33 misc/Url.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -3701,19 +5446,165 @@ structure Url :> URL =
 
 	fun hash url = StringHashKey.hash (toString url)
     end
-(* src # 39 ../top/PHASE.sig *)
+(* src # 34 infrastructure/CRASH.sig *)
+(*
+ * Handling of internal inconsistencies.
+ *)
+
+signature CRASH =
+  sig
+    exception Crash of string
+  end
+(* src # 35 infrastructure/Crash.sml *)
+(*
+ * Handling of internal inconsistencies.
+ *)
+
+structure Crash :> CRASH =
+  struct
+    exception Crash of string
+  end
+(* src # 36 infrastructure/SOURCE.sig *)
+(*
+ * A source file.
+ *)
+
+
+signature SOURCE =
+  sig
+
+    type source
+    type t	= source
+
+    type pos	= int * int
+    type region	= pos * pos
+
+    type desc
+
+    val fromString:		string -> source
+    val toString:		source -> string
+
+    val nowhere:		region
+    val over:			region * region -> region
+    val between:		region * region -> region
+
+    val regionToString:		region -> string
+
+    val stringDesc:		desc
+    val urlDesc:		Url.t -> desc
+
+    val url:			desc -> Url.t option
+
+  end
+(* src # 37 infrastructure/Source.sml *)
+(*
+ * A source file
+ *)
+
+
+structure Source :> SOURCE =
+  struct
+
+    type source	= string
+    type t	= source
+
+    type pos	= int * int
+    type region	= pos * pos
+
+    type desc	= Url.t option
+
+    val nowhere = ((0,0),(0,0))
+
+    fun fromString s	= s
+    fun toString s	= s
+
+    fun over(reg1: region, reg2: region)	= (#1 reg1, #2 reg2)
+    fun between(reg1: region, reg2: region)	= (#2 reg1, #1 reg2)
+
+    fun posToString(lin,col) =
+	Int.toString lin ^ "." ^ Int.toString col
+
+    fun regionToString(region as (pos1,pos2)) =
+	if region = nowhere then
+	    "(unknown position)"
+	else
+	    posToString pos1 ^ "-" ^ posToString pos2
+
+    val stringDesc = NONE
+    val urlDesc    = SOME
+    fun url d      = d
+
+  end
+(* src # 38 infrastructure/ERROR.sig *)
+(*
+ * Error handling.
+ *)
+
+
+signature ERROR =
+  sig
+
+    (* Import *)
+
+    type region = Source.region
+
+
+    (* Export *)
+
+    exception Error of region * string
+
+    val error :	region * string -> 'a
+    val warn :	region * string -> unit
+
+  end
+(* src # 39 infrastructure/Error.sml *)
+(*
+ * Error handling.
+ *)
+
+
+structure Error :> ERROR =
+  struct
+
+    (* Import *)
+
+    type region = Source.region
+
+
+    (* Export *)
+
+    exception Error of region * string
+
+    fun print(reg, s) =
+        TextIO.output(TextIO.stdErr,
+		      Source.regionToString reg ^ ": " ^ s ^ "\n")
+
+    fun error(reg, message) = ( print(reg,message) ; raise Error(reg,message) )
+    fun warn (reg, message) =   print(reg, "warning: " ^ message)
+
+  end
+(* src # 40 infrastructure/SWITCHES.sig *)
+signature SWITCHES =
+  sig
+    val printComponentSig :	bool ref
+  end
+(* src # 41 infrastructure/Switches.sml *)
+structure Switches :> SWITCHES =
+  struct
+    val printComponentSig		= ref true
+  end
+(* src # 42 infrastructure/CONTEXT.sig *)
 signature CONTEXT =
   sig
     type t
-    (* val initial: unit -> t *)
-    val clone:   t    -> t
+    val clone: t -> t
   end
-
+(* src # 43 infrastructure/REPRESENTATION.sig *)
 signature REPRESENTATION =
   sig
     type t
   end
-
+(* src # 44 infrastructure/PHASE.sig *)
 signature PHASE =
   sig
     structure C: CONTEXT
@@ -3722,7 +5613,7 @@ signature PHASE =
 
     val translate: C.t -> I.t -> O.t   (* [Error.Error] *)
   end
-
+(* src # 45 infrastructure/PHASE_ERROR.sig *)
 signature PHASE_ERROR =
   sig
     type error		(* a datatype of possible errors *)
@@ -3731,7 +5622,63 @@ signature PHASE_ERROR =
     val error:	Error.region * error -> 'a	(* format and print error *)
     val warn:	Error.region * warning -> unit	(* format and print warning *)
   end
-(* src # 40 ../top/TARGET.sig *)
+(* src # 46 infrastructure/ComposePhases.sml *)
+functor ComposePhases(
+	structure Phase1:  PHASE
+	structure Phase2:  PHASE where I = Phase1.O
+	structure Context: CONTEXT
+	val context1: Context.t -> Phase1.C.t
+	val context2: Context.t -> Phase2.C.t
+    ) : PHASE =
+  struct
+    structure I = Phase1.I
+    structure O = Phase2.O
+    structure C = Context
+
+    fun translate context = Phase2.translate(context2 context)
+			  o Phase1.translate(context1 context)
+  end
+(* src # 47 infrastructure/EmptyContext.sml *)
+structure EmptyContext :> CONTEXT where type t = unit =
+  struct
+    type t = unit
+
+    fun initial() = ()
+    fun clone()   = ()
+  end
+(* src # 48 infrastructure/SIGNATURE.sig *)
+(* Abstract 1st class representation of signatures *)
+
+signature SIGNATURE =
+  sig
+    type t
+    val matches: t * t -> bool
+  end
+(* src # 49 infrastructure/COMPOSER.sig *)
+(* The Komponist *)
+
+signature COMPOSER =
+  sig
+    structure Sig: SIGNATURE
+
+    exception Corrupt
+
+    val sign:	Url.t -> Sig.t		(* [Corrupt, IO.Io] *)
+    val start:	Url.t -> unit		(* [Corrupt, IO.Io] *)
+  end
+
+signature COMPOSER' =
+    sig
+	structure Sig: SIGNATURE
+
+	exception Corrupt
+
+	val sign:	Url.t -> Sig.t		(* [Corrupt, IO.Io] *)
+	val start:	Url.t -> unit		(* [Corrupt, IO.Io] *)
+
+	val setAcquisitionMethod: (Url.t -> Sig.t) -> unit
+    end
+(* src # 50 infrastructure/TARGET.sig *)
 signature TARGET =
   sig
     structure C: CONTEXT
@@ -3741,149 +5688,13 @@ signature TARGET =
     val apply: C.t -> t -> unit
     val save: C.t -> string -> t -> unit
   end
-(* src # 41 ../top/EmptyContext.sml *)
-structure EmptyContext :> CONTEXT where type t = unit =
-  struct
-    type t = unit
-
-    fun initial() = ()
-    fun clone()   = ()
-  end
-(* src # 42 ../top/ENGINE.sig *)
-(*
- * Author:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *
- * Copyright:
- *   Leif Kornstaedt, 2000
- *
- * Last change:
- *   $Date$ by $Author$
- *   $Revision$
- *)
-
-signature CODE =
-    sig
-	type t
-
-	val externalize: TextIO.outstream * t -> unit
-    end
-
-signature ENGINE =
-    sig
-	type t
-	type code
-	type value
-
-	exception Format of string
-
-	val start: unit -> t
-	val stop: t -> unit
-
-	val buildFunctor: t -> code -> value   (* Format *)
-	val saveValue: t -> string -> value -> unit   (* Format *)
-
-	val valueToString: value -> string
-    end
-(* src # 43 ../top/MakeEngine.sml *)
-(*
- * Author:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *
- * Copyright:
- *   Leif Kornstaedt, 2000
- *
- * Last change:
- *   $Date$ by $Author$
- *   $Revision$
- *)
-
-functor MakeEngine(val cmd: string
-		   val args: string list
-		   structure Code: CODE) :> ENGINE where type code = Code.t =
-    struct
-	type t = Unix.proc option ref
-	type code = Code.t
-	type value = int
-
-	exception Format of string
-
-	val valueToString = Int.toString
-
-	fun start () = ref (SOME (Unix.execute (cmd, args)))
-
-	fun instream proc = #1 (Unix.streamsOf (valOf (!proc)))
-	fun outstream proc = #2 (Unix.streamsOf (valOf (!proc)))
-
-	fun stop proc =
-	    (TextIO.closeOut (outstream proc);
-	     proc := NONE)
-
-	datatype arg =
-	    CODE of Code.t
-	  | VALUE of value
-	  | STRING of string
-
-	fun sendCommand (proc, command, args) =
-	    let
-		val q = outstream proc
-	    in
-		TextIO.output (q, "Command: " ^ command ^ "\n");
-		List.app (fn arg =>
-			  (TextIO.output (q, "Argument: ");
-			   case arg of
-			       CODE code =>
-				   Code.externalize (q, code)
-			     | VALUE value =>
-				   TextIO.output (q, valueToString value)
-			     | STRING string =>
-				   TextIO.output (q, string);
-			   TextIO.output1 (q, #"\n"))) args;
-		TextIO.output1 (q, #"\n");
-		TextIO.flushOut q
-	    end
-
-	local
-	    fun split (#":"::cs) = (nil, cs)
-	      | split (c::cs) =
-		let
-		    val (name, value) = split cs
-		in
-		    (c::name, value)
-		end
-	      | split nil = raise Format "split: colon expected"
-	in
-	    fun parseResult proc =
-		case TextIO.inputLine (instream proc) of
-		    "\n" => nil
-		  | s =>
-			let
-			    val (name, value) = split (String.explode s)
-			in
-			    (String.implode name, String.implode value)::
-			    parseResult proc
-			end
-	end
-
-	fun buildFunctor proc code =
-	    (sendCommand (proc, "buildFunctor", [CODE code]);
-	     case parseResult proc of
-		    [("Result", s)] => valOf (Int.fromString s)
-		  | _ => raise Format "buildFunctor: result expected")
-
-	fun saveValue proc filename value =
-	    (sendCommand (proc, "saveValue", [STRING filename, VALUE value]);
-	     case parseResult proc of
-		 [("Result", _)] => ()
-	       | _ => raise Format "saveValue: result expected")
-    end
-(* src # 44 ../common/Stamp.sml *)
+(* src # 51 common/Stamp.sml *)
 structure Stamp = MakeStamp()
-(* src # 45 ../common/StampSet.sml *)
-structure StampSet = MakeHashImpSet(Stamp)
-(* src # 46 ../common/StampMap.sml *)
-structure StampMap = MakeHashImpMap(Stamp)
-(* src # 47 ../common/NAME.sig *)
+(* src # 52 common/StampSet.sml *)
+structure StampSet = MakeHashImpSet(FromEqHashKey(Stamp))
+(* src # 53 common/StampMap.sml *)
+structure StampMap = MakeHashImpMap(FromEqHashKey(Stamp))
+(* src # 54 common/NAME.sig *)
 signature NAME =
   sig
 
@@ -3895,7 +5706,7 @@ signature NAME =
     val toString :	name -> string
 
   end
-(* src # 48 ../common/Name.sml *)
+(* src # 55 common/Name.sml *)
 structure Name :> NAME =
   struct
 
@@ -3914,7 +5725,7 @@ structure Name :> NAME =
       | toString InId			= "?"
 
   end
-(* src # 49 ../common/LABEL.sig *)
+(* src # 56 common/LABEL.sig *)
 signature LABEL =
   sig
 
@@ -3926,57 +5737,57 @@ signature LABEL =
 
     val fromString :	string -> lab
     val fromInt :	int    -> lab
-    val fromName :	Name.t -> lab
+    val fromLargeInt :	LargeInt.int -> lab
+    val fromName :	Name.t -> lab		(* Domain *)
     val toName :	lab    -> Name.t
     val toString :	lab    -> string
-    val toInt :		lab    -> int option
+    val toLargeInt :	lab    -> LargeInt.int option
 
     val compare :	lab * lab -> order
     val hash :		lab -> int
 
   end
-(* src # 50 ../common/Label.sml *)
+(* src # 57 common/Label.sml *)
 structure Label :> LABEL =
   struct
 
-    datatype lab = NUM of int | ALPHA of string		(* [lab,l] *)
-
-    type t   = lab
+    datatype lab = NUM of LargeInt.int | ALPHA of string	(* [lab,l] *)
+    type     t   = lab
 
 
     (* Conversions *)
 
-    fun fromInt n		= NUM n
-    fun fromString s		= case Int.fromString s
+    fun fromInt n		= NUM(LargeInt.fromInt n)
+    fun fromLargeInt n		= NUM n
+    fun fromString s		= case LargeInt.fromString s
 				    of SOME n => NUM n
 				     | NONE   => ALPHA s
 
-    fun fromName(Name.ExId s)	= ALPHA s
-      | fromName(Name.InId)	= ALPHA ""
+    fun fromName(Name.ExId s)	= fromString s
+      | fromName(Name.InId)	= raise Domain
 
-    fun toName(ALPHA "")	= Name.InId
-      | toName(ALPHA s)		= Name.ExId s
-      | toName(NUM n)		= Name.ExId(Int.toString n)
+    fun toName(ALPHA s)		= Name.ExId s
+      | toName(NUM n)		= Name.ExId(LargeInt.toString n)
 
-    fun toString(NUM n)		= Int.toString n
+    fun toString(NUM n)		= LargeInt.toString n
       | toString(ALPHA s)	= s
 
-    fun toInt(NUM n)		= SOME n
-      | toInt(ALPHA s)		= NONE
+    fun toLargeInt(NUM n)	= SOME n
+      | toLargeInt(ALPHA s)	= NONE
 
 
     (* Ordering and hashing *)
 
-    fun compare(NUM n1,   NUM n2)	= Int.compare(n1,n2)
+    fun compare(NUM n1,   NUM n2)	= LargeInt.compare(n1,n2)
       | compare(ALPHA s1, ALPHA s2)	= String.compare(s1,s2)
       | compare(NUM n1,   ALPHA s2)	= LESS
       | compare(ALPHA s1, NUM n2)	= GREATER
 
-    fun hash(NUM n)			= n
+    fun hash(NUM n)			= LargeIntHashKey.hash n
       | hash(ALPHA s)			= StringHashKey.hash s
 
   end
-(* src # 51 ../common/PATH.sig *)
+(* src # 58 common/PATH.sig *)
 (* Since SML allows multiple definitions of the same id in a structure,
    labels are not enough for paths. So we added an index. *)
 
@@ -3987,32 +5798,32 @@ signature PATH =
 
     type lab   = Label.t
     type name  = Name.t
-    type url   = Url.t
 
-    eqtype path
+    type path
     type t = path
 
   (* Operations *)
 
     val invent :	unit -> path
+    val global :	name -> path
     val fromLab :	lab  -> path
-    val fromUrl :	url  -> path
     val toLab :		path -> lab
     val path :		path * lab * int -> path
 
+    val equals :	path * path -> bool
     val compare :	path * path -> order
     val hash :		path -> int
 
     val isDot :		path -> bool
     val asDot :		path -> path * lab * int
 
-    val strengthen :	path * (path * lab * int) -> unit
+    val strengthen :	path * lab * int * path -> unit
 
     val clone :		path -> path
     val instance :	('rea * path -> path option) -> 'rea * path -> path
 
   end
-(* src # 52 ../common/Path.sml *)
+(* src # 59 common/Path.sml *)
 (* Notes:
  * - Paths are shared, i.e. each path has to be unique.
  * - Since SML allows multiple definitions of the same id in a structure,
@@ -4024,67 +5835,47 @@ structure PathPrivate =
 
   (* Types *)
 
-    type lab   = Label.t
-    type name  = Name.t
-    type url   = Url.t
+    type lab	= Label.t
+    type name	= Name.t
+    type stamp	= GlobalStamp.t
 
     datatype path' =
 	  PLAIN of name
-	| URL   of url
 	| DOT   of path * lab * int
 
-    withtype path = path' ref
+    withtype path = stamp * path' ref
     type t = path
 
 
   (* Creation and projection *)
 
-    fun invent()		= ref(PLAIN(Name.InId))
-    fun fromLab l		= ref(PLAIN(Label.toName l))
-    fun fromUrl url		= ref(URL url)
-    fun path pln		= ref(DOT pln)
+    fun invent()		= (GlobalStamp.new(), ref(PLAIN(Name.InId)))
+    fun fromLab l		= (GlobalStamp.new(), ref(PLAIN(Label.toName l)))
+    fun path pln		= (GlobalStamp.new(), ref(DOT pln))
+    fun global n		= (GlobalStamp.fromString(Name.toString n),
+				   ref(PLAIN n))
 
-    fun toLab(ref(PLAIN n))	= Label.fromName n
-      | toLab _			= raise Crash.Crash "Path.toLab"
+    fun toLab (_, ref(PLAIN n))	= Label.fromName n
+      | toLab   _		= raise Crash.Crash "Path.toLab"
 
-    fun isDot(ref(DOT _))	= true
-      | isDot _			= false
+    fun isDot (_, ref(DOT _))	= true
+      | isDot   _		= false
 
-    fun asDot(ref(DOT pln))	= pln
-      | asDot _			= raise Crash.Crash "Path.asDot"
+    fun asDot (_, ref(DOT pln))	= pln
+      | asDot   _		= raise Crash.Crash "Path.asDot"
 
 
-  (* Ordering and hashing *)
+  (* Comparison and hashing *)
 
-    fun idx(PLAIN _)		= 0
-      | idx(URL _)		= 1
-      | idx(DOT _)		= 2
-
-    fun compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
-						  else compare'(p1', p2')
-    and compare'(PLAIN(x1),     PLAIN(x2))	= Name.compare(x1,x2)
-      | compare'(URL(u1),       URL(u2))	= Url.compare(u1,u2)
-      | compare'(DOT(p1,l1,n1), DOT(p2,l2,n2))	= (case compare(p1,p2)
-						     of r as (LESS|GREATER) => r
-						      | EQUAL =>
-						   case Label.compare(l1,l2)
-						     of r as (LESS|GREATER) => r
-						      | EQUAL =>
-						   Int.compare(n1,n2))
-      | compare'(p1,            p2)		= Int.compare(idx p1, idx p2)
-
-    fun hash(ref(PLAIN x))	= Name.hash x
-      | hash(ref(URL u))	= Url.hash u
-      | hash(ref(DOT(p,l,n)))	= Label.hash l
+    fun equals((stamp1,_), (stamp2,_))	= stamp1 = stamp2
+    fun compare((stamp1,_), (stamp2,_))	= GlobalStamp.compare(stamp1,stamp2)
+    fun hash (stamp, _)			= GlobalStamp.hash stamp
 
 
   (* Strengthening *)
 
-    (* Strengthening has to be used carefully, as it results in a new
-     * hash value, thereby invalidating eventual hash maps and sets! *)
-
-    fun strengthen(p1, (p as ref(PLAIN _),l,n)) = p := DOT(p1,l,n)
-      | strengthen _                            = ()
+    fun strengthen(p,l,n, (_, p' as ref(PLAIN _))) = p' := DOT(p,l,n)
+      | strengthen _                               = ()
 
 
   (* Cloning *)
@@ -4095,10 +5886,9 @@ structure PathPrivate =
 		case lookup(rea, p1)
 		 of SOME p2 => p2
 		  | NONE    =>
-		case !p1
-		 of p' as PLAIN _ => ref p'
-		  | p' as URL _   => p1
-		  | DOT(p,l,n)    => ref(DOT(clone p, l, n))
+		case !(#2 p1)
+		 of DOT(p,l,n) => (GlobalStamp.new(), ref(DOT(clone p, l, n)))
+		  | p'         => (GlobalStamp.new(), ref p')
 	in
 	    clone p
 	end
@@ -4108,12 +5898,12 @@ structure PathPrivate =
   end
 
 
-structure Path : (*DEBUG :>*) PATH = PathPrivate
-(* src # 53 ../common/PathSet.sml *)
+structure Path : PATH = PathPrivate
+(* src # 60 common/PathSet.sml *)
 structure PathSet = MakeHashImpSet(Path)
-(* src # 54 ../common/PathMap.sml *)
+(* src # 61 common/PathMap.sml *)
 structure PathMap = MakeHashImpMap(Path)
-(* src # 55 ../common/TYPE.sig *)
+(* src # 62 common/TYPE.sig *)
 signature TYPE =
   sig
 
@@ -4252,7 +6042,7 @@ signature TYPE =
     val resetLevel :	unit -> unit
 
   end
-(* src # 56 ../common/Type.sml *)
+(* src # 63 common/Type.sml *)
 (*******************************************************************************
 On Type Functions:
 
@@ -4311,7 +6101,8 @@ the following example:
 	IntList = Nil | Cons(Int, IntList)
 
 Maybe this can be made a bit more permissive, but in general it seems
-impossible to have non-uniform datatypes as well as arbitrary recursive types.
+impossible to have non-uniform datatypes as well as arbitrary recursive types -
+type checking would become undecidable.
 
 It is also unclear to me whether some sort of hash-consing can be applied to
 recursive types or even recursive type functions.
@@ -5065,8 +6856,8 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 recur unifyRow (t1, t2, r1, r2, SUM)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 if p1 = p2 then t1 := LINK t2
-				    else raise Unify(t1,t2)
+			 if Path.equals(p1,p2) then t1 := LINK t2
+					       else raise Unify(t1,t2)
 
 		       | (APPLY(tt1), APPLY(tt2)) =>
 			 (* Note that we do not allow general lambdas during
@@ -5173,7 +6964,7 @@ end*)
 
     (* To maximise sharing, links are kept after comparison iff the
      * types are equal. If the types are not equal, all updates are
-     * undone. This could be optimized by keeping equal subtrees.
+     * undone. This could be optimized by keeping equal subtrees, but what for?
      *)
 
     fun equals(t1,t2) =
@@ -5223,7 +7014,7 @@ end*)
 			 recur equalsRow (r1,r2)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 p1 = p2
+			 Path.equals(p1,p2)
 
 		       | (APPLY(tt1), APPLY(tt2)) =>
 			 recur equalsPair (tt1,tt2)
@@ -5326,7 +7117,7 @@ end
 
 
 structure Type : (*DEBUG :>*) TYPE = TypePrivate
-(* src # 57 ../common/PP_PATH.sig *)
+(* src # 64 common/PP_PATH.sig *)
 signature PP_PATH =
   sig
 
@@ -5336,7 +7127,7 @@ signature PP_PATH =
     val ppPath : path -> doc
 
   end
-(* src # 58 ../common/PPPath.sml *)
+(* src # 65 common/PPPath.sml *)
 structure PPPath :> PP_PATH =
   struct
 
@@ -5355,14 +7146,12 @@ structure PPPath :> PP_PATH =
     fun ppHiddenLab(0,l)	= ppLab l
       | ppHiddenLab(i,l)	= text "?" ^^ ppHiddenLab(i-1, l)
 
-    fun ppPath(ref(PLAIN n))	= ppName n
-      | ppPath(ref(URL _))	= raise Crash.Crash "PPPath.ppPath: URL path"
-      | ppPath(ref(DOT(p,l,i)))	= (case !p of URL _ => text ""
-					    | _     => ppPath p ^^ text ".")
-				  ^^ ppHiddenLab(i, l)
+    fun ppPath (_, ref p')	= ppPath' p'
+    and ppPath'(PLAIN n)	= ppName n
+      | ppPath'(DOT(p,l,i))	= ppPath p ^^ text "." ^^ ppHiddenLab(i, l)
 
   end
-(* src # 59 ../common/PP_TYPE.sig *)
+(* src # 66 common/PP_TYPE.sig *)
 signature PP_TYPE =
   sig
 
@@ -5374,7 +7163,7 @@ signature PP_TYPE =
     val ppKind :	kind -> doc
 
   end
-(* src # 60 ../common/PPType.sml *)
+(* src # 67 common/PPType.sml *)
 structure PPType :> PP_TYPE =
   struct
 
@@ -5548,8 +7337,12 @@ text "@" ^^*)
 		    ppTypPrec p t
 
 	      | ppTypPrec' p (ABBREV(t1,t2)) =
+(*DEBUG
+text "(" ^^
+*)
 		    ppTypPrec p t1
-
+(*^/^ text "as" ^/^ ppTypPrec p t2 ^^ text ")"
+*)
 	      | ppTypPrec' p (MARK t') =
 		    text "!" ^^ ppTypPrec' p t'
 
@@ -5667,615 +7460,7 @@ text "@" ^^*)
 	end
 
   end
-(* src # 61 ../common/INTERMEDIATE_GRAMMAR.sig *)
-signature INTERMEDIATE_GRAMMAR =
-  sig
-
-    (* Generic *)
-
-    type lab_info
-    type id_info
-    type longid_info
-    type exp_info
-    type pat_info
-    type 'a field_info
-    type match_info
-    type dec_info
-
-    type sign
-
-    (* Literals *)
-
-    datatype lit =
-	  WordLit   of LargeWord.word		(* modulo arithmetic *)
-	| IntLit    of LargeInt.int		(* integer arithmetic *)
-	| CharLit   of WideChar.char		(* character *)
-	| StringLit of WideString.string	(* character string *)
-(*	| RealLit   of LargeReal.real		(* floating point *)
-UNFINISHED: obsolete after bootstrapping:
-*)	| RealLit   of string			(* floating point *)
-
-    (* Identifiers *)
-
-    datatype lab    = Lab     of lab_info * Label.t
-    datatype id     = Id      of id_info * Stamp.t * Name.t
-    datatype longid = ShortId of longid_info * id
-		    | LongId  of longid_info * longid * lab
-
-    (* Expressions *)
-
-    datatype exp =
-	  LitExp    of exp_info * lit			(* literal *)
-	| PrimExp   of exp_info * string		(* primitive value *)
-	| NewExp    of exp_info * bool			(* new constructor *)
-				(* bool : is n-ary *)
-	| VarExp    of exp_info * longid		(* variable *)
-	| TagExp    of exp_info * lab * bool		(* sum injector *)
-				(* bool : is n-ary *)
-	| ConExp    of exp_info * longid * bool		(* constructor *)
-				(* bool : is n-ary *)
-	| RefExp    of exp_info				(* reference *)
-	| TupExp    of exp_info * exp list		(* tuple *)
-	| RowExp    of exp_info * exp field list	(* record / module *)
-			(* all labels distinct *)
-	| SelExp    of exp_info * lab			(* field selector *)
-	| VecExp    of exp_info * exp list		(* vector *)
-	| FunExp    of exp_info * match list		(* function / functor *)
-	| AppExp    of exp_info * exp * exp		(* application *)
-	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
-	| UpExp     of exp_info * exp			(* up cast *)
-	| AndExp    of exp_info * exp * exp		(* conjunction *)
-	| OrExp     of exp_info * exp * exp		(* disjunction *)
-	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
-	| WhileExp  of exp_info * exp * exp		(* conditional loop *)
-	| SeqExp    of exp_info * exp list		(* sequential *)
-	| CaseExp   of exp_info * exp * match list	(* case switch *)
-	| RaiseExp  of exp_info * exp			(* exception raise *)
-	| HandleExp of exp_info * exp * match list	(* exception handler *)
-	| LetExp    of exp_info * dec list * exp	(* local binding *)
-
-    and 'a field = Field of 'a field_info * lab * 'a
-
-    and match    = Match of match_info * pat * exp
-
-    (* Patterns (always linear) *)
-
-    and pat =
-	  WildPat   of pat_info				(* wildcard *)
-	| LitPat    of pat_info * lit			(* literal *)
-	| VarPat    of pat_info * id			(* variable *)
-	| TagPat    of pat_info * lab * bool		(* sum injector *)
-			(* bool : is n-ary, appears only fully applied *)
-	| ConPat    of pat_info * longid * bool		(* constructed *)
-			(* bool : is n-ary, appears only fully applied *)
-	| RefPat    of pat_info				(* reference *)
-	| TupPat    of pat_info * pat list		(* tuple *)
-	| RowPat    of pat_info * pat field list	(* record *)
-			(* all labels distinct *)
-	| VecPat    of pat_info * pat list		(* vector *)
-	| AppPat    of pat_info * pat * pat		(* construction *)
-			(* first must be ConPat or RefPat *)
-	| AsPat     of pat_info * pat * pat		(* conjunction *)
-	| AltPat    of pat_info * pat list		(* disjunction *)
-			(* all patterns bind same ids *)
-	| NegPat    of pat_info * pat			(* negation *)
-	| GuardPat  of pat_info * pat * exp		(* guard *)
-	| WithPat   of pat_info * pat * dec list	(* local bindings *)
-
-    (* Declarations *)
-
-    and dec =
-	  ValDec    of dec_info * pat * exp		(* value / module *)
-	  		(* if inside RecDec, then
-			 * (1) pat may not contain AltPat, NegPat, GuardPat,
-			 *     WithPat
-			 * (2) exp may only contain LitExp, VarExp, ConExp,
-			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
-			 * (3) AppExps may only contain ConExp or RefExp
-			 *     as first argument
-			 * (4) if an VarPat on the LHS structurally corresponds
-			 *     to an VarExp on the RHS then the RHS id may not
-			 *     be bound on the LHS *)
-	| RecDec    of dec_info * dec list		(* recursion *)
-
-    (* Components *)
-
-    type comp = (id * sign * Url.t) list * (exp * sign)
-    type t = comp
-
-
-    (* Operations *)
-
-    val stamp :		id	-> Stamp.t
-    val name :		id	-> Name.t
-    val lab :		lab	-> Label.t
-
-    val infoLab :	lab	-> lab_info
-    val infoId :	id	-> id_info
-    val infoLongid :	longid	-> longid_info
-    val infoExp :	exp	-> exp_info
-    val infoField :	'a field -> 'a field_info
-    val infoMatch :	match	-> match_info
-    val infoPat :	pat	-> pat_info
-    val infoDec :	dec	-> dec_info
-
-  end
-(* src # 62 ../common/MakeIntermediateGrammar.sml *)
-functor MakeIntermediateGrammar(type lab_info
-				type id_info
-				type longid_info
-				type exp_info
-				type pat_info
-				type 'a field_info
-				type match_info
-				type dec_info
-				type sign) : INTERMEDIATE_GRAMMAR =
-  struct
-
-    (* Generic *)
-
-    type lab_info	= lab_info
-    type id_info	= id_info
-    type longid_info	= longid_info
-    type exp_info	= exp_info
-    type pat_info	= pat_info
-    type 'a field_info	= 'a field_info
-    type match_info	= match_info
-    type dec_info	= dec_info
-
-    type sign		= sign
-
-    (* Literals *)
-
-    datatype lit =
-	  WordLit   of LargeWord.word		(* modulo arithmetic *)
-	| IntLit    of LargeInt.int		(* integer arithmetic *)
-	| CharLit   of WideChar.char		(* character *)
-	| StringLit of WideString.string	(* character string *)
-(*	| RealLit   of LargeReal.real		(* floating point *)
-UNFINISHED: obsolete after bootstrapping:
-*)	| RealLit   of string			(* floating point *)
-
-    (* Identifiers *)
-
-    datatype lab    = Lab     of lab_info * Label.t
-    datatype id     = Id      of id_info * Stamp.t * Name.t
-    datatype longid = ShortId of longid_info * id
-		    | LongId  of longid_info * longid * lab
-
-    (* Expressions *)
-
-    datatype exp =
-	  LitExp    of exp_info * lit			(* literal *)
-	| PrimExp   of exp_info * string		(* primitive value *)
-	| NewExp    of exp_info * bool			(* new constructor *)
-				(* bool : is n-ary *)
-	| VarExp    of exp_info * longid		(* variable *)
-	| TagExp    of exp_info * lab * bool		(* sum injector *)
-	| ConExp    of exp_info * longid * bool		(* constructor *)
-				(* bool : is n-ary *)
-	| RefExp    of exp_info				(* reference *)
-	| TupExp    of exp_info * exp list		(* tuple *)
-	| RowExp    of exp_info * exp field list	(* record / module *)
-			(* all labels distinct *)
-	| SelExp    of exp_info * lab			(* field selector *)
-	| VecExp    of exp_info * exp list		(* vector *)
-	| FunExp    of exp_info * match list		(* function / functor *)
-	| AppExp    of exp_info * exp * exp		(* application *)
-	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
-	| UpExp     of exp_info * exp			(* up cast *)
-	| AndExp    of exp_info * exp * exp		(* conjunction *)
-	| OrExp     of exp_info * exp * exp		(* disjunction *)
-	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
-	| WhileExp  of exp_info * exp * exp		(* conditional loop *)
-	| SeqExp    of exp_info * exp list		(* sequential *)
-	| CaseExp   of exp_info * exp * match list	(* case switch *)
-	| RaiseExp  of exp_info * exp			(* exception raise *)
-	| HandleExp of exp_info * exp * match list	(* exception handler *)
-	| LetExp    of exp_info * dec list * exp	(* local binding *)
-
-    and 'a field = Field of 'a field_info * lab * 'a
-
-    and match    = Match of match_info * pat * exp
-
-    (* Patterns (always linear) *)
-
-    and pat =
-	  WildPat   of pat_info				(* wildcard *)
-	| LitPat    of pat_info * lit			(* literal *)
-	| VarPat    of pat_info * id			(* variable *)
-	| TagPat    of pat_info * lab * bool		(* sum injector *)
-			(* bool : is n-ary, appears only fully applied *)
-	| ConPat    of pat_info * longid * bool		(* constructed *)
-			(* bool : is n-ary, appears only fully applied *)
-	| RefPat    of pat_info				(* reference *)
-	| TupPat    of pat_info * pat list		(* tuple *)
-	| RowPat    of pat_info * pat field list	(* record *)
-			(* all labels distinct *)
-	| VecPat    of pat_info * pat list		(* vector *)
-	| AppPat    of pat_info * pat * pat		(* construction *)
-			(* first must be ConPat or RefPat *)
-	| AsPat     of pat_info * pat * pat		(* conjunction *)
-	| AltPat    of pat_info * pat list		(* disjunction *)
-			(* all patterns bind same ids *)
-	| NegPat    of pat_info * pat			(* negation *)
-	| GuardPat  of pat_info * pat * exp		(* guard *)
-	| WithPat   of pat_info * pat * dec list	(* local bindings *)
-
-    (* Declarations *)
-
-    and dec =
-	  ValDec    of dec_info * pat * exp		(* value / module *)
-	  		(* if inside RecDec, then
-			 * (1) pat may not contain AltPat, NegPat, GuardPat,
-			 *     WithPat
-			 * (2) exp may only contain LitExp, VarExp, ConExp,
-			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
-			 * (3) AppExps may only contain ConExp or RefExp
-			 *     as first argument
-			 * (4) if an VarPat on the LHS structurally corresponds
-			 *     to an VarExp on the RHS then the RHS id may not
-			 *     be bound on the LHS *)
-	| RecDec    of dec_info * dec list		(* recursion *)
-
-    (* Components *)
-
-    type comp = (id * sign * Url.t) list * (exp * sign)
-    type t = comp
-
-
-    (* Projections *)
-
-    fun stamp(Id(_,x,_))		= x
-    fun name(Id(_,_,n))			= n
-    fun lab(Lab(_,a))			= a
-
-    fun infoLab(Lab(i,_))		= i
-    fun infoId(Id(i,_,_))		= i
-    fun infoLongid(ShortId(i,_))	= i
-      | infoLongid(LongId(i,_,_))	= i
-
-    fun infoExp(LitExp(i,_))		= i
-      | infoExp(PrimExp(i,_))		= i
-      | infoExp(NewExp(i,_))		= i
-      | infoExp(VarExp(i,_))		= i
-      | infoExp(TagExp(i,_,_))		= i
-      | infoExp(ConExp(i,_,_))		= i
-      | infoExp(RefExp(i))		= i
-      | infoExp(TupExp(i,_))		= i
-      | infoExp(RowExp(i,_))		= i
-      | infoExp(SelExp(i,_))		= i
-      | infoExp(VecExp(i,_))		= i
-      | infoExp(FunExp(i,_))		= i
-      | infoExp(AppExp(i,_,_))		= i
-      | infoExp(AdjExp(i,_,_))		= i
-      | infoExp(UpExp(i,_))		= i
-      | infoExp(AndExp(i,_,_))		= i
-      | infoExp(OrExp(i,_,_))		= i
-      | infoExp(IfExp(i,_,_,_))		= i
-      | infoExp(WhileExp(i,_,_))	= i
-      | infoExp(SeqExp(i,_))		= i
-      | infoExp(CaseExp(i,_,_))		= i
-      | infoExp(RaiseExp(i,_))		= i
-      | infoExp(HandleExp(i,_,_))	= i
-      | infoExp(LetExp(i,_,_))		= i
-
-    fun infoField(Field(i,_,_))		= i
-    fun infoMatch(Match(i,_,_))		= i
-
-    fun infoPat(WildPat(i))		= i
-      | infoPat(LitPat(i,_))		= i
-      | infoPat(VarPat(i,_))		= i
-      | infoPat(TagPat(i,_,_))		= i
-      | infoPat(ConPat(i,_,_))		= i
-      | infoPat(RefPat(i))		= i
-      | infoPat(TupPat(i,_))		= i
-      | infoPat(RowPat(i,_))		= i
-      | infoPat(VecPat(i,_))		= i
-      | infoPat(AppPat(i,_,_))		= i
-      | infoPat(AsPat(i,_,_))		= i
-      | infoPat(AltPat(i,_))		= i
-      | infoPat(NegPat(i,_))		= i
-      | infoPat(GuardPat(i,_,_))	= i
-      | infoPat(WithPat(i,_,_))		= i
-
-    fun infoDec(ValDec(i,_,_))		= i
-      | infoDec(RecDec(i,_))		= i
-
-  end
-(* src # 63 ../common/IntermediateGrammar.sml *)
-structure IntermediateInfo =
-  struct
-    type lab_info	= { region: Source.region }
-    type id_info	= { region: Source.region }
-    type longid_info	= { region: Source.region }
-    type exp_info	= { region: Source.region, typ: Type.t }
-    type pat_info	= { region: Source.region, typ: Type.t }
-    type 'a field_info	= { region: Source.region }
-    type match_info	= { region: Source.region }
-    type dec_info	= { region: Source.region }
-  end
-
-structure IntermediateGrammar = MakeIntermediateGrammar(open IntermediateInfo
-							type sign = unit)
-(* src # 64 ../common/PREBOUND.sig *)
-signature PREBOUND =
-  sig
-
-    type name  = Name.t
-    type stamp = Stamp.t
-    type path  = Path.t
-
-    val valname_false :		name
-    val valname_true :		name
-    val valname_nil :		name
-    val valname_cons :		name
-    val valname_ref :		name
-    val valname_match :		name
-    val valname_bind :		name
-
-    val typname_bool :		name
-    val typname_int :		name
-    val typname_word :		name
-    val typname_real :		name
-    val typname_string :	name
-    val typname_char :		name
-    val typname_list :		name
-    val typname_vec :		name
-    val typname_ref :		name
-    val typname_exn :		name
-
-    val valstamp_false :	stamp
-    val valstamp_true :		stamp
-    val valstamp_nil :		stamp
-    val valstamp_cons :		stamp
-    val valstamp_ref :		stamp
-    val valstamp_match :	stamp
-    val valstamp_bind :		stamp
-
-    val typstamp_bool :		stamp
-    val typstamp_int :		stamp
-    val typstamp_word :		stamp
-    val typstamp_real :		stamp
-    val typstamp_string :	stamp
-    val typstamp_char :		stamp
-    val typstamp_list :		stamp
-    val typstamp_vec :		stamp
-    val typstamp_ref :		stamp
-    val typstamp_exn :		stamp
-
-    val valpath_false :		path
-    val valpath_true :		path
-    val valpath_nil :		path
-    val valpath_cons :		path
-    val valpath_ref :		path
-    val valpath_match :		path
-    val valpath_bind :		path
-
-    val typpath_bool :		path
-    val typpath_int :		path
-    val typpath_word :		path
-    val typpath_real :		path
-    val typpath_string :	path
-    val typpath_char :		path
-    val typpath_list :		path
-    val typpath_vec :		path
-    val typpath_ref :		path
-    val typpath_exn :		path
-
-  end
-(* src # 65 ../common/MakePrebound.sml *)
-functor MakePrebound(val valid_false :	string
-		     val valid_true :	string
-		     val valid_nil :	string
-		     val valid_cons :	string
-		     val valid_ref :	string
-		     val valid_match :	string
-		     val valid_bind :	string
-		     val typid_bool :	string
-		     val typid_int :	string
-		     val typid_word :	string
-		     val typid_real :	string
-		     val typid_string :	string
-		     val typid_char :	string
-		     val typid_list :	string
-		     val typid_vec :	string
-		     val typid_ref :	string
-		     val typid_exn :	string
-		    ) :> PREBOUND =
-  struct
-
-    type name  = Name.t
-    type stamp = Stamp.t
-    type path  = Path.t
-
-    val valname_false	= Name.ExId valid_false
-    val valname_true	= Name.ExId valid_true
-    val valname_nil	= Name.ExId valid_nil
-    val valname_cons	= Name.ExId valid_cons
-    val valname_ref	= Name.ExId valid_ref
-    val valname_match	= Name.ExId valid_match
-    val valname_bind	= Name.ExId valid_bind
-
-    val typname_bool	= Name.ExId typid_bool
-    val typname_int	= Name.ExId typid_int
-    val typname_word	= Name.ExId typid_word
-    val typname_real	= Name.ExId typid_real
-    val typname_string	= Name.ExId typid_string
-    val typname_char	= Name.ExId typid_char
-    val typname_list	= Name.ExId typid_list
-    val typname_vec	= Name.ExId typid_vec
-    val typname_ref	= Name.ExId typid_ref
-    val typname_exn	= Name.ExId typid_exn
-
-    val valstamp_false	= Stamp.new()
-    val valstamp_true	= Stamp.new()
-    val valstamp_nil	= Stamp.new()
-    val valstamp_cons	= Stamp.new()
-    val valstamp_ref	= Stamp.new()
-    val valstamp_match	= Stamp.new()
-    val valstamp_bind	= Stamp.new()
-
-    val typstamp_bool	= Stamp.new()
-    val typstamp_int	= Stamp.new()
-    val typstamp_word	= Stamp.new()
-    val typstamp_real	= Stamp.new()
-    val typstamp_string	= Stamp.new()
-    val typstamp_char	= Stamp.new()
-    val typstamp_list	= Stamp.new()
-    val typstamp_vec	= Stamp.new()
-    val typstamp_ref	= Stamp.new()
-    val typstamp_exn	= Stamp.new()
-
-    val valpath_false	= Path.fromLab(Label.fromName valname_false)
-    val valpath_true	= Path.fromLab(Label.fromName valname_true)
-    val valpath_nil	= Path.fromLab(Label.fromName valname_nil)
-    val valpath_cons	= Path.fromLab(Label.fromName valname_cons)
-    val valpath_ref	= Path.fromLab(Label.fromName valname_ref)
-    val valpath_match	= Path.fromLab(Label.fromName valname_match)
-    val valpath_bind	= Path.fromLab(Label.fromName valname_bind)
-
-    val typpath_int	= Path.fromLab(Label.fromName typname_int)
-    val typpath_word	= Path.fromLab(Label.fromName typname_word)
-    val typpath_char	= Path.fromLab(Label.fromName typname_char)
-    val typpath_string	= Path.fromLab(Label.fromName typname_string)
-    val typpath_real	= Path.fromLab(Label.fromName typname_real)
-    val typpath_bool	= Path.fromLab(Label.fromName typname_bool)
-    val typpath_exn	= Path.fromLab(Label.fromName typname_exn)
-    val typpath_ref	= Path.fromLab(Label.fromName typname_ref)
-    val typpath_vec	= Path.fromLab(Label.fromName typname_vec)
-    val typpath_list	= Path.fromLab(Label.fromName typname_list)
-
-  end
-(* src # 66 ../common/Prebound.sml *)
-structure Prebound = MakePrebound(val valid_false	= "false"
-				  val valid_true	= "true"
-				  val valid_nil		= "nil"
-				  val valid_cons	= "::"
-				  val valid_ref		= "ref"
-				  val valid_match	= "Match"
-				  val valid_bind	= "Bind"
-
-				  val typid_bool	= "bool"
-				  val typid_int		= "int"
-				  val typid_word	= "word"
-				  val typid_real	= "real"
-				  val typid_string	= "string"
-				  val typid_char	= "char"
-				  val typid_list	= "list"
-				  val typid_vec		= "vector"
-				  val typid_ref		= "ref"
-				  val typid_exn		= "exn"
-				 )
-(* src # 67 ../common/PREBOUND_TYPE.sig *)
-signature PREBOUND_TYPE =
-  sig
-
-    type path = Path.t
-    type con  = Type.con
-    type typ  = Type.typ
-
-    val path_bool :		path (* = Prebound.typpath_bool *)
-    val path_int :		path (* = Prebound.typpath_int *)
-    val path_word :		path (* = Prebound.typpath_word *)
-    val path_real :		path (* = Prebound.typpath_real *)
-    val path_string :		path (* = Prebound.typpath_string *)
-    val path_char :		path (* = Prebound.typpath_char *)
-    val path_list :		path (* = Prebound.typpath_list *)
-    val path_vec :		path (* = Prebound.typpath_vec *)
-    val path_ref :		path (* = Prebound.typpath_ref *)
-    val path_exn :		path (* = Prebound.typpath_exn *)
-
-    val con_int :		con
-    val con_word :		con
-    val con_real :		con
-    val con_string :		con
-    val con_char :		con
-    val con_vec :		con
-    val con_ref :		con
-    val con_exn :		con
-
-    val typ_unit :		typ
-    val typ_bool :		typ
-    val typ_int :		typ
-    val typ_word :		typ
-    val typ_real :		typ
-    val typ_string :		typ
-    val typ_char :		typ
-    val typ_list :		typ
-    val typ_vec :		typ
-    val typ_ref :		typ
-    val typ_exn :		typ
-
-  end
-(* src # 68 ../common/PreboundType.sml *)
-structure PreboundType :> PREBOUND_TYPE =
-  struct
-
-    type path		= Path.t
-    type con		= Type.con
-    type typ		= Type.typ
-
-    datatype kind	= datatype Type.kind
-    datatype sort	= datatype Type.sort
-
-    val path_bool	= Prebound.typpath_bool
-    val path_int	= Prebound.typpath_int
-    val path_word	= Prebound.typpath_word
-    val path_real	= Prebound.typpath_real
-    val path_string	= Prebound.typpath_string
-    val path_char	= Prebound.typpath_char
-    val path_list	= Prebound.typpath_list
-    val path_vec	= Prebound.typpath_vec
-    val path_ref	= Prebound.typpath_ref
-    val path_exn	= Prebound.typpath_exn
-
-    val con_bool	= (STAR, CLOSED, path_bool)
-    val con_word	= (STAR, CLOSED, path_word)
-    val con_int		= (STAR, CLOSED, path_int)
-    val con_char	= (STAR, CLOSED, path_char)
-    val con_string	= (STAR, CLOSED, path_string)
-    val con_real	= (STAR, CLOSED, path_real)
-    val con_exn		= (STAR, CLOSED, path_exn)
-    val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
-    val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
-    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
-
-    val lab_false	= Label.fromName(Prebound.valname_false)
-    val lab_true	= Label.fromName(Prebound.valname_true)
-    val lab_nil		= Label.fromName(Prebound.valname_nil)
-    val lab_cons	= Label.fromName(Prebound.valname_cons)
-
-    val typ_list	= Type.unknown(ARROW(STAR,STAR))
-    val var_list	= Type.var STAR
-    val typ_var		= Type.inVar var_list
-    val typ_cons	= Type.inTuple [typ_var, Type.inApply(typ_list,typ_var)]
-
-    val row_unit	= Type.emptyRow()
-    val row_bool	= Type.extendRow(lab_false, [],
-			  Type.extendRow(lab_true, [], Type.emptyRow()))
-    val row_list	= Type.extendRow(lab_cons, [typ_cons],
-			  Type.extendRow(lab_nil, [], Type.emptyRow()))
-
-    val typ_unit	= Type.inProd row_unit
-    val typ_int		= Type.inCon con_int
-    val typ_word	= Type.inCon con_word
-    val typ_char	= Type.inCon con_char
-    val typ_string	= Type.inCon con_string
-    val typ_real	= Type.inCon con_real
-    val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
-					Type.inMu(Type.inSum row_bool))
-    val typ_exn		= Type.inCon con_exn
-    val typ_ref		= Type.inCon con_ref
-    val typ_vec		= Type.inCon con_vec
-    val _		= Type.unify(typ_list,
-			    Type.inAbbrev(Type.inCon con_list,
-				Type.inMu(Type.inLambda(var_list,
-							Type.inSum row_list))))
-  end
-(* src # 69 ../frontend-common/StringMap.sml *)
-structure StringMap = MakeHashImpMap(StringHashKey)
-(* src # 70 ../frontend-common/FIXITY.sig *)
+(* src # 68 common/FIXITY.sig *)
 signature FIXITY =
   sig
 
@@ -6289,7 +7474,7 @@ signature FIXITY =
     type t = fix
 
   end
-(* src # 71 ../frontend-common/Fixity.sml *)
+(* src # 69 common/Fixity.sml *)
 structure Fixity :> FIXITY =
   struct
 
@@ -6303,7 +7488,7 @@ structure Fixity :> FIXITY =
     type t = fix
 
   end
-(* src # 72 ../frontend-common/INF.sig *)
+(* src # 70 common/INF.sig *)
 signature INF =
   sig
 
@@ -6311,13 +7496,12 @@ signature INF =
 
     type lab   = Label.t
     type name  = Name.t
-    type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
     type tkind = Type.kind
     type fix   = Fixity.t
 
-    datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
+    datatype val_sort = VALUE | CONSTRUCTOR of int	(* [w] *)
     datatype typ_sort = datatype Type.sort		(* [w] *)
 
     type kind						(* [kappa,k] *)
@@ -6431,6 +7615,12 @@ signature INF =
 
     exception Lookup
 
+    val pathVal :	sign * lab -> path		(* Lookup *)
+    val pathTyp :	sign * lab -> path		(* Lookup *)
+    val pathMod :	sign * lab -> path		(* Lookup *)
+    val pathInf :	sign * lab -> path		(* Lookup *)
+    val pathFix :	sign * lab -> path		(* Lookup *)
+
     val lookupVal :	sign * lab -> typ		(* Lookup *)
     val lookupTyp :	sign * lab -> typ		(* Lookup *)
     val lookupMod :	sign * lab -> inf		(* Lookup *)
@@ -6485,7 +7675,7 @@ signature INF =
     val equaliseKind :	kind * kind -> unit		(* Mismatch *)
 
   end
-(* src # 73 ../frontend-common/Inf.sml *)
+(* src # 71 common/Inf.sml *)
 (* Interfaces contain state. This means that they must be instantiated
    at each occurance. *)
 
@@ -6496,13 +7686,12 @@ structure InfPrivate =
 
     type lab	= Label.t
     type name	= Name.t
-    type stamp	= Stamp.t
     type path	= Path.t
     type typ	= Type.t
     type tkind	= Type.kind
     type fix    = Fixity.t
 
-    datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
+    datatype val_sort = VALUE | CONSTRUCTOR of int	(* [w] *)
     datatype typ_sort = datatype Type.sort		(* [w] *)
 
     type id	= path * lab * int			(* [x] *)
@@ -6514,6 +7703,7 @@ structure InfPrivate =
     datatype space = VAL' | TYP' | MOD' | INF' | FIX'
 
     structure Map = MakeHashImpMap(struct type t = space * lab
+					  val equals = op=
 					  fun hash(_,l) = Label.hash l end)
 
 
@@ -6581,6 +7771,7 @@ structure InfPrivate =
       | itemId'(FIX(x,_))	= x
 
     fun itemPath  item		= idPath(itemId item)
+    fun itemPath' item'		= idPath(itemId' item')
     fun itemLab   item		= idLab(itemId item)
     fun itemIndex item		= idIndex(itemId item)
 
@@ -6717,6 +7908,12 @@ structure InfPrivate =
 	  of SOME(item::items) =>
 		!(Option.valOf(List.find (fn item => itemIndex item = n) items))
 	   | _ => raise Lookup
+
+    fun pathVal args	= (itemPath' o lookup VAL') args
+    fun pathTyp args	= (itemPath' o lookup TYP') args
+    fun pathMod args	= (itemPath' o lookup MOD') args
+    fun pathInf args	= (itemPath' o lookup INF') args
+    fun pathFix args	= (itemPath' o lookup FIX') args
 
     fun lookupVal args	= (selectVal' o lookup VAL') args
     fun lookupTyp args	= (selectTyp  o lookup TYP') args
@@ -6916,7 +8113,7 @@ structure InfPrivate =
 	    val p' = Path.instance PathMap.lookup (rea, p)
 	in
 	    (*UNFINISHED: do we need to make the check? *)
-	    if p' <> p then PathMap.insert(rea, p, p') else () ;
+	    if Path.equals(p',p) then () else PathMap.insert(rea, p, p') ;
 	    p'
 	end
 
@@ -6978,7 +8175,7 @@ structure InfPrivate =
 		    extendSig((FIX',l), item)
 		end
 	in
-	    Misc.List_appr instanceItem items ;
+	    List.appr instanceItem items ;
 	    s
 	end
 
@@ -7041,7 +8238,7 @@ structure InfPrivate =
 
   (* Creation of singleton (shallow instantiation) *)
 
-    (* Creates an instance of an interface where every item is equal to
+    (* Creates an instance of an interface where every item is equal
      * to the original one.
      *)
 
@@ -7135,7 +8332,7 @@ structure InfPrivate =
 		    extendSig((FIX',l), item)
 		end
 	in
-	    Misc.List_appr singletonItem items ;
+	    List.appr singletonItem items ;
 	    s
 	end
 
@@ -7191,7 +8388,7 @@ structure InfPrivate =
 	      | cloneItem'(item' as FIX(x,q)) =
 		    extendSig((FIX', idLab x), ref item')
 	in
-	    Misc.List_appr cloneItem items ;
+	    List.appr cloneItem items ;
 	    s
 	end
 
@@ -7293,16 +8490,16 @@ structure InfPrivate =
 	    FIX(x, q)
 	end
 
-    and strengthenId(p, pln)		= Path.strengthen(p, pln)
+    and strengthenId(p, (p',l,n))	= Path.strengthen(p,l,n, p')
 
     and strengthenPathDef(p, NONE)	= SOME p
       | strengthenPathDef(p, d)		= d
 
     and strengthenTypDef(p, k, NONE)	= SOME(pathToTyp k p)
-      | strengthenTypDef(p, k, SOME t)	= SOME(Type.inAbbrev(pathToTyp k p,t))
+      | strengthenTypDef(p, k, d)	= d
 
     and strengthenInfDef(p, k, NONE)	= SOME(pathToInf k p)
-      | strengthenInfDef(p, k, SOME j)	= SOME(inAbbrev(pathToInf k p,j))
+      | strengthenInfDef(p, k, d)	= d
 
 
   (* Kinds *)
@@ -7368,20 +8565,23 @@ structure InfPrivate =
 
     and match'(rea, _, ref TOP) = ()
       | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
+	if Path.equals(p1,p2) then
 	    ()
 	else
 	    raise Mismatch(Incompatible(j1,j2))
 
       | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
-      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
-	( realise(rea, j21)
-	; match'(rea, j21, j11) handle Mismatch mismatch =>
-		raise Mismatch(MismatchDom mismatch)
-	; realise(rea, j12)
-	; match'(rea, j12, j22) handle Mismatch mismatch =>
-		raise Mismatch(MismatchRan mismatch)
+      | match'(rea, j1 as ref(FUN _), j2 as ref(FUN _)) =
+	( realise(rea, j2)
+	; case (instance j1, instance j2)
+	   of (ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =>
+	      ( match'(rea, j21, j11) handle Mismatch mismatch =>
+		    raise Mismatch(MismatchDom mismatch)
+	      ; match'(rea, j12, j22) handle Mismatch mismatch =>
+		    raise Mismatch(MismatchRan mismatch)
+	      )
+	    | _ => raise Crash.Crash "Inf.match: funny instantiation"
 	)
 
       | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
@@ -7390,7 +8590,7 @@ structure InfPrivate =
 
       | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
 	( match'(rea, j11, j21)
-	; if p1 = p2 then () else
+	; if Path.equals(p1,p2) then () else
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
@@ -7416,7 +8616,7 @@ structure InfPrivate =
 		    val  space  = itemSpace item2
 		    val  item1  = List.hd(Map.lookupExistent(m1, (space,l)))
 		in
-		    if p = itemPath item1 then () else
+		    if Path.equals(p, itemPath item1) then () else
 		    case space
 		     of VAL' => PathMap.insert(val_rea, p, selectVal(!item1))
 		      | TYP' => PathMap.insert(typ_rea, p, selectTyp(!item1))
@@ -7510,8 +8710,11 @@ structure InfPrivate =
 	if q1 = q2 then () else
 	    raise Mismatch(MismatchFix(l,q1,q2))
 
-    and matchValSort(l,w1,w2) =
-	if w1 = CONSTRUCTOR orelse w2 = VALUE then () else
+    and matchValSort(l, w1, VALUE) = ()
+      | matchValSort(l, w1 as CONSTRUCTOR k1, w2 as CONSTRUCTOR k2) = 
+	if k1 = k2 then () else
+	    raise Mismatch(MismatchValSort(l, w1, w2))
+      | matchValSort(l,w1,w2) =
 	    raise Mismatch(MismatchValSort(l, w1, w2))
 
     and matchTypSort(l,w1,w2) =
@@ -7522,7 +8725,11 @@ structure InfPrivate =
     and matchValDef(l, _,    NONE)	= ()
       | matchValDef(l, NONE, SOME p2)	= raise Mismatch(ManifestVal(l,NONE,p2))
       | matchValDef(l, SOME p1, SOME p2) =
-	    if p1 = p2 then () else raise Mismatch(ManifestVal(l, SOME p1, p2))
+	    if Path.equals(p1,p2) then () else
+(*DEBUG*)
+()(*
+		raise Mismatch(ManifestVal(l, SOME p1, p2))
+*)
 
     and matchTypDef(l, _,    NONE)	= ()
       | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
@@ -7533,7 +8740,11 @@ structure InfPrivate =
     and matchModDef(l, _,    NONE)	= ()
       | matchModDef(l, NONE, SOME p2)	= raise Mismatch(ManifestMod(l,NONE,p2))
       | matchModDef(l, SOME p1, SOME p2) =
-	    if p1 = p2 then () else raise Mismatch(ManifestMod(l, SOME p1, p2))
+	    if Path.equals(p1,p2) then () else
+(*DEBUG*)
+()(*
+		raise Mismatch(ManifestMod(l, SOME p1, p2))
+*)
 
     and matchInfDef(l, _,    NONE)	= ()
       | matchInfDef(l, NONE, SOME j2)	= raise Mismatch(ManifestInf(l,NONE))
@@ -7561,7 +8772,7 @@ structure InfPrivate =
     and intersect'(rea, j1, ref TOP) = j1
       | intersect'(rea, ref TOP, j2) = j2
       | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
+	if Path.equals(p1,p2) then
 	    j1
 	else
 	    raise Mismatch(Incompatible(j1,j2))
@@ -7641,9 +8852,9 @@ structure InfPrivate =
 		     (* Nested structures are already realised.
 		      * We would loop during realisation if we inserted
 		      * identity realisations. *)
-		     ( if pair1(itemPath item1 <> itemPath item2,
-				!item1, !item2) then () else
-			  Misc.General_swap(item1, item2)
+		     ( if pair1(not(Path.equals(itemPath item1,itemPath item2)),
+				!item1, !item2) then ()
+		       else item1 :=: item2
 		     ; pair(m1, items, (item1,item2)::pairs, left)
 		     )
 
@@ -7735,11 +8946,11 @@ structure InfPrivate =
 	if q1 = q2 then q1 else
 	    raise Mismatch(MismatchFix(l,q1,q2))
 
-    and intersectValSort(l,w1,w2) =
-	if w1 = CONSTRUCTOR orelse w2 = CONSTRUCTOR then
-	    CONSTRUCTOR
-	else
-	    VALUE
+    and intersectValSort(l,w1,VALUE) = w1
+      | intersectValSort(l,VALUE,w2) = w2
+      | intersectValSort(l,w1,w2) =
+	if w1 = w2 then w1 else
+	    raise Mismatch(MismatchValSort(l,w1,w2))
 
     and intersectTypSort(l,w1,w2) =
 	if w1 = OPEN orelse w2 = OPEN then
@@ -7752,7 +8963,7 @@ structure InfPrivate =
       | intersectValDef(l, SOME p1, NONE)	= SOME p1
       | intersectValDef(l, NONE,    SOME p2)	= SOME p2
       | intersectValDef(l, SOME p1, SOME p2)	=
-	    if p1 = p2 then SOME p1 else
+	    if Path.equals(p1,p2) then SOME p1 else
 		raise Mismatch(ManifestVal(l, SOME p1, p2))
 
     and intersectTypDef(l, NONE,    NONE)	= NONE
@@ -7766,7 +8977,7 @@ structure InfPrivate =
       | intersectModDef(l, SOME p1, NONE)	= SOME p1
       | intersectModDef(l, NONE,    SOME p2)	= SOME p2
       | intersectModDef(l, SOME p1, SOME p2)	=
-	    if p1 = p2 then SOME p1 else
+	    if Path.equals(p1,p2) then SOME p1 else
 		raise Mismatch(ManifestMod(l, SOME p1, p2))
 
     and intersectInfDef(l, NONE,    NONE)	= NONE
@@ -7779,7 +8990,871 @@ structure InfPrivate =
 
 
 structure Inf : INF = InfPrivate
-(* src # 74 ../frontend-common/ABSTRACT_GRAMMAR.sig *)
+(* src # 72 common/PP_INF.sig *)
+signature PP_INF =
+  sig
+
+    type doc  = PrettyPrint.doc
+    type inf  = Inf.inf
+    type sign = Inf.sign
+
+    val ppInf :	inf -> doc
+    val ppSig : sign -> doc
+
+  end
+(* src # 73 common/PPInf.sml *)
+structure PPInf :> PP_INF =
+  struct
+
+    (* Import *)
+
+    open InfPrivate
+    open PrettyPrint
+    open PPMisc
+
+    infixr ^^ ^/^
+
+
+    (* Helpers *)
+
+    fun uncurry(ref(APPLY(j1,p,_))) = let val (j,ps) = uncurry j1
+				      in (j,ps@[p]) end
+      | uncurry j		    = (j,[])
+
+
+    (* Simple objects *)
+
+    fun ppLab l		= text(Label.toString l)
+    fun ppCon (k,p)	= PPPath.ppPath p
+
+
+    (* Interfaces *)
+
+    (* Precedence:
+     *	0 : binders (LAMBDA(id : inf1) . inf2)
+     *	1 : constructed type (inf(path))
+     *)
+
+    fun ppInf(ref j') = fbox(below(ppInf' j'))
+
+    and ppInf'(TOP) =
+	    text "TOP"
+
+      | ppInf'(CON c) =
+	    ppCon c
+
+      | ppInf'(SIG s) =
+	    ppSig' s
+
+      | ppInf'(FUN(p,j1,j2)) =
+	let
+	    val doc = ppBinder("FCT",p,j1,j2)
+	in
+	    fbox(below doc)
+	end
+
+      | ppInf'(LAMBDA(p,j1,j2)) =
+	let
+	    val doc = ppBinder("LAMBDA",p,j1,j2)
+	in
+	    fbox(below doc)
+	end
+
+      | ppInf'(j' as APPLY _) =
+	let
+	    val (j,ps) = uncurry(ref j')
+	in
+	    fbox(nest(List.foldl (fn(p,d) => d ^/^ paren(PPPath.ppPath p))
+				 (ppInf j) ps))
+	end
+
+      | ppInf'(ABBREV(j1,j2)) =
+	    ppInf j1
+
+      | ppInf'(LINK j) =
+(*DEBUG
+text "@" ^^*)
+	    ppInf j
+
+    and ppBinder(s,p,j1,j2) =
+	    abox(
+		fbox(
+		    text s ^^
+		    text "(" ^/^
+		    below(break ^^
+			PPPath.ppPath p ^/^
+			text ":" ^^
+			nest(break ^^
+			    ppInf j1
+			)
+		    ) ^/^
+		    text ")" ^/^
+		    text "."
+		) ^^
+		nest(break ^^
+		    ppInf j2
+		)
+	    )
+
+
+    (* Signatures *)
+
+    and ppSig' s =
+	let
+	    val doc = ppSig s
+	in
+	    abox(below(
+		text "sig" ^^
+		(if isEmpty doc then
+		    empty
+		 else
+		    nest(vbox(break ^^ doc))
+		) ^^ break ^^
+		text "end"
+	    ))
+	end
+
+    and ppSig(ref items, _) = vbox(List.foldl ppItem empty items)
+
+    and ppItem(ref item', doc) = ppItem'(item', doc)
+
+    and ppItem'(VAL((p,l,0), t, w, d), doc) =
+	    abox(
+		hbox(
+		    text(if w = VALUE then "val" else "constructor") ^/^
+		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
+		    text ":"
+		) ^^
+		nest(break ^^
+		    abox(PPType.ppTyp t)
+		) ^^
+		(case d of NONE => empty | SOME p' =>
+		if Path.equals(p',p) then empty else
+		nest(break ^^
+		    abox(text "=" ^/^ PPPath.ppPath p')
+		))
+	    ) ^/^ doc
+
+      | ppItem'(TYP((p,l,0), k, w, d), doc) =
+	    abox(
+		hbox(
+		    text(if w = CLOSED then "type" else "datatype") ^/^
+		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
+		    text ":"
+		) ^^
+		nest(break ^^
+		    abox(PPType.ppKind k)
+		) ^^
+		(case d of NONE => empty | SOME t =>
+		if Type.isCon t andalso Path.equals(#3(Type.asCon t), p) then
+		    empty
+		else
+		nest(break ^^
+		    abox(text "=" ^/^ PPType.ppTyp t)
+		))
+	    ) ^/^ doc
+
+      | ppItem'(MOD((p,l,0), j, d), doc) =
+	    abox(
+		hbox(
+		    text(if isArrow j then "functor" else "structure") ^/^
+		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
+		    text ":"
+		) ^^
+		nest(break ^^
+		    abox(ppInf j)
+		) ^^
+		(case d of NONE => empty | SOME p' =>
+		if Path.equals(p',p) then empty else
+		nest(break ^^
+		    abox(text "=" ^/^ PPPath.ppPath p')
+		))
+	    ) ^/^ doc
+
+      | ppItem'(INF((p,l,0), k, d), doc) =
+	    abox(
+		hbox(
+		    text "signature" ^/^
+		    ppLab l ^/^
+(*DEBUG
+text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
+		    text ":"
+		) ^^
+		nest(break ^^
+		    abox(ppKind k)
+		) ^^
+		(case d of NONE => empty | SOME j =>
+		if isCon j andalso Path.equals(#2(asCon j), p) then empty else
+		nest(break ^^
+		    abox(text "=" ^/^ ppInf j)
+		))
+	    ) ^/^ doc
+
+      | ppItem'(FIX((p,l,0), f), doc) =
+	    hbox(
+		let open Fixity in
+		    (case f
+		      of NONFIX    => text "nonfix"
+		       | PREFIX n  => text "prefix" ^/^ text(Int.toString n)
+		       | POSTFIX n => text "postfix" ^/^ text(Int.toString n)
+		       | INFIX(n,LEFT) => text "infix" ^/^ text(Int.toString n)
+		       | INFIX(n,RIGHT) =>
+				text "infixr" ^/^ text(Int.toString n)
+		       | INFIX(n,NEITHER) =>
+				text "infixn" ^/^ text(Int.toString n)
+		    ) ^/^
+		    ppLab l
+		end
+	    ) ^/^ doc
+
+      | ppItem'(_, doc) = doc		(* hidden item *)
+
+
+    (* Kinds *)
+
+    and ppKind(ref k') = fbox(below(ppKind' k'))
+
+    and ppKind'(GROUND) =
+	    text "*"
+
+      | ppKind'(DEP(p,j,k)) =
+	    fbox(below(
+		abox(
+		    fbox(
+			text "PI" ^/^
+			text "(" ^^
+			below(break ^^
+			    PPPath.ppPath p ^/^
+			    text ":" ^^
+			    nest(break ^^
+				ppInf j
+			    )
+			) ^/^
+			text ")" ^/^
+			text "."
+		    ) ^^
+		    nest(break ^^
+			ppKind k
+		    )
+		)
+	    ))
+
+  end
+(* src # 74 common/INTERMEDIATE_GRAMMAR.sig *)
+signature INTERMEDIATE_GRAMMAR =
+  sig
+
+    (* Generic *)
+
+    type lab_info
+    type id_info
+    type longid_info
+    type exp_info
+    type pat_info
+    type 'a field_info
+    type match_info
+    type dec_info
+
+    type sign
+
+    (* Literals *)
+
+    datatype lit =
+	  WordLit   of LargeWord.word		(* modulo arithmetic *)
+	| IntLit    of LargeInt.int		(* integer arithmetic *)
+	| CharLit   of WideChar.char		(* character *)
+	| StringLit of WideString.string	(* character string *)
+(*	| RealLit   of LargeReal.real		(* floating point *)
+UNFINISHED: obsolete after bootstrapping:
+*)	| RealLit   of string			(* floating point *)
+
+    (* Identifiers *)
+
+    datatype lab    = Lab     of lab_info * Label.t
+    datatype id     = Id      of id_info * Stamp.t * Name.t
+    datatype longid = ShortId of longid_info * id
+		    | LongId  of longid_info * longid * lab
+
+    (* Expressions *)
+
+    datatype exp =
+	  LitExp    of exp_info * lit			(* literal *)
+	| PrimExp   of exp_info * string		(* primitive value *)
+	| NewExp    of exp_info * bool			(* new constructor *)
+				(* bool : is n-ary *)
+	| VarExp    of exp_info * longid		(* variable *)
+	| TagExp    of exp_info * lab * bool		(* sum injector *)
+				(* bool : is n-ary *)
+	| ConExp    of exp_info * longid * bool		(* constructor *)
+				(* bool : is n-ary *)
+	| RefExp    of exp_info				(* reference *)
+	| TupExp    of exp_info * exp list		(* tuple *)
+	| ProdExp   of exp_info * exp field list	(* record / module *)
+			(* all labels distinct *)
+	| SelExp    of exp_info * lab			(* field selector *)
+	| VecExp    of exp_info * exp list		(* vector *)
+	| FunExp    of exp_info * match list		(* function / functor *)
+	| AppExp    of exp_info * exp * exp		(* application *)
+	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
+	| UpExp     of exp_info * exp			(* up cast *)
+	| AndExp    of exp_info * exp * exp		(* conjunction *)
+	| OrExp     of exp_info * exp * exp		(* disjunction *)
+	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
+	| WhileExp  of exp_info * exp * exp		(* conditional loop *)
+	| SeqExp    of exp_info * exp list		(* sequential *)
+	| CaseExp   of exp_info * exp * match list	(* case switch *)
+	| RaiseExp  of exp_info * exp			(* exception raise *)
+	| HandleExp of exp_info * exp * match list	(* exception handler *)
+	| LetExp    of exp_info * dec list * exp	(* local binding *)
+
+    and 'a field = Field of 'a field_info * lab * 'a
+
+    and match    = Match of match_info * pat * exp
+
+    (* Patterns (always linear) *)
+
+    and pat =
+	  JokPat    of pat_info				(* joker (wildcard) *)
+	| LitPat    of pat_info * lit			(* literal *)
+	| VarPat    of pat_info * id			(* variable *)
+	| TagPat    of pat_info * lab * bool		(* sum injector *)
+			(* bool : is n-ary, appears only fully applied *)
+	| ConPat    of pat_info * longid * bool		(* constructed *)
+			(* bool : is n-ary, appears only fully applied *)
+	| RefPat    of pat_info				(* reference *)
+	| TupPat    of pat_info * pat list		(* tuple *)
+	| ProdPat   of pat_info * pat field list	(* record *)
+			(* all labels distinct *)
+	| VecPat    of pat_info * pat list		(* vector *)
+	| AppPat    of pat_info * pat * pat		(* construction *)
+			(* first must be ConPat or RefPat *)
+	| AsPat     of pat_info * pat * pat		(* conjunction *)
+	| AltPat    of pat_info * pat list		(* disjunction *)
+			(* all patterns bind same ids *)
+	| NegPat    of pat_info * pat			(* negation *)
+	| GuardPat  of pat_info * pat * exp		(* guard *)
+	| WithPat   of pat_info * pat * dec list	(* local bindings *)
+
+    (* Declarations *)
+
+    and dec =
+	  ValDec    of dec_info * pat * exp		(* value / module *)
+	  		(* if inside RecDec, then
+			 * (1) pat may not contain AltPat, NegPat, GuardPat,
+			 *     WithPat
+			 * (2) exp may only contain LitExp, VarExp, ConExp,
+			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
+			 * (3) AppExps may only contain ConExp or RefExp
+			 *     as first argument
+			 * (4) if an VarPat on the LHS structurally corresponds
+			 *     to an VarExp on the RHS then the RHS id may not
+			 *     be bound on the LHS *)
+	| RecDec    of dec_info * dec list		(* recursion *)
+
+    (* Components *)
+
+    type comp = (id * sign * Url.t) list * (exp * sign)
+    type t = comp
+
+
+    (* Operations *)
+
+    val stamp :		id	-> Stamp.t
+    val name :		id	-> Name.t
+    val lab :		lab	-> Label.t
+
+    val infoLab :	lab	-> lab_info
+    val infoId :	id	-> id_info
+    val infoLongid :	longid	-> longid_info
+    val infoExp :	exp	-> exp_info
+    val infoField :	'a field -> 'a field_info
+    val infoMatch :	match	-> match_info
+    val infoPat :	pat	-> pat_info
+    val infoDec :	dec	-> dec_info
+
+  end
+(* src # 75 common/MakeIntermediateGrammar.sml *)
+functor MakeIntermediateGrammar(type lab_info
+				type id_info
+				type longid_info
+				type exp_info
+				type pat_info
+				type 'a field_info
+				type match_info
+				type dec_info
+				type sign) : INTERMEDIATE_GRAMMAR =
+  struct
+
+    (* Generic *)
+
+    type lab_info	= lab_info
+    type id_info	= id_info
+    type longid_info	= longid_info
+    type exp_info	= exp_info
+    type pat_info	= pat_info
+    type 'a field_info	= 'a field_info
+    type match_info	= match_info
+    type dec_info	= dec_info
+
+    type sign		= sign
+
+    (* Literals *)
+
+    datatype lit =
+	  WordLit   of LargeWord.word		(* modulo arithmetic *)
+	| IntLit    of LargeInt.int		(* integer arithmetic *)
+	| CharLit   of WideChar.char		(* character *)
+	| StringLit of WideString.string	(* character string *)
+(*	| RealLit   of LargeReal.real		(* floating point *)
+UNFINISHED: obsolete after bootstrapping:
+*)	| RealLit   of string			(* floating point *)
+
+    (* Identifiers *)
+
+    datatype lab    = Lab     of lab_info * Label.t
+    datatype id     = Id      of id_info * Stamp.t * Name.t
+    datatype longid = ShortId of longid_info * id
+		    | LongId  of longid_info * longid * lab
+
+    (* Expressions *)
+
+    datatype exp =
+	  LitExp    of exp_info * lit			(* literal *)
+	| PrimExp   of exp_info * string		(* primitive value *)
+	| NewExp    of exp_info * bool			(* new constructor *)
+				(* bool : is n-ary *)
+	| VarExp    of exp_info * longid		(* variable *)
+	| TagExp    of exp_info * lab * bool		(* sum injector *)
+	| ConExp    of exp_info * longid * bool		(* constructor *)
+				(* bool : is n-ary *)
+	| RefExp    of exp_info				(* reference *)
+	| TupExp    of exp_info * exp list		(* tuple *)
+	| ProdExp   of exp_info * exp field list	(* record / module *)
+			(* all labels distinct *)
+	| SelExp    of exp_info * lab			(* field selector *)
+	| VecExp    of exp_info * exp list		(* vector *)
+	| FunExp    of exp_info * match list		(* function / functor *)
+	| AppExp    of exp_info * exp * exp		(* application *)
+	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
+	| UpExp     of exp_info * exp			(* up cast *)
+	| AndExp    of exp_info * exp * exp		(* conjunction *)
+	| OrExp     of exp_info * exp * exp		(* disjunction *)
+	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
+	| WhileExp  of exp_info * exp * exp		(* conditional loop *)
+	| SeqExp    of exp_info * exp list		(* sequential *)
+	| CaseExp   of exp_info * exp * match list	(* case switch *)
+	| RaiseExp  of exp_info * exp			(* exception raise *)
+	| HandleExp of exp_info * exp * match list	(* exception handler *)
+	| LetExp    of exp_info * dec list * exp	(* local binding *)
+
+    and 'a field = Field of 'a field_info * lab * 'a
+
+    and match    = Match of match_info * pat * exp
+
+    (* Patterns (always linear) *)
+
+    and pat =
+	  JokPat    of pat_info				(* wildcard *)
+	| LitPat    of pat_info * lit			(* literal *)
+	| VarPat    of pat_info * id			(* variable *)
+	| TagPat    of pat_info * lab * bool		(* sum injector *)
+			(* bool : is n-ary, appears only fully applied *)
+	| ConPat    of pat_info * longid * bool		(* constructed *)
+			(* bool : is n-ary, appears only fully applied *)
+	| RefPat    of pat_info				(* reference *)
+	| TupPat    of pat_info * pat list		(* tuple *)
+	| ProdPat   of pat_info * pat field list	(* record *)
+			(* all labels distinct *)
+	| VecPat    of pat_info * pat list		(* vector *)
+	| AppPat    of pat_info * pat * pat		(* construction *)
+			(* first must be ConPat or RefPat *)
+	| AsPat     of pat_info * pat * pat		(* conjunction *)
+	| AltPat    of pat_info * pat list		(* disjunction *)
+			(* all patterns bind same ids *)
+	| NegPat    of pat_info * pat			(* negation *)
+	| GuardPat  of pat_info * pat * exp		(* guard *)
+	| WithPat   of pat_info * pat * dec list	(* local bindings *)
+
+    (* Declarations *)
+
+    and dec =
+	  ValDec    of dec_info * pat * exp		(* value / module *)
+	  		(* if inside RecDec, then
+			 * (1) pat may not contain AltPat, NegPat, GuardPat,
+			 *     WithPat
+			 * (2) exp may only contain LitExp, VarExp, ConExp,
+			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
+			 * (3) AppExps may only contain ConExp or RefExp
+			 *     as first argument
+			 * (4) if an VarPat on the LHS structurally corresponds
+			 *     to an VarExp on the RHS then the RHS id may not
+			 *     be bound on the LHS *)
+	| RecDec    of dec_info * dec list		(* recursion *)
+
+    (* Components *)
+
+    type comp = (id * sign * Url.t) list * (exp * sign)
+    type t = comp
+
+
+    (* Projections *)
+
+    fun stamp(Id(_,x,_))		= x
+    fun name(Id(_,_,n))			= n
+    fun lab(Lab(_,a))			= a
+
+    fun infoLab(Lab(i,_))		= i
+    fun infoId(Id(i,_,_))		= i
+    fun infoLongid(ShortId(i,_))	= i
+      | infoLongid(LongId(i,_,_))	= i
+
+    fun infoExp(LitExp(i,_))		= i
+      | infoExp(PrimExp(i,_))		= i
+      | infoExp(NewExp(i,_))		= i
+      | infoExp(VarExp(i,_))		= i
+      | infoExp(TagExp(i,_,_))		= i
+      | infoExp(ConExp(i,_,_))		= i
+      | infoExp(RefExp(i))		= i
+      | infoExp(TupExp(i,_))		= i
+      | infoExp(ProdExp(i,_))		= i
+      | infoExp(SelExp(i,_))		= i
+      | infoExp(VecExp(i,_))		= i
+      | infoExp(FunExp(i,_))		= i
+      | infoExp(AppExp(i,_,_))		= i
+      | infoExp(AdjExp(i,_,_))		= i
+      | infoExp(UpExp(i,_))		= i
+      | infoExp(AndExp(i,_,_))		= i
+      | infoExp(OrExp(i,_,_))		= i
+      | infoExp(IfExp(i,_,_,_))		= i
+      | infoExp(WhileExp(i,_,_))	= i
+      | infoExp(SeqExp(i,_))		= i
+      | infoExp(CaseExp(i,_,_))		= i
+      | infoExp(RaiseExp(i,_))		= i
+      | infoExp(HandleExp(i,_,_))	= i
+      | infoExp(LetExp(i,_,_))		= i
+
+    fun infoField(Field(i,_,_))		= i
+    fun infoMatch(Match(i,_,_))		= i
+
+    fun infoPat(JokPat(i))		= i
+      | infoPat(LitPat(i,_))		= i
+      | infoPat(VarPat(i,_))		= i
+      | infoPat(TagPat(i,_,_))		= i
+      | infoPat(ConPat(i,_,_))		= i
+      | infoPat(RefPat(i))		= i
+      | infoPat(TupPat(i,_))		= i
+      | infoPat(ProdPat(i,_))		= i
+      | infoPat(VecPat(i,_))		= i
+      | infoPat(AppPat(i,_,_))		= i
+      | infoPat(AsPat(i,_,_))		= i
+      | infoPat(AltPat(i,_))		= i
+      | infoPat(NegPat(i,_))		= i
+      | infoPat(GuardPat(i,_,_))	= i
+      | infoPat(WithPat(i,_,_))		= i
+
+    fun infoDec(ValDec(i,_,_))		= i
+      | infoDec(RecDec(i,_))		= i
+
+  end
+(* src # 76 common/IntermediateGrammar.sml *)
+structure IntermediateInfo =
+  struct
+    type lab_info	= { region: Source.region }
+    type id_info	= { region: Source.region }
+    type longid_info	= { region: Source.region }
+    type exp_info	= { region: Source.region, typ: Type.t }
+    type pat_info	= { region: Source.region, typ: Type.t }
+    type 'a field_info	= { region: Source.region }
+    type match_info	= { region: Source.region }
+    type dec_info	= { region: Source.region }
+  end
+
+structure IntermediateGrammar = MakeIntermediateGrammar(open IntermediateInfo
+							type sign = Inf.sign)
+(* src # 77 common/PREBOUND.sig *)
+signature PREBOUND =
+  sig
+
+    type name  = Name.t
+    type stamp = Stamp.t
+    type path  = Path.t
+
+    val valname_false :		name
+    val valname_true :		name
+    val valname_nil :		name
+    val valname_cons :		name
+    val valname_ref :		name
+    val valname_match :		name
+    val valname_bind :		name
+
+    val typname_bool :		name
+    val typname_int :		name
+    val typname_word :		name
+    val typname_real :		name
+    val typname_string :	name
+    val typname_char :		name
+    val typname_list :		name
+    val typname_vec :		name
+    val typname_ref :		name
+    val typname_exn :		name
+
+    val valstamp_false :	stamp
+    val valstamp_true :		stamp
+    val valstamp_nil :		stamp
+    val valstamp_cons :		stamp
+    val valstamp_ref :		stamp
+    val valstamp_match :	stamp
+    val valstamp_bind :		stamp
+
+    val typstamp_bool :		stamp
+    val typstamp_int :		stamp
+    val typstamp_word :		stamp
+    val typstamp_real :		stamp
+    val typstamp_string :	stamp
+    val typstamp_char :		stamp
+    val typstamp_list :		stamp
+    val typstamp_vec :		stamp
+    val typstamp_ref :		stamp
+    val typstamp_exn :		stamp
+
+    val valpath_false :		path
+    val valpath_true :		path
+    val valpath_nil :		path
+    val valpath_cons :		path
+    val valpath_ref :		path
+    val valpath_match :		path
+    val valpath_bind :		path
+
+    val typpath_bool :		path
+    val typpath_int :		path
+    val typpath_word :		path
+    val typpath_real :		path
+    val typpath_string :	path
+    val typpath_char :		path
+    val typpath_list :		path
+    val typpath_vec :		path
+    val typpath_ref :		path
+    val typpath_exn :		path
+
+  end
+(* src # 78 common/MakePrebound.sml *)
+functor MakePrebound(val valid_false :	string
+		     val valid_true :	string
+		     val valid_nil :	string
+		     val valid_cons :	string
+		     val valid_ref :	string
+		     val valid_match :	string
+		     val valid_bind :	string
+		     val typid_bool :	string
+		     val typid_int :	string
+		     val typid_word :	string
+		     val typid_real :	string
+		     val typid_string :	string
+		     val typid_char :	string
+		     val typid_list :	string
+		     val typid_vec :	string
+		     val typid_ref :	string
+		     val typid_exn :	string
+		    ) :> PREBOUND =
+  struct
+
+    type name  = Name.t
+    type stamp = Stamp.t
+    type path  = Path.t
+
+    val valname_false	= Name.ExId valid_false
+    val valname_true	= Name.ExId valid_true
+    val valname_nil	= Name.ExId valid_nil
+    val valname_cons	= Name.ExId valid_cons
+    val valname_ref	= Name.ExId valid_ref
+    val valname_match	= Name.ExId valid_match
+    val valname_bind	= Name.ExId valid_bind
+
+    val typname_bool	= Name.ExId typid_bool
+    val typname_int	= Name.ExId typid_int
+    val typname_word	= Name.ExId typid_word
+    val typname_real	= Name.ExId typid_real
+    val typname_string	= Name.ExId typid_string
+    val typname_char	= Name.ExId typid_char
+    val typname_list	= Name.ExId typid_list
+    val typname_vec	= Name.ExId typid_vec
+    val typname_ref	= Name.ExId typid_ref
+    val typname_exn	= Name.ExId typid_exn
+
+    val valstamp_false	= Stamp.new()
+    val valstamp_true	= Stamp.new()
+    val valstamp_nil	= Stamp.new()
+    val valstamp_cons	= Stamp.new()
+    val valstamp_ref	= Stamp.new()
+    val valstamp_match	= Stamp.new()
+    val valstamp_bind	= Stamp.new()
+
+    val typstamp_bool	= Stamp.new()
+    val typstamp_int	= Stamp.new()
+    val typstamp_word	= Stamp.new()
+    val typstamp_real	= Stamp.new()
+    val typstamp_string	= Stamp.new()
+    val typstamp_char	= Stamp.new()
+    val typstamp_list	= Stamp.new()
+    val typstamp_vec	= Stamp.new()
+    val typstamp_ref	= Stamp.new()
+    val typstamp_exn	= Stamp.new()
+
+    val valpath_false	= Path.global valname_false
+    val valpath_true	= Path.global valname_true
+    val valpath_nil	= Path.global valname_nil
+    val valpath_cons	= Path.global valname_cons
+    val valpath_ref	= Path.global valname_ref
+    val valpath_match	= Path.global valname_match
+    val valpath_bind	= Path.global valname_bind
+
+    val typpath_int	= Path.global typname_int
+    val typpath_word	= Path.global typname_word
+    val typpath_char	= Path.global typname_char
+    val typpath_string	= Path.global typname_string
+    val typpath_real	= Path.global typname_real
+    val typpath_bool	= Path.global typname_bool
+    val typpath_exn	= Path.global typname_exn
+    val typpath_ref	= Path.global typname_ref
+    val typpath_vec	= Path.global typname_vec
+    val typpath_list	= Path.global typname_list
+
+  end
+(* src # 79 common/Prebound.sml *)
+structure Prebound = MakePrebound(val valid_false	= "false"
+				  val valid_true	= "true"
+				  val valid_nil		= "nil"
+				  val valid_cons	= "::"
+				  val valid_ref		= "ref"
+				  val valid_match	= "Match"
+				  val valid_bind	= "Bind"
+
+				  val typid_bool	= "bool"
+				  val typid_int		= "int"
+				  val typid_word	= "word"
+				  val typid_real	= "real"
+				  val typid_string	= "string"
+				  val typid_char	= "char"
+				  val typid_list	= "list"
+				  val typid_vec		= "vector"
+				  val typid_ref		= "ref"
+				  val typid_exn		= "exn"
+				 )
+(* src # 80 common/PREBOUND_TYPE.sig *)
+signature PREBOUND_TYPE =
+  sig
+
+    type path = Path.t
+    type con  = Type.con
+    type typ  = Type.typ
+
+    val path_bool :		path (* = Prebound.typpath_bool *)
+    val path_int :		path (* = Prebound.typpath_int *)
+    val path_word :		path (* = Prebound.typpath_word *)
+    val path_real :		path (* = Prebound.typpath_real *)
+    val path_string :		path (* = Prebound.typpath_string *)
+    val path_char :		path (* = Prebound.typpath_char *)
+    val path_list :		path (* = Prebound.typpath_list *)
+    val path_vec :		path (* = Prebound.typpath_vec *)
+    val path_ref :		path (* = Prebound.typpath_ref *)
+    val path_exn :		path (* = Prebound.typpath_exn *)
+
+    val con_int :		con
+    val con_word :		con
+    val con_real :		con
+    val con_string :		con
+    val con_char :		con
+    val con_vec :		con
+    val con_ref :		con
+    val con_exn :		con
+
+    val typ_unit :		typ
+    val typ_bool :		typ
+    val typ_int :		typ
+    val typ_word :		typ
+    val typ_real :		typ
+    val typ_string :		typ
+    val typ_char :		typ
+    val typ_list :		typ
+    val typ_vec :		typ
+    val typ_ref :		typ
+    val typ_exn :		typ
+
+  end
+(* src # 81 common/PreboundType.sml *)
+structure PreboundType :> PREBOUND_TYPE =
+  struct
+
+    type path		= Path.t
+    type con		= Type.con
+    type typ		= Type.typ
+
+    datatype kind	= datatype Type.kind
+    datatype sort	= datatype Type.sort
+
+    val path_bool	= Prebound.typpath_bool
+    val path_int	= Prebound.typpath_int
+    val path_word	= Prebound.typpath_word
+    val path_real	= Prebound.typpath_real
+    val path_string	= Prebound.typpath_string
+    val path_char	= Prebound.typpath_char
+    val path_list	= Prebound.typpath_list
+    val path_vec	= Prebound.typpath_vec
+    val path_ref	= Prebound.typpath_ref
+    val path_exn	= Prebound.typpath_exn
+
+    val con_bool	= (STAR, CLOSED, path_bool)
+    val con_word	= (STAR, CLOSED, path_word)
+    val con_int		= (STAR, CLOSED, path_int)
+    val con_char	= (STAR, CLOSED, path_char)
+    val con_string	= (STAR, CLOSED, path_string)
+    val con_real	= (STAR, CLOSED, path_real)
+    val con_exn		= (STAR, CLOSED, path_exn)
+    val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
+    val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
+    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
+
+    val lab_false	= Label.fromName(Prebound.valname_false)
+    val lab_true	= Label.fromName(Prebound.valname_true)
+    val lab_nil		= Label.fromName(Prebound.valname_nil)
+    val lab_cons	= Label.fromName(Prebound.valname_cons)
+
+    val typ_list	= Type.unknown(ARROW(STAR,STAR))
+    val var_list	= Type.var STAR
+    val typ_var		= Type.inVar var_list
+    val typ_cons	= Type.inTuple [typ_var, Type.inApply(typ_list,typ_var)]
+
+    val row_unit	= Type.emptyRow()
+    val row_bool	= Type.extendRow(lab_false, [],
+			  Type.extendRow(lab_true, [], Type.emptyRow()))
+    val row_list	= Type.extendRow(lab_cons, [typ_cons],
+			  Type.extendRow(lab_nil, [], Type.emptyRow()))
+
+    val typ_unit	= Type.inProd row_unit
+    val typ_int		= Type.inCon con_int
+    val typ_word	= Type.inCon con_word
+    val typ_char	= Type.inCon con_char
+    val typ_string	= Type.inCon con_string
+    val typ_real	= Type.inCon con_real
+    val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
+					Type.inMu(Type.inSum row_bool))
+    val typ_exn		= Type.inCon con_exn
+    val typ_ref		= Type.inCon con_ref
+    val typ_vec		= Type.inCon con_vec
+    val _		= Type.unify(typ_list,
+			    Type.inAbbrev(Type.inCon con_list,
+				Type.inMu(Type.inLambda(var_list,
+							Type.inSum row_list))))
+  end
+(* src # 82 frontend-common/StringMap.sml *)
+structure StringMap = MakeHashImpMap(StringHashKey)
+(* src # 83 frontend-common/ABSTRACT_GRAMMAR.sig *)
 signature ABSTRACT_GRAMMAR =
   sig
 
@@ -8000,7 +10075,7 @@ signature ABSTRACT_GRAMMAR =
     val infoComp :	comp	-> comp_info
 
   end
-(* src # 75 ../frontend-common/MakeAbstractGrammar.sml *)
+(* src # 84 frontend-common/MakeAbstractGrammar.sml *)
 functor MakeAbstractGrammar(type fix_info
 			    type lab_info
 			    type id_info
@@ -8349,7 +10424,7 @@ functor MakeAbstractGrammar(type fix_info
     fun infoComp(Comp(i,_,_))		= i
 
   end
-(* src # 76 ../frontend-common/AbstractGrammar.sml *)
+(* src # 85 frontend-common/AbstractGrammar.sml *)
 structure AbstractInfo =
   struct
     type fix_info	= Source.region
@@ -8376,7 +10451,7 @@ structure AbstractInfo =
   end
 
 structure AbstractGrammar = MakeAbstractGrammar(AbstractInfo)
-(* src # 77 ../frontend-common/TypedGrammar.sml *)
+(* src # 86 frontend-common/TypedGrammar.sml *)
 structure TypedInfo =
   struct
     type fix_info	= { region: Source.region, fix: Fixity.t }
@@ -8395,8 +10470,8 @@ structure TypedInfo =
     type dec_info	= { region: Source.region }
     type spec_info	= { region: Source.region }
     type imp_info	= { region: Source.region }
-    type ann_info	= { region: Source.region }
-    type comp_info	= { region: Source.region }
+    type ann_info	= { region: Source.region, sign: Inf.sign }
+    type comp_info	= { region: Source.region, sign: Inf.sign }
 
     fun labToIdInfo i	= i
     fun idToLabInfo i	= i
@@ -8405,10 +10480,11 @@ structure TypedInfo =
     fun fixInfo(r,f)	= { region = r, fix = f }
     fun typInfo(r,t)	= { region = r, typ = t }
     fun infInfo(r,j)	= { region = r, inf = j }
+    fun sigInfo(r,s)	= { region = r, sign = s }
   end
 
 structure TypedGrammar = MakeAbstractGrammar(TypedInfo)
-(* src # 78 ../frontend-common/ENV.sig *)
+(* src # 87 frontend-common/ENV.sig *)
 signature ENV =
   sig
 
@@ -8466,7 +10542,7 @@ signature ENV =
     val foldInfs :	(stamp * inf_entry * 'a -> 'a) -> 'a -> env -> 'a
 
   end
-(* src # 79 ../frontend-common/Env.sml *)
+(* src # 88 frontend-common/Env.sml *)
 structure Env :> ENV =
   struct
 
@@ -8480,7 +10556,7 @@ structure Env :> ENV =
 
     (* The map implementing the environment *)
 
-    structure Map = MakeHashScopedImpMap(Stamp)
+    structure Map = MakeHashScopedImpMap(FromEqHashKey(Stamp))
 
     datatype env = ENV of ran Map.t
     and      ran = VAL of val_entry
@@ -8560,12 +10636,12 @@ structure Env :> ENV =
     fun foldInfs f a (ENV E)		= Map.foldi (foldInf f) a E
 
   end
-(* src # 80 ../frontend-common/ENV0.sig *)
+(* src # 89 frontend-common/ENV0.sig *)
 signature ENV0 =
   sig
     val E0 :	Env.t
   end
-(* src # 81 ../frontend-common/Env0.sml *)
+(* src # 90 frontend-common/Env0.sml *)
 structure Env0 :> ENV0 =
   struct
 
@@ -8636,264 +10712,27 @@ structure Env0 :> ENV0 =
     val typ_match = typ_exn
     val typ_bind  = typ_exn
 
-    fun insertCon'(stamp, path, typ, name) =
+    fun insertCon'(stamp, path,k,  typ, name) =
 	let
 	    val entry = { id   = Id(Source.nowhere, stamp, name)
 			, path = path
 			, typ  = typ
-			, sort = Inf.CONSTRUCTOR
+			, sort = Inf.CONSTRUCTOR k
 			}
 	in
 	    insertVal(E0, stamp, entry)
 	end
 
-    val _ = insertCon'(valstamp_false, valpath_false, typ_false, valname_false)
-    val _ = insertCon'(valstamp_true,  valpath_true,  typ_true,  valname_true)
-    val _ = insertCon'(valstamp_nil,   valpath_nil,   typ_nil,   valname_nil)
-    val _ = insertCon'(valstamp_cons,  valpath_cons,  typ_cons,  valname_cons)
-    val _ = insertCon'(valstamp_ref,   valpath_ref,   typ_ref,   valname_ref)
-    val _ = insertCon'(valstamp_match, valpath_match, typ_match, valname_match)
-    val _ = insertCon'(valstamp_bind,  valpath_bind,  typ_bind,  valname_bind)
+    val _ = insertCon'(valstamp_false,valpath_false, 0, typ_false,valname_false)
+    val _ = insertCon'(valstamp_true, valpath_true,  0, typ_true, valname_true)
+    val _ = insertCon'(valstamp_nil,  valpath_nil,   0, typ_nil,  valname_nil)
+    val _ = insertCon'(valstamp_cons, valpath_cons,  2, typ_cons, valname_cons)
+    val _ = insertCon'(valstamp_ref,  valpath_ref,   1, typ_ref,  valname_ref)
+    val _ = insertCon'(valstamp_match,valpath_match, 0, typ_match,valname_match)
+    val _ = insertCon'(valstamp_bind, valpath_bind,  0, typ_bind, valname_bind)
 
   end
-(* src # 82 ../frontend-common/PP_INF.sig *)
-signature PP_INF =
-  sig
-
-    type doc  = PrettyPrint.doc
-    type inf  = Inf.inf
-    type sign = Inf.sign
-
-    val ppInf :	inf -> doc
-    val ppSig : sign -> doc
-
-  end
-(* src # 83 ../frontend-common/PPInf.sml *)
-structure PPInf :> PP_INF =
-  struct
-
-    (* Import *)
-
-    open InfPrivate
-    open PrettyPrint
-    open PPMisc
-
-    infixr ^^ ^/^
-
-
-    (* Helpers *)
-
-    fun uncurry(ref(APPLY(j1,p,_))) = let val (j,ps) = uncurry j1
-				      in (j,ps@[p]) end
-      | uncurry j		    = (j,[])
-
-
-    (* Simple objects *)
-
-    fun ppLab l		= text(Label.toString l)
-    fun ppCon (k,p)	= PPPath.ppPath p
-
-
-    (* Interfaces *)
-
-    (* Precedence:
-     *	0 : binders (LAMBDA(id : inf1) . inf2)
-     *	1 : constructed type (inf(path))
-     *)
-
-    fun ppInf(ref j') = fbox(below(ppInf' j'))
-
-    and ppInf'(TOP) =
-	    text "TOP"
-
-      | ppInf'(CON c) =
-	    ppCon c
-
-      | ppInf'(SIG s) =
-	    ppSig' s
-
-      | ppInf'(FUN(p,j1,j2)) =
-	let
-	    val doc = ppBinder("FCT",p,j1,j2)
-	in
-	    fbox(below doc)
-	end
-
-      | ppInf'(LAMBDA(p,j1,j2)) =
-	let
-	    val doc = ppBinder("LAMBDA",p,j1,j2)
-	in
-	    fbox(below doc)
-	end
-
-      | ppInf'(j' as APPLY _) =
-	let
-	    val (j,ps) = uncurry(ref j')
-	in
-	    fbox(nest(List.foldl (fn(p,d) => d ^/^ paren(PPPath.ppPath p))
-				 (ppInf j) ps))
-	end
-
-      | ppInf'(ABBREV(j1,j2)) =
-	    ppInf j1
-
-      | ppInf'(LINK j) =
-(*DEBUG
-text "@" ^^*)
-	    ppInf j
-
-    and ppBinder(s,p,j1,j2) =
-	    abox(
-		fbox(
-		    text s ^^
-		    text "(" ^/^
-		    below(break ^^
-			PPPath.ppPath p ^/^
-			text ":" ^^
-			nest(break ^^
-			    ppInf j1
-			)
-		    ) ^/^
-		    text ")" ^/^
-		    text "."
-		) ^^
-		nest(break ^^
-		    ppInf j2
-		)
-	    )
-
-
-    (* Signatures *)
-
-    and ppSig' s =
-	let
-	    val doc = ppSig s
-	in
-	    abox(below(
-		text "sig" ^^
-		(if isEmpty doc then
-		    empty
-		 else
-		    nest(vbox(break ^^ doc))
-		) ^^ break ^^
-		text "end"
-	    ))
-	end
-
-    and ppSig(ref items, _) = vbox(List.foldl ppItem empty items)
-
-    and ppItem(ref item', doc) = ppItem'(item', doc)
-
-    and ppItem'(VAL((p,l,0), t, w, d), doc) =
-	    abox(
-		hbox(
-		    text(if w = VALUE then "val" else "constructor") ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(PPType.ppTyp t)
-		) ^^
-		(case d of NONE => empty | SOME p' =>
-		if p' = p then empty else
-		nest(break ^^
-		    abox(text "=" ^/^ PPPath.ppPath p')
-		))
-	    ) ^/^ doc
-
-      | ppItem'(TYP((p,l,0), k, w, d), doc) =
-	    abox(
-		hbox(
-		    text(if w = CLOSED then "type" else "datatype") ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(PPType.ppKind k)
-		) ^^
-		(case d of NONE => empty | SOME t =>
-		if Type.isCon t andalso #3(Type.asCon t) = p then empty else
-		nest(break ^^
-		    abox(text "=" ^/^ PPType.ppTyp t)
-		))
-	    ) ^/^ doc
-
-      | ppItem'(MOD((p,l,0), j, d), doc) =
-	    abox(
-		hbox(
-		    text(if isArrow j then "functor" else "structure") ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(ppInf j)
-		) ^^
-		(case d of NONE => empty | SOME p' =>
-		if p' = p then empty else
-		nest(break ^^
-		    abox(text "=" ^/^ PPPath.ppPath p')
-		))
-	    ) ^/^ doc
-
-      | ppItem'(INF((p,l,0), k, d), doc) =
-	    abox(
-		hbox(
-		    text "signature" ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(ppKind k)
-		) ^^
-		(case d of NONE => empty | SOME j =>
-		if isCon j andalso #2(asCon j) = p then empty else
-		nest(break ^^
-		    abox(text "=" ^/^ ppInf j)
-		))
-	    ) ^/^ doc
-
-      | ppItem'(_, doc) = doc		(* hidden item *)
-
-
-    (* Kinds *)
-
-    and ppKind(ref k') = fbox(below(ppKind' k'))
-
-    and ppKind'(GROUND) =
-	    text "*"
-
-      | ppKind'(DEP(p,j,k)) =
-	    fbox(below(
-		abox(
-		    fbox(
-			text "PI" ^/^
-			text "(" ^^
-			below(break ^^
-			    PPPath.ppPath p ^/^
-			    text ":" ^^
-			    nest(break ^^
-				ppInf j
-			    )
-			) ^/^
-			text ")" ^/^
-			text "."
-		    ) ^^
-		    nest(break ^^
-			ppKind k
-		    )
-		)
-	    ))
-
-  end
-(* src # 84 ../frontend-common/ELABORATION_ERROR.sig *)
+(* src # 91 frontend-common/ELABORATION_ERROR.sig *)
 signature ELABORATION_ERROR =
   sig
 
@@ -8956,12 +10795,18 @@ signature ELABORATION_ERROR =
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
 	(* Imports *)
-	| ValItemMismatch	of lab * typ * typ
-	| ConItemMismatch	of lab * typ * typ
-	| TypItemMismatch	of lab * kind * kind
-	| ModItemMismatch	of lab * inf_mismatch
-	| InfItemMismatch	of lab * inf_mismatch
-	| FixItemMismatch	of lab * fix * fix
+	| ValImpUnbound		of lab
+	| ConImpUnbound		of lab
+	| TypImpUnbound		of lab
+	| ModImpUnbound		of lab
+	| InfImpUnbound		of lab
+	| FixImpUnbound		of lab
+	| ValImpMismatch	of lab * typ * typ
+	| ConImpMismatch	of lab * typ * typ
+	| TypImpMismatch	of lab * kind * kind
+	| ModImpMismatch	of lab * inf_mismatch
+	| InfImpMismatch	of lab * inf_mismatch
+	| FixImpMismatch	of lab * fix * fix
 	(* Components *)
 	| CompUnclosed		of lab * int * typ
 
@@ -8972,7 +10817,7 @@ signature ELABORATION_ERROR =
     val warn :	Source.region * warning -> unit
 
   end
-(* src # 85 ../frontend-common/ElaborationError.sml *)
+(* src # 92 frontend-common/ElaborationError.sml *)
 structure ElaborationError :> ELABORATION_ERROR =
   struct
 
@@ -9044,12 +10889,18 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
 	(* Imports *)
-	| ValItemMismatch	of lab * typ * typ
-	| ConItemMismatch	of lab * typ * typ
-	| TypItemMismatch	of lab * kind * kind
-	| ModItemMismatch	of lab * inf_mismatch
-	| InfItemMismatch	of lab * inf_mismatch
-	| FixItemMismatch	of lab * fix * fix
+	| ValImpUnbound		of lab
+	| ConImpUnbound		of lab
+	| TypImpUnbound		of lab
+	| ModImpUnbound		of lab
+	| InfImpUnbound		of lab
+	| FixImpUnbound		of lab
+	| ValImpMismatch	of lab * typ * typ
+	| ConImpMismatch	of lab * typ * typ
+	| TypImpMismatch	of lab * kind * kind
+	| ModImpMismatch	of lab * inf_mismatch
+	| InfImpMismatch	of lab * inf_mismatch
+	| FixImpMismatch	of lab * fix * fix
 	(* Components *)
 	| CompUnclosed		of lab * int * typ
 
@@ -9175,6 +11026,10 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    textpar["is","incompatible"]
       | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
 	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
+      | ppMismatch'(Inf.MismatchValSort(a,Inf.CONSTRUCTOR _,
+					  Inf.CONSTRUCTOR _)) =
+	    indent(textpar["constructor",ppLab a]) ^^
+	    textpar["has","incompatible","syntactic","arity"]
       | ppMismatch'(Inf.MismatchValSort(a,w1,w2)) =
 	    indent(textpar["val",ppLab a]) ^^
 	    textpar["is","not","a","constructor"]
@@ -9182,11 +11037,13 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    indent(textpar["val",ppLab a]) ^^
 	    textpar["is","not","an","open","datatype"]
       | ppMismatch'(Inf.MismatchDom im) =
-	    textpar["functor","argument","signature","is","incompatible,",
-		"because"] ^^
+	    break ^^
+	    textpar["functor","argument","signature","is","too","restrictive,",
+		"because","in","the","argument","signature","matched,"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.MismatchRan im) =
-	    textpar["functor","result","signature","is","incompatible,",
+	    break ^^
+	    textpar["functor","result","signature","is","too","permissive,",
 		"because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
@@ -9352,32 +11209,46 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppError(SingInfPath) =
 	  textpar["module","expression","is","not","a","path"]
       (* Imports *)
-      | ppError(ValItemMismatch(a,t1,t2)) =
+      | ppError(ValImpUnbound a) =
+	  textpar["value",ppLab a,"is","not","exported","by","component"]
+      | ppError(ConImpUnbound a) =
+	  textpar["constructor",ppLab a,"is","not","exported","by","component"]
+      | ppError(TypImpUnbound a) =
+	  textpar["type",ppLab a,"is","not","exported","by","component"]
+      | ppError(ModImpUnbound a) =
+	  textpar["structure","or","functor",ppLab a,"is","not","exported",
+		  "by","component"]
+      | ppError(InfImpUnbound a) =
+	  textpar["signature",ppLab a,"is","not","exported","by","component"]
+      | ppError(FixImpUnbound a) =
+	  textpar["fixity","status","for",ppLab a,"is","not","exported",
+		  "by","component"]
+      | ppError(ValImpMismatch(a,t1,t2)) =
 	vbox(
 	    textpar["type","annotation","of","value",ppLab a] ^^
 	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    textpar["does","not","match","component","export","type"] ^^
 	    nest(break ^^ below(PPType.ppTyp t2))
 	)
-      | ppError(ConItemMismatch(a,t1,t2)) =
+      | ppError(ConImpMismatch(a,t1,t2)) =
 	vbox(
 	    textpar["type","of","constructor",ppLab a] ^^
 	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    textpar["does","not","match","component","export","type"] ^^
 	    nest(break ^^ below(PPType.ppTyp t2))
 	)
-      | ppError(TypItemMismatch(a,k1,k2)) =
+      | ppError(TypImpMismatch(a,k1,k2)) =
 	  textpar["type",ppLab a,"exported","by","component",
 		  "has","incompatible","arity"]
-      | ppError(ModItemMismatch(a,im)) =
+      | ppError(ModImpMismatch(a,im)) =
 	ppMismatch(
 	  textpar["module",ppLab a,"exported","by","component","does","not",
 		  "match","signature,","because"], im)
-      | ppError(InfItemMismatch(a,im)) =
+      | ppError(InfImpMismatch(a,im)) =
 	ppMismatch(
 	  textpar["signature",ppLab a,"exported","by","component","is",
 		  "incompatible,","because"], im)
-      | ppError(FixItemMismatch(a,f1,f2)) =
+      | ppError(FixImpMismatch(a,f1,f2)) =
 	  textpar["fixity","status","for",ppLab a,"does","not","match",
 		  "export"]
       (* Components *)
@@ -9401,7 +11272,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end
-(* src # 86 ../frontend-common/ELABORATION_PHASE.sig *)
+(* src # 93 frontend-common/ELABORATION_PHASE.sig *)
 signature ELABORATION_PHASE =
   sig
 
@@ -9412,7 +11283,7 @@ signature ELABORATION_PHASE =
     val translate : Env.t -> I.comp -> O.comp
 
   end
-(* src # 87 ../frontend-common/ElaborationPhase.sml *)
+(* src # 94 frontend-common/MakeElaborationPhase.sml *)
 (* UNFINISHED:
    - packages
    - appropriate treatment of value paths
@@ -9425,9 +11296,9 @@ signature ELABORATION_PHASE =
  * table.
  *)
 
-(*UNFINISHED*)
-signature COMPOSER' = sig val sign: Url.t -> Inf.sign end
-functor MakeElaborationPhase(Composer: COMPOSER') :> ELABORATION_PHASE =
+functor MakeElaborationPhase(
+		Composer: COMPOSER where type Sig.t = Inf.sign
+	) :> ELABORATION_PHASE =
   struct
 
     structure C = Env
@@ -9556,7 +11427,8 @@ val lev = ref 0
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert val " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
 *)
-	    val  p      = Inf.newVal(s, Label.fromName name)
+	    val  p      = Inf.newVal(s, Label.fromName name
+					handle Domain => Label.fromInt 0)
 	    val  t      = Type.unknown(Type.STAR)
 	    (*UNFINISHED: use punning: *)
 	    val (p',t') = ( insertVal(E, stamp, {id=id, path=p, typ=t, sort=w})
@@ -10134,9 +12006,12 @@ val _=print "\n"
 	    val (s,longid') = elabModLongid_path(E, longid)
 	    val (l,lab')    = elabLab(E, lab)
 	    val  t          = Inf.lookupTyp(s, l)
+	    val  k          = Type.kind t
 	    val  w          = Inf.lookupTypSort(s, l)
+	    val  p          = Inf.pathTyp(s, l)
+	    val  t'         = Type.inAbbrev(Type.inCon(k,w,p), t)
 	in
-	    ( t, w, O.LongId(nonInfo(i), longid', lab') )
+	    ( t', w, O.LongId(nonInfo(i), longid', lab') )
 	end
 
 
@@ -10858,7 +12733,7 @@ print "\n\
 
       | elabDec(E, s, vars, I.ConDec(i, id, typ, k)) =
 	let
-	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
+	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR k, id)
 	    val (t,typ')    = elabStarTyp(E, typ)
 	    (*UNFINISHED: check that type is extensible or an appropriate sum*)
 	    val  d          = case typ
@@ -10866,7 +12741,7 @@ print "\n\
 					SOME(elabValLongid_path(E,longid))
 				 | _ => NONE
 	    val  _          = Type.unify(t,t0)
-	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR, d)
+	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR k, d)
 	in
 	    O.ConDec(nonInfo(i), id', typ', k)
 	end
@@ -10915,7 +12790,9 @@ val _=print "\n"
       | elabDec(E, s, vars, I.FixDec(i, id, fix)) =
 	let
 	    val  id'     = elabValId_bind'(E, id)
+	    val  p       = Inf.newFix(s, Label.fromName(I.name id))
 	    val (f,fix') = elabFix(E, fix)
+	    val  _       = Inf.extendFix(s, p, f)
 	in
 	    O.FixDec(nonInfo(i), id', fix')
 	end
@@ -11119,7 +12996,7 @@ val _=print "\n"
 
       | elabSpec(E, s, I.ConSpec(i, id, typ, k)) =
 	let
-	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
+	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR k, id)
 	    val (t,typ')    = elabStarTyp(E, typ)
 	    (*UNFINISHED: check that type is extensible or an appropriate sum *)
 	    val  d          = case typ
@@ -11127,7 +13004,7 @@ val _=print "\n"
 					SOME(elabValLongid_path(E,longid))
 				 | _ => NONE
 	    val  _          = Type.unify(t,t0)
-	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR, d)
+	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR k, d)
 	in
 	    O.ConSpec(nonInfo(i), id', typ', k)
 	end
@@ -11197,7 +13074,9 @@ print "\n\
       | elabSpec(E, s, I.FixSpec(i, id, fix)) =
 	let
 	    val id'      = elabValId_bind'(E, id)
+	    val  p       = Inf.newFix(s, Label.fromName(I.name id))
 	    val (f,fix') = elabFix(E, fix)
+	    val  _       = Inf.extendFix(s, p, f)
 	in
 	    O.FixSpec(nonInfo(i), id', fix')
 	end
@@ -11324,7 +13203,7 @@ and elabRHSRecSpec' bla =
 			(*UNFINISHED: Handling of IO failure? *)
 	    val imps' = elabImps(E, s, imps)
 	in
-	    O.ImpAnn(nonInfo(i), imps', url)
+	    O.ImpAnn(sigInfo(i,s), imps', url)
 	end
 
     and elabAnns(E, anns) = List.map (fn ann => elabAnn(E, ann)) anns
@@ -11336,7 +13215,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val (t0,p,id') = elabValId_bind(E, s, Inf.VALUE, id)
 	    val  a         = Label.fromName(O.name id')
-	    val  t1        = Inf.lookupVal(s, a)
+	    val  t1        = Inf.lookupVal(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.ValImpUnbound a)
 	    val (t2,desc') = case desc
 				of I.NoDesc(i') =>
 				   (t1, O.NoDesc(typInfo(i',t1)))
@@ -11347,7 +13227,7 @@ and elabRHSRecSpec' bla =
 				      if Type.matches(t2,t1) then
 					  (t2, O.SomeDesc(typInfo(i',t2), typ'))
 				      else
-					  error(i, E.ValItemMismatch(a,t2,t1))
+					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
 	    val  _         = Type.unify(t2,t0)
 	in
@@ -11356,9 +13236,10 @@ and elabRHSRecSpec' bla =
 
       | elabImp(E, s, I.ConImp(i, id, desc, k)) =
 	let
-	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
+	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR k, id)
 	    val  a          = Label.fromName(O.name id')
-	    val  t1         = Inf.lookupVal(s, a)
+	    val  t1         = Inf.lookupVal(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.ConImpUnbound a)
 	    (*UNFINISHED: check that it is constructor*)
 	    (*UNFINISHED: check that type is extensible or an appropriate sum *)
 	    val (t2,desc') = case desc
@@ -11371,7 +13252,7 @@ and elabRHSRecSpec' bla =
 				      if Type.matches(t2,t1) then
 					  (t2, O.SomeDesc(typInfo(i',t2), typ'))
 				      else
-					  error(i, E.ValItemMismatch(a,t2,t1))
+					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
 	    val  _         = Type.unify(t2,t0)
 	in
@@ -11383,7 +13264,8 @@ and elabRHSRecSpec' bla =
 	    (*UNFINISHED: have to check (or disallow) manifest type *)
 	    val  a            = Label.fromName(I.name id)
 	    val  p            = Inf.newTyp(s, a)
-	    val  t1           = Inf.lookupTyp(s, a)
+	    val  t1           = Inf.lookupTyp(s, a) handle Inf.Lookup =>
+				    error(I.infoId id, E.TypImpUnbound a)
 	    val  w1           = Inf.lookupTypSort(s, a)
 	    val (t2,w2,desc') = case desc
 				of I.NoDesc(i') =>
@@ -11398,7 +13280,7 @@ and elabRHSRecSpec' bla =
 				      if k2 = k1 then
 					 (t1,w1,O.SomeDesc(typInfo(i',t1),typ'))
 				      else
-					 error(i, E.TypItemMismatch(a,k2,k1))
+					 error(i, E.TypImpMismatch(a,k2,k1))
 				   end
 	    val  id'       = elabTypId_bind(E, p, t2, w2, id)
 	in
@@ -11409,7 +13291,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val  a         = Label.fromName(I.name id)
 	    val  p         = Inf.newMod(s, a)
-	    val  j1        = Inf.lookupMod(s, a)
+	    val  j1        = Inf.lookupMod(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.ModImpUnbound a)
 	    val (j2,desc') = case desc
 				of I.NoDesc(i') =>
 				   (j1, O.NoDesc(infInfo(i',j1)))
@@ -11420,7 +13303,7 @@ and elabRHSRecSpec' bla =
 				       val  _        = Inf.strengthen(p, j2')
 				   in
 				       Inf.match(j2,j1) handle Inf.Mismatch m =>
-					   error(i, E.ModItemMismatch(a, m)) ;
+					   error(i, E.ModImpMismatch(a, m)) ;
 				       (j2', O.SomeDesc(infInfo(i',j2'), inf'))
 				   end
 	    val id'        = elabModId_bind(E, p, j2, id)
@@ -11432,7 +13315,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val  a         = Label.fromName(I.name id)
 	    val  p         = Inf.newInf(s, a)
-	    val  j1        = Inf.lookupInf(s, a)
+	    val  j1        = Inf.lookupInf(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.InfImpUnbound a)
 	    val (j2,desc') = case desc
 				of I.NoDesc(i') =>
 				   (j1, O.NoDesc(infInfo(i',j1)))
@@ -11444,7 +13328,7 @@ and elabRHSRecSpec' bla =
 				   in
 					Inf.equaliseKind(k2, Inf.kind j1)
 					handle Inf.Mismatch m =>
-					    error(i, E.InfItemMismatch(a,m)) ;
+					    error(i, E.InfImpMismatch(a,m)) ;
 					(j1, O.SomeDesc(infInfo(i',j1), inf'))
 				   end
 	    val  id'       = elabInfId_bind(E, p, j2, id)
@@ -11456,7 +13340,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val a     = Label.fromName(I.name id)
 	    val id'   = elabValId_bind'(E, id)
-	    val f1    = Inf.lookupFix(s, a)
+	    val f1    = Inf.lookupFix(s, a) handle Inf.Lookup =>
+			    error(I.infoId id, E.FixImpUnbound a)
 	    val desc' = case desc
 			  of I.NoDesc(i')       => O.NoDesc(fixInfo(i',f1))
 			   | I.SomeDesc(i',fix) =>
@@ -11466,7 +13351,7 @@ and elabRHSRecSpec' bla =
 				    if f2 = f1 then
 					O.SomeDesc(fixInfo(i',f2), fix')
 				    else
-					error(i, E.FixItemMismatch(a,f2,f1))
+					error(i, E.FixImpMismatch(a,f2,f1))
 				end
 	in
 	    O.FixImp(nonInfo(i), id', desc')
@@ -11494,7 +13379,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val a  = Label.fromName(I.name id)
 	    val p  = Inf.newTyp(s, a)
-	    val t1 = Inf.lookupTyp(s, a)
+	    val t1 = Inf.lookupTyp(s, a) handle Inf.Lookup =>
+			error(I.infoId id, E.TypImpUnbound a)
 	    val k1 = Type.kind t1
 	    val w1 = Inf.lookupTypSort(s, a)
 	    val _  = case desc
@@ -11504,7 +13390,7 @@ and elabRHSRecSpec' bla =
 				val k2 = elabTypKind(E, typ)
 			   in
 				if k2 = k1 then () else
-				    error(i, E.TypItemMismatch(a,k2,k1))
+				    error(i, E.TypImpMismatch(a,k2,k1))
 			   end
 	    val _  = elabTypId_bind(E, p, t1, w1, id)
 	in
@@ -11559,16 +13445,18 @@ and elabRHSRecSpec' bla =
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
 			    error(i, E.CompUnclosed lnt)
 (*DEBUG*)
-val n = List.foldl (fn(i,n) => if Inf.isInfItem i then n+1 else n) 0 (Inf.items s)
-val _ = if n < ~160 then
-  print "Component signature too large to be printed\n"
+val _ = if not(!Switches.printComponentSig) then
+  print "(Component signature not printed)\n"
 else
 ( print "Component signature:\n"
 ; PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
 ; print "\n"
 )
+	    (*UNFINISHED: do we need this?
+	    val _     = Inf.strengthenSig(Path.fromLab(Label.fromString "?"), s)
+	    *)
 	in
-	    O.Comp(nonInfo(i), anns', decs')
+	    O.Comp(sigInfo(i,s), anns', decs')
 	end
 
 
@@ -11587,9 +13475,7 @@ else
 	    )
 
   end
-
-structure ElaborationPhase = MakeElaborationPhase(fun sign _ = Inf.empty())
-(* src # 88 ../frontend-common/TRANSLATION_PHASE.sig *)
+(* src # 95 frontend-common/TRANSLATION_PHASE.sig *)
 signature TRANSLATION_PHASE =
   sig
     structure C : CONTEXT              = EmptyContext
@@ -11598,7 +13484,7 @@ signature TRANSLATION_PHASE =
 
     val translate : C.t -> I.comp -> O.comp
   end
-(* src # 89 ../frontend-common/TranslationPhase.sml *)
+(* src # 96 frontend-common/TranslationPhase.sml *)
 structure TranslationPhase :> TRANSLATION_PHASE =
   struct
 
@@ -11612,9 +13498,12 @@ structure TranslationPhase :> TRANSLATION_PHASE =
   (* Recognize sum type constructors (tags) *)
 
     fun isTagType t =
-	Type.isArrow t andalso isTagType(#2(Type.asArrow t)) orelse
-	Type.isAll t   andalso isTagType(#2(Type.asAll t))   orelse
-	Type.isExist t andalso isTagType(#2(Type.asExist t)) orelse
+	Type.isArrow t  andalso isTagType(#2(Type.asArrow t))  orelse
+	Type.isAll t    andalso isTagType(#2(Type.asAll t))    orelse
+	Type.isExist t  andalso isTagType(#2(Type.asExist t))  orelse
+	Type.isLambda t andalso isTagType(#2(Type.asLambda t)) orelse
+	Type.isApply t  andalso isTagType(#1(Type.asApply t))  orelse
+	Type.isMu t     andalso isTagType(Type.asMu t)         orelse
 	Type.isSum t
 
 
@@ -11745,8 +13634,8 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Identifiers *)
 
-    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel  l)
-    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel' l)
+    fun trLab(I.Lab(i,a))		= O.Lab(i, trLabel  a)
+    fun trLab'(I.Lab(i,a))		= O.Lab(i, trLabel' a)
 
     fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
     fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)
@@ -11756,6 +13645,10 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trLongid(I.ShortId(i,x))	= O.ShortId(i, trId x)
       | trLongid(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab a)
+
+    fun trLabLongid(I.ShortId(i,x))	= O.Lab(i,
+					       Label.fromName(trName(I.name x)))
+      | trLabLongid(I.LongId(i,y,a))	= trLab a
 
 
   (* Extract bound ids from declarations. *)
@@ -11811,10 +13704,13 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
       | trExp(I.TagExp(i,a,k))		= O.TagExp(i, trLab a, k>1)
-      | trExp(I.ConExp(i,y,k))		= O.ConExp(i, trLongid y, k>1)
+      | trExp(I.ConExp(i,y,k))		= if isTagType(#typ i) then
+					      O.TagExp(i, trLabLongid y, k>1)
+					  else
+					      O.ConExp(i, trLongid y, k>1)
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
-      | trExp(I.ProdExp(i,r))		= O.RowExp(i, trExpRow r)
+      | trExp(I.ProdExp(i,r))		= O.ProdExp(i, trExpRow r)
       | trExp(I.SelExp(i,a))		= O.SelExp(i, trLab a)
       | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
       | trExp(I.FunExp(i,ms))		= O.FunExp(i, trMatchs ms)
@@ -11845,14 +13741,17 @@ UNFINISHED: obsolete after bootstrapping:
     and trMatch(I.Match(i,p,e))		= O.Match(i, trPat p, trExp e)
     and trMatchs ms			= List.map trMatch ms
 
-    and trPat(I.JokPat(i))		= O.WildPat(i)
+    and trPat(I.JokPat(i))		= O.JokPat(i)
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
       | trPat(I.TagPat(i,a,k))		= O.TagPat(i, trLab a, k>1)
-      | trPat(I.ConPat(i,y,k))		= O.ConPat(i, trLongid y, k>1)
+      | trPat(I.ConPat(i,y,k))		= if isTagType(#typ i) then
+					      O.TagPat(i, trLabLongid y, k>1)
+					  else
+					      O.ConPat(i, trLongid y, k>1)
       | trPat(I.RefPat(i))		= O.RefPat(i)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
-      | trPat(I.ProdPat(i,r))		= O.RowPat(i, trPatRow r)
+      | trPat(I.ProdPat(i,r))		= O.ProdPat(i, trPatRow r)
       | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AppPat(i,p1,p2))	= O.AppPat(i, trPat p1, trPat p2)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
@@ -11880,7 +13779,7 @@ UNFINISHED: obsolete after bootstrapping:
 					      val ids' = ids ds
 					      val fs'  = List.map idToField ids'
 					      val ds'  = trDecs ds in
-					      O.LetExp(i',ds', O.RowExp(i',fs'))
+					      O.LetExp(i',ds',O.ProdExp(i',fs'))
 					  end
       | trMod(I.SelMod(i,m,a))		= let val i' = trInfo i
 					      val r  = #region i'
@@ -11937,13 +13836,27 @@ UNFINISHED: obsolete after bootstrapping:
     and trEqCon(i,x,y',ds')		= O.ValDec(nonInfo(#region i),
 						   O.VarPat(i,trId x),
 						   O.VarExp(i,y')) :: ds'
-    and trNewCon(i,x,k,ds')		= O.ValDec(nonInfo(#region i),
-						   O.VarPat(i,trId x),
-						   O.NewExp(i,k>1)) :: ds'
-    and trTagCon(i,x,k,ds')		= O.ValDec(nonInfo(#region i),
-						   O.VarPat(i,trId x),
-						   O.TagExp(i,trLab(I.idToLab x)
-							     ,k>1)) :: ds'
+    and trNewCon(i,x,k,ds')		= let val r  = #region i
+					      val _  = Type.enterLevel()
+					      val t  = Type.instance(#typ i)
+					      val _  = Type.exitLevel()
+					      val _  = Type.close t
+					      val i' = typInfo(r,t)
+					  in O.ValDec(nonInfo r,
+						      O.VarPat(i',trId x),
+						      O.NewExp(i',k>1)) :: ds'
+					  end
+    and trTagCon(i,x,k,ds')		= let val r  = #region i
+					      val _  = Type.enterLevel()
+					      val t  = Type.instance(#typ i)
+					      val _  = Type.exitLevel()
+					      val _  = Type.close t
+					      val i' = typInfo(r,t)
+					  in O.ValDec(nonInfo r,
+						O.VarPat(i',trId x),
+						O.TagExp(i',trLab(I.idToLab x)
+							   ,k>1)) :: ds'
+					  end
 
 
   (* Imports and annotations *)
@@ -11952,11 +13865,12 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trAnn(I.ImpAnn(i,is,u),(xsus',ds')) =
 	let
-	    val x'   = O.Id(i, Stamp.new(), Name.InId)
-	    val y'   = O.ShortId(i, x')
+	    val i'   = nonInfo(#region i)
+	    val x'   = O.Id(i', Stamp.new(), Name.InId)
+	    val y'   = O.ShortId(i', x')
 	    val ds'' = trImps(is, y', ds')
 	in
-	    ( (x',(),u)::xsus', ds'' )
+	    ( (x',#sign i,u)::xsus', ds'' )
 	end
 
     and trImps(is, y, ds')		= List.foldr (trImp y) ds' is
@@ -11983,15 +13897,26 @@ UNFINISHED: obsolete after bootstrapping:
 	    val  fs'        = List.map idToField ids'
 	    val  t          = Type.inProd(idsToRow ids')
 	    val  i'         = typInfo(#region i,t)
-	    val  exp'       = O.LetExp(i', ds', O.RowExp(i', fs'))
+	    val  exp'       = O.LetExp(i', ds', O.ProdExp(i', fs'))
 	in
-	    ( xsus', (exp',()) )
+	    ( xsus', (exp', #sign i) )
 	end
 
     fun translate() = trComp
 
   end
-(* src # 90 ../frontend-sml/LAB.sig *)
+(* src # 97 frontend-common/MakeFrontendCommon.sml *)
+functor MakeFrontendCommon(
+		Composer: COMPOSER where type Sig.t = Inf.sign
+	) : PHASE =
+     ComposePhases(
+	structure Phase1  = MakeElaborationPhase(Composer)
+	structure Phase2  = TranslationPhase
+	structure Context = Env
+	fun context1 E    = E
+	fun context2 E    = ()
+     )
+(* src # 98 frontend-sml/LAB.sig *)
 (*
  * Standard ML label identifiers
  *
@@ -12010,13 +13935,8 @@ signature LAB =
     val fromLargeInt:	LargeInt.int -> Lab
     val toString:	Lab          -> string
 
-    val equalsNum:	Lab * LargeInt.int -> bool
-
-    val compare:	Lab * Lab -> order
-
   end
-(*DEBUG*) where type Lab = string
-(* src # 91 ../frontend-sml/Lab.sml *)
+(* src # 99 frontend-sml/Lab.sml *)
 (*
  * Standard ML label identifiers
  *
@@ -12035,18 +13955,8 @@ structure Lab :> LAB =
     fun fromLargeInt n = LargeInt.toString n
     fun toString s     = s
 
-    fun compare(s1,s2) =
-      case (LargeInt.fromString s1, LargeInt.fromString s2)
-	of (SOME n1, SOME n2) => LargeInt.compare(n1,n2)
-	 |     _              => String.compare(s1,s2)
-
-    fun equalsNum(s,n) =
-      case LargeInt.fromString s
-	of SOME n' => n = n'
-	 | NONE    => false
-
   end
-(* src # 92 ../frontend-sml/ID.sig *)
+(* src # 100 frontend-sml/ID.sig *)
 (*
  * Standard ML identifiers
  *
@@ -12074,7 +13984,7 @@ signature ID =
 
   end
 (*DEBUG*) where type Id = string
-(* src # 93 ../frontend-sml/MakeId.sml *)
+(* src # 101 frontend-sml/MakeId.sml *)
 (*
  * Standard ML identifiers
  *
@@ -12101,7 +14011,7 @@ functor MakeId(Stamp: STAMP) : (*DEBUG :>*) ID =
     val compare = String.compare
 
   end
-(* src # 94 ../frontend-sml/Ids.sml *)
+(* src # 102 frontend-sml/Ids.sml *)
 (*
  * Standard ML basic objects (shared between syntax and semantics)
  *
@@ -12122,7 +14032,7 @@ structure TyVar	= MakeId(Stamp)
 structure StrId	= MakeId(Stamp)
 structure SigId = MakeId(Stamp)
 end
-(* src # 95 ../frontend-sml/SCON.sig *)
+(* src # 103 frontend-sml/SCON.sig *)
 (*
  * Standard ML special constants
  *
@@ -12149,7 +14059,7 @@ signature SCON =
     val toString: SCon -> string
 
   end
-(* src # 96 ../frontend-sml/SCon.sml *)
+(* src # 104 frontend-sml/SCon.sml *)
 (*
  * Standard ML special constants
  *
@@ -12176,7 +14086,7 @@ structure SCon :> SCON =
       | toString(REAL r)   = LargeReal.toString r
 
   end
-(* src # 97 ../frontend-sml/INPUT_GRAMMAR.sig *)
+(* src # 105 frontend-sml/INPUT_GRAMMAR.sig *)
 (*
  * Stockhausen input grammar
  *
@@ -12389,7 +14299,7 @@ signature INPUT_GRAMMAR =
 	| TYPEDPat       of Info * Pat * Ty
 	| NONPat         of Info * Pat
 	| ASPat          of Info * Pat * Pat
-	| WHENPat        of Info * Pat * AtExp
+	| WHEREPat       of Info * Pat * AtExp
 	| WITHVALPat     of Info * Pat * ValBind
 	| WITHFUNPat     of Info * Pat * FvalBind
 
@@ -12506,6 +14416,9 @@ signature INPUT_GRAMMAR =
 	| SIGNATUREImp    of Info * SigItem
 	| EMPTYImp        of Info
 	| SEQImp          of Info * Imp * Imp
+	| INFIXImp        of Info * int * VId
+	| INFIXRImp       of Info * int * VId
+	| NONFIXImp       of Info * VId
 
     and ValItem =
 	  PLAINValItem    of Info * Op * VId * ValItem option
@@ -12624,7 +14537,7 @@ signature INPUT_GRAMMAR =
     val explodeLong :	'a Long		-> StrId list * 'a
 
   end
-(* src # 98 ../frontend-sml/MakeInputGrammar.sml *)
+(* src # 106 frontend-sml/MakeInputGrammar.sml *)
 (*
  * Stockhausen input grammar
  *
@@ -12837,7 +14750,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| TYPEDPat       of Info * Pat * Ty
 	| NONPat         of Info * Pat
 	| ASPat          of Info * Pat * Pat
-	| WHENPat        of Info * Pat * AtExp
+	| WHEREPat       of Info * Pat * AtExp
 	| WITHVALPat     of Info * Pat * ValBind
 	| WITHFUNPat     of Info * Pat * FvalBind
 
@@ -12953,6 +14866,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| SIGNATUREImp    of Info * SigItem
 	| EMPTYImp        of Info
 	| SEQImp          of Info * Imp * Imp
+	| INFIXImp        of Info * int * VId
+	| INFIXRImp       of Info * int * VId
+	| NONFIXImp       of Info * VId
 
     and ValItem =
 	  PLAINValItem    of Info * Op * VId * ValItem option
@@ -13110,7 +15026,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoPat(TYPEDPat(I,_,_))			= I
       | infoPat(NONPat(I,_))				= I
       | infoPat(ASPat(I,_,_))				= I
-      | infoPat(WHENPat(I,_,_))				= I
+      | infoPat(WHEREPat(I,_,_))			= I
       | infoPat(WITHVALPat(I,_,_))			= I
       | infoPat(WITHFUNPat(I,_,_))			= I
 
@@ -13199,6 +15115,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoImp(SIGNATUREImp(I,_))			= I
       | infoImp(EMPTYImp(I))				= I
       | infoImp(SEQImp(I,_,_))				= I
+      | infoImp(INFIXImp(I,_,_))			= I
+      | infoImp(INFIXRImp(I,_,_))			= I
+      | infoImp(NONFIXImp(I,_))				= I
 
     fun infoValItem(PLAINValItem(I,_,_,_))		= I
       | infoValItem(DESCValItem(I,_,_,_,_))		= I
@@ -13246,9 +15165,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | explodeLong'(DOTLong(_,longid,id), ids)	= explodeLong'(longid, id::ids)
 
   end
-(* src # 99 ../frontend-sml/InputGrammar.sml *)
+(* src # 107 frontend-sml/InputGrammar.sml *)
 structure InputGrammar = MakeInputGrammar(type Info = Source.region)
-(* src # 100 ../frontend-sml/PARSING_ERROR.sig *)
+(* src # 108 frontend-sml/PARSING_ERROR.sig *)
 signature PARSING_ERROR =
   sig
 
@@ -13279,7 +15198,7 @@ signature PARSING_ERROR =
     val warn :	Source.region * warning -> unit
 
   end
-(* src # 101 ../frontend-sml/ParsingError.sml *)
+(* src # 109 frontend-sml/ParsingError.sml *)
 structure ParsingError :> PARSING_ERROR =
   struct
 
@@ -13369,7 +15288,7 @@ structure ParsingError :> PARSING_ERROR =
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end
-(* src # 102 ../frontend-sml/ABSTRACTION_ERROR.sig *)
+(* src # 110 frontend-sml/ABSTRACTION_ERROR.sig *)
 signature ABSTRACTION_ERROR =
   sig
 
@@ -13427,6 +15346,7 @@ signature ABSTRACTION_ERROR =
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Imports and items *)
+	| ImpFixDuplicate	of VId
 	| ImpVIdDuplicate	of VId
 	| ImpTyConDuplicate	of TyCon
 	| ImpStrIdDuplicate	of StrId
@@ -13441,6 +15361,8 @@ signature ABSTRACTION_ERROR =
 	| SigItemUnbound	of SigId
 	| ConItemNonCon		of VId
 	| DconItemNonCon	of VId
+	(* Components *)
+	| CompCorrupt		of Url.t
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id
@@ -13458,7 +15380,7 @@ signature ABSTRACTION_ERROR =
     val warn :	Source.region * warning -> unit
 
   end
-(* src # 103 ../frontend-sml/AbstractionError.sml *)
+(* src # 111 frontend-sml/AbstractionError.sml *)
 structure AbstractionError :> ABSTRACTION_ERROR =
   struct
 
@@ -13525,6 +15447,7 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Imports and items *)
+	| ImpFixDuplicate	of VId
 	| ImpVIdDuplicate	of VId
 	| ImpTyConDuplicate	of TyCon
 	| ImpStrIdDuplicate	of StrId
@@ -13539,6 +15462,8 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| SigItemUnbound	of SigId
 	| ConItemNonCon		of VId
 	| DconItemNonCon	of VId
+	(* Components *)
+	| CompCorrupt		of Url.t
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id
@@ -13682,6 +15607,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  textpar["non-constructor","on","constructor","description",
 		  "right","hand","side"]
       (* Imports and items *)
+      | ppError(ImpFixDuplicate vid) =
+	  textpar(["duplicate","fixity","for"] @ #2 classVId @
+		  [ppVId vid,"in","import"])
       | ppError(ImpVIdDuplicate vid) =
 	  textpar(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
       | ppError(ImpTyConDuplicate tycon) =
@@ -13712,6 +15640,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(DconItemNonCon vid) =
 	  textpar["value",ppVId vid,"exported","by","component","is",
 		  "not","a","constructor"]
+      (* Components *)
+      | ppError(CompCorrupt u) =
+	  textpar["corrupt","component","at","URL","\""^Url.toString u^"\""]
       (* Sharing translation *)
       | ppError(SharingExternalTy x) =
 	  textpar(#2 classTyCon @ [ppId x,"is","external","to","signature"])
@@ -13745,7 +15676,7 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end
-(* src # 104 ../frontend-sml/INFIX.sig *)
+(* src # 112 frontend-sml/INFIX.sig *)
 (*
  * Standard ML infix resolution
  *
@@ -13775,7 +15706,7 @@ signature INFIX =
     val pat :	InfEnv -> Grammar.Pat -> Grammar.Pat
 
   end
-(* src # 105 ../frontend-sml/Infix.sml *)
+(* src # 113 frontend-sml/Infix.sml *)
 (*
  * Standard ML infix resolution
  *
@@ -13960,7 +15891,7 @@ structure Infix :> INFIX =
 		    infoPat, infoAtPat, categoriseAtPat, flattenPat)
 
   end
-(* src # 106 ../frontend-sml/BIND_ENV.sig *)
+(* src # 114 frontend-sml/BIND_ENV.sig *)
 (*******************************************************************************
 
 The binding environment just contains the information necessary to do
@@ -14031,6 +15962,7 @@ signature BIND_ENV =
 
     val insertScope :		Env -> unit
     val deleteScope :		Env -> unit
+    val deleteAll :		Env -> unit
     val mergeScope :		Env -> unit
     val mergeDisjointScope :	Env -> unit		(* Collision* *)
     val inheritScope :		Env * Env -> unit
@@ -14091,7 +16023,7 @@ signature BIND_ENV =
     val infEnv :		Env -> VId -> InfStatus
 
   end
-(* src # 107 ../frontend-sml/BindEnv.sml *)
+(* src # 115 frontend-sml/BindEnv.sml *)
 structure BindEnv :> BIND_ENV =
   struct
 
@@ -14127,7 +16059,9 @@ structure BindEnv :> BIND_ENV =
 
     (* The map implementing the environment *)
 
-    structure Map = MakeHashScopedImpMap(type t = Dom val hash = hashDom)
+    structure Map = MakeHashScopedImpMap(type t     = Dom
+					 val equals = op=
+					 val hash   = hashDom)
 
 
     (* The environment's range *)
@@ -14209,6 +16143,7 @@ structure BindEnv :> BIND_ENV =
     fun insertScope(ENV E)		= Map.insertScope E
     fun inheritScope(ENV E1, ENV E2)	= Map.inheritScope(E1,E2)
     fun deleteScope(ENV E)		= Map.deleteScope E
+    fun deleteAll(ENV E)		= Map.deleteAll E
     fun mergeScope(ENV E)		= Map.mergeScope E
     fun mergeDisjointScope(ENV E)	= Map.mergeDisjointScope E
 					  handle Map.Collision coll =>
@@ -14314,7 +16249,178 @@ structure BindEnv :> BIND_ENV =
 						     | SOME(_,inf) => inf
 
   end
-(* src # 108 ../frontend-sml/SHARING.sig *)
+(* src # 116 frontend-sml/BIND_ENV_FROM_SIG.sig *)
+signature BIND_ENV_FROM_SIG =
+  sig
+    val envFromSig :	Source.region * Inf.sign -> BindEnv.t
+  end
+(* src # 117 frontend-sml/BindEnvFromSig.sml *)
+structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
+  struct
+
+    open BindEnv
+
+
+    (*
+     * Fixity modes not available in SML are converted as follows:
+     * - non-associative infix -> left-associative infix
+     * - prefix  -> nonfix
+     * - postfix -> nonfix
+     *)
+
+    fun assocFromAssoc(Fixity.LEFT)	= Infix.LEFT
+      | assocFromAssoc(Fixity.RIGHT)	= Infix.RIGHT
+      | assocFromAssoc(Fixity.NEITHER)	= Infix.LEFT
+
+    fun infFromFix(Fixity.NONFIX)	= NONE
+      | infFromFix(Fixity.PREFIX n)	= NONE
+      | infFromFix(Fixity.POSTFIX n)	= NONE
+      | infFromFix(Fixity.INFIX(n,a))	= SOME(assocFromAssoc a, n)
+
+
+    fun idStatusFromSort(Inf.VALUE,         t) = V
+      | idStatusFromSort(Inf.CONSTRUCTOR k, t) = idStatusFromArity(k,t)
+
+    and idStatusFromArity(k, t) =
+	if Type.isAll t then
+	    idStatusFromArity(k, #2(Type.asAll t))
+	else if Type.isExist t then
+	    idStatusFromArity(k, #2(Type.asExist t))
+	else if Type.isArrow t then
+	    idStatusFromArity(k, #2(Type.asArrow t))
+	else if Type.isLambda t then
+	    idStatusFromArity(k, #2(Type.asLambda t))
+	else if Type.isApply t then
+	    idStatusFromArity(k, #1(Type.asApply t))
+	else if Type.isCon t
+	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
+	    R
+	else
+	    C k
+
+
+    fun envFromTyp(I,s,t) =
+	if Type.isSum t then
+	    envFromRow(I, s, Type.asSum t)
+	else if Type.isLambda t then
+	    envFromTyp(I, s, #2(Type.asLambda t))
+	else if Type.isMu t then
+	    envFromTyp(I, s, Type.asMu t)
+	else if Type.isCon t
+	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
+	    let
+		val E   = new()
+		val x   = Stamp.new()
+		val vid = VId.fromString(Name.toString(Prebound.valname_ref))
+	    in
+		insertVal(E, vid, (I,x,R)) ; E
+	    end
+	else
+	    new()
+
+    and envFromRow(I,s,r) =
+	let
+	    val E = new()
+
+	    fun loop r =
+		if Type.isEmptyRow r then () else
+		let
+		    val (a,ts) = Type.headRow r
+		    val  x     = Stamp.new()
+		    val  vid   = VId.fromString(Label.toString a)
+		    val  is    = case Inf.lookupValSort(s,a)
+				   of Inf.VALUE         => raise Inf.Lookup
+				    | Inf.CONSTRUCTOR k => C k
+					(* UNFINISHED: check that the
+					 * constructor actually constructs
+					 * the type in question. *)
+					(* UNFINISHED: what if the
+					 * constructors are actually hidden
+					 * by following members??? *)
+		in
+		    insertVal(E, vid, (I,x,is)) ;
+		    loop(Type.tailRow r)
+		end
+	in
+	    ( loop r ; E )
+	    handle Inf.Lookup => new()
+	end
+
+
+    fun envFromInf(I,j) =
+	if Inf.isTop j orelse Inf.isCon j then
+	    new()
+	else if Inf.isSig j then
+	    envFromSig(I, Inf.asSig j)
+	else if Inf.isArrow j then
+	    envFromInf(I, #3(Inf.asArrow j))
+	else if Inf.isLambda j then
+	    envFromInf(I, #3(Inf.asLambda j))
+	else if Inf.isApply j then
+	    envFromInf(I, #1(Inf.asApply j))
+	else
+	    raise Crash.Crash "BindEnvFromSig.envFromInf: unknown interface"
+
+    and envFromSig(I,s) =
+	let
+	    val E = new()
+	in
+	    List.app (insertItem(E,I,s)) (Inf.items s);
+	    E
+	end
+
+    and insertItem (E,I,s) item =
+	if Inf.isFixItem item then
+	    let
+		val (l,f) = Inf.asFixItem item
+		val  vid  = VId.fromString(Label.toString l)
+		val  is   = infFromFix f
+	    in
+		insertInf(E, vid, (I,is))
+	    end
+	else if Inf.isValItem item then
+	    let
+		val (l,t,w,_) = Inf.asValItem item
+		val  vid      = VId.fromString(Label.toString l)
+		val  x        = Stamp.new()
+		val  is       = idStatusFromSort(w,t)
+	    in
+		insertVal(E, vid, (I,x,is))
+	    end
+	else if Inf.isTypItem item then
+	    let
+		val (l,k,w,d) = Inf.asTypItem item
+		val  tycon    = TyCon.fromString(Label.toString l)
+		val  x        = Stamp.new()
+		val  E'       = case d
+				  of NONE   => new()
+				   | SOME t => envFromTyp(I, s, t)
+	    in
+		insertTy(E, tycon, (I,x,E'))
+	    end
+	else if Inf.isModItem item then
+	    let
+		val (l,j,_) = Inf.asModItem item
+		val  strid  = StrId.fromString(Label.toString l)
+		val  x      = Stamp.new()
+		val  E'     = envFromInf(I, j)
+	    in
+		insertStr(E, strid, (I,x,E'))
+	    end
+	else if Inf.isInfItem item then
+	    let
+		val (l,k,jo) = Inf.asInfItem item
+		val  sigid   = SigId.fromString(Label.toString l)
+		val  x       = Stamp.new()
+		val  E'      = envFromInf(I, Option.getOpt(jo, Inf.inTop()))
+	    in
+		insertSig(E, sigid, (I,x,E'))
+	    end
+	else
+	     raise Crash.Crash "BindEnvFromSig.insertItem: unknown item"
+
+  end
+(* src # 118 frontend-sml/SHARING.sig *)
 signature SHARING =
   sig
 
@@ -14326,7 +16432,7 @@ signature SHARING =
     val shareStr :	spec list * longid list -> spec list  (* -> reversed *)
 
   end
-(* src # 109 ../frontend-sml/Sharing.sml *)
+(* src # 119 frontend-sml/Sharing.sml *)
 (*
  * Translation of sharing constraints.
  *
@@ -14511,7 +16617,7 @@ structure Sharing :> SHARING =
     val shareStr = share STR
 
   end
-(* src # 110 ../frontend-sml/ABSTRACTION_PHASE.sig *)
+(* src # 120 frontend-sml/ABSTRACTION_PHASE.sig *)
 signature ABSTRACTION_PHASE =
   sig
     structure C : CONTEXT          = BindEnv
@@ -14520,8 +16626,10 @@ signature ABSTRACTION_PHASE =
 
     val translate : BindEnv.t -> I.Component -> O.comp
   end
-(* src # 111 ../frontend-sml/AbstractionPhase.sml *)
-structure AbstractionPhase :> ABSTRACTION_PHASE =
+(* src # 121 frontend-sml/MakeAbstractionPhase.sml *)
+functor MakeAbstractionPhase(
+		Composer: COMPOSER where type Sig.t = Inf.sign
+	) :> ABSTRACTION_PHASE =
   struct
 
     structure C   = BindEnv
@@ -14886,7 +16994,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | unguardedTyVarsPat E (ASPat(_, pat1, pat2)) =
 	    unguardedTyVarsPat E pat1 @ unguardedTyVarsPat E pat2
 
-      | unguardedTyVarsPat E (WHENPat(_, pat, atexp)) =
+      | unguardedTyVarsPat E (WHEREPat(_, pat, atexp)) =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsAtExp E atexp
 
       | unguardedTyVarsPat E (WITHVALPat(_, pat, valbind)) =
@@ -15173,7 +17281,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
 	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,BindEnv.new()) pat)
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
-	 | WHENPat(i, pat, atexp) =>
+	 | WHEREPat(i, pat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val pat' = trPat (E,E') pat
@@ -15559,7 +17667,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | PRIMITIVECONSTRUCTORDec
 		(i, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon, s) =>
 	   let
-		val  id1'        = inventId i
+		val  id1'        = trVId_bind' E vid
 		val (id2',stamp) = trVId_bind E vid
 		val  _           = insertScope E
 		val (ids',typ')  = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
@@ -15815,11 +17923,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trFappPat_lhs E (Infix.pat (infEnv E) fpat)
 	 | ( TYPEDPat(i, fpat, _)
-	   | WHENPat(i, fpat, _) )	=> trFpat_lhs E fpat
+	   | WHEREPat(i, fpat, _)
+	   | WITHVALPat(i, fpat, _)
+	   | WITHFUNPat(i, fpat, _) )	=> trFpat_lhs E fpat
 	 | ( NONPat(i,_)
-	   | ASPat(i,_,_)
-	   | WITHVALPat(i,_,_)
-	   | WITHFUNPat(i,_,_) )	=> error(i, E.FvalBindPatInvalid)
+	   | ASPat(i,_,_) )		=> error(i, E.FvalBindPatInvalid)
 
     and trFappPat_lhs E =
 	fn APPPat(i, fpat, atpat)	=> trFappPat_lhs E fpat
@@ -15936,7 +18044,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( pat', arity, typ'::typs' )
 	   end
 
-	 | WHENPat(i, fpat, atexp) =>
+	 | WHEREPat(i, fpat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
@@ -15949,8 +18057,48 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.GuardPat(i, pat', exp'), arity, typs' )
 	   end
 
-	 | ( NONPat(i,_) | ASPat(i,_,_)
-	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
+	 | WITHVALPat(i, pat, valbind) =>
+	   let
+		val  _   = insertScope E'
+		val (pat',arity,typs') = trFpat_rhs (E,E') pat
+		val  _   = inheritScope(E, cloneScope E')
+		val  _   = insertScope E'
+		val decs'= trValBindo (E,E') (SOME valbind)
+		val  _   = deleteScope E
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.WithPatVIdDuplicate)
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.PatVIdDuplicate)
+	   in
+		( O.WithPat(i, pat', decs'), arity, typs' )
+	   end
+
+	 | WITHFUNPat(i, pat, fvalbind) =>
+	   let
+		val  _   = insertScope E'
+		val (pat',arity,typs') = trFpat_rhs (E,E') pat
+		val  _   = inheritScope(E, cloneScope E')
+		val  _   = insertScope E'
+		val ids' = trFvalBindo_lhs (E,E') (SOME fvalbind)
+		val  _   = inheritScope(E, cloneScope E')
+		val exps'= trFvalBindo_rhs E (SOME fvalbind)
+		val decs'= ListPair.map
+				(fn(id',exp') =>
+				 O.ValDec(O.infoExp exp',
+					  O.VarPat(O.infoId id', id'), exp'))
+				(ids',exps')
+		val  _   = deleteScope E
+		val  _   = deleteScope E
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.WithPatVIdDuplicate)
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId(E', vid', E.PatVIdDuplicate)
+	   in
+		( O.WithPat(i, pat', [O.RecDec(infoFvalBind fvalbind, decs')]),
+		  arity, typs' )
+	   end
+
+	 | ( NONPat(i,_) | ASPat(i,_,_) ) =>
 		error(i, E.FvalBindPatInvalid)
 
     and trFappPat_rhs (E,E') =
@@ -16909,6 +19057,45 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SEQImp(i, imp1, imp2) =>
 		trImp' (E,E', trImp' (E,E',acc) imp1) imp2
 
+	 | INFIXImp(i, n, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix  = Fixity.INFIX(n, Fixity.LEFT)
+		val fix' = O.Fix(i, fix)
+		val imp' = O.FixImp(i, id', O.SomeDesc(i,fix'))
+		val _    = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+			   handle CollisionInf vid' =>
+				   error(i', E.ImpFixDuplicate vid')
+	   in
+		imp' :: acc
+	   end
+
+	 | INFIXRImp(i, n, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix  = Fixity.INFIX(n, Fixity.RIGHT)
+		val fix' = O.Fix(i, fix)
+		val imp' = O.FixImp(i, id', O.SomeDesc(i,fix'))
+		val _    = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+			   handle CollisionInf vid' =>
+				   error(i', E.ImpFixDuplicate vid')
+	   in
+		imp' :: acc
+	   end
+
+	 | NONFIXImp(i, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix  = Fixity.NONFIX
+		val fix' = O.Fix(i, fix)
+		val imp' = O.FixImp(i, id', O.SomeDesc(i,fix'))
+		val _    = insertDisjointInf(E, vid', (i', NONE))
+			   handle CollisionInf vid' =>
+				   error(i', E.ImpFixDuplicate vid')
+	   in
+		imp' :: acc
+	   end
+
 
     and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
 	let
@@ -17228,8 +19415,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
-		(*UNFINISHED: extract bind env from component*)
-		val E'    = BindEnv.new()
+		val s     = Composer.sign url
+			    handle Composer.Corrupt =>
+				error(i, E.CompCorrupt url)
+				(*UNFINISHED: handle IO errors *)
+		val E'    = BindEnvFromSig.envFromSig(i, s)
 		val _     = insertScope E
 		val imps' = trImp (E,E') imp
 		val _     = mergeScope E
@@ -17279,7 +19469,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val translate = trComponent
 
   end
-(* src # 112 ../frontend-sml/DERIVED_FORMS.sig *)
+(* src # 122 frontend-sml/DERIVED_FORMS.sig *)
 (*
  * Standard ML derived forms
  *
@@ -17298,6 +19488,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
  *	<type typbind> local datatype datbind in type typbind' dec end
  *     where typbind' contains a binding t = t for each tycon t bound in
  *     datbind. Note that this results in a different treatment of equality.
+ *   - derived forms for where patterns:
+ *	pat withval valbind where atexp
+ *	==>
+ *	pat withval valbind end where atexp
+ *
+ *	pat withfun fvalbind where atexp
+ *	==>
+ *	pat withfun fvalbind end where atexp
  *   - include takes longsigids:
  *	include longsigid_1 ... longsigid_n
  *	==>
@@ -17422,6 +19620,8 @@ signature DERIVED_FORMS =
     val VIDPatRow:   Info * VId * Ty option * Pat option * PatRow option
                                                                -> PatRow
     val WITHFUNPat:  Info * Pat * FvalBind                     -> Pat
+    val WITHVALWHEREPat: Info * Pat * ValBind * AtExp          -> Pat
+    val WITHFUNWHEREPat: Info * Pat * FvalBind * AtExp         -> Pat
 
     (* Types *)
 
@@ -17515,6 +19715,9 @@ signature DERIVED_FORMS =
     val FUNImp:           Info * ValItem                           -> Imp
     val EXCEPTIONImp:     Info * ExItem                            -> Imp
     val FUNCTORImp:       Info * FunItem                           -> Imp
+    val INFIXMULTIImp:    Info * int option * VId list             -> Imp
+    val INFIXRMULTIImp:   Info * int option * VId list             -> Imp
+    val NONFIXMULTIImp:   Info * VId list                          -> Imp
 
     val PLAINExItem:      Info * Op * VId * ExItem option          -> ExItem
     val DESCExItem:       Info * Op * VId * Ty * ExItem option     -> ExItem
@@ -17529,7 +19732,7 @@ signature DERIVED_FORMS =
     val EXPProgram:       Info * Exp * Program option -> Program
 
   end
-(* src # 113 ../frontend-sml/Parser.grm.sig *)
+(* src # 123 frontend-sml/Parser.grm.sig *)
 signature Parser_TOKENS =
 sig
 type ('a,'b) token
@@ -17631,7 +19834,7 @@ structure Tokens : Parser_TOKENS
 sharing type ParserData.Token.token = Tokens.token
 sharing type ParserData.svalue = Tokens.svalue
 end
-(* src # 114 ../frontend-sml/Parser.grm.sml *)
+(* src # 124 frontend-sml/Parser.grm.sml *)
 
 functor LrVals(structure Token:        TOKEN
 			structure DerivedForms: DERIVED_FORMS
@@ -17669,7 +19872,9 @@ struct
 (*	  pat ::= non pat							*)
 (*   - with patterns:								*)
 (*	  pat ::= pat withval valbind end					*)
-(*	      ::= pat withfun fvalbind end	(derived form)			*)
+(*	      ::= pat withfun fvalbind end		(derived form)		*)
+(*	      ::= pat withval valbind where atexp	(derived form)		*)
+(*	      ::= pat withfun fvalbind where atexp	(derived form)		*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
 (*        dec      ::= constructor dconbind					*)
@@ -17726,9 +19931,41 @@ struct
 (*	  sigexp ::= sigexp where signature longsigid_1 = sigexp		*)
 (*   - components:								*)
 (*	  component ::= ann <program>						*)
-(*	  ann       ::= import spec from string					*)
+(*	  ann       ::=	import imp from string					*)
 (*			<>							*)
 (*			ann <;> ann						*)
+(*	  imp       ::=	val valitem						*)
+(*			type typitem						*)
+(*			datatype typitem					*)
+(*			constructor dconitem					*)
+(*			structure stritem					*)
+(*			signature sigitem					*)
+(*			infix <d> vid_1 ... vid_n	(n>=1)			*)
+(*			infixr <d> vid_1 ... vid_n	(n>=1)			*)
+(*			nonfix vid_1 ... vid_n		(n>=1)			*)
+(*			<>							*)
+(*			imp <;> imp						*)
+(*	  valitem   ::=	<op> vid <and valitem>					*)
+(*			<op> vid : ty <and valitem>				*)
+(*	  typitem   ::=	tycon <and typitem>					*)
+(*			tyvarseq tycon <and typitem>				*)
+(*	  datitem   ::=	tycon <and datitem>					*)
+(*			tyvarseq tycon = conitem <and datitem>			*)
+(*	  conitem   ::=	<op> vid <of ty> <| conitem>				*)
+(*	  dconitem  ::=	<op> vid <and dconitem>					*)
+(*			<op> vid <of ty> : tyvarseq longtycon <and dconitem>	*)
+(*	  stritem   ::=	strid <and stritem>					*)
+(*			strid : sigexp <and stritem>				*)
+(*	  sigitem   ::=	sigid <and sigitem>					*)
+(*			sigid strpat_1 ... strpat_n <and sigitem>	(n>=1)	*)
+(*   - component derived forms:							*)
+(*	  imp       ::=	fun valitem						*)
+(*			exception exitem					*)
+(*			functor funitem						*)
+(*	  exitem    ::=	<op> vid <and exitem>					*)
+(*			<op> vid of ty <and exitem>				*)
+(*	  funitem   ::=	strid <and funitem>					*)
+(*			strid strpat_1 ... strpat_n : sigexp <and funitem>	*)
 (*										*)
 (* We did NOT introduce a sharing signature ... and signature ... derived form	*)
 (* similar to types, because we consider that completely broken.		*)
@@ -17800,317 +20037,323 @@ local open LrTable in
 val table=let val actionRows =
 "\
 \\001\000\001\000\000\000\000\000\
-\\001\000\001\000\191\005\002\000\191\005\003\000\191\005\004\000\191\005\
-\\005\000\191\005\007\000\191\005\008\000\191\005\009\000\191\005\
-\\010\000\191\005\011\000\191\005\013\000\191\005\014\000\191\005\
-\\016\000\191\005\017\000\191\005\018\000\191\005\019\000\191\005\
-\\020\000\191\005\021\000\191\005\022\000\191\005\023\000\191\005\
-\\024\000\191\005\025\000\191\005\028\000\191\005\029\000\191\005\
-\\030\000\191\005\034\000\191\005\035\000\191\005\036\000\191\005\
-\\037\000\191\005\038\000\191\005\039\000\191\005\040\000\191\005\
-\\041\000\191\005\042\000\191\005\044\000\191\005\045\000\191\005\
-\\046\000\191\005\047\000\191\005\049\000\191\005\050\000\191\005\
-\\052\000\191\005\053\000\191\005\054\000\197\005\055\000\191\005\
-\\061\000\191\005\062\000\191\005\063\000\191\005\064\000\191\005\
-\\066\000\191\005\067\000\191\005\068\000\191\005\069\000\191\005\
-\\070\000\191\005\072\000\191\005\074\000\191\005\075\000\191\005\
-\\076\000\191\005\077\000\191\005\078\000\191\005\079\000\191\005\
-\\080\000\191\005\081\000\191\005\082\000\191\005\083\000\191\005\
-\\084\000\191\005\085\000\191\005\086\000\191\005\087\000\191\005\000\000\
-\\001\000\001\000\194\005\002\000\194\005\003\000\194\005\004\000\194\005\
-\\005\000\194\005\007\000\194\005\008\000\194\005\009\000\194\005\
-\\010\000\194\005\011\000\194\005\013\000\194\005\014\000\194\005\
-\\016\000\194\005\017\000\194\005\018\000\194\005\020\000\194\005\
-\\021\000\194\005\022\000\194\005\024\000\194\005\025\000\194\005\
-\\028\000\194\005\029\000\194\005\030\000\194\005\031\000\194\005\
-\\032\000\194\005\035\000\194\005\037\000\194\005\039\000\194\005\
-\\040\000\194\005\041\000\194\005\042\000\194\005\045\000\194\005\
-\\046\000\194\005\047\000\194\005\048\000\194\005\050\000\194\005\
-\\052\000\194\005\053\000\194\005\054\000\197\005\061\000\194\005\
-\\062\000\194\005\063\000\194\005\064\000\194\005\066\000\194\005\
-\\067\000\194\005\068\000\194\005\069\000\194\005\070\000\194\005\
-\\072\000\194\005\074\000\194\005\075\000\194\005\076\000\194\005\
-\\085\000\194\005\086\000\194\005\087\000\194\005\000\000\
-\\001\000\001\000\198\005\002\000\198\005\003\000\198\005\004\000\198\005\
-\\005\000\198\005\007\000\198\005\008\000\198\005\009\000\198\005\
-\\010\000\198\005\011\000\198\005\013\000\198\005\014\000\198\005\
-\\016\000\198\005\017\000\198\005\018\000\198\005\019\000\198\005\
-\\020\000\198\005\021\000\198\005\022\000\198\005\024\000\198\005\
-\\025\000\198\005\028\000\198\005\029\000\198\005\030\000\198\005\
-\\031\000\198\005\032\000\198\005\034\000\198\005\035\000\198\005\
-\\037\000\198\005\039\000\198\005\040\000\198\005\041\000\198\005\
-\\042\000\198\005\045\000\198\005\046\000\198\005\047\000\198\005\
-\\048\000\198\005\050\000\198\005\052\000\198\005\053\000\198\005\
-\\054\000\197\005\061\000\198\005\062\000\198\005\063\000\198\005\
-\\064\000\198\005\066\000\198\005\067\000\198\005\068\000\198\005\
-\\069\000\198\005\070\000\198\005\072\000\198\005\073\000\198\005\
-\\074\000\198\005\075\000\198\005\076\000\198\005\085\000\198\005\
-\\086\000\198\005\087\000\198\005\000\000\
-\\001\000\001\000\123\006\002\000\123\006\003\000\123\006\004\000\123\006\
-\\005\000\123\006\007\000\123\006\008\000\123\006\009\000\123\006\
-\\010\000\123\006\011\000\123\006\013\000\123\006\014\000\123\006\
-\\016\000\123\006\017\000\123\006\018\000\123\006\020\000\123\006\
-\\021\000\123\006\022\000\123\006\024\000\123\006\025\000\123\006\
-\\028\000\123\006\029\000\123\006\030\000\123\006\031\000\123\006\
-\\032\000\123\006\035\000\123\006\037\000\123\006\039\000\123\006\
-\\040\000\123\006\041\000\123\006\042\000\123\006\045\000\123\006\
-\\046\000\123\006\047\000\123\006\048\000\123\006\050\000\123\006\
-\\052\000\123\006\053\000\123\006\061\000\123\006\062\000\123\006\
-\\063\000\123\006\064\000\123\006\066\000\123\006\067\000\123\006\
-\\068\000\123\006\069\000\123\006\070\000\123\006\072\000\123\006\
-\\074\000\123\006\075\000\123\006\076\000\123\006\085\000\135\006\
-\\086\000\135\006\087\000\099\001\000\000\
-\\001\000\001\000\165\006\002\000\165\006\003\000\116\002\008\000\165\006\
-\\010\000\165\006\011\000\165\006\013\000\165\006\016\000\165\006\
-\\017\000\165\006\018\000\165\006\019\000\001\002\020\000\165\006\
-\\021\000\165\006\024\000\165\006\029\000\165\006\030\000\165\006\
-\\034\000\000\002\035\000\165\006\041\000\153\006\042\000\165\006\
-\\050\000\165\006\062\000\165\006\063\000\165\006\064\000\165\006\
-\\066\000\165\006\067\000\165\006\068\000\165\006\072\000\165\006\
-\\073\000\253\001\074\000\165\006\076\000\153\006\085\000\071\000\000\000\
-\\001\000\001\000\165\006\002\000\165\006\003\000\116\002\008\000\165\006\
-\\010\000\165\006\011\000\165\006\013\000\165\006\016\000\165\006\
-\\017\000\165\006\018\000\165\006\020\000\165\006\021\000\165\006\
-\\024\000\165\006\029\000\165\006\030\000\165\006\035\000\165\006\
-\\041\000\194\006\042\000\165\006\050\000\165\006\062\000\165\006\
-\\063\000\165\006\064\000\165\006\066\000\165\006\067\000\165\006\
-\\068\000\165\006\072\000\165\006\074\000\165\006\075\000\194\006\
-\\076\000\194\006\000\000\
-\\001\000\001\000\165\006\002\000\165\006\003\000\073\005\008\000\165\006\
-\\010\000\165\006\011\000\165\006\013\000\165\006\016\000\165\006\
-\\017\000\165\006\018\000\165\006\019\000\001\002\020\000\165\006\
-\\021\000\165\006\024\000\165\006\029\000\165\006\030\000\165\006\
-\\034\000\000\002\035\000\165\006\041\000\227\006\042\000\165\006\
-\\050\000\165\006\062\000\165\006\063\000\165\006\064\000\165\006\
-\\066\000\165\006\067\000\165\006\068\000\165\006\072\000\165\006\
-\\073\000\253\001\074\000\165\006\075\000\227\006\076\000\227\006\
+\\001\000\001\000\203\005\002\000\203\005\003\000\203\005\004\000\203\005\
+\\005\000\203\005\007\000\203\005\008\000\203\005\009\000\203\005\
+\\010\000\203\005\011\000\203\005\013\000\203\005\014\000\203\005\
+\\016\000\203\005\017\000\203\005\018\000\203\005\019\000\203\005\
+\\020\000\203\005\021\000\203\005\022\000\203\005\023\000\203\005\
+\\024\000\203\005\025\000\203\005\028\000\203\005\029\000\203\005\
+\\030\000\203\005\034\000\203\005\035\000\203\005\036\000\203\005\
+\\037\000\203\005\038\000\203\005\039\000\203\005\040\000\203\005\
+\\041\000\203\005\042\000\203\005\044\000\203\005\045\000\203\005\
+\\046\000\203\005\047\000\203\005\049\000\203\005\050\000\203\005\
+\\052\000\203\005\053\000\203\005\054\000\209\005\055\000\203\005\
+\\061\000\203\005\062\000\203\005\063\000\203\005\064\000\203\005\
+\\066\000\203\005\067\000\203\005\068\000\203\005\069\000\203\005\
+\\070\000\203\005\072\000\203\005\074\000\203\005\075\000\203\005\
+\\076\000\203\005\077\000\203\005\078\000\203\005\079\000\203\005\
+\\080\000\203\005\081\000\203\005\082\000\203\005\083\000\203\005\
+\\084\000\203\005\085\000\203\005\086\000\203\005\087\000\203\005\000\000\
+\\001\000\001\000\206\005\002\000\206\005\003\000\206\005\004\000\206\005\
+\\005\000\206\005\007\000\206\005\008\000\206\005\009\000\206\005\
+\\010\000\206\005\011\000\206\005\013\000\206\005\014\000\206\005\
+\\016\000\206\005\017\000\206\005\018\000\206\005\020\000\206\005\
+\\021\000\206\005\022\000\206\005\024\000\206\005\025\000\206\005\
+\\028\000\206\005\029\000\206\005\030\000\206\005\031\000\206\005\
+\\032\000\206\005\035\000\206\005\037\000\206\005\039\000\206\005\
+\\040\000\206\005\041\000\206\005\042\000\206\005\045\000\206\005\
+\\046\000\206\005\047\000\206\005\048\000\206\005\050\000\206\005\
+\\052\000\206\005\053\000\206\005\054\000\209\005\061\000\206\005\
+\\062\000\206\005\063\000\206\005\064\000\206\005\066\000\206\005\
+\\067\000\206\005\068\000\206\005\069\000\206\005\070\000\206\005\
+\\072\000\206\005\074\000\206\005\075\000\206\005\076\000\206\005\
+\\085\000\206\005\086\000\206\005\087\000\206\005\000\000\
+\\001\000\001\000\210\005\002\000\210\005\003\000\210\005\004\000\210\005\
+\\005\000\210\005\007\000\210\005\008\000\210\005\009\000\210\005\
+\\010\000\210\005\011\000\210\005\013\000\210\005\014\000\210\005\
+\\016\000\210\005\017\000\210\005\018\000\210\005\019\000\210\005\
+\\020\000\210\005\021\000\210\005\022\000\210\005\024\000\210\005\
+\\025\000\210\005\028\000\210\005\029\000\210\005\030\000\210\005\
+\\031\000\210\005\032\000\210\005\034\000\210\005\035\000\210\005\
+\\037\000\210\005\039\000\210\005\040\000\210\005\041\000\210\005\
+\\042\000\210\005\045\000\210\005\046\000\210\005\047\000\210\005\
+\\048\000\210\005\050\000\210\005\052\000\210\005\053\000\210\005\
+\\054\000\209\005\061\000\210\005\062\000\210\005\063\000\210\005\
+\\064\000\210\005\066\000\210\005\067\000\210\005\068\000\210\005\
+\\069\000\210\005\070\000\210\005\072\000\210\005\073\000\210\005\
+\\074\000\210\005\075\000\210\005\076\000\210\005\085\000\210\005\
+\\086\000\210\005\087\000\210\005\000\000\
+\\001\000\001\000\137\006\002\000\137\006\003\000\137\006\004\000\137\006\
+\\005\000\137\006\007\000\137\006\008\000\137\006\009\000\137\006\
+\\010\000\137\006\011\000\137\006\013\000\137\006\014\000\137\006\
+\\016\000\137\006\017\000\137\006\018\000\137\006\020\000\137\006\
+\\021\000\137\006\022\000\137\006\024\000\137\006\025\000\137\006\
+\\028\000\137\006\029\000\137\006\030\000\137\006\031\000\137\006\
+\\032\000\137\006\035\000\137\006\037\000\137\006\039\000\137\006\
+\\040\000\137\006\041\000\137\006\042\000\137\006\045\000\137\006\
+\\046\000\137\006\047\000\137\006\048\000\137\006\050\000\137\006\
+\\052\000\137\006\053\000\137\006\061\000\137\006\062\000\137\006\
+\\063\000\137\006\064\000\137\006\066\000\137\006\067\000\137\006\
+\\068\000\137\006\069\000\137\006\070\000\137\006\072\000\137\006\
+\\074\000\137\006\075\000\137\006\076\000\137\006\085\000\149\006\
+\\086\000\149\006\087\000\107\001\000\000\
+\\001\000\001\000\179\006\002\000\179\006\003\000\126\002\008\000\179\006\
+\\010\000\179\006\011\000\179\006\013\000\179\006\016\000\179\006\
+\\017\000\179\006\018\000\179\006\019\000\009\002\020\000\179\006\
+\\021\000\179\006\024\000\179\006\029\000\179\006\030\000\179\006\
+\\034\000\008\002\035\000\179\006\041\000\167\006\042\000\179\006\
+\\050\000\179\006\062\000\179\006\063\000\179\006\064\000\179\006\
+\\066\000\179\006\067\000\179\006\068\000\179\006\072\000\179\006\
+\\073\000\005\002\074\000\179\006\076\000\167\006\085\000\071\000\000\000\
+\\001\000\001\000\179\006\002\000\179\006\003\000\126\002\008\000\179\006\
+\\010\000\179\006\011\000\179\006\013\000\179\006\016\000\179\006\
+\\017\000\179\006\018\000\179\006\020\000\179\006\021\000\179\006\
+\\024\000\179\006\029\000\179\006\030\000\179\006\035\000\179\006\
+\\041\000\208\006\042\000\179\006\050\000\179\006\062\000\179\006\
+\\063\000\179\006\064\000\179\006\066\000\179\006\067\000\179\006\
+\\068\000\179\006\072\000\179\006\074\000\179\006\075\000\208\006\
+\\076\000\208\006\000\000\
+\\001\000\001\000\179\006\002\000\179\006\003\000\085\005\008\000\179\006\
+\\010\000\179\006\011\000\179\006\013\000\179\006\016\000\179\006\
+\\017\000\179\006\018\000\179\006\019\000\009\002\020\000\179\006\
+\\021\000\179\006\024\000\179\006\029\000\179\006\030\000\179\006\
+\\034\000\008\002\035\000\179\006\041\000\241\006\042\000\179\006\
+\\050\000\179\006\062\000\179\006\063\000\179\006\064\000\179\006\
+\\066\000\179\006\067\000\179\006\068\000\179\006\072\000\179\006\
+\\073\000\005\002\074\000\179\006\075\000\241\006\076\000\241\006\
 \\085\000\071\000\000\000\
-\\001\000\001\000\165\006\002\000\165\006\003\000\073\005\008\000\165\006\
-\\010\000\165\006\011\000\165\006\013\000\165\006\016\000\165\006\
-\\017\000\165\006\018\000\165\006\020\000\165\006\021\000\165\006\
-\\024\000\165\006\029\000\165\006\030\000\165\006\035\000\165\006\
-\\041\000\227\006\042\000\165\006\050\000\165\006\054\000\004\001\
-\\062\000\165\006\063\000\165\006\064\000\165\006\066\000\165\006\
-\\067\000\165\006\068\000\165\006\072\000\165\006\074\000\165\006\
-\\075\000\227\006\076\000\227\006\000\000\
-\\001\000\001\000\165\006\002\000\165\006\003\000\073\005\008\000\165\006\
-\\010\000\165\006\011\000\165\006\013\000\165\006\016\000\165\006\
-\\017\000\165\006\018\000\165\006\020\000\165\006\021\000\165\006\
-\\024\000\165\006\029\000\165\006\030\000\165\006\035\000\165\006\
-\\041\000\227\006\042\000\165\006\050\000\165\006\062\000\165\006\
-\\063\000\165\006\064\000\165\006\066\000\165\006\067\000\165\006\
-\\068\000\165\006\072\000\165\006\074\000\165\006\075\000\227\006\
-\\076\000\227\006\000\000\
-\\001\000\001\000\203\006\002\000\203\006\003\000\142\002\008\000\203\006\
-\\010\000\203\006\011\000\203\006\013\000\203\006\016\000\203\006\
-\\017\000\203\006\018\000\203\006\020\000\203\006\021\000\203\006\
-\\024\000\203\006\029\000\203\006\030\000\203\006\035\000\203\006\
-\\042\000\203\006\050\000\203\006\062\000\203\006\063\000\203\006\
-\\064\000\203\006\066\000\203\006\067\000\203\006\068\000\203\006\
-\\072\000\203\006\074\000\203\006\075\000\194\006\000\000\
-\\001\000\001\000\203\006\002\000\203\006\003\000\220\004\008\000\203\006\
-\\010\000\203\006\011\000\203\006\013\000\203\006\016\000\203\006\
-\\017\000\203\006\018\000\203\006\019\000\001\002\020\000\203\006\
-\\021\000\203\006\024\000\203\006\029\000\203\006\030\000\203\006\
-\\034\000\000\002\035\000\203\006\042\000\203\006\050\000\203\006\
-\\062\000\203\006\063\000\203\006\064\000\203\006\066\000\203\006\
-\\067\000\203\006\068\000\203\006\072\000\203\006\073\000\253\001\
-\\074\000\203\006\075\000\227\006\085\000\071\000\000\000\
-\\001\000\001\000\203\006\002\000\203\006\003\000\220\004\008\000\203\006\
-\\010\000\203\006\011\000\203\006\013\000\203\006\016\000\203\006\
-\\017\000\203\006\018\000\203\006\020\000\203\006\021\000\203\006\
-\\024\000\203\006\029\000\203\006\030\000\203\006\035\000\203\006\
-\\042\000\203\006\050\000\203\006\054\000\004\001\062\000\203\006\
-\\063\000\203\006\064\000\203\006\066\000\203\006\067\000\203\006\
-\\068\000\203\006\072\000\203\006\074\000\203\006\075\000\227\006\000\000\
-\\001\000\001\000\203\006\002\000\203\006\003\000\220\004\008\000\203\006\
-\\010\000\203\006\011\000\203\006\013\000\203\006\016\000\203\006\
-\\017\000\203\006\018\000\203\006\020\000\203\006\021\000\203\006\
-\\024\000\203\006\029\000\203\006\030\000\203\006\035\000\203\006\
-\\042\000\203\006\050\000\203\006\062\000\203\006\063\000\203\006\
-\\064\000\203\006\066\000\203\006\067\000\203\006\068\000\203\006\
-\\072\000\203\006\074\000\203\006\075\000\227\006\000\000\
-\\001\000\001\000\234\006\002\000\234\006\003\000\045\003\008\000\234\006\
-\\010\000\234\006\011\000\234\006\013\000\234\006\016\000\234\006\
-\\017\000\234\006\018\000\234\006\019\000\001\002\020\000\234\006\
-\\021\000\234\006\024\000\234\006\029\000\234\006\030\000\234\006\
-\\034\000\000\002\035\000\234\006\041\000\153\006\042\000\234\006\
-\\050\000\234\006\062\000\234\006\063\000\234\006\064\000\234\006\
-\\066\000\234\006\067\000\234\006\068\000\234\006\072\000\234\006\
-\\073\000\253\001\074\000\234\006\076\000\153\006\085\000\071\000\000\000\
-\\001\000\001\000\234\006\002\000\234\006\003\000\045\003\008\000\234\006\
-\\010\000\234\006\011\000\234\006\013\000\234\006\016\000\234\006\
-\\017\000\234\006\018\000\234\006\020\000\234\006\021\000\234\006\
-\\024\000\234\006\029\000\234\006\030\000\234\006\035\000\234\006\
-\\041\000\194\006\042\000\234\006\050\000\234\006\062\000\234\006\
-\\063\000\234\006\064\000\234\006\066\000\234\006\067\000\234\006\
-\\068\000\234\006\072\000\234\006\074\000\234\006\075\000\194\006\
-\\076\000\194\006\000\000\
-\\001\000\001\000\234\006\002\000\234\006\003\000\150\005\008\000\234\006\
-\\010\000\234\006\011\000\234\006\013\000\234\006\016\000\234\006\
-\\017\000\234\006\018\000\234\006\019\000\001\002\020\000\234\006\
-\\021\000\234\006\024\000\234\006\029\000\234\006\030\000\234\006\
-\\034\000\000\002\035\000\234\006\041\000\227\006\042\000\234\006\
-\\050\000\234\006\062\000\234\006\063\000\234\006\064\000\234\006\
-\\066\000\234\006\067\000\234\006\068\000\234\006\072\000\234\006\
-\\073\000\253\001\074\000\234\006\075\000\227\006\076\000\227\006\
+\\001\000\001\000\179\006\002\000\179\006\003\000\085\005\008\000\179\006\
+\\010\000\179\006\011\000\179\006\013\000\179\006\016\000\179\006\
+\\017\000\179\006\018\000\179\006\020\000\179\006\021\000\179\006\
+\\024\000\179\006\029\000\179\006\030\000\179\006\035\000\179\006\
+\\041\000\241\006\042\000\179\006\050\000\179\006\054\000\010\001\
+\\062\000\179\006\063\000\179\006\064\000\179\006\066\000\179\006\
+\\067\000\179\006\068\000\179\006\072\000\179\006\074\000\179\006\
+\\075\000\241\006\076\000\241\006\000\000\
+\\001\000\001\000\179\006\002\000\179\006\003\000\085\005\008\000\179\006\
+\\010\000\179\006\011\000\179\006\013\000\179\006\016\000\179\006\
+\\017\000\179\006\018\000\179\006\020\000\179\006\021\000\179\006\
+\\024\000\179\006\029\000\179\006\030\000\179\006\035\000\179\006\
+\\041\000\241\006\042\000\179\006\050\000\179\006\062\000\179\006\
+\\063\000\179\006\064\000\179\006\066\000\179\006\067\000\179\006\
+\\068\000\179\006\072\000\179\006\074\000\179\006\075\000\241\006\
+\\076\000\241\006\000\000\
+\\001\000\001\000\217\006\002\000\217\006\003\000\152\002\008\000\217\006\
+\\010\000\217\006\011\000\217\006\013\000\217\006\016\000\217\006\
+\\017\000\217\006\018\000\217\006\020\000\217\006\021\000\217\006\
+\\024\000\217\006\029\000\217\006\030\000\217\006\035\000\217\006\
+\\042\000\217\006\050\000\217\006\062\000\217\006\063\000\217\006\
+\\064\000\217\006\066\000\217\006\067\000\217\006\068\000\217\006\
+\\072\000\217\006\074\000\217\006\075\000\208\006\000\000\
+\\001\000\001\000\217\006\002\000\217\006\003\000\232\004\008\000\217\006\
+\\010\000\217\006\011\000\217\006\013\000\217\006\016\000\217\006\
+\\017\000\217\006\018\000\217\006\019\000\009\002\020\000\217\006\
+\\021\000\217\006\024\000\217\006\029\000\217\006\030\000\217\006\
+\\034\000\008\002\035\000\217\006\042\000\217\006\050\000\217\006\
+\\062\000\217\006\063\000\217\006\064\000\217\006\066\000\217\006\
+\\067\000\217\006\068\000\217\006\072\000\217\006\073\000\005\002\
+\\074\000\217\006\075\000\241\006\085\000\071\000\000\000\
+\\001\000\001\000\217\006\002\000\217\006\003\000\232\004\008\000\217\006\
+\\010\000\217\006\011\000\217\006\013\000\217\006\016\000\217\006\
+\\017\000\217\006\018\000\217\006\020\000\217\006\021\000\217\006\
+\\024\000\217\006\029\000\217\006\030\000\217\006\035\000\217\006\
+\\042\000\217\006\050\000\217\006\054\000\010\001\062\000\217\006\
+\\063\000\217\006\064\000\217\006\066\000\217\006\067\000\217\006\
+\\068\000\217\006\072\000\217\006\074\000\217\006\075\000\241\006\000\000\
+\\001\000\001\000\217\006\002\000\217\006\003\000\232\004\008\000\217\006\
+\\010\000\217\006\011\000\217\006\013\000\217\006\016\000\217\006\
+\\017\000\217\006\018\000\217\006\020\000\217\006\021\000\217\006\
+\\024\000\217\006\029\000\217\006\030\000\217\006\035\000\217\006\
+\\042\000\217\006\050\000\217\006\062\000\217\006\063\000\217\006\
+\\064\000\217\006\066\000\217\006\067\000\217\006\068\000\217\006\
+\\072\000\217\006\074\000\217\006\075\000\241\006\000\000\
+\\001\000\001\000\248\006\002\000\248\006\003\000\057\003\008\000\248\006\
+\\010\000\248\006\011\000\248\006\013\000\248\006\016\000\248\006\
+\\017\000\248\006\018\000\248\006\019\000\009\002\020\000\248\006\
+\\021\000\248\006\024\000\248\006\029\000\248\006\030\000\248\006\
+\\034\000\008\002\035\000\248\006\041\000\167\006\042\000\248\006\
+\\050\000\248\006\062\000\248\006\063\000\248\006\064\000\248\006\
+\\066\000\248\006\067\000\248\006\068\000\248\006\072\000\248\006\
+\\073\000\005\002\074\000\248\006\076\000\167\006\085\000\071\000\000\000\
+\\001\000\001\000\248\006\002\000\248\006\003\000\057\003\008\000\248\006\
+\\010\000\248\006\011\000\248\006\013\000\248\006\016\000\248\006\
+\\017\000\248\006\018\000\248\006\020\000\248\006\021\000\248\006\
+\\024\000\248\006\029\000\248\006\030\000\248\006\035\000\248\006\
+\\041\000\208\006\042\000\248\006\050\000\248\006\062\000\248\006\
+\\063\000\248\006\064\000\248\006\066\000\248\006\067\000\248\006\
+\\068\000\248\006\072\000\248\006\074\000\248\006\075\000\208\006\
+\\076\000\208\006\000\000\
+\\001\000\001\000\248\006\002\000\248\006\003\000\162\005\008\000\248\006\
+\\010\000\248\006\011\000\248\006\013\000\248\006\016\000\248\006\
+\\017\000\248\006\018\000\248\006\019\000\009\002\020\000\248\006\
+\\021\000\248\006\024\000\248\006\029\000\248\006\030\000\248\006\
+\\034\000\008\002\035\000\248\006\041\000\241\006\042\000\248\006\
+\\050\000\248\006\062\000\248\006\063\000\248\006\064\000\248\006\
+\\066\000\248\006\067\000\248\006\068\000\248\006\072\000\248\006\
+\\073\000\005\002\074\000\248\006\075\000\241\006\076\000\241\006\
 \\085\000\071\000\000\000\
-\\001\000\001\000\234\006\002\000\234\006\003\000\150\005\008\000\234\006\
-\\010\000\234\006\011\000\234\006\013\000\234\006\016\000\234\006\
-\\017\000\234\006\018\000\234\006\020\000\234\006\021\000\234\006\
-\\024\000\234\006\029\000\234\006\030\000\234\006\035\000\234\006\
-\\041\000\227\006\042\000\234\006\050\000\234\006\054\000\004\001\
-\\062\000\234\006\063\000\234\006\064\000\234\006\066\000\234\006\
-\\067\000\234\006\068\000\234\006\072\000\234\006\074\000\234\006\
-\\075\000\227\006\076\000\227\006\000\000\
-\\001\000\001\000\234\006\002\000\234\006\003\000\150\005\008\000\234\006\
-\\010\000\234\006\011\000\234\006\013\000\234\006\016\000\234\006\
-\\017\000\234\006\018\000\234\006\020\000\234\006\021\000\234\006\
-\\024\000\234\006\029\000\234\006\030\000\234\006\035\000\234\006\
-\\041\000\227\006\042\000\234\006\050\000\234\006\062\000\234\006\
-\\063\000\234\006\064\000\234\006\066\000\234\006\067\000\234\006\
-\\068\000\234\006\072\000\234\006\074\000\234\006\075\000\227\006\
-\\076\000\227\006\000\000\
-\\001\000\003\000\077\001\008\000\161\007\011\000\161\007\013\000\161\007\
-\\029\000\161\007\030\000\161\007\050\000\161\007\061\000\161\007\
-\\068\000\161\007\072\000\161\007\074\000\161\007\075\000\194\006\000\000\
-\\001\000\003\000\083\001\008\000\183\007\011\000\183\007\013\000\183\007\
-\\029\000\183\007\030\000\183\007\034\000\249\000\041\000\201\006\
-\\050\000\183\007\061\000\183\007\068\000\183\007\072\000\183\007\
-\\074\000\183\007\000\000\
-\\001\000\003\000\083\001\008\000\183\007\011\000\183\007\013\000\183\007\
-\\029\000\183\007\030\000\183\007\050\000\183\007\061\000\183\007\
-\\068\000\183\007\072\000\183\007\074\000\183\007\075\000\194\006\000\000\
-\\001\000\003\000\226\001\008\000\153\007\011\000\153\007\013\000\153\007\
-\\022\000\165\001\029\000\153\007\030\000\153\007\041\000\072\006\
-\\050\000\153\007\061\000\153\007\068\000\153\007\072\000\153\007\
-\\074\000\153\007\000\000\
-\\001\000\003\000\015\003\008\000\088\007\010\000\088\007\011\000\088\007\
-\\013\000\088\007\017\000\088\007\018\000\088\007\021\000\088\007\
-\\029\000\088\007\030\000\088\007\035\000\088\007\050\000\088\007\
-\\063\000\088\007\064\000\088\007\066\000\088\007\067\000\088\007\
-\\068\000\088\007\069\000\088\007\070\000\088\007\072\000\088\007\
-\\074\000\088\007\075\000\194\006\000\000\
-\\001\000\003\000\119\003\008\000\070\007\010\000\070\007\011\000\070\007\
-\\013\000\070\007\017\000\070\007\018\000\070\007\021\000\070\007\
-\\029\000\070\007\030\000\070\007\035\000\070\007\046\000\194\006\
-\\050\000\070\007\063\000\070\007\064\000\070\007\066\000\070\007\
-\\067\000\070\007\068\000\070\007\069\000\070\007\070\000\070\007\
-\\072\000\070\007\074\000\070\007\075\000\194\006\000\000\
-\\001\000\003\000\234\003\008\000\105\007\010\000\105\007\011\000\105\007\
-\\013\000\105\007\017\000\105\007\018\000\105\007\021\000\105\007\
-\\029\000\105\007\030\000\105\007\035\000\105\007\050\000\105\007\
-\\063\000\105\007\064\000\105\007\066\000\105\007\067\000\105\007\
-\\068\000\105\007\069\000\105\007\070\000\105\007\072\000\105\007\
-\\074\000\105\007\075\000\194\006\000\000\
-\\001\000\003\000\188\004\008\000\161\007\011\000\161\007\013\000\161\007\
-\\019\000\001\002\029\000\161\007\030\000\161\007\034\000\000\002\
-\\050\000\161\007\061\000\161\007\068\000\161\007\072\000\161\007\
-\\073\000\253\001\074\000\161\007\075\000\227\006\085\000\071\000\000\000\
-\\001\000\003\000\188\004\008\000\161\007\011\000\161\007\013\000\161\007\
-\\029\000\161\007\030\000\161\007\050\000\161\007\054\000\004\001\
-\\061\000\161\007\068\000\161\007\072\000\161\007\074\000\161\007\
-\\075\000\227\006\000\000\
-\\001\000\003\000\188\004\008\000\161\007\011\000\161\007\013\000\161\007\
-\\029\000\161\007\030\000\161\007\050\000\161\007\061\000\161\007\
-\\068\000\161\007\072\000\161\007\074\000\161\007\075\000\227\006\000\000\
-\\001\000\003\000\011\005\008\000\183\007\011\000\183\007\013\000\183\007\
-\\019\000\001\002\029\000\183\007\030\000\183\007\034\000\000\002\
-\\050\000\183\007\061\000\183\007\068\000\183\007\072\000\183\007\
-\\073\000\253\001\074\000\183\007\075\000\227\006\085\000\071\000\000\000\
-\\001\000\003\000\011\005\008\000\183\007\011\000\183\007\013\000\183\007\
-\\029\000\183\007\030\000\183\007\050\000\183\007\054\000\004\001\
-\\061\000\183\007\068\000\183\007\072\000\183\007\074\000\183\007\
-\\075\000\227\006\000\000\
-\\001\000\003\000\011\005\008\000\183\007\011\000\183\007\013\000\183\007\
-\\029\000\183\007\030\000\183\007\050\000\183\007\061\000\183\007\
-\\068\000\183\007\072\000\183\007\074\000\183\007\075\000\227\006\000\000\
-\\001\000\003\000\083\005\008\000\070\007\010\000\070\007\011\000\070\007\
-\\013\000\070\007\017\000\070\007\018\000\070\007\019\000\001\002\
-\\021\000\070\007\029\000\070\007\030\000\070\007\034\000\000\002\
-\\035\000\070\007\046\000\227\006\050\000\070\007\063\000\070\007\
-\\064\000\070\007\066\000\070\007\067\000\070\007\068\000\070\007\
-\\069\000\070\007\070\000\070\007\072\000\070\007\073\000\253\001\
-\\074\000\070\007\075\000\227\006\085\000\071\000\000\000\
-\\001\000\003\000\083\005\008\000\070\007\010\000\070\007\011\000\070\007\
-\\013\000\070\007\017\000\070\007\018\000\070\007\021\000\070\007\
-\\029\000\070\007\030\000\070\007\035\000\070\007\046\000\227\006\
-\\050\000\070\007\054\000\004\001\063\000\070\007\064\000\070\007\
-\\066\000\070\007\067\000\070\007\068\000\070\007\069\000\070\007\
-\\070\000\070\007\072\000\070\007\074\000\070\007\075\000\227\006\000\000\
-\\001\000\003\000\083\005\008\000\070\007\010\000\070\007\011\000\070\007\
-\\013\000\070\007\017\000\070\007\018\000\070\007\021\000\070\007\
-\\029\000\070\007\030\000\070\007\035\000\070\007\046\000\227\006\
-\\050\000\070\007\063\000\070\007\064\000\070\007\066\000\070\007\
-\\067\000\070\007\068\000\070\007\069\000\070\007\070\000\070\007\
-\\072\000\070\007\074\000\070\007\075\000\227\006\000\000\
-\\001\000\003\000\130\005\008\000\088\007\010\000\088\007\011\000\088\007\
-\\013\000\088\007\017\000\088\007\018\000\088\007\019\000\001\002\
-\\021\000\088\007\029\000\088\007\030\000\088\007\034\000\000\002\
-\\035\000\088\007\050\000\088\007\063\000\088\007\064\000\088\007\
-\\066\000\088\007\067\000\088\007\068\000\088\007\069\000\088\007\
-\\070\000\088\007\072\000\088\007\073\000\253\001\074\000\088\007\
-\\075\000\227\006\085\000\071\000\000\000\
-\\001\000\003\000\130\005\008\000\088\007\010\000\088\007\011\000\088\007\
-\\013\000\088\007\017\000\088\007\018\000\088\007\021\000\088\007\
-\\029\000\088\007\030\000\088\007\035\000\088\007\050\000\088\007\
-\\054\000\004\001\063\000\088\007\064\000\088\007\066\000\088\007\
-\\067\000\088\007\068\000\088\007\069\000\088\007\070\000\088\007\
-\\072\000\088\007\074\000\088\007\075\000\227\006\000\000\
-\\001\000\003\000\130\005\008\000\088\007\010\000\088\007\011\000\088\007\
-\\013\000\088\007\017\000\088\007\018\000\088\007\021\000\088\007\
-\\029\000\088\007\030\000\088\007\035\000\088\007\050\000\088\007\
-\\063\000\088\007\064\000\088\007\066\000\088\007\067\000\088\007\
-\\068\000\088\007\069\000\088\007\070\000\088\007\072\000\088\007\
-\\074\000\088\007\075\000\227\006\000\000\
-\\001\000\003\000\140\005\008\000\105\007\010\000\105\007\011\000\105\007\
-\\013\000\105\007\017\000\105\007\018\000\105\007\019\000\001\002\
-\\021\000\105\007\029\000\105\007\030\000\105\007\034\000\000\002\
-\\035\000\105\007\050\000\105\007\063\000\105\007\064\000\105\007\
-\\066\000\105\007\067\000\105\007\068\000\105\007\069\000\105\007\
-\\070\000\105\007\072\000\105\007\073\000\253\001\074\000\105\007\
-\\075\000\227\006\085\000\071\000\000\000\
-\\001\000\003\000\140\005\008\000\105\007\010\000\105\007\011\000\105\007\
-\\013\000\105\007\017\000\105\007\018\000\105\007\021\000\105\007\
-\\029\000\105\007\030\000\105\007\035\000\105\007\050\000\105\007\
-\\054\000\004\001\063\000\105\007\064\000\105\007\066\000\105\007\
-\\067\000\105\007\068\000\105\007\069\000\105\007\070\000\105\007\
-\\072\000\105\007\074\000\105\007\075\000\227\006\000\000\
-\\001\000\003\000\140\005\008\000\105\007\010\000\105\007\011\000\105\007\
-\\013\000\105\007\017\000\105\007\018\000\105\007\021\000\105\007\
-\\029\000\105\007\030\000\105\007\035\000\105\007\050\000\105\007\
-\\063\000\105\007\064\000\105\007\066\000\105\007\067\000\105\007\
-\\068\000\105\007\069\000\105\007\070\000\105\007\072\000\105\007\
-\\074\000\105\007\075\000\227\006\000\000\
-\\001\000\004\000\091\000\007\000\019\001\014\000\090\000\025\000\089\000\
-\\041\000\088\000\000\000\
-\\001\000\004\000\091\000\009\000\081\002\014\000\090\000\025\000\089\000\
-\\041\000\088\000\000\000\
-\\001\000\004\000\091\000\014\000\090\000\022\000\071\001\025\000\089\000\
-\\041\000\088\000\000\000\
-\\001\000\004\000\091\000\014\000\090\000\025\000\089\000\028\000\053\001\
-\\041\000\088\000\000\000\
-\\001\000\004\000\091\000\014\000\090\000\025\000\089\000\035\000\016\001\
-\\040\000\015\001\041\000\088\000\042\000\014\001\000\000\
-\\001\000\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\
-\\042\000\087\000\000\000\
-\\001\000\005\000\191\005\039\000\191\005\040\000\191\005\041\000\191\005\
-\\046\000\184\005\000\000\
-\\001\000\005\000\192\005\039\000\192\005\040\000\192\005\041\000\192\005\
-\\046\000\185\005\075\000\192\005\000\000\
-\\001\000\005\000\193\005\039\000\193\005\040\000\193\005\041\000\193\005\
-\\046\000\186\005\075\000\193\005\000\000\
-\\001\000\005\000\026\001\035\000\190\001\040\000\189\001\041\000\025\001\
-\\045\000\188\001\052\000\023\001\053\000\022\001\075\000\021\001\000\000\
-\\001\000\005\000\026\001\041\000\025\001\046\000\024\001\052\000\023\001\
-\\053\000\022\001\075\000\021\001\000\000\
-\\001\000\005\000\026\001\041\000\025\001\047\000\045\001\052\000\023\001\
-\\053\000\022\001\075\000\021\001\000\000\
-\\001\000\005\000\026\001\041\000\025\001\047\000\060\001\052\000\023\001\
-\\053\000\022\001\075\000\021\001\000\000\
+\\001\000\001\000\248\006\002\000\248\006\003\000\162\005\008\000\248\006\
+\\010\000\248\006\011\000\248\006\013\000\248\006\016\000\248\006\
+\\017\000\248\006\018\000\248\006\020\000\248\006\021\000\248\006\
+\\024\000\248\006\029\000\248\006\030\000\248\006\035\000\248\006\
+\\041\000\241\006\042\000\248\006\050\000\248\006\054\000\010\001\
+\\062\000\248\006\063\000\248\006\064\000\248\006\066\000\248\006\
+\\067\000\248\006\068\000\248\006\072\000\248\006\074\000\248\006\
+\\075\000\241\006\076\000\241\006\000\000\
+\\001\000\001\000\248\006\002\000\248\006\003\000\162\005\008\000\248\006\
+\\010\000\248\006\011\000\248\006\013\000\248\006\016\000\248\006\
+\\017\000\248\006\018\000\248\006\020\000\248\006\021\000\248\006\
+\\024\000\248\006\029\000\248\006\030\000\248\006\035\000\248\006\
+\\041\000\241\006\042\000\248\006\050\000\248\006\062\000\248\006\
+\\063\000\248\006\064\000\248\006\066\000\248\006\067\000\248\006\
+\\068\000\248\006\072\000\248\006\074\000\248\006\075\000\241\006\
+\\076\000\241\006\000\000\
+\\001\000\003\000\083\001\008\000\178\007\011\000\178\007\013\000\178\007\
+\\017\000\178\007\018\000\178\007\021\000\178\007\029\000\178\007\
+\\030\000\178\007\050\000\178\007\061\000\178\007\068\000\178\007\
+\\072\000\178\007\074\000\178\007\075\000\208\006\000\000\
+\\001\000\003\000\089\001\008\000\200\007\011\000\200\007\013\000\200\007\
+\\017\000\200\007\018\000\200\007\021\000\200\007\029\000\200\007\
+\\030\000\200\007\034\000\255\000\041\000\215\006\050\000\200\007\
+\\061\000\200\007\068\000\200\007\072\000\200\007\074\000\200\007\000\000\
+\\001\000\003\000\089\001\008\000\200\007\011\000\200\007\013\000\200\007\
+\\017\000\200\007\018\000\200\007\021\000\200\007\029\000\200\007\
+\\030\000\200\007\050\000\200\007\061\000\200\007\068\000\200\007\
+\\072\000\200\007\074\000\200\007\075\000\208\006\000\000\
+\\001\000\003\000\234\001\008\000\170\007\011\000\170\007\013\000\170\007\
+\\017\000\170\007\018\000\170\007\021\000\170\007\022\000\173\001\
+\\029\000\170\007\030\000\170\007\041\000\084\006\050\000\170\007\
+\\061\000\170\007\068\000\170\007\072\000\170\007\074\000\170\007\000\000\
+\\001\000\003\000\027\003\008\000\102\007\010\000\102\007\011\000\102\007\
+\\013\000\102\007\017\000\102\007\018\000\102\007\021\000\102\007\
+\\029\000\102\007\030\000\102\007\035\000\102\007\050\000\102\007\
+\\063\000\102\007\064\000\102\007\066\000\102\007\067\000\102\007\
+\\068\000\102\007\069\000\102\007\070\000\102\007\072\000\102\007\
+\\074\000\102\007\075\000\208\006\000\000\
+\\001\000\003\000\131\003\008\000\084\007\010\000\084\007\011\000\084\007\
+\\013\000\084\007\017\000\084\007\018\000\084\007\021\000\084\007\
+\\029\000\084\007\030\000\084\007\035\000\084\007\046\000\208\006\
+\\050\000\084\007\063\000\084\007\064\000\084\007\066\000\084\007\
+\\067\000\084\007\068\000\084\007\069\000\084\007\070\000\084\007\
+\\072\000\084\007\074\000\084\007\075\000\208\006\000\000\
+\\001\000\003\000\246\003\008\000\119\007\010\000\119\007\011\000\119\007\
+\\013\000\119\007\017\000\119\007\018\000\119\007\021\000\119\007\
+\\029\000\119\007\030\000\119\007\035\000\119\007\050\000\119\007\
+\\063\000\119\007\064\000\119\007\066\000\119\007\067\000\119\007\
+\\068\000\119\007\069\000\119\007\070\000\119\007\072\000\119\007\
+\\074\000\119\007\075\000\208\006\000\000\
+\\001\000\003\000\200\004\008\000\178\007\011\000\178\007\013\000\178\007\
+\\017\000\178\007\018\000\178\007\019\000\009\002\021\000\178\007\
+\\029\000\178\007\030\000\178\007\034\000\008\002\050\000\178\007\
+\\061\000\178\007\068\000\178\007\072\000\178\007\073\000\005\002\
+\\074\000\178\007\075\000\241\006\085\000\071\000\000\000\
+\\001\000\003\000\200\004\008\000\178\007\011\000\178\007\013\000\178\007\
+\\017\000\178\007\018\000\178\007\021\000\178\007\029\000\178\007\
+\\030\000\178\007\050\000\178\007\054\000\010\001\061\000\178\007\
+\\068\000\178\007\072\000\178\007\074\000\178\007\075\000\241\006\000\000\
+\\001\000\003\000\200\004\008\000\178\007\011\000\178\007\013\000\178\007\
+\\017\000\178\007\018\000\178\007\021\000\178\007\029\000\178\007\
+\\030\000\178\007\050\000\178\007\061\000\178\007\068\000\178\007\
+\\072\000\178\007\074\000\178\007\075\000\241\006\000\000\
+\\001\000\003\000\023\005\008\000\200\007\011\000\200\007\013\000\200\007\
+\\017\000\200\007\018\000\200\007\019\000\009\002\021\000\200\007\
+\\029\000\200\007\030\000\200\007\034\000\008\002\050\000\200\007\
+\\061\000\200\007\068\000\200\007\072\000\200\007\073\000\005\002\
+\\074\000\200\007\075\000\241\006\085\000\071\000\000\000\
+\\001\000\003\000\023\005\008\000\200\007\011\000\200\007\013\000\200\007\
+\\017\000\200\007\018\000\200\007\021\000\200\007\029\000\200\007\
+\\030\000\200\007\050\000\200\007\054\000\010\001\061\000\200\007\
+\\068\000\200\007\072\000\200\007\074\000\200\007\075\000\241\006\000\000\
+\\001\000\003\000\023\005\008\000\200\007\011\000\200\007\013\000\200\007\
+\\017\000\200\007\018\000\200\007\021\000\200\007\029\000\200\007\
+\\030\000\200\007\050\000\200\007\061\000\200\007\068\000\200\007\
+\\072\000\200\007\074\000\200\007\075\000\241\006\000\000\
+\\001\000\003\000\095\005\008\000\084\007\010\000\084\007\011\000\084\007\
+\\013\000\084\007\017\000\084\007\018\000\084\007\019\000\009\002\
+\\021\000\084\007\029\000\084\007\030\000\084\007\034\000\008\002\
+\\035\000\084\007\046\000\241\006\050\000\084\007\063\000\084\007\
+\\064\000\084\007\066\000\084\007\067\000\084\007\068\000\084\007\
+\\069\000\084\007\070\000\084\007\072\000\084\007\073\000\005\002\
+\\074\000\084\007\075\000\241\006\085\000\071\000\000\000\
+\\001\000\003\000\095\005\008\000\084\007\010\000\084\007\011\000\084\007\
+\\013\000\084\007\017\000\084\007\018\000\084\007\021\000\084\007\
+\\029\000\084\007\030\000\084\007\035\000\084\007\046\000\241\006\
+\\050\000\084\007\054\000\010\001\063\000\084\007\064\000\084\007\
+\\066\000\084\007\067\000\084\007\068\000\084\007\069\000\084\007\
+\\070\000\084\007\072\000\084\007\074\000\084\007\075\000\241\006\000\000\
+\\001\000\003\000\095\005\008\000\084\007\010\000\084\007\011\000\084\007\
+\\013\000\084\007\017\000\084\007\018\000\084\007\021\000\084\007\
+\\029\000\084\007\030\000\084\007\035\000\084\007\046\000\241\006\
+\\050\000\084\007\063\000\084\007\064\000\084\007\066\000\084\007\
+\\067\000\084\007\068\000\084\007\069\000\084\007\070\000\084\007\
+\\072\000\084\007\074\000\084\007\075\000\241\006\000\000\
+\\001\000\003\000\142\005\008\000\102\007\010\000\102\007\011\000\102\007\
+\\013\000\102\007\017\000\102\007\018\000\102\007\019\000\009\002\
+\\021\000\102\007\029\000\102\007\030\000\102\007\034\000\008\002\
+\\035\000\102\007\050\000\102\007\063\000\102\007\064\000\102\007\
+\\066\000\102\007\067\000\102\007\068\000\102\007\069\000\102\007\
+\\070\000\102\007\072\000\102\007\073\000\005\002\074\000\102\007\
+\\075\000\241\006\085\000\071\000\000\000\
+\\001\000\003\000\142\005\008\000\102\007\010\000\102\007\011\000\102\007\
+\\013\000\102\007\017\000\102\007\018\000\102\007\021\000\102\007\
+\\029\000\102\007\030\000\102\007\035\000\102\007\050\000\102\007\
+\\054\000\010\001\063\000\102\007\064\000\102\007\066\000\102\007\
+\\067\000\102\007\068\000\102\007\069\000\102\007\070\000\102\007\
+\\072\000\102\007\074\000\102\007\075\000\241\006\000\000\
+\\001\000\003\000\142\005\008\000\102\007\010\000\102\007\011\000\102\007\
+\\013\000\102\007\017\000\102\007\018\000\102\007\021\000\102\007\
+\\029\000\102\007\030\000\102\007\035\000\102\007\050\000\102\007\
+\\063\000\102\007\064\000\102\007\066\000\102\007\067\000\102\007\
+\\068\000\102\007\069\000\102\007\070\000\102\007\072\000\102\007\
+\\074\000\102\007\075\000\241\006\000\000\
+\\001\000\003\000\152\005\008\000\119\007\010\000\119\007\011\000\119\007\
+\\013\000\119\007\017\000\119\007\018\000\119\007\019\000\009\002\
+\\021\000\119\007\029\000\119\007\030\000\119\007\034\000\008\002\
+\\035\000\119\007\050\000\119\007\063\000\119\007\064\000\119\007\
+\\066\000\119\007\067\000\119\007\068\000\119\007\069\000\119\007\
+\\070\000\119\007\072\000\119\007\073\000\005\002\074\000\119\007\
+\\075\000\241\006\085\000\071\000\000\000\
+\\001\000\003\000\152\005\008\000\119\007\010\000\119\007\011\000\119\007\
+\\013\000\119\007\017\000\119\007\018\000\119\007\021\000\119\007\
+\\029\000\119\007\030\000\119\007\035\000\119\007\050\000\119\007\
+\\054\000\010\001\063\000\119\007\064\000\119\007\066\000\119\007\
+\\067\000\119\007\068\000\119\007\069\000\119\007\070\000\119\007\
+\\072\000\119\007\074\000\119\007\075\000\241\006\000\000\
+\\001\000\003\000\152\005\008\000\119\007\010\000\119\007\011\000\119\007\
+\\013\000\119\007\017\000\119\007\018\000\119\007\021\000\119\007\
+\\029\000\119\007\030\000\119\007\035\000\119\007\050\000\119\007\
+\\063\000\119\007\064\000\119\007\066\000\119\007\067\000\119\007\
+\\068\000\119\007\069\000\119\007\070\000\119\007\072\000\119\007\
+\\074\000\119\007\075\000\241\006\000\000\
+\\001\000\004\000\094\000\007\000\025\001\014\000\093\000\025\000\092\000\
+\\041\000\091\000\000\000\
+\\001\000\004\000\094\000\009\000\091\002\014\000\093\000\025\000\092\000\
+\\041\000\091\000\000\000\
+\\001\000\004\000\094\000\014\000\093\000\022\000\077\001\025\000\092\000\
+\\041\000\091\000\000\000\
+\\001\000\004\000\094\000\014\000\093\000\025\000\092\000\028\000\059\001\
+\\041\000\091\000\000\000\
+\\001\000\004\000\094\000\014\000\093\000\025\000\092\000\035\000\022\001\
+\\040\000\021\001\041\000\091\000\042\000\020\001\000\000\
+\\001\000\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\
+\\042\000\090\000\000\000\
+\\001\000\005\000\203\005\039\000\203\005\040\000\203\005\041\000\203\005\
+\\046\000\196\005\000\000\
+\\001\000\005\000\204\005\039\000\204\005\040\000\204\005\041\000\204\005\
+\\046\000\197\005\075\000\204\005\000\000\
+\\001\000\005\000\205\005\039\000\205\005\040\000\205\005\041\000\205\005\
+\\046\000\198\005\075\000\205\005\000\000\
+\\001\000\005\000\032\001\035\000\198\001\040\000\197\001\041\000\031\001\
+\\045\000\196\001\052\000\029\001\053\000\028\001\075\000\027\001\000\000\
+\\001\000\005\000\032\001\041\000\031\001\046\000\030\001\052\000\029\001\
+\\053\000\028\001\075\000\027\001\000\000\
+\\001\000\005\000\032\001\041\000\031\001\047\000\051\001\052\000\029\001\
+\\053\000\028\001\075\000\027\001\000\000\
+\\001\000\005\000\032\001\041\000\031\001\047\000\066\001\052\000\029\001\
+\\053\000\028\001\075\000\027\001\000\000\
 \\001\000\006\000\068\000\012\000\065\000\015\000\063\000\019\000\060\000\
 \\023\000\057\000\026\000\055\000\027\000\054\000\033\000\051\000\
-\\034\000\050\000\035\000\142\000\036\000\049\000\038\000\048\000\
+\\034\000\050\000\035\000\145\000\036\000\049\000\038\000\048\000\
 \\046\000\047\000\049\000\046\000\055\000\044\000\058\000\043\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
@@ -18122,261 +20365,249 @@ val table=let val actionRows =
 \\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
 \\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
 \\086\000\025\000\087\000\024\000\000\000\
-\\001\000\010\000\068\002\000\000\
-\\001\000\010\000\069\002\000\000\
-\\001\000\010\000\079\002\000\000\
-\\001\000\010\000\080\002\000\000\
-\\001\000\010\000\137\002\000\000\
-\\001\000\010\000\201\002\000\000\
-\\001\000\010\000\229\002\000\000\
-\\001\000\010\000\106\003\075\000\002\002\000\000\
-\\001\000\010\000\198\003\041\000\233\002\076\000\232\002\000\000\
-\\001\000\011\000\135\002\013\000\134\002\029\000\133\002\030\000\132\002\
-\\050\000\131\002\068\000\130\002\072\000\129\002\074\000\128\002\000\000\
-\\001\000\011\000\135\002\013\000\134\002\029\000\133\002\030\000\132\002\
-\\050\000\131\002\068\000\130\002\072\000\129\002\074\000\128\002\
+\\001\000\010\000\077\002\075\000\076\002\000\000\
+\\001\000\010\000\079\002\075\000\078\002\000\000\
+\\001\000\010\000\089\002\000\000\
+\\001\000\010\000\090\002\000\000\
+\\001\000\010\000\147\002\000\000\
+\\001\000\010\000\213\002\000\000\
+\\001\000\010\000\241\002\000\000\
+\\001\000\010\000\118\003\075\000\010\002\000\000\
+\\001\000\010\000\210\003\041\000\245\002\076\000\244\002\000\000\
+\\001\000\011\000\145\002\013\000\144\002\029\000\143\002\030\000\142\002\
+\\050\000\141\002\068\000\140\002\072\000\139\002\074\000\138\002\000\000\
+\\001\000\011\000\145\002\013\000\144\002\029\000\143\002\030\000\142\002\
+\\050\000\141\002\068\000\140\002\072\000\139\002\074\000\138\002\
 \\085\000\071\000\000\000\
-\\001\000\011\000\210\002\013\000\209\002\029\000\208\002\030\000\207\002\
-\\050\000\206\002\068\000\205\002\072\000\204\002\074\000\203\002\
+\\001\000\011\000\222\002\013\000\221\002\029\000\220\002\030\000\219\002\
+\\050\000\218\002\068\000\217\002\072\000\216\002\074\000\215\002\
 \\085\000\071\000\000\000\
-\\001\000\011\000\003\003\013\000\002\003\029\000\001\003\030\000\000\003\
-\\050\000\255\002\068\000\254\002\072\000\253\002\074\000\252\002\
+\\001\000\011\000\015\003\013\000\014\003\029\000\013\003\030\000\012\003\
+\\050\000\011\003\068\000\010\003\072\000\009\003\074\000\008\003\
 \\085\000\071\000\000\000\
-\\001\000\011\000\003\003\013\000\002\003\029\000\001\003\030\000\000\003\
-\\050\000\255\002\068\000\254\002\072\000\253\002\074\000\252\002\
-\\085\000\099\000\000\000\
-\\001\000\011\000\079\003\013\000\078\003\029\000\077\003\030\000\076\003\
-\\050\000\075\003\068\000\074\003\072\000\073\003\074\000\072\003\
+\\001\000\011\000\015\003\013\000\014\003\029\000\013\003\030\000\012\003\
+\\050\000\011\003\068\000\010\003\072\000\009\003\074\000\008\003\
+\\085\000\102\000\000\000\
+\\001\000\011\000\091\003\013\000\090\003\029\000\089\003\030\000\088\003\
+\\050\000\087\003\068\000\086\003\072\000\085\003\074\000\084\003\
 \\085\000\071\000\000\000\
-\\001\000\011\000\194\003\013\000\193\003\029\000\192\003\030\000\191\003\
-\\044\000\096\000\050\000\190\003\068\000\189\003\072\000\188\003\
-\\074\000\187\003\085\000\071\000\000\000\
-\\001\000\011\000\194\003\013\000\193\003\029\000\192\003\030\000\191\003\
-\\050\000\190\003\068\000\189\003\072\000\188\003\074\000\187\003\
+\\001\000\011\000\206\003\013\000\205\003\029\000\204\003\030\000\203\003\
+\\044\000\099\000\050\000\202\003\068\000\201\003\072\000\200\003\
+\\074\000\199\003\085\000\071\000\000\000\
+\\001\000\011\000\206\003\013\000\205\003\029\000\204\003\030\000\203\003\
+\\050\000\202\003\068\000\201\003\072\000\200\003\074\000\199\003\
 \\085\000\071\000\000\000\
-\\001\000\011\000\225\003\013\000\224\003\029\000\223\003\030\000\222\003\
-\\050\000\221\003\068\000\220\003\072\000\219\003\074\000\218\003\
+\\001\000\011\000\237\003\013\000\236\003\029\000\235\003\030\000\234\003\
+\\050\000\233\003\068\000\232\003\072\000\231\003\074\000\230\003\
 \\085\000\071\000\000\000\
-\\001\000\011\000\064\004\013\000\063\004\029\000\062\004\030\000\061\004\
-\\050\000\060\004\068\000\059\004\072\000\058\004\074\000\057\004\
+\\001\000\011\000\076\004\013\000\075\004\029\000\074\004\030\000\073\004\
+\\050\000\072\004\068\000\071\004\072\000\070\004\074\000\069\004\
 \\085\000\071\000\000\000\
-\\001\000\011\000\064\004\013\000\063\004\029\000\062\004\030\000\061\004\
-\\050\000\060\004\068\000\059\004\072\000\058\004\074\000\057\004\
-\\085\000\099\000\000\000\
-\\001\000\011\000\077\004\013\000\076\004\029\000\075\004\030\000\074\004\
-\\050\000\073\004\068\000\072\004\072\000\071\004\074\000\070\004\
+\\001\000\011\000\076\004\013\000\075\004\029\000\074\004\030\000\073\004\
+\\050\000\072\004\068\000\071\004\072\000\070\004\074\000\069\004\
+\\085\000\102\000\000\000\
+\\001\000\011\000\089\004\013\000\088\004\029\000\087\004\030\000\086\004\
+\\050\000\085\004\068\000\084\004\072\000\083\004\074\000\082\004\
 \\085\000\071\000\000\000\
-\\001\000\011\000\098\004\013\000\097\004\029\000\096\004\030\000\095\004\
-\\050\000\094\004\068\000\093\004\072\000\092\004\074\000\091\004\
+\\001\000\011\000\110\004\013\000\109\004\029\000\108\004\030\000\107\004\
+\\050\000\106\004\068\000\105\004\072\000\104\004\074\000\103\004\
 \\085\000\071\000\000\000\
-\\001\000\016\000\049\001\000\000\
-\\001\000\016\000\050\001\000\000\
-\\001\000\016\000\140\002\000\000\
-\\001\000\016\000\238\002\000\000\
+\\001\000\016\000\055\001\000\000\
+\\001\000\016\000\056\001\000\000\
+\\001\000\016\000\150\002\000\000\
+\\001\000\016\000\250\002\000\000\
 \\001\000\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
 \\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
 \\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\117\001\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\218\001\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\013\002\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\097\002\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\225\002\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\012\003\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\125\003\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\135\003\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\057\000\155\003\
-\\071\000\116\001\085\000\104\001\000\000\
-\\001\000\019\000\120\001\034\000\119\001\056\000\118\001\071\000\116\001\
-\\085\000\104\001\000\000\
-\\001\000\019\000\001\002\034\000\000\002\057\000\255\001\059\000\254\001\
-\\073\000\253\001\085\000\071\000\000\000\
-\\001\000\019\000\001\002\034\000\000\002\057\000\124\002\059\000\123\002\
-\\073\000\253\001\085\000\071\000\000\000\
-\\001\000\019\000\001\002\034\000\000\002\057\000\179\002\059\000\178\002\
-\\073\000\253\001\085\000\071\000\000\000\
-\\001\000\023\000\158\000\027\000\157\000\034\000\156\000\036\000\155\000\
-\\038\000\154\000\044\000\153\000\051\000\152\000\055\000\151\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\125\001\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\226\001\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\021\002\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\107\002\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\237\002\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\024\003\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\137\003\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\147\003\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\057\000\167\003\
+\\071\000\124\001\085\000\112\001\000\000\
+\\001\000\019\000\128\001\034\000\127\001\056\000\126\001\071\000\124\001\
+\\085\000\112\001\000\000\
+\\001\000\019\000\009\002\034\000\008\002\057\000\007\002\059\000\006\002\
+\\073\000\005\002\085\000\071\000\000\000\
+\\001\000\019\000\009\002\034\000\008\002\057\000\134\002\059\000\133\002\
+\\073\000\005\002\085\000\071\000\000\000\
+\\001\000\019\000\009\002\034\000\008\002\057\000\189\002\059\000\188\002\
+\\073\000\005\002\085\000\071\000\000\000\
+\\001\000\023\000\161\000\027\000\160\000\034\000\159\000\036\000\158\000\
+\\038\000\157\000\044\000\156\000\051\000\155\000\055\000\154\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
-\\085\000\026\000\086\000\025\000\087\000\024\000\088\000\106\000\000\000\
-\\001\000\023\000\158\000\027\000\157\000\034\000\161\000\036\000\155\000\
-\\038\000\154\000\044\000\153\000\051\000\152\000\055\000\151\000\
+\\085\000\026\000\086\000\025\000\087\000\024\000\088\000\109\000\000\000\
+\\001\000\023\000\161\000\027\000\160\000\034\000\164\000\036\000\158\000\
+\\038\000\157\000\044\000\156\000\051\000\155\000\055\000\154\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
 \\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\001\000\023\000\158\000\034\000\156\000\036\000\155\000\038\000\154\000\
-\\044\000\153\000\051\000\152\000\055\000\151\000\077\000\034\000\
+\\001\000\023\000\161\000\034\000\159\000\036\000\158\000\038\000\157\000\
+\\044\000\156\000\051\000\155\000\055\000\154\000\077\000\034\000\
 \\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
 \\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
-\\086\000\025\000\087\000\024\000\088\000\106\000\000\000\
-\\001\000\023\000\158\000\034\000\161\000\035\000\042\001\036\000\155\000\
-\\038\000\154\000\044\000\153\000\051\000\152\000\055\000\151\000\
+\\086\000\025\000\087\000\024\000\088\000\109\000\000\000\
+\\001\000\023\000\161\000\034\000\164\000\035\000\048\001\036\000\158\000\
+\\038\000\157\000\044\000\156\000\051\000\155\000\055\000\154\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
 \\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\001\000\023\000\158\000\034\000\161\000\035\000\042\001\036\000\155\000\
-\\038\000\154\000\044\000\153\000\051\000\152\000\055\000\151\000\
+\\001\000\023\000\161\000\034\000\164\000\035\000\048\001\036\000\158\000\
+\\038\000\157\000\044\000\156\000\051\000\155\000\055\000\154\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
-\\085\000\026\000\086\000\025\000\087\000\024\000\088\000\106\000\000\000\
-\\001\000\023\000\158\000\034\000\161\000\036\000\155\000\038\000\154\000\
-\\044\000\153\000\051\000\152\000\055\000\151\000\077\000\034\000\
+\\085\000\026\000\086\000\025\000\087\000\024\000\088\000\109\000\000\000\
+\\001\000\023\000\161\000\034\000\164\000\036\000\158\000\038\000\157\000\
+\\044\000\156\000\051\000\155\000\055\000\154\000\077\000\034\000\
 \\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
 \\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
 \\086\000\025\000\087\000\024\000\000\000\
-\\001\000\029\000\025\002\072\000\024\002\085\000\071\000\000\000\
-\\001\000\029\000\147\002\072\000\146\002\085\000\071\000\000\000\
-\\001\000\030\000\115\000\050\000\114\000\074\000\113\000\000\000\
-\\001\000\031\000\255\000\000\000\
-\\001\000\031\000\156\001\000\000\
-\\001\000\031\000\158\001\000\000\
-\\001\000\031\000\214\001\000\000\
-\\001\000\031\000\160\002\000\000\
-\\001\000\031\000\024\003\000\000\
-\\001\000\031\000\026\003\000\000\
-\\001\000\034\000\107\000\085\000\198\000\086\000\197\000\088\000\106\000\000\000\
-\\001\000\034\000\249\000\000\000\
-\\001\000\035\000\017\001\000\000\
-\\001\000\035\000\018\001\000\000\
-\\001\000\035\000\154\001\000\000\
-\\001\000\035\000\191\001\000\000\
-\\001\000\035\000\192\001\000\000\
-\\001\000\035\000\245\001\000\000\
-\\001\000\035\000\247\001\040\000\246\001\000\000\
-\\001\000\035\000\016\002\000\000\
-\\001\000\035\000\139\002\075\000\002\002\000\000\
-\\001\000\035\000\234\002\041\000\233\002\076\000\232\002\000\000\
-\\001\000\035\000\235\002\000\000\
-\\001\000\035\000\007\003\075\000\002\002\000\000\
-\\001\000\035\000\029\003\075\000\002\002\000\000\
-\\001\000\037\000\006\001\000\000\
-\\001\000\037\000\013\001\000\000\
-\\001\000\037\000\183\001\000\000\
-\\001\000\037\000\187\001\000\000\
-\\001\000\039\000\191\005\040\000\191\005\041\000\191\005\046\000\184\005\
-\\054\000\197\005\075\000\191\005\000\000\
-\\001\000\039\000\105\006\040\000\105\006\041\000\011\001\075\000\201\005\000\000\
-\\001\000\039\000\008\001\000\000\
-\\001\000\039\000\184\001\000\000\
-\\001\000\039\000\243\001\000\000\
-\\001\000\039\000\064\002\000\000\
-\\001\000\041\000\159\001\000\000\
-\\001\000\041\000\222\001\000\000\
-\\001\000\041\000\244\001\000\000\
-\\001\000\041\000\017\002\000\000\
-\\001\000\041\000\037\002\000\000\
-\\001\000\041\000\060\002\000\000\
-\\001\000\041\000\061\002\000\000\
-\\001\000\041\000\098\002\000\000\
-\\001\000\041\000\113\002\076\000\112\002\000\000\
-\\001\000\041\000\183\002\000\000\
-\\001\000\041\000\185\002\000\000\
-\\001\000\041\000\230\002\000\000\
-\\001\000\041\000\020\003\000\000\
-\\001\000\041\000\031\003\046\000\030\003\000\000\
-\\001\000\041\000\043\003\076\000\042\003\000\000\
-\\001\000\041\000\094\003\000\000\
-\\001\000\041\000\140\003\000\000\
-\\001\000\041\000\159\003\000\000\
-\\001\000\041\000\239\003\000\000\
-\\001\000\043\000\037\001\078\000\127\000\079\000\126\000\085\000\036\001\
-\\086\000\134\000\087\000\133\000\000\000\
-\\001\000\044\000\096\000\085\000\071\000\000\000\
-\\001\000\046\000\187\005\075\000\175\005\000\000\
-\\001\000\046\000\188\005\075\000\176\005\000\000\
+\\001\000\029\000\033\002\072\000\032\002\085\000\071\000\000\000\
+\\001\000\029\000\157\002\072\000\156\002\085\000\071\000\000\000\
+\\001\000\030\000\118\000\050\000\117\000\074\000\116\000\000\000\
+\\001\000\031\000\005\001\000\000\
+\\001\000\031\000\164\001\000\000\
+\\001\000\031\000\166\001\000\000\
+\\001\000\031\000\222\001\000\000\
+\\001\000\031\000\170\002\000\000\
+\\001\000\031\000\036\003\000\000\
+\\001\000\031\000\038\003\000\000\
+\\001\000\034\000\110\000\085\000\201\000\086\000\200\000\088\000\109\000\000\000\
+\\001\000\034\000\255\000\000\000\
+\\001\000\035\000\023\001\000\000\
+\\001\000\035\000\024\001\000\000\
+\\001\000\035\000\162\001\000\000\
+\\001\000\035\000\199\001\000\000\
+\\001\000\035\000\200\001\000\000\
+\\001\000\035\000\253\001\000\000\
+\\001\000\035\000\255\001\040\000\254\001\000\000\
+\\001\000\035\000\024\002\000\000\
+\\001\000\035\000\149\002\075\000\010\002\000\000\
+\\001\000\035\000\246\002\041\000\245\002\076\000\244\002\000\000\
+\\001\000\035\000\247\002\000\000\
+\\001\000\035\000\019\003\075\000\010\002\000\000\
+\\001\000\035\000\041\003\075\000\010\002\000\000\
+\\001\000\037\000\012\001\000\000\
+\\001\000\037\000\019\001\000\000\
+\\001\000\037\000\191\001\000\000\
+\\001\000\037\000\195\001\000\000\
+\\001\000\039\000\203\005\040\000\203\005\041\000\203\005\046\000\196\005\
+\\054\000\209\005\075\000\203\005\000\000\
+\\001\000\039\000\117\006\040\000\117\006\041\000\017\001\075\000\213\005\000\000\
+\\001\000\039\000\014\001\000\000\
+\\001\000\039\000\192\001\000\000\
+\\001\000\039\000\251\001\000\000\
+\\001\000\039\000\072\002\000\000\
+\\001\000\041\000\167\001\000\000\
+\\001\000\041\000\230\001\000\000\
+\\001\000\041\000\252\001\000\000\
+\\001\000\041\000\025\002\000\000\
+\\001\000\041\000\045\002\000\000\
+\\001\000\041\000\068\002\000\000\
+\\001\000\041\000\069\002\000\000\
+\\001\000\041\000\108\002\000\000\
+\\001\000\041\000\123\002\076\000\122\002\000\000\
+\\001\000\041\000\193\002\000\000\
+\\001\000\041\000\195\002\000\000\
+\\001\000\041\000\242\002\000\000\
+\\001\000\041\000\032\003\000\000\
+\\001\000\041\000\043\003\046\000\042\003\000\000\
+\\001\000\041\000\055\003\076\000\054\003\000\000\
+\\001\000\041\000\106\003\000\000\
+\\001\000\041\000\152\003\000\000\
+\\001\000\041\000\171\003\000\000\
+\\001\000\041\000\251\003\000\000\
+\\001\000\043\000\043\001\078\000\130\000\079\000\129\000\085\000\042\001\
+\\086\000\137\000\087\000\136\000\000\000\
+\\001\000\044\000\099\000\085\000\071\000\000\000\
+\\001\000\046\000\199\005\075\000\187\005\000\000\
+\\001\000\046\000\200\005\075\000\188\005\000\000\
 \\001\000\046\000\047\000\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\001\000\046\000\170\000\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\001\000\046\000\170\000\085\000\169\000\086\000\025\000\087\000\024\000\000\000\
-\\001\000\046\000\012\001\000\000\
-\\001\000\046\000\055\001\000\000\
-\\001\000\046\000\110\001\000\000\
-\\001\000\046\000\122\001\000\000\
-\\001\000\046\000\123\001\000\000\
-\\001\000\046\000\186\001\000\000\
-\\001\000\046\000\235\001\000\000\
-\\001\000\046\000\003\002\075\000\002\002\000\000\
-\\001\000\046\000\051\002\000\000\
-\\001\000\046\000\152\002\054\000\004\001\000\000\
-\\001\000\046\000\180\002\075\000\002\002\000\000\
-\\001\000\046\000\182\002\000\000\
-\\001\000\046\000\184\002\075\000\002\002\000\000\
-\\001\000\046\000\239\002\054\000\004\001\000\000\
-\\001\000\046\000\008\003\000\000\
-\\001\000\046\000\018\003\000\000\
-\\001\000\046\000\019\003\000\000\
-\\001\000\046\000\053\003\000\000\
-\\001\000\046\000\199\003\000\000\
-\\001\000\046\000\200\003\000\000\
-\\001\000\046\000\201\003\000\000\
-\\001\000\046\000\202\003\000\000\
-\\001\000\046\000\203\003\000\000\
-\\001\000\046\000\204\003\000\000\
-\\001\000\046\000\205\003\000\000\
-\\001\000\046\000\206\003\000\000\
-\\001\000\046\000\238\003\000\000\
-\\001\000\046\000\002\004\000\000\
-\\001\000\046\000\003\004\000\000\
-\\001\000\046\000\004\004\000\000\
-\\001\000\046\000\005\004\000\000\
-\\001\000\046\000\006\004\000\000\
-\\001\000\046\000\007\004\000\000\
-\\001\000\046\000\008\004\000\000\
-\\001\000\046\000\009\004\000\000\
-\\001\000\046\000\010\004\000\000\
-\\001\000\046\000\038\004\000\000\
-\\001\000\046\000\039\004\000\000\
-\\001\000\046\000\040\004\000\000\
-\\001\000\046\000\041\004\000\000\
-\\001\000\046\000\042\004\000\000\
-\\001\000\046\000\043\004\000\000\
-\\001\000\046\000\044\004\000\000\
-\\001\000\046\000\045\004\000\000\
-\\001\000\046\000\110\004\000\000\
-\\001\000\046\000\111\004\000\000\
-\\001\000\046\000\112\004\000\000\
-\\001\000\046\000\113\004\000\000\
-\\001\000\046\000\114\004\000\000\
-\\001\000\046\000\115\004\000\000\
-\\001\000\046\000\116\004\000\000\
-\\001\000\046\000\117\004\000\000\
-\\001\000\046\000\205\004\000\000\
-\\001\000\046\000\206\004\000\000\
-\\001\000\046\000\207\004\000\000\
-\\001\000\046\000\208\004\000\000\
-\\001\000\046\000\209\004\000\000\
-\\001\000\046\000\210\004\000\000\
-\\001\000\046\000\211\004\000\000\
-\\001\000\046\000\212\004\000\000\
-\\001\000\046\000\228\004\000\000\
-\\001\000\046\000\229\004\000\000\
-\\001\000\046\000\230\004\000\000\
-\\001\000\046\000\231\004\000\000\
-\\001\000\046\000\232\004\000\000\
-\\001\000\046\000\233\004\000\000\
-\\001\000\046\000\234\004\000\000\
-\\001\000\046\000\235\004\000\000\
-\\001\000\046\000\042\005\000\000\
-\\001\000\046\000\043\005\000\000\
-\\001\000\046\000\044\005\000\000\
-\\001\000\046\000\045\005\000\000\
-\\001\000\046\000\046\005\000\000\
-\\001\000\046\000\047\005\000\000\
-\\001\000\046\000\048\005\000\000\
-\\001\000\046\000\049\005\000\000\
-\\001\000\046\000\050\005\000\000\
-\\001\000\046\000\051\005\000\000\
-\\001\000\046\000\052\005\000\000\
-\\001\000\046\000\053\005\000\000\
+\\001\000\046\000\173\000\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
+\\001\000\046\000\173\000\085\000\172\000\086\000\025\000\087\000\024\000\000\000\
+\\001\000\046\000\018\001\000\000\
+\\001\000\046\000\061\001\000\000\
+\\001\000\046\000\118\001\000\000\
+\\001\000\046\000\130\001\000\000\
+\\001\000\046\000\131\001\000\000\
+\\001\000\046\000\194\001\000\000\
+\\001\000\046\000\243\001\000\000\
+\\001\000\046\000\011\002\075\000\010\002\000\000\
+\\001\000\046\000\059\002\000\000\
+\\001\000\046\000\162\002\054\000\010\001\000\000\
+\\001\000\046\000\190\002\075\000\010\002\000\000\
+\\001\000\046\000\192\002\000\000\
+\\001\000\046\000\194\002\075\000\010\002\000\000\
+\\001\000\046\000\251\002\054\000\010\001\000\000\
+\\001\000\046\000\020\003\000\000\
+\\001\000\046\000\030\003\000\000\
+\\001\000\046\000\031\003\000\000\
+\\001\000\046\000\065\003\000\000\
+\\001\000\046\000\211\003\000\000\
+\\001\000\046\000\212\003\000\000\
+\\001\000\046\000\213\003\000\000\
+\\001\000\046\000\214\003\000\000\
+\\001\000\046\000\215\003\000\000\
+\\001\000\046\000\216\003\000\000\
+\\001\000\046\000\217\003\000\000\
+\\001\000\046\000\218\003\000\000\
+\\001\000\046\000\250\003\000\000\
+\\001\000\046\000\014\004\000\000\
+\\001\000\046\000\015\004\000\000\
+\\001\000\046\000\016\004\000\000\
+\\001\000\046\000\017\004\000\000\
+\\001\000\046\000\018\004\000\000\
+\\001\000\046\000\019\004\000\000\
+\\001\000\046\000\020\004\000\000\
+\\001\000\046\000\021\004\000\000\
+\\001\000\046\000\022\004\000\000\
+\\001\000\046\000\050\004\000\000\
+\\001\000\046\000\051\004\000\000\
+\\001\000\046\000\052\004\000\000\
+\\001\000\046\000\053\004\000\000\
+\\001\000\046\000\054\004\000\000\
+\\001\000\046\000\055\004\000\000\
+\\001\000\046\000\056\004\000\000\
+\\001\000\046\000\057\004\000\000\
+\\001\000\046\000\122\004\000\000\
+\\001\000\046\000\123\004\000\000\
+\\001\000\046\000\124\004\000\000\
+\\001\000\046\000\125\004\000\000\
+\\001\000\046\000\126\004\000\000\
+\\001\000\046\000\127\004\000\000\
+\\001\000\046\000\128\004\000\000\
+\\001\000\046\000\129\004\000\000\
+\\001\000\046\000\217\004\000\000\
+\\001\000\046\000\218\004\000\000\
+\\001\000\046\000\219\004\000\000\
+\\001\000\046\000\220\004\000\000\
+\\001\000\046\000\221\004\000\000\
+\\001\000\046\000\222\004\000\000\
+\\001\000\046\000\223\004\000\000\
+\\001\000\046\000\224\004\000\000\
+\\001\000\046\000\240\004\000\000\
+\\001\000\046\000\241\004\000\000\
+\\001\000\046\000\242\004\000\000\
+\\001\000\046\000\243\004\000\000\
+\\001\000\046\000\244\004\000\000\
+\\001\000\046\000\245\004\000\000\
+\\001\000\046\000\246\004\000\000\
+\\001\000\046\000\247\004\000\000\
 \\001\000\046\000\054\005\000\000\
 \\001\000\046\000\055\005\000\000\
 \\001\000\046\000\056\005\000\000\
@@ -18389,54 +20620,54 @@ val table=let val actionRows =
 \\001\000\046\000\063\005\000\000\
 \\001\000\046\000\064\005\000\000\
 \\001\000\046\000\065\005\000\000\
-\\001\000\047\000\231\002\000\000\
-\\001\000\047\000\095\003\000\000\
-\\001\000\047\000\160\003\000\000\
-\\001\000\048\000\138\002\000\000\
-\\001\000\048\000\211\002\000\000\
-\\001\000\048\000\004\003\000\000\
-\\001\000\048\000\080\003\000\000\
-\\001\000\048\000\195\003\000\000\
-\\001\000\048\000\226\003\000\000\
-\\001\000\048\000\065\004\000\000\
-\\001\000\048\000\078\004\000\000\
-\\001\000\048\000\099\004\000\000\
-\\001\000\054\000\093\000\000\000\
-\\001\000\054\000\239\001\000\000\
-\\001\000\054\000\242\001\000\000\
-\\001\000\061\000\203\000\000\000\
-\\001\000\075\000\009\001\000\000\
-\\001\000\075\000\092\002\000\000\
-\\001\000\075\000\143\002\000\000\
-\\001\000\075\000\213\002\000\000\
-\\001\000\075\000\228\003\000\000\
-\\001\000\075\000\235\003\000\000\
-\\001\000\078\000\127\000\079\000\126\000\085\000\125\000\086\000\124\000\
-\\087\000\123\000\000\000\
-\\001\000\078\000\127\000\079\000\126\000\085\000\036\001\086\000\134\000\
-\\087\000\133\000\000\000\
-\\001\000\083\000\074\001\000\000\
-\\001\000\083\000\051\003\000\000\
-\\001\000\083\000\162\003\000\000\
-\\001\000\083\000\100\004\000\000\
+\\001\000\046\000\066\005\000\000\
+\\001\000\046\000\067\005\000\000\
+\\001\000\046\000\068\005\000\000\
+\\001\000\046\000\069\005\000\000\
+\\001\000\046\000\070\005\000\000\
+\\001\000\046\000\071\005\000\000\
+\\001\000\046\000\072\005\000\000\
+\\001\000\046\000\073\005\000\000\
+\\001\000\046\000\074\005\000\000\
+\\001\000\046\000\075\005\000\000\
+\\001\000\046\000\076\005\000\000\
+\\001\000\046\000\077\005\000\000\
+\\001\000\047\000\243\002\000\000\
+\\001\000\047\000\107\003\000\000\
+\\001\000\047\000\172\003\000\000\
+\\001\000\048\000\148\002\000\000\
+\\001\000\048\000\223\002\000\000\
+\\001\000\048\000\016\003\000\000\
+\\001\000\048\000\092\003\000\000\
+\\001\000\048\000\207\003\000\000\
+\\001\000\048\000\238\003\000\000\
+\\001\000\048\000\077\004\000\000\
+\\001\000\048\000\090\004\000\000\
+\\001\000\048\000\111\004\000\000\
+\\001\000\054\000\096\000\000\000\
+\\001\000\054\000\247\001\000\000\
+\\001\000\054\000\250\001\000\000\
+\\001\000\061\000\206\000\000\000\
+\\001\000\075\000\015\001\000\000\
+\\001\000\075\000\102\002\000\000\
+\\001\000\075\000\153\002\000\000\
+\\001\000\075\000\225\002\000\000\
+\\001\000\075\000\240\003\000\000\
+\\001\000\075\000\247\003\000\000\
+\\001\000\078\000\130\000\079\000\129\000\085\000\128\000\086\000\127\000\
+\\087\000\126\000\000\000\
+\\001\000\078\000\130\000\079\000\129\000\085\000\042\001\086\000\137\000\
+\\087\000\136\000\000\000\
+\\001\000\083\000\080\001\000\000\
+\\001\000\083\000\063\003\000\000\
+\\001\000\083\000\174\003\000\000\
+\\001\000\083\000\112\004\000\000\
 \\001\000\085\000\071\000\000\000\
-\\001\000\085\000\099\000\000\000\
-\\001\000\085\000\198\000\086\000\197\000\000\000\
-\\001\000\085\000\098\001\086\000\197\000\000\000\
-\\001\000\085\000\104\001\000\000\
-\\001\000\088\000\106\000\000\000\
-\\174\005\000\000\
-\\175\005\000\000\
-\\176\005\000\000\
-\\177\005\000\000\
-\\178\005\000\000\
-\\179\005\000\000\
-\\180\005\000\000\
-\\181\005\000\000\
-\\182\005\000\000\
-\\183\005\000\000\
-\\184\005\000\000\
-\\185\005\000\000\
+\\001\000\085\000\102\000\000\000\
+\\001\000\085\000\201\000\086\000\200\000\000\000\
+\\001\000\085\000\106\001\086\000\200\000\000\000\
+\\001\000\085\000\112\001\000\000\
+\\001\000\088\000\109\000\000\000\
 \\186\005\000\000\
 \\187\005\000\000\
 \\188\005\000\000\
@@ -18461,12 +20692,7 @@ val table=let val actionRows =
 \\207\005\000\000\
 \\208\005\000\000\
 \\209\005\000\000\
-\\210\005\008\000\209\001\023\000\111\000\000\000\
-\\210\005\008\000\039\003\023\000\111\000\000\000\
-\\210\005\023\000\111\000\000\000\
-\\210\005\023\000\111\000\077\000\034\000\078\000\033\000\079\000\032\000\
-\\080\000\031\000\081\000\030\000\082\000\029\000\083\000\028\000\
-\\084\000\027\000\000\000\
+\\210\005\000\000\
 \\211\005\000\000\
 \\212\005\000\000\
 \\213\005\000\000\
@@ -18478,103 +20704,108 @@ val table=let val actionRows =
 \\219\005\000\000\
 \\220\005\000\000\
 \\221\005\000\000\
-\\222\005\000\000\
+\\222\005\008\000\217\001\023\000\114\000\000\000\
+\\222\005\008\000\051\003\023\000\114\000\000\000\
+\\222\005\023\000\114\000\000\000\
+\\222\005\023\000\114\000\077\000\034\000\078\000\033\000\079\000\032\000\
+\\080\000\031\000\081\000\030\000\082\000\029\000\083\000\028\000\
+\\084\000\027\000\000\000\
 \\223\005\000\000\
 \\224\005\000\000\
-\\225\005\006\000\068\000\012\000\065\000\015\000\063\000\019\000\060\000\
+\\225\005\000\000\
+\\226\005\000\000\
+\\227\005\000\000\
+\\228\005\000\000\
+\\229\005\000\000\
+\\230\005\000\000\
+\\231\005\000\000\
+\\232\005\000\000\
+\\233\005\000\000\
+\\234\005\000\000\
+\\235\005\000\000\
+\\236\005\000\000\
+\\237\005\006\000\068\000\012\000\065\000\015\000\063\000\019\000\060\000\
 \\023\000\057\000\026\000\055\000\027\000\054\000\033\000\051\000\
 \\034\000\050\000\036\000\049\000\038\000\048\000\046\000\047\000\
 \\049\000\046\000\055\000\044\000\058\000\043\000\077\000\034\000\
 \\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
 \\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
 \\086\000\025\000\087\000\024\000\000\000\
-\\226\005\000\000\
-\\227\005\004\000\091\000\014\000\090\000\025\000\089\000\040\000\005\001\
-\\041\000\088\000\000\000\
-\\228\005\000\000\
-\\229\005\000\000\
-\\230\005\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\
-\\042\000\067\002\000\000\
-\\231\005\000\000\
-\\232\005\000\000\
-\\233\005\000\000\
-\\234\005\000\000\
-\\235\005\004\000\091\000\014\000\090\000\025\000\089\000\040\000\169\001\
-\\041\000\088\000\000\000\
-\\235\005\040\000\169\001\000\000\
-\\236\005\000\000\
-\\237\005\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
-\\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
-\\077\000\034\000\078\000\137\000\079\000\136\000\080\000\031\000\
-\\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
-\\085\000\135\000\086\000\134\000\087\000\133\000\000\000\
 \\238\005\000\000\
-\\239\005\000\000\
-\\240\005\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
+\\239\005\004\000\094\000\014\000\093\000\025\000\092\000\040\000\011\001\
+\\041\000\091\000\000\000\
+\\240\005\000\000\
+\\241\005\000\000\
+\\242\005\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\
+\\042\000\075\002\000\000\
+\\243\005\000\000\
+\\244\005\000\000\
+\\245\005\000\000\
+\\246\005\000\000\
+\\247\005\004\000\094\000\014\000\093\000\025\000\092\000\040\000\177\001\
+\\041\000\091\000\000\000\
+\\247\005\040\000\177\001\000\000\
+\\248\005\000\000\
+\\249\005\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
+\\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
+\\077\000\034\000\078\000\140\000\079\000\139\000\080\000\031\000\
+\\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
+\\085\000\138\000\086\000\137\000\087\000\136\000\000\000\
+\\250\005\000\000\
+\\251\005\000\000\
+\\252\005\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
 \\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
 \\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\241\005\000\000\
-\\242\005\000\000\
-\\243\005\004\000\091\000\041\000\088\000\000\000\
-\\244\005\004\000\091\000\025\000\089\000\041\000\088\000\000\000\
-\\245\005\000\000\
-\\246\005\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\000\000\
-\\247\005\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\000\000\
-\\248\005\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\000\000\
-\\249\005\000\000\
-\\250\005\000\000\
-\\251\005\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\000\000\
-\\252\005\054\000\004\001\000\000\
 \\253\005\000\000\
 \\254\005\000\000\
-\\255\005\045\000\062\001\000\000\
-\\000\006\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\000\000\
-\\001\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
-\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
-\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\174\000\
-\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
-\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
-\\074\000\035\000\000\000\
-\\002\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
-\\017\000\062\000\018\000\061\000\019\000\001\002\020\000\059\000\
-\\021\000\058\000\024\000\056\000\029\000\053\000\030\000\052\000\
-\\034\000\000\002\042\000\174\000\050\000\045\000\057\000\124\002\
-\\059\000\123\002\062\000\042\000\063\000\041\000\064\000\040\000\
-\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
-\\073\000\253\001\074\000\035\000\085\000\071\000\000\000\
-\\002\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
-\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
-\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\174\000\
-\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
-\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
-\\074\000\035\000\000\000\
-\\003\006\000\000\
-\\004\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
-\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
-\\024\000\056\000\029\000\053\000\030\000\052\000\050\000\045\000\
-\\062\000\042\000\063\000\041\000\064\000\040\000\066\000\039\000\
-\\067\000\038\000\068\000\037\000\072\000\036\000\074\000\035\000\000\000\
+\\255\005\004\000\094\000\041\000\091\000\000\000\
+\\000\006\004\000\094\000\025\000\092\000\041\000\091\000\000\000\
+\\001\006\000\000\
+\\002\006\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\000\000\
+\\003\006\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\000\000\
+\\004\006\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\000\000\
 \\005\006\000\000\
 \\006\006\000\000\
-\\007\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\007\006\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\000\000\
+\\008\006\054\000\010\001\000\000\
+\\009\006\000\000\
+\\010\006\000\000\
+\\011\006\045\000\068\001\000\000\
+\\012\006\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\000\000\
+\\013\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\177\000\
+\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
+\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
+\\074\000\035\000\000\000\
+\\014\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\019\000\009\002\020\000\059\000\
+\\021\000\058\000\024\000\056\000\029\000\053\000\030\000\052\000\
+\\034\000\008\002\042\000\177\000\050\000\045\000\057\000\134\002\
+\\059\000\133\002\062\000\042\000\063\000\041\000\064\000\040\000\
+\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
+\\073\000\005\002\074\000\035\000\085\000\071\000\000\000\
+\\014\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\177\000\
+\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
+\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
+\\074\000\035\000\000\000\
+\\015\006\000\000\
+\\016\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
 \\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
 \\024\000\056\000\029\000\053\000\030\000\052\000\050\000\045\000\
 \\062\000\042\000\063\000\041\000\064\000\040\000\066\000\039\000\
 \\067\000\038\000\068\000\037\000\072\000\036\000\074\000\035\000\000\000\
-\\008\006\000\000\
-\\009\006\000\000\
-\\010\006\000\000\
-\\011\006\000\000\
-\\012\006\000\000\
-\\013\006\000\000\
-\\014\006\000\000\
-\\015\006\000\000\
-\\016\006\000\000\
 \\017\006\000\000\
 \\018\006\000\000\
-\\019\006\000\000\
+\\019\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\050\000\045\000\
+\\062\000\042\000\063\000\041\000\064\000\040\000\066\000\039\000\
+\\067\000\038\000\068\000\037\000\072\000\036\000\074\000\035\000\000\000\
 \\020\006\000\000\
 \\021\006\000\000\
 \\022\006\000\000\
@@ -18592,169 +20823,170 @@ val table=let val actionRows =
 \\034\006\000\000\
 \\035\006\000\000\
 \\036\006\000\000\
-\\037\006\032\000\066\001\000\000\
+\\037\006\000\000\
 \\038\006\000\000\
-\\039\006\046\000\170\000\085\000\169\000\086\000\025\000\087\000\024\000\000\000\
+\\039\006\000\000\
 \\040\006\000\000\
-\\041\006\054\000\004\001\085\000\071\000\000\000\
+\\041\006\000\000\
 \\042\006\000\000\
-\\043\006\077\000\179\000\078\000\178\000\000\000\
+\\043\006\000\000\
 \\044\006\000\000\
 \\045\006\000\000\
 \\046\006\000\000\
-\\047\006\003\000\071\002\004\000\091\000\014\000\090\000\025\000\089\000\
-\\041\000\088\000\000\000\
+\\047\006\000\000\
 \\048\006\000\000\
-\\049\006\000\000\
-\\050\006\003\000\059\001\000\000\
-\\051\006\000\000\
+\\049\006\032\000\072\001\000\000\
+\\050\006\000\000\
+\\051\006\046\000\173\000\085\000\172\000\086\000\025\000\087\000\024\000\000\000\
 \\052\006\000\000\
-\\053\006\045\000\057\001\000\000\
-\\054\006\004\000\091\000\014\000\090\000\025\000\089\000\041\000\088\000\000\000\
-\\055\006\005\000\026\001\041\000\025\001\052\000\023\001\053\000\022\001\
-\\075\000\021\001\000\000\
+\\053\006\054\000\010\001\085\000\071\000\000\000\
+\\054\006\000\000\
+\\055\006\077\000\182\000\078\000\181\000\000\000\
 \\056\006\000\000\
 \\057\006\000\000\
 \\058\006\000\000\
-\\059\006\003\000\153\001\000\000\
-\\059\006\003\000\153\001\046\000\152\001\000\000\
+\\059\006\003\000\081\002\004\000\094\000\014\000\093\000\025\000\092\000\
+\\041\000\091\000\000\000\
 \\060\006\000\000\
 \\061\006\000\000\
-\\062\006\000\000\
+\\062\006\003\000\065\001\000\000\
 \\063\006\000\000\
 \\064\006\000\000\
-\\065\006\000\000\
-\\066\006\000\000\
-\\067\006\003\000\070\001\000\000\
-\\067\006\003\000\070\001\046\000\069\001\000\000\
-\\067\006\003\000\070\001\046\000\205\001\000\000\
-\\067\006\003\000\070\001\046\000\213\001\000\000\
+\\065\006\045\000\063\001\000\000\
+\\066\006\004\000\094\000\014\000\093\000\025\000\092\000\041\000\091\000\000\000\
+\\067\006\005\000\032\001\041\000\031\001\052\000\029\001\053\000\028\001\
+\\075\000\027\001\000\000\
 \\068\006\000\000\
 \\069\006\000\000\
-\\070\006\045\000\060\003\000\000\
-\\071\006\000\000\
-\\072\006\022\000\165\001\000\000\
-\\072\006\022\000\165\001\046\000\164\001\000\000\
-\\072\006\022\000\165\001\046\000\203\001\000\000\
-\\072\006\022\000\165\001\046\000\028\003\000\000\
-\\072\006\022\000\165\001\046\000\033\003\000\000\
+\\070\006\000\000\
+\\071\006\003\000\161\001\000\000\
+\\071\006\003\000\161\001\046\000\160\001\000\000\
+\\072\006\000\000\
 \\073\006\000\000\
 \\074\006\000\000\
 \\075\006\000\000\
-\\076\006\003\000\056\003\000\000\
+\\076\006\000\000\
 \\077\006\000\000\
 \\078\006\000\000\
-\\079\006\000\000\
-\\080\006\003\000\083\002\000\000\
+\\079\006\003\000\076\001\000\000\
+\\079\006\003\000\076\001\046\000\075\001\000\000\
+\\079\006\003\000\076\001\046\000\213\001\000\000\
+\\079\006\003\000\076\001\046\000\221\001\000\000\
+\\080\006\000\000\
 \\081\006\000\000\
-\\082\006\000\000\
+\\082\006\045\000\072\003\000\000\
 \\083\006\000\000\
-\\084\006\000\000\
+\\084\006\022\000\173\001\000\000\
+\\084\006\022\000\173\001\046\000\172\001\000\000\
+\\084\006\022\000\173\001\046\000\211\001\000\000\
+\\084\006\022\000\173\001\046\000\040\003\000\000\
+\\084\006\022\000\173\001\046\000\045\003\000\000\
 \\085\006\000\000\
 \\086\006\000\000\
 \\087\006\000\000\
-\\088\006\000\000\
+\\088\006\003\000\068\003\000\000\
 \\089\006\000\000\
 \\090\006\000\000\
 \\091\006\000\000\
-\\092\006\000\000\
-\\093\006\023\000\158\000\034\000\161\000\036\000\155\000\038\000\154\000\
-\\044\000\153\000\051\000\152\000\055\000\151\000\077\000\034\000\
-\\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
-\\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
-\\086\000\025\000\087\000\024\000\000\000\
+\\092\006\003\000\093\002\000\000\
+\\093\006\000\000\
 \\094\006\000\000\
-\\095\006\005\000\026\001\040\000\182\001\041\000\025\001\052\000\023\001\
-\\053\000\022\001\075\000\021\001\000\000\
+\\095\006\000\000\
 \\096\006\000\000\
-\\097\006\005\000\026\001\041\000\025\001\045\000\188\001\052\000\023\001\
-\\053\000\022\001\075\000\021\001\000\000\
+\\097\006\000\000\
 \\098\006\000\000\
 \\099\006\000\000\
 \\100\006\000\000\
 \\101\006\000\000\
 \\102\006\000\000\
-\\103\006\005\000\026\001\040\000\192\002\041\000\025\001\052\000\023\001\
-\\053\000\022\001\075\000\021\001\000\000\
-\\103\006\040\000\192\002\000\000\
+\\103\006\000\000\
 \\104\006\000\000\
-\\105\006\041\000\011\001\000\000\
-\\106\006\005\000\026\001\041\000\025\001\052\000\023\001\053\000\022\001\
-\\075\000\021\001\000\000\
-\\107\006\005\000\074\002\000\000\
+\\105\006\023\000\161\000\034\000\164\000\036\000\158\000\038\000\157\000\
+\\044\000\156\000\051\000\155\000\055\000\154\000\077\000\034\000\
+\\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
+\\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
+\\086\000\025\000\087\000\024\000\000\000\
+\\106\006\000\000\
+\\107\006\005\000\032\001\040\000\190\001\041\000\031\001\052\000\029\001\
+\\053\000\028\001\075\000\027\001\000\000\
 \\108\006\000\000\
-\\109\006\043\000\037\001\078\000\127\000\079\000\126\000\085\000\036\001\
-\\086\000\134\000\087\000\133\000\000\000\
+\\109\006\005\000\032\001\041\000\031\001\045\000\196\001\052\000\029\001\
+\\053\000\028\001\075\000\027\001\000\000\
 \\110\006\000\000\
 \\111\006\000\000\
-\\112\006\023\000\158\000\034\000\161\000\036\000\155\000\038\000\154\000\
-\\044\000\153\000\055\000\151\000\077\000\034\000\078\000\033\000\
+\\112\006\000\000\
+\\113\006\000\000\
+\\114\006\000\000\
+\\115\006\005\000\032\001\040\000\204\002\041\000\031\001\052\000\029\001\
+\\053\000\028\001\075\000\027\001\000\000\
+\\115\006\040\000\204\002\000\000\
+\\116\006\000\000\
+\\117\006\041\000\017\001\000\000\
+\\118\006\005\000\032\001\041\000\031\001\052\000\029\001\053\000\028\001\
+\\075\000\027\001\000\000\
+\\119\006\005\000\084\002\000\000\
+\\120\006\000\000\
+\\121\006\043\000\043\001\078\000\130\000\079\000\129\000\085\000\042\001\
+\\086\000\137\000\087\000\136\000\000\000\
+\\122\006\000\000\
+\\123\006\000\000\
+\\124\006\023\000\161\000\034\000\164\000\036\000\158\000\038\000\157\000\
+\\044\000\156\000\055\000\154\000\077\000\034\000\078\000\033\000\
 \\079\000\032\000\080\000\031\000\081\000\030\000\082\000\029\000\
 \\083\000\028\000\084\000\027\000\085\000\026\000\086\000\025\000\
 \\087\000\024\000\000\000\
-\\113\006\000\000\
-\\114\006\041\000\025\001\000\000\
-\\115\006\005\000\026\001\041\000\025\001\000\000\
-\\116\006\000\000\
-\\117\006\000\000\
-\\118\006\000\000\
-\\119\006\048\000\100\001\000\000\
-\\120\006\000\000\
-\\121\006\000\000\
-\\122\006\000\000\
-\\124\006\000\000\
 \\125\006\000\000\
-\\126\006\000\000\
-\\127\006\000\000\
+\\126\006\041\000\031\001\000\000\
+\\127\006\005\000\032\001\041\000\031\001\000\000\
 \\128\006\000\000\
 \\129\006\000\000\
 \\130\006\000\000\
 \\131\006\000\000\
-\\132\006\040\000\221\002\000\000\
-\\133\006\000\000\
-\\134\006\078\000\127\000\079\000\126\000\085\000\125\000\086\000\124\000\
-\\087\000\123\000\000\000\
-\\136\006\034\000\236\000\038\000\235\000\058\000\234\000\088\000\106\000\000\000\
-\\137\006\000\000\
+\\132\006\000\000\
+\\133\006\048\000\108\001\000\000\
+\\134\006\000\000\
+\\135\006\000\000\
+\\136\006\000\000\
 \\138\006\000\000\
-\\139\006\040\000\246\001\000\000\
+\\139\006\000\000\
 \\140\006\000\000\
-\\141\006\034\000\107\000\088\000\106\000\000\000\
+\\141\006\000\000\
 \\142\006\000\000\
 \\143\006\000\000\
 \\144\006\000\000\
-\\145\006\040\000\155\001\000\000\
-\\146\006\000\000\
-\\147\006\054\000\004\001\000\000\
-\\148\006\000\000\
-\\149\006\000\000\
-\\150\006\000\000\
+\\145\006\000\000\
+\\146\006\040\000\233\002\000\000\
+\\147\006\000\000\
+\\148\006\078\000\130\000\079\000\129\000\085\000\128\000\086\000\127\000\
+\\087\000\126\000\000\000\
+\\150\006\034\000\242\000\038\000\241\000\058\000\240\000\088\000\109\000\000\000\
 \\151\006\000\000\
 \\152\006\000\000\
-\\153\006\019\000\001\002\034\000\000\002\073\000\253\001\085\000\071\000\000\000\
-\\154\006\075\000\002\002\000\000\
-\\154\006\075\000\086\003\000\000\
-\\154\006\075\000\252\003\000\000\
-\\155\006\075\000\002\002\000\000\
-\\155\006\075\000\086\003\000\000\
-\\155\006\075\000\252\003\000\000\
-\\156\006\041\000\233\002\076\000\232\002\000\000\
-\\157\006\075\000\002\002\000\000\
-\\157\006\075\000\086\003\000\000\
-\\157\006\075\000\252\003\000\000\
+\\153\006\040\000\254\001\000\000\
+\\154\006\000\000\
+\\155\006\034\000\110\000\088\000\109\000\000\000\
+\\156\006\000\000\
+\\157\006\000\000\
 \\158\006\000\000\
-\\159\006\000\000\
+\\159\006\040\000\163\001\000\000\
 \\160\006\000\000\
-\\161\006\000\000\
+\\161\006\054\000\010\001\000\000\
 \\162\006\000\000\
 \\163\006\000\000\
 \\164\006\000\000\
+\\165\006\000\000\
 \\166\006\000\000\
-\\167\006\000\000\
-\\168\006\000\000\
-\\169\006\000\000\
-\\170\006\000\000\
-\\171\006\000\000\
+\\167\006\019\000\009\002\034\000\008\002\073\000\005\002\085\000\071\000\000\000\
+\\168\006\075\000\010\002\000\000\
+\\168\006\075\000\098\003\000\000\
+\\168\006\075\000\008\004\000\000\
+\\169\006\075\000\010\002\000\000\
+\\169\006\075\000\098\003\000\000\
+\\169\006\075\000\008\004\000\000\
+\\170\006\041\000\245\002\076\000\244\002\000\000\
+\\171\006\075\000\010\002\000\000\
+\\171\006\075\000\098\003\000\000\
+\\171\006\075\000\008\004\000\000\
 \\172\006\000\000\
 \\173\006\000\000\
 \\174\006\000\000\
@@ -18762,19 +20994,13 @@ val table=let val actionRows =
 \\176\006\000\000\
 \\177\006\000\000\
 \\178\006\000\000\
-\\179\006\000\000\
 \\180\006\000\000\
 \\181\006\000\000\
 \\182\006\000\000\
 \\183\006\000\000\
 \\184\006\000\000\
-\\185\006\075\000\002\002\000\000\
-\\185\006\075\000\120\003\000\000\
-\\186\006\041\000\244\000\000\000\
-\\186\006\041\000\244\000\054\000\004\001\000\000\
-\\186\006\041\000\244\000\076\000\243\000\000\000\
-\\186\006\041\000\244\000\076\000\150\001\000\000\
-\\186\006\041\000\150\002\000\000\
+\\185\006\000\000\
+\\186\006\000\000\
 \\187\006\000\000\
 \\188\006\000\000\
 \\189\006\000\000\
@@ -18785,12 +21011,18 @@ val table=let val actionRows =
 \\194\006\000\000\
 \\195\006\000\000\
 \\196\006\000\000\
-\\197\006\019\000\001\002\034\000\000\002\073\000\253\001\085\000\071\000\000\000\
-\\198\006\054\000\004\001\000\000\
-\\199\006\000\000\
-\\200\006\000\000\
-\\201\006\034\000\249\000\000\000\
+\\197\006\000\000\
+\\198\006\000\000\
+\\199\006\075\000\010\002\000\000\
+\\199\006\075\000\132\003\000\000\
+\\200\006\041\000\250\000\000\000\
+\\200\006\041\000\250\000\054\000\010\001\000\000\
+\\200\006\041\000\250\000\076\000\249\000\000\000\
+\\200\006\041\000\250\000\076\000\158\001\000\000\
+\\200\006\041\000\160\002\000\000\
+\\201\006\000\000\
 \\202\006\000\000\
+\\203\006\000\000\
 \\204\006\000\000\
 \\205\006\000\000\
 \\206\006\000\000\
@@ -18798,13 +21030,12 @@ val table=let val actionRows =
 \\208\006\000\000\
 \\209\006\000\000\
 \\210\006\000\000\
-\\211\006\000\000\
-\\212\006\000\000\
+\\211\006\019\000\009\002\034\000\008\002\073\000\005\002\085\000\071\000\000\000\
+\\212\006\054\000\010\001\000\000\
 \\213\006\000\000\
 \\214\006\000\000\
-\\215\006\000\000\
+\\215\006\034\000\255\000\000\000\
 \\216\006\000\000\
-\\217\006\000\000\
 \\218\006\000\000\
 \\219\006\000\000\
 \\220\006\000\000\
@@ -18814,51 +21045,37 @@ val table=let val actionRows =
 \\224\006\000\000\
 \\225\006\000\000\
 \\226\006\000\000\
-\\227\006\003\000\127\004\000\000\
-\\227\006\003\000\127\004\019\000\001\002\034\000\000\002\073\000\253\001\
-\\085\000\071\000\000\000\
-\\227\006\003\000\127\004\054\000\004\001\000\000\
+\\227\006\000\000\
 \\228\006\000\000\
 \\229\006\000\000\
 \\230\006\000\000\
-\\231\006\034\000\249\000\000\000\
+\\231\006\000\000\
 \\232\006\000\000\
 \\233\006\000\000\
+\\234\006\000\000\
 \\235\006\000\000\
 \\236\006\000\000\
 \\237\006\000\000\
 \\238\006\000\000\
 \\239\006\000\000\
 \\240\006\000\000\
-\\241\006\000\000\
+\\241\006\003\000\139\004\000\000\
+\\241\006\003\000\139\004\019\000\009\002\034\000\008\002\073\000\005\002\
+\\085\000\071\000\000\000\
+\\241\006\003\000\139\004\054\000\010\001\000\000\
 \\242\006\000\000\
 \\243\006\000\000\
 \\244\006\000\000\
-\\245\006\000\000\
+\\245\006\034\000\255\000\000\000\
 \\246\006\000\000\
 \\247\006\000\000\
-\\248\006\000\000\
 \\249\006\000\000\
 \\250\006\000\000\
 \\251\006\000\000\
 \\252\006\000\000\
 \\253\006\000\000\
-\\254\006\008\000\148\001\011\000\147\001\013\000\146\001\017\000\145\001\
-\\018\000\144\001\021\000\143\001\029\000\142\001\030\000\141\001\
-\\050\000\138\001\063\000\137\001\064\000\136\001\066\000\135\001\
-\\067\000\134\001\068\000\133\001\069\000\132\001\070\000\015\002\
-\\072\000\130\001\074\000\129\001\000\000\
-\\255\006\008\000\148\001\011\000\147\001\013\000\146\001\017\000\145\001\
-\\018\000\144\001\021\000\143\001\029\000\142\001\030\000\141\001\
-\\042\000\140\001\044\000\139\001\050\000\138\001\063\000\137\001\
-\\064\000\136\001\066\000\135\001\067\000\134\001\068\000\133\001\
-\\069\000\132\001\070\000\131\001\072\000\130\001\074\000\129\001\
-\\085\000\071\000\000\000\
-\\255\006\008\000\148\001\011\000\147\001\013\000\146\001\017\000\145\001\
-\\018\000\144\001\021\000\143\001\029\000\142\001\030\000\141\001\
-\\042\000\140\001\050\000\138\001\063\000\137\001\064\000\136\001\
-\\066\000\135\001\067\000\134\001\068\000\133\001\069\000\132\001\
-\\070\000\131\001\072\000\130\001\074\000\129\001\000\000\
+\\254\006\000\000\
+\\255\006\000\000\
 \\000\007\000\000\
 \\001\007\000\000\
 \\002\007\000\000\
@@ -18871,8 +21088,22 @@ val table=let val actionRows =
 \\009\007\000\000\
 \\010\007\000\000\
 \\011\007\000\000\
-\\012\007\000\000\
-\\013\007\000\000\
+\\012\007\008\000\156\001\011\000\155\001\013\000\154\001\017\000\153\001\
+\\018\000\152\001\021\000\151\001\029\000\150\001\030\000\149\001\
+\\050\000\146\001\063\000\145\001\064\000\144\001\066\000\143\001\
+\\067\000\142\001\068\000\141\001\069\000\140\001\070\000\023\002\
+\\072\000\138\001\074\000\137\001\000\000\
+\\013\007\008\000\156\001\011\000\155\001\013\000\154\001\017\000\153\001\
+\\018\000\152\001\021\000\151\001\029\000\150\001\030\000\149\001\
+\\042\000\148\001\044\000\147\001\050\000\146\001\063\000\145\001\
+\\064\000\144\001\066\000\143\001\067\000\142\001\068\000\141\001\
+\\069\000\140\001\070\000\139\001\072\000\138\001\074\000\137\001\
+\\085\000\071\000\000\000\
+\\013\007\008\000\156\001\011\000\155\001\013\000\154\001\017\000\153\001\
+\\018\000\152\001\021\000\151\001\029\000\150\001\030\000\149\001\
+\\042\000\148\001\050\000\146\001\063\000\145\001\064\000\144\001\
+\\066\000\143\001\067\000\142\001\068\000\141\001\069\000\140\001\
+\\070\000\139\001\072\000\138\001\074\000\137\001\000\000\
 \\014\007\000\000\
 \\015\007\000\000\
 \\016\007\000\000\
@@ -18881,7 +21112,7 @@ val table=let val actionRows =
 \\019\007\000\000\
 \\020\007\000\000\
 \\021\007\000\000\
-\\022\007\075\000\002\002\000\000\
+\\022\007\000\000\
 \\023\007\000\000\
 \\024\007\000\000\
 \\025\007\000\000\
@@ -18889,69 +21120,69 @@ val table=let val actionRows =
 \\027\007\000\000\
 \\028\007\000\000\
 \\029\007\000\000\
-\\030\007\032\000\169\002\000\000\
+\\030\007\000\000\
 \\031\007\000\000\
-\\032\007\046\000\232\003\000\000\
+\\032\007\000\000\
 \\033\007\000\000\
 \\034\007\000\000\
-\\035\007\046\000\231\003\000\000\
-\\036\007\000\000\
+\\035\007\000\000\
+\\036\007\075\000\010\002\000\000\
 \\037\007\000\000\
-\\038\007\046\000\127\003\054\000\004\001\000\000\
+\\038\007\000\000\
 \\039\007\000\000\
 \\040\007\000\000\
 \\041\007\000\000\
 \\042\007\000\000\
-\\043\007\003\000\244\003\000\000\
-\\044\007\000\000\
+\\043\007\000\000\
+\\044\007\032\000\179\002\000\000\
 \\045\007\000\000\
-\\046\007\000\000\
-\\047\007\003\000\023\003\000\000\
-\\047\007\003\000\023\003\046\000\022\003\000\000\
+\\046\007\046\000\244\003\000\000\
+\\047\007\000\000\
 \\048\007\000\000\
-\\049\007\000\000\
+\\049\007\046\000\243\003\000\000\
 \\050\007\000\000\
 \\051\007\000\000\
-\\052\007\000\000\
+\\052\007\046\000\139\003\054\000\010\001\000\000\
 \\053\007\000\000\
 \\054\007\000\000\
-\\055\007\003\000\174\002\000\000\
-\\055\007\003\000\174\002\046\000\173\002\000\000\
-\\055\007\003\000\174\002\046\000\036\003\000\000\
-\\055\007\003\000\174\002\046\000\250\003\000\000\
+\\055\007\000\000\
 \\056\007\000\000\
-\\057\007\000\000\
-\\058\007\045\000\088\004\000\000\
+\\057\007\003\000\000\004\000\000\
+\\058\007\000\000\
 \\059\007\000\000\
 \\060\007\000\000\
-\\061\007\000\000\
-\\062\007\003\000\083\004\000\000\
+\\061\007\003\000\035\003\000\000\
+\\061\007\003\000\035\003\046\000\034\003\000\000\
+\\062\007\000\000\
 \\063\007\000\000\
 \\064\007\000\000\
 \\065\007\000\000\
-\\066\007\003\000\145\003\000\000\
+\\066\007\000\000\
 \\067\007\000\000\
 \\068\007\000\000\
-\\069\007\000\000\
-\\070\007\003\000\119\003\054\000\004\001\000\000\
+\\069\007\003\000\184\002\000\000\
+\\069\007\003\000\184\002\046\000\183\002\000\000\
+\\069\007\003\000\184\002\046\000\048\003\000\000\
+\\069\007\003\000\184\002\046\000\006\004\000\000\
+\\070\007\000\000\
 \\071\007\000\000\
-\\072\007\000\000\
+\\072\007\045\000\100\004\000\000\
 \\073\007\000\000\
 \\074\007\000\000\
 \\075\007\000\000\
-\\076\007\000\000\
+\\076\007\003\000\095\004\000\000\
 \\077\007\000\000\
 \\078\007\000\000\
 \\079\007\000\000\
-\\080\007\000\000\
+\\080\007\003\000\157\003\000\000\
 \\081\007\000\000\
 \\082\007\000\000\
 \\083\007\000\000\
-\\084\007\000\000\
+\\084\007\003\000\131\003\054\000\010\001\000\000\
 \\085\007\000\000\
 \\086\007\000\000\
 \\087\007\000\000\
-\\088\007\003\000\015\003\046\000\014\003\000\000\
+\\088\007\000\000\
 \\089\007\000\000\
 \\090\007\000\000\
 \\091\007\000\000\
@@ -18965,9 +21196,10 @@ val table=let val actionRows =
 \\099\007\000\000\
 \\100\007\000\000\
 \\101\007\000\000\
-\\102\007\000\000\
+\\102\007\003\000\027\003\046\000\026\003\000\000\
 \\103\007\000\000\
 \\104\007\000\000\
+\\105\007\000\000\
 \\106\007\000\000\
 \\107\007\000\000\
 \\108\007\000\000\
@@ -18981,13 +21213,8 @@ val table=let val actionRows =
 \\116\007\000\000\
 \\117\007\000\000\
 \\118\007\000\000\
-\\119\007\000\000\
-\\120\007\008\000\084\000\011\000\083\000\013\000\082\000\029\000\081\000\
-\\030\000\080\000\050\000\078\000\068\000\077\000\072\000\076\000\
-\\074\000\075\000\000\000\
-\\121\007\008\000\084\000\011\000\083\000\013\000\082\000\029\000\081\000\
-\\030\000\080\000\042\000\079\000\050\000\078\000\068\000\077\000\
-\\072\000\076\000\074\000\075\000\000\000\
+\\120\007\000\000\
+\\121\007\000\000\
 \\122\007\000\000\
 \\123\007\000\000\
 \\124\007\000\000\
@@ -19000,59 +21227,64 @@ val table=let val actionRows =
 \\131\007\000\000\
 \\132\007\000\000\
 \\133\007\000\000\
-\\134\007\000\000\
-\\135\007\000\000\
+\\134\007\008\000\087\000\011\000\086\000\013\000\085\000\017\000\084\000\
+\\018\000\083\000\021\000\082\000\029\000\081\000\030\000\080\000\
+\\050\000\078\000\068\000\077\000\072\000\076\000\074\000\075\000\000\000\
+\\135\007\008\000\087\000\011\000\086\000\013\000\085\000\017\000\084\000\
+\\018\000\083\000\021\000\082\000\029\000\081\000\030\000\080\000\
+\\042\000\079\000\050\000\078\000\068\000\077\000\072\000\076\000\
+\\074\000\075\000\000\000\
 \\136\007\000\000\
-\\137\007\003\000\229\001\000\000\
-\\137\007\003\000\229\001\041\000\228\001\000\000\
+\\137\007\000\000\
 \\138\007\000\000\
 \\139\007\000\000\
 \\140\007\000\000\
-\\141\007\003\000\088\001\000\000\
+\\141\007\000\000\
 \\142\007\000\000\
 \\143\007\000\000\
 \\144\007\000\000\
 \\145\007\000\000\
-\\146\007\003\000\093\001\000\000\
-\\146\007\003\000\093\001\046\000\092\001\000\000\
+\\146\007\000\000\
 \\147\007\000\000\
 \\148\007\000\000\
-\\149\007\045\000\083\003\000\000\
+\\149\007\000\000\
 \\150\007\000\000\
 \\151\007\000\000\
 \\152\007\000\000\
-\\153\007\003\000\226\001\000\000\
-\\154\007\000\000\
+\\153\007\000\000\
+\\154\007\003\000\237\001\000\000\
+\\154\007\003\000\237\001\041\000\236\001\000\000\
 \\155\007\000\000\
 \\156\007\000\000\
-\\157\007\003\000\234\001\000\000\
-\\157\007\003\000\234\001\022\000\233\001\000\000\
-\\158\007\000\000\
+\\157\007\000\000\
+\\158\007\003\000\094\001\000\000\
 \\159\007\000\000\
 \\160\007\000\000\
-\\161\007\003\000\077\001\041\000\076\001\000\000\
+\\161\007\000\000\
 \\162\007\000\000\
-\\163\007\000\000\
+\\163\007\003\000\101\001\000\000\
+\\163\007\003\000\101\001\046\000\100\001\000\000\
 \\164\007\000\000\
 \\165\007\000\000\
-\\166\007\000\000\
+\\166\007\045\000\095\003\000\000\
 \\167\007\000\000\
 \\168\007\000\000\
 \\169\007\000\000\
-\\170\007\000\000\
+\\170\007\003\000\234\001\000\000\
 \\171\007\000\000\
 \\172\007\000\000\
 \\173\007\000\000\
-\\174\007\000\000\
+\\174\007\003\000\242\001\000\000\
+\\174\007\003\000\242\001\022\000\241\001\000\000\
 \\175\007\000\000\
 \\176\007\000\000\
 \\177\007\000\000\
-\\178\007\000\000\
-\\179\007\003\000\080\001\000\000\
-\\179\007\003\000\080\001\034\000\249\000\000\000\
+\\178\007\003\000\083\001\041\000\082\001\000\000\
+\\179\007\000\000\
 \\180\007\000\000\
 \\181\007\000\000\
 \\182\007\000\000\
+\\183\007\000\000\
 \\184\007\000\000\
 \\185\007\000\000\
 \\186\007\000\000\
@@ -19065,36 +21297,53 @@ val table=let val actionRows =
 \\193\007\000\000\
 \\194\007\000\000\
 \\195\007\000\000\
-\\196\007\000\000\
+\\196\007\003\000\086\001\000\000\
+\\196\007\003\000\086\001\034\000\255\000\000\000\
 \\197\007\000\000\
-\\198\007\042\000\007\000\060\000\006\000\065\000\005\000\000\000\
-\\199\007\042\000\007\000\060\000\006\000\065\000\005\000\000\000\
-\\200\007\000\000\
+\\198\007\000\000\
+\\199\007\000\000\
 \\201\007\000\000\
-\\202\007\060\000\006\000\065\000\005\000\000\000\
+\\202\007\000\000\
 \\203\007\000\000\
-\\204\007\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
-\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
-\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\086\000\
-\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
-\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
-\\074\000\035\000\000\000\
+\\204\007\000\000\
 \\205\007\000\000\
 \\206\007\000\000\
 \\207\007\000\000\
-\\208\007\002\000\069\000\006\000\068\000\008\000\067\000\011\000\066\000\
+\\208\007\000\000\
+\\209\007\000\000\
+\\210\007\000\000\
+\\211\007\000\000\
+\\212\007\000\000\
+\\213\007\000\000\
+\\214\007\000\000\
+\\215\007\042\000\007\000\060\000\006\000\065\000\005\000\000\000\
+\\216\007\042\000\007\000\060\000\006\000\065\000\005\000\000\000\
+\\217\007\000\000\
+\\218\007\000\000\
+\\219\007\060\000\006\000\065\000\005\000\000\000\
+\\220\007\000\000\
+\\221\007\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\089\000\
+\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
+\\066\000\039\000\067\000\038\000\068\000\037\000\072\000\036\000\
+\\074\000\035\000\000\000\
+\\222\007\000\000\
+\\223\007\000\000\
+\\224\007\000\000\
+\\225\007\002\000\069\000\006\000\068\000\008\000\067\000\011\000\066\000\
 \\012\000\065\000\013\000\064\000\015\000\063\000\017\000\062\000\
 \\018\000\061\000\019\000\060\000\020\000\059\000\021\000\058\000\
 \\023\000\057\000\024\000\056\000\026\000\055\000\027\000\054\000\
 \\029\000\053\000\030\000\052\000\033\000\051\000\034\000\050\000\
-\\036\000\049\000\038\000\048\000\042\000\225\000\046\000\047\000\
+\\036\000\049\000\038\000\048\000\042\000\231\000\046\000\047\000\
 \\049\000\046\000\050\000\045\000\055\000\044\000\058\000\043\000\
 \\062\000\042\000\063\000\041\000\064\000\040\000\066\000\039\000\
 \\067\000\038\000\068\000\037\000\072\000\036\000\074\000\035\000\
 \\077\000\034\000\078\000\033\000\079\000\032\000\080\000\031\000\
 \\081\000\030\000\082\000\029\000\083\000\028\000\084\000\027\000\
 \\085\000\026\000\086\000\025\000\087\000\024\000\000\000\
-\\208\007\002\000\069\000\006\000\068\000\008\000\067\000\011\000\066\000\
+\\225\007\002\000\069\000\006\000\068\000\008\000\067\000\011\000\066\000\
 \\012\000\065\000\013\000\064\000\015\000\063\000\017\000\062\000\
 \\018\000\061\000\019\000\060\000\020\000\059\000\021\000\058\000\
 \\023\000\057\000\024\000\056\000\026\000\055\000\027\000\054\000\
@@ -19106,116 +21355,118 @@ val table=let val actionRows =
 \\078\000\033\000\079\000\032\000\080\000\031\000\081\000\030\000\
 \\082\000\029\000\083\000\028\000\084\000\027\000\085\000\026\000\
 \\086\000\025\000\087\000\024\000\000\000\
-\\209\007\000\000\
-\\210\007\000\000\
-\\211\007\000\000\
+\\226\007\000\000\
+\\227\007\000\000\
+\\228\007\000\000\
 \"
 val actionRowNumbers =
-"\087\003\086\003\097\003\027\001\
-\\006\003\091\003\090\003\100\003\
-\\095\003\128\001\123\001\092\003\
+"\092\003\091\003\102\003\027\001\
+\\008\003\096\003\095\003\105\003\
+\\100\003\128\001\123\001\097\003\
 \\046\000\104\001\103\001\101\001\
 \\011\001\058\001\074\001\064\001\
 \\060\001\073\001\052\001\051\001\
 \\001\000\039\001\038\001\040\001\
 \\037\001\036\001\035\001\034\001\
 \\033\001\157\000\028\001\027\001\
-\\012\002\012\002\072\001\071\001\
+\\014\002\014\002\072\001\071\001\
 \\104\000\027\001\087\001\071\001\
 \\021\001\059\001\100\001\087\001\
-\\054\000\055\000\096\000\012\002\
+\\054\000\055\000\096\000\014\002\
 \\101\000\055\000\027\001\160\000\
 \\162\000\122\001\122\001\163\001\
 \\163\001\055\000\098\000\101\000\
-\\071\001\112\000\055\000\012\002\
-\\089\003\056\001\007\003\005\003\
+\\071\001\112\000\055\000\014\002\
+\\094\003\056\001\009\003\007\003\
 \\014\001\027\001\028\001\027\001\
-\\071\001\009\003\071\001\112\000\
-\\071\001\071\001\112\000\124\001\
-\\096\003\096\003\007\002\055\000\
-\\101\000\055\000\102\001\161\000\
-\\143\001\065\002\063\002\144\001\
-\\082\002\057\001\145\001\113\000\
-\\011\002\029\001\135\001\013\002\
-\\055\001\032\001\136\001\162\000\
-\\105\000\068\001\162\000\027\001\
-\\071\001\071\001\115\001\089\001\
-\\086\001\127\000\141\001\162\000\
-\\078\001\045\001\044\001\043\001\
-\\047\001\046\001\133\000\099\001\
-\\015\001\132\000\163\000\049\000\
-\\048\000\131\000\159\000\158\000\
-\\128\000\045\000\114\000\115\000\
-\\079\001\041\000\097\000\051\000\
-\\241\001\239\001\130\001\210\001\
-\\212\001\221\001\101\000\209\001\
-\\238\001\221\001\100\000\097\000\
-\\160\000\134\001\052\000\099\000\
-\\109\001\146\001\161\001\075\001\
-\\155\001\048\001\159\001\050\001\
-\\049\001\125\001\120\001\078\000\
-\\126\001\079\000\162\000\162\001\
-\\042\001\041\001\162\000\044\000\
-\\101\000\175\001\164\000\173\001\
-\\170\001\132\001\053\000\118\001\
-\\113\001\142\001\162\000\029\001\
-\\157\001\157\001\189\001\054\001\
-\\053\001\043\000\029\001\157\001\
-\\008\003\023\001\016\003\049\003\
-\\017\003\068\003\018\003\020\000\
-\\014\003\162\000\010\003\162\000\
-\\012\003\029\001\027\003\011\003\
-\\015\003\162\000\013\003\029\001\
-\\033\003\093\003\098\003\096\003\
-\\094\003\030\001\252\001\004\000\
-\\250\001\248\001\105\001\254\001\
-\\031\001\006\002\007\002\107\001\
-\\108\001\106\001\065\001\061\001\
-\\165\000\083\000\083\000\166\000\
-\\081\002\167\000\113\002\136\002\
-\\066\002\180\001\116\000\016\002\
-\\106\000\030\001\107\000\137\000\
-\\162\000\162\000\027\001\055\000\
-\\082\001\197\001\076\001\022\001\
-\\098\001\007\002\055\000\081\001\
-\\055\000\055\000\085\001\083\001\
-\\080\001\055\000\131\001\082\000\
-\\097\000\101\000\055\000\007\002\
-\\101\000\240\001\223\001\220\001\
-\\129\000\243\001\134\000\237\001\
-\\234\001\168\000\047\000\227\001\
-\\130\000\050\000\117\000\118\000\
-\\214\001\165\001\211\001\055\000\
-\\160\001\158\001\127\001\122\001\
-\\055\000\154\001\153\001\055\000\
-\\133\001\055\000\171\001\101\000\
-\\168\001\101\000\055\000\116\001\
-\\101\000\198\001\190\001\138\001\
-\\012\002\137\001\183\001\069\001\
-\\012\002\101\000\191\001\108\000\
-\\088\003\046\003\084\000\027\001\
-\\064\003\067\003\028\001\069\003\
-\\138\000\027\001\022\000\023\003\
-\\027\003\024\003\112\000\045\003\
-\\169\000\028\003\071\001\112\000\
-\\099\003\012\001\253\001\062\001\
-\\002\000\007\002\007\002\001\002\
+\\071\001\011\003\071\001\112\000\
+\\162\000\163\001\163\001\071\001\
+\\071\001\112\000\124\001\101\003\
+\\101\003\009\002\055\000\101\000\
+\\055\000\102\001\161\000\143\001\
+\\067\002\065\002\144\001\084\002\
+\\057\001\145\001\113\000\013\002\
+\\029\001\135\001\015\002\055\001\
+\\032\001\136\001\162\000\105\000\
+\\068\001\162\000\027\001\071\001\
+\\071\001\115\001\089\001\086\001\
+\\127\000\141\001\162\000\078\001\
+\\045\001\044\001\043\001\047\001\
+\\046\001\133\000\099\001\015\001\
+\\132\000\163\000\049\000\048\000\
+\\131\000\159\000\158\000\128\000\
+\\045\000\114\000\115\000\079\001\
+\\041\000\097\000\051\000\241\001\
+\\239\001\130\001\210\001\212\001\
+\\221\001\101\000\209\001\238\001\
+\\221\001\100\000\097\000\160\000\
+\\134\001\052\000\099\000\109\001\
+\\146\001\161\001\075\001\155\001\
+\\048\001\159\001\050\001\049\001\
+\\125\001\120\001\078\000\126\001\
+\\079\000\162\000\162\001\042\001\
+\\041\001\162\000\044\000\101\000\
+\\175\001\164\000\173\001\170\001\
+\\132\001\053\000\118\001\113\001\
+\\142\001\162\000\029\001\157\001\
+\\157\001\189\001\054\001\053\001\
+\\043\000\029\001\157\001\010\003\
+\\023\001\018\003\054\003\019\003\
+\\073\003\020\003\020\000\016\003\
+\\162\000\012\003\162\000\014\003\
+\\029\001\032\003\023\003\162\000\
+\\162\000\013\003\017\003\162\000\
+\\015\003\029\001\038\003\098\003\
+\\103\003\101\003\099\003\030\001\
+\\254\001\004\000\252\001\250\001\
+\\105\001\000\002\031\001\008\002\
+\\009\002\107\001\108\001\106\001\
+\\065\001\061\001\165\000\083\000\
+\\083\000\166\000\083\002\167\000\
+\\115\002\138\002\068\002\180\001\
+\\116\000\018\002\106\000\030\001\
+\\107\000\137\000\162\000\162\000\
+\\027\001\055\000\082\001\197\001\
+\\076\001\022\001\098\001\009\002\
+\\055\000\081\001\055\000\055\000\
+\\085\001\083\001\080\001\055\000\
+\\131\001\082\000\097\000\101\000\
+\\055\000\009\002\101\000\240\001\
+\\223\001\220\001\129\000\243\001\
+\\134\000\237\001\234\001\168\000\
+\\047\000\227\001\130\000\050\000\
+\\117\000\118\000\214\001\165\001\
+\\211\001\055\000\160\001\158\001\
+\\127\001\122\001\055\000\154\001\
+\\153\001\055\000\133\001\055\000\
+\\171\001\101\000\168\001\101\000\
+\\055\000\116\001\101\000\198\001\
+\\190\001\138\001\014\002\137\001\
+\\183\001\069\001\014\002\101\000\
+\\191\001\108\000\093\003\051\003\
+\\084\000\027\001\069\003\072\003\
+\\028\001\074\003\138\000\027\001\
+\\022\000\028\003\032\003\029\003\
+\\112\000\022\003\021\003\050\003\
+\\169\000\033\003\071\001\112\000\
+\\104\003\012\001\255\001\062\001\
+\\002\000\009\002\009\002\003\002\
 \\013\001\066\001\003\000\135\000\
-\\005\002\139\000\119\000\120\000\
-\\093\000\075\002\170\000\078\002\
-\\073\002\070\002\137\002\113\000\
-\\068\002\083\000\122\001\061\002\
-\\093\000\085\000\114\002\138\002\
-\\135\002\121\000\140\000\027\001\
+\\007\002\139\000\119\000\120\000\
+\\093\000\077\002\170\000\080\002\
+\\075\002\072\002\139\002\113\000\
+\\070\002\083\000\122\001\063\002\
+\\093\000\085\000\116\002\140\002\
+\\137\002\121\000\140\000\027\001\
 \\028\001\102\000\083\000\027\001\
-\\012\002\012\002\072\001\071\001\
-\\071\001\141\000\140\002\071\001\
-\\012\002\162\000\163\001\163\001\
+\\014\002\014\002\072\001\071\001\
+\\071\001\141\000\142\002\071\001\
+\\014\002\162\000\163\001\163\001\
 \\071\001\071\001\112\000\171\000\
-\\083\000\176\001\007\002\012\002\
-\\014\002\032\001\030\001\152\001\
+\\083\000\176\001\009\002\014\002\
+\\016\002\032\001\030\001\152\001\
 \\032\001\083\000\196\001\142\000\
-\\088\001\143\000\071\001\007\002\
+\\088\001\143\000\071\001\009\002\
 \\136\000\234\001\095\001\022\001\
 \\233\001\097\001\092\001\093\001\
 \\090\001\111\001\245\001\056\000\
@@ -19228,255 +21479,256 @@ val actionRowNumbers =
 \\208\001\071\001\185\001\071\001\
 \\156\001\188\001\162\000\030\001\
 \\187\001\112\001\181\001\071\001\
-\\122\001\047\003\019\000\016\001\
-\\113\000\048\003\065\003\066\003\
-\\086\000\071\003\037\003\144\000\
-\\071\001\019\003\007\002\071\001\
-\\025\003\026\003\041\003\007\002\
-\\071\001\071\001\032\003\162\000\
-\\031\003\030\001\251\001\249\001\
-\\031\001\255\001\007\002\008\002\
-\\007\002\000\002\038\002\145\000\
-\\005\000\022\002\018\002\122\001\
+\\122\001\052\003\019\000\016\001\
+\\113\000\053\003\070\003\071\003\
+\\086\000\076\003\042\003\144\000\
+\\071\001\024\003\009\002\071\001\
+\\030\003\031\003\046\003\009\002\
+\\071\001\071\001\037\003\162\000\
+\\036\003\030\001\253\001\251\001\
+\\031\001\001\002\009\002\010\002\
+\\009\002\002\002\040\002\145\000\
+\\005\000\024\002\020\002\122\001\
 \\082\000\113\000\121\001\122\001\
-\\066\000\093\000\074\002\060\000\
-\\002\001\122\000\080\000\040\002\
-\\080\002\010\000\017\001\113\000\
-\\139\002\103\000\037\002\083\000\
-\\157\002\067\002\158\002\082\002\
-\\145\002\172\000\031\001\030\001\
-\\160\002\159\002\082\002\150\002\
-\\029\001\151\002\162\000\109\000\
-\\162\000\155\002\162\000\083\000\
-\\147\002\162\000\149\002\166\002\
-\\162\000\162\000\148\002\156\002\
-\\162\000\168\002\168\002\029\001\
-\\195\002\095\000\173\000\179\001\
-\\178\001\015\002\174\000\146\000\
-\\175\000\147\000\007\002\012\002\
+\\066\000\093\000\076\002\060\000\
+\\002\001\122\000\080\000\042\002\
+\\082\002\010\000\017\001\113\000\
+\\141\002\103\000\039\002\083\000\
+\\159\002\069\002\160\002\084\002\
+\\147\002\172\000\031\001\030\001\
+\\162\002\161\002\084\002\152\002\
+\\029\001\153\002\162\000\109\000\
+\\162\000\157\002\162\000\083\000\
+\\149\002\162\000\151\002\168\002\
+\\162\000\162\000\150\002\158\002\
+\\162\000\170\002\170\002\029\001\
+\\197\002\095\000\173\000\179\001\
+\\178\001\017\002\174\000\146\000\
+\\175\000\147\000\009\002\014\002\
 \\160\000\195\001\077\001\096\001\
-\\094\001\055\000\246\001\247\001\
-\\164\001\097\000\222\001\232\001\
-\\101\000\231\001\225\001\226\001\
-\\224\001\129\001\084\001\055\000\
-\\205\001\071\001\160\000\188\001\
-\\184\001\196\001\139\001\188\001\
-\\061\000\050\003\067\000\003\001\
-\\070\003\021\000\018\001\113\000\
-\\012\002\039\003\022\003\021\003\
-\\044\003\043\003\032\003\029\003\
-\\196\001\063\001\067\001\004\002\
-\\009\002\010\002\087\000\087\000\
-\\042\002\023\002\157\000\062\000\
-\\148\000\255\000\123\000\024\002\
-\\124\000\082\000\113\000\081\000\
-\\077\002\176\000\027\001\031\001\
-\\027\001\071\001\071\001\012\002\
-\\071\001\071\001\039\002\069\002\
-\\083\000\072\002\083\000\084\002\
-\\028\001\068\000\004\001\146\002\
-\\031\001\030\001\125\000\177\000\
-\\088\000\230\002\027\001\143\002\
-\\178\000\141\002\179\000\149\000\
-\\186\002\110\000\030\001\111\000\
-\\199\001\126\000\150\000\165\002\
-\\164\002\200\001\153\002\012\002\
-\\152\002\196\002\189\002\070\001\
-\\012\002\111\002\151\000\014\000\
-\\082\000\113\000\095\000\177\001\
-\\160\000\007\002\024\001\012\002\
-\\180\000\030\001\204\001\091\001\
+\\094\001\055\000\082\000\246\001\
+\\082\000\247\001\164\001\097\000\
+\\222\001\232\001\101\000\231\001\
+\\225\001\226\001\224\001\129\001\
+\\084\001\055\000\205\001\071\001\
+\\160\000\188\001\184\001\196\001\
+\\139\001\188\001\061\000\055\003\
+\\067\000\003\001\075\003\021\000\
+\\018\001\113\000\014\002\044\003\
+\\027\003\026\003\049\003\048\003\
+\\037\003\034\003\196\001\063\001\
+\\067\001\006\002\011\002\012\002\
+\\087\000\087\000\044\002\025\002\
+\\157\000\062\000\148\000\255\000\
+\\123\000\026\002\124\000\082\000\
+\\113\000\081\000\079\002\176\000\
+\\027\001\031\001\027\001\071\001\
+\\071\001\014\002\071\001\071\001\
+\\041\002\071\002\083\000\074\002\
+\\083\000\086\002\028\001\068\000\
+\\004\001\148\002\031\001\030\001\
+\\125\000\177\000\088\000\232\002\
+\\027\001\145\002\178\000\143\002\
+\\179\000\149\000\188\002\110\000\
+\\030\001\111\000\199\001\126\000\
+\\150\000\167\002\166\002\200\001\
+\\155\002\014\002\154\002\198\002\
+\\191\002\070\001\014\002\113\002\
+\\151\000\014\000\082\000\113\000\
+\\095\000\177\001\160\000\009\002\
+\\024\001\014\002\180\000\030\001\
+\\204\001\091\001\248\001\249\001\
 \\166\001\229\001\156\000\235\001\
 \\228\001\110\001\207\001\208\001\
 \\186\001\194\001\182\001\140\001\
-\\052\003\027\001\031\001\027\001\
-\\071\001\071\001\012\002\071\001\
-\\071\001\084\000\072\003\070\000\
-\\005\001\030\001\020\003\042\003\
-\\030\003\036\003\002\002\021\001\
-\\006\000\029\002\044\002\113\000\
-\\026\002\043\002\041\002\017\002\
+\\057\003\027\001\031\001\027\001\
+\\071\001\071\001\014\002\071\001\
+\\071\001\084\000\077\003\070\000\
+\\005\001\030\001\025\003\047\003\
+\\035\003\041\003\004\002\021\001\
+\\006\000\031\002\046\002\113\000\
+\\028\002\045\002\043\002\019\002\
 \\087\000\093\000\083\000\083\000\
-\\019\002\020\002\152\000\000\001\
-\\094\000\027\001\064\002\082\002\
-\\064\002\160\000\160\000\030\001\
-\\160\000\160\000\076\002\063\000\
-\\083\002\086\002\027\001\031\001\
-\\027\001\071\001\071\001\012\002\
-\\071\001\071\001\085\000\144\002\
-\\142\002\035\002\027\001\209\002\
-\\024\000\062\002\113\000\227\002\
-\\089\000\028\001\177\002\176\002\
-\\031\001\030\001\090\000\182\002\
-\\007\002\012\002\030\001\163\002\
-\\032\001\153\000\071\001\036\002\
-\\071\001\007\002\208\002\071\001\
-\\167\002\191\002\071\001\194\002\
-\\162\000\030\001\193\002\029\001\
-\\091\000\091\000\116\002\027\001\
-\\154\000\001\001\112\002\151\001\
+\\021\002\022\002\152\000\000\001\
+\\094\000\027\001\066\002\084\002\
+\\066\002\160\000\160\000\030\001\
+\\160\000\160\000\078\002\063\000\
+\\085\002\088\002\027\001\031\001\
+\\027\001\071\001\071\001\014\002\
+\\071\001\071\001\085\000\146\002\
+\\144\002\037\002\027\001\211\002\
+\\024\000\064\002\113\000\229\002\
+\\089\000\028\001\179\002\178\002\
+\\031\001\030\001\090\000\184\002\
+\\009\002\014\002\030\001\165\002\
+\\032\001\153\000\071\001\038\002\
+\\071\001\009\002\210\002\071\001\
+\\169\002\193\002\071\001\196\002\
+\\162\000\030\001\195\002\029\001\
+\\091\000\091\000\118\002\027\001\
+\\154\000\001\001\114\002\151\001\
 \\150\001\149\001\030\001\025\001\
 \\204\001\202\001\071\001\230\001\
-\\206\001\192\001\071\001\064\002\
-\\082\002\064\002\160\000\160\000\
-\\030\001\160\000\160\000\051\003\
-\\076\002\074\003\027\001\031\001\
-\\027\001\071\001\071\001\012\002\
-\\071\001\071\001\086\000\040\003\
-\\034\003\071\001\003\002\047\002\
-\\072\000\006\001\033\002\046\002\
-\\045\002\145\000\028\002\025\002\
-\\083\000\094\000\064\000\079\002\
+\\206\001\192\001\071\001\066\002\
+\\084\002\066\002\160\000\160\000\
+\\030\001\160\000\160\000\056\003\
+\\078\002\079\003\027\001\031\001\
+\\027\001\071\001\071\001\014\002\
+\\071\001\071\001\086\000\045\003\
+\\039\003\071\001\005\002\049\002\
+\\072\000\006\001\035\002\048\002\
+\\047\002\145\000\030\002\027\002\
+\\083\000\094\000\064\000\081\002\
 \\181\000\182\000\183\000\184\000\
 \\185\000\186\000\187\000\188\000\
-\\071\002\064\002\082\002\064\002\
+\\073\002\066\002\084\002\066\002\
 \\160\000\160\000\030\001\160\000\
-\\160\000\085\002\076\002\212\002\
-\\213\002\027\001\073\000\007\001\
-\\228\002\023\000\019\001\113\000\
-\\229\002\027\001\174\002\173\002\
-\\171\002\170\002\245\002\025\000\
-\\020\001\113\000\185\002\184\002\
-\\189\000\155\000\012\002\160\000\
-\\160\000\181\002\205\002\071\001\
-\\160\000\194\002\190\002\196\001\
-\\154\002\197\002\118\002\015\000\
-\\030\002\113\000\117\002\027\002\
-\\115\002\091\000\095\000\190\000\
+\\160\000\087\002\078\002\214\002\
+\\215\002\027\001\073\000\007\001\
+\\230\002\023\000\019\001\113\000\
+\\231\002\027\001\176\002\175\002\
+\\173\002\172\002\247\002\025\000\
+\\020\001\113\000\187\002\186\002\
+\\189\000\155\000\014\002\160\000\
+\\160\000\183\002\207\002\071\001\
+\\160\000\196\002\192\002\196\001\
+\\156\002\199\002\120\002\015\000\
+\\032\002\113\000\119\002\029\002\
+\\117\002\091\000\095\000\190\000\
 \\147\001\201\001\203\001\193\001\
 \\191\000\192\000\193\000\194\000\
 \\195\000\196\000\197\000\198\000\
-\\064\002\082\002\064\002\160\000\
+\\066\002\084\002\066\002\160\000\
 \\160\000\030\001\160\000\160\000\
-\\073\003\076\002\038\003\035\003\
-\\049\002\027\001\031\001\027\001\
-\\071\001\071\001\012\002\071\001\
-\\071\001\087\000\032\002\031\002\
-\\021\002\027\001\092\000\027\001\
-\\071\001\071\001\007\002\071\001\
+\\078\003\078\002\043\003\040\003\
+\\051\002\027\001\031\001\027\001\
+\\071\001\071\001\014\002\071\001\
+\\071\001\087\000\034\002\033\002\
+\\023\002\027\001\092\000\027\001\
+\\071\001\071\001\009\002\071\001\
 \\071\001\199\000\200\000\201\000\
 \\202\000\203\000\204\000\205\000\
-\\206\000\210\002\211\002\215\002\
+\\206\000\212\002\213\002\217\002\
 \\027\001\031\001\027\001\071\001\
-\\071\001\012\002\071\001\071\001\
-\\088\000\231\002\074\000\008\001\
-\\175\002\031\001\030\001\247\002\
-\\027\001\076\000\009\001\183\002\
-\\160\000\007\002\030\001\204\002\
-\\181\002\178\002\071\001\207\002\
-\\208\002\192\002\200\002\187\002\
-\\071\001\121\002\077\000\010\001\
-\\120\002\034\002\119\002\151\000\
+\\071\001\014\002\071\001\071\001\
+\\088\000\233\002\074\000\008\001\
+\\177\002\031\001\030\001\249\002\
+\\027\001\076\000\009\001\185\002\
+\\160\000\009\002\030\001\206\002\
+\\183\002\180\002\071\001\209\002\
+\\210\002\194\002\202\002\189\002\
+\\071\001\123\002\077\000\010\001\
+\\122\002\036\002\121\002\151\000\
 \\026\001\027\001\092\000\027\001\
-\\071\001\071\001\007\002\071\001\
+\\071\001\071\001\009\002\071\001\
 \\071\001\207\000\208\000\209\000\
 \\210\000\211\000\212\000\213\000\
-\\214\000\064\002\082\002\064\002\
+\\214\000\066\002\084\002\066\002\
 \\160\000\160\000\030\001\160\000\
-\\160\000\076\002\048\002\109\002\
-\\105\002\108\002\109\002\160\000\
-\\160\000\107\002\160\000\160\000\
+\\160\000\078\002\050\002\111\002\
+\\107\002\110\002\111\002\160\000\
+\\160\000\109\002\160\000\160\000\
 \\027\001\092\000\027\001\071\001\
-\\071\001\007\002\071\001\071\001\
-\\064\002\082\002\064\002\160\000\
+\\071\001\009\002\071\001\071\001\
+\\066\002\084\002\066\002\160\000\
 \\160\000\030\001\160\000\160\000\
-\\214\002\076\002\233\002\027\001\
+\\216\002\078\002\235\002\027\001\
 \\031\001\027\001\071\001\071\001\
-\\012\002\071\001\071\001\089\000\
-\\172\002\169\002\246\002\249\002\
+\\014\002\071\001\071\001\089\000\
+\\174\002\171\002\248\002\251\002\
 \\027\001\031\001\027\001\071\001\
-\\071\001\012\002\071\001\071\001\
-\\090\000\162\002\161\002\204\002\
-\\202\002\071\001\179\002\180\002\
-\\206\002\198\002\071\001\194\002\
-\\123\002\027\001\031\001\027\001\
-\\071\001\071\001\012\002\071\001\
+\\071\001\014\002\071\001\071\001\
+\\090\000\164\002\163\002\206\002\
+\\204\002\071\001\181\002\182\002\
+\\208\002\200\002\071\001\196\002\
+\\125\002\027\001\031\001\027\001\
+\\071\001\071\001\014\002\071\001\
 \\071\001\091\000\148\001\027\000\
-\\060\003\026\000\027\000\160\000\
+\\065\003\026\000\027\000\160\000\
 \\160\000\028\000\160\000\160\000\
 \\027\001\092\000\027\001\071\001\
-\\071\001\007\002\071\001\071\001\
+\\071\001\009\002\071\001\071\001\
 \\215\000\216\000\217\000\218\000\
 \\219\000\220\000\221\000\222\000\
-\\103\002\065\000\110\002\104\002\
-\\107\002\107\002\102\002\107\002\
-\\107\002\012\000\094\002\011\000\
+\\105\002\065\000\112\002\106\002\
+\\109\002\109\002\104\002\109\002\
+\\109\002\012\000\096\002\011\000\
 \\012\000\160\000\160\000\013\000\
 \\160\000\160\000\223\000\224\000\
 \\225\000\226\000\227\000\228\000\
-\\229\000\230\000\064\002\082\002\
-\\064\002\160\000\160\000\030\001\
-\\160\000\160\000\232\002\076\002\
-\\064\002\082\002\064\002\160\000\
+\\229\000\230\000\066\002\084\002\
+\\066\002\160\000\160\000\030\001\
+\\160\000\160\000\234\002\078\002\
+\\066\002\084\002\066\002\160\000\
 \\160\000\030\001\160\000\160\000\
-\\248\002\076\002\201\002\203\002\
-\\199\002\188\002\064\002\082\002\
-\\064\002\160\000\160\000\030\001\
-\\160\000\160\000\122\002\076\002\
-\\058\003\061\003\067\000\063\003\
-\\059\003\028\000\028\000\057\003\
-\\028\000\028\000\030\000\082\003\
+\\250\002\078\002\203\002\205\002\
+\\201\002\190\002\066\002\084\002\
+\\066\002\160\000\160\000\030\001\
+\\160\000\160\000\124\002\078\002\
+\\063\003\066\003\067\000\068\003\
+\\064\003\028\000\028\000\062\003\
+\\028\000\028\000\030\000\087\003\
 \\029\000\030\000\160\000\160\000\
 \\031\000\160\000\160\000\027\001\
 \\092\000\027\001\071\001\071\001\
-\\007\002\071\001\071\001\106\002\
-\\100\002\098\002\099\002\101\002\
-\\092\002\095\002\069\000\097\002\
-\\093\002\013\000\013\000\091\002\
+\\009\002\071\001\071\001\108\002\
+\\102\002\100\002\101\002\103\002\
+\\094\002\097\002\069\000\099\002\
+\\095\002\013\000\013\000\093\002\
 \\013\000\013\000\027\001\092\000\
-\\027\001\071\001\071\001\007\002\
+\\027\001\071\001\071\001\009\002\
 \\071\001\071\001\231\000\232\000\
 \\233\000\234\000\235\000\236\000\
 \\237\000\238\000\239\000\240\000\
 \\241\000\242\000\243\000\244\000\
 \\245\000\246\000\247\000\248\000\
 \\249\000\250\000\251\000\252\000\
-\\253\000\254\000\062\003\055\003\
-\\053\003\054\003\056\003\080\003\
-\\083\003\070\000\085\003\081\003\
-\\031\000\031\000\079\003\031\000\
-\\031\000\008\000\007\000\057\002\
+\\253\000\254\000\067\003\060\003\
+\\058\003\059\003\061\003\085\003\
+\\088\003\070\000\090\003\086\003\
+\\031\000\031\000\084\003\031\000\
+\\031\000\008\000\007\000\059\002\
 \\008\000\160\000\160\000\009\000\
-\\160\000\160\000\096\002\089\002\
-\\087\002\088\002\090\002\033\000\
-\\223\002\032\000\033\000\160\000\
+\\160\000\160\000\098\002\091\002\
+\\089\002\090\002\092\002\033\000\
+\\225\002\032\000\033\000\160\000\
 \\160\000\034\000\160\000\160\000\
 \\027\001\092\000\027\001\071\001\
-\\071\001\007\002\071\001\071\001\
+\\071\001\009\002\071\001\071\001\
 \\027\001\092\000\027\001\071\001\
-\\071\001\007\002\071\001\071\001\
+\\071\001\009\002\071\001\071\001\
 \\027\001\092\000\027\001\071\001\
-\\071\001\007\002\071\001\071\001\
-\\084\003\077\003\075\003\076\003\
-\\078\003\055\002\058\002\071\000\
-\\060\002\056\002\009\000\009\000\
-\\054\002\009\000\009\000\221\002\
-\\224\002\073\000\226\002\222\002\
-\\034\000\034\000\220\002\034\000\
-\\034\000\036\000\241\002\035\000\
+\\071\001\009\002\071\001\071\001\
+\\089\003\082\003\080\003\081\003\
+\\083\003\057\002\060\002\071\000\
+\\062\002\058\002\009\000\009\000\
+\\056\002\009\000\009\000\223\002\
+\\226\002\073\000\228\002\224\002\
+\\034\000\034\000\222\002\034\000\
+\\034\000\036\000\243\002\035\000\
 \\036\000\160\000\160\000\037\000\
-\\160\000\160\000\039\000\001\003\
+\\160\000\160\000\039\000\003\003\
 \\038\000\039\000\160\000\160\000\
 \\040\000\160\000\160\000\017\000\
-\\131\002\016\000\017\000\160\000\
+\\133\002\016\000\017\000\160\000\
 \\160\000\018\000\160\000\160\000\
-\\059\002\052\002\050\002\051\002\
-\\053\002\225\002\218\002\216\002\
-\\217\002\219\002\239\002\242\002\
-\\075\000\244\002\240\002\037\000\
-\\037\000\238\002\037\000\037\000\
-\\255\002\002\003\076\000\004\003\
-\\000\003\040\000\040\000\254\002\
-\\040\000\040\000\129\002\132\002\
-\\077\000\134\002\130\002\018\000\
-\\018\000\128\002\018\000\018\000\
-\\243\002\236\002\234\002\235\002\
-\\237\002\003\003\252\002\250\002\
-\\251\002\253\002\133\002\126\002\
-\\124\002\125\002\127\002\000\000"
+\\061\002\054\002\052\002\053\002\
+\\055\002\227\002\220\002\218\002\
+\\219\002\221\002\241\002\244\002\
+\\075\000\246\002\242\002\037\000\
+\\037\000\240\002\037\000\037\000\
+\\001\003\004\003\076\000\006\003\
+\\002\003\040\000\040\000\000\003\
+\\040\000\040\000\131\002\134\002\
+\\077\000\136\002\132\002\018\000\
+\\018\000\130\002\018\000\018\000\
+\\245\002\238\002\236\002\237\002\
+\\239\002\005\003\254\002\252\002\
+\\253\002\255\002\135\002\128\002\
+\\126\002\127\002\129\002\000\000"
 val gotoT =
 "\
-\\191\000\002\000\192\000\001\000\196\000\171\005\000\000\
+\\191\000\002\000\192\000\001\000\196\000\183\005\000\000\
 \\192\000\006\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
@@ -19490,11 +21742,11 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\032\000\083\000\034\000\010\000\035\000\009\000\000\000\
+\\032\000\086\000\034\000\010\000\035\000\009\000\000\000\
 \\000\000\
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\090\000\000\000\
+\\011\000\017\000\013\000\016\000\016\000\093\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -19513,134 +21765,135 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\093\000\090\000\092\000\000\000\
-\\009\000\096\000\102\000\095\000\000\000\
-\\008\000\099\000\112\000\098\000\000\000\
-\\007\000\103\000\048\000\102\000\083\000\101\000\084\000\100\000\000\000\
-\\007\000\103\000\048\000\106\000\083\000\101\000\084\000\100\000\000\000\
-\\001\000\108\000\015\000\107\000\000\000\
-\\015\000\110\000\000\000\
+\\008\000\096\000\090\000\095\000\000\000\
+\\009\000\099\000\102\000\098\000\000\000\
+\\008\000\102\000\112\000\101\000\000\000\
+\\007\000\106\000\048\000\105\000\083\000\104\000\084\000\103\000\000\000\
+\\007\000\106\000\048\000\109\000\083\000\104\000\084\000\103\000\000\000\
+\\001\000\111\000\015\000\110\000\000\000\
+\\015\000\113\000\000\000\
 \\000\000\
-\\008\000\019\000\013\000\114\000\000\000\
+\\008\000\019\000\013\000\117\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\017\000\117\000\
-\\018\000\116\000\025\000\014\000\026\000\013\000\027\000\115\000\000\000\
-\\015\000\119\000\057\000\118\000\000\000\
-\\003\000\120\000\000\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\017\000\120\000\
+\\018\000\119\000\025\000\014\000\026\000\013\000\027\000\118\000\000\000\
+\\015\000\122\000\057\000\121\000\000\000\
+\\003\000\123\000\000\000\
 \\000\000\
-\\001\000\021\000\003\000\130\000\005\000\129\000\008\000\019\000\
-\\010\000\018\000\011\000\017\000\013\000\016\000\016\000\128\000\
-\\022\000\127\000\023\000\126\000\000\000\
+\\001\000\021\000\003\000\133\000\005\000\132\000\008\000\019\000\
+\\010\000\018\000\011\000\017\000\013\000\016\000\016\000\131\000\
+\\022\000\130\000\023\000\129\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\017\000\136\000\
-\\018\000\116\000\025\000\014\000\026\000\013\000\027\000\115\000\000\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\017\000\139\000\
+\\018\000\119\000\025\000\014\000\026\000\013\000\027\000\118\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\019\000\139\000\
-\\021\000\138\000\025\000\014\000\026\000\013\000\027\000\137\000\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\141\000\000\000\
-\\001\000\148\000\005\000\020\000\007\000\103\000\008\000\019\000\
-\\011\000\147\000\013\000\016\000\040\000\146\000\061\000\145\000\
-\\071\000\144\000\072\000\143\000\084\000\142\000\000\000\
-\\007\000\103\000\048\000\157\000\083\000\101\000\084\000\100\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\071\000\144\000\072\000\158\000\000\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\019\000\142\000\
+\\021\000\141\000\025\000\014\000\026\000\013\000\027\000\140\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\160\000\000\000\
-\\008\000\019\000\013\000\162\000\038\000\161\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\163\000\011\000\017\000\
+\\026\000\013\000\027\000\144\000\000\000\
+\\001\000\151\000\005\000\020\000\007\000\106\000\008\000\019\000\
+\\011\000\150\000\013\000\016\000\040\000\149\000\061\000\148\000\
+\\071\000\147\000\072\000\146\000\084\000\145\000\000\000\
+\\007\000\106\000\048\000\160\000\083\000\104\000\084\000\103\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\071\000\147\000\072\000\161\000\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
+\\026\000\013\000\027\000\163\000\000\000\
+\\008\000\019\000\013\000\165\000\038\000\164\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\166\000\011\000\017\000\
 \\013\000\016\000\000\000\
-\\004\000\166\000\005\000\165\000\037\000\164\000\000\000\
-\\031\000\171\000\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
-\\031\000\173\000\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
-\\002\000\175\000\039\000\174\000\000\000\
-\\002\000\175\000\039\000\178\000\000\000\
+\\004\000\169\000\005\000\168\000\037\000\167\000\000\000\
+\\031\000\174\000\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
+\\031\000\176\000\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
+\\002\000\178\000\039\000\177\000\000\000\
+\\002\000\178\000\039\000\181\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\179\000\000\000\
-\\001\000\148\000\005\000\020\000\007\000\103\000\008\000\019\000\
-\\011\000\147\000\013\000\016\000\042\000\185\000\044\000\184\000\
-\\046\000\183\000\047\000\182\000\061\000\145\000\071\000\144\000\
-\\072\000\181\000\084\000\180\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\028\000\188\000\030\000\187\000\061\000\145\000\
-\\071\000\144\000\072\000\186\000\000\000\
-\\015\000\190\000\059\000\189\000\000\000\
-\\006\000\194\000\007\000\103\000\051\000\193\000\052\000\192\000\
-\\084\000\191\000\000\000\
+\\026\000\013\000\027\000\182\000\000\000\
+\\001\000\151\000\005\000\020\000\007\000\106\000\008\000\019\000\
+\\011\000\150\000\013\000\016\000\042\000\188\000\044\000\187\000\
+\\046\000\186\000\047\000\185\000\061\000\148\000\071\000\147\000\
+\\072\000\184\000\084\000\183\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\028\000\191\000\030\000\190\000\061\000\148\000\
+\\071\000\147\000\072\000\189\000\000\000\
+\\015\000\193\000\059\000\192\000\000\000\
+\\006\000\197\000\007\000\106\000\051\000\196\000\052\000\195\000\
+\\084\000\194\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\197\000\000\000\
-\\007\000\103\000\050\000\199\000\083\000\198\000\084\000\100\000\000\000\
+\\026\000\013\000\027\000\200\000\000\000\
+\\007\000\106\000\050\000\202\000\083\000\201\000\084\000\103\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\164\000\200\000\000\000\
+\\164\000\203\000\000\000\
 \\000\000\
-\\008\000\203\000\177\000\202\000\000\000\
-\\009\000\205\000\183\000\204\000\000\000\
-\\008\000\207\000\185\000\206\000\000\000\
-\\015\000\209\000\173\000\208\000\000\000\
+\\008\000\206\000\177\000\205\000\000\000\
+\\009\000\208\000\183\000\207\000\000\000\
+\\008\000\210\000\185\000\209\000\000\000\
+\\015\000\212\000\173\000\211\000\000\000\
 \\000\000\
-\\015\000\211\000\165\000\210\000\000\000\
-\\006\000\214\000\007\000\103\000\084\000\213\000\167\000\212\000\000\000\
-\\015\000\211\000\165\000\215\000\000\000\
-\\015\000\217\000\175\000\216\000\000\000\
-\\006\000\220\000\007\000\103\000\084\000\219\000\169\000\218\000\000\000\
-\\032\000\083\000\034\000\010\000\035\000\009\000\000\000\
+\\015\000\214\000\165\000\213\000\000\000\
+\\006\000\217\000\007\000\106\000\084\000\216\000\167\000\215\000\000\000\
+\\004\000\169\000\005\000\168\000\037\000\218\000\000\000\
+\\002\000\178\000\039\000\219\000\000\000\
+\\002\000\178\000\039\000\220\000\000\000\
+\\015\000\214\000\165\000\221\000\000\000\
+\\015\000\223\000\175\000\222\000\000\000\
+\\006\000\226\000\007\000\106\000\084\000\225\000\169\000\224\000\000\000\
+\\032\000\086\000\034\000\010\000\035\000\009\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
 \\026\000\013\000\027\000\012\000\032\000\011\000\034\000\010\000\
-\\035\000\009\000\193\000\008\000\194\000\222\000\195\000\221\000\000\000\
+\\035\000\009\000\193\000\008\000\194\000\228\000\195\000\227\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
 \\026\000\013\000\027\000\012\000\032\000\011\000\034\000\010\000\
-\\035\000\009\000\193\000\008\000\194\000\222\000\195\000\224\000\000\000\
-\\007\000\231\000\073\000\230\000\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
+\\035\000\009\000\193\000\008\000\194\000\228\000\195\000\230\000\000\000\
+\\007\000\237\000\073\000\236\000\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\235\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\028\000\236\000\030\000\187\000\061\000\145\000\
-\\071\000\144\000\072\000\186\000\000\000\
+\\026\000\013\000\027\000\241\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\028\000\242\000\030\000\190\000\061\000\148\000\
+\\071\000\147\000\072\000\189\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\237\000\000\000\
+\\026\000\013\000\027\000\243\000\000\000\
 \\000\000\
-\\004\000\239\000\005\000\165\000\008\000\238\000\000\000\
+\\004\000\245\000\005\000\168\000\008\000\244\000\000\000\
 \\000\000\
-\\097\000\240\000\000\000\
-\\097\000\243\000\000\000\
+\\097\000\246\000\000\000\
+\\097\000\249\000\000\000\
 \\000\000\
-\\089\000\246\000\103\000\245\000\113\000\244\000\000\000\
-\\000\000\
-\\000\000\
-\\089\000\246\000\113\000\248\000\000\000\
-\\000\000\
-\\006\000\249\000\000\000\
+\\089\000\252\000\103\000\251\000\113\000\250\000\000\000\
 \\000\000\
 \\000\000\
+\\089\000\252\000\113\000\254\000\000\000\
 \\000\000\
-\\007\000\251\000\085\000\250\000\000\000\
-\\000\000\
-\\004\000\252\000\005\000\165\000\000\000\
-\\000\000\
-\\000\000\
-\\004\000\254\000\005\000\165\000\000\000\
-\\008\000\255\000\000\000\
-\\015\000\000\001\000\000\
-\\015\000\001\001\000\000\
+\\006\000\255\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\007\000\001\001\085\000\000\001\000\000\
+\\000\000\
+\\004\000\002\001\005\000\168\000\000\000\
 \\000\000\
 \\000\000\
-\\004\000\005\001\005\000\165\000\000\000\
+\\004\000\004\001\005\000\168\000\000\000\
+\\008\000\005\001\000\000\
+\\015\000\006\001\000\000\
+\\015\000\007\001\000\000\
 \\000\000\
 \\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\004\000\011\001\005\000\168\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -19648,9 +21901,9 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\069\000\008\001\000\000\
 \\000\000\
 \\000\000\
+\\069\000\014\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -19661,188 +21914,193 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\040\000\018\001\061\000\145\000\071\000\144\000\
-\\072\000\143\000\000\000\
-\\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\025\001\000\000\
 \\000\000\
 \\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\040\000\024\001\061\000\148\000\071\000\147\000\
+\\072\000\146\000\000\000\
+\\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\031\001\000\000\
 \\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\062\000\028\001\063\000\027\001\
-\\071\000\144\000\072\000\026\001\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\071\000\144\000\072\000\029\001\000\000\
 \\000\000\
-\\003\000\033\001\005\000\032\001\066\000\031\001\067\000\030\001\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\062\000\036\001\063\000\027\001\
-\\071\000\144\000\072\000\026\001\000\000\
-\\001\000\148\000\005\000\020\000\007\000\251\000\008\000\019\000\
-\\011\000\147\000\013\000\016\000\061\000\145\000\064\000\039\001\
-\\065\000\038\001\071\000\144\000\072\000\037\001\085\000\250\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\040\000\041\001\061\000\145\000\071\000\144\000\
-\\072\000\143\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\042\001\011\000\017\000\
+\\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\062\000\034\001\063\000\033\001\
+\\071\000\147\000\072\000\032\001\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\071\000\147\000\072\000\035\001\000\000\
+\\000\000\
+\\003\000\039\001\005\000\038\001\066\000\037\001\067\000\036\001\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\062\000\042\001\063\000\033\001\
+\\071\000\147\000\072\000\032\001\000\000\
+\\001\000\151\000\005\000\020\000\007\000\001\001\008\000\019\000\
+\\011\000\150\000\013\000\016\000\061\000\148\000\064\000\045\001\
+\\065\000\044\001\071\000\147\000\072\000\043\001\085\000\000\001\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\040\000\047\001\061\000\148\000\071\000\147\000\
+\\072\000\146\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\048\001\011\000\017\000\
 \\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\064\000\039\001\065\000\038\001\
-\\071\000\144\000\072\000\037\001\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\064\000\045\001\065\000\044\001\
+\\071\000\147\000\072\000\043\001\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\162\000\038\000\044\001\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\004\000\166\000\005\000\165\000\037\000\045\001\000\000\
+\\008\000\019\000\013\000\165\000\038\000\050\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\033\000\046\001\034\000\169\000\035\000\009\000\000\000\
+\\004\000\169\000\005\000\168\000\037\000\051\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\004\000\166\000\005\000\165\000\037\000\049\001\000\000\
+\\033\000\052\001\034\000\172\000\035\000\009\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\004\000\166\000\005\000\165\000\037\000\050\001\000\000\
-\\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\042\000\052\001\044\000\184\000\046\000\183\000\
-\\047\000\182\000\061\000\145\000\071\000\144\000\072\000\181\000\000\000\
-\\000\000\
-\\000\000\
-\\045\000\054\001\000\000\
-\\043\000\056\001\000\000\
-\\000\000\
-\\000\000\
-\\029\000\059\001\000\000\
-\\000\000\
-\\000\000\
-\\004\000\061\001\005\000\165\000\000\000\
-\\006\000\062\001\000\000\
-\\036\000\063\001\000\000\
-\\036\000\065\001\000\000\
-\\053\000\066\001\000\000\
+\\004\000\169\000\005\000\168\000\037\000\055\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\006\000\070\001\000\000\
+\\004\000\169\000\005\000\168\000\037\000\056\001\000\000\
+\\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\042\000\058\001\044\000\187\000\046\000\186\000\
+\\047\000\185\000\061\000\148\000\071\000\147\000\072\000\184\000\000\000\
+\\000\000\
+\\000\000\
+\\045\000\060\001\000\000\
+\\043\000\062\001\000\000\
+\\000\000\
+\\000\000\
+\\029\000\065\001\000\000\
+\\000\000\
+\\000\000\
+\\004\000\067\001\005\000\168\000\000\000\
+\\006\000\068\001\000\000\
+\\036\000\069\001\000\000\
 \\036\000\071\001\000\000\
+\\053\000\072\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\178\000\073\001\000\000\
-\\000\000\
-\\089\000\246\000\113\000\077\001\184\000\076\001\000\000\
-\\000\000\
-\\089\000\246\000\103\000\080\001\113\000\244\000\186\000\079\001\000\000\
-\\000\000\
-\\004\000\082\001\005\000\165\000\000\000\
-\\000\000\
-\\004\000\083\001\005\000\165\000\000\000\
-\\000\000\
-\\006\000\084\001\000\000\
-\\168\000\085\001\000\000\
+\\006\000\076\001\000\000\
+\\036\000\077\001\000\000\
 \\000\000\
 \\000\000\
-\\004\000\087\001\005\000\165\000\000\000\
 \\000\000\
-\\006\000\088\001\000\000\
-\\170\000\089\001\000\000\
+\\178\000\079\001\000\000\
+\\000\000\
+\\089\000\252\000\113\000\083\001\184\000\082\001\000\000\
+\\000\000\
+\\089\000\252\000\103\000\086\001\113\000\250\000\186\000\085\001\000\000\
+\\000\000\
+\\004\000\088\001\005\000\168\000\000\000\
+\\000\000\
+\\004\000\089\001\005\000\168\000\000\000\
+\\000\000\
+\\006\000\090\001\000\000\
+\\168\000\091\001\000\000\
+\\000\000\
+\\004\000\169\000\005\000\168\000\037\000\093\001\000\000\
+\\004\000\169\000\005\000\168\000\037\000\094\001\000\000\
+\\000\000\
+\\000\000\
+\\004\000\095\001\005\000\168\000\000\000\
+\\000\000\
+\\006\000\096\001\000\000\
+\\170\000\097\001\000\000\
 \\000\000\
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
 \\026\000\013\000\027\000\012\000\032\000\011\000\034\000\010\000\
-\\035\000\009\000\193\000\008\000\194\000\222\000\195\000\092\001\000\000\
+\\035\000\009\000\193\000\008\000\194\000\228\000\195\000\100\001\000\000\
 \\000\000\
-\\006\000\095\001\008\000\019\000\012\000\094\001\013\000\093\001\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\099\001\000\000\
-\\003\000\105\001\078\000\104\001\079\000\103\001\000\000\
-\\007\000\231\000\073\000\107\001\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\082\000\106\001\000\000\
+\\006\000\103\001\008\000\019\000\012\000\102\001\013\000\101\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\110\001\101\000\109\001\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\119\001\101\000\109\001\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\107\001\000\000\
+\\003\000\113\001\078\000\112\001\079\000\111\001\000\000\
+\\007\000\237\000\073\000\115\001\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\082\000\114\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\089\000\246\000\113\000\122\001\000\000\
-\\008\000\126\001\120\000\125\001\121\000\124\001\122\000\123\001\000\000\
-\\097\000\147\001\000\000\
-\\049\000\149\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\006\000\095\001\008\000\019\000\012\000\155\001\013\000\093\001\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\118\001\101\000\117\001\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\127\001\101\000\117\001\000\000\
 \\000\000\
 \\000\000\
-\\004\000\158\001\005\000\165\000\000\000\
-\\004\000\159\001\005\000\165\000\000\000\
-\\008\000\238\000\000\000\
+\\000\000\
+\\089\000\252\000\113\000\130\001\000\000\
+\\008\000\134\001\120\000\133\001\121\000\132\001\122\000\131\001\000\000\
+\\097\000\155\001\000\000\
+\\049\000\157\001\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\006\000\103\001\008\000\019\000\012\000\163\001\013\000\101\001\000\000\
+\\000\000\
+\\000\000\
+\\004\000\166\001\005\000\168\000\000\000\
+\\004\000\167\001\005\000\168\000\000\000\
+\\008\000\244\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\018\000\160\001\
-\\025\000\014\000\026\000\013\000\027\000\115\000\000\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\018\000\168\001\
+\\025\000\014\000\026\000\013\000\027\000\118\000\000\000\
 \\000\000\
-\\056\000\161\001\000\000\
+\\056\000\169\001\000\000\
 \\000\000\
-\\003\000\130\000\005\000\165\001\022\000\164\001\000\000\
-\\024\000\166\001\000\000\
-\\007\000\231\000\073\000\168\001\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\169\001\000\000\
-\\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\020\000\171\001\
-\\025\000\014\000\026\000\013\000\027\000\170\001\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\018\000\172\001\
-\\025\000\014\000\026\000\013\000\027\000\115\000\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\173\001\000\000\
-\\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\174\001\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\040\000\175\001\061\000\145\000\071\000\144\000\
-\\072\000\143\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\042\000\176\001\044\000\184\000\046\000\183\000\
-\\047\000\182\000\061\000\145\000\071\000\144\000\072\000\181\000\000\000\
+\\003\000\133\000\005\000\173\001\022\000\172\001\000\000\
+\\024\000\174\001\000\000\
+\\007\000\237\000\073\000\176\001\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
 \\026\000\013\000\027\000\177\001\000\000\
-\\007\000\231\000\073\000\178\001\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\071\000\144\000\072\000\179\001\000\000\
+\\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\020\000\179\001\
+\\025\000\014\000\026\000\013\000\027\000\178\001\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\018\000\180\001\
+\\025\000\014\000\026\000\013\000\027\000\118\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
+\\026\000\013\000\027\000\181\001\000\000\
+\\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\182\001\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\040\000\183\001\061\000\148\000\071\000\147\000\
+\\072\000\146\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\042\000\184\001\044\000\187\000\046\000\186\000\
+\\047\000\185\000\061\000\148\000\071\000\147\000\072\000\184\000\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
+\\026\000\013\000\027\000\185\001\000\000\
+\\007\000\237\000\073\000\186\001\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\071\000\147\000\072\000\187\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -19850,7 +22108,7 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\069\000\183\001\000\000\
+\\069\000\191\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -19863,194 +22121,191 @@ val gotoT =
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\191\001\000\000\
+\\026\000\013\000\027\000\199\001\000\000\
 \\000\000\
 \\000\000\
-\\033\000\046\001\034\000\169\000\035\000\009\000\000\000\
-\\031\000\192\001\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
+\\033\000\052\001\034\000\172\000\035\000\009\000\000\000\
+\\031\000\200\001\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\020\000\193\001\
-\\025\000\014\000\026\000\013\000\027\000\170\001\000\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\020\000\201\001\
+\\025\000\014\000\026\000\013\000\027\000\178\001\000\000\
 \\000\000\
-\\000\000\
-\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\194\001\000\000\
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\195\001\000\000\
+\\026\000\013\000\027\000\202\001\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\044\000\196\001\046\000\183\000\047\000\182\000\
-\\061\000\145\000\071\000\144\000\072\000\181\000\000\000\
-\\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\042\000\197\001\044\000\184\000\046\000\183\000\
-\\047\000\182\000\061\000\145\000\071\000\144\000\072\000\181\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\198\001\000\000\
+\\026\000\013\000\027\000\203\001\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\028\000\199\001\030\000\187\000\061\000\145\000\
-\\071\000\144\000\072\000\186\000\000\000\
-\\056\000\200\001\000\000\
-\\053\000\202\001\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\044\000\204\001\046\000\186\000\047\000\185\000\
+\\061\000\148\000\071\000\147\000\072\000\184\000\000\000\
 \\000\000\
-\\007\000\103\000\048\000\204\001\083\000\101\000\084\000\100\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\042\000\205\001\044\000\187\000\046\000\186\000\
+\\047\000\185\000\061\000\148\000\071\000\147\000\072\000\184\000\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
+\\026\000\013\000\027\000\206\001\000\000\
 \\000\000\
-\\000\000\
-\\015\000\206\001\054\000\205\001\000\000\
-\\007\000\103\000\050\000\208\001\083\000\198\000\084\000\100\000\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\028\000\209\001\030\000\187\000\061\000\145\000\
-\\071\000\144\000\072\000\186\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\028\000\207\001\030\000\190\000\061\000\148\000\
+\\071\000\147\000\072\000\189\000\000\000\
+\\056\000\208\001\000\000\
 \\053\000\210\001\000\000\
 \\000\000\
+\\007\000\106\000\048\000\212\001\083\000\104\000\084\000\103\000\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\215\001\101\000\214\001\
-\\179\000\213\001\000\000\
-\\008\000\203\000\177\000\217\001\000\000\
+\\015\000\214\001\054\000\213\001\000\000\
+\\007\000\106\000\050\000\216\001\083\000\201\000\084\000\103\000\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\028\000\217\001\030\000\190\000\061\000\148\000\
+\\071\000\147\000\072\000\189\000\000\000\
+\\053\000\218\001\000\000\
 \\000\000\
-\\184\000\218\001\000\000\
-\\009\000\205\000\183\000\219\001\000\000\
 \\000\000\
 \\000\000\
-\\008\000\207\000\185\000\221\001\000\000\
-\\056\000\223\001\174\000\222\001\000\000\
-\\166\000\225\001\000\000\
-\\168\000\228\001\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\223\001\101\000\222\001\
+\\179\000\221\001\000\000\
+\\008\000\206\000\177\000\225\001\000\000\
 \\000\000\
-\\006\000\214\000\007\000\103\000\084\000\213\000\167\000\229\001\000\000\
-\\176\000\230\001\000\000\
+\\184\000\226\001\000\000\
+\\009\000\208\000\183\000\227\001\000\000\
 \\000\000\
 \\000\000\
-\\015\000\235\001\171\000\234\001\000\000\
-\\006\000\220\000\007\000\103\000\084\000\219\000\169\000\236\001\000\000\
+\\008\000\210\000\185\000\229\001\000\000\
+\\056\000\231\001\174\000\230\001\000\000\
+\\166\000\233\001\000\000\
+\\168\000\236\001\000\000\
 \\000\000\
+\\006\000\217\000\007\000\106\000\084\000\216\000\167\000\237\001\000\000\
 \\000\000\
 \\000\000\
+\\176\000\238\001\000\000\
 \\000\000\
 \\000\000\
-\\007\000\231\000\075\000\238\001\076\000\227\000\077\000\226\000\
-\\081\000\225\000\000\000\
-\\007\000\231\000\073\000\239\001\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
+\\015\000\243\001\171\000\242\001\000\000\
+\\006\000\226\000\007\000\106\000\084\000\225\000\169\000\244\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\007\000\237\000\075\000\246\001\076\000\233\000\077\000\232\000\
+\\081\000\231\000\000\000\
+\\007\000\237\000\073\000\247\001\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\248\001\
-\\088\000\247\001\092\000\246\001\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\000\000\
 \\000\000\
 \\000\000\
-\\120\000\003\002\121\000\124\001\122\000\123\001\000\000\
-\\089\000\004\002\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\005\002\101\000\109\001\000\000\
-\\031\000\006\002\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\000\002\
+\\088\000\255\001\092\000\254\001\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\248\001\
-\\088\000\247\001\092\000\007\002\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\010\002\101\000\009\002\
-\\105\000\008\002\000\000\
 \\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\000\000\
 \\000\000\
-\\122\000\012\002\000\000\
 \\000\000\
+\\120\000\011\002\121\000\132\001\122\000\131\001\000\000\
+\\089\000\012\002\000\000\
 \\000\000\
-\\008\000\017\002\144\000\016\002\000\000\
-\\009\000\019\002\150\000\018\002\000\000\
-\\008\000\019\000\013\000\021\002\129\000\020\002\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\024\002\101\000\109\001\000\000\
-\\008\000\026\002\156\000\025\002\000\000\
-\\007\000\103\000\083\000\028\002\084\000\100\000\132\000\027\002\000\000\
-\\007\000\103\000\083\000\028\002\084\000\100\000\132\000\029\002\000\000\
-\\001\000\031\002\015\000\030\002\000\000\
-\\015\000\032\002\000\000\
-\\015\000\034\002\140\000\033\002\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\013\002\101\000\117\001\000\000\
+\\031\000\014\002\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
 \\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\000\002\
+\\088\000\255\001\092\000\015\002\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\018\002\101\000\017\002\
+\\105\000\016\002\000\000\
 \\000\000\
-\\015\000\037\002\130\000\036\002\000\000\
-\\007\000\103\000\083\000\028\002\084\000\100\000\132\000\038\002\000\000\
-\\004\000\166\000\005\000\165\000\037\000\039\002\000\000\
-\\002\000\175\000\039\000\040\002\000\000\
-\\002\000\175\000\039\000\041\002\000\000\
-\\015\000\037\002\130\000\042\002\000\000\
-\\015\000\044\002\142\000\043\002\000\000\
-\\006\000\048\002\007\000\103\000\084\000\047\002\135\000\046\002\
-\\136\000\045\002\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\050\002\101\000\109\001\000\000\
+\\122\000\020\002\000\000\
 \\000\000\
-\\007\000\231\000\073\000\051\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\007\000\103\000\048\000\052\002\083\000\101\000\084\000\100\000\000\000\
 \\000\000\
-\\007\000\251\000\085\000\053\002\000\000\
-\\006\000\095\001\008\000\019\000\012\000\054\002\013\000\093\001\000\000\
+\\008\000\025\002\144\000\024\002\000\000\
+\\009\000\027\002\150\000\026\002\000\000\
+\\008\000\019\000\013\000\029\002\129\000\028\002\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\032\002\101\000\117\001\000\000\
+\\008\000\034\002\156\000\033\002\000\000\
+\\007\000\106\000\083\000\036\002\084\000\103\000\132\000\035\002\000\000\
+\\007\000\106\000\083\000\036\002\084\000\103\000\132\000\037\002\000\000\
+\\001\000\039\002\015\000\038\002\000\000\
+\\015\000\040\002\000\000\
+\\015\000\042\002\140\000\041\002\000\000\
 \\000\000\
-\\007\000\055\002\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\056\002\101\000\109\001\000\000\
-\\056\000\057\002\000\000\
 \\000\000\
+\\015\000\045\002\130\000\044\002\000\000\
+\\007\000\106\000\083\000\036\002\084\000\103\000\132\000\046\002\000\000\
+\\004\000\169\000\005\000\168\000\037\000\047\002\000\000\
+\\002\000\178\000\039\000\048\002\000\000\
+\\002\000\178\000\039\000\049\002\000\000\
+\\015\000\045\002\130\000\050\002\000\000\
+\\015\000\052\002\142\000\051\002\000\000\
+\\006\000\056\002\007\000\106\000\084\000\055\002\135\000\054\002\
+\\136\000\053\002\000\000\
 \\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\058\002\101\000\117\001\000\000\
 \\000\000\
-\\015\000\060\002\000\000\
-\\007\000\231\000\073\000\061\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
+\\007\000\237\000\073\000\059\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\007\000\106\000\048\000\060\002\083\000\104\000\084\000\103\000\000\000\
 \\000\000\
-\\069\000\008\001\000\000\
+\\007\000\001\001\085\000\061\002\000\000\
+\\006\000\103\001\008\000\019\000\012\000\062\002\013\000\101\001\000\000\
 \\000\000\
-\\003\000\130\000\005\000\165\001\022\000\063\002\000\000\
+\\007\000\063\002\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\064\002\101\000\117\001\000\000\
+\\056\000\065\002\000\000\
 \\000\000\
-\\024\000\064\002\000\000\
 \\000\000\
 \\000\000\
+\\015\000\068\002\000\000\
+\\007\000\237\000\073\000\069\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\000\000\
+\\069\000\014\001\000\000\
 \\000\000\
+\\003\000\133\000\005\000\173\001\022\000\071\002\000\000\
 \\000\000\
+\\024\000\072\002\000\000\
 \\000\000\
 \\000\000\
-\\041\000\068\002\000\000\
 \\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\063\000\070\002\071\000\144\000\
-\\072\000\026\001\000\000\
 \\000\000\
 \\000\000\
-\\070\000\071\002\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\071\000\144\000\072\000\073\002\000\000\
 \\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\065\000\075\002\071\000\144\000\
-\\072\000\074\002\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\063\000\076\002\071\000\144\000\
-\\072\000\026\001\000\000\
+\\041\000\078\002\000\000\
 \\000\000\
 \\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\063\000\080\002\071\000\147\000\
+\\072\000\032\001\000\000\
 \\000\000\
 \\000\000\
+\\070\000\081\002\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\071\000\147\000\072\000\083\002\000\000\
 \\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\065\000\085\002\071\000\147\000\
+\\072\000\084\002\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\063\000\086\002\071\000\147\000\
+\\072\000\032\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -20058,75 +22313,80 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\060\000\080\002\000\000\
-\\015\000\082\002\000\000\
 \\000\000\
-\\015\000\206\001\054\000\083\002\000\000\
 \\000\000\
-\\053\000\084\002\000\000\
-\\004\000\085\002\005\000\165\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\086\002\013\000\093\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\015\000\206\001\054\000\087\002\000\000\
-\\031\000\088\002\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
+\\060\000\090\002\000\000\
+\\015\000\092\002\000\000\
 \\000\000\
-\\178\000\089\002\000\000\
+\\015\000\214\001\054\000\093\002\000\000\
 \\000\000\
-\\089\000\091\002\000\000\
+\\053\000\094\002\000\000\
+\\004\000\095\002\005\000\168\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\096\002\013\000\101\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\094\002\101\000\093\002\
-\\187\000\092\002\000\000\
+\\015\000\214\001\054\000\097\002\000\000\
+\\031\000\098\002\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
 \\000\000\
+\\178\000\099\002\000\000\
 \\000\000\
+\\089\000\101\002\000\000\
 \\000\000\
-\\015\000\209\000\173\000\097\002\000\000\
 \\000\000\
-\\007\000\231\000\073\000\098\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\211\000\165\000\099\002\000\000\
 \\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\104\002\101\000\103\002\
+\\187\000\102\002\000\000\
 \\000\000\
 \\000\000\
-\\007\000\231\000\073\000\100\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\217\000\175\000\101\002\000\000\
-\\015\000\235\001\171\000\102\002\000\000\
-\\170\000\103\002\000\000\
-\\004\000\104\002\005\000\165\000\000\000\
 \\000\000\
-\\006\000\105\002\008\000\238\000\000\000\
+\\015\000\212\000\173\000\107\002\000\000\
 \\000\000\
+\\007\000\237\000\073\000\108\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\214\000\165\000\109\002\000\000\
 \\000\000\
-\\008\000\238\000\009\000\106\002\000\000\
 \\000\000\
-\\007\000\231\000\073\000\107\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
 \\000\000\
-\\007\000\231\000\073\000\109\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\082\000\108\002\000\000\
+\\007\000\237\000\073\000\110\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\223\000\175\000\111\002\000\000\
+\\015\000\243\001\171\000\112\002\000\000\
+\\170\000\113\002\000\000\
+\\004\000\114\002\005\000\168\000\000\000\
 \\000\000\
+\\006\000\115\002\008\000\244\000\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\113\002\091\000\112\002\000\000\
+\\008\000\244\000\009\000\116\002\000\000\
 \\000\000\
+\\007\000\237\000\073\000\117\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\000\000\
-\\031\000\115\002\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
+\\007\000\237\000\073\000\119\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\082\000\118\002\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\123\002\091\000\122\002\000\000\
+\\000\000\
+\\000\000\
+\\031\000\125\002\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\116\002\000\000\
-\\089\000\117\002\000\000\
-\\008\000\019\000\013\000\250\001\031\000\120\002\033\000\170\000\
-\\034\000\169\000\035\000\009\000\086\000\249\001\087\000\119\002\
-\\088\000\118\002\000\000\
-\\031\000\123\002\033\000\170\000\034\000\169\000\035\000\009\000\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\248\001\
-\\088\000\247\001\092\000\134\002\000\000\
+\\026\000\126\002\000\000\
+\\089\000\127\002\000\000\
+\\008\000\019\000\013\000\002\002\031\000\130\002\033\000\173\000\
+\\034\000\172\000\035\000\009\000\086\000\001\002\087\000\129\002\
+\\088\000\128\002\000\000\
+\\031\000\133\002\033\000\173\000\034\000\172\000\035\000\009\000\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\000\002\
+\\088\000\255\001\092\000\144\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -20134,744 +22394,750 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\104\000\139\002\000\000\
+\\104\000\149\002\000\000\
 \\000\000\
-\\089\000\142\002\000\000\
+\\089\000\152\002\000\000\
 \\000\000\
-\\008\000\019\000\013\000\021\002\129\000\143\002\000\000\
+\\008\000\019\000\013\000\029\002\129\000\153\002\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\146\002\101\000\109\001\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\156\002\101\000\117\001\000\000\
 \\000\000\
-\\097\000\147\002\000\000\
+\\097\000\157\002\000\000\
 \\000\000\
-\\089\000\246\000\103\000\149\002\113\000\244\000\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\152\002\
-\\127\000\151\002\000\000\
-\\006\000\095\001\008\000\019\000\012\000\154\002\013\000\093\001\
-\\125\000\153\002\000\000\
+\\089\000\252\000\103\000\159\002\113\000\250\000\000\000\
 \\000\000\
 \\000\000\
-\\089\000\246\000\103\000\155\002\113\000\244\000\000\000\
-\\000\000\
-\\006\000\156\002\000\000\
-\\000\000\
-\\004\000\157\002\005\000\165\000\000\000\
-\\000\000\
-\\004\000\159\002\005\000\165\000\000\000\
-\\000\000\
-\\004\000\160\002\005\000\165\000\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\161\002\101\000\109\001\000\000\
-\\000\000\
-\\004\000\162\002\005\000\165\000\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\162\002\
+\\127\000\161\002\000\000\
+\\006\000\103\001\008\000\019\000\012\000\164\002\013\000\101\001\
+\\125\000\163\002\000\000\
 \\000\000\
 \\000\000\
-\\004\000\166\000\005\000\165\000\037\000\163\002\000\000\
-\\004\000\166\000\005\000\165\000\037\000\164\002\000\000\
+\\089\000\252\000\103\000\165\002\113\000\250\000\000\000\
+\\000\000\
+\\006\000\166\002\000\000\
+\\000\000\
+\\004\000\167\002\005\000\168\000\000\000\
+\\000\000\
+\\004\000\169\002\005\000\168\000\000\000\
+\\000\000\
+\\004\000\170\002\005\000\168\000\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\171\002\101\000\117\001\000\000\
+\\000\000\
+\\004\000\172\002\005\000\168\000\000\000\
 \\000\000\
 \\000\000\
-\\004\000\165\002\005\000\165\000\000\000\
-\\123\000\166\002\000\000\
-\\123\000\168\002\000\000\
-\\006\000\169\002\000\000\
-\\137\000\170\002\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\175\002\
-\\088\000\174\002\115\000\173\002\000\000\
-\\000\000\
-\\049\000\179\002\000\000\
+\\004\000\169\000\005\000\168\000\037\000\173\002\000\000\
+\\004\000\169\000\005\000\168\000\037\000\174\002\000\000\
 \\000\000\
 \\000\000\
+\\004\000\175\002\005\000\168\000\000\000\
+\\123\000\176\002\000\000\
+\\123\000\178\002\000\000\
+\\006\000\179\002\000\000\
+\\137\000\180\002\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\185\002\
+\\088\000\184\002\115\000\183\002\000\000\
+\\000\000\
+\\049\000\189\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\007\000\231\000\073\000\184\002\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\007\000\103\000\083\000\185\002\084\000\100\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\186\002\011\000\017\000\
+\\000\000\
+\\000\000\
+\\007\000\237\000\073\000\194\002\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\007\000\106\000\083\000\195\002\084\000\103\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\196\002\011\000\017\000\
 \\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\020\000\187\002\
-\\025\000\014\000\026\000\013\000\027\000\170\001\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\040\000\188\002\061\000\145\000\071\000\144\000\
-\\072\000\143\000\000\000\
-\\000\000\
-\\068\000\189\002\000\000\
-\\001\000\148\000\005\000\020\000\008\000\019\000\011\000\147\000\
-\\013\000\016\000\061\000\145\000\071\000\144\000\072\000\191\002\000\000\
-\\068\000\192\002\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\020\000\197\002\
+\\025\000\014\000\026\000\013\000\027\000\178\001\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\198\002\000\000\
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
-\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\013\000\027\000\193\002\000\000\
-\\000\000\
-\\015\000\190\000\059\000\194\002\000\000\
-\\005\000\020\000\008\000\019\000\010\000\195\002\011\000\017\000\
-\\013\000\016\000\000\000\
-\\053\000\196\002\000\000\
-\\000\000\
-\\056\000\197\002\000\000\
-\\000\000\
-\\053\000\198\002\000\000\
+\\011\000\017\000\013\000\016\000\016\000\199\002\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\180\000\200\002\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\040\000\200\002\061\000\148\000\071\000\147\000\
+\\072\000\146\000\000\000\
 \\000\000\
-\\000\000\
-\\186\000\210\002\000\000\
-\\000\000\
-\\089\000\212\002\000\000\
-\\007\000\103\000\083\000\213\002\084\000\100\000\000\000\
-\\000\000\
-\\166\000\214\002\000\000\
-\\000\000\
-\\176\000\215\002\000\000\
-\\000\000\
-\\170\000\216\002\000\000\
-\\000\000\
-\\056\000\217\002\000\000\
-\\000\000\
-\\000\000\
-\\080\000\218\002\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\093\000\222\002\098\000\112\001\099\000\111\001\100\000\221\002\
-\\101\000\220\002\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\093\000\225\002\098\000\112\001\099\000\111\001\100\000\224\002\
-\\101\000\220\002\000\000\
-\\000\000\
-\\000\000\
-\\008\000\093\000\090\000\226\002\000\000\
+\\068\000\201\002\000\000\
+\\001\000\151\000\005\000\020\000\008\000\019\000\011\000\150\000\
+\\013\000\016\000\061\000\148\000\071\000\147\000\072\000\203\002\000\000\
+\\068\000\204\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\113\002\000\000\
 \\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\234\002\000\000\
-\\089\000\235\002\000\000\
+\\026\000\013\000\027\000\205\002\000\000\
+\\000\000\
+\\015\000\193\000\059\000\206\002\000\000\
+\\005\000\020\000\008\000\019\000\010\000\207\002\011\000\017\000\
+\\013\000\016\000\000\000\
+\\053\000\208\002\000\000\
+\\000\000\
+\\056\000\209\002\000\000\
+\\000\000\
+\\053\000\210\002\000\000\
 \\000\000\
 \\000\000\
-\\000\000\
-\\008\000\019\000\013\000\238\002\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\239\002\000\000\
-\\008\000\019\000\013\000\240\002\000\000\
-\\015\000\241\002\000\000\
-\\015\000\242\002\000\000\
-\\007\000\103\000\083\000\243\002\084\000\100\000\000\000\
-\\015\000\244\002\000\000\
-\\015\000\245\002\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\180\000\212\002\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\246\002\101\000\109\001\000\000\
+\\186\000\222\002\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\247\002\101\000\109\001\000\000\
+\\089\000\224\002\000\000\
+\\007\000\106\000\083\000\225\002\084\000\103\000\000\000\
 \\000\000\
-\\009\000\096\000\102\000\248\002\000\000\
-\\008\000\019\000\013\000\125\002\106\000\249\002\109\000\124\002\000\000\
+\\166\000\226\002\000\000\
 \\000\000\
+\\176\000\227\002\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\152\002\
-\\127\000\003\003\000\000\
-\\006\000\095\001\008\000\019\000\012\000\154\002\013\000\093\001\
-\\125\000\004\003\000\000\
+\\170\000\228\002\000\000\
+\\000\000\
+\\056\000\229\002\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\009\003\101\000\008\003\
-\\146\000\007\003\000\000\
-\\151\000\011\003\000\000\
-\\008\000\019\000\013\000\015\003\128\000\014\003\000\000\
+\\080\000\230\002\000\000\
 \\000\000\
 \\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\093\000\234\002\098\000\120\001\099\000\119\001\100\000\233\002\
+\\101\000\232\002\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\093\000\237\002\098\000\120\001\099\000\119\001\100\000\236\002\
+\\101\000\232\002\000\000\
 \\000\000\
 \\000\000\
-\\000\000\
-\\133\000\019\003\000\000\
-\\000\000\
-\\006\000\095\001\008\000\019\000\012\000\023\003\013\000\093\001\000\000\
-\\000\000\
-\\056\000\025\003\000\000\
+\\008\000\096\000\090\000\238\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\056\000\030\003\000\000\
+\\008\000\019\000\013\000\002\002\086\000\123\002\000\000\
 \\000\000\
-\\007\000\103\000\083\000\028\002\084\000\100\000\132\000\032\003\000\000\
-\\000\000\
-\\137\000\033\003\000\000\
-\\000\000\
-\\015\000\036\003\138\000\035\003\000\000\
-\\007\000\103\000\083\000\039\003\084\000\100\000\134\000\038\003\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\250\001\086\000\113\002\114\000\042\003\000\000\
 \\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
 \\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
-\\026\000\044\003\000\000\
-\\089\000\045\003\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\175\002\
-\\088\000\174\002\115\000\046\003\000\000\
+\\026\000\246\002\000\000\
+\\089\000\247\002\000\000\
 \\000\000\
-\\005\000\020\000\008\000\019\000\010\000\047\003\011\000\017\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\250\002\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\251\002\000\000\
+\\008\000\019\000\013\000\252\002\000\000\
+\\015\000\253\002\000\000\
+\\015\000\254\002\000\000\
+\\007\000\106\000\083\000\255\002\084\000\103\000\000\000\
+\\015\000\000\003\000\000\
+\\015\000\001\003\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\002\003\101\000\117\001\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\003\003\101\000\117\001\000\000\
+\\000\000\
+\\009\000\099\000\102\000\004\003\000\000\
+\\008\000\019\000\013\000\135\002\106\000\005\003\109\000\134\002\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\162\002\
+\\127\000\015\003\000\000\
+\\006\000\103\001\008\000\019\000\012\000\164\002\013\000\101\001\
+\\125\000\016\003\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\021\003\101\000\020\003\
+\\146\000\019\003\000\000\
+\\151\000\023\003\000\000\
+\\008\000\019\000\013\000\027\003\128\000\026\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\133\000\031\003\000\000\
+\\000\000\
+\\006\000\103\001\008\000\019\000\012\000\035\003\013\000\101\001\000\000\
+\\000\000\
+\\056\000\037\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\056\000\042\003\000\000\
+\\000\000\
+\\007\000\106\000\083\000\036\002\084\000\103\000\132\000\044\003\000\000\
+\\000\000\
+\\137\000\045\003\000\000\
+\\000\000\
+\\015\000\048\003\138\000\047\003\000\000\
+\\007\000\106\000\083\000\051\003\084\000\103\000\134\000\050\003\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\123\002\114\000\054\003\000\000\
+\\001\000\021\000\005\000\020\000\008\000\019\000\010\000\018\000\
+\\011\000\017\000\013\000\016\000\016\000\015\000\025\000\014\000\
+\\026\000\056\003\000\000\
+\\089\000\057\003\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\185\002\
+\\088\000\184\002\115\000\058\003\000\000\
+\\000\000\
+\\005\000\020\000\008\000\019\000\010\000\059\003\011\000\017\000\
 \\013\000\016\000\000\000\
-\\007\000\231\000\073\000\048\003\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
+\\007\000\237\000\073\000\060\003\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\000\000\
-\\007\000\103\000\083\000\050\003\084\000\100\000\000\000\
+\\007\000\106\000\083\000\062\003\084\000\103\000\000\000\
 \\000\000\
-\\006\000\095\001\008\000\019\000\012\000\052\003\013\000\093\001\000\000\
-\\058\000\053\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\003\000\033\001\005\000\032\001\066\000\055\003\000\000\
+\\006\000\103\001\008\000\019\000\012\000\064\003\013\000\101\001\000\000\
+\\058\000\065\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\060\000\056\003\000\000\
 \\000\000\
-\\055\000\057\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\059\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\060\003\000\000\
-\\008\000\019\000\013\000\061\003\000\000\
-\\015\000\062\003\000\000\
-\\015\000\063\003\000\000\
-\\007\000\103\000\083\000\064\003\084\000\100\000\000\000\
-\\015\000\065\003\000\000\
-\\015\000\066\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\068\003\101\000\214\001\
-\\179\000\067\003\000\000\
-\\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\188\000\069\003\000\000\
-\\000\000\
-\\006\000\095\001\008\000\019\000\012\000\079\003\013\000\093\001\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\172\000\080\003\000\000\
-\\000\000\
-\\003\000\105\001\078\000\082\003\000\000\
-\\091\000\083\003\000\000\
-\\000\000\
-\\000\000\
-\\089\000\085\003\000\000\
+\\003\000\039\001\005\000\038\001\066\000\067\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\093\000\087\003\098\000\112\001\099\000\111\001\100\000\086\003\
-\\101\000\220\002\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\248\001\
-\\088\000\089\003\092\000\088\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\090\003\101\000\109\001\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\091\003\101\000\109\001\000\000\
+\\060\000\068\003\000\000\
+\\000\000\
+\\055\000\069\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\071\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\072\003\000\000\
+\\008\000\019\000\013\000\073\003\000\000\
+\\015\000\074\003\000\000\
+\\015\000\075\003\000\000\
+\\007\000\106\000\083\000\076\003\084\000\103\000\000\000\
+\\015\000\077\003\000\000\
+\\015\000\078\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\080\003\101\000\222\001\
+\\179\000\079\003\000\000\
+\\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\188\000\081\003\000\000\
+\\000\000\
+\\006\000\103\001\008\000\019\000\012\000\091\003\013\000\101\001\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\172\000\092\003\000\000\
+\\000\000\
+\\003\000\113\001\078\000\094\003\000\000\
+\\091\000\095\003\000\000\
+\\000\000\
+\\000\000\
+\\089\000\097\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\119\002\
-\\088\000\094\003\000\000\
-\\008\000\019\000\013\000\095\003\000\000\
-\\097\000\096\003\000\000\
-\\089\000\246\000\103\000\097\003\113\000\244\000\000\000\
-\\097\000\098\003\000\000\
-\\005\000\020\000\008\000\019\000\010\000\099\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\100\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\101\003\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\102\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\103\003\011\000\017\000\
-\\013\000\016\000\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\093\000\099\003\098\000\120\001\099\000\119\001\100\000\098\003\
+\\101\000\232\002\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\000\002\
+\\088\000\101\003\092\000\100\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\102\003\101\000\117\001\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\103\003\101\000\117\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\105\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\106\003\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\129\002\
+\\088\000\106\003\000\000\
 \\008\000\019\000\013\000\107\003\000\000\
-\\015\000\108\003\000\000\
-\\015\000\109\003\000\000\
-\\007\000\103\000\083\000\110\003\084\000\100\000\000\000\
-\\015\000\111\003\000\000\
-\\015\000\112\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\114\003\101\000\009\002\
-\\105\000\113\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\115\003\000\000\
-\\000\000\
-\\145\000\116\003\000\000\
-\\000\000\
-\\089\000\119\003\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\122\003\101\000\121\003\
-\\152\000\120\003\000\000\
-\\009\000\019\002\150\000\124\003\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\127\003\
-\\126\000\126\003\000\000\
-\\006\000\095\001\008\000\019\000\012\000\129\003\013\000\093\001\
-\\124\000\128\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\132\003\101\000\131\003\
-\\158\000\130\003\000\000\
-\\000\000\
-\\007\000\231\000\073\000\134\003\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\007\000\103\000\083\000\028\002\084\000\100\000\132\000\135\003\000\000\
-\\006\000\095\001\008\000\019\000\012\000\136\003\013\000\093\001\000\000\
-\\000\000\
-\\007\000\137\003\000\000\
-\\000\000\
-\\015\000\139\003\000\000\
-\\000\000\
-\\015\000\140\003\000\000\
-\\007\000\231\000\073\000\141\003\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\143\000\142\003\000\000\
-\\015\000\144\003\000\000\
-\\000\000\
-\\000\000\
-\\015\000\036\003\138\000\145\003\000\000\
-\\137\000\146\003\000\000\
-\\004\000\147\003\005\000\165\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\148\003\013\000\093\001\000\000\
-\\000\000\
-\\006\000\149\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\152\003\101\000\151\003\
-\\116\000\150\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\155\003\101\000\151\003\
-\\116\000\154\003\000\000\
-\\000\000\
-\\008\000\099\000\112\000\156\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\006\000\095\001\008\000\019\000\012\000\159\003\013\000\093\001\000\000\
-\\000\000\
-\\058\000\161\003\000\000\
-\\000\000\
-\\015\000\119\000\057\000\162\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\015\000\206\001\054\000\163\003\000\000\
-\\097\000\164\003\000\000\
-\\089\000\246\000\103\000\165\003\113\000\244\000\000\000\
-\\097\000\166\003\000\000\
-\\005\000\020\000\008\000\019\000\010\000\167\003\011\000\017\000\
+\\097\000\108\003\000\000\
+\\089\000\252\000\103\000\109\003\113\000\250\000\000\000\
+\\097\000\110\003\000\000\
+\\005\000\020\000\008\000\019\000\010\000\111\003\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\168\003\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\112\003\011\000\017\000\
 \\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\169\003\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\170\003\011\000\017\000\
+\\006\000\103\001\008\000\019\000\012\000\113\003\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\114\003\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\171\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\172\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\173\003\000\000\
-\\008\000\019\000\013\000\174\003\000\000\
-\\015\000\175\003\000\000\
-\\015\000\176\003\000\000\
-\\007\000\103\000\083\000\177\003\084\000\100\000\000\000\
-\\015\000\178\003\000\000\
-\\015\000\179\003\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\181\003\101\000\093\002\
-\\187\000\180\003\000\000\
-\\174\000\182\003\000\000\
-\\000\000\
-\\015\000\235\001\171\000\183\003\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\125\002\094\000\184\003\109\000\124\002\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\194\003\101\000\109\001\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\119\002\
-\\088\000\195\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\097\000\205\003\000\000\
-\\089\000\246\000\103\000\206\003\113\000\244\000\000\000\
-\\097\000\207\003\000\000\
-\\005\000\020\000\008\000\019\000\010\000\208\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\209\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\210\003\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\211\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\212\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\000\000\
-\\000\000\
-\\145\000\213\003\000\000\
-\\000\000\
-\\008\000\017\002\144\000\214\003\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\147\000\215\003\000\000\
-\\000\000\
-\\000\000\
-\\151\000\225\003\000\000\
-\\000\000\
-\\089\000\227\003\000\000\
-\\000\000\
-\\008\000\019\000\013\000\015\003\128\000\228\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\157\000\231\003\000\000\
-\\000\000\
-\\089\000\234\003\000\000\
-\\133\000\235\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\007\000\103\000\083\000\238\003\084\000\100\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\239\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\240\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\131\000\241\003\000\000\
-\\000\000\
-\\015\000\044\002\142\000\243\003\000\000\
-\\005\000\020\000\008\000\019\000\010\000\244\003\011\000\017\000\
-\\013\000\016\000\000\000\
-\\137\000\245\003\000\000\
-\\000\000\
-\\056\000\246\003\000\000\
-\\000\000\
-\\137\000\247\003\000\000\
-\\000\000\
-\\114\000\249\003\000\000\
-\\000\000\
-\\089\000\251\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\253\003\101\000\151\003\
-\\116\000\252\003\000\000\
-\\008\000\019\000\013\000\250\001\086\000\249\001\087\000\175\002\
-\\088\000\255\003\115\000\254\003\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\097\000\009\004\000\000\
-\\089\000\246\000\103\000\010\004\113\000\244\000\000\000\
-\\097\000\011\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\012\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\013\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\014\004\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\015\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\016\004\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\115\003\011\000\017\000\
 \\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\000\000\
-\\008\000\019\000\013\000\017\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\018\004\000\000\
-\\008\000\019\000\013\000\019\004\000\000\
-\\015\000\020\004\000\000\
-\\015\000\021\004\000\000\
-\\007\000\103\000\083\000\022\004\084\000\100\000\000\000\
-\\015\000\023\004\000\000\
-\\015\000\024\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\093\000\026\004\098\000\112\001\099\000\111\001\100\000\025\004\
-\\101\000\220\002\000\000\
-\\000\000\
+\\008\000\019\000\013\000\117\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\118\003\000\000\
+\\008\000\019\000\013\000\119\003\000\000\
+\\015\000\120\003\000\000\
+\\015\000\121\003\000\000\
+\\007\000\106\000\083\000\122\003\084\000\103\000\000\000\
+\\015\000\123\003\000\000\
+\\015\000\124\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\126\003\101\000\017\002\
+\\105\000\125\003\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\013\000\027\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\029\004\111\000\028\004\000\000\
-\\008\000\019\000\013\000\030\004\000\000\
-\\015\000\031\004\000\000\
+\\000\000\
+\\008\000\019\000\013\000\127\003\000\000\
+\\000\000\
+\\145\000\128\003\000\000\
+\\000\000\
+\\089\000\131\003\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\134\003\101\000\133\003\
+\\152\000\132\003\000\000\
+\\009\000\027\002\150\000\136\003\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\139\003\
+\\126\000\138\003\000\000\
+\\006\000\103\001\008\000\019\000\012\000\141\003\013\000\101\001\
+\\124\000\140\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\144\003\101\000\143\003\
+\\158\000\142\003\000\000\
+\\000\000\
+\\007\000\237\000\073\000\146\003\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\007\000\106\000\083\000\036\002\084\000\103\000\132\000\147\003\000\000\
+\\006\000\103\001\008\000\019\000\012\000\148\003\013\000\101\001\000\000\
+\\000\000\
+\\007\000\149\003\000\000\
+\\000\000\
+\\015\000\151\003\000\000\
+\\000\000\
+\\015\000\152\003\000\000\
+\\007\000\237\000\073\000\153\003\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\143\000\154\003\000\000\
+\\015\000\156\003\000\000\
+\\000\000\
+\\000\000\
+\\015\000\048\003\138\000\157\003\000\000\
+\\137\000\158\003\000\000\
+\\004\000\159\003\005\000\168\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\160\003\013\000\101\001\000\000\
+\\000\000\
+\\006\000\161\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\164\003\101\000\163\003\
+\\116\000\162\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\167\003\101\000\163\003\
+\\116\000\166\003\000\000\
+\\000\000\
+\\008\000\102\000\112\000\168\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\006\000\103\001\008\000\019\000\012\000\171\003\013\000\101\001\000\000\
+\\000\000\
+\\058\000\173\003\000\000\
+\\000\000\
+\\015\000\122\000\057\000\174\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\015\000\214\001\054\000\175\003\000\000\
+\\097\000\176\003\000\000\
+\\089\000\252\000\103\000\177\003\113\000\250\000\000\000\
+\\097\000\178\003\000\000\
+\\005\000\020\000\008\000\019\000\010\000\179\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\180\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\181\003\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\182\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\183\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\184\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\185\003\000\000\
+\\008\000\019\000\013\000\186\003\000\000\
+\\015\000\187\003\000\000\
+\\015\000\188\003\000\000\
+\\007\000\106\000\083\000\189\003\084\000\103\000\000\000\
+\\015\000\190\003\000\000\
+\\015\000\191\003\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\193\003\101\000\103\002\
+\\187\000\192\003\000\000\
+\\174\000\194\003\000\000\
+\\000\000\
+\\015\000\243\001\171\000\195\003\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\135\002\094\000\196\003\109\000\134\002\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\206\003\101\000\117\001\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\129\002\
+\\088\000\207\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\097\000\217\003\000\000\
+\\089\000\252\000\103\000\218\003\113\000\250\000\000\000\
+\\097\000\219\003\000\000\
+\\005\000\020\000\008\000\019\000\010\000\220\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\221\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\222\003\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\223\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\224\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\000\000\
+\\000\000\
+\\145\000\225\003\000\000\
+\\000\000\
+\\008\000\025\002\144\000\226\003\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\147\000\227\003\000\000\
+\\000\000\
+\\000\000\
+\\151\000\237\003\000\000\
+\\000\000\
+\\089\000\239\003\000\000\
+\\000\000\
+\\008\000\019\000\013\000\027\003\128\000\240\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\157\000\243\003\000\000\
+\\000\000\
+\\089\000\246\003\000\000\
+\\133\000\247\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\007\000\106\000\083\000\250\003\084\000\103\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\251\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\252\003\011\000\017\000\
+\\013\000\016\000\000\000\
+\\131\000\253\003\000\000\
+\\000\000\
+\\015\000\052\002\142\000\255\003\000\000\
+\\005\000\020\000\008\000\019\000\010\000\000\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\137\000\001\004\000\000\
+\\000\000\
+\\056\000\002\004\000\000\
+\\000\000\
+\\137\000\003\004\000\000\
+\\000\000\
+\\114\000\005\004\000\000\
+\\000\000\
+\\089\000\007\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\009\004\101\000\163\003\
+\\116\000\008\004\000\000\
+\\008\000\019\000\013\000\002\002\086\000\001\002\087\000\185\002\
+\\088\000\011\004\115\000\010\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\097\000\021\004\000\000\
+\\089\000\252\000\103\000\022\004\113\000\250\000\000\000\
+\\097\000\023\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\024\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\025\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\026\004\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\027\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\028\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\029\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\030\004\000\000\
+\\008\000\019\000\013\000\031\004\000\000\
 \\015\000\032\004\000\000\
-\\007\000\231\000\073\000\033\004\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\034\004\000\000\
+\\015\000\033\004\000\000\
+\\007\000\106\000\083\000\034\004\084\000\103\000\000\000\
 \\015\000\035\004\000\000\
+\\015\000\036\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\093\000\038\004\098\000\120\001\099\000\119\001\100\000\037\004\
+\\101\000\232\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\044\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\045\004\000\000\
-\\008\000\019\000\013\000\046\004\000\000\
+\\008\000\019\000\013\000\039\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\041\004\111\000\040\004\000\000\
+\\008\000\019\000\013\000\042\004\000\000\
+\\015\000\043\004\000\000\
+\\015\000\044\004\000\000\
+\\007\000\237\000\073\000\045\004\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\046\004\000\000\
 \\015\000\047\004\000\000\
-\\015\000\048\004\000\000\
-\\007\000\103\000\083\000\049\004\084\000\100\000\000\000\
-\\015\000\050\004\000\000\
-\\015\000\051\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\053\004\101\000\008\003\
-\\146\000\052\004\000\000\
-\\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\153\000\054\004\000\000\
 \\000\000\
 \\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\127\003\
-\\126\000\064\004\000\000\
-\\006\000\095\001\008\000\019\000\012\000\129\003\013\000\093\001\
-\\124\000\065\004\000\000\
-\\000\000\
-\\008\000\026\002\156\000\066\004\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\159\000\067\004\000\000\
 \\000\000\
 \\000\000\
-\\005\000\020\000\008\000\019\000\010\000\077\004\011\000\017\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\013\000\056\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\057\004\000\000\
+\\008\000\019\000\013\000\058\004\000\000\
+\\015\000\059\004\000\000\
+\\015\000\060\004\000\000\
+\\007\000\106\000\083\000\061\004\084\000\103\000\000\000\
+\\015\000\062\004\000\000\
+\\015\000\063\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\065\004\101\000\020\003\
+\\146\000\064\004\000\000\
+\\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\153\000\066\004\000\000\
+\\000\000\
+\\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\139\003\
+\\126\000\076\004\000\000\
+\\006\000\103\001\008\000\019\000\012\000\141\003\013\000\101\001\
+\\124\000\077\004\000\000\
+\\000\000\
+\\008\000\034\002\156\000\078\004\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\159\000\079\004\000\000\
+\\000\000\
+\\000\000\
+\\005\000\020\000\008\000\019\000\010\000\089\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\007\000\231\000\073\000\078\004\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\079\004\013\000\093\001\000\000\
-\\141\000\080\004\000\000\
-\\131\000\082\004\000\000\
+\\007\000\237\000\073\000\090\004\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\091\004\013\000\101\001\000\000\
+\\141\000\092\004\000\000\
+\\131\000\094\004\000\000\
 \\000\000\
-\\015\000\037\002\130\000\083\004\000\000\
+\\015\000\045\002\130\000\095\004\000\000\
 \\000\000\
-\\143\000\084\004\000\000\
+\\143\000\096\004\000\000\
 \\000\000\
-\\139\000\085\004\000\000\
+\\139\000\097\004\000\000\
 \\000\000\
-\\015\000\036\003\138\000\087\004\000\000\
+\\015\000\048\003\138\000\099\004\000\000\
 \\000\000\
-\\008\000\019\000\013\000\125\002\109\000\124\002\117\000\088\004\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\008\000\019\000\013\000\099\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\101\004\111\000\028\004\182\000\100\004\000\000\
-\\008\000\019\000\013\000\102\004\000\000\
-\\015\000\103\004\000\000\
-\\015\000\104\004\000\000\
-\\007\000\231\000\073\000\105\004\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\106\004\000\000\
-\\015\000\107\004\000\000\
+\\008\000\019\000\013\000\135\002\109\000\134\002\117\000\100\004\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\008\000\019\000\013\000\111\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\113\004\111\000\040\004\182\000\112\004\000\000\
+\\008\000\019\000\013\000\114\004\000\000\
+\\015\000\115\004\000\000\
+\\015\000\116\004\000\000\
+\\007\000\237\000\073\000\117\004\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\118\004\000\000\
+\\015\000\119\004\000\000\
 \\000\000\
 \\000\000\
-\\097\000\116\004\000\000\
-\\089\000\246\000\103\000\117\004\113\000\244\000\000\000\
-\\097\000\118\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\119\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\120\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\121\004\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\122\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\123\004\011\000\017\000\
-\\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
-\\110\000\124\004\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\000\000\
-\\110\000\127\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\128\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\129\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\110\000\130\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\097\000\128\004\000\000\
+\\089\000\252\000\103\000\129\004\113\000\250\000\000\000\
+\\097\000\130\004\000\000\
 \\005\000\020\000\008\000\019\000\010\000\131\004\011\000\017\000\
 \\013\000\016\000\000\000\
 \\005\000\020\000\008\000\019\000\010\000\132\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\008\000\019\000\013\000\133\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\135\004\108\000\134\004\111\000\028\004\000\000\
-\\008\000\019\000\013\000\136\004\000\000\
-\\015\000\137\004\000\000\
-\\015\000\138\004\000\000\
-\\007\000\231\000\073\000\139\004\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\140\004\000\000\
-\\015\000\141\004\000\000\
-\\097\000\142\004\000\000\
-\\089\000\246\000\103\000\143\004\113\000\244\000\000\000\
-\\097\000\144\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\145\004\011\000\017\000\
+\\006\000\103\001\008\000\019\000\012\000\133\004\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\134\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\146\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\147\004\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\148\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\149\004\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\135\004\011\000\017\000\
 \\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
+\\110\000\136\004\000\000\
 \\000\000\
-\\008\000\019\000\013\000\150\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\151\004\000\000\
-\\008\000\019\000\013\000\152\004\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\000\000\
+\\110\000\139\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\140\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\141\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\110\000\142\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\143\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\144\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\008\000\019\000\013\000\145\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\147\004\108\000\146\004\111\000\040\004\000\000\
+\\008\000\019\000\013\000\148\004\000\000\
+\\015\000\149\004\000\000\
+\\015\000\150\004\000\000\
+\\007\000\237\000\073\000\151\004\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\152\004\000\000\
 \\015\000\153\004\000\000\
-\\015\000\154\004\000\000\
-\\007\000\103\000\083\000\155\004\084\000\100\000\000\000\
-\\015\000\156\004\000\000\
-\\015\000\157\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\159\004\101\000\121\003\
-\\152\000\158\004\000\000\
+\\097\000\154\004\000\000\
+\\089\000\252\000\103\000\155\004\113\000\250\000\000\000\
+\\097\000\156\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\157\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\158\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\159\004\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\160\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\161\004\011\000\017\000\
+\\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\000\000\
-\\008\000\019\000\013\000\160\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\161\004\000\000\
 \\008\000\019\000\013\000\162\004\000\000\
-\\015\000\163\004\000\000\
-\\015\000\164\004\000\000\
-\\007\000\103\000\083\000\165\004\084\000\100\000\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\163\004\000\000\
+\\008\000\019\000\013\000\164\004\000\000\
+\\015\000\165\004\000\000\
 \\015\000\166\004\000\000\
-\\015\000\167\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\169\004\101\000\131\003\
-\\158\000\168\004\000\000\
-\\000\000\
-\\000\000\
-\\141\000\170\004\000\000\
-\\000\000\
-\\015\000\034\002\140\000\171\004\000\000\
+\\007\000\106\000\083\000\167\004\084\000\103\000\000\000\
+\\015\000\168\004\000\000\
+\\015\000\169\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\171\004\101\000\133\003\
+\\152\000\170\004\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\015\000\036\003\138\000\172\004\000\000\
-\\137\000\173\004\000\000\
-\\000\000\
+\\008\000\019\000\013\000\172\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\173\004\000\000\
 \\008\000\019\000\013\000\174\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\175\004\000\000\
-\\008\000\019\000\013\000\176\004\000\000\
-\\015\000\177\004\000\000\
+\\015\000\175\004\000\000\
+\\015\000\176\004\000\000\
+\\007\000\106\000\083\000\177\004\084\000\103\000\000\000\
 \\015\000\178\004\000\000\
-\\007\000\103\000\083\000\179\004\084\000\100\000\000\000\
-\\015\000\180\004\000\000\
-\\015\000\181\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\111\001\100\000\183\004\101\000\151\003\
-\\116\000\182\004\000\000\
+\\015\000\179\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\181\004\101\000\143\003\
+\\158\000\180\004\000\000\
 \\000\000\
-\\110\000\124\004\178\000\185\004\181\000\184\004\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\
-\\178\000\185\004\181\000\187\004\000\000\
-\\110\000\127\004\178\000\185\004\181\000\188\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\189\004\011\000\017\000\
+\\141\000\182\004\000\000\
+\\000\000\
+\\015\000\042\002\140\000\183\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\015\000\048\003\138\000\184\004\000\000\
+\\137\000\185\004\000\000\
+\\000\000\
+\\008\000\019\000\013\000\186\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\187\004\000\000\
+\\008\000\019\000\013\000\188\004\000\000\
+\\015\000\189\004\000\000\
+\\015\000\190\004\000\000\
+\\007\000\106\000\083\000\191\004\084\000\103\000\000\000\
+\\015\000\192\004\000\000\
+\\015\000\193\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\119\001\100\000\195\004\101\000\163\003\
+\\116\000\194\004\000\000\
+\\000\000\
+\\110\000\136\004\178\000\197\004\181\000\196\004\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\
+\\178\000\197\004\181\000\199\004\000\000\
+\\110\000\139\004\178\000\197\004\181\000\200\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\201\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\190\004\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\202\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\110\000\130\004\178\000\185\004\181\000\191\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\192\004\011\000\017\000\
+\\110\000\142\004\178\000\197\004\181\000\203\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\204\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\193\004\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\205\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\008\000\019\000\013\000\194\004\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\196\004\111\000\028\004\190\000\195\004\000\000\
-\\008\000\019\000\013\000\197\004\000\000\
-\\015\000\198\004\000\000\
-\\015\000\199\004\000\000\
-\\007\000\231\000\073\000\200\004\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\201\004\000\000\
-\\015\000\202\004\000\000\
+\\008\000\019\000\013\000\206\004\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\208\004\111\000\040\004\190\000\207\004\000\000\
+\\008\000\019\000\013\000\209\004\000\000\
+\\015\000\210\004\000\000\
+\\015\000\211\004\000\000\
+\\007\000\237\000\073\000\212\004\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\213\004\000\000\
+\\015\000\214\004\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -20881,141 +23147,141 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\109\000\211\004\000\000\
+\\109\000\223\004\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\000\000\
-\\110\000\213\004\000\000\
+\\110\000\224\004\000\000\
+\\110\000\225\004\000\000\
 \\000\000\
-\\110\000\214\004\000\000\
-\\110\000\215\004\000\000\
-\\104\000\217\004\107\000\216\004\110\000\124\004\000\000\
+\\110\000\226\004\000\000\
+\\110\000\227\004\000\000\
+\\104\000\229\004\107\000\228\004\110\000\136\004\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\104\000\217\004\
-\\107\000\219\004\110\000\126\004\000\000\
-\\104\000\217\004\107\000\220\004\110\000\127\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\221\004\011\000\017\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\104\000\229\004\
+\\107\000\231\004\110\000\138\004\000\000\
+\\104\000\229\004\107\000\232\004\110\000\139\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\233\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\222\004\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\234\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\104\000\217\004\107\000\223\004\110\000\130\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\224\004\011\000\017\000\
+\\104\000\229\004\107\000\235\004\110\000\142\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\236\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\225\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\097\000\234\004\000\000\
-\\089\000\246\000\103\000\235\004\113\000\244\000\000\000\
-\\097\000\236\004\000\000\
 \\005\000\020\000\008\000\019\000\010\000\237\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\238\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\239\004\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\240\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\241\004\011\000\017\000\
-\\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
-\\097\000\242\004\000\000\
-\\089\000\246\000\103\000\243\004\113\000\244\000\000\000\
-\\097\000\244\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\245\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\246\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\247\004\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\248\004\011\000\017\000\
-\\013\000\016\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\097\000\246\004\000\000\
+\\089\000\252\000\103\000\247\004\113\000\250\000\000\000\
+\\097\000\248\004\000\000\
 \\005\000\020\000\008\000\019\000\010\000\249\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\097\000\250\004\000\000\
-\\089\000\246\000\103\000\251\004\113\000\244\000\000\000\
-\\097\000\252\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\250\004\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\251\004\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\252\004\011\000\017\000\
+\\013\000\016\000\000\000\
 \\005\000\020\000\008\000\019\000\010\000\253\004\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\254\004\011\000\017\000\
-\\013\000\016\000\000\000\
-\\006\000\095\001\008\000\019\000\012\000\255\004\013\000\093\001\000\000\
-\\005\000\020\000\008\000\019\000\010\000\000\005\011\000\017\000\
-\\013\000\016\000\000\000\
+\\000\000\
+\\000\000\
+\\097\000\254\004\000\000\
+\\089\000\252\000\103\000\255\004\113\000\250\000\000\000\
+\\097\000\000\005\000\000\
 \\005\000\020\000\008\000\019\000\010\000\001\005\011\000\017\000\
 \\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\002\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\003\005\013\000\101\001\000\000\
+\\005\000\020\000\008\000\019\000\010\000\004\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\005\005\011\000\017\000\
+\\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\203\000\109\000\211\004\177\000\217\001\180\000\002\005\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\178\000\185\004\181\000\003\005\000\000\
-\\110\000\213\004\178\000\185\004\181\000\004\005\000\000\
-\\000\000\
-\\110\000\214\004\178\000\185\004\181\000\005\005\000\000\
-\\110\000\215\004\178\000\185\004\181\000\006\005\000\000\
-\\110\000\124\004\186\000\008\005\189\000\007\005\000\000\
-\\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\
-\\186\000\008\005\189\000\010\005\000\000\
-\\110\000\127\004\186\000\008\005\189\000\011\005\000\000\
+\\097\000\006\005\000\000\
+\\089\000\252\000\103\000\007\005\113\000\250\000\000\000\
+\\097\000\008\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\009\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\010\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\006\000\103\001\008\000\019\000\012\000\011\005\013\000\101\001\000\000\
 \\005\000\020\000\008\000\019\000\010\000\012\005\011\000\017\000\
 \\013\000\016\000\000\000\
 \\005\000\020\000\008\000\019\000\010\000\013\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\110\000\130\004\186\000\008\005\189\000\014\005\000\000\
-\\005\000\020\000\008\000\019\000\010\000\015\005\011\000\017\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\206\000\109\000\223\004\177\000\225\001\180\000\014\005\000\000\
+\\000\000\
+\\000\000\
+\\110\000\224\004\178\000\197\004\181\000\015\005\000\000\
+\\110\000\225\004\178\000\197\004\181\000\016\005\000\000\
+\\000\000\
+\\110\000\226\004\178\000\197\004\181\000\017\005\000\000\
+\\110\000\227\004\178\000\197\004\181\000\018\005\000\000\
+\\110\000\136\004\186\000\020\005\189\000\019\005\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\
+\\186\000\020\005\189\000\022\005\000\000\
+\\110\000\139\004\186\000\020\005\189\000\023\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\024\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\016\005\011\000\017\000\
+\\005\000\020\000\008\000\019\000\010\000\025\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\008\000\019\000\013\000\017\005\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\096\000\019\005\098\000\112\001\099\000\018\005\111\000\028\004\000\000\
-\\008\000\019\000\013\000\020\005\000\000\
-\\015\000\021\005\000\000\
-\\015\000\022\005\000\000\
-\\007\000\231\000\073\000\023\005\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\024\005\000\000\
-\\015\000\025\005\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\009\000\096\000\102\000\248\002\106\000\026\005\109\000\211\004\000\000\
-\\000\000\
-\\000\000\
-\\104\000\217\004\107\000\027\005\110\000\212\004\000\000\
-\\104\000\217\004\107\000\028\005\110\000\213\004\000\000\
-\\000\000\
-\\104\000\217\004\107\000\029\005\110\000\214\004\000\000\
-\\104\000\217\004\107\000\030\005\110\000\215\004\000\000\
-\\008\000\019\000\013\000\031\005\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\033\005\111\000\028\004\149\000\032\005\000\000\
-\\008\000\019\000\013\000\034\005\000\000\
-\\015\000\035\005\000\000\
+\\110\000\142\004\186\000\020\005\189\000\026\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\027\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\028\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\008\000\019\000\013\000\029\005\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\096\000\031\005\098\000\120\001\099\000\030\005\111\000\040\004\000\000\
+\\008\000\019\000\013\000\032\005\000\000\
+\\015\000\033\005\000\000\
+\\015\000\034\005\000\000\
+\\007\000\237\000\073\000\035\005\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
 \\015\000\036\005\000\000\
-\\007\000\231\000\073\000\037\005\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\038\005\000\000\
-\\015\000\039\005\000\000\
+\\015\000\037\005\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\009\000\099\000\102\000\004\003\106\000\038\005\109\000\223\004\000\000\
+\\000\000\
+\\000\000\
+\\104\000\229\004\107\000\039\005\110\000\224\004\000\000\
+\\104\000\229\004\107\000\040\005\110\000\225\004\000\000\
+\\000\000\
+\\104\000\229\004\107\000\041\005\110\000\226\004\000\000\
+\\104\000\229\004\107\000\042\005\110\000\227\004\000\000\
+\\008\000\019\000\013\000\043\005\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\045\005\111\000\040\004\149\000\044\005\000\000\
+\\008\000\019\000\013\000\046\005\000\000\
+\\015\000\047\005\000\000\
+\\015\000\048\005\000\000\
+\\007\000\237\000\073\000\049\005\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\050\005\000\000\
+\\015\000\051\005\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -21047,77 +23313,77 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\207\000\109\000\211\004\185\000\221\001\188\000\064\005\000\000\
+\\008\000\210\000\109\000\223\004\185\000\229\001\188\000\076\005\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\186\000\008\005\189\000\065\005\000\000\
-\\110\000\213\004\186\000\008\005\189\000\066\005\000\000\
+\\110\000\224\004\186\000\020\005\189\000\077\005\000\000\
+\\110\000\225\004\186\000\020\005\189\000\078\005\000\000\
 \\000\000\
-\\110\000\214\004\186\000\008\005\189\000\067\005\000\000\
-\\110\000\215\004\186\000\008\005\189\000\068\005\000\000\
-\\091\000\070\005\095\000\069\005\110\000\124\004\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\091\000\070\005\
-\\095\000\072\005\110\000\126\004\000\000\
+\\110\000\226\004\186\000\020\005\189\000\079\005\000\000\
+\\110\000\227\004\186\000\020\005\189\000\080\005\000\000\
+\\091\000\082\005\095\000\081\005\110\000\136\004\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\091\000\082\005\
+\\095\000\084\005\110\000\138\004\000\000\
 \\000\000\
-\\091\000\070\005\095\000\073\005\110\000\127\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\074\005\011\000\017\000\
+\\091\000\082\005\095\000\085\005\110\000\139\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\086\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\075\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\091\000\070\005\095\000\076\005\110\000\130\004\000\000\
-\\005\000\020\000\008\000\019\000\010\000\077\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\078\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\110\000\124\004\145\000\080\005\148\000\079\005\000\000\
-\\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\
-\\145\000\080\005\148\000\082\005\000\000\
-\\110\000\127\004\145\000\080\005\148\000\083\005\000\000\
-\\005\000\020\000\008\000\019\000\010\000\084\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\085\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\110\000\130\004\145\000\080\005\148\000\086\005\000\000\
 \\005\000\020\000\008\000\019\000\010\000\087\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\088\005\011\000\017\000\
+\\091\000\082\005\095\000\088\005\110\000\142\004\000\000\
+\\005\000\020\000\008\000\019\000\010\000\089\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\008\000\019\000\013\000\089\005\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\091\005\111\000\028\004\155\000\090\005\000\000\
-\\008\000\019\000\013\000\092\005\000\000\
-\\015\000\093\005\000\000\
-\\015\000\094\005\000\000\
-\\007\000\231\000\073\000\095\005\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
-\\015\000\096\005\000\000\
-\\015\000\097\005\000\000\
-\\008\000\019\000\013\000\098\005\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\100\005\111\000\028\004\161\000\099\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\090\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\110\000\136\004\145\000\092\005\148\000\091\005\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\
+\\145\000\092\005\148\000\094\005\000\000\
+\\110\000\139\004\145\000\092\005\148\000\095\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\096\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\097\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\110\000\142\004\145\000\092\005\148\000\098\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\099\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\100\005\011\000\017\000\
+\\013\000\016\000\000\000\
 \\008\000\019\000\013\000\101\005\000\000\
-\\015\000\102\005\000\000\
-\\015\000\103\005\000\000\
-\\007\000\231\000\073\000\104\005\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\103\005\111\000\040\004\155\000\102\005\000\000\
+\\008\000\019\000\013\000\104\005\000\000\
 \\015\000\105\005\000\000\
 \\015\000\106\005\000\000\
-\\008\000\019\000\013\000\107\005\000\000\
-\\008\000\019\000\009\000\101\001\013\000\100\001\014\000\113\001\
-\\098\000\112\001\099\000\109\005\111\000\028\004\119\000\108\005\000\000\
+\\007\000\237\000\073\000\107\005\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\108\005\000\000\
+\\015\000\109\005\000\000\
 \\008\000\019\000\013\000\110\005\000\000\
-\\015\000\111\005\000\000\
-\\015\000\112\005\000\000\
-\\007\000\231\000\073\000\113\005\074\000\229\000\075\000\228\000\
-\\076\000\227\000\077\000\226\000\081\000\225\000\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\112\005\111\000\040\004\161\000\111\005\000\000\
+\\008\000\019\000\013\000\113\005\000\000\
 \\015\000\114\005\000\000\
 \\015\000\115\005\000\000\
+\\007\000\237\000\073\000\116\005\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\117\005\000\000\
+\\015\000\118\005\000\000\
+\\008\000\019\000\013\000\119\005\000\000\
+\\008\000\019\000\009\000\109\001\013\000\108\001\014\000\121\001\
+\\098\000\120\001\099\000\121\005\111\000\040\004\119\000\120\005\000\000\
+\\008\000\019\000\013\000\122\005\000\000\
+\\015\000\123\005\000\000\
+\\015\000\124\005\000\000\
+\\007\000\237\000\073\000\125\005\074\000\235\000\075\000\234\000\
+\\076\000\233\000\077\000\232\000\081\000\231\000\000\000\
+\\015\000\126\005\000\000\
+\\015\000\127\005\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -21125,65 +23391,65 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\093\000\090\000\226\002\094\000\116\005\109\000\211\004\000\000\
+\\008\000\096\000\090\000\238\002\094\000\128\005\109\000\223\004\000\000\
 \\000\000\
 \\000\000\
-\\091\000\070\005\095\000\117\005\110\000\212\004\000\000\
-\\091\000\070\005\095\000\118\005\110\000\213\004\000\000\
+\\091\000\082\005\095\000\129\005\110\000\224\004\000\000\
+\\091\000\082\005\095\000\130\005\110\000\225\004\000\000\
 \\000\000\
-\\091\000\070\005\095\000\119\005\110\000\214\004\000\000\
-\\091\000\070\005\095\000\120\005\110\000\215\004\000\000\
-\\000\000\
-\\000\000\
-\\008\000\017\002\109\000\211\004\144\000\214\003\147\000\121\005\000\000\
+\\091\000\082\005\095\000\131\005\110\000\226\004\000\000\
+\\091\000\082\005\095\000\132\005\110\000\227\004\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\145\000\080\005\148\000\122\005\000\000\
-\\110\000\213\004\145\000\080\005\148\000\123\005\000\000\
+\\008\000\025\002\109\000\223\004\144\000\226\003\147\000\133\005\000\000\
 \\000\000\
-\\110\000\214\004\145\000\080\005\148\000\124\005\000\000\
-\\110\000\215\004\145\000\080\005\148\000\125\005\000\000\
-\\110\000\124\004\151\000\127\005\154\000\126\005\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\
-\\151\000\127\005\154\000\129\005\000\000\
-\\110\000\127\004\151\000\127\005\154\000\130\005\000\000\
-\\005\000\020\000\008\000\019\000\010\000\131\005\011\000\017\000\
+\\110\000\224\004\145\000\092\005\148\000\134\005\000\000\
+\\110\000\225\004\145\000\092\005\148\000\135\005\000\000\
+\\000\000\
+\\110\000\226\004\145\000\092\005\148\000\136\005\000\000\
+\\110\000\227\004\145\000\092\005\148\000\137\005\000\000\
+\\110\000\136\004\151\000\139\005\154\000\138\005\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\
+\\151\000\139\005\154\000\141\005\000\000\
+\\110\000\139\004\151\000\139\005\154\000\142\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\143\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\132\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\110\000\130\004\151\000\127\005\154\000\133\005\000\000\
-\\005\000\020\000\008\000\019\000\010\000\134\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\135\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\110\000\124\004\157\000\137\005\160\000\136\005\000\000\
-\\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\
-\\157\000\137\005\160\000\139\005\000\000\
-\\110\000\127\004\157\000\137\005\160\000\140\005\000\000\
-\\005\000\020\000\008\000\019\000\010\000\141\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\142\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\110\000\130\004\157\000\137\005\160\000\143\005\000\000\
 \\005\000\020\000\008\000\019\000\010\000\144\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\145\005\011\000\017\000\
+\\110\000\142\004\151\000\139\005\154\000\145\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\146\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\110\000\124\004\114\000\147\005\118\000\146\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\147\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\110\000\136\004\157\000\149\005\160\000\148\005\000\000\
 \\000\000\
-\\008\000\019\000\013\000\250\001\086\000\002\002\110\000\126\004\
-\\114\000\147\005\118\000\149\005\000\000\
-\\110\000\127\004\114\000\147\005\118\000\150\005\000\000\
-\\005\000\020\000\008\000\019\000\010\000\151\005\011\000\017\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\
+\\157\000\149\005\160\000\151\005\000\000\
+\\110\000\139\004\157\000\149\005\160\000\152\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\153\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\152\005\011\000\017\000\
-\\013\000\016\000\000\000\
-\\110\000\130\004\114\000\147\005\118\000\153\005\000\000\
 \\005\000\020\000\008\000\019\000\010\000\154\005\011\000\017\000\
 \\013\000\016\000\000\000\
-\\005\000\020\000\008\000\019\000\010\000\155\005\011\000\017\000\
+\\110\000\142\004\157\000\149\005\160\000\155\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\156\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\157\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\110\000\136\004\114\000\159\005\118\000\158\005\000\000\
+\\000\000\
+\\008\000\019\000\013\000\002\002\086\000\010\002\110\000\138\004\
+\\114\000\159\005\118\000\161\005\000\000\
+\\110\000\139\004\114\000\159\005\118\000\162\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\163\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\164\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\110\000\142\004\114\000\159\005\118\000\165\005\000\000\
+\\005\000\020\000\008\000\019\000\010\000\166\005\011\000\017\000\
+\\013\000\016\000\000\000\
+\\005\000\020\000\008\000\019\000\010\000\167\005\011\000\017\000\
 \\013\000\016\000\000\000\
 \\000\000\
 \\000\000\
@@ -21197,34 +23463,34 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\009\000\019\002\109\000\211\004\150\000\124\003\153\000\156\005\000\000\
+\\009\000\027\002\109\000\223\004\150\000\136\003\153\000\168\005\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\151\000\127\005\154\000\157\005\000\000\
-\\110\000\213\004\151\000\127\005\154\000\158\005\000\000\
+\\110\000\224\004\151\000\139\005\154\000\169\005\000\000\
+\\110\000\225\004\151\000\139\005\154\000\170\005\000\000\
 \\000\000\
-\\110\000\214\004\151\000\127\005\154\000\159\005\000\000\
-\\110\000\215\004\151\000\127\005\154\000\160\005\000\000\
-\\000\000\
-\\000\000\
-\\008\000\026\002\109\000\211\004\156\000\066\004\159\000\161\005\000\000\
+\\110\000\226\004\151\000\139\005\154\000\171\005\000\000\
+\\110\000\227\004\151\000\139\005\154\000\172\005\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\157\000\137\005\160\000\162\005\000\000\
-\\110\000\213\004\157\000\137\005\160\000\163\005\000\000\
-\\000\000\
-\\110\000\214\004\157\000\137\005\160\000\164\005\000\000\
-\\110\000\215\004\157\000\137\005\160\000\165\005\000\000\
+\\008\000\034\002\109\000\223\004\156\000\078\004\159\000\173\005\000\000\
 \\000\000\
 \\000\000\
-\\008\000\099\000\109\000\211\004\112\000\156\003\117\000\166\005\000\000\
+\\110\000\224\004\157\000\149\005\160\000\174\005\000\000\
+\\110\000\225\004\157\000\149\005\160\000\175\005\000\000\
+\\000\000\
+\\110\000\226\004\157\000\149\005\160\000\176\005\000\000\
+\\110\000\227\004\157\000\149\005\160\000\177\005\000\000\
 \\000\000\
 \\000\000\
-\\110\000\212\004\114\000\147\005\118\000\167\005\000\000\
-\\110\000\213\004\114\000\147\005\118\000\168\005\000\000\
+\\008\000\102\000\109\000\223\004\112\000\168\003\117\000\178\005\000\000\
 \\000\000\
-\\110\000\214\004\114\000\147\005\118\000\169\005\000\000\
-\\110\000\215\004\114\000\147\005\118\000\170\005\000\000\
+\\000\000\
+\\110\000\224\004\114\000\159\005\118\000\179\005\000\000\
+\\110\000\225\004\114\000\159\005\118\000\180\005\000\000\
+\\000\000\
+\\110\000\226\004\114\000\159\005\118\000\181\005\000\000\
+\\110\000\227\004\114\000\159\005\118\000\182\005\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -21242,8 +23508,8 @@ val gotoT =
 \\000\000\
 \\000\000\
 \"
-val numstates = 1452
-val numrules = 550
+val numstates = 1464
+val numrules = 555
 val s = ref "" and index = ref 0
 val string_to_int = fn () => 
 let val i = !index
@@ -23128,7 +25394,7 @@ val pat2=pat2 ()
 (MlyValue.pat pat1,patleft as pat1left,_))::rest671) => let val result
 =MlyValue.pat(fn _ => let val pat as pat1=pat1 ()
 val atexp as atexp1=atexp1 ()
- in ( WHENPat(I(patleft,atexpright), pat, atexp) ) end
+ in ( WHEREPat(I(patleft,atexpright), pat, atexp) ) end
 )
  in (LrTable.NT 71,(result,pat1left,atexp1right),rest671) end
 | (199,(_,(_,_,ENDright as END1right))::(_,(MlyValue.valbind valbind1,
@@ -23146,20 +25412,44 @@ val fvalbind as fvalbind1=fvalbind1 ()
  in ( WITHFUNPat(I(patleft,ENDright), pat, fvalbind) ) end
 )
  in (LrTable.NT 71,(result,pat1left,END1right),rest671) end
-| (201,(_,(MlyValue.tupty tupty1,tupty1left,tupty1right))::rest671)
+| (201,(_,(MlyValue.atexp atexp1,_,atexpright as atexp1right))::_::(_,
+(MlyValue.valbind valbind1,_,_))::_::(_,(MlyValue.pat pat1,patleft as 
+pat1left,_))::rest671) => let val result=MlyValue.pat(fn _ => let val 
+pat as pat1=pat1 ()
+val valbind as valbind1=valbind1 ()
+val atexp as atexp1=atexp1 ()
+ in (
+ WITHVALWHEREPat(I(patleft,atexpright),
+					  pat, valbind, atexp) )
+ end
+)
+ in (LrTable.NT 71,(result,pat1left,atexp1right),rest671) end
+| (202,(_,(MlyValue.atexp atexp1,_,atexpright as atexp1right))::_::(_,
+(MlyValue.fvalbind fvalbind1,_,_))::_::(_,(MlyValue.pat pat1,patleft
+ as pat1left,_))::rest671) => let val result=MlyValue.pat(fn _ => let 
+val pat as pat1=pat1 ()
+val fvalbind as fvalbind1=fvalbind1 ()
+val atexp as atexp1=atexp1 ()
+ in (
+ WITHFUNWHEREPat(I(patleft,atexpright),
+					  pat, fvalbind, atexp) )
+ end
+)
+ in (LrTable.NT 71,(result,pat1left,atexp1right),rest671) end
+| (203,(_,(MlyValue.tupty tupty1,tupty1left,tupty1right))::rest671)
  => let val result=MlyValue.ty(fn _ => let val tupty as tupty1=tupty1 
 ()
  in ( tupty ) end
 )
  in (LrTable.NT 72,(result,tupty1left,tupty1right),rest671) end
-| (202,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
+| (204,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
 MlyValue.tupty tupty1,tuptyleft as tupty1left,_))::rest671) => let 
 val result=MlyValue.ty(fn _ => let val tupty as tupty1=tupty1 ()
 val ty as ty1=ty1 ()
  in ( ARROWTy(I(tuptyleft,tyright), tupty, ty) ) end
 )
  in (LrTable.NT 72,(result,tupty1left,ty1right),rest671) end
-| (203,(_,(MlyValue.ty_STAR_list ty_STAR_list1,ty_STAR_listleft as 
+| (205,(_,(MlyValue.ty_STAR_list ty_STAR_list1,ty_STAR_listleft as 
 ty_STAR_list1left,ty_STAR_listright as ty_STAR_list1right))::rest671)
  => let val result=MlyValue.tupty(fn _ => let val ty_STAR_list as 
 ty_STAR_list1=ty_STAR_list1 ()
@@ -23170,7 +25460,7 @@ ty_STAR_list1=ty_STAR_list1 ()
 )
  in (LrTable.NT 73,(result,ty_STAR_list1left,ty_STAR_list1right),
 rest671) end
-| (204,(_,(MlyValue.ty_STAR_list ty_STAR_list1,_,ty_STAR_list1right))
+| (206,(_,(MlyValue.ty_STAR_list ty_STAR_list1,_,ty_STAR_list1right))
 ::_::(_,(MlyValue.consty consty1,consty1left,_))::rest671) => let val 
 result=MlyValue.ty_STAR_list(fn _ => let val consty as consty1=consty1
  ()
@@ -23179,18 +25469,18 @@ val ty_STAR_list as ty_STAR_list1=ty_STAR_list1 ()
 )
  in (LrTable.NT 74,(result,consty1left,ty_STAR_list1right),rest671)
  end
-| (205,(_,(MlyValue.consty consty1,consty1left,consty1right))::rest671
+| (207,(_,(MlyValue.consty consty1,consty1left,consty1right))::rest671
 ) => let val result=MlyValue.ty_STAR_list(fn _ => let val consty as 
 consty1=consty1 ()
  in ( consty::[] ) end
 )
  in (LrTable.NT 74,(result,consty1left,consty1right),rest671) end
-| (206,(_,(MlyValue.atty atty1,atty1left,atty1right))::rest671) => 
+| (208,(_,(MlyValue.atty atty1,atty1left,atty1right))::rest671) => 
 let val result=MlyValue.consty(fn _ => let val atty as atty1=atty1 ()
  in ( atty ) end
 )
  in (LrTable.NT 75,(result,atty1left,atty1right),rest671) end
-| (207,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+| (209,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::(_,(MlyValue.tyseq tyseq1,tyseqleft as tyseq1left,_
 ))::rest671) => let val result=MlyValue.consty(fn _ => let val tyseq
  as tyseq1=tyseq1 ()
@@ -23200,33 +25490,33 @@ val longtycon as longtycon1=longtycon1 ()
  end
 )
  in (LrTable.NT 75,(result,tyseq1left,longtycon1right),rest671) end
-| (208,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
+| (210,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
  as tyvar1right))::rest671) => let val result=MlyValue.atty(fn _ => 
 let val tyvar as tyvar1=tyvar1 ()
  in ( TYVARTy(I(tyvarleft,tyvarright), tyvar) ) end
 )
  in (LrTable.NT 76,(result,tyvar1left,tyvar1right),rest671) end
-| (209,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.tyrow_opt 
+| (211,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.tyrow_opt 
 tyrow_opt1,_,_))::(_,(_,LBRACEleft as LBRACE1left,_))::rest671) => 
 let val result=MlyValue.atty(fn _ => let val tyrow_opt as tyrow_opt1=
 tyrow_opt1 ()
  in ( RECORDTy(I(LBRACEleft,RBRACEright), tyrow_opt) ) end
 )
  in (LrTable.NT 76,(result,LBRACE1left,RBRACE1right),rest671) end
-| (210,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty ty1,_,_))::(
+| (212,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty ty1,_,_))::(
 _,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atty(fn _ => let val ty as ty1=ty1 ()
  in ( PARTy(I(LPARleft,RPARright), ty) ) end
 )
  in (LrTable.NT 76,(result,LPAR1left,RPAR1right),rest671) end
-| (211,(_,(MlyValue.longsigid longsigid1,_,longsigidright as 
+| (213,(_,(MlyValue.longsigid longsigid1,_,longsigidright as 
 longsigid1right))::(_,(_,PACKleft as PACK1left,_))::rest671) => let 
 val result=MlyValue.atty(fn _ => let val longsigid as longsigid1=
 longsigid1 ()
  in ( PACKTy(I(PACKleft,longsigidright), longsigid)) end
 )
  in (LrTable.NT 76,(result,PACK1left,longsigid1right),rest671) end
-| (212,(_,(MlyValue.COMMA_tyrow_opt COMMA_tyrow_opt1,_,
+| (214,(_,(MlyValue.COMMA_tyrow_opt COMMA_tyrow_opt1,_,
 COMMA_tyrow_optright as COMMA_tyrow_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.lab lab1,lableft as lab1left,_))::rest671) => 
 let val result=MlyValue.tyrow(fn _ => let val lab as lab1=lab1 ()
@@ -23239,34 +25529,34 @@ val COMMA_tyrow_opt as COMMA_tyrow_opt1=COMMA_tyrow_opt1 ()
 )
  in (LrTable.NT 77,(result,lab1left,COMMA_tyrow_opt1right),rest671)
  end
-| (213,(_,(MlyValue.tyrow tyrow1,_,tyrow1right))::(_,(_,COMMA1left,_))
+| (215,(_,(MlyValue.tyrow tyrow1,_,tyrow1right))::(_,(_,COMMA1left,_))
 ::rest671) => let val result=MlyValue.COMMA_tyrow_opt(fn _ => let val 
 tyrow as tyrow1=tyrow1 ()
  in ( SOME tyrow ) end
 )
  in (LrTable.NT 79,(result,COMMA1left,tyrow1right),rest671) end
-| (214,rest671) => let val result=MlyValue.COMMA_tyrow_opt(fn _ => (
+| (216,rest671) => let val result=MlyValue.COMMA_tyrow_opt(fn _ => (
  NONE ))
  in (LrTable.NT 79,(result,defaultPos,defaultPos),rest671) end
-| (215,(_,(MlyValue.tyrow tyrow1,tyrow1left,tyrow1right))::rest671)
+| (217,(_,(MlyValue.tyrow tyrow1,tyrow1left,tyrow1right))::rest671)
  => let val result=MlyValue.tyrow_opt(fn _ => let val tyrow as tyrow1=
 tyrow1 ()
  in ( SOME tyrow ) end
 )
  in (LrTable.NT 78,(result,tyrow1left,tyrow1right),rest671) end
-| (216,rest671) => let val result=MlyValue.tyrow_opt(fn _ => ( NONE ))
+| (218,rest671) => let val result=MlyValue.tyrow_opt(fn _ => ( NONE ))
  in (LrTable.NT 78,(result,defaultPos,defaultPos),rest671) end
-| (217,(_,(MlyValue.consty consty1,constyleft as consty1left,
+| (219,(_,(MlyValue.consty consty1,constyleft as consty1left,
 constyright as consty1right))::rest671) => let val result=
 MlyValue.tyseq(fn _ => let val consty as consty1=consty1 ()
  in ( Seq(I(constyleft,constyright),
 					      [consty]) ) end
 )
  in (LrTable.NT 80,(result,consty1left,consty1right),rest671) end
-| (218,rest671) => let val result=MlyValue.tyseq(fn _ => (
+| (220,rest671) => let val result=MlyValue.tyseq(fn _ => (
  Seq(I(defaultPos,defaultPos), []) ))
  in (LrTable.NT 80,(result,defaultPos,defaultPos),rest671) end
-| (219,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty_COMMA_list2 
+| (221,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty_COMMA_list2 
 ty_COMMA_list21,_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => 
 let val result=MlyValue.tyseq(fn _ => let val ty_COMMA_list2 as 
 ty_COMMA_list21=ty_COMMA_list21 ()
@@ -23274,7 +25564,7 @@ ty_COMMA_list21=ty_COMMA_list21 ()
 					      ty_COMMA_list2) ) end
 )
  in (LrTable.NT 80,(result,LPAR1left,RPAR1right),rest671) end
-| (220,(_,(MlyValue.ty_COMMA_list2 ty_COMMA_list21,_,
+| (222,(_,(MlyValue.ty_COMMA_list2 ty_COMMA_list21,_,
 ty_COMMA_list21right))::_::(_,(MlyValue.ty ty1,ty1left,_))::rest671)
  => let val result=MlyValue.ty_COMMA_list2(fn _ => let val ty as ty1=
 ty1 ()
@@ -23282,30 +25572,30 @@ val ty_COMMA_list2 as ty_COMMA_list21=ty_COMMA_list21 ()
  in ( ty::ty_COMMA_list2 ) end
 )
  in (LrTable.NT 81,(result,ty1left,ty_COMMA_list21right),rest671) end
-| (221,(_,(MlyValue.ty ty2,_,ty2right))::_::(_,(MlyValue.ty ty1,
+| (223,(_,(MlyValue.ty ty2,_,ty2right))::_::(_,(MlyValue.ty ty1,
 ty1left,_))::rest671) => let val result=MlyValue.ty_COMMA_list2(fn _
  => let val ty1=ty1 ()
 val ty2=ty2 ()
  in ( [ty1, ty2] ) end
 )
  in (LrTable.NT 81,(result,ty1left,ty2right),rest671) end
-| (222,(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq11left,
+| (224,(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq11left,
 tyvarseq11right))::rest671) => let val result=MlyValue.tyvarseq(fn _
  => let val tyvarseq1 as tyvarseq11=tyvarseq11 ()
  in ( tyvarseq1 ) end
 )
  in (LrTable.NT 82,(result,tyvarseq11left,tyvarseq11right),rest671)
  end
-| (223,rest671) => let val result=MlyValue.tyvarseq(fn _ => (
+| (225,rest671) => let val result=MlyValue.tyvarseq(fn _ => (
  Seq(I(defaultPos,defaultPos), []) ))
  in (LrTable.NT 82,(result,defaultPos,defaultPos),rest671) end
-| (224,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
+| (226,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
  as tyvar1right))::rest671) => let val result=MlyValue.tyvarseq1(fn _
  => let val tyvar as tyvar1=tyvar1 ()
  in ( Seq(I(tyvarleft,tyvarright), [tyvar])) end
 )
  in (LrTable.NT 83,(result,tyvar1left,tyvar1right),rest671) end
-| (225,(_,(_,_,RPARright as RPAR1right))::(_,(
+| (227,(_,(_,_,RPARright as RPAR1right))::(_,(
 MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,_))::(_,(_,LPARleft
  as LPAR1left,_))::rest671) => let val result=MlyValue.tyvarseq1(fn _
  => let val tyvar_COMMA_list1 as tyvar_COMMA_list11=tyvar_COMMA_list11
@@ -23314,7 +25604,7 @@ MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,_))::(_,(_,LPARleft
 					      tyvar_COMMA_list1) ) end
 )
  in (LrTable.NT 83,(result,LPAR1left,RPAR1right),rest671) end
-| (226,(_,(MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,
+| (228,(_,(MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,
 tyvar_COMMA_list11right))::_::(_,(MlyValue.tyvar tyvar1,tyvar1left,_))
 ::rest671) => let val result=MlyValue.tyvar_COMMA_list1(fn _ => let 
 val tyvar as tyvar1=tyvar1 ()
@@ -23323,19 +25613,19 @@ val tyvar_COMMA_list1 as tyvar_COMMA_list11=tyvar_COMMA_list11 ()
 )
  in (LrTable.NT 84,(result,tyvar1left,tyvar_COMMA_list11right),rest671
 ) end
-| (227,(_,(MlyValue.tyvar tyvar1,tyvar1left,tyvar1right))::rest671)
+| (229,(_,(MlyValue.tyvar tyvar1,tyvar1left,tyvar1right))::rest671)
  => let val result=MlyValue.tyvar_COMMA_list1(fn _ => let val tyvar
  as tyvar1=tyvar1 ()
  in ( tyvar::[] ) end
 )
  in (LrTable.NT 84,(result,tyvar1left,tyvar1right),rest671) end
-| (228,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec1,_,_))::(
+| (230,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec1,_,_))::(
 _,(_,STRUCTleft as STRUCT1left,_))::rest671) => let val result=
 MlyValue.atstrexp(fn _ => let val dec as dec1=dec1 ()
  in ( STRUCTAtStrExp(I(STRUCTleft,ENDright), dec) ) end
 )
  in (LrTable.NT 85,(result,STRUCT1left,END1right),rest671) end
-| (229,(_,(MlyValue.longstrid longstrid1,longstridleft as 
+| (231,(_,(MlyValue.longstrid longstrid1,longstridleft as 
 longstrid1left,longstridright as longstrid1right))::rest671) => let 
 val result=MlyValue.atstrexp(fn _ => let val longstrid as longstrid1=
 longstrid1 ()
@@ -23346,19 +25636,19 @@ longstrid1 ()
 )
  in (LrTable.NT 85,(result,longstrid1left,longstrid1right),rest671)
  end
-| (230,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.strexp strexp1,
+| (232,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.strexp strexp1,
 _,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atstrexp(fn _ => let val strexp as strexp1=strexp1 ()
  in ( PARAtStrExp(I(LPARleft,RPARright), strexp) ) end
 )
  in (LrTable.NT 85,(result,LPAR1left,RPAR1right),rest671) end
-| (231,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.dec dec1,_,_))
+| (233,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.dec dec1,_,_))
 ::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atstrexp(fn _ => let val dec as dec1=dec1 ()
  in ( DECAtStrExp(I(LPARleft,RPARright), dec) ) end
 )
  in (LrTable.NT 85,(result,LPAR1left,RPAR1right),rest671) end
-| (232,(_,(_,_,ENDright as END1right))::(_,(MlyValue.strexp strexp1,_,
+| (234,(_,(_,_,ENDright as END1right))::(_,(MlyValue.strexp strexp1,_,
 _))::_::(_,(MlyValue.dec dec1,_,_))::(_,(_,LETleft as LET1left,_))::
 rest671) => let val result=MlyValue.atstrexp(fn _ => let val dec as 
 dec1=dec1 ()
@@ -23366,7 +25656,7 @@ val strexp as strexp1=strexp1 ()
  in ( LETAtStrExp(I(LETleft,ENDright), dec, strexp) ) end
 )
  in (LrTable.NT 85,(result,LET1left,END1right),rest671) end
-| (233,(_,(MlyValue.atstrexp atstrexp1,atstrexpleft as atstrexp1left,
+| (235,(_,(MlyValue.atstrexp atstrexp1,atstrexpleft as atstrexp1left,
 atstrexpright as atstrexp1right))::rest671) => let val result=
 MlyValue.appstrexp(fn _ => let val atstrexp as atstrexp1=atstrexp1 ()
  in ( ATSTREXPStrExp(I(atstrexpleft,atstrexpright),
@@ -23374,7 +25664,7 @@ MlyValue.appstrexp(fn _ => let val atstrexp as atstrexp1=atstrexp1 ()
  end
 )
  in (LrTable.NT 86,(result,atstrexp1left,atstrexp1right),rest671) end
-| (234,(_,(MlyValue.atstrexp atstrexp1,_,atstrexpright as 
+| (236,(_,(MlyValue.atstrexp atstrexp1,_,atstrexpright as 
 atstrexp1right))::(_,(MlyValue.appstrexp appstrexp1,appstrexpleft as 
 appstrexp1left,_))::rest671) => let val result=MlyValue.appstrexp(fn _
  => let val appstrexp as appstrexp1=appstrexp1 ()
@@ -23385,14 +25675,14 @@ val atstrexp as atstrexp1=atstrexp1 ()
 ) end
 )
  in (LrTable.NT 86,(result,appstrexp1left,atstrexp1right),rest671) end
-| (235,(_,(MlyValue.appstrexp appstrexp1,appstrexp1left,
+| (237,(_,(MlyValue.appstrexp appstrexp1,appstrexp1left,
 appstrexp1right))::rest671) => let val result=MlyValue.strexp(fn _ => 
 let val appstrexp as appstrexp1=appstrexp1 ()
  in ( appstrexp ) end
 )
  in (LrTable.NT 87,(result,appstrexp1left,appstrexp1right),rest671)
  end
-| (236,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+| (238,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
 ::(_,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671)
  => let val result=MlyValue.strexp(fn _ => let val strexp as strexp1=
 strexp1 ()
@@ -23403,7 +25693,7 @@ val sigexp as sigexp1=sigexp1 ()
  end
 )
  in (LrTable.NT 87,(result,strexp1left,sigexp1right),rest671) end
-| (237,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+| (239,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
 ::(_,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671)
  => let val result=MlyValue.strexp(fn _ => let val strexp as strexp1=
 strexp1 ()
@@ -23411,7 +25701,7 @@ val sigexp as sigexp1=sigexp1 ()
  in ( OPAQStrExp(I(strexpleft,sigexpright), strexp, sigexp)) end
 )
  in (LrTable.NT 87,(result,strexp1left,sigexp1right),rest671) end
-| (238,(_,(MlyValue.strexp strexp1,_,strexpright as strexp1right))::_
+| (240,(_,(MlyValue.strexp strexp1,_,strexpright as strexp1right))::_
 ::(_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.strexp(fn _ => let val strpat as 
 strpat1=strpat1 ()
@@ -23419,7 +25709,7 @@ val strexp as strexp1=strexp1 ()
  in ( FCTStrExp(I(FCTleft,strexpright), strpat, strexp) ) end
 )
  in (LrTable.NT 87,(result,FCT1left,strexp1right),rest671) end
-| (239,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+| (241,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
 ::(_,(MlyValue.infexp infexp1,_,_))::(_,(_,UNPACKleft as UNPACK1left,_
 ))::rest671) => let val result=MlyValue.strexp(fn _ => let val infexp
  as infexp1=infexp1 ()
@@ -23430,7 +25720,7 @@ val sigexp as sigexp1=sigexp1 ()
  end
 )
  in (LrTable.NT 87,(result,UNPACK1left,sigexp1right),rest671) end
-| (240,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
+| (242,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
 _,_))::_::(_,(MlyValue.strid strid1,_,_))::(_,(_,LPARleft as LPAR1left
 ,_))::rest671) => let val result=MlyValue.strpat(fn _ => let val strid
  as strid1=strid1 ()
@@ -23438,19 +25728,19 @@ val sigexp as sigexp1=sigexp1 ()
  in ( StrPat(I(LPARleft,RPARright), strid, sigexp) ) end
 )
  in (LrTable.NT 88,(result,LPAR1left,RPAR1right),rest671) end
-| (241,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
+| (243,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
 _,_))::_::_::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val 
 result=MlyValue.strpat(fn _ => let val sigexp as sigexp1=sigexp1 ()
  in ( WILDCARDStrPat(I(LPARleft,RPARright), sigexp) ) end
 )
  in (LrTable.NT 88,(result,LPAR1left,RPAR1right),rest671) end
-| (242,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.spec spec1,_,_)
+| (244,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.spec spec1,_,_)
 )::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.strpat(fn _ => let val spec as spec1=spec1 ()
  in ( SPECStrPat(I(LPARleft,RPARright), spec) ) end
 )
  in (LrTable.NT 88,(result,LPAR1left,RPAR1right),rest671) end
-| (243,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+| (245,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
 ,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
 MlyValue.strid strid1,stridleft as strid1left,_))::rest671) => let 
@@ -23468,7 +25758,7 @@ strexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 89,(result,strid1left,strexp__AND_strbind_opt1right),
 rest671) end
-| (244,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+| (246,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
 ,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strid strid1,
 stridleft as strid1left,_))::rest671) => let val result=
@@ -23484,7 +25774,7 @@ strexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 89,(result,strid1left,strexp__AND_strbind_opt1right),
 rest671) end
-| (245,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+| (247,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
 ,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(_,
 UNDERBARleft as UNDERBAR1left,_))::rest671) => let val result=
@@ -23502,16 +25792,16 @@ strexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 89,(result,UNDERBAR1left,strexp__AND_strbind_opt1right
 ),rest671) end
-| (246,(_,(MlyValue.strbind strbind1,_,strbind1right))::(_,(_,AND1left
+| (248,(_,(MlyValue.strbind strbind1,_,strbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_strbind_opt(fn _ => let 
 val strbind as strbind1=strbind1 ()
  in ( SOME strbind ) end
 )
  in (LrTable.NT 90,(result,AND1left,strbind1right),rest671) end
-| (247,rest671) => let val result=MlyValue.AND_strbind_opt(fn _ => (
+| (249,rest671) => let val result=MlyValue.AND_strbind_opt(fn _ => (
  NONE ))
  in (LrTable.NT 90,(result,defaultPos,defaultPos),rest671) end
-| (248,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
+| (250,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
 AND_strbind_opt1right))::(_,(MlyValue.appstrexp appstrexp1,
 appstrexp1left,_))::rest671) => let val result=
 MlyValue.strexp__AND_strbind_opt(fn _ => let val appstrexp as 
@@ -23521,7 +25811,7 @@ val AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
 )
  in (LrTable.NT 91,(result,appstrexp1left,AND_strbind_opt1right),
 rest671) end
-| (249,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+| (251,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
 ,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_strbind_opt(fn _ => let val strexp
@@ -23537,7 +25827,7 @@ sigexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 91,(result,strexp1left,sigexp__AND_strbind_opt1right),
 rest671) end
-| (250,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+| (252,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
 ,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_strbind_opt(fn _ => let val strexp
@@ -23553,7 +25843,7 @@ sigexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 91,(result,strexp1left,sigexp__AND_strbind_opt1right),
 rest671) end
-| (251,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+| (253,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
 ,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.strexp__AND_strbind_opt(fn _ => 
@@ -23568,7 +25858,7 @@ strexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 91,(result,FCT1left,strexp__AND_strbind_opt1right),
 rest671) end
-| (252,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+| (254,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
 ,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.infexp infexp1,_,_))::(_,(_,UNPACKleft as UNPACK1left,_))
 ::rest671) => let val result=MlyValue.strexp__AND_strbind_opt(fn _ => 
@@ -23584,7 +25874,7 @@ sigexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 91,(result,UNPACK1left,sigexp__AND_strbind_opt1right),
 rest671) end
-| (253,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
+| (255,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
 AND_strbind_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_strbind_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -23593,7 +25883,7 @@ val AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
 )
  in (LrTable.NT 92,(result,sigexp'1left,AND_strbind_opt1right),rest671
 ) end
-| (254,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+| (256,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
 ,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_strbind_opt(fn _ => 
@@ -23608,7 +25898,7 @@ sigexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 92,(result,FCT1left,sigexp__AND_strbind_opt1right),
 rest671) end
-| (255,(_,(MlyValue.rea__AND_strbind_opt rea__AND_strbind_opt1,_,
+| (257,(_,(MlyValue.rea__AND_strbind_opt rea__AND_strbind_opt1,_,
 rea__AND_strbind_optright as rea__AND_strbind_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_strbind_opt(fn _ => let val sigexp
@@ -23624,7 +25914,7 @@ rea__AND_strbind_opt1 ()
 )
  in (LrTable.NT 92,(result,sigexp1left,rea__AND_strbind_opt1right),
 rest671) end
-| (256,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (258,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -23645,7 +25935,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,VAL1left,AND_rea_opt__AND_strbind_opt1right
 ),rest671) end
-| (257,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (259,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -23666,7 +25956,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,FUN1left,AND_rea_opt__AND_strbind_opt1right
 ),rest671) end
-| (258,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (260,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -23688,7 +25978,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (259,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (261,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -23710,7 +26000,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,EXCEPTION1left,
 AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (260,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (262,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -23731,7 +26021,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,TYPE1left,
 AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (261,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (263,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -23753,7 +26043,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,STRUCTURE1left,
 AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (262,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (264,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
 AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -23774,7 +26064,7 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,FUNCTOR1left,
 AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (263,(_,(MlyValue.sigexp__AND_rea_opt__AND_strbind_opt 
+| (265,(_,(MlyValue.sigexp__AND_rea_opt__AND_strbind_opt 
 sigexp__AND_rea_opt__AND_strbind_opt1,_,
 sigexp__AND_rea_opt__AND_strbind_optright as 
 sigexp__AND_rea_opt__AND_strbind_opt1right))::_::(_,(
@@ -23798,7 +26088,7 @@ sigexp__AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 93,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (264,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,
+| (266,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,
 AND_strbind_opt1left,AND_strbind_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_strbind_opt(fn _ => let val 
 AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
@@ -23806,7 +26096,7 @@ AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
 )
  in (LrTable.NT 94,(result,AND_strbind_opt1left,AND_strbind_opt1right)
 ,rest671) end
-| (265,(_,(MlyValue.rea__AND_strbind_opt rea__AND_strbind_opt1,_,
+| (267,(_,(MlyValue.rea__AND_strbind_opt rea__AND_strbind_opt1,_,
 rea__AND_strbind_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_strbind_opt(fn _ => let val 
 rea__AND_strbind_opt as rea__AND_strbind_opt1=rea__AND_strbind_opt1 ()
@@ -23817,7 +26107,7 @@ rea__AND_strbind_opt as rea__AND_strbind_opt1=rea__AND_strbind_opt1 ()
 )
  in (LrTable.NT 94,(result,AND1left,rea__AND_strbind_opt1right),
 rest671) end
-| (266,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+| (268,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
 AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_strbind_opt(fn _ => let 
@@ -23832,26 +26122,26 @@ AND_rea_opt__AND_strbind_opt1 ()
 )
  in (LrTable.NT 95,(result,appsigexp1left,
 AND_rea_opt__AND_strbind_opt1right),rest671) end
-| (267,(_,(MlyValue.sigexp sigexp1,_,sigexp1right))::(_,(_,COLON1left,
+| (269,(_,(MlyValue.sigexp sigexp1,_,sigexp1right))::(_,(_,COLON1left,
 _))::rest671) => let val result=MlyValue.COLON_sigexp_opt(fn _ => let 
 val sigexp as sigexp1=sigexp1 ()
  in ( SOME sigexp ) end
 )
  in (LrTable.NT 96,(result,COLON1left,sigexp1right),rest671) end
-| (268,rest671) => let val result=MlyValue.COLON_sigexp_opt(fn _ => (
+| (270,rest671) => let val result=MlyValue.COLON_sigexp_opt(fn _ => (
  NONE ))
  in (LrTable.NT 96,(result,defaultPos,defaultPos),rest671) end
-| (269,(_,(_,ANYleft as ANY1left,ANYright as ANY1right))::rest671) => 
+| (271,(_,(_,ANYleft as ANY1left,ANYright as ANY1right))::rest671) => 
 let val result=MlyValue.atsigexp(fn _ => (
  ANYAtSigExp(I(ANYleft,ANYright)) ))
  in (LrTable.NT 97,(result,ANY1left,ANY1right),rest671) end
-| (270,(_,(_,_,ENDright as END1right))::(_,(MlyValue.spec spec1,_,_))
+| (272,(_,(_,_,ENDright as END1right))::(_,(MlyValue.spec spec1,_,_))
 ::(_,(_,SIGleft as SIG1left,_))::rest671) => let val result=
 MlyValue.atsigexp(fn _ => let val spec as spec1=spec1 ()
  in ( SIGAtSigExp(I(SIGleft,ENDright), spec) ) end
 )
  in (LrTable.NT 97,(result,SIG1left,END1right),rest671) end
-| (271,(_,(MlyValue.longsigid longsigid1,longsigidleft as 
+| (273,(_,(MlyValue.longsigid longsigid1,longsigidleft as 
 longsigid1left,longsigidright as longsigid1right))::rest671) => let 
 val result=MlyValue.atsigexp(fn _ => let val longsigid as longsigid1=
 longsigid1 ()
@@ -23862,7 +26152,7 @@ longsigid1 ()
 )
  in (LrTable.NT 97,(result,longsigid1left,longsigid1right),rest671)
  end
-| (272,(_,(_,_,ENDright as END1right))::(_,(MlyValue.sigexp sigexp1,_,
+| (274,(_,(_,_,ENDright as END1right))::(_,(MlyValue.sigexp sigexp1,_,
 _))::_::(_,(MlyValue.dec dec1,_,_))::(_,(_,LETleft as LET1left,_))::
 rest671) => let val result=MlyValue.atsigexp(fn _ => let val dec as 
 dec1=dec1 ()
@@ -23870,13 +26160,13 @@ val sigexp as sigexp1=sigexp1 ()
  in ( LETAtSigExp(I(LETleft,ENDright), dec, sigexp) ) end
 )
  in (LrTable.NT 97,(result,LET1left,END1right),rest671) end
-| (273,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
+| (275,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
 _,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atsigexp(fn _ => let val sigexp as sigexp1=sigexp1 ()
  in ( PARAtSigExp(I(LPARleft,RPARright), sigexp) ) end
 )
  in (LrTable.NT 97,(result,LPAR1left,RPAR1right),rest671) end
-| (274,(_,(MlyValue.atsigexp atsigexp1,atsigexpleft as atsigexp1left,
+| (276,(_,(MlyValue.atsigexp atsigexp1,atsigexpleft as atsigexp1left,
 atsigexpright as atsigexp1right))::rest671) => let val result=
 MlyValue.appsigexp(fn _ => let val atsigexp as atsigexp1=atsigexp1 ()
  in ( ATSIGEXPSigExp(I(atsigexpleft,atsigexpright),
@@ -23884,7 +26174,7 @@ MlyValue.appsigexp(fn _ => let val atsigexp as atsigexp1=atsigexp1 ()
  end
 )
  in (LrTable.NT 98,(result,atsigexp1left,atsigexp1right),rest671) end
-| (275,(_,(MlyValue.atstrexp atstrexp1,_,atstrexpright as 
+| (277,(_,(MlyValue.atstrexp atstrexp1,_,atstrexpright as 
 atstrexp1right))::(_,(MlyValue.appsigexp appsigexp1,appsigexpleft as 
 appsigexp1left,_))::rest671) => let val result=MlyValue.appsigexp(fn _
  => let val appsigexp as appsigexp1=appsigexp1 ()
@@ -23895,13 +26185,13 @@ val atstrexp as atstrexp1=atstrexp1 ()
 ) end
 )
  in (LrTable.NT 98,(result,appsigexp1left,atstrexp1right),rest671) end
-| (276,(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,sigexp'1right))::
+| (278,(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,sigexp'1right))::
 rest671) => let val result=MlyValue.sigexp(fn _ => let val sigexp' as 
 sigexp'1=sigexp'1 ()
  in ( sigexp' ) end
 )
  in (LrTable.NT 99,(result,sigexp'1left,sigexp'1right),rest671) end
-| (277,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+| (279,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
 ::(_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp(fn _ => let val strpat as 
 strpat1=strpat1 ()
@@ -23909,7 +26199,7 @@ val sigexp as sigexp1=sigexp1 ()
  in ( FCTSigExp(I(FCTleft,sigexpright), strpat, sigexp) ) end
 )
  in (LrTable.NT 99,(result,FCT1left,sigexp1right),rest671) end
-| (278,(_,(MlyValue.rea rea1,_,rearight as rea1right))::_::(_,(
+| (280,(_,(MlyValue.rea rea1,_,rearight as rea1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp(fn _ => let val sigexp as sigexp1=
 sigexp1 ()
@@ -23918,14 +26208,14 @@ val rea as rea1=rea1 ()
 					 sigexp, rea) ) end
 )
  in (LrTable.NT 99,(result,sigexp1left,rea1right),rest671) end
-| (279,(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,
+| (281,(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,
 appsigexp1right))::rest671) => let val result=MlyValue.sigexp'(fn _
  => let val appsigexp as appsigexp1=appsigexp1 ()
  in ( appsigexp ) end
 )
  in (LrTable.NT 100,(result,appsigexp1left,appsigexp1right),rest671)
  end
-| (280,(_,(MlyValue.longstrid longstrid2,_,longstrid2right))::_::(_,(
+| (282,(_,(MlyValue.longstrid longstrid2,_,longstrid2right))::_::(_,(
 MlyValue.longstrid longstrid1,_,_))::_::(_,(MlyValue.sigexp sigexp1,
 sigexpleft as sigexp1left,_))::rest671) => let val result=
 MlyValue.sigexp'(fn _ => let val sigexp as sigexp1=sigexp1 ()
@@ -23937,7 +26227,7 @@ val longstrid2=longstrid2 ()
 ) end
 )
  in (LrTable.NT 100,(result,sigexp1left,longstrid2right),rest671) end
-| (281,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
+| (283,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
 ,sigexp__AND_sigbind_optright as sigexp__AND_sigbind_opt1right))::_::(
 _,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.sigid 
 sigid1,sigidleft as sigid1left,_))::rest671) => let val result=
@@ -23954,26 +26244,26 @@ sigexp__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 101,(result,sigid1left,sigexp__AND_sigbind_opt1right),
 rest671) end
-| (282,(_,(MlyValue.strpat_list1 strpat_list11,strpat_list11left,
+| (284,(_,(MlyValue.strpat_list1 strpat_list11,strpat_list11left,
 strpat_list11right))::rest671) => let val result=MlyValue.strpat_list0
 (fn _ => let val strpat_list1 as strpat_list11=strpat_list11 ()
  in ( strpat_list1 ) end
 )
  in (LrTable.NT 102,(result,strpat_list11left,strpat_list11right),
 rest671) end
-| (283,rest671) => let val result=MlyValue.strpat_list0(fn _ => ( [] )
+| (285,rest671) => let val result=MlyValue.strpat_list0(fn _ => ( [] )
 )
  in (LrTable.NT 102,(result,defaultPos,defaultPos),rest671) end
-| (284,(_,(MlyValue.sigbind sigbind1,_,sigbind1right))::(_,(_,AND1left
+| (286,(_,(MlyValue.sigbind sigbind1,_,sigbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_sigbind_opt(fn _ => let 
 val sigbind as sigbind1=sigbind1 ()
  in ( SOME sigbind ) end
 )
  in (LrTable.NT 103,(result,AND1left,sigbind1right),rest671) end
-| (285,rest671) => let val result=MlyValue.AND_sigbind_opt(fn _ => (
+| (287,rest671) => let val result=MlyValue.AND_sigbind_opt(fn _ => (
  NONE ))
  in (LrTable.NT 103,(result,defaultPos,defaultPos),rest671) end
-| (286,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,_,
+| (288,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,_,
 AND_sigbind_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_sigbind_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -23982,7 +26272,7 @@ val AND_sigbind_opt as AND_sigbind_opt1=AND_sigbind_opt1 ()
 )
  in (LrTable.NT 104,(result,sigexp'1left,AND_sigbind_opt1right),
 rest671) end
-| (287,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
+| (289,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
 ,sigexp__AND_sigbind_optright as sigexp__AND_sigbind_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_sigbind_opt(fn _ => 
@@ -23997,7 +26287,7 @@ sigexp__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 104,(result,FCT1left,sigexp__AND_sigbind_opt1right),
 rest671) end
-| (288,(_,(MlyValue.rea__AND_sigbind_opt rea__AND_sigbind_opt1,_,
+| (290,(_,(MlyValue.rea__AND_sigbind_opt rea__AND_sigbind_opt1,_,
 rea__AND_sigbind_optright as rea__AND_sigbind_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_sigbind_opt(fn _ => let val sigexp
@@ -24013,7 +26303,7 @@ rea__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 104,(result,sigexp1left,rea__AND_sigbind_opt1right),
 rest671) end
-| (289,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (291,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24034,7 +26324,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,VAL1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (290,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (292,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24055,7 +26345,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,FUN1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (291,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (293,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24077,7 +26367,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (292,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (294,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24099,7 +26389,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,EXCEPTION1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (293,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (295,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -24120,7 +26410,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,TYPE1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (294,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (296,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -24142,7 +26432,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,STRUCTURE1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (295,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (297,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
 AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -24163,7 +26453,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,FUNCTOR1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (296,(_,(MlyValue.sigexp__AND_rea_opt__AND_sigbind_opt 
+| (298,(_,(MlyValue.sigexp__AND_rea_opt__AND_sigbind_opt 
 sigexp__AND_rea_opt__AND_sigbind_opt1,_,
 sigexp__AND_rea_opt__AND_sigbind_optright as 
 sigexp__AND_rea_opt__AND_sigbind_opt1right))::_::(_,(
@@ -24187,7 +26477,7 @@ sigexp__AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 105,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (297,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,
+| (299,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,
 AND_sigbind_opt1left,AND_sigbind_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_sigbind_opt(fn _ => let val 
 AND_sigbind_opt as AND_sigbind_opt1=AND_sigbind_opt1 ()
@@ -24195,7 +26485,7 @@ AND_sigbind_opt as AND_sigbind_opt1=AND_sigbind_opt1 ()
 )
  in (LrTable.NT 106,(result,AND_sigbind_opt1left,AND_sigbind_opt1right
 ),rest671) end
-| (298,(_,(MlyValue.rea__AND_sigbind_opt rea__AND_sigbind_opt1,_,
+| (300,(_,(MlyValue.rea__AND_sigbind_opt rea__AND_sigbind_opt1,_,
 rea__AND_sigbind_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_sigbind_opt(fn _ => let val 
 rea__AND_sigbind_opt as rea__AND_sigbind_opt1=rea__AND_sigbind_opt1 ()
@@ -24206,7 +26496,7 @@ rea__AND_sigbind_opt as rea__AND_sigbind_opt1=rea__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 106,(result,AND1left,rea__AND_sigbind_opt1right),
 rest671) end
-| (299,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+| (301,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
 AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_sigbind_opt(fn _ => let 
@@ -24221,7 +26511,7 @@ AND_rea_opt__AND_sigbind_opt1 ()
 )
  in (LrTable.NT 107,(result,appsigexp1left,
 AND_rea_opt__AND_sigbind_opt1right),rest671) end
-| (300,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (302,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
 MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
 ::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as VAL1left,_))::
@@ -24238,7 +26528,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 ) end
 )
  in (LrTable.NT 108,(result,VAL1left,AND_rea_opt1right),rest671) end
-| (301,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (303,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
 MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
 ::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as FUN1left,_))::
@@ -24255,7 +26545,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 ) end
 )
  in (LrTable.NT 108,(result,FUN1left,AND_rea_opt1right),rest671) end
-| (302,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (304,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
 MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
 ::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,CONSTRUCTORleft as 
@@ -24273,7 +26563,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 )
  in (LrTable.NT 108,(result,CONSTRUCTOR1left,AND_rea_opt1right),
 rest671) end
-| (303,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (305,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
 MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
 ::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft as 
@@ -24291,7 +26581,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 )
  in (LrTable.NT 108,(result,EXCEPTION1left,AND_rea_opt1right),rest671)
  end
-| (304,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (306,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_,(
 MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,_
 ,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
@@ -24305,7 +26595,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 ) end
 )
  in (LrTable.NT 108,(result,TYPE1left,AND_rea_opt1right),rest671) end
-| (305,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (307,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.longstrid longstrid2,_,_))::_::(_,(
 MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
 MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
@@ -24322,7 +26612,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 )
  in (LrTable.NT 108,(result,STRUCTURE1left,AND_rea_opt1right),rest671)
  end
-| (306,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+| (308,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
 AND_rea_opt1right))::(_,(MlyValue.longstrid longstrid2,_,_))::_::(_,(
 MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
 MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as FUNCTOR1left
@@ -24339,7 +26629,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 )
  in (LrTable.NT 108,(result,FUNCTOR1left,AND_rea_opt1right),rest671)
  end
-| (307,(_,(MlyValue.sigexp__AND_rea_opt sigexp__AND_rea_opt1,_,
+| (309,(_,(MlyValue.sigexp__AND_rea_opt sigexp__AND_rea_opt1,_,
 sigexp__AND_rea_optright as sigexp__AND_rea_opt1right))::_::(_,(
 MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
 longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
@@ -24358,16 +26648,16 @@ val sigexp__AND_rea_opt as sigexp__AND_rea_opt1=sigexp__AND_rea_opt1
 )
  in (LrTable.NT 108,(result,SIGNATURE1left,sigexp__AND_rea_opt1right),
 rest671) end
-| (308,(_,(MlyValue.rea rea1,_,rea1right))::(_,(_,AND1left,_))::
+| (310,(_,(MlyValue.rea rea1,_,rea1right))::(_,(_,AND1left,_))::
 rest671) => let val result=MlyValue.AND_rea_opt(fn _ => let val rea
  as rea1=rea1 ()
  in ( SOME rea ) end
 )
  in (LrTable.NT 109,(result,AND1left,rea1right),rest671) end
-| (309,rest671) => let val result=MlyValue.AND_rea_opt(fn _ => ( NONE 
+| (311,rest671) => let val result=MlyValue.AND_rea_opt(fn _ => ( NONE 
 ))
  in (LrTable.NT 109,(result,defaultPos,defaultPos),rest671) end
-| (310,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_opt1right))::(_
+| (312,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_opt1right))::(_
 ,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt(fn _ => let val appsigexp as 
 appsigexp1=appsigexp1 ()
@@ -24376,7 +26666,7 @@ val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
 )
  in (LrTable.NT 110,(result,appsigexp1left,AND_rea_opt1right),rest671)
  end
-| (311,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
+| (313,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
 ,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
 MlyValue.strpat_list1 strpat_list11,_,_))::(_,(MlyValue.strid strid1,
@@ -24396,7 +26686,7 @@ strexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 111,(result,strid1left,strexp__AND_funbind_opt1right),
 rest671) end
-| (312,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
+| (314,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
 ,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strpat_list1 
 strpat_list11,_,_))::(_,(MlyValue.strid strid1,stridleft as strid1left
@@ -24415,13 +26705,13 @@ strexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 111,(result,strid1left,strexp__AND_funbind_opt1right),
 rest671) end
-| (313,(_,(MlyValue.strpat strpat1,strpat1left,strpat1right))::rest671
+| (315,(_,(MlyValue.strpat strpat1,strpat1left,strpat1right))::rest671
 ) => let val result=MlyValue.strpat_list1(fn _ => let val strpat as 
 strpat1=strpat1 ()
  in ( strpat::[] ) end
 )
  in (LrTable.NT 112,(result,strpat1left,strpat1right),rest671) end
-| (314,(_,(MlyValue.strpat_list1 strpat_list11,_,strpat_list11right))
+| (316,(_,(MlyValue.strpat_list1 strpat_list11,_,strpat_list11right))
 ::(_,(MlyValue.strpat strpat1,strpat1left,_))::rest671) => let val 
 result=MlyValue.strpat_list1(fn _ => let val strpat as strpat1=strpat1
  ()
@@ -24430,16 +26720,16 @@ val strpat_list1 as strpat_list11=strpat_list11 ()
 )
  in (LrTable.NT 112,(result,strpat1left,strpat_list11right),rest671)
  end
-| (315,(_,(MlyValue.funbind funbind1,_,funbind1right))::(_,(_,AND1left
+| (317,(_,(MlyValue.funbind funbind1,_,funbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_funbind_opt(fn _ => let 
 val funbind as funbind1=funbind1 ()
  in ( SOME funbind ) end
 )
  in (LrTable.NT 113,(result,AND1left,funbind1right),rest671) end
-| (316,rest671) => let val result=MlyValue.AND_funbind_opt(fn _ => (
+| (318,rest671) => let val result=MlyValue.AND_funbind_opt(fn _ => (
  NONE ))
  in (LrTable.NT 113,(result,defaultPos,defaultPos),rest671) end
-| (317,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
+| (319,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
 AND_funbind_opt1right))::(_,(MlyValue.appstrexp appstrexp1,
 appstrexp1left,_))::rest671) => let val result=
 MlyValue.strexp__AND_funbind_opt(fn _ => let val appstrexp as 
@@ -24449,7 +26739,7 @@ val AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
 )
  in (LrTable.NT 114,(result,appstrexp1left,AND_funbind_opt1right),
 rest671) end
-| (318,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+| (320,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
 ,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_funbind_opt(fn _ => let val strexp
@@ -24465,7 +26755,7 @@ sigexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 114,(result,strexp1left,sigexp__AND_funbind_opt1right)
 ,rest671) end
-| (319,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+| (321,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
 ,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_funbind_opt(fn _ => let val strexp
@@ -24481,7 +26771,7 @@ sigexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 114,(result,strexp1left,sigexp__AND_funbind_opt1right)
 ,rest671) end
-| (320,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
+| (322,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
 ,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.strexp__AND_funbind_opt(fn _ => 
@@ -24496,7 +26786,7 @@ strexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 114,(result,FCT1left,strexp__AND_funbind_opt1right),
 rest671) end
-| (321,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+| (323,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
 ,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.infexp infexp1,_,_))::(_,(_,UNPACKleft as UNPACK1left,_))
 ::rest671) => let val result=MlyValue.strexp__AND_funbind_opt(fn _ => 
@@ -24512,7 +26802,7 @@ sigexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 114,(result,UNPACK1left,sigexp__AND_funbind_opt1right)
 ,rest671) end
-| (322,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
+| (324,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
 AND_funbind_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_funbind_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -24521,7 +26811,7 @@ val AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
 )
  in (LrTable.NT 115,(result,sigexp'1left,AND_funbind_opt1right),
 rest671) end
-| (323,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+| (325,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
 ,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_funbind_opt(fn _ => 
@@ -24536,7 +26826,7 @@ sigexp__AND_funbind_opt1 ()
 )
  in (LrTable.NT 115,(result,FCT1left,sigexp__AND_funbind_opt1right),
 rest671) end
-| (324,(_,(MlyValue.rea__AND_funbind_opt rea__AND_funbind_opt1,_,
+| (326,(_,(MlyValue.rea__AND_funbind_opt rea__AND_funbind_opt1,_,
 rea__AND_funbind_optright as rea__AND_funbind_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_funbind_opt(fn _ => let val sigexp
@@ -24552,7 +26842,7 @@ rea__AND_funbind_opt1 ()
 )
  in (LrTable.NT 115,(result,sigexp1left,rea__AND_funbind_opt1right),
 rest671) end
-| (325,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (327,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24573,7 +26863,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,VAL1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (326,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (328,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24594,7 +26884,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,FUN1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (327,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (329,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24616,7 +26906,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (328,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (330,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -24638,7 +26928,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,EXCEPTION1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (329,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (331,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -24659,7 +26949,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,TYPE1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (330,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (332,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -24681,7 +26971,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,STRUCTURE1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (331,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (333,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
 AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -24702,7 +26992,7 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,FUNCTOR1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (332,(_,(MlyValue.sigexp__AND_rea_opt__AND_funbind_opt 
+| (334,(_,(MlyValue.sigexp__AND_rea_opt__AND_funbind_opt 
 sigexp__AND_rea_opt__AND_funbind_opt1,_,
 sigexp__AND_rea_opt__AND_funbind_optright as 
 sigexp__AND_rea_opt__AND_funbind_opt1right))::_::(_,(
@@ -24726,7 +27016,7 @@ sigexp__AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 116,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (333,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,
+| (335,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,
 AND_funbind_opt1left,AND_funbind_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_funbind_opt(fn _ => let val 
 AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
@@ -24734,7 +27024,7 @@ AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
 )
  in (LrTable.NT 117,(result,AND_funbind_opt1left,AND_funbind_opt1right
 ),rest671) end
-| (334,(_,(MlyValue.rea__AND_funbind_opt rea__AND_funbind_opt1,_,
+| (336,(_,(MlyValue.rea__AND_funbind_opt rea__AND_funbind_opt1,_,
 rea__AND_funbind_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_funbind_opt(fn _ => let val 
 rea__AND_funbind_opt as rea__AND_funbind_opt1=rea__AND_funbind_opt1 ()
@@ -24745,7 +27035,7 @@ rea__AND_funbind_opt as rea__AND_funbind_opt1=rea__AND_funbind_opt1 ()
 )
  in (LrTable.NT 117,(result,AND1left,rea__AND_funbind_opt1right),
 rest671) end
-| (335,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+| (337,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
 AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_funbind_opt(fn _ => let 
@@ -24760,34 +27050,34 @@ AND_rea_opt__AND_funbind_opt1 ()
 )
  in (LrTable.NT 118,(result,appsigexp1left,
 AND_rea_opt__AND_funbind_opt1right),rest671) end
-| (336,(_,(MlyValue.spec1 spec11,spec11left,spec11right))::rest671)
+| (338,(_,(MlyValue.spec1 spec11,spec11left,spec11right))::rest671)
  => let val result=MlyValue.spec(fn _ => let val spec1 as spec11=
 spec11 ()
  in ( spec1 ) end
 )
  in (LrTable.NT 119,(result,spec11left,spec11right),rest671) end
-| (337,rest671) => let val result=MlyValue.spec(fn _ => (
+| (339,rest671) => let val result=MlyValue.spec(fn _ => (
  EMPTYSpec(I(defaultPos,defaultPos)) ))
  in (LrTable.NT 119,(result,defaultPos,defaultPos),rest671) end
-| (338,(_,(MlyValue.spec1' spec1'1,spec1'1left,spec1'1right))::rest671
+| (340,(_,(MlyValue.spec1' spec1'1,spec1'1left,spec1'1right))::rest671
 ) => let val result=MlyValue.spec1(fn _ => let val spec1' as spec1'1=
 spec1'1 ()
  in ( spec1' ) end
 )
  in (LrTable.NT 120,(result,spec1'1left,spec1'1right),rest671) end
-| (339,(_,(MlyValue.spec1' spec1'1,_,spec1'right as spec1'1right))::(_
+| (341,(_,(MlyValue.spec1' spec1'1,_,spec1'right as spec1'1right))::(_
 ,(MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
 val spec1' as spec1'1=spec1'1 ()
  in ( SEQSpec(I(spec1left,spec1'right), spec1, spec1') ) end
 )
  in (LrTable.NT 120,(result,spec11left,spec1'1right),rest671) end
-| (340,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
+| (342,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
 rest671) => let val result=MlyValue.spec1(fn _ => (
  EMPTYSpec(I(SEMICOLONleft,SEMICOLONleft)) ))
  in (LrTable.NT 120,(result,SEMICOLON1left,SEMICOLON1right),rest671)
  end
-| (341,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
+| (343,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
 longtycon_EQUALS_list2right as longtycon_EQUALS_list21right))::_::(_,(
 _,SHARINGleft as SHARING1left,_))::rest671) => let val result=
 MlyValue.spec1(fn _ => let val longtycon_EQUALS_list2 as 
@@ -24801,7 +27091,7 @@ longtycon_EQUALS_list21=longtycon_EQUALS_list21 ()
 )
  in (LrTable.NT 120,(result,SHARING1left,longtycon_EQUALS_list21right)
 ,rest671) end
-| (342,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
+| (344,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
 longtycon_EQUALS_list2right as longtycon_EQUALS_list21right))::_::_::(
 _,(MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
@@ -24815,7 +27105,7 @@ longtycon_EQUALS_list21 ()
 )
  in (LrTable.NT 120,(result,spec11left,longtycon_EQUALS_list21right),
 rest671) end
-| (343,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
+| (345,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
 longsigid_EQUALS_list2right as longsigid_EQUALS_list21right))::_::(_,(
 _,SHARINGleft as SHARING1left,_))::rest671) => let val result=
 MlyValue.spec1(fn _ => let val longsigid_EQUALS_list2 as 
@@ -24830,7 +27120,7 @@ longsigid_EQUALS_list21=longsigid_EQUALS_list21 ()
 )
  in (LrTable.NT 120,(result,SHARING1left,longsigid_EQUALS_list21right)
 ,rest671) end
-| (344,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
+| (346,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
 longsigid_EQUALS_list2right as longsigid_EQUALS_list21right))::_::_::(
 _,(MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
@@ -24844,7 +27134,7 @@ longsigid_EQUALS_list21 ()
 )
  in (LrTable.NT 120,(result,spec11left,longsigid_EQUALS_list21right),
 rest671) end
-| (345,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
+| (347,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
 longstrid_EQUALS_list2right as longstrid_EQUALS_list21right))::(_,(_,
 SHARINGleft as SHARING1left,_))::rest671) => let val result=
 MlyValue.spec1(fn _ => let val longstrid_EQUALS_list2 as 
@@ -24858,7 +27148,7 @@ longstrid_EQUALS_list21=longstrid_EQUALS_list21 ()
 )
  in (LrTable.NT 120,(result,SHARING1left,longstrid_EQUALS_list21right)
 ,rest671) end
-| (346,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
+| (348,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
 longstrid_EQUALS_list2right as longstrid_EQUALS_list21right))::_::(_,(
 MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
@@ -24871,37 +27161,37 @@ longstrid_EQUALS_list21 ()
 )
  in (LrTable.NT 120,(result,spec11left,longstrid_EQUALS_list21right),
 rest671) end
-| (347,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
+| (349,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
 ::(_,(_,VALleft as VAL1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val valdesc as valdesc1=valdesc1 ()
  in ( VALSpec(I(VALleft,valdescright), valdesc) ) end
 )
  in (LrTable.NT 121,(result,VAL1left,valdesc1right),rest671) end
-| (348,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
+| (350,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
 ::(_,(_,FUNleft as FUN1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val valdesc as valdesc1=valdesc1 ()
  in ( FUNSpec(I(FUNleft,valdescright), valdesc) ) end
 )
  in (LrTable.NT 121,(result,FUN1left,valdesc1right),rest671) end
-| (349,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
+| (351,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
 ::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val typdesc as typdesc1=typdesc1 ()
  in ( TYPESpec(I(TYPEleft,typdescright), typdesc) ) end
 )
  in (LrTable.NT 121,(result,TYPE1left,typdesc1right),rest671) end
-| (350,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
+| (352,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
 ::(_,(_,EQTYPEleft as EQTYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val typdesc as typdesc1=typdesc1 ()
  in ( EQTYPESpec(I(EQTYPEleft,typdescright), typdesc) ) end
 )
  in (LrTable.NT 121,(result,EQTYPE1left,typdesc1right),rest671) end
-| (351,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
+| (353,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
 ::(_,(_,EQEQTYPEleft as EQEQTYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val typdesc as typdesc1=typdesc1 ()
  in ( EQEQTYPESpec(I(EQEQTYPEleft,typdescright), typdesc) ) end
 )
  in (LrTable.NT 121,(result,EQEQTYPE1left,typdesc1right),rest671) end
-| (352,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
+| (354,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
 WITHTYPE_typdesc_optright as WITHTYPE_typdesc_opt1right))::(_,(
 MlyValue.datdesc0 datdesc01,_,_))::(_,(_,DATATYPEleft as DATATYPE1left
 ,_))::rest671) => let val result=MlyValue.spec1'(fn _ => let val 
@@ -24916,7 +27206,7 @@ WITHTYPE_typdesc_opt1 ()
 )
  in (LrTable.NT 121,(result,DATATYPE1left,WITHTYPE_typdesc_opt1right),
 rest671) end
-| (353,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
+| (355,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
 WITHTYPE_typdesc_optright as WITHTYPE_typdesc_opt1right))::(_,(
 MlyValue.datdesc1 datdesc11,_,_))::(_,(_,DATATYPEleft as DATATYPE1left
 ,_))::rest671) => let val result=MlyValue.spec1'(fn _ => let val 
@@ -24931,7 +27221,7 @@ WITHTYPE_typdesc_opt1 ()
 )
  in (LrTable.NT 121,(result,DATATYPE1left,WITHTYPE_typdesc_opt1right),
 rest671) end
-| (354,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+| (356,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::_::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(_,
 DATATYPEleft as DATATYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val tycon as tycon1=tycon1 ()
@@ -24943,7 +27233,7 @@ val longtycon as longtycon1=longtycon1 ()
 )
  in (LrTable.NT 121,(result,DATATYPE1left,longtycon1right),rest671)
  end
-| (355,(_,(MlyValue.dcondesc dcondesc1,_,dcondescright as 
+| (357,(_,(MlyValue.dcondesc dcondesc1,_,dcondescright as 
 dcondesc1right))::(_,(_,CONSTRUCTORleft as CONSTRUCTOR1left,_))::
 rest671) => let val result=MlyValue.spec1'(fn _ => let val dcondesc
  as dcondesc1=dcondesc1 ()
@@ -24954,37 +27244,37 @@ rest671) => let val result=MlyValue.spec1'(fn _ => let val dcondesc
 )
  in (LrTable.NT 121,(result,CONSTRUCTOR1left,dcondesc1right),rest671)
  end
-| (356,(_,(MlyValue.exdesc exdesc1,_,exdescright as exdesc1right))::(_
+| (358,(_,(MlyValue.exdesc exdesc1,_,exdescright as exdesc1right))::(_
 ,(_,EXCEPTIONleft as EXCEPTION1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val exdesc as exdesc1=exdesc1 ()
  in ( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) ) end
 )
  in (LrTable.NT 121,(result,EXCEPTION1left,exdesc1right),rest671) end
-| (357,(_,(MlyValue.strdesc strdesc1,_,strdescright as strdesc1right))
+| (359,(_,(MlyValue.strdesc strdesc1,_,strdescright as strdesc1right))
 ::(_,(_,STRUCTUREleft as STRUCTURE1left,_))::rest671) => let val 
 result=MlyValue.spec1'(fn _ => let val strdesc as strdesc1=strdesc1 ()
  in ( STRUCTURESpec(I(STRUCTUREleft,strdescright), strdesc)) end
 )
  in (LrTable.NT 121,(result,STRUCTURE1left,strdesc1right),rest671) end
-| (358,(_,(MlyValue.sigdesc sigdesc1,_,sigdescright as sigdesc1right))
+| (360,(_,(MlyValue.sigdesc sigdesc1,_,sigdescright as sigdesc1right))
 ::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671) => let val 
 result=MlyValue.spec1'(fn _ => let val sigdesc as sigdesc1=sigdesc1 ()
  in ( SIGNATURESpec(I(SIGNATUREleft,sigdescright), sigdesc)) end
 )
  in (LrTable.NT 121,(result,SIGNATURE1left,sigdesc1right),rest671) end
-| (359,(_,(MlyValue.fundesc fundesc1,_,fundescright as fundesc1right))
+| (361,(_,(MlyValue.fundesc fundesc1,_,fundescright as fundesc1right))
 ::(_,(_,FUNCTORleft as FUNCTOR1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val fundesc as fundesc1=fundesc1 ()
  in ( FUNCTORSpec(I(FUNCTORleft,fundescright), fundesc)) end
 )
  in (LrTable.NT 121,(result,FUNCTOR1left,fundesc1right),rest671) end
-| (360,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::(_
+| (362,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::(_
 ,(_,INCLUDEleft as INCLUDE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val sigexp as sigexp1=sigexp1 ()
  in ( INCLUDESpec(I(INCLUDEleft,sigexpright), sigexp) ) end
 )
  in (LrTable.NT 121,(result,INCLUDE1left,sigexp1right),rest671) end
-| (361,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
+| (363,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
 MlyValue.tyvar tyvar1,_,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,_,_))::(_,(_,OVERLOADleft as OVERLOAD1left,_))
 ::rest671) => let val result=MlyValue.spec1'(fn _ => let val OP_opt
@@ -24998,7 +27288,7 @@ val ty as ty1=ty1 ()
 ) end
 )
  in (LrTable.NT 121,(result,OVERLOAD1left,ty1right),rest671) end
-| (362,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
+| (364,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
 ::_::(_,(MlyValue.longtycon longtycon1,_,_))::_::(_,(MlyValue.vid vid1
 ,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,INSTANCEleft as 
 INSTANCE1left,_))::rest671) => let val result=MlyValue.spec1'(fn _ => 
@@ -25012,7 +27302,7 @@ val longvid as longvid1=longvid1 ()
 ) end
 )
  in (LrTable.NT 121,(result,INSTANCE1left,longvid1right),rest671) end
-| (363,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+| (365,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::_::(_,(MlyValue.scon scon1,_,_))::(_,(_,
 INSTANCEleft as INSTANCE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val scon as scon1=scon1 ()
@@ -25024,7 +27314,7 @@ val longtycon as longtycon1=longtycon1 ()
 )
  in (LrTable.NT 121,(result,INSTANCE1left,longtycon1right),rest671)
  end
-| (364,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+| (366,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXleft
  as INFIX1left,_))::rest671) => let val result=MlyValue.spec1'(fn _
  => let val d_opt as d_opt1=d_opt1 ()
@@ -25035,7 +27325,7 @@ val vid_list1 as vid_list11=vid_list11 ()
  end
 )
  in (LrTable.NT 121,(result,INFIX1left,vid_list11right),rest671) end
-| (365,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+| (367,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXRleft
  as INFIXR1left,_))::rest671) => let val result=MlyValue.spec1'(fn _
  => let val d_opt as d_opt1=d_opt1 ()
@@ -25046,7 +27336,7 @@ val vid_list1 as vid_list11=vid_list11 ()
 ) end
 )
  in (LrTable.NT 121,(result,INFIXR1left,vid_list11right),rest671) end
-| (366,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+| (368,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(_,NONFIXleft as NONFIX1left,_))::rest671) => 
 let val result=MlyValue.spec1'(fn _ => let val vid_list1 as vid_list11
 =vid_list11 ()
@@ -25055,17 +27345,17 @@ let val result=MlyValue.spec1'(fn _ => let val vid_list1 as vid_list11
 ) end
 )
  in (LrTable.NT 121,(result,NONFIX1left,vid_list11right),rest671) end
-| (367,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,
+| (369,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,
 WITHTYPE1left,_))::rest671) => let val result=
 MlyValue.WITHTYPE_typdesc_opt(fn _ => let val typdesc as typdesc1=
 typdesc1 ()
  in ( SOME typdesc ) end
 )
  in (LrTable.NT 122,(result,WITHTYPE1left,typdesc1right),rest671) end
-| (368,rest671) => let val result=MlyValue.WITHTYPE_typdesc_opt(fn _
+| (370,rest671) => let val result=MlyValue.WITHTYPE_typdesc_opt(fn _
  => ( NONE ))
  in (LrTable.NT 122,(result,defaultPos,defaultPos),rest671) end
-| (369,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
+| (371,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
 longtycon_EQUALS_list11right))::_::(_,(MlyValue.longtycon longtycon1,
 longtycon1left,_))::rest671) => let val result=
 MlyValue.longtycon_EQUALS_list1(fn _ => let val longtycon as 
@@ -25076,7 +27366,7 @@ longtycon_EQUALS_list11 ()
 )
  in (LrTable.NT 123,(result,longtycon1left,
 longtycon_EQUALS_list11right),rest671) end
-| (370,(_,(MlyValue.longtycon longtycon1,longtycon1left,
+| (372,(_,(MlyValue.longtycon longtycon1,longtycon1left,
 longtycon1right))::rest671) => let val result=
 MlyValue.longtycon_EQUALS_list1(fn _ => let val longtycon as 
 longtycon1=longtycon1 ()
@@ -25084,7 +27374,7 @@ longtycon1=longtycon1 ()
 )
  in (LrTable.NT 123,(result,longtycon1left,longtycon1right),rest671)
  end
-| (371,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
+| (373,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
 longtycon_EQUALS_list11right))::_::(_,(MlyValue.longtycon longtycon1,
 longtycon1left,_))::rest671) => let val result=
 MlyValue.longtycon_EQUALS_list2(fn _ => let val longtycon as 
@@ -25095,7 +27385,7 @@ longtycon_EQUALS_list11 ()
 )
  in (LrTable.NT 124,(result,longtycon1left,
 longtycon_EQUALS_list11right),rest671) end
-| (372,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
+| (374,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
 longsigid_EQUALS_list11right))::_::(_,(MlyValue.longsigid longsigid1,
 longsigid1left,_))::rest671) => let val result=
 MlyValue.longsigid_EQUALS_list1(fn _ => let val longsigid as 
@@ -25106,7 +27396,7 @@ longsigid_EQUALS_list11 ()
 )
  in (LrTable.NT 125,(result,longsigid1left,
 longsigid_EQUALS_list11right),rest671) end
-| (373,(_,(MlyValue.longsigid longsigid1,longsigid1left,
+| (375,(_,(MlyValue.longsigid longsigid1,longsigid1left,
 longsigid1right))::rest671) => let val result=
 MlyValue.longsigid_EQUALS_list1(fn _ => let val longsigid as 
 longsigid1=longsigid1 ()
@@ -25114,7 +27404,7 @@ longsigid1=longsigid1 ()
 )
  in (LrTable.NT 125,(result,longsigid1left,longsigid1right),rest671)
  end
-| (374,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
+| (376,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
 longsigid_EQUALS_list11right))::_::(_,(MlyValue.longsigid longsigid1,
 longsigid1left,_))::rest671) => let val result=
 MlyValue.longsigid_EQUALS_list2(fn _ => let val longsigid as 
@@ -25125,7 +27415,7 @@ longsigid_EQUALS_list11 ()
 )
  in (LrTable.NT 126,(result,longsigid1left,
 longsigid_EQUALS_list11right),rest671) end
-| (375,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
+| (377,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
 longstrid_EQUALS_list11right))::_::(_,(MlyValue.longstrid longstrid1,
 longstrid1left,_))::rest671) => let val result=
 MlyValue.longstrid_EQUALS_list1(fn _ => let val longstrid as 
@@ -25136,7 +27426,7 @@ longstrid_EQUALS_list11 ()
 )
  in (LrTable.NT 127,(result,longstrid1left,
 longstrid_EQUALS_list11right),rest671) end
-| (376,(_,(MlyValue.longstrid longstrid1,longstrid1left,
+| (378,(_,(MlyValue.longstrid longstrid1,longstrid1left,
 longstrid1right))::rest671) => let val result=
 MlyValue.longstrid_EQUALS_list1(fn _ => let val longstrid as 
 longstrid1=longstrid1 ()
@@ -25144,7 +27434,7 @@ longstrid1=longstrid1 ()
 )
  in (LrTable.NT 127,(result,longstrid1left,longstrid1right),rest671)
  end
-| (377,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
+| (379,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
 longstrid_EQUALS_list11right))::_::(_,(MlyValue.longstrid longstrid1,
 longstrid1left,_))::rest671) => let val result=
 MlyValue.longstrid_EQUALS_list2(fn _ => let val longstrid as 
@@ -25155,7 +27445,7 @@ longstrid_EQUALS_list11 ()
 )
  in (LrTable.NT 128,(result,longstrid1left,
 longstrid_EQUALS_list11right),rest671) end
-| (378,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
+| (380,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
 AND_valdesc_optright as AND_valdesc_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,
 OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -25170,7 +27460,7 @@ val AND_valdesc_opt as AND_valdesc_opt1=AND_valdesc_opt1 ()
 )
  in (LrTable.NT 129,(result,OP_opt1left,AND_valdesc_opt1right),rest671
 ) end
-| (379,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
+| (381,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
 AND_valdesc_optright as AND_valdesc_opt1right))::(_,(MlyValue.longvid 
 longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.vid
  vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left,_))::rest671) => 
@@ -25187,16 +27477,16 @@ val AND_valdesc_opt as AND_valdesc_opt1=AND_valdesc_opt1 ()
 )
  in (LrTable.NT 129,(result,OP_opt1left,AND_valdesc_opt1right),rest671
 ) end
-| (380,(_,(MlyValue.valdesc valdesc1,_,valdesc1right))::(_,(_,AND1left
+| (382,(_,(MlyValue.valdesc valdesc1,_,valdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_valdesc_opt(fn _ => let 
 val valdesc as valdesc1=valdesc1 ()
  in ( SOME valdesc ) end
 )
  in (LrTable.NT 130,(result,AND1left,valdesc1right),rest671) end
-| (381,rest671) => let val result=MlyValue.AND_valdesc_opt(fn _ => (
+| (383,rest671) => let val result=MlyValue.AND_valdesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 130,(result,defaultPos,defaultPos),rest671) end
-| (382,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
+| (384,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
 AND_typdesc_optright as AND_typdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,tyvarseqleft as 
 tyvarseq1left,_))::rest671) => let val result=MlyValue.typdesc(fn _
@@ -25210,7 +27500,7 @@ val AND_typdesc_opt as AND_typdesc_opt1=AND_typdesc_opt1 ()
 )
  in (LrTable.NT 131,(result,tyvarseq1left,AND_typdesc_opt1right),
 rest671) end
-| (383,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
+| (385,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
 AND_typdesc_optright as AND_typdesc_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(MlyValue.tyvarseq 
 tyvarseq1,tyvarseqleft as tyvarseq1left,_))::rest671) => let val 
@@ -25226,16 +27516,16 @@ val AND_typdesc_opt as AND_typdesc_opt1=AND_typdesc_opt1 ()
 )
  in (LrTable.NT 131,(result,tyvarseq1left,AND_typdesc_opt1right),
 rest671) end
-| (384,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,AND1left
+| (386,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_typdesc_opt(fn _ => let 
 val typdesc as typdesc1=typdesc1 ()
  in ( SOME typdesc ) end
 )
  in (LrTable.NT 132,(result,AND1left,typdesc1right),rest671) end
-| (385,rest671) => let val result=MlyValue.AND_typdesc_opt(fn _ => (
+| (387,rest671) => let val result=MlyValue.AND_typdesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 132,(result,defaultPos,defaultPos),rest671) end
-| (386,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (388,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,tyvarseqleft as 
 tyvarseq1left,_))::rest671) => let val result=MlyValue.datdesc(fn _
@@ -25249,7 +27539,7 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 )
  in (LrTable.NT 133,(result,tyvarseq1left,AND_datdesc_opt1right),
 rest671) end
-| (387,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (389,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.condesc 
 condesc1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq tyvarseq1,tyvarseqleft as tyvarseq1left,_))::rest671
@@ -25265,7 +27555,7 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 )
  in (LrTable.NT 133,(result,tyvarseq1left,AND_datdesc_opt1right),
 rest671) end
-| (388,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (390,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,tyconleft as tycon1left,_))::rest671) => let val result=
 MlyValue.datdesc0(fn _ => let val tycon as tycon1=tycon1 ()
@@ -25278,7 +27568,7 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 )
  in (LrTable.NT 134,(result,tycon1left,AND_datdesc_opt1right),rest671)
  end
-| (389,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (391,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.condesc 
 condesc1,_,_))::_::(_,(MlyValue.tycon tycon1,tyconleft as tycon1left,_
 ))::rest671) => let val result=MlyValue.datdesc0(fn _ => let val tycon
@@ -25293,7 +27583,7 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 )
  in (LrTable.NT 134,(result,tycon1left,AND_datdesc_opt1right),rest671)
  end
-| (390,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (392,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as 
 tyvarseq11left,_))::rest671) => let val result=MlyValue.datdesc1(fn _
@@ -25307,7 +27597,7 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 )
  in (LrTable.NT 135,(result,tyvarseq11left,AND_datdesc_opt1right),
 rest671) end
-| (391,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (393,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.condesc 
 condesc1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as tyvarseq11left,_))::
@@ -25324,16 +27614,16 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 )
  in (LrTable.NT 135,(result,tyvarseq11left,AND_datdesc_opt1right),
 rest671) end
-| (392,(_,(MlyValue.datdesc datdesc1,_,datdesc1right))::(_,(_,AND1left
+| (394,(_,(MlyValue.datdesc datdesc1,_,datdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_datdesc_opt(fn _ => let 
 val datdesc as datdesc1=datdesc1 ()
  in ( SOME datdesc ) end
 )
  in (LrTable.NT 136,(result,AND1left,datdesc1right),rest671) end
-| (393,rest671) => let val result=MlyValue.AND_datdesc_opt(fn _ => (
+| (395,rest671) => let val result=MlyValue.AND_datdesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 136,(result,defaultPos,defaultPos),rest671) end
-| (394,(_,(MlyValue.BAR_condesc_opt BAR_condesc_opt1,_,
+| (396,(_,(MlyValue.BAR_condesc_opt BAR_condesc_opt1,_,
 BAR_condesc_optright as BAR_condesc_opt1right))::(_,(
 MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => 
@@ -25349,16 +27639,16 @@ val BAR_condesc_opt as BAR_condesc_opt1=BAR_condesc_opt1 ()
 )
  in (LrTable.NT 137,(result,OP_opt1left,BAR_condesc_opt1right),rest671
 ) end
-| (395,(_,(MlyValue.condesc condesc1,_,condesc1right))::(_,(_,BAR1left
+| (397,(_,(MlyValue.condesc condesc1,_,condesc1right))::(_,(_,BAR1left
 ,_))::rest671) => let val result=MlyValue.BAR_condesc_opt(fn _ => let 
 val condesc as condesc1=condesc1 ()
  in ( SOME condesc ) end
 )
  in (LrTable.NT 138,(result,BAR1left,condesc1right),rest671) end
-| (396,rest671) => let val result=MlyValue.BAR_condesc_opt(fn _ => (
+| (398,rest671) => let val result=MlyValue.BAR_condesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 138,(result,defaultPos,defaultPos),rest671) end
-| (397,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
+| (399,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
 AND_dcondesc_optright as AND_dcondesc_opt1right))::(_,(
 MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,_
 ,_))::_::(_,(MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid 
@@ -25378,7 +27668,7 @@ val AND_dcondesc_opt as AND_dcondesc_opt1=AND_dcondesc_opt1 ()
 )
  in (LrTable.NT 139,(result,OP_opt1left,AND_dcondesc_opt1right),
 rest671) end
-| (398,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
+| (400,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
 AND_dcondesc_optright as AND_dcondesc_opt1right))::(_,(
 MlyValue.longvid longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_
 ::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left
@@ -25396,16 +27686,16 @@ val AND_dcondesc_opt as AND_dcondesc_opt1=AND_dcondesc_opt1 ()
 )
  in (LrTable.NT 139,(result,OP_opt1left,AND_dcondesc_opt1right),
 rest671) end
-| (399,(_,(MlyValue.dcondesc dcondesc1,_,dcondesc1right))::(_,(_,
+| (401,(_,(MlyValue.dcondesc dcondesc1,_,dcondesc1right))::(_,(_,
 AND1left,_))::rest671) => let val result=MlyValue.AND_dcondesc_opt(fn 
 _ => let val dcondesc as dcondesc1=dcondesc1 ()
  in ( SOME dcondesc ) end
 )
  in (LrTable.NT 140,(result,AND1left,dcondesc1right),rest671) end
-| (400,rest671) => let val result=MlyValue.AND_dcondesc_opt(fn _ => (
+| (402,rest671) => let val result=MlyValue.AND_dcondesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 140,(result,defaultPos,defaultPos),rest671) end
-| (401,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
+| (403,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
 AND_exdesc_optright as AND_exdesc_opt1right))::(_,(MlyValue.OF_ty_opt 
 OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt 
 OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -25420,7 +27710,7 @@ val AND_exdesc_opt as AND_exdesc_opt1=AND_exdesc_opt1 ()
 )
  in (LrTable.NT 141,(result,OP_opt1left,AND_exdesc_opt1right),rest671)
  end
-| (402,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
+| (404,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
 AND_exdesc_optright as AND_exdesc_opt1right))::(_,(MlyValue.longvid 
 longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.vid
  vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left,_))::rest671) => 
@@ -25437,16 +27727,16 @@ val AND_exdesc_opt as AND_exdesc_opt1=AND_exdesc_opt1 ()
 )
  in (LrTable.NT 141,(result,OP_opt1left,AND_exdesc_opt1right),rest671)
  end
-| (403,(_,(MlyValue.exdesc exdesc1,_,exdesc1right))::(_,(_,AND1left,_)
+| (405,(_,(MlyValue.exdesc exdesc1,_,exdesc1right))::(_,(_,AND1left,_)
 )::rest671) => let val result=MlyValue.AND_exdesc_opt(fn _ => let val 
 exdesc as exdesc1=exdesc1 ()
  in ( SOME exdesc ) end
 )
  in (LrTable.NT 142,(result,AND1left,exdesc1right),rest671) end
-| (404,rest671) => let val result=MlyValue.AND_exdesc_opt(fn _ => (
+| (406,rest671) => let val result=MlyValue.AND_exdesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 142,(result,defaultPos,defaultPos),rest671) end
-| (405,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
+| (407,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
 ,sigexp__AND_strdesc_optright as sigexp__AND_strdesc_opt1right))::_::(
 _,(MlyValue.strid strid1,stridleft as strid1left,_))::rest671) => let 
 val result=MlyValue.strdesc(fn _ => let val strid as strid1=strid1 ()
@@ -25460,7 +27750,7 @@ sigexp__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 143,(result,strid1left,sigexp__AND_strdesc_opt1right),
 rest671) end
-| (406,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
+| (408,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
 AND_strdesc_optright as AND_strdesc_opt1right))::(_,(
 MlyValue.longstrid longstrid1,_,_))::_::(_,(MlyValue.COLON_sigexp_opt 
 COLON_sigexp_opt1,_,_))::(_,(MlyValue.strid strid1,stridleft as 
@@ -25477,16 +27767,16 @@ val AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
 )
  in (LrTable.NT 143,(result,strid1left,AND_strdesc_opt1right),rest671)
  end
-| (407,(_,(MlyValue.strdesc strdesc1,_,strdesc1right))::(_,(_,AND1left
+| (409,(_,(MlyValue.strdesc strdesc1,_,strdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_strdesc_opt(fn _ => let 
 val strdesc as strdesc1=strdesc1 ()
  in ( SOME strdesc ) end
 )
  in (LrTable.NT 144,(result,AND1left,strdesc1right),rest671) end
-| (408,rest671) => let val result=MlyValue.AND_strdesc_opt(fn _ => (
+| (410,rest671) => let val result=MlyValue.AND_strdesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 144,(result,defaultPos,defaultPos),rest671) end
-| (409,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
+| (411,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
 AND_strdesc_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_strdesc_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -25495,7 +27785,7 @@ val AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
 )
  in (LrTable.NT 145,(result,sigexp'1left,AND_strdesc_opt1right),
 rest671) end
-| (410,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
+| (412,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
 ,sigexp__AND_strdesc_optright as sigexp__AND_strdesc_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_strdesc_opt(fn _ => 
@@ -25510,7 +27800,7 @@ sigexp__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 145,(result,FCT1left,sigexp__AND_strdesc_opt1right),
 rest671) end
-| (411,(_,(MlyValue.rea__AND_strdesc_opt rea__AND_strdesc_opt1,_,
+| (413,(_,(MlyValue.rea__AND_strdesc_opt rea__AND_strdesc_opt1,_,
 rea__AND_strdesc_optright as rea__AND_strdesc_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_strdesc_opt(fn _ => let val sigexp
@@ -25526,7 +27816,7 @@ rea__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 145,(result,sigexp1left,rea__AND_strdesc_opt1right),
 rest671) end
-| (412,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (414,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25547,7 +27837,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,VAL1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (413,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (415,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25568,7 +27858,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,FUN1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (414,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (416,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25590,7 +27880,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (415,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (417,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25612,7 +27902,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,EXCEPTION1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (416,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (418,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -25633,7 +27923,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,TYPE1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (417,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (419,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -25655,7 +27945,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,STRUCTURE1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (418,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (420,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
 AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -25676,7 +27966,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,FUNCTOR1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (419,(_,(MlyValue.sigexp__AND_rea_opt__AND_strdesc_opt 
+| (421,(_,(MlyValue.sigexp__AND_rea_opt__AND_strdesc_opt 
 sigexp__AND_rea_opt__AND_strdesc_opt1,_,
 sigexp__AND_rea_opt__AND_strdesc_optright as 
 sigexp__AND_rea_opt__AND_strdesc_opt1right))::_::(_,(
@@ -25700,7 +27990,7 @@ sigexp__AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 146,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (420,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,
+| (422,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,
 AND_strdesc_opt1left,AND_strdesc_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_strdesc_opt(fn _ => let val 
 AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
@@ -25708,7 +27998,7 @@ AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
 )
  in (LrTable.NT 147,(result,AND_strdesc_opt1left,AND_strdesc_opt1right
 ),rest671) end
-| (421,(_,(MlyValue.rea__AND_strdesc_opt rea__AND_strdesc_opt1,_,
+| (423,(_,(MlyValue.rea__AND_strdesc_opt rea__AND_strdesc_opt1,_,
 rea__AND_strdesc_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_strdesc_opt(fn _ => let val 
 rea__AND_strdesc_opt as rea__AND_strdesc_opt1=rea__AND_strdesc_opt1 ()
@@ -25719,7 +28009,7 @@ rea__AND_strdesc_opt as rea__AND_strdesc_opt1=rea__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 147,(result,AND1left,rea__AND_strdesc_opt1right),
 rest671) end
-| (422,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+| (424,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
 AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_strdesc_opt(fn _ => let 
@@ -25734,7 +28024,7 @@ AND_rea_opt__AND_strdesc_opt1 ()
 )
  in (LrTable.NT 148,(result,appsigexp1left,
 AND_rea_opt__AND_strdesc_opt1right),rest671) end
-| (423,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
+| (425,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
 AND_sigdesc_optright as AND_sigdesc_opt1right))::(_,(
 MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.sigid sigid1,
 sigidleft as sigid1left,_))::rest671) => let val result=
@@ -25748,7 +28038,7 @@ val AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 149,(result,sigid1left,AND_sigdesc_opt1right),rest671)
  end
-| (424,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
+| (426,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
 ,sigexp__AND_sigdesc_optright as sigexp__AND_sigdesc_opt1right))::_::(
 _,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.sigid 
 sigid1,sigidleft as sigid1left,_))::rest671) => let val result=
@@ -25766,16 +28056,16 @@ sigexp__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 149,(result,sigid1left,sigexp__AND_sigdesc_opt1right),
 rest671) end
-| (425,(_,(MlyValue.sigdesc sigdesc1,_,sigdesc1right))::(_,(_,AND1left
+| (427,(_,(MlyValue.sigdesc sigdesc1,_,sigdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_sigdesc_opt(fn _ => let 
 val sigdesc as sigdesc1=sigdesc1 ()
  in ( SOME sigdesc ) end
 )
  in (LrTable.NT 150,(result,AND1left,sigdesc1right),rest671) end
-| (426,rest671) => let val result=MlyValue.AND_sigdesc_opt(fn _ => (
+| (428,rest671) => let val result=MlyValue.AND_sigdesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 150,(result,defaultPos,defaultPos),rest671) end
-| (427,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
+| (429,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
 AND_sigdesc_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_sigdesc_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -25784,7 +28074,7 @@ val AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 151,(result,sigexp'1left,AND_sigdesc_opt1right),
 rest671) end
-| (428,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
+| (430,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
 ,sigexp__AND_sigdesc_optright as sigexp__AND_sigdesc_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_sigdesc_opt(fn _ => 
@@ -25799,7 +28089,7 @@ sigexp__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 151,(result,FCT1left,sigexp__AND_sigdesc_opt1right),
 rest671) end
-| (429,(_,(MlyValue.rea__AND_sigdesc_opt rea__AND_sigdesc_opt1,_,
+| (431,(_,(MlyValue.rea__AND_sigdesc_opt rea__AND_sigdesc_opt1,_,
 rea__AND_sigdesc_optright as rea__AND_sigdesc_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_sigdesc_opt(fn _ => let val sigexp
@@ -25815,7 +28105,7 @@ rea__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 151,(result,sigexp1left,rea__AND_sigdesc_opt1right),
 rest671) end
-| (430,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (432,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25836,7 +28126,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,VAL1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (431,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (433,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25857,7 +28147,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,FUN1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (432,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (434,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25879,7 +28169,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (433,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (435,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -25901,7 +28191,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,EXCEPTION1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (434,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (436,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -25922,7 +28212,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,TYPE1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (435,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (437,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -25944,7 +28234,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,STRUCTURE1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (436,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (438,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
 AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -25965,7 +28255,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,FUNCTOR1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (437,(_,(MlyValue.sigexp__AND_rea_opt__AND_sigdesc_opt 
+| (439,(_,(MlyValue.sigexp__AND_rea_opt__AND_sigdesc_opt 
 sigexp__AND_rea_opt__AND_sigdesc_opt1,_,
 sigexp__AND_rea_opt__AND_sigdesc_optright as 
 sigexp__AND_rea_opt__AND_sigdesc_opt1right))::_::(_,(
@@ -25989,7 +28279,7 @@ sigexp__AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 152,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (438,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,
+| (440,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,
 AND_sigdesc_opt1left,AND_sigdesc_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_sigdesc_opt(fn _ => let val 
 AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
@@ -25997,7 +28287,7 @@ AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 153,(result,AND_sigdesc_opt1left,AND_sigdesc_opt1right
 ),rest671) end
-| (439,(_,(MlyValue.rea__AND_sigdesc_opt rea__AND_sigdesc_opt1,_,
+| (441,(_,(MlyValue.rea__AND_sigdesc_opt rea__AND_sigdesc_opt1,_,
 rea__AND_sigdesc_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_sigdesc_opt(fn _ => let val 
 rea__AND_sigdesc_opt as rea__AND_sigdesc_opt1=rea__AND_sigdesc_opt1 ()
@@ -26008,7 +28298,7 @@ rea__AND_sigdesc_opt as rea__AND_sigdesc_opt1=rea__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 153,(result,AND1left,rea__AND_sigdesc_opt1right),
 rest671) end
-| (440,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+| (442,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
 AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_sigdesc_opt(fn _ => let 
@@ -26023,7 +28313,7 @@ AND_rea_opt__AND_sigdesc_opt1 ()
 )
  in (LrTable.NT 154,(result,appsigexp1left,
 AND_rea_opt__AND_sigdesc_opt1right),rest671) end
-| (441,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
+| (443,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
 ,sigexp__AND_fundesc_optright as sigexp__AND_fundesc_opt1right))::_::(
 _,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.strid 
 strid1,stridleft as strid1left,_))::rest671) => let val result=
@@ -26040,16 +28330,16 @@ sigexp__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 155,(result,strid1left,sigexp__AND_fundesc_opt1right),
 rest671) end
-| (442,(_,(MlyValue.fundesc fundesc1,_,fundesc1right))::(_,(_,AND1left
+| (444,(_,(MlyValue.fundesc fundesc1,_,fundesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_fundesc_opt(fn _ => let 
 val fundesc as fundesc1=fundesc1 ()
  in ( SOME fundesc ) end
 )
  in (LrTable.NT 156,(result,AND1left,fundesc1right),rest671) end
-| (443,rest671) => let val result=MlyValue.AND_fundesc_opt(fn _ => (
+| (445,rest671) => let val result=MlyValue.AND_fundesc_opt(fn _ => (
  NONE ))
  in (LrTable.NT 156,(result,defaultPos,defaultPos),rest671) end
-| (444,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,_,
+| (446,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,_,
 AND_fundesc_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_fundesc_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -26058,7 +28348,7 @@ val AND_fundesc_opt as AND_fundesc_opt1=AND_fundesc_opt1 ()
 )
  in (LrTable.NT 157,(result,sigexp'1left,AND_fundesc_opt1right),
 rest671) end
-| (445,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
+| (447,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
 ,sigexp__AND_fundesc_optright as sigexp__AND_fundesc_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_fundesc_opt(fn _ => 
@@ -26073,7 +28363,7 @@ sigexp__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 157,(result,FCT1left,sigexp__AND_fundesc_opt1right),
 rest671) end
-| (446,(_,(MlyValue.rea__AND_fundesc_opt rea__AND_fundesc_opt1,_,
+| (448,(_,(MlyValue.rea__AND_fundesc_opt rea__AND_fundesc_opt1,_,
 rea__AND_fundesc_optright as rea__AND_fundesc_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_fundesc_opt(fn _ => let val sigexp
@@ -26089,7 +28379,7 @@ rea__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 157,(result,sigexp1left,rea__AND_fundesc_opt1right),
 rest671) end
-| (447,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (449,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26110,7 +28400,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,VAL1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (448,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (450,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26131,7 +28421,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,FUN1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (449,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (451,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26153,7 +28443,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (450,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (452,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26175,7 +28465,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,EXCEPTION1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (451,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (453,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -26196,7 +28486,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,TYPE1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (452,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (454,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -26218,7 +28508,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,STRUCTURE1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (453,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (455,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
 AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -26239,7 +28529,7 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,FUNCTOR1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (454,(_,(MlyValue.sigexp__AND_rea_opt__AND_fundesc_opt 
+| (456,(_,(MlyValue.sigexp__AND_rea_opt__AND_fundesc_opt 
 sigexp__AND_rea_opt__AND_fundesc_opt1,_,
 sigexp__AND_rea_opt__AND_fundesc_optright as 
 sigexp__AND_rea_opt__AND_fundesc_opt1right))::_::(_,(
@@ -26263,7 +28553,7 @@ sigexp__AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 158,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (455,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,
+| (457,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,
 AND_fundesc_opt1left,AND_fundesc_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_fundesc_opt(fn _ => let val 
 AND_fundesc_opt as AND_fundesc_opt1=AND_fundesc_opt1 ()
@@ -26271,7 +28561,7 @@ AND_fundesc_opt as AND_fundesc_opt1=AND_fundesc_opt1 ()
 )
  in (LrTable.NT 159,(result,AND_fundesc_opt1left,AND_fundesc_opt1right
 ),rest671) end
-| (456,(_,(MlyValue.rea__AND_fundesc_opt rea__AND_fundesc_opt1,_,
+| (458,(_,(MlyValue.rea__AND_fundesc_opt rea__AND_fundesc_opt1,_,
 rea__AND_fundesc_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_fundesc_opt(fn _ => let val 
 rea__AND_fundesc_opt as rea__AND_fundesc_opt1=rea__AND_fundesc_opt1 ()
@@ -26282,7 +28572,7 @@ rea__AND_fundesc_opt as rea__AND_fundesc_opt1=rea__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 159,(result,AND1left,rea__AND_fundesc_opt1right),
 rest671) end
-| (457,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+| (459,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
 AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_fundesc_opt(fn _ => let 
@@ -26297,57 +28587,57 @@ AND_rea_opt__AND_fundesc_opt1 ()
 )
  in (LrTable.NT 160,(result,appsigexp1left,
 AND_rea_opt__AND_fundesc_opt1right),rest671) end
-| (458,(_,(MlyValue.imp1 imp11,imp11left,imp11right))::rest671) => 
+| (460,(_,(MlyValue.imp1 imp11,imp11left,imp11right))::rest671) => 
 let val result=MlyValue.imp(fn _ => let val imp1 as imp11=imp11 ()
  in ( imp1 ) end
 )
  in (LrTable.NT 161,(result,imp11left,imp11right),rest671) end
-| (459,rest671) => let val result=MlyValue.imp(fn _ => (
+| (461,rest671) => let val result=MlyValue.imp(fn _ => (
  EMPTYImp(I(defaultPos,defaultPos)) ))
  in (LrTable.NT 161,(result,defaultPos,defaultPos),rest671) end
-| (460,(_,(MlyValue.imp1' imp1'1,imp1'1left,imp1'1right))::rest671)
+| (462,(_,(MlyValue.imp1' imp1'1,imp1'1left,imp1'1right))::rest671)
  => let val result=MlyValue.imp1(fn _ => let val imp1' as imp1'1=
 imp1'1 ()
  in ( imp1' ) end
 )
  in (LrTable.NT 162,(result,imp1'1left,imp1'1right),rest671) end
-| (461,(_,(MlyValue.imp1' imp1'1,_,imp1'right as imp1'1right))::(_,(
+| (463,(_,(MlyValue.imp1' imp1'1,_,imp1'right as imp1'1right))::(_,(
 MlyValue.imp1 imp11,imp1left as imp11left,_))::rest671) => let val 
 result=MlyValue.imp1(fn _ => let val imp1 as imp11=imp11 ()
 val imp1' as imp1'1=imp1'1 ()
  in ( SEQImp(I(imp1left,imp1'right), imp1, imp1') ) end
 )
  in (LrTable.NT 162,(result,imp11left,imp1'1right),rest671) end
-| (462,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
+| (464,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
 rest671) => let val result=MlyValue.imp1(fn _ => (
  EMPTYImp(I(SEMICOLONleft,SEMICOLONleft)) ))
  in (LrTable.NT 162,(result,SEMICOLON1left,SEMICOLON1right),rest671)
  end
-| (463,(_,(MlyValue.valitem valitem1,_,valitemright as valitem1right))
+| (465,(_,(MlyValue.valitem valitem1,_,valitemright as valitem1right))
 ::(_,(_,VALleft as VAL1left,_))::rest671) => let val result=
 MlyValue.imp1'(fn _ => let val valitem as valitem1=valitem1 ()
  in ( VALImp(I(VALleft,valitemright), valitem) ) end
 )
  in (LrTable.NT 163,(result,VAL1left,valitem1right),rest671) end
-| (464,(_,(MlyValue.valitem valitem1,_,valitemright as valitem1right))
+| (466,(_,(MlyValue.valitem valitem1,_,valitemright as valitem1right))
 ::(_,(_,FUNleft as FUN1left,_))::rest671) => let val result=
 MlyValue.imp1'(fn _ => let val valitem as valitem1=valitem1 ()
  in ( FUNImp(I(FUNleft,valitemright), valitem) ) end
 )
  in (LrTable.NT 163,(result,FUN1left,valitem1right),rest671) end
-| (465,(_,(MlyValue.typitem typitem1,_,typitemright as typitem1right))
+| (467,(_,(MlyValue.typitem typitem1,_,typitemright as typitem1right))
 ::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
 MlyValue.imp1'(fn _ => let val typitem as typitem1=typitem1 ()
  in ( TYPEImp(I(TYPEleft,typitemright), typitem) ) end
 )
  in (LrTable.NT 163,(result,TYPE1left,typitem1right),rest671) end
-| (466,(_,(MlyValue.datitem datitem1,_,datitemright as datitem1right))
+| (468,(_,(MlyValue.datitem datitem1,_,datitemright as datitem1right))
 ::(_,(_,DATATYPEleft as DATATYPE1left,_))::rest671) => let val result=
 MlyValue.imp1'(fn _ => let val datitem as datitem1=datitem1 ()
  in ( DATATYPEImp(I(DATATYPEleft,datitemright), datitem) ) end
 )
  in (LrTable.NT 163,(result,DATATYPE1left,datitem1right),rest671) end
-| (467,(_,(MlyValue.dconitem dconitem1,_,dconitemright as 
+| (469,(_,(MlyValue.dconitem dconitem1,_,dconitemright as 
 dconitem1right))::(_,(_,CONSTRUCTORleft as CONSTRUCTOR1left,_))::
 rest671) => let val result=MlyValue.imp1'(fn _ => let val dconitem as 
 dconitem1=dconitem1 ()
@@ -26358,31 +28648,62 @@ dconitem1=dconitem1 ()
 )
  in (LrTable.NT 163,(result,CONSTRUCTOR1left,dconitem1right),rest671)
  end
-| (468,(_,(MlyValue.exitem exitem1,_,exitemright as exitem1right))::(_
+| (470,(_,(MlyValue.exitem exitem1,_,exitemright as exitem1right))::(_
 ,(_,EXCEPTIONleft as EXCEPTION1left,_))::rest671) => let val result=
 MlyValue.imp1'(fn _ => let val exitem as exitem1=exitem1 ()
  in ( EXCEPTIONImp(I(EXCEPTIONleft,exitemright), exitem) ) end
 )
  in (LrTable.NT 163,(result,EXCEPTION1left,exitem1right),rest671) end
-| (469,(_,(MlyValue.stritem stritem1,_,stritemright as stritem1right))
+| (471,(_,(MlyValue.stritem stritem1,_,stritemright as stritem1right))
 ::(_,(_,STRUCTUREleft as STRUCTURE1left,_))::rest671) => let val 
 result=MlyValue.imp1'(fn _ => let val stritem as stritem1=stritem1 ()
  in ( STRUCTUREImp(I(STRUCTUREleft,stritemright), stritem)) end
 )
  in (LrTable.NT 163,(result,STRUCTURE1left,stritem1right),rest671) end
-| (470,(_,(MlyValue.sigitem sigitem1,_,sigitemright as sigitem1right))
+| (472,(_,(MlyValue.sigitem sigitem1,_,sigitemright as sigitem1right))
 ::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671) => let val 
 result=MlyValue.imp1'(fn _ => let val sigitem as sigitem1=sigitem1 ()
  in ( SIGNATUREImp(I(SIGNATUREleft,sigitemright), sigitem)) end
 )
  in (LrTable.NT 163,(result,SIGNATURE1left,sigitem1right),rest671) end
-| (471,(_,(MlyValue.funitem funitem1,_,funitemright as funitem1right))
+| (473,(_,(MlyValue.funitem funitem1,_,funitemright as funitem1right))
 ::(_,(_,FUNCTORleft as FUNCTOR1left,_))::rest671) => let val result=
 MlyValue.imp1'(fn _ => let val funitem as funitem1=funitem1 ()
  in ( FUNCTORImp(I(FUNCTORleft,funitemright), funitem)) end
 )
  in (LrTable.NT 163,(result,FUNCTOR1left,funitem1right),rest671) end
-| (472,(_,(MlyValue.AND_valitem_opt AND_valitem_opt1,_,
+| (474,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXleft
+ as INFIX1left,_))::rest671) => let val result=MlyValue.imp1'(fn _ => 
+let val d_opt as d_opt1=d_opt1 ()
+val vid_list1 as vid_list11=vid_list11 ()
+ in (
+ INFIXMULTIImp(I(INFIXleft,vid_list1right), d_opt,
+					vid_list1) )
+ end
+)
+ in (LrTable.NT 163,(result,INFIX1left,vid_list11right),rest671) end
+| (475,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXRleft
+ as INFIXR1left,_))::rest671) => let val result=MlyValue.imp1'(fn _
+ => let val d_opt as d_opt1=d_opt1 ()
+val vid_list1 as vid_list11=vid_list11 ()
+ in (
+ INFIXRMULTIImp(I(INFIXRleft,vid_list1right), d_opt,
+					 vid_list1) 
+) end
+)
+ in (LrTable.NT 163,(result,INFIXR1left,vid_list11right),rest671) end
+| (476,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+vid_list11right))::(_,(_,NONFIXleft as NONFIX1left,_))::rest671) => 
+let val result=MlyValue.imp1'(fn _ => let val vid_list1 as vid_list11=
+vid_list11 ()
+ in ( NONFIXMULTIImp(I(NONFIXleft,vid_list1right),
+					 vid_list1) )
+ end
+)
+ in (LrTable.NT 163,(result,NONFIX1left,vid_list11right),rest671) end
+| (477,(_,(MlyValue.AND_valitem_opt AND_valitem_opt1,_,
 AND_valitem_optright as AND_valitem_opt1right))::(_,(MlyValue.vid vid1
 ,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))::
 rest671) => let val result=MlyValue.valitem(fn _ => let val OP_opt as 
@@ -26396,7 +28717,7 @@ val AND_valitem_opt as AND_valitem_opt1=AND_valitem_opt1 ()
 )
  in (LrTable.NT 164,(result,OP_opt1left,AND_valitem_opt1right),rest671
 ) end
-| (473,(_,(MlyValue.AND_valitem_opt AND_valitem_opt1,_,
+| (478,(_,(MlyValue.AND_valitem_opt AND_valitem_opt1,_,
 AND_valitem_optright as AND_valitem_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,
 OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -26411,16 +28732,16 @@ val AND_valitem_opt as AND_valitem_opt1=AND_valitem_opt1 ()
 )
  in (LrTable.NT 164,(result,OP_opt1left,AND_valitem_opt1right),rest671
 ) end
-| (474,(_,(MlyValue.valitem valitem1,_,valitem1right))::(_,(_,AND1left
+| (479,(_,(MlyValue.valitem valitem1,_,valitem1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_valitem_opt(fn _ => let 
 val valitem as valitem1=valitem1 ()
  in ( SOME valitem ) end
 )
  in (LrTable.NT 165,(result,AND1left,valitem1right),rest671) end
-| (475,rest671) => let val result=MlyValue.AND_valitem_opt(fn _ => (
+| (480,rest671) => let val result=MlyValue.AND_valitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 165,(result,defaultPos,defaultPos),rest671) end
-| (476,(_,(MlyValue.AND_typitem_opt AND_typitem_opt1,_,
+| (481,(_,(MlyValue.AND_typitem_opt AND_typitem_opt1,_,
 AND_typitem_optright as AND_typitem_opt1right))::(_,(MlyValue.tycon 
 tycon1,tyconleft as tycon1left,_))::rest671) => let val result=
 MlyValue.typitem(fn _ => let val tycon as tycon1=tycon1 ()
@@ -26432,7 +28753,7 @@ val AND_typitem_opt as AND_typitem_opt1=AND_typitem_opt1 ()
 )
  in (LrTable.NT 166,(result,tycon1left,AND_typitem_opt1right),rest671)
  end
-| (477,(_,(MlyValue.AND_typitem_opt AND_typitem_opt1,_,
+| (482,(_,(MlyValue.AND_typitem_opt AND_typitem_opt1,_,
 AND_typitem_optright as AND_typitem_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as 
 tyvarseq11left,_))::rest671) => let val result=MlyValue.typitem(fn _
@@ -26446,16 +28767,16 @@ val AND_typitem_opt as AND_typitem_opt1=AND_typitem_opt1 ()
 )
  in (LrTable.NT 166,(result,tyvarseq11left,AND_typitem_opt1right),
 rest671) end
-| (478,(_,(MlyValue.typitem typitem1,_,typitem1right))::(_,(_,AND1left
+| (483,(_,(MlyValue.typitem typitem1,_,typitem1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_typitem_opt(fn _ => let 
 val typitem as typitem1=typitem1 ()
  in ( SOME typitem ) end
 )
  in (LrTable.NT 167,(result,AND1left,typitem1right),rest671) end
-| (479,rest671) => let val result=MlyValue.AND_typitem_opt(fn _ => (
+| (484,rest671) => let val result=MlyValue.AND_typitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 167,(result,defaultPos,defaultPos),rest671) end
-| (480,(_,(MlyValue.AND_datitem_opt AND_datitem_opt1,_,
+| (485,(_,(MlyValue.AND_datitem_opt AND_datitem_opt1,_,
 AND_datitem_optright as AND_datitem_opt1right))::(_,(MlyValue.tycon 
 tycon1,tyconleft as tycon1left,_))::rest671) => let val result=
 MlyValue.datitem(fn _ => let val tycon as tycon1=tycon1 ()
@@ -26467,7 +28788,7 @@ val AND_datitem_opt as AND_datitem_opt1=AND_datitem_opt1 ()
 )
  in (LrTable.NT 168,(result,tycon1left,AND_datitem_opt1right),rest671)
  end
-| (481,(_,(MlyValue.AND_datitem_opt AND_datitem_opt1,_,
+| (486,(_,(MlyValue.AND_datitem_opt AND_datitem_opt1,_,
 AND_datitem_optright as AND_datitem_opt1right))::(_,(MlyValue.conitem 
 conitem1,_,_))::_::(_,(MlyValue.tycon tycon1,tyconleft as tycon1left,_
 ))::rest671) => let val result=MlyValue.datitem(fn _ => let val tycon
@@ -26482,7 +28803,7 @@ val AND_datitem_opt as AND_datitem_opt1=AND_datitem_opt1 ()
 )
  in (LrTable.NT 168,(result,tycon1left,AND_datitem_opt1right),rest671)
  end
-| (482,(_,(MlyValue.AND_datitem_opt AND_datitem_opt1,_,
+| (487,(_,(MlyValue.AND_datitem_opt AND_datitem_opt1,_,
 AND_datitem_optright as AND_datitem_opt1right))::(_,(MlyValue.conitem 
 conitem1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as tyvarseq11left,_))::
@@ -26499,16 +28820,16 @@ val AND_datitem_opt as AND_datitem_opt1=AND_datitem_opt1 ()
 )
  in (LrTable.NT 168,(result,tyvarseq11left,AND_datitem_opt1right),
 rest671) end
-| (483,(_,(MlyValue.datitem datitem1,_,datitem1right))::(_,(_,AND1left
+| (488,(_,(MlyValue.datitem datitem1,_,datitem1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_datitem_opt(fn _ => let 
 val datitem as datitem1=datitem1 ()
  in ( SOME datitem ) end
 )
  in (LrTable.NT 169,(result,AND1left,datitem1right),rest671) end
-| (484,rest671) => let val result=MlyValue.AND_datitem_opt(fn _ => (
+| (489,rest671) => let val result=MlyValue.AND_datitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 169,(result,defaultPos,defaultPos),rest671) end
-| (485,(_,(MlyValue.BAR_conitem_opt BAR_conitem_opt1,_,
+| (490,(_,(MlyValue.BAR_conitem_opt BAR_conitem_opt1,_,
 BAR_conitem_optright as BAR_conitem_opt1right))::(_,(
 MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => 
@@ -26524,16 +28845,16 @@ val BAR_conitem_opt as BAR_conitem_opt1=BAR_conitem_opt1 ()
 )
  in (LrTable.NT 170,(result,OP_opt1left,BAR_conitem_opt1right),rest671
 ) end
-| (486,(_,(MlyValue.conitem conitem1,_,conitem1right))::(_,(_,BAR1left
+| (491,(_,(MlyValue.conitem conitem1,_,conitem1right))::(_,(_,BAR1left
 ,_))::rest671) => let val result=MlyValue.BAR_conitem_opt(fn _ => let 
 val conitem as conitem1=conitem1 ()
  in ( SOME conitem ) end
 )
  in (LrTable.NT 171,(result,BAR1left,conitem1right),rest671) end
-| (487,rest671) => let val result=MlyValue.BAR_conitem_opt(fn _ => (
+| (492,rest671) => let val result=MlyValue.BAR_conitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 171,(result,defaultPos,defaultPos),rest671) end
-| (488,(_,(MlyValue.AND_dconitem_opt AND_dconitem_opt1,_,
+| (493,(_,(MlyValue.AND_dconitem_opt AND_dconitem_opt1,_,
 AND_dconitem_optright as AND_dconitem_opt1right))::(_,(MlyValue.vid 
 vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))
 ::rest671) => let val result=MlyValue.dconitem(fn _ => let val OP_opt
@@ -26547,7 +28868,7 @@ val AND_dconitem_opt as AND_dconitem_opt1=AND_dconitem_opt1 ()
 )
  in (LrTable.NT 172,(result,OP_opt1left,AND_dconitem_opt1right),
 rest671) end
-| (489,(_,(MlyValue.AND_dconitem_opt AND_dconitem_opt1,_,
+| (494,(_,(MlyValue.AND_dconitem_opt AND_dconitem_opt1,_,
 AND_dconitem_optright as AND_dconitem_opt1right))::(_,(
 MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,_
 ,_))::_::(_,(MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid 
@@ -26567,16 +28888,16 @@ val AND_dconitem_opt as AND_dconitem_opt1=AND_dconitem_opt1 ()
 )
  in (LrTable.NT 172,(result,OP_opt1left,AND_dconitem_opt1right),
 rest671) end
-| (490,(_,(MlyValue.dconitem dconitem1,_,dconitem1right))::(_,(_,
+| (495,(_,(MlyValue.dconitem dconitem1,_,dconitem1right))::(_,(_,
 AND1left,_))::rest671) => let val result=MlyValue.AND_dconitem_opt(fn 
 _ => let val dconitem as dconitem1=dconitem1 ()
  in ( SOME dconitem ) end
 )
  in (LrTable.NT 173,(result,AND1left,dconitem1right),rest671) end
-| (491,rest671) => let val result=MlyValue.AND_dconitem_opt(fn _ => (
+| (496,rest671) => let val result=MlyValue.AND_dconitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 173,(result,defaultPos,defaultPos),rest671) end
-| (492,(_,(MlyValue.AND_exitem_opt AND_exitem_opt1,_,
+| (497,(_,(MlyValue.AND_exitem_opt AND_exitem_opt1,_,
 AND_exitem_optright as AND_exitem_opt1right))::(_,(MlyValue.vid vid1,_
 ,_))::(_,(MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))::
 rest671) => let val result=MlyValue.exitem(fn _ => let val OP_opt as 
@@ -26590,7 +28911,7 @@ val AND_exitem_opt as AND_exitem_opt1=AND_exitem_opt1 ()
 )
  in (LrTable.NT 174,(result,OP_opt1left,AND_exitem_opt1right),rest671)
  end
-| (493,(_,(MlyValue.AND_exitem_opt AND_exitem_opt1,_,
+| (498,(_,(MlyValue.AND_exitem_opt AND_exitem_opt1,_,
 AND_exitem_optright as AND_exitem_opt1right))::(_,(MlyValue.ty ty1,_,_
 ))::_::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,
 OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -26605,16 +28926,16 @@ val AND_exitem_opt as AND_exitem_opt1=AND_exitem_opt1 ()
 )
  in (LrTable.NT 174,(result,OP_opt1left,AND_exitem_opt1right),rest671)
  end
-| (494,(_,(MlyValue.exitem exitem1,_,exitem1right))::(_,(_,AND1left,_)
+| (499,(_,(MlyValue.exitem exitem1,_,exitem1right))::(_,(_,AND1left,_)
 )::rest671) => let val result=MlyValue.AND_exitem_opt(fn _ => let val 
 exitem as exitem1=exitem1 ()
  in ( SOME exitem ) end
 )
  in (LrTable.NT 175,(result,AND1left,exitem1right),rest671) end
-| (495,rest671) => let val result=MlyValue.AND_exitem_opt(fn _ => (
+| (500,rest671) => let val result=MlyValue.AND_exitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 175,(result,defaultPos,defaultPos),rest671) end
-| (496,(_,(MlyValue.AND_stritem_opt AND_stritem_opt1,_,
+| (501,(_,(MlyValue.AND_stritem_opt AND_stritem_opt1,_,
 AND_stritem_optright as AND_stritem_opt1right))::(_,(MlyValue.strid 
 strid1,stridleft as strid1left,_))::rest671) => let val result=
 MlyValue.stritem(fn _ => let val strid as strid1=strid1 ()
@@ -26626,7 +28947,7 @@ val AND_stritem_opt as AND_stritem_opt1=AND_stritem_opt1 ()
 )
  in (LrTable.NT 176,(result,strid1left,AND_stritem_opt1right),rest671)
  end
-| (497,(_,(MlyValue.sigexp__AND_stritem_opt sigexp__AND_stritem_opt1,_
+| (502,(_,(MlyValue.sigexp__AND_stritem_opt sigexp__AND_stritem_opt1,_
 ,sigexp__AND_stritem_optright as sigexp__AND_stritem_opt1right))::_::(
 _,(MlyValue.strid strid1,stridleft as strid1left,_))::rest671) => let 
 val result=MlyValue.stritem(fn _ => let val strid as strid1=strid1 ()
@@ -26640,16 +28961,16 @@ sigexp__AND_stritem_opt1 ()
 )
  in (LrTable.NT 176,(result,strid1left,sigexp__AND_stritem_opt1right),
 rest671) end
-| (498,(_,(MlyValue.stritem stritem1,_,stritem1right))::(_,(_,AND1left
+| (503,(_,(MlyValue.stritem stritem1,_,stritem1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_stritem_opt(fn _ => let 
 val stritem as stritem1=stritem1 ()
  in ( SOME stritem ) end
 )
  in (LrTable.NT 177,(result,AND1left,stritem1right),rest671) end
-| (499,rest671) => let val result=MlyValue.AND_stritem_opt(fn _ => (
+| (504,rest671) => let val result=MlyValue.AND_stritem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 177,(result,defaultPos,defaultPos),rest671) end
-| (500,(_,(MlyValue.AND_stritem_opt AND_stritem_opt1,_,
+| (505,(_,(MlyValue.AND_stritem_opt AND_stritem_opt1,_,
 AND_stritem_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_stritem_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -26658,7 +28979,7 @@ val AND_stritem_opt as AND_stritem_opt1=AND_stritem_opt1 ()
 )
  in (LrTable.NT 178,(result,sigexp'1left,AND_stritem_opt1right),
 rest671) end
-| (501,(_,(MlyValue.sigexp__AND_stritem_opt sigexp__AND_stritem_opt1,_
+| (506,(_,(MlyValue.sigexp__AND_stritem_opt sigexp__AND_stritem_opt1,_
 ,sigexp__AND_stritem_optright as sigexp__AND_stritem_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_stritem_opt(fn _ => 
@@ -26673,7 +28994,7 @@ sigexp__AND_stritem_opt1 ()
 )
  in (LrTable.NT 178,(result,FCT1left,sigexp__AND_stritem_opt1right),
 rest671) end
-| (502,(_,(MlyValue.rea__AND_stritem_opt rea__AND_stritem_opt1,_,
+| (507,(_,(MlyValue.rea__AND_stritem_opt rea__AND_stritem_opt1,_,
 rea__AND_stritem_optright as rea__AND_stritem_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_stritem_opt(fn _ => let val sigexp
@@ -26689,7 +29010,7 @@ rea__AND_stritem_opt1 ()
 )
  in (LrTable.NT 178,(result,sigexp1left,rea__AND_stritem_opt1right),
 rest671) end
-| (503,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (508,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26710,7 +29031,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,VAL1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (504,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (509,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26731,7 +29052,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,FUN1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (505,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (510,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26753,7 +29074,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (506,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (511,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -26775,7 +29096,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,EXCEPTION1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (507,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (512,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -26796,7 +29117,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,TYPE1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (508,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (513,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -26818,7 +29139,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,STRUCTURE1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (509,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (514,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_optright as 
 AND_rea_opt__AND_stritem_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -26839,7 +29160,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,FUNCTOR1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (510,(_,(MlyValue.sigexp__AND_rea_opt__AND_stritem_opt 
+| (515,(_,(MlyValue.sigexp__AND_rea_opt__AND_stritem_opt 
 sigexp__AND_rea_opt__AND_stritem_opt1,_,
 sigexp__AND_rea_opt__AND_stritem_optright as 
 sigexp__AND_rea_opt__AND_stritem_opt1right))::_::(_,(
@@ -26863,7 +29184,7 @@ sigexp__AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 179,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (511,(_,(MlyValue.AND_stritem_opt AND_stritem_opt1,
+| (516,(_,(MlyValue.AND_stritem_opt AND_stritem_opt1,
 AND_stritem_opt1left,AND_stritem_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_stritem_opt(fn _ => let val 
 AND_stritem_opt as AND_stritem_opt1=AND_stritem_opt1 ()
@@ -26871,7 +29192,7 @@ AND_stritem_opt as AND_stritem_opt1=AND_stritem_opt1 ()
 )
  in (LrTable.NT 180,(result,AND_stritem_opt1left,AND_stritem_opt1right
 ),rest671) end
-| (512,(_,(MlyValue.rea__AND_stritem_opt rea__AND_stritem_opt1,_,
+| (517,(_,(MlyValue.rea__AND_stritem_opt rea__AND_stritem_opt1,_,
 rea__AND_stritem_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_stritem_opt(fn _ => let val 
 rea__AND_stritem_opt as rea__AND_stritem_opt1=rea__AND_stritem_opt1 ()
@@ -26882,7 +29203,7 @@ rea__AND_stritem_opt as rea__AND_stritem_opt1=rea__AND_stritem_opt1 ()
 )
  in (LrTable.NT 180,(result,AND1left,rea__AND_stritem_opt1right),
 rest671) end
-| (513,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
+| (518,(_,(MlyValue.AND_rea_opt__AND_stritem_opt 
 AND_rea_opt__AND_stritem_opt1,_,AND_rea_opt__AND_stritem_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_stritem_opt(fn _ => let 
@@ -26897,7 +29218,7 @@ AND_rea_opt__AND_stritem_opt1 ()
 )
  in (LrTable.NT 181,(result,appsigexp1left,
 AND_rea_opt__AND_stritem_opt1right),rest671) end
-| (514,(_,(MlyValue.AND_sigitem_opt AND_sigitem_opt1,_,
+| (519,(_,(MlyValue.AND_sigitem_opt AND_sigitem_opt1,_,
 AND_sigitem_optright as AND_sigitem_opt1right))::(_,(MlyValue.sigid 
 sigid1,sigidleft as sigid1left,_))::rest671) => let val result=
 MlyValue.sigitem(fn _ => let val sigid as sigid1=sigid1 ()
@@ -26909,7 +29230,7 @@ val AND_sigitem_opt as AND_sigitem_opt1=AND_sigitem_opt1 ()
 )
  in (LrTable.NT 182,(result,sigid1left,AND_sigitem_opt1right),rest671)
  end
-| (515,(_,(MlyValue.AND_sigitem_opt AND_sigitem_opt1,_,
+| (520,(_,(MlyValue.AND_sigitem_opt AND_sigitem_opt1,_,
 AND_sigitem_optright as AND_sigitem_opt1right))::(_,(
 MlyValue.strpat_list1 strpat_list11,_,_))::(_,(MlyValue.sigid sigid1,
 sigidleft as sigid1left,_))::rest671) => let val result=
@@ -26923,16 +29244,16 @@ val AND_sigitem_opt as AND_sigitem_opt1=AND_sigitem_opt1 ()
 )
  in (LrTable.NT 182,(result,sigid1left,AND_sigitem_opt1right),rest671)
  end
-| (516,(_,(MlyValue.sigitem sigitem1,_,sigitem1right))::(_,(_,AND1left
+| (521,(_,(MlyValue.sigitem sigitem1,_,sigitem1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_sigitem_opt(fn _ => let 
 val sigitem as sigitem1=sigitem1 ()
  in ( SOME sigitem ) end
 )
  in (LrTable.NT 183,(result,AND1left,sigitem1right),rest671) end
-| (517,rest671) => let val result=MlyValue.AND_sigitem_opt(fn _ => (
+| (522,rest671) => let val result=MlyValue.AND_sigitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 183,(result,defaultPos,defaultPos),rest671) end
-| (518,(_,(MlyValue.AND_funitem_opt AND_funitem_opt1,_,
+| (523,(_,(MlyValue.AND_funitem_opt AND_funitem_opt1,_,
 AND_funitem_optright as AND_funitem_opt1right))::(_,(MlyValue.strid 
 strid1,stridleft as strid1left,_))::rest671) => let val result=
 MlyValue.funitem(fn _ => let val strid as strid1=strid1 ()
@@ -26944,7 +29265,7 @@ val AND_funitem_opt as AND_funitem_opt1=AND_funitem_opt1 ()
 )
  in (LrTable.NT 184,(result,strid1left,AND_funitem_opt1right),rest671)
  end
-| (519,(_,(MlyValue.sigexp__AND_funitem_opt sigexp__AND_funitem_opt1,_
+| (524,(_,(MlyValue.sigexp__AND_funitem_opt sigexp__AND_funitem_opt1,_
 ,sigexp__AND_funitem_optright as sigexp__AND_funitem_opt1right))::_::(
 _,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.strid 
 strid1,stridleft as strid1left,_))::rest671) => let val result=
@@ -26961,16 +29282,16 @@ sigexp__AND_funitem_opt1 ()
 )
  in (LrTable.NT 184,(result,strid1left,sigexp__AND_funitem_opt1right),
 rest671) end
-| (520,(_,(MlyValue.funitem funitem1,_,funitem1right))::(_,(_,AND1left
+| (525,(_,(MlyValue.funitem funitem1,_,funitem1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_funitem_opt(fn _ => let 
 val funitem as funitem1=funitem1 ()
  in ( SOME funitem ) end
 )
  in (LrTable.NT 185,(result,AND1left,funitem1right),rest671) end
-| (521,rest671) => let val result=MlyValue.AND_funitem_opt(fn _ => (
+| (526,rest671) => let val result=MlyValue.AND_funitem_opt(fn _ => (
  NONE ))
  in (LrTable.NT 185,(result,defaultPos,defaultPos),rest671) end
-| (522,(_,(MlyValue.AND_funitem_opt AND_funitem_opt1,_,
+| (527,(_,(MlyValue.AND_funitem_opt AND_funitem_opt1,_,
 AND_funitem_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_funitem_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -26979,7 +29300,7 @@ val AND_funitem_opt as AND_funitem_opt1=AND_funitem_opt1 ()
 )
  in (LrTable.NT 186,(result,sigexp'1left,AND_funitem_opt1right),
 rest671) end
-| (523,(_,(MlyValue.sigexp__AND_funitem_opt sigexp__AND_funitem_opt1,_
+| (528,(_,(MlyValue.sigexp__AND_funitem_opt sigexp__AND_funitem_opt1,_
 ,sigexp__AND_funitem_optright as sigexp__AND_funitem_opt1right))::_::(
 _,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
 rest671) => let val result=MlyValue.sigexp__AND_funitem_opt(fn _ => 
@@ -26994,7 +29315,7 @@ sigexp__AND_funitem_opt1 ()
 )
  in (LrTable.NT 186,(result,FCT1left,sigexp__AND_funitem_opt1right),
 rest671) end
-| (524,(_,(MlyValue.rea__AND_funitem_opt rea__AND_funitem_opt1,_,
+| (529,(_,(MlyValue.rea__AND_funitem_opt rea__AND_funitem_opt1,_,
 rea__AND_funitem_optright as rea__AND_funitem_opt1right))::_::(_,(
 MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
 let val result=MlyValue.sigexp__AND_funitem_opt(fn _ => let val sigexp
@@ -27010,7 +29331,7 @@ rea__AND_funitem_opt1 ()
 )
  in (LrTable.NT 186,(result,sigexp1left,rea__AND_funitem_opt1right),
 rest671) end
-| (525,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (530,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -27031,7 +29352,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,VAL1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (526,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (531,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -27052,7 +29373,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,FUN1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (527,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (532,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -27074,7 +29395,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,CONSTRUCTOR1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (528,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (533,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.longvid longvid2,_,
 _))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
@@ -27096,7 +29417,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,EXCEPTION1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (529,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (534,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
 ,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
@@ -27117,7 +29438,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,TYPE1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (530,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (535,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -27139,7 +29460,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,STRUCTURE1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (531,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (536,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_optright as 
 AND_rea_opt__AND_funitem_opt1right))::(_,(MlyValue.longstrid 
 longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
@@ -27160,7 +29481,7 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,FUNCTOR1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (532,(_,(MlyValue.sigexp__AND_rea_opt__AND_funitem_opt 
+| (537,(_,(MlyValue.sigexp__AND_rea_opt__AND_funitem_opt 
 sigexp__AND_rea_opt__AND_funitem_opt1,_,
 sigexp__AND_rea_opt__AND_funitem_optright as 
 sigexp__AND_rea_opt__AND_funitem_opt1right))::_::(_,(
@@ -27184,7 +29505,7 @@ sigexp__AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 187,(result,SIGNATURE1left,
 sigexp__AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (533,(_,(MlyValue.AND_funitem_opt AND_funitem_opt1,
+| (538,(_,(MlyValue.AND_funitem_opt AND_funitem_opt1,
 AND_funitem_opt1left,AND_funitem_opt1right))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_funitem_opt(fn _ => let val 
 AND_funitem_opt as AND_funitem_opt1=AND_funitem_opt1 ()
@@ -27192,7 +29513,7 @@ AND_funitem_opt as AND_funitem_opt1=AND_funitem_opt1 ()
 )
  in (LrTable.NT 188,(result,AND_funitem_opt1left,AND_funitem_opt1right
 ),rest671) end
-| (534,(_,(MlyValue.rea__AND_funitem_opt rea__AND_funitem_opt1,_,
+| (539,(_,(MlyValue.rea__AND_funitem_opt rea__AND_funitem_opt1,_,
 rea__AND_funitem_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
 result=MlyValue.AND_rea_opt__AND_funitem_opt(fn _ => let val 
 rea__AND_funitem_opt as rea__AND_funitem_opt1=rea__AND_funitem_opt1 ()
@@ -27203,7 +29524,7 @@ rea__AND_funitem_opt as rea__AND_funitem_opt1=rea__AND_funitem_opt1 ()
 )
  in (LrTable.NT 188,(result,AND1left,rea__AND_funitem_opt1right),
 rest671) end
-| (535,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
+| (540,(_,(MlyValue.AND_rea_opt__AND_funitem_opt 
 AND_rea_opt__AND_funitem_opt1,_,AND_rea_opt__AND_funitem_opt1right))::
 (_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
 val result=MlyValue.sigexp__AND_rea_opt__AND_funitem_opt(fn _ => let 
@@ -27218,15 +29539,15 @@ AND_rea_opt__AND_funitem_opt1 ()
 )
  in (LrTable.NT 189,(result,appsigexp1left,
 AND_rea_opt__AND_funitem_opt1right),rest671) end
-| (536,(_,(MlyValue.ann1 ann11,ann11left,ann11right))::rest671) => 
+| (541,(_,(MlyValue.ann1 ann11,ann11left,ann11right))::rest671) => 
 let val result=MlyValue.ann0(fn _ => let val ann1 as ann11=ann11 ()
  in ( ann1 ) end
 )
  in (LrTable.NT 190,(result,ann11left,ann11right),rest671) end
-| (537,rest671) => let val result=MlyValue.ann0(fn _ => (
+| (542,rest671) => let val result=MlyValue.ann0(fn _ => (
  EMPTYAnn(I(defaultPos,defaultPos)) ))
  in (LrTable.NT 190,(result,defaultPos,defaultPos),rest671) end
-| (538,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
+| (543,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
 ::(_,(MlyValue.imp imp1,_,_))::(_,(_,IMPORTleft as IMPORT1left,_))::
 rest671) => let val result=MlyValue.ann1(fn _ => let val imp as imp1=
 imp1 ()
@@ -27235,14 +29556,14 @@ val STRING as STRING1=STRING1 ()
 					    imp, STRING) ) end
 )
  in (LrTable.NT 191,(result,IMPORT1left,STRING1right),rest671) end
-| (539,(_,(MlyValue.strid strid1,_,stridright as strid1right))::(_,(_,
+| (544,(_,(MlyValue.strid strid1,_,stridright as strid1right))::(_,(_,
 PREBOUNDleft as PREBOUND1left,_))::rest671) => let val result=
 MlyValue.ann1(fn _ => let val strid as strid1=strid1 ()
  in ( PREBOUNDAnn(I(PREBOUNDleft,stridright),
 					      strid) ) end
 )
  in (LrTable.NT 191,(result,PREBOUND1left,strid1right),rest671) end
-| (540,(_,(MlyValue.ann1 ann12,_,ann12right))::(_,(MlyValue.ann1 ann11
+| (545,(_,(MlyValue.ann1 ann12,_,ann12right))::(_,(MlyValue.ann1 ann11
 ,ann11left,_))::rest671) => let val result=MlyValue.ann1(fn _ => let 
 val ann11=ann11 ()
 val ann12=ann12 ()
@@ -27250,19 +29571,19 @@ val ann12=ann12 ()
 					 ann11, ann12) ) end
 )
  in (LrTable.NT 191,(result,ann11left,ann12right),rest671) end
-| (541,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
+| (546,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
 rest671) => let val result=MlyValue.ann1(fn _ => (
  EMPTYAnn(I(SEMICOLONleft,SEMICOLONleft)) ))
  in (LrTable.NT 191,(result,SEMICOLON1left,SEMICOLON1right),rest671)
  end
-| (542,(_,(MlyValue.dec' dec'1,dec'left as dec'1left,dec'right as 
+| (547,(_,(MlyValue.dec' dec'1,dec'left as dec'1left,dec'right as 
 dec'1right))::rest671) => let val result=MlyValue.program(fn _ => let 
 val dec' as dec'1=dec'1 ()
  in ( DECProgram(I(dec'left,dec'right),
 				     dec', NONE) ) end
 )
  in (LrTable.NT 192,(result,dec'1left,dec'1right),rest671) end
-| (543,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
+| (548,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
 program_opt'1right))::_::(_,(MlyValue.dec' dec'1,dec'left as dec'1left
 ,_))::rest671) => let val result=MlyValue.program(fn _ => let val dec'
  as dec'1=dec'1 ()
@@ -27273,7 +29594,7 @@ val program_opt' as program_opt'1=program_opt'1 ()
 ) end
 )
  in (LrTable.NT 192,(result,dec'1left,program_opt'1right),rest671) end
-| (544,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
+| (549,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
 program_opt'1right))::_::(_,(MlyValue.exp exp1,expleft as exp1left,_))
 ::rest671) => let val result=MlyValue.program(fn _ => let val exp as 
 exp1=exp1 ()
@@ -27284,23 +29605,23 @@ val program_opt' as program_opt'1=program_opt'1 ()
 ) end
 )
  in (LrTable.NT 192,(result,exp1left,program_opt'1right),rest671) end
-| (545,(_,(MlyValue.program program1,program1left,program1right))::
+| (550,(_,(MlyValue.program program1,program1left,program1right))::
 rest671) => let val result=MlyValue.program_opt(fn _ => let val 
 program as program1=program1 ()
  in ( SOME program ) end
 )
  in (LrTable.NT 193,(result,program1left,program1right),rest671) end
-| (546,rest671) => let val result=MlyValue.program_opt(fn _ => ( NONE 
+| (551,rest671) => let val result=MlyValue.program_opt(fn _ => ( NONE 
 ))
  in (LrTable.NT 193,(result,defaultPos,defaultPos),rest671) end
-| (547,(_,(MlyValue.program_opt program_opt1,program_opt1left,
+| (552,(_,(MlyValue.program_opt program_opt1,program_opt1left,
 program_opt1right))::rest671) => let val result=MlyValue.program_opt'(
 fn _ => let val program_opt as program_opt1=program_opt1 ()
  in ( program_opt ) end
 )
  in (LrTable.NT 194,(result,program_opt1left,program_opt1right),
 rest671) end
-| (548,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'1right))
+| (553,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'1right))
 ::(_,(_,SEMICOLON1left,_))::rest671) => let val result=
 MlyValue.program_opt'(fn _ => let val program_opt' as program_opt'1=
 program_opt'1 ()
@@ -27308,7 +29629,7 @@ program_opt'1 ()
 )
  in (LrTable.NT 194,(result,SEMICOLON1left,program_opt'1right),rest671
 ) end
-| (549,(_,(MlyValue.program_opt program_opt1,_,program_optright as 
+| (554,(_,(MlyValue.program_opt program_opt1,_,program_optright as 
 program_opt1right))::(_,(MlyValue.ann0 ann01,ann0left as ann01left,_))
 ::rest671) => let val result=MlyValue.component(fn _ => let val ann0
  as ann01=ann01 ()
@@ -27511,7 +29832,7 @@ fun ETYVAR (i,p1,p2) = Token.TOKEN (ParserData.LrTable.T 88,(
 ParserData.MlyValue.ETYVAR (fn () => i),p1,p2))
 end
 end
-(* src # 115 ../frontend-sml/DerivedForms.sml *)
+(* src # 125 frontend-sml/DerivedForms.sml *)
 (*
  * Standard ML derived forms
  *
@@ -27531,6 +29852,14 @@ end
  *	<type typbind> local datatype datbind in type typbind' dec end
  *     where typbind' contains a binding t = t for each tycon t bound in
  *     datbind. Note that this results in a different treatment of equality.
+ *   - derived forms for where patterns:
+ *	pat withval valbind where atexp
+ *	==>
+ *	pat withval valbind end where atexp
+ *
+ *	pat withfun fvalbind where atexp
+ *	==>
+ *	pat withfun fvalbind end where atexp
  *   - include takes longsigids:
  *	include longsigid_1 ... longsigid_n
  *	==>
@@ -27869,6 +30198,21 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.ROWPatRow(I, lab, pat, patrow_opt)
 	end
 
+    fun WITHVALWHEREPat(I, pat, valbind, atexp) =
+	let
+	    val I'         = Source.over(G.infoPat pat, G.infoValBind valbind)
+	    val withvalPat = G.WITHVALPat(I', pat, valbind)
+	in
+	    G.WHEREPat(I, withvalPat, atexp)
+	end
+
+    fun WITHFUNWHEREPat(I, pat, fvalbind, atexp) =
+	let
+	    val I'         = Source.over(G.infoPat pat, G.infoFvalBind fvalbind)
+	    val withfunPat = G.WITHFUNPat(I', pat, fvalbind)
+	in
+	    G.WHEREPat(I, withfunPat, atexp)
+	end
 
 
     (* Expressions *)
@@ -28238,6 +30582,23 @@ structure DerivedForms :> DERIVED_FORMS =
     val PLAINExItem  = G.PLAINDconItem
     val PLAINFunItem = G.PLAINStrItem
 
+    fun INFIXMULTIImp(I, _, [])          = G.EMPTYImp(I)
+      | INFIXMULTIImp(I, NONE, longvids) = INFIXMULTIImp(I, SOME 0, longvids)
+      | INFIXMULTIImp(I, SOME d, longvid::longvids) =
+	    G.SEQImp(I, G.INFIXImp(I, d, longvid),
+			INFIXMULTIImp(I, SOME d, longvids))
+
+    fun INFIXRMULTIImp(I, _, [])          = G.EMPTYImp(I)
+      | INFIXRMULTIImp(I, NONE, longvids) = INFIXRMULTIImp(I, SOME 0, longvids)
+      | INFIXRMULTIImp(I, SOME d, longvid::longvids) =
+	    G.SEQImp(I, G.INFIXRImp(I, d, longvid),
+			INFIXRMULTIImp(I, SOME d, longvids))
+
+    fun NONFIXMULTIImp(I, [])                = G.EMPTYImp(I)
+      | NONFIXMULTIImp(I, longvid::longvids) =
+	    G.SEQImp(I, G.NONFIXImp(I,longvid), NONFIXMULTIImp(I,longvids))
+
+
     fun DESCExItem(I, op_opt, vid, ty, dconitem_opt) =
 	    G.DESCDconItem(I, op_opt, vid, SOME ty, G.Seq(I,[]),
 			      longtycon_EXN(I), dconitem_opt)
@@ -28271,7 +30632,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	end
 
   end
-(* src # 116 ../frontend-sml/LEXER_ERROR.sig *)
+(* src # 126 frontend-sml/LEXER_ERROR.sig *)
 signature LEXER_ERROR =
   sig
 
@@ -28284,7 +30645,7 @@ signature LEXER_ERROR =
     val error :	(int * int) * error -> 'a
 
   end
-(* src # 117 ../frontend-sml/LexerError.sml *)
+(* src # 127 frontend-sml/LexerError.sml *)
 functor LexerError(structure Tokens: Parser_TOKENS
 		   type error) : LEXER_ERROR =
   struct
@@ -28298,7 +30659,7 @@ functor LexerError(structure Tokens: Parser_TOKENS
     fun error pos_e = raise Error pos_e
 
   end
-(* src # 118 ../frontend-sml/Lexer.lex.sml *)
+(* src # 128 frontend-sml/Lexer.lex.sml *)
  functor Lexer(structure Tokens:     Parser_TOKENS
 			structure LexerError: LEXER_ERROR
 			  where type token = (Tokens.svalue,int) Tokens.token
@@ -28341,7 +30702,6 @@ functor LexerError(structure Tokens: Parser_TOKENS
  *)
 
 
-    open Misc
     open Tokens
 
     structure E = ParsingError
@@ -28452,7 +30812,7 @@ functor LexerError(structure Tokens: Parser_TOKENS
 		case String.sub(s,k)
 		  of #"\"" => WideString.implode(List.rev cs)
 		   | #"\\" => escape(k+1,cs)
-		   |   c   => convert(k+1, Char_toWide(c)::cs)
+		   |   c   => convert(k+1, Char.toWide(c)::cs)
 
 	    and escape(k,cs) =
 		case String.sub(s,k)
@@ -37151,7 +39511,7 @@ end
   in lex
   end
 end
-(* src # 119 ../frontend-sml/CountPosLexer.sml *)
+(* src # 129 frontend-sml/CountPosLexer.sml *)
 functor CountPosLexer(
 	structure Lexer: LEXER
 	where type UserDeclarations.pos = int
@@ -37171,7 +39531,7 @@ functor CountPosLexer(
 
     fun makeLexer yyinput =
 	let
-	    val lin  = ref 1
+	    val lin  = ref 0	(*UNFINISHED: 1*)
 	    val col  = ref 0
 	    val pos  = ref 0
 	    val buf  = ref ""	(* current buffer *)
@@ -37234,7 +39594,7 @@ functor CountPosLexer(
 	end
 
   end
-(* src # 120 ../frontend-sml/PARSING_PHASE.sig *)
+(* src # 130 frontend-sml/PARSING_PHASE.sig *)
 signature PARSING_PHASE =
   sig
     structure C : CONTEXT       = EmptyContext
@@ -37243,7 +39603,7 @@ signature PARSING_PHASE =
 
     val translate : C.t -> I.source -> InputGrammar.Component
   end
-(* src # 121 ../frontend-sml/ParsingPhase.sml *)
+(* src # 131 frontend-sml/ParsingPhase.sml *)
 structure ParsingPhase :> PARSING_PHASE =
   struct
 
@@ -37296,14 +39656,14 @@ structure ParsingPhase :> PARSING_PHASE =
     fun translate() = parse
 
   end
-(* src # 122 ../frontend-sml/BIND_ENV0.sig *)
+(* src # 132 frontend-sml/BIND_ENV0.sig *)
 signature BIND_ENV0 =
   sig
 
     val E0 :	BindEnv.Env
 
   end
-(* src # 123 ../frontend-sml/BindEnv0.sml *)
+(* src # 133 frontend-sml/BindEnv0.sml *)
 structure BindEnv0 :> BIND_ENV0 =
   struct
 
@@ -37328,7 +39688,7 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertVal(E_bool, VId.fromString "false", (i,valstamp_false,C 0))
     val _ = insertVal(E_bool, VId.fromString "true",  (i,valstamp_true, C 0))
     val _ = insertVal(E_list, VId.fromString "nil",   (i,valstamp_nil,  C 0))
-    val _ = insertVal(E_list, VId.fromString "::",    (i,valstamp_cons, C 1))
+    val _ = insertVal(E_list, VId.fromString "::",    (i,valstamp_cons, C 2))
     val _ = insertVal(E_ref,  VId.fromString "ref",   (i,valstamp_ref,  R))
 
     val _ = insertTy(E, TyCon.fromString "bool",   (i, typstamp_bool,  E_bool))
@@ -37358,7 +39718,18 @@ structure BindEnv0 :> BIND_ENV0 =
     val _  = insertStr(E0, StrId.fromString "", (i, Stamp.new(), E))
 
   end
-(* src # 124 ../backend-common/LABEL_SORT.sig *)
+(* src # 134 frontend-sml/MakeFrontendSML.sml *)
+functor MakeFrontendSML(
+		Composer: COMPOSER where type Sig.t = Inf.sign
+	) : PHASE =
+     ComposePhases(
+	structure Phase1  = ParsingPhase
+	structure Phase2  = MakeAbstractionPhase(Composer)
+	structure Context = BindEnv
+	fun context1 E    = ()
+	fun context2 E    = E
+     )
+(* src # 135 backend-common/LABEL_SORT.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37381,7 +39752,7 @@ signature LABEL_SORT =
 
 	val sort: 'a t list -> 'a t list * arity
     end
-(* src # 125 ../backend-common/MakeLabelSort.sml *)
+(* src # 136 backend-common/MakeLabelSort.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37445,7 +39816,7 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 		  | NONE => (xs', Rec)
 	    end
     end
-(* src # 126 ../backend-common/LabelSort.sml *)
+(* src # 137 backend-common/LabelSort.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37461,7 +39832,7 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 structure LabelSort =
     MakeLabelSort(type 'a t = Label.t * 'a
 		  fun get (label, _) = label)
-(* src # 127 ../backend-common/FLAT_GRAMMAR.sig *)
+(* src # 138 backend-common/FLAT_GRAMMAR.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37491,10 +39862,6 @@ signature FLAT_GRAMMAR =
 
 	(* Expressions and Declarations *)
 
-	type shared = int ref
-
-	type isToplevel = bool
-
 	datatype conArity =
 	    Nullary
 	  | Unary
@@ -37504,6 +39871,7 @@ signature FLAT_GRAMMAR =
 	datatype funFlag =
 	    PrintName of string
 	  | AuxiliaryOf of stamp
+	  | IsToplevel
 
 	datatype 'a args =
 	    OneArg of 'a
@@ -37518,7 +39886,7 @@ signature FLAT_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
-	type id_info = IntermediateInfo.id_info
+	type id_info = {region: Source.region}
 	type stm_info = {region: Source.region, liveness: livenessInfo ref}
 	type exp_info = {region: Source.region, typ: Type.t}
 
@@ -37540,17 +39908,17 @@ signature FLAT_GRAMMAR =
 	  | VecTest of id list
 
 	datatype stm =
-	    ValDec of stm_info * id * exp * isToplevel
-	  | RecDec of stm_info * (id * exp) list * isToplevel
+	    ValDec of stm_info * id * exp
+	  | RecDec of stm_info * (id * exp) list
 	    (* all ids distinct *)
 	  | EvalStm of stm_info * exp
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
 	  (* the following must always be last *)
-	  | HandleStm of stm_info * body * id * body * body * shared
-	  | EndHandleStm of stm_info * shared
-	  | TestStm of stm_info * id * test * body * body
-	  | SharedStm of stm_info * body * shared   (* used at least twice *)
+	  | HandleStm of stm_info * body * id * body * body * stamp
+	  | EndHandleStm of stm_info * stamp
+	  | TestStm of stm_info * id * (test * body) list * body
+	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
 	  | ReturnStm of stm_info * exp
 	  | IndirectStm of stm_info * body option ref
 	  | ExportStm of stm_info * exp
@@ -37561,6 +39929,7 @@ signature FLAT_GRAMMAR =
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * conArity
 	  | ConExp of exp_info * id * conArity
+	  | StaticConExp of exp_info * stamp * conArity
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id list
 	  | RecExp of exp_info * (label * id) list
@@ -37568,16 +39937,20 @@ signature FLAT_GRAMMAR =
 	  | SelExp of exp_info * label
 	  | VecExp of exp_info * id list
 	  | FunExp of exp_info * stamp * funFlag list * id args * body
-	  | AppExp of exp_info * id * id args
-	  | SelAppExp of exp_info * label * id
+	  | PrimAppExp of exp_info * string * id list
+	  | VarAppExp of exp_info * id * id args
 	  | TagAppExp of exp_info * label * id args * conArity
 	    (* args may only be TupArgs if conArity is Tuple;
 	     * args may only be RecArgs if conArity is Record *)
 	  | ConAppExp of exp_info * id * id args * conArity
 	    (* args may only be TupArgs if conArity is Tuple;
 	     * args may only be RecArgs if conArity is Record *)
+	  | StaticConAppExp of exp_info * stamp * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
 	  | RefAppExp of exp_info * id
-	  | PrimAppExp of exp_info * string * id list
+	  | SelAppExp of exp_info * label * id
+	  | FunAppExp of exp_info * id * stamp * id args
 	  | AdjExp of exp_info * id * id
 	withtype body = stm list
 
@@ -37587,7 +39960,7 @@ signature FLAT_GRAMMAR =
 
 	val infoStm: stm -> stm_info
     end
-(* src # 128 ../backend-common/FlatGrammar.sml *)
+(* src # 139 backend-common/FlatGrammar.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37618,10 +39991,6 @@ structure FlatGrammar: FLAT_GRAMMAR =
 
 	(* Expressions and Declarations *)
 
-	type shared = int ref
-
-	type isToplevel = bool
-
 	datatype conArity =
 	    Nullary
 	  | Unary
@@ -37631,6 +40000,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	datatype funFlag =
 	    PrintName of string
 	  | AuxiliaryOf of stamp
+	  | IsToplevel
 
 	datatype 'a args =
 	    OneArg of 'a
@@ -37645,7 +40015,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
-	type id_info = IntermediateInfo.id_info
+	type id_info = {region: Source.region}
 	type stm_info = {region: Source.region, liveness: livenessInfo ref}
 	type exp_info = {region: Source.region, typ: Type.t}
 
@@ -37667,17 +40037,17 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | VecTest of id list
 
 	datatype stm =
-	    ValDec of stm_info * id * exp * isToplevel
-	  | RecDec of stm_info * (id * exp) list * isToplevel
+	    ValDec of stm_info * id * exp
+	  | RecDec of stm_info * (id * exp) list
 	    (* all ids distinct *)
 	  | EvalStm of stm_info * exp
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
 	  (* the following must always be last *)
-	  | HandleStm of stm_info * body * id * body * body * shared
-	  | EndHandleStm of stm_info * shared
-	  | TestStm of stm_info * id * test * body * body
-	  | SharedStm of stm_info * body * shared   (* used at least twice *)
+	  | HandleStm of stm_info * body * id * body * body * stamp
+	  | EndHandleStm of stm_info * stamp
+	  | TestStm of stm_info * id * (test * body) list * body
+	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
 	  | ReturnStm of stm_info * exp
 	  | IndirectStm of stm_info * body option ref
 	  | ExportStm of stm_info * exp
@@ -37688,6 +40058,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * conArity
 	  | ConExp of exp_info * id * conArity
+	  | StaticConExp of exp_info * stamp * conArity
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id list
 	  | RecExp of exp_info * (label * id) list
@@ -37695,16 +40066,20 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | SelExp of exp_info * label
 	  | VecExp of exp_info * id list
 	  | FunExp of exp_info * stamp * funFlag list * id args * body
-	  | AppExp of exp_info * id * id args
-	  | SelAppExp of exp_info * label * id
+	  | PrimAppExp of exp_info * string * id list
+	  | VarAppExp of exp_info * id * id args
 	  | TagAppExp of exp_info * label * id args * conArity
 	    (* args may only be TupArgs if conArity is Tuple;
 	     * args may only be RecArgs if conArity is Record *)
 	  | ConAppExp of exp_info * id * id args * conArity
 	    (* args may only be TupArgs if conArity is Tuple;
 	     * args may only be RecArgs if conArity is Record *)
+	  | StaticConAppExp of exp_info * stamp * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
 	  | RefAppExp of exp_info * id
-	  | PrimAppExp of exp_info * string * id list
+	  | SelAppExp of exp_info * label * id
+	  | FunAppExp of exp_info * id * stamp * id args
 	  | AdjExp of exp_info * id * id
 	withtype body = stm list
 
@@ -37712,20 +40087,20 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	type component = (id * sign * Url.t) list * (body * sign)
 	type t = component
 
-	fun infoStm (ValDec (info, _, _, _)) = info
-	  | infoStm (RecDec (info, _, _)) = info
+	fun infoStm (ValDec (info, _, _)) = info
+	  | infoStm (RecDec (info, _)) = info
 	  | infoStm (EvalStm (info, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
 	  | infoStm (ReraiseStm (info, _)) = info
 	  | infoStm (HandleStm (info, _, _, _, _, _)) = info
 	  | infoStm (EndHandleStm (info, _)) = info
-	  | infoStm (TestStm (info, _, _, _, _)) = info
+	  | infoStm (TestStm (info, _, _, _)) = info
 	  | infoStm (SharedStm (info, _, _)) = info
 	  | infoStm (ReturnStm (info, _)) = info
 	  | infoStm (IndirectStm (info, _)) = info
 	  | infoStm (ExportStm (info, _)) = info
     end
-(* src # 129 ../backend-common/OUTPUT_FLAT_GRAMMAR.sig *)
+(* src # 140 backend-common/OUTPUT_FLAT_GRAMMAR.sig *)
 (*
  * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37744,7 +40119,7 @@ signature OUTPUT_FLAT_GRAMMAR =
 
 	val outputComponent: I.component -> string
     end
-(* src # 130 ../backend-common/OutputFlatGrammar.sml *)
+(* src # 141 backend-common/OutputFlatGrammar.sml *)
 (*
  * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37798,16 +40173,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		format' f
 	    end
 
-	local
-	    val count = ref 0
-	in
-	    fun gen () =
-		let
-		    val n = !count + 1
-		in
-		    count := n; n
-		end
-	end
+	fun visit (stamp, shared) =
+	    not (StampSet.member (shared, stamp)) before
+	    StampSet.insert (shared, stamp)
 
 	fun insert (x, ys as (y::yr)): int list =
 	    if x < y then x::ys else y::insert (x, yr)
@@ -37880,41 +40248,42 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
-	fun outputStm (ValDec (_, id, exp, isToplevel)) =
-	    SEQ [S "val ", ID id, S " = ", IN, outputExp exp, EX,
-		 if isToplevel then CO "toplevel" else NULL]
-	  | outputStm (RecDec (_, idExpList, isToplevel)) =
-	    SEQ [S "rec", IN, if isToplevel then CO "toplevel" else NULL,
+	fun outputStm (ValDec (_, id, exp), _) =
+	    SEQ [S "val ", ID id, S " = ", IN, outputExp exp, EX]
+	  | outputStm (RecDec (_, idExpList), _) =
+	    SEQ [S "rec", IN,
 		 SEQ (List.map (fn (id, exp) =>
 				SEQ [NL, S "val ", ID id, S " = ",
 				     IN, outputExp exp, EX]) idExpList), EX]
-	  | outputStm (EvalStm (_, exp)) =
+	  | outputStm (EvalStm (_, exp), _) =
 	    SEQ [S "eval ", IN, outputExp exp, EX]
-	  | outputStm (HandleStm (_, body1, id, body2, body3, shared)) =
-	    (shared := gen ();
-	     SEQ [S "try", CO (Int.toString (!shared)), IN, NL,
-		  outputBody body1, EX, NL,
-		  S "catch ", ID id, IN, NL, outputBody body2, EX, NL,
-		  S "cont", IN, NL, outputBody body3, EX])
-	  | outputStm (EndHandleStm (_, ref i)) =
-	    S ("(* leave " ^ Int.toString i ^ " *)")
-	  | outputStm (TestStm (_, id, test, body1, body2)) =
-	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
-		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
-		 EX]
-	  | outputStm (RaiseStm (_, id)) = SEQ [S "raise ", ID id]
-	  | outputStm (ReraiseStm (_, id)) = SEQ [S "reraise ", ID id]
-	  | outputStm (SharedStm (_, body, shared as ref 0)) =
-	    (shared := gen ();
-	     SEQ [S ("label " ^ (Int.toString (!shared)) ^ ":"), NL,
-		  outputBody body])
-	  | outputStm (SharedStm (_, _, ref i)) =
-	    SEQ [S ("goto " ^ (Int.toString i))]
-	  | outputStm (ReturnStm (_, exp)) =
+	  | outputStm (HandleStm (_, body1, id, body2, body3, stamp), shared) =
+	    SEQ [S "try", CO (Stamp.toString stamp), IN, NL,
+		 outputBody (body1, shared), EX, NL,
+		 S "catch ", ID id, IN, NL, outputBody (body2, shared), EX, NL,
+		 S "cont", IN, NL, outputBody (body3, shared), EX]
+	  | outputStm (EndHandleStm (_, stamp), _) =
+	    S ("(* leave " ^ Stamp.toString stamp ^ " *)")
+	  | outputStm (TestStm (_, id, testBodyList, body), shared) =
+	    SEQ [S "case ", ID id, S " of", IN, NL,
+		 SEQ (List.map (fn (test, body) =>
+				SEQ [outputTest test, S " =>", IN, NL,
+				     outputBody (body, shared), EX, NL])
+		      testBodyList),
+		 S "else", IN, NL, outputBody (body, shared), EX]
+	  | outputStm (RaiseStm (_, id), _) = SEQ [S "raise ", ID id]
+	  | outputStm (ReraiseStm (_, id), _) = SEQ [S "reraise ", ID id]
+	  | outputStm (SharedStm (_, body, stamp), shared) =
+	    if visit (stamp, shared) then
+		SEQ [S ("label " ^ (Stamp.toString stamp) ^ ":"), NL,
+		     outputBody (body, shared)]
+	    else
+		SEQ [S ("goto " ^ (Stamp.toString stamp))]
+	  | outputStm (ReturnStm (_, exp), _) =
 	    SEQ [S "return ", IN, outputExp exp, EX]
-	  | outputStm (IndirectStm (_, ref bodyOpt)) =
-	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt)]
-	  | outputStm (ExportStm (_, exp)) =
+	  | outputStm (IndirectStm (_, ref bodyOpt), shared) =
+	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt, shared)]
+	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
@@ -37924,6 +40293,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [outputTag conArity, S " ", S (Label.toString label)]
 	  | outputExp (ConExp (_, id, conArity)) =
 	    SEQ [outputCon conArity, S " ", ID id]
+	  | outputExp (StaticConExp (_, stamp, conArity)) =
+	    SEQ [outputCon conArity, S " ", S (Stamp.toString stamp)]
 	  | outputExp (RefExp _) = SEQ [S "ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
@@ -37939,36 +40310,42 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, _, args, body)) =
 	    SEQ [NL, S "fn ", outputArgs args, S " =>",
-		 IN, NL, outputBody body, EX]
-	  | outputExp (AppExp (_, id, args)) =
+		 IN, NL, outputBody (body, StampSet.new ()), EX]
+	  | outputExp (PrimAppExp (_, s, ids)) =
+	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
+	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
-	  | outputExp (SelAppExp (_, label, id)) =
-	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
 	  | outputExp (TagAppExp (_, label, args, conArity)) =
 	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
 		 S ") ", outputArgs args]
 	  | outputExp (ConAppExp (_, id, args, conArity)) =
 	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
 		 outputArgs args]
+	  | outputExp (StaticConAppExp (_, stamp, args, conArity)) =
+	    SEQ [S "(", outputCon conArity, S " ", S (Stamp.toString stamp),
+		 S ") ", outputArgs args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ [S "ref ", ID id]
-	  | outputExp (PrimAppExp (_, s, ids)) =
-	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
+	  | outputExp (SelAppExp (_, label, id)) =
+	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
 	  | outputExp (AdjExp (_, id1, id2)) =
 	    SEQ [S "adj ", ID id1, S ", ", ID id2]
-	and outputBody stms =
-	    SEP (NL,
-		 List.map (fn stm =>
-			   SEQ [outputInfo (infoStm stm), outputStm stm]) stms)
+	  | outputExp (FunAppExp (_, id, _, args)) =
+	    SEQ [ID id, S " ", outputArgs args]
+	and outputBody (stms, shared) =
+	    SEP (NL, List.map (fn stm =>
+			       SEQ [outputInfo (infoStm stm),
+				    outputStm (stm, shared)]) stms)
 
 	fun outputComponent (importList, (body, _)) =
 	    format (SEQ [SEQ (List.map
 			      (fn (id, _, url) =>
 			       SEQ [S "import ", ID id,
 				    S (" from " ^ Url.toString url ^ "\n")])
-			      importList), outputBody body, NL])
+			      importList), outputBody (body, StampSet.new ()),
+			 NL])
     end
-(* src # 131 ../backend-common/INTERMEDIATE_AUX.sig *)
+(* src # 142 backend-common/INTERMEDIATE_AUX.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -38007,7 +40384,7 @@ signature INTERMEDIATE_AUX =
 
 	val makeConArity: I.exp_info * bool -> O.conArity
     end
-(* src # 132 ../backend-common/IntermediateAux.sml *)
+(* src # 143 backend-common/IntermediateAux.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -38047,7 +40424,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInExp (RefExp _, _) = false
 	  | occursInExp (TupExp (_, exps), id) =
 	    List.exists (fn exp => occursInExp (exp, id)) exps
-	  | occursInExp (RowExp (_, expFields), id) =
+	  | occursInExp (ProdExp (_, expFields), id) =
 	    List.exists (fn Field (_, _, exp) => occursInExp (exp, id))
 	    expFields
 	  | occursInExp (SelExp (_, _), _) = false
@@ -38083,7 +40460,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.exists (fn Match (_, pat, exp) =>
 		       occursInPat (pat, id) orelse occursInExp (exp, id))
 	    matches
-	and occursInPat (WildPat _, _) = false
+	and occursInPat (JokPat _, _) = false
 	  | occursInPat (LitPat (_, _), _) = false
 	  | occursInPat (VarPat (_, _), _) = false
 	  | occursInPat (TagPat (_, _, _), _) = false
@@ -38091,7 +40468,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInPat (RefPat _, id) = false
 	  | occursInPat (TupPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
-	  | occursInPat (RowPat (_, patFields), id) =
+	  | occursInPat (ProdPat (_, patFields), id) =
 	    List.exists (fn Field (_, _, pat) => occursInPat (pat, id))
 	    patFields
 	  | occursInPat (VecPat (_, pats), id) =
@@ -38110,7 +40487,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.exists (fn dec => occursInDec (dec, id)) decs
 
 	local
-	    fun patternVariablesOf' (WildPat _, ids) = ids
+	    fun patternVariablesOf' (JokPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
 	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
 	      | patternVariablesOf' (TagPat (_, _, _), ids) = ids
@@ -38118,7 +40495,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	      | patternVariablesOf' (RefPat _, ids) = ids
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (RowPat (_, fieldPats), ids) =
+	      | patternVariablesOf' (ProdPat (_, fieldPats), ids) =
 		foldr (fn (Field (_, _, pat), ids) =>
 		       patternVariablesOf' (pat, ids)) ids fieldPats
 	      | patternVariablesOf' (VecPat (_, pats), ids) =
@@ -38171,11 +40548,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substExp (exp as RefExp _, _) = exp
 	  | substExp (TupExp (info, exps), subst) =
 	    TupExp (info, List.map (fn exp => substExp (exp, subst)) exps)
-	  | substExp (RowExp (info, expFields), subst) =
-	    RowExp (info,
-		    List.map (fn Field (info, label, exp) =>
-			      Field (info, label, substExp (exp, subst)))
-		    expFields)
+	  | substExp (ProdExp (info, expFields), subst) =
+	    ProdExp (info,
+		     List.map (fn Field (info, label, exp) =>
+			       Field (info, label, substExp (exp, subst)))
+		     expFields)
 	  | substExp (exp as SelExp (_, _), _) = exp
 	  | substExp (VecExp (info, exps), subst) =
 	    VecExp (info, List.map (fn exp => substExp (exp, subst)) exps)
@@ -38212,7 +40589,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.map (fn Match (info, pat, exp) =>
 		      Match (info, substPat (pat, subst),
 			     substExp (exp, subst))) matches
-	and substPat (pat as WildPat _, _) = pat
+	and substPat (pat as JokPat _, _) = pat
 	  | substPat (pat as LitPat (_, _), _) = pat
 	  | substPat (pat as VarPat (_, _), _) = pat
 	  | substPat (pat as TagPat (_, _, _), _) = pat
@@ -38221,11 +40598,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substPat (pat as RefPat _, subst) = pat
 	  | substPat (TupPat (info, pats), subst) =
 	    TupPat (info, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (RowPat (info, patFields), subst) =
-	    RowPat (info,
-		    List.map (fn Field (info, label, pat) =>
-			      Field (info, label, substPat (pat, subst)))
-		    patFields)
+	  | substPat (ProdPat (info, patFields), subst) =
+	    ProdPat (info,
+		     List.map (fn Field (info, label, pat) =>
+			       Field (info, label, substPat (pat, subst)))
+		     patFields)
 	  | substPat (VecPat (info, pats), subst) =
 	    VecPat (info, List.map (fn pat => substPat (pat, subst)) pats)
 	  | substPat (AppPat (info, pat1, pat2), subst) =
@@ -38277,7 +40654,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		    nil => pat'
 		  | _::_ => WithPat (infoPat pat', pat', decs)
 	    end
-	and relax (pat as WildPat _, subst) = (pat, subst)
+	and relax (pat as JokPat _, subst) = (pat, subst)
 	  | relax (pat as LitPat (_, _), subst) = (pat, subst)
 	  | relax (VarPat (info, id), subst) =
 	    let
@@ -38300,7 +40677,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(TupPat (info, pats'), subst')
 	    end
-	  | relax (RowPat (info, patFields), subst) =
+	  | relax (ProdPat (info, patFields), subst) =
 	    let
 		val (patFields', subst') =
 		    List.foldr
@@ -38311,7 +40688,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 (Field (info, label, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
-		(RowPat (info, patFields'), subst')
+		(ProdPat (info, patFields'), subst')
 	    end
 	  | relax (VecPat (info, pats), subst) =
 	    let
@@ -38365,7 +40742,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun parseRow row =
 		if Type.isEmptyRow row then
 		    if Type.isUnknownRow row then
-			raise Crash.Crash "IntermediateAus.parseRow 1"
+			raise Crash.Crash "IntermediateAux.parseRow 1"
 		    else nil
 		else
 		    case Type.headRow row of
@@ -38394,7 +40771,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		else Nullary
 	end
     end
-(* src # 133 ../backend-common/SIMPLIFY_MATCH.sig *)
+(* src # 144 backend-common/SIMPLIFY_MATCH.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -38460,7 +40837,7 @@ signature SIMPLIFY_MATCH =
 	val buildFunArgs: (Source.region * I.pat * O.body) list * O.body ->
 	    O.id O.args * testGraph * mapping * consequent list
     end
-(* src # 134 ../backend-common/SimplifyMatch.sml *)
+(* src # 145 backend-common/SimplifyMatch.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -38553,8 +40930,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val (labelTypList, hasDots) =
 			if Type.isProd typ then parseRow (Type.asProd typ)
 			else
-			    (Misc.List_mapi (fn (i, typ) =>
-					     (Label.fromInt (i + 1), typ))
+			    (List.mapi (fn (i, typ) =>
+					(Label.fromInt (i + 1), typ))
 			     (Type.asTuple typ), false)
 		    val (labelTypList', arity) = LabelSort.sort labelTypList
 		in
@@ -38563,10 +40940,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	end
 
 	fun makeAppArgs (TupPat (_, pats), true, pos) =
-	    (Misc.List_mapi (fn (i, pat) =>
-			     (LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
+	    (List.mapi (fn (i, pat) =>
+			(LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
 	     O.TupArgs (List.map typPat pats))
-	  | makeAppArgs (pat as RowPat (info, patFields), true, pos) =
+	  | makeAppArgs (pat as ProdPat (info, patFields), true, pos) =
 	    (case getRow (#typ info) of
 		 (_, _, true) => ([(pos, pat)], O.OneArg (#typ info))
 	       | (labelTypList, LabelSort.Tup _, false) =>
@@ -38579,7 +40956,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		      O.RecArgs labelTypList))
 	  | makeAppArgs (pat, _, pos) = ([(pos, pat)], O.OneArg (typPat pat))
 
-	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
+	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
@@ -38620,12 +40997,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
 			 Test (pos, RefAppTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
-	    Misc.List_foldli
+	    List.foldli
 	    (fn (i, pat, (rest, mapping)) =>
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
 	    (Test (pos, TupTest (List.map typPat pats))::rest, mapping) pats
-	  | makeTestSeq (RowPat (info, patFields), pos, rest, mapping) =
+	  | makeTestSeq (ProdPat (info, patFields), pos, rest, mapping) =
 	    List.foldl (fn (Field (_, Lab (_, label), pat), (rest, mapping)) =>
 			makeTestSeq (pat, LABEL label::pos, rest, mapping))
 	    (case getRow (#typ info) of
@@ -38638,7 +41015,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	       | (labelTypList, LabelSort.Rec, false) =>
 		     Test (pos, RecTest labelTypList)::rest, mapping) patFields
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
-	    Misc.List_foldli
+	    List.foldli
 	    (fn (i, pat, (rest, mapping)) =>
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
@@ -38705,13 +41082,20 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	fun indent 0 = ""
 	  | indent n = "  " ^ indent (n - 1)
 
-	fun testToString (LitTest _) = "lit"
+	fun litToString (WordLit w) = LargeWord.toString w
+	  | litToString (IntLit i) = LargeInt.toString i
+	  | litToString (CharLit c) = "#\"" ^ WideChar.toString c ^ "\""
+	  | litToString (StringLit s) = "\"" ^ s ^ "\""
+	  | litToString (RealLit s) = s
+
+	fun testToString (LitTest lit) = "lit " ^ litToString lit
 	  | testToString (TagTest label | TagAppTest (label, O.OneArg _, _)) =
 	    "tag " ^ Label.toString label
 	  | testToString (TagAppTest (label, O.TupArgs typs, _)) =
-	    "tag tup " ^ Int.toString (List.length typs)
+	    "tag " ^ Label.toString label ^
+	    " tup " ^ Int.toString (List.length typs)
 	  | testToString (TagAppTest (label, O.RecArgs labelTypList, _)) =
-	    "tag rec"
+	    "tag " ^ Label.toString label ^ " rec"
 	  | testToString (ConTest _ | ConAppTest (_, O.OneArg _, _)) = "con"
 	  | testToString (ConAppTest (_, O.TupArgs typs, _)) =
 	    "con tup " ^ Int.toString (List.length typs)
@@ -38735,7 +41119,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    testToString test ^ "\n" ^
 	    graphToString (thenGraph, level + 1) ^
 	    graphToString (elseGraph, level + 1)
-	  | graphToString (Leaf (_, _), level) = indent level ^ "leaf\n"
+	  | graphToString (Leaf (body, _), level) =
+	    indent level ^ "leaf " ^
+	    (Source.regionToString (#region (O.infoStm (List.hd body)))) ^ "\n"
 	  | graphToString (Default, level) = indent level ^ "default\n"
 
 	fun mappingToString' ((pos, _)::mapping) =
@@ -38801,14 +41187,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		else NONE
 	      | findTest (_, _, _) = NONE
 	in
-	    fun mergeIntoTree (nil, thenTree, _) = thenTree
-	      | mergeIntoTree (Test (pos, test)::testSeqRest,
+	    fun mergeIntoTree (Test (pos, test)::testSeqRest,
 			       thenTree, elseTree) =
 		(case findTest (elseTree, pos, test) of
-		     SOME treeRef =>
+		     SOME (treeRef as ref tree) =>
 			 let
-			     val newTree = mergeIntoTree (testSeqRest,
-							  thenTree, !treeRef)
+			     val newTree =
+				 mergeIntoTree (testSeqRest, thenTree, tree)
 			 in
 			     treeRef := newTree; elseTree
 			 end
@@ -38824,14 +41209,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		mergeIntoTree (testSeq, elseTree,
 			       mergeIntoTree (testSeqRest, thenTree, elseTree))
 	      | mergeIntoTree (Alt testSeqs::testSeqRest, thenTree, elseTree) =
-		let
-		    val newThenTree =
-			mergeIntoTree (testSeqRest, thenTree, Default)
-		in
-		    List.foldr (fn (testSeq, elseTree) =>
-				mergeIntoTree (testSeq, newThenTree, elseTree))
-		    elseTree testSeqs
-		end
+		(*--** this may create duplicate code in some cases. *)
+		(* This could be removed by reconstructing the whole graph *)
+		(* using hash-consing. *)
+		List.foldr
+		(fn (testSeq, elseTree) =>
+		 mergeIntoTree (testSeq @ testSeqRest, thenTree, elseTree))
+		elseTree testSeqs
+	      | mergeIntoTree (nil, thenTree, _) = thenTree
 	end
 
 	(* Elimination of Backtracking, Producing a Test Graph *)
@@ -38943,23 +41328,23 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	type consequent = (Source.region * O.body option ref)
 
-	fun buildGraph (matches, elseExp) =
+	fun buildGraph (matches, elseBody) =
 	    let
 		val (graph, consequents) =
-		    List.foldr (fn ((region, pat, thenExp),
+		    List.foldr (fn ((region, pat, thenBody),
 				    (elseTree, consequents)) =>
 				let
 				    val pat' = separateAlt pat
 				    val (testSeq, _) =
 					makeTestSeq (pat', nil, nil, nil)
 				    val r = ref NONE
-				    val leaf = Leaf (thenExp, r)
+				    val leaf = Leaf (thenBody, r)
 				in
 				    (mergeIntoTree (List.rev testSeq,
 						    leaf, elseTree),
 				     (region, r)::consequents)
 				end) (Default, nil) matches
-		val elseGraph = Leaf (elseExp, ref NONE)
+		val elseGraph = Leaf (elseBody, ref NONE)
 	    in
 		case graph of
 		    Default =>
@@ -39016,14 +41401,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    exception SideEffect   (* precondition 2 not satisfied *)
 	    exception NotNAry
 
-	    fun deconstructs (WildPat _) = false
+	    fun deconstructs (JokPat _) = false
 	      | deconstructs (LitPat _) = raise NotNAry
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
 	      | deconstructs (TagPat (_, _, _)) = raise NotNAry
 	      | deconstructs (ConPat (_, _, _)) = raise NotNAry
 	      | deconstructs (RefPat _) = raise NotNAry
 	      | deconstructs (TupPat (_, _)) = true
-	      | deconstructs (RowPat (_, _)) = true
+	      | deconstructs (ProdPat (_, _)) = true
 	      | deconstructs (VecPat (_, _)) = raise NotNAry
 	      | deconstructs (AppPat (_, _, _)) = raise NotNAry
 	      | deconstructs (AsPat (_, pat1, pat2)) =
@@ -39054,8 +41439,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				  freshId (exp_info (Source.nowhere, typ)))
 			typs
 		    val labelIdList =
-			Misc.List_mapi (fn (i, id) =>
-					(Label.fromInt (i + 1), id)) ids
+			List.mapi (fn (i, id) =>
+				   (Label.fromInt (i + 1), id)) ids
 		    val mapping =
 			List.foldr (fn ((label, id), mapping) =>
 				    ([LABEL label], id)::mapping)
@@ -39095,7 +41480,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		raise Crash.Crash "SimplifyMatch.buildFunArgs"
 	end
     end
-(* src # 135 ../backend-common/SIMPLIFY_REC.sig *)
+(* src # 146 backend-common/SIMPLIFY_REC.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -39118,7 +41503,7 @@ signature SIMPLIFY_REC =
 
 	val derec: I.dec list -> constraint list * binding list * alias list
     end
-(* src # 136 ../backend-common/SimplifyRec.sml *)
+(* src # 147 backend-common/SimplifyRec.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -39143,25 +41528,25 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	type alias = id * id * exp_info
 
 	datatype pat =
-	    WildPat of pat_info
+	    JokPat of pat_info
 	  | LitPat of pat_info * lit
 	  | VarPat of pat_info * id
 	  | TagPat of pat_info * lab * pat option * bool
 	  | ConPat of pat_info * longid * pat option * bool
 	  | RefPat of pat_info * pat
 	  | TupPat of pat_info * pat list
-	  | RowPat of pat_info * pat field list
+	  | ProdPat of pat_info * pat field list
 	  | VecPat of pat_info * pat list
 	  | AsPat of pat_info * id * pat
 
-	fun infoPat (WildPat info) = info
+	fun infoPat (JokPat info) = info
 	  | infoPat (LitPat (info, _)) = info
 	  | infoPat (VarPat (info, _)) = info
 	  | infoPat (TagPat (info, _, _, _)) = info
 	  | infoPat (ConPat (info, _, _, _)) = info
 	  | infoPat (RefPat (info, _)) = info
 	  | infoPat (TupPat (info, _)) = info
-	  | infoPat (RowPat (info, _)) = info
+	  | infoPat (ProdPat (info, _)) = info
 	  | infoPat (VecPat (info, _)) = info
 	  | infoPat (AsPat (info, _, _)) = info
 
@@ -39173,7 +41558,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    if s = s' then SOME x else select (fieldr, s')
 	  | select (nil, _) = NONE
 
-	fun unalias (WildPat _) = (nil, NONE)
+	fun unalias (JokPat _) = (nil, NONE)
 	  | unalias (VarPat (_, id)) = ([id], NONE)
 	  | unalias (AsPat (_, id, pat)) =
 	    let
@@ -39186,7 +41571,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun mkRefTyp typ =
 	    Type.inArrow (typ, Type.inApply (PreboundType.typ_ref, typ))
 
-	fun patToExp (WildPat info) =
+	fun patToExp (JokPat info) =
 	    let
 		val id = freshId info
 	    in
@@ -39233,7 +41618,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(TupPat (info, pats'), TupExp (info, exps'))
 	    end
-	  | patToExp (RowPat (info, patFields)) =
+	  | patToExp (ProdPat (info, patFields)) =
 	    let
 		val (patFields', expFields') =
 		    List.foldr (fn (Field (info, label, pat),
@@ -39245,7 +41630,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 				     Field (info, label, exp)::expFields)
 				end) (nil, nil) patFields
 	    in
-		(RowPat (info, patFields'), RowExp (info, expFields'))
+		(ProdPat (info, patFields'), ProdExp (info, expFields'))
 	    end
 	  | patToExp (VecPat (info, pats)) =
 	    let
@@ -39256,7 +41641,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (pat as AsPat (info, id, _)) =
 	    (pat, VarExp (info, ShortId (id_info info, id)))
 
-	fun derec' (WildPat _, exp) = (nil, [(nil, exp)])
+	fun derec' (JokPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (info, lit1), LitExp (_, lit2)) =
 	    if lit1 = lit2 then (nil, nil)
 	    else Error.error (#region info, "pattern never matches")
@@ -39292,7 +41677,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			    in
 				(cs @ cr, idsExps @ idsExpr)
 			    end) (nil, nil) (pats, exps)
-	  | derec' (TupPat (_, pats), RowExp (_, expFields)) =
+	  | derec' (TupPat (_, pats), ProdExp (_, expFields)) =
 	    (case FieldSort.sort expFields of
 		 (expFields', FieldSort.Tup _) =>
 		     ListPair.foldr
@@ -39305,9 +41690,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	       | (_, FieldSort.Rec) =>
 		     raise Crash.Crash
 			 "SimplifyRec.derec' 1 type inconsistency")
-	  | derec' (RowPat (_, _), TupExp (_, _)) =
+	  | derec' (ProdPat (_, _), TupExp (_, _)) =
 	    raise Crash.Crash "SimplifyRec.derec' 2 type inconsistency"
-	  | derec' (RowPat (_, patFields), RowExp (_, expFields)) =
+	  | derec' (ProdPat (_, patFields), ProdExp (_, expFields)) =
 	    let
 		val (expFields', _) = FieldSort.sort expFields
 	    in
@@ -39344,8 +41729,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | derec' (pat, _) =
 	    raise Crash.Crash "SimplifyRec.derec' 3 internal error"
 
-	fun unify (WildPat _, pat2) = (nil, pat2)
-	  | unify (pat1, WildPat _) = (nil, pat1)
+	fun unify (JokPat _, pat2) = (nil, pat2)
+	  | unify (pat1, JokPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (info, lit1), LitPat (_, lit2)) =
 	    if lit1 = lit2 then (nil, pat1)
 	    else Error.error (#region info, "pattern never matches")
@@ -39393,7 +41778,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (info, pats))
 	    end
-	  | unify (RowPat (info, patFields1), RowPat (_, patFields2)) =
+	  | unify (ProdPat (info, patFields1), ProdPat (_, patFields2)) =
 	    let
 		val (constraints, patFields) =
 		    ListPair.foldr (fn (Field (info, label, pat1),
@@ -39405,7 +41790,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 					 Field (info, label, pat)::patFieldr)
 				    end) (nil, nil) (patFields1, patFields2)
 	    in
-		(constraints, RowPat (info, patFields))
+		(constraints, ProdPat (info, patFields))
 	    end
 	  | unify (VecPat (info, pats1), VecPat (_, pats2)) =
 	    if length pats1 = length pats2 then
@@ -39443,7 +41828,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun getField (Field (_, _, pat)) = pat
 
-	fun preprocess (I.WildPat info) = (nil, WildPat info)
+	fun preprocess (I.JokPat info) = (nil, JokPat info)
 	  | preprocess (I.LitPat (info, lit)) = (nil, LitPat (info, lit))
 	  | preprocess (I.VarPat (info, id)) = (nil, VarPat (info, id))
 	  | preprocess (I.TagPat (info, label, isNAry)) =
@@ -39480,13 +41865,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (info, pats))
 	    end
-	  | preprocess (I.RowPat (info, patFields)) =
+	  | preprocess (I.ProdPat (info, patFields)) =
 	    let
 		val typ = #typ info
 		val labelTypList =
 		    if Type.isTuple typ then
-			Misc.List_mapi (fn (i, typ) =>
-					(Label.fromInt (i + 1), typ))
+			List.mapi (fn (i, typ) => (Label.fromInt (i + 1), typ))
 			(Type.asTuple typ)
 		    else parseRow (Type.asProd typ)
 		fun adjoin (labelTyp as (label, _), patFields as
@@ -39498,7 +41882,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			val info = {region = Source.nowhere}
 		    in
 			[Field (info, Lab (info, label),
-				I.WildPat (exp_info (Source.nowhere, typ)))]
+				I.JokPat (exp_info (Source.nowhere, typ)))]
 		    end
 		val patFields' =
 		    List.foldr adjoin patFields labelTypList
@@ -39516,7 +41900,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			FieldSort.Tup i =>
 			    TupPat (info, List.map getField patFields''')
 		      | FieldSort.Rec =>
-			    RowPat (info, patFields''')
+			    ProdPat (info, patFields''')
 	    in
 		(constraints, pat')
 	    end
@@ -39586,7 +41970,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | derec nil = (nil, nil, nil)
     end
-(* src # 137 ../backend-common/FLATTENING_PHASE.sig *)
+(* src # 148 backend-common/FLATTENING_PHASE.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -39607,7 +41991,7 @@ signature FLATTENING_PHASE =
 
 	val translate: C.t -> I.t -> O.t
     end
-(* src # 138 ../backend-common/FlatteningPhase.sml *)
+(* src # 149 backend-common/FlatteningPhase.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -39661,7 +42045,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
 	  | share stms =
-	    [O.SharedStm (stmInfo Source.nowhere, stms, ref 0)]
+	    [O.SharedStm (stmInfo Source.nowhere, stms, Stamp.new ())]
 
 	datatype continuation =
 	    Decs of dec list * continuation
@@ -39677,12 +42061,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    (*--** missing type for longid translation *)
 		val stm =
 		    O.ValDec (stmInfo (#region info), id',
-			      O.SelAppExp (info', label, id), false)
+			      O.SelAppExp (info', label, id))
 	    in
 		(stms @ [stm], id')
 	    end
 
-	fun decsToIdExpList (O.ValDec (_, id, exp', _)::rest, region) =
+	fun decsToIdExpList (O.ValDec (_, id, exp')::rest, region) =
 	    (id, exp')::decsToIdExpList (rest, region)
 	  | decsToIdExpList (O.IndirectStm (_, ref bodyOpt)::rest, region) =
 	    decsToIdExpList (valOf bodyOpt, region) @
@@ -39693,10 +42077,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stmInfo (#region info), id,
-			O.TagTest label_true, thenStms,
+			[(O.TagTest label_true, thenStms)],
 			[O.TestStm (stmInfo (#region info), id,
-				    O.TagTest label_false,
-				    elseStms, errStms)])]
+				    [(O.TagTest label_false, elseStms)],
+				    errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -39711,8 +42095,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateCont (Share (ref (SOME stms), _)) = stms
 	and translateDec (ValDec (info, VarPat (_, id), exp), cont) =
 	    let
-		fun declare exp' =
-		    O.ValDec (stmInfo (#region info), id, exp', false)
+		fun declare exp' = O.ValDec (stmInfo (#region info), id, exp')
 	    in
 		translateExp (exp, declare, cont)
 	    end
@@ -39731,7 +42114,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				  val toExp = O.VarExp (info, toId)
 			      in
 				  O.ValDec (stmInfo (#region (infoId fromId)),
-					    fromId, toExp, false)
+					    fromId, toExp)
 			      end) aliases
 		val subst = List.map (fn (id1, id2, _) => (id1, id2)) aliases
 		val decs' =
@@ -39740,11 +42123,11 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		     translateExp (substExp (exp, subst),
 				   fn exp' =>
 				   O.ValDec (stmInfo (#region (infoExp exp)),
-					     id, exp', false),
+					     id, exp'),
 				   Goto decs)) nil idExpList
 		val idExpList' = decsToIdExpList (decs', #region info)
 		val rest =
-		    O.RecDec (stmInfo (#region info), idExpList', false)::
+		    O.RecDec (stmInfo (#region info), idExpList')::
 		    aliasDecs @ translateCont cont
 		val errStms =
 		    share [O.RaiseStm (stmInfo (#region info), id_Bind)]
@@ -39758,7 +42141,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		     (*--** the following ConTest has wrong arity *)
 		     stms1 @ stms2 @
 		     [O.TestStm (stmInfo (#region info), id1,
-				 O.ConTest id2, rest, errStms)]
+				 [(O.ConTest id2, rest)], errStms)]
 		 end) rest constraints
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
@@ -39771,8 +42154,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info = infoExp exp
 		val id' = freshId info
-		fun declare exp' =
-		    O.ValDec (stmInfo (#region info), id', exp', false)
+		fun declare exp' = O.ValDec (stmInfo (#region info), id', exp')
 		val stms = translateExp (exp, declare, cont)
 	    in
 		(stms, id')
@@ -39790,7 +42172,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(stms, O.TupArgs ids)
 	    end
-	  | unfoldArgs (RowExp (_, expFields), rest, true) =
+	  | unfoldArgs (ProdExp (_, expFields), rest, true) =
 	    let
 		val (stms, labelIdList) =
 		    List.foldr (fn (Field (_, Lab (_, label), exp),
@@ -39855,7 +42237,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		r := SOME (f (O.TupExp (info, ids))::translateCont cont);
 		stms
 	    end
-	  | translateExp (RowExp (info, expFields), f, cont) =
+	  | translateExp (ProdExp (info, expFields), f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo (#region info), r)]
@@ -39898,12 +42280,18 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateExp (FunExp (info, matches), f, cont) =
 	    let
-		val region = #region (infoMatch (List.hd matches))
-		fun return exp' = O.ReturnStm (stmInfo region, exp')
 		val matches' =
-		    List.map (fn Match (_, pat, exp) =>
-			      (#region (infoExp exp), pat,
-			       translateExp (exp, return, Goto nil))) matches
+		    List.map (fn Match (info, pat, exp) =>
+			      let
+				  val region = #region info
+				  fun return exp' =
+				      O.ReturnStm (stmInfo region, exp')
+			      in
+				  (#region (infoExp exp), pat,
+				   translateExp (exp, return, Goto nil))
+			      end)
+		    matches
+		val region = #region (infoMatch (List.hd matches))
 		val errStms = [O.RaiseStm (stmInfo region, id_Match)]
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
@@ -39913,6 +42301,31 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		f (O.FunExp (info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
+(*--**DEBUG
+	  | translateExp (FunExp (info, matches), f, cont) =
+	    let
+		val region = #region (infoMatch (List.hd matches))
+		fun return exp' = O.ReturnStm (stmInfo region, exp')
+		val matches' =
+		    List.map (fn Match (_, pat, exp) =>
+			      (#region (infoExp exp), pat,
+			       translateExp (exp, return, Goto nil))) matches
+		val r = ref NONE
+		val errStms = [O.IndirectStm (stmInfo region, r)]
+		val (args, graph, mapping, consequents) =
+		    buildFunArgs (matches', errStms)
+		val body = translateGraph (graph, mapping)
+		val id = freshId info
+	    in
+		checkReachability consequents;
+		r := SOME [O.ValDec (stmInfo region, id,
+				     O.ConAppExp (info, id_Match,
+						  args, O.Unary)),
+			   O.RaiseStm (stmInfo region, id)];
+		f (O.FunExp (info, Stamp.new (), nil, args, body))::
+		translateCont cont
+	    end
+*)
 	  | translateExp (AppExp (info, TagExp (info', Lab (_, label), isNAry),
 				  exp2), f, cont) =
 	    let
@@ -39965,7 +42378,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms2, args) = unfoldArgs (exp2, rest, true)
 		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
-		r := SOME (f (O.AppExp (info, id1, args))::
+		r := SOME (f (O.VarAppExp (info, id1, args))::
 			   translateCont cont);
 		stms1
 	    end
@@ -40058,11 +42471,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info' = infoExp exp
 		val id' = freshId info'
-		val shared = ref 0
+		val stamp = Stamp.new ()
 		val cont' =
-		    Goto [O.EndHandleStm (stmInfo (#region info), shared)]
-		fun f' exp' =
-		    O.ValDec (stmInfo (#region info'), id', exp', false)
+		    Goto [O.EndHandleStm (stmInfo (#region info), stamp)]
+		fun f' exp' = O.ValDec (stmInfo (#region info'), id', exp')
 		val tryBody = translateExp (exp, f', cont')
 		val catchInfo = exp_info (#region info, PreboundType.typ_exn)
 		val catchId = freshId catchInfo
@@ -40082,7 +42494,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				   f, cont)
 	    in
 		[O.HandleStm (stmInfo (#region info), tryBody,
-			      catchId, catchBody, contBody, shared)]
+			      catchId, catchBody, contBody, stamp)]
 	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
 	    let
@@ -40136,6 +42548,26 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		checkReachability consequents;
 		stms
 	    end
+(*--**DEBUG
+	and simplifyCase (region, exp, matches, raiseId, isReraise) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stmInfo region, r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val id' = freshId (infoExp exp)
+		val errStms =
+		    [O.ValDec (stmInfo region, id',
+			       O.ConAppExp (infoExp exp, raiseId,
+					    O.OneArg id, O.Unary)),
+		     if isReraise then O.ReraiseStm (stmInfo region, id')
+		     else O.RaiseStm (stmInfo region, id')]
+		val (graph, consequents) = buildGraph (matches, errStms)
+	    in
+		r := SOME (translateGraph (graph, [(nil, id)]));
+		checkReachability consequents;
+		stms
+	    end
+*)
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =
 	    let
@@ -40187,8 +42619,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms, test', mapping') =
 		    translateTest (test, pos, mapping)
 	    in
-		stms @ [O.TestStm (stmInfo Source.nowhere, id, test',
-				   translateGraph (thenGraph, mapping'),
+		stms @ [O.TestStm (stmInfo Source.nowhere, id,
+				   [(test',
+				     translateGraph (thenGraph, mapping'))],
 				   translateGraph (elseGraph, mapping'))]
 	    end
 	and translateTypArgs (O.OneArg typ, pos, mapping) =
@@ -40204,7 +42637,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			      freshId (exp_info (Source.nowhere, typ))) typs
 	    in
 		(O.TupArgs ids,
-		 Misc.List_foldri
+		 List.foldri
 		 (fn (i, id, mapping) =>
 		  (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		 mapping ids)
@@ -40262,7 +42695,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    List.map (fn typ =>
 			      freshId (exp_info (Source.nowhere, typ))) typs
 		val mapping' =
-		    Misc.List_foldli
+		    List.foldli
 		    (fn (i, id, mapping) =>
 		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		    mapping ids
@@ -40296,7 +42729,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    List.map (fn typ =>
 			      freshId (exp_info (Source.nowhere, typ))) typs
 		val mapping' =
-		    Misc.List_foldli
+		    List.foldli
 		    (fn (i, id, mapping) =>
 		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		    mapping ids
@@ -40314,7 +42747,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		(imports, (translateExp (exportExp, export, Goto nil), sign))
 	    end
     end
-(* src # 139 ../backend-common/LIVENESS_ANALYSIS_PHASE.sig *)
+(* src # 150 backend-common/LIVENESS_ANALYSIS_PHASE.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -40334,7 +42767,7 @@ signature LIVENESS_ANALYSIS_PHASE =
 	val annotate: I.component -> unit
     end
 
-(* src # 140 ../backend-common/LivenessAnalysisPhase.sml *)
+(* src # 151 backend-common/LivenessAnalysisPhase.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -40442,7 +42875,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	(* Annotate the `Use' set at each statement *)
 
-	fun scanBody (ValDec (i, id, exp, _)::stms, initial) =
+	fun scanBody (ValDec (i, id, exp)::stms, initial) =
 	    let
 		val lset = scanBody (stms, initial)
 		val set = lazyValOf (scanExp (exp, del (lset, id)))
@@ -40450,7 +42883,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody (RecDec (i, idExpList, _)::stms, initial) =
+	  | scanBody (RecDec (i, idExpList)::stms, initial) =
 	    let
 		val lset = scanBody (stms, initial)
 		val lset' =
@@ -40492,7 +42925,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    let
 		val lset3 = scanBody (body3, initial)
 		val lset2 = scanBody (body2, lset3)
-		val lset1 = scanBody (body1, lset2)
+		val lset1 = scanBody (body1, union (lset2, lazyValOf lset3))
 		val set = lazyValOf (del (lset1, id))
 	    in
 		setInfo (i, set);
@@ -40505,11 +42938,15 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody ([TestStm (i, id, test, body1, body2)], initial) =
+	  | scanBody ([TestStm (i, id, testBodyList, body)], initial) =
+	    (*--** was there any reason for the test to be scanned twice? *)
 	    let
 		val initial' = Orig (lazyValOf initial)
-		val lset1 = scanTest (test, scanBody (body1, initial'))
-		val lset2 = scanTest (test, scanBody (body2, initial'))
+		val lset1 =
+		    List.foldl (fn ((test, body), initial') =>
+				scanTest (test, scanBody (body, initial')))
+		    initial' testBodyList
+		val lset2 = scanBody (body, initial')
 		val lset1' = union (lset1, lazyValOf (ins (lset2, id)))
 		val set = lazyValOf lset1'
 	    in
@@ -40565,6 +43002,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
 	  | scanExp (TagExp (_, _, _), lset) = lset
 	  | scanExp (ConExp (_, id, _), lset) = ins (lset, id)
+	  | scanExp (StaticConExp (_, _, _), lset) = lset
 	  | scanExp (RefExp _, lset) = lset
 	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
 	  | scanExp (RecExp (_, labIdList), lset) =
@@ -40578,15 +43016,19 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		processArgs (args, union (lset, set), del)
 	    end
-	  | scanExp (AppExp (_, id, args), lset) =
+	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
+	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
 	  | scanExp (TagAppExp (_, _, args, _), lset) =
 	    processArgs (args, lset, ins)
 	  | scanExp (ConAppExp (_, id, args, _), lset) =
 	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (StaticConAppExp (_, _, args, _), lset) =
+	    processArgs (args, lset, ins)
 	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
-	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
+	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
+	  | scanExp (FunAppExp (_, id, _, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
 
 	(* Compute `Def' and `Kill' sets *)
@@ -40615,9 +43057,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initTest (LabTest (_, id), set) = ins (set, id)
 	  | initTest (VecTest ids, set) = insList (set, ids)
 
-	fun initStm (ValDec (_, id, exp, _), set) =
-	    (ins (set, id); initExp exp)
-	  | initStm (RecDec (_, idExpList, _), set) =
+	fun initStm (ValDec (_, id, exp), set) = (ins (set, id); initExp exp)
+	  | initStm (RecDec (_, idExpList), set) =
 	    List.app (fn (id, exp) => (ins (set, id); initExp exp)) idExpList
 	  | initStm (EvalStm (_, exp), _) = initExp exp
 	  | initStm (RaiseStm (_, _), _) = ()
@@ -40629,15 +43070,18 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		ins (set', id);
 		initBody (body1, StampSet.clone set);
 		initBody (body2, set');
+		(*--** is this correct? *)
 		initBody (body3, set)
 	    end
 	  | initStm (EndHandleStm (_, _), _) = ()
-	  | initStm (TestStm (_, _, test, body1, body2), set) =
+	  | initStm (TestStm (_, _, testBodyList, body), set) =
 	    let
 		val set' = StampSet.clone set
 	    in
-		initTest (test, set'); initBody (body1, set');
-		initBody (body2, set)
+		List.app (fn (test, body) =>
+			  (initTest (test, set'); initBody (body, set')))
+		testBodyList;
+		initBody (body, set)
 	    end
 	  | initStm (SharedStm ({liveness = ref (Kill _), ...}, _, _), _) = ()
 	  | initStm (SharedStm (_, body, _), set) = initBody (body, set)
@@ -40677,7 +43121,150 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    (scanBody (body, Copy (StampSet.new ()));
 	     initBody (body, StampSet.new ()))
     end
-(* src # 141 ../backend-mozart/OzifyFlatGrammar.sml *)
+(* src # 152 backend-common/CODE.sig *)
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature CODE =
+    sig
+	type t
+
+	val externalize: TextIO.outstream * t -> unit
+    end
+(* src # 153 backend-common/ENGINE.sig *)
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature ENGINE =
+    sig
+	type t
+	type code
+	type value
+
+	exception Format of string
+
+	val start: unit -> t
+	val stop: t -> unit
+
+	val buildFunctor: t -> code -> value   (* Format *)
+	val saveValue: t -> string -> value -> unit   (* Format *)
+
+	val valueToString: value -> string
+    end
+(* src # 154 backend-common/MakeEngine.sml *)
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+functor MakeEngine(val cmd: unit -> string * string list
+		   structure Code: CODE) :> ENGINE where type code = Code.t =
+    struct
+	type t = Unix.proc option ref
+	type code = Code.t
+	type value = int
+
+	exception Format of string
+
+	val valueToString = Int.toString
+
+	fun start () = ref (SOME (Unix.execute (cmd ())))
+
+	fun instream proc = #1 (Unix.streamsOf (valOf (!proc)))
+	fun outstream proc = #2 (Unix.streamsOf (valOf (!proc)))
+
+	datatype arg =
+	    CODE of Code.t
+	  | VALUE of value
+	  | STRING of string
+
+	fun sendCommand (proc, command, args) =
+	    let
+		val q = outstream proc
+	    in
+		TextIO.output (q, "Command: " ^ command ^ "\n");
+		List.app (fn arg =>
+			  (TextIO.output (q, "Argument: ");
+			   case arg of
+			       CODE code =>
+				   Code.externalize (q, code)
+			     | VALUE value =>
+				   TextIO.output (q, valueToString value)
+			     | STRING string =>
+				   TextIO.output (q, string);
+			   TextIO.output1 (q, #"\n"))) args;
+		TextIO.output1 (q, #"\n");
+		TextIO.flushOut q
+	    end
+
+	local
+	    fun split (#":"::cs) = (nil, cs)
+	      | split (c::cs) =
+		let
+		    val (name, value) = split cs
+		in
+		    (c::name, value)
+		end
+	      | split nil = raise Format "split: colon expected"
+	in
+	    fun parseResult proc =
+		case TextIO.inputLine (instream proc) of
+		    "\n" => nil
+		  | s =>
+			let
+			    val (name, value) = split (String.explode s)
+			in
+			    (String.implode name, String.implode value)::
+			    parseResult proc
+			end
+	end
+
+	fun stop proc =
+	    (sendCommand (proc, "stop", nil);
+	     case parseResult proc of
+		 [("Result", _)] => ()
+	       | _ => raise Format "stop: result expected";
+	     TextIO.closeOut (outstream proc);
+	     proc := NONE)
+
+	fun buildFunctor proc code =
+	    (sendCommand (proc, "buildFunctor", [CODE code]);
+	     case parseResult proc of
+		 [("Result", s)] => valOf (Int.fromString s)
+	       | _ => raise Format "buildFunctor: result expected")
+
+	fun saveValue proc filename value =
+	    (sendCommand (proc, "saveValue", [STRING filename, VALUE value]);
+	     case parseResult proc of
+		 [("Result", _)] => ()
+	       | _ => raise Format "saveValue: result expected")
+    end
+(* src # 155 backend-mozart/OzifyFlatGrammar.sml *)
 (*
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
@@ -40692,7 +43279,6 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
  *   $Revision$
  *)
 
-
 structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
     struct
 	open FlatGrammar
@@ -40700,22 +43286,24 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	type t = string * FlatGrammar.t
 
 	local
-	    val count = ref 0
+	    (*--** remove global state *)
+	    val visited = StampSet.new ()
 	in
-	    fun gen () =
-		let
-		    val n = !count + 1
-		in
-		    count := n; n
-		end
+	    fun init () = StampSet.deleteAll visited
+
+	    fun visit stamp =
+		not (StampSet.member (visited, stamp)) before
+		StampSet.insert (visited, stamp)
 	end
 
 	val output = TextIO.output
 	val output1 = TextIO.output1
 
-	fun f (q, s) = (output (q, s); output1 (q, #"("))
+	fun l q = output1 (q, #"(")
 	fun m q = output1 (q, #" ")
+	fun h q = output1 (q, #"#")
 	fun r q = output1 (q, #")")
+	fun f (q, s) = (output (q, s); l q)
 
 	fun outputBool (q, b) = output (q, Bool.toString b)
 	fun outputInt (q, n) = output (q, Int.toString n)
@@ -40758,15 +43346,14 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    outputList outputChar (q, String.explode s)
 
 	fun outputPair (outputA, outputB) (q, (a, b)) =
-	    (output1 (q, #"("); outputA (q, a);
-	     output1 (q, #"#"); outputB (q, b); output1 (q, #")"))
+	    (l q; outputA (q, a); h q; outputB (q, b); r q)
 
 	local
 	    fun outputRegion (q, ((ll, lc), (rl, rc))) =
-		(output (q, Int.toString ll); output1 (q, #"#");
-		 output (q, Int.toString lc); output1 (q, #"#");
-		 output (q, Int.toString rl); output1 (q, #"#");
-		 output (q, Int.toString rc))
+		(l q; output (q, Int.toString ll); h q;
+		 output (q, Int.toString lc); r q; h q;
+		 l q; output (q, Int.toString rl); h q;
+		 output (q, Int.toString rc); r q)
 	in
 	    fun outputIdInfo (q, info: id_info) =
 		outputRegion (q, #region info)
@@ -40790,9 +43377,14 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
 	fun outputLabel (q, label) =
-	    case Label.toInt label of
-		SOME i => outputInt (q, i)
-	      | NONE => outputAtom (q, Label.toString label)
+	    case Label.toLargeInt label of
+		SOME n => outputLargeInt (q, n)
+	      | NONE =>
+		    case Label.toString label of
+			"true" => output (q, "true")
+		      | "false" => output (q, "false")
+		      | "::" => output (q, "'|'")
+		      | s => outputAtom (q, s)
 
 	fun outputId (q, Id (info, stamp, name)) =
 	    (f (q, "id"); outputIdInfo (q, info); m q;
@@ -40850,45 +43442,43 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "printName"); outputAtom (q, s); r q)
 	  | outputFunFlag (q, AuxiliaryOf stamp) =
 	    (f (q, "auxiliaryOf"); outputStamp (q, stamp); r q)
+	  | outputFunFlag (q, IsToplevel) = output (q, "IsToplevel")
 
-	fun outputStm (q, ValDec (info, id, exp, isToplevel)) =
+	fun outputStm (q, ValDec (info, id, exp)) =
 	    (f (q, "valDec"); outputStmInfo (q, info); m q;
-	     outputId (q, id); m q; outputExp (q, exp); m q;
-	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, RecDec (info, idExpList, isToplevel)) =
+	     outputId (q, id); m q; outputExp (q, exp); r q)
+	  | outputStm (q, RecDec (info, idExpList)) =
 	    (f (q, "recDec"); outputStmInfo (q, info); m q;
-	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
-	     outputBool (q, isToplevel); r q)
+	     outputList (outputPair (outputId, outputExp)) (q, idExpList); r q)
 	  | outputStm (q, EvalStm (info, exp)) =
 	    (f (q, "evalStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
-	  | outputStm (q, HandleStm (info, body1, id, body2, body3, shared)) =
-	    (shared := gen ();
-	     f (q, "handleStm"); outputStmInfo (q, info); m q;
+	  | outputStm (q, HandleStm (info, body1, id, body2, body3, stamp)) =
+	    (f (q, "handleStm"); outputStmInfo (q, info); m q;
 	     outputBody (q, body1); m q; outputId (q, id); m q;
 	     outputBody (q, body2); m q; outputBody (q, body3); m q;
-	     outputInt (q, !shared); r q)
-	  | outputStm (q, EndHandleStm (info, ref i)) =
+	     outputStamp (q, stamp); r q)
+	  | outputStm (q, EndHandleStm (info, stamp)) =
 	    (f (q, "endHandleStm"); outputStmInfo (q, info); m q;
-	     outputInt (q, i); r q)
-	  | outputStm (q, TestStm (info, id, test, body1, body2)) =
+	     outputStamp (q, stamp); r q)
+	  | outputStm (q, TestStm (info, id, testBodyList, body)) =
 	    (f (q, "testStm"); outputStmInfo (q, info); m q;
-	     outputId (q, id); m q; outputTest (q, test); m q;
-	     outputBody (q, body1); m q; outputBody (q, body2); r q)
+	     outputId (q, id); m q;
+	     outputList (outputPair (outputTest, outputBody))
+	     (q, testBodyList); m q; outputBody (q, body); r q)
 	  | outputStm (q, RaiseStm (info, id)) =
 	    (f (q, "raiseStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); r q)
 	  | outputStm (q, ReraiseStm (info, id)) =
 	    (f (q, "reraiseStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputStm (q, SharedStm (info, body, shared)) =
-	    (if !shared = 0 then
-		 (shared := gen ();
-		  f (q, "sharedStm"); outputStmInfo (q, info); m q;
+	  | outputStm (q, SharedStm (info, body, stamp)) =
+	    (if visit stamp then
+		 (f (q, "sharedStm"); outputStmInfo (q, info); m q;
 		  outputBody (q, body); m q)
 	     else
-		 f (q, "refStm");
-	     outputInt (q, !shared); r q)
+		f (q, "refStm");
+	     outputStamp (q, stamp); r q)
 	  | outputStm (q, ReturnStm (info, exp)) =
 	    (f (q, "returnStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
@@ -40916,6 +43506,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, ConExp (info, id, conArity)) =
 	    (f (q, "conExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputConArity (q, conArity); r q)
+	  | outputExp (q, StaticConExp (info, stamp, conArity)) =
+	    (f (q, "staticConExp"); outputExpInfo (q, info); m q;
+	     outputStamp (q, stamp); m q; outputConArity (q, conArity); r q)
 	  | outputExp (q, RefExp info) =
 	    (f (q, "refExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =
@@ -40936,12 +43529,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
 	     outputArgs outputId (q, args); m q; outputBody (q, body); r q)
-	  | outputExp (q, AppExp (info, id, args)) =
-	    (f (q, "appExp"); outputExpInfo (q, info); m q;
+	  | outputExp (q, PrimAppExp (info, string, ids)) =
+	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
+	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
+	  | outputExp (q, VarAppExp (info, id, args)) =
+	    (f (q, "varAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
-	  | outputExp (q, SelAppExp (info, label, id)) =
-	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputId (q, id); r q)
 	  | outputExp (q, TagAppExp (info, label, args, conArity)) =
 	    (f (q, "tagAppExp"); outputExpInfo (q, info); m q;
 	     outputLabel (q, label); m q; outputArgs outputId (q, args); m q;
@@ -40950,27 +43543,37 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "conAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); m q;
 	     outputConArity (q, conArity); r q)
+	  | outputExp (q, StaticConAppExp (info, stamp, args, conArity)) =
+	    (f (q, "staticConAppExp"); outputExpInfo (q, info); m q;
+	     outputStamp (q, stamp); m q; outputArgs outputId (q, args); m q;
+	     outputConArity (q, conArity); r q)
 	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, PrimAppExp (info, string, ids)) =
-	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
-	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
+	  | outputExp (q, SelAppExp (info, label, id)) =
+	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
+	     outputLabel (q, label); m q; outputId (q, id); r q)
+	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
+	    (f (q, "funAppExp"); outputExpInfo (q, info); m q;
+	     outputId (q, id); m q; outputStamp (q, stamp); m q;
+	     outputArgs outputId (q, args); r q)
 	  | outputExp (q, AdjExp (info, id1, id2)) =
 	    (f (q, "adjExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
 	fun externalize (q, (filename, (importList, (stms, _)))) =
-	    (outputString (q, filename);
-	     output1 (q, #"#");
+	    (init ();
+	     outputString (q, filename); h q; l q;
 	     outputList (fn (q, (id, _, url)) =>
-			 outputPair (outputId, outputString)
-			 (q, (id, Url.toString url))) (q, importList);
-	     output1 (q, #"#");
-	     outputList outputStm (q, stms))
+			 (l q; outputId (q, id);
+			  h q; output (q, "unit");
+			  h q; outputString (q, Url.toString url); r q))
+	     (q, importList);
+	     h q; l q; outputList outputStm (q, stms); h q;
+	     output (q, "unit"); r q; r q)
     end
-(* src # 142 ../backend-mozart/MozartGenerationPhase.sml *)
+(* src # 156 backend-mozart/MozartGenerationPhase.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -40984,12 +43587,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
  *)
 
 structure MozartEngine =
-    MakeEngine (val cmd = "/bin/sh"
-		val args = ["stoc-mozart.exe"]
-(*--** for debugging:
-		val args = ["stoc-mozart.exe", "--debug"]
- *)
-		structure Code = OzifyFlatGrammar)
+    MakeEngine(fun cmd () =
+		   ("/bin/sh",
+		    [case OS.Process.getEnv "STOC_MOZART" of
+			 SOME s => s
+		       | NONE => "stoc-mozart.exe"])
+	       structure Code = OzifyFlatGrammar)
 
 structure MozartTargetContext :> CONTEXT where type t = MozartEngine.t =
     struct
@@ -41033,7 +43636,7 @@ structure MozartGenerationPhase (*:> PHASE
 
 	fun translate inFilename component = (inFilename, component)
     end
-(* src # 143 ../backend-com+/IL.sig *)
+(* src # 157 backend-com+/IL.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -41206,7 +43809,7 @@ signature IL =
 
 	val outputProgram: TextIO.outstream * program -> unit
     end
-(* src # 144 ../backend-com+/IL.sml *)
+(* src # 158 backend-com+/IL.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -41388,6 +43991,7 @@ structure IL :> IL =
 
 	structure Map =
 	    MakeHashImpMap(type t = label
+			   val equals = op=
 			   fun hash label = label)
 
 	val size = ref 0
@@ -41846,7 +44450,7 @@ structure IL :> IL =
 	     outputProgram (q, declr))
 	  | outputProgram (_, nil) = ()
     end
-(* src # 145 ../backend-com+/StockWerk.sml *)
+(* src # 159 backend-com+/StockWerk.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -41927,7 +44531,7 @@ structure StockWerk =
 	val Procedure3Ty       = IL.ClassTy Procedure3
 	val Procedure4Ty       = IL.ClassTy Procedure4
     end
-(* src # 146 ../backend-com+/BUILTINS.sig *)
+(* src # 160 backend-com+/BUILTINS.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -41944,7 +44548,7 @@ signature BUILTINS =
     sig
 	val lookup: string -> IL.id * IL.ty
     end
-(* src # 147 ../backend-com+/Builtins.sml *)
+(* src # 161 backend-com+/Builtins.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -41998,7 +44602,7 @@ structure Builtins :> BUILTINS =
 		    (String.map (fn c => if c = #"." then #"$" else c) name,
 		     StockWerk.StockWertTy)
     end
-(* src # 148 ../backend-com+/CODE_STORE.sig *)
+(* src # 162 backend-com+/CODE_STORE.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -42050,7 +44654,7 @@ signature CODE_STORE =
 	val closeMethod: unit -> unit
 	val close: unit -> IL.program
     end
-(* src # 149 ../backend-com+/CodeStore.sml *)
+(* src # 163 backend-com+/CodeStore.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -42082,7 +44686,7 @@ structure CodeStore :> CODE_STORE =
 	type class = stamp
 
 	structure Map = StampMap
-	structure ScopedMap = MakeHashScopedImpMap(Stamp)
+	structure ScopedMap = MakeHashScopedImpMap(FromEqHashKey(Stamp))
 
 	type classAttrState = (extends * implements) option ref
 	type scope = reg ScopedMap.t
@@ -42340,7 +44944,7 @@ structure CodeStore :> CODE_STORE =
 		 end) [mainMethod] (!classes)
 	    end
     end
-(* src # 150 ../backend-com+/CODE_GEN_PHASE.sig *)
+(* src # 164 backend-com+/CODE_GEN_PHASE.sig *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -42360,7 +44964,7 @@ signature CODE_GEN_PHASE =
 
 	val genComponent: I.component -> O.program
     end
-(* src # 151 ../backend-com+/CodeGenPhase.sml *)
+(* src # 165 backend-com+/CodeGenPhase.sml *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -42417,8 +45021,8 @@ signature CODE_GEN_PHASE =
  * Applikationen verwendet wird, heisst Hilfsprozedur (Auxiliary).  Berechne
  * den Dominanzgraphen des Aufrufgraphen der Toplevel-Prozeduren.  Jede
  * dominierende nicht-Hilfsprozedur, die ausschliesslich Hilfsprozeduren
- * unter sich hat, kann die Definitionen ihrer Hilfsprozeduren in ihrer
- * eigenen Klasse aufnehmen.
+ * unter sich hat, kann die Definitionen ihrer Hilfsprozeduren in ihre
+ * eigene Klasse mit aufnehmen.
  *
  * Entsprechend dominierte Hilfsprozeduren sollen mit dem Flag AuxiliaryOf
  * annotiert werden.
@@ -42460,15 +45064,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun emitRecordArity labelIdList =
 	    (emit (LdcI4 (List.length labelIdList));
 	     emit (Newarr System.ObjectTy);
-	     Misc.List_appi (fn (i, (label, _)) =>
-			     (emit Dup; emit (LdcI4 i);
-			      case Label.toInt label of
-				  SOME i =>
-				      (emit (LdcI4 i);
-				       emit (Newobj (System.Int32, [Int32Ty])))
-				| NONE =>
-				      emit (Ldstr (Label.toString label));
-			      emit (StelemRef))) labelIdList;
+	     List.appi (fn (i, (label, _)) =>
+			(emit Dup; emit (LdcI4 i);
+			 case Label.toLargeInt label of
+			     SOME i =>
+				 (emit (LdcI4 (LargeInt.toInt i));
+						(*--** *)
+				  emit (Newobj (System.Int32, [Int32Ty])))
+			   | NONE =>
+				 emit (Ldstr (Label.toString label));
+			 emit (StelemRef))) labelIdList;
 	     emit (Call (false, StockWerk.RecordArity, "MakeRecordArity",
 			 [ArrayTy System.ObjectTy], StockWerk.RecordArityTy)))
 
@@ -42476,8 +45081,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    PREPARE
 	  | FILL
 	  | BOTH
-
-	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
 	fun genTestInt (dottedname, ty, i, elseLabel) =
 	    (emit Dup; emit (Isinst dottedname); emit (B (FALSE, elseLabel));
@@ -42570,9 +45173,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Castclass StockWerk.Tuple);
 	     emit (Ldfld (StockWerk.Tuple, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emit LdelemRef;
-			      declareLocal id)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emit LdelemRef;
+			 declareLocal id)) ids;
 	     emit Pop)
 	  | genTest (RecTest labelIdList, elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Record);
@@ -42580,16 +45183,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Castclass StockWerk.Record);
 	     emit (Ldfld (StockWerk.Record, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, (_, id)) =>
-			     (emit Dup; emit (LdcI4 i); emit LdelemRef;
-			      declareLocal id)) labelIdList;
+	     List.appi (fn (i, (_, id)) =>
+			(emit Dup; emit (LdcI4 i); emit LdelemRef;
+			 declareLocal id)) labelIdList;
 	     emit Pop)
 	  | genTest (LabTest (label, id), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Record);
 	     emit (B (FALSE, elseLabel));
-	     case Label.toInt label of
+	     case Label.toLargeInt label of
 		 SOME i =>
-		     (emit (LdcI4 i);
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
 		      emit (Call (true, StockWerk.StockWert, "CondSelect",
 				  [Int32Ty], StockWerk.StockWertTy)))
 	       | NONE =>
@@ -42609,9 +45212,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
 		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
 		emit (Label thenLabel);
-		Misc.List_appi (fn (i, id) =>
-				(emit Dup; emit (LdcI4 i); emit LdelemRef;
-				 declareLocal id)) ids;
+		List.appi (fn (i, id) =>
+			   (emit Dup; emit (LdcI4 i); emit LdelemRef;
+			    declareLocal id)) ids;
 		emit Pop
 	    end
 
@@ -42631,24 +45234,27 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (LdcR4 s);
 	     emit (Newobj (StockWerk.Real, [Float32Ty])))
 
+	(*--** remove global state *)
+	val sharedLabels: label StampMap.t = StampMap.new ()
+
 	(*--** in EvalStm and declarations of unused variables,
 	 * remove all of exp but side-effects *)
 
-	fun genStm (ValDec (_, id, exp, _)) =
+	fun genStm (ValDec (_, id, exp)) =
 	    (genExp (exp, BOTH); declareLocal id)
-	  | genStm (RecDec (_, idExpList, _)) =
+	  | genStm (RecDec (_, idExpList)) =
 	    (List.app (fn (id, exp) =>
 		       (genExp (exp, PREPARE); declareLocal id)) idExpList;
 	     List.app (fn (id, exp) =>
 		       (emitId id; genExp (exp, FILL))) idExpList)
 	  | genStm (EvalStm (_, exp)) = (genExp (exp, BOTH); emit Pop)
-	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, shared)) =
+	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, stamp)) =
 	    let
 		val label1 = newLabel ()
 		val label2 = newLabel ()
 		val label3 = newLabel ()
 	    in
-		shared := label3;
+		StampMap.insertDisjoint (sharedLabels, stamp, label3);
 		emit (Try (label1, label2, StockWerk.ExceptionWrapper,
 			   label2, label3));
 		emit (Label label1); genBody tryBody;
@@ -42658,13 +45264,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		declareLocal id; genBody catchBody;
 		emit (Label label3); genBody contBody
 	    end
-	  | genStm (EndHandleStm (_, shared)) = emit (Leave (!shared))
-	  | genStm (stm as TestStm (_, id, _, _, _)) =
-	    let
-		val (testBodyList, elseBody) = gatherTests ([stm], id)
-	    in
-		genTestStm (id, testBodyList, fn () => genBody elseBody)
-	    end
+	  | genStm (EndHandleStm (_, stamp)) =
+	    emit (Leave (StampMap.lookupExistent (sharedLabels, stamp)))
+	  | genStm (stm as TestStm (_, id, testBodyList, elseBody)) =
+	    genTestStm (id, testBodyList, fn () => genBody elseBody)
 	  | genStm (RaiseStm (info, id)) =
 	    let
 		val ((line, _), (_, _)) = #region info
@@ -42675,25 +45278,19 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Throw
 	    end
 	  | genStm (ReraiseStm (_, _)) = emit Rethrow
-	  | genStm (SharedStm (_, body, shared as ref 0)) =
-	    let
-		val label = newLabel ()
-	    in
-		emit (Label label); shared := label; genBody body
-	    end
-	  | genStm (SharedStm (_, _, ref i)) = emit (Br i)
+	  | genStm (SharedStm (_, body, stamp)) =
+	    (case StampMap.lookup (sharedLabels, stamp) of
+		 NONE =>
+		     let
+			 val label = newLabel ()
+		     in
+			 StampMap.insertDisjoint (sharedLabels, stamp, label);
+			 emit (Label label); genBody body
+		     end
+	       | SOME label => emit (Br label))
 	  | genStm (ReturnStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
 	  | genStm (ExportStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
-	and gatherTests ([TestStm (_, id, test, thenBody, elseBody)], id') =
-	    if idEq (id, id') then
-		let
-		    val (testBodyList, elseBody') = gatherTests (elseBody, id')
-		in
-		    ((test, thenBody)::testBodyList, elseBody')
-		end
-	    else (nil, elseBody)
-	  | gatherTests (body, _) = (nil, body)
 	and genTestStm (_, nil, elseBodyFun) = elseBodyFun ()
 	  | genTestStm (id, testBodyList, elseBodyFun) =
 	    let
@@ -42794,16 +45391,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (TupExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Tuple, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) ids;
 	     emit Pop)
 	  | genExp (TupExp (_, ids), BOTH) =
 	    (emit (LdcI4 (List.length ids));
 	     emit (Newarr StockWerk.StockWertTy);
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) ids;
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
 	  | genExp (RecExp (_, labelIdList), PREPARE) =
 	    (emitRecordArity labelIdList;
@@ -42814,23 +45411,23 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (RecExp (_, labelIdList), FILL) =
 	    (emit (Ldfld (StockWerk.Record, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, (_, id)) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) labelIdList;
+	     List.appi (fn (i, (_, id)) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) labelIdList;
 	     emit Pop)
 	  | genExp (RecExp (_, labelIdList), BOTH) =
 	    (emitRecordArity labelIdList;
 	     emit (LdcI4 (List.length labelIdList));
 	     emit (Newarr StockWerk.StockWertTy);
-	     Misc.List_appi (fn (i, (_, id)) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) labelIdList;
+	     List.appi (fn (i, (_, id)) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) labelIdList;
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
 	  | genExp (SelExp (_, label), BOTH) =
-	    (case Label.toInt label of
+	    (case Label.toLargeInt label of
 		 SOME i =>
-		     (emit (LdcI4 i);
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
 		      emit (Newobj (StockWerk.IntSelector, [Int32Ty])))
 	       | NONE =>
 		     (emit (Ldstr (Label.toString label));
@@ -42843,9 +45440,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (VecExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Vector, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     Misc.List_appi (fn (i, id) =>
-			     (emit Dup; emit (LdcI4 i); emitId id;
-			      emit StelemRef)) ids;
+	     List.appi (fn (i, id) =>
+			(emit Dup; emit (LdcI4 i); emitId id;
+			 emit StelemRef)) ids;
 	     emit Pop)
 	  | genExp (FunExp (info, stamp, _, args, body), PREPARE) =
 	    (emitRegion ("FunExp", #region info);
@@ -42902,50 +45499,40 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			 closeMethod ()
 		     end;
 	     emit Pop)
-	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
+	  | genExp (PrimAppExp (_, name, ids), BOTH) =   (*--** not impl'd *)
+	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"
+	  | genExp (VarAppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs nil), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs nil), BOTH) =
 	    (emitId id;
 	     emit (Callvirt (StockWerk.StockWert, "Apply0",
 			     nil, StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs [id1, id2]), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs [id1, id2]), BOTH) =
 	    (emitId id; emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply2",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy],
 			     StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs [id1, id2, id3]), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs [id1, id2, id3]), BOTH) =
 	    (emitId id; emitId id1; emitId id2; emitId id3;
 	     emit (Callvirt (StockWerk.StockWert, "Apply3",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
 			      StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs [id1, id2, id3, id4]), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs [id1, id2, id3, id4]), BOTH) =
 	    (emitId id; emitId id1; emitId id2; emitId id3; emitId id4;
 	     emit (Callvirt (StockWerk.StockWert, "Apply4",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
 			      StockWerk.StockWertTy, StockWerk.StockWertTy],
 			     StockWerk.StockWertTy)))
-	  | genExp (AppExp (info, id, TupArgs ids), BOTH) =
+	  | genExp (VarAppExp (info, id, TupArgs ids), BOTH) =
 	    (emitId id; genExp (TupExp (info, ids), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (info, id, RecArgs labelIdList), BOTH) =
+	  | genExp (VarAppExp (info, id, RecArgs labelIdList), BOTH) =
 	    (emitId id; genExp (RecExp (info, labelIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (SelAppExp (_, label, id), BOTH) =
-	    (emitId id;
-	     case Label.toInt label of
-		 SOME i =>
-		     (emit (LdcI4 i);
-		      emit (Callvirt (StockWerk.StockWert, "Select", [Int32Ty],
-				      StockWerk.StockWertTy)))
-	       | NONE =>
-		     (emit (Ldstr (Label.toString label));
-		      emit (Callvirt (StockWerk.StockWert, "Select",
-				      [System.StringTy],
-				      StockWerk.StockWertTy))))
 	  | genExp (TagAppExp (_, _, _, _), _) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genExp: TagAppExp"
 	  | genExp (ConAppExp (_, id, _, _), PREPARE) =
@@ -42960,8 +45547,20 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id;
 	     emit (Call (true, StockWerk.Ref, "Assign",
 			 [StockWerk.StockWertTy], VoidTy)))
-	  | genExp (PrimAppExp (_, name, ids), BOTH) =   (*--** not impl'd *)
-	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"
+	  | genExp (SelAppExp (_, label, id), BOTH) =
+	    (emitId id;
+	     case Label.toLargeInt label of
+		 SOME i =>
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
+		      emit (Callvirt (StockWerk.StockWert, "Select", [Int32Ty],
+				      StockWerk.StockWertTy)))
+	       | NONE =>
+		     (emit (Ldstr (Label.toString label));
+		      emit (Callvirt (StockWerk.StockWert, "Select",
+				      [System.StringTy],
+				      StockWerk.StockWertTy))))
+	  | genExp (FunAppExp (info, id, _, args), expMode) =
+	    genExp (VarAppExp (info, id, args), expMode)
 	  | genExp (AdjExp (_, id1, id2), BOTH) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genExp: AdjExp"
 	  | genExp (exp, PREPARE) =
@@ -43002,7 +45601,148 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			declareLocal id)) imports;
 	     genBody body; close())
     end
-(* src # 152 ../top/MAIN.sig *)
+(* src # 166 top/Signature.sml *)
+structure Signature :> SIGNATURE where type t = Inf.sign =
+  struct
+    type t = Inf.sign
+
+    fun matches(s1,s2) =
+	let
+	    val j1 = Inf.inSig s1
+	    val j2 = Inf.instance(Inf.inSig s2)
+	in
+	    ( Inf.match(j1,j2) ; true ) handle Inf.Mismatch _ => false
+	end
+
+  end
+(* src # 167 top/Composer.sml *)
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
+    struct
+	structure Sig = Signature
+
+	exception Corrupt
+
+	val acquire: (Url.t -> Sig.t) ref =
+	    ref (fn _ => raise Crash.Crash "Composer.acquire")
+
+	fun setAcquisitionMethod f = acquire := f
+
+	structure UrlMap = MakeHashImpMap(FromEqHashKey(Url))
+
+	val signTable: Sig.t UrlMap.t = UrlMap.new ()
+
+	fun sign url =
+	    case UrlMap.lookup (signTable, url) of
+		SOME sign => sign
+	      | NONE =>
+		    let
+			val sign = !acquire url
+		    in
+			UrlMap.insertDisjoint (signTable, url, sign);
+			sign
+		    end
+
+	fun start url = ()
+    end
+(* src # 168 top/INITIAL_CONTEXT.sig *)
+signature INITIAL_CONTEXT =
+  sig
+    type t
+    val initial: unit -> t
+  end
+(* src # 169 top/COMPILER.sig *)
+(*
+ * Scenarios for compiler usage:
+ * 1. Batch: always use initial context, discard result
+ * 2. Interactive: use previous resulting context
+ * 3. Debugging: context is provided by some outside magic, discard result
+ *)
+
+signature COMPILER =
+  sig
+    structure Source: SOURCE
+    structure Target: TARGET
+
+    type context
+
+    val initial: context
+    val compile: context * Source.t -> context * Target.t  (* [Error.Error] *)
+  end
+(* src # 170 top/MakeCompiler.sml *)
+(*
+ * Mmh, how about parameterization of Phases over error output formatting...?
+ * And shouldn't the Composer also be applied here?
+ * Problem is, this requires applicative functors with extended paths.
+ *)
+
+functor MakeCompiler(
+	structure Source:   SOURCE
+	structure Target:   TARGET
+	structure FrontendSpecific: PHASE where I = Source
+	structure FrontendCommon:   PHASE where I = FrontendSpecific.O
+	structure BackendCommon:    PHASE where I = FrontendCommon.O
+	structure BackendSpecific:  PHASE where I = BackendCommon.O
+					  where O = Target
+	structure FrontendSpecificInitialContext: INITIAL_CONTEXT
+					  where type t = FrontendSpecific.C.t
+	structure FrontendCommonInitialContext:   INITIAL_CONTEXT
+					  where type t = FrontendCommon.C.t
+	structure BackendCommonInitialContext:    INITIAL_CONTEXT
+					  where type t = BackendCommon.C.t
+	structure BackendSpecificInitialContext:  INITIAL_CONTEXT
+					  where type t = BackendSpecific.C.t
+       ) :> COMPILER where Source = Source
+		     where Target = Target
+  =
+  struct
+    structure Source = Source
+    structure Target = Target
+
+    type context =
+	{ feSpec : FrontendSpecific.C.t
+	, feComm : FrontendCommon.C.t
+	, beComm : BackendCommon.C.t
+	, beSpec : BackendSpecific.C.t
+	}
+
+    val initial =
+	{ feSpec = FrontendSpecificInitialContext.initial()
+	, feComm = FrontendCommonInitialContext.initial()
+	, beComm = BackendCommonInitialContext.initial()
+	, beSpec = BackendSpecificInitialContext.initial()
+	}
+
+    fun clone {feSpec,feComm,beComm,beSpec} =
+	{ feSpec = FrontendSpecific.C.clone feSpec
+	, feComm = FrontendCommon.C.clone feComm
+	, beComm = BackendCommon.C.clone beComm
+	, beSpec = BackendSpecific.C.clone beSpec
+	}
+
+    fun compile(C, source) =
+	let
+	    val C' = clone C
+	    val f  = BackendSpecific.translate(#beSpec C')
+		   o BackendCommon.translate(#beComm C')
+		   o FrontendCommon.translate(#feComm C')
+		   o FrontendSpecific.translate(#feSpec C')
+	in
+	    (C', f source)
+	end
+  end
+(* src # 171 top/MAIN.sig *)
 signature MAIN =
   sig
 
@@ -43042,7 +45782,29 @@ signature MAIN =
     val comifyFileToFile :	string * string -> unit
 
   end
-(* src # 153 ../top/Main.sml *)
+(* src # 172 top/Main.sml *)
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2000
+ *   Andreas Rossberg, 1999-2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure AbstractionPhase = MakeAbstractionPhase(Composer)
+structure ElaborationPhase = MakeElaborationPhase(Composer)
+
+(* Test *)
+structure FrontendSML    = MakeFrontendSML(Composer)
+structure FrontendCommon = MakeFrontendCommon(Composer)
+
+
 structure Main :> MAIN =
   struct
 
@@ -43101,15 +45863,20 @@ structure Main :> MAIN =
 	    TextIO.output1 (outstream, #"\n")
 	end
 
-    fun mozartify inFilename outFilename s =
-	let
-	    val component as (_, (_, exportSign)) = flatten s
-	    val engine = MozartEngine.start ()
-	in
-	    MozartTarget.save engine outFilename
-	    (MozartGenerationPhase.translate inFilename component);
-	    exportSign
-	end
+    local
+	val engine: MozartEngine.t option ref = ref NONE
+    in
+	fun mozartify inFilename outFilename s =
+	    let
+		val component as (_, (_, exportSign)) = flatten s
+	    in
+		if isSome (!engine) then ()
+		else engine := SOME (MozartEngine.start ());
+		MozartTarget.save (valOf (!engine)) outFilename
+		(MozartGenerationPhase.translate inFilename component);
+		exportSign
+	    end
+    end
 
     fun comify outstream s =
 	let
@@ -43146,12 +45913,90 @@ structure Main :> MAIN =
     fun ozifyStringToFile(s,n)	= processString (toFile ozify n) s
     fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify n2) n1
 
-    fun compileForMozart(n1,n2)	= processFile (mozartify n1 n2) n1
-
     val comifyStringToStdOut	= processString (comify TextIO.stdOut)
     val comifyFileToStdOut	= processFile (comify TextIO.stdOut)
 
     fun comifyStringToFile(s,n)	= processString (toFile comify n) s
     fun comifyFileToFile(n1,n2)	= processFile (toFile comify n2) n1
+
+    (* Tell the composer how to compile Alice source files *)
+
+    fun parseUrl url =
+	case (Url.getScheme url, Url.getAuthority url) of
+	    ((NONE | SOME "file"), NONE) =>
+		Url.toString (Url.setScheme (url, NONE))
+	  | (SOME "x-alice", NONE) =>
+		Url.toString (Url.setScheme (Url.makeRelativePath url, NONE))
+	  | _ => raise Crash.Crash "Main.parseUrl"
+
+    fun existsFile filename =
+	(TextIO.closeIn (TextIO.openIn filename); true) handle IO.Io _ => false
+
+    fun changeExtension (filename, fro, to) =
+	let
+	    val n = String.size filename
+	    val m = String.size fro
+	in
+	    if n > m andalso String.substring (filename, n - m, m) = fro then
+		let
+		    val newname = String.substring (filename, 0, n - m) ^ to
+		in
+		    if existsFile newname then SOME newname
+		    else NONE
+		end
+	    else NONE
+	end
+
+    fun compileSign filename =
+	let
+	    val _ =
+		TextIO.print ("### reading signature file " ^ filename ^ "\n")
+	    val (_, (_, sign)) = translateFile filename
+	    val _ = TextIO.print "### done\n"
+	in
+	    case Inf.items sign of
+		[item] => Inf.asSig (valOf (#3 (Inf.asInfItem item)))
+	      | _ => raise Crash.Crash "Composer.compileSign"
+	end
+
+    val fileStack: string list ref = ref nil
+
+    fun compileForMozart (sourceFilename, targetFilename) =
+	(TextIO.print ("### compiling file " ^ sourceFilename ^ "\n");
+	 fileStack := sourceFilename::(!fileStack);
+	 processFile (mozartify sourceFilename targetFilename) sourceFilename
+	 before (TextIO.print ("### wrote file " ^ targetFilename ^ "\n");
+		 case !fileStack of
+		     _::(rest as resumeFilename::_) =>
+			 (fileStack := rest;
+			  TextIO.print ("### resuming compilation of " ^
+					resumeFilename ^ "\n"))
+		   | _ => ()))
+
+    fun acquireSign url =
+	let
+	    val targetFilename = parseUrl url
+	    val sigFilename = targetFilename ^ ".sig"
+	in
+	    if existsFile sigFilename then compileSign sigFilename
+	    else
+		case changeExtension (targetFilename, ".ozf", ".sml") of
+		    SOME sourceFilename =>
+			compileForMozart (sourceFilename, targetFilename)
+		  | NONE =>
+			case changeExtension (targetFilename,
+					      ".ozf", ".sig") of
+			    SOME sourceFilename =>
+				compileForMozart (sourceFilename,
+						  targetFilename)
+			  | NONE =>
+				(TextIO.print
+				 ("### warning: could not locate source for " ^
+				  targetFilename ^ "\n");
+				 Inf.empty ())
+	end
+
+    val _ = Composer.setAcquisitionMethod acquireSign
+    val _ = Switches.printComponentSig := false
 
   end
