@@ -75,3 +75,12 @@ UnsafeInspector.inspect (D A, t_S);
 UnsafeInspector.inspect (E {bla = "hello", blubb = #"w"}, t_S);
 UnsafeInspector.inspect (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
 
+(* Liste *)
+structure IntList = Reflect.ReflectType
+    (type t = (string vector vector * int vector vector) list);
+val t_list = IntList.x;
+
+UnsafeInspector.inspect ([{1 = #[#["hi","du"],#["guck","mal"]], 
+			   2 = #[#[0,8,1,5],#[4,7,1,1]]},
+			  {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
+			   2 = #[#[0,8,1,5],#[4,7,1,1]]}],t_list);

@@ -35,6 +35,12 @@ sig
     
     val createGraph: Reflect.value * Type.t  * node * int * int -> node
 
+    val listdescToNode: 
+        Reflect.value * Type.t * node * int * int * 'b list_desc  -> node
+
+    val listElemArray:
+	'a list * int * Type.t * node * int * bool -> node array
+       
     val treatProd:  Reflect.value * Type.t  * node * int * int * Type.row 
 	-> node
 
@@ -75,6 +81,11 @@ sig
     val queryDepth :  
 	Reflect.value * Type.t  * node * int * int * Type.row * 
 	(Reflect.value * Type.t  * node * int * int * Type.row -> node) 
+	-> node
+
+    val queryDepthL :  
+	Reflect.value * Type.t  * node * int * int * 'a list_desc * 
+	(Reflect.value * Type.t  * node * int * int * 'a list_desc -> node) 
 	-> node
 
 end;

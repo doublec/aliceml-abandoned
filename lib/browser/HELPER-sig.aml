@@ -19,8 +19,6 @@ import structure Gtk      from "x-alice:/lib/gtk/Gtk"
 import structure Label from "x-alice:/lib/rtt/Label"
 import structure Types    from "Types"
 
-
-
 open Types
 
 signature HELPER =
@@ -56,5 +54,10 @@ sig
     val checkContKids : node array * int -> bool
     val checkConcKids : node array * int -> bool
     val setsVertical : node -> bool
+
+    (* Behandlung von Listen *)
+    val inspectList : int * 'a list  -> 'a list_desc 
+    val inspectList' : int * 'a list * 'a list -> 'a list_desc
+    val castList : 'a -> 'b list
 
 end;

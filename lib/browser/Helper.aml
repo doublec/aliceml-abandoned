@@ -13,16 +13,21 @@
  *
  *)
 
-import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
-import structure Type      from "x-alice:/lib/rtt/Type"
-import structure Label     from "x-alice:/lib/rtt/Label"
-import structure Types     from "Types"
+import structure Gdk           from "x-alice:/lib/gtk/Gdk"
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
+import structure Type          from "x-alice:/lib/rtt/Type"
+import structure Label         from "x-alice:/lib/rtt/Label"
+import structure UnsafeValue   from "x-alice:/lib/system/UnsafeValue"
+import structure Types         from "Types"
 import structure WindowManager from "WindowManager"
-import signature HELPER    from "HELPER-sig"
+import signature HELPER        from "HELPER-sig"
+
+local 
 
 open Types
+
+in
 
 structure Helper :> HELPER = 
 struct
@@ -118,4 +123,21 @@ struct
        Container(r) => checkContKids (#kids(r),0)
      | _ => false
 
-end;
+    fun inspectList(n,x) = inspectList'(n,x,[])
+
+    and inspectList'(n,x,xs) =
+	if not(Future.isDetermined x) 
+	    then Indet(List.rev xs, x) 
+	else
+	  if List.null x 
+	      then Det(List.rev xs, false) 
+	  else
+	    if n = 0 
+		then Det(List.rev xs, true) 
+	    else inspectList'(n-1, List.tl x, List.hd x :: xs)
+
+    fun castList value = UnsafeValue.cast value : 'a list
+		
+end
+
+end

@@ -103,4 +103,13 @@ struct
        
      | EMBEDDED of Reflect.value * Type.t  
 
+   (* zur Behandlung von Listen *)
+   datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
+                        | Indet of 'a list * 'a list (* mit Future *)
+       
+   val compList = 
+       let structure UnitList = Reflect.ReflectType(type t = unit list)
+	   val unitList = UnitList.x
+       in #1(Type.asApply(unitList))
+       end    
 end

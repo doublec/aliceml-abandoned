@@ -26,19 +26,22 @@ import structure Dictionary from "Dictionary"
 import structure MkPathTable from "MkPathTable"
 import signature NEW_NODE from "NEW_NODE-sig"
 
-open Types
-open Helper
-open MkPathTable
+local
+    open Types
+    open Helper
+    open MkPathTable
 
+in	
+    
 structure NewNode :> NEW_NODE =
 struct
-
+    
     val max_width = ref 15
     val max_depth = ref 5
     val dict = Dictionary.empty
-    
+	
     exception createGraph_unknownNode
-
+    
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
                             val i = Dictionary.insert(Empty,dict)
@@ -63,12 +66,84 @@ struct
          | Type.Apply(t1,t2)
            => (case unApply (Type.inspect(t)) of 
                (Type.Con path, ts) => newPath (va,t,p,i,d,path)
-             | _ => raise createGraph_unknownNode)   
+             | _ => let val typ = #1(Type.asApply(t)) 
+		    in if Type.equal(typ,compList) (* Liste *)
+			   then let val vv = castList va
+				    val listdesc = inspectList(!max_width,vv)
+				in queryDepthL (va,t,p,i,d,listdesc,
+						listdescToNode)
+				end
+		       else raise createGraph_unknownNode
+		    end)   
          | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd)
 	 | Type.Mu(sum) => createGraph (va,sum,p,i,d)
          | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
          | _ => raise  createGraph_unknownNode) 
 
+    (* listdescToNode *)
+    and listdescToNode (va,t,p,i,d,ld) = 
+       case ld of 
+	Indet(l,f) => Empty (* spaeter fuer Futures erweitern! *)
+      | Det(l,b) 
+        => let val desc = createValue(va,t,NO_ACTIONS)
+               val na = if b then Array.array(List.length(l) + 1,Empty)
+			else Array.array(List.length(l),Empty)
+               val concat = createConcat(desc,p,i,Array.array(3,Empty),
+					 ~1,~1,setGroup)
+	       val lbraNode = createSimple (INTERPUNCT,concat,0,
+					    "[",BRACK_COLOR,setGroup)
+	       val rbraNode = createSimple (INTERPUNCT,concat,2,
+                                            "]",BRACK_COLOR,setGroup)
+               val container = 
+		   if b = true 
+		       then createContainer(desc,p,i,na,~1,~1,~1,setGroup)
+		   else createContainer(INTERPUNCT,concat,1,na,~1,~1,~1,
+					setGroup)
+               val length = List.length l
+               val rl = ref (length - 1)
+	       val inty = #2(Type.asApply(t))   
+               val last = let val inva = UnsafeValue.cast(List.last(l))
+		                         : Reflect.value
+			  in createGraph(inva,inty,container,!rl,d+1)
+			  end
+               val nodearray = listElemArray(List.take(l,length-1),length-1,
+					     inty,container,d,b)
+	   in ( Array.update(na,!rl,last)
+	      ; copyArray(nodearray,na) 
+	      ; if b 
+		    then let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
+						     container,length,d+1,
+						     setGroup)
+			 in ( Array.update(na,length,limit)
+			     ; container )
+			 end 
+		else ( Array.update(getKids(concat),0,lbraNode)
+		     ; Array.update(getKids(concat),1,container)
+		     ; Array.update(getKids(concat),2,rbraNode)
+		     ; concat ) )
+	   end
+
+    (* ListElemArray *)
+    and listElemArray(list,length,listtyp,p,d,b) = 
+	let val rl = ref (length - 1)
+	    val na = Array.array(length,Empty)
+	in ( while !rl >= 0 do
+            (let val concat = createConcat(INTERPUNCT,p,!rl,
+					   Array.array(2,Empty),
+                                           ~1,~1,setGroup) 
+                 val inva = UnsafeValue.cast(List.nth(list,!rl))
+                            : Reflect.value
+                 val elem = createGraph(inva,listtyp,concat,0,d+1)
+                 val repr = if b = true then "::" else ", "
+                 val sep = createSimple(INTERPUNCT,concat,1,repr,SEP_COLOR,
+					setGroup)
+	     in ( Array.update(getKids(concat),0,elem)
+                ; Array.update(getKids(concat),1,sep)
+                ; Array.update(na,!rl,concat))
+	     end ; rl := !rl - 1)
+	   ; na )
+	end
+                                             
     (* treatProd *)
     and treatProd (va,t,p,i,d,row) = 
 	let
@@ -356,11 +431,21 @@ struct
 						   group = f(p)}
                                                     
     (* queryDepth *)
-    and queryDepth(va,t,p,i,d,row,f) = 
+    and queryDepth (va,t,p,i,d,row,f) = 
 	if d > !max_depth 
 	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
 			      p,i,d,setGroup)
 	else f (va,t,p,i,d,row)
-	    
-end
 
+    (* queryDepthL *)
+    and queryDepthL (va,t,p,i,d,ld,f) = 
+	if d > !max_depth 
+	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+			      p,i,d,setGroup)
+	else f (va,t,p,i,d,ld)
+
+	    
+end (* struct end *)
+ 
+end (* local end *)
+ 

@@ -76,7 +76,7 @@ sig
 		     status : status ref,
 		     group : Gtk.object}
        
-     | Limit of {desc : desc,
+  | Limit of {desc : desc,
                  sort : limit, 
 		 parent : node,
 		 index : int,
@@ -102,6 +102,12 @@ sig
 		 sort : limit }
 
      | EMBEDDED of Reflect.value * Type.t
+
+   (* zur Behandlung von Listen *)
+   datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
+                         | Indet of 'a list * 'a list (* mit Future *)
+       
+   val compList : Type.t
 
 end;
 
