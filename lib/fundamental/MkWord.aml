@@ -117,10 +117,10 @@ struct
     fun value c		= fromInt(Char.ord(Char.toUpper c)) -
 			  (if fromInt(Char.ord c) < ten+w10 then zero else ten)
 
-    fun fmt radix i = if i = w0 then "0"
-		      else fmt'(base radix, i, [])
-    and fmt'(b, i, cs) = if i = w0 then String.implode cs
-			 else fmt'(b, i div b, digit(i mod b) :: cs)
+    fun fmt radix i	= if i = w0 then "0"
+			  else fmt'(base radix, i, [])
+    and fmt'(b, i, cs)	= if i = w0 then String.implode cs
+			  else fmt'(b, i div b, digit(i mod b) :: cs)
 
 
     (* Scanning *)
