@@ -554,8 +554,17 @@ struct
 	   | _				=> t
     and reduceAbbrevR t	=
 	case content t
-	  of (ABBREV(_,t2) | LINK t2)	=> reduceAbbrevR t2
+	  of LINK t2			=> reduceAbbrevR t2
+	   | ABBREV(t1,t2)		=> (case reduceAbbrevR'(t2,0)
+					     of NONE    => t
+					      | SOME t3 => new(ABBREV(t1,t3))
+					   )
 	   | _				=> t
+    and reduceAbbrevR'(t,n) =
+	case content t
+	  of LINK t2			=> reduceAbbrevR'(t2,n)
+	   | ABBREV(_,t2)		=> reduceAbbrevR'(t2,n+1)
+	   | _				=> if n > 0 then SOME t else NONE
 
     fun lambda'(a,t) = reduceEta(canonicalVar a, t)
     and reduceEta(a,t) =
@@ -1243,27 +1252,29 @@ val _ = checkMuFwd := checkMu
      * if called from matchCont!
      *)
 
-    fun instance t = instance'(subst, Map.new(), t)
-    and instance'(f,m,t) =
+    fun instance t = instance'(subst, Map.new(), t, NONE)
+    and instance'(f,m,t,to) =
 	case content t
-	  of LINK t	=> instance'(f,m,t)
-	   | ABBREV(t1,t2) => instance'(f,m,t2)
+	  of LINK t	=> instance'(f,m,t,to)
+	   | ABBREV(t1,t2) => instance'(f,m,t2, SOME(Option.getOpt(to,t1)))
 	   | ALL(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
-			    instance'(f,m,t))
+			    instance'(f,m,t,to))
 	   | EXIST(a,t)	=> ((*Map.insert(m, canonical a, newVar'(kind a));*)
-			    instance'(f,m,t))
-	   | _		=> f(m,t)
+			    instance'(f,m,t,to))
+	   | _		=> case to of NONE    => f(m,t)
+				    | SOME t1 => f(m,abbrev'(t1,t))
 
-    fun skolem t = skolem'(subst, Map.new(), t)
-    and skolem'(f,m,t) =
+    fun skolem t = skolem'(subst, Map.new(), t, NONE)
+    and skolem'(f,m,t,to) =
 	case content t
-	  of LINK t	=> skolem'(f,m,t)
-	   | ABBREV(t1,t2) => skolem'(f,m,t2)
+	  of LINK t	=> skolem'(f,m,t,to)
+	   | ABBREV(t1,t2) => skolem'(f,m,t2, SOME(Option.getOpt(to,t1)))
 	   | ALL(a,t)	=> ((*Map.insert(m, canonical a, newVar'(kind a));*)
-			    skolem'(f,m,t))
+			    skolem'(f,m,t,to))
 	   | EXIST(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
-			    skolem'(f,m,t))
-	   | _		=> f(m,t)
+			    skolem'(f,m,t,to))
+	   | _		=> case to of NONE    => f(m,t)
+				    | SOME t1 => f(m,abbrev'(t1,t))
 
     (*DEBUG*)
     val instance = trace instance "instance"
@@ -1528,9 +1539,14 @@ TextIO.print("i = "^Int.toString i^"\n");
 	 of some as SOME _ => some
 	  | NONE =>
 	case content t
-	 of (LINK t1 | ABBREV(_,t1)) =>
+	 of LINK t1 =>
 		(case expand(i,ms,rea,t1)
 		 of NONE => SOME(t1,0)
+		  | some => some
+		)
+	  | ABBREV(_,t2) =>
+		(case expand(i,ms,rea,t2)
+		 of (NONE | SOME(_,0)) => NONE
 		  | some => some
 		)
 	  | CON(p,k) =>
@@ -1597,6 +1613,9 @@ TextIO.print("i = "^Int.toString i^"\n");
 		)
 	  | (HOLE(k1,n1), _) => bind(i,ms,rea, n1,t1,t2,k1)
 	  | (_, HOLE(k2,n2)) => bind(i,ms,rea, n2,t2,t1,k2)
+
+	  | (ABBREV(_,t1'), _) => unify''(i,ms,rea,t1',t2)
+	  | (_, ABBREV(_,t2')) => unify''(i,ms,rea,t1,t2')
 
 	  | ( (FUN(t11,t12), FUN(t21,t22))
 	    | (APPLY(t11,t12), APPLY(t21,t22)) ) =>
@@ -1754,9 +1773,9 @@ equal(t1,t2)
 	if Cell.equal(t1,t2) then () else
 	let
 	    val m   = Map.new()
-	    val t1' = instance'(#2, m, t1)
+	    val t1' = instance'(#2, m, t1, NONE)
 (*DEBUG*)handle e => raise e
-	    val t2' = skolem'(#2, m, t2)
+	    val t2' = skolem'(#2, m, t2, NONE)
 (*DEBUG*)handle e => raise e
 	    val ms' = if Map.isEmpty m then ms else m::ms
 	in
