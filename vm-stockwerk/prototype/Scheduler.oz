@@ -92,22 +92,6 @@ define
 	 PendingSignalsTl <- Empty
 	 SignalSources <- {Array.new 0 INITIAL_SIGNAL_SOURCES_SIZE - 1 unit}
       end
-      meth processPendingSignals()
-	 if {IsFree @PendingSignalsHd} then skip
-	 elsecase @PendingSignalsHd of Id|Rest then
-	    PendingSignalsHd <- Rest
-	    case @SignalSources.Id of transient(TransientState) then
-	       case {Access TransientState} of future(Ts) then
-		  for T in Ts do
-		     {self wakeup(T)}
-		  end
-	       end
-	       {Assign TransientState ref(tuple())}
-	    end
-	    @SignalSources.Id := unit
-	    SignalManager, processPendingSignals()
-	 end
-      end
       meth registerSignalSource(?Id ?Transient) A in
 	 A = @SignalSources
 	 for I in 0..{Array.high A} break: Break do
@@ -134,6 +118,22 @@ define
       end
       meth waitForSignal()
 	 {Wait @PendingSignalsHd}
+      end
+      meth processPendingSignals()
+	 if {IsFree @PendingSignalsHd} then skip
+	 elsecase @PendingSignalsHd of Id|Rest then
+	    PendingSignalsHd <- Rest
+	    case @SignalSources.Id of transient(TransientState) then
+	       case {Access TransientState} of future(Ts) then
+		  for T in Ts do
+		     {self wakeup(T)}
+		  end
+	       end
+	       {Assign TransientState ref(tuple())}
+	    end
+	    @SignalSources.Id := unit
+	    SignalManager, processPendingSignals()
+	 end
       end
    end
 
