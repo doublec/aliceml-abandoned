@@ -95,6 +95,8 @@ protected:
     // ... elements
   };
 public:
+  using Block::ToWord;
+
   static JavaArray *New(word type, u_int length) {
     //--** array representation depends on type
     Block *b = Store::AllocBlock(JavaLabel::JavaArray, BASE_SIZE + length);
@@ -126,7 +128,9 @@ public:
     Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
     return GetArg(BASE_SIZE + index);
   }
-
+  u_int GetLength() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  }
 };
 
 class DllExport Lock: private Block {
