@@ -31,8 +31,7 @@ static unsigned long ComputeMask(int pos, int width) {
 static void CreateHeader(FILE *f, unsigned int tag, unsigned int size, unsigned int generations,
 			 unsigned long *MAX_TAGSIZE_PTR, unsigned long *GEN_SHIFT_PTR) {
   unsigned long GC_SHIFT      = 0;
-  unsigned long FINMARK_SHIFT = 1;
-  unsigned long HANDLER_SHIFT = (FINMARK_SHIFT + 1);
+  unsigned long HANDLER_SHIFT = 1;
   unsigned long TAG_SHIFT     = (HANDLER_SHIFT + 1);
   unsigned long SIZE_SHIFT    = (TAG_SHIFT + tag);
   unsigned long INTGEN_SHIFT  = (SIZE_SHIFT + size);
@@ -40,7 +39,6 @@ static void CreateHeader(FILE *f, unsigned int tag, unsigned int size, unsigned 
   unsigned long MAX_TAGSIZE   = ((1 << tag) - 1);
   unsigned long MAX_BLOCKSIZE = ((1 << size) - 1);
   unsigned long GC_MASK       = ComputeMask(GC_SHIFT, 1);
-  unsigned long FINMARK_MASK  = ComputeMask(FINMARK_SHIFT, 1);
   unsigned long HANDLER_MASK  = ComputeMask(HANDLER_SHIFT, 1);
   unsigned long TAG_MASK      = ComputeMask(TAG_SHIFT, tag);
   unsigned long SIZE_MASK     = ComputeMask(SIZE_SHIFT, size);
@@ -53,7 +51,6 @@ static void CreateHeader(FILE *f, unsigned int tag, unsigned int size, unsigned 
   std::fprintf(f, "typedef enum {\n");
 
   std::fprintf(f, "  GC_SHIFT      = 0x%lx,\n", GC_SHIFT);
-  std::fprintf(f, "  FINMARK_SHIFT = 0x%lx,\n", FINMARK_SHIFT);
   std::fprintf(f, "  HANDLER_SHIFT = 0x%lx,\n", HANDLER_SHIFT);
   std::fprintf(f, "  TAG_SHIFT     = 0x%lx,\n", TAG_SHIFT);
   std::fprintf(f, "  SIZE_SHIFT    = 0x%lx,\n", SIZE_SHIFT);
@@ -63,7 +60,6 @@ static void CreateHeader(FILE *f, unsigned int tag, unsigned int size, unsigned 
   std::fprintf(f, "  MAX_BLOCKSIZE = 0x%lx,\n", MAX_BLOCKSIZE);
 
   std::fprintf(f, "  GC_MASK       = 0x%lx,\n", GC_MASK);
-  std::fprintf(f, "  FINMARK_MASK  = 0x%lx,\n", FINMARK_MASK);
   std::fprintf(f, "  HANDLER_MASK  = 0x%lx,\n", HANDLER_MASK);
   std::fprintf(f, "  TAG_MASK      = 0x%lx,\n", TAG_MASK);
   std::fprintf(f, "  SIZE_MASK     = 0x%lx,\n", SIZE_MASK);
@@ -146,7 +142,6 @@ int main(int argc, char **argv) {
   std::fprintf(f, "#define __STORECONFIG_HH__\n\n");
 
   if (HEADER_FULL_WIDTH != (HEADER_GC_MARK_WIDTH +
-			    HEADER_FINALIZE_MARK_WIDTH +
 			    HEADER_HANDLER_MARK_WIDTH +
 			    HEADER_TAG_WIDTH +
 			    HEADER_SIZE_WIDTH +

@@ -72,15 +72,6 @@ public:
     AssertStore(p != INVALID_POINTER);
     return (((u_int *) p)[0] & HANDLER_MASK);
   }
-  // Finalize Flag Access
-  static void SetFinalizeMark(Block *p) {
-    AssertStore(p != INVALID_POINTER);
-    ((u_int *) p)[0] |= (1 << FINMARK_SHIFT);
-  }
-  static u_int HasFinalizeMark(Block *p) {
-    AssertStore(p != INVALID_POINTER);
-    return (((u_int *) p)[0] & FINMARK_MASK);
-  }
 };
 
 #endif __STORE__HEADEROP_HH__

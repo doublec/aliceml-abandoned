@@ -20,12 +20,10 @@
 #define HEADER_FULL_WIDTH          32
 // Space used for Garbage-Collection Flags
 #define HEADER_GC_MARK_WIDTH       1
-// Space used for Finalisation-Marking
-#define HEADER_FINALIZE_MARK_WIDTH 1
 // Space used for Handler-Flag
 #define HEADER_HANDLER_MARK_WIDTH  1
 // Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
-#define HEADER_TAG_WIDTH           10
+#define HEADER_TAG_WIDTH           11
 // Space used for Block Size (MAX_BLOCKSIZE = (2 ^ (HEADER_SIZE_WIDTH) - 1))
 #define HEADER_SIZE_WIDTH          16
 // Space used for Intgen-Marking
