@@ -16,6 +16,6 @@
 signature SERVER =
 sig
     val newServer :  unit -> (unit -> 'a) -> unit
-    val serve     :  (unit -> 'a) -> unit
+    val serve : (unit -> 'a) -> unit
 end
 
