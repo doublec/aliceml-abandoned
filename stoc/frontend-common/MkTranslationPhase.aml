@@ -423,7 +423,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun idsDec xs' (I.ValDec(i,p,e))	= idsPat xs' p
       | idsDec xs' (I.ConDec(i,x,t,k))	= idsId trId xs' x (#typ(I.infoTyp t))
-      | idsDec xs' (I.TypDec(i,x,t))	= ()
+      | idsDec xs' (I.TypDec(i,x,t))	= idsId trTypid xs' x (typ_typ)
       | idsDec xs' (I.ModDec(i,x,m))	= idsId trModid xs' x
 						(infToTyp(#inf(I.infoMod m)))
       | idsDec xs' (I.InfDec(i,x,j))	= ()
