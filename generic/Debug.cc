@@ -63,6 +63,8 @@ static const char *TransLabel(BlockLabel l) {
     return "ARGS";
   case CONCRETE_LABEL:
     return "CONCRETE";
+  case IODESC_LABEL:
+    return "IODESC";
   default:
     return "UNKNOWN";
   }
