@@ -576,21 +576,15 @@ void NativeCodeJitter::KillIdRef(word idRef) {
 }
 
 void NativeCodeJitter::GlobalEnvSel(u_int Dest, u_int Ptr, word pos) {
-  Assert(Dest != JIT_V2);
-  Assert(Dest != JIT_FP);
-  jit_movr_p(JIT_FP, JIT_V2);
-  NativeCodeFrame::GetClosure(JIT_V2, Ptr);
-  Generic::Closure::Sel(JIT_V2, Dest, Store::WordToInt(pos));
-  jit_movr_p(JIT_V2, JIT_FP);
+  Assert(Dest != Ptr);
+  NativeCodeFrame::GetClosure(Dest, Ptr);
+  Generic::Closure::Sel(Dest, Dest, Store::WordToInt(pos));
 }
 
 void NativeCodeJitter::ImmediateSel(u_int Dest, u_int Ptr, u_int pos) {
-  Assert(Dest != JIT_V2);
-  Assert(Dest != JIT_FP);
-  jit_movr_p(JIT_FP, JIT_V2);
-  NativeCodeFrame::GetImmediateArgs(JIT_V2, Ptr);
-  JITStore::GetArg(Dest, JIT_V2, pos);
-  jit_movr_p(JIT_V2, JIT_FP);
+  Assert(Dest != Ptr);
+  NativeCodeFrame::GetImmediateArgs(Dest, Ptr);
+  JITStore::GetArg(Dest, Dest, pos);
 }
 
 TagVal *NativeCodeJitter::LookupSubst(u_int index) {
@@ -2226,12 +2220,6 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
   BranchToOffset(JIT_R0);
   return INVALID_POINTER;
-}
-
-static void StopWithAssertion() {
-  fprintf(stderr, "Illegal stack frame pointer\n");
-  fflush(stderr);
-  static_cast<u_int *>(NULL)[0] = 0;
 }
 
 char *NativeCodeJitter::CompileProlog(const char *info) {
