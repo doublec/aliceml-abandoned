@@ -5,7 +5,7 @@
 
 <?php section("overview", "overview") ?>
   <P>Alice's component system has a lot in common with that of Oz.
-    <?php if ($platform != "stockwerk") { ?>
+    <?php if ($platform != "seam") { ?>
     As described in the <A href="interop.html">interoperability document</A>,
     Alice components are actually mapped to Oz functors.
     <?php } ?>
@@ -27,7 +27,7 @@
     environment variables <TT>ALICE_LOAD_PREFIX</TT> and
     <TT>ALICE_LOAD_SUFFIX</TT> instead.</P>
   <P>
-    <?php if ($platform != "stockwerk") { ?>
+    <?php if ($platform != "seam") { ?>
     <TT>alicerun</TT> initializes <TT>OZ_LOAD</TT>, unless set, in the same
     way that <TT>ozengine</TT> does.
     <?php } ?>
@@ -35,7 +35,7 @@
   <OL>
     <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
       before any of the following.</P>
-    <?php if ($platform == "stockwerk") { ?>
+    <?php if ($platform == "seam") { ?>
     <LI><P>Otherwise, the URL is tried with the platform's default component
       extension appended, which is <TT>.stc</TT>.</P>
     <?php } else { ?>
@@ -55,7 +55,7 @@
     >component managers</A>, which are similar to Oz
     <A href="http://www.mozart-oz.org/documentation/system/node7.html"
     >module managers</A>.
-    <?php if ($platform != "stockwerk") { ?>
+    <?php if ($platform != "seam") { ?>
     However, they have distinct implementations
     and may behave differently.
     <?php } ?>
@@ -86,7 +86,7 @@
     uses an Oz module manager, using the <TT>OZ_LOAD</TT> resolver,
     while <TT>alicerun</TT> uses an Alice component manager, using the
     <TT>ALICE_LOAD</TT> resolver.
-    <?php if ($platform != "stockwerk") { ?>
+    <?php if ($platform != "seam") { ?>
     Because Alice component managers can link Oz functors, Oz applications
     can be started by <TT>alicerun</TT> without any change.  The converse,
     running Alice applications using <TT>ozengine</TT>, however requires the
@@ -139,9 +139,9 @@
     Alice, file extensions should always be omitted in component URLs such
     as in import announcements.  This is in contrast to Oz, which requires
     them.  Alice deviates from Oz for improved cross-platform compatibility.
-    <?php if ($platform == "stockwerk") { ?>
+    <?php if ($platform == "seam") { ?>
     Different virtual machines for Alice use different file extensions.
-    For example, the Stockwerk-based Alice uses <TT>.stc</TT>, while the
+    For example, the SEAM-based Alice uses <TT>.stc</TT>, while the
     Mozart-based Alice uses <TT>.ozf</TT>.
     <?php } else { ?>
     The upcoming virtual machine for Alice uses a different file extension.

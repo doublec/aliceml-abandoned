@@ -66,7 +66,7 @@ environment variables:</P>
 	directory in the user's home directory, in a <A
 	href="library/resolver-handler.html#cache">cache-style</A>
 	structure.
-      <?php if ($platform == "stockwerk") { ?>
+      <?php if ($platform == "seam") { ?>
       <LI>The URL is tried with the platform's default component
 	extension appended, which is <TT>.stc</TT>.
       <?php } else { ?>
@@ -89,7 +89,7 @@ environment variables:</P>
   <DD><P>if set (its value does not matter), causes trace messages to be
     printed on standard error about linking Alice components required to
     boot the machine.</P>
-  <?php if ($platform == "stockwerk") { ?>
+  <?php if ($platform == "seam") { ?>
   <DT><P><TT>ALICE_JIT_MODE</TT></P>
   <DD><P>if set to <TT>0</TT>, disables the run-time compiler.  By default,
     it is enabled.</P>
