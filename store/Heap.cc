@@ -24,8 +24,6 @@
 
 #if HAVE_VIRTUALALLOC
 # include <windows.h>
-#elif HAVE_MMAP
-# include <sys/mman.h>
 #else
 # include <cstdlib>
 # include <unistd.h>
@@ -37,12 +35,6 @@ void HeapChunk::Alloc(u_int size) {
 				(MEM_RESERVE | MEM_COMMIT),
 				PAGE_READWRITE);
   Assert(block != NULL);
-#elif HAVE_MMAP
-  block = (char *) mmap(NULL, size,
-			PROT_READ | PROT_WRITE,
-			MAP_PRIVATE | MAP_ANONYMOUS,
-			-1, (off_t) 0);
-  Assert(block != MAP_FAILED);
 #else
   block = (char *) std::malloc(size);
   Assert(block != NULL);
@@ -52,10 +44,6 @@ void HeapChunk::Alloc(u_int size) {
 void HeapChunk::Free() {
 #if HAVE_VIRTUALALLOC
   if (VirtualFree(block, 0, MEM_RELEASE) != TRUE) {
-    Assert(false); // to be done
-  }
-#elif HAVE_MMAP
-  if (munmap(block, (u_int) (max - base)) != 0) {
     Assert(false); // to be done
   }
 #else
