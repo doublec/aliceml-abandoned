@@ -1,0 +1,250 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GtkTreeTypes  from "GtkTreeTypes"
+import structure MkTypeManager from "MkTypeManager"
+import structure Util          from "Util"
+import signature TYPE_MANAGER  from "TYPE_MANAGER-sig"
+import signature SIGNATURE     from "SIGNATURE-sig"
+
+functor MkSignature(structure TypeManager : TYPE_MANAGER
+		    val space : string
+		    val funcs : GtkTreeTypes.tree_item list) :> SIGNATURE =
+    struct
+	open GtkTreeTypes
+	open TypeManager
+
+	(* This file will be created *)
+	val file = TextIO.openOut((case space of
+				       "gdk"        => "UnsafeGDK.asig"
+				     | "gtk"        => "UnsafeGTK.asig"
+				     | "gtk_canvas" => "UnsafeGTKCANVAS.asig"))
+	    
+	(* Printing abstractions *)
+	fun ps s   = TextIO.output(file, s)
+	fun psl ls = List.app ps ls
+
+	(* Indentation constant *)
+	val indent = "                    "
+
+	(* Convert Oz Types to Alice *)
+	local
+	    fun getOutType "int"    = "int"
+	      | getOutType "double" = "real"
+
+	    fun getInType "gboolean"     = "int" (* Hack Alert *)
+	      | getInType "gchar"        = "int"
+	      | getInType "guchar"       = "int"
+	      | getInType "gint"         = "int"
+	      | getInType "int"          = "int"
+	      | getInType "guint"        = "int"
+	      | getInType "gshort"       = "int"
+	      | getInType "gushort"      = "int"
+	      | getInType "glong"        = "int"
+	      | getInType "gulong"       = "int"
+	      | getInType "gint8"        = "int"
+	      | getInType "guint8"       = "int"
+	      | getInType "gint16"       = "int"
+	      | getInType "guint16"      = "int"
+	      | getInType "gint32"       = "int"
+	      | getInType "guint32"      = "int"
+	      | getInType "gint64"       = "int"
+	      | getInType "guint64"      = "int"
+	      | getInType "gfloat"       = "real"
+	      | getInType "gdouble"      = "real"
+	      | getInType "double"       = "real"
+	      | getInType "gsize"        = "int"
+	      | getInType "gssize"       = "int"
+	      | getInType "gchar*"       = "string"
+	      | getInType "char*"        = "string"
+	      | getInType "const gchar*" = "string"
+	      | getInType "const char*"  = "string"
+	      | getInType "void"         = "unit"
+	      | getInType tStr           =
+		if isBasicType tStr then "int" else "object"
+	in
+	    fun getSigType (OUT(t)) = getOutType t
+	      | getSigType (IN(t))  = getInType t
+	end
+
+	(* Emit Function Arguments Type *)
+	fun emitArgs ("", nil)               = ps "unit -> "
+	  | emitArgs (_, nil)                = ps " -> "
+	  | emitArgs (prefix, (_, t, _)::ar) =
+	    (psl [prefix, getSigType t];
+	     emitArgs (" * ", ar))
+
+	(* Emit Function Result Type *)
+	local
+	    fun emitResult' ("", nil)                   = ps "unit"
+	      | emitResult' (prefix, nil)               = ()
+	      | emitResult' (prefix, (_, IN(_), _)::ar) =
+		emitResult' (prefix, ar)
+	      | emitResult' (prefix, (_, t as OUT(_), _)::ar) =
+		(psl [prefix, getSigType t];
+		 emitResult' (" * ", ar))
+	in
+	    fun emitResult (TYPE("void", ""), args) = emitResult' ("", args)
+	      | emitResult (ret, args) =
+		let
+		    val [(_, t, _)] = prepareArgs (0, [ARG(ret, "")])
+		in
+		    (ps (getSigType t);
+		     emitResult' (" * ", args))
+		end
+	end
+
+	(* WidgetGet Code *)
+	val widgetGetCode =
+	    [indent, "val widgetGet : object * string -> arg\n"]
+    
+	(* CanvasItemNew and -Configure Code *)
+	val canvasItemCode =
+	    [indent,
+	     "val itemNew : object * int * ((string * arg) list) -> object\n",
+	     indent,
+	     "val itemConfigure : object * ((string * arg) list) -> unit\n"]
+
+	(* ColorSelectionGetColor and -SetColor Code *)
+	val colorSelectionGetColorCode =
+	    [indent, "val colorSelectionGetColor : object -> real list\n"]
+	val colorSelectionSetColorCode =
+	    [indent,
+	     "val colorSelectionSetColor : object * real list -> unit\n"]
+
+	(* Signature Emitter *)
+	fun emit (FUNCTION("gtk_signal_connect", _))    = ()
+	  | emit (FUNCTION("gtk_signal_disconnect", _)) = ()
+	  | emit (FUNCTION("gtk_signal_block", _))      = ()
+	  | emit (FUNCTION("gtk_signal_unblock", _))    = ()
+	  | emit (FUNCTION("gtk_signal_emit", _))       = ()
+	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
+	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
+	  | emit (FUNCTION("gtk_color_selection_get_color", _)) =
+	    psl colorSelectionGetColorCode
+	  | emit (FUNCTION("gtk_color_selection_set_color", _)) =
+	    psl colorSelectionSetColorCode
+	  | emit (FUNCTION(name, {ret, args, ...}))     =
+	    let
+		val func     = Util.computeWrapperName (space, name)
+		val callArgs = prepareArgs (0, args)
+	    in
+		(psl [indent, "val ", Util.firstLower func, " : "];
+		 emitArgs ("", callArgs);
+		 emitResult (ret, callArgs);
+		 ps "\n")
+	    end
+	  | emit _ = ()
+
+        (* Field Signature Emitter *)
+	local
+	    val prefix = (case space of
+			      "gdk"        => "gdk"
+			    | "gtk"        => "gtk"
+			    | "gtk_canvas" => "gtkCanvas")
+
+	    fun emitField' p {field, ptrs, alias} =
+		let
+		    val alias = Util.firstUpper (Util.translateName alias)
+		    val name  = (p ^ "GetField" ^ alias)
+		    val t     = IN(field ^ ptrs)
+		in
+		    psl [indent, "val ", name,
+			 " : object -> ", getSigType t, "\n"]
+		end
+	in
+	    fun emitField (STRUCTURE(name, cs)) =
+		let
+		    val p' = Util.translateName (Util.cutPrefix ("_", name))
+		    val p  = Util.cutPrefix (prefix, p')
+		in
+		    if isClassName name then
+			List.app (emitField' p) cs
+		    else ()
+		end
+	      | emitField _ = ()
+	end
+
+	(* Constant Signature Emitter *)
+	local
+	    val prefix = (case space of
+			      "gdk"        => "GDK_"
+			    | "gtk"        => "GTK_"
+			    | "gtk_canvas" => "GTK_CANVAS_")
+		
+	    fun makeName field =
+		(case Util.cutPrefix (prefix, field) of
+		     "2BUTTON_PRESS" => "TWO_BUTTON_PRESS"
+		   | "3BUTTON_PRESS" => "THREE_BUTTON_PRESS"
+		   | Id              => Id)
+
+	    fun emitConst' {field, value} =
+		psl [indent, "val ", makeName field, " : int\n"]
+	in
+	    fun emitConst (ENUM(_, cs)) = List.app emitConst' cs
+	      | emitConst _             = ()
+	end
+	    
+	(* File Prefix Constant Data *)
+	val gdkInits =
+	    [indent, "val allocColor : int * int * int -> object\n"]
+
+	val gtkInits =
+	    [indent, "val signalConnect : ",
+	     indent, "object * string * (arg list -> unit) -> int\n",
+	     indent, "val signalDisconnect : object * int -> unit\n",
+	     indent, "val signalBlock : object * int -> unit\n",
+	     indent, "val signalUnblock : object * int -> unit\n",
+	     indent, "val signalEmit : object * int -> unit\n"
+	     ]
+
+	local
+	    val (sigName, component, defs) =
+		(case space of
+		     "gdk"        => ("UnsafeGDK",
+				      "UNSAFE_GDK_COMPONENT", gdkInits)
+		   | "gtk"        => ("UnsafeGTK",
+				      "UNSAFE_GTK_COMPONENT", gtkInits)
+		   | "gtk_canvas" => ("UnsafeGTKCANVAS",
+				      "UNSAFE_GTK_CANVAS_COMPONENT", nil))
+	in
+	    val filePrefix =
+		["(* This file is generated. Please do not edit *)\n\n",
+		 "import structure GtkTypes from \"GtkTypes\"\n\n",
+		 "local\n",
+		 "    open GtkTypes\n",
+		 "in\n",
+		 "    signature ", component, " = \n",
+		 "        sig\n",
+		 "            structure ", sigName, " : \n",
+		 "                sig\n"] @ defs
+	end
+
+	val fileEnd =
+	    ["                end\n",
+             "        end\n",
+	     "end\n"]
+
+	(* Create Signature File *)
+	fun create () =
+	    let
+		val (funcs, fields, consts) = splitTypes funcs
+	    in
+		(psl filePrefix;
+		 List.app emit funcs;
+		 List.app emitField fields;
+		 List.app emitConst consts;
+		 psl fileEnd;
+		 TextIO.closeOut file)
+	    end
+    end
