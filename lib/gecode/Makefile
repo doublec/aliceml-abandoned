@@ -7,12 +7,14 @@ SOURCES = \
 	GecodeSpace.cc
 
 TARGETS = \
-	FD-sig.stc \
-	FD.stc \
 	SPACE-sig.stc \
 	Space.stc \
+	FD-sig.stc \
+	FD.stc \
 	SEARCH-sig.stc \
-	Search.stc
+	Search.stc \
+	LINEAR-sig.stc \
+	Linear.stc
 
 EXTRA_LIBS =
 EXTRA_INCLUDES = -I../..

@@ -1,0 +1,68 @@
+(*
+ * First atttempt for gecode-FD linear wrapper
+ *)
+
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Space from "Space"
+
+signature LINEAR =
+    sig
+	infix  7  `*
+	infix  6  `+ `-
+	infix  5  `#
+	infix  4  `= `<> `> `>= `< `<=
+
+	infix  3  `->
+	infix  3  `<-
+	infix  3  `==
+	infix  3  `&
+	infix  3  `|
+	(*Why not `!= instead?*)
+	infix  3  XOR
+
+
+	datatype domain_element =
+	    `` of int
+	  | `# of int * int
+
+	type domain = domain_element list
+
+	datatype term =
+	    FD of FD.fdvar
+	  | `  of int
+	  | `+ of term * term
+	  | `- of term * term
+	  | `* of term * term
+
+	datatype rel =
+	    `<   of term * term
+	  | `<=  of term * term
+	  | `=   of term * term
+	  | `<>  of term * term
+	  | `>=  of term * term
+	  | `>   of term * term
+	 
+	val fdterm : Space.space * domain -> term
+	val fdtermVec : Space.space * int * domain -> term vector
+	
+	val post : Space.space * rel * FD.conlevel -> unit
+
+
+	datatype b_term = 
+	  BV of FD.boolvar
+	 | BC of bool
+	 | HOLDS of rel
+	 | `== of b_term * b_term
+	 | `-> of b_term * b_term
+	 | `<- of b_term * b_term
+	 | `! of b_term
+	 | `& of b_term * b_term
+	 | XOR of b_term * b_term
+	 | `| of b_term * b_term
+
+	val boolterm : Space.space -> b_term
+	val booltermVec : Space.space * int -> b_term vector
+
+	val postTrue : Space.space * b_term -> unit
+
+    end
