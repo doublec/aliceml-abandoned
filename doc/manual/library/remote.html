@@ -100,11 +100,13 @@
     </DT>
     <DD>
       <P>the former two exceptions indicate that the argument or result of
-      a call to a proxy contained a sited value. The third exception
-      indicates an internal protocol error during execution of a proxy call,
+      a call to a proxy, or to <TT><A href="execute">execute</A></TT>
+      contained a sited value. The third exception
+      indicates an internal protocol error during execution of excute
+      or a proxy call,
       where the string describes the error condition in text form.
-      These exception are never raised directly, but
-      occurs only as the argument of a <TT>Proxy</TT> exception.
+      For proxy calls, these exceptions are never raised directly, but
+      occur only as the argument of a <TT>Proxy</TT> exception.
     </DD>
 
     <DT>
@@ -210,7 +212,9 @@
     <DD>
       <P>makes <TT><I>package</I></TT> available to other sites for taking.
 	Returns a ticket suitable for <TT><A href="#take">take</A></TT>
-	or <TT><A href="#Take-fn">Take</A></TT>.
+	or <TT><A href="#Take-fn">Take</A></TT>. Raises
+	<TT><A href="component.html#Sited">Sited</A></TT> if the package
+	contains sited values.
 	An offered package can be taken any number of times.
 	If the package contains mutable data, then each
 	<TT><A href="#take">take</A></TT> will return a clone of
@@ -271,7 +275,32 @@
 	transfers a clone of <TT><I>component</I></TT> to the new site, on which
 	it is evaluated using the local component manager.  A clone of the
 	component's export module is transferred back to the caller as a
-	package.</P>
+	package. If evaluation of the component terminates with an
+	exception, that exception is re-raised in the caller's thread.</P>
+
+	<P>Like proxy calls, execute may fail for a number of reasons:</P>
+      <UL>
+	<LI><P>The component contains a sited value. In that
+	  case, <TT><A
+	  href="#SitedArgument-exn">SitedArgument</A></TT> will be
+	  raised.</P>
+	<LI><P>The export of the component contains a sited value after
+	  evaluation on the remote site, or it contains a failed future that
+	  carries an exception with a sited value or another failed
+	  future. In all cases, <TT><A
+	  href="#SitedResult-exn">SitedResult</A></TT> will be raised.
+	  (Secondary failed futures are captured to prevent divergence in
+	  the case of circular data structures.)</P>
+	<LI><P>A protocol failure occurs in the lower communication layers.
+	  In this case, <TT><A 
+	  href="#Protocol-exn">Protocol</A> <I>s</I></TT> will be raised,
+	  with <TT><I>s</I></TT> describing the error condition.</P>
+	<LI><P>An I/O problem occurs in the lower communication layers.
+	  In this case, <TT><A 
+	  href="io.html">Io</A> <I>args</I></TT> will be raised, with
+	  <TT><I>args</I></TT> carrying further information.</P>
+      </UL>
+
 	<P>Note that the <TT>ssh</TT> command must be available on the local
 	site, you must be able to login on the remote site via SSH without
 	entering a password (e.g. by using an SSH daemon),

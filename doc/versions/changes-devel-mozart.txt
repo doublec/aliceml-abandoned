@@ -86,6 +86,7 @@ Library:
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
   - Added function execute, made the Execute functor a trivial wrapper.
+  - More error conditions distinguished by execute.
 * Gtk library: simplified structure, all types are now defined in GtkTypes.
 
 

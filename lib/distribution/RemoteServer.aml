@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,11 +20,21 @@ import structure Remote           from "Remote"
 
 fun main [ticket] =
     let
+	datatype reply = OK of package | EXN of exn
+
 	structure Query =
 	    unpack Remote.take ticket : (val component : Component.t
-					 val return : package -> unit)
+					 val return : reply -> unit)
+	val reply =
+	    OK (ComponentManager.eval (Url.fromString "", Query.component))
+	    handle exn => EXN exn
     in
-	Query.return (ComponentManager.eval (Url.fromString "", Query.component));
+	Query.return reply
+	handle Remote.Proxy Remote.SitedArgument =>
+	       Query.return (EXN Remote.SitedResult)
+	     | Remote.Proxy exn =>
+	       Query.return (EXN exn)
+	     | exn => Query.return (EXN exn);
 	OS.Process.exit OS.Process.success
     end
   | main _ = OS.Process.exit OS.Process.failure

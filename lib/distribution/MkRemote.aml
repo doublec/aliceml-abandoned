@@ -368,15 +368,18 @@ struct
      * Remote Execution
      *)
 
+    datatype reply = OK of package | EXN of exn
+
     fun execute (host, component) =
 	let
             val p = Promise.promise ()
             val ticket =
                 offer (pack (val component = component
-			     val return = proxy (fn package => 
-						 Promise.fulfill (p, package)))
+			     val return = proxy (fn reply => 
+						 Promise.fulfill (p, reply)))
 			  : (val component : Component.t
-			     val return : package -> unit))
+			     val return : reply -> unit))
+		handle Component.Sited => raise SitedArgument
 (*DEBUG
             val _ =
                 TextIO.print ("ssh " ^ host ^ " alicerun " ^
@@ -389,7 +392,9 @@ struct
                                "x-alice:/lib/distribution/RemoteServer",
                                ticket])
 	in
-	    Future.await (Promise.future p)
+	    case Promise.future p of
+		OK package => package
+	      | EXN exn => raise exn
 	end
 
     functor Execute (val host: string
