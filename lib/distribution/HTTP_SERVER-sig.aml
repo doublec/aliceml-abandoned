@@ -17,8 +17,7 @@ signature HTTP_SERVER =
     sig
 	type handler = Http.request -> Http.response
 
-	val start: int option -> Url.t
-	val getRootURI: unit -> Url.t
+	val start: int option -> int
 	val registerFor: Url.t * handler -> unit
 	val register: handler -> Url.t
     end

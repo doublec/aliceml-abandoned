@@ -52,12 +52,13 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 
 	fun start port =
 	    let
-		val url = HttpServer.start (SOME port)
+		val port = HttpServer.start (SOME port)
 	    in
 		HttpServer.registerFor
 		    (Url.setPath (Url.empty, ["debug"]), debugHandler);
 		HttpServer.registerFor (Url.empty, documentHandler);
-		TextIO.print ("started server at " ^ Url.toString url ^ "\n");
+		TextIO.print ("started server at port " ^
+			      Int.toString port ^ "\n");
 		Future.await blackHole
 	    end
 

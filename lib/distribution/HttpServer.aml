@@ -15,7 +15,6 @@ import structure Socket        from "x-alice:/lib/system/Socket"
 import structure FromEqHashKey from "x-alice:/lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap  from "x-alice:/lib/utility/MkHashImpMap"
 import structure Url           from "x-alice:/lib/utility/Url"
-import structure UnsafeRemote  from "UnsafeRemote"
 import structure Http          from "Http"
 import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 
@@ -23,7 +22,7 @@ structure HttpServer :> HTTP_SERVER =
     struct
 	type handler = Http.request -> Http.response
 
-	val rootURI: Url.t option ref = ref NONE
+	val myPort: int option ref = ref NONE
 
 	fun notFoundHandler (request: Http.request) =
 	    Http.makeResponse
@@ -39,8 +38,8 @@ structure HttpServer :> HTTP_SERVER =
 		 " was not found on this server.<P>\n\
 		 \<HR>\n\
 		 \<ADDRESS>Stockhausen HTTP Server" ^
-		 (case !rootURI of
-		      SOME uri => " at " ^ Url.toString uri
+		 (case !myPort of
+		      SOME port => " at port " ^ Int.toString port
 		    | NONE => "") ^ "</ADDRESS>\n\
 		 \</BODY></HTML>\n"}
 
@@ -78,27 +77,21 @@ structure HttpServer :> HTTP_SERVER =
 		Socket.close socket
 	    end
 	    handle Http.Format =>
-		(TextIO.print "format error\n";
-		 Socket.close socket)
+		       (TextIO.print "format error\n";
+			Socket.close socket)
+		 | Http.Closed => ()
 
 	fun start portOpt =
-	    case !rootURI of
-		SOME uri => uri
+	    case !myPort of
+		SOME port => port
 	      | NONE =>
 		    let
-			fun server (socket, host, port) =
-			    handleConnection (socket, host, port)
-			    handle Http.Closed => ()
-			val (_, serverPort) = Socket.server (portOpt, server)
-			val serverHost = UnsafeRemote.getLocalIP ()
-			val url =
-			    Url.fromString ("http://" ^ serverHost ^ ":" ^
-					    Int.toString serverPort ^ "/")
+			val (_, serverPort) =
+			    Socket.server (portOpt, handleConnection)
 		    in
-			rootURI := SOME url; url
+			myPort := SOME serverPort;
+			serverPort
 		    end
-
-	fun getRootURI () = start NONE
 
 	fun registerFor (uri, handler) =
 	    let
