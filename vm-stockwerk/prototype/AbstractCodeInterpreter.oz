@@ -60,10 +60,11 @@ define
    Try            = 30
    VecTest        = 31
 
-   Global    = 0
-   Immediate = 1
-   Local     = 2
-   Toplevel  = 3
+   Global       = 0
+   Immediate    = 1
+   LastUseLocal = 2
+   Local        = 3
+   Toplevel     = 4
 
    Template = 0
 
@@ -115,6 +116,23 @@ define
    fun {GetIdRef IdRef Closure L}
       case IdRef of tag(!Immediate X) then X
       [] tag(!Local Id) then L.Id
+      [] tag(!LastUseLocal Id) then L.Id
+      [] tag(!Global I) then Closure.(I + 2)
+      [] tag(!Toplevel I) then Closure.(I + 2)
+      end
+   end
+
+   proc {KillIdRef IdRef L}
+      case IdRef of tag(!LastUseLocal Id) then L.Id := dead1
+      else skip
+      end
+   end
+
+   fun {GetIdRefKill IdRef Closure L}
+      case IdRef of tag(!Immediate X) then X
+      [] tag(!Local Id) then L.Id
+      [] tag(!LastUseLocal Id) then
+	 X = L.Id in L.Id := dead2 X
       [] tag(!Global I) then Closure.(I + 2)
       [] tag(!Toplevel I) then Closure.(I + 2)
       end
@@ -135,6 +153,7 @@ define
    end
 
    fun {NullaryConCase I N C Cases Closure L ElseInstr}
+      %--** some kills missing
       if I > N then ElseInstr
       elsecase Cases.I of tuple(IdRef ThenInstr) then C2 in
 	 C2 = {GetIdRef IdRef Closure L}
@@ -148,6 +167,7 @@ define
    end
 
    fun {NAryConCase I N C Cases Closure L}
+      %--** some kills missing
       if I > N then unit
       elsecase Cases.I of Case=tuple(IdRef _ _) then C2 in
 	 C2 = {GetIdRef IdRef Closure L}
@@ -172,11 +192,11 @@ define
       %--** preemption
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
-	    L.(Ids.I) := killed
+	    L.(Ids.I) := dead3
 	 end
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutVar Id IdRef NextInstr) then
-	 L.Id := {GetIdRef IdRef Closure L}
+	 L.Id := {GetIdRefKill IdRef Closure L}
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutNew Id S NextInstr) then
 	 L.Id := case {VirtualString.toAtom S} of '' then {NewName}
@@ -188,27 +208,27 @@ define
 	 T = {MakeTuple tag N + 1}
 	 T.1 = I
 	 for J in 1..N do
-	    T.(J + 1) = {GetIdRef IdRefs.J Closure L}
+	    T.(J + 1) = {GetIdRefKill IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutCon Id IdRef IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple con N + 1}
-	 T.1 = {GetIdRef IdRef Closure L}
+	 T.1 = {GetIdRefKill IdRef Closure L}
 	 for J in 1..N do
-	    T.(J + 1) = {GetIdRef IdRefs.J Closure L}
+	    T.(J + 1) = {GetIdRefKill IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutRef Id IdRef NextInstr) then
-	 L.Id := {NewCell {GetIdRef IdRef Closure L}}
+	 L.Id := {NewCell {GetIdRefKill IdRef Closure L}}
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutTup Id IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple tuple N}
 	 for J in 1..N do
-	    T.J = {GetIdRef IdRefs.J Closure L}
+	    T.J = {GetIdRefKill IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
@@ -216,7 +236,7 @@ define
 	 N = {Width IdRefs}
 	 T = {MakeTuple vector N}
 	 for J in 1..N do
-	    T.J = {GetIdRef IdRefs.J Closure L}
+	    T.J = {GetIdRefKill IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
@@ -225,7 +245,7 @@ define
 	 NewClosure = {MakeTuple closure N + 1}
 	 NewClosure.1 = ConcreteCode
 	 for J in 1..N do
-	    NewClosure.(J + 1) = {GetIdRef IdRefs.J Closure L}
+	    NewClosure.(J + 1) = {GetIdRefKill IdRefs.J Closure L}
 	 end
 	 L.Id := NewClosure
 	 {Emulate NextInstr Closure L TaskStack}
@@ -237,7 +257,7 @@ define
 	 NewClosure = {MakeTuple closure NT + 1}
 	 NewClosure.1 = {MakeConcreteCode AbstractCode}
 	 for J in 1..NT do X in
-	    X = {GetIdRef IdRefs.J Closure L}
+	    X = {GetIdRefKill IdRefs.J Closure L}
 	    Toplevels.J = X
 	    NewClosure.(J + 1) = X
 	 end
@@ -245,11 +265,11 @@ define
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then Args in
 	 case {Width IdRefs} of 1 then
-	    Args = arg({GetIdRef IdRefs.1 Closure L})
+	    Args = arg({GetIdRefKill IdRefs.1 Closure L})
 	 elseof N then
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Args.J = {GetIdRef IdRefs.J Closure L}
+	       Args.J = {GetIdRefKill IdRefs.J Closure L}
 	    end
 	 end
 	 case IdDefInstrOpt of !NONE then   % tail call
@@ -259,15 +279,15 @@ define
 	    {PushCall Args Op NewFrame|TaskStack}
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op Args in
-	 Op = {GetIdRef IdRef Closure L}
+	 Op = {GetIdRefKill IdRef Closure L}
 	 %% construct argument:
 	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Args = arg({GetIdRef IdRef Closure L})
+	    Args = arg({GetIdRefKill IdRef Closure L})
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Args.J = {GetIdRef IdRefs.J Closure L}
+	       Args.J = {GetIdRefKill IdRefs.J Closure L}
 	    end
 	 end
 	 case IdDefArgsInstrOpt of !NONE then   % tail call
@@ -285,6 +305,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof R then
+	    {KillIdRef IdRef L}
 	    L.Id := {Access R}
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
@@ -294,6 +315,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof T then N in
+	    {KillIdRef IdRef L}
 	    N = {Width IdDefs}
 	    for J in 1..N do
 	       case IdDefs.J of tag(!IdDef Id) then
@@ -309,20 +331,20 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof T then
+	    {KillIdRef IdRef L}
 	    L.Id := T.(I + 1)
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
       [] tag(!LazySel Id IdRef I NextInstr) then X NewClosure in
-	 X = {GetIdRef IdRef Closure L}
+	 X = {GetIdRefKill IdRef Closure L}
 	 NewClosure = closure(lazySel(LazySelInterpreter) X I)
 	 L.Id := transient({NewCell byneed(NewClosure)})
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!Raise IdRef) then Exn in
-	 Exn = {GetIdRef IdRef Closure L}
+	 Exn = {GetIdRefKill IdRef Closure L}
 	 exception(nil Exn TaskStack)
-      [] tag(!Reraise IdRef) then X in
-	 X = {GetIdRef IdRef Closure L}
-	 case X of package(Debug Exn) then
+      [] tag(!Reraise IdRef) then
+	 case {GetIdRefKill IdRef Closure L} of package(Debug Exn) then
 	    exception(Debug Exn TaskStack)
 	 end
       [] tag(!Try TryInstr IdDef1 IdDef2 HandleInstr) then
@@ -340,6 +362,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof I then ThenInstr in
+	    {KillIdRef IdRef L}
 	    ThenInstr = {LitCase 1 {Width IntInstrVec} I IntInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
@@ -349,6 +372,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof I then Index in
+	    {KillIdRef IdRef L}
 	    Index = I - Offset
 	    if Index >= 0 andthen Index < {Width Instrs} then
 	       {Emulate Instrs.(Index + 1) Closure L TaskStack}
@@ -362,6 +386,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof F then ThenInstr in
+	    {KillIdRef IdRef L}
 	    ThenInstr = {LitCase 1 {Width RealInstrVec}
 			 F RealInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
@@ -372,6 +397,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof S then ThenInstr in
+	    {KillIdRef IdRef L}
 	    ThenInstr = {LitCase 1 {Width StringInstrVec}
 			 S StringInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
@@ -382,6 +408,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof T then
+	    {KillIdRef IdRef L}
 	    if {IsInt T} then ThenInstr in
 	       ThenInstr = {LitCase 1 {Width NullaryCases}
 			    T NullaryCases ElseInstr}
@@ -405,6 +432,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof T then Index in
+	    {KillIdRef IdRef L}
 	    Index = if {IsInt T} then T else T.1 end
 	    if Index >= {Width Tests} then
 	       {Emulate ElseInstr Closure L TaskStack}
@@ -421,7 +449,7 @@ define
 	    end
 	 end
       [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C0 in
-	    C0 = {GetIdRef IdRef Closure L}
+	 C0 = {GetIdRef IdRef Closure L}
 	 case {Deref C0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -433,6 +461,7 @@ define
 		  NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 		  request(Transient args() NewFrame|TaskStack)
 	       elseof ThenInstr then
+		  {KillIdRef IdRef L}
 		  {Emulate ThenInstr Closure L TaskStack}
 	       end
 	    elsecase {Deref C.1} of Transient=transient(_) then NewFrame in
@@ -448,11 +477,13 @@ define
 		     [] !Wildcard then skip
 		     end
 		  end
+		  {KillIdRef IdRef L}
 		  {Emulate ThenInstr Closure L TaskStack}
 	       [] request(Transient) then NewFrame in
 		  NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 		  request(Transient args() NewFrame|TaskStack)
 	       [] unit then
+		  {KillIdRef IdRef L}
 		  {Emulate ElseInstr Closure L TaskStack}
 	       end
 	    end
@@ -463,6 +494,7 @@ define
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
 	 elseof V then
+	    {KillIdRef IdRef L}
 	    case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
 	    of tuple(IdDefs ThenInstr) then N in
 	       N = {Width IdDefs}
@@ -482,12 +514,12 @@ define
       [] tag(!Return IdRefArgs) then Args in
 	 %% construct arguments to call the continuation with:
 	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Args = arg({GetIdRef IdRef Closure L})
+	    Args = arg({GetIdRefKill IdRef Closure L})
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Args.J = {GetIdRef IdRefs.J Closure L}
+	       Args.J = {GetIdRefKill IdRefs.J Closure L}
 	    end
 	 end
 	 continue(Args TaskStack)
@@ -571,10 +603,14 @@ define
 	    case Frame of frame(_ _ _ closure(Function ...) _) then
 	       case {Deref Function} of function(_ F#L#C _ _ _ _ _) then
 		  'Alice function '#F#', line '#L#', column '#C
+	       [] specialized(_ F#L#C _ _ _ _ _) then
+		  'Alice specialized function '#F#', line '#L#', column '#C
 	       end
 	    [] handler(_ _ _ _ closure(Function ...) _) then
 	       case {Deref Function} of function(_ F#L#C _ _ _ _ _) then
 		  'Alice handler '#F#', line '#L#', column '#C
+	       [] specialized(_ F#L#C _ _ _ _ _) then
+		  'Alice specialized handler '#F#', line '#L#', column '#C
 	       end
 	    end
 	 end)
