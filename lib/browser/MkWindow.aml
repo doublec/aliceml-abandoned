@@ -26,6 +26,8 @@ import structure NodeSearch from "NodeSearch"
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
+import structure Update from "Update" (* to be verified *)
+import structure NewNode from "NewNode" (* to be verified *)
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 local 
@@ -278,6 +280,83 @@ struct
 		;()))
 
 
+	fun calcAbsolutePosition(x,y) = let
+					 val valueh = Gtk.adjustmentGetFieldValue(hadj)
+					 val valuev = Gtk.adjustmentGetFieldValue(vadj) 
+					 val x = Real.+ (x,valueh)
+					 val y = Real.+ (y,valuev)
+				     in
+						 (x,y)
+				     end
+	
+	fun destroySelectionMarkings () = case !selection of 
+	    NONE => ()
+	  | SOME(_,rect) => Gtk.objectDestroy(rect)  
+		
+	fun handleReinspect node = fn _ => Update.reinspect(node,NewNode.createGraph)
+    
+
+ fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
+     let
+	 val font_width = fontWidth(!Settings.font)
+	 val font_height = fontHeight(!Settings.font)  
+     in
+	case event of
+	  Gdk.GDK_BUTTON_PRESS({button = 1, ...} as r) => 
+		    let 
+			val (x,y) = calcAbsolutePosition(#x(r),#y(r))
+			val (node_x,node_y,node) = 
+			    NodeSearch.search(Dictionaries.dict,x,y)
+			val (node_x_real,node_y_real) = 
+					     (Real.fromInt(font_width* node_x),
+					      Real.fromInt(font_height *node_y))      
+		    in 
+		       (case node of 
+			    SOME(n) => 
+				let
+				    val x2 = Real.+(node_x_real,
+						    Real.fromInt(font_width 
+								 * Layout.get_xdim(n)))
+				    val y2 = Real.+ (node_y_real,
+						     Real.fromInt(font_height 
+								  *Layout.get_ydim(n)))
+				    val re =createRectangle(lowest_layer,
+							    node_x_real,
+							    node_y_real,
+							    x2,
+							    y2)
+				    val _ = GtkCanvas.itemLowerToBottom(re)
+				    val _ = destroySelectionMarkings()
+				    val _ = selection := SOME (n,re)
+				in
+				    setSelectionMenuSensitive(bar,true)
+				end
+			  | NONE => ( setSelectionMenuSensitive(bar,false)
+				     ; destroySelectionMarkings()
+					 ; selection := NONE))
+		    end
+	| Gdk.GDK_BUTTON_PRESS({button = 3, ...} as r) =>
+		    let
+			val (x,y) = calcAbsolutePosition(#x(r),#y(r))
+			val (node_x,node_y,node) = 
+			    NodeSearch.search(Dictionaries.dict,x,y)
+		    in
+		    (case node of 
+			SOME(n) =>( makePopup({widthhandler = [], 
+					       depthhandler = [], 
+					       reinspecthandler = [handleReinspect(node)]})
+				   ; ())
+		      | NONE => ())
+		    end
+        | _ => ()
+     end)
+    
+     
+
+
+
+
+(*
 
     fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
 	let
@@ -346,7 +425,9 @@ struct
 		    end
 	      | _ => ()
 	end)
-				     
+	
+*)
+			     
     val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
 	
     val canvas = DA.canvas
