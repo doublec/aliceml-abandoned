@@ -205,10 +205,10 @@ struct
 					    ppDecs decs ^/^
 					    ppExp exp
 					  )
-      | ppExp(UpExp(i, exp))		= exptree "Up" i (
+      | ppExp(AbsExp(i, exp))		= exptree "Abs" i (
 					    ppExp exp
 					  )
-      | ppExp(CastExp(i, exp))		= exptree "Cast" i (
+      | ppExp(UnabsExp(i, exp))		= exptree "Unabs" i (
 					    ppExp exp
 					  )
 
