@@ -137,7 +137,7 @@ public:
 
   static void Init();
 
-  static Constructor *New(String *name, Block *guid);
+  static Constructor *New(String *name, ::Block *guid);
   static Constructor *New(String *name) {
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
     b->Init(NAME_POS, name->ToWord());
