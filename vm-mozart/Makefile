@@ -80,8 +80,8 @@ BACKENDCOMMONSOURCES = \
 	SIMPLIFY_MATCH.sig SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
 	FLATTENING_PHASE.sig FlatteningPhase.sml PRIM_OPS.sig \
 	PrimOps.sml VALUE_PROPAGATION_PHASE.sig ValuePropagationPhase.sml \
-	LIVENESS_ANALYSIS_PHASE.sig LivenessAnalysisPhase.sml CODE.sig \
-	ENGINE.sig MakeEngine.sml BackendCommon.sml
+	LIVENESS_ANALYSIS_PHASE.sig MakeLivenessAnalysisPhase.sml CODE.sig \
+	ENGINE.sig MakeEngine.sml MakeBackendCommon.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
 BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml

@@ -16,7 +16,7 @@ from "x-alice:/frontend-sml/MakeFrontendSML.ozf"
 
 import
     structure MakeBackendCommon
-from "x-alice:/backend-common/BackendCommon.ozf"
+from "x-alice:/backend-common/MakeBackendCommon.ozf"
 
 import
     structure MakeMozartTarget

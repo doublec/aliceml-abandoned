@@ -1,10 +1,14 @@
 import
-    structure Source
-from "x-alice:/infrastructure/Source.ozf"
-
-import
     structure Url
 from "x-alice:/misc/Url.ozf"
+
+import
+    structure Crash
+from "x-alice:/infrastructure/Crash.ozf"
+
+import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
 
 import
     structure Stamp

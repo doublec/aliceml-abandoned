@@ -100,7 +100,7 @@ from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
 
 import
     structure MakeBackendCommon
-from "x-alice:/backend-common/BackendCommon.ozf"
+from "x-alice:/backend-common/MakeBackendCommon.ozf"
 
 import
     structure Signature

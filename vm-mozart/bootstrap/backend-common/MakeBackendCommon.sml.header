@@ -35,5 +35,5 @@ import
 from "x-alice:/backend-common/ValuePropagationPhase.ozf"
 
 import
-    structure LivenessAnalysisPhase
-from "x-alice:/backend-common/LivenessAnalysisPhase.ozf"
+    structure MakeLivenessAnalysisPhase
+from "x-alice:/backend-common/MakeLivenessAnalysisPhase.ozf"
