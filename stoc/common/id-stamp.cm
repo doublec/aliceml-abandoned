@@ -1,0 +1,10 @@
+Group
+
+	signature STAMP
+	structure Stamp
+
+is
+
+	../misc/sources.cm
+
+	Stamp.sml

@@ -1,15 +1,12 @@
 Group
 
-	structure Stamp
 	signature INTERMEDIATE_GRAMMAR
 	structure IntermediateGrammar
 
 is
 
-	../misc/sources.cm
 	../error/sources.cm
-
-	Stamp.sml
+	id-stamp.cm
 
 	INTERMEDIATE_GRAMMAR.sig
 	MakeIntermediateGrammar.sml

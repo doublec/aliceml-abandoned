@@ -1,5 +1,6 @@
 Group
 
+	signature STAMP
 	structure Stamp
 	signature INTERMEDIATE_GRAMMAR
 	structure IntermediateGrammar
@@ -11,6 +12,7 @@ is
 	../misc/sources.cm
 	../error/sources.cm
 
+	id-stamp.cm
 	intermediate-grammar.cm
 
 	PREBOUND.sig
