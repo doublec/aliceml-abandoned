@@ -24,6 +24,7 @@ import signature STREAM      from "STREAM-sig"
 structure Stream :> STREAM =
     struct
 	type 'a stream = 'a list Promise.promise ref
+	type 'a t      = 'a stream
 
 	exception Closed
 

@@ -27,6 +27,7 @@ struct
     open Ref
 
     type 'a promise	= bool ref * 'a
+    type 'a t		= 'a promise
 
     exception Promise	= Hole.Hole
 
@@ -60,6 +61,7 @@ struct
     open Ref
 
     datatype 'a promise	= Promise__ of bool ref * 'a
+    type 'a t		= 'a promise
 
     exception Promise	= Hole.Hole
 

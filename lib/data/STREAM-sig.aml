@@ -20,6 +20,7 @@ import type unit and list    from "ToplevelTypes"
 signature STREAM =					(**)
     sig
 	type 'a stream
+	type 'a t = 'a stream
 
 	exception Closed
 

@@ -22,6 +22,7 @@ import type unit and exn     from "ToplevelTypes"
 signature PROMISE =					(**)
 sig
     type 'a promise
+    type 'a t = 'a promise
 
     exception Promise
 

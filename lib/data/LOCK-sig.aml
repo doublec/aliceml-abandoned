@@ -20,6 +20,7 @@ import type unit             from "ToplevelTypes"
 signature LOCK =						(**)
     sig
 	type lock
+	type t = lock
 
 	val lock: unit -> lock
 	val sync: lock -> ('a -> 'b) -> 'a -> 'b

@@ -27,6 +27,7 @@ import signature THREAD           from "THREAD-sig"
 structure Thread : THREAD =				(**)
 struct
     type thread
+    type t = thread
     datatype state = RUNNABLE | BLOCKED | TERMINATED
 
     __primitive exception Terminate			= "Thread.Terminate"

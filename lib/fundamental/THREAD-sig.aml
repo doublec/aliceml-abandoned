@@ -25,6 +25,7 @@ import structure Time             from "Time"
 signature THREAD =					(**)
 sig
     type thread
+    type t = thread
     datatype state = RUNNABLE | BLOCKED | TERMINATED
 
     exception Terminate
