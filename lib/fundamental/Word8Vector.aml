@@ -25,6 +25,7 @@ structure Word8Vector = MkMonoVector(
     __primitive val fromList: elem list -> vector = "Word8Vector.fromList"
     __primitive val length: vector -> int = "Word8Vector.length"
     __primitive val sub: vector * int -> elem = "Word8Vector.sub"
+    __primitive val concat: vector list -> vector = "Word8Vector.concat"
     __primitive val tabulate: int * (int -> elem) -> vector =
 		    "Word8Vector.tabulate"
 )

@@ -35,6 +35,7 @@ functor MkMonoVector(BaseMonoVector: sig
     val fromList: elem list -> vector
     val length: vector -> int
     val sub: vector * int -> elem
+    val concat: vector list -> vector
     val tabulate: int * (int -> elem) -> vector
 end) :> MONO_VECTOR
     where type vector = BaseMonoVector.vector
@@ -60,7 +61,6 @@ struct
     fun extract(v,0,NONE)	= v
       | extract(v,i,no)		= tabulate(sliceLength(v,i,no),
 					   fn k => sub'(v,i+k))
-    fun concat vs		= fromList(List.concat(List.map toList vs))
     fun append(v1,v2)		= concat[v1,v2]				(**)
 
     fun rev v			= let val len = length v		(**)
