@@ -112,12 +112,18 @@ struct
 	  | strictTypeCheck (_, _, str) = str
 
 	fun lazyTypeCheck (signOpt, importSignOpt, str, url, baseUrlOpt) =
-	    lazy (trace ("type-checking " ^ Url.toString url ^
-			 (case baseUrlOpt of
-			      SOME baseUrl =>
-				  " imported from " ^ Url.toString baseUrl
-			    | NONE => ""));
-		  strictTypeCheck (signOpt, importSignOpt, str))
+	    let
+		val message =
+		    Url.toString url ^
+		    (case baseUrlOpt of
+			 SOME baseUrl =>
+			 " imported from " ^ Url.toString baseUrl
+		       | NONE => "")
+	    in
+		lazy (trace ("type-checking " ^ message);
+		      strictTypeCheck (signOpt, importSignOpt, str) before
+		      trace ("type-checked  " ^ message))
+	    end
 
 	fun link' url =
 	    case UrlMap.lookupNew (map, url) of
@@ -148,7 +154,8 @@ struct
 			       imports
 	    in
 		trace ("evaluating " ^ Url.toString baseUrl);
-		body imports'
+		body imports' before
+		trace ("evaluated  " ^ Url.toString baseUrl)
 	    end
 	  | eval (_, EVALUATED (_, str)) = Future.await str
 
