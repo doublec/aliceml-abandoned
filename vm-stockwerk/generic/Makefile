@@ -47,7 +47,11 @@ PRIMITIVESSRCS = Primitive.cc PrimitiveTable.cc $(PRIMITIVES:%=%.cc)
 
 UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect Socket
 UNSAFE_UTILITY = MkRefMap
-UNSAFESSRCS = $(UNSAFE_SYSTEM:%=Unsafe%.cc) $(UNSAFE_UTILITY:%=Unsafe%.cc)
+UNSAFE_DISTRIBUTION = Remote
+UNSAFESSRCS = \
+	$(UNSAFE_SYSTEM:%=Unsafe%.cc) \
+	$(UNSAFE_UTILITY:%=Unsafe%.cc) \
+	$(UNSAFE_DISTRIBUTION:%=Unsafe%.cc)
 
 SRCS = \
 	$(GENERICSRCS) \

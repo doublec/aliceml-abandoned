@@ -40,25 +40,27 @@ extern word UnsafeOS(void);
 extern word UnsafeCommandLine(void);
 extern word UnsafeComponent(void);
 extern word UnsafeDebug(void);
-extern word UnsafeSocket(void); //--** missing
-extern word UnsafeRand(void); //--** missing
+extern word UnsafeSocket(void);
+extern word UnsafeRand(void);
 extern word UnsafeReflect(void);
 extern word UnsafeMkRefMap(void);
 //extern word UnsafeAddr(void); //--** missing
+extern word UnsafeRemote(void);
 
 static NativeComponent nativeComponents[] = {
-  {"lib/system/UnsafeConfig",      UnsafeConfig},
-  {"lib/system/UnsafeIO",          UnsafeIO},
-  {"lib/system/UnsafeOS",          UnsafeOS},
-//{"lib/system/UnsafeUnix",        UnsafeUnix}, //--** missing
-  {"lib/system/UnsafeCommandLine", UnsafeCommandLine},
-  {"lib/system/UnsafeComponent",   UnsafeComponent},
-  {"lib/system/UnsafeDebug",       UnsafeDebug},
-  {"lib/system/UnsafeSocket",      UnsafeSocket},
-  {"lib/system/UnsafeRand",        UnsafeRand},
-  {"lib/system/UnsafeReflect",     UnsafeReflect},
-  {"lib/utility/UnsafeMkRefMap",   UnsafeMkRefMap},
-//{"lib/utility/UnsafeAddr",       UnsafeAddr},
+  {"lib/system/UnsafeConfig",       UnsafeConfig},
+  {"lib/system/UnsafeIO",           UnsafeIO},
+  {"lib/system/UnsafeOS",           UnsafeOS},
+//{"lib/system/UnsafeUnix",         UnsafeUnix}, //--** missing
+  {"lib/system/UnsafeCommandLine",  UnsafeCommandLine},
+  {"lib/system/UnsafeComponent",    UnsafeComponent},
+  {"lib/system/UnsafeDebug",        UnsafeDebug},
+  {"lib/system/UnsafeSocket",       UnsafeSocket}, //--** missing
+  {"lib/system/UnsafeRand",         UnsafeRand},
+  {"lib/system/UnsafeReflect",      UnsafeReflect},
+  {"lib/utility/UnsafeMkRefMap",    UnsafeMkRefMap},
+//{"lib/utility/UnsafeAddr",        UnsafeAddr},
+  {"lib/distribution/UnsafeRemote", UnsafeRemote},
   {NULL, NULL}
 };
 
