@@ -13,20 +13,20 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/AbstractCodeInterpreter.hh"
+#pragma implementation "alice/AbstractCodeInterpreter.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/AbstractCodeInterpreter.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Backtrace.hh"
-#include "emulator/Closure.hh"
-#include "emulator/ConcreteCode.hh"
-#include "emulator/Alice.hh"
-#include "emulator/Pickle.hh"
-#include "emulator/LazySelectionInterpreter.hh"
-#include "emulator/Transients.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Backtrace.hh"
+#include "generic/Closure.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Transients.hh"
+#include "alice/Data.hh"
+#include "alice/AbstractCode.hh"
+#include "alice/LazySelInterpreter.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 
 // Local Environment
 class Environment : private Array {
@@ -145,7 +145,7 @@ inline void PushState(TaskStack *taskStack,
 		      Closure *globalEnv,
 		      Environment *localEnv) {
   //--** formalArgs should only be constructed once
-  TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
+  TagVal *formalArgs = TagVal::New(AbstractCode::TupArgs, 1);
   formalArgs->Init(0, Vector::New(0)->ToWord());
   PushState(taskStack, pc, globalEnv, localEnv, formalArgs);
 }
@@ -158,10 +158,10 @@ inline void PushState(TaskStack *taskStack,
 
 inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
   TagVal *tagVal = TagVal::FromWord(idRef);
-  switch (Pickle::GetIdRef(tagVal)) {
-  case Pickle::Local:
+  switch (AbstractCode::GetIdRef(tagVal)) {
+  case AbstractCode::Local:
     return localEnv->Lookup(tagVal->Sel(0));
-  case Pickle::Global:
+  case AbstractCode::Global:
     return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
@@ -215,8 +215,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   Environment *localEnv = frame->GetLocalEnv();
   TagVal *formalArgs    = frame->GetFormalArgs();
   // Calling convention conversion
-  switch (Pickle::GetArgs(formalArgs)) {
-  case Pickle::OneArg:
+  switch (AbstractCode::GetArgs(formalArgs)) {
+  case AbstractCode::OneArg:
     {
       Construct();
       TagVal *idDef = TagVal::FromWord(formalArgs->Sel(0));
@@ -224,7 +224,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[0]);
     }
     break;
-  case Pickle::TupArgs:
+  case AbstractCode::TupArgs:
     {
       Vector *formalIdDefs = Vector::FromWord(formalArgs->Sel(0));
       u_int nArgs = formalIdDefs->GetLength();
@@ -250,8 +250,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   while (!(Scheduler::TestPreempt() || Store::NeedGC())) {
   loop:
     Assert(pc != INVALID_POINTER);
-    switch (Pickle::GetInstr(pc)) {
-    case Pickle::Kill: // of id vector * instr
+    switch (AbstractCode::GetInstr(pc)) {
+    case AbstractCode::Kill: // of id vector * instr
       {
 	Vector *kills = Vector::FromWord(pc->Sel(0));
 	for (u_int i = kills->GetLength(); i--; )
@@ -259,26 +259,26 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(1));
       }
       break;
-    case Pickle::PutConst: // of id * value * instr
+    case AbstractCode::PutConst: // of id * value * instr
       {
 	localEnv->Add(pc->Sel(0), pc->Sel(1));
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutVar: // of id * idRef  * instr
+    case AbstractCode::PutVar: // of id * idRef  * instr
       {
 	localEnv->Add(pc->Sel(0), GetIdRef(pc->Sel(1), globalEnv, localEnv));
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutNew: // of id * string * instr
+    case AbstractCode::PutNew: // of id * string * instr
       {
 	Constructor *constructor = Constructor::New(pc->Sel(1));
 	localEnv->Add(pc->Sel(0), constructor->ToWord());
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutTag: // of id * int * idRef vector * instr
+    case AbstractCode::PutTag: // of id * int * idRef vector * instr
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(2));
 	u_int nargs = idRefs->GetLength();
@@ -289,7 +289,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::PutCon: // of id * idRef * idRef vector * instr
+    case AbstractCode::PutCon: // of id * idRef * idRef vector * instr
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(2));
 	u_int nargs = idRefs->GetLength();
@@ -303,14 +303,14 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::PutRef: // of id * idRef * instr
+    case AbstractCode::PutRef: // of id * idRef * instr
       {
 	word contents = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	localEnv->Add(pc->Sel(0), Cell::New(contents)->ToWord());
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutTup: // of id * idRef vector * instr
+    case AbstractCode::PutTup: // of id * idRef vector * instr
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(1));
 	u_int nargs = idRefs->GetLength();
@@ -325,7 +325,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutVec: // of id * idRef vector * instr
+    case AbstractCode::PutVec: // of id * idRef vector * instr
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(1));
 	u_int nargs = idRefs->GetLength();
@@ -336,7 +336,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutFun: // of id * idRef vector * function * instr
+    case AbstractCode::PutFun: // of id * idRef vector * function * instr
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(1));
 	u_int nglobals = idRefs->GetLength();
@@ -347,13 +347,14 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::AppPrim: // of value * idRef vector * (idDef * instr) option
+    case AbstractCode::AppPrim:
+      // of value * idRef vector * (idDef * instr) option
       {
 	TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
 	if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
 	  // Save our state for return
 	  Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
-	  TagVal *formalArgs = TagVal::New(Pickle::OneArg, 1);
+	  TagVal *formalArgs = TagVal::New(AbstractCode::OneArg, 1);
 	  formalArgs->Init(0, idDefInstr->Sel(0));
 	  PushState(taskStack, TagVal::FromWord(idDefInstr->Sel(1)),
 		    globalEnv, localEnv, formalArgs);
@@ -368,8 +369,10 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	return taskStack->PushCall(pc->Sel(0));
       }
       break;
-    case Pickle::AppVar: // of idRef * idRef args * (idDef args * instr) option
-    case Pickle::AppConst: // of value * idRef args * (idDef args * instr) option
+    case AbstractCode::AppVar:
+      // of idRef * idRef args * (idDef args * instr) option
+    case AbstractCode::AppConst:
+      // of value * idRef args * (idDef args * instr) option
       {
 	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
 	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
@@ -380,13 +383,13 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 		    TagVal::FromWord(idDefArgsInstr->Sel(0)));
 	}
 	TagVal *actualArgs = TagVal::FromWord(pc->Sel(1));
-	switch (Pickle::GetArgs(actualArgs)) {
-	case Pickle::OneArg:
+	switch (AbstractCode::GetArgs(actualArgs)) {
+	case AbstractCode::OneArg:
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] =
 	    GetIdRef(actualArgs->Sel(0), globalEnv, localEnv);
 	  break;
-	case Pickle::TupArgs:
+	case AbstractCode::TupArgs:
 	  {
 	    Vector *actualIdRefs = Vector::FromWord(actualArgs->Sel(0));
 	    u_int nArgs  = actualIdRefs->GetLength();
@@ -397,17 +400,17 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  }
 	  break;
 	}
-	switch (Pickle::GetInstr(pc)) {
-	case Pickle::AppVar:
+	switch (AbstractCode::GetInstr(pc)) {
+	case AbstractCode::AppVar:
 	  return taskStack->PushCall(GetIdRef(pc->Sel(0), globalEnv, localEnv));
-	case Pickle::AppConst:
+	case AbstractCode::AppConst:
 	  return taskStack->PushCall(pc->Sel(0));
 	default:
 	  Error("AbstractCodeInterpreter: inconsistent (AppVar/AppConst)")
 	}
       }
       break;
-    case Pickle::GetRef: // of id * idRef * instr
+    case AbstractCode::GetRef: // of id * idRef * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Cell *cell = Cell::FromWord(suspendWord);
@@ -416,7 +419,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::GetTup: // of idDef vector * idRef * instr
+    case AbstractCode::GetTup: // of idDef vector * idRef * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Vector *idDefs = Vector::FromWord(pc->Sel(0));
@@ -437,7 +440,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::Sel: // of id * idRef * int * instr
+    case AbstractCode::Sel: // of id * idRef * int * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Tuple *tuple = Tuple::FromWord(suspendWord);
@@ -446,40 +449,40 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::LazySel: // of id * idRef * int * instr
+    case AbstractCode::LazySel: // of id * idRef * int * instr
       {
-	word tuple       = GetIdRef(pc->Sel(1), globalEnv, localEnv);
-	int index        = Store::WordToInt(pc->Sel(2));
-	Closure *closure = LazySelectionClosure::New(tuple, index);
+	word tuple = GetIdRef(pc->Sel(1), globalEnv, localEnv);
+	int index = Store::WordToInt(pc->Sel(2));
+	Closure *closure = LazySelClosure::New(tuple, index);
 	localEnv->Add(pc->Sel(0), Byneed::New(closure->ToWord())->ToWord());
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::Raise: // of idRef
+    case AbstractCode::Raise: // of idRef
       {
-	Scheduler::currentData      = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Scheduler::currentData = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Interpreter::RAISE;
       }
       break;
-    case Pickle::Reraise: // of idRef
+    case AbstractCode::Reraise: // of idRef
       {
 	Tuple *package =
 	  Tuple::FromWord(GetIdRef(pc->Sel(0), globalEnv, localEnv));
 	Assert(package != INVALID_POINTER);
 	package->AssertWidth(2);
-	Scheduler::currentData      = package->Sel(0);
+	Scheduler::currentData = package->Sel(0);
 	Scheduler::currentBacktrace =
 	  Backtrace::FromWordDirect(package->Sel(1));
 	return Interpreter::RAISE;
       }
-    case Pickle::Try: // of instr * idDef * idDef * instr
+    case AbstractCode::Try: // of instr * idDef * idDef * instr
       {
 	// Push a handler stack frame:
 	Vector *formalIdDefs = Vector::New(2);
 	formalIdDefs->Init(0, pc->Sel(1));
 	formalIdDefs->Init(1, pc->Sel(2));
-	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
+	TagVal *formalArgs = TagVal::New(AbstractCode::TupArgs, 1);
 	formalArgs->Init(0, formalIdDefs->ToWord());
 	AbstractCodeHandlerFrame *frame =
 	  AbstractCodeHandlerFrame::New(this,
@@ -491,7 +494,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(0));
       }
       break;
-    case Pickle::EndTry: // of instr
+    case AbstractCode::EndTry: // of instr
       {
 	Assert(StackFrame::FromWordDirect(taskStack->GetFrame())->GetLabel() ==
 	       ABSTRACT_CODE_HANDLER_FRAME);
@@ -499,12 +502,12 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(0));
       }
       break;
-    case Pickle::EndHandle: // of instr
+    case AbstractCode::EndHandle: // of instr
       {
 	pc = TagVal::FromWord(pc->Sel(0));
       }
       break;
-    case Pickle::IntTest: // of idRef * (int * instr) vector * instr
+    case AbstractCode::IntTest: // of idRef * (int * instr) vector * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	int value = Store::WordToInt(suspendWord);
@@ -521,7 +524,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::RealTest: // of idRef * (real * instr) vector * instr
+    case AbstractCode::RealTest: // of idRef * (real * instr) vector * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Real *real = Real::FromWord(suspendWord);
@@ -539,7 +542,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::StringTest: // of idRef * (string * instr) vector * instr
+    case AbstractCode::StringTest:
+      // of idRef * (string * instr) vector * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	String *string = String::FromWord(suspendWord);
@@ -561,7 +565,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       }
       break;
     //--** WideStringTest
-    case Pickle::TagTest:
+    case AbstractCode::TagTest:
       // of idRef * (int * instr) vector
       //          * (int * idDef vector * instr) vector * instr
       {
@@ -602,7 +606,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::ConTest:
+    case AbstractCode::ConTest:
       // of idRef * (idRef * instr) vector
       //          * (idRef * idDef vector * instr) vector * instr
       {
@@ -650,7 +654,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::VecTest: // of idRef * (idDef vector * instr) vector * instr
+    case AbstractCode::VecTest:
+      // of idRef * (idDef vector * instr) vector * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Vector *vector = Vector::FromWord(suspendWord);
@@ -674,21 +679,21 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::Shared: // of stamp * instr
+    case AbstractCode::Shared: // of stamp * instr
       {
 	pc = TagVal::FromWord(pc->Sel(1));
       }
       break;
-    case Pickle::Return: // of idRef args
+    case AbstractCode::Return: // of idRef args
       {
 	TagVal *returnArgs = TagVal::FromWord(pc->Sel(0));
-	switch (Pickle::GetArgs(returnArgs)) {
-	case Pickle::OneArg:
+	switch (AbstractCode::GetArgs(returnArgs)) {
+	case AbstractCode::OneArg:
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] =
 	    GetIdRef(returnArgs->Sel(0), globalEnv, localEnv);
 	  break;
-	case Pickle::TupArgs:
+	case AbstractCode::TupArgs:
 	  {
 	    Vector *returnIdRefs = Vector::FromWord(returnArgs->Sel(0));
 	    u_int nArgs = returnIdRefs->GetLength();

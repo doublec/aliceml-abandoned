@@ -3,18 +3,22 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#ifndef __EMULATOR_PICKLE_HH__
-#define __EMULATOR_PICKLE_HH__
+#ifndef __ALICE__ABSTRACT_CODE_HH__
+#define __ALICE__ABSTRACT_CODE_HH__
+
+#if defined(interface)
+#pragma interface "alice/AbstractCode.hh"
+#endif
 
 // Opcodes
-class Pickle {
+class AbstractCode {
 public:
   //
   // All constructors here must be lexicographically ordered

@@ -13,25 +13,24 @@
 //
 
 #include <cstdio>
-#include "emulator/RootSet.hh"
-#include "emulator/Transients.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/IOHandler.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Guid.hh"
-#include "emulator/Primitive.hh"
-#include "emulator/PrimitiveTable.hh"
-#include "emulator/Unpickler.hh"
-#include "emulator/Pickler.hh"
-#include "emulator/BootLinker.hh"
-#include "emulator/Properties.hh"
-#include "emulator/Alice.hh"
+#include "generic/RootSet.hh"
+#include "generic/Transients.hh"
+#include "generic/TaskStack.hh"
+#include "generic/IOHandler.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Primitive.hh"
+#include "generic/Unpickler.hh"
+#include "generic/Pickler.hh"
+#include "generic/BootLinker.hh"
+#include "generic/Properties.hh"
+#include "generic/PushCallInterpreter.hh"
+#include "generic/ByneedInterpreter.hh"
 
-// Make Interpreter visible
-#include "emulator/PushCallInterpreter.hh"
-#include "emulator/LazySelectionInterpreter.hh"
-#include "emulator/ByneedInterpreter.hh"
-#include "emulator/AbstractCodeInterpreter.hh"
+#include "alice/Data.hh"
+#include "alice/PrimitiveTable.hh"
+#include "alice/Guid.hh"
+#include "alice/LazySelInterpreter.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 
 extern word UnsafeConfig(void);
 extern word UnsafeIO(void);
@@ -55,11 +54,11 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeCommandLine",  UnsafeCommandLine},
   {"lib/system/UnsafeComponent",    UnsafeComponent},
   {"lib/system/UnsafeDebug",        UnsafeDebug},
-  {"lib/system/UnsafeSocket",       UnsafeSocket}, //--** missing
+  {"lib/system/UnsafeSocket",       UnsafeSocket},
   {"lib/system/UnsafeRand",         UnsafeRand},
   {"lib/system/UnsafeReflect",      UnsafeReflect},
   {"lib/utility/UnsafeMkRefMap",    UnsafeMkRefMap},
-//{"lib/utility/UnsafeAddr",        UnsafeAddr},
+//{"lib/utility/UnsafeAddr",        UnsafeAddr}, //--** missing
   {"lib/distribution/UnsafeRemote", UnsafeRemote},
   {NULL, NULL}
 };
@@ -86,17 +85,18 @@ int main(int argc, char *argv[]) {
   TaskStack::Init();
   IOHandler::Init();
   Scheduler::Init();
-  Guid::Init();
+  // Setup Interpreters and Services
   Primitive::Init();
-  PrimitiveTable::Init();
-  // Setup Interpreters
   PushCallInterpreter::Init();
-  LazySelectionInterpreter::Init();
   ByneedInterpreter::Init();
-  AbstractCodeInterpreter::Init();
   Unpickler::Init();
   Pickler::Init();
   BootLinker::Init(nativeComponents);
+  // Setup Alice Layer
+  PrimitiveTable::Init();
+  Guid::Init();
+  LazySelInterpreter::Init();
+  AbstractCodeInterpreter::Init();
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);

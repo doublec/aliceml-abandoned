@@ -15,12 +15,12 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = store adt emulator
+SUBDIRS = store adt generic alice
 
 SRCS = Base.cc Main.cc
-OBJS = $(SRCS:%.cc=%.o) adt/libadt.a store/libstore.a emulator/libemulator.a
+OBJS = $(SRCS:%.cc=%.o)
 
-LIBS = $(EXTRA_LIBS)
+LIBS = $(SUBDIRS:%=-L%) -lalice -lgeneric -ladt -lstore $(EXTRA_LIBS)
 
 .PHONY: all-subdirs depend-local
 
@@ -45,6 +45,7 @@ distclean:
 	rm -f $(OBJS) stow stow.exe Makefile.deps
 
 Makefile.deps: Makefile $(SRCS)
+	cd store && $(MAKE) StoreConfig.hh || exit 1
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps
 
 include Makefile.deps
