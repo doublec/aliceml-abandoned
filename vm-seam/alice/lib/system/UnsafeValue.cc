@@ -155,6 +155,8 @@ public:
   virtual void DumpFrame(StackFrame *sFrame);
 };
 
+CatchWorker *CatchWorker::self;
+
 u_int CatchWorker::GetFrameSize(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
