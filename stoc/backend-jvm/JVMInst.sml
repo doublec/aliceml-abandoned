@@ -3,9 +3,16 @@ and classname = string
 and fieldname = string
 and methodsig = string
 and methodname = string;
-    
-datatype INSTRUCTION =
-    AStore of int
+datatype LABEL =
+    StringLabel of string
+  | IntLabel of int
+datatype JVMBASETYPE = (* fuer ldc, double und long kann dml nicht *)
+    JVMInt of int
+  | JVMFloat of real
+  | JVMString of string
+datatype
+    INSTRUCTION =
+    Astore of int
   | Aastore
   | Aconst of int
   | Aload of int
@@ -14,11 +21,15 @@ datatype INSTRUCTION =
   | AtCodeInt of int   (* iconst_?, bipush, sipush, ldc :*)
   | AtCodeString of string
   | Athrow
+  | Bipush of int
+  | Catch of classname * label * label * label
   | Checkcast of classname
   | Dup
+  | Fconst of int
   | Getfield of classname * fieldname
   | Getstatic of classname * fieldname
   | Goto of label
+  | Iconst of int
   | Ifacmp of label
   | Ifeq  of label
   | Ifneq of label
@@ -27,11 +38,12 @@ datatype INSTRUCTION =
   | Invokespecial of classname * methodname * methodsig
   | Invokevirtual of classname * methodname * methodsig
   | Label of label
-  | Ldc of label
+  | Ldc of JVMBASETYPE
   | New of classname
   | Pop
   | Putfield of classname * fieldname
   | Putstatic of classname * fieldname
+  | Sipush of int
   | Swap
   | Tableswitch of int * (label list) * label
 and CLASS =
@@ -42,10 +54,7 @@ and
     Field of FIELDACCESS list * fieldname * FIELDTYPE
 and
     METHOD =
-    Method of METHODACCESS list * methodname * methodsig * LIMITS * INSTRUCTION list * HANDLER list
-and
-    HANDLER =
-    Catch of classname * label * label * label
+    Method of METHODACCESS list * methodname * methodsig * LIMITS * INSTRUCTION list
 and
     FIELDTYPE =
     Classtype of classname
