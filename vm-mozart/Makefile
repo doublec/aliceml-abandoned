@@ -415,6 +415,7 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/rtt build2/install/lib/ml-yacc
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
+#--** be more economic about this:
 INSTALL2LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.ozf) \
 	$(LIBSOURCES0:%.asig=%.ozf)

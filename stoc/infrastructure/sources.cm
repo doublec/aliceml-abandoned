@@ -7,3 +7,7 @@ Group is
 	target.cm
 	composer.cm
 	pp-misc.cm
+
+	MkHashScopedImpSet.aml
+	MkHashScopedImpMap.aml
+	StringMap.aml

@@ -1,7 +1,0 @@
-NJ
-CM
-*.lex.*
-*.grm.*
-~*
-[a-z]*.sml
-*.x86-linux

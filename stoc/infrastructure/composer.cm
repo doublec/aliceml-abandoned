@@ -1,6 +1,6 @@
 Group is
 
-	../misc/sources.cm
+	../../lib/utility/sources.cm
 	signature.cm
 
 	COMPOSER-sig.aml
