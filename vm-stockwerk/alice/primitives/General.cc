@@ -26,6 +26,8 @@ void PrimitiveTable::RegisterGeneral() {
     UniqueConstructor::New(String::New("General.Chr"))->ToWord();
   PrimitiveTable::General_Div =
     UniqueConstructor::New(String::New("General.Div"))->ToWord();
+  PrimitiveTable::General_Domain =
+    UniqueConstructor::New(String::New("General.Domain"))->ToWord();
   PrimitiveTable::General_Overflow =
     UniqueConstructor::New(String::New("General.Overflow"))->ToWord();
   PrimitiveTable::General_Size =
@@ -36,7 +38,7 @@ void PrimitiveTable::RegisterGeneral() {
   RegisterUniqueConstructor("General.Bind");
   Register("General.Chr", PrimitiveTable::General_Chr);
   Register("General.Div", PrimitiveTable::General_Div);
-  RegisterUniqueConstructor("General.Domain");
+  Register("General.Domain", PrimitiveTable::General_Domain);
   RegisterUniqueConstructor("General.Fail");
   RegisterUniqueConstructor("General.Match");
   Register("General.Overflow", PrimitiveTable::General_Overflow);
