@@ -202,26 +202,32 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		       declareLocal id)) ids; emit Pop; emit Pop
 	    end
 	  | genTest (RecTest labIdList, elseLabel) =
+	    (emit Dup; emit (Isinst StockWerk.Record);
+	     emit (B (FALSE, elseLabel));
+	     emit (Castclass StockWerk.Record); emit Dup;
+	     emit (Ldfld (StockWerk.Record, "RecordArity",
+			  StockWerk.RecordArityTy));
+	     emitRecordArity (List.map #1 labIdList);
+	     emit (B (NE_UN, elseLabel));
+	     emit (Ldfld (StockWerk.Record, "Values",
+			  ArrayTy StockWerk.StockWertTy));
+	     appi (fn (i, (_, id)) =>
+		   (emit Dup; emit (LdcI4 i); emit LdelemRef;
+		    declareLocal id)) labIdList; emit Pop)
+	  | genTest (LabTest (lab, id), elseLabel) =
 	    let
 		val thenLabel = newLabel ()
 	    in
 		emit Dup; emit (Isinst StockWerk.Record);
 		emit (B (FALSE, elseLabel));
 		emit (Castclass StockWerk.Record); emit Dup;
-		emit (Ldfld (StockWerk.Record, "RecordArity",
-			     StockWerk.RecordArityTy));
-		emitRecordArity (List.map #1 labIdList);
-		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
-		emit (Label thenLabel);
-		emit (Ldfld (StockWerk.Record, "Values",
-			     ArrayTy StockWerk.StockWertTy));
-		appi (fn (i, (_, id)) =>
-		      (emit Dup; emit (LdcI4 i); emit LdelemRef;
-		       declareLocal id)) labIdList; emit Pop
+		emit (Ldstr lab);
+		emit (Call (true, StockWerk.Record, "CondSelect",
+			    [System.StringTy], StockWerk.StockWertTy));
+		emit Dup; emit (B (TRUE, thenLabel));
+		emit Pop; emit (Br elseLabel);
+		emit (Label thenLabel); declareLocal id; emit Pop
 	    end
-	  | genTest (LabTest (lab, id), elseLabel) =
-	    (*--** *)
-	    Crash.crash "CodeGenPhase.genTest: LabTest"
 	  | genTest (VecTest ids, elseLabel) =
 	    let
 		val thenLabel = newLabel ()
