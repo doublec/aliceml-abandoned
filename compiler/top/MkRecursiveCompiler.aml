@@ -75,22 +75,22 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 		source
 	    end
 
+	fun isBaseSig desc =
+	    case Source.url desc of
+		SOME url =>
+		    parseUrl url =
+		    parseUrl (Url.fromString (stockhome () ^ "lib/Base." ^
+					      extension ^ ".sig"))
+	      | NONE => false
+
 	fun processBasic process (desc, s) =
 	    process
 	    (desc,
 	     if !Switches.implicitImport then
-		 case OS.Process.getEnv "STOCKHOME" of
-		     SOME homedir =>
-			 if Source.url desc =
-			     SOME (Url.fromString ("file:" ^
-						   homedir ^ "/lib/Base." ^
-						   extension ^ ".sig"))
-			 then s
-			 else
-			     String.map (fn #"\n" => #" " | c => c)
-			     (readFile (homedir ^ "/Default.import")) ^
-			     "\n" ^ s
-		   | NONE => (warn "Default.import not found"; s)
+		 if isBaseSig desc then s
+		 else
+		     String.map (fn #"\n" => #" " | c => c)
+		     (readFile (stockhome () ^ "Default.import")) ^ "\n" ^ s
 	     else s)
 
 	fun processString process source =
