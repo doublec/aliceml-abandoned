@@ -121,11 +121,12 @@ DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
   Pickler::Init();
   // Set up Alice Language Layer:
   AliceLanguageLayer::Init();
-  BootLinker::Init(nativeComponents);
   // Setup Alice exceptions used in lower Layers:
   //--** should not be here
   Unpickler::InitExceptions();
   Pickler::InitExceptions();
+  //--** move this up:
+  BootLinker::Init(nativeComponents);
   // Link and execute boot component:
   BootLinker::Link(String::New("lib/system/Boot")); //--** to be done
   return Scheduler::Run();
