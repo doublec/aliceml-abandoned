@@ -48,7 +48,7 @@ static u_int mb(u_int n) {
   return n << 20;
 }
 
-static int JavaMain(char *home, u_int argc, char *argv[]) {
+static int JavaMain(u_int argc, char *argv[]) {
   if (argc < 2) {
     std::fprintf(stderr, "usage: %s <classfile> <args...>\n", argv[0]);
     return 2;
@@ -91,9 +91,5 @@ static int JavaMain(char *home, u_int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  char *home = std::getenv("JAVA_HOME");
-  if (home == NULL) {
-    Error("could not determine installation directory");
-  }
-  std::exit(JavaMain(home, argc, argv));
+  std::exit(JavaMain(argc, argv));
 }
