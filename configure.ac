@@ -94,5 +94,5 @@ AC_SUBST(SEAM_LDFLAGS)
 AC_SUBST(SEAM_LIBS)
 AC_SUBST(SUPPORTDIR)
 
-AC_CONFIG_FILES([Makefile Makefile.vars])
+AC_CONFIG_FILES([Makefile Makefile.vars seamtool])
 AC_OUTPUT

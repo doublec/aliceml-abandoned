@@ -1,22 +1,11 @@
 #!/bin/sh
 
-##
-## Configuration Section
-##
-
-LIGHTNING=0
-
-##
-## End of Configuration Section
-##
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
 if [ $# -lt 1 ]; then
     echo "usage: $0 [--verbose|-v] (cc|c++|ld) <option> ..." >&2
     exit 2
-fi
-
-if test -z "${ALICE_HOME}"; then
-  ALICE_HOME=$(dirname $(dirname $0))
 fi
 
 case `uname -s` in
@@ -45,21 +34,14 @@ cmd() {
 }
 
 case "$mode" in
-    cc)
-	if [ "$platform" = windows ]; then
-	    cflags=-mno-cygwin
-	else
-	    cflags=-fPIC
-	fi
-	cmd gcc $cflags -DLIGHTNING=$LIGHTNING -I$ALICE_HOME/include "$@"
-	;;
     c++)
 	if [ "$platform" = windows ]; then
-	    cflags=-mno-cygwin
+	    cxxflags=-mno-cygwin
 	else
-	    cflags=-fPIC
+	    cxxflags=-fPIC
 	fi
-	cmd g++ $cflags -DLIGHTNING=$LIGHTNING -I$ALICE_HOME/include "$@"
+	cmd @CXX@ $cxxflags -DLIGHTNING=@HAVE_LIGHTNING@ \
+	    -I@includedir@/seam "$@"
 	;;
     ld)
 	outputfile=""
@@ -79,7 +61,7 @@ case "$mode" in
 		-s)
 		    ldflags="$ldflags $1"; shift
 		    ;;
-		-l*|-L*)
+		-l*|-L*|*.dll)
 		    libs="$libs $1"; shift
 		    ;;
 		*)
@@ -87,11 +69,11 @@ case "$mode" in
 		    ;;
 	    esac
 	done
-	libs="$libs $ALICE_HOME/seam.dll $ALICE_HOME/alice.dll"
+	libs="$libs @bindir@/seam.dll"
 	if [ "$platform" = windows ]; then
 	    ldflags="-mno-cygwin $ldflags"
 	fi
-	cmd g++ -shared $ldflags -o $outputfile $fileargs $libs
+	cmd @CXX@ -shared $ldflags -o $outputfile $fileargs $libs
 	;;
     *)
 	echo $0: unknown mode \`$1\' >&2

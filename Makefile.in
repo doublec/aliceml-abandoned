@@ -76,15 +76,15 @@ INCLUDEFILES = \
 ## Done
 ##
 
+prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
-prefix = @prefix@
 includedir = @includedir@
 INSTALLDIRS = \
 	$(bindir) \
 	$(includedir)/seam/store $(includedir)/seam/adt \
 	$(includedir)/seam/generic
-BINS = seam.exe seam.dll
+BINS = seam.exe seam.dll seamtool
 INSTALLFILES = $(BINS:%=$(bindir)/%) $(INCLUDEFILES:%=$(includedir)/seam/%)
 INSTALL = @INSTALL@
 
