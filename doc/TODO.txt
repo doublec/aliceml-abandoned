@@ -18,6 +18,10 @@ Individual steps, each probably resulting in a checkin
 (note - the system is inconsistent only once, namely in-between
 steps 3 and 4):
 
+======
+ DONE
+======
+
 1. Do not use CM to generate files. (LK)
 
    This means that vm-mozart/bootstrap/Makefile does not copy the
@@ -185,6 +189,10 @@ steps 3 and 4):
    source file anyway).  Exceptions to this are the files generated
    via ml-lex/ml-yacc (Lexer.aml, PARSER-sig.aml, Parser.sml) - these
    tools do not support our concept of imports.
+
+======
+ TODO
+======
 
 5. Provide a new place for all files formerly in lib/bootstrap. (LK)
 
