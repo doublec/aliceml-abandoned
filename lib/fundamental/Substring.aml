@@ -26,7 +26,9 @@ import structure List                              from "List"
 import structure String                            from "String"
 import signature SUBSTRING                         from "SUBSTRING-sig"
 
-structure Substring :> SUBSTRING where (*String = String*)type String.string = String.string =
+structure Substring :> SUBSTRING (*where String = String*)
+		       where type String.string    = String.string
+		       where type String.Char.char = String.Char.char =
 struct
     structure String		= String
     type substring		= string * int * int
