@@ -57,7 +57,6 @@
     "STACK", "STACKARRAY", \
     "ROOTSETELEMENT", \
     "THREAD", \
-    "CONCRETECODE", \
     "CLOSURE", \
     "TUPLE" \
   }
