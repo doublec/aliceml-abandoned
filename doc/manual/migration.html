@@ -144,13 +144,10 @@
     For example, the SEAM-based Alice uses <TT>.alc</TT>, while the
     Mozart-based Alice uses <TT>.ozf</TT>.
     <?php } else { ?>
-    The upcoming virtual machine for Alice uses a different file extension.
+    The new virtual machine for Alice uses the file extension <TT>.alc</TT> for
+    components.
     <?php } ?>
   </P>
-  <P>Abstract types in components carry strong identities.  Consequently,
-    clients require <B>recompilation</B> when the definition of an abstract
-    type they use is recompiled.  This is different from Oz, where a recompiled
-    functor remains compatible to the previous compiled functor.</P>
   <P><TT>alicec</TT> does not support <B>cyclic imports</B>, as opposed to Oz.
     Alice component managers and the Alice static linker can handle cyclic
     imports, however.  You can implement cyclic Alice components using
