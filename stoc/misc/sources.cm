@@ -32,5 +32,8 @@ Group is
     URL.sig
     Url.sml
 
+    SORT.sig
+    MakeSort.sml
+
     DEPTH_FIRST_SEARCH.sig
     MakeDepthFirstSearch.sml
