@@ -218,7 +218,19 @@ final public class Word implements DMLValue {
     /** <code>val min : (word * word) -> word </code>*/
     /** <code>val max : (word * word) -> word </code>*/
     /** <code>val fmt : java.lang.StringCvt.radix -> word -> string </code>*/
+
+    _BUILTIN(ToString) {
+	_APPLY(val) {
+	    try {
+		_REQUESTDEC(DMLValue y,val);
+		return new STRING (java.lang.String.valueOf(((Word) y).value));
+	    } catch (ClassCastException c) {
+		_error("wrong argument",val);
+	    }
+	}
+    }
     /** <code>val toString : word -> string </code>*/
+    _FIELD(Word,toString);
     /** <code>val fromString : string -> word option </code>*/
     /** <code>val scan : java.lang.StringCvt.radix -> (char, 'a) java.lang.StringCvt.reader -> 'a -> (word, 'a) option</code>*/
 }
