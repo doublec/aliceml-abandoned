@@ -102,7 +102,7 @@ structure ToJasmin =
 		    val l'= condJump l
 		in
 		    case IntHash.lookup(!stackSizeHash, l') of
-			SOME s => (if s <> size then
+			SOME s => (if s <> size andalso !OPTIMIZE >= 2 then
 				       print ("Stack verification error: Size = "^
 					      Int.toString s^" or "^
 					      Int.toString size^
@@ -130,7 +130,7 @@ structure ToJasmin =
 	     call leave to compute the stack size for the next
 	     instruction. *)
 	    fun leaveMethod (sizeAfter, rest) =
-		(if sizeAfter <> 0
+		(if sizeAfter <> 0 andalso !OPTIMIZE >= 2
 		     then
 			 print ("Stack verification error: Size = "^
 				Int.toString sizeAfter^" leaving "^(!actclass)^
@@ -216,16 +216,6 @@ structure ToJasmin =
 		 Therefore, they cannot be fused on Aload/Astore sequences *)
 		val defines: int StampHash.t ref = ref (StampHash.new ())
 
-		(* new has to be called before each code optimization *)
-		fun new regs =
-		    (fromPos := StampHash.new();
-		     toPos := StampHash.new();
-		     jvmto := IntHash.new();
-		     labHash := IntHash.new();
-		     fusedwith := StampHash.new();
-		     defines := StampHash.new();
-		     maxReg:=regs)
-
 		(* returns the stamp associated with the one in question *)
 		fun getOrigin register =
 		    case StampHash.lookup (!fusedwith, register) of
@@ -273,6 +263,19 @@ structure ToJasmin =
 				  StampHash.insert (!fromPos, stamp', pos))
 			else ()
 		    end
+
+		(* new has to be called before each code optimization *)
+		fun new regs =
+		    (fromPos := StampHash.new();
+		     toPos := StampHash.new();
+		     jvmto := IntHash.new();
+		     labHash := IntHash.new();
+		     fusedwith := StampHash.new();
+		     defines := StampHash.new();
+		     List.map
+		     (fn (Id (_, stamp', _)) => define (stamp', ~2))
+		     (Vector.sub(parmIds, regs));
+		     maxReg:=regs)
 
 		(* we need to remember the last usage of a variable for liveness analysis *)
 		fun use (stamp', pos) =
@@ -362,18 +365,23 @@ structure ToJasmin =
 				    NONE => raise (Crash.Crash "ToJasmin: addJump")
 				  | SOME v => v
 			    in
-				if f' > regto andalso t' > regfrom andalso t' > regto
+				if f' > regto andalso t' > regfrom andalso t' < regto
 				    then
 					(vprint (3, "setting toPos "^Stamp.toString stamp'^
-						 " to "^Int.toString t'^"\n");
-					 StampHash.insert (!toPos, stamp', t'))
+						 " to "^Int.toString f'^"\n");
+					 StampHash.insert (!toPos, stamp', f'))
 				else if f' > regfrom andalso f' <regto
 				    andalso t' < regfrom
 					 then
 					     (vprint (3, "setting fromPos "^Stamp.toString stamp'^
 						      " to "^Int.toString t'^"\n");
 					      StampHash.insert (!fromPos, genuineReg, t'))
-				     else ()
+				     else vprint (3, "reg "^Stamp.toString stamp'^" ("^
+						  Stamp.toString genuineReg^"): "^
+						  Int.toString regfrom^" - "^
+						  Int.toString regto^
+						  ", NO collission when Jumping from "^
+						  Int.toString f'^" to "^Int.toString t'^".\n")
 			    end
 		    in
 			if isSome t then StampHash.appi checkReg (!toPos) else ()

@@ -1212,9 +1212,14 @@ structure CodeGen =
 					 let
 					     val p' = if defaultApply then 1 else p
 					 in
-					     stampCode (fnstamp, curFun, curCls) ::
-					     Comment "NormalApply" ::
-					     loadparms (p', [Invokeinterface (mApply p')])
+					     if curFun = curCls andalso curFun = fnstamp
+						 andalso tailCallPos andalso not defaultApply
+						 then updateparms
+						     (p', [Goto Label.startlabel])
+					     else
+						 stampCode (fnstamp, curFun, curCls) ::
+						 Comment "NormalApply" ::
+						 loadparms (p', [Invokeinterface (mApply p')])
 					 end)
 		       | primcode => primcode)
 	    in
@@ -1616,6 +1621,7 @@ structure CodeGen =
 			Method ([MPublic],
 				applyName parms,
 				(valList parms, [Classsig IVal]),
+				Label Label.startlabel ::
 				Multi body' ::
 				addmatchlabel)
 		    end

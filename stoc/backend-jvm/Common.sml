@@ -106,12 +106,15 @@ structure Common=
 	structure Label =
 	    struct
 		(* Label for "raise Match" *)
-
 		val matchlabel = 0
-		(* the actual label number *)
-		val labelcount = ref (1:label)
 
-		val retryStack = ref [(1:label, toplevel)]
+		(* Label for begin of apply-body *)
+		val startlabel = 1
+
+		(* the actual label number *)
+		val labelcount = ref (2:label)
+
+		val retryStack = ref [(2:label, toplevel)]
 
 		fun new () =
 		    (labelcount := !labelcount + 1;
