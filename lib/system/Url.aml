@@ -11,7 +11,6 @@
  *)
 
 import structure Assert from "Assert"
-import structure StringHashKey from "StringHashKey"
 import signature URL from "URL-sig"
 
 (*
@@ -442,8 +441,10 @@ structure Url :> URL =
 	 * This must not happen!
 	 *)
 
+	val equal = op=
+
 	fun compare (url1, url2) =
 	    String.compare (toString url1, toString url2)
 
-	fun hash url = StringHashKey.hash (toString url)
+	fun hash url = String.hash (toString url)
     end
