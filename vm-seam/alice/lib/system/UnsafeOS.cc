@@ -20,6 +20,14 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#define Interruptible(t, res, call) t res = call; res = res;
+#else
+#include <errno.h>
+#define Interruptible(res, call)		\
+  int res;					\
+  do {						\
+    res = call;					\
+  } while (res < 0 && errno == EINTR);
 #endif
 
 #include "generic/RootSet.hh"
@@ -52,7 +60,8 @@ static word SysErrConstructor;
 
 DEFINE1(UnsafeOS_FileSys_chDir) {
   DECLARE_STRING(name, x0);
-  if (chdir(name->ExportC())) {
+  Interruptible(res, chdir(name->ExportC()));
+  if (res) {
     const char *err = "chDir: cannot change directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
@@ -88,7 +97,8 @@ DEFINE1(UnsafeOS_FileSys_mkDir) {
 DEFINE1(UnsafeOS_FileSys_isDir) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  if (stat(name->ExportC(), &info)) {
+  Interruptible(res, stat(name->ExportC(), &info));
+  if (res) {
     const char *err = "isDir: cannot get file attributes";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
@@ -98,7 +108,8 @@ DEFINE1(UnsafeOS_FileSys_isDir) {
 DEFINE1(UnsafeOS_FileSys_fileSize) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  if (stat(name->ExportC(), &info)) {
+  Interruptible(res, stat(name->ExportC(), &info));
+  if (res) {
     const char *err = "fileSize: cannot get file size";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
@@ -108,7 +119,8 @@ DEFINE1(UnsafeOS_FileSys_fileSize) {
 DEFINE1(UnsafeOS_FileSys_modTime) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  if (stat(name->ExportC(), &info)) {
+  Interruptible(res, stat(name->ExportC(), &info));
+  if (res) {
     const char *err = "modTime: cannot get file time";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
@@ -117,7 +129,8 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
 
 DEFINE1(UnsafeOS_FileSys_remove) {
   DECLARE_STRING(name, x0);
-  if (unlink(name->ExportC())) {
+  Interruptible(res, unlink(name->ExportC()));
+  if (res) {
     const char *err = "remove: cannot remove file";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
@@ -173,6 +186,8 @@ static word UnsafeOS_FileSys() {
 //
 
 DEFINE1(UnsafeOS_Process_system) {
+  //--** Windows: NT/2000? see Mozart implementation
+  //--** Unix: interruptibility? see Mozart implementation
   DECLARE_STRING(command, x0);
   RETURN_INT(system(command->ExportC()));
 } END
