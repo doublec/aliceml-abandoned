@@ -188,13 +188,15 @@
       being based on the Mozart linker, the help message speaks of
       functors instead of components and mentions options not supported
       for Alice.</P></DD>
-    <DT><TT>--output </TT>&lt;<I>file</I>&gt;,
-      <TT>-o</TT> &lt;<I>file</I>&gt;</DT>
+    <DT><TT>-o</TT> &lt;<I>file</I>&gt;,
+      <TT>--output</TT> &lt;<I>file</I>&gt;</DT>
     <DD><P>Specify where to write the output component.
       If omitted, do not produce any output.</P></DD>
-    <DT><TT>--</TT>[<TT>no</TT>]<TT>verbose</TT> (default: false)</DT>
-    <DD><P>Whether or not to print messages on activities performed.</P></DD>
-      Import URLs in the resulting component remain relative.</P></DD>
+    <DT><TT>-v</TT>, <TT>--verbose</TT></DT>
+    <DD><P>Print messages on activities performed.</P></DD>
+    <DT><TT>-d</TT>, <TT>--dumpsig</TT></DT>
+    <DD><P>Dump import/export signatures of resulting component, or
+      of root component if no ouput file has been specified.</P></DD>
     <DT><TT>--include</TT> &lt;<I>url</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
       >url</I>&gt; (default: none, see <TT>--relative</TT>)</DT>
     <DD><P>Include components with these URL prefixes.</P></DD>
