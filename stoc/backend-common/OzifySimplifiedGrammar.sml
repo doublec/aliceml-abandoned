@@ -47,6 +47,8 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	     output (q, String.toCString s);
 	     output1(q, #"'"))
 
+	fun outputStamp (q, n) = output (q, Stamp.toString n)
+
 	fun outputOption _ (q, NONE) =
 	    (f (q, "none"); r q)
 	  | outputOption outputX (q, SOME x) =
@@ -81,21 +83,6 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	  | outputLit (q, RealLit x) =
 	    (f (q, "realLit"); output (q, x); r q)
 
-	fun outputId (q, Id (coord, stamp, name)) =
-	    (f (q, "id"); outputCoord (q, coord); m q;
-	     outputInt (q, stamp); m q;
-	     case name of
-		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)
-	       | InId => output (q, "inId");
-	     r q)
-
-	fun outputLongid (q, ShortId (coord, id)) =
-	    (f (q, "shortId"); outputCoord (q, coord); m q;
-	     outputId (q, id); r q)
-	  | outputLongid (q, LongId (coord, longid, id)) =
-	    (f (q, "longId"); outputCoord (q, coord); m q;
-	     outputLongid (q, longid); m q; outputId (q, id); r q)
-
 	fun outputLabString (q, s) =
 	    case Int.fromString s of
 		NONE => outputAtom (q, s)
@@ -104,6 +91,21 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	fun outputLab (q, Lab (coord, s)) =
 	    (f (q, "lab"); outputCoord (q, coord); m q;
 	     outputLabString (q, s); r q)
+
+	fun outputId (q, Id (coord, stamp, name)) =
+	    (f (q, "id"); outputCoord (q, coord); m q;
+	     outputStamp (q, stamp); m q;
+	     case name of
+		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)
+	       | InId => output (q, "inId");
+	     r q)
+
+	fun outputLongid (q, ShortId (coord, id)) =
+	    (f (q, "shortId"); outputCoord (q, coord); m q;
+	     outputId (q, id); r q)
+	  | outputLongid (q, LongId (coord, longid, lab)) =
+	    (f (q, "longId"); outputCoord (q, coord); m q;
+	     outputLongid (q, longid); m q; outputLab (q, lab); r q)
 
 	fun outputDec (q, OneDec (coord, id, exp)) =
 	    (f (q, "oneDec"); outputCoord (q, coord); m q;

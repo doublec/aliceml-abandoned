@@ -3,9 +3,9 @@ Group is
     ../common/sources.cm
     ../error/sources.cm
     ../misc/sources.cm
+
     simplified-grammar.cm
 
-    Stamp.sml
     LABEL_SORT.sig
     LabelSort.sml
     DEBUG.sig

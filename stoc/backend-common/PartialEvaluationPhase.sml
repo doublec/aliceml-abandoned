@@ -48,9 +48,7 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 
 	(* State *)
 
-	structure StampSymtable =
-	    MakeHashScopedImpMap(type t = stamp
-				 fun hash stamp = stamp)
+	structure StampSymtable = MakeHashScopedImpMap(Stamp)
 
 	type state = {env: valDesc StampSymtable.t, isToplevel: bool ref}
 
