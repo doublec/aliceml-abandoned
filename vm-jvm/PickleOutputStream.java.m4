@@ -20,6 +20,15 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 
     public DMLObjectOutputStream(java.io.OutputStream out) throws java.io.IOException {
 	super(out);
+	if (fcn==null)
+	    try{
+		fcn=Class.forName("de.uni_sb.ps.dml.runtime.DMLFuntion");
+		System.err.println("Class zum Vergleichen: "+fcn);
+	    } catch (ClassNotFoundException e) {
+		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as DMLObjectOutputStream.");
+		e.printStackTrace();
+	    }
+	enableReplaceObject(true);
     }
 
     final public void waitForBind(boolean b) {
