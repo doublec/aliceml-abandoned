@@ -63,7 +63,10 @@ public:
   SeamMemberDll word Get(word key);
   SeamMemberDll word CondGet(word key, word alternative); 
 
-  SeamMemberDll u_int GetSize() {
+#ifndef DEBUG_CHECK
+  SeamMemberDll
+#endif
+  u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
   }
   void Clear() {
