@@ -4,7 +4,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000
+ *   Leif Kornstaedt, 2000-2001
+ *   Andreas Rossberg, 2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,7 +14,6 @@
 
 (*
  * Mmh, how about parameterization of Phases over error output formatting...?
- * And shouldn't the Composer also be applied here?
  * Problem is, this requires applicative functors with extended paths.
  *)
 
@@ -21,25 +21,20 @@ import structure Source   from "../infrastructure/Source"
 import structure Error    from "../infrastructure/Error"
 import signature SWITCHES from "../infrastructure/SWITCHES-sig"
 import signature PHASE    from "../infrastructure/PHASE-sig"
-import signature TARGET   from "../infrastructure/TARGET-sig"
+import structure Target   from "../infrastructure/Target"
 import signature COMPILER from "COMPILER-sig"
 
 
 functor MkCompiler(
 	structure Switches:         SWITCHES
-	structure Target:           TARGET
 	structure FrontendSpecific: PHASE where type I.t = Source.t
 	structure FrontendCommon:   PHASE where type I.t = FrontendSpecific.O.t
 	structure BackendCommon:    PHASE where type I.t = FrontendCommon.O.t
 	structure BackendSpecific:  PHASE where type I.t = BackendCommon.O.t
 					  where type O.t = Target.t
-       ) :> COMPILER (*TODO where Target = Target*)
-	    where type Target.t     = Target.t
-	    where type Target.C.t   = Target.C.t
-	    where type Target.Sig.t = Target.Sig.t =
+       ) :> COMPILER =
 struct
     structure Switches = Switches
-    structure Target = Target
 
     exception Error
 
