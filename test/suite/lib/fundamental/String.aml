@@ -131,16 +131,51 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testSubstring () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-
-    fun testExtract () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t (s, i, j) = if i > 0 then t (List.tl s, i - 1, j)
+			      else List.take (s, j)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.string, Gen.int, Gen.int))
+	    (Test.test (fn (s, i, j) => String.substring (s, i, j) =
+			             implode (t (explode s, i, j))
+				     handle Subscript => i < 0 orelse 
+					 j < 0 orelse 
+					 String.size (s) < (i + j)))
+	end
 
     fun testScanC () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testTokens () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t' _   nil    s = (s, nil)
+	      | t' d (x::xs)  s = if d x
+				      then (s, x::xs)
+				  else t' d xs (s ^ (String.str x))
+
+	    fun t _ nil xs = if List.null xs then [] else xs
+	      | t d  s  xs = if d (List.hd s)
+				  then 
+				      let 
+					  val (a, b) = (t' d (List.tl s) "")
+				      in
+					  if a <> "" then t d b (a :: xs)
+					  else t d b xs
+				      end
+			     else
+				 let 
+				     val (a, b) = (t' d s "")
+				 in
+				     if a <> "" then t d b (a :: xs)
+					  else t d b xs
+				 end
+
+	    fun h c x = x = c
+	in
+	    Gen.try 100 (Gen.pair (Gen.char, Gen.string)) 
+	    (Test.test (fn (c, s) => String.tokens (h c) s = 
+			              List.rev (t (h c) (explode s) [])))
+	end
 
     fun testToFromCString () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -155,7 +190,15 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testCollate () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t (c1, c2) = if Char.>(c1, c2)
+				 then GREATER
+			     else if Char.equal(c1, c2) then EQUAL
+				  else LESS
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.string)) 
+	      (Test.test (fn x => String.compare x = String.collate t x))
+	end
 
     fun testToFromWide () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -191,8 +234,11 @@ struct
 	    fun h c x = x = c
 	in
 	    Gen.try 100 (Gen.pair (Gen.char, Gen.string)) 
-	      (Test.test (fn (c, s) => String.fields (h c) s = 
-			                 List.rev (t (h c) (explode s) [])))
+	    (Test.test (fn (c, s) => String.fields (h c) s = 
+			              (if explode s = nil then [""]
+				       else if List.hd (explode s) = c 
+				      then List.rev (t (h c) (explode s) [""])
+				      else List.rev (t (h c) (explode s) []))))
 	end
 
     fun testSub () =

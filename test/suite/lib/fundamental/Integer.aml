@@ -161,7 +161,12 @@ struct
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testQuot () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t (a, b) = if b <> 0 then a = b * (Int.quot (a, b)) + (a mod b)
+			   else true
+	in
+	    Gen.try 10 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
+	end
 
     fun testScan () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -179,7 +184,7 @@ struct
     fun testRem () =
 	let
 	    (* very ugly... TODO: some more faster way *)
-	    fun t (x, y, r, i) = if i > Int.abs(x) then false
+	    fun t (x, y, r, i) = if y * i > Int.abs(x) then false
 				 else if x = y * i + r then true 
 				     else t (x, y, r, i + 1)
 	    fun getInt i = (Gen.int i) div 1000
@@ -221,7 +226,12 @@ struct
 	end
 
     fun testDiv () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t (a, b) = if b <> 0 then a = b * (a div b) + (a mod b)
+			   else true
+	in
+	    Gen.try 10 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
+	end
 
     fun testFmt () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
