@@ -12,8 +12,8 @@
 
 signature PICKLE =
 sig
-    exception Corrupt
     exception Sited
+    exception Corrupt
 
     val extension : string
 

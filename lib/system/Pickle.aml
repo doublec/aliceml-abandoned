@@ -17,8 +17,8 @@ structure Pickle : PICKLE =
 struct
     nonfix mod
 
-    exception Corrupt = UnsafePickle.Corrupt
     exception Sited   = UnsafePickle.Sited
+    exception Corrupt = UnsafePickle.Corrupt
 
     val extension = UnsafePickle.extension
 

@@ -26,8 +26,8 @@ signature UNSAFE_PICKLE_COMPONENT =
     sig
 	structure UnsafePickle:
 	    sig
-		exception Corrupt
 		exception Sited
+		exception Corrupt
 
 		val extension : string
 
