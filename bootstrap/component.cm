@@ -1,0 +1,10 @@
+Group is
+
+    ../lib/system/signature.cm
+    ../lib/utility/sources.cm
+
+    UNSAFE_COMPONENT-sig.sml
+    UnsafeComponent.sml
+    COMPONENT_MANAGER-sig.sml
+    COMPONENT-sig.sml
+    Component.sml
