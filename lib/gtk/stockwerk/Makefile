@@ -55,7 +55,7 @@ PC_OPTS = gtk+-2.0 libgnomecanvas-2.0
 endif
 
 ALICEC = alicec 
-ALICEC_OPTS = --dump-phases --no-warn-conventions
+ALICEC_OPTS = --no-warn-conventions
 ALICETOOL = alicetool
 ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
