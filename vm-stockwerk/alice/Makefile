@@ -42,7 +42,7 @@ SOURCES = \
 	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc) \
 	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
 	AliceLanguageLayer.cc \
-	$(LIGHTNING_SRCS)
+	$(LIGHTNING_SOURCES)
 
 OBJS = $(SOURCES:%.cc=%.o)
 
