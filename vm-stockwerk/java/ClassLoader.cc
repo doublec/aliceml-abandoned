@@ -320,6 +320,9 @@ Worker::Result ResolveInterpreter::Run() {
       ClassInfo *classInfo = theClass->GetClassInfo();
       Table *methods = classInfo->GetMethods();
       u_int sIndex = 0, vIndex = 0, nMethods = methods->GetCount();
+      word wSuper = classInfo->GetSuper();
+      if (wSuper != null)
+	vIndex = Class::FromWord(wSuper)->GetNumberOfVirtualMethods();
       for (u_int i = 0; i < nMethods; i++) {
 	MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
 	if (methodInfo->IsTheMethod(name, descriptor)) {
@@ -349,7 +352,6 @@ Worker::Result ResolveInterpreter::Run() {
 	    vIndex++;
 	}
       }
-      word wSuper = classInfo->GetSuper();
       if (wSuper == null) {
 	ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError, name);
 	Scheduler::nArgs = 0;
