@@ -11,7 +11,7 @@
  *
  *)
 
-import structure Space from "Space"
+import structure Space  from "Space"
 import signature SEARCH from "SEARCH-sig"
 
 structure Search :> SEARCH =
@@ -80,7 +80,7 @@ structure Search :> SEARCH =
 				  let
 				      val nbs = doSearchBest(s, bs)
 				  in
-				      (case eq(bs, nbs) of
+				      (case bs = nbs of
 					   false => (constrain(c, nbs);
 						     doSearchBest(c, nbs))
 					 | true  => doSearchBest(c, nbs))

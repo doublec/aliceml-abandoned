@@ -34,7 +34,8 @@ ALICELINK_OPTS = -v
 
 ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
                SPACE-sig.aml Space.aml \
-               SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml
+               SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml \
+               LINEAR-sig.aml Linear.aml
 
 NATIVES = FD FS Space Explorer
 

@@ -13,12 +13,21 @@
 
 signature SPACE =
     sig
-	type 'a space
+	eqtype 'a space
 	    
-	datatype status =
-	    FAILED
+	datatype state =
+	    MERGED
+	  | FAILED
 	  | SUCCEEDED
 	  | ALTERNATIVES of int
+
+	datatype verbose_state =
+	    VERBOSE_SUSPENDED of verbose_state
+	  | VERBOSE_MERGED
+	  | VERBOSE_FAILED
+	  | VERBOSE_SUCCEEDED_STUCK
+	  | VERBOSE_SUCCEEDED_ENTAILED
+	  | VERBOSE_ALTERNATIVES of int
 	    
 	datatype choice =
 	    SINGLE of int
@@ -26,10 +35,11 @@ signature SPACE =
 	    
 	val space : (unit -> 'a) -> 'a space
 	    
-	val ask : 'a space -> status
+	val ask : 'a space -> state
+	val askVerbose : 'a space -> verbose_state
 	val clone : 'a space -> 'a space
 	val commit : 'a space * choice -> unit
 	val inject : 'a space * ('a -> unit) -> unit
 	val merge : 'a space -> 'a
-	val eq : 'a space * 'a space -> bool (* depricated! *)
+	val kill : 'a space -> unit
     end
