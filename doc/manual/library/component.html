@@ -170,11 +170,12 @@
       <TT><A name="defaultResolver">defaultResolver</A></TT>
     </DT>
     <DD>
-      <P>is a <A href="resolver.html">resolver</A> initialized by parsing
-	the contents of the <TT>ALICE_LOAD</TT> environment variable.
-	<TT>defaultResolver</TT> is a memoizing resolver with the name
-	<TT>"load"</TT>.  It is the resolver used by <TT><A href="#load"
-	>load</A></TT>.</P>
+      <P>is a <A href="resolver.html">resolver</A> initialized by
+	<A href="../machine.html#environment-variables"><TT>alicerun</TT></A>
+	from the <TT>ALICE_LOAD_PREFIX</TT> and <TT>ALICE_LOAD_SUFFIX</TT>
+	environment variables.  <TT>defaultResolver</TT> is a memoizing
+	resolver with the name <TT>"load"</TT>.  It is the resolver used
+	by <TT><A href="#load">load</A></TT>.</P>
     </DD>
 
     <DT>
