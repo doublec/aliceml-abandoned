@@ -71,7 +71,7 @@ define
    end
 
    class PickleParser
-      attr Bs Dict Counter
+      attr Bs: unit Dict: unit Counter: unit
       meth init(S $)
 	 Bs <- S
 	 Dict <- {NewDictionary}
