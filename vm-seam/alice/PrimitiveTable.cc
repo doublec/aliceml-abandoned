@@ -39,8 +39,8 @@ word PrimitiveTable::Thread_Terminated;
 void PrimitiveTable::Init() {
   valueTable    = HashTable::New(HashTable::BLOCK_KEY, 19)->ToWord();
   functionTable = HashTable::New(HashTable::BLOCK_KEY, 19)->ToWord();
-  RootSet::Add(functionTable);
   RootSet::Add(valueTable);
+  RootSet::Add(functionTable);
   RootSet::Add(PrimitiveTable::Future_Future);
   RootSet::Add(PrimitiveTable::General_Chr);
   RootSet::Add(PrimitiveTable::General_Div);
@@ -68,7 +68,7 @@ void PrimitiveTable::Init() {
   RegisterThread();
   RegisterUnsafe();
   RegisterVector();
-  RegisterWord(); 
+  RegisterWord();
 }
 
 void PrimitiveTable::Register(const char *name, word value) {
