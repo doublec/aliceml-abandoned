@@ -216,9 +216,15 @@ void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, u_int match_gen,
     while (scan < *chunkTop) {
       Block *curp   = (Block *) scan;
       u_int cursize = HeaderOp::DecodeSize(curp);
-      
+      BlockLabel l  = curp->GetLabel();
+
+      // Test for HandlerBlock
+      if (l == HANDLER_BLOCK_LABEL) {
+	curp->GetHandler()->PrepareForGC(curp);
+      }
+
       // Scan current tuple (if label != CHUNK)
-      if (curp->GetLabel() != CHUNK_LABEL) {
+      if (l != CHUNK_LABEL) {
 	for (u_int i = 1; i <= cursize; i++) {
 	  word p = PointerOp::Deref(curp->GetArg(i));
 	  
@@ -284,6 +290,24 @@ void Store::SwitchToNewChunk(MemChunk *chunk) {
   storeChunkTop = chunk->GetTop();
   storeChunkMax = chunk->GetMax();
   storeCurChunk = chunk;
+}
+
+word Store::ResolveForwardPtr(word v) {
+  word dv = PointerOp::Deref(v);
+
+  if (!PointerOp::IsInt(dv)) {
+    Block *p = PointerOp::RemoveTag(dv);
+
+    if (GCHelper::AlreadyMoved(p)) {
+      return GCHelper::GetForwardPtr(p);
+    }
+    else {
+      return dv;
+    }
+  }
+  else {
+    return dv;
+  }
 }
 
 word Store::DoGC(word root) {

@@ -19,6 +19,7 @@
 #include "store/Base.hh"
 #include "store/HeaderOp.hh"
 #include "store/PointerOp.hh"
+#include "store/Handler.hh"
 
 class MemChunk;
 
@@ -72,6 +73,7 @@ public:
   static void CloseStore();
 
   // GC Related Functions
+  static word ResolveForwardPtr(word v);
   static word DoGC(word root);
   static void AddToIntgenSet(Block *v);
   static int NeedGC() {
@@ -95,6 +97,15 @@ public:
   static Transient *AllocTransient(BlockLabel l) {
     Assert((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAllocBlock(l, 1);
+  }
+  static Block *AllocBlockWithHandler(u_int s, Handler *h) {
+    s += 1;
+    Block *t = (Block *) Store::FastAlloc((s + 1) << 2);
+    Assert(t != NULL);
+    HeaderOp::EncodeHeader(t, HANDLER_BLOCK_LABEL, s);
+    // ugly hack to avoid regrouping the items
+    ((word *) t)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
+    return t;
   }
   // Conversion Functions
   static word IntToWord(int v) {
