@@ -10,12 +10,13 @@
  *   $Revision$
  *)
 
-import structure IODesc       from "IODesc"
-import structure IO           from "IO"
-import structure TextPrimIO   from "TextPrimIO"
-import structure StreamIO     from "StreamIO"
-import structure ImperativeIO from "ImperativeIO"
-import signature TEXT_IO      from "TEXT_IO-sig"
+import structure IODesc           from "IODesc"
+import structure IO               from "IO"
+import structure TextPrimIO       from "TextPrimIO"
+import structure StreamIO         from "StreamIO"
+import structure ImperativeIO     from "ImperativeIO"
+import structure MkTextTranslator from "MkTextTranslator"
+import signature TEXT_IO          from "TEXT_IO-sig"
 
 (*--** newline translation missing *)
 
@@ -31,9 +32,17 @@ structure TextIO :> TEXT_IO =
 			 structure Vector = CharVector)
 	open TextImperativeIO
 
+	structure TextTranslator =
+	    MkTextTranslator(structure PrimIO = TextPrimIO
+			     structure Vector = CharVector
+			     structure Array = CharArray)
+
+	fun textReader obj = TextTranslator.translateReader (TextPrimIO.RD obj)
+	fun textWriter obj = TextTranslator.translateWriter (TextPrimIO.WR obj)
+
 	fun openIn name =
 	    let
-		val reader = TextPrimIO.RD (IODesc.openIn name)
+		val reader = textReader (IODesc.openIn name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openIn", name}
 		val v = CharVector.fromList nil
@@ -57,7 +66,8 @@ structure TextIO :> TEXT_IO =
 
 	fun openString s =
 	    let
-		val reader = TextPrimIO.openVector s
+		val reader =
+		    TextTranslator.translateReader (TextPrimIO.openVector s)
 		val v = CharVector.fromList nil
 	    in
 		TextImperativeIO.mkInstream
@@ -66,7 +76,7 @@ structure TextIO :> TEXT_IO =
 
 	fun openOut name =
 	    let
-		val writer = TextPrimIO.WR (IODesc.openOut name)
+		val writer = textWriter (IODesc.openOut name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openOut", name}
 	    in
@@ -76,7 +86,7 @@ structure TextIO :> TEXT_IO =
 
 	fun openAppend name =
 	    let
-		val writer = TextPrimIO.WR (IODesc.openAppend name)
+		val writer = textWriter (IODesc.openAppend name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openAppend", name}
 	    in
@@ -88,17 +98,17 @@ structure TextIO :> TEXT_IO =
 
 	val stdIn =
 	    TextImperativeIO.mkInstream
-		(TextStreamIO.mkInstream (TextPrimIO.RD IODesc.stdIn,
+		(TextStreamIO.mkInstream (textReader IODesc.stdIn,
 					  CharVector.fromList nil))
 
 	val stdOut =
 	    TextImperativeIO.mkOutstream
-		(TextStreamIO.mkOutstream (TextPrimIO.WR IODesc.stdOut,
+		(TextStreamIO.mkOutstream (textWriter IODesc.stdOut,
 					   IO.LINE_BUF))
 
 	val stdErr =
 	    TextImperativeIO.mkOutstream
-		(TextStreamIO.mkOutstream (TextPrimIO.WR IODesc.stdErr,
+		(TextStreamIO.mkOutstream (textWriter IODesc.stdErr,
 					   IO.NO_BUF))
 
 	fun print s = (output (stdOut, s); flushOut stdOut)
