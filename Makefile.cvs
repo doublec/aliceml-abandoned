@@ -11,7 +11,7 @@ cvs:
 	lightningize --copy --force --automake
 	aclocal-seam -I .
 	autoconf
-	automake --add-missing
+	automake-seam --add-missing
 	cd libltdl; aclocal; autoconf; automake --add-missing
 
 .PHONY: cvs
