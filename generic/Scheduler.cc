@@ -40,6 +40,7 @@ void Scheduler::Timer() {
 void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
   RootSet::Add(root);
+  root = Store::IntToWord(0);
   vmGUID = Tuple::New(4)->ToWord(); // Hack alert: to be done
 }
 
