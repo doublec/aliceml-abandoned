@@ -53,6 +53,9 @@ struct
             val mainw   = Main.mkMainWindow (startClientCB (state, callbacks), 
 					     startServerCB (state, callbacks),
 					     startSingleCB (state, callbacks),
+					     turnCB (state, callbacks),
+					     changeViewCB (state, callbacks),
+					     giveUpCB callbacks
 					     quitCB)
         in
             { mainWindow = mainw, callbacks, state }
@@ -81,6 +84,10 @@ struct
 				     readySingleCB (state, mainWindow,
 						    callbacks),
 				     cancelSingleCB state))
+
+    and turnCB callbacks (mainWindow, d) = #turn callbacks d
+
+    and changeViewCB callbacks (mainWindow, d) = #changeView callbacks d
 
     (* menuItem `quit' pressed *)
     and quitCB mainWindow = ()
