@@ -165,7 +165,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; declareArgs (TupArgs idDefs, true))
 	  | genStm (ProdDec (info, labelIdDefVec, id)) =
 	    (emitId id; declareArgs (ProdArgs labelIdDefVec, true))
-	  | genStm (TryStm (_, tryBody, idDef, handleBody)) =
+	  | genStm (TryStm (_, tryBody, idDef1, idDef2, handleBody)) =
 	    let
 		val label1 = newLabel ()
 		val label2 = newLabel ()
@@ -176,8 +176,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Try (label1, label2, Alice.Exception, label2, label3));
 		emit (Label label1); genBody tryBody;
 		emit (Label label2);
+		emit Dup; declareLocal idDef1;
 		emit (Ldfld (Alice.Exception, "Value", System.ObjectTy));
-		declareLocal idDef; genBody handleBody;
+		declareLocal idDef2; genBody handleBody;
 		emit (Label label3);
 		case !handlerCont of
 		    SOME (label, contBody) =>
