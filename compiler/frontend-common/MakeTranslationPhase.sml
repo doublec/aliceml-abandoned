@@ -204,7 +204,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 		val      w1    = Inf.lookupValSort(s1,a)
 		val      i     = typInfo(r,t)
 		val      i'    = nonInfo r
-		val      a'    = O.Lab(i',a)
+		val      a'    = O.Lab(i', trLabel a)
 		val      y     = O.LongId(typInfo(r,NONE), x, a')
 		val  (exp,b')  = if w1 = w2 then
 				     (O.VarExp(i,y), b)
@@ -234,7 +234,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 		val    t2    = infToTyp j2
 		val    i     = typInfo(r,t2)
 		val    i'    = nonInfo r
-		val    a'    = O.Lab(i',a)
+		val    a'    = O.Lab(i', trModLabel a)
 		val    y     = O.LongId(typInfo(r, SOME t2), x, a')
 		val (exp,b') = case upInf(y,j1,j2, r,t1,t2)
 				 of NONE     => (O.VarExp(i,y), b)
