@@ -98,12 +98,11 @@ using the compress function.
 
 On Singletons:
 
-To increase sharing, interfaces annotated at singletons are not selfified, but
-are just (possibly narrowed versions of) the original interface. This has to be
-taken into account during realisation. Lookup performs selfification
-(strengthening) on the fly.
+Singleton modules are only used for pretty-printing purposes now, they no
+longer express module sharing. We try to keep them consistent for nice printing
+but basically ignore them during matching.
 
-We have canonicalisation axioms for singleton kinds:
+For singleton kinds we have canonicalisation axioms:
 
 	SING_{SING_k j}(j')  = SING_k j
 	SING_{DEP x:j.k}(j') = DEP x:j.SING_k(j' x)
@@ -297,6 +296,7 @@ struct
     fun dummy _			= assert false
     val modFwd			= ref(dummy : path * inf -> mod)
     val applyFwd'		= ref(dummy : inf * mod -> inf)
+    val selfifyFwd 		= ref(dummy : inf -> inf)
     val narrowFwd 		= ref(dummy : inf * inf -> inf)
     val narrowModFwd 		= ref(dummy : mod * inf -> mod)
     val realiseFwd		= ref(dummy : rea * inf -> inf)
@@ -310,6 +310,7 @@ struct
 
     fun mod(p,j)		= !modFwd(p,j)
     fun apply'(j,m)		= !applyFwd'(j,m)
+    fun selfify j		= !selfifyFwd j
     fun narrow(j1,j2)		= !narrowFwd(j1,j2)
     fun narrowMod(m,j)		= !narrowModFwd(m,j)
     fun realise(rea,j)		= !realiseFwd(rea,j)
@@ -468,16 +469,10 @@ struct
 	if PathSet.member(b,p) then () else PathSet.insert(f,p)
 
     and pathsMod'(f,b,(p,j)) =
-	let
-	    val b' = PathSet.set()
-	in
-	    pathsPath'(f,b,p);
-	    paths'(f,b',j);
-	    PathSet.difference(f,b);
-	    PathSet.difference(b',b);
-	    PathSet.union(f,b'); (* for non-selfified paths! *)
-	    PathSet.union(b,b')
-	end
+	((* Disable module sharing...
+	 pathsPath'(f,b,p);
+	 *)
+	 paths'(f,b,j))
 
     and pathsSig'(f,b,s)           = List.appr (pathsItem'(f,b)) (items s)
     and pathsItem'(f,b) (FIX _)    = ()
@@ -724,12 +719,19 @@ struct
   (* Creation and injection, reduction *)
 
     nonfix mod
-    fun mod(m as (p,j)) = reduceMod(m,j)	(* ASSUME j ~ instance(p,j) *)
-    and reduceMod(m,j) =
+    fun mod(p,j) = reduceMod(p,j)	(* ASSUME j ~ instance(p,j) *)
+    and reduceMod(p,j) =
 	case content j
-	 of ABBREV(_,j2)	=> reduceMod(m,j2)
-	  | THAT m'		=> m'
-	  | _			=> m
+	 of ABBREV(j1,j2) =>
+	    let
+		val (p',j2') = reduceMod(p,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then (p,j)
+		else (p, new(ABBREV(j1,j2')))
+	    end
+	  | THAT m'	=> m'
+	  | _		=> (p, selfify j)
 
     val top'		= let val j = new TOP in fn() => j end
     fun con'(p,k)	= new(CON(p,k))
@@ -758,9 +760,16 @@ struct
     fun sing'(m as (p,j)) = reduceSing(m,j)	(* ASSUME j ~ instance(p,j) *)
     and reduceSing(m,j) =
 	case content j
-	 of ABBREV(_,j2)	=> reduceSing(m,j2)
-	  | THAT _		=> j
-	  | _			=> new(THAT m)
+	 of ABBREV(j1,j2) =>
+	    let
+		val j2' = reduceSing(m,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else new(ABBREV(j1,j2'))
+	    end
+	  | THAT _	=> j
+	  | _		=> new(THAT m)
 
     fun lambda'(p,j1,j2) = reduceEta(p,j1,j2)
     and reduceEta(p1,j1,j2) =
@@ -1051,6 +1060,51 @@ struct
 	  | EXIST(p,j1,j2) => let val (pjs,j) = splitExist j2
 			      in ((p,j1)::pjs, j) end
 	  | _              => ([],j)
+
+
+  (* Selfification *)
+
+    fun selfify j =
+	case content j
+	 of SIG s =>
+	    let
+		val change = ref false
+		val items' = List.map (selfifyItem change) (items s)
+	    in
+		if !change
+		then sign'(newSig items')
+		else j
+	    end
+	  | EXIST(p,j1,j2) =>
+	    let
+		val j2' = selfify j2
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else new(EXIST(p,j1,j2'))
+	    end
+	  | ABBREV(j1,j2) =>
+	    let
+		val j2' = selfify j2
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else new(ABBREV(j1,j2'))
+	    end
+	  | (TOP | CON _ | THAT _ | FUN _ | LAMBDA _ | APPLY _) => j
+
+    and selfifyItem change (item as FIX _) = item
+      | selfifyItem change (item as VAL _) = item
+      | selfifyItem change (item as TYP(p,k)) =
+	    if Type.isSingKind k then item else
+	    (change := true; TYP(p, Type.singKind(Type.con(p,k))))
+      | selfifyItem change (item as MOD(p,j)) =
+	    if isSing j then item else
+	    (change := true; MOD(p, sing'(mod(p,j))))
+      | selfifyItem change (item as INF(p,k)) =
+	    if isSingKind k then item else
+	    (change := true; INF(p, singKind(con'(p,k))))
+      | selfifyItem change (item as HIDDEN _) = item
 
 
   (* Maximisation *)
@@ -1492,12 +1546,21 @@ TextIO.print "\n";
 	end
 
     and buildMod(c, m as (p,j)) =
+	let
+	    val p' = case PathMap.lookup(#mod_rea(#rea c), p)
+		      of NONE       => p
+		       | SOME(p',_) => p'
+	in
+	    (p', build(c,j))
+	end
+	(* Disabled modules haring...
 	case PathMap.lookup(#mod_rea(#rea c), p)
-	 of NONE    => m
+	 of NONE    => (p,
 	  | SOME m' => narrowMod'({extend  = false,
 				   used    = PathSet.set(),
 				   typ_rea = #typ_rea(#rea c),
 				   typ     = #typ c}, m', j)
+	*)
 
     and buildSig(c, j, toInf, s) =
 	let
@@ -1541,15 +1604,6 @@ else ()
 	    (change := true; VAL(l,t'))
 	end
       | buildItem(c, change, item as TYP(p,k)) =
-	(case PathMap.lookup(#typ_rea(#rea c), p)
-	 of SOME t => (* for non-selfified module annotations *)
-	    let
-		val p' = buildPath(c,p)
-		val k' = Type.singKind t
-	    in
-		change := true; TYP(p',k')
-	    end
-	  | NONE =>
 	let
 	    val p' = buildPath(c,p)
 	    val k' = Type.realiseKindCont(#typ c, #typ_rea(#rea c), k)
@@ -1570,17 +1624,8 @@ TextIO.print "\n";
 (*DEBUG*)handle e => raise e;
 		change := true; TYP(p',k')
 	    )
-	end)
+	end
       | buildItem(c, change, item as MOD(p,j)) =
-	(case PathMap.lookup(#mod_rea(#rea c), p)
-	 of SOME m => (* for non-selfified module annotations *)
-	    let
-		val p' = buildPath(c,p)
-		val j' = sing' m
-	    in
-		change := true; MOD(p',j')
-	    end
-	  | NONE =>
 	let
 	    val p' = buildPath(c,p)
 	    val j' = build(instContext(c, InstDot p'), j)
@@ -1600,17 +1645,8 @@ TextIO.print "\n";
 (*DEBUG*)handle e => raise e;
 		change := true; MOD(p',j')
 	    )
-	end)
+	end
       | buildItem(c, change, item as INF(p,k)) =
-	(case PathMap.lookup(#inf_rea(#rea c), p)
-	 of SOME j => (* for non-selfified module annotations *)
-	    let
-		val p' = buildPath(c,p)
-		val k' = singKind j
-	    in
-		change := true; INF(p',k')
-	    end
-	  | NONE =>
 	let
 	    val p' = buildPath(c,p)
 	    val k' = buildKind(c,k)
@@ -1630,7 +1666,7 @@ TextIO.print "\n";
 (*DEBUG*)handle e => raise e;
 		change := true; INF(p',k')
 	    )
-	end)
+	end
       | buildItem(c, change, HIDDEN item') =
 	    HIDDEN(buildItem(c, change, item'))
 
@@ -1764,6 +1800,17 @@ TextIO.print "Inf.instance done.\n";
 	    end
 
 	  | THAT(p,j') =>
+	    let
+		val p'  = case PathMap.lookup(#mod_rea rea,p)
+			   of NONE       => p
+			    | SOME(p',_) => p'
+		val j'' = avoid'(b,rea,j')
+	    in
+		if PathMap.member(#mod b,p')
+		then j''
+		else sing'(p',j'')
+	    end
+	    (* Disable module sharing...
 	    if PathMap.member(#mod_rea rea,p) then
 		if PathMap.member(#mod b,p) then raise Unavoidable else
 		realise(rea,j)
@@ -1772,12 +1819,12 @@ TextIO.print "Inf.instance done.\n";
 	    else
 		let
 		    val j'' = avoid'(b,rea,j')
-		    (* luckily, we don't have to "unselfify" j' ;-) *)
 		in
 		    PathMap.insert(#mod_rea rea, p, mod(p,j''));
 		    (* disallow further occurances of p, by keeping it in b! *)
 		    j''
 		end
+	    *)
 
 	  | EXIST(p,j1,j2) =>
 	    let
@@ -1848,6 +1895,23 @@ TextIO.print "Inf.instance done.\n";
 	      | _ => item' (* normalised kinds contain no paths *)
 	end
       | avoidItem' (b,rea,change) (item as MOD(p,j)) =
+	let
+	    val j'    = avoid'(b,rea,j)
+	    val item' = if Cell.equal(j,j')
+			then item
+			else (change := true; MOD(p,j'))
+	in
+	    case inspect j'
+	     of Sing(p',j'') =>
+		if PathMap.member(#mod b,p') then
+		    (PathMap.insertDisjoint(#mod_rea rea, p', (p,j''));
+		     PathMap.removeExistent(#mod b,p');
+		     change := true;
+		     MOD(p,j''))
+		else item'
+	      | _ => item'
+	end
+	(* Disable module sharing...
 	(case inspect j
 	 of Sing(p',j') => (*UNFINISHED: where (PathMap.member(#mod b,p') ...) *)
 	    (case PathMap.lookup(#mod b,p')
@@ -1894,6 +1958,7 @@ TextIO.print "Inf.instance done.\n";
 		else (change := true; MOD(p,j'))
 	    end
 	)
+	*)
       | avoidItem' (b,rea,change) (item as INF(p,k)) =
 	let
 	    val k'    = realiseKind(rea,k)
@@ -2017,6 +2082,9 @@ TextIO.print "Inf.match done.\n")
 		matchMod(mt,rea,m1,m2)
 	  | (THAT(p1,j1'), _) =>
 		match'(mt,rea,j1',j2)
+	  | (_, THAT(p2,j2')) =>
+		(* Disable module sharing... *)
+		match'(mt,rea,j1,j2')
 	  | (CON(p1,_), CON(p2,_)) =>
 		if Path.equal(p1,p2) then () else
 		(case PathMap.lookup(#inf_rea rea, p1)
@@ -2068,14 +2136,14 @@ TextIO.print "Inf.match done.\n")
 	  | (APPLY(j1',m1), APPLY(j2',m2)) =>
 		(match'(mt,rea,j1',j2')
 		 handle Mismatch m => raise Mismatch(MismatchFun m);
-		 (* EXPERIMENTAL: make arguments non-generative *)
-		 equal'(mt,rea,#2 m1,#2 m2)
-		 (* originally: equalMod'(mt,rea,m1,m2) *)
+		 equalMod'(mt,rea,m1,m2)
 		 handle Mismatch m => raise Mismatch(MismatchArg m)
 		)
 	  | _ => raise Mismatch(Incompatible(j1,j2))
 
     and matchMod(mt, rea, m1 as (p1,j1), m2 as (p2,j2)) =
+	match'(mt,rea,j1,j2)
+	(* Disable module sharing...
 	if Path.equal(p1,p2) then match'(mt,rea,j1,j2) else
 	case PathMap.lookup(#mod_rea rea, p1)
 	  of SOME m1' => matchMod(mt,rea,m1',m2)
@@ -2083,6 +2151,7 @@ TextIO.print "Inf.match done.\n")
 	case PathMap.lookup(#mod_rea rea, p2)
 	  of SOME m2' => matchMod(mt,rea,m1,m2')
 	   | NONE     => raise Mismatch(IncompatibleMod(p1,p2))
+	*)
 
     and matchSig(mt,rea,s1,s2) =
 	if narrows(s2,s1)
@@ -2579,6 +2648,7 @@ TextIO.print "\n";
 
     val _ = modFwd             := mod
     val _ = applyFwd'          := apply'
+    val _ = selfifyFwd         := selfify
     val _ = narrowFwd          := narrow
     val _ = narrowModFwd       := narrowMod
     val _ = realiseFwd         := realise

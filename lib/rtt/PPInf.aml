@@ -233,6 +233,7 @@ struct
 	    let
 		val (p,j') = asMod m
 	    in
+		if not debug then ppInf'(ps,prec,j') else
 		fbox(below(nest(
 		    text "<" ^^
 		    PPPath.ppPath' ps p ^^ text " :" ^/^
