@@ -786,7 +786,7 @@
     </DD>
 
     <DT>
-      <TT>Reified.card (<I>i1</I>, <I>v<I>, <I>i2</I>, <I>c</I>)</TT>
+      <TT>Reified.card (<I>i1</I>, <I>v</I>, <I>i2</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>For detailed documentation, click
