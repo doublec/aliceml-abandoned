@@ -5,7 +5,7 @@
  *
  * Copyright:
  *   Leif Kornstaedt, 2000-2001
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg, 2000-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,13 +15,12 @@
 import structure Inf       from "../../lib/rtt/Inf"
 import structure Url       from "../../lib/system/Url"
 import structure Component from "../../lib/system/Component"
-import structure Reflect   from "../../lib/system/Reflect"
 
 signature TARGET =
 sig
     datatype t =
 	COMPONENT of {component: unit -> Component.t,
-		      eval: Url.t -> Reflect.module}
+		      eval: Url.t -> package}
       | FOREIGN of {inf: Inf.t,
 		    save: string -> unit}
 end

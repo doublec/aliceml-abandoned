@@ -48,7 +48,7 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 				val str = #1 (Reflect.reflectPackage package)
 			    in
 				CodeGenPhase.eval (x, str);
-				str
+				package
 			    end
 		    in
 			if not (!Switches.Debug.dumpTarget) then () else

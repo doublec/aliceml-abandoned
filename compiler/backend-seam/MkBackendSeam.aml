@@ -78,7 +78,7 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 					 Promise.fulfill
 					 (p, UnsafeValue.projPoly (str, label)))
 				    exports;
-				str
+				package
 			    end
 		    in
 			(context, Target.COMPONENT

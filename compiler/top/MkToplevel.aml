@@ -18,6 +18,7 @@ import structure OS                   from "../../lib/system/OS"
 import structure Url                  from "../../lib/system/Url"
 import structure Signal               from "../../lib/system/Signal"
 
+import structure Reflect              from "../../lib/system/Reflect"
 import structure Component            from "../../lib/system/Component"
 import structure PPComponent          from "../../lib/system/PPComponent"
 import structure PPMismatch           from "../../lib/rtt/PPMismatch"
@@ -137,23 +138,18 @@ struct
 		     in
 			 case result of
 			     NONE => NONE (* interrupted *)
-			   | SOME str => (* completed or stopped *)
+			   | SOME package => (* completed or stopped *)
 			     if not printSig then SOME context' else
-			     case Component.inf (component ())
-			       of NONE =>
-				      (TextIO.print "[no result signature]\n";
-				       SOME context')
-		        	| SOME inf =>
-				      interruptable
-				      (fn _ =>
-				       let
-					   val doc =
-					       PPComponent.ppComp (str, inf)
-				       in
-					   PrettyPrint.output(TextIO.stdOut, doc, 79);
-					   TextIO.print "\n";
-					   context'
-				       end)
+			     interruptable
+			     (fn _ =>
+			      let
+				  val (str, inf) = Reflect.reflectPackage package
+				  val doc = PPComponent.ppComp (str, inf)
+			      in
+				  PrettyPrint.output(TextIO.stdOut, doc, 79);
+				  TextIO.print "\n";
+				  context'
+			      end)
 		     end
 		   | Target.FOREIGN _ =>
 			 raise RecursiveCompiler.Crash

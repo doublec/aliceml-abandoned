@@ -1090,3 +1090,5 @@ val isFst	= Alt.isFst
 val isSnd	= Alt.isSnd
 val isNone	= Option.isNone
 val appr	= List.appr
+
+type package = unit

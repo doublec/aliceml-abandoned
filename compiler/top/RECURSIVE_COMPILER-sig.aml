@@ -33,7 +33,7 @@ signature RECURSIVE_COMPILER =
 
 	datatype target =
 	    COMPONENT of {component: unit -> Component.t,
-			  eval: Url.t -> Reflect.module}
+			  eval: Url.t -> package}
 	  | FOREIGN   of {inf: Inf.t,
 			  save: string -> unit}
 
@@ -60,7 +60,7 @@ signature RECURSIVE_COMPILER' =
 
 	datatype target =
 	    COMPONENT of {component: unit -> Component.t,
-			  eval: Url.t -> Reflect.module}
+			  eval: Url.t -> package}
 	  | FOREIGN   of {inf: Inf.t,
 			  save: string -> unit}
 
