@@ -3,7 +3,7 @@
 //   Jens Regenberg <jens@ps.uni-sb.de>
 //
 // Copyright:
-//   Jens Regenberg, 2002-2004
+//   Jens Regenberg, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
