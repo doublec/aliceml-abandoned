@@ -166,6 +166,26 @@ struct
 			      p,i,d,setGroup)
 	else f (va,t,p,i,d,ld)
 
+(* Hilfsfunktionen zur Behandlung von Listen *)
+
+    (* inspectList *)
+    fun inspectList(n,x) = inspectList'(n,x,[])
+	
+    and inspectList'(n,x,xs) =
+	if not(Future.isDetermined x) 
+	    then Indet(List.rev xs, x) 
+	else
+	    if List.null x 
+		then Det(List.rev xs, false) 
+	    else
+		if n = 0 
+		    then Det(List.rev xs, true) 
+		else inspectList'(n-1, List.tl x, List.hd x :: xs)
+	
+    (* castList *)	    
+    fun castList value = UnsafeValue.cast value : 'a list    
+
+
 (* Bestimmung des Pfades bei Packages und Promises *)
 
     val sign = Inf.asSig(Option.valOf 

@@ -22,7 +22,7 @@ import signature TYPES from "TYPES-sig"
 structure Types :> TYPES = 
 struct
     
-    datatype actions = NO_ACTIONS (* wird spaeter erweitert *)
+    datatype actions = NO_ACTIONS (* Erweiterung moeglich *)
     
     datatype desc =
 	INTERPUNCT
@@ -40,119 +40,132 @@ struct
     fun createIValue(va,t,act) = I_VALUE{value = va,
 					 typ = t,
 					 actions = act}
+
+    fun getValue desc = case desc of VALUE(r) => #value(r)
+                                   | _ => raise Match
+
+    fun getInfValue desc = case desc of I_VALUE(r) => #value(r)
+	                              | _ => raise Match
+
+    fun getTyp desc = case desc of VALUE(r) => #typ(r)
+                                 | _ => raise Match
+
+    fun getInf desc = case desc of I_VALUE(r) => #typ(r)
+                                 | _ => raise Match
 	
-   datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+	
+    datatype status = CLEAN | DIRTY | DAZZLED | DEAD
+	
+    datatype color_class = INT_COLOR 
+                         | REAL_COLOR
+                         | CHAR_COLOR
+                         | STR_COLOR
+                         | WORD_COLOR
+                         | EXN_COLOR
+                         | REF_COLOR
+                         | LABEL_COLOR
+                         | SEP_COLOR
+                         | EQU_COLOR
+                         | LIMIT_COLOR
+                         | BRACK_COLOR
+                         | REL_COLOR
+                         | DEFAULT
 
-   datatype status = CLEAN | DIRTY | DAZZLED | DEAD
-
-   datatype color_class = INT_COLOR 
-                        | REAL_COLOR
-                        | CHAR_COLOR
-                        | STR_COLOR
-                        | WORD_COLOR
-                        | EXN_COLOR
-                        | REF_COLOR
-                        | LABEL_COLOR
-                        | SEP_COLOR
-                        | EQU_COLOR
-                        | LIMIT_COLOR
-                        | BRACK_COLOR
-                        | REL_COLOR
-                        | DEFAULT
-
-   datatype node = 
-       Simple of {desc : desc, 
-		  parent : node,
-		  index : int,
-		  depth : int,
-		  rep : string, 
-                  width : int ref,
-		  color : color_class, 
-		  status : status ref,
-		  group : Gtk.object}
-       
-     | Concat of {desc : desc, 
-		  parent : node,
-		  index : int,
-                  depth : int,
-		  kids : node array, 
-		  width : int ref,
-		  height : int ref,
-		  status : status ref,
-		  group : Gtk.object}
-       
-     | Container of {desc : desc, 
-		     parent : node,
-		     index : int,
-		     depth : int,
-		     kids : node array, 
-		     width : int ref,
-		     height : int ref,
-                     l_width : int ref,
-		     status : status ref,
-		     group : Gtk.object}
-       
-     | Limit of {desc : desc, 
-                 sort : limit,
-		 parent : node,
-		 index : int, 
-		 depth : int,
-		 status : status ref,
-		 group : Gtk.object}
-
-     | RelNode of {desc : desc, 
-                   content : node ref,
-		   parent : node,  
-		   index : int, 
+    datatype node = 
+	Simple of {desc : desc, 
+		   parent : node,
+		   index : int,
 		   depth : int,
-                   counter : int ref, 
 		   rep : string, 
-	           relman : node list ref, 
-                   width : int ref,
-                   height : int ref,
+		   width : int ref,
 		   color : color_class, 
-		   status : status ref, 
-		   group : Gtk.object}  
-       
-     | RelRefNode of {desc : desc, 
-		      parent : node, 
-		      index : int, 
+		   status : status ref,
+		   group : Gtk.object}
+	
+      | Concat of {desc : desc, 
+		   parent : node,
+		   index : int,
+		   depth : int,
+		   kids : node array, 
+		   width : int ref,
+		   height : int ref,
+		   status : status ref,
+		   group : Gtk.object}
+	
+      | Container of {desc : desc, 
+		      parent : node,
+		      index : int,
 		      depth : int,
-                      rep : string, 
-		      relnode : node, 
-                      width : int ref, 
-		      color : color_class, 
-		      status : status ref,  
-		      group : Gtk.object}  
-       
-     | Empty 
-       
-   datatype doc = 
-       
-       SIMPLE of {desc : desc, 
-		  rep : string, 
-		  color : color_class }
-
-     | CONCAT of {desc : desc, 
-		  kids : doc vector }
-
-     | CONTAINER of {desc : desc, 
-		     kids : doc vector }
-
-     | LIMIT of {desc : desc, 
-		 sort : limit }
-       
-     | EMBEDDED of Reflect.value * Type.t 
-
-     | EMBEDDED_INF of Reflect.module * Inf.t 
-
-   (* zur Behandlung von Listen *)
-   datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
-                        | Indet of 'a list * 'a list (* mit Future *)
-       
-   val compList = 
-       let structure UnitList = Reflect.ReflectType(type t = unit list)
-	   val unitList = UnitList.x
-       in #1(Type.asApply(unitList))
-       end    
+		      kids : node array, 
+		      width : int ref,
+		      height : int ref,
+		      l_width : int ref,
+		      status : status ref,
+		      group : Gtk.object}
+	
+      | Limit of {desc : desc, 
+		  sort : limit,
+		  parent : node,
+		  index : int, 
+		  depth : int,
+		  status : status ref,
+		  group : Gtk.object}
+	
+      | RelNode of {desc : desc, 
+		    content : node ref,
+		    parent : node,  
+		    index : int, 
+		    depth : int,
+		    counter : int ref, 
+		    rep : string, 
+		    relman : node list ref, 
+		    width : int ref,
+		    height : int ref,
+		    color : color_class, 
+		    status : status ref, 
+		    group : Gtk.object}  
+	
+      | RelRefNode of {desc : desc, 
+		       parent : node, 
+		       index : int, 
+		       depth : int,
+		       rep : string, 
+		       relnode : node, 
+		       width : int ref, 
+		       color : color_class, 
+		       status : status ref,  
+		       group : Gtk.object}  
+	
+      | Empty 
+	
+    datatype doc = 
+	
+	SIMPLE of {desc : desc, 
+		   rep : string, 
+		   color : color_class }
+	
+      | CONCAT of {desc : desc, 
+		   kids : doc vector }
+	
+      | CONTAINER of {desc : desc, 
+		      kids : doc vector }
+	
+      | LIMIT of {desc : desc, 
+		  sort : limit }
+	
+      | EMBEDDED of Reflect.value * Type.t 
+	
+      | EMBEDDED_INF of Reflect.module * Inf.t 
+	
+    (* zur Behandlung von Listen *)
+    datatype 'a list_desc = Det of 'a list * bool (* ohne Futures *)
+                          | Indet of 'a list * 'a list (* enthaelt Future(s) *)
+	
+    val compList = 
+	let structure UnitList = Reflect.ReflectType(type t = unit list)
+	    val unitList = UnitList.x
+	in #1(Type.asApply(unitList))
+	end 
+   
 end
