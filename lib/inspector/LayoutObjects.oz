@@ -123,11 +123,27 @@ define
       meth noSep($)
 	 true
       end
+      meth isVert($)
+	 case {Label @value}
+	 of fd          then false
+	 [] 'Promise__' then false
+	 [] 'Package__' then false
+	 else true
+	 end
+      end
    end
 
    class TupleGrLayoutObject from LabelTupleGrLayoutObject
       meth noSep($)
 	 true
+      end
+      meth isVert($)
+	 case {Label @value}
+	 of fd          then false
+	 [] 'Promise__' then false
+	 [] 'Package__' then false
+	 else true
+	 end
       end
    end
 

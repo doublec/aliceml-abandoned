@@ -219,6 +219,20 @@ define
 	       @type  = vector
 	       @label = {New Helper.ozAtom create('#[' self 0 Visual vector)}
 	       @brace = {New Helper.ozAtom create(']' self 0 Visual vector)}
+	    [] 'Promise__' then
+	       @type  = promise
+	       @label = {New Helper.ozAtom create('promise' self 0 Visual promise)}
+	       @brace = {New Helper.empty create(self)}
+	       arity    <- nil
+	       maxWidth <- 0
+	       %% Hack Alert
+	       {Dictionary.put @items 1 {New Helper.empty create(self)}}
+	    [] 'Package__' then
+	       @type  = package
+	       @label = {New Helper.ozAtom create('package' self 0 Visual package)}
+	       @brace = {New Helper.empty create(self)}
+	       %% Hack Alert
+	       {Dictionary.put @items 1 {New Helper.empty create(self)}}
 	    else
 	       @type = conval
 	       if {System.eq Value.1 unit}
