@@ -126,7 +126,7 @@ final public class Char extends SCon {
 	    _fromTuple(args,val,1,"Char.isSpace");
 	    DMLValue ch  = args[0].request();
 	    if (ch instanceof Char) {
-		return (Character.isSpace(((Char) ch).ch) ?
+		return (Character.isWhitespace(((Char) ch).ch) ?
 		    Constants.dmltrue :
 			Constants.dmlfalse);
 	    } else {
