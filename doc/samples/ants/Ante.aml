@@ -27,41 +27,75 @@ struct
 			  Pick of instr * instr | Drop of instr |
 			  Sense of dir * condition * instr * instr |
 			  Flip of int * instr * instr
-    type stmt		= int * (instr -> instr)
+    type state		= int
+    type stmt		= state -> int * (instr -> instr)
     type 'a branch	= 'a * stmt
 
+
+  (* New turn labels *)
+
+    val labcount = ref 0
+
+    fun newlabel s =
+	"_" ^ s ^ "-" ^ Int.toString (!labcount) before (labcount := !labcount+1)
 
   (* Primitives *)
 
     exception Malformed of string
 
-    val fail		= (0, fn k => Fail)
-    fun goto l		= (0, fn k => Goto l)
-    val nop		= (1, id)
+    fun expandlabel st l = l ^ "$" ^ Int.toString st
 
-    fun label l		= (1, fn k => Label(l, k))
-    fun mark m		= (1, fn k => Mark(m, k))
-    fun unmark m	= (1, fn k => Unmark(m, k))
-    fun turn s		= (1, fn k => Turn(s, k))
-    val drop		= (1, fn k => Drop k)
+    val fail		= fn st => (0, fn k => Fail)
+    fun goto l		= fn st => (0, fn k => Goto (expandlabel st l))
+    val nop		= fn st => (1, id)
 
-    fun move ifyes (n,f)	= (n+1, fn k => Move(f k, k))
-      | move ifnot (n,f)	= (n+1, fn k => Move(k, f k))
-    fun pick ifyes (n,f)	= (n+1, fn k => Pick(f k, k))
-      | pick ifnot (n,f)	= (n+1, fn k => Pick(k, f k))
-    fun sense d c ifyes (n,f)	= (n+1, fn k => Sense(d, c, f k, k))
-      | sense d c ifnot (n,f)	= (n+1, fn k => Sense(d, c, k, f k))
-    fun flip i ifyes (n,f)	= (n+1, fn k => Flip(i, f k, k))
-      | flip i ifnot (n,f)	= (n+1, fn k => Flip(i, k, f k))
+    fun label l		= fn st => (1, fn k => Label(expandlabel st l, k))
+    fun mark m		= fn st => (1, fn k => Mark(m, k))
+    fun unmark m	= fn st => (1, fn k => Unmark(m, k))
+    val drop		= fn st => (1, fn k => Drop k)
 
-    fun letlabel (f : label -> stmt) = (#1(f ""), fn k => Scope (fn l => #2(f l) k))
+    fun turn s =
+	let
+	    val l = newlabel "turn"
+	in
+	    fn st =>
+	    let
+		val st' = (st + (case s of left => 5 | right => 1)) mod 6
+	    in
+		(1, fn k => Turn(s, Concat(Goto (expandlabel st' l),
+					   Label (expandlabel st l, k))))
+	    end
+	end
+
+    fun letlabel (f : label -> stmt) =
+	fn st =>
+	let
+	    val (n,_) = f "dummy" st
+	in
+	    (n, fn k => Scope (fn l => #2 (f (expandlabel st l) st) k))
+	end
 
     infixr ++
-    fun (0,f1) ++ (n2,f2)	= (n2, fn k => Concat(f1 k, f2 k))
-      | (1,f1) ++ (n2,f2)	= (n2, fn k => f1 (f2 k))
-      | (_,f1) ++ (n2,f2)	= (n2, fn k => Scope (fn l => Concat(f1 (Goto l), Label(l, f2 k))))
+    fun b1 ++ b2 =
+	fn st =>
+	let
+	    val (n1,f1) = b1 st
+	    val (n2,f2) = b2 st
+	in
+	    case n1
+	     of 0 => (n2, fn k => Concat(f1 k, f2 k))
+	      | 1 => (n2, fn k => f1 (f2 k))
+	      | _ => (n2, fn k => Scope (fn l => Concat(f1 (Goto l), Label(l, f2 k))))
+	end
 
-    fun join g (n1,f1) (n2,f2)	= (n1+n2, fn k => g (f1 k, f2 k))
+    fun join g b1 b2 =
+	fn st =>
+	let
+	    val (n1,f1) = b1 st
+	    val (n2,f2) = b2 st
+	in
+	    (n1+n2, fn k => g (f1 k, f2 k))
+	end
 
     fun move2 ifyes b1 ifnot b2		= join Move b1 b2
       | move2 ifnot b1 ifyes b2		= join Move b2 b1
@@ -79,6 +113,29 @@ struct
       | flip2 n ifnot b1 ifyes b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b2 b1
       | flip2 n _     _  _     _	= raise Malformed "flip"
 
+    fun negate ifnot = ifyes
+      | negate ifyes = ifnot
+
+    fun move yesno b			= move2 yesno b (negate yesno) nop
+    fun pick yesno b			= pick2 yesno b (negate yesno) nop
+    fun sense d c yesno b		= sense2 d c yesno b (negate yesno) nop
+    fun flip i yesno b			= flip2 i yesno b (negate yesno) nop
+
+    fun switch (bs : stmt list) =
+	let
+	    val l = newlabel "switch"
+	in
+	    fn st =>
+	    let
+		val fs = List.map (fn b => #2 (b st)) bs
+	    in
+		(1, switch' l 0 fs)
+	    end
+	end
+    and switch' l st   []    k = Label(expandlabel 6 l, k)
+      | switch' l st (f::fs) k = Concat(Label(expandlabel st l,
+					      f (Goto(expandlabel 6 l))),
+					switch' l (st+1) fs k)
 
   (* Combinators *)
 
@@ -254,9 +311,15 @@ struct
 		(n, I.Flip(y,s1,s2,a)::l1@l2, n2, e2)
 	    end
 
-    fun compile (_,f) =
+    fun compile (b : stmt) =
 	let
-	    val (_,l,n,e) = traverse (ref 0) 0 E.empty () (f Fail)
+	    val instr = Concat(#2 (b 0) Fail,
+			Concat(#2 (b 1) Fail,
+			Concat(#2 (b 2) Fail,
+			Concat(#2 (b 3) Fail,
+			Concat(#2 (b 4) Fail,
+			Concat(#2 (b 5) Fail,Fail))))))
+	    val (_,l,n,e) = traverse (ref 0) 0 E.empty () instr
 	in
 	    assert n <= 10_000 do
 	    E.appi (fn (l,(p,_)) =>

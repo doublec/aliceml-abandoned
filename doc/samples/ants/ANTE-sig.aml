@@ -42,6 +42,7 @@ sig
     val sense2	: dir -> condition -> yesno -> stmt -> yesno -> stmt -> stmt
     val flip2	: int -> yesno -> stmt -> yesno -> stmt -> stmt
 
+    val switch	: stmt list -> stmt
     val flipn	: stmt list -> stmt
     val sensen	: (dir * condition) branch list -> otherwise -> stmt -> stmt
     val loop	: stmt -> stmt
