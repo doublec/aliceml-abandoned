@@ -11,11 +11,17 @@
 //
 
 #include <unistd.h>
-#include <netdb.h>
 #include <sys/types.h>
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <winsock.h>
+typedef int socklen_t;
+#else
+#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#endif
 
 #include "emulator/Authoring.hh"
 
@@ -128,7 +134,7 @@ DEFINE1(UnsafeSocket_input1) {
   DECLARE_INT(sock, x0);
 
   u_char c;
-  int n = recv(sock, &c, 1, MSG_PEEK);
+  int n = recv(sock, reinterpret_cast<char *>(&c), 1, MSG_PEEK);
   if (n < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   } else if (n == 0) { // EOF
@@ -151,7 +157,8 @@ DEFINE2(UnsafeSocket_inputN) {
   String *buffer = String::New(count);
   int nread = 0;
   while (nread < count) {
-    int n = recv(sock, buffer->GetValue() + nread, count - nread, 0);
+    int n = recv(sock, reinterpret_cast<char *>(buffer->GetValue() + nread),
+		 count - nread, 0);
     if (n < 0) {
       RAISE(Store::IntToWord(0)); //--** IO.Io
     } else if (n == 0) {
@@ -168,7 +175,7 @@ DEFINE2(UnsafeSocket_output1) {
   DECLARE_INT(sock, x0);
   DECLARE_INT(i, x1);
   u_char c = i;
-  if (send(sock, &c, 1, 0) < 0) {
+  if (send(sock, reinterpret_cast<char *>(&c), 1, 0) < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
   RETURN_UNIT;
@@ -181,7 +188,7 @@ DEFINE2(UnsafeSocket_output) {
   u_char *buffer = string->GetValue();
   u_int count = string->GetSize();
   while (count > 0) {
-    int n = send(sock, buffer, string->GetSize(), 0);
+    int n = send(sock, reinterpret_cast<char *>(buffer), string->GetSize(), 0);
     if (n < 0) {
       RAISE(Store::IntToWord(0)); //--** IO.Io
     }

@@ -15,6 +15,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#endif
+
 #include "emulator/Authoring.hh"
 #include "emulator/RootSet.hh"
 #include "emulator/Closure.hh"
@@ -83,14 +88,17 @@ DEFINE0(FileSys_getDir) {
 
 DEFINE1(FileSys_mkDir) {
   DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int res = mkdir(ExportCString(name));
+#else
   int res = mkdir(ExportCString(name),
 		  S_IRUSR | S_IWUSR | S_IXUSR |
 		  S_IRGRP | S_IWGRP | S_IXGRP |
 		  S_IROTH | S_IWOTH | S_IXOTH);
+#endif
   if (!res) {
     RETURN_UNIT;
-  }
-  else {
+  } else {
     const char *err = "mkDir: cannot create directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
@@ -135,7 +143,7 @@ DEFINE0(FileSys_tmpName) {
     if (access(s, F_OK))
       break;
   }
-  RETURN(String::New(s));
+  RETURN(String::New(s)->ToWord());
 #else
   static const char path[] = "/tmp/aliceXXXXXX";
   String *s = String::New(path, sizeof(path));

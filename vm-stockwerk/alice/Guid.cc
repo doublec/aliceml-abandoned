@@ -16,11 +16,14 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#include <process.h>
+#else
+#include <sys/times.h>
 #endif
+
 #include <unistd.h>
 #include <cstdlib>
 #include <time.h>
-#include <sys/times.h>
 
 #include "emulator/Guid.hh"
 #include "emulator/RootSet.hh"
@@ -33,22 +36,40 @@ void Guid::Init() {
   srand(0);
 }
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
+# ifdef __GNUC__
+typedef long long verylong;
+# else
+typedef long verylong;
+# endif
+
+static verylong GetTimeStamp() {
+  SYSTEMTIME st;
+  GetSystemTime(&st);
+  FILETIME ft;
+  SystemTimeToFileTime(&st, &ft);
+  verylong x1 = ((verylong) (u_int) ft.dwHighDateTime) << 32;
+  verylong x2 = x1 + (u_int) ft.dwLowDateTime;
+  return x2 / 10000;
+}
+
+#else
+
+static int GetTimeStamp() {
+  struct tms buffer;
+  int t = times(&buffer);
+  double t2 = t * 1000.0 / static_cast<double>(sysconf(_SC_CLK_TCK));
+  return static_cast<int>(t2);
+}
+
+#endif
+
 Guid *Guid::New() {
   Tuple *tuple = Tuple::New(4);
   tuple->Init(0, Store::IntToWord(static_cast<int>(getpid())));
   tuple->Init(1, Store::IntToWord(static_cast<int>(time(0))));
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  SYSTEMTIME st;
-  GetSystemTime(&st);
-  FILETIME ft;
-  SystemTimeToFileTime(&st,&ft);
-  tuple->Init(2, fileTimeToMS(&ft));
-#else
-  struct tms buffer;
-  int t = times(&buffer);
-  double t2 = t * 1000.0 / static_cast<double>(sysconf(_SC_CLK_TCK));
-  tuple->Init(2, Store::IntToWord(static_cast<int>(t2)));
-#endif
+  tuple->Init(2, Store::IntToWord(GetTimeStamp()));
   tuple->Init(3, Store::IntToWord(rand()));
   return static_cast<Guid *>(tuple);
 }
