@@ -59,3 +59,25 @@ compatible way.
   (2) Or rename the type constructor.
 
 	datatype bool' = datatype bool
+
+      Add
+
+	datatype bool  = datatype bool'
+
+      if you really want to keep the name.
+
+
+* Recursive value bindings does not remove constructor status on the identifiers
+  bound. You cannot bind functions to an identifier that was a constructor
+  previously.
+
+  Examples:
+
+	val rec true = fn x => x
+	fun true x = x
+
+  This is legal in SML (though SML/NJ for example does not allow it either).
+  In Stockhausen it produces a type clash (due to the extended val rec).
+
+  Fix:
+      Rename your function, this is perverse anyway.
