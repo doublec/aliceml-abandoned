@@ -726,7 +726,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 *)
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
-				  status as ref (Optimized (_, _))), mapping) =
+				  status as ref (Cooked (_, _))), mapping) =
 	    let
 		val stms =
 		    share (translateNode (pos, test, thenGraph, elseGraph,

@@ -233,8 +233,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	and nodeStatus =
 	    Initial
 	  | Raw of testGraph list * testGraph list
+	    (* list of all nodes that reference this node as `then',
+	     * list of all nodes that reference this node as `else' *)
 	  | Cooked of (pos * test) list * (pos * test) list
-	  | Optimized of (pos * test) list * (pos * test) list
+	    (* set of true tests for this node's `then',
+	     * set of false tests for this node's `else' *)
 	  | Translated of O.body
 
 	(* Debugging *)
@@ -282,12 +285,27 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testToString (DecTest (_, decs)) =
 	    "dec " ^ Int.toString (List.length decs)
 
-	fun graphToString (Node (pos, test, ref thenGraph, ref elseGraph, _),
-			   level) =
+	fun posTestListToString ((pos, test)::rest) =
+	    posToString pos ^ ": " ^ testToString test ^
+	    (if List.null rest then "" else ", " ^ posTestListToString rest)
+	  | posTestListToString nil = ""
+
+	fun graphToString (Node (pos, test, ref thenGraph, ref elseGraph,
+				 ref status), level) =
 	    indent level ^
 	    posToString pos ^ ": " ^
 	    testToString test ^ "\n" ^
+	    (case status of
+		 Cooked (posTestList, _) =>
+		     indent (level + 1) ^ "[" ^
+		     posTestListToString posTestList ^ "]\n"
+	       | _ => "") ^
 	    graphToString (thenGraph, level + 1) ^
+	    (case status of
+		 Cooked (_, posTestList) =>
+		     indent (level + 1) ^ "[" ^
+		     posTestListToString posTestList ^ "]\n"
+	       | _ => "") ^
 	    graphToString (elseGraph, level + 1)
 	  | graphToString (Leaf (body, _), level) =
 	    indent level ^ "leaf " ^
@@ -405,6 +423,21 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Optimization of the Test Graph *)
 
+	(* In a first step (`Raw' annotations), compute for each node n
+	 * the list of all nodes that reach n through a `then' edge, and
+	 * the list of all the nodes that reach n through a `false' edge.
+	 *
+	 * In a second step (`Cooked' annotations), compute for each edge
+	 * (i.e., reference to a graph) the set of pairs (pos * test) that
+	 * are true resp. false upon taking this edge.  Use this information
+	 * to shorten paths.  This is essential to maximize parallelization
+	 * of tests at the same position in ValuePropagationPhase.
+	 *
+	 * Note: Only the `true' sets for each `then' edge and the `false'
+	 * sets for each `else' edge need to be stored for subsequent
+	 * computations.
+	 *)
+
 	local
 	    fun union (NONE, gs) = gs
 	      | union (SOME g, gr) = g::gr
@@ -434,69 +467,58 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		else testSetIntersect (testSetRest, testSet')
 	      | testSetIntersect (nil, _) = nil
 
-	    fun getSets (status as ref (Raw (trueGraphs, falseGraphs))) =
-		let
-		    val sets = (makePosTestList (trueGraphs, true),
-				makePosTestList (falseGraphs, false))
-		in
-		    status := Cooked sets; sets
-		end
-	      | getSets (ref (Cooked sets)) = sets
-	      | getSets (ref (Optimized sets)) = sets
-	      | getSets (ref _) = raise Crash.Crash "SimplifyMatch.getSets"
-	    and makePosTestList (graphs, isTrue) =
-		List.foldr
-		(fn (graph, posTestList) =>
-		 case graph of
-		     Node (pos, test, _, _, status) =>
-			 let
-			     val (trueSet, falseSet) = getSets status
-			 in
-			     if isTrue then
-				 testSetIntersect ((pos, test)::trueSet,
-						   falseSet)
-			     else
-				 testSetIntersect (trueSet,
-						   (pos, test)::falseSet)
-			 end
-		   | _ => raise Crash.Crash "SimplifyMatch.makePosTestList")
-		nil graphs
-
 	    fun disentailed (pos, test, (pos', test')::rest) =
 		pos = pos' andalso areParallelTests (test, test')
 		orelse disentailed (pos, test, rest)
 	      | disentailed (_, _, nil) = false
 
-	    fun optimize (ref (Node (_, _, _, _, ref (Optimized (_, _))))) = ()
-	      | optimize (graphRef as
-			  ref (Node (pos, test, thenGraphRef, elseGraphRef,
-				     status))) =
+	    fun optimizeNode (graphRef as ref (Node (pos, test, ref thenGraph,
+						     ref elseGraph, _)),
+			      trueSet, falseSet) =
+		(if testSetMember (pos, test, trueSet) then
+		     (graphRef := thenGraph;
+		      optimizeNode (graphRef, trueSet, falseSet))
+		 else if testSetMember (pos, test, falseSet)
+		     orelse disentailed (pos, test, trueSet) then
+		     (graphRef := elseGraph;
+		      optimizeNode (graphRef, trueSet, falseSet))
+		 else ())
+	      | optimizeNode (ref _, _, _) = ()
+
+	    fun getSets (Node (pos, test, thenGraphRef, elseGraphRef,
+			       status as ref (Raw (thenPreds, elsePreds)))) =
 		let
-		    val sets as (trueSet, falseSet) = getSets status
+		    val trueSet2 = intersect (#1, thenPreds)
+			(* set of `true' tests for `else' edge *)
+		    val falseSet1 = intersect (#2, elsePreds)
+			(* set of `false' tests for `then' edge *)
+		    val trueSet1 = (pos, test)::trueSet2
+			(* set of `true' tests for `then' edge *)
+		    val falseSet2 = (pos, test)::falseSet1
+			(* set of `false' tests for `else' edge *)
+		    val sets = (trueSet1, falseSet2)
 		in
-		    if testSetMember (pos, test, trueSet) then
-			(graphRef := !thenGraphRef; optimize graphRef)
-		    else if testSetMember (pos, test, falseSet)
-			orelse disentailed (pos, test, trueSet) then
-			(graphRef := !elseGraphRef; optimize graphRef)
-		    else
-			(status := Optimized sets;
-			 optimize thenGraphRef;
-			 optimize elseGraphRef)
+		    status := Cooked sets;
+		    getSets (!thenGraphRef); getSets (!elseGraphRef);
+		    optimizeNode (thenGraphRef, trueSet1, falseSet1);
+		    optimizeNode (elseGraphRef, trueSet2, falseSet2);
+		    SOME sets
 		end
-	      | optimize (ref (Leaf (_, _))) = ()
-	      | optimize (ref _) = raise Crash.Crash "SimplifyMatch.optimize"
+	      | getSets (Node (_, _, _, _, ref (Cooked sets))) = SOME sets
+	      | getSets (Leaf (_, _)) = NONE
+	      | getSets _ = raise Crash.Crash "SimplifyMatch.getSets"
+	    and intersect (sel, graph::graphs) =
+		List.foldr (fn (graph, testSet) =>
+			    testSetIntersect (sel (valOf (getSets graph)),
+					      testSet))
+		(sel (valOf (getSets graph))) graphs
+	      | intersect (_, nil) = nil
 	in
 	    fun optimizeGraph graph =
-		let
-		    val _ = computeRaw (graph, NONE, NONE)
-		    val graphRef = ref graph
-		in
-		    optimize graphRef; !graphRef
-		end
+		(computeRaw (graph, NONE, NONE); getSets graph; graph)
 	end
 
-	type consequent = (Source.region * O.body option ref)
+	type consequent = Source.region * O.body option ref
 
 	fun buildGraph (matches, elseBody) =
 	    let

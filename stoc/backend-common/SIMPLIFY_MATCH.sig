@@ -48,7 +48,6 @@ signature SIMPLIFY_MATCH =
 	    Initial
 	  | Raw of testGraph list * testGraph list
 	  | Cooked of (pos * test) list * (pos * test) list
-	  | Optimized of (pos * test) list * (pos * test) list
 	  | Translated of O.body
 
 	val posToString: pos -> string
@@ -56,7 +55,7 @@ signature SIMPLIFY_MATCH =
 	val graphToString: testGraph * int -> string
 	val mappingToString: mapping -> string
 
-	type consequent = (Source.region * O.body option ref)
+	type consequent = Source.region * O.body option ref
 
 	val buildGraph: (Source.region * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
