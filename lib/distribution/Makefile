@@ -5,7 +5,7 @@
 ### 
 ### Copyright:
 ###   Thorsten Brunklaus, 2001
-###   Leif Kornstaedt, 2001
+###   Leif Kornstaedt, 2001-2002
 ### 
 ### Last change:
 ###   $Date$ by $Author$
@@ -32,7 +32,14 @@ STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOL = alicelink
 STOLOPTS = -v
 
-ALICESOURCES = REMOTE-sig.aml Remote.aml RemoteServer.aml
+ALICESOURCES = \
+	HTTP-sig.aml Http.aml \
+	HTTP_SERVER-sig.aml HttpServer.aml \
+	HTTP_CLIENT-sig.aml HttpClient.aml \
+	HttpServerMain.aml HttpClientMain.aml \
+	REMOTE-sig.aml Remote.aml \
+	TestServer.aml TestClient.aml \
+	RemoteServer.aml
 
 NATIVES = Remote
 
