@@ -21,13 +21,13 @@ type     exn    = Prebound.exn
 exception Match = Prebound.Match
 exception Bind  = Prebound.Bind
 
-__primitive op=  : ''a * ''a -> bool = "="
-__primitive op<> : ''a * ''a -> bool = "<>"
-__primitive op:= : 'a ref * 'a -> unit = ":="
+__primitive val op=  : ''a * ''a -> bool = "="
+__primitive val op<> : ''a * ''a -> bool = "<>"
+__primitive val op:= : 'a ref * 'a -> unit = ":="
 
-__primitive op+ : int * int -> int = "+"
-__primitive op- : int * int -> int = "-"
-__primitive op< : int * int -> bool = "<"
+__primitive val op+ : int * int -> int = "+"
+__primitive val op- : int * int -> int = "-"
+__primitive val op< : int * int -> bool = "<"
 
 structure General =
     struct
@@ -84,26 +84,26 @@ structure ListPair =
 
 structure String =
     struct
-	__primitive op^ : string * string -> string = "String.^"
-	__primitive str : string * string -> string = "String.str"
+	__primitive val op^ : string * string -> string = "String.^"
+	__primitive val str : string * string -> string = "String.str"
     end
 
 val op^ = String.^
 
 structure Int =
     struct
-	__primitive toString : int -> string = "Int.toString"
+	__primitive val toString : int -> string = "Int.toString"
     end
 
 structure Char =
     struct
-	__primitive ord : char -> int = "Char.ord"
-	__primitive chr : int -> char = "Char.chr"
+	__primitive val ord : char -> int = "Char.ord"
+	__primitive val chr : int -> char = "Char.chr"
     end
 
 structure TextIO =
     struct
-	__primitive print : string -> unit = "TextIO.print"
+	__primitive val print : string -> unit = "TextIO.print"
     end
 
 (*--------------------------------------------------------------------*)
