@@ -627,8 +627,13 @@ define
 		 end#ri_t
 	      'Thread.resume':
 		 fun {$ T}
-		    {T setSuspend(false)}
-		    {Scheduler.object condEnqueue(T)}
+		    if {T isSuspended($)} then
+		       {T setSuspend(false)}
+		       case {T getState($)} of runnable then
+			  {Scheduler.object enqueue(T)}
+		       else skip
+		       end
+		    end
 		    tuple()
 		 end#r_v
 	      'Thread.state':
