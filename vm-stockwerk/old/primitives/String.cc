@@ -19,8 +19,8 @@
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
   DECLARE_STRING(string2, x1);
-  int length1 = string1->GetLength();
-  int length2 = string2->GetLength();
+  int length1 = string1->GetSize();
+  int length2 = string2->GetSize();
   String *newString = String::New(length1 + length2);
   char *base = newString->GetValue();
   std::memcpy(base, string1->GetValue(), length1);
@@ -29,8 +29,8 @@ DEFINE2(String_opconcat) {
 } END
 
 static inline int DoCompare(String *string1, String *string2) {
-  int length1 = string1->GetLength();
-  int length2 = string2->GetLength();
+  int length1 = string1->GetSize();
+  int length2 = string2->GetSize();
   int result = std::memcmp(string1->GetValue(), string2->GetValue(),
 			   length1 < length2? length1: length2);
   if (result == 0) {
@@ -73,7 +73,7 @@ DEFINE1(String_explode) {
   DECLARE_STRING(string, x0);
   char *base = string->GetValue();
   word list = Store::IntToWord(1); // nil
-  for (u_int i = string->GetLength(); i--; ) {
+  for (u_int i = string->GetSize(); i--; ) {
     TagVal *cons = TagVal::New(0, 2);
     cons->Init(0, Store::IntToWord(base[i]));
     cons->Init(1, list);
@@ -98,13 +98,13 @@ DEFINE1(String_implode) {
 
 DEFINE1(String_size) {
   DECLARE_STRING(string, x0);
-  RETURN_INT(string->GetLength());
+  RETURN_INT(string->GetSize());
 } END
 
 DEFINE2(String_sub) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || static_cast<u_int>(index) >= string->GetLength())
+  if (index < 0 || static_cast<u_int>(index) >= string->GetSize())
     RAISE(GlobalPrimitives::General_Subscript);
   RETURN_INT(string->GetValue()[index]);
 } END
@@ -113,7 +113,7 @@ DEFINE3(String_substring) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(startIndex, x1);
   DECLARE_INT(sliceLength, x2);
-  int stringLength = string->GetLength();
+  int stringLength = string->GetSize();
   if (startIndex < 0 || sliceLength < 0 ||
       startIndex + sliceLength > stringLength)
     RAISE(GlobalPrimitives::General_Subscript);

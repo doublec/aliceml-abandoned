@@ -467,13 +467,13 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	String *string = String::FromWord(suspendWord);
 	if (string == INVALID_POINTER) SUSPEND(suspendWord);
 	const char *value = string->GetValue();
-	u_int length = string->GetLength();
+	u_int length = string->GetSize();
 	Vector *tests = Vector::FromWord(pc->Sel(1));
 	u_int ntests = tests->GetLength();
 	for (u_int i = 0; i < ntests; i++) {
 	  Tuple *pair = Tuple::FromWord(tests->Sub(i));
 	  string = String::FromWord(pair->Sel(0));
-	  if (string->GetLength() == length &&
+	  if (string->GetSize() == length &&
 	      !memcmp(string->GetValue(), value, length)) {
 	    pc = TagVal::FromWord(pair->Sel(1));
 	    goto loop;
