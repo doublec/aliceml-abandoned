@@ -21,7 +21,7 @@ signature URL_MAP =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	val new: (Url.t * 'a) vector -> 'a map
+	val map: (Url.t * 'a) vector -> 'a map
 
 	val lookup: 'a map * Url.t -> 'a option
 	val lookupNew: 'a map * Url.t -> 'a lookup_result
@@ -38,9 +38,9 @@ structure UrlMap :> URL_MAP =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	fun new initial =
+	fun map initial =
 	    let
-		val map = UrlMap.new ()
+		val map = UrlMap.map ()
 	    in
 		Vector.app (fn (url, x) =>
 			       UrlMap.insert (map, url, ref (SOME x))) initial;
