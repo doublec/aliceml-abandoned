@@ -3,7 +3,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SRCS = Outline.cc Scheduler.cc
+SRCS = Outline.cc Scheduler.cc Unpickler.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all header clean distclean
