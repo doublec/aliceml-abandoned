@@ -600,7 +600,9 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	case Pickle::REF:
 	  {
 	    u_int index = is->GetUInt(); CHECK_EOB();
-	    s = String::FromWordDirect(SelFromEnv(env, index));
+	    word w = SelFromEnv(env, index);
+	    if (w == 0) CORRUPT();
+	    s = String::FromWordDirect(w);
 	    y = INVALID_POINTER;
 	  }
 	  break;
@@ -672,7 +674,9 @@ Interpreter::Result UnpickleInterpreter::Run() {
     case Pickle::REF:
       {
 	u_int index = is->GetUInt(); CHECK_EOB();
-	Set(x, i, SelFromEnv(env, index));
+	word w = SelFromEnv(env, index);
+	if (w == 0) CORRUPT();
+	Set(x, i, w);
 	is->Commit();
 	PushUnpickleFrame(x, i + 1, n);
 	CONTINUE();
