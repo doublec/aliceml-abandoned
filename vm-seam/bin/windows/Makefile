@@ -13,7 +13,7 @@ SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 all: $(EXES)
 
 alicerun.o:
-	$(CXX) $(CXXFLAGS) -DROOT='--argc?(argv[1],argv++):usage()' \
+	$(CXX) $(CXXFLAGS) -DROOT='--argc?*++argv:usage()' \
         -c alicex.cc -o alicerun.o
 
 alice.o:
