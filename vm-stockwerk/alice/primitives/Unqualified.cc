@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 static int Compare(word x0, word x1) {
   Block *a = Store::WordToBlock(x0);

@@ -15,8 +15,8 @@
 #include "generic/Tuple.hh"
 #include "generic/Closure.hh"
 #include "alice/AliceConcreteCode.hh"
-#include "alice/primitives/Authoring.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/Authoring.hh"
 
 DEFINE2(Unsafe_Array_sub) {
   DECLARE_ARRAY(array, x0);
