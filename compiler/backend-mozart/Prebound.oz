@@ -175,6 +175,7 @@ define
 	    end
 	 end
       'GlobalStamp.hash': BootName.hash
+      'Hole.Cyclic': {NewUniqueName 'Hole.Cyclic'}
       'Hole.Hole': {NewUniqueName 'Hole.Hole'}
       'Hole.fail':
 	 fun {$ X E}
