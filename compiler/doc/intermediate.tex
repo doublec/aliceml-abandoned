@@ -437,6 +437,8 @@ E \vdash \f{ref}\;\exp : t \Rightarrow t
 \frac{
 E \vdash \exp \Rightarrow t'
 \qquad
+t' \notin V \cup C
+\qquad
 t = \c{strict}(t')
 }{
 E \vdash \f{strict}\;\exp : t \Rightarrow t
@@ -781,6 +783,8 @@ E \vdash \f{ref}\;\pat : t \Rightarrow t,E'
 \begin{equation}
 \frac{
 E \vdash \pat \Rightarrow t',E'
+\qquad
+t' \notin V \cup C
 \qquad
 t = \c{strict}(t')
 }{

@@ -433,9 +433,9 @@ struct
 		t
 	   end
 
-	(* E |- exp => t'   t = c_strict(t')
-	 * ---------------------------------
-	 *    E |- strict exp : t => t
+	(* E |- exp => t'   t' notin V union C    t = c_strict(t')
+	 * -------------------------------------------------------
+	 *               E |- strict exp : t => t
 	 *)
 	 | StrictExp(i, exp) =>
 	   let
@@ -443,6 +443,8 @@ struct
 		val t' = chExp E exp
 		val t1 = Type.inApply(PervasiveType.typ_strict, t')
 	   in
+		check (not(Type.isVar t' orelse Type.isCon t'))
+		      (i, "StrictExp arg type", #[TYPE t']);
 		check (Type.equals(t1,t))
 		      (i, "StrictExp type", #[TYPE_PAIR(t1,t)]);
 		t
@@ -885,9 +887,9 @@ struct
 		t
 	   end
 
-	(* E |- pat => t',E'    t = c_strict(t')
-	 * -------------------------------------
-	 *     E |- strict pat : t => t,E'
+	(* E |- pat => t',E'   t' notin V union C    t = c_strict(t')
+	 * ----------------------------------------------------------
+	 *               E |- strict pat : t => t,E'
 	 *)
 	 | StrictPat(i, pat) =>
 	   let
@@ -895,6 +897,8 @@ struct
 		val t' = chPat E pat
 		val t1 = Type.inApply(PervasiveType.typ_strict, t')
 	   in
+		check (not(Type.isVar t' orelse Type.isCon t'))
+		      (i, "StrictPat arg type", #[TYPE t']);
 		check (Type.equals(t1,t))
 		      (i, "StrictPat type", #[TYPE_PAIR(t1,t)]);
 		t
