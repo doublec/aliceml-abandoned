@@ -18,9 +18,10 @@ specification (following the syntax used in signatures) of what entities to use
 and a URL. The exported bindings of the corresponding component must match
 the spec given, subject to the usual signature matching rules.
 
-Later we may provide special forms of import specifications that do not require
-giving type and interface annotations to mentioned value and module names. The
-required information will then be extracted from the imported component itself.
+Later we will provide special forms of import specifications that do not
+require giving type and interface annotations to mentioned value and module
+names. The required information will then be extracted from the imported
+component itself. But we need to bootstrap first, and have type checking.
 
 From an abstract viewpoint, a component is a structure matching the following
 signature:
