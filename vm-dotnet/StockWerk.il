@@ -1504,25 +1504,6 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
-    .method public class StockWerk.StockWert CondSelect(class System.String) {
-      .locals(int32)
-      ldarg.0
-      ldfld class StockWerk.RecordArity StockWerk.Record::Arity
-      ldarg.1
-      call instance int32 StockWerk.RecordArity::Select(class System.String)
-      stloc.0
-      ldloc.0
-      ldc.i4.M1
-      beq.s retNull
-      ldarg.0
-      ldfld class StockWerk.StockWert[] StockWerk.Record::Values
-      ldloc.0
-      ldelem.ref
-      ret
-    retNull:
-      ldnull
-      ret
-    }
   }
 
   //
