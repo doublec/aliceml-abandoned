@@ -35,6 +35,7 @@ signature MAINWINDOW =
                     Types.explorer_state option ref -> unit
       val setStatusMsg : Types.explorer_state option ref *
                          string * bool -> unit
+      val setWindowTitle : string -> unit
   end
 
 structure MainWindow :> MAINWINDOW =
@@ -187,4 +188,7 @@ structure MainWindow :> MAINWINDOW =
       else
           Gtk.statusbarPop(ExplorerGUI.statusbar, !contextId)
     | setStatusMsg _ = ()
+
+  fun setWindowTitle title =
+    Gtk.windowSetTitle(ExplorerGUI.aliceexplorer, title)
   end

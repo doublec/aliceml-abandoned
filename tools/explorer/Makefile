@@ -54,8 +54,10 @@ $(GLADE_TARGETS): $(GLADE_SOURCES)
 clean:
 	rm -f $(TARGETS) $(GLADE_TARGETS)
 
-depend: $(SOURCES)
-	alicedep $(SOURCES) > Makefile.depend
+depend:
+	alicedep $(SOURCES) > Makefile.predepend
+	sed "/\/opt\//d" Makefile.predepend > Makefile.depend
+
 
 install: all
 	install -d $(INSTALLTO)

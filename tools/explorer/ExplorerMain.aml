@@ -23,7 +23,7 @@ signature EXPLORER =
       type explorer = Types.explorer_state option ref
       val serve : (unit -> unit) -> unit
       val initExplorer : unit -> explorer
-      val initWithSpace : Space.space -> explorer
+      val initWithSpace : Space.space * string -> explorer
       val exploreAll : Space.space -> explorer
       val exploreOne : Space.space -> explorer
 (*      val exploreBest : Space.space * better -> explorer*)
@@ -77,10 +77,11 @@ structure ExplorerMain :> EXPLORER =
 			    end
 			  | SOME s => s
 
-  fun initWithSpace s =
+  fun initWithSpace (s, name) =
       let
 	  val state = initExplorer()
       in
+          serve (fn () => MainWindow.setWindowTitle name) ;
           serve (fn () => ExplorerSearch.initSearch
                               (serve, state, MainWindow.refresh,
                                CanvasHelper.resetCanvas, s));
@@ -152,7 +153,7 @@ structure ExplorerMain :> EXPLORER =
       let
           val space = Space.new()
           val root = script space
-          val e = initWithSpace space
+          val e = initWithSpace (space, "Explorer")
       in
           addInfoAction(e, ExplorerInspect.inspect t root, "default");
           e
