@@ -515,7 +515,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	case AbstractCode::TupArgs:
 	  {
 	    Vector *actualIdRefs = Vector::FromWordDirect(actualArgs->Sel(0));
-	    u_int nArgs  = actualIdRefs->GetLength();
+	    u_int nArgs = actualIdRefs->GetLength();
 	    Scheduler::nArgs = nArgs;
 	    for (u_int i = nArgs; i--; )
 	      Scheduler::currentArgs[i] =
