@@ -36,55 +36,60 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val none = 0: LargeInt.int
 		val some = TAG 1
 
-		val idDef = TAG 0
+		val idDef    = TAG 0
 		val wildcard = 1: LargeInt.int
 
-		val oneArg = TAG 0
+		val oneArg  = TAG 0
 		val tupArgs = TAG 1
 
-		val function = TAG 0
+		val appPrim        = TAG 0
+		val appVar         = TAG 1
+		val close          = TAG 2
+		val compactIntTest = TAG 3
+		val compactTagTest = TAG 4
+		val conTest        = TAG 5
+		val directAppVar   = TAG 6
+		val endHandle      = TAG 7
+		val endTry         = TAG 8
+		val getRef         = TAG 9
+		val getTup         = TAG 10
+		val intTest        = TAG 11
+		val kill           = TAG 12
+		val lazySel        = TAG 13
+		val putCon         = TAG 14
+		val putNew         = TAG 15
+		val putRef         = TAG 16
+		val putTag         = TAG 17
+		val putTup         = TAG 18
+		val putVar         = TAG 19
+		val putVec         = TAG 20
+		val raise_         = TAG 21
+		val realTest       = TAG 22
+		val reraise        = TAG 23
+		val return         = TAG 24
+		val sel            = TAG 25
+		val shared         = TAG 26
+		val specialize     = TAG 27
+		val stringTest     = TAG 28
+		val tagTest        = TAG 29
+		val try            = TAG 30
+		val vecTest        = TAG 31
 
-		val appPrim = TAG 0
-		val appVar = TAG 1
-		val compactIntTest = TAG 2
-		val compactTagTest = TAG 3
-		val conTest = TAG 4
-		val directAppVar = TAG 5
-		val endHandle = TAG 6
-		val endTry = TAG 7
-		val getRef = TAG 8
-		val getTup = TAG 9
-		val intTest = TAG 10
-		val kill = TAG 11
-		val lazySel = TAG 12
-		val putCon = TAG 13
-		val putFun = TAG 14
-		val putNew = TAG 15
-		val putRef = TAG 16
-		val putTag = TAG 17
-		val putTup = TAG 18
-		val putVar = TAG 19
-		val putVec = TAG 20
-		val raise_ = TAG 21
-		val realTest = TAG 22
-		val reraise = TAG 23
-		val return = TAG 24
-		val sel = TAG 25
-		val shared = TAG 26
-		val stringTest = TAG 27
-		val tagTest = TAG 28
-		val try = TAG 29
-		val vecTest = TAG 30
-
-		val global = TAG 0
+		val global    = TAG 0
 		val immediate = TAG 1
-		val local_ = TAG 2
+		val local_    = TAG 2
+		val toplevel  = TAG 3
 
-		fun toInt ARRAY        = 0
-		  | toInt CELL         = 1
-		  | toInt CON_VAL      = 2
-		  | toInt VECTOR       = 3
-		  | toInt (TAG i)      = 4 + i
+		val template = TAG 0
+
+		val function    = TAG 0
+		val specialized = TAG 1
+
+		fun toInt ARRAY   = 0
+		  | toInt CELL    = 1
+		  | toInt CON_VAL = 2
+		  | toInt VECTOR  = 3
+		  | toInt (TAG i) = 4 + i
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
@@ -179,18 +184,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.VECTOR, Vector.length values + 1);
 	     outputInt (context, LargeInt.fromInt (Vector.length values));
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context,
-			 V.Function (coord, nglobals, nlocals, args, body)) =
+	  | outputValue (context, V.ConcreteCode abstractCode) =
 	    (outputTransform (context, "Alice.function");
-	     outputBlock (context, Label.function, 5);
-	     outputCoord (context, coord);
-	     outputInt (context, LargeInt.fromInt nglobals);
-	     outputInt (context, LargeInt.fromInt nlocals);
-	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body))
-	  | outputValue (context, V.Closure (function, values)) =
+	     outputAbstractCode (context, abstractCode))
+	  | outputValue (context, V.Closure (concreteCode, values)) =
 	    (outputClosure (context, 1 + Vector.length values);
-	     outputValue (context, function);
+	     outputValue (context, concreteCode);
 	     Vector.app (fn value => outputValue (context, value)) values)
 	  | outputValue (context, V.Sign _) =
 	    outputInt (context, 0) (*--** i.e., `NONE' *)
@@ -225,10 +224,15 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.putVec, 3); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
 	     outputInstr (context, instr))
-	  | outputInstr (context, PutFun (id, idRefs, function, instr)) =
-	    (outputBlock (context, Label.putFun, 4); outputId (context, id);
+	  | outputInstr (context, Close (id, idRefs, value, instr)) =
+	    (outputBlock (context, Label.close, 4); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
-	     outputValue (context, function); outputInstr (context, instr))
+	     outputValue (context, value); outputInstr (context, instr))
+	  | outputInstr (context, Specialize (id, idRefs, template, instr)) =
+	    (outputBlock (context, Label.specialize, 4);
+	     outputId (context, id);
+	     outputVector outputIdRef (context, idRefs);
+	     outputTemplate (context, template); outputInstr (context, instr))
 	  | outputInstr (context, AppPrim (value, idRefs, idDefInstrOpt)) =
 	    (outputBlock (context, Label.appPrim, 3);
 	     outputValue (context, value);
@@ -382,13 +386,39 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, Return args) =
 	    (outputBlock (context, Label.return, 1);
 	     outputArgs outputIdRef (context, args))
-	and outputIdRef (context, Local id) =
-	    (outputBlock (context, Label.local_, 1); outputId (context, id))
-	  | outputIdRef (context, Global id) =
-	    (outputBlock (context, Label.global, 1); outputId (context, id))
-	  | outputIdRef (context, Immediate value) =
+	and outputIdRef (context, Immediate value) =
 	    (outputBlock (context, Label.immediate, 1);
 	     outputValue (context, value))
+	  | outputIdRef (context, Local id) =
+	    (outputBlock (context, Label.local_, 1); outputId (context, id))
+	  | outputIdRef (context, Global i) =
+	    (outputBlock (context, Label.global, 1); outputId (context, i))
+	  | outputIdRef (context, Toplevel i) =
+	    (outputBlock (context, Label.toplevel, 1); outputId (context, i))
+	and outputTemplate (context, Template (coord, ntoplevels, nlocals,
+					       args, body)) =
+	    (outputBlock (context, Label.template, 5);
+	     outputCoord (context, coord);
+	     outputInt (context, LargeInt.fromInt ntoplevels);
+	     outputInt (context, LargeInt.fromInt nlocals);
+	     outputArgs outputIdDef (context, args);
+	     outputInstr (context, body))
+	and outputAbstractCode (context, Function (coord, nglobals, nlocals,
+						   args, body)) =
+	    (outputBlock (context, Label.function, 5);
+	     outputCoord (context, coord);
+	     outputInt (context, LargeInt.fromInt nglobals);
+	     outputInt (context, LargeInt.fromInt nlocals);
+	     outputArgs outputIdDef (context, args);
+	     outputInstr (context, body))
+	  | outputAbstractCode (context, Specialized (coord, toplevels,
+						      nlocals, args, body)) =
+	    (outputBlock (context, Label.specialized, 5);
+	     outputCoord (context, coord);
+	     outputVector outputValue (context, toplevels);
+	     outputInt (context, LargeInt.fromInt nlocals);
+	     outputArgs outputIdDef (context, args);
+	     outputInstr (context, body))
 
 	fun output (outstream, value) =
 	    outputValue ({outstream = outstream, shared = StampMap.new ()},

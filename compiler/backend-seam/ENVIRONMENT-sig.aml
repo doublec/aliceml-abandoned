@@ -21,10 +21,12 @@ signature ENVIRONMENT =
 
 	type t
 
-	val new: string * AbstractCodeGrammar.value StampMap.t -> t
-	val filename: t -> string
-	val startFn: t -> unit
+	val startTop: string * AbstractCodeGrammar.value StampMap.t -> t
+	val endTop: t -> int
+	val startClose: t -> unit
+	val startSpecialize: t -> unit
 	val endFn: t -> FlatGrammar.id vector * int
+	val filename: t -> string
 	val declare: t * FlatGrammar.id -> AbstractCodeGrammar.id
 	val fresh: t -> AbstractCodeGrammar.id
 	val lookup: t * FlatGrammar.id -> AbstractCodeGrammar.idRef

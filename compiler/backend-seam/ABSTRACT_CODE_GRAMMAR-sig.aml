@@ -32,8 +32,6 @@ signature ABSTRACT_CODE_GRAMMAR =
 
 	type coord = string * int * int
 
-	type 'instr function = coord * int * int * idDef args * 'instr
-
 	datatype instr =
 	    Kill of id vector * instr
 	  | PutVar of id * idRef * instr
@@ -43,7 +41,8 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | PutRef of id * idRef * instr
 	  | PutTup of id * idRef vector * instr
 	  | PutVec of id * idRef vector * instr
-	  | PutFun of id * idRef vector * value * instr
+	  | Close of id * idRef vector * value * instr
+	  | Specialize of id * idRef vector * template * instr
 	  | AppPrim of value * idRef vector * (idDef * instr) option
 	  | AppVar of idRef * idRef args * (idDef args * instr) option
 	  | DirectAppVar of idRef * idRef args * (idDef args * instr) option
@@ -70,10 +69,16 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | Shared of Stamp.t * instr
 	  | Return of idRef args
 	and idRef =
-	    Local of id
+	    Immediate of value
+	  | Local of id
 	  | Global of int
-	  | Immediate of value
-	withtype value = instr function Value.t
+	  | Toplevel of int
+	and template =
+	    Template of coord * int * int * idDef args * instr
+	and abstractCode =
+	    Function of coord * int * int * idDef args * instr
+	  | Specialized of coord * value vector * int * idDef args * instr
+	withtype value = abstractCode Value.t
 
 	type t = value * Stamp.t vector
     end

@@ -23,71 +23,105 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	structure AbstractCodeGrammar = AbstractCodeGrammar
 
 	type scope = AbstractCodeGrammar.idRef StampMap.t
-	type globals = FlatGrammar.id list
+	type ids = FlatGrammar.id list
 	type index = int
+
+	type entry = {scope: scope,
+		      localIndex: index,
+		      globalIndex: index,
+		      globalIds: ids,
+		      isSpecialize: bool}
 
 	type t = {filename: string,
 		  context: AbstractCodeGrammar.value StampMap.t,
-		  stack: (scope * index * index * globals) list ref,
+		  stack: entry list ref,
 		  scope: scope ref,
 		  localIndex: index ref,
 		  globalIndex: index ref,
-		  globals: globals ref,
+		  globalIds: ids ref,
+		  isSpecialize: bool ref,
 		  shared: AbstractCodeGrammar.instr StampMap.t}
 
-	fun new (filename, context) =
+	fun startTop (filename, context) =
 	    {filename = filename, context = context,
 	     stack = ref nil, scope = ref (StampMap.new ()),
-	     localIndex = ref 0, globalIndex = ref 0, globals = ref nil,
-	     shared = StampMap.new ()}
+	     localIndex = ref 0, globalIndex = ref 0, globalIds = ref nil,
+	     isSpecialize = ref false, shared = StampMap.new ()}
+
+	fun endTop ({stack = ref nil, localIndex = ref localIndex,
+		     globalIds = ref nil, ...}: t) =
+	    localIndex
+	  | endTop _ = raise Crash.Crash "MkEnvironment.endTop"
+
+	fun startFn ({stack, scope, localIndex,
+		      globalIndex, globalIds, isSpecialize, ...}: t,
+		     isSpecialize') =
+	    let
+		val entry = {scope = !scope,
+			     localIndex = !localIndex,
+			     globalIndex = !globalIndex,
+			     globalIds = !globalIds,
+			     isSpecialize = !isSpecialize}
+	    in
+		stack := entry::(!stack);
+		scope := StampMap.new ();
+		localIndex := 0;
+		globalIndex := 0; globalIds := nil;
+		isSpecialize := isSpecialize'
+	    end
+
+	fun startClose env = startFn (env, false)
+
+	fun startSpecialize env = startFn (env, true)
+
+	fun endFn ({stack, scope, localIndex,
+		    globalIndex, globalIds, isSpecialize, ...}: t) =
+	    let
+		val result =
+		    (Vector.fromList (List.rev (!globalIds)),
+		     !localIndex)
+		val {scope = scope',
+		     localIndex = localIndex',
+		     globalIndex = globalIndex',
+		     globalIds = globalIds',
+		     isSpecialize = isSpecialize'} = List.hd (!stack)
+	    in
+		stack := List.tl (!stack); scope := scope';
+		localIndex := localIndex';
+		globalIndex := globalIndex'; globalIds := globalIds';
+		isSpecialize := isSpecialize';
+		result
+	    end
 
 	fun filename ({filename, ...}: t) = filename
-
-	fun startFn ({stack, scope, localIndex, globalIndex, globals,
-		      ...}: t) =
-	    (stack := (!scope, !localIndex, !globalIndex, !globals)::(!stack);
-	     scope := StampMap.new ();
-	     localIndex := 0;
-	     globalIndex := 0;
-	     globals := nil)
-
-	fun endFn ({stack, scope, localIndex, globalIndex, globals, ...}: t) =
-	    case !stack of
-		(scope', localIndex', globalIndex', globals')::rest =>
-		    (Vector.fromList (List.rev (!globals)), !localIndex)
-		    before (scope := scope';
-			    localIndex := localIndex';
-			    globalIndex := globalIndex';
-			    globals := globals';
-			    stack := rest)
-	      | nil => raise Crash.Crash "Environment.endFn"
 
 	fun declare ({scope, localIndex, ...}: t,
 		     FlatGrammar.Id (_, stamp, _)) =
 	    case StampMap.lookup (!scope, stamp) of
-		SOME (AbstractCodeGrammar.Local i) => i
-	      | SOME (AbstractCodeGrammar.Global _ |
-		      AbstractCodeGrammar.Immediate _) =>
-		    raise Crash.Crash "Environment.declare"
+		SOME (AbstractCodeGrammar.Local id) => id
+	      | SOME (AbstractCodeGrammar.Immediate _ |
+		      AbstractCodeGrammar.Global _ |
+		      AbstractCodeGrammar.Toplevel _) =>
+		    raise Crash.Crash "MkEnvironment.declare"
 	      | NONE =>
-			let
-			    val i = !localIndex
-			in
-			    localIndex := i + 1;
-			    StampMap.insertDisjoint
-			       (!scope, stamp, AbstractCodeGrammar.Local i);
-			    i
-			end
+		    let
+			val id = !localIndex
+		    in
+			localIndex := id + 1;
+			StampMap.insertDisjoint
+			    (!scope, stamp, AbstractCodeGrammar.Local id);
+			id
+		    end
 
 	fun fresh ({localIndex, ...}: t) =
 	    let
-		val i = !localIndex
+		val id = !localIndex
 	    in
-		localIndex := i + 1;
-		i
+		localIndex := id + 1; id
 	    end
 
-	fun lookup ({context, scope, globalIndex, globals, ...}: t,
+	fun lookup ({context, scope,
+		     globalIndex, globalIds, isSpecialize, ...}: t,
 		    id as FlatGrammar.Id (_, stamp, _)) =
 	    case StampMap.lookup (context, stamp) of
 		SOME value => AbstractCodeGrammar.Immediate value
@@ -97,9 +131,12 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	      | NONE =>
 		    let
 			val i = !globalIndex
-			val idRef = AbstractCodeGrammar.Global i
+			val idRef =
+			    if !isSpecialize
+			    then AbstractCodeGrammar.Toplevel i
+			    else AbstractCodeGrammar.Global i
 		    in
-			globals := id::(!globals);
+			globalIds := id::(!globalIds);
 			globalIndex := i + 1;
 			StampMap.insertDisjoint (!scope, stamp, idRef);
 			idRef
