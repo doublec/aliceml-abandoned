@@ -126,15 +126,16 @@ announcements</A>.</P>
 
 <P>The load operations for pickles can access arbitrary components. The file
 name argument is interpreted as an URI. If the file at the designated location
-does not contain a plain pickle, the component will get linked and evaluated by
-the current component manager and its export is returned. That may imply
-arbitrary side effects. In particular, it may trigger additional components
-being loaded transitively, if respective imports are required.</P>
+does not contain a plain pickle, the component will be linked and evaluated by
+the current component manager and its export is returned. This may cause
+arbitrary side effects. In particular, it may trigger the loading of
+additional, transitively imported components, if their exports are
+required.</P>
 
 <P>Note that evaluation of components causes the creation of new <A
-href="packages.html#dynamic">generative types</A>. So if a non-pickle component
-is loaded twice, any generative type contained in its export will be
-incompatible between both instances. Similarly for exceptions.</P>
+href="packages.html#dynamic">generative types</A>. Thus, if a non-pickle
+component is loaded twice, any generative types contained in its export will
+be incompatible between both instances. The same holds for exceptions.</P>
 
 
 <?php footing() ?>
